@@ -1,0 +1,35 @@
+K 25
+svn:wc:ra_dav:version-url
+V 98
+/svn/dirac/!svn/ver/3033/trunk/ePAD/DicomProxy/src/edu/stanford/isis/dicomproxy/queryretrieve/gson
+END
+GStudySearch.java
+K 25
+svn:wc:ra_dav:version-url
+V 116
+/svn/dirac/!svn/ver/3033/trunk/ePAD/DicomProxy/src/edu/stanford/isis/dicomproxy/queryretrieve/gson/GStudySearch.java
+END
+GServers.java
+K 25
+svn:wc:ra_dav:version-url
+V 112
+/svn/dirac/!svn/ver/2040/trunk/ePAD/DicomProxy/src/edu/stanford/isis/dicomproxy/queryretrieve/gson/GServers.java
+END
+GSeriesSearch.java
+K 25
+svn:wc:ra_dav:version-url
+V 117
+/svn/dirac/!svn/ver/2040/trunk/ePAD/DicomProxy/src/edu/stanford/isis/dicomproxy/queryretrieve/gson/GSeriesSearch.java
+END
+QRAdaptor.java
+K 25
+svn:wc:ra_dav:version-url
+V 113
+/svn/dirac/!svn/ver/2040/trunk/ePAD/DicomProxy/src/edu/stanford/isis/dicomproxy/queryretrieve/gson/QRAdaptor.java
+END
+Z_QRAdaptorServerTest.java
+K 25
+svn:wc:ra_dav:version-url
+V 125
+/svn/dirac/!svn/ver/2040/trunk/ePAD/DicomProxy/src/edu/stanford/isis/dicomproxy/queryretrieve/gson/Z_QRAdaptorServerTest.java
+END

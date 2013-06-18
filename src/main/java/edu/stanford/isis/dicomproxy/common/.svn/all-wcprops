@@ -1,0 +1,167 @@
+K 25
+svn:wc:ra_dav:version-url
+V 86
+/svn/dirac/!svn/ver/3106/trunk/ePAD/DicomProxy/src/edu/stanford/isis/dicomproxy/common
+END
+ProxyDateFormatter.java
+K 25
+svn:wc:ra_dav:version-url
+V 110
+/svn/dirac/!svn/ver/2030/trunk/ePAD/DicomProxy/src/edu/stanford/isis/dicomproxy/common/ProxyDateFormatter.java
+END
+SearchResultUtils.java
+K 25
+svn:wc:ra_dav:version-url
+V 109
+/svn/dirac/!svn/ver/3106/trunk/ePAD/DicomProxy/src/edu/stanford/isis/dicomproxy/common/SearchResultUtils.java
+END
+DicomHashUtil.java
+K 25
+svn:wc:ra_dav:version-url
+V 105
+/svn/dirac/!svn/ver/2030/trunk/ePAD/DicomProxy/src/edu/stanford/isis/dicomproxy/common/DicomHashUtil.java
+END
+LockFileUtils.java
+K 25
+svn:wc:ra_dav:version-url
+V 105
+/svn/dirac/!svn/ver/2030/trunk/ePAD/DicomProxy/src/edu/stanford/isis/dicomproxy/common/LockFileUtils.java
+END
+ProxyVersion.java
+K 25
+svn:wc:ra_dav:version-url
+V 104
+/svn/dirac/!svn/ver/2676/trunk/ePAD/DicomProxy/src/edu/stanford/isis/dicomproxy/common/ProxyVersion.java
+END
+DicomImageSorter.java
+K 25
+svn:wc:ra_dav:version-url
+V 108
+/svn/dirac/!svn/ver/2030/trunk/ePAD/DicomProxy/src/edu/stanford/isis/dicomproxy/common/DicomImageSorter.java
+END
+DicomImageData.java
+K 25
+svn:wc:ra_dav:version-url
+V 106
+/svn/dirac/!svn/ver/2030/trunk/ePAD/DicomProxy/src/edu/stanford/isis/dicomproxy/common/DicomImageData.java
+END
+DicomRowData.java
+K 25
+svn:wc:ra_dav:version-url
+V 104
+/svn/dirac/!svn/ver/2030/trunk/ePAD/DicomProxy/src/edu/stanford/isis/dicomproxy/common/DicomRowData.java
+END
+ProxyFileUtils.java
+K 25
+svn:wc:ra_dav:version-url
+V 106
+/svn/dirac/!svn/ver/2598/trunk/ePAD/DicomProxy/src/edu/stanford/isis/dicomproxy/common/ProxyFileUtils.java
+END
+DicomData.java
+K 25
+svn:wc:ra_dav:version-url
+V 101
+/svn/dirac/!svn/ver/2030/trunk/ePAD/DicomProxy/src/edu/stanford/isis/dicomproxy/common/DicomData.java
+END
+DicomStudyUID.java
+K 25
+svn:wc:ra_dav:version-url
+V 105
+/svn/dirac/!svn/ver/2030/trunk/ePAD/DicomProxy/src/edu/stanford/isis/dicomproxy/common/DicomStudyUID.java
+END
+FileKey.java
+K 25
+svn:wc:ra_dav:version-url
+V 99
+/svn/dirac/!svn/ver/2030/trunk/ePAD/DicomProxy/src/edu/stanford/isis/dicomproxy/common/FileKey.java
+END
+DicomSearchResult.java
+K 25
+svn:wc:ra_dav:version-url
+V 109
+/svn/dirac/!svn/ver/2030/trunk/ePAD/DicomProxy/src/edu/stanford/isis/dicomproxy/common/DicomSearchResult.java
+END
+WadoUrlBuilder.java
+K 25
+svn:wc:ra_dav:version-url
+V 106
+/svn/dirac/!svn/ver/2030/trunk/ePAD/DicomProxy/src/edu/stanford/isis/dicomproxy/common/WadoUrlBuilder.java
+END
+ImageEnhancer.java
+K 25
+svn:wc:ra_dav:version-url
+V 105
+/svn/dirac/!svn/ver/3033/trunk/ePAD/DicomProxy/src/edu/stanford/isis/dicomproxy/common/ImageEnhancer.java
+END
+DicomSearchType.java
+K 25
+svn:wc:ra_dav:version-url
+V 107
+/svn/dirac/!svn/ver/2089/trunk/ePAD/DicomProxy/src/edu/stanford/isis/dicomproxy/common/DicomSearchType.java
+END
+DicomTag.java
+K 25
+svn:wc:ra_dav:version-url
+V 100
+/svn/dirac/!svn/ver/2030/trunk/ePAD/DicomProxy/src/edu/stanford/isis/dicomproxy/common/DicomTag.java
+END
+DicomSeriesData.java
+K 25
+svn:wc:ra_dav:version-url
+V 107
+/svn/dirac/!svn/ver/2030/trunk/ePAD/DicomProxy/src/edu/stanford/isis/dicomproxy/common/DicomSeriesData.java
+END
+DicomSeriesUID.java
+K 25
+svn:wc:ra_dav:version-url
+V 106
+/svn/dirac/!svn/ver/2030/trunk/ePAD/DicomProxy/src/edu/stanford/isis/dicomproxy/common/DicomSeriesUID.java
+END
+Main.java
+K 25
+svn:wc:ra_dav:version-url
+V 96
+/svn/dirac/!svn/ver/2030/trunk/ePAD/DicomProxy/src/edu/stanford/isis/dicomproxy/common/Main.java
+END
+epadcommon.gwt.xml
+K 25
+svn:wc:ra_dav:version-url
+V 104
+/svn/dirac/!svn/ver/819/trunk/ePAD/DicomProxy/src/edu/stanford/isis/dicomproxy/common/epadcommon.gwt.xml
+END
+DicomQueryLevel.java
+K 25
+svn:wc:ra_dav:version-url
+V 107
+/svn/dirac/!svn/ver/2030/trunk/ePAD/DicomProxy/src/edu/stanford/isis/dicomproxy/common/DicomQueryLevel.java
+END
+DicomTagFileUtils.java
+K 25
+svn:wc:ra_dav:version-url
+V 109
+/svn/dirac/!svn/ver/3106/trunk/ePAD/DicomProxy/src/edu/stanford/isis/dicomproxy/common/DicomTagFileUtils.java
+END
+DicomStudyData.java
+K 25
+svn:wc:ra_dav:version-url
+V 106
+/svn/dirac/!svn/ver/2030/trunk/ePAD/DicomProxy/src/edu/stanford/isis/dicomproxy/common/DicomStudyData.java
+END
+DicomFormatUtil.java
+K 25
+svn:wc:ra_dav:version-url
+V 107
+/svn/dirac/!svn/ver/2592/trunk/ePAD/DicomProxy/src/edu/stanford/isis/dicomproxy/common/DicomFormatUtil.java
+END
+DicomUID.java
+K 25
+svn:wc:ra_dav:version-url
+V 100
+/svn/dirac/!svn/ver/2030/trunk/ePAD/DicomProxy/src/edu/stanford/isis/dicomproxy/common/DicomUID.java
+END
+DicomImageUID.java
+K 25
+svn:wc:ra_dav:version-url
+V 105
+/svn/dirac/!svn/ver/2030/trunk/ePAD/DicomProxy/src/edu/stanford/isis/dicomproxy/common/DicomImageUID.java
+END

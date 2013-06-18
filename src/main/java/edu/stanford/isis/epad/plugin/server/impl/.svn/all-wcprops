@@ -1,0 +1,41 @@
+K 25
+svn:wc:ra_dav:version-url
+V 92
+/svn/dirac/!svn/ver/3106/trunk/ePAD/DicomProxy/src/edu/stanford/isis/epad/plugin/server/impl
+END
+EPadFilesImpl.java
+K 25
+svn:wc:ra_dav:version-url
+V 111
+/svn/dirac/!svn/ver/2581/trunk/ePAD/DicomProxy/src/edu/stanford/isis/epad/plugin/server/impl/EPadFilesImpl.java
+END
+PluginConfig.java
+K 25
+svn:wc:ra_dav:version-url
+V 110
+/svn/dirac/!svn/ver/3106/trunk/ePAD/DicomProxy/src/edu/stanford/isis/epad/plugin/server/impl/PluginConfig.java
+END
+PluginHandlerMap.java
+K 25
+svn:wc:ra_dav:version-url
+V 114
+/svn/dirac/!svn/ver/2530/trunk/ePAD/DicomProxy/src/edu/stanford/isis/epad/plugin/server/impl/PluginHandlerMap.java
+END
+EPadProxyConfigImpl.java
+K 25
+svn:wc:ra_dav:version-url
+V 117
+/svn/dirac/!svn/ver/2044/trunk/ePAD/DicomProxy/src/edu/stanford/isis/epad/plugin/server/impl/EPadProxyConfigImpl.java
+END
+EPadPluginImpl.java
+K 25
+svn:wc:ra_dav:version-url
+V 112
+/svn/dirac/!svn/ver/2443/trunk/ePAD/DicomProxy/src/edu/stanford/isis/epad/plugin/server/impl/EPadPluginImpl.java
+END
+ClassFinderTestUtils.java
+K 25
+svn:wc:ra_dav:version-url
+V 118
+/svn/dirac/!svn/ver/2433/trunk/ePAD/DicomProxy/src/edu/stanford/isis/epad/plugin/server/impl/ClassFinderTestUtils.java
+END

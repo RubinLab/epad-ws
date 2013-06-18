@@ -1,0 +1,29 @@
+K 25
+svn:wc:ra_dav:version-url
+V 88
+/svn/dirac/!svn/ver/3106/trunk/ePAD/DicomProxy/src/edu/stanford/isis/dicomproxy/db/mysql
+END
+MySqlConnectionPool.java
+K 25
+svn:wc:ra_dav:version-url
+V 113
+/svn/dirac/!svn/ver/2687/trunk/ePAD/DicomProxy/src/edu/stanford/isis/dicomproxy/db/mysql/MySqlConnectionPool.java
+END
+StudyStatus.java
+K 25
+svn:wc:ra_dav:version-url
+V 105
+/svn/dirac/!svn/ver/2581/trunk/ePAD/DicomProxy/src/edu/stanford/isis/dicomproxy/db/mysql/StudyStatus.java
+END
+MySqlInstance.java
+K 25
+svn:wc:ra_dav:version-url
+V 107
+/svn/dirac/!svn/ver/2751/trunk/ePAD/DicomProxy/src/edu/stanford/isis/dicomproxy/db/mysql/MySqlInstance.java
+END
+MySqlQueries.java
+K 25
+svn:wc:ra_dav:version-url
+V 106
+/svn/dirac/!svn/ver/3106/trunk/ePAD/DicomProxy/src/edu/stanford/isis/dicomproxy/db/mysql/MySqlQueries.java
+END

@@ -1,0 +1,29 @@
+K 25
+svn:wc:ra_dav:version-url
+V 88
+/svn/dirac/!svn/ver/3106/trunk/ePAD/DicomProxy/src/edu/stanford/isis/dicomproxy/handlers
+END
+ResourceCheckHandler.java
+K 25
+svn:wc:ra_dav:version-url
+V 114
+/svn/dirac/!svn/ver/2048/trunk/ePAD/DicomProxy/src/edu/stanford/isis/dicomproxy/handlers/ResourceCheckHandler.java
+END
+FirstWebSocketServlet.java
+K 25
+svn:wc:ra_dav:version-url
+V 115
+/svn/dirac/!svn/ver/2049/trunk/ePAD/DicomProxy/src/edu/stanford/isis/dicomproxy/handlers/FirstWebSocketServlet.java
+END
+RemoteSearchHandler.java
+K 25
+svn:wc:ra_dav:version-url
+V 113
+/svn/dirac/!svn/ver/2147/trunk/ePAD/DicomProxy/src/edu/stanford/isis/dicomproxy/handlers/RemoteSearchHandler.java
+END
+package-info.java
+K 25
+svn:wc:ra_dav:version-url
+V 106
+/svn/dirac/!svn/ver/1066/trunk/ePAD/DicomProxy/src/edu/stanford/isis/dicomproxy/handlers/package-info.java
+END

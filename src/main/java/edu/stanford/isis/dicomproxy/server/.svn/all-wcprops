@@ -1,0 +1,95 @@
+K 25
+svn:wc:ra_dav:version-url
+V 86
+/svn/dirac/!svn/ver/3106/trunk/ePAD/DicomProxy/src/edu/stanford/isis/dicomproxy/server
+END
+ProxyConfig.java
+K 25
+svn:wc:ra_dav:version-url
+V 103
+/svn/dirac/!svn/ver/2504/trunk/ePAD/DicomProxy/src/edu/stanford/isis/dicomproxy/server/ProxyConfig.java
+END
+ProxyWorkers.java
+K 25
+svn:wc:ra_dav:version-url
+V 104
+/svn/dirac/!svn/ver/2043/trunk/ePAD/DicomProxy/src/edu/stanford/isis/dicomproxy/server/ProxyWorkers.java
+END
+LogFormatter.java
+K 25
+svn:wc:ra_dav:version-url
+V 104
+/svn/dirac/!svn/ver/2559/trunk/ePAD/DicomProxy/src/edu/stanford/isis/dicomproxy/server/LogFormatter.java
+END
+SearchResult.java
+K 25
+svn:wc:ra_dav:version-url
+V 104
+/svn/dirac/!svn/ver/2043/trunk/ePAD/DicomProxy/src/edu/stanford/isis/dicomproxy/server/SearchResult.java
+END
+ResourceUtils.java
+K 25
+svn:wc:ra_dav:version-url
+V 105
+/svn/dirac/!svn/ver/2043/trunk/ePAD/DicomProxy/src/edu/stanford/isis/dicomproxy/server/ResourceUtils.java
+END
+RStudyData.java
+K 25
+svn:wc:ra_dav:version-url
+V 102
+/svn/dirac/!svn/ver/2043/trunk/ePAD/DicomProxy/src/edu/stanford/isis/dicomproxy/server/RStudyData.java
+END
+RDataBuilder.java
+K 25
+svn:wc:ra_dav:version-url
+V 104
+/svn/dirac/!svn/ver/2043/trunk/ePAD/DicomProxy/src/edu/stanford/isis/dicomproxy/server/RDataBuilder.java
+END
+ProxyManager.java
+K 25
+svn:wc:ra_dav:version-url
+V 104
+/svn/dirac/!svn/ver/2043/trunk/ePAD/DicomProxy/src/edu/stanford/isis/dicomproxy/server/ProxyManager.java
+END
+ShutdownSignal.java
+K 25
+svn:wc:ra_dav:version-url
+V 106
+/svn/dirac/!svn/ver/2043/trunk/ePAD/DicomProxy/src/edu/stanford/isis/dicomproxy/server/ShutdownSignal.java
+END
+ProxyLogger.java
+K 25
+svn:wc:ra_dav:version-url
+V 103
+/svn/dirac/!svn/ver/2633/trunk/ePAD/DicomProxy/src/edu/stanford/isis/dicomproxy/server/ProxyLogger.java
+END
+SearchResultCache.java
+K 25
+svn:wc:ra_dav:version-url
+V 109
+/svn/dirac/!svn/ver/2043/trunk/ePAD/DicomProxy/src/edu/stanford/isis/dicomproxy/server/SearchResultCache.java
+END
+DicomSearchMap.java
+K 25
+svn:wc:ra_dav:version-url
+V 106
+/svn/dirac/!svn/ver/2043/trunk/ePAD/DicomProxy/src/edu/stanford/isis/dicomproxy/server/DicomSearchMap.java
+END
+RSeriesData.java
+K 25
+svn:wc:ra_dav:version-url
+V 103
+/svn/dirac/!svn/ver/3033/trunk/ePAD/DicomProxy/src/edu/stanford/isis/dicomproxy/server/RSeriesData.java
+END
+RImageData.java
+K 25
+svn:wc:ra_dav:version-url
+V 102
+/svn/dirac/!svn/ver/2043/trunk/ePAD/DicomProxy/src/edu/stanford/isis/dicomproxy/server/RImageData.java
+END
+RDataColumn.java
+K 25
+svn:wc:ra_dav:version-url
+V 103
+/svn/dirac/!svn/ver/2043/trunk/ePAD/DicomProxy/src/edu/stanford/isis/dicomproxy/server/RDataColumn.java
+END
