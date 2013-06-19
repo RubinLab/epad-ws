@@ -7,9 +7,6 @@
  */
 package edu.stanford.isis.epad.plugin.server.impl;
 
-import com.google.gwt.dom.client.DivElement;
-import com.google.gwt.user.client.ui.LayoutPanel;
-
 import edu.stanford.isis.epad.plugin.server.EPadPlugin;
 
 
@@ -30,6 +27,7 @@ public class EPadPluginImpl implements EPadPlugin{
     }
 
 
+    /*
     @Override
     public LayoutPanel getGwtUILayoutPanel() {
         return null;  //To change body of implemented methods use File | Settings | File Templates.
@@ -39,5 +37,6 @@ public class EPadPluginImpl implements EPadPlugin{
     public DivElement getGwtUIDivElement() {
         return null;  //To change body of implemented methods use File | Settings | File Templates.
     }
+    */
 
 }

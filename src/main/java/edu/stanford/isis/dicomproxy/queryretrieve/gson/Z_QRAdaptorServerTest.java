@@ -7,11 +7,10 @@
  */
 package edu.stanford.isis.dicomproxy.queryretrieve.gson;
 
-import com.google.gson.Gson;
-import edu.stanford.isis.dicomproxy.queryretrieve.jso.Z_QRAdaptorClientTest;
-
 import java.util.HashMap;
 import java.util.Map;
+
+import com.google.gson.Gson;
 
 /**
  * Testing JSON parsing on server-side.
@@ -43,12 +42,14 @@ public class Z_QRAdaptorServerTest {
         System.out.println(" -- de-serialized result --");
         System.out.println(studySearch2);
 
+        /* Removed because it was using experimental GWT-dependent JSON handling code
         System.out.println(" -- de-serialize actual return value -- ");
         GStudySearch studySearch3 = gson.fromJson(Z_QRAdaptorClientTest.studyResult, GStudySearch.class);
         System.out.println(studySearch3);
 
         System.out.println(" -- in ePad usable format -- ");
         System.out.println(studySearch3.toEPadCsvFormat());
+        */
     }
 
 }

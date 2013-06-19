@@ -20,7 +20,6 @@
     <aim3api.version>1.0</aim3api.version>
     <restlet.version>2.0.13</restlet.version>
     <dcm4chee.version>2.0.27</dcm4chee.version>
-    <gwt.version>2.5.1</gwt.version>
     <jetty.version>7.3.0.v20110203</jetty.version>
     <mysql.connector.version>5.1.22</mysql.connector.version>
     <gson.version>2.2.1</gson.version>
@@ -274,12 +273,6 @@
     </dependency>
 
    <dependency>
-	<groupId>com.google.gwt</groupId>
-	<artifactId>gwt-user</artifactId>
-        <version>${gwt.version}</version>
-   </dependency>
-            
-   <dependency>
      <groupId>mysql</groupId>
      <artifactId>mysql-connector-java</artifactId>
      <version>${mysql.connector.version}</version>
@@ -310,13 +303,6 @@
    <dependency>
 	<groupId>tracing</groupId>
 	<artifactId>tracing</artifactId>
-	<version>1.0</version>
-   </dependency>
-
-   <!-- Local ./lib dependency. TODO: Build a Maven repository for this or incorporate into Dicom Proxy code. -->
-   <dependency>
-	<groupId>epadplugin</groupId>
-	<artifactId>epadplugin</artifactId>
 	<version>1.0</version>
    </dependency>
 
