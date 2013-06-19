@@ -4,9 +4,11 @@ import java.awt.image.BufferedImage;
 import java.awt.image.DataBuffer;
 import java.awt.image.Raster;
 import java.awt.image.WritableRaster;
+
+import org.apache.log4j.Logger;
 import org.dcm4che2.data.DicomObject;
 import org.dcm4che2.data.Tag;
-import org.acr.Dicom.Logger;
+//import org.acr.Dicom.Logger;
 
 public class RasterProcessorDP {
 	/**

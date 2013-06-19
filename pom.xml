@@ -299,21 +299,15 @@
    <!-- Local ./lib JARs that do not (yet) have Maven entries. -->
    <!-- See http://blog.dub.podval.org/2010/01/maven-in-project-repository.html for explanation of how to generate these repository entries. -->
 
-   <!-- Local ./lib dependency. TODO: See if we can find a Maven repository or incorporate into Dicom Proxy code. -->
-   <dependency>
-	<groupId>tracing</groupId>
-	<artifactId>tracing</artifactId>
-	<version>1.0</version>
-   </dependency>
-
-   <!-- Local ./lib dependency. TODO: Build Maven project for this or incorprate into Dicom Proxy code.-->
+   <!-- Local ./lib dependency. TODO: Server should not be dependent on this. -->
    <dependency>
 	<groupId>dicominterface</groupId>
 	<artifactId>dicominterface</artifactId>
 	<version>1.0</version>
    </dependency>
 
-   <!-- Local ./lib dependency. TODO: See if we can find a Maven repository for this. -->
+   <!-- Local ./lib dependency. TODO: See if we can find a public Maven repository for this. -->
+
    <dependency>
 	<groupId>pixelmed</groupId>
 	<artifactId>pixelmed</artifactId>
