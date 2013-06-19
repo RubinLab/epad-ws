@@ -7,12 +7,11 @@
  */
 package edu.stanford.isis.dicomproxy.server;
 
+import java.util.Map;
+
 import edu.stanford.isis.dicomproxy.common.DicomSeriesUID;
 import edu.stanford.isis.dicomproxy.common.DicomStudyUID;
 import edu.stanford.isis.dicomproxy.common.DicomTag;
-import org.dcm4che2.data.Tag;
-
-import java.util.Map;
 
 /**
  *
@@ -24,11 +23,7 @@ public class RDataBuilder {
 
 
     public static RStudyData createStudyData(Map<DicomTag,String> map){
-        int[] required = {Tag.StudyInstanceUID,
-                          Tag.StudyDate,
-                          Tag.PatientID,
-                          Tag.PatientName,
-                          Tag.ModalitiesInStudy};
+        //int[] required = {Tag.StudyInstanceUID, Tag.StudyDate, Tag.PatientID, Tag.PatientName, Tag.ModalitiesInStudy};
 
         //checkForRequiredTags(required,map);
 

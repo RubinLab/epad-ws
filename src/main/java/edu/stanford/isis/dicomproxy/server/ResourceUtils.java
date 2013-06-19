@@ -79,9 +79,9 @@ public class ResourceUtils {
      */
     public static File getDicomProxyBaseDir(){
         String pwd = System.getProperty("user.dir");
-        String parent = pwd.substring(0,pwd.length()-4);
+        // WTF String parent = pwd.substring(0,pwd.length()-4);
 
-        return new File(parent);
+        return new File(pwd);
     }
 
     /**

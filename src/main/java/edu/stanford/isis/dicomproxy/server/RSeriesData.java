@@ -7,14 +7,14 @@
  */
 package edu.stanford.isis.dicomproxy.server;
 
+import java.util.Map;
+
+import org.dcm4che2.data.Tag;
+
 import edu.stanford.isis.dicomproxy.common.DicomQueryLevel;
 import edu.stanford.isis.dicomproxy.common.DicomSeriesData;
 import edu.stanford.isis.dicomproxy.common.DicomSeriesUID;
 import edu.stanford.isis.dicomproxy.common.DicomTag;
-import edu.stanford.isis.dicomproxy.server.threads.ThumbnailGenerator;
-import org.dcm4che2.data.Tag;
-
-import java.util.Map;
 
 /**
  * DicomSeries

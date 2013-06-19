@@ -16,12 +16,12 @@ public class UploadErrorFile {
 
     private final FileKey fileKey;
     private final String errorMessage;
-    private final Exception exception;
+    //private final Exception exception;
 
     public UploadErrorFile(FileKey fileKey, String errorMessage, Exception e){
         this.fileKey=fileKey;
         this.errorMessage=errorMessage;
-        this.exception=e;
+        //this.exception=e;
     }
 
     public FileKey getFileKey(){

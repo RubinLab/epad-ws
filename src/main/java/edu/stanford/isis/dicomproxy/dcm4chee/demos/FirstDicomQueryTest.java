@@ -57,8 +57,6 @@ import org.dcm4che2.net.TransferCapability;
 import org.dcm4che2.net.UserIdentity;
 import org.dcm4che2.net.service.DicomService;
 import org.dcm4che2.net.service.StorageService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Try to retrieve a known patient-id from rufus.

@@ -19,7 +19,7 @@ public class MySqlFactory {
     private static final ProxyLogger log = ProxyLogger.getInstance();
 
     private static final BlockingQueue<SeriesOrder> seriesWatchQueue = new ArrayBlockingQueue<SeriesOrder>(2000);
-    private static final BlockingQueue<DicomHeadersTask> dicomHeadersTaskQueue = new ArrayBlockingQueue<DicomHeadersTask>(2000);
+    //private static final BlockingQueue<DicomHeadersTask> dicomHeadersTaskQueue = new ArrayBlockingQueue<DicomHeadersTask>(2000);
     private static final BlockingQueue<GeneratorTask> pngTaskQueue = new ArrayBlockingQueue<GeneratorTask>(2000);
 
     final ExecutorService dbTableWatcherExec = Executors.newSingleThreadExecutor();

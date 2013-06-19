@@ -631,6 +631,7 @@ public class SegmentationObjectsFileWriter {
 			attrs.put(tag, new SequenceAttribute(tag));
 		}
 
+		@SuppressWarnings("unchecked")
 		Iterator <SequenceItem> it = sequence.iterator();
 		boolean initial = true;
 		while(it.hasNext()) {
@@ -751,6 +752,7 @@ public class SegmentationObjectsFileWriter {
 	}
 
 	private void remove_attributes_from_sequence(Set <AttributeTag> tags, SequenceAttribute sequence)  {
+		@SuppressWarnings("unchecked")
 		Iterator <SequenceItem> it = sequence.iterator();
 		while(it.hasNext()) {
 			AttributeList l = it.next().getAttributeList();
@@ -836,7 +838,7 @@ public class SegmentationObjectsFileWriter {
 		String input_file = args[0];//"./DicomFiles/CT0010";//
 		String map_file = args[1];//"./TEMP/CT0010.mapbin";//
 		String output_file = args[2];//"./TEMP/CT0010.sobin";//"segmentation_test_out.dcm";
-		String mode = args[3]; //"BINARY";
+		//String mode = args[3]; //"BINARY";
 		
 		byte [] pixels = null; 
 		SegmentationObjectsFileWriter obj = null;

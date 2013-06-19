@@ -55,7 +55,7 @@ public class GStudySearch {
         StringBuilder sb = new StringBuilder();
         sb.append("r=").append(result).append("\n");
         sb.append("m=").append(message).append("\n");
-        for(Map currMap : list){
+        for(Map<?,?> currMap : list){
             sb.append("row:").append(currMap).append("\n");
         }
         return sb.toString();

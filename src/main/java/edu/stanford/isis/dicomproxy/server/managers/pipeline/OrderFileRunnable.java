@@ -172,7 +172,8 @@ public class OrderFileRunnable implements Runnable{
         }
     }//updateOrderFileWith
 
-    private static void debugImageOrderList(List<ImageOrder> imageOrderList){
+    @SuppressWarnings("unused")
+	private static void debugImageOrderList(List<ImageOrder> imageOrderList){
         logger.info("===DEBUG IMAGE ORDER.   size="+imageOrderList.size());
         for(ImageOrder curr : imageOrderList){
             logger.info(" image-order="+curr.toString());

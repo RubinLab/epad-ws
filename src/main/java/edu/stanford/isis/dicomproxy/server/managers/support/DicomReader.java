@@ -15,7 +15,6 @@ import org.dcm4che2.io.DicomInputStream;
 import org.dcm4che2.io.StopTagInputHandler;
 
 import edu.stanford.aim.proxy.helpers.RasterProcessor;
-import edu.stanford.isis.tools.pixelmed.RasterProcessorDP;
 /**
  *
  * Tools for processing Dicom images

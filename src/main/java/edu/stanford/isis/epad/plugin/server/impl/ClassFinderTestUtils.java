@@ -1,8 +1,5 @@
 package edu.stanford.isis.epad.plugin.server.impl;
 
-import edu.stanford.isis.dicomproxy.server.ProxyLogger;
-import edu.stanford.isis.epad.plugin.server.PluginHandler;
-
 import java.io.File;
 import java.io.IOException;
 import java.lang.annotation.Annotation;
@@ -15,6 +12,9 @@ import java.util.List;
 import java.util.Set;
 import java.util.jar.Attributes;
 import java.util.jar.Manifest;
+
+import edu.stanford.isis.dicomproxy.server.ProxyLogger;
+import edu.stanford.isis.epad.plugin.server.PluginHandler;
 
 /**
  * Place to keep the class loader test code.
@@ -30,7 +30,7 @@ public class ClassFinderTestUtils
      * @param clazz Class
      * @return String
      */
-    public static String readJarManifestForClass(Class clazz){
+    public static String readJarManifestForClass(Class<?> clazz){
 
         StringBuilder sb = new StringBuilder();
         try{
@@ -46,7 +46,7 @@ public class ClassFinderTestUtils
             "/META-INF/MANIFEST.MF";
             Manifest manifest = new Manifest(new URL(manifestPath).openStream());
             Attributes attr = manifest.getMainAttributes();
-            String value = attr.getValue("Manifest-Version");
+            //String value = attr.getValue("Manifest-Version");
 
 
             Set<Object> keys = attr.keySet();
@@ -71,9 +71,9 @@ public class ClassFinderTestUtils
     /**
      * Methods to find classes and annotations
      */
-    public static List<Class> getClasses(String packageName) throws ClassNotFoundException, IOException
+    public static List<Class<?>> getClasses(String packageName) throws ClassNotFoundException, IOException
     {
-        List<Class> classes = new ArrayList<Class>();
+        List<Class<?>> classes = new ArrayList<Class<?>>();
         try{
             ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
             //ClassLoader classLoader = ClassLoader.getSystemClassLoader();
@@ -105,9 +105,9 @@ public class ClassFinderTestUtils
 
 
 
-    public static List<Class> findClasses(File directory, String packageName) throws ClassNotFoundException
+    public static List<Class<?>> findClasses(File directory, String packageName) throws ClassNotFoundException
     {
-        List<Class> classes = new ArrayList<Class>();
+        List<Class<?>> classes = new ArrayList<Class<?>>();
         if (!directory.exists())
         {
             return classes;
@@ -128,17 +128,17 @@ public class ClassFinderTestUtils
     }
 
 
-    public static boolean isPluginHandler(Class testClass){
+    public static boolean isPluginHandler(Class<?> testClass){
         return testClass.isAnnotationPresent(PluginHandler.class);
     }
 
-    public static boolean hasAnnotation(Class testClass, Class<? extends Annotation> annotationClass)
+    public static boolean hasAnnotation(Class<?> testClass, Class<? extends Annotation> annotationClass)
     {
         return testClass.isAnnotationPresent(annotationClass);
     }
 
 
-    public static List<Method> findMethodsWithAnnotation(Class testClass, Class<? extends Annotation> annotationClass)
+    public static List<Method> findMethodsWithAnnotation(Class<?> testClass, Class<? extends Annotation> annotationClass)
     {
         List<Method> retVal = new ArrayList<Method>();
         for (Method method : testClass.getMethods())
@@ -171,7 +171,7 @@ public class ClassFinderTestUtils
 
     public static void classForName(){
         try{
-            Class clazz = Class.forName("edu.stanford.isis.plugins.first.FirstHandler");
+            Class<?> clazz = Class.forName("edu.stanford.isis.plugins.first.FirstHandler");
             if(clazz!=null){
                 logger.info("found FirstHandler by Class.forName");
                 //ToDo: add this here.
@@ -192,11 +192,12 @@ public class ClassFinderTestUtils
              // Step 2: Define a class to be loaded.
             String classNameToBeLoaded = "edu.stanford.isis.plugins.first.FirstHandler";
              // Step 3: Load the class
-            Class myClass = myClassLoader.loadClass(classNameToBeLoaded);
+            Class<?> myClass = myClassLoader.loadClass(classNameToBeLoaded);
 
             if(myClass!=null){
                 logger.info("dynamicClassLoader found FirstHandler.");
                 // Step 4: create a new instance of that class
+                @SuppressWarnings("unused")
                 Object whatInstance = myClass.newInstance();
             }else{
                 logger.info("FirstHandler was not found");

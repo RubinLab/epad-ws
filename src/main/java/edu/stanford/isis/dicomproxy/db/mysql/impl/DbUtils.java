@@ -7,19 +7,24 @@
  */
 package edu.stanford.isis.dicomproxy.db.mysql.impl;
 
+import java.io.File;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.sql.Timestamp;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+
 import edu.stanford.isis.dicomproxy.common.DicomSeriesUID;
 import edu.stanford.isis.dicomproxy.common.DicomStudyUID;
 import edu.stanford.isis.dicomproxy.common.DicomTagFileUtils;
 import edu.stanford.isis.dicomproxy.common.FileKey;
-import edu.stanford.isis.dicomproxy.db.mysql.impl.DbQueries.InstanceKey;
 import edu.stanford.isis.dicomproxy.server.ProxyLogger;
 import edu.stanford.isis.dicomproxy.server.ResourceUtils;
-
-import java.io.File;
-import java.sql.*;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
 
 /**
  * Utilities for a database.

@@ -7,15 +7,6 @@
  */
 package edu.stanford.isis.dicomproxy.server.managers.localstore;
 
-import edu.stanford.isis.dicomproxy.common.FileKey;
-import edu.stanford.isis.dicomproxy.server.ProxyLogger;
-
-import java.io.File;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Watch the dicom directory for new directories that are not related to the pipeline.
@@ -32,28 +23,28 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class DicomDirWatcher implements Runnable{
 
-    private static final ProxyLogger logger = ProxyLogger.getInstance();
+    //private static final ProxyLogger logger = ProxyLogger.getInstance();
 
-    private final Set<FileKey> knownDicomFilesWithTagFile;
-    private final Map<FileKey,WatchData> newDicomFilesWithoutTagFile;
+    //private final Set<FileKey> knownDicomFilesWithTagFile;
+    //private final Map<FileKey,WatchData> newDicomFilesWithoutTagFile;
 
-    private final Set<FileKey> knownPipelineDirs;
-    private final Set<FileKey> knownLocalStoreDirs;
+    //private final Set<FileKey> knownPipelineDirs;
+    //private final Set<FileKey> knownLocalStoreDirs;
 
-    private final Map<FileKey,WatchData> newLocalStoreDirs;
+    //private final Map<FileKey,WatchData> newLocalStoreDirs;
 
-    private static final String BASE_DICOM_DIR = "../resources/dicom";
+    //private static final String BASE_DICOM_DIR = "../resources/dicom";
 
     boolean isFirst=true;
 
     public DicomDirWatcher(){
-        knownDicomFilesWithTagFile = Collections.synchronizedSet(new HashSet<FileKey>());
-        newDicomFilesWithoutTagFile = new ConcurrentHashMap<FileKey,WatchData>();
+        //knownDicomFilesWithTagFile = Collections.synchronizedSet(new HashSet<FileKey>());
+        //newDicomFilesWithoutTagFile = new ConcurrentHashMap<FileKey,WatchData>();
 
-        knownPipelineDirs = Collections.synchronizedSet(new HashSet<FileKey>());
-        knownLocalStoreDirs = Collections.synchronizedSet(new HashSet<FileKey>());
+        //knownPipelineDirs = Collections.synchronizedSet(new HashSet<FileKey>());
+        //knownLocalStoreDirs = Collections.synchronizedSet(new HashSet<FileKey>());
 
-        newLocalStoreDirs = new ConcurrentHashMap<FileKey,WatchData>();
+        //newLocalStoreDirs = new ConcurrentHashMap<FileKey,WatchData>();
     }//
 
     @Override
@@ -76,7 +67,7 @@ public class DicomDirWatcher implements Runnable{
      */
     private void init(){
 
-        File dicomDir = new File(BASE_DICOM_DIR);
+        //File dicomDir = new File(BASE_DICOM_DIR);
 
 
 

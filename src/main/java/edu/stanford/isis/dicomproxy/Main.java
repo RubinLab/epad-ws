@@ -118,6 +118,7 @@ public class Main {
 
 		ShutdownSignal shutdownSignal = ShutdownSignal.getInstance();
 
+		@SuppressWarnings("unused") // Initialize singleton
 		ProxyManager proxyManager = ProxyManager.getInstance();
 		Server server = null;
 		try {
@@ -125,6 +126,7 @@ public class Main {
 					+ ProxyVersion.getBuildDate());
 
 			// read config file.
+			@SuppressWarnings("unused") // Initialize singleton
 			ProxyConfig proxyConfig = ProxyConfig.getInstance();
 
 			// init plugin classes.
@@ -220,9 +222,10 @@ public class Main {
 	 * @param server
 	 *            Server
 	 */
+	@SuppressWarnings("unused")
 	private static void createWebAppContext(Server server) {
 		try {
-			final int jettyPort = 8327; // ToDo: Move this to
+			//final int jettyPort = 8327; // ToDo: Move this to
 										// "proxy-config.properties" with
 										// default setting 8088.
 			final String contextPath = "/a";
@@ -582,17 +585,18 @@ public class Main {
 	/**
 	 * Temporary test to find best way to get plugin classes using reflection.
 	 */
+	@SuppressWarnings("unused")
 	private static void pluginReflectionsTests() {
 		try {
 
 			// Look for a class that has annotation EPadPluginHandler
 			String packageName = "edu.stanford.isis.plugins.first";
-			List<Class> pluginClasses = ClassFinderTestUtils
+			List<Class<?>> pluginClasses = ClassFinderTestUtils
 					.getClasses(packageName);
 
 			log.info("Found :" + pluginClasses.size() + " classes in package: "
 					+ packageName);
-			for (Class pluginClass : pluginClasses) {
+			for (Class<?> pluginClass : pluginClasses) {
 				if (ClassFinderTestUtils.hasAnnotation(pluginClass,
 						PluginHandler.class)) {
 					log.info("Found PluginHandler class: "

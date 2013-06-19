@@ -1,24 +1,14 @@
 package edu.stanford.isis.dicomproxy.handlers.aim;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.net.URL;
 import java.net.URLDecoder;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
-import java.util.StringTokenizer;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -34,20 +24,14 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
-import org.apache.commons.fileupload.FileItem;
 import org.apache.commons.fileupload.FileItemIterator;
 import org.apache.commons.fileupload.FileItemStream;
-import org.apache.commons.fileupload.disk.DiskFileItemFactory;
 import org.apache.commons.fileupload.servlet.ServletFileUpload;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpException;
 import org.apache.commons.httpclient.methods.GetMethod;
-import org.apache.commons.httpclient.util.HttpURLConnection;
-import org.eclipse.jetty.server.HttpConnection;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
-import org.eclipse.jetty.util.StringUtil;
-import org.eclipse.jetty.util.TypeUtil;
 import org.restlet.resource.Get;
 import org.w3c.dom.DOMException;
 import org.w3c.dom.Document;
@@ -218,12 +202,16 @@ public class AimResourceHandler extends AbstractHandler{
 					File f=new File(filePath+tempName);
 
 					FileOutputStream fos = new FileOutputStream(f);
-					int len;
-					byte[] buffer = new byte[32768];
-					while ((len = stream.read(buffer, 0, buffer.length)) != -1) {
-						fos.write(buffer,0,len);
-					}//while
-						out.print("added ("+fileCount+"): "+name);
+					try {
+						int len;
+						byte[] buffer = new byte[32768];
+						while ((len = stream.read(buffer, 0, buffer.length)) != -1) {
+							fos.write(buffer,0,len);
+						}//while
+					} finally {
+						fos.close();
+					}
+					out.print("added ("+fileCount+"): "+name);
 
 					//Transform it a AIM File
 						ImageAnnotation ia= AnnotationGetter.getImageAnnotationFromFile(f.getAbsolutePath(), xsdFilePath);
@@ -431,7 +419,7 @@ public class AimResourceHandler extends AbstractHandler{
 				if(templateHasBeenFound){
 					logger.info("Template Has Been Found, handler : "+handlerName);	
 					//Trigger the plugin
-					String nameAIM=aim.getUniqueIdentifier() + ".xml";
+					//String nameAIM=aim.getUniqueIdentifier() + ".xml";
 					
 					String url="http://localhost:8080/plugin/"+pluginName+"/?aimFile="+aim.getUniqueIdentifier();
 					//--Post to the plugin
@@ -441,7 +429,7 @@ public class AimResourceHandler extends AbstractHandler{
 					GetMethod method = new GetMethod(url);
 					// Execute the GET method
 					try {
-						int statusCode = client.executeMethod(method);
+						client.executeMethod(method);
 					} catch (HttpException e) {
 						// TODO Auto-generated catch block
 						e.printStackTrace();

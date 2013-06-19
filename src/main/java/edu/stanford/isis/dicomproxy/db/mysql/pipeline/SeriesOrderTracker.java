@@ -1,13 +1,15 @@
 package edu.stanford.isis.dicomproxy.db.mysql.pipeline;
 
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+
 import edu.stanford.isis.dicomproxy.db.mysql.MySqlInstance;
 import edu.stanford.isis.dicomproxy.db.mysql.MySqlQueries;
 import edu.stanford.isis.dicomproxy.db.mysql.model.SeriesOrder;
 import edu.stanford.isis.dicomproxy.db.mysql.model.SeriesOrderStatus;
 import edu.stanford.isis.dicomproxy.server.ProxyLogger;
-
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Singleton class to keep track of all images and which are in the pipeline.
@@ -18,7 +20,8 @@ import java.util.concurrent.ConcurrentHashMap;
 public class SeriesOrderTracker
 {
 
-    private static final ProxyLogger logger = ProxyLogger.getInstance();
+    @SuppressWarnings("unused") // Static initializer
+	private static final ProxyLogger logger = ProxyLogger.getInstance();
 
     private static SeriesOrderTracker ourInstance = new SeriesOrderTracker();
 

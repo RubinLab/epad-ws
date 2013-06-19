@@ -91,8 +91,8 @@ public class WindowLevelHandler extends AbstractHandler
         String seriesuid = req.getParameter("seriesuid");
         String studyuid = req.getParameter("studyuid");
         PrintWriter out = res.getWriter();
-        String direction = req.getParameter("direction");
-        String order = req.getParameter("order");
+        //String direction = req.getParameter("direction");
+        //String order = req.getParameter("order");
 
         File seriesDir = findSeriesDirectory(studyuid,seriesuid);
 

@@ -43,7 +43,7 @@ public class SignalShutdownHandler extends AbstractHandler {
         out.print("Got shutdown request from: "+remoteAddr+" queryString="+queryString);
 
 
-        String user = httpServletRequest.getParameter("user");
+        //String user = httpServletRequest.getParameter("user");
         String auth = httpServletRequest.getParameter("auth");
 
         if(auth.equals("rev604")){

@@ -127,7 +127,7 @@ public class JPEGLevelingTask implements Callable<File>
 
             //Wait to get exit value
             try {
-                int exitValue = process.waitFor(); //keep.
+                process.waitFor(); //keep.
 
                 //log.info("JPEGTask: "+sb.toString());
             } catch (InterruptedException e) {

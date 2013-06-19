@@ -7,18 +7,19 @@
  */
 package edu.stanford.isis.dicomproxy.xmldb;
 
+import java.util.Set;
+
+import org.restlet.Request;
+import org.restlet.data.Form;
+
 import com.sleepycat.dbxml.XmlContainer;
 import com.sleepycat.dbxml.XmlDocument;
 import com.sleepycat.dbxml.XmlException;
 import com.sleepycat.dbxml.XmlManager;
 import com.sleepycat.dbxml.XmlMetaData;
 import com.sleepycat.dbxml.XmlMetaDataIterator;
-import com.sleepycat.dbxml.XmlQueryContext;
 import com.sleepycat.dbxml.XmlResults;
 import com.sleepycat.dbxml.XmlValue;
-import java.util.Set;
-import org.restlet.Request;
-import org.restlet.data.Form;
 
 import edu.stanford.isis.dicomproxy.server.ProxyLogger;
 
@@ -135,7 +136,7 @@ public class MetaDataUtil
             XmlMetaDataIterator iterator = xmlDoc.getMetaDataIterator();
             XmlMetaData data = iterator.next();
             while(data!=null){
-                String name = data.get_name();
+                //String name = data.get_name();
                 XmlValue xmlValue = data.get_value();
                 if(xmlValue!=null){
                   log.debug("META-DATA name: "+data.get_name()+" value: "+data.get_value().asString()+" uri: "+data.get_uri());
@@ -186,7 +187,7 @@ public class MetaDataUtil
     public static XmlDocument getXmlDocumentForUid(String uid, XmlResults xmlResults){
 
         try{
-            int debugIndex=1;
+            //int debugIndex=1;
             while(xmlResults.hasNext()){
                 XmlDocument xmlDocument = xmlResults.next().asDocument();
                 if(xmlDocument!=null){

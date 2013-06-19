@@ -7,7 +7,6 @@
  */
 package edu.stanford.isis.dicomproxy.server.managers.localstore;
 
-import edu.stanford.isis.dicomproxy.server.ProxyLogger;
 
 /**
  * Keeps watch over the local store.
@@ -15,7 +14,7 @@ import edu.stanford.isis.dicomproxy.server.ProxyLogger;
  *
  */
 public class LocalStoreFactory {
-    private static final ProxyLogger log = ProxyLogger.getInstance();
+    //private static final ProxyLogger log = ProxyLogger.getInstance();
 
     private static LocalStoreFactory ourInstance = new LocalStoreFactory();
 

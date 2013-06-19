@@ -10,8 +10,6 @@ import java.io.PrintWriter;
 import java.io.Reader;
 import java.io.Writer;
 import java.net.URLDecoder;
-import java.util.List;
-import java.util.Map;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -23,7 +21,6 @@ import org.eclipse.jetty.server.handler.AbstractHandler;
 import edu.stanford.isis.dicomproxy.common.ProxyFileUtils;
 import edu.stanford.isis.dicomproxy.db.mysql.MySqlInstance;
 import edu.stanford.isis.dicomproxy.db.mysql.MySqlQueries;
-import edu.stanford.isis.dicomproxy.db.mysql.pipeline.DicomDeleteTask;
 import edu.stanford.isis.dicomproxy.server.ProxyConfig;
 import edu.stanford.isis.dicomproxy.server.ProxyLogger;
 
@@ -153,7 +150,7 @@ public class SegmentationPathHandler extends AbstractHandler
             
             //Wait to get exit value
             try {
-                int exitValue = process.waitFor(); //keep.
+                process.waitFor(); //keep.
             } catch (InterruptedException e) {
                 log.warning("Didn't qr dicom files in: "+imageIdKey,e);
             }

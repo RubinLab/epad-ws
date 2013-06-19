@@ -81,7 +81,7 @@ public class PluginHandlerMap {
     public PluginServletHandler loadFromClassName(String className){
         try{
             ClassLoader systemClassLoader = ClassLoader.getSystemClassLoader();
-            Class clazz = systemClassLoader.loadClass(className);
+            Class<?> clazz = systemClassLoader.loadClass(className);
             if(clazz!=null){
                 if(ClassFinderTestUtils.isPluginHandler(clazz)){
                      if((clazz.newInstance() instanceof PluginServletHandler)){
@@ -108,9 +108,10 @@ public class PluginHandlerMap {
 
         try{
             ClassLoader systemClassLoader = ClassLoader.getSystemClassLoader();
-            Class clazzA = systemClassLoader.loadClass("edu.stanford.isis.plugins.first.FirstHandler");
+            @SuppressWarnings("unused")
+			Class<?> clazzA = systemClassLoader.loadClass("edu.stanford.isis.plugins.first.FirstHandler");
 
-            Class clazz = systemClassLoader.loadClass("edu.stanford.isis.plugins.first.FirstHandler");
+            Class<?> clazz = systemClassLoader.loadClass("edu.stanford.isis.plugins.first.FirstHandler");
 
             if(clazz!=null){
                 logger.info("found FirstHandler by loadClass");

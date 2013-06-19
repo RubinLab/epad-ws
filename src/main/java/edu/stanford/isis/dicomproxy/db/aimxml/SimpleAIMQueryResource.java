@@ -7,12 +7,10 @@
  */
 package edu.stanford.isis.dicomproxy.db.aimxml;
 
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
-import java.io.File;
-import java.io.IOException;
-import java.lang.reflect.*;
 
 import org.restlet.data.Form;
 import org.restlet.data.MediaType;
@@ -24,7 +22,6 @@ import org.restlet.resource.Post;
 import com.sleepycat.db.DatabaseException;
 import com.sleepycat.dbxml.XmlContainer;
 import com.sleepycat.dbxml.XmlDocument;
-import com.sleepycat.dbxml.XmlDocumentConfig;
 import com.sleepycat.dbxml.XmlManager;
 import com.sleepycat.dbxml.XmlManagerConfig;
 import com.sleepycat.dbxml.XmlQueryContext;
@@ -437,7 +434,7 @@ public class SimpleAIMQueryResource extends XMLDatabaseResource{
     	String collection = queryForm.getFirstValue("collection");
         if (collection == null || collection.isEmpty())
            collection = dbVars.get("defaultcontainer");
-        String namespace = queryForm.getFirstValue("namespace");
+        //String namespace = queryForm.getFirstValue("namespace");
         String uid = queryForm.getFirstValue("uid");
         
         deleteFile(uid,collection);

@@ -7,14 +7,11 @@
  */
 package edu.stanford.isis.dicomproxy.queryretrieve.jso;
 
-import com.google.gwt.core.client.JsonUtils;
-import com.google.gwt.json.client.JSONArray;
-//import com.google.gwt.gson.client.JSONObject;
-import com.google.gwt.json.client.JSONObject;
 import com.google.gwt.json.client.JSONParser;
 import com.google.gwt.json.client.JSONValue;
+
 import edu.stanford.isis.dicomproxy.common.SearchResultUtils;
-import edu.stanford.isis.dicomproxy.queryretrieve.jso.*;
+//import com.google.gwt.gson.client.JSONObject;
 
 /**
  * Turn JSON responses into current format used by ePad client.
@@ -71,7 +68,7 @@ public class QRAdaptorClient {
 
         JsArray<ServersEntry> serversList =  servers.getList();
         for(int i=0; i<serversList.length(); i++){
-            ServersEntry entry = serversList.get(i);
+            //ServersEntry entry = serversList.get(i);
 
         }
 

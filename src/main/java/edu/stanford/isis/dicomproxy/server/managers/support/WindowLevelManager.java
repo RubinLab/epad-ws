@@ -20,13 +20,13 @@ public class WindowLevelManager
 
     private static WindowLevelManager ourInstance = new WindowLevelManager();
 
-    private static final DicomWindowSetting unleveledA =new DicomWindowSetting(4096,2048);
-    private static final DicomWindowSetting unleveledB =new DicomWindowSetting(4096,1036);
+    //private static final DicomWindowSetting unleveledA =new DicomWindowSetting(4096,2048);
+    //private static final DicomWindowSetting unleveledB =new DicomWindowSetting(4096,1036);
 
-    private static final DicomWindowSetting abdomen =new DicomWindowSetting(4096,2048);
-    private static final DicomWindowSetting brain =new DicomWindowSetting(4096,2048);
-    private static final DicomWindowSetting lung =new DicomWindowSetting(4096,2048);
-    private static final DicomWindowSetting bone =new DicomWindowSetting(4096,2048);
+    //private static final DicomWindowSetting abdomen =new DicomWindowSetting(4096,2048);
+    //private static final DicomWindowSetting brain =new DicomWindowSetting(4096,2048);
+    //private static final DicomWindowSetting lung =new DicomWindowSetting(4096,2048);
+    //private static final DicomWindowSetting bone =new DicomWindowSetting(4096,2048);
 
     //this has either the "current" or "series-id" setting.
     private Map<String,DicomWindowSetting> currSettings = new HashMap<String,DicomWindowSetting>();

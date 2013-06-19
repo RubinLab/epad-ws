@@ -59,7 +59,7 @@ public class DicomQuery {
                 "83393488148532965622665512597663741359");
 
         System.out.println("#studies found: " + retVal.getStudies().size());
-        int debug=1;
+        //int debug=1;
 
         for(DicomStudyData curr: retVal.getStudies()){
             System.out.println( "studyId="+curr.getStudyId() );
@@ -69,7 +69,7 @@ public class DicomQuery {
             System.out.println( "studyDate="+curr.getStudyDate() );
         }
 
-        debug=2;
+        //debug=2;
     }
 
     /**

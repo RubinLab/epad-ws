@@ -487,7 +487,7 @@ public class ProxyFileUtils
             String newPath = zipFile.substring(0, zipFile.length() - 4);
 
             makeDirs(new File(newPath));
-            Enumeration zipFileEntries = zip.entries();
+            Enumeration <?> zipFileEntries = zip.entries();
 
             // Process each entry
             while (zipFileEntries.hasMoreElements())

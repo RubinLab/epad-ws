@@ -39,21 +39,22 @@ public class DicomFileUtil {
         }
 
         String mWord=null;
-        try{
-            RandomAccessFile in = new RandomAccessFile(f,"r");
+        try {
+        	RandomAccessFile in = new RandomAccessFile(f,"r");
+        	try {
+        		in.seek(128); //go to offset 128.
 
-            //go to offset 128.
-            in.seek(128);
-
-            //read 4 bytes.
-            byte[] magicWord = new byte[4];
-            in.read(magicWord,0,4);
-            mWord = new String(magicWord);
+        		//read 4 bytes.
+        		byte[] magicWord = new byte[4];
+        		in.read(magicWord,0,4);
+        		mWord = new String(magicWord);
+        	} finally {
+        		in.close();
+        	}
 
         }catch(IOException e){
-            log.warning("Failed to read file: "+f.getAbsolutePath(),e);
+        	log.warning("Failed to read file: "+f.getAbsolutePath(),e);
         }
-
         return DICOM_MAGIC_WORD.equalsIgnoreCase(mWord);
     }
 

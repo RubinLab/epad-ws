@@ -1,15 +1,14 @@
 package edu.stanford.isis.dicomproxy.db.mysql.pipeline;
 
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.BlockingQueue;
+
 import edu.stanford.isis.dicomproxy.db.mysql.MySqlInstance;
 import edu.stanford.isis.dicomproxy.db.mysql.MySqlQueries;
 import edu.stanford.isis.dicomproxy.db.mysql.model.SeriesOrder;
 import edu.stanford.isis.dicomproxy.server.ProxyLogger;
 import edu.stanford.isis.dicomproxy.server.ShutdownSignal;
-
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
-import java.util.concurrent.BlockingQueue;
 
 /**
  * Watch for new studies that appear with a database with the 'study-status' field set to zero

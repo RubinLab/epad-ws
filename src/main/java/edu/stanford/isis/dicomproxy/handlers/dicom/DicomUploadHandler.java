@@ -7,10 +7,16 @@
  */
 package edu.stanford.isis.dicomproxy.handlers.dicom;
 
-import edu.stanford.isis.dicomproxy.server.ProxyLogger;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.PrintWriter;
 
-import org.apache.commons.fileupload.FileItem;
-import org.apache.commons.fileupload.FileItemFactory;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
 import org.apache.commons.fileupload.FileItemIterator;
 import org.apache.commons.fileupload.FileItemStream;
 import org.apache.commons.fileupload.servlet.ServletFileUpload;
@@ -18,11 +24,8 @@ import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import java.io.*;
-import java.util.List;
+
+import edu.stanford.isis.dicomproxy.server.ProxyLogger;
 //TODO AAA Should this be deprecated
 /**
  * Attempt at downloading zip files - not used (TBR).
@@ -78,12 +81,16 @@ public class DicomUploadHandler extends AbstractHandler
 
                 //ByteArrayOutputStream out = new ByteArrayOutputStream();
                 FileOutputStream fos = new FileOutputStream( new File(tempUploadDir+name));
-                int len;
-                byte[] buffer = new byte[32768];
-                while ((len = stream.read(buffer, 0, buffer.length)) != -1) {
-                     fos.write(buffer,0,len);
-                }//while
-                out.print("added ("+fileCount+"): "+name);
+                try {
+                	int len;
+                	byte[] buffer = new byte[32768];
+                	while ((len = stream.read(buffer, 0, buffer.length)) != -1) {
+                		fos.write(buffer,0,len);
+                	}//while
+                	out.print("added ("+fileCount+"): "+name);
+                } finally {
+                	fos.close();
+                }
             }//while
 
             out.flush();

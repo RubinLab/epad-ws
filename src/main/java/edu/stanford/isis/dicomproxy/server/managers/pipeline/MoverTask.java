@@ -7,18 +7,17 @@
  */
 package edu.stanford.isis.dicomproxy.server.managers.pipeline;
 
+import java.io.File;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.Callable;
+
 import edu.stanford.isis.dicomproxy.common.DicomFormatUtil;
 import edu.stanford.isis.dicomproxy.common.DicomTagFileUtils;
 import edu.stanford.isis.dicomproxy.common.LockFileUtils;
 import edu.stanford.isis.dicomproxy.common.ProxyFileUtils;
 import edu.stanford.isis.dicomproxy.handlers.dicom.RsnaSearchResultMap;
 import edu.stanford.isis.dicomproxy.server.ProxyLogger;
-import edu.stanford.isis.dicomproxy.server.ResourceUtils;
-
-import java.io.File;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.Callable;
 
 
 public class MoverTask implements Callable<File> {

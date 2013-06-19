@@ -7,13 +7,6 @@
  */
 package edu.stanford.isis.dicomproxy.handlers;
 
-import org.eclipse.jetty.websocket.WebSocket;
-import org.eclipse.jetty.websocket.WebSocketServlet;
-
-import javax.servlet.http.HttpServletRequest;
-import java.io.IOException;
-import java.util.Set;
-import java.util.concurrent.CopyOnWriteArraySet;
 //TODO AAA Had to comment out body to run with latest versions of jars
 //TODO AAA Should this be deprecated
 /**
@@ -23,7 +16,6 @@ import java.util.concurrent.CopyOnWriteArraySet;
  *
  * @author amsnyder
  */
-@SuppressWarnings("serial")
 public class FirstWebSocketServlet // extends WebSocketServlet
 {
 	/*

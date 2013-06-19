@@ -122,7 +122,8 @@ public class XMLDatabaseResource extends ServerResource {
             }
         }
 
-        private void printEnvironmentConfig(){
+        @SuppressWarnings("unused")
+		private void printEnvironmentConfig(){
         EnvironmentConfig ec;
         try {
             ec = env.getConfig();

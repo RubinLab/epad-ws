@@ -99,55 +99,56 @@ public class RsnaSearchResultMap {
      */
     private void parseResultFile(File resultFile){
 
-        log.info("################## START Parsing RSNA file _"+resultFile.getName()+"_ ##########################");
-        try {
-            BufferedReader in = new BufferedReader(new FileReader(resultFile.getAbsolutePath()));
+    	log.info("################## START Parsing RSNA file _"+resultFile.getName()+"_ ##########################");
+    	try {
+    		BufferedReader in = new BufferedReader(new FileReader(resultFile.getAbsolutePath()));
+    		try {
+    			boolean isResultSection=false;
+    			String line;
+    			StringBuilder resultBuffer = new StringBuilder();
+    			List<String> searchKeyList = new ArrayList<String>();
+    			while((line = in.readLine())!=null){
 
-            boolean isResultSection=false;
-            String line;
-            StringBuilder resultBuffer = new StringBuilder();
-            List<String> searchKeyList = new ArrayList<String>();
-            while((line = in.readLine())!=null){
+    				if(line.toLowerCase().indexOf("# result #")>0){
+    					isResultSection=true;
+    					continue;
+    				}
 
-                if(line.toLowerCase().indexOf("# result #")>0){
-                    isResultSection=true;
-                    continue;
-                }
+    				if(isResultSection){
+    					resultBuffer.append(line).append("\n");
+    				}else{
+    					searchKeyList.add(line.toLowerCase().trim());
+    				}
+    			}
 
-                if(isResultSection){
-                    resultBuffer.append(line).append("\n");
-                }else{
-                    searchKeyList.add(line.toLowerCase().trim());
-                }
-            }
+    			if(resultBuffer.length()>0 && searchKeyList.size()>0){
+    				for(String key : searchKeyList){
+    					if( resultMap.containsKey(key) ){
+    						log.info("WARNING: Overwriting: "+key+" with new result.");
+    					}
+    					resultMap.put(key,resultBuffer.toString());
+    					log.info("RSNA Search: resultMap: key="+key+" | value="+resultBuffer.toString());
+    				}
+    			}else{
+    				log.info("WARNING. Result file might be invalid: "+resultFile.getAbsolutePath());
+    			}
 
-            if(resultBuffer.length()>0 && searchKeyList.size()>0){
-                for(String key : searchKeyList){
-                    if( resultMap.containsKey(key) ){
-                        log.info("WARNING: Overwriting: "+key+" with new result.");
-                    }
-                    resultMap.put(key,resultBuffer.toString());
-                    log.info("RSNA Search: resultMap: key="+key+" | value="+resultBuffer.toString());
-                }
-            }else{
-                log.info("WARNING. Result file might be invalid: "+resultFile.getAbsolutePath());
-            }
-
-            //save if this is a default result.
-            if(resultFile.getName().toLowerCase().startsWith("default")){
-                log.info("Using default result for file: "+resultFile.getAbsolutePath() );
-                defaultResult = resultBuffer.toString();
-            }
-
-        } catch (FileNotFoundException e) {
-            log.sever("Failed to read file: "+resultFile.getAbsolutePath(),e);
-        } catch (IOException e) {
-            log.sever("I/O Error. File: "+resultFile.getAbsolutePath(),e);
-        }
-        finally {
-            log.info("################## END Parsing RSNA file ##########################");
-        }
-
+    			//save if this is a default result.
+    			if(resultFile.getName().toLowerCase().startsWith("default")){
+    				log.info("Using default result for file: "+resultFile.getAbsolutePath() );
+    				defaultResult = resultBuffer.toString();
+    			}
+    		} finally {
+    			in.close();
+    		}
+    	} catch (FileNotFoundException e) {
+    		log.sever("Failed to read file: "+resultFile.getAbsolutePath(),e);
+    	} catch (IOException e) {
+    		log.sever("I/O Error. File: "+resultFile.getAbsolutePath(),e);
+    	}
+    	finally {
+    		log.info("################## END Parsing RSNA file ##########################");
+    	}
     }
 
 

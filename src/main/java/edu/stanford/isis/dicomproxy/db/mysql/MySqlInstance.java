@@ -85,7 +85,8 @@ public class MySqlInstance {
     }
     
 
-    private void updateMySqlTables()
+    @SuppressWarnings("unused")
+	private void updateMySqlTables()
     {
         try{
 

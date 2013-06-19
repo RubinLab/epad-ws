@@ -1,15 +1,16 @@
 package edu.stanford.isis.dicomproxy.db.mysql.pipeline;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+
 import edu.stanford.isis.dicomproxy.common.DicomFormatUtil;
 import edu.stanford.isis.dicomproxy.common.ProxyFileUtils;
 import edu.stanford.isis.dicomproxy.db.mysql.MySqlInstance;
 import edu.stanford.isis.dicomproxy.db.mysql.MySqlQueries;
-import edu.stanford.isis.dicomproxy.server.ProxyConfig;
 import edu.stanford.isis.dicomproxy.server.ProxyLogger;
-
-import java.io.*;
-import java.util.List;
-import java.util.Map;
 
 /**
  *
@@ -137,7 +138,7 @@ public class DicomDeleteTask implements Runnable
 
             //Wait to get exit value
             try {
-                int exitValue = process.waitFor(); //keep.
+//                int exitValue = process.waitFor(); //keep.
 //                long totalTime = System.currentTimeMillis() - startTime;
 //                log.info("Tags exit value is: " + exitValue+" and took: "+totalTime+" ms");
             } catch (Exception e) {
@@ -190,7 +191,7 @@ public class DicomDeleteTask implements Runnable
             
             //Wait to get exit value
             try {
-                int exitValue = process.waitFor(); //keep.
+//                int exitValue = process.waitFor(); //keep.
 //                long totalTime = System.currentTimeMillis() - startTime;
 //                log.info("Tags exit value is: " + exitValue+" and took: "+totalTime+" ms");
             } catch (Exception e) {

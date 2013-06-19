@@ -1,10 +1,36 @@
 package edu.stanford.isis.dicomproxy.db.mysql.pipeline;
 
+import java.awt.Color;
+import java.awt.Graphics2D;
+import java.awt.Image;
+import java.awt.Toolkit;
+import java.awt.image.BufferedImage;
+import java.awt.image.FilteredImageSource;
+import java.awt.image.ImageFilter;
+import java.awt.image.ImageProducer;
+import java.awt.image.RGBImageFilter;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
+import javax.imageio.ImageIO;
+
+import org.apache.commons.httpclient.HttpClient;
+import org.apache.commons.httpclient.methods.GetMethod;
+
+import com.pixelmed.dicom.Attribute;
+import com.pixelmed.dicom.AttributeList;
+import com.pixelmed.dicom.TagFromName;
+import com.pixelmed.display.SourceImage;
+
 import edu.stanford.hakan.aim3api.base.AimException;
 import edu.stanford.hakan.aim3api.base.DICOMImageReference;
 import edu.stanford.hakan.aim3api.base.ImageAnnotation;
-import edu.stanford.hakan.aim3api.base.ImageReference;
-import edu.stanford.hakan.aim3api.base.ImageReferenceCollection;
 import edu.stanford.hakan.aim3api.base.ImageSeries;
 import edu.stanford.hakan.aim3api.base.ImageStudy;
 import edu.stanford.hakan.aim3api.base.Person;
@@ -20,41 +46,6 @@ import edu.stanford.isis.dicomproxy.db.mysql.impl.DcmDbUtils;
 import edu.stanford.isis.dicomproxy.db.mysql.impl.PngStatus;
 import edu.stanford.isis.dicomproxy.server.ProxyConfig;
 import edu.stanford.isis.dicomproxy.server.ProxyLogger;
-import edu.stanford.isis.epad.plugin.server.impl.PluginConfig;
-
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-
-import java.awt.Color;
-import java.awt.Graphics2D;
-import java.awt.Image;
-import java.awt.Toolkit;
-import java.awt.image.BufferedImage;
-import java.awt.image.FilteredImageSource;
-import java.awt.image.ImageFilter;
-import java.awt.image.ImageProducer;
-import java.awt.image.RGBImageFilter;
-import java.util.Map;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-
-import javax.imageio.ImageIO;
-
-import org.apache.commons.httpclient.HttpClient;
-import org.apache.commons.httpclient.HttpException;
-import org.apache.commons.httpclient.methods.GetMethod;
-import org.restlet.engine.resource.AnnotationUtils;
-
-import com.pixelmed.dicom.Attribute;
-import com.pixelmed.dicom.AttributeList;
-import com.pixelmed.dicom.TagFromName;
-import com.pixelmed.display.SourceImage;
-import com.pixelmed.geometry.GeometryOfVolume;
 
 
 /**
@@ -99,13 +90,13 @@ public class DicomSegmentObjectGeneratorTask implements GeneratorTask
 
 		SourceImage sourceImage = null;
 		DicomSegObj dso = null;
-		AttributeList list = null;
-		GeometryOfVolume geometry = null;
+		//AttributeList list = null;
+		//GeometryOfVolume geometry = null;
 
-		ArrayList<String> retPngs = new ArrayList<String>();
-		List<String> pngs = null;
-		String encoded = null;
-		byte[] bytes;
+		//ArrayList<String> retPngs = new ArrayList<String>();
+		//List<String> pngs = null;
+		//String encoded = null;
+		//byte[] bytes;
 
 		//         String studyId = (String) getRequestAttributes().get("id1");
 		//         String seriesId = (String) getRequestAttributes().get("id2");
@@ -395,7 +386,7 @@ public class DicomSegmentObjectGeneratorTask implements GeneratorTask
 			String studyIUID = Attribute.getSingleStringValueOrEmptyString(attbList, TagFromName.StudyInstanceUID);
 			String seriesIUID = Attribute.getSingleStringValueOrEmptyString(attbList, TagFromName.SeriesInstanceUID);
 			String imageID = Attribute.getSingleStringValueOrEmptyString(attbList, TagFromName.SOPInstanceUID);
-			String refID = Attribute.getSingleStringValueOrEmptyString(attbList, TagFromName.ReferencedSOPInstanceUID);
+			//String refID = Attribute.getSingleStringValueOrEmptyString(attbList, TagFromName.ReferencedSOPInstanceUID);
 
 			retVal.put("study-id",studyIUID);
 			retVal.put("series-id",seriesIUID);
@@ -481,7 +472,7 @@ public class DicomSegmentObjectGeneratorTask implements GeneratorTask
 	
 	public static String getDicomSeriesUIDFromImageUID(String imageUID) throws Exception{
 
-	  	ArrayList<String> result=null;
+	  	//ArrayList<String> result=null;
 		String url = "http://localhost:8080/segmentationpath/"+"?image_iuid="+imageUID;
 		
 		//--Get the Dicom file from the server
@@ -495,7 +486,7 @@ public class DicomSegmentObjectGeneratorTask implements GeneratorTask
 			//Get the result as stream
 			BufferedReader reader = new BufferedReader(new InputStreamReader(method.getResponseBodyAsStream(), "UTF-8"));
 			
-			result=new ArrayList<String>();
+			//result=new ArrayList<String>();
 			
             String line;
             while ((line = reader.readLine()) != null) {

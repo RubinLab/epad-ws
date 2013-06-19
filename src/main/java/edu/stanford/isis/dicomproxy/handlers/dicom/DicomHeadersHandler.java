@@ -1,21 +1,5 @@
 package edu.stanford.isis.dicomproxy.handlers.dicom;
 
-import org.apache.commons.httpclient.HttpClient;
-import org.apache.commons.httpclient.HttpException;
-import org.apache.commons.httpclient.methods.GetMethod;
-import org.eclipse.jetty.server.Request;
-import org.eclipse.jetty.server.handler.AbstractHandler;
-
-import edu.stanford.isis.dicomproxy.common.WadoUrlBuilder;
-import edu.stanford.isis.dicomproxy.db.mysql.pipeline.DicomHeadersTask;
-import edu.stanford.isis.dicomproxy.server.ProxyConfig;
-import edu.stanford.isis.dicomproxy.server.ProxyLogger;
-import edu.stanford.isis.dicomproxy.server.RSeriesData;
-
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -26,12 +10,24 @@ import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.apache.commons.httpclient.HttpClient;
+import org.apache.commons.httpclient.HttpException;
+import org.apache.commons.httpclient.methods.GetMethod;
+import org.eclipse.jetty.server.Request;
+import org.eclipse.jetty.server.handler.AbstractHandler;
+
+import edu.stanford.isis.dicomproxy.common.WadoUrlBuilder;
+import edu.stanford.isis.dicomproxy.db.mysql.pipeline.DicomHeadersTask;
+import edu.stanford.isis.dicomproxy.server.ProxyConfig;
+import edu.stanford.isis.dicomproxy.server.ProxyLogger;
 
 /**
  * Download headers for a series or study in one quick step.
@@ -80,12 +76,15 @@ public class DicomHeadersHandler extends AbstractHandler {
 
 					//Write the result
 					BufferedReader in = new BufferedReader(new FileReader(tempTag.getAbsolutePath()));
-					String line;
-					while((line = in.readLine())!=null){
-						out.println(line);
+					try {
+						String line;
+						while((line = in.readLine())!=null){
+							out.println(line);
+						}
+						out.flush();
+					} finally {
+						in.close();
 					}
-					out.flush();
-
 				} catch (InterruptedException e) {
 
 				}

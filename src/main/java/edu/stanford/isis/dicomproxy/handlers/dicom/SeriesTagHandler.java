@@ -52,21 +52,25 @@ public class SeriesTagHandler extends AbstractHandler {
             String patId = getPatientIdFromStudyIuid(studyIUID);
             if(useBase64){
                 ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-                InputStream seriesStream = getSeriesTagsAsStream(seriesIUID);
-                buffer = addToByteArrayBuffer(buffer, seriesStream);
+        		InputStream seriesStream = getSeriesTagsAsStream(seriesIUID);
+            	try {
+            		addToByteArrayBuffer(buffer, seriesStream);
 
-                InputStream imageStream = getInstanceTagsForSeriesAsStream(seriesIUID);
-                buffer = addToByteArrayBuffer(buffer, imageStream);
+            		InputStream imageStream = getInstanceTagsForSeriesAsStream(seriesIUID);
+            		addToByteArrayBuffer(buffer, imageStream);
 
-                InputStream studyStream = getStudyTagsAsStream(studyIUID);
-                buffer = addToByteArrayBuffer(buffer, studyStream);
+            		InputStream studyStream = getStudyTagsAsStream(studyIUID);
+            		addToByteArrayBuffer(buffer, studyStream);
 
-                InputStream patientStream = getPatientTagsAsStream(patId);
-                buffer = addToByteArrayBuffer(buffer, patientStream);
+            		InputStream patientStream = getPatientTagsAsStream(patId);
+            		addToByteArrayBuffer(buffer, patientStream);
 
-                String base64Result = base64Encode(buffer);
-                out.print(base64Result);
-
+            		String base64Result = base64Encode(buffer);
+            		out.print(base64Result);
+            	} finally {
+            		buffer.close();
+            		seriesStream.close();
+            	}
             }else{
 
                 String seriesTags = getSeriesTags(seriesIUID);
@@ -104,7 +108,7 @@ public class SeriesTagHandler extends AbstractHandler {
      * @return ByteArrayOutputStream
      * @throws IOException - on error
      */
-    private ByteArrayOutputStream addToByteArrayBuffer(ByteArrayOutputStream buffer, InputStream is)
+    private void addToByteArrayBuffer(ByteArrayOutputStream buffer, InputStream is)
         throws IOException
     {
         if(is!=null){
@@ -114,7 +118,6 @@ public class SeriesTagHandler extends AbstractHandler {
                 buffer.write(data,0,nRead);
             }
         }
-        return buffer;
     }
 
     /**
@@ -301,7 +304,7 @@ public class SeriesTagHandler extends AbstractHandler {
     private static void createDicomTagEntry(StringBuilder sb, AttributeList attributeList,AttributeTag tag){
         String key = null;
         try{
-            DicomDictionary dictionary = attributeList.getDictionary();
+            DicomDictionary dictionary = AttributeList.getDictionary();
             key = dictionary.getFullNameFromTag(tag);
             Attribute attribute = attributeList.get(tag);
             if(attribute!=null){

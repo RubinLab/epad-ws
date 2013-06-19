@@ -927,7 +927,8 @@ public class MySqlQueriesImpl implements MySqlQueries{
     }
 
 
-    private boolean findPngFile(String studyUID, String seriesUID, String sopInstanceUID){
+    @SuppressWarnings("unused")
+	private boolean findPngFile(String studyUID, String seriesUID, String sopInstanceUID){
         return DicomFormatUtil.hasFileWithExtension(studyUID,seriesUID,sopInstanceUID,".png");
     }//findPngFile
 

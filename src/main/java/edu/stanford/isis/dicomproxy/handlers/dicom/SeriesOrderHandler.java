@@ -1,20 +1,20 @@
 package edu.stanford.isis.dicomproxy.handlers.dicom;
 
-import com.pixelmed.dicom.DicomException;
-import edu.stanford.isis.dicomproxy.common.DicomFormatUtil;
-import edu.stanford.isis.dicomproxy.common.ProxyFileUtils;
-import edu.stanford.isis.dicomproxy.db.mysql.MySqlInstance;
-import edu.stanford.isis.dicomproxy.db.mysql.MySqlQueries;
-import edu.stanford.isis.dicomproxy.server.ProxyLogger;
-import org.eclipse.jetty.server.Request;
-import org.eclipse.jetty.server.handler.AbstractHandler;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.List;
 import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.eclipse.jetty.server.Request;
+import org.eclipse.jetty.server.handler.AbstractHandler;
+
+import edu.stanford.isis.dicomproxy.common.DicomFormatUtil;
+import edu.stanford.isis.dicomproxy.db.mysql.MySqlInstance;
+import edu.stanford.isis.dicomproxy.db.mysql.MySqlQueries;
+import edu.stanford.isis.dicomproxy.server.ProxyLogger;
 
 /**
  * Create and "order-file" by calling the MySql database. It will look like the following

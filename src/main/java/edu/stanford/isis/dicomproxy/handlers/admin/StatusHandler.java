@@ -7,15 +7,21 @@
  */
 package edu.stanford.isis.dicomproxy.handlers.admin;
 
-import edu.stanford.isis.dicomproxy.common.ProxyVersion;
-import edu.stanford.isis.dicomproxy.db.mysql.MySqlInstance;
-import edu.stanford.isis.dicomproxy.handlers.aim.AimResourceHandler;
-import edu.stanford.isis.dicomproxy.server.ProxyConfig;
-import edu.stanford.isis.dicomproxy.server.ProxyLogger;
-import edu.stanford.isis.dicomproxy.server.managers.pipeline.PipelineFactory;
-import edu.stanford.isis.epad.plugin.server.EPadPlugin;
-import edu.stanford.isis.epad.plugin.server.impl.EPadPluginImpl;
-import edu.stanford.isis.epad.plugin.server.impl.EPadProxyConfigImpl;
+import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.ObjectOutputStream;
+import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
+import java.net.URL;
+import java.net.URLConnection;
+
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
@@ -23,32 +29,20 @@ import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.mime.MultipartEntity;
 import org.apache.http.entity.mime.content.FileBody;
-import org.apache.http.entity.mime.content.StringBody;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.util.EntityUtils;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
-import java.io.BufferedReader;
-import java.io.ByteArrayOutputStream;
-import java.io.DataOutputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.ObjectOutputStream;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
-import java.io.PrintWriter;
-import java.net.URL;
-import java.net.URLConnection;
+import edu.stanford.hakan.aim3api.base.AimException;
+import edu.stanford.isis.dicomproxy.common.ProxyVersion;
+import edu.stanford.isis.dicomproxy.db.mysql.MySqlInstance;
+import edu.stanford.isis.dicomproxy.server.ProxyConfig;
+import edu.stanford.isis.dicomproxy.server.ProxyLogger;
+import edu.stanford.isis.dicomproxy.server.managers.pipeline.PipelineFactory;
+import edu.stanford.isis.epad.plugin.server.EPadPlugin;
+import edu.stanford.isis.epad.plugin.server.impl.EPadPluginImpl;
+import edu.stanford.isis.epad.plugin.server.impl.EPadProxyConfigImpl;
 
 /**
  * Returns the public status of the Proxy.
@@ -328,6 +322,7 @@ public class StatusHandler extends AbstractHandler {
 	 *
 	 * @return String
 	 */
+	@SuppressWarnings("unused")
 	private String getStatusAsText(){
 		StringBuilder sb = new StringBuilder();
 

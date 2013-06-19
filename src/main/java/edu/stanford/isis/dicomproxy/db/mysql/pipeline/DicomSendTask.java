@@ -112,7 +112,7 @@ public class DicomSendTask implements Runnable
 
             //Wait to get exit value
             try {
-                int exitValue = process.waitFor(); //keep.
+                process.waitFor(); //keep.
 //                long totalTime = System.currentTimeMillis() - startTime;
 //                log.info("Tags exit value is: " + exitValue+" and took: "+totalTime+" ms");
             } catch (InterruptedException e) {

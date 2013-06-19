@@ -321,7 +321,8 @@ public class MySqlSearchHandler extends AbstractHandler
      * @param httpRequest HttpServletRequest
      * @return String
      */
-    private String getSearchParam(DicomSearchType searchType, HttpServletRequest httpRequest){
+    @SuppressWarnings("unused")
+	private String getSearchParam(DicomSearchType searchType, HttpServletRequest httpRequest){
         return httpRequest.getParameter(searchType.toString());
     }
 

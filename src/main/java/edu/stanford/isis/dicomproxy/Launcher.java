@@ -1,7 +1,10 @@
 package edu.stanford.isis.dicomproxy;
 
-import java.io.*;
-import java.nio.channels.UnsupportedAddressTypeException;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileFilter;
+import java.io.FileWriter;
+import java.io.FilenameFilter;
 
 /**
  * Script for starting/stopping/restarting the proxy. It

@@ -36,6 +36,7 @@ import com.pixelmed.utils.FloatFormatter;
 public class ImageEnhancer{
 
 	/***/
+	@SuppressWarnings("unused")
 	private static final String identString = "@(#) $Header: /userland/cvs/pixelmed/imgbook/com/pixelmed/display/SingleImagePanel.java,v 1.177 2012/09/23 17:52:41 dclunie Exp $";
 
 	/***/
@@ -175,6 +176,7 @@ public class ImageEnhancer{
 	/***/
 	private int largestGray;
 	/***/
+	@SuppressWarnings("unused")
 	private int firstvalueMapped;
 	/***/
 	private int numberOfEntries;
@@ -235,14 +237,14 @@ public class ImageEnhancer{
 		return imageGeometry;
 	}
 
-	protected Vector preDefinedShapes;			// of Shape
-	protected Vector preDefinedText;
-	protected Vector localizerShapes;			// of Shape
-	protected Vector volumeLocalizationShapes;	// of Shape
-	protected Vector interactiveDrawingShapes;
-	protected Vector persistentDrawingShapes;
-	protected Vector selectedDrawingShapes;
-	protected Vector persistentDrawingText;		// of TextAnnotation
+	protected Vector<?> preDefinedShapes;			// of Shape
+	protected Vector<?> preDefinedText;
+	protected Vector<?> localizerShapes;			// of Shape
+	protected Vector<?> volumeLocalizationShapes;	// of Shape
+	protected Vector<?> interactiveDrawingShapes;
+	protected Vector<?> persistentDrawingShapes;
+	protected Vector<?> selectedDrawingShapes;
+	protected Vector<?> persistentDrawingText;		// of TextAnnotation
 	protected Vector<SuperimposedImage> superimposedImages;
 
 	/**
@@ -250,7 +252,7 @@ public class ImageEnhancer{
 	 *
 	 * @param	shapes	a {@link java.util.Vector java.util.Vector} of {@link java.awt.Shape java.awt.Shape}, may be null or empty
 	 */
-	public final void setPreDefinedShapes(Vector shapes) {
+	public final void setPreDefinedShapes(Vector<?> shapes) {
 		//System.err.println("SingleImagePanel.setPreDefinedShapes(): preDefinedShapes was:");
 		//com.pixelmed.geometry.LocalizerPosterFactory.dumpShapes(preDefinedShapes);
 		//System.err.println("SingleImagePanel.setPreDefinedShapes(): setting preDefinedShapes to:");
@@ -263,42 +265,42 @@ public class ImageEnhancer{
 	 *
 	 * @param	shapes	a {@link java.util.Vector java.util.Vector} of {@link java.awt.Shape java.awt.Shape}, may be null or empty
 	 */
-	public final void setLocalizerShapes(Vector shapes) { this.localizerShapes=shapes; }
+	public final void setLocalizerShapes(Vector<?> shapes) { this.localizerShapes=shapes; }
 
 	/**
 	 * <p>Set the shapes of any volume localization postings to be displayed on the currently selected and displayed frame.</p>
 	 *
 	 * @param	shapes	a {@link java.util.Vector java.util.Vector} of {@link java.awt.Shape java.awt.Shape}, may be null or empty
 	 */
-	public final void setVolumeLocalizationShapes(Vector shapes) { this.volumeLocalizationShapes=shapes; }
+	public final void setVolumeLocalizationShapes(Vector<?> shapes) { this.volumeLocalizationShapes=shapes; }
 
 	/**
 	 * <p>Set the unselected region shapes to to be displayed on the currently selected and displayed frame.</p>
 	 *
 	 * @param	shapes	a {@link java.util.Vector java.util.Vector} of {@link java.awt.Shape java.awt.Shape}, may be null or empty
 	 */
-	public final void setPersistentDrawingShapes(Vector shapes) { persistentDrawingShapes=shapes; }
+	public final void setPersistentDrawingShapes(Vector<?> shapes) { persistentDrawingShapes=shapes; }
 
 	/**
 	 * <p>Get the unselected region shapes to to be displayed on the currently selected and displayed frame.</p>
 	 *
 	 * @return	a {@link java.util.Vector java.util.Vector} of {@link java.awt.Shape java.awt.Shape}, may be null or empty
 	 */
-	public final Vector getPersistentDrawingShapes() { return persistentDrawingShapes; }
+	public final Vector<?> getPersistentDrawingShapes() { return persistentDrawingShapes; }
 
 	/**
 	 * <p>Set the selected region shapes to to be displayed on the currently selected and displayed frame.</p>
 	 *
 	 * @param	shapes	a {@link java.util.Vector java.util.Vector} of {@link java.awt.Shape java.awt.Shape}, may be null or empty
 	 */
-	public final void setSelectedDrawingShapes(Vector shapes) { selectedDrawingShapes=shapes; }
+	public final void setSelectedDrawingShapes(Vector<?> shapes) { selectedDrawingShapes=shapes; }
 
 	/**
 	 * <p>Get the selected region shapes to to be displayed on the currently selected and displayed frame.</p>
 	 *
 	 * @return	a {@link java.util.Vector java.util.Vector} of {@link java.awt.Shape java.awt.Shape}, may be null or empty
 	 */
-	public final Vector getSelectedDrawingShapes() { return selectedDrawingShapes; }
+	public final Vector<?> getSelectedDrawingShapes() { return selectedDrawingShapes; }
 
 	/**
 	 * <p>Set the superimposed images to to be displayed on the appropriate frames.</p>
@@ -315,6 +317,7 @@ public class ImageEnhancer{
 	public final Vector<SuperimposedImage> getSuperimposedImages() { return superimposedImages; }
 
 	/***/
+	@SuppressWarnings("unused")
 	private DemographicAndTechniqueAnnotations demographicAndTechniqueAnnotations = null;
 	/***/
 
@@ -340,10 +343,12 @@ public class ImageEnhancer{
 	/***/
 	protected DisplayedAreaSelection originalDisplayedAreaSelection = null;
 	/***/
+	@SuppressWarnings("unused")
 	private DisplayedAreaSelection useDisplayedAreaSelection = null;
 
 
 	/***/
+	@SuppressWarnings("unused")
 	private AffineTransform preTransformImageRelativeCoordinates = null;
 
 	/**
@@ -470,6 +475,7 @@ public class ImageEnhancer{
 		useWindowLinearExactCalculationInsteadOfDICOMStandardMethod = false;
 	}
 
+	@SuppressWarnings("unused")
 	private double windowingAccelerationValue = 1;
 
 	/**
@@ -836,7 +842,7 @@ public class ImageEnhancer{
 	private void doCommonConstructorStuff(SourceImage sImg,
 			EventContext typeOfPanelEventContext,
 			int[] sortOrder,
-			Vector preDefinedShapes,Vector preDefinedText,
+			Vector<?> preDefinedShapes,Vector<?> preDefinedText,
 			GeometryOfVolume imageGeometry) {
 		this.sImg = sImg;
 		boolean convertNonGrayscale = false;
@@ -944,7 +950,7 @@ public class ImageEnhancer{
 	public ImageEnhancer(SourceImage sImg,
 			EventContext typeOfPanelEventContext,
 			int[] sortOrder,
-			Vector preDefinedShapes,Vector preDefinedText,
+			Vector<?> preDefinedShapes,Vector<?> preDefinedText,
 			GeometryOfVolume imageGeometry) {
 		doCommonConstructorStuff(sImg,
 				typeOfPanelEventContext,

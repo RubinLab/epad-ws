@@ -29,7 +29,7 @@ public enum DicomQueryLevel {
      * @return Class type of class this should be cast to.
      * @throws ClassNotFoundException
      */
-    Class cast()
+    Class<?> cast()
         throws ClassNotFoundException
     {
         return Class.forName(className);

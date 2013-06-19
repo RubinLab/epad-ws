@@ -7,16 +7,24 @@
  */
 package edu.stanford.isis.dicomproxy.server.managers.pipeline;
 
-import edu.stanford.isis.dicomproxy.common.DicomTagFileUtils;
-import edu.stanford.isis.dicomproxy.common.FileKey;
-import edu.stanford.isis.dicomproxy.common.ProxyFileUtils;
-import edu.stanford.isis.dicomproxy.server.ProxyLogger;
-import edu.stanford.isis.dicomproxy.server.managers.support.DicomReader;
-
-import javax.imageio.ImageIO;
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.Reader;
 import java.util.Map;
 import java.util.concurrent.Callable;
+
+import javax.imageio.ImageIO;
+
+import edu.stanford.isis.dicomproxy.common.DicomTagFileUtils;
+import edu.stanford.isis.dicomproxy.common.FileKey;
+import edu.stanford.isis.dicomproxy.server.ProxyLogger;
+import edu.stanford.isis.dicomproxy.server.managers.support.DicomReader;
 
 /**
  * Given a dicom file create the thumbnail file.
@@ -73,7 +81,7 @@ public class JPEGTask implements Callable<File>
 
             //Wait to get exit value
             try {
-                int exitValue = process.waitFor(); //keep.
+                process.waitFor(); //keep.
 
                 log.info("JPEGTask call: "+sb.toString());
             } catch (InterruptedException e) {
@@ -161,7 +169,7 @@ public class JPEGTask implements Callable<File>
 
                 //Wait to get exit value
                 try {
-                    int exitValue = process.waitFor(); //keep.
+                    process.waitFor(); //keep.
 
                     log.info("JPEGTask: "+sb.toString());
                 } catch (InterruptedException e) {

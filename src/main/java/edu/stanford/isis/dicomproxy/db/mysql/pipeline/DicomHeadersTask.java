@@ -32,7 +32,7 @@ public class DicomHeadersTask implements Runnable
         Process process = null;
         
         try{
-        	int nbLines=0;
+        	//int nbLines=0;
             String[] command = {"./dcm2txt", "-w", "250", "-l", "250",dicomInputFile.getAbsolutePath() };
 
             ProcessBuilder pb = new ProcessBuilder( command );
@@ -49,12 +49,12 @@ public class DicomHeadersTask implements Runnable
             StringBuilder sb = new StringBuilder();
             while ((line = br.readLine()) != null) {
                 sb.append(line).append("\n");
-                nbLines++;
+                //nbLines++;
             }
 
             //Wait to get exit value
             try {
-                int exitValue = process.waitFor(); //keep.  
+                process.waitFor(); //keep.  
             } catch (InterruptedException e) {
                 logger.warning("Couldn't get tags for: "+dicomInputFile.getAbsolutePath(),e);
             }

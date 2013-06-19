@@ -8,17 +8,19 @@
 package edu.stanford.isis.dicomproxy.server.managers.pipeline;
 
 
-import edu.stanford.isis.dicomproxy.common.*;
-import edu.stanford.isis.dicomproxy.server.ProxyLogger;
-import org.apache.commons.io.FileUtils;
-
 import java.io.File;
 import java.io.IOException;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
+
+import org.apache.commons.io.FileUtils;
+
+import edu.stanford.isis.dicomproxy.common.DicomTagFileUtils;
+import edu.stanford.isis.dicomproxy.common.FileKey;
+import edu.stanford.isis.dicomproxy.common.ProxyFileUtils;
+import edu.stanford.isis.dicomproxy.server.ProxyLogger;
 
 /**
  * This class manages the creation of thumbnails in the /resources/dicom directory.
@@ -84,7 +86,7 @@ public class ThumbnailManager {
     private void init(){
 
         //inspect the resource directory for thumbnails.
-        List<File> studyDirs = ProxyFileUtils.getDirectoriesIn(new File("../resources/dicom"));
+        //List<File> studyDirs = ProxyFileUtils.getDirectoriesIn(new File("../resources/dicom"));
         //List<File> dicomFile
 
         //create missing thumbnails.
@@ -127,7 +129,8 @@ public class ThumbnailManager {
         }
     }
 
-    private static File createPngFile(String dcmFilePath){
+    @SuppressWarnings("unused")
+	private static File createPngFile(String dcmFilePath){
         return new File( dcmFilePath.replaceAll(".dcm",".png") );
     }
 
@@ -153,11 +156,13 @@ public class ThumbnailManager {
      * @param y int
      * @return int
      */
-    private static int getIndex(int x, int y){
+    @SuppressWarnings("unused")
+	private static int getIndex(int x, int y){
         return (x*y)+x;
     }
 
-    private static float forceRange(float value, float min, float max){
+    @SuppressWarnings("unused")
+	private static float forceRange(float value, float min, float max){
         if(value>max){
             return max;
         }

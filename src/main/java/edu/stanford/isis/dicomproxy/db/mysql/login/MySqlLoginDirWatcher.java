@@ -1,29 +1,20 @@
 package edu.stanford.isis.dicomproxy.db.mysql.login;
 
-import edu.stanford.isis.dicomproxy.common.FileKey;
-import edu.stanford.isis.dicomproxy.common.ProxyFileUtils;
-import edu.stanford.isis.dicomproxy.db.mysql.MySqlInstance;
-import edu.stanford.isis.dicomproxy.db.mysql.MySqlQueries;
-import edu.stanford.isis.dicomproxy.db.mysql.pipeline.DicomSendTask;
-import edu.stanford.isis.dicomproxy.server.ProxyLogger;
-import edu.stanford.isis.dicomproxy.server.ShutdownSignal;
-import edu.stanford.isis.dicomproxy.server.managers.pipeline.UploadFile;
-
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileFilter;
-import java.io.FileNotFoundException;
 import java.io.FileReader;
-import java.io.FilenameFilter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.ConcurrentModificationException;
 import java.util.List;
 import java.util.TreeMap;
-import java.util.TreeSet;
 import java.util.concurrent.TimeUnit;
 
-import org.apache.commons.io.FileUtils;
+import edu.stanford.isis.dicomproxy.db.mysql.MySqlInstance;
+import edu.stanford.isis.dicomproxy.db.mysql.MySqlQueries;
+import edu.stanford.isis.dicomproxy.server.ProxyLogger;
+import edu.stanford.isis.dicomproxy.server.ShutdownSignal;
 
 /**
  * Watches for the login file. When a new login file is
@@ -38,7 +29,7 @@ public class MySqlLoginDirWatcher implements Runnable
 	public static final int CHECK_INTERVAL = 120000; //check every 2 minutes.
 
 	public static final String FOUND_DIR_FILE = "dir.found";
-	private static final long MAX_WAIT_TIME = 120000; //in milliseconds
+	//private static final long MAX_WAIT_TIME = 120000; //in milliseconds
 
 	ProxyLogger log = ProxyLogger.getInstance();
 

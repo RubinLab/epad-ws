@@ -7,19 +7,18 @@
  */
 package edu.stanford.isis.epad.plugin.server.impl;
 
-import edu.stanford.isis.dicomproxy.common.DicomFormatUtil;
-import edu.stanford.isis.dicomproxy.common.FileKey;
-import edu.stanford.isis.dicomproxy.server.ProxyLogger;
-import edu.stanford.isis.epad.plugin.server.EPadFiles;
-import edu.stanford.isis.epad.plugin.server.UIdType;
-import org.eclipse.jetty.server.HttpConnection;
-
 import java.io.File;
 import java.io.FileFilter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+
+import edu.stanford.isis.dicomproxy.common.DicomFormatUtil;
+import edu.stanford.isis.dicomproxy.common.FileKey;
+import edu.stanford.isis.dicomproxy.server.ProxyLogger;
+import edu.stanford.isis.epad.plugin.server.EPadFiles;
+import edu.stanford.isis.epad.plugin.server.UIdType;
 
 /**
  * Implements ePAD Files plugin API.

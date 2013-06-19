@@ -2,14 +2,14 @@ package edu.stanford.isis.tools.pixelmed;
 
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferByte;
-import javax.imageio.ImageIO;
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Iterator;
+
+import javax.imageio.ImageIO;
 
 import com.pixelmed.anatproc.CodedConcept;
 import com.pixelmed.dicom.Attribute;
@@ -176,6 +176,7 @@ public class ConvertTIFFMasksToSegmentationObjects {
 		ArrayList <String> mask_files = list_files_in_folder_in_alphabetic_order(path_to_mask_files);
 
 		try {
+			@SuppressWarnings("unused")
 			ConvertTIFFMasksToSegmentationObjects obj = new ConvertTIFFMasksToSegmentationObjects(mask_files, dicom_files, output_file);
 		}  catch(Exception e) {
 			System.err.println(e);

@@ -15,8 +15,10 @@ public class ProxyVersion {
 
     private ProxyVersion(){}
 
-    private static final String VERSION = "@(#)00.00.00@";
-    private static final String BUILD_DATE = "";//ToDo: create an Ant task for this.
+    @SuppressWarnings("unused")
+	private static final String VERSION = "@(#)00.00.00@";
+    @SuppressWarnings("unused")
+	private static final String BUILD_DATE = "";//ToDo: create an Ant task for this.
 
     public static String getVersion(){
         return "1.1c";

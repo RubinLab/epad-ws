@@ -116,7 +116,7 @@ public class DicomTagFileUtils {
         DataInputStream in = new DataInputStream(fstream);
         BufferedReader br = new BufferedReader(new InputStreamReader(in));
         
-        int l=0;
+        //int l=0;
         String line;
         while( (line=br.readLine())!=null ){
             parseLine(line,tagMap);

@@ -12,10 +12,7 @@ import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 
-import edu.stanford.isis.dicomproxy.server.ProxyConfig;
-import edu.stanford.isis.dicomproxy.server.ProxyLogger;
 import org.restlet.data.Form;
 import org.restlet.data.Status;
 import org.restlet.representation.Representation;
@@ -33,6 +30,9 @@ import com.sleepycat.dbxml.XmlManager;
 import com.sleepycat.dbxml.XmlManagerConfig;
 import com.sleepycat.dbxml.XmlQueryContext;
 import com.sleepycat.dbxml.XmlResults;
+
+import edu.stanford.isis.dicomproxy.server.ProxyConfig;
+import edu.stanford.isis.dicomproxy.server.ProxyLogger;
 
 /**
  * This is based on the Aim Template Server XMLDatabaseResource class.

@@ -7,13 +7,15 @@
  */
 package edu.stanford.isis.dicomproxy.server;
 
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
+import java.util.concurrent.LinkedBlockingQueue;
+
 import edu.stanford.isis.dicomproxy.common.DicomSeriesUID;
 import edu.stanford.isis.dicomproxy.common.DicomStudyUID;
 import edu.stanford.isis.dicomproxy.server.managers.pipeline.PipelineFactory;
 import edu.stanford.isis.dicomproxy.server.threads.ThumbnailGenerator;
-
-import java.util.Stack;
-import java.util.concurrent.*;
 
 /**
  * Keeps a detailed list of the current work queues and the
@@ -54,7 +56,8 @@ public class ProxyWorkers {
     /**
      *
      */
-    private void startThreads(){
+    @SuppressWarnings("unused")
+	private void startThreads(){
         thumbnailProcess = new ThumbnailGenerator(thumbnailQueue);
     }
 

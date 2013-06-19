@@ -1,46 +1,23 @@
 package edu.stanford.isis.dicomproxy.handlers.event;
 
-import org.apache.commons.httpclient.HttpClient;
-import org.apache.commons.httpclient.HttpException;
-import org.apache.commons.httpclient.methods.GetMethod;
-import org.eclipse.jetty.server.Request;
-import org.eclipse.jetty.server.handler.AbstractHandler;
-
-import com.pixelmed.dicom.DicomException;
-import com.pixelmed.display.SourceImage;
-
-import edu.stanford.isis.dicomproxy.common.SearchResultUtils;
-import edu.stanford.isis.dicomproxy.common.WadoUrlBuilder;
-import edu.stanford.isis.dicomproxy.db.mysql.MySqlInstance;
-import edu.stanford.isis.dicomproxy.db.mysql.MySqlQueries;
-import edu.stanford.isis.dicomproxy.db.mysql.pipeline.DicomHeadersTask;
-import edu.stanford.isis.dicomproxy.server.ProxyConfig;
-import edu.stanford.isis.dicomproxy.server.ProxyLogger;
-import edu.stanford.isis.dicomproxy.server.RSeriesData;
-
-import edu.stanford.isis.dicomproxy.common.ImageEnhancer;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.net.URLDecoder;
+import java.util.List;
+import java.util.Map;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import java.awt.image.BufferedImage;
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.PrintWriter;
-import java.io.UnsupportedEncodingException;
-import java.net.URLDecoder;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
+import org.eclipse.jetty.server.Request;
+import org.eclipse.jetty.server.handler.AbstractHandler;
+
+import edu.stanford.isis.dicomproxy.common.SearchResultUtils;
+import edu.stanford.isis.dicomproxy.db.mysql.MySqlInstance;
+import edu.stanford.isis.dicomproxy.db.mysql.MySqlQueries;
+import edu.stanford.isis.dicomproxy.server.ProxyConfig;
+import edu.stanford.isis.dicomproxy.server.ProxyLogger;
 
 /**
  * Get all the events for a user

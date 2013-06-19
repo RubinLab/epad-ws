@@ -7,8 +7,6 @@
  */
 package edu.stanford.isis.dicomproxy.queryretrieve.gson;
 
-import edu.stanford.isis.dicomproxy.common.SearchResultUtils;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -30,7 +28,7 @@ public class GSeriesSearch {
     }
 
     public String toEPadCsvFormat(){
-        StringBuilder sb = new StringBuilder();
+        //StringBuilder sb = new StringBuilder();
         throw new UnsupportedOperationException("not implemented. See GStudySearch.java for example.");
         //return sb.toString();
     }

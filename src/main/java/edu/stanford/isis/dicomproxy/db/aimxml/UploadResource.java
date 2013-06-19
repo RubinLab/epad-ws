@@ -9,25 +9,32 @@ package edu.stanford.isis.dicomproxy.db.aimxml;
 
 import java.io.File;
 import java.io.FileOutputStream;
-
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.URLDecoder;
+import java.util.ArrayList;
+import java.util.List;
 
-import java.util.*;
-
-import org.restlet.data.*;
-import org.restlet.representation.*;
-import org.restlet.resource.*;
-import org.restlet.util.Series;
+import org.apache.commons.fileupload.FileItem;
+import org.apache.commons.fileupload.FileUploadException;
+import org.apache.commons.fileupload.disk.DiskFileItemFactory;
+import org.restlet.data.Disposition;
+import org.restlet.data.MediaType;
+import org.restlet.data.Parameter;
 import org.restlet.engine.http.header.DispositionReader;
 import org.restlet.engine.http.header.HeaderConstants;
-import org.restlet.ext.fileupload.*;
-import org.apache.commons.fileupload.*;
-import org.apache.commons.fileupload.disk.*;
+import org.restlet.ext.fileupload.RestletFileUpload;
+import org.restlet.representation.InputRepresentation;
+import org.restlet.representation.Representation;
+import org.restlet.representation.StringRepresentation;
+import org.restlet.resource.Post;
+import org.restlet.util.Series;
 
-import com.sleepycat.db.*;
-import com.sleepycat.dbxml.*;
+import com.sleepycat.db.DatabaseException;
+import com.sleepycat.dbxml.XmlContainer;
+import com.sleepycat.dbxml.XmlDocument;
+import com.sleepycat.dbxml.XmlDocumentConfig;
+import com.sleepycat.dbxml.XmlManager;
+import com.sleepycat.dbxml.XmlManagerConfig;
 
 
 public class UploadResource extends XMLDatabaseResource {
@@ -83,13 +90,15 @@ public class UploadResource extends XMLDatabaseResource {
     }
 
  
+	@SuppressWarnings("unused")
 	private Representation receiveWWWFile(Representation entity) {
 		log.info("receiveWWWFile " );
 		Representation returnRep = null;
-		File tempFile;
+		//File tempFile;
 		if (entity instanceof InputRepresentation) {
 			log.info("receiveWWWFile entity is instanceof InputRepresentation ");
 			
+			@SuppressWarnings("unchecked")
 			Series<Parameter> params = (Series<Parameter>) this.getRequest().getAttributes().get("org.restlet.http.headers");
 			log.info("receiveWWWFile params " + params);
 			String header = params.getFirstValue(HeaderConstants.HEADER_CONTENT_DISPOSITION);

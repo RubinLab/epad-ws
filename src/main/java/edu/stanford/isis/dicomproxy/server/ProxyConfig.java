@@ -83,8 +83,11 @@ public class ProxyConfig {
             }
 
             FileInputStream fis = new FileInputStream(configFile);
-            properties.load(fis);
-            fis.close();
+            try {
+            	properties.load(fis);
+            } finally {
+            	fis.close();
+            }
 
             readProxyLoggerDebugState();
 

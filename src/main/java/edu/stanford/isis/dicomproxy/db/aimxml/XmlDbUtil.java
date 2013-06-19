@@ -7,12 +7,12 @@
  */
 package edu.stanford.isis.dicomproxy.db.aimxml;
 
-import com.sleepycat.db.DatabaseException;
 import com.sleepycat.db.EnvironmentConfig;
 import com.sleepycat.dbxml.XmlContainer;
 import com.sleepycat.dbxml.XmlException;
 import com.sleepycat.dbxml.XmlManager;
 import com.sleepycat.dbxml.XmlResults;
+
 import edu.stanford.isis.dicomproxy.server.ProxyLogger;
 
 /**
