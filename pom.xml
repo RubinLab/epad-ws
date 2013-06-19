@@ -320,18 +320,6 @@
 	<version>1.0</version>
    </dependency>
 
-   <!-- Local ./lib dependency. TODO: Cannot find a Maven repository for this version of Berkeley DB. -->
-   <dependency>
-	<groupId>db</groupId>
-	<artifactId>db</artifactId>
-	<version>1.0</version>
-   </dependency>
-   <dependency>
-	<groupId>dbxml</groupId>
-	<artifactId>dbxml</artifactId>
-	<version>1.0</version>
-   </dependency>
-            
   </dependencies>
 
   <build>
