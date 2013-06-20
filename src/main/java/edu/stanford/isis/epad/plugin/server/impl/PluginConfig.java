@@ -1,7 +1,7 @@
 package edu.stanford.isis.epad.plugin.server.impl;
 
-import edu.stanford.isis.dicomproxy.server.ProxyLogger;
-import edu.stanford.isis.dicomproxy.server.ResourceUtils;
+import edu.stanford.isis.epadws.server.ProxyLogger;
+import edu.stanford.isis.epadws.server.ResourceUtils;
 
 import java.io.BufferedReader;
 import java.io.File;

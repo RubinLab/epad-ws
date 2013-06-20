@@ -300,6 +300,7 @@
    <!-- See http://blog.dub.podval.org/2010/01/maven-in-project-repository.html for explanation of how to generate these repository entries. -->
 
    <!-- Local ./lib dependency. TODO: Server should not be dependent on this. -->
+
    <dependency>
 	<groupId>dicominterface</groupId>
 	<artifactId>dicominterface</artifactId>

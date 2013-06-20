@@ -7,8 +7,8 @@
  */
 package edu.stanford.isis.epad.plugin.server.impl;
 
-import edu.stanford.isis.dicomproxy.server.ProxyLogger;
 import edu.stanford.isis.epad.plugin.server.PluginServletHandler;
+import edu.stanford.isis.epadws.server.ProxyLogger;
 
 import java.util.*;
 

@@ -14,11 +14,11 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
-import edu.stanford.isis.dicomproxy.common.DicomFormatUtil;
-import edu.stanford.isis.dicomproxy.common.FileKey;
-import edu.stanford.isis.dicomproxy.server.ProxyLogger;
 import edu.stanford.isis.epad.plugin.server.EPadFiles;
 import edu.stanford.isis.epad.plugin.server.UIdType;
+import edu.stanford.isis.epadws.common.DicomFormatUtil;
+import edu.stanford.isis.epadws.common.FileKey;
+import edu.stanford.isis.epadws.server.ProxyLogger;
 
 /**
  * Implements ePAD Files plugin API.

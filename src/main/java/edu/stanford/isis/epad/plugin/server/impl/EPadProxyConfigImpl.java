@@ -7,9 +7,9 @@
  */
 package edu.stanford.isis.epad.plugin.server.impl;
 
-import edu.stanford.isis.dicomproxy.server.ProxyConfig;
-import edu.stanford.isis.dicomproxy.server.ProxyLogger;
 import edu.stanford.isis.epad.plugin.server.EPadProxyConfig;
+import edu.stanford.isis.epadws.server.ProxyConfig;
+import edu.stanford.isis.epadws.server.ProxyLogger;
 
 /**
  *

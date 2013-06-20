@@ -13,8 +13,8 @@ import java.util.Set;
 import java.util.jar.Attributes;
 import java.util.jar.Manifest;
 
-import edu.stanford.isis.dicomproxy.server.ProxyLogger;
 import edu.stanford.isis.epad.plugin.server.PluginHandler;
+import edu.stanford.isis.epadws.server.ProxyLogger;
 
 /**
  * Place to keep the class loader test code.
