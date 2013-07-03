@@ -12,54 +12,34 @@ package edu.stanford.isis.epadws.handlers;
 /**
  * First test of a WebSocket servlet - not being used (TBR).
  * 
- * <p>This does not seem to match the current version of Jetty</p>
- *
+ * <p>
+ * This does not seem to match the current version of Jetty
+ * </p>
+ * 
  * @author amsnyder
+ * 
+ * @deprecated
  */
+@Deprecated
 public class FirstWebSocketServlet // extends WebSocketServlet
 {
 	/*
-    private final Set<FirstWebSocket> _members = new CopyOnWriteArraySet<FirstWebSocket>();
-
-    @Override
-    protected WebSocket doWebSocketConnect(HttpServletRequest httpServletRequest, String s) {
-        return new FirstWebSocket();
-    }
-
-    class FirstWebSocket implements WebSocket
-    {
-        Outbound _outbound;
-
-        @Override
-        public void onConnect(Outbound outbound) {
-            _outbound=outbound;
-            _members.add(this);
-        }
-
-        @Override
-        public void onMessage(byte frame, String data) {
-            for (FirstWebSocket member : _members)
-            {
-                try
-                {
-                    member._outbound.sendMessage(frame,data);
-                }
-                catch(IOException e) {
-                    //Log.warn(e);
-                }
-            }
-        }
-
-        @Override
-        public void onFragment(boolean bool, byte b, byte[] bytes, int i, int i1) {}
-
-        @Override
-        public void onMessage(byte frame, byte[] data, int offset, int length) {}
-
-        @Override
-        public void onDisconnect() {
-            _members.remove(this);
-        }
-    }
-*/
+	 * private final Set<FirstWebSocket> _members = new CopyOnWriteArraySet<FirstWebSocket>();
+	 * 
+	 * @Override protected WebSocket doWebSocketConnect(HttpServletRequest httpServletRequest, String s) { return new
+	 * FirstWebSocket(); }
+	 * 
+	 * class FirstWebSocket implements WebSocket { Outbound _outbound;
+	 * 
+	 * @Override public void onConnect(Outbound outbound) { _outbound=outbound; _members.add(this); }
+	 * 
+	 * @Override public void onMessage(byte frame, String data) { for (FirstWebSocket member : _members) { try {
+	 * member._outbound.sendMessage(frame,data); } catch(IOException e) { //Log.warn(e); } } }
+	 * 
+	 * @Override public void onFragment(boolean bool, byte b, byte[] bytes, int i, int i1) {}
+	 * 
+	 * @Override public void onMessage(byte frame, byte[] data, int offset, int length) {}
+	 * 
+	 * @Override public void onDisconnect() { _members.remove(this); } }
+	 */
 }

@@ -46,136 +46,148 @@ import edu.stanford.isis.epadws.server.managers.pipeline.PipelineFactory;
 
 /**
  * Returns the public status of the Proxy.
- *
+ * 
  * @author amsnyder
+ * 
+ * @deprecated
  */
-public class StatusHandler extends AbstractHandler {
+@Deprecated
+public class StatusHandler extends AbstractHandler
+{
 
 	private static final ProxyLogger log = ProxyLogger.getInstance();
 	public String serviceUrl = ProxyConfig.getInstance().getParam("serviceUrl");
-	
-	private long startTime;
 
-	public StatusHandler(){
+	private final long startTime;
+
+	public StatusHandler()
+	{
 		startTime = System.currentTimeMillis();
 	}
 
 	/**
-
-	 * Save the annotation to the server in the aim database. An invalid
-
-	 * annotation will not be saved. Save a file backup just in case.
-
 	 * 
-
+	 * Save the annotation to the server in the aim database. An invalid
+	 * 
+	 * annotation will not be saved. Save a file backup just in case.
+	 * 
+	 * 
+	 * 
 	 * @param aim
-
+	 * 
 	 * @return
-
+	 * 
 	 * @throws AimException
-
-	 * @throws IOException 
-
+	 * 
+	 * @throws IOException
 	 */
 
-	public static void saveToServer() throws IOException {
+	public static void saveToServer() throws IOException
+	{
 
 		log.info("saveToServer");
 
-			File fileToUpload=new File("/home/epad/AIM_029dwxvdypcwvlimke1kb4f59nlt3nw1ymmlf2bo.xml");
-			String urlToConnect = "http://epad-dev2.stanford.edu:8080/aimresource/";
-			String paramToSend = "upload";
-			String boundary = Long.toHexString(System.currentTimeMillis());
-			
-			log.info("saveToServer has an aim file");
+		File fileToUpload = new File("/home/epad/AIM_029dwxvdypcwvlimke1kb4f59nlt3nw1ymmlf2bo.xml");
+		String urlToConnect = "http://epad-dev2.stanford.edu:8080/aimresource/";
+		String paramToSend = "upload";
+		String boundary = Long.toHexString(System.currentTimeMillis());
 
-			URLConnection connection = new URL(urlToConnect).openConnection();
-			connection.setDoOutput(true); // This sets request method to POST.
-			connection.setRequestProperty("Content-Type", "multipart/form-data; boundary=" + boundary);
-			
-			connection.connect();
-			
-			log.info("Connection open ");
-			
-			PrintWriter writer = null;
+		log.info("saveToServer has an aim file");
+
+		URLConnection connection = new URL(urlToConnect).openConnection();
+		connection.setDoOutput(true); // This sets request method to POST.
+		connection.setRequestProperty("Content-Type", "multipart/form-data; boundary=" + boundary);
+
+		connection.connect();
+
+		log.info("Connection open ");
+
+		PrintWriter writer = null;
+		try {
+			writer = new PrintWriter(new OutputStreamWriter(connection.getOutputStream(), "UTF-8"));
+
+			writer.println("--" + boundary);
+			writer.println("Content-Disposition: form-data; name=\"paramToSend\"");
+			writer.println("Content-Type: text/plain; charset=UTF-8");
+			writer.println();
+			writer.println(paramToSend);
+
+			writer.println("--" + boundary);
+			writer.println("Content-Disposition: form-data; name=\"fileToUpload\"; filename=\"file.txt\"");
+			writer.println("Content-Type: text/plain; charset=UTF-8");
+			writer.println();
+			BufferedReader reader = null;
 			try {
-			    writer = new PrintWriter(new OutputStreamWriter(connection.getOutputStream(), "UTF-8"));
-
-			    writer.println("--" + boundary);
-			    writer.println("Content-Disposition: form-data; name=\"paramToSend\"");
-			    writer.println("Content-Type: text/plain; charset=UTF-8");
-			    writer.println();
-			    writer.println(paramToSend);
-
-			    writer.println("--" + boundary);
-			    writer.println("Content-Disposition: form-data; name=\"fileToUpload\"; filename=\"file.txt\"");
-			    writer.println("Content-Type: text/plain; charset=UTF-8");
-			    writer.println();
-			    BufferedReader reader = null;
-			    try {
-			        reader = new BufferedReader(new InputStreamReader(new FileInputStream(fileToUpload), "UTF-8"));
-			        for (String line; (line = reader.readLine()) != null;) {
-			            writer.println(line);
-			        }
-			    }catch(Exception e){
-					log.warning("Failed to send aim with buffer.",e);
-			    } finally {
-			        if (reader != null) try { reader.close(); } catch (IOException logOrIgnore) {}
-			    }
-
-			    writer.println("--" + boundary + "--");
-			 }catch(Exception e){
-					log.warning("Failed to send aim.",e);
+				reader = new BufferedReader(new InputStreamReader(new FileInputStream(fileToUpload), "UTF-8"));
+				for (String line; (line = reader.readLine()) != null;) {
+					writer.println(line);
+				}
+			} catch (Exception e) {
+				log.warning("Failed to send aim with buffer.", e);
 			} finally {
-			    if (writer != null) writer.close();
+				if (reader != null)
+					try {
+						reader.close();
+					} catch (IOException logOrIgnore) {
+					}
 			}
 
-			log.info("saveToServer done");
-	
+			writer.println("--" + boundary + "--");
+		} catch (Exception e) {
+			log.warning("Failed to send aim.", e);
+		} finally {
+			if (writer != null)
+				writer.close();
+		}
+
+		log.info("saveToServer done");
 
 	}
-	
-	
-	public static void saveToServer2() throws IOException {
+
+	public static void saveToServer2() throws IOException
+	{
 
 		log.info("saveToServer");
 
-			File fileToUpload=new File("/home/epad/AIM_029dwxvdypcwvlimke1kb4f59nlt3nw1ymmlf2bo.xml");
-			String urlToConnect = "http://epad-dev2.stanford.edu:8080/aimresource/";
-			
-			log.info("saveToServer has an aim file");
+		File fileToUpload = new File("/home/epad/AIM_029dwxvdypcwvlimke1kb4f59nlt3nw1ymmlf2bo.xml");
+		String urlToConnect = "http://epad-dev2.stanford.edu:8080/aimresource/";
 
-			HttpClient httpclient = new DefaultHttpClient();
-	        try {
-	            HttpPost httppost = new HttpPost(urlToConnect);
+		log.info("saveToServer has an aim file");
 
-	            FileBody bin = new FileBody(fileToUpload);
-	          
-	            MultipartEntity reqEntity = new MultipartEntity();
-	            reqEntity.addPart("bin", bin);
+		HttpClient httpclient = new DefaultHttpClient();
+		try {
+			HttpPost httppost = new HttpPost(urlToConnect);
 
-	            httppost.setEntity(reqEntity);
+			FileBody bin = new FileBody(fileToUpload);
 
-	            System.out.println("executing request " + httppost.getRequestLine());
-	            HttpResponse response = httpclient.execute(httppost);
-	            HttpEntity resEntity = response.getEntity();
+			MultipartEntity reqEntity = new MultipartEntity();
+			reqEntity.addPart("bin", bin);
 
-	            System.out.println("----------------------------------------");
-	            System.out.println(response.getStatusLine());
-	            if (resEntity != null) {
-	                System.out.println("Response content length: " + resEntity.getContentLength());
-	            }
-	            EntityUtils.consume(resEntity);
-	        } finally {
-	            try { httpclient.getConnectionManager().shutdown(); } catch (Exception ignore) {}
-	        }
+			httppost.setEntity(reqEntity);
 
-			log.info("saveToServer done");
-	
+			System.out.println("executing request " + httppost.getRequestLine());
+			HttpResponse response = httpclient.execute(httppost);
+			HttpEntity resEntity = response.getEntity();
+
+			System.out.println("----------------------------------------");
+			System.out.println(response.getStatusLine());
+			if (resEntity != null) {
+				System.out.println("Response content length: " + resEntity.getContentLength());
+			}
+			EntityUtils.consume(resEntity);
+		} finally {
+			try {
+				httpclient.getConnectionManager().shutdown();
+			} catch (Exception ignore) {
+			}
+		}
+
+		log.info("saveToServer done");
 
 	}
 
-	public static byte[] serialize(Object obj) throws IOException {
+	public static byte[] serialize(Object obj) throws IOException
+	{
 		ByteArrayOutputStream b = new ByteArrayOutputStream();
 		ObjectOutputStream o = new ObjectOutputStream(b);
 		o.writeObject(obj);
@@ -184,89 +196,70 @@ public class StatusHandler extends AbstractHandler {
 
 	}
 
+	/*
+	 * public static void tryPOST() throws IOException { System.out.println("=== PUT: create a new database ===");
+	 * 
+	 * // The java URL connection to the resource URL url = new URL("http://epad-prod1.stanford.edu:8080/aimresource");
+	 * System.out.println("\n* URL: " + url);
+	 * 
+	 * // Establish the connection to the URL HttpURLConnection conn = (HttpURLConnection) url.openConnection(); // // Set
+	 * an output connection // conn.setDoOutput(true); // Set as PUT request conn.setRequestMethod("PUT");
+	 * 
+	 * // Get and cache output stream OutputStream out = new BufferedOutputStream(conn.getOutputStream());
+	 * System.out.println("\n* get the stream"); // Create and cache file input stream InputStream in = new
+	 * BufferedInputStream( new
+	 * FileInputStream("/home/epad/DicomProxy/resources/annotations/AIM_4145453244701952000.xml"));
+	 * 
+	 * // Send document to server System.out.println("\n* Send document..."); for(int i; (i = in.read()) != -1;)
+	 * out.write(i); in.close(); out.close();
+	 * 
+	 * // Print the HTTP response code System.out.println("\n* HTTP response: " + conn.getResponseCode() + " (" +
+	 * conn.getResponseMessage() + ')');
+	 * 
+	 * // Close connection conn.disconnect(); }
+	 */
 
-
-
-
-
-	/*public static void tryPOST() throws IOException {
-		System.out.println("=== PUT: create a new database ===");
-
-		// The java URL connection to the resource
-		URL url = new URL("http://epad-prod1.stanford.edu:8080/aimresource");
-		System.out.println("\n* URL: " + url);
-
-		// Establish the connection to the URL
-		HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-		//	    // Set an output connection
-		//	    conn.setDoOutput(true);
-		// Set as PUT request
-		conn.setRequestMethod("PUT");
-
-		// Get and cache output stream
-		OutputStream out = new BufferedOutputStream(conn.getOutputStream());
-		System.out.println("\n* get the stream");
-		// Create and cache file input stream
-		InputStream in = new BufferedInputStream(
-				new FileInputStream("/home/epad/DicomProxy/resources/annotations/AIM_4145453244701952000.xml"));
-
-		// Send document to server
-		System.out.println("\n* Send document...");
-		for(int i; (i = in.read()) != -1;) out.write(i);
-		in.close();
-		out.close();
-
-		// Print the HTTP response code
-		System.out.println("\n* HTTP response: " + conn.getResponseCode() +
-				" (" + conn.getResponseMessage() + ')');
-
-		// Close connection
-		conn.disconnect();
-	}*/
-
-	//	public static void tryPUT2() throws IOException {
-	//		HttpClient client = new HttpClient();
-	//		/* Implement an HTTP PUT method on the resource */
-	//		PutMethod put = new PutMethod("http://epad-prod1.stanford.edu:8080/aimresource/");
-	//		File input = new File("/home/epad/DicomProxy/resources/annotations/AIM_4145453244701952000.xml");
-	//		RequestEntity entity = new FileRequestEntity(input, "Content-Length: 1431");
-	//		put.setRequestEntity(entity);
-	//		/* Create an access token and set it in the request header*/
-	////		String token = GetAuth.getAuthQuest();
-	////		put.setRequestHeader("Authorization", token);
-	//		/* Execute the HTTP PUT request */
-	//		client.executeMethod(put);
-	//		
-	//	
-	//		/* Display the response */
-	//		System.out.println("Response status code: " + put.getStatusCode());
-	//		System.out.println("Response header: ");
-	////		Header[] respHeaders=put.getResponseHeaders();
-	////
-	////		for (int i = 0; i < respHeaders.length; i++) {
-	////			System.out.println(respHeaders[i]);
-	////		}
-	//	}
+	// public static void tryPUT2() throws IOException {
+	// HttpClient client = new HttpClient();
+	// /* Implement an HTTP PUT method on the resource */
+	// PutMethod put = new PutMethod("http://epad-prod1.stanford.edu:8080/aimresource/");
+	// File input = new File("/home/epad/DicomProxy/resources/annotations/AIM_4145453244701952000.xml");
+	// RequestEntity entity = new FileRequestEntity(input, "Content-Length: 1431");
+	// put.setRequestEntity(entity);
+	// /* Create an access token and set it in the request header*/
+	// // String token = GetAuth.getAuthQuest();
+	// // put.setRequestHeader("Authorization", token);
+	// /* Execute the HTTP PUT request */
+	// client.executeMethod(put);
+	//
+	//
+	// /* Display the response */
+	// System.out.println("Response status code: " + put.getStatusCode());
+	// System.out.println("Response header: ");
+	// // Header[] respHeaders=put.getResponseHeaders();
+	// //
+	// // for (int i = 0; i < respHeaders.length; i++) {
+	// // System.out.println(respHeaders[i]);
+	// // }
+	// }
 
 	@Override
-	public void handle(String s, Request request,
-			HttpServletRequest httpRequest,
-			HttpServletResponse httpResponse)
-	throws IOException, ServletException
+	public void handle(String s, Request request, HttpServletRequest httpRequest, HttpServletResponse httpResponse)
+			throws IOException, ServletException
 	{
 
 		log.info("status request");
 		PrintWriter out = httpResponse.getWriter();
 
-		try{
+		try {
 			httpResponse.setContentType("text/plain");
 			httpResponse.setStatus(HttpServletResponse.SC_OK);
-			httpResponse.setHeader("Access-Control-Allow-Origin","*");
+			httpResponse.setHeader("Access-Control-Allow-Origin", "*");
 
 			request.setHandled(true);
 
 			long upTime = System.currentTimeMillis() - startTime;
-			long upTimeSec = upTime/1000;
+			long upTimeSec = upTime / 1000;
 
 			ProxyConfig proxyConfig = ProxyConfig.getInstance();
 			EPadProxyConfigImpl ePadProxyConfig = new EPadProxyConfigImpl();
@@ -279,8 +272,8 @@ public class StatusHandler extends AbstractHandler {
 			out.println();
 			out.println("Version: " + ProxyVersion.getBuildDate());
 			out.println();
-			out.println("DicomProxy listening on: " +proxyConfig.getParam("ListenIP") + ":" +
-					proxyConfig.getParam("ListenPort"));
+			out.println("DicomProxy listening on: " + proxyConfig.getParam("ListenIP") + ":"
+					+ proxyConfig.getParam("ListenPort"));
 			out.println();
 			out.println("Plugin Version - interface:      " + EPadPlugin.PLUGIN_INTERFACE_VERSION);
 			out.println("Plugin Version - implementation: " + ePadPlugin.getPluginImplVersion());
@@ -290,45 +283,44 @@ public class StatusHandler extends AbstractHandler {
 			out.println();
 			out.println("epad.war serverProxy=" + ePadProxyConfig.getProxyConfigParam("serverProxy"));
 			out.println();
-			out.println("pipelineActivity : "+getPipelineActivityLevel());
-
+			out.println("pipelineActivity : " + getPipelineActivityLevel());
 
 			saveToServer2();
 
-		}catch(Exception e){
-			log.warning("Failed to build status page.",e);
-		}finally{
+		} catch (Exception e) {
+			log.warning("Failed to build status page.", e);
+		} finally {
 			out.flush();
 		}
 	}
 
-	private String getPipelineActivityLevel(){
+	private String getPipelineActivityLevel()
+	{
 		PipelineFactory pipelineFactory = PipelineFactory.getInstance();
 		StringBuilder sb = new StringBuilder();
 		int activityLevel = pipelineFactory.getActivityLevel();
 		int errCount = pipelineFactory.getErrorFileCount();
-		if( activityLevel==0 ){
+		if (activityLevel == 0) {
 			sb.append("idle.");
-		}else{
-			sb.append("active-"+activityLevel);
-			if(errCount>0){
-				sb.append(" errors-"+errCount);
+		} else {
+			sb.append("active-" + activityLevel);
+			if (errCount > 0) {
+				sb.append(" errors-" + errCount);
 			}
 		}
 		return sb.toString();
 	}
 
 	/**
-	 *
+	 * 
 	 * @return String
 	 */
 	@SuppressWarnings("unused")
-	private String getStatusAsText(){
+	private String getStatusAsText()
+	{
 		StringBuilder sb = new StringBuilder();
 
 		return sb.toString();
 	}
-
-
 
 }

@@ -1,18 +1,12 @@
-package edu.stanford.isis.epadws.handlers.dicom;
+package edu.stanford.isis.epadws.resources.server;
 
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.net.URLDecoder;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
-import org.eclipse.jetty.server.Request;
-import org.eclipse.jetty.server.handler.AbstractHandler;
+import org.restlet.data.CharacterSet;
+import org.restlet.data.Status;
+import org.restlet.resource.Get;
 
 import edu.stanford.isis.epadws.common.DicomFormatUtil;
 import edu.stanford.isis.epadws.common.DicomSearchType;
@@ -21,59 +15,59 @@ import edu.stanford.isis.epadws.db.mysql.MySqlInstance;
 import edu.stanford.isis.epadws.db.mysql.MySqlQueries;
 import edu.stanford.isis.epadws.db.mysql.impl.MySqlStudyQueryBuilder;
 import edu.stanford.isis.epadws.server.ProxyConfig;
-import edu.stanford.isis.epadws.server.ProxyLogger;
 import edu.stanford.isis.epadws.server.RSeriesData;
 
-/**
- * @author amsnyder
- * 
- * @deprecated
- */
-@Deprecated
-public class MySqlSearchHandler extends AbstractHandler
+public class SQLSearchServerResource extends BaseServerResource
 {
-	private static final ProxyLogger log = ProxyLogger.getInstance();
+	private static final String NO_QUERY_MESSAGE = "No query in request";
+	private static final String MISSING_SEARCH_PARAMETER_MESSAGE = "Missing DICOM search parameter";
 
-	public MySqlSearchHandler()
+	public SQLSearchServerResource()
 	{
+		setNegotiated(false); // Disable content negotiation
 	}
 
 	@Override
-	public void handle(String s, Request request, HttpServletRequest httpRequest, HttpServletResponse httpResponse)
-			throws IOException, ServletException
+	protected void doCatch(Throwable throwable)
 	{
-		httpResponse.setContentType("text/plain");
-		httpResponse.setStatus(HttpServletResponse.SC_OK);
-		request.setHandled(true);
+		log.warning("An exception was thrown in the SQL search resource.", throwable);
+	}
 
-		PrintWriter out = httpResponse.getWriter();
+	@Get("text")
+	public String query()
+	{
+		StringBuilder out = new StringBuilder();
 
-		String queryString = httpRequest.getQueryString();
-		queryString = URLDecoder.decode(queryString, "UTF-8");
-
-		log.info("Query from ePad : " + queryString);
+		String queryString = getQuery().getQueryString(CharacterSet.UTF_8);
+		log.info("Query from ePAD : " + queryString);
 
 		if (queryString != null) {
-
 			queryString = queryString.trim();
 
 			if (isSeriesRequest(queryString)) {
 				handleSeriesRequest(out, queryString);
 			} else {
-				handleStudyRequest(out, queryString, httpRequest);
+				DicomSearchType searchType = getSearchType();
+				if (searchType != null) {
+					handleStudyRequest(out, queryString, searchType);
+				} else {
+					log.info(MISSING_SEARCH_PARAMETER_MESSAGE);
+					setStatus(Status.CLIENT_ERROR_BAD_REQUEST);
+					return MISSING_SEARCH_PARAMETER_MESSAGE;
+				}
 			}
-
+			setStatus(Status.SUCCESS_OK);
+			return out.toString();
 		} else {
-			log.info("NO Query from request.");
+			log.info(NO_QUERY_MESSAGE);
+			setStatus(Status.CLIENT_ERROR_BAD_REQUEST);
+			return NO_QUERY_MESSAGE;
 		}
-		out.flush();
 	}
 
-	private void handleStudyRequest(PrintWriter out, String queryString, HttpServletRequest httpRequest)
+	private void handleStudyRequest(StringBuilder out, String queryString, DicomSearchType searchType)
 	{
 		try {
-			DicomSearchType searchType = getSearchType(httpRequest);
-
 			log.info(queryString);
 			String[] parts = queryString.split("=");
 			String value = parts[1].trim();
@@ -85,7 +79,7 @@ public class MySqlSearchHandler extends AbstractHandler
 			debugPrintSQL(searchType, value);
 
 			// headers for the request.
-			out.print(new SearchResultUtils().get_STUDY_SEARCH_HEADER());
+			out.append(new SearchResultUtils().get_STUDY_SEARCH_HEADER());
 
 			final Map<String, String> translator = new HashMap<String, String>();
 			translator.put("StudyUID", "study_iuid");
@@ -135,9 +129,8 @@ public class MySqlSearchHandler extends AbstractHandler
 
 				sb.append("\n");
 				log.info("line = " + sb.toString());
-				out.print(sb.toString());
+				out.append(sb.toString());
 			}
-
 		} catch (Exception e) {
 			log.warning("handleStudyRequest (mysql) had..", e);
 		}
@@ -150,7 +143,7 @@ public class MySqlSearchHandler extends AbstractHandler
 	 * @param removeChar String character to remove
 	 * @return String cleaned of character and trimmed.
 	 */
-	private static String clean(String input, String removeChar)
+	private String clean(String input, String removeChar)
 	{
 		if (input == null)
 			return null;
@@ -170,7 +163,7 @@ public class MySqlSearchHandler extends AbstractHandler
 	 * @param seriesDate YYYY-MM-DD HH:MM:SS.sss
 	 * @return YYYYMMDD
 	 */
-	private static String cleanSeriesDate(String seriesDate)
+	private String cleanSeriesDate(String seriesDate)
 	{
 		try {
 			if (seriesDate != null) {
@@ -215,7 +208,7 @@ public class MySqlSearchHandler extends AbstractHandler
 	 *          Here we will look for *.series files within the study directory. If it is there then It will read that
 	 *          file and add it to the result.
 	 */
-	private void handleSeriesRequest(PrintWriter out, String queryString)
+	private void handleSeriesRequest(StringBuilder out, String queryString)
 	{
 		String studyIdKey = getStudyUIDFromRequest(queryString);
 
@@ -223,7 +216,7 @@ public class MySqlSearchHandler extends AbstractHandler
 		String studyUID = DicomFormatUtil.formatDirToUid(studyIdKey);
 		List<Map<String, String>> series = dbQueries.doSeriesSearch(studyUID);
 
-		out.print(RSeriesData.getHeaderColumn() + "\n");
+		out.append(RSeriesData.getHeaderColumn() + "\n");
 		log.info("series search column header: " + RSeriesData.getHeaderColumn());
 
 		Map<String, String> seriesTranslatorMap = createSeriesTranslatorMap();
@@ -250,7 +243,7 @@ public class MySqlSearchHandler extends AbstractHandler
 			sb.append(row.get(seriesTranslatorMap.get("station-name"))).append(separator);
 			sb.append(row.get(seriesTranslatorMap.get("department")));
 			// sb.append(",")sb.append(row.get("accession_no")); //ToDo: uncomment this when ready to test client side.
-			out.print(sb.toString() + "\n");
+			out.append(sb.toString() + "\n");
 			log.info(sb.toString());
 		}
 
@@ -310,34 +303,13 @@ public class MySqlSearchHandler extends AbstractHandler
 		return isSeries;
 	}
 
-	/**
-	 * pwd
-	 * 
-	 * @param httpRequest HttpServletRequest
-	 * @return DicomSearchType
-	 */
-	private DicomSearchType getSearchType(HttpServletRequest httpRequest)
+	private DicomSearchType getSearchType()
 	{
 		for (DicomSearchType curr : DicomSearchType.values()) {
-
-			if ((httpRequest.getParameter(curr.toString()) != null)) {
+			if ((getQueryValue(curr.toString()) != null)) {
 				return curr;
 			}
 		}
-		log.info("ERROR: Request missing search parameter. req=" + httpRequest.toString());
-		throw new IllegalArgumentException("Request missing search parameter. Req=" + httpRequest.toString());
+		return null;
 	}
-
-	/**
-	 * 
-	 * @param searchType DicomSearchType
-	 * @param httpRequest HttpServletRequest
-	 * @return String
-	 */
-	@SuppressWarnings("unused")
-	private String getSearchParam(DicomSearchType searchType, HttpServletRequest httpRequest)
-	{
-		return httpRequest.getParameter(searchType.toString());
-	}
-
 }

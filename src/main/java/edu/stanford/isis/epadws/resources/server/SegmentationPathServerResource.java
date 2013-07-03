@@ -1,86 +1,71 @@
-package edu.stanford.isis.epadws.handlers.dicom;
+package edu.stanford.isis.epadws.resources.server;
 
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileWriter;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.PrintWriter;
 import java.io.Reader;
 import java.io.Writer;
-import java.net.URLDecoder;
 
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
-import org.eclipse.jetty.server.Request;
-import org.eclipse.jetty.server.handler.AbstractHandler;
+import org.restlet.data.CharacterSet;
+import org.restlet.data.Status;
+import org.restlet.resource.Get;
 
 import edu.stanford.isis.epadws.common.ProxyFileUtils;
 import edu.stanford.isis.epadws.db.mysql.MySqlInstance;
 import edu.stanford.isis.epadws.db.mysql.MySqlQueries;
 import edu.stanford.isis.epadws.server.ProxyConfig;
-import edu.stanford.isis.epadws.server.ProxyLogger;
 
-/**
- * @author kurtz
- * 
- * @deprecated
- */
-@Deprecated
-public class SegmentationPathHandler extends AbstractHandler
+public class SegmentationPathServerResource extends BaseServerResource
 {
-	private static final ProxyLogger log = ProxyLogger.getInstance();
+	private static final String NO_QUERY_MESSAGE = "No query in request";
+	private static final String EXCEPTION_MESSAGE = "Exception retrieving from ePAD database: ";
 
-	public SegmentationPathHandler()
+	public SegmentationPathServerResource()
 	{
+		setNegotiated(false); // Disable content negotiation
 	}
 
 	@Override
-	public void handle(String s, Request request, HttpServletRequest httpRequest, HttpServletResponse httpResponse)
-			throws IOException, ServletException
+	protected void doCatch(Throwable throwable)
 	{
-		httpResponse.setContentType("text/plain");
-		httpResponse.setStatus(HttpServletResponse.SC_OK);
-		request.setHandled(true);
+		log.warning("An exception was thrown in the segmentation path resource.", throwable);
+	}
 
-		PrintWriter out = httpResponse.getWriter();
-
-		String queryString = httpRequest.getQueryString();
-		queryString = URLDecoder.decode(queryString, "UTF-8");
-		log.info("SegmentationPath query from ePad : " + queryString);
+	@Get("text")
+	public String query()
+	{
+		String queryString = getQuery().getQueryString(CharacterSet.UTF_8);
+		log.info("Segmentation path query from ePAD : " + queryString);
 
 		if (queryString != null) {
-
+			StringBuilder out = new StringBuilder();
 			queryString = queryString.trim();
-			// Get the parameters
 			String imageIdKey = getInstanceUIDFromRequest(queryString);
 			String[] res = null;
 			if (imageIdKey != null) {
 				log.info("DCMQR: " + imageIdKey);
 				try {
-					// res=dcmqr(imageIdKey);
-					res = retrieveFromEpadDB(imageIdKey);
+					res = retrieveFromEpadDB(imageIdKey); // res=dcmqr(imageIdKey);
 				} catch (Exception e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
+					log.warning(EXCEPTION_MESSAGE, e);
+					setStatus(Status.SERVER_ERROR_INTERNAL);
+					return EXCEPTION_MESSAGE + e.getMessage();
 				}
 			}
-
-			ProxyConfig config = ProxyConfig.getInstance();
 			String separator = config.getParam("fieldSeparator");
-
 			// Write the result
-			out.println("StudyUID" + separator + "SeriesUID" + separator + "ImageUID");
+			out.append("StudyUID" + separator + "SeriesUID" + separator + "ImageUID\n");
 			if (res[0] != null && res[1] != null && res[2] != null)
-				out.println(res[0] + separator + res[1] + separator + res[2]);
+				out.append(res[0] + separator + res[1] + separator + res[2] + "\n");
 
-			out.flush();
-
+			setStatus(Status.SUCCESS_OK);
+			return out.toString();
 		} else {
-			log.info("NO segmentation Query from request.");
+			log.info(NO_QUERY_MESSAGE);
+			setStatus(Status.CLIENT_ERROR_BAD_REQUEST);
+			return NO_QUERY_MESSAGE;
 		}
 	}
 
@@ -266,5 +251,4 @@ public class SegmentationPathHandler extends AbstractHandler
 		String fileName = "../log/qr_" + System.currentTimeMillis() + ".log";
 		ProxyFileUtils.write(new File(fileName), contents);
 	}
-
 }

@@ -1,54 +1,50 @@
-package edu.stanford.isis.epadws.handlers.dicom;
+package edu.stanford.isis.epadws.resources.server;
 
-import java.io.IOException;
-import java.net.URLDecoder;
-
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
-import org.eclipse.jetty.server.Request;
-import org.eclipse.jetty.server.handler.AbstractHandler;
+import org.restlet.data.CharacterSet;
+import org.restlet.data.Status;
+import org.restlet.resource.Get;
 
 import edu.stanford.isis.epadws.db.mysql.pipeline.DicomDeleteTask;
-import edu.stanford.isis.epadws.server.ProxyLogger;
 
 /**
- * @author kurtz
- * 
- * @deprecated
+ * This is not RESTful. For moment, we are just replicating the pre-Restlet code. TODO Refactor to make RESTful.
  */
-@Deprecated
-public class DicomDeleteHandler extends AbstractHandler
+public class DICOMDeleteServerResource extends BaseServerResource
 {
-	private static final ProxyLogger log = ProxyLogger.getInstance();
+	private static final String SUCCESS_MESSAGE = "Image deleted";
+	private static final String NO_QUERY_ERROR_MESSAGE = "No query present in request";
 
-	public DicomDeleteHandler()
+	public DICOMDeleteServerResource()
 	{
+		setNegotiated(false); // Disable content negotiation
 	}
 
 	@Override
-	public void handle(String s, Request request, HttpServletRequest httpRequest, HttpServletResponse httpResponse)
-			throws IOException, ServletException
+	protected void doCatch(Throwable throwable)
 	{
-		httpResponse.setContentType("text/plain");
-		httpResponse.setStatus(HttpServletResponse.SC_OK);
-		request.setHandled(true);
+		log.warning("An exception was thrown in the DICOM delete resource.", throwable);
+	}
 
-		String queryString = httpRequest.getQueryString();
-		queryString = URLDecoder.decode(queryString, "UTF-8");
+	@Get
+	// TODO Should be DELETE
+	public String deleteImage()
+	{
+		String queryString = getQuery().getQueryString(CharacterSet.UTF_8);
 		log.info("Delete query from ePad : " + queryString);
 
 		if (queryString != null) {
-
 			queryString = queryString.trim();
 			if (isSeriesRequest(queryString)) {
 				handleSeriesRequest(queryString);
 			} else {
 				handleStudyRequest(queryString);
 			}
+			setStatus(Status.SUCCESS_OK);
+			return SUCCESS_MESSAGE;
 		} else {
-			log.info("NO delete Query from request.");
+			log.info(NO_QUERY_ERROR_MESSAGE);
+			setStatus(Status.CLIENT_ERROR_BAD_REQUEST);
+			return NO_QUERY_ERROR_MESSAGE;
 		}
 	}
 
@@ -63,7 +59,6 @@ public class DicomDeleteHandler extends AbstractHandler
 
 			log.info("DicomDeleteHandler(study) = " + value);
 			(new Thread(new DicomDeleteTask(value, true))).start();
-
 		} catch (Exception e) {
 			log.warning("handleStudyRequest (mysql) had..", e);
 		}

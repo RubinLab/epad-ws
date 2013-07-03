@@ -45,11 +45,13 @@ import edu.stanford.hakan.aim3api.base.ImageAnnotation;
 import edu.stanford.hakan.aim3api.usage.AnnotationBuilder;
 import edu.stanford.hakan.aim3api.usage.AnnotationGetter;
 import edu.stanford.isis.epad.plugin.server.impl.PluginConfig;
+import edu.stanford.isis.epadws.resources.server.XmlNamespaceTranslator;
 import edu.stanford.isis.epadws.server.ProxyConfig;
 import edu.stanford.isis.epadws.server.ProxyLogger;
 
-public class AimResourceHandler extends AbstractHandler{
-
+@Deprecated
+public class AimResourceHandler extends AbstractHandler
+{
 	private static final ProxyLogger logger = ProxyLogger.getInstance();
 
 	public String serverProxy = ProxyConfig.getInstance().getParam("serverProxy");
@@ -65,54 +67,54 @@ public class AimResourceHandler extends AbstractHandler{
 	public String templatePath = ProxyConfig.getInstance().getParam("baseTemplatesDir");
 	public String wadoProxy = ProxyConfig.getInstance().getParam("wadoProxy");
 
-	public AimResourceHandler(){
-
+	public AimResourceHandler()
+	{
 	}
 
 	/**
-	 * To test the post try :
-	 * curl --form upload=@/home/kurtz/Bureau/AIM_83ga0zjofj3y8ncm8wb1k3mlitis1glyugamx0zl.xml  http://epad-prod1.stanford.edu:8080/aimresource/
+	 * To test the post try:
+	 * 
+	 * <pre>
+	 * curl --form upload=@/home/kurtz/Bureau/AIM_83ga0zjofj3y8ncm8wb1k3mlitis1glyugamx0zl.xml
+	 * http://epad-prod1.stanford.edu:8080/aimresource/
+	 * </pre>
 	 */
 	@Override
-	public void handle(String s, Request request, HttpServletRequest httpRequest, HttpServletResponse httpResponse) throws IOException, ServletException {
-
+	public void handle(String s, Request request, HttpServletRequest httpRequest, HttpServletResponse httpResponse)
+			throws IOException, ServletException
+	{
 		String method = httpRequest.getMethod();
 
-		logger.info("AimResourceHandler handles : "+ method);
+		logger.info("AimResourceHandler handles : " + method);
 
-		//httpResponse.setContentType("application/json;charset=UTF-8");   
+		// httpResponse.setContentType("application/json;charset=UTF-8");
 		httpResponse.setContentType("text/xml");
 		httpResponse.setHeader("Cache-Control", "no-cache");
 
-		if("GET".equalsIgnoreCase(method)){
-			//get the query
+		if ("GET".equalsIgnoreCase(method)) {
 			String queryString = httpRequest.getQueryString();
 			queryString = URLDecoder.decode(queryString, "UTF-8");
 
-			logger.info("AimResourceHandler received GET method : "+ queryString);
+			logger.info("AimResourceHandler received GET method : " + queryString);
 
-			if(queryString!=null){
+			if (queryString != null) {
 				queryString = queryString.trim();
 				String[] queryStrings = queryString.split("=");
 
 				String id1 = null;
-				String id2 =  null;
-				//Get the parameters
+				String id2 = null;
 
-				if(queryStrings.length==2){
-					id1=queryStrings[0];	
-					id2=queryStrings[1];	
-				}else{ 
-					if(queryStrings.length==1){
-						id1=queryStrings[0];	
+				if (queryStrings.length == 2) {
+					id1 = queryStrings[0];
+					id2 = queryStrings[1];
+				} else {
+					if (queryStrings.length == 1) {
+						id1 = queryStrings[0];
 					}
 				}
+				ArrayList<ImageAnnotation> aims = getAIM(id1, id2); // Get the aim files
 
-				//Get the aim files
-				ArrayList<ImageAnnotation> aims=getAIM(id1,id2);
-
-				try {
-					//Build an xml document
+				try { // Build an xml document
 					DocumentBuilderFactory dbfac = DocumentBuilderFactory.newInstance();
 					DocumentBuilder docBuilder = null;
 
@@ -122,25 +124,26 @@ public class AimResourceHandler extends AbstractHandler{
 					Element root = doc.createElement("imageAnnotations");
 					doc.appendChild(root);
 
-					//foreach aim document founded
-					for(ImageAnnotation aim:aims){
-						//get the node
-						Node node =aim.getXMLNode(docBuilder.newDocument());
+					for (ImageAnnotation aim : aims) {
+						Node node = aim.getXMLNode(docBuilder.newDocument());
 						Node copyNode = doc.importNode(node, true);
 
-						//copy the node
+						// copy the node
 						Element res = (Element) copyNode;
-						res.setAttributeNS("http://www.w3.org/2000/xmlns/","xmlns:rdf","http://www.w3.org/1999/02/22-rdf-syntax-ns#");
-						res.setAttributeNS("http://www.w3.org/2000/xmlns/","xmlns:xsi","http://www.w3.org/2001/XMLSchema-instance");
-						res.setAttribute("xsi:schemaLocation","gme://caCORE.caCORE/3.2/edu.northwestern.radiology.AIM AIM_v3_rv11_XML.xsd");
+						res.setAttributeNS("http://www.w3.org/2000/xmlns/", "xmlns:rdf",
+								"http://www.w3.org/1999/02/22-rdf-syntax-ns#");
+						res.setAttributeNS("http://www.w3.org/2000/xmlns/", "xmlns:xsi",
+								"http://www.w3.org/2001/XMLSchema-instance");
+						res.setAttribute("xsi:schemaLocation",
+								"gme://caCORE.caCORE/3.2/edu.northwestern.radiology.AIM AIM_v3_rv11_XML.xsd");
 
-						Node n = renameNodeNS(res,"ImageAnnotation");
+						Node n = renameNodeNS(res, "ImageAnnotation");
 
-						//Adding to the root
+						// Adding to the root
 						root.appendChild(n);
 					}
 
-					//Return results as a string
+					// Return results as a string
 					String queryResults = XmlDocumentToString(doc);
 					httpResponse.getWriter().print(queryResults);
 
@@ -158,107 +161,96 @@ public class AimResourceHandler extends AbstractHandler{
 				httpResponse.getWriter().flush();
 				httpResponse.getWriter().close();
 
-				//With gson
-				/*Type listType = new TypeToken<ArrayList<ImageAnnotation>>() {}.getType();
-				logger.info("numberOfAnnotations = "+aims.size());
-				Gson gson = new Gson();
-				String json = gson.toJson(aims,listType);
-				logger.info("json ="+json);
-
-				ArrayList<ImageAnnotation> target2 = gson.fromJson(json, listType);
-				logger.info("json ="+target2.get(0).getCagridId());
-				 */				
+				// With gson
+				/*
+				 * Type listType = new TypeToken<ArrayList<ImageAnnotation>>() {}.getType();
+				 * logger.info("numberOfAnnotations = "+aims.size()); Gson gson = new Gson(); String json =
+				 * gson.toJson(aims,listType); logger.info("json ="+json);
+				 * 
+				 * ArrayList<ImageAnnotation> target2 = gson.fromJson(json, listType);
+				 * logger.info("json ="+target2.get(0).getCagridId());
+				 */
 			}
 		}
 
-		if("POST".equalsIgnoreCase(method)){
-			//Voir org.apache.commons.fileupload
-			//http://www.tutorialspoint.com/servlets/servlets-file-uploading.htm
+		if ("POST".equalsIgnoreCase(method)) {
+			// Voir org.apache.commons.fileupload
+			// http://www.tutorialspoint.com/servlets/servlets-file-uploading.htm
 
 			logger.info("AimResourceHandler received POST method");
 
 			String filePath = "/home/epad/DicomProxy/resources/annotations/upload/";
 			PrintWriter out = httpResponse.getWriter();
 
-			logger.info("Uploading files to dir: "+filePath);
-			logger.debug("method: "+method+",  why not POST?!");
-			//create the directory for uploading file.
-			try{
+			logger.info("Uploading files to dir: " + filePath);
+			logger.debug("method: " + method + ",  why not POST?!");
+			// create the directory for uploading file.
+			try {
 				ServletFileUpload upload = new ServletFileUpload();
 
 				FileItemIterator iter = upload.getItemIterator(httpRequest);
 				int fileCount = 0;
-				while(iter.hasNext()){
+				while (iter.hasNext()) {
 					fileCount++;
-					logger.debug("starting file #"+fileCount);
+					logger.debug("starting file #" + fileCount);
 					FileItemStream item = iter.next();
 
 					String name = item.getFieldName();
-					logger.debug("FieldName = "+name);
+					logger.debug("FieldName = " + name);
 					InputStream stream = item.openStream();
 
-					String tempName = "temp-"+System.currentTimeMillis()+".xml";
+					String tempName = "temp-" + System.currentTimeMillis() + ".xml";
 
-					File f=new File(filePath+tempName);
+					File f = new File(filePath + tempName);
 
 					FileOutputStream fos = new FileOutputStream(f);
 					try {
 						int len;
 						byte[] buffer = new byte[32768];
 						while ((len = stream.read(buffer, 0, buffer.length)) != -1) {
-							fos.write(buffer,0,len);
-						}//while
+							fos.write(buffer, 0, len);
+						}// while
 					} finally {
 						fos.close();
 					}
-					out.print("added ("+fileCount+"): "+name);
+					out.print("added (" + fileCount + "): " + name);
 
-					//Transform it a AIM File
-						ImageAnnotation ia= AnnotationGetter.getImageAnnotationFromFile(f.getAbsolutePath(), xsdFilePath);
-						if(ia!=null){
-							saveToServer(ia);
-							out.println("-- Add to AIM server: " + ia.getUniqueIdentifier() + "<br>");
-						}else{
-							out.println("-- Failed ! not added to AIM server<br>");
-						}
+					// Transform it a AIM File
+					ImageAnnotation ia = AnnotationGetter.getImageAnnotationFromFile(f.getAbsolutePath(), xsdFilePath);
+					if (ia != null) {
+						saveToServer(ia);
+						out.println("-- Add to AIM server: " + ia.getUniqueIdentifier() + "<br>");
+					} else {
+						out.println("-- Failed ! not added to AIM server<br>");
+					}
 
-				}//while
+				}// while
 
 				out.flush();
 
-			}catch(Exception e){
-				logger.warning("Failed to upload AIM files to _"+filePath+"_",e);
-			}catch(Error temp){
-				logger.warning("Error. Could jar file be missing from start script?",temp);
-			}finally{
+			} catch (Exception e) {
+				logger.warning("Failed to upload AIM files to _" + filePath + "_", e);
+			} catch (Error temp) {
+				logger.warning("Error. Could jar file be missing from start script?", temp);
+			} finally {
 				logger.info("leaving AIMHandler handle.");
-				if(out!=null){
+				if (out != null) {
 					out.close();
 				}
 			}
 		}
 
-
 	}
 
-
-
-
-
-
-
-
-
-
 	/**
-	 * Read the annotations from the aim database by patient name, patient id,
-	 * series id, annotation id, or just get all of them on a GET. Can also
-	 * delete by annotation id.
+	 * Read the annotations from the aim database by patient name, patient id, series id, annotation id, or just get all
+	 * of them on a GET. Can also delete by annotation id.
 	 * 
 	 * @return ArrayList<ImageAnnotation>
 	 */
 	@Get
-	public ArrayList<ImageAnnotation> getAIM(String id1,String id2) {
+	public ArrayList<ImageAnnotation> getAIM(String id1, String id2)
+	{
 		ArrayList<ImageAnnotation> retAims = new ArrayList<ImageAnnotation>();
 		List<ImageAnnotation> aims = null;
 		ImageAnnotation aim = null;
@@ -266,15 +258,10 @@ public class AimResourceHandler extends AbstractHandler{
 		if (id1.equals("personName")) {
 			String personName = id2;
 			try {
-				aims = AnnotationGetter
-				.getImageAnnotationsFromServerByPersonNameEqual(
-						serverUrl, namespace, collection, username,
-						password, personName, xsdFilePath);
-
+				aims = AnnotationGetter.getImageAnnotationsFromServerByPersonNameEqual(serverUrl, namespace, collection,
+						username, password, personName, xsdFilePath);
 			} catch (AimException e) {
-				logger.warning(
-						"Exception on AnnotationGetter.getImageAnnotationsFromServerByPersonNameEqual "
-						+ personName, e);
+				logger.warning("Exception on AnnotationGetter.getImageAnnotationsFromServerByPersonNameEqual " + personName, e);
 			}
 			if (aims != null) {
 				retAims.addAll(aims);
@@ -282,101 +269,77 @@ public class AimResourceHandler extends AbstractHandler{
 		} else if (id1.equals("patientId")) {
 			String patientId = id2;
 			try {
-				aims = AnnotationGetter
-				.getImageAnnotationsFromServerByPersonIdEqual(
-						serverUrl, namespace, collection, username,
-						password, patientId, xsdFilePath);
+				aims = AnnotationGetter.getImageAnnotationsFromServerByPersonIdEqual(serverUrl, namespace, collection,
+						username, password, patientId, xsdFilePath);
 			} catch (AimException e) {
-				logger.warning(
-						"Exception on AnnotationGetter.getImageAnnotationsFromServerByPersonIdEqual "
-						+ patientId, e);
+				logger.warning("Exception on AnnotationGetter.getImageAnnotationsFromServerByPersonIdEqual " + patientId, e);
 			}
 			if (aims != null) {
 				retAims.addAll(aims);
 			}
-
 		} else if (id1.equals("seriesUID")) {
 			String seriesUID = id2;
 			try {
-				aims = AnnotationGetter
-				.getImageAnnotationsFromServerByImageSeriesInstanceUIDEqual(
-						serverUrl, namespace, collection, username,
-						password, seriesUID, xsdFilePath);
+				aims = AnnotationGetter.getImageAnnotationsFromServerByImageSeriesInstanceUIDEqual(serverUrl, namespace,
+						collection, username, password, seriesUID, xsdFilePath);
 			} catch (AimException e) {
-				logger.warning(
-						"Exception on AnnotationGetter.getImageAnnotationsFromServerByImageSeriesInstanceUIDEqual "
+				logger.warning("Exception on AnnotationGetter.getImageAnnotationsFromServerByImageSeriesInstanceUIDEqual "
 						+ seriesUID, e);
 			}
 			if (aims != null) {
 				retAims.addAll(aims);
 			}
-
 		} else if (id1.equals("annotationUID")) {
 			String annotationUID = id2;
-			if(id2.equals("all")){
-				String query = "SELECT FROM " + collection
-				+ " WHERE (ImageAnnotation.cagridId like '0')";
+			if (id2.equals("all")) {
+				String query = "SELECT FROM " + collection + " WHERE (ImageAnnotation.cagridId like '0')";
 				try {
-					aims = AnnotationGetter
-					.getImageAnnotationsFromServerWithAimQuery(serverUrl,
-							namespace, username, password, query,
-							xsdFilePath);
+					aims = AnnotationGetter.getImageAnnotationsFromServerWithAimQuery(serverUrl, namespace, username, password,
+							query, xsdFilePath);
 				} catch (AimException e) {
-					logger.warning(
-							"Exception on AnnotationGetter.getImageAnnotationsFromServerWithAimQuery ",
-							e);
+					logger.warning("Exception on AnnotationGetter.getImageAnnotationsFromServerWithAimQuery ", e);
 				}
 				if (aims != null) {
 					retAims.addAll(aims);
 				}
-				
-			}else{
+			} else {
 				try {
-					aim = AnnotationGetter
-					.getImageAnnotationFromServerByUniqueIdentifier(
-							serverUrl, namespace, collection, username,
-							password, annotationUID, xsdFilePath);
-	
+					aim = AnnotationGetter.getImageAnnotationFromServerByUniqueIdentifier(serverUrl, namespace, collection,
+							username, password, annotationUID, xsdFilePath);
 				} catch (AimException e) {
-					logger.warning(
-							"Exception on AnnotationGetter.getImageAnnotationFromServerByUniqueIdentifier "
+					logger.warning("Exception on AnnotationGetter.getImageAnnotationFromServerByUniqueIdentifier "
 							+ annotationUID, e);
 				}
 				if (aim != null) {
 					retAims.add(aim);
 				}
 			}
-			
 		} else if (id1.equals("deleteUID")) {
 			String annotationUID = id2;
 			logger.info("calling performDelete with deleteUID on GET ");
 			performDelete(annotationUID, collection, serverUrl);
 			retAims = null;
-			
 		} else if (id1.equals("key")) {
 			logger.info("id1 is key id2 is " + id2);
-
 		}
-
 		logger.info("Number of AIM files founded : " + retAims.size());
 
 		return retAims;
 	}
 
 	/**
-	 * Save the annotation to the server in the aim database. An invalid
-	 * annotation will not be saved. Save a file backup just in case.
+	 * Save the annotation to the server in the AIM database. An invalid annotation will not be saved. Save a file backup
+	 * just in case.
 	 * 
-	 * @param aim
-	 * @return
+	 * @param ImageAnnotation
+	 * @return String
 	 * @throws AimException
 	 */
-	public String saveToServer(ImageAnnotation aim) throws AimException {
+	public String saveToServer(ImageAnnotation aim) throws AimException
+	{
 		String res = "";
 
-		if (aim.getCodeValue() != null) {
-
-			// for safety, write a backup file
+		if (aim.getCodeValue() != null) { // For safety, write a backup file
 			String tempXmlPath = this.baseAnnotationDir + "temp-" + aim.getUniqueIdentifier() + ".xml";
 			String storeXmlPath = this.baseAnnotationDir + aim.getUniqueIdentifier() + ".xml";
 			File tempFile = new File(tempXmlPath);
@@ -392,40 +355,39 @@ public class AimResourceHandler extends AbstractHandler{
 			AnnotationBuilder.saveToServer(aim, serverUrl, namespace, collection, xsdFilePath, username, password);
 			res = AnnotationBuilder.getAimXMLsaveResult();
 			logger.info("AnnotationBuilder.saveToServer result: " + res);
-			
-			//Check for plugin!!
-			if(aim.getCodingSchemeDesignator().equals("epad-plugin")){
-				
-				//find which template has been used to fill the aim file
-				String templateName= aim.getCodeValue(); //ex: jjv-5
-				
-				logger.info("Plugin detection : "+templateName);
-				
-				//Check if this template corresponds to a plugin
-				boolean templateHasBeenFound=false;
-				String handlerName=null;
-				String pluginName=null;
-				
+
+			// Check for plugin!!
+			if (aim.getCodingSchemeDesignator().equals("epad-plugin")) {
+				// find which template has been used to fill the aim file
+				String templateName = aim.getCodeValue(); // ex: jjv-5
+
+				logger.info("Plugin detection : " + templateName);
+
+				// Check if this template corresponds to a plugin
+				boolean templateHasBeenFound = false;
+				String handlerName = null;
+				String pluginName = null;
+
 				List<String> list = PluginConfig.getInstance().getPluginTemplateList();
-				for(int i=0;i<list.size();i++){
-					String templateNameFounded=list.get(i);
-					if(templateNameFounded.equals(templateName)){
-						handlerName=PluginConfig.getInstance().getPluginHandlerList().get(i);
-						pluginName=PluginConfig.getInstance().getPluginNameList().get(i);
-						templateHasBeenFound=true;
+				for (int i = 0; i < list.size(); i++) {
+					String templateNameFounded = list.get(i);
+					if (templateNameFounded.equals(templateName)) {
+						handlerName = PluginConfig.getInstance().getPluginHandlerList().get(i);
+						pluginName = PluginConfig.getInstance().getPluginNameList().get(i);
+						templateHasBeenFound = true;
 					}
 				}
-				
-				if(templateHasBeenFound){
-					logger.info("Template Has Been Found, handler : "+handlerName);	
-					//Trigger the plugin
-					//String nameAIM=aim.getUniqueIdentifier() + ".xml";
-					
-					String url="http://localhost:8080/plugin/"+pluginName+"/?aimFile="+aim.getUniqueIdentifier();
-					//--Post to the plugin
+
+				if (templateHasBeenFound) {
+					logger.info("Template Has Been Found, handler : " + handlerName);
+					// Trigger the plugin
+					// String nameAIM=aim.getUniqueIdentifier() + ".xml";
+
+					String url = "http://localhost:8080/plugin/" + pluginName + "/?aimFile=" + aim.getUniqueIdentifier();
+					// --Post to the plugin
 					HttpClient client = new HttpClient();
-	
-					logger.info("Triggering plugin at the following adress : "+url  );
+
+					logger.info("Triggering plugin at the following adress : " + url);
 					GetMethod method = new GetMethod(url);
 					// Execute the GET method
 					try {
@@ -438,7 +400,7 @@ public class AimResourceHandler extends AbstractHandler{
 						e.printStackTrace();
 					}
 				}
-				
+
 			}
 
 		}
@@ -447,38 +409,38 @@ public class AimResourceHandler extends AbstractHandler{
 	}
 
 	// Delete the document from the aim database.
-	private String performDelete(String uid, String collection,String serverURL) {
+	private String performDelete(String uid, String collection, String serverURL)
+	{
 		String result = "";
 
 		logger.info("performDelete on : " + uid);
 		try {
-			//AnnotationGetter.deleteImageAnnotationFromServer(serverUrl, namespace, collection, xsdFilePath,username, password, uid);
-			AnnotationGetter.removeImageAnnotationFromServer(serverUrl, namespace, collection,username, password, uid);
-			
+			// AnnotationGetter.deleteImageAnnotationFromServer(serverUrl, namespace, collection, xsdFilePath,username,
+			// password, uid);
+			AnnotationGetter.removeImageAnnotationFromServer(serverUrl, namespace, collection, username, password, uid);
+
 			logger.info("after deletion on : " + uid);
-			
+
 		} catch (Exception ex) {
-			result = "XML Deletion operation is Unsuccessful (Method Name; performDelete): "
-				+ ex.getLocalizedMessage();
-			logger.info("XML Deletion operation is Unsuccessful (Method Name; performDelete): "
-					+ ex.getLocalizedMessage());
+			result = "XML Deletion operation is Unsuccessful (Method Name; performDelete): " + ex.getLocalizedMessage();
+			logger.info("XML Deletion operation is Unsuccessful (Method Name; performDelete): " + ex.getLocalizedMessage());
 		}
 		logger.info("AnnotationGetter.deleteImageAnnotationFromServer result: " + result);
 		return result;
 	}
 
-	//Create an xml document from a String
-	public static String XmlDocumentToString(Document document) {
+	// Create an xml document from a String
+	public static String XmlDocumentToString(Document document)
+	{
 
-		//add the good namespace
-		new XmlNamespaceTranslator()
-		.addTranslation(null, "gme://caCORE.caCORE/3.2/edu.northwestern.radiology.AIM")
-		.addTranslation("", "gme://caCORE.caCORE/3.2/edu.northwestern.radiology.AIM")
-		.translateNamespaces(document);
+		// add the good namespace
+		new XmlNamespaceTranslator().addTranslation(null, "gme://caCORE.caCORE/3.2/edu.northwestern.radiology.AIM")
+				.addTranslation("", "gme://caCORE.caCORE/3.2/edu.northwestern.radiology.AIM").translateNamespaces(document);
 
-		//set up a transformer
+		// set up a transformer
 		TransformerFactory transfac = TransformerFactory.newInstance();
-		Transformer trans = null;;
+		Transformer trans = null;
+		;
 		try {
 			trans = transfac.newTransformer();
 		} catch (TransformerConfigurationException e1) {
@@ -488,7 +450,7 @@ public class AimResourceHandler extends AbstractHandler{
 
 		trans.setOutputProperty(OutputKeys.INDENT, "yes");
 
-		//create string from xml tree
+		// create string from xml tree
 		StringWriter sw = new StringWriter();
 		StreamResult result = new StreamResult(sw);
 		DOMSource source = new DOMSource(document);
@@ -503,10 +465,12 @@ public class AimResourceHandler extends AbstractHandler{
 		return sw.toString();
 	}
 
-	//rename namespace of the nodes
-	private static Node renameNodeNS(Node node, String newName) {
+	// rename namespace of the nodes
+	private static Node renameNodeNS(Node node, String newName)
+	{
 
-		Element newNode = node.getOwnerDocument().createElementNS("gme://caCORE.caCORE/3.2/edu.northwestern.radiology.AIM",newName);
+		Element newNode = node.getOwnerDocument().createElementNS("gme://caCORE.caCORE/3.2/edu.northwestern.radiology.AIM",
+				newName);
 		NamedNodeMap map = node.getAttributes();
 		for (int i = 0; i < map.getLength(); i++) {
 			newNode.setAttribute(map.item(i).getNodeName(), map.item(i).getNodeValue());
@@ -519,7 +483,5 @@ public class AimResourceHandler extends AbstractHandler{
 
 		return newNode;
 	}
-
-
 
 }

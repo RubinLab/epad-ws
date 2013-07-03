@@ -1,4 +1,4 @@
-package edu.stanford.isis.epadws.handlers.aim;
+package edu.stanford.isis.epadws.resources.server;
 
 import java.util.HashMap;
 import java.util.Map;

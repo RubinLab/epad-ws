@@ -1,110 +1,108 @@
-package edu.stanford.isis.epadws.handlers.dicom;
+package edu.stanford.isis.epadws.resources.server;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
-import java.net.URLDecoder;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpException;
 import org.apache.commons.httpclient.methods.GetMethod;
-import org.eclipse.jetty.server.Request;
-import org.eclipse.jetty.server.handler.AbstractHandler;
+import org.restlet.data.CharacterSet;
+import org.restlet.data.Status;
+import org.restlet.resource.Get;
 
 import edu.stanford.isis.epadws.common.WadoUrlBuilder;
 import edu.stanford.isis.epadws.db.mysql.pipeline.DicomHeadersTask;
-import edu.stanford.isis.epadws.server.ProxyConfig;
-import edu.stanford.isis.epadws.server.ProxyLogger;
 
-/**
- * Download headers for a series or study in one quick step.
- * 
- * @author amsnyder
- * 
- * @deprecated
- */
-@Deprecated
-public class DicomHeadersHandler extends AbstractHandler
+public class DICOMHeadersServerResource extends BaseServerResource
 {
-	private static final ProxyLogger log = ProxyLogger.getInstance();
-	ProxyConfig config = ProxyConfig.getInstance();
+	private static final String SUCCESS_MESSAGE = "Request succeeded.";
+	private static final String FILE_NOT_FOUND_MESSAGE = "File not found: ";
+	private static final String IO_EXCEPTION_MESSAGE = "IO exception: ";
+	private static final String BAD_DICOM_REFERENCE_MESSAGE = "Bad DICOM reference: ";
+	private static final String BAD_REQUEST_MESSAGE = "Bad request - no query";
 
-	public DicomHeadersHandler()
+	public DICOMHeadersServerResource()
 	{
+		setNegotiated(false); // Disable content negotiation
 	}
 
 	@Override
-	public void handle(String s, Request request, HttpServletRequest httpServletRequest,
-			HttpServletResponse httpServletResponse) throws IOException, ServletException
+	protected void doCatch(Throwable throwable)
 	{
+		log.warning("An exception was thrown in the DICOM headers resource.", throwable);
+	}
 
-		httpServletResponse.setContentType("text/plain");
-		httpServletResponse.setStatus(HttpServletResponse.SC_OK);
-		request.setHandled(true);
-		PrintWriter out = httpServletResponse.getWriter();
-
-		String queryString = httpServletRequest.getQueryString();
-		queryString = URLDecoder.decode(queryString, "UTF-8");
-		log.info("Dicom header query from ePad : " + queryString);
+	@Get("text")
+	public String query()
+	{
+		String queryString = getQuery().getQueryString(CharacterSet.UTF_8);
+		log.info("DICOM header query from ePAD : " + queryString);
 
 		if (queryString != null) {
+			StringBuilder out = new StringBuilder();
 			queryString = queryString.trim();
-			// Get the parameters
 			String studyIdKey = getStudyUIDFromRequest(queryString);
 			String seriesIdKey = getSeriesUIDFromRequest(queryString);
 			String imageIdKey = getInstanceUIDFromRequest(queryString);
 
-			// get the wado and the tag file
+			// Get the WADO and the tag file
 			if (studyIdKey != null && seriesIdKey != null && imageIdKey != null) {
-				File tempDicom = File.createTempFile(imageIdKey, ".tmp");
-				feedFileWithDicomFromWado(tempDicom, studyIdKey, seriesIdKey, imageIdKey);
-				File tempTag = File.createTempFile(imageIdKey, "_tag.tmp");
-
-				// Generation of the tag file
-				ExecutorService taskExecutor = Executors.newFixedThreadPool(4);
-				taskExecutor.execute(new DicomHeadersTask(tempDicom, tempTag));
-				taskExecutor.shutdown();
 				try {
-					taskExecutor.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
+					File tempDicom = File.createTempFile(imageIdKey, ".tmp");
+					feedFileWithDicomFromWado(tempDicom, studyIdKey, seriesIdKey, imageIdKey);
+					File tempTag = File.createTempFile(imageIdKey, "_tag.tmp");
 
-					// Write the result
-					BufferedReader in = new BufferedReader(new FileReader(tempTag.getAbsolutePath()));
+					ExecutorService taskExecutor = Executors.newFixedThreadPool(4); // Generation of the tag file
+					taskExecutor.execute(new DicomHeadersTask(tempDicom, tempTag));
+					taskExecutor.shutdown();
 					try {
-						String line;
-						while ((line = in.readLine()) != null) {
-							out.println(line);
+						taskExecutor.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
+						BufferedReader in = new BufferedReader(new FileReader(tempTag.getAbsolutePath()));
+						try {
+							String line;
+							while ((line = in.readLine()) != null) {
+								out.append(line);
+							}
+						} finally {
+							in.close();
 						}
-						out.flush();
-					} finally {
-						in.close();
+					} catch (InterruptedException e) {
 					}
-				} catch (InterruptedException e) {
-
+					log.info(SUCCESS_MESSAGE);
+					setStatus(Status.SUCCESS_OK);
+					return out.toString();
+				} catch (FileNotFoundException e) {
+					log.warning(FILE_NOT_FOUND_MESSAGE, e);
+					setStatus(Status.SERVER_ERROR_INTERNAL);
+					return FILE_NOT_FOUND_MESSAGE + e.getMessage();
+				} catch (IOException e) {
+					log.warning(IO_EXCEPTION_MESSAGE, e);
+					setStatus(Status.SERVER_ERROR_INTERNAL);
+					return IO_EXCEPTION_MESSAGE + e.getMessage();
 				}
-
 			} else {
-				log.info("Bad dicom reference.");
+				log.info(BAD_DICOM_REFERENCE_MESSAGE);
+				setStatus(Status.CLIENT_ERROR_BAD_REQUEST);
+				return BAD_DICOM_REFERENCE_MESSAGE;
 			}
-
 		} else {
-			log.info("NO header Query from request.");
+			log.info(BAD_REQUEST_MESSAGE);
+			setStatus(Status.CLIENT_ERROR_BAD_REQUEST);
+			return BAD_REQUEST_MESSAGE;
 		}
 	}
 
-	private static String getStudyUIDFromRequest(String queryString)
+	private String getStudyUIDFromRequest(String queryString)
 	{
 		log.info(queryString);
 		String[] parts = queryString.split("&");
@@ -114,9 +112,8 @@ public class DicomHeadersHandler extends AbstractHandler
 		return value;
 	}
 
-	private static String getSeriesUIDFromRequest(String queryString)
+	private String getSeriesUIDFromRequest(String queryString)
 	{
-
 		log.info(queryString);
 		String[] parts = queryString.split("&");
 		String value = parts[1].trim();
@@ -125,9 +122,8 @@ public class DicomHeadersHandler extends AbstractHandler
 		return value;
 	}
 
-	private static String getInstanceUIDFromRequest(String queryString)
+	private String getInstanceUIDFromRequest(String queryString)
 	{
-
 		log.info(queryString);
 		String[] parts = queryString.split("&");
 		String value = parts[2].trim();
@@ -137,23 +133,20 @@ public class DicomHeadersHandler extends AbstractHandler
 	}
 
 	private void feedFileWithDicomFromWado(File temp, String studyIdKey, String seriesIdKey, String imageIdKey)
-	{
-
-		// we use wado to get the dicom image
-		String host = config.getParam("NameServer");
+	{ // We use WADO to get the DICOM image
+		String host = config.getParam("NameServer"); // TODO Constants for these parameter names
 		int port = config.getIntParam("DicomServerWadoPort");
 		String base = config.getParam("WadoUrlExtension");
 
 		WadoUrlBuilder wadoUrlBuilder = new WadoUrlBuilder(host, port, base, WadoUrlBuilder.Type.FILE);
 
-		// GET WADO call result.
 		wadoUrlBuilder.setStudyUID(studyIdKey);
 		wadoUrlBuilder.setSeriesUID(seriesIdKey);
 		wadoUrlBuilder.setObjectUID(imageIdKey);
 
 		try {
 			String wadoUrl = wadoUrlBuilder.build();
-			log.info("Build wadoUrl = " + wadoUrl);
+			log.info("WADO URL = " + wadoUrl);
 
 			// --Get the Dicom file from the server
 			HttpClient client = new HttpClient();
@@ -178,7 +171,6 @@ public class DicomHeadersHandler extends AbstractHandler
 				out.flush();
 				out.close();
 			}
-
 		} catch (UnsupportedEncodingException e) {
 			log.warning("Not able to build wado url for : " + temp.getName(), e);
 		} catch (HttpException e) {
@@ -187,5 +179,4 @@ public class DicomHeadersHandler extends AbstractHandler
 			log.warning("Not able to write the temp dicom image : " + temp.getName(), e);
 		}
 	}
-
 }

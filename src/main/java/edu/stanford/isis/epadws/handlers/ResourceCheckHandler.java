@@ -9,10 +9,12 @@ package edu.stanford.isis.epadws.handlers;
 
 /**
  * Make a check to see which resources are available - not used (TBR).
- *
- *
+ * 
+ * 
  * @author amsnyder
  * @deprecated
  */
-public class ResourceCheckHandler {
+@Deprecated
+public class ResourceCheckHandler
+{
 }

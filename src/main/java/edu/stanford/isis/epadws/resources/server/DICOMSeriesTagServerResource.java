@@ -1,19 +1,16 @@
-package edu.stanford.isis.epadws.handlers.dicom;
+package edu.stanford.isis.epadws.resources.server;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.PrintWriter;
 import java.sql.Blob;
 import java.sql.SQLException;
 import java.util.Map;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import javax.xml.bind.DatatypeConverter;
 
-import org.eclipse.jetty.server.Request;
-import org.eclipse.jetty.server.handler.AbstractHandler;
+import org.restlet.data.Status;
+import org.restlet.resource.Get;
 
 import com.pixelmed.dicom.Attribute;
 import com.pixelmed.dicom.AttributeList;
@@ -24,90 +21,98 @@ import com.pixelmed.dicom.DicomInputStream;
 
 import edu.stanford.isis.epadws.db.mysql.MySqlInstance;
 import edu.stanford.isis.epadws.db.mysql.MySqlQueries;
-import edu.stanford.isis.epadws.server.ProxyLogger;
 
-/**
- * 
- * @author alansnyder
- * 
- * @deprecated
- */
-@Deprecated
-public class SeriesTagHandler extends AbstractHandler
+public class DICOMSeriesTagServerResource extends BaseServerResource
 {
+	private static final String SUCCESS_MESSAGE = "Series tag request succeeded";
+	private static final String IO_EXCEPTION_MESSAGE = "Series tag request had IO exception: ";
+	private static final String DICOM_EXCEPTION_MESSAGE = "Series tag request had DICOM exception: ";
+	private static final String SQL_EXCEPTION_MESSAGE = "Series tag request had SQL exception: ";
+	private static final String ERROR_MESSAGE = "Series tag request had error: ";
 
-	static final ProxyLogger logger = ProxyLogger.getInstance();
+	public DICOMSeriesTagServerResource()
+	{
+		setNegotiated(false); // Disable content negotiation
+	}
 
 	@Override
-	public void handle(String s, Request request, HttpServletRequest req, HttpServletResponse res)
+	protected void doCatch(Throwable throwable)
 	{
-		res.setContentType("text/plain");
-		res.setStatus(HttpServletResponse.SC_OK);
-		res.setHeader("Access-Control-Allow-Origin", "*");
-		request.setHandled(true);
+		log.warning("An exception was thrown in the DICOM series tag resource.", throwable);
+	}
 
-		String seriesIUID = req.getParameter("series_iuid");
-		logger.info("SeriesTagHandler: series_iuid=" + seriesIUID);
+	@Get("text")
+	public String seriesTag()
+	{
+		setResponseHeader("Access-Control-Allow-Origin", "*");
+
+		String seriesIUID = getQueryValue("series_iuid"); // TODO Need constants for these DICOM names
+		log.info("SeriesTag: series_iuid =" + seriesIUID);
 
 		boolean useBase64 = true;
-		String contentType = req.getParameter("type");
+		String contentType = getQueryValue("type");
 		if ("text".equals(contentType)) {
 			useBase64 = false;
 		}
 
-		PrintWriter out = null;
 		try {
-			out = res.getWriter();
+			String response = query(seriesIUID, useBase64);
+			log.info(SUCCESS_MESSAGE);
+			setStatus(Status.SUCCESS_OK);
+			return response;
+		} catch (IOException e) {
+			log.warning(IO_EXCEPTION_MESSAGE, e);
+			setStatus(Status.SERVER_ERROR_INTERNAL);
+			return IO_EXCEPTION_MESSAGE + e.getMessage();
+		} catch (DicomException e) {
+			log.warning(DICOM_EXCEPTION_MESSAGE, e);
+			setStatus(Status.SERVER_ERROR_INTERNAL);
+			return DICOM_EXCEPTION_MESSAGE + e.getMessage();
+		} catch (SQLException e) {
+			log.warning(SQL_EXCEPTION_MESSAGE, e);
+			setStatus(Status.SERVER_ERROR_INTERNAL);
+			return SQL_EXCEPTION_MESSAGE + e.getMessage();
+		} catch (Error e) {
+			log.warning(ERROR_MESSAGE, e);
+			setStatus(Status.SERVER_ERROR_INTERNAL);
+			return ERROR_MESSAGE + e.getMessage();
+		}
+	}
 
-			String studyIUID = getStudyIuidFromSeriesId(seriesIUID);
-			String patId = getPatientIdFromStudyIuid(studyIUID);
-			if (useBase64) {
-				ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-				InputStream seriesStream = getSeriesTagsAsStream(seriesIUID);
-				try {
-					addToByteArrayBuffer(buffer, seriesStream);
+	private String query(String seriesIUID, boolean useBase64) throws IOException, SQLException, DicomException
+	{
+		StringBuilder out = new StringBuilder();
+		String studyIUID = getStudyIuidFromSeriesId(seriesIUID);
+		String patId = getPatientIdFromStudyIuid(studyIUID);
+		if (useBase64) {
+			ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+			InputStream seriesStream = getSeriesTagsAsStream(seriesIUID);
+			try {
+				addToByteArrayBuffer(buffer, seriesStream);
+				InputStream imageStream = getInstanceTagsForSeriesAsStream(seriesIUID);
+				addToByteArrayBuffer(buffer, imageStream);
+				InputStream studyStream = getStudyTagsAsStream(studyIUID);
+				addToByteArrayBuffer(buffer, studyStream);
+				InputStream patientStream = getPatientTagsAsStream(patId);
+				addToByteArrayBuffer(buffer, patientStream);
+				String base64Result = base64Encode(buffer);
 
-					InputStream imageStream = getInstanceTagsForSeriesAsStream(seriesIUID);
-					addToByteArrayBuffer(buffer, imageStream);
-
-					InputStream studyStream = getStudyTagsAsStream(studyIUID);
-					addToByteArrayBuffer(buffer, studyStream);
-
-					InputStream patientStream = getPatientTagsAsStream(patId);
-					addToByteArrayBuffer(buffer, patientStream);
-
-					String base64Result = base64Encode(buffer);
-					out.print(base64Result);
-				} finally {
-					buffer.close();
-					seriesStream.close();
-				}
-			} else {
-
-				String seriesTags = getSeriesTags(seriesIUID);
-				String imageTags = getInstanceTagsForSeries(seriesIUID);
-				String studyTags = getStudyTags(studyIUID);
-				String patientTags = getPatientTags(patId);
-				String result = seriesTags + imageTags + studyTags + patientTags;
-				logger.info("SeriesTagHandler: result=" + result);
-
-				out.print(result);
+				out.append(base64Result);
+				return out.toString();
+			} finally {
+				buffer.close();
+				seriesStream.close();
 			}
-			out.flush();
+		} else {
+			String seriesTags = getSeriesTags(seriesIUID);
+			String imageTags = getInstanceTagsForSeries(seriesIUID);
+			String studyTags = getStudyTags(studyIUID);
+			String patientTags = getPatientTags(patId);
+			String result = seriesTags + imageTags + studyTags + patientTags;
+			log.info("SeriesTagHandler: result =" + result);
 
-		} catch (IOException ioe) {
-			printException(out, "SeriesTagHandler had IOException", ioe);
-		} catch (DicomException de) {
-			printException(out, "SeriesTagHandler had DicomException", de);
-		} catch (Exception e) {
-			printException(out, "SeriesTagHandler had Exception", e);
-		} catch (Error err) {
-			printException(out, "SeriesTagHandler had Error", err);
-		} finally {
-			if (out != null) {
-				out.close();
-				out = null;
-			}
+			out.append(result);
+			return out.toString();
 		}
 	}
 
@@ -143,20 +148,20 @@ public class SeriesTagHandler extends AbstractHandler
 		return DatatypeConverter.printBase64Binary(buffer.toByteArray());
 	}
 
-	private static String getStudyIuidFromSeriesId(String seriesIUID)
+	private String getStudyIuidFromSeriesId(String seriesIUID)
 	{
 		MySqlQueries queries = MySqlInstance.getInstance().getMysqlQueries();
 		Map<String, String> tags = queries.getParentStudyForSeries(seriesIUID);
 		return tags.get("study_iuid");
 	}
 
-	private static InputStream getStudyTagsAsStream(String studyIUID)
+	private InputStream getStudyTagsAsStream(String studyIUID)
 	{
 		MySqlQueries queries = MySqlInstance.getInstance().getMysqlQueries();
 		return queries.getStudyAttrsAsStream(studyIUID);
 	}
 
-	private static String getStudyTags(String studyIUID) throws IOException, DicomException
+	private String getStudyTags(String studyIUID) throws IOException, DicomException
 	{
 		StringBuilder sb = new StringBuilder();
 		InputStream stream = getStudyTagsAsStream(studyIUID);
@@ -179,20 +184,20 @@ public class SeriesTagHandler extends AbstractHandler
 		return sb.toString();
 	}
 
-	private static String getPatientIdFromStudyIuid(String studyIUID)
+	private String getPatientIdFromStudyIuid(String studyIUID)
 	{
 		MySqlQueries queries = MySqlInstance.getInstance().getMysqlQueries();
 		Map<String, String> tags = queries.getPatientForStudy(studyIUID);
 		return tags.get("pat_id");
 	}
 
-	private static InputStream getPatientTagsAsStream(String patId)
+	private InputStream getPatientTagsAsStream(String patId)
 	{
 		MySqlQueries queries = MySqlInstance.getInstance().getMysqlQueries();
 		return queries.getPatientAttrsAsStream(patId);
 	}
 
-	private static String getPatientTags(String patId) throws IOException, DicomException
+	private String getPatientTags(String patId) throws IOException, DicomException
 	{
 		StringBuilder sb = new StringBuilder();
 		InputStream stream = getPatientTagsAsStream(patId);
@@ -212,7 +217,7 @@ public class SeriesTagHandler extends AbstractHandler
 		return sb.toString();
 	}
 
-	private static InputStream getInstanceTagsForSeriesAsStream(String seriesIUID) throws SQLException, DicomException,
+	private InputStream getInstanceTagsForSeriesAsStream(String seriesIUID) throws SQLException, DicomException,
 			IOException
 	{
 		MySqlQueries queries = MySqlInstance.getInstance().getMysqlQueries();
@@ -223,7 +228,7 @@ public class SeriesTagHandler extends AbstractHandler
 		return null;
 	}
 
-	private static String getInstanceTagsForSeries(String seriesIUID) throws SQLException, DicomException, IOException
+	private String getInstanceTagsForSeries(String seriesIUID) throws SQLException, DicomException, IOException
 	{
 		MySqlQueries queries = MySqlInstance.getInstance().getMysqlQueries();
 		Blob blob = queries.getImageBlobDataForSeries(seriesIUID);
@@ -233,7 +238,7 @@ public class SeriesTagHandler extends AbstractHandler
 		return "";
 	}
 
-	private static String getInstanceTags(InputStream stream) throws IOException, DicomException
+	private String getInstanceTags(InputStream stream) throws IOException, DicomException
 	{
 		StringBuilder sb = new StringBuilder();
 
@@ -282,18 +287,17 @@ public class SeriesTagHandler extends AbstractHandler
 		// createDicomTagEntry(sb,attributeList,new AttributeTag(0x0070,0x0084));//Content Creator s Name -->
 		// createDicomTagEntry(sb,attributeList,new AttributeTag(0x0400,0x0561));//Original Attributes Sequence -->
 
-		// logger.info("SeriesTagHandler.getSeriesTags [TEMP]\n"+sb.toString());
+		// log.info("SeriesTagHandler.getSeriesTags [TEMP]\n"+sb.toString());
 		return sb.toString();
-
 	}
 
-	private static InputStream getSeriesTagsAsStream(String seriesIUID)
+	private InputStream getSeriesTagsAsStream(String seriesIUID)
 	{
 		MySqlQueries queries = MySqlInstance.getInstance().getMysqlQueries();
 		return queries.getSeriesAttrsAsStream(seriesIUID);
 	}
 
-	private static String getSeriesTags(String seriesIUID) throws IOException, DicomException
+	private String getSeriesTags(String seriesIUID) throws IOException, DicomException
 	{
 		StringBuilder sb = new StringBuilder();
 		InputStream stream = getSeriesTagsAsStream(seriesIUID);
@@ -307,11 +311,11 @@ public class SeriesTagHandler extends AbstractHandler
 		createDicomTagEntry(sb, attributeList, new AttributeTag(0x0008, 0x103e));// "Series Description"
 		createDicomTagEntry(sb, attributeList, new AttributeTag(0x0020, 0x000e));// "Series Instance UID"
 
-		// logger.info("SeriesTagHandler.getSeriesTags [TEMP]\n"+sb.toString());
+		// log.info("SeriesTagHandler.getSeriesTags [TEMP]\n"+sb.toString());
 		return sb.toString();
 	}
 
-	private static void createDicomTagEntry(StringBuilder sb, AttributeList attributeList, AttributeTag tag)
+	private void createDicomTagEntry(StringBuilder sb, AttributeList attributeList, AttributeTag tag)
 	{
 		String key = null;
 		try {
@@ -322,24 +326,13 @@ public class SeriesTagHandler extends AbstractHandler
 				String value = attribute.getDelimitedStringValuesOrEmptyString();
 				sb.append(key).append(": ").append(value).append("\n");
 			} else {
-				logger.info("[Temp] didn't find tag: " + key);
+				log.info("[Temp] didn't find tag: " + key);
 			}
-
 		} catch (Exception e) {
 			if (key == null) {
 				key = tag.toString();
 			}
-			logger.warning("Failed to create DicomTag: " + key, e);
+			log.warning("Failed to create DicomTag: " + key, e);
 		}
 	}
-
-	private static void printException(PrintWriter out, String message, Throwable t)
-	{
-		logger.warning(message, t);
-		if (out != null) {
-			out.print(message + " : " + t.getMessage());
-			out.flush();
-		}
-	}
-
 }

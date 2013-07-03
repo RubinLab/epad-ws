@@ -21,19 +21,26 @@ import edu.stanford.isis.epadws.server.ProxyLogger;
 
 /**
  * WandoHandler
- *
+ * 
  * @author ckurtz
+ * 
+ * @deprecated
  */
-public class WadoHandler extends AbstractHandler {
-
+@Deprecated
+public class WadoHandler extends AbstractHandler
+{
 
 	private static final ProxyLogger log = ProxyLogger.getInstance();
 	ProxyConfig config = ProxyConfig.getInstance();
 
-	public WadoHandler(){}
+	public WadoHandler()
+	{
+	}
 
 	@Override
-	public void handle(String s, Request request, HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse) throws IOException, ServletException {
+	public void handle(String s, Request request, HttpServletRequest httpServletRequest,
+			HttpServletResponse httpServletResponse) throws IOException, ServletException
+	{
 
 		httpServletResponse.setContentType("image/jpeg");
 		httpServletResponse.setStatus(HttpServletResponse.SC_OK);
@@ -42,14 +49,14 @@ public class WadoHandler extends AbstractHandler {
 
 		String queryString = httpServletRequest.getQueryString();
 		queryString = URLDecoder.decode(queryString, "UTF-8");
-		log.info("Wado query from ePad : "+ queryString);
+		log.info("Wado query from ePad : " + queryString);
 
-		if(queryString!=null){
+		if (queryString != null) {
 
 			ProxyConfig config = ProxyConfig.getInstance();
 
 			try {
-				//we use wado to get the dicom image		
+				// we use wado to get the dicom image
 				String host = config.getParam("NameServer");
 				int port = config.getIntParam("DicomServerWadoPort");
 				String base = config.getParam("WadoUrlExtension");
@@ -60,20 +67,20 @@ public class WadoHandler extends AbstractHandler {
 				sb.append(base);
 				sb.append(queryString);
 
-				String wadoUrl= sb.toString();
-				log.info("Build wadoUrl = "+wadoUrl);
+				String wadoUrl = sb.toString();
+				log.info("Build wadoUrl = " + wadoUrl);
 
-				//--Get the Dicom file from the server
+				// --Get the Dicom file from the server
 				HttpClient client = new HttpClient();
 
 				GetMethod method = new GetMethod(wadoUrl);
 				// Execute the GET method
-				int statusCode = client.executeMethod(method);		
-				
-				if(statusCode != -1 ) {
-					//Get the result as stream
+				int statusCode = client.executeMethod(method);
+
+				if (statusCode != -1) {
+					// Get the result as stream
 					InputStream res = method.getResponseBodyAsStream();
-					
+
 					int read = 0;
 					byte[] bytes = new byte[4096];
 
@@ -85,17 +92,15 @@ public class WadoHandler extends AbstractHandler {
 					out.close();
 				}
 
-
 			} catch (UnsupportedEncodingException e) {
-				log.warning("Not able to build wado url for  ",e);
+				log.warning("Not able to build wado url for  ", e);
 			} catch (HttpException e) {
-				log.warning("Not able to get the wado image ",e);
+				log.warning("Not able to get the wado image ", e);
 			}
 
-		}else{
+		} else {
 			log.info("NO header Query from request.");
 		}
 	}
-
 
 }

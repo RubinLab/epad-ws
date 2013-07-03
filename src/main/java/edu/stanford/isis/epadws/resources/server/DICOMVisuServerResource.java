@@ -1,111 +1,100 @@
-package edu.stanford.isis.epadws.handlers.dicom;
+package edu.stanford.isis.epadws.resources.server;
 
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
-import java.net.URLDecoder;
-
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpException;
 import org.apache.commons.httpclient.methods.GetMethod;
-import org.eclipse.jetty.server.Request;
-import org.eclipse.jetty.server.handler.AbstractHandler;
+import org.restlet.data.CharacterSet;
+import org.restlet.data.Status;
+import org.restlet.resource.Get;
 
 import com.pixelmed.dicom.DicomException;
 import com.pixelmed.display.SourceImage;
 
 import edu.stanford.isis.epadws.common.ImageEnhancer;
 import edu.stanford.isis.epadws.common.WadoUrlBuilder;
-import edu.stanford.isis.epadws.server.ProxyConfig;
-import edu.stanford.isis.epadws.server.ProxyLogger;
 
-/**
- * Generate window width and center for a series or study in one quick step.
- * 
- * @author amsnyder
- * 
- * @deprecated
- */
-@Deprecated
-public class DicomVisuHandler extends AbstractHandler
+public class DICOMVisuServerResource extends BaseServerResource
 {
+	private static final String SUCCESS_MESSAGE = "Request succeeded.";
+	private static final String BAD_DICOM_REFERENCE_MESSAGE = "Bad DICOM reference: ";
+	private static final String BAD_REQUEST_MESSAGE = "Bad request - no query";
+	private static final String DICOM_EXCEPTION_MESSAGE = "DICOM exception: ";
+	private static final String IO_EXCEPTION_MESSAGE = "IO exception: ";
 
-	private static final ProxyLogger log = ProxyLogger.getInstance();
-	ProxyConfig config = ProxyConfig.getInstance();
-
-	public DicomVisuHandler()
+	public DICOMVisuServerResource()
 	{
+		setNegotiated(false); // Disable content negotiation
 	}
 
 	@Override
-	public void handle(String s, Request request, HttpServletRequest httpServletRequest,
-			HttpServletResponse httpServletResponse) throws IOException, ServletException
+	protected void doCatch(Throwable throwable)
 	{
+		log.warning("An exception was thrown in the DICOM VISU resource.", throwable);
+	}
 
-		httpServletResponse.setContentType("text/plain");
-		httpServletResponse.setStatus(HttpServletResponse.SC_OK);
-		request.setHandled(true);
-		PrintWriter out = httpServletResponse.getWriter();
-
-		String queryString = httpServletRequest.getQueryString();
-		queryString = URLDecoder.decode(queryString, "UTF-8");
-		log.info("Dicom visu query from ePad : " + queryString);
+	@Get("text")
+	public String query()
+	{
+		String queryString = getQuery().getQueryString(CharacterSet.UTF_8);
+		log.info("Received DICOM VISU query from ePAD : " + queryString);
 
 		if (queryString != null) {
+			StringBuilder out = new StringBuilder();
 			queryString = queryString.trim();
-			// Get the parameters
 			String studyIdKey = getStudyUIDFromRequest(queryString);
 			String seriesIdKey = getSeriesUIDFromRequest(queryString);
 			String imageIdKey = getInstanceUIDFromRequest(queryString);
 
-			// get the wado and the tag file
-			if (studyIdKey != null && seriesIdKey != null && imageIdKey != null) {
-				File tempDicom = File.createTempFile(imageIdKey, ".tmp");
-				feedFileWithDicomFromWado(tempDicom, studyIdKey, seriesIdKey, imageIdKey);
-
-				// Generation of the window and center parameter
+			if (studyIdKey != null && seriesIdKey != null && imageIdKey != null) { // Get the WADO and the tag file
 				SourceImage srcDicomImage = null;
 				try {
-					srcDicomImage = new SourceImage(tempDicom.getAbsolutePath());
-				} catch (DicomException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
+					File tempDicom = File.createTempFile(imageIdKey, ".tmp");
+					feedFileWithDicomFromWado(tempDicom, studyIdKey, seriesIdKey, imageIdKey);
 
+					try {
+						srcDicomImage = new SourceImage(tempDicom.getAbsolutePath());
+					} catch (DicomException e) {
+						log.warning(DICOM_EXCEPTION_MESSAGE, e);
+						setStatus(Status.SERVER_ERROR_INTERNAL);
+						return DICOM_EXCEPTION_MESSAGE + e.getMessage();
+					}
+				} catch (IOException e) {
+					log.warning(IO_EXCEPTION_MESSAGE, e);
+					setStatus(Status.SERVER_ERROR_INTERNAL);
+					return IO_EXCEPTION_MESSAGE + e.getMessage();
+				}
 				double windowWidth = 0.0;
 				double windowCenter = 0.0;
 
 				if (srcDicomImage != null) {
 					ImageEnhancer ie = new ImageEnhancer(srcDicomImage);
 					ie.findVisuParametersImage();
-
 					windowWidth = ie.getWindowWidth();
 					windowCenter = ie.getWindowCenter();
 				}
+				String separator = config.getParam("fieldSeparator"); // TODO Constants for these names
+				out.append("windowWidth" + separator + "windowCenten");
+				out.append(windowWidth + separator + windowCenter + "\n");
 
-				ProxyConfig config = ProxyConfig.getInstance();
-				String separator = config.getParam("fieldSeparator");
-
-				// Write the result
-				out.println("windowWidth" + separator + "windowCenter");
-				out.println(windowWidth + separator + windowCenter);
-
-				out.flush();
-
+				log.info(SUCCESS_MESSAGE);
+				setStatus(Status.SUCCESS_OK);
+				return out.toString();
 			} else {
-				log.info("Bad dicom reference.");
+				log.info(BAD_DICOM_REFERENCE_MESSAGE);
+				setStatus(Status.CLIENT_ERROR_BAD_REQUEST);
+				return BAD_DICOM_REFERENCE_MESSAGE;
 			}
-
 		} else {
-			log.info("NO header Query from request.");
+			log.info(BAD_REQUEST_MESSAGE);
+			setStatus(Status.CLIENT_ERROR_BAD_REQUEST);
+			return BAD_REQUEST_MESSAGE;
 		}
 	}
 
@@ -121,7 +110,6 @@ public class DicomVisuHandler extends AbstractHandler
 
 	private static String getSeriesUIDFromRequest(String queryString)
 	{
-
 		log.info(queryString);
 		String[] parts = queryString.split("&");
 		String value = parts[1].trim();
@@ -132,7 +120,6 @@ public class DicomVisuHandler extends AbstractHandler
 
 	private static String getInstanceUIDFromRequest(String queryString)
 	{
-
 		log.info(queryString);
 		String[] parts = queryString.split("&");
 		String value = parts[2].trim();
@@ -142,23 +129,20 @@ public class DicomVisuHandler extends AbstractHandler
 	}
 
 	private void feedFileWithDicomFromWado(File temp, String studyIdKey, String seriesIdKey, String imageIdKey)
-	{
-
-		// we use wado to get the dicom image
+	{ // We use WADO to get the DICOM image
 		String host = config.getParam("NameServer");
 		int port = config.getIntParam("DicomServerWadoPort");
 		String base = config.getParam("WadoUrlExtension");
 
 		WadoUrlBuilder wadoUrlBuilder = new WadoUrlBuilder(host, port, base, WadoUrlBuilder.Type.FILE);
 
-		// GET WADO call result.
 		wadoUrlBuilder.setStudyUID(studyIdKey);
 		wadoUrlBuilder.setSeriesUID(seriesIdKey);
 		wadoUrlBuilder.setObjectUID(imageIdKey);
 
 		try {
 			String wadoUrl = wadoUrlBuilder.build();
-			log.info("Build wadoUrl = " + wadoUrl);
+			log.info("WADO URL = " + wadoUrl);
 
 			// --Get the Dicom file from the server
 			HttpClient client = new HttpClient();
@@ -168,14 +152,13 @@ public class DicomVisuHandler extends AbstractHandler
 			int statusCode = client.executeMethod(method);
 
 			if (statusCode != -1) {
-				// Get the result as stream
+				// Get the result as a stream
 				InputStream res = method.getResponseBodyAsStream();
-				// write the inputStream to a FileOutputStream
+				// Write the inputStream to a FileOutputStream
 				OutputStream out = new FileOutputStream(temp);
 
 				int read = 0;
 				byte[] bytes = new byte[4096];
-
 				while ((read = res.read(bytes)) != -1) {
 					out.write(bytes, 0, read);
 				}
@@ -183,7 +166,6 @@ public class DicomVisuHandler extends AbstractHandler
 				out.flush();
 				out.close();
 			}
-
 		} catch (UnsupportedEncodingException e) {
 			log.warning("Not able to build wado url for : " + temp.getName(), e);
 		} catch (HttpException e) {
@@ -192,5 +174,4 @@ public class DicomVisuHandler extends AbstractHandler
 			log.warning("Not able to write the temp dicom image : " + temp.getName(), e);
 		}
 	}
-
 }
