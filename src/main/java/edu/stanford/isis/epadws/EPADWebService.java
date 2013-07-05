@@ -306,6 +306,7 @@ public class EPADWebService extends Application
 	/**
 	 * Load all the plugins into a map.
 	 */
+	@SuppressWarnings("unused")
 	private static void loadPluginClasses()
 	{
 		PluginHandlerMap pluginHandlerMap = PluginHandlerMap.getInstance();

@@ -65,6 +65,7 @@ import edu.stanford.isis.epadws.server.threads.ShutdownHookThread;
  * Start an embedded Jetty server, and all the threads required for this application.
  * 
  */
+@SuppressWarnings("deprecation")
 public class Main
 {
 	private static ProxyLogger log = ProxyLogger.getInstance();
