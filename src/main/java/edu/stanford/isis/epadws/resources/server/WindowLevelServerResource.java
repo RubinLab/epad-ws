@@ -48,8 +48,9 @@ public class WindowLevelServerResource extends BaseServerResource implements Win
 
 			if (WindowLevelCommand.CREATE.hasCommandName(commandName)) {
 				try {
+					String out = createLevelJpegs();
 					setStatus(Status.SUCCESS_OK);
-					return createLevelJpegs();
+					return out;
 				} catch (IOException e) {
 					setStatus(Status.SERVER_ERROR_INTERNAL);
 					return CREATE_ERROR_MESSAGE + e.getMessage();
@@ -59,8 +60,9 @@ public class WindowLevelServerResource extends BaseServerResource implements Win
 				}
 			} else if (WindowLevelCommand.QUERY.hasCommandName(commandName)) {
 				try {
+					String out = queryLeveledJpegs();
 					setStatus(Status.SUCCESS_OK);
-					return queryLeveledJpegs();
+					return out;
 				} catch (IOException e) {
 					setStatus(Status.SERVER_ERROR_INTERNAL);
 					return QUERY_ERROR_MESSAGE + e.getMessage();

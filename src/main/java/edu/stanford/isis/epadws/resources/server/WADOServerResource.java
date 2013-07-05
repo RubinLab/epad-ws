@@ -17,8 +17,6 @@ import org.restlet.representation.StringRepresentation;
 import org.restlet.resource.ClientResource;
 import org.restlet.resource.Get;
 
-import edu.stanford.isis.epadws.server.ProxyConfig;
-
 public class WADOServerResource extends BaseServerResource
 {
 	private static final String NO_QUERY_ERROR_TEXT = "No query specified in request!";
@@ -44,19 +42,8 @@ public class WADOServerResource extends BaseServerResource
 		log.info("WADO query received from ePAD : " + queryString);
 
 		if (queryString != null) {
-			ProxyConfig config = ProxyConfig.getInstance();
-
 			try { // We use WADO to get the DICOM image.
-				String host = config.getParam("NameServer"); // TODO DICOM name constants
-				int port = config.getIntParam("DicomServerWadoPort");
-				String base = config.getParam("WadoUrlExtension");
-
-				StringBuilder sb = new StringBuilder();
-				sb.append("http://").append(host);
-				sb.append(":").append(port);
-				sb.append(base);
-				sb.append(queryString);
-				String wadoURL = sb.toString();
+				String wadoURL = buildWADOURL(queryString);
 				log.info("WADO URL = " + wadoURL);
 
 				Client client = new Client(getContext(), Protocol.HTTP);
@@ -67,9 +54,8 @@ public class WADOServerResource extends BaseServerResource
 
 				if (clientResponse == Status.SUCCESS_OK) {
 					InputStream stream = representation.getStream();
-					// We stream the representation back to the client.
 					setStatus(Status.SUCCESS_OK);
-					return new DICOMStreamWriter(stream);
+					return new DICOMStreamWriter(stream); // We stream the representation back to the client.
 				} else {
 					log.info(WADO_REQUEST_HTTP_ERROR_TEXT + clientResponse);
 					setStatus(Status.SERVER_ERROR_INTERNAL);
@@ -93,6 +79,21 @@ public class WADOServerResource extends BaseServerResource
 			setStatus(Status.CLIENT_ERROR_BAD_REQUEST);
 			return new StringRepresentation(NO_QUERY_ERROR_TEXT);
 		}
+	}
+
+	private String buildWADOURL(String queryString)
+	{
+		String host = config.getParam("NameServer"); // TODO DICOM name constants
+		int port = config.getIntParam("DicomServerWadoPort");
+		String base = config.getParam("WadoUrlExtension");
+
+		StringBuilder sb = new StringBuilder();
+		sb.append("http://").append(host);
+		sb.append(":").append(port);
+		sb.append(base);
+		sb.append(queryString);
+		String wadoURL = sb.toString();
+		return wadoURL;
 	}
 
 	// A Restlet {@link OutputRepresentation} provides streaming infrastructure.

@@ -36,33 +36,10 @@ public class EventServerResource extends BaseServerResource
 		String queryString = getQuery().getQueryString(CharacterSet.UTF_8);
 
 		if (queryString != null) {
-			StringBuilder out = new StringBuilder();
-			queryString = queryString.trim();
-
-			String userName = getUserNameFromRequest(queryString);
+			String userName = getUserNameFromRequest(queryString.trim());
 			if (userName != null) { // Get all the events for a user
-				MySqlQueries dbQueries = MySqlInstance.getInstance().getMysqlQueries();
-				List<Map<String, String>> result = dbQueries.getEventsForUser(userName);
-
-				out.append(new SearchResultUtils().get_EVENT_SEARCH_HEADER());
-				log.info("Get the events query from ePad : " + queryString + " MySql found " + result.size() + " results.");
-				String separator = config.getParam("fieldSeparator");
-
-				for (Map<String, String> row : result) { // Write the result
-					StringBuilder sb = new StringBuilder();
-					sb.append(row.get("pk")).append(separator);
-					sb.append(row.get("event_status")).append(separator);
-					sb.append(row.get("created_time")).append(separator);
-					sb.append(row.get("aim_uid")).append(separator);
-					sb.append(row.get("aim_name")).append(separator);
-					sb.append(row.get("patient_id")).append(separator);
-					sb.append(row.get("patient_name")).append(separator);
-					sb.append(row.get("template_id")).append(separator);
-					sb.append(row.get("template_name")).append(separator);
-					sb.append(row.get("plugin_name"));
-					sb.append("\n");
-					out.append(sb.toString());
-				}
+				log.info("Got events query from ePad : " + queryString);
+				String out = executeEventQuery(userName);
 				log.info(INSERT_SUCCESS_MESSAGE);
 				setStatus(Status.SUCCESS_OK);
 				return out.toString();
@@ -76,6 +53,34 @@ public class EventServerResource extends BaseServerResource
 			setStatus(Status.CLIENT_ERROR_BAD_REQUEST);
 			return MISSING_QUERY_MESSAGE;
 		}
+	}
+
+	private String executeEventQuery(String userName)
+	{
+		StringBuilder out = new StringBuilder();
+		MySqlQueries dbQueries = MySqlInstance.getInstance().getMysqlQueries();
+		List<Map<String, String>> result = dbQueries.getEventsForUser(userName);
+
+		out.append(new SearchResultUtils().get_EVENT_SEARCH_HEADER());
+		log.info("Found " + result.size() + " results.");
+		String separator = config.getParam("fieldSeparator");
+
+		for (Map<String, String> row : result) { // Write the result
+			StringBuilder sb = new StringBuilder();
+			sb.append(row.get("pk")).append(separator);
+			sb.append(row.get("event_status")).append(separator);
+			sb.append(row.get("created_time")).append(separator);
+			sb.append(row.get("aim_uid")).append(separator);
+			sb.append(row.get("aim_name")).append(separator);
+			sb.append(row.get("patient_id")).append(separator);
+			sb.append(row.get("patient_name")).append(separator);
+			sb.append(row.get("template_id")).append(separator);
+			sb.append(row.get("template_name")).append(separator);
+			sb.append(row.get("plugin_name"));
+			sb.append("\n");
+			out.append(sb.toString());
+		}
+		return out.toString();
 	}
 
 	@Post("text")

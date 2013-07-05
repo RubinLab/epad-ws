@@ -20,7 +20,7 @@ import edu.stanford.isis.epadws.server.ProxyConfig;
 public class SegmentationPathServerResource extends BaseServerResource
 {
 	private static final String NO_QUERY_MESSAGE = "No query in request";
-	private static final String EXCEPTION_MESSAGE = "Exception retrieving from ePAD database: ";
+	private static final String EXCEPTION_MESSAGE = "Exception retrieving from ePAD database";
 
 	public SegmentationPathServerResource()
 	{
@@ -40,33 +40,37 @@ public class SegmentationPathServerResource extends BaseServerResource
 		log.info("Segmentation path query from ePAD : " + queryString);
 
 		if (queryString != null) {
-			StringBuilder out = new StringBuilder();
-			queryString = queryString.trim();
-			String imageIdKey = getInstanceUIDFromRequest(queryString);
-			String[] res = null;
-			if (imageIdKey != null) {
-				log.info("DCMQR: " + imageIdKey);
-				try {
-					res = retrieveFromEpadDB(imageIdKey); // res=dcmqr(imageIdKey);
-				} catch (Exception e) {
-					log.warning(EXCEPTION_MESSAGE, e);
-					setStatus(Status.SERVER_ERROR_INTERNAL);
-					return EXCEPTION_MESSAGE + e.getMessage();
-				}
+			try {
+				String out = queryEPADDatabase(queryString);
+				setStatus(Status.SUCCESS_OK);
+				return out;
+			} catch (Exception e) {
+				log.warning(EXCEPTION_MESSAGE, e);
+				setStatus(Status.SERVER_ERROR_INTERNAL);
+				return EXCEPTION_MESSAGE + ": " + e.getMessage();
 			}
-			String separator = config.getParam("fieldSeparator");
-			// Write the result
-			out.append("StudyUID" + separator + "SeriesUID" + separator + "ImageUID\n");
-			if (res[0] != null && res[1] != null && res[2] != null)
-				out.append(res[0] + separator + res[1] + separator + res[2] + "\n");
-
-			setStatus(Status.SUCCESS_OK);
-			return out.toString();
 		} else {
 			log.info(NO_QUERY_MESSAGE);
 			setStatus(Status.CLIENT_ERROR_BAD_REQUEST);
 			return NO_QUERY_MESSAGE;
 		}
+	}
+
+	private String queryEPADDatabase(String queryString) throws Exception
+	{
+		StringBuilder out = new StringBuilder();
+		String imageIdKey = getInstanceUIDFromRequest(queryString.trim());
+		String[] result = null;
+		if (imageIdKey != null) {
+			log.info("DCMQR: " + imageIdKey);
+			result = retrieveFromEpadDB(imageIdKey); // res=dcmqr(imageIdKey);
+		}
+		String separator = config.getParam("fieldSeparator");
+		out.append("StudyUID" + separator + "SeriesUID" + separator + "ImageUID\n");
+		if (result[0] != null && result[1] != null && result[2] != null)
+			out.append(result[0] + separator + result[1] + separator + result[2] + "\n");
+
+		return out.toString();
 	}
 
 	private static String getInstanceUIDFromRequest(String queryString)

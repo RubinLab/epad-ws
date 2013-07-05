@@ -21,6 +21,7 @@ public class SQLSearchServerResource extends BaseServerResource
 {
 	private static final String NO_QUERY_MESSAGE = "No query in request";
 	private static final String MISSING_SEARCH_PARAMETER_MESSAGE = "Missing DICOM search parameter";
+	private static final String QUERY_EXCEPTION_MESSAGE = "Error running query";
 
 	public SQLSearchServerResource()
 	{
@@ -36,28 +37,33 @@ public class SQLSearchServerResource extends BaseServerResource
 	@Get("text")
 	public String query()
 	{
-		StringBuilder out = new StringBuilder();
-
 		String queryString = getQuery().getQueryString(CharacterSet.UTF_8);
 		log.info("Query from ePAD : " + queryString);
 
 		if (queryString != null) {
+			String result = "";
 			queryString = queryString.trim();
 
 			if (isSeriesRequest(queryString)) {
-				handleSeriesRequest(out, queryString);
+				result = handleSeriesRequest(queryString);
 			} else {
-				DicomSearchType searchType = getSearchType();
-				if (searchType != null) {
-					handleStudyRequest(out, queryString, searchType);
-				} else {
-					log.info(MISSING_SEARCH_PARAMETER_MESSAGE);
-					setStatus(Status.CLIENT_ERROR_BAD_REQUEST);
-					return MISSING_SEARCH_PARAMETER_MESSAGE;
+				try {
+					DicomSearchType searchType = getSearchType();
+					if (searchType != null) {
+						result = handleStudyRequest(queryString, searchType);
+					} else {
+						log.info(MISSING_SEARCH_PARAMETER_MESSAGE);
+						setStatus(Status.CLIENT_ERROR_BAD_REQUEST);
+						return MISSING_SEARCH_PARAMETER_MESSAGE;
+					}
+				} catch (Exception e) {
+					log.warning(QUERY_EXCEPTION_MESSAGE, e);
+					setStatus(Status.SERVER_ERROR_INTERNAL);
+					return QUERY_EXCEPTION_MESSAGE + ": " + e.getMessage();
 				}
 			}
 			setStatus(Status.SUCCESS_OK);
-			return out.toString();
+			return result;
 		} else {
 			log.info(NO_QUERY_MESSAGE);
 			setStatus(Status.CLIENT_ERROR_BAD_REQUEST);
@@ -65,75 +71,72 @@ public class SQLSearchServerResource extends BaseServerResource
 		}
 	}
 
-	private void handleStudyRequest(StringBuilder out, String queryString, DicomSearchType searchType)
+	private String handleStudyRequest(String queryString, DicomSearchType searchType) throws Exception
 	{
-		try {
-			log.info(queryString);
-			String[] parts = queryString.split("=");
-			String value = parts[1].trim();
-			log.info("MySqlSearchHandler(handleStudyRequest) = " + value);
+		StringBuilder out = new StringBuilder();
 
-			ProxyConfig config = ProxyConfig.getInstance();
-			String separator = config.getParam("fieldSeparator");
+		log.info(queryString);
+		String[] parts = queryString.split("=");
+		String value = parts[1].trim();
+		log.info("MySqlSearchHandler(handleStudyRequest) = " + value);
 
-			debugPrintSQL(searchType, value);
+		ProxyConfig config = ProxyConfig.getInstance();
+		String separator = config.getParam("fieldSeparator");
 
-			// headers for the request.
-			out.append(new SearchResultUtils().get_STUDY_SEARCH_HEADER());
+		debugPrintSQL(searchType, value);
 
-			final Map<String, String> translator = new HashMap<String, String>();
-			translator.put("StudyUID", "study_iuid");
-			translator.put("Patient Name", "pat_name");
-			translator.put("Patient ID", "pat_id");
-			translator.put("Exam Type", "modality");
-			translator.put("Date Acquired", "study_datetime");
-			translator.put("PNG Not Ready", "study_status");
-			translator.put("Series Count", "number_series");
-			translator.put("First SeriesUID", "series_iuid");
-			translator.put("First Series Date Acquired", "pps_start");
-			translator.put("Study Accession Number", "accession_no");
-			translator.put("Images Count", "sum_images");
+		// headers for the request.
+		out.append(new SearchResultUtils().get_STUDY_SEARCH_HEADER());
 
-			translator.put("StudyID", "study_id");
-			translator.put("Study Description", "study_desc");
-			translator.put("Physician Name", "ref_physician");
-			translator.put("Patient Birthdate", "pat_birthdate");
-			translator.put("Patient Sex", "pat_sex");
+		final Map<String, String> translator = new HashMap<String, String>();
+		translator.put("StudyUID", "study_iuid");
+		translator.put("Patient Name", "pat_name");
+		translator.put("Patient ID", "pat_id");
+		translator.put("Exam Type", "modality");
+		translator.put("Date Acquired", "study_datetime");
+		translator.put("PNG Not Ready", "study_status");
+		translator.put("Series Count", "number_series");
+		translator.put("First SeriesUID", "series_iuid");
+		translator.put("First Series Date Acquired", "pps_start");
+		translator.put("Study Accession Number", "accession_no");
+		translator.put("Images Count", "sum_images");
 
-			MySqlQueries dbQueries = MySqlInstance.getInstance().getMysqlQueries();
-			List<Map<String, String>> result = dbQueries.doStudySearch(searchType.toString(), value);
+		translator.put("StudyID", "study_id");
+		translator.put("Study Description", "study_desc");
+		translator.put("Physician Name", "ref_physician");
+		translator.put("Patient Birthdate", "pat_birthdate");
+		translator.put("Patient Sex", "pat_sex");
 
-			log.info("MySql found " + result.size() + " results.");
-			log.info("Search result: " + result.toString());
+		MySqlQueries dbQueries = MySqlInstance.getInstance().getMysqlQueries();
+		List<Map<String, String>> result = dbQueries.doStudySearch(searchType.toString(), value);
 
-			for (Map<String, String> row : result) {
-				StringBuilder sb = new StringBuilder();
-				sb.append(row.get(translator.get("StudyUID"))).append(separator);
-				sb.append(clean(row.get(translator.get("Patient Name")), "^")).append(separator);
-				sb.append(row.get(translator.get("Patient ID"))).append(separator);
-				sb.append(clean(row.get(translator.get("Exam Type")), "^")).append(separator);
-				sb.append(row.get(translator.get("Date Acquired"))).append(separator);
-				sb.append(row.get(translator.get("PNG Not Ready"))).append(separator);
-				sb.append(row.get(translator.get("Series Count"))).append(separator);
-				sb.append(row.get(translator.get("First SeriesUID"))).append(separator);
-				sb.append(row.get(translator.get("First Series Date Acquired"))).append(separator);
-				sb.append(row.get(translator.get("Study Accession Number"))).append(separator);
-				sb.append(clean(row.get(translator.get("Images Count")), ", ")).append(separator);
-				;
+		log.info("MySql found " + result.size() + " results.");
+		log.info("Search result: " + result.toString());
 
-				sb.append(row.get(translator.get("StudyID"))).append(separator);
-				sb.append(row.get(translator.get("Study Description"))).append(separator);
-				sb.append(clean(row.get(translator.get("Physician Name")), "^")).append(separator);
-				sb.append(row.get(translator.get("Patient Birthdate"))).append(separator);
-				sb.append(row.get(translator.get("Patient Sex")));
+		for (Map<String, String> row : result) {
+			StringBuilder sb = new StringBuilder();
+			sb.append(row.get(translator.get("StudyUID"))).append(separator);
+			sb.append(clean(row.get(translator.get("Patient Name")), "^")).append(separator);
+			sb.append(row.get(translator.get("Patient ID"))).append(separator);
+			sb.append(clean(row.get(translator.get("Exam Type")), "^")).append(separator);
+			sb.append(row.get(translator.get("Date Acquired"))).append(separator);
+			sb.append(row.get(translator.get("PNG Not Ready"))).append(separator);
+			sb.append(row.get(translator.get("Series Count"))).append(separator);
+			sb.append(row.get(translator.get("First SeriesUID"))).append(separator);
+			sb.append(row.get(translator.get("First Series Date Acquired"))).append(separator);
+			sb.append(row.get(translator.get("Study Accession Number"))).append(separator);
+			sb.append(clean(row.get(translator.get("Images Count")), ", ")).append(separator);
+			sb.append(row.get(translator.get("StudyID"))).append(separator);
+			sb.append(row.get(translator.get("Study Description"))).append(separator);
+			sb.append(clean(row.get(translator.get("Physician Name")), "^")).append(separator);
+			sb.append(row.get(translator.get("Patient Birthdate"))).append(separator);
+			sb.append(row.get(translator.get("Patient Sex")));
 
-				sb.append("\n");
-				log.info("line = " + sb.toString());
-				out.append(sb.toString());
-			}
-		} catch (Exception e) {
-			log.warning("handleStudyRequest (mysql) had..", e);
+			sb.append("\n");
+			log.info("line = " + sb.toString());
+			out.append(sb.toString());
 		}
+		return out.toString();
 	}
 
 	/**
@@ -208,9 +211,10 @@ public class SQLSearchServerResource extends BaseServerResource
 	 *          Here we will look for *.series files within the study directory. If it is there then It will read that
 	 *          file and add it to the result.
 	 */
-	private void handleSeriesRequest(StringBuilder out, String queryString)
+	private String handleSeriesRequest(String queryString)
 	{
 		String studyIdKey = getStudyUIDFromRequest(queryString);
+		StringBuilder out = new StringBuilder();
 
 		MySqlQueries dbQueries = MySqlInstance.getInstance().getMysqlQueries();
 		String studyUID = DicomFormatUtil.formatDirToUid(studyIdKey);
@@ -246,8 +250,8 @@ public class SQLSearchServerResource extends BaseServerResource
 			out.append(sb.toString() + "\n");
 			log.info(sb.toString());
 		}
-
-	}// handleSeriesRequest
+		return out.toString();
+	}
 
 	/**
 	 * Create a map where the keys are column names in the html page and values are column names in the database.
