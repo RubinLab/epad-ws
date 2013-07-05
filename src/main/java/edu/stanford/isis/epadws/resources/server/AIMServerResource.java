@@ -47,25 +47,20 @@ import edu.stanford.isis.epad.plugin.server.impl.PluginConfig;
 import edu.stanford.isis.epadws.server.ProxyConfig;
 
 /**
- * AIM resource.
- * 
+ * AIM resource. AIM files can be queries or uploaded.
  * 
  * @author martin
  */
 public class AIMServerResource extends BaseServerResource
 {
-	public String serverProxy = ProxyConfig.getInstance().getParam("serverProxy"); // TODO Need constants for these names
-	public String namespace = ProxyConfig.getInstance().getParam("namespace");
-	public String serverUrl = ProxyConfig.getInstance().getParam("serverUrl");
-	public String username = ProxyConfig.getInstance().getParam("username");
-	public String password = ProxyConfig.getInstance().getParam("password");
-	public String baseAnnotationDir = ProxyConfig.getInstance().getParam("baseAnnotationDir");
-	public String xsdFile = ProxyConfig.getInstance().getParam("xsdFile");
-	public String xsdFilePath = ProxyConfig.getInstance().getParam("baseSchemaDir") + xsdFile;
-	public String collection = ProxyConfig.getInstance().getParam("collection");
-	public String dbpath = ProxyConfig.getInstance().getParam("dbpath");
-	public String templatePath = ProxyConfig.getInstance().getParam("baseTemplatesDir");
-	public String wadoProxy = ProxyConfig.getInstance().getParam("wadoProxy");
+	private final String namespace = ProxyConfig.getInstance().getParam("namespace"); // TODO Constants for these names
+	private final String serverUrl = ProxyConfig.getInstance().getParam("serverUrl");
+	private final String username = ProxyConfig.getInstance().getParam("username");
+	private final String password = ProxyConfig.getInstance().getParam("password");
+	private final String baseAnnotationDir = ProxyConfig.getInstance().getParam("baseAnnotationDir");
+	private final String xsdFile = ProxyConfig.getInstance().getParam("xsdFile");
+	private final String xsdFilePath = ProxyConfig.getInstance().getParam("baseSchemaDir") + xsdFile;
+	private final String collection = ProxyConfig.getInstance().getParam("collection");
 
 	private static final String PARSER_ERROR_MESSAGE = "XML parser error: ";
 	private static final String DOM_ERROR_MESSAGE = "DOM error: ";
@@ -95,7 +90,6 @@ public class AIMServerResource extends BaseServerResource
 
 		if (queryString != null) {
 			ArrayList<ImageAnnotation> imageAnnotations = getAIMImageAnnotations(queryString);
-
 			try {
 				String queryResults = buildXMLDocument(imageAnnotations);
 				setStatus(Status.SUCCESS_OK);

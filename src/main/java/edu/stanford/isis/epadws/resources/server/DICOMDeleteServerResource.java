@@ -11,7 +11,8 @@ import edu.stanford.isis.epadws.db.mysql.pipeline.DicomDeleteTask;
  */
 public class DICOMDeleteServerResource extends BaseServerResource
 {
-	private static final String SUCCESS_MESSAGE = "Image deleted";
+	private static final String SUCCESS_MESSAGE = "DICOM image deleted";
+	private static final String FAILURE_MESSAGE = "Error deleting DICOM image: ";
 	private static final String NO_QUERY_ERROR_MESSAGE = "No query present in request";
 
 	public DICOMDeleteServerResource()
@@ -30,17 +31,24 @@ public class DICOMDeleteServerResource extends BaseServerResource
 	public String deleteImage()
 	{
 		String queryString = getQuery().getQueryString(CharacterSet.UTF_8);
-		log.info("Delete query from ePad : " + queryString);
+		log.info("DICOM delete query from ePAD : " + queryString);
 
 		if (queryString != null) {
 			queryString = queryString.trim();
-			if (isSeriesRequest(queryString)) {
-				handleSeriesRequest(queryString);
-			} else {
-				handleStudyRequest(queryString);
+
+			try {
+				if (isDICOMSeriesRequest(queryString)) {
+					handleDICOMSeriesRequest(queryString);
+				} else {
+					handleDICOMStudyRequest(queryString);
+				}
+				setStatus(Status.SUCCESS_OK);
+				return SUCCESS_MESSAGE;
+			} catch (Exception e) {
+				log.warning(FAILURE_MESSAGE, e);
+				setStatus(Status.SERVER_ERROR_INTERNAL);
+				return FAILURE_MESSAGE + e.getMessage();
 			}
-			setStatus(Status.SUCCESS_OK);
-			return SUCCESS_MESSAGE;
 		} else {
 			log.info(NO_QUERY_ERROR_MESSAGE);
 			setStatus(Status.CLIENT_ERROR_BAD_REQUEST);
@@ -48,37 +56,28 @@ public class DICOMDeleteServerResource extends BaseServerResource
 		}
 	}
 
-	private void handleStudyRequest(String queryString)
+	private void handleDICOMStudyRequest(String queryString) throws Exception
 	{
-		try {
-			log.info(queryString);
-			String[] parts = queryString.split("&");
-			String value = parts[1].trim();
-			parts = value.split("=");
-			value = parts[1].trim();
+		log.info(queryString);
+		String[] parts = queryString.split("&");
+		String value = parts[1].trim();
+		parts = value.split("=");
+		value = parts[1].trim();
 
-			log.info("DicomDeleteHandler(study) = " + value);
-			(new Thread(new DicomDeleteTask(value, true))).start();
-		} catch (Exception e) {
-			log.warning("handleStudyRequest (mysql) had..", e);
-		}
+		log.info("DicomDeleteHandler(study) = " + value);
+		(new Thread(new DicomDeleteTask(value, true))).start();
 	}
 
-	private void handleSeriesRequest(String queryString)
+	private void handleDICOMSeriesRequest(String queryString) throws Exception
 	{
-		try {
-			log.info(queryString);
-			String[] parts = queryString.split("&");
-			String value = parts[1].trim();
-			parts = value.split("=");
-			value = parts[1].trim();
+		log.info(queryString);
+		String[] parts = queryString.split("&");
+		String value = parts[1].trim();
+		parts = value.split("=");
+		value = parts[1].trim();
 
-			log.info("DicomDeleteHandler(series) = " + value);
-			(new Thread(new DicomDeleteTask(value, false))).start();
-
-		} catch (Exception e) {
-			log.warning("handleSeriesRequest (mysql) had..", e);
-		}
+		log.info("DicomDeleteHandler(series) = " + value);
+		(new Thread(new DicomDeleteTask(value, false))).start();
 	}
 
 	/**
@@ -87,7 +86,7 @@ public class DICOMDeleteServerResource extends BaseServerResource
 	 * @param queryString String
 	 * @return boolean
 	 */
-	private static boolean isSeriesRequest(String queryString)
+	private static boolean isDICOMSeriesRequest(String queryString)
 	{
 		String check = queryString.toLowerCase().trim();
 		boolean isSeries = check.indexOf("eletetype=series") > 0;
