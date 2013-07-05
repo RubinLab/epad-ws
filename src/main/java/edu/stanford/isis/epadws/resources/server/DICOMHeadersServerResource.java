@@ -49,35 +49,15 @@ public class DICOMHeadersServerResource extends BaseServerResource
 		log.info("DICOM header query from ePAD : " + queryString);
 
 		if (queryString != null) {
-			StringBuilder out = new StringBuilder();
 			queryString = queryString.trim();
 			String studyIdKey = getStudyUIDFromRequest(queryString);
 			String seriesIdKey = getSeriesUIDFromRequest(queryString);
 			String imageIdKey = getInstanceUIDFromRequest(queryString);
 
-			// Get the WADO and the tag file
 			if (studyIdKey != null && seriesIdKey != null && imageIdKey != null) {
-				try {
-					File tempDicom = File.createTempFile(imageIdKey, ".tmp");
-					feedFileWithDicomFromWado(tempDicom, studyIdKey, seriesIdKey, imageIdKey);
-					File tempTag = File.createTempFile(imageIdKey, "_tag.tmp");
-
-					ExecutorService taskExecutor = Executors.newFixedThreadPool(4); // Generation of the tag file
-					taskExecutor.execute(new DicomHeadersTask(tempDicom, tempTag));
-					taskExecutor.shutdown();
-					try {
-						taskExecutor.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
-						BufferedReader in = new BufferedReader(new FileReader(tempTag.getAbsolutePath()));
-						try {
-							String line;
-							while ((line = in.readLine()) != null) {
-								out.append(line);
-							}
-						} finally {
-							in.close();
-						}
-					} catch (InterruptedException e) {
-					}
+				try { // Get the WADO and the tag file
+					StringBuilder out = new StringBuilder();
+					executeDICOMHeadersTask(studyIdKey, seriesIdKey, imageIdKey, out);
 					log.info(SUCCESS_MESSAGE);
 					setStatus(Status.SUCCESS_OK);
 					return out.toString();
@@ -99,6 +79,31 @@ public class DICOMHeadersServerResource extends BaseServerResource
 			log.info(BAD_REQUEST_MESSAGE);
 			setStatus(Status.CLIENT_ERROR_BAD_REQUEST);
 			return BAD_REQUEST_MESSAGE;
+		}
+	}
+
+	private void executeDICOMHeadersTask(String studyIdKey, String seriesIdKey, String imageIdKey, StringBuilder out)
+			throws IOException, FileNotFoundException
+	{
+		File tempDicom = File.createTempFile(imageIdKey, ".tmp");
+		feedFileWithDicomFromWado(tempDicom, studyIdKey, seriesIdKey, imageIdKey);
+		File tempTag = File.createTempFile(imageIdKey, "_tag.tmp");
+
+		ExecutorService taskExecutor = Executors.newFixedThreadPool(4); // Generation of the tag file
+		taskExecutor.execute(new DicomHeadersTask(tempDicom, tempTag));
+		taskExecutor.shutdown();
+		try {
+			taskExecutor.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
+			BufferedReader in = new BufferedReader(new FileReader(tempTag.getAbsolutePath()));
+			try {
+				String line;
+				while ((line = in.readLine()) != null) {
+					out.append(line);
+				}
+			} finally {
+				in.close();
+			}
+		} catch (InterruptedException e) {
 		}
 	}
 
