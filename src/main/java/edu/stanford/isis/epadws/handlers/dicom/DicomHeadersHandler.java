@@ -26,15 +26,19 @@ import org.eclipse.jetty.server.handler.AbstractHandler;
 
 import edu.stanford.isis.epadws.common.WadoUrlBuilder;
 import edu.stanford.isis.epadws.db.mysql.pipeline.DicomHeadersTask;
+import edu.stanford.isis.epadws.resources.server.DICOMHeadersServerResource;
 import edu.stanford.isis.epadws.server.ProxyConfig;
 import edu.stanford.isis.epadws.server.ProxyLogger;
 
 /**
  * Download headers for a series or study in one quick step.
+ * <p>
+ * Now handled by Restlet resource {@link DICOMHeadersServerResource}.
  * 
  * @author amsnyder
  * 
  * @deprecated
+ * @see DICOMHeadersServerResource
  */
 @Deprecated
 public class DicomHeadersHandler extends AbstractHandler

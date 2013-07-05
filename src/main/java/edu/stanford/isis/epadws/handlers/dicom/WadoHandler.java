@@ -16,15 +16,19 @@ import org.apache.commons.httpclient.methods.GetMethod;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 
+import edu.stanford.isis.epadws.resources.server.WADOServerResource;
 import edu.stanford.isis.epadws.server.ProxyConfig;
 import edu.stanford.isis.epadws.server.ProxyLogger;
 
 /**
  * WandoHandler
+ * <p>
+ * Now handled by Restlet resource {@link WADOServerResource}.
  * 
  * @author ckurtz
  * 
  * @deprecated
+ * @see WADOServerResource
  */
 @Deprecated
 public class WadoHandler extends AbstractHandler

@@ -16,15 +16,19 @@ import org.eclipse.jetty.server.handler.AbstractHandler;
 import edu.stanford.isis.epadws.common.SearchResultUtils;
 import edu.stanford.isis.epadws.db.mysql.MySqlInstance;
 import edu.stanford.isis.epadws.db.mysql.MySqlQueries;
+import edu.stanford.isis.epadws.resources.server.EventServerResource;
 import edu.stanford.isis.epadws.server.ProxyConfig;
 import edu.stanford.isis.epadws.server.ProxyLogger;
 
 /**
  * Get all the events for a user
+ * <p>
+ * Now handled by Restlet resource {@link EventServerResource}.
  * 
  * @author amsnyder
  * 
  * @deprecated
+ * @see EventServerResource
  */
 @Deprecated
 public class EventSearchHandler extends AbstractHandler

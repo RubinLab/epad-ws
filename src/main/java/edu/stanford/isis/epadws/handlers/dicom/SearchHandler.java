@@ -24,8 +24,6 @@ import java.util.List;
 /**
  * Handles all search request APIs.
  *
- *
- *
  * @author amsnyder
  */
 public class SearchHandler extends AbstractHandler

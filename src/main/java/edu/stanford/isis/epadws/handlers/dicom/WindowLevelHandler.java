@@ -23,6 +23,7 @@ import org.eclipse.jetty.server.handler.AbstractHandler;
 
 import edu.stanford.isis.epadws.common.DicomFormatUtil;
 import edu.stanford.isis.epadws.common.FileKey;
+import edu.stanford.isis.epadws.resources.server.WindowLevelServerResource;
 import edu.stanford.isis.epadws.server.ProxyLogger;
 import edu.stanford.isis.epadws.server.managers.leveling.WindowLevelFactory;
 
@@ -40,7 +41,11 @@ import edu.stanford.isis.epadws.server.managers.leveling.WindowLevelFactory;
  * 
  * ex. http://rufus.stanford.edu:8325/level?cmd=query&wl=400&ww=40&seriesuid=1.2.456.76.34
  * 
+ * Now handled by Restlet resource {@link WindowLevelServerResource}.
+ * 
  * @deprecated
+ * 
+ * @see WindowLevelServerResource
  */
 @Deprecated
 public class WindowLevelHandler extends AbstractHandler

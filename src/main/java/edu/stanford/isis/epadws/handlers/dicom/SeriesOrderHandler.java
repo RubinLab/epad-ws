@@ -14,6 +14,7 @@ import org.eclipse.jetty.server.handler.AbstractHandler;
 import edu.stanford.isis.epadws.common.DicomFormatUtil;
 import edu.stanford.isis.epadws.db.mysql.MySqlInstance;
 import edu.stanford.isis.epadws.db.mysql.MySqlQueries;
+import edu.stanford.isis.epadws.resources.server.DICOMSeriesOrderServerResource;
 import edu.stanford.isis.epadws.server.ProxyLogger;
 
 /**
@@ -32,9 +33,12 @@ import edu.stanford.isis.epadws.server.ProxyLogger;
  * 
  * select * from pacsdb.instance as i, pacsdb.series as s where i.series_fk=s.pk and s.series_iuid=?
  * 
+ * Now handled by Restlet resource {@link DICOMSeriesOrderServerResource}.
+ * 
  * @author amsnyder
  * 
  * @deprecated
+ * @see DICOMSeriesOrderServerResource
  */
 @Deprecated
 public class SeriesOrderHandler extends AbstractHandler

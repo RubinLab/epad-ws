@@ -25,9 +25,12 @@ import edu.stanford.isis.epadws.server.ProxyLogger;
 import edu.stanford.isis.epadws.server.RSeriesData;
 
 /**
+ * Now handled by Restlet resource {@link SQLServerSearchResource}.
+ * 
  * @author amsnyder
  * 
  * @deprecated
+ * @see SQLServerSearchResource
  */
 @Deprecated
 public class MySqlSearchHandler extends AbstractHandler

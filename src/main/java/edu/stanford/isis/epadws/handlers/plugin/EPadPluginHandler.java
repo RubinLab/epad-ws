@@ -20,12 +20,17 @@ import org.eclipse.jetty.server.handler.AbstractHandler;
 
 import edu.stanford.isis.epad.plugin.server.PluginServletHandler;
 import edu.stanford.isis.epad.plugin.server.impl.PluginHandlerMap;
+import edu.stanford.isis.epadws.resources.server.PluginServerResource;
 import edu.stanford.isis.epadws.server.ProxyLogger;
 
 /**
  * The handler for plugins.
+ * <p>
+ * Now handled by Restlet resource {@link PluginServerResource}.
  * 
  * @deprecated
+ * 
+ * @see PluginServerResource
  */
 @Deprecated
 public class EPadPluginHandler extends AbstractHandler

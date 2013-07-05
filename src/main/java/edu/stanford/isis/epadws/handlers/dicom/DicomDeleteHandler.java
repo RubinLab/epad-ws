@@ -11,12 +11,16 @@ import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 
 import edu.stanford.isis.epadws.db.mysql.pipeline.DicomDeleteTask;
+import edu.stanford.isis.epadws.resources.server.DICOMDeleteServerResource;
 import edu.stanford.isis.epadws.server.ProxyLogger;
 
 /**
+ * Now handled by Restlet resource {@link DICOMDeleteServerResource}.
+ * 
  * @author kurtz
  * 
  * @deprecated
+ * @see DICOMDeleteServerResource
  */
 @Deprecated
 public class DicomDeleteHandler extends AbstractHandler

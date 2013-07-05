@@ -21,13 +21,18 @@ import org.eclipse.jetty.server.handler.AbstractHandler;
 import edu.stanford.isis.epadws.common.ProxyFileUtils;
 import edu.stanford.isis.epadws.db.mysql.MySqlInstance;
 import edu.stanford.isis.epadws.db.mysql.MySqlQueries;
+import edu.stanford.isis.epadws.resources.server.SegmentationPathServerResource;
 import edu.stanford.isis.epadws.server.ProxyConfig;
 import edu.stanford.isis.epadws.server.ProxyLogger;
 
 /**
+ * Now handled by Restlet resource {@link SegmentationPathServerResource}.
+ * 
  * @author kurtz
  * 
  * @deprecated
+ * 
+ * @see SegmentationPathServerResource
  */
 @Deprecated
 public class SegmentationPathHandler extends AbstractHandler

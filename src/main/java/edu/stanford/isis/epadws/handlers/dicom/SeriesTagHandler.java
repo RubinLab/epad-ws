@@ -24,13 +24,16 @@ import com.pixelmed.dicom.DicomInputStream;
 
 import edu.stanford.isis.epadws.db.mysql.MySqlInstance;
 import edu.stanford.isis.epadws.db.mysql.MySqlQueries;
+import edu.stanford.isis.epadws.resources.server.DICOMSeriesTagServerResource;
 import edu.stanford.isis.epadws.server.ProxyLogger;
 
 /**
+ * Now handled by Restlet resource {@link DICOMSeriesTagServerResource}.
  * 
  * @author alansnyder
  * 
  * @deprecated
+ * @see DICOMSeriesTagServerResource
  */
 @Deprecated
 public class SeriesTagHandler extends AbstractHandler
