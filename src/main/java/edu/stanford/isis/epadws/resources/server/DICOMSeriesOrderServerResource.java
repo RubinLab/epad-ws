@@ -33,8 +33,8 @@ import edu.stanford.isis.epadws.db.mysql.MySqlQueries;
 public class DICOMSeriesOrderServerResource extends BaseServerResource
 {
 	private static final String SUCCESS_MESSAGE = "Series order request succeeded";
-	private static final String EXCEPTION_MESSAGE = "Series order request has exception: ";
-	private static final String ERROR_MESSAGE = "Series order request has exception: ";
+	private static final String EXCEPTION_MESSAGE = "Series order request has exception";
+	private static final String ERROR_MESSAGE = "Series order request has exception";
 
 	public DICOMSeriesOrderServerResource()
 	{
@@ -63,11 +63,11 @@ public class DICOMSeriesOrderServerResource extends BaseServerResource
 		} catch (Exception e) {
 			log.warning(EXCEPTION_MESSAGE, e);
 			setStatus(Status.SERVER_ERROR_INTERNAL);
-			return EXCEPTION_MESSAGE + e.getMessage();
+			return EXCEPTION_MESSAGE + ": " + e.getMessage();
 		} catch (Error e) {
 			log.warning(ERROR_MESSAGE, e);
 			setStatus(Status.SERVER_ERROR_INTERNAL);
-			return ERROR_MESSAGE + e.getMessage();
+			return ERROR_MESSAGE + ": " + e.getMessage();
 		}
 	}
 

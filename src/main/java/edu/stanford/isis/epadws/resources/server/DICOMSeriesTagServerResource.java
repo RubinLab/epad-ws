@@ -25,10 +25,10 @@ import edu.stanford.isis.epadws.db.mysql.MySqlQueries;
 public class DICOMSeriesTagServerResource extends BaseServerResource
 {
 	private static final String SUCCESS_MESSAGE = "Series tag request succeeded";
-	private static final String IO_EXCEPTION_MESSAGE = "Series tag request had IO exception: ";
-	private static final String DICOM_EXCEPTION_MESSAGE = "Series tag request had DICOM exception: ";
-	private static final String SQL_EXCEPTION_MESSAGE = "Series tag request had SQL exception: ";
-	private static final String ERROR_MESSAGE = "Series tag request had error: ";
+	private static final String IO_EXCEPTION_MESSAGE = "Series tag request had IO exception";
+	private static final String DICOM_EXCEPTION_MESSAGE = "Series tag request had DICOM exception";
+	private static final String SQL_EXCEPTION_MESSAGE = "Series tag request had SQL exception";
+	private static final String ERROR_MESSAGE = "Series tag request had error";
 
 	public DICOMSeriesTagServerResource()
 	{
@@ -47,13 +47,12 @@ public class DICOMSeriesTagServerResource extends BaseServerResource
 		setResponseHeader("Access-Control-Allow-Origin", "*");
 
 		String seriesIUID = getQueryValue("series_iuid"); // TODO Need constants for these DICOM names
-		log.info("SeriesTag: series_iuid =" + seriesIUID);
+		log.info("SeriesTag: series_iuid = " + seriesIUID);
 
 		boolean useBase64 = true;
 		String contentType = getQueryValue("type");
-		if ("text".equals(contentType)) {
+		if ("text".equals(contentType))
 			useBase64 = false;
-		}
 
 		try {
 			String response = query(seriesIUID, useBase64);
@@ -63,19 +62,19 @@ public class DICOMSeriesTagServerResource extends BaseServerResource
 		} catch (IOException e) {
 			log.warning(IO_EXCEPTION_MESSAGE, e);
 			setStatus(Status.SERVER_ERROR_INTERNAL);
-			return IO_EXCEPTION_MESSAGE + e.getMessage();
+			return IO_EXCEPTION_MESSAGE + ": " + e.getMessage();
 		} catch (DicomException e) {
 			log.warning(DICOM_EXCEPTION_MESSAGE, e);
 			setStatus(Status.SERVER_ERROR_INTERNAL);
-			return DICOM_EXCEPTION_MESSAGE + e.getMessage();
+			return DICOM_EXCEPTION_MESSAGE + ": " + e.getMessage();
 		} catch (SQLException e) {
 			log.warning(SQL_EXCEPTION_MESSAGE, e);
 			setStatus(Status.SERVER_ERROR_INTERNAL);
-			return SQL_EXCEPTION_MESSAGE + e.getMessage();
+			return SQL_EXCEPTION_MESSAGE + ": " + e.getMessage();
 		} catch (Error e) {
 			log.warning(ERROR_MESSAGE, e);
 			setStatus(Status.SERVER_ERROR_INTERNAL);
-			return ERROR_MESSAGE + e.getMessage();
+			return ERROR_MESSAGE + ": " + e.getMessage();
 		}
 	}
 

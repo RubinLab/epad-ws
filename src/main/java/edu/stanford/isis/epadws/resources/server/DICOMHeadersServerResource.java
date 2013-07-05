@@ -26,9 +26,9 @@ import edu.stanford.isis.epadws.db.mysql.pipeline.DicomHeadersTask;
 public class DICOMHeadersServerResource extends BaseServerResource
 {
 	private static final String SUCCESS_MESSAGE = "Request succeeded.";
-	private static final String FILE_NOT_FOUND_MESSAGE = "File not found: ";
-	private static final String IO_EXCEPTION_MESSAGE = "IO exception: ";
-	private static final String BAD_DICOM_REFERENCE_MESSAGE = "Bad DICOM reference: ";
+	private static final String FILE_NOT_FOUND_MESSAGE = "File not found";
+	private static final String IO_EXCEPTION_MESSAGE = "IO exception";
+	private static final String BAD_DICOM_REFERENCE_MESSAGE = "Bad DICOM reference";
 	private static final String BAD_REQUEST_MESSAGE = "Bad request - no query";
 
 	public DICOMHeadersServerResource()
@@ -56,19 +56,18 @@ public class DICOMHeadersServerResource extends BaseServerResource
 
 			if (studyIdKey != null && seriesIdKey != null && imageIdKey != null) {
 				try { // Get the WADO and the tag file
-					StringBuilder out = new StringBuilder();
-					executeDICOMHeadersTask(studyIdKey, seriesIdKey, imageIdKey, out);
+					String out = executeDICOMHeadersTask(studyIdKey, seriesIdKey, imageIdKey);
 					log.info(SUCCESS_MESSAGE);
 					setStatus(Status.SUCCESS_OK);
-					return out.toString();
+					return out;
 				} catch (FileNotFoundException e) {
 					log.warning(FILE_NOT_FOUND_MESSAGE, e);
 					setStatus(Status.SERVER_ERROR_INTERNAL);
-					return FILE_NOT_FOUND_MESSAGE + e.getMessage();
+					return FILE_NOT_FOUND_MESSAGE + ": " + e.getMessage();
 				} catch (IOException e) {
 					log.warning(IO_EXCEPTION_MESSAGE, e);
 					setStatus(Status.SERVER_ERROR_INTERNAL);
-					return IO_EXCEPTION_MESSAGE + e.getMessage();
+					return IO_EXCEPTION_MESSAGE + ": " + e.getMessage();
 				}
 			} else {
 				log.info(BAD_DICOM_REFERENCE_MESSAGE);
@@ -82,12 +81,13 @@ public class DICOMHeadersServerResource extends BaseServerResource
 		}
 	}
 
-	private void executeDICOMHeadersTask(String studyIdKey, String seriesIdKey, String imageIdKey, StringBuilder out)
-			throws IOException, FileNotFoundException
+	private String executeDICOMHeadersTask(String studyIdKey, String seriesIdKey, String imageIdKey) throws IOException,
+			FileNotFoundException
 	{
 		File tempDicom = File.createTempFile(imageIdKey, ".tmp");
 		feedFileWithDicomFromWado(tempDicom, studyIdKey, seriesIdKey, imageIdKey);
 		File tempTag = File.createTempFile(imageIdKey, "_tag.tmp");
+		StringBuilder out = new StringBuilder();
 
 		ExecutorService taskExecutor = Executors.newFixedThreadPool(4); // Generation of the tag file
 		taskExecutor.execute(new DicomHeadersTask(tempDicom, tempTag));
@@ -105,6 +105,7 @@ public class DICOMHeadersServerResource extends BaseServerResource
 			}
 		} catch (InterruptedException e) {
 		}
+		return out.toString();
 	}
 
 	private String getStudyUIDFromRequest(String queryString)

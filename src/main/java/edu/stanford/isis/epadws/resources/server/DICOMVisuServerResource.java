@@ -46,46 +46,27 @@ public class DICOMVisuServerResource extends BaseServerResource
 		log.info("Received DICOM VISU query from ePAD : " + queryString);
 
 		if (queryString != null) {
-			StringBuilder out = new StringBuilder();
 			queryString = queryString.trim();
 			String studyIdKey = getStudyUIDFromRequest(queryString);
 			String seriesIdKey = getSeriesUIDFromRequest(queryString);
 			String imageIdKey = getInstanceUIDFromRequest(queryString);
 
 			if (studyIdKey != null && seriesIdKey != null && imageIdKey != null) { // Get the WADO and the tag file
-				SourceImage srcDicomImage = null;
 				try {
-					File tempDicom = File.createTempFile(imageIdKey, ".tmp");
-					feedFileWithDicomFromWado(tempDicom, studyIdKey, seriesIdKey, imageIdKey);
+					String out = calculate(studyIdKey, seriesIdKey, imageIdKey);
 
-					try {
-						srcDicomImage = new SourceImage(tempDicom.getAbsolutePath());
-					} catch (DicomException e) {
-						log.warning(DICOM_EXCEPTION_MESSAGE, e);
-						setStatus(Status.SERVER_ERROR_INTERNAL);
-						return DICOM_EXCEPTION_MESSAGE + e.getMessage();
-					}
+					log.info(SUCCESS_MESSAGE);
+					setStatus(Status.SUCCESS_OK);
+					return out.toString();
+				} catch (DicomException e) {
+					log.warning(DICOM_EXCEPTION_MESSAGE, e);
+					setStatus(Status.SERVER_ERROR_INTERNAL);
+					return DICOM_EXCEPTION_MESSAGE + ": " + e.getMessage();
 				} catch (IOException e) {
 					log.warning(IO_EXCEPTION_MESSAGE, e);
 					setStatus(Status.SERVER_ERROR_INTERNAL);
-					return IO_EXCEPTION_MESSAGE + e.getMessage();
+					return IO_EXCEPTION_MESSAGE + ": " + e.getMessage();
 				}
-				double windowWidth = 0.0;
-				double windowCenter = 0.0;
-
-				if (srcDicomImage != null) {
-					ImageEnhancer ie = new ImageEnhancer(srcDicomImage);
-					ie.findVisuParametersImage();
-					windowWidth = ie.getWindowWidth();
-					windowCenter = ie.getWindowCenter();
-				}
-				String separator = config.getParam("fieldSeparator"); // TODO Constants for these names
-				out.append("windowWidth" + separator + "windowCenten");
-				out.append(windowWidth + separator + windowCenter + "\n");
-
-				log.info(SUCCESS_MESSAGE);
-				setStatus(Status.SUCCESS_OK);
-				return out.toString();
 			} else {
 				log.info(BAD_DICOM_REFERENCE_MESSAGE);
 				setStatus(Status.CLIENT_ERROR_BAD_REQUEST);
@@ -96,6 +77,28 @@ public class DICOMVisuServerResource extends BaseServerResource
 			setStatus(Status.CLIENT_ERROR_BAD_REQUEST);
 			return BAD_REQUEST_MESSAGE;
 		}
+	}
+
+	private String calculate(String studyIdKey, String seriesIdKey, String imageIdKey) throws IOException, DicomException
+	{
+		StringBuilder out = new StringBuilder();
+		File tempDicom = File.createTempFile(imageIdKey, ".tmp");
+		feedFileWithDicomFromWado(tempDicom, studyIdKey, seriesIdKey, imageIdKey);
+		SourceImage srcDicomImage = new SourceImage(tempDicom.getAbsolutePath());
+		double windowWidth = 0.0;
+		double windowCenter = 0.0;
+
+		if (srcDicomImage != null) {
+			ImageEnhancer ie = new ImageEnhancer(srcDicomImage);
+			ie.findVisuParametersImage();
+			windowWidth = ie.getWindowWidth();
+			windowCenter = ie.getWindowCenter();
+		}
+		String separator = config.getParam("fieldSeparator"); // TODO Constants for these names
+		out.append("windowWidth" + separator + "windowCenten");
+		out.append(windowWidth + separator + windowCenter + "\n");
+
+		return out.toString();
 	}
 
 	private static String getStudyUIDFromRequest(String queryString)

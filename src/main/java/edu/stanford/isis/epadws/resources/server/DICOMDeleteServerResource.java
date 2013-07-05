@@ -12,7 +12,7 @@ import edu.stanford.isis.epadws.db.mysql.pipeline.DicomDeleteTask;
 public class DICOMDeleteServerResource extends BaseServerResource
 {
 	private static final String SUCCESS_MESSAGE = "DICOM image deleted";
-	private static final String FAILURE_MESSAGE = "Error deleting DICOM image: ";
+	private static final String FAILURE_MESSAGE = "Error deleting DICOM image";
 	private static final String NO_QUERY_ERROR_MESSAGE = "No query present in request";
 
 	public DICOMDeleteServerResource()
@@ -47,7 +47,7 @@ public class DICOMDeleteServerResource extends BaseServerResource
 			} catch (Exception e) {
 				log.warning(FAILURE_MESSAGE, e);
 				setStatus(Status.SERVER_ERROR_INTERNAL);
-				return FAILURE_MESSAGE + e.getMessage();
+				return FAILURE_MESSAGE + ": " + e.getMessage();
 			}
 		} else {
 			log.info(NO_QUERY_ERROR_MESSAGE);
