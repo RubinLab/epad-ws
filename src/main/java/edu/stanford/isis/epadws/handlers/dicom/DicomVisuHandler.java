@@ -31,7 +31,7 @@ import edu.stanford.isis.epadws.server.ProxyLogger;
 /**
  * Generate window width and center for a series or study in one quick step.
  * <p>
- * Now handles by Restlet resource {@link DICOMVisuServerResource}.
+ * Now handled by Restlet resource {@link DICOMVisuServerResource}.
  * 
  * @author amsnyder
  * 
