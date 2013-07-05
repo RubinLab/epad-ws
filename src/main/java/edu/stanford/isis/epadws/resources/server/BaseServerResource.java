@@ -7,6 +7,11 @@ import org.restlet.util.Series;
 import edu.stanford.isis.epadws.server.ProxyConfig;
 import edu.stanford.isis.epadws.server.ProxyLogger;
 
+/**
+ * Base resource for all ePAD web service REST resources.
+ * 
+ * @author martin
+ */
 public class BaseServerResource extends ServerResource
 {
 	protected static final ProxyLogger log = ProxyLogger.getInstance();

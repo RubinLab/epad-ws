@@ -10,3 +10,4 @@
 # Exclude build directory
 target/*
 .
+/target

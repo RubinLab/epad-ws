@@ -1,6 +1,7 @@
 package edu.stanford.isis.epadws.resources.server;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -21,6 +22,7 @@ import javax.xml.transform.stream.StreamResult;
 
 import org.apache.commons.fileupload.FileItemIterator;
 import org.apache.commons.fileupload.FileItemStream;
+import org.apache.commons.fileupload.FileUploadException;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpException;
 import org.apache.commons.httpclient.methods.GetMethod;
@@ -44,9 +46,15 @@ import edu.stanford.hakan.aim3api.usage.AnnotationGetter;
 import edu.stanford.isis.epad.plugin.server.impl.PluginConfig;
 import edu.stanford.isis.epadws.server.ProxyConfig;
 
+/**
+ * AIM resource.
+ * 
+ * 
+ * @author martin
+ */
 public class AIMServerResource extends BaseServerResource
 {
-	public String serverProxy = ProxyConfig.getInstance().getParam("serverProxy");
+	public String serverProxy = ProxyConfig.getInstance().getParam("serverProxy"); // TODO Need constants for these names
 	public String namespace = ProxyConfig.getInstance().getParam("namespace");
 	public String serverUrl = ProxyConfig.getInstance().getParam("serverUrl");
 	public String username = ProxyConfig.getInstance().getParam("username");
@@ -63,6 +71,8 @@ public class AIMServerResource extends BaseServerResource
 	private static final String DOM_ERROR_MESSAGE = "DOM error: ";
 	private static final String AIM_ERROR_MESSAGE = "AIM error: ";
 	private static final String BAD_REQUEST_ERROR_MESSAGE = "Missing query";
+	private static final String FAILED_TO_UPLOAD_MESSAGE = "Failed to upload AIM files to directory ";
+	private static final String UPLOAD_ERROR_MESSAGE = "Upload error. Could JAR file be missing from start script? ";
 
 	public AIMServerResource()
 	{
@@ -76,52 +86,19 @@ public class AIMServerResource extends BaseServerResource
 	}
 
 	@Get("xml")
-	public String query()
+	public String queryAIM()
 	{
-		setResponseHeader("Cache-Control", "no-cache");
 		String queryString = getQuery().getQueryString(CharacterSet.UTF_8);
-
 		log.info("AimResourceHandler received GET method : " + queryString);
 
+		setResponseHeader("Cache-Control", "no-cache");
+
 		if (queryString != null) {
-			String[] queryStrings = queryString.trim().split("=");
-			String id1 = null;
-			String id2 = null;
+			ArrayList<ImageAnnotation> imageAnnotations = getAIMImageAnnotations(queryString);
 
-			if (queryStrings.length == 2) {
-				id1 = queryStrings[0];
-				id2 = queryStrings[1];
-			} else {
-				if (queryStrings.length == 1) {
-					id1 = queryStrings[0];
-				}
-			}
-			ArrayList<ImageAnnotation> aims = getAIM(id1, id2); // Get the aim files
-
-			try { // Build an XML document
-				DocumentBuilderFactory dbfac = DocumentBuilderFactory.newInstance();
-				DocumentBuilder docBuilder = null;
-				docBuilder = dbfac.newDocumentBuilder();
-				Document doc = docBuilder.newDocument();
-				Element root = doc.createElement("imageAnnotations");
-				doc.appendChild(root);
-
-				for (ImageAnnotation aim : aims) {
-					Node node = aim.getXMLNode(docBuilder.newDocument());
-					Node copyNode = doc.importNode(node, true);
-
-					// copy the node
-					Element res = (Element)copyNode;
-					res.setAttributeNS("http://www.w3.org/2000/xmlns/", "xmlns:rdf",
-							"http://www.w3.org/1999/02/22-rdf-syntax-ns#");
-					res.setAttributeNS("http://www.w3.org/2000/xmlns/", "xmlns:xsi", "http://www.w3.org/2001/XMLSchema-instance");
-					res.setAttribute("xsi:schemaLocation",
-							"gme://caCORE.caCORE/3.2/edu.northwestern.radiology.AIM AIM_v3_rv11_XML.xsd");
-
-					Node n = renameNodeNS(res, "ImageAnnotation");
-					root.appendChild(n); // Add to the root
-				}
-				String queryResults = XmlDocumentToString(doc);
+			try {
+				String queryResults = buildXMLDocument(imageAnnotations);
+				setStatus(Status.SUCCESS_OK);
 				return queryResults;
 			} catch (ParserConfigurationException e) {
 				setStatus(Status.SERVER_ERROR_INTERNAL);
@@ -144,65 +121,113 @@ public class AIMServerResource extends BaseServerResource
 	}
 
 	@Post("xml")
-	public String upload(Representation representation)
+	public String uploadAIM(Representation representation)
 	{
-		log.info("AimResourceHandler received POST method");
-
+		log.info("AIM resource received POST method");
 		String filePath = "/home/epad/DicomProxy/resources/annotations/upload/"; // TODO This should come from config file
-		StringBuilder out = new StringBuilder();
 
-		log.info("Uploading files to directory: " + filePath);
-
-		try { // Create the directory for uploading files.
-			RestletFileUpload upload = new RestletFileUpload();
-
-			FileItemIterator iter = upload.getItemIterator(representation);
-			int fileCount = 0;
-			while (iter.hasNext()) {
-				fileCount++;
-				log.debug("starting file #" + fileCount);
-				FileItemStream item = iter.next();
-
-				String name = item.getFieldName();
-				log.debug("FieldName = " + name);
-				InputStream stream = item.openStream();
-
-				String tempName = "temp-" + System.currentTimeMillis() + ".xml";
-				File f = new File(filePath + tempName);
-				FileOutputStream fos = new FileOutputStream(f);
-				try {
-					int len;
-					byte[] buffer = new byte[32768];
-					while ((len = stream.read(buffer, 0, buffer.length)) != -1) {
-						fos.write(buffer, 0, len);
-					}
-				} finally {
-					fos.close();
-				}
-				out.append("added (" + fileCount + "): " + name + "\n");
-
-				// Transform it an AIM File
-				ImageAnnotation ia = AnnotationGetter.getImageAnnotationFromFile(f.getAbsolutePath(), xsdFilePath);
-				if (ia != null) {
-					saveToServer(ia);
-					out.append("-- Add to AIM server: " + ia.getUniqueIdentifier() + "<br>\n");
-				} else {
-					out.append("-- Failed ! not added to AIM server<br>\n");
-				}
-			}
+		try { // Create the directory for AIM file upload
+			StringBuilder out = new StringBuilder();
+			RestletFileUpload fileUpload = new RestletFileUpload();
+			FileItemIterator fileIterator = fileUpload.getItemIterator(representation);
+			uploadFiles(filePath, fileIterator, out);
 			setStatus(Status.SUCCESS_OK);
 			return out.toString();
 		} catch (Exception e) {
-			String errorMessage = "Failed to upload AIM files to _" + filePath + "_" + e.getMessage();
+			String errorMessage = FAILED_TO_UPLOAD_MESSAGE + filePath + ": " + e.getMessage();
 			log.info(errorMessage);
 			setStatus(Status.SERVER_ERROR_INTERNAL);
 			return errorMessage;
 		} catch (Error e) {
-			String errorMessage = "Error. Could jar file be missing from start script? Error = " + e.getMessage();
+			String errorMessage = UPLOAD_ERROR_MESSAGE + e.getMessage();
 			log.info(errorMessage);
 			setStatus(Status.SERVER_ERROR_INTERNAL);
 			return errorMessage;
 		}
+	}
+
+	private void uploadFiles(String filePath, FileItemIterator fileIterator, StringBuilder out)
+			throws FileUploadException, IOException, FileNotFoundException, AimException
+	{
+		log.info("Uploading files to directory: " + filePath);
+
+		int fileCount = 0;
+		while (fileIterator.hasNext()) {
+			FileItemStream item = fileIterator.next();
+			String name = item.getFieldName();
+			InputStream stream = item.openStream();
+			fileCount++;
+
+			log.debug("Starting file #" + fileCount);
+			log.debug("FieldName = " + name);
+
+			String tempName = "temp-" + System.currentTimeMillis() + ".xml";
+			File f = new File(filePath + tempName);
+			FileOutputStream fos = new FileOutputStream(f);
+			try {
+				int len;
+				byte[] buffer = new byte[32768];
+				while ((len = stream.read(buffer, 0, buffer.length)) != -1) {
+					fos.write(buffer, 0, len);
+				}
+			} finally {
+				fos.close();
+			}
+			out.append("Added (" + fileCount + "): " + name + "\n");
+
+			// Transform it an AIM File
+			ImageAnnotation ia = AnnotationGetter.getImageAnnotationFromFile(f.getAbsolutePath(), xsdFilePath);
+			if (ia != null) {
+				saveToServer(ia);
+				out.append("-- Add to AIM server: " + ia.getUniqueIdentifier() + "<br>\n");
+			} else {
+				out.append("-- Failed ! not added to AIM server<br>\n");
+			}
+		}
+	}
+
+	private String buildXMLDocument(ArrayList<ImageAnnotation> aims) throws ParserConfigurationException, AimException
+	{
+		DocumentBuilderFactory dbfac = DocumentBuilderFactory.newInstance();
+		DocumentBuilder docBuilder = null;
+		docBuilder = dbfac.newDocumentBuilder();
+		Document doc = docBuilder.newDocument();
+		Element root = doc.createElement("imageAnnotations");
+		doc.appendChild(root);
+
+		for (ImageAnnotation aim : aims) {
+			Node node = aim.getXMLNode(docBuilder.newDocument());
+			Node copyNode = doc.importNode(node, true);
+
+			// Copy the node
+			Element res = (Element)copyNode;
+			res.setAttributeNS("http://www.w3.org/2000/xmlns/", "xmlns:rdf", "http://www.w3.org/1999/02/22-rdf-syntax-ns#");
+			res.setAttributeNS("http://www.w3.org/2000/xmlns/", "xmlns:xsi", "http://www.w3.org/2001/XMLSchema-instance");
+			res.setAttribute("xsi:schemaLocation",
+					"gme://caCORE.caCORE/3.2/edu.northwestern.radiology.AIM AIM_v3_rv11_XML.xsd");
+
+			Node n = renameNodeNS(res, "ImageAnnotation");
+			root.appendChild(n); // Add to the root
+		}
+		String queryResults = XmlDocumentToString(doc);
+		return queryResults;
+	}
+
+	private ArrayList<ImageAnnotation> getAIMImageAnnotations(String queryString)
+	{
+		String[] queryStrings = queryString.trim().split("=");
+		String id1 = null;
+		String id2 = null;
+		if (queryStrings.length == 2) {
+			id1 = queryStrings[0];
+			id2 = queryStrings[1];
+		} else {
+			if (queryStrings.length == 1) {
+				id1 = queryStrings[0];
+			}
+		}
+		ArrayList<ImageAnnotation> aims = getAIM(id1, id2); // Get the AIM files
+		return aims;
 	}
 
 	/**
