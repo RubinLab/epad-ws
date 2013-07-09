@@ -8,6 +8,11 @@ import java.awt.image.WritableRaster;
 import org.dcm4che2.data.DicomObject;
 import org.dcm4che2.data.Tag;
 
+/**
+ * Class extracted from https://bmir-gforge.stanford.edu/svn/dirac/trunk/ePAD/ePAD-2012/DicomInterface to remove
+ * dependency.
+ * 
+ */
 public class RasterProcessor
 {
 	/**
