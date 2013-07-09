@@ -83,7 +83,8 @@
 	<artifactId>aim3api</artifactId>
         <version>${aim3api.version}</version>
      </dependency>
-            
+
+    <!-- Start of DCM4CHEE dependencies -->
     <dependency>
       <groupId>dcm4che</groupId>
       <artifactId>dcm4che-core</artifactId>
@@ -143,6 +144,8 @@
       <artifactId>dcm4che-imageio-rle</artifactId>
       <version>${dcm4chee.version}</version>
     </dependency>
+
+    <!-- End of DCM4CHEE dependencies -->
 
     <dependency>
         <groupId>org.restlet.jse</groupId>
@@ -296,19 +299,18 @@
      <version>${servlet.api.version}</version>
    </dependency>
 
-   <!-- Local ./lib repository for JARs that are not in pubic Maven repositories. -->
-   <!-- See http://blog.dub.podval.org/2010/01/maven-in-project-repository.html for explanation of how to generate these repository entries. -->
-
    <!-- Local ./lib dependency. TODO: Server should not be dependent on this. -->
 
+    <!-- This is in the project repository because we could not find a public Maven repository containing it. -->
+    <!--
    <dependency>
 	<groupId>dicominterface</groupId>
 	<artifactId>dicominterface</artifactId>
 	<version>1.0</version>
    </dependency>
+    -->
 
-   <!-- Local ./lib dependency. TODO: See if we can find a public Maven repository for this. -->
-
+    <!-- This is in the project repository because we could not find a public Maven repository containing it. -->
    <dependency>
 	<groupId>pixelmed</groupId>
 	<artifactId>pixelmed</artifactId>
