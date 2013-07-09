@@ -299,18 +299,7 @@
      <version>${servlet.api.version}</version>
    </dependency>
 
-   <!-- Local ./lib dependency. TODO: Server should not be dependent on this. -->
-
-    <!-- This is in the project repository because we could not find a public Maven repository containing it. -->
-    <!--
-   <dependency>
-	<groupId>dicominterface</groupId>
-	<artifactId>dicominterface</artifactId>
-	<version>1.0</version>
-   </dependency>
-    -->
-
-    <!-- This is in the project repository because we could not find a public Maven repository containing it. -->
+   <!-- This is in the project repository because we could not find a public Maven repository containing it. -->
    <dependency>
 	<groupId>pixelmed</groupId>
 	<artifactId>pixelmed</artifactId>
