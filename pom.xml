@@ -4,9 +4,9 @@
 
   <groupId>edu.stanford.isis.dicomproxy</groupId>
   <artifactId>epad-ws</artifactId>
+  <!-- Inherit version from parent -->
   <packaging>jar</packaging>
   <name>ePAD Web Services</name>
-  <url>http://maven.apache.org</url>
 
   <parent>
     <groupId>edu.stanford.isis</groupId>
