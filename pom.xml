@@ -2,18 +2,18 @@
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
-  <groupId>edu.stanford.isis.dicomproxy</groupId>
-  <artifactId>epad-ws</artifactId>
-  <!-- Inherit version from parent -->
-  <packaging>jar</packaging>
-  <name>ePAD Web Services</name>
-
   <parent>
     <groupId>edu.stanford.isis</groupId>
     <artifactId>epad-project</artifactId>
     <version>1.2-SNAPSHOT</version>
     <relativePath>../isis-epad-project/pom.xml</relativePath>
   </parent>
+
+  <groupId>edu.stanford.isis.dicomproxy</groupId>
+  <artifactId>epad-ws</artifactId>
+  <!-- Inherit version from parent -->
+  <packaging>jar</packaging>
+  <name>ePAD Web Services</name>
 
   <properties>
 
@@ -39,7 +39,6 @@
     <commons.io.version>1.4</commons.io.version>
     <commons.codec.version>1.7</commons.codec.version>
     <junit.version>3.8.1</junit.version>
-
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
   </properties>
@@ -153,6 +152,8 @@
 
     <!-- End of DCM4CHEE dependencies -->
 
+    <!-- Start of Restlet dependencies -->
+
     <dependency>
         <groupId>org.restlet.jse</groupId>
         <artifactId>org.restlet</artifactId>
@@ -182,6 +183,8 @@
         <artifactId>org.restlet.ext.servlet</artifactId>
         <version>${restlet.version}</version>
     </dependency>
+
+    <!-- End of Restlet dependencies -->
 
     <dependency>
 	<groupId>com.google.code.gson</groupId>
@@ -307,9 +310,9 @@
 
    <!-- This is in the project repository because we could not find a public Maven repository containing it. -->
    <dependency>
-	<groupId>pixelmed</groupId>
-	<artifactId>pixelmed</artifactId>
-	<version>1.0</version>
+     <groupId>pixelmed</groupId>
+     <artifactId>pixelmed</artifactId>
+     <version>1.0</version>
    </dependency>
 
   </dependencies>
@@ -327,14 +330,14 @@
         </configuration>
       </plugin>
 
-	<plugin>
-                <groupId>org.mortbay.jetty</groupId>
-                <artifactId>jetty-maven-plugin</artifactId>
-                <version>${jetty.version}</version>
-                <configuration>
-                    <scanIntervalSeconds>2</scanIntervalSeconds>
-                </configuration>
-            </plugin>
+      <plugin>
+        <groupId>org.mortbay.jetty</groupId>
+        <artifactId>jetty-maven-plugin</artifactId>
+        <version>${jetty.version}</version>
+        <configuration>
+          <scanIntervalSeconds>2</scanIntervalSeconds>
+        </configuration>
+      </plugin>
 
     </plugins>
 
