@@ -12,8 +12,9 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 
-import edu.stanford.isis.epadws.common.DicomSeriesUID;
-import edu.stanford.isis.epadws.common.DicomStudyUID;
+import edu.stanford.isis.epad.common.ProxyLogger;
+import edu.stanford.isis.epad.common.dicom.DicomSeriesUID;
+import edu.stanford.isis.epad.common.dicom.DicomStudyUID;
 import edu.stanford.isis.epadws.server.managers.pipeline.PipelineFactory;
 import edu.stanford.isis.epadws.server.threads.ThumbnailGenerator;
 

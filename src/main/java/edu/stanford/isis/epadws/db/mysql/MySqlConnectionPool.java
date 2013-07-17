@@ -1,6 +1,6 @@
 package edu.stanford.isis.epadws.db.mysql;
 
-import edu.stanford.isis.epadws.server.ProxyLogger;
+import edu.stanford.isis.epad.common.ProxyLogger;
 import edu.stanford.isis.epadws.server.ShutdownSignal;
 
 import java.sql.Connection;

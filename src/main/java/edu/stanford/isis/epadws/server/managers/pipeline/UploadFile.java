@@ -7,7 +7,7 @@
  */
 package edu.stanford.isis.epadws.server.managers.pipeline;
 
-import edu.stanford.isis.epadws.common.FileKey;
+import edu.stanford.isis.epad.common.FileKey;
 
 import java.io.File;
 

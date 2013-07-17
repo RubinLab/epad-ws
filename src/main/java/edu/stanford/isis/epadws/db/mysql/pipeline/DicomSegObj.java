@@ -4,7 +4,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 
-import edu.stanford.isis.epadws.server.ProxyLogger;
+import edu.stanford.isis.epad.common.ProxyLogger;
 
 import org.apache.commons.codec.binary.Base64;
 

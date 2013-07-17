@@ -11,9 +11,10 @@ package edu.stanford.isis.epadws.server.managers.pipeline;
 import java.io.*;
 import java.util.concurrent.Callable;
 import java.io.IOException;
+
 import javax.imageio.ImageIO;
 
-import edu.stanford.isis.epadws.server.ProxyLogger;
+import edu.stanford.isis.epad.common.ProxyLogger;
 import edu.stanford.isis.epadws.server.managers.support.DicomReader;
 
 

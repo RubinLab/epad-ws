@@ -20,7 +20,7 @@ import org.restlet.data.CharacterSet;
 import org.restlet.data.Status;
 import org.restlet.resource.Get;
 
-import edu.stanford.isis.epadws.common.WadoUrlBuilder;
+import edu.stanford.isis.epad.common.WadoUrlBuilder;
 import edu.stanford.isis.epadws.db.mysql.pipeline.DicomHeadersTask;
 
 public class DICOMHeadersServerResource extends BaseServerResource
@@ -144,7 +144,7 @@ public class DICOMHeadersServerResource extends BaseServerResource
 		int port = config.getIntParam("DicomServerWadoPort");
 		String base = config.getParam("WadoUrlExtension");
 
-		WadoUrlBuilder wadoUrlBuilder = new WadoUrlBuilder(host, port, base, WadoUrlBuilder.Type.FILE);
+		WadoUrlBuilder wadoUrlBuilder = new WadoUrlBuilder(host, port, base, WadoUrlBuilder.ContentType.FILE);
 
 		wadoUrlBuilder.setStudyUID(studyIdKey);
 		wadoUrlBuilder.setSeriesUID(seriesIdKey);

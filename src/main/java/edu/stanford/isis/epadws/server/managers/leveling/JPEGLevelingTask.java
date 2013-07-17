@@ -7,9 +7,9 @@
  */
 package edu.stanford.isis.epadws.server.managers.leveling;
 
-import edu.stanford.isis.epadws.common.FileKey;
-import edu.stanford.isis.epadws.common.ProxyFileUtils;
-import edu.stanford.isis.epadws.server.ProxyLogger;
+import edu.stanford.isis.epad.common.FileKey;
+import edu.stanford.isis.epad.common.ProxyFileUtils;
+import edu.stanford.isis.epad.common.ProxyLogger;
 
 import java.io.*;
 import java.util.concurrent.Callable;

@@ -4,8 +4,8 @@ import org.restlet.engine.header.Header;
 import org.restlet.resource.ServerResource;
 import org.restlet.util.Series;
 
-import edu.stanford.isis.epadws.server.ProxyConfig;
-import edu.stanford.isis.epadws.server.ProxyLogger;
+import edu.stanford.isis.epad.common.ProxyConfig;
+import edu.stanford.isis.epad.common.ProxyLogger;
 
 /**
  * Base resource for all ePAD web service REST resources.

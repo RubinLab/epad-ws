@@ -7,9 +7,9 @@
  */
 package edu.stanford.isis.epadws.dcm4chee.demos;
 
-import edu.stanford.isis.epadws.common.DicomImageUID;
-import edu.stanford.isis.epadws.common.DicomSeriesUID;
-import edu.stanford.isis.epadws.common.DicomStudyUID;
+import edu.stanford.isis.epad.common.dicom.DicomImageUID;
+import edu.stanford.isis.epad.common.dicom.DicomSeriesUID;
+import edu.stanford.isis.epad.common.dicom.DicomStudyUID;
 
 import java.util.Date;
 import java.util.List;

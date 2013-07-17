@@ -13,12 +13,12 @@ import javax.servlet.http.HttpServletResponse;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 
+import edu.stanford.isis.epad.common.ProxyConfig;
+import edu.stanford.isis.epad.common.ProxyLogger;
 import edu.stanford.isis.epadws.common.SearchResultUtils;
 import edu.stanford.isis.epadws.db.mysql.MySqlInstance;
 import edu.stanford.isis.epadws.db.mysql.MySqlQueries;
 import edu.stanford.isis.epadws.resources.server.EventServerResource;
-import edu.stanford.isis.epadws.server.ProxyConfig;
-import edu.stanford.isis.epadws.server.ProxyLogger;
 
 /**
  * Get all the events for a user

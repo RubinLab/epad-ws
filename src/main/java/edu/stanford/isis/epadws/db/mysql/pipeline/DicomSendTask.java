@@ -1,8 +1,8 @@
 package edu.stanford.isis.epadws.db.mysql.pipeline;
 
-import edu.stanford.isis.epadws.common.ProxyFileUtils;
-import edu.stanford.isis.epadws.server.ProxyConfig;
-import edu.stanford.isis.epadws.server.ProxyLogger;
+import edu.stanford.isis.epad.common.ProxyConfig;
+import edu.stanford.isis.epad.common.ProxyFileUtils;
+import edu.stanford.isis.epad.common.ProxyLogger;
 
 import java.io.*;
 

@@ -7,7 +7,7 @@
  */
 package edu.stanford.isis.epadws.server;
 
-import edu.stanford.isis.epadws.common.DicomSearchType;
+import edu.stanford.isis.epad.common.dicom.DicomSearchType;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;

@@ -11,9 +11,9 @@ import java.util.List;
 import java.util.TreeMap;
 import java.util.concurrent.TimeUnit;
 
+import edu.stanford.isis.epad.common.ProxyLogger;
 import edu.stanford.isis.epadws.db.mysql.MySqlInstance;
 import edu.stanford.isis.epadws.db.mysql.MySqlQueries;
-import edu.stanford.isis.epadws.server.ProxyLogger;
 import edu.stanford.isis.epadws.server.ShutdownSignal;
 
 /**

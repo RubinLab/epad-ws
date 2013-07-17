@@ -5,11 +5,11 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
+import edu.stanford.isis.epad.common.ProxyLogger;
 import edu.stanford.isis.epadws.db.mysql.MySqlInstance;
 import edu.stanford.isis.epadws.db.mysql.MySqlQueries;
 import edu.stanford.isis.epadws.db.mysql.model.SeriesOrder;
 import edu.stanford.isis.epadws.db.mysql.model.SeriesOrderStatus;
-import edu.stanford.isis.epadws.server.ProxyLogger;
 
 /**
  * Singleton class to keep track of all images and which are in the pipeline.

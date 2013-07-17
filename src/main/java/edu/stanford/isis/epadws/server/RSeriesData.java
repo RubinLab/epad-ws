@@ -11,10 +11,11 @@ import java.util.Map;
 
 import org.dcm4che2.data.Tag;
 
-import edu.stanford.isis.epadws.common.DicomQueryLevel;
-import edu.stanford.isis.epadws.common.DicomSeriesData;
-import edu.stanford.isis.epadws.common.DicomSeriesUID;
-import edu.stanford.isis.epadws.common.DicomTag;
+import edu.stanford.isis.epad.common.ProxyConfig;
+import edu.stanford.isis.epad.common.dicom.DicomQueryLevel;
+import edu.stanford.isis.epad.common.dicom.DicomSeriesData;
+import edu.stanford.isis.epad.common.dicom.DicomSeriesUID;
+import edu.stanford.isis.epad.common.dicom.DicomTag;
 
 /**
  * DicomSeries

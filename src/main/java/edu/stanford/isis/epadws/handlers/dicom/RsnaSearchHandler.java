@@ -7,7 +7,7 @@
  */
 package edu.stanford.isis.epadws.handlers.dicom;
 
-import edu.stanford.isis.epadws.server.ProxyLogger;
+import edu.stanford.isis.epad.common.ProxyLogger;
 import edu.stanford.isis.epadws.server.managers.pipeline.SeriesFileUtils;
 
 import org.eclipse.jetty.server.Request;
@@ -16,6 +16,7 @@ import org.eclipse.jetty.server.handler.AbstractHandler;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+
 import java.io.*;
 import java.util.List;
 import java.util.Map;

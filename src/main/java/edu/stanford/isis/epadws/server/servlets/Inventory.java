@@ -1,6 +1,5 @@
 package edu.stanford.isis.epadws.server.servlets;
 import java.io.IOException;
-
 import java.io.PrintWriter;
 import java.util.List;
 // import java.util.ArrayList;
@@ -17,17 +16,18 @@ import java.sql.ResultSetMetaData;
 // import java.sql.Statement;
 import java.sql.PreparedStatement;
 
+import edu.stanford.isis.epad.common.JsonHelper;
 import edu.stanford.isis.epadws.db.mysql.MySqlInstance;
 import edu.stanford.isis.epadws.handlers.dicom.RsnaSearchHandler;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.ServletException;
 import javax.servlet.ServletConfig;
 import javax.servlet.http.HttpServlet;
-import edu.stanford.aim.proxy.helpers.JsonHelper;
 
 /**
  * Provide an inventory of the patients, studies, series, and instances

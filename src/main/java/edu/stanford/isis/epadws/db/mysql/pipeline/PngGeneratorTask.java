@@ -1,16 +1,17 @@
 package edu.stanford.isis.epadws.db.mysql.pipeline;
 
 import javax.imageio.ImageIO;
+
 import java.io.*;
 import java.util.HashMap;
 import java.util.Map;
 
-import edu.stanford.isis.epadws.common.ProxyFileUtils;
+import edu.stanford.isis.epad.common.ProxyFileUtils;
+import edu.stanford.isis.epad.common.ProxyLogger;
 import edu.stanford.isis.epadws.db.mysql.MySqlInstance;
 import edu.stanford.isis.epadws.db.mysql.MySqlQueries;
 import edu.stanford.isis.epadws.db.mysql.impl.DcmDbUtils;
 import edu.stanford.isis.epadws.db.mysql.impl.PngStatus;
-import edu.stanford.isis.epadws.server.ProxyLogger;
 import edu.stanford.isis.epadws.server.managers.support.DicomReader;
 
 /**

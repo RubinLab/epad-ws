@@ -7,7 +7,7 @@
  */
 package edu.stanford.isis.epadws.server.managers.leveling;
 
-import edu.stanford.isis.epadws.server.ProxyLogger;
+import edu.stanford.isis.epad.common.ProxyLogger;
 import edu.stanford.isis.epadws.server.managers.support.WindowLevelManager;
 
 import java.io.File;

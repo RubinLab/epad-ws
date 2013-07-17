@@ -7,10 +7,10 @@
  */
 package edu.stanford.isis.epadws.server;
 
-import edu.stanford.isis.epadws.common.DicomQueryLevel;
-import edu.stanford.isis.epadws.common.DicomStudyData;
-import edu.stanford.isis.epadws.common.DicomStudyUID;
-import edu.stanford.isis.epadws.common.DicomTag;
+import edu.stanford.isis.epad.common.dicom.DicomQueryLevel;
+import edu.stanford.isis.epad.common.dicom.DicomStudyData;
+import edu.stanford.isis.epad.common.dicom.DicomStudyUID;
+import edu.stanford.isis.epad.common.dicom.DicomTag;
 
 import org.dcm4che2.data.Tag;
 

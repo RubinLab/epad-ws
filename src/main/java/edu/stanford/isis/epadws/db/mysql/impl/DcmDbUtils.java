@@ -1,8 +1,8 @@
 package edu.stanford.isis.epadws.db.mysql.impl;
 
-import edu.stanford.isis.epadws.common.DicomFormatUtil;
-import edu.stanford.isis.epadws.common.FileKey;
-import edu.stanford.isis.epadws.common.ProxyFileUtils;
+import edu.stanford.isis.epad.common.FileKey;
+import edu.stanford.isis.epad.common.ProxyFileUtils;
+import edu.stanford.isis.epad.common.dicom.DicomFormatUtil;
 import edu.stanford.isis.epadws.db.mysql.MySqlInstance;
 import edu.stanford.isis.epadws.db.mysql.MySqlQueries;
 

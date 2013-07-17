@@ -7,7 +7,7 @@
  */
 package edu.stanford.isis.epadws.common;
 
-import edu.stanford.isis.epadws.server.ProxyConfig;
+import edu.stanford.isis.epad.common.ProxyConfig;
 
 /**
  *

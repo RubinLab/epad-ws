@@ -6,11 +6,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 
-import edu.stanford.isis.epadws.common.DicomFormatUtil;
-import edu.stanford.isis.epadws.common.ProxyFileUtils;
+import edu.stanford.isis.epad.common.ProxyFileUtils;
+import edu.stanford.isis.epad.common.ProxyLogger;
+import edu.stanford.isis.epad.common.dicom.DicomFormatUtil;
 import edu.stanford.isis.epadws.db.mysql.MySqlInstance;
 import edu.stanford.isis.epadws.db.mysql.MySqlQueries;
-import edu.stanford.isis.epadws.server.ProxyLogger;
 
 /**
  *

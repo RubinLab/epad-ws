@@ -18,10 +18,10 @@ import javax.servlet.http.HttpServletResponse;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 
+import edu.stanford.isis.epad.common.ProxyLogger;
 import edu.stanford.isis.epad.plugin.server.PluginServletHandler;
 import edu.stanford.isis.epad.plugin.server.impl.PluginHandlerMap;
 import edu.stanford.isis.epadws.resources.server.PluginServerResource;
-import edu.stanford.isis.epadws.server.ProxyLogger;
 
 /**
  * The handler for plugins.

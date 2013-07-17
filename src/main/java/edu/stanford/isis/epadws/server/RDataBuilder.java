@@ -9,9 +9,11 @@ package edu.stanford.isis.epadws.server;
 
 import java.util.Map;
 
-import edu.stanford.isis.epadws.common.DicomSeriesUID;
-import edu.stanford.isis.epadws.common.DicomStudyUID;
-import edu.stanford.isis.epadws.common.DicomTag;
+import edu.stanford.isis.epad.common.ProxyLogger;
+import edu.stanford.isis.epad.common.ResourceUtils;
+import edu.stanford.isis.epad.common.dicom.DicomSeriesUID;
+import edu.stanford.isis.epad.common.dicom.DicomStudyUID;
+import edu.stanford.isis.epad.common.dicom.DicomTag;
 
 /**
  *

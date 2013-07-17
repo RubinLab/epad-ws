@@ -10,9 +10,9 @@ import javax.servlet.http.HttpServletResponse;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 
+import edu.stanford.isis.epad.common.ProxyLogger;
 import edu.stanford.isis.epadws.db.mysql.pipeline.DicomDeleteTask;
 import edu.stanford.isis.epadws.resources.server.DICOMDeleteServerResource;
-import edu.stanford.isis.epadws.server.ProxyLogger;
 
 /**
  * Now handled by Restlet resource {@link DICOMDeleteServerResource}.

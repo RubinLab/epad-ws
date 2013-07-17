@@ -3,13 +3,13 @@ package edu.stanford.isis.epadws.resources.server;
 import org.restlet.data.Status;
 import org.restlet.resource.Post;
 
+import edu.stanford.isis.epad.common.ProxyConfig;
 import edu.stanford.isis.epad.plugin.server.EPadPlugin;
 import edu.stanford.isis.epad.plugin.server.impl.EPadPluginImpl;
 import edu.stanford.isis.epad.plugin.server.impl.EPadProxyConfigImpl;
 import edu.stanford.isis.epadws.common.ProxyVersion;
 import edu.stanford.isis.epadws.db.mysql.MySqlInstance;
 import edu.stanford.isis.epadws.resources.EPadWebServiceResource;
-import edu.stanford.isis.epadws.server.ProxyConfig;
 import edu.stanford.isis.epadws.server.managers.pipeline.PipelineFactory;
 
 /**

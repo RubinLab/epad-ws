@@ -24,11 +24,11 @@ import org.apache.commons.httpclient.methods.GetMethod;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 
-import edu.stanford.isis.epadws.common.WadoUrlBuilder;
+import edu.stanford.isis.epad.common.ProxyConfig;
+import edu.stanford.isis.epad.common.ProxyLogger;
+import edu.stanford.isis.epad.common.WadoUrlBuilder;
 import edu.stanford.isis.epadws.db.mysql.pipeline.DicomHeadersTask;
 import edu.stanford.isis.epadws.resources.server.DICOMHeadersServerResource;
-import edu.stanford.isis.epadws.server.ProxyConfig;
-import edu.stanford.isis.epadws.server.ProxyLogger;
 
 /**
  * Download headers for a series or study in one quick step.
@@ -148,7 +148,7 @@ public class DicomHeadersHandler extends AbstractHandler
 		int port = config.getIntParam("DicomServerWadoPort");
 		String base = config.getParam("WadoUrlExtension");
 
-		WadoUrlBuilder wadoUrlBuilder = new WadoUrlBuilder(host, port, base, WadoUrlBuilder.Type.FILE);
+		WadoUrlBuilder wadoUrlBuilder = new WadoUrlBuilder(host, port, base, WadoUrlBuilder.ContentType.FILE);
 
 		// GET WADO call result.
 		wadoUrlBuilder.setStudyUID(studyIdKey);

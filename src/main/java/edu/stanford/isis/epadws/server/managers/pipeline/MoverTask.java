@@ -12,12 +12,12 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
 
-import edu.stanford.isis.epadws.common.DicomFormatUtil;
-import edu.stanford.isis.epadws.common.DicomTagFileUtils;
-import edu.stanford.isis.epadws.common.LockFileUtils;
-import edu.stanford.isis.epadws.common.ProxyFileUtils;
+import edu.stanford.isis.epad.common.LockFileUtils;
+import edu.stanford.isis.epad.common.ProxyFileUtils;
+import edu.stanford.isis.epad.common.ProxyLogger;
+import edu.stanford.isis.epad.common.dicom.DicomFormatUtil;
+import edu.stanford.isis.epad.common.dicom.DicomTagFileUtils;
 import edu.stanford.isis.epadws.handlers.dicom.RsnaSearchResultMap;
-import edu.stanford.isis.epadws.server.ProxyLogger;
 
 
 public class MoverTask implements Callable<File> {

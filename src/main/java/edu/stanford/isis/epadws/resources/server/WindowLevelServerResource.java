@@ -9,8 +9,8 @@ import java.util.Map;
 import org.restlet.data.Status;
 import org.restlet.resource.Post;
 
-import edu.stanford.isis.epadws.common.DicomFormatUtil;
-import edu.stanford.isis.epadws.common.FileKey;
+import edu.stanford.isis.epad.common.FileKey;
+import edu.stanford.isis.epad.common.dicom.DicomFormatUtil;
 import edu.stanford.isis.epadws.resources.WindowLevelResource;
 import edu.stanford.isis.epadws.server.managers.leveling.WindowLevelFactory;
 

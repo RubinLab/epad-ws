@@ -7,7 +7,7 @@
  */
 package edu.stanford.isis.epadws.server.managers.pipeline;
 
-import edu.stanford.isis.epadws.server.ProxyLogger;
+import edu.stanford.isis.epad.common.ProxyLogger;
 import edu.stanford.isis.epadws.server.ShutdownSignal;
 
 import org.eclipse.jetty.util.ConcurrentHashSet;

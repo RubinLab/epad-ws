@@ -43,8 +43,8 @@ import edu.stanford.hakan.aim3api.base.AimException;
 import edu.stanford.hakan.aim3api.base.ImageAnnotation;
 import edu.stanford.hakan.aim3api.usage.AnnotationBuilder;
 import edu.stanford.hakan.aim3api.usage.AnnotationGetter;
+import edu.stanford.isis.epad.common.ProxyConfig;
 import edu.stanford.isis.epad.plugin.server.impl.PluginConfig;
-import edu.stanford.isis.epadws.server.ProxyConfig;
 
 /**
  * AIM resource. AIM files can be queries or uploaded.

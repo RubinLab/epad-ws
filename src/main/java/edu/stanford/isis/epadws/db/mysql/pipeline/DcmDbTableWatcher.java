@@ -4,10 +4,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 
+import edu.stanford.isis.epad.common.ProxyLogger;
 import edu.stanford.isis.epadws.db.mysql.MySqlInstance;
 import edu.stanford.isis.epadws.db.mysql.MySqlQueries;
 import edu.stanford.isis.epadws.db.mysql.model.SeriesOrder;
-import edu.stanford.isis.epadws.server.ProxyLogger;
 import edu.stanford.isis.epadws.server.ShutdownSignal;
 
 /**

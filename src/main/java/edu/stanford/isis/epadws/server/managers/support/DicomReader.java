@@ -14,13 +14,13 @@ import org.dcm4che2.imageioimpl.plugins.dcm.DicomImageReaderSpi;
 import org.dcm4che2.io.DicomInputStream;
 import org.dcm4che2.io.StopTagInputHandler;
 
-import edu.stanford.aim.proxy.helpers.RasterProcessor;
+import edu.stanford.isis.epad.common.dicom.RasterProcessor;
 /**
  *
  * Tools for processing Dicom images
  * 
  */
-public class DicomReader extends edu.stanford.aim.proxy.tools.DicomReader {
+public class DicomReader extends edu.stanford.isis.epad.common.dicom.DicomReader {
             /**
              * Constructor.
              * @param value file containing Dicom data

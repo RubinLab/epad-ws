@@ -6,7 +6,7 @@ import java.util.Map;
 import org.restlet.data.Status;
 import org.restlet.resource.Get;
 
-import edu.stanford.isis.epadws.common.DicomFormatUtil;
+import edu.stanford.isis.epad.common.dicom.DicomFormatUtil;
 import edu.stanford.isis.epadws.db.mysql.MySqlInstance;
 import edu.stanford.isis.epadws.db.mysql.MySqlQueries;
 

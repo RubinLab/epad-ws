@@ -1,11 +1,11 @@
 package edu.stanford.isis.epadws.db.mysql;
 
-import edu.stanford.isis.epadws.common.FileKey;
-import edu.stanford.isis.epadws.common.ProxyFileUtils;
+import edu.stanford.isis.epad.common.FileKey;
+import edu.stanford.isis.epad.common.ProxyFileUtils;
+import edu.stanford.isis.epad.common.ProxyLogger;
 import edu.stanford.isis.epadws.db.mysql.impl.DbState;
 import edu.stanford.isis.epadws.db.mysql.impl.DbUtils;
 import edu.stanford.isis.epadws.db.mysql.impl.MySqlQueriesImpl;
-import edu.stanford.isis.epadws.server.ProxyLogger;
 
 import java.io.File;
 import java.sql.Connection;

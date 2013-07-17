@@ -35,13 +35,13 @@ import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 
 import edu.stanford.hakan.aim3api.base.AimException;
+import edu.stanford.isis.epad.common.ProxyConfig;
+import edu.stanford.isis.epad.common.ProxyLogger;
 import edu.stanford.isis.epad.plugin.server.EPadPlugin;
 import edu.stanford.isis.epad.plugin.server.impl.EPadPluginImpl;
 import edu.stanford.isis.epad.plugin.server.impl.EPadProxyConfigImpl;
 import edu.stanford.isis.epadws.common.ProxyVersion;
 import edu.stanford.isis.epadws.db.mysql.MySqlInstance;
-import edu.stanford.isis.epadws.server.ProxyConfig;
-import edu.stanford.isis.epadws.server.ProxyLogger;
 import edu.stanford.isis.epadws.server.managers.pipeline.PipelineFactory;
 
 /**

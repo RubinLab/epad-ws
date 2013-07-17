@@ -22,11 +22,11 @@ import org.eclipse.jetty.server.handler.AbstractHandler;
 import com.pixelmed.dicom.DicomException;
 import com.pixelmed.display.SourceImage;
 
-import edu.stanford.isis.epadws.common.ImageEnhancer;
-import edu.stanford.isis.epadws.common.WadoUrlBuilder;
+import edu.stanford.isis.epad.common.ImageEnhancer;
+import edu.stanford.isis.epad.common.ProxyConfig;
+import edu.stanford.isis.epad.common.ProxyLogger;
+import edu.stanford.isis.epad.common.WadoUrlBuilder;
 import edu.stanford.isis.epadws.resources.server.DICOMVisuServerResource;
-import edu.stanford.isis.epadws.server.ProxyConfig;
-import edu.stanford.isis.epadws.server.ProxyLogger;
 
 /**
  * Generate window width and center for a series or study in one quick step.
@@ -153,7 +153,7 @@ public class DicomVisuHandler extends AbstractHandler
 		int port = config.getIntParam("DicomServerWadoPort");
 		String base = config.getParam("WadoUrlExtension");
 
-		WadoUrlBuilder wadoUrlBuilder = new WadoUrlBuilder(host, port, base, WadoUrlBuilder.Type.FILE);
+		WadoUrlBuilder wadoUrlBuilder = new WadoUrlBuilder(host, port, base, WadoUrlBuilder.ContentType.FILE);
 
 		// GET WADO call result.
 		wadoUrlBuilder.setStudyUID(studyIdKey);

@@ -19,12 +19,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import edu.stanford.isis.epadws.common.DicomSeriesUID;
-import edu.stanford.isis.epadws.common.DicomStudyUID;
-import edu.stanford.isis.epadws.common.DicomTagFileUtils;
-import edu.stanford.isis.epadws.common.FileKey;
-import edu.stanford.isis.epadws.server.ProxyLogger;
-import edu.stanford.isis.epadws.server.ResourceUtils;
+import edu.stanford.isis.epad.common.FileKey;
+import edu.stanford.isis.epad.common.ProxyLogger;
+import edu.stanford.isis.epad.common.ResourceUtils;
+import edu.stanford.isis.epad.common.dicom.DicomSeriesUID;
+import edu.stanford.isis.epad.common.dicom.DicomStudyUID;
+import edu.stanford.isis.epad.common.dicom.DicomTagFileUtils;
 
 /**
  * Utilities for a database.

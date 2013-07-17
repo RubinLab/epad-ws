@@ -26,6 +26,8 @@ import org.eclipse.jetty.servlet.ServletHolder;
 import org.eclipse.jetty.webapp.WebAppContext;
 import org.restlet.ext.servlet.ServerServlet;
 
+import edu.stanford.isis.epad.common.ProxyConfig;
+import edu.stanford.isis.epad.common.ProxyLogger;
 import edu.stanford.isis.epad.plugin.server.EPadFiles;
 import edu.stanford.isis.epad.plugin.server.PluginHandler;
 import edu.stanford.isis.epad.plugin.server.PluginServletHandler;
@@ -51,8 +53,6 @@ import edu.stanford.isis.epadws.handlers.dicom.WadoHandler;
 import edu.stanford.isis.epadws.handlers.dicom.WindowLevelHandler;
 import edu.stanford.isis.epadws.handlers.event.EventSearchHandler;
 import edu.stanford.isis.epadws.handlers.plugin.EPadPluginHandler;
-import edu.stanford.isis.epadws.server.ProxyConfig;
-import edu.stanford.isis.epadws.server.ProxyLogger;
 import edu.stanford.isis.epadws.server.ProxyManager;
 import edu.stanford.isis.epadws.server.ShutdownSignal;
 import edu.stanford.isis.epadws.server.managers.leveling.WindowLevelFactory;

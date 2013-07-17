@@ -1,8 +1,8 @@
 package edu.stanford.isis.epadws.db.mysql.pipeline;
 
+import edu.stanford.isis.epad.common.ProxyLogger;
 import edu.stanford.isis.epadws.db.mysql.login.MySqlLoginDirWatcher;
 import edu.stanford.isis.epadws.db.mysql.model.SeriesOrder;
-import edu.stanford.isis.epadws.server.ProxyLogger;
 
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;

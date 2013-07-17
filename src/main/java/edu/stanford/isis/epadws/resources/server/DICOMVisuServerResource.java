@@ -17,8 +17,8 @@ import org.restlet.resource.Get;
 import com.pixelmed.dicom.DicomException;
 import com.pixelmed.display.SourceImage;
 
-import edu.stanford.isis.epadws.common.ImageEnhancer;
-import edu.stanford.isis.epadws.common.WadoUrlBuilder;
+import edu.stanford.isis.epad.common.ImageEnhancer;
+import edu.stanford.isis.epad.common.WadoUrlBuilder;
 
 public class DICOMVisuServerResource extends BaseServerResource
 {
@@ -137,7 +137,7 @@ public class DICOMVisuServerResource extends BaseServerResource
 		int port = config.getIntParam("DicomServerWadoPort");
 		String base = config.getParam("WadoUrlExtension");
 
-		WadoUrlBuilder wadoUrlBuilder = new WadoUrlBuilder(host, port, base, WadoUrlBuilder.Type.FILE);
+		WadoUrlBuilder wadoUrlBuilder = new WadoUrlBuilder(host, port, base, WadoUrlBuilder.ContentType.FILE);
 
 		wadoUrlBuilder.setStudyUID(studyIdKey);
 		wadoUrlBuilder.setSeriesUID(seriesIdKey);

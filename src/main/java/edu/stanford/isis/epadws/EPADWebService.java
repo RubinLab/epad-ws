@@ -22,6 +22,8 @@ import org.restlet.data.Protocol;
 import org.restlet.resource.Directory;
 import org.restlet.routing.Router;
 
+import edu.stanford.isis.epad.common.ProxyConfig;
+import edu.stanford.isis.epad.common.ProxyLogger;
 import edu.stanford.isis.epad.plugin.server.EPadFiles;
 import edu.stanford.isis.epad.plugin.server.PluginServletHandler;
 import edu.stanford.isis.epad.plugin.server.ePadPluginController;
@@ -44,8 +46,6 @@ import edu.stanford.isis.epadws.resources.server.SQLSearchServerResource;
 import edu.stanford.isis.epadws.resources.server.SegmentationPathServerResource;
 import edu.stanford.isis.epadws.resources.server.WADOServerResource;
 import edu.stanford.isis.epadws.resources.server.WindowLevelServerResource;
-import edu.stanford.isis.epadws.server.ProxyConfig;
-import edu.stanford.isis.epadws.server.ProxyLogger;
 import edu.stanford.isis.epadws.server.ProxyManager;
 import edu.stanford.isis.epadws.server.ShutdownSignal;
 import edu.stanford.isis.epadws.server.managers.leveling.WindowLevelFactory;

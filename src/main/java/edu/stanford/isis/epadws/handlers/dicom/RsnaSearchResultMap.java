@@ -7,9 +7,9 @@
  */
 package edu.stanford.isis.epadws.handlers.dicom;
 
-import edu.stanford.isis.epadws.common.DicomTagFileUtils;
-import edu.stanford.isis.epadws.common.ProxyFileUtils;
-import edu.stanford.isis.epadws.server.ProxyLogger;
+import edu.stanford.isis.epad.common.ProxyFileUtils;
+import edu.stanford.isis.epad.common.ProxyLogger;
+import edu.stanford.isis.epad.common.dicom.DicomTagFileUtils;
 
 import java.io.*;
 import java.util.*;

@@ -1,6 +1,6 @@
 package edu.stanford.isis.epadws.db.mysql.model;
 
-import edu.stanford.isis.epadws.server.ProxyLogger;
+import edu.stanford.isis.epad.common.ProxyLogger;
 
 import java.util.ArrayList;
 import java.util.List;
