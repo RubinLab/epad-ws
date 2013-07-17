@@ -310,7 +310,7 @@
 
    <!-- This is in the project repository because we could not find a public Maven repository containing it. -->
    <dependency>
-     <groupId>pixelmed</groupId>
+     <groupId>com.pixelmed</groupId>
      <artifactId>pixelmed</artifactId>
      <version>1.0</version>
    </dependency>
