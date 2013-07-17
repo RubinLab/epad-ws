@@ -82,9 +82,9 @@ public class StatusHandler extends AbstractHandler
 	 * @throws IOException
 	 */
 
-	public static void saveToServer() throws IOException
+	@SuppressWarnings("unused")
+	private static void saveToServer() throws IOException
 	{
-
 		log.info("saveToServer");
 
 		File fileToUpload = new File("/home/epad/AIM_029dwxvdypcwvlimke1kb4f59nlt3nw1ymmlf2bo.xml");

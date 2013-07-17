@@ -129,7 +129,7 @@ public class AimResourceHandler extends AbstractHandler
 						Node copyNode = doc.importNode(node, true);
 
 						// copy the node
-						Element res = (Element) copyNode;
+						Element res = (Element)copyNode;
 						res.setAttributeNS("http://www.w3.org/2000/xmlns/", "xmlns:rdf",
 								"http://www.w3.org/1999/02/22-rdf-syntax-ns#");
 						res.setAttributeNS("http://www.w3.org/2000/xmlns/", "xmlns:xsi",
@@ -200,9 +200,7 @@ public class AimResourceHandler extends AbstractHandler
 					InputStream stream = item.openStream();
 
 					String tempName = "temp-" + System.currentTimeMillis() + ".xml";
-
 					File f = new File(filePath + tempName);
-
 					FileOutputStream fos = new FileOutputStream(f);
 					try {
 						int len;

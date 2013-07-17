@@ -49,7 +49,6 @@ public class EPadPluginHandler extends AbstractHandler
 			try {
 				logger.info("init plugin: - " + handler.getName() + " - " + handler.getVersion());
 				handler.init();
-
 			} catch (ExceptionInInitializerError eiie) {
 				Throwable cause = eiie.getCause();
 				logger.warning("Plugin: " + key + " init exception: " + key, eiie);
