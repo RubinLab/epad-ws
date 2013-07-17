@@ -79,6 +79,12 @@
  <dependencies>
 
      <dependency>
+        <groupId>edu.stanford.isis.epad</groupId>
+	<artifactId>epad-common</artifactId>
+        <version>${project.version}</version> 
+     </dependency>
+
+     <dependency>
         <groupId>edu.stanford.hakan.aim3api</groupId>
 	<artifactId>aim3api</artifactId>
         <version>${aim3api.version}</version>
