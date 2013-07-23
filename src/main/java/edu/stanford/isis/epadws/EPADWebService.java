@@ -17,7 +17,6 @@ import java.util.concurrent.TimeUnit;
 import org.restlet.Application;
 import org.restlet.Component;
 import org.restlet.Restlet;
-import org.restlet.Server;
 import org.restlet.data.Protocol;
 import org.restlet.resource.Directory;
 import org.restlet.routing.Router;
@@ -33,19 +32,7 @@ import edu.stanford.isis.epad.plugin.server.impl.PluginHandlerMap;
 import edu.stanford.isis.epadws.common.ProxyVersion;
 import edu.stanford.isis.epadws.db.mysql.MySqlInstance;
 import edu.stanford.isis.epadws.db.mysql.pipeline.MySqlFactory;
-import edu.stanford.isis.epadws.resources.server.AIMServerResource;
-import edu.stanford.isis.epadws.resources.server.DICOMDeleteServerResource;
-import edu.stanford.isis.epadws.resources.server.DICOMHeadersServerResource;
-import edu.stanford.isis.epadws.resources.server.DICOMSeriesOrderServerResource;
-import edu.stanford.isis.epadws.resources.server.DICOMSeriesTagServerResource;
-import edu.stanford.isis.epadws.resources.server.DICOMVisuServerResource;
 import edu.stanford.isis.epadws.resources.server.EPadWebServiceServerResource;
-import edu.stanford.isis.epadws.resources.server.EventServerResource;
-import edu.stanford.isis.epadws.resources.server.PluginServerResource;
-import edu.stanford.isis.epadws.resources.server.SQLSearchServerResource;
-import edu.stanford.isis.epadws.resources.server.SegmentationPathServerResource;
-import edu.stanford.isis.epadws.resources.server.WADOServerResource;
-import edu.stanford.isis.epadws.resources.server.WindowLevelServerResource;
 import edu.stanford.isis.epadws.server.ProxyManager;
 import edu.stanford.isis.epadws.server.ShutdownSignal;
 import edu.stanford.isis.epadws.server.managers.leveling.WindowLevelFactory;
@@ -76,7 +63,7 @@ public class EPADWebService extends Application
 	 */
 	public static void main(String[] args)
 	{
-		Server server = null;
+		Component component = null;
 
 		@SuppressWarnings("unused")
 		ProxyManager proxyManager = ProxyManager.getInstance();
@@ -88,12 +75,12 @@ public class EPADWebService extends Application
 			log.info("Starting the ePAD Web Service. Build date: " + ProxyVersion.getBuildDate());
 			initPlugins(); // Initialize plugin classes
 			startSupportThreads();
-			server = createServer(port);
+			component = createComponent(port);
 			// testPluginImpl();
 			Runtime.getRuntime().addShutdownHook(new ShutdownHookThread());
 
 			log.info("Starting server on port " + port);
-			server.start();
+			component.start();
 		} catch (BindException be) {
 			log.sever("Bind exception", be);
 			Throwable t = be.getCause();
@@ -128,44 +115,39 @@ public class EPADWebService extends Application
 	{
 		log.info("****************** createInboundRoot **********************");
 
-		initPlugins();
-		initializePluginHandlers();
+		// initPlugins();
+		// initializePluginHandlers();
 
 		Router router = new Router(getContext());
 
-		log.info("" + getContext());
+		log.info("Context: " + getContext());
 
-		// router.attachDefault(DebugServerTracer.class); // Can use this tracer to examine inbound calls.
-
-		// addWebAppAtContextPath(handlerList, "ePad.war", "/epad");
-		// addWebAppAtContextPath(handlerList, "AimQLWeb.war", "aqlweb");
-		// addWebAppAtContextPath(handlerList, "originalEPad.war", "/apad");
-		// addWebAppAtContextPath(handlerList, "epadGL.war", "/epadgl");
-
-		Directory warDirectory = new Directory(getContext(), "war:/home/epad/webapps"); // TODO Put in configuration file
-		router.attach("/epad", warDirectory);
-		router.attach("/aqlweb", warDirectory);
-		router.attach("/apad", warDirectory);
-		router.attach("/epadgl", warDirectory);
-
-		Directory resourcesDirectory = new Directory(getContext(), "file://home/epad/resources"); // TODO Put in
-																																															// configuration file
+		// TODO Put in configuration file
+		Directory resourcesDirectory = new Directory(getContext(),
+				"file:///Users/martin/workspace/rubin-lab/epad-ws/resources");
 		resourcesDirectory.setListingAllowed(true);
 		router.attach("/resources", resourcesDirectory);
 
+		// TODO Put in configuration file
+		Directory warDirectory = new Directory(getContext(), "war:///Users/martin/workspace/rubin-lab/epad-ws/webapps/");
+		warDirectory.setNegotiatingContent(false);
+		warDirectory.setIndexName("Web_pad.html");
+		router.attach("/epad/", warDirectory);
+
 		router.attach("/server/{operation}", EPadWebServiceServerResource.class);
-		router.attach("/plugins/{pluginName}", PluginServerResource.class);
-		router.attach("/level", WindowLevelServerResource.class);
-		router.attach("/dicomdelete", DICOMDeleteServerResource.class);
-		router.attach("/aimresource", AIMServerResource.class);
-		router.attach("/eWado", WADOServerResource.class);
-		router.attach("/seriestag", DICOMSeriesTagServerResource.class);
-		router.attach("/seriesorder", DICOMSeriesOrderServerResource.class);
-		router.attach("/search", SQLSearchServerResource.class);
-		router.attach("/dicomtag", DICOMHeadersServerResource.class);
-		router.attach("/dicomparam", DICOMVisuServerResource.class);
-		router.attach("/eventresource", EventServerResource.class);
-		router.attach("/segmentationpath", SegmentationPathServerResource.class);
+
+		// router.attach("/plugins/{pluginName}", PluginServerResource.class);
+		// router.attach("/level", WindowLevelServerResource.class);
+		// router.attach("/dicomdelete", DICOMDeleteServerResource.class);
+		// router.attach("/aimresource", AIMServerResource.class);
+		// router.attach("/eWado", WADOServerResource.class);
+		// router.attach("/seriestag", DICOMSeriesTagServerResource.class);
+		// router.attach("/seriesorder", DICOMSeriesOrderServerResource.class);
+		// router.attach("/search", SQLSearchServerResource.class);
+		// router.attach("/dicomtag", DICOMHeadersServerResource.class);
+		// router.attach("/dicomparam", DICOMVisuServerResource.class);
+		// router.attach("/eventresource", EventServerResource.class);
+		// router.attach("/segmentationpath", SegmentationPathServerResource.class);
 
 		return router;
 	}
@@ -204,17 +186,20 @@ public class EPADWebService extends Application
 	 * An implementation is picked up from loaded JARs. If the org.restlets.ext.jetty JAR is in the class path, for
 	 * example, it will be picked up.
 	 * 
-	 * @return Server
+	 * @return Component
 	 */
-	private static Server createServer(int port)
+	private static Component createComponent(int port)
 	{
 		Component component = new Component();
 
-		Server server = new Server(Protocol.HTTP, port, component);
+		component.getClients().add(Protocol.FILE);
+		component.getServers().add(Protocol.HTTP, port);
+
+		component.getClients().add(Protocol.HTTP); // Needed?
 
 		component.getDefaultHost().attach(new EPADWebService());
 
-		return server;
+		return component;
 	}
 
 	/**

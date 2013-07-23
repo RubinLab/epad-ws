@@ -109,7 +109,7 @@ public class SegmentationPathServerResource extends BaseServerResource
 			String[] command = { "./dcmqr", dcmServerTitlePort, "-I", opt };
 
 			ProcessBuilder pb = new ProcessBuilder(command);
-			pb.directory(new File("../../src/dcm4che-2.0.23/bin"));
+			pb.directory(new File("../../src/dcm4che-2.0.23/bin")); // TODO Fix ?
 
 			Process process = pb.start();
 			process.getOutputStream();// get the output stream.
@@ -252,7 +252,7 @@ public class SegmentationPathServerResource extends BaseServerResource
 
 	private static void writeQRLog(String contents)
 	{
-		String fileName = "../log/qr_" + System.currentTimeMillis() + ".log";
+		String fileName = "./log/qr_" + System.currentTimeMillis() + ".log"; // TODO Fro config file
 		ProxyFileUtils.write(new File(fileName), contents);
 	}
 }
