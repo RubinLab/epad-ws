@@ -123,16 +123,15 @@ public class EPADWebService extends Application
 		log.info("Context: " + getContext());
 
 		// TODO Put in configuration file
-		Directory resourcesDirectory = new Directory(getContext(),
-				"file:///Users/martin/workspace/rubin-lab/epad-ws/resources");
+		Directory resourcesDirectory = new Directory(getContext(), "file:///Users/martin/tmp/resources");
 		resourcesDirectory.setListingAllowed(true);
 		router.attach("/resources", resourcesDirectory);
 
 		// TODO Put in configuration file
-		Directory warDirectory = new Directory(getContext(), "war:///Users/martin/workspace/rubin-lab/epad-ws/webapps/");
+		Directory warDirectory = new Directory(getContext(), "war:///Users/martin/tmp/webapps");
 		warDirectory.setNegotiatingContent(false);
 		warDirectory.setIndexName("Web_pad.html");
-		router.attach("/epad/", warDirectory);
+		router.attach("/epad", warDirectory);
 
 		router.attach("/server/{operation}", EPadWebServiceServerResource.class);
 
@@ -193,6 +192,8 @@ public class EPADWebService extends Application
 		Component component = new Component();
 
 		component.getClients().add(Protocol.FILE);
+		component.getClients().add(Protocol.WAR);
+		component.getServers().add(Protocol.WAR, port);
 		component.getServers().add(Protocol.HTTP, port);
 
 		component.getClients().add(Protocol.HTTP); // Needed?
