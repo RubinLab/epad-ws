@@ -20,7 +20,7 @@ import edu.stanford.isis.epadws.server.managers.pipeline.PipelineFactory;
  * 
  * <pre>
  * curl -v -X POST "http://host:port/server/shutdown"
- * curl -v -X POST "http://host:port/server/status"
+ * curl -v -X GET "http://host:port/server/status"
  * </pre>
  * 
  * @author martin
@@ -28,8 +28,8 @@ import edu.stanford.isis.epadws.server.managers.pipeline.PipelineFactory;
 public class EPadWebServiceServerResource extends BaseServerResource implements EPadWebServiceResource
 {
 	private static final String SERVER_SHUTDOWN_MESSAGE = "Server shut down!";
-	private static final String UNKNOWN_GET_OPERATION_MESSAGE = "Bad request - unknown GET operation: ";
-	private static final String UNKNOWN_POST_OPERATION_MESSAGE = "Bad request - unknown POST operation: ";
+	private static final String UNKNOWN_GET_OPERATION_MESSAGE = "Bad request - unknown GET server operation: ";
+	private static final String UNKNOWN_POST_OPERATION_MESSAGE = "Bad request - unknown POST server operation: ";
 	private static final String STATUS_PAGE_BUILD_ERROR_MESSAGE = "Error building status page: ";
 
 	private static final long startTime = System.currentTimeMillis();

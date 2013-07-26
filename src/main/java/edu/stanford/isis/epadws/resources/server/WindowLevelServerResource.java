@@ -7,20 +7,29 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.restlet.data.Status;
-import org.restlet.resource.Post;
 
 import edu.stanford.isis.epad.common.FileKey;
 import edu.stanford.isis.epad.common.dicom.DicomFormatUtil;
 import edu.stanford.isis.epadws.resources.WindowLevelResource;
 import edu.stanford.isis.epadws.server.managers.leveling.WindowLevelFactory;
 
+/**
+ * To test:
+ * 
+ * <pre>
+ * curl -X GET "http://localhost:8080/level/cmd=query&seriesuid=23&studyuid=32"
+ * curl -X POST "http://localhost:8080/level/cmd=create"
+ * </pre>
+ */
 public class WindowLevelServerResource extends BaseServerResource implements WindowLevelResource
 {
+	private static final String SUCCESS_MESSAGE = "JPEGs levelled!";
 	private static final String MALFORMED_REQUEST_MESSAGE = "Malformed request!";
-	private static final String UNKNOWN_COMMAND_MESSAGE = "Bad request - unknown command: ";
+	private static final String UNKNOWN_GET_COMMAND_MESSAGE = "Bad request - unknown GET level command: ";
+	private static final String UNKNOWN_POST_COMMAND_MESSAGE = "Bad request - unknown POST level command: ";
 	private static final String EMPTY_COMMAND_MESSAGE = "Bad request - no command";
-	private static final String CREATE_ERROR_MESSAGE = "Create error: ";
-	private static final String QUERY_ERROR_MESSAGE = "Query error: ";
+	private static final String CREATE_ERROR_MESSAGE = "Level create internal error: ";
+	private static final String QUERY_ERROR_MESSAGE = "Level query internal error: ";
 
 	// Caches which series belongs to which study in case the request doesn't have that info.
 	private static final Map<String, String> seriesToStudyMap = new HashMap<String, String>();
@@ -37,33 +46,20 @@ public class WindowLevelServerResource extends BaseServerResource implements Win
 	}
 
 	@Override
-	@Post
-	public String command()
+	public String query()
 	{
-		if (getQueryValue(QUERY_COMMAND_NAME) == null) {
+		if (getQueryValue(COMMAND_NAME) == null) {
 			setStatus(Status.CLIENT_ERROR_BAD_REQUEST);
 			return MALFORMED_REQUEST_MESSAGE;
 		} else {
-			String commandName = getQueryValue(QUERY_COMMAND_NAME);
+			String commandName = getQueryValue(COMMAND_NAME);
 
-			if (WindowLevelCommand.CREATE.hasCommandName(commandName)) {
-				try {
-					String out = createLevelJpegs();
-					setStatus(Status.SUCCESS_OK);
-					return out;
-				} catch (IOException e) {
-					setStatus(Status.SERVER_ERROR_INTERNAL);
-					return CREATE_ERROR_MESSAGE + e.getMessage();
-				} catch (InterruptedException e) {
-					setStatus(Status.SERVER_ERROR_INTERNAL);
-					return CREATE_ERROR_MESSAGE + e.getMessage();
-				}
-			} else if (WindowLevelCommand.QUERY.hasCommandName(commandName)) {
+			if (WindowLevelCommand.QUERY.hasCommandName(commandName)) {
 				try {
 					String out = queryLeveledJpegs();
 					setStatus(Status.SUCCESS_OK);
 					return out;
-				} catch (IOException e) {
+				} catch (Exception e) {
 					setStatus(Status.SERVER_ERROR_INTERNAL);
 					return QUERY_ERROR_MESSAGE + e.getMessage();
 				}
@@ -72,23 +68,51 @@ public class WindowLevelServerResource extends BaseServerResource implements Win
 				if (commandName == null)
 					return EMPTY_COMMAND_MESSAGE;
 				else
-					return UNKNOWN_COMMAND_MESSAGE + commandName;
+					return UNKNOWN_GET_COMMAND_MESSAGE + commandName;
+			}
+		}
+	}
+
+	@Override
+	public String create()
+	{
+		if (getQueryValue(COMMAND_NAME) == null) {
+			setStatus(Status.CLIENT_ERROR_BAD_REQUEST);
+			return MALFORMED_REQUEST_MESSAGE;
+		} else {
+			String commandName = getQueryValue(COMMAND_NAME);
+
+			if (WindowLevelCommand.CREATE.hasCommandName(commandName)) {
+				try {
+					createLevelJpegs();
+					setStatus(Status.SUCCESS_OK);
+					return SUCCESS_MESSAGE;
+				} catch (IOException e) {
+					setStatus(Status.SERVER_ERROR_INTERNAL);
+					return CREATE_ERROR_MESSAGE + e.getMessage();
+				} catch (InterruptedException e) {
+					setStatus(Status.SERVER_ERROR_INTERNAL);
+					return CREATE_ERROR_MESSAGE + e.getMessage();
+				}
+			} else {
+				setStatus(Status.CLIENT_ERROR_BAD_REQUEST);
+				if (commandName == null)
+					return EMPTY_COMMAND_MESSAGE;
+				else
+					return UNKNOWN_POST_COMMAND_MESSAGE + commandName;
 			}
 		}
 	}
 
 	/**
 	 * Put in a request to level all of the images.
-	 * 
-	 * @return String
 	 */
-	private String createLevelJpegs() throws IOException, InterruptedException
+	private void createLevelJpegs() throws IOException, InterruptedException
 	{
-		String wl = getQueryValue("wl");
+		String wl = getQueryValue("wl"); // TODO Define constants for these strings.
 		String ww = getQueryValue("ww");
 		String seriesuid = getQueryValue("seriesuid");
 		String studyuid = getQueryValue("studyuid");
-		StringBuilder out = new StringBuilder();
 		// String direction = req.getParameter("direction");
 		// String order = req.getParameter("order");
 
@@ -120,8 +144,6 @@ public class WindowLevelServerResource extends BaseServerResource implements Win
 		// (b) determine an optimized order of creating the files.
 		// (c) delete any work in the queue creating a different window level setting.
 		// (d) Add the all into the queue most important first.
-
-		return out.toString();
 	}
 
 	/**
@@ -131,7 +153,7 @@ public class WindowLevelServerResource extends BaseServerResource implements Win
 	 */
 	private String queryLeveledJpegs() throws IOException
 	{
-		String wl = getQueryValue("wl");
+		String wl = getQueryValue("wl"); // TODO Constants for these strings.
 		String ww = getQueryValue("ww");
 		String seriesuid = getQueryValue("seriesuid");
 		String studyuid = getQueryValue("studyuid");
@@ -167,7 +189,7 @@ public class WindowLevelServerResource extends BaseServerResource implements Win
 		}
 
 		if (studyuid == null) {
-			throw new IllegalStateException("Failed to find a study directory for seriesuid=" + seriesuid);
+			throw new IllegalStateException("Failed to find a study for seriesuid=" + seriesuid);
 		}
 
 		return new File(DicomFormatUtil.createDicomDirPath(studyuid, seriesuid));
@@ -186,9 +208,18 @@ public class WindowLevelServerResource extends BaseServerResource implements Win
 			return cachedStudyDir;
 		}
 
+		String dicomBaseDirPath = DicomFormatUtil.getDicomBaseDirPath();
+
+		if (dicomBaseDirPath == null)
+			throw new RuntimeException("no DICOM directory specified");
+
 		File baseDicomDir = new File(DicomFormatUtil.getDicomBaseDirPath());
 
 		File[] studyDirs = baseDicomDir.listFiles();
+
+		if (studyDirs == null)
+			throw new RuntimeException("invalid DICOM directory " + dicomBaseDirPath);
+
 		for (File currStudyDir : studyDirs) {
 
 			File[] seriesDirs = currStudyDir.listFiles();

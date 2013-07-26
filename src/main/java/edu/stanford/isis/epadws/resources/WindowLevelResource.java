@@ -1,5 +1,6 @@
 package edu.stanford.isis.epadws.resources;
 
+import org.restlet.resource.Get;
 import org.restlet.resource.Post;
 
 /**
@@ -9,10 +10,13 @@ import org.restlet.resource.Post;
  */
 public interface WindowLevelResource
 {
-	public final String QUERY_COMMAND_NAME = "cmd";
+	public final String COMMAND_NAME = "cmd";
+
+	@Get
+	public String query();
 
 	@Post
-	public String command();
+	public String create();
 
 	enum WindowLevelCommand {
 		CREATE("create"), QUERY("query");
