@@ -74,7 +74,7 @@ public class EPADWebService extends Application
 
 			log.info("Starting the ePAD Web Service. Build date: " + ProxyVersion.getBuildDate());
 			initPlugins(); // Initialize plugin classes
-			startSupportThreads();
+			// startSupportThreads();
 			component = createComponent(port);
 			// testPluginImpl();
 			Runtime.getRuntime().addShutdownHook(new ShutdownHookThread());

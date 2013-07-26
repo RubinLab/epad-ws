@@ -1,5 +1,6 @@
 package edu.stanford.isis.epadws.resources;
 
+import org.restlet.resource.Get;
 import org.restlet.resource.Post;
 
 /**
@@ -15,8 +16,11 @@ public interface EPadWebServiceResource
 {
 	public final String TEMPLATE_OPERATION_NAME = "operation";
 
+	@Get
+	public String status();
+
 	@Post
-	public String operation();
+	public String shutdown();
 
 	enum ServerOperation {
 		SHUTDOWN("shutdown"), STATUS("status");

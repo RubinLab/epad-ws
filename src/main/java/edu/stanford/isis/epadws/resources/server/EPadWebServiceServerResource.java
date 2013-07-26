@@ -1,6 +1,7 @@
 package edu.stanford.isis.epadws.resources.server;
 
 import org.restlet.data.Status;
+import org.restlet.resource.Get;
 import org.restlet.resource.Post;
 
 import edu.stanford.isis.epad.common.ProxyConfig;
@@ -27,8 +28,8 @@ import edu.stanford.isis.epadws.server.managers.pipeline.PipelineFactory;
 public class EPadWebServiceServerResource extends BaseServerResource implements EPadWebServiceResource
 {
 	private static final String SERVER_SHUTDOWN_MESSAGE = "Server shut down!";
-	private static final String MALFORMED_REQUEST_MESSAGE = "Malformed request!";
-	private static final String UNKNOWN_OPERATION_MESSAGE = "Bad request - unknown operation: ";
+	private static final String UNKNOWN_GET_OPERATION_MESSAGE = "Bad request - unknown GET operation: ";
+	private static final String UNKNOWN_POST_OPERATION_MESSAGE = "Bad request - unknown POST operation: ";
 	private static final String STATUS_PAGE_BUILD_ERROR_MESSAGE = "Error building status page: ";
 
 	private static final long startTime = System.currentTimeMillis();
@@ -41,28 +42,34 @@ public class EPadWebServiceServerResource extends BaseServerResource implements 
 	@Override
 	protected void doCatch(Throwable throwable)
 	{
-		log.debug("An exception was thrown in the ePAD web serviceresource.\n");
+		log.debug("An exception was thrown in the ePAD web service resource.");
+	}
+
+	@Override
+	@Get("text")
+	public String status()
+	{
+		String operationName = getAttribute(TEMPLATE_OPERATION_NAME);
+		if (ServerOperation.STATUS.hasOperationName(operationName)) {
+			return generateStatusMessage();
+		} else {
+			setStatus(Status.CLIENT_ERROR_BAD_REQUEST);
+			return UNKNOWN_GET_OPERATION_MESSAGE + operationName;
+		}
 	}
 
 	@Override
 	@Post("text")
-	public String operation()
+	public String shutdown()
 	{
-		if (!getRequestAttributes().containsKey(TEMPLATE_OPERATION_NAME)) {
-			setStatus(Status.CLIENT_ERROR_BAD_REQUEST);
-			return MALFORMED_REQUEST_MESSAGE;
+		String operationName = getAttribute(TEMPLATE_OPERATION_NAME);
+		if (ServerOperation.SHUTDOWN.hasOperationName(operationName)) {
+			// TODO Shut it down!
+			setStatus(Status.SUCCESS_OK);
+			return SERVER_SHUTDOWN_MESSAGE;
 		} else {
-			String operationName = getAttribute(TEMPLATE_OPERATION_NAME);
-			if (ServerOperation.STATUS.hasOperationName(operationName)) {
-				return generateStatusMessage();
-			} else if (ServerOperation.SHUTDOWN.hasOperationName(operationName)) {
-				// TODO Shut it down!
-				setStatus(Status.SUCCESS_OK);
-				return SERVER_SHUTDOWN_MESSAGE;
-			} else {
-				setStatus(Status.CLIENT_ERROR_BAD_REQUEST);
-				return UNKNOWN_OPERATION_MESSAGE + operationName;
-			}
+			setStatus(Status.CLIENT_ERROR_BAD_REQUEST);
+			return UNKNOWN_POST_OPERATION_MESSAGE + operationName;
 		}
 	}
 
@@ -80,10 +87,10 @@ public class EPadWebServiceServerResource extends BaseServerResource implements 
 			long upTime = System.currentTimeMillis() - startTime;
 			long upTimeSec = upTime / 1000;
 
-			out.append("--------------  DicomProxy status  --------------\n\n");
-			out.append("DICOM Proxy uptime: " + upTimeSec + " sec\n\n");
+			out.append("--------------  ePAD Web Service status  --------------\n\n");
+			out.append("ePAD Web Service uptime: " + upTimeSec + " sec\n\n");
 			out.append("Version: " + ProxyVersion.getBuildDate() + "\n\n");
-			out.append("DicomProxy listening on: " + proxyConfig.getParam("ListenIP") + ":"
+			out.append("ePAD Web Service listening on: " + proxyConfig.getParam("ListenIP") + ":"
 					+ proxyConfig.getParam("ListenPort") + "\n\n");
 			out.append("Plugin Version - interface:      " + EPadPlugin.PLUGIN_INTERFACE_VERSION + "\n");
 			out.append("Plugin Version - implementation: " + ePadPlugin.getPluginImplVersion() + "\n\n");
