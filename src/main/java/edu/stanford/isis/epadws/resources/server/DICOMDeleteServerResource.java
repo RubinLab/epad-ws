@@ -7,13 +7,20 @@ import org.restlet.resource.Get;
 import edu.stanford.isis.epadws.db.mysql.pipeline.DicomDeleteTask;
 
 /**
- * This is not RESTful. For moment, we are just replicating the pre-Restlet code. TODO Refactor to make RESTful.
+ * This is not RESTful. For moment, we are just replicating the pre-Restlet code.
+ * <p>
+ * TODO Refactor to make RESTful. To test:
+ * 
+ * <pre>
+ * curl -X GET "http://localhost:8080/dicomdelete?seriesuid=23"
+ * curl -X GET "http://localhost:8080/dicomdelete?studyuid=332"
+ * </pre>
  */
 public class DICOMDeleteServerResource extends BaseServerResource
 {
 	private static final String SUCCESS_MESSAGE = "DICOM image deleted";
 	private static final String FAILURE_MESSAGE = "Error deleting DICOM image";
-	private static final String NO_QUERY_ERROR_MESSAGE = "No query present in request";
+	private static final String NO_QUERY_ERROR_MESSAGE = "No DICOM series or study present in request";
 
 	public DICOMDeleteServerResource()
 	{
@@ -26,14 +33,14 @@ public class DICOMDeleteServerResource extends BaseServerResource
 		log.warning("An exception was thrown in the DICOM delete resource.", throwable);
 	}
 
-	@Get
+	@Get("text")
 	// TODO Should be DELETE
 	public String deleteImage()
 	{
 		String queryString = getQuery().getQueryString(CharacterSet.UTF_8);
 		log.info("DICOM delete query from ePAD : " + queryString);
 
-		if (queryString != null) {
+		if (queryString != null && queryString.length() != 0) {
 			queryString = queryString.trim();
 
 			try {

@@ -32,6 +32,7 @@ import edu.stanford.isis.epad.plugin.server.impl.PluginHandlerMap;
 import edu.stanford.isis.epadws.common.ProxyVersion;
 import edu.stanford.isis.epadws.db.mysql.MySqlInstance;
 import edu.stanford.isis.epadws.db.mysql.pipeline.MySqlFactory;
+import edu.stanford.isis.epadws.resources.server.DICOMDeleteServerResource;
 import edu.stanford.isis.epadws.resources.server.EPadWebServiceServerResource;
 import edu.stanford.isis.epadws.resources.server.WindowLevelServerResource;
 import edu.stanford.isis.epadws.server.ProxyManager;
@@ -136,8 +137,7 @@ public class EPADWebService extends Application
 
 		router.attach("/server/{operation}", EPadWebServiceServerResource.class);
 		router.attach("/level", WindowLevelServerResource.class);
-
-		// router.attach("/dicomdelete", DICOMDeleteServerResource.class);
+		router.attach("/dicomdelete", DICOMDeleteServerResource.class);
 		// router.attach("/aimresource", AIMServerResource.class);
 		// router.attach("/eWado", WADOServerResource.class);
 		// router.attach("/seriestag", DICOMSeriesTagServerResource.class);
