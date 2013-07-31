@@ -53,12 +53,9 @@ public class EPADWebService extends Application
 	private final PluginHandlerMap pluginHandlerMap = PluginHandlerMap.getInstance();
 
 	/**
-	 * Starts EPad web server and sets several contexts to be used by restlets.
+	 * Starts EPad web server and sets several contexts to be used by Restlets.
 	 * <p>
 	 * The application listens on the port indicated by the property <i>ePadClientPort</i> in proxy-config.properties.
-	 * <p>
-	 * The current directory must be set to the bin subdirectory before calling the start scripts associated with this
-	 * application.
 	 * 
 	 * @param args String[]
 	 * @see ProxyConfig
@@ -194,7 +191,9 @@ public class EPADWebService extends Application
 		Component component = new Component();
 
 		component.getClients().add(Protocol.FILE);
+		// component.getServers().add(Protocol.FILE);
 		component.getClients().add(Protocol.WAR);
+		// component.getServers().add(Protocol.WAR);
 		component.getServers().add(Protocol.WAR, port);
 		component.getServers().add(Protocol.HTTP, port);
 

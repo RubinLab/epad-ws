@@ -17,14 +17,14 @@ import edu.stanford.isis.epadws.server.managers.leveling.WindowLevelFactory;
  * To test:
  * 
  * <pre>
- * curl -X GET "http://localhost:8080/level/cmd=query&seriesuid=23&studyuid=32"
- * curl -X POST "http://localhost:8080/level/cmd=create"
+ * curl -X GET "http://localhost:8080/level?cmd=query&seriesuid=23&studyuid=32"
+ * curl -X POST "http://localhost:8080/level?cmd=create"
  * </pre>
  */
 public class WindowLevelServerResource extends BaseServerResource implements WindowLevelResource
 {
 	private static final String SUCCESS_MESSAGE = "JPEGs levelled!";
-	private static final String MALFORMED_REQUEST_MESSAGE = "Malformed request!";
+	private static final String MALFORMED_REQUEST_MESSAGE = "Malformed request - command should be QUERY or CREATE!";
 	private static final String UNKNOWN_GET_COMMAND_MESSAGE = "Bad request - unknown GET level command: ";
 	private static final String UNKNOWN_POST_COMMAND_MESSAGE = "Bad request - unknown POST level command: ";
 	private static final String EMPTY_COMMAND_MESSAGE = "Bad request - no command";

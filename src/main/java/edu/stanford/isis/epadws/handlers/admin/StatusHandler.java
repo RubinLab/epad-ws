@@ -30,7 +30,6 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.mime.MultipartEntity;
 import org.apache.http.entity.mime.content.FileBody;
 import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.util.EntityUtils;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 
@@ -174,7 +173,7 @@ public class StatusHandler extends AbstractHandler
 			if (resEntity != null) {
 				System.out.println("Response content length: " + resEntity.getContentLength());
 			}
-			EntityUtils.consume(resEntity);
+			// TODO EntityUtils.consume(resEntity);
 		} finally {
 			try {
 				httpclient.getConnectionManager().shutdown();
