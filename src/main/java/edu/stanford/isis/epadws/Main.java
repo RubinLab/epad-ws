@@ -21,10 +21,7 @@ import org.eclipse.jetty.server.handler.ContextHandlerCollection;
 import org.eclipse.jetty.server.handler.DefaultHandler;
 import org.eclipse.jetty.server.handler.HandlerList;
 import org.eclipse.jetty.server.handler.ResourceHandler;
-import org.eclipse.jetty.servlet.ServletContextHandler;
-import org.eclipse.jetty.servlet.ServletHolder;
 import org.eclipse.jetty.webapp.WebAppContext;
-import org.restlet.ext.servlet.ServerServlet;
 
 import edu.stanford.isis.epad.common.ProxyConfig;
 import edu.stanford.isis.epad.common.ProxyLogger;
@@ -42,6 +39,7 @@ import edu.stanford.isis.epadws.db.mysql.pipeline.MySqlFactory;
 import edu.stanford.isis.epadws.handlers.admin.SignalShutdownHandler;
 import edu.stanford.isis.epadws.handlers.admin.StatusHandler;
 import edu.stanford.isis.epadws.handlers.aim.AimResourceHandler;
+import edu.stanford.isis.epadws.handlers.coordination.CoordinationHandler;
 import edu.stanford.isis.epadws.handlers.dicom.DicomDeleteHandler;
 import edu.stanford.isis.epadws.handlers.dicom.DicomHeadersHandler;
 import edu.stanford.isis.epadws.handlers.dicom.DicomVisuHandler;
@@ -199,9 +197,9 @@ public class Main
 		loadPluginClasses();
 
 		addWebAppAtContextPath(handlerList, "ePad.war", "/epad");
-		addWebAppAtContextPath(handlerList, "AimQLWeb.war", "aqlweb");
-		addWebAppAtContextPath(handlerList, "originalEPad.war", "/apad");
-		addWebAppAtContextPath(handlerList, "epadGL.war", "/epadgl");
+		// addWebAppAtContextPath(handlerList, "AimQLWeb.war", "aqlweb");
+		// addWebAppAtContextPath(handlerList, "originalEPad.war", "/apad");
+		// addWebAppAtContextPath(handlerList, "epadGL.war", "/epadgl");
 
 		addFileServerAtContextPath("../resources", handlerList, "/resources");
 
@@ -219,6 +217,7 @@ public class Main
 		addHandlerAtContextPath(new EventSearchHandler(), "/eventresource", handlerList);
 		addHandlerAtContextPath(new SegmentationPathHandler(), "/segmentationpath", handlerList);
 		addHandlerAtContextPath(new EPadPluginHandler(), "/plugin", handlerList);
+		addHandlerAtContextPath(new CoordinationHandler(), "/coordination", handlerList);
 
 		ContextHandlerCollection contexts = new ContextHandlerCollection();
 		contexts.setHandlers(handlerList.toArray(new Handler[handlerList.size()]));
@@ -393,35 +392,6 @@ public class Main
 			ClassFinderTestUtils.readJarManifestForClass(pluginHandlerMap.getClass());
 		} catch (Exception e) {
 			log.warning("Failed plugin reflections test.", e);
-		}
-	}
-
-	/**
-	 * Check the proxy-config.properties file for the useDbXml setting. Add this handler if true.
-	 * 
-	 * @param proxyConfig ProxyConfig
-	 * @param handlerList List of Handlers
-	 */
-	@SuppressWarnings("unused")
-	private static void configureAimXmlDatabase(ProxyConfig proxyConfig, List<Handler> handlerList)
-	{
-		if ("true".equalsIgnoreCase(proxyConfig.getParam("useDbXml"))) {
-			try {
-				ServletContextHandler restletContextHandler = new ServletContextHandler(ServletContextHandler.NO_SESSIONS);
-				restletContextHandler.setContextPath("/restlet");
-				ServerServlet serverServlet = new ServerServlet();
-				ServletHolder servletHolder = new ServletHolder(serverServlet);
-				servletHolder
-						.setInitParameter("org.restlet.application", "edu.stanford.isis.epadws.db.aimxml.XmlDbApplication");
-				restletContextHandler.addServlet(servletHolder, "/*");
-				handlerList.add(restletContextHandler);
-			} catch (NoClassDefFoundError error) {
-				log.sever("## ERROR ##: AIM XML Database: No Restlet class found. Continue without AIM XML Database!", error);
-			} catch (Exception e) {
-				log.warning("## ERROR ##: Failed to register Context. Continue without AIM XML Database.", e);
-			}
-		} else {
-			log.info("WARNING: Not using AIM XML Database!");
 		}
 	}
 

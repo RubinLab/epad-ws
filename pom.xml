@@ -82,6 +82,24 @@
       <version>${restlet.version}</version>
     </dependency>
 
+    <dependency>
+      <groupId>org.restlet.jse</groupId>
+      <artifactId>org.restlet.ext.jetty</artifactId>
+      <version>${restlet.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>org.restlet.jse</groupId>
+      <artifactId>org.restlet.ext.ssl</artifactId>
+        <version>${restlet.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>org.restlet.jse</groupId>
+      <artifactId>org.restlet.ext.json</artifactId>
+      <version>${restlet.version}</version>
+    </dependency>
+
     <!-- End of Restlet dependencies -->
 
     <dependency>
@@ -140,17 +158,17 @@
     </dependency>
 
     <dependency>
-      <groupId>org.restlet.jse</groupId>
-      <artifactId>org.restlet.ext.jetty</artifactId>
-        <version>${restlet.version}</version>
-    </dependency>
-
-    <dependency>
       <groupId>org.eclipse.jetty.aggregate</groupId>
       <artifactId>jetty-all</artifactId>
       <version>${jetty.version}</version>
     </dependency>
 
+    <dependency>
+	<groupId>org.eclipse.jetty</groupId>
+	<artifactId>jetty-server</artifactId>
+      <version>${jetty.version}</version>
+    </dependency>
+            
     <dependency>
       <groupId>javax.servlet</groupId>
       <artifactId>servlet-api</artifactId>

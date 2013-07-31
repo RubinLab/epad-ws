@@ -1,90 +1,156 @@
 package edu.stanford.isis.epadws.db.mysql;
 
-import edu.stanford.isis.epadws.db.mysql.impl.PngStatus;
-
 import java.io.InputStream;
 import java.sql.Blob;
+import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
+
+import edu.stanford.isis.epadws.db.mysql.impl.PngStatus;
+import edu.stanford.isis.epadws.handlers.coordination.CoordinationHandler;
+import edu.stanford.isis.epadws.handlers.coordination.Term;
 
 /**
  * @author amsnyder
  */
-public interface MySqlQueries {
+public interface MySqlQueries
+{
 
-    List<Map<String,String>> doStudySearch(String type, String searchString);
-    void doDeleteStudy(String uid);
-    void doDeleteSeries(String uid);
+	List<Map<String, String>> doStudySearch(String type, String searchString);
 
-    List<Map<String,String>> doSeriesSearch(String studyUID);
+	void doDeleteStudy(String uid);
 
-    /**
-     * Get all the studies with the study-stats of zero.
-     * @return a list of studyUIDs.
-     */
-    List<String> getNewStudies();
-    List<String> getNewSeries();    //@Deprecated.
-    List<String> getEPadDdSeriesForStatus(int statusCode);  //calls epaddb and replaces above.
+	void doDeleteSeries(String uid);
 
-    List<Map<String,String>> getStudiesForStatus(int statusCode);
-    List<Map<String,String>> getSeriesForStatus(int statusCode); //@Deprecated
-    List<Map<String,String>> getSeriesForStatusEx(int statusCode); //replaces call above.
-    Map<String,String> getSeriesById(String seriesIUID);
+	List<Map<String, String>> doSeriesSearch(String studyUID);
 
+	/**
+	 * Get all the studies with the study-stats of zero.
+	 * 
+	 * @return a list of studyUIDs.
+	 */
+	List<String> getNewStudies();
 
-    Map<String,String> getPatientForStudy(String studyIUID);
-    Map<String,String> getParentStudyForSeries(String seriesIUID);
-    Map<String,String> getParentSeriesForImage(String sopInstanceUID);
+	List<String> getNewSeries(); // @Deprecated.
 
-    String getStudyUIDForSeries(String seriesUID);
-    String getSeriesUIDForImage(String sopInstanceUID);
+	List<String> getEPadDdSeriesForStatus(int statusCode); // calls epaddb and replaces above.
 
-    List<String> getSopInstanceUidsForSeries(String seriesIUID);
-    List<Map<String,String>> getImageFilesForSeries(String seriesIUID);
+	List<Map<String, String>> getStudiesForStatus(int statusCode);
 
-    Blob getImageBlobDataForSeries(String seriesIUID);
+	List<Map<String, String>> getSeriesForStatus(int statusCode); // @Deprecated
 
-    void updateStudiesStatusCode(int newStatusCode, String studyIUID);
-    void updateSeriesStatusCode(int newStatusCode, String seriesIUID);
-    void updateSeriesStatusCodeEx(int newStatusCode, String seriesIUID);
+	List<Map<String, String>> getSeriesForStatusEx(int statusCode); // replaces call above.
 
+	Map<String, String> getSeriesById(String seriesIUID);
 
-    List<Map<String,String>> getUnprocessedPngFilesSeries(String seriesIUID);
+	Map<String, String> getPatientForStudy(String studyIUID);
 
+	Map<String, String> getParentStudyForSeries(String seriesIUID);
 
-    void insertEpadFile(Map<String,String> data);
+	Map<String, String> getParentSeriesForImage(String sopInstanceUID);
 
-    boolean hasEpadFile(String filePath);
+	String getStudyUIDForSeries(String seriesUID);
 
-    void updateEpadFile(String filePath, PngStatus newStatus, int fileSize , String errorMsg);
+	String getSeriesUIDForImage(String sopInstanceUID);
 
-    int countEpadFilesLike(String likePath);
-    
-    String selectEpadFilePathLike(String sopInstanceUID);
+	List<String> getSopInstanceUidsForSeries(String seriesIUID);
 
-    float getPercentComplete(String seriesUID);
+	List<Map<String, String>> getImageFilesForSeries(String seriesIUID);
 
-    List<Map<String,String>> getOrderFile(String seriesUID);
+	Blob getImageBlobDataForSeries(String seriesIUID);
 
-    int getStudyKey(String studyUID);
-    int getSeriesKey(String seriesUID);
-    int getInstanceKey(String sopInstanceUID);
+	void updateStudiesStatusCode(int newStatusCode, String studyIUID);
 
-    String getSeriesAttrs(String seriesUID);
-    String getInstanceAttrs(String sopInstanceUID);
+	void updateSeriesStatusCode(int newStatusCode, String seriesIUID);
 
-    byte[] getSeriesAttrsAsBytes(String seriesUID);
-    byte[] getInstanceAttrsAsBytes(String sopInstanceUID);
+	void updateSeriesStatusCodeEx(int newStatusCode, String seriesIUID);
 
-    InputStream getPatientAttrsAsStream(String patId);
-    InputStream getStudyAttrsAsStream(String studyIUID);
-    InputStream getSeriesAttrsAsStream(String seriesUID);
-    InputStream getInstanceAttrsAsStream(String sopInstanceUID);
-    
+	List<Map<String, String>> getUnprocessedPngFilesSeries(String seriesIUID);
+
+	void insertEpadFile(Map<String, String> data);
+
+	boolean hasEpadFile(String filePath);
+
+	void updateEpadFile(String filePath, PngStatus newStatus, int fileSize, String errorMsg);
+
+	int countEpadFilesLike(String likePath);
+
+	String selectEpadFilePathLike(String sopInstanceUID);
+
+	float getPercentComplete(String seriesUID);
+
+	List<Map<String, String>> getOrderFile(String seriesUID);
+
+	int getStudyKey(String studyUID);
+
+	int getSeriesKey(String seriesUID);
+
+	int getInstanceKey(String sopInstanceUID);
+
+	String getSeriesAttrs(String seriesUID);
+
+	String getInstanceAttrs(String sopInstanceUID);
+
+	byte[] getSeriesAttrsAsBytes(String seriesUID);
+
+	byte[] getInstanceAttrsAsBytes(String sopInstanceUID);
+
+	InputStream getPatientAttrsAsStream(String patId);
+
+	InputStream getStudyAttrsAsStream(String studyIUID);
+
+	InputStream getSeriesAttrsAsStream(String seriesUID);
+
+	InputStream getInstanceAttrsAsStream(String sopInstanceUID);
+
 	List<String> getAllUsers();
+
 	void insertUserInDb(String username, String email, String password, String expirationdate, String userrole);
-	
+
 	String getUserFK(String username);
-	void insertEventInDb(String userName, String event_status,String aim_uid, String aim_name,String patient_id,String patient_name,String template_id,String template_name,String plugin_name);
-	List<Map<String,String>> getEventsForUser(String username);
+
+	void insertEventInDb(String userName, String event_status, String aim_uid, String aim_name, String patient_id,
+			String patient_name, String template_id, String template_name, String plugin_name);
+
+	List<Map<String, String>> getEventsForUser(String username);
+
+	/**
+	 * Return the key of a {@link Term}.
+	 * 
+	 * @param term
+	 * @return The key of the term or -1 if it is not recorded
+	 * @see CoordinationHandler
+	 */
+	int getKeyForTerm(Term term) throws SQLException;
+
+	/**
+	 * 
+	 * @param termKeys
+	 * @return The {@link Term} representing the coordination or null if it does not exist.
+	 * @see CoordinationHandler
+	 */
+	Term getCoordinationTerm(List<Integer> termKeys) throws SQLException;
+
+	/**
+	 * Insert a term and return its new ID.
+	 * 
+	 * @param term
+	 * @return The new key of the term
+	 * @see CoordinationHandler
+	 */
+	int insertTerm(Term term) throws SQLException;
+
+	/**
+	 * Record a coordination term.
+	 * 
+	 * @param coordinationTermID
+	 * @param schemaName
+	 * @param schemaVersion
+	 * @param description
+	 * @param termIDs
+	 * @return A {@link Term} representing the new coordination
+	 * @see CoordinationHandler
+	 */
+	Term insertCoordinationTerm(String termIDPrefix, String schemaName, String schemaVersion, String description,
+			List<Integer> termKeys) throws SQLException;
 }
