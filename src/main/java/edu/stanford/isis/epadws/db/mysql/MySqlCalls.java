@@ -1,4 +1,4 @@
-package edu.stanford.isis.epadws.db.mysql.impl;
+package edu.stanford.isis.epadws.db.mysql;
 
 /**
  * SQL queries for MySQL DCM4CHEE tables.

@@ -39,7 +39,7 @@ import edu.stanford.isis.epad.common.ProxyLogger;
 import edu.stanford.isis.epad.plugin.server.EPadPlugin;
 import edu.stanford.isis.epad.plugin.server.impl.EPadPluginImpl;
 import edu.stanford.isis.epad.plugin.server.impl.EPadProxyConfigImpl;
-import edu.stanford.isis.epadws.common.ProxyVersion;
+import edu.stanford.isis.epadws.EPadWebServerVersion;
 import edu.stanford.isis.epadws.db.mysql.MySqlInstance;
 import edu.stanford.isis.epadws.server.managers.pipeline.PipelineFactory;
 
@@ -269,7 +269,7 @@ public class StatusHandler extends AbstractHandler
 			out.println();
 			out.println("DICOM Proxy uptime: " + upTimeSec + " sec");
 			out.println();
-			out.println("Version: " + ProxyVersion.getBuildDate());
+			out.println("Version: " + EPadWebServerVersion.getBuildDate());
 			out.println();
 			out.println("DicomProxy listening on: " + proxyConfig.getParam("ListenIP") + ":"
 					+ proxyConfig.getParam("ListenPort"));

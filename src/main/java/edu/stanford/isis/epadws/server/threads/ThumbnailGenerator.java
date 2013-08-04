@@ -21,7 +21,7 @@ import edu.stanford.isis.epad.common.dicom.DicomImageUID;
 import edu.stanford.isis.epad.common.dicom.DicomSearchMap;
 import edu.stanford.isis.epad.common.dicom.DicomSeriesUID;
 import edu.stanford.isis.epad.common.dicom.DicomStudyUID;
-import edu.stanford.isis.epadws.dcm4chee.demos.DicomQuery;
+import edu.stanford.isis.epadws.dcm4chee.DicomQuery;
 import edu.stanford.isis.epadws.server.ShutdownSignal;
 
 /**

@@ -11,7 +11,7 @@ import edu.stanford.isis.epad.common.dicom.DicomImageData;
 import edu.stanford.isis.epad.common.dicom.DicomSearchResult;
 import edu.stanford.isis.epad.common.dicom.DicomSearchType;
 import edu.stanford.isis.epad.common.dicom.DicomSeriesUID;
-import edu.stanford.isis.epadws.dcm4chee.demos.DicomQuery;
+import edu.stanford.isis.epadws.dcm4chee.DicomQuery;
 
 import java.util.List;
 

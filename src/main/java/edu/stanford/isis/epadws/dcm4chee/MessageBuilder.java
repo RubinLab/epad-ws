@@ -5,7 +5,7 @@
  * Software License Agreement available at:
  *   http://epad.stanford.edu/license/
  */
-package edu.stanford.isis.epadws.dcm4chee.demos;
+package edu.stanford.isis.epadws.dcm4chee;
 
 /**
  * A replacement for log4j in the FirstDicomQueryTest code.

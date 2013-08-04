@@ -9,9 +9,9 @@ import org.restlet.data.Status;
 import org.restlet.resource.Get;
 
 import edu.stanford.isis.epad.common.ProxyConfig;
+import edu.stanford.isis.epad.common.SearchResultUtils;
 import edu.stanford.isis.epad.common.dicom.DicomFormatUtil;
 import edu.stanford.isis.epad.common.dicom.DicomSearchType;
-import edu.stanford.isis.epadws.common.SearchResultUtils;
 import edu.stanford.isis.epadws.db.mysql.MySqlInstance;
 import edu.stanford.isis.epadws.db.mysql.MySqlQueries;
 import edu.stanford.isis.epadws.db.mysql.impl.MySqlStudyQueryBuilder;

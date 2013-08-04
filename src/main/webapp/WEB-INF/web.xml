@@ -12,10 +12,23 @@
     <description>Example Restlet Servlet</description>
     <servlet-class>org.restlet.ext.servlet.ServerServlet</servlet-class>
     <init-param>
+      <param-name>org.restlet.clients</param-name>
+      <param-value>HTTP FILE CLAP</param-value>
+    </init-param>
+    <init-param>
       <param-name>org.restlet.application</param-name>
       <param-value>edu.stanford.isis.epadws.EPADWebService</param-value> 
     </init-param>
+    <load-on-startup>1</load-on-startup>
   </servlet>
+
+ <!-- Restlet adapter -->
+   <servlet>
+      <servlet-name>RestletServlet</servlet-name>
+      <servlet-class>
+         org.restlet.ext.servlet.ServerServlet
+      </servlet-class>
+   </servlet>
   
   <servlet-mapping>
     <servlet-name>Restlet</servlet-name>
@@ -23,7 +36,7 @@
   </servlet-mapping>
   
   <welcome-file-list>
-    <welcome-file>index.jsp</welcome-file>
+    <welcome-file>Web_pad.html</welcome-file>
   </welcome-file-list>
   
 </web-app>

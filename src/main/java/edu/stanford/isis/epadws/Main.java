@@ -33,7 +33,6 @@ import edu.stanford.isis.epad.plugin.server.impl.ClassFinderTestUtils;
 import edu.stanford.isis.epad.plugin.server.impl.EPadFilesImpl;
 import edu.stanford.isis.epad.plugin.server.impl.PluginConfig;
 import edu.stanford.isis.epad.plugin.server.impl.PluginHandlerMap;
-import edu.stanford.isis.epadws.common.ProxyVersion;
 import edu.stanford.isis.epadws.db.mysql.MySqlInstance;
 import edu.stanford.isis.epadws.db.mysql.pipeline.MySqlFactory;
 import edu.stanford.isis.epadws.handlers.admin.SignalShutdownHandler;
@@ -59,7 +58,7 @@ import edu.stanford.isis.epadws.server.threads.ShutdownHookThread;
 /**
  * Entry point for the EPad Web Service. In the architecture this is the between the web application and the DICOM
  * server.
- * 
+ * <p>
  * Start an embedded Jetty server, and all the threads required for this application.
  * 
  */
@@ -111,7 +110,7 @@ public class Main
 			ProxyConfig proxyConfig = ProxyConfig.getInstance(); // Reads configuration file
 			int port = proxyConfig.getIntParam("ePadClientPort");
 
-			log.info("Starting the Dicom Proxy. Build date: " + ProxyVersion.getBuildDate());
+			log.info("Starting the Dicom Proxy. Build date: " + EPadWebServerVersion.getBuildDate());
 			initPlugins(); // Initialize plugin classes
 			startSupportThreads();
 			server = createServer(port);

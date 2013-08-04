@@ -5,29 +5,30 @@
  * Software License Agreement available at:
  *   http://epad.stanford.edu/license/
  */
-package edu.stanford.isis.epadws.common;
+package edu.stanford.isis.epadws;
 
-/**
- *
- * @author amsnyder
- */
-public class ProxyVersion {
+public class EPadWebServerVersion
+{
+	private EPadWebServerVersion()
+	{
+	}
 
-    private ProxyVersion(){}
-
-    @SuppressWarnings("unused")
+	@SuppressWarnings("unused")
 	private static final String VERSION = "@(#)00.00.00@";
-    @SuppressWarnings("unused")
-	private static final String BUILD_DATE = "";//ToDo: create an Ant task for this.
 
-    public static String getVersion(){
-        return "1.1c";
-        //return VERSION;
-    }
+	@SuppressWarnings("unused")
+	private static final String BUILD_DATE = "";// ToDo: create an Ant task for this.
 
-    public static String getBuildDate(){
-        return "Nov 9, 2012 13:00"; //ToDo: make part of ANT build process.
-        //return BUILD_DATE;
-    }
+	public static String getVersion()
+	{
+		return "1.2";
+		// return VERSION;
+	}
+
+	public static String getBuildDate()
+	{
+		return "Nov 9, 2012 13:00"; // ToDo: make part of ANT build process.
+		// return BUILD_DATE;
+	}
 
 }

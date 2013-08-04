@@ -29,7 +29,6 @@ import edu.stanford.isis.epad.plugin.server.ePadPluginController;
 import edu.stanford.isis.epad.plugin.server.impl.EPadFilesImpl;
 import edu.stanford.isis.epad.plugin.server.impl.PluginConfig;
 import edu.stanford.isis.epad.plugin.server.impl.PluginHandlerMap;
-import edu.stanford.isis.epadws.common.ProxyVersion;
 import edu.stanford.isis.epadws.db.mysql.MySqlInstance;
 import edu.stanford.isis.epadws.db.mysql.pipeline.MySqlFactory;
 import edu.stanford.isis.epadws.resources.server.DICOMDeleteServerResource;
@@ -71,10 +70,12 @@ public class EPADWebService extends Application
 			ProxyConfig proxyConfig = ProxyConfig.getInstance(); // Reads configuration file
 			int port = proxyConfig.getIntParam("ePadClientPort");
 
-			log.info("Starting the ePAD Web Service. Build date: " + ProxyVersion.getBuildDate());
+			log.info("Starting the ePAD Web Service. Build date: " + EPadWebServerVersion.getBuildDate());
 			initPlugins(); // Initialize plugin classes
 			// startSupportThreads();
+
 			component = createComponent(port);
+
 			// testPluginImpl();
 			Runtime.getRuntime().addShutdownHook(new ShutdownHookThread());
 
@@ -112,7 +113,7 @@ public class EPADWebService extends Application
 	@Override
 	public Restlet createInboundRoot()
 	{
-		log.info("****************** createInboundRoot **********************");
+		log.info("****************** createInboundRootx **********************");
 
 		// initPlugins();
 		// initializePluginHandlers();
@@ -127,9 +128,9 @@ public class EPADWebService extends Application
 		router.attach("/resources", resourcesDirectory);
 
 		// TODO Put in configuration file
-		Directory warDirectory = new Directory(getContext(), "war:///Users/martin/tmp/webapps");
-		warDirectory.setNegotiatingContent(false);
-		warDirectory.setIndexName("Web_pad.html");
+		Directory warDirectory = new Directory(getContext(), "file:///Users/martin/workspace/rubin-lab/webapps");
+		// warDirectory.setNegotiatingContent(false);
+		// warDirectory.setIndexName("Web_pad.html");
 		router.attach("/epad", warDirectory);
 
 		router.attach("/server/{operation}", EPadWebServiceServerResource.class);
@@ -146,6 +147,10 @@ public class EPADWebService extends Application
 		// router.attach("/segmentationpath", SegmentationPathServerResource.class);
 
 		// router.attach("/plugins/{pluginName}", PluginServerResource.class);
+
+		getConnectorService().getClientProtocols().add(Protocol.FILE);
+
+		startSupportThreads();
 
 		return router;
 	}
@@ -190,14 +195,11 @@ public class EPADWebService extends Application
 	{
 		Component component = new Component();
 
-		component.getClients().add(Protocol.FILE);
-		// component.getServers().add(Protocol.FILE);
-		component.getClients().add(Protocol.WAR);
-		// component.getServers().add(Protocol.WAR);
-		component.getServers().add(Protocol.WAR, port);
 		component.getServers().add(Protocol.HTTP, port);
-
-		component.getClients().add(Protocol.HTTP); // Needed?
+		component.getClients().add(Protocol.FILE);
+		component.getClients().add(Protocol.WAR);
+		component.getClients().add(Protocol.HTTP);
+		component.getClients().add(Protocol.CLAP);
 
 		component.getDefaultHost().attach(new EPADWebService());
 

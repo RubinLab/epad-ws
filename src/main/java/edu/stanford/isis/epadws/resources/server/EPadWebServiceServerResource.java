@@ -8,7 +8,7 @@ import edu.stanford.isis.epad.common.ProxyConfig;
 import edu.stanford.isis.epad.plugin.server.EPadPlugin;
 import edu.stanford.isis.epad.plugin.server.impl.EPadPluginImpl;
 import edu.stanford.isis.epad.plugin.server.impl.EPadProxyConfigImpl;
-import edu.stanford.isis.epadws.common.ProxyVersion;
+import edu.stanford.isis.epadws.EPadWebServerVersion;
 import edu.stanford.isis.epadws.db.mysql.MySqlInstance;
 import edu.stanford.isis.epadws.resources.EPadWebServiceResource;
 import edu.stanford.isis.epadws.server.managers.pipeline.PipelineFactory;
@@ -89,7 +89,7 @@ public class EPadWebServiceServerResource extends BaseServerResource implements 
 
 			out.append("--------------  ePAD Web Service status  --------------\n\n");
 			out.append("ePAD Web Service uptime: " + upTimeSec + " sec\n\n");
-			out.append("Version: " + ProxyVersion.getBuildDate() + "\n\n");
+			out.append("Version: " + EPadWebServerVersion.getBuildDate() + "\n\n");
 			out.append("ePAD Web Service listening on: " + proxyConfig.getParam("ListenIP") + ":"
 					+ proxyConfig.getParam("ListenPort") + "\n\n");
 			out.append("Plugin Version - interface:      " + EPadPlugin.PLUGIN_INTERFACE_VERSION + "\n");

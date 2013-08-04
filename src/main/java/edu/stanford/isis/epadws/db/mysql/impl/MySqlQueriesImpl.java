@@ -21,6 +21,7 @@ import edu.stanford.isis.epad.common.ProxyLogger;
 import edu.stanford.isis.epad.common.dicom.DicomFormatUtil;
 import edu.stanford.isis.epad.common.dicom.DicomParentCache;
 import edu.stanford.isis.epad.common.dicom.DicomParentType;
+import edu.stanford.isis.epadws.db.mysql.MySqlCalls;
 import edu.stanford.isis.epadws.db.mysql.MySqlConnectionPool;
 import edu.stanford.isis.epadws.db.mysql.MySqlQueries;
 import edu.stanford.isis.epadws.handlers.coordination.Term;
