@@ -9,7 +9,6 @@
     <relativePath>../isis-epad-project/pom.xml</relativePath>
   </parent>
 
-  <groupId>edu.stanford.isis.epad</groupId>
   <artifactId>epad-ws</artifactId>
   <packaging>jar</packaging>
   <name>ePAD Web Services</name>

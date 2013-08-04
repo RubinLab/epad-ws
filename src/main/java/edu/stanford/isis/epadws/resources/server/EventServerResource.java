@@ -55,34 +55,6 @@ public class EventServerResource extends BaseServerResource
 		}
 	}
 
-	private String executeEventQuery(String userName)
-	{
-		StringBuilder out = new StringBuilder();
-		MySqlQueries dbQueries = MySqlInstance.getInstance().getMysqlQueries();
-		List<Map<String, String>> result = dbQueries.getEventsForUser(userName);
-
-		out.append(new SearchResultUtils().get_EVENT_SEARCH_HEADER());
-		log.info("Found " + result.size() + " results.");
-		String separator = config.getParam("fieldSeparator");
-
-		for (Map<String, String> row : result) { // Write the result
-			StringBuilder sb = new StringBuilder();
-			sb.append(row.get("pk")).append(separator);
-			sb.append(row.get("event_status")).append(separator);
-			sb.append(row.get("created_time")).append(separator);
-			sb.append(row.get("aim_uid")).append(separator);
-			sb.append(row.get("aim_name")).append(separator);
-			sb.append(row.get("patient_id")).append(separator);
-			sb.append(row.get("patient_name")).append(separator);
-			sb.append(row.get("template_id")).append(separator);
-			sb.append(row.get("template_name")).append(separator);
-			sb.append(row.get("plugin_name"));
-			sb.append("\n");
-			out.append(sb.toString());
-		}
-		return out.toString();
-	}
-
 	@Post("text")
 	public String insertEvent()
 	{
@@ -124,6 +96,34 @@ public class EventServerResource extends BaseServerResource
 			setStatus(Status.CLIENT_ERROR_BAD_REQUEST);
 			return MISSING_QUERY_MESSAGE;
 		}
+	}
+
+	private String executeEventQuery(String userName)
+	{
+		StringBuilder out = new StringBuilder();
+		MySqlQueries dbQueries = MySqlInstance.getInstance().getMysqlQueries();
+		List<Map<String, String>> result = dbQueries.getEventsForUser(userName);
+
+		out.append(new SearchResultUtils().get_EVENT_SEARCH_HEADER());
+		log.info("Found " + result.size() + " results.");
+		String separator = config.getParam("fieldSeparator");
+
+		for (Map<String, String> row : result) { // Write the result
+			StringBuilder sb = new StringBuilder();
+			sb.append(row.get("pk")).append(separator);
+			sb.append(row.get("event_status")).append(separator);
+			sb.append(row.get("created_time")).append(separator);
+			sb.append(row.get("aim_uid")).append(separator);
+			sb.append(row.get("aim_name")).append(separator);
+			sb.append(row.get("patient_id")).append(separator);
+			sb.append(row.get("patient_name")).append(separator);
+			sb.append(row.get("template_id")).append(separator);
+			sb.append(row.get("template_name")).append(separator);
+			sb.append(row.get("plugin_name"));
+			sb.append("\n");
+			out.append(sb.toString());
+		}
+		return out.toString();
 	}
 
 	// TODO Look at these methods. Not sure why they are manually processing query.

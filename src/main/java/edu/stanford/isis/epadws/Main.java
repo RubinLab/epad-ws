@@ -35,7 +35,6 @@ import edu.stanford.isis.epad.plugin.server.impl.PluginConfig;
 import edu.stanford.isis.epad.plugin.server.impl.PluginHandlerMap;
 import edu.stanford.isis.epadws.db.mysql.MySqlInstance;
 import edu.stanford.isis.epadws.db.mysql.pipeline.MySqlFactory;
-import edu.stanford.isis.epadws.handlers.admin.SignalShutdownHandler;
 import edu.stanford.isis.epadws.handlers.admin.StatusHandler;
 import edu.stanford.isis.epadws.handlers.aim.AimResourceHandler;
 import edu.stanford.isis.epadws.handlers.coordination.CoordinationHandler;
@@ -203,7 +202,6 @@ public class Main
 		addFileServerAtContextPath("../resources", handlerList, "/resources");
 
 		addHandlerAtContextPath(new StatusHandler(), "/status", handlerList);
-		addHandlerAtContextPath(new SignalShutdownHandler(), "/shutdown", handlerList);
 		addHandlerAtContextPath(new WindowLevelHandler(), "/level", handlerList);
 		addHandlerAtContextPath(new DicomDeleteHandler(), "/dicomdelete", handlerList);
 		addHandlerAtContextPath(new AimResourceHandler(), "/aimresource", handlerList);

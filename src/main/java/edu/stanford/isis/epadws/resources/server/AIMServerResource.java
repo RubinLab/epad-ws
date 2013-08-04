@@ -44,6 +44,7 @@ import edu.stanford.hakan.aim3api.base.ImageAnnotation;
 import edu.stanford.hakan.aim3api.usage.AnnotationBuilder;
 import edu.stanford.hakan.aim3api.usage.AnnotationGetter;
 import edu.stanford.isis.epad.common.ProxyConfig;
+import edu.stanford.isis.epad.common.XmlNamespaceTranslator;
 import edu.stanford.isis.epad.plugin.server.impl.PluginConfig;
 
 /**
