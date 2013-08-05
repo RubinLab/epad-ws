@@ -14,7 +14,7 @@ import edu.stanford.isis.epadws.resources.EPadWebServiceResource;
 import edu.stanford.isis.epadws.server.managers.pipeline.PipelineFactory;
 
 /**
- * Resource representing an EPad Web Server.
+ * Resource representing an ePAD Web Server.
  * <p>
  * To test:
  * 

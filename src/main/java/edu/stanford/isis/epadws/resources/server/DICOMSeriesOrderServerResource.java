@@ -56,7 +56,7 @@ public class DICOMSeriesOrderServerResource extends BaseServerResource
 		log.info("SeriesTag: series_iuid=" + seriesIUID);
 
 		try {
-			String response = query(seriesIUID);
+			String response = queryDatabase(seriesIUID);
 			log.info(SUCCESS_MESSAGE);
 			setStatus(Status.SUCCESS_OK);
 			return response;
@@ -71,7 +71,7 @@ public class DICOMSeriesOrderServerResource extends BaseServerResource
 		}
 	}
 
-	private String query(String seriesIUID)
+	private String queryDatabase(String seriesIUID)
 	{
 		StringBuilder out = new StringBuilder();
 

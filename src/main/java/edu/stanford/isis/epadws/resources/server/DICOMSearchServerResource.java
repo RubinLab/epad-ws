@@ -11,19 +11,23 @@ import org.restlet.resource.Get;
 import edu.stanford.isis.epad.common.ProxyConfig;
 import edu.stanford.isis.epad.common.SearchResultUtils;
 import edu.stanford.isis.epad.common.dicom.DicomFormatUtil;
-import edu.stanford.isis.epad.common.dicom.DicomSearchType;
+import edu.stanford.isis.epad.common.dicom.DicomStudySearchType;
 import edu.stanford.isis.epadws.db.mysql.MySqlInstance;
 import edu.stanford.isis.epadws.db.mysql.MySqlQueries;
 import edu.stanford.isis.epadws.db.mysql.impl.MySqlStudyQueryBuilder;
 import edu.stanford.isis.epadws.server.RSeriesData;
 
-public class SQLSearchServerResource extends BaseServerResource
+/**
+ * Query the database using DICOM series or study search parameters.
+ * 
+ */
+public class DICOMSearchServerResource extends BaseServerResource
 {
-	private static final String NO_QUERY_MESSAGE = "No query in request";
-	private static final String MISSING_SEARCH_PARAMETER_MESSAGE = "Missing DICOM search parameter";
+	private static final String MISSING_QUERY_MESSAGE = "No series or study query in request";
+	private static final String MISSING_STUDY_SEARCH_TYPE_MESSAGE = "Missing DICOM study search type";
 	private static final String QUERY_EXCEPTION_MESSAGE = "Error running query";
 
-	public SQLSearchServerResource()
+	public DICOMSearchServerResource()
 	{
 		setNegotiated(false); // Disable content negotiation
 	}
@@ -44,17 +48,17 @@ public class SQLSearchServerResource extends BaseServerResource
 			String result = "";
 			queryString = queryString.trim();
 
-			if (isSeriesRequest(queryString)) {
-				result = handleSeriesRequest(queryString);
+			if (isDICOMSeriesRequest(queryString)) {
+				result = handleDICOMSeriesRequest(queryString);
 			} else {
 				try {
-					DicomSearchType searchType = getSearchType();
+					DicomStudySearchType searchType = getDICOMStudySearchType();
 					if (searchType != null) {
-						result = handleStudyRequest(queryString, searchType);
+						result = handleDICOMStudyRequest(queryString, searchType);
 					} else {
-						log.info(MISSING_SEARCH_PARAMETER_MESSAGE);
+						log.info(MISSING_STUDY_SEARCH_TYPE_MESSAGE);
 						setStatus(Status.CLIENT_ERROR_BAD_REQUEST);
-						return MISSING_SEARCH_PARAMETER_MESSAGE;
+						return MISSING_STUDY_SEARCH_TYPE_MESSAGE;
 					}
 				} catch (Exception e) {
 					log.warning(QUERY_EXCEPTION_MESSAGE, e);
@@ -65,13 +69,13 @@ public class SQLSearchServerResource extends BaseServerResource
 			setStatus(Status.SUCCESS_OK);
 			return result;
 		} else {
-			log.info(NO_QUERY_MESSAGE);
+			log.info(MISSING_QUERY_MESSAGE);
 			setStatus(Status.CLIENT_ERROR_BAD_REQUEST);
-			return NO_QUERY_MESSAGE;
+			return MISSING_QUERY_MESSAGE;
 		}
 	}
 
-	private String handleStudyRequest(String queryString, DicomSearchType searchType) throws Exception
+	private String handleDICOMStudyRequest(String queryString, DicomStudySearchType searchType) throws Exception
 	{
 		StringBuilder out = new StringBuilder();
 
@@ -140,6 +144,65 @@ public class SQLSearchServerResource extends BaseServerResource
 	}
 
 	/**
+	 * Get all the series for a study.
+	 * 
+	 * @param out PrintWriter for the output.
+	 * @param queryString String - query string which contains the study id. The query line looks like the following:
+	 *          http://[ip:port]/search?searchType=series&studyUID=[studyID].
+	 * 
+	 *          The return is text in a CSV format. The first line are the keys, and all the following lines are data:
+	 * 
+	 *          keys: "Series Id, Patient Id, Patient Name, Series Date, Exam Type, Thumbnail URL, Series Description,
+	 *          NumberOfSeriesRelatedInstances, ImagesInSeries".
+	 * 
+	 *          The values are one line per series.
+	 * 
+	 *          Here we will look for *.series files within the study directory. If it is there then It will read that
+	 *          file and add it to the result.
+	 */
+	private String handleDICOMSeriesRequest(String queryString)
+	{
+		String studyIdKey = getStudyUIDFromRequest(queryString);
+		StringBuilder out = new StringBuilder();
+
+		MySqlQueries dbQueries = MySqlInstance.getInstance().getMysqlQueries();
+		String studyUID = DicomFormatUtil.formatDirToUid(studyIdKey);
+		List<Map<String, String>> series = dbQueries.doSeriesSearch(studyUID);
+
+		out.append(RSeriesData.getHeaderColumn() + "\n");
+		log.info("series search column header: " + RSeriesData.getHeaderColumn());
+
+		Map<String, String> seriesTranslatorMap = createSeriesTranslatorMap();
+
+		ProxyConfig config = ProxyConfig.getInstance();
+		String separator = config.getParam("fieldSeparator");
+
+		log.info("dbQueries.doSeriesSearch() had " + series.size() + " results, for studyUID=" + studyUID);
+		for (Map<String, String> row : series) {
+			StringBuilder sb = new StringBuilder();
+			sb.append(row.get(seriesTranslatorMap.get("series-id"))).append(separator);
+			sb.append(row.get(seriesTranslatorMap.get("patient-id"))).append(separator);
+			sb.append(row.get(seriesTranslatorMap.get("patient-name"))).append(separator);
+			sb.append(cleanSeriesDate(row.get(seriesTranslatorMap.get("series-date")))).append(separator);
+			sb.append(row.get(seriesTranslatorMap.get("exam-type"))).append(separator);
+			sb.append(row.get(seriesTranslatorMap.get("thumbnail-url"))).append(separator);
+			sb.append(row.get(seriesTranslatorMap.get("series-desc"))).append(separator);
+			sb.append(row.get(seriesTranslatorMap.get("num-series-in-rel-instances"))).append(separator);
+			sb.append(row.get(seriesTranslatorMap.get("images-in-series"))).append(separator);
+			sb.append(row.get(seriesTranslatorMap.get("png-not-ready"))).append(separator);
+
+			sb.append(row.get(seriesTranslatorMap.get("body-part"))).append(separator);
+			sb.append(row.get(seriesTranslatorMap.get("institution"))).append(separator);
+			sb.append(row.get(seriesTranslatorMap.get("station-name"))).append(separator);
+			sb.append(row.get(seriesTranslatorMap.get("department")));
+			// sb.append(",")sb.append(row.get("accession_no")); //ToDo: uncomment this when ready to test client side.
+			out.append(sb.toString() + "\n");
+			log.info(sb.toString());
+		}
+		return out.toString();
+	}
+
+	/**
 	 * Remove a specific character from a from the string.
 	 * 
 	 * @param input String
@@ -187,7 +250,7 @@ public class SQLSearchServerResource extends BaseServerResource
 	 * @param searchType DicomSearchType The type of search patient name, modality, study date, etc...
 	 * @param value String what to search for ...
 	 */
-	private void debugPrintSQL(DicomSearchType searchType, String value)
+	private void debugPrintSQL(DicomStudySearchType searchType, String value)
 	{
 		MySqlStudyQueryBuilder queryBuilder = new MySqlStudyQueryBuilder(searchType.toString(), value);
 		String query = queryBuilder.createStudySearchQuery();
@@ -195,66 +258,7 @@ public class SQLSearchServerResource extends BaseServerResource
 	}
 
 	/**
-	 * Get all the series for a study.
-	 * 
-	 * @param out PrintWriter for the output.
-	 * @param queryString String - query string which contains the study id. The query line looks like the following:
-	 *          http://[ip:port]/search?searchType=series&studyUID=[studyID].
-	 * 
-	 *          The return is text in a CSV format. The first line are the keys, and all the following lines are data:
-	 * 
-	 *          keys: "Series Id, Patient Id, Patient Name, Series Date, Exam Type, Thumbnail URL, Series Description,
-	 *          NumberOfSeriesRelatedInstances, ImagesInSeries".
-	 * 
-	 *          The values are one line per series.
-	 * 
-	 *          Here we will look for *.series files within the study directory. If it is there then It will read that
-	 *          file and add it to the result.
-	 */
-	private String handleSeriesRequest(String queryString)
-	{
-		String studyIdKey = getStudyUIDFromRequest(queryString);
-		StringBuilder out = new StringBuilder();
-
-		MySqlQueries dbQueries = MySqlInstance.getInstance().getMysqlQueries();
-		String studyUID = DicomFormatUtil.formatDirToUid(studyIdKey);
-		List<Map<String, String>> series = dbQueries.doSeriesSearch(studyUID);
-
-		out.append(RSeriesData.getHeaderColumn() + "\n");
-		log.info("series search column header: " + RSeriesData.getHeaderColumn());
-
-		Map<String, String> seriesTranslatorMap = createSeriesTranslatorMap();
-
-		ProxyConfig config = ProxyConfig.getInstance();
-		String separator = config.getParam("fieldSeparator");
-
-		log.info("dbQueries.doSeriesSearch() had " + series.size() + " results, for studyUID=" + studyUID);
-		for (Map<String, String> row : series) {
-			StringBuilder sb = new StringBuilder();
-			sb.append(row.get(seriesTranslatorMap.get("series-id"))).append(separator);
-			sb.append(row.get(seriesTranslatorMap.get("patient-id"))).append(separator);
-			sb.append(row.get(seriesTranslatorMap.get("patient-name"))).append(separator);
-			sb.append(cleanSeriesDate(row.get(seriesTranslatorMap.get("series-date")))).append(separator);
-			sb.append(row.get(seriesTranslatorMap.get("exam-type"))).append(separator);
-			sb.append(row.get(seriesTranslatorMap.get("thumbnail-url"))).append(separator);
-			sb.append(row.get(seriesTranslatorMap.get("series-desc"))).append(separator);
-			sb.append(row.get(seriesTranslatorMap.get("num-series-in-rel-instances"))).append(separator);
-			sb.append(row.get(seriesTranslatorMap.get("images-in-series"))).append(separator);
-			sb.append(row.get(seriesTranslatorMap.get("png-not-ready"))).append(separator);
-
-			sb.append(row.get(seriesTranslatorMap.get("body-part"))).append(separator);
-			sb.append(row.get(seriesTranslatorMap.get("institution"))).append(separator);
-			sb.append(row.get(seriesTranslatorMap.get("station-name"))).append(separator);
-			sb.append(row.get(seriesTranslatorMap.get("department")));
-			// sb.append(",")sb.append(row.get("accession_no")); //ToDo: uncomment this when ready to test client side.
-			out.append(sb.toString() + "\n");
-			log.info(sb.toString());
-		}
-		return out.toString();
-	}
-
-	/**
-	 * Create a map where the keys are column names in the html page and values are column names in the database.
+	 * Create a map where the keys are column names in the HTML page and values are column names in the database.
 	 * 
 	 * @return Map of String keys to String values.
 	 */
@@ -298,7 +302,7 @@ public class SQLSearchServerResource extends BaseServerResource
 	 * @param queryString String
 	 * @return boolean
 	 */
-	private static boolean isSeriesRequest(String queryString)
+	private static boolean isDICOMSeriesRequest(String queryString)
 	{
 		String check = queryString.toLowerCase().trim();
 		boolean isSeries = check.indexOf("earchtype=series") > 0;
@@ -307,9 +311,9 @@ public class SQLSearchServerResource extends BaseServerResource
 		return isSeries;
 	}
 
-	private DicomSearchType getSearchType()
+	private DicomStudySearchType getDICOMStudySearchType()
 	{
-		for (DicomSearchType curr : DicomSearchType.values()) {
+		for (DicomStudySearchType curr : DicomStudySearchType.values()) {
 			if ((getQueryValue(curr.toString()) != null)) {
 				return curr;
 			}

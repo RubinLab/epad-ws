@@ -6,7 +6,7 @@ import org.restlet.representation.StringRepresentation;
 /**
  * Server resource to dump invocation parameters. Can be used for testing.
  */
-public class DebugTracer extends BaseServerResource
+public class DebugServerResource extends BaseServerResource
 {
 	@Override
 	public Representation handle()

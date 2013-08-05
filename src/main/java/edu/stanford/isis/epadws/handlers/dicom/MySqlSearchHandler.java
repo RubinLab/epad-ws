@@ -18,7 +18,7 @@ import edu.stanford.isis.epad.common.ProxyConfig;
 import edu.stanford.isis.epad.common.ProxyLogger;
 import edu.stanford.isis.epad.common.SearchResultUtils;
 import edu.stanford.isis.epad.common.dicom.DicomFormatUtil;
-import edu.stanford.isis.epad.common.dicom.DicomSearchType;
+import edu.stanford.isis.epad.common.dicom.DicomStudySearchType;
 import edu.stanford.isis.epadws.db.mysql.MySqlInstance;
 import edu.stanford.isis.epadws.db.mysql.MySqlQueries;
 import edu.stanford.isis.epadws.db.mysql.impl.MySqlStudyQueryBuilder;
@@ -75,7 +75,7 @@ public class MySqlSearchHandler extends AbstractHandler
 	private void handleStudyRequest(PrintWriter out, String queryString, HttpServletRequest httpRequest)
 	{
 		try {
-			DicomSearchType searchType = getSearchType(httpRequest);
+			DicomStudySearchType searchType = getSearchType(httpRequest);
 
 			log.info(queryString);
 			String[] parts = queryString.split("=");
@@ -194,7 +194,7 @@ public class MySqlSearchHandler extends AbstractHandler
 	 * @param searchType DicomSearchType The type of search patient name, modality, study date, etc...
 	 * @param value String what to search for ...
 	 */
-	private void debugPrintSQL(DicomSearchType searchType, String value)
+	private void debugPrintSQL(DicomStudySearchType searchType, String value)
 	{
 		MySqlStudyQueryBuilder queryBuilder = new MySqlStudyQueryBuilder(searchType.toString(), value);
 		String query = queryBuilder.createStudySearchQuery();
@@ -319,9 +319,9 @@ public class MySqlSearchHandler extends AbstractHandler
 	 * @param httpRequest HttpServletRequest
 	 * @return DicomSearchType
 	 */
-	private DicomSearchType getSearchType(HttpServletRequest httpRequest)
+	private DicomStudySearchType getSearchType(HttpServletRequest httpRequest)
 	{
-		for (DicomSearchType curr : DicomSearchType.values()) {
+		for (DicomStudySearchType curr : DicomStudySearchType.values()) {
 
 			if ((httpRequest.getParameter(curr.toString()) != null)) {
 				return curr;
@@ -338,7 +338,7 @@ public class MySqlSearchHandler extends AbstractHandler
 	 * @return String
 	 */
 	@SuppressWarnings("unused")
-	private String getSearchParam(DicomSearchType searchType, HttpServletRequest httpRequest)
+	private String getSearchParam(DicomStudySearchType searchType, HttpServletRequest httpRequest)
 	{
 		return httpRequest.getParameter(searchType.toString());
 	}

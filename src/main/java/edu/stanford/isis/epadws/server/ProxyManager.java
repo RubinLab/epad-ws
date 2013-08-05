@@ -9,7 +9,7 @@ package edu.stanford.isis.epadws.server;
 
 import edu.stanford.isis.epad.common.dicom.DicomImageData;
 import edu.stanford.isis.epad.common.dicom.DicomSearchResult;
-import edu.stanford.isis.epad.common.dicom.DicomSearchType;
+import edu.stanford.isis.epad.common.dicom.DicomStudySearchType;
 import edu.stanford.isis.epad.common.dicom.DicomSeriesUID;
 import edu.stanford.isis.epadws.dcm4chee.DicomQuery;
 
@@ -36,7 +36,7 @@ public class ProxyManager {
      * @param searchParam  String like ExamType=MR, or PatientID=...
      * @return DicomSearchResult
      */
-    public DicomSearchResult getSearchResult(DicomSearchType searchType, String searchParam){
+    public DicomSearchResult getSearchResult(DicomStudySearchType searchType, String searchParam){
 
         return DicomQuery.searchForStudies(searchType, searchParam);
 

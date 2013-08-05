@@ -7,7 +7,7 @@
  */
 package edu.stanford.isis.epadws.server;
 
-import edu.stanford.isis.epad.common.dicom.DicomSearchType;
+import edu.stanford.isis.epad.common.dicom.DicomStudySearchType;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -37,7 +37,7 @@ public class SearchResultCache {
      * @param searchType
      * @param searchParam
      */
-    public void cache(SearchResult searchResult, DicomSearchType searchType, String searchParam){
+    public void cache(SearchResult searchResult, DicomStudySearchType searchType, String searchParam){
         SearchKey key = new SearchKey(searchType,searchParam);
         cache.put(key,searchResult);
         cacheTimestamp.put(key,System.currentTimeMillis());
@@ -69,7 +69,7 @@ public class SearchResultCache {
      * @param searchParam
      * @return
      */
-    public SearchResult find(DicomSearchType searchType, String searchParam){
+    public SearchResult find(DicomStudySearchType searchType, String searchParam){
         SearchKey key = new SearchKey(searchType,searchParam);
         //check the time-to-live of this request.
         Long timestamp = cacheTimestamp.get(key);
@@ -97,10 +97,10 @@ public class SearchResultCache {
 
     class SearchKey {
 
-        final DicomSearchType type;
+        final DicomStudySearchType type;
         final String param;
 
-        public SearchKey(DicomSearchType searchType, String searchParam){
+        public SearchKey(DicomStudySearchType searchType, String searchParam){
             type=searchType;
             param=searchParam;
         }

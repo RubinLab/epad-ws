@@ -9,7 +9,7 @@ package edu.stanford.isis.epadws.dcm4chee;
 
 import edu.stanford.isis.epad.common.dicom.DicomImageData;
 import edu.stanford.isis.epad.common.dicom.DicomSearchResult;
-import edu.stanford.isis.epad.common.dicom.DicomSearchType;
+import edu.stanford.isis.epad.common.dicom.DicomStudySearchType;
 import edu.stanford.isis.epad.common.dicom.DicomSeriesUID;
 
 import java.util.List;
@@ -25,7 +25,7 @@ public interface DicomQueryInterface {
      * @param searchParam
      * @return DicomSearchResult
      */
-    DicomSearchResult searchForStudies(DicomSearchType searchType, String searchParam);
+    DicomSearchResult searchForStudies(DicomStudySearchType searchType, String searchParam);
 
     /**
      * Get DICOM tag information about a series.

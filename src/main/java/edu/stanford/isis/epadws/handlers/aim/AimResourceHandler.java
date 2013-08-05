@@ -48,7 +48,11 @@ import edu.stanford.isis.epad.common.ProxyConfig;
 import edu.stanford.isis.epad.common.ProxyLogger;
 import edu.stanford.isis.epad.common.XmlNamespaceTranslator;
 import edu.stanford.isis.epad.plugin.server.impl.PluginConfig;
+import edu.stanford.isis.epadws.resources.server.AIMServerResource;
 
+/**
+ * Now handled by Restlet resource {@link AIMServerResource}.
+ */
 @Deprecated
 public class AimResourceHandler extends AbstractHandler
 {

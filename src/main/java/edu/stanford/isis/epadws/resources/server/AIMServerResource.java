@@ -48,7 +48,7 @@ import edu.stanford.isis.epad.common.XmlNamespaceTranslator;
 import edu.stanford.isis.epad.plugin.server.impl.PluginConfig;
 
 /**
- * AIM resource. AIM files can be queries or uploaded.
+ * AIM resource. AIM XML files in an XML database can be queried or uploaded.
  * 
  * @author martin
  */
@@ -81,11 +81,43 @@ public class AIMServerResource extends BaseServerResource
 		log.warning("An exception was thrown in the AIM resource.", throwable);
 	}
 
+	/**
+	 * To test the post try:
+	 * 
+	 * <pre>
+	 * curl --form upload=@/tmp/AIMFile.xml http://localhost:8080/aimresource/
+	 */
+	@Post("xml")
+	public String uploadAIM(Representation representation)
+	{
+		log.info("AIMServerResource received POST method");
+		String filePath = "/home/epad/DicomProxy/resources/annotations/upload/"; // TODO This should come from config file
+
+		try { // Create the directory for AIM file upload
+			StringBuilder out = new StringBuilder();
+			RestletFileUpload fileUpload = new RestletFileUpload();
+			FileItemIterator fileIterator = fileUpload.getItemIterator(representation);
+			uploadXMLFiles(filePath, fileIterator, out);
+			setStatus(Status.SUCCESS_OK);
+			return out.toString();
+		} catch (Exception e) {
+			String errorMessage = FAILED_TO_UPLOAD_MESSAGE + filePath + ": " + e.getMessage();
+			log.info(errorMessage);
+			setStatus(Status.SERVER_ERROR_INTERNAL);
+			return errorMessage;
+		} catch (Error e) {
+			String errorMessage = UPLOAD_ERROR_MESSAGE + e.getMessage();
+			log.info(errorMessage);
+			setStatus(Status.SERVER_ERROR_INTERNAL);
+			return errorMessage;
+		}
+	}
+
 	@Get("xml")
 	public String queryAIM()
 	{
 		String queryString = getQuery().getQueryString(CharacterSet.UTF_8);
-		log.info("AimResourceHandler received GET method : " + queryString);
+		log.info("AIMServerResource received GET method : " + queryString);
 
 		setResponseHeader("Cache-Control", "no-cache");
 
@@ -115,40 +147,14 @@ public class AIMServerResource extends BaseServerResource
 		}
 	}
 
-	@Post("xml")
-	public String uploadAIM(Representation representation)
-	{
-		log.info("AIM resource received POST method");
-		String filePath = "/home/epad/DicomProxy/resources/annotations/upload/"; // TODO This should come from config file
-
-		try { // Create the directory for AIM file upload
-			StringBuilder out = new StringBuilder();
-			RestletFileUpload fileUpload = new RestletFileUpload();
-			FileItemIterator fileIterator = fileUpload.getItemIterator(representation);
-			uploadFiles(filePath, fileIterator, out);
-			setStatus(Status.SUCCESS_OK);
-			return out.toString();
-		} catch (Exception e) {
-			String errorMessage = FAILED_TO_UPLOAD_MESSAGE + filePath + ": " + e.getMessage();
-			log.info(errorMessage);
-			setStatus(Status.SERVER_ERROR_INTERNAL);
-			return errorMessage;
-		} catch (Error e) {
-			String errorMessage = UPLOAD_ERROR_MESSAGE + e.getMessage();
-			log.info(errorMessage);
-			setStatus(Status.SERVER_ERROR_INTERNAL);
-			return errorMessage;
-		}
-	}
-
-	private void uploadFiles(String filePath, FileItemIterator fileIterator, StringBuilder out)
+	private void uploadXMLFiles(String filePath, FileItemIterator fileItemIterator, StringBuilder out)
 			throws FileUploadException, IOException, FileNotFoundException, AimException
 	{
-		log.info("Uploading files to directory: " + filePath);
+		log.info("Uploading AIM XML files to directory: " + filePath);
 
 		int fileCount = 0;
-		while (fileIterator.hasNext()) {
-			FileItemStream item = fileIterator.next();
+		while (fileItemIterator.hasNext()) {
+			FileItemStream item = fileItemIterator.next();
 			String name = item.getFieldName();
 			InputStream stream = item.openStream();
 			fileCount++;
@@ -172,11 +178,13 @@ public class AIMServerResource extends BaseServerResource
 
 			// Transform it an AIM File
 			ImageAnnotation ia = AnnotationGetter.getImageAnnotationFromFile(f.getAbsolutePath(), xsdFilePath);
+
+			// Save it to the server if it transformed successfully
 			if (ia != null) {
-				saveToServer(ia);
+				saveImageAnnotationToServer(ia);
 				out.append("-- Add to AIM server: " + ia.getUniqueIdentifier() + "<br>\n");
 			} else {
-				out.append("-- Failed ! not added to AIM server<br>\n");
+				out.append("-- Failed - file not added to AIM server!<br>\n");
 			}
 		}
 	}
@@ -195,7 +203,7 @@ public class AIMServerResource extends BaseServerResource
 			Node copyNode = doc.importNode(node, true);
 
 			// Copy the node
-			Element res = (Element)copyNode;
+			Element res = (Element)copyNode; // TODO These should be constants, ideally in the aim3api project.
 			res.setAttributeNS("http://www.w3.org/2000/xmlns/", "xmlns:rdf", "http://www.w3.org/1999/02/22-rdf-syntax-ns#");
 			res.setAttributeNS("http://www.w3.org/2000/xmlns/", "xmlns:xsi", "http://www.w3.org/2001/XMLSchema-instance");
 			res.setAttribute("xsi:schemaLocation",
@@ -204,7 +212,7 @@ public class AIMServerResource extends BaseServerResource
 			Node n = renameNodeNS(res, "ImageAnnotation");
 			root.appendChild(n); // Add to the root
 		}
-		String queryResults = XmlDocumentToString(doc);
+		String queryResults = xmlDocumentToString(doc);
 		return queryResults;
 	}
 
@@ -221,7 +229,7 @@ public class AIMServerResource extends BaseServerResource
 				id1 = queryStrings[0];
 			}
 		}
-		ArrayList<ImageAnnotation> aims = getAIM(id1, id2); // Get the AIM files
+		ArrayList<ImageAnnotation> aims = queryAIMDatabase(id1, id2); // Get the AIM files
 		return aims;
 	}
 
@@ -233,7 +241,7 @@ public class AIMServerResource extends BaseServerResource
 	 * @return String
 	 * @throws AimException
 	 */
-	public String saveToServer(ImageAnnotation aim) throws AimException
+	public String saveImageAnnotationToServer(ImageAnnotation aim) throws AimException
 	{
 		String res = "";
 
@@ -291,11 +299,11 @@ public class AIMServerResource extends BaseServerResource
 					try {
 						client.executeMethod(method);
 					} catch (HttpException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
+						throw new RuntimeException("HTTP error processing XML document using plugin " + pluginName + ": "
+								+ e.getMessage(), e);
 					} catch (IOException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
+						throw new RuntimeException("IO error processing XML document using plugin " + pluginName + ": "
+								+ e.getMessage(), e);
 					}
 				}
 			}
@@ -304,19 +312,19 @@ public class AIMServerResource extends BaseServerResource
 	}
 
 	/**
-	 * Read the annotations from the aim database by patient name, patient id, series id, annotation id, or just get all
+	 * Read the annotations from the AIM database by patient name, patient id, series id, annotation id, or just get all
 	 * of them on a GET. Can also delete by annotation id.
 	 * 
-	 * @return ArrayList<ImageAnnotation>
+	 * @return The matching annotations ArrayList<ImageAnnotation>
 	 */
-	public ArrayList<ImageAnnotation> getAIM(String id1, String id2)
+	public ArrayList<ImageAnnotation> queryAIMDatabase(String parameterName, String parameterValue)
 	{
 		ArrayList<ImageAnnotation> retAims = new ArrayList<ImageAnnotation>();
 		List<ImageAnnotation> aims = null;
 		ImageAnnotation aim = null;
 
-		if (id1.equals("personName")) {
-			String personName = id2;
+		if (parameterName.equals("personName")) {
+			String personName = parameterValue;
 			try {
 				aims = AnnotationGetter.getImageAnnotationsFromServerByPersonNameEqual(serverUrl, namespace, collection,
 						username, password, personName, xsdFilePath);
@@ -326,8 +334,8 @@ public class AIMServerResource extends BaseServerResource
 			if (aims != null) {
 				retAims.addAll(aims);
 			}
-		} else if (id1.equals("patientId")) {
-			String patientId = id2;
+		} else if (parameterName.equals("patientId")) {
+			String patientId = parameterValue;
 			try {
 				aims = AnnotationGetter.getImageAnnotationsFromServerByPersonIdEqual(serverUrl, namespace, collection,
 						username, password, patientId, xsdFilePath);
@@ -337,8 +345,8 @@ public class AIMServerResource extends BaseServerResource
 			if (aims != null) {
 				retAims.addAll(aims);
 			}
-		} else if (id1.equals("seriesUID")) {
-			String seriesUID = id2;
+		} else if (parameterName.equals("seriesUID")) {
+			String seriesUID = parameterValue;
 			try {
 				aims = AnnotationGetter.getImageAnnotationsFromServerByImageSeriesInstanceUIDEqual(serverUrl, namespace,
 						collection, username, password, seriesUID, xsdFilePath);
@@ -349,9 +357,9 @@ public class AIMServerResource extends BaseServerResource
 			if (aims != null) {
 				retAims.addAll(aims);
 			}
-		} else if (id1.equals("annotationUID")) {
-			String annotationUID = id2;
-			if (id2.equals("all")) {
+		} else if (parameterName.equals("annotationUID")) {
+			String annotationUID = parameterValue;
+			if (parameterValue.equals("all")) {
 				String query = "SELECT FROM " + collection + " WHERE (ImageAnnotation.cagridId like '0')";
 				try {
 					aims = AnnotationGetter.getImageAnnotationsFromServerWithAimQuery(serverUrl, namespace, username, password,
@@ -374,23 +382,22 @@ public class AIMServerResource extends BaseServerResource
 					retAims.add(aim);
 				}
 			}
-		} else if (id1.equals("deleteUID")) {
-			String annotationUID = id2;
+		} else if (parameterName.equals("deleteUID")) {
+			String annotationUID = parameterValue;
 			log.info("calling performDelete with deleteUID on GET ");
-			performDelete(annotationUID, collection, serverUrl);
+			deleteXMLDocumentFromDatabase(annotationUID, collection, serverUrl);
 			retAims = null;
-		} else if (id1.equals("key")) {
-			log.info("id1 is key id2 is " + id2);
+		} else if (parameterName.equals("key")) {
+			log.info("id1 is key id2 is " + parameterValue);
 		}
-		log.info("Number of AIM files founded : " + retAims.size());
+		log.info("Number of AIM files found: " + retAims.size());
 
 		return retAims;
 	}
 
-	// Create an XML document from a String
-	public static String XmlDocumentToString(Document document)
+	public static String xmlDocumentToString(Document document)
 	{
-
+		// TODO These namespaces should be constants, ideally in the aim3api project.
 		// add the good namespace
 		new XmlNamespaceTranslator().addTranslation(null, "gme://caCORE.caCORE/3.2/edu.northwestern.radiology.AIM")
 				.addTranslation("", "gme://caCORE.caCORE/3.2/edu.northwestern.radiology.AIM").translateNamespaces(document);
@@ -401,14 +408,13 @@ public class AIMServerResource extends BaseServerResource
 		;
 		try {
 			trans = transfac.newTransformer();
-		} catch (TransformerConfigurationException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
+		} catch (TransformerConfigurationException e) {
+			throw new RuntimeException("Error transforming XML document: " + e.getMessage(), e);
 		}
 
 		trans.setOutputProperty(OutputKeys.INDENT, "yes");
 
-		// create string from xml tree
+		// create string from XML tree
 		StringWriter sw = new StringWriter();
 		StreamResult result = new StreamResult(sw);
 		DOMSource source = new DOMSource(document);
@@ -416,14 +422,12 @@ public class AIMServerResource extends BaseServerResource
 		try {
 			trans.transform(source, result);
 		} catch (TransformerException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			throw new RuntimeException("Error converting XML document: " + e.getMessage(), e);
 		}
 		return sw.toString();
 	}
 
-	// Delete the document from the aim database.
-	private String performDelete(String uid, String collection, String serverURL)
+	private String deleteXMLDocumentFromDatabase(String uid, String collection, String serverURL)
 	{
 		String result = "";
 
@@ -443,7 +447,7 @@ public class AIMServerResource extends BaseServerResource
 		return result;
 	}
 
-	// rename namespace of the nodes
+	// Rename namespace of the nodes
 	private static Node renameNodeNS(Node node, String newName)
 	{
 

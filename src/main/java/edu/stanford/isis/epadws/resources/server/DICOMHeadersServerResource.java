@@ -25,7 +25,7 @@ import edu.stanford.isis.epadws.db.mysql.pipeline.DicomHeadersTask;
 
 public class DICOMHeadersServerResource extends BaseServerResource
 {
-	private static final String SUCCESS_MESSAGE = "Request succeeded.";
+	private static final String SUCCESS_MESSAGE = "Request succeeded";
 	private static final String FILE_NOT_FOUND_MESSAGE = "File not found";
 	private static final String IO_EXCEPTION_MESSAGE = "IO exception";
 	private static final String BAD_DICOM_REFERENCE_MESSAGE = "Bad DICOM reference";

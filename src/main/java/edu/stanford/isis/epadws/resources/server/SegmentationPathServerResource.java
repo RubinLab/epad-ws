@@ -19,8 +19,8 @@ import edu.stanford.isis.epadws.db.mysql.MySqlQueries;
 
 public class SegmentationPathServerResource extends BaseServerResource
 {
-	private static final String NO_QUERY_MESSAGE = "No query in request";
-	private static final String EXCEPTION_MESSAGE = "Exception retrieving from ePAD database";
+	private static final String MISSING_QUERY_MESSAGE = "No query in request";
+	private static final String DATABASE_EXCEPTION_MESSAGE = "Exception retrieving from ePAD database";
 
 	public SegmentationPathServerResource()
 	{
@@ -45,14 +45,14 @@ public class SegmentationPathServerResource extends BaseServerResource
 				setStatus(Status.SUCCESS_OK);
 				return out;
 			} catch (Exception e) {
-				log.warning(EXCEPTION_MESSAGE, e);
+				log.warning(DATABASE_EXCEPTION_MESSAGE, e);
 				setStatus(Status.SERVER_ERROR_INTERNAL);
-				return EXCEPTION_MESSAGE + ": " + e.getMessage();
+				return DATABASE_EXCEPTION_MESSAGE + ": " + e.getMessage();
 			}
 		} else {
-			log.info(NO_QUERY_MESSAGE);
+			log.info(MISSING_QUERY_MESSAGE);
 			setStatus(Status.CLIENT_ERROR_BAD_REQUEST);
-			return NO_QUERY_MESSAGE;
+			return MISSING_QUERY_MESSAGE;
 		}
 	}
 

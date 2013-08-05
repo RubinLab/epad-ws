@@ -24,7 +24,7 @@ import edu.stanford.isis.epad.common.SearchResultUtils;
 import edu.stanford.isis.epad.common.dicom.DicomImageData;
 import edu.stanford.isis.epad.common.dicom.DicomImageSorter;
 import edu.stanford.isis.epad.common.dicom.DicomSearchResult;
-import edu.stanford.isis.epad.common.dicom.DicomSearchType;
+import edu.stanford.isis.epad.common.dicom.DicomStudySearchType;
 import edu.stanford.isis.epad.common.dicom.DicomSeriesData;
 import edu.stanford.isis.epad.common.dicom.DicomSeriesUID;
 import edu.stanford.isis.epad.common.dicom.DicomStudyData;
@@ -153,7 +153,7 @@ public class SearchHandler extends AbstractHandler
 	 */
 	private void performStudySearch(HttpServletRequest httpRequest, PrintWriter out)
 	{
-		DicomSearchType searchType = getSearchType(httpRequest);
+		DicomStudySearchType searchType = getSearchType(httpRequest);
 
 		log.info("Study search request for type: " + searchType);
 
@@ -220,9 +220,9 @@ public class SearchHandler extends AbstractHandler
 	 * @param httpRequest
 	 * @return
 	 */
-	private DicomSearchType getSearchType(HttpServletRequest httpRequest)
+	private DicomStudySearchType getSearchType(HttpServletRequest httpRequest)
 	{
-		for (DicomSearchType curr : DicomSearchType.values()) {
+		for (DicomStudySearchType curr : DicomStudySearchType.values()) {
 
 			if ((httpRequest.getParameter(curr.toString()) != null)) {
 				return curr;
@@ -237,7 +237,7 @@ public class SearchHandler extends AbstractHandler
 	 * @param httpRequest
 	 * @return
 	 */
-	private String getSearchParam(DicomSearchType searchType, HttpServletRequest httpRequest)
+	private String getSearchParam(DicomStudySearchType searchType, HttpServletRequest httpRequest)
 	{
 		return httpRequest.getParameter(searchType.toString());
 	}

@@ -23,7 +23,7 @@ import edu.stanford.isis.epad.common.dicom.DicomData;
 import edu.stanford.isis.epad.common.dicom.DicomImageData;
 import edu.stanford.isis.epad.common.dicom.DicomSearchMap;
 import edu.stanford.isis.epad.common.dicom.DicomSearchResult;
-import edu.stanford.isis.epad.common.dicom.DicomSearchType;
+import edu.stanford.isis.epad.common.dicom.DicomStudySearchType;
 import edu.stanford.isis.epad.common.dicom.DicomSeriesData;
 import edu.stanford.isis.epad.common.dicom.DicomSeriesUID;
 import edu.stanford.isis.epad.common.dicom.DicomStudyData;
@@ -53,7 +53,7 @@ public class SearchResult implements DicomSearchResult
 	/**
 	 * String indicating type of search that was used to locate the studies.
 	 */
-	final DicomSearchType searchType;
+	final DicomStudySearchType searchType;
 	/**
 	 * Value used in search for studies.
 	 */
@@ -61,7 +61,7 @@ public class SearchResult implements DicomSearchResult
 
 	final DicomSearchMap searchMap;
 
-	public SearchResult(DicomSearchType type, String param)
+	public SearchResult(DicomStudySearchType type, String param)
 	{
 		searchResultMap = new ConcurrentHashMap<DicomStudyUID, Tree<DicomData>>();
 		studyList = new ArrayList<DicomStudyUID>();

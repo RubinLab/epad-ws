@@ -66,7 +66,7 @@ import edu.stanford.isis.epad.common.ProxyConfig;
 import edu.stanford.isis.epad.common.ProxyLogger;
 import edu.stanford.isis.epad.common.dicom.DicomImageData;
 import edu.stanford.isis.epad.common.dicom.DicomSearchResult;
-import edu.stanford.isis.epad.common.dicom.DicomSearchType;
+import edu.stanford.isis.epad.common.dicom.DicomStudySearchType;
 import edu.stanford.isis.epad.common.dicom.DicomSeriesUID;
 import edu.stanford.isis.epad.common.dicom.DicomStudyData;
 import edu.stanford.isis.epad.common.dicom.DicomStudyUID;
@@ -83,15 +83,15 @@ import edu.stanford.isis.epadws.server.SearchResultCache;
  * <ul>
  * <li>{@link #buildImagesSearchArgs(String)}</li>
  * <li>{@link #buildSeriesSearchArgs(String)}</li>
- * <li>{@link #buildStudySearchArgs(DicomSearchType, String)}</li>
+ * <li>{@link #buildStudySearchArgs(DicomStudySearchType, String)}</li>
  * </ul>
  * <p>
  * These appear to be the methods called by other packages to carry out the Dicom search.
  * </p>
  * <ul>
  * <li>
- * {@link #searchForStudies(DicomSearchType, String)} called by
- * {@link edu.stanford.isis.epadws.server.ProxyManager#getSearchResult(DicomSearchType,String)}</li>
+ * {@link #searchForStudies(DicomStudySearchType, String)} called by
+ * {@link edu.stanford.isis.epadws.server.ProxyManager#getSearchResult(DicomStudySearchType,String)}</li>
  * <li>
  * {@link #searchForSeries(String, String)} called by
  * {@link edu.stanford.isis.epadws.server.ProxyManager#getSeriesSearchResult(String,String)}</li>
@@ -109,7 +109,7 @@ public class DicomQuery
 
 	public static void main(String[] args)
 	{
-		DicomSearchResult retVal = DicomQuery.searchForStudies(DicomSearchType.PATIENT_ID,
+		DicomSearchResult retVal = DicomQuery.searchForStudies(DicomStudySearchType.PATIENT_ID,
 				"83393488148532965622665512597663741359");
 
 		System.out.println("#studies found: " + retVal.getStudies().size());
@@ -133,7 +133,7 @@ public class DicomQuery
 	 * @param searchParam
 	 * @return DicomSearchResult -
 	 */
-	public static DicomSearchResult searchForStudies(DicomSearchType searchType, String searchParam)
+	public static DicomSearchResult searchForStudies(DicomStudySearchType searchType, String searchParam)
 	{
 
 		String[] dicomQueryArguments = buildStudySearchArgs(searchType, searchParam);
@@ -276,7 +276,7 @@ public class DicomQuery
 	 * DCM4CHEE@171.65.102.125:11112 Disconnected from the target VM, address: '127.0.0.1:50011', transport: 'socket' *
 	 * 
 	 */
-	private static DicomSearchResult parseStudySearchResult(DicomSearchType searchType, String searchParam)
+	private static DicomSearchResult parseStudySearchResult(DicomStudySearchType searchType, String searchParam)
 	{
 
 		boolean isReadingTags = false;
@@ -505,7 +505,7 @@ public class DicomQuery
 	 * @param searchParam - String
 	 * @return String[]
 	 */
-	private static String[] buildStudySearchArgs(DicomSearchType searchType, String searchParam)
+	private static String[] buildStudySearchArgs(DicomStudySearchType searchType, String searchParam)
 	{
 
 		ProxyConfig proxyConfig = ProxyConfig.getInstance();
