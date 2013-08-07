@@ -4,7 +4,7 @@ import org.restlet.data.CharacterSet;
 import org.restlet.data.Status;
 import org.restlet.resource.Get;
 
-import edu.stanford.isis.epadws.db.mysql.pipeline.DicomDeleteTask;
+import edu.stanford.isis.epadws.processing.pipeline.DicomDeleteTask;
 
 /**
  * This is not RESTful. For moment, we are just replicating the pre-Restlet code.

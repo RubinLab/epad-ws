@@ -16,8 +16,8 @@ import org.eclipse.jetty.server.handler.AbstractHandler;
 import edu.stanford.isis.epad.common.ProxyConfig;
 import edu.stanford.isis.epad.common.ProxyLogger;
 import edu.stanford.isis.epad.common.SearchResultUtils;
-import edu.stanford.isis.epadws.db.mysql.MySqlInstance;
-import edu.stanford.isis.epadws.db.mysql.MySqlQueries;
+import edu.stanford.isis.epadws.processing.mysql.MySqlInstance;
+import edu.stanford.isis.epadws.processing.mysql.MySqlQueries;
 import edu.stanford.isis.epadws.resources.server.EventServerResource;
 
 /**

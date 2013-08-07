@@ -1,10 +1,10 @@
 package edu.stanford.isis.tools;
 
 import edu.stanford.isis.epad.common.ProxyLogger;
-import edu.stanford.isis.epadws.db.mysql.MySqlInstance;
-import edu.stanford.isis.epadws.db.mysql.MySqlQueries;
-import edu.stanford.isis.epadws.db.mysql.impl.DbCalls;
-import edu.stanford.isis.epadws.db.mysql.impl.DbUtils;
+import edu.stanford.isis.epadws.processing.mysql.DbCalls;
+import edu.stanford.isis.epadws.processing.mysql.DbUtils;
+import edu.stanford.isis.epadws.processing.mysql.MySqlInstance;
+import edu.stanford.isis.epadws.processing.mysql.MySqlQueries;
 
 import java.sql.*;
 import java.util.List;

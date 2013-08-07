@@ -19,9 +19,9 @@ import edu.stanford.isis.epad.common.ProxyLogger;
 import edu.stanford.isis.epad.common.SearchResultUtils;
 import edu.stanford.isis.epad.common.dicom.DicomFormatUtil;
 import edu.stanford.isis.epad.common.dicom.DicomStudySearchType;
-import edu.stanford.isis.epadws.db.mysql.MySqlInstance;
-import edu.stanford.isis.epadws.db.mysql.MySqlQueries;
-import edu.stanford.isis.epadws.db.mysql.impl.MySqlStudyQueryBuilder;
+import edu.stanford.isis.epadws.processing.mysql.MySqlInstance;
+import edu.stanford.isis.epadws.processing.mysql.MySqlQueries;
+import edu.stanford.isis.epadws.processing.mysql.MySqlStudyQueryBuilder;
 import edu.stanford.isis.epadws.server.RSeriesData;
 
 /**

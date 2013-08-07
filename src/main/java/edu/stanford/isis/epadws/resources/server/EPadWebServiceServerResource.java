@@ -9,7 +9,7 @@ import edu.stanford.isis.epad.plugin.server.EPadPlugin;
 import edu.stanford.isis.epad.plugin.server.impl.EPadPluginImpl;
 import edu.stanford.isis.epad.plugin.server.impl.EPadProxyConfigImpl;
 import edu.stanford.isis.epadws.EPadWebServerVersion;
-import edu.stanford.isis.epadws.db.mysql.MySqlInstance;
+import edu.stanford.isis.epadws.processing.mysql.MySqlInstance;
 import edu.stanford.isis.epadws.resources.EPadWebServiceResource;
 import edu.stanford.isis.epadws.server.managers.pipeline.PipelineFactory;
 

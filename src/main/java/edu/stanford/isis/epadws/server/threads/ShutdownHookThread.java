@@ -8,7 +8,7 @@
 package edu.stanford.isis.epadws.server.threads;
 
 import edu.stanford.isis.epad.common.ProxyLogger;
-import edu.stanford.isis.epadws.db.mysql.MySqlInstance;
+import edu.stanford.isis.epadws.processing.mysql.MySqlInstance;
 import edu.stanford.isis.epadws.server.ShutdownSignal;
 import edu.stanford.isis.epadws.server.managers.pipeline.PipelineFactory;
 

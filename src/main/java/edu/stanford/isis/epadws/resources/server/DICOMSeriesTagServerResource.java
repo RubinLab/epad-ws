@@ -19,8 +19,8 @@ import com.pixelmed.dicom.DicomDictionary;
 import com.pixelmed.dicom.DicomException;
 import com.pixelmed.dicom.DicomInputStream;
 
-import edu.stanford.isis.epadws.db.mysql.MySqlInstance;
-import edu.stanford.isis.epadws.db.mysql.MySqlQueries;
+import edu.stanford.isis.epadws.processing.mysql.MySqlInstance;
+import edu.stanford.isis.epadws.processing.mysql.MySqlQueries;
 
 public class DICOMSeriesTagServerResource extends BaseServerResource
 {

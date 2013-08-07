@@ -14,8 +14,8 @@ import org.restlet.resource.Get;
 
 import edu.stanford.isis.epad.common.ProxyConfig;
 import edu.stanford.isis.epad.common.ProxyFileUtils;
-import edu.stanford.isis.epadws.db.mysql.MySqlInstance;
-import edu.stanford.isis.epadws.db.mysql.MySqlQueries;
+import edu.stanford.isis.epadws.processing.mysql.MySqlInstance;
+import edu.stanford.isis.epadws.processing.mysql.MySqlQueries;
 
 public class SegmentationPathServerResource extends BaseServerResource
 {

@@ -19,8 +19,8 @@ import com.google.gson.JsonParseException;
 
 import edu.stanford.isis.epad.common.ProxyConfig;
 import edu.stanford.isis.epad.common.ProxyLogger;
-import edu.stanford.isis.epadws.db.mysql.MySqlInstance;
-import edu.stanford.isis.epadws.db.mysql.MySqlQueries;
+import edu.stanford.isis.epadws.processing.mysql.MySqlInstance;
+import edu.stanford.isis.epadws.processing.mysql.MySqlQueries;
 
 /**
  * The coordination handler is responsible for taking a set of ordered terms and returning a unique ID for those terms.
