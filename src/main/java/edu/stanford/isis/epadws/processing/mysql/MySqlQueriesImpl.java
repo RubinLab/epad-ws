@@ -576,6 +576,34 @@ public class MySqlQueriesImpl implements MySqlQueries
 	}
 
 	@Override
+	public List<Map<String, String>> getImageFilesForSeriesOrdered(String seriesIUID)
+	{
+		List<Map<String, String>> retVal = new ArrayList<Map<String, String>>();
+
+		Connection c = null;
+		PreparedStatement ps = null;
+		ResultSet rs = null;
+		try {
+			c = getConnection();
+			ps = c.prepareStatement(MySqlCalls.SELECT_FILES_FOR_SERIES_ORDERED);
+			ps.setString(1, seriesIUID);
+
+			rs = ps.executeQuery();
+			while (rs.next()) {
+				Map<String, String> resultMap = createResultMap(rs);
+				retVal.add(resultMap);
+			}// while
+
+		} catch (SQLException sqle) {
+			String debugInfo = DbUtils.getDebugData(rs);
+			logger.warning("database operation failed. debugInfo=" + debugInfo, sqle);
+		} finally {
+			close(c, ps, rs);
+		}
+		return retVal;
+	}
+
+	@Override
 	public List<Map<String, String>> getImageFilesForSeries(String seriesIUID)
 	{
 		List<Map<String, String>> retVal = new ArrayList<Map<String, String>>();
@@ -658,6 +686,34 @@ public class MySqlQueriesImpl implements MySqlQueries
 			logger.warning("getImagesWithoutPngFileForSeries had " + e.getMessage(), e);
 		}
 		return imagesWithoutPngFiles;
+	}
+
+	@Override
+	public List<Map<String, String>> getProcessedPngFilesSeriesOrdered(String seriesIUID)
+	{
+		List<Map<String, String>> imagesWithPngFiles = new ArrayList<Map<String, String>>();
+		try {
+			/* i.sop_iuid, i.inst_no, s.series_iuid, f.filepath, f.file_size */
+			List<Map<String, String>> allImagesWithFiles = getImageFilesForSeriesOrdered(seriesIUID);
+
+			/* sop_iuid */
+			List<String> finishedImage = getFinishedImagesForSeries(seriesIUID);
+
+			logger.info("getImagesWithoutPngFile... has: " + allImagesWithFiles.size() + " images with files and "
+					+ finishedImage.size() + " finished images for series=" + shortenSting(seriesIUID));
+
+			for (Map<String, String> currImageWithFile : allImagesWithFiles) {
+				String sopIdWithFile = currImageWithFile.get("sop_iuid");
+
+				if (finishedImage.contains(sopIdWithFile)) {
+					imagesWithPngFiles.add(currImageWithFile);
+				}
+			}// for
+
+		} catch (Exception e) {
+			logger.warning("getImagesWithPngFileForSeries had " + e.getMessage(), e);
+		}
+		return imagesWithPngFiles;
 	}
 
 	private static String shortenSting(String longString)

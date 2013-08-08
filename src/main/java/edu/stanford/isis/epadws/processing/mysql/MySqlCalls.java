@@ -21,6 +21,7 @@ public class MySqlCalls
 	// public static final String SELECT_FILES_FOR_SERIES =
 	// "SELECT i.sop_iuid, i.inst_no, s.series_iuid, f.filepath, f.file_size from pacsdb.files as f, pacsdb.instance as i, pacsdb.series as s WHERE f.instance_fk=i.pk and i.series_fk=s.pk and s.series_iuid=?";
 	public static final String SELECT_FILES_FOR_SERIES = "SELECT i.sop_iuid, i.inst_no, s.series_iuid, f.filepath, f.file_size, st.study_iuid from pacsdb.files as f, pacsdb.instance as i, pacsdb.series as s, pacsdb.study as st WHERE f.instance_fk=i.pk and i.series_fk=s.pk and s.study_fk=st.pk and s.series_iuid=?";
+	public static final String SELECT_FILES_FOR_SERIES_ORDERED = "SELECT i.sop_iuid, i.inst_no, s.series_iuid, f.filepath, f.file_size, st.study_iuid from pacsdb.files as f, pacsdb.instance as i, pacsdb.series as s, pacsdb.study as st WHERE f.instance_fk=i.pk and i.series_fk=s.pk and s.study_fk=st.pk and s.series_iuid=?  order by cast(i.inst_no as signed)";
 
 	// public static final String SELECT_SERIES_FOR_STUDY =
 	// "SELECT s.series_iuid, p.pat_id, p.pat_name, st.study_datetime, s.modality, s.series_desc, s.num_instances from pacsdb.series as s, pacsdb.study as st, pacsdb.patient as p where st.study_iuid=? and s.study_fk=st.pk and st.patient_fk=p.pk";

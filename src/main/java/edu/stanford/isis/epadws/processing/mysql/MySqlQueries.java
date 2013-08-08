@@ -57,6 +57,8 @@ public interface MySqlQueries
 
 	List<Map<String, String>> getImageFilesForSeries(String seriesIUID);
 
+	List<Map<String, String>> getImageFilesForSeriesOrdered(String seriesIUID);
+
 	Blob getImageBlobDataForSeries(String seriesIUID);
 
 	void updateStudiesStatusCode(int newStatusCode, String studyIUID);
@@ -66,6 +68,8 @@ public interface MySqlQueries
 	void updateSeriesStatusCodeEx(int newStatusCode, String seriesIUID);
 
 	List<Map<String, String>> getUnprocessedPngFilesSeries(String seriesIUID);
+
+	List<Map<String, String>> getProcessedPngFilesSeriesOrdered(String seriesIUID);
 
 	void insertEpadFile(Map<String, String> data);
 

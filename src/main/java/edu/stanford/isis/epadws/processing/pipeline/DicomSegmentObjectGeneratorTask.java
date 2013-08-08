@@ -410,7 +410,7 @@ public class DicomSegmentObjectGeneratorTask implements GeneratorTask
 
 
 	@Override
-	public File getDicomInputFile() {
+	public File getInputFile() {
 		return dicomInputFile;
 	}
 
