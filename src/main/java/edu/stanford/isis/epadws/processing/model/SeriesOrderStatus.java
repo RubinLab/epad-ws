@@ -38,7 +38,7 @@ public class SeriesOrderStatus {
         state=pState;
     }
 
-    public ProcessingState getState(){
+    public ProcessingState getProcessingState(){
         return state;
     }
 

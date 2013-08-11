@@ -19,6 +19,8 @@ import edu.stanford.isis.epad.common.ProxyLogger;
 
 public class PNGGridGenerator
 {
+	public static final int IMAGES_PER_AXIS = 4;
+	public static final int IMAGES_PER_AXIS * IMAGES_PER_AXIS;
 	private static ProxyLogger logger = ProxyLogger.getInstance();
 
 	private static final float COMPRESSION = 0.25f;

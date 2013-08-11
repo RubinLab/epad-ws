@@ -36,26 +36,20 @@ import edu.stanford.isis.epadws.server.ShutdownSignal;
  */
 public class SeriesWatcher implements Runnable
 {
-
-	ProxyLogger logger = ProxyLogger.getInstance();
-
-	final BlockingQueue<SeriesOrder> seriesQueue;
-	final BlockingQueue<GeneratorTask> generatorTaskQueue;
-
-	final SeriesOrderTracker seriesOrderTracker;
-
+	private final BlockingQueue<SeriesOrder> seriesQueue;
+	private final BlockingQueue<GeneratorTask> generatorTaskQueue;
+	private final SeriesOrderTracker seriesOrderTracker;
 	private final String dcm4cheeRootDir;
 
-	final ShutdownSignal shutdownSignal = ShutdownSignal.getInstance();
-
-	ProxyConfig config = ProxyConfig.getInstance();
+	private final ShutdownSignal shutdownSignal = ShutdownSignal.getInstance();
+	private final ProxyConfig config = ProxyConfig.getInstance();
+	private final ProxyLogger logger = ProxyLogger.getInstance();
 
 	public SeriesWatcher(BlockingQueue<SeriesOrder> seriesQueue, BlockingQueue<GeneratorTask> pngTaskQueue)
 	{
 		this.seriesQueue = seriesQueue;
 		this.generatorTaskQueue = pngTaskQueue;
 		this.seriesOrderTracker = SeriesOrderTracker.getInstance();
-
 		dcm4cheeRootDir = ProxyConfig.getInstance().getParam("dcm4cheeDirRoot");
 	}
 
@@ -69,39 +63,43 @@ public class SeriesWatcher implements Runnable
 			try {
 				SeriesOrder seriesOrder = seriesQueue.poll(5000, TimeUnit.MILLISECONDS);
 
-				if (seriesOrder != null) { // add new seriesOrder to the map.
+				if (seriesOrder != null) { // Add new SeriesOrder to the map.
+					logger.info("Series watcher found new series with series UID" + seriesOrder.getSeriesUID());
 					seriesOrderTracker.add(new SeriesOrderStatus(seriesOrder));
 				}
-
-				if (seriesOrderTracker.getStatusSet().size() > 0) { // walk through the map
+				if (seriesOrderTracker.getStatusSet().size() > 0) { // Walk through the map
 					logger.info("SeriesOrderTracker has: " + seriesOrderTracker.getStatusSet().size() + " series.");
 				} else {
 					if (loopCount % 5 == 0) {
 						logger.info("SeriesOrderTracker running, but has no series.");
 					}
 				}
+				// Loop through all current active series and
 				for (SeriesOrderStatus currentSeriesOrderStatus : seriesOrderTracker.getStatusSet()) {
 					SeriesOrder currentSeriesOrder = currentSeriesOrderStatus.getSeriesOrder();
 					List<Map<String, String>> newImageList = mySqlQueries.getUnprocessedPngFilesSeries(currentSeriesOrder
-							.getSeriesUID()); // Look for newly arrived images.
+							.getSeriesUID());
 
-					logger.info("[TEMP] newImageList size: " + newImageList.size());
-					if (newImageList.size() > 0) {
-						logger.info("[TEMP] " + newImageList.size() + " images added.");
-						currentSeriesOrder.updateImageList(newImageList);
+					if (newImageList.size() > 0) { // Look for newly arrived DICOM images.
+						logger.info("Found " + newImageList.size() + " DICOM images added.");
+						currentSeriesOrder.updateImageList(newImageList); // SeriesOrder tracks instance order
 						currentSeriesOrderStatus.registerActivity();
 						currentSeriesOrderStatus.setState(ProcessingState.IN_PIPELINE);
 						addToGeneratorTaskPipeline(newImageList);
-					} else { // There are no unprocessed PNG files left. If so get all the processed ones.
-						List<Map<String, String>> processedPNGImages = mySqlQueries
-								.getProcessedPngFilesSeriesOrdered(currentSeriesOrder.getSeriesUID());
-
-						if (processedPNGImages.size() > 0) {
-							logger.info("[TEMP] " + processedPNGImages.size() + " PNG images to be converted to grid images.");
-							addToPNGGridGeneratorTaskPipeline(newImageList);
+					} else { // There are no unprocessed PNG files left.
+						if (currentSeriesOrderStatus.getProcessingState() == ProcessingState.IN_PIPELINE) {
+							logger.info("No unprocesses PNG files left for series with UID " + seriesOrder.getSeriesUID());
+							List<Map<String, String>> processedPNGImages = mySqlQueries
+									.getProcessedPngFilesSeriesOrdered(currentSeriesOrder.getSeriesUID());
+							if (processedPNGImages.size() > 0) { // Convert processed PNG files to PNG grid files
+								logger.info("Found " + processedPNGImages.size() + " PNG images. Converting to grid images.");
+								currentSeriesOrderStatus.setState(ProcessingState.IN_PNG_GRID_PIPELINE);
+								addToPNGGridGeneratorTaskPipeline(newImageList);
+							}
 						}
 					}
 				}
+				// Loop through all current active series and remove them if they are done.
 				for (SeriesOrderStatus currentSeriesOrderStatus : seriesOrderTracker.getStatusSet()) {
 					if (currentSeriesOrderStatus.isDone()) { // Remove finished series
 						seriesOrderTracker.remove(currentSeriesOrderStatus);
@@ -113,38 +111,36 @@ public class SeriesWatcher implements Runnable
 		}
 	}
 
-	private void addToPNGGridGeneratorTaskPipeline(List<Map<String, String>> imageList)
+	private void addToPNGGridGeneratorTaskPipeline(List<Map<String, String>> pngImageList)
 	{
 		MySqlQueries queries = MySqlInstance.getInstance().getMysqlQueries();
 		int currentImageIndex = 0;
-		for (Map<String, String> currentImage : imageList) {
-			String inputFilePath = getInputFilePath(currentImage); // Get the input file path.
-			File inputPNGFile = new File(inputFilePath);
-
-			String outputFilePath = createOutputFilePathForDicomPNGGridImage(currentImage); // Get the output file path.
-			logger.info("Checking epad_files table for: " + outputFilePath);
-			if (!queries.hasEpadFile(outputFilePath)) {
-				logger.info("SeriesWatcher has: " + currentImage.get("sop_iuid") + " PNG for grid processing.");
+		for (Map<String, String> currentPNGImage : pngImageList) {
+			String inputPNGFilePath = getInputFilePath(currentPNGImage); // Get the input file path.
+			File inputPNGFile = new File(inputPNGFilePath);
+			String outputPNGGridFilePath = createOutputFilePathForDicomPNGGridImage(currentPNGImage);
+			logger.info("Checking epad_files table for: " + outputPNGGridFilePath);
+			if (!queries.hasEpadFile(outputPNGGridFilePath)) {
+				logger.info("SeriesWatcher has: " + currentPNGImage.get("sop_iuid") + " PNG for grid processing.");
 				// Need to get slice for PNG files.
-				List<File> inputPNGGridFiles = getSliceOfFiles(imageList, currentImageIndex, 16);
-				createPngGridFileForPNGImages(inputPNGFile, inputPNGGridFiles, outputFilePath);
+				List<File> inputPNGGridFiles = getSliceOfPNGFiles(pngImageList, currentImageIndex, 16);
+				createPngGridFileForPNGImages(inputPNGFile, inputPNGGridFiles, outputPNGGridFilePath);
 			}
 			currentImageIndex++;
 		}
 	}
 
-	private List<File> getSliceOfFiles(List<Map<String, String>> imageList, int currentImageIndex, int sliceSize)
+	private List<File> getSliceOfPNGFiles(List<Map<String, String>> imageList, int currentImageIndex, int sliceSize)
 	{
-		List<File> slice = new ArrayList<File>(sliceSize);
+		List<File> sliceOfPNGFiles = new ArrayList<File>(sliceSize);
 
 		for (int i = currentImageIndex; i < sliceSize; i++) {
-			Map<String, String> currentImage = imageList.get(i);
-			String filePath = getInputFilePath(currentImage); // Get the input file path.
-			File file = new File(filePath);
-			slice.add(file);
+			Map<String, String> currentPNGImage = imageList.get(i);
+			String pngFilePath = getInputFilePath(currentPNGImage);
+			File pngFile = new File(pngFilePath);
+			sliceOfPNGFiles.add(pngFile);
 		}
-
-		return slice;
+		return sliceOfPNGFiles;
 	}
 
 	private void createPngGridFileForPNGImages(File inputPNGFile, List<File> inputPNGGridFiles,
