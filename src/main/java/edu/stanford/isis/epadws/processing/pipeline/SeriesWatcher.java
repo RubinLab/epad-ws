@@ -18,6 +18,7 @@ import org.apache.commons.httpclient.methods.GetMethod;
 
 import edu.stanford.isis.epad.common.ProxyConfig;
 import edu.stanford.isis.epad.common.ProxyLogger;
+import edu.stanford.isis.epad.common.ResourceUtils;
 import edu.stanford.isis.epad.common.WadoUrlBuilder;
 import edu.stanford.isis.epad.common.dicom.DicomFormatUtil;
 import edu.stanford.isis.epadws.processing.model.PngStatus;
@@ -292,16 +293,13 @@ public class SeriesWatcher implements Runnable
 	 */
 	private String createOutputFilePathForDicomPNGImage(Map<String, String> currImage)
 	{
-
 		String seriesIUID = currImage.get("series_iuid");
-
 		MySqlQueries queries = MySqlInstance.getInstance().getMysqlQueries();
 		String studyUID = queries.getStudyUIDForSeries(seriesIUID);
-
 		String imageUID = currImage.get("sop_iuid");
-
 		StringBuilder outputPath = new StringBuilder();
-		outputPath.append("../resources/dicom/"); // TODO: Specify in config file
+
+		outputPath.append(ResourceUtils.getEPADWebServerPNGDir());
 		outputPath.append(DicomFormatUtil.formatUidToDir(studyUID)).append("/");
 		outputPath.append(DicomFormatUtil.formatUidToDir(seriesIUID)).append("/");
 		outputPath.append(DicomFormatUtil.formatUidToDir(imageUID)).append(".png");
@@ -316,16 +314,13 @@ public class SeriesWatcher implements Runnable
 	 */
 	private String createOutputFilePathForDicomPNGGridImage(Map<String, String> currImage)
 	{
-
 		String seriesIUID = currImage.get("series_iuid");
-
 		MySqlQueries queries = MySqlInstance.getInstance().getMysqlQueries();
 		String studyUID = queries.getStudyUIDForSeries(seriesIUID);
-
 		String imageUID = currImage.get("sop_iuid");
-
 		StringBuilder outputPath = new StringBuilder();
-		outputPath.append("../resources/dicom_grid/"); // TODO: Specify in config file
+
+		outputPath.append(ResourceUtils.getEPADWebServerPNGGridDir());
 		outputPath.append(DicomFormatUtil.formatUidToDir(studyUID)).append("/");
 		outputPath.append(DicomFormatUtil.formatUidToDir(seriesIUID)).append("/");
 		outputPath.append(DicomFormatUtil.formatUidToDir(imageUID)).append(".png");
@@ -345,5 +340,4 @@ public class SeriesWatcher implements Runnable
 		}
 		return dcm4cheeRootDir + "/";
 	}
-
 }

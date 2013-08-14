@@ -11,6 +11,7 @@ import java.util.concurrent.TimeUnit;
 import edu.stanford.isis.epad.common.FileKey;
 import edu.stanford.isis.epad.common.ProxyFileUtils;
 import edu.stanford.isis.epad.common.ProxyLogger;
+import edu.stanford.isis.epad.common.ResourceUtils;
 import edu.stanford.isis.epadws.server.ShutdownSignal;
 import edu.stanford.isis.epadws.server.managers.pipeline.UploadFile;
 
@@ -22,14 +23,10 @@ import edu.stanford.isis.epadws.server.managers.pipeline.UploadFile;
  */
 public class MySqlUploadDirWatcher implements Runnable
 {
-
-	public static final String UPLOAD_ROOT_DIR = "./resources/upload/"; // TODO Get from config file
 	public static final int CHECK_INTERVAL = 5000; // check every 5 seconds.
-
 	public static final String FOUND_DIR_FILE = "dir.found";
 	private static final long MAX_WAIT_TIME = 120000; // in milliseconds
-
-	ProxyLogger log = ProxyLogger.getInstance();
+	private final ProxyLogger log = ProxyLogger.getInstance();
 
 	@Override
 	public void run()
@@ -40,8 +37,8 @@ public class MySqlUploadDirWatcher implements Runnable
 				if (shutdownSignal.hasShutdown()) {
 					return;
 				}
-
-				File rootDir = new File(UPLOAD_ROOT_DIR);
+				File rootDir = new File(ResourceUtils.getEPADWebServerUploadDir());
+				log.info("MySQL upload directory:" + ResourceUtils.getEPADWebServerUploadDir());
 				try {
 					List<File> newDirList = findNewDir(rootDir);
 					if (newDirList != null) {
@@ -57,8 +54,7 @@ public class MySqlUploadDirWatcher implements Runnable
 					return;
 				}
 				TimeUnit.MILLISECONDS.sleep(CHECK_INTERVAL);
-			}// while
-
+			}
 		} catch (Exception e) {
 			log.sever("UploadDirWatcher error.", e);
 		} finally {
@@ -73,16 +69,14 @@ public class MySqlUploadDirWatcher implements Runnable
 
 		File[] allFiles = dir.listFiles();
 		for (File currFile : allFiles) {
-
 			if (currFile.isDirectory()) {
 				if (!hasSignalDir(currFile)) {
 					retVal.add(currFile);
 				}
-			}// if
-		}// for
-
+			}
+		}
 		return retVal;
-	}// findNewDir
+	}
 
 	private boolean hasSignalDir(File dir)
 	{
@@ -91,7 +85,7 @@ public class MySqlUploadDirWatcher implements Runnable
 			if (currPath.indexOf(FOUND_DIR_FILE) > 0) {
 				return true;
 			}
-		}// for
+		}
 		return false;
 	}
 
@@ -151,11 +145,8 @@ public class MySqlUploadDirWatcher implements Runnable
 					}
 				}
 			}
-
-			if ((System.currentTimeMillis() - emptyDirStartWaitTime) > MAX_WAIT_TIME) {
+			if ((System.currentTimeMillis() - emptyDirStartWaitTime) > MAX_WAIT_TIME)
 				throw new IllegalStateException("Exceeded max wait time to upload a file.");
-			}
-			// sleep one second.
 			Thread.sleep(2000);
 		}
 	}

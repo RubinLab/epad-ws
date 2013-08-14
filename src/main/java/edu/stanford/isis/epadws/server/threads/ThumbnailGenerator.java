@@ -115,15 +115,9 @@ public class ThumbnailGenerator implements Runnable
 	 */
 	private File createThumbnailFile(DicomStudyUID studyUID, DicomSeriesUID seriesUID) throws IOException
 	{
-
-		File dicomProxyBaseDir = ResourceUtils.getDicomProxyBaseDir();
-		String basePath = dicomProxyBaseDir.getAbsolutePath();
-		if (!basePath.endsWith("/")) {
-			basePath = basePath + "/";
-		}
 		String thumbnailFilePath = ResourceUtils.makeThumbnailFilePath(studyUID, seriesUID);
 
-		return ResourceUtils.generateFile(basePath + thumbnailFilePath);
+		return ResourceUtils.generateFile(thumbnailFilePath);
 	}
 
 }

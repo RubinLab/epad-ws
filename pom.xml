@@ -22,6 +22,18 @@
     </dependency>
 
     <dependency>
+      <groupId>edu.stanford.isis.epad.plugins</groupId>
+      <artifactId>tedseg</artifactId>
+      <version>${tedseg.plugin.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>edu.stanford.isis.epad.plugins</groupId>
+      <artifactId>jjvector</artifactId>
+      <version>${jjvector.plugin.version}</version>
+    </dependency>
+
+    <dependency>
       <groupId>edu.stanford.hakan.aim3api</groupId>
       <artifactId>aim3api</artifactId>
       <version>${aim3api.version}</version>
@@ -207,6 +219,11 @@
     </dependency>
     <!-- End of Eclipse/Jetty-related dependencies -->
 
+<dependency>
+	<groupId>gov.nih.imagej</groupId>
+	<artifactId>imagej</artifactId>
+	<version>1.47</version>
+</dependency>
   </dependencies>
 
   <build>

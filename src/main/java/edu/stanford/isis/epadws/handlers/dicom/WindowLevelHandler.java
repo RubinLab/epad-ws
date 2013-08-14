@@ -23,6 +23,7 @@ import org.eclipse.jetty.server.handler.AbstractHandler;
 
 import edu.stanford.isis.epad.common.FileKey;
 import edu.stanford.isis.epad.common.ProxyLogger;
+import edu.stanford.isis.epad.common.ResourceUtils;
 import edu.stanford.isis.epad.common.dicom.DicomFormatUtil;
 import edu.stanford.isis.epadws.resources.server.WindowLevelServerResource;
 import edu.stanford.isis.epadws.server.managers.leveling.WindowLevelFactory;
@@ -167,14 +168,11 @@ public class WindowLevelHandler extends AbstractHandler
 	 */
 	private String findStudyForSeries(String seriesuid)
 	{
-
-		// is the answer cached?
-		String cachedStudyDir = seriesToStudyMap.get(seriesuid);
-		if (cachedStudyDir != null) {
+		String cachedStudyDir = seriesToStudyMap.get(seriesuid); // Is the answer cached?
+		if (cachedStudyDir != null)
 			return cachedStudyDir;
-		}
 
-		File baseDicomDir = new File(DicomFormatUtil.getDicomBaseDirPath());
+		File baseDicomDir = new File(ResourceUtils.getEPADWebServerDicomDir());
 
 		File[] studyDirs = baseDicomDir.listFiles();
 		for (File currStudyDir : studyDirs) {
