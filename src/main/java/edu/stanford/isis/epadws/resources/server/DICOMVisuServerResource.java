@@ -1,5 +1,9 @@
 package edu.stanford.isis.epadws.resources.server;
 
+import ij.ImagePlus;
+import ij.io.Opener;
+import ij.measure.Calibration;
+
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -17,7 +21,6 @@ import org.restlet.resource.Get;
 import com.pixelmed.dicom.DicomException;
 import com.pixelmed.display.SourceImage;
 
-import edu.stanford.isis.epad.common.ImageEnhancer;
 import edu.stanford.isis.epad.common.WadoUrlBuilder;
 
 public class DICOMVisuServerResource extends BaseServerResource
@@ -89,11 +92,29 @@ public class DICOMVisuServerResource extends BaseServerResource
 		double windowCenter = 0.0;
 
 		if (srcDicomImage != null) {
-			ImageEnhancer ie = new ImageEnhancer(srcDicomImage);
-			ie.findVisuParametersImage();
-			windowWidth = ie.getWindowWidth();
-			windowCenter = ie.getWindowCenter();
+			log.info("Dicom image is valid");
+			/*
+			 * ImageEnhancer ie=new ImageEnhancer(srcDicomImage); ie.findVisuParametersImage();
+			 * 
+			 * windowWidth=ie.getWindowWidth(); windowCenter=ie.getWindowCenter();
+			 */
+
+			Opener opener = new Opener();
+			String imageFilePath = tempDicom.getAbsolutePath();
+			ImagePlus imp = opener.openImage(imageFilePath);
+			// ImageProcessor ip = imp.getProcessor();
+
+			double min = imp.getDisplayRangeMin();
+			double max = imp.getDisplayRangeMax();
+			Calibration cal = imp.getCalibration();
+			// int digits = (ip instanceof FloatProcessor) || cal.calibrated() ? 2 : 0;
+			double minValue = cal.getCValue(min);
+			double maxValue = cal.getCValue(max);
+
+			windowWidth = (maxValue - minValue);
+			windowCenter = (minValue + windowWidth / 2.0);
 		}
+
 		String separator = config.getParam("fieldSeparator"); // TODO Constants for these names
 		out.append("windowWidth" + separator + "windowCenten");
 		out.append(windowWidth + separator + windowCenter + "\n");

@@ -17,70 +17,68 @@ import edu.stanford.isis.epadws.processing.mysql.MySqlQueries;
 import edu.stanford.isis.epadws.server.ShutdownSignal;
 
 /**
- * Watches for the login file. When a new login file is
- * found it creates a user entry into the database
- *
+ * Watches for the login file. When a new login file is found it creates a user entry into the database
+ * 
  * @author ckurtz
  */
 public class MySqlLoginDirWatcher implements Runnable
 {
-
 	public static final String LOGIN_ROOT_DIR = "../etc/login/";
-	public static final int CHECK_INTERVAL = 120000; //check every 2 minutes.
+	public static final int CHECK_INTERVAL = 120000; // check every 2 minutes.
 
 	public static final String FOUND_DIR_FILE = "dir.found";
-	//private static final long MAX_WAIT_TIME = 120000; //in milliseconds
+	// private static final long MAX_WAIT_TIME = 120000; // in milliseconds
 
 	ProxyLogger log = ProxyLogger.getInstance();
 
 	@Override
-	public void run() {
-		try{
+	public void run()
+	{
+		try {
 			ShutdownSignal shutdownSignal = ShutdownSignal.getInstance();
-			while(true){
-				if(shutdownSignal.hasShutdown()){
+			while (true) {
+				if (shutdownSignal.hasShutdown()) {
 					return;
 				}
-
 				File rootDir = new File(LOGIN_ROOT_DIR);
-				try{
+				try {
 					List<File> newUserList = findNewUsers(rootDir);
-					if(newUserList!=null){
-						for(File currUserFile : newUserList){
+					if (newUserList != null) {
+						for (File currUserFile : newUserList) {
 							processUser(currUserFile);
 						}
 					}
-				}catch(ConcurrentModificationException cme){
-					log.warning("Login Thread had: ",cme);
+				} catch (ConcurrentModificationException cme) {
+					log.warning("Login Thread had: ", cme);
 				}
-
-				if(shutdownSignal.hasShutdown()){
+				if (shutdownSignal.hasShutdown()) {
 					return;
 				}
 				TimeUnit.MILLISECONDS.sleep(CHECK_INTERVAL);
-			}//while
+			}
 
-
-		}catch(Exception e){
+		} catch (Exception e) {
 			log.sever("UploadDirWatcher error.", e);
-		}finally{
+		} finally {
 			log.info("Done. UploadDirWatcher thread.");
 		}
 	}
 
-	//looks for new users files.
+	// looks for new users files.
 	private List<File> findNewUsers(File dir)
 	{
 		MySqlQueries queries = MySqlInstance.getInstance().getMysqlQueries();
 
-		//For the return
+		// For the return
 		List<File> retVal = new ArrayList<File>();
 
-		//Extract all the names of the existing user from the database
+		// Extract all the names of the existing user from the database
 		List<String> existingUsers = queries.getAllUsers();
 
 		FileFilter fileFilter = new FileFilter() {
-			public boolean accept(File file) {
+			@Override
+			public boolean accept(File file)
+			{
 				return file.getName().endsWith(".properties");
 			}
 		};
@@ -89,36 +87,35 @@ public class MySqlLoginDirWatcher implements Runnable
 		if (allFiles == null) {
 			System.out.println("Directory is a empty Directory");
 		} else {
-			//for each file, we check the validity of the user file
-			for(File currFile : allFiles){
-				//Check the validity of the file
-				if(isValidUserFile(currFile) 
-						//Check if user already exists in the db
-						&& !existingUsers.contains(extractUserName(currFile))
-				){
+			// for each file, we check the validity of the user file
+			for (File currFile : allFiles) {
+				// Check the validity of the file
+				if (isValidUserFile(currFile)
+				// Check if user already exists in the db
+						&& extractUserName(currFile) != null && !existingUsers.contains(extractUserName(currFile))) {
 					retVal.add(currFile);
 				}
-			}//for
+			}// for
 		}
 
 		return retVal;
-	}//findNewDir
+	}// findNewDir
 
+	private boolean isValidUserFile(File currFile)
+	{
+		boolean isValid = false;
 
-	private boolean isValidUserFile(File currFile) {
-		boolean isValid=false;
-
-		if(currFile!=null && currFile.isFile()){
-			//Check the name of the file
+		if (currFile != null && currFile.isFile()) {
+			// Check the name of the file
 			String rawName = stripExtension(currFile.getName());
-			String [] parts=rawName.split("_");
-			if(parts!=null && parts.length==3){
+			String[] parts = rawName.split("_");
+			if (parts != null && parts.length == 3) {
 				String name = parts[0];
 				String software = parts[1];
-				String email= parts[2];
+				String email = parts[2];
 
-				if(software.equals("epad") && name.length()>=1 && email.contains("@")){	
-					isValid=true;
+				if (software.equals("epad") && name.length() >= 1 && email.contains("@")) {
+					isValid = true;
 				}
 			}
 		}
@@ -126,18 +123,19 @@ public class MySqlLoginDirWatcher implements Runnable
 		return isValid;
 	}
 
-	private String extractUserName(File currFile) {
-		String userName=null;
+	private String extractUserName(File currFile)
+	{
+		String userName = null;
 
-		if(currFile!=null && currFile.isFile()){
-			//Check the name of the file
+		if (currFile != null && currFile.isFile()) {
+			// Check the name of the file
 			String rawName = stripExtension(currFile.getName());
-			String [] parts=rawName.split("_");
-			if(parts!=null && parts.length==3){
+			String[] parts = rawName.split("_");
+			if (parts != null && parts.length == 3) {
 				String name = parts[0];
 
-				if(name.length()>=1){	
-					userName=name;
+				if (name.length() >= 1) {
+					userName = name;
 				}
 			}
 		}
@@ -145,74 +143,77 @@ public class MySqlLoginDirWatcher implements Runnable
 		return userName;
 	}
 
-	public static String stripExtension(String str) {
+	public static String stripExtension(String str)
+	{
 		// Handle null case specially.
-		if (str == null) 
+		if (str == null)
 			return null;
 
 		// Get position of last '.'.
 		int pos = str.lastIndexOf(".");
 
 		// If there wasn't any '.' just return the string as is.
-		if (pos == -1) return str;
+		if (pos == -1)
+			return str;
 
 		// Otherwise return the string, up to the dot.
 		return str.substring(0, pos);
 	}
 
-	private void processUser(File f)
-	throws InterruptedException
+	private void processUser(File f) throws InterruptedException
 	{
 		MySqlQueries queries = MySqlInstance.getInstance().getMysqlQueries();
 
-		if(f!=null){
-			String userName=extractUserName(f);
-			//Extract the content of the file
+		if (f != null) {
+			String userName = extractUserName(f);
+			// Extract the content of the file
 			try {
 				TreeMap<String, String> content = extractContentFromUserFile(f);
-				//Check validity of file content
-				if(content.containsKey("email")
-						&& content.containsKey("password")
-						&& content.containsKey("expirationdate")
-						&& content.containsKey("userrole")
-						&& content.containsKey("username")){
-					
-					//Insert the user into the database
-					String email=content.get("email");
-					String password=  content.get("password");
-					String expirationdate= content.get("expirationdate");
-					String userrole = content.get("userrole");
-					String username =content.get("username");
+				// Check validity of file content
+				if (content.containsKey("email") && content.containsKey("password") && content.containsKey("expirationdate")
+						&& content.containsKey("userrole") && content.containsKey("username")) {
 
-					queries.insertUserInDb(username,email,password,expirationdate,userrole);
+					// Insert the user into the database
+					String email = content.get("email");
+					String password = content.get("password");
+					String expirationdate = content.get("expirationdate");
+					String userrole = content.get("userrole");
+					String username = content.get("username");
+
+					queries.insertUserInDb(username, email, password, expirationdate, userrole);
 
 				}
 
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
-			}catch(Exception e){
-				log.warning("Failed to extract file content for "+userName+": "+e.getMessage(),e);
+			} catch (Exception e) {
+				log.warning("Failed to extract file content for " + userName + ": " + e.getMessage(), e);
 			}
-
 
 		}
 
 	}
 
-	private static boolean isCommentLine(String line){
+	private static boolean isCommentLine(String line)
+	{
 		line = line.trim();
-		if(line.startsWith("//"))return true;
-		if(line.startsWith("#"))return true;
-		if(line.startsWith("*"))return true;
+		if (line.startsWith("//"))
+			return true;
+		if (line.startsWith("#"))
+			return true;
+		if (line.startsWith("*"))
+			return true;
 
-		//count a blank line as a comment.
-		if("".equals(line))return true;
+		// count a blank line as a comment.
+		if ("".equals(line))
+			return true;
 
 		return false;
 	}
 
-	private TreeMap<String, String> extractContentFromUserFile(File f) throws IOException {
+	private TreeMap<String, String> extractContentFromUserFile(File f) throws IOException
+	{
 
 		TreeMap<String, String> content = new TreeMap<String, String>();
 
@@ -221,14 +222,14 @@ public class MySqlLoginDirWatcher implements Runnable
 		while ((line = br.readLine()) != null) {
 			// process the line.
 			line = line.trim();
-			if( !isCommentLine(line) ){
-				//add this to the list of content.
-				String[] linePart =line.split("=");
-				if(linePart.length!=2){
-					log.info("Wrong line from user login file: "+line);
-					content.put(linePart[0],"");
-				}else{
-					content.put(linePart[0],linePart[1]);
+			if (!isCommentLine(line)) {
+				// add this to the list of content.
+				String[] linePart = line.split("=");
+				if (linePart.length != 2) {
+					log.info("Wrong line from user login file: " + line);
+					content.put(linePart[0], "");
+				} else {
+					content.put(linePart[0], linePart[1]);
 				}
 			}
 		}
@@ -236,6 +237,5 @@ public class MySqlLoginDirWatcher implements Runnable
 
 		return content;
 	}
-
 
 }

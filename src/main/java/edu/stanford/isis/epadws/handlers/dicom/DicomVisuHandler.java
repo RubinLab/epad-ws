@@ -1,5 +1,9 @@
 package edu.stanford.isis.epadws.handlers.dicom;
 
+import ij.ImagePlus;
+import ij.io.Opener;
+import ij.measure.Calibration;
+
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -22,14 +26,11 @@ import org.eclipse.jetty.server.handler.AbstractHandler;
 import com.pixelmed.dicom.DicomException;
 import com.pixelmed.display.SourceImage;
 
-import edu.stanford.isis.epad.common.ImageEnhancer;
 import edu.stanford.isis.epad.common.ProxyConfig;
 import edu.stanford.isis.epad.common.ProxyLogger;
 import edu.stanford.isis.epad.common.WadoUrlBuilder;
-import edu.stanford.isis.epadws.resources.server.DICOMVisuServerResource;
 
-/**
- * Generate window width and center for a series or study in one quick step.
+/*Generate window width and center for a series or study in one quick step.
  * <p>
  * Now handled by Restlet resource {@link DICOMVisuServerResource}.
  * 
@@ -88,11 +89,27 @@ public class DicomVisuHandler extends AbstractHandler
 				double windowCenter = 0.0;
 
 				if (srcDicomImage != null) {
-					ImageEnhancer ie = new ImageEnhancer(srcDicomImage);
-					ie.findVisuParametersImage();
+					log.info("Dicom image is valid");
+					/*
+					 * ImageEnhancer ie=new ImageEnhancer(srcDicomImage); ie.findVisuParametersImage();
+					 * 
+					 * windowWidth=ie.getWindowWidth(); windowCenter=ie.getWindowCenter();
+					 */
 
-					windowWidth = ie.getWindowWidth();
-					windowCenter = ie.getWindowCenter();
+					Opener opener = new Opener();
+					String imageFilePath = tempDicom.getAbsolutePath();
+					ImagePlus imp = opener.openImage(imageFilePath);
+					// ImageProcessor ip = imp.getProcessor();
+
+					double min = imp.getDisplayRangeMin();
+					double max = imp.getDisplayRangeMax();
+					Calibration cal = imp.getCalibration();
+					// int digits = (ip instanceof FloatProcessor) || cal.calibrated() ? 2 : 0;
+					double minValue = cal.getCValue(min);
+					double maxValue = cal.getCValue(max);
+
+					windowWidth = (maxValue - minValue);
+					windowCenter = (minValue + windowWidth / 2.0);
 				}
 
 				ProxyConfig config = ProxyConfig.getInstance();
@@ -101,6 +118,9 @@ public class DicomVisuHandler extends AbstractHandler
 				// Write the result
 				out.println("windowWidth" + separator + "windowCenter");
 				out.println(windowWidth + separator + windowCenter);
+
+				log.info("windowWidth" + separator + "windowCenter");
+				log.info(windowWidth + separator + windowCenter);
 
 				out.flush();
 
