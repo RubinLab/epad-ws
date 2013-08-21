@@ -209,8 +209,8 @@ public class StatusHandler extends AbstractHandler
 	 * 
 	 * // Get and cache output stream OutputStream out = new BufferedOutputStream(conn.getOutputStream());
 	 * System.out.println("\n* get the stream"); // Create and cache file input stream InputStream in = new
-	 * BufferedInputStream( new
-	 * FileInputStream("/home/epad/DicomProxy/resources/annotations/AIM_4145453244701952000.xml"));
+	 * BufferedInputStream( new FileInputStream(ResourceUtils.getEPADWebServerAnnotationsDir() +
+	 * "AIM_4145453244701952000.xml"));
 	 * 
 	 * // Send document to server System.out.println("\n* Send document..."); for(int i; (i = in.read()) != -1;)
 	 * out.write(i); in.close(); out.close();
@@ -225,7 +225,7 @@ public class StatusHandler extends AbstractHandler
 	// HttpClient client = new HttpClient();
 	// /* Implement an HTTP PUT method on the resource */
 	// PutMethod put = new PutMethod("http://epad-prod1.stanford.edu:8080/aimresource/");
-	// File input = new File("/home/epad/DicomProxy/resources/annotations/AIM_4145453244701952000.xml");
+	// File input = new File(ResourceUtils.getEPADWebServerAnnotationsDir() + "AIM_4145453244701952000.xml");
 	// RequestEntity entity = new FileRequestEntity(input, "Content-Length: 1431");
 	// put.setRequestEntity(entity);
 	// /* Create an access token and set it in the request header*/

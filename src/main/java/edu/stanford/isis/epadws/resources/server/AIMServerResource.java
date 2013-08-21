@@ -44,6 +44,7 @@ import edu.stanford.hakan.aim3api.base.ImageAnnotation;
 import edu.stanford.hakan.aim3api.usage.AnnotationBuilder;
 import edu.stanford.hakan.aim3api.usage.AnnotationGetter;
 import edu.stanford.isis.epad.common.ProxyConfig;
+import edu.stanford.isis.epad.common.ResourceUtils;
 import edu.stanford.isis.epad.common.XmlNamespaceTranslator;
 import edu.stanford.isis.epad.plugin.server.impl.PluginConfig;
 
@@ -91,7 +92,7 @@ public class AIMServerResource extends BaseServerResource
 	public String uploadAIM(Representation representation)
 	{
 		log.info("AIMServerResource received POST method");
-		String filePath = "/home/epad/DicomProxy/resources/annotations/upload/"; // TODO This should come from config file
+		String filePath = ResourceUtils.getEPADWebServerAnnotationsUploadDir();
 
 		try { // Create the directory for AIM file upload
 			StringBuilder out = new StringBuilder();

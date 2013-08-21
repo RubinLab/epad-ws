@@ -26,6 +26,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import edu.stanford.isis.epad.common.ProxyLogger;
+import edu.stanford.isis.epad.common.ResourceUtils;
 
 //TODO AAA Should this be deprecated
 /**
@@ -74,7 +75,7 @@ public class DicomUploadHandler extends AbstractHandler
 		log.debug("method: " + method + ",  why not POST?!");
 		// create the directory for uploading file.
 		try {
-			File tempUploadDir = new File("../resources/upload/" + tempDir);
+			File tempUploadDir = new File(ResourceUtils.getEPADWebServerUploadDir() + tempDir);
 			tempUploadDir.mkdirs();
 			ServletFileUpload upload = new ServletFileUpload();
 

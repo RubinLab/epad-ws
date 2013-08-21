@@ -23,6 +23,7 @@ import org.restlet.routing.Router;
 
 import edu.stanford.isis.epad.common.ProxyConfig;
 import edu.stanford.isis.epad.common.ProxyLogger;
+import edu.stanford.isis.epad.common.ResourceUtils;
 import edu.stanford.isis.epad.plugin.server.EPadFiles;
 import edu.stanford.isis.epad.plugin.server.PluginServletHandler;
 import edu.stanford.isis.epad.plugin.server.ePadPluginController;
@@ -123,12 +124,12 @@ public class EPADWebService extends Application
 		log.info("Context: " + getContext());
 
 		// TODO Put in configuration file
-		Directory resourcesDirectory = new Directory(getContext(), "file:///Users/martin/tmp/resources");
+		Directory resourcesDirectory = new Directory(getContext(), "file://" + ResourceUtils.getEPADWebServerResourcesDir());
 		resourcesDirectory.setListingAllowed(true);
 		router.attach("/resources", resourcesDirectory);
 
 		// TODO Put in configuration file
-		Directory warDirectory = new Directory(getContext(), "file:///Users/martin/workspace/rubin-lab/webapps");
+		Directory warDirectory = new Directory(getContext(), "file://" + ResourceUtils.getEPADWebServerWebappsDir());
 		// warDirectory.setNegotiatingContent(false);
 		// warDirectory.setIndexName("Web_pad.html");
 		router.attach("/epad", warDirectory);
@@ -264,33 +265,6 @@ public class EPADWebService extends Application
 		}
 		WindowLevelFactory.getInstance().buildAndStart();
 	}
-
-	/*
-	 * private static void addHandlers(Server server) { List<Handler> handlerList = new ArrayList<Handler>();
-	 * 
-	 * loadPluginClasses();
-	 * 
-	 * addWebAppAtContextPath(handlerList, "ePad.war", "/epad"); addWebAppAtContextPath(handlerList, "AimQLWeb.war",
-	 * "aqlweb"); addWebAppAtContextPath(handlerList, "originalEPad.war", "/apad"); addWebAppAtContextPath(handlerList,
-	 * "epadGL.war", "/epadgl");
-	 * 
-	 * addFileServerAtContextPath("../resources", handlerList, "/resources");
-	 * 
-	 * addHandlerAtContextPath(new StatusHandler(), "/status", handlerList); addHandlerAtContextPath(new
-	 * SignalShutdownHandler(), "/shutdown", handlerList); addHandlerAtContextPath(new WindowLevelHandler(), "/level",
-	 * handlerList); addHandlerAtContextPath(new MySqlSearchHandler(), "/search", handlerList);
-	 * addHandlerAtContextPath(new EPadPluginHandler(), "/plugin", handlerList); addHandlerAtContextPath(new
-	 * SeriesTagHandler(), "/seriestag", handlerList); addHandlerAtContextPath(new SeriesOrderHandler(), "/seriesorder",
-	 * handlerList); addHandlerAtContextPath(new DicomDeleteHandler(), "/dicomdelete", handlerList);
-	 * addHandlerAtContextPath(new AimResourceHandler(), "/aimresource", handlerList); addHandlerAtContextPath(new
-	 * DicomHeadersHandler(), "/dicomtag", handlerList); addHandlerAtContextPath(new DicomVisuHandler(), "/dicomparam",
-	 * handlerList); addHandlerAtContextPath(new WadoHandler(), "/eWado", handlerList); addHandlerAtContextPath(new
-	 * EventSearchHandler(), "/eventresource", handlerList); addHandlerAtContextPath(new SegmentationPathHandler(),
-	 * "/segmentationpath", handlerList);
-	 * 
-	 * ContextHandlerCollection contexts = new ContextHandlerCollection(); contexts.setHandlers(handlerList.toArray(new
-	 * Handler[handlerList.size()])); server.setHandler(contexts); }
-	 */
 
 	/**
 	 * Load all the plugins into a map.

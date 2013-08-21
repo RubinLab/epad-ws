@@ -46,6 +46,7 @@ import edu.stanford.hakan.aim3api.usage.AnnotationBuilder;
 import edu.stanford.hakan.aim3api.usage.AnnotationGetter;
 import edu.stanford.isis.epad.common.ProxyConfig;
 import edu.stanford.isis.epad.common.ProxyLogger;
+import edu.stanford.isis.epad.common.ResourceUtils;
 import edu.stanford.isis.epad.common.XmlNamespaceTranslator;
 import edu.stanford.isis.epad.plugin.server.impl.PluginConfig;
 import edu.stanford.isis.epadws.resources.server.AIMServerResource;
@@ -183,7 +184,7 @@ public class AimResourceHandler extends AbstractHandler
 
 			logger.info("AimResourceHandler received POST method");
 
-			String filePath = "/home/epad/DicomProxy/resources/annotations/upload/";
+			String filePath = ResourceUtils.getEPADWebServerAnnotationsUploadDir();
 			PrintWriter out = httpResponse.getWriter();
 
 			logger.info("Uploading files to dir: " + filePath);

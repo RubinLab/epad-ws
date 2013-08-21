@@ -8,6 +8,7 @@ import java.io.InputStreamReader;
 
 import edu.stanford.isis.epad.common.ProxyFileUtils;
 import edu.stanford.isis.epad.common.ProxyLogger;
+import edu.stanford.isis.epad.common.ResourceUtils;
 import edu.stanford.isis.epad.common.dicom.DicomFormatUtil;
 import edu.stanford.isis.epadws.processing.mysql.MySqlInstance;
 import edu.stanford.isis.epadws.processing.mysql.MySqlQueries;
@@ -69,7 +70,7 @@ public class DicomDeleteTask implements Runnable
 	{
 
 		StringBuilder outputPath = new StringBuilder();
-		outputPath.append("../resources/dicom/");
+		outputPath.append(ResourceUtils.getEPADWebServerPNGDir());
 		outputPath.append(DicomFormatUtil.formatUidToDir(studyUID)).append("");
 
 		File dirToDelete = new File(outputPath.toString());
@@ -91,7 +92,7 @@ public class DicomDeleteTask implements Runnable
 		String studyUID = queries.getStudyUIDForSeries(seriesUID);
 
 		StringBuilder outputPath = new StringBuilder();
-		outputPath.append("../resources/dicom/");
+		outputPath.append(ResourceUtils.getEPADWebServerPNGDir());
 		outputPath.append(DicomFormatUtil.formatUidToDir(studyUID)).append("/");
 		outputPath.append(DicomFormatUtil.formatUidToDir(seriesUID)).append("/");
 

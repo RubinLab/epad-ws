@@ -25,6 +25,7 @@ import org.eclipse.jetty.webapp.WebAppContext;
 
 import edu.stanford.isis.epad.common.ProxyConfig;
 import edu.stanford.isis.epad.common.ProxyLogger;
+import edu.stanford.isis.epad.common.ResourceUtils;
 import edu.stanford.isis.epad.plugin.server.EPadFiles;
 import edu.stanford.isis.epad.plugin.server.PluginHandler;
 import edu.stanford.isis.epad.plugin.server.PluginServletHandler;
@@ -198,7 +199,7 @@ public class Main
 		// addWebAppAtContextPath(handlerList, "originalEPad.war", "/apad");
 		// addWebAppAtContextPath(handlerList, "epadGL.war", "/epadgl");
 
-		addFileServerAtContextPath("../resources", handlerList, "/resources");
+		addFileServerAtContextPath(ResourceUtils.getEPADWebServerResourcesDir(), handlerList, "/resources");
 
 		addHandlerAtContextPath(new StatusHandler(), "/status", handlerList);
 		addHandlerAtContextPath(new WindowLevelHandler(), "/level", handlerList);
