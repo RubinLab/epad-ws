@@ -219,11 +219,12 @@
     </dependency>
     <!-- End of Eclipse/Jetty-related dependencies -->
 
-<dependency>
+    <dependency>
 	<groupId>gov.nih.imagej</groupId>
 	<artifactId>imagej</artifactId>
 	<version>1.47</version>
-</dependency>
+    </dependency>
+
   </dependencies>
 
   <build>

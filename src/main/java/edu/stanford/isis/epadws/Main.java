@@ -239,7 +239,7 @@ public class Main
 	 */
 	private static void addWebAppAtContextPath(List<Handler> handlerList, String warFileName, String contextPath)
 	{
-		String webAppPath = "../webapps/" + warFileName;
+		String webAppPath = ResourceUtils.getEPADWebServerWebappsDir() + warFileName;
 		if (!contextPath.startsWith("/")) {
 			contextPath = "/" + contextPath;
 		}
@@ -446,8 +446,8 @@ public class Main
 			WebAppContext webapp = new WebAppContext();
 			webapp.setParentLoaderPriority(true);
 			webapp.setContextPath(contextPath);
-			webapp.setWar("../webapps");
-			webapp.setDefaultsDescriptor("../etc/webdefault.xml");
+			webapp.setWar(ResourceUtils.getEPADWebServerWebappsDir());
+			webapp.setDefaultsDescriptor(ResourceUtils.getEPADWebServerEtcDir() + "webdefault.xml");
 			server.setHandler(webapp);
 		} catch (Exception e) {
 			log.warning("failed to start webapp context.", e);

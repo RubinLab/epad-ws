@@ -12,6 +12,7 @@ import java.util.TreeMap;
 import java.util.concurrent.TimeUnit;
 
 import edu.stanford.isis.epad.common.ProxyLogger;
+import edu.stanford.isis.epad.common.ResourceUtils;
 import edu.stanford.isis.epadws.processing.mysql.MySqlInstance;
 import edu.stanford.isis.epadws.processing.mysql.MySqlQueries;
 import edu.stanford.isis.epadws.server.ShutdownSignal;
@@ -23,7 +24,8 @@ import edu.stanford.isis.epadws.server.ShutdownSignal;
  */
 public class MySqlLoginDirWatcher implements Runnable
 {
-	public static final String LOGIN_ROOT_DIR = "../etc/login/";
+	// public static final String LOGIN_ROOT_DIR = "../etc/login/";
+	public static final String LOGIN_ROOT_DIR = ResourceUtils.getEPADWebServerLoginDir();
 	public static final int CHECK_INTERVAL = 120000; // check every 2 minutes.
 
 	public static final String FOUND_DIR_FILE = "dir.found";

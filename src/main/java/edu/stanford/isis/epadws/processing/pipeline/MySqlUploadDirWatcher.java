@@ -33,12 +33,12 @@ public class MySqlUploadDirWatcher implements Runnable
 	{
 		try {
 			ShutdownSignal shutdownSignal = ShutdownSignal.getInstance();
+			File rootDir = new File(ResourceUtils.getEPADWebServerUploadDir());
+			log.info("MySQL upload directory:" + ResourceUtils.getEPADWebServerUploadDir());
 			while (true) {
 				if (shutdownSignal.hasShutdown()) {
 					return;
 				}
-				File rootDir = new File(ResourceUtils.getEPADWebServerUploadDir());
-				log.info("MySQL upload directory:" + ResourceUtils.getEPADWebServerUploadDir());
 				try {
 					List<File> newDirList = findNewDir(rootDir);
 					if (newDirList != null) {
@@ -49,7 +49,6 @@ public class MySqlUploadDirWatcher implements Runnable
 				} catch (ConcurrentModificationException cme) {
 					log.warning("Upload Watch Thread had: ", cme);
 				}
-
 				if (shutdownSignal.hasShutdown()) {
 					return;
 				}

@@ -71,9 +71,9 @@ public class SeriesWatcher implements Runnable
 				if (seriesOrderTracker.getStatusSet().size() > 0) { // Walk through the map
 					logger.info("SeriesOrderTracker has: " + seriesOrderTracker.getStatusSet().size() + " series.");
 				} else {
-					if (loopCount % 5 == 0) {
-						logger.info("SeriesOrderTracker running, but has no series.");
-					}
+					// if (loopCount % 5 == 0) {
+					// logger.info("SeriesOrderTracker running, but has no series.");
+					// }
 				}
 				// Loop through all current active series and
 				for (SeriesOrderStatus currentSeriesOrderStatus : seriesOrderTracker.getStatusSet()) {
