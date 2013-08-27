@@ -132,7 +132,6 @@ public class MySqlQueriesImpl implements MySqlQueries
 	@Override
 	public void doDeleteStudy(String uid)
 	{
-
 		Connection c = null;
 		PreparedStatement ps = null;
 		ResultSet rs = null;
@@ -142,7 +141,6 @@ public class MySqlQueriesImpl implements MySqlQueries
 			ps = c.prepareStatement(MySqlCalls.DELETE_FROM_EPAD_FILES);
 			ps.setString(1, "%" + uid.replace('.', '_') + "%");
 			ps.executeUpdate();
-
 		} catch (SQLException sqle) {
 			String debugInfo = DbUtils.getDebugData(rs);
 			logger.warning("database operation failed. debugInfo=" + debugInfo, sqle);
@@ -154,8 +152,6 @@ public class MySqlQueriesImpl implements MySqlQueries
 	@Override
 	public void doDeleteSeries(String uid)
 	{
-
-		// TODO Auto-generated method stub
 		Connection c = null;
 		PreparedStatement ps = null;
 		ResultSet rs = null;

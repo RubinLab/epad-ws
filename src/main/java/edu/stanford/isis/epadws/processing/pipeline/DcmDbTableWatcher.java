@@ -38,8 +38,6 @@ public class DcmDbTableWatcher implements Runnable
 			try {
 				List<Map<String, String>> series = mySqlQueries.getSeriesForStatusEx(0);
 
-				logger.info("watch");
-
 				for (Map<String, String> currSeries : series) {
 					logger.info("found" + series.size());
 					// add this study into a queue to create new png files.
@@ -63,7 +61,7 @@ public class DcmDbTableWatcher implements Runnable
 
 				}// for
 
-				Thread.sleep(5000);
+				Thread.sleep(500);
 
 			} catch (Exception e) {
 				logger.warning("DcmDbTableWatcher had: " + e.getMessage(), e);

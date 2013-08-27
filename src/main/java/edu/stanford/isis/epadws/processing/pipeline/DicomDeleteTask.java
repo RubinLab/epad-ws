@@ -5,6 +5,8 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.util.List;
+import java.util.Map;
 
 import edu.stanford.isis.epad.common.ProxyFileUtils;
 import edu.stanford.isis.epad.common.ProxyLogger;
@@ -40,8 +42,18 @@ public class DicomDeleteTask implements Runnable
 			if (deleteStudy) {
 				// Delete from dcm4chee
 				dcmDeleteStudy(uidToDelete);
+
+				logger.info("StudyIDXXX: " + uidToDelete);
+
+				List<Map<String, String>> study2series = dbQueries.doSeriesSearch(uidToDelete);
+
+				for (Map<String, String> series : study2series) {
+					logger.info("SeriesID: " + series.get("series-id"));
+				}
+
 				// Delete the entries in the table
 				dbQueries.doDeleteStudy(uidToDelete);
+
 				// Delete the files
 				deletePNGforStudy(uidToDelete);
 			} else {
@@ -66,7 +78,7 @@ public class DicomDeleteTask implements Runnable
 	 * @throws Exception
 	 */
 
-	public static void deletePNGforStudy(String studyUID) throws Exception
+	private static void deletePNGforStudy(String studyUID) throws Exception
 	{
 
 		StringBuilder outputPath = new StringBuilder();
@@ -76,7 +88,7 @@ public class DicomDeleteTask implements Runnable
 		File dirToDelete = new File(outputPath.toString());
 		boolean success = delete(dirToDelete);
 
-		logger.info("Deleting the png for study at " + outputPath.toString() + " success = " + success);
+		logger.info("Deleting the PNG for study at " + outputPath.toString() + " success = " + success);
 	}
 
 	/**
@@ -85,7 +97,7 @@ public class DicomDeleteTask implements Runnable
 	 * @param uid
 	 * @throws Exception
 	 */
-	public static void deletePNGforSeries(String seriesUID) throws Exception
+	private static void deletePNGforSeries(String seriesUID) throws Exception
 	{
 
 		MySqlQueries queries = MySqlInstance.getInstance().getMysqlQueries();
@@ -99,7 +111,7 @@ public class DicomDeleteTask implements Runnable
 		File dirToDelete = new File(outputPath.toString());
 		boolean success = delete(dirToDelete);
 
-		logger.info("Deleting the png for series at " + outputPath.toString() + " success = " + success);
+		logger.info("Deleting the PNG for series at " + outputPath.toString() + " success = " + success);
 	}
 
 	/**
@@ -109,7 +121,7 @@ public class DicomDeleteTask implements Runnable
 	 * @throws Exception
 	 */
 
-	public static void dcmDeleteStudy(String uid) throws Exception
+	private static void dcmDeleteStudy(String uid) throws Exception
 	{
 		InputStream is = null;
 		InputStreamReader isr = null;
@@ -164,7 +176,7 @@ public class DicomDeleteTask implements Runnable
 	 * @throws Exception
 	 */
 
-	public static void dcmDeleteSeries(String uid) throws Exception
+	private static void dcmDeleteSeries(String uid) throws Exception
 	{
 		InputStream is = null;
 		InputStreamReader isr = null;
@@ -238,9 +250,8 @@ public class DicomDeleteTask implements Runnable
 		ProxyFileUtils.write(new File(fileName), contents);
 	}
 
-	public static boolean delete(File file) throws IOException
+	private static boolean delete(File file) throws IOException
 	{
-
 		boolean success = false;
 		if (file.isDirectory()) {
 
@@ -275,5 +286,4 @@ public class DicomDeleteTask implements Runnable
 		}
 		return success;
 	}
-
 }

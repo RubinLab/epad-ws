@@ -89,7 +89,7 @@ public class SeriesWatcher implements Runnable
 						addToGeneratorTaskPipeline(newImageList);
 					} else { // There are no unprocessed PNG files left.
 						if (currentSeriesOrderStatus.getProcessingState() == ProcessingState.IN_PIPELINE) {
-							logger.info("No unprocesses PNG files left for series with UID " + seriesOrder.getSeriesUID());
+							logger.info("No unprocesses PNG files left for series with UID " + currentSeriesOrder.getSeriesUID());
 							List<Map<String, String>> processedPNGImages = mySqlQueries
 									.getProcessedPngFilesSeriesOrdered(currentSeriesOrder.getSeriesUID());
 							if (processedPNGImages.size() > 0) { // Convert processed PNG files to PNG grid files
