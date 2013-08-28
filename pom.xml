@@ -65,6 +65,7 @@
     </dependency>
 
     <!-- Start of DCM4CHEE dependencies -->
+
     <dependency>
       <groupId>dcm4che</groupId>
       <artifactId>dcm4che-core</artifactId>
@@ -194,6 +195,7 @@
     <!-- End of Apache dependencies -->
             
     <!-- Start of Eclipse/Jetty-related dependencies -->
+
     <dependency>
       <groupId>org.eclipse.jetty</groupId>
       <artifactId>jetty-http</artifactId>
@@ -217,12 +219,13 @@
       <artifactId>jetty-util</artifactId>
       <version>${jetty.version}</version>
     </dependency>
+
     <!-- End of Eclipse/Jetty-related dependencies -->
 
     <dependency>
-	<groupId>gov.nih.imagej</groupId>
-	<artifactId>imagej</artifactId>
-	<version>1.47</version>
+      <groupId>gov.nih.imagej</groupId>
+      <artifactId>imagej</artifactId>
+      <version>${imagej.version}</version>
     </dependency>
 
   </dependencies>
