@@ -33,6 +33,7 @@ import edu.stanford.isis.epad.plugin.server.impl.ClassFinderTestUtils;
 import edu.stanford.isis.epad.plugin.server.impl.EPadFilesImpl;
 import edu.stanford.isis.epad.plugin.server.impl.PluginConfig;
 import edu.stanford.isis.epad.plugin.server.impl.PluginHandlerMap;
+import edu.stanford.isis.epadws.handlers.admin.ImageCheckHandler;
 import edu.stanford.isis.epadws.handlers.admin.StatusHandler;
 import edu.stanford.isis.epadws.handlers.aim.AimResourceHandler;
 import edu.stanford.isis.epadws.handlers.coordination.CoordinationHandler;
@@ -48,7 +49,7 @@ import edu.stanford.isis.epadws.handlers.dicom.WindowLevelHandler;
 import edu.stanford.isis.epadws.handlers.event.EventSearchHandler;
 import edu.stanford.isis.epadws.handlers.plugin.EPadPluginHandler;
 import edu.stanford.isis.epadws.processing.mysql.MySqlInstance;
-import edu.stanford.isis.epadws.processing.pipeline.MySqlFactory;
+import edu.stanford.isis.epadws.processing.pipeline.QueueAndWatcherManager;
 import edu.stanford.isis.epadws.server.ProxyManager;
 import edu.stanford.isis.epadws.server.ShutdownSignal;
 import edu.stanford.isis.epadws.server.managers.leveling.WindowLevelFactory;
@@ -82,11 +83,7 @@ public class Main
 	 * <li>
 	 * /status - page showing status of server {@link StatusHandler}</li>
 	 * <li>
-	 * /epad - adds the web application <code>../webaps/ePad.war</code>.</li>
-	 * <li>
-	 * /apad - adds the web application <code>../webapps/originalEPad.war</code> .</li>
-	 * <li>
-	 * /queryretrieve - adds the web application <code>../webapps/DicomInterface.war</code>.</li>
+	 * /epad - adds the web application <code>../webapps/ePad.war</code>.</li>
 	 * <li>
 	 * /search - {@link edu.stanford.isis.epadws.handlers.dicom.RsnaSearchHandler} or
 	 * {@link edu.stanford.isis.epadws.handlers.dicom.SearchHandler}.</li>
@@ -138,7 +135,7 @@ public class Main
 			stopServer(server);
 
 			MySqlInstance.getInstance().shutdown();
-			MySqlFactory.getInstance().shutdown();
+			QueueAndWatcherManager.getInstance().shutdown();
 			WindowLevelFactory.getInstance().shutdown();
 
 			try { // Wait just long enough for some messages to be printed out.
@@ -166,7 +163,7 @@ public class Main
 		log.info("Starting support threads.");
 
 		try { // Start MySql database.
-			MySqlFactory.getInstance().buildAndStart();
+			QueueAndWatcherManager.getInstance().buildAndStart();
 			MySqlInstance.getInstance().startup();
 			log.info("Startup of MySql database was successful.");
 		} catch (Exception e) {
@@ -214,6 +211,7 @@ public class Main
 		addHandlerAtContextPath(new SegmentationPathHandler(), "/segmentationpath", handlerList);
 		addHandlerAtContextPath(new EPadPluginHandler(), "/plugin", handlerList);
 		addHandlerAtContextPath(new CoordinationHandler(), "/coordination", handlerList);
+		addHandlerAtContextPath(new ImageCheckHandler(), "/imagecheck", handlerList);
 
 		ContextHandlerCollection contexts = new ContextHandlerCollection();
 		contexts.setHandlers(handlerList.toArray(new Handler[handlerList.size()]));

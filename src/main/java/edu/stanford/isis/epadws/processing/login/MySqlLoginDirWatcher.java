@@ -24,14 +24,12 @@ import edu.stanford.isis.epadws.server.ShutdownSignal;
  */
 public class MySqlLoginDirWatcher implements Runnable
 {
-	// public static final String LOGIN_ROOT_DIR = "../etc/login/";
 	public static final String LOGIN_ROOT_DIR = ResourceUtils.getEPADWebServerLoginDir();
 	public static final int CHECK_INTERVAL = 120000; // check every 2 minutes.
-
 	public static final String FOUND_DIR_FILE = "dir.found";
 	// private static final long MAX_WAIT_TIME = 120000; // in milliseconds
 
-	ProxyLogger log = ProxyLogger.getInstance();
+	private final ProxyLogger log = ProxyLogger.getInstance();
 
 	@Override
 	public void run()
@@ -58,7 +56,6 @@ public class MySqlLoginDirWatcher implements Runnable
 				}
 				TimeUnit.MILLISECONDS.sleep(CHECK_INTERVAL);
 			}
-
 		} catch (Exception e) {
 			log.sever("UploadDirWatcher error.", e);
 		} finally {

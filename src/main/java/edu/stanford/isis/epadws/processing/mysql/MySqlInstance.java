@@ -11,6 +11,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import edu.stanford.isis.epad.common.FileKey;
 import edu.stanford.isis.epad.common.ProxyFileUtils;
 import edu.stanford.isis.epad.common.ProxyLogger;
+import edu.stanford.isis.epad.common.ResourceUtils;
 import edu.stanford.isis.epadws.processing.model.DbState;
 
 /**
@@ -91,9 +92,9 @@ public class MySqlInstance
 	private void updateMySqlTables()
 	{
 		try {
-
 			// for now we are just creating the loading the first version.
-			String sqlFilePath = FileKey.getCanonicalPath(new File("../etc/db/mysql/dcm4chee-extensions.sql"));
+			String mySQLScriptDir = ResourceUtils.getEPADWebServerMySQLScriptDir();
+			String sqlFilePath = FileKey.getCanonicalPath(new File(mySQLScriptDir + "dcm4chee-extensions.sql"));
 			File createDbTablesFile = new File(sqlFilePath);
 			logger.info("Reading sql file: " + sqlFilePath);
 			String content = ProxyFileUtils.read(createDbTablesFile);
@@ -140,8 +141,7 @@ public class MySqlInstance
 					DbUtils.close(s);
 					DbUtils.close(conn);
 				}
-			}// for
-
+			}
 		} catch (Exception e) {
 			logger.warning("Failed to create extra my sql tables", e);
 		}

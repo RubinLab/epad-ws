@@ -266,7 +266,7 @@ public class MySqlQueriesImpl implements MySqlQueries
 	}
 
 	@Override
-	public List<String> getEPadDdSeriesForStatus(int statusCode)
+	public List<String> getEPadDbSeriesForStatus(int statusCode)
 	{
 		List<String> retVal = new ArrayList<String>();
 
@@ -358,8 +358,6 @@ public class MySqlQueriesImpl implements MySqlQueries
 
 			List<String> seriesList = new ArrayList<String>(pacsSet);
 
-			// System.out.println(seriesList.toString());
-
 			for (String currSeries : seriesList) {
 				Map<String, String> currSeriesData = getSeriesById(currSeries);
 				if (currSeriesData != null) {
@@ -381,9 +379,7 @@ public class MySqlQueriesImpl implements MySqlQueries
 	}
 
 	private Set<String> getAllSeriesFromEPadDb()
-	{
-		// This is a "select series_iuid from epaddb.series_status";
-
+	{ // This is a "select series_iuid from epaddb.series_status";
 		Set<String> retVal = new HashSet<String>();
 
 		Connection c = null;
@@ -396,7 +392,7 @@ public class MySqlQueriesImpl implements MySqlQueries
 			rs = ps.executeQuery();
 			while (rs.next()) {
 				retVal.add(rs.getString("series_iuid"));
-			}// while
+			}
 		} catch (SQLException sqle) {
 			String debugInfo = DbUtils.getDebugData(rs);
 			logger.warning("database operation failed. debugInfo=" + debugInfo, sqle);
@@ -572,7 +568,7 @@ public class MySqlQueriesImpl implements MySqlQueries
 	}
 
 	@Override
-	public List<Map<String, String>> getImageFilesForSeriesOrdered(String seriesIUID)
+	public List<Map<String, String>> getDICOMImageFilesDescriptionsOrdered(String seriesIUID)
 	{
 		List<Map<String, String>> retVal = new ArrayList<Map<String, String>>();
 
@@ -599,8 +595,11 @@ public class MySqlQueriesImpl implements MySqlQueries
 		return retVal;
 	}
 
+	/**
+	 * Looks in dcm4chee database to find a list of all DICOM image descriptions (table is pacsdb.files).
+	 */
 	@Override
-	public List<Map<String, String>> getImageFilesForSeries(String seriesIUID)
+	public List<Map<String, String>> getDICOMImageFileDescriptions(String seriesIUID)
 	{
 		List<Map<String, String>> retVal = new ArrayList<Map<String, String>>();
 
@@ -644,8 +643,7 @@ public class MySqlQueriesImpl implements MySqlQueries
 
 			if (rs.next()) {
 				retVal = rs.getBlob("inst_attrs");
-			}// if
-
+			}
 		} catch (SQLException sqle) {
 			String debugInfo = DbUtils.getDebugData(rs);
 			logger.warning("database operation failed. debugInfo=" + debugInfo, sqle);
@@ -656,60 +654,59 @@ public class MySqlQueriesImpl implements MySqlQueries
 	}
 
 	@Override
-	public List<Map<String, String>> getUnprocessedPngFilesSeries(String seriesIUID)
+	public List<Map<String, String>> getUnprocessedDICOMImageFileDescriptions(String seriesIUID)
 	{
-
-		List<Map<String, String>> imagesWithoutPngFiles = new ArrayList<Map<String, String>>();
+		List<Map<String, String>> dicomWithoutPNGImageFileDescriptions = new ArrayList<Map<String, String>>();
 		try {
-			/* i.sop_iuid, i.inst_no, s.series_iuid, f.filepath, f.file_size */
-			List<Map<String, String>> allImagesWithFiles = getImageFilesForSeries(seriesIUID);
+			// Get list of DICOM image descriptions from DCM4CHEE database table (pacsdb.files). Each image description is a
+			// map with keys: i.sop_iuid, i.inst_no, s.series_iuid, f.filepath, f.file_size.
+			List<Map<String, String>> dicomImageFileDescriptions = getDICOMImageFileDescriptions(seriesIUID);
 
-			/* sop_iuid */
-			List<String> finishedImage = getFinishedImagesForSeries(seriesIUID);
+			// Get list of instance IDs for images in series from ePAD database table (epaddb.epad_files).
+			List<String> finishedImageInstanceIDs = getFinishedDICOMImageInstanceIDsForSeries(seriesIUID);
 
-			logger.info("getImagesWithoutPngFile... has: " + allImagesWithFiles.size() + " images with files and "
-					+ finishedImage.size() + " finished images for series=" + shortenSting(seriesIUID));
+			logger.info("getUnprocessedPngFilesSeries... has: " + dicomImageFileDescriptions.size()
+					+ " images with files and " + finishedImageInstanceIDs.size() + " finished images for series="
+					+ shortenSting(seriesIUID));
 
-			for (Map<String, String> currImageWithFile : allImagesWithFiles) {
-				String sopIdWithFile = currImageWithFile.get("sop_iuid");
+			for (Map<String, String> dicomImageFileDescription : dicomImageFileDescriptions) {
+				String sopIdWithFile = dicomImageFileDescription.get("sop_iuid");
 
-				if (!finishedImage.contains(sopIdWithFile)) {
-					imagesWithoutPngFiles.add(currImageWithFile);
+				if (!finishedImageInstanceIDs.contains(sopIdWithFile)) {
+					dicomWithoutPNGImageFileDescriptions.add(dicomImageFileDescription);
 				}
-			}// for
-
+			}
 		} catch (Exception e) {
-			logger.warning("getImagesWithoutPngFileForSeries had " + e.getMessage(), e);
+			logger.warning("getUnprocessedDICOMImageFileDescriptions had " + e.getMessage(), e);
 		}
-		return imagesWithoutPngFiles;
+		return dicomWithoutPNGImageFileDescriptions;
 	}
 
 	@Override
-	public List<Map<String, String>> getProcessedPngFilesSeriesOrdered(String seriesIUID)
+	public List<Map<String, String>> getProcessedDICOMImageFileDescriptionsOrdered(String seriesIUID)
 	{
-		List<Map<String, String>> imagesWithPngFiles = new ArrayList<Map<String, String>>();
+		List<Map<String, String>> dicomWithPNGImageFileDescriptions = new ArrayList<Map<String, String>>();
 		try {
 			/* i.sop_iuid, i.inst_no, s.series_iuid, f.filepath, f.file_size */
-			List<Map<String, String>> allImagesWithFiles = getImageFilesForSeriesOrdered(seriesIUID);
+			List<Map<String, String>> dicomImageFileDescriptions = getDICOMImageFilesDescriptionsOrdered(seriesIUID);
 
 			/* sop_iuid */
-			List<String> finishedImage = getFinishedImagesForSeries(seriesIUID);
+			List<String> finishedImageInstanceIDs = getFinishedDICOMImageInstanceIDsForSeries(seriesIUID);
 
-			logger.info("getImagesWithoutPngFile... has: " + allImagesWithFiles.size() + " images with files and "
-					+ finishedImage.size() + " finished images for series=" + shortenSting(seriesIUID));
+			logger.info("getImagesWithoutPngFile... has: " + dicomImageFileDescriptions.size() + " images with files and "
+					+ finishedImageInstanceIDs.size() + " finished images for series=" + shortenSting(seriesIUID));
 
-			for (Map<String, String> currImageWithFile : allImagesWithFiles) {
-				String sopIdWithFile = currImageWithFile.get("sop_iuid");
+			for (Map<String, String> dicomImageFileDescription : dicomImageFileDescriptions) {
+				String sopIdWithFile = dicomImageFileDescription.get("sop_iuid");
 
-				if (finishedImage.contains(sopIdWithFile)) {
-					imagesWithPngFiles.add(currImageWithFile);
+				if (finishedImageInstanceIDs.contains(sopIdWithFile)) {
+					dicomWithPNGImageFileDescriptions.add(dicomImageFileDescription);
 				}
-			}// for
-
+			}
 		} catch (Exception e) {
 			logger.warning("getImagesWithPngFileForSeries had " + e.getMessage(), e);
 		}
-		return imagesWithPngFiles;
+		return dicomWithPNGImageFileDescriptions;
 	}
 
 	private static String shortenSting(String longString)
@@ -725,12 +722,12 @@ public class MySqlQueriesImpl implements MySqlQueries
 	}
 
 	/**
-	 * Cross database query that gets finished image (png) files for a series.
+	 * Cross database query that gets finished image instance IDs for a series.
 	 * 
 	 * @param seriesIUID String
 	 * @return List of String (sopInstanceIds).
 	 */
-	private List<String> getFinishedImagesForSeries(String seriesIUID)
+	private List<String> getFinishedDICOMImageInstanceIDsForSeries(String seriesIUID)
 	{
 		List<String> retVal = new ArrayList<String>();
 
@@ -745,8 +742,7 @@ public class MySqlQueriesImpl implements MySqlQueries
 			rs = ps.executeQuery();
 			while (rs.next()) {
 				retVal.add(rs.getString("sop_iuid"));
-			}// while
-
+			}
 		} catch (SQLException sqle) {
 			String debugInfo = DbUtils.getDebugData(rs);
 			logger.warning("database operation failed. debugInfo=" + debugInfo, sqle);
@@ -757,34 +753,34 @@ public class MySqlQueriesImpl implements MySqlQueries
 	}
 
 	@Override
-	public void insertEpadFile(Map<String, String> data)
+	public void insertEpadFile(Map<String, String> row)
 	{
 		Connection c = null;
 		PreparedStatement ps = null;
 		try {
-			logger.info("Inserting into epad_file table. data=" + data);
+			logger.info("Inserting into epad_file table. data=" + row);
 
 			c = getConnection();
 			ps = c.prepareStatement(MySqlCalls.INSERT_INTO_EPAD_FILES);
 
-			ps.setInt(1, Integer.parseInt(data.get("instance_fk")));// instance_fk
-			ps.setInt(2, Integer.parseInt(data.get("file_type")));// file_type
-			ps.setString(3, data.get("file_path"));// file_path
-			ps.setInt(4, Integer.parseInt(data.get("file_size")));// file_size
+			ps.setInt(1, Integer.parseInt(row.get("instance_fk")));// instance_fk
+			ps.setInt(2, Integer.parseInt(row.get("file_type")));// file_type
+			ps.setString(3, row.get("file_path"));// file_path
+			ps.setInt(4, Integer.parseInt(row.get("file_size")));// file_size
 
-			int fileStatus = getFileStatus(data);
+			int fileStatus = getFileStatus(row);
 			ps.setInt(5, fileStatus);// file_status
 
-			String errMsg = getErrMsg(data);
+			String errMsg = getErrMsg(row);
 			ps.setString(6, errMsg);// err_msg
-			ps.setString(7, data.get("file_md5"));// file_md5
+			ps.setString(7, row.get("file_md5"));// file_md5
 
 			ps.execute();
 
 		} catch (SQLException sqle) {
 			logger.warning("database operation failed.", sqle);
 		} catch (Exception e) {
-			logger.warning("database operation (insert epad_file) failed. data=" + data, e);
+			logger.warning("database operation (insert epad_file) failed. data=" + row, e);
 		} finally {
 			close(c, ps);
 		}
@@ -959,7 +955,7 @@ public class MySqlQueriesImpl implements MySqlQueries
 
 	private int getNumberOfInstances(String seriesUID)
 	{
-		List<String> list = getFinishedImagesForSeries(seriesUID);
+		List<String> list = getFinishedDICOMImageInstanceIDsForSeries(seriesUID);
 		return list.size();
 	}
 
@@ -1542,6 +1538,31 @@ public class MySqlQueriesImpl implements MySqlQueries
 		} finally {
 			close(c, ps, rs);
 		}
+	}
+
+	@Override
+	public List<String> selectEpadFilePath()
+	{
+		Connection c = null;
+		PreparedStatement ps = null;
+		ResultSet rs = null;
+		List<String> result = new ArrayList<String>();
+
+		try {
+			c = getConnection();
+			ps = c.prepareStatement(MySqlCalls.SELECT_ALL_PATHS);
+			rs = ps.executeQuery();
+			while (rs.next()) {
+				result.add(rs.getString(1));
+			}
+		} catch (SQLException sqle) {
+			String debugInfo = DbUtils.getDebugData(rs);
+			logger.warning("database operation failed. debugInfo=" + debugInfo, sqle);
+			return null;
+		} finally {
+			close(c, ps, rs);
+		}
+		return result;
 	}
 
 	@Override

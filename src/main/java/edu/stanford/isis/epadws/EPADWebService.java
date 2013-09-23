@@ -31,7 +31,7 @@ import edu.stanford.isis.epad.plugin.server.impl.EPadFilesImpl;
 import edu.stanford.isis.epad.plugin.server.impl.PluginConfig;
 import edu.stanford.isis.epad.plugin.server.impl.PluginHandlerMap;
 import edu.stanford.isis.epadws.processing.mysql.MySqlInstance;
-import edu.stanford.isis.epadws.processing.pipeline.MySqlFactory;
+import edu.stanford.isis.epadws.processing.pipeline.QueueAndWatcherManager;
 import edu.stanford.isis.epadws.resources.server.DICOMDeleteServerResource;
 import edu.stanford.isis.epadws.resources.server.EPadWebServiceServerResource;
 import edu.stanford.isis.epadws.resources.server.WindowLevelServerResource;
@@ -171,7 +171,7 @@ public class EPADWebService extends Application
 		shutdownSignal.shutdownNow();
 
 		MySqlInstance.getInstance().shutdown();
-		MySqlFactory.getInstance().shutdown();
+		QueueAndWatcherManager.getInstance().shutdown();
 		WindowLevelFactory.getInstance().shutdown();
 
 		try { // Wait just long enough for some messages to be printed out.
@@ -256,8 +256,8 @@ public class EPADWebService extends Application
 	{
 		log.info("Starting support threads.");
 
-		try { // Start MySql database.
-			MySqlFactory.getInstance().buildAndStart();
+		try {
+			QueueAndWatcherManager.getInstance().buildAndStart();
 			MySqlInstance.getInstance().startup();
 			log.info("Startup of MySql database was successful.");
 		} catch (Exception e) {

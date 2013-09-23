@@ -74,6 +74,8 @@ public class MySqlCalls
 
 	public static final String SELECT_PATH = "select file_path from epaddb.epad_files as f where f.file_path LIKE ? LIMIT 1";
 
+	public static final String SELECT_ALL_PATHS = "select file_path from epaddb.epad_files";
+
 	public static final String PK_FOR_STUDY = "SELECT pk from pacsdb.study where study_iuid=?";
 	public static final String PK_FOR_SERIES = "SELECT pk from pacsdb.series where series_iuid=?";
 	public static final String PK_FOR_INSTANCE = "SELECT pk from pacsdb.instance where sop_iuid=?";

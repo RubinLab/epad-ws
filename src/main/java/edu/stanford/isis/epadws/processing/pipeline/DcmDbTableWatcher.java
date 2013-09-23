@@ -39,37 +39,27 @@ public class DcmDbTableWatcher implements Runnable
 				List<Map<String, String>> series = mySqlQueries.getSeriesForStatusEx(0);
 
 				for (Map<String, String> currSeries : series) {
-					logger.info("found" + series.size());
-					// add this study into a queue to create new png files.
 					String seriesIUid = currSeries.get("series_iuid");
 					String seriesDesc = currSeries.get("series_desc");
 					String numInstances = currSeries.get("num_instances");
+					// Create a SeriesOrder to indicate new PNG files are being created.
+					SeriesOrder seriesOrder = new SeriesOrder(Integer.parseInt(numInstances), seriesIUid);
+					mySqlQueries.updateSeriesStatusCodeEx(325, seriesIUid);
+					submitSeriesForPngGeneration(seriesOrder); // Submit this series to generate all the PNG files.
+					float percentComplete = mySqlQueries.getPercentComplete(seriesIUid);
+					SeriesOrderTracker.getInstance().setPercentComplete(seriesIUid, percentComplete);
+
 					logger.info("DCM4CHEE new series found - #images=" + numInstances + ", desc=" + seriesDesc + ", series iuid="
 							+ seriesIUid);
 
 					logger.info("[TEMP] Creating new OrderSeries numInstances=" + numInstances + " seriesIUid=" + seriesIUid);
-					// update the series to indicate new PNG files are being created.
-					SeriesOrder seriesOrder = new SeriesOrder(Integer.parseInt(numInstances), seriesIUid);
-
-					mySqlQueries.updateSeriesStatusCodeEx(325, seriesIUid);
-
-					// submit this series to generate all the PNG files.
-					submitSeriesForPngGeneration(seriesOrder);
-
-					float percentComplete = mySqlQueries.getPercentComplete(seriesIUid);
-					SeriesOrderTracker.getInstance().setPercentComplete(seriesIUid, percentComplete);
-
-				}// for
-
+				}
 				Thread.sleep(500);
-
 			} catch (Exception e) {
 				logger.warning("DcmDbTableWatcher had: " + e.getMessage(), e);
 			}
-
-		}// while
-
-	}// run
+		}
+	}
 
 	/**
 	 * 
@@ -77,9 +67,7 @@ public class DcmDbTableWatcher implements Runnable
 	 */
 	private void submitSeriesForPngGeneration(SeriesOrder seriesOrder)
 	{
-		logger.info("Submitting Series for PNG Generation: " + seriesOrder.getSeriesUID());
-		// send this to a task.
+		logger.info("Submitting series for PNG generation: " + seriesOrder.getSeriesUID());
 		seriesQueue.offer(seriesOrder);
 	}
-
 }

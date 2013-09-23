@@ -7,13 +7,12 @@ import java.util.Map;
 import edu.stanford.isis.epad.common.ProxyLogger;
 
 /**
- * Keeps all the information about each instance in a series and the order.
+ * Keeps all the information about each instance in a series and the instance order.
  * 
  * @author amsnyder
  */
 public class SeriesOrder
 {
-
 	private static final ProxyLogger logger = ProxyLogger.getInstance();
 
 	final ArrayList<ImageEntry> instances;
@@ -21,7 +20,6 @@ public class SeriesOrder
 
 	public SeriesOrder(int numInstance, String seriesUID)
 	{
-
 		if (numInstance < 1) {
 			throw new IllegalArgumentException("numInstances must be a positive value.");
 		}
@@ -35,7 +33,6 @@ public class SeriesOrder
 		for (int i = 0; i < instanceSize + 1; i++) {
 			instances.add(null);
 		}
-
 		this.seriesUID = seriesUID;
 	}
 
@@ -106,10 +103,10 @@ public class SeriesOrder
 		return instances.size();
 	}
 
-	public void updateImageList(List<Map<String, String>> newImageList)
+	public void updateImageDescriptions(List<Map<String, String>> imageDescriptions)
 	{
-		for (Map<String, String> currImage : newImageList) {
-			String instanceNum = currImage.get("inst_no");
+		for (Map<String, String> imageDescription : imageDescriptions) {
+			String instanceNum = imageDescription.get("inst_no");
 
 			// //ToDo: delete below once debugged.
 			// if(instanceNum==null){
@@ -122,7 +119,7 @@ public class SeriesOrder
 			// //ToDo: delete above once debugged.
 
 			int instNum = Integer.parseInt(instanceNum);
-			String sopInstanceUID = currImage.get("sop_iuid");
+			String sopInstanceUID = imageDescription.get("sop_iuid");
 
 			addNewImage(instNum, sopInstanceUID);
 		}
@@ -150,7 +147,6 @@ public class SeriesOrder
 				}
 			}
 			instances.set(instNum, imageEntry);
-		}// if
+		}
 	}
-
 }

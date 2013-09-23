@@ -5,7 +5,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
-import edu.stanford.isis.epad.common.ProxyLogger;
 import edu.stanford.isis.epadws.processing.model.SeriesOrder;
 import edu.stanford.isis.epadws.processing.model.SeriesOrderStatus;
 import edu.stanford.isis.epadws.processing.mysql.MySqlInstance;
@@ -14,19 +13,12 @@ import edu.stanford.isis.epadws.processing.mysql.MySqlQueries;
 /**
  * Singleton class to keep track of all images and which are in the pipeline.
  * 
- * 
  * @author alansnyder
  */
 public class SeriesOrderTracker
 {
-	@SuppressWarnings("unused")
-	// Static initializer
-	private static final ProxyLogger logger = ProxyLogger.getInstance();
-
-	private static SeriesOrderTracker ourInstance = new SeriesOrderTracker();
-
+	private static final SeriesOrderTracker ourInstance = new SeriesOrderTracker();
 	private final Map<String, SeriesOrderStatus> statusMap = new ConcurrentHashMap<String, SeriesOrderStatus>();
-
 	private final Map<String, Float> completionMap = new ConcurrentHashMap<String, Float>();
 
 	public static SeriesOrderTracker getInstance()
@@ -97,5 +89,4 @@ public class SeriesOrderTracker
 	{
 		completionMap.put(seriesUID, percentComplete);
 	}
-
 }

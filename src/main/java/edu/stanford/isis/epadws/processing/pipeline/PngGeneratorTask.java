@@ -19,7 +19,7 @@ import edu.stanford.isis.epadws.processing.mysql.MySqlQueries;
 import edu.stanford.isis.epadws.server.managers.support.DicomReader;
 
 /**
- * Given a specific input and output file generate the png file.
+ * Generate a PNG file from a DICOM file.
  * 
  * @author amsnyder
  */
@@ -38,57 +38,57 @@ public class PngGeneratorTask implements GeneratorTask
 	@Override
 	public void run()
 	{
-		writePackedPngs();
+		writePackedPNGs();
 	}
 
-	private void writePackedPngs()
+	private void writePackedPNGs()
 	{
 		MySqlQueries queries = MySqlInstance.getInstance().getMysqlQueries();
-
-		File inputFile = dicomInputFile;
-		File outputFile = pngOutputFile;
-		OutputStream outputStream = null;
+		File inputDICOMFile = dicomInputFile;
+		File outputPNGFile = pngOutputFile;
+		OutputStream outputPNGStream = null;
 		Map<String, String> epadFilesTable = new HashMap<String, String>();
+
 		try {
-			DicomReader instance = new DicomReader(inputFile);
-			String pngFilePath = outputFile.getAbsolutePath();
-			epadFilesTable = DcmDbUtils.createEPadFilesTableData(outputFile);
-			outputFile = new File(pngFilePath); // Create the real file name here.
-			logger.info("PngGeneratorTask: creating png file: " + outputFile.getAbsolutePath());
+			DicomReader instance = new DicomReader(inputDICOMFile);
+			String pngFilePath = outputPNGFile.getAbsolutePath();
+			epadFilesTable = DcmDbUtils.createEPadFilesTableData(outputPNGFile);
+			outputPNGFile = new File(pngFilePath);
 
-			boolean created = ProxyFileUtils.createDirsAndFile(outputFile); // Create the file
+			logger.info("PngGeneratorTask: creating PNG file: " + outputPNGFile.getAbsolutePath());
+
+			boolean created = ProxyFileUtils.createDirsAndFile(outputPNGFile); // Create the file
 			if (created)
-				logger.info("Using file: " + outputFile.getAbsolutePath());
+				logger.info("Using file: " + outputPNGFile.getAbsolutePath());
 
-			outputStream = new FileOutputStream(outputFile);
-			ImageIO.write(instance.getMyPackedImage(), "png", outputStream);
+			outputPNGStream = new FileOutputStream(outputPNGFile);
+			ImageIO.write(instance.getMyPackedImage(), "png", outputPNGStream);
 
-			logger.info("Finished writing PNG file: " + outputFile);
-			epadFilesTable = DcmDbUtils.createEPadFilesTableData(outputFile);
-			int fileSize = getFileSize(epadFilesTable);
-			queries.updateEpadFile(epadFilesTable.get("file_path"), PngStatus.DONE, fileSize, "");
+			logger.info("Finished writing PNG file: " + outputPNGFile);
+			epadFilesTable = DcmDbUtils.createEPadFilesTableData(outputPNGFile);
+			queries.updateEpadFile(epadFilesTable.get("file_path"), PngStatus.DONE, getFileSize(epadFilesTable), "");
 		} catch (FileNotFoundException e) {
-			logger.warning("failed to create packed png for: " + inputFile.getAbsolutePath(), e);
+			logger.warning("Failed to create packed PNG for: " + inputDICOMFile.getAbsolutePath(), e);
 			queries.updateEpadFile(epadFilesTable.get("file_path"), PngStatus.ERROR, 0, "Dicom file not found.");
 		} catch (IOException e) {
-			logger.warning("failed to create packed PNG for: " + inputFile.getAbsolutePath(), e);
+			logger.warning("Failed to create packed PNG for: " + inputDICOMFile.getAbsolutePath(), e);
 			queries.updateEpadFile(epadFilesTable.get("file_path"), PngStatus.ERROR, 0, "IO Error.");
 		} catch (Exception e) {
-			logger.warning("FAILED to create packed PNG for: " + inputFile.getAbsolutePath(), e);
+			logger.warning("Failed to create packed PNG for: " + inputDICOMFile.getAbsolutePath(), e);
 			queries.updateEpadFile(epadFilesTable.get("file_path"), PngStatus.ERROR, 0,
 					"General Exception: " + e.getMessage());
 		} finally {
-			if (inputFile.getName().endsWith(".tmp")) {
-				boolean res = inputFile.delete();
-				logger.info("deletion of input temp dicom File : " + res);
+			if (inputDICOMFile.getName().endsWith(".tmp")) {
+				boolean res = inputDICOMFile.delete();
+				logger.info("Deleted temporary DICOM file : " + res);
 			}
-			if (outputStream != null) {
+			if (outputPNGStream != null) {
 				try {
-					outputStream.flush();
-					outputStream.close();
-					outputStream = null;
+					outputPNGStream.flush();
+					outputPNGStream.close();
+					outputPNGStream = null;
 				} catch (Exception e) {
-					logger.warning("Failed to close outputStream.", e);
+					logger.warning("Failed to close output stream", e);
 				}
 			}
 		}

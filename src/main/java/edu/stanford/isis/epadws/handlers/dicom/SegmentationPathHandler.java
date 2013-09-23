@@ -21,6 +21,7 @@ import org.eclipse.jetty.server.handler.AbstractHandler;
 import edu.stanford.isis.epad.common.ProxyConfig;
 import edu.stanford.isis.epad.common.ProxyFileUtils;
 import edu.stanford.isis.epad.common.ProxyLogger;
+import edu.stanford.isis.epad.common.ResourceUtils;
 import edu.stanford.isis.epadws.processing.mysql.MySqlInstance;
 import edu.stanford.isis.epadws.processing.mysql.MySqlQueries;
 import edu.stanford.isis.epadws.resources.server.SegmentationPathServerResource;
@@ -177,7 +178,7 @@ public class SegmentationPathHandler extends AbstractHandler
 			}
 
 		} catch (Exception e) {
-			log.warning("DicomHeadersTask failed to create dicom tags file.", e);
+			log.warning("DicomHeadersTask failed to create DICOm tags file.", e);
 		} catch (OutOfMemoryError oome) {
 			log.warning("DicomHeadersTask OutOfMemoryError: ", oome);
 		} finally {
@@ -268,8 +269,8 @@ public class SegmentationPathHandler extends AbstractHandler
 
 	private static void writeQRLog(String contents)
 	{
-		String fileName = "../log/qr_" + System.currentTimeMillis() + ".log";
+		String etcDirectory = ResourceUtils.getEPADWebServerEtcDir();
+		String fileName = etcDirectory + "qr_" + System.currentTimeMillis() + ".log";
 		ProxyFileUtils.write(new File(fileName), contents);
 	}
-
 }

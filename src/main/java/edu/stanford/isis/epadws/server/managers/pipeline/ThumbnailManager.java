@@ -19,6 +19,7 @@ import org.apache.commons.io.FileUtils;
 import edu.stanford.isis.epad.common.FileKey;
 import edu.stanford.isis.epad.common.ProxyFileUtils;
 import edu.stanford.isis.epad.common.ProxyLogger;
+import edu.stanford.isis.epad.common.ResourceUtils;
 import edu.stanford.isis.epad.common.dicom.DicomTagFileUtils;
 
 /**
@@ -50,7 +51,8 @@ public class ThumbnailManager
 	private final Map<FileKey, ThumbnailInfo> thumbnailMap;
 
 	private static BlockingQueue<File> thumbnailQueue = null;
-	private static final String genericThumbnailPath = "../etc/icons/genericThumbnail.jpg";
+	private static final String iconsDirectory = ResourceUtils.getEPADWebServerIconsDir();
+	private static final String genericThumbnailPath = iconsDirectory + "genericThumbnail.jpg";
 
 	public static ThumbnailManager getInstance()
 	{

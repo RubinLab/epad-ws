@@ -11,6 +11,7 @@ import java.io.Writer;
 import edu.stanford.isis.epad.common.ProxyConfig;
 import edu.stanford.isis.epad.common.ProxyFileUtils;
 import edu.stanford.isis.epad.common.ProxyLogger;
+import edu.stanford.isis.epad.common.ResourceUtils;
 
 /**
  * 
@@ -99,13 +100,14 @@ public class DicomSendTask implements Runnable
 				if (filePaths != null)
 					nbFiles = filePaths.length;
 			}
-
 			logger.info("Sending " + nbFiles + " files - command: ./dcmsnd " + dcmServerTitlePort + " " + dirPath);
 
 			String[] command = { "./dcmsnd", dcmServerTitlePort, dirPath };
 
 			ProcessBuilder pb = new ProcessBuilder(command);
-			pb.directory(new File("../etc/scripts/tpl/bin"));
+			String dicomScriptsDir = ResourceUtils.getEPADWebServerDICOMBinDir();
+			logger.info("dicomScriptsDir: " + dicomScriptsDir);
+			pb.directory(new File(dicomScriptsDir));
 
 			Process process = pb.start();
 			process.getOutputStream();// get the output stream.
@@ -120,31 +122,26 @@ public class DicomSendTask implements Runnable
 				sb.append(line).append("\n");
 			}
 
-			// Wait to get exit value
-			try {
+			try { // Wait to get exit value
 				process.waitFor(); // keep.
 				// long totalTime = System.currentTimeMillis() - startTime;
 				// log.info("Tags exit value is: " + exitValue+" and took: "+totalTime+" ms");
 			} catch (InterruptedException e) {
-				logger.warning("Didn't send dicom files in: " + inputDirFile.getAbsolutePath(), e);
+				logger.warning("Didn't send DICOM files in: " + inputDirFile.getAbsolutePath(), e);
 			}
-
 			String cmdLineOutput = sb.toString();
 			writeUploadLog(cmdLineOutput);
 
 			if (cmdLineOutput.toLowerCase().contains("error")) {
 				throw new IllegalStateException("Failed for: " + parseError(cmdLineOutput));
 			}
-
 		} catch (Exception e) {
-
 			if (e instanceof IllegalStateException && throwException) {
 				throw e;
 			}
-
-			logger.warning("DicomHeadersTask failed to create dicom tags file.", e);
+			logger.warning("DicomHeadersTask failed to create DICOM tags file: " + e.getMessage());
 			if (throwException) {
-				throw new IllegalStateException("DicomHeadersTask failed to create dicom tags file.", e);
+				throw new IllegalStateException("DicomHeadersTask failed to create DICom tags file.", e);
 			}
 		} catch (OutOfMemoryError oome) {
 			logger.warning("DicomHeadersTask OutOfMemoryError: ", oome);
@@ -181,7 +178,8 @@ public class DicomSendTask implements Runnable
 	 */
 	private static void writeUploadLog(String contents)
 	{
-		String fileName = "../log/upload_" + System.currentTimeMillis() + ".log";
+		String logDirectory = ResourceUtils.getEPADWebServerLogDir();
+		String fileName = logDirectory + "upload_" + System.currentTimeMillis() + ".log";
 		ProxyFileUtils.write(new File(fileName), contents);
 	}
 

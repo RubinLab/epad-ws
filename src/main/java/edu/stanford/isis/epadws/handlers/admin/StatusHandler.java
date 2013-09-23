@@ -56,7 +56,6 @@ import edu.stanford.isis.epadws.server.managers.pipeline.PipelineFactory;
 @Deprecated
 public class StatusHandler extends AbstractHandler
 {
-
 	private static final ProxyLogger log = ProxyLogger.getInstance();
 	public String serviceUrl = ProxyConfig.getInstance().getParam("serviceUrl");
 
@@ -68,12 +67,8 @@ public class StatusHandler extends AbstractHandler
 	}
 
 	/**
-	 * 
-	 * Save the annotation to the server in the aim database. An invalid
-	 * 
-	 * annotation will not be saved. Save a file backup just in case.
-	 * 
-	 * 
+	 * Save the annotation to the server in the aim database. An invalid annotation will not be saved. Save a file backup
+	 * just in case.
 	 * 
 	 * @param aim
 	 * 

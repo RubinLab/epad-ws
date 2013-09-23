@@ -28,10 +28,10 @@ public class DcmDbUtils
 	}
 
 	/**
-	 * Given the file name generate the data to load the table.
+	 * Given a file generate the data to update the ePAD database table that contains information about that file.
 	 * 
 	 * @param outputFile File
-	 * @return Map of String to String
+	 * @return Map of String to String. The key is the database column name.
 	 */
 	public static Map<String, String> createEPadFilesTableData(File outputFile)
 	{

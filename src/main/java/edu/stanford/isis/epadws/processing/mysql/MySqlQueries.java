@@ -33,7 +33,7 @@ public interface MySqlQueries
 
 	List<String> getNewSeries(); // @Deprecated.
 
-	List<String> getEPadDdSeriesForStatus(int statusCode); // calls epaddb and replaces above.
+	List<String> getEPadDbSeriesForStatus(int statusCode); // calls epaddb and replaces above.
 
 	List<Map<String, String>> getStudiesForStatus(int statusCode);
 
@@ -55,9 +55,9 @@ public interface MySqlQueries
 
 	List<String> getSopInstanceUidsForSeries(String seriesIUID);
 
-	List<Map<String, String>> getImageFilesForSeries(String seriesIUID);
+	List<Map<String, String>> getDICOMImageFileDescriptions(String seriesIUID);
 
-	List<Map<String, String>> getImageFilesForSeriesOrdered(String seriesIUID);
+	List<Map<String, String>> getDICOMImageFilesDescriptionsOrdered(String seriesIUID);
 
 	Blob getImageBlobDataForSeries(String seriesIUID);
 
@@ -67,9 +67,15 @@ public interface MySqlQueries
 
 	void updateSeriesStatusCodeEx(int newStatusCode, String seriesIUID);
 
-	List<Map<String, String>> getUnprocessedPngFilesSeries(String seriesIUID);
+	/**
+	 * For the specified series, return a list of DICOM image file descriptions for instances that have no corresponding
+	 * PNG file specified in the ePAD database.
+	 * <p>
+	 * Each description is a map with keys: sop_iuid, inst_no, series_iuid, filepath, file_size.
+	 */
+	List<Map<String, String>> getUnprocessedDICOMImageFileDescriptions(String seriesIUID);
 
-	List<Map<String, String>> getProcessedPngFilesSeriesOrdered(String seriesIUID);
+	List<Map<String, String>> getProcessedDICOMImageFileDescriptionsOrdered(String seriesIUID);
 
 	void insertEpadFile(Map<String, String> data);
 
@@ -80,6 +86,8 @@ public interface MySqlQueries
 	int countEpadFilesLike(String likePath);
 
 	String selectEpadFilePathLike(String sopInstanceUID);
+
+	List<String> selectEpadFilePath();
 
 	float getPercentComplete(String seriesUID);
 

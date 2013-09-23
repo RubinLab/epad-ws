@@ -4,72 +4,75 @@ import edu.stanford.isis.epad.common.ProxyLogger;
 
 /**
  * Status of the SeriesOrder class.
- *
- * When a new series is detected, it either runs to completion or until it is
- * idle for a set amount of time.
- *
- *
+ * <p>
+ * When a new series is detected, it either runs to completion or until it is idle for a set amount of time.
+ * 
  * @author amsnyder
  */
-public class SeriesOrderStatus {
+public class SeriesOrderStatus
+{
+	ProxyLogger logger = ProxyLogger.getInstance();
 
-    ProxyLogger logger = ProxyLogger.getInstance();
+	private static final long MAX_IDLE_TIME = 30000;
 
-    private static final long MAX_IDLE_TIME = 30000;
+	private long lastActivityTimeStamp;
 
-    long lastActivityTimeStamp;
+	private final SeriesOrder seriesOrder;
 
-    final SeriesOrder seriesOrder;
+	private ProcessingState state = ProcessingState.NEW;
 
-    ProcessingState state = ProcessingState.NEW;
+	public SeriesOrderStatus(SeriesOrder seriesOrder)
+	{
+		if (seriesOrder == null) {
+			throw new IllegalArgumentException("seriesOrder cannot be null.");
+		}
+		this.seriesOrder = seriesOrder;
+		lastActivityTimeStamp = System.currentTimeMillis();
+	}
 
+	public SeriesOrder getSeriesOrder()
+	{
+		return seriesOrder;
+	}
 
-    public SeriesOrderStatus(SeriesOrder seriesOrder){
-        if(seriesOrder==null){throw new IllegalArgumentException("seriesOrder cannot be null.");}
-        this.seriesOrder = seriesOrder;
-        lastActivityTimeStamp = System.currentTimeMillis();
-    }
+	public void setState(ProcessingState pState)
+	{
+		state = pState;
+	}
 
-    public SeriesOrder getSeriesOrder(){
-        return seriesOrder;
-    }
+	public ProcessingState getProcessingState()
+	{
+		return state;
+	}
 
-    public void setState(ProcessingState pState){
-        state=pState;
-    }
+	/**
+	 * We are done if the series has been idle for a while, or if it is complete.
+	 * 
+	 * @return boolean
+	 */
+	public boolean isDone()
+	{
+		// Has the series been idle for too long?
+		long currTime = System.currentTimeMillis();
+		if (currTime > lastActivityTimeStamp + MAX_IDLE_TIME) {
+			// log this series as being done.
+			logger.info("Series: " + seriesOrder.seriesUID + " is idle. Downloaded " + seriesOrder.getFinishedCount()
+					+ " of " + seriesOrder.size() + " images.");
+			return true;
+		}
 
-    public ProcessingState getProcessingState(){
-        return state;
-    }
+		// log for instances that
 
-    /**
-     * We are done if the series has been idle for a while, or if it is complete.
-     *
-     * @return boolean
-     */
-    public boolean isDone(){
+		// is it now complete?
+		if (seriesOrder.isComplete()) {
+			logger.info("Series: " + seriesOrder.seriesUID + " is complete. #images=" + seriesOrder.size());
+			return true;
+		}
+		return false;
+	}
 
-        //Has the series been idle for too long?
-        long currTime = System.currentTimeMillis();
-        if(currTime> lastActivityTimeStamp+MAX_IDLE_TIME){
-            //log this series as being done.
-            logger.info("Series: "+seriesOrder.seriesUID+" is idle. Downloaded "+seriesOrder.getFinishedCount()+" of "+seriesOrder.size()+" images.");
-            return true;
-        }
-
-        //log for instances that
-
-
-        //is it now complete?
-        if( seriesOrder.isComplete() ){
-            logger.info("Series: "+seriesOrder.seriesUID+" is complete. #images="+seriesOrder.size());
-            return true;
-        }
-        return false;
-    }
-
-    public void registerActivity(){
-        lastActivityTimeStamp = System.currentTimeMillis();
-    }
-
+	public void registerActivity()
+	{
+		lastActivityTimeStamp = System.currentTimeMillis();
+	}
 }

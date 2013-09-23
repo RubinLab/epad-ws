@@ -133,7 +133,8 @@ public class DicomDeleteTask implements Runnable
 			String[] command = { "./dcmdeleteStudy", uid };
 
 			ProcessBuilder pb = new ProcessBuilder(command);
-			pb.directory(new File("../etc/scripts/myscripts/bin"));
+			String myScriptsBinDirectory = ResourceUtils.getEPADWebServerMyScriptsDir();
+			pb.directory(new File(myScriptsBinDirectory));
 
 			Process process = pb.start();
 			process.getOutputStream();// get the output stream.
@@ -176,6 +177,7 @@ public class DicomDeleteTask implements Runnable
 	 * @throws Exception
 	 */
 
+	@SuppressWarnings("unused")
 	private static void dcmDeleteSeries(String uid) throws Exception
 	{
 		InputStream is = null;
@@ -188,7 +190,8 @@ public class DicomDeleteTask implements Runnable
 			String[] command = { "./dcmdeleteSeries", uid };
 
 			ProcessBuilder pb = new ProcessBuilder(command);
-			pb.directory(new File("../etc/scripts/myscripts/bin"));
+			String myScriptsDirectory = ResourceUtils.getEPADWebServerMyScriptsDir();
+			pb.directory(new File(myScriptsDirectory));
 
 			Process process = pb.start();
 			process.getOutputStream();// get the output stream.
@@ -246,7 +249,8 @@ public class DicomDeleteTask implements Runnable
 	 */
 	private static void writeDeleteLog(String contents)
 	{
-		String fileName = "../log/delete_" + System.currentTimeMillis() + ".log";
+		String logDirectory = ResourceUtils.getEPADWebServerLogDir();
+		String fileName = logDirectory + "delete_" + System.currentTimeMillis() + ".log";
 		ProxyFileUtils.write(new File(fileName), contents);
 	}
 

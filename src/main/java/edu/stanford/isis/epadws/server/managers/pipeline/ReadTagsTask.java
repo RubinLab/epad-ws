@@ -7,95 +7,104 @@
  */
 package edu.stanford.isis.epadws.server.managers.pipeline;
 
-import edu.stanford.isis.epad.common.ProxyFileUtils;
-import edu.stanford.isis.epad.common.ProxyLogger;
-
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.util.concurrent.Callable;
 
-public class ReadTagsTask implements Callable<File> {
+import edu.stanford.isis.epad.common.ProxyFileUtils;
+import edu.stanford.isis.epad.common.ProxyLogger;
+import edu.stanford.isis.epad.common.ResourceUtils;
 
-    static final ProxyLogger log = ProxyLogger.getInstance();
-    static final UploadPipelineFiles pipeline = UploadPipelineFiles.getInstance();
+public class ReadTagsTask implements Callable<File>
+{
 
-    final File file;
+	static final ProxyLogger log = ProxyLogger.getInstance();
+	static final UploadPipelineFiles pipeline = UploadPipelineFiles.getInstance();
 
-    protected ReadTagsTask(File file){
-        this.file=file;
-    }
+	final File file;
 
+	protected ReadTagsTask(File file)
+	{
+		this.file = file;
+	}
 
-    @Override
-    public File call() throws Exception {
+	@Override
+	public File call() throws Exception
+	{
 
-        //rename this file to something with a lower extension right now.
-        //file.renameTo(new File(file.getName().toLowerCase()));
+		// rename this file to something with a lower extension right now.
+		// file.renameTo(new File(file.getName().toLowerCase()));
 
-        try{
-            //only dicom files should pass here.
-            if( !ProxyFileUtils.isFileType(file,".dcm") ){
-                log.info(file+" is NOT a DICOM file.");
-                return null;
-            }
+		try {
+			// only dicom files should pass here.
+			if (!ProxyFileUtils.isFileType(file, ".dcm")) {
+				log.info(file + " is NOT a DICOM file.");
+				return null;
+			}
 
-            String tagPath = createTagPath(file);
+			String tagPath = createTagPath(file);
 
-            String[] command = {"./dcm2txt", "-w", "120", file.getAbsolutePath() };
+			String[] command = { "./dcm2txt", "-w", "120", file.getAbsolutePath() };
 
-            ProcessBuilder pb = new ProcessBuilder( command );
-            pb.directory(new File("../etc/scripts/tpl/bin"));
+			ProcessBuilder pb = new ProcessBuilder(command);
+			String dicomBinDirectory = ResourceUtils.getEPADWebServerDICOMBinDir();
+			pb.directory(new File(dicomBinDirectory));
 
-//            long startTime = System.currentTimeMillis();
-            Process process = pb.start();
-            process.getOutputStream();//get the output stream.
-            //Read out dir output
-            InputStream is = process.getInputStream();
-            InputStreamReader isr = new InputStreamReader(is);
+			// long startTime = System.currentTimeMillis();
+			Process process = pb.start();
+			process.getOutputStream();// get the output stream.
+			// Read out dir output
+			InputStream is = process.getInputStream();
+			InputStreamReader isr = new InputStreamReader(is);
 
-            BufferedReader br = new BufferedReader(isr);
-            String line;
-            StringBuilder sb = new StringBuilder();
-            while ((line = br.readLine()) != null) {
-                sb.append(line).append("\n");
-            }
+			BufferedReader br = new BufferedReader(isr);
+			String line;
+			StringBuilder sb = new StringBuilder();
+			while ((line = br.readLine()) != null) {
+				sb.append(line).append("\n");
+			}
 
-            //Wait to get exit value
-            try {
-                process.waitFor(); //keep.
-//                long totalTime = System.currentTimeMillis() - startTime;
-//                log.info("Tags exit value is: " + exitValue+" and took: "+totalTime+" ms");
-            } catch (InterruptedException e) {
-                log.warning("Couldn't get tags for: "+file.getAbsolutePath(),e);
-            }
+			// Wait to get exit value
+			try {
+				process.waitFor(); // keep.
+				// long totalTime = System.currentTimeMillis() - startTime;
+				// log.info("Tags exit value is: " + exitValue+" and took: "+totalTime+" ms");
+			} catch (InterruptedException e) {
+				log.warning("Couldn't get tags for: " + file.getAbsolutePath(), e);
+			}
 
-            //write the contents of this buffer to a file.
-            File tagFile = new File(tagPath);
-            FileWriter tagFileWriter = new FileWriter(tagFile);
-            tagFileWriter.write(sb.toString());
-            tagFileWriter.flush();
-            tagFileWriter.close();
-            return file;
-        }catch(Exception e){
-            pipeline.addErrorFile(file,"ReadTagsTask error.",e);
-            return null;
-        }
-    }
+			// write the contents of this buffer to a file.
+			File tagFile = new File(tagPath);
+			FileWriter tagFileWriter = new FileWriter(tagFile);
+			tagFileWriter.write(sb.toString());
+			tagFileWriter.flush();
+			tagFileWriter.close();
+			return file;
+		} catch (Exception e) {
+			pipeline.addErrorFile(file, "ReadTagsTask error.", e);
+			return null;
+		}
+	}
 
-
-    /**
-     * replace *.dcm with *.tag in the file path. If no *.dcm file is there then just add it.
-     * @param dcmFile File
-     * @return String
-     */
-    private static String createTagPath(File dcmFile){
-        String dcmFilePath = dcmFile.getAbsolutePath();
-        if( dcmFilePath.endsWith("dcm") ){
-            return dcmFilePath.replaceAll("\\.dcm","\\.tag");
-        }
-        if( dcmFilePath.endsWith("DCM") ){
-            return dcmFilePath.replaceAll("\\.DCM","\\.tag");
-        }
-        return dcmFilePath+".tag";
-    }
+	/**
+	 * replace *.dcm with *.tag in the file path. If no *.dcm file is there then just add it.
+	 * 
+	 * @param dcmFile File
+	 * @return String
+	 */
+	private static String createTagPath(File dcmFile)
+	{
+		String dcmFilePath = dcmFile.getAbsolutePath();
+		if (dcmFilePath.endsWith("dcm")) {
+			return dcmFilePath.replaceAll("\\.dcm", "\\.tag");
+		}
+		if (dcmFilePath.endsWith("DCM")) {
+			return dcmFilePath.replaceAll("\\.DCM", "\\.tag");
+		}
+		return dcmFilePath + ".tag";
+	}
 
 }

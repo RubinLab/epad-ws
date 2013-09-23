@@ -240,5 +240,4 @@ public class CoordinationHandler extends AbstractHandler
 	{
 		return "{ \"error\": \"" + errorMessage + ": " + e.getMessage() + "\"}";
 	}
-
 }
