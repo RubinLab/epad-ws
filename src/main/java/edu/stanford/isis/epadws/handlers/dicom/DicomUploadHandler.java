@@ -26,7 +26,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import edu.stanford.isis.epad.common.ProxyLogger;
-import edu.stanford.isis.epad.common.ResourceUtils;
+import edu.stanford.isis.epad.common.util.ResourceUtils;
 
 //TODO AAA Should this be deprecated
 /**

@@ -16,23 +16,22 @@ import org.eclipse.jetty.server.handler.AbstractHandler;
 
 import edu.stanford.isis.epad.common.ProxyConfig;
 import edu.stanford.isis.epad.common.ProxyLogger;
-import edu.stanford.isis.epad.common.SearchResultUtils;
 import edu.stanford.isis.epad.common.dicom.DicomFormatUtil;
 import edu.stanford.isis.epad.common.dicom.DicomStudySearchType;
+import edu.stanford.isis.epad.common.dicom.RSeriesData;
+import edu.stanford.isis.epad.common.util.SearchResultUtils;
 import edu.stanford.isis.epadws.processing.mysql.MySqlInstance;
 import edu.stanford.isis.epadws.processing.mysql.MySqlQueries;
 import edu.stanford.isis.epadws.processing.mysql.MySqlStudyQueryBuilder;
-import edu.stanford.isis.epadws.server.RSeriesData;
+import edu.stanford.isis.epadws.resources.server.DICOMSearchServerResource;
 
 /**
- * Now handled by Restlet resource {@link SQLServerSearchResource}.
+ * Now handled by Restlet resource {@link DICOMSearchServerResource}.
  * 
  * @author amsnyder
  * 
- * @deprecated
- * @see SQLServerSearchResource
+ * @see DICOMSearchServerResource
  */
-@Deprecated
 public class MySqlSearchHandler extends AbstractHandler
 {
 	private static final ProxyLogger log = ProxyLogger.getInstance();

@@ -11,11 +11,11 @@ import com.google.gson.Gson;
 
 import edu.stanford.isis.epad.common.dicom.DicomFormatUtil;
 import edu.stanford.isis.epad.common.dicom.DicomStudySearchType;
+import edu.stanford.isis.epad.common.dicom.RSeriesData;
 import edu.stanford.isis.epadws.handlers.dicom.SeriesSearchResult;
 import edu.stanford.isis.epadws.handlers.dicom.StudySearchResult;
 import edu.stanford.isis.epadws.processing.mysql.MySqlInstance;
 import edu.stanford.isis.epadws.processing.mysql.MySqlQueries;
-import edu.stanford.isis.epadws.server.RSeriesData;
 
 /**
  * Query the database using DICOM series or study search parameters.
@@ -50,11 +50,11 @@ public class DICOMSearchServerResource extends BaseServerResource
 			try {
 				String result = "";
 				if (isDICOMSeriesRequest(queryString)) {
-					result = handleDICOMSeriesRequest(queryString);
+					result = performDICOMSeriesSearch(queryString);
 				} else {
 					DicomStudySearchType searchType = getDICOMStudySearchType();
 					if (searchType != null) {
-						result = handleDICOMStudyRequest(searchType, queryString);
+						result = performDICOMStudySearch(searchType, queryString);
 					} else {
 						log.info(MISSING_STUDY_SEARCH_TYPE_MESSAGE);
 						setStatus(Status.CLIENT_ERROR_BAD_REQUEST);
@@ -76,7 +76,7 @@ public class DICOMSearchServerResource extends BaseServerResource
 	}
 
 	// curl -v -X get "http://<ip>:<port>/search/?patientName=*"
-	private String handleDICOMStudyRequest(DicomStudySearchType searchType, String searchString) throws Exception
+	private String performDICOMStudySearch(DicomStudySearchType searchType, String searchString) throws Exception
 	{
 		final MySqlQueries dbQueries = MySqlInstance.getInstance().getMysqlQueries();
 		final List<Map<String, String>> searchResult = dbQueries.doStudySearch(searchType.toString(), searchString);
@@ -137,7 +137,7 @@ public class DICOMSearchServerResource extends BaseServerResource
 	 *          Here we will look for *.series files within the study directory. If it is there then It will read that
 	 *          file and add it to the result.
 	 */
-	private String handleDICOMSeriesRequest(String searchString) throws Exception
+	private String performDICOMSeriesSearch(String searchString) throws Exception
 	{
 		final String studyIdKey = getStudyUIDFromRequest(searchString);
 		final String studyUID = DicomFormatUtil.formatDirToUid(studyIdKey);

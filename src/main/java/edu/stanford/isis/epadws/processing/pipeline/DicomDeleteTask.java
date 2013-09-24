@@ -8,10 +8,10 @@ import java.io.InputStreamReader;
 import java.util.List;
 import java.util.Map;
 
-import edu.stanford.isis.epad.common.ProxyFileUtils;
 import edu.stanford.isis.epad.common.ProxyLogger;
-import edu.stanford.isis.epad.common.ResourceUtils;
 import edu.stanford.isis.epad.common.dicom.DicomFormatUtil;
+import edu.stanford.isis.epad.common.util.ProxyFileUtils;
+import edu.stanford.isis.epad.common.util.ResourceUtils;
 import edu.stanford.isis.epadws.processing.mysql.MySqlInstance;
 import edu.stanford.isis.epadws.processing.mysql.MySqlQueries;
 

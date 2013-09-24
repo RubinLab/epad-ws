@@ -19,10 +19,10 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
-import edu.stanford.isis.epad.common.ProxyFileUtils;
 import edu.stanford.isis.epad.common.ProxyLogger;
-import edu.stanford.isis.epad.common.ResourceUtils;
 import edu.stanford.isis.epad.common.dicom.DicomTagFileUtils;
+import edu.stanford.isis.epad.common.util.ProxyFileUtils;
+import edu.stanford.isis.epad.common.util.ResourceUtils;
 
 /**
  * Holds search results.

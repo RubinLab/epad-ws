@@ -15,12 +15,12 @@ import java.util.concurrent.TimeUnit;
 
 import edu.stanford.isis.epad.common.ProxyConfig;
 import edu.stanford.isis.epad.common.ProxyLogger;
-import edu.stanford.isis.epad.common.ResourceUtils;
-import edu.stanford.isis.epad.common.WadoUrlBuilder;
 import edu.stanford.isis.epad.common.dicom.DicomImageUID;
 import edu.stanford.isis.epad.common.dicom.DicomSearchMap;
 import edu.stanford.isis.epad.common.dicom.DicomSeriesUID;
 import edu.stanford.isis.epad.common.dicom.DicomStudyUID;
+import edu.stanford.isis.epad.common.util.ResourceUtils;
+import edu.stanford.isis.epad.common.util.WadoUrlBuilder;
 import edu.stanford.isis.epadws.dcm4chee.DicomQuery;
 import edu.stanford.isis.epadws.server.ShutdownSignal;
 

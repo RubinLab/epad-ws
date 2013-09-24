@@ -37,13 +37,10 @@ import edu.stanford.isis.epadws.resources.server.DICOMSeriesOrderServerResource;
  * 
  * @author amsnyder
  * 
- * @deprecated
  * @see DICOMSeriesOrderServerResource
  */
-@Deprecated
 public class SeriesOrderHandler extends AbstractHandler
 {
-
 	static final ProxyLogger logger = ProxyLogger.getInstance();
 
 	@Override
@@ -78,7 +75,6 @@ public class SeriesOrderHandler extends AbstractHandler
 			}
 
 			out.flush();
-
 		} catch (IOException ioe) {
 			printException(out, "SeriesOrderHandler had IOException", ioe);
 		} catch (Exception e) {

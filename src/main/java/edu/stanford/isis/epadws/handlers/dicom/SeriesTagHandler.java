@@ -32,13 +32,10 @@ import edu.stanford.isis.epadws.resources.server.DICOMSeriesTagServerResource;
  * 
  * @author alansnyder
  * 
- * @deprecated
  * @see DICOMSeriesTagServerResource
  */
-@Deprecated
 public class SeriesTagHandler extends AbstractHandler
 {
-
 	static final ProxyLogger logger = ProxyLogger.getInstance();
 
 	@Override

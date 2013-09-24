@@ -50,10 +50,7 @@ import edu.stanford.isis.epadws.server.managers.pipeline.PipelineFactory;
  * Now handled by Restlet resource {@link EPadWebServiceServerResource}.
  * 
  * @author amsnyder
- * 
- * @deprecated
  */
-@Deprecated
 public class StatusHandler extends AbstractHandler
 {
 	private static final ProxyLogger log = ProxyLogger.getInstance();

@@ -21,10 +21,10 @@ import java.util.concurrent.Callable;
 
 import javax.imageio.ImageIO;
 
-import edu.stanford.isis.epad.common.FileKey;
 import edu.stanford.isis.epad.common.ProxyLogger;
-import edu.stanford.isis.epad.common.ResourceUtils;
 import edu.stanford.isis.epad.common.dicom.DicomTagFileUtils;
+import edu.stanford.isis.epad.common.util.FileKey;
+import edu.stanford.isis.epad.common.util.ResourceUtils;
 import edu.stanford.isis.epadws.server.managers.support.DicomReader;
 
 /**

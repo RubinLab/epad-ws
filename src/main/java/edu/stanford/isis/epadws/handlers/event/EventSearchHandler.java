@@ -15,7 +15,7 @@ import org.eclipse.jetty.server.handler.AbstractHandler;
 
 import edu.stanford.isis.epad.common.ProxyConfig;
 import edu.stanford.isis.epad.common.ProxyLogger;
-import edu.stanford.isis.epad.common.SearchResultUtils;
+import edu.stanford.isis.epad.common.util.SearchResultUtils;
 import edu.stanford.isis.epadws.processing.mysql.MySqlInstance;
 import edu.stanford.isis.epadws.processing.mysql.MySqlQueries;
 import edu.stanford.isis.epadws.resources.server.EventServerResource;
@@ -27,10 +27,8 @@ import edu.stanford.isis.epadws.resources.server.EventServerResource;
  * 
  * @author amsnyder
  * 
- * @deprecated
  * @see EventServerResource
  */
-@Deprecated
 public class EventSearchHandler extends AbstractHandler
 {
 
@@ -45,7 +43,6 @@ public class EventSearchHandler extends AbstractHandler
 	public void handle(String s, Request request, HttpServletRequest httpServletRequest,
 			HttpServletResponse httpServletResponse) throws IOException, ServletException
 	{
-
 		String method = httpServletRequest.getMethod();
 
 		httpServletResponse.setContentType("text/plain");

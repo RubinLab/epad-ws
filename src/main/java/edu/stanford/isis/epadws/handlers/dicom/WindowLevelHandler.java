@@ -21,10 +21,10 @@ import javax.servlet.http.HttpServletResponse;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 
-import edu.stanford.isis.epad.common.FileKey;
 import edu.stanford.isis.epad.common.ProxyLogger;
-import edu.stanford.isis.epad.common.ResourceUtils;
 import edu.stanford.isis.epad.common.dicom.DicomFormatUtil;
+import edu.stanford.isis.epad.common.util.FileKey;
+import edu.stanford.isis.epad.common.util.ResourceUtils;
 import edu.stanford.isis.epadws.resources.server.WindowLevelServerResource;
 import edu.stanford.isis.epadws.server.managers.leveling.WindowLevelFactory;
 
@@ -44,14 +44,10 @@ import edu.stanford.isis.epadws.server.managers.leveling.WindowLevelFactory;
  * 
  * Now handled by Restlet resource {@link WindowLevelServerResource}.
  * 
- * @deprecated
- * 
  * @see WindowLevelServerResource
  */
-@Deprecated
 public class WindowLevelHandler extends AbstractHandler
 {
-
 	private static ProxyLogger logger = ProxyLogger.getInstance();
 
 	// caches which series belongs to which study in case the request doesn't have that info.

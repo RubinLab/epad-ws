@@ -28,23 +28,22 @@ import com.pixelmed.display.SourceImage;
 
 import edu.stanford.isis.epad.common.ProxyConfig;
 import edu.stanford.isis.epad.common.ProxyLogger;
-import edu.stanford.isis.epad.common.WadoUrlBuilder;
+import edu.stanford.isis.epad.common.util.WadoUrlBuilder;
+import edu.stanford.isis.epadws.resources.server.DICOMVisuServerResource;
 
-/*Generate window width and center for a series or study in one quick step.
+/**
+ * Generate window width and center for a series or study in one quick step.
  * <p>
  * Now handled by Restlet resource {@link DICOMVisuServerResource}.
  * 
  * @author amsnyder
  * 
- * @deprecated
  * @see DICOMVisuServerResource
  */
-@Deprecated
 public class DicomVisuHandler extends AbstractHandler
 {
-
 	private static final ProxyLogger log = ProxyLogger.getInstance();
-	ProxyConfig config = ProxyConfig.getInstance();
+	private static final ProxyConfig config = ProxyConfig.getInstance();
 
 	public DicomVisuHandler()
 	{
@@ -54,7 +53,6 @@ public class DicomVisuHandler extends AbstractHandler
 	public void handle(String s, Request request, HttpServletRequest httpServletRequest,
 			HttpServletResponse httpServletResponse) throws IOException, ServletException
 	{
-
 		httpServletResponse.setContentType("text/plain");
 		httpServletResponse.setStatus(HttpServletResponse.SC_OK);
 		request.setHandled(true);

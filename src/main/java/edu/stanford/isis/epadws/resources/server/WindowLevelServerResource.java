@@ -8,9 +8,9 @@ import java.util.Map;
 
 import org.restlet.data.Status;
 
-import edu.stanford.isis.epad.common.FileKey;
-import edu.stanford.isis.epad.common.ResourceUtils;
 import edu.stanford.isis.epad.common.dicom.DicomFormatUtil;
+import edu.stanford.isis.epad.common.util.FileKey;
+import edu.stanford.isis.epad.common.util.ResourceUtils;
 import edu.stanford.isis.epadws.resources.WindowLevelResource;
 import edu.stanford.isis.epadws.server.managers.leveling.WindowLevelFactory;
 

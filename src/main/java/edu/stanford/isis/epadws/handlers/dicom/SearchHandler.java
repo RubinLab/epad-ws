@@ -20,7 +20,6 @@ import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 
 import edu.stanford.isis.epad.common.ProxyLogger;
-import edu.stanford.isis.epad.common.SearchResultUtils;
 import edu.stanford.isis.epad.common.dicom.DicomImageData;
 import edu.stanford.isis.epad.common.dicom.DicomImageSorter;
 import edu.stanford.isis.epad.common.dicom.DicomSearchResult;
@@ -29,12 +28,13 @@ import edu.stanford.isis.epad.common.dicom.DicomSeriesData;
 import edu.stanford.isis.epad.common.dicom.DicomSeriesUID;
 import edu.stanford.isis.epad.common.dicom.DicomStudyData;
 import edu.stanford.isis.epad.common.dicom.DicomStudyUID;
+import edu.stanford.isis.epad.common.dicom.RImageData;
+import edu.stanford.isis.epad.common.dicom.RSeriesData;
+import edu.stanford.isis.epad.common.dicom.DICOMSearchResultImpl;
+import edu.stanford.isis.epad.common.dicom.DICOMSearchResultCache;
+import edu.stanford.isis.epad.common.util.SearchResultUtils;
 import edu.stanford.isis.epadws.server.ProxyManager;
 import edu.stanford.isis.epadws.server.ProxyWorkers;
-import edu.stanford.isis.epadws.server.RImageData;
-import edu.stanford.isis.epadws.server.RSeriesData;
-import edu.stanford.isis.epadws.server.SearchResult;
-import edu.stanford.isis.epadws.server.SearchResultCache;
 
 /**
  * Handles all search request APIs.
@@ -158,8 +158,8 @@ public class SearchHandler extends AbstractHandler
 		log.info("Study search request for type: " + searchType);
 
 		DicomSearchResult searchResult = proxyManager.getSearchResult(searchType, getSearchParam(searchType, httpRequest));
-		SearchResultCache cache = SearchResultCache.getInstance();
-		cache.setMostRecent((SearchResult)searchResult, httpRequest.getRemoteAddr());
+		DICOMSearchResultCache cache = DICOMSearchResultCache.getInstance();
+		cache.setMostRecent((DICOMSearchResultImpl)searchResult, httpRequest.getRemoteAddr());
 
 		List<DicomStudyData> studies = searchResult.getStudies();
 		log.info("Search for: " + searchType + " found " + studies.size() + " results.");

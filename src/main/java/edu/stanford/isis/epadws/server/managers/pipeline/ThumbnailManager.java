@@ -16,11 +16,11 @@ import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.io.FileUtils;
 
-import edu.stanford.isis.epad.common.FileKey;
-import edu.stanford.isis.epad.common.ProxyFileUtils;
 import edu.stanford.isis.epad.common.ProxyLogger;
-import edu.stanford.isis.epad.common.ResourceUtils;
 import edu.stanford.isis.epad.common.dicom.DicomTagFileUtils;
+import edu.stanford.isis.epad.common.util.FileKey;
+import edu.stanford.isis.epad.common.util.ProxyFileUtils;
+import edu.stanford.isis.epad.common.util.ResourceUtils;
 
 /**
  * This class manages the creation of thumbnails in the /resources/dicom directory.

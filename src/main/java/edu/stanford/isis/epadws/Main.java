@@ -24,7 +24,7 @@ import org.eclipse.jetty.webapp.WebAppContext;
 
 import edu.stanford.isis.epad.common.ProxyConfig;
 import edu.stanford.isis.epad.common.ProxyLogger;
-import edu.stanford.isis.epad.common.ResourceUtils;
+import edu.stanford.isis.epad.common.util.ResourceUtils;
 import edu.stanford.isis.epad.plugin.server.EPadFiles;
 import edu.stanford.isis.epad.plugin.server.PluginHandler;
 import edu.stanford.isis.epad.plugin.server.PluginServletHandler;
@@ -59,10 +59,9 @@ import edu.stanford.isis.epadws.server.threads.ShutdownHookThread;
  * Entry point for the EPad Web Service. In the architecture this is the between the web application and the DICOM
  * server.
  * <p>
- * Start an embedded Jetty server, and all the threads required for this application.
+ * Start an embedded Jetty server and all the threads required for this application.
  * 
  */
-@SuppressWarnings("deprecation")
 public class Main
 {
 	private static ProxyLogger log = ProxyLogger.getInstance();
@@ -191,9 +190,6 @@ public class Main
 		loadPluginClasses();
 
 		addWebAppAtContextPath(handlerList, "ePad.war", "/epad");
-		// addWebAppAtContextPath(handlerList, "AimQLWeb.war", "aqlweb");
-		// addWebAppAtContextPath(handlerList, "originalEPad.war", "/apad");
-		// addWebAppAtContextPath(handlerList, "epadGL.war", "/epadgl");
 
 		addFileServerAtContextPath(ResourceUtils.getEPADWebServerResourcesDir(), handlerList, "/resources");
 
@@ -218,15 +214,6 @@ public class Main
 		server.setHandler(contexts);
 	}
 
-	// Old deprecated code from above. Delete soon.
-	// configureAimXmlDatabase(proxyConfig, handlerList);
-	// Configure if the search is going to be RSNA mode, H2 DB mode or original Dicom Server mode.
-	// configureSearchHandler(proxyConfig, handlerList);
-	// addHandlerAtContext(new DicomUploadHandler(), "/dicomupload", handlerList);
-	// addFileServerAtContext(SeriesWatcher, handlerList, "/dcm4chee");//only needed if we need the raw DICOM files.
-	// This is the context for war files is the webapps directory.
-	// createWebAppContext(server); //ToDo: re-enable once new VM is running.
-
 	/**
 	 * Adds a war file from the web-apps directory at a context path.
 	 * 
@@ -249,11 +236,9 @@ public class Main
 
 	private static void addFileServerAtContextPath(String baseDir, List<Handler> handlerList, String contextPath)
 	{
-		// Start file server from resources directory.
 		ResourceHandler resourceHandler = new ResourceHandler();
 		resourceHandler.setDirectoriesListed(true);
 		resourceHandler.setWelcomeFiles(new String[] { "index.html" });
-
 		resourceHandler.setResourceBase(baseDir);
 
 		HandlerList handlers = new HandlerList();
@@ -328,15 +313,6 @@ public class Main
 		}
 	}
 
-	// Old deprecated code from above. Delete soon.
-	// configureAimXmlDatabase(proxyConfig, handlerList);
-	// Configure if the search is going to be RSNA mode, H2 DB mode or original Dicom Server mode.
-	// configureSearchHandler(proxyConfig, handlerList);
-	// addHandlerAtContext(new DicomUploadHandler(), "/dicomupload", handlerList);
-	// addFileServerAtContext(SeriesWatcher, handlerList, "/dcm4chee");//only needed if we need the raw DICOM files.
-	// This is the context for war files is the webapps directory.
-	// createWebAppContext(server); //ToDo: re-enable once new VM is running.
-
 	private static void testPluginImpl()
 	{
 		try {
@@ -387,68 +363,6 @@ public class Main
 			ClassFinderTestUtils.readJarManifestForClass(pluginHandlerMap.getClass());
 		} catch (Exception e) {
 			log.warning("Failed plugin reflections test.", e);
-		}
-	}
-
-	/**
-	 * Configure the search handler based on the etc/proxy-config.properties settings.
-	 * 
-	 * @param proxyConfig ProxyConfig
-	 * @param handlerList List of Handler
-	 */
-	@SuppressWarnings("unused")
-	private static void configureSearchHandler(ProxyConfig proxyConfig, List<Handler> handlerList)
-	{
-		/*
-		 * NOTE This section is deprecated. But will be similar to the final result
-		 */
-		// if(!"true".equalsIgnoreCase(proxyConfig.getParam("rsnaSearchDemo"))){
-		//
-		// //This is the DicomServer was are talking with.
-		// String dicomServerAETitle =
-		// proxyConfig.getParam("DicomServerAETitle");
-		// String dicomServerIP = proxyConfig.getParam("DicomServerIP");
-		// String dicomServerPort = proxyConfig.getParam("DicomServerPort");
-		// log.info("Search uses DicomServer ("+dicomServerAETitle+") @"+dicomServerIP+":"+dicomServerPort);
-		//
-		// //This should be the IP address that the DicomServer sees.
-		// String myIP = proxyConfig.getParam("ListenIP");
-		// String myPort = proxyConfig.getParam("ListenPort");
-		// log.info("Expecting DicomProxy to listen @"+myIP+":"+myPort);
-		//
-		// ProxyManager proxyManager = ProxyManager.getInstance();
-		// addHandlerAtContext(new
-		// SearchHandler(proxyManager),"/search",handlerList);
-		// }else{
-
-		log.info("Using MySQL Database Search Mode.");
-		addHandlerAtContextPath(new MySqlSearchHandler(), "/search", handlerList);
-	}
-
-	/**
-	 * Creates a context for war files in the webapps directory.
-	 * 
-	 * @param server Server
-	 */
-	@SuppressWarnings("unused")
-	private static void createWebAppContext(Server server)
-	{
-		try {
-			// final int jettyPort = 8327; // ToDo: Move this to
-			// "proxy-config.properties" with
-			// default setting 8088.
-			final String contextPath = "/a";
-
-			// log.info("Starting webapp context on port="+jettyPort+" and contextPath="+contextPath);
-
-			WebAppContext webapp = new WebAppContext();
-			webapp.setParentLoaderPriority(true);
-			webapp.setContextPath(contextPath);
-			webapp.setWar(ResourceUtils.getEPADWebServerWebappsDir());
-			webapp.setDefaultsDescriptor(ResourceUtils.getEPADWebServerEtcDir() + "webdefault.xml");
-			server.setHandler(webapp);
-		} catch (Exception e) {
-			log.warning("failed to start webapp context.", e);
 		}
 	}
 }

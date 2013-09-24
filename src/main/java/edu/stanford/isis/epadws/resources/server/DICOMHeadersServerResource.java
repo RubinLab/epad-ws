@@ -20,7 +20,7 @@ import org.restlet.data.CharacterSet;
 import org.restlet.data.Status;
 import org.restlet.resource.Get;
 
-import edu.stanford.isis.epad.common.WadoUrlBuilder;
+import edu.stanford.isis.epad.common.util.WadoUrlBuilder;
 import edu.stanford.isis.epadws.processing.pipeline.DicomHeadersTask;
 
 public class DICOMHeadersServerResource extends BaseServerResource

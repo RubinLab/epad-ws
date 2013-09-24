@@ -14,9 +14,9 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.concurrent.Callable;
 
-import edu.stanford.isis.epad.common.ProxyFileUtils;
 import edu.stanford.isis.epad.common.ProxyLogger;
-import edu.stanford.isis.epad.common.ResourceUtils;
+import edu.stanford.isis.epad.common.util.ProxyFileUtils;
+import edu.stanford.isis.epad.common.util.ResourceUtils;
 
 public class ReadTagsTask implements Callable<File>
 {

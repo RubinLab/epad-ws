@@ -10,8 +10,8 @@ import java.util.Map;
 
 import javax.imageio.ImageIO;
 
-import edu.stanford.isis.epad.common.ProxyFileUtils;
 import edu.stanford.isis.epad.common.ProxyLogger;
+import edu.stanford.isis.epad.common.util.ProxyFileUtils;
 import edu.stanford.isis.epadws.processing.model.PngStatus;
 import edu.stanford.isis.epadws.processing.mysql.DcmDbUtils;
 import edu.stanford.isis.epadws.processing.mysql.MySqlInstance;

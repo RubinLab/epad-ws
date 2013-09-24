@@ -21,7 +21,7 @@ import org.restlet.resource.Get;
 import com.pixelmed.dicom.DicomException;
 import com.pixelmed.display.SourceImage;
 
-import edu.stanford.isis.epad.common.WadoUrlBuilder;
+import edu.stanford.isis.epad.common.util.WadoUrlBuilder;
 
 public class DICOMVisuServerResource extends BaseServerResource
 {

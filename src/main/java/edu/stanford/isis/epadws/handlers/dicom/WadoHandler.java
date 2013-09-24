@@ -27,10 +27,8 @@ import edu.stanford.isis.epadws.resources.server.WADOServerResource;
  * 
  * @author ckurtz
  * 
- * @deprecated
  * @see WADOServerResource
  */
-@Deprecated
 public class WadoHandler extends AbstractHandler
 {
 

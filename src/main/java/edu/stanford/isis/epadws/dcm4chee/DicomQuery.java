@@ -71,9 +71,9 @@ import edu.stanford.isis.epad.common.dicom.DicomSeriesUID;
 import edu.stanford.isis.epad.common.dicom.DicomStudyData;
 import edu.stanford.isis.epad.common.dicom.DicomStudyUID;
 import edu.stanford.isis.epad.common.dicom.DicomTag;
-import edu.stanford.isis.epadws.server.RImageData;
-import edu.stanford.isis.epadws.server.SearchResult;
-import edu.stanford.isis.epadws.server.SearchResultCache;
+import edu.stanford.isis.epad.common.dicom.RImageData;
+import edu.stanford.isis.epad.common.dicom.DICOMSearchResultImpl;
+import edu.stanford.isis.epad.common.dicom.DICOMSearchResultCache;
 
 /**
  * Make a DicomQuery.
@@ -142,7 +142,7 @@ public class DicomQuery
 		return parseStudySearchResult(searchType, searchParam);
 	}
 
-	private static void debugSearchResultCache(SearchResultCache cache)
+	private static void debugSearchResultCache(DICOMSearchResultCache cache)
 	{
 		ProxyLogger logger = ProxyLogger.getInstance();
 		logger.info("DEBUG SearchResultCache: " + cache.toString());
@@ -157,9 +157,9 @@ public class DicomQuery
 	 */
 	public static DicomSearchResult searchForSeries(String studyUID, String remoteAddr)
 	{
-		SearchResultCache searchResultCache = SearchResultCache.getInstance();
+		DICOMSearchResultCache searchResultCache = DICOMSearchResultCache.getInstance();
 
-		SearchResult result = searchResultCache.getMostRecent(remoteAddr);
+		DICOMSearchResultImpl result = searchResultCache.getMostRecent(remoteAddr);
 		if (result == null) {
 			debugSearchResultCache(searchResultCache);
 			throw new IllegalStateException("Failed to find the root search for: studyUID=" + studyUID + " remoteAddr="
@@ -210,7 +210,7 @@ public class DicomQuery
 	 * @param rootResult
 	 * @return
 	 */
-	private static DicomSearchResult parseSeriesSearchResult(String studyUID, SearchResult rootResult)
+	private static DicomSearchResult parseSeriesSearchResult(String studyUID, DICOMSearchResultImpl rootResult)
 	{
 		boolean isReadingTags = false;
 
@@ -281,7 +281,7 @@ public class DicomQuery
 
 		boolean isReadingTags = false;
 
-		SearchResult retVal = new SearchResult(searchType, searchParam);
+		DICOMSearchResultImpl retVal = new DICOMSearchResultImpl(searchType, searchParam);
 
 		// NOTE:: We are using a static log here, which will not work for multiple
 		// simultaneous calls. This needs to be fixed.
@@ -312,7 +312,7 @@ public class DicomQuery
 			}
 		}
 
-		SearchResultCache cache = SearchResultCache.getInstance();
+		DICOMSearchResultCache cache = DICOMSearchResultCache.getInstance();
 		cache.cache(retVal, searchType, searchParam);
 
 		return retVal;

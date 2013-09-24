@@ -14,10 +14,10 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.concurrent.Callable;
 
-import edu.stanford.isis.epad.common.FileKey;
-import edu.stanford.isis.epad.common.ProxyFileUtils;
 import edu.stanford.isis.epad.common.ProxyLogger;
-import edu.stanford.isis.epad.common.ResourceUtils;
+import edu.stanford.isis.epad.common.util.FileKey;
+import edu.stanford.isis.epad.common.util.ProxyFileUtils;
+import edu.stanford.isis.epad.common.util.ResourceUtils;
 
 /**
  * Creates one JPEG file leveled with the stated parameters.

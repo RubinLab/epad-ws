@@ -9,9 +9,9 @@ import java.io.Reader;
 import java.io.Writer;
 
 import edu.stanford.isis.epad.common.ProxyConfig;
-import edu.stanford.isis.epad.common.ProxyFileUtils;
 import edu.stanford.isis.epad.common.ProxyLogger;
-import edu.stanford.isis.epad.common.ResourceUtils;
+import edu.stanford.isis.epad.common.util.ProxyFileUtils;
+import edu.stanford.isis.epad.common.util.ResourceUtils;
 
 /**
  * 

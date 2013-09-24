@@ -9,8 +9,8 @@ import java.util.concurrent.TimeUnit;
 
 import edu.stanford.isis.epad.common.ProxyConfig;
 import edu.stanford.isis.epad.common.ProxyLogger;
-import edu.stanford.isis.epad.common.ResourceUtils;
 import edu.stanford.isis.epad.common.dicom.DicomFormatUtil;
+import edu.stanford.isis.epad.common.util.ResourceUtils;
 import edu.stanford.isis.epadws.processing.model.PngStatus;
 import edu.stanford.isis.epadws.processing.model.ProcessingState;
 import edu.stanford.isis.epadws.processing.model.SeriesOrder;

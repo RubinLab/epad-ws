@@ -19,9 +19,9 @@ import org.apache.commons.httpclient.methods.GetMethod;
 
 import edu.stanford.isis.epad.common.ProxyConfig;
 import edu.stanford.isis.epad.common.ProxyLogger;
-import edu.stanford.isis.epad.common.ResourceUtils;
-import edu.stanford.isis.epad.common.WadoUrlBuilder;
 import edu.stanford.isis.epad.common.dicom.DicomFormatUtil;
+import edu.stanford.isis.epad.common.util.ResourceUtils;
+import edu.stanford.isis.epad.common.util.WadoUrlBuilder;
 import edu.stanford.isis.epadws.processing.login.MySqlLoginDirWatcher;
 import edu.stanford.isis.epadws.processing.model.PngStatus;
 import edu.stanford.isis.epadws.processing.model.SeriesOrder;

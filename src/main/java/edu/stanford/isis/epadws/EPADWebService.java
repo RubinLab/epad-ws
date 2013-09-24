@@ -23,7 +23,7 @@ import org.restlet.routing.Router;
 
 import edu.stanford.isis.epad.common.ProxyConfig;
 import edu.stanford.isis.epad.common.ProxyLogger;
-import edu.stanford.isis.epad.common.ResourceUtils;
+import edu.stanford.isis.epad.common.util.ResourceUtils;
 import edu.stanford.isis.epad.plugin.server.EPadFiles;
 import edu.stanford.isis.epad.plugin.server.PluginServletHandler;
 import edu.stanford.isis.epad.plugin.server.ePadPluginController;

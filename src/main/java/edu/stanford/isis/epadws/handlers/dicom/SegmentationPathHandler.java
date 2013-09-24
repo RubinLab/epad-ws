@@ -19,9 +19,9 @@ import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 
 import edu.stanford.isis.epad.common.ProxyConfig;
-import edu.stanford.isis.epad.common.ProxyFileUtils;
 import edu.stanford.isis.epad.common.ProxyLogger;
-import edu.stanford.isis.epad.common.ResourceUtils;
+import edu.stanford.isis.epad.common.util.ProxyFileUtils;
+import edu.stanford.isis.epad.common.util.ResourceUtils;
 import edu.stanford.isis.epadws.processing.mysql.MySqlInstance;
 import edu.stanford.isis.epadws.processing.mysql.MySqlQueries;
 import edu.stanford.isis.epadws.resources.server.SegmentationPathServerResource;
@@ -31,11 +31,8 @@ import edu.stanford.isis.epadws.resources.server.SegmentationPathServerResource;
  * 
  * @author kurtz
  * 
- * @deprecated
- * 
  * @see SegmentationPathServerResource
  */
-@Deprecated
 public class SegmentationPathHandler extends AbstractHandler
 {
 	private static final ProxyLogger log = ProxyLogger.getInstance();
@@ -48,11 +45,11 @@ public class SegmentationPathHandler extends AbstractHandler
 	public void handle(String s, Request request, HttpServletRequest httpRequest, HttpServletResponse httpResponse)
 			throws IOException, ServletException
 	{
+		PrintWriter out = httpResponse.getWriter();
+
 		httpResponse.setContentType("text/plain");
 		httpResponse.setStatus(HttpServletResponse.SC_OK);
 		request.setHandled(true);
-
-		PrintWriter out = httpResponse.getWriter();
 
 		String queryString = httpRequest.getQueryString();
 		queryString = URLDecoder.decode(queryString, "UTF-8");

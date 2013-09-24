@@ -7,8 +7,8 @@
  */
 package edu.stanford.isis.epadws.server.managers.pipeline;
 
-import edu.stanford.isis.epad.common.FileKey;
 import edu.stanford.isis.epad.common.ProxyLogger;
+import edu.stanford.isis.epad.common.util.FileKey;
 
 import java.io.File;
 import java.util.ArrayList;

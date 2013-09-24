@@ -28,11 +28,8 @@ import edu.stanford.isis.epadws.resources.server.PluginServerResource;
  * <p>
  * Now handled by Restlet resource {@link PluginServerResource}.
  * 
- * @deprecated
- * 
  * @see PluginServerResource
  */
-@Deprecated
 public class EPadPluginHandler extends AbstractHandler
 {
 

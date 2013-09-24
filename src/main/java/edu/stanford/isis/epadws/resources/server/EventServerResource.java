@@ -8,7 +8,7 @@ import org.restlet.data.Status;
 import org.restlet.resource.Get;
 import org.restlet.resource.Post;
 
-import edu.stanford.isis.epad.common.SearchResultUtils;
+import edu.stanford.isis.epad.common.util.SearchResultUtils;
 import edu.stanford.isis.epadws.processing.mysql.MySqlInstance;
 import edu.stanford.isis.epadws.processing.mysql.MySqlQueries;
 

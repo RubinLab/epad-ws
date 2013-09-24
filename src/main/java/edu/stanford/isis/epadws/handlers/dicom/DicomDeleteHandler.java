@@ -19,10 +19,8 @@ import edu.stanford.isis.epadws.resources.server.DICOMDeleteServerResource;
  * 
  * @author kurtz
  * 
- * @deprecated
  * @see DICOMDeleteServerResource
  */
-@Deprecated
 public class DicomDeleteHandler extends AbstractHandler
 {
 	private static final ProxyLogger log = ProxyLogger.getInstance();
