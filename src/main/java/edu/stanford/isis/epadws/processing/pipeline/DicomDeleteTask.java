@@ -97,6 +97,7 @@ public class DicomDeleteTask implements Runnable
 	 * @param uid
 	 * @throws Exception
 	 */
+	@SuppressWarnings("unused")
 	private static void deletePNGforSeries(String seriesUID) throws Exception
 	{
 
