@@ -7,27 +7,14 @@
  */
 package edu.stanford.isis.epadws;
 
-import java.net.BindException;
-import java.net.SocketException;
-
 import org.restlet.Application;
-import org.restlet.Component;
 import org.restlet.Restlet;
-import org.restlet.data.Protocol;
-import org.restlet.resource.Directory;
 import org.restlet.routing.Router;
 
-import edu.stanford.isis.epad.common.ProxyConfig;
 import edu.stanford.isis.epad.common.ProxyLogger;
-import edu.stanford.isis.epad.common.util.ResourceUtils;
-import edu.stanford.isis.epadws.processing.mysql.MySqlInstance;
-import edu.stanford.isis.epadws.processing.pipeline.QueueAndWatcherManager;
 import edu.stanford.isis.epadws.resources.server.DICOMDeleteServerResource;
 import edu.stanford.isis.epadws.resources.server.EPadWebServiceServerResource;
 import edu.stanford.isis.epadws.resources.server.WindowLevelServerResource;
-import edu.stanford.isis.epadws.server.ShutdownSignal;
-import edu.stanford.isis.epadws.server.managers.leveling.WindowLevelFactory;
-import edu.stanford.isis.epadws.server.threads.ShutdownHookThread;
 
 /**
  * Entry point for the EPad Web Service. In the architecture this is the between the web application and the DICOM
@@ -38,42 +25,13 @@ import edu.stanford.isis.epadws.server.threads.ShutdownHookThread;
  */
 public class EPADWebService extends Application
 {
-	private static ProxyLogger log = ProxyLogger.getInstance();
-	private static ProxyConfig proxyConfig = ProxyConfig.getInstance();
+	private static final ProxyLogger log = ProxyLogger.getInstance();
 
-	/**
-	 * Starts EPad web server and sets several contexts to be used by Restlets.
-	 * <p>
-	 * The application listens on the port indicated by the property <i>ePadClientPort</i> in proxy-config.properties.
-	 * 
-	 * @param args String[]
-	 * @see ProxyConfig
-	 */
-	public static void main(String[] args)
+	@Override
+	public void start() throws Exception
 	{
-		try {
-			int port = proxyConfig.getIntParam("ePadClientPort");
-			Runtime.getRuntime().addShutdownHook(new ShutdownHookThread());
-			Component component = new Component();
-
-			component.getServers().add(Protocol.HTTP, port);
-			component.getClients().add(Protocol.FILE);
-			component.getClients().add(Protocol.WAR);
-			component.getClients().add(Protocol.HTTP);
-			component.getClients().add(Protocol.CLAP);
-			component.getDefaultHost().attach(new EPADWebService());
-			component.start();
-		} catch (BindException be) {
-			log.sever("Bind exception", be);
-			Throwable t = be.getCause();
-			log.warning("Bind exception cause: " + be.getMessage(), t);
-		} catch (SocketException se) {
-			log.sever("Cannot bind to all sockets.", se);
-		} catch (Exception e) {
-			log.sever("Fatal Exception. Shutting down EPad Web Service.", e);
-		} catch (Error err) {
-			log.sever("Fatal Error. Shutting down EPad Web Service.", err);
-		}
+		super.start();
+		log.info("++++++++++++++++++++++++++++++++Restlet started");
 	}
 
 	@Override
@@ -82,7 +40,7 @@ public class EPADWebService extends Application
 	{
 		Router router = new Router(getContext());
 
-		log.info("Context: " + getContext());
+		log.info("************************************Context: " + getContext());
 
 		router.attach("/server/{operation}", EPadWebServiceServerResource.class);
 		router.attach("/level", WindowLevelServerResource.class);
@@ -98,16 +56,16 @@ public class EPADWebService extends Application
 		// router.attach("/segmentationpath", SegmentationPathServerResource.class);
 		// router.attach("/plugins/{pluginName}", PluginServerResource.class);
 
-		Directory resourcesDirectory = new Directory(getContext(), "file://" + ResourceUtils.getEPADWebServerResourcesDir());
-		resourcesDirectory.setListingAllowed(true);
-		router.attach("/resources", resourcesDirectory);
-
-		Directory warDirectory = new Directory(getContext(), "file://" + ResourceUtils.getEPADWebServerWebappsDir());
-		// warDirectory.setNegotiatingContent(false);
-		// warDirectory.setIndexName("Web_pad.html");
-		router.attach("/epad", warDirectory);
-
-		getConnectorService().getClientProtocols().add(Protocol.FILE);
+		/*
+		 * Directory resourcesDirectory = new Directory(getContext(), "file://" +
+		 * ResourceUtils.getEPADWebServerResourcesDir()); resourcesDirectory.setListingAllowed(true);
+		 * router.attach("/resources", resourcesDirectory);
+		 * 
+		 * Directory warDirectory = new Directory(getContext(), "file://" + ResourceUtils.getEPADWebServerWebappsDir()); //
+		 * warDirectory.setNegotiatingContent(false); // warDirectory.setIndexName("Web_pad.html"); router.attach("/epad",
+		 * warDirectory);
+		 */
+		// getConnectorService().getClientProtocols().add(Protocol.FILE);
 
 		return router;
 	}
@@ -126,18 +84,5 @@ public class EPADWebService extends Application
 		setDescription("EPAD Web Server");
 		setOwner("RubinLab");
 		setAuthor("RubinLab");
-	}
-
-	@Override
-	public synchronized void stop() throws Exception
-	{
-		super.stop();
-
-		ShutdownSignal shutdownSignal = ShutdownSignal.getInstance();
-		shutdownSignal.shutdownNow();
-
-		MySqlInstance.getInstance().shutdown();
-		QueueAndWatcherManager.getInstance().shutdown();
-		WindowLevelFactory.getInstance().shutdown();
 	}
 }

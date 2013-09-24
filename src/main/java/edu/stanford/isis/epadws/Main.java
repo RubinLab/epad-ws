@@ -21,6 +21,8 @@ import org.eclipse.jetty.server.handler.DefaultHandler;
 import org.eclipse.jetty.server.handler.HandlerList;
 import org.eclipse.jetty.server.handler.ResourceHandler;
 import org.eclipse.jetty.webapp.WebAppContext;
+import org.restlet.Component;
+import org.restlet.data.Protocol;
 
 import edu.stanford.isis.epad.common.ProxyConfig;
 import edu.stanford.isis.epad.common.ProxyLogger;
@@ -50,6 +52,7 @@ import edu.stanford.isis.epadws.handlers.event.EventSearchHandler;
 import edu.stanford.isis.epadws.handlers.plugin.EPadPluginHandler;
 import edu.stanford.isis.epadws.processing.mysql.MySqlInstance;
 import edu.stanford.isis.epadws.processing.pipeline.QueueAndWatcherManager;
+import edu.stanford.isis.epadws.server.ProxyManager;
 import edu.stanford.isis.epadws.server.ShutdownSignal;
 import edu.stanford.isis.epadws.server.managers.leveling.WindowLevelFactory;
 import edu.stanford.isis.epadws.server.threads.ShutdownHookThread;
@@ -82,18 +85,25 @@ public class Main
 		ShutdownSignal shutdownSignal = ShutdownSignal.getInstance();
 		Server server = null;
 
+		@SuppressWarnings("unused")
+		ProxyManager proxyManager = ProxyManager.getInstance();
+
 		try {
 			int port = proxyConfig.getIntParam("ePadClientPort");
-			log.info("Starting the ePAD Web Server, version " + EPadWebServerVersion.getVersion() + " build date "
-					+ EPadWebServerVersion.getBuildDate());
-			initPlugins();
-			startSupportThreads();
+			log.info("Starting the Dicom Proxy. Build date: " + EPadWebServerVersion.getBuildDate());
+			// initPlugins(); // Initialize plugin classes
+			// startSupportThreads();
 			server = createServer(port);
 			addHandlers(server);
-			testPluginImpl();
+			// testPluginImpl();
 			Runtime.getRuntime().addShutdownHook(new ShutdownHookThread());
 
-			log.info("Starting server (version " + Server.getVersion() + ") on port " + port);
+			Component component = new Component();
+			component.getServers().add(Protocol.HTTP, 8081);
+			component.getDefaultHost().attach(new EPADWebService());
+			component.start();
+
+			log.info("Starting Jetty on port " + port);
 			server.start();
 			server.join();
 		} catch (BindException be) {
@@ -129,6 +139,15 @@ public class Main
 		log.info("#####################################################");
 	}
 
+	/**
+	 * Make sure plugin has implementations.
+	 */
+	private static void initPlugins()
+	{
+		ePadPluginController controller = ePadPluginController.getInstance();
+		controller.setImpl(new EPadFilesImpl());
+	}
+
 	private static void startSupportThreads()
 	{
 		log.info("Starting support threads.");
@@ -143,10 +162,21 @@ public class Main
 		WindowLevelFactory.getInstance().buildAndStart();
 	}
 
+	/**
+	 * Create the server and add handlers.
+	 * 
+	 * @return Server
+	 */
+	private static Server createServer(int port)
+	{
+		Server server = new Server(port);
+
+		return server;
+	}
+
 	private static void addHandlers(Server server)
 	{
 		List<Handler> handlerList = new ArrayList<Handler>();
-		ContextHandlerCollection contexts = new ContextHandlerCollection();
 
 		loadPluginClasses();
 
@@ -170,33 +200,13 @@ public class Main
 		addHandlerAtContextPath(new CoordinationHandler(), "/coordination", handlerList);
 		addHandlerAtContextPath(new ImageCheckHandler(), "/imagecheck", handlerList);
 
+		ContextHandlerCollection contexts = new ContextHandlerCollection();
 		contexts.setHandlers(handlerList.toArray(new Handler[handlerList.size()]));
 		server.setHandler(contexts);
 	}
 
 	/**
-	 * Load all the plugins into a map.
-	 */
-	private static void loadPluginClasses()
-	{
-		PluginHandlerMap pluginHandlerMap = PluginHandlerMap.getInstance();
-		PluginConfig pluginConfig = PluginConfig.getInstance();
-		List<String> pluginHandlerList = pluginConfig.getPluginHandlerList();
-
-		for (String currClassName : pluginHandlerList) {
-			log.info("Loading plugin class: " + currClassName);
-			PluginServletHandler psh = pluginHandlerMap.loadFromClassName(currClassName);
-			if (psh != null) {
-				String pluginName = psh.getName();
-				pluginHandlerMap.setPluginServletHandler(pluginName, psh);
-			} else {
-				log.info("WARNING: Didn't find plugin class: " + currClassName);
-			}
-		}
-	}
-
-	/**
-	 * Adds a WAR file from the webapps directory at a context path.
+	 * Adds a war file from the web-apps directory at a context path.
 	 * 
 	 * @param handlerList List of handlers
 	 * @param warFileName String war file name, with or without extension (e.g., ePad.war)
@@ -218,12 +228,11 @@ public class Main
 	private static void addFileServerAtContextPath(String baseDir, List<Handler> handlerList, String contextPath)
 	{
 		ResourceHandler resourceHandler = new ResourceHandler();
-		HandlerList handlers = new HandlerList();
-
 		resourceHandler.setDirectoriesListed(true);
 		resourceHandler.setWelcomeFiles(new String[] { "index.html" });
 		resourceHandler.setResourceBase(baseDir);
 
+		HandlerList handlers = new HandlerList();
 		handlers.setHandlers(new Handler[] { resourceHandler, new DefaultHandler() });
 
 		addHandlerAtContextPath(handlers, contextPath, handlerList);
@@ -252,28 +261,28 @@ public class Main
 		contextHandler.setHandler(handler); // Add status handler
 		handlerList.add(contextHandler);
 
-		log.info("Added " + handler.getClass().getName() + " at context " + contextPath);
+		log.info("Added " + handler.getClass().getName() + " at context: " + contextPath);
 	}
 
 	/**
-	 * Create the server and add handlers.
-	 * 
-	 * @return Server
+	 * Load all the plugins into a map.
 	 */
-	private static Server createServer(int port)
+	private static void loadPluginClasses()
 	{
-		Server server = new Server(port);
+		PluginHandlerMap pluginHandlerMap = PluginHandlerMap.getInstance();
+		PluginConfig pluginConfig = PluginConfig.getInstance();
+		List<String> pluginHandlerList = pluginConfig.getPluginHandlerList();
 
-		return server;
-	}
-
-	/**
-	 * Make sure plugin has implementations.
-	 */
-	private static void initPlugins()
-	{
-		ePadPluginController controller = ePadPluginController.getInstance();
-		controller.setImpl(new EPadFilesImpl());
+		for (String currClassName : pluginHandlerList) {
+			log.info("Loading plugin class: " + currClassName);
+			PluginServletHandler psh = pluginHandlerMap.loadFromClassName(currClassName);
+			if (psh != null) {
+				String pluginName = psh.getName();
+				pluginHandlerMap.setPluginServletHandler(pluginName, psh);
+			} else {
+				log.info("WARNING: Didn't find plugin class: " + currClassName);
+			}
+		}
 	}
 
 	/**
