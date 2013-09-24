@@ -50,7 +50,6 @@ import edu.stanford.isis.epadws.handlers.event.EventSearchHandler;
 import edu.stanford.isis.epadws.handlers.plugin.EPadPluginHandler;
 import edu.stanford.isis.epadws.processing.mysql.MySqlInstance;
 import edu.stanford.isis.epadws.processing.pipeline.QueueAndWatcherManager;
-import edu.stanford.isis.epadws.server.ProxyManager;
 import edu.stanford.isis.epadws.server.ShutdownSignal;
 import edu.stanford.isis.epadws.server.managers.leveling.WindowLevelFactory;
 import edu.stanford.isis.epadws.server.threads.ShutdownHookThread;
@@ -65,6 +64,7 @@ import edu.stanford.isis.epadws.server.threads.ShutdownHookThread;
 public class Main
 {
 	private static ProxyLogger log = ProxyLogger.getInstance();
+	private static ProxyConfig proxyConfig = ProxyConfig.getInstance();
 
 	/**
 	 * Starts EPad web server and sets several contexts to be used by restlets.
@@ -73,22 +73,6 @@ public class Main
 	 * <p>
 	 * The current directory must be set to the bin subdirectory before calling the start scripts associated with this
 	 * application.
-	 * <p>
-	 * This method sets up the following contexts on the Jetty server.
-	 * <ul>
-	 * <li>
-	 * /resources - this is a file server for the resources subdirectory {@link #addFileServer(String, List)} using
-	 * {@link ResourceHandler}.</li>
-	 * <li>
-	 * /status - page showing status of server {@link StatusHandler}</li>
-	 * <li>
-	 * /epad - adds the web application <code>../webapps/ePad.war</code>.</li>
-	 * <li>
-	 * /search - {@link edu.stanford.isis.epadws.handlers.dicom.RsnaSearchHandler} or
-	 * {@link edu.stanford.isis.epadws.handlers.dicom.SearchHandler}.</li>
-	 * <li>
-	 * /status - {@link edu.stanford.isis.epadws.handlers.admin.StatusHandler}.</li>
-	 * </ul>
 	 * 
 	 * @param args String[]
 	 * @see ProxyConfig
@@ -98,21 +82,18 @@ public class Main
 		ShutdownSignal shutdownSignal = ShutdownSignal.getInstance();
 		Server server = null;
 
-		@SuppressWarnings("unused")
-		ProxyManager proxyManager = ProxyManager.getInstance();
-
 		try {
-			ProxyConfig proxyConfig = ProxyConfig.getInstance(); // Reads configuration file
 			int port = proxyConfig.getIntParam("ePadClientPort");
-			log.info("Starting the Dicom Proxy. Build date: " + EPadWebServerVersion.getBuildDate());
-			initPlugins(); // Initialize plugin classes
+			log.info("Starting the ePAD Web Server, version " + EPadWebServerVersion.getVersion() + " build date "
+					+ EPadWebServerVersion.getBuildDate());
+			initPlugins();
 			startSupportThreads();
 			server = createServer(port);
 			addHandlers(server);
 			testPluginImpl();
 			Runtime.getRuntime().addShutdownHook(new ShutdownHookThread());
 
-			log.info("Starting Jetty " + server.getClass().getPackage().getImplementationVersion() + " on port " + port);
+			log.info("Starting server (version " + Server.getVersion() + ") on port " + port);
 			server.start();
 			server.join();
 		} catch (BindException be) {
@@ -148,15 +129,6 @@ public class Main
 		log.info("#####################################################");
 	}
 
-	/**
-	 * Make sure plugin has implementations.
-	 */
-	private static void initPlugins()
-	{
-		ePadPluginController controller = ePadPluginController.getInstance();
-		controller.setImpl(new EPadFilesImpl());
-	}
-
 	private static void startSupportThreads()
 	{
 		log.info("Starting support threads.");
@@ -171,21 +143,10 @@ public class Main
 		WindowLevelFactory.getInstance().buildAndStart();
 	}
 
-	/**
-	 * Create the server and add handlers.
-	 * 
-	 * @return Server
-	 */
-	private static Server createServer(int port)
-	{
-		Server server = new Server(port);
-
-		return server;
-	}
-
 	private static void addHandlers(Server server)
 	{
 		List<Handler> handlerList = new ArrayList<Handler>();
+		ContextHandlerCollection contexts = new ContextHandlerCollection();
 
 		loadPluginClasses();
 
@@ -209,13 +170,33 @@ public class Main
 		addHandlerAtContextPath(new CoordinationHandler(), "/coordination", handlerList);
 		addHandlerAtContextPath(new ImageCheckHandler(), "/imagecheck", handlerList);
 
-		ContextHandlerCollection contexts = new ContextHandlerCollection();
 		contexts.setHandlers(handlerList.toArray(new Handler[handlerList.size()]));
 		server.setHandler(contexts);
 	}
 
 	/**
-	 * Adds a war file from the web-apps directory at a context path.
+	 * Load all the plugins into a map.
+	 */
+	private static void loadPluginClasses()
+	{
+		PluginHandlerMap pluginHandlerMap = PluginHandlerMap.getInstance();
+		PluginConfig pluginConfig = PluginConfig.getInstance();
+		List<String> pluginHandlerList = pluginConfig.getPluginHandlerList();
+
+		for (String currClassName : pluginHandlerList) {
+			log.info("Loading plugin class: " + currClassName);
+			PluginServletHandler psh = pluginHandlerMap.loadFromClassName(currClassName);
+			if (psh != null) {
+				String pluginName = psh.getName();
+				pluginHandlerMap.setPluginServletHandler(pluginName, psh);
+			} else {
+				log.info("WARNING: Didn't find plugin class: " + currClassName);
+			}
+		}
+	}
+
+	/**
+	 * Adds a WAR file from the webapps directory at a context path.
 	 * 
 	 * @param handlerList List of handlers
 	 * @param warFileName String war file name, with or without extension (e.g., ePad.war)
@@ -237,11 +218,12 @@ public class Main
 	private static void addFileServerAtContextPath(String baseDir, List<Handler> handlerList, String contextPath)
 	{
 		ResourceHandler resourceHandler = new ResourceHandler();
+		HandlerList handlers = new HandlerList();
+
 		resourceHandler.setDirectoriesListed(true);
 		resourceHandler.setWelcomeFiles(new String[] { "index.html" });
 		resourceHandler.setResourceBase(baseDir);
 
-		HandlerList handlers = new HandlerList();
 		handlers.setHandlers(new Handler[] { resourceHandler, new DefaultHandler() });
 
 		addHandlerAtContextPath(handlers, contextPath, handlerList);
@@ -270,28 +252,28 @@ public class Main
 		contextHandler.setHandler(handler); // Add status handler
 		handlerList.add(contextHandler);
 
-		log.info("Added " + handler.getClass().getName() + " at context: " + contextPath);
+		log.info("Added " + handler.getClass().getName() + " at context " + contextPath);
 	}
 
 	/**
-	 * Load all the plugins into a map.
+	 * Create the server and add handlers.
+	 * 
+	 * @return Server
 	 */
-	private static void loadPluginClasses()
+	private static Server createServer(int port)
 	{
-		PluginHandlerMap pluginHandlerMap = PluginHandlerMap.getInstance();
-		PluginConfig pluginConfig = PluginConfig.getInstance();
-		List<String> pluginHandlerList = pluginConfig.getPluginHandlerList();
+		Server server = new Server(port);
 
-		for (String currClassName : pluginHandlerList) {
-			log.info("Loading plugin class: " + currClassName);
-			PluginServletHandler psh = pluginHandlerMap.loadFromClassName(currClassName);
-			if (psh != null) {
-				String pluginName = psh.getName();
-				pluginHandlerMap.setPluginServletHandler(pluginName, psh);
-			} else {
-				log.info("WARNING: Didn't find plugin class: " + currClassName);
-			}
-		}
+		return server;
+	}
+
+	/**
+	 * Make sure plugin has implementations.
+	 */
+	private static void initPlugins()
+	{
+		ePadPluginController controller = ePadPluginController.getInstance();
+		controller.setImpl(new EPadFilesImpl());
 	}
 
 	/**

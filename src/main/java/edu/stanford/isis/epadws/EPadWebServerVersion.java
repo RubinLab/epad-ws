@@ -13,22 +13,13 @@ public class EPadWebServerVersion
 	{
 	}
 
-	@SuppressWarnings("unused")
-	private static final String VERSION = "@(#)00.00.00@";
-
-	@SuppressWarnings("unused")
-	private static final String BUILD_DATE = "";// ToDo: create an Ant task for this.
-
 	public static String getVersion()
 	{
 		return "1.2";
-		// return VERSION;
 	}
 
 	public static String getBuildDate()
 	{
-		return "Nov 9, 2012 13:00"; // ToDo: make part of ANT build process.
-		// return BUILD_DATE;
+		return "September 2013"; // TODO Make part of build process.
 	}
-
 }
