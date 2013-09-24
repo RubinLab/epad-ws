@@ -51,15 +51,17 @@ public class EPADWebService extends Application
 	 */
 	public static void main(String[] args)
 	{
-		Component component = null;
-
 		try {
 			int port = proxyConfig.getIntParam("ePadClientPort");
-
-			component = createComponent(port);
 			Runtime.getRuntime().addShutdownHook(new ShutdownHookThread());
+			Component component = new Component();
 
-			log.info("Starting server on port " + port);
+			component.getServers().add(Protocol.HTTP, port);
+			component.getClients().add(Protocol.FILE);
+			component.getClients().add(Protocol.WAR);
+			component.getClients().add(Protocol.HTTP);
+			component.getClients().add(Protocol.CLAP);
+			component.getDefaultHost().attach(new EPADWebService());
 			component.start();
 		} catch (BindException be) {
 			log.sever("Bind exception", be);
@@ -74,61 +76,13 @@ public class EPADWebService extends Application
 		}
 	}
 
-	/**
-	 * Create the server. The Restlets framework does not require that a particular server implementation is specified
-	 * here. An implementation is picked up from loaded JARs. If the org.restlets.ext.jetty JAR is in the class path, for
-	 * example, it will be picked up.
-	 * 
-	 * @return Component
-	 */
-	private static Component createComponent(int port)
-	{
-		Component component = new Component();
-
-		component.getServers().add(Protocol.HTTP, port);
-		component.getClients().add(Protocol.FILE);
-		component.getClients().add(Protocol.WAR);
-		component.getClients().add(Protocol.HTTP);
-		component.getClients().add(Protocol.CLAP);
-		component.getDefaultHost().attach(new EPADWebService());
-
-		return component;
-	}
-
-	public EPADWebService()
-	{
-		log.info("******************Restlet Application Started **********************");
-		setName("EPADWebServer");
-		setDescription("EPAD Web Server");
-		setOwner("RubinLab");
-		setAuthor("RubinLab");
-	}
-
-	// TODO: Directory class for files. See http://restlet.org/learn/tutorial/2.2/
-	// directory.setListingAllowed(true); directory.setDeeplyAccessible(true);
-	/**
-	 * Called when the Restlet framework initializes the {@link EPADWebService} application.
-	 * <p>
-	 * Here we link routes to resources.
-	 */
 	@Override
+	// Called when the Restlet framework initializes the {@link EPADWebService} application.
 	public Restlet createInboundRoot()
 	{
-		log.info("****************** createInboundRoot **********************");
 		Router router = new Router(getContext());
 
 		log.info("Context: " + getContext());
-
-		// TODO Put in configuration file
-		Directory resourcesDirectory = new Directory(getContext(), "file://" + ResourceUtils.getEPADWebServerResourcesDir());
-		resourcesDirectory.setListingAllowed(true);
-		router.attach("/resources", resourcesDirectory);
-
-		// TODO Put in configuration file
-		Directory warDirectory = new Directory(getContext(), "file://" + ResourceUtils.getEPADWebServerWebappsDir());
-		// warDirectory.setNegotiatingContent(false);
-		// warDirectory.setIndexName("Web_pad.html");
-		router.attach("/epad", warDirectory);
 
 		router.attach("/server/{operation}", EPadWebServiceServerResource.class);
 		router.attach("/level", WindowLevelServerResource.class);
@@ -142,12 +96,36 @@ public class EPADWebService extends Application
 		// router.attach("/dicomparam", DICOMVisuServerResource.class);
 		// router.attach("/eventresource", EventServerResource.class);
 		// router.attach("/segmentationpath", SegmentationPathServerResource.class);
-
 		// router.attach("/plugins/{pluginName}", PluginServerResource.class);
+
+		Directory resourcesDirectory = new Directory(getContext(), "file://" + ResourceUtils.getEPADWebServerResourcesDir());
+		resourcesDirectory.setListingAllowed(true);
+		router.attach("/resources", resourcesDirectory);
+
+		Directory warDirectory = new Directory(getContext(), "file://" + ResourceUtils.getEPADWebServerWebappsDir());
+		// warDirectory.setNegotiatingContent(false);
+		// warDirectory.setIndexName("Web_pad.html");
+		router.attach("/epad", warDirectory);
 
 		getConnectorService().getClientProtocols().add(Protocol.FILE);
 
 		return router;
+	}
+
+	/**
+	 * Create the server. The Restlets framework does not require that a particular server implementation is specified
+	 * here. An implementation is picked up from loaded JARs. If the org.restlets.ext.jetty JAR is in the class path, for
+	 * example, it will be picked up.
+	 * 
+	 * @return Component
+	 */
+	public EPADWebService()
+	{
+		log.info("******************Restlet Application Started **********************");
+		setName("EPADWebServer");
+		setDescription("EPAD Web Server");
+		setOwner("RubinLab");
+		setAuthor("RubinLab");
 	}
 
 	@Override
