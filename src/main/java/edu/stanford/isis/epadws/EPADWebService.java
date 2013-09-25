@@ -12,7 +12,7 @@ import org.restlet.Restlet;
 import org.restlet.routing.Router;
 
 import edu.stanford.isis.epad.common.ProxyLogger;
-import edu.stanford.isis.epadws.resources.server.DICOMDeleteServerResource;
+import edu.stanford.isis.epadws.resources.server.DICOMSearchServerResource;
 import edu.stanford.isis.epadws.resources.server.EPadWebServiceServerResource;
 import edu.stanford.isis.epadws.resources.server.WindowLevelServerResource;
 
@@ -34,17 +34,21 @@ public class EPADWebService extends Application
 		log.info("++++++++++++++++++++++++++++++++Restlet started");
 	}
 
-	@Override
 	// Called when the Restlet framework initializes the {@link EPADWebService} application.
+	@Override
 	public Restlet createInboundRoot()
 	{
 		Router router = new Router(getContext());
 
 		log.info("************************************Context: " + getContext());
 
+		router.attach("/search", DICOMSearchServerResource.class);
+
+		log.info("************************************Added /search");
+
 		router.attach("/server/{operation}", EPadWebServiceServerResource.class);
 		router.attach("/level", WindowLevelServerResource.class);
-		router.attach("/dicomdelete", DICOMDeleteServerResource.class);
+		// router.attach("/dicomdelete", DICOMDeleteServerResource.class);
 		// router.attach("/aimresource", AIMServerResource.class);
 		// router.attach("/eWado", WADOServerResource.class);
 		// router.attach("/seriestag", DICOMSeriesTagServerResource.class);

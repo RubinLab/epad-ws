@@ -42,6 +42,7 @@ import edu.stanford.isis.epadws.handlers.coordination.CoordinationHandler;
 import edu.stanford.isis.epadws.handlers.dicom.DicomDeleteHandler;
 import edu.stanford.isis.epadws.handlers.dicom.DicomHeadersHandler;
 import edu.stanford.isis.epadws.handlers.dicom.DicomVisuHandler;
+import edu.stanford.isis.epadws.handlers.dicom.MySQLSearchHandlerJSON;
 import edu.stanford.isis.epadws.handlers.dicom.MySqlSearchHandler;
 import edu.stanford.isis.epadws.handlers.dicom.SegmentationPathHandler;
 import edu.stanford.isis.epadws.handlers.dicom.SeriesOrderHandler;
@@ -93,18 +94,21 @@ public class Main
 			log.info("Starting the Dicom Proxy. Build date: " + EPadWebServerVersion.getBuildDate());
 			// initPlugins(); // Initialize plugin classes
 			// startSupportThreads();
-			server = createServer(port);
+			server = new Server(port);
 			addHandlers(server);
 			// testPluginImpl();
 			Runtime.getRuntime().addShutdownHook(new ShutdownHookThread());
 
+			log.info("Starting Jetty on port " + port);
+			server.start();
+
 			Component component = new Component();
 			component.getServers().add(Protocol.HTTP, 8081);
 			component.getDefaultHost().attach(new EPADWebService());
+
+			log.info("Starting test Restlet component");
 			component.start();
 
-			log.info("Starting Jetty on port " + port);
-			server.start();
 			server.join();
 		} catch (BindException be) {
 			log.sever("Bind exception", be);
@@ -162,18 +166,6 @@ public class Main
 		WindowLevelFactory.getInstance().buildAndStart();
 	}
 
-	/**
-	 * Create the server and add handlers.
-	 * 
-	 * @return Server
-	 */
-	private static Server createServer(int port)
-	{
-		Server server = new Server(port);
-
-		return server;
-	}
-
 	private static void addHandlers(Server server)
 	{
 		List<Handler> handlerList = new ArrayList<Handler>();
@@ -192,6 +184,7 @@ public class Main
 		addHandlerAtContextPath(new SeriesTagHandler(), "/seriestag", handlerList);
 		addHandlerAtContextPath(new SeriesOrderHandler(), "/seriesorder", handlerList);
 		addHandlerAtContextPath(new MySqlSearchHandler(), "/search", handlerList);
+		addHandlerAtContextPath(new MySQLSearchHandlerJSON(), "/searchj", handlerList);
 		addHandlerAtContextPath(new DicomHeadersHandler(), "/dicomtag", handlerList);
 		addHandlerAtContextPath(new DicomVisuHandler(), "/dicomparam", handlerList);
 		addHandlerAtContextPath(new EventSearchHandler(), "/eventresource", handlerList);

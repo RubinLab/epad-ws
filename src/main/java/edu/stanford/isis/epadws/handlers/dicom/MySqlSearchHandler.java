@@ -219,9 +219,8 @@ public class MySqlSearchHandler extends AbstractHandler
 	 */
 	private void handleSeriesRequest(PrintWriter out, String queryString)
 	{
-		String studyIdKey = getStudyUIDFromRequest(queryString);
-
 		MySqlQueries dbQueries = MySqlInstance.getInstance().getMysqlQueries();
+		String studyIdKey = getStudyUIDFromRequest(queryString);
 		String studyUID = DicomFormatUtil.formatDirToUid(studyIdKey);
 		List<Map<String, String>> series = dbQueries.doSeriesSearch(studyUID);
 
@@ -256,7 +255,7 @@ public class MySqlSearchHandler extends AbstractHandler
 			log.info(sb.toString());
 		}
 
-	}// handleSeriesRequest
+	}
 
 	/**
 	 * Create a map where the keys are column names in the html page and values are column names in the database.

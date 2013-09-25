@@ -94,7 +94,7 @@
       <version>${restlet.version}</version>
     </dependency>
 
-    <dependency> <!-- JEE only - not in JSE group -->
+    <dependency> 
       <groupId>org.restlet.jee</groupId>
       <artifactId>org.restlet.ext.servlet</artifactId>
       <version>${restlet.version}</version>
@@ -106,12 +106,13 @@
       <version>${restlet.version}</version>
     </dependency>
 
+<!--
     <dependency>
       <groupId>org.restlet.jee</groupId>
       <artifactId>org.restlet.ext.ssl</artifactId>
       <version>${restlet.version}</version>
     </dependency>
-
+-->
     <dependency>
       <groupId>org.restlet.jee</groupId>
       <artifactId>org.restlet.ext.httpclient</artifactId>

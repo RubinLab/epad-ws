@@ -1,88 +1,93 @@
-package edu.stanford.isis.epadws.resources.server;
+package edu.stanford.isis.epadws.handlers.dicom;
 
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.net.URLDecoder;
 import java.util.List;
 import java.util.Map;
 
-import org.restlet.data.CharacterSet;
-import org.restlet.data.Status;
-import org.restlet.resource.Get;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.eclipse.jetty.server.Request;
+import org.eclipse.jetty.server.handler.AbstractHandler;
 
 import com.google.gson.Gson;
 
+import edu.stanford.isis.epad.common.ProxyLogger;
 import edu.stanford.isis.epad.common.dicom.DicomFormatUtil;
 import edu.stanford.isis.epad.common.dicom.DicomStudySearchType;
 import edu.stanford.isis.epad.common.dicom.RSeriesData;
-import edu.stanford.isis.epadws.handlers.dicom.SeriesSearchResult;
-import edu.stanford.isis.epadws.handlers.dicom.StudySearchResult;
 import edu.stanford.isis.epadws.processing.mysql.MySqlInstance;
 import edu.stanford.isis.epadws.processing.mysql.MySqlQueries;
 
-/**
- * Query the database using DICOM series or study search parameters.
- * 
- */
-public class DICOMSearchServerResource extends BaseServerResource
+public class MySQLSearchHandlerJSON extends AbstractHandler
 {
+	private static final ProxyLogger log = ProxyLogger.getInstance();
 	private static final String MISSING_QUERY_MESSAGE = "No series or study query in request";
 	private static final String MISSING_STUDY_SEARCH_TYPE_MESSAGE = "Missing DICOM study search type";
 	private static final String QUERY_EXCEPTION_MESSAGE = "Error running query";
 
-	public DICOMSearchServerResource()
+	public MySQLSearchHandlerJSON()
 	{
-		setNegotiated(false); // Disable content negotiation
 	}
 
 	@Override
-	protected void doCatch(Throwable throwable)
+	public void handle(String s, Request request, HttpServletRequest httpRequest, HttpServletResponse httpResponse)
+			throws IOException, ServletException
 	{
-		log.warning("An exception was thrown in the DICOM search resource.", throwable);
-	}
+		PrintWriter out = httpResponse.getWriter();
+		String result = "";
+		httpResponse.setContentType("application/json");
+		httpResponse.setStatus(HttpServletResponse.SC_OK);
+		request.setHandled(true);
 
-	@Get("text")
-	public String query()
-	{
-		String queryString = getQuery().getQueryString(CharacterSet.UTF_8);
-		log.info("Query from ePAD : " + queryString);
+		String queryString = httpRequest.getQueryString();
+		queryString = URLDecoder.decode(queryString, "UTF-8");
+
+		log.info("Query from ePad : " + queryString);
 
 		if (queryString != null) {
 			queryString = queryString.trim();
 
 			try {
-				String result = "";
 				if (isDICOMSeriesRequest(queryString)) {
 					result = performDICOMSeriesSearch(queryString);
 				} else {
-					DicomStudySearchType searchType = getDICOMStudySearchType();
+					DicomStudySearchType searchType = getSearchType(httpRequest);
 					if (searchType != null) {
 						result = performDICOMStudySearch(searchType, queryString);
 					} else {
 						log.info(MISSING_STUDY_SEARCH_TYPE_MESSAGE);
-						setStatus(Status.CLIENT_ERROR_BAD_REQUEST);
-						return createJSONErrorResponse(MISSING_STUDY_SEARCH_TYPE_MESSAGE);
+						httpResponse.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+						result = createJSONErrorResponse(MISSING_STUDY_SEARCH_TYPE_MESSAGE);
 					}
 				}
-				setStatus(Status.SUCCESS_OK);
-				return result;
+				httpResponse.setStatus(HttpServletResponse.SC_OK);
 			} catch (Exception e) {
 				log.warning(QUERY_EXCEPTION_MESSAGE, e);
-				setStatus(Status.SERVER_ERROR_INTERNAL);
-				return createJSONErrorResponse(QUERY_EXCEPTION_MESSAGE, e);
+				httpResponse.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+				result = createJSONErrorResponse(QUERY_EXCEPTION_MESSAGE, e);
 			}
 		} else {
 			log.info(MISSING_QUERY_MESSAGE);
-			setStatus(Status.CLIENT_ERROR_BAD_REQUEST);
-			return createJSONErrorResponse(MISSING_QUERY_MESSAGE);
+			httpResponse.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+			result = createJSONErrorResponse(MISSING_QUERY_MESSAGE);
 		}
+		out.append(result);
+		out.flush();
 	}
 
-	// curl -v -X get "http://<ip>:<port>/search?searchType=patientName&searchString=%2A
-
-	private String performDICOMStudySearch(DicomStudySearchType searchType, String searchString) throws Exception
+	// curl -v -X get "http://<ip>:<port>/search?patientName=*
+	private String performDICOMStudySearch(DicomStudySearchType searchType, String queryString) throws Exception
 	{
 		final MySqlQueries dbQueries = MySqlInstance.getInstance().getMysqlQueries();
+		final String[] parts = queryString.split("=");
+		final String searchString = parts[1].trim();
 		final List<Map<String, String>> searchResult = dbQueries.doStudySearch(searchType.toString(), searchString);
+		final StringBuilder result = new StringBuilder();
 		boolean isFirst = true;
-		StringBuilder result = new StringBuilder();
 
 		log.info("MySqlSearchHandler(handleStudyRequest) = " + searchString);
 		log.info("MySql found " + searchResult.size() + " results.");
@@ -130,7 +135,7 @@ public class DICOMSearchServerResource extends BaseServerResource
 	/**
 	 * Get all the series for a study.
 	 * 
-	 * @param searchString String - query string which contains the study id. The query line looks like the following:
+	 * @param queryString String - query string which contains the study id. The query line looks like the following:
 	 *          http://[ip:port]/search?searchType=series&studyUID=[studyID].
 	 * 
 	 *          The values are one line per series.
@@ -138,9 +143,9 @@ public class DICOMSearchServerResource extends BaseServerResource
 	 *          Here we will look for *.series files within the study directory. If it is there then It will read that
 	 *          file and add it to the result.
 	 */
-	private String performDICOMSeriesSearch(String searchString) throws Exception
+	private String performDICOMSeriesSearch(String queryString) throws Exception
 	{
-		final String studyIdKey = getStudyUIDFromRequest(searchString);
+		final String studyIdKey = getStudyUIDFromRequest(queryString);
 		final String studyUID = DicomFormatUtil.formatDirToUid(studyIdKey);
 		final MySqlQueries dbQueries = MySqlInstance.getInstance().getMysqlQueries();
 		final List<Map<String, String>> series = dbQueries.doSeriesSearch(studyUID);
@@ -255,14 +260,17 @@ public class DICOMSearchServerResource extends BaseServerResource
 		return isSeries;
 	}
 
-	private DicomStudySearchType getDICOMStudySearchType()
+	private DicomStudySearchType getSearchType(HttpServletRequest httpRequest)
 	{
 		for (DicomStudySearchType curr : DicomStudySearchType.values()) {
-			if ((getQueryValue(curr.toString()) != null)) {
+			log.info("type :[" + curr.toString() + "]");
+			log.info("M: " + httpRequest.getParameter(curr.toString()));
+			if ((httpRequest.getParameter(curr.toString()) != null)) {
 				return curr;
 			}
 		}
-		return null;
+		log.info("ERROR: Request missing search parameter. req=" + httpRequest.toString());
+		throw new IllegalArgumentException("Request missing search parameter. Req=" + httpRequest.toString());
 	}
 
 	private String createJSONErrorResponse(String errorMessage)
@@ -274,4 +282,5 @@ public class DICOMSearchServerResource extends BaseServerResource
 	{
 		return "{ \"error\": \"" + errorMessage + ": " + e.getMessage() + "\"}";
 	}
+
 }
