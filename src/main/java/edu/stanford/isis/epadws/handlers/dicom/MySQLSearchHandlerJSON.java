@@ -96,22 +96,22 @@ public class MySQLSearchHandlerJSON extends AbstractHandler
 		result.append("{ \"ResultSet\": [");
 
 		for (Map<String, String> row : searchResult) {
-			final String studyUID = row.get("study_iuid");
-			final String patientName = row.get("pat_name");
-			final String patientID = row.get("pat_id");
-			final String examType = row.get("modality");
-			final String dateAcquired = row.get("study_datetime");
-			final String pngStatus = row.get("study_status");
-			final String seriesCount = row.get("number_series");
-			final String firstSeriesUID = row.get("series_iuid");
-			final String firstSeriesDateAcquired = row.get("pps_start");
-			final String studyAccessionNumber = row.get("accession_no");
-			final String imagesCount = row.get("sum_images");
-			final String stuidID = row.get("study_id");
-			final String studyDescription = row.get("study_desc");
-			final String physicianName = row.get("ref_physician");
-			final String birthdate = row.get("pat_birthdate");
-			final String sex = row.get("pat_sex");
+			final String studyUID = getStringValueFromRow(row, "study_iuid");
+			final String patientName = getStringValueFromRow(row, "pat_name");
+			final String patientID = getStringValueFromRow(row, "pat_id");
+			final String examType = getStringValueFromRow(row, "modality");
+			final String dateAcquired = getStringValueFromRow(row, "study_datetime");
+			final String pngStatus = getStringValueFromRow(row, "study_status");
+			final String seriesCount = getStringValueFromRow(row, "number_series");
+			final String firstSeriesUID = getStringValueFromRow(row, "series_iuid");
+			final String firstSeriesDateAcquired = getStringValueFromRow(row, "pps_start");
+			final String studyAccessionNumber = getStringValueFromRow(row, "accession_no");
+			final String imagesCount = getStringValueFromRow(row, "sum_images");
+			final String stuidID = getStringValueFromRow(row, "study_id");
+			final String studyDescription = getStringValueFromRow(row, "study_desc");
+			final String physicianName = getStringValueFromRow(row, "ref_physician");
+			final String birthdate = getStringValueFromRow(row, "pat_birthdate");
+			final String sex = getStringValueFromRow(row, "pat_sex");
 			final StudySearchResult studySearchResult = new StudySearchResult(studyUID, patientName, patientID, examType,
 					dateAcquired, pngStatus, seriesCount, firstSeriesUID, firstSeriesDateAcquired, studyAccessionNumber,
 					imagesCount, stuidID, studyDescription, physicianName, birthdate, sex);
@@ -123,6 +123,16 @@ public class MySQLSearchHandlerJSON extends AbstractHandler
 		result.append("] }");
 
 		return result.toString();
+	}
+
+	private String getStringValueFromRow(Map<String, String> row, String columnName)
+	{
+		String value = row.get(columnName);
+
+		if (value == null)
+			return "";
+		else
+			return value;
 	}
 
 	private String studySearchResult2JSON(StudySearchResult studySearchResult)
@@ -158,21 +168,21 @@ public class MySQLSearchHandlerJSON extends AbstractHandler
 		result.append("{ \"ResultSet\": [");
 
 		for (Map<String, String> row : series) {
-			final String seriesID = row.get("series_iuid");
-			final String patientID = row.get("pat_id");
-			final String patientName = row.get("pat_name");
-			final String seriesDate = reformatSeriesDate(row.get("study_datetime"));
-			final String examType = row.get("modality");
-			final String thumbnailURL = row.get("thumbnail_url");
-			final String seriesDescription = row.get("series-desc");
-			final int numberOfSeriesRelatedInstances = Integer.parseInt(row.get("num_instances"));
-			final int imagesInSeries = Integer.parseInt(row.get("num_instances"));
-			final String seriesStatus = row.get("series_status");
-			final String bodyPart = row.get("body_part");
-			final String institution = row.get("institution");
-			final String stationName = row.get("station_name");
-			final String department = row.get("department");
-			final String accessionNumber = row.get("accession_no");
+			final String seriesID = getStringValueFromRow(row, "series_iuid");
+			final String patientID = getStringValueFromRow(row, "pat_id");
+			final String patientName = getStringValueFromRow(row, "pat_name");
+			final String seriesDate = reformatSeriesDate(getStringValueFromRow(row, "study_datetime"));
+			final String examType = getStringValueFromRow(row, "modality");
+			final String thumbnailURL = getStringValueFromRow(row, "thumbnail_url");
+			final String seriesDescription = getStringValueFromRow(row, "series-desc");
+			final int numberOfSeriesRelatedInstances = Integer.parseInt(getStringValueFromRow(row, "num_instances"));
+			final int imagesInSeries = Integer.parseInt(getStringValueFromRow(row, "num_instances"));
+			final String seriesStatus = getStringValueFromRow(row, "series_status");
+			final String bodyPart = getStringValueFromRow(row, "body_part");
+			final String institution = getStringValueFromRow(row, "institution");
+			final String stationName = getStringValueFromRow(row, "station_name");
+			final String department = getStringValueFromRow(row, "department");
+			final String accessionNumber = getStringValueFromRow(row, "accession_no");
 			final SeriesSearchResult seriesSearchResult = new SeriesSearchResult(seriesID, patientID, patientName,
 					seriesDate, examType, thumbnailURL, seriesDescription, numberOfSeriesRelatedInstances, imagesInSeries,
 					seriesStatus, bodyPart, institution, stationName, department, accessionNumber);
