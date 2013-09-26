@@ -20,9 +20,10 @@ import org.eclipse.jetty.server.handler.ContextHandlerCollection;
 import org.eclipse.jetty.server.handler.DefaultHandler;
 import org.eclipse.jetty.server.handler.HandlerList;
 import org.eclipse.jetty.server.handler.ResourceHandler;
+import org.eclipse.jetty.servlet.ServletContextHandler;
+import org.eclipse.jetty.servlet.ServletHolder;
 import org.eclipse.jetty.webapp.WebAppContext;
-import org.restlet.Component;
-import org.restlet.data.Protocol;
+import org.restlet.ext.servlet.ServerServlet;
 
 import edu.stanford.isis.epad.common.ProxyConfig;
 import edu.stanford.isis.epad.common.ProxyLogger;
@@ -92,22 +93,30 @@ public class Main
 		try {
 			int port = proxyConfig.getIntParam("ePadClientPort");
 			log.info("Starting the Dicom Proxy. Build date: " + EPadWebServerVersion.getBuildDate());
-			// initPlugins(); // Initialize plugin classes
-			// startSupportThreads();
+			initPlugins(); // Initialize plugin classes
+			startSupportThreads();
 			server = new Server(port);
 			addHandlers(server);
-			// testPluginImpl();
+			testPluginImpl();
 			Runtime.getRuntime().addShutdownHook(new ShutdownHookThread());
+
+			// See: http://restlet-discuss.1400322.n2.nabble.com/Jetty-Webapp-td7313234.html
 
 			log.info("Starting Jetty on port " + port);
 			server.start();
+			/*
+			 * Component component = new Component(); component.getServers().add(Protocol.HTTP, 8081);
+			 * component.getDefaultHost().attach(new EPADWebService());
+			 * 
+			 * log.info("Starting test Restlet component"); component.start();
+			 */
 
-			Component component = new Component();
-			component.getServers().add(Protocol.HTTP, 8081);
-			component.getDefaultHost().attach(new EPADWebService());
-
-			log.info("Starting test Restlet component");
-			component.start();
+			ServletContextHandler restletContext = new ServletContextHandler(ServletContextHandler.SESSIONS);
+			restletContext.setContextPath("/restlet");
+			ServerServlet serverServlet = new ServerServlet();
+			ServletHolder servletHolder = new ServletHolder(serverServlet);
+			servletHolder.setInitParameter("org.restlet.application", "edu.stanford.isis.epadws.EPADWebService");
+			restletContext.addServlet(servletHolder, "/*");
 
 			server.join();
 		} catch (BindException be) {

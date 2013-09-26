@@ -116,7 +116,7 @@ public class ImageCheckHandler extends AbstractHandler
 			if (!pngFile.isFile()) {
 				String message = pngFileName;
 				out.write(message + " \n");
-				numberOfMissingPNGFiles++;
+				// numberOfMissingPNGFiles++;
 			}
 		}
 		out.write("Number of series in DICOM database = " + seriesIUIDs.size() + "\n");
