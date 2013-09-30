@@ -37,6 +37,7 @@ import edu.stanford.isis.epad.plugin.server.impl.EPadFilesImpl;
 import edu.stanford.isis.epad.plugin.server.impl.PluginConfig;
 import edu.stanford.isis.epad.plugin.server.impl.PluginHandlerMap;
 import edu.stanford.isis.epadws.handlers.admin.ImageCheckHandler;
+import edu.stanford.isis.epadws.handlers.admin.LoginHandler;
 import edu.stanford.isis.epadws.handlers.admin.StatusHandler;
 import edu.stanford.isis.epadws.handlers.aim.AimResourceHandler;
 import edu.stanford.isis.epadws.handlers.coordination.CoordinationHandler;
@@ -201,6 +202,7 @@ public class Main
 		addHandlerAtContextPath(new EPadPluginHandler(), "/plugin", handlerList);
 		addHandlerAtContextPath(new CoordinationHandler(), "/coordination", handlerList);
 		addHandlerAtContextPath(new ImageCheckHandler(), "/imagecheck", handlerList);
+		addHandlerAtContextPath(new LoginHandler(), "/login", handlerList);
 
 		ContextHandlerCollection contexts = new ContextHandlerCollection();
 		contexts.setHandlers(handlerList.toArray(new Handler[handlerList.size()]));
