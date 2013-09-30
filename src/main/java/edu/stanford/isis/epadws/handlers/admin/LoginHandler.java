@@ -3,7 +3,6 @@ package edu.stanford.isis.epadws.handlers.admin;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
-import java.net.MalformedURLException;
 import java.nio.charset.Charset;
 
 import javax.servlet.ServletException;
@@ -12,6 +11,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.httpclient.HttpClient;
+import org.apache.commons.httpclient.HttpException;
 import org.apache.commons.httpclient.methods.PostMethod;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
@@ -27,7 +27,7 @@ public class LoginHandler extends AbstractHandler
 	private static final String MISSING_USERNAME_MESSAGE = "Missing user name";
 	private static final String INVALID_METHOD_MESSAGE = "Only POST method is valid for this route";
 	private static final String LOGIN_EXCEPTION_MESSAGE = "Internal login error";
-	private static final String XNAT_CONNECTION_ERROR_MESSAGE = "Internal login error connecting to XNAT";
+	private static final String XNAT_INVOCATION_ERROR_MESSAGE = "XNAT call not successful";
 
 	public LoginHandler()
 	{
@@ -60,50 +60,9 @@ public class LoginHandler extends AbstractHandler
 
 			if (!username.equals("")) {
 				String authString = buildAuthorizatonString(username, password);
-				String xnatHost = config.getParam("XNATServer");
-				int xnatPort = config.getIntParam("XNATPort");
-				String xnatSessionBase = config.getParam("XNATSessionURLExtension");
-				String xnatSessionURL = buildURLString(xnatHost, xnatPort, xnatSessionBase);
-
-				log.info("Invoking XNAT session service at " + xnatSessionURL + " with user name " + username);
 
 				try {
-					HttpClient client = new HttpClient();
-					PostMethod postMethod = new PostMethod(xnatSessionURL);
-					postMethod.setRequestHeader("Authorization", "Basic " + authString);
-					int statusCode = client.executeMethod(postMethod);
-
-					if (statusCode != -1) {
-						log.info("Successfully invoked XNAT session service");
-						InputStreamReader isr = null;
-						try {
-							isr = new InputStreamReader(postMethod.getResponseBodyAsStream());
-							int read = 0;
-							char[] chars = new char[1024];
-							StringBuilder sb = new StringBuilder();
-
-							while ((read = isr.read(chars)) > 0) {
-								sb.append(chars, 0, read);
-							}
-							String jsessionID = sb.toString();
-							log.info("JSESSIONID returned from XNAT: " + jsessionID);
-							result = jsessionID;
-							httpResponse.setStatus(HttpServletResponse.SC_OK);
-						} catch (IOException e) {
-							log.warning(LOGIN_EXCEPTION_MESSAGE, e);
-							httpResponse.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-							result = LOGIN_EXCEPTION_MESSAGE + ": " + e.getMessage();
-						} finally {
-							if (isr != null)
-								isr.close();
-						}
-					} else {
-						httpResponse.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-						log.warning(XNAT_CONNECTION_ERROR_MESSAGE + "; status code =" + statusCode);
-						result = XNAT_CONNECTION_ERROR_MESSAGE;
-					}
-				} catch (MalformedURLException e) {
-					e.printStackTrace();
+					result = invokeXNATSessionIDService(httpResponse, authString);
 				} catch (IOException e) {
 					log.warning(LOGIN_EXCEPTION_MESSAGE, e);
 					httpResponse.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
@@ -126,6 +85,55 @@ public class LoginHandler extends AbstractHandler
 		}
 		out.append(result);
 		out.flush();
+	}
+
+	private String invokeXNATSessionIDService(HttpServletResponse httpResponse, String authString) throws IOException,
+			HttpException
+	{
+		String xnatHost = config.getParam("XNATServer");
+		int xnatPort = config.getIntParam("XNATPort");
+		String xnatSessionBase = config.getParam("XNATSessionURLExtension");
+		String xnatSessionURL = buildURLString(xnatHost, xnatPort, xnatSessionBase);
+		HttpClient client = new HttpClient();
+		PostMethod postMethod = new PostMethod(xnatSessionURL);
+		String result;
+
+		postMethod.setRequestHeader("Authorization", "Basic " + authString);
+
+		log.info("Invoking XNAT session service at " + xnatSessionURL);
+
+		int statusCode = client.executeMethod(postMethod);
+
+		if (statusCode == HttpServletResponse.SC_OK) {
+			log.info("Successfully invoked XNAT session service");
+			InputStreamReader isr = null;
+			try {
+				isr = new InputStreamReader(postMethod.getResponseBodyAsStream());
+				int read = 0;
+				char[] chars = new char[1024];
+				StringBuilder sb = new StringBuilder();
+
+				while ((read = isr.read(chars)) > 0) {
+					sb.append(chars, 0, read);
+				}
+				String jsessionID = sb.toString();
+				log.info("JSESSIONID returned from XNAT: " + jsessionID);
+				result = jsessionID;
+				httpResponse.setStatus(HttpServletResponse.SC_OK);
+			} catch (IOException e) {
+				log.warning(LOGIN_EXCEPTION_MESSAGE, e);
+				httpResponse.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+				result = LOGIN_EXCEPTION_MESSAGE + ": " + e.getMessage();
+			} finally {
+				if (isr != null)
+					isr.close();
+			}
+		} else {
+			httpResponse.setStatus(statusCode);
+			log.warning(XNAT_INVOCATION_ERROR_MESSAGE + "; status code =" + statusCode);
+			result = XNAT_INVOCATION_ERROR_MESSAGE;
+		}
+		return result;
 	}
 
 	private String buildAuthorizatonString(String username, String password)
