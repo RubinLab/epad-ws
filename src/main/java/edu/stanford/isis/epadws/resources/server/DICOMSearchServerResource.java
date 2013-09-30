@@ -12,8 +12,8 @@ import com.google.gson.Gson;
 import edu.stanford.isis.epad.common.dicom.DicomFormatUtil;
 import edu.stanford.isis.epad.common.dicom.DicomStudySearchType;
 import edu.stanford.isis.epad.common.dicom.RSeriesData;
-import edu.stanford.isis.epadws.handlers.dicom.SeriesSearchResult;
-import edu.stanford.isis.epadws.handlers.dicom.StudySearchResult;
+import edu.stanford.isis.epadws.handlers.dicom.DICOMSeriesSearchResult;
+import edu.stanford.isis.epadws.handlers.dicom.DICOMStudySearchResult;
 import edu.stanford.isis.epadws.processing.mysql.MySqlInstance;
 import edu.stanford.isis.epadws.processing.mysql.MySqlQueries;
 
@@ -107,7 +107,7 @@ public class DICOMSearchServerResource extends BaseServerResource
 			final String physicianName = row.get("ref_physician");
 			final String birthdate = row.get("pat_birthdate");
 			final String sex = row.get("pat_sex");
-			final StudySearchResult studySearchResult = new StudySearchResult(studyUID, patientName, patientID, examType,
+			final DICOMStudySearchResult studySearchResult = new DICOMStudySearchResult(studyUID, patientName, patientID, examType,
 					dateAcquired, studyStatus, seriesCount, firstSeriesUID, firstSeriesDateAcquired, studyAccessionNumber,
 					imagesCount, stuidID, studyDescription, physicianName, birthdate, sex);
 			if (!isFirst)
@@ -120,7 +120,7 @@ public class DICOMSearchServerResource extends BaseServerResource
 		return result.toString();
 	}
 
-	private String studySearchResult2JSON(StudySearchResult studySearchResult)
+	private String studySearchResult2JSON(DICOMStudySearchResult studySearchResult)
 	{
 		Gson gson = new Gson();
 
@@ -168,7 +168,7 @@ public class DICOMSearchServerResource extends BaseServerResource
 			final String stationName = row.get("station_name");
 			final String department = row.get("department");
 			final String accessionNumber = row.get("accession_no");
-			final SeriesSearchResult seriesSearchResult = new SeriesSearchResult(seriesID, patientID, patientName,
+			final DICOMSeriesSearchResult seriesSearchResult = new DICOMSeriesSearchResult(seriesID, patientID, patientName,
 					seriesDate, examType, thumbnailURL, seriesDescription, numberOfSeriesRelatedInstances, imagesInSeries,
 					seriesStatus, bodyPart, institution, stationName, department, accessionNumber);
 			if (!isFirst)
@@ -181,7 +181,7 @@ public class DICOMSearchServerResource extends BaseServerResource
 		return result.toString();
 	}
 
-	private String seriesSearchResult2JSON(SeriesSearchResult seriesSearchResult)
+	private String seriesSearchResult2JSON(DICOMSeriesSearchResult seriesSearchResult)
 	{
 		Gson gson = new Gson();
 

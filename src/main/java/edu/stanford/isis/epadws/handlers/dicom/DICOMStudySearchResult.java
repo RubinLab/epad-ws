@@ -1,6 +1,6 @@
 package edu.stanford.isis.epadws.handlers.dicom;
 
-public class StudySearchResult
+public class DICOMStudySearchResult
 {
 	public final String studyUID, patientName, patientID, examType, dateAcquired;
 	public int studyStatus, seriesCount;
@@ -8,7 +8,7 @@ public class StudySearchResult
 	public int imagesCount;
 	public String studyID, studyDescription, physicianName, birthdate, sex;
 
-	public StudySearchResult(String studyUID, String patientName, String patientID, String examType, String dateAcquired,
+	public DICOMStudySearchResult(String studyUID, String patientName, String patientID, String examType, String dateAcquired,
 			int studyStatus, int seriesCount, String firstSeriesUID, String firstSeriesDateAcquired,
 			String studyAccessionNumber, int imagesCount, String studyID, String studyDescription, String physicianName,
 			String birthdate, String sex)

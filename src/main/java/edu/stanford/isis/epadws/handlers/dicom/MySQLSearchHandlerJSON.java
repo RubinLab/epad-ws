@@ -112,7 +112,7 @@ public class MySQLSearchHandlerJSON extends AbstractHandler
 			final String physicianName = getStringValueFromRow(row, "ref_physician");
 			final String birthdate = getStringValueFromRow(row, "pat_birthdate");
 			final String sex = getStringValueFromRow(row, "pat_sex");
-			final StudySearchResult studySearchResult = new StudySearchResult(studyUID, patientName, patientID, examType,
+			final DICOMStudySearchResult studySearchResult = new DICOMStudySearchResult(studyUID, patientName, patientID, examType,
 					dateAcquired, studyStatus, seriesCount, firstSeriesUID, firstSeriesDateAcquired, studyAccessionNumber,
 					imagesCount, stuidID, studyDescription, physicianName, birthdate, sex);
 			if (!isFirst)
@@ -166,7 +166,7 @@ public class MySQLSearchHandlerJSON extends AbstractHandler
 			final String stationName = getStringValueFromRow(row, "station_name");
 			final String department = getStringValueFromRow(row, "department");
 			final String accessionNumber = getStringValueFromRow(row, "accession_no");
-			final SeriesSearchResult seriesSearchResult = new SeriesSearchResult(seriesID, patientID, patientName,
+			final DICOMSeriesSearchResult seriesSearchResult = new DICOMSeriesSearchResult(seriesID, patientID, patientName,
 					seriesDate, examType, thumbnailURL, seriesDescription, numberOfSeriesRelatedInstances, imagesInSeries,
 					seriesStatus, bodyPart, institution, stationName, department, accessionNumber);
 			if (!isFirst)
@@ -179,7 +179,7 @@ public class MySQLSearchHandlerJSON extends AbstractHandler
 		return result.toString();
 	}
 
-	private String seriesSearchResult2JSON(SeriesSearchResult seriesSearchResult)
+	private String seriesSearchResult2JSON(DICOMSeriesSearchResult seriesSearchResult)
 	{
 		Gson gson = new Gson();
 
@@ -293,7 +293,7 @@ public class MySQLSearchHandlerJSON extends AbstractHandler
 		}
 	}
 
-	private String studySearchResult2JSON(StudySearchResult studySearchResult)
+	private String studySearchResult2JSON(DICOMStudySearchResult studySearchResult)
 	{
 		Gson gson = new Gson();
 

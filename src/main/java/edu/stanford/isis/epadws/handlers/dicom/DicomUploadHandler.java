@@ -73,7 +73,7 @@ public class DicomUploadHandler extends AbstractHandler
 		String tempDir = "temp-" + System.currentTimeMillis() + "/";
 		log.info("Uploading files to dir: " + tempDir);
 		log.debug("method: " + method + ",  why not POST?!");
-		// create the directory for uploading file.
+
 		try {
 			File tempUploadDir = new File(ResourceUtils.getEPADWebServerUploadDir() + tempDir);
 			tempUploadDir.mkdirs();
@@ -102,10 +102,8 @@ public class DicomUploadHandler extends AbstractHandler
 				} finally {
 					fos.close();
 				}
-			}// while
-
+			}
 			out.flush();
-
 		} catch (Exception e) {
 			log.warning("Failed to upload DICOM files to _" + tempDir + "_", e);
 		} catch (Error temp) {
