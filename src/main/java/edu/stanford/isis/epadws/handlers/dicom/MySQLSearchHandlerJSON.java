@@ -25,6 +25,7 @@ import edu.stanford.isis.epadws.processing.mysql.MySqlQueries;
 public class MySQLSearchHandlerJSON extends AbstractHandler
 {
 	private static final ProxyLogger log = ProxyLogger.getInstance();
+
 	private static final String MISSING_QUERY_MESSAGE = "No series or study query in request";
 	private static final String MISSING_STUDY_SEARCH_TYPE_MESSAGE = "Missing DICOM study search type";
 	private static final String QUERY_EXCEPTION_MESSAGE = "Error running query";
@@ -40,7 +41,6 @@ public class MySQLSearchHandlerJSON extends AbstractHandler
 		PrintWriter out = httpResponse.getWriter();
 		String result = "";
 		httpResponse.setContentType("application/json");
-		httpResponse.setStatus(HttpServletResponse.SC_OK);
 		request.setHandled(true);
 
 		String queryString = httpRequest.getQueryString();
@@ -101,19 +101,19 @@ public class MySQLSearchHandlerJSON extends AbstractHandler
 			final String patientID = getStringValueFromRow(row, "pat_id");
 			final String examType = getStringValueFromRow(row, "modality");
 			final String dateAcquired = getStringValueFromRow(row, "study_datetime");
-			final String pngStatus = getStringValueFromRow(row, "study_status");
-			final String seriesCount = getStringValueFromRow(row, "number_series");
+			final int studyStatus = getIntegerFromRow(row, "study_status");
+			final int seriesCount = getIntegerFromRow(row, "number_series");
 			final String firstSeriesUID = getStringValueFromRow(row, "series_iuid");
 			final String firstSeriesDateAcquired = getStringValueFromRow(row, "pps_start");
 			final String studyAccessionNumber = getStringValueFromRow(row, "accession_no");
-			final String imagesCount = getStringValueFromRow(row, "sum_images");
+			final int imagesCount = getIntegerFromRow(row, "sum_images");
 			final String stuidID = getStringValueFromRow(row, "study_id");
 			final String studyDescription = getStringValueFromRow(row, "study_desc");
 			final String physicianName = getStringValueFromRow(row, "ref_physician");
 			final String birthdate = getStringValueFromRow(row, "pat_birthdate");
 			final String sex = getStringValueFromRow(row, "pat_sex");
 			final StudySearchResult studySearchResult = new StudySearchResult(studyUID, patientName, patientID, examType,
-					dateAcquired, pngStatus, seriesCount, firstSeriesUID, firstSeriesDateAcquired, studyAccessionNumber,
+					dateAcquired, studyStatus, seriesCount, firstSeriesUID, firstSeriesDateAcquired, studyAccessionNumber,
 					imagesCount, stuidID, studyDescription, physicianName, birthdate, sex);
 			if (!isFirst)
 				result.append(",\n");
@@ -123,23 +123,6 @@ public class MySQLSearchHandlerJSON extends AbstractHandler
 		result.append("] }");
 
 		return result.toString();
-	}
-
-	private String getStringValueFromRow(Map<String, String> row, String columnName)
-	{
-		String value = row.get(columnName);
-
-		if (value == null)
-			return "";
-		else
-			return value;
-	}
-
-	private String studySearchResult2JSON(StudySearchResult studySearchResult)
-	{
-		Gson gson = new Gson();
-
-		return gson.toJson(studySearchResult);
 	}
 
 	/**
@@ -174,10 +157,10 @@ public class MySQLSearchHandlerJSON extends AbstractHandler
 			final String seriesDate = reformatSeriesDate(getStringValueFromRow(row, "study_datetime"));
 			final String examType = getStringValueFromRow(row, "modality");
 			final String thumbnailURL = getStringValueFromRow(row, "thumbnail_url");
-			final String seriesDescription = getStringValueFromRow(row, "series-desc");
+			final String seriesDescription = getStringValueFromRow(row, "series_desc");
 			final int numberOfSeriesRelatedInstances = Integer.parseInt(getStringValueFromRow(row, "num_instances"));
-			final int imagesInSeries = Integer.parseInt(getStringValueFromRow(row, "num_instances"));
-			final String seriesStatus = getStringValueFromRow(row, "series_status");
+			final int imagesInSeries = getIntegerFromRow(row, "num_instances");
+			final int seriesStatus = getIntegerFromRow(row, "series_status");
 			final String bodyPart = getStringValueFromRow(row, "body_part");
 			final String institution = getStringValueFromRow(row, "institution");
 			final String stationName = getStringValueFromRow(row, "station_name");
@@ -283,6 +266,40 @@ public class MySQLSearchHandlerJSON extends AbstractHandler
 		throw new IllegalArgumentException("Request missing search parameter. Req=" + httpRequest.toString());
 	}
 
+	private String getStringValueFromRow(Map<String, String> row, String columnName)
+	{
+		String value = row.get(columnName);
+
+		if (value == null)
+			return "";
+		else
+			return value;
+	}
+
+	// TODO Perhaps throw exception rather than returning -1 for missing or erroneous values.
+	private int getIntegerFromRow(Map<String, String> row, String columnName)
+	{
+		String value = row.get(columnName);
+
+		if (value == null)
+			return -1;
+		else {
+			try {
+				return Integer.parseInt(value);
+			} catch (NumberFormatException e) {
+				log.info("expecting integer value in column " + columnName + " got " + value);
+				return -1;
+			}
+		}
+	}
+
+	private String studySearchResult2JSON(StudySearchResult studySearchResult)
+	{
+		Gson gson = new Gson();
+
+		return gson.toJson(studySearchResult);
+	}
+
 	private String createJSONErrorResponse(String errorMessage)
 	{
 		return "{ \"error\": \"" + errorMessage + "\"}";
@@ -292,5 +309,4 @@ public class MySQLSearchHandlerJSON extends AbstractHandler
 	{
 		return "{ \"error\": \"" + errorMessage + ": " + e.getMessage() + "\"}";
 	}
-
 }

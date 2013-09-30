@@ -96,19 +96,19 @@ public class DICOMSearchServerResource extends BaseServerResource
 			final String patientID = row.get("pat_id");
 			final String examType = row.get("modality");
 			final String dateAcquired = row.get("study_datetime");
-			final String pngStatus = row.get("study_status");
-			final String seriesCount = row.get("number_series");
+			final int studyStatus = getIntegerFromRow(row, "study_status");
+			final int seriesCount = getIntegerFromRow(row, "number_series");
 			final String firstSeriesUID = row.get("series_iuid");
 			final String firstSeriesDateAcquired = row.get("pps_start");
 			final String studyAccessionNumber = row.get("accession_no");
-			final String imagesCount = row.get("sum_images");
+			final int imagesCount = getIntegerFromRow(row, "sum_images");
 			final String stuidID = row.get("study_id");
 			final String studyDescription = row.get("study_desc");
 			final String physicianName = row.get("ref_physician");
 			final String birthdate = row.get("pat_birthdate");
 			final String sex = row.get("pat_sex");
 			final StudySearchResult studySearchResult = new StudySearchResult(studyUID, patientName, patientID, examType,
-					dateAcquired, pngStatus, seriesCount, firstSeriesUID, firstSeriesDateAcquired, studyAccessionNumber,
+					dateAcquired, studyStatus, seriesCount, firstSeriesUID, firstSeriesDateAcquired, studyAccessionNumber,
 					imagesCount, stuidID, studyDescription, physicianName, birthdate, sex);
 			if (!isFirst)
 				result.append(",\n");
@@ -160,9 +160,9 @@ public class DICOMSearchServerResource extends BaseServerResource
 			final String examType = row.get("modality");
 			final String thumbnailURL = row.get("thumbnail_url");
 			final String seriesDescription = row.get("series-desc");
-			final int numberOfSeriesRelatedInstances = Integer.parseInt(row.get("num_instances"));
+			final int numberOfSeriesRelatedInstances = getIntegerFromRow(row, "num_instances");
 			final int imagesInSeries = Integer.parseInt(row.get("num_instances"));
-			final String seriesStatus = row.get("series_status");
+			final int seriesStatus = getIntegerFromRow(row, "series_status");
 			final String bodyPart = row.get("body_part");
 			final String institution = row.get("institution");
 			final String stationName = row.get("station_name");
@@ -253,6 +253,23 @@ public class DICOMSearchServerResource extends BaseServerResource
 
 		log.info(" isSeries=" + isSeries + " for: " + queryString);
 		return isSeries;
+	}
+
+	// TODO Catch exception above
+	private int getIntegerFromRow(Map<String, String> row, String columnName)
+	{
+		String value = row.get(columnName);
+
+		if (value == null)
+			return -1;
+		else {
+			try {
+				return Integer.parseInt(value);
+			} catch (NumberFormatException e) {
+				log.info("expecting integer value in column " + columnName + " got " + value);
+				return -1;
+			}
+		}
 	}
 
 	private DicomStudySearchType getDICOMStudySearchType()
