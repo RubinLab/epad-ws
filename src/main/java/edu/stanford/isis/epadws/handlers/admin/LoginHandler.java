@@ -27,10 +27,6 @@ public class LoginHandler extends AbstractHandler
 	private static final String INVALID_METHOD_MESSAGE = "Only POST method is valid for this route";
 	private static final String LOGIN_EXCEPTION_MESSAGE = "Internal login error";
 
-	public LoginHandler()
-	{
-	}
-
 	@Override
 	public void handle(String s, Request request, HttpServletRequest httpRequest, HttpServletResponse httpResponse)
 			throws IOException, ServletException

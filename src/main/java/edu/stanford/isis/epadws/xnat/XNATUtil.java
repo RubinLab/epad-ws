@@ -18,9 +18,6 @@ import edu.stanford.isis.epad.common.ProxyConfig;
 import edu.stanford.isis.epad.common.ProxyLogger;
 
 /**
- * 
- * 
- * 
  * @author martin
  */
 public class XNATUtil
@@ -33,7 +30,7 @@ public class XNATUtil
 
 	/**
 	 * 
-	 * @param response Status set to HttpServletResponse.SC_OK on success, HttpServletResponse.SC_INTERNAL_SERVER_ERROR on
+	 * @param httpResponse Status set to HttpServletResponse.SC_OK on success, HttpServletResponse.SC_INTERNAL_SERVER_ERROR on
 	 *          failure.
 	 * @param username
 	 * @param password
@@ -42,7 +39,7 @@ public class XNATUtil
 	 * @throws HttpException
 	 * @throws IllegalArgumentException
 	 */
-	public static String invokeXNATSessionIDService(HttpServletRequest request, HttpServletResponse response)
+	public static String invokeXNATSessionIDService(HttpServletRequest httpRequest, HttpServletResponse httpResponse)
 			throws IOException, HttpException
 	{
 		String xnatHost = getStringConfigurationParameter("XNATServer");
@@ -51,8 +48,8 @@ public class XNATUtil
 		String xnatSessionURL = buildURLString(xnatHost, xnatPort, xnatSessionBase);
 		HttpClient client = new HttpClient();
 		PostMethod postMethod = new PostMethod(xnatSessionURL);
-		String username = extractUserNameFromAuthorizationHeader(request);
-		String password = extractPasswordFromAuthorizationHeader(request);
+		String username = extractUserNameFromAuthorizationHeader(httpRequest);
+		String password = extractPasswordFromAuthorizationHeader(httpRequest);
 		String authString = buildAuthorizatonString(username, password);
 		String result = "";
 
@@ -77,24 +74,24 @@ public class XNATUtil
 				String jsessionID = sb.toString();
 				log.info("JSESSIONID returned from XNAT: " + jsessionID);
 				result = jsessionID;
-				response.setStatus(HttpServletResponse.SC_OK);
+				httpResponse.setStatus(HttpServletResponse.SC_OK);
 			} catch (IOException e) {
 				log.warning(LOGIN_EXCEPTION_MESSAGE, e);
-				response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+				httpResponse.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 				result = LOGIN_EXCEPTION_MESSAGE + ": " + e.getMessage();
 			} finally {
 				if (isr != null)
 					isr.close();
 			}
 		} else {
-			response.setStatus(statusCode);
+			httpResponse.setStatus(statusCode);
 			log.warning(XNAT_LOGIN_ERROR_MESSAGE + "; status code = " + statusCode);
 			result = XNAT_LOGIN_ERROR_MESSAGE + "; status code = " + statusCode;
 		}
 		return result;
 	}
 
-	public static boolean hasValidXNATSessionID(HttpServletRequest servletRequest) throws IOException, HttpException
+	public static boolean hasValidXNATSessionID(HttpServletRequest httpRequest) throws IOException, HttpException
 	{
 		String xnatHost = getStringConfigurationParameter("XNATServer");
 		int xnatPort = getIntegerConfigurationParameter("XNATPort");
@@ -102,7 +99,7 @@ public class XNATUtil
 		String xnatSessionURL = buildURLString(xnatHost, xnatPort, xnatSessionBase);
 		HttpClient client = new HttpClient();
 		GetMethod getMethod = new GetMethod(xnatSessionURL);
-		String jsessionID = getJSessionIDFromRequest(servletRequest);
+		String jsessionID = getJSessionIDFromRequest(httpRequest);
 		boolean isValidSessionID = false;
 
 		getMethod.setRequestHeader("Cookie", "JSESSIONID=" + jsessionID);
@@ -115,6 +112,17 @@ public class XNATUtil
 			isValidSessionID = false;
 		}
 		return isValidSessionID;
+	}
+
+	public static String extractUserNameFromAuthorizationHeader(HttpServletRequest httpRequest)
+	{
+		String credentials = extractCredentialsFromAuthorizationHeader(httpRequest);
+		String[] values = credentials.split(":", 2);
+
+		if (values.length != 0 && values[0] != null)
+			return values[0];
+		else
+			return "";
 	}
 
 	private static String getJSessionIDFromRequest(HttpServletRequest servletRequest)
@@ -182,17 +190,6 @@ public class XNATUtil
 	private static int getIntegerConfigurationParameter(String parameterName)
 	{
 		return config.getIntParam(parameterName);
-	}
-
-	private static String extractUserNameFromAuthorizationHeader(HttpServletRequest request)
-	{
-		String credentials = extractCredentialsFromAuthorizationHeader(request);
-		String[] values = credentials.split(":", 2);
-
-		if (values.length != 0 && values[0] != null)
-			return values[0];
-		else
-			return "";
 	}
 
 	private static String extractPasswordFromAuthorizationHeader(HttpServletRequest request)
