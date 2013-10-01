@@ -41,10 +41,11 @@ import edu.stanford.isis.epadws.handlers.admin.LoginHandler;
 import edu.stanford.isis.epadws.handlers.admin.StatusHandler;
 import edu.stanford.isis.epadws.handlers.aim.AimResourceHandler;
 import edu.stanford.isis.epadws.handlers.coordination.CoordinationHandler;
+import edu.stanford.isis.epadws.handlers.dicom.DICOMSearchHandler;
+import edu.stanford.isis.epadws.handlers.dicom.DICOMSeriesOrderHandler;
 import edu.stanford.isis.epadws.handlers.dicom.DicomDeleteHandler;
 import edu.stanford.isis.epadws.handlers.dicom.DicomHeadersHandler;
 import edu.stanford.isis.epadws.handlers.dicom.DicomVisuHandler;
-import edu.stanford.isis.epadws.handlers.dicom.MySQLSearchHandlerJSON;
 import edu.stanford.isis.epadws.handlers.dicom.MySqlSearchHandler;
 import edu.stanford.isis.epadws.handlers.dicom.SegmentationPathHandler;
 import edu.stanford.isis.epadws.handlers.dicom.SeriesOrderHandler;
@@ -194,15 +195,17 @@ public class Main
 		addHandlerAtContextPath(new SeriesTagHandler(), "/seriestag", handlerList);
 		addHandlerAtContextPath(new SeriesOrderHandler(), "/seriesorder", handlerList);
 		addHandlerAtContextPath(new MySqlSearchHandler(), "/search", handlerList);
-		addHandlerAtContextPath(new MySQLSearchHandlerJSON(), "/searchj", handlerList);
 		addHandlerAtContextPath(new DicomHeadersHandler(), "/dicomtag", handlerList);
 		addHandlerAtContextPath(new DicomVisuHandler(), "/dicomparam", handlerList);
 		addHandlerAtContextPath(new EventSearchHandler(), "/eventresource", handlerList);
 		addHandlerAtContextPath(new SegmentationPathHandler(), "/segmentationpath", handlerList);
 		addHandlerAtContextPath(new EPadPluginHandler(), "/plugin", handlerList);
+
 		addHandlerAtContextPath(new CoordinationHandler(), "/coordination", handlerList);
 		addHandlerAtContextPath(new ImageCheckHandler(), "/imagecheck", handlerList);
 		addHandlerAtContextPath(new LoginHandler(), "/login", handlerList);
+		addHandlerAtContextPath(new DICOMSearchHandler(), "/searchj", handlerList);
+		addHandlerAtContextPath(new DICOMSeriesOrderHandler(), "/seriesorderj", handlerList);
 
 		ContextHandlerCollection contexts = new ContextHandlerCollection();
 		contexts.setHandlers(handlerList.toArray(new Handler[handlerList.size()]));

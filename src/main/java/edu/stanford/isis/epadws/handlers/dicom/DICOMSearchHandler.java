@@ -16,9 +16,12 @@ import org.eclipse.jetty.server.handler.AbstractHandler;
 import com.google.gson.Gson;
 
 import edu.stanford.isis.epad.common.ProxyLogger;
+import edu.stanford.isis.epad.common.dicom.DICOMSeriesSearchResult;
+import edu.stanford.isis.epad.common.dicom.DICOMStudySearchResult;
 import edu.stanford.isis.epad.common.dicom.DicomFormatUtil;
 import edu.stanford.isis.epad.common.dicom.DicomStudySearchType;
 import edu.stanford.isis.epad.common.dicom.RSeriesData;
+import edu.stanford.isis.epad.common.util.JsonHelper;
 import edu.stanford.isis.epadws.processing.mysql.MySqlInstance;
 import edu.stanford.isis.epadws.processing.mysql.MySqlQueries;
 import edu.stanford.isis.epadws.xnat.XNATUtil;
@@ -31,16 +34,16 @@ import edu.stanford.isis.epadws.xnat.XNATUtil;
  * 
  * @author martin
  */
-public class MySQLSearchHandlerJSON extends AbstractHandler
+public class DICOMSearchHandler extends AbstractHandler
 {
 	private static final ProxyLogger log = ProxyLogger.getInstance();
 
 	private static final String MISSING_QUERY_MESSAGE = "No series or study query in request";
 	private static final String MISSING_STUDY_SEARCH_TYPE_MESSAGE = "Missing DICOM study search type";
-	private static final String QUERY_EXCEPTION_MESSAGE = "Error running query";
+	private static final String INTERNAL_EXCEPTION_MESSAGE = "Internal error running query";
 	private static final String INVALID_SESSION_TOKEN_MESSAGE = "Session token is invalid";
 
-	public MySQLSearchHandlerJSON()
+	public DICOMSearchHandler()
 	{
 	}
 
@@ -49,7 +52,6 @@ public class MySQLSearchHandlerJSON extends AbstractHandler
 			throws IOException, ServletException
 	{
 		PrintWriter out = httpResponse.getWriter();
-		String result = "";
 
 		httpResponse.setContentType("application/json");
 		request.setHandled(true);
@@ -57,41 +59,44 @@ public class MySQLSearchHandlerJSON extends AbstractHandler
 		if (XNATUtil.hasValidXNATSessionID(httpRequest)) {
 			String queryString = httpRequest.getQueryString();
 			queryString = URLDecoder.decode(queryString, "UTF-8");
-			log.info("Query from ePad : " + queryString);
+			log.info("Query from ePAD : " + queryString);
 
 			if (queryString != null) {
 				queryString = queryString.trim();
 
 				try {
 					if (isDICOMSeriesRequest(queryString)) {
-						result = performDICOMSeriesSearch(queryString);
+						performDICOMSeriesSearch(out, queryString);
 					} else {
 						DicomStudySearchType searchType = getSearchType(httpRequest);
 						if (searchType != null) {
-							result = performDICOMStudySearch(searchType, queryString);
+							performDICOMStudySearch(out, searchType, queryString);
 						} else {
 							log.info(MISSING_STUDY_SEARCH_TYPE_MESSAGE);
 							httpResponse.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-							result = createJSONErrorResponse(MISSING_STUDY_SEARCH_TYPE_MESSAGE);
+							out.append(JsonHelper.createJSONErrorResponse(MISSING_STUDY_SEARCH_TYPE_MESSAGE));
 						}
 					}
 					httpResponse.setStatus(HttpServletResponse.SC_OK);
 				} catch (Exception e) {
-					log.warning(QUERY_EXCEPTION_MESSAGE, e);
+					log.warning(INTERNAL_EXCEPTION_MESSAGE, e);
 					httpResponse.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-					result = createJSONErrorResponse(QUERY_EXCEPTION_MESSAGE, e);
+					out.append(JsonHelper.createJSONErrorResponse(INTERNAL_EXCEPTION_MESSAGE, e));
+				} catch (Error e) {
+					log.warning(INTERNAL_EXCEPTION_MESSAGE, e);
+					httpResponse.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+					out.append(JsonHelper.createJSONErrorResponse(INTERNAL_EXCEPTION_MESSAGE, e));
 				}
 			} else {
 				log.info(MISSING_QUERY_MESSAGE);
 				httpResponse.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-				result = createJSONErrorResponse(MISSING_QUERY_MESSAGE);
+				out.append(JsonHelper.createJSONErrorResponse(MISSING_QUERY_MESSAGE));
 			}
 		} else {
 			log.info(INVALID_SESSION_TOKEN_MESSAGE);
 			httpResponse.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-			result = createJSONErrorResponse(INVALID_SESSION_TOKEN_MESSAGE);
+			out.append(JsonHelper.createJSONErrorResponse(INVALID_SESSION_TOKEN_MESSAGE));
 		}
-		out.append(result);
 		out.flush();
 	}
 
@@ -105,20 +110,20 @@ public class MySQLSearchHandlerJSON extends AbstractHandler
 	 * @return
 	 * @throws Exception
 	 */
-	private String performDICOMStudySearch(DicomStudySearchType searchType, String queryString) throws Exception
+	private void performDICOMStudySearch(PrintWriter out, DicomStudySearchType searchType, String queryString)
+			throws Exception
 	{
 		final MySqlQueries dbQueries = MySqlInstance.getInstance().getMysqlQueries();
 		final String[] parts = queryString.split("=");
 		final String searchString = parts[1].trim();
 		final List<Map<String, String>> searchResult = dbQueries.doStudySearch(searchType.toString(), searchString);
-		final StringBuilder result = new StringBuilder();
 		boolean isFirst = true;
 
 		log.info("MySqlSearchHandler(handleStudyRequest) = " + searchString);
 		log.info("MySql found " + searchResult.size() + " results.");
 		log.info("Search result: " + searchResult.toString());
 
-		result.append("{ \"ResultSet\": [");
+		out.append("{ \"ResultSet\": [");
 
 		for (Map<String, String> row : searchResult) {
 			final String studyUID = getStringValueFromRow(row, "study_iuid");
@@ -141,13 +146,11 @@ public class MySQLSearchHandlerJSON extends AbstractHandler
 					examType, dateAcquired, studyStatus, seriesCount, firstSeriesUID, firstSeriesDateAcquired,
 					studyAccessionNumber, imagesCount, stuidID, studyDescription, physicianName, birthdate, sex);
 			if (!isFirst)
-				result.append(",\n");
+				out.append(",\n");
 			isFirst = false;
-			result.append(studySearchResult2JSON(studySearchResult));
+			out.append(studySearchResult2JSON(studySearchResult));
 		}
-		result.append("] }");
-
-		return result.toString();
+		out.append("] }");
 	}
 
 	/**
@@ -161,19 +164,18 @@ public class MySQLSearchHandlerJSON extends AbstractHandler
 	 *          Here we will look for *.series files within the study directory. If it is there then It will read that
 	 *          file and add it to the result.
 	 */
-	private String performDICOMSeriesSearch(String queryString) throws Exception
+	private void performDICOMSeriesSearch(PrintWriter out, String queryString) throws Exception
 	{
 		final String studyIdKey = getStudyUIDFromRequest(queryString);
 		final String studyUID = DicomFormatUtil.formatDirToUid(studyIdKey);
 		final MySqlQueries dbQueries = MySqlInstance.getInstance().getMysqlQueries();
 		final List<Map<String, String>> series = dbQueries.doSeriesSearch(studyUID);
-		final StringBuilder result = new StringBuilder();
 		boolean isFirst = true;
 
 		log.info("Series search column header: " + RSeriesData.getHeaderColumn());
 		log.info("dbQueries.doSeriesSearch() had " + series.size() + " results, for studyUID=" + studyUID);
 
-		result.append("{ \"ResultSet\": [");
+		out.append("{ \"ResultSet\": [");
 
 		for (Map<String, String> row : series) {
 			final String seriesID = getStringValueFromRow(row, "series_iuid");
@@ -195,13 +197,11 @@ public class MySQLSearchHandlerJSON extends AbstractHandler
 					seriesDate, examType, thumbnailURL, seriesDescription, numberOfSeriesRelatedInstances, imagesInSeries,
 					seriesStatus, bodyPart, institution, stationName, department, accessionNumber);
 			if (!isFirst)
-				result.append(",\n");
+				out.append(",\n");
 			isFirst = false;
-			result.append(seriesSearchResult2JSON(seriesSearchResult));
+			out.append(seriesSearchResult2JSON(seriesSearchResult));
 		}
-		result.append("] }");
-
-		return result.toString();
+		out.append("] }");
 	}
 
 	private String seriesSearchResult2JSON(DICOMSeriesSearchResult seriesSearchResult)
@@ -323,15 +323,5 @@ public class MySQLSearchHandlerJSON extends AbstractHandler
 		Gson gson = new Gson();
 
 		return gson.toJson(studySearchResult);
-	}
-
-	private String createJSONErrorResponse(String errorMessage)
-	{
-		return "{ \"error\": \"" + errorMessage + "\"}";
-	}
-
-	private String createJSONErrorResponse(String errorMessage, Exception e)
-	{
-		return "{ \"error\": \"" + errorMessage + ": " + e.getMessage() + "\"}";
 	}
 }

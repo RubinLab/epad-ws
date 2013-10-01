@@ -56,7 +56,6 @@ public class MySqlSearchHandler extends AbstractHandler
 		log.info("Query from ePad : " + queryString);
 
 		if (queryString != null) {
-
 			queryString = queryString.trim();
 
 			if (isSeriesRequest(queryString)) {
@@ -64,7 +63,6 @@ public class MySqlSearchHandler extends AbstractHandler
 			} else {
 				handleStudyRequest(out, queryString, httpRequest);
 			}
-
 		} else {
 			log.info("NO Query from request.");
 		}

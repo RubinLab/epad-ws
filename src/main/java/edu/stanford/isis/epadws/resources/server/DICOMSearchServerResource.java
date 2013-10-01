@@ -9,11 +9,11 @@ import org.restlet.resource.Get;
 
 import com.google.gson.Gson;
 
+import edu.stanford.isis.epad.common.dicom.DICOMSeriesSearchResult;
+import edu.stanford.isis.epad.common.dicom.DICOMStudySearchResult;
 import edu.stanford.isis.epad.common.dicom.DicomFormatUtil;
 import edu.stanford.isis.epad.common.dicom.DicomStudySearchType;
 import edu.stanford.isis.epad.common.dicom.RSeriesData;
-import edu.stanford.isis.epadws.handlers.dicom.DICOMSeriesSearchResult;
-import edu.stanford.isis.epadws.handlers.dicom.DICOMStudySearchResult;
 import edu.stanford.isis.epadws.processing.mysql.MySqlInstance;
 import edu.stanford.isis.epadws.processing.mysql.MySqlQueries;
 

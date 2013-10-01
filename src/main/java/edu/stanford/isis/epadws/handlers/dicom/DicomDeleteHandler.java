@@ -42,7 +42,6 @@ public class DicomDeleteHandler extends AbstractHandler
 		log.info("Delete query from ePad : " + queryString);
 
 		if (queryString != null) {
-
 			queryString = queryString.trim();
 			if (isSeriesRequest(queryString)) {
 				handleSeriesRequest(queryString);
