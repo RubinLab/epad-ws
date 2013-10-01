@@ -11,6 +11,7 @@ import javax.servlet.http.HttpServletResponse;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpException;
+import org.apache.commons.httpclient.methods.DeleteMethod;
 import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.httpclient.methods.PostMethod;
 
@@ -30,8 +31,8 @@ public class XNATUtil
 
 	/**
 	 * 
-	 * @param httpResponse Status set to HttpServletResponse.SC_OK on success, HttpServletResponse.SC_INTERNAL_SERVER_ERROR on
-	 *          failure.
+	 * @param httpResponse Status set to HttpServletResponse.SC_OK on success,
+	 *          HttpServletResponse.SC_INTERNAL_SERVER_ERROR on failure.
 	 * @param username
 	 * @param password
 	 * @return A JSESSIONID value on success; and error string otherwise
@@ -89,6 +90,25 @@ public class XNATUtil
 			result = XNAT_LOGIN_ERROR_MESSAGE + "; status code = " + statusCode;
 		}
 		return result;
+	}
+
+	public static int invalidateXNATSessionID(HttpServletRequest httpRequest) throws IOException, HttpException
+	{
+		String xnatHost = getStringConfigurationParameter("XNATServer");
+		int xnatPort = getIntegerConfigurationParameter("XNATPort");
+		String xnatSessionBase = getStringConfigurationParameter("XNATSessionURLExtension");
+		String xnatSessionURL = buildURLString(xnatHost, xnatPort, xnatSessionBase);
+		HttpClient client = new HttpClient();
+		DeleteMethod deleteMethod = new DeleteMethod(xnatSessionURL);
+		String jsessionID = getJSessionIDFromRequest(httpRequest);
+
+		deleteMethod.setRequestHeader("Cookie", "JSESSIONID=" + jsessionID);
+
+		int statusCode = client.executeMethod(deleteMethod);
+
+		log.info("XNAT delete session returns status code " + statusCode);
+
+		return statusCode;
 	}
 
 	public static boolean hasValidXNATSessionID(HttpServletRequest httpRequest) throws IOException, HttpException

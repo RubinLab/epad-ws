@@ -38,6 +38,9 @@ import edu.stanford.isis.epadws.xnat.XNATUtil;
  * select * from pacsdb.instance as i, pacsdb.series as s where i.series_fk=s.pk and s.series_iuid=?
  * </code>
  * 
+ * To test: <code>
+ * curl -b JSESSIONID=<id> -X GET "http://epad-dev2.stanford.edu:8080/seriesorderj/?series_iuid=1.2.840.113619.2.55.3.25168424.5576.1168603848.697"
+ * </code>
  */
 public class DICOMSeriesOrderHandler extends AbstractHandler
 {

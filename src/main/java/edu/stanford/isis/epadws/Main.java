@@ -37,7 +37,7 @@ import edu.stanford.isis.epad.plugin.server.impl.EPadFilesImpl;
 import edu.stanford.isis.epad.plugin.server.impl.PluginConfig;
 import edu.stanford.isis.epad.plugin.server.impl.PluginHandlerMap;
 import edu.stanford.isis.epadws.handlers.admin.ImageCheckHandler;
-import edu.stanford.isis.epadws.handlers.admin.LoginHandler;
+import edu.stanford.isis.epadws.handlers.admin.SessionHandler;
 import edu.stanford.isis.epadws.handlers.admin.StatusHandler;
 import edu.stanford.isis.epadws.handlers.aim.AimResourceHandler;
 import edu.stanford.isis.epadws.handlers.coordination.CoordinationHandler;
@@ -46,12 +46,8 @@ import edu.stanford.isis.epadws.handlers.dicom.DICOMSeriesOrderHandler;
 import edu.stanford.isis.epadws.handlers.dicom.DicomDeleteHandler;
 import edu.stanford.isis.epadws.handlers.dicom.DicomHeadersHandler;
 import edu.stanford.isis.epadws.handlers.dicom.DicomVisuHandler;
-import edu.stanford.isis.epadws.handlers.dicom.MySqlSearchHandler;
-import edu.stanford.isis.epadws.handlers.dicom.SegmentationPathHandler;
-import edu.stanford.isis.epadws.handlers.dicom.SeriesOrderHandler;
 import edu.stanford.isis.epadws.handlers.dicom.SeriesTagHandler;
 import edu.stanford.isis.epadws.handlers.dicom.WadoHandler;
-import edu.stanford.isis.epadws.handlers.dicom.WindowLevelHandler;
 import edu.stanford.isis.epadws.handlers.event.EventSearchHandler;
 import edu.stanford.isis.epadws.handlers.plugin.EPadPluginHandler;
 import edu.stanford.isis.epadws.processing.mysql.MySqlInstance;
@@ -187,23 +183,24 @@ public class Main
 
 		addFileServerAtContextPath(ResourceUtils.getEPADWebServerResourcesDir(), handlerList, "/resources");
 
-		addHandlerAtContextPath(new StatusHandler(), "/status", handlerList);
-		addHandlerAtContextPath(new WindowLevelHandler(), "/level", handlerList);
+		// addHandlerAtContextPath(new WindowLevelHandler(), "/level", handlerList);
+		// addHandlerAtContextPath(new SeriesOrderHandler(), "/seriesorder", handlerList);
+		// addHandlerAtContextPath(new MySqlSearchHandler(), "/search", handlerList);
+		// addHandlerAtContextPath(new SegmentationPathHandler(), "/segmentationpath", handlerList);
+
 		addHandlerAtContextPath(new DicomDeleteHandler(), "/dicomdelete", handlerList);
 		addHandlerAtContextPath(new AimResourceHandler(), "/aimresource", handlerList);
 		addHandlerAtContextPath(new WadoHandler(), "/eWado", handlerList);
 		addHandlerAtContextPath(new SeriesTagHandler(), "/seriestag", handlerList);
-		addHandlerAtContextPath(new SeriesOrderHandler(), "/seriesorder", handlerList);
-		addHandlerAtContextPath(new MySqlSearchHandler(), "/search", handlerList);
 		addHandlerAtContextPath(new DicomHeadersHandler(), "/dicomtag", handlerList);
-		addHandlerAtContextPath(new DicomVisuHandler(), "/dicomparam", handlerList);
 		addHandlerAtContextPath(new EventSearchHandler(), "/eventresource", handlerList);
-		addHandlerAtContextPath(new SegmentationPathHandler(), "/segmentationpath", handlerList);
+		addHandlerAtContextPath(new DicomVisuHandler(), "/dicomparam", handlerList);
 		addHandlerAtContextPath(new EPadPluginHandler(), "/plugin", handlerList);
 
+		addHandlerAtContextPath(new SessionHandler(), "/session", handlerList);
+		addHandlerAtContextPath(new StatusHandler(), "/status", handlerList);
 		addHandlerAtContextPath(new CoordinationHandler(), "/coordination", handlerList);
 		addHandlerAtContextPath(new ImageCheckHandler(), "/imagecheck", handlerList);
-		addHandlerAtContextPath(new LoginHandler(), "/login", handlerList);
 		addHandlerAtContextPath(new DICOMSearchHandler(), "/searchj", handlerList);
 		addHandlerAtContextPath(new DICOMSeriesOrderHandler(), "/seriesorderj", handlerList);
 
