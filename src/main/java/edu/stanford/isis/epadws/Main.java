@@ -42,11 +42,11 @@ import edu.stanford.isis.epadws.handlers.admin.StatusHandler;
 import edu.stanford.isis.epadws.handlers.aim.AimResourceHandler;
 import edu.stanford.isis.epadws.handlers.coordination.CoordinationHandler;
 import edu.stanford.isis.epadws.handlers.dicom.DICOMDeleteHandler;
+import edu.stanford.isis.epadws.handlers.dicom.DICOMHeadersHandler;
 import edu.stanford.isis.epadws.handlers.dicom.DICOMSearchHandler;
 import edu.stanford.isis.epadws.handlers.dicom.DICOMSeriesOrderHandler;
-import edu.stanford.isis.epadws.handlers.dicom.DICOMHeadersHandler;
-import edu.stanford.isis.epadws.handlers.dicom.DicomVisuHandler;
-import edu.stanford.isis.epadws.handlers.dicom.SeriesTagHandler;
+import edu.stanford.isis.epadws.handlers.dicom.DICOMSeriesTagHandler;
+import edu.stanford.isis.epadws.handlers.dicom.DICOMVisuHandler;
 import edu.stanford.isis.epadws.handlers.dicom.WadoHandler;
 import edu.stanford.isis.epadws.handlers.event.EventSearchHandler;
 import edu.stanford.isis.epadws.handlers.plugin.EPadPluginHandler;
@@ -185,20 +185,19 @@ public class Main
 
 		addHandlerAtContextPath(new AimResourceHandler(), "/aimresource", handlerList);
 		addHandlerAtContextPath(new WadoHandler(), "/eWado", handlerList);
-		addHandlerAtContextPath(new SeriesTagHandler(), "/seriestag", handlerList);
 		addHandlerAtContextPath(new EventSearchHandler(), "/eventresource", handlerList);
-		addHandlerAtContextPath(new DicomVisuHandler(), "/dicomparam", handlerList);
 		addHandlerAtContextPath(new EPadPluginHandler(), "/plugin", handlerList);
 
 		addHandlerAtContextPath(new SessionHandler(), "/session", handlerList);
 		addHandlerAtContextPath(new StatusHandler(), "/status", handlerList);
 		addHandlerAtContextPath(new ImageCheckHandler(), "/imagecheck", handlerList);
+		addHandlerAtContextPath(new CoordinationHandler(), "/coordination", handlerList);
 		addHandlerAtContextPath(new DICOMSearchHandler(), "/searchj", handlerList);
 		addHandlerAtContextPath(new DICOMSeriesOrderHandler(), "/seriesorderj", handlerList);
 		addHandlerAtContextPath(new DICOMDeleteHandler(), "/dicomdelete", handlerList);
 		addHandlerAtContextPath(new DICOMHeadersHandler(), "/dicomtag", handlerList);
-
-		addHandlerAtContextPath(new CoordinationHandler(), "/coordination", handlerList);
+		addHandlerAtContextPath(new DICOMSeriesTagHandler(), "/seriestag", handlerList);
+		addHandlerAtContextPath(new DICOMVisuHandler(), "/dicomparam", handlerList);
 
 		ContextHandlerCollection contexts = new ContextHandlerCollection();
 		contexts.setHandlers(handlerList.toArray(new Handler[handlerList.size()]));

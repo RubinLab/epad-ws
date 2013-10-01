@@ -8,6 +8,7 @@ import java.sql.Blob;
 import java.sql.SQLException;
 import java.util.Map;
 
+import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.xml.bind.DatatypeConverter;
@@ -25,89 +26,101 @@ import com.pixelmed.dicom.DicomInputStream;
 import edu.stanford.isis.epad.common.ProxyLogger;
 import edu.stanford.isis.epadws.processing.mysql.MySqlInstance;
 import edu.stanford.isis.epadws.processing.mysql.MySqlQueries;
-import edu.stanford.isis.epadws.resources.server.DICOMSeriesTagServerResource;
+import edu.stanford.isis.epadws.xnat.XNATUtil;
 
 /**
- * Now handled by Restlet resource {@link DICOMSeriesTagServerResource}.
- * 
- * @author alansnyder
- * 
- * @see DICOMSeriesTagServerResource
  */
-public class SeriesTagHandler extends AbstractHandler
+public class DICOMSeriesTagHandler extends AbstractHandler
 {
-	static final ProxyLogger logger = ProxyLogger.getInstance();
+	private static final ProxyLogger log = ProxyLogger.getInstance();
+
+	private static final String INTERNAL_ERROR_MESSAGE = "Internal error on delete";
+	private static final String INVALID_SESSION_TOKEN_MESSAGE = "Session token is invalid";
+	private static final String MISSING_SERIES_IUID_MESSAGE = "No Series IUID parameter in request";
 
 	@Override
-	public void handle(String s, Request request, HttpServletRequest req, HttpServletResponse res)
+	public void handle(String s, Request request, HttpServletRequest httpRequest, HttpServletResponse httpResponse)
+			throws IOException, ServletException
 	{
-		res.setContentType("text/plain");
-		res.setStatus(HttpServletResponse.SC_OK);
-		res.setHeader("Access-Control-Allow-Origin", "*");
+		PrintWriter out = httpResponse.getWriter();
+
+		httpResponse.setContentType("text/plain");
+		httpResponse.setHeader("Access-Control-Allow-Origin", "*");
 		request.setHandled(true);
 
-		String seriesIUID = req.getParameter("series_iuid");
-		logger.info("SeriesTagHandler: series_iuid=" + seriesIUID);
+		if (XNATUtil.hasValidXNATSessionID(httpRequest)) {
+			String seriesIUID = httpRequest.getParameter("series_iuid");
 
-		boolean useBase64 = true;
-		String contentType = req.getParameter("type");
-		if ("text".equals(contentType)) {
-			useBase64 = false;
-		}
-
-		PrintWriter out = null;
-		try {
-			out = res.getWriter();
-
-			String studyIUID = getStudyIuidFromSeriesId(seriesIUID);
-			String patId = getPatientIdFromStudyIuid(studyIUID);
-			if (useBase64) {
-				ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-				InputStream seriesStream = getSeriesTagsAsStream(seriesIUID);
+			if (seriesIUID != null) {
+				boolean useBase64 = true;
+				String contentType = httpRequest.getParameter("type");
+				if ("text".equals(contentType)) {
+					useBase64 = false;
+				}
+				log.info("DICOMSeriesTagHandler: series_iuid=" + seriesIUID);
 				try {
-					addToByteArrayBuffer(buffer, seriesStream);
-
-					InputStream imageStream = getInstanceTagsForSeriesAsStream(seriesIUID);
-					addToByteArrayBuffer(buffer, imageStream);
-
-					InputStream studyStream = getStudyTagsAsStream(studyIUID);
-					addToByteArrayBuffer(buffer, studyStream);
-
-					InputStream patientStream = getPatientTagsAsStream(patId);
-					addToByteArrayBuffer(buffer, patientStream);
-
-					String base64Result = base64Encode(buffer);
-					out.print(base64Result);
-				} finally {
-					buffer.close();
-					seriesStream.close();
+					handleDICOMSeriesTagQuery(out, seriesIUID, useBase64);
+					httpResponse.setStatus(HttpServletResponse.SC_OK);
+				} catch (IOException e) {
+					log.warning(INTERNAL_ERROR_MESSAGE, e);
+					out.print(INTERNAL_ERROR_MESSAGE + ": " + e.getMessage());
+					httpResponse.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+				} catch (DicomException e) {
+					log.warning(INTERNAL_ERROR_MESSAGE, e);
+					out.print(INTERNAL_ERROR_MESSAGE + ": " + e.getMessage());
+					httpResponse.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+				} catch (Exception e) {
+					log.warning(INTERNAL_ERROR_MESSAGE, e);
+					out.print(INTERNAL_ERROR_MESSAGE + ": " + e.getMessage());
+					httpResponse.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+				} catch (Error e) {
+					log.warning(INTERNAL_ERROR_MESSAGE, e);
+					out.print(INTERNAL_ERROR_MESSAGE + ": " + e.getMessage());
+					httpResponse.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 				}
 			} else {
-
-				String seriesTags = getSeriesTags(seriesIUID);
-				String imageTags = getInstanceTagsForSeries(seriesIUID);
-				String studyTags = getStudyTags(studyIUID);
-				String patientTags = getPatientTags(patId);
-				String result = seriesTags + imageTags + studyTags + patientTags;
-				logger.info("SeriesTagHandler: result=" + result);
-
-				out.print(result);
+				log.info(MISSING_SERIES_IUID_MESSAGE);
+				httpResponse.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+				out.append(MISSING_SERIES_IUID_MESSAGE);
 			}
-			out.flush();
+		} else {
+			log.info(INVALID_SESSION_TOKEN_MESSAGE);
+			out.append(INVALID_SESSION_TOKEN_MESSAGE);
+			httpResponse.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+		}
+		out.flush();
+	}
 
-		} catch (IOException ioe) {
-			printException(out, "SeriesTagHandler had IOException", ioe);
-		} catch (DicomException de) {
-			printException(out, "SeriesTagHandler had DicomException", de);
-		} catch (Exception e) {
-			printException(out, "SeriesTagHandler had Exception", e);
-		} catch (Error err) {
-			printException(out, "SeriesTagHandler had Error", err);
-		} finally {
-			if (out != null) {
-				out.close();
-				out = null;
+	private void handleDICOMSeriesTagQuery(PrintWriter out, String seriesIUID, boolean useBase64) throws IOException,
+			SQLException, DicomException
+	{
+		String studyIUID = getStudyIuidFromSeriesId(seriesIUID);
+		String patId = getPatientIdFromStudyIuid(studyIUID);
+		if (useBase64) {
+			ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+			InputStream seriesStream = getSeriesTagsAsStream(seriesIUID);
+			try {
+				addToByteArrayBuffer(buffer, seriesStream);
+				InputStream imageStream = getInstanceTagsForSeriesAsStream(seriesIUID);
+				addToByteArrayBuffer(buffer, imageStream);
+				InputStream studyStream = getStudyTagsAsStream(studyIUID);
+				addToByteArrayBuffer(buffer, studyStream);
+				InputStream patientStream = getPatientTagsAsStream(patId);
+				addToByteArrayBuffer(buffer, patientStream);
+				String base64Result = base64Encode(buffer);
+				out.print(base64Result);
+			} finally {
+				buffer.close();
+				seriesStream.close();
 			}
+		} else {
+			String seriesTags = getSeriesTags(seriesIUID);
+			String imageTags = getInstanceTagsForSeries(seriesIUID);
+			String studyTags = getStudyTags(studyIUID);
+			String patientTags = getPatientTags(patId);
+			String result = seriesTags + imageTags + studyTags + patientTags;
+			log.info("SeriesTagHandler: result=" + result);
+			out.print(result);
 		}
 	}
 
@@ -322,20 +335,20 @@ public class SeriesTagHandler extends AbstractHandler
 				String value = attribute.getDelimitedStringValuesOrEmptyString();
 				sb.append(key).append(": ").append(value).append("\n");
 			} else {
-				logger.info("[Temp] didn't find tag: " + key);
+				log.info("[Temp] didn't find tag: " + key);
 			}
 
 		} catch (Exception e) {
 			if (key == null) {
 				key = tag.toString();
 			}
-			logger.warning("Failed to create DicomTag: " + key, e);
+			log.warning("Failed to create DicomTag: " + key, e);
 		}
 	}
 
 	private static void printException(PrintWriter out, String message, Throwable t)
 	{
-		logger.warning(message, t);
+		log.warning(message, t);
 		if (out != null) {
 			out.print(message + " : " + t.getMessage());
 			out.flush();
