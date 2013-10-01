@@ -21,7 +21,16 @@ import edu.stanford.isis.epad.common.dicom.DicomStudySearchType;
 import edu.stanford.isis.epad.common.dicom.RSeriesData;
 import edu.stanford.isis.epadws.processing.mysql.MySqlInstance;
 import edu.stanford.isis.epadws.processing.mysql.MySqlQueries;
+import edu.stanford.isis.epadws.xnat.XNATUtil;
 
+/**
+ * <code>
+ * curl -v -b JSESSIOND=<id> -X GET "http://<ip>:<port>/searchj?patientName=*
+ * curl -v -b JSESSIOND=<id> -X GET "http://<ip>:<port>/searchj?searchType=series&studyUID=[studyID]"
+ * </code>
+ * 
+ * @author martin
+ */
 public class MySQLSearchHandlerJSON extends AbstractHandler
 {
 	private static final ProxyLogger log = ProxyLogger.getInstance();
@@ -29,6 +38,7 @@ public class MySQLSearchHandlerJSON extends AbstractHandler
 	private static final String MISSING_QUERY_MESSAGE = "No series or study query in request";
 	private static final String MISSING_STUDY_SEARCH_TYPE_MESSAGE = "Missing DICOM study search type";
 	private static final String QUERY_EXCEPTION_MESSAGE = "Error running query";
+	private static final String INVALID_SESSION_TOKEN_MESSAGE = "Session token is invalid";
 
 	public MySQLSearchHandlerJSON()
 	{
@@ -40,46 +50,61 @@ public class MySQLSearchHandlerJSON extends AbstractHandler
 	{
 		PrintWriter out = httpResponse.getWriter();
 		String result = "";
+
 		httpResponse.setContentType("application/json");
 		request.setHandled(true);
 
-		String queryString = httpRequest.getQueryString();
-		queryString = URLDecoder.decode(queryString, "UTF-8");
+		if (XNATUtil.hasValidXNATSessionID(httpRequest)) {
+			String queryString = httpRequest.getQueryString();
+			queryString = URLDecoder.decode(queryString, "UTF-8");
+			log.info("Query from ePad : " + queryString);
 
-		log.info("Query from ePad : " + queryString);
+			if (queryString != null) {
+				queryString = queryString.trim();
 
-		if (queryString != null) {
-			queryString = queryString.trim();
-
-			try {
-				if (isDICOMSeriesRequest(queryString)) {
-					result = performDICOMSeriesSearch(queryString);
-				} else {
-					DicomStudySearchType searchType = getSearchType(httpRequest);
-					if (searchType != null) {
-						result = performDICOMStudySearch(searchType, queryString);
+				try {
+					if (isDICOMSeriesRequest(queryString)) {
+						result = performDICOMSeriesSearch(queryString);
 					} else {
-						log.info(MISSING_STUDY_SEARCH_TYPE_MESSAGE);
-						httpResponse.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-						result = createJSONErrorResponse(MISSING_STUDY_SEARCH_TYPE_MESSAGE);
+						DicomStudySearchType searchType = getSearchType(httpRequest);
+						if (searchType != null) {
+							result = performDICOMStudySearch(searchType, queryString);
+						} else {
+							log.info(MISSING_STUDY_SEARCH_TYPE_MESSAGE);
+							httpResponse.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+							result = createJSONErrorResponse(MISSING_STUDY_SEARCH_TYPE_MESSAGE);
+						}
 					}
+					httpResponse.setStatus(HttpServletResponse.SC_OK);
+				} catch (Exception e) {
+					log.warning(QUERY_EXCEPTION_MESSAGE, e);
+					httpResponse.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+					result = createJSONErrorResponse(QUERY_EXCEPTION_MESSAGE, e);
 				}
-				httpResponse.setStatus(HttpServletResponse.SC_OK);
-			} catch (Exception e) {
-				log.warning(QUERY_EXCEPTION_MESSAGE, e);
-				httpResponse.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-				result = createJSONErrorResponse(QUERY_EXCEPTION_MESSAGE, e);
+			} else {
+				log.info(MISSING_QUERY_MESSAGE);
+				httpResponse.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+				result = createJSONErrorResponse(MISSING_QUERY_MESSAGE);
 			}
 		} else {
-			log.info(MISSING_QUERY_MESSAGE);
-			httpResponse.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-			result = createJSONErrorResponse(MISSING_QUERY_MESSAGE);
+			log.info(INVALID_SESSION_TOKEN_MESSAGE);
+			httpResponse.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+			result = createJSONErrorResponse(INVALID_SESSION_TOKEN_MESSAGE);
 		}
 		out.append(result);
 		out.flush();
 	}
 
-	// curl -v -X get "http://<ip>:<port>/search?patientName=*
+	/**
+	 * <code>
+	 * curl -v -X get "http://<ip>:<port>/search?patientName=*
+	 * </code>
+	 * 
+	 * @param searchType
+	 * @param queryString
+	 * @return
+	 * @throws Exception
+	 */
 	private String performDICOMStudySearch(DicomStudySearchType searchType, String queryString) throws Exception
 	{
 		final MySqlQueries dbQueries = MySqlInstance.getInstance().getMysqlQueries();
@@ -112,9 +137,9 @@ public class MySQLSearchHandlerJSON extends AbstractHandler
 			final String physicianName = getStringValueFromRow(row, "ref_physician");
 			final String birthdate = getStringValueFromRow(row, "pat_birthdate");
 			final String sex = getStringValueFromRow(row, "pat_sex");
-			final DICOMStudySearchResult studySearchResult = new DICOMStudySearchResult(studyUID, patientName, patientID, examType,
-					dateAcquired, studyStatus, seriesCount, firstSeriesUID, firstSeriesDateAcquired, studyAccessionNumber,
-					imagesCount, stuidID, studyDescription, physicianName, birthdate, sex);
+			final DICOMStudySearchResult studySearchResult = new DICOMStudySearchResult(studyUID, patientName, patientID,
+					examType, dateAcquired, studyStatus, seriesCount, firstSeriesUID, firstSeriesDateAcquired,
+					studyAccessionNumber, imagesCount, stuidID, studyDescription, physicianName, birthdate, sex);
 			if (!isFirst)
 				result.append(",\n");
 			isFirst = false;
