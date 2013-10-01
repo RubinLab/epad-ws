@@ -29,6 +29,7 @@ import edu.stanford.isis.epad.common.ProxyLogger;
 import edu.stanford.isis.epad.common.util.WadoUrlBuilder;
 import edu.stanford.isis.epadws.processing.pipeline.DicomHeadersTask;
 import edu.stanford.isis.epadws.resources.server.DICOMHeadersServerResource;
+import edu.stanford.isis.epadws.xnat.XNATUtil;
 
 /**
  * Download headers for a series or study in one quick step.
@@ -39,71 +40,98 @@ import edu.stanford.isis.epadws.resources.server.DICOMHeadersServerResource;
  * 
  * @see DICOMHeadersServerResource
  */
-public class DicomHeadersHandler extends AbstractHandler
+public class DICOMHeadersHandler extends AbstractHandler
 {
 	private static final ProxyLogger log = ProxyLogger.getInstance();
 	private static final ProxyConfig config = ProxyConfig.getInstance();
 
-	public DicomHeadersHandler()
+	private static final String INTERNAL_ERROR_MESSAGE = "Internal error on delete";
+	private static final String INVALID_SESSION_TOKEN_MESSAGE = "Session token is invalid";
+	private static final String MISSING_QUERY_MESSAGE = "No query paramaters specified";
+	private static final String BADLY_FORMED_QUERY_MESSAGE = "Invalid query paramaters specified";
+
+	public DICOMHeadersHandler()
 	{
 	}
 
 	@Override
-	public void handle(String s, Request request, HttpServletRequest httpServletRequest,
-			HttpServletResponse httpServletResponse) throws IOException, ServletException
+	public void handle(String s, Request request, HttpServletRequest httpRequest, HttpServletResponse httpResponse)
+			throws IOException, ServletException
 	{
+		PrintWriter out = httpResponse.getWriter();
 
-		httpServletResponse.setContentType("text/plain");
-		httpServletResponse.setStatus(HttpServletResponse.SC_OK);
+		httpResponse.setContentType("text/plain");
+		httpResponse.setStatus(HttpServletResponse.SC_OK);
 		request.setHandled(true);
-		PrintWriter out = httpServletResponse.getWriter();
 
-		String queryString = httpServletRequest.getQueryString();
-		queryString = URLDecoder.decode(queryString, "UTF-8");
-		log.info("Dicom header query from ePad : " + queryString);
+		if (XNATUtil.hasValidXNATSessionID(httpRequest)) {
+			String queryString = httpRequest.getQueryString();
+			queryString = URLDecoder.decode(queryString, "UTF-8");
 
-		if (queryString != null) {
-			queryString = queryString.trim();
-			// Get the parameters
-			String studyIdKey = getStudyUIDFromRequest(queryString);
-			String seriesIdKey = getSeriesUIDFromRequest(queryString);
-			String imageIdKey = getInstanceUIDFromRequest(queryString);
+			if (queryString != null) {
+				queryString = queryString.trim();
 
-			// get the wado and the tag file
-			if (studyIdKey != null && seriesIdKey != null && imageIdKey != null) {
-				File tempDicom = File.createTempFile(imageIdKey, ".tmp");
-				feedFileWithDicomFromWado(tempDicom, studyIdKey, seriesIdKey, imageIdKey);
-				File tempTag = File.createTempFile(imageIdKey, "_tag.tmp");
+				log.info("DICOM header query from ePad : " + queryString);
 
-				// Generation of the tag file
-				ExecutorService taskExecutor = Executors.newFixedThreadPool(4);
-				taskExecutor.execute(new DicomHeadersTask(tempDicom, tempTag));
-				taskExecutor.shutdown();
 				try {
-					taskExecutor.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
+					String studyIdKey = getStudyUIDFromRequest(queryString);
+					String seriesIdKey = getSeriesUIDFromRequest(queryString);
+					String imageIdKey = getInstanceUIDFromRequest(queryString);
 
-					// Write the result
-					BufferedReader in = new BufferedReader(new FileReader(tempTag.getAbsolutePath()));
-					try {
-						String line;
-						while ((line = in.readLine()) != null) {
-							out.println(line);
+					// Get the WADO and the tag file
+					if (studyIdKey != null && seriesIdKey != null && imageIdKey != null) {
+						File tempDicom = File.createTempFile(imageIdKey, ".tmp");
+						feedFileWithDicomFromWado(tempDicom, studyIdKey, seriesIdKey, imageIdKey);
+						File tempTag = File.createTempFile(imageIdKey, "_tag.tmp");
+
+						// Generation of the tag file
+						ExecutorService taskExecutor = Executors.newFixedThreadPool(4);
+						taskExecutor.execute(new DicomHeadersTask(tempDicom, tempTag));
+						taskExecutor.shutdown();
+						try {
+							taskExecutor.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
+
+							BufferedReader in = new BufferedReader(new FileReader(tempTag.getAbsolutePath()));
+							try {
+								String line;
+								while ((line = in.readLine()) != null) {
+									out.println(line);
+								}
+								out.flush();
+							} finally {
+								in.close();
+							}
+						} catch (InterruptedException e) {
+							log.info("DICOM headers task interrupted");
+							out.print("DICOM headers task interrupted");
+							Thread.currentThread().interrupt();
+							httpResponse.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 						}
-						out.flush();
-					} finally {
-						in.close();
+					} else {
+						log.info(BADLY_FORMED_QUERY_MESSAGE);
+						out.append(BADLY_FORMED_QUERY_MESSAGE);
+						httpResponse.setStatus(HttpServletResponse.SC_BAD_REQUEST);
 					}
-				} catch (InterruptedException e) {
-
+				} catch (Exception e) {
+					log.warning(INTERNAL_ERROR_MESSAGE, e);
+					out.print(INTERNAL_ERROR_MESSAGE + ": " + e.getMessage());
+					httpResponse.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+				} catch (Error e) {
+					log.warning(INTERNAL_ERROR_MESSAGE, e);
+					out.print(INTERNAL_ERROR_MESSAGE + ": " + e.getMessage());
+					httpResponse.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 				}
-
 			} else {
-				log.info("Bad dicom reference.");
+				log.info(MISSING_QUERY_MESSAGE);
+				out.append(MISSING_QUERY_MESSAGE);
+				httpResponse.setStatus(HttpServletResponse.SC_BAD_REQUEST);
 			}
-
 		} else {
-			log.info("NO header Query from request.");
+			log.info(INVALID_SESSION_TOKEN_MESSAGE);
+			out.append(INVALID_SESSION_TOKEN_MESSAGE);
+			httpResponse.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
 		}
+		out.flush();
 	}
 
 	private static String getStudyUIDFromRequest(String queryString)
@@ -118,7 +146,6 @@ public class DicomHeadersHandler extends AbstractHandler
 
 	private static String getSeriesUIDFromRequest(String queryString)
 	{
-
 		log.info(queryString);
 		String[] parts = queryString.split("&");
 		String value = parts[1].trim();
@@ -129,7 +156,6 @@ public class DicomHeadersHandler extends AbstractHandler
 
 	private static String getInstanceUIDFromRequest(String queryString)
 	{
-
 		log.info(queryString);
 		String[] parts = queryString.split("&");
 		String value = parts[2].trim();
@@ -140,7 +166,6 @@ public class DicomHeadersHandler extends AbstractHandler
 
 	private void feedFileWithDicomFromWado(File temp, String studyIdKey, String seriesIdKey, String imageIdKey)
 	{
-
 		// we use wado to get the dicom image
 		String host = config.getParam("NameServer");
 		int port = config.getIntParam("DicomServerWadoPort");
