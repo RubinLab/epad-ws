@@ -19,8 +19,10 @@ import com.google.gson.JsonParseException;
 
 import edu.stanford.isis.epad.common.ProxyConfig;
 import edu.stanford.isis.epad.common.ProxyLogger;
+import edu.stanford.isis.epad.common.util.JsonHelper;
 import edu.stanford.isis.epadws.processing.mysql.MySqlInstance;
 import edu.stanford.isis.epadws.processing.mysql.MySqlQueries;
+import edu.stanford.isis.epadws.xnat.XNATUtil;
 
 /**
  * The coordination handler is responsible for taking a set of ordered terms and returning a unique ID for those terms.
@@ -84,6 +86,7 @@ public class CoordinationHandler extends AbstractHandler
 	private static final String INTERNAL_SQL_ERROR_MESSAGE = "Internal server SQL error";
 	private static final String BAD_JSON_ERROR_MESSAGE = "Bad JSON - does not represent a valid coordination";
 	private static final String UNPARSABLE_JSON_ERROR_MESSAGE = "Unparsable JSON";
+	private static final String INVALID_SESSION_TOKEN_MESSAGE = "Session token is invalid";
 
 	private final static int MIN_COORDINATION_TERMS = 2;
 
@@ -91,57 +94,68 @@ public class CoordinationHandler extends AbstractHandler
 	private final ProxyConfig config = ProxyConfig.getInstance();
 
 	@Override
-	public void handle(String s, Request request, HttpServletRequest httpServletRequest,
-			HttpServletResponse httpServletResponse) throws IOException, ServletException
+	public void handle(String s, Request request, HttpServletRequest httpRequest, HttpServletResponse httpResponse)
+			throws IOException, ServletException
 	{
-		String method = httpServletRequest.getMethod();
-		PrintWriter out = httpServletResponse.getWriter();
+		PrintWriter out = httpResponse.getWriter();
 
-		httpServletResponse.setContentType("application/json;charset=UTF-8");
+		httpResponse.setContentType("application/json;charset=UTF-8");
 		request.setHandled(true);
 
-		if ("POST".equalsIgnoreCase(method)) {
-			try {
-				Coordination coordination = readCoordination(request);
-				log.info("Received AIM Template coordination: " + coordination);
-				if (coordination != null && coordination.isValid()) {
-					if (coordination.getNumberOfTerms() >= MIN_COORDINATION_TERMS) {
-						Term term = getCoordinationTerm(coordination);
-						out.append(term2JSON(term));
-						log.info("Returned AIM Template coordination term: " + term);
-						// TODO Should also return SC_CREATED with location header if new.
-						httpServletResponse.setStatus(HttpServletResponse.SC_OK);
+		if (XNATUtil.hasValidXNATSessionID(httpRequest)) {
+			String method = httpRequest.getMethod();
+
+			if ("POST".equalsIgnoreCase(method)) {
+				try {
+					Coordination coordination = readCoordination(request);
+					log.info("Received AIM Template coordination: " + coordination);
+					if (coordination != null && coordination.isValid()) {
+						if (coordination.getNumberOfTerms() >= MIN_COORDINATION_TERMS) {
+							Term term = getCoordinationTerm(coordination);
+							out.append(term2JSON(term));
+							log.info("Returned AIM Template coordination term: " + term);
+							// TODO Should also return SC_CREATED with location header if new.
+							httpResponse.setStatus(HttpServletResponse.SC_OK);
+						} else {
+							httpResponse.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+							log.info(BAD_TERMS_MESSAGE);
+							out.print(JsonHelper.createJSONErrorResponse(BAD_TERMS_MESSAGE));
+						}
 					} else {
-						httpServletResponse.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-						log.info(BAD_TERMS_MESSAGE);
-						out.print(createJSONErrorResponse(BAD_TERMS_MESSAGE));
+						httpResponse.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+						log.info(BAD_JSON_ERROR_MESSAGE);
+						out.print(JsonHelper.createJSONErrorResponse(BAD_JSON_ERROR_MESSAGE));
 					}
-				} else {
-					httpServletResponse.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-					log.info(BAD_JSON_ERROR_MESSAGE);
-					out.print(createJSONErrorResponse(BAD_JSON_ERROR_MESSAGE));
+				} catch (JsonParseException e) {
+					httpResponse.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+					log.warning(UNPARSABLE_JSON_ERROR_MESSAGE, e);
+					out.print(JsonHelper.createJSONErrorResponse(UNPARSABLE_JSON_ERROR_MESSAGE, e));
+				} catch (IOException e) {
+					httpResponse.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+					log.warning(INTERNAL_IO_ERROR_MESSAGE, e);
+					out.print(JsonHelper.createJSONErrorResponse(INTERNAL_IO_ERROR_MESSAGE, e));
+				} catch (SQLException e) {
+					httpResponse.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+					log.warning(INTERNAL_SQL_ERROR_MESSAGE, e);
+					out.print(JsonHelper.createJSONErrorResponse(INTERNAL_SQL_ERROR_MESSAGE, e));
+				} catch (Exception e) {
+					httpResponse.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+					log.warning(INTERNAL_ERROR_MESSAGE, e);
+					out.print(JsonHelper.createJSONErrorResponse(INTERNAL_ERROR_MESSAGE, e));
+				} catch (Error e) {
+					httpResponse.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+					log.warning(INTERNAL_ERROR_MESSAGE, e);
+					out.print(JsonHelper.createJSONErrorResponse(INTERNAL_ERROR_MESSAGE, e));
 				}
-			} catch (JsonParseException e) {
-				httpServletResponse.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-				log.warning(UNPARSABLE_JSON_ERROR_MESSAGE, e);
-				out.print(createJSONErrorResponse(UNPARSABLE_JSON_ERROR_MESSAGE, e));
-			} catch (IOException e) {
-				httpServletResponse.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-				log.warning(INTERNAL_IO_ERROR_MESSAGE, e);
-				out.print(createJSONErrorResponse(INTERNAL_IO_ERROR_MESSAGE, e));
-			} catch (SQLException e) {
-				httpServletResponse.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-				log.warning(INTERNAL_SQL_ERROR_MESSAGE, e);
-				out.print(createJSONErrorResponse(INTERNAL_SQL_ERROR_MESSAGE, e));
-			} catch (Exception e) {
-				httpServletResponse.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-				log.warning(INTERNAL_ERROR_MESSAGE, e);
-				out.print(createJSONErrorResponse(INTERNAL_ERROR_MESSAGE, e));
+			} else {
+				httpResponse.setStatus(HttpServletResponse.SC_FORBIDDEN);
+				log.info(FORBIDDEN_MESSAGE);
+				out.print(JsonHelper.createJSONErrorResponse(FORBIDDEN_MESSAGE));
 			}
 		} else {
-			httpServletResponse.setStatus(HttpServletResponse.SC_FORBIDDEN);
-			log.info(FORBIDDEN_MESSAGE);
-			out.print(createJSONErrorResponse(FORBIDDEN_MESSAGE));
+			log.info(INVALID_SESSION_TOKEN_MESSAGE);
+			httpResponse.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+			out.append(INVALID_SESSION_TOKEN_MESSAGE);
 		}
 		out.flush();
 	}
@@ -229,15 +243,5 @@ public class CoordinationHandler extends AbstractHandler
 			termKey = dbQueries.insertTerm(term);
 		}
 		return termKey;
-	}
-
-	private String createJSONErrorResponse(String errorMessage)
-	{
-		return "{ \"error\": \"" + errorMessage + "\"}";
-	}
-
-	private String createJSONErrorResponse(String errorMessage, Exception e)
-	{
-		return "{ \"error\": \"" + errorMessage + ": " + e.getMessage() + "\"}";
 	}
 }

@@ -183,11 +183,6 @@ public class Main
 
 		addFileServerAtContextPath(ResourceUtils.getEPADWebServerResourcesDir(), handlerList, "/resources");
 
-		// addHandlerAtContextPath(new WindowLevelHandler(), "/level", handlerList);
-		// addHandlerAtContextPath(new SeriesOrderHandler(), "/seriesorder", handlerList);
-		// addHandlerAtContextPath(new MySqlSearchHandler(), "/search", handlerList);
-		// addHandlerAtContextPath(new SegmentationPathHandler(), "/segmentationpath", handlerList);
-
 		addHandlerAtContextPath(new DicomDeleteHandler(), "/dicomdelete", handlerList);
 		addHandlerAtContextPath(new AimResourceHandler(), "/aimresource", handlerList);
 		addHandlerAtContextPath(new WadoHandler(), "/eWado", handlerList);
@@ -199,10 +194,10 @@ public class Main
 
 		addHandlerAtContextPath(new SessionHandler(), "/session", handlerList);
 		addHandlerAtContextPath(new StatusHandler(), "/status", handlerList);
-		addHandlerAtContextPath(new CoordinationHandler(), "/coordination", handlerList);
 		addHandlerAtContextPath(new ImageCheckHandler(), "/imagecheck", handlerList);
 		addHandlerAtContextPath(new DICOMSearchHandler(), "/searchj", handlerList);
 		addHandlerAtContextPath(new DICOMSeriesOrderHandler(), "/seriesorderj", handlerList);
+		addHandlerAtContextPath(new CoordinationHandler(), "/coordination", handlerList);
 
 		ContextHandlerCollection contexts = new ContextHandlerCollection();
 		contexts.setHandlers(handlerList.toArray(new Handler[handlerList.size()]));

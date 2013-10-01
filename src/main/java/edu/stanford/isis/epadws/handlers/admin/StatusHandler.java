@@ -19,7 +19,6 @@ import org.eclipse.jetty.server.handler.AbstractHandler;
 
 import edu.stanford.isis.epad.common.ProxyConfig;
 import edu.stanford.isis.epad.common.ProxyLogger;
-import edu.stanford.isis.epad.common.util.JsonHelper;
 import edu.stanford.isis.epad.plugin.server.EPadPlugin;
 import edu.stanford.isis.epad.plugin.server.impl.EPadPluginImpl;
 import edu.stanford.isis.epad.plugin.server.impl.EPadProxyConfigImpl;
@@ -90,18 +89,17 @@ public class StatusHandler extends AbstractHandler
 			} catch (Exception e) {
 				log.warning(INTERNAL_EXCEPTION_MESSAGE, e);
 				httpResponse.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-				out.append(JsonHelper.createJSONErrorResponse(INTERNAL_EXCEPTION_MESSAGE, e));
+				out.append(INTERNAL_EXCEPTION_MESSAGE + ": " + e.getMessage());
 			} catch (Error e) {
 				log.warning(INTERNAL_EXCEPTION_MESSAGE, e);
 				httpResponse.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-				out.append(JsonHelper.createJSONErrorResponse(INTERNAL_EXCEPTION_MESSAGE, e));
+				out.append(INTERNAL_EXCEPTION_MESSAGE + e.getMessage());
 			}
 		} else {
 			log.info(INVALID_SESSION_TOKEN_MESSAGE);
 			httpResponse.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-			out.append(JsonHelper.createJSONErrorResponse(INVALID_SESSION_TOKEN_MESSAGE));
+			out.append(INVALID_SESSION_TOKEN_MESSAGE);
 		}
-
 		out.flush();
 	}
 

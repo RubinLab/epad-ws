@@ -16,55 +16,69 @@ import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 
 import edu.stanford.isis.epad.common.ProxyLogger;
+import edu.stanford.isis.epad.common.util.JsonHelper;
 import edu.stanford.isis.epadws.processing.mysql.MySqlInstance;
 import edu.stanford.isis.epadws.processing.mysql.MySqlQueries;
 import edu.stanford.isis.epadws.processing.pipeline.QueueAndWatcherManager;
+import edu.stanford.isis.epadws.xnat.XNATUtil;
 
 /**
  * @author martin
  */
 public class ImageCheckHandler extends AbstractHandler
 {
+	private static final ProxyLogger log = ProxyLogger.getInstance();
+
 	private static final String FORBIDDEN_MESSAGE = "Forbidden method - only GET supported!";
 	private static final String INTERNAL_ERROR_MESSAGE = "Internal server error";
 	private static final String INTERNAL_IO_ERROR_MESSAGE = "Internal server IO error";
 	private static final String INTERNAL_SQL_ERROR_MESSAGE = "Internal server SQL error";
-	private static final ProxyLogger log = ProxyLogger.getInstance();
+	private static final String INVALID_SESSION_TOKEN_MESSAGE = "Session token is invalid";
 
 	private final QueueAndWatcherManager queueAndWatcherManager = QueueAndWatcherManager.getInstance();
 
 	@Override
-	public void handle(String s, Request request, HttpServletRequest httpServletRequest,
-			HttpServletResponse httpServletResponse) throws IOException, ServletException
+	public void handle(String s, Request request, HttpServletRequest httpRequest, HttpServletResponse httpResponse)
+			throws IOException, ServletException
 	{
-		String method = httpServletRequest.getMethod();
-		PrintWriter out = httpServletResponse.getWriter();
+		PrintWriter out = httpResponse.getWriter();
 
-		httpServletResponse.setContentType("text/plain;charset=UTF-8");
+		httpResponse.setContentType("text/plain;charset=UTF-8");
 		request.setHandled(true);
 
-		if ("GET".equalsIgnoreCase(method)) {
-			try {
-				log.info("Received request");
-				verifyImageGeneration(out);
-				httpServletResponse.setStatus(HttpServletResponse.SC_OK);
-			} catch (IOException e) {
-				httpServletResponse.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-				log.warning(INTERNAL_IO_ERROR_MESSAGE, e);
-				out.print(createJSONErrorResponse(INTERNAL_IO_ERROR_MESSAGE, e));
-			} catch (SQLException e) {
-				httpServletResponse.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-				log.warning(INTERNAL_SQL_ERROR_MESSAGE, e);
-				out.print(createJSONErrorResponse(INTERNAL_SQL_ERROR_MESSAGE, e));
-			} catch (Exception e) {
-				httpServletResponse.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-				log.warning(INTERNAL_ERROR_MESSAGE, e);
-				out.print(createJSONErrorResponse(INTERNAL_ERROR_MESSAGE, e));
+		if (XNATUtil.hasValidXNATSessionID(httpRequest)) {
+			String method = httpRequest.getMethod();
+			if ("GET".equalsIgnoreCase(method)) {
+				try {
+					log.info("Received request");
+					verifyImageGeneration(out);
+					httpResponse.setStatus(HttpServletResponse.SC_OK);
+				} catch (IOException e) {
+					httpResponse.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+					log.warning(INTERNAL_IO_ERROR_MESSAGE, e);
+					out.print(INTERNAL_IO_ERROR_MESSAGE + ": " + e.getMessage());
+				} catch (SQLException e) {
+					httpResponse.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+					log.warning(INTERNAL_SQL_ERROR_MESSAGE, e);
+					out.print(INTERNAL_SQL_ERROR_MESSAGE + ": " + e.getMessage());
+				} catch (Exception e) {
+					httpResponse.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+					log.warning(INTERNAL_ERROR_MESSAGE, e);
+					out.print(INTERNAL_ERROR_MESSAGE + ": " + e.getMessage());
+				} catch (Error e) {
+					httpResponse.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+					log.warning(INTERNAL_ERROR_MESSAGE, e);
+					out.print(INTERNAL_ERROR_MESSAGE + ": " + e.getMessage());
+				}
+			} else {
+				httpResponse.setStatus(HttpServletResponse.SC_FORBIDDEN);
+				log.info(FORBIDDEN_MESSAGE);
+				out.print(FORBIDDEN_MESSAGE);
 			}
 		} else {
-			httpServletResponse.setStatus(HttpServletResponse.SC_FORBIDDEN);
-			log.info(FORBIDDEN_MESSAGE);
-			out.print(createJSONErrorResponse(FORBIDDEN_MESSAGE));
+			log.info(INVALID_SESSION_TOKEN_MESSAGE);
+			httpResponse.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+			out.append(JsonHelper.createJSONErrorResponse(INVALID_SESSION_TOKEN_MESSAGE));
 		}
 		out.flush();
 	}
@@ -133,15 +147,5 @@ public class ImageCheckHandler extends AbstractHandler
 			out.flush();
 			queueAndWatcherManager.addToPNGGeneratorTaskPipeline(allUnprocessedDICOMImageFileDescriptions);
 		}
-	}
-
-	private String createJSONErrorResponse(String errorMessage)
-	{
-		return "{ \"error\": \"" + errorMessage + "\"}";
-	}
-
-	private String createJSONErrorResponse(String errorMessage, Exception e)
-	{
-		return "{ \"error\": \"" + errorMessage + ": " + e.getMessage() + "\"}";
 	}
 }
