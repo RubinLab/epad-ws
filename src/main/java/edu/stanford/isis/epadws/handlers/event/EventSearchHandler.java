@@ -19,6 +19,7 @@ import edu.stanford.isis.epad.common.util.SearchResultUtils;
 import edu.stanford.isis.epadws.processing.mysql.MySqlInstance;
 import edu.stanford.isis.epadws.processing.mysql.MySqlQueries;
 import edu.stanford.isis.epadws.resources.server.EventServerResource;
+import edu.stanford.isis.epadws.xnat.XNATUtil;
 
 /**
  * Get all the events for a user
@@ -31,113 +32,120 @@ import edu.stanford.isis.epadws.resources.server.EventServerResource;
  */
 public class EventSearchHandler extends AbstractHandler
 {
-
 	private static final ProxyLogger log = ProxyLogger.getInstance();
-	ProxyConfig config = ProxyConfig.getInstance();
+	private static final ProxyConfig config = ProxyConfig.getInstance();
 
-	public EventSearchHandler()
-	{
-	}
+	private static final String INVALID_METHOD_MESSAGE = "Only POST and GET methods valid for this route";
+	private static final String INTERNAL_EXCEPTION_MESSAGE = "Internal error";
+	private static final String MISSING_USER_NAME_MESSAGE = "No user name in query";
+	private static final String BAD_PARAMETERS_MESSAGE = "Missing parameters";
+	private static final String MISSING_QUERY_MESSAGE = "No query in request";
+	private static final String INVALID_SESSION_TOKEN_MESSAGE = "Session token is invalid";
 
 	@Override
-	public void handle(String s, Request request, HttpServletRequest httpServletRequest,
-			HttpServletResponse httpServletResponse) throws IOException, ServletException
+	public void handle(String s, Request request, HttpServletRequest httpRequest, HttpServletResponse httpResponse)
+			throws IOException, ServletException
 	{
-		String method = httpServletRequest.getMethod();
+		PrintWriter out = httpResponse.getWriter();
 
-		httpServletResponse.setContentType("text/plain");
-		httpServletResponse.setStatus(HttpServletResponse.SC_OK);
+		httpResponse.setContentType("text/plain");
 		request.setHandled(true);
-		PrintWriter out = httpServletResponse.getWriter();
 
-		String queryString = httpServletRequest.getQueryString();
+		String queryString = httpRequest.getQueryString();
 		queryString = URLDecoder.decode(queryString, "UTF-8");
 
-		if ("GET".equalsIgnoreCase(method)) {
-			// get the query
-
-			if (queryString != null) {
-				queryString = queryString.trim();
-				// Get the parameters
-				String userName = getUserNameFromRequest(queryString);
-
-				// get all the events for a user
-				if (userName != null) {
-
-					MySqlQueries dbQueries = MySqlInstance.getInstance().getMysqlQueries();
-					List<Map<String, String>> result = dbQueries.getEventsForUser(userName);
-
-					out.print(new SearchResultUtils().get_EVENT_SEARCH_HEADER());
-
-					log.info("Get the events query from ePad : " + queryString + " MySql found " + result.size() + " results.");
-					// log.info("Search result: "+result.toString());
-
-					ProxyConfig config = ProxyConfig.getInstance();
-					String separator = config.getParam("fieldSeparator");
-
-					// Write the result
-					for (Map<String, String> row : result) {
-						StringBuilder sb = new StringBuilder();
-
-						sb.append(row.get("pk")).append(separator);
-						sb.append(row.get("event_status")).append(separator);
-						sb.append(row.get("created_time")).append(separator);
-						sb.append(row.get("aim_uid")).append(separator);
-						sb.append(row.get("aim_name")).append(separator);
-						sb.append(row.get("patient_id")).append(separator);
-						sb.append(row.get("patient_name")).append(separator);
-						sb.append(row.get("template_id")).append(separator);
-						sb.append(row.get("template_name")).append(separator);
-						sb.append(row.get("plugin_name"));
-
-						sb.append("\n");
-						// log.info("line = "+sb.toString());
-						out.print(sb.toString());
+		if (XNATUtil.hasValidXNATSessionID(httpRequest)) {
+			String method = httpRequest.getMethod();
+			if ("GET".equalsIgnoreCase(method)) {
+				if (queryString != null) {
+					queryString = queryString.trim();
+					log.info("Events query from ePAD: " + queryString);
+					String userName = getUserNameFromRequest(queryString);
+					if (userName != null) {
+						try {
+							findEventsForUser(out, userName);
+							httpResponse.setStatus(HttpServletResponse.SC_OK);
+						} catch (Exception e) {
+							log.info(INTERNAL_EXCEPTION_MESSAGE);
+							httpResponse.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+						} catch (Error e) {
+							log.info(INTERNAL_EXCEPTION_MESSAGE);
+							httpResponse.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+						}
+					} else {
+						log.info(MISSING_USER_NAME_MESSAGE);
+						out.append(MISSING_USER_NAME_MESSAGE);
+						httpResponse.setStatus(HttpServletResponse.SC_BAD_REQUEST);
 					}
-
-					out.flush();
-
 				} else {
-					log.info("Bad user name.");
+					log.info(MISSING_QUERY_MESSAGE);
+					out.append(MISSING_QUERY_MESSAGE);
+					httpResponse.setStatus(HttpServletResponse.SC_BAD_REQUEST);
 				}
+			} else if ("POST".equalsIgnoreCase(method)) {
+				log.info("EventSearchHandler received POST method");
 
+				queryString = queryString.trim();
+				String userName = getUserNameFromRequest(queryString);
+				String event_status = getEventStatusFromRequest(queryString);
+				String aim_uid = getAimUidFromRequest(queryString);
+				String aim_name = getAimNameFromRequest(queryString);
+				String patient_id = getPatientIdFromRequest(queryString);
+				String patient_name = getPatientNameFromRequest(queryString);
+				String template_id = getTemplateIdFromRequest(queryString);
+				String template_name = getTemplateNameFromRequest(queryString);
+				String plugin_name = getPluginNameFromRequest(queryString);
+
+				log.info("Save event : " + aim_uid + " for user " + userName);
+				if (userName != null && event_status != null && aim_uid != null && aim_uid != null && aim_name != null
+						&& patient_id != null && patient_name != null && template_id != null && template_name != null
+						&& plugin_name != null) {
+					MySqlQueries dbQueries = MySqlInstance.getInstance().getMysqlQueries();
+					dbQueries.insertEventInDb(userName, event_status, aim_uid, aim_name, patient_id, patient_name, template_id,
+							template_name, plugin_name);
+					httpResponse.setStatus(HttpServletResponse.SC_OK);
+				} else {
+					log.info(BAD_PARAMETERS_MESSAGE);
+					out.append(BAD_PARAMETERS_MESSAGE);
+					httpResponse.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+				}
 			} else {
-				log.info("NO header Query from request.");
+				log.info(INVALID_METHOD_MESSAGE);
+				out.append(INVALID_METHOD_MESSAGE);
+				httpResponse.setHeader("Access-Control-Allow-Methods", "POST GET");
+				httpResponse.setStatus(HttpServletResponse.SC_METHOD_NOT_ALLOWED);
 			}
+		} else {
+			log.info(INVALID_SESSION_TOKEN_MESSAGE);
+			out.append(INVALID_SESSION_TOKEN_MESSAGE);
+			httpResponse.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
 		}
+		out.flush();
+		out.close();
+	}
 
-		if ("POST".equalsIgnoreCase(method)) {
-			log.info("EventSearchHandler received POST method");
-
-			queryString = queryString.trim();
-			// Get the parameters
-			String userName = getUserNameFromRequest(queryString);
-			String event_status = getEventStatusFromRequest(queryString);
-
-			String aim_uid = getAimUidFromRequest(queryString);
-			String aim_name = getAimNameFromRequest(queryString);
-
-			String patient_id = getPatientIdFromRequest(queryString);
-			String patient_name = getPatientNameFromRequest(queryString);
-			String template_id = getTemplateIdFromRequest(queryString);
-			String template_name = getTemplateNameFromRequest(queryString);
-			String plugin_name = getPluginNameFromRequest(queryString);
-
-			log.info("Save event : " + aim_uid + " for user " + userName);
-
-			// post an event for a user
-			if (userName != null && event_status != null && aim_uid != null && aim_uid != null && aim_name != null
-					&& patient_id != null && patient_name != null && template_id != null && template_name != null
-					&& plugin_name != null) {
-				MySqlQueries dbQueries = MySqlInstance.getInstance().getMysqlQueries();
-				dbQueries.insertEventInDb(userName, event_status, aim_uid, aim_name, patient_id, patient_name, template_id,
-						template_name, plugin_name);
-			} else {
-				log.info("EventSearchHandler received POST method : bad parameters");
-			}
-
+	private void findEventsForUser(PrintWriter out, String userName)
+	{
+		MySqlQueries dbQueries = MySqlInstance.getInstance().getMysqlQueries();
+		List<Map<String, String>> result = dbQueries.getEventsForUser(userName);
+		out.print(new SearchResultUtils().get_EVENT_SEARCH_HEADER());
+		log.info("MySql found " + result.size() + " results.");
+		String separator = config.getParam("fieldSeparator");
+		for (Map<String, String> row : result) {
+			StringBuilder sb = new StringBuilder();
+			sb.append(row.get("pk")).append(separator);
+			sb.append(row.get("event_status")).append(separator);
+			sb.append(row.get("created_time")).append(separator);
+			sb.append(row.get("aim_uid")).append(separator);
+			sb.append(row.get("aim_name")).append(separator);
+			sb.append(row.get("patient_id")).append(separator);
+			sb.append(row.get("patient_name")).append(separator);
+			sb.append(row.get("template_id")).append(separator);
+			sb.append(row.get("template_name")).append(separator);
+			sb.append(row.get("plugin_name"));
+			sb.append("\n");
+			out.print(sb.toString());
 		}
-
 	}
 
 	private static String getUserNameFromRequest(String queryString)

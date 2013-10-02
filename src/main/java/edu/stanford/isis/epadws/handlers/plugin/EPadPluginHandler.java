@@ -32,9 +32,8 @@ import edu.stanford.isis.epadws.resources.server.PluginServerResource;
  */
 public class EPadPluginHandler extends AbstractHandler
 {
-
-	ProxyLogger logger = ProxyLogger.getInstance();
-	PluginHandlerMap pluginHandlerMap = PluginHandlerMap.getInstance();
+	private final ProxyLogger logger = ProxyLogger.getInstance();
+	private final PluginHandlerMap pluginHandlerMap = PluginHandlerMap.getInstance();
 
 	@Override
 	public void doStart()

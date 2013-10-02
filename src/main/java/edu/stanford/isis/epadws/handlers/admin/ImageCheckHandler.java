@@ -54,26 +54,26 @@ public class ImageCheckHandler extends AbstractHandler
 					verifyImageGeneration(out);
 					httpResponse.setStatus(HttpServletResponse.SC_OK);
 				} catch (IOException e) {
-					httpResponse.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 					log.warning(INTERNAL_IO_ERROR_MESSAGE, e);
 					out.print(INTERNAL_IO_ERROR_MESSAGE + ": " + e.getMessage());
-				} catch (SQLException e) {
 					httpResponse.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+				} catch (SQLException e) {
 					log.warning(INTERNAL_SQL_ERROR_MESSAGE, e);
 					out.print(INTERNAL_SQL_ERROR_MESSAGE + ": " + e.getMessage());
+					httpResponse.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 				} catch (Exception e) {
-					httpResponse.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 					log.warning(INTERNAL_ERROR_MESSAGE, e);
 					out.print(INTERNAL_ERROR_MESSAGE + ": " + e.getMessage());
+					httpResponse.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 				} catch (Error e) {
-					httpResponse.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 					log.warning(INTERNAL_ERROR_MESSAGE, e);
 					out.print(INTERNAL_ERROR_MESSAGE + ": " + e.getMessage());
+					httpResponse.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 				}
 			} else {
-				httpResponse.setStatus(HttpServletResponse.SC_FORBIDDEN);
 				log.info(FORBIDDEN_MESSAGE);
 				out.print(FORBIDDEN_MESSAGE);
+				httpResponse.setStatus(HttpServletResponse.SC_FORBIDDEN);
 			}
 		} else {
 			log.info(INVALID_SESSION_TOKEN_MESSAGE);
@@ -81,6 +81,7 @@ public class ImageCheckHandler extends AbstractHandler
 			out.append(JsonHelper.createJSONErrorResponse(INVALID_SESSION_TOKEN_MESSAGE));
 		}
 		out.flush();
+		out.close();
 	}
 
 	private void verifyImageGeneration(PrintWriter out) throws SQLException, IOException

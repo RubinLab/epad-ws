@@ -42,23 +42,23 @@ public class SessionHandler extends AbstractHandler
 		String method = httpRequest.getMethod();
 		if ("POST".equalsIgnoreCase(method)) {
 			if (username.length() != 0) {
-				log.info("Login request from ePad from user " + username);
+				log.info("Login request from user " + username);
 				try {
 					out.append(XNATUtil.invokeXNATSessionIDService(httpRequest, httpResponse));
 					httpResponse.setStatus(HttpServletResponse.SC_OK);
 				} catch (IOException e) {
 					log.warning(LOGIN_EXCEPTION_MESSAGE, e);
-					httpResponse.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 					out.append(LOGIN_EXCEPTION_MESSAGE + ": " + e.getMessage());
+					httpResponse.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 				} catch (Exception e) {
 					log.warning(LOGIN_EXCEPTION_MESSAGE, e);
-					httpResponse.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 					out.append(LOGIN_EXCEPTION_MESSAGE + ": " + e.getMessage());
+					httpResponse.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 				}
 			} else {
 				log.info(MISSING_USERNAME_MESSAGE);
-				httpResponse.setStatus(HttpServletResponse.SC_BAD_REQUEST);
 				out.append(MISSING_USERNAME_MESSAGE);
+				httpResponse.setStatus(HttpServletResponse.SC_BAD_REQUEST);
 			}
 		} else if ("DELETE".equalsIgnoreCase(method)) {
 			log.info("Logout request from ePad from user");
@@ -68,19 +68,20 @@ public class SessionHandler extends AbstractHandler
 				httpResponse.setStatus(statusCode);
 			} catch (IOException e) {
 				log.warning(LOGOUT_EXCEPTION_MESSAGE, e);
-				httpResponse.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 				out.append(LOGOUT_EXCEPTION_MESSAGE + ": " + e.getMessage());
+				httpResponse.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 			} catch (Exception e) {
 				log.warning(LOGOUT_EXCEPTION_MESSAGE, e);
-				httpResponse.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 				out.append(LOGOUT_EXCEPTION_MESSAGE + ": " + e.getMessage());
+				httpResponse.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 			}
 		} else {
 			log.info(INVALID_METHOD_MESSAGE);
-			httpResponse.setStatus(HttpServletResponse.SC_METHOD_NOT_ALLOWED);
-			httpResponse.setHeader("Access-Control-Allow-Methods", "POST DELETE");
 			out.append(INVALID_METHOD_MESSAGE);
+			httpResponse.setHeader("Access-Control-Allow-Methods", "POST DELETE");
+			httpResponse.setStatus(HttpServletResponse.SC_METHOD_NOT_ALLOWED);
 		}
 		out.flush();
+		out.close();
 	}
 }

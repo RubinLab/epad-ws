@@ -86,6 +86,7 @@ public class DICOMSeriesOrderHandler extends AbstractHandler
 			out.append(JsonHelper.createJSONErrorResponse(INVALID_SESSION_TOKEN_MESSAGE));
 		}
 		out.flush();
+		out.close();
 	}
 
 	private static void peformDICOMSeriesOrderQuery(PrintWriter out, String seriesIUID) throws NumberFormatException

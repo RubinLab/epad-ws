@@ -89,8 +89,8 @@ public class DICOMSearchHandler extends AbstractHandler
 				}
 			} else {
 				log.info(MISSING_QUERY_MESSAGE);
-				httpResponse.setStatus(HttpServletResponse.SC_BAD_REQUEST);
 				out.append(JsonHelper.createJSONErrorResponse(MISSING_QUERY_MESSAGE));
+				httpResponse.setStatus(HttpServletResponse.SC_BAD_REQUEST);
 			}
 		} else {
 			log.info(INVALID_SESSION_TOKEN_MESSAGE);
@@ -98,6 +98,7 @@ public class DICOMSearchHandler extends AbstractHandler
 			out.append(JsonHelper.createJSONErrorResponse(INVALID_SESSION_TOKEN_MESSAGE));
 		}
 		out.flush();
+		out.close();
 	}
 
 	/**

@@ -183,9 +183,6 @@ public class Main
 
 		addFileServerAtContextPath(ResourceUtils.getEPADWebServerResourcesDir(), handlerList, "/resources");
 
-		addHandlerAtContextPath(new AimResourceHandler(), "/aimresource", handlerList);
-		addHandlerAtContextPath(new WadoHandler(), "/eWado", handlerList);
-		addHandlerAtContextPath(new EventSearchHandler(), "/eventresource", handlerList);
 		addHandlerAtContextPath(new EPadPluginHandler(), "/plugin", handlerList);
 
 		addHandlerAtContextPath(new SessionHandler(), "/session", handlerList);
@@ -198,6 +195,9 @@ public class Main
 		addHandlerAtContextPath(new DICOMHeadersHandler(), "/dicomtag", handlerList);
 		addHandlerAtContextPath(new DICOMSeriesTagHandler(), "/seriestag", handlerList);
 		addHandlerAtContextPath(new DICOMVisuHandler(), "/dicomparam", handlerList);
+		addHandlerAtContextPath(new AimResourceHandler(), "/aimresource", handlerList);
+		addHandlerAtContextPath(new WadoHandler(), "/eWado", handlerList);
+		addHandlerAtContextPath(new EventSearchHandler(), "/eventresource", handlerList);
 
 		ContextHandlerCollection contexts = new ContextHandlerCollection();
 		contexts.setHandlers(handlerList.toArray(new Handler[handlerList.size()]));
@@ -205,7 +205,7 @@ public class Main
 	}
 
 	/**
-	 * Adds a war file from the web-apps directory at a context path.
+	 * Adds a WAR file from the web-apps directory at a context path.
 	 * 
 	 * @param handlerList List of handlers
 	 * @param warFileName String war file name, with or without extension (e.g., ePad.war)

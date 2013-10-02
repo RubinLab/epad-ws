@@ -88,19 +88,20 @@ public class StatusHandler extends AbstractHandler
 				httpResponse.setStatus(HttpServletResponse.SC_OK);
 			} catch (Exception e) {
 				log.warning(INTERNAL_EXCEPTION_MESSAGE, e);
-				httpResponse.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 				out.append(INTERNAL_EXCEPTION_MESSAGE + ": " + e.getMessage());
+				httpResponse.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 			} catch (Error e) {
 				log.warning(INTERNAL_EXCEPTION_MESSAGE, e);
-				httpResponse.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 				out.append(INTERNAL_EXCEPTION_MESSAGE + e.getMessage());
+				httpResponse.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 			}
 		} else {
 			log.info(INVALID_SESSION_TOKEN_MESSAGE);
-			httpResponse.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
 			out.append(INVALID_SESSION_TOKEN_MESSAGE);
+			httpResponse.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
 		}
 		out.flush();
+		out.close();
 	}
 
 	private String getPipelineActivityLevel()

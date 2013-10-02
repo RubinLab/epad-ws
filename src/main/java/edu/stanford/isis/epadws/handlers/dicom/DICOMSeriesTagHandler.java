@@ -50,13 +50,11 @@ public class DICOMSeriesTagHandler extends AbstractHandler
 
 		if (XNATUtil.hasValidXNATSessionID(httpRequest)) {
 			String seriesIUID = httpRequest.getParameter("series_iuid");
-
 			if (seriesIUID != null) {
 				boolean useBase64 = true;
 				String contentType = httpRequest.getParameter("type");
-				if ("text".equals(contentType)) {
+				if ("text".equals(contentType))
 					useBase64 = false;
-				}
 				log.info("DICOMSeriesTagHandler: series_iuid=" + seriesIUID);
 				try {
 					handleDICOMSeriesTagQuery(out, seriesIUID, useBase64);
@@ -89,6 +87,7 @@ public class DICOMSeriesTagHandler extends AbstractHandler
 			httpResponse.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
 		}
 		out.flush();
+		out.close();
 	}
 
 	private void handleDICOMSeriesTagQuery(PrintWriter out, String seriesIUID, boolean useBase64) throws IOException,
@@ -345,14 +344,4 @@ public class DICOMSeriesTagHandler extends AbstractHandler
 			log.warning("Failed to create DicomTag: " + key, e);
 		}
 	}
-
-	private static void printException(PrintWriter out, String message, Throwable t)
-	{
-		log.warning(message, t);
-		if (out != null) {
-			out.print(message + " : " + t.getMessage());
-			out.flush();
-		}
-	}
-
 }

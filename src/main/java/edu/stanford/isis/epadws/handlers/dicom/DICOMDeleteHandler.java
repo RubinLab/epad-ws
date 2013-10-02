@@ -79,6 +79,7 @@ public class DICOMDeleteHandler extends AbstractHandler
 			httpResponse.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
 		}
 		out.flush();
+		out.close();
 	}
 
 	private void handleDICOMStudyDeleteRequest(String queryString)

@@ -95,8 +95,8 @@ public class DICOMVisuHandler extends AbstractHandler
 				}
 			} else {
 				log.info(MISSING_QUERY_MESSAGE);
-				httpResponse.setStatus(HttpServletResponse.SC_BAD_REQUEST);
 				out.append(MISSING_QUERY_MESSAGE);
+				httpResponse.setStatus(HttpServletResponse.SC_BAD_REQUEST);
 			}
 		} else {
 			log.info(INVALID_SESSION_TOKEN_MESSAGE);
@@ -104,6 +104,7 @@ public class DICOMVisuHandler extends AbstractHandler
 			httpResponse.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
 		}
 		out.flush();
+		out.close();
 	}
 
 	private void handleDICOMVisu(PrintWriter out, String studyIdKey, String seriesIdKey, String imageIdKey)

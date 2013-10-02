@@ -70,34 +70,27 @@ public class DICOMHeadersHandler extends AbstractHandler
 
 			if (queryString != null) {
 				queryString = queryString.trim();
-
-				log.info("DICOM header query from ePad : " + queryString);
-
+				log.info("DICOM header query from ePaAD : " + queryString);
 				try {
 					String studyIdKey = getStudyUIDFromRequest(queryString);
 					String seriesIdKey = getSeriesUIDFromRequest(queryString);
 					String imageIdKey = getInstanceUIDFromRequest(queryString);
 
-					// Get the WADO and the tag file
 					if (studyIdKey != null && seriesIdKey != null && imageIdKey != null) {
 						File tempDicom = File.createTempFile(imageIdKey, ".tmp");
 						feedFileWithDicomFromWado(tempDicom, studyIdKey, seriesIdKey, imageIdKey);
 						File tempTag = File.createTempFile(imageIdKey, "_tag.tmp");
-
-						// Generation of the tag file
 						ExecutorService taskExecutor = Executors.newFixedThreadPool(4);
 						taskExecutor.execute(new DicomHeadersTask(tempDicom, tempTag));
 						taskExecutor.shutdown();
 						try {
 							taskExecutor.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
-
 							BufferedReader in = new BufferedReader(new FileReader(tempTag.getAbsolutePath()));
 							try {
 								String line;
 								while ((line = in.readLine()) != null) {
 									out.println(line);
 								}
-								out.flush();
 							} finally {
 								in.close();
 							}
@@ -132,6 +125,7 @@ public class DICOMHeadersHandler extends AbstractHandler
 			httpResponse.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
 		}
 		out.flush();
+		out.close();
 	}
 
 	private static String getStudyUIDFromRequest(String queryString)

@@ -104,7 +104,6 @@ public class CoordinationHandler extends AbstractHandler
 
 		if (XNATUtil.hasValidXNATSessionID(httpRequest)) {
 			String method = httpRequest.getMethod();
-
 			if ("POST".equalsIgnoreCase(method)) {
 				try {
 					Coordination coordination = readCoordination(request);
@@ -158,6 +157,7 @@ public class CoordinationHandler extends AbstractHandler
 			out.append(INVALID_SESSION_TOKEN_MESSAGE);
 		}
 		out.flush();
+		out.close();
 	}
 
 	private Coordination readCoordination(Request request) throws IOException

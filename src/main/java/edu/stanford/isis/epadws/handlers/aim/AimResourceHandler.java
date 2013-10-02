@@ -1,6 +1,7 @@
 package edu.stanford.isis.epadws.handlers.aim;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -26,6 +27,7 @@ import javax.xml.transform.stream.StreamResult;
 
 import org.apache.commons.fileupload.FileItemIterator;
 import org.apache.commons.fileupload.FileItemStream;
+import org.apache.commons.fileupload.FileUploadException;
 import org.apache.commons.fileupload.servlet.ServletFileUpload;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpException;
@@ -33,7 +35,6 @@ import org.apache.commons.httpclient.methods.GetMethod;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.restlet.resource.Get;
-import org.w3c.dom.DOMException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
@@ -46,10 +47,12 @@ import edu.stanford.hakan.aim3api.usage.AnnotationBuilder;
 import edu.stanford.hakan.aim3api.usage.AnnotationGetter;
 import edu.stanford.isis.epad.common.ProxyConfig;
 import edu.stanford.isis.epad.common.ProxyLogger;
+import edu.stanford.isis.epad.common.util.JsonHelper;
 import edu.stanford.isis.epad.common.util.ResourceUtils;
 import edu.stanford.isis.epad.common.util.XmlNamespaceTranslator;
 import edu.stanford.isis.epad.plugin.server.impl.PluginConfig;
 import edu.stanford.isis.epadws.resources.server.AIMServerResource;
+import edu.stanford.isis.epadws.xnat.XNATUtil;
 
 /**
  * Now handled by Restlet resource {@link AIMServerResource}.
@@ -71,9 +74,11 @@ public class AimResourceHandler extends AbstractHandler
 	public String templatePath = ProxyConfig.getInstance().getParam("baseTemplatesDir");
 	public String wadoProxy = ProxyConfig.getInstance().getParam("wadoProxy");
 
-	public AimResourceHandler()
-	{
-	}
+	private static final String INTERNAL_EXCEPTION_MESSAGE = "Internal error";
+	private static final String INVALID_METHOD_MESSAGE = "Only POST and GET methods valid for this route";
+	private static final String FILE_UPLOAD_ERROR_MESSAGE = "File upload failures; see response for details";
+	private static final String MISSING_QUERY_MESSAGE = "No series or study query in request";
+	private static final String INVALID_SESSION_TOKEN_MESSAGE = "Session token is invalid";
 
 	/**
 	 * To test the post try:
@@ -87,161 +92,145 @@ public class AimResourceHandler extends AbstractHandler
 	public void handle(String s, Request request, HttpServletRequest httpRequest, HttpServletResponse httpResponse)
 			throws IOException, ServletException
 	{
-		String method = httpRequest.getMethod();
+		PrintWriter out = httpResponse.getWriter();
 
-		logger.info("AimResourceHandler handles : " + method);
-
-		// httpResponse.setContentType("application/json;charset=UTF-8");
 		httpResponse.setContentType("text/xml");
 		httpResponse.setHeader("Cache-Control", "no-cache");
 
-		if ("GET".equalsIgnoreCase(method)) {
-			String queryString = httpRequest.getQueryString();
-			queryString = URLDecoder.decode(queryString, "UTF-8");
-
-			logger.info("AimResourceHandler received GET method : " + queryString);
-
-			if (queryString != null) {
-				queryString = queryString.trim();
-				String[] queryStrings = queryString.split("=");
-
-				String id1 = null;
-				String id2 = null;
-
-				if (queryStrings.length == 2) {
-					id1 = queryStrings[0];
-					id2 = queryStrings[1];
+		if (XNATUtil.hasValidXNATSessionID(httpRequest)) {
+			String method = httpRequest.getMethod();
+			if ("GET".equalsIgnoreCase(method)) {
+				String queryString = httpRequest.getQueryString();
+				queryString = URLDecoder.decode(queryString, "UTF-8");
+				logger.info("AimResourceHandler received GET method : " + queryString);
+				if (queryString != null) {
+					try { // Build an XML document
+						queryAIMImageAnnotations(out, queryString);
+						httpResponse.setStatus(HttpServletResponse.SC_OK);
+					} catch (Exception e) {
+						logger.warning(INTERNAL_EXCEPTION_MESSAGE);
+						out.append(INTERNAL_EXCEPTION_MESSAGE + "<br>");
+						httpResponse.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+					} catch (Error e) {
+						logger.warning(INTERNAL_EXCEPTION_MESSAGE);
+						out.append(INTERNAL_EXCEPTION_MESSAGE + "<br>");
+						httpResponse.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+					}
 				} else {
-					if (queryStrings.length == 1) {
-						id1 = queryStrings[0];
-					}
+					logger.info(MISSING_QUERY_MESSAGE);
+					out.append(JsonHelper.createJSONErrorResponse(MISSING_QUERY_MESSAGE));
+					httpResponse.setStatus(HttpServletResponse.SC_BAD_REQUEST);
 				}
-				ArrayList<ImageAnnotation> aims = getAIM(id1, id2); // Get the aim files
-
-				try { // Build an xml document
-					DocumentBuilderFactory dbfac = DocumentBuilderFactory.newInstance();
-					DocumentBuilder docBuilder = null;
-
-					docBuilder = dbfac.newDocumentBuilder();
-					Document doc = docBuilder.newDocument();
-
-					Element root = doc.createElement("imageAnnotations");
-					doc.appendChild(root);
-
-					for (ImageAnnotation aim : aims) {
-						Node node = aim.getXMLNode(docBuilder.newDocument());
-						Node copyNode = doc.importNode(node, true);
-
-						// copy the node
-						Element res = (Element)copyNode;
-						res.setAttributeNS("http://www.w3.org/2000/xmlns/", "xmlns:rdf",
-								"http://www.w3.org/1999/02/22-rdf-syntax-ns#");
-						res.setAttributeNS("http://www.w3.org/2000/xmlns/", "xmlns:xsi",
-								"http://www.w3.org/2001/XMLSchema-instance");
-						res.setAttribute("xsi:schemaLocation",
-								"gme://caCORE.caCORE/3.2/edu.northwestern.radiology.AIM AIM_v3_rv11_XML.xsd");
-
-						Node n = renameNodeNS(res, "ImageAnnotation");
-
-						// Adding to the root
-						root.appendChild(n);
-					}
-
-					// Return results as a string
-					String queryResults = XmlDocumentToString(doc);
-					httpResponse.getWriter().print(queryResults);
-
-				} catch (ParserConfigurationException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				} catch (DOMException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				} catch (AimException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-
-				httpResponse.getWriter().flush();
-				httpResponse.getWriter().close();
-
-				// With gson
-				/*
-				 * Type listType = new TypeToken<ArrayList<ImageAnnotation>>() {}.getType();
-				 * logger.info("numberOfAnnotations = "+aims.size()); Gson gson = new Gson(); String json =
-				 * gson.toJson(aims,listType); logger.info("json ="+json);
-				 * 
-				 * ArrayList<ImageAnnotation> target2 = gson.fromJson(json, listType);
-				 * logger.info("json ="+target2.get(0).getCagridId());
-				 */
-			}
-		}
-
-		if ("POST".equalsIgnoreCase(method)) {
-			// Voir org.apache.commons.fileupload
-			// http://www.tutorialspoint.com/servlets/servlets-file-uploading.htm
-
-			logger.info("AimResourceHandler received POST method");
-
-			String filePath = ResourceUtils.getEPADWebServerAnnotationsUploadDir();
-			PrintWriter out = httpResponse.getWriter();
-
-			logger.info("Uploading files to dir: " + filePath);
-			logger.debug("method: " + method + ",  why not POST?!");
-			// create the directory for uploading file.
-			try {
-				ServletFileUpload upload = new ServletFileUpload();
-
-				FileItemIterator iter = upload.getItemIterator(httpRequest);
-				int fileCount = 0;
-				while (iter.hasNext()) {
-					fileCount++;
-					logger.debug("starting file #" + fileCount);
-					FileItemStream item = iter.next();
-
-					String name = item.getFieldName();
-					logger.debug("FieldName = " + name);
-					InputStream stream = item.openStream();
-
-					String tempName = "temp-" + System.currentTimeMillis() + ".xml";
-					File f = new File(filePath + tempName);
-					FileOutputStream fos = new FileOutputStream(f);
-					try {
-						int len;
-						byte[] buffer = new byte[32768];
-						while ((len = stream.read(buffer, 0, buffer.length)) != -1) {
-							fos.write(buffer, 0, len);
-						}// while
-					} finally {
-						fos.close();
-					}
-					out.print("added (" + fileCount + "): " + name);
-
-					// Transform it a AIM File
-					ImageAnnotation ia = AnnotationGetter.getImageAnnotationFromFile(f.getAbsolutePath(), xsdFilePath);
-					if (ia != null) {
-						saveToServer(ia);
-						out.println("-- Add to AIM server: " + ia.getUniqueIdentifier() + "<br>");
+			} else if ("POST".equalsIgnoreCase(method)) { // http://www.tutorialspoint.com/servlets/servlets-file-uploading.htm
+				String annotationsUploadDirPath = ResourceUtils.getEPADWebServerAnnotationsUploadDir();
+				logger.info("Uploading files to dir: " + annotationsUploadDirPath);
+				try {
+					boolean saveError = uploadAIMAnnotations(httpRequest, out, annotationsUploadDirPath);
+					if (saveError) {
+						logger.warning(FILE_UPLOAD_ERROR_MESSAGE);
+						out.append(FILE_UPLOAD_ERROR_MESSAGE + "<br>");
+						httpResponse.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 					} else {
-						out.println("-- Failed ! not added to AIM server<br>");
+						httpResponse.setStatus(HttpServletResponse.SC_OK);
 					}
-
-				}// while
-
-				out.flush();
-
-			} catch (Exception e) {
-				logger.warning("Failed to upload AIM files to _" + filePath + "_", e);
-			} catch (Error temp) {
-				logger.warning("Error. Could jar file be missing from start script?", temp);
-			} finally {
-				logger.info("leaving AIMHandler handle.");
-				if (out != null) {
-					out.close();
+				} catch (Exception e) {
+					logger.warning("Failed to upload AIM files to _" + annotationsUploadDirPath + "_", e);
+					httpResponse.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+				} catch (Error e) {
+					logger.warning("Error. Could jar file be missing from start script?", e);
+					httpResponse.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 				}
+			} else {
+				logger.info(INVALID_METHOD_MESSAGE);
+				out.append(INVALID_METHOD_MESSAGE);
+				httpResponse.setHeader("Access-Control-Allow-Methods", "POST GET");
+				httpResponse.setStatus(HttpServletResponse.SC_METHOD_NOT_ALLOWED);
+			}
+		} else {
+			logger.info(INVALID_SESSION_TOKEN_MESSAGE);
+			out.append(INVALID_SESSION_TOKEN_MESSAGE);
+			httpResponse.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+		}
+		out.flush();
+		out.close();
+	}
+
+	private void queryAIMImageAnnotations(PrintWriter out, String queryString) throws ParserConfigurationException,
+			AimException
+	{
+		queryString = queryString.trim();
+		String[] queryStrings = queryString.split("=");
+		String id1 = null;
+		String id2 = null;
+		if (queryStrings.length == 2) {
+			id1 = queryStrings[0];
+			id2 = queryStrings[1];
+		} else {
+			if (queryStrings.length == 1) {
+				id1 = queryStrings[0];
 			}
 		}
+		ArrayList<ImageAnnotation> aims = getAIMImageAnnotations(id1, id2);
 
+		DocumentBuilderFactory dbfac = DocumentBuilderFactory.newInstance();
+		DocumentBuilder docBuilder = dbfac.newDocumentBuilder();
+		Document doc = docBuilder.newDocument();
+		Element root = doc.createElement("imageAnnotations");
+		doc.appendChild(root);
+
+		for (ImageAnnotation aim : aims) {
+			Node node = aim.getXMLNode(docBuilder.newDocument());
+			Node copyNode = doc.importNode(node, true);
+			Element res = (Element)copyNode; // Copy the node
+			res.setAttributeNS("http://www.w3.org/2000/xmlns/", "xmlns:rdf", "http://www.w3.org/1999/02/22-rdf-syntax-ns#");
+			res.setAttributeNS("http://www.w3.org/2000/xmlns/", "xmlns:xsi", "http://www.w3.org/2001/XMLSchema-instance");
+			res.setAttribute("xsi:schemaLocation",
+					"gme://caCORE.caCORE/3.2/edu.northwestern.radiology.AIM AIM_v3_rv11_XML.xsd");
+			Node n = renameNodeNS(res, "ImageAnnotation");
+			root.appendChild(n); // Adding to the root
+		}
+		String queryResults = XmlDocumentToString(doc);
+		out.print(queryResults);
+	}
+
+	private boolean uploadAIMAnnotations(HttpServletRequest httpRequest, PrintWriter out, String annotationsUploadDirPath)
+			throws FileUploadException, IOException, FileNotFoundException, AimException
+	{
+		ServletFileUpload upload = new ServletFileUpload();
+		FileItemIterator iter = upload.getItemIterator(httpRequest);
+		int fileCount = 0;
+		boolean saveError = false;
+
+		while (iter.hasNext()) {
+			fileCount++;
+			logger.debug("starting file #" + fileCount);
+			FileItemStream item = iter.next();
+			String name = item.getFieldName();
+			logger.debug("FieldName = " + name);
+			InputStream stream = item.openStream();
+			String tempName = "temp-" + System.currentTimeMillis() + ".xml";
+			File f = new File(annotationsUploadDirPath + tempName);
+			FileOutputStream fos = new FileOutputStream(f);
+			try {
+				int len;
+				byte[] buffer = new byte[32768];
+				while ((len = stream.read(buffer, 0, buffer.length)) != -1) {
+					fos.write(buffer, 0, len);
+				}
+			} finally {
+				fos.close();
+			}
+			out.print("added (" + fileCount + "): " + name);
+			ImageAnnotation ia = AnnotationGetter.getImageAnnotationFromFile(f.getAbsolutePath(), xsdFilePath);
+			if (ia != null) {
+				saveToServer(ia);
+				out.println("-- Add to AIM server: " + ia.getUniqueIdentifier() + "<br>");
+			} else {
+				out.println("-- Failed ! not added to AIM server<br>");
+				saveError = true;
+			}
+		}
+		return saveError;
 	}
 
 	/**
@@ -251,7 +240,7 @@ public class AimResourceHandler extends AbstractHandler
 	 * @return ArrayList<ImageAnnotation>
 	 */
 	@Get
-	public ArrayList<ImageAnnotation> getAIM(String id1, String id2)
+	public ArrayList<ImageAnnotation> getAIMImageAnnotations(String id1, String id2)
 	{
 		ArrayList<ImageAnnotation> retAims = new ArrayList<ImageAnnotation>();
 		List<ImageAnnotation> aims = null;
