@@ -17,7 +17,7 @@ import edu.stanford.isis.epad.common.dicom.DicomFormatUtil;
 import edu.stanford.isis.epad.common.dicom.DicomTagFileUtils;
 import edu.stanford.isis.epad.common.util.LockFileUtils;
 import edu.stanford.isis.epad.common.util.ProxyFileUtils;
-import edu.stanford.isis.epadws.handlers.dicom.RsnaSearchResultMap;
+import edu.stanford.isis.epad.common.util.RsnaSearchResultMap;
 
 
 public class MoverTask implements Callable<File> {

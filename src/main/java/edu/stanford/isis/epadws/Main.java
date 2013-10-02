@@ -183,8 +183,6 @@ public class Main
 
 		addFileServerAtContextPath(ResourceUtils.getEPADWebServerResourcesDir(), handlerList, "/resources");
 
-		addHandlerAtContextPath(new EPadPluginHandler(), "/plugin", handlerList);
-
 		addHandlerAtContextPath(new SessionHandler(), "/session", handlerList);
 		addHandlerAtContextPath(new StatusHandler(), "/status", handlerList);
 		addHandlerAtContextPath(new ImageCheckHandler(), "/imagecheck", handlerList);
@@ -198,6 +196,8 @@ public class Main
 		addHandlerAtContextPath(new AimResourceHandler(), "/aimresource", handlerList);
 		addHandlerAtContextPath(new WadoHandler(), "/eWado", handlerList);
 		addHandlerAtContextPath(new EventSearchHandler(), "/eventresource", handlerList);
+
+		addHandlerAtContextPath(new EPadPluginHandler(), "/plugin", handlerList);
 
 		ContextHandlerCollection contexts = new ContextHandlerCollection();
 		contexts.setHandlers(handlerList.toArray(new Handler[handlerList.size()]));
