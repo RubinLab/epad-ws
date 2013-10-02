@@ -93,6 +93,7 @@ public class DICOMSeriesOrderHandler extends AbstractHandler
 	{
 		MySqlQueries queries = MySqlInstance.getInstance().getMysqlQueries();
 		List<Map<String, String>> orderQueryEntries = queries.getOrderFile(seriesIUID);
+		boolean isFirst = true;
 
 		log.info("DICOMSeriesOrderHandler: series_iuid=" + seriesIUID);
 
@@ -107,7 +108,10 @@ public class DICOMSeriesOrderHandler extends AbstractHandler
 
 			DICOMSeriesOrderSearchResult searchResult = new DICOMSeriesOrderSearchResult(fileName, instanceNumber,
 					sliceLocation, contentTime);
-			out.println(seriesOrderSearchResult2JSON(searchResult));
+			if (!isFirst)
+				out.append(",\n");
+			isFirst = false;
+			out.print(seriesOrderSearchResult2JSON(searchResult));
 		}
 		out.print("] }");
 	}
