@@ -1,4 +1,4 @@
-package edu.stanford.isis.epadws.handlers.admin;
+package edu.stanford.isis.epadws.handlers.xnat;
 
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -14,13 +14,21 @@ import edu.stanford.isis.epad.common.ProxyLogger;
 import edu.stanford.isis.epadws.xnat.XNATUtil;
 
 /**
- * <code> curl -v -u admin:admin -X POST http://<host>:<port>/session/ </code>
- * 
- * <code>curl -v -b JSESSIONID=<key> -X DELETE http://<host>:<port>/session/</code>
+ * Handler for XNAT-based session management.
+ * <p>
+ * To create a session key:
+ * <p>
+ * <code>curl -v -u [username:password] -X POST http://[host:port]/session/ </code>
+ * <p>
+ * Returns a session key.
+ * <p>
+ * To deactivate that key:
+ * <p>
+ * <code>curl -v -b JSESSIONID=[session_key] -X DELETE http://[host:port]/session/</code>
  * 
  * @author martin
  */
-public class SessionHandler extends AbstractHandler
+public class XNATSessionHandler extends AbstractHandler
 {
 	private static final ProxyLogger log = ProxyLogger.getInstance();
 

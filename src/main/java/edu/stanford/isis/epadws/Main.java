@@ -34,8 +34,7 @@ import edu.stanford.isis.epad.plugin.server.impl.EPadFilesImpl;
 import edu.stanford.isis.epad.plugin.server.impl.PluginConfig;
 import edu.stanford.isis.epad.plugin.server.impl.PluginHandlerMap;
 import edu.stanford.isis.epadws.handlers.admin.ImageCheckHandler;
-import edu.stanford.isis.epadws.handlers.admin.SessionHandler;
-import edu.stanford.isis.epadws.handlers.admin.StatusHandler;
+import edu.stanford.isis.epadws.handlers.admin.ServerStatusHandler;
 import edu.stanford.isis.epadws.handlers.aim.AimResourceHandler;
 import edu.stanford.isis.epadws.handlers.coordination.CoordinationHandler;
 import edu.stanford.isis.epadws.handlers.dicom.DICOMDeleteHandler;
@@ -47,6 +46,8 @@ import edu.stanford.isis.epadws.handlers.dicom.DICOMVisuHandler;
 import edu.stanford.isis.epadws.handlers.dicom.WadoHandler;
 import edu.stanford.isis.epadws.handlers.event.EventSearchHandler;
 import edu.stanford.isis.epadws.handlers.plugin.EPadPluginHandler;
+import edu.stanford.isis.epadws.handlers.xnat.XNATProjectHandler;
+import edu.stanford.isis.epadws.handlers.xnat.XNATSessionHandler;
 import edu.stanford.isis.epadws.processing.mysql.MySqlInstance;
 import edu.stanford.isis.epadws.processing.pipeline.QueueAndWatcherManager;
 import edu.stanford.isis.epadws.server.ShutdownSignal;
@@ -177,8 +178,9 @@ public class Main
 
 		addFileServerAtContextPath(ResourceUtils.getEPADWebServerResourcesDir(), handlerList, "/resources");
 
-		addHandlerAtContextPath(new SessionHandler(), "/session", handlerList);
-		addHandlerAtContextPath(new StatusHandler(), "/status", handlerList);
+		addHandlerAtContextPath(new XNATSessionHandler(), "/session", handlerList);
+		addHandlerAtContextPath(new XNATProjectHandler(), "/projects", handlerList);
+		addHandlerAtContextPath(new ServerStatusHandler(), "/status", handlerList);
 		addHandlerAtContextPath(new ImageCheckHandler(), "/imagecheck", handlerList);
 		addHandlerAtContextPath(new CoordinationHandler(), "/coordination", handlerList);
 		addHandlerAtContextPath(new DICOMSearchHandler(), "/searchj", handlerList);

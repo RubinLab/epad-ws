@@ -34,7 +34,7 @@ import edu.stanford.isis.epadws.xnat.XNATUtil;
  * 
  * @author martin
  */
-public class StatusHandler extends AbstractHandler
+public class ServerStatusHandler extends AbstractHandler
 {
 	private static final ProxyLogger log = ProxyLogger.getInstance();
 
@@ -43,7 +43,7 @@ public class StatusHandler extends AbstractHandler
 
 	private final long startTime;
 
-	public StatusHandler()
+	public ServerStatusHandler()
 	{
 		startTime = System.currentTimeMillis();
 	}
@@ -67,9 +67,9 @@ public class StatusHandler extends AbstractHandler
 				long upTimeSec = upTime / 1000;
 
 				out.println();
-				out.println("--------------  DicomProxy status  --------------");
+				out.println("--------------  ePAD Server Status  --------------");
 				out.println();
-				out.println("ePAD server uptime: " + upTimeSec + " sec");
+				out.println("ePAD server uptime: " + upTimeSec + " second(s)");
 				out.println();
 				out.println("Version: " + EPadWebServerVersion.getBuildDate());
 				out.println();
@@ -79,11 +79,11 @@ public class StatusHandler extends AbstractHandler
 				out.println("Plugin Version - implementation: " + ePadPlugin.getPluginImplVersion());
 				MySqlInstance instance = MySqlInstance.getInstance();
 				out.println();
-				out.println("DB Startup Time: " + instance.getStartupTime() + " ms");
+				out.println("Database startup time: " + instance.getStartupTime() + " ms");
 				out.println();
 				out.println("epad.war serverProxy=" + ePadProxyConfig.getProxyConfigParam("serverProxy"));
 				out.println();
-				out.println("pipelineActivity : " + getPipelineActivityLevel());
+				out.println("Pipeline activity level: " + getPipelineActivityLevel());
 
 				httpResponse.setStatus(HttpServletResponse.SC_OK);
 			} catch (Exception e) {

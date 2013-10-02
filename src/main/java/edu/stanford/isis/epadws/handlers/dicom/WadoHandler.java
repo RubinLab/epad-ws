@@ -58,13 +58,23 @@ public class WadoHandler extends AbstractHandler
 					GetMethod method = new GetMethod(wadoUrl);
 					int statusCode = client.executeMethod(method);
 					if (statusCode == HttpServletResponse.SC_OK) {
-						InputStream res = method.getResponseBodyAsStream();
-						int read = 0;
-						byte[] bytes = new byte[4096];
-						while ((read = res.read(bytes)) != -1) {
-							out.write(bytes, 0, read);
+						InputStream res = null;
+						try {
+							res = method.getResponseBodyAsStream();
+							int read = 0;
+							byte[] bytes = new byte[4096];
+							while ((read = res.read(bytes)) != -1) {
+								out.write(bytes, 0, read);
+							}
+						} finally {
+							if (res != null) {
+								try {
+									res.close();
+								} catch (IOException e) {
+									log.warning("Error closing WADO response stream", e);
+								}
+							}
 						}
-						res.close();
 						log.info("Query succeeded");
 						httpResponse.setStatus(HttpServletResponse.SC_OK);
 					} else {

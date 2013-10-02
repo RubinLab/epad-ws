@@ -23,6 +23,9 @@ import edu.stanford.isis.epad.common.ProxyLogger;
  */
 public class XNATUtil
 {
+	public static final String XNAT_SESSION_BASE = "/xnat/data/JSESSION";
+	public static final String XNAT_PROJECT_BASE = "/xnat/data/projects";
+
 	private static final ProxyLogger log = ProxyLogger.getInstance();
 	private static final ProxyConfig config = ProxyConfig.getInstance();
 
@@ -43,10 +46,9 @@ public class XNATUtil
 	public static String invokeXNATSessionIDService(HttpServletRequest httpRequest, HttpServletResponse httpResponse)
 			throws IOException, HttpException
 	{
-		String xnatHost = getStringConfigurationParameter("XNATServer");
-		int xnatPort = getIntegerConfigurationParameter("XNATPort");
-		String xnatSessionBase = getStringConfigurationParameter("XNATSessionURLExtension");
-		String xnatSessionURL = buildURLString(xnatHost, xnatPort, xnatSessionBase);
+		String xnatHost = config.getStringConfigurationParameter("XNATServer");
+		int xnatPort = config.getIntegerConfigurationParameter("XNATPort");
+		String xnatSessionURL = buildURLString(xnatHost, xnatPort, XNAT_SESSION_BASE);
 		HttpClient client = new HttpClient();
 		PostMethod postMethod = new PostMethod(xnatSessionURL);
 		String username = extractUserNameFromAuthorizationHeader(httpRequest);
@@ -64,13 +66,23 @@ public class XNATUtil
 			log.info("Successfully invoked XNAT session service");
 			InputStreamReader isr = null;
 			try {
-				isr = new InputStreamReader(postMethod.getResponseBodyAsStream());
-				int read = 0;
-				char[] chars = new char[1024];
 				StringBuilder sb = new StringBuilder();
-
-				while ((read = isr.read(chars)) > 0) {
-					sb.append(chars, 0, read);
+				isr = null;
+				try {
+					isr = new InputStreamReader(postMethod.getResponseBodyAsStream());
+					int read = 0;
+					char[] chars = new char[128];
+					while ((read = isr.read(chars)) > 0) {
+						sb.append(chars, 0, read);
+					}
+				} finally {
+					if (isr != null) {
+						try {
+							isr.close();
+						} catch (IOException e) {
+							log.warning("Error closing XNAT session response stream", e);
+						}
+					}
 				}
 				String jsessionID = sb.toString();
 				log.info("JSESSIONID returned from XNAT: " + jsessionID);
@@ -94,9 +106,9 @@ public class XNATUtil
 
 	public static int invalidateXNATSessionID(HttpServletRequest httpRequest) throws IOException, HttpException
 	{
-		String xnatHost = getStringConfigurationParameter("XNATServer");
-		int xnatPort = getIntegerConfigurationParameter("XNATPort");
-		String xnatSessionBase = getStringConfigurationParameter("XNATSessionURLExtension");
+		String xnatHost = config.getStringConfigurationParameter("XNATServer");
+		int xnatPort = config.getIntegerConfigurationParameter("XNATPort");
+		String xnatSessionBase = config.getStringConfigurationParameter("XNATSessionURLExtension");
 		String xnatSessionURL = buildURLString(xnatHost, xnatPort, xnatSessionBase);
 		HttpClient client = new HttpClient();
 		DeleteMethod deleteMethod = new DeleteMethod(xnatSessionURL);
@@ -113,9 +125,9 @@ public class XNATUtil
 
 	public static boolean hasValidXNATSessionID(HttpServletRequest httpRequest) throws IOException, HttpException
 	{
-		String xnatHost = getStringConfigurationParameter("XNATServer");
-		int xnatPort = getIntegerConfigurationParameter("XNATPort");
-		String xnatSessionBase = getStringConfigurationParameter("XNATSessionURLExtension");
+		String xnatHost = config.getStringConfigurationParameter("XNATServer");
+		int xnatPort = config.getIntegerConfigurationParameter("XNATPort");
+		String xnatSessionBase = config.getStringConfigurationParameter("XNATSessionURLExtension");
 		String xnatSessionURL = buildURLString(xnatHost, xnatPort, xnatSessionBase);
 		HttpClient client = new HttpClient();
 		GetMethod getMethod = new GetMethod(xnatSessionURL);
@@ -145,7 +157,17 @@ public class XNATUtil
 			return "";
 	}
 
-	private static String getJSessionIDFromRequest(HttpServletRequest servletRequest)
+	public static String buildURLString(String host, int port, String base)
+	{
+		StringBuilder sb = new StringBuilder();
+		sb.append("http://").append(host);
+		sb.append(":").append(port);
+		sb.append(base);
+
+		return sb.toString();
+	}
+
+	public static String getJSessionIDFromRequest(HttpServletRequest servletRequest)
 	{
 		String jSessionID = "";
 
@@ -171,45 +193,6 @@ public class XNATUtil
 		log.info("Base64 encoded authorization string: " + authStringEnc);
 
 		return authStringEnc;
-	}
-
-	private static String buildURLString(String host, int port, String base)
-	{
-		StringBuilder sb = new StringBuilder();
-		sb.append("http://").append(host);
-		sb.append(":").append(port);
-		sb.append(base);
-
-		return sb.toString();
-	}
-
-	/**
-	 * 
-	 * @param parameterName
-	 * @return
-	 * @throws IllegalArgumentException
-	 */
-	private static String getStringConfigurationParameter(String parameterName)
-	{
-		String parameterValue = config.getParam(parameterName);
-
-		if (parameterValue == null) {
-			String errorMessage = "no value for parameter " + parameterName + " in configuration file";
-			log.warning(errorMessage);
-			throw new IllegalArgumentException(errorMessage);
-		}
-		return parameterValue;
-	}
-
-	/**
-	 * 
-	 * @param parameterName
-	 * @return
-	 * @throws IllegalArgumentException
-	 */
-	private static int getIntegerConfigurationParameter(String parameterName)
-	{
-		return config.getIntParam(parameterName);
 	}
 
 	private static String extractPasswordFromAuthorizationHeader(HttpServletRequest request)
