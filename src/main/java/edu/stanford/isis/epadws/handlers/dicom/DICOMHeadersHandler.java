@@ -28,17 +28,13 @@ import edu.stanford.isis.epad.common.ProxyConfig;
 import edu.stanford.isis.epad.common.ProxyLogger;
 import edu.stanford.isis.epad.common.util.WadoUrlBuilder;
 import edu.stanford.isis.epadws.processing.pipeline.DicomHeadersTask;
-import edu.stanford.isis.epadws.resources.server.DICOMHeadersServerResource;
 import edu.stanford.isis.epadws.xnat.XNATUtil;
 
 /**
  * Download headers for a series or study in one quick step.
- * <p>
- * Now handled by Restlet resource {@link DICOMHeadersServerResource}.
  * 
  * @author amsnyder
  * 
- * @see DICOMHeadersServerResource
  */
 public class DICOMHeadersHandler extends AbstractHandler
 {

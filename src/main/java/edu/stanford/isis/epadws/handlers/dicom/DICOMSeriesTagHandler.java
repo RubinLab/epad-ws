@@ -28,8 +28,6 @@ import edu.stanford.isis.epadws.processing.mysql.MySqlInstance;
 import edu.stanford.isis.epadws.processing.mysql.MySqlQueries;
 import edu.stanford.isis.epadws.xnat.XNATUtil;
 
-/**
- */
 public class DICOMSeriesTagHandler extends AbstractHandler
 {
 	private static final ProxyLogger log = ProxyLogger.getInstance();

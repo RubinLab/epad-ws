@@ -14,15 +14,11 @@ import org.eclipse.jetty.server.handler.AbstractHandler;
 import edu.stanford.isis.epad.common.ProxyLogger;
 import edu.stanford.isis.epad.common.util.JsonHelper;
 import edu.stanford.isis.epadws.processing.pipeline.DicomDeleteTask;
-import edu.stanford.isis.epadws.resources.server.DICOMDeleteServerResource;
 import edu.stanford.isis.epadws.xnat.XNATUtil;
 
 /**
- * Now handled by Restlet resource {@link DICOMDeleteServerResource}.
- * 
  * @author kurtz
  * 
- * @see DICOMDeleteServerResource
  */
 public class DICOMDeleteHandler extends AbstractHandler
 {

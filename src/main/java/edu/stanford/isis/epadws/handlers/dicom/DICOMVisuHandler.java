@@ -29,17 +29,14 @@ import com.pixelmed.display.SourceImage;
 import edu.stanford.isis.epad.common.ProxyConfig;
 import edu.stanford.isis.epad.common.ProxyLogger;
 import edu.stanford.isis.epad.common.util.WadoUrlBuilder;
-import edu.stanford.isis.epadws.resources.server.DICOMVisuServerResource;
 import edu.stanford.isis.epadws.xnat.XNATUtil;
 
 /**
  * Generate window width and center for a series or study in one quick step.
  * <p>
- * Now handled by Restlet resource {@link DICOMVisuServerResource}.
  * 
  * @author amsnyder
  * 
- * @see DICOMVisuServerResource
  */
 public class DICOMVisuHandler extends AbstractHandler
 {

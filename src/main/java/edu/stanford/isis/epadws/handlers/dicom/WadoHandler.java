@@ -21,8 +21,6 @@ import edu.stanford.isis.epadws.xnat.XNATUtil;
 
 /**
  * WandoHandler
- * <p>
- * Now handled by Restlet resource {@link WADOServerResource}.
  * 
  * @author ckurtz
  * 

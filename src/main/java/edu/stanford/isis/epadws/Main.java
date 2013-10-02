@@ -20,10 +20,7 @@ import org.eclipse.jetty.server.handler.ContextHandlerCollection;
 import org.eclipse.jetty.server.handler.DefaultHandler;
 import org.eclipse.jetty.server.handler.HandlerList;
 import org.eclipse.jetty.server.handler.ResourceHandler;
-import org.eclipse.jetty.servlet.ServletContextHandler;
-import org.eclipse.jetty.servlet.ServletHolder;
 import org.eclipse.jetty.webapp.WebAppContext;
-import org.restlet.ext.servlet.ServerServlet;
 
 import edu.stanford.isis.epad.common.ProxyConfig;
 import edu.stanford.isis.epad.common.ProxyLogger;
@@ -52,10 +49,12 @@ import edu.stanford.isis.epadws.handlers.event.EventSearchHandler;
 import edu.stanford.isis.epadws.handlers.plugin.EPadPluginHandler;
 import edu.stanford.isis.epadws.processing.mysql.MySqlInstance;
 import edu.stanford.isis.epadws.processing.pipeline.QueueAndWatcherManager;
-import edu.stanford.isis.epadws.server.ProxyManager;
 import edu.stanford.isis.epadws.server.ShutdownSignal;
 import edu.stanford.isis.epadws.server.managers.leveling.WindowLevelFactory;
 import edu.stanford.isis.epadws.server.threads.ShutdownHookThread;
+
+// TODO Add a generic authentication handler.
+// See: https://github.com/eclipse/jetty.project/blob/master/examples/embedded/src/main/java/org/eclipse/jetty/embedded/SecuredHelloHandler.java
 
 /**
  * Entry point for the EPad Web Service. In the architecture this is the between the web application and the DICOM
@@ -66,8 +65,8 @@ import edu.stanford.isis.epadws.server.threads.ShutdownHookThread;
  */
 public class Main
 {
-	private static ProxyLogger log = ProxyLogger.getInstance();
-	private static ProxyConfig proxyConfig = ProxyConfig.getInstance();
+	private static final ProxyLogger log = ProxyLogger.getInstance();
+	private static final ProxyConfig proxyConfig = ProxyConfig.getInstance();
 
 	/**
 	 * Starts EPad web server and sets several contexts to be used by restlets.
@@ -84,9 +83,6 @@ public class Main
 	{
 		ShutdownSignal shutdownSignal = ShutdownSignal.getInstance();
 		Server server = null;
-
-		@SuppressWarnings("unused")
-		ProxyManager proxyManager = ProxyManager.getInstance();
 
 		try {
 			int port = proxyConfig.getIntParam("ePadClientPort");
@@ -108,14 +104,12 @@ public class Main
 			 * 
 			 * log.info("Starting test Restlet component"); component.start();
 			 */
-
-			ServletContextHandler restletContext = new ServletContextHandler(ServletContextHandler.SESSIONS);
-			restletContext.setContextPath("/restlet");
-			ServerServlet serverServlet = new ServerServlet();
-			ServletHolder servletHolder = new ServletHolder(serverServlet);
-			servletHolder.setInitParameter("org.restlet.application", "edu.stanford.isis.epadws.EPADWebService");
-			restletContext.addServlet(servletHolder, "/*");
-
+			/*
+			 * ServletContextHandler restletContext = new ServletContextHandler(ServletContextHandler.SESSIONS);
+			 * restletContext.setContextPath("/restlet"); ServerServlet serverServlet = new ServerServlet(); ServletHolder
+			 * servletHolder = new ServletHolder(serverServlet); servletHolder.setInitParameter("org.restlet.application",
+			 * "edu.stanford.isis.epadws.EPADWebService"); restletContext.addServlet(servletHolder, "/*");
+			 */
 			server.join();
 		} catch (BindException be) {
 			log.sever("Bind exception", be);
@@ -196,7 +190,6 @@ public class Main
 		addHandlerAtContextPath(new AimResourceHandler(), "/aimresource", handlerList);
 		addHandlerAtContextPath(new WadoHandler(), "/eWado", handlerList);
 		addHandlerAtContextPath(new EventSearchHandler(), "/eventresource", handlerList);
-
 		addHandlerAtContextPath(new EPadPluginHandler(), "/plugin", handlerList);
 
 		ContextHandlerCollection contexts = new ContextHandlerCollection();

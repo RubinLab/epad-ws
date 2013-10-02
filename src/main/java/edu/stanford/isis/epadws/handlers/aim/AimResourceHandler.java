@@ -51,12 +51,8 @@ import edu.stanford.isis.epad.common.util.JsonHelper;
 import edu.stanford.isis.epad.common.util.ResourceUtils;
 import edu.stanford.isis.epad.common.util.XmlNamespaceTranslator;
 import edu.stanford.isis.epad.plugin.server.impl.PluginConfig;
-import edu.stanford.isis.epadws.resources.server.AIMServerResource;
 import edu.stanford.isis.epadws.xnat.XNATUtil;
 
-/**
- * Now handled by Restlet resource {@link AIMServerResource}.
- */
 public class AimResourceHandler extends AbstractHandler
 {
 	private static final ProxyLogger logger = ProxyLogger.getInstance();
