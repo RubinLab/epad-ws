@@ -10,6 +10,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.apache.commons.httpclient.HttpClient;
+import org.apache.commons.httpclient.HttpException;
 import org.apache.commons.httpclient.methods.GetMethod;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
@@ -50,42 +51,10 @@ public class WadoHandler extends AbstractHandler
 			log.info("WADO query from ePAD: " + queryString);
 			if (queryString != null) {
 				try {
-					String host = config.getParam("NameServer");
-					int port = config.getIntParam("DicomServerWadoPort");
-					String base = config.getParam("WadoUrlExtension");
-					String wadoUrl = buildWADOURL(host, port, base, queryString);
-					HttpClient client = new HttpClient();
-					GetMethod method = new GetMethod(wadoUrl);
-					int statusCode = client.executeMethod(method);
-					if (statusCode == HttpServletResponse.SC_OK) {
-						InputStream res = null;
-						try {
-							res = method.getResponseBodyAsStream();
-							int read = 0;
-							byte[] bytes = new byte[4096];
-							while ((read = res.read(bytes)) != -1) {
-								out.write(bytes, 0, read);
-							}
-						} finally {
-							if (res != null) {
-								try {
-									res.close();
-								} catch (IOException e) {
-									log.warning("Error closing WADO response stream", e);
-								}
-							}
-						}
-						log.info("Query succeeded");
-						httpResponse.setStatus(HttpServletResponse.SC_OK);
-					} else {
-						log.info(INTERNAL_EXCEPTION_MESSAGE);
-						httpResponse.setStatus(statusCode);
-					}
-				} catch (Exception e) {
-					log.info(INTERNAL_EXCEPTION_MESSAGE);
-					httpResponse.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-				} catch (Error e) {
-					log.info(INTERNAL_EXCEPTION_MESSAGE);
+					int statusCode = performWADOQuery(queryString, out);
+					httpResponse.setStatus(statusCode);
+				} catch (Throwable t) {
+					log.warning(INTERNAL_EXCEPTION_MESSAGE, t);
 					httpResponse.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 				}
 			} else {
@@ -98,6 +67,39 @@ public class WadoHandler extends AbstractHandler
 		}
 		out.flush();
 		out.close();
+	}
+
+	private int performWADOQuery(String queryString, ServletOutputStream out) throws IOException, HttpException
+	{
+		String host = config.getParam("NameServer");
+		int port = config.getIntParam("DicomServerWadoPort");
+		String base = config.getParam("WadoUrlExtension");
+		String wadoUrl = buildWADOURL(host, port, base, queryString);
+		HttpClient client = new HttpClient();
+		GetMethod method = new GetMethod(wadoUrl);
+		int statusCode = client.executeMethod(method);
+		if (statusCode == HttpServletResponse.SC_OK) {
+			InputStream res = null;
+			try {
+				res = method.getResponseBodyAsStream();
+				int read = 0;
+				byte[] bytes = new byte[4096];
+				while ((read = res.read(bytes)) != -1) {
+					out.write(bytes, 0, read);
+				}
+			} finally {
+				if (res != null) {
+					try {
+						res.close();
+					} catch (IOException e) {
+						log.warning("Error closing WADO response stream", e);
+					}
+				}
+			}
+		} else {
+			log.info(INTERNAL_EXCEPTION_MESSAGE);
+		}
+		return statusCode;
 	}
 
 	private String buildWADOURL(String host, int port, String base, String queryString)
