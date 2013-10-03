@@ -40,7 +40,7 @@ public class XNATProjectHandler extends AbstractHandler
 	private static final String XNAT_INVOCATION_ERROR_MESSAGE = "Error invoking XNAT project call";
 
 	@Override
-	public void handle(String s, Request request, HttpServletRequest httpRequest, HttpServletResponse httpResponse)
+	public void handle(String base, Request request, HttpServletRequest httpRequest, HttpServletResponse httpResponse)
 			throws IOException, ServletException
 	{
 		ServletOutputStream out = httpResponse.getOutputStream();
@@ -51,7 +51,7 @@ public class XNATProjectHandler extends AbstractHandler
 
 		if (XNATUtil.hasValidXNATSessionID(httpRequest)) {
 			try {
-				int statusCode = invokeXNATProjectService(out, httpRequest, httpResponse);
+				int statusCode = invokeXNATProjectService(base, httpRequest, httpResponse, out);
 				httpResponse.setStatus(statusCode);
 			} catch (Exception e) {
 				log.warning(INTERNAL_EXCEPTION_MESSAGE, e);
@@ -64,19 +64,19 @@ public class XNATProjectHandler extends AbstractHandler
 			}
 		} else {
 			log.info(INVALID_SESSION_TOKEN_MESSAGE);
-			JsonHelper.createJSONErrorResponse(INVALID_SESSION_TOKEN_MESSAGE);
+			out.print(JsonHelper.createJSONErrorResponse(INVALID_SESSION_TOKEN_MESSAGE));
 			httpResponse.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
 		}
 		out.flush();
 		out.close();
 	}
 
-	private int invokeXNATProjectService(ServletOutputStream out, HttpServletRequest httpRequest,
-			HttpServletResponse httpResponse) throws IOException, HttpException
+	private int invokeXNATProjectService(String base, HttpServletRequest httpRequest, HttpServletResponse httpResponse,
+			ServletOutputStream out) throws IOException, HttpException
 	{
 		String xnatHost = config.getStringConfigurationParameter("XNATServer");
 		int xnatPort = config.getIntegerConfigurationParameter("XNATPort");
-		String xnatProjectURL = XNATUtil.buildURLString(xnatHost, xnatPort, XNATUtil.XNAT_PROJECT_BASE);
+		String xnatProjectURL = XNATUtil.buildURLString(xnatHost, xnatPort, XNATUtil.XNAT_PROJECT_BASE, base);
 		HttpClient client = new HttpClient();
 		GetMethod getMethod = new GetMethod(xnatProjectURL);
 		String jsessionID = XNATUtil.getJSessionIDFromRequest(httpRequest);

@@ -87,7 +87,7 @@ public class Main
 
 		try {
 			int port = proxyConfig.getIntParam("ePadClientPort");
-			log.info("Starting the Dicom Proxy. Build date: " + EPadWebServerVersion.getBuildDate());
+			log.info("Starting the ePAD web service. Build date: " + EPadWebServerVersion.getBuildDate());
 			initPlugins(); // Initialize plugin classes
 			startSupportThreads();
 			server = new Server(port);

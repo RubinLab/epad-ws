@@ -159,10 +159,16 @@ public class XNATUtil
 
 	public static String buildURLString(String host, int port, String base)
 	{
+		return buildURLString(host, port, base, "");
+	}
+
+	public static String buildURLString(String host, int port, String base, String ext)
+	{
 		StringBuilder sb = new StringBuilder();
 		sb.append("http://").append(host);
 		sb.append(":").append(port);
 		sb.append(base);
+		sb.append(ext);
 
 		return sb.toString();
 	}
