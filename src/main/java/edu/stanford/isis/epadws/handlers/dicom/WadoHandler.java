@@ -18,7 +18,6 @@ import org.eclipse.jetty.server.handler.AbstractHandler;
 import edu.stanford.isis.epad.common.ProxyConfig;
 import edu.stanford.isis.epad.common.ProxyLogger;
 import edu.stanford.isis.epadws.resources.server.WADOServerResource;
-import edu.stanford.isis.epadws.xnat.XNATUtil;
 
 /**
  * WandoHandler
@@ -34,7 +33,8 @@ public class WadoHandler extends AbstractHandler
 
 	private static final String INTERNAL_EXCEPTION_MESSAGE = "Internal error";
 	private static final String MISSING_QUERY_MESSAGE = "No query in request";
-	private static final String INVALID_SESSION_TOKEN_MESSAGE = "Session token is invalid";
+
+	// private static final String INVALID_SESSION_TOKEN_MESSAGE = "Session token is invalid";
 
 	@Override
 	public void handle(String s, Request request, HttpServletRequest httpRequest, HttpServletResponse httpResponse)
@@ -45,10 +45,11 @@ public class WadoHandler extends AbstractHandler
 		httpResponse.setContentType("image/jpeg");
 		request.setHandled(true);
 
-		if (XNATUtil.hasValidXNATSessionID(httpRequest)) {
+		// TODO Temporarily turn off authentication
+		// if (XNATUtil.hasValidXNATSessionID(httpRequest)) {
+		if (true) {
 			String queryString = httpRequest.getQueryString();
 			queryString = URLDecoder.decode(queryString, "UTF-8");
-			log.info("WADO query from ePAD: " + queryString);
 			if (queryString != null) {
 				try {
 					int statusCode = performWADOQuery(queryString, out);
@@ -61,10 +62,11 @@ public class WadoHandler extends AbstractHandler
 				log.info(MISSING_QUERY_MESSAGE);
 				httpResponse.setStatus(HttpServletResponse.SC_BAD_REQUEST);
 			}
-		} else {
-			log.info(INVALID_SESSION_TOKEN_MESSAGE);
-			httpResponse.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
 		}
+		// } else {
+		// log.info(INVALID_SESSION_TOKEN_MESSAGE);
+		// httpResponse.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+		// }
 		out.flush();
 		out.close();
 	}
@@ -78,6 +80,9 @@ public class WadoHandler extends AbstractHandler
 		HttpClient client = new HttpClient();
 		GetMethod method = new GetMethod(wadoUrl);
 		int statusCode = client.executeMethod(method);
+
+		log.info("WADO query from ePAD: " + queryString);
+
 		if (statusCode == HttpServletResponse.SC_OK) {
 			InputStream res = null;
 			try {
