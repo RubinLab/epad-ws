@@ -53,13 +53,9 @@ public class XNATProjectHandler extends AbstractHandler
 			try {
 				int statusCode = invokeXNATProjectService(base, httpRequest, httpResponse, out);
 				httpResponse.setStatus(statusCode);
-			} catch (Exception e) {
-				log.warning(INTERNAL_EXCEPTION_MESSAGE, e);
-				out.print(JsonHelper.createJSONErrorResponse(INTERNAL_EXCEPTION_MESSAGE, e));
-				httpResponse.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-			} catch (Error e) {
-				log.warning(INTERNAL_EXCEPTION_MESSAGE, e);
-				out.print(JsonHelper.createJSONErrorResponse(INTERNAL_EXCEPTION_MESSAGE, e));
+			} catch (Throwable t) {
+				log.warning(INTERNAL_EXCEPTION_MESSAGE, t);
+				out.print(JsonHelper.createJSONErrorResponse(INTERNAL_EXCEPTION_MESSAGE, t));
 				httpResponse.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 			}
 		} else {
