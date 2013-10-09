@@ -40,35 +40,42 @@ public class WadoHandler extends AbstractHandler
 	public void handle(String s, Request request, HttpServletRequest httpRequest, HttpServletResponse httpResponse)
 			throws IOException, ServletException
 	{
-		ServletOutputStream out = httpResponse.getOutputStream();
+		ServletOutputStream out = null;
+		int statusCode;
 
-		httpResponse.setContentType("image/jpeg");
-		request.setHandled(true);
+		try {
+			out = httpResponse.getOutputStream();
 
-		// TODO Temporarily turn off authentication
-		// if (XNATUtil.hasValidXNATSessionID(httpRequest)) {
-		if (true) {
-			String queryString = httpRequest.getQueryString();
-			queryString = URLDecoder.decode(queryString, "UTF-8");
-			if (queryString != null) {
-				try {
-					int statusCode = performWADOQuery(queryString, out);
-					httpResponse.setStatus(statusCode);
-				} catch (Throwable t) {
-					log.warning(INTERNAL_EXCEPTION_MESSAGE, t);
-					httpResponse.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+			httpResponse.setContentType("image/jpeg");
+			request.setHandled(true);
+
+			// TODO Temporarily turn off authentication
+			// if (XNATUtil.hasValidXNATSessionID(httpRequest)) {
+			if (true) {
+				String queryString = httpRequest.getQueryString();
+				queryString = URLDecoder.decode(queryString, "UTF-8");
+				if (queryString != null) {
+					log.info("WADOHandler, query=" + queryString);
+					statusCode = performWADOQuery(queryString, out);
+				} else {
+					log.info(MISSING_QUERY_MESSAGE);
+					statusCode = HttpServletResponse.SC_BAD_REQUEST;
 				}
-			} else {
-				log.info(MISSING_QUERY_MESSAGE);
-				httpResponse.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+			}
+			// } else {
+			// log.info(INVALID_SESSION_TOKEN_MESSAGE);
+			// responseStatusCode = HttpServletResponse.SC_UNAUTHORIZED;
+			// }
+		} catch (Throwable t) {
+			log.warning(INTERNAL_EXCEPTION_MESSAGE, t);
+			statusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+		} finally {
+			if (out != null) {
+				out.flush();
+				out.close();
 			}
 		}
-		// } else {
-		// log.info(INVALID_SESSION_TOKEN_MESSAGE);
-		// httpResponse.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-		// }
-		out.flush();
-		out.close();
+		httpResponse.setStatus(statusCode);
 	}
 
 	private int performWADOQuery(String queryString, ServletOutputStream out) throws IOException, HttpException
@@ -80,8 +87,6 @@ public class WadoHandler extends AbstractHandler
 		HttpClient client = new HttpClient();
 		GetMethod method = new GetMethod(wadoUrl);
 		int statusCode = client.executeMethod(method);
-
-		log.info("WADO query from ePAD: " + queryString);
 
 		if (statusCode == HttpServletResponse.SC_OK) {
 			InputStream res = null;
