@@ -47,7 +47,6 @@ import edu.stanford.hakan.aim3api.usage.AnnotationBuilder;
 import edu.stanford.hakan.aim3api.usage.AnnotationGetter;
 import edu.stanford.isis.epad.common.ProxyConfig;
 import edu.stanford.isis.epad.common.ProxyLogger;
-import edu.stanford.isis.epad.common.util.JsonHelper;
 import edu.stanford.isis.epad.common.util.ResourceUtils;
 import edu.stanford.isis.epad.common.util.XmlNamespaceTranslator;
 import edu.stanford.isis.epad.plugin.server.impl.PluginConfig;
@@ -98,23 +97,19 @@ public class AimResourceHandler extends AbstractHandler
 			if ("GET".equalsIgnoreCase(method)) {
 				String queryString = httpRequest.getQueryString();
 				queryString = URLDecoder.decode(queryString, "UTF-8");
-				logger.info("AimResourceHandler received GET method : " + queryString);
+				logger.info("AimResourceHandler received query: " + queryString);
 				if (queryString != null) {
-					try { // Build an XML document
+					try {
 						queryAIMImageAnnotations(out, queryString);
 						httpResponse.setStatus(HttpServletResponse.SC_OK);
-					} catch (Exception e) {
-						logger.warning(INTERNAL_EXCEPTION_MESSAGE);
-						out.append(INTERNAL_EXCEPTION_MESSAGE + "<br>");
-						httpResponse.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-					} catch (Error e) {
-						logger.warning(INTERNAL_EXCEPTION_MESSAGE);
-						out.append(INTERNAL_EXCEPTION_MESSAGE + "<br>");
+					} catch (Throwable t) {
+						logger.warning(INTERNAL_EXCEPTION_MESSAGE, t);
+						out.append(INTERNAL_EXCEPTION_MESSAGE + t.getMessage() + "<br>");
 						httpResponse.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 					}
 				} else {
 					logger.info(MISSING_QUERY_MESSAGE);
-					out.append(JsonHelper.createJSONErrorResponse(MISSING_QUERY_MESSAGE));
+					out.append(MISSING_QUERY_MESSAGE);
 					httpResponse.setStatus(HttpServletResponse.SC_BAD_REQUEST);
 				}
 			} else if ("POST".equalsIgnoreCase(method)) { // http://www.tutorialspoint.com/servlets/servlets-file-uploading.htm
@@ -129,11 +124,9 @@ public class AimResourceHandler extends AbstractHandler
 					} else {
 						httpResponse.setStatus(HttpServletResponse.SC_OK);
 					}
-				} catch (Exception e) {
-					logger.warning("Failed to upload AIM files to _" + annotationsUploadDirPath + "_", e);
-					httpResponse.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-				} catch (Error e) {
-					logger.warning("Error. Could jar file be missing from start script?", e);
+				} catch (Throwable t) {
+					logger.warning("Failed to upload AIM files to _" + annotationsUploadDirPath + "_", t);
+					out.append("Failed to upload AIM files to _" + annotationsUploadDirPath + "_; error=" + t.getMessage());
 					httpResponse.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 				}
 			} else {
@@ -167,6 +160,7 @@ public class AimResourceHandler extends AbstractHandler
 			}
 		}
 		ArrayList<ImageAnnotation> aims = getAIMImageAnnotations(id1, id2);
+		logger.info("AimResourceHandler, number of AIM files found: " + aims.size());
 
 		DocumentBuilderFactory dbfac = DocumentBuilderFactory.newInstance();
 		DocumentBuilder docBuilder = dbfac.newDocumentBuilder();
@@ -309,8 +303,6 @@ public class AimResourceHandler extends AbstractHandler
 		} else if (id1.equals("key")) {
 			logger.info("id1 is key id2 is " + id2);
 		}
-		logger.info("Number of AIM files founded : " + retAims.size());
-
 		return retAims;
 	}
 

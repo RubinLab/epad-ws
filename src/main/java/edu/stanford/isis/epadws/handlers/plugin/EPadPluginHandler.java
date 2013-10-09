@@ -50,7 +50,6 @@ public class EPadPluginHandler extends AbstractHandler
 		PluginServletHandler pluginHandler = pluginHandlerMap.getPluginServletHandler(pluginName);
 
 		if (XNATUtil.hasValidXNATSessionID(httpRequest)) {
-
 			if (pluginHandler != null) {
 				String method = httpRequest.getMethod();
 				if ("GET".equalsIgnoreCase(method)) {

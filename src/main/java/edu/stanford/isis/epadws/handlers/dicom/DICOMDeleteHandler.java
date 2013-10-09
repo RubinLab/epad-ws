@@ -44,7 +44,7 @@ public class DICOMDeleteHandler extends AbstractHandler
 		if (XNATUtil.hasValidXNATSessionID(httpRequest)) {
 			String queryString = httpRequest.getQueryString();
 			queryString = URLDecoder.decode(queryString, "UTF-8");
-			log.info("Delete query from ePAD: " + queryString);
+			log.info("DICOMDeleteHandler query: " + queryString);
 
 			if (queryString != null) {
 				queryString = queryString.trim();
@@ -113,8 +113,6 @@ public class DICOMDeleteHandler extends AbstractHandler
 		String check = queryString.toLowerCase().trim();
 		boolean isSeries = check.indexOf("eletetype=series") > 0;
 
-		log.info(" isSeries=" + isSeries + " for: " + queryString);
 		return isSeries;
 	}
-
 }

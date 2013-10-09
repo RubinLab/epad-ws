@@ -70,7 +70,7 @@ public class DicomHeadersTask implements Runnable
 
 			boolean created = ProxyFileUtils.createDirsAndFile(outputFile);
 			if (created) {
-				logger.info("Using file: " + outputFile.getAbsolutePath());
+				logger.info("DICOMHeadersTask, using temporary file: " + outputFile.getAbsolutePath());
 			}
 
 			// write the contents of this buffer to a file.

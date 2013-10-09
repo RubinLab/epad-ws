@@ -105,7 +105,7 @@ public class EventServerResource extends BaseServerResource
 		List<Map<String, String>> result = dbQueries.getEventsForUser(userName);
 
 		out.append(new SearchResultUtils().get_EVENT_SEARCH_HEADER());
-		log.info("Found " + result.size() + " results.");
+		log.info("Found " + result.size() + " result(s).");
 		String separator = config.getParam("fieldSeparator");
 
 		for (Map<String, String> row : result) { // Write the result

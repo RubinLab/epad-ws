@@ -43,7 +43,7 @@ public class XNATProjectHandler extends AbstractHandler
 	public void handle(String base, Request request, HttpServletRequest httpRequest, HttpServletResponse httpResponse)
 			throws IOException, ServletException
 	{
-		ServletOutputStream out = httpResponse.getOutputStream();
+		ServletOutputStream outputStream = httpResponse.getOutputStream();
 
 		httpResponse.setContentType("application/json");
 		httpResponse.setHeader("Access-Control-Allow-Origin", "*");
@@ -51,24 +51,24 @@ public class XNATProjectHandler extends AbstractHandler
 
 		if (XNATUtil.hasValidXNATSessionID(httpRequest)) {
 			try {
-				int statusCode = invokeXNATProjectService(base, httpRequest, httpResponse, out);
+				int statusCode = invokeXNATProjectService(base, httpRequest, httpResponse, outputStream);
 				httpResponse.setStatus(statusCode);
 			} catch (Throwable t) {
 				log.warning(INTERNAL_EXCEPTION_MESSAGE, t);
-				out.print(JsonHelper.createJSONErrorResponse(INTERNAL_EXCEPTION_MESSAGE, t));
+				outputStream.print(JsonHelper.createJSONErrorResponse(INTERNAL_EXCEPTION_MESSAGE, t));
 				httpResponse.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 			}
 		} else {
 			log.info(INVALID_SESSION_TOKEN_MESSAGE);
-			out.print(JsonHelper.createJSONErrorResponse(INVALID_SESSION_TOKEN_MESSAGE));
+			outputStream.print(JsonHelper.createJSONErrorResponse(INVALID_SESSION_TOKEN_MESSAGE));
 			httpResponse.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
 		}
-		out.flush();
-		out.close();
+		outputStream.flush();
+		outputStream.close();
 	}
 
 	private int invokeXNATProjectService(String base, HttpServletRequest httpRequest, HttpServletResponse httpResponse,
-			ServletOutputStream out) throws IOException, HttpException
+			ServletOutputStream outputStream) throws IOException, HttpException
 	{
 		String xnatHost = config.getStringConfigurationParameter("XNATServer");
 		int xnatPort = config.getIntegerConfigurationParameter("XNATPort");
@@ -77,7 +77,7 @@ public class XNATProjectHandler extends AbstractHandler
 		GetMethod getMethod = new GetMethod(xnatProjectURL);
 		String jsessionID = XNATUtil.getJSessionIDFromRequest(httpRequest);
 
-		// TODO Cleaner cookie pass through
+		// TODO Cleaner cookie pass through?
 		getMethod.setRequestHeader("Cookie", "JSESSIONID=" + jsessionID);
 
 		log.info("Invoking XNAT project service at " + xnatProjectURL);
@@ -86,26 +86,26 @@ public class XNATProjectHandler extends AbstractHandler
 
 		if (statusCode == HttpServletResponse.SC_OK) {
 			log.info("Successfully invoked XNAT project service");
-			InputStream res = null;
+			InputStream xnatResponse = null;
 			try {
-				res = getMethod.getResponseBodyAsStream();
+				xnatResponse = getMethod.getResponseBodyAsStream();
 				int read = 0;
 				byte[] bytes = new byte[4096];
-				while ((read = res.read(bytes)) != -1) {
-					out.write(bytes, 0, read);
+				while ((read = xnatResponse.read(bytes)) != -1) {
+					outputStream.write(bytes, 0, read);
 				}
 			} finally {
-				if (res != null) {
+				if (xnatResponse != null) {
 					try {
-						res.close();
+						xnatResponse.close();
 					} catch (IOException e) {
 						log.warning("Error closing XNAT project response stream", e);
 					}
 				}
 			}
 		} else {
-			log.info(XNAT_INVOCATION_ERROR_MESSAGE + ";statusCode=" + statusCode);
-			JsonHelper.createJSONErrorResponse(XNAT_INVOCATION_ERROR_MESSAGE + ";statusCode=" + statusCode);
+			log.info(XNAT_INVOCATION_ERROR_MESSAGE + ";status code=" + statusCode);
+			JsonHelper.createJSONErrorResponse(XNAT_INVOCATION_ERROR_MESSAGE + ";status code=" + statusCode);
 		}
 		return statusCode;
 	}

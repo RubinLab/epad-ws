@@ -195,9 +195,6 @@ public class XNATUtil
 		byte[] authEncBytes = Base64.encodeBase64(authString.getBytes());
 		String authStringEnc = new String(authEncBytes);
 
-		log.info("Authorization string: " + authString);
-		log.info("Base64 encoded authorization string: " + authStringEnc);
-
 		return authStringEnc;
 	}
 

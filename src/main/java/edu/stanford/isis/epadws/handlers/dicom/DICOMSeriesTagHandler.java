@@ -53,7 +53,7 @@ public class DICOMSeriesTagHandler extends AbstractHandler
 				String contentType = httpRequest.getParameter("type");
 				if ("text".equals(contentType))
 					useBase64 = false;
-				log.info("DICOMSeriesTagHandler: series_iuid=" + seriesIUID);
+				log.info("DICOMSeriesTagHandler, series_iuid=" + seriesIUID);
 				try {
 					handleDICOMSeriesTagQuery(out, seriesIUID, useBase64);
 					httpResponse.setStatus(HttpServletResponse.SC_OK);

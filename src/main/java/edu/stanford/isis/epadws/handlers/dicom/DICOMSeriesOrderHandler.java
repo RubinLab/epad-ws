@@ -95,7 +95,7 @@ public class DICOMSeriesOrderHandler extends AbstractHandler
 		List<Map<String, String>> orderQueryEntries = queries.getOrderFile(seriesIUID);
 		boolean isFirst = true;
 
-		log.info("DICOMSeriesOrderHandler: series_iuid=" + seriesIUID);
+		log.info("DICOMSeriesOrderHandler, series_iuid=" + seriesIUID);
 
 		out.println("{ \"ResultSet\": [");
 

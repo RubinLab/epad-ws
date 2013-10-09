@@ -84,9 +84,8 @@ public class DICOMSearchServerResource extends BaseServerResource
 		boolean isFirst = true;
 		StringBuilder result = new StringBuilder();
 
-		log.info("MySqlSearchHandler(handleStudyRequest) = " + searchString);
-		log.info("MySql found " + searchResult.size() + " results.");
-		log.info("Search result: " + searchResult.toString());
+		log.info("performDICOMStudySearch = " + searchString);
+		log.info("MySql found " + searchResult.size() + " result(s).");
 
 		result.append("{ \"ResultSet\": [");
 
@@ -107,9 +106,9 @@ public class DICOMSearchServerResource extends BaseServerResource
 			final String physicianName = row.get("ref_physician");
 			final String birthdate = row.get("pat_birthdate");
 			final String sex = row.get("pat_sex");
-			final DICOMStudySearchResult studySearchResult = new DICOMStudySearchResult(studyUID, patientName, patientID, examType,
-					dateAcquired, studyStatus, seriesCount, firstSeriesUID, firstSeriesDateAcquired, studyAccessionNumber,
-					imagesCount, stuidID, studyDescription, physicianName, birthdate, sex);
+			final DICOMStudySearchResult studySearchResult = new DICOMStudySearchResult(studyUID, patientName, patientID,
+					examType, dateAcquired, studyStatus, seriesCount, firstSeriesUID, firstSeriesDateAcquired,
+					studyAccessionNumber, imagesCount, stuidID, studyDescription, physicianName, birthdate, sex);
 			if (!isFirst)
 				result.append(",\n");
 			isFirst = false;

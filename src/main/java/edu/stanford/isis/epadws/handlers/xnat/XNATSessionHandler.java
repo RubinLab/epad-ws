@@ -42,15 +42,15 @@ public class XNATSessionHandler extends AbstractHandler
 			throws IOException, ServletException
 	{
 		PrintWriter out = httpResponse.getWriter();
-		String username = XNATUtil.extractUserNameFromAuthorizationHeader(httpRequest);
 
 		httpResponse.setContentType("text/plain");
 		request.setHandled(true);
 
 		String method = httpRequest.getMethod();
 		if ("POST".equalsIgnoreCase(method)) {
+			String username = XNATUtil.extractUserNameFromAuthorizationHeader(httpRequest);
 			if (username.length() != 0) {
-				log.info("Login request from user " + username);
+				log.info("XNATSessionHandler, login request from user " + username);
 				try {
 					out.append(XNATUtil.invokeXNATSessionIDService(httpRequest, httpResponse));
 					httpResponse.setStatus(HttpServletResponse.SC_OK);
@@ -69,7 +69,7 @@ public class XNATSessionHandler extends AbstractHandler
 				httpResponse.setStatus(HttpServletResponse.SC_BAD_REQUEST);
 			}
 		} else if ("DELETE".equalsIgnoreCase(method)) {
-			log.info("Logout request from ePad from user");
+			log.info("XNATSessionHandler, logout request");
 			try {
 				int statusCode = XNATUtil.invalidateXNATSessionID(httpRequest);
 				log.info("XNAT delete session returns status code " + statusCode);
@@ -78,9 +78,9 @@ public class XNATSessionHandler extends AbstractHandler
 				log.warning(LOGOUT_EXCEPTION_MESSAGE, e);
 				out.append(LOGOUT_EXCEPTION_MESSAGE + ": " + e.getMessage());
 				httpResponse.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-			} catch (Exception e) {
-				log.warning(LOGOUT_EXCEPTION_MESSAGE, e);
-				out.append(LOGOUT_EXCEPTION_MESSAGE + ": " + e.getMessage());
+			} catch (Throwable t) {
+				log.warning(LOGOUT_EXCEPTION_MESSAGE, t);
+				out.append(LOGOUT_EXCEPTION_MESSAGE + ": " + t.getMessage());
 				httpResponse.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 			}
 		} else {

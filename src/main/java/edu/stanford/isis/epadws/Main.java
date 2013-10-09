@@ -307,10 +307,10 @@ public class Main
 			String baseDirPath = ePadFiles.getBaseDirPath();
 			log.info("baseDirPath = " + baseDirPath);
 
-			List<String> allStudies = ePadFiles.getStudies();
-			for (String currStudy : allStudies) {
-				log.info("Study: " + currStudy);
-			}
+			// List<String> allStudies = ePadFiles.getStudies();
+			// for (String currStudy : allStudies) {
+			// log.info("Study: " + currStudy);
+			// }
 		} catch (Exception e) {
 			log.warning("Failed ePadPlugin test.", e);
 		} catch (Error err) {

@@ -129,7 +129,7 @@ public class EventSearchHandler extends AbstractHandler
 		List<Map<String, String>> result = dbQueries.getEventsForUser(userName);
 
 		out.print(new SearchResultUtils().get_EVENT_SEARCH_HEADER());
-		log.info("MySql found " + result.size() + " results.");
+		log.info("Event search found " + result.size() + " result(s).");
 
 		String separator = config.getParam("fieldSeparator");
 		for (Map<String, String> row : result) {

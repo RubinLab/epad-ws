@@ -67,7 +67,7 @@ public class DICOMVisuHandler extends AbstractHandler
 
 			if (queryString != null) {
 				queryString = queryString.trim();
-				log.info("DICOM visu query from ePAD: " + queryString);
+				log.info("DICOMVisuHandler query: " + queryString);
 				String studyIdKey = getStudyUIDFromRequest(queryString);
 				String seriesIdKey = getSeriesUIDFromRequest(queryString);
 				String imageIdKey = getInstanceUIDFromRequest(queryString);

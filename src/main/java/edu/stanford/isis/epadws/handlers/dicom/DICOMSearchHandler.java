@@ -1,12 +1,10 @@
 package edu.stanford.isis.epadws.handlers.dicom;
 
-import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.URLDecoder;
 import java.util.List;
 import java.util.Map;
 
-import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -20,7 +18,6 @@ import edu.stanford.isis.epad.common.dicom.DICOMSeriesSearchResult;
 import edu.stanford.isis.epad.common.dicom.DICOMStudySearchResult;
 import edu.stanford.isis.epad.common.dicom.DicomFormatUtil;
 import edu.stanford.isis.epad.common.dicom.DicomStudySearchType;
-import edu.stanford.isis.epad.common.dicom.RSeriesData;
 import edu.stanford.isis.epad.common.util.JsonHelper;
 import edu.stanford.isis.epadws.processing.mysql.MySqlInstance;
 import edu.stanford.isis.epadws.processing.mysql.MySqlQueries;
@@ -49,56 +46,58 @@ public class DICOMSearchHandler extends AbstractHandler
 
 	@Override
 	public void handle(String s, Request request, HttpServletRequest httpRequest, HttpServletResponse httpResponse)
-			throws IOException, ServletException
+
 	{
-		PrintWriter out = httpResponse.getWriter();
+		PrintWriter outputStream = null;
+		int statusCode;
 
 		httpResponse.setContentType("application/json");
 		request.setHandled(true);
 
-		if (XNATUtil.hasValidXNATSessionID(httpRequest)) {
-			String queryString = httpRequest.getQueryString();
-			queryString = URLDecoder.decode(queryString, "UTF-8");
-			log.info("Query from ePAD : " + queryString);
+		try {
+			outputStream = httpResponse.getWriter();
 
-			if (queryString != null) {
-				queryString = queryString.trim();
+			if (XNATUtil.hasValidXNATSessionID(httpRequest)) {
+				String queryString = httpRequest.getQueryString();
+				queryString = URLDecoder.decode(queryString, "UTF-8");
+				log.info("DICOMSearchHandler query: " + queryString);
 
-				try {
+				if (queryString != null) {
+					queryString = queryString.trim();
 					if (isDICOMSeriesRequest(queryString)) {
-						performDICOMSeriesSearch(out, queryString);
+						performDICOMSeriesSearch(outputStream, queryString);
 					} else {
 						DicomStudySearchType searchType = getSearchType(httpRequest);
 						if (searchType != null) {
-							performDICOMStudySearch(out, searchType, queryString);
+							performDICOMStudySearch(outputStream, searchType, queryString);
 						} else {
 							log.info(MISSING_STUDY_SEARCH_TYPE_MESSAGE);
-							httpResponse.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-							out.append(JsonHelper.createJSONErrorResponse(MISSING_STUDY_SEARCH_TYPE_MESSAGE));
+							statusCode = HttpServletResponse.SC_BAD_REQUEST;
+							outputStream.append(JsonHelper.createJSONErrorResponse(MISSING_STUDY_SEARCH_TYPE_MESSAGE));
 						}
 					}
-					httpResponse.setStatus(HttpServletResponse.SC_OK);
-				} catch (Exception e) {
-					log.warning(INTERNAL_EXCEPTION_MESSAGE, e);
-					httpResponse.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-					out.append(JsonHelper.createJSONErrorResponse(INTERNAL_EXCEPTION_MESSAGE, e));
-				} catch (Error e) {
-					log.warning(INTERNAL_EXCEPTION_MESSAGE, e);
-					httpResponse.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-					out.append(JsonHelper.createJSONErrorResponse(INTERNAL_EXCEPTION_MESSAGE, e));
+					statusCode = HttpServletResponse.SC_OK;
+				} else {
+					log.info(MISSING_QUERY_MESSAGE);
+					outputStream.append(JsonHelper.createJSONErrorResponse(MISSING_QUERY_MESSAGE));
+					statusCode = HttpServletResponse.SC_BAD_REQUEST;
 				}
 			} else {
-				log.info(MISSING_QUERY_MESSAGE);
-				out.append(JsonHelper.createJSONErrorResponse(MISSING_QUERY_MESSAGE));
-				httpResponse.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+				log.info(INVALID_SESSION_TOKEN_MESSAGE);
+				statusCode = HttpServletResponse.SC_UNAUTHORIZED;
+				outputStream.append(JsonHelper.createJSONErrorResponse(INVALID_SESSION_TOKEN_MESSAGE));
 			}
-		} else {
-			log.info(INVALID_SESSION_TOKEN_MESSAGE);
-			httpResponse.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-			out.append(JsonHelper.createJSONErrorResponse(INVALID_SESSION_TOKEN_MESSAGE));
+		} catch (Throwable t) {
+			log.warning(INTERNAL_EXCEPTION_MESSAGE, t);
+			outputStream.append(JsonHelper.createJSONErrorResponse(INTERNAL_EXCEPTION_MESSAGE, t));
+			statusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+		} finally {
+			if (outputStream != null) {
+				outputStream.flush();
+				outputStream.close();
+			}
 		}
-		out.flush();
-		out.close();
+		httpResponse.setStatus(statusCode);
 	}
 
 	/**
@@ -108,11 +107,8 @@ public class DICOMSearchHandler extends AbstractHandler
 	 * 
 	 * @param searchType
 	 * @param queryString
-	 * @return
-	 * @throws Exception
 	 */
-	private void performDICOMStudySearch(PrintWriter out, DicomStudySearchType searchType, String queryString)
-			throws Exception
+	private void performDICOMStudySearch(PrintWriter outputStream, DicomStudySearchType searchType, String queryString)
 	{
 		final MySqlQueries dbQueries = MySqlInstance.getInstance().getMysqlQueries();
 		final String[] parts = queryString.split("=");
@@ -120,11 +116,9 @@ public class DICOMSearchHandler extends AbstractHandler
 		final List<Map<String, String>> searchResult = dbQueries.doStudySearch(searchType.toString(), searchString);
 		boolean isFirst = true;
 
-		log.info("MySqlSearchHandler(handleStudyRequest) = " + searchString);
-		log.info("MySql found " + searchResult.size() + " results.");
-		log.info("Search result: " + searchResult.toString());
+		log.info("DICOMSearchHandler study search found " + searchResult.size() + " result(s).");
 
-		out.append("{ \"ResultSet\": [");
+		outputStream.append("{ \"ResultSet\": [");
 
 		for (Map<String, String> row : searchResult) {
 			final String studyUID = getStringValueFromRow(row, "study_iuid");
@@ -147,11 +141,11 @@ public class DICOMSearchHandler extends AbstractHandler
 					examType, dateAcquired, studyStatus, seriesCount, firstSeriesUID, firstSeriesDateAcquired,
 					studyAccessionNumber, imagesCount, stuidID, studyDescription, physicianName, birthdate, sex);
 			if (!isFirst)
-				out.append(",\n");
+				outputStream.append(",\n");
 			isFirst = false;
-			out.append(studySearchResult2JSON(studySearchResult));
+			outputStream.append(studySearchResult2JSON(studySearchResult));
 		}
-		out.append("] }");
+		outputStream.append("] }");
 	}
 
 	/**
@@ -165,7 +159,7 @@ public class DICOMSearchHandler extends AbstractHandler
 	 *          Here we will look for *.series files within the study directory. If it is there then It will read that
 	 *          file and add it to the result.
 	 */
-	private void performDICOMSeriesSearch(PrintWriter out, String queryString) throws Exception
+	private void performDICOMSeriesSearch(PrintWriter outputStream, String queryString)
 	{
 		final String studyIdKey = getStudyUIDFromRequest(queryString);
 		final String studyUID = DicomFormatUtil.formatDirToUid(studyIdKey);
@@ -173,10 +167,9 @@ public class DICOMSearchHandler extends AbstractHandler
 		final List<Map<String, String>> series = dbQueries.doSeriesSearch(studyUID);
 		boolean isFirst = true;
 
-		log.info("Series search column header: " + RSeriesData.getHeaderColumn());
-		log.info("dbQueries.doSeriesSearch() had " + series.size() + " results, for studyUID=" + studyUID);
+		log.info("DICOMSearchHandler series search found " + series.size() + " result(s) for study with UID " + studyUID);
 
-		out.append("{ \"ResultSet\": [");
+		outputStream.append("{ \"ResultSet\": [");
 
 		for (Map<String, String> row : series) {
 			final String seriesID = getStringValueFromRow(row, "series_iuid");
@@ -198,11 +191,11 @@ public class DICOMSearchHandler extends AbstractHandler
 					seriesDate, examType, thumbnailURL, seriesDescription, numberOfSeriesRelatedInstances, imagesInSeries,
 					seriesStatus, bodyPart, institution, stationName, department, accessionNumber);
 			if (!isFirst)
-				out.append(",\n");
+				outputStream.append(",\n");
 			isFirst = false;
-			out.append(seriesSearchResult2JSON(seriesSearchResult));
+			outputStream.append(seriesSearchResult2JSON(seriesSearchResult));
 		}
-		out.append("] }");
+		outputStream.append("] }");
 	}
 
 	private String seriesSearchResult2JSON(DICOMSeriesSearchResult seriesSearchResult)
@@ -260,7 +253,7 @@ public class DICOMSearchHandler extends AbstractHandler
 		end = end.replace('=', ' ');
 		String[] parts = end.split(" ");
 		String key = parts[1].replace('.', '_');
-		log.info("key=" + key + ",   queryString=" + queryString);
+		// log.info("key=" + key + ",   queryString=" + queryString);
 		return key;
 	}
 
@@ -275,20 +268,17 @@ public class DICOMSearchHandler extends AbstractHandler
 		String check = queryString.toLowerCase().trim();
 		boolean isSeries = check.indexOf("earchtype=series") > 0;
 
-		log.info(" isSeries=" + isSeries + " for: " + queryString);
 		return isSeries;
 	}
 
 	private DicomStudySearchType getSearchType(HttpServletRequest httpRequest)
 	{
 		for (DicomStudySearchType curr : DicomStudySearchType.values()) {
-			log.info("type :[" + curr.toString() + "]");
-			log.info("M: " + httpRequest.getParameter(curr.toString()));
 			if ((httpRequest.getParameter(curr.toString()) != null)) {
 				return curr;
 			}
 		}
-		log.info("ERROR: Request missing search parameter. req=" + httpRequest.toString());
+		log.warning("ERROR: Request missing search parameter. req=" + httpRequest.toString());
 		throw new IllegalArgumentException("Request missing search parameter. Req=" + httpRequest.toString());
 	}
 
@@ -313,7 +303,7 @@ public class DICOMSearchHandler extends AbstractHandler
 			try {
 				return Integer.parseInt(value);
 			} catch (NumberFormatException e) {
-				log.info("expecting integer value in column " + columnName + " got " + value);
+				log.warning("expecting integer value in column " + columnName + " got " + value);
 				return -1;
 			}
 		}
