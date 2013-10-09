@@ -14,7 +14,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -35,9 +34,6 @@ import edu.stanford.isis.epadws.xnat.XNATUtil;
 
 /**
  * Download headers for a series or study in one quick step.
- * 
- * @author amsnyder
- * 
  */
 public class DICOMHeadersHandlerJSON extends AbstractHandler
 {
@@ -50,13 +46,8 @@ public class DICOMHeadersHandlerJSON extends AbstractHandler
 	private static final String BADLY_FORMED_QUERY_MESSAGE = "Invalid query paramaters specified";
 	private static final String WADO_INVOCATION_ERROR_MESSAGE = "Error retrieving header from WADO";
 
-	public DICOMHeadersHandlerJSON()
-	{
-	}
-
 	@Override
 	public void handle(String s, Request request, HttpServletRequest httpRequest, HttpServletResponse httpResponse)
-			throws ServletException
 	{
 		PrintWriter outputStream = null;
 		int statusCode;
@@ -116,10 +107,12 @@ public class DICOMHeadersHandlerJSON extends AbstractHandler
 				taskExecutor.shutdown();
 				try {
 					taskExecutor.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
-					BufferedReader tagReader = new BufferedReader(new FileReader(tempTag.getAbsolutePath()));
+					BufferedReader tagReader = null;
 					try {
 						boolean isFirst = true;
 						String dicomElement;
+						tagReader = new BufferedReader(new FileReader(tempTag.getAbsolutePath()));
+
 						outputStream.append("{ \"ResultSet\": [");
 
 						while ((dicomElement = tagReader.readLine()) != null) {
