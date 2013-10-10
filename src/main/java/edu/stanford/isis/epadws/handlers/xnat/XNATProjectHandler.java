@@ -43,28 +43,38 @@ public class XNATProjectHandler extends AbstractHandler
 	public void handle(String base, Request request, HttpServletRequest httpRequest, HttpServletResponse httpResponse)
 			throws IOException, ServletException
 	{
-		ServletOutputStream outputStream = httpResponse.getOutputStream();
+		ServletOutputStream outputStream = null;
+		int statusCode;
 
 		httpResponse.setContentType("application/json");
 		httpResponse.setHeader("Access-Control-Allow-Origin", "*");
 		request.setHandled(true);
 
-		if (XNATUtil.hasValidXNATSessionID(httpRequest)) {
-			try {
-				int statusCode = invokeXNATProjectService(base, httpRequest, httpResponse, outputStream);
-				httpResponse.setStatus(statusCode);
-			} catch (Throwable t) {
-				log.warning(INTERNAL_EXCEPTION_MESSAGE, t);
-				outputStream.print(JsonHelper.createJSONErrorResponse(INTERNAL_EXCEPTION_MESSAGE, t));
-				httpResponse.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+		try {
+			outputStream = httpResponse.getOutputStream();
+
+			if (XNATUtil.hasValidXNATSessionID(httpRequest)) {
+				statusCode = invokeXNATProjectService(base, httpRequest, httpResponse, outputStream);
+			} else {
+				log.info(INVALID_SESSION_TOKEN_MESSAGE);
+				outputStream.print(JsonHelper.createJSONErrorResponse(INVALID_SESSION_TOKEN_MESSAGE));
+				statusCode = HttpServletResponse.SC_UNAUTHORIZED;
 			}
-		} else {
-			log.info(INVALID_SESSION_TOKEN_MESSAGE);
-			outputStream.print(JsonHelper.createJSONErrorResponse(INVALID_SESSION_TOKEN_MESSAGE));
-			httpResponse.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+		} catch (Throwable t) {
+			log.warning(INTERNAL_EXCEPTION_MESSAGE, t);
+			outputStream.print(JsonHelper.createJSONErrorResponse(INTERNAL_EXCEPTION_MESSAGE, t));
+			statusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+		} finally {
+			if (outputStream != null) {
+				try {
+					outputStream.flush();
+					outputStream.close();
+				} catch (IOException e) {
+					log.warning("Error closing project output stream", e);
+				}
+			}
 		}
-		outputStream.flush();
-		outputStream.close();
+		httpResponse.setStatus(statusCode);
 	}
 
 	private int invokeXNATProjectService(String base, HttpServletRequest httpRequest, HttpServletResponse httpResponse,
