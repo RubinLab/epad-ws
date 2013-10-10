@@ -124,7 +124,7 @@ public class DICOMHeadersHandlerJSON extends AbstractHandler
 								outputStream.println(dicomElementResult2JSON(dicomElementResult));
 							}
 						}
-						outputStream.append("} ]");
+						outputStream.append("] }");
 					} finally {
 						if (tagReader != null) {
 							try {
