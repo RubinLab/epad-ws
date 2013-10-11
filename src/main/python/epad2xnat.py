@@ -1,6 +1,10 @@
 #!/usr/bin/python
 
-# epad2xnat.py -x epad-dev1.stanford.edu:8090 -u xxx -p xxx dicom/
+# First rough-and-ready stab at script to take an ePAD DICOM directory and populate an
+# XNAT project with the users and series it contains.
+#
+# e.g., 
+# epad2xnat.py -x epad-dev1.stanford.edu:8090 -u [user] -p [password] dicom/
 
 import argparse, os, sys, subprocess, re, requests
 
@@ -12,7 +16,7 @@ patient_id_element_name='Patient\'s Name'
 
 parser = argparse.ArgumentParser() 
 
-parser.add_argument("-x", "--xnat", help="XNAT host", required=True)
+parser.add_argument("-x", "--xnat_url", help="XNAT host", required=True)
 parser.add_argument("-u", "--user", help="XNAT user", required=True)
 parser.add_argument("-p", "--password", help="XNAT password", required=True)
 parser.add_argument("basepath", help="base directory path")
