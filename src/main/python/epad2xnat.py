@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
-# First rough-and-ready stab at script to take an ePAD DICOM image directory containing DICOM tage files 
-# and populate an XNAT project with the subjects and studies it contains.
+# First stab at script to take a pre-XNAT ePAD DICOM image directory containing DICOM header files 
+# and to populate an XNAT project with the subjects and studies it contains.
 #
 # Example usage:
 # epad2xnat.py -x epad-dev1.stanford.edu:8090 -u [user] -p [password] ~/DicomProxy/resources/dicom/
@@ -10,56 +10,87 @@ import argparse, os, sys, subprocess, re, requests
 
 xnat_auth_base='/xnat/data/JSESSION'
 xnat_project_base='/xnat/data/projects/'
-xnat_epad_project_name='EPAD_XNAT'
 patient_id_dicom_element_name='Patient\'s Name'
 
+def project_name_to_xnat_id(project_name):
+  return re.sub('[ \-,]', '_', project_name) # Replace spaces and dashes with underscores
+
 def subject_name_to_xnat_id(subject_name):
-  return re.sub('[\^ \-,]', '_', subject_name)
+  return re.sub('[\^ \-,]', '_', subject_name) # Replace ^, spaces, commas, and dashes with underscores
+
+def study_uid_to_xnat_id(study_uid):
+  return study_uid.replace('.', '_') # XNAT does not like periods in its IDs
 
 def xnat_login(xnat_base_url, user, password):
   xnat_auth_url = xnat_base_url + xnat_auth_base
   r = requests.post(xnat_auth_url, auth=(user, password))
-  jsessionid = r.text
-  return jsessionid
+  if r.status_code == requests.codes.ok:
+    jsessionid = r.text
+    return jsessionid
+  else:
+    print 'Error logging in to XNAT - status code =', r.status_code
+    r.raise_for_status()
 
 def xnat_logout(xnat_base_url, jsessionid):
   xnat_auth_url = xnat_base_url + xnat_auth_base
   cookies = dict(JSESSIONID=jsessionid)
   r = requests.delete(xnat_auth_url, cookies=cookies)
-  print r.status_code
+  if r.status_code != requests.codes.ok:
+    print 'Warning: XNAT logout request failed - status code =', r.status_code
   
-def create_xnat_subject(xnat_epad_project_subject_url, jsessionid, subject_name):
+def create_xnat_project(xnat_base_url, jsessionid, project_name):
+  xnat_project_id = project_name_to_xnat_id(project_name)
+  xnat_project_url = xnat_base_url + xnat_project_base  
+  payload = { 'ID': xnat_project_id, 'name': project_name } 
+  cookies = dict(JSESSIONID=jsessionid)
+  r = requests.post(xnat_project_url, params=payload, cookies=cookies)
+  if r.status_code == requests.codes.ok: # XNAT returns 200 returns than 201 even if project does not already exist
+    print 'Project', project_name, 'created'
+  else:
+    print 'Warning: Failed to create project', project_name, '- status code =', r.status_code
+    r.raise_for_status()
+
+def create_xnat_subject(xnat_base_url, jsessionid, project_name, subject_name):
+  xnat_project_id = project_name_to_xnat_id(project_name)
+  xnat_epad_project_url = xnat_base_url + xnat_project_base + xnat_project_id
+  xnat_epad_project_subject_url = xnat_epad_project_url+'/subjects/'
   xnat_subject_id = subject_name_to_xnat_id(subject_name)
   #payload = { 'label': subject_name } # XNAT is very sensitive to label content 
   payload = { }
   xnat_subject_url = xnat_epad_project_subject_url + xnat_subject_id
   cookies = dict(JSESSIONID=jsessionid)
   r = requests.put(xnat_subject_url, params=payload, cookies=cookies)
-  print r.status_code
-  print r.text
+  if r.status_code == requests.codes.ok:
+    print 'Subject', subject_name, 'already exists in XNAT'
+  elif r.status_code == requests.codes.created:
+    print 'Subject', subject_name, 'created'
+  else:
+    print 'Warning: Failed to create subject', subject_name, '- status code =', r.status_code
 
-def create_xnat_subjects(xnat_base_url, jsessionid, subject_study_pairs):
-  xnat_epad_project_url = xnat_base_url + xnat_project_base + xnat_epad_project_name
-  xnat_epad_project_subject_url = xnat_epad_project_url+'/subjects/'
-  
+def create_xnat_subjects(xnat_base_url, jsessionid, project_name, subject_study_pairs):  
   for subject_name, _ in subject_study_pairs:
-    create_xnat_subject(xnat_epad_project_subject_url, jsessionid, subject_name)
+    create_xnat_subject(xnat_base_url, jsessionid, project_name, subject_name)
 
-def create_xnat_study_experiment(xnat_epad_project_subject_url, jsessionid, subject_name, series_uid):
+def create_xnat_experiment(xnat_base_url, jsessionid, project_name, subject_name, study_uid):
+  xnat_project_id = project_name_to_xnat_id(project_name)
+  xnat_epad_project_url = xnat_base_url + xnat_project_base + xnat_project_id
+  xnat_epad_project_subject_url = xnat_epad_project_url+'/subjects/'
   xnat_subject_id = subject_name_to_xnat_id(subject_name)
-  xnat_experiment_id = series_uid.replace('.', '_') # XNAT does not like periods in its IDs
-  payload = { 'label': series_uid, 'xsiType': 'xnat:otherDicomSessionData' }
+  xnat_experiment_id = study_uid_to_xnat_id(study_uid)
+  payload = { 'label': study_uid, 'xsiType': 'xnat:otherDicomSessionData' }
   xnat_experiment_url = xnat_epad_project_subject_url + xnat_subject_id + '/experiments/' + xnat_experiment_id
   cookies = dict(JSESSIONID=jsessionid)
   r = requests.put(xnat_experiment_url, params=payload, cookies=cookies)
-  print r.status_code
+  if r.status_code == requests.codes.ok:
+    print 'Experiment for study', study_uid, 'already existed in XNAT'
+  elif r.status_code == requests.codes.created:
+    print 'Experiment for study', study_uid, 'created'
+  else:
+    print 'Warning: Failed to create experiment for tudy', study_uid, '- status code =', r.status_code
 
-def create_xnat_study_experiments(xnat_base_url, jsessionid, subject_study_pairs):
-  xnat_epad_project_url = xnat_base_url + xnat_project_base + xnat_epad_project_name
-  xnat_epad_project_subject_url = xnat_epad_project_url+'/subjects/'
-  
+def create_xnat_experiments(xnat_base_url, jsessionid, project_name, subject_study_pairs):
   for subject_name, study_uid in subject_study_pairs:
-    create_xnat_study_experiment(xnat_epad_project_subject_url, jsessionid, subject_name, series_uid)
+    create_xnat_experiment(xnat_base_url, jsessionid, project_name, subject_name, study_uid)
 
 # Return a list of subject, study_uid pairs.
 def process_epad_image_directory(epad_image_directory):
@@ -99,12 +130,14 @@ def process_epad_image_directory(epad_image_directory):
 if __name__ == '__main__':
   parser = argparse.ArgumentParser() 
   parser.add_argument("-x", "--xnat_url", help="XNAT host", required=True)
+  parser.add_argument("-r", "--xnat_project", help="XNAT project", required=True)
   parser.add_argument("-u", "--user", help="XNAT user", required=True)
   parser.add_argument("-p", "--password", help="XNAT password", required=True)
   parser.add_argument("epad_image_directory", help="ePAD image directory path")
   args = parser.parse_args()
 
   xnat_base_url = 'http://' + args.xnat_url
+  xnat_project_name = args.xnat_project
   epad_image_directory = args.epad_image_directory
   user = args.user
   password=args.password
@@ -117,24 +150,26 @@ if __name__ == '__main__':
       print subject_name.ljust(30), study_uid
 
     jsessionid = xnat_login(xnat_base_url, user, password)
-    create_xnat_subjects(xnat_base_url, jsessionid, subject_study_pairs)      
-    create_xnat_study_experiments(xnat_base_url, jsessionid, subject_study_pairs)
+    create_xnat_project(xnat_base_url, jsessionid, xnat_project_name)
+    create_xnat_subjects(xnat_base_url, jsessionid, xnat_project_name, subject_study_pairs)      
+    create_xnat_experiments(xnat_base_url, jsessionid, xnat_project_name, subject_study_pairs)
     xnat_logout(xnat_base_url, jsessionid)
+    print 'Done.'
     
   except subprocess.CalledProcessError as e:
-    print "Called process error: {0}".format(e.message)
+    print "Called process error:", e
   except AttributeError as e:
-    print "Attribute error: {0}".format(e.message)
+    print "Attribute error:;", e
   except OSError as e:
-    print "OS error({0}): {1}".format(e.errno, e.strerror)
+    print "OS error:", e
   except IOError as e:
-    print "IO error({0}): {1}".format(e.errno, e.strerror)
+    print "IO error:", e
   except NameError as e:
-    print "Name error: {0}".format(e.message)
+    print "Name error:", e
   except RuntimeError as e:
-    print "Runtime error({0}): {1}".format(e.errno, e.strerror)
+    print "Runtime error:", e
   except UrlError as e:
-    print "Runtime error({0}): {1}".format(e.errno, e.strerror)
+    print "Runtime error:", e
   except:
     print "Unexpected error:", sys.exc_info()[0]
 
