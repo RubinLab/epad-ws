@@ -108,8 +108,7 @@ public class XNATUtil
 	{
 		String xnatHost = config.getStringConfigurationParameter("XNATServer");
 		int xnatPort = config.getIntegerConfigurationParameter("XNATPort");
-		String xnatSessionBase = config.getStringConfigurationParameter("XNATSessionURLExtension");
-		String xnatSessionURL = buildURLString(xnatHost, xnatPort, xnatSessionBase);
+		String xnatSessionURL = buildURLString(xnatHost, xnatPort, XNAT_SESSION_BASE);
 		HttpClient client = new HttpClient();
 		DeleteMethod deleteMethod = new DeleteMethod(xnatSessionURL);
 		String jsessionID = getJSessionIDFromRequest(httpRequest);
@@ -127,8 +126,7 @@ public class XNATUtil
 	{
 		String xnatHost = config.getStringConfigurationParameter("XNATServer");
 		int xnatPort = config.getIntegerConfigurationParameter("XNATPort");
-		String xnatSessionBase = config.getStringConfigurationParameter("XNATSessionURLExtension");
-		String xnatSessionURL = buildURLString(xnatHost, xnatPort, xnatSessionBase);
+		String xnatSessionURL = buildURLString(xnatHost, xnatPort, XNAT_SESSION_BASE);
 		HttpClient client = new HttpClient();
 		GetMethod getMethod = new GetMethod(xnatSessionURL);
 		String jsessionID = getJSessionIDFromRequest(httpRequest);
