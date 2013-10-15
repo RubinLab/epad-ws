@@ -5,6 +5,8 @@
 #
 # Example usage:
 # epad2xnat.py -x epad-dev1.stanford.edu:8090 -r [project-name] -u [user] -p [password] ~/DicomProxy/resources/dicom/
+#
+# See: https://wiki.xnat.org/display/XNAT16/Basic+DICOM+object+identification
 
 import argparse, os, sys, subprocess, re, xnat
 

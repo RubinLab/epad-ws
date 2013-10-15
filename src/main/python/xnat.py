@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import os, sys, re, requests
+import os, sys, re, requests, urllib
 
 xnat_auth_base='/xnat/data/JSESSION'
 xnat_project_base='/xnat/data/projects/'
@@ -9,7 +9,16 @@ def project_name_to_xnat_project_id(project_name):
   return re.sub('[ ,]', '_', project_name) # Replace spaces and commas with underscores
 
 def patient_name_to_xnat_subject_id(patient_name):
-  return re.sub('[\^ ,]', '_', patient_name) # Replace ^, spaces, and commas with underscores
+  urlencoded = urllib.quote(patient_name)
+  return urlencoded.replace('%', '-')
+  #return re.sub('[\^ ,]', '-', patient_name) # Replace ^, spaces, and commas with dashes
+
+# We URL-encode the label because XNAT labels do not allow any special characters. 
+# XNAT also does not allow the '%' character so after URL-encoding we replace the it with a space.
+# The recipient must replace this space with a '%' and then decode as normal.
+def patient_name_to_xnat_subject_label(patient_name):
+  urlencoded = urllib.quote(patient_name)
+  return urlencoded.replace('%', ' ')
 
 def study_uid_to_xnat_experiment_id(study_uid):
   return study_uid.replace('.', '_') # XNAT does not like periods in its IDs
@@ -48,10 +57,10 @@ def create_subject(xnat_base_url, jsessionid, project_name, patient_name):
   xnat_epad_project_url = xnat_base_url + xnat_project_base + xnat_project_id
   xnat_epad_project_subject_url = xnat_epad_project_url+'/subjects/'
   xnat_subject_id = patient_name_to_xnat_subject_id(patient_name)
-  #payload = { 'ID': xnat_subject_id, 'label': xnat_subject_id } # Subject labels are sensitive in XNAT  
-  payload = {}
-  xnat_subject_url = xnat_epad_project_subject_url + xnat_subject_id
+  xnat_subject_label = patient_name_to_xnat_subject_label(patient_name)
   cookies = dict(JSESSIONID=jsessionid)
+  payload = { 'ID': xnat_subject_id, 'label': xnat_subject_label } # Do not omit seemingly redundant 'ID' in payload 
+  xnat_subject_url = xnat_epad_project_subject_url + xnat_subject_id
   r = requests.put(xnat_subject_url, params=payload, cookies=cookies)
   if r.status_code == requests.codes.ok:
     print 'Subject', patient_name, 'already exists in XNAT'
@@ -79,7 +88,7 @@ def create_experiment(xnat_base_url, jsessionid, project_name, patient_name, stu
   elif r.status_code == requests.codes.created:
     print 'Experiment for study', study_uid, 'created'
   else:
-    print 'Warning: failed to create experiment for tudy', study_uid, '- status code =', r.status_code
+    print 'Warning: failed to create experiment for study', study_uid, '- status code =', r.status_code
 
 def create_experiments(xnat_base_url, jsessionid, project_name, subject_study_pairs):
   for patient_name, study_uid in subject_study_pairs:
