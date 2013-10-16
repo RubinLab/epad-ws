@@ -184,6 +184,8 @@ public class XNATUtil
 				}
 			}
 		}
+		if (jSessionID.length() == 0)
+			log.warning("No JSESESSIONID cookie present in request");
 		return jSessionID;
 	}
 

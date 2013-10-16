@@ -18,6 +18,7 @@ import org.eclipse.jetty.server.handler.AbstractHandler;
 import edu.stanford.isis.epad.common.ProxyConfig;
 import edu.stanford.isis.epad.common.ProxyLogger;
 import edu.stanford.isis.epadws.resources.server.WADOServerResource;
+import edu.stanford.isis.epadws.xnat.XNATUtil;
 
 /**
  * WandoHandler
@@ -33,8 +34,7 @@ public class WadoHandler extends AbstractHandler
 
 	private static final String INTERNAL_EXCEPTION_MESSAGE = "Internal error";
 	private static final String MISSING_QUERY_MESSAGE = "No query in request";
-
-	// private static final String INVALID_SESSION_TOKEN_MESSAGE = "Session token is invalid";
+	private static final String INVALID_SESSION_TOKEN_MESSAGE = "Session token is invalid";
 
 	@Override
 	public void handle(String s, Request request, HttpServletRequest httpRequest, HttpServletResponse httpResponse)
@@ -49,9 +49,7 @@ public class WadoHandler extends AbstractHandler
 			httpResponse.setContentType("image/jpeg");
 			request.setHandled(true);
 
-			// TODO Temporarily turn off authentication
-			// if (XNATUtil.hasValidXNATSessionID(httpRequest)) {
-			if (true) {
+			if (XNATUtil.hasValidXNATSessionID(httpRequest)) {
 				String queryString = httpRequest.getQueryString();
 				queryString = URLDecoder.decode(queryString, "UTF-8");
 				if (queryString != null) {
@@ -61,11 +59,10 @@ public class WadoHandler extends AbstractHandler
 					log.info(MISSING_QUERY_MESSAGE);
 					statusCode = HttpServletResponse.SC_BAD_REQUEST;
 				}
+			} else {
+				log.info(INVALID_SESSION_TOKEN_MESSAGE);
+				statusCode = HttpServletResponse.SC_UNAUTHORIZED;
 			}
-			// } else {
-			// log.info(INVALID_SESSION_TOKEN_MESSAGE);
-			// responseStatusCode = HttpServletResponse.SC_UNAUTHORIZED;
-			// }
 		} catch (Throwable t) {
 			log.warning(INTERNAL_EXCEPTION_MESSAGE, t);
 			statusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;

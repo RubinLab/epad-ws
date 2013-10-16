@@ -35,7 +35,7 @@ public class XNATProjectHandler extends AbstractHandler
 	private static final ProxyLogger log = ProxyLogger.getInstance();
 	private static final ProxyConfig config = ProxyConfig.getInstance();
 
-	private static final String INVALID_SESSION_TOKEN_MESSAGE = "Session token is invalid";
+	private static final String INVALID_SESSION_TOKEN_MESSAGE = "No valid session token";
 	private static final String INTERNAL_EXCEPTION_MESSAGE = "Internal error getting server status";
 	private static final String XNAT_INVOCATION_ERROR_MESSAGE = "Error invoking XNAT project call";
 
