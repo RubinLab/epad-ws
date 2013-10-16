@@ -16,7 +16,7 @@ def patient_id_to_xnat_subject_id(patient_id):
   urlencoded = urllib.quote(patient_id)
   return urlencoded.replace('.', '%2e').replace('%', '_') 
 
-# Replace non alpha-numeric and any non .-_ with dashes. 
+# Replace non alpha-numeric, spaces, . and _ characters with dashes. 
 def patient_name_to_xnat_subject_label(patient_name):
   return re.sub('[^a-zA-Z0-9\.\-_ ]', '-', patient_name.replace('^', ' ')) 
 
@@ -30,7 +30,7 @@ def login(xnat_base_url, user, password):
     jsessionid = r.text
     return jsessionid
   else:
-    print 'Error: log in to XNAT failed - status code =', r.status_code
+    print 'Error: XNAT login request failed - status code =', r.status_code
     r.raise_for_status()
 
 def logout(xnat_base_url, jsessionid):
