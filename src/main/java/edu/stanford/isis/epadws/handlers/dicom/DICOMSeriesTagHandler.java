@@ -65,13 +65,9 @@ public class DICOMSeriesTagHandler extends AbstractHandler
 					log.warning(INTERNAL_ERROR_MESSAGE, e);
 					out.print(INTERNAL_ERROR_MESSAGE + ": " + e.getMessage());
 					httpResponse.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-				} catch (Exception e) {
-					log.warning(INTERNAL_ERROR_MESSAGE, e);
-					out.print(INTERNAL_ERROR_MESSAGE + ": " + e.getMessage());
-					httpResponse.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-				} catch (Error e) {
-					log.warning(INTERNAL_ERROR_MESSAGE, e);
-					out.print(INTERNAL_ERROR_MESSAGE + ": " + e.getMessage());
+				} catch (Throwable t) {
+					log.warning(INTERNAL_ERROR_MESSAGE, t);
+					out.print(INTERNAL_ERROR_MESSAGE + ": " + t.getMessage());
 					httpResponse.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 				}
 			} else {

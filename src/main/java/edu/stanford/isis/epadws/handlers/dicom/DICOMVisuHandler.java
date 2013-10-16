@@ -56,7 +56,7 @@ public class DICOMVisuHandler extends AbstractHandler
 	public void handle(String s, Request request, HttpServletRequest httpRequest, HttpServletResponse httpResponse)
 			throws IOException, ServletException
 	{
-		PrintWriter out = httpResponse.getWriter();
+		PrintWriter responseStream = httpResponse.getWriter();
 
 		httpResponse.setContentType("text/plain");
 		request.setHandled(true);
@@ -74,34 +74,30 @@ public class DICOMVisuHandler extends AbstractHandler
 
 				if (studyIdKey != null && seriesIdKey != null && imageIdKey != null) {
 					try {
-						handleDICOMVisu(out, studyIdKey, seriesIdKey, imageIdKey);
+						handleDICOMVisu(responseStream, studyIdKey, seriesIdKey, imageIdKey);
 						httpResponse.setStatus(HttpServletResponse.SC_OK);
-					} catch (Exception e) {
-						log.warning(INTERNAL_ERROR_MESSAGE, e);
-						out.print(INTERNAL_ERROR_MESSAGE + ": " + e.getMessage());
-						httpResponse.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-					} catch (Error e) {
-						log.warning(INTERNAL_ERROR_MESSAGE, e);
-						out.print(INTERNAL_ERROR_MESSAGE + ": " + e.getMessage());
+					} catch (Throwable t) {
+						log.warning(INTERNAL_ERROR_MESSAGE, t);
+						responseStream.print(INTERNAL_ERROR_MESSAGE + ": " + t.getMessage());
 						httpResponse.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 					}
 				} else {
 					log.info(BADLY_FORMED_QUERY_MESSAGE);
-					out.append(BADLY_FORMED_QUERY_MESSAGE);
+					responseStream.append(BADLY_FORMED_QUERY_MESSAGE);
 					httpResponse.setStatus(HttpServletResponse.SC_BAD_REQUEST);
 				}
 			} else {
 				log.info(MISSING_QUERY_MESSAGE);
-				out.append(MISSING_QUERY_MESSAGE);
+				responseStream.append(MISSING_QUERY_MESSAGE);
 				httpResponse.setStatus(HttpServletResponse.SC_BAD_REQUEST);
 			}
 		} else {
 			log.info(INVALID_SESSION_TOKEN_MESSAGE);
-			out.append(INVALID_SESSION_TOKEN_MESSAGE);
+			responseStream.append(INVALID_SESSION_TOKEN_MESSAGE);
 			httpResponse.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
 		}
-		out.flush();
-		out.close();
+		responseStream.flush();
+		responseStream.close();
 	}
 
 	private void handleDICOMVisu(PrintWriter out, String studyIdKey, String seriesIdKey, String imageIdKey)

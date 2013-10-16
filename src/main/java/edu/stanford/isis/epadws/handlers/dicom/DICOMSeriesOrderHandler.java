@@ -66,14 +66,10 @@ public class DICOMSeriesOrderHandler extends AbstractHandler
 				try {
 					peformDICOMSeriesOrderQuery(out, seriesIUID);
 					httpResponse.setStatus(HttpServletResponse.SC_OK);
-				} catch (Exception e) {
-					log.warning(INTERNAL_EXCEPTION_MESSAGE, e);
+				} catch (Throwable t) {
+					log.warning(INTERNAL_EXCEPTION_MESSAGE, t);
 					httpResponse.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-					out.append(JsonHelper.createJSONErrorResponse(INTERNAL_EXCEPTION_MESSAGE, e));
-				} catch (Error e) {
-					log.warning(INTERNAL_EXCEPTION_MESSAGE, e);
-					httpResponse.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-					out.append(JsonHelper.createJSONErrorResponse(INTERNAL_EXCEPTION_MESSAGE, e));
+					out.append(JsonHelper.createJSONErrorResponse(INTERNAL_EXCEPTION_MESSAGE, t));
 				}
 			} else {
 				log.info(MISSING_SERIES_IUID_MESSAGE);

@@ -53,11 +53,11 @@ public class DICOMHeadersHandler extends AbstractHandler
 	public void handle(String s, Request request, HttpServletRequest httpRequest, HttpServletResponse httpResponse)
 			throws ServletException
 	{
-		PrintWriter outputStream = null;
+		PrintWriter responseStream = null;
 		int statusCode;
 
 		try {
-			outputStream = httpResponse.getWriter();
+			responseStream = httpResponse.getWriter();
 
 			httpResponse.setContentType("text/plain");
 			request.setHandled(true);
@@ -88,7 +88,7 @@ public class DICOMHeadersHandler extends AbstractHandler
 									String line;
 									while ((line = tagReader.readLine()) != null) {
 										log.info("DICOMHEADERLINE: " + line);
-										outputStream.println(line);
+										responseStream.println(line);
 									}
 								} finally {
 									if (tagReader != null) {
@@ -102,38 +102,38 @@ public class DICOMHeadersHandler extends AbstractHandler
 								statusCode = HttpServletResponse.SC_OK;
 							} catch (InterruptedException e) {
 								log.info("DICOM headers task interrupted");
-								outputStream.print("DICOM headers task interrupted");
+								responseStream.print("DICOM headers task interrupted");
 								Thread.currentThread().interrupt();
 								statusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 							}
 						} else {
 							log.info(WADO_INVOCATION_ERROR_MESSAGE + "; status code=" + wadoStatusCode);
-							outputStream.print(WADO_INVOCATION_ERROR_MESSAGE + "; status code=" + wadoStatusCode);
+							responseStream.print(WADO_INVOCATION_ERROR_MESSAGE + "; status code=" + wadoStatusCode);
 							statusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 						}
 					} else {
 						log.info(BADLY_FORMED_QUERY_MESSAGE);
-						outputStream.append(BADLY_FORMED_QUERY_MESSAGE);
+						responseStream.append(BADLY_FORMED_QUERY_MESSAGE);
 						statusCode = HttpServletResponse.SC_BAD_REQUEST;
 					}
 				} else {
 					log.info(MISSING_QUERY_MESSAGE);
-					outputStream.append(MISSING_QUERY_MESSAGE);
+					responseStream.append(MISSING_QUERY_MESSAGE);
 					statusCode = HttpServletResponse.SC_BAD_REQUEST;
 				}
 			} else {
 				log.info(INVALID_SESSION_TOKEN_MESSAGE);
-				outputStream.append(INVALID_SESSION_TOKEN_MESSAGE);
+				responseStream.append(INVALID_SESSION_TOKEN_MESSAGE);
 				statusCode = HttpServletResponse.SC_UNAUTHORIZED;
 			}
 		} catch (Throwable t) {
 			log.warning(INTERNAL_ERROR_MESSAGE, t);
-			outputStream.print(INTERNAL_ERROR_MESSAGE + ": " + t.getMessage());
+			responseStream.print(INTERNAL_ERROR_MESSAGE + ": " + t.getMessage());
 			statusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 		} finally {
-			if (outputStream != null) {
-				outputStream.flush();
-				outputStream.close();
+			if (responseStream != null) {
+				responseStream.flush();
+				responseStream.close();
 			}
 		}
 		httpResponse.setStatus(statusCode);

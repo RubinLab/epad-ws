@@ -43,7 +43,7 @@ public class XNATProjectHandler extends AbstractHandler
 	public void handle(String base, Request request, HttpServletRequest httpRequest, HttpServletResponse httpResponse)
 			throws IOException, ServletException
 	{
-		ServletOutputStream outputStream = null;
+		ServletOutputStream responseStream = null;
 		int statusCode;
 
 		httpResponse.setContentType("application/json");
@@ -51,24 +51,24 @@ public class XNATProjectHandler extends AbstractHandler
 		request.setHandled(true);
 
 		try {
-			outputStream = httpResponse.getOutputStream();
+			responseStream = httpResponse.getOutputStream();
 
 			if (XNATUtil.hasValidXNATSessionID(httpRequest)) {
-				statusCode = invokeXNATProjectService(base, httpRequest, httpResponse, outputStream);
+				statusCode = invokeXNATProjectService(base, httpRequest, httpResponse, responseStream);
 			} else {
 				log.info(INVALID_SESSION_TOKEN_MESSAGE);
-				outputStream.print(JsonHelper.createJSONErrorResponse(INVALID_SESSION_TOKEN_MESSAGE));
+				responseStream.print(JsonHelper.createJSONErrorResponse(INVALID_SESSION_TOKEN_MESSAGE));
 				statusCode = HttpServletResponse.SC_UNAUTHORIZED;
 			}
 		} catch (Throwable t) {
 			log.warning(INTERNAL_EXCEPTION_MESSAGE, t);
-			outputStream.print(JsonHelper.createJSONErrorResponse(INTERNAL_EXCEPTION_MESSAGE, t));
+			responseStream.print(JsonHelper.createJSONErrorResponse(INTERNAL_EXCEPTION_MESSAGE, t));
 			statusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 		} finally {
-			if (outputStream != null) {
+			if (responseStream != null) {
 				try {
-					outputStream.flush();
-					outputStream.close();
+					responseStream.flush();
+					responseStream.close();
 				} catch (IOException e) {
 					log.warning("Error closing project output stream", e);
 				}

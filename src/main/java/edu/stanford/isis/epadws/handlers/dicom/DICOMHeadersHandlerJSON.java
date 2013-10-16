@@ -49,45 +49,45 @@ public class DICOMHeadersHandlerJSON extends AbstractHandler
 	@Override
 	public void handle(String s, Request request, HttpServletRequest httpRequest, HttpServletResponse httpResponse)
 	{
-		PrintWriter outputStream = null;
+		PrintWriter responseStream = null;
 		int statusCode;
 
 		httpResponse.setContentType("application/json");
 		request.setHandled(true);
 
 		try {
-			outputStream = httpResponse.getWriter();
+			responseStream = httpResponse.getWriter();
 
 			if (XNATUtil.hasValidXNATSessionID(httpRequest)) {
 				String queryString = httpRequest.getQueryString();
 				queryString = URLDecoder.decode(queryString, "UTF-8");
 
 				if (queryString != null) {
-					statusCode = performDICOMHeaderRequest(outputStream, queryString.trim());
+					statusCode = performDICOMHeaderRequest(responseStream, queryString.trim());
 				} else {
 					log.info(MISSING_QUERY_MESSAGE);
-					outputStream.append(JsonHelper.createJSONErrorResponse(MISSING_QUERY_MESSAGE));
+					responseStream.append(JsonHelper.createJSONErrorResponse(MISSING_QUERY_MESSAGE));
 					statusCode = HttpServletResponse.SC_BAD_REQUEST;
 				}
 			} else {
 				log.info(INVALID_SESSION_TOKEN_MESSAGE);
-				outputStream.append(JsonHelper.createJSONErrorResponse(INVALID_SESSION_TOKEN_MESSAGE));
+				responseStream.append(JsonHelper.createJSONErrorResponse(INVALID_SESSION_TOKEN_MESSAGE));
 				statusCode = HttpServletResponse.SC_UNAUTHORIZED;
 			}
 		} catch (Throwable t) {
 			log.warning(INTERNAL_ERROR_MESSAGE, t);
-			outputStream.print(JsonHelper.createJSONErrorResponse(INTERNAL_ERROR_MESSAGE, t));
+			responseStream.print(JsonHelper.createJSONErrorResponse(INTERNAL_ERROR_MESSAGE, t));
 			statusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 		} finally {
-			if (outputStream != null) {
-				outputStream.flush();
-				outputStream.close();
+			if (responseStream != null) {
+				responseStream.flush();
+				responseStream.close();
 			}
 		}
 		httpResponse.setStatus(statusCode);
 	}
 
-	private int performDICOMHeaderRequest(PrintWriter outputStream, String queryString) throws IOException,
+	private int performDICOMHeaderRequest(PrintWriter responseStream, String queryString) throws IOException,
 			FileNotFoundException
 	{
 		String studyIdKey = getStudyUIDFromRequest(queryString);
@@ -113,18 +113,18 @@ public class DICOMHeadersHandlerJSON extends AbstractHandler
 						String dicomElement;
 						tagReader = new BufferedReader(new FileReader(tempTag.getAbsolutePath()));
 
-						outputStream.append("{ \"ResultSet\": [");
+						responseStream.append("{ \"ResultSet\": [");
 
 						while ((dicomElement = tagReader.readLine()) != null) {
 							DICOMElementResult dicomElementResult = decodeDICOMElement(dicomElement);
 							if (dicomElementResult != null) {
 								if (!isFirst)
-									outputStream.append(",\n");
+									responseStream.append(",\n");
 								isFirst = false;
-								outputStream.println(dicomElementResult2JSON(dicomElementResult));
+								responseStream.println(dicomElementResult2JSON(dicomElementResult));
 							}
 						}
-						outputStream.append("] }");
+						responseStream.append("] }");
 					} finally {
 						if (tagReader != null) {
 							try {
@@ -137,19 +137,19 @@ public class DICOMHeadersHandlerJSON extends AbstractHandler
 					statusCode = HttpServletResponse.SC_OK;
 				} catch (InterruptedException e) {
 					log.info("DICOM headers task interrupted");
-					outputStream.print(JsonHelper.createJSONErrorResponse("DICOM headers task interrupted"));
+					responseStream.print(JsonHelper.createJSONErrorResponse("DICOM headers task interrupted"));
 					Thread.currentThread().interrupt();
 					statusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 				}
 			} else {
 				log.info(WADO_INVOCATION_ERROR_MESSAGE + "; status code=" + wadoStatusCode);
-				outputStream.print(JsonHelper.createJSONErrorResponse(WADO_INVOCATION_ERROR_MESSAGE + "; status code="
+				responseStream.print(JsonHelper.createJSONErrorResponse(WADO_INVOCATION_ERROR_MESSAGE + "; status code="
 						+ wadoStatusCode));
 				statusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 			}
 		} else {
 			log.info(BADLY_FORMED_QUERY_MESSAGE);
-			outputStream.append(JsonHelper.createJSONErrorResponse(BADLY_FORMED_QUERY_MESSAGE));
+			responseStream.append(JsonHelper.createJSONErrorResponse(BADLY_FORMED_QUERY_MESSAGE));
 			statusCode = HttpServletResponse.SC_BAD_REQUEST;
 		}
 		return statusCode;

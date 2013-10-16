@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URLDecoder;
 
-import javax.servlet.ServletException;
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -35,26 +34,26 @@ public class WadoHandler extends AbstractHandler
 	private static final String INTERNAL_EXCEPTION_MESSAGE = "Internal error";
 	private static final String MISSING_QUERY_MESSAGE = "No query in request";
 	private static final String INVALID_SESSION_TOKEN_MESSAGE = "Session token is invalid";
+	private static final String RESPONSE_STREAM_ERROR_MESSAGE = "Error closing or flushing response stream";
 
 	@Override
 	public void handle(String s, Request request, HttpServletRequest httpRequest, HttpServletResponse httpResponse)
-			throws IOException, ServletException
 	{
-		ServletOutputStream out = null;
+		ServletOutputStream responseStream = null;
 		int statusCode;
 
-		try {
-			out = httpResponse.getOutputStream();
+		httpResponse.setContentType("image/jpeg");
+		request.setHandled(true);
 
-			httpResponse.setContentType("image/jpeg");
-			request.setHandled(true);
+		try {
+			responseStream = httpResponse.getOutputStream();
 
 			if (XNATUtil.hasValidXNATSessionID(httpRequest)) {
 				String queryString = httpRequest.getQueryString();
 				queryString = URLDecoder.decode(queryString, "UTF-8");
 				if (queryString != null) {
 					log.info("WADOHandler, query=" + queryString);
-					statusCode = performWADOQuery(queryString, out);
+					statusCode = performWADOQuery(queryString, responseStream);
 				} else {
 					log.info(MISSING_QUERY_MESSAGE);
 					statusCode = HttpServletResponse.SC_BAD_REQUEST;
@@ -67,9 +66,13 @@ public class WadoHandler extends AbstractHandler
 			log.warning(INTERNAL_EXCEPTION_MESSAGE, t);
 			statusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 		} finally {
-			if (out != null) {
-				out.flush();
-				out.close();
+			if (responseStream != null) {
+				try {
+					responseStream.flush();
+					responseStream.close();
+				} catch (IOException e) {
+					log.warning(RESPONSE_STREAM_ERROR_MESSAGE, e);
+				}
 			}
 		}
 		httpResponse.setStatus(statusCode);

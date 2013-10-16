@@ -87,7 +87,7 @@ public class AimResourceHandler extends AbstractHandler
 	public void handle(String s, Request request, HttpServletRequest httpRequest, HttpServletResponse httpResponse)
 			throws IOException, ServletException
 	{
-		PrintWriter out = httpResponse.getWriter();
+		PrintWriter responseStream = httpResponse.getWriter();
 
 		httpResponse.setContentType("text/xml");
 		httpResponse.setHeader("Cache-Control", "no-cache");
@@ -100,48 +100,48 @@ public class AimResourceHandler extends AbstractHandler
 				logger.info("AimResourceHandler received query: " + queryString);
 				if (queryString != null) {
 					try {
-						queryAIMImageAnnotations(out, queryString);
+						queryAIMImageAnnotations(responseStream, queryString);
 						httpResponse.setStatus(HttpServletResponse.SC_OK);
 					} catch (Throwable t) {
 						logger.warning(INTERNAL_EXCEPTION_MESSAGE, t);
-						out.append(INTERNAL_EXCEPTION_MESSAGE + t.getMessage() + "<br>");
+						responseStream.append(INTERNAL_EXCEPTION_MESSAGE + t.getMessage() + "<br>");
 						httpResponse.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 					}
 				} else {
 					logger.info(MISSING_QUERY_MESSAGE);
-					out.append(MISSING_QUERY_MESSAGE);
+					responseStream.append(MISSING_QUERY_MESSAGE);
 					httpResponse.setStatus(HttpServletResponse.SC_BAD_REQUEST);
 				}
 			} else if ("POST".equalsIgnoreCase(method)) { // http://www.tutorialspoint.com/servlets/servlets-file-uploading.htm
 				String annotationsUploadDirPath = ResourceUtils.getEPADWebServerAnnotationsUploadDir();
 				logger.info("Uploading files to dir: " + annotationsUploadDirPath);
 				try {
-					boolean saveError = uploadAIMAnnotations(httpRequest, out, annotationsUploadDirPath);
+					boolean saveError = uploadAIMAnnotations(httpRequest, responseStream, annotationsUploadDirPath);
 					if (saveError) {
 						logger.warning(FILE_UPLOAD_ERROR_MESSAGE);
-						out.append(FILE_UPLOAD_ERROR_MESSAGE + "<br>");
+						responseStream.append(FILE_UPLOAD_ERROR_MESSAGE + "<br>");
 						httpResponse.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 					} else {
 						httpResponse.setStatus(HttpServletResponse.SC_OK);
 					}
 				} catch (Throwable t) {
 					logger.warning("Failed to upload AIM files to _" + annotationsUploadDirPath + "_", t);
-					out.append("Failed to upload AIM files to _" + annotationsUploadDirPath + "_; error=" + t.getMessage());
+					responseStream.append("Failed to upload AIM files to _" + annotationsUploadDirPath + "_; error=" + t.getMessage());
 					httpResponse.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 				}
 			} else {
 				logger.info(INVALID_METHOD_MESSAGE);
-				out.append(INVALID_METHOD_MESSAGE);
+				responseStream.append(INVALID_METHOD_MESSAGE);
 				httpResponse.setHeader("Access-Control-Allow-Methods", "POST GET");
 				httpResponse.setStatus(HttpServletResponse.SC_METHOD_NOT_ALLOWED);
 			}
 		} else {
 			logger.info(INVALID_SESSION_TOKEN_MESSAGE);
-			out.append(INVALID_SESSION_TOKEN_MESSAGE);
+			responseStream.append(INVALID_SESSION_TOKEN_MESSAGE);
 			httpResponse.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
 		}
-		out.flush();
-		out.close();
+		responseStream.flush();
+		responseStream.close();
 	}
 
 	private void queryAIMImageAnnotations(PrintWriter out, String queryString) throws ParserConfigurationException,

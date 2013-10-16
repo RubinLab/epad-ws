@@ -40,9 +40,6 @@ import edu.stanford.isis.epad.common.util.ResourceUtils;
 public class DicomUploadHandler extends AbstractHandler
 {
 	private static final ProxyLogger log = ProxyLogger.getInstance();
-	/**
-	 * slf4j logger.
-	 */
 	protected Logger debugLogger = null;
 
 	public DicomUploadHandler()

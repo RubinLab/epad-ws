@@ -55,14 +55,10 @@ public class DICOMDeleteHandler extends AbstractHandler
 						handleDICOMStudyDeleteRequest(queryString);
 					}
 					httpResponse.setStatus(HttpServletResponse.SC_OK);
-				} catch (Exception e) {
+				} catch (Throwable t) {
 					httpResponse.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-					log.warning(INTERNAL_ERROR_MESSAGE, e);
-					out.print(INTERNAL_ERROR_MESSAGE + ": " + e.getMessage());
-				} catch (Error e) {
-					httpResponse.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-					log.warning(INTERNAL_ERROR_MESSAGE, e);
-					out.print(INTERNAL_ERROR_MESSAGE + ": " + e.getMessage());
+					log.warning(INTERNAL_ERROR_MESSAGE, t);
+					out.print(INTERNAL_ERROR_MESSAGE + ": " + t.getMessage());
 				}
 			} else {
 				log.info(MISSING_QUERY_MESSAGE);

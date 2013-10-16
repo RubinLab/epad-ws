@@ -41,7 +41,7 @@ public class XNATSessionHandler extends AbstractHandler
 	public void handle(String s, Request request, HttpServletRequest httpRequest, HttpServletResponse httpResponse)
 			throws IOException, ServletException
 	{
-		PrintWriter out = httpResponse.getWriter();
+		PrintWriter responseStream = httpResponse.getWriter();
 
 		httpResponse.setContentType("text/plain");
 		request.setHandled(true);
@@ -52,20 +52,20 @@ public class XNATSessionHandler extends AbstractHandler
 			if (username.length() != 0) {
 				log.info("XNATSessionHandler, login request from user " + username);
 				try {
-					out.append(XNATUtil.invokeXNATSessionIDService(httpRequest, httpResponse));
+					responseStream.append(XNATUtil.invokeXNATSessionIDService(httpRequest, httpResponse));
 					httpResponse.setStatus(HttpServletResponse.SC_OK);
 				} catch (IOException e) {
 					log.warning(LOGIN_EXCEPTION_MESSAGE, e);
-					out.append(LOGIN_EXCEPTION_MESSAGE + ": " + e.getMessage());
+					responseStream.append(LOGIN_EXCEPTION_MESSAGE + ": " + e.getMessage());
 					httpResponse.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 				} catch (Exception e) {
 					log.warning(LOGIN_EXCEPTION_MESSAGE, e);
-					out.append(LOGIN_EXCEPTION_MESSAGE + ": " + e.getMessage());
+					responseStream.append(LOGIN_EXCEPTION_MESSAGE + ": " + e.getMessage());
 					httpResponse.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 				}
 			} else {
 				log.info(MISSING_USERNAME_MESSAGE);
-				out.append(MISSING_USERNAME_MESSAGE);
+				responseStream.append(MISSING_USERNAME_MESSAGE);
 				httpResponse.setStatus(HttpServletResponse.SC_BAD_REQUEST);
 			}
 		} else if ("DELETE".equalsIgnoreCase(method)) {
@@ -76,20 +76,20 @@ public class XNATSessionHandler extends AbstractHandler
 				httpResponse.setStatus(statusCode);
 			} catch (IOException e) {
 				log.warning(LOGOUT_EXCEPTION_MESSAGE, e);
-				out.append(LOGOUT_EXCEPTION_MESSAGE + ": " + e.getMessage());
+				responseStream.append(LOGOUT_EXCEPTION_MESSAGE + ": " + e.getMessage());
 				httpResponse.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 			} catch (Throwable t) {
 				log.warning(LOGOUT_EXCEPTION_MESSAGE, t);
-				out.append(LOGOUT_EXCEPTION_MESSAGE + ": " + t.getMessage());
+				responseStream.append(LOGOUT_EXCEPTION_MESSAGE + ": " + t.getMessage());
 				httpResponse.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 			}
 		} else {
 			log.info(INVALID_METHOD_MESSAGE);
-			out.append(INVALID_METHOD_MESSAGE);
+			responseStream.append(INVALID_METHOD_MESSAGE);
 			httpResponse.setHeader("Access-Control-Allow-Methods", "POST DELETE");
 			httpResponse.setStatus(HttpServletResponse.SC_METHOD_NOT_ALLOWED);
 		}
-		out.flush();
-		out.close();
+		responseStream.flush();
+		responseStream.close();
 	}
 }

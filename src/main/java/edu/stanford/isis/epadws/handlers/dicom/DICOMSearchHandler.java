@@ -40,22 +40,17 @@ public class DICOMSearchHandler extends AbstractHandler
 	private static final String INTERNAL_EXCEPTION_MESSAGE = "Internal error running query";
 	private static final String INVALID_SESSION_TOKEN_MESSAGE = "Session token is invalid";
 
-	public DICOMSearchHandler()
-	{
-	}
-
 	@Override
 	public void handle(String s, Request request, HttpServletRequest httpRequest, HttpServletResponse httpResponse)
-
 	{
-		PrintWriter outputStream = null;
+		PrintWriter responseStream = null;
 		int statusCode;
 
 		httpResponse.setContentType("application/json");
 		request.setHandled(true);
 
 		try {
-			outputStream = httpResponse.getWriter();
+			responseStream = httpResponse.getWriter();
 
 			if (XNATUtil.hasValidXNATSessionID(httpRequest)) {
 				String queryString = httpRequest.getQueryString();
@@ -65,36 +60,36 @@ public class DICOMSearchHandler extends AbstractHandler
 				if (queryString != null) {
 					queryString = queryString.trim();
 					if (isDICOMSeriesRequest(queryString)) {
-						performDICOMSeriesSearch(outputStream, queryString);
+						performDICOMSeriesSearch(responseStream, queryString);
 					} else {
 						DicomStudySearchType searchType = getSearchType(httpRequest);
 						if (searchType != null) {
-							performDICOMStudySearch(outputStream, searchType, queryString);
+							performDICOMStudySearch(responseStream, searchType, queryString);
 						} else {
 							log.info(MISSING_STUDY_SEARCH_TYPE_MESSAGE);
 							statusCode = HttpServletResponse.SC_BAD_REQUEST;
-							outputStream.append(JsonHelper.createJSONErrorResponse(MISSING_STUDY_SEARCH_TYPE_MESSAGE));
+							responseStream.append(JsonHelper.createJSONErrorResponse(MISSING_STUDY_SEARCH_TYPE_MESSAGE));
 						}
 					}
 					statusCode = HttpServletResponse.SC_OK;
 				} else {
 					log.info(MISSING_QUERY_MESSAGE);
-					outputStream.append(JsonHelper.createJSONErrorResponse(MISSING_QUERY_MESSAGE));
+					responseStream.append(JsonHelper.createJSONErrorResponse(MISSING_QUERY_MESSAGE));
 					statusCode = HttpServletResponse.SC_BAD_REQUEST;
 				}
 			} else {
 				log.info(INVALID_SESSION_TOKEN_MESSAGE);
 				statusCode = HttpServletResponse.SC_UNAUTHORIZED;
-				outputStream.append(JsonHelper.createJSONErrorResponse(INVALID_SESSION_TOKEN_MESSAGE));
+				responseStream.append(JsonHelper.createJSONErrorResponse(INVALID_SESSION_TOKEN_MESSAGE));
 			}
 		} catch (Throwable t) {
 			log.warning(INTERNAL_EXCEPTION_MESSAGE, t);
-			outputStream.append(JsonHelper.createJSONErrorResponse(INTERNAL_EXCEPTION_MESSAGE, t));
+			responseStream.append(JsonHelper.createJSONErrorResponse(INTERNAL_EXCEPTION_MESSAGE, t));
 			statusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 		} finally {
-			if (outputStream != null) {
-				outputStream.flush();
-				outputStream.close();
+			if (responseStream != null) {
+				responseStream.flush();
+				responseStream.close();
 			}
 		}
 		httpResponse.setStatus(statusCode);
