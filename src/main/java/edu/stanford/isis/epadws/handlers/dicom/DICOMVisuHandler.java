@@ -13,7 +13,6 @@ import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 
-import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -33,119 +32,123 @@ import edu.stanford.isis.epadws.xnat.XNATUtil;
 
 /**
  * Generate window width and center for a series or study in one quick step.
- * <p>
  * 
  * @author amsnyder
- * 
  */
 public class DICOMVisuHandler extends AbstractHandler
 {
 	private static final ProxyLogger log = ProxyLogger.getInstance();
 	private static final ProxyConfig config = ProxyConfig.getInstance();
 
-	private static final String INTERNAL_ERROR_MESSAGE = "Internal error on delete";
+	private static final String WADO_ERROR_MESSAGE = "WADO error";
+	private static final String INTERNAL_ERROR_MESSAGE = "Internal error";
 	private static final String INVALID_SESSION_TOKEN_MESSAGE = "Session token is invalid";
 	private static final String MISSING_QUERY_MESSAGE = "No query in request";
 	private static final String BADLY_FORMED_QUERY_MESSAGE = "Invalid query paramaters specified";
 
-	public DICOMVisuHandler()
-	{
-	}
-
 	@Override
 	public void handle(String s, Request request, HttpServletRequest httpRequest, HttpServletResponse httpResponse)
-			throws IOException, ServletException
 	{
-		PrintWriter responseStream = httpResponse.getWriter();
+		PrintWriter responseStream = null;
+		int statusCode;
 
 		httpResponse.setContentType("text/plain");
 		request.setHandled(true);
 
-		if (XNATUtil.hasValidXNATSessionID(httpRequest)) {
-			String queryString = httpRequest.getQueryString();
-			queryString = URLDecoder.decode(queryString, "UTF-8");
+		try {
+			responseStream = httpResponse.getWriter();
 
-			if (queryString != null) {
-				queryString = queryString.trim();
-				log.info("DICOMVisuHandler query: " + queryString);
-				String studyIdKey = getStudyUIDFromRequest(queryString);
-				String seriesIdKey = getSeriesUIDFromRequest(queryString);
-				String imageIdKey = getInstanceUIDFromRequest(queryString);
+			if (XNATUtil.hasValidXNATSessionID(httpRequest)) {
+				String queryString = httpRequest.getQueryString();
+				queryString = URLDecoder.decode(queryString, "UTF-8");
 
-				if (studyIdKey != null && seriesIdKey != null && imageIdKey != null) {
-					try {
-						handleDICOMVisu(responseStream, studyIdKey, seriesIdKey, imageIdKey);
-						httpResponse.setStatus(HttpServletResponse.SC_OK);
-					} catch (Throwable t) {
-						log.warning(INTERNAL_ERROR_MESSAGE, t);
-						responseStream.print(INTERNAL_ERROR_MESSAGE + ": " + t.getMessage());
-						httpResponse.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+				if (queryString != null) {
+					queryString = queryString.trim();
+					String studyIdKey = getStudyUIDFromRequest(queryString);
+					String seriesIdKey = getSeriesUIDFromRequest(queryString);
+					String imageIdKey = getInstanceUIDFromRequest(queryString);
+
+					if (studyIdKey != null && seriesIdKey != null && imageIdKey != null) {
+						if (handleDICOMVisu(responseStream, studyIdKey, seriesIdKey, imageIdKey))
+							statusCode = HttpServletResponse.SC_OK;
+						else {
+							log.warning(WADO_ERROR_MESSAGE);
+							responseStream.print(INTERNAL_ERROR_MESSAGE);
+							statusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+						}
+					} else {
+						log.info(BADLY_FORMED_QUERY_MESSAGE);
+						responseStream.append(BADLY_FORMED_QUERY_MESSAGE);
+						statusCode = HttpServletResponse.SC_BAD_REQUEST;
 					}
 				} else {
-					log.info(BADLY_FORMED_QUERY_MESSAGE);
-					responseStream.append(BADLY_FORMED_QUERY_MESSAGE);
-					httpResponse.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+					log.info(MISSING_QUERY_MESSAGE);
+					responseStream.append(MISSING_QUERY_MESSAGE);
+					statusCode = HttpServletResponse.SC_BAD_REQUEST;
 				}
 			} else {
-				log.info(MISSING_QUERY_MESSAGE);
-				responseStream.append(MISSING_QUERY_MESSAGE);
-				httpResponse.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+				log.info(INVALID_SESSION_TOKEN_MESSAGE);
+				responseStream.append(INVALID_SESSION_TOKEN_MESSAGE);
+				statusCode = HttpServletResponse.SC_UNAUTHORIZED;
 			}
-		} else {
-			log.info(INVALID_SESSION_TOKEN_MESSAGE);
-			responseStream.append(INVALID_SESSION_TOKEN_MESSAGE);
-			httpResponse.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+		} catch (Throwable t) {
+			log.warning(INTERNAL_ERROR_MESSAGE, t);
+			responseStream.print(INTERNAL_ERROR_MESSAGE + ": " + t.getMessage());
+			statusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+		} finally {
+			if (responseStream != null) {
+				responseStream.flush();
+				responseStream.close();
+			}
 		}
-		responseStream.flush();
-		responseStream.close();
+		httpResponse.setStatus(statusCode);
 	}
 
-	private void handleDICOMVisu(PrintWriter out, String studyIdKey, String seriesIdKey, String imageIdKey)
-			throws IOException
+	private boolean handleDICOMVisu(PrintWriter responseStream, String studyIdKey, String seriesIdKey, String imageIdKey)
 	{
-		File tempDicom = File.createTempFile(imageIdKey, ".tmp");
-		feedFileWithDicomFromWado(tempDicom, studyIdKey, seriesIdKey, imageIdKey);
-		// Generation of the window and center parameter
-		SourceImage srcDicomImage = null;
-		try {
-			srcDicomImage = new SourceImage(tempDicom.getAbsolutePath());
-		} catch (DicomException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		double windowWidth = 0.0;
-		double windowCenter = 0.0;
+		boolean success;
 
-		if (srcDicomImage != null) {
-			log.info("DICOM image is valid");
-			/*
-			 * ImageEnhancer ie=new ImageEnhancer(srcDicomImage); ie.findVisuParametersImage();
-			 * 
-			 * windowWidth=ie.getWindowWidth(); windowCenter=ie.getWindowCenter();
-			 */
-			Opener opener = new Opener();
-			String imageFilePath = tempDicom.getAbsolutePath();
-			ImagePlus imp = opener.openImage(imageFilePath);// ImageProcessor ip = imp.getProcessor();
-			double min = imp.getDisplayRangeMin();
-			double max = imp.getDisplayRangeMax();
-			Calibration cal = imp.getCalibration();
-			// int digits = (ip instanceof FloatProcessor) || cal.calibrated() ? 2 : 0;
-			double minValue = cal.getCValue(min);
-			double maxValue = cal.getCValue(max);
-			windowWidth = (maxValue - minValue);
-			windowCenter = (minValue + windowWidth / 2.0);
+		try {
+			File tempDicom = File.createTempFile(imageIdKey, ".tmp");
+
+			feedFileWithDicomFromWado(tempDicom, studyIdKey, seriesIdKey, imageIdKey);
+
+			SourceImage srcDicomImage = new SourceImage(tempDicom.getAbsolutePath());
+			double windowWidth = 0.0;
+			double windowCenter = 0.0;
+
+			if (srcDicomImage != null) {
+				log.info("DICOM image is valid");
+				Opener opener = new Opener();
+				String imageFilePath = tempDicom.getAbsolutePath();
+				ImagePlus imp = opener.openImage(imageFilePath);// ImageProcessor ip = imp.getProcessor();
+				double min = imp.getDisplayRangeMin();
+				double max = imp.getDisplayRangeMax();
+				Calibration cal = imp.getCalibration();
+				// int digits = (ip instanceof FloatProcessor) || cal.calibrated() ? 2 : 0;
+				double minValue = cal.getCValue(min);
+				double maxValue = cal.getCValue(max);
+				windowWidth = (maxValue - minValue);
+				windowCenter = (minValue + windowWidth / 2.0);
+			}
+			String separator = config.getParam("fieldSeparator");
+			responseStream.println("windowWidth" + separator + "windowCenter");
+			responseStream.println(windowWidth + separator + windowCenter);
+			log.info("windowWidth" + separator + "windowCenter");
+			log.info(windowWidth + separator + windowCenter);
+			success = true;
+		} catch (DicomException e) {
+			log.warning("Error reading DICOM image ", e);
+			success = false;
+		} catch (IOException e) {
+			log.warning("Error getting DICOM image from WADO", e);
+			success = false;
 		}
-		ProxyConfig config = ProxyConfig.getInstance();
-		String separator = config.getParam("fieldSeparator");
-		out.println("windowWidth" + separator + "windowCenter");
-		out.println(windowWidth + separator + windowCenter);
-		log.info("windowWidth" + separator + "windowCenter");
-		log.info(windowWidth + separator + windowCenter);
+		return success;
 	}
 
 	private static String getStudyUIDFromRequest(String queryString)
 	{
-		log.info(queryString);
 		String[] parts = queryString.split("&");
 		String value = parts[0].trim();
 		parts = value.split("=");
@@ -155,8 +158,6 @@ public class DICOMVisuHandler extends AbstractHandler
 
 	private static String getSeriesUIDFromRequest(String queryString)
 	{
-
-		log.info(queryString);
 		String[] parts = queryString.split("&");
 		String value = parts[1].trim();
 		parts = value.split("=");
@@ -166,8 +167,6 @@ public class DICOMVisuHandler extends AbstractHandler
 
 	private static String getInstanceUIDFromRequest(String queryString)
 	{
-
-		log.info(queryString);
 		String[] parts = queryString.split("&");
 		String value = parts[2].trim();
 		parts = value.split("=");

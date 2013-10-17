@@ -7,10 +7,8 @@
  */
 package edu.stanford.isis.epadws.handlers.admin;
 
-import java.io.IOException;
 import java.io.PrintWriter;
 
-import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -50,58 +48,61 @@ public class ServerStatusHandler extends AbstractHandler
 
 	@Override
 	public void handle(String s, Request request, HttpServletRequest httpRequest, HttpServletResponse httpResponse)
-			throws IOException, ServletException
 	{
-		PrintWriter out = httpResponse.getWriter();
+		PrintWriter responseStream = null;
+		int statusCode;
 
 		httpResponse.setContentType("text/plain");
 		httpResponse.setHeader("Access-Control-Allow-Origin", "*");
 		request.setHandled(true);
 
-		if (XNATUtil.hasValidXNATSessionID(httpRequest)) {
-			try {
+		try {
+			responseStream = httpResponse.getWriter();
+
+			if (XNATUtil.hasValidXNATSessionID(httpRequest)) {
 				ProxyConfig proxyConfig = ProxyConfig.getInstance();
 				EPadProxyConfigImpl ePadProxyConfig = new EPadProxyConfigImpl();
 				EPadPlugin ePadPlugin = new EPadPluginImpl();
 				long upTime = System.currentTimeMillis() - startTime;
 				long upTimeSec = upTime / 1000;
 
-				out.println();
-				out.println("--------------  ePAD Server Status  --------------");
-				out.println();
-				out.println("ePAD server uptime: " + upTimeSec + " second(s)");
-				out.println();
-				out.println("Version: " + EPadWebServerVersion.getBuildDate());
-				out.println();
-				out.println("Listening on: " + proxyConfig.getParam("ListenIP") + ":" + proxyConfig.getParam("ListenPort"));
-				out.println();
-				out.println("Plugin Version - interface:      " + EPadPlugin.PLUGIN_INTERFACE_VERSION);
-				out.println("Plugin Version - implementation: " + ePadPlugin.getPluginImplVersion());
+				responseStream.println();
+				responseStream.println("--------------  ePAD Server Status  --------------");
+				responseStream.println();
+				responseStream.println("ePAD server uptime: " + upTimeSec + " second(s)");
+				responseStream.println();
+				responseStream.println("Version: " + EPadWebServerVersion.getBuildDate());
+				responseStream.println();
+				responseStream.println("Listening on: " + proxyConfig.getParam("ListenIP") + ":"
+						+ proxyConfig.getParam("ListenPort"));
+				responseStream.println();
+				responseStream.println("Plugin Version - interface:      " + EPadPlugin.PLUGIN_INTERFACE_VERSION);
+				responseStream.println("Plugin Version - implementation: " + ePadPlugin.getPluginImplVersion());
 				MySqlInstance instance = MySqlInstance.getInstance();
-				out.println();
-				out.println("Database startup time: " + instance.getStartupTime() + " ms");
-				out.println();
-				out.println("epad.war serverProxy=" + ePadProxyConfig.getProxyConfigParam("serverProxy"));
-				out.println();
-				out.println("Pipeline activity level: " + getPipelineActivityLevel());
+				responseStream.println();
+				responseStream.println("Database startup time: " + instance.getStartupTime() + " ms");
+				responseStream.println();
+				responseStream.println("epad.war serverProxy=" + ePadProxyConfig.getProxyConfigParam("serverProxy"));
+				responseStream.println();
+				responseStream.println("Pipeline activity level: " + getPipelineActivityLevel());
 
-				httpResponse.setStatus(HttpServletResponse.SC_OK);
-			} catch (Exception e) {
-				log.warning(INTERNAL_EXCEPTION_MESSAGE, e);
-				out.append(INTERNAL_EXCEPTION_MESSAGE + ": " + e.getMessage());
-				httpResponse.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-			} catch (Error e) {
-				log.warning(INTERNAL_EXCEPTION_MESSAGE, e);
-				out.append(INTERNAL_EXCEPTION_MESSAGE + e.getMessage());
-				httpResponse.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+				statusCode = HttpServletResponse.SC_OK;
+			} else {
+				log.info(INVALID_SESSION_TOKEN_MESSAGE);
+				responseStream.append(INVALID_SESSION_TOKEN_MESSAGE);
+				statusCode = HttpServletResponse.SC_UNAUTHORIZED;
 			}
-		} else {
-			log.info(INVALID_SESSION_TOKEN_MESSAGE);
-			out.append(INVALID_SESSION_TOKEN_MESSAGE);
-			httpResponse.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+		} catch (Throwable t) {
+			log.warning(INTERNAL_EXCEPTION_MESSAGE, t);
+			responseStream.append(INTERNAL_EXCEPTION_MESSAGE + ": " + t.getMessage());
+			statusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+		} finally {
+			if (responseStream != null) {
+				responseStream.flush();
+				responseStream.close();
+			}
 		}
-		out.flush();
-		out.close();
+		httpResponse.setStatus(statusCode);
 	}
 
 	private String getPipelineActivityLevel()

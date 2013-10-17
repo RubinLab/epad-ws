@@ -8,7 +8,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -39,52 +38,56 @@ public class ImageCheckHandler extends AbstractHandler
 
 	@Override
 	public void handle(String s, Request request, HttpServletRequest httpRequest, HttpServletResponse httpResponse)
-			throws IOException, ServletException
 	{
-		PrintWriter out = httpResponse.getWriter();
+		PrintWriter responseStream = null;
+		int statusCode;
 
 		httpResponse.setContentType("text/plain;charset=UTF-8");
 		request.setHandled(true);
 
-		if (XNATUtil.hasValidXNATSessionID(httpRequest)) {
-			String method = httpRequest.getMethod();
-			if ("GET".equalsIgnoreCase(method)) {
-				try {
-					log.info("Received request");
-					verifyImageGeneration(out);
-					httpResponse.setStatus(HttpServletResponse.SC_OK);
-				} catch (IOException e) {
-					log.warning(INTERNAL_IO_ERROR_MESSAGE, e);
-					out.print(INTERNAL_IO_ERROR_MESSAGE + ": " + e.getMessage());
-					httpResponse.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-				} catch (SQLException e) {
-					log.warning(INTERNAL_SQL_ERROR_MESSAGE, e);
-					out.print(INTERNAL_SQL_ERROR_MESSAGE + ": " + e.getMessage());
-					httpResponse.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-				} catch (Exception e) {
-					log.warning(INTERNAL_ERROR_MESSAGE, e);
-					out.print(INTERNAL_ERROR_MESSAGE + ": " + e.getMessage());
-					httpResponse.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-				} catch (Error e) {
-					log.warning(INTERNAL_ERROR_MESSAGE, e);
-					out.print(INTERNAL_ERROR_MESSAGE + ": " + e.getMessage());
-					httpResponse.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+		try {
+			responseStream = httpResponse.getWriter();
+
+			if (XNATUtil.hasValidXNATSessionID(httpRequest)) {
+				String method = httpRequest.getMethod();
+				if ("GET".equalsIgnoreCase(method)) {
+					try {
+						log.info("Received request");
+						verifyImageGeneration(responseStream);
+						statusCode = HttpServletResponse.SC_OK;
+					} catch (IOException e) {
+						log.warning(INTERNAL_IO_ERROR_MESSAGE, e);
+						responseStream.print(INTERNAL_IO_ERROR_MESSAGE + ": " + e.getMessage());
+						statusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+					} catch (SQLException e) {
+						log.warning(INTERNAL_SQL_ERROR_MESSAGE, e);
+						responseStream.print(INTERNAL_SQL_ERROR_MESSAGE + ": " + e.getMessage());
+						statusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+					}
+				} else {
+					log.info(FORBIDDEN_MESSAGE);
+					responseStream.print(FORBIDDEN_MESSAGE);
+					statusCode = HttpServletResponse.SC_FORBIDDEN;
 				}
 			} else {
-				log.info(FORBIDDEN_MESSAGE);
-				out.print(FORBIDDEN_MESSAGE);
-				httpResponse.setStatus(HttpServletResponse.SC_FORBIDDEN);
+				log.info(INVALID_SESSION_TOKEN_MESSAGE);
+				responseStream.append(JsonHelper.createJSONErrorResponse(INVALID_SESSION_TOKEN_MESSAGE));
+				statusCode = HttpServletResponse.SC_UNAUTHORIZED;
 			}
-		} else {
-			log.info(INVALID_SESSION_TOKEN_MESSAGE);
-			httpResponse.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-			out.append(JsonHelper.createJSONErrorResponse(INVALID_SESSION_TOKEN_MESSAGE));
+		} catch (Throwable t) {
+			log.warning(INTERNAL_ERROR_MESSAGE, t);
+			responseStream.print(INTERNAL_ERROR_MESSAGE + ": " + t.getMessage());
+			statusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+		} finally {
+			if (responseStream != null) {
+				responseStream.flush();
+				responseStream.close();
+			}
 		}
-		out.flush();
-		out.close();
+		httpResponse.setStatus(statusCode);
 	}
 
-	private void verifyImageGeneration(PrintWriter out) throws SQLException, IOException
+	private void verifyImageGeneration(PrintWriter responseStream) throws SQLException, IOException
 	{
 		final MySqlQueries dbQueries = MySqlInstance.getInstance().getMysqlQueries();
 		final List<String> seriesIUIDs = dbQueries.getNewSeries();
@@ -102,7 +105,7 @@ public class ImageCheckHandler extends AbstractHandler
 			final int numberOfUnprocessedImages = unprocessedDICOMImageFileDescriptionsInSeries.size();
 
 			if (numberOfUnprocessedImages != 0) {
-				out.write("Number of instances in series " + seriesIUID
+				responseStream.write("Number of instances in series " + seriesIUID
 						+ " for which there is no ePAD database entry for a PNG file = " + numberOfUnprocessedImages + "\n");
 				numberOfSeriesWithMissingEPADDatabaseEntry++;
 				allUnprocessedDICOMImageFileDescriptions.addAll(unprocessedDICOMImageFileDescriptionsInSeries);
@@ -130,22 +133,24 @@ public class ImageCheckHandler extends AbstractHandler
 			File pngFile = new File(pngFileName);
 			if (!pngFile.isFile()) {
 				String message = pngFileName;
-				out.write(message + " \n");
+				responseStream.write(message + " \n");
 				// numberOfMissingPNGFiles++;
 			}
 		}
-		out.write("Number of series in DICOM database = " + seriesIUIDs.size() + "\n");
+		responseStream.write("Number of series in DICOM database = " + seriesIUIDs.size() + "\n");
 		if (numberOfSeriesWithMissingEPADDatabaseEntry != 0)
-			out.write("Number of series with missing ePAD database entries = " + numberOfSeriesWithMissingEPADDatabaseEntry
-					+ "\n");
-		out.write("Total number of unprocessed instances " + allUnprocessedDICOMImageFileDescriptions.size() + "\n");
-		out.write("Total number of PNG files = " + pngFileNames.size() + "\n");
+			responseStream.write("Number of series with missing ePAD database entries = "
+					+ numberOfSeriesWithMissingEPADDatabaseEntry + "\n");
+		responseStream.write("Total number of unprocessed instances " + allUnprocessedDICOMImageFileDescriptions.size()
+				+ "\n");
+		responseStream.write("Total number of PNG files = " + pngFileNames.size() + "\n");
 		if (numberOfMissingPNGFiles != 0)
-			out.write("Number of missing PNG files = " + numberOfMissingPNGFiles + "\n");
+			responseStream.write("Number of missing PNG files = " + numberOfMissingPNGFiles + "\n");
 
 		if (allUnprocessedDICOMImageFileDescriptions.size() != 0) {
-			out.write("Adding " + allUnprocessedDICOMImageFileDescriptions.size() + " unprocessed images to PNG pipeline...");
-			out.flush();
+			responseStream.write("Adding " + allUnprocessedDICOMImageFileDescriptions.size()
+					+ " unprocessed images to PNG pipeline...");
+			responseStream.flush();
 			queueAndWatcherManager.addToPNGGeneratorTaskPipeline(allUnprocessedDICOMImageFileDescriptions);
 		}
 	}

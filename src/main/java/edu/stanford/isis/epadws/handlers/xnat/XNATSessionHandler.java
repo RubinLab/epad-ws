@@ -54,13 +54,9 @@ public class XNATSessionHandler extends AbstractHandler
 				try {
 					responseStream.append(XNATUtil.invokeXNATSessionIDService(httpRequest, httpResponse));
 					httpResponse.setStatus(HttpServletResponse.SC_OK);
-				} catch (IOException e) {
-					log.warning(LOGIN_EXCEPTION_MESSAGE, e);
-					responseStream.append(LOGIN_EXCEPTION_MESSAGE + ": " + e.getMessage());
-					httpResponse.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-				} catch (Exception e) {
-					log.warning(LOGIN_EXCEPTION_MESSAGE, e);
-					responseStream.append(LOGIN_EXCEPTION_MESSAGE + ": " + e.getMessage());
+				} catch (Throwable t) {
+					log.warning(LOGIN_EXCEPTION_MESSAGE, t);
+					responseStream.append(LOGIN_EXCEPTION_MESSAGE + ": " + t.getMessage());
 					httpResponse.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 				}
 			} else {

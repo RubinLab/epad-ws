@@ -31,7 +31,7 @@ import edu.stanford.isis.epadws.xnat.XNATUtil;
 /**
  * Download headers for a series or study in one quick step.
  * 
- * @author amsnyder
+ * TODO Delete this and overwrite with DICOMHeadersHandlerJSON.java
  * 
  */
 public class DICOMHeadersHandler extends AbstractHandler
@@ -44,10 +44,6 @@ public class DICOMHeadersHandler extends AbstractHandler
 	private static final String MISSING_QUERY_MESSAGE = "No query paramaters specified";
 	private static final String BADLY_FORMED_QUERY_MESSAGE = "Invalid query paramaters specified";
 	private static final String WADO_INVOCATION_ERROR_MESSAGE = "Error retrieving header from WADO";
-
-	public DICOMHeadersHandler()
-	{
-	}
 
 	@Override
 	public void handle(String s, Request request, HttpServletRequest httpRequest, HttpServletResponse httpResponse)

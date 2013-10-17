@@ -7,7 +7,6 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -95,17 +94,18 @@ public class CoordinationHandler extends AbstractHandler
 
 	@Override
 	public void handle(String s, Request request, HttpServletRequest httpRequest, HttpServletResponse httpResponse)
-			throws IOException, ServletException
 	{
-		PrintWriter responseStream = httpResponse.getWriter();
+		PrintWriter responseStream = null;
+		int statusCode;
 
 		httpResponse.setContentType("application/json;charset=UTF-8");
 		request.setHandled(true);
 
-		if (XNATUtil.hasValidXNATSessionID(httpRequest)) {
-			String method = httpRequest.getMethod();
-			if ("POST".equalsIgnoreCase(method)) {
-				try {
+		try {
+			responseStream = httpResponse.getWriter();
+			if (XNATUtil.hasValidXNATSessionID(httpRequest)) {
+				String method = httpRequest.getMethod();
+				if ("POST".equalsIgnoreCase(method)) {
 					Coordination coordination = readCoordination(request);
 					log.info("Received AIM Template coordination: " + coordination);
 					if (coordination != null && coordination.isValid()) {
@@ -114,46 +114,48 @@ public class CoordinationHandler extends AbstractHandler
 							responseStream.append(term2JSON(term));
 							log.info("Returned AIM Template coordination term: " + term);
 							// TODO Should also return SC_CREATED with location header if new.
-							httpResponse.setStatus(HttpServletResponse.SC_OK);
+							statusCode = HttpServletResponse.SC_OK;
 						} else {
-							httpResponse.setStatus(HttpServletResponse.SC_BAD_REQUEST);
 							log.info(BAD_TERMS_MESSAGE);
 							responseStream.print(JsonHelper.createJSONErrorResponse(BAD_TERMS_MESSAGE));
+							statusCode = HttpServletResponse.SC_BAD_REQUEST;
 						}
 					} else {
-						httpResponse.setStatus(HttpServletResponse.SC_BAD_REQUEST);
 						log.info(BAD_JSON_ERROR_MESSAGE);
 						responseStream.print(JsonHelper.createJSONErrorResponse(BAD_JSON_ERROR_MESSAGE));
+						statusCode = HttpServletResponse.SC_BAD_REQUEST;
 					}
-				} catch (JsonParseException e) {
-					httpResponse.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-					log.warning(UNPARSABLE_JSON_ERROR_MESSAGE, e);
-					responseStream.print(JsonHelper.createJSONErrorResponse(UNPARSABLE_JSON_ERROR_MESSAGE, e));
-				} catch (IOException e) {
-					httpResponse.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-					log.warning(INTERNAL_IO_ERROR_MESSAGE, e);
-					responseStream.print(JsonHelper.createJSONErrorResponse(INTERNAL_IO_ERROR_MESSAGE, e));
-				} catch (SQLException e) {
-					httpResponse.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-					log.warning(INTERNAL_SQL_ERROR_MESSAGE, e);
-					responseStream.print(JsonHelper.createJSONErrorResponse(INTERNAL_SQL_ERROR_MESSAGE, e));
-				} catch (Throwable t) {
-					httpResponse.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-					log.warning(INTERNAL_ERROR_MESSAGE, t);
-					responseStream.print(JsonHelper.createJSONErrorResponse(INTERNAL_ERROR_MESSAGE, t));
+				} else {
+					log.info(FORBIDDEN_MESSAGE);
+					responseStream.print(JsonHelper.createJSONErrorResponse(FORBIDDEN_MESSAGE));
+					statusCode = HttpServletResponse.SC_FORBIDDEN;
 				}
 			} else {
-				httpResponse.setStatus(HttpServletResponse.SC_FORBIDDEN);
-				log.info(FORBIDDEN_MESSAGE);
-				responseStream.print(JsonHelper.createJSONErrorResponse(FORBIDDEN_MESSAGE));
+				log.info(INVALID_SESSION_TOKEN_MESSAGE);
+				responseStream.append(INVALID_SESSION_TOKEN_MESSAGE);
+				statusCode = HttpServletResponse.SC_UNAUTHORIZED;
 			}
-		} else {
-			log.info(INVALID_SESSION_TOKEN_MESSAGE);
-			httpResponse.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-			responseStream.append(INVALID_SESSION_TOKEN_MESSAGE);
+		} catch (JsonParseException e) {
+			log.warning(UNPARSABLE_JSON_ERROR_MESSAGE, e);
+			responseStream.print(JsonHelper.createJSONErrorResponse(UNPARSABLE_JSON_ERROR_MESSAGE, e));
+			statusCode = HttpServletResponse.SC_BAD_REQUEST;
+		} catch (IOException e) {
+			log.warning(INTERNAL_IO_ERROR_MESSAGE, e);
+			responseStream.print(JsonHelper.createJSONErrorResponse(INTERNAL_IO_ERROR_MESSAGE, e));
+			statusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+		} catch (SQLException e) {
+			log.warning(INTERNAL_SQL_ERROR_MESSAGE, e);
+			responseStream.print(JsonHelper.createJSONErrorResponse(INTERNAL_SQL_ERROR_MESSAGE, e));
+			statusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+		} catch (Throwable t) {
+			log.warning(INTERNAL_ERROR_MESSAGE, t);
+			responseStream.print(JsonHelper.createJSONErrorResponse(INTERNAL_ERROR_MESSAGE, t));
+			statusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+		} finally {
+			responseStream.flush();
+			responseStream.close();
 		}
-		responseStream.flush();
-		responseStream.close();
+		httpResponse.setStatus(statusCode);
 	}
 
 	private Coordination readCoordination(Request request) throws IOException

@@ -3,7 +3,6 @@ package edu.stanford.isis.epadws.handlers.xnat;
 import java.io.IOException;
 import java.io.InputStream;
 
-import javax.servlet.ServletException;
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -41,7 +40,7 @@ public class XNATProjectHandler extends AbstractHandler
 
 	@Override
 	public void handle(String base, Request request, HttpServletRequest httpRequest, HttpServletResponse httpResponse)
-			throws IOException, ServletException
+			throws IOException
 	{
 		ServletOutputStream responseStream = null;
 		int statusCode;

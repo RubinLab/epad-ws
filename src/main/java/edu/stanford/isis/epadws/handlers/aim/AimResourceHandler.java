@@ -11,7 +11,6 @@ import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.xml.parsers.DocumentBuilder;
@@ -85,63 +84,68 @@ public class AimResourceHandler extends AbstractHandler
 	 */
 	@Override
 	public void handle(String s, Request request, HttpServletRequest httpRequest, HttpServletResponse httpResponse)
-			throws IOException, ServletException
 	{
-		PrintWriter responseStream = httpResponse.getWriter();
+		PrintWriter responseStream = null;
+		int statusCode;
 
 		httpResponse.setContentType("text/xml");
 		httpResponse.setHeader("Cache-Control", "no-cache");
 
-		if (XNATUtil.hasValidXNATSessionID(httpRequest)) {
-			String method = httpRequest.getMethod();
-			if ("GET".equalsIgnoreCase(method)) {
-				String queryString = httpRequest.getQueryString();
-				queryString = URLDecoder.decode(queryString, "UTF-8");
-				logger.info("AimResourceHandler received query: " + queryString);
-				if (queryString != null) {
-					try {
+		try {
+			responseStream = httpResponse.getWriter();
+
+			if (XNATUtil.hasValidXNATSessionID(httpRequest)) {
+				String method = httpRequest.getMethod();
+				if ("GET".equalsIgnoreCase(method)) {
+					String queryString = httpRequest.getQueryString();
+					queryString = URLDecoder.decode(queryString, "UTF-8");
+					logger.info("AimResourceHandler received query: " + queryString);
+					if (queryString != null) {
 						queryAIMImageAnnotations(responseStream, queryString);
-						httpResponse.setStatus(HttpServletResponse.SC_OK);
+						statusCode = HttpServletResponse.SC_OK;
+					} else {
+						logger.info(MISSING_QUERY_MESSAGE);
+						responseStream.append(MISSING_QUERY_MESSAGE);
+						statusCode = HttpServletResponse.SC_BAD_REQUEST;
+					}
+				} else if ("POST".equalsIgnoreCase(method)) { // http://www.tutorialspoint.com/servlets/servlets-file-uploading.htm
+					String annotationsUploadDirPath = ResourceUtils.getEPADWebServerAnnotationsUploadDir();
+					logger.info("Uploading files to dir: " + annotationsUploadDirPath);
+					try {
+						boolean saveError = uploadAIMAnnotations(httpRequest, responseStream, annotationsUploadDirPath);
+						if (saveError) {
+							logger.warning(FILE_UPLOAD_ERROR_MESSAGE);
+							responseStream.append(FILE_UPLOAD_ERROR_MESSAGE + "<br>");
+							statusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+						} else {
+							statusCode = HttpServletResponse.SC_OK;
+						}
 					} catch (Throwable t) {
-						logger.warning(INTERNAL_EXCEPTION_MESSAGE, t);
-						responseStream.append(INTERNAL_EXCEPTION_MESSAGE + t.getMessage() + "<br>");
-						httpResponse.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+						logger.warning("Failed to upload AIM files to _" + annotationsUploadDirPath + "_", t);
+						responseStream.append("Failed to upload AIM files to _" + annotationsUploadDirPath + "_; error="
+								+ t.getMessage());
+						statusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 					}
 				} else {
-					logger.info(MISSING_QUERY_MESSAGE);
-					responseStream.append(MISSING_QUERY_MESSAGE);
-					httpResponse.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-				}
-			} else if ("POST".equalsIgnoreCase(method)) { // http://www.tutorialspoint.com/servlets/servlets-file-uploading.htm
-				String annotationsUploadDirPath = ResourceUtils.getEPADWebServerAnnotationsUploadDir();
-				logger.info("Uploading files to dir: " + annotationsUploadDirPath);
-				try {
-					boolean saveError = uploadAIMAnnotations(httpRequest, responseStream, annotationsUploadDirPath);
-					if (saveError) {
-						logger.warning(FILE_UPLOAD_ERROR_MESSAGE);
-						responseStream.append(FILE_UPLOAD_ERROR_MESSAGE + "<br>");
-						httpResponse.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-					} else {
-						httpResponse.setStatus(HttpServletResponse.SC_OK);
-					}
-				} catch (Throwable t) {
-					logger.warning("Failed to upload AIM files to _" + annotationsUploadDirPath + "_", t);
-					responseStream.append("Failed to upload AIM files to _" + annotationsUploadDirPath + "_; error=" + t.getMessage());
-					httpResponse.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+					logger.info(INVALID_METHOD_MESSAGE);
+					responseStream.append(INVALID_METHOD_MESSAGE);
+					httpResponse.setHeader("Access-Control-Allow-Methods", "POST GET");
+					statusCode = HttpServletResponse.SC_METHOD_NOT_ALLOWED;
 				}
 			} else {
-				logger.info(INVALID_METHOD_MESSAGE);
-				responseStream.append(INVALID_METHOD_MESSAGE);
-				httpResponse.setHeader("Access-Control-Allow-Methods", "POST GET");
-				httpResponse.setStatus(HttpServletResponse.SC_METHOD_NOT_ALLOWED);
+				logger.info(INVALID_SESSION_TOKEN_MESSAGE);
+				responseStream.append(INVALID_SESSION_TOKEN_MESSAGE);
+				statusCode = HttpServletResponse.SC_UNAUTHORIZED;
 			}
-		} else {
-			logger.info(INVALID_SESSION_TOKEN_MESSAGE);
-			responseStream.append(INVALID_SESSION_TOKEN_MESSAGE);
-			httpResponse.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+		} catch (Throwable t) {
+			logger.warning(INTERNAL_EXCEPTION_MESSAGE, t);
+			responseStream.append(INTERNAL_EXCEPTION_MESSAGE + t.getMessage() + "<br>");
+			statusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+		} finally {
+			responseStream.flush();
+			responseStream.close();
 		}
-		responseStream.flush();
-		responseStream.close();
+		httpResponse.setStatus(statusCode);
 	}
 
 	private void queryAIMImageAnnotations(PrintWriter out, String queryString) throws ParserConfigurationException,
@@ -183,8 +187,8 @@ public class AimResourceHandler extends AbstractHandler
 		out.print(queryResults);
 	}
 
-	private boolean uploadAIMAnnotations(HttpServletRequest httpRequest, PrintWriter out, String annotationsUploadDirPath)
-			throws FileUploadException, IOException, FileNotFoundException, AimException
+	private boolean uploadAIMAnnotations(HttpServletRequest httpRequest, PrintWriter responseStream,
+			String annotationsUploadDirPath) throws FileUploadException, IOException, FileNotFoundException, AimException
 	{
 		ServletFileUpload upload = new ServletFileUpload();
 		FileItemIterator iter = upload.getItemIterator(httpRequest);
@@ -200,23 +204,30 @@ public class AimResourceHandler extends AbstractHandler
 			InputStream stream = item.openStream();
 			String tempName = "temp-" + System.currentTimeMillis() + ".xml";
 			File f = new File(annotationsUploadDirPath + tempName);
-			FileOutputStream fos = new FileOutputStream(f);
+			FileOutputStream fos = null;
 			try {
+				fos = new FileOutputStream(f);
 				int len;
 				byte[] buffer = new byte[32768];
 				while ((len = stream.read(buffer, 0, buffer.length)) != -1) {
 					fos.write(buffer, 0, len);
 				}
 			} finally {
-				fos.close();
+				if (fos != null) {
+					try {
+						fos.close();
+					} catch (IOException e) {
+						logger.warning("Error closing AIM upload stream", e);
+					}
+				}
 			}
-			out.print("added (" + fileCount + "): " + name);
+			responseStream.print("added (" + fileCount + "): " + name);
 			ImageAnnotation ia = AnnotationGetter.getImageAnnotationFromFile(f.getAbsolutePath(), xsdFilePath);
 			if (ia != null) {
 				saveToServer(ia);
-				out.println("-- Add to AIM server: " + ia.getUniqueIdentifier() + "<br>");
+				responseStream.println("-- Add to AIM server: " + ia.getUniqueIdentifier() + "<br>");
 			} else {
-				out.println("-- Failed ! not added to AIM server<br>");
+				responseStream.println("-- Failed ! not added to AIM server<br>");
 				saveError = true;
 			}
 		}

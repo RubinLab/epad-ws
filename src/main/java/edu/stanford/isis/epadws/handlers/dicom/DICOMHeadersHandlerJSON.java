@@ -61,7 +61,6 @@ public class DICOMHeadersHandlerJSON extends AbstractHandler
 			if (XNATUtil.hasValidXNATSessionID(httpRequest)) {
 				String queryString = httpRequest.getQueryString();
 				queryString = URLDecoder.decode(queryString, "UTF-8");
-
 				if (queryString != null) {
 					statusCode = performDICOMHeaderRequest(responseStream, queryString.trim());
 				} else {
