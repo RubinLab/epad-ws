@@ -2,6 +2,7 @@ package edu.stanford.isis.epadws.handlers.xnat;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletRequest;
@@ -34,7 +35,7 @@ public class XNATProjectHandler extends AbstractHandler
 	private static final ProxyLogger log = ProxyLogger.getInstance();
 	private static final ProxyConfig config = ProxyConfig.getInstance();
 
-	private static final String INVALID_SESSION_TOKEN_MESSAGE = "No valid session token";
+	private static final String INVALID_SESSION_TOKEN_MESSAGE = "Invalid session token";
 	private static final String INTERNAL_EXCEPTION_MESSAGE = "Internal error getting server status";
 	private static final String XNAT_INVOCATION_ERROR_MESSAGE = "Error invoking XNAT project call";
 
@@ -42,7 +43,7 @@ public class XNATProjectHandler extends AbstractHandler
 	public void handle(String base, Request request, HttpServletRequest httpRequest, HttpServletResponse httpResponse)
 			throws IOException
 	{
-		ServletOutputStream responseStream = null;
+		ServletOutputStream responseStream = null; // TODO Look at use of ServletOutputStream
 		int statusCode;
 
 		httpResponse.setContentType("application/json");
@@ -63,21 +64,13 @@ public class XNATProjectHandler extends AbstractHandler
 			log.warning(INTERNAL_EXCEPTION_MESSAGE, t);
 			responseStream.print(JsonHelper.createJSONErrorResponse(INTERNAL_EXCEPTION_MESSAGE, t));
 			statusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
-		} finally {
-			if (responseStream != null) {
-				try {
-					responseStream.flush();
-					responseStream.close();
-				} catch (IOException e) {
-					log.warning("Error closing project output stream", e);
-				}
-			}
 		}
 		httpResponse.setStatus(statusCode);
 	}
 
 	private int invokeXNATProjectService(String base, HttpServletRequest httpRequest, HttpServletResponse httpResponse,
-			ServletOutputStream outputStream) throws IOException, HttpException
+	// ServletOutputStream outputStream) throws IOException, HttpException
+			OutputStream outputStream) throws IOException, HttpException
 	{
 		String xnatHost = config.getStringConfigurationParameter("XNATServer");
 		int xnatPort = config.getIntegerConfigurationParameter("XNATPort");

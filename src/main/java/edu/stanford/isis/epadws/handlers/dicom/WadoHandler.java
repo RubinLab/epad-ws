@@ -34,7 +34,6 @@ public class WadoHandler extends AbstractHandler
 	private static final String INTERNAL_EXCEPTION_MESSAGE = "Internal error";
 	private static final String MISSING_QUERY_MESSAGE = "No query in request";
 	private static final String INVALID_SESSION_TOKEN_MESSAGE = "Session token is invalid";
-	private static final String RESPONSE_STREAM_ERROR_MESSAGE = "Error closing or flushing response stream";
 
 	@Override
 	public void handle(String s, Request request, HttpServletRequest httpRequest, HttpServletResponse httpResponse)
@@ -65,15 +64,6 @@ public class WadoHandler extends AbstractHandler
 		} catch (Throwable t) {
 			log.warning(INTERNAL_EXCEPTION_MESSAGE, t);
 			statusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
-		} finally {
-			if (responseStream != null) {
-				try {
-					responseStream.flush();
-					responseStream.close();
-				} catch (IOException e) {
-					log.warning(RESPONSE_STREAM_ERROR_MESSAGE, e);
-				}
-			}
 		}
 		httpResponse.setStatus(statusCode);
 	}
