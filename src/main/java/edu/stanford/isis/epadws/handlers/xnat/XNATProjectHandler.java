@@ -64,6 +64,8 @@ public class XNATProjectHandler extends AbstractHandler
 			log.warning(INTERNAL_EXCEPTION_MESSAGE, t);
 			responseStream.print(JsonHelper.createJSONErrorResponse(INTERNAL_EXCEPTION_MESSAGE, t));
 			statusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+		} finally {
+			responseStream.flush();
 		}
 		httpResponse.setStatus(statusCode);
 	}

@@ -57,6 +57,7 @@ public class WadoHandler extends AbstractHandler
 					log.info(MISSING_QUERY_MESSAGE);
 					statusCode = HttpServletResponse.SC_BAD_REQUEST;
 				}
+				responseStream.flush();
 			} else {
 				log.info(INVALID_SESSION_TOKEN_MESSAGE);
 				statusCode = HttpServletResponse.SC_UNAUTHORIZED;

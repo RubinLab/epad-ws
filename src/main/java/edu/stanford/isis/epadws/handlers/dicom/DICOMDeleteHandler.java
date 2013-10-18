@@ -36,7 +36,7 @@ public class DICOMDeleteHandler extends AbstractHandler
 	public void handle(String s, Request request, HttpServletRequest httpRequest, HttpServletResponse httpResponse)
 			throws IOException, ServletException
 	{
-		PrintWriter out = httpResponse.getWriter();
+		PrintWriter responseStream = httpResponse.getWriter();
 
 		httpResponse.setContentType("text/plain");
 		request.setHandled(true);
@@ -58,20 +58,19 @@ public class DICOMDeleteHandler extends AbstractHandler
 				} catch (Throwable t) {
 					httpResponse.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 					log.warning(INTERNAL_ERROR_MESSAGE, t);
-					out.print(INTERNAL_ERROR_MESSAGE + ": " + t.getMessage());
+					responseStream.print(INTERNAL_ERROR_MESSAGE + ": " + t.getMessage());
 				}
 			} else {
 				log.info(MISSING_QUERY_MESSAGE);
-				out.append(MISSING_QUERY_MESSAGE);
+				responseStream.append(MISSING_QUERY_MESSAGE);
 				httpResponse.setStatus(HttpServletResponse.SC_BAD_REQUEST);
 			}
 		} else {
 			log.info(INVALID_SESSION_TOKEN_MESSAGE);
-			out.append(JsonHelper.createJSONErrorResponse(INVALID_SESSION_TOKEN_MESSAGE));
+			responseStream.append(JsonHelper.createJSONErrorResponse(INVALID_SESSION_TOKEN_MESSAGE));
 			httpResponse.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
 		}
-		out.flush();
-		out.close();
+		responseStream.flush();
 	}
 
 	private void handleDICOMStudyDeleteRequest(String queryString)

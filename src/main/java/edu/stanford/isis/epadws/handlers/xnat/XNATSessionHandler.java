@@ -3,7 +3,6 @@ package edu.stanford.isis.epadws.handlers.xnat;
 import java.io.IOException;
 import java.io.PrintWriter;
 
-import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -39,7 +38,7 @@ public class XNATSessionHandler extends AbstractHandler
 
 	@Override
 	public void handle(String s, Request request, HttpServletRequest httpRequest, HttpServletResponse httpResponse)
-			throws IOException, ServletException
+			throws IOException
 	{
 		PrintWriter responseStream = httpResponse.getWriter();
 
@@ -86,6 +85,5 @@ public class XNATSessionHandler extends AbstractHandler
 			httpResponse.setStatus(HttpServletResponse.SC_METHOD_NOT_ALLOWED);
 		}
 		responseStream.flush();
-		responseStream.close();
 	}
 }

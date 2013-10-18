@@ -143,7 +143,6 @@ public class AimResourceHandler extends AbstractHandler
 			statusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 		} finally {
 			responseStream.flush();
-			responseStream.close();
 		}
 		httpResponse.setStatus(statusCode);
 	}

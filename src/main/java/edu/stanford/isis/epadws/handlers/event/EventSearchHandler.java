@@ -120,7 +120,6 @@ public class EventSearchHandler extends AbstractHandler
 			httpResponse.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
 		}
 		out.flush();
-		out.close();
 	}
 
 	private void findEventsForUser(PrintWriter out, String userName)

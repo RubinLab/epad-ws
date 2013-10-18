@@ -99,7 +99,6 @@ public class ServerStatusHandler extends AbstractHandler
 		} finally {
 			if (responseStream != null) {
 				responseStream.flush();
-				responseStream.close();
 			}
 		}
 		httpResponse.setStatus(statusCode);

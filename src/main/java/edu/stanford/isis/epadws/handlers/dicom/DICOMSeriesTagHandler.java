@@ -8,7 +8,6 @@ import java.sql.Blob;
 import java.sql.SQLException;
 import java.util.Map;
 
-import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.xml.bind.DatatypeConverter;
@@ -38,50 +37,55 @@ public class DICOMSeriesTagHandler extends AbstractHandler
 
 	@Override
 	public void handle(String s, Request request, HttpServletRequest httpRequest, HttpServletResponse httpResponse)
-			throws IOException, ServletException
 	{
-		PrintWriter out = httpResponse.getWriter();
+		PrintWriter responseStream = null;
+		int statusCode;
 
 		httpResponse.setContentType("text/plain");
 		httpResponse.setHeader("Access-Control-Allow-Origin", "*");
 		request.setHandled(true);
 
-		if (XNATUtil.hasValidXNATSessionID(httpRequest)) {
-			String seriesIUID = httpRequest.getParameter("series_iuid");
-			if (seriesIUID != null) {
-				boolean useBase64 = true;
-				String contentType = httpRequest.getParameter("type");
-				if ("text".equals(contentType))
-					useBase64 = false;
-				log.info("DICOMSeriesTagHandler, series_iuid=" + seriesIUID);
-				try {
-					handleDICOMSeriesTagQuery(out, seriesIUID, useBase64);
-					httpResponse.setStatus(HttpServletResponse.SC_OK);
-				} catch (IOException e) {
-					log.warning(INTERNAL_ERROR_MESSAGE, e);
-					out.print(INTERNAL_ERROR_MESSAGE + ": " + e.getMessage());
-					httpResponse.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-				} catch (DicomException e) {
-					log.warning(INTERNAL_ERROR_MESSAGE, e);
-					out.print(INTERNAL_ERROR_MESSAGE + ": " + e.getMessage());
-					httpResponse.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-				} catch (Throwable t) {
-					log.warning(INTERNAL_ERROR_MESSAGE, t);
-					out.print(INTERNAL_ERROR_MESSAGE + ": " + t.getMessage());
-					httpResponse.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+		try {
+			responseStream = httpResponse.getWriter();
+
+			if (XNATUtil.hasValidXNATSessionID(httpRequest)) {
+				String seriesIUID = httpRequest.getParameter("series_iuid");
+				if (seriesIUID != null) {
+					boolean useBase64 = true;
+					String contentType = httpRequest.getParameter("type");
+					if ("text".equals(contentType))
+						useBase64 = false;
+					log.info("DICOMSeriesTagHandler, series_iuid=" + seriesIUID);
+					try {
+						handleDICOMSeriesTagQuery(responseStream, seriesIUID, useBase64);
+						statusCode = HttpServletResponse.SC_OK;
+					} catch (IOException e) {
+						log.warning(INTERNAL_ERROR_MESSAGE, e);
+						responseStream.print(INTERNAL_ERROR_MESSAGE + ": " + e.getMessage());
+						statusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+					} catch (DicomException e) {
+						log.warning(INTERNAL_ERROR_MESSAGE, e);
+						responseStream.print(INTERNAL_ERROR_MESSAGE + ": " + e.getMessage());
+						statusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+					}
+				} else {
+					log.info(MISSING_SERIES_IUID_MESSAGE);
+					responseStream.append(MISSING_SERIES_IUID_MESSAGE);
+					statusCode = HttpServletResponse.SC_BAD_REQUEST;
 				}
 			} else {
-				log.info(MISSING_SERIES_IUID_MESSAGE);
-				httpResponse.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-				out.append(MISSING_SERIES_IUID_MESSAGE);
+				log.info(INVALID_SESSION_TOKEN_MESSAGE);
+				responseStream.append(INVALID_SESSION_TOKEN_MESSAGE);
+				statusCode = HttpServletResponse.SC_UNAUTHORIZED;
 			}
-		} else {
-			log.info(INVALID_SESSION_TOKEN_MESSAGE);
-			out.append(INVALID_SESSION_TOKEN_MESSAGE);
-			httpResponse.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+		} catch (Throwable t) {
+			log.warning(INTERNAL_ERROR_MESSAGE, t);
+			responseStream.print(INTERNAL_ERROR_MESSAGE + ": " + t.getMessage());
+			statusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+		} finally {
+			responseStream.flush();
 		}
-		out.flush();
-		out.close();
+		httpResponse.setStatus(statusCode);
 	}
 
 	private void handleDICOMSeriesTagQuery(PrintWriter out, String seriesIUID, boolean useBase64) throws IOException,

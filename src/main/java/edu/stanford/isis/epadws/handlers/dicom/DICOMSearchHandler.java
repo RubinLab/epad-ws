@@ -67,8 +67,8 @@ public class DICOMSearchHandler extends AbstractHandler
 							performDICOMStudySearch(responseStream, searchType, queryString);
 						} else {
 							log.info(MISSING_STUDY_SEARCH_TYPE_MESSAGE);
-							statusCode = HttpServletResponse.SC_BAD_REQUEST;
 							responseStream.append(JsonHelper.createJSONErrorResponse(MISSING_STUDY_SEARCH_TYPE_MESSAGE));
+							statusCode = HttpServletResponse.SC_BAD_REQUEST;
 						}
 					}
 					statusCode = HttpServletResponse.SC_OK;
@@ -79,8 +79,8 @@ public class DICOMSearchHandler extends AbstractHandler
 				}
 			} else {
 				log.info(INVALID_SESSION_TOKEN_MESSAGE);
-				statusCode = HttpServletResponse.SC_UNAUTHORIZED;
 				responseStream.append(JsonHelper.createJSONErrorResponse(INVALID_SESSION_TOKEN_MESSAGE));
+				statusCode = HttpServletResponse.SC_UNAUTHORIZED;
 			}
 		} catch (Throwable t) {
 			log.warning(INTERNAL_EXCEPTION_MESSAGE, t);
@@ -89,7 +89,6 @@ public class DICOMSearchHandler extends AbstractHandler
 		} finally {
 			if (responseStream != null) {
 				responseStream.flush();
-				responseStream.close();
 			}
 		}
 		httpResponse.setStatus(statusCode);
