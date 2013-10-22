@@ -17,27 +17,28 @@ import org.eclipse.jetty.server.handler.AbstractHandler;
 import edu.stanford.isis.epad.common.ProxyConfig;
 import edu.stanford.isis.epad.common.ProxyLogger;
 import edu.stanford.isis.epad.common.util.JsonHelper;
-import edu.stanford.isis.epad.common.xnat.XNATProjectDescription;
+import edu.stanford.isis.epad.common.xnat.XNATSubjectDescription;
 import edu.stanford.isis.epadws.xnat.XNATUtil;
 
 /**
- * XNAT-based project retrieval handler. At present, a pretty thin wrapper around an XNAT projects call.
+ * XNAT-based subject retrieval handler. At present, a pretty thin wrapper around an XNAT subjects call. Primarily used
+ * for search.
  * <p>
  * <code>
- * curl -b JSESSIONID=<session_id> -X GET "http://[host:port]/projects/"
+ * curl -b JSESSIONID=<session_id> -X GET "http://[host:port]/subjects?project=*&src=*nice*&columns=label,src" 
  * </code>
  * 
  * @author martin
- * @see XNATProjectDescription
+ * @see XNATSubjectDescription
  */
-public class XNATProjectHandler extends AbstractHandler
+public class XNATSubjectHandler extends AbstractHandler
 {
 	private static final ProxyLogger log = ProxyLogger.getInstance();
 	private static final ProxyConfig config = ProxyConfig.getInstance();
 
 	private static final String INVALID_SESSION_TOKEN_MESSAGE = "Invalid session token";
-	private static final String INTERNAL_EXCEPTION_MESSAGE = "Internal error getting projects";
-	private static final String XNAT_INVOCATION_ERROR_MESSAGE = "Error invoking XNAT project call";
+	private static final String INTERNAL_EXCEPTION_MESSAGE = "Internal error getting subjects";
+	private static final String XNAT_INVOCATION_ERROR_MESSAGE = "Error invoking XNAT subject call";
 
 	@Override
 	public void handle(String base, Request request, HttpServletRequest httpRequest, HttpServletResponse httpResponse)
@@ -54,7 +55,7 @@ public class XNATProjectHandler extends AbstractHandler
 			responseStream = httpResponse.getOutputStream();
 
 			if (XNATUtil.hasValidXNATSessionID(httpRequest)) {
-				statusCode = invokeXNATProjectService(base, httpRequest, httpResponse, responseStream);
+				statusCode = invokeXNATSubjectService(base, httpRequest, httpResponse, responseStream);
 			} else {
 				log.info(INVALID_SESSION_TOKEN_MESSAGE);
 				responseStream.print(JsonHelper.createJSONErrorResponse(INVALID_SESSION_TOKEN_MESSAGE));
@@ -70,31 +71,29 @@ public class XNATProjectHandler extends AbstractHandler
 		httpResponse.setStatus(statusCode);
 	}
 
-	private int invokeXNATProjectService(String base, HttpServletRequest httpRequest, HttpServletResponse httpResponse,
+	private int invokeXNATSubjectService(String base, HttpServletRequest httpRequest, HttpServletResponse httpResponse,
 			OutputStream outputStream) throws IOException
 	{
 		String xnatHost = config.getStringConfigurationParameter("XNATServer");
 		int xnatPort = config.getIntegerConfigurationParameter("XNATPort");
-		String xnatProjectURL = XNATUtil.buildURLString(xnatHost, xnatPort, XNATUtil.XNAT_PROJECT_BASE, base);
+		String xnatSubjectURL = XNATUtil.buildURLString(xnatHost, xnatPort, XNATUtil.XNAT_SUBJECT_BASE, base);
 		HttpClient client = new HttpClient();
 		String jsessionID = XNATUtil.getJSessionIDFromRequest(httpRequest);
-
 		String queryString = httpRequest.getQueryString();
 
 		if (queryString != null) {
 			queryString = URLDecoder.decode(queryString, "UTF-8");
 			queryString = queryString.trim();
-			xnatProjectURL = xnatProjectURL.replaceFirst("/$", "") + "?" + queryString;
+			xnatSubjectURL = xnatSubjectURL.replaceFirst("/$", "") + "?" + queryString;
 		}
 
-		GetMethod getMethod = new GetMethod(xnatProjectURL);
-
+		GetMethod getMethod = new GetMethod(xnatSubjectURL);
 		getMethod.setRequestHeader("Cookie", "JSESSIONID=" + jsessionID);
-		log.info("Invoking XNAT project service at " + xnatProjectURL);
+		log.info("Invoking XNAT subject service at " + xnatSubjectURL);
 
 		int statusCode = client.executeMethod(getMethod);
 		if (statusCode == HttpServletResponse.SC_OK) {
-			log.info("Successfully invoked XNAT project service");
+			log.info("Successfully invoked XNAT subject service");
 			InputStream xnatResponse = null;
 			try {
 				xnatResponse = getMethod.getResponseBodyAsStream();
@@ -108,7 +107,7 @@ public class XNATProjectHandler extends AbstractHandler
 					try {
 						xnatResponse.close();
 					} catch (IOException e) {
-						log.warning("Error closing XNAT project response stream", e);
+						log.warning("Error closing XNAT subject response stream", e);
 					}
 				}
 			}

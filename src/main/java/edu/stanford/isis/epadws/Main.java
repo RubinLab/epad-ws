@@ -49,6 +49,7 @@ import edu.stanford.isis.epadws.handlers.event.EventSearchHandler;
 import edu.stanford.isis.epadws.handlers.plugin.EPadPluginHandler;
 import edu.stanford.isis.epadws.handlers.xnat.XNATProjectHandler;
 import edu.stanford.isis.epadws.handlers.xnat.XNATSessionHandler;
+import edu.stanford.isis.epadws.handlers.xnat.XNATSubjectHandler;
 import edu.stanford.isis.epadws.processing.mysql.MySqlInstance;
 import edu.stanford.isis.epadws.processing.pipeline.QueueAndWatcherManager;
 import edu.stanford.isis.epadws.server.ShutdownSignal;
@@ -175,12 +176,9 @@ public class Main
 
 		loadPluginClasses();
 
-		addWebAppAtContextPath(handlerList, "ePad.war", "/epad");
-
-		addFileServerAtContextPath(ResourceUtils.getEPADWebServerResourcesDir(), handlerList, "/resources");
-
 		addHandlerAtContextPath(new XNATSessionHandler(), "/session", handlerList);
 		addHandlerAtContextPath(new XNATProjectHandler(), "/projects", handlerList);
+		addHandlerAtContextPath(new XNATSubjectHandler(), "/subjects", handlerList);
 		addHandlerAtContextPath(new ServerStatusHandler(), "/status", handlerList);
 		addHandlerAtContextPath(new ImageCheckHandler(), "/imagecheck", handlerList);
 		addHandlerAtContextPath(new CoordinationHandler(), "/coordination", handlerList);
@@ -195,6 +193,10 @@ public class Main
 		addHandlerAtContextPath(new WadoHandler(), "/eWado", handlerList);
 		addHandlerAtContextPath(new EventSearchHandler(), "/eventresource", handlerList);
 		addHandlerAtContextPath(new EPadPluginHandler(), "/plugin", handlerList);
+
+		addWebAppAtContextPath(handlerList, "ePad.war", "/epad");
+
+		addFileServerAtContextPath(ResourceUtils.getEPADWebServerResourcesDir(), handlerList, "/resources");
 
 		ContextHandlerCollection contexts = new ContextHandlerCollection();
 		contexts.setHandlers(handlerList.toArray(new Handler[handlerList.size()]));
@@ -245,15 +247,10 @@ public class Main
 	 */
 	private static void addHandlerAtContextPath(Handler handler, String contextPath, List<Handler> handlerList)
 	{
-		ContextHandler contextHandler = new ContextHandler();
+		ContextHandler contextHandler = new ContextHandler(contextPath);
 
-		if (!contextPath.startsWith("/"))
-			contextPath = "/" + contextPath;
-
-		contextHandler.setContextPath(contextPath);
 		contextHandler.setResourceBase(".");
 		contextHandler.setClassLoader(Thread.currentThread().getContextClassLoader());
-
 		contextHandler.setHandler(handler); // Add status handler
 		handlerList.add(contextHandler);
 

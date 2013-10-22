@@ -25,6 +25,7 @@ public class XNATUtil
 {
 	public static final String XNAT_SESSION_BASE = "/xnat/data/JSESSION";
 	public static final String XNAT_PROJECT_BASE = "/xnat/data/projects";
+	public static final String XNAT_SUBJECT_BASE = "/xnat/data/subjects";
 
 	private static final ProxyLogger log = ProxyLogger.getInstance();
 	private static final ProxyConfig config = ProxyConfig.getInstance();

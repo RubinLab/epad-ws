@@ -54,11 +54,11 @@ public class DICOMSearchHandler extends AbstractHandler
 
 			if (XNATUtil.hasValidXNATSessionID(httpRequest)) {
 				String queryString = httpRequest.getQueryString();
-				queryString = URLDecoder.decode(queryString, "UTF-8");
-				log.info("DICOMSearchHandler query: " + queryString);
 
 				if (queryString != null) {
+					queryString = URLDecoder.decode(queryString, "UTF-8");
 					queryString = queryString.trim();
+					log.info("DICOMSearchHandler query: " + queryString);
 					if (isDICOMSeriesRequest(queryString)) {
 						performDICOMSeriesSearch(responseStream, queryString);
 					} else {
