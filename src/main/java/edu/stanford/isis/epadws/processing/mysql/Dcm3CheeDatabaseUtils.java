@@ -6,7 +6,7 @@ import java.util.Map;
 
 import edu.stanford.isis.epad.common.dicom.DicomFormatUtil;
 import edu.stanford.isis.epad.common.util.FileKey;
-import edu.stanford.isis.epad.common.util.ProxyFileUtils;
+import edu.stanford.isis.epad.common.util.EPADFileUtils;
 import edu.stanford.isis.epadws.processing.model.PngStatus;
 
 /**
@@ -14,9 +14,9 @@ import edu.stanford.isis.epadws.processing.model.PngStatus;
  * 
  * @author alansnyder
  */
-public class DcmDbUtils
+public class Dcm3CheeDatabaseUtils
 {
-	private DcmDbUtils()
+	private Dcm3CheeDatabaseUtils()
 	{
 	}
 
@@ -67,11 +67,11 @@ public class DcmDbUtils
 	public static int getFileTypeFromName(String name)
 	{
 		if (name.endsWith(".png")) {
-			return DcmDbUtils.FILE_TYPE_PNG;
+			return Dcm3CheeDatabaseUtils.FILE_TYPE_PNG;
 		} else if (name.endsWith(".tag")) {
-			return DcmDbUtils.FILE_TYPE_TAG;
+			return Dcm3CheeDatabaseUtils.FILE_TYPE_TAG;
 		}
-		return DcmDbUtils.FILE_TYPE_UNKNOWN;
+		return Dcm3CheeDatabaseUtils.FILE_TYPE_UNKNOWN;
 	}
 
 	/**
@@ -80,7 +80,7 @@ public class DcmDbUtils
 	 */
 	public static String getSOPInstanceUIDFromPath(String path)
 	{
-		String p = ProxyFileUtils.fileAbsolutePathWithoutExtension(new File(path));
+		String p = EPADFileUtils.fileAbsolutePathWithoutExtension(new File(path));
 
 		p = p.replace('/', ',');
 		String[] parts = p.split(",");

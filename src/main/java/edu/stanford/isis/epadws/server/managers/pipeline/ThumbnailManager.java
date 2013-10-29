@@ -16,10 +16,10 @@ import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.io.FileUtils;
 
-import edu.stanford.isis.epad.common.ProxyLogger;
 import edu.stanford.isis.epad.common.dicom.DicomTagFileUtils;
+import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epad.common.util.FileKey;
-import edu.stanford.isis.epad.common.util.ProxyFileUtils;
+import edu.stanford.isis.epad.common.util.EPADFileUtils;
 import edu.stanford.isis.epad.common.util.ResourceUtils;
 
 /**
@@ -42,7 +42,7 @@ import edu.stanford.isis.epad.common.util.ResourceUtils;
  */
 public class ThumbnailManager
 {
-	private static final ProxyLogger logger = ProxyLogger.getInstance();
+	private static final EPADLogger logger = EPADLogger.getInstance();
 	private static ThumbnailManager ourInstance = new ThumbnailManager();
 
 	/**
@@ -202,7 +202,7 @@ public class ThumbnailManager
 		if (tInfo.updateInstanceNumber(Integer.parseInt(instanceNumber))) {
 			// the update says we need a new thumbnail, to get this file from the studyId, seriesId and instance number.
 			String thumbnailPath = ThumbnailFileUtil.createThumbnailPath(studyId, seriesId);
-			String jpgFilePath = ProxyFileUtils.replaceExtensionWith(dcmFile, "jpg");
+			String jpgFilePath = EPADFileUtils.replaceExtensionWith(dcmFile, "jpg");
 			String returnMsg = ThumbnailFileUtil.shrinkJpegFile(jpgFilePath, thumbnailPath, 32);
 			if ("".equals(returnMsg)) {
 				logger.info("wrote: " + thumbnailPath);

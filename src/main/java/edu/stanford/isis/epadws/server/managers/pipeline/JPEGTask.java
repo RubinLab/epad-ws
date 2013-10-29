@@ -21,11 +21,11 @@ import java.util.concurrent.Callable;
 
 import javax.imageio.ImageIO;
 
-import edu.stanford.isis.epad.common.ProxyLogger;
+import edu.stanford.isis.epad.common.dicom.DicomReader;
 import edu.stanford.isis.epad.common.dicom.DicomTagFileUtils;
+import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epad.common.util.FileKey;
 import edu.stanford.isis.epad.common.util.ResourceUtils;
-import edu.stanford.isis.epadws.server.managers.support.DicomReader;
 
 /**
  * Given a dicom file create the thumbnail file.
@@ -35,7 +35,7 @@ import edu.stanford.isis.epadws.server.managers.support.DicomReader;
  */
 public class JPEGTask implements Callable<File>
 {
-	static final ProxyLogger log = ProxyLogger.getInstance();
+	static final EPADLogger log = EPADLogger.getInstance();
 
 	final File file;
 

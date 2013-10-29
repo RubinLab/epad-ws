@@ -14,18 +14,18 @@ import java.io.IOException;
 
 import javax.imageio.ImageIO;
 
-import edu.stanford.isis.epad.common.ProxyLogger;
-import edu.stanford.isis.epadws.server.managers.support.DicomReader;
+import edu.stanford.isis.epad.common.dicom.DicomReader;
+import edu.stanford.isis.epad.common.util.EPADLogger;
 
 
 /**
  * Creates a packed PNG file based. DicomReader code is from Bradley Ross.
  *
- * @see edu.stanford.isis.epadws.server.managers.support.DicomReader#main
+ * @see edu.stanford.isis.epad.common.dicom.DicomReader#main
  */
 public class PackedPngTask implements Callable<File>
 {
-    static final ProxyLogger logger = ProxyLogger.getInstance();
+    static final EPADLogger logger = EPADLogger.getInstance();
 
     final File file;
 

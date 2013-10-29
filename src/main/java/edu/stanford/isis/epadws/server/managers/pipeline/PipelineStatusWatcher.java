@@ -10,8 +10,8 @@ package edu.stanford.isis.epadws.server.managers.pipeline;
 import java.io.File;
 import java.util.concurrent.TimeUnit;
 
-import edu.stanford.isis.epad.common.ProxyLogger;
-import edu.stanford.isis.epad.common.util.ProxyFileUtils;
+import edu.stanford.isis.epad.common.util.EPADFileUtils;
+import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epad.common.util.ResourceUtils;
 import edu.stanford.isis.epadws.server.ShutdownSignal;
 
@@ -23,7 +23,7 @@ import edu.stanford.isis.epadws.server.ShutdownSignal;
 public class PipelineStatusWatcher implements Runnable
 {
 
-	ProxyLogger log = ProxyLogger.getInstance();
+	EPADLogger log = EPADLogger.getInstance();
 
 	public PipelineStatusWatcher()
 	{
@@ -32,13 +32,13 @@ public class PipelineStatusWatcher implements Runnable
 	public static void countDicomFileInUploadDir()
 	{
 
-		int nDcmFiles = ProxyFileUtils.countFilesWithEnding(ResourceUtils.getEPADWebServerUploadDir(), ".dcm");
+		int nDcmFiles = EPADFileUtils.countFilesWithEnding(ResourceUtils.getEPADWebServerUploadDir(), ".dcm");
 		StringBuilder sb = new StringBuilder();
 		sb.append("files remaining: ").append(nDcmFiles).append("\n");
 		sb.append("last update:").append(System.currentTimeMillis());
 
 		File pipelineStatusFile = new File(ResourceUtils.getEPADWebServerPNGDir() + "pipeline.status");
-		ProxyFileUtils.overwrite(pipelineStatusFile, sb.toString());
+		EPADFileUtils.overwrite(pipelineStatusFile, sb.toString());
 	}// call
 
 	@Override

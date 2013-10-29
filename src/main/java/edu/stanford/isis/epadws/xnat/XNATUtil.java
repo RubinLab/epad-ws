@@ -15,21 +15,21 @@ import org.apache.commons.httpclient.methods.DeleteMethod;
 import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.httpclient.methods.PostMethod;
 
-import edu.stanford.isis.epad.common.ProxyConfig;
-import edu.stanford.isis.epad.common.ProxyLogger;
+import edu.stanford.isis.epad.common.util.EPADConfig;
+import edu.stanford.isis.epad.common.util.EPADLogger;
 
 /**
  * @author martin
  */
 public class XNATUtil
 {
-	public static final String XNAT_SESSION_BASE = "/xnat/data/JSESSION";
 	public static final String XNAT_PROJECT_BASE = "/xnat/data/projects";
 	public static final String XNAT_SUBJECT_BASE = "/xnat/data/subjects";
 
-	private static final ProxyLogger log = ProxyLogger.getInstance();
-	private static final ProxyConfig config = ProxyConfig.getInstance();
+	private static final EPADLogger log = EPADLogger.getInstance();
+	private static final EPADConfig config = EPADConfig.getInstance();
 
+	private static final String XNAT_SESSION_BASE = "/xnat/data/JSESSION";
 	private static final String LOGIN_EXCEPTION_MESSAGE = "Internal login error";
 	private static final String XNAT_LOGIN_ERROR_MESSAGE = "XNAT login not successful";
 
@@ -45,7 +45,7 @@ public class XNATUtil
 	 * @throws IllegalArgumentException
 	 */
 	public static String invokeXNATSessionIDService(HttpServletRequest httpRequest, HttpServletResponse httpResponse)
-			throws IOException, HttpException
+			throws IOException
 	{
 		String xnatHost = config.getStringConfigurationParameter("XNATServer");
 		int xnatPort = config.getIntegerConfigurationParameter("XNATPort");
@@ -57,10 +57,8 @@ public class XNATUtil
 		String authString = buildAuthorizatonString(username, password);
 		String result = "";
 
-		postMethod.setRequestHeader("Authorization", "Basic " + authString);
-
 		log.info("Invoking XNAT session service at " + xnatSessionURL);
-
+		postMethod.setRequestHeader("Authorization", "Basic " + authString);
 		int statusCode = client.executeMethod(postMethod);
 
 		if (statusCode == HttpServletResponse.SC_OK) {
@@ -86,21 +84,21 @@ public class XNATUtil
 					}
 				}
 				String jsessionID = sb.toString();
-				log.info("JSESSIONID returned from XNAT: " + jsessionID);
+				log.info("JSESSIONID returned from XNAT");
 				result = jsessionID;
 				httpResponse.setStatus(HttpServletResponse.SC_OK);
 			} catch (IOException e) {
 				log.warning(LOGIN_EXCEPTION_MESSAGE, e);
-				httpResponse.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 				result = LOGIN_EXCEPTION_MESSAGE + ": " + e.getMessage();
+				httpResponse.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 			} finally {
 				if (isr != null)
 					isr.close();
 			}
 		} else {
-			httpResponse.setStatus(statusCode);
 			log.warning(XNAT_LOGIN_ERROR_MESSAGE + "; status code = " + statusCode);
 			result = XNAT_LOGIN_ERROR_MESSAGE + "; status code = " + statusCode;
+			httpResponse.setStatus(statusCode);
 		}
 		return result;
 	}

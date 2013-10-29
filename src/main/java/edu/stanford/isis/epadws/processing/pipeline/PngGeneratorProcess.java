@@ -6,7 +6,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-import edu.stanford.isis.epad.common.ProxyLogger;
+import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epadws.server.ShutdownSignal;
 
 /**
@@ -21,7 +21,7 @@ public class PngGeneratorProcess implements Runnable
 	private final BlockingQueue<GeneratorTask> pngTaskQueue;
 	private final ExecutorService pngExecs;
 	private final ExecutorService tagExec;
-	private final ProxyLogger logger = ProxyLogger.getInstance();
+	private final EPADLogger logger = EPADLogger.getInstance();
 	private final ShutdownSignal shutdownSignal = ShutdownSignal.getInstance();
 
 	public PngGeneratorProcess(BlockingQueue<GeneratorTask> taskQueue)

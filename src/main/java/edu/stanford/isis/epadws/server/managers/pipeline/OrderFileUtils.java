@@ -7,10 +7,10 @@
  */
 package edu.stanford.isis.epadws.server.managers.pipeline;
 
-import edu.stanford.isis.epad.common.ProxyLogger;
 import edu.stanford.isis.epad.common.dicom.DicomFormatUtil;
 import edu.stanford.isis.epad.common.dicom.DicomTagFileUtils;
-import edu.stanford.isis.epad.common.util.ProxyFileUtils;
+import edu.stanford.isis.epad.common.util.EPADFileUtils;
+import edu.stanford.isis.epad.common.util.EPADLogger;
 
 import java.io.*;
 import java.util.*;
@@ -20,7 +20,7 @@ import java.util.*;
  */
 public class OrderFileUtils {
 
-    private static final ProxyLogger logger = ProxyLogger.getInstance();
+    private static final EPADLogger logger = EPADLogger.getInstance();
 
     private OrderFileUtils(){}
 
@@ -56,7 +56,7 @@ public class OrderFileUtils {
             File seriesDir = getSeriesDirFromOrderFile(orderFile.getCanonicalPath());
             //logger.info("readOrderFileFromTags: seriesDir="+seriesDir.getAbsolutePath());
 
-            List<File> tagFiles = ProxyFileUtils.getAllFilesWithExtension(seriesDir, ".tag");
+            List<File> tagFiles = EPADFileUtils.getAllFilesWithExtension(seriesDir, ".tag");
 
             for(File currTagFile : tagFiles){
                 Map<String,String> currTagMap = DicomTagFileUtils.readTagFile(currTagFile);
@@ -198,7 +198,7 @@ public class OrderFileUtils {
     {
         List<OrderFileRunnable.OrderFileEntry> retVal = new ArrayList<OrderFileRunnable.OrderFileEntry>();
         try{
-            String content = ProxyFileUtils.read(new File(orderFilePath));
+            String content = EPADFileUtils.read(new File(orderFilePath));
             String[] lines = content.split("\n");
 
             for(String line : lines){
@@ -209,7 +209,7 @@ public class OrderFileUtils {
                 String name = OrderFileUtils.getImageUidFromLine(line);
 
                 protoTagsMap.put(DicomTagFileUtils.INSTANCE_NUMBER,""+imageOrder);
-                String path = ProxyFileUtils.appendNameToDir(baseDir, name);
+                String path = EPADFileUtils.appendNameToDir(baseDir, name);
                 retVal.add(new OrderFileRunnable.OrderFileEntry(new File(path),protoTagsMap));
             }//for
 

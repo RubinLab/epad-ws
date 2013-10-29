@@ -15,11 +15,10 @@ import javax.servlet.http.HttpServletResponse;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 
-import edu.stanford.isis.epad.common.ProxyConfig;
-import edu.stanford.isis.epad.common.ProxyLogger;
-import edu.stanford.isis.epad.plugin.server.EPadPlugin;
-import edu.stanford.isis.epad.plugin.server.impl.EPadPluginImpl;
-import edu.stanford.isis.epad.plugin.server.impl.EPadProxyConfigImpl;
+import edu.stanford.isis.epad.common.plugins.EPadPlugin;
+import edu.stanford.isis.epad.common.plugins.impl.EPadPluginImpl;
+import edu.stanford.isis.epad.common.util.EPADConfig;
+import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epadws.EPadWebServerVersion;
 import edu.stanford.isis.epadws.processing.mysql.MySqlInstance;
 import edu.stanford.isis.epadws.server.managers.pipeline.PipelineFactory;
@@ -34,7 +33,7 @@ import edu.stanford.isis.epadws.xnat.XNATUtil;
  */
 public class ServerStatusHandler extends AbstractHandler
 {
-	private static final ProxyLogger log = ProxyLogger.getInstance();
+	private static final EPADLogger log = EPADLogger.getInstance();
 
 	private static final String INVALID_SESSION_TOKEN_MESSAGE = "Session token is invalid";
 	private static final String INTERNAL_EXCEPTION_MESSAGE = "Internal error getting server status";
@@ -60,8 +59,7 @@ public class ServerStatusHandler extends AbstractHandler
 			responseStream = httpResponse.getWriter();
 
 			if (XNATUtil.hasValidXNATSessionID(httpRequest)) {
-				ProxyConfig proxyConfig = ProxyConfig.getInstance();
-				EPadProxyConfigImpl ePadProxyConfig = new EPadProxyConfigImpl();
+				EPADConfig proxyConfig = EPADConfig.getInstance();
 				EPadPlugin ePadPlugin = new EPadPluginImpl();
 				long upTime = System.currentTimeMillis() - startTime;
 				long upTimeSec = upTime / 1000;
@@ -82,7 +80,6 @@ public class ServerStatusHandler extends AbstractHandler
 				responseStream.println();
 				responseStream.println("Database startup time: " + instance.getStartupTime() + " ms");
 				responseStream.println();
-				responseStream.println("epad.war serverProxy=" + ePadProxyConfig.getProxyConfigParam("serverProxy"));
 				responseStream.println();
 				responseStream.println("Pipeline activity level: " + getPipelineActivityLevel());
 

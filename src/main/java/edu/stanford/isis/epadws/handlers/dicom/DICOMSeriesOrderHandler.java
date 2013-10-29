@@ -12,9 +12,9 @@ import org.eclipse.jetty.server.handler.AbstractHandler;
 
 import com.google.gson.Gson;
 
-import edu.stanford.isis.epad.common.ProxyLogger;
 import edu.stanford.isis.epad.common.dicom.DICOMSeriesOrderSearchResult;
 import edu.stanford.isis.epad.common.dicom.DicomFormatUtil;
+import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epad.common.util.JsonHelper;
 import edu.stanford.isis.epadws.processing.mysql.MySqlInstance;
 import edu.stanford.isis.epadws.processing.mysql.MySqlQueries;
@@ -42,7 +42,7 @@ import edu.stanford.isis.epadws.xnat.XNATUtil;
  */
 public class DICOMSeriesOrderHandler extends AbstractHandler
 {
-	private static final ProxyLogger log = ProxyLogger.getInstance();
+	private static final EPADLogger log = EPADLogger.getInstance();
 
 	private static final String MISSING_SERIES_IUID_MESSAGE = "No Series IUID parameter in request";
 	private static final String INVALID_SESSION_TOKEN_MESSAGE = "Session token is invalid";

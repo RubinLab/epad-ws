@@ -4,8 +4,8 @@ import org.restlet.engine.header.Header;
 import org.restlet.resource.ServerResource;
 import org.restlet.util.Series;
 
-import edu.stanford.isis.epad.common.ProxyConfig;
-import edu.stanford.isis.epad.common.ProxyLogger;
+import edu.stanford.isis.epad.common.util.EPADConfig;
+import edu.stanford.isis.epad.common.util.EPADLogger;
 
 /**
  * Base resource for all ePAD web service REST resources.
@@ -14,8 +14,8 @@ import edu.stanford.isis.epad.common.ProxyLogger;
  */
 public class BaseServerResource extends ServerResource
 {
-	protected static final ProxyLogger log = ProxyLogger.getInstance();
-	protected static final ProxyConfig config = ProxyConfig.getInstance();
+	protected static final EPADLogger log = EPADLogger.getInstance();
+	protected static final EPADConfig config = EPADConfig.getInstance();
 
 	protected void setResponseHeader(String header, String value)
 	{

@@ -39,35 +39,37 @@ import edu.stanford.hakan.aim3api.base.Segmentation;
 import edu.stanford.hakan.aim3api.base.SegmentationCollection;
 import edu.stanford.hakan.aim3api.base.TwoDimensionSpatialCoordinate;
 import edu.stanford.hakan.aim3api.usage.AnnotationBuilder;
-import edu.stanford.isis.epad.common.ProxyConfig;
-import edu.stanford.isis.epad.common.ProxyLogger;
+import edu.stanford.isis.epad.common.dicom.DicomSegObj;
 import edu.stanford.isis.epad.common.dicom.DicomTagFileUtils;
+import edu.stanford.isis.epad.common.pixelmed.PixelMedUtils;
+import edu.stanford.isis.epad.common.util.EPADConfig;
+import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epad.common.util.ResourceUtils;
 import edu.stanford.isis.epadws.processing.model.PngStatus;
-import edu.stanford.isis.epadws.processing.mysql.DcmDbUtils;
+import edu.stanford.isis.epadws.processing.mysql.Dcm3CheeDatabaseUtils;
 import edu.stanford.isis.epadws.processing.mysql.MySqlInstance;
 import edu.stanford.isis.epadws.processing.mysql.MySqlQueries;
 
 /**
- * This task generates Dicom Segmentation Objects.
+ * This task generates DICOM Segmentation Objects.
  * 
  * @author alansnyder
  */
 public class DicomSegmentObjectGeneratorTask implements GeneratorTask
 {
-	public String serverProxy = ProxyConfig.getInstance().getParam("serverProxy");
-	public String namespace = ProxyConfig.getInstance().getParam("namespace");
-	public String serverUrl = ProxyConfig.getInstance().getParam("serverUrl");
-	public String username = ProxyConfig.getInstance().getParam("username");
-	public String password = ProxyConfig.getInstance().getParam("password");
-	public String baseAnnotationDir = ProxyConfig.getInstance().getParam("baseAnnotationDir");
-	public String xsdFile = ProxyConfig.getInstance().getParam("xsdFile");
-	public String xsdFilePath = ProxyConfig.getInstance().getParam("baseSchemaDir") + xsdFile;
-	public String collection = ProxyConfig.getInstance().getParam("collection");
-	public String dbpath = ProxyConfig.getInstance().getParam("dbpath");
-	public String templatePath = ProxyConfig.getInstance().getParam("baseTemplatesDir");
-	public String wadoProxy = ProxyConfig.getInstance().getParam("wadoProxy");
-	private static ProxyLogger logger = ProxyLogger.getInstance();
+	public String serverProxy = EPADConfig.getInstance().getParam("serverProxy");
+	public String namespace = EPADConfig.getInstance().getParam("namespace");
+	public String serverUrl = EPADConfig.getInstance().getParam("serverUrl");
+	public String username = EPADConfig.getInstance().getParam("username");
+	public String password = EPADConfig.getInstance().getParam("password");
+	public String baseAnnotationDir = EPADConfig.getInstance().getParam("baseAnnotationDir");
+	public String xsdFile = EPADConfig.getInstance().getParam("xsdFile");
+	public String xsdFilePath = EPADConfig.getInstance().getParam("baseSchemaDir") + xsdFile;
+	public String collection = EPADConfig.getInstance().getParam("collection");
+	public String dbpath = EPADConfig.getInstance().getParam("dbpath");
+	public String templatePath = EPADConfig.getInstance().getParam("baseTemplatesDir");
+	public String wadoProxy = EPADConfig.getInstance().getParam("wadoProxy");
+	private static EPADLogger logger = EPADLogger.getInstance();
 
 	static final String baseDicomDirectory = ResourceUtils.getEPADWebServerPNGDir();
 
@@ -83,7 +85,6 @@ public class DicomSegmentObjectGeneratorTask implements GeneratorTask
 	@Override
 	public void run()
 	{
-
 		logger.info("Processing Dicom Segmentation Object for: " + dicomInputFile.getAbsolutePath());
 
 		SourceImage sourceImage = null;
@@ -364,7 +365,7 @@ public class DicomSegmentObjectGeneratorTask implements GeneratorTask
 
 	private void insertEpadFile(MySqlQueries queries, File outputFile)
 	{
-		Map<String, String> epadFilesTable = DcmDbUtils.createEPadFilesTableData(outputFile);
+		Map<String, String> epadFilesTable = Dcm3CheeDatabaseUtils.createEPadFilesTableData(outputFile);
 		epadFilesTable.put("file_status", "" + PngStatus.IN_PIPELINE.getCode());
 		queries.insertEpadFile(epadFilesTable);
 	}

@@ -13,11 +13,11 @@ import org.eclipse.jetty.server.handler.AbstractHandler;
 
 import com.google.gson.Gson;
 
-import edu.stanford.isis.epad.common.ProxyLogger;
 import edu.stanford.isis.epad.common.dicom.DICOMSeriesSearchResult;
 import edu.stanford.isis.epad.common.dicom.DICOMStudySearchResult;
 import edu.stanford.isis.epad.common.dicom.DicomFormatUtil;
 import edu.stanford.isis.epad.common.dicom.DicomStudySearchType;
+import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epad.common.util.JsonHelper;
 import edu.stanford.isis.epadws.processing.mysql.MySqlInstance;
 import edu.stanford.isis.epadws.processing.mysql.MySqlQueries;
@@ -33,7 +33,7 @@ import edu.stanford.isis.epadws.xnat.XNATUtil;
  */
 public class DICOMSearchHandler extends AbstractHandler
 {
-	private static final ProxyLogger log = ProxyLogger.getInstance();
+	private static final EPADLogger log = EPADLogger.getInstance();
 
 	private static final String MISSING_QUERY_MESSAGE = "No series or study query in request";
 	private static final String MISSING_STUDY_SEARCH_TYPE_MESSAGE = "Missing DICOM study search type";

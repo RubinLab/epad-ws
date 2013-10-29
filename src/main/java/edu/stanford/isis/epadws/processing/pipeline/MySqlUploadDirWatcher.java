@@ -8,9 +8,9 @@ import java.util.ConcurrentModificationException;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import edu.stanford.isis.epad.common.ProxyLogger;
+import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epad.common.util.FileKey;
-import edu.stanford.isis.epad.common.util.ProxyFileUtils;
+import edu.stanford.isis.epad.common.util.EPADFileUtils;
 import edu.stanford.isis.epad.common.util.ResourceUtils;
 import edu.stanford.isis.epadws.server.ShutdownSignal;
 import edu.stanford.isis.epadws.server.managers.pipeline.UploadFile;
@@ -26,7 +26,7 @@ public class MySqlUploadDirWatcher implements Runnable
 	public static final int CHECK_INTERVAL = 5000; // check every 5 seconds.
 	public static final String FOUND_DIR_FILE = "dir.found";
 	private static final long MAX_WAIT_TIME = 120000; // in milliseconds
-	private final ProxyLogger log = ProxyLogger.getInstance();
+	private final EPADLogger log = EPADLogger.getInstance();
 
 	@Override
 	public void run()
@@ -201,7 +201,7 @@ public class MySqlUploadDirWatcher implements Runnable
 	private void unzipFiles(File zipFile) throws IOException
 	{
 		log.info("Unzipping: " + zipFile.getAbsolutePath());
-		ProxyFileUtils.extractFolder(zipFile.getAbsolutePath());
+		EPADFileUtils.extractFolder(zipFile.getAbsolutePath());
 	}
 
 	private void sendDicom(File dir) throws Exception
@@ -213,14 +213,14 @@ public class MySqlUploadDirWatcher implements Runnable
 	private void deleteDir(File dir)
 	{
 		log.info("MySQL deleting directory: " + dir.getAbsolutePath());
-		ProxyFileUtils.deleteDirAndContents(dir);
+		EPADFileUtils.deleteDirAndContents(dir);
 	}
 
 	private void writeExceptionLog(File dir, Exception e)
 	{
 		String fileName = dir.getAbsolutePath() + "/exception_" + System.currentTimeMillis() + ".log";
 		String content = makeLogExpContents(e);
-		ProxyFileUtils.write(new File(fileName), content);
+		EPADFileUtils.write(new File(fileName), content);
 	}
 
 	private String makeLogExpContents(Exception e)

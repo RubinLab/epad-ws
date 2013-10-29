@@ -11,7 +11,7 @@ import org.restlet.Application;
 import org.restlet.Restlet;
 import org.restlet.routing.Router;
 
-import edu.stanford.isis.epad.common.ProxyLogger;
+import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epadws.resources.server.DICOMSearchServerResource;
 import edu.stanford.isis.epadws.resources.server.EPadWebServiceServerResource;
 import edu.stanford.isis.epadws.resources.server.WindowLevelServerResource;
@@ -25,7 +25,7 @@ import edu.stanford.isis.epadws.resources.server.WindowLevelServerResource;
  */
 public class EPADWebService extends Application
 {
-	private static final ProxyLogger log = ProxyLogger.getInstance();
+	private static final EPADLogger log = EPADLogger.getInstance();
 
 	@Override
 	public void start() throws Exception

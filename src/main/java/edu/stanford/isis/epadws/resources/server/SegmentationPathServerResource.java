@@ -12,8 +12,8 @@ import org.restlet.data.CharacterSet;
 import org.restlet.data.Status;
 import org.restlet.resource.Get;
 
-import edu.stanford.isis.epad.common.ProxyConfig;
-import edu.stanford.isis.epad.common.util.ProxyFileUtils;
+import edu.stanford.isis.epad.common.util.EPADConfig;
+import edu.stanford.isis.epad.common.util.EPADFileUtils;
 import edu.stanford.isis.epadws.processing.mysql.MySqlInstance;
 import edu.stanford.isis.epadws.processing.mysql.MySqlQueries;
 
@@ -96,7 +96,7 @@ public class SegmentationPathServerResource extends BaseServerResource
 		FileWriter tagFileWriter = null;
 
 		try {
-			ProxyConfig pc = ProxyConfig.getInstance();
+			EPADConfig pc = EPADConfig.getInstance();
 			String aeTitle = pc.getParam("DicomServerAETitle");
 			String dsPort = pc.getParam("DicomServerPort");
 
@@ -253,6 +253,6 @@ public class SegmentationPathServerResource extends BaseServerResource
 	private static void writeQRLog(String contents)
 	{
 		String fileName = "./log/qr_" + System.currentTimeMillis() + ".log"; // TODO Fro config file
-		ProxyFileUtils.write(new File(fileName), contents);
+		EPADFileUtils.write(new File(fileName), contents);
 	}
 }

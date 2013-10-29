@@ -8,8 +8,8 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.Writer;
 
-import edu.stanford.isis.epad.common.ProxyLogger;
-import edu.stanford.isis.epad.common.util.ProxyFileUtils;
+import edu.stanford.isis.epad.common.util.EPADFileUtils;
+import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epad.common.util.ResourceUtils;
 
 /**
@@ -19,10 +19,10 @@ import edu.stanford.isis.epad.common.util.ResourceUtils;
  */
 public class DicomHeadersTask implements Runnable
 {
-	private static ProxyLogger logger = ProxyLogger.getInstance();
+	private static final EPADLogger logger = EPADLogger.getInstance();
 
-	final File dicomInputFile;
-	File outputFile;
+	private final File dicomInputFile;
+	private final File outputFile;
 
 	public DicomHeadersTask(File dicomInputFile, File outputFile)
 	{
@@ -40,7 +40,6 @@ public class DicomHeadersTask implements Runnable
 		Process process = null;
 
 		try {
-			// int nbLines=0;
 			String[] command = { "./dcm2txt", "-w", "250", "-l", "250", dicomInputFile.getAbsolutePath() };
 
 			ProcessBuilder pb = new ProcessBuilder(command);
@@ -58,22 +57,19 @@ public class DicomHeadersTask implements Runnable
 			StringBuilder sb = new StringBuilder();
 			while ((line = br.readLine()) != null) {
 				sb.append(line).append("\n");
-				// nbLines++;
 			}
 
-			// Wait to get exit value
 			try {
-				process.waitFor(); // keep.
+				process.waitFor();
 			} catch (InterruptedException e) {
 				logger.warning("Couldn't get tags for: " + dicomInputFile.getAbsolutePath(), e);
 			}
 
-			boolean created = ProxyFileUtils.createDirsAndFile(outputFile);
+			boolean created = EPADFileUtils.createDirsAndFile(outputFile);
 			if (created) {
 				logger.info("DICOMHeadersTask, using temporary file: " + outputFile.getAbsolutePath());
 			}
 
-			// write the contents of this buffer to a file.
 			File tagFile = outputFile;
 			tagFileWriter = new FileWriter(tagFile);
 			tagFileWriter.write(sb.toString());
@@ -85,7 +81,6 @@ public class DicomHeadersTask implements Runnable
 		} catch (OutOfMemoryError oome) {
 			logger.warning("DicomHeadersTask OutOfMemoryError: ", oome);
 		} finally {
-
 			close(tagFileWriter);
 			close(br);
 			close(isr);
@@ -131,5 +126,4 @@ public class DicomHeadersTask implements Runnable
 			logger.warning("Failed to close stream", e);
 		}
 	}
-
 }

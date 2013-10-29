@@ -8,9 +8,9 @@ import java.sql.Statement;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
-import edu.stanford.isis.epad.common.ProxyLogger;
+import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epad.common.util.FileKey;
-import edu.stanford.isis.epad.common.util.ProxyFileUtils;
+import edu.stanford.isis.epad.common.util.EPADFileUtils;
 import edu.stanford.isis.epad.common.util.ResourceUtils;
 import edu.stanford.isis.epadws.processing.model.DbState;
 
@@ -20,7 +20,7 @@ import edu.stanford.isis.epadws.processing.model.DbState;
 public class MySqlInstance
 {
 
-	private static ProxyLogger logger = ProxyLogger.getInstance();
+	private static EPADLogger logger = EPADLogger.getInstance();
 
 	private static final String USER = "pacs";
 	private static final String PWD = "pacs";
@@ -97,7 +97,7 @@ public class MySqlInstance
 			String sqlFilePath = FileKey.getCanonicalPath(new File(mySQLScriptDir + "dcm4chee-extensions.sql"));
 			File createDbTablesFile = new File(sqlFilePath);
 			logger.info("Reading sql file: " + sqlFilePath);
-			String content = ProxyFileUtils.read(createDbTablesFile);
+			String content = EPADFileUtils.read(createDbTablesFile);
 
 			List<String> createCommands = DbUtils.parseCreateTable(content);
 

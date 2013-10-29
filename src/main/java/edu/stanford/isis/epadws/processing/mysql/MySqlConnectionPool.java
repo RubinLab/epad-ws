@@ -1,6 +1,6 @@
 package edu.stanford.isis.epadws.processing.mysql;
 
-import edu.stanford.isis.epad.common.ProxyLogger;
+import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epadws.server.ShutdownSignal;
 
 import java.sql.Connection;
@@ -18,7 +18,7 @@ import java.util.List;
 public class MySqlConnectionPool implements Runnable
 {
 
-    private static final ProxyLogger logger = ProxyLogger.getInstance();
+    private static final EPADLogger logger = EPADLogger.getInstance();
 
     int initialConnections = 5;
     List<Connection> connectionsAvailable = Collections.synchronizedList(new ArrayList<Connection>());

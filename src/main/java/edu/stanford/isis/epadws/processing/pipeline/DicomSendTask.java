@@ -8,9 +8,9 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.Writer;
 
-import edu.stanford.isis.epad.common.ProxyConfig;
-import edu.stanford.isis.epad.common.ProxyLogger;
-import edu.stanford.isis.epad.common.util.ProxyFileUtils;
+import edu.stanford.isis.epad.common.util.EPADConfig;
+import edu.stanford.isis.epad.common.util.EPADFileUtils;
+import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epad.common.util.ResourceUtils;
 
 /**
@@ -20,9 +20,9 @@ import edu.stanford.isis.epad.common.util.ResourceUtils;
  */
 public class DicomSendTask implements Runnable
 {
-	private static ProxyLogger logger = ProxyLogger.getInstance();
+	private static EPADLogger logger = EPADLogger.getInstance();
 
-	final File inputDir;
+	private final File inputDir;
 
 	public DicomSendTask(File inputDir)
 	{
@@ -37,7 +37,6 @@ public class DicomSendTask implements Runnable
 		} catch (Exception e) {
 			logger.warning("run had: " + e.getMessage(), e);
 		}
-
 	}
 
 	/**
@@ -58,7 +57,6 @@ public class DicomSendTask implements Runnable
 	private static String escapeSpacesInDirPath(String path)
 	{
 		StringBuilder sb = new StringBuilder();
-
 		String[] parts = path.split(" ");
 		boolean isFirst = true;
 		for (String part : parts) {
@@ -79,7 +77,7 @@ public class DicomSendTask implements Runnable
 		FileWriter tagFileWriter = null;
 
 		try {
-			ProxyConfig pc = ProxyConfig.getInstance();
+			EPADConfig pc = EPADConfig.getInstance();
 			String aeTitle = pc.getParam("DicomServerAETitle");
 			String dsIP = pc.getParam("DicomServerIP");
 			String dsPort = pc.getParam("DicomServerPort");
@@ -92,7 +90,6 @@ public class DicomSendTask implements Runnable
 				dirPath = escapeSpacesInDirPath(dirPath);
 			}
 
-			// Get the number of files
 			File dir = new File(dirPath);
 			int nbFiles = -1;
 			if (dir != null) {
@@ -180,7 +177,7 @@ public class DicomSendTask implements Runnable
 	{
 		String logDirectory = ResourceUtils.getEPADWebServerLogDir();
 		String fileName = logDirectory + "upload_" + System.currentTimeMillis() + ".log";
-		ProxyFileUtils.write(new File(fileName), contents);
+		EPADFileUtils.write(new File(fileName), contents);
 	}
 
 	private static void close(Writer writer)
@@ -232,14 +229,13 @@ public class DicomSendTask implements Runnable
 		String dirWithSpace = "/home/epad/cureData/9/9 40 456/";
 
 		if (pathContainsSpaces(dirWithoutSpace)) {
-			System.out.print("TEST FAILED. pathContainsSpaces error");
+			logger.warning("TEST FAILED. pathContainsSpaces error");
 		}
 
 		if (pathContainsSpaces(dirWithSpace)) {
 			String newDirPath = escapeSpacesInDirPath(dirWithSpace);
-			System.out.println("Expected: /home/epad/cureData/9\\ 40\\ 456/  Actual: " + newDirPath);
+			logger.warning("Expected: /home/epad/cureData/9\\ 40\\ 456/  Actual: " + newDirPath);
 		}
-		System.out.println("DONE.");
+		logger.info("DONE.");
 	}
-
 }

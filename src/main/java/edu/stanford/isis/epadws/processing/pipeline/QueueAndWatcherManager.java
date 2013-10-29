@@ -1,11 +1,7 @@
 package edu.stanford.isis.epadws.processing.pipeline;
 
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.UnsupportedEncodingException;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -13,19 +9,15 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import org.apache.commons.httpclient.HttpClient;
-import org.apache.commons.httpclient.HttpException;
-import org.apache.commons.httpclient.methods.GetMethod;
-
-import edu.stanford.isis.epad.common.ProxyConfig;
-import edu.stanford.isis.epad.common.ProxyLogger;
 import edu.stanford.isis.epad.common.dicom.DicomFormatUtil;
+import edu.stanford.isis.epad.common.pixelmed.PixelMedUtils;
+import edu.stanford.isis.epad.common.util.EPADConfig;
+import edu.stanford.isis.epad.common.util.EPADLogger;
+import edu.stanford.isis.epad.common.util.EPADTools;
 import edu.stanford.isis.epad.common.util.ResourceUtils;
-import edu.stanford.isis.epad.common.util.WadoUrlBuilder;
-import edu.stanford.isis.epadws.processing.login.MySqlLoginDirWatcher;
 import edu.stanford.isis.epadws.processing.model.PngStatus;
 import edu.stanford.isis.epadws.processing.model.SeriesOrder;
-import edu.stanford.isis.epadws.processing.mysql.DcmDbUtils;
+import edu.stanford.isis.epadws.processing.mysql.Dcm3CheeDatabaseUtils;
 import edu.stanford.isis.epadws.processing.mysql.MySqlInstance;
 import edu.stanford.isis.epadws.processing.mysql.MySqlQueries;
 
@@ -34,33 +26,25 @@ import edu.stanford.isis.epadws.processing.mysql.MySqlQueries;
  */
 public class QueueAndWatcherManager
 {
-	private static final ProxyLogger logger = ProxyLogger.getInstance();
+	private static final EPADLogger logger = EPADLogger.getInstance();
 	private static final BlockingQueue<SeriesOrder> seriesWatchQueue = new ArrayBlockingQueue<SeriesOrder>(2000);
 	// private static final BlockingQueue<DicomHeadersTask> dicomHeadersTaskQueue = new
 	// ArrayBlockingQueue<DicomHeadersTask>(2000);
 	private static final BlockingQueue<GeneratorTask> pngGeneratorTaskQueue = new ArrayBlockingQueue<GeneratorTask>(2000);
 
-	final ExecutorService dbTableWatcherExec = Executors.newSingleThreadExecutor();
-	final ExecutorService seriesWatcherExec = Executors.newSingleThreadExecutor();
-	final ExecutorService pngProcessExec = Executors.newSingleThreadExecutor();
-
-	// watches upload directory.
-	final ExecutorService uploadDirWatcherExec = Executors.newSingleThreadExecutor();
-
-	// login watcher.
-	final ExecutorService loginDirWatcherExec = Executors.newSingleThreadExecutor();
+	private final ExecutorService dbTableWatcherExec = Executors.newSingleThreadExecutor();
+	private final ExecutorService seriesWatcherExec = Executors.newSingleThreadExecutor();
+	private final ExecutorService pngProcessExec = Executors.newSingleThreadExecutor();
+	private final ExecutorService uploadDirWatcherExec = Executors.newSingleThreadExecutor();
 
 	private static QueueAndWatcherManager ourInstance = new QueueAndWatcherManager();
+	private final Dcm4CheeDatabaseTableWatcher dbTableWatcher;
+	private final SeriesWatcher seriesWatcher;
+	private final PngGeneratorProcess pngGeneratorProcess;
 
-	final DcmDbTableWatcher dbTableWatcher;
-	final SeriesWatcher seriesWatcher;
-	final PngGeneratorProcess pngGeneratorProcess;
-
-	final MySqlUploadDirWatcher uploadDirWatcher;
-	final MySqlLoginDirWatcher loginDirWatcher;
+	private final MySqlUploadDirWatcher uploadDirWatcher;
 
 	private final String dcm4cheeRootDir;
-	private final ProxyConfig config = ProxyConfig.getInstance();
 
 	public static QueueAndWatcherManager getInstance()
 	{
@@ -69,12 +53,11 @@ public class QueueAndWatcherManager
 
 	private QueueAndWatcherManager()
 	{
-		dbTableWatcher = new DcmDbTableWatcher(seriesWatchQueue);
+		dbTableWatcher = new Dcm4CheeDatabaseTableWatcher(seriesWatchQueue);
 		seriesWatcher = new SeriesWatcher(seriesWatchQueue, pngGeneratorTaskQueue);
 		pngGeneratorProcess = new PngGeneratorProcess(pngGeneratorTaskQueue);
 		uploadDirWatcher = new MySqlUploadDirWatcher();
-		loginDirWatcher = new MySqlLoginDirWatcher();
-		dcm4cheeRootDir = ProxyConfig.getInstance().getParam("dcm4cheeDirRoot");
+		dcm4cheeRootDir = EPADConfig.getInstance().getParam("dcm4cheeDirRoot");
 	}
 
 	public void buildAndStart()
@@ -86,7 +69,6 @@ public class QueueAndWatcherManager
 		uploadDirWatcherExec.execute(uploadDirWatcher);
 
 		logger.info("Starting login checker.");
-		loginDirWatcherExec.execute(loginDirWatcher);
 	}
 
 	public void shutdown()
@@ -110,7 +92,7 @@ public class QueueAndWatcherManager
 			if (!inputDICOMFile.exists()) { // If the file does not exist (stored on another file system)
 				try { // We create a temporary file
 					File temp = File.createTempFile(dicomImageDescription.get("sop_iuid"), ".tmp");
-					feedFileWithDicomFromWado(temp, dicomImageDescription);
+					EPADTools.feedFileWithDICOMFromWADO(temp, dicomImageDescription);
 					inputDICOMFile = temp;
 				} catch (IOException e) {
 					logger.warning("Exception when creating temp image : " + dicomImageDescription.get("sop_iuid"), e);
@@ -186,7 +168,7 @@ public class QueueAndWatcherManager
 
 	private void insertEpadFile(MySqlQueries queries, File outputPNGFile)
 	{
-		Map<String, String> epadFilesTable = DcmDbUtils.createEPadFilesTableData(outputPNGFile);
+		Map<String, String> epadFilesTable = Dcm3CheeDatabaseUtils.createEPadFilesTableData(outputPNGFile);
 		epadFilesTable.put("file_status", "" + PngStatus.IN_PIPELINE.getCode());
 		queries.insertEpadFile(epadFilesTable);
 	}
@@ -211,55 +193,4 @@ public class QueueAndWatcherManager
 
 		return outputPath.toString();
 	}
-
-	private void feedFileWithDicomFromWado(File temp, Map<String, String> dicomImageFileDescription)
-	{
-		// we use wado to get the dicom image
-		String host = config.getParam("NameServer");
-		int port = config.getIntParam("DicomServerWadoPort");
-		String base = config.getParam("WadoUrlExtension");
-
-		WadoUrlBuilder wadoUrlBuilder = new WadoUrlBuilder(host, port, base, WadoUrlBuilder.ContentType.FILE);
-
-		// GET WADO call result.
-		wadoUrlBuilder.setStudyUID(dicomImageFileDescription.get("study_iuid"));
-		wadoUrlBuilder.setSeriesUID(dicomImageFileDescription.get("series_iuid"));
-		wadoUrlBuilder.setObjectUID(dicomImageFileDescription.get("sop_iuid"));
-
-		try {
-			String wadoUrl = wadoUrlBuilder.build();
-			logger.info("Build wadoUrl = " + wadoUrl);
-
-			// --Get the Dicom file from the server
-			HttpClient client = new HttpClient();
-
-			GetMethod method = new GetMethod(wadoUrl);
-			// Execute the GET method
-			int statusCode = client.executeMethod(method);
-
-			if (statusCode != -1) {
-				// Get the result as stream
-				InputStream res = method.getResponseBodyAsStream();
-				// write the inputStream to a FileOutputStream
-				OutputStream out = new FileOutputStream(temp);
-
-				int read = 0;
-				byte[] bytes = new byte[4096];
-
-				while ((read = res.read(bytes)) != -1) {
-					out.write(bytes, 0, read);
-				}
-				res.close();
-				out.flush();
-				out.close();
-			}
-		} catch (UnsupportedEncodingException e) {
-			logger.warning("Not able to build WADO URL for : " + temp.getName(), e);
-		} catch (HttpException e) {
-			logger.warning("Not able to get the WADO image : " + temp.getName(), e);
-		} catch (IOException e) {
-			logger.warning("Not able to write the temp DICOM image : " + temp.getName(), e);
-		}
-	}
-
 }

@@ -7,7 +7,7 @@
  */
 package edu.stanford.isis.epadws.server.managers.pipeline;
 
-import edu.stanford.isis.epad.common.ProxyLogger;
+import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epad.common.util.FileKey;
 
 import java.io.File;
@@ -23,7 +23,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class UploadPipelineFiles {
 
-    private static final ProxyLogger log = ProxyLogger.getInstance();
+    private static final EPADLogger log = EPADLogger.getInstance();
 
     /**
      * Keeps track of files that have been put in the pipeline.

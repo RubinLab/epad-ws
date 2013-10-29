@@ -16,8 +16,8 @@ import org.eclipse.jetty.server.handler.AbstractHandler;
 import com.google.gson.Gson;
 import com.google.gson.JsonParseException;
 
-import edu.stanford.isis.epad.common.ProxyConfig;
-import edu.stanford.isis.epad.common.ProxyLogger;
+import edu.stanford.isis.epad.common.util.EPADConfig;
+import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epad.common.util.JsonHelper;
 import edu.stanford.isis.epadws.processing.mysql.MySqlInstance;
 import edu.stanford.isis.epadws.processing.mysql.MySqlQueries;
@@ -89,8 +89,8 @@ public class CoordinationHandler extends AbstractHandler
 
 	private final static int MIN_COORDINATION_TERMS = 2;
 
-	private static final ProxyLogger log = ProxyLogger.getInstance();
-	private final ProxyConfig config = ProxyConfig.getInstance();
+	private static final EPADLogger log = EPADLogger.getInstance();
+	private final EPADConfig config = EPADConfig.getInstance();
 
 	@Override
 	public void handle(String s, Request request, HttpServletRequest httpRequest, HttpServletResponse httpResponse)

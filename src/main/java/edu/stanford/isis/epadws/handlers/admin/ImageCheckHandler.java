@@ -14,7 +14,7 @@ import javax.servlet.http.HttpServletResponse;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 
-import edu.stanford.isis.epad.common.ProxyLogger;
+import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epad.common.util.JsonHelper;
 import edu.stanford.isis.epadws.processing.mysql.MySqlInstance;
 import edu.stanford.isis.epadws.processing.mysql.MySqlQueries;
@@ -26,7 +26,7 @@ import edu.stanford.isis.epadws.xnat.XNATUtil;
  */
 public class ImageCheckHandler extends AbstractHandler
 {
-	private static final ProxyLogger log = ProxyLogger.getInstance();
+	private static final EPADLogger log = EPADLogger.getInstance();
 
 	private static final String FORBIDDEN_MESSAGE = "Forbidden method - only GET supported!";
 	private static final String INTERNAL_ERROR_MESSAGE = "Internal server error";

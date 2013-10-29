@@ -9,8 +9,8 @@ package edu.stanford.isis.epadws.server.managers.pipeline;
 
 
 
-import edu.stanford.isis.epad.common.ProxyLogger;
 import edu.stanford.isis.epad.common.dicom.DicomTagFileUtils;
+import edu.stanford.isis.epad.common.util.EPADLogger;
 
 import java.util.Map;
 
@@ -20,7 +20,7 @@ import java.util.Map;
  */
 public class ImageOrder implements Comparable<ImageOrder>{
 
-    private static final ProxyLogger log = ProxyLogger.getInstance();
+    private static final EPADLogger log = EPADLogger.getInstance();
 
     private final int order;
     private final String imageUID;

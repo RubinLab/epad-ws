@@ -11,35 +11,39 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Signal a shutdown event.
- *
+ * 
  * @author amsnyder
  */
-public class ShutdownSignal {
-    private static ShutdownSignal ourInstance = new ShutdownSignal();
+public class ShutdownSignal
+{
+	private static ShutdownSignal ourInstance = new ShutdownSignal();
 
-    final AtomicBoolean isRunning;
+	private final AtomicBoolean isRunning;
 
-    public static ShutdownSignal getInstance() {
-        return ourInstance;
-    }
+	public static ShutdownSignal getInstance()
+	{
+		return ourInstance;
+	}
 
-    private ShutdownSignal() {
-        isRunning = new AtomicBoolean(true);
-    }
+	private ShutdownSignal()
+	{
+		isRunning = new AtomicBoolean(true);
+	}
 
-    /**
-     * Call when time to shutdown application.
-     */
-    public void shutdownNow(){
-        isRunning.set(false);
-    }
+	/**
+	 * Call when time to shutdown application.
+	 */
+	public void shutdownNow()
+	{
+		isRunning.set(false);
+	}
 
-    /**
-     *
-     * @return boolean. True if application is running. False if shutting down.
-     */
-    public boolean hasShutdown(){
-        return !isRunning.get();
-    }
-
+	/**
+	 * 
+	 * @return boolean. True if application is running. False if shutting down.
+	 */
+	public boolean hasShutdown()
+	{
+		return !isRunning.get();
+	}
 }

@@ -10,10 +10,10 @@ import java.util.Map;
 
 import javax.imageio.ImageIO;
 
-import edu.stanford.isis.epad.common.ProxyLogger;
-import edu.stanford.isis.epad.common.util.ProxyFileUtils;
+import edu.stanford.isis.epad.common.util.EPADFileUtils;
+import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epadws.processing.model.PngStatus;
-import edu.stanford.isis.epadws.processing.mysql.DcmDbUtils;
+import edu.stanford.isis.epadws.processing.mysql.Dcm3CheeDatabaseUtils;
 import edu.stanford.isis.epadws.processing.mysql.MySqlInstance;
 import edu.stanford.isis.epadws.processing.mysql.MySqlQueries;
 import edu.stanford.isis.epadws.server.managers.support.DicomReader;
@@ -25,7 +25,7 @@ import edu.stanford.isis.epadws.server.managers.support.DicomReader;
  */
 public class PngGeneratorTask implements GeneratorTask
 {
-	private static ProxyLogger logger = ProxyLogger.getInstance();
+	private static EPADLogger logger = EPADLogger.getInstance();
 	private final File dicomInputFile;
 	private final File pngOutputFile;
 
@@ -52,12 +52,12 @@ public class PngGeneratorTask implements GeneratorTask
 		try {
 			DicomReader instance = new DicomReader(inputDICOMFile);
 			String pngFilePath = outputPNGFile.getAbsolutePath();
-			epadFilesTable = DcmDbUtils.createEPadFilesTableData(outputPNGFile);
+			epadFilesTable = Dcm3CheeDatabaseUtils.createEPadFilesTableData(outputPNGFile);
 			outputPNGFile = new File(pngFilePath);
 
 			logger.info("PngGeneratorTask: creating PNG file: " + outputPNGFile.getAbsolutePath());
 
-			boolean created = ProxyFileUtils.createDirsAndFile(outputPNGFile); // Create the file
+			boolean created = EPADFileUtils.createDirsAndFile(outputPNGFile); // Create the file
 			if (created)
 				logger.info("Using file: " + outputPNGFile.getAbsolutePath());
 
@@ -65,7 +65,7 @@ public class PngGeneratorTask implements GeneratorTask
 			ImageIO.write(instance.getMyPackedImage(), "png", outputPNGStream);
 
 			logger.info("Finished writing PNG file: " + outputPNGFile);
-			epadFilesTable = DcmDbUtils.createEPadFilesTableData(outputPNGFile);
+			epadFilesTable = Dcm3CheeDatabaseUtils.createEPadFilesTableData(outputPNGFile);
 			queries.updateEpadFile(epadFilesTable.get("file_path"), PngStatus.DONE, getFileSize(epadFilesTable), "");
 		} catch (FileNotFoundException e) {
 			logger.warning("Failed to create packed PNG for: " + inputDICOMFile.getAbsolutePath(), e);

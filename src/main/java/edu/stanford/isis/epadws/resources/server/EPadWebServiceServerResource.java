@@ -4,10 +4,9 @@ import org.restlet.data.Status;
 import org.restlet.resource.Get;
 import org.restlet.resource.Post;
 
-import edu.stanford.isis.epad.common.ProxyConfig;
-import edu.stanford.isis.epad.plugin.server.EPadPlugin;
-import edu.stanford.isis.epad.plugin.server.impl.EPadPluginImpl;
-import edu.stanford.isis.epad.plugin.server.impl.EPadProxyConfigImpl;
+import edu.stanford.isis.epad.common.plugins.EPadPlugin;
+import edu.stanford.isis.epad.common.plugins.impl.EPadPluginImpl;
+import edu.stanford.isis.epad.common.util.EPADConfig;
 import edu.stanford.isis.epadws.EPadWebServerVersion;
 import edu.stanford.isis.epadws.processing.mysql.MySqlInstance;
 import edu.stanford.isis.epadws.resources.EPadWebServiceResource;
@@ -81,8 +80,7 @@ public class EPadWebServiceServerResource extends BaseServerResource implements 
 		try {
 			setResponseHeader("Access-Control-Allow-Origin", "*");
 
-			ProxyConfig proxyConfig = ProxyConfig.getInstance();
-			EPadProxyConfigImpl ePadProxyConfig = new EPadProxyConfigImpl();
+			EPADConfig proxyConfig = EPADConfig.getInstance();
 			EPadPlugin ePadPlugin = new EPadPluginImpl();
 			long upTime = System.currentTimeMillis() - startTime;
 			long upTimeSec = upTime / 1000;
@@ -96,7 +94,6 @@ public class EPadWebServiceServerResource extends BaseServerResource implements 
 			out.append("Plugin Version - implementation: " + ePadPlugin.getPluginImplVersion() + "\n\n");
 			MySqlInstance instance = MySqlInstance.getInstance();
 			out.append("DB Startup Time: " + instance.getStartupTime() + " ms\n\n");
-			out.append("epad.war serverProxy=" + ePadProxyConfig.getProxyConfigParam("serverProxy") + "\n\n");
 			out.append("pipelineActivity : " + getPipelineActivityLevel() + "\n");
 			setStatus(Status.SUCCESS_OK);
 		} catch (Exception e) {

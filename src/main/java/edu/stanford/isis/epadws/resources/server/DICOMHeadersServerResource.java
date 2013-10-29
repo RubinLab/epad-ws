@@ -3,24 +3,17 @@ package edu.stanford.isis.epadws.resources.server;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.UnsupportedEncodingException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-import org.apache.commons.httpclient.HttpClient;
-import org.apache.commons.httpclient.HttpException;
-import org.apache.commons.httpclient.methods.GetMethod;
 import org.restlet.data.CharacterSet;
 import org.restlet.data.Status;
 import org.restlet.resource.Get;
 
-import edu.stanford.isis.epad.common.util.WadoUrlBuilder;
+import edu.stanford.isis.epad.common.util.EPADTools;
 import edu.stanford.isis.epadws.processing.pipeline.DicomHeadersTask;
 
 public class DICOMHeadersServerResource extends BaseServerResource
@@ -85,7 +78,7 @@ public class DICOMHeadersServerResource extends BaseServerResource
 			FileNotFoundException
 	{
 		File tempDicom = File.createTempFile(imageIdKey, ".tmp");
-		feedFileWithDicomFromWado(tempDicom, studyIdKey, seriesIdKey, imageIdKey);
+		EPADTools.feedFileWithDICOMFromWADO(tempDicom, studyIdKey, seriesIdKey, imageIdKey);
 		File tempTag = File.createTempFile(imageIdKey, "_tag.tmp");
 		StringBuilder out = new StringBuilder();
 
@@ -136,53 +129,5 @@ public class DICOMHeadersServerResource extends BaseServerResource
 		parts = value.split("=");
 		value = parts[1].trim();
 		return value;
-	}
-
-	private void feedFileWithDicomFromWado(File temp, String studyIdKey, String seriesIdKey, String imageIdKey)
-	{ // We use WADO to get the DICOM image
-		String host = config.getParam("NameServer"); // TODO Constants for these parameter names
-		int port = config.getIntParam("DicomServerWadoPort");
-		String base = config.getParam("WadoUrlExtension");
-
-		WadoUrlBuilder wadoUrlBuilder = new WadoUrlBuilder(host, port, base, WadoUrlBuilder.ContentType.FILE);
-
-		wadoUrlBuilder.setStudyUID(studyIdKey);
-		wadoUrlBuilder.setSeriesUID(seriesIdKey);
-		wadoUrlBuilder.setObjectUID(imageIdKey);
-
-		try {
-			String wadoUrl = wadoUrlBuilder.build();
-			log.info("WADO URL = " + wadoUrl);
-
-			// --Get the Dicom file from the server
-			HttpClient client = new HttpClient();
-
-			GetMethod method = new GetMethod(wadoUrl);
-			// Execute the GET method
-			int statusCode = client.executeMethod(method);
-
-			if (statusCode != -1) {
-				// Get the result as stream
-				InputStream res = method.getResponseBodyAsStream();
-				// write the inputStream to a FileOutputStream
-				OutputStream out = new FileOutputStream(temp);
-
-				int read = 0;
-				byte[] bytes = new byte[4096];
-
-				while ((read = res.read(bytes)) != -1) {
-					out.write(bytes, 0, read);
-				}
-				res.close();
-				out.flush();
-				out.close();
-			}
-		} catch (UnsupportedEncodingException e) {
-			log.warning("Not able to build wado url for : " + temp.getName(), e);
-		} catch (HttpException e) {
-			log.warning("Not able to get the wado image : " + temp.getName(), e);
-		} catch (IOException e) {
-			log.warning("Not able to write the temp dicom image : " + temp.getName(), e);
-		}
 	}
 }

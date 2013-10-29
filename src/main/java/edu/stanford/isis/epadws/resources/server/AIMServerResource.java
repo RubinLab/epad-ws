@@ -43,10 +43,10 @@ import edu.stanford.hakan.aim3api.base.AimException;
 import edu.stanford.hakan.aim3api.base.ImageAnnotation;
 import edu.stanford.hakan.aim3api.usage.AnnotationBuilder;
 import edu.stanford.hakan.aim3api.usage.AnnotationGetter;
-import edu.stanford.isis.epad.common.ProxyConfig;
+import edu.stanford.isis.epad.common.plugins.PluginConfig;
+import edu.stanford.isis.epad.common.util.EPADConfig;
 import edu.stanford.isis.epad.common.util.ResourceUtils;
 import edu.stanford.isis.epad.common.util.XmlNamespaceTranslator;
-import edu.stanford.isis.epad.plugin.server.impl.PluginConfig;
 
 /**
  * AIM resource. AIM XML files in an XML database can be queried or uploaded.
@@ -55,14 +55,14 @@ import edu.stanford.isis.epad.plugin.server.impl.PluginConfig;
  */
 public class AIMServerResource extends BaseServerResource
 {
-	private final String namespace = ProxyConfig.getInstance().getParam("namespace"); // TODO Constants for these names
-	private final String serverUrl = ProxyConfig.getInstance().getParam("serverUrl");
-	private final String username = ProxyConfig.getInstance().getParam("username");
-	private final String password = ProxyConfig.getInstance().getParam("password");
-	private final String baseAnnotationDir = ProxyConfig.getInstance().getParam("baseAnnotationDir");
-	private final String xsdFile = ProxyConfig.getInstance().getParam("xsdFile");
-	private final String xsdFilePath = ProxyConfig.getInstance().getParam("baseSchemaDir") + xsdFile;
-	private final String collection = ProxyConfig.getInstance().getParam("collection");
+	private final String namespace = EPADConfig.getInstance().getParam("namespace"); // TODO Constants for these names
+	private final String serverUrl = EPADConfig.getInstance().getParam("serverUrl");
+	private final String username = EPADConfig.getInstance().getParam("username");
+	private final String password = EPADConfig.getInstance().getParam("password");
+	private final String baseAnnotationDir = EPADConfig.getInstance().getParam("baseAnnotationDir");
+	private final String xsdFile = EPADConfig.getInstance().getParam("xsdFile");
+	private final String xsdFilePath = EPADConfig.getInstance().getParam("baseSchemaDir") + xsdFile;
+	private final String collection = EPADConfig.getInstance().getParam("collection");
 
 	private static final String PARSER_ERROR_MESSAGE = "XML parser error: ";
 	private static final String DOM_ERROR_MESSAGE = "DOM error: ";

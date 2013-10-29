@@ -7,7 +7,7 @@
  */
 package edu.stanford.isis.epadws.server.managers.pipeline;
 
-import edu.stanford.isis.epad.common.ProxyLogger;
+import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epadws.server.ShutdownSignal;
 
 import org.eclipse.jetty.util.ConcurrentHashSet;
@@ -23,7 +23,7 @@ public abstract class AbstractPipelineProcess<V> implements Runnable{
 
     //ToDo: See if all the <File> references can change to <V> to make it more general.
 
-    protected static final ProxyLogger logger = ProxyLogger.getInstance();
+    protected static final EPADLogger logger = EPADLogger.getInstance();
     protected final ShutdownSignal signal = ShutdownSignal.getInstance();
 
     final ExecutorService exec;

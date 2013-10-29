@@ -16,9 +16,9 @@ import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
 
-import edu.stanford.isis.epad.common.ProxyLogger;
+import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epad.common.util.FileKey;
-import edu.stanford.isis.epad.common.util.ProxyFileUtils;
+import edu.stanford.isis.epad.common.util.EPADFileUtils;
 import edu.stanford.isis.epad.common.util.ResourceUtils;
 import edu.stanford.isis.epadws.server.ShutdownSignal;
 
@@ -30,7 +30,7 @@ public class UploadDirWatcher implements Runnable
 {
 	public static final String UPLOAD_ROOT_DIR = ResourceUtils.getEPADWebServerUploadDir();
 	public static final int CHECK_INTERVAL = 5000; // check every 5 seconds.
-	private final ProxyLogger log = ProxyLogger.getInstance();
+	private final EPADLogger log = EPADLogger.getInstance();
 	private final BlockingQueue<File> unzipQueue;
 
 	/**
@@ -100,7 +100,7 @@ public class UploadDirWatcher implements Runnable
 			Long timestamp = emptyDir.get(currKey);
 			if (deleteTime > timestamp) {
 				File dirToDelete = currKey.getFile();
-				if (ProxyFileUtils.deleteDirAndContents(dirToDelete)) {
+				if (EPADFileUtils.deleteDirAndContents(dirToDelete)) {
 					log.info("DELETED DIR: " + dirToDelete.getAbsolutePath());
 					emptyDir.remove(currKey);
 				} else {
@@ -119,10 +119,10 @@ public class UploadDirWatcher implements Runnable
 	private void searchForEmptyDirectories(File rootDir)
 	{
 		try {
-			List<File> dirs = ProxyFileUtils.getDirectoriesIn(rootDir);
+			List<File> dirs = EPADFileUtils.getDirectoriesIn(rootDir);
 			for (File currDir : dirs) {
 				// check to see if it is empty.
-				int nFile = ProxyFileUtils.countFilesWithEnding(currDir, ".dcm");
+				int nFile = EPADFileUtils.countFilesWithEnding(currDir, ".dcm");
 				FileKey keyFile = new FileKey(currDir);
 				if (nFile == 0) {
 					// add it with the current timestamp only if not already in the list.

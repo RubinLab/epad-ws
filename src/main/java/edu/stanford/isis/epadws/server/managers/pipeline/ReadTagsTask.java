@@ -14,14 +14,14 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.concurrent.Callable;
 
-import edu.stanford.isis.epad.common.ProxyLogger;
-import edu.stanford.isis.epad.common.util.ProxyFileUtils;
+import edu.stanford.isis.epad.common.util.EPADFileUtils;
+import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epad.common.util.ResourceUtils;
 
 public class ReadTagsTask implements Callable<File>
 {
 
-	static final ProxyLogger log = ProxyLogger.getInstance();
+	static final EPADLogger log = EPADLogger.getInstance();
 	static final UploadPipelineFiles pipeline = UploadPipelineFiles.getInstance();
 
 	final File file;
@@ -40,7 +40,7 @@ public class ReadTagsTask implements Callable<File>
 
 		try {
 			// only dicom files should pass here.
-			if (!ProxyFileUtils.isFileType(file, ".dcm")) {
+			if (!EPADFileUtils.isFileType(file, ".dcm")) {
 				log.info(file + " is NOT a DICOM file.");
 				return null;
 			}

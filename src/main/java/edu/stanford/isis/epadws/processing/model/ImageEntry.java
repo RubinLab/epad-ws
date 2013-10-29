@@ -1,86 +1,95 @@
 package edu.stanford.isis.epadws.processing.model;
 
 /**
- * instanceNum
- * SOPInstanceUID
- * PNG file path
- * header file path
- *
+ * instanceNum SOPInstanceUID PNG file path header file path
+ * 
  * @author amsnyder
  */
-public class ImageEntry {
+public class ImageEntry
+{
+	private final int instanceNum;
+	private final String sopInstanceUID;
+	private String pngFilePath = null;
+	private String dicomHeaderFilePath = null;
+	private ProcessingState state = ProcessingState.NEW;
+	private final String errorMessage = null;
 
-    final int instanceNum;
-    final String sopInstanceUID;
-    String pngFilePath=null;
-    String dicomHeaderFilePath=null;
+	public ImageEntry(int instanceNum, String sopInstanceUID)
+	{
+		this.instanceNum = instanceNum;
+		this.sopInstanceUID = sopInstanceUID;
+	}
 
-    ProcessingState state = ProcessingState.NEW;
-    String errorMessage = null;
+	public int getInstanceNum()
+	{
+		return instanceNum;
+	}
 
-    public ImageEntry(int instanceNum, String sopInstanceUID){
-        this.instanceNum = instanceNum;
-        this.sopInstanceUID = sopInstanceUID;
-    }
+	public String getSopInstanceUID()
+	{
+		return sopInstanceUID;
+	}
 
-    public int getInstanceNum(){
-        return instanceNum;
-    }
+	public ProcessingState getState()
+	{
+		return state;
+	}
 
-    public String getSopInstanceUID(){
-        return sopInstanceUID;
-    }
+	public void setState(ProcessingState newState)
+	{
+		state = newState;
+	}
 
-    public ProcessingState getState(){
-        return state;
-    }
+	public boolean hasPngFile()
+	{
+		return pngFilePath != null;
+	}
 
-    public void setState(ProcessingState newState){
-        state = newState;
-    }
+	public void setPngFilePath(String pngFilePath)
+	{
+		this.pngFilePath = pngFilePath;
+	}
 
+	public String getPngFilePath()
+	{
+		return pngFilePath;
+	}
 
-    public boolean hasPngFile(){
-        return pngFilePath!=null;
-    }
+	public boolean hasHeaderFile()
+	{
+		return dicomHeaderFilePath != null;
+	}
 
-    public void setPngFilePath(String pngFilePath){
-        this.pngFilePath=pngFilePath;
-    }
+	public void setDicomHeaderFilePath(String dicomHeaderFilePath)
+	{
+		this.dicomHeaderFilePath = dicomHeaderFilePath;
+	}
 
-    public String getPngFilePath(){
-        return pngFilePath;
-    }
+	public String getDicomHeaderFilePath()
+	{
+		return dicomHeaderFilePath;
+	}
 
-    public boolean hasHeaderFile(){
-        return dicomHeaderFilePath!=null;
-    }
+	public boolean hasError()
+	{
+		return errorMessage != null;
+	}
 
-    public void setDicomHeaderFilePath(String dicomHeaderFilePath){
-        this.dicomHeaderFilePath=dicomHeaderFilePath;
-    }
+	public String getErrorMessage()
+	{
+		return errorMessage;
+	}
 
-    public String getDicomHeaderFilePath(){
-        return dicomHeaderFilePath;
-    }
-
-    public boolean hasError(){
-        return errorMessage!=null;
-    }
-
-    public String getErrorMessage(){
-        return errorMessage;
-    }
-
-    /**
-     * Processing is complete when the PNG file and the dicom-header file is complete.
-     * @return boolean
-     */
-    public boolean isComplete(){
-        if( hasHeaderFile() && hasPngFile() ){
-            return true;
-        }
-        return false;
-    }
-
+	/**
+	 * Processing is complete when the PNG file and the dicom-header file is complete.
+	 * 
+	 * @return boolean
+	 */
+	public boolean isComplete()
+	{
+		if (hasHeaderFile() && hasPngFile()) {
+			return true;
+		}
+		return false;
+	}
 }

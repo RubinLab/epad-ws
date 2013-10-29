@@ -13,15 +13,15 @@ import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
 
-import edu.stanford.isis.epad.common.ProxyConfig;
-import edu.stanford.isis.epad.common.ProxyLogger;
 import edu.stanford.isis.epad.common.dicom.DicomImageUID;
+import edu.stanford.isis.epad.common.dicom.DicomQuery;
 import edu.stanford.isis.epad.common.dicom.DicomSearchMap;
 import edu.stanford.isis.epad.common.dicom.DicomSeriesUID;
 import edu.stanford.isis.epad.common.dicom.DicomStudyUID;
+import edu.stanford.isis.epad.common.util.EPADConfig;
+import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epad.common.util.ResourceUtils;
 import edu.stanford.isis.epad.common.util.WadoUrlBuilder;
-import edu.stanford.isis.epadws.dcm4chee.DicomQuery;
 import edu.stanford.isis.epadws.server.ShutdownSignal;
 
 /**
@@ -30,11 +30,9 @@ import edu.stanford.isis.epadws.server.ShutdownSignal;
  */
 public class ThumbnailGenerator implements Runnable
 {
-	ProxyLogger log = ProxyLogger.getInstance();
-
-	BlockingQueue<DicomSeriesUID> inputQueue;
-
-	final DicomSearchMap dicomSearchMap;
+	private final EPADLogger log = EPADLogger.getInstance();
+	private final BlockingQueue<DicomSeriesUID> inputQueue;
+	private final DicomSearchMap dicomSearchMap;
 
 	public ThumbnailGenerator(BlockingQueue<DicomSeriesUID> queue)
 	{
@@ -45,7 +43,6 @@ public class ThumbnailGenerator implements Runnable
 	@Override
 	public void run()
 	{
-
 		try {
 
 			ShutdownSignal signal = ShutdownSignal.getInstance();
@@ -72,7 +69,7 @@ public class ThumbnailGenerator implements Runnable
 				DicomImageUID middleImageId = images.get(middleIndex);
 
 				// Build WADO call.
-				ProxyConfig config = ProxyConfig.getInstance();
+				EPADConfig config = EPADConfig.getInstance();
 				String host = config.getParam("DicomServerIP");
 				int port = config.getIntParam("DicomServerWadoPort");
 				String base = config.getParam("WadoUrlExtension");
@@ -99,7 +96,6 @@ public class ThumbnailGenerator implements Runnable
 		} catch (Exception e) {
 			log.warning("ThumbnailGenerator had: ", e);
 		}
-
 		log.info("Stopping ThumbnailGenerator process");
 	}
 
@@ -119,7 +115,6 @@ public class ThumbnailGenerator implements Runnable
 
 		return ResourceUtils.generateFile(thumbnailFilePath);
 	}
-
 }
 
 /**

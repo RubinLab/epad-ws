@@ -13,8 +13,8 @@ import javax.servlet.http.HttpServletResponse;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 
-import edu.stanford.isis.epad.common.ProxyConfig;
-import edu.stanford.isis.epad.common.ProxyLogger;
+import edu.stanford.isis.epad.common.util.EPADConfig;
+import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epad.common.util.SearchResultUtils;
 import edu.stanford.isis.epadws.processing.mysql.MySqlInstance;
 import edu.stanford.isis.epadws.processing.mysql.MySqlQueries;
@@ -25,8 +25,8 @@ import edu.stanford.isis.epadws.xnat.XNATUtil;
  */
 public class EventSearchHandler extends AbstractHandler
 {
-	private static final ProxyLogger log = ProxyLogger.getInstance();
-	private static final ProxyConfig config = ProxyConfig.getInstance();
+	private static final EPADLogger log = EPADLogger.getInstance();
+	private static final EPADConfig config = EPADConfig.getInstance();
 
 	private static final String INVALID_METHOD_MESSAGE = "Only POST and GET methods valid for this route";
 	private static final String INTERNAL_EXCEPTION_MESSAGE = "Internal error";

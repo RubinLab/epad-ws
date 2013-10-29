@@ -17,10 +17,10 @@ import java.util.Set;
 
 import javax.xml.bind.DatatypeConverter;
 
-import edu.stanford.isis.epad.common.ProxyLogger;
 import edu.stanford.isis.epad.common.dicom.DicomFormatUtil;
 import edu.stanford.isis.epad.common.dicom.DicomParentCache;
 import edu.stanford.isis.epad.common.dicom.DicomParentType;
+import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epadws.handlers.coordination.Term;
 import edu.stanford.isis.epadws.processing.model.PngStatus;
 
@@ -29,7 +29,7 @@ import edu.stanford.isis.epadws.processing.model.PngStatus;
  */
 public class MySqlQueriesImpl implements MySqlQueries
 {
-	private static final ProxyLogger logger = ProxyLogger.getInstance();
+	private static final EPADLogger logger = EPADLogger.getInstance();
 
 	private final MySqlConnectionPool connectionPool;
 

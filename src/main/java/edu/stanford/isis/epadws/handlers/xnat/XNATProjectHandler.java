@@ -14,8 +14,8 @@ import org.apache.commons.httpclient.methods.GetMethod;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 
-import edu.stanford.isis.epad.common.ProxyConfig;
-import edu.stanford.isis.epad.common.ProxyLogger;
+import edu.stanford.isis.epad.common.util.EPADConfig;
+import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epad.common.util.JsonHelper;
 import edu.stanford.isis.epad.common.xnat.XNATProjectDescription;
 import edu.stanford.isis.epadws.xnat.XNATUtil;
@@ -32,8 +32,8 @@ import edu.stanford.isis.epadws.xnat.XNATUtil;
  */
 public class XNATProjectHandler extends AbstractHandler
 {
-	private static final ProxyLogger log = ProxyLogger.getInstance();
-	private static final ProxyConfig config = ProxyConfig.getInstance();
+	private static final EPADLogger log = EPADLogger.getInstance();
+	private static final EPADConfig config = EPADConfig.getInstance();
 
 	private static final String INVALID_SESSION_TOKEN_MESSAGE = "Invalid session token";
 	private static final String INTERNAL_EXCEPTION_MESSAGE = "Internal error getting projects";

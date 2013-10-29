@@ -12,17 +12,17 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
 
-import edu.stanford.isis.epad.common.ProxyLogger;
 import edu.stanford.isis.epad.common.dicom.DicomFormatUtil;
 import edu.stanford.isis.epad.common.dicom.DicomTagFileUtils;
+import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epad.common.util.LockFileUtils;
-import edu.stanford.isis.epad.common.util.ProxyFileUtils;
+import edu.stanford.isis.epad.common.util.EPADFileUtils;
 import edu.stanford.isis.epad.common.util.RsnaSearchResultMap;
 
 
 public class MoverTask implements Callable<File> {
 
-    static final ProxyLogger log = ProxyLogger.getInstance();
+    static final EPADLogger log = EPADLogger.getInstance();
 
     static final UploadPipelineFiles pipeline = UploadPipelineFiles.getInstance();
 
@@ -53,9 +53,9 @@ public class MoverTask implements Callable<File> {
             File movedFile = new File(toDirPathBase+"/"+imageFileName+".dcm");
 
             //write the file to this directory path.
-            ProxyFileUtils.checkAndMoveFile(tagFile, movedTagFile);
+            EPADFileUtils.checkAndMoveFile(tagFile, movedTagFile);
             LockFileUtils.lockDir(new File(toDirPathBase), LockFileUtils.LockType.PIPELINE);
-            ProxyFileUtils.checkAndMoveFile(file, movedFile);
+            EPADFileUtils.checkAndMoveFile(file, movedFile);
 
             //ToDo: delete RSNA search mode when done.
             RsnaSearchResultMap resultMap = RsnaSearchResultMap.getInstance();
@@ -113,7 +113,7 @@ public class MoverTask implements Callable<File> {
         String content = SeriesFileUtils.createSeriesFileContentFromDicomTags(tags);
         log.info("writing series file: "+seriesFile.getAbsolutePath()+" \n "+content);
 
-        ProxyFileUtils.overwrite(seriesFile, content);
+        EPADFileUtils.overwrite(seriesFile, content);
     }
 
     /**

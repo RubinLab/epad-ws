@@ -1,6 +1,6 @@
 package edu.stanford.isis.epadws.processing.model;
 
-import edu.stanford.isis.epad.common.ProxyLogger;
+import edu.stanford.isis.epad.common.util.EPADLogger;
 
 /**
  * Status of the SeriesOrder class.
@@ -11,7 +11,7 @@ import edu.stanford.isis.epad.common.ProxyLogger;
  */
 public class SeriesOrderStatus
 {
-	ProxyLogger logger = ProxyLogger.getInstance();
+	EPADLogger logger = EPADLogger.getInstance();
 
 	private static final long MAX_IDLE_TIME = 30000;
 
@@ -56,16 +56,12 @@ public class SeriesOrderStatus
 		long currTime = System.currentTimeMillis();
 		if (currTime > lastActivityTimeStamp + MAX_IDLE_TIME) {
 			// log this series as being done.
-			logger.info("Series: " + seriesOrder.seriesUID + " is idle. Downloaded " + seriesOrder.getFinishedCount()
+			logger.info("Series: " + seriesOrder.getSeriesUID() + " is idle. Downloaded " + seriesOrder.getFinishedCount()
 					+ " of " + seriesOrder.size() + " images.");
 			return true;
 		}
-
-		// log for instances that
-
-		// is it now complete?
 		if (seriesOrder.isComplete()) {
-			logger.info("Series: " + seriesOrder.seriesUID + " is complete. #images=" + seriesOrder.size());
+			logger.info("Series: " + seriesOrder.getSeriesUID() + " is complete. #images=" + seriesOrder.size());
 			return true;
 		}
 		return false;

@@ -44,29 +44,29 @@ import edu.stanford.hakan.aim3api.base.AimException;
 import edu.stanford.hakan.aim3api.base.ImageAnnotation;
 import edu.stanford.hakan.aim3api.usage.AnnotationBuilder;
 import edu.stanford.hakan.aim3api.usage.AnnotationGetter;
-import edu.stanford.isis.epad.common.ProxyConfig;
-import edu.stanford.isis.epad.common.ProxyLogger;
+import edu.stanford.isis.epad.common.plugins.PluginConfig;
+import edu.stanford.isis.epad.common.util.EPADConfig;
+import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epad.common.util.ResourceUtils;
 import edu.stanford.isis.epad.common.util.XmlNamespaceTranslator;
-import edu.stanford.isis.epad.plugin.server.impl.PluginConfig;
 import edu.stanford.isis.epadws.xnat.XNATUtil;
 
 public class AimResourceHandler extends AbstractHandler
 {
-	private static final ProxyLogger logger = ProxyLogger.getInstance();
+	private static final EPADLogger logger = EPADLogger.getInstance();
 
-	public String serverProxy = ProxyConfig.getInstance().getParam("serverProxy");
-	public String namespace = ProxyConfig.getInstance().getParam("namespace");
-	public String serverUrl = ProxyConfig.getInstance().getParam("serverUrl");
-	public String username = ProxyConfig.getInstance().getParam("username");
-	public String password = ProxyConfig.getInstance().getParam("password");
-	public String baseAnnotationDir = ProxyConfig.getInstance().getParam("baseAnnotationDir");
-	public String xsdFile = ProxyConfig.getInstance().getParam("xsdFile");
-	public String xsdFilePath = ProxyConfig.getInstance().getParam("baseSchemaDir") + xsdFile;
-	public String collection = ProxyConfig.getInstance().getParam("collection");
-	public String dbpath = ProxyConfig.getInstance().getParam("dbpath");
-	public String templatePath = ProxyConfig.getInstance().getParam("baseTemplatesDir");
-	public String wadoProxy = ProxyConfig.getInstance().getParam("wadoProxy");
+	public String serverProxy = EPADConfig.getInstance().getParam("serverProxy");
+	public String namespace = EPADConfig.getInstance().getParam("namespace");
+	public String serverUrl = EPADConfig.getInstance().getParam("serverUrl");
+	public String username = EPADConfig.getInstance().getParam("username");
+	public String password = EPADConfig.getInstance().getParam("password");
+	public String baseAnnotationDir = EPADConfig.getInstance().getParam("baseAnnotationDir");
+	public String xsdFile = EPADConfig.getInstance().getParam("xsdFile");
+	public String xsdFilePath = EPADConfig.getInstance().getParam("baseSchemaDir") + xsdFile;
+	public String collection = EPADConfig.getInstance().getParam("collection");
+	public String dbpath = EPADConfig.getInstance().getParam("dbpath");
+	public String templatePath = EPADConfig.getInstance().getParam("baseTemplatesDir");
+	public String wadoProxy = EPADConfig.getInstance().getParam("wadoProxy");
 
 	private static final String INTERNAL_EXCEPTION_MESSAGE = "Internal error";
 	private static final String INVALID_METHOD_MESSAGE = "Only POST and GET methods valid for this route";

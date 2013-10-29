@@ -7,8 +7,8 @@ import org.restlet.data.Status;
 import org.restlet.ext.servlet.ServletUtils;
 import org.restlet.resource.Get;
 
-import edu.stanford.isis.epad.plugin.server.PluginServletHandler;
-import edu.stanford.isis.epad.plugin.server.impl.PluginHandlerMap;
+import edu.stanford.isis.epad.common.plugins.PluginHandlerMap;
+import edu.stanford.isis.epad.common.plugins.PluginServletHandler;
 
 public class PluginServerResource extends BaseServerResource
 {

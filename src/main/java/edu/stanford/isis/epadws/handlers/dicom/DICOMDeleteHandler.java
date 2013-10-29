@@ -11,7 +11,7 @@ import javax.servlet.http.HttpServletResponse;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 
-import edu.stanford.isis.epad.common.ProxyLogger;
+import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epad.common.util.JsonHelper;
 import edu.stanford.isis.epadws.processing.pipeline.DicomDeleteTask;
 import edu.stanford.isis.epadws.xnat.XNATUtil;
@@ -22,7 +22,7 @@ import edu.stanford.isis.epadws.xnat.XNATUtil;
  */
 public class DICOMDeleteHandler extends AbstractHandler
 {
-	private static final ProxyLogger log = ProxyLogger.getInstance();
+	private static final EPADLogger log = EPADLogger.getInstance();
 
 	private static final String INTERNAL_ERROR_MESSAGE = "Internal error on delete";
 	private static final String INVALID_SESSION_TOKEN_MESSAGE = "Session token is invalid";

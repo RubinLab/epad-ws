@@ -18,9 +18,9 @@ import javax.servlet.http.HttpServletResponse;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 
-import edu.stanford.isis.epad.common.ProxyLogger;
-import edu.stanford.isis.epad.plugin.server.PluginServletHandler;
-import edu.stanford.isis.epad.plugin.server.impl.PluginHandlerMap;
+import edu.stanford.isis.epad.common.plugins.PluginHandlerMap;
+import edu.stanford.isis.epad.common.plugins.PluginServletHandler;
+import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epadws.xnat.XNATUtil;
 
 /**
@@ -28,7 +28,7 @@ import edu.stanford.isis.epadws.xnat.XNATUtil;
  */
 public class EPadPluginHandler extends AbstractHandler
 {
-	private final ProxyLogger log = ProxyLogger.getInstance();
+	private final EPADLogger log = EPADLogger.getInstance();
 	private final PluginHandlerMap pluginHandlerMap = PluginHandlerMap.getInstance();
 
 	private static final String INVALID_METHOD_MESSAGE = "Only POST and GET methods valid for this route";

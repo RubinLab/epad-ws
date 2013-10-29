@@ -7,7 +7,7 @@
  */
 package edu.stanford.isis.epadws.server.threads;
 
-import edu.stanford.isis.epad.common.ProxyLogger;
+import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epadws.processing.mysql.MySqlInstance;
 import edu.stanford.isis.epadws.server.ShutdownSignal;
 import edu.stanford.isis.epadws.server.managers.pipeline.PipelineFactory;
@@ -19,7 +19,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 public class ShutdownHookThread extends Thread{
 
-    private static final ProxyLogger logger = ProxyLogger.getInstance();
+    private static final EPADLogger logger = EPADLogger.getInstance();
 
     private static final AtomicBoolean hasRun = new AtomicBoolean(false);
 

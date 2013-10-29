@@ -9,22 +9,20 @@ import javax.servlet.http.HttpServletResponse;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 
-import edu.stanford.isis.epad.common.ProxyLogger;
-
 /**
  * Provide access control.
  * <p>
- * Also allows CORS requests to support GWT Dev Mode where drawing on retrieved canvas is required.
+ * Also allows CORS requests to support cross origin drawing on retrieved canvas is required.
  * 
  * @author martin
  * 
  */
 public class ResourceCheckHandler extends AbstractHandler
 {
-	private final ProxyLogger log = ProxyLogger.getInstance();
+	// private final ProxyLogger log = ProxyLogger.getInstance();
 
-	private static final String INTERNAL_ERROR_MESSAGE = "Internal server error";
-	private static final String INVALID_SESSION_TOKEN_MESSAGE = "Session token is invalid";
+	// private static final String INTERNAL_ERROR_MESSAGE = "Internal server error";
+	// private static final String INVALID_SESSION_TOKEN_MESSAGE = "Session token is invalid";
 
 	@Override
 	public void handle(String s, Request request, HttpServletRequest httpRequest, HttpServletResponse httpResponse)
@@ -40,6 +38,7 @@ public class ResourceCheckHandler extends AbstractHandler
 
 		request.setHandled(false);
 
+		// TODO Authentication temporarily off for testing
 		// try {
 		// if (XNATUtil.hasValidXNATSessionID(httpRequest)) {
 		// request.setHandled(false);

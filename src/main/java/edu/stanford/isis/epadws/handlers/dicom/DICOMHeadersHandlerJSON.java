@@ -3,11 +3,8 @@ package edu.stanford.isis.epadws.handlers.dicom;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.net.URLDecoder;
 import java.util.concurrent.ExecutorService;
@@ -17,18 +14,15 @@ import java.util.concurrent.TimeUnit;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.apache.commons.httpclient.HttpClient;
-import org.apache.commons.httpclient.methods.GetMethod;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 
 import com.google.gson.Gson;
 
-import edu.stanford.isis.epad.common.ProxyConfig;
-import edu.stanford.isis.epad.common.ProxyLogger;
 import edu.stanford.isis.epad.common.dicom.DICOMElementResult;
+import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epad.common.util.JsonHelper;
-import edu.stanford.isis.epad.common.util.WadoUrlBuilder;
+import edu.stanford.isis.epad.common.util.EPADTools;
 import edu.stanford.isis.epadws.processing.pipeline.DicomHeadersTask;
 import edu.stanford.isis.epadws.xnat.XNATUtil;
 
@@ -37,8 +31,7 @@ import edu.stanford.isis.epadws.xnat.XNATUtil;
  */
 public class DICOMHeadersHandlerJSON extends AbstractHandler
 {
-	private static final ProxyLogger log = ProxyLogger.getInstance();
-	private static final ProxyConfig config = ProxyConfig.getInstance();
+	private static final EPADLogger log = EPADLogger.getInstance();
 
 	private static final String INTERNAL_ERROR_MESSAGE = "Internal error on delete";
 	private static final String INVALID_SESSION_TOKEN_MESSAGE = "Session token is invalid";
@@ -97,7 +90,7 @@ public class DICOMHeadersHandlerJSON extends AbstractHandler
 
 		if (studyIdKey != null && seriesIdKey != null && imageIdKey != null) {
 			File tempDICOMFile = File.createTempFile(imageIdKey, ".tmp");
-			int wadoStatusCode = feedFileWithDICOMFromWADO(tempDICOMFile, studyIdKey, seriesIdKey, imageIdKey);
+			int wadoStatusCode = EPADTools.feedFileWithDICOMFromWADO(tempDICOMFile, studyIdKey, seriesIdKey, imageIdKey);
 			if (wadoStatusCode == HttpServletResponse.SC_OK) {
 				File tempTag = File.createTempFile(imageIdKey, "_tag.tmp");
 				ExecutorService taskExecutor = Executors.newFixedThreadPool(4);
@@ -227,48 +220,6 @@ public class DICOMHeadersHandlerJSON extends AbstractHandler
 		} else {
 			return "";
 		}
-	}
-
-	private int feedFileWithDICOMFromWADO(File temp, String studyIdKey, String seriesIdKey, String imageIdKey)
-			throws IOException
-	{
-		String host = config.getParam("NameServer");
-		int port = config.getIntParam("DicomServerWadoPort");
-		String base = config.getParam("WadoUrlExtension");
-
-		WadoUrlBuilder wadoUrlBuilder = new WadoUrlBuilder(host, port, base, WadoUrlBuilder.ContentType.FILE);
-
-		wadoUrlBuilder.setStudyUID(studyIdKey);
-		wadoUrlBuilder.setSeriesUID(seriesIdKey);
-		wadoUrlBuilder.setObjectUID(imageIdKey);
-
-		String wadoUrl = wadoUrlBuilder.build();
-
-		HttpClient client = new HttpClient();
-		GetMethod method = new GetMethod(wadoUrl);
-		int statusCode = client.executeMethod(method);
-
-		if (statusCode == HttpServletResponse.SC_OK) {
-			InputStream wadoResponseStream = null;
-			OutputStream outputStream = null;
-			try {
-				wadoResponseStream = method.getResponseBodyAsStream();
-				outputStream = new FileOutputStream(temp);
-				int read = 0;
-				byte[] bytes = new byte[4096];
-				while ((read = wadoResponseStream.read(bytes)) != -1) {
-					outputStream.write(bytes, 0, read);
-				}
-			} finally {
-				if (wadoResponseStream != null)
-					wadoResponseStream.close();
-				if (outputStream != null) {
-					outputStream.flush();
-					outputStream.close();
-				}
-			}
-		}
-		return statusCode;
 	}
 
 	// TODO Fix this mess

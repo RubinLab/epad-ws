@@ -19,7 +19,6 @@ import java.io.FileOutputStream;
 import javax.imageio.ImageIO;
 import javax.swing.ImageIcon;
 
-import edu.stanford.isis.epad.common.ProxyLogger;
 /*
  * The JPEGCodec and JPEGImageEncoder are classes that are not
  * to be used to the application software.  They are intended to
@@ -28,6 +27,7 @@ import com.sun.image.codec.jpeg.JPEGCodec;
 import com.sun.image.codec.jpeg.JPEGImageEncoder;
 */
 import edu.stanford.isis.epad.common.dicom.DicomFormatUtil;
+import edu.stanford.isis.epad.common.util.EPADLogger;
 
 import java.awt.Toolkit;
 import java.awt.Color;
@@ -38,7 +38,7 @@ import java.awt.Color;
  */
 public class ThumbnailFileUtil {
 
-    private static final ProxyLogger logger = ProxyLogger.getInstance();
+    private static final EPADLogger logger = EPADLogger.getInstance();
 
     private ThumbnailFileUtil(){}
 

@@ -7,15 +7,15 @@ import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
 
-import edu.stanford.isis.epad.common.ProxyConfig;
-import edu.stanford.isis.epad.common.ProxyLogger;
 import edu.stanford.isis.epad.common.dicom.DicomFormatUtil;
+import edu.stanford.isis.epad.common.util.EPADConfig;
+import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epad.common.util.ResourceUtils;
 import edu.stanford.isis.epadws.processing.model.PngStatus;
 import edu.stanford.isis.epadws.processing.model.ProcessingState;
 import edu.stanford.isis.epadws.processing.model.SeriesOrder;
 import edu.stanford.isis.epadws.processing.model.SeriesOrderStatus;
-import edu.stanford.isis.epadws.processing.mysql.DcmDbUtils;
+import edu.stanford.isis.epadws.processing.mysql.Dcm3CheeDatabaseUtils;
 import edu.stanford.isis.epadws.processing.mysql.MySqlInstance;
 import edu.stanford.isis.epadws.processing.mysql.MySqlQueries;
 import edu.stanford.isis.epadws.server.ShutdownSignal;
@@ -33,7 +33,7 @@ public class SeriesWatcher implements Runnable
 	private final String dcm4cheeRootDir;
 
 	private final ShutdownSignal shutdownSignal = ShutdownSignal.getInstance();
-	private final ProxyLogger logger = ProxyLogger.getInstance();
+	private final EPADLogger logger = EPADLogger.getInstance();
 
 	private final QueueAndWatcherManager queueAndWatcherManager = QueueAndWatcherManager.getInstance();
 
@@ -42,16 +42,14 @@ public class SeriesWatcher implements Runnable
 		this.seriesQueue = seriesQueue;
 		this.pngGeneratorTaskQueue = pngGeneratorTaskQueue;
 		this.seriesOrderTracker = SeriesOrderTracker.getInstance();
-		dcm4cheeRootDir = ProxyConfig.getInstance().getParam("dcm4cheeDirRoot");
+		dcm4cheeRootDir = EPADConfig.getInstance().getParam("dcm4cheeDirRoot");
 	}
 
 	@Override
 	public void run()
 	{
-		// int loopCount = 0;
 		MySqlQueries mySqlQueries = MySqlInstance.getInstance().getMysqlQueries();
 		while (!shutdownSignal.hasShutdown()) {
-			// loopCount++;
 			try {
 				SeriesOrder seriesOrder = seriesQueue.poll(5000, TimeUnit.MILLISECONDS);
 
@@ -61,10 +59,6 @@ public class SeriesWatcher implements Runnable
 				}
 				if (seriesOrderTracker.getStatusSet().size() > 0) {
 					logger.info("SeriesOrderTracker has: " + seriesOrderTracker.getStatusSet().size() + " series.");
-				} else {
-					// if (loopCount % 5 == 0) {
-					// logger.info("SeriesOrderTracker running, but has no series.");
-					// }
 				}
 				// Loop through all new series and find images that have no corresponding PNG file recorded in ePAD database.
 				for (SeriesOrderStatus currentSeriesOrderStatus : seriesOrderTracker.getStatusSet()) {
@@ -152,7 +146,7 @@ public class SeriesWatcher implements Runnable
 
 	private void insertEpadFile(MySqlQueries queries, File outputPNGFile)
 	{
-		Map<String, String> epadFilesTable = DcmDbUtils.createEPadFilesTableData(outputPNGFile);
+		Map<String, String> epadFilesTable = Dcm3CheeDatabaseUtils.createEPadFilesTableData(outputPNGFile);
 		epadFilesTable.put("file_status", "" + PngStatus.IN_PIPELINE.getCode());
 		queries.insertEpadFile(epadFilesTable);
 	}

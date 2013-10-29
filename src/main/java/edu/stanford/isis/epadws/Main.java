@@ -22,24 +22,23 @@ import org.eclipse.jetty.server.handler.HandlerList;
 import org.eclipse.jetty.server.handler.ResourceHandler;
 import org.eclipse.jetty.webapp.WebAppContext;
 
-import edu.stanford.isis.epad.common.ProxyConfig;
-import edu.stanford.isis.epad.common.ProxyLogger;
+import edu.stanford.isis.epad.common.plugins.EPadFiles;
+import edu.stanford.isis.epad.common.plugins.PluginConfig;
+import edu.stanford.isis.epad.common.plugins.PluginHandler;
+import edu.stanford.isis.epad.common.plugins.PluginHandlerMap;
+import edu.stanford.isis.epad.common.plugins.PluginServletHandler;
+import edu.stanford.isis.epad.common.plugins.ePadPluginController;
+import edu.stanford.isis.epad.common.plugins.impl.ClassFinderTestUtils;
+import edu.stanford.isis.epad.common.plugins.impl.EPadFilesImpl;
+import edu.stanford.isis.epad.common.util.EPADConfig;
+import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epad.common.util.ResourceUtils;
-import edu.stanford.isis.epad.plugin.server.EPadFiles;
-import edu.stanford.isis.epad.plugin.server.PluginHandler;
-import edu.stanford.isis.epad.plugin.server.PluginServletHandler;
-import edu.stanford.isis.epad.plugin.server.ePadPluginController;
-import edu.stanford.isis.epad.plugin.server.impl.ClassFinderTestUtils;
-import edu.stanford.isis.epad.plugin.server.impl.EPadFilesImpl;
-import edu.stanford.isis.epad.plugin.server.impl.PluginConfig;
-import edu.stanford.isis.epad.plugin.server.impl.PluginHandlerMap;
 import edu.stanford.isis.epadws.handlers.admin.ImageCheckHandler;
-import edu.stanford.isis.epadws.handlers.admin.ServerStatusHandler;
 import edu.stanford.isis.epadws.handlers.admin.ResourceCheckHandler;
+import edu.stanford.isis.epadws.handlers.admin.ServerStatusHandler;
 import edu.stanford.isis.epadws.handlers.aim.AimResourceHandler;
 import edu.stanford.isis.epadws.handlers.coordination.CoordinationHandler;
 import edu.stanford.isis.epadws.handlers.dicom.DICOMDeleteHandler;
-import edu.stanford.isis.epadws.handlers.dicom.DICOMHeadersHandler;
 import edu.stanford.isis.epadws.handlers.dicom.DICOMHeadersHandlerJSON;
 import edu.stanford.isis.epadws.handlers.dicom.DICOMSearchHandler;
 import edu.stanford.isis.epadws.handlers.dicom.DICOMSeriesOrderHandler;
@@ -69,8 +68,8 @@ import edu.stanford.isis.epadws.server.threads.ShutdownHookThread;
  */
 public class Main
 {
-	private static final ProxyLogger log = ProxyLogger.getInstance();
-	private static final ProxyConfig proxyConfig = ProxyConfig.getInstance();
+	private static final EPADLogger log = EPADLogger.getInstance();
+	private static final EPADConfig proxyConfig = EPADConfig.getInstance();
 
 	/**
 	 * Starts EPad web server and sets several contexts to be used by restlets.
@@ -81,7 +80,7 @@ public class Main
 	 * application.
 	 * 
 	 * @param args String[]
-	 * @see ProxyConfig
+	 * @see EPADConfig
 	 */
 	public static void main(String[] args)
 	{
@@ -186,7 +185,6 @@ public class Main
 		addHandlerAtContextPath(new DICOMSearchHandler(), "/searchj", handlerList);
 		addHandlerAtContextPath(new DICOMSeriesOrderHandler(), "/seriesorderj", handlerList);
 		addHandlerAtContextPath(new DICOMDeleteHandler(), "/dicomdelete", handlerList);
-		addHandlerAtContextPath(new DICOMHeadersHandler(), "/dicomtag", handlerList);
 		addHandlerAtContextPath(new DICOMHeadersHandlerJSON(), "/dicomtagj", handlerList);
 		addHandlerAtContextPath(new DICOMSeriesTagHandler(), "/seriestag", handlerList);
 		addHandlerAtContextPath(new DICOMVisuHandler(), "/dicomparam", handlerList);

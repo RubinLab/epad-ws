@@ -8,9 +8,9 @@ import java.io.InputStreamReader;
 import java.util.List;
 import java.util.Map;
 
-import edu.stanford.isis.epad.common.ProxyLogger;
 import edu.stanford.isis.epad.common.dicom.DicomFormatUtil;
-import edu.stanford.isis.epad.common.util.ProxyFileUtils;
+import edu.stanford.isis.epad.common.util.EPADFileUtils;
+import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epad.common.util.ResourceUtils;
 import edu.stanford.isis.epadws.processing.mysql.MySqlInstance;
 import edu.stanford.isis.epadws.processing.mysql.MySqlQueries;
@@ -22,7 +22,7 @@ import edu.stanford.isis.epadws.processing.mysql.MySqlQueries;
  */
 public class DicomDeleteTask implements Runnable
 {
-	private static ProxyLogger logger = ProxyLogger.getInstance();
+	private static EPADLogger logger = EPADLogger.getInstance();
 
 	final String uidToDelete;
 	final boolean deleteStudy;
@@ -40,21 +40,13 @@ public class DicomDeleteTask implements Runnable
 
 		try {
 			if (deleteStudy) {
-				// Delete from dcm4chee
 				dcmDeleteStudy(uidToDelete);
-
-				logger.info("StudyIDXXX: " + uidToDelete);
-
 				List<Map<String, String>> study2series = dbQueries.doSeriesSearch(uidToDelete);
 
 				for (Map<String, String> series : study2series) {
 					logger.info("SeriesID: " + series.get("series-id"));
 				}
-
-				// Delete the entries in the table
 				dbQueries.doDeleteStudy(uidToDelete);
-
-				// Delete the files
 				deletePNGforStudy(uidToDelete);
 			} else {
 				// Not supported in the current version of dcm4chee
@@ -63,21 +55,18 @@ public class DicomDeleteTask implements Runnable
 				 * from dcm4chee dcmDeleteSeries(uidToDelete); //Delete the entries in the table
 				 * dbQueries.doDeleteSeries(uidToDelete); //Delete the files deletePNGforSeries(uidToDelete);
 				 */
-
 			}
 		} catch (Exception e) {
 			logger.warning("run had: " + e.getMessage(), e);
 		}
-
 	}
 
 	/**
-	 * Delete pngs success
+	 * Delete PNGs
 	 * 
 	 * @param uid
 	 * @throws Exception
 	 */
-
 	private static void deletePNGforStudy(String studyUID) throws Exception
 	{
 
@@ -92,7 +81,7 @@ public class DicomDeleteTask implements Runnable
 	}
 
 	/**
-	 * Delete pngs
+	 * Delete PNGs
 	 * 
 	 * @param uid
 	 * @throws Exception
@@ -103,7 +92,6 @@ public class DicomDeleteTask implements Runnable
 
 		MySqlQueries queries = MySqlInstance.getInstance().getMysqlQueries();
 		String studyUID = queries.getStudyUIDForSeries(seriesUID);
-
 		StringBuilder outputPath = new StringBuilder();
 		outputPath.append(ResourceUtils.getEPADWebServerPNGDir());
 		outputPath.append(DicomFormatUtil.formatUidToDir(studyUID)).append("/");
@@ -139,10 +127,8 @@ public class DicomDeleteTask implements Runnable
 
 			Process process = pb.start();
 			process.getOutputStream();// get the output stream.
-			// Read out dir output
 			is = process.getInputStream();
 			isr = new InputStreamReader(is);
-
 			br = new BufferedReader(isr);
 			String line;
 			StringBuilder sb = new StringBuilder();
@@ -150,7 +136,6 @@ public class DicomDeleteTask implements Runnable
 				sb.append(line).append("\n");
 			}
 
-			// Wait to get exit value
 			try {
 				// int exitValue = process.waitFor(); //keep.
 				// long totalTime = System.currentTimeMillis() - startTime;
@@ -165,7 +150,6 @@ public class DicomDeleteTask implements Runnable
 			if (cmdLineOutput.toLowerCase().contains("error")) {
 				throw new IllegalStateException("Failed for: " + parseError(cmdLineOutput));
 			}
-
 		} catch (Exception e) {
 			logger.warning("Didn't delete dicom files in: " + uid, e);
 		}
@@ -206,14 +190,12 @@ public class DicomDeleteTask implements Runnable
 			while ((line = br.readLine()) != null) {
 				sb.append(line).append("\n");
 			}
-
-			// Wait to get exit value
 			try {
 				// int exitValue = process.waitFor(); //keep.
 				// long totalTime = System.currentTimeMillis() - startTime;
 				// log.info("Tags exit value is: " + exitValue+" and took: "+totalTime+" ms");
 			} catch (Exception e) {
-				logger.warning("Didn't delete dicom files in: " + uid, e);
+				logger.warning("Didn't delete DICOM files in: " + uid, e);
 			}
 
 			String cmdLineOutput = sb.toString();
@@ -222,7 +204,6 @@ public class DicomDeleteTask implements Runnable
 			if (cmdLineOutput.toLowerCase().contains("error")) {
 				throw new IllegalStateException("Failed for: " + parseError(cmdLineOutput));
 			}
-
 		} catch (Exception e) {
 			logger.warning("Didn't delete dicom files in: " + uid, e);
 		}
@@ -252,7 +233,7 @@ public class DicomDeleteTask implements Runnable
 	{
 		String logDirectory = ResourceUtils.getEPADWebServerLogDir();
 		String fileName = logDirectory + "delete_" + System.currentTimeMillis() + ".log";
-		ProxyFileUtils.write(new File(fileName), contents);
+		EPADFileUtils.write(new File(fileName), contents);
 	}
 
 	private static boolean delete(File file) throws IOException
@@ -260,34 +241,20 @@ public class DicomDeleteTask implements Runnable
 		boolean success = false;
 		if (file.isDirectory()) {
 
-			// directory is empty, then delete it
 			if (file.list().length == 0) {
 				success = file.delete();
-				// System.out.println("Directory is deleted : " + file.getAbsolutePath());
 			} else {
-
-				// list all the directory contents
 				String files[] = file.list();
-
 				for (String temp : files) {
-					// construct the file structure
 					File fileDelete = new File(file, temp);
-
-					// recursive delete
 					delete(fileDelete);
 				}
-
-				// check the directory again, if empty then delete it
-				if (file.list().length == 0) {
+				if (file.list().length == 0) { // Check the directory again; if empty then delete it.
 					success = file.delete();
-					// System.out.println("Directory is deleted : " + file.getAbsolutePath());
 				}
 			}
-
 		} else {
-			// if file, then delete it
 			success = file.delete();
-			// System.out.println("File is deleted : " + file.getAbsolutePath());
 		}
 		return success;
 	}

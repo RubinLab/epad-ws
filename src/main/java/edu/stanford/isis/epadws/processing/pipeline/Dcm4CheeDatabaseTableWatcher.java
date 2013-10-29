@@ -4,26 +4,24 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 
-import edu.stanford.isis.epad.common.ProxyLogger;
+import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epadws.processing.model.SeriesOrder;
 import edu.stanford.isis.epadws.processing.mysql.MySqlInstance;
 import edu.stanford.isis.epadws.processing.mysql.MySqlQueries;
 import edu.stanford.isis.epadws.server.ShutdownSignal;
 
 /**
- * Watch for new studies that appear with a database with the 'study-status' field set to zero
- * 
- * 
+ * Watch for new studies that appear with a DCM4CHEE database with the 'study-status' field set to zero
  * 
  * @author amsnyder
  */
-public class DcmDbTableWatcher implements Runnable
+public class Dcm4CheeDatabaseTableWatcher implements Runnable
 {
-	ProxyLogger logger = ProxyLogger.getInstance();
+	private final EPADLogger logger = EPADLogger.getInstance();
 
-	final BlockingQueue<SeriesOrder> seriesQueue;
+	private final BlockingQueue<SeriesOrder> seriesQueue;
 
-	public DcmDbTableWatcher(BlockingQueue<SeriesOrder> seriesQueue)
+	public Dcm4CheeDatabaseTableWatcher(BlockingQueue<SeriesOrder> seriesQueue)
 	{
 		this.seriesQueue = seriesQueue;
 	}

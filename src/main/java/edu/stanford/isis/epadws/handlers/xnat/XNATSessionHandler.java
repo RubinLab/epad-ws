@@ -9,7 +9,7 @@ import javax.servlet.http.HttpServletResponse;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 
-import edu.stanford.isis.epad.common.ProxyLogger;
+import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epadws.xnat.XNATUtil;
 
 /**
@@ -29,7 +29,7 @@ import edu.stanford.isis.epadws.xnat.XNATUtil;
  */
 public class XNATSessionHandler extends AbstractHandler
 {
-	private static final ProxyLogger log = ProxyLogger.getInstance();
+	private static final EPADLogger log = EPADLogger.getInstance();
 
 	private static final String MISSING_USERNAME_MESSAGE = "Missing user name";
 	private static final String INVALID_METHOD_MESSAGE = "Only POST and DELETE methods valid for this route";

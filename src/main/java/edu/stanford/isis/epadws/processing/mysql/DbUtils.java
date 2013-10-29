@@ -19,10 +19,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import edu.stanford.isis.epad.common.ProxyLogger;
 import edu.stanford.isis.epad.common.dicom.DicomSeriesUID;
 import edu.stanford.isis.epad.common.dicom.DicomStudyUID;
 import edu.stanford.isis.epad.common.dicom.DicomTagFileUtils;
+import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epad.common.util.FileKey;
 import edu.stanford.isis.epad.common.util.ResourceUtils;
 
@@ -32,7 +32,7 @@ import edu.stanford.isis.epad.common.util.ResourceUtils;
 public class DbUtils
 {
 
-	private static ProxyLogger logger = ProxyLogger.getInstance();
+	private static EPADLogger logger = EPADLogger.getInstance();
 
 	private DbUtils()
 	{

@@ -7,9 +7,9 @@
  */
 package edu.stanford.isis.epadws.server.managers.leveling;
 
+import edu.stanford.isis.epad.common.dicom.DicomWindowSetting;
+import edu.stanford.isis.epad.common.dicom.WindowLevelManager;
 import edu.stanford.isis.epadws.server.managers.pipeline.AbstractPipelineProcess;
-import edu.stanford.isis.epadws.server.managers.support.DicomWindowSetting;
-import edu.stanford.isis.epadws.server.managers.support.WindowLevelManager;
 
 import java.io.File;
 import java.util.concurrent.BlockingQueue;

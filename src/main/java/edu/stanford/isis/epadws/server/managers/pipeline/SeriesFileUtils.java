@@ -13,11 +13,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import edu.stanford.isis.epad.common.ProxyConfig;
-import edu.stanford.isis.epad.common.ProxyLogger;
 import edu.stanford.isis.epad.common.dicom.DicomFormatUtil;
 import edu.stanford.isis.epad.common.dicom.DicomTagFileUtils;
-import edu.stanford.isis.epad.common.util.ProxyFileUtils;
+import edu.stanford.isis.epad.common.util.EPADConfig;
+import edu.stanford.isis.epad.common.util.EPADFileUtils;
+import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epad.common.util.ResourceUtils;
 
 /**
@@ -26,7 +26,7 @@ import edu.stanford.isis.epad.common.util.ResourceUtils;
 public class SeriesFileUtils
 {
 
-	private static final ProxyLogger log = ProxyLogger.getInstance();
+	private static final EPADLogger log = EPADLogger.getInstance();
 
 	private SeriesFileUtils()
 	{
@@ -60,7 +60,7 @@ public class SeriesFileUtils
 		}
 		log.info("Reading series file: " + seriesFile.getAbsolutePath());
 
-		List<Map<String, String>> retVal = ProxyFileUtils.readCsvFormattedFile(seriesFile);
+		List<Map<String, String>> retVal = EPADFileUtils.readCsvFormattedFile(seriesFile);
 
 		log.info("series file map #entires=" + retVal.get(0).size());
 
@@ -84,7 +84,7 @@ public class SeriesFileUtils
 			log.info("BAD FILE: \n" + content);
 			log.info(seriesFileTags.toString());
 		}
-		ProxyFileUtils.overwrite(new File(seriesFilePath), content);
+		EPADFileUtils.overwrite(new File(seriesFilePath), content);
 	}
 
 	/**
@@ -208,7 +208,7 @@ public class SeriesFileUtils
 	public static String writeKeys()
 	{
 
-		ProxyConfig config = ProxyConfig.getInstance();
+		EPADConfig config = EPADConfig.getInstance();
 		String separator = config.getParam("fieldSeparator");
 
 		StringBuilder sb = new StringBuilder();
@@ -238,12 +238,12 @@ public class SeriesFileUtils
 		StringBuilder sb = new StringBuilder();
 		sb.append(writeKeys());
 
-		ProxyConfig config = ProxyConfig.getInstance();
+		EPADConfig config = EPADConfig.getInstance();
 		String separator = config.getParam("fieldSeparator");
 
 		try {
 			for (File seriesFile : seriesFiles) {
-				List<Map<String, String>> values = ProxyFileUtils.readCsvFormattedFile(seriesFile);
+				List<Map<String, String>> values = EPADFileUtils.readCsvFormattedFile(seriesFile);
 
 				for (Map<String, String> valueMap : values) {
 					sb.append(valueMap.get(SERIES_ID)).append(separator);
@@ -287,7 +287,7 @@ public class SeriesFileUtils
 						+ studyDir.getCanonicalPath());
 				return retVal;
 			}
-			retVal = ProxyFileUtils.getAllFilesWithExtension(studyDir, ".series");
+			retVal = EPADFileUtils.getAllFilesWithExtension(studyDir, ".series");
 		} catch (Exception e) {
 			log.warning("getSeriesFileFor", e);
 		}

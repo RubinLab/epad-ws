@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import edu.stanford.isis.epad.common.ProxyLogger;
+import edu.stanford.isis.epad.common.util.EPADLogger;
 
 /**
  * Keeps all the information about each instance in a series and the instance order.
@@ -13,10 +13,10 @@ import edu.stanford.isis.epad.common.ProxyLogger;
  */
 public class SeriesOrder
 {
-	private static final ProxyLogger logger = ProxyLogger.getInstance();
+	private static final EPADLogger logger = EPADLogger.getInstance();
 
-	final ArrayList<ImageEntry> instances;
-	final String seriesUID;
+	private final ArrayList<ImageEntry> instances;
+	private final String seriesUID;
 
 	public SeriesOrder(int numInstance, String seriesUID)
 	{
@@ -63,7 +63,6 @@ public class SeriesOrder
 			if (!hasInstance(index)) {
 				return null;
 			}
-
 			return instances.get(index);
 		} catch (Exception e) {
 			logger.info("SeriesOrder: " + e.getMessage() + " size=" + size() + " seriesUID=" + seriesUID);

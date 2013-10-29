@@ -7,7 +7,7 @@
  */
 package edu.stanford.isis.epadws.server.managers.pipeline;
 
-import edu.stanford.isis.epad.common.ProxyLogger;
+import edu.stanford.isis.epad.common.util.EPADLogger;
 
 import java.io.File;
 import java.util.concurrent.*;
@@ -17,7 +17,7 @@ import java.util.concurrent.*;
  */
 public class PipelineFactory {
 
-    private static final ProxyLogger log = ProxyLogger.getInstance();
+    private static final EPADLogger log = EPADLogger.getInstance();
 
     private static final BlockingQueue<File> unzipQueue = new ArrayBlockingQueue<File>(500);
     private static final BlockingQueue<File> taggerQueue = new ArrayBlockingQueue<File>(500);

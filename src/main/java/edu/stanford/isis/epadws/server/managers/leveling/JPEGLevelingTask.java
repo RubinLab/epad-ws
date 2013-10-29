@@ -14,9 +14,9 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.concurrent.Callable;
 
-import edu.stanford.isis.epad.common.ProxyLogger;
+import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epad.common.util.FileKey;
-import edu.stanford.isis.epad.common.util.ProxyFileUtils;
+import edu.stanford.isis.epad.common.util.EPADFileUtils;
 import edu.stanford.isis.epad.common.util.ResourceUtils;
 
 /**
@@ -24,7 +24,7 @@ import edu.stanford.isis.epad.common.util.ResourceUtils;
  */
 public class JPEGLevelingTask implements Callable<File>
 {
-	static final ProxyLogger log = ProxyLogger.getInstance();
+	static final EPADLogger log = EPADLogger.getInstance();
 
 	final File file;
 	int ww;
@@ -92,7 +92,7 @@ public class JPEGLevelingTask implements Callable<File>
 		File leveledJPegDir = new File(seriesDir.getAbsolutePath() + "/ww" + ww + "wl" + wl);
 
 		// make the directory if needed.
-		ProxyFileUtils.makeDirs(leveledJPegDir);
+		EPADFileUtils.makeDirs(leveledJPegDir);
 
 		String jpegFilePath = FileKey.getCanonicalPath(leveledJPegDir) + "/" + name.replaceAll("\\.dcm", ".jpg");
 		return jpegFilePath;

@@ -7,8 +7,8 @@
  */
 package edu.stanford.isis.epadws.server.managers.pipeline;
 
-import edu.stanford.isis.epad.common.ProxyLogger;
-import edu.stanford.isis.epad.common.util.ProxyFileUtils;
+import edu.stanford.isis.epad.common.util.EPADFileUtils;
+import edu.stanford.isis.epad.common.util.EPADLogger;
 
 import java.io.File;
 import java.io.IOException;
@@ -19,7 +19,7 @@ import java.io.RandomAccessFile;
  */
 public class DicomFileUtil {
 
-    static final ProxyLogger log = ProxyLogger.getInstance();
+    static final EPADLogger log = EPADLogger.getInstance();
 
     private DicomFileUtil(){}
 
@@ -67,7 +67,7 @@ public class DicomFileUtil {
     {
         File newName = new File( f.getAbsolutePath()+".dcm" );
         try{
-            ProxyFileUtils.checkAndMoveFile(f,newName);
+            EPADFileUtils.checkAndMoveFile(f,newName);
         }catch(IOException ioe){
             log.warning("Failed to rename file: "+f.getAbsolutePath(),ioe);
         }

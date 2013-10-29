@@ -7,9 +7,9 @@
  */
 package edu.stanford.isis.epadws.server.managers.pipeline;
 
-import edu.stanford.isis.epad.common.ProxyLogger;
 import edu.stanford.isis.epad.common.dicom.DicomTagFileUtils;
-import edu.stanford.isis.epad.common.util.ProxyFileUtils;
+import edu.stanford.isis.epad.common.util.EPADFileUtils;
+import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epadws.server.ShutdownSignal;
 
 import java.io.File;
@@ -26,7 +26,7 @@ public class OrderFileRunnable implements Runnable{
 
     private static final int ORDER_FILE_SLEEP_TIME_MS = 2000;
 
-    protected static final ProxyLogger logger = ProxyLogger.getInstance();
+    protected static final EPADLogger logger = EPADLogger.getInstance();
     protected final ShutdownSignal signal = ShutdownSignal.getInstance();
 
     final ExecutorService exec;
@@ -96,7 +96,7 @@ public class OrderFileRunnable implements Runnable{
             //get number of files in directory.
             String seriesDirPath = convertOrderPathToSeriesDir(orderFilePath);
 
-            int nDcmFiles = ProxyFileUtils.countFilesWithEnding(seriesDirPath,".dcm");
+            int nDcmFiles = EPADFileUtils.countFilesWithEnding(seriesDirPath,".dcm");
 
             //convert the path name.
             seriesFilePath = convertOrderPathToSeriesPath(orderFilePath);
