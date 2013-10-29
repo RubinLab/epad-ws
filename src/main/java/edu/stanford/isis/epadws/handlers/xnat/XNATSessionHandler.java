@@ -41,6 +41,7 @@ public class XNATSessionHandler extends AbstractHandler
 			throws IOException
 	{
 		PrintWriter responseStream = httpResponse.getWriter();
+		String origin = httpRequest.getHeader("Origin");
 
 		httpResponse.setContentType("text/plain");
 		request.setHandled(true);
@@ -51,7 +52,11 @@ public class XNATSessionHandler extends AbstractHandler
 			if (username.length() != 0) {
 				log.info("XNATSessionHandler, login request from user " + username);
 				try {
-					responseStream.append(XNATUtil.invokeXNATSessionIDService(httpRequest, httpResponse));
+					String jsessionID = XNATUtil.invokeXNATSessionIDService(httpRequest, httpResponse);
+					responseStream.append(jsessionID);
+					httpResponse.setHeader("Set-Cookie", "JSESSIONID=" + jsessionID);
+					httpResponse.setHeader("Access-Control-Allow-Origin", origin); // Needed in addition to the pre-flight header
+					httpResponse.setHeader("Access-Control-Allow-Credentials", "true");
 					httpResponse.setStatus(HttpServletResponse.SC_OK);
 				} catch (Throwable t) {
 					log.warning(LOGIN_EXCEPTION_MESSAGE, t);
@@ -78,10 +83,16 @@ public class XNATSessionHandler extends AbstractHandler
 				responseStream.append(LOGOUT_EXCEPTION_MESSAGE + ": " + t.getMessage());
 				httpResponse.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 			}
+		} else if ("OPTIONS".equalsIgnoreCase(method)) {
+			log.info("XNATSessionHandler, CORS preflight OPTIONS request");
+			httpResponse.setHeader("Access-Control-Allow-Origin", origin);
+			httpResponse.setHeader("Access-Control-Allow-Credentials", "true");
+			httpResponse.setHeader("Access-Control-Allow-Headers", "Authorization");
+			httpResponse.setStatus(HttpServletResponse.SC_OK);
 		} else {
-			log.info(INVALID_METHOD_MESSAGE);
-			responseStream.append(INVALID_METHOD_MESSAGE);
-			httpResponse.setHeader("Access-Control-Allow-Methods", "POST DELETE");
+			log.info(INVALID_METHOD_MESSAGE + "; got " + method);
+			responseStream.append(INVALID_METHOD_MESSAGE + "; got " + method);
+			httpResponse.setHeader("Access-Control-Allow-Methods", "POST DELETE OPTIONS");
 			httpResponse.setStatus(HttpServletResponse.SC_METHOD_NOT_ALLOWED);
 		}
 		responseStream.flush();
