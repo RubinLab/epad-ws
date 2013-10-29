@@ -35,6 +35,7 @@ import edu.stanford.isis.epad.plugin.server.impl.PluginConfig;
 import edu.stanford.isis.epad.plugin.server.impl.PluginHandlerMap;
 import edu.stanford.isis.epadws.handlers.admin.ImageCheckHandler;
 import edu.stanford.isis.epadws.handlers.admin.ServerStatusHandler;
+import edu.stanford.isis.epadws.handlers.admin.ResourceCheckHandler;
 import edu.stanford.isis.epadws.handlers.aim.AimResourceHandler;
 import edu.stanford.isis.epadws.handlers.coordination.CoordinationHandler;
 import edu.stanford.isis.epadws.handlers.dicom.DICOMDeleteHandler;
@@ -196,11 +197,31 @@ public class Main
 
 		addWebAppAtContextPath(handlerList, "ePad.war", "/epad");
 
+		addHandlerAtContextPath(new ResourceCheckHandler(), "/resources", handlerList);
 		addFileServerAtContextPath(ResourceUtils.getEPADWebServerResourcesDir(), handlerList, "/resources");
 
 		ContextHandlerCollection contexts = new ContextHandlerCollection();
 		contexts.setHandlers(handlerList.toArray(new Handler[handlerList.size()]));
 		server.setHandler(contexts);
+	}
+
+	/**
+	 * @param handler Handler
+	 * @param contextPath String
+	 * @param handlerList List of Handler
+	 * @see Handler
+	 * @see ContextHandler
+	 */
+	private static void addHandlerAtContextPath(Handler handler, String contextPath, List<Handler> handlerList)
+	{
+		ContextHandler contextHandler = new ContextHandler(contextPath);
+
+		contextHandler.setResourceBase(".");
+		contextHandler.setClassLoader(Thread.currentThread().getContextClassLoader());
+		contextHandler.setHandler(handler);
+		handlerList.add(contextHandler);
+
+		log.info("Added " + handler.getClass().getName() + " at context: " + contextPath);
 	}
 
 	/**
@@ -236,25 +257,6 @@ public class Main
 		addHandlerAtContextPath(handlers, contextPath, handlerList);
 
 		log.info("Added file server from " + baseDir + " directory.");
-	}
-
-	/**
-	 * @param handler Handler
-	 * @param contextPath String
-	 * @param handlerList List of Handler
-	 * @see Handler
-	 * @see ContextHandler
-	 */
-	private static void addHandlerAtContextPath(Handler handler, String contextPath, List<Handler> handlerList)
-	{
-		ContextHandler contextHandler = new ContextHandler(contextPath);
-
-		contextHandler.setResourceBase(".");
-		contextHandler.setClassLoader(Thread.currentThread().getContextClassLoader());
-		contextHandler.setHandler(handler); // Add status handler
-		handlerList.add(contextHandler);
-
-		log.info("Added " + handler.getClass().getName() + " at context: " + contextPath);
 	}
 
 	/**

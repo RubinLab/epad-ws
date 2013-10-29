@@ -25,7 +25,7 @@ def get_dicom_element_value(dicom_element):
   if m:
     return m.group('value')
   else:
-    print 'Warning: could not extract value form DICOM  element', dicom_eleament
+    print 'Warning: could not extract value from DICOM element', dicom_eleament
     return None
 
 def get_dicom_header_file_path(study_dir):

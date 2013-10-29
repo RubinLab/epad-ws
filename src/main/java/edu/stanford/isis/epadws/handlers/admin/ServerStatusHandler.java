@@ -53,7 +53,7 @@ public class ServerStatusHandler extends AbstractHandler
 		int statusCode;
 
 		httpResponse.setContentType("text/plain");
-		httpResponse.setHeader("Access-Control-Allow-Origin", "*");
+
 		request.setHandled(true);
 
 		try {
