@@ -20,6 +20,7 @@ import edu.stanford.isis.epadws.processing.pipeline.process.MoverProcess;
 import edu.stanford.isis.epadws.processing.pipeline.process.ReadTagsProcess;
 import edu.stanford.isis.epadws.processing.pipeline.process.ThumbnailProcess;
 import edu.stanford.isis.epadws.processing.pipeline.process.UnzipProcess;
+import edu.stanford.isis.epadws.processing.pipeline.threads.OrderFileThread;
 import edu.stanford.isis.epadws.processing.pipeline.watcher.PipelineStatusWatcher;
 import edu.stanford.isis.epadws.processing.pipeline.watcher.UploadDirWatcher;
 
@@ -52,11 +53,10 @@ public class PipelineFactory
 	private static final PipelineFactory ourInstance = new PipelineFactory();
 
 	private final UploadDirWatcher uploadDirWatcher;
-
 	private final UnzipProcess unzipProcess;
 	private final ReadTagsProcess readTagsProcess;
 	private final MoverProcess moverProcess;
-	private final OrderFileRunnable orderFileRunnable;
+	private final OrderFileThread orderFileRunnable;
 	private final ThumbnailProcess thumbnailProcess;
 
 	public static PipelineFactory getInstance()
@@ -72,7 +72,7 @@ public class PipelineFactory
 		unzipProcess = new UnzipProcess(unzipService, unzipQueue, taggerQueue);
 		readTagsProcess = new ReadTagsProcess(taggerService, taggerQueue, moverQueue);
 		moverProcess = new MoverProcess(moverService, moverQueue, orderQueue);
-		orderFileRunnable = new OrderFileRunnable(orderService, orderQueue);
+		orderFileRunnable = new OrderFileThread(orderService, orderQueue);
 		thumbnailProcess = new ThumbnailProcess(thumbnailService, thumbnailQueue, null);
 
 		// print every 60 seconds.

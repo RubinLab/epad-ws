@@ -9,7 +9,7 @@ import edu.stanford.isis.epadws.processing.model.SeriesOrder;
 import edu.stanford.isis.epadws.processing.mysql.MySqlInstance;
 import edu.stanford.isis.epadws.processing.mysql.MySqlQueries;
 import edu.stanford.isis.epadws.processing.pipeline.SeriesOrderTracker;
-import edu.stanford.isis.epadws.processing.threads.ShutdownSignal;
+import edu.stanford.isis.epadws.processing.pipeline.threads.ShutdownSignal;
 
 /**
  * Watch for new studies that appear with a DCM4CHEE database with the 'study-status' field set to zero

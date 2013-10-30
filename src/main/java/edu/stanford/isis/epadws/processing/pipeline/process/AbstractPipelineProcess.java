@@ -19,7 +19,7 @@ import java.util.concurrent.TimeUnit;
 import org.eclipse.jetty.util.ConcurrentHashSet;
 
 import edu.stanford.isis.epad.common.util.EPADLogger;
-import edu.stanford.isis.epadws.processing.threads.ShutdownSignal;
+import edu.stanford.isis.epadws.processing.pipeline.threads.ShutdownSignal;
 
 /**
  * Abstract class for a stage in the pipeline has the basic components of a pipeline process.

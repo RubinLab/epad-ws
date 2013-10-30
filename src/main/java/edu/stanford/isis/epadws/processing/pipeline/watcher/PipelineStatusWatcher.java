@@ -13,7 +13,7 @@ import java.util.concurrent.TimeUnit;
 import edu.stanford.isis.epad.common.util.EPADFileUtils;
 import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epad.common.util.ResourceUtils;
-import edu.stanford.isis.epadws.processing.threads.ShutdownSignal;
+import edu.stanford.isis.epadws.processing.pipeline.threads.ShutdownSignal;
 
 /**
  * Count the number of dicom files in the upload/temp directory. Write the results to the

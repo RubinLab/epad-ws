@@ -18,7 +18,7 @@ import edu.stanford.isis.epad.common.util.EPADFileUtils;
 import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epad.common.util.LockFileUtils;
 import edu.stanford.isis.epad.common.util.RsnaSearchResultMap;
-import edu.stanford.isis.epadws.processing.pipeline.SeriesFileUtils;
+import edu.stanford.isis.epadws.processing.pipeline.DicomSeriesFileUtils;
 import edu.stanford.isis.epadws.processing.pipeline.ThumbnailManager;
 import edu.stanford.isis.epadws.processing.pipeline.UploadPipelineFiles;
 
@@ -114,7 +114,7 @@ public class MoverTask implements Callable<File>
 		}
 
 		debugMap(tags, 5);
-		String content = SeriesFileUtils.createSeriesFileContentFromDicomTags(tags);
+		String content = DicomSeriesFileUtils.createSeriesFileContentFromDicomTags(tags);
 		log.info("writing series file: " + seriesFile.getAbsolutePath() + " \n " + content);
 
 		EPADFileUtils.overwrite(seriesFile, content);

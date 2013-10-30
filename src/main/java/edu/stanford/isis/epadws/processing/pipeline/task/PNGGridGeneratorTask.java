@@ -12,7 +12,7 @@ import edu.stanford.isis.epadws.processing.model.PngStatus;
 import edu.stanford.isis.epadws.processing.mysql.Dcm3CheeDatabaseUtils;
 import edu.stanford.isis.epadws.processing.mysql.MySqlInstance;
 import edu.stanford.isis.epadws.processing.mysql.MySqlQueries;
-import edu.stanford.isis.epadws.processing.threads.PNGGridGenerator;
+import edu.stanford.isis.epadws.processing.pipeline.threads.PNGGridGenerator;
 
 /**
  * Given a set of PNG files, generate a single PNG containing a grid of these files.

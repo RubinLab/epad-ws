@@ -22,7 +22,7 @@ import edu.stanford.isis.epad.common.util.EPADFileUtils;
 import edu.stanford.isis.epad.common.util.ResourceUtils;
 import edu.stanford.isis.epadws.processing.pipeline.DicomUploadFile;
 import edu.stanford.isis.epadws.processing.pipeline.UploadPipelineFiles;
-import edu.stanford.isis.epadws.processing.threads.ShutdownSignal;
+import edu.stanford.isis.epadws.processing.pipeline.threads.ShutdownSignal;
 
 /**
  * This is a process the runs every five seconds. If it sees a new file in two consecutive runs with the same file size

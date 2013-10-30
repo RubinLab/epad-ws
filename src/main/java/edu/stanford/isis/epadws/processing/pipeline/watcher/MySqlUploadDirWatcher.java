@@ -14,7 +14,7 @@ import edu.stanford.isis.epad.common.util.EPADFileUtils;
 import edu.stanford.isis.epad.common.util.ResourceUtils;
 import edu.stanford.isis.epadws.processing.pipeline.DicomUploadFile;
 import edu.stanford.isis.epadws.processing.pipeline.task.DicomSendTask;
-import edu.stanford.isis.epadws.processing.threads.ShutdownSignal;
+import edu.stanford.isis.epadws.processing.pipeline.threads.ShutdownSignal;
 
 /**
  * Watches for a new directory and a zip file. When a new directory is found it puts a "dir.found" file into it and

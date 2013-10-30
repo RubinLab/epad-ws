@@ -21,7 +21,7 @@ import edu.stanford.isis.epadws.processing.mysql.MySqlQueries;
 import edu.stanford.isis.epadws.processing.pipeline.SeriesOrderTracker;
 import edu.stanford.isis.epadws.processing.pipeline.task.GeneratorTask;
 import edu.stanford.isis.epadws.processing.pipeline.task.PNGGridGeneratorTask;
-import edu.stanford.isis.epadws.processing.threads.ShutdownSignal;
+import edu.stanford.isis.epadws.processing.pipeline.threads.ShutdownSignal;
 
 /**
  * Task to watch series.

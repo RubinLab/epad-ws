@@ -52,9 +52,9 @@ import edu.stanford.isis.epadws.handlers.xnat.XNATSessionHandler;
 import edu.stanford.isis.epadws.handlers.xnat.XNATSubjectHandler;
 import edu.stanford.isis.epadws.processing.leveling.WindowLevelFactory;
 import edu.stanford.isis.epadws.processing.mysql.MySqlInstance;
+import edu.stanford.isis.epadws.processing.pipeline.threads.ShutdownHookThread;
+import edu.stanford.isis.epadws.processing.pipeline.threads.ShutdownSignal;
 import edu.stanford.isis.epadws.processing.pipeline.watcher.QueueAndWatcherManager;
-import edu.stanford.isis.epadws.processing.threads.ShutdownHookThread;
-import edu.stanford.isis.epadws.processing.threads.ShutdownSignal;
 
 // TODO Add a generic authentication handler.
 // See: https://github.com/eclipse/jetty.project/blob/master/examples/embedded/src/main/java/org/eclipse/jetty/embedded/SecuredHelloHandler.java

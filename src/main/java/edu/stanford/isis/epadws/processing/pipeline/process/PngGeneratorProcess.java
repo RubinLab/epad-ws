@@ -9,7 +9,7 @@ import java.util.concurrent.TimeUnit;
 import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epadws.processing.pipeline.task.DicomHeadersTask;
 import edu.stanford.isis.epadws.processing.pipeline.task.GeneratorTask;
-import edu.stanford.isis.epadws.processing.threads.ShutdownSignal;
+import edu.stanford.isis.epadws.processing.pipeline.threads.ShutdownSignal;
 
 /**
  * Create one or multiple of these processes to listen for PngGeneratorTask on the queue and run them when ready.
