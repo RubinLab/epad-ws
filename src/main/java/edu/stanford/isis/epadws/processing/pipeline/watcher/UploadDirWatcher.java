@@ -21,7 +21,7 @@ import edu.stanford.isis.epad.common.util.FileKey;
 import edu.stanford.isis.epad.common.util.EPADFileUtils;
 import edu.stanford.isis.epad.common.util.ResourceUtils;
 import edu.stanford.isis.epadws.processing.pipeline.DicomUploadFile;
-import edu.stanford.isis.epadws.processing.pipeline.UploadPipelineFiles;
+import edu.stanford.isis.epadws.processing.pipeline.DicomUploadPipelineFiles;
 import edu.stanford.isis.epadws.processing.pipeline.threads.ShutdownSignal;
 
 /**
@@ -44,7 +44,7 @@ public class UploadDirWatcher implements Runnable
 	/**
 	 * Tracks files that had a error in the queue.
 	 */
-	private final UploadPipelineFiles uploadPipelineFiles = UploadPipelineFiles.getInstance();
+	private final DicomUploadPipelineFiles uploadPipelineFiles = DicomUploadPipelineFiles.getInstance();
 
 	/**
 	 * Track /resource/upload/temp-* directories that are empty (no *.dcm files) and delete them if they remain empty for

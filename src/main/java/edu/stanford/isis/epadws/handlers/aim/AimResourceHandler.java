@@ -129,7 +129,7 @@ public class AimResourceHandler extends AbstractHandler
 				} else {
 					logger.info(INVALID_METHOD_MESSAGE);
 					responseStream.append(INVALID_METHOD_MESSAGE);
-					httpResponse.setHeader("Access-Control-Allow-Methods", "POST GET");
+					httpResponse.setHeader("Access-Control-Allow-Methods", "POST, GET");
 					statusCode = HttpServletResponse.SC_METHOD_NOT_ALLOWED;
 				}
 			} else {

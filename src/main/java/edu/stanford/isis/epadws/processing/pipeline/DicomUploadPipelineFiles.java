@@ -21,7 +21,7 @@ import edu.stanford.isis.epad.common.util.FileKey;
  * This class keeps track of all the files that have caused an error in the pipeline.
  * 
  */
-public class UploadPipelineFiles
+public class DicomUploadPipelineFiles
 {
 	private static final EPADLogger log = EPADLogger.getInstance();
 
@@ -33,16 +33,16 @@ public class UploadPipelineFiles
 	/**
 	 * Keeps track of files that had an error in the pipeline, so they are not run again.
 	 */
-	private final Map<FileKey, UploadErrorFile> uploadErrorFiles = new ConcurrentHashMap<FileKey, UploadErrorFile>();
+	private final Map<FileKey, DicomUploadErrorFile> uploadErrorFiles = new ConcurrentHashMap<FileKey, DicomUploadErrorFile>();
 
-	private static UploadPipelineFiles ourInstance = new UploadPipelineFiles();
+	private static DicomUploadPipelineFiles ourInstance = new DicomUploadPipelineFiles();
 
-	public static UploadPipelineFiles getInstance()
+	public static DicomUploadPipelineFiles getInstance()
 	{
 		return ourInstance;
 	}
 
-	private UploadPipelineFiles()
+	private DicomUploadPipelineFiles()
 	{
 	}
 
@@ -61,9 +61,9 @@ public class UploadPipelineFiles
 	 * 
 	 * @return List
 	 */
-	public List<UploadErrorFile> getErrorFiles()
+	public List<DicomUploadErrorFile> getErrorFiles()
 	{
-		return new ArrayList<UploadErrorFile>(uploadErrorFiles.values());
+		return new ArrayList<DicomUploadErrorFile>(uploadErrorFiles.values());
 	}
 
 	/**
@@ -80,7 +80,7 @@ public class UploadPipelineFiles
 		log.info("Adding error file: " + file.getAbsolutePath() + " for: " + errorMessage + " , " + expMessage);
 
 		FileKey uploadFileKey = new FileKey(file);
-		uploadErrorFiles.put(uploadFileKey, new UploadErrorFile(uploadFileKey, errorMessage, e));
+		uploadErrorFiles.put(uploadFileKey, new DicomUploadErrorFile(uploadFileKey, errorMessage, e));
 		inPipelineMap.remove(uploadFileKey);
 	}
 

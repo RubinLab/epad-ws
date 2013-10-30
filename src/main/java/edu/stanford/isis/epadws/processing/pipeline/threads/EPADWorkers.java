@@ -24,9 +24,9 @@ import edu.stanford.isis.epadws.processing.pipeline.PipelineFactory;
  * 
  * @author amsnyder
  */
-public class ProxyWorkers
+public class EPADWorkers
 {
-	private static ProxyWorkers ourInstance = new ProxyWorkers();
+	private static EPADWorkers ourInstance = new EPADWorkers();
 	private static EPADLogger logger = EPADLogger.getInstance();
 
 	private final BlockingQueue<DicomSeriesUID> thumbnailQueue = new LinkedBlockingQueue<DicomSeriesUID>();
@@ -35,12 +35,12 @@ public class ProxyWorkers
 
 	private Runnable thumbnailProcess;
 
-	public static ProxyWorkers getInstance()
+	public static EPADWorkers getInstance()
 	{
 		return ourInstance;
 	}
 
-	private ProxyWorkers()
+	private EPADWorkers()
 	{
 		thumbnailProcess = new ThumbnailGeneratorThread(thumbnailQueue);
 		thumbnailExec.execute(thumbnailProcess);

@@ -10,7 +10,7 @@ package edu.stanford.isis.epadws.processing.pipeline.task;
 import edu.stanford.isis.epad.common.util.EPADFileUtils;
 import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epadws.processing.pipeline.DicomFileUtil;
-import edu.stanford.isis.epadws.processing.pipeline.UploadPipelineFiles;
+import edu.stanford.isis.epadws.processing.pipeline.DicomUploadPipelineFiles;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -23,7 +23,7 @@ import java.util.concurrent.Callable;
 public class UnzipTask implements Callable<List<File>>{
 
     private static final EPADLogger log = EPADLogger.getInstance();
-    private static final UploadPipelineFiles pipeline = UploadPipelineFiles.getInstance();
+    private static final DicomUploadPipelineFiles pipeline = DicomUploadPipelineFiles.getInstance();
 
     File file;
 

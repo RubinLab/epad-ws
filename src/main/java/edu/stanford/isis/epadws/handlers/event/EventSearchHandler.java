@@ -111,7 +111,7 @@ public class EventSearchHandler extends AbstractHandler
 			} else {
 				log.info(INVALID_METHOD_MESSAGE);
 				out.append(INVALID_METHOD_MESSAGE);
-				httpResponse.setHeader("Access-Control-Allow-Methods", "POST GET");
+				httpResponse.setHeader("Access-Control-Allow-Methods", "POST, GET");
 				httpResponse.setStatus(HttpServletResponse.SC_METHOD_NOT_ALLOWED);
 			}
 		} else {

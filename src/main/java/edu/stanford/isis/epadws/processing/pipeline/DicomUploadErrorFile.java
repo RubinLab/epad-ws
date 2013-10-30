@@ -9,13 +9,13 @@ package edu.stanford.isis.epadws.processing.pipeline;
 
 import edu.stanford.isis.epad.common.util.FileKey;
 
-public class UploadErrorFile
+public class DicomUploadErrorFile
 {
 	private final FileKey fileKey;
 	private final String errorMessage;
 	private final Exception exception;
 
-	public UploadErrorFile(FileKey fileKey, String errorMessage, Exception e)
+	public DicomUploadErrorFile(FileKey fileKey, String errorMessage, Exception e)
 	{
 		this.fileKey = fileKey;
 		this.errorMessage = errorMessage;

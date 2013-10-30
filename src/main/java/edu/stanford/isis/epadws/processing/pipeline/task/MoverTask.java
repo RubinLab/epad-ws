@@ -20,13 +20,13 @@ import edu.stanford.isis.epad.common.util.LockFileUtils;
 import edu.stanford.isis.epad.common.util.RsnaSearchResultMap;
 import edu.stanford.isis.epadws.processing.pipeline.DicomSeriesFileUtils;
 import edu.stanford.isis.epadws.processing.pipeline.ThumbnailManager;
-import edu.stanford.isis.epadws.processing.pipeline.UploadPipelineFiles;
+import edu.stanford.isis.epadws.processing.pipeline.DicomUploadPipelineFiles;
 
 public class MoverTask implements Callable<File>
 {
 	private static final EPADLogger log = EPADLogger.getInstance();
 
-	private static final UploadPipelineFiles pipeline = UploadPipelineFiles.getInstance();
+	private static final DicomUploadPipelineFiles pipeline = DicomUploadPipelineFiles.getInstance();
 
 	private final File file;
 

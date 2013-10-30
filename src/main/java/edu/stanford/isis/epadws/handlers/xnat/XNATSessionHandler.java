@@ -107,7 +107,7 @@ public class XNATSessionHandler extends AbstractHandler
 		} else {
 			log.info(INVALID_METHOD_MESSAGE + "; got " + method);
 			responseStream.append(INVALID_METHOD_MESSAGE + "; got " + method);
-			httpResponse.setHeader("Access-Control-Allow-Methods", "POST DELETE OPTIONS");
+			httpResponse.setHeader("Access-Control-Allow-Methods", "POST, DELETE, OPTIONS");
 			statusCode = HttpServletResponse.SC_METHOD_NOT_ALLOWED;
 		}
 		httpResponse.setStatus(statusCode);
