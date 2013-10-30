@@ -21,7 +21,7 @@ import edu.stanford.isis.epad.common.util.EPADConfig;
 import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epadws.EPadWebServerVersion;
 import edu.stanford.isis.epadws.processing.mysql.MySqlInstance;
-import edu.stanford.isis.epadws.server.managers.pipeline.PipelineFactory;
+import edu.stanford.isis.epadws.processing.pipeline.PipelineFactory;
 import edu.stanford.isis.epadws.xnat.XNATUtil;
 
 /**

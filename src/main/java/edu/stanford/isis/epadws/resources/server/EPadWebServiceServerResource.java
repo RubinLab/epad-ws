@@ -9,8 +9,8 @@ import edu.stanford.isis.epad.common.plugins.impl.EPadPluginImpl;
 import edu.stanford.isis.epad.common.util.EPADConfig;
 import edu.stanford.isis.epadws.EPadWebServerVersion;
 import edu.stanford.isis.epadws.processing.mysql.MySqlInstance;
+import edu.stanford.isis.epadws.processing.pipeline.PipelineFactory;
 import edu.stanford.isis.epadws.resources.EPadWebServiceResource;
-import edu.stanford.isis.epadws.server.managers.pipeline.PipelineFactory;
 
 /**
  * Resource representing an ePAD Web Server.

@@ -13,7 +13,7 @@ import org.eclipse.jetty.server.handler.AbstractHandler;
 
 import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epad.common.util.JsonHelper;
-import edu.stanford.isis.epadws.processing.pipeline.DicomDeleteTask;
+import edu.stanford.isis.epadws.processing.pipeline.task.DicomDeleteTask;
 import edu.stanford.isis.epadws.xnat.XNATUtil;
 
 /**

@@ -14,7 +14,7 @@ import org.restlet.data.Status;
 import org.restlet.resource.Get;
 
 import edu.stanford.isis.epad.common.util.EPADTools;
-import edu.stanford.isis.epadws.processing.pipeline.DicomHeadersTask;
+import edu.stanford.isis.epadws.processing.pipeline.task.DicomHeadersTask;
 
 public class DICOMHeadersServerResource extends BaseServerResource
 {

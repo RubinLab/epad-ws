@@ -12,7 +12,7 @@ import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epad.common.util.FileKey;
 import edu.stanford.isis.epad.common.util.EPADFileUtils;
 import edu.stanford.isis.epad.common.util.ResourceUtils;
-import edu.stanford.isis.epadws.processing.model.DbState;
+import edu.stanford.isis.epadws.processing.model.DatabaseState;
 
 /**
  * @author amsnyder
@@ -30,7 +30,7 @@ public class MySqlInstance
 	private MySqlConnectionPool connectionPool;
 	private MySqlQueries mySqlQueries;
 
-	private final AtomicReference<DbState> dbState = new AtomicReference<DbState>(DbState.INIT);
+	private final AtomicReference<DatabaseState> dbState = new AtomicReference<DatabaseState>(DatabaseState.INIT);
 
 	private long startupTime = -1;
 
@@ -55,14 +55,14 @@ public class MySqlInstance
 
 		} catch (Exception e) {
 			logger.sever("Failed to init connection pool to database database", e);
-			dbState.set(DbState.ERROR);
+			dbState.set(DatabaseState.ERROR);
 		}
 	}
 
 	public void startup()
 	{
 		try {
-			dbState.set(DbState.STARTING);
+			dbState.set(DatabaseState.STARTING);
 			long time = System.currentTimeMillis();
 
 			if (!tablesUpToDate()) {
@@ -74,12 +74,12 @@ public class MySqlInstance
 
 			startupTime = System.currentTimeMillis() - time;
 
-			dbState.set(DbState.READY);
+			dbState.set(DatabaseState.READY);
 			logger.info("Database took " + startupTime + " ms to start.");
 
 		} catch (Exception e) {
 			logger.sever("Failed to start-up database", e);
-			dbState.set(DbState.ERROR);
+			dbState.set(DatabaseState.ERROR);
 		}
 	}
 
@@ -188,7 +188,7 @@ public class MySqlInstance
 
 	public void shutdown()
 	{
-		dbState.set(DbState.SHUTDOWN);
+		dbState.set(DatabaseState.SHUTDOWN);
 		long time = System.currentTimeMillis();
 		logger.info("Shutting down database.");
 
@@ -232,7 +232,7 @@ public class MySqlInstance
 
 	public Connection getConnection() throws SQLException
 	{
-		if (dbState.get() == DbState.READY || dbState.get() == DbState.STARTING) {
+		if (dbState.get() == DatabaseState.READY || dbState.get() == DatabaseState.STARTING) {
 			Connection newConnection = connectionPool.getConnection();
 			if (newConnection.isClosed()) {
 				logger.info("MySqlInstance.getConnection returning closed connection");

@@ -23,7 +23,7 @@ import edu.stanford.isis.epad.common.dicom.DICOMElementResult;
 import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epad.common.util.JsonHelper;
 import edu.stanford.isis.epad.common.util.EPADTools;
-import edu.stanford.isis.epadws.processing.pipeline.DicomHeadersTask;
+import edu.stanford.isis.epadws.processing.pipeline.task.DicomHeadersTask;
 import edu.stanford.isis.epadws.xnat.XNATUtil;
 
 /**

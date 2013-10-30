@@ -7,7 +7,6 @@ package edu.stanford.isis.epadws.processing.mysql;
  */
 public class MySqlCalls
 {
-
 	private MySqlCalls()
 	{
 	}

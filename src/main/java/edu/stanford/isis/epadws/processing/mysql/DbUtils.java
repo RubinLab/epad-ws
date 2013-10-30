@@ -31,7 +31,6 @@ import edu.stanford.isis.epad.common.util.ResourceUtils;
  */
 public class DbUtils
 {
-
 	private static EPADLogger logger = EPADLogger.getInstance();
 
 	private DbUtils()
@@ -91,7 +90,6 @@ public class DbUtils
 	 */
 	public static String getDebugData(ResultSet rs)
 	{
-
 		try {
 			StringBuilder sb = new StringBuilder();
 
@@ -230,7 +228,6 @@ public class DbUtils
 	 */
 	public static String makeThumbnailFilePath(Map<String, String> tags)
 	{
-
 		DicomSeriesUID seriesUID = new DicomSeriesUID(tags.get(DicomTagFileUtils.SERIES_UID));
 		DicomStudyUID studyUID = new DicomStudyUID(tags.get(DicomTagFileUtils.STUDY_UID));
 
@@ -287,11 +284,8 @@ public class DbUtils
 			if (currPart.length() > 0) {
 				// retVal.add(currPart.toUpperCase()+";");
 				retVal.add(currPart + ";");
-				// System.out.println(currPart);
 			}
-		}// for
-
+		}
 		return retVal;
 	}
-
 }

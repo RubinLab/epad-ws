@@ -19,7 +19,7 @@ public class SeriesOrderStatus
 
 	private final SeriesOrder seriesOrder;
 
-	private ProcessingState state = ProcessingState.NEW;
+	private ImageProcessingState state = ImageProcessingState.NEW;
 
 	public SeriesOrderStatus(SeriesOrder seriesOrder)
 	{
@@ -35,12 +35,12 @@ public class SeriesOrderStatus
 		return seriesOrder;
 	}
 
-	public void setState(ProcessingState pState)
+	public void setState(ImageProcessingState pState)
 	{
 		state = pState;
 	}
 
-	public ProcessingState getProcessingState()
+	public ImageProcessingState getProcessingState()
 	{
 		return state;
 	}

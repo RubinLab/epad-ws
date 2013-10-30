@@ -15,7 +15,7 @@ public class SeriesOrder
 {
 	private static final EPADLogger logger = EPADLogger.getInstance();
 
-	private final ArrayList<ImageEntry> instances;
+	private final ArrayList<DicomImageEntry> instances;
 	private final String seriesUID;
 
 	public SeriesOrder(int numInstance, String seriesUID)
@@ -29,7 +29,7 @@ public class SeriesOrder
 			instanceSize = 2 * numInstance;
 		}
 
-		instances = new ArrayList<ImageEntry>(instanceSize);
+		instances = new ArrayList<DicomImageEntry>(instanceSize);
 		for (int i = 0; i < instanceSize + 1; i++) {
 			instances.add(null);
 		}
@@ -50,14 +50,14 @@ public class SeriesOrder
 		return instances.get(index) != null;
 	}
 
-	public int set(ImageEntry entry)
+	public int set(DicomImageEntry entry)
 	{
 		int index = entry.getInstanceNum();
 		instances.set(index, entry);
 		return index;
 	}
 
-	public ImageEntry getByInstanceNo(int index) throws Exception
+	public DicomImageEntry getByInstanceNo(int index) throws Exception
 	{
 		try {
 			if (!hasInstance(index)) {
@@ -132,7 +132,7 @@ public class SeriesOrder
 	 */
 	private void addNewImage(int instNum, String sopInstanceUID)
 	{
-		ImageEntry imageEntry = new ImageEntry(instNum, sopInstanceUID);
+		DicomImageEntry imageEntry = new DicomImageEntry(instNum, sopInstanceUID);
 		if (!hasInstance(instNum)) {
 			logger.info("[TEMP LOG-DEBUGGING] adding: " + instNum + " sopInstanceUID: " + sopInstanceUID);
 
