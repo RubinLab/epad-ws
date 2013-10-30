@@ -25,7 +25,7 @@ import edu.stanford.isis.epadws.processing.pipeline.watcher.PipelineStatusWatche
 import edu.stanford.isis.epadws.processing.pipeline.watcher.UploadDirWatcher;
 
 /**
- * A Singleton class to get queues and objects needed by pipeline classes.
+ * A singleton class to get queues and objects needed by pipeline classes.
  */
 public class PipelineFactory
 {
@@ -211,5 +211,4 @@ public class PipelineFactory
 	{
 		return uploadDirWatcher.getErrorFileCount();
 	}
-
 }

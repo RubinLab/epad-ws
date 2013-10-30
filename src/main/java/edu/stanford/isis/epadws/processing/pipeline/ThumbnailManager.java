@@ -172,7 +172,6 @@ public class ThumbnailManager
 	 */
 	public void writeThumbnailIfNeeded(Map<String, String> tags, File dcmFile)
 	{
-
 		String studyId = tags.get(DicomTagFileUtils.STUDY_UID);
 		String seriesId = tags.get(DicomTagFileUtils.SERIES_UID);
 
@@ -201,9 +200,8 @@ public class ThumbnailManager
 			} else {
 				logger.info("WARNING! Failed to write thumbnail.  " + returnMsg);
 			}
-		}// if
-
-	}// writeThumbnailIfNeeded
+		}
+	}
 
 	/**
 	 * Copy the generic icon there until something better is ready.
@@ -218,19 +216,18 @@ public class ThumbnailManager
 		} catch (IOException e) {
 			logger.warning("Failed to place generic icon to: " + thumbnailFile.getAbsolutePath(), e);
 		}
-
-	}// putGenericIcon
+	}
 
 	static class ThumbnailInfo
 	{
-		final String studyId;
-		final String seriesId;
-		final String thumbnailPath;
+		public final String studyId;
+		public final String seriesId;
+		public final String thumbnailPath;
 
-		ThumbnailStatus status;
-		int minOrder = -1;
-		int maxOrder = -1;
-		int lastOrder = -1;
+		public ThumbnailStatus status;
+		private int minOrder = -1;
+		private int maxOrder = -1;
+		private int lastOrder = -1;
 
 		ThumbnailInfo(String studyId, String seriesId)
 		{
@@ -318,11 +315,9 @@ public class ThumbnailManager
 		{
 			status = tStatus;
 		}
-
 	}
 
 	static enum ThumbnailStatus {
 		NO_THUMBNAIL, PRE_EXISTING_THUMBNAIL, NEW_SERIES_HAS_GOOD_THUMBNAIL, NEW_SERIES_NEEDS_BETTER_THUMBNAIL;
 	}
-
 }

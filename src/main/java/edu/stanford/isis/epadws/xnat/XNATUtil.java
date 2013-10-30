@@ -31,7 +31,20 @@ public class XNATUtil
 
 	private static final String XNAT_SESSION_BASE = "/xnat/data/JSESSION";
 	private static final String LOGIN_EXCEPTION_MESSAGE = "Internal login error";
-	private static final String XNAT_LOGIN_ERROR_MESSAGE = "XNAT login not successful";
+	private static final String XNAT_UNAUTHORIZED_MESSAGE = "XNAT login not successful";
+	private static final String XNAT_LOGIN_ERROR_MESSAGE = "Unexpected XNAT login response";
+
+	public static final class XNATSessionResponse
+	{
+		public final int statusCode;
+		public final String response;
+
+		public XNATSessionResponse(int responseCode, String response)
+		{
+			this.statusCode = responseCode;
+			this.response = response;
+		}
+	}
 
 	/**
 	 * 
@@ -44,8 +57,7 @@ public class XNATUtil
 	 * @throws HttpException
 	 * @throws IllegalArgumentException
 	 */
-	public static String invokeXNATSessionIDService(HttpServletRequest httpRequest, HttpServletResponse httpResponse)
-			throws IOException
+	public static XNATSessionResponse invokeXNATSessionIDService(HttpServletRequest httpRequest) throws IOException
 	{
 		String xnatHost = config.getStringConfigurationParameter("XNATServer");
 		int xnatPort = config.getIntegerConfigurationParameter("XNATPort");
@@ -55,7 +67,7 @@ public class XNATUtil
 		String username = extractUserNameFromAuthorizationHeader(httpRequest);
 		String password = extractPasswordFromAuthorizationHeader(httpRequest);
 		String authString = buildAuthorizatonString(username, password);
-		String result = "";
+		XNATSessionResponse xnatSessionResponse;
 
 		log.info("Invoking XNAT session service at " + xnatSessionURL);
 		postMethod.setRequestHeader("Authorization", "Basic " + authString);
@@ -85,22 +97,24 @@ public class XNATUtil
 				}
 				String jsessionID = sb.toString();
 				log.info("JSESSIONID returned from XNAT");
-				result = jsessionID;
-				httpResponse.setStatus(HttpServletResponse.SC_OK);
+				xnatSessionResponse = new XNATSessionResponse(HttpServletResponse.SC_OK, jsessionID);
 			} catch (IOException e) {
 				log.warning(LOGIN_EXCEPTION_MESSAGE, e);
-				result = LOGIN_EXCEPTION_MESSAGE + ": " + e.getMessage();
-				httpResponse.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+				xnatSessionResponse = new XNATSessionResponse(HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
+						LOGIN_EXCEPTION_MESSAGE + ": " + e.getMessage());
 			} finally {
 				if (isr != null)
 					isr.close();
 			}
+		} else if (statusCode == HttpServletResponse.SC_UNAUTHORIZED) {
+			log.warning(XNAT_UNAUTHORIZED_MESSAGE);
+			xnatSessionResponse = new XNATSessionResponse(statusCode, XNAT_UNAUTHORIZED_MESSAGE);
 		} else {
-			log.warning(XNAT_LOGIN_ERROR_MESSAGE + "; status code = " + statusCode);
-			result = XNAT_LOGIN_ERROR_MESSAGE + "; status code = " + statusCode;
-			httpResponse.setStatus(statusCode);
+			log.warning(XNAT_LOGIN_ERROR_MESSAGE + "; XNAT status code = " + statusCode);
+			xnatSessionResponse = new XNATSessionResponse(HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
+					XNAT_LOGIN_ERROR_MESSAGE + "; XNAT status code = " + statusCode);
 		}
-		return result;
+		return xnatSessionResponse;
 	}
 
 	public static int invalidateXNATSessionID(HttpServletRequest httpRequest) throws IOException, HttpException
