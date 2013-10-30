@@ -3,7 +3,6 @@ package edu.stanford.isis.epadws.handlers.xnat;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.URLDecoder;
 
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletRequest;
@@ -88,7 +87,6 @@ public class XNATProjectHandler extends AbstractHandler
 		String queryString = httpRequest.getQueryString();
 
 		if (queryString != null) {
-			queryString = URLDecoder.decode(queryString, "UTF-8");
 			queryString = queryString.trim();
 			xnatURL = xnatURL.replaceFirst("/$", "") + "?" + queryString;
 		}
