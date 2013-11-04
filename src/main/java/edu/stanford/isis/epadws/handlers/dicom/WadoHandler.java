@@ -16,15 +16,9 @@ import org.eclipse.jetty.server.handler.AbstractHandler;
 
 import edu.stanford.isis.epad.common.util.EPADConfig;
 import edu.stanford.isis.epad.common.util.EPADLogger;
-import edu.stanford.isis.epadws.resources.server.WADOServerResource;
-import edu.stanford.isis.epadws.xnat.XNATUtil;
 
 /**
- * WandoHandler
- * 
- * @author ckurtz
- * 
- * @see WADOServerResource
+ * WADO Handler
  */
 public class WadoHandler extends AbstractHandler
 {
@@ -33,13 +27,21 @@ public class WadoHandler extends AbstractHandler
 
 	private static final String INTERNAL_EXCEPTION_MESSAGE = "Internal error";
 	private static final String MISSING_QUERY_MESSAGE = "No query in request";
-	private static final String INVALID_SESSION_TOKEN_MESSAGE = "Session token is invalid";
+
+	// private static final String INVALID_SESSION_TOKEN_MESSAGE = "Session token is invalid";
 
 	@Override
 	public void handle(String s, Request request, HttpServletRequest httpRequest, HttpServletResponse httpResponse)
 	{
 		ServletOutputStream responseStream = null;
+		String origin = httpRequest.getHeader("Origin"); // CORS request should have Origin header
 		int statusCode;
+
+		// Origin header indicates a possible CORS requests, which we support to allow drawing on canvas in GWT Dev Mode.
+		if (origin != null) {
+			httpResponse.setHeader("Access-Control-Allow-Origin", origin);
+			httpResponse.setHeader("Access-Control-Allow-Credentials", "true"); // Needed to allow cookies.
+		}
 
 		httpResponse.setContentType("image/jpeg");
 		request.setHandled(true);
@@ -47,7 +49,8 @@ public class WadoHandler extends AbstractHandler
 		try {
 			responseStream = httpResponse.getOutputStream();
 
-			if (XNATUtil.hasValidXNATSessionID(httpRequest)) {
+			// if (XNATUtil.hasValidXNATSessionID(httpRequest)) {
+			if (1 < 2) { // TODO Temporarily turn off authentication on this route.
 				String queryString = httpRequest.getQueryString();
 				queryString = URLDecoder.decode(queryString, "UTF-8");
 				if (queryString != null) {
@@ -58,13 +61,22 @@ public class WadoHandler extends AbstractHandler
 					statusCode = HttpServletResponse.SC_BAD_REQUEST;
 				}
 				responseStream.flush();
-			} else {
-				log.info(INVALID_SESSION_TOKEN_MESSAGE);
-				statusCode = HttpServletResponse.SC_UNAUTHORIZED;
+				// } else {
+				// log.info(INVALID_SESSION_TOKEN_MESSAGE);
+				// statusCode = HttpServletResponse.SC_UNAUTHORIZED;
+				// }
 			}
 		} catch (Throwable t) {
 			log.warning(INTERNAL_EXCEPTION_MESSAGE, t);
 			statusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+		} finally {
+			if (responseStream != null) {
+				try {
+					responseStream.flush();
+				} catch (IOException e) {
+					log.warning("Error flushing WADO response stream", e);
+				}
+			}
 		}
 		httpResponse.setStatus(statusCode);
 	}

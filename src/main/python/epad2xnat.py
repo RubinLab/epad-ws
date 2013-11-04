@@ -5,6 +5,9 @@
 #
 # Example usage:
 # epad2xnat.py -x epad-dev1.stanford.edu:8090 -r [xnat_project-name] -u [xnat_user] -p [xnat_password] ~/DicomProxy/resources/dicom/
+# For local testing, ZIP up ePAD DICOM  directory excluding PNG files:
+#   zip -r dev2.zip ~/DicomProxy/resources/dicom -x "*.png"
+# then transfer ZIP to local machine and upzip.
 #
 # See: https://wiki.xnat.org/display/XNAT16/Basic+DICOM+object+identification
 
