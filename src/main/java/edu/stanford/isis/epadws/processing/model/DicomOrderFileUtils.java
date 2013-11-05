@@ -5,7 +5,7 @@
  * Software License Agreement available at:
  *   http://epad.stanford.edu/license/
  */
-package edu.stanford.isis.epadws.processing.pipeline;
+package edu.stanford.isis.epadws.processing.model;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -19,6 +19,7 @@ import java.util.Map;
 import java.util.Set;
 
 import edu.stanford.isis.epad.common.dicom.DicomFormatUtil;
+import edu.stanford.isis.epad.common.dicom.DicomImageOrder;
 import edu.stanford.isis.epad.common.dicom.DicomTagFileUtils;
 import edu.stanford.isis.epad.common.util.EPADFileUtils;
 import edu.stanford.isis.epad.common.util.EPADLogger;

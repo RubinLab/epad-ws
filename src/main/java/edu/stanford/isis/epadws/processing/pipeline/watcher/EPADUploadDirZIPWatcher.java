@@ -16,19 +16,19 @@ import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
 
+import edu.stanford.isis.epad.common.util.EPADFileUtils;
 import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epad.common.util.FileKey;
-import edu.stanford.isis.epad.common.util.EPADFileUtils;
 import edu.stanford.isis.epad.common.util.ResourceUtils;
-import edu.stanford.isis.epadws.processing.pipeline.DicomUploadFile;
-import edu.stanford.isis.epadws.processing.pipeline.DicomUploadPipelineFiles;
+import edu.stanford.isis.epadws.processing.model.DicomUploadFile;
+import edu.stanford.isis.epadws.processing.model.DicomUploadPipelineFiles;
 import edu.stanford.isis.epadws.processing.pipeline.threads.ShutdownSignal;
 
 /**
- * This is a process the runs every five seconds. If it sees a new file in two consecutive runs with the same file size
- * it will assume the it is "DONE" and put it into the QUEUE for the unzipping files. This begins the process.
+ * This is a process the runs every five seconds. If it sees a new ZIP file in two consecutive runs with the same file
+ * size it will assume the it is "DONE" and put it into the QUEUE for the unzipping files. This begins the process.
  */
-public class UploadDirWatcher implements Runnable
+public class EPADUploadDirZIPWatcher implements Runnable
 {
 	public static final String UPLOAD_ROOT_DIR = ResourceUtils.getEPADWebServerUploadDir();
 	public static final int CHECK_INTERVAL = 5000; // check every 5 seconds.
@@ -53,7 +53,7 @@ public class UploadDirWatcher implements Runnable
 	private final Map<FileKey, Long> emptyDir = new HashMap<FileKey, Long>();
 	private static final long EMPTY_DIR_INTERVAL = 60 * 15 * 1000; // in milliseconds
 
-	public UploadDirWatcher(BlockingQueue<File> unzipQueue)
+	public EPADUploadDirZIPWatcher(BlockingQueue<File> unzipQueue)
 	{
 		this.unzipQueue = unzipQueue;
 	}

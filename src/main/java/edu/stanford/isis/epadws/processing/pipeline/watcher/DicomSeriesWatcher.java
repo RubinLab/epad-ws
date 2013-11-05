@@ -15,10 +15,10 @@ import edu.stanford.isis.epadws.processing.model.PngStatus;
 import edu.stanford.isis.epadws.processing.model.ImageProcessingState;
 import edu.stanford.isis.epadws.processing.model.SeriesOrder;
 import edu.stanford.isis.epadws.processing.model.SeriesOrderStatus;
+import edu.stanford.isis.epadws.processing.model.SeriesOrderTracker;
 import edu.stanford.isis.epadws.processing.persistence.Dcm3CheeDatabaseUtils;
 import edu.stanford.isis.epadws.processing.persistence.MySqlInstance;
 import edu.stanford.isis.epadws.processing.persistence.MySqlQueries;
-import edu.stanford.isis.epadws.processing.pipeline.SeriesOrderTracker;
 import edu.stanford.isis.epadws.processing.pipeline.task.GeneratorTask;
 import edu.stanford.isis.epadws.processing.pipeline.task.PNGGridGeneratorTask;
 import edu.stanford.isis.epadws.processing.pipeline.threads.ShutdownSignal;
@@ -28,7 +28,7 @@ import edu.stanford.isis.epadws.processing.pipeline.threads.ShutdownSignal;
  * 
  * @author amsnyder
  */
-public class SeriesWatcher implements Runnable
+public class DicomSeriesWatcher implements Runnable
 {
 	private final BlockingQueue<SeriesOrder> seriesQueue;
 	private final BlockingQueue<GeneratorTask> pngGeneratorTaskQueue;
@@ -40,7 +40,7 @@ public class SeriesWatcher implements Runnable
 
 	private final QueueAndWatcherManager queueAndWatcherManager = QueueAndWatcherManager.getInstance();
 
-	public SeriesWatcher(BlockingQueue<SeriesOrder> seriesQueue, BlockingQueue<GeneratorTask> pngGeneratorTaskQueue)
+	public DicomSeriesWatcher(BlockingQueue<SeriesOrder> seriesQueue, BlockingQueue<GeneratorTask> pngGeneratorTaskQueue)
 	{
 		this.seriesQueue = seriesQueue;
 		this.pngGeneratorTaskQueue = pngGeneratorTaskQueue;

@@ -5,7 +5,7 @@
  * Software License Agreement available at:
  *   http://epad.stanford.edu/license/
  */
-package edu.stanford.isis.epadws.processing.pipeline;
+package edu.stanford.isis.epadws.processing.model;
 
 import java.io.File;
 import java.util.ArrayList;

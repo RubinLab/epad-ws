@@ -21,6 +21,7 @@ import edu.stanford.isis.epad.common.util.EPADFileUtils;
 import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epad.common.util.FileKey;
 import edu.stanford.isis.epad.common.util.ResourceUtils;
+import edu.stanford.isis.epadws.processing.model.ThumbnailFileUtil;
 
 /**
  * This class manages the creation of thumbnails in the /resources/dicom directory.

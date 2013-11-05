@@ -16,21 +16,15 @@ import edu.stanford.isis.epad.common.util.ResourceUtils;
 import edu.stanford.isis.epadws.processing.pipeline.threads.ShutdownSignal;
 
 /**
- * Count the number of dicom files in the upload/temp directory. Write the results to the
- * /resources/dicom/pipeline.status file and also update the PipelineStatus class which is a single place for keeping
- * all this data.
+ * Count the number of DICOM files in the ./resources/upload/temp* directory. Write the results to the
+ * ./resources/dicom/pipeline.status file.
  */
 public class PipelineStatusWatcher implements Runnable
 {
 	private static final EPADLogger log = EPADLogger.getInstance();
 
-	public PipelineStatusWatcher()
-	{
-	}
-
 	public static void countDicomFileInUploadDir()
 	{
-
 		int nDcmFiles = EPADFileUtils.countFilesWithEnding(ResourceUtils.getEPADWebServerUploadDir(), ".dcm");
 		StringBuilder sb = new StringBuilder();
 		sb.append("files remaining: ").append(nDcmFiles).append("\n");

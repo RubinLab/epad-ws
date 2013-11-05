@@ -51,7 +51,7 @@ public class JPEGThumbnailTask implements Callable<File>
 		BufferedReader br = null;
 
 		try {
-			log.info("start JPEGTask");
+			log.info("Startiing JPEG thumbnail task...");
 
 			// File tagFile = getTagFileFromDcm(file);
 			// Map<String,String> tags = DicomTagFileUtils.readTagFile(tagFile);

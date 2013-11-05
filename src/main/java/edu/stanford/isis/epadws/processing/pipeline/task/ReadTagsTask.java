@@ -17,7 +17,7 @@ import java.util.concurrent.Callable;
 import edu.stanford.isis.epad.common.util.EPADFileUtils;
 import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epad.common.util.ResourceUtils;
-import edu.stanford.isis.epadws.processing.pipeline.DicomUploadPipelineFiles;
+import edu.stanford.isis.epadws.processing.model.DicomUploadPipelineFiles;
 
 public class ReadTagsTask implements Callable<File>
 {

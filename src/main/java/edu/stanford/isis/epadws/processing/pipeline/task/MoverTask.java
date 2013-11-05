@@ -13,14 +13,14 @@ import java.util.Set;
 import java.util.concurrent.Callable;
 
 import edu.stanford.isis.epad.common.dicom.DicomFormatUtil;
+import edu.stanford.isis.epad.common.dicom.DicomSeriesFileUtils;
 import edu.stanford.isis.epad.common.dicom.DicomTagFileUtils;
 import edu.stanford.isis.epad.common.util.EPADFileUtils;
 import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epad.common.util.LockFileUtils;
 import edu.stanford.isis.epad.common.util.RsnaSearchResultMap;
-import edu.stanford.isis.epadws.processing.pipeline.DicomSeriesFileUtils;
+import edu.stanford.isis.epadws.processing.model.DicomUploadPipelineFiles;
 import edu.stanford.isis.epadws.processing.pipeline.ThumbnailManager;
-import edu.stanford.isis.epadws.processing.pipeline.DicomUploadPipelineFiles;
 
 public class MoverTask implements Callable<File>
 {
@@ -70,7 +70,6 @@ public class MoverTask implements Callable<File>
 			createImageFiles(tags, movedFile);
 
 			return movedFile;
-
 		} catch (Exception e) {
 			pipeline.addErrorFile(file, "MoverTask error.", e);
 			e.printStackTrace();// temp

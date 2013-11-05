@@ -8,25 +8,25 @@ import java.util.ConcurrentModificationException;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
+import edu.stanford.isis.epad.common.util.EPADFileUtils;
 import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epad.common.util.FileKey;
-import edu.stanford.isis.epad.common.util.EPADFileUtils;
 import edu.stanford.isis.epad.common.util.ResourceUtils;
-import edu.stanford.isis.epadws.processing.pipeline.DicomUploadFile;
+import edu.stanford.isis.epadws.processing.model.DicomUploadFile;
 import edu.stanford.isis.epadws.processing.pipeline.task.DicomSendTask;
 import edu.stanford.isis.epadws.processing.pipeline.threads.ShutdownSignal;
 
 /**
- * Watches for a new directory and a zip file. When a new directory is found it puts a "dir.found" file into it and
- * passes it to the DicomSendTask.
+ * Watches for a new directory and a ZIP file in the ePAD upload directory. When a new directory is found it puts a
+ * "dir.found" file into it and passes it to the {@DicomSendTask}.
  * 
  * @author amsnyder
  */
-public class MySqlUploadDirWatcher implements Runnable
+public class EPADUploadDirWatcher implements Runnable
 {
-	public static final int CHECK_INTERVAL = 5000; // check every 5 seconds.
+	public static final int CHECK_INTERVAL = 5000; // Check every 5 seconds
 	public static final String FOUND_DIR_FILE = "dir.found";
-	private static final long MAX_WAIT_TIME = 120000; // in milliseconds
+	private static final long MAX_WAIT_TIME = 120000; // 120 seconds
 	private final EPADLogger log = EPADLogger.getInstance();
 
 	@Override
@@ -47,8 +47,8 @@ public class MySqlUploadDirWatcher implements Runnable
 							processDir(currDir);
 						}
 					}
-				} catch (ConcurrentModificationException cme) {
-					log.warning("Upload Watch Thread had: ", cme);
+				} catch (ConcurrentModificationException e) {
+					log.warning("Upload Watch Thread had error: ", e);
 				}
 				if (shutdownSignal.hasShutdown()) {
 					return;
@@ -154,8 +154,7 @@ public class MySqlUploadDirWatcher implements Runnable
 	private File waitForZipUploadComplete(File dir) throws InterruptedException
 	{
 		log.info("MySQL waiting for completion of: " + dir.getAbsolutePath());
-		// wait for the zip file to complete.
-		long zipFileStartWaitTime = System.currentTimeMillis();
+		long zipFileStartWaitTime = System.currentTimeMillis(); // Wait for the zip file to complete.
 		long prevZipFileSize = -1;
 		long prevZipFileLastUpdated = 0;
 
@@ -168,8 +167,7 @@ public class MySqlUploadDirWatcher implements Runnable
 				}
 			});
 
-			// should have only one zip file in directory.
-			if (zipFiles == null) {
+			if (zipFiles == null) { // Should have only one zip file in directory.
 				throw new IllegalStateException("No zip file in directory. dir=" + dir.getAbsolutePath());
 			} else if (zipFiles.length > 1) {
 				int numZipFiles = zipFiles.length;
@@ -184,19 +182,16 @@ public class MySqlUploadDirWatcher implements Runnable
 			long currZipFileLastUpdated = zipFile.getLastUpdated();
 
 			if (prevZipFileSize == currZipFileSize && prevZipFileLastUpdated == currZipFileLastUpdated) {
-				// uploading complete.
-				return zipFileKey.getFile();
+				return zipFileKey.getFile(); // uploading complete.
 			} else {
 				prevZipFileSize = currZipFileSize;
 				prevZipFileLastUpdated = currZipFileLastUpdated;
 			}
-
 			if ((System.currentTimeMillis() - zipFileStartWaitTime) > MAX_WAIT_TIME) {
 				throw new IllegalStateException("Zip file upload time exceeded.");
 			}
-			// sleep one second.
 			Thread.sleep(1000);
-		}// while
+		}
 	}
 
 	private void unzipFiles(File zipFile) throws IOException
@@ -236,5 +231,4 @@ public class MySqlUploadDirWatcher implements Runnable
 
 		return sb.toString();
 	}
-
 }

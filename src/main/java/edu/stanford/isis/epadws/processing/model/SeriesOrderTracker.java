@@ -1,12 +1,10 @@
-package edu.stanford.isis.epadws.processing.pipeline;
+package edu.stanford.isis.epadws.processing.model;
 
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
-import edu.stanford.isis.epadws.processing.model.SeriesOrder;
-import edu.stanford.isis.epadws.processing.model.SeriesOrderStatus;
 import edu.stanford.isis.epadws.processing.persistence.MySqlInstance;
 import edu.stanford.isis.epadws.processing.persistence.MySqlQueries;
 

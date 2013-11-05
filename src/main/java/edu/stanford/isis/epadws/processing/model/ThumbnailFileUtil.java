@@ -5,7 +5,7 @@
  * Software License Agreement available at:
  *   http://epad.stanford.edu/license/
  */
-package edu.stanford.isis.epadws.processing.pipeline;
+package edu.stanford.isis.epadws.processing.model;
 
 import java.awt.Color;
 import java.awt.Graphics2D;
@@ -27,6 +27,8 @@ import javax.swing.ImageIcon;
  import com.sun.image.codec.jpeg.JPEGCodec;
  import com.sun.image.codec.jpeg.JPEGImageEncoder;
  */
+
+
 import edu.stanford.isis.epad.common.dicom.DicomFormatUtil;
 import edu.stanford.isis.epad.common.util.EPADLogger;
 
@@ -191,7 +193,6 @@ public class ThumbnailFileUtil
 
 			return sb.toString();
 		}
-		return ""; // success
+		return "";
 	}
-
-}// class
+}

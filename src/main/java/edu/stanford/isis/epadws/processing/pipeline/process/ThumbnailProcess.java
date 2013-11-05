@@ -15,30 +15,29 @@ import java.util.concurrent.ExecutorService;
 
 import edu.stanford.isis.epadws.processing.pipeline.task.JPEGThumbnailTask;
 
-/**
- *
- */
 public class ThumbnailProcess extends AbstractPipelineProcess<File>
 {
+	public ThumbnailProcess(ExecutorService exec, BlockingQueue<File> inQueue, BlockingQueue<File> outQueue)
+	{
+		super(exec, inQueue, outQueue);
+	}
 
-    public ThumbnailProcess(ExecutorService exec, BlockingQueue<File> inQueue, BlockingQueue<File> outQueue) {
-        super(exec, inQueue, outQueue);
-    }
+	@Override
+	public Callable<File> getTask(File submitFile)
+	{
+		return new JPEGThumbnailTask(submitFile);
+	}
 
-    @Override
-    public Callable<File> getTask(File submitFile) {
-        return new JPEGThumbnailTask(submitFile);
-    }
+	@Override
+	public void process() throws InterruptedException, ExecutionException
+	{
+		submitTask();
+		forwardCompletedTasks();
+	}
 
-    @Override
-    public void process() throws InterruptedException, ExecutionException {
-        submitTask();
-        forwardCompletedTasks();
-    }
-
-    @Override
-    public String getProcessName() {
-        return "Thumbnail";
-    }
-
+	@Override
+	public String getProcessName()
+	{
+		return "Thumbnail";
+	}
 }

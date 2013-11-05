@@ -18,10 +18,6 @@ import java.util.concurrent.TimeUnit;
 
 import edu.stanford.isis.epadws.processing.pipeline.task.UnzipTask;
 
-/**
- * Read the queue and process create the tasks.
- * 
- */
 public class UnzipProcess extends AbstractPipelineProcess<List<File>>
 {
 	public UnzipProcess(ExecutorService unzipExec, BlockingQueue<File> unzipQueue, BlockingQueue<File> tagQueue)

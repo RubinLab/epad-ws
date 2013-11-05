@@ -17,7 +17,6 @@ import edu.stanford.isis.epadws.processing.pipeline.task.ReadTagsTask;
 
 public class ReadTagsProcess extends AbstractPipelineProcess<File>
 {
-
 	public ReadTagsProcess(ExecutorService tagExec, BlockingQueue<File> tagQueue, BlockingQueue<File> moverQueue)
 	{
 		super(tagExec, tagQueue, moverQueue);
@@ -42,5 +41,4 @@ public class ReadTagsProcess extends AbstractPipelineProcess<File>
 	{
 		return "Tags";
 	}
-
 }

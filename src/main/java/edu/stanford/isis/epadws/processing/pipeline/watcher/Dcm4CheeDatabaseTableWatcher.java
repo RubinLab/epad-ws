@@ -6,9 +6,9 @@ import java.util.concurrent.BlockingQueue;
 
 import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epadws.processing.model.SeriesOrder;
+import edu.stanford.isis.epadws.processing.model.SeriesOrderTracker;
 import edu.stanford.isis.epadws.processing.persistence.MySqlInstance;
 import edu.stanford.isis.epadws.processing.persistence.MySqlQueries;
-import edu.stanford.isis.epadws.processing.pipeline.SeriesOrderTracker;
 import edu.stanford.isis.epadws.processing.pipeline.threads.ShutdownSignal;
 
 /**

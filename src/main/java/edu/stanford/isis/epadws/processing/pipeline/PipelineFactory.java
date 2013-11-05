@@ -22,7 +22,7 @@ import edu.stanford.isis.epadws.processing.pipeline.process.ThumbnailProcess;
 import edu.stanford.isis.epadws.processing.pipeline.process.UnzipProcess;
 import edu.stanford.isis.epadws.processing.pipeline.threads.OrderFileThread;
 import edu.stanford.isis.epadws.processing.pipeline.watcher.PipelineStatusWatcher;
-import edu.stanford.isis.epadws.processing.pipeline.watcher.UploadDirWatcher;
+import edu.stanford.isis.epadws.processing.pipeline.watcher.EPADUploadDirZIPWatcher;
 
 /**
  * A singleton class to get queues and objects needed by pipeline classes.
@@ -52,7 +52,7 @@ public class PipelineFactory
 	 */
 	private static final PipelineFactory ourInstance = new PipelineFactory();
 
-	private final UploadDirWatcher uploadDirWatcher;
+	private final EPADUploadDirZIPWatcher uploadDirWatcher;
 	private final UnzipProcess unzipProcess;
 	private final ReadTagsProcess readTagsProcess;
 	private final MoverProcess moverProcess;
@@ -68,7 +68,7 @@ public class PipelineFactory
 	{
 		ThumbnailManager.getFirstInstance(thumbnailQueue);
 
-		uploadDirWatcher = new UploadDirWatcher(unzipQueue);
+		uploadDirWatcher = new EPADUploadDirZIPWatcher(unzipQueue);
 		unzipProcess = new UnzipProcess(unzipService, unzipQueue, taggerQueue);
 		readTagsProcess = new ReadTagsProcess(taggerService, taggerQueue, moverQueue);
 		moverProcess = new MoverProcess(moverService, moverQueue, orderQueue);

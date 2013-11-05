@@ -13,11 +13,6 @@ import edu.stanford.isis.epad.common.util.EPADFileUtils;
 import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epad.common.util.ResourceUtils;
 
-/**
- * 
- * 
- * @author amsnyder
- */
 public class DicomSendTask implements Runnable
 {
 	private static EPADLogger logger = EPADLogger.getInstance();

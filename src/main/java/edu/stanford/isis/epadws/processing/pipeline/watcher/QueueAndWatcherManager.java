@@ -41,14 +41,14 @@ public class QueueAndWatcherManager
 	private final ExecutorService pngProcessExec = Executors.newSingleThreadExecutor();
 	private final ExecutorService uploadDirWatcherExec = Executors.newSingleThreadExecutor();
 
-	private static QueueAndWatcherManager ourInstance = new QueueAndWatcherManager();
-	private final Dcm4CheeDatabaseTableWatcher dbTableWatcher;
-	private final SeriesWatcher seriesWatcher;
+	private final Dcm4CheeDatabaseTableWatcher dcm4CheeDatabaseTableWatcher;
+	private final DicomSeriesWatcher seriesWatcher;
 	private final PngGeneratorProcess pngGeneratorProcess;
-
-	private final MySqlUploadDirWatcher uploadDirWatcher;
+	private final EPADUploadDirWatcher epadUploadDirWatcher;
 
 	private final String dcm4cheeRootDir;
+
+	private static QueueAndWatcherManager ourInstance = new QueueAndWatcherManager();
 
 	public static QueueAndWatcherManager getInstance()
 	{
@@ -57,20 +57,20 @@ public class QueueAndWatcherManager
 
 	private QueueAndWatcherManager()
 	{
-		dbTableWatcher = new Dcm4CheeDatabaseTableWatcher(seriesWatchQueue);
-		seriesWatcher = new SeriesWatcher(seriesWatchQueue, pngGeneratorTaskQueue);
+		dcm4CheeDatabaseTableWatcher = new Dcm4CheeDatabaseTableWatcher(seriesWatchQueue);
+		seriesWatcher = new DicomSeriesWatcher(seriesWatchQueue, pngGeneratorTaskQueue);
 		pngGeneratorProcess = new PngGeneratorProcess(pngGeneratorTaskQueue);
-		uploadDirWatcher = new MySqlUploadDirWatcher();
+		epadUploadDirWatcher = new EPADUploadDirWatcher();
 		dcm4cheeRootDir = EPADConfig.getInstance().getParam("dcm4cheeDirRoot");
 	}
 
 	public void buildAndStart()
 	{
 		logger.info("Starting PNG generator pipeline.");
-		dbTableWatcherExec.execute(dbTableWatcher);
+		dbTableWatcherExec.execute(dcm4CheeDatabaseTableWatcher);
 		seriesWatcherExec.execute(seriesWatcher);
 		pngProcessExec.execute(pngGeneratorProcess);
-		uploadDirWatcherExec.execute(uploadDirWatcher);
+		uploadDirWatcherExec.execute(epadUploadDirWatcher);
 
 		logger.info("Starting login checker.");
 	}
