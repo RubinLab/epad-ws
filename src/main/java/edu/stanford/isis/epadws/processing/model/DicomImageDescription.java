@@ -5,19 +5,20 @@ package edu.stanford.isis.epadws.processing.model;
  * 
  * @author amsnyder
  */
-public class DicomImageEntry
+public class DicomImageDescription
 {
 	private final int instanceNum;
 	private final String sopInstanceUID;
+	private final String errorMessage = null;
 	private String pngFilePath = null;
 	private String dicomHeaderFilePath = null;
-	private ImageProcessingState state = ImageProcessingState.NEW;
-	private final String errorMessage = null;
+	private DicomImageProcessingState state;
 
-	public DicomImageEntry(int instanceNum, String sopInstanceUID)
+	public DicomImageDescription(int instanceNum, String sopInstanceUID)
 	{
 		this.instanceNum = instanceNum;
 		this.sopInstanceUID = sopInstanceUID;
+		state = DicomImageProcessingState.NEW;
 	}
 
 	public int getInstanceNum()
@@ -30,12 +31,12 @@ public class DicomImageEntry
 		return sopInstanceUID;
 	}
 
-	public ImageProcessingState getState()
+	public DicomImageProcessingState getState()
 	{
 		return state;
 	}
 
-	public void setState(ImageProcessingState newState)
+	public void setState(DicomImageProcessingState newState)
 	{
 		state = newState;
 	}

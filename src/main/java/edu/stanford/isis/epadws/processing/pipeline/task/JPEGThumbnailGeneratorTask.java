@@ -31,13 +31,13 @@ import edu.stanford.isis.epadws.processing.pipeline.ThumbnailManager;
 /**
  * Given a DICOM file create the thumbnail file.
  */
-public class JPEGThumbnailTask implements Callable<File>
+public class JPEGThumbnailGeneratorTask implements Callable<File>
 {
 	static private final EPADLogger log = EPADLogger.getInstance();
 
 	private final File file;
 
-	public JPEGThumbnailTask(File file)
+	public JPEGThumbnailGeneratorTask(File file)
 	{
 		this.file = file;
 	}
@@ -51,7 +51,7 @@ public class JPEGThumbnailTask implements Callable<File>
 		BufferedReader br = null;
 
 		try {
-			log.info("Startiing JPEG thumbnail task...");
+			log.info("Starting JPEG thumbnail generator task...");
 
 			// File tagFile = getTagFileFromDcm(file);
 			// Map<String,String> tags = DicomTagFileUtils.readTagFile(tagFile);
@@ -121,7 +121,6 @@ public class JPEGThumbnailTask implements Callable<File>
 				}
 			}
 		}
-
 		return null;
 	}
 
@@ -138,9 +137,6 @@ public class JPEGThumbnailTask implements Callable<File>
 	{
 
 		try {
-
-			// This might be the difference.
-
 			String leveledJPegDir = file.getParent();
 			String name = file.getName();
 
@@ -187,7 +183,6 @@ public class JPEGThumbnailTask implements Callable<File>
 				} catch (InterruptedException e) {
 					log.warning("Couldn't get tags for: " + file.getAbsolutePath(), e);
 				}
-
 			} catch (IOException ioe) {
 				log.warning("Failed to make leveled image (" + width + "," + level + ")", ioe);
 			} finally {
@@ -210,7 +205,6 @@ public class JPEGThumbnailTask implements Callable<File>
 				}
 			}
 			log.info("JPEGTask: finished writing: " + jpegPath);
-
 		} catch (Exception e) {
 			log.sever("Failed to create JPEG", e);
 		}

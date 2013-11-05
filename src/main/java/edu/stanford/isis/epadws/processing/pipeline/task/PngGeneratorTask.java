@@ -47,8 +47,8 @@ public class PngGeneratorTask implements GeneratorTask
 		MySqlQueries queries = MySqlInstance.getInstance().getMysqlQueries();
 		File inputDICOMFile = dicomInputFile;
 		File outputPNGFile = pngOutputFile;
-		OutputStream outputPNGStream = null;
 		Map<String, String> epadFilesTable = new HashMap<String, String>();
+		OutputStream outputPNGStream = null;
 
 		try {
 			DicomReader instance = new DicomReader(inputDICOMFile);
@@ -67,7 +67,8 @@ public class PngGeneratorTask implements GeneratorTask
 
 			logger.info("Finished writing PNG file: " + outputPNGFile);
 			epadFilesTable = Dcm4CheeDatabaseUtils.createEPadFilesTableData(outputPNGFile);
-			queries.updateEpadFile(epadFilesTable.get("file_path"), PngProcessingStatus.DONE, getFileSize(epadFilesTable), "");
+			queries
+					.updateEpadFile(epadFilesTable.get("file_path"), PngProcessingStatus.DONE, getFileSize(epadFilesTable), "");
 		} catch (FileNotFoundException e) {
 			logger.warning("Failed to create packed PNG for: " + inputDICOMFile.getAbsolutePath(), e);
 			queries.updateEpadFile(epadFilesTable.get("file_path"), PngProcessingStatus.ERROR, 0, "Dicom file not found.");

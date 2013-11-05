@@ -19,14 +19,14 @@ import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epad.common.util.ResourceUtils;
 import edu.stanford.isis.epadws.processing.model.DicomUploadPipelineFiles;
 
-public class ReadTagsTask implements Callable<File>
+public class ReadDicomTagsTask implements Callable<File>
 {
 	private static final EPADLogger log = EPADLogger.getInstance();
 	private static final DicomUploadPipelineFiles pipeline = DicomUploadPipelineFiles.getInstance();
 
 	private final File file;
 
-	public ReadTagsTask(File file)
+	public ReadDicomTagsTask(File file)
 	{
 		this.file = file;
 	}
@@ -34,7 +34,6 @@ public class ReadTagsTask implements Callable<File>
 	@Override
 	public File call() throws Exception
 	{
-
 		// rename this file to something with a lower extension right now.
 		// file.renameTo(new File(file.getName().toLowerCase()));
 
@@ -67,8 +66,7 @@ public class ReadTagsTask implements Callable<File>
 				sb.append(line).append("\n");
 			}
 
-			// Wait to get exit value
-			try {
+			try { // Wait to get exit value
 				process.waitFor(); // keep.
 				// long totalTime = System.currentTimeMillis() - startTime;
 				// log.info("Tags exit value is: " + exitValue+" and took: "+totalTime+" ms");
@@ -106,5 +104,4 @@ public class ReadTagsTask implements Callable<File>
 		}
 		return dcmFilePath + ".tag";
 	}
-
 }

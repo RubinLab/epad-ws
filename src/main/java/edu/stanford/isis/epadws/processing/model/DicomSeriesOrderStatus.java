@@ -19,7 +19,7 @@ public class DicomSeriesOrderStatus
 
 	private final DicomSeriesOrder seriesOrder;
 
-	private ImageProcessingState state = ImageProcessingState.NEW;
+	private DicomImageProcessingState state = DicomImageProcessingState.NEW;
 
 	public DicomSeriesOrderStatus(DicomSeriesOrder seriesOrder)
 	{
@@ -35,12 +35,12 @@ public class DicomSeriesOrderStatus
 		return seriesOrder;
 	}
 
-	public void setState(ImageProcessingState pState)
+	public void setState(DicomImageProcessingState pState)
 	{
 		state = pState;
 	}
 
-	public ImageProcessingState getProcessingState()
+	public DicomImageProcessingState getProcessingState()
 	{
 		return state;
 	}

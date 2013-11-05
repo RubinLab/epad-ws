@@ -25,9 +25,7 @@ import edu.stanford.isis.epadws.processing.pipeline.ThumbnailManager;
 public class MoverTask implements Callable<File>
 {
 	private static final EPADLogger log = EPADLogger.getInstance();
-
 	private static final DicomUploadPipelineFiles pipeline = DicomUploadPipelineFiles.getInstance();
-
 	private final File file;
 
 	public MoverTask(File file)
@@ -63,19 +61,16 @@ public class MoverTask implements Callable<File>
 			RsnaSearchResultMap resultMap = RsnaSearchResultMap.getInstance();
 			resultMap.addResult(tags);
 
-			// write the series file if it doesn't exist already.
-			writeSeriesFileIfNeeded(tags, studyId, seriesId);
-
-			// write JPG and or 16-bit Png files.
-			createImageFiles(tags, movedFile);
+			writeSeriesFileIfNeeded(tags, studyId, seriesId); // Write the series file if it doesn't exist already.
+			createImageFiles(tags, movedFile); // Write JPG and or 16-bit Png files.
 
 			return movedFile;
 		} catch (Exception e) {
 			pipeline.addErrorFile(file, "MoverTask error.", e);
-			e.printStackTrace();// temp
-			return null;
+			log.warning("Error in mover task", e);
+			return null; // TODO Look at this.
 		}
-	}// call
+	}
 
 	/**
 	 * Creates a jpeg and/or a two-channel png file for each .dicom file.
@@ -88,10 +83,8 @@ public class MoverTask implements Callable<File>
 
 		ThumbnailManager thumbnailManager = ThumbnailManager.getInstance();
 		thumbnailManager.writeJpgFile(tags, dcmFile);
-
-		// ToDo: If we are not doing this then remove pixelMed.jar file from project.
-
-	}// createJpgFile
+		// TODO If we are not doing this then remove pixelMed.jar file from project.
+	}
 
 	/**
 	 * It a *.series file for series doesn't already exist then write one.
@@ -102,7 +95,6 @@ public class MoverTask implements Callable<File>
 	 */
 	private void writeSeriesFileIfNeeded(Map<String, String> tags, String studyId, String seriesId)
 	{
-
 		File studyDir = new File(DicomFormatUtil.createDicomDirPath(studyId));
 
 		String seriesFileName = DicomFormatUtil.formatUidToDir(seriesId);
@@ -127,7 +119,6 @@ public class MoverTask implements Callable<File>
 	 */
 	private static void debugMap(Map<String, String> tags, int maxTags)
 	{
-
 		int nTags = tags.size();
 		Set<String> keys = tags.keySet();
 		if (nTags < maxTags) {
@@ -139,11 +130,10 @@ public class MoverTask implements Callable<File>
 		for (String currKey : keys) {
 			i++;
 			sb.append("key[").append(i).append("]=").append(currKey).append(", ");
-
 			if (i > maxTags) {
 				break;
 			}
-		}// for
+		}
 		log.info("debugMap:  " + sb.toString());
 	}
 }

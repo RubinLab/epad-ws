@@ -38,17 +38,14 @@ public class DicomHeadersTask implements Runnable
 
 		try {
 			String[] command = { "./dcm2txt", "-w", "250", "-l", "250", dicomInputFile.getAbsolutePath() };
-
-			ProcessBuilder pb = new ProcessBuilder(command);
+			ProcessBuilder processBuilder = new ProcessBuilder(command);
 			String dicomBinDir = ResourceUtils.getEPADWebServerDICOMBinDir();
-			pb.directory(new File(dicomBinDir));
 
-			process = pb.start();
-			process.getOutputStream();// get the output stream.
-			// Read out dir output
+			processBuilder.directory(new File(dicomBinDir));
+			process = processBuilder.start();
+			process.getOutputStream();
 			is = process.getInputStream();
 			isr = new InputStreamReader(is);
-
 			br = new BufferedReader(isr);
 			String line;
 			StringBuilder sb = new StringBuilder();
@@ -63,16 +60,12 @@ public class DicomHeadersTask implements Runnable
 			}
 
 			boolean created = EPADFileUtils.createDirsAndFile(outputFile);
-			if (created) {
+			if (created)
 				logger.info("DICOMHeadersTask, using temporary file: " + outputFile.getAbsolutePath());
-			}
 
 			File tagFile = outputFile;
 			tagFileWriter = new FileWriter(tagFile);
 			tagFileWriter.write(sb.toString());
-			// tagFileWriter.flush();
-			// tagFileWriter.close();
-
 		} catch (Exception e) {
 			logger.warning("DicomHeadersTask failed to create DICOM tags file:" + e.getMessage());
 		} catch (OutOfMemoryError oome) {

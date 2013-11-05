@@ -12,7 +12,7 @@ import edu.stanford.isis.epad.common.util.EPADConfig;
 import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epad.common.util.ResourceUtils;
 import edu.stanford.isis.epadws.processing.model.DicomSeriesOrderTracker;
-import edu.stanford.isis.epadws.processing.model.ImageProcessingState;
+import edu.stanford.isis.epadws.processing.model.DicomImageProcessingState;
 import edu.stanford.isis.epadws.processing.model.PngProcessingStatus;
 import edu.stanford.isis.epadws.processing.model.DicomSeriesOrder;
 import edu.stanford.isis.epadws.processing.model.DicomSeriesOrderStatus;
@@ -83,16 +83,16 @@ public class Dcm4CheeSeriesWatcher implements Runnable
 						// SeriesOrder tracks instance order
 						currentSeriesOrder.updateImageDescriptions(unprocessedDICOMImageFileDescriptions);
 						currentSeriesOrderStatus.registerActivity();
-						currentSeriesOrderStatus.setState(ImageProcessingState.IN_PIPELINE);
+						currentSeriesOrderStatus.setState(DicomImageProcessingState.IN_PIPELINE);
 						queueAndWatcherManager.addToPNGGeneratorTaskPipeline(unprocessedDICOMImageFileDescriptions);
 					} else { // There are no unprocessed PNG files left.
-						if (currentSeriesOrderStatus.getProcessingState() == ImageProcessingState.IN_PIPELINE) {
+						if (currentSeriesOrderStatus.getProcessingState() == DicomImageProcessingState.IN_PIPELINE) {
 							logger.info("No unprocesses PNG files left for series with UID " + currentSeriesOrder.getSeriesUID());
 							List<Map<String, String>> processedPNGImages = mySqlQueries
 									.getProcessedDICOMImageFileDescriptionsOrdered(currentSeriesOrder.getSeriesUID());
 							if (processedPNGImages.size() > 0) { // Convert processed PNG files to PNG grid files
 								logger.info("Found " + processedPNGImages.size() + " PNG images. Converting to grid images.");
-								currentSeriesOrderStatus.setState(ImageProcessingState.IN_PNG_GRID_PIPELINE);
+								currentSeriesOrderStatus.setState(DicomImageProcessingState.IN_PNG_GRID_PIPELINE);
 								addToPNGGridGeneratorTaskPipeline(unprocessedDICOMImageFileDescriptions);
 							}
 						}

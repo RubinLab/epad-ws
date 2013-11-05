@@ -13,7 +13,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 
-import edu.stanford.isis.epadws.processing.pipeline.task.JPEGThumbnailTask;
+import edu.stanford.isis.epadws.processing.pipeline.task.JPEGThumbnailGeneratorTask;
 
 public class ThumbnailProcess extends AbstractPipelineProcess<File>
 {
@@ -25,7 +25,7 @@ public class ThumbnailProcess extends AbstractPipelineProcess<File>
 	@Override
 	public Callable<File> getTask(File submitFile)
 	{
-		return new JPEGThumbnailTask(submitFile);
+		return new JPEGThumbnailGeneratorTask(submitFile);
 	}
 
 	@Override

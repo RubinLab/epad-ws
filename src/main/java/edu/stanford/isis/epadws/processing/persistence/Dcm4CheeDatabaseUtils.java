@@ -11,10 +11,6 @@ import edu.stanford.isis.epadws.processing.model.PngProcessingStatus;
 
 public class Dcm4CheeDatabaseUtils
 {
-	private Dcm4CheeDatabaseUtils()
-	{
-	}
-
 	public static Map<String, String> addErrorMsg(Map<String, String> map, PngProcessingStatus pngStatus, String errMsg)
 	{
 		map.put("file_status", "" + pngStatus.getCode());

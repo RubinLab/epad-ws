@@ -13,7 +13,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 
-import edu.stanford.isis.epadws.processing.pipeline.task.ReadTagsTask;
+import edu.stanford.isis.epadws.processing.pipeline.task.ReadDicomTagsTask;
 
 public class ReadTagsProcess extends AbstractPipelineProcess<File>
 {
@@ -25,7 +25,7 @@ public class ReadTagsProcess extends AbstractPipelineProcess<File>
 	@Override
 	public Callable<File> getTask(File submitFile)
 	{
-		return new ReadTagsTask(submitFile);
+		return new ReadDicomTagsTask(submitFile);
 	}
 
 	@Override
