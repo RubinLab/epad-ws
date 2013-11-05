@@ -16,7 +16,7 @@ import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epad.common.util.EPADTools;
 import edu.stanford.isis.epad.common.util.ResourceUtils;
 import edu.stanford.isis.epadws.processing.model.PngStatus;
-import edu.stanford.isis.epadws.processing.model.SeriesOrder;
+import edu.stanford.isis.epadws.processing.model.DicomSeriesOrder;
 import edu.stanford.isis.epadws.processing.persistence.Dcm3CheeDatabaseUtils;
 import edu.stanford.isis.epadws.processing.persistence.MySqlInstance;
 import edu.stanford.isis.epadws.processing.persistence.MySqlQueries;
@@ -31,20 +31,21 @@ import edu.stanford.isis.epadws.processing.pipeline.task.PngGeneratorTask;
 public class QueueAndWatcherManager
 {
 	private static final EPADLogger logger = EPADLogger.getInstance();
-	private static final BlockingQueue<SeriesOrder> seriesWatchQueue = new ArrayBlockingQueue<SeriesOrder>(2000);
+	private static final BlockingQueue<DicomSeriesOrder> dcm4CheeSeriesWatcherQueue = new ArrayBlockingQueue<DicomSeriesOrder>(2000);
+	private static final BlockingQueue<GeneratorTask> pngGeneratorTaskQueue = new ArrayBlockingQueue<GeneratorTask>(2000);
 	// private static final BlockingQueue<DicomHeadersTask> dicomHeadersTaskQueue = new
 	// ArrayBlockingQueue<DicomHeadersTask>(2000);
-	private static final BlockingQueue<GeneratorTask> pngGeneratorTaskQueue = new ArrayBlockingQueue<GeneratorTask>(2000);
 
 	private final ExecutorService dbTableWatcherExec = Executors.newSingleThreadExecutor();
 	private final ExecutorService seriesWatcherExec = Executors.newSingleThreadExecutor();
 	private final ExecutorService pngProcessExec = Executors.newSingleThreadExecutor();
 	private final ExecutorService uploadDirWatcherExec = Executors.newSingleThreadExecutor();
 
-	private final Dcm4CheeDatabaseTableWatcher dcm4CheeDatabaseTableWatcher;
-	private final DicomSeriesWatcher seriesWatcher;
-	private final PngGeneratorProcess pngGeneratorProcess;
+	private final Dcm4CheeDatabaseWatcher dcm4CheeDatabaseTableWatcher;
+	private final Dcm4CheeSeriesWatcher dcm4CheeSeriesWatcher;
 	private final EPADUploadDirWatcher epadUploadDirWatcher;
+
+	private final PngGeneratorProcess pngGeneratorProcess;
 
 	private final String dcm4cheeRootDir;
 
@@ -57,8 +58,8 @@ public class QueueAndWatcherManager
 
 	private QueueAndWatcherManager()
 	{
-		dcm4CheeDatabaseTableWatcher = new Dcm4CheeDatabaseTableWatcher(seriesWatchQueue);
-		seriesWatcher = new DicomSeriesWatcher(seriesWatchQueue, pngGeneratorTaskQueue);
+		dcm4CheeDatabaseTableWatcher = new Dcm4CheeDatabaseWatcher(dcm4CheeSeriesWatcherQueue);
+		dcm4CheeSeriesWatcher = new Dcm4CheeSeriesWatcher(dcm4CheeSeriesWatcherQueue, pngGeneratorTaskQueue);
 		pngGeneratorProcess = new PngGeneratorProcess(pngGeneratorTaskQueue);
 		epadUploadDirWatcher = new EPADUploadDirWatcher();
 		dcm4cheeRootDir = EPADConfig.getInstance().getParam("dcm4cheeDirRoot");
@@ -68,7 +69,7 @@ public class QueueAndWatcherManager
 	{
 		logger.info("Starting PNG generator pipeline.");
 		dbTableWatcherExec.execute(dcm4CheeDatabaseTableWatcher);
-		seriesWatcherExec.execute(seriesWatcher);
+		seriesWatcherExec.execute(dcm4CheeSeriesWatcher);
 		pngProcessExec.execute(pngGeneratorProcess);
 		uploadDirWatcherExec.execute(epadUploadDirWatcher);
 
@@ -141,10 +142,10 @@ public class QueueAndWatcherManager
 	 */
 	public String getDcm4cheeRootDir()
 	{
-		if (dcm4cheeRootDir.endsWith("/")) {
+		if (dcm4cheeRootDir.endsWith("/"))
 			return dcm4cheeRootDir;
-		}
-		return dcm4cheeRootDir + "/";
+		else
+			return dcm4cheeRootDir + "/";
 	}
 
 	private void processDicomSegmentationObject(String outputFilePath, String inputFilePath)
@@ -154,7 +155,6 @@ public class QueueAndWatcherManager
 
 		DicomSegmentObjectGeneratorTask dsoTask = new DicomSegmentObjectGeneratorTask(inFile, outFile);
 		pngGeneratorTaskQueue.offer(dsoTask);
-
 		logger.info("Segmentation Object found: " + inputFilePath);
 	}
 

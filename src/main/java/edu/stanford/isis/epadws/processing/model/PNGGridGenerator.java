@@ -1,4 +1,4 @@
-package edu.stanford.isis.epadws.processing.pipeline.threads;
+package edu.stanford.isis.epadws.processing.model;
 
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;

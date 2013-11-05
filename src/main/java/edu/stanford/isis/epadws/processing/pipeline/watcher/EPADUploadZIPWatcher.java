@@ -25,13 +25,14 @@ import edu.stanford.isis.epadws.processing.model.DicomUploadPipelineFiles;
 import edu.stanford.isis.epadws.processing.pipeline.threads.ShutdownSignal;
 
 /**
- * This is a process the runs every five seconds. If it sees a new ZIP file in two consecutive runs with the same file
- * size it will assume the it is "DONE" and put it into the QUEUE for the unzipping files. This begins the process.
+ * This is a process the runs every five seconds. If it sees a new ZIP, DCM or GZ file in two consecutive runs with the
+ * same file size it will assume the it is "DONE" and put it into the QUEUE for the unzipping files. This begins the
+ * process.
  */
-public class EPADUploadDirZIPWatcher implements Runnable
+public class EPADUploadZIPWatcher implements Runnable
 {
 	public static final String UPLOAD_ROOT_DIR = ResourceUtils.getEPADWebServerUploadDir();
-	public static final int CHECK_INTERVAL = 5000; // check every 5 seconds.
+	public static final int CHECK_INTERVAL = 5000; // Check every 5 seconds.
 	private final EPADLogger log = EPADLogger.getInstance();
 	private final BlockingQueue<File> unzipQueue;
 
@@ -53,7 +54,7 @@ public class EPADUploadDirZIPWatcher implements Runnable
 	private final Map<FileKey, Long> emptyDir = new HashMap<FileKey, Long>();
 	private static final long EMPTY_DIR_INTERVAL = 60 * 15 * 1000; // in milliseconds
 
-	public EPADUploadDirZIPWatcher(BlockingQueue<File> unzipQueue)
+	public EPADUploadZIPWatcher(BlockingQueue<File> unzipQueue)
 	{
 		this.unzipQueue = unzipQueue;
 	}
@@ -61,14 +62,12 @@ public class EPADUploadDirZIPWatcher implements Runnable
 	@Override
 	public void run()
 	{
-
 		try {
 			ShutdownSignal shutdownSignal = ShutdownSignal.getInstance();
 			while (true) {
 				if (shutdownSignal.hasShutdown()) {
 					return;
 				}
-
 				File rootDir = new File(UPLOAD_ROOT_DIR);
 				try {
 					searchDir(rootDir);
@@ -82,17 +81,16 @@ public class EPADUploadDirZIPWatcher implements Runnable
 					return;
 				}
 				TimeUnit.MILLISECONDS.sleep(CHECK_INTERVAL);
-			}// while
-
+			}
 		} catch (Exception e) {
 			log.sever("UploadDirWatcher error.", e);
 		} finally {
 			log.info("Done. UploadDirWatcher thread.");
 		}
-	}// run
+	}
 
 	/**
-	 * Delete any directory that is more than EMPTY_DIR_INTERVAL ms old.
+	 * Delete any directory that is more than EMPTY_DIR_INTERVAL milliseconds old.
 	 */
 	private void deleteEmptyDirectories()
 	{
@@ -109,9 +107,8 @@ public class EPADUploadDirZIPWatcher implements Runnable
 					log.info("FAILED to delete dir: " + dirToDelete.getAbsolutePath());
 				}
 			}
-		}// for
-
-	}// deleteEmptyDirectories
+		}
+	}
 
 	/**
 	 * Looks for empty directories under a root file add them.
@@ -122,22 +119,18 @@ public class EPADUploadDirZIPWatcher implements Runnable
 	{
 		try {
 			List<File> dirs = EPADFileUtils.getDirectoriesIn(rootDir);
-			for (File currDir : dirs) {
-				// check to see if it is empty.
+			for (File currDir : dirs) { // check to see if it is empty.
 				int nFile = EPADFileUtils.countFilesWithEnding(currDir, ".dcm");
 				FileKey keyFile = new FileKey(currDir);
 				if (nFile == 0) {
-					// add it with the current timestamp only if not already in the list.
-					if (emptyDir.get(keyFile) == null) {
+					if (emptyDir.get(keyFile) == null) { // Add it with the current timestamp only if not already in the list.
 						emptyDir.put(keyFile, System.currentTimeMillis());
 						log.info("EMPTY_DIR list added: " + keyFile.toString());
 					}
 				} else {
-					// remove it from the list.
-					emptyDir.remove(keyFile);
+					emptyDir.remove(keyFile); // Remove it from the list.
 				}
 			}
-
 		} catch (Exception e) {
 			log.warning(e.getMessage(), e);
 		}
@@ -145,11 +138,8 @@ public class EPADUploadDirZIPWatcher implements Runnable
 
 	private void searchDir(File dir) throws InterruptedException
 	{
-
-		// get all the files in this directory.
-		if (!dir.isDirectory()) {
+		if (!dir.isDirectory()) // get all the files in this directory.
 			return;
-		}
 
 		File[] allFiles = dir.listFiles();
 
@@ -177,15 +167,13 @@ public class EPADUploadDirZIPWatcher implements Runnable
 						} else {
 							log.info("WARNING: File: " + currFileKey + " was not accepted to unzipQueue. Likely full.");
 						}
-					}// if
-				}// if
+					}
+				}
 			} else {
 				log.info("Cannot read file: " + currFile.getAbsolutePath());
 			}
-
-		}// for
-
-	}// searchDir
+		}
+	}
 
 	/**
 	 * determines if this file should be added to the pipeline.
@@ -195,11 +183,8 @@ public class EPADUploadDirZIPWatcher implements Runnable
 	 */
 	private boolean checkShouldAddToPipeline(FileKey fileKey)
 	{
-
-		// Don't add a directory.
-		if (fileKey.getFile().isDirectory()) {
+		if (fileKey.getFile().isDirectory())
 			return false;
-		}
 
 		// Only add *.dcm, *.zip, *.gz files.
 		String fileName = fileKey.getFile().getName().toLowerCase();

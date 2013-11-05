@@ -9,13 +9,13 @@ package edu.stanford.isis.epadws.processing.model;
 
 import edu.stanford.isis.epad.common.util.FileKey;
 
-public class DicomUploadErrorFile
+public class DicomUploadErrorFileDescription
 {
 	private final FileKey fileKey;
 	private final String errorMessage;
 	private final Exception exception;
 
-	public DicomUploadErrorFile(FileKey fileKey, String errorMessage, Exception e)
+	public DicomUploadErrorFileDescription(FileKey fileKey, String errorMessage, Exception e)
 	{
 		this.fileKey = fileKey;
 		this.errorMessage = errorMessage;

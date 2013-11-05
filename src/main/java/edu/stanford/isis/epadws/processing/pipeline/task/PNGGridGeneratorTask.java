@@ -8,11 +8,11 @@ import java.util.Map;
 
 import edu.stanford.isis.epad.common.util.EPADFileUtils;
 import edu.stanford.isis.epad.common.util.EPADLogger;
+import edu.stanford.isis.epadws.processing.model.PNGGridGenerator;
 import edu.stanford.isis.epadws.processing.model.PngStatus;
 import edu.stanford.isis.epadws.processing.persistence.Dcm3CheeDatabaseUtils;
 import edu.stanford.isis.epadws.processing.persistence.MySqlInstance;
 import edu.stanford.isis.epadws.processing.persistence.MySqlQueries;
-import edu.stanford.isis.epadws.processing.pipeline.threads.PNGGridGenerator;
 
 /**
  * Given a set of PNG files, generate a single PNG containing a grid of these files.

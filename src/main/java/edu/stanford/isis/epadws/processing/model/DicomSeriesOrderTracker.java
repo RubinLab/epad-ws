@@ -13,27 +13,27 @@ import edu.stanford.isis.epadws.processing.persistence.MySqlQueries;
  * 
  * @author alansnyder
  */
-public class SeriesOrderTracker
+public class DicomSeriesOrderTracker
 {
-	private static final SeriesOrderTracker ourInstance = new SeriesOrderTracker();
-	private final Map<String, SeriesOrderStatus> statusMap = new ConcurrentHashMap<String, SeriesOrderStatus>();
+	private static final DicomSeriesOrderTracker ourInstance = new DicomSeriesOrderTracker();
+	private final Map<String, DicomSeriesOrderStatus> statusMap = new ConcurrentHashMap<String, DicomSeriesOrderStatus>();
 	private final Map<String, Float> completionMap = new ConcurrentHashMap<String, Float>();
 
-	public static SeriesOrderTracker getInstance()
+	public static DicomSeriesOrderTracker getInstance()
 	{
 		return ourInstance;
 	}
 
-	private SeriesOrderTracker()
+	private DicomSeriesOrderTracker()
 	{
 	}
 
-	public void add(SeriesOrderStatus seriesOrderStatus)
+	public void add(DicomSeriesOrderStatus seriesOrderStatus)
 	{
 		if (seriesOrderStatus == null) {
 			throw new IllegalArgumentException("seriesOrderStatus cannot be null.");
 		}
-		SeriesOrder so = seriesOrderStatus.getSeriesOrder();
+		DicomSeriesOrder so = seriesOrderStatus.getSeriesOrder();
 		if (so == null) {
 			throw new IllegalArgumentException("SeriesOrder cannot be null.");
 		}
@@ -41,18 +41,18 @@ public class SeriesOrderTracker
 		statusMap.put(seriesUID, seriesOrderStatus);
 	}
 
-	public void remove(SeriesOrderStatus seriesOrderStatus)
+	public void remove(DicomSeriesOrderStatus seriesOrderStatus)
 	{
 		String seriesUID = seriesOrderStatus.getSeriesOrder().getSeriesUID();
 		statusMap.remove(seriesUID);
 	}
 
-	public Set<SeriesOrderStatus> getStatusSet()
+	public Set<DicomSeriesOrderStatus> getStatusSet()
 	{
-		return new HashSet<SeriesOrderStatus>(statusMap.values());
+		return new HashSet<DicomSeriesOrderStatus>(statusMap.values());
 	}
 
-	public SeriesOrderStatus get(String seriesUID)
+	public DicomSeriesOrderStatus get(String seriesUID)
 	{
 		return statusMap.get(seriesUID);
 	}

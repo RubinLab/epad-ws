@@ -9,7 +9,7 @@ import edu.stanford.isis.epad.common.util.EPADLogger;
  * 
  * @author amsnyder
  */
-public class SeriesOrderStatus
+public class DicomSeriesOrderStatus
 {
 	EPADLogger logger = EPADLogger.getInstance();
 
@@ -17,11 +17,11 @@ public class SeriesOrderStatus
 
 	private long lastActivityTimeStamp;
 
-	private final SeriesOrder seriesOrder;
+	private final DicomSeriesOrder seriesOrder;
 
 	private ImageProcessingState state = ImageProcessingState.NEW;
 
-	public SeriesOrderStatus(SeriesOrder seriesOrder)
+	public DicomSeriesOrderStatus(DicomSeriesOrder seriesOrder)
 	{
 		if (seriesOrder == null) {
 			throw new IllegalArgumentException("seriesOrder cannot be null.");
@@ -30,7 +30,7 @@ public class SeriesOrderStatus
 		lastActivityTimeStamp = System.currentTimeMillis();
 	}
 
-	public SeriesOrder getSeriesOrder()
+	public DicomSeriesOrder getSeriesOrder()
 	{
 		return seriesOrder;
 	}

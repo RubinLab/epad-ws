@@ -11,14 +11,14 @@ import edu.stanford.isis.epad.common.util.EPADLogger;
  * 
  * @author amsnyder
  */
-public class SeriesOrder
+public class DicomSeriesOrder
 {
 	private static final EPADLogger logger = EPADLogger.getInstance();
 
 	private final ArrayList<DicomImageEntry> instances;
 	private final String seriesUID;
 
-	public SeriesOrder(int numInstance, String seriesUID)
+	public DicomSeriesOrder(int numInstance, String seriesUID)
 	{
 		if (numInstance < 1) {
 			throw new IllegalArgumentException("numInstances must be a positive value.");

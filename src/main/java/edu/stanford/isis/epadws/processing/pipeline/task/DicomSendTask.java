@@ -76,14 +76,12 @@ public class DicomSendTask implements Runnable
 			String aeTitle = pc.getParam("DicomServerAETitle");
 			String dsIP = pc.getParam("DicomServerIP");
 			String dsPort = pc.getParam("DicomServerPort");
-
 			String dcmServerTitlePort = aeTitle + "@" + dsIP + ":" + dsPort;
 			dcmServerTitlePort = dcmServerTitlePort.trim();
 
 			String dirPath = inputDirFile.getAbsolutePath();
-			if (pathContainsSpaces(dirPath)) {
+			if (pathContainsSpaces(dirPath))
 				dirPath = escapeSpacesInDirPath(dirPath);
-			}
 
 			File dir = new File(dirPath);
 			int nbFiles = -1;
@@ -98,12 +96,11 @@ public class DicomSendTask implements Runnable
 
 			ProcessBuilder pb = new ProcessBuilder(command);
 			String dicomScriptsDir = ResourceUtils.getEPADWebServerDICOMBinDir();
-			logger.info("dicomScriptsDir: " + dicomScriptsDir);
+			logger.info("DICOMScriptsDir: " + dicomScriptsDir);
 			pb.directory(new File(dicomScriptsDir));
 
 			Process process = pb.start();
-			process.getOutputStream();// get the output stream.
-			// Read out dir output
+			process.getOutputStream();
 			is = process.getInputStream();
 			isr = new InputStreamReader(is);
 
@@ -124,9 +121,8 @@ public class DicomSendTask implements Runnable
 			String cmdLineOutput = sb.toString();
 			writeUploadLog(cmdLineOutput);
 
-			if (cmdLineOutput.toLowerCase().contains("error")) {
+			if (cmdLineOutput.toLowerCase().contains("error"))
 				throw new IllegalStateException("Failed for: " + parseError(cmdLineOutput));
-			}
 		} catch (Exception e) {
 			if (e instanceof IllegalStateException && throwException) {
 				throw e;
