@@ -93,12 +93,11 @@ public class ServerStatusHandler extends AbstractHandler
 			log.warning(INTERNAL_EXCEPTION_MESSAGE, t);
 			responseStream.append(INTERNAL_EXCEPTION_MESSAGE + ": " + t.getMessage());
 			statusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
-		} finally {
-			if (responseStream != null) {
-				responseStream.flush();
-			}
 		}
 		httpResponse.setStatus(statusCode);
+		if (responseStream != null) {
+			responseStream.flush();
+		}
 	}
 
 	private String getPipelineActivityLevel()

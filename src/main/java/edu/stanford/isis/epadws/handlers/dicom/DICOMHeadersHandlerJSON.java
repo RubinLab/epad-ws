@@ -21,8 +21,8 @@ import com.google.gson.Gson;
 
 import edu.stanford.isis.epad.common.dicom.DICOMElementResult;
 import edu.stanford.isis.epad.common.util.EPADLogger;
-import edu.stanford.isis.epad.common.util.JsonHelper;
 import edu.stanford.isis.epad.common.util.EPADTools;
+import edu.stanford.isis.epad.common.util.JsonHelper;
 import edu.stanford.isis.epadws.processing.pipeline.task.DicomHeadersTask;
 import edu.stanford.isis.epadws.xnat.XNATUtil;
 
@@ -70,12 +70,10 @@ public class DICOMHeadersHandlerJSON extends AbstractHandler
 			log.warning(INTERNAL_ERROR_MESSAGE, t);
 			responseStream.print(JsonHelper.createJSONErrorResponse(INTERNAL_ERROR_MESSAGE, t));
 			statusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
-		} finally {
-			if (responseStream != null) {
-				responseStream.flush();
-			}
 		}
 		httpResponse.setStatus(statusCode);
+		if (responseStream != null)
+			responseStream.flush();
 	}
 
 	private int performDICOMHeaderRequest(PrintWriter responseStream, String queryString) throws IOException,

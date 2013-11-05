@@ -86,12 +86,10 @@ public class DICOMSearchHandler extends AbstractHandler
 			log.warning(INTERNAL_EXCEPTION_MESSAGE, t);
 			responseStream.append(JsonHelper.createJSONErrorResponse(INTERNAL_EXCEPTION_MESSAGE, t));
 			statusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
-		} finally {
-			if (responseStream != null) {
-				responseStream.flush();
-			}
 		}
 		httpResponse.setStatus(statusCode);
+		if (responseStream != null)
+			responseStream.flush();
 	}
 
 	/**

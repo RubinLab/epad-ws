@@ -10,7 +10,6 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.httpclient.HttpClient;
-import org.apache.commons.httpclient.HttpException;
 import org.apache.commons.httpclient.methods.DeleteMethod;
 import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.httpclient.methods.PostMethod;
@@ -54,7 +53,6 @@ public class XNATUtil
 	 * @param password
 	 * @return A JSESSIONID value on success; and error string otherwise
 	 * @throws IOException
-	 * @throws HttpException
 	 * @throws IllegalArgumentException
 	 */
 	public static XNATSessionResponse invokeXNATSessionIDService(HttpServletRequest httpRequest) throws IOException
@@ -117,7 +115,7 @@ public class XNATUtil
 		return xnatSessionResponse;
 	}
 
-	public static int invalidateXNATSessionID(HttpServletRequest httpRequest) throws IOException, HttpException
+	public static int invalidateXNATSessionID(HttpServletRequest httpRequest) throws IOException
 	{
 		String xnatHost = config.getStringConfigurationParameter("XNATServer");
 		int xnatPort = config.getIntegerConfigurationParameter("XNATPort");
@@ -130,12 +128,13 @@ public class XNATUtil
 
 		int statusCode = client.executeMethod(deleteMethod);
 
-		log.info("XNAT delete session returns status code " + statusCode);
+		if (statusCode != HttpServletResponse.SC_OK)
+			log.warning("XNAT delete session call returned status code " + statusCode);
 
 		return statusCode;
 	}
 
-	public static boolean hasValidXNATSessionID(HttpServletRequest httpRequest) throws IOException, HttpException
+	public static boolean hasValidXNATSessionID(HttpServletRequest httpRequest) throws IOException
 	{
 		String xnatHost = config.getStringConfigurationParameter("XNATServer");
 		int xnatPort = config.getIntegerConfigurationParameter("XNATPort");

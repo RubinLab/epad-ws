@@ -77,7 +77,6 @@ public class EPadPluginHandler extends AbstractHandler
 			httpResponse.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
 		}
 		out.flush();
-		out.close();
 	}
 
 	private void writeDebugInfo(Request request, PrintWriter out)

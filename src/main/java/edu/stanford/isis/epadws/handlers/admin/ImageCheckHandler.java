@@ -78,12 +78,10 @@ public class ImageCheckHandler extends AbstractHandler
 			log.warning(INTERNAL_ERROR_MESSAGE, t);
 			responseStream.print(INTERNAL_ERROR_MESSAGE + ": " + t.getMessage());
 			statusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
-		} finally {
-			if (responseStream != null) {
-				responseStream.flush();
-			}
 		}
 		httpResponse.setStatus(statusCode);
+		if (responseStream != null)
+			responseStream.flush();
 	}
 
 	private void verifyImageGeneration(PrintWriter responseStream) throws SQLException, IOException

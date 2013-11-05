@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.URLDecoder;
 
-import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -34,9 +33,10 @@ public class DICOMDeleteHandler extends AbstractHandler
 
 	@Override
 	public void handle(String s, Request request, HttpServletRequest httpRequest, HttpServletResponse httpResponse)
-			throws IOException, ServletException
+			throws IOException
 	{
 		PrintWriter responseStream = httpResponse.getWriter();
+		int responseCode;
 
 		httpResponse.setContentType("text/plain");
 		request.setHandled(true);
@@ -54,22 +54,23 @@ public class DICOMDeleteHandler extends AbstractHandler
 					} else {
 						handleDICOMStudyDeleteRequest(queryString);
 					}
-					httpResponse.setStatus(HttpServletResponse.SC_OK);
+					responseCode = HttpServletResponse.SC_OK;
 				} catch (Throwable t) {
-					httpResponse.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 					log.warning(INTERNAL_ERROR_MESSAGE, t);
 					responseStream.print(INTERNAL_ERROR_MESSAGE + ": " + t.getMessage());
+					responseCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 				}
 			} else {
 				log.info(MISSING_QUERY_MESSAGE);
 				responseStream.append(MISSING_QUERY_MESSAGE);
-				httpResponse.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+				responseCode = HttpServletResponse.SC_BAD_REQUEST;
 			}
 		} else {
 			log.info(INVALID_SESSION_TOKEN_MESSAGE);
 			responseStream.append(JsonHelper.createJSONErrorResponse(INVALID_SESSION_TOKEN_MESSAGE));
-			httpResponse.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+			responseCode = HttpServletResponse.SC_UNAUTHORIZED;
 		}
+		httpResponse.setStatus(responseCode);
 		responseStream.flush();
 	}
 

@@ -151,10 +151,9 @@ public class CoordinationHandler extends AbstractHandler
 			log.warning(INTERNAL_ERROR_MESSAGE, t);
 			responseStream.print(JsonHelper.createJSONErrorResponse(INTERNAL_ERROR_MESSAGE, t));
 			statusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
-		} finally {
-			responseStream.flush();
 		}
 		httpResponse.setStatus(statusCode);
+		responseStream.flush();
 	}
 
 	private Coordination readCoordination(Request request) throws IOException
