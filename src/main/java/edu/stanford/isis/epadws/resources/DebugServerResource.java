@@ -1,4 +1,4 @@
-package edu.stanford.isis.epadws.resources.server;
+package edu.stanford.isis.epadws.resources;
 
 import org.restlet.representation.Representation;
 import org.restlet.representation.StringRepresentation;

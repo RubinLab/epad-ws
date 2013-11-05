@@ -12,9 +12,9 @@ import org.restlet.Restlet;
 import org.restlet.routing.Router;
 
 import edu.stanford.isis.epad.common.util.EPADLogger;
-import edu.stanford.isis.epadws.resources.server.DICOMSearchServerResource;
-import edu.stanford.isis.epadws.resources.server.EPadWebServiceServerResource;
-import edu.stanford.isis.epadws.resources.server.WindowLevelServerResource;
+import edu.stanford.isis.epadws.resources.DICOMSearchServerResource;
+import edu.stanford.isis.epadws.resources.EPadWebServiceServerResource;
+import edu.stanford.isis.epadws.resources.WindowLevelServerResource;
 
 /**
  * Entry point for the EPad Web Service. In the architecture this is the between the web application and the DICOM

@@ -66,7 +66,8 @@ public class XNATProjectHandler extends AbstractHandler
 			}
 		} catch (Throwable t) {
 			log.warning(INTERNAL_EXCEPTION_MESSAGE, t);
-			responseStream.print(JsonHelper.createJSONErrorResponse(INTERNAL_EXCEPTION_MESSAGE, t));
+			if (responseStream != null)
+				responseStream.print(JsonHelper.createJSONErrorResponse(INTERNAL_EXCEPTION_MESSAGE, t));
 			statusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 		}
 		httpResponse.setStatus(statusCode);
@@ -80,7 +81,7 @@ public class XNATProjectHandler extends AbstractHandler
 		String xnatURL = XNATUtil.buildURLString(xnatHost, xnatPort, XNATUtil.XNAT_PROJECT_BASE, base);
 		HttpClient client = new HttpClient();
 		String jsessionID = XNATUtil.getJSessionIDFromRequest(httpRequest);
-		int statusCode;
+		int xnatStatusCode;
 
 		String queryString = httpRequest.getQueryString();
 
@@ -104,8 +105,8 @@ public class XNATProjectHandler extends AbstractHandler
 		if (xnatMethod != null) {
 			log.info("Invoking " + xnatMethod.getName() + " on XNAT at " + xnatURL);
 			xnatMethod.setRequestHeader("Cookie", "JSESSIONID=" + jsessionID);
-			statusCode = client.executeMethod(xnatMethod);
-			if (statusCode == HttpServletResponse.SC_OK) {
+			xnatStatusCode = client.executeMethod(xnatMethod);
+			if (xnatStatusCode == HttpServletResponse.SC_OK) {
 				log.info("Successfully invoked XNAT");
 				InputStream xnatResponse = null;
 				try {
@@ -125,13 +126,13 @@ public class XNATProjectHandler extends AbstractHandler
 					}
 				}
 			} else {
-				log.info(XNAT_INVOCATION_ERROR_MESSAGE + ";status code=" + statusCode);
+				log.info(XNAT_INVOCATION_ERROR_MESSAGE + ";status code=" + xnatStatusCode);
 			}
 		} else {
 			log.info(INVALID_METHOD_MESSAGE + "; got " + method);
 			httpResponse.setHeader("Access-Control-Allow-Methods", "GET, PUT, POST, DELETE");
-			statusCode = HttpServletResponse.SC_METHOD_NOT_ALLOWED;
+			xnatStatusCode = HttpServletResponse.SC_METHOD_NOT_ALLOWED;
 		}
-		return statusCode;
+		return xnatStatusCode;
 	}
 }

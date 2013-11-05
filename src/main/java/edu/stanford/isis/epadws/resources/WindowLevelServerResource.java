@@ -1,4 +1,4 @@
-package edu.stanford.isis.epadws.resources.server;
+package edu.stanford.isis.epadws.resources;
 
 import java.io.File;
 import java.io.FileFilter;
@@ -12,7 +12,6 @@ import edu.stanford.isis.epad.common.dicom.DicomFormatUtil;
 import edu.stanford.isis.epad.common.util.FileKey;
 import edu.stanford.isis.epad.common.util.ResourceUtils;
 import edu.stanford.isis.epadws.processing.leveling.WindowLevelFactory;
-import edu.stanford.isis.epadws.resources.WindowLevelResource;
 
 /**
  * To test:

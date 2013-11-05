@@ -1,4 +1,4 @@
-package edu.stanford.isis.epadws.resources.server;
+package edu.stanford.isis.epadws.resources;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;

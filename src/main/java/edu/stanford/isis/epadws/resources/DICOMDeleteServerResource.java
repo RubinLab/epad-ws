@@ -1,4 +1,4 @@
-package edu.stanford.isis.epadws.resources.server;
+package edu.stanford.isis.epadws.resources;
 
 import org.restlet.data.CharacterSet;
 import org.restlet.data.Status;

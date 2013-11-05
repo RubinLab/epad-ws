@@ -1,4 +1,4 @@
-package edu.stanford.isis.epadws.resources.server;
+package edu.stanford.isis.epadws.resources;
 
 import org.restlet.data.Status;
 import org.restlet.resource.Get;
@@ -10,7 +10,6 @@ import edu.stanford.isis.epad.common.util.EPADConfig;
 import edu.stanford.isis.epadws.EPadWebServerVersion;
 import edu.stanford.isis.epadws.processing.mysql.MySqlInstance;
 import edu.stanford.isis.epadws.processing.pipeline.PipelineFactory;
-import edu.stanford.isis.epadws.resources.EPadWebServiceResource;
 
 /**
  * Resource representing an ePAD Web Server.
