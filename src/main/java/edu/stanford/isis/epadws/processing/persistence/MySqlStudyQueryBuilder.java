@@ -1,4 +1,4 @@
-package edu.stanford.isis.epadws.processing.mysql;
+package edu.stanford.isis.epadws.processing.persistence;
 
 /**
  * 
@@ -9,8 +9,6 @@ public class MySqlStudyQueryBuilder
 	private final String type;
 	private final boolean useLike;
 	private final String typeValue;
-
-	// select ... from ... where ... = | like ...
 
 	public MySqlStudyQueryBuilder(String type, String typeValue)
 	{
@@ -68,7 +66,6 @@ public class MySqlStudyQueryBuilder
 			sb.append("s.modality ");
 			sb.append(upperCaseEqualOrLikeClause(typeValue));
 		}
-
 		sb.append(" and s.study_fk=st.pk");
 		sb.append(" and st.patient_fk=p.pk");
 
@@ -81,21 +78,15 @@ public class MySqlStudyQueryBuilder
 	private String createStudyGroupByClause()
 	{
 		StringBuilder sb = new StringBuilder();
-
 		sb.append(" group by st.study_iuid ");
-
 		return sb.toString();
-
 	}
 
 	private String createStudyOrderByClause()
 	{
 		StringBuilder sb = new StringBuilder();
-
 		sb.append(" order by s.created_time ");
-
 		return sb.toString();
-
 	}
 
 	private String equalOrLikeClause(String typeValue)
@@ -121,5 +112,4 @@ public class MySqlStudyQueryBuilder
 			return "= '" + typeValue.toUpperCase() + "'";
 		}
 	}
-
 }

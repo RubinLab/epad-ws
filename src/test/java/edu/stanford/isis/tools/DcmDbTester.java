@@ -1,19 +1,12 @@
 package edu.stanford.isis.tools;
 
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.Timestamp;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 import edu.stanford.isis.epad.common.util.EPADLogger;
-import edu.stanford.isis.epadws.processing.mysql.DbCalls;
-import edu.stanford.isis.epadws.processing.mysql.DbUtils;
-import edu.stanford.isis.epadws.processing.mysql.MySqlInstance;
-import edu.stanford.isis.epadws.processing.mysql.MySqlQueries;
+import edu.stanford.isis.epadws.processing.persistence.MySqlInstance;
+import edu.stanford.isis.epadws.processing.persistence.MySqlQueries;
 
 /**
  * A connection test for DCM4CHEE MySQL database.
@@ -32,10 +25,6 @@ public class DcmDbTester
 	public static void main(String[] args)
 	{
 		try {
-			String connectionString = getConnectionStringFromCmdLineArgs(args);
-			Connection con = DriverManager.getConnection(connectionString, user, pw);
-			doSqlTest1(con);
-
 			MySqlInstance mySqlInstance = MySqlInstance.getInstance();
 			mySqlInstance.startup();
 
@@ -56,33 +45,6 @@ public class DcmDbTester
 			e.printStackTrace();
 		} finally {
 			MySqlInstance.getInstance().shutdown();
-		}
-	}
-
-	/**
-	 * Just test the connection.
-	 * 
-	 * @param con
-	 */
-	private static void doSqlTest1(Connection con)
-	{
-		PreparedStatement ps = null;
-		ResultSet rs = null;
-		try {
-			ps = con.prepareStatement(DbCalls.SELECT_STUDY_FK_ON_FS_TABLE);
-			rs = ps.executeQuery();
-
-			while (rs.next()) {
-				String studyFk = rs.getString("study_fk");
-				String filesystemFk = rs.getString("filesystem_fk");
-				Timestamp ts = rs.getTimestamp("access_time");
-				logger.info("Study: " + studyFk + " filesystem: " + filesystemFk + " timestamp: " + ts);
-			}
-		} catch (Exception e) {
-			logger.warning("doSqlTest1", e);
-		} finally {
-			DbUtils.close(rs);
-			DbUtils.close(ps);
 		}
 	}
 
@@ -295,28 +257,6 @@ public class DcmDbTester
 		} catch (Exception e) {
 			logger.warning("doSqlTest8", e);
 		}
-	}
-
-	/**
-	 * If "arg[0]" contains a lower-case 'r' use the rufus version of the connection string.
-	 * 
-	 * @param args String[]
-	 * @return String
-	 */
-	private static String getConnectionStringFromCmdLineArgs(String[] args)
-	{
-		String retVal = mysqlConn;
-
-		if (args == null) {
-			System.out.println("args is null.");
-		} else if (args.length == 0) {
-			System.out.println("args length is zero.");
-		} else if (args[0].indexOf('r') > -1) {
-			System.out.println("args[]= " + args[0]);
-			retVal = mysqlConnR;
-		}
-		System.out.println("Using connection string: " + retVal);
-		return retVal;
 	}
 
 	private static String printKeys(Set<String> keySet)

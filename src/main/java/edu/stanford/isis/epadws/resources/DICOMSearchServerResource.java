@@ -14,8 +14,8 @@ import edu.stanford.isis.epad.common.dicom.DICOMStudySearchResult;
 import edu.stanford.isis.epad.common.dicom.DicomFormatUtil;
 import edu.stanford.isis.epad.common.dicom.DicomStudySearchType;
 import edu.stanford.isis.epad.common.dicom.RSeriesData;
-import edu.stanford.isis.epadws.processing.mysql.MySqlInstance;
-import edu.stanford.isis.epadws.processing.mysql.MySqlQueries;
+import edu.stanford.isis.epadws.processing.persistence.MySqlInstance;
+import edu.stanford.isis.epadws.processing.persistence.MySqlQueries;
 
 /**
  * Query the database using DICOM series or study search parameters.

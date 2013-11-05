@@ -1,4 +1,4 @@
-package edu.stanford.isis.epadws.processing.mysql;
+package edu.stanford.isis.epadws.processing.persistence;
 
 import java.io.InputStream;
 import java.sql.Blob;
@@ -15,7 +15,6 @@ import edu.stanford.isis.epadws.processing.model.PngStatus;
  */
 public interface MySqlQueries
 {
-
 	List<Map<String, String>> doStudySearch(String type, String searchString);
 
 	void doDeleteStudy(String uid);

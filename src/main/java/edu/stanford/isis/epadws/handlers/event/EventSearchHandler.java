@@ -15,13 +15,10 @@ import org.eclipse.jetty.server.handler.AbstractHandler;
 import edu.stanford.isis.epad.common.util.EPADConfig;
 import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epad.common.util.SearchResultUtils;
-import edu.stanford.isis.epadws.processing.mysql.MySqlInstance;
-import edu.stanford.isis.epadws.processing.mysql.MySqlQueries;
+import edu.stanford.isis.epadws.processing.persistence.MySqlInstance;
+import edu.stanford.isis.epadws.processing.persistence.MySqlQueries;
 import edu.stanford.isis.epadws.xnat.XNATUtil;
 
-/**
- * @author amsnyder
- */
 public class EventSearchHandler extends AbstractHandler
 {
 	private static final EPADLogger log = EPADLogger.getInstance();

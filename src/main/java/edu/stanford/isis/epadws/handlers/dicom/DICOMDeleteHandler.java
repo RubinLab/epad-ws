@@ -15,10 +15,6 @@ import edu.stanford.isis.epad.common.util.JsonHelper;
 import edu.stanford.isis.epadws.processing.pipeline.task.DicomDeleteTask;
 import edu.stanford.isis.epadws.xnat.XNATUtil;
 
-/**
- * @author kurtz
- * 
- */
 public class DICOMDeleteHandler extends AbstractHandler
 {
 	private static final EPADLogger log = EPADLogger.getInstance();

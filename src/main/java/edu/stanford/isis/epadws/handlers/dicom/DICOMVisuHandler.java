@@ -25,8 +25,6 @@ import edu.stanford.isis.epadws.xnat.XNATUtil;
 
 /**
  * Generate window width and center for a series or study in one quick step.
- * 
- * @author amsnyder
  */
 public class DICOMVisuHandler extends AbstractHandler
 {

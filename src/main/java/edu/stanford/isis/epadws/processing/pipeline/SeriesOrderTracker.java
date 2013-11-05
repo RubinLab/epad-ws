@@ -7,8 +7,8 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import edu.stanford.isis.epadws.processing.model.SeriesOrder;
 import edu.stanford.isis.epadws.processing.model.SeriesOrderStatus;
-import edu.stanford.isis.epadws.processing.mysql.MySqlInstance;
-import edu.stanford.isis.epadws.processing.mysql.MySqlQueries;
+import edu.stanford.isis.epadws.processing.persistence.MySqlInstance;
+import edu.stanford.isis.epadws.processing.persistence.MySqlQueries;
 
 /**
  * Singleton class to keep track of all images and which are in the pipeline.

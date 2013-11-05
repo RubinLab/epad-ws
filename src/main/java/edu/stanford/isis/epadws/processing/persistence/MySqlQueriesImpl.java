@@ -1,4 +1,4 @@
-package edu.stanford.isis.epadws.processing.mysql;
+package edu.stanford.isis.epadws.processing.persistence;
 
 import java.io.InputStream;
 import java.sql.Blob;
@@ -70,7 +70,7 @@ public class MySqlQueriesImpl implements MySqlQueries
 					String value = rs.getString(currKey);
 
 					if (isStudyDateColumn(currKey)) {
-						value = DbUtils.formatMySqlStudyDateToYYYYMMDDFormat(value);
+						value = DatabaseUtils.formatMySqlStudyDateToYYYYMMDDFormat(value);
 					}
 
 					line.put(currKey, value);
@@ -78,7 +78,7 @@ public class MySqlQueriesImpl implements MySqlQueries
 				retVal.add(line);
 			}
 		} catch (SQLException sqle) {
-			String debugInfo = DbUtils.getDebugData(rs);
+			String debugInfo = DatabaseUtils.getDebugData(rs);
 			logger.warning("database operation failed for: _" + searchSql + "_ debugInfo=" + debugInfo, sqle);
 		} finally {
 			close(c, s, rs);
@@ -94,7 +94,6 @@ public class MySqlQueriesImpl implements MySqlQueries
 	@Override
 	public List<Map<String, String>> doSeriesSearch(String studyUID)
 	{
-
 		List<Map<String, String>> retVal = new ArrayList<Map<String, String>>();
 
 		Connection c = null;
@@ -120,12 +119,11 @@ public class MySqlQueriesImpl implements MySqlQueries
 				retVal.add(rowMap);
 			}// while
 		} catch (SQLException sqle) {
-			String debugInfo = DbUtils.getDebugData(rs);
+			String debugInfo = DatabaseUtils.getDebugData(rs);
 			logger.warning("database operation failed. debugInfo=" + debugInfo, sqle);
 		} finally {
 			close(c, ps, rs);
 		}
-
 		return retVal;
 	}
 
@@ -142,7 +140,7 @@ public class MySqlQueriesImpl implements MySqlQueries
 			ps.setString(1, "%" + uid.replace('.', '_') + "%");
 			ps.executeUpdate();
 		} catch (SQLException sqle) {
-			String debugInfo = DbUtils.getDebugData(rs);
+			String debugInfo = DatabaseUtils.getDebugData(rs);
 			logger.warning("database operation failed. debugInfo=" + debugInfo, sqle);
 		} finally {
 			close(c, ps, rs);
@@ -166,12 +164,11 @@ public class MySqlQueriesImpl implements MySqlQueries
 			ps.executeUpdate();
 
 		} catch (SQLException sqle) {
-			String debugInfo = DbUtils.getDebugData(rs);
+			String debugInfo = DatabaseUtils.getDebugData(rs);
 			logger.warning("database operation failed. debugInfo=" + debugInfo, sqle);
 		} finally {
 			close(c, ps, rs);
 		}
-
 	}
 
 	/**
@@ -197,7 +194,7 @@ public class MySqlQueriesImpl implements MySqlQueries
 				retVal.add(rs.getString("study_iuid"));
 			}// while
 		} catch (SQLException sqle) {
-			String debugInfo = DbUtils.getDebugData(rs);
+			String debugInfo = DatabaseUtils.getDebugData(rs);
 			logger.warning("database operation failed. debugInfo=" + debugInfo, sqle);
 		} finally {
 			close(c, ps, rs);
@@ -228,7 +225,7 @@ public class MySqlQueriesImpl implements MySqlQueries
 				retVal.add(rs.getString("user_name"));
 			}// while
 		} catch (SQLException sqle) {
-			String debugInfo = DbUtils.getDebugData(rs);
+			String debugInfo = DatabaseUtils.getDebugData(rs);
 			logger.warning("database operation failed. debugInfo=" + debugInfo, sqle);
 		} finally {
 			close(c, ps, rs);
@@ -256,7 +253,7 @@ public class MySqlQueriesImpl implements MySqlQueries
 				retVal.add(rs.getString("series_iuid"));
 			}// while
 		} catch (SQLException sqle) {
-			String debugInfo = DbUtils.getDebugData(rs);
+			String debugInfo = DatabaseUtils.getDebugData(rs);
 			logger.warning("database operation failed. debugInfo=" + debugInfo, sqle);
 		} finally {
 			close(c, ps, rs);
@@ -283,7 +280,7 @@ public class MySqlQueriesImpl implements MySqlQueries
 				retVal.add(rs.getString("series_iuid"));
 			}// while
 		} catch (SQLException sqle) {
-			String debugInfo = DbUtils.getDebugData(rs);
+			String debugInfo = DatabaseUtils.getDebugData(rs);
 			logger.warning("database operation failed. debugInfo=" + debugInfo, sqle);
 		} finally {
 			close(c, ps, rs);
@@ -311,7 +308,7 @@ public class MySqlQueriesImpl implements MySqlQueries
 				retVal.add(resultMap);
 			}// while
 		} catch (SQLException sqle) {
-			String debugInfo = DbUtils.getDebugData(rs);
+			String debugInfo = DatabaseUtils.getDebugData(rs);
 			logger.warning("database operation failed. debugInfo=" + debugInfo, sqle);
 		} finally {
 			close(c, ps, rs);
@@ -338,7 +335,7 @@ public class MySqlQueriesImpl implements MySqlQueries
 				retVal.add(resultMap);
 			}// while
 		} catch (SQLException sqle) {
-			String debugInfo = DbUtils.getDebugData(rs);
+			String debugInfo = DatabaseUtils.getDebugData(rs);
 			logger.warning("database operation failed. debugInfo=" + debugInfo, sqle);
 		} finally {
 			close(c, ps, rs);
@@ -394,7 +391,7 @@ public class MySqlQueriesImpl implements MySqlQueries
 				retVal.add(rs.getString("series_iuid"));
 			}
 		} catch (SQLException sqle) {
-			String debugInfo = DbUtils.getDebugData(rs);
+			String debugInfo = DatabaseUtils.getDebugData(rs);
 			logger.warning("database operation failed. debugInfo=" + debugInfo, sqle);
 		} finally {
 			close(c, ps, rs);
@@ -421,7 +418,7 @@ public class MySqlQueriesImpl implements MySqlQueries
 				retVal = createResultMap(rs);
 			}// while
 		} catch (SQLException sqle) {
-			String debugInfo = DbUtils.getDebugData(rs);
+			String debugInfo = DatabaseUtils.getDebugData(rs);
 			logger.warning("database operation failed. debugInfo=" + debugInfo, sqle);
 		} finally {
 			close(c, ps, rs);
@@ -447,7 +444,7 @@ public class MySqlQueriesImpl implements MySqlQueries
 				retVal = createResultMap(rs);
 			}// while
 		} catch (SQLException sqle) {
-			String debugInfo = DbUtils.getDebugData(rs);
+			String debugInfo = DatabaseUtils.getDebugData(rs);
 			logger.warning("database operation failed. debugInfo=" + debugInfo, sqle);
 		} finally {
 			close(c, ps, rs);
@@ -473,7 +470,7 @@ public class MySqlQueriesImpl implements MySqlQueries
 				retVal = createResultMap(rs);
 			}// while
 		} catch (SQLException sqle) {
-			String debugInfo = DbUtils.getDebugData(rs);
+			String debugInfo = DatabaseUtils.getDebugData(rs);
 			logger.warning("database operation failed. debugInfo=" + debugInfo, sqle);
 		} finally {
 			close(c, ps, rs);
@@ -499,7 +496,7 @@ public class MySqlQueriesImpl implements MySqlQueries
 				retVal = createResultMap(rs);
 			}// while
 		} catch (SQLException sqle) {
-			String debugInfo = DbUtils.getDebugData(rs);
+			String debugInfo = DatabaseUtils.getDebugData(rs);
 			logger.warning("database operation failed. debugInfo=" + debugInfo, sqle);
 		} finally {
 			close(c, ps, rs);
@@ -559,7 +556,7 @@ public class MySqlQueriesImpl implements MySqlQueries
 			}// while
 
 		} catch (SQLException sqle) {
-			String debugInfo = DbUtils.getDebugData(rs);
+			String debugInfo = DatabaseUtils.getDebugData(rs);
 			logger.warning("database operation failed. debugInfo=" + debugInfo, sqle);
 		} finally {
 			close(c, ps, rs);
@@ -587,7 +584,7 @@ public class MySqlQueriesImpl implements MySqlQueries
 			}// while
 
 		} catch (SQLException sqle) {
-			String debugInfo = DbUtils.getDebugData(rs);
+			String debugInfo = DatabaseUtils.getDebugData(rs);
 			logger.warning("database operation failed. debugInfo=" + debugInfo, sqle);
 		} finally {
 			close(c, ps, rs);
@@ -618,7 +615,7 @@ public class MySqlQueriesImpl implements MySqlQueries
 			}// while
 
 		} catch (SQLException sqle) {
-			String debugInfo = DbUtils.getDebugData(rs);
+			String debugInfo = DatabaseUtils.getDebugData(rs);
 			logger.warning("database operation failed. debugInfo=" + debugInfo, sqle);
 		} finally {
 			close(c, ps, rs);
@@ -645,7 +642,7 @@ public class MySqlQueriesImpl implements MySqlQueries
 				retVal = rs.getBlob("inst_attrs");
 			}
 		} catch (SQLException sqle) {
-			String debugInfo = DbUtils.getDebugData(rs);
+			String debugInfo = DatabaseUtils.getDebugData(rs);
 			logger.warning("database operation failed. debugInfo=" + debugInfo, sqle);
 		} finally {
 			close(c, ps, rs);
@@ -744,7 +741,7 @@ public class MySqlQueriesImpl implements MySqlQueries
 				retVal.add(rs.getString("sop_iuid"));
 			}
 		} catch (SQLException sqle) {
-			String debugInfo = DbUtils.getDebugData(rs);
+			String debugInfo = DatabaseUtils.getDebugData(rs);
 			logger.warning("database operation failed. debugInfo=" + debugInfo, sqle);
 		} finally {
 			close(c, ps, rs);
@@ -866,7 +863,7 @@ public class MySqlQueriesImpl implements MySqlQueries
 				retVal = createResultMap(rs);
 			}// while
 		} catch (SQLException sqle) {
-			String debugInfo = DbUtils.getDebugData(rs);
+			String debugInfo = DatabaseUtils.getDebugData(rs);
 			logger.warning("database operation failed. debugInfo=" + debugInfo, sqle);
 		} finally {
 			close(c, ps, rs);
@@ -891,7 +888,7 @@ public class MySqlQueriesImpl implements MySqlQueries
 			return rs.next();
 
 		} catch (SQLException sqle) {
-			String debugInfo = DbUtils.getDebugData(rs);
+			String debugInfo = DatabaseUtils.getDebugData(rs);
 			logger.warning("database operation failed. debugInfo=" + debugInfo, sqle);
 			return false;
 		} finally {
@@ -917,7 +914,7 @@ public class MySqlQueriesImpl implements MySqlQueries
 			ps.execute();
 
 		} catch (SQLException sqle) {
-			String debugInfo = DbUtils.getDebugData(rs);
+			String debugInfo = DatabaseUtils.getDebugData(rs);
 			logger.warning("database operation failed. debugInfo=" + debugInfo, sqle);
 		} finally {
 			close(c, ps, rs);
@@ -1012,7 +1009,7 @@ public class MySqlQueriesImpl implements MySqlQueries
 			}// while
 
 		} catch (SQLException e) {
-			String debugInfo = DbUtils.getDebugData(rs);
+			String debugInfo = DatabaseUtils.getDebugData(rs);
 			logger.warning("database operation failed. debugInfo=" + debugInfo, e);
 		} finally {
 			close(c, ps, rs);
@@ -1040,7 +1037,7 @@ public class MySqlQueriesImpl implements MySqlQueries
 			ps.execute();
 
 		} catch (SQLException sqle) {
-			String debugInfo = DbUtils.getDebugData(rs);
+			String debugInfo = DatabaseUtils.getDebugData(rs);
 			logger.warning("database operation failed. debugInfo=" + debugInfo, sqle);
 		} finally {
 			close(c, ps, rs);
@@ -1061,7 +1058,7 @@ public class MySqlQueriesImpl implements MySqlQueries
 			ps.execute();
 
 		} catch (SQLException sqle) {
-			String debugInfo = DbUtils.getDebugData(rs);
+			String debugInfo = DatabaseUtils.getDebugData(rs);
 			logger.warning("database operation failed. debugInfo=" + debugInfo, sqle);
 		} finally {
 			close(c, ps, rs);
@@ -1117,7 +1114,7 @@ public class MySqlQueriesImpl implements MySqlQueries
 			return rs.next();
 
 		} catch (SQLException sqle) {
-			String debugInfo = DbUtils.getDebugData(rs);
+			String debugInfo = DatabaseUtils.getDebugData(rs);
 			logger.warning("database operation failed. debugInfo=" + debugInfo, sqle);
 			return false;
 		} finally {
@@ -1141,7 +1138,7 @@ public class MySqlQueriesImpl implements MySqlQueries
 			ps.execute();
 
 		} catch (SQLException sqle) {
-			String debugInfo = DbUtils.getDebugData(rs);
+			String debugInfo = DatabaseUtils.getDebugData(rs);
 			logger.warning("database operation failed. debugInfo=" + debugInfo, sqle);
 		} finally {
 			close(c, ps, rs);
@@ -1172,7 +1169,7 @@ public class MySqlQueriesImpl implements MySqlQueries
 				return -1;
 			}
 		} catch (SQLException sqle) {
-			String debugInfo = DbUtils.getDebugData(rs);
+			String debugInfo = DatabaseUtils.getDebugData(rs);
 			logger.warning("database operation failed. debugInfo=" + debugInfo, sqle);
 			return -1;
 		} finally {
@@ -1198,7 +1195,7 @@ public class MySqlQueriesImpl implements MySqlQueries
 				return -1;
 			}
 		} catch (SQLException sqle) {
-			String debugInfo = DbUtils.getDebugData(rs);
+			String debugInfo = DatabaseUtils.getDebugData(rs);
 			logger.warning("database operation failed. debugInfo=" + debugInfo, sqle);
 			return -1;
 		} finally {
@@ -1223,7 +1220,7 @@ public class MySqlQueriesImpl implements MySqlQueries
 				return -1;
 			}
 		} catch (SQLException sqle) {
-			String debugInfo = DbUtils.getDebugData(rs);
+			String debugInfo = DatabaseUtils.getDebugData(rs);
 			logger.warning("database operation failed. debugInfo=" + debugInfo, sqle);
 			return -1;
 		} finally {
@@ -1343,7 +1340,7 @@ public class MySqlQueriesImpl implements MySqlQueries
 				return null;
 			}
 		} catch (SQLException sqle) {
-			String debugInfo = DbUtils.getDebugData(rs);
+			String debugInfo = DatabaseUtils.getDebugData(rs);
 			logger.warning("database operation failed. debugInfo=" + debugInfo, sqle);
 			return null;
 		} finally {
@@ -1367,7 +1364,7 @@ public class MySqlQueriesImpl implements MySqlQueries
 				return null;
 			}
 		} catch (SQLException sqle) {
-			String debugInfo = DbUtils.getDebugData(rs);
+			String debugInfo = DatabaseUtils.getDebugData(rs);
 			logger.warning("database operation failed. debugInfo=" + debugInfo, sqle);
 			return null;
 		} finally {
@@ -1391,7 +1388,7 @@ public class MySqlQueriesImpl implements MySqlQueries
 				return null;
 			}
 		} catch (SQLException sqle) {
-			String debugInfo = DbUtils.getDebugData(rs);
+			String debugInfo = DatabaseUtils.getDebugData(rs);
 			logger.warning("database operation failed. debugInfo=" + debugInfo, sqle);
 			return null;
 		} finally {
@@ -1415,7 +1412,7 @@ public class MySqlQueriesImpl implements MySqlQueries
 				return null;
 			}
 		} catch (SQLException sqle) {
-			String debugInfo = DbUtils.getDebugData(rs);
+			String debugInfo = DatabaseUtils.getDebugData(rs);
 			logger.warning("database operation failed. debugInfo=" + debugInfo, sqle);
 			return null;
 		} finally {
@@ -1452,26 +1449,26 @@ public class MySqlQueriesImpl implements MySqlQueries
 
 	void close(Connection c, Statement s)
 	{
-		DbUtils.close(s);
+		DatabaseUtils.close(s);
 		connectionPool.freeConnection(c);
 	}
 
 	void close(Connection c, PreparedStatement ps)
 	{
-		DbUtils.close(ps);
+		DatabaseUtils.close(ps);
 		connectionPool.freeConnection(c);
 	}
 
 	void close(Connection c, Statement s, ResultSet rs)
 	{
-		DbUtils.close(rs);
+		DatabaseUtils.close(rs);
 		close(c, s);
 	}
 
 	void close(Connection c, PreparedStatement ps, ResultSet rs)
 	{
 		close(c, ps);
-		DbUtils.close(rs);
+		DatabaseUtils.close(rs);
 	}
 
 	@Override
@@ -1505,7 +1502,7 @@ public class MySqlQueriesImpl implements MySqlQueries
 				retVal.add(rowMap);
 			}// while
 		} catch (SQLException sqle) {
-			String debugInfo = DbUtils.getDebugData(rs);
+			String debugInfo = DatabaseUtils.getDebugData(rs);
 			logger.warning("database operation failed. debugInfo=" + debugInfo, sqle);
 		} finally {
 			close(c, ps, rs);
@@ -1532,7 +1529,7 @@ public class MySqlQueriesImpl implements MySqlQueries
 				return null;
 			}
 		} catch (SQLException sqle) {
-			String debugInfo = DbUtils.getDebugData(rs);
+			String debugInfo = DatabaseUtils.getDebugData(rs);
 			logger.warning("database operation failed. debugInfo=" + debugInfo, sqle);
 			return null;
 		} finally {
@@ -1556,7 +1553,7 @@ public class MySqlQueriesImpl implements MySqlQueries
 				result.add(rs.getString(1));
 			}
 		} catch (SQLException sqle) {
-			String debugInfo = DbUtils.getDebugData(rs);
+			String debugInfo = DatabaseUtils.getDebugData(rs);
 			logger.warning("database operation failed. debugInfo=" + debugInfo, sqle);
 			return null;
 		} finally {
@@ -1584,7 +1581,7 @@ public class MySqlQueriesImpl implements MySqlQueries
 				return -1;
 			}
 		} catch (SQLException e) {
-			String debugInfo = DbUtils.getDebugData(rs);
+			String debugInfo = DatabaseUtils.getDebugData(rs);
 			logger.warning("database operation failed. debugInfo=" + debugInfo, e);
 			throw e;
 		} finally {
@@ -1633,7 +1630,7 @@ public class MySqlQueriesImpl implements MySqlQueries
 					return null; // Does not exist
 				}
 			} catch (SQLException e) {
-				String debugInfo = DbUtils.getDebugData(rs);
+				String debugInfo = DatabaseUtils.getDebugData(rs);
 				logger.warning("database operation failed. debugInfo=" + debugInfo, e);
 				throw e;
 			} finally {
@@ -1673,7 +1670,7 @@ public class MySqlQueriesImpl implements MySqlQueries
 				return -1; // It does not exist in the
 			}
 		} catch (SQLException e) {
-			String debugInfo = DbUtils.getDebugData(rs);
+			String debugInfo = DatabaseUtils.getDebugData(rs);
 			logger.warning("database operation failed. debugInfo=" + debugInfo, e);
 			throw e;
 		} finally {
@@ -1722,7 +1719,7 @@ public class MySqlQueriesImpl implements MySqlQueries
 
 			return new Term(coordinationTermID, schemaName, schemaVersion, description);
 		} catch (SQLException e) {
-			String debugInfo = DbUtils.getDebugData(rs);
+			String debugInfo = DatabaseUtils.getDebugData(rs);
 			logger.warning("database operation failed. debugInfo=" + debugInfo, e);
 			throw e;
 		} finally {
@@ -1753,7 +1750,7 @@ public class MySqlQueriesImpl implements MySqlQueries
 			}
 			return termID;
 		} catch (SQLException e) {
-			String debugInfo = DbUtils.getDebugData(rs);
+			String debugInfo = DatabaseUtils.getDebugData(rs);
 			logger.warning("database operation failed. debugInfo=" + debugInfo, e);
 			throw e;
 		} finally {

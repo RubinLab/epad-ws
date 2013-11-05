@@ -1,19 +1,14 @@
-package edu.stanford.isis.epadws.processing.mysql;
+package edu.stanford.isis.epadws.processing.persistence;
 
 import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
 
 import edu.stanford.isis.epad.common.dicom.DicomFormatUtil;
-import edu.stanford.isis.epad.common.util.FileKey;
 import edu.stanford.isis.epad.common.util.EPADFileUtils;
+import edu.stanford.isis.epad.common.util.FileKey;
 import edu.stanford.isis.epadws.processing.model.PngStatus;
 
-/**
- * Move utility classes to here.
- * 
- * @author alansnyder
- */
 public class Dcm3CheeDatabaseUtils
 {
 	private Dcm3CheeDatabaseUtils()

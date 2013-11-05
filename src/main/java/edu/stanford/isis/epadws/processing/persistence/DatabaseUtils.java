@@ -5,7 +5,7 @@
  * Software License Agreement available at:
  *   http://epad.stanford.edu/license/
  */
-package edu.stanford.isis.epadws.processing.mysql;
+package edu.stanford.isis.epadws.processing.persistence;
 
 import java.io.File;
 import java.sql.Connection;
@@ -26,14 +26,11 @@ import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epad.common.util.FileKey;
 import edu.stanford.isis.epad.common.util.ResourceUtils;
 
-/**
- * Utilities for a database.
- */
-public class DbUtils
+public class DatabaseUtils
 {
 	private static EPADLogger logger = EPADLogger.getInstance();
 
-	private DbUtils()
+	private DatabaseUtils()
 	{
 	}
 
@@ -232,26 +229,6 @@ public class DbUtils
 		DicomStudyUID studyUID = new DicomStudyUID(tags.get(DicomTagFileUtils.STUDY_UID));
 
 		return ResourceUtils.makeThumbnailFilePath(studyUID, seriesUID);
-	}
-
-	/**
-	 * 
-	 * @param dbValues Map
-	 */
-	public static void debugInstanceKeys(Map<DbQueries.InstanceKey, String> dbValues)
-	{
-		DbQueries.InstanceKey[] allKeys = DbQueries.InstanceKey.values();
-		StringBuilder sb = new StringBuilder();
-		sb.append("[");
-		for (DbQueries.InstanceKey key : allKeys) {
-			sb.append("{");
-			String value = dbValues.get(key);
-			sb.append(key).append("=").append(value);
-			sb.append("},");
-		}
-		sb.append("]");
-
-		logger.info("InstanceKey map: " + sb.toString());
 	}
 
 	/**

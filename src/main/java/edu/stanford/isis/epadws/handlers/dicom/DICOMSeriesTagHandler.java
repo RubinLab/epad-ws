@@ -23,8 +23,8 @@ import com.pixelmed.dicom.DicomException;
 import com.pixelmed.dicom.DicomInputStream;
 
 import edu.stanford.isis.epad.common.util.EPADLogger;
-import edu.stanford.isis.epadws.processing.mysql.MySqlInstance;
-import edu.stanford.isis.epadws.processing.mysql.MySqlQueries;
+import edu.stanford.isis.epadws.processing.persistence.MySqlInstance;
+import edu.stanford.isis.epadws.processing.persistence.MySqlQueries;
 import edu.stanford.isis.epadws.xnat.XNATUtil;
 
 public class DICOMSeriesTagHandler extends AbstractHandler

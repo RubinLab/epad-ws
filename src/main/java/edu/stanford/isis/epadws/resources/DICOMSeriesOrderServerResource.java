@@ -7,8 +7,8 @@ import org.restlet.data.Status;
 import org.restlet.resource.Get;
 
 import edu.stanford.isis.epad.common.dicom.DicomFormatUtil;
-import edu.stanford.isis.epadws.processing.mysql.MySqlInstance;
-import edu.stanford.isis.epadws.processing.mysql.MySqlQueries;
+import edu.stanford.isis.epadws.processing.persistence.MySqlInstance;
+import edu.stanford.isis.epadws.processing.persistence.MySqlQueries;
 
 /**
  * Create and "order-file" by calling the MySql database. It will look like the following (to be compatible with the

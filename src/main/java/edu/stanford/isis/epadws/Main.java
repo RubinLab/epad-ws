@@ -51,7 +51,7 @@ import edu.stanford.isis.epadws.handlers.xnat.XNATProjectHandler;
 import edu.stanford.isis.epadws.handlers.xnat.XNATSessionHandler;
 import edu.stanford.isis.epadws.handlers.xnat.XNATSubjectHandler;
 import edu.stanford.isis.epadws.processing.leveling.WindowLevelFactory;
-import edu.stanford.isis.epadws.processing.mysql.MySqlInstance;
+import edu.stanford.isis.epadws.processing.persistence.MySqlInstance;
 import edu.stanford.isis.epadws.processing.pipeline.threads.ShutdownHookThread;
 import edu.stanford.isis.epadws.processing.pipeline.threads.ShutdownSignal;
 import edu.stanford.isis.epadws.processing.pipeline.watcher.QueueAndWatcherManager;

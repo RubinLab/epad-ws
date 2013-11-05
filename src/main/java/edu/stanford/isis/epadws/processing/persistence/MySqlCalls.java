@@ -1,10 +1,5 @@
-package edu.stanford.isis.epadws.processing.mysql;
+package edu.stanford.isis.epadws.processing.persistence;
 
-/**
- * SQL queries for MySQL DCM4CHEE tables.
- * 
- * @author amsnyder
- */
 public class MySqlCalls
 {
 	private MySqlCalls()

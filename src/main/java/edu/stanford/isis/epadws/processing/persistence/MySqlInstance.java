@@ -1,4 +1,4 @@
-package edu.stanford.isis.epadws.processing.mysql;
+package edu.stanford.isis.epadws.processing.persistence;
 
 import java.io.File;
 import java.sql.Connection;
@@ -8,9 +8,9 @@ import java.sql.Statement;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
+import edu.stanford.isis.epad.common.util.EPADFileUtils;
 import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epad.common.util.FileKey;
-import edu.stanford.isis.epad.common.util.EPADFileUtils;
 import edu.stanford.isis.epad.common.util.ResourceUtils;
 import edu.stanford.isis.epadws.processing.model.DatabaseState;
 
@@ -19,13 +19,12 @@ import edu.stanford.isis.epadws.processing.model.DatabaseState;
  */
 public class MySqlInstance
 {
-
 	private static EPADLogger logger = EPADLogger.getInstance();
 
 	private static final String USER = "pacs";
 	private static final String PWD = "pacs";
 
-	private static MySqlInstance ourInstance = new MySqlInstance();
+	private static final MySqlInstance ourInstance = new MySqlInstance();
 
 	private MySqlConnectionPool connectionPool;
 	private MySqlQueries mySqlQueries;
@@ -52,7 +51,6 @@ public class MySqlInstance
 			createConnectionPool();
 
 			mySqlQueries = new MySqlQueriesImpl(connectionPool);
-
 		} catch (Exception e) {
 			logger.sever("Failed to init connection pool to database database", e);
 			dbState.set(DatabaseState.ERROR);
@@ -71,12 +69,10 @@ public class MySqlInstance
 			} else {
 				logger.info("ePad's extra MySQL tables appear to be up to date.");
 			}
-
 			startupTime = System.currentTimeMillis() - time;
 
 			dbState.set(DatabaseState.READY);
 			logger.info("Database took " + startupTime + " ms to start.");
-
 		} catch (Exception e) {
 			logger.sever("Failed to start-up database", e);
 			dbState.set(DatabaseState.ERROR);
@@ -91,15 +87,14 @@ public class MySqlInstance
 	@SuppressWarnings("unused")
 	private void updateMySqlTables()
 	{
-		try {
-			// for now we are just creating the loading the first version.
+		try { // For now we are just creating the loading the first version.
 			String mySQLScriptDir = ResourceUtils.getEPADWebServerMySQLScriptDir();
 			String sqlFilePath = FileKey.getCanonicalPath(new File(mySQLScriptDir + "dcm4chee-extensions.sql"));
 			File createDbTablesFile = new File(sqlFilePath);
 			logger.info("Reading sql file: " + sqlFilePath);
 			String content = EPADFileUtils.read(createDbTablesFile);
 
-			List<String> createCommands = DbUtils.parseCreateTable(content);
+			List<String> createCommands = DatabaseUtils.parseCreateTable(content);
 
 			for (String currCreateTableCmd : createCommands) {
 				logger.info("executing: " + currCreateTableCmd);
@@ -128,7 +123,6 @@ public class MySqlInstance
 					} else {
 						s.execute(sqlCmd);
 					}
-
 				} catch (SQLException sqle) {
 					if (sqlCmd.toUpperCase().startsWith("DROP")) {
 						logger.info("Not dropping table: " + currCreateTableCmd);
@@ -138,20 +132,17 @@ public class MySqlInstance
 				} catch (Exception e) {
 					logger.warning("Failed to create database.", e);
 				} finally {
-					DbUtils.close(s);
-					DbUtils.close(conn);
+					DatabaseUtils.close(s);
+					DatabaseUtils.close(conn);
 				}
 			}
 		} catch (Exception e) {
-			logger.warning("Failed to create extra my sql tables", e);
+			logger.warning("Failed to create extra MySQL tables", e);
 		}
-
 	}
 
 	private boolean tablesUpToDate()
 	{
-		// return true;
-
 		boolean result = false;
 		Connection conn = null;
 		Statement s = null;
@@ -178,12 +169,11 @@ public class MySqlInstance
 			result = false;
 		} finally {
 			logger.info(sb.toString());
-			DbUtils.close(rs);
-			DbUtils.close(s);
-			DbUtils.close(conn);
+			DatabaseUtils.close(rs);
+			DatabaseUtils.close(s);
+			DatabaseUtils.close(conn);
 		}
 		return result;
-
 	}
 
 	public void shutdown()
@@ -192,9 +182,6 @@ public class MySqlInstance
 		long time = System.currentTimeMillis();
 		logger.info("Shutting down database.");
 
-		// flush data
-
-		// close connection pool.
 		closeConnectionPool();
 		logger.info("The database took " + (System.currentTimeMillis() - time) + " ms, to shutdown.");
 	}
@@ -206,9 +193,7 @@ public class MySqlInstance
 
 	private void createConnectionPool() throws SQLException
 	{
-		// String localHostConnStr = "jdbc:mysql://localhost:3306/pacsdb"; //ToDo: old method.
 		String localHostConnStr = "jdbc:mysql://localhost:3306?autoReconnect=true";
-		// String localHostConnStr = "jdbc:mysql://localhost:3306";
 
 		logger.info("MySql using connection string: " + localHostConnStr);
 
@@ -241,5 +226,4 @@ public class MySqlInstance
 		}
 		throw new IllegalStateException("Database Not Ready. It is in: " + dbState.get().name() + " state");
 	}
-
 }

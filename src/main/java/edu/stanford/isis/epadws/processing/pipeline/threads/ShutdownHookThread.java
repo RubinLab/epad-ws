@@ -8,7 +8,7 @@
 package edu.stanford.isis.epadws.processing.pipeline.threads;
 
 import edu.stanford.isis.epad.common.util.EPADLogger;
-import edu.stanford.isis.epadws.processing.mysql.MySqlInstance;
+import edu.stanford.isis.epadws.processing.persistence.MySqlInstance;
 import edu.stanford.isis.epadws.processing.pipeline.PipelineFactory;
 
 import java.util.concurrent.atomic.AtomicBoolean;

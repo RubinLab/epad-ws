@@ -22,9 +22,6 @@ import edu.stanford.isis.epad.common.plugins.PluginServletHandler;
 import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epadws.xnat.XNATUtil;
 
-/**
- * The handler for plugins.
- */
 public class EPadPluginHandler extends AbstractHandler
 {
 	private final EPADLogger log = EPADLogger.getInstance();

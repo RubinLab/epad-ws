@@ -1,4 +1,4 @@
-package edu.stanford.isis.epadws.processing.mysql;
+package edu.stanford.isis.epadws.processing.persistence;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -89,9 +89,9 @@ public class MySqlConnectionPool implements Runnable
 			while (!shutdownSignal.hasShutdown()) {
 				synchronized (this) {
 					closeExcessConnections();
-				}// synchronized
+				}
 				Thread.sleep(10);
-			}// while
+			}
 		} catch (SQLException sqle) {
 			logger.sever("SQL Exception. Lost the connection pool.", sqle);
 			sqle.printStackTrace();
@@ -99,8 +99,7 @@ public class MySqlConnectionPool implements Runnable
 			logger.sever("Lost MySQL connection pool! ", e);
 			e.printStackTrace();
 		}
-
-	}// run
+	}
 
 	/**
 	 * Private method to close excess connections.
@@ -115,7 +114,7 @@ public class MySqlConnectionPool implements Runnable
 			connectionsAvailable.remove(connection);
 			connection.close();
 			caSize = connectionsAvailable.size();
-		}// while
+		}
 	}
 
 	/**
@@ -135,5 +134,4 @@ public class MySqlConnectionPool implements Runnable
 			logger.sever("Failed to dispose of connections.", sqle);
 		}
 	}
-
 }

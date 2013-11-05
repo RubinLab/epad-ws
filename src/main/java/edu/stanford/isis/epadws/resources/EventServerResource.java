@@ -9,8 +9,8 @@ import org.restlet.resource.Get;
 import org.restlet.resource.Post;
 
 import edu.stanford.isis.epad.common.util.SearchResultUtils;
-import edu.stanford.isis.epadws.processing.mysql.MySqlInstance;
-import edu.stanford.isis.epadws.processing.mysql.MySqlQueries;
+import edu.stanford.isis.epadws.processing.persistence.MySqlInstance;
+import edu.stanford.isis.epadws.processing.persistence.MySqlQueries;
 
 public class EventServerResource extends BaseServerResource
 {

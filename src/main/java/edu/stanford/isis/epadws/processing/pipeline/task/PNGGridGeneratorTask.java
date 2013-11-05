@@ -9,9 +9,9 @@ import java.util.Map;
 import edu.stanford.isis.epad.common.util.EPADFileUtils;
 import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epadws.processing.model.PngStatus;
-import edu.stanford.isis.epadws.processing.mysql.Dcm3CheeDatabaseUtils;
-import edu.stanford.isis.epadws.processing.mysql.MySqlInstance;
-import edu.stanford.isis.epadws.processing.mysql.MySqlQueries;
+import edu.stanford.isis.epadws.processing.persistence.Dcm3CheeDatabaseUtils;
+import edu.stanford.isis.epadws.processing.persistence.MySqlInstance;
+import edu.stanford.isis.epadws.processing.persistence.MySqlQueries;
 import edu.stanford.isis.epadws.processing.pipeline.threads.PNGGridGenerator;
 
 /**
