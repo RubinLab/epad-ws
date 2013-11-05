@@ -8,7 +8,7 @@ import java.util.Map;
 
 import edu.stanford.isis.epadws.handlers.coordination.CoordinationHandler;
 import edu.stanford.isis.epadws.handlers.coordination.Term;
-import edu.stanford.isis.epadws.processing.model.PngStatus;
+import edu.stanford.isis.epadws.processing.model.PngProcessingStatus;
 
 /**
  * @author amsnyder
@@ -80,7 +80,7 @@ public interface MySqlQueries
 
 	boolean hasEpadFile(String filePath);
 
-	void updateEpadFile(String filePath, PngStatus newStatus, int fileSize, String errorMsg);
+	void updateEpadFile(String filePath, PngProcessingStatus newStatus, int fileSize, String errorMsg);
 
 	int countEpadFilesLike(String likePath);
 

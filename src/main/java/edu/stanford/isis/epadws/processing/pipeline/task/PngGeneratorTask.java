@@ -13,8 +13,8 @@ import javax.imageio.ImageIO;
 import edu.stanford.isis.epad.common.dicom.DicomReader;
 import edu.stanford.isis.epad.common.util.EPADFileUtils;
 import edu.stanford.isis.epad.common.util.EPADLogger;
-import edu.stanford.isis.epadws.processing.model.PngStatus;
-import edu.stanford.isis.epadws.processing.persistence.Dcm3CheeDatabaseUtils;
+import edu.stanford.isis.epadws.processing.model.PngProcessingStatus;
+import edu.stanford.isis.epadws.processing.persistence.Dcm4CheeDatabaseUtils;
 import edu.stanford.isis.epadws.processing.persistence.MySqlInstance;
 import edu.stanford.isis.epadws.processing.persistence.MySqlQueries;
 
@@ -26,6 +26,7 @@ import edu.stanford.isis.epadws.processing.persistence.MySqlQueries;
 public class PngGeneratorTask implements GeneratorTask
 {
 	private static final EPADLogger logger = EPADLogger.getInstance();
+
 	private final File dicomInputFile;
 	private final File pngOutputFile;
 
@@ -52,7 +53,7 @@ public class PngGeneratorTask implements GeneratorTask
 		try {
 			DicomReader instance = new DicomReader(inputDICOMFile);
 			String pngFilePath = outputPNGFile.getAbsolutePath();
-			epadFilesTable = Dcm3CheeDatabaseUtils.createEPadFilesTableData(outputPNGFile);
+			epadFilesTable = Dcm4CheeDatabaseUtils.createEPadFilesTableData(outputPNGFile);
 			outputPNGFile = new File(pngFilePath);
 
 			logger.info("PngGeneratorTask: creating PNG file: " + outputPNGFile.getAbsolutePath());
@@ -65,17 +66,17 @@ public class PngGeneratorTask implements GeneratorTask
 			ImageIO.write(instance.getPackedImage(), "png", outputPNGStream);
 
 			logger.info("Finished writing PNG file: " + outputPNGFile);
-			epadFilesTable = Dcm3CheeDatabaseUtils.createEPadFilesTableData(outputPNGFile);
-			queries.updateEpadFile(epadFilesTable.get("file_path"), PngStatus.DONE, getFileSize(epadFilesTable), "");
+			epadFilesTable = Dcm4CheeDatabaseUtils.createEPadFilesTableData(outputPNGFile);
+			queries.updateEpadFile(epadFilesTable.get("file_path"), PngProcessingStatus.DONE, getFileSize(epadFilesTable), "");
 		} catch (FileNotFoundException e) {
 			logger.warning("Failed to create packed PNG for: " + inputDICOMFile.getAbsolutePath(), e);
-			queries.updateEpadFile(epadFilesTable.get("file_path"), PngStatus.ERROR, 0, "Dicom file not found.");
+			queries.updateEpadFile(epadFilesTable.get("file_path"), PngProcessingStatus.ERROR, 0, "Dicom file not found.");
 		} catch (IOException e) {
 			logger.warning("Failed to create packed PNG for: " + inputDICOMFile.getAbsolutePath(), e);
-			queries.updateEpadFile(epadFilesTable.get("file_path"), PngStatus.ERROR, 0, "IO Error.");
+			queries.updateEpadFile(epadFilesTable.get("file_path"), PngProcessingStatus.ERROR, 0, "IO Error.");
 		} catch (Exception e) {
 			logger.warning("Failed to create packed PNG for: " + inputDICOMFile.getAbsolutePath(), e);
-			queries.updateEpadFile(epadFilesTable.get("file_path"), PngStatus.ERROR, 0,
+			queries.updateEpadFile(epadFilesTable.get("file_path"), PngProcessingStatus.ERROR, 0,
 					"General Exception: " + e.getMessage());
 		} finally {
 			if (inputDICOMFile.getName().endsWith(".tmp")) {
@@ -88,20 +89,9 @@ public class PngGeneratorTask implements GeneratorTask
 					outputPNGStream.close();
 					outputPNGStream = null;
 				} catch (Exception e) {
-					logger.warning("Failed to close output stream", e);
+					logger.warning("Failed to close PNG output stream", e);
 				}
 			}
-		}
-	}
-
-	private int getFileSize(Map<String, String> epadFilesTable)
-	{
-		try {
-			String fileSize = epadFilesTable.get("file_size");
-			return Integer.parseInt(fileSize);
-		} catch (Exception e) {
-			logger.warning("Failed to get file.", e);
-			return 0;
 		}
 	}
 
@@ -131,5 +121,16 @@ public class PngGeneratorTask implements GeneratorTask
 	public String getTaskType()
 	{
 		return "Png";
+	}
+
+	private int getFileSize(Map<String, String> epadFilesTable)
+	{
+		try {
+			String fileSize = epadFilesTable.get("file_size");
+			return Integer.parseInt(fileSize);
+		} catch (Exception e) {
+			logger.warning("Failed to get file.", e);
+			return 0;
+		}
 	}
 }

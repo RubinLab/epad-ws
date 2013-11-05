@@ -15,9 +15,9 @@ import edu.stanford.isis.epad.common.util.EPADConfig;
 import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epad.common.util.EPADTools;
 import edu.stanford.isis.epad.common.util.ResourceUtils;
-import edu.stanford.isis.epadws.processing.model.PngStatus;
+import edu.stanford.isis.epadws.processing.model.PngProcessingStatus;
 import edu.stanford.isis.epadws.processing.model.DicomSeriesOrder;
-import edu.stanford.isis.epadws.processing.persistence.Dcm3CheeDatabaseUtils;
+import edu.stanford.isis.epadws.processing.persistence.Dcm4CheeDatabaseUtils;
 import edu.stanford.isis.epadws.processing.persistence.MySqlInstance;
 import edu.stanford.isis.epadws.processing.persistence.MySqlQueries;
 import edu.stanford.isis.epadws.processing.pipeline.process.PngGeneratorProcess;
@@ -172,8 +172,8 @@ public class QueueAndWatcherManager
 
 	private void insertEpadFile(MySqlQueries queries, File outputPNGFile)
 	{
-		Map<String, String> epadFilesTable = Dcm3CheeDatabaseUtils.createEPadFilesTableData(outputPNGFile);
-		epadFilesTable.put("file_status", "" + PngStatus.IN_PIPELINE.getCode());
+		Map<String, String> epadFilesTable = Dcm4CheeDatabaseUtils.createEPadFilesTableData(outputPNGFile);
+		epadFilesTable.put("file_status", "" + PngProcessingStatus.IN_PIPELINE.getCode());
 		queries.insertEpadFile(epadFilesTable);
 	}
 

@@ -22,7 +22,7 @@ import edu.stanford.isis.epad.common.dicom.DicomParentCache;
 import edu.stanford.isis.epad.common.dicom.DicomParentType;
 import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epadws.handlers.coordination.Term;
-import edu.stanford.isis.epadws.processing.model.PngStatus;
+import edu.stanford.isis.epadws.processing.model.PngProcessingStatus;
 
 /**
  * @author amsnyder
@@ -897,7 +897,7 @@ public class MySqlQueriesImpl implements MySqlQueries
 	}
 
 	@Override
-	public void updateEpadFile(String filePath, PngStatus pngStatus, int fileSize, String errorMsg)
+	public void updateEpadFile(String filePath, PngProcessingStatus pngStatus, int fileSize, String errorMsg)
 	{
 		Connection c = null;
 		PreparedStatement ps = null;
@@ -963,11 +963,11 @@ public class MySqlQueriesImpl implements MySqlQueries
 			if (fileStatus != null) {
 				return Integer.parseInt(fileStatus);
 			}
-			return PngStatus.DONE.getCode();
+			return PngProcessingStatus.DONE.getCode();
 		} catch (Exception e) {
 			logger.warning("failed to parse file_status.", e);
 		}
-		return PngStatus.DONE.getCode();
+		return PngProcessingStatus.DONE.getCode();
 	}
 
 	private String getErrMsg(Map<String, String> data)

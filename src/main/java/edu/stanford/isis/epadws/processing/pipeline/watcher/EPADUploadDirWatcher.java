@@ -35,11 +35,11 @@ public class EPADUploadDirWatcher implements Runnable
 		try {
 			ShutdownSignal shutdownSignal = ShutdownSignal.getInstance();
 			File rootDir = new File(ResourceUtils.getEPADWebServerUploadDir());
-			log.info("MySQL upload directory:" + ResourceUtils.getEPADWebServerUploadDir());
+			log.info("ePAD upload directory:" + ResourceUtils.getEPADWebServerUploadDir());
 			while (true) {
-				if (shutdownSignal.hasShutdown()) {
+				if (shutdownSignal.hasShutdown())
 					return;
-				}
+
 				try {
 					List<File> newDirList = findNewDir(rootDir);
 					if (newDirList != null) {
@@ -50,19 +50,19 @@ public class EPADUploadDirWatcher implements Runnable
 				} catch (ConcurrentModificationException e) {
 					log.warning("Upload Watch Thread had error: ", e);
 				}
-				if (shutdownSignal.hasShutdown()) {
+				if (shutdownSignal.hasShutdown())
 					return;
-				}
+
 				TimeUnit.MILLISECONDS.sleep(CHECK_INTERVAL);
 			}
 		} catch (Exception e) {
-			log.sever("UploadDirWatcher error.", e);
+			log.sever("UploadDirWatcher error", e);
 		} finally {
 			log.info("Done. UploadDirWatcher thread.");
 		}
 	}
 
-	// looks for new files without the dir.found file in it.
+	// Looks for new files without the dir.found file in it.
 	private List<File> findNewDir(File dir)
 	{
 		List<File> retVal = new ArrayList<File>();
@@ -174,7 +174,6 @@ public class EPADUploadDirWatcher implements Runnable
 				throw new IllegalStateException("Too many zip files (" + numZipFiles + ") in directory. dir="
 						+ dir.getAbsolutePath());
 			}
-
 			FileKey zipFileKey = new FileKey(zipFiles[0]);
 			DicomUploadFile zipFile = new DicomUploadFile(zipFileKey.getFile());
 
@@ -228,7 +227,6 @@ public class EPADUploadDirWatcher implements Runnable
 		for (StackTraceElement currSte : ste) {
 			sb.append(currSte.getFileName()).append(".").append(currSte.getMethodName()).append(currSte.getLineNumber());
 		}
-
 		return sb.toString();
 	}
 }

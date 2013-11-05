@@ -9,8 +9,8 @@ import java.util.Map;
 import edu.stanford.isis.epad.common.util.EPADFileUtils;
 import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epadws.processing.model.PNGGridGenerator;
-import edu.stanford.isis.epadws.processing.model.PngStatus;
-import edu.stanford.isis.epadws.processing.persistence.Dcm3CheeDatabaseUtils;
+import edu.stanford.isis.epadws.processing.model.PngProcessingStatus;
+import edu.stanford.isis.epadws.processing.persistence.Dcm4CheeDatabaseUtils;
 import edu.stanford.isis.epadws.processing.persistence.MySqlInstance;
 import edu.stanford.isis.epadws.processing.persistence.MySqlQueries;
 
@@ -19,7 +19,7 @@ import edu.stanford.isis.epadws.processing.persistence.MySqlQueries;
  * 
  * @author martin
  */
-public class PNGGridGeneratorTask implements GeneratorTask
+public class PngGridGeneratorTask implements GeneratorTask
 {
 	private final File pngInputFile;
 	private final List<File> inputPNGGridFiles;
@@ -29,7 +29,7 @@ public class PNGGridGeneratorTask implements GeneratorTask
 	private static final int IMAGES_PER_AXIS = 4;
 	private static final EPADLogger logger = EPADLogger.getInstance();
 
-	public PNGGridGeneratorTask(File pngInputFile, List<File> inputPNGGridFiles, File outputPNGFile)
+	public PngGridGeneratorTask(File pngInputFile, List<File> inputPNGGridFiles, File outputPNGFile)
 	{
 		this.pngInputFile = pngInputFile;
 		this.inputPNGGridFiles = new ArrayList<File>(inputPNGGridFiles);
@@ -48,7 +48,7 @@ public class PNGGridGeneratorTask implements GeneratorTask
 		Map<String, String> epadFilesTable = new HashMap<String, String>();
 		try {
 			logger.info("PNGGridGeneratorTask: creating PNG grid file: " + outputPNGFile.getAbsolutePath());
-			epadFilesTable = Dcm3CheeDatabaseUtils.createEPadFilesTableData(outputPNGFile);
+			epadFilesTable = Dcm4CheeDatabaseUtils.createEPadFilesTableData(outputPNGFile);
 
 			boolean created = EPADFileUtils.createDirsAndFile(outputPNGFile); // Create the file
 			if (created)
@@ -60,14 +60,14 @@ public class PNGGridGeneratorTask implements GeneratorTask
 			if (success) {
 				logger.info("Finished writing PNG grid file: " + outputPNGFile);
 				int fileSize = getFileSize(epadFilesTable);
-				queries.updateEpadFile(epadFilesTable.get("file_path"), PngStatus.DONE, fileSize, "");
+				queries.updateEpadFile(epadFilesTable.get("file_path"), PngProcessingStatus.DONE, fileSize, "");
 			} else {
 				logger.info("Failed to create grid PNG file: " + outputPNGFile.getAbsolutePath());
-				queries.updateEpadFile(epadFilesTable.get("file_path"), PngStatus.ERROR, 0, "Error generating grid");
+				queries.updateEpadFile(epadFilesTable.get("file_path"), PngProcessingStatus.ERROR, 0, "Error generating grid");
 			}
 		} catch (Exception e) {
 			logger.warning("Failed to create grid PNG file: " + outputPNGFile.getAbsolutePath(), e);
-			queries.updateEpadFile(epadFilesTable.get("file_path"), PngStatus.ERROR, 0,
+			queries.updateEpadFile(epadFilesTable.get("file_path"), PngProcessingStatus.ERROR, 0,
 					"General Exception: " + e.getMessage());
 		}
 	}

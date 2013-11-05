@@ -7,15 +7,15 @@ import java.util.Map;
 import edu.stanford.isis.epad.common.dicom.DicomFormatUtil;
 import edu.stanford.isis.epad.common.util.EPADFileUtils;
 import edu.stanford.isis.epad.common.util.FileKey;
-import edu.stanford.isis.epadws.processing.model.PngStatus;
+import edu.stanford.isis.epadws.processing.model.PngProcessingStatus;
 
-public class Dcm3CheeDatabaseUtils
+public class Dcm4CheeDatabaseUtils
 {
-	private Dcm3CheeDatabaseUtils()
+	private Dcm4CheeDatabaseUtils()
 	{
 	}
 
-	public static Map<String, String> addErrorMsg(Map<String, String> map, PngStatus pngStatus, String errMsg)
+	public static Map<String, String> addErrorMsg(Map<String, String> map, PngProcessingStatus pngStatus, String errMsg)
 	{
 		map.put("file_status", "" + pngStatus.getCode());
 		map.put("err_msg", errMsg);
@@ -43,7 +43,7 @@ public class Dcm3CheeDatabaseUtils
 		retVal.put("file_path", filePath);
 		retVal.put("file_size", "" + fileSize);
 		retVal.put("file_md5", "n/a");
-		retVal.put("file_status", "" + PngStatus.DONE.getCode());
+		retVal.put("file_status", "" + PngProcessingStatus.DONE.getCode());
 		retVal.put("err_msg", "");
 
 		return retVal;
@@ -62,11 +62,11 @@ public class Dcm3CheeDatabaseUtils
 	public static int getFileTypeFromName(String name)
 	{
 		if (name.endsWith(".png")) {
-			return Dcm3CheeDatabaseUtils.FILE_TYPE_PNG;
+			return Dcm4CheeDatabaseUtils.FILE_TYPE_PNG;
 		} else if (name.endsWith(".tag")) {
-			return Dcm3CheeDatabaseUtils.FILE_TYPE_TAG;
+			return Dcm4CheeDatabaseUtils.FILE_TYPE_TAG;
 		}
-		return Dcm3CheeDatabaseUtils.FILE_TYPE_UNKNOWN;
+		return Dcm4CheeDatabaseUtils.FILE_TYPE_UNKNOWN;
 	}
 
 	/**

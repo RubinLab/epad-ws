@@ -45,8 +45,8 @@ import edu.stanford.isis.epad.common.pixelmed.PixelMedUtils;
 import edu.stanford.isis.epad.common.util.EPADConfig;
 import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epad.common.util.ResourceUtils;
-import edu.stanford.isis.epadws.processing.model.PngStatus;
-import edu.stanford.isis.epadws.processing.persistence.Dcm3CheeDatabaseUtils;
+import edu.stanford.isis.epadws.processing.model.PngProcessingStatus;
+import edu.stanford.isis.epadws.processing.persistence.Dcm4CheeDatabaseUtils;
 import edu.stanford.isis.epadws.processing.persistence.MySqlInstance;
 import edu.stanford.isis.epadws.processing.persistence.MySqlQueries;
 
@@ -156,7 +156,7 @@ public class DicomSegmentObjectGeneratorTask implements GeneratorTask
 					// encoded = DicomSegObj.base64EncodeBytes(bytes);
 					// retPngs.add(encoded);
 
-					queries.updateEpadFile(pngUrl, PngStatus.DONE, 77, "");
+					queries.updateEpadFile(pngUrl, PngProcessingStatus.DONE, 77, "");
 
 				} catch (IOException e) {
 					logger.warning("failed to write segmentation png", e);
@@ -365,8 +365,8 @@ public class DicomSegmentObjectGeneratorTask implements GeneratorTask
 
 	private void insertEpadFile(MySqlQueries queries, File outputFile)
 	{
-		Map<String, String> epadFilesTable = Dcm3CheeDatabaseUtils.createEPadFilesTableData(outputFile);
-		epadFilesTable.put("file_status", "" + PngStatus.IN_PIPELINE.getCode());
+		Map<String, String> epadFilesTable = Dcm4CheeDatabaseUtils.createEPadFilesTableData(outputFile);
+		epadFilesTable.put("file_status", "" + PngProcessingStatus.IN_PIPELINE.getCode());
 		queries.insertEpadFile(epadFilesTable);
 	}
 
