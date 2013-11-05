@@ -90,8 +90,6 @@ public class DICOMVisuHandler extends AbstractHandler
 			statusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 		}
 		httpResponse.setStatus(statusCode);
-		if (responseStream != null)
-			responseStream.flush();
 	}
 
 	private boolean handleDICOMVisu(PrintWriter responseStream, String studyIdKey, String seriesIdKey, String imageIdKey)

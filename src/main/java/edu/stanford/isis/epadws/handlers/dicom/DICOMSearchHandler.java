@@ -88,8 +88,6 @@ public class DICOMSearchHandler extends AbstractHandler
 			statusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 		}
 		httpResponse.setStatus(statusCode);
-		if (responseStream != null)
-			responseStream.flush();
 	}
 
 	/**

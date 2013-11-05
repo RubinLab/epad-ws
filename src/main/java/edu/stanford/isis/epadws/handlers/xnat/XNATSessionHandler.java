@@ -111,6 +111,5 @@ public class XNATSessionHandler extends AbstractHandler
 			statusCode = HttpServletResponse.SC_METHOD_NOT_ALLOWED;
 		}
 		httpResponse.setStatus(statusCode);
-		responseStream.flush();
 	}
 }

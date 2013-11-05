@@ -71,7 +71,6 @@ public class XNATSubjectHandler extends AbstractHandler
 			statusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 		}
 		httpResponse.setStatus(statusCode);
-		responseStream.flush();
 	}
 
 	private int invokeXNATSubjectService(String base, HttpServletRequest httpRequest, HttpServletResponse httpResponse,

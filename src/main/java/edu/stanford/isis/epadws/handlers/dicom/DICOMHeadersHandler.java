@@ -29,7 +29,7 @@ import edu.stanford.isis.epadws.xnat.XNATUtil;
 /**
  * Download headers for a series or study in one quick step.
  */
-public class DICOMHeadersHandlerJSON extends AbstractHandler
+public class DICOMHeadersHandler extends AbstractHandler
 {
 	private static final EPADLogger log = EPADLogger.getInstance();
 
@@ -72,8 +72,6 @@ public class DICOMHeadersHandlerJSON extends AbstractHandler
 			statusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 		}
 		httpResponse.setStatus(statusCode);
-		if (responseStream != null)
-			responseStream.flush();
 	}
 
 	private int performDICOMHeaderRequest(PrintWriter responseStream, String queryString) throws IOException,

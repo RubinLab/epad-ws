@@ -52,7 +52,6 @@ public class ServerStatusHandler extends AbstractHandler
 		int statusCode;
 
 		httpResponse.setContentType("text/plain");
-
 		request.setHandled(true);
 
 		try {
@@ -95,9 +94,6 @@ public class ServerStatusHandler extends AbstractHandler
 			statusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 		}
 		httpResponse.setStatus(statusCode);
-		if (responseStream != null) {
-			responseStream.flush();
-		}
 	}
 
 	private String getPipelineActivityLevel()

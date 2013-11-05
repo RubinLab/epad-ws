@@ -76,7 +76,6 @@ public class EPadPluginHandler extends AbstractHandler
 			out.append(INVALID_SESSION_TOKEN_MESSAGE);
 			httpResponse.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
 		}
-		out.flush();
 	}
 
 	private void writeDebugInfo(Request request, PrintWriter out)

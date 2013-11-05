@@ -39,7 +39,7 @@ import edu.stanford.isis.epadws.handlers.admin.ServerStatusHandler;
 import edu.stanford.isis.epadws.handlers.aim.AimResourceHandler;
 import edu.stanford.isis.epadws.handlers.coordination.CoordinationHandler;
 import edu.stanford.isis.epadws.handlers.dicom.DICOMDeleteHandler;
-import edu.stanford.isis.epadws.handlers.dicom.DICOMHeadersHandlerJSON;
+import edu.stanford.isis.epadws.handlers.dicom.DICOMHeadersHandler;
 import edu.stanford.isis.epadws.handlers.dicom.DICOMSearchHandler;
 import edu.stanford.isis.epadws.handlers.dicom.DICOMSeriesOrderHandler;
 import edu.stanford.isis.epadws.handlers.dicom.DICOMSeriesTagHandler;
@@ -184,8 +184,8 @@ public class Main
 		addHandlerAtContextPath(new CoordinationHandler(), "/coordination", handlerList);
 		addHandlerAtContextPath(new DICOMSearchHandler(), "/searchj", handlerList);
 		addHandlerAtContextPath(new DICOMSeriesOrderHandler(), "/seriesorderj", handlerList);
-		addHandlerAtContextPath(new DICOMDeleteHandler(), "/dicomdelete", handlerList);
-		addHandlerAtContextPath(new DICOMHeadersHandlerJSON(), "/dicomtagj", handlerList);
+		addHandlerAtContextPath(new DICOMDeleteHandler(), "/dicomdelete", handlerList); // TODO Deprecated?
+		addHandlerAtContextPath(new DICOMHeadersHandler(), "/dicomtagj", handlerList);
 		addHandlerAtContextPath(new DICOMSeriesTagHandler(), "/seriestag", handlerList);
 		addHandlerAtContextPath(new DICOMVisuHandler(), "/dicomparam", handlerList);
 		addHandlerAtContextPath(new AimResourceHandler(), "/aimresource", handlerList);

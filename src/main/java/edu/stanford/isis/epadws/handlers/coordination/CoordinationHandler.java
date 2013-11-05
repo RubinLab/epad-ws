@@ -153,7 +153,6 @@ public class CoordinationHandler extends AbstractHandler
 			statusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 		}
 		httpResponse.setStatus(statusCode);
-		responseStream.flush();
 	}
 
 	private Coordination readCoordination(Request request) throws IOException

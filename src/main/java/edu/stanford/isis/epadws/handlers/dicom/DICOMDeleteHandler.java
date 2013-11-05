@@ -27,10 +27,6 @@ public class DICOMDeleteHandler extends AbstractHandler
 	private static final String INVALID_SESSION_TOKEN_MESSAGE = "Session token is invalid";
 	private static final String MISSING_QUERY_MESSAGE = "No query paramaters specified";
 
-	public DICOMDeleteHandler()
-	{
-	}
-
 	@Override
 	public void handle(String s, Request request, HttpServletRequest httpRequest, HttpServletResponse httpResponse)
 			throws IOException
@@ -71,7 +67,6 @@ public class DICOMDeleteHandler extends AbstractHandler
 			responseCode = HttpServletResponse.SC_UNAUTHORIZED;
 		}
 		httpResponse.setStatus(responseCode);
-		responseStream.flush();
 	}
 
 	private void handleDICOMStudyDeleteRequest(String queryString)

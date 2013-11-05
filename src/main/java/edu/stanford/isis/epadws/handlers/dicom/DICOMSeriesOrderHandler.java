@@ -81,8 +81,6 @@ public class DICOMSeriesOrderHandler extends AbstractHandler
 			statusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 		}
 		httpResponse.setStatus(statusCode);
-		if (responseStream != null)
-			responseStream.flush();
 	}
 
 	private static void peformDICOMSeriesOrderQuery(PrintWriter out, String seriesIUID) throws NumberFormatException

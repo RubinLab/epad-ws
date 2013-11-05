@@ -143,8 +143,6 @@ public class AimResourceHandler extends AbstractHandler
 			statusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 		}
 		httpResponse.setStatus(statusCode);
-		if (responseStream != null)
-			responseStream.flush();
 	}
 
 	private void queryAIMImageAnnotations(PrintWriter out, String queryString) throws ParserConfigurationException,

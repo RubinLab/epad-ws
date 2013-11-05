@@ -84,8 +84,6 @@ public class DICOMSeriesTagHandler extends AbstractHandler
 			statusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 		}
 		httpResponse.setStatus(statusCode);
-		if (responseStream != null)
-			responseStream.flush();
 	}
 
 	private void handleDICOMSeriesTagQuery(PrintWriter out, String seriesIUID, boolean useBase64) throws IOException,

@@ -71,13 +71,6 @@ public class WadoHandler extends AbstractHandler
 			statusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 		}
 		httpResponse.setStatus(statusCode);
-		if (responseStream != null) {
-			try {
-				responseStream.flush();
-			} catch (IOException e) {
-				log.warning("Error flushing WADO response stream", e);
-			}
-		}
 	}
 
 	private int performWADOQuery(String queryString, ServletOutputStream out) throws IOException, HttpException
