@@ -11,7 +11,6 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.Set;
 
-import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -37,12 +36,11 @@ public class EPadPluginHandler extends AbstractHandler
 
 	@Override
 	public void handle(String s, Request request, HttpServletRequest httpRequest, HttpServletResponse httpResponse)
-			throws IOException, ServletException
+			throws IOException
 	{
-		PrintWriter out = httpResponse.getWriter();
+		PrintWriter responseStream = httpResponse.getWriter();
 
 		httpResponse.setContentType("text/plain");
-
 		httpResponse.setHeader("Access-Control-Allow-Origin", "*");
 		request.setHandled(true);
 
@@ -60,20 +58,20 @@ public class EPadPluginHandler extends AbstractHandler
 					httpResponse.setStatus(HttpServletResponse.SC_OK);
 				} else {
 					log.info(INVALID_METHOD_MESSAGE);
-					out.append(INVALID_METHOD_MESSAGE);
-					writeDebugInfo(request, out);
+					responseStream.append(INVALID_METHOD_MESSAGE);
+					writeDebugInfo(request, responseStream);
 					httpResponse.setHeader("Access-Control-Allow-Methods", "POST, GET");
 					httpResponse.setStatus(HttpServletResponse.SC_METHOD_NOT_ALLOWED);
 				}
 			} else {
 				log.info(PLUGIN_NOT_FOUND_MESSAGE + " " + pluginName);
-				out.append(PLUGIN_NOT_FOUND_MESSAGE + " " + pluginName);
-				writeDebugInfo(request, out);
+				responseStream.append(PLUGIN_NOT_FOUND_MESSAGE + " " + pluginName);
+				writeDebugInfo(request, responseStream);
 				httpResponse.setStatus(HttpServletResponse.SC_NOT_FOUND);
 			}
 		} else {
 			log.info(INVALID_SESSION_TOKEN_MESSAGE);
-			out.append(INVALID_SESSION_TOKEN_MESSAGE);
+			responseStream.append(INVALID_SESSION_TOKEN_MESSAGE);
 			httpResponse.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
 		}
 	}

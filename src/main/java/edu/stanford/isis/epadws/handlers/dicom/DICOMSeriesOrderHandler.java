@@ -77,7 +77,8 @@ public class DICOMSeriesOrderHandler extends AbstractHandler
 			}
 		} catch (Throwable t) {
 			log.warning(INTERNAL_EXCEPTION_MESSAGE, t);
-			responseStream.append(JsonHelper.createJSONErrorResponse(INTERNAL_EXCEPTION_MESSAGE, t));
+			if (responseStream != null)
+				responseStream.append(JsonHelper.createJSONErrorResponse(INTERNAL_EXCEPTION_MESSAGE, t));
 			statusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 		}
 		httpResponse.setStatus(statusCode);

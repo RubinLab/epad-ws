@@ -139,7 +139,8 @@ public class AimResourceHandler extends AbstractHandler
 			}
 		} catch (Throwable t) {
 			logger.warning(INTERNAL_EXCEPTION_MESSAGE, t);
-			responseStream.append(INTERNAL_EXCEPTION_MESSAGE + t.getMessage() + "<br>");
+			if (responseStream != null)
+				responseStream.append(INTERNAL_EXCEPTION_MESSAGE + t.getMessage() + "<br>");
 			statusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 		}
 		httpResponse.setStatus(statusCode);

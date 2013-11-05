@@ -90,7 +90,8 @@ public class ServerStatusHandler extends AbstractHandler
 			}
 		} catch (Throwable t) {
 			log.warning(INTERNAL_EXCEPTION_MESSAGE, t);
-			responseStream.append(INTERNAL_EXCEPTION_MESSAGE + ": " + t.getMessage());
+			if (responseStream != null)
+				responseStream.append(INTERNAL_EXCEPTION_MESSAGE + ": " + t.getMessage());
 			statusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 		}
 		httpResponse.setStatus(statusCode);

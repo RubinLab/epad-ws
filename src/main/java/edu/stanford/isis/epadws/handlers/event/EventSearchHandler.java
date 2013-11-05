@@ -6,7 +6,6 @@ import java.net.URLDecoder;
 import java.util.List;
 import java.util.Map;
 
-import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -37,7 +36,7 @@ public class EventSearchHandler extends AbstractHandler
 
 	@Override
 	public void handle(String s, Request request, HttpServletRequest httpRequest, HttpServletResponse httpResponse)
-			throws IOException, ServletException
+			throws IOException
 	{
 		PrintWriter out = httpResponse.getWriter();
 

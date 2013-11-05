@@ -67,7 +67,8 @@ public class XNATSubjectHandler extends AbstractHandler
 			}
 		} catch (Throwable t) {
 			log.warning(INTERNAL_EXCEPTION_MESSAGE, t);
-			responseStream.print(JsonHelper.createJSONErrorResponse(INTERNAL_EXCEPTION_MESSAGE, t));
+			if (responseStream != null)
+				responseStream.print(JsonHelper.createJSONErrorResponse(INTERNAL_EXCEPTION_MESSAGE, t));
 			statusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 		}
 		httpResponse.setStatus(statusCode);

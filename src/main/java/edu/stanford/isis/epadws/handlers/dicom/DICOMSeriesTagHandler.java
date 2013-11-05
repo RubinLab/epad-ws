@@ -80,7 +80,8 @@ public class DICOMSeriesTagHandler extends AbstractHandler
 			}
 		} catch (Throwable t) {
 			log.warning(INTERNAL_ERROR_MESSAGE, t);
-			responseStream.print(INTERNAL_ERROR_MESSAGE + ": " + t.getMessage());
+			if (responseStream != null)
+				responseStream.print(INTERNAL_ERROR_MESSAGE + ": " + t.getMessage());
 			statusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 		}
 		httpResponse.setStatus(statusCode);

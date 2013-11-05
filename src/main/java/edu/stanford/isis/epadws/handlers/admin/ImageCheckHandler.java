@@ -52,7 +52,6 @@ public class ImageCheckHandler extends AbstractHandler
 				String method = httpRequest.getMethod();
 				if ("GET".equalsIgnoreCase(method)) {
 					try {
-						log.info("Received request");
 						verifyImageGeneration(responseStream);
 						statusCode = HttpServletResponse.SC_OK;
 					} catch (IOException e) {
@@ -76,7 +75,8 @@ public class ImageCheckHandler extends AbstractHandler
 			}
 		} catch (Throwable t) {
 			log.warning(INTERNAL_ERROR_MESSAGE, t);
-			responseStream.print(INTERNAL_ERROR_MESSAGE + ": " + t.getMessage());
+			if (responseStream != null)
+				responseStream.print(INTERNAL_ERROR_MESSAGE + ": " + t.getMessage());
 			statusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 		}
 		httpResponse.setStatus(statusCode);
@@ -92,7 +92,7 @@ public class ImageCheckHandler extends AbstractHandler
 		int numberOfMissingPNGFiles = 0;
 
 		// Verify that each image in a DICOM series in DCM4CHEE has an entry for a generated PNG file in the ePAD database,
-		// indicating that the images existence was correctly detected. Below, we then detect that the PNG file itself
+		// which indicates that the images existence was correctly detected. Below, we then detect that the PNG file itself
 		// exists.
 		for (String seriesIUID : seriesIUIDs) {
 			final List<Map<String, String>> unprocessedDICOMImageFileDescriptionsInSeries = dbQueries
@@ -105,7 +105,7 @@ public class ImageCheckHandler extends AbstractHandler
 				numberOfSeriesWithMissingEPADDatabaseEntry++;
 				allUnprocessedDICOMImageFileDescriptions.addAll(unprocessedDICOMImageFileDescriptionsInSeries);
 			} else {
-				// out.write("All instances detected for series " + seriesIUID + "\n");
+				// responseStream.write("All instances detected for series " + seriesIUID + "\n");
 			}
 
 			// Each file description is a map with keys: sop_iuid, inst_no, series_iuid, filepath, file_size.
