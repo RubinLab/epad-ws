@@ -13,27 +13,27 @@ import edu.stanford.isis.epadws.processing.persistence.MySqlQueries;
  * 
  * @author alansnyder
  */
-public class DicomSeriesOrderTracker
+public class DicomSeriesDescriptionTracker
 {
-	private static final DicomSeriesOrderTracker ourInstance = new DicomSeriesOrderTracker();
-	private final Map<String, DicomSeriesOrderStatus> statusMap = new ConcurrentHashMap<String, DicomSeriesOrderStatus>();
+	private static final DicomSeriesDescriptionTracker ourInstance = new DicomSeriesDescriptionTracker();
+	private final Map<String, DicomSeriesStatus> statusMap = new ConcurrentHashMap<String, DicomSeriesStatus>();
 	private final Map<String, Float> completionMap = new ConcurrentHashMap<String, Float>();
 
-	public static DicomSeriesOrderTracker getInstance()
+	public static DicomSeriesDescriptionTracker getInstance()
 	{
 		return ourInstance;
 	}
 
-	private DicomSeriesOrderTracker()
+	private DicomSeriesDescriptionTracker()
 	{
 	}
 
-	public void add(DicomSeriesOrderStatus seriesOrderStatus)
+	public void add(DicomSeriesStatus seriesOrderStatus)
 	{
 		if (seriesOrderStatus == null) {
 			throw new IllegalArgumentException("seriesOrderStatus cannot be null.");
 		}
-		DicomSeriesOrder so = seriesOrderStatus.getSeriesOrder();
+		DicomSeriesDescription so = seriesOrderStatus.getSeriesDescription();
 		if (so == null) {
 			throw new IllegalArgumentException("SeriesOrder cannot be null.");
 		}
@@ -41,18 +41,18 @@ public class DicomSeriesOrderTracker
 		statusMap.put(seriesUID, seriesOrderStatus);
 	}
 
-	public void remove(DicomSeriesOrderStatus seriesOrderStatus)
+	public void remove(DicomSeriesStatus seriesOrderStatus)
 	{
-		String seriesUID = seriesOrderStatus.getSeriesOrder().getSeriesUID();
+		String seriesUID = seriesOrderStatus.getSeriesDescription().getSeriesUID();
 		statusMap.remove(seriesUID);
 	}
 
-	public Set<DicomSeriesOrderStatus> getStatusSet()
+	public Set<DicomSeriesStatus> getStatusSet()
 	{
-		return new HashSet<DicomSeriesOrderStatus>(statusMap.values());
+		return new HashSet<DicomSeriesStatus>(statusMap.values());
 	}
 
-	public DicomSeriesOrderStatus get(String seriesUID)
+	public DicomSeriesStatus get(String seriesUID)
 	{
 		return statusMap.get(seriesUID);
 	}

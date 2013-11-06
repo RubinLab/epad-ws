@@ -33,7 +33,7 @@ public class DicomUploadPipelineFiles
 	/**
 	 * Keeps track of files that had an error in the pipeline, so they are not run again.
 	 */
-	private final Map<FileKey, DicomUploadErrorFileDescription> uploadErrorFiles = new ConcurrentHashMap<FileKey, DicomUploadErrorFileDescription>();
+	private final Map<FileKey, DicomUploadFileErrorDescription> uploadErrorFiles = new ConcurrentHashMap<FileKey, DicomUploadFileErrorDescription>();
 
 	private static DicomUploadPipelineFiles ourInstance = new DicomUploadPipelineFiles();
 
@@ -61,9 +61,9 @@ public class DicomUploadPipelineFiles
 	 * 
 	 * @return List
 	 */
-	public List<DicomUploadErrorFileDescription> getErrorFiles()
+	public List<DicomUploadFileErrorDescription> getErrorFiles()
 	{
-		return new ArrayList<DicomUploadErrorFileDescription>(uploadErrorFiles.values());
+		return new ArrayList<DicomUploadFileErrorDescription>(uploadErrorFiles.values());
 	}
 
 	/**
@@ -80,7 +80,7 @@ public class DicomUploadPipelineFiles
 		log.info("Adding error file: " + file.getAbsolutePath() + " for: " + errorMessage + " , " + expMessage);
 
 		FileKey uploadFileKey = new FileKey(file);
-		uploadErrorFiles.put(uploadFileKey, new DicomUploadErrorFileDescription(uploadFileKey, errorMessage, e));
+		uploadErrorFiles.put(uploadFileKey, new DicomUploadFileErrorDescription(uploadFileKey, errorMessage, e));
 		inPipelineMap.remove(uploadFileKey);
 	}
 

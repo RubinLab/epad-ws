@@ -160,7 +160,7 @@ public class Main
 	{
 		log.info("Starting support threads.");
 
-		try { // Start MySql database.
+		try {
 			QueueAndWatcherManager.getInstance().buildAndStart();
 			MySqlInstance.getInstance().startup();
 			log.info("Startup of MySql database was successful.");

@@ -5,8 +5,8 @@ import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 
 import edu.stanford.isis.epad.common.util.EPADLogger;
-import edu.stanford.isis.epadws.processing.model.DicomSeriesOrder;
-import edu.stanford.isis.epadws.processing.model.DicomSeriesOrderTracker;
+import edu.stanford.isis.epadws.processing.model.DicomSeriesDescription;
+import edu.stanford.isis.epadws.processing.model.DicomSeriesDescriptionTracker;
 import edu.stanford.isis.epadws.processing.persistence.MySqlInstance;
 import edu.stanford.isis.epadws.processing.persistence.MySqlQueries;
 import edu.stanford.isis.epadws.processing.pipeline.threads.ShutdownSignal;
@@ -21,11 +21,14 @@ public class Dcm4CheeDatabaseWatcher implements Runnable
 {
 	private final EPADLogger logger = EPADLogger.getInstance();
 
-	private final BlockingQueue<DicomSeriesOrder> dcm4CheeSeriesWatcherQueue;
+	private final BlockingQueue<DicomSeriesDescription> dcm4CheeSeriesWatcherQueue;
+	private final BlockingQueue<DicomSeriesDescription> xnatSeriesWatcherQueue;
 
-	public Dcm4CheeDatabaseWatcher(BlockingQueue<DicomSeriesOrder> dcm4CheeSeriesWatcherQueue)
+	public Dcm4CheeDatabaseWatcher(BlockingQueue<DicomSeriesDescription> dcm4CheeSeriesWatcherQueue,
+			BlockingQueue<DicomSeriesDescription> xnatSeriesWatcherQueue)
 	{
 		this.dcm4CheeSeriesWatcherQueue = dcm4CheeSeriesWatcherQueue;
+		this.xnatSeriesWatcherQueue = xnatSeriesWatcherQueue;
 	}
 
 	@Override
@@ -36,38 +39,46 @@ public class Dcm4CheeDatabaseWatcher implements Runnable
 
 		while (!signal.hasShutdown()) {
 			try {
+
 				List<Map<String, String>> series = mySqlQueries.getSeriesForStatusEx(0);
 
 				for (Map<String, String> currSeries : series) {
 					String seriesIUid = currSeries.get("series_iuid");
+					String studyIUID = mySqlQueries.getStudyUIDForSeries(seriesIUid);
+					Map<String, String> patient = mySqlQueries.getPatientForStudy(studyIUID);
+					String patientName = patient.get("pat_name");
+					String patientID = patient.get("pat_id");
 					String seriesDesc = currSeries.get("series_desc");
 					String numInstances = currSeries.get("num_instances");
-					// Create a SeriesOrder to indicate new PNG files are being created.
-					DicomSeriesOrder seriesOrder = new DicomSeriesOrder(Integer.parseInt(numInstances), seriesIUid);
+					// Create a DicomSeriesDescription to indicate new PNG files are being created.
+					DicomSeriesDescription dicomSeriesDescription = new DicomSeriesDescription(Integer.parseInt(numInstances),
+							seriesIUid, studyIUID, patientName, patientID);
 					mySqlQueries.updateSeriesStatusCodeEx(325, seriesIUid);
-					submitSeriesForPngGeneration(seriesOrder); // Submit this series to generate all the PNG files.
+					submitSeriesForPngGeneration(dicomSeriesDescription); // Submit this series to generate all the PNG files.
+					submitSeriesForXNATGeneration(dicomSeriesDescription); // Submit this series to generate XNAT information.
 					float percentComplete = mySqlQueries.getPercentComplete(seriesIUid);
-					DicomSeriesOrderTracker.getInstance().setPercentComplete(seriesIUid, percentComplete);
+					DicomSeriesDescriptionTracker.getInstance().setPercentComplete(seriesIUid, percentComplete);
 
 					logger.info("DCM4CHEE new series found - #images=" + numInstances + ", desc=" + seriesDesc + ", series iuid="
 							+ seriesIUid);
-
 					logger.info("[TEMP] Creating new OrderSeries numInstances=" + numInstances + " seriesIUid=" + seriesIUid);
 				}
 				Thread.sleep(500);
 			} catch (Exception e) {
-				logger.warning("DcmDbTableWatcher had: " + e.getMessage(), e);
+				logger.warning("Dcm4CheeDatabaseWatcher error", e);
 			}
 		}
 	}
 
-	/**
-	 * 
-	 * @param seriesOrder SeriesOrder
-	 */
-	private void submitSeriesForPngGeneration(DicomSeriesOrder seriesOrder)
+	private void submitSeriesForPngGeneration(DicomSeriesDescription dicomSeriesDescription)
 	{
-		logger.info("Submitting series for PNG generation: " + seriesOrder.getSeriesUID());
-		dcm4CheeSeriesWatcherQueue.offer(seriesOrder);
+		logger.info("Submitting series for PNG generation: " + dicomSeriesDescription.getSeriesUID());
+		dcm4CheeSeriesWatcherQueue.offer(dicomSeriesDescription);
+	}
+
+	private void submitSeriesForXNATGeneration(DicomSeriesDescription dicomSeriesDescription)
+	{
+		logger.info("Submitting series for XNAT generation: " + dicomSeriesDescription.getSeriesUID());
+		xnatSeriesWatcherQueue.offer(dicomSeriesDescription);
 	}
 }

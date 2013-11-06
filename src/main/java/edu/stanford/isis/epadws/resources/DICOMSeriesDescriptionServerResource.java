@@ -30,13 +30,13 @@ import edu.stanford.isis.epadws.processing.persistence.MySqlQueries;
  * select * from pacsdb.instance as i, pacsdb.series as s where i.series_fk=s.pk and s.series_iuid=?
  * </pre>
  */
-public class DICOMSeriesOrderServerResource extends BaseServerResource
+public class DICOMSeriesDescriptionServerResource extends BaseServerResource
 {
 	private static final String SUCCESS_MESSAGE = "Series order request succeeded";
 	private static final String EXCEPTION_MESSAGE = "Series order request has exception";
 	private static final String ERROR_MESSAGE = "Series order request has exception";
 
-	public DICOMSeriesOrderServerResource()
+	public DICOMSeriesDescriptionServerResource()
 	{
 		setNegotiated(false); // Disable content negotiation
 	}

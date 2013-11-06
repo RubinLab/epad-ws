@@ -38,19 +38,17 @@ public class PackedPngTask implements Callable<File>
 	@Override
 	public File call() throws Exception
 	{
-		File input = file;
+		File inputFile = file;
 		File outputFile = null;
 		OutputStream outputStream = null;
 		try {
-			DicomReader instance = new DicomReader(input);
+			DicomReader instance = new DicomReader(inputFile);
 			String pngFilePath = file.getAbsolutePath().replaceAll("\\.dcm", ".png");
 
 			logger.info("Creating PNG file: " + pngFilePath);
-
-			outputFile = new File(pngFilePath); // create the real file name here.
+			outputFile = new File(pngFilePath);
 			outputStream = new FileOutputStream(outputFile);
 			ImageIO.write(instance.getPackedImage(), "png", outputStream);
-
 		} catch (FileNotFoundException e) {
 			logger.warning("failed to create packed PNG for: " + file.getAbsolutePath(), e);
 		} catch (IOException e) {
@@ -61,6 +59,7 @@ public class PackedPngTask implements Callable<File>
 					outputStream.close();
 					outputStream = null;
 				} catch (Exception e) {
+					logger.warning("Error closing packed PNG output stream", e);
 				}
 			}
 		}

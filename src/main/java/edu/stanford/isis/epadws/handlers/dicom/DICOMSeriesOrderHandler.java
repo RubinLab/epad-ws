@@ -12,7 +12,7 @@ import org.eclipse.jetty.server.handler.AbstractHandler;
 
 import com.google.gson.Gson;
 
-import edu.stanford.isis.epad.common.dicom.DICOMSeriesOrderSearchResult;
+import edu.stanford.isis.epad.common.dicom.DICOMSeriesDescriptionSearchResult;
 import edu.stanford.isis.epad.common.dicom.DicomFormatUtil;
 import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epad.common.util.JsonHelper;
@@ -63,7 +63,7 @@ public class DICOMSeriesOrderHandler extends AbstractHandler
 			if (XNATUtil.hasValidXNATSessionID(httpRequest)) {
 				String seriesIUID = httpRequest.getParameter("series_iuid");
 				if (seriesIUID != null) {
-					peformDICOMSeriesOrderQuery(responseStream, seriesIUID);
+					peformDICOMSeriesDescriptionQuery(responseStream, seriesIUID);
 					statusCode = HttpServletResponse.SC_OK;
 				} else {
 					log.info(MISSING_SERIES_IUID_MESSAGE);
@@ -84,13 +84,14 @@ public class DICOMSeriesOrderHandler extends AbstractHandler
 		httpResponse.setStatus(statusCode);
 	}
 
-	private static void peformDICOMSeriesOrderQuery(PrintWriter out, String seriesIUID) throws NumberFormatException
+	private static void peformDICOMSeriesDescriptionQuery(PrintWriter out, String seriesIUID)
+			throws NumberFormatException
 	{
 		MySqlQueries queries = MySqlInstance.getInstance().getMysqlQueries();
 		List<Map<String, String>> orderQueryEntries = queries.getOrderFile(seriesIUID);
 		boolean isFirst = true;
 
-		log.info("DICOMSeriesOrderHandler, series_iuid=" + seriesIUID);
+		log.info("DICOMSeriesDescriptionHandler, series_iuid=" + seriesIUID);
 
 		out.println("{ \"ResultSet\": [");
 
@@ -101,8 +102,8 @@ public class DICOMSeriesOrderHandler extends AbstractHandler
 			String sliceLocation = createSliceLocation(entry);// entry.get("inst_custom1");
 			String contentTime = "null";
 
-			DICOMSeriesOrderSearchResult searchResult = new DICOMSeriesOrderSearchResult(fileName, instanceNumber,
-					sliceLocation, contentTime);
+			DICOMSeriesDescriptionSearchResult searchResult = new DICOMSeriesDescriptionSearchResult(fileName,
+					instanceNumber, sliceLocation, contentTime);
 			if (!isFirst)
 				out.append(",\n");
 			isFirst = false;
@@ -130,7 +131,7 @@ public class DICOMSeriesOrderHandler extends AbstractHandler
 		return DicomFormatUtil.formatUidToDir(sopInstanceUID) + ".dcm";
 	}
 
-	private static String seriesOrderSearchResult2JSON(DICOMSeriesOrderSearchResult seriesOrderSearchResult)
+	private static String seriesOrderSearchResult2JSON(DICOMSeriesDescriptionSearchResult seriesOrderSearchResult)
 	{
 		Gson gson = new Gson();
 

@@ -2,6 +2,8 @@ package edu.stanford.isis.epadws.xnat;
 
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.nio.charset.Charset;
 
 import javax.servlet.http.Cookie;
@@ -13,6 +15,7 @@ import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.methods.DeleteMethod;
 import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.httpclient.methods.PostMethod;
+import org.apache.commons.httpclient.methods.PutMethod;
 
 import edu.stanford.isis.epad.common.util.EPADConfig;
 import edu.stanford.isis.epad.common.util.EPADLogger;
@@ -22,8 +25,8 @@ import edu.stanford.isis.epad.common.util.EPADLogger;
  */
 public class XNATUtil
 {
-	public static final String XNAT_PROJECT_BASE = "/xnat/data/projects";
-	public static final String XNAT_SUBJECT_BASE = "/xnat/data/subjects";
+	public static final String XNAT_PROJECT_BASE = "/xnat/data/projects/";
+	public static final String XNAT_SUBJECT_BASE = "/xnat/data/subjects/";
 
 	private static final EPADLogger log = EPADLogger.getInstance();
 	private static final EPADConfig config = EPADConfig.getInstance();
@@ -46,23 +49,25 @@ public class XNATUtil
 	}
 
 	/**
-	 * 
-	 * @param httpResponse Status set to HttpServletResponse.SC_OK on success,
-	 *          HttpServletResponse.SC_INTERNAL_SERVER_ERROR on failure.
-	 * @param username
-	 * @param password
+	 * @param HttpServlerRequest
 	 * @return XNATSessionResponse
 	 * @throws IllegalArgumentException
 	 */
 	public static XNATSessionResponse invokeXNATSessionIDService(HttpServletRequest httpRequest)
+	{
+		String username = extractUserNameFromAuthorizationHeader(httpRequest);
+		String password = extractPasswordFromAuthorizationHeader(httpRequest);
+
+		return invokeXNATSessionIDService(username, password);
+	}
+
+	public static XNATSessionResponse invokeXNATSessionIDService(String username, String password)
 	{
 		String xnatHost = config.getStringConfigurationParameter("XNATServer");
 		int xnatPort = config.getIntegerConfigurationParameter("XNATPort");
 		String xnatSessionURL = buildURLString(xnatHost, xnatPort, XNAT_SESSION_BASE);
 		HttpClient client = new HttpClient();
 		PostMethod postMethod = new PostMethod(xnatSessionURL);
-		String username = extractUserNameFromAuthorizationHeader(httpRequest);
-		String password = extractPasswordFromAuthorizationHeader(httpRequest);
 		String authString = buildAuthorizatonString(username, password);
 		XNATSessionResponse xnatSessionResponse;
 		int xnatStatusCode;
@@ -144,12 +149,83 @@ public class XNATUtil
 
 	public static boolean hasValidXNATSessionID(HttpServletRequest httpRequest)
 	{
+		String jsessionID = getJSessionIDFromRequest(httpRequest);
+
+		return hasValidXNATSessionID(jsessionID);
+	}
+
+	public static boolean createXNATProject(String projectID, String projectName, String jsessionID)
+	{
+		String xnatHost = config.getStringConfigurationParameter("XNATServer");
+		int xnatPort = config.getIntegerConfigurationParameter("XNATPort");
+		String xnatProjectURL = buildProjectCreationURL(xnatHost, xnatPort, XNAT_PROJECT_BASE, projectID, projectName);
+		HttpClient client = new HttpClient();
+		PostMethod postMethod = new PostMethod(xnatProjectURL);
+		int xnatStatusCode;
+
+		postMethod.setRequestHeader("Cookie", "JSESSIONID=" + jsessionID);
+
+		try {
+			log.info("Invoking XNAT with URL" + xnatProjectURL);
+			xnatStatusCode = client.executeMethod(postMethod);
+		} catch (IOException e) {
+			log.warning("Error calling XNAT project service", e);
+			xnatStatusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+		}
+		return (xnatStatusCode == HttpServletResponse.SC_OK || xnatStatusCode == HttpServletResponse.SC_CREATED);
+	}
+
+	public static boolean createXNATSubject(String projectID, String subjectName, String subjectID, String jsessionID)
+	{
+		String xnatHost = config.getStringConfigurationParameter("XNATServer");
+		int xnatPort = config.getIntegerConfigurationParameter("XNATPort");
+		String xnatSubjectURL = buildSubjectCreationURL(xnatHost, xnatPort, XNAT_PROJECT_BASE, projectID, subjectName,
+				subjectID);
+		HttpClient client = new HttpClient();
+		PostMethod postMethod = new PostMethod(xnatSubjectURL);
+		int xnatStatusCode;
+
+		postMethod.setRequestHeader("Cookie", "JSESSIONID=" + jsessionID);
+
+		try {
+			log.info("Invoking XNAT with URL" + xnatSubjectURL);
+			xnatStatusCode = client.executeMethod(postMethod);
+		} catch (IOException e) {
+			log.warning("Error calling XNAT project service", e);
+			xnatStatusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+		}
+		return (xnatStatusCode == HttpServletResponse.SC_OK || xnatStatusCode == HttpServletResponse.SC_CREATED);
+	}
+
+	public static boolean createXNATStudy(String projectID, String subjectID, String studyID, String jsessionID)
+	{
+		String xnatHost = config.getStringConfigurationParameter("XNATServer");
+		int xnatPort = config.getIntegerConfigurationParameter("XNATPort");
+		String xnatStudyURL = buildStudyCreationURL(xnatHost, xnatPort, XNAT_PROJECT_BASE, projectID, subjectID, studyID);
+
+		HttpClient client = new HttpClient();
+		PutMethod putMethod = new PutMethod(xnatStudyURL);
+		int xnatStatusCode;
+
+		putMethod.setRequestHeader("Cookie", "JSESSIONID=" + jsessionID);
+
+		try {
+			log.info("Invoking XNAT with URL" + xnatStudyURL);
+			xnatStatusCode = client.executeMethod(putMethod);
+		} catch (IOException e) {
+			log.warning("Error calling XNAT project service", e);
+			xnatStatusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+		}
+		return (xnatStatusCode == HttpServletResponse.SC_OK || xnatStatusCode == HttpServletResponse.SC_CREATED);
+	}
+
+	public static boolean hasValidXNATSessionID(String jsessionID)
+	{
 		String xnatHost = config.getStringConfigurationParameter("XNATServer");
 		int xnatPort = config.getIntegerConfigurationParameter("XNATPort");
 		String xnatSessionURL = buildURLString(xnatHost, xnatPort, XNAT_SESSION_BASE);
 		HttpClient client = new HttpClient();
 		GetMethod getMethod = new GetMethod(xnatSessionURL);
-		String jsessionID = getJSessionIDFromRequest(httpRequest);
 		int xnatStatusCode;
 
 		getMethod.setRequestHeader("Cookie", "JSESSIONID=" + jsessionID);
@@ -172,6 +248,39 @@ public class XNATUtil
 			return values[0];
 		else
 			return "";
+	}
+
+	private static String buildProjectCreationURL(String host, int port, String base, String projectID, String projectName)
+	{
+		String urlString = buildURLString(host, port, base, "") + "?ID=" + projectID + "&name=" + projectName;
+		return encode(urlString);
+	}
+
+	private static String buildSubjectCreationURL(String host, int port, String base, String projectID, String subjectID,
+			String subjectName)
+	{
+		String urlString = buildURLString(host, port, base, "") + projectID + "/subjects?label=" + subjectID + "&src="
+				+ subjectName;
+		return encode(urlString);
+	}
+
+	private static String buildStudyCreationURL(String host, int port, String base, String projectID, String subjectID,
+			String studyUID)
+	{
+		String experimentID = studyUID.replace('.', '_');
+		String urlString = buildURLString(host, port, base, "") + projectID + "/subjects/" + subjectID + "/experiments/"
+				+ experimentID + "?label=" + studyUID + "&xsiType=xnat:otherDicomSessionData";
+		return encode(urlString);
+	}
+
+	private static String encode(String urlString)
+	{
+		try {
+			return URLEncoder.encode(urlString, "UTF-8");
+		} catch (UnsupportedEncodingException e) {
+			log.warning("Error encoding URL " + urlString, e);
+			return null;
+		}
 	}
 
 	public static String buildURLString(String host, int port, String base)

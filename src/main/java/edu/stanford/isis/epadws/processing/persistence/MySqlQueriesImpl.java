@@ -234,7 +234,6 @@ public class MySqlQueriesImpl implements MySqlQueries
 		return retVal;
 	}
 
-	// @Deprecated
 	@Override
 	public List<String> getNewSeries()
 	{
@@ -278,7 +277,7 @@ public class MySqlQueriesImpl implements MySqlQueries
 			rs = ps.executeQuery();
 			while (rs.next()) {
 				retVal.add(rs.getString("series_iuid"));
-			}// while
+			}
 		} catch (SQLException sqle) {
 			String debugInfo = DatabaseUtils.getDebugData(rs);
 			logger.warning("database operation failed. debugInfo=" + debugInfo, sqle);
@@ -306,7 +305,7 @@ public class MySqlQueriesImpl implements MySqlQueries
 			while (rs.next()) {
 				Map<String, String> resultMap = createResultMap(rs);
 				retVal.add(resultMap);
-			}// while
+			}
 		} catch (SQLException sqle) {
 			String debugInfo = DatabaseUtils.getDebugData(rs);
 			logger.warning("database operation failed. debugInfo=" + debugInfo, sqle);
@@ -333,7 +332,7 @@ public class MySqlQueriesImpl implements MySqlQueries
 			while (rs.next()) {
 				Map<String, String> resultMap = createResultMap(rs);
 				retVal.add(resultMap);
-			}// while
+			}
 		} catch (SQLException sqle) {
 			String debugInfo = DatabaseUtils.getDebugData(rs);
 			logger.warning("database operation failed. debugInfo=" + debugInfo, sqle);
@@ -653,7 +652,7 @@ public class MySqlQueriesImpl implements MySqlQueries
 	@Override
 	public List<Map<String, String>> getUnprocessedDICOMImageFileDescriptions(String seriesIUID)
 	{
-		List<Map<String, String>> dicomWithoutPNGImageFileDescriptions = new ArrayList<Map<String, String>>();
+		List<Map<String, String>> dicomFilesWithoutPNGImagesFileDescriptions = new ArrayList<Map<String, String>>();
 		try {
 			// Get list of DICOM image descriptions from DCM4CHEE database table (pacsdb.files). Each image description is a
 			// map with keys: i.sop_iuid, i.inst_no, s.series_iuid, f.filepath, f.file_size.
@@ -670,13 +669,13 @@ public class MySqlQueriesImpl implements MySqlQueries
 				String sopIdWithFile = dicomImageFileDescription.get("sop_iuid");
 
 				if (!finishedImageInstanceIDs.contains(sopIdWithFile)) {
-					dicomWithoutPNGImageFileDescriptions.add(dicomImageFileDescription);
+					dicomFilesWithoutPNGImagesFileDescriptions.add(dicomImageFileDescription);
 				}
 			}
 		} catch (Exception e) {
 			logger.warning("getUnprocessedDICOMImageFileDescriptions had " + e.getMessage(), e);
 		}
-		return dicomWithoutPNGImageFileDescriptions;
+		return dicomFilesWithoutPNGImagesFileDescriptions;
 	}
 
 	@Override

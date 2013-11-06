@@ -11,34 +11,53 @@ import edu.stanford.isis.epad.common.util.EPADLogger;
  * 
  * @author amsnyder
  */
-public class DicomSeriesOrder
+public class DicomSeriesDescription
 {
 	private static final EPADLogger logger = EPADLogger.getInstance();
 
 	private final ArrayList<DicomImageDescription> instances;
+	private final String studyIUID;
 	private final String seriesUID;
+	private final String patientName;
+	private final String patientID;
 
-	public DicomSeriesOrder(int numInstance, String seriesUID)
+	public DicomSeriesDescription(int numInstance, String seriesUID, String studyIUID, String patientName, String patientID)
 	{
-		if (numInstance < 1) {
+		if (numInstance < 1)
 			throw new IllegalArgumentException("numInstances must be a positive value.");
-		}
 
 		int instanceSize = 2000;
-		if (instanceSize < numInstance + 1) {
+		if (instanceSize < numInstance + 1)
 			instanceSize = 2 * numInstance;
-		}
 
 		instances = new ArrayList<DicomImageDescription>(instanceSize);
-		for (int i = 0; i < instanceSize + 1; i++) {
+		for (int i = 0; i < instanceSize + 1; i++)
 			instances.add(null);
-		}
+
 		this.seriesUID = seriesUID;
+		this.studyIUID = studyIUID;
+		this.patientName = patientName;
+		this.patientID = patientID;
 	}
 
 	public String getSeriesUID()
 	{
 		return seriesUID;
+	}
+
+	public String getStudyIUID()
+	{
+		return studyIUID;
+	}
+
+	public String getPatientName()
+	{
+		return patientName;
+	}
+
+	public String getPatientID()
+	{
+		return patientID;
 	}
 
 	public boolean hasInstance(int index)

@@ -26,36 +26,36 @@ public class MoverTask implements Callable<File>
 {
 	private static final EPADLogger log = EPADLogger.getInstance();
 	private static final DicomUploadPipelineFiles pipeline = DicomUploadPipelineFiles.getInstance();
-	private final File file;
+	private final File dicomFile;
 
-	public MoverTask(File file)
+	public MoverTask(File dicomFile)
 	{
-		this.file = file;
+		this.dicomFile = dicomFile;
 	}
 
 	@Override
 	public File call() throws Exception
 	{
 		try {
-			File tagFile = new File(DicomTagFileUtils.createTagFilePath(file.getAbsolutePath()));
+			File tagFile = new File(DicomTagFileUtils.createTagFilePath(dicomFile.getAbsolutePath()));
 			Map<String, String> tags = DicomTagFileUtils.readTagFile(tagFile);
 
-			// Determine the directory. i.e. study/series.
+			// Determine the directory, i.e., study/series.
 			String studyId = DicomTagFileUtils.getTag(DicomTagFileUtils.STUDY_UID, tags);
 			String seriesId = DicomTagFileUtils.getTag(DicomTagFileUtils.SERIES_UID, tags);
 			String sopInstanceId = DicomTagFileUtils.getTag(DicomTagFileUtils.SOP_INST_UID, tags);
 
-			// create the move-to directory structure.
+			// Create the move-to directory structure.
 			String toDirPathBase = DicomFormatUtil.createDicomDirPath(studyId, seriesId);
 			String imageFileName = DicomFormatUtil.formatUidToDir(sopInstanceId);
 
 			File movedTagFile = new File(toDirPathBase + "/" + imageFileName + ".tag");
 			File movedFile = new File(toDirPathBase + "/" + imageFileName + ".dcm");
 
-			// write the file to this directory path.
+			// Write the file to this directory path.
 			EPADFileUtils.checkAndMoveFile(tagFile, movedTagFile);
 			LockFileUtils.lockDir(new File(toDirPathBase), LockFileUtils.LockType.PIPELINE);
-			EPADFileUtils.checkAndMoveFile(file, movedFile);
+			EPADFileUtils.checkAndMoveFile(dicomFile, movedFile);
 
 			// ToDo: delete RSNA search mode when done.
 			RsnaSearchResultMap resultMap = RsnaSearchResultMap.getInstance();
@@ -66,14 +66,14 @@ public class MoverTask implements Callable<File>
 
 			return movedFile;
 		} catch (Exception e) {
-			pipeline.addErrorFile(file, "MoverTask error.", e);
+			pipeline.addErrorFile(dicomFile, "MoverTask error.", e);
 			log.warning("Error in mover task", e);
-			return null; // TODO Look at this.
+			return null;
 		}
 	}
 
 	/**
-	 * Creates a jpeg and/or a two-channel png file for each .dicom file.
+	 * Creates a JEPG and/or a two-channel PNG file for each DICOM file.
 	 * 
 	 * @param tags Map of String keys to String value. Contains the tags in the DICOM file.
 	 * @param dcmFile the dicom file used to create an image.
