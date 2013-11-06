@@ -327,7 +327,6 @@ public class MySqlQueriesImpl implements MySqlQueries
 			c = getConnection();
 			ps = c.prepareStatement(MySqlCalls.SELECT_SERIES_BY_STATUS);
 			ps.setInt(1, statusCode);
-
 			rs = ps.executeQuery();
 			while (rs.next()) {
 				Map<String, String> resultMap = createResultMap(rs);
@@ -363,7 +362,7 @@ public class MySqlQueriesImpl implements MySqlQueries
 				}
 			}
 		} catch (Exception e) {
-			logger.warning("database operation failed.", e);
+			logger.warning("database operation failed", e);
 		}
 		return retVal;
 	}

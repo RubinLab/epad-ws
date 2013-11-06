@@ -13,8 +13,8 @@ import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epad.common.util.ResourceUtils;
 import edu.stanford.isis.epadws.processing.model.DicomImageProcessingState;
 import edu.stanford.isis.epadws.processing.model.DicomSeriesDescription;
-import edu.stanford.isis.epadws.processing.model.DicomSeriesStatus;
 import edu.stanford.isis.epadws.processing.model.DicomSeriesDescriptionTracker;
+import edu.stanford.isis.epadws.processing.model.DicomSeriesStatus;
 import edu.stanford.isis.epadws.processing.model.PngProcessingStatus;
 import edu.stanford.isis.epadws.processing.persistence.Dcm4CheeDatabaseUtils;
 import edu.stanford.isis.epadws.processing.persistence.MySqlInstance;
@@ -25,6 +25,9 @@ import edu.stanford.isis.epadws.processing.pipeline.threads.ShutdownSignal;
 
 /**
  * Process DICOM series appearing in the series queue (which was filled by a {@Dcm4CheeDatabaseWatcher
+ * 
+ * 
+ * 
  * 
  * }), which picks up new series by monitoring a DCM4CHEE database instance).
  * <p>
@@ -61,7 +64,7 @@ public class DICOMSeriesWatcher implements Runnable
 			try {
 				DicomSeriesDescription dicomSeriesDescription = dicomSeriesWatcherQueue.poll(5000, TimeUnit.MILLISECONDS);
 
-				if (dicomSeriesDescription != null) { // Add new SeriesOrder.
+				if (dicomSeriesDescription != null) {
 					logger.info("Series watcher found new series with series UID" + dicomSeriesDescription.getSeriesUID());
 					dicomSeriesDescriptionTracker.add(new DicomSeriesStatus(dicomSeriesDescription));
 				}
@@ -84,7 +87,8 @@ public class DICOMSeriesWatcher implements Runnable
 						queueAndWatcherManager.addToPNGGeneratorTaskPipeline(unprocessedDICOMImageFileDescriptions);
 					} else { // There are no unprocessed PNG files left.
 						if (currentSeriesStatus.getProcessingState() == DicomImageProcessingState.IN_PIPELINE) {
-							logger.info("No unprocesses PNG files left for series with UID " + currentSeriesDescription.getSeriesUID());
+							logger.info("No unprocesses PNG files left for series with UID "
+									+ currentSeriesDescription.getSeriesUID());
 							List<Map<String, String>> processedPNGImages = mySqlQueries
 									.getProcessedDICOMImageFileDescriptionsOrdered(currentSeriesDescription.getSeriesUID());
 							if (processedPNGImages.size() > 0) { // Convert processed PNG files to PNG grid files

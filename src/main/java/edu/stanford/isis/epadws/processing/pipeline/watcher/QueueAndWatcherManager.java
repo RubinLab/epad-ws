@@ -72,19 +72,17 @@ public class QueueAndWatcherManager
 
 	public void buildAndStart()
 	{
-		logger.info("Starting PNG generator pipeline.");
+		logger.info("Starting pipelines...");
 		dcm4CheeDatabaseWatcherExec.execute(dcm4CheeDatabaseWatcher);
 		dicomSeriesWatcherExec.execute(dicomSeriesWatcher);
 		xnatSeriesWatcherExec.execute(xnatSeriesWatcher);
 		pngGeneratorProcessExec.execute(pngGeneratorProcess);
 		epadUploadDirWatcherExec.execute(epadUploadDirWatcher);
-
-		logger.info("Starting login checker.");
 	}
 
 	public void shutdown()
 	{
-		logger.info("Stopping PNG generator pipeline.");
+		logger.info("Stopping pipelines...");
 		dcm4CheeDatabaseWatcherExec.shutdown();
 		dicomSeriesWatcherExec.shutdown();
 		xnatSeriesWatcherExec.shutdown();

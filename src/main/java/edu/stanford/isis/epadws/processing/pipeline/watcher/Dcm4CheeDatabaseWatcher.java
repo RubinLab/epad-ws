@@ -39,7 +39,6 @@ public class Dcm4CheeDatabaseWatcher implements Runnable
 
 		while (!signal.hasShutdown()) {
 			try {
-
 				List<Map<String, String>> series = mySqlQueries.getSeriesForStatusEx(0);
 
 				for (Map<String, String> currSeries : series) {
