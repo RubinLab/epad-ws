@@ -68,7 +68,7 @@ def create_subject(xnat_base_url, jsessionid, project_name, patient_id, patient_
   xnat_epad_project_subject_url = xnat_epad_project_url+'/subjects/'
   xnat_subject_label = patient_name_to_xnat_subject_label(patient_name)
   cookies = dict(JSESSIONID=jsessionid)
-  payload = { 'label' : xnat_subject_label, 'src': patient_name } 
+  payload = { 'label' : project_id+'--'+xnat_subject_label, 'src': patient_name } 
   xnat_subject_url = xnat_epad_project_subject_url
   r = requests.post(xnat_subject_url, params=payload, cookies=cookies)
   if r.status_code == requests.codes.ok:
