@@ -4,7 +4,9 @@
 # and to populate an XNAT project with the patients and studies it contains.
 #
 # Example usage:
+#
 # epad2xnat.py -x epad-dev1.stanford.edu:8090 -r [xnat_project-name] -u [xnat_user] -p [xnat_password] ~/DicomProxy/resources/dicom/
+#
 # For local testing, ZIP up ePAD DICOM  directory excluding PNG files:
 #   zip -r dev2.zip ~/DicomProxy/resources/dicom -x "*.png"
 # then transfer ZIP to local machine and upzip.
@@ -19,7 +21,7 @@ patient_id_dicom_element_name='Patient ID'
 def get_dicom_element(dicom_header_file_name, dicom_element_name):
   with file(dicom_header_file_name) as dicom_header_file:
     for dicom_element in dicom_header_file:
-      if dicom_element_name in dicom_element:
+      if dicom_element_name in dicom_element: # TODO Need better test here
         return dicom_element
   return None
 
@@ -28,7 +30,7 @@ def get_dicom_element_value(dicom_element):
   if m:
     return m.group('value')
   else:
-    print 'Warning: could not extract value from DICOM element', dicom_eleament
+    print 'Warning: could not extract value from DICOM element', dicom_element
     return None
 
 def get_dicom_header_file_path(study_dir):

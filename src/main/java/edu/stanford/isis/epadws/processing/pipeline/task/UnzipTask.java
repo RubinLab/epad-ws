@@ -35,7 +35,7 @@ public class UnzipTask implements Callable<List<File>>
 		List<File> retVal = new ArrayList<File>();
 		try {
 			log.info("Checking file extension: " + file.getName());
-			// Dicom files might not have extensions. Add it if missing.
+			// DICOM files might not have extensions. Add it if missing.
 			if (!EPADFileUtils.hasExtension(file)) {
 				if (DicomFileUtil.hasMagicWordInHeader(file)) {
 					file = DicomFileUtil.addDcmExtensionToFile(file);
@@ -48,11 +48,11 @@ public class UnzipTask implements Callable<List<File>>
 				return retVal;
 			} else if (extension.equalsIgnoreCase("zip")) {
 				EPADFileUtils.extractFolder(file.getAbsolutePath());
-				// The new files will be discovered by the directory watcher, so don't return anything.
+				// The new files will be discovered by the upload directory watcher, so don't return anything.
 				return retVal;
 			} else if (extension.equalsIgnoreCase("gz")) {
 				EPADFileUtils.extractFolder(file.getAbsolutePath());
-				// The new files will be discovered by the directory watcher, so don't return anything.
+				// The new files will be discovered by the upload directory watcher, so don't return anything.
 				return retVal;
 			} else if (extension.equalsIgnoreCase("tag")) {
 				// ignore new tag files they will get moved with dcm files.

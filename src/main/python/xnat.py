@@ -10,7 +10,7 @@ xnat_project_base='/xnat/data/projects/'
 def project_name_to_xnat_project_id(project_name):
   return re.sub('[^a-zA-Z0-9\.\-_]', '_', project_name)
 
-# XNAT labels allow alphanumeric, underscore (_), dash(-), period (.) and space characters only.
+# Xnat labels allow alphanumeric, underscore (_), dash(-), period (.) and space characters only.
 # Replace other characters with underscores. Also first replace DICOM ^ with underscore. 
 # We also replace spaces with underscores. 
 def patient_name_to_xnat_subject_label(patient_name):

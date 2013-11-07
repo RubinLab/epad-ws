@@ -1,33 +1,39 @@
 package edu.stanford.isis.epadws.processing.pipeline.watcher;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.ConcurrentModificationException;
 import java.util.List;
+import java.util.Map;
+import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 
 import edu.stanford.isis.epad.common.util.EPADFileUtils;
 import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epad.common.util.FileKey;
 import edu.stanford.isis.epad.common.util.ResourceUtils;
+import edu.stanford.isis.epadws.processing.model.DicomTagFileUtils;
 import edu.stanford.isis.epadws.processing.model.DicomUploadFile;
 import edu.stanford.isis.epadws.processing.pipeline.task.DicomSendTask;
 import edu.stanford.isis.epadws.processing.pipeline.threads.ShutdownSignal;
+import edu.stanford.isis.epadws.xnat.XNATUtil;
 
 /**
- * Watches for a new directory and a ZIP file in the ePAD upload directory. When a new directory is found it puts a
- * "dir.found" file into it and passes it to the {@DicomSendTask}.
+ * Watches for a new directory containing a ZIP file in the ePAD upload directory (./resources/upload/). When a new
+ * directory is found it puts a "dir.found" file into it and waits for the ZIP upload to complete. When the ZIP upload
+ * finished it upzips the file if necessary and sends the directory to DCM4CHEE.
  * 
  * @author amsnyder
  */
 public class EPADUploadDirWatcher implements Runnable
 {
-	public static final int CHECK_INTERVAL = 5000; // Check every 5 seconds
-	public static final String FOUND_DIR_FILE = "dir.found";
+	private static final int CHECK_INTERVAL = 5000; // Check every 5 seconds
+	private static final String FOUND_DIR_FILE = "dir.found";
 	private static final long MAX_WAIT_TIME = 120000; // 120 seconds
-	private final EPADLogger log = EPADLogger.getInstance();
+	private static final EPADLogger log = EPADLogger.getInstance();
 
 	@Override
 	public void run()
@@ -35,42 +41,40 @@ public class EPADUploadDirWatcher implements Runnable
 		try {
 			ShutdownSignal shutdownSignal = ShutdownSignal.getInstance();
 			File rootDir = new File(ResourceUtils.getEPADWebServerUploadDir());
-			log.info("ePAD upload directory:" + ResourceUtils.getEPADWebServerUploadDir());
+			log.info("EPADUploadDirWatcher: upload directory=" + ResourceUtils.getEPADWebServerUploadDir());
 			while (true) {
 				if (shutdownSignal.hasShutdown())
 					return;
 
 				try {
-					List<File> newDirList = findNewDir(rootDir);
+					List<File> newDirList = findNewUploadDirectory(rootDir);
 					if (newDirList != null) {
 						for (File currDir : newDirList) {
-							processDir(currDir);
+							processUploadDirectory(currDir);
 						}
 					}
 				} catch (ConcurrentModificationException e) {
-					log.warning("Upload Watch Thread had error: ", e);
+					log.warning("EPADUploadDirWatcher thread error ", e);
 				}
 				if (shutdownSignal.hasShutdown())
 					return;
-
 				TimeUnit.MILLISECONDS.sleep(CHECK_INTERVAL);
 			}
 		} catch (Exception e) {
-			log.sever("UploadDirWatcher error", e);
+			log.sever("EPADUploadDirWatcher thread error", e);
 		} finally {
-			log.info("Done. UploadDirWatcher thread.");
+			log.info("EPADUploadDirWatcher thread done.");
 		}
 	}
 
-	// Looks for new files without the dir.found file in it.
-	private List<File> findNewDir(File dir)
-	{
+	private List<File> findNewUploadDirectory(File dir)
+	{ // Looks for new directories without the dir.found file.
 		List<File> retVal = new ArrayList<File>();
 
 		File[] allFiles = dir.listFiles();
 		for (File currFile : allFiles) {
 			if (currFile.isDirectory()) {
-				if (!hasSignalDir(currFile)) {
+				if (!hasFoundDirFile(currFile)) {
 					retVal.add(currFile);
 				}
 			}
@@ -78,7 +82,7 @@ public class EPADUploadDirWatcher implements Runnable
 		return retVal;
 	}
 
-	private boolean hasSignalDir(File dir)
+	private boolean hasFoundDirFile(File dir)
 	{
 		String[] allFilePaths = dir.list();
 		for (String currPath : allFilePaths) {
@@ -89,34 +93,36 @@ public class EPADUploadDirWatcher implements Runnable
 		return false;
 	}
 
-	private void processDir(File dir) throws InterruptedException
+	private void processUploadDirectory(File dir) throws InterruptedException
 	{
 		try {
-			boolean hasZipFile = waitOnEmptyDir(dir);
+			boolean hasZipFile = waitOnEmptyUploadDirectory(dir);
 			if (hasZipFile) {
-				File zipFile = waitForZipUploadComplete(dir);
+				File zipFile = waitForZipUploadToComplete(dir);
 				unzipFiles(zipFile);
 			}
-			sendDicom(dir);
+			DicomTagFileUtils.generateDicomTagFiles(dir);
+			createXNATRepresentation(dir);
+			sendFilesToDcm4Chee(dir);
 			deleteDir(dir);
 		} catch (IOException ioe) {
-			log.warning("DicomSend failed (IOException) for dir" + dir.getAbsolutePath(), ioe);
+			log.warning("EPADUploadDirWatcher: DicomSend failed (IOException) for dir" + dir.getAbsolutePath(), ioe);
 			writeExceptionLog(dir, ioe);
 		} catch (IllegalStateException e) {
-			log.warning("DicomSend failed (ISE) for dir=" + dir.getAbsolutePath(), e);
+			log.warning("EPADUploadDirWatcher: DicomSend failed (ISE) for dir=" + dir.getAbsolutePath(), e);
 			writeExceptionLog(dir, e);
 		} catch (Exception e) {
-			log.warning("DicomSend failed (Exception) for dir=" + dir.getAbsolutePath(), e);
+			log.warning("EPADUploadDirWatcher: DicomSend failed (Exception) for dir=" + dir.getAbsolutePath(), e);
 			writeExceptionLog(dir, e);
 		} finally {
-			log.info("Upload finished: " + dir.getAbsolutePath());
+			log.info("EPADUploadDirWatcher: upload finished: " + dir.getAbsolutePath());
 		}
 	}
 
-	private boolean waitOnEmptyDir(File dir) throws InterruptedException
+	private boolean waitOnEmptyUploadDirectory(File dir) throws InterruptedException
 	{
-		log.info("Upload waiting on empty dir: " + dir.getAbsolutePath());
-		// if this file has only one zip file, wait for it to complete upload.
+		log.info("EPADUploadDirWatcher: upload waiting for upload to start in directory: " + dir.getAbsolutePath());
+		// If this file has only one ZIP file, wait for it to complete upload.
 		long emptyDirStartWaitTime = System.currentTimeMillis();
 		boolean hasZipFile = false;
 
@@ -146,15 +152,15 @@ public class EPADUploadDirWatcher implements Runnable
 				}
 			}
 			if ((System.currentTimeMillis() - emptyDirStartWaitTime) > MAX_WAIT_TIME)
-				throw new IllegalStateException("Exceeded max wait time to upload a file.");
+				throw new IllegalStateException("Exceeded maximum wait time to upload a ZIP file.");
 			Thread.sleep(2000);
 		}
 	}
 
-	private File waitForZipUploadComplete(File dir) throws InterruptedException
+	private File waitForZipUploadToComplete(File dir) throws InterruptedException
 	{
-		log.info("MySQL waiting for completion of: " + dir.getAbsolutePath());
-		long zipFileStartWaitTime = System.currentTimeMillis(); // Wait for the zip file to complete.
+		log.info("EPADUploadDirWatcher: waiting for completion of ZIP upload in directory: " + dir.getAbsolutePath());
+		long zipFileStartWaitTime = System.currentTimeMillis();
 		long prevZipFileSize = -1;
 		long prevZipFileLastUpdated = 0;
 
@@ -167,11 +173,11 @@ public class EPADUploadDirWatcher implements Runnable
 				}
 			});
 
-			if (zipFiles == null) { // Should have only one zip file in directory.
-				throw new IllegalStateException("No zip file in directory. dir=" + dir.getAbsolutePath());
+			if (zipFiles == null) {
+				throw new IllegalStateException("No ZIP file in directory: " + dir.getAbsolutePath());
 			} else if (zipFiles.length > 1) {
 				int numZipFiles = zipFiles.length;
-				throw new IllegalStateException("Too many zip files (" + numZipFiles + ") in directory. dir="
+				throw new IllegalStateException("Too many ZIP files (" + numZipFiles + ") in directory:"
 						+ dir.getAbsolutePath());
 			}
 			FileKey zipFileKey = new FileKey(zipFiles[0]);
@@ -181,7 +187,7 @@ public class EPADUploadDirWatcher implements Runnable
 			long currZipFileLastUpdated = zipFile.getLastUpdated();
 
 			if (prevZipFileSize == currZipFileSize && prevZipFileLastUpdated == currZipFileLastUpdated) {
-				return zipFileKey.getFile(); // uploading complete.
+				return zipFileKey.getFile(); // Uploading complete.
 			} else {
 				prevZipFileSize = currZipFileSize;
 				prevZipFileLastUpdated = currZipFileLastUpdated;
@@ -195,19 +201,71 @@ public class EPADUploadDirWatcher implements Runnable
 
 	private void unzipFiles(File zipFile) throws IOException
 	{
-		log.info("Unzipping: " + zipFile.getAbsolutePath());
+		log.info("EPADUploadDirWatcher: unzipping " + zipFile.getAbsolutePath());
 		EPADFileUtils.extractFolder(zipFile.getAbsolutePath());
 	}
 
-	private void sendDicom(File dir) throws Exception
+	private void createXNATRepresentation(File dir)
 	{
-		log.info("DCMSND: " + dir.getAbsolutePath());
+		String xnatUploadFilePath = dir.getAbsolutePath() + File.separator + "xnat_upload.properties";
+		File file = new File(xnatUploadFilePath);
+
+		if (!file.exists())
+			log.warning("EPADUploadDirWatcher: could not find XNAT upload properties file " + xnatUploadFilePath);
+		else {
+			Properties properties = new Properties();
+			FileInputStream is = null;
+			try {
+				is = new FileInputStream(file);
+				properties.load(is);
+				String xnatProjectID = properties.getProperty("XNATProjectName");
+				String xnatSessionID = properties.getProperty("XNATSessionID");
+
+				if (xnatProjectID != null || xnatSessionID != null) {
+					for (File dicomTagFile : DicomTagFileUtils.listDICOMTagFiles(dir)) {
+						Map<String, String> tagMap = DicomTagFileUtils.readTagFile(dicomTagFile);
+						String subjectID = DicomTagFileUtils.getTag(DicomTagFileUtils.PATIENT_ID, tagMap);
+						String subjectName = DicomTagFileUtils.getTag(DicomTagFileUtils.PATIENT_NAME_ALT, tagMap);
+						String studyIUID = DicomTagFileUtils.getTag(DicomTagFileUtils.STUDY_UID, tagMap);
+
+						if (subjectName != null) {
+							if (subjectID == null)
+								subjectID = subjectName;
+							XNATUtil.createXNATSubject(xnatProjectID, subjectName, subjectID, xnatSessionID);
+							if (studyIUID != null)
+								XNATUtil.createXNATStudy(xnatProjectID, subjectID, studyIUID, xnatSessionID);
+							else
+								log.warning("EPADUploadDirWatcher: missing study UID in DICOM tag file");
+						} else
+							log.warning("EPADUploadDirWatcher: missing patient name in DICOM tag file");
+					}
+				} else {
+					log.warning("EPADUploadDirWatcher: missing XNAT project name and/or session ID in properties file"
+							+ xnatUploadFilePath);
+				}
+			} catch (IOException e) {
+				log.warning("EPADUploadDirWatcher: error loading XNAT upload file " + xnatUploadFilePath, e);
+			} finally {
+				if (is != null) {
+					try {
+						is.close();
+					} catch (IOException e) {
+						log.warning("EPADUploadDirWatcher: error closing XNAT upload file " + xnatUploadFilePath, e);
+					}
+				}
+			}
+		}
+	}
+
+	private void sendFilesToDcm4Chee(File dir) throws Exception
+	{
+		log.info("EPADUploadDirWatcher: sending directory " + dir.getAbsolutePath() + " to DCM4CHEE");
 		DicomSendTask.dcmsnd(dir, true);
 	}
 
 	private void deleteDir(File dir)
 	{
-		log.info("MySQL deleting directory: " + dir.getAbsolutePath());
+		log.info("EPADUploadDirWatcher: deleting directory: " + dir.getAbsolutePath());
 		EPADFileUtils.deleteDirAndContents(dir);
 	}
 

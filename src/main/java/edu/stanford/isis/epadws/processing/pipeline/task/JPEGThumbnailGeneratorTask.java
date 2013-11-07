@@ -22,10 +22,10 @@ import java.util.concurrent.Callable;
 import javax.imageio.ImageIO;
 
 import edu.stanford.isis.epad.common.dicom.DicomReader;
-import edu.stanford.isis.epad.common.dicom.DicomTagFileUtils;
 import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epad.common.util.FileKey;
 import edu.stanford.isis.epad.common.util.ResourceUtils;
+import edu.stanford.isis.epadws.processing.model.DicomTagFileUtils;
 import edu.stanford.isis.epadws.processing.pipeline.ThumbnailManager;
 
 /**
@@ -229,15 +229,10 @@ public class JPEGThumbnailGeneratorTask implements Callable<File>
 	 */
 	public static void writeThumbnailIfNeeded(File dicomFile)
 	{
-		try {
-			String tagFilePath = DicomTagFileUtils.createTagFilePath(dicomFile.getAbsolutePath());
-			Map<String, String> tags = DicomTagFileUtils.readTagFile(new File(tagFilePath));
-			ThumbnailManager thumbnailManager = ThumbnailManager.getInstance();
-			thumbnailManager.writeThumbnailIfNeeded(tags, dicomFile);
-
-		} catch (IOException ioe) {
-			log.warning("Failed to write: " + dicomFile.getAbsolutePath(), ioe);
-		}
+		String tagFilePath = DicomTagFileUtils.createTagFilePath(dicomFile.getAbsolutePath());
+		Map<String, String> tags = DicomTagFileUtils.readTagFile(new File(tagFilePath));
+		ThumbnailManager thumbnailManager = ThumbnailManager.getInstance();
+		thumbnailManager.writeThumbnailIfNeeded(tags, dicomFile);
 	}
 
 	public void writePackedPngs()

@@ -21,8 +21,8 @@ import edu.stanford.isis.epadws.processing.pipeline.process.ReadTagsProcess;
 import edu.stanford.isis.epadws.processing.pipeline.process.ThumbnailProcess;
 import edu.stanford.isis.epadws.processing.pipeline.process.UnzipProcess;
 import edu.stanford.isis.epadws.processing.pipeline.threads.OrderFileThread;
-import edu.stanford.isis.epadws.processing.pipeline.watcher.PipelineStatusWatcher;
 import edu.stanford.isis.epadws.processing.pipeline.watcher.EPADUploadZIPWatcher;
+import edu.stanford.isis.epadws.processing.pipeline.watcher.PipelineStatusWatcher;
 
 /**
  * A singleton class to get queues and objects needed by pipeline classes.
@@ -118,14 +118,12 @@ public class PipelineFactory
 			}
 
 			private boolean updateTimeExceeded()
-			{
-				// true if more than one minute.
+			{ // true if more than one minute
 				return ((System.currentTimeMillis() - lastUpdate) > (1000 * 60));
 			}
 		}, 5, 1, TimeUnit.SECONDS);
 
 		pipelineStatusWatchExec.scheduleAtFixedRate(new PipelineStatusWatcher(), 5, 5, TimeUnit.SECONDS);
-
 	}
 
 	/**
@@ -150,7 +148,6 @@ public class PipelineFactory
 	{
 		pipelineStatusWatchExec.shutdown();
 		statusCheckService.shutdown();
-
 		uploadDirWatchExec.shutdown();
 
 		// ?? Do we need this.

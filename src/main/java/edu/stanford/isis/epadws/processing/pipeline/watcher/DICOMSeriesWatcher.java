@@ -24,15 +24,24 @@ import edu.stanford.isis.epadws.processing.pipeline.task.PngGridGeneratorTask;
 import edu.stanford.isis.epadws.processing.pipeline.threads.ShutdownSignal;
 
 /**
- * Process DICOM series appearing in the series queue (which was filled by a {@Dcm4CheeDatabaseWatcher
- * 
- * 
- * 
- * 
- * }), which picks up new series by monitoring a DCM4CHEE database instance).
+ * Process DICOM series appearing in the series queue.
  * <p>
- * Submits these to the PNG generation task queue (to be processed by the {@PngGridGeneratorTask}
- * ). Also maintains order information for the series using the {@SeriesOrderTracker} class.
+ * These series are represented by a {@DicomSeriesDescription}.
+ * <p>
+ * These descriptions are placed in the queue by a {@Dcm4CheeDatabaseWatcher}, which picks up
+ * new series by monitoring a DCM4CHEE database.
+ * <p>
+ * This watcher submits these to the PNG generation task queue to be processed by the {@PngGridGeneratorTask
+ * 
+ * 
+ * 
+ * 
+ * } It also maintains order information for the series using the {@DicomSeriesOrderTracker
+ * 
+ * 
+ * 
+ * 
+ * } class.
  */
 public class DICOMSeriesWatcher implements Runnable
 {
@@ -80,10 +89,11 @@ public class DICOMSeriesWatcher implements Runnable
 
 					if (unprocessedDICOMImageFileDescriptions.size() > 0) {
 						logger.info("Found " + unprocessedDICOMImageFileDescriptions.size() + " unprocessed DICOM image(s).");
-						// SeriesOrder tracks instance order
+						// DicomSeriesOrder tracks instance order
 						currentSeriesDescription.updateImageDescriptions(unprocessedDICOMImageFileDescriptions);
 						currentSeriesStatus.registerActivity();
 						currentSeriesStatus.setState(DicomImageProcessingState.IN_PIPELINE);
+						logger.info("Adding to PNG generator task pipeline");
 						queueAndWatcherManager.addToPNGGeneratorTaskPipeline(unprocessedDICOMImageFileDescriptions);
 					} else { // There are no unprocessed PNG files left.
 						if (currentSeriesStatus.getProcessingState() == DicomImageProcessingState.IN_PIPELINE) {
@@ -106,7 +116,7 @@ public class DICOMSeriesWatcher implements Runnable
 					}
 				}
 			} catch (Exception e) {
-				logger.warning("Exception SeriesWatcher thread.", e);
+				logger.warning("Exception SeriesWatcher thread", e);
 			}
 		}
 	}

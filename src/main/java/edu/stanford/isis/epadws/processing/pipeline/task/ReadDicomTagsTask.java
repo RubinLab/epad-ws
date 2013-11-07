@@ -24,11 +24,11 @@ public class ReadDicomTagsTask implements Callable<File>
 	private static final EPADLogger log = EPADLogger.getInstance();
 	private static final DicomUploadPipelineFiles pipeline = DicomUploadPipelineFiles.getInstance();
 
-	private final File file;
+	private final File dicomFile;
 
-	public ReadDicomTagsTask(File file)
+	public ReadDicomTagsTask(File dicomFile)
 	{
-		this.file = file;
+		this.dicomFile = dicomFile;
 	}
 
 	@Override
@@ -38,24 +38,21 @@ public class ReadDicomTagsTask implements Callable<File>
 		// file.renameTo(new File(file.getName().toLowerCase()));
 
 		try {
-			// only dicom files should pass here.
-			if (!EPADFileUtils.isFileType(file, ".dcm")) {
-				log.info(file + " is NOT a DICOM file.");
+			// Only DICOM files should pass here.
+			if (!EPADFileUtils.isFileType(dicomFile, ".dcm")) {
+				log.info(dicomFile + " is NOT a DICOM file.");
 				return null;
 			}
 
-			String tagPath = createTagPath(file);
-
-			String[] command = { "./dcm2txt", "-w", "120", file.getAbsolutePath() };
-
-			ProcessBuilder pb = new ProcessBuilder(command);
+			String tagPath = createTagFilePath(dicomFile);
+			String[] command = { "./dcm2txt", "-w", "120", dicomFile.getAbsolutePath() };
+			ProcessBuilder processBuilder = new ProcessBuilder(command);
 			String dicomBinDirectory = ResourceUtils.getEPADWebServerDICOMBinDir();
-			pb.directory(new File(dicomBinDirectory));
 
-			// long startTime = System.currentTimeMillis();
-			Process process = pb.start();
+			processBuilder.directory(new File(dicomBinDirectory));
+
+			Process process = processBuilder.start();
 			process.getOutputStream();// get the output stream.
-			// Read out dir output
 			InputStream is = process.getInputStream();
 			InputStreamReader isr = new InputStreamReader(is);
 
@@ -71,18 +68,18 @@ public class ReadDicomTagsTask implements Callable<File>
 				// long totalTime = System.currentTimeMillis() - startTime;
 				// log.info("Tags exit value is: " + exitValue+" and took: "+totalTime+" ms");
 			} catch (InterruptedException e) {
-				log.warning("Couldn't get tags for: " + file.getAbsolutePath(), e);
+				log.warning("Could not generate tag file for: " + dicomFile.getAbsolutePath(), e);
 			}
 
-			// write the contents of this buffer to a file.
+			// Write the contents of this buffer to a file.
 			File tagFile = new File(tagPath);
 			FileWriter tagFileWriter = new FileWriter(tagFile);
 			tagFileWriter.write(sb.toString());
 			tagFileWriter.flush();
 			tagFileWriter.close();
-			return file;
+			return dicomFile;
 		} catch (Exception e) {
-			pipeline.addErrorFile(file, "ReadTagsTask error.", e);
+			pipeline.addErrorFile(dicomFile, "ReadTagsTask error.", e);
 			return null;
 		}
 	}
@@ -93,7 +90,7 @@ public class ReadDicomTagsTask implements Callable<File>
 	 * @param dcmFile File
 	 * @return String
 	 */
-	private static String createTagPath(File dcmFile)
+	private static String createTagFilePath(File dcmFile)
 	{
 		String dcmFilePath = dcmFile.getAbsolutePath();
 		if (dcmFilePath.endsWith("dcm")) {

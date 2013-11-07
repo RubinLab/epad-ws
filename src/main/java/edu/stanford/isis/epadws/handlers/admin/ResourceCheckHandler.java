@@ -9,6 +9,8 @@ import javax.servlet.http.HttpServletResponse;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 
+import edu.stanford.isis.epad.common.util.EPADLogger;
+
 /**
  * Provide access control.
  * <p>
@@ -19,7 +21,7 @@ import org.eclipse.jetty.server.handler.AbstractHandler;
  */
 public class ResourceCheckHandler extends AbstractHandler
 {
-	// private final ProxyLogger log = ProxyLogger.getInstance();
+	private final EPADLogger log = EPADLogger.getInstance();
 
 	// private static final String INTERNAL_ERROR_MESSAGE = "Internal server error";
 	// private static final String INVALID_SESSION_TOKEN_MESSAGE = "Session token is invalid";
@@ -34,6 +36,10 @@ public class ResourceCheckHandler extends AbstractHandler
 		if (origin != null) {
 			httpResponse.setHeader("Access-Control-Allow-Origin", origin);
 			httpResponse.setHeader("Access-Control-Allow-Credentials", "true"); // Needed to allow cookies.
+			log.info("ResourceCheck(CORS): " + request);
+		} else {
+			httpResponse.setHeader("Access-Control-Allow-Origin", "*");
+			log.info("ResourceCheck: " + request);
 		}
 
 		request.setHandled(false);

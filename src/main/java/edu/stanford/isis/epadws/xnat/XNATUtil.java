@@ -166,13 +166,15 @@ public class XNATUtil
 		postMethod.setRequestHeader("Cookie", "JSESSIONID=" + jsessionID);
 
 		try {
-			log.info("Invoking XNAT with URL" + xnatProjectURL);
+			log.info("Invoking XNAT with URL " + xnatProjectURL);
 			xnatStatusCode = client.executeMethod(postMethod);
+			if (unexpectedCreationStatusCode(xnatStatusCode))
+				log.warning("Failure calling XNAT; status code = " + xnatStatusCode);
 		} catch (IOException e) {
 			log.warning("Error calling XNAT project service", e);
 			xnatStatusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 		}
-		return (xnatStatusCode == HttpServletResponse.SC_OK || xnatStatusCode == HttpServletResponse.SC_CREATED);
+		return (!unexpectedCreationStatusCode(xnatStatusCode));
 	}
 
 	public static boolean createXNATSubject(String projectID, String subjectName, String subjectID, String jsessionID)
@@ -188,13 +190,20 @@ public class XNATUtil
 		postMethod.setRequestHeader("Cookie", "JSESSIONID=" + jsessionID);
 
 		try {
-			log.info("Invoking XNAT with URL" + xnatSubjectURL);
+			log.info("Invoking XNAT with URL " + xnatSubjectURL);
 			xnatStatusCode = client.executeMethod(postMethod);
+			if (unexpectedCreationStatusCode(xnatStatusCode))
+				log.warning("Failure calling XNAT; status code = " + xnatStatusCode);
 		} catch (IOException e) {
 			log.warning("Error calling XNAT project service", e);
 			xnatStatusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 		}
-		return (xnatStatusCode == HttpServletResponse.SC_OK || xnatStatusCode == HttpServletResponse.SC_CREATED);
+		return (!unexpectedCreationStatusCode(xnatStatusCode));
+	}
+
+	private static boolean unexpectedCreationStatusCode(int statusCode)
+	{
+		return !(statusCode == HttpServletResponse.SC_OK || statusCode == HttpServletResponse.SC_CREATED || statusCode == HttpServletResponse.SC_CONFLICT);
 	}
 
 	public static boolean createXNATStudy(String projectID, String subjectID, String studyID, String jsessionID)
@@ -210,13 +219,15 @@ public class XNATUtil
 		putMethod.setRequestHeader("Cookie", "JSESSIONID=" + jsessionID);
 
 		try {
-			log.info("Invoking XNAT with URL" + xnatStudyURL);
+			log.info("Invoking XNAT with URL " + xnatStudyURL);
 			xnatStatusCode = client.executeMethod(putMethod);
+			if (unexpectedCreationStatusCode(xnatStatusCode))
+				log.warning("Failure calling XNAT; status code = " + xnatStatusCode);
 		} catch (IOException e) {
 			log.warning("Error calling XNAT project service", e);
 			xnatStatusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 		}
-		return (xnatStatusCode == HttpServletResponse.SC_OK || xnatStatusCode == HttpServletResponse.SC_CREATED);
+		return (!unexpectedCreationStatusCode(xnatStatusCode));
 	}
 
 	public static boolean hasValidXNATSessionID(String jsessionID)
@@ -252,25 +263,50 @@ public class XNATUtil
 
 	private static String buildProjectCreationURL(String host, int port, String base, String projectID, String projectName)
 	{
-		String urlString = buildURLString(host, port, base, "") + "?ID=" + projectID + "&name=" + projectName;
-		return encode(urlString);
+		String queryString = "?ID=" + projectName2XNATProjectID(projectName) + "&name=" + encode(projectName);
+		String urlString = buildURLString(host, port, base, "") + queryString;
+		return urlString;
 	}
 
 	private static String buildSubjectCreationURL(String host, int port, String base, String projectID, String subjectID,
 			String subjectName)
 	{
-		String urlString = buildURLString(host, port, base, "") + projectID + "/subjects?label=" + subjectID + "&src="
-				+ subjectName;
-		return encode(urlString);
+		String queryPart = "?label=" + patientName2XNATSubjectLabel(subjectName) + "&src=" + encode(subjectName);
+		String urlString = buildURLString(host, port, base, "") + projectID + "/subjects" + queryPart;
+
+		return urlString;
 	}
 
 	private static String buildStudyCreationURL(String host, int port, String base, String projectID, String subjectID,
 			String studyUID)
 	{
-		String experimentID = studyUID.replace('.', '_');
+		String experimentID = studyUID2XNATExperimentID(studyUID);
 		String urlString = buildURLString(host, port, base, "") + projectID + "/subjects/" + subjectID + "/experiments/"
 				+ experimentID + "?label=" + studyUID + "&xsiType=xnat:otherDicomSessionData";
-		return encode(urlString);
+		return urlString;
+	}
+
+	private static String projectName2XNATProjectID(String projectName)
+	{
+		String result = projectName.replaceAll("[^a-zA-Z0-9\\\\.\\\\-_]", "_");
+
+		// log.info("projectName2XNATProjectID: in=" + projectName + ", out=" + result);
+
+		return result;
+	}
+
+	private static String patientName2XNATSubjectLabel(String patientName)
+	{
+		String result = patientName.replaceAll("[^a-zA-Z0-9\\\\.\\\\-_]", "_").replaceAll("\\\\^", "_");
+
+		// log.info("patientName2XNATSubjectLabel: in=" + patientName + ", out=" + result);
+
+		return result;
+	}
+
+	private static String studyUID2XNATExperimentID(String studyUID)
+	{
+		return studyUID.replace('.', '_');
 	}
 
 	private static String encode(String urlString)

@@ -13,13 +13,13 @@ import java.util.Set;
 import java.util.concurrent.Callable;
 
 import edu.stanford.isis.epad.common.dicom.DicomFormatUtil;
-import edu.stanford.isis.epad.common.dicom.DicomTagFileUtils;
 import edu.stanford.isis.epad.common.util.EPADFileUtils;
 import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epad.common.util.LockFileUtils;
-import edu.stanford.isis.epad.common.util.RsnaSearchResultMap;
 import edu.stanford.isis.epadws.processing.model.DicomSeriesFileUtils;
+import edu.stanford.isis.epadws.processing.model.DicomTagFileUtils;
 import edu.stanford.isis.epadws.processing.model.DicomUploadPipelineFiles;
+import edu.stanford.isis.epadws.processing.model.RsnaSearchResultMap;
 import edu.stanford.isis.epadws.processing.pipeline.ThumbnailManager;
 
 public class MoverTask implements Callable<File>

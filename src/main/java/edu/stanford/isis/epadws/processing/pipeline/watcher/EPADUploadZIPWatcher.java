@@ -26,8 +26,7 @@ import edu.stanford.isis.epadws.processing.pipeline.threads.ShutdownSignal;
 
 /**
  * This is a process the runs every five seconds. If it sees a new ZIP, DCM or GZ file in two consecutive runs with the
- * same file size it will assume the it is "DONE" and put it into the QUEUE for the unzipping files. This begins the
- * process.
+ * same file size it will assume the it is "DONE" and put it into the QUEUE. This begins the process.
  */
 public class EPADUploadZIPWatcher implements Runnable
 {
@@ -146,7 +145,6 @@ public class EPADUploadZIPWatcher implements Runnable
 		// log.info("Found "+allFiles.length+" files/dir in: "+dir.getAbsolutePath());
 
 		for (File currFile : allFiles) {
-
 			if (currFile.isDirectory()) {
 				searchDir(currFile);
 			}
@@ -155,8 +153,7 @@ public class EPADUploadZIPWatcher implements Runnable
 				boolean isError = uploadPipelineFiles.isKnownErrorFile(currFileKey);
 				boolean isInPipeline = uploadPipelineFiles.isInPipeline(currFileKey);
 				if (!isError && !isInPipeline) {
-					// If this file is already there and it has not changed since last time,
-					// put it in pipeline.
+					// If this file is already there and it has not changed since last time, put it in pipeline.
 					boolean shouldAddToPipeline = checkShouldAddToPipeline(currFileKey);
 					if (shouldAddToPipeline) {
 						log.info("Adding file: " + currFileKey + " to unzip queue.");
@@ -241,5 +238,4 @@ public class EPADUploadZIPWatcher implements Runnable
 	{
 		return uploadPipelineFiles.getErrorFiles().size();
 	}
-
 }
