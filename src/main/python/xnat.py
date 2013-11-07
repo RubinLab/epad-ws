@@ -88,7 +88,7 @@ def create_experiment(xnat_base_url, jsessionid, project_name, patient_id, patie
   xnat_epad_project_subject_url = xnat_epad_project_url+'/subjects/'
   xnat_subject_label = patient_name_to_xnat_subject_label(patient_name)
   xnat_experiment_id = study_uid_to_xnat_experiment_id(study_uid)
-  payload = { 'label': study_uid, 'xsiType': 'xnat:otherDicomSessionData' }
+  payload = { 'name': study_uid, 'xsiType': 'xnat:otherDicomSessionData' }
   xnat_experiment_url = xnat_epad_project_subject_url + xnat_subject_label + '/experiments/' + xnat_experiment_id
   cookies = dict(JSESSIONID=jsessionid)
   r = requests.put(xnat_experiment_url, params=payload, cookies=cookies)

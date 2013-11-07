@@ -158,7 +158,7 @@ public class XNATUtil
 	{
 		String xnatHost = config.getStringConfigurationParameter("XNATServer");
 		int xnatPort = config.getIntegerConfigurationParameter("XNATPort");
-		String xnatProjectURL = buildProjectCreationURL(xnatHost, xnatPort, XNAT_PROJECT_BASE, projectID, projectName);
+		String xnatProjectURL = buildXNATProjectCreationURL(xnatHost, xnatPort, XNAT_PROJECT_BASE, projectID, projectName);
 		HttpClient client = new HttpClient();
 		PostMethod postMethod = new PostMethod(xnatProjectURL);
 		int xnatStatusCode;
@@ -171,17 +171,26 @@ public class XNATUtil
 			if (unexpectedCreationStatusCode(xnatStatusCode))
 				log.warning("Failure calling XNAT; status code = " + xnatStatusCode);
 		} catch (IOException e) {
-			log.warning("Error calling XNAT project service", e);
+			log.warning("Error calling XNAT", e);
 			xnatStatusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 		}
 		return (!unexpectedCreationStatusCode(xnatStatusCode));
+	}
+
+	private static String buildXNATProjectCreationURL(String host, int port, String base, String projectID,
+			String projectName)
+	{
+		String queryString = "?ID=" + projectName2XNATProjectID(projectName) + "&name=" + encode(projectName);
+		String urlString = buildURLString(host, port, base) + queryString;
+
+		return urlString;
 	}
 
 	public static boolean createXNATSubject(String projectID, String subjectName, String subjectID, String jsessionID)
 	{
 		String xnatHost = config.getStringConfigurationParameter("XNATServer");
 		int xnatPort = config.getIntegerConfigurationParameter("XNATPort");
-		String xnatSubjectURL = buildSubjectCreationURL(xnatHost, xnatPort, XNAT_PROJECT_BASE, projectID, subjectName,
+		String xnatSubjectURL = buildXNATSubjectCreationURL(xnatHost, xnatPort, XNAT_PROJECT_BASE, projectID, subjectName,
 				subjectID);
 		HttpClient client = new HttpClient();
 		PostMethod postMethod = new PostMethod(xnatSubjectURL);
@@ -195,10 +204,19 @@ public class XNATUtil
 			if (unexpectedCreationStatusCode(xnatStatusCode))
 				log.warning("Failure calling XNAT; status code = " + xnatStatusCode);
 		} catch (IOException e) {
-			log.warning("Error calling XNAT project service", e);
+			log.warning("Error calling XNAT", e);
 			xnatStatusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 		}
 		return (!unexpectedCreationStatusCode(xnatStatusCode));
+	}
+
+	private static String buildXNATSubjectCreationURL(String host, int port, String base, String projectID,
+			String subjectID, String subjectName)
+	{
+		String queryPart = "?label=" + patientName2XNATSubjectLabel(subjectName) + "&src=" + encode(subjectName);
+		String urlString = buildURLString(host, port, base) + projectID + "/subjects" + queryPart;
+
+		return urlString;
 	}
 
 	private static boolean unexpectedCreationStatusCode(int statusCode)
@@ -210,7 +228,8 @@ public class XNATUtil
 	{
 		String xnatHost = config.getStringConfigurationParameter("XNATServer");
 		int xnatPort = config.getIntegerConfigurationParameter("XNATPort");
-		String xnatStudyURL = buildStudyCreationURL(xnatHost, xnatPort, XNAT_PROJECT_BASE, projectID, subjectID, studyID);
+		String xnatStudyURL = buildXNATExperimentCreationURL(xnatHost, xnatPort, XNAT_PROJECT_BASE, projectID, subjectID,
+				studyID);
 
 		HttpClient client = new HttpClient();
 		PutMethod putMethod = new PutMethod(xnatStudyURL);
@@ -224,10 +243,20 @@ public class XNATUtil
 			if (unexpectedCreationStatusCode(xnatStatusCode))
 				log.warning("Failure calling XNAT; status code = " + xnatStatusCode);
 		} catch (IOException e) {
-			log.warning("Error calling XNAT project service", e);
+			log.warning("Error calling XNAT", e);
 			xnatStatusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 		}
 		return (!unexpectedCreationStatusCode(xnatStatusCode));
+	}
+
+	private static String buildXNATExperimentCreationURL(String host, int port, String base, String projectID,
+			String subjectID, String studyUID)
+	{
+		String experimentID = studyUID2XNATExperimentID(studyUID);
+		String urlString = buildURLString(host, port, base) + projectID + "/subjects/" + subjectID + "/experiments/"
+				+ experimentID + "?name=" + studyUID + "&xsiType=xnat:otherDicomSessionData";
+
+		return urlString;
 	}
 
 	public static boolean hasValidXNATSessionID(String jsessionID)
@@ -244,7 +273,7 @@ public class XNATUtil
 		try {
 			xnatStatusCode = client.executeMethod(getMethod);
 		} catch (IOException e) {
-			log.warning("Error calling XNAT session service", e);
+			log.warning("Error calling XNAT", e);
 			xnatStatusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 		}
 		return (xnatStatusCode == HttpServletResponse.SC_OK);
@@ -259,31 +288,6 @@ public class XNATUtil
 			return values[0];
 		else
 			return "";
-	}
-
-	private static String buildProjectCreationURL(String host, int port, String base, String projectID, String projectName)
-	{
-		String queryString = "?ID=" + projectName2XNATProjectID(projectName) + "&name=" + encode(projectName);
-		String urlString = buildURLString(host, port, base, "") + queryString;
-		return urlString;
-	}
-
-	private static String buildSubjectCreationURL(String host, int port, String base, String projectID, String subjectID,
-			String subjectName)
-	{
-		String queryPart = "?label=" + patientName2XNATSubjectLabel(subjectName) + "&src=" + encode(subjectName);
-		String urlString = buildURLString(host, port, base, "") + projectID + "/subjects" + queryPart;
-
-		return urlString;
-	}
-
-	private static String buildStudyCreationURL(String host, int port, String base, String projectID, String subjectID,
-			String studyUID)
-	{
-		String experimentID = studyUID2XNATExperimentID(studyUID);
-		String urlString = buildURLString(host, port, base, "") + projectID + "/subjects/" + subjectID + "/experiments/"
-				+ experimentID + "?label=" + studyUID + "&xsiType=xnat:otherDicomSessionData";
-		return urlString;
 	}
 
 	private static String projectName2XNATProjectID(String projectName)
