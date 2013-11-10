@@ -31,7 +31,7 @@ import edu.stanford.isis.epadws.processing.pipeline.task.PngGeneratorTask;
 public class QueueAndWatcherManager
 {
 	private static final EPADLogger logger = EPADLogger.getInstance();
-	private static final BlockingQueue<DicomSeriesDescription> dcm4CheeSeriesWatcherQueue = new ArrayBlockingQueue<DicomSeriesDescription>(
+	private static final BlockingQueue<DicomSeriesDescription> dicomSeriesWatcherQueue = new ArrayBlockingQueue<DicomSeriesDescription>(
 			2000);
 	private static final BlockingQueue<DicomSeriesDescription> xnatSeriesWatcherQueue = new ArrayBlockingQueue<DicomSeriesDescription>(
 			2000);
@@ -46,7 +46,7 @@ public class QueueAndWatcherManager
 	private final ExecutorService epadUploadDirWatcherExec = Executors.newSingleThreadExecutor();
 
 	private final Dcm4CheeDatabaseWatcher dcm4CheeDatabaseWatcher;
-	private final DICOMSeriesWatcher dicomSeriesWatcher;
+	private final DicomSeriesWatcher dicomSeriesWatcher;
 	private final XNATSeriesWatcher xnatSeriesWatcher;
 	private final PngGeneratorProcess pngGeneratorProcess;
 	private final EPADUploadDirWatcher epadUploadDirWatcher;
@@ -62,8 +62,8 @@ public class QueueAndWatcherManager
 
 	private QueueAndWatcherManager()
 	{
-		dcm4CheeDatabaseWatcher = new Dcm4CheeDatabaseWatcher(dcm4CheeSeriesWatcherQueue, xnatSeriesWatcherQueue);
-		dicomSeriesWatcher = new DICOMSeriesWatcher(dcm4CheeSeriesWatcherQueue, pngGeneratorTaskQueue);
+		dcm4CheeDatabaseWatcher = new Dcm4CheeDatabaseWatcher(dicomSeriesWatcherQueue, xnatSeriesWatcherQueue);
+		dicomSeriesWatcher = new DicomSeriesWatcher(dicomSeriesWatcherQueue, pngGeneratorTaskQueue);
 		xnatSeriesWatcher = new XNATSeriesWatcher(xnatSeriesWatcherQueue);
 		pngGeneratorProcess = new PngGeneratorProcess(pngGeneratorTaskQueue);
 		epadUploadDirWatcher = new EPADUploadDirWatcher();

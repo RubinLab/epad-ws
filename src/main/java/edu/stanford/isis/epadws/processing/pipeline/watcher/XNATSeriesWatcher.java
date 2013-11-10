@@ -11,6 +11,16 @@ import edu.stanford.isis.epadws.processing.model.DicomSeriesDescription;
 import edu.stanford.isis.epadws.processing.pipeline.threads.ShutdownSignal;
 import edu.stanford.isis.epadws.xnat.XNATUtil;
 
+/**
+ * Monitors the XNAT series queue. The queue contains descriptions of new DICOM series that have been uploaded to ePAD's
+ * DCM4CHEE instance (and are modeled by {@link DicomSeriesDescription} objects).
+ * <p>
+ * This queue is populated by a {@link Dcm4CheeDatabaseWatcher}, which monitors a DCM4CHEE MySQL database for new DICOM
+ * series.
+ * 
+ * @author martin
+ * 
+ */
 public class XNATSeriesWatcher implements Runnable
 {
 	private final BlockingQueue<DicomSeriesDescription> xnatSeriesWatcherQueue;
@@ -80,7 +90,7 @@ public class XNATSeriesWatcher implements Runnable
 	private boolean updateSessionID()
 	{
 		if (jsessionID != null && !XNATUtil.hasValidXNATSessionID(jsessionID)) { // Validating will extend validity
-			XNATUtil.XNATSessionResponse xnatSessionResponse = XNATUtil.invokeXNATSessionIDService(uploadProjectUser,
+			XNATUtil.XNATSessionResponse xnatSessionResponse = XNATUtil.getXNATSessionID(uploadProjectUser,
 					uploadProjectPassword);
 			if (xnatSessionResponse.statusCode != HttpServletResponse.SC_OK) {
 				logger.warning("Error invoking XNAT session service for study upload; statusCode = "

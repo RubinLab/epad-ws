@@ -12,10 +12,9 @@ import edu.stanford.isis.epadws.processing.persistence.MySqlQueries;
 import edu.stanford.isis.epadws.processing.pipeline.threads.ShutdownSignal;
 
 /**
- * Watch for new studies that appear with a DCM4CHEE database with the 'study-status' field set to zero. Add them to the
- * series watcher queue to be processed by {@Dcm4CheeSeriesWatcher}.
- * 
- * @author amsnyder
+ * Watch for new studies that appear with a DCM4CHEE database with the 'study-status' field set to zero, which indicates
+ * that they are new series. Add them to the series watcher queues to be subsequently processed by
+ * {@link DicomSeriesWatcher} and {@link XNATSeriesWatcher}.
  */
 public class Dcm4CheeDatabaseWatcher implements Runnable
 {
@@ -24,10 +23,10 @@ public class Dcm4CheeDatabaseWatcher implements Runnable
 	private final BlockingQueue<DicomSeriesDescription> dcm4CheeSeriesWatcherQueue;
 	private final BlockingQueue<DicomSeriesDescription> xnatSeriesWatcherQueue;
 
-	public Dcm4CheeDatabaseWatcher(BlockingQueue<DicomSeriesDescription> dcm4CheeSeriesWatcherQueue,
+	public Dcm4CheeDatabaseWatcher(BlockingQueue<DicomSeriesDescription> dicomSeriesWatcherQueue,
 			BlockingQueue<DicomSeriesDescription> xnatSeriesWatcherQueue)
 	{
-		this.dcm4CheeSeriesWatcherQueue = dcm4CheeSeriesWatcherQueue;
+		this.dcm4CheeSeriesWatcherQueue = dicomSeriesWatcherQueue;
 		this.xnatSeriesWatcherQueue = xnatSeriesWatcherQueue;
 	}
 

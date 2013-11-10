@@ -25,8 +25,8 @@ import edu.stanford.isis.epad.common.util.EPADLogger;
  */
 public class XNATUtil
 {
-	public static final String XNAT_PROJECT_BASE = "/xnat/data/projects/";
-	public static final String XNAT_SUBJECT_BASE = "/xnat/data/subjects/";
+	private static final String XNAT_PROJECT_BASE = "/xnat/data/projects/";
+	private static final String XNAT_SUBJECT_BASE = "/xnat/data/subjects/";
 
 	private static final EPADLogger log = EPADLogger.getInstance();
 	private static final EPADConfig config = EPADConfig.getInstance();
@@ -58,10 +58,10 @@ public class XNATUtil
 		String username = extractUserNameFromAuthorizationHeader(httpRequest);
 		String password = extractPasswordFromAuthorizationHeader(httpRequest);
 
-		return invokeXNATSessionIDService(username, password);
+		return getXNATSessionID(username, password);
 	}
 
-	public static XNATSessionResponse invokeXNATSessionIDService(String username, String password)
+	public static XNATSessionResponse getXNATSessionID(String username, String password)
 	{
 		String xnatHost = config.getStringConfigurationParameter("XNATServer");
 		int xnatPort = config.getIntegerConfigurationParameter("XNATPort");
@@ -337,6 +337,22 @@ public class XNATUtil
 		sb.append(ext);
 
 		return sb.toString();
+	}
+
+	public static String buildProjectURLString(String base)
+	{
+		String xnatHost = config.getStringConfigurationParameter("XNATServer");
+		int xnatPort = config.getIntegerConfigurationParameter("XNATPort");
+
+		return buildURLString(xnatHost, xnatPort, XNAT_PROJECT_BASE, base);
+	}
+
+	public static String buildSubjectURLString(String base)
+	{
+		String xnatHost = config.getStringConfigurationParameter("XNATServer");
+		int xnatPort = config.getIntegerConfigurationParameter("XNATPort");
+
+		return buildURLString(xnatHost, xnatPort, XNAT_SUBJECT_BASE, base);
 	}
 
 	public static String getJSessionIDFromRequest(HttpServletRequest servletRequest)

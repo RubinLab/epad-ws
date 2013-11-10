@@ -24,26 +24,17 @@ import edu.stanford.isis.epadws.processing.pipeline.task.PngGridGeneratorTask;
 import edu.stanford.isis.epadws.processing.pipeline.threads.ShutdownSignal;
 
 /**
- * Process DICOM series appearing in the series queue.
+ * Process new DICOM series appearing in the series queue.
  * <p>
- * These series are represented by a {@DicomSeriesDescription}.
+ * These descriptions are placed in the queue by a {@link Dcm4CheeDatabaseWatcher}, which picks up new series by
+ * monitoring a DCM4CHEE MySQL database.
  * <p>
- * These descriptions are placed in the queue by a {@Dcm4CheeDatabaseWatcher}, which picks up
- * new series by monitoring a DCM4CHEE database.
+ * These series are represented by a {@link DicomSeriesDescription} object.
  * <p>
- * This watcher submits these to the PNG generation task queue to be processed by the {@PngGridGeneratorTask
- * 
- * 
- * 
- * 
- * } It also maintains order information for the series using the {@DicomSeriesOrderTracker
- * 
- * 
- * 
- * 
- * } class.
+ * This watcher submits these to the PNG generation task queue to be processed by the {@link PngGridGeneratorTask}. It
+ * also maintains order information for the series using the {@link DicomSeriesOrderTracker} class.
  */
-public class DICOMSeriesWatcher implements Runnable
+public class DicomSeriesWatcher implements Runnable
 {
 	private final BlockingQueue<DicomSeriesDescription> dicomSeriesWatcherQueue;
 	private final BlockingQueue<GeneratorTask> pngGeneratorTaskQueue;
@@ -56,7 +47,7 @@ public class DICOMSeriesWatcher implements Runnable
 
 	private final QueueAndWatcherManager queueAndWatcherManager = QueueAndWatcherManager.getInstance();
 
-	public DICOMSeriesWatcher(BlockingQueue<DicomSeriesDescription> dicomSeriesWatcherQueue,
+	public DicomSeriesWatcher(BlockingQueue<DicomSeriesDescription> dicomSeriesWatcherQueue,
 			BlockingQueue<GeneratorTask> pngGeneratorTaskQueue)
 	{
 		this.dicomSeriesWatcherQueue = dicomSeriesWatcherQueue;

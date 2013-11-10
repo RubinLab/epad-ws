@@ -17,7 +17,6 @@ import org.apache.commons.httpclient.methods.PutMethod;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 
-import edu.stanford.isis.epad.common.util.EPADConfig;
 import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epad.common.util.JsonHelper;
 import edu.stanford.isis.epad.common.xnat.XNATProjectDescription;
@@ -36,7 +35,6 @@ import edu.stanford.isis.epadws.xnat.XNATUtil;
 public class XNATProjectHandler extends AbstractHandler
 {
 	private static final EPADLogger log = EPADLogger.getInstance();
-	private static final EPADConfig config = EPADConfig.getInstance();
 
 	private static final String INVALID_SESSION_TOKEN_MESSAGE = "Invalid session token";
 	private static final String INTERNAL_EXCEPTION_MESSAGE = "Internal error invoking XNAT";
@@ -47,7 +45,7 @@ public class XNATProjectHandler extends AbstractHandler
 	public void handle(String base, Request request, HttpServletRequest httpRequest, HttpServletResponse httpResponse)
 			throws IOException
 	{
-		ServletOutputStream responseStream = null; // TODO Look at use of ServletOutputStream
+		ServletOutputStream responseStream = null;
 		int statusCode;
 
 		httpResponse.setContentType("application/json");
@@ -76,9 +74,7 @@ public class XNATProjectHandler extends AbstractHandler
 	private int invokeXNATProjectService(String base, HttpServletRequest httpRequest, HttpServletResponse httpResponse,
 			OutputStream responseStream) throws IOException
 	{
-		String xnatHost = config.getStringConfigurationParameter("XNATServer");
-		int xnatPort = config.getIntegerConfigurationParameter("XNATPort");
-		String xnatURL = XNATUtil.buildURLString(xnatHost, xnatPort, XNATUtil.XNAT_PROJECT_BASE, base);
+		String xnatProjectURL = XNATUtil.buildProjectURLString(base);
 		HttpClient client = new HttpClient();
 		String jsessionID = XNATUtil.getJSessionIDFromRequest(httpRequest);
 		int xnatStatusCode;
@@ -87,23 +83,23 @@ public class XNATProjectHandler extends AbstractHandler
 
 		if (queryString != null) {
 			queryString = queryString.trim();
-			xnatURL = xnatURL.replaceFirst("/$", "") + "?" + queryString;
+			xnatProjectURL = xnatProjectURL.replaceFirst("/$", "") + "?" + queryString;
 		}
 
 		HttpMethodBase xnatMethod = null;
 		String method = httpRequest.getMethod();
 		if ("GET".equalsIgnoreCase(method)) {
-			xnatMethod = new GetMethod(xnatURL);
+			xnatMethod = new GetMethod(xnatProjectURL);
 		} else if ("DELETE".equalsIgnoreCase(method)) {
-			xnatMethod = new DeleteMethod(xnatURL);
+			xnatMethod = new DeleteMethod(xnatProjectURL);
 		} else if ("POST".equalsIgnoreCase(method)) {
-			xnatMethod = new PostMethod(xnatURL);
+			xnatMethod = new PostMethod(xnatProjectURL);
 		} else if ("PUT".equalsIgnoreCase(method)) {
-			xnatMethod = new PutMethod(xnatURL);
+			xnatMethod = new PutMethod(xnatProjectURL);
 		}
 
 		if (xnatMethod != null) {
-			log.info("Invoking " + xnatMethod.getName() + " on XNAT at " + xnatURL);
+			log.info("Invoking " + xnatMethod.getName() + " on XNAT at " + xnatProjectURL);
 			xnatMethod.setRequestHeader("Cookie", "JSESSIONID=" + jsessionID);
 			xnatStatusCode = client.executeMethod(xnatMethod);
 			if (xnatStatusCode == HttpServletResponse.SC_OK) {

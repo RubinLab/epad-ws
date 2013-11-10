@@ -17,10 +17,8 @@ import org.apache.commons.httpclient.methods.PutMethod;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 
-import edu.stanford.isis.epad.common.util.EPADConfig;
 import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epad.common.util.JsonHelper;
-import edu.stanford.isis.epad.common.xnat.XNATSubjectDescription;
 import edu.stanford.isis.epadws.xnat.XNATUtil;
 
 /**
@@ -32,12 +30,10 @@ import edu.stanford.isis.epadws.xnat.XNATUtil;
  * </code>
  * 
  * @author martin
- * @see XNATSubjectDescription
  */
 public class XNATSubjectHandler extends AbstractHandler
 {
 	private static final EPADLogger log = EPADLogger.getInstance();
-	private static final EPADConfig config = EPADConfig.getInstance();
 
 	private static final String INVALID_SESSION_TOKEN_MESSAGE = "Invalid session token";
 	private static final String INTERNAL_EXCEPTION_MESSAGE = "Internal error invoking XNAT";
@@ -48,7 +44,7 @@ public class XNATSubjectHandler extends AbstractHandler
 	public void handle(String base, Request request, HttpServletRequest httpRequest, HttpServletResponse httpResponse)
 			throws IOException
 	{
-		ServletOutputStream responseStream = null; // TODO Look at use of ServletOutputStream
+		ServletOutputStream responseStream = null;
 		int statusCode;
 
 		httpResponse.setContentType("application/json");
@@ -77,9 +73,7 @@ public class XNATSubjectHandler extends AbstractHandler
 	private int invokeXNATSubjectService(String base, HttpServletRequest httpRequest, HttpServletResponse httpResponse,
 			OutputStream responseStream) throws IOException
 	{
-		String xnatHost = config.getStringConfigurationParameter("XNATServer");
-		int xnatPort = config.getIntegerConfigurationParameter("XNATPort");
-		String xnatURL = XNATUtil.buildURLString(xnatHost, xnatPort, XNATUtil.XNAT_SUBJECT_BASE, base);
+		String xnatURL = XNATUtil.buildSubjectURLString(base);
 		HttpClient client = new HttpClient();
 		String jsessionID = XNATUtil.getJSessionIDFromRequest(httpRequest);
 		String queryString = httpRequest.getQueryString();
