@@ -26,7 +26,7 @@ import edu.stanford.isis.epadws.xnat.XNATUtil;
 /**
  * Generate window width and center for a series or study in one quick step.
  */
-public class DICOMVisuHandler extends AbstractHandler
+public class DICOMWindowingHandler extends AbstractHandler
 {
 	private static final EPADLogger log = EPADLogger.getInstance();
 	private static final EPADConfig config = EPADConfig.getInstance();
@@ -46,7 +46,7 @@ public class DICOMVisuHandler extends AbstractHandler
 		httpResponse.setContentType("text/plain");
 		request.setHandled(true);
 
-		log.info("DICOMVisuHandler: " + request.toString());
+		log.info("DICOM windowing handler: " + request.toString());
 
 		try {
 			responseStream = httpResponse.getWriter();
@@ -62,7 +62,7 @@ public class DICOMVisuHandler extends AbstractHandler
 					String imageIdKey = getInstanceUIDFromRequest(queryString);
 
 					if (studyIdKey != null && seriesIdKey != null && imageIdKey != null) {
-						if (handleDICOMVisu(responseStream, studyIdKey, seriesIdKey, imageIdKey))
+						if (handleDICOMWindowing(responseStream, studyIdKey, seriesIdKey, imageIdKey))
 							statusCode = HttpServletResponse.SC_OK;
 						else {
 							log.warning(WADO_ERROR_MESSAGE);
@@ -93,7 +93,8 @@ public class DICOMVisuHandler extends AbstractHandler
 		httpResponse.setStatus(statusCode);
 	}
 
-	private boolean handleDICOMVisu(PrintWriter responseStream, String studyIdKey, String seriesIdKey, String imageIdKey)
+	private boolean handleDICOMWindowing(PrintWriter responseStream, String studyIdKey, String seriesIdKey,
+			String imageIdKey)
 	{
 		boolean success;
 
@@ -107,7 +108,7 @@ public class DICOMVisuHandler extends AbstractHandler
 			double windowCenter = 0.0;
 
 			if (srcDicomImage != null) {
-				log.info("DICOM image is valid");
+				log.info("DICOM windowing handler: image is valid");
 				Opener opener = new Opener();
 				String imageFilePath = tempDicom.getAbsolutePath();
 				ImagePlus imp = opener.openImage(imageFilePath);// ImageProcessor ip = imp.getProcessor();
@@ -123,14 +124,14 @@ public class DICOMVisuHandler extends AbstractHandler
 			String separator = config.getParam("fieldSeparator");
 			responseStream.println("windowWidth" + separator + "windowCenter");
 			responseStream.println(windowWidth + separator + windowCenter);
-			log.info("windowWidth" + separator + "windowCenter");
-			log.info(windowWidth + separator + windowCenter);
+			log.info("DICOM windowing handler: " + "windowWidth" + separator + "windowCenter " + windowWidth + separator
+					+ windowCenter);
 			success = true;
 		} catch (DicomException e) {
-			log.warning("Error reading DICOM image ", e);
+			log.warning("DICOM windowing handler: error reading DICOM image ", e);
 			success = false;
 		} catch (IOException e) {
-			log.warning("Error getting DICOM image from WADO", e);
+			log.warning("DICOM windowing handler: error getting DICOM image from WADO", e);
 			success = false;
 		}
 		return success;

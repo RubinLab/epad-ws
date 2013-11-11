@@ -43,7 +43,7 @@ import edu.stanford.isis.epadws.handlers.dicom.DICOMHeadersHandler;
 import edu.stanford.isis.epadws.handlers.dicom.DICOMSearchHandler;
 import edu.stanford.isis.epadws.handlers.dicom.DICOMSeriesOrderHandler;
 import edu.stanford.isis.epadws.handlers.dicom.DICOMSeriesTagHandler;
-import edu.stanford.isis.epadws.handlers.dicom.DICOMVisuHandler;
+import edu.stanford.isis.epadws.handlers.dicom.DICOMWindowingHandler;
 import edu.stanford.isis.epadws.handlers.dicom.WadoHandler;
 import edu.stanford.isis.epadws.handlers.event.EventSearchHandler;
 import edu.stanford.isis.epadws.handlers.plugin.EPadPluginHandler;
@@ -187,7 +187,7 @@ public class Main
 		addHandlerAtContextPath(new DICOMDeleteHandler(), "/dicomdelete", handlerList); // TODO Deprecated?
 		addHandlerAtContextPath(new DICOMHeadersHandler(), "/dicomtagj", handlerList);
 		addHandlerAtContextPath(new DICOMSeriesTagHandler(), "/seriestag", handlerList);
-		addHandlerAtContextPath(new DICOMVisuHandler(), "/dicomparam", handlerList);
+		addHandlerAtContextPath(new DICOMWindowingHandler(), "/dicomparam", handlerList);
 		addHandlerAtContextPath(new AimResourceHandler(), "/aimresource", handlerList);
 		addHandlerAtContextPath(new WadoHandler(), "/eWado", handlerList);
 		addHandlerAtContextPath(new EventSearchHandler(), "/eventresource", handlerList);
