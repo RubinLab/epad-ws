@@ -50,6 +50,8 @@ public class DicomSeriesWatcher implements Runnable
 	public DicomSeriesWatcher(BlockingQueue<DicomSeriesDescription> dicomSeriesWatcherQueue,
 			BlockingQueue<GeneratorTask> pngGeneratorTaskQueue)
 	{
+		logger.info("Starting the DICOM series watcher");
+
 		this.dicomSeriesWatcherQueue = dicomSeriesWatcherQueue;
 		this.pngGeneratorTaskQueue = pngGeneratorTaskQueue;
 		this.dicomSeriesDescriptionTracker = DicomSeriesDescriptionTracker.getInstance();
@@ -190,11 +192,6 @@ public class DicomSeriesWatcher implements Runnable
 		return outputPath.toString();
 	}
 
-	/**
-	 * Add a forward slash if it is missing.
-	 * 
-	 * @return String
-	 */
 	public String getDcm4cheeRootDir()
 	{
 		if (dcm4cheeRootDir.endsWith("/")) {

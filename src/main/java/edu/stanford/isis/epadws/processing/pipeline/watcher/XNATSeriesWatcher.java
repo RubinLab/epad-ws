@@ -29,20 +29,21 @@ public class XNATSeriesWatcher implements Runnable
 	private static final EPADLogger logger = EPADLogger.getInstance();
 	private static final EPADConfig config = EPADConfig.getInstance();
 
-	private final String uploadProjectID;
-	private final String uploadProjectUser;
-	private final String uploadProjectPassword;
+	private final String xnatUploadProjectID;
+	private final String xnatUploadProjectUser;
+	private final String xnatUploadProjectPassword;
 	private String jsessionID;
 
 	public XNATSeriesWatcher(BlockingQueue<DicomSeriesDescription> xnatSeriesWatcherQueue)
 	{
 		this.xnatSeriesWatcherQueue = xnatSeriesWatcherQueue;
 
-		uploadProjectID = config.getStringConfigurationParameter("XNATUploadProjectID");
-		uploadProjectUser = config.getStringConfigurationParameter("XNATUploadProjectUser");
-		uploadProjectPassword = config.getStringConfigurationParameter("XNATUploadProjectPassword");
+		xnatUploadProjectID = config.getStringConfigurationParameter("XNATUploadProjectID");
+		xnatUploadProjectUser = config.getStringConfigurationParameter("XNATUploadProjectUser");
+		xnatUploadProjectPassword = config.getStringConfigurationParameter("XNATUploadProjectPassword");
 
 		jsessionID = null;
+		logger.info("Starting the XNAT series watcher");
 	}
 
 	@Override
@@ -53,33 +54,29 @@ public class XNATSeriesWatcher implements Runnable
 				DicomSeriesDescription dicomSeriesDescription = xnatSeriesWatcherQueue.poll(5000, TimeUnit.MILLISECONDS);
 
 				if (dicomSeriesDescription != null) {
-					String studyIUID = dicomSeriesDescription.getStudyIUID();
-					String patientID = dicomSeriesDescription.getPatientID();
-					String patientName = dicomSeriesDescription.getPatientName();
+					String dicomStudyIUID = dicomSeriesDescription.getStudyIUID();
+					String dicomPatientID = dicomSeriesDescription.getPatientID();
+					String dicomPatientName = dicomSeriesDescription.getPatientName();
 
-					logger.info("XNAT series watcher found new study with ID" + studyIUID + " for patient " + patientName
-							+ " with ID " + patientID);
+					logger.info("XNAT series watcher found new DICOM study with ID" + dicomStudyIUID + " for patient "
+							+ dicomPatientName + " with ID " + dicomPatientID);
 
-					createXNATStudy(uploadProjectID, patientID, patientName, studyIUID);
+					createXNATStudy(xnatUploadProjectID, dicomPatientID, dicomPatientName, dicomStudyIUID);
 				}
 			} catch (Exception e) {
-				logger.warning("Exception in XNATSeriesWatcher thread.", e);
+				logger.warning("Exception in XNAT series watcher thread", e);
 			}
 		}
 	}
 
-	private void createXNATStudy(String projectID, String subjectID, String subjectName, String studyIUID)
+	private void createXNATStudy(String xnatProjectID, String dicomPatientID, String dicomPatientName, String dicomStudyUID)
 	{
 		if (updateSessionID()) {
-			XNATUtil.createXNATProject(uploadProjectID, uploadProjectID, jsessionID);
+			String xnatSubjectID = XNATUtil.createXNATSubjectFromDICOMPatient(xnatProjectID, dicomPatientName, dicomPatientID, jsessionID))
 
-			if (XNATUtil.createXNATSubject(projectID, subjectName, subjectID, jsessionID))
-				logger.info("Successfully created XNAT subject " + subjectName);
-
-			if (XNATUtil.createXNATStudy(projectID, subjectID, studyIUID, jsessionID))
-				logger.info("Successfully created XNAT study " + studyIUID);
+			XNATUtil.createXNATExperimentFromDICOMStudy(xnatProjectID, xnatSubjectID, dicomStudyUID, jsessionID);
 		} else {
-			logger.warning("Could not log into XNAT to upload study " + studyIUID);
+			logger.warning("Could not log into XNAT to upload DICOM study " + dicomStudyUID);
 		}
 	}
 
@@ -90,8 +87,8 @@ public class XNATSeriesWatcher implements Runnable
 	private boolean updateSessionID()
 	{
 		if (jsessionID != null && !XNATUtil.hasValidXNATSessionID(jsessionID)) { // Validating will extend validity
-			XNATUtil.XNATSessionResponse xnatSessionResponse = XNATUtil.getXNATSessionID(uploadProjectUser,
-					uploadProjectPassword);
+			XNATUtil.XNATSessionResponse xnatSessionResponse = XNATUtil.getXNATSessionID(xnatUploadProjectUser,
+					xnatUploadProjectPassword);
 			if (xnatSessionResponse.statusCode != HttpServletResponse.SC_OK) {
 				logger.warning("Error invoking XNAT session service for study upload; statusCode = "
 						+ xnatSessionResponse.statusCode);
@@ -104,5 +101,4 @@ public class XNATSeriesWatcher implements Runnable
 		} else
 			return true;
 	}
-
 }

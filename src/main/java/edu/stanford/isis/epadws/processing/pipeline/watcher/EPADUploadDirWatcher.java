@@ -1,14 +1,11 @@
 package edu.stanford.isis.epadws.processing.pipeline.watcher;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.ConcurrentModificationException;
 import java.util.List;
-import java.util.Map;
-import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 
 import edu.stanford.isis.epad.common.util.EPADFileUtils;
@@ -22,9 +19,12 @@ import edu.stanford.isis.epadws.processing.pipeline.threads.ShutdownSignal;
 import edu.stanford.isis.epadws.xnat.XNATUtil;
 
 /**
- * Watches for a new directory containing a ZIP file in the ePAD upload directory (./resources/upload/). When a new
- * directory is found it puts a "dir.found" file into it and waits for the ZIP upload to complete. When the ZIP upload
- * finished it upzips the file if necessary and sends the directory to DCM4CHEE.
+ * Watches for a new directory containing ZIP or DICOOM files in the ePAD upload directory. When a new directory is
+ * found it puts a "dir.found" file into it. If the upload is a ZIP file it waits for the ZIP upload to complete and
+ * then unzips it.
+ * <p>
+ * It then generates DICOM tag efiles for each DICOM file, creates XNAT entities for the DICOM files, and sends the
+ * DICOM files to DCM4CHEE.
  * 
  * @author amsnyder
  */
@@ -41,7 +41,7 @@ public class EPADUploadDirWatcher implements Runnable
 		try {
 			ShutdownSignal shutdownSignal = ShutdownSignal.getInstance();
 			File rootDir = new File(ResourceUtils.getEPADWebServerUploadDir());
-			log.info("EPADUploadDirWatcher: upload directory=" + ResourceUtils.getEPADWebServerUploadDir());
+			log.info("Startying the ePAD upload directory watcher; directory =" + ResourceUtils.getEPADWebServerUploadDir());
 			while (true) {
 				if (shutdownSignal.hasShutdown())
 					return;
@@ -102,17 +102,17 @@ public class EPADUploadDirWatcher implements Runnable
 				unzipFiles(zipFile);
 			}
 			DicomTagFileUtils.generateDicomTagFiles(dir);
-			createXNATRepresentation(dir);
+			XNATUtil.createXNATEntitiesFromDICOMFilesInDirectory(dir);
 			sendFilesToDcm4Chee(dir);
 			deleteDir(dir);
 		} catch (IOException ioe) {
-			log.warning("EPADUploadDirWatcher: DicomSend failed (IOException) for dir" + dir.getAbsolutePath(), ioe);
+			log.warning("EPADUploadDirWatcher: error (IOException);dir=" + dir.getAbsolutePath(), ioe);
 			writeExceptionLog(dir, ioe);
 		} catch (IllegalStateException e) {
-			log.warning("EPADUploadDirWatcher: DicomSend failed (ISE) for dir=" + dir.getAbsolutePath(), e);
+			log.warning("EPADUploadDirWatcher: error (IllegalStateException); dir=" + dir.getAbsolutePath(), e);
 			writeExceptionLog(dir, e);
 		} catch (Exception e) {
-			log.warning("EPADUploadDirWatcher: DicomSend failed (Exception) for dir=" + dir.getAbsolutePath(), e);
+			log.warning("EPADUploadDirWatcher: error (Exception); dir=" + dir.getAbsolutePath(), e);
 			writeExceptionLog(dir, e);
 		} finally {
 			log.info("EPADUploadDirWatcher: upload finished: " + dir.getAbsolutePath());
@@ -203,58 +203,6 @@ public class EPADUploadDirWatcher implements Runnable
 	{
 		log.info("EPADUploadDirWatcher: unzipping " + zipFile.getAbsolutePath());
 		EPADFileUtils.extractFolder(zipFile.getAbsolutePath());
-	}
-
-	private void createXNATRepresentation(File dir)
-	{
-		String xnatUploadFilePath = dir.getAbsolutePath() + File.separator + "xnat_upload.properties";
-		File file = new File(xnatUploadFilePath);
-
-		if (!file.exists())
-			log.warning("EPADUploadDirWatcher: could not find XNAT upload properties file " + xnatUploadFilePath);
-		else {
-			Properties properties = new Properties();
-			FileInputStream is = null;
-			try {
-				is = new FileInputStream(file);
-				properties.load(is);
-				String xnatProjectID = properties.getProperty("XNATProjectName");
-				String xnatSessionID = properties.getProperty("XNATSessionID");
-
-				if (xnatProjectID != null || xnatSessionID != null) {
-					for (File dicomTagFile : DicomTagFileUtils.listDICOMTagFiles(dir)) {
-						Map<String, String> tagMap = DicomTagFileUtils.readTagFile(dicomTagFile);
-						String subjectID = DicomTagFileUtils.getTag(DicomTagFileUtils.PATIENT_ID, tagMap);
-						String subjectName = DicomTagFileUtils.getTag(DicomTagFileUtils.PATIENT_NAME_ALT, tagMap);
-						String studyIUID = DicomTagFileUtils.getTag(DicomTagFileUtils.STUDY_UID, tagMap);
-
-						if (subjectName != null) {
-							if (subjectID == null)
-								subjectID = subjectName;
-							XNATUtil.createXNATSubject(xnatProjectID, subjectName, subjectID, xnatSessionID);
-							if (studyIUID != null)
-								XNATUtil.createXNATStudy(xnatProjectID, subjectID, studyIUID, xnatSessionID);
-							else
-								log.warning("EPADUploadDirWatcher: missing study UID in DICOM tag file");
-						} else
-							log.warning("EPADUploadDirWatcher: missing patient name in DICOM tag file");
-					}
-				} else {
-					log.warning("EPADUploadDirWatcher: missing XNAT project name and/or session ID in properties file"
-							+ xnatUploadFilePath);
-				}
-			} catch (IOException e) {
-				log.warning("EPADUploadDirWatcher: error loading XNAT upload file " + xnatUploadFilePath, e);
-			} finally {
-				if (is != null) {
-					try {
-						is.close();
-					} catch (IOException e) {
-						log.warning("EPADUploadDirWatcher: error closing XNAT upload file " + xnatUploadFilePath, e);
-					}
-				}
-			}
-		}
 	}
 
 	private void sendFilesToDcm4Chee(File dir) throws Exception

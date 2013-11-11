@@ -31,6 +31,7 @@ public class PngGeneratorProcess implements Runnable
 		this.pngTaskQueue = taskQueue;
 		pngExecs = Executors.newFixedThreadPool(20);
 		tagExec = Executors.newFixedThreadPool(20);
+		logger.info("Starting the PNG generator process");
 	}
 
 	@Override

@@ -12,9 +12,9 @@ import edu.stanford.isis.epadws.processing.persistence.MySqlQueries;
 import edu.stanford.isis.epadws.processing.pipeline.threads.ShutdownSignal;
 
 /**
- * Watch for new studies that appear with a DCM4CHEE database with the 'study-status' field set to zero, which indicates
- * that they are new series. Add them to the series watcher queues to be subsequently processed by
- * {@link DicomSeriesWatcher} and {@link XNATSeriesWatcher}.
+ * Watch for new studies that appear with ePAD's DCM4CHEE MySQL database with the 'study-status' field set to zero,
+ * which indicates that they are new series. Add them to the series watcher queues to be subsequently processed by
+ * watchers (currently {@link DicomSeriesWatcher} and {@link XNATSeriesWatcher}).
  */
 public class Dcm4CheeDatabaseWatcher implements Runnable
 {
@@ -26,6 +26,7 @@ public class Dcm4CheeDatabaseWatcher implements Runnable
 	public Dcm4CheeDatabaseWatcher(BlockingQueue<DicomSeriesDescription> dicomSeriesWatcherQueue,
 			BlockingQueue<DicomSeriesDescription> xnatSeriesWatcherQueue)
 	{
+		logger.info("Starting the DCM4CHEE database watcher");
 		this.dcm4CheeSeriesWatcherQueue = dicomSeriesWatcherQueue;
 		this.xnatSeriesWatcherQueue = xnatSeriesWatcherQueue;
 	}
@@ -48,7 +49,6 @@ public class Dcm4CheeDatabaseWatcher implements Runnable
 					String patientID = patient.get("pat_id");
 					String seriesDesc = currSeries.get("series_desc");
 					String numInstances = currSeries.get("num_instances");
-					// Create a DicomSeriesDescription to indicate new PNG files are being created.
 					DicomSeriesDescription dicomSeriesDescription = new DicomSeriesDescription(Integer.parseInt(numInstances),
 							seriesIUid, studyIUID, patientName, patientID);
 					mySqlQueries.updateSeriesStatusCodeEx(325, seriesIUid);
@@ -59,7 +59,6 @@ public class Dcm4CheeDatabaseWatcher implements Runnable
 
 					logger.info("DCM4CHEE new series found - #images=" + numInstances + ", desc=" + seriesDesc + ", series iuid="
 							+ seriesIUid);
-					logger.info("[TEMP] Creating new OrderSeries numInstances=" + numInstances + " seriesIUid=" + seriesIUid);
 				}
 				Thread.sleep(500);
 			} catch (Exception e) {

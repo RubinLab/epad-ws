@@ -1,10 +1,14 @@
 package edu.stanford.isis.epadws.xnat;
 
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.nio.charset.Charset;
+import java.util.Map;
+import java.util.Properties;
 
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
@@ -19,6 +23,7 @@ import org.apache.commons.httpclient.methods.PutMethod;
 
 import edu.stanford.isis.epad.common.util.EPADConfig;
 import edu.stanford.isis.epad.common.util.EPADLogger;
+import edu.stanford.isis.epadws.processing.model.DicomTagFileUtils;
 
 /**
  * @author martin
@@ -27,6 +32,8 @@ public class XNATUtil
 {
 	private static final String XNAT_PROJECT_BASE = "/xnat/data/projects/";
 	private static final String XNAT_SUBJECT_BASE = "/xnat/data/subjects/";
+
+	private static final String XNAT_UPLOAD_PROPERTIES_FILE_NAME = "xnat_upload.properties";
 
 	private static final EPADLogger log = EPADLogger.getInstance();
 	private static final EPADConfig config = EPADConfig.getInstance();
@@ -122,6 +129,65 @@ public class XNATUtil
 		return xnatSessionResponse;
 	}
 
+	/**
+	 * Take a directory containing a list of DICOM files and associated header files and create XNAT representations of
+	 * the each DICOM image. This method expects a properties file called xnat_upload.properties in the directory
+	 * containing an XNAT project name and an XNAT session ID.
+	 * 
+	 * @param uploadDirectory
+	 */
+	public static void createXNATEntitiesFromDICOMFilesInDirectory(File uploadDirectory)
+	{
+		String uploadFilePath = uploadDirectory.getAbsolutePath() + File.separator + XNAT_UPLOAD_PROPERTIES_FILE_NAME;
+		File xnatUploadPropertiesFile = new File(uploadFilePath);
+
+		if (!xnatUploadPropertiesFile.exists())
+			log.warning("Could not find XNAT upload properties file " + uploadFilePath);
+		else {
+			Properties xnatUploadPproperties = new Properties();
+			FileInputStream is = null;
+			try {
+				is = new FileInputStream(xnatUploadPropertiesFile);
+				xnatUploadPproperties.load(is);
+				String xnatProjectID = xnatUploadPproperties.getProperty("XNATProjectName");
+				String xnatSessionID = xnatUploadPproperties.getProperty("XNATSessionID");
+
+				if (xnatProjectID != null || xnatSessionID != null) {
+					for (File dicomTagFile : DicomTagFileUtils.listDICOMTagFiles(uploadDirectory)) {
+						Map<String, String> tagMap = DicomTagFileUtils.readTagFile(dicomTagFile);
+						String dicomPatientID = DicomTagFileUtils.getTag(DicomTagFileUtils.PATIENT_ID, tagMap);
+						String dicomPatientName = DicomTagFileUtils.getTag(DicomTagFileUtils.PATIENT_NAME_ALT, tagMap);
+						String dicomStudyUID = DicomTagFileUtils.getTag(DicomTagFileUtils.STUDY_UID, tagMap);
+
+						if (dicomPatientName != null) {
+							if (dicomPatientID == null)
+								dicomPatientID = dicomPatientName;
+							String xnatSubjectID = createXNATSubjectFromDICOMPatient(xnatProjectID, dicomPatientName, dicomPatientID,
+									xnatSessionID);
+							if (dicomStudyUID != null)
+								createXNATExperimentFromDICOMStudy(xnatProjectID, xnatSubjectID, dicomStudyUID, xnatSessionID);
+							else
+								log.warning("Missing study UID in DICOM tag file " + dicomTagFile.getAbsolutePath());
+						} else
+							log.warning("Missing patient name in DICOM tag file " + dicomTagFile.getAbsolutePath());
+					}
+				} else {
+					log.warning("Missing XNAT project name and/or session ID in properties file" + uploadFilePath);
+				}
+			} catch (IOException e) {
+				log.warning("Error loading XNAT upload properties file " + uploadFilePath, e);
+			} finally {
+				if (is != null) {
+					try {
+						is.close();
+					} catch (IOException e) {
+						log.warning("Error closing XNAT upload properties file " + uploadFilePath, e);
+					}
+				}
+			}
+		}
+	}
+
 	public static int invalidateXNATSessionID(HttpServletRequest httpRequest)
 	{
 		String xnatHost = config.getStringConfigurationParameter("XNATServer");
@@ -154,11 +220,12 @@ public class XNATUtil
 		return hasValidXNATSessionID(jsessionID);
 	}
 
-	public static boolean createXNATProject(String projectID, String projectName, String jsessionID)
+	public static boolean createXNATProject(String xnatProjectID, String xnatProjectName, String jsessionID)
 	{
 		String xnatHost = config.getStringConfigurationParameter("XNATServer");
 		int xnatPort = config.getIntegerConfigurationParameter("XNATPort");
-		String xnatProjectURL = buildXNATProjectCreationURL(xnatHost, xnatPort, XNAT_PROJECT_BASE, projectID, projectName);
+		String xnatProjectURL = buildXNATProjectCreationURL(xnatHost, xnatPort, XNAT_PROJECT_BASE, xnatProjectID,
+				xnatProjectName);
 		HttpClient client = new HttpClient();
 		PostMethod postMethod = new PostMethod(xnatProjectURL);
 		int xnatStatusCode;
@@ -177,44 +244,49 @@ public class XNATUtil
 		return (!unexpectedCreationStatusCode(xnatStatusCode));
 	}
 
-	private static String buildXNATProjectCreationURL(String host, int port, String base, String projectID,
-			String projectName)
+	private static String buildXNATProjectCreationURL(String host, int port, String base, String xnatProjectID,
+			String xnatProjectName)
 	{
-		String queryString = "?ID=" + projectName2XNATProjectID(projectName) + "&name=" + encode(projectName);
+		String queryString = "?ID=" + projectName2XNATProjectID(xnatProjectName) + "&name=" + encode(xnatProjectName);
 		String urlString = buildURLString(host, port, base) + queryString;
 
 		return urlString;
 	}
 
-	public static boolean createXNATSubject(String projectID, String subjectName, String subjectID, String jsessionID)
+	public static String createXNATSubjectFromDICOMPatient(String xnatProjectID, String dicomPatientName,
+			String dicomPatientID, String jsessionID)
 	{
 		String xnatHost = config.getStringConfigurationParameter("XNATServer");
 		int xnatPort = config.getIntegerConfigurationParameter("XNATPort");
-		String xnatSubjectURL = buildXNATSubjectCreationURL(xnatHost, xnatPort, XNAT_PROJECT_BASE, projectID, subjectName,
-				subjectID);
+		String xnatSubjectURL = buildXNATSubjectCreationURL(xnatHost, xnatPort, XNAT_PROJECT_BASE, xnatProjectID,
+				dicomPatientName, dicomPatientID);
 		HttpClient client = new HttpClient();
 		PostMethod postMethod = new PostMethod(xnatSubjectURL);
 		int xnatStatusCode;
+		String xnatSubjectID = null;
 
 		postMethod.setRequestHeader("Cookie", "JSESSIONID=" + jsessionID);
 
 		try {
 			log.info("Invoking XNAT with URL " + xnatSubjectURL);
 			xnatStatusCode = client.executeMethod(postMethod);
-			if (unexpectedCreationStatusCode(xnatStatusCode))
+			if (unexpectedCreationStatusCode(xnatStatusCode)) {
 				log.warning("Failure calling XNAT; status code = " + xnatStatusCode);
+			} else {
+				xnatSubjectID = postMethod.getResponseBodyAsString();
+			}
 		} catch (IOException e) {
 			log.warning("Error calling XNAT", e);
-			xnatStatusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 		}
-		return (!unexpectedCreationStatusCode(xnatStatusCode));
+		return xnatSubjectID;
 	}
 
-	private static String buildXNATSubjectCreationURL(String host, int port, String base, String projectID,
-			String subjectID, String subjectName)
+	private static String buildXNATSubjectCreationURL(String host, int port, String base, String xnatProjectID,
+			String dicomPatientID, String dicomPatientName)
 	{
-		String queryPart = "?label=" + patientName2XNATSubjectLabel(subjectName) + "&src=" + encode(subjectName);
-		String urlString = buildURLString(host, port, base) + projectID + "/subjects" + queryPart;
+		String xnatSubjectLabel = dicomPatientName2XNATSubjectLabel(dicomPatientName);
+		String queryPart = "?label=" + xnatSubjectLabel + "&src=" + encode(dicomPatientName);
+		String urlString = buildURLString(host, port, base) + xnatProjectID + "/subjects" + queryPart;
 
 		return urlString;
 	}
@@ -224,12 +296,13 @@ public class XNATUtil
 		return !(statusCode == HttpServletResponse.SC_OK || statusCode == HttpServletResponse.SC_CREATED || statusCode == HttpServletResponse.SC_CONFLICT);
 	}
 
-	public static boolean createXNATStudy(String projectID, String subjectID, String studyID, String jsessionID)
+	public static boolean createXNATExperimentFromDICOMStudy(String xnatProjectID, String xnatSubjectID,
+			String dicomStudyUID, String jsessionID)
 	{
 		String xnatHost = config.getStringConfigurationParameter("XNATServer");
 		int xnatPort = config.getIntegerConfigurationParameter("XNATPort");
-		String xnatStudyURL = buildXNATExperimentCreationURL(xnatHost, xnatPort, XNAT_PROJECT_BASE, projectID, subjectID,
-				studyID);
+		String xnatStudyURL = buildXNATExperimentCreationURL(xnatHost, xnatPort, XNAT_PROJECT_BASE, xnatProjectID,
+				xnatSubjectID, dicomStudyUID);
 
 		HttpClient client = new HttpClient();
 		PutMethod putMethod = new PutMethod(xnatStudyURL);
@@ -249,12 +322,12 @@ public class XNATUtil
 		return (!unexpectedCreationStatusCode(xnatStatusCode));
 	}
 
-	private static String buildXNATExperimentCreationURL(String host, int port, String base, String projectID,
-			String subjectID, String studyUID)
+	private static String buildXNATExperimentCreationURL(String host, int port, String base, String xnatProjectID,
+			String xnatSubjectID, String dicomStudyUID)
 	{
-		String experimentID = studyUID2XNATExperimentID(studyUID);
-		String urlString = buildURLString(host, port, base) + projectID + "/subjects/" + subjectID + "/experiments/"
-				+ experimentID + "?name=" + studyUID + "&xsiType=xnat:otherDicomSessionData";
+		String experimentID = dicomStudyUID2XNATExperimentID(dicomStudyUID);
+		String urlString = buildURLString(host, port, base) + xnatProjectID + "/subjects/" + xnatSubjectID
+				+ "/experiments/" + experimentID + "?name=" + dicomStudyUID + "&xsiType=xnat:otherDicomSessionData";
 
 		return urlString;
 	}
@@ -290,27 +363,27 @@ public class XNATUtil
 			return "";
 	}
 
-	private static String projectName2XNATProjectID(String projectName)
+	private static String projectName2XNATProjectID(String xnatProjectName)
 	{
-		String result = projectName.replaceAll("[^a-zA-Z0-9\\\\.\\\\-_]", "_");
+		String result = xnatProjectName.replaceAll("[^a-zA-Z0-9\\\\.\\\\-_]", "_");
 
 		// log.info("projectName2XNATProjectID: in=" + projectName + ", out=" + result);
 
 		return result;
 	}
 
-	private static String patientName2XNATSubjectLabel(String patientName)
+	private static String dicomPatientName2XNATSubjectLabel(String dicomPatientName)
 	{
-		String result = patientName.replaceAll("[^a-zA-Z0-9\\\\.\\\\-_]", "_").replaceAll("\\\\^", "_");
+		String result = dicomPatientName.replaceAll("[^a-zA-Z0-9\\\\.\\\\-_]", "_").replaceAll("\\\\^", "_");
 
 		// log.info("patientName2XNATSubjectLabel: in=" + patientName + ", out=" + result);
 
 		return result;
 	}
 
-	private static String studyUID2XNATExperimentID(String studyUID)
+	private static String dicomStudyUID2XNATExperimentID(String dicomStudyUID)
 	{
-		return studyUID.replace('.', '_');
+		return dicomStudyUID.replace('.', '_');
 	}
 
 	private static String encode(String urlString)
