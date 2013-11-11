@@ -96,7 +96,7 @@ public class DicomTagFileUtils
 			BufferedReader br = null;
 			FileWriter tagFileWriter = null;
 
-			logger.info("Generating DICOM tag file for file" + dicomFile.getAbsolutePath());
+			logger.info("Generating DICOM tag file for file " + dicomFile.getAbsolutePath());
 
 			try {
 				String tagPath = createTagFilePath(dicomFile);

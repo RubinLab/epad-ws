@@ -109,7 +109,7 @@ public class DicomSeriesWatcher implements Runnable
 					}
 				}
 			} catch (Exception e) {
-				logger.warning("Exception SeriesWatcher thread", e);
+				logger.warning("Exception in DICOM series watcher thread", e);
 			}
 		}
 	}

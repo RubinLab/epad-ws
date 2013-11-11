@@ -36,10 +36,10 @@ public class ResourceCheckHandler extends AbstractHandler
 		if (origin != null) {
 			httpResponse.setHeader("Access-Control-Allow-Origin", origin);
 			httpResponse.setHeader("Access-Control-Allow-Credentials", "true"); // Needed to allow cookies.
-			log.info("ResourceCheck(CORS): " + request);
+			log.info("ResourceCheckHandler(CORS): " + request);
 		} else {
 			httpResponse.setHeader("Access-Control-Allow-Origin", "*");
-			log.info("ResourceCheck: " + request);
+			log.info("ResourceCheckHandler: " + request);
 		}
 
 		request.setHandled(false);

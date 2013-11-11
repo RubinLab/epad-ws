@@ -103,10 +103,9 @@ public class EPADUploadDirWatcher implements Runnable
 			}
 			DicomTagFileUtils.generateDicomTagFiles(dir);
 			XNATUtil.createXNATEntitiesFromDICOMFilesInDirectory(dir);
-			EPADFileUtils.deleteFilesInDirWithExtension(dir, "tag");
-			EPADFileUtils.deleteFilesInDirWithExtension(dir, "properties");
+			cleanUploadDirectory(dir);
 			sendFilesToDcm4Chee(dir);
-			deleteDir(dir);
+			deleteUploadDir(dir);
 		} catch (IOException ioe) {
 			log.warning("EPADUploadDirWatcher: error (IOException);dir=" + dir.getAbsolutePath(), ioe);
 			writeExceptionLog(dir, ioe);
@@ -119,6 +118,14 @@ public class EPADUploadDirWatcher implements Runnable
 		} finally {
 			log.info("EPADUploadDirWatcher: upload finished: " + dir.getAbsolutePath());
 		}
+	}
+
+	private void cleanUploadDirectory(File dir)
+	{
+		log.info("Deleting tag and properties files in upload directory " + dir.getAbsolutePath());
+
+		EPADFileUtils.deleteFilesInDirWithExtension(dir, "tag");
+		EPADFileUtils.deleteFilesInDirWithExtension(dir, "properties");
 	}
 
 	private boolean waitOnEmptyUploadDirectory(File dir) throws InterruptedException
@@ -213,7 +220,7 @@ public class EPADUploadDirWatcher implements Runnable
 		DicomSendTask.dcmsnd(dir, true);
 	}
 
-	private void deleteDir(File dir)
+	private void deleteUploadDir(File dir)
 	{
 		log.info("EPADUploadDirWatcher: deleting directory: " + dir.getAbsolutePath());
 		EPADFileUtils.deleteDirAndContents(dir);
