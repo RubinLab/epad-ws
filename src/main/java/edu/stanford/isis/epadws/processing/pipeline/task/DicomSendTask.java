@@ -96,11 +96,10 @@ public class DicomSendTask implements Runnable
 
 			ProcessBuilder pb = new ProcessBuilder(command);
 			String dicomScriptsDir = ResourceUtils.getEPADWebServerDICOMBinDir();
-			logger.info("DICOMScriptsDir: " + dicomScriptsDir);
 			pb.directory(new File(dicomScriptsDir));
-
+			pb.redirectErrorStream(true);
 			Process process = pb.start();
-			process.getOutputStream();
+
 			is = process.getInputStream();
 			isr = new InputStreamReader(is);
 
@@ -109,12 +108,12 @@ public class DicomSendTask implements Runnable
 			StringBuilder sb = new StringBuilder();
 			while ((line = br.readLine()) != null) {
 				sb.append(line).append("\n");
+				logger.info("./dcmsend output: " + line);
 			}
 
 			try { // Wait to get exit value
-				process.waitFor(); // keep.
-				// long totalTime = System.currentTimeMillis() - startTime;
-				// log.info("Tags exit value is: " + exitValue+" and took: "+totalTime+" ms");
+				int exitValue = process.waitFor();
+				logger.info("DICOM send exit value is: " + exitValue);
 			} catch (InterruptedException e) {
 				logger.warning("Didn't send DICOM files in: " + inputDirFile.getAbsolutePath(), e);
 			}
@@ -127,14 +126,14 @@ public class DicomSendTask implements Runnable
 			if (e instanceof IllegalStateException && throwException) {
 				throw e;
 			}
-			logger.warning("DicomHeadersTask failed to create DICOM tags file: " + e.getMessage());
+			logger.warning("DicomSendTask failed to send DICOM files: " + e.getMessage());
 			if (throwException) {
-				throw new IllegalStateException("DicomHeadersTask failed to create DICom tags file.", e);
+				throw new IllegalStateException("DicomSendTask failed to send DICOM files", e);
 			}
 		} catch (OutOfMemoryError oome) {
-			logger.warning("DicomHeadersTask OutOfMemoryError: ", oome);
+			logger.warning("DicomSendTask out of memory: ", oome);
 			if (throwException) {
-				throw new IllegalStateException("DicomHeadersTask OutOfMemoryError: ", oome);
+				throw new IllegalStateException("DicomSendTask out of memory: ", oome);
 			}
 		} finally {
 			close(tagFileWriter);

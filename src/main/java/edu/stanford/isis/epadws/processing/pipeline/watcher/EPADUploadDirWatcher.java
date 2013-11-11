@@ -103,6 +103,8 @@ public class EPADUploadDirWatcher implements Runnable
 			}
 			DicomTagFileUtils.generateDicomTagFiles(dir);
 			XNATUtil.createXNATEntitiesFromDICOMFilesInDirectory(dir);
+			EPADFileUtils.deleteFilesInDirWithExtension(dir, "tag");
+			EPADFileUtils.deleteFilesInDirWithExtension(dir, "properties");
 			sendFilesToDcm4Chee(dir);
 			deleteDir(dir);
 		} catch (IOException ioe) {
