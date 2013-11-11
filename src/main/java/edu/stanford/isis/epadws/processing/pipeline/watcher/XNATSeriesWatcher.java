@@ -57,11 +57,12 @@ public class XNATSeriesWatcher implements Runnable
 					String dicomStudyIUID = dicomSeriesDescription.getStudyIUID();
 					String dicomPatientID = dicomSeriesDescription.getPatientID();
 					String dicomPatientName = dicomSeriesDescription.getPatientName();
+					String xnatSubjectLabel = XNATUtil.dicomPatientID2XNATSubjectLabel(dicomPatientID);
 
 					logger.info("XNAT series watcher found new DICOM study with ID" + dicomStudyIUID + " for patient "
 							+ dicomPatientName + " with ID " + dicomPatientID);
 
-					createXNATStudy(xnatUploadProjectID, dicomPatientID, dicomPatientName, dicomStudyIUID);
+					createXNATStudy(xnatUploadProjectID, xnatSubjectLabel, dicomPatientName, dicomStudyIUID);
 				}
 			} catch (Exception e) {
 				logger.warning("Exception in XNAT series watcher thread", e);
@@ -69,12 +70,13 @@ public class XNATSeriesWatcher implements Runnable
 		}
 	}
 
-	private void createXNATStudy(String xnatProjectID, String dicomPatientID, String dicomPatientName, String dicomStudyUID)
+	private void createXNATStudy(String xnatProjectID, String xnatSubjectLabel, String dicomPatientName,
+			String dicomStudyUID)
 	{
 		if (updateSessionID()) {
-			String xnatSubjectID = XNATUtil.createXNATSubjectFromDICOMPatient(xnatProjectID, dicomPatientName, dicomPatientID, jsessionID))
+			XNATUtil.createXNATSubjectFromDICOMPatient(xnatProjectID, xnatSubjectLabel, dicomPatientName, jsessionID);
 
-			XNATUtil.createXNATExperimentFromDICOMStudy(xnatProjectID, xnatSubjectID, dicomStudyUID, jsessionID);
+			XNATUtil.createXNATExperimentFromDICOMStudy(xnatProjectID, xnatSubjectLabel, dicomStudyUID, jsessionID);
 		} else {
 			logger.warning("Could not log into XNAT to upload DICOM study " + dicomStudyUID);
 		}
