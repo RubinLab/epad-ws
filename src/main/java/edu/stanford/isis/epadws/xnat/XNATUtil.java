@@ -316,6 +316,8 @@ public class XNATUtil
 		return (!unexpectedCreationStatusCode(xnatStatusCode));
 	}
 
+	// Setting the label field explicitly in this URL causes duplicate experiments to be created for
+	// the same study.
 	private static String buildXNATExperimentCreationURL(String host, int port, String base, String xnatProjectID,
 			String xnatSubjectLabel, String dicomStudyUID)
 	{
@@ -411,6 +413,9 @@ public class XNATUtil
 		String xnatHost = config.getStringConfigurationParameter("XNATServer");
 		int xnatPort = config.getIntegerConfigurationParameter("XNATPort");
 
+		if (base.startsWith("/"))
+			base = base.substring(1, base.length());
+
 		return buildURLString(xnatHost, xnatPort, XNAT_PROJECT_BASE, base);
 	}
 
@@ -418,6 +423,9 @@ public class XNATUtil
 	{
 		String xnatHost = config.getStringConfigurationParameter("XNATServer");
 		int xnatPort = config.getIntegerConfigurationParameter("XNATPort");
+
+		if (base.startsWith("/"))
+			base = base.substring(1, base.length());
 
 		return buildURLString(xnatHost, xnatPort, XNAT_SUBJECT_BASE, base);
 	}

@@ -46,6 +46,8 @@ public class DICOMVisuHandler extends AbstractHandler
 		httpResponse.setContentType("text/plain");
 		request.setHandled(true);
 
+		log.info("DICOMVisuHandler: " + request.toString());
+
 		try {
 			responseStream = httpResponse.getWriter();
 
