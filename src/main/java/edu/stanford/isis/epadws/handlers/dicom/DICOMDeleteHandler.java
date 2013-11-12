@@ -36,7 +36,7 @@ public class DICOMDeleteHandler extends AbstractHandler
 		if (XNATUtil.hasValidXNATSessionID(httpRequest)) {
 			String queryString = httpRequest.getQueryString();
 			queryString = URLDecoder.decode(queryString, "UTF-8");
-			log.info("DICOMDeleteHandler query: " + queryString);
+			log.info("DICOM delete handler query: " + queryString);
 
 			if (queryString != null) {
 				queryString = queryString.trim();
@@ -73,7 +73,7 @@ public class DICOMDeleteHandler extends AbstractHandler
 		parts = value.split("=");
 		value = parts[1].trim();
 
-		log.info("DicomDeleteHandler(study) = " + value);
+		log.info("DICOM delete handler (study) = " + value);
 		(new Thread(new DicomDeleteTask(value, true))).start();
 	}
 

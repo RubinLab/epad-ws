@@ -237,11 +237,8 @@ public class DicomTagFileUtils
 			while ((line = br.readLine()) != null) {
 				parseLine(line, tagMap);
 			}
-
-			logger.info("Number of tags= " + tagMap.size());
-
 		} catch (IOException e) {
-
+			logger.warning("Error reading tag file" + tagFile.getAbsolutePath(), e);
 		} finally {
 			try {
 				if (br != null)

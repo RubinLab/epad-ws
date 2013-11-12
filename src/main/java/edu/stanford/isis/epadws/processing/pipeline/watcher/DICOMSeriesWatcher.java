@@ -43,9 +43,9 @@ public class DicomSeriesWatcher implements Runnable
 	private final String dcm4cheeRootDir; // Used by the PNG grid process only.
 
 	private final ShutdownSignal shutdownSignal = ShutdownSignal.getInstance();
-	private final EPADLogger logger = EPADLogger.getInstance();
+	private static final EPADLogger logger = EPADLogger.getInstance();
 
-	private final QueueAndWatcherManager queueAndWatcherManager = QueueAndWatcherManager.getInstance();
+	private QueueAndWatcherManager queueAndWatcherManager; // = QueueAndWatcherManager.getInstance();
 
 	public DicomSeriesWatcher(BlockingQueue<DicomSeriesDescription> dicomSeriesWatcherQueue,
 			BlockingQueue<GeneratorTask> pngGeneratorTaskQueue)
@@ -62,6 +62,8 @@ public class DicomSeriesWatcher implements Runnable
 	public void run()
 	{
 		MySqlQueries mySqlQueries = MySqlInstance.getInstance().getMysqlQueries();
+		queueAndWatcherManager = QueueAndWatcherManager.getInstance();
+
 		while (!shutdownSignal.hasShutdown()) {
 			try {
 				DicomSeriesDescription dicomSeriesDescription = dicomSeriesWatcherQueue.poll(5000, TimeUnit.MILLISECONDS);
@@ -71,7 +73,7 @@ public class DicomSeriesWatcher implements Runnable
 					dicomSeriesDescriptionTracker.add(new DicomSeriesStatus(dicomSeriesDescription));
 				}
 				if (dicomSeriesDescriptionTracker.getStatusSet().size() > 0) {
-					logger.info("SeriesOrderTracker has: " + dicomSeriesDescriptionTracker.getStatusSet().size() + " series.");
+					logger.info("DICOM series tracker has: " + dicomSeriesDescriptionTracker.getStatusSet().size() + " series.");
 				}
 				// Loop through all new series and find images that have no corresponding PNG file recorded in ePAD database.
 				for (DicomSeriesStatus currentSeriesStatus : dicomSeriesDescriptionTracker.getStatusSet()) {
@@ -86,19 +88,21 @@ public class DicomSeriesWatcher implements Runnable
 						currentSeriesDescription.updateImageDescriptions(unprocessedDICOMImageFileDescriptions);
 						currentSeriesStatus.registerActivity();
 						currentSeriesStatus.setState(DicomImageProcessingState.IN_PIPELINE);
-						logger.info("Adding to PNG generator task pipeline");
+						logger.info("Adding to PNG generator task pipeline" + queueAndWatcherManager);
 						queueAndWatcherManager.addToPNGGeneratorTaskPipeline(unprocessedDICOMImageFileDescriptions);
 					} else { // There are no unprocessed PNG files left.
 						if (currentSeriesStatus.getProcessingState() == DicomImageProcessingState.IN_PIPELINE) {
 							logger.info("No unprocesses PNG files left for series with UID "
 									+ currentSeriesDescription.getSeriesUID());
-							List<Map<String, String>> processedPNGImages = mySqlQueries
-									.getProcessedDICOMImageFileDescriptionsOrdered(currentSeriesDescription.getSeriesUID());
-							if (processedPNGImages.size() > 0) { // Convert processed PNG files to PNG grid files
-								logger.info("Found " + processedPNGImages.size() + " PNG images. Converting to grid images.");
-								currentSeriesStatus.setState(DicomImageProcessingState.IN_PNG_GRID_PIPELINE);
-								addToPNGGridGeneratorTaskPipeline(unprocessedDICOMImageFileDescriptions);
-							}
+							/*
+							 * List<Map<String, String>> processedPNGImages = mySqlQueries
+							 * .getProcessedDICOMImageFileDescriptionsOrdered(currentSeriesDescription.getSeriesUID());
+							 * 
+							 * if (processedPNGImages.size() > 0) { // Convert processed PNG files to PNG grid files
+							 * logger.info("Found " + processedPNGImages.size() + " PNG images. Converting to grid images.");
+							 * currentSeriesStatus.setState(DicomImageProcessingState.IN_PNG_GRID_PIPELINE);
+							 * addToPNGGridGeneratorTaskPipeline(unprocessedDICOMImageFileDescriptions); }
+							 */
 						}
 					}
 				}
@@ -114,6 +118,7 @@ public class DicomSeriesWatcher implements Runnable
 		}
 	}
 
+	@SuppressWarnings("unused")
 	private void addToPNGGridGeneratorTaskPipeline(List<Map<String, String>> unprocessedPNGImageDescriptions)
 	{
 		MySqlQueries queries = MySqlInstance.getInstance().getMysqlQueries();

@@ -23,6 +23,7 @@ import edu.stanford.isis.epad.common.dicom.DicomParentType;
 import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epadws.handlers.coordination.Term;
 import edu.stanford.isis.epadws.processing.model.PngProcessingStatus;
+import edu.stanford.isis.epadws.processing.pipeline.watcher.Dcm4CheeDatabaseWatcher;
 
 /**
  * @author amsnyder
@@ -41,13 +42,13 @@ public class MySqlQueriesImpl implements MySqlQueries
 	@Override
 	public List<Map<String, String>> doStudySearch(String type, String searchString)
 	{
-
 		// Handle the special case of a work-list search
-
 		List<Map<String, String>> retVal = new ArrayList<Map<String, String>>();
 
 		MySqlStudyQueryBuilder queryBuilder = new MySqlStudyQueryBuilder(type, searchString);
 		String searchSql = queryBuilder.createStudySearchQuery();
+
+		logger.info("Performing study search with SQL " + searchSql);
 
 		Connection c = null;
 		Statement s = null;
@@ -72,7 +73,6 @@ public class MySqlQueriesImpl implements MySqlQueries
 					if (isStudyDateColumn(currKey)) {
 						value = DatabaseUtils.formatMySqlStudyDateToYYYYMMDDFormat(value);
 					}
-
 					line.put(currKey, value);
 				}
 				retVal.add(line);
@@ -101,10 +101,8 @@ public class MySqlQueriesImpl implements MySqlQueries
 		ResultSet rs = null;
 		try {
 			c = getConnection();
-
 			ps = c.prepareStatement(MySqlCalls.SELECT_SERIES_FOR_STUDY);
 			ps.setString(1, studyUID);
-
 			rs = ps.executeQuery();
 			ResultSetMetaData metaData = rs.getMetaData();
 
@@ -115,9 +113,9 @@ public class MySqlQueriesImpl implements MySqlQueries
 					String colName = metaData.getColumnName(i);
 					String value = rs.getString(i);
 					rowMap.put(colName, value);
-				}// for
+				}
 				retVal.add(rowMap);
-			}// while
+			}
 		} catch (SQLException sqle) {
 			String debugInfo = DatabaseUtils.getDebugData(rs);
 			logger.warning("database operation failed. debugInfo=" + debugInfo, sqle);
@@ -136,9 +134,11 @@ public class MySqlQueriesImpl implements MySqlQueries
 		try {
 			c = getConnection();
 
+			logger.info("Deleting study " + uid + " from ePAD database");
 			ps = c.prepareStatement(MySqlCalls.DELETE_FROM_EPAD_FILES);
 			ps.setString(1, "%" + uid.replace('.', '_') + "%");
-			ps.executeUpdate();
+			int rowsAffected = ps.executeUpdate();
+			logger.info("Rows affected " + rowsAffected);
 		} catch (SQLException sqle) {
 			String debugInfo = DatabaseUtils.getDebugData(rs);
 			logger.warning("database operation failed. debugInfo=" + debugInfo, sqle);
@@ -155,14 +155,18 @@ public class MySqlQueriesImpl implements MySqlQueries
 		ResultSet rs = null;
 		try {
 			c = getConnection();
+
+			logger.info("Deleting series " + uid + " from ePAD file table in database");
 			ps = c.prepareStatement(MySqlCalls.DELETE_FROM_EPAD_FILES);
 			ps.setString(1, "%" + uid.replace('.', '_') + "%");
-			ps.executeUpdate();
+			int rowsAffected = ps.executeUpdate();
+			logger.info("Rows affected " + rowsAffected);
 
+			logger.info("Deleting series " + uid + " from ePAD status table in database");
 			ps = c.prepareStatement(MySqlCalls.DELETE_SERIES_FROM_SERIES_STATUS);
 			ps.setString(1, uid);
-			ps.executeUpdate();
-
+			rowsAffected = ps.executeUpdate();
+			logger.info("Rows affected " + rowsAffected);
 		} catch (SQLException sqle) {
 			String debugInfo = DatabaseUtils.getDebugData(rs);
 			logger.warning("database operation failed. debugInfo=" + debugInfo, sqle);
@@ -250,7 +254,7 @@ public class MySqlQueriesImpl implements MySqlQueries
 			rs = ps.executeQuery();
 			while (rs.next()) {
 				retVal.add(rs.getString("series_iuid"));
-			}// while
+			}
 		} catch (SQLException sqle) {
 			String debugInfo = DatabaseUtils.getDebugData(rs);
 			logger.warning("database operation failed. debugInfo=" + debugInfo, sqle);
@@ -341,6 +345,10 @@ public class MySqlQueriesImpl implements MySqlQueries
 		return retVal;
 	}
 
+	/**
+	 * Called by {@link Dcm4CheeDatabaseWatcher} to see if new series have been uploaded to DCM4CHEE that ePAD does not
+	 * know about.
+	 */
 	@Override
 	public List<Map<String, String>> getSeriesForStatusEx(int statusCode)
 	{
@@ -350,6 +358,9 @@ public class MySqlQueriesImpl implements MySqlQueries
 			Set<String> pacsSet = getNewSeriesFromPacsDb();
 			Set<String> epadSet = getAllSeriesFromEPadDb();
 			pacsSet.removeAll(epadSet);
+
+			// logger.info("There " + pacsSet.size() + " studies in DCM4CHEE database and " + epadSet.size()
+			// + " in the ePAD database");
 
 			List<String> seriesList = new ArrayList<String>(pacsSet);
 

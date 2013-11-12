@@ -53,7 +53,7 @@ public class QueueAndWatcherManager
 
 	private final String dcm4cheeRootDir;
 
-	private static QueueAndWatcherManager ourInstance = new QueueAndWatcherManager();
+	private final static QueueAndWatcherManager ourInstance = new QueueAndWatcherManager();
 
 	public static QueueAndWatcherManager getInstance()
 	{
@@ -62,12 +62,14 @@ public class QueueAndWatcherManager
 
 	private QueueAndWatcherManager()
 	{
+		logger.info("Starting QueueAndWatcherManager...");
 		dcm4CheeDatabaseWatcher = new Dcm4CheeDatabaseWatcher(dicomSeriesWatcherQueue, xnatSeriesWatcherQueue);
 		dicomSeriesWatcher = new DicomSeriesWatcher(dicomSeriesWatcherQueue, pngGeneratorTaskQueue);
 		xnatSeriesWatcher = new XNATSeriesWatcher(xnatSeriesWatcherQueue);
 		pngGeneratorProcess = new PngGeneratorProcess(pngGeneratorTaskQueue);
 		epadUploadDirWatcher = new EPADUploadDirWatcher();
 		dcm4cheeRootDir = EPADConfig.getInstance().getParam("dcm4cheeDirRoot");
+		logger.info("Started QueueAndWatcherManager...");
 	}
 
 	public void buildAndStart()
@@ -98,9 +100,9 @@ public class QueueAndWatcherManager
 		for (Map<String, String> dicomImageDescription : dicomImageFileDescriptions) {
 			String inputDICOMFilePath = getInputFilePath(dicomImageDescription); // Get the input file path.
 			File inputDICOMFile = new File(inputDICOMFilePath);
-
 			if (!inputDICOMFile.exists()) { // If the file does not exist (stored on another file system)
 				try { // We create a temporary file
+					logger.info("Creating temporary image ");
 					File temp = File.createTempFile(dicomImageDescription.get("sop_iuid"), ".tmp");
 					EPADTools.feedFileWithDICOMFromWADO(temp, dicomImageDescription);
 					inputDICOMFile = temp;

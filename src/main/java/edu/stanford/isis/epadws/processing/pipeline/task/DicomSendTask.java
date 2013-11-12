@@ -90,7 +90,7 @@ public class DicomSendTask implements Runnable
 				if (filePaths != null)
 					nbFiles = filePaths.length;
 			}
-			logger.info("Sending " + nbFiles + " files - command: ./dcmsnd " + dcmServerTitlePort + " " + dirPath);
+			logger.info("./dcmsnd: sending " + nbFiles + " files - command: ./dcmsnd " + dcmServerTitlePort + " " + dirPath);
 
 			String[] command = { "./dcmsnd", dcmServerTitlePort, dirPath };
 

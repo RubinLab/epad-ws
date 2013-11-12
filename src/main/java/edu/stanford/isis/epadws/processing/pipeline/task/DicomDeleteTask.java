@@ -39,11 +39,14 @@ public class DicomDeleteTask implements Runnable
 
 		try {
 			if (deleteStudy) {
-				dcmDeleteStudy(uidToDelete);
+				dcm4CheeDeleteStudy(uidToDelete);
 				List<Map<String, String>> study2series = dbQueries.doSeriesSearch(uidToDelete);
+				logger.info("Found " + study2series.size() + " series in study " + uidToDelete);
 
 				for (Map<String, String> series : study2series) {
-					logger.info("SeriesID: " + series.get("series-id"));
+					String seriesID = series.get("series-id");
+					logger.info("SeriesID to delete: " + seriesID);
+					dbQueries.doDeleteSeries(seriesID);
 				}
 				dbQueries.doDeleteStudy(uidToDelete);
 				deletePNGforStudy(uidToDelete);
@@ -108,7 +111,7 @@ public class DicomDeleteTask implements Runnable
 	 * @throws Exception
 	 */
 
-	private static void dcmDeleteStudy(String uid) throws Exception
+	private static void dcm4CheeDeleteStudy(String uid) throws Exception
 	{
 		InputStream is = null;
 		InputStreamReader isr = null;
@@ -124,24 +127,23 @@ public class DicomDeleteTask implements Runnable
 			pb.directory(new File(myScriptsBinDirectory));
 
 			Process process = pb.start();
-			process.getOutputStream();// get the output stream.
+			process.getOutputStream();
 			is = process.getInputStream();
 			isr = new InputStreamReader(is);
 			br = new BufferedReader(isr);
 			String line;
 			StringBuilder sb = new StringBuilder();
 			while ((line = br.readLine()) != null) {
+				logger.info("./dcmdeleteStudy: " + line);
 				sb.append(line).append("\n");
 			}
 
 			try {
-				// int exitValue = process.waitFor(); //keep.
-				// long totalTime = System.currentTimeMillis() - startTime;
-				// log.info("Tags exit value is: " + exitValue+" and took: "+totalTime+" ms");
+				int exitValue = process.waitFor(); // keep.
+				logger.info("DICOM delete study exit value is: " + exitValue);
 			} catch (Exception e) {
-				logger.warning("Didn't delete dicom files in: " + uid, e);
+				logger.warning("Didn't delete DICOM files in: " + uid, e);
 			}
-
 			String cmdLineOutput = sb.toString();
 			writeDeleteLog(cmdLineOutput);
 

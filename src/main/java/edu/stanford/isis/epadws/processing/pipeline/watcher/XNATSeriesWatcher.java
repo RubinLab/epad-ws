@@ -42,7 +42,7 @@ public class XNATSeriesWatcher implements Runnable
 		xnatUploadProjectUser = config.getStringConfigurationParameter("XNATUploadProjectUser");
 		xnatUploadProjectPassword = config.getStringConfigurationParameter("XNATUploadProjectPassword");
 
-		jsessionID = null;
+		jsessionID = "";
 		logger.info("Starting the XNAT series watcher");
 	}
 
@@ -88,7 +88,7 @@ public class XNATSeriesWatcher implements Runnable
 	 */
 	private boolean updateSessionID()
 	{
-		if (jsessionID != null && !XNATUtil.hasValidXNATSessionID(jsessionID)) { // Validating will extend validity
+		if (!XNATUtil.hasValidXNATSessionID(jsessionID)) { // Validating will extend validity
 			XNATUtil.XNATSessionResponse xnatSessionResponse = XNATUtil.getXNATSessionID(xnatUploadProjectUser,
 					xnatUploadProjectPassword);
 			if (xnatSessionResponse.statusCode != HttpServletResponse.SC_OK) {
