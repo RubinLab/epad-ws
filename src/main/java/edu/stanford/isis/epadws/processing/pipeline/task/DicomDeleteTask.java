@@ -39,18 +39,21 @@ public class DicomDeleteTask implements Runnable
 
 		try {
 			if (deleteStudy) {
-				dcm4CheeDeleteStudy(uidToDelete);
-				List<Map<String, String>> study2series = dbQueries.doSeriesSearch(uidToDelete);
+				List<Map<String, String>> study2series = dbQueries.findSeriesInStudyInDcm4Chee(uidToDelete);
 				logger.info("Found " + study2series.size() + " series in study " + uidToDelete);
 
+				dcm4CheeDeleteDicomStudy(uidToDelete); // Must run after finding series in DCM4CHEE
+
+				// Should not delete until after deleting study in DCM4CHEE or PNG pipeline will activate.
 				for (Map<String, String> series : study2series) {
-					String seriesID = series.get("series-id");
-					logger.info("SeriesID to delete: " + seriesID);
-					dbQueries.doDeleteSeries(seriesID);
+					String seriesID = series.get("series_iuid");
+					logger.info("SeriesID to delete in ePAD database: " + seriesID);
+					dbQueries.doDeleteSeriesInEPadDatabase(seriesID);
 				}
-				dbQueries.doDeleteStudy(uidToDelete);
-				deletePNGforStudy(uidToDelete);
+				dbQueries.doDeleteDicomStudyInEPadDatabase(uidToDelete);
+				deletePNGsforDicomStudy(uidToDelete);
 			} else {
+				logger.warning("Attempt at (currently unsupported) delete of individual series " + uidToDelete);
 				// Not supported in the current version of dcm4chee
 				/*
 				 * //To avoid to fire the png generation pipeline dbQueries.updateSeriesStatusCodeEx(77,uidToDelete); //Delete
@@ -69,7 +72,7 @@ public class DicomDeleteTask implements Runnable
 	 * @param uid
 	 * @throws Exception
 	 */
-	private static void deletePNGforStudy(String studyUID) throws Exception
+	private static void deletePNGsforDicomStudy(String studyUID) throws Exception
 	{
 		StringBuilder outputPath = new StringBuilder();
 		outputPath.append(ResourceUtils.getEPADWebServerPNGDir());
@@ -111,7 +114,7 @@ public class DicomDeleteTask implements Runnable
 	 * @throws Exception
 	 */
 
-	private static void dcm4CheeDeleteStudy(String uid) throws Exception
+	private static void dcm4CheeDeleteDicomStudy(String uid) throws Exception
 	{
 		InputStream is = null;
 		InputStreamReader isr = null;

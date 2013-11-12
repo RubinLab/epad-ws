@@ -69,24 +69,24 @@ public class DICOMDeleteHandler extends AbstractHandler
 	{
 		log.info(queryString);
 		String[] parts = queryString.split("&");
-		String value = parts[1].trim();
-		parts = value.split("=");
-		value = parts[1].trim();
+		String studyUID = parts[1].trim();
+		parts = studyUID.split("=");
+		studyUID = parts[1].trim();
 
-		log.info("DICOM delete handler (study) = " + value);
-		(new Thread(new DicomDeleteTask(value, true))).start();
+		log.info("DICOM delete handler (study) = " + studyUID);
+		(new Thread(new DicomDeleteTask(studyUID, true))).start();
 	}
 
 	private void handleDICOMSeriesDeleteRequest(String queryString)
 	{
 		log.info(queryString);
 		String[] parts = queryString.split("&");
-		String value = parts[1].trim();
-		parts = value.split("=");
-		value = parts[1].trim();
+		String seriesUID = parts[1].trim();
+		parts = seriesUID.split("=");
+		seriesUID = parts[1].trim();
 
-		log.info("DicomDeleteHandler(series) = " + value);
-		(new Thread(new DicomDeleteTask(value, false))).start();
+		log.info("DicomDeleteHandler(series) = " + seriesUID);
+		(new Thread(new DicomDeleteTask(seriesUID, false))).start();
 	}
 
 	/**

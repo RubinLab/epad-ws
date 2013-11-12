@@ -40,7 +40,7 @@ public class MySqlQueriesImpl implements MySqlQueries
 	}
 
 	@Override
-	public List<Map<String, String>> doStudySearch(String type, String searchString)
+	public List<Map<String, String>> doStudySearchInDcm4Chee(String type, String searchString)
 	{
 		// Handle the special case of a work-list search
 		List<Map<String, String>> retVal = new ArrayList<Map<String, String>>();
@@ -92,7 +92,7 @@ public class MySqlQueriesImpl implements MySqlQueries
 	}
 
 	@Override
-	public List<Map<String, String>> doSeriesSearch(String studyUID)
+	public List<Map<String, String>> findSeriesInStudyInDcm4Chee(String studyUID)
 	{
 		List<Map<String, String>> retVal = new ArrayList<Map<String, String>>();
 
@@ -126,7 +126,7 @@ public class MySqlQueriesImpl implements MySqlQueries
 	}
 
 	@Override
-	public void doDeleteStudy(String uid)
+	public void doDeleteDicomStudyInEPadDatabase(String uid)
 	{
 		Connection c = null;
 		PreparedStatement ps = null;
@@ -134,7 +134,6 @@ public class MySqlQueriesImpl implements MySqlQueries
 		try {
 			c = getConnection();
 
-			logger.info("Deleting study " + uid + " from ePAD database");
 			ps = c.prepareStatement(MySqlCalls.DELETE_FROM_EPAD_FILES);
 			ps.setString(1, "%" + uid.replace('.', '_') + "%");
 			int rowsAffected = ps.executeUpdate();
@@ -148,7 +147,7 @@ public class MySqlQueriesImpl implements MySqlQueries
 	}
 
 	@Override
-	public void doDeleteSeries(String uid)
+	public void doDeleteSeriesInEPadDatabase(String uid)
 	{
 		Connection c = null;
 		PreparedStatement ps = null;
@@ -181,7 +180,7 @@ public class MySqlQueriesImpl implements MySqlQueries
 	 * @return a list of studyUIDs.
 	 */
 	@Override
-	public List<String> getNewStudies()
+	public List<String> getNewStudiesInDcm4Chee()
 	{
 		List<String> retVal = new ArrayList<String>();
 

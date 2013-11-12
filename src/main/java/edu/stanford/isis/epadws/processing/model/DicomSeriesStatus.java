@@ -53,12 +53,9 @@ public class DicomSeriesStatus
 	 */
 	public boolean isDone()
 	{
-		// Has the series been idle for too long?
 		long currTime = System.currentTimeMillis();
 		if (currTime > lastActivityTimeStamp + MAX_IDLE_TIME) {
-			// log this series as being done.
-			logger.info("Series: " + seriesOrder.getSeriesUID() + " is idle. Downloaded " + seriesOrder.getFinishedCount()
-					+ " of " + seriesOrder.size() + " images.");
+			logger.info("Series: " + seriesOrder.getSeriesUID() + " is idle.");
 			return true;
 		}
 		if (seriesOrder.isComplete()) {

@@ -80,7 +80,7 @@ public class DICOMSearchServerResource extends BaseServerResource
 	private String performDICOMStudySearch(DicomStudySearchType searchType, String searchString) throws Exception
 	{
 		final MySqlQueries dbQueries = MySqlInstance.getInstance().getMysqlQueries();
-		final List<Map<String, String>> searchResult = dbQueries.doStudySearch(searchType.toString(), searchString);
+		final List<Map<String, String>> searchResult = dbQueries.doStudySearchInDcm4Chee(searchType.toString(), searchString);
 		boolean isFirst = true;
 		StringBuilder result = new StringBuilder();
 
@@ -142,7 +142,7 @@ public class DICOMSearchServerResource extends BaseServerResource
 		final String studyIdKey = getStudyUIDFromRequest(searchString);
 		final String studyUID = DicomFormatUtil.formatDirToUid(studyIdKey);
 		final MySqlQueries dbQueries = MySqlInstance.getInstance().getMysqlQueries();
-		final List<Map<String, String>> series = dbQueries.doSeriesSearch(studyUID);
+		final List<Map<String, String>> series = dbQueries.findSeriesInStudyInDcm4Chee(studyUID);
 		final StringBuilder result = new StringBuilder();
 		boolean isFirst = true;
 

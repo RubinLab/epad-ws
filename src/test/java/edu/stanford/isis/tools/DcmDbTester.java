@@ -57,7 +57,7 @@ public class DcmDbTester
 			logger.info("######## Start test #2 - basic search ########");
 
 			MySqlQueries mySqlQueries = MySqlInstance.getInstance().getMysqlQueries();
-			List<Map<String, String>> results = mySqlQueries.doStudySearch("patientName", "*");
+			List<Map<String, String>> results = mySqlQueries.doStudySearchInDcm4Chee("patientName", "*");
 
 			String[] keys = { "study_iuid", "pat_id", "modality", "study_datetime", "pat_name" };
 			StringBuilder sb = new StringBuilder("Study Results \n");
@@ -92,7 +92,7 @@ public class DcmDbTester
 			logger.info("######## Start test #3 - wildcard search ########");
 
 			MySqlQueries mySqlQueries = MySqlInstance.getInstance().getMysqlQueries();
-			List<Map<String, String>> results = mySqlQueries.doStudySearch("patientName", "A*");
+			List<Map<String, String>> results = mySqlQueries.doStudySearchInDcm4Chee("patientName", "A*");
 
 			String[] keys = { "study_iuid", "pat_id", "modality", "study_datetime", "pat_name" };
 			StringBuilder sb = new StringBuilder("Study Results \n");
@@ -126,8 +126,8 @@ public class DcmDbTester
 			logger.info("######## Start test #4 - case insensitive search ########");
 
 			MySqlQueries mySqlQueries = MySqlInstance.getInstance().getMysqlQueries();
-			List<Map<String, String>> resultsUpperCase = mySqlQueries.doStudySearch("patientName", "A*");
-			List<Map<String, String>> resultsLowerCase = mySqlQueries.doStudySearch("patientName", "a*");
+			List<Map<String, String>> resultsUpperCase = mySqlQueries.doStudySearchInDcm4Chee("patientName", "A*");
+			List<Map<String, String>> resultsLowerCase = mySqlQueries.doStudySearchInDcm4Chee("patientName", "a*");
 
 			if (resultsUpperCase.size() != resultsLowerCase.size()) {
 				logger.info("FAILED: Case insensitive search test." + " upper-case=" + resultsUpperCase.size() + " lower-case="
@@ -150,7 +150,7 @@ public class DcmDbTester
 			logger.info("######## Start test #5 - patient id search ########");
 
 			MySqlQueries mySqlQueries = MySqlInstance.getInstance().getMysqlQueries();
-			List<Map<String, String>> results = mySqlQueries.doStudySearch("patientId", "2228*");
+			List<Map<String, String>> results = mySqlQueries.doStudySearchInDcm4Chee("patientId", "2228*");
 			String[] keys = { "study_iuid", "pat_id", "modality", "study_datetime", "pat_name" };
 			StringBuilder sb = new StringBuilder("Study Results \n");
 			int resultIndex = 1;
@@ -178,7 +178,7 @@ public class DcmDbTester
 			logger.info("######## Start test #6 - exam-type search ########");
 
 			MySqlQueries mySqlQueries = MySqlInstance.getInstance().getMysqlQueries();
-			List<Map<String, String>> results = mySqlQueries.doStudySearch("examType", "DX");
+			List<Map<String, String>> results = mySqlQueries.doStudySearchInDcm4Chee("examType", "DX");
 
 			String[] keys = { "study_iuid", "pat_id", "modality", "study_datetime", "pat_name" };
 			StringBuilder sb = new StringBuilder("Study Results \n");
@@ -207,7 +207,7 @@ public class DcmDbTester
 			logger.info("######## Start test #7 - study-time search ########");
 
 			MySqlQueries mySqlQueries = MySqlInstance.getInstance().getMysqlQueries();
-			List<Map<String, String>> results = mySqlQueries.doStudySearch("studyDate", "2002");
+			List<Map<String, String>> results = mySqlQueries.doStudySearchInDcm4Chee("studyDate", "2002");
 
 			String[] keys = { "study_iuid", "pat_id", "modality", "study_datetime", "pat_name" };
 			StringBuilder sb = new StringBuilder("Study Results \n");
@@ -240,7 +240,7 @@ public class DcmDbTester
 
 			MySqlQueries mySqlQueries = MySqlInstance.getInstance().getMysqlQueries();
 			List<Map<String, String>> results = mySqlQueries
-					.doSeriesSearch("1.2.826.0.1.3680043.8.420.30757817405477639080180001130587461759");
+					.findSeriesInStudyInDcm4Chee("1.2.826.0.1.3680043.8.420.30757817405477639080180001130587461759");
 
 			// String[] keys = {"study_iuid", "pat_id", "modality", "study_datetime", "pat_name"};
 			StringBuilder sb = new StringBuilder("Series Results \n");

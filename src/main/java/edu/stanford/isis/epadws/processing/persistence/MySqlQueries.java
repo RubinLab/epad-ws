@@ -15,20 +15,20 @@ import edu.stanford.isis.epadws.processing.model.PngProcessingStatus;
  */
 public interface MySqlQueries
 {
-	List<Map<String, String>> doStudySearch(String type, String searchString);
+	List<Map<String, String>> doStudySearchInDcm4Chee(String type, String searchString);
 
-	void doDeleteStudy(String uid);
+	List<Map<String, String>> findSeriesInStudyInDcm4Chee(String studyUID);
 
-	void doDeleteSeries(String uid);
+	void doDeleteDicomStudyInEPadDatabase(String uid);
 
-	List<Map<String, String>> doSeriesSearch(String studyUID);
+	void doDeleteSeriesInEPadDatabase(String uid);
 
 	/**
 	 * Get all the studies with the study-stats of zero.
 	 * 
 	 * @return a list of studyUIDs.
 	 */
-	List<String> getNewStudies();
+	List<String> getNewStudiesInDcm4Chee();
 
 	List<String> getNewSeries(); // @Deprecated.
 
