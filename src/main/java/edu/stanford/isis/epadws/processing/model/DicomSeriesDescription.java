@@ -21,7 +21,8 @@ public class DicomSeriesDescription
 	private final String patientName;
 	private final String patientID;
 
-	public DicomSeriesDescription(int numInstance, String seriesUID, String studyIUID, String patientName, String patientID)
+	public DicomSeriesDescription(int numInstance, String seriesUID, String studyIUID, String patientName,
+			String patientID)
 	{
 		if (numInstance < 1)
 			throw new IllegalArgumentException("numInstances must be a positive value.");
@@ -153,8 +154,7 @@ public class DicomSeriesDescription
 	{
 		DicomImageDescription imageEntry = new DicomImageDescription(instNum, sopInstanceUID);
 		if (!hasInstance(instNum)) {
-			logger.info("[TEMP LOG-DEBUGGING] adding: " + instNum + " sopInstanceUID: " + sopInstanceUID);
-
+			// logger.info("[TEMP LOG-DEBUGGING] adding: " + instNum + " sopInstanceUID: " + sopInstanceUID);
 			if (instances.size() < instNum + 1) {
 				int start = instances.size();
 				logger.info("WARNING: resizing array from=" + instances.size() + " to=" + (instNum + 1) + " series="

@@ -111,7 +111,6 @@ public class QueueAndWatcherManager
 				}
 			}
 			String outputPNGFilePath = createOutputPNGFilePathForDicomImage(dicomImageDescription);
-			logger.info("Checking epad_files table for: " + outputPNGFilePath);
 			if (!queries.hasEpadFile(outputPNGFilePath)) {
 				if (PixelMedUtils.isDicomSegmentationObject(inputDICOMFilePath)) { // Generate slices of PNG mask
 					logger.info("SeriesWatcher has: " + dicomImageDescription.get("sop_iuid") + " DICOM segmentation object.");

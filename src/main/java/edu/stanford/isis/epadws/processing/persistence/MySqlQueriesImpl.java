@@ -764,7 +764,7 @@ public class MySqlQueriesImpl implements MySqlQueries
 		Connection c = null;
 		PreparedStatement ps = null;
 		try {
-			logger.info("Inserting into epad_file table. data=" + row);
+			// logger.info("Inserting into epad_file table. data=" + row);
 
 			c = getConnection();
 			ps = c.prepareStatement(MySqlCalls.INSERT_INTO_EPAD_FILES);

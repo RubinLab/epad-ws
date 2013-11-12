@@ -69,7 +69,7 @@ public class DicomSeriesWatcher implements Runnable
 				DicomSeriesDescription dicomSeriesDescription = dicomSeriesWatcherQueue.poll(5000, TimeUnit.MILLISECONDS);
 
 				if (dicomSeriesDescription != null) {
-					logger.info("Series watcher found new series with series UID" + dicomSeriesDescription.getSeriesUID());
+					logger.info("Series watcher found new series with series UID " + dicomSeriesDescription.getSeriesUID());
 					dicomSeriesDescriptionTracker.add(new DicomSeriesStatus(dicomSeriesDescription));
 				}
 				if (dicomSeriesDescriptionTracker.getStatusSet().size() > 0) {
@@ -127,7 +127,6 @@ public class DicomSeriesWatcher implements Runnable
 			String inputPNGFilePath = getInputFilePath(currentPNGImage); // Get the input file path.
 			File inputPNGFile = new File(inputPNGFilePath);
 			String outputPNGGridFilePath = createOutputFilePathForDicomPNGGridImage(currentPNGImage);
-			logger.info("Checking epad_files table for: " + outputPNGGridFilePath);
 			if (!queries.hasEpadFile(outputPNGGridFilePath)) {
 				logger.info("SeriesWatcher has: " + currentPNGImage.get("sop_iuid") + " PNG for grid processing.");
 				// Need to get slice for PNG files.
