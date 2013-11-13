@@ -238,7 +238,7 @@ public class MySqlQueriesImpl implements MySqlQueries
 	}
 
 	@Override
-	public List<String> getNewSeries()
+	public List<String> getNewSeriesInDcm4Chee()
 	{
 		List<String> retVal = new ArrayList<String>();
 
@@ -265,34 +265,7 @@ public class MySqlQueriesImpl implements MySqlQueries
 	}
 
 	@Override
-	public List<String> getEPadDbSeriesForStatus(int statusCode)
-	{
-		List<String> retVal = new ArrayList<String>();
-
-		Connection c = null;
-		PreparedStatement ps = null;
-		ResultSet rs = null;
-		try {
-			c = getConnection();
-			ps = c.prepareStatement(MySqlCalls.SELECT_EPAD_SERIES_BY_STATUS);
-			ps.setInt(1, statusCode);
-
-			rs = ps.executeQuery();
-			while (rs.next()) {
-				retVal.add(rs.getString("series_iuid"));
-			}
-		} catch (SQLException sqle) {
-			String debugInfo = DatabaseUtils.getDebugData(rs);
-			logger.warning("database operation failed. debugInfo=" + debugInfo, sqle);
-		} finally {
-			close(c, ps, rs);
-		}
-
-		return retVal;
-	}
-
-	@Override
-	public List<Map<String, String>> getStudiesForStatus(int statusCode)
+	public List<Map<String, String>> getStudiesForStatusInEPadDatabase(int statusCode)
 	{
 		List<Map<String, String>> retVal = new ArrayList<Map<String, String>>();
 
@@ -318,38 +291,12 @@ public class MySqlQueriesImpl implements MySqlQueries
 		return retVal;
 	}
 
-	@Override
-	public List<Map<String, String>> getSeriesForStatus(int statusCode)
-	{
-		List<Map<String, String>> retVal = new ArrayList<Map<String, String>>();
-
-		Connection c = null;
-		PreparedStatement ps = null;
-		ResultSet rs = null;
-		try {
-			c = getConnection();
-			ps = c.prepareStatement(MySqlCalls.SELECT_SERIES_BY_STATUS);
-			ps.setInt(1, statusCode);
-			rs = ps.executeQuery();
-			while (rs.next()) {
-				Map<String, String> resultMap = createResultMap(rs);
-				retVal.add(resultMap);
-			}
-		} catch (SQLException sqle) {
-			String debugInfo = DatabaseUtils.getDebugData(rs);
-			logger.warning("database operation failed. debugInfo=" + debugInfo, sqle);
-		} finally {
-			close(c, ps, rs);
-		}
-		return retVal;
-	}
-
 	/**
 	 * Called by {@link Dcm4CheeDatabaseWatcher} to see if new series have been uploaded to DCM4CHEE that ePAD does not
 	 * know about.
 	 */
 	@Override
-	public List<Map<String, String>> getSeriesForStatusEx(int statusCode)
+	public List<Map<String, String>> getSeriesForStatusInEPadDatabase(int statusCode)
 	{
 		List<Map<String, String>> retVal = new ArrayList<Map<String, String>>();
 
@@ -364,7 +311,7 @@ public class MySqlQueriesImpl implements MySqlQueries
 			List<String> seriesList = new ArrayList<String>(pacsSet);
 
 			for (String currSeries : seriesList) {
-				Map<String, String> currSeriesData = getSeriesById(currSeries);
+				Map<String, String> currSeriesData = getSeriesByIdInEPadDatabase(currSeries);
 				if (currSeriesData != null) {
 					if (!currSeriesData.isEmpty()) {
 						retVal.add(currSeriesData);
@@ -379,7 +326,7 @@ public class MySqlQueriesImpl implements MySqlQueries
 
 	private Set<String> getNewSeriesFromPacsDb()
 	{
-		List<String> pacsList = getNewSeries();
+		List<String> pacsList = getNewSeriesInDcm4Chee();
 		return new HashSet<String>(pacsList);
 	}
 
@@ -409,7 +356,7 @@ public class MySqlQueriesImpl implements MySqlQueries
 	}
 
 	@Override
-	public Map<String, String> getSeriesById(String seriesIUID)
+	public Map<String, String> getSeriesByIdInEPadDatabase(String seriesIUID)
 	{
 		Map<String, String> retVal = new HashMap<String, String>();
 
@@ -424,7 +371,7 @@ public class MySqlQueriesImpl implements MySqlQueries
 			rs = ps.executeQuery();
 			if (rs.next()) {
 				retVal = createResultMap(rs);
-			}// while
+			}
 		} catch (SQLException sqle) {
 			String debugInfo = DatabaseUtils.getDebugData(rs);
 			logger.warning("database operation failed. debugInfo=" + debugInfo, sqle);
@@ -435,7 +382,7 @@ public class MySqlQueriesImpl implements MySqlQueries
 	}
 
 	@Override
-	public Map<String, String> getPatientForStudy(String studyIUID)
+	public Map<String, String> getPatientForStudyFromDcm4Chee(String studyIUID)
 	{
 		Map<String, String> retVal = new HashMap<String, String>();
 
@@ -450,7 +397,37 @@ public class MySqlQueriesImpl implements MySqlQueries
 			rs = ps.executeQuery();
 			if (rs.next()) {
 				retVal = createResultMap(rs);
-			}// while
+			}
+		} catch (SQLException sqle) {
+			String debugInfo = DatabaseUtils.getDebugData(rs);
+			logger.warning("database operation failed. debugInfo=" + debugInfo, sqle);
+		} finally {
+			close(c, ps, rs);
+		}
+		return retVal;
+	}
+
+	/**
+	 * @param patientID
+	 * @return A list of study IDs
+	 */
+	@Override
+	public List<String> getStudyIDsForPatientFromDcm4Chee(String patientID)
+	{
+		List<String> retVal = new ArrayList<String>();
+
+		Connection c = null;
+		PreparedStatement ps = null;
+		ResultSet rs = null;
+		try {
+			c = getConnection();
+			ps = c.prepareStatement(MySqlCalls.SELECT_STUDY_FOR_PATIENT);
+			ps.setString(1, patientID);
+
+			rs = ps.executeQuery();
+			if (rs.next()) {
+				retVal.add(rs.getString("study_iuid"));
+			}
 		} catch (SQLException sqle) {
 			String debugInfo = DatabaseUtils.getDebugData(rs);
 			logger.warning("database operation failed. debugInfo=" + debugInfo, sqle);

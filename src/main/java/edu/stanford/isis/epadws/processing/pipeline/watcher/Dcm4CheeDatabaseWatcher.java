@@ -39,12 +39,12 @@ public class Dcm4CheeDatabaseWatcher implements Runnable
 
 		while (!signal.hasShutdown()) {
 			try {
-				List<Map<String, String>> series = mySqlQueries.getSeriesForStatusEx(0);
+				List<Map<String, String>> series = mySqlQueries.getSeriesForStatusInEPadDatabase(0);
 
 				for (Map<String, String> currSeries : series) {
 					String seriesIUid = currSeries.get("series_iuid");
 					String studyIUID = mySqlQueries.getStudyUIDForSeries(seriesIUid);
-					Map<String, String> patient = mySqlQueries.getPatientForStudy(studyIUID);
+					Map<String, String> patient = mySqlQueries.getPatientForStudyFromDcm4Chee(studyIUID);
 					String patientName = patient.get("pat_name");
 					String patientID = patient.get("pat_id");
 					String seriesDesc = currSeries.get("series_desc");

@@ -33,7 +33,10 @@ public class MySqlCalls
 	public static final String UPDATE_SERIES_STATUS_CODE = "UPDATE pacsdb.series SET series_status=? WHERE series_iuid=?";
 	public static final String UPDATE_MARK_STUDY_FOR_DELETION = "UPDATE pacsdb.study_on_fs SET mark_to_delete='true' where study_fk=?";
 
+	public static final String SELECT_STUDY_FOR_PATIENT = "SELECT * from pacsdb.patient as p, pacsdb.study as st WHERE p.pk=st.patient_fk and patient.pat_id=?";
+
 	public static final String SELECT_PATIENT_FOR_STUDY = "SELECT * from pacsdb.patient as p, pacsdb.study as st WHERE p.pk=st.patient_fk and st.study_iuid=?";
+
 	public static final String SELECT_PARENT_STUDY_FOR_SERIES = "SELECT * from pacsdb.study as st, pacsdb.series as s WHERE st.pk=s.study_fk and s.series_iuid=?";
 	public static final String SELECT_PARENT_SERIES_FOR_IMAGE = "SELECT * from pacsdb.series as s, pacsdb.instance as i WHERE s.pk=i.series_fk and i.sop_iuid=?";
 

@@ -12,14 +12,18 @@ import org.eclipse.jetty.server.handler.AbstractHandler;
 
 import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epad.common.util.JsonHelper;
-import edu.stanford.isis.epadws.processing.pipeline.task.DicomDeleteTask;
+import edu.stanford.isis.epadws.processing.pipeline.task.PatientDeleteTask;
 import edu.stanford.isis.epadws.xnat.XNATUtil;
 
 /**
- * Delete a study or a series.
+ * Delete a patient. Deletes the studies associated with that patient from the ePAD and DCM4CHEE databases.
+ * <p>
+ * Deletes all studies and series associated with a patient so should only be used if that patient is not present in any
+ * XNAT study.
  * 
+ * @author martin
  */
-public class DICOMDeleteHandler extends AbstractHandler
+public class PatientDeleteHandler extends AbstractHandler
 {
 	private static final EPADLogger log = EPADLogger.getInstance();
 
@@ -40,16 +44,12 @@ public class DICOMDeleteHandler extends AbstractHandler
 		if (XNATUtil.hasValidXNATSessionID(httpRequest)) {
 			String queryString = httpRequest.getQueryString();
 			queryString = URLDecoder.decode(queryString, "UTF-8");
-			log.info("DICOM delete handler query: " + queryString);
+			log.info("Patient delete handler query: " + queryString);
 
 			if (queryString != null) {
 				queryString = queryString.trim();
 				try {
-					if (isSeriesRequest(queryString)) {
-						handleDICOMSeriesDeleteRequest(queryString);
-					} else {
-						handleDICOMStudyDeleteRequest(queryString);
-					}
+					handlePatientDeleteRequest(queryString);
 					responseCode = HttpServletResponse.SC_OK;
 				} catch (Throwable t) {
 					log.warning(INTERNAL_ERROR_MESSAGE, t);
@@ -69,41 +69,16 @@ public class DICOMDeleteHandler extends AbstractHandler
 		httpResponse.setStatus(responseCode);
 	}
 
-	private void handleDICOMStudyDeleteRequest(String queryString)
+	private void handlePatientDeleteRequest(String queryString)
 	{
 		log.info(queryString);
 		String[] parts = queryString.split("&");
-		String studyUID = parts[1].trim();
-		parts = studyUID.split("=");
-		studyUID = parts[1].trim();
+		String patientID = parts[1].trim();
+		parts = patientID.split("=");
+		patientID = parts[1].trim();
 
-		log.info("DICOM delete handler (study) = " + studyUID);
-		(new Thread(new DicomDeleteTask(studyUID, true))).start();
-	}
+		log.info("Deleting patient = " + patientID);
 
-	private void handleDICOMSeriesDeleteRequest(String queryString)
-	{
-		log.info(queryString);
-		String[] parts = queryString.split("&");
-		String seriesUID = parts[1].trim();
-		parts = seriesUID.split("=");
-		seriesUID = parts[1].trim();
-
-		log.info("DicomDeleteHandler(series) = " + seriesUID);
-		(new Thread(new DicomDeleteTask(seriesUID, false))).start();
-	}
-
-	/**
-	 * Look for deletetype=series in the request to determine if it is a series request.
-	 * 
-	 * @param queryString String
-	 * @return boolean
-	 */
-	private static boolean isSeriesRequest(String queryString)
-	{
-		String check = queryString.toLowerCase().trim();
-		boolean isSeries = check.indexOf("eletetype=series") > 0;
-
-		return isSeries;
+		(new Thread(new PatientDeleteTask(patientID))).start();
 	}
 }

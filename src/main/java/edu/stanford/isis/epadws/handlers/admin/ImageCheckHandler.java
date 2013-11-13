@@ -85,7 +85,7 @@ public class ImageCheckHandler extends AbstractHandler
 	private void verifyImageGeneration(PrintWriter responseStream) throws SQLException, IOException
 	{
 		final MySqlQueries dbQueries = MySqlInstance.getInstance().getMysqlQueries();
-		final List<String> seriesIUIDs = dbQueries.getNewSeries();
+		final List<String> seriesIUIDs = dbQueries.getNewSeriesInDcm4Chee();
 		List<Map<String, String>> allUnprocessedDICOMImageFileDescriptions = new ArrayList<Map<String, String>>();
 
 		int numberOfSeriesWithMissingEPADDatabaseEntry = 0;

@@ -44,6 +44,7 @@ import edu.stanford.isis.epadws.handlers.dicom.DICOMSearchHandler;
 import edu.stanford.isis.epadws.handlers.dicom.DICOMSeriesOrderHandler;
 import edu.stanford.isis.epadws.handlers.dicom.DICOMSeriesTagHandler;
 import edu.stanford.isis.epadws.handlers.dicom.DICOMWindowingHandler;
+import edu.stanford.isis.epadws.handlers.dicom.PatientDeleteHandler;
 import edu.stanford.isis.epadws.handlers.dicom.WadoHandler;
 import edu.stanford.isis.epadws.handlers.event.EventSearchHandler;
 import edu.stanford.isis.epadws.handlers.plugin.EPadPluginHandler;
@@ -184,7 +185,8 @@ public class Main
 		addHandlerAtContextPath(new CoordinationHandler(), "/coordination", handlerList);
 		addHandlerAtContextPath(new DICOMSearchHandler(), "/searchj", handlerList);
 		addHandlerAtContextPath(new DICOMSeriesOrderHandler(), "/seriesorderj", handlerList);
-		addHandlerAtContextPath(new DICOMDeleteHandler(), "/dicomdelete", handlerList); // TODO Deprecated?
+		addHandlerAtContextPath(new DICOMDeleteHandler(), "/dicomdelete", handlerList);
+		addHandlerAtContextPath(new PatientDeleteHandler(), "/patientdelete", handlerList);
 		addHandlerAtContextPath(new DICOMHeadersHandler(), "/dicomtagj", handlerList);
 		addHandlerAtContextPath(new DICOMSeriesTagHandler(), "/seriestag", handlerList);
 		addHandlerAtContextPath(new DICOMWindowingHandler(), "/dicomparam", handlerList);

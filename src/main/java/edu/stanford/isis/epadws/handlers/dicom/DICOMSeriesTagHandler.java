@@ -191,7 +191,7 @@ public class DICOMSeriesTagHandler extends AbstractHandler
 	private static String getPatientIdFromStudyIuid(String studyIUID)
 	{
 		MySqlQueries queries = MySqlInstance.getInstance().getMysqlQueries();
-		Map<String, String> tags = queries.getPatientForStudy(studyIUID);
+		Map<String, String> tags = queries.getPatientForStudyFromDcm4Chee(studyIUID);
 		return tags.get("pat_id");
 	}
 

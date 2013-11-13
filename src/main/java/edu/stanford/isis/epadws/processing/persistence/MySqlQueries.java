@@ -10,9 +10,6 @@ import edu.stanford.isis.epadws.handlers.coordination.CoordinationHandler;
 import edu.stanford.isis.epadws.handlers.coordination.Term;
 import edu.stanford.isis.epadws.processing.model.PngProcessingStatus;
 
-/**
- * @author amsnyder
- */
 public interface MySqlQueries
 {
 	List<Map<String, String>> doStudySearchInDcm4Chee(String type, String searchString);
@@ -24,25 +21,23 @@ public interface MySqlQueries
 	void doDeleteSeriesInEPadDatabase(String uid);
 
 	/**
-	 * Get all the studies with the study-stats of zero.
+	 * Get all the studies with the study status of zero.
 	 * 
 	 * @return a list of studyUIDs.
 	 */
 	List<String> getNewStudiesInDcm4Chee();
 
-	List<String> getNewSeries(); // @Deprecated.
+	List<String> getNewSeriesInDcm4Chee();
 
-	List<String> getEPadDbSeriesForStatus(int statusCode); // calls epaddb and replaces above.
+	List<Map<String, String>> getStudiesForStatusInEPadDatabase(int statusCode);
 
-	List<Map<String, String>> getStudiesForStatus(int statusCode);
+	List<Map<String, String>> getSeriesForStatusInEPadDatabase(int statusCode);
 
-	List<Map<String, String>> getSeriesForStatus(int statusCode); // @Deprecated
+	Map<String, String> getSeriesByIdInEPadDatabase(String seriesIUID);
 
-	List<Map<String, String>> getSeriesForStatusEx(int statusCode); // replaces call above.
+	Map<String, String> getPatientForStudyFromDcm4Chee(String studyIUID);
 
-	Map<String, String> getSeriesById(String seriesIUID);
-
-	Map<String, String> getPatientForStudy(String studyIUID);
+	List<String> getStudyIDsForPatientFromDcm4Chee(String patientID);
 
 	Map<String, String> getParentStudyForSeries(String seriesIUID);
 
