@@ -186,10 +186,10 @@ public class Main
 		addHandlerAtContextPath(new DICOMSearchHandler(), "/searchj", handlerList);
 		addHandlerAtContextPath(new DICOMSeriesOrderHandler(), "/seriesorderj", handlerList);
 		addHandlerAtContextPath(new DICOMDeleteHandler(), "/dicomdelete", handlerList);
-		addHandlerAtContextPath(new PatientDeleteHandler(), "/patientdelete", handlerList);
 		addHandlerAtContextPath(new DICOMHeadersHandler(), "/dicomtagj", handlerList);
 		addHandlerAtContextPath(new DICOMSeriesTagHandler(), "/seriestag", handlerList);
 		addHandlerAtContextPath(new DICOMWindowingHandler(), "/dicomparam", handlerList);
+		addHandlerAtContextPath(new PatientDeleteHandler(), "/patientdelete", handlerList);
 		addHandlerAtContextPath(new AimResourceHandler(), "/aimresource", handlerList);
 		addHandlerAtContextPath(new WadoHandler(), "/eWado", handlerList);
 		addHandlerAtContextPath(new EventSearchHandler(), "/eventresource", handlerList);

@@ -90,6 +90,7 @@ public class AimResourceHandler extends AbstractHandler
 
 		httpResponse.setContentType("text/xml");
 		httpResponse.setHeader("Cache-Control", "no-cache");
+		request.setHandled(true);
 
 		try {
 			responseStream = httpResponse.getWriter();
