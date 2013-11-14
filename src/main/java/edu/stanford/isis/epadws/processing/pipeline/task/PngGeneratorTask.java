@@ -56,16 +56,13 @@ public class PngGeneratorTask implements GeneratorTask
 			epadFilesTable = Dcm4CheeDatabaseUtils.createEPadFilesTableData(outputPNGFile);
 			outputPNGFile = new File(pngFilePath);
 
-			logger.info("PngGeneratorTask: creating PNG file: " + outputPNGFile.getAbsolutePath());
+			// logger.info("PngGeneratorTask: creating PNG file: " + outputPNGFile.getAbsolutePath());
 
-			boolean created = EPADFileUtils.createDirsAndFile(outputPNGFile); // Create the file
-			if (created)
-				logger.info("Using file: " + outputPNGFile.getAbsolutePath());
+			EPADFileUtils.createDirsAndFile(outputPNGFile);
 
 			outputPNGStream = new FileOutputStream(outputPNGFile);
 			ImageIO.write(instance.getPackedImage(), "png", outputPNGStream);
 
-			logger.info("Finished writing PNG file: " + outputPNGFile);
 			epadFilesTable = Dcm4CheeDatabaseUtils.createEPadFilesTableData(outputPNGFile);
 			queries
 					.updateEpadFile(epadFilesTable.get("file_path"), PngProcessingStatus.DONE, getFileSize(epadFilesTable), "");
@@ -81,8 +78,7 @@ public class PngGeneratorTask implements GeneratorTask
 					"General Exception: " + e.getMessage());
 		} finally {
 			if (inputDICOMFile.getName().endsWith(".tmp")) {
-				boolean res = inputDICOMFile.delete();
-				logger.info("Deleted temporary DICOM file : " + res);
+				inputDICOMFile.delete();
 			}
 			if (outputPNGStream != null) {
 				try {

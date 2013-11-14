@@ -214,7 +214,6 @@ public class DicomSendTask implements Runnable
 	 */
 	public static void main(String[] args)
 	{
-		System.out.println("testing spaces in directory. ");
 		String dirWithoutSpace = "/home/epad/cureData/9/9_40_456/";
 		String dirWithSpace = "/home/epad/cureData/9/9 40 456/";
 

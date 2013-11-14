@@ -217,7 +217,6 @@ public class DicomTagFileUtils
 	 */
 	public static Map<String, String> readTagFile(File tagFile)
 	{
-		System.out.println("Read the tag file from = " + tagFile.getAbsolutePath());
 		Map<String, String> tagMap = new HashMap<String, String>();
 
 		if (tagFile.getName().toLowerCase().endsWith(".dcm")) {

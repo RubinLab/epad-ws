@@ -59,9 +59,7 @@ public class DicomHeadersTask implements Runnable
 				logger.warning("Couldn't get tags for: " + dicomInputFile.getAbsolutePath(), e);
 			}
 
-			boolean created = EPADFileUtils.createDirsAndFile(outputFile);
-			if (created)
-				logger.info("DICOMHeadersTask, using temporary file: " + outputFile.getAbsolutePath());
+			EPADFileUtils.createDirsAndFile(outputFile);
 
 			File tagFile = outputFile;
 			tagFileWriter = new FileWriter(tagFile);

@@ -42,7 +42,6 @@ public class PngGeneratorProcess implements Runnable
 				GeneratorTask task = pngTaskQueue.poll(500, TimeUnit.MILLISECONDS);
 				if (task == null)
 					continue;
-				logger.info("Executing: " + task.toString());
 				pngExecs.execute(task);
 				readDicomHeadersTask(task);
 			} catch (Exception e) {
@@ -60,7 +59,6 @@ public class PngGeneratorProcess implements Runnable
 		try {
 			taskType = task.getTaskType();
 			String tagPath = task.getTagFilePath();
-			logger.info("Creating new DicomHeadersTask");
 			DicomHeadersTask dicomHeadersTask = new DicomHeadersTask(task.getInputFile(), new File(tagPath));
 			tagExec.execute(dicomHeadersTask);
 		} catch (Exception e) {

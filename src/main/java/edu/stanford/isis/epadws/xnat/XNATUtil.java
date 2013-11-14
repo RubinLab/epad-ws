@@ -372,7 +372,7 @@ public class XNATUtil
 	{
 		String result = dicomPatientID.replaceAll("[^a-zA-Z0-9\\\\.\\\\-_]", "_").replaceAll("\\\\^", "_");
 
-		log.info("dicomPatientID2XNATSubjectLabel: in=" + dicomPatientID + ", out=" + result);
+		// log.info("dicomPatientID2XNATSubjectLabel: in=" + dicomPatientID + ", out=" + result);
 
 		return result;
 	}

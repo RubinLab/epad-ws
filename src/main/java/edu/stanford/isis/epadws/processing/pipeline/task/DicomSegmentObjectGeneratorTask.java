@@ -199,16 +199,15 @@ public class DicomSegmentObjectGeneratorTask implements GeneratorTask
 
 	private void generateAIMSegmentationFile(File tagFile) throws Exception
 	{
-
 		// Read the tag file
 		Map<String, String> tags = DicomTagFileUtils.readTagFile(tagFile);
 
-		System.out.println("SOP Class UID=" + tags.get("SOP Class UID"));
-		System.out.println("SOP Instance UID=" + tags.get("SOP Instance UID"));
+		logger.info("SOP Class UID=" + tags.get("SOP Class UID"));
+		logger.info("SOP Instance UID=" + tags.get("SOP Instance UID"));
 
-		System.out.println("Study Instance UID=" + tags.get("Study Instance UID"));
-		System.out.println("Series Instance UID=" + tags.get("Series Instance UID"));
-		System.out.println("Referenced SOP Instance UID=" + tags.get("Referenced SOP Instance UID"));
+		logger.info("Study Instance UID=" + tags.get("Study Instance UID"));
+		logger.info("Series Instance UID=" + tags.get("Series Instance UID"));
+		logger.info("Referenced SOP Instance UID=" + tags.get("Referenced SOP Instance UID"));
 
 		// ----------------generate an AIM file
 		ImageAnnotation imageAnnotation = new ImageAnnotation(0, "", "2012-10-17T10:22:40", "segmentation", "SEG",
@@ -269,7 +268,7 @@ public class DicomSegmentObjectGeneratorTask implements GeneratorTask
 		// Adding Person to ImageAnnotation
 		imageAnnotation.addPerson(person);
 
-		System.out.println("SaveToServer AIM SegmentationFile " + imageAnnotation.getUniqueIdentifier());
+		logger.info("SaveToServer AIM SegmentationFile " + imageAnnotation.getUniqueIdentifier());
 		try {
 			saveToServer(imageAnnotation);
 		} catch (AimException e) {

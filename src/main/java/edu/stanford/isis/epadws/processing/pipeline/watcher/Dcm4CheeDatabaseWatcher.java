@@ -57,7 +57,7 @@ public class Dcm4CheeDatabaseWatcher implements Runnable
 					float percentComplete = mySqlQueries.getPercentComplete(seriesIUid);
 					DicomSeriesDescriptionTracker.getInstance().setPercentComplete(seriesIUid, percentComplete);
 
-					logger.info("DCM4CHEE new series found - #images=" + numInstances + ", desc=" + seriesDesc + ", series iuid="
+					logger.info("New series (" + seriesDesc + ") found in DCM4CHEE with " + numInstances + " images and ID "
 							+ seriesIUid);
 				}
 				Thread.sleep(500);
@@ -69,13 +69,11 @@ public class Dcm4CheeDatabaseWatcher implements Runnable
 
 	private void submitSeriesForPngGeneration(DicomSeriesDescription dicomSeriesDescription)
 	{
-		logger.info("Submitting series for PNG generation: " + dicomSeriesDescription.getSeriesUID());
 		dcm4CheeSeriesWatcherQueue.offer(dicomSeriesDescription);
 	}
 
 	private void submitSeriesForXNATGeneration(DicomSeriesDescription dicomSeriesDescription)
 	{
-		logger.info("Submitting series for XNAT generation: " + dicomSeriesDescription.getSeriesUID());
 		xnatSeriesWatcherQueue.offer(dicomSeriesDescription);
 	}
 }

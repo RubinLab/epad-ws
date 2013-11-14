@@ -645,16 +645,15 @@ public class MySqlQueriesImpl implements MySqlQueries
 			List<Map<String, String>> dicomImageFileDescriptions = getDICOMImageFileDescriptions(seriesIUID);
 
 			// Get list of instance IDs for images in series from ePAD database table (epaddb.epad_files).
-			List<String> finishedImageInstanceIDs = getFinishedDICOMImageInstanceIDsForSeries(seriesIUID);
+			List<String> finishedDICOMImageInstanceIDs = getFinishedDICOMImageInstanceIDsForSeries(seriesIUID);
 
-			logger.info("getUnprocessedPngFilesSeries... has: " + dicomImageFileDescriptions.size()
-					+ " images with files and " + finishedImageInstanceIDs.size() + " finished images for series="
-					+ shortenSting(seriesIUID));
+			// logger.info("Found " + dicomImageFileDescriptions.size() + " unprocessed DICOM image(s) with files and "
+			// + finishedDICOMImageInstanceIDs.size() + " processed image(s) for series " + shortenSting(seriesIUID));
 
 			for (Map<String, String> dicomImageFileDescription : dicomImageFileDescriptions) {
 				String sopIdWithFile = dicomImageFileDescription.get("sop_iuid");
 
-				if (!finishedImageInstanceIDs.contains(sopIdWithFile)) {
+				if (!finishedDICOMImageInstanceIDs.contains(sopIdWithFile)) {
 					dicomFilesWithoutPNGImagesFileDescriptions.add(dicomImageFileDescription);
 				}
 			}
@@ -916,15 +915,13 @@ public class MySqlQueriesImpl implements MySqlQueries
 	public float getPercentComplete(String seriesUID)
 	{
 		// for a given series look at the number is instance. vs the number that has a unique file.
-
 		int nPngFiles = getNumberOfPngFiles(seriesUID);
 		int nInstances = getNumberOfInstances(seriesUID);
 
 		if (nInstances <= 0) {
-			logger.info("WARNING: series with zero instance might be Segmentation Object. seriesUID=" + seriesUID);
+			logger.info("WARNING: series " + seriesUID + " with zero instances might be segmentation object");
 			return 0.01f;
 		}
-
 		float percent = nPngFiles / nInstances;
 		return percent;
 	}

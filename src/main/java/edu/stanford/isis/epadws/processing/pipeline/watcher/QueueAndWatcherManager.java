@@ -107,16 +107,14 @@ public class QueueAndWatcherManager
 					EPADTools.feedFileWithDICOMFromWADO(temp, dicomImageDescription);
 					inputDICOMFile = temp;
 				} catch (IOException e) {
-					logger.warning("Exception when creating temp image : " + dicomImageDescription.get("sop_iuid"), e);
+					logger.warning("Exception when creating temporary image : " + dicomImageDescription.get("sop_iuid"), e);
 				}
 			}
 			String outputPNGFilePath = createOutputPNGFilePathForDicomImage(dicomImageDescription);
 			if (!queries.hasEpadFile(outputPNGFilePath)) {
 				if (PixelMedUtils.isDicomSegmentationObject(inputDICOMFilePath)) { // Generate slices of PNG mask
-					logger.info("SeriesWatcher has: " + dicomImageDescription.get("sop_iuid") + " DICOM segmentation object.");
 					processDicomSegmentationObject(outputPNGFilePath, inputDICOMFilePath);
 				} else { // Generate PNG file.
-					logger.info("SeriesWatcher has: " + dicomImageDescription.get("sop_iuid") + " DICOM object.");
 					createPNGFileForDICOMImage(outputPNGFilePath, inputDICOMFile);
 				}
 			}
@@ -171,9 +169,6 @@ public class QueueAndWatcherManager
 		insertEpadFile(queries, outputPNGFile);
 		PngGeneratorTask pngTask = new PngGeneratorTask(inputDICOMFile, outputPNGFile);
 		pngGeneratorTaskQueue.offer(pngTask);
-
-		logger.info("Offering to PngTaskQueue: PNG file path=" + outputPNGFilePath + " DICOM file path="
-				+ inputDICOMFile.getAbsolutePath());
 	}
 
 	private void insertEpadFile(MySqlQueries queries, File outputPNGFile)

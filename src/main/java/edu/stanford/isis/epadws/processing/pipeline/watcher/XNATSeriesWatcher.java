@@ -59,7 +59,7 @@ public class XNATSeriesWatcher implements Runnable
 					String dicomPatientName = dicomSeriesDescription.getPatientName();
 					String xnatSubjectLabel = XNATUtil.dicomPatientID2XNATSubjectLabel(dicomPatientID);
 
-					logger.info("XNAT series watcher found new DICOM study with ID" + dicomStudyIUID + " for patient "
+					logger.info("XNAT series watcher found new DICOM study " + dicomStudyIUID + " for patient "
 							+ dicomPatientName + " with ID " + dicomPatientID);
 
 					createXNATStudy(xnatUploadProjectID, xnatSubjectLabel, dicomPatientName, dicomStudyIUID);

@@ -15,21 +15,23 @@ public class DicomSeriesDescription
 {
 	private static final EPADLogger logger = EPADLogger.getInstance();
 
+	private final int numberOfInstances;
 	private final ArrayList<DicomImageDescription> instances;
 	private final String studyIUID;
 	private final String seriesUID;
 	private final String patientName;
 	private final String patientID;
 
-	public DicomSeriesDescription(int numInstance, String seriesUID, String studyIUID, String patientName,
+	public DicomSeriesDescription(int numberOfInstance, String seriesUID, String studyIUID, String patientName,
 			String patientID)
 	{
-		if (numInstance < 1)
+		if (numberOfInstance < 1)
 			throw new IllegalArgumentException("numInstances must be a positive value.");
 
+		this.numberOfInstances = numberOfInstance;
 		int instanceSize = 2000;
-		if (instanceSize < numInstance + 1)
-			instanceSize = 2 * numInstance;
+		if (instanceSize < numberOfInstances + 1)
+			instanceSize = 2 * numberOfInstances;
 
 		instances = new ArrayList<DicomImageDescription>(instanceSize);
 		for (int i = 0; i < instanceSize + 1; i++)
@@ -59,6 +61,11 @@ public class DicomSeriesDescription
 	public String getPatientID()
 	{
 		return patientID;
+	}
+
+	public int getNumberOfInstances()
+	{
+		return numberOfInstances;
 	}
 
 	public boolean hasInstance(int index)

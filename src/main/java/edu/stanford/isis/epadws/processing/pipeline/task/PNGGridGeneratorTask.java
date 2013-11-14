@@ -50,9 +50,7 @@ public class PngGridGeneratorTask implements GeneratorTask
 			logger.info("PNGGridGeneratorTask: creating PNG grid file: " + outputPNGFile.getAbsolutePath());
 			epadFilesTable = Dcm4CheeDatabaseUtils.createEPadFilesTableData(outputPNGFile);
 
-			boolean created = EPADFileUtils.createDirsAndFile(outputPNGFile); // Create the file
-			if (created)
-				logger.info("Using file: " + outputPNGFile.getAbsolutePath());
+			EPADFileUtils.createDirsAndFile(outputPNGFile);
 
 			boolean success = PNGGridGenerator.createPNGGridFile(inputPNGGridFiles, outputPNGFile, INSET_IMAGE_SIZE,
 					IMAGES_PER_AXIS, 0, false);

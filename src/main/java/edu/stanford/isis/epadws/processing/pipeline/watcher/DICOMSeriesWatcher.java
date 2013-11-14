@@ -66,14 +66,12 @@ public class DicomSeriesWatcher implements Runnable
 
 		while (!shutdownSignal.hasShutdown()) {
 			try {
-				DicomSeriesDescription dicomSeriesDescription = dicomSeriesWatcherQueue.poll(5000, TimeUnit.MILLISECONDS);
+				DicomSeriesDescription dicomSeriesDescription = dicomSeriesWatcherQueue.poll(1000, TimeUnit.MILLISECONDS);
 
 				if (dicomSeriesDescription != null) {
-					logger.info("Series watcher found new series with series UID " + dicomSeriesDescription.getSeriesUID());
+					logger.info("Series watcher found new series with " + dicomSeriesDescription.getNumberOfInstances()
+							+ " instance(s) and series UID " + dicomSeriesDescription.getSeriesUID());
 					dicomSeriesDescriptionTracker.add(new DicomSeriesStatus(dicomSeriesDescription));
-				}
-				if (dicomSeriesDescriptionTracker.getStatusSet().size() > 0) {
-					logger.info("DICOM series tracker has: " + dicomSeriesDescriptionTracker.getStatusSet().size() + " series.");
 				}
 				// Loop through all new series and find images that have no corresponding PNG file recorded in ePAD database.
 				for (DicomSeriesStatus currentSeriesStatus : dicomSeriesDescriptionTracker.getStatusSet()) {
@@ -83,17 +81,16 @@ public class DicomSeriesWatcher implements Runnable
 							.getUnprocessedDICOMImageFileDescriptions(currentSeriesDescription.getSeriesUID());
 
 					if (unprocessedDICOMImageFileDescriptions.size() > 0) {
-						logger.info("Found " + unprocessedDICOMImageFileDescriptions.size() + " unprocessed DICOM image(s).");
+						logger.info("Found " + unprocessedDICOMImageFileDescriptions.size()
+								+ " unprocessed DICOM image(s) for series " + currentSeriesDescription.getSeriesUID());
 						// DicomSeriesOrder tracks instance order
 						currentSeriesDescription.updateImageDescriptions(unprocessedDICOMImageFileDescriptions);
 						currentSeriesStatus.registerActivity();
 						currentSeriesStatus.setState(DicomImageProcessingState.IN_PIPELINE);
-						logger.info("Adding to PNG generator task pipeline" + queueAndWatcherManager);
 						queueAndWatcherManager.addToPNGGeneratorTaskPipeline(unprocessedDICOMImageFileDescriptions);
 					} else { // There are no unprocessed PNG files left.
 						if (currentSeriesStatus.getProcessingState() == DicomImageProcessingState.IN_PIPELINE) {
-							logger.info("No unprocesses PNG files left for series with UID "
-									+ currentSeriesDescription.getSeriesUID());
+							logger.info("No unprocessed PNG files left for series " + currentSeriesDescription.getSeriesUID());
 							/*
 							 * List<Map<String, String>> processedPNGImages = mySqlQueries
 							 * .getProcessedDICOMImageFileDescriptionsOrdered(currentSeriesDescription.getSeriesUID());
@@ -153,7 +150,8 @@ public class DicomSeriesWatcher implements Runnable
 	private void createPngGridFileForPNGImages(File inputPNGFile, List<File> inputPNGGridFiles,
 			String outputPNGGridFilePath)
 	{
-		logger.info("Offering to PNGGridTaskQueue: out=" + outputPNGGridFilePath + " in=" + inputPNGFile.getAbsolutePath());
+		// logger.info("Offering to PNGGridTaskQueue: out=" + outputPNGGridFilePath + " in=" +
+		// inputPNGFile.getAbsolutePath());
 
 		File outputPNGFile = new File(outputPNGGridFilePath);
 		MySqlQueries queries = MySqlInstance.getInstance().getMysqlQueries();

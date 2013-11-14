@@ -104,7 +104,8 @@ public class DICOMSearchHandler extends AbstractHandler
 		final MySqlQueries dbQueries = MySqlInstance.getInstance().getMysqlQueries();
 		final String[] parts = queryString.split("=");
 		final String searchString = parts[1].trim();
-		final List<Map<String, String>> searchResult = dbQueries.doStudySearchInDcm4Chee(searchType.toString(), searchString);
+		final List<Map<String, String>> searchResult = dbQueries.doStudySearchInDcm4Chee(searchType.toString(),
+				searchString);
 		boolean isFirst = true;
 
 		log.info("DICOMSearchHandler study search found " + searchResult.size() + " result(s).");
@@ -158,7 +159,7 @@ public class DICOMSearchHandler extends AbstractHandler
 		final List<Map<String, String>> series = dbQueries.findSeriesInStudyInDcm4Chee(studyUID);
 		boolean isFirst = true;
 
-		log.info("DICOMSearchHandler series search found " + series.size() + " result(s) for study with UID " + studyUID);
+		log.info("DICOMSearchHandler series search found " + series.size() + " result(s) for study " + studyUID);
 
 		outputStream.append("{ \"ResultSet\": [");
 
