@@ -60,7 +60,8 @@ public class XNATSessionHandler extends AbstractHandler
 					if (xnatSessionResponse.statusCode == HttpServletResponse.SC_OK) {
 						String jsessionID = xnatSessionResponse.response;
 						responseStream.append(jsessionID);
-						httpResponse.setHeader("Set-Cookie", "JSESSIONID=" + jsessionID);
+						httpResponse.addHeader("Set-Cookie", "JSESSIONID=" + jsessionID);
+						httpResponse.addHeader("Set-Cookie", "ePADLoggedinUser=" + username);
 						httpResponse.setHeader("Access-Control-Allow-Origin", origin);
 						httpResponse.setHeader("Access-Control-Allow-Credentials", "true");
 						statusCode = HttpServletResponse.SC_OK;

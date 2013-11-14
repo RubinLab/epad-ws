@@ -55,3 +55,36 @@ def process_epad_dicom_directory(epad_dicom_directory):
       else:
         print 'Warning: no DICOM header file found for study', study_uid
   return study_uid_patient_name_id_triple
+
+def get_dicom_header_files(epad_dicom_directory):
+  study_dir_find_args = ['find', epad_dicom_directory, '-type', 'd', '-mindepth', '1', '-maxdepth', '1']
+  dicom_header_files = []
+  
+  study_dirs = subprocess.check_output(study_dir_find_args)
+  for study_dir in study_dirs.split('\n'):
+    if study_dir: # Process directories directly under the base directory (which should contain a DICOM study directory)
+      study_uid = os.path.basename(study_dir).replace('_', '.') # ePAD converts . to _ in file names
+      dicom_header_file_path = get_dicom_header_file_path(study_dir)      
+      if dicom_header_file_path: 
+        dicom_header_files.append(dicom_header_file_path)
+      else:
+        print 'Warning: no DICOM header file found for study', study_uid
+  return dicom_header_files
+
+def get_study_patient_id_name_dicom_elements(epad_dicom_directory):
+  study_uid_patient_name_id_triple = []
+
+  for dicom_header_file_path in get_dicom_header_files(epad_dicom_directory):
+      patient_id_dicom_element = get_dicom_element(dicom_header_file_path, patient_id_dicom_element_name) 
+      if patient_id_dicom_element: 
+          patient_name_dicom_element = get_dicom_element(dicom_header_file_path, patient_name_dicom_element_name)
+          if patient_name_dicom_element:  
+              patient_id = get_dicom_element_value(patient_id_dicom_element)
+              patient_name = get_dicom_element_value(patient_name_dicom_element)
+              if patient_id and patient_name:
+                  study_uid_patient_name_id_triple.append( (study_uid, patient_id, patient_name) )
+              else:
+                  print 'Warning: no patient name found in DICOM header file', dicom_header_file_path
+              else:
+                  print 'Warning: no patient ID found in DICOM header file', dicom_header_file_path
+  return study_uid_patient_name_id_triple
