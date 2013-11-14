@@ -19,12 +19,12 @@ import edu.stanford.isis.epadws.processing.pipeline.threads.ShutdownSignal;
 import edu.stanford.isis.epadws.xnat.XNATUtil;
 
 /**
- * Watches for a new directory containing ZIP or DICOOM files in the ePAD upload directory. When a new directory is
- * found it puts a "dir.found" file into it. If the upload is a ZIP file it waits for the ZIP upload to complete and
- * then unzips it.
+ * Watches for a new directory containing ZIP or DICOM files in the ePAD upload directory. When a new directory is found
+ * it puts a "dir.found" file into it. If the upload is a ZIP file it waits for the ZIP upload to complete and then
+ * unzips it.
  * <p>
- * It then generates DICOM tag efiles for each DICOM file, creates XNAT entities for the DICOM files, and sends the
- * DICOM files to DCM4CHEE.
+ * It then generates DICOM tag files for each DICOM file, creates XNAT entities for the DICOM files, and sends the DICOM
+ * files to DCM4CHEE.
  * 
  * @author amsnyder
  */

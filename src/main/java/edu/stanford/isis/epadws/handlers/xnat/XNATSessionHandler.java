@@ -60,10 +60,10 @@ public class XNATSessionHandler extends AbstractHandler
 					if (xnatSessionResponse.statusCode == HttpServletResponse.SC_OK) {
 						String jsessionID = xnatSessionResponse.response;
 						responseStream.append(jsessionID);
-						httpResponse.addHeader("Set-Cookie", "JSESSIONID=" + jsessionID);
-						httpResponse.addHeader("Set-Cookie", "ePADLoggedinUser=" + username);
-						httpResponse.setHeader("Access-Control-Allow-Origin", origin);
-						httpResponse.setHeader("Access-Control-Allow-Credentials", "true");
+						httpResponse.addHeader("Set-Cookie", "JSESSIONID=" + jsessionID + ";path=/");
+						httpResponse.addHeader("Set-Cookie", "ePADLoggedinUser=" + username + ";path=/");
+						httpResponse.addHeader("Access-Control-Allow-Origin", origin);
+						httpResponse.addHeader("Access-Control-Allow-Credentials", "true");
 						statusCode = HttpServletResponse.SC_OK;
 					} else if (xnatSessionResponse.statusCode == HttpServletResponse.SC_UNAUTHORIZED) {
 						log.info(UNAUTHORIZED_USER_XNAT_RESPONSE_MESSAGE);
