@@ -6,7 +6,6 @@ import java.util.concurrent.BlockingQueue;
 
 import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epadws.processing.model.DicomSeriesDescription;
-import edu.stanford.isis.epadws.processing.model.DicomSeriesDescriptionTracker;
 import edu.stanford.isis.epadws.processing.persistence.MySqlInstance;
 import edu.stanford.isis.epadws.processing.persistence.MySqlQueries;
 import edu.stanford.isis.epadws.processing.pipeline.threads.ShutdownSignal;
@@ -54,8 +53,6 @@ public class Dcm4CheeDatabaseWatcher implements Runnable
 					mySqlQueries.updateSeriesStatusCodeEx(325, seriesIUid);
 					submitSeriesForPngGeneration(dicomSeriesDescription); // Submit this series to generate all the PNG files.
 					submitSeriesForXNATGeneration(dicomSeriesDescription); // Submit this series to generate XNAT information.
-					float percentComplete = mySqlQueries.getPercentComplete(seriesIUid);
-					DicomSeriesDescriptionTracker.getInstance().setPercentComplete(seriesIUid, percentComplete);
 
 					logger.info("New DICOM series (" + patientName + ", " + seriesDesc + ") found in DCM4CHEE with "
 							+ numInstances + " images and ID " + seriesIUid);

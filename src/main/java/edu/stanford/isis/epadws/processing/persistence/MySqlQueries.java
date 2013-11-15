@@ -67,7 +67,7 @@ public interface MySqlQueries
 	 * <p>
 	 * Each description is a map with keys: sop_iuid, inst_no, series_iuid, filepath, file_size.
 	 */
-	List<Map<String, String>> getUnprocessedDICOMImageFileDescriptions(String seriesIUID);
+	List<Map<String, String>> getUnprocessedDicomImageFileDescriptions(String seriesIUID);
 
 	List<Map<String, String>> getProcessedDICOMImageFileDescriptionsOrdered(String seriesIUID);
 

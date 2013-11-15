@@ -40,7 +40,7 @@ import edu.stanford.isis.epadws.xnat.XNATUtil;
  * curl -b JSESSIONID=<id> -X GET "http://epad-dev2.stanford.edu:8080/seriesorderj/?series_iuid=1.2.840.113619.2.55.3.25168424.5576.1168603848.697"
  * </code>
  */
-public class DICOMSeriesOrderHandler extends AbstractHandler
+public class DicomSeriesOrderHandler extends AbstractHandler
 {
 	private static final EPADLogger log = EPADLogger.getInstance();
 

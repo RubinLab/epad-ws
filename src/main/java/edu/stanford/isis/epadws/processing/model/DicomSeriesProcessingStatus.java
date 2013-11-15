@@ -3,11 +3,10 @@ package edu.stanford.isis.epadws.processing.model;
 import edu.stanford.isis.epad.common.util.EPADLogger;
 
 /**
- * Pipeline processing state of a DICOM series.
+ * Pipeline processing state of a DICOM series. A {@link DicomSeriesProcessingStatusTracker} holds these for all series
+ * on the pipeline.
  * <p>
  * When a new series is detected, it either runs to completion or until it is idle for a set amount of time.
- * 
- * @author amsnyder
  */
 public class DicomSeriesProcessingStatus
 {
@@ -19,31 +18,36 @@ public class DicomSeriesProcessingStatus
 
 	private final DicomSeriesDescription dicomSeriesDescription;
 
-	private DicomImageProcessingState imageProcessingState;
+	private DicomImageProcessingState dicomImageProcessingState;
 
 	public DicomSeriesProcessingStatus(DicomSeriesDescription dicomSeriesDescription)
 	{
 		if (dicomSeriesDescription == null)
-			throw new IllegalArgumentException("DICOM series description cannot be null.");
+			throw new IllegalArgumentException("DICOM series description cannot be null");
 
 		this.dicomSeriesDescription = dicomSeriesDescription;
 		lastActivityTimeStamp = System.currentTimeMillis();
-		imageProcessingState = DicomImageProcessingState.NEW;
+		dicomImageProcessingState = DicomImageProcessingState.NEW;
 	}
 
-	public DicomSeriesDescription getSeriesDescription()
+	public float percentComplete()
+	{
+		return dicomSeriesDescription.percentComplete();
+	}
+
+	public DicomSeriesDescription getDicomSeriesDescription()
 	{
 		return dicomSeriesDescription;
 	}
 
 	public void setState(DicomImageProcessingState pState)
 	{
-		imageProcessingState = pState;
+		dicomImageProcessingState = pState;
 	}
 
 	public DicomImageProcessingState getProcessingState()
 	{
-		return imageProcessingState;
+		return dicomImageProcessingState;
 	}
 
 	/**
@@ -59,8 +63,8 @@ public class DicomSeriesProcessingStatus
 			return true;
 		}
 		if (dicomSeriesDescription.isComplete()) {
-			logger.info("Series: " + dicomSeriesDescription.getSeriesUID() + " is complete. #images="
-					+ dicomSeriesDescription.size());
+			logger.info("Series: " + dicomSeriesDescription.getSeriesUID() + " is complete with "
+					+ dicomSeriesDescription.getNumberOfInstances() + " instances");
 			return true;
 		}
 		return false;

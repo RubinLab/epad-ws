@@ -41,7 +41,7 @@ import edu.stanford.isis.epadws.handlers.coordination.CoordinationHandler;
 import edu.stanford.isis.epadws.handlers.dicom.DICOMDeleteHandler;
 import edu.stanford.isis.epadws.handlers.dicom.DICOMHeadersHandler;
 import edu.stanford.isis.epadws.handlers.dicom.DICOMSearchHandler;
-import edu.stanford.isis.epadws.handlers.dicom.DICOMSeriesOrderHandler;
+import edu.stanford.isis.epadws.handlers.dicom.DicomSeriesOrderHandler;
 import edu.stanford.isis.epadws.handlers.dicom.DICOMSeriesTagHandler;
 import edu.stanford.isis.epadws.handlers.dicom.DICOMWindowingHandler;
 import edu.stanford.isis.epadws.handlers.dicom.PatientDeleteHandler;
@@ -184,7 +184,7 @@ public class Main
 		addHandlerAtContextPath(new ImageCheckHandler(), "/imagecheck", handlerList);
 		addHandlerAtContextPath(new CoordinationHandler(), "/coordination", handlerList);
 		addHandlerAtContextPath(new DICOMSearchHandler(), "/searchj", handlerList);
-		addHandlerAtContextPath(new DICOMSeriesOrderHandler(), "/seriesorderj", handlerList);
+		addHandlerAtContextPath(new DicomSeriesOrderHandler(), "/seriesorderj", handlerList);
 		addHandlerAtContextPath(new DICOMDeleteHandler(), "/dicomdelete", handlerList);
 		addHandlerAtContextPath(new DICOMHeadersHandler(), "/dicomtagj", handlerList);
 		addHandlerAtContextPath(new DICOMSeriesTagHandler(), "/seriestag", handlerList);

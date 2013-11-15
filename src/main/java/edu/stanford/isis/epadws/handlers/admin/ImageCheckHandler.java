@@ -96,7 +96,7 @@ public class ImageCheckHandler extends AbstractHandler
 		// exists.
 		for (String seriesIUID : seriesIUIDs) {
 			final List<Map<String, String>> unprocessedDICOMImageFileDescriptionsInSeries = dbQueries
-					.getUnprocessedDICOMImageFileDescriptions(seriesIUID);
+					.getUnprocessedDicomImageFileDescriptions(seriesIUID);
 			final int numberOfUnprocessedImages = unprocessedDICOMImageFileDescriptionsInSeries.size();
 
 			if (numberOfUnprocessedImages != 0) {

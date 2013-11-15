@@ -7,9 +7,8 @@ import java.util.Map;
 import edu.stanford.isis.epad.common.util.EPADLogger;
 
 /**
- * Keeps all the information about each instance in a series and the instance order.
- * 
- * @author amsnyder
+ * Keeps all the information about each instance in a series and the instance order. A
+ * {@link DicomSeriesProcessingStatus} tracks this series when it is in the pipeline.
  */
 public class DicomSeriesDescription
 {
@@ -63,6 +62,25 @@ public class DicomSeriesDescription
 		return patientID;
 	}
 
+	public boolean isComplete()
+	{
+		int size = instances.size();
+		for (int i = 0; i < size; i++) {
+			if (!hasInstance(i)) {
+				return false;
+			}
+		}
+		return true;
+	}
+
+	public float percentComplete()
+	{
+		int numberOfInstances = getNumberOfInstances();
+		int numberOfCompletedInstances = getNumberOfCompletedInstances();
+
+		return (numberOfCompletedInstances) / ((float)numberOfInstances) * 100.0f;
+	}
+
 	public int getNumberOfCompletedInstances()
 	{
 		int count = 0;
@@ -75,23 +93,12 @@ public class DicomSeriesDescription
 		return count;
 	}
 
-	public boolean isComplete()
-	{
-		int size = instances.size();
-		for (int i = 0; i < size; i++) {
-			if (!hasInstance(i)) {
-				return false;
-			}
-		}
-		return true;
-	}
-
 	public int getNumberOfInstances()
 	{
 		return numberOfInstances;
 	}
 
-	public int size()
+	private int size()
 	{
 		return instances.size();
 	}
@@ -125,10 +132,10 @@ public class DicomSeriesDescription
 		}
 	}
 
-	public void updateImageDescriptions(List<Map<String, String>> imageDescriptions)
+	public void updateWithDicomImageFileDescriptions(List<Map<String, String>> dicomImageFileDescriptions)
 	{
-		for (Map<String, String> imageDescription : imageDescriptions) {
-			String instanceNum = imageDescription.get("inst_no");
+		for (Map<String, String> dicomImageFileDescription : dicomImageFileDescriptions) {
+			String instanceNumberString = dicomImageFileDescription.get("inst_no");
 
 			// //ToDo: delete below once debugged.
 			// if(instanceNum==null){
@@ -140,34 +147,31 @@ public class DicomSeriesDescription
 			// }
 			// //ToDo: delete above once debugged.
 
-			int instNum = Integer.parseInt(instanceNum);
-			String sopInstanceUID = imageDescription.get("sop_iuid");
-
-			addNewImage(instNum, sopInstanceUID);
+			int instanceNumber = Integer.parseInt(instanceNumberString);
+			String sopInstanceUID = dicomImageFileDescription.get("sop_iuid");
+			addCompletedInstance(instanceNumber, sopInstanceUID);
 		}
 	}
 
 	/**
-	 * New a new image. Add it to the list.
-	 * 
-	 * @param instNum int
+	 * @param instanceNumber int
 	 * @param sopInstanceUID String
 	 */
-	private void addNewImage(int instNum, String sopInstanceUID)
+	private void addCompletedInstance(int instanceNumber, String sopInstanceUID)
 	{
-		DicomImageDescription imageEntry = new DicomImageDescription(instNum, sopInstanceUID);
-		if (!hasInstance(instNum)) {
+		DicomImageDescription imageEntry = new DicomImageDescription(instanceNumber, sopInstanceUID);
+		if (!hasInstance(instanceNumber)) {
 			// logger.info("[TEMP LOG-DEBUGGING] adding: " + instNum + " sopInstanceUID: " + sopInstanceUID);
-			if (instances.size() < instNum + 1) {
+			if (instances.size() < instanceNumber + 1) {
 				int start = instances.size();
-				logger.info("WARNING: resizing array from=" + instances.size() + " to=" + (instNum + 1) + " series="
+				logger.info("WARNING: resizing array from=" + instances.size() + " to=" + (instanceNumber + 1) + " series="
 						+ seriesUID);
-				instances.ensureCapacity(instNum + 1);
-				for (int i = start; i < instNum + 1; i++) {
+				instances.ensureCapacity(instanceNumber + 1);
+				for (int i = start; i < instanceNumber + 1; i++) {
 					instances.add(start, null);
 				}
 			}
-			instances.set(instNum, imageEntry);
+			instances.set(instanceNumber, imageEntry);
 		}
 	}
 }

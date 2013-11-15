@@ -636,7 +636,7 @@ public class MySqlQueriesImpl implements MySqlQueries
 	}
 
 	@Override
-	public List<Map<String, String>> getUnprocessedDICOMImageFileDescriptions(String seriesIUID)
+	public List<Map<String, String>> getUnprocessedDicomImageFileDescriptions(String seriesIUID)
 	{
 		List<Map<String, String>> dicomFilesWithoutPNGImagesFileDescriptions = new ArrayList<Map<String, String>>();
 		try {
