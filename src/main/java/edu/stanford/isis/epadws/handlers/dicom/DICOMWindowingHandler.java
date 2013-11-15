@@ -46,8 +46,6 @@ public class DICOMWindowingHandler extends AbstractHandler
 		httpResponse.setContentType("text/plain");
 		request.setHandled(true);
 
-		log.info("DICOM windowing handler: " + request.toString());
-
 		try {
 			responseStream = httpResponse.getWriter();
 
@@ -108,7 +106,6 @@ public class DICOMWindowingHandler extends AbstractHandler
 			double windowCenter = 0.0;
 
 			if (srcDicomImage != null) {
-				log.info("DICOM windowing handler: image is valid");
 				Opener opener = new Opener();
 				String imageFilePath = tempDicom.getAbsolutePath();
 				ImagePlus imp = opener.openImage(imageFilePath);// ImageProcessor ip = imp.getProcessor();
@@ -124,8 +121,6 @@ public class DICOMWindowingHandler extends AbstractHandler
 			String separator = config.getParam("fieldSeparator");
 			responseStream.println("windowWidth" + separator + "windowCenter");
 			responseStream.println(windowWidth + separator + windowCenter);
-			log.info("DICOM windowing handler: " + "windowWidth" + separator + "windowCenter " + windowWidth + separator
-					+ windowCenter);
 			success = true;
 		} catch (DicomException e) {
 			log.warning("DICOM windowing handler: error reading DICOM image ", e);

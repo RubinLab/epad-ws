@@ -144,20 +144,26 @@ public class XNATUtil
 		if (!xnatUploadPropertiesFile.exists())
 			log.warning("Could not find XNAT upload properties file " + uploadFilePath);
 		else {
-			Properties xnatUploadPproperties = new Properties();
+			Properties xnatUploadProperties = new Properties();
 			FileInputStream is = null;
 			try {
+				log.warning("Found XNAT upload properties file " + uploadFilePath);
 				is = new FileInputStream(xnatUploadPropertiesFile);
-				xnatUploadPproperties.load(is);
-				String xnatProjectID = xnatUploadPproperties.getProperty("XNATProjectName");
-				String xnatSessionID = xnatUploadPproperties.getProperty("XNATSessionID");
+				xnatUploadProperties.load(is);
+				String xnatProjectID = xnatUploadProperties.getProperty("XNATProjectName");
+				String xnatSessionID = xnatUploadProperties.getProperty("XNATSessionID");
+				log.info("xnatProjectID " + xnatProjectID);
 
-				if (xnatProjectID != null || xnatSessionID != null) {
+				int numberOfDICOMFiles = 0;
+				if (xnatProjectID != null && xnatSessionID != null) {
 					for (File dicomFile : DicomTagFileUtils.listDICOMFiles(uploadDirectory)) {
 						DicomReader dicomReader = new DicomReader(dicomFile);
-						String dicomPatientName = dicomReader.getPatientName();
+						String dicomPatientName = dicomReader.getPatientName().toUpperCase(); // DCM4CHEE stores the patient name as
+																																									// upper case so we match
 						String dicomPatientID = dicomReader.getPatientID();
 						String dicomStudyUID = dicomReader.getStudyIUID();
+						// TODO Check these values for validity
+
 						/*
 						 * Map<String, String> tagMap = DicomTagFileUtils.readTagFile(dicomFile); String dicomPatientID =
 						 * DicomTagFileUtils.getTag(DicomTagFileUtils.PATIENT_ID, tagMap); String dicomPatientName =
@@ -176,12 +182,15 @@ public class XNATUtil
 								log.warning("Missing study UID in DICOM tag file " + dicomFile.getAbsolutePath());
 						} else
 							log.warning("Missing patient name in DICOM tag file " + dicomFile.getAbsolutePath());
+						numberOfDICOMFiles++;
 					}
+					if (numberOfDICOMFiles == 0)
+						log.warning("No DICOM files found in upload directory!");
 				} else {
 					log.warning("Missing XNAT project name and/or session ID in properties file" + uploadFilePath);
 				}
 			} catch (IOException e) {
-				log.warning("Error loading XNAT upload properties file " + uploadFilePath, e);
+				log.warning("Error processing upload in directory " + uploadFilePath, e);
 			} finally {
 				if (is != null) {
 					try {
@@ -191,6 +200,7 @@ public class XNATUtil
 					}
 				}
 			}
+
 		}
 	}
 

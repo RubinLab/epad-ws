@@ -16,7 +16,7 @@ import edu.stanford.isis.epadws.processing.persistence.MySqlQueries;
 public class DicomSeriesDescriptionTracker
 {
 	private static final DicomSeriesDescriptionTracker ourInstance = new DicomSeriesDescriptionTracker();
-	private final Map<String, DicomSeriesStatus> statusMap = new ConcurrentHashMap<String, DicomSeriesStatus>();
+	private final Map<String, DicomSeriesProcessingStatus> statusMap = new ConcurrentHashMap<String, DicomSeriesProcessingStatus>();
 	private final Map<String, Float> completionMap = new ConcurrentHashMap<String, Float>();
 
 	public static DicomSeriesDescriptionTracker getInstance()
@@ -28,7 +28,7 @@ public class DicomSeriesDescriptionTracker
 	{
 	}
 
-	public void add(DicomSeriesStatus seriesOrderStatus)
+	public void add(DicomSeriesProcessingStatus seriesOrderStatus)
 	{
 		if (seriesOrderStatus == null) {
 			throw new IllegalArgumentException("seriesOrderStatus cannot be null.");
@@ -41,18 +41,18 @@ public class DicomSeriesDescriptionTracker
 		statusMap.put(seriesUID, seriesOrderStatus);
 	}
 
-	public void remove(DicomSeriesStatus seriesOrderStatus)
+	public void remove(DicomSeriesProcessingStatus seriesOrderStatus)
 	{
 		String seriesUID = seriesOrderStatus.getSeriesDescription().getSeriesUID();
 		statusMap.remove(seriesUID);
 	}
 
-	public Set<DicomSeriesStatus> getStatusSet()
+	public Set<DicomSeriesProcessingStatus> getStatusSet()
 	{
-		return new HashSet<DicomSeriesStatus>(statusMap.values());
+		return new HashSet<DicomSeriesProcessingStatus>(statusMap.values());
 	}
 
-	public DicomSeriesStatus get(String seriesUID)
+	public DicomSeriesProcessingStatus get(String seriesUID)
 	{
 		return statusMap.get(seriesUID);
 	}

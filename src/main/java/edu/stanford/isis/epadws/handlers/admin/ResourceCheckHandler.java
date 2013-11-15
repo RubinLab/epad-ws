@@ -27,7 +27,7 @@ public class ResourceCheckHandler extends AbstractHandler
 	// private static final String INVALID_SESSION_TOKEN_MESSAGE = "Session token is invalid";
 
 	@Override
-	public void handle(String s, Request request, HttpServletRequest httpRequest, HttpServletResponse httpResponse)
+	public void handle(String base, Request request, HttpServletRequest httpRequest, HttpServletResponse httpResponse)
 			throws IOException, ServletException
 	{
 		String origin = httpRequest.getHeader("Origin"); // CORS request should have Origin header
@@ -36,10 +36,10 @@ public class ResourceCheckHandler extends AbstractHandler
 		if (origin != null) {
 			httpResponse.setHeader("Access-Control-Allow-Origin", origin);
 			httpResponse.setHeader("Access-Control-Allow-Credentials", "true"); // Needed to allow cookies.
-			log.info("ResourceCheckHandler(CORS): " + request);
+			log.info("ResourceCheckHandler(CORS): " + base);
 		} else {
-			// httpResponse.setHeader("Access-Control-Allow-Origin", "*");
-			log.info("ResourceCheckHandler: " + request);
+			httpResponse.setHeader("Access-Control-Allow-Origin", "*");
+			log.info("ResourceCheckHandler: " + base);
 		}
 
 		request.setHandled(false);

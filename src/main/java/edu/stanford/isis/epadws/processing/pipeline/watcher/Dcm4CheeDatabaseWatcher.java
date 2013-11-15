@@ -13,7 +13,7 @@ import edu.stanford.isis.epadws.processing.pipeline.threads.ShutdownSignal;
 
 /**
  * Watch for new studies that appear with ePAD's DCM4CHEE MySQL database with the 'study-status' field set to zero,
- * which indicates that they are a new series. Add them to the series watcher queues to be subsequently processed by
+ * which indicates that they are a new series. Add them to ePAD's series watcher queues to be subsequently processed by
  * watchers (currently {@link DicomSeriesWatcher} and {@link XNATSeriesWatcher}).
  */
 public class Dcm4CheeDatabaseWatcher implements Runnable

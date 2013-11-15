@@ -151,18 +151,18 @@ public class AimResourceHandler extends AbstractHandler
 			AimException
 	{
 		queryString = queryString.trim();
-		String[] queryStrings = queryString.split("=");
+		String[] queryStrings = queryString.split("&");
 		String id1 = null;
 		String id2 = null;
+		String user = null;
 		if (queryStrings.length == 2) {
-			id1 = queryStrings[0];
-			id2 = queryStrings[1];
-		} else {
-			if (queryStrings.length == 1) {
-				id1 = queryStrings[0];
-			}
+			String[] patientIDString = queryStrings[0].split("=");
+			String[] userString = queryStrings[1].split("=");
+			id1 = patientIDString[0];
+			id2 = patientIDString[1];
+			user = userString[1];
 		}
-		ArrayList<ImageAnnotation> aims = getAIMImageAnnotations(id1, id2);
+		ArrayList<ImageAnnotation> aims = getAIMImageAnnotations(id1, id2, user);
 		logger.info("AimResourceHandler, number of AIM files found: " + aims.size());
 
 		DocumentBuilderFactory dbfac = DocumentBuilderFactory.newInstance();
@@ -240,7 +240,7 @@ public class AimResourceHandler extends AbstractHandler
 	 * @return ArrayList<ImageAnnotation>
 	 */
 	@Get
-	public ArrayList<ImageAnnotation> getAIMImageAnnotations(String id1, String id2)
+	public ArrayList<ImageAnnotation> getAIMImageAnnotations(String id1, String id2, String user)
 	{
 		ArrayList<ImageAnnotation> retAims = new ArrayList<ImageAnnotation>();
 		List<ImageAnnotation> aims = null;
@@ -251,6 +251,7 @@ public class AimResourceHandler extends AbstractHandler
 			try {
 				aims = AnnotationGetter.getImageAnnotationsFromServerByPersonNameEqual(serverUrl, namespace, collection,
 						username, password, personName, xsdFilePath);
+
 			} catch (AimException e) {
 				logger.warning("Exception on AnnotationGetter.getImageAnnotationsFromServerByPersonNameEqual " + personName, e);
 			}
@@ -260,8 +261,12 @@ public class AimResourceHandler extends AbstractHandler
 		} else if (id1.equals("patientId")) {
 			String patientId = id2;
 			try {
-				aims = AnnotationGetter.getImageAnnotationsFromServerByPersonIdEqual(serverUrl, namespace, collection,
-						username, password, patientId, xsdFilePath);
+				/*
+				 * aims = AnnotationGetter.getImageAnnotationsFromServerByPersonIdEqual(serverUrl, namespace, collection,
+				 * username, password, patientId, xsdFilePath);
+				 */
+				aims = AnnotationGetter.getImageAnnotationsFromServerByPersonIDAndUserNameEqual(serverUrl, namespace,
+						collection, username, password, patientId, user, xsdFilePath);
 			} catch (AimException e) {
 				logger.warning("Exception on AnnotationGetter.getImageAnnotationsFromServerByPersonIdEqual " + patientId, e);
 			}
@@ -283,10 +288,15 @@ public class AimResourceHandler extends AbstractHandler
 		} else if (id1.equals("annotationUID")) {
 			String annotationUID = id2;
 			if (id2.equals("all")) {
-				String query = "SELECT FROM " + collection + " WHERE (ImageAnnotation.cagridId like '0')";
+
+				// String query = "SELECT FROM " + collection + " WHERE (ImageAnnotation.cagridId like '0')";
 				try {
-					aims = AnnotationGetter.getImageAnnotationsFromServerWithAimQuery(serverUrl, namespace, username, password,
-							query, xsdFilePath);
+					aims = AnnotationGetter.getImageAnnotationsFromServerByUserLoginNameContains(serverUrl, namespace,
+							collection, username, password, user);
+					/*
+					 * aims = AnnotationGetter.getImageAnnotationsFromServerWithAimQuery(serverUrl, namespace, username, password,
+					 * query, xsdFilePath);
+					 */
 				} catch (AimException e) {
 					logger.warning("Exception on AnnotationGetter.getImageAnnotationsFromServerWithAimQuery ", e);
 				}

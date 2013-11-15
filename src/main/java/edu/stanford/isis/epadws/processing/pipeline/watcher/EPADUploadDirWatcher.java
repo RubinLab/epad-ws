@@ -100,9 +100,8 @@ public class EPADUploadDirWatcher implements Runnable
 				File zipFile = waitForZipUploadToComplete(dir);
 				unzipFiles(zipFile);
 			}
-			// DicomTagFileUtils.generateDicomTagFiles(dir);
 			XNATUtil.createXNATEntitiesFromDICOMFilesInDirectory(dir);
-			// cleanUploadDirectory(dir);
+			cleanUploadDirectory(dir);
 			sendFilesToDcm4Chee(dir);
 			deleteUploadDir(dir);
 		} catch (IOException ioe) {
@@ -119,13 +118,10 @@ public class EPADUploadDirWatcher implements Runnable
 		}
 	}
 
-	@SuppressWarnings("unused")
 	private void cleanUploadDirectory(File dir)
 	{
-		log.info("Deleting tag and properties files in upload directory " + dir.getAbsolutePath());
-
-		EPADFileUtils.deleteFilesInDirWithExtension(dir, "tag");
 		EPADFileUtils.deleteFilesInDirWithExtension(dir, "properties");
+		EPADFileUtils.deleteFilesInDirWithExtension(dir, "zip");
 	}
 
 	private boolean waitOnEmptyUploadDirectory(File dir) throws InterruptedException

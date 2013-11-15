@@ -103,7 +103,6 @@ public class XNATProjectHandler extends AbstractHandler
 			xnatMethod.setRequestHeader("Cookie", "JSESSIONID=" + jsessionID);
 			xnatStatusCode = client.executeMethod(xnatMethod);
 			if (xnatStatusCode == HttpServletResponse.SC_OK) {
-				log.info("Successfully invoked XNAT");
 				InputStream xnatResponse = null;
 				try {
 					xnatResponse = xnatMethod.getResponseBodyAsStream();

@@ -3,47 +3,47 @@ package edu.stanford.isis.epadws.processing.model;
 import edu.stanford.isis.epad.common.util.EPADLogger;
 
 /**
- * Status of the SeriesOrder class.
+ * Pipeline processing state of a DICOM series.
  * <p>
  * When a new series is detected, it either runs to completion or until it is idle for a set amount of time.
  * 
  * @author amsnyder
  */
-public class DicomSeriesStatus
+public class DicomSeriesProcessingStatus
 {
-	EPADLogger logger = EPADLogger.getInstance();
+	private static final EPADLogger logger = EPADLogger.getInstance();
 
 	private static final long MAX_IDLE_TIME = 30000;
 
 	private long lastActivityTimeStamp;
 
-	private final DicomSeriesDescription seriesOrder;
+	private final DicomSeriesDescription dicomSeriesDescription;
 
-	private DicomImageProcessingState state;
+	private DicomImageProcessingState imageProcessingState;
 
-	public DicomSeriesStatus(DicomSeriesDescription seriesOrder)
+	public DicomSeriesProcessingStatus(DicomSeriesDescription dicomSeriesDescription)
 	{
-		if (seriesOrder == null)
-			throw new IllegalArgumentException("seriesOrder cannot be null.");
+		if (dicomSeriesDescription == null)
+			throw new IllegalArgumentException("DICOM series description cannot be null.");
 
-		this.seriesOrder = seriesOrder;
+		this.dicomSeriesDescription = dicomSeriesDescription;
 		lastActivityTimeStamp = System.currentTimeMillis();
-		state = DicomImageProcessingState.NEW;
+		imageProcessingState = DicomImageProcessingState.NEW;
 	}
 
 	public DicomSeriesDescription getSeriesDescription()
 	{
-		return seriesOrder;
+		return dicomSeriesDescription;
 	}
 
 	public void setState(DicomImageProcessingState pState)
 	{
-		state = pState;
+		imageProcessingState = pState;
 	}
 
 	public DicomImageProcessingState getProcessingState()
 	{
-		return state;
+		return imageProcessingState;
 	}
 
 	/**
@@ -55,11 +55,12 @@ public class DicomSeriesStatus
 	{
 		long currTime = System.currentTimeMillis();
 		if (currTime > lastActivityTimeStamp + MAX_IDLE_TIME) {
-			logger.info("Series: " + seriesOrder.getSeriesUID() + " is idle.");
+			logger.info("Series: " + dicomSeriesDescription.getSeriesUID() + " is idle.");
 			return true;
 		}
-		if (seriesOrder.isComplete()) {
-			logger.info("Series: " + seriesOrder.getSeriesUID() + " is complete. #images=" + seriesOrder.size());
+		if (dicomSeriesDescription.isComplete()) {
+			logger.info("Series: " + dicomSeriesDescription.getSeriesUID() + " is complete. #images="
+					+ dicomSeriesDescription.size());
 			return true;
 		}
 		return false;

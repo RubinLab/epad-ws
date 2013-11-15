@@ -174,13 +174,19 @@ public class DicomTagFileUtils
 		Set<File> files = new HashSet<File>();
 		if (dir.listFiles() != null) {
 			for (File entry : dir.listFiles()) {
-				if (entry.isFile() && entry.getName().toLowerCase().endsWith(".dcm"))
+				if (isDicomFile(entry))
 					files.add(entry);
 				else
 					files.addAll(listDICOMFiles(entry));
 			}
 		}
 		return files;
+	}
+
+	public static boolean isDicomFile(File file)
+	{
+		return file.isFile() && file.getName().toLowerCase().endsWith(".dcm");
+		// return file.isFile() && DicomFileUtil.hasMagicWordInHeader(file);
 	}
 
 	public static Collection<File> listDICOMTagFiles(File dir)

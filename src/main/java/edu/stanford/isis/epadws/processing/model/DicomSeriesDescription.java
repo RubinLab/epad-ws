@@ -22,20 +22,20 @@ public class DicomSeriesDescription
 	private final String patientName;
 	private final String patientID;
 
-	public DicomSeriesDescription(int numberOfInstance, String seriesUID, String studyIUID, String patientName,
+	public DicomSeriesDescription(int numberOfInstances, String seriesUID, String studyIUID, String patientName,
 			String patientID)
 	{
-		if (numberOfInstance < 1)
+		if (numberOfInstances < 1)
 			throw new IllegalArgumentException("numInstances must be a positive value.");
 
-		this.numberOfInstances = numberOfInstance;
+		this.numberOfInstances = numberOfInstances;
 		int instanceSize = 2000;
 		if (instanceSize < numberOfInstances + 1)
 			instanceSize = 2 * numberOfInstances;
 
 		instances = new ArrayList<DicomImageDescription>(instanceSize);
 		for (int i = 0; i < instanceSize + 1; i++)
-			instances.add(null);
+			instances.add(null); // Indicates that it is not processed yet
 
 		this.seriesUID = seriesUID;
 		this.studyIUID = studyIUID;
@@ -63,9 +63,37 @@ public class DicomSeriesDescription
 		return patientID;
 	}
 
+	public int getNumberOfCompletedInstances()
+	{
+		int count = 0;
+		int size = size();
+		for (int i = 0; i < size; i++) {
+			if (hasInstance(i)) {
+				count++;
+			}
+		}
+		return count;
+	}
+
+	public boolean isComplete()
+	{
+		int size = instances.size();
+		for (int i = 0; i < size; i++) {
+			if (!hasInstance(i)) {
+				return false;
+			}
+		}
+		return true;
+	}
+
 	public int getNumberOfInstances()
 	{
 		return numberOfInstances;
+	}
+
+	public int size()
+	{
+		return instances.size();
 	}
 
 	public boolean hasInstance(int index)
@@ -77,10 +105,10 @@ public class DicomSeriesDescription
 		return instances.get(index) != null;
 	}
 
-	public int set(DicomImageDescription entry)
+	public int set(DicomImageDescription dicomImageDescription)
 	{
-		int index = entry.getInstanceNum();
-		instances.set(index, entry);
+		int index = dicomImageDescription.getInstanceNum();
+		instances.set(index, dicomImageDescription);
 		return index;
 	}
 
@@ -95,38 +123,6 @@ public class DicomSeriesDescription
 			logger.info("SeriesOrder: " + e.getMessage() + " size=" + size() + " seriesUID=" + seriesUID);
 			throw e;
 		}
-	}
-
-	/**
-	 * 
-	 * @return boolean
-	 */
-	public boolean isComplete()
-	{
-		int size = instances.size();
-		for (int i = 0; i < size; i++) {
-			if (!hasInstance(i)) {
-				return false;
-			}
-		}
-		return true;
-	}
-
-	public int getFinishedCount()
-	{
-		int count = 0;
-		int size = size();
-		for (int i = 0; i < size; i++) {
-			if (hasInstance(i)) {
-				count++;
-			}
-		}
-		return count;
-	}
-
-	public int size()
-	{
-		return instances.size();
 	}
 
 	public void updateImageDescriptions(List<Map<String, String>> imageDescriptions)

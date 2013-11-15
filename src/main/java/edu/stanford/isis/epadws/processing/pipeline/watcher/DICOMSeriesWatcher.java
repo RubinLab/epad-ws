@@ -14,7 +14,7 @@ import edu.stanford.isis.epad.common.util.ResourceUtils;
 import edu.stanford.isis.epadws.processing.model.DicomImageProcessingState;
 import edu.stanford.isis.epadws.processing.model.DicomSeriesDescription;
 import edu.stanford.isis.epadws.processing.model.DicomSeriesDescriptionTracker;
-import edu.stanford.isis.epadws.processing.model.DicomSeriesStatus;
+import edu.stanford.isis.epadws.processing.model.DicomSeriesProcessingStatus;
 import edu.stanford.isis.epadws.processing.model.PngProcessingStatus;
 import edu.stanford.isis.epadws.processing.persistence.Dcm4CheeDatabaseUtils;
 import edu.stanford.isis.epadws.processing.persistence.MySqlInstance;
@@ -24,12 +24,10 @@ import edu.stanford.isis.epadws.processing.pipeline.task.PngGridGeneratorTask;
 import edu.stanford.isis.epadws.processing.pipeline.threads.ShutdownSignal;
 
 /**
- * Process new DICOM series appearing in the series queue.
+ * Process new DICOM series appearing in the series queue. Each series is described by a {@link DicomSeriesDescription}.
  * <p>
  * These descriptions are placed in the queue by a {@link Dcm4CheeDatabaseWatcher}, which picks up new series by
  * monitoring a DCM4CHEE MySQL database.
- * <p>
- * These series are represented by a {@link DicomSeriesDescription} object.
  * <p>
  * This watcher submits these to the PNG generation task queue to be processed by the {@link PngGridGeneratorTask}. It
  * also maintains order information for the series using the {@link DicomSeriesOrderTracker} class.
@@ -45,7 +43,7 @@ public class DicomSeriesWatcher implements Runnable
 	private final ShutdownSignal shutdownSignal = ShutdownSignal.getInstance();
 	private static final EPADLogger logger = EPADLogger.getInstance();
 
-	private QueueAndWatcherManager queueAndWatcherManager; // = QueueAndWatcherManager.getInstance();
+	private QueueAndWatcherManager queueAndWatcherManager;
 
 	public DicomSeriesWatcher(BlockingQueue<DicomSeriesDescription> dicomSeriesWatcherQueue,
 			BlockingQueue<GeneratorTask> pngGeneratorTaskQueue)
@@ -71,10 +69,10 @@ public class DicomSeriesWatcher implements Runnable
 				if (dicomSeriesDescription != null) {
 					logger.info("Series watcher found new series with " + dicomSeriesDescription.getNumberOfInstances()
 							+ " instance(s) and series UID " + dicomSeriesDescription.getSeriesUID());
-					dicomSeriesDescriptionTracker.add(new DicomSeriesStatus(dicomSeriesDescription));
+					dicomSeriesDescriptionTracker.add(new DicomSeriesProcessingStatus(dicomSeriesDescription));
 				}
 				// Loop through all new series and find images that have no corresponding PNG file recorded in ePAD database.
-				for (DicomSeriesStatus currentSeriesStatus : dicomSeriesDescriptionTracker.getStatusSet()) {
+				for (DicomSeriesProcessingStatus currentSeriesStatus : dicomSeriesDescriptionTracker.getStatusSet()) {
 					DicomSeriesDescription currentSeriesDescription = currentSeriesStatus.getSeriesDescription();
 					// Each entry in list is map with keys: sop_iuid, inst_no, series_iuid, filepath, file_size.
 					List<Map<String, String>> unprocessedDICOMImageFileDescriptions = mySqlQueries
@@ -104,7 +102,7 @@ public class DicomSeriesWatcher implements Runnable
 					}
 				}
 				// Loop through all current active series and remove them if they are done.
-				for (DicomSeriesStatus currentSeriesOrderStatus : dicomSeriesDescriptionTracker.getStatusSet()) {
+				for (DicomSeriesProcessingStatus currentSeriesOrderStatus : dicomSeriesDescriptionTracker.getStatusSet()) {
 					if (currentSeriesOrderStatus.isDone()) { // Remove finished series
 						dicomSeriesDescriptionTracker.remove(currentSeriesOrderStatus);
 					}
