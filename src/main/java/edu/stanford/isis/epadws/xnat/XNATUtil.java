@@ -7,7 +7,6 @@ import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.nio.charset.Charset;
-import java.util.Map;
 import java.util.Properties;
 
 import javax.servlet.http.Cookie;
@@ -21,6 +20,7 @@ import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.httpclient.methods.PostMethod;
 import org.apache.commons.httpclient.methods.PutMethod;
 
+import edu.stanford.isis.epad.common.dicom.DicomReader;
 import edu.stanford.isis.epad.common.util.EPADConfig;
 import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epadws.processing.model.DicomTagFileUtils;
@@ -131,8 +131,8 @@ public class XNATUtil
 
 	/**
 	 * Take a directory containing a list of DICOM files and associated header files and create XNAT representations of
-	 * the each DICOM image. This method expects a properties file called xnat_upload.properties in the directory
-	 * containing an XNAT project name and an XNAT session ID.
+	 * the each DICOM image. This method expects a properties file called xnat_upload.properties in the directory. It
+	 * should contain an XNAT project name and an XNAT session ID.
 	 * 
 	 * @param uploadDirectory
 	 */
@@ -153,11 +153,17 @@ public class XNATUtil
 				String xnatSessionID = xnatUploadPproperties.getProperty("XNATSessionID");
 
 				if (xnatProjectID != null || xnatSessionID != null) {
-					for (File dicomTagFile : DicomTagFileUtils.listDICOMTagFiles(uploadDirectory)) {
-						Map<String, String> tagMap = DicomTagFileUtils.readTagFile(dicomTagFile);
-						String dicomPatientID = DicomTagFileUtils.getTag(DicomTagFileUtils.PATIENT_ID, tagMap);
-						String dicomPatientName = DicomTagFileUtils.getTag(DicomTagFileUtils.PATIENT_NAME_ALT, tagMap);
-						String dicomStudyUID = DicomTagFileUtils.getTag(DicomTagFileUtils.STUDY_UID, tagMap);
+					for (File dicomFile : DicomTagFileUtils.listDICOMFiles(uploadDirectory)) {
+						DicomReader dicomReader = new DicomReader(dicomFile);
+						String dicomPatientName = dicomReader.getPatientName();
+						String dicomPatientID = dicomReader.getPatientID();
+						String dicomStudyUID = dicomReader.getStudyIUID();
+						/*
+						 * Map<String, String> tagMap = DicomTagFileUtils.readTagFile(dicomFile); String dicomPatientID =
+						 * DicomTagFileUtils.getTag(DicomTagFileUtils.PATIENT_ID, tagMap); String dicomPatientName =
+						 * DicomTagFileUtils.getTag(DicomTagFileUtils.PATIENT_NAME_ALT, tagMap); String dicomStudyUID =
+						 * DicomTagFileUtils.getTag(DicomTagFileUtils.STUDY_UID, tagMap);
+						 */
 						String xnatSubjectLabel = dicomPatientID2XNATSubjectLabel(dicomPatientID);
 
 						if (dicomPatientName != null) {
@@ -167,9 +173,9 @@ public class XNATUtil
 							if (dicomStudyUID != null)
 								createXNATExperimentFromDICOMStudy(xnatProjectID, xnatSubjectLabel, dicomStudyUID, xnatSessionID);
 							else
-								log.warning("Missing study UID in DICOM tag file " + dicomTagFile.getAbsolutePath());
+								log.warning("Missing study UID in DICOM tag file " + dicomFile.getAbsolutePath());
 						} else
-							log.warning("Missing patient name in DICOM tag file " + dicomTagFile.getAbsolutePath());
+							log.warning("Missing patient name in DICOM tag file " + dicomFile.getAbsolutePath());
 					}
 				} else {
 					log.warning("Missing XNAT project name and/or session ID in properties file" + uploadFilePath);

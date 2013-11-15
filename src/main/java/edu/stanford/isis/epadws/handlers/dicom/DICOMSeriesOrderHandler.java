@@ -12,7 +12,7 @@ import org.eclipse.jetty.server.handler.AbstractHandler;
 
 import com.google.gson.Gson;
 
-import edu.stanford.isis.epad.common.dicom.DICOMSeriesDescriptionSearchResult;
+import edu.stanford.isis.epad.common.dicom.DicomSeriesDescriptionSearchResult;
 import edu.stanford.isis.epad.common.dicom.DicomFormatUtil;
 import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epad.common.util.JsonHelper;
@@ -102,7 +102,7 @@ public class DICOMSeriesOrderHandler extends AbstractHandler
 			String sliceLocation = createSliceLocation(entry);// entry.get("inst_custom1");
 			String contentTime = "null";
 
-			DICOMSeriesDescriptionSearchResult searchResult = new DICOMSeriesDescriptionSearchResult(fileName,
+			DicomSeriesDescriptionSearchResult searchResult = new DicomSeriesDescriptionSearchResult(fileName,
 					instanceNumber, sliceLocation, contentTime);
 			if (!isFirst)
 				out.append(",\n");
@@ -131,7 +131,7 @@ public class DICOMSeriesOrderHandler extends AbstractHandler
 		return DicomFormatUtil.formatUidToDir(sopInstanceUID) + ".dcm";
 	}
 
-	private static String seriesOrderSearchResult2JSON(DICOMSeriesDescriptionSearchResult seriesOrderSearchResult)
+	private static String seriesOrderSearchResult2JSON(DicomSeriesDescriptionSearchResult seriesOrderSearchResult)
 	{
 		Gson gson = new Gson();
 

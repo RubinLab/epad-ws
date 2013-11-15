@@ -39,7 +39,7 @@ import edu.stanford.hakan.aim3api.base.Segmentation;
 import edu.stanford.hakan.aim3api.base.SegmentationCollection;
 import edu.stanford.hakan.aim3api.base.TwoDimensionSpatialCoordinate;
 import edu.stanford.hakan.aim3api.usage.AnnotationBuilder;
-import edu.stanford.isis.epad.common.dicom.DicomSegObj;
+import edu.stanford.isis.epad.common.dicom.DicomSegmentationObject;
 import edu.stanford.isis.epad.common.pixelmed.PixelMedUtils;
 import edu.stanford.isis.epad.common.util.EPADConfig;
 import edu.stanford.isis.epad.common.util.EPADLogger;
@@ -88,7 +88,7 @@ public class DicomSegmentObjectGeneratorTask implements GeneratorTask
 		logger.info("Processing Dicom Segmentation Object for: " + dicomInputFile.getAbsolutePath());
 
 		SourceImage sourceImage = null;
-		DicomSegObj dso = null;
+		DicomSegmentationObject dso = null;
 		// AttributeList list = null;
 		// GeometryOfVolume geometry = null;
 
@@ -117,7 +117,7 @@ public class DicomSegmentObjectGeneratorTask implements GeneratorTask
 				+ objectId);
 
 		// test out some pixelmed calls
-		dso = new DicomSegObj();
+		dso = new DicomSegmentationObject();
 		// should be able to get one image url to do the attribute thing here
 
 		// String imageUrl = baseDicomDirectory + studyId + "/" + seriesId + "/" + imageId + ".dcm";

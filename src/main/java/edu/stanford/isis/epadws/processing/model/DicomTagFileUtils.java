@@ -103,7 +103,6 @@ public class DicomTagFileUtils
 				String[] command = { "./dcm2txt", "-w", "120", dicomFile.getAbsolutePath() };
 				ProcessBuilder processBuilder = new ProcessBuilder(command);
 				String dicomBinDirectory = ResourceUtils.getEPADWebServerDICOMBinDir();
-
 				processBuilder.directory(new File(dicomBinDirectory));
 
 				Process process = processBuilder.start();
@@ -122,7 +121,7 @@ public class DicomTagFileUtils
 				try {
 					processStatusCode = process.waitFor();
 				} catch (InterruptedException e) {
-					logger.warning("Could not generate tag file for: " + dicomFile.getAbsolutePath(), e);
+					logger.warning("Error generating tag file for " + dicomFile.getAbsolutePath(), e);
 				}
 
 				if (processStatusCode == 0) {

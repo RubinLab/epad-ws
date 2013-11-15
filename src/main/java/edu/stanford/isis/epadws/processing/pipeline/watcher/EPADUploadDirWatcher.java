@@ -12,7 +12,6 @@ import edu.stanford.isis.epad.common.util.EPADFileUtils;
 import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epad.common.util.FileKey;
 import edu.stanford.isis.epad.common.util.ResourceUtils;
-import edu.stanford.isis.epadws.processing.model.DicomTagFileUtils;
 import edu.stanford.isis.epadws.processing.model.DicomUploadFile;
 import edu.stanford.isis.epadws.processing.pipeline.task.DicomSendTask;
 import edu.stanford.isis.epadws.processing.pipeline.threads.ShutdownSignal;
@@ -101,9 +100,9 @@ public class EPADUploadDirWatcher implements Runnable
 				File zipFile = waitForZipUploadToComplete(dir);
 				unzipFiles(zipFile);
 			}
-			DicomTagFileUtils.generateDicomTagFiles(dir);
+			// DicomTagFileUtils.generateDicomTagFiles(dir);
 			XNATUtil.createXNATEntitiesFromDICOMFilesInDirectory(dir);
-			cleanUploadDirectory(dir);
+			// cleanUploadDirectory(dir);
 			sendFilesToDcm4Chee(dir);
 			deleteUploadDir(dir);
 		} catch (IOException ioe) {
@@ -120,6 +119,7 @@ public class EPADUploadDirWatcher implements Runnable
 		}
 	}
 
+	@SuppressWarnings("unused")
 	private void cleanUploadDirectory(File dir)
 	{
 		log.info("Deleting tag and properties files in upload directory " + dir.getAbsolutePath());

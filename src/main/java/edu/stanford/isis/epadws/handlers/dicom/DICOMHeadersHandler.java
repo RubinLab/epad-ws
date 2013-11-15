@@ -19,7 +19,7 @@ import org.eclipse.jetty.server.handler.AbstractHandler;
 
 import com.google.gson.Gson;
 
-import edu.stanford.isis.epad.common.dicom.DICOMElementResult;
+import edu.stanford.isis.epad.common.dicom.DicomElementResult;
 import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epad.common.util.EPADTools;
 import edu.stanford.isis.epad.common.util.JsonHelper;
@@ -104,7 +104,7 @@ public class DICOMHeadersHandler extends AbstractHandler
 						responseStream.append("{ \"ResultSet\": [");
 
 						while ((dicomElement = tagReader.readLine()) != null) {
-							DICOMElementResult dicomElementResult = decodeDICOMElement(dicomElement);
+							DicomElementResult dicomElementResult = decodeDICOMElement(dicomElement);
 							if (dicomElementResult != null) {
 								if (!isFirst)
 									responseStream.append(",\n");
@@ -143,7 +143,7 @@ public class DICOMHeadersHandler extends AbstractHandler
 		return statusCode;
 	}
 
-	private String dicomElementResult2JSON(DICOMElementResult dicomElementResult)
+	private String dicomElementResult2JSON(DicomElementResult dicomElementResult)
 	{
 		Gson gson = new Gson();
 
@@ -151,7 +151,7 @@ public class DICOMHeadersHandler extends AbstractHandler
 	}
 
 	// TODO This code is very brittle. Rewrite to make more robust. Also ignores DICOM sequences.
-	private DICOMElementResult decodeDICOMElement(String dicomElement)
+	private DicomElementResult decodeDICOMElement(String dicomElement)
 	{
 		String[] fields = dicomElement.split(" ");
 
@@ -164,7 +164,7 @@ public class DICOMHeadersHandler extends AbstractHandler
 				String value = stripBraces(assembleValue(fields, valueFieldStartIndex, valueFieldEndIndex));
 				String tagName = assembleValue(fields, valueFieldEndIndex + 1, fields.length - 1);
 
-				return new DICOMElementResult(tagCode, tagName, value);
+				return new DicomElementResult(tagCode, tagName, value);
 			} else {
 				return null;
 			}

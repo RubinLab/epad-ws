@@ -13,7 +13,7 @@ import edu.stanford.isis.epadws.processing.pipeline.threads.ShutdownSignal;
 
 /**
  * Watch for new studies that appear with ePAD's DCM4CHEE MySQL database with the 'study-status' field set to zero,
- * which indicates that they are new series. Add them to the series watcher queues to be subsequently processed by
+ * which indicates that they are a new series. Add them to the series watcher queues to be subsequently processed by
  * watchers (currently {@link DicomSeriesWatcher} and {@link XNATSeriesWatcher}).
  */
 public class Dcm4CheeDatabaseWatcher implements Runnable
@@ -26,7 +26,7 @@ public class Dcm4CheeDatabaseWatcher implements Runnable
 	public Dcm4CheeDatabaseWatcher(BlockingQueue<DicomSeriesDescription> dicomSeriesWatcherQueue,
 			BlockingQueue<DicomSeriesDescription> xnatSeriesWatcherQueue)
 	{
-		logger.info("Starting the DCM4CHEE database watcher");
+		logger.info("Starting ePAD's DCM4CHEE database watcher");
 		this.dcm4CheeSeriesWatcherQueue = dicomSeriesWatcherQueue;
 		this.xnatSeriesWatcherQueue = xnatSeriesWatcherQueue;
 	}
@@ -57,8 +57,8 @@ public class Dcm4CheeDatabaseWatcher implements Runnable
 					float percentComplete = mySqlQueries.getPercentComplete(seriesIUid);
 					DicomSeriesDescriptionTracker.getInstance().setPercentComplete(seriesIUid, percentComplete);
 
-					logger.info("New series (" + seriesDesc + ") found in DCM4CHEE with " + numInstances + " images and ID "
-							+ seriesIUid);
+					logger.info("New DICOM series (" + patientName + ", " + seriesDesc + ") found in DCM4CHEE with "
+							+ numInstances + " images and ID " + seriesIUid);
 				}
 				Thread.sleep(500);
 			} catch (Exception e) {
