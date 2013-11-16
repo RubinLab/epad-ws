@@ -24,6 +24,7 @@ import edu.stanford.isis.epad.common.dicom.DicomReader;
 import edu.stanford.isis.epad.common.util.EPADConfig;
 import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epadws.processing.model.DicomTagFileUtils;
+import edu.stanford.isis.epadws.processing.update.UpdateTracker;
 
 /**
  * @author martin
@@ -42,6 +43,8 @@ public class XNATUtil
 	private static final String LOGIN_EXCEPTION_MESSAGE = "Internal login error";
 	private static final String XNAT_UNAUTHORIZED_MESSAGE = "XNAT login not successful";
 	private static final String XNAT_LOGIN_ERROR_MESSAGE = "Unexpected XNAT login response";
+
+	private static final UpdateTracker updateTracker = UpdateTracker.getInstance();
 
 	public static final class XNATSessionResponse
 	{
@@ -253,6 +256,8 @@ public class XNATUtil
 			xnatStatusCode = client.executeMethod(postMethod);
 			if (unexpectedCreationStatusCode(xnatStatusCode))
 				log.warning("Failure calling XNAT; status code = " + xnatStatusCode);
+			else
+				updateTracker.recordUpdate(jsessionID, xnatProjectID);
 		} catch (IOException e) {
 			log.warning("Error calling XNAT", e);
 			xnatStatusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
@@ -287,6 +292,8 @@ public class XNATUtil
 			xnatStatusCode = client.executeMethod(postMethod);
 			if (unexpectedCreationStatusCode(xnatStatusCode))
 				log.warning("Failure calling XNAT; status code = " + xnatStatusCode);
+			else
+				updateTracker.recordUpdate(jsessionID, xnatProjectID, xnatSubjectLabel);
 		} catch (IOException e) {
 			log.warning("Error calling XNAT", e);
 		}
@@ -325,6 +332,8 @@ public class XNATUtil
 			xnatStatusCode = client.executeMethod(putMethod);
 			if (unexpectedCreationStatusCode(xnatStatusCode))
 				log.warning("Failure calling XNAT; status code = " + xnatStatusCode);
+			else
+				updateTracker.recordUpdate(jsessionID, xnatProjectID, xnatSubjectLabel, dicomStudyUID);
 		} catch (IOException e) {
 			log.warning("Error calling XNAT", e);
 			xnatStatusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
