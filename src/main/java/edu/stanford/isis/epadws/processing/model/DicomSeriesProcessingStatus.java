@@ -59,7 +59,7 @@ public class DicomSeriesProcessingStatus
 	{
 		long currTime = System.currentTimeMillis();
 		if (currTime > lastActivityTimeStamp + MAX_IDLE_TIME) {
-			logger.info("Series: " + dicomSeriesDescription.getSeriesUID() + " is idle.");
+			logger.info("Series " + dicomSeriesDescription.getSeriesUID() + " is idle.");
 			return true;
 		}
 		if (dicomSeriesDescription.isComplete()) {

@@ -114,7 +114,6 @@ public class XNATUtil
 					}
 				}
 				String jsessionID = sb.toString();
-				log.info("JSESSIONID returned from XNAT");
 				xnatSessionResponse = new XNATSessionResponse(HttpServletResponse.SC_OK, jsessionID);
 			} catch (IOException e) {
 				log.warning(LOGIN_EXCEPTION_MESSAGE, e);
@@ -133,26 +132,26 @@ public class XNATUtil
 	}
 
 	/**
-	 * Take a directory containing a list of DICOM files and associated header files and create XNAT representations of
-	 * the each DICOM image. This method expects a properties file called xnat_upload.properties in the directory. It
-	 * should contain an XNAT project name and an XNAT session ID.
+	 * Take a directory containing a list of DICOM files and create XNAT representations of the each DICOM image. This
+	 * method expects a properties file called xnat_upload.properties in the directory. This file should contain an XNAT
+	 * project name and an XNAT session ID.
 	 * 
 	 * @param uploadDirectory
 	 */
 	public static void createXNATEntitiesFromDICOMFilesInDirectory(File uploadDirectory)
 	{
-		String uploadFilePath = uploadDirectory.getAbsolutePath() + File.separator + XNAT_UPLOAD_PROPERTIES_FILE_NAME;
-		File xnatUploadPropertiesFile = new File(uploadFilePath);
+		String propertiesFilePath = uploadDirectory.getAbsolutePath() + File.separator + XNAT_UPLOAD_PROPERTIES_FILE_NAME;
+		File xnatUploadPropertiesFile = new File(propertiesFilePath);
 
 		if (!xnatUploadPropertiesFile.exists())
-			log.warning("Could not find XNAT upload properties file " + uploadFilePath);
+			log.warning("Could not find XNAT upload properties file " + propertiesFilePath);
 		else {
 			Properties xnatUploadProperties = new Properties();
-			FileInputStream is = null;
+			FileInputStream propertiesFileStream = null;
 			try {
-				log.warning("Found XNAT upload properties file " + uploadFilePath);
-				is = new FileInputStream(xnatUploadPropertiesFile);
-				xnatUploadProperties.load(is);
+				log.info("Found XNAT upload properties file " + propertiesFilePath);
+				propertiesFileStream = new FileInputStream(xnatUploadPropertiesFile);
+				xnatUploadProperties.load(propertiesFileStream);
 				String xnatProjectID = xnatUploadProperties.getProperty("XNATProjectName");
 				String xnatSessionID = xnatUploadProperties.getProperty("XNATSessionID");
 				log.info("xnatProjectID " + xnatProjectID);
@@ -161,49 +160,42 @@ public class XNATUtil
 				if (xnatProjectID != null && xnatSessionID != null) {
 					for (File dicomFile : DicomTagFileUtils.listDICOMFiles(uploadDirectory)) {
 						DicomReader dicomReader = new DicomReader(dicomFile);
-						String dicomPatientName = dicomReader.getPatientName().toUpperCase(); // DCM4CHEE stores the patient name as
-																																									// upper case so we match
+						// DCM4CHEE stores the patient name as upper case so we match. TODO get original from database?
+						String dicomPatientName = dicomReader.getPatientName().toUpperCase();
 						String dicomPatientID = dicomReader.getPatientID();
 						String dicomStudyUID = dicomReader.getStudyIUID();
-						// TODO Check these values for validity
-
-						/*
-						 * Map<String, String> tagMap = DicomTagFileUtils.readTagFile(dicomFile); String dicomPatientID =
-						 * DicomTagFileUtils.getTag(DicomTagFileUtils.PATIENT_ID, tagMap); String dicomPatientName =
-						 * DicomTagFileUtils.getTag(DicomTagFileUtils.PATIENT_NAME_ALT, tagMap); String dicomStudyUID =
-						 * DicomTagFileUtils.getTag(DicomTagFileUtils.STUDY_UID, tagMap);
-						 */
-						String xnatSubjectLabel = dicomPatientID2XNATSubjectLabel(dicomPatientID);
 
 						if (dicomPatientName != null) {
-							if (dicomPatientID == null)
+							if (dicomPatientID == null) // TODO Check that this is a valid thing to do.
 								dicomPatientID = dicomPatientName;
+							String xnatSubjectLabel = dicomPatientID2XNATSubjectLabel(dicomPatientID);
 							createXNATSubjectFromDICOMPatient(xnatProjectID, xnatSubjectLabel, dicomPatientName, xnatSessionID);
 							if (dicomStudyUID != null)
 								createXNATExperimentFromDICOMStudy(xnatProjectID, xnatSubjectLabel, dicomStudyUID, xnatSessionID);
 							else
-								log.warning("Missing study UID in DICOM tag file " + dicomFile.getAbsolutePath());
+								log.warning("Missing study UID in DICOM file " + dicomFile.getAbsolutePath());
 						} else
-							log.warning("Missing patient name in DICOM tag file " + dicomFile.getAbsolutePath());
+							log.warning("Missing patient name in DICOM file " + dicomFile.getAbsolutePath());
 						numberOfDICOMFiles++;
 					}
-					if (numberOfDICOMFiles == 0)
+					if (numberOfDICOMFiles != 0)
+						log.info("Found " + numberOfDICOMFiles + " DICOM files in upload directory");
+					else
 						log.warning("No DICOM files found in upload directory!");
 				} else {
-					log.warning("Missing XNAT project name and/or session ID in properties file" + uploadFilePath);
+					log.warning("Missing XNAT project name and/or session ID in properties file" + propertiesFilePath);
 				}
 			} catch (IOException e) {
-				log.warning("Error processing upload in directory " + uploadFilePath, e);
+				log.warning("Error processing upload in directory " + propertiesFilePath, e);
 			} finally {
-				if (is != null) {
+				if (propertiesFileStream != null) {
 					try {
-						is.close();
+						propertiesFileStream.close();
 					} catch (IOException e) {
-						log.warning("Error closing XNAT upload properties file " + uploadFilePath, e);
+						log.warning("Error closing XNAT upload properties file " + propertiesFilePath, e);
 					}
 				}
 			}
-
 		}
 	}
 

@@ -31,7 +31,7 @@ public class EPADUploadDirWatcher implements Runnable
 {
 	private static final int CHECK_INTERVAL = 5000; // Check every 5 seconds
 	private static final String FOUND_DIR_FILE = "dir.found";
-	private static final long MAX_WAIT_TIME = 120000; // 120 seconds
+	private static final long MAX_WAIT_TIME = 1200000; // 120 seconds //TODO temp x10
 	private static final EPADLogger log = EPADLogger.getInstance();
 
 	@Override
@@ -122,11 +122,12 @@ public class EPADUploadDirWatcher implements Runnable
 	{
 		EPADFileUtils.deleteFilesInDirWithExtension(dir, "properties");
 		EPADFileUtils.deleteFilesInDirWithExtension(dir, "zip");
+		EPADFileUtils.deleteFilesInDirWithExtension(dir, "log");
 	}
 
 	private boolean waitOnEmptyUploadDirectory(File dir) throws InterruptedException
 	{
-		log.info("EPADUploadDirWatcher: upload waiting for upload to start in directory: " + dir.getAbsolutePath());
+		log.info("EPADUploadDirWatcher: upload waiting for upload to complete in directory " + dir.getAbsolutePath());
 		// If this file has only one ZIP file, wait for it to complete upload.
 		long emptyDirStartWaitTime = System.currentTimeMillis();
 		boolean hasZipFile = false;
@@ -164,7 +165,7 @@ public class EPADUploadDirWatcher implements Runnable
 
 	private File waitForZipUploadToComplete(File dir) throws InterruptedException
 	{
-		log.info("EPADUploadDirWatcher: waiting for completion of ZIP upload in directory: " + dir.getAbsolutePath());
+		log.info("EPADUploadDirWatcher: waiting for completion of unzip in directory " + dir.getAbsolutePath());
 		long zipFileStartWaitTime = System.currentTimeMillis();
 		long prevZipFileSize = -1;
 		long prevZipFileLastUpdated = 0;
