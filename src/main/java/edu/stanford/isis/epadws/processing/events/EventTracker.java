@@ -1,11 +1,20 @@
 package edu.stanford.isis.epadws.processing.events;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.lang.reflect.Modifier;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+
+import edu.stanford.isis.epad.common.util.EPADLogger;
 
 public class EventTracker
 {
-	private final Map<String, EventDescription> eventMap = new HashMap<String, EventDescription>();
+	private final ConcurrentMap<String, List<ProjectEventDescription>> projectEventMap = new ConcurrentHashMap<String, List<ProjectEventDescription>>();
+	private static final EPADLogger log = EPADLogger.getInstance();
 
 	private static final EventTracker ourInstance = new EventTracker();
 
@@ -18,54 +27,87 @@ public class EventTracker
 	{
 	}
 
-	public void addSession(String sessionID)
+	public synchronized ProjectEventDescription recordProjectEvent(String sessionID, String projectID)
 	{
-		if (!eventMap.containsKey(sessionID)) {
-			eventMap.put(sessionID, new EventDescription());
+		ProjectEventDescription projectEvent;
+
+		log.info("recordProjectEvent: " + sessionID + ", projectID" + projectID);
+
+		if (projectEventMap.containsKey(sessionID)) {
+			projectEvent = null;
+			for (ProjectEventDescription currentProjectEvent : projectEventMap.get(sessionID)) {
+				if (currentProjectEvent.projectID.equals(projectID)) {
+					projectEvent = currentProjectEvent;
+					break;
+				}
+			}
+			if (projectEvent == null) // We have no events for this project
+				projectEvent = new ProjectEventDescription(projectID);
+		} else {
+			List<ProjectEventDescription> projectEvents = new ArrayList<ProjectEventDescription>();
+			projectEvent = new ProjectEventDescription(projectID);
+			projectEvents.add(projectEvent);
+			projectEventMap.put(sessionID, projectEvents);
+		}
+		return projectEvent;
+	}
+
+	// TODO Too coarse locking
+	public synchronized String dumpProjectEvents(String sessionID)
+	{
+		StringBuilder result = new StringBuilder();
+		final GsonBuilder gsonBuilder = new GsonBuilder();
+
+		gsonBuilder.excludeFieldsWithModifiers(Modifier.PRIVATE);
+
+		final Gson gson = gsonBuilder.create();
+
+		result.append("{ \"ProjectEvents\": ");
+
+		if (projectEventMap.containsKey(sessionID)) {
+			result.append(gson.toJson(projectEventMap.get(sessionID)));
+
+			projectEventMap.get(sessionID).clear();
+		} else {
+			result.append("[]");
 		}
 
-		// TODO Remove old invalid sessions
+		result.append(" }");
+
+		return result.toString();
 	}
 
-	public ProjectEventDescription recordEvent(String sessionID, String projectID)
+	public PatientEventDescription recordPatientEvent(String sessionID, String projectID, String patientID)
 	{
-		EventDescription eventDescription = getEventDescription(sessionID);
-		return eventDescription.recordProjectEvent(projectID);
-	}
+		log.info("recordPatientEvent: " + sessionID + ", projectID" + projectID + ", patientID" + patientID);
 
-	public PatientEventDescription recordEvent(String sessionID, String projectID, String patientID)
-	{
-		ProjectEventDescription projectEvent = recordEvent(sessionID, projectID);
+		ProjectEventDescription projectEvent = recordProjectEvent(sessionID, projectID);
 		return projectEvent.recordPatientEvent(patientID);
 	}
 
-	public StudyEventDescription recordEvent(String sessionID, String projectID, String patientID, String studyID)
+	public StudyEventDescription recordStudyEvent(String sessionID, String projectID, String patientID, String studyID)
 	{
-		PatientEventDescription patientEvent = recordEvent(sessionID, projectID, patientID);
+		log.info("recordPatientEvent: " + sessionID + ", projectID" + projectID + ", patientID" + patientID + ", studyID "
+				+ studyID);
+
+		PatientEventDescription patientEvent = recordPatientEvent(sessionID, projectID, patientID);
 		return patientEvent.recordStudyEvent(studyID);
 	}
 
-	public SeriesEventDescription recordEvent(String sessionID, String projectID, String patientID, String studyID,
+	public SeriesEventDescription recordSeriesEvent(String sessionID, String projectID, String patientID, String studyID,
 			String seriesID)
 	{
-		StudyEventDescription studyEvent = recordEvent(sessionID, projectID, patientID, studyID);
+		log.info("recordPatientEvent: " + sessionID + ", projectID" + projectID + ", patientID" + patientID + ", studyID "
+				+ studyID + ", seriesID " + seriesID);
+
+		StudyEventDescription studyEvent = recordStudyEvent(sessionID, projectID, patientID, studyID);
 		return studyEvent.recordSeriesEvent(seriesID);
 	}
 
-	public void recordEvent(String sessionID, String projectID, String patientID, String studyID, String seriesID,
-			float percentComplete)
+	public void recordSeriesEvent(String sessionID, String projectID, String patientID, String studyID, String seriesID,
+			float percentPNGGenerationComplete)
 	{
-		SeriesEventDescription seriesEvent = recordEvent(sessionID, projectID, patientID, studyID, seriesID);
-		seriesEvent.percentPNGGenerationComplete = percentComplete;
-	}
-
-	public EventDescription getEventDescription(String sessionID)
-	{
-		if (!eventMap.containsKey(sessionID)) {
-			EventDescription eventDescription = new EventDescription();
-			eventMap.put(sessionID, eventDescription);
-			return eventDescription;
-		} else
-			return eventMap.get(sessionID);
+		SeriesEventDescription seriesEvent = recordSeriesEvent(sessionID, projectID, patientID, studyID, seriesID);
+		seriesEvent.percentPNGGenerationComplete = percentPNGGenerationComplete;
 	}
 }

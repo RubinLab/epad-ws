@@ -1,24 +1,24 @@
 package edu.stanford.isis.epadws.processing.events;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 public class StudyEventDescription
 {
 	public final String studyID;
-	public final Set<SeriesEventDescription> seriesEvents;
-	private final Map<String, SeriesEventDescription> seriesEventMap;
+	public final List<SeriesEventDescription> seriesEvents;
+	private final ConcurrentMap<String, SeriesEventDescription> seriesEventMap;
 
 	public StudyEventDescription(String studyID)
 	{
 		this.studyID = studyID;
-		this.seriesEventMap = new HashMap<String, SeriesEventDescription>();
-		this.seriesEvents = new HashSet<SeriesEventDescription>();
+		this.seriesEventMap = new ConcurrentHashMap<String, SeriesEventDescription>();
+		this.seriesEvents = new ArrayList<SeriesEventDescription>();
 	}
 
-	public SeriesEventDescription recordSeriesEvent(String seriesID)
+	public synchronized SeriesEventDescription recordSeriesEvent(String seriesID)
 	{
 		if (!seriesEventMap.containsKey(seriesID)) {
 			SeriesEventDescription seriesUpdate = new SeriesEventDescription(studyID);
@@ -27,5 +27,10 @@ public class StudyEventDescription
 			return seriesUpdate;
 		} else
 			return seriesEventMap.get(seriesID);
+	}
+
+	public List<SeriesEventDescription> getSeriesEvents()
+	{
+		return new ArrayList<SeriesEventDescription>(seriesEventMap.values());
 	}
 }

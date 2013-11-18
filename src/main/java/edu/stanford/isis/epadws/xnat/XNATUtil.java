@@ -44,7 +44,7 @@ public class XNATUtil
 	private static final String XNAT_UNAUTHORIZED_MESSAGE = "XNAT login not successful";
 	private static final String XNAT_LOGIN_ERROR_MESSAGE = "Unexpected XNAT login response";
 
-	private static final EventTracker updateTracker = EventTracker.getInstance();
+	private static final EventTracker eventTracker = EventTracker.getInstance();
 
 	public static final class XNATSessionResponse
 	{
@@ -249,7 +249,7 @@ public class XNATUtil
 			if (unexpectedCreationStatusCode(xnatStatusCode))
 				log.warning("Failure calling XNAT; status code = " + xnatStatusCode);
 			else
-				updateTracker.recordEvent(jsessionID, xnatProjectID);
+				eventTracker.recordProjectEvent(jsessionID, xnatProjectID);
 		} catch (IOException e) {
 			log.warning("Error calling XNAT", e);
 			xnatStatusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
@@ -285,7 +285,7 @@ public class XNATUtil
 			if (unexpectedCreationStatusCode(xnatStatusCode))
 				log.warning("Failure calling XNAT; status code = " + xnatStatusCode);
 			else
-				updateTracker.recordEvent(jsessionID, xnatProjectID, xnatSubjectLabel);
+				eventTracker.recordPatientEvent(jsessionID, xnatProjectID, xnatSubjectLabel);
 		} catch (IOException e) {
 			log.warning("Error calling XNAT", e);
 		}
@@ -325,7 +325,7 @@ public class XNATUtil
 			if (unexpectedCreationStatusCode(xnatStatusCode))
 				log.warning("Failure calling XNAT; status code = " + xnatStatusCode);
 			else
-				updateTracker.recordEvent(jsessionID, xnatProjectID, xnatSubjectLabel, dicomStudyUID);
+				eventTracker.recordStudyEvent(jsessionID, xnatProjectID, xnatSubjectLabel, dicomStudyUID);
 		} catch (IOException e) {
 			log.warning("Error calling XNAT", e);
 			xnatStatusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;

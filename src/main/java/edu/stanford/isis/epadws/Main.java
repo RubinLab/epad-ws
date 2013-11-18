@@ -41,12 +41,13 @@ import edu.stanford.isis.epadws.handlers.coordination.CoordinationHandler;
 import edu.stanford.isis.epadws.handlers.dicom.DICOMDeleteHandler;
 import edu.stanford.isis.epadws.handlers.dicom.DICOMHeadersHandler;
 import edu.stanford.isis.epadws.handlers.dicom.DICOMSearchHandler;
-import edu.stanford.isis.epadws.handlers.dicom.DicomSeriesOrderHandler;
 import edu.stanford.isis.epadws.handlers.dicom.DICOMSeriesTagHandler;
 import edu.stanford.isis.epadws.handlers.dicom.DICOMWindowingHandler;
+import edu.stanford.isis.epadws.handlers.dicom.DicomSeriesOrderHandler;
 import edu.stanford.isis.epadws.handlers.dicom.PatientDeleteHandler;
 import edu.stanford.isis.epadws.handlers.dicom.WadoHandler;
 import edu.stanford.isis.epadws.handlers.event.EventSearchHandler;
+import edu.stanford.isis.epadws.handlers.event.ProjectEventHandler;
 import edu.stanford.isis.epadws.handlers.plugin.EPadPluginHandler;
 import edu.stanford.isis.epadws.handlers.xnat.XNATProjectHandler;
 import edu.stanford.isis.epadws.handlers.xnat.XNATSessionHandler;
@@ -193,6 +194,7 @@ public class Main
 		addHandlerAtContextPath(new AimResourceHandler(), "/aimresource", handlerList);
 		addHandlerAtContextPath(new WadoHandler(), "/eWado", handlerList);
 		addHandlerAtContextPath(new EventSearchHandler(), "/eventresource", handlerList);
+		addHandlerAtContextPath(new ProjectEventHandler(), "/events", handlerList);
 		addHandlerAtContextPath(new EPadPluginHandler(), "/plugin", handlerList);
 
 		addWebAppAtContextPath(handlerList, "ePad.war", "/epad");
