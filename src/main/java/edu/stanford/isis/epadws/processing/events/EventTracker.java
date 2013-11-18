@@ -41,8 +41,10 @@ public class EventTracker
 					break;
 				}
 			}
-			if (projectEvent == null) // We have no events for this project
+			if (projectEvent == null) { // We have no events for this project
 				projectEvent = new ProjectEventDescription(projectID);
+				projectEventMap.get(sessionID).add(projectEvent);
+			}
 		} else {
 			List<ProjectEventDescription> projectEvents = new ArrayList<ProjectEventDescription>();
 			projectEvent = new ProjectEventDescription(projectID);
@@ -62,7 +64,9 @@ public class EventTracker
 
 		final Gson gson = gsonBuilder.create();
 
-		result.append("{ \"ProjectEvents\": ");
+		result.append("{ \"projectEvents\": ");
+
+		log.info("dumpProjectEvents.keys: " + projectEventMap.keySet());
 
 		if (projectEventMap.containsKey(sessionID)) {
 			result.append(gson.toJson(projectEventMap.get(sessionID)));

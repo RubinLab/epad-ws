@@ -7,13 +7,13 @@ import java.util.concurrent.ConcurrentMap;
 
 public class PatientEventDescription
 {
-	public final String subjectID;
+	public final String patientID;
 	public final List<StudyEventDescription> studyEvents;
 	private final ConcurrentMap<String, StudyEventDescription> studyEventMap;
 
 	public PatientEventDescription(String subjectID)
 	{
-		this.subjectID = subjectID;
+		this.patientID = subjectID;
 		this.studyEventMap = new ConcurrentHashMap<String, StudyEventDescription>();
 		this.studyEvents = new ArrayList<StudyEventDescription>();
 	}
