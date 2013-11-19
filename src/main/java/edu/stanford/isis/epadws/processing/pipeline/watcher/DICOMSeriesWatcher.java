@@ -92,7 +92,8 @@ public class DicomSeriesWatcher implements Runnable
 						queueAndWatcherManager.addToPNGGeneratorTaskPipeline(unprocessedDicomImageFileDescriptions);
 					} else { // There are no unprocessed PNG files left.
 						if (currentDicomSeriesProcessingStatus.getProcessingState() == DicomImageProcessingState.IN_PIPELINE) {
-							logger.info("No unprocessed PNG files left for series " + currentDicomSeriesDescription.getSeriesUID());
+							// logger.info("No unprocessed PNG files left for series " +
+							// currentDicomSeriesDescription.getSeriesUID());
 							/*
 							 * List<Map<String, String>> processedPNGImages = mySqlQueries
 							 * .getProcessedDICOMImageFileDescriptionsOrdered(currentSeriesDescription.getSeriesUID());

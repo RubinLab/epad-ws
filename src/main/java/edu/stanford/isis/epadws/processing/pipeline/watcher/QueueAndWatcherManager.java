@@ -159,7 +159,7 @@ public class QueueAndWatcherManager
 
 		DicomSegmentObjectGeneratorTask dsoTask = new DicomSegmentObjectGeneratorTask(inFile, outFile);
 		pngGeneratorTaskQueue.offer(dsoTask);
-		logger.info("Segmentation Object found: " + inputFilePath);
+		logger.info("Segmentation object found: " + inputFilePath);
 	}
 
 	private void createPNGFileForDICOMImage(String outputPNGFilePath, File inputDICOMFile)

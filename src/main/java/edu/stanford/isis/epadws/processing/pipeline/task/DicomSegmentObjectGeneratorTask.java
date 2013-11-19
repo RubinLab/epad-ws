@@ -85,7 +85,7 @@ public class DicomSegmentObjectGeneratorTask implements GeneratorTask
 	@Override
 	public void run()
 	{
-		logger.info("Processing Dicom Segmentation Object for: " + dicomInputFile.getAbsolutePath());
+		logger.info("Processing DSO for file " + dicomInputFile.getAbsolutePath());
 
 		SourceImage sourceImage = null;
 		DicomSegmentationObject dso = null;
@@ -119,10 +119,8 @@ public class DicomSegmentObjectGeneratorTask implements GeneratorTask
 		// test out some pixelmed calls
 		dso = new DicomSegmentationObject();
 		// should be able to get one image url to do the attribute thing here
-
 		// String imageUrl = baseDicomDirectory + studyId + "/" + seriesId + "/" + imageId + ".dcm";
 		// String objectUrl = baseDicomDirectory + studyId + "/" + seriesId + "/segmentation/" + objectId + ".dcm";
-
 		// File imageFile = new File(imageUrl);
 		// File objectFile = new File(objectUrl);
 
@@ -135,13 +133,11 @@ public class DicomSegmentObjectGeneratorTask implements GeneratorTask
 			File repDest = new File(baseDicomDirectory + studyId + "/" + seriesId + "/");
 			repDest.mkdirs();
 
-			// -------------create the mask images
+			// Create the mask images
 			MySqlQueries queries = MySqlInstance.getInstance().getMysqlQueries();
-
 			for (int i = 0; i < count; i++) {
 				BufferedImage source = sourceImage.getBufferedImage(count - i - 1);
-				// Generate a transparent image
-				BufferedImage sourceWithTransparency = generateTransparentImage(source);
+				BufferedImage sourceWithTransparency = generateTransparentImage(source); // Generate a transparent image
 
 				// String pngUrl = baseDicomDirectory + studyId + "/" + seriesId + "/segmentation/" + objectId + "-" + i +
 				// ".png";
@@ -149,7 +145,6 @@ public class DicomSegmentObjectGeneratorTask implements GeneratorTask
 				File sourceFile = new File(pngUrl);
 				try {
 					insertEpadFile(queries, sourceFile);
-
 					ImageIO.write(sourceWithTransparency, "png", sourceFile);
 
 					// bytes = DicomSegObj.getFileBytes(sourceFile);
@@ -157,7 +152,6 @@ public class DicomSegmentObjectGeneratorTask implements GeneratorTask
 					// retPngs.add(encoded);
 
 					queries.updateEpadFile(pngUrl, PngProcessingStatus.DONE, 77, "");
-
 				} catch (IOException e) {
 					logger.warning("failed to write segmentation png", e);
 				}
@@ -265,45 +259,36 @@ public class DicomSegmentObjectGeneratorTask implements GeneratorTask
 		person.setId(tags.get("Patient ID"));
 		person.setName(tags.get("Patient's Name"));
 		person.setCagridId(0);
-		// Adding Person to ImageAnnotation
 		imageAnnotation.addPerson(person);
 
-		logger.info("SaveToServer AIM SegmentationFile " + imageAnnotation.getUniqueIdentifier());
+		logger.info("Saving AIM segmentation file to server" + imageAnnotation.getUniqueIdentifier());
 		try {
 			saveToServer(imageAnnotation);
 		} catch (AimException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			logger.warning("Exception saving AIM segmentation file to server", e);
 		}
 	}
 
 	private BufferedImage generateTransparentImage(BufferedImage source)
 	{
-
 		Image image = makeColorTransparent(source, Color.BLACK);
 		BufferedImage transparent = imageToBufferedImage(image);
-
 		Image image2 = makeColorSemiTransparent(transparent, Color.WHITE);
 		BufferedImage transparent2 = imageToBufferedImage(image2);
-
 		image = null;
 		transparent = null;
 		image2 = null;
-
 		return transparent2;
 	}
 
 	private static BufferedImage imageToBufferedImage(Image image)
 	{
-
 		BufferedImage bufferedImage = new BufferedImage(image.getWidth(null), image.getHeight(null),
 				BufferedImage.TYPE_INT_ARGB);
 		Graphics2D g2 = bufferedImage.createGraphics();
 		g2.drawImage(image, 0, 0, null);
 		g2.dispose();
-
 		return bufferedImage;
-
 	}
 
 	public static Image makeColorTransparent(BufferedImage im, final Color color)
