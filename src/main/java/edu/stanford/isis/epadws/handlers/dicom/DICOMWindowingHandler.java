@@ -26,7 +26,7 @@ import edu.stanford.isis.epadws.xnat.XNATUtil;
 /**
  * Generate window width and center for a series or study in one quick step.
  */
-public class DICOMWindowingHandler extends AbstractHandler
+public class DicomWindowingHandler extends AbstractHandler
 {
 	private static final EPADLogger log = EPADLogger.getInstance();
 	private static final EPADConfig config = EPADConfig.getInstance();

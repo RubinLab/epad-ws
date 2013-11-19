@@ -449,7 +449,7 @@ public class XNATUtil
 
 	public static String getJSessionIDFromRequest(HttpServletRequest servletRequest)
 	{
-		String jSessionID = "";
+		String jSessionID = null;
 
 		Cookie[] cookies = servletRequest.getCookies();
 		if (cookies != null) {
@@ -460,8 +460,8 @@ public class XNATUtil
 				}
 			}
 		}
-		if (jSessionID.length() == 0)
-			log.warning("No JSESESSIONID cookie present in request");
+		if (jSessionID == null)
+			log.warning("No JSESESSIONID cookie present in request " + servletRequest.getRequestURL());
 		return jSessionID;
 	}
 

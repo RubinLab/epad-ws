@@ -71,7 +71,7 @@ public class AimResourceHandler extends AbstractHandler
 	private static final String INTERNAL_EXCEPTION_MESSAGE = "Internal error";
 	private static final String INVALID_METHOD_MESSAGE = "Only POST and GET methods valid for this route";
 	private static final String FILE_UPLOAD_ERROR_MESSAGE = "File upload failures; see response for details";
-	private static final String MISSING_QUERY_MESSAGE = "No series or study query in request";
+	private static final String MISSING_QUERY_MESSAGE = "No series or study query in AIM request";
 	private static final String INVALID_SESSION_TOKEN_MESSAGE = "Session token is invalid";
 
 	/**
@@ -83,7 +83,7 @@ public class AimResourceHandler extends AbstractHandler
 	 * </pre>
 	 */
 	@Override
-	public void handle(String s, Request request, HttpServletRequest httpRequest, HttpServletResponse httpResponse)
+	public void handle(String base, Request request, HttpServletRequest httpRequest, HttpServletResponse httpResponse)
 	{
 		PrintWriter responseStream = null;
 		int statusCode;
@@ -91,6 +91,8 @@ public class AimResourceHandler extends AbstractHandler
 		httpResponse.setContentType("text/xml");
 		httpResponse.setHeader("Cache-Control", "no-cache");
 		request.setHandled(true);
+
+		logger.info("AimResourceHandler: " + base);
 
 		try {
 			responseStream = httpResponse.getWriter();
@@ -128,13 +130,13 @@ public class AimResourceHandler extends AbstractHandler
 						statusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 					}
 				} else {
-					logger.info(INVALID_METHOD_MESSAGE);
+					logger.warning(INVALID_METHOD_MESSAGE);
 					responseStream.append(INVALID_METHOD_MESSAGE);
 					httpResponse.setHeader("Access-Control-Allow-Methods", "POST, GET");
 					statusCode = HttpServletResponse.SC_METHOD_NOT_ALLOWED;
 				}
 			} else {
-				logger.info(INVALID_SESSION_TOKEN_MESSAGE);
+				logger.warning(INVALID_SESSION_TOKEN_MESSAGE);
 				responseStream.append(INVALID_SESSION_TOKEN_MESSAGE);
 				statusCode = HttpServletResponse.SC_UNAUTHORIZED;
 			}

@@ -54,8 +54,9 @@ public class WadoHandler extends AbstractHandler
 				String queryString = httpRequest.getQueryString();
 				queryString = URLDecoder.decode(queryString, "UTF-8");
 				if (queryString != null) {
-					log.info("WADOHandler, query=" + queryString);
 					statusCode = performWADOQuery(queryString, responseStream);
+					if (statusCode != HttpServletResponse.SC_OK)
+						log.warning("WADOHandler query" + queryString + " failed; statusCode=" + statusCode);
 				} else {
 					log.info(MISSING_QUERY_MESSAGE);
 					statusCode = HttpServletResponse.SC_BAD_REQUEST;
@@ -73,7 +74,7 @@ public class WadoHandler extends AbstractHandler
 		httpResponse.setStatus(statusCode);
 	}
 
-	private int performWADOQuery(String queryString, ServletOutputStream out) throws IOException, HttpException
+	private int performWADOQuery(String queryString, ServletOutputStream outputStream) throws IOException, HttpException
 	{
 		String host = config.getParam("NameServer");
 		int port = config.getIntParam("DicomServerWadoPort");
@@ -90,7 +91,7 @@ public class WadoHandler extends AbstractHandler
 				int read = 0;
 				byte[] bytes = new byte[4096];
 				while ((read = res.read(bytes)) != -1) {
-					out.write(bytes, 0, read);
+					outputStream.write(bytes, 0, read);
 				}
 			} finally {
 				if (res != null) {
@@ -102,7 +103,7 @@ public class WadoHandler extends AbstractHandler
 				}
 			}
 		} else {
-			log.info(INTERNAL_EXCEPTION_MESSAGE);
+			log.warning(INTERNAL_EXCEPTION_MESSAGE);
 		}
 		return statusCode;
 	}
@@ -110,14 +111,10 @@ public class WadoHandler extends AbstractHandler
 	private String buildWADOURL(String host, int port, String base, String queryString)
 	{
 		StringBuilder sb = new StringBuilder();
-
 		sb.append("http://").append(host);
 		sb.append(":").append(port);
 		sb.append(base);
 		sb.append(queryString);
-
-		log.info("Build wadoUrl = " + sb.toString());
-
 		return sb.toString();
 	}
 }

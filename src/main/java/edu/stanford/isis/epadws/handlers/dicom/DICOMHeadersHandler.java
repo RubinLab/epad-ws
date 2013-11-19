@@ -29,7 +29,7 @@ import edu.stanford.isis.epadws.xnat.XNATUtil;
 /**
  * Download headers for a series or study in one quick step.
  */
-public class DICOMHeadersHandler extends AbstractHandler
+public class DicomHeadersHandler extends AbstractHandler
 {
 	private static final EPADLogger log = EPADLogger.getInstance();
 

@@ -1,6 +1,7 @@
 package edu.stanford.isis.epadws.handlers.dicom;
 
 import java.io.PrintWriter;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -12,8 +13,9 @@ import org.eclipse.jetty.server.handler.AbstractHandler;
 
 import com.google.gson.Gson;
 
-import edu.stanford.isis.epad.common.dicom.DicomSeriesDescriptionSearchResult;
 import edu.stanford.isis.epad.common.dicom.DicomFormatUtil;
+import edu.stanford.isis.epad.common.dicom.DicomImageDescriptionSearchResult;
+import edu.stanford.isis.epad.common.dicom.DicomSeriesDescriptionSearchResult;
 import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epad.common.util.JsonHelper;
 import edu.stanford.isis.epadws.processing.persistence.MySqlInstance;
@@ -21,23 +23,27 @@ import edu.stanford.isis.epadws.processing.persistence.MySqlQueries;
 import edu.stanford.isis.epadws.xnat.XNATUtil;
 
 /**
- * Create and "order-file" by calling the MySql database. It will look like the following (to be compatible with the
- * older "ord" file format.
+ * Create description of the images in a series and their order.
  * 
- * filename,order,Slice Location,Content Time
- * 1_2_840_113619_2_55_3_2819264857_499_1244214379_94_1.dcm,1,-6.500,104551.000000
- * 1_2_840_113619_2_55_3_2819264857_499_1244214379_94_2.dcm,2,-7.125,104551.000000
- * 
- * filename is - sopInstanceUID with .dcm at end. sop_iuid in instance table. order - inst_no in instance table. Slice
- * Location - inst_custom1 field in instance table Content Time - Doesn't seem to be used for now, so will set to
- * 'null'.
- * 
- * The SQL needed for this is like: <code>
+ * <p>
+ * <code>
+ * { "ResultSet": 
+ *    [ { "contentTime": "", "fileName": "1_2_840_113619_2_131_2819278861_1343943578_325998.dcm", "instanceNumber": 1, "sliceLocation": "-0.0800" },
+ *    ...
+ *    ]
+ * }
+ * </code>
+ * <p>
+ * The SQL to find this information in the DCM4CHEE database is like:
+ * <p>
+ * <code>
  * select * from pacsdb.instance as i, pacsdb.series as s where i.series_fk=s.pk and s.series_iuid=?
  * </code>
- * 
- * To test: <code>
- * curl -b JSESSIONID=<id> -X GET "http://epad-dev2.stanford.edu:8080/seriesorderj/?series_iuid=1.2.840.113619.2.55.3.25168424.5576.1168603848.697"
+ * <p>
+ * To test:
+ * <p>
+ * <code>
+ * curl -b JSESSIONID=<id> -X GET "http://[host]:[port]/seriesorderj/?series_iuid=1.2.840.113619.2.55.3.25168424.5576.1168603848.697"
  * </code>
  */
 public class DicomSeriesOrderHandler extends AbstractHandler
@@ -84,35 +90,31 @@ public class DicomSeriesOrderHandler extends AbstractHandler
 		httpResponse.setStatus(statusCode);
 	}
 
-	private static void peformDICOMSeriesDescriptionQuery(PrintWriter out, String seriesIUID)
-			throws NumberFormatException
+	private void peformDICOMSeriesDescriptionQuery(PrintWriter outputStream, String seriesIUID)
 	{
 		MySqlQueries queries = MySqlInstance.getInstance().getMysqlQueries();
 		List<Map<String, String>> orderQueryEntries = queries.getOrderFile(seriesIUID);
-		boolean isFirst = true;
+		List<DicomImageDescriptionSearchResult> imageDescriptions = new ArrayList<DicomImageDescriptionSearchResult>();
 
 		log.info("DICOMSeriesDescriptionHandler, series_iuid=" + seriesIUID);
-
-		out.println("{ \"ResultSet\": [");
 
 		for (Map<String, String> entry : orderQueryEntries) {
 			String sopInstanceUID = entry.get("sop_iuid");
 			String fileName = createFileNameField(sopInstanceUID);
 			int instanceNumber = Integer.parseInt(entry.get("inst_no"));
 			String sliceLocation = createSliceLocation(entry);// entry.get("inst_custom1");
-			String contentTime = "null";
+			String contentTime = "null"; // TODO Can we find this somewhere?
 
-			DicomSeriesDescriptionSearchResult searchResult = new DicomSeriesDescriptionSearchResult(fileName,
+			DicomImageDescriptionSearchResult dicomImageDescription = new DicomImageDescriptionSearchResult(fileName,
 					instanceNumber, sliceLocation, contentTime);
-			if (!isFirst)
-				out.append(",\n");
-			isFirst = false;
-			out.print(seriesOrderSearchResult2JSON(searchResult));
+			imageDescriptions.add(dicomImageDescription);
 		}
-		out.print("] }");
+		DicomSeriesDescriptionSearchResult dicomSeriesDescriptionSearchResult = new DicomSeriesDescriptionSearchResult(
+				imageDescriptions);
+		outputStream.print(dicomSeriesDescriptionSearchResult2JSON(dicomSeriesDescriptionSearchResult));
 	}
 
-	private static String createSliceLocation(Map<String, String> entry)
+	private String createSliceLocation(Map<String, String> entry)
 	{
 		String sliceLoc = entry.get("inst_custom1");
 		if (sliceLoc == null)
@@ -126,16 +128,16 @@ public class DicomSeriesOrderHandler extends AbstractHandler
 	 * @param sopInstanceUID String
 	 * @return String
 	 */
-	private static String createFileNameField(String sopInstanceUID)
+	private String createFileNameField(String sopInstanceUID)
 	{
 		return DicomFormatUtil.formatUidToDir(sopInstanceUID) + ".dcm";
 	}
 
-	private static String seriesOrderSearchResult2JSON(DicomSeriesDescriptionSearchResult seriesOrderSearchResult)
+	private String dicomSeriesDescriptionSearchResult2JSON(
+			DicomSeriesDescriptionSearchResult dicomSeriesDescriptionSearchResult)
 	{
 		Gson gson = new Gson();
 
-		return gson.toJson(seriesOrderSearchResult);
+		return gson.toJson(dicomSeriesDescriptionSearchResult);
 	}
-
 }
