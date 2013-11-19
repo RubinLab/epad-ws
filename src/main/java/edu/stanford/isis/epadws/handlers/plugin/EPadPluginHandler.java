@@ -48,11 +48,9 @@ public class EPadPluginHandler extends AbstractHandler
 			if (pluginHandler != null) {
 				String method = httpRequest.getMethod();
 				if ("GET".equalsIgnoreCase(method)) {
-					pluginHandler.doGet(httpRequest, httpResponse);
-					httpResponse.setStatus(HttpServletResponse.SC_OK);
+					pluginHandler.doGet(httpRequest, httpResponse); // Status set by plugin
 				} else if ("POST".equalsIgnoreCase(method)) {
-					pluginHandler.doPost(httpRequest, httpResponse);
-					httpResponse.setStatus(HttpServletResponse.SC_OK);
+					pluginHandler.doPost(httpRequest, httpResponse); // Status set by plugin
 				} else {
 					log.info(INVALID_METHOD_MESSAGE);
 					responseStream.append(INVALID_METHOD_MESSAGE);

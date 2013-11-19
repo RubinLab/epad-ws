@@ -66,8 +66,6 @@ public class EventTracker
 
 		result.append("{ \"projectEvents\": ");
 
-		log.info("dumpProjectEvents.keys: " + projectEventMap.keySet());
-
 		if (projectEventMap.containsKey(sessionID)) {
 			result.append(gson.toJson(projectEventMap.get(sessionID)));
 

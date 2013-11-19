@@ -111,7 +111,7 @@ public class AimResourceHandler extends AbstractHandler
 					}
 				} else if ("POST".equalsIgnoreCase(method)) { // http://www.tutorialspoint.com/servlets/servlets-file-uploading.htm
 					String annotationsUploadDirPath = ResourceUtils.getEPADWebServerAnnotationsUploadDir();
-					logger.info("Uploading files to dir: " + annotationsUploadDirPath);
+					logger.info("Uploading annotations to directory " + annotationsUploadDirPath);
 					try {
 						boolean saveError = uploadAIMAnnotations(httpRequest, responseStream, annotationsUploadDirPath);
 						if (saveError) {
@@ -122,8 +122,8 @@ public class AimResourceHandler extends AbstractHandler
 							statusCode = HttpServletResponse.SC_OK;
 						}
 					} catch (Throwable t) {
-						logger.warning("Failed to upload AIM files to _" + annotationsUploadDirPath + "_", t);
-						responseStream.append("Failed to upload AIM files to _" + annotationsUploadDirPath + "_; error="
+						logger.warning("Failed to upload AIM files to directory" + annotationsUploadDirPath, t);
+						responseStream.append("Failed to upload AIM files to directory " + annotationsUploadDirPath + "; error="
 								+ t.getMessage());
 						statusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 					}
@@ -196,10 +196,10 @@ public class AimResourceHandler extends AbstractHandler
 
 		while (iter.hasNext()) {
 			fileCount++;
-			logger.debug("starting file #" + fileCount);
+			logger.debug("Uploading annotation number " + fileCount);
 			FileItemStream item = iter.next();
 			String name = item.getFieldName();
-			logger.debug("FieldName = " + name);
+			// logger.debug("FieldName = " + name);
 			InputStream stream = item.openStream();
 			String tempName = "temp-" + System.currentTimeMillis() + ".xml";
 			File f = new File(annotationsUploadDirPath + tempName);
@@ -223,7 +223,8 @@ public class AimResourceHandler extends AbstractHandler
 			responseStream.print("added (" + fileCount + "): " + name);
 			ImageAnnotation ia = AnnotationGetter.getImageAnnotationFromFile(f.getAbsolutePath(), xsdFilePath);
 			if (ia != null) {
-				saveToServer(ia);
+				String jsessionID = XNATUtil.getJSessionIDFromRequest(httpRequest);
+				saveToServer(ia, jsessionID);
 				responseStream.println("-- Add to AIM server: " + ia.getUniqueIdentifier() + "<br>");
 			} else {
 				responseStream.println("-- Failed ! not added to AIM server<br>");
@@ -334,9 +335,9 @@ public class AimResourceHandler extends AbstractHandler
 	 * @return String
 	 * @throws AimException
 	 */
-	public String saveToServer(ImageAnnotation aim) throws AimException
+	public String saveToServer(ImageAnnotation aim, String jsessionID) throws AimException
 	{
-		String res = "";
+		String result = "";
 
 		if (aim.getCodeValue() != null) { // For safety, write a backup file
 			String tempXmlPath = this.baseAnnotationDir + "temp-" + aim.getUniqueIdentifier() + ".xml";
@@ -344,25 +345,24 @@ public class AimResourceHandler extends AbstractHandler
 			File tempFile = new File(tempXmlPath);
 			File storeFile = new File(storeXmlPath);
 			AnnotationBuilder.saveToFile(aim, tempXmlPath, xsdFilePath);
-			res = AnnotationBuilder.getAimXMLsaveResult();
-			logger.info("AnnotationBuilder.saveToFile result: " + res);
+
+			logger.info("Saving AIM file with ID " + aim.getUniqueIdentifier());
+
+			result = AnnotationBuilder.getAimXMLsaveResult();
+
+			logger.info("AnnotationBuilder.saveToFile result: " + result);
 			if (storeFile.exists()) {
 				storeFile.delete();
 			}
 			tempFile.renameTo(storeFile);
 
 			AnnotationBuilder.saveToServer(aim, serverUrl, namespace, collection, xsdFilePath, username, password);
-			res = AnnotationBuilder.getAimXMLsaveResult();
-			logger.info("AnnotationBuilder.saveToServer result: " + res);
+			result = AnnotationBuilder.getAimXMLsaveResult();
+			logger.info("AnnotationBuilder.saveToServer result: " + result);
 
-			// Check for plugin!!
-			if (aim.getCodingSchemeDesignator().equals("epad-plugin")) {
-				// find which template has been used to fill the aim file
+			if (aim.getCodingSchemeDesignator().equals("epad-plugin")) { // Which template has been used to fill the AIM file
 				String templateName = aim.getCodeValue(); // ex: jjv-5
-
-				logger.info("Plugin detection : " + templateName);
-
-				// Check if this template corresponds to a plugin
+				logger.info("Template name for plugin " + templateName);
 				boolean templateHasBeenFound = false;
 				String handlerName = null;
 				String pluginName = null;
@@ -378,33 +378,23 @@ public class AimResourceHandler extends AbstractHandler
 				}
 
 				if (templateHasBeenFound) {
-					logger.info("Template Has Been Found, handler : " + handlerName);
-					// Trigger the plugin
-					// String nameAIM=aim.getUniqueIdentifier() + ".xml";
-
-					String url = "http://localhost:8080/plugin/" + pluginName + "/?aimFile=" + aim.getUniqueIdentifier();
-					// --Post to the plugin
 					HttpClient client = new HttpClient();
-
-					logger.info("Triggering plugin at the following adress : " + url);
+					String url = "http://localhost:8080/plugin/" + pluginName + "/?aimFile=" + aim.getUniqueIdentifier();
+					logger.info("Triggering plugin at " + url + ", handler name " + handlerName);
 					GetMethod method = new GetMethod(url);
-					// Execute the GET method
+					method.setRequestHeader("Cookie", "JSESSIONID=" + jsessionID);
 					try {
-						client.executeMethod(method);
+						int statusCode = client.executeMethod(method);
+						logger.info("Status code returned from plugin " + statusCode);
 					} catch (HttpException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
+						logger.warning("HTTP error calling plugin ", e);
 					} catch (IOException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
+						logger.warning("IO exception calling plugin ", e);
 					}
 				}
-
 			}
-
 		}
-
-		return res;
+		return result;
 	}
 
 	// Delete the document from the aim database.
