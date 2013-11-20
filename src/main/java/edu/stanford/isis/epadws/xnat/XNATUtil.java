@@ -385,9 +385,11 @@ public class XNATUtil
 		return result;
 	}
 
+	// Only a-zA-Z0-9, dash, underscore, and space allowed. Replace with underscore. Here we also replace spaces with
+	// underscores though XNAT would allow spaces in labels.
 	public static String dicomPatientID2XNATSubjectLabel(String dicomPatientID)
 	{
-		String result = dicomPatientID.replaceAll("[^a-zA-Z0-9\\\\.\\\\-_]", "_").replaceAll("\\\\^", "_");
+		String result = dicomPatientID.replaceAll("[^a-zA-Z0-9\\\\-_]", "_").replaceAll("\\\\^", "_");
 
 		// log.info("dicomPatientID2XNATSubjectLabel: in=" + dicomPatientID + ", out=" + result);
 

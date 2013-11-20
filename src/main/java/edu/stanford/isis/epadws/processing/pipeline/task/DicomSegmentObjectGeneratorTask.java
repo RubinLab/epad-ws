@@ -171,7 +171,7 @@ public class DicomSegmentObjectGeneratorTask implements GeneratorTask
 			tagFileTemp.createNewFile();
 			DicomHeadersTask dht = new DicomHeadersTask(dicomInputFile, tagFileTemp);
 			dht.run();
-			generateAIMSegmentationFile(tagFileTemp);
+			generateAIMFile(tagFileTemp);
 			System.gc();
 		} catch (Exception e) {
 			logger.warning("Error: when trying to write PNGs for segmentation object " + e.getMessage());
@@ -179,34 +179,37 @@ public class DicomSegmentObjectGeneratorTask implements GeneratorTask
 	}
 
 	/**
-	 * Generate an AIM file describing a DICOM Segmentation Object. The References SOP Instance UID in the DICOM tag file
-	 * identifies the image from which the segmentation object is derived from. The DICOM file does not contain the study
-	 * or series identifiers for that image so we discover it by querying DCM4CHEE's database.
+	 * Generate an AIM file linking to a DICOM Segmentation Object (DSO). The References SOP Instance UID in the DICOM DSO
+	 * tag file identifies the image from which the segmentation object is derived from. The DICOM file does not contain
+	 * the study or series identifiers for that image so we discover it by querying DCM4CHEE's database.
 	 * <p>
-	 * We then store these series and image IDs in a DICOMImageReference element
+	 * This AIM file actually annotates the original image NOT the DSO. We link to the DSO by storing the DOS's image ID
+	 * in the sopInstanceUID field in a Segmentation element. When processing this AIM file, the user can find the DSO's
+	 * series by searching using this imageID.
 	 * 
 	 * @param dicomTagFile
 	 * @throws Exception
 	 */
-	private void generateAIMSegmentationFile(File dicomTagFile) throws Exception
+	private void generateAIMFile(File dicomTagFile) throws Exception
 	{
 		Map<String, String> dicomTags = DicomTagFileUtils.readTagFile(dicomTagFile);
 
 		String patientID = dicomTags.get("Patient ID");
 		String patientName = dicomTags.get("Patient's Name");
 		String sopClassUID = dicomTags.get("SOP Class UID");
-		String sopInstanceUID = dicomTags.get("SOP Instance UID");
-		String studyInstanceUID = dicomTags.get("Study Instance UID");
-		String seriesInstanceUID = dicomTags.get("Series Instance UID");
+		String dsoStudyInstanceUID = dicomTags.get("Study Instance UID"); // Study ID of the DSO (same as original image)
+		String dsoSeriesInstanceUID = dicomTags.get("Series Instance UID"); // Series ID of DSO (DSO gets new series)
+		String dsoSopInstanceUID = dicomTags.get("SOP Instance UID"); // Image ID of DSO
 		String referencedSOPInstanceUID = dicomTags.get("Referenced SOP Instance UID"); // Image from which DSO is derived
 		String referencedSeriesInstanceUID = getDicomSeriesUIDFromImageUID(referencedSOPInstanceUID); // Series ID for same
+		String referencedStudyInstanceUID = dsoStudyInstanceUID; // Will be same study as DSO
 
 		logger.info("Patient ID=" + patientID);
 		logger.info("Patient's Name=" + patientName);
 		logger.info("SOP Class UID=" + sopClassUID);
-		logger.info("SOP Instance UID=" + sopInstanceUID);
-		logger.info("Study Instance UID=" + studyInstanceUID);
-		logger.info("Series Instance UID=" + seriesInstanceUID);
+		logger.info("DSO Study Instance UID=" + dsoStudyInstanceUID);
+		logger.info("DSO Series Instance UID=" + dsoSeriesInstanceUID);
+		logger.info("DOO SOP Instance UID=" + dsoSopInstanceUID);
 		logger.info("Referenced SOP Instance UID=" + referencedSOPInstanceUID);
 		logger.info("Referenced Series Instance UID=" + referencedSeriesInstanceUID);
 
@@ -214,7 +217,7 @@ public class DicomSegmentObjectGeneratorTask implements GeneratorTask
 				"SEG Only", "", "", "");
 
 		SegmentationCollection sc = new SegmentationCollection();
-		sc.AddSegmentation(new Segmentation(0, sopInstanceUID, sopClassUID, "", 1));
+		sc.AddSegmentation(new Segmentation(0, dsoSopInstanceUID, sopClassUID, "", 1));
 		imageAnnotation.setSegmentationCollection(sc);
 
 		DICOMImageReference dicomImageReference = new DICOMImageReference();
@@ -222,7 +225,7 @@ public class DicomSegmentObjectGeneratorTask implements GeneratorTask
 
 		ImageStudy imageStudy = new ImageStudy();
 		imageStudy.setCagridId(0);
-		imageStudy.setInstanceUID(studyInstanceUID);
+		imageStudy.setInstanceUID(referencedStudyInstanceUID);
 		imageStudy.setStartDate("2012-01-16T00:00:00");
 		imageStudy.setStartTime("12:45:34");
 
@@ -438,7 +441,7 @@ public class DicomSegmentObjectGeneratorTask implements GeneratorTask
 		return res;
 	}
 
-	private static String convertDicomNameToImageUID(String currFileName)
+	private static String convertDicomFileNameToImageUID(String currFileName)
 	{
 		int lastDotIndex = currFileName.lastIndexOf('.');
 
@@ -465,7 +468,7 @@ public class DicomSegmentObjectGeneratorTask implements GeneratorTask
 				if (cols != null && cols.length > 1) {
 					String seriesUD = cols[1];
 					if (!seriesUD.equals("SeriesUID")) {
-						return convertDicomNameToImageUID(seriesUD);
+						return convertDicomFileNameToImageUID(seriesUD);
 					}
 				}
 			}
