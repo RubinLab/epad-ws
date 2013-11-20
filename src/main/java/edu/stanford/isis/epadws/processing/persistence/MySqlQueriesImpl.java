@@ -42,13 +42,10 @@ public class MySqlQueriesImpl implements MySqlQueries
 	@Override
 	public List<Map<String, String>> doStudySearchInDcm4Chee(String type, String searchString)
 	{
-		// Handle the special case of a work-list search
 		List<Map<String, String>> retVal = new ArrayList<Map<String, String>>();
-
 		MySqlStudyQueryBuilder queryBuilder = new MySqlStudyQueryBuilder(type, searchString);
 		String searchSql = queryBuilder.createStudySearchQuery();
-
-		logger.info("Performing study search with SQL " + searchSql);
+		// logger.info("Performing study search with SQL " + searchSql);
 
 		Connection c = null;
 		Statement s = null;

@@ -9,8 +9,6 @@ import javax.servlet.http.HttpServletResponse;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 
-import edu.stanford.isis.epad.common.util.EPADLogger;
-
 /**
  * Provide access control.
  * <p>
@@ -21,7 +19,7 @@ import edu.stanford.isis.epad.common.util.EPADLogger;
  */
 public class ResourceCheckHandler extends AbstractHandler
 {
-	private final EPADLogger log = EPADLogger.getInstance();
+	// private final EPADLogger log = EPADLogger.getInstance();
 
 	// private static final String INTERNAL_ERROR_MESSAGE = "Internal server error";
 	// private static final String INVALID_SESSION_TOKEN_MESSAGE = "Session token is invalid";

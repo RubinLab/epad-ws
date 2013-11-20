@@ -163,84 +163,71 @@ public class DicomSegmentObjectGeneratorTask implements GeneratorTask
 			File tagFile = new File(repDest.getAbsolutePath() + "/" + objectId + ".tag");
 			if (!tagFile.exists()) {
 				tagFile.createNewFile();
-
-				// Generation of the tag file
 				ExecutorService taskExecutor = Executors.newFixedThreadPool(1);
 				taskExecutor.execute(new DicomHeadersTask(dicomInputFile, tagFile));
 				taskExecutor.shutdown();
 			}
-
-			// -------------Create an AIM file to link the segmentation
 			File tagFileTemp = File.createTempFile(tagFile.getName(), ".temptag");
 			tagFileTemp.createNewFile();
 			DicomHeadersTask dht = new DicomHeadersTask(dicomInputFile, tagFileTemp);
 			dht.run();
-
 			generateAIMSegmentationFile(tagFileTemp);
-
 			System.gc();
-
 		} catch (Exception e) {
-			logger.info("Error: when trying to write pngs for segmentation object " + e.getMessage());
+			logger.warning("Error: when trying to write PNGs for segmentation object " + e.getMessage());
 		}
-
-		// test out some pixelmed calls
-		// list = dso.getAttributes(imageUrl);
-		// if (list != null) logger.info(list.toString());
-
-		// return retPngs;
 	}
 
 	private void generateAIMSegmentationFile(File tagFile) throws Exception
 	{
-		// Read the tag file
 		Map<String, String> tags = DicomTagFileUtils.readTagFile(tagFile);
 
-		logger.info("SOP Class UID=" + tags.get("SOP Class UID"));
-		logger.info("SOP Instance UID=" + tags.get("SOP Instance UID"));
+		String patientID = tags.get("Patient ID");
+		String patientName = tags.get("Patient's Name");
+		String sopClassUID = tags.get("SOP Class UID");
+		String sopInstanceUID = tags.get("SOP Instance UID");
+		String studyInstanceUID = tags.get("Study Instance UID");
+		String seriesInstanceUID = tags.get("Series Instance UID");
+		String referencedSOPInstanceUID = tags.get("Referenced SOP Instance UID");
 
-		logger.info("Study Instance UID=" + tags.get("Study Instance UID"));
-		logger.info("Series Instance UID=" + tags.get("Series Instance UID"));
-		logger.info("Referenced SOP Instance UID=" + tags.get("Referenced SOP Instance UID"));
+		logger.info("Patient ID=" + patientID);
+		logger.info("Patient's Name=" + patientName);
+		logger.info("SOP Class UID=" + sopClassUID);
+		logger.info("SOP Instance UID=" + sopInstanceUID);
+		logger.info("Study Instance UID=" + studyInstanceUID);
+		logger.info("Series Instance UID=" + seriesInstanceUID);
+		logger.info("Referenced SOP Instance UID=" + referencedSOPInstanceUID);
 
-		// ----------------generate an AIM file
 		ImageAnnotation imageAnnotation = new ImageAnnotation(0, "", "2012-10-17T10:22:40", "segmentation", "SEG",
 				"SEG Only", "", "", "");
 
 		SegmentationCollection sc = new SegmentationCollection();
-		sc.AddSegmentation(new Segmentation(0, tags.get("SOP Instance UID"), tags.get("SOP Class UID"), "", 1));
+		sc.AddSegmentation(new Segmentation(0, sopInstanceUID, sopClassUID, "", 1));
 		imageAnnotation.setSegmentationCollection(sc);
 
-		// *** Adding DICOM Image's information to the ImageAnnotation
 		DICOMImageReference dicomImageReference = new DICOMImageReference();
 		dicomImageReference.setCagridId(0);
-		// ImageStudy
 		ImageStudy imageStudy = new ImageStudy();
 		imageStudy.setCagridId(0);
-		imageStudy.setInstanceUID(tags.get("Study Instance UID"));
+		imageStudy.setInstanceUID(studyInstanceUID);
 		imageStudy.setStartDate("2012-01-16T00:00:00");
 		imageStudy.setStartTime("12:45:34");
-		// ImageSeries
+
 		ImageSeries imageSeries = new ImageSeries();
 		imageSeries.setCagridId(0);
-		imageSeries.setInstanceUID(getDicomSeriesUIDFromImageUID(tags.get("Referenced SOP Instance UID")));
-		// Image
+		imageSeries.setInstanceUID(getDicomSeriesUIDFromImageUID(referencedSOPInstanceUID));
+
 		edu.stanford.hakan.aim3api.base.Image image = new edu.stanford.hakan.aim3api.base.Image();
 		image.setCagridId(0);
-		image.setSopClassUID("112233");
-		image.setSopInstanceUID(tags.get("Referenced SOP Instance UID"));
-		// Adding ...
-		// Image to ImageSeries
-		imageSeries.addImage(image);
-		// ImageSeries to ImageStudy
-		imageStudy.setImageSeries(imageSeries);
-		// ImageStudy to ImageReference
-		dicomImageReference.setImageStudy(imageStudy);
-		// ImageReference to ImageAnnotation
-		imageAnnotation.addImageReference(dicomImageReference);
+		image.setSopClassUID("112233"); // TODO
+		image.setSopInstanceUID(referencedSOPInstanceUID);
 
-		// *** Creating GeometricShape with its coordinates
-		Polyline polyline = new Polyline();
+		imageSeries.addImage(image); // Image to ImageSeries
+		imageStudy.setImageSeries(imageSeries); // ImageSeries to ImageStudy
+		dicomImageReference.setImageStudy(imageStudy); // ImageStudy to ImageReference
+		imageAnnotation.addImageReference(dicomImageReference); // ImageReference to ImageAnnotation
+
+		Polyline polyline = new Polyline(); // *** Creating GeometricShape with its coordinates
 		polyline.setCagridId(0);
 		polyline.setIncludeFlag(false);
 		polyline.setShapeIdentifier(0);
@@ -249,23 +236,21 @@ public class DicomSegmentObjectGeneratorTask implements GeneratorTask
 		polyline.addSpatialCoordinate(new TwoDimensionSpatialCoordinate(0, 2, "0", 0, 3236.0, 2412.0));
 		polyline.addSpatialCoordinate(new TwoDimensionSpatialCoordinate(0, 3, "0", 0, 2693.0, 2412.0));
 		polyline.setLineStyle("lineStyle");
-		// Adding Polyline to ImageAnnotation
-		imageAnnotation.addGeometricShape(polyline);
+		imageAnnotation.addGeometricShape(polyline); // Adding polyline to ImageAnnotation
 
-		// *** Creating Person
 		Person person = new Person();
 		person.setSex("F");
 		person.setBirthDate("1965-02-12T00:00:00");
-		person.setId(tags.get("Patient ID"));
-		person.setName(tags.get("Patient's Name"));
+		person.setId(patientID);
+		person.setName(patientName);
 		person.setCagridId(0);
 		imageAnnotation.addPerson(person);
 
-		logger.info("Saving AIM segmentation file to server" + imageAnnotation.getUniqueIdentifier());
+		logger.info("Saving AIM file to server " + imageAnnotation.getUniqueIdentifier());
 		try {
 			saveToServer(imageAnnotation);
 		} catch (AimException e) {
-			logger.warning("Exception saving AIM segmentation file to server", e);
+			logger.warning("Exception saving AIM file for segmentation object to server", e);
 		}
 	}
 
@@ -454,23 +439,13 @@ public class DicomSegmentObjectGeneratorTask implements GeneratorTask
 
 	public static String getDicomSeriesUIDFromImageUID(String imageUID) throws Exception
 	{
-
-		// ArrayList<String> result=null;
 		String url = "http://localhost:8080/segmentationpath/" + "?image_iuid=" + imageUID;
-
-		// --Get the Dicom file from the server
 		HttpClient client = new HttpClient();
 		GetMethod method = new GetMethod(url);
-
-		// Execute the GET method
 		int statusCode = client.executeMethod(method);
 
 		if (statusCode != -1) {
-			// Get the result as stream
 			BufferedReader reader = new BufferedReader(new InputStreamReader(method.getResponseBodyAsStream(), "UTF-8"));
-
-			// result=new ArrayList<String>();
-
 			String line;
 			while ((line = reader.readLine()) != null) {
 				String[] cols = line.split(",");
@@ -480,9 +455,7 @@ public class DicomSegmentObjectGeneratorTask implements GeneratorTask
 						return convertDicomNameToImageUID(seriesUD);
 					}
 				}
-
 			}
-
 		}
 		return null;
 	}

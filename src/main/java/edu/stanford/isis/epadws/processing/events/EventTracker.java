@@ -31,7 +31,7 @@ public class EventTracker
 	{
 		ProjectEventDescription projectEvent;
 
-		log.info("recordProjectEvent: " + sessionID + ", projectID" + projectID);
+		log.info("recordProjectEvent: " + sessionID + ", projectID " + projectID);
 
 		if (projectEventMap.containsKey(sessionID)) {
 			projectEvent = null;
@@ -59,11 +59,8 @@ public class EventTracker
 	{
 		StringBuilder result = new StringBuilder();
 		final GsonBuilder gsonBuilder = new GsonBuilder();
-
 		gsonBuilder.excludeFieldsWithModifiers(Modifier.PRIVATE);
-
 		final Gson gson = gsonBuilder.create();
-
 		result.append("{ \"projectEvents\": ");
 
 		if (projectEventMap.containsKey(sessionID)) {
@@ -81,7 +78,7 @@ public class EventTracker
 
 	public PatientEventDescription recordPatientEvent(String sessionID, String projectID, String patientID)
 	{
-		log.info("recordPatientEvent: " + sessionID + ", projectID" + projectID + ", patientID" + patientID);
+		log.info("recordPatientEvent: " + sessionID + ", projectID " + projectID + ", patientID " + patientID);
 
 		ProjectEventDescription projectEvent = recordProjectEvent(sessionID, projectID);
 		return projectEvent.recordPatientEvent(patientID);
@@ -89,8 +86,8 @@ public class EventTracker
 
 	public StudyEventDescription recordStudyEvent(String sessionID, String projectID, String patientID, String studyID)
 	{
-		log.info("recordPatientEvent: " + sessionID + ", projectID" + projectID + ", patientID" + patientID + ", studyID "
-				+ studyID);
+		log.info("recordPatientEvent: " + sessionID + ", projectID " + projectID + ", patientID " + patientID
+				+ ", studyID " + studyID);
 
 		PatientEventDescription patientEvent = recordPatientEvent(sessionID, projectID, patientID);
 		return patientEvent.recordStudyEvent(studyID);
@@ -99,8 +96,8 @@ public class EventTracker
 	public SeriesEventDescription recordSeriesEvent(String sessionID, String projectID, String patientID, String studyID,
 			String seriesID)
 	{
-		log.info("recordPatientEvent: " + sessionID + ", projectID" + projectID + ", patientID" + patientID + ", studyID "
-				+ studyID + ", seriesID " + seriesID);
+		log.info("recordPatientEvent: " + sessionID + ", projectID " + projectID + ", patientID " + patientID
+				+ ", studyID " + studyID + ", seriesID " + seriesID);
 
 		StudyEventDescription studyEvent = recordStudyEvent(sessionID, projectID, patientID, studyID);
 		return studyEvent.recordSeriesEvent(seriesID);
