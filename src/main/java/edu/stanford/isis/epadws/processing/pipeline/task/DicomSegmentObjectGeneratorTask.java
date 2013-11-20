@@ -102,7 +102,7 @@ public class DicomSegmentObjectGeneratorTask implements GeneratorTask
 		// String imageId = (String) getRequestAttributes().get("id3");
 		// String objectId = (String) getRequestAttributes().get("id4");
 		// above needs to be replace with below.
-		Map<String, String> ids = readIdFromDicomHeader(dicomInputFile);
+		Map<String, String> ids = readTagsFromDicomFile(dicomInputFile);
 		String studyId = ids.get("study-id");
 		String seriesId = ids.get("series-id");
 		String imageId = ids.get("sop-inst-id");
@@ -181,7 +181,7 @@ public class DicomSegmentObjectGeneratorTask implements GeneratorTask
 	/**
 	 * Generate an AIM file linking to a DICOM Segmentation Object (DSO). The References SOP Instance UID in the DICOM DSO
 	 * tag file identifies the image from which the segmentation object is derived from. The DICOM file does not contain
-	 * the study or series identifiers for that image so we discover it by querying DCM4CHEE's database.
+	 * the study or series identifiers for that image so we discover it by querying ePAD.
 	 * <p>
 	 * This AIM file actually annotates the original image NOT the DSO. We link to the DSO by storing the DOS's image ID
 	 * in the sopInstanceUID field in a Segmentation element. When processing this AIM file, the user can find the DSO's
@@ -217,7 +217,7 @@ public class DicomSegmentObjectGeneratorTask implements GeneratorTask
 				"SEG Only", "", "", "");
 
 		SegmentationCollection sc = new SegmentationCollection();
-		sc.AddSegmentation(new Segmentation(0, dsoSopInstanceUID, sopClassUID, "", 1));
+		sc.AddSegmentation(new Segmentation(0, dsoSopInstanceUID, sopClassUID, referencedSOPInstanceUID, 1));
 		imageAnnotation.setSegmentationCollection(sc);
 
 		DICOMImageReference dicomImageReference = new DICOMImageReference();
@@ -266,7 +266,7 @@ public class DicomSegmentObjectGeneratorTask implements GeneratorTask
 		try {
 			saveImageAnnotationToServer(imageAnnotation);
 		} catch (AimException e) {
-			logger.warning("Exception saving AIM file for segmentation object to server", e);
+			logger.warning("Exception saving AIM file to server", e);
 		}
 	}
 
@@ -295,18 +295,15 @@ public class DicomSegmentObjectGeneratorTask implements GeneratorTask
 	public static Image makeColorTransparent(BufferedImage im, final Color color)
 	{
 		ImageFilter filter = new RGBImageFilter() {
-
-			// the color we are looking for... Alpha bits are set to opaque
-			public int markerRGB = color.getRGB() | 0xFF000000;
+			public int markerRGB = color.getRGB() | 0xFF000000; // the color we are looking for... Alpha bits are set to
+																													// opaque
 
 			@Override
 			public final int filterRGB(int x, int y, int rgb)
 			{
-				if ((rgb | 0xFF000000) == markerRGB) {
-					// Mark the alpha bits as zero - transparent
+				if ((rgb | 0xFF000000) == markerRGB) { // Mark the alpha bits as zero - transparent
 					return 0x00FFFFFF & rgb;
-				} else {
-					// nothing to do
+				} else { // nothing to do
 					return rgb;
 				}
 			}
@@ -326,19 +323,14 @@ public class DicomSegmentObjectGeneratorTask implements GeneratorTask
 			@Override
 			public final int filterRGB(int x, int y, int rgb)
 			{
-				if ((rgb | 0xFF000000) == markerRGB) {
-					// Mark the alpha bits as zero - transparent
-
+				if ((rgb | 0xFF000000) == markerRGB) { // Mark the alpha bits as zero - transparent
 					int r = 255;
 					int g = 0;
 					int b = 0;
 					int a = 80;
-
 					int col = (a << 24) | (r << 16) | (g << 8) | b;
-
 					return col;
-				} else {
-					// nothing to do
+				} else { // nothing to do
 					return rgb;
 				}
 			}
@@ -355,10 +347,9 @@ public class DicomSegmentObjectGeneratorTask implements GeneratorTask
 		queries.insertEpadFile(epadFilesTable);
 	}
 
-	private static Map<String, String> readIdFromDicomHeader(File dicomInputFile)
+	private static Map<String, String> readTagsFromDicomFile(File dicomInputFile)
 	{
 		Map<String, String> retVal = new HashMap<String, String>();
-
 		retVal.put("study-id", "not-found");
 		retVal.put("series-id", "not-found");
 		retVal.put("sop-inst-id", "not-found");
@@ -384,11 +375,9 @@ public class DicomSegmentObjectGeneratorTask implements GeneratorTask
 
 			logger.info("[TEMP] Segmentation Object. Is segmentNumber Tag there? Segment Number=[" + segmentNumber + "]."
 					+ " Is it the same as the Instance Number Tag? Instance Number=[" + instanceNumber + "].");
-
 		} catch (Exception e) {
 			logger.warning("Failed to read Dicom header tags of segmentation object: " + dicomInputFile.getAbsolutePath(), e);
 		}
-
 		return retVal;
 	}
 
@@ -401,9 +390,7 @@ public class DicomSegmentObjectGeneratorTask implements GeneratorTask
 	@Override
 	public String getTagFilePath()
 	{
-
 		// ToDo: verify that path here. It might be in
-
 		return segObjectOutputFile.getAbsolutePath().replaceAll("\\.png", ".tag");
 	}
 
@@ -413,13 +400,11 @@ public class DicomSegmentObjectGeneratorTask implements GeneratorTask
 		return "DicomSegmentationObject";
 	}
 
-	public String saveImageAnnotationToServer(ImageAnnotation aim) throws AimException
+	private String saveImageAnnotationToServer(ImageAnnotation aim) throws AimException
 	{
 		String res = "";
 
-		if (aim.getCodeValue() != null) {
-
-			// for safety, write a backup file
+		if (aim.getCodeValue() != null) { // First, write a backup file
 			String tempXmlPath = this.baseAnnotationDir + "temp-" + aim.getUniqueIdentifier() + ".xml";
 			String storeXmlPath = this.baseAnnotationDir + aim.getUniqueIdentifier() + ".xml";
 			File tempFile = new File(tempXmlPath);
@@ -435,9 +420,7 @@ public class DicomSegmentObjectGeneratorTask implements GeneratorTask
 			AnnotationBuilder.saveToServer(aim, serverUrl, namespace, collection, xsdFilePath, username, password);
 			res = AnnotationBuilder.getAimXMLsaveResult();
 			logger.info("AnnotationBuilder.saveToServer result: " + res);
-
 		}
-
 		return res;
 	}
 
@@ -453,7 +436,8 @@ public class DicomSegmentObjectGeneratorTask implements GeneratorTask
 		return uidPart;
 	}
 
-	public static String getDicomSeriesUIDFromImageUID(String imageUID) throws Exception
+	// TODO Replace this with direct call to databae
+	private String getDicomSeriesUIDFromImageUID(String imageUID) throws Exception
 	{
 		String url = "http://localhost:8080/segmentationpath/" + "?image_iuid=" + imageUID;
 		HttpClient client = new HttpClient();

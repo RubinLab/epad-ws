@@ -25,9 +25,6 @@ import edu.stanford.isis.epadws.handlers.coordination.Term;
 import edu.stanford.isis.epadws.processing.model.PngProcessingStatus;
 import edu.stanford.isis.epadws.processing.pipeline.watcher.Dcm4CheeDatabaseWatcher;
 
-/**
- * @author amsnyder
- */
 public class MySqlQueriesImpl implements MySqlQueries
 {
 	private static final EPADLogger logger = EPADLogger.getInstance();
@@ -81,11 +78,6 @@ public class MySqlQueriesImpl implements MySqlQueries
 			close(c, s, rs);
 		}
 		return retVal;
-	}
-
-	private static boolean isStudyDateColumn(String currKey)
-	{
-		return (currKey.toLowerCase().indexOf("date") > 0 || currKey.toLowerCase().indexOf("time") > 0);
 	}
 
 	@Override
@@ -203,37 +195,6 @@ public class MySqlQueriesImpl implements MySqlQueries
 		return retVal;
 	}
 
-	/**
-	 * Get all the users
-	 * 
-	 * @return a list of users.
-	 */
-	@Override
-	public List<String> getAllUsers()
-	{
-		List<String> retVal = new ArrayList<String>();
-
-		Connection c = null;
-		PreparedStatement ps = null;
-		ResultSet rs = null;
-		try {
-			c = getConnection();
-			ps = c.prepareStatement(MySqlCalls.SELECT_ALL_USERS);
-
-			rs = ps.executeQuery();
-			while (rs.next()) {
-				retVal.add(rs.getString("user_name"));
-			}// while
-		} catch (SQLException sqle) {
-			String debugInfo = DatabaseUtils.getDebugData(rs);
-			logger.warning("database operation failed. debugInfo=" + debugInfo, sqle);
-		} finally {
-			close(c, ps, rs);
-		}
-
-		return retVal;
-	}
-
 	@Override
 	public List<String> getNewSeriesInDcm4Chee()
 	{
@@ -319,37 +280,6 @@ public class MySqlQueriesImpl implements MySqlQueries
 			logger.warning("database operation failed", e);
 		}
 		return retVal;
-	}
-
-	private Set<String> getNewSeriesFromPacsDb()
-	{
-		List<String> pacsList = getNewSeriesInDcm4Chee();
-		return new HashSet<String>(pacsList);
-	}
-
-	private Set<String> getAllSeriesFromEPadDb()
-	{ // This is a "select series_iuid from epaddb.series_status";
-		Set<String> retVal = new HashSet<String>();
-
-		Connection c = null;
-		PreparedStatement ps = null;
-		ResultSet rs = null;
-		try {
-			c = getConnection();
-			ps = c.prepareStatement("select series_iuid from epaddb.series_status");
-
-			rs = ps.executeQuery();
-			while (rs.next()) {
-				retVal.add(rs.getString("series_iuid"));
-			}
-		} catch (SQLException sqle) {
-			String debugInfo = DatabaseUtils.getDebugData(rs);
-			logger.warning("database operation failed. debugInfo=" + debugInfo, sqle);
-		} finally {
-			close(c, ps, rs);
-		}
-		return retVal;
-
 	}
 
 	@Override
@@ -687,49 +617,6 @@ public class MySqlQueriesImpl implements MySqlQueries
 		return dicomWithPNGImageFileDescriptions;
 	}
 
-	private static String shortenSting(String longString)
-	{
-		if (longString.length() > 10) {
-			StringBuilder sb = new StringBuilder();
-			sb.append("...");
-			int index = longString.length() - 5;
-			sb.append(longString.substring(index));
-			return sb.toString();
-		}
-		return longString;
-	}
-
-	/**
-	 * Cross database query that gets finished image instance IDs for a series.
-	 * 
-	 * @param seriesIUID String
-	 * @return List of String (sopInstanceIds).
-	 */
-	private List<String> getFinishedDICOMImageInstanceIDsForSeries(String seriesIUID)
-	{
-		List<String> retVal = new ArrayList<String>();
-
-		Connection c = null;
-		PreparedStatement ps = null;
-		ResultSet rs = null;
-		try {
-			c = getConnection();
-			ps = c.prepareStatement(MySqlCalls.SELECT_EPAD_FILES_FOR_SERIES);
-			ps.setString(1, seriesIUID);
-
-			rs = ps.executeQuery();
-			while (rs.next()) {
-				retVal.add(rs.getString("sop_iuid"));
-			}
-		} catch (SQLException sqle) {
-			String debugInfo = DatabaseUtils.getDebugData(rs);
-			logger.warning("database operation failed. debugInfo=" + debugInfo, sqle);
-		} finally {
-			close(c, ps, rs);
-		}
-		return retVal;
-	}
-
 	@Override
 	public void insertEpadFile(Map<String, String> row)
 	{
@@ -737,56 +624,22 @@ public class MySqlQueriesImpl implements MySqlQueries
 		PreparedStatement ps = null;
 		try {
 			// logger.info("Inserting into epad_file table. data=" + row);
-
 			c = getConnection();
 			ps = c.prepareStatement(MySqlCalls.INSERT_INTO_EPAD_FILES);
-
 			ps.setInt(1, Integer.parseInt(row.get("instance_fk")));// instance_fk
 			ps.setInt(2, Integer.parseInt(row.get("file_type")));// file_type
 			ps.setString(3, row.get("file_path"));// file_path
 			ps.setInt(4, Integer.parseInt(row.get("file_size")));// file_size
-
 			int fileStatus = getFileStatus(row);
 			ps.setInt(5, fileStatus);// file_status
-
 			String errMsg = getErrMsg(row);
 			ps.setString(6, errMsg);// err_msg
 			ps.setString(7, row.get("file_md5"));// file_md5
-
 			ps.execute();
-
 		} catch (SQLException sqle) {
 			logger.warning("database operation failed.", sqle);
 		} catch (Exception e) {
 			logger.warning("database operation (insert epad_file) failed. data=" + row, e);
-		} finally {
-			close(c, ps);
-		}
-	}
-
-	@Override
-	public void insertUserInDb(String username, String email, String password, String expirationdate, String userrole)
-	{
-		Connection c = null;
-		PreparedStatement ps = null;
-		try {
-			logger.info("Inserting into login table: " + username);
-
-			c = getConnection();
-			ps = c.prepareStatement(MySqlCalls.INSERT_INTO_USER);
-
-			ps.setString(1, username);
-			ps.setString(2, email);
-			ps.setString(3, password);
-			ps.setString(4, expirationdate);
-			ps.setString(5, userrole);
-
-			ps.execute();
-
-		} catch (SQLException sqle) {
-			logger.warning("database operation failed.", sqle);
-		} catch (Exception e) {
-			logger.warning("database operation (insert user) failed: " + username, e);
 		} finally {
 			close(c, ps);
 		}
@@ -799,13 +652,11 @@ public class MySqlQueriesImpl implements MySqlQueries
 		Connection c = null;
 		PreparedStatement ps = null;
 		try {
-			// logger.info("Inserting into event table: "+userName+" EVENT:"+aim_uid);
+			logger.info("Inserting into event table: " + userName + " EVENT:" + aim_uid);
 
 			c = getConnection();
 			ps = c.prepareStatement(MySqlCalls.INSERT_INTO_EVENT);
-
-			String user_fk = getUserFK(userName);
-			ps.setString(1, user_fk);
+			ps.setString(1, userName);
 			ps.setString(2, event_status);
 			ps.setString(3, aim_uid);
 			ps.setString(4, aim_name);
@@ -814,44 +665,14 @@ public class MySqlQueriesImpl implements MySqlQueries
 			ps.setString(7, template_id);
 			ps.setString(8, template_name);
 			ps.setString(9, plugin_name);
-
 			ps.execute();
-
 		} catch (SQLException sqle) {
 			logger.warning("database operation failed.", sqle);
 		} catch (Exception e) {
-			logger.warning("database operation (insert event) failed: " + aim_uid, e);
+			logger.warning("database operation (insert event) failed for AIM ID " + aim_uid, e);
 		} finally {
 			close(c, ps);
 		}
-	}
-
-	@Override
-	public String getUserFK(String username)
-	{
-		Map<String, String> retVal = new HashMap<String, String>();
-
-		Connection c = null;
-		PreparedStatement ps = null;
-		ResultSet rs = null;
-		try {
-			c = getConnection();
-			ps = c.prepareStatement(MySqlCalls.SELECT_USER_PK);
-			ps.setString(1, username);
-
-			rs = ps.executeQuery();
-			if (rs.next()) {
-				retVal = createResultMap(rs);
-			}// while
-		} catch (SQLException sqle) {
-			String debugInfo = DatabaseUtils.getDebugData(rs);
-			logger.warning("database operation failed. debugInfo=" + debugInfo, sqle);
-		} finally {
-			close(c, ps, rs);
-		}
-
-		return retVal.get(retVal.keySet().toArray()[0]);
-
 	}
 
 	@Override
@@ -923,51 +744,6 @@ public class MySqlQueriesImpl implements MySqlQueries
 		return percent;
 	}
 
-	private int getNumberOfPngFiles(String seriesUID)
-	{
-		List<String> list = getSopInstanceUidsForSeries(seriesUID);
-		return list.size();
-	}
-
-	private int getNumberOfInstances(String seriesUID)
-	{
-		List<String> list = getFinishedDICOMImageInstanceIDsForSeries(seriesUID);
-		return list.size();
-	}
-
-	private int getFileStatus(Map<String, String> data)
-	{
-		try {
-			String fileStatus = data.get("file_status");
-			if (fileStatus != null) {
-				return Integer.parseInt(fileStatus);
-			}
-			return PngProcessingStatus.DONE.getCode();
-		} catch (Exception e) {
-			logger.warning("failed to parse file_status.", e);
-		}
-		return PngProcessingStatus.DONE.getCode();
-	}
-
-	private String getErrMsg(Map<String, String> data)
-	{
-		String errMsg = data.get("err_msg");
-		if (errMsg != null) {
-			return errMsg;
-		}
-		return "";
-	}
-
-	static String getValueOrDefault(String value, String def)
-	{
-		if (value == null) {
-			return def;
-		} else if ("".equalsIgnoreCase("")) {
-			return def;
-		}
-		return value;
-	}
-
 	@Override
 	public List<Map<String, String>> getOrderFile(String seriesUID)
 	{
@@ -995,12 +771,6 @@ public class MySqlQueriesImpl implements MySqlQueries
 		}
 		return retVal;
 	}
-
-	@SuppressWarnings("unused")
-	private boolean findPngFile(String studyUID, String seriesUID, String sopInstanceUID)
-	{
-		return DicomFormatUtil.hasFileWithExtension(studyUID, seriesUID, sopInstanceUID, ".png");
-	}// findPngFile
 
 	@Override
 	public void updateStudiesStatusCode(int newStatusCode, String studyIUID)
@@ -1303,107 +1073,6 @@ public class MySqlQueriesImpl implements MySqlQueries
 		}
 	}
 
-	private Blob getPatientAttrsAsBlob(String patientID)
-	{
-		Connection c = null;
-		PreparedStatement ps = null;
-		ResultSet rs = null;
-		try {
-			c = getConnection();
-			ps = c.prepareStatement(MySqlCalls.SELECT_PATIENT_ATTRS);
-			ps.setString(1, patientID);
-			rs = ps.executeQuery();
-			if (rs.next()) {
-				return rs.getBlob(1);
-			} else {
-				return null;
-			}
-		} catch (SQLException sqle) {
-			String debugInfo = DatabaseUtils.getDebugData(rs);
-			logger.warning("database operation failed. debugInfo=" + debugInfo, sqle);
-			return null;
-		} finally {
-			close(c, ps, rs);
-		}
-	}
-
-	private Blob getStudyAttrsAsBlob(String studyIUID)
-	{
-		Connection c = null;
-		PreparedStatement ps = null;
-		ResultSet rs = null;
-		try {
-			c = getConnection();
-			ps = c.prepareStatement(MySqlCalls.SELECT_STUDY_ATTRS);
-			ps.setString(1, studyIUID);
-			rs = ps.executeQuery();
-			if (rs.next()) {
-				return rs.getBlob(1);
-			} else {
-				return null;
-			}
-		} catch (SQLException sqle) {
-			String debugInfo = DatabaseUtils.getDebugData(rs);
-			logger.warning("database operation failed. debugInfo=" + debugInfo, sqle);
-			return null;
-		} finally {
-			close(c, ps, rs);
-		}
-	}
-
-	private Blob getSeriesAttrsAsBlob(String seriesUID)
-	{
-		Connection c = null;
-		PreparedStatement ps = null;
-		ResultSet rs = null;
-		try {
-			c = getConnection();
-			ps = c.prepareStatement(MySqlCalls.SELECT_SERIES_ATTRS);
-			ps.setString(1, seriesUID);
-			rs = ps.executeQuery();
-			if (rs.next()) {
-				return rs.getBlob(1);
-			} else {
-				return null;
-			}
-		} catch (SQLException sqle) {
-			String debugInfo = DatabaseUtils.getDebugData(rs);
-			logger.warning("database operation failed. debugInfo=" + debugInfo, sqle);
-			return null;
-		} finally {
-			close(c, ps, rs);
-		}
-	}
-
-	private Blob getInstanceAttrsAsBlob(String sopInstanceUID)
-	{
-		Connection c = null;
-		PreparedStatement ps = null;
-		ResultSet rs = null;
-		try {
-			c = getConnection();
-			ps = c.prepareStatement(MySqlCalls.SELECT_INSTANCE_ATTRS);
-			ps.setString(1, sopInstanceUID);
-			rs = ps.executeQuery();
-			if (rs.next()) {
-				return rs.getBlob(1);
-			} else {
-				return null;
-			}
-		} catch (SQLException sqle) {
-			String debugInfo = DatabaseUtils.getDebugData(rs);
-			logger.warning("database operation failed. debugInfo=" + debugInfo, sqle);
-			return null;
-		} finally {
-			close(c, ps, rs);
-		}
-	}
-
-	private static String convertBytes2Base64(byte[] bytes)
-	{
-		return DatatypeConverter.printBase64Binary(bytes);
-	}
-
 	public static Map<String, String> createResultMap(ResultSet resultSet) throws SQLException
 	{
 		Map<String, String> retVal = new HashMap<String, String>();
@@ -1419,41 +1088,9 @@ public class MySqlQueriesImpl implements MySqlQueries
 		return retVal;
 	}
 
-	// /*** Database utilities ***/
-
-	Connection getConnection() throws SQLException
-	{
-		return connectionPool.getConnection();
-	}
-
-	void close(Connection c, Statement s)
-	{
-		DatabaseUtils.close(s);
-		connectionPool.freeConnection(c);
-	}
-
-	void close(Connection c, PreparedStatement ps)
-	{
-		DatabaseUtils.close(ps);
-		connectionPool.freeConnection(c);
-	}
-
-	void close(Connection c, Statement s, ResultSet rs)
-	{
-		DatabaseUtils.close(rs);
-		close(c, s);
-	}
-
-	void close(Connection c, PreparedStatement ps, ResultSet rs)
-	{
-		close(c, ps);
-		DatabaseUtils.close(rs);
-	}
-
 	@Override
 	public List<Map<String, String>> getEventsForUser(String username)
 	{
-
 		List<Map<String, String>> retVal = new ArrayList<Map<String, String>>();
 
 		Connection c = null;
@@ -1461,12 +1098,8 @@ public class MySqlQueriesImpl implements MySqlQueries
 		ResultSet rs = null;
 		try {
 			c = getConnection();
-
 			ps = c.prepareStatement(MySqlCalls.SELECT_EVENTS_FOR_USER);
-
-			String user_fk = getUserFK(username);
-			ps.setString(1, user_fk);
-
+			ps.setString(1, username);
 			rs = ps.executeQuery();
 			ResultSetMetaData metaData = rs.getMetaData();
 
@@ -1477,18 +1110,16 @@ public class MySqlQueriesImpl implements MySqlQueries
 					String colName = metaData.getColumnName(i);
 					String value = rs.getString(i);
 					rowMap.put(colName, value);
-				}// for
+				}
 				retVal.add(rowMap);
-			}// while
+			}
 		} catch (SQLException sqle) {
 			String debugInfo = DatabaseUtils.getDebugData(rs);
 			logger.warning("database operation failed. debugInfo=" + debugInfo, sqle);
 		} finally {
 			close(c, ps, rs);
 		}
-
 		return retVal;
-
 	}
 
 	@Override
@@ -1618,45 +1249,6 @@ public class MySqlQueriesImpl implements MySqlQueries
 		}
 	}
 
-	/**
-	 * Query <core>epaddb.coordinations</code> table to find a coordination that contains all the supplied term keys (and
-	 * no more) in the exact supplied position.
-	 * <p>
-	 * The table has the following structure:
-	 * 
-	 * <pre>
-	 * [coordination_key, term_key, term_position]
-	 * </pre>
-	 * 
-	 * A <code>coordination_key</code> is a non-unique key containing all the coordination's term keys and their
-	 * positions.
-	 * 
-	 * @param termKeys The terms keys to coordinate; their position in the list signifies their order.
-	 * @return The ID of the coordination or -1 if its not recorded
-	 */
-	private int getCoordinationKey(List<Integer> termKeys) throws SQLException
-	{
-		Connection c = null;
-		PreparedStatement ps = null;
-		ResultSet rs = null;
-		try {
-			c = getConnection();
-			ps = c.prepareStatement(generateCoordinationKeyQuery(termKeys));
-			rs = ps.executeQuery();
-			if (rs.next()) {
-				return rs.getInt(1);
-			} else {
-				return -1; // It does not exist in the
-			}
-		} catch (SQLException e) {
-			String debugInfo = DatabaseUtils.getDebugData(rs);
-			logger.warning("database operation failed. debugInfo=" + debugInfo, e);
-			throw e;
-		} finally {
-			close(c, ps, rs);
-		}
-	}
-
 	@Override
 	public Term insertCoordinationTerm(String termIDPrefix, String schemaName, String schemaVersion, String description,
 			List<Integer> termKeys) throws SQLException
@@ -1759,6 +1351,45 @@ public class MySqlQueriesImpl implements MySqlQueries
 		return studySeriesAndImageIDs;
 	}
 
+	/**
+	 * Query <core>epaddb.coordinations</code> table to find a coordination that contains all the supplied term keys (and
+	 * no more) in the exact supplied position.
+	 * <p>
+	 * The table has the following structure:
+	 * 
+	 * <pre>
+	 * [coordination_key, term_key, term_position]
+	 * </pre>
+	 * 
+	 * A <code>coordination_key</code> is a non-unique key containing all the coordination's term keys and their
+	 * positions.
+	 * 
+	 * @param termKeys The terms keys to coordinate; their position in the list signifies their order.
+	 * @return The ID of the coordination or -1 if its not recorded
+	 */
+	private int getCoordinationKey(List<Integer> termKeys) throws SQLException
+	{
+		Connection c = null;
+		PreparedStatement ps = null;
+		ResultSet rs = null;
+		try {
+			c = getConnection();
+			ps = c.prepareStatement(generateCoordinationKeyQuery(termKeys));
+			rs = ps.executeQuery();
+			if (rs.next()) {
+				return rs.getInt(1);
+			} else {
+				return -1; // It does not exist in the
+			}
+		} catch (SQLException e) {
+			String debugInfo = DatabaseUtils.getDebugData(rs);
+			logger.warning("database operation failed. debugInfo=" + debugInfo, e);
+			throw e;
+		} finally {
+			close(c, ps, rs);
+		}
+	}
+
 	private String generateCoordinationKeyQuery(List<Integer> termKeys)
 	{
 		StringBuilder query = new StringBuilder();
@@ -1780,5 +1411,266 @@ public class MySqlQueriesImpl implements MySqlQueries
 		query.append("                      I.position > " + numberOfPositions + ")");
 
 		return query.toString();
+	}
+
+	// /*** Database utilities ***/
+
+	private Connection getConnection() throws SQLException
+	{
+		return connectionPool.getConnection();
+	}
+
+	private void close(Connection c, Statement s)
+	{
+		DatabaseUtils.close(s);
+		connectionPool.freeConnection(c);
+	}
+
+	private void close(Connection c, PreparedStatement ps)
+	{
+		DatabaseUtils.close(ps);
+		connectionPool.freeConnection(c);
+	}
+
+	private void close(Connection c, Statement s, ResultSet rs)
+	{
+		DatabaseUtils.close(rs);
+		close(c, s);
+	}
+
+	private void close(Connection c, PreparedStatement ps, ResultSet rs)
+	{
+		close(c, ps);
+		DatabaseUtils.close(rs);
+	}
+
+	private String shortenSting(String longString)
+	{
+		if (longString.length() > 10) {
+			StringBuilder sb = new StringBuilder();
+			sb.append("...");
+			int index = longString.length() - 5;
+			sb.append(longString.substring(index));
+			return sb.toString();
+		}
+		return longString;
+	}
+
+	private static boolean isStudyDateColumn(String currKey)
+	{
+		return (currKey.toLowerCase().indexOf("date") > 0 || currKey.toLowerCase().indexOf("time") > 0);
+	}
+
+	private int getNumberOfPngFiles(String seriesUID)
+	{
+		List<String> list = getSopInstanceUidsForSeries(seriesUID);
+		return list.size();
+	}
+
+	private int getNumberOfInstances(String seriesUID)
+	{
+		List<String> list = getFinishedDICOMImageInstanceIDsForSeries(seriesUID);
+		return list.size();
+	}
+
+	private int getFileStatus(Map<String, String> data)
+	{
+		try {
+			String fileStatus = data.get("file_status");
+			if (fileStatus != null) {
+				return Integer.parseInt(fileStatus);
+			}
+			return PngProcessingStatus.DONE.getCode();
+		} catch (Exception e) {
+			logger.warning("failed to parse file_status.", e);
+		}
+		return PngProcessingStatus.DONE.getCode();
+	}
+
+	private String getErrMsg(Map<String, String> data)
+	{
+		String errMsg = data.get("err_msg");
+		if (errMsg != null) {
+			return errMsg;
+		}
+		return "";
+	}
+
+	private String getValueOrDefault(String value, String def)
+	{
+		if (value == null) {
+			return def;
+		} else if ("".equalsIgnoreCase("")) {
+			return def;
+		}
+		return value;
+	}
+
+	@SuppressWarnings("unused")
+	private boolean findPngFile(String studyUID, String seriesUID, String sopInstanceUID)
+	{
+		return DicomFormatUtil.hasFileWithExtension(studyUID, seriesUID, sopInstanceUID, ".png");
+	}
+
+	private Blob getPatientAttrsAsBlob(String patientID)
+	{
+		Connection c = null;
+		PreparedStatement ps = null;
+		ResultSet rs = null;
+		try {
+			c = getConnection();
+			ps = c.prepareStatement(MySqlCalls.SELECT_PATIENT_ATTRS);
+			ps.setString(1, patientID);
+			rs = ps.executeQuery();
+			if (rs.next()) {
+				return rs.getBlob(1);
+			} else {
+				return null;
+			}
+		} catch (SQLException sqle) {
+			String debugInfo = DatabaseUtils.getDebugData(rs);
+			logger.warning("database operation failed. debugInfo=" + debugInfo, sqle);
+			return null;
+		} finally {
+			close(c, ps, rs);
+		}
+	}
+
+	private Blob getStudyAttrsAsBlob(String studyIUID)
+	{
+		Connection c = null;
+		PreparedStatement ps = null;
+		ResultSet rs = null;
+		try {
+			c = getConnection();
+			ps = c.prepareStatement(MySqlCalls.SELECT_STUDY_ATTRS);
+			ps.setString(1, studyIUID);
+			rs = ps.executeQuery();
+			if (rs.next()) {
+				return rs.getBlob(1);
+			} else {
+				return null;
+			}
+		} catch (SQLException sqle) {
+			String debugInfo = DatabaseUtils.getDebugData(rs);
+			logger.warning("database operation failed. debugInfo=" + debugInfo, sqle);
+			return null;
+		} finally {
+			close(c, ps, rs);
+		}
+	}
+
+	private Blob getSeriesAttrsAsBlob(String seriesUID)
+	{
+		Connection c = null;
+		PreparedStatement ps = null;
+		ResultSet rs = null;
+		try {
+			c = getConnection();
+			ps = c.prepareStatement(MySqlCalls.SELECT_SERIES_ATTRS);
+			ps.setString(1, seriesUID);
+			rs = ps.executeQuery();
+			if (rs.next()) {
+				return rs.getBlob(1);
+			} else {
+				return null;
+			}
+		} catch (SQLException sqle) {
+			String debugInfo = DatabaseUtils.getDebugData(rs);
+			logger.warning("database operation failed. debugInfo=" + debugInfo, sqle);
+			return null;
+		} finally {
+			close(c, ps, rs);
+		}
+	}
+
+	private Blob getInstanceAttrsAsBlob(String sopInstanceUID)
+	{
+		Connection c = null;
+		PreparedStatement ps = null;
+		ResultSet rs = null;
+		try {
+			c = getConnection();
+			ps = c.prepareStatement(MySqlCalls.SELECT_INSTANCE_ATTRS);
+			ps.setString(1, sopInstanceUID);
+			rs = ps.executeQuery();
+			if (rs.next()) {
+				return rs.getBlob(1);
+			} else {
+				return null;
+			}
+		} catch (SQLException sqle) {
+			String debugInfo = DatabaseUtils.getDebugData(rs);
+			logger.warning("database operation failed. debugInfo=" + debugInfo, sqle);
+			return null;
+		} finally {
+			close(c, ps, rs);
+		}
+	}
+
+	private static String convertBytes2Base64(byte[] bytes)
+	{
+		return DatatypeConverter.printBase64Binary(bytes);
+	}
+
+	private Set<String> getNewSeriesFromPacsDb()
+	{
+		List<String> pacsList = getNewSeriesInDcm4Chee();
+		return new HashSet<String>(pacsList);
+	}
+
+	private Set<String> getAllSeriesFromEPadDb()
+	{ // This is a "select series_iuid from epaddb.series_status";
+		Set<String> retVal = new HashSet<String>();
+
+		Connection c = null;
+		PreparedStatement ps = null;
+		ResultSet rs = null;
+		try {
+			c = getConnection();
+			ps = c.prepareStatement("select series_iuid from epaddb.series_status");
+
+			rs = ps.executeQuery();
+			while (rs.next()) {
+				retVal.add(rs.getString("series_iuid"));
+			}
+		} catch (SQLException sqle) {
+			String debugInfo = DatabaseUtils.getDebugData(rs);
+			logger.warning("database operation failed. debugInfo=" + debugInfo, sqle);
+		} finally {
+			close(c, ps, rs);
+		}
+		return retVal;
+	}
+
+	/**
+	 * Cross database query that gets finished image instance IDs for a series.
+	 * 
+	 * @param seriesIUID String
+	 * @return List of String (sopInstanceIds).
+	 */
+	private List<String> getFinishedDICOMImageInstanceIDsForSeries(String seriesIUID)
+	{
+		List<String> retVal = new ArrayList<String>();
+
+		Connection c = null;
+		PreparedStatement ps = null;
+		ResultSet rs = null;
+		try {
+			c = getConnection();
+			ps = c.prepareStatement(MySqlCalls.SELECT_EPAD_FILES_FOR_SERIES);
+			ps.setString(1, seriesIUID);
+
+			rs = ps.executeQuery();
+			while (rs.next()) {
+				retVal.add(rs.getString("sop_iuid"));
+			}
+		} catch (SQLException sqle) {
+			String debugInfo = DatabaseUtils.getDebugData(rs);
+			logger.warning("database operation failed. debugInfo=" + debugInfo, sqle);
+		} finally {
+			close(c, ps, rs);
+		}
+		return retVal;
 	}
 }

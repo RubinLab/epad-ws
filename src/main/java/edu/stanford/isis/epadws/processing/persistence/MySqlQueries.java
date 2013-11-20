@@ -111,12 +111,6 @@ public interface MySqlQueries
 
 	InputStream getInstanceAttrsAsStream(String sopInstanceUID);
 
-	List<String> getAllUsers();
-
-	void insertUserInDb(String username, String email, String password, String expirationdate, String userrole);
-
-	String getUserFK(String username);
-
 	void insertEventInDb(String userName, String event_status, String aim_uid, String aim_name, String patient_id,
 			String patient_name, String template_id, String template_name, String plugin_name);
 

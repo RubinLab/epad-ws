@@ -26,8 +26,6 @@ public class MySqlCalls
 
 	public static final String SELECT_SERIES_BY_ID = "SELECT * from pacsdb.series where series_iuid=?";
 
-	public static final String SELECT_ALL_USERS = "SELECT user_name from epaddb.users";
-
 	public static final String SELECT_STUDY_FK_ON_FS_TABLE = "SELECT study_fk from pacsdb.study_on_fs";
 	public static final String UPDATE_STUDY_STATUS_CODE = "UPDATE pacsdb.study SET study_status=? WHERE study_iuid=?";
 	public static final String UPDATE_SERIES_STATUS_CODE = "UPDATE pacsdb.series SET series_status=? WHERE series_iuid=?";
@@ -40,21 +38,15 @@ public class MySqlCalls
 	public static final String SELECT_PARENT_STUDY_FOR_SERIES = "SELECT * from pacsdb.study as st, pacsdb.series as s WHERE st.pk=s.study_fk and s.series_iuid=?";
 	public static final String SELECT_PARENT_SERIES_FOR_IMAGE = "SELECT * from pacsdb.series as s, pacsdb.instance as i WHERE s.pk=i.series_fk and i.sop_iuid=?";
 
-	public static final String SELECT_USER_PK = "SELECT u.pk from epaddb.users as u WHERE user_name=?";
-
 	public static final String SELECT_EPAD_FILES_FOR_SERIES = "select i.sop_iuid from epaddb.epad_files as f, pacsdb.instance as i, pacsdb.series as s where series_iuid=? and i.series_fk=s.pk and f.instance_fk=i.pk";
 
 	public static final String INSERT_INTO_EPAD_FILES = "INSERT INTO epaddb.epad_files"
 			+ "(instance_fk,file_type,file_path,file_size,file_status,err_msg,file_md5)" + "VALUES (?,?,?,?,?,?,?)";
 
-	public static final String INSERT_INTO_USER = "INSERT INTO epaddb.users"
-			+ "(user_name,user_email,user_passwd,user_expiration,user_role)" + "VALUES (?,?,?,?,?)";
-
 	public static final String INSERT_INTO_EVENT = "INSERT INTO epaddb.events"
-			+ "(user_fk,event_status,aim_uid,aim_name,patient_id,patient_name,template_id,template_name,plugin_name)"
+			+ "(username,event_status,aim_uid,aim_name,patient_id,patient_name,template_id,template_name,plugin_name)"
 			+ "VALUES (?,?,?,?,?,?,?,?,?)";
-
-	public static final String SELECT_EVENTS_FOR_USER = "SELECT * from epaddb.events where user_fk=?";
+	public static final String SELECT_EVENTS_FOR_USER = "SELECT * from epaddb.events where username=?";
 
 	public static final String SELECT_EPAD_FILES_FOR_PATH_LIKE = "SELECT * from epaddb.epad_files where file_path LIKE ?";
 	public static final String SELECT_EPAD_FILES_FOR_EXACT_PATH = "SELECT * from epaddb.epad_files where file_path=?";
