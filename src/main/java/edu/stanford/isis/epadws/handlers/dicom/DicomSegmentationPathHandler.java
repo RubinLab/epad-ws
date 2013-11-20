@@ -1,6 +1,5 @@
 package edu.stanford.isis.epadws.handlers.dicom;
 
-import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.URLDecoder;
 
@@ -16,6 +15,9 @@ import edu.stanford.isis.epadws.processing.persistence.MySqlInstance;
 import edu.stanford.isis.epadws.processing.persistence.MySqlQueries;
 
 /**
+ * Given an image identifier for an image in a DICOM study return a three-column CSV with the study, series and image
+ * IDs.
+ * 
  * @author kurtz
  */
 public class DicomSegmentationPathHandler extends AbstractHandler
@@ -23,75 +25,68 @@ public class DicomSegmentationPathHandler extends AbstractHandler
 	private static final EPADLogger log = EPADLogger.getInstance();
 	private static final EPADConfig config = EPADConfig.getInstance();
 
-	// TODO Convert to JSON and clean up entire class. Add authentication etc.
+	// TODO Convert result to JSON and clean up entire class. Add authentication etc.
 
 	@Override
 	public void handle(String base, Request request, HttpServletRequest httpRequest, HttpServletResponse httpResponse)
-			throws IOException
 	{
-		httpResponse.setContentType("text/plain");
-		httpResponse.setStatus(HttpServletResponse.SC_OK);
-		request.setHandled(true);
-
-		PrintWriter responseStream = httpResponse.getWriter();
-
+		PrintWriter responseStream = null;
+		int statusCode;
 		String queryString = httpRequest.getQueryString();
 
+		httpResponse.setContentType("text/plain");
+		request.setHandled(true);
+
 		if (queryString != null) {
-			queryString = URLDecoder.decode(queryString, "UTF-8");
-			queryString = queryString.trim();
-			String imageIdKey = getInstanceUIDFromRequest(queryString);
-			String[] res = null;
-			log.info("SegmentationPath query from ePAD : " + queryString);
-			if (imageIdKey != null) {
-				log.info("DCMQR: " + imageIdKey);
-				try {
-					res = retrieveFromEpadDB(imageIdKey);
-				} catch (Exception e) {
-					log.warning("error reading database", e);
+			try {
+				responseStream = httpResponse.getWriter();
+				queryString = URLDecoder.decode(queryString, "UTF-8");
+				queryString = queryString.trim();
+				String imageUID = getImageUIDFromRequest(queryString);
+				if (imageUID != null) {
+					String[] studySeriesAndImageIDs = retrieveStudySeriesAndImageIDsFromEpadDatabase(imageUID);
+					String separator = config.getParam("fieldSeparator");
+					log.info("SegmentationPath query from ePAD for image " + imageUID);
+
+					if (studySeriesAndImageIDs[0] != null && studySeriesAndImageIDs[1] != null
+							&& studySeriesAndImageIDs[2] != null) {
+						responseStream.println("StudyUID" + separator + "SeriesUID" + separator + "ImageUID");
+						responseStream.println(studySeriesAndImageIDs[0] + separator + studySeriesAndImageIDs[1] + separator
+								+ studySeriesAndImageIDs[2]);
+						statusCode = HttpServletResponse.SC_OK;
+					} else {
+						log.warning("Could not find study for image with UID" + imageUID);
+						statusCode = HttpServletResponse.SC_NOT_FOUND;
+					}
+				} else {
+					log.warning("No image ID in request query!");
+					statusCode = HttpServletResponse.SC_BAD_REQUEST;
 				}
+			} catch (Exception e) {
+				log.warning("Internal server error handling series path request", e);
+				statusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 			}
-			String separator = config.getParam("fieldSeparator");
-			responseStream.println("StudyUID" + separator + "SeriesUID" + separator + "ImageUID");
-			if (res[0] != null && res[1] != null && res[2] != null)
-				responseStream.println(res[0] + separator + res[1] + separator + res[2]);
 			responseStream.flush();
 		} else {
-			log.warning("No segmentation query in request!");
+			log.warning("No segmentation path query in request!");
+			statusCode = HttpServletResponse.SC_BAD_REQUEST;
 		}
+		httpResponse.setStatus(statusCode);
 	}
 
-	private static String getInstanceUIDFromRequest(String queryString)
+	private String[] retrieveStudySeriesAndImageIDsFromEpadDatabase(String imageUID)
+	{
+		MySqlQueries dbQueries = MySqlInstance.getInstance().getMysqlQueries();
+
+		return dbQueries.retrieveStudySeriesAndImageIDsFromEpadDatabase(imageUID);
+	}
+
+	private String getImageUIDFromRequest(String queryString)
 	{
 		String[] parts = queryString.split("&");
 		String value = parts[0].trim();
 		parts = value.split("=");
 		value = parts[1].trim();
 		return value;
-	}
-
-	public static String[] retrieveFromEpadDB(String imageIdKey) throws Exception
-	{
-		MySqlQueries queries = MySqlInstance.getInstance().getMysqlQueries();
-		String study = null;
-		String series = null;
-		String[] res = new String[3];
-		String imageIdKeyWithoutDot = imageIdKey.replaceAll("\\.", "_");
-		String path = queries.selectEpadFilePathLike(imageIdKeyWithoutDot);
-
-		log.info("Segmentation path found : " + path);
-
-		if (path != null) {
-			String[] tab = path.split("\\/");
-			series = tab[tab.length - 2];
-			study = tab[tab.length - 3];
-		}
-		res[0] = study;
-		res[1] = series;
-		res[2] = imageIdKeyWithoutDot;
-
-		log.info("Segmentation DICOM files found : " + study + " " + series);
-
-		return res;
 	}
 }

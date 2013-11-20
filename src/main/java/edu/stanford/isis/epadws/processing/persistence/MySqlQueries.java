@@ -33,6 +33,8 @@ public interface MySqlQueries
 
 	List<Map<String, String>> getSeriesForStatusInEPadDatabase(int statusCode);
 
+	String[] retrieveStudySeriesAndImageIDsFromEpadDatabase(String imageUID);
+
 	Map<String, String> getSeriesByIdInEPadDatabase(String seriesIUID);
 
 	Map<String, String> getPatientForStudyFromDcm4Chee(String studyIUID);

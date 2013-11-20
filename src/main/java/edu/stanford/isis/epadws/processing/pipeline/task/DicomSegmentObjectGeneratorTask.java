@@ -178,17 +178,28 @@ public class DicomSegmentObjectGeneratorTask implements GeneratorTask
 		}
 	}
 
-	private void generateAIMSegmentationFile(File tagFile) throws Exception
+	/**
+	 * Generate an AIM file describing a DICOM Segmentation Object. The References SOP Instance UID in the DICOM tag file
+	 * identifies the image from which the segmentation object is derived from. The DICOM file does not contain the study
+	 * or series identifiers for that image so we discover it by querying DCM4CHEE's database.
+	 * <p>
+	 * We then store these series and image IDs in a DICOMImageReference element
+	 * 
+	 * @param dicomTagFile
+	 * @throws Exception
+	 */
+	private void generateAIMSegmentationFile(File dicomTagFile) throws Exception
 	{
-		Map<String, String> tags = DicomTagFileUtils.readTagFile(tagFile);
+		Map<String, String> dicomTags = DicomTagFileUtils.readTagFile(dicomTagFile);
 
-		String patientID = tags.get("Patient ID");
-		String patientName = tags.get("Patient's Name");
-		String sopClassUID = tags.get("SOP Class UID");
-		String sopInstanceUID = tags.get("SOP Instance UID");
-		String studyInstanceUID = tags.get("Study Instance UID");
-		String seriesInstanceUID = tags.get("Series Instance UID");
-		String referencedSOPInstanceUID = tags.get("Referenced SOP Instance UID");
+		String patientID = dicomTags.get("Patient ID");
+		String patientName = dicomTags.get("Patient's Name");
+		String sopClassUID = dicomTags.get("SOP Class UID");
+		String sopInstanceUID = dicomTags.get("SOP Instance UID");
+		String studyInstanceUID = dicomTags.get("Study Instance UID");
+		String seriesInstanceUID = dicomTags.get("Series Instance UID");
+		String referencedSOPInstanceUID = dicomTags.get("Referenced SOP Instance UID"); // Image from which DSO is derived
+		String referencedSeriesInstanceUID = getDicomSeriesUIDFromImageUID(referencedSOPInstanceUID); // Series ID for same
 
 		logger.info("Patient ID=" + patientID);
 		logger.info("Patient's Name=" + patientName);
@@ -197,6 +208,7 @@ public class DicomSegmentObjectGeneratorTask implements GeneratorTask
 		logger.info("Study Instance UID=" + studyInstanceUID);
 		logger.info("Series Instance UID=" + seriesInstanceUID);
 		logger.info("Referenced SOP Instance UID=" + referencedSOPInstanceUID);
+		logger.info("Referenced Series Instance UID=" + referencedSeriesInstanceUID);
 
 		ImageAnnotation imageAnnotation = new ImageAnnotation(0, "", "2012-10-17T10:22:40", "segmentation", "SEG",
 				"SEG Only", "", "", "");
@@ -207,6 +219,7 @@ public class DicomSegmentObjectGeneratorTask implements GeneratorTask
 
 		DICOMImageReference dicomImageReference = new DICOMImageReference();
 		dicomImageReference.setCagridId(0);
+
 		ImageStudy imageStudy = new ImageStudy();
 		imageStudy.setCagridId(0);
 		imageStudy.setInstanceUID(studyInstanceUID);
@@ -215,19 +228,19 @@ public class DicomSegmentObjectGeneratorTask implements GeneratorTask
 
 		ImageSeries imageSeries = new ImageSeries();
 		imageSeries.setCagridId(0);
-		imageSeries.setInstanceUID(getDicomSeriesUIDFromImageUID(referencedSOPInstanceUID));
+		imageSeries.setInstanceUID(referencedSeriesInstanceUID);
 
 		edu.stanford.hakan.aim3api.base.Image image = new edu.stanford.hakan.aim3api.base.Image();
 		image.setCagridId(0);
 		image.setSopClassUID("112233"); // TODO
 		image.setSopInstanceUID(referencedSOPInstanceUID);
 
-		imageSeries.addImage(image); // Image to ImageSeries
-		imageStudy.setImageSeries(imageSeries); // ImageSeries to ImageStudy
-		dicomImageReference.setImageStudy(imageStudy); // ImageStudy to ImageReference
-		imageAnnotation.addImageReference(dicomImageReference); // ImageReference to ImageAnnotation
+		imageSeries.addImage(image); // Add Image to ImageSeries
+		imageStudy.setImageSeries(imageSeries); // Add ImageSeries to ImageStudy
+		dicomImageReference.setImageStudy(imageStudy); // Add ImageStudy to ImageReference
+		imageAnnotation.addImageReference(dicomImageReference); // Add DicomImageReference to ImageAnnotation
 
-		Polyline polyline = new Polyline(); // *** Creating GeometricShape with its coordinates
+		Polyline polyline = new Polyline();
 		polyline.setCagridId(0);
 		polyline.setIncludeFlag(false);
 		polyline.setShapeIdentifier(0);
@@ -236,7 +249,7 @@ public class DicomSegmentObjectGeneratorTask implements GeneratorTask
 		polyline.addSpatialCoordinate(new TwoDimensionSpatialCoordinate(0, 2, "0", 0, 3236.0, 2412.0));
 		polyline.addSpatialCoordinate(new TwoDimensionSpatialCoordinate(0, 3, "0", 0, 2693.0, 2412.0));
 		polyline.setLineStyle("lineStyle");
-		imageAnnotation.addGeometricShape(polyline); // Adding polyline to ImageAnnotation
+		imageAnnotation.addGeometricShape(polyline);
 
 		Person person = new Person();
 		person.setSex("F");
@@ -248,7 +261,7 @@ public class DicomSegmentObjectGeneratorTask implements GeneratorTask
 
 		logger.info("Saving AIM file to server " + imageAnnotation.getUniqueIdentifier());
 		try {
-			saveToServer(imageAnnotation);
+			saveImageAnnotationToServer(imageAnnotation);
 		} catch (AimException e) {
 			logger.warning("Exception saving AIM file for segmentation object to server", e);
 		}
@@ -397,7 +410,7 @@ public class DicomSegmentObjectGeneratorTask implements GeneratorTask
 		return "DicomSegmentationObject";
 	}
 
-	public String saveToServer(ImageAnnotation aim) throws AimException
+	public String saveImageAnnotationToServer(ImageAnnotation aim) throws AimException
 	{
 		String res = "";
 
@@ -459,8 +472,7 @@ public class DicomSegmentObjectGeneratorTask implements GeneratorTask
 		}
 		return null;
 	}
-
-}// class
+}
 
 // <?xml version="1.0"?>
 // <ImageAnnotation xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" dateTime="2012-10-24T11:03:31"

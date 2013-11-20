@@ -1737,6 +1737,28 @@ public class MySqlQueriesImpl implements MySqlQueries
 		}
 	}
 
+	// TODO This is very low level and brittle. See if we can get information from DCM4CHEE database.
+	@Override
+	public String[] retrieveStudySeriesAndImageIDsFromEpadDatabase(String imageUID)
+	{
+		String study = null;
+		String series = null;
+		String[] studySeriesAndImageIDs = new String[3];
+		String imageIdKeyWithoutDot = imageUID.replaceAll("\\.", "_");
+		String path = selectEpadFilePathLike(imageIdKeyWithoutDot);
+
+		if (path != null) {
+			String[] tab = path.split("\\/");
+			series = tab[tab.length - 2];
+			study = tab[tab.length - 3];
+		}
+		studySeriesAndImageIDs[0] = study;
+		studySeriesAndImageIDs[1] = series;
+		studySeriesAndImageIDs[2] = imageIdKeyWithoutDot;
+
+		return studySeriesAndImageIDs;
+	}
+
 	private String generateCoordinationKeyQuery(List<Integer> termKeys)
 	{
 		StringBuilder query = new StringBuilder();
