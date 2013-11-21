@@ -90,7 +90,7 @@ public class MySqlQueriesImpl implements MySqlQueries
 		ResultSet rs = null;
 		try {
 			c = getConnection();
-			ps = c.prepareStatement(MySqlCalls.SELECT_SERIES_FOR_STUDY);
+			ps = c.prepareStatement(MySqlCalls.DCM4CHEE_SELECT_SERIES_FOR_STUDY);
 			ps.setString(1, studyUID);
 			rs = ps.executeQuery();
 			ResultSetMetaData metaData = rs.getMetaData();
@@ -178,7 +178,7 @@ public class MySqlQueriesImpl implements MySqlQueries
 		ResultSet rs = null;
 		try {
 			c = getConnection();
-			ps = c.prepareStatement(MySqlCalls.SELECT_STUDY_BY_STATUS);
+			ps = c.prepareStatement(MySqlCalls.DCM4CHEE_SELECT_STUDY_BY_STATUS);
 			ps.setInt(1, 0);
 
 			rs = ps.executeQuery();
@@ -205,7 +205,7 @@ public class MySqlQueriesImpl implements MySqlQueries
 		ResultSet rs = null;
 		try {
 			c = getConnection();
-			ps = c.prepareStatement(MySqlCalls.SELECT_SERIES_BY_STATUS);
+			ps = c.prepareStatement(MySqlCalls.DCM4CHEE_SELECT_SERIES_BY_STATUS);
 			ps.setInt(1, 0);
 
 			rs = ps.executeQuery();
@@ -232,7 +232,7 @@ public class MySqlQueriesImpl implements MySqlQueries
 		ResultSet rs = null;
 		try {
 			c = getConnection();
-			ps = c.prepareStatement(MySqlCalls.SELECT_STUDY_BY_STATUS);
+			ps = c.prepareStatement(MySqlCalls.DCM4CHEE_SELECT_STUDY_BY_STATUS);
 			ps.setInt(1, statusCode);
 
 			rs = ps.executeQuery();
@@ -292,7 +292,7 @@ public class MySqlQueriesImpl implements MySqlQueries
 		ResultSet rs = null;
 		try {
 			c = getConnection();
-			ps = c.prepareStatement(MySqlCalls.SELECT_SERIES_BY_ID);
+			ps = c.prepareStatement(MySqlCalls.DCM4CHEE_SELECT_SERIES_BY_ID);
 			ps.setString(1, seriesIUID);
 
 			rs = ps.executeQuery();
@@ -318,7 +318,7 @@ public class MySqlQueriesImpl implements MySqlQueries
 		ResultSet rs = null;
 		try {
 			c = getConnection();
-			ps = c.prepareStatement(MySqlCalls.SELECT_PATIENT_FOR_STUDY);
+			ps = c.prepareStatement(MySqlCalls.DCM4CHEE_SELECT_PATIENT_FOR_STUDY);
 			ps.setString(1, studyIUID);
 
 			rs = ps.executeQuery();
@@ -348,7 +348,7 @@ public class MySqlQueriesImpl implements MySqlQueries
 		ResultSet rs = null;
 		try {
 			c = getConnection();
-			ps = c.prepareStatement(MySqlCalls.SELECT_STUDY_FOR_PATIENT);
+			ps = c.prepareStatement(MySqlCalls.DCM4CHEE_SELECT_STUDY_FOR_PATIENT);
 			ps.setString(1, patientID);
 
 			rs = ps.executeQuery();
@@ -374,7 +374,7 @@ public class MySqlQueriesImpl implements MySqlQueries
 		ResultSet rs = null;
 		try {
 			c = getConnection();
-			ps = c.prepareStatement(MySqlCalls.SELECT_PARENT_STUDY_FOR_SERIES);
+			ps = c.prepareStatement(MySqlCalls.DCM4CHEE_SELECT_PARENT_STUDY_FOR_SERIES);
 			ps.setString(1, seriesIUID);
 
 			rs = ps.executeQuery();
@@ -400,7 +400,7 @@ public class MySqlQueriesImpl implements MySqlQueries
 		ResultSet rs = null;
 		try {
 			c = getConnection();
-			ps = c.prepareStatement(MySqlCalls.SELECT_PARENT_SERIES_FOR_IMAGE);
+			ps = c.prepareStatement(MySqlCalls.DCM4CHEE_SELECT_PARENT_SERIES_FOR_IMAGE);
 			ps.setString(1, sopInstanceUID);
 
 			rs = ps.executeQuery();
@@ -459,7 +459,7 @@ public class MySqlQueriesImpl implements MySqlQueries
 		ResultSet rs = null;
 		try {
 			c = getConnection();
-			ps = c.prepareStatement(MySqlCalls.SELECT_INSTANCE_FOR_SERIES);
+			ps = c.prepareStatement(MySqlCalls.DCM4CHEE_SELECT_INSTANCE_FOR_SERIES);
 			ps.setString(1, seriesIUID);
 
 			rs = ps.executeQuery();
@@ -486,7 +486,7 @@ public class MySqlQueriesImpl implements MySqlQueries
 		ResultSet rs = null;
 		try {
 			c = getConnection();
-			ps = c.prepareStatement(MySqlCalls.SELECT_FILES_FOR_SERIES_ORDERED);
+			ps = c.prepareStatement(MySqlCalls.DCM4CHEE_SELECT_FILES_FOR_SERIES_ORDERED);
 			ps.setString(1, seriesIUID);
 
 			rs = ps.executeQuery();
@@ -517,7 +517,7 @@ public class MySqlQueriesImpl implements MySqlQueries
 		ResultSet rs = null;
 		try {
 			c = getConnection();
-			ps = c.prepareStatement(MySqlCalls.SELECT_FILES_FOR_SERIES);
+			ps = c.prepareStatement(MySqlCalls.DCM4CHEE_SELECT_FILES_FOR_SERIES);
 			ps.setString(1, seriesIUID);
 
 			rs = ps.executeQuery();
@@ -545,7 +545,7 @@ public class MySqlQueriesImpl implements MySqlQueries
 		ResultSet rs = null;
 		try {
 			c = getConnection();
-			ps = c.prepareStatement(MySqlCalls.SELECT_INSTANCE_FOR_SERIES);
+			ps = c.prepareStatement(MySqlCalls.DCM4CHEE_SELECT_INSTANCE_FOR_SERIES);
 			ps.setString(1, seriesIUID);
 
 			rs = ps.executeQuery();
@@ -754,7 +754,7 @@ public class MySqlQueriesImpl implements MySqlQueries
 		ResultSet rs = null;
 		try {
 			c = getConnection();
-			ps = c.prepareStatement(MySqlCalls.SELECT_INSTANCE_FOR_SERIES_ORDER_BY_INT);
+			ps = c.prepareStatement(MySqlCalls.DCM4CHEE_SELECT_INSTANCE_FOR_SERIES_ORDER_BY_INT);
 			ps.setString(1, seriesUID);
 
 			rs = ps.executeQuery();
@@ -780,7 +780,7 @@ public class MySqlQueriesImpl implements MySqlQueries
 		ResultSet rs = null;
 		try {
 			c = getConnection();
-			ps = c.prepareStatement(MySqlCalls.UPDATE_STUDY_STATUS_CODE);
+			ps = c.prepareStatement(MySqlCalls.DCM4CHEE_UPDATE_STUDY_STATUS_CODE);
 			ps.setInt(1, newStatusCode);
 			ps.setString(2, studyIUID);
 			ps.execute();
@@ -801,7 +801,7 @@ public class MySqlQueriesImpl implements MySqlQueries
 		ResultSet rs = null;
 		try {
 			c = getConnection();
-			ps = c.prepareStatement(MySqlCalls.UPDATE_SERIES_STATUS_CODE);
+			ps = c.prepareStatement(MySqlCalls.DCM4CHEE_UPDATE_SERIES_STATUS_CODE);
 			ps.setInt(1, newStatusCode);
 			ps.setString(2, seriesIUID);
 			ps.execute();
@@ -904,7 +904,7 @@ public class MySqlQueriesImpl implements MySqlQueries
 		StringBuilder sb = new StringBuilder();
 		try {
 			c = getConnection();
-			ps = c.prepareStatement(MySqlCalls.PK_FOR_STUDY);
+			ps = c.prepareStatement(MySqlCalls.DCM4CHEE_PK_FOR_STUDY);
 			ps.setString(1, studyUID);
 
 			sb.append("getStudyKey(").append(studyUID).append(").");
@@ -935,7 +935,7 @@ public class MySqlQueriesImpl implements MySqlQueries
 		ResultSet rs = null;
 		try {
 			c = getConnection();
-			ps = c.prepareStatement(MySqlCalls.PK_FOR_SERIES);
+			ps = c.prepareStatement(MySqlCalls.DCM4CHEE_PK_FOR_SERIES);
 			ps.setString(1, seriesUID);
 			rs = ps.executeQuery();
 			if (rs.next()) {
@@ -960,7 +960,7 @@ public class MySqlQueriesImpl implements MySqlQueries
 		ResultSet rs = null;
 		try {
 			c = getConnection();
-			ps = c.prepareStatement(MySqlCalls.PK_FOR_INSTANCE);
+			ps = c.prepareStatement(MySqlCalls.DCM4CHEE_PK_FOR_INSTANCE);
 			ps.setString(1, sopInstanceUID);
 			rs = ps.executeQuery();
 			if (rs.next()) {
@@ -1157,7 +1157,7 @@ public class MySqlQueriesImpl implements MySqlQueries
 
 		try {
 			c = getConnection();
-			ps = c.prepareStatement(MySqlCalls.SELECT_ALL_PATHS);
+			ps = c.prepareStatement(MySqlCalls.SELECT_ALL_EPAD_FILE_PATHS);
 			rs = ps.executeQuery();
 			while (rs.next()) {
 				result.add(rs.getString(1));
@@ -1180,7 +1180,7 @@ public class MySqlQueriesImpl implements MySqlQueries
 		ResultSet rs = null;
 		try {
 			c = getConnection();
-			ps = c.prepareStatement(MySqlCalls.SELECT_TERM_KEY);
+			ps = c.prepareStatement(MySqlCalls.SELECT_COORDINATION_TERM_KEY);
 			ps.setString(1, term.getTermID());
 			ps.setString(2, term.getSchemaName());
 			ps.setString(3, term.getSchemaVersion());
@@ -1306,7 +1306,7 @@ public class MySqlQueriesImpl implements MySqlQueries
 		ResultSet rs = null;
 		try {
 			c = getConnection();
-			ps = c.prepareStatement(MySqlCalls.INSERT_TERM, Statement.RETURN_GENERATED_KEYS);
+			ps = c.prepareStatement(MySqlCalls.INSERT_COORDINATION_TERM, Statement.RETURN_GENERATED_KEYS);
 			ps.setString(1, term.getTermID());
 			ps.setString(2, term.getSchemaName());
 			ps.setString(3, term.getSchemaVersion());
@@ -1519,7 +1519,7 @@ public class MySqlQueriesImpl implements MySqlQueries
 		ResultSet rs = null;
 		try {
 			c = getConnection();
-			ps = c.prepareStatement(MySqlCalls.SELECT_PATIENT_ATTRS);
+			ps = c.prepareStatement(MySqlCalls.DCM4CHEE_SELECT_PATIENT_ATTRS);
 			ps.setString(1, patientID);
 			rs = ps.executeQuery();
 			if (rs.next()) {
@@ -1543,7 +1543,7 @@ public class MySqlQueriesImpl implements MySqlQueries
 		ResultSet rs = null;
 		try {
 			c = getConnection();
-			ps = c.prepareStatement(MySqlCalls.SELECT_STUDY_ATTRS);
+			ps = c.prepareStatement(MySqlCalls.DCM4CHEE_SELECT_STUDY_ATTRS);
 			ps.setString(1, studyIUID);
 			rs = ps.executeQuery();
 			if (rs.next()) {
@@ -1567,7 +1567,7 @@ public class MySqlQueriesImpl implements MySqlQueries
 		ResultSet rs = null;
 		try {
 			c = getConnection();
-			ps = c.prepareStatement(MySqlCalls.SELECT_SERIES_ATTRS);
+			ps = c.prepareStatement(MySqlCalls.DCM4CHEE_SELECT_SERIES_ATTRS);
 			ps.setString(1, seriesUID);
 			rs = ps.executeQuery();
 			if (rs.next()) {
@@ -1591,7 +1591,7 @@ public class MySqlQueriesImpl implements MySqlQueries
 		ResultSet rs = null;
 		try {
 			c = getConnection();
-			ps = c.prepareStatement(MySqlCalls.SELECT_INSTANCE_ATTRS);
+			ps = c.prepareStatement(MySqlCalls.DCM4CHEE_SELECT_INSTANCE_ATTRS);
 			ps.setString(1, sopInstanceUID);
 			rs = ps.executeQuery();
 			if (rs.next()) {
