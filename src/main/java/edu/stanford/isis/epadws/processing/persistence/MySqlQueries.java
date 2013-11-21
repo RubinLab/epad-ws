@@ -116,6 +116,8 @@ public interface MySqlQueries
 
 	List<Map<String, String>> getEventsForUser(String username);
 
+	void deleteEventsForUser(String username);
+
 	/**
 	 * Return the key of a {@link Term}.
 	 * 

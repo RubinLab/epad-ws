@@ -92,8 +92,6 @@ public class AimResourceHandler extends AbstractHandler
 		httpResponse.setHeader("Cache-Control", "no-cache");
 		request.setHandled(true);
 
-		logger.info("AimResourceHandler: " + base);
-
 		try {
 			responseStream = httpResponse.getWriter();
 

@@ -32,7 +32,7 @@ public class EventSearchHandler extends AbstractHandler
 	private static final String INVALID_SESSION_TOKEN_MESSAGE = "Session token is invalid";
 
 	@Override
-	public void handle(String s, Request request, HttpServletRequest httpRequest, HttpServletResponse httpResponse)
+	public void handle(String base, Request request, HttpServletRequest httpRequest, HttpServletResponse httpResponse)
 			throws IOException
 	{
 		PrintWriter out = httpResponse.getWriter();
@@ -48,7 +48,6 @@ public class EventSearchHandler extends AbstractHandler
 			if ("GET".equalsIgnoreCase(method)) {
 				if (queryString != null) {
 					queryString = queryString.trim();
-					log.info("Events query from ePAD: " + queryString);
 					String userName = getUserNameFromRequest(queryString);
 					if (userName != null) {
 						try {
@@ -117,16 +116,15 @@ public class EventSearchHandler extends AbstractHandler
 		}
 	}
 
-	private void findEventsForUser(PrintWriter out, String userName)
+	private void findEventsForUser(PrintWriter responseStrean, String userName)
 	{
 		MySqlQueries dbQueries = MySqlInstance.getInstance().getMysqlQueries();
-		List<Map<String, String>> result = dbQueries.getEventsForUser(userName);
+		List<Map<String, String>> eventMap = dbQueries.getEventsForUser(userName);
 
-		out.print(new SearchResultUtils().get_EVENT_SEARCH_HEADER());
-		log.info("Event search found " + result.size() + " result(s).");
+		responseStrean.print(new SearchResultUtils().get_EVENT_SEARCH_HEADER());
 
 		String separator = config.getParam("fieldSeparator");
-		for (Map<String, String> row : result) {
+		for (Map<String, String> row : eventMap) {
 			StringBuilder sb = new StringBuilder();
 			sb.append(row.get("pk")).append(separator);
 			sb.append(row.get("event_status")).append(separator);
@@ -139,7 +137,7 @@ public class EventSearchHandler extends AbstractHandler
 			sb.append(row.get("template_name")).append(separator);
 			sb.append(row.get("plugin_name"));
 			sb.append("\n");
-			out.print(sb.toString());
+			responseStrean.print(sb.toString());
 		}
 	}
 

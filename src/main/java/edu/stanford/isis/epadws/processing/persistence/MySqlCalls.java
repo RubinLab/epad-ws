@@ -15,7 +15,8 @@ public class MySqlCalls
 	public static final String INSERT_INTO_EVENT = "INSERT INTO epaddb.events"
 			+ "(username,event_status,aim_uid,aim_name,patient_id,patient_name,template_id,template_name,plugin_name)"
 			+ "VALUES (?,?,?,?,?,?,?,?,?)";
-	public static final String SELECT_EVENTS_FOR_USER = "SELECT * from epaddb.events where username=?";
+	public static final String SELECT_EVENTS_FOR_USER = "SELECT * from epaddb.events where username=? ORDER BY pk";
+	public static final String DELETE_EVENTS_FOR_USER = "DELETE from epaddb.events where username=? and pk <= ?";
 	public static final String SELECT_EPAD_FILES_FOR_PATH_LIKE = "SELECT * from epaddb.epad_files where file_path LIKE ?";
 	public static final String SELECT_EPAD_FILES_FOR_EXACT_PATH = "SELECT * from epaddb.epad_files where file_path=?";
 	public static final String UPDATE_EPAD_FILES_FOR_PATH_LIKE = "UPDATE epaddb.epad_files SET file_status=?, file_size=?, err_msg=? where file_path like ?";

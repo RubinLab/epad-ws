@@ -1091,7 +1091,7 @@ public class MySqlQueriesImpl implements MySqlQueries
 	@Override
 	public List<Map<String, String>> getEventsForUser(String username)
 	{
-		List<Map<String, String>> retVal = new ArrayList<Map<String, String>>();
+		List<Map<String, String>> rows = new ArrayList<Map<String, String>>();
 
 		Connection c = null;
 		PreparedStatement ps = null;
@@ -1107,11 +1107,22 @@ public class MySqlQueriesImpl implements MySqlQueries
 				Map<String, String> rowMap = new HashMap<String, String>();
 				int nCols = metaData.getColumnCount();
 				for (int i = 1; i < nCols + 1; i++) {
-					String colName = metaData.getColumnName(i);
+					String columnName = metaData.getColumnName(i);
 					String value = rs.getString(i);
-					rowMap.put(colName, value);
+					rowMap.put(columnName, value);
 				}
-				retVal.add(rowMap);
+				rows.add(rowMap);
+			}
+
+			if (!rows.isEmpty()) { // Delete events up the most recent event for user
+				logger.info("Event search found " + rows + " event(s) for user " + username);
+
+				String pk = rows.get(0).get("pk"); // We order by pk, an auto-increment field (which does not wrap)
+				ps = c.prepareStatement(MySqlCalls.DELETE_EVENTS_FOR_USER);
+				ps.setString(1, username);
+				ps.setString(2, pk);
+				int rowsAffected = ps.executeUpdate();
+				logger.info("" + rowsAffected + " event(s) deleted for user " + username);
 			}
 		} catch (SQLException sqle) {
 			String debugInfo = DatabaseUtils.getDebugData(rs);
@@ -1119,7 +1130,24 @@ public class MySqlQueriesImpl implements MySqlQueries
 		} finally {
 			close(c, ps, rs);
 		}
-		return retVal;
+		return rows;
+	}
+
+	@Override
+	public void deleteEventsForUser(String username)
+	{
+		Connection c = null;
+		PreparedStatement ps = null;
+		try {
+			c = getConnection();
+			ps = c.prepareStatement(MySqlCalls.DELETE_EVENTS_FOR_USER);
+			ps.setString(1, username);
+			ps.executeUpdate();
+		} catch (SQLException sqle) {
+			logger.warning("Delete events operation failed", sqle);
+		} finally {
+			close(c, ps);
+		}
 	}
 
 	@Override
