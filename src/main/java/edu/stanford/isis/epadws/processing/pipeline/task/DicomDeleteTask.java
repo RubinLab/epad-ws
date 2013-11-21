@@ -11,7 +11,7 @@ import java.util.Map;
 import edu.stanford.isis.epad.common.dicom.DicomFormatUtil;
 import edu.stanford.isis.epad.common.util.EPADFileUtils;
 import edu.stanford.isis.epad.common.util.EPADLogger;
-import edu.stanford.isis.epad.common.util.ResourceUtils;
+import edu.stanford.isis.epad.common.util.EPADResources;
 import edu.stanford.isis.epadws.processing.persistence.MySqlInstance;
 import edu.stanford.isis.epadws.processing.persistence.MySqlQueries;
 
@@ -75,7 +75,7 @@ public class DicomDeleteTask implements Runnable
 	private static void deletePNGsforDicomStudy(String studyUID) throws Exception
 	{
 		StringBuilder outputPath = new StringBuilder();
-		outputPath.append(ResourceUtils.getEPADWebServerPNGDir());
+		outputPath.append(EPADResources.getEPADWebServerPNGDir());
 		outputPath.append(DicomFormatUtil.formatUidToDir(studyUID)).append("");
 
 		File dirToDelete = new File(outputPath.toString());
@@ -97,7 +97,7 @@ public class DicomDeleteTask implements Runnable
 		MySqlQueries queries = MySqlInstance.getInstance().getMysqlQueries();
 		String studyUID = queries.getStudyUIDForSeries(seriesUID);
 		StringBuilder outputPath = new StringBuilder();
-		outputPath.append(ResourceUtils.getEPADWebServerPNGDir());
+		outputPath.append(EPADResources.getEPADWebServerPNGDir());
 		outputPath.append(DicomFormatUtil.formatUidToDir(studyUID)).append("/");
 		outputPath.append(DicomFormatUtil.formatUidToDir(seriesUID)).append("/");
 
@@ -126,7 +126,7 @@ public class DicomDeleteTask implements Runnable
 			String[] command = { "./dcmdeleteStudy", uid };
 
 			ProcessBuilder pb = new ProcessBuilder(command);
-			String myScriptsBinDirectory = ResourceUtils.getEPADWebServerMyScriptsDir();
+			String myScriptsBinDirectory = EPADResources.getEPADWebServerMyScriptsDir();
 			pb.directory(new File(myScriptsBinDirectory));
 
 			Process process = pb.start();
@@ -178,7 +178,7 @@ public class DicomDeleteTask implements Runnable
 			String[] command = { "./dcmdeleteSeries", uid };
 
 			ProcessBuilder pb = new ProcessBuilder(command);
-			String myScriptsDirectory = ResourceUtils.getEPADWebServerMyScriptsDir();
+			String myScriptsDirectory = EPADResources.getEPADWebServerMyScriptsDir();
 			pb.directory(new File(myScriptsDirectory));
 
 			Process process = pb.start();
@@ -234,7 +234,7 @@ public class DicomDeleteTask implements Runnable
 	 */
 	private static void writeDeleteLog(String contents)
 	{
-		String logDirectory = ResourceUtils.getEPADWebServerLogDir();
+		String logDirectory = EPADResources.getEPADWebServerLogDir();
 		String fileName = logDirectory + "delete_" + System.currentTimeMillis() + ".log";
 		EPADFileUtils.write(new File(fileName), contents);
 	}

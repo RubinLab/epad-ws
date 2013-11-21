@@ -87,7 +87,7 @@ public class DicomHeadersHandler extends AbstractHandler
 
 		if (studyIdKey != null && seriesIdKey != null && imageIdKey != null) {
 			File tempDICOMFile = File.createTempFile(imageIdKey, ".tmp");
-			int wadoStatusCode = EPADTools.feedFileWithDICOMFromWADO(tempDICOMFile, studyIdKey, seriesIdKey, imageIdKey);
+			int wadoStatusCode = EPADTools.downloadDICOMFileFromWADO(tempDICOMFile, studyIdKey, seriesIdKey, imageIdKey);
 			if (wadoStatusCode == HttpServletResponse.SC_OK) {
 				File tempTag = File.createTempFile(imageIdKey, "_tag.tmp");
 				ExecutorService taskExecutor = Executors.newFixedThreadPool(4);

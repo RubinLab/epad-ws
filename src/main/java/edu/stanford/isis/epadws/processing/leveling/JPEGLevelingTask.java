@@ -17,7 +17,7 @@ import java.util.concurrent.Callable;
 import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epad.common.util.FileKey;
 import edu.stanford.isis.epad.common.util.EPADFileUtils;
-import edu.stanford.isis.epad.common.util.ResourceUtils;
+import edu.stanford.isis.epad.common.util.EPADResources;
 
 /**
  * Creates one JPEG file leveled with the stated parameters.
@@ -118,7 +118,7 @@ public class JPEGLevelingTask implements Callable<File>
 				jpegFile.getAbsolutePath() };
 
 		ProcessBuilder pb = new ProcessBuilder(command);
-		String dicomBinDirectory = ResourceUtils.getEPADWebServerDICOMBinDir();
+		String dicomBinDirectory = EPADResources.getEPADWebServerDICOMBinDir();
 		pb.directory(new File(dicomBinDirectory));
 
 		try {

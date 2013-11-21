@@ -17,7 +17,7 @@ import edu.stanford.isis.epad.common.dicom.DicomFormatUtil;
 import edu.stanford.isis.epad.common.util.EPADConfig;
 import edu.stanford.isis.epad.common.util.EPADFileUtils;
 import edu.stanford.isis.epad.common.util.EPADLogger;
-import edu.stanford.isis.epad.common.util.ResourceUtils;
+import edu.stanford.isis.epad.common.util.EPADResources;
 
 /**
  * The central location for reading and writing series files.
@@ -279,7 +279,7 @@ public class DicomSeriesFileUtils
 		List<File> retVal = new ArrayList<File>();
 		try {
 			String studyDirName = DicomFormatUtil.formatUidToDir(studyId);
-			File studyDir = new File(ResourceUtils.getEPADWebServerPNGDir() + studyDirName);
+			File studyDir = new File(EPADResources.getEPADWebServerPNGDir() + studyDirName);
 			if (!studyDir.exists()) {
 				log.info("WARNING: Could not find directory for: " + studyId + ". Dir doesn't exist. dir="
 						+ studyDir.getCanonicalPath());

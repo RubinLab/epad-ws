@@ -11,7 +11,7 @@ import java.util.concurrent.TimeUnit;
 import edu.stanford.isis.epad.common.util.EPADFileUtils;
 import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epad.common.util.FileKey;
-import edu.stanford.isis.epad.common.util.ResourceUtils;
+import edu.stanford.isis.epad.common.util.EPADResources;
 import edu.stanford.isis.epadws.processing.model.DicomUploadFile;
 import edu.stanford.isis.epadws.processing.pipeline.task.DicomSendTask;
 import edu.stanford.isis.epadws.processing.pipeline.threads.ShutdownSignal;
@@ -39,8 +39,8 @@ public class EPADUploadDirWatcher implements Runnable
 	{
 		try {
 			ShutdownSignal shutdownSignal = ShutdownSignal.getInstance();
-			File rootDir = new File(ResourceUtils.getEPADWebServerUploadDir());
-			log.info("Startying the ePAD upload directory watcher; directory =" + ResourceUtils.getEPADWebServerUploadDir());
+			File rootDir = new File(EPADResources.getEPADWebServerUploadDir());
+			log.info("Startying the ePAD upload directory watcher; directory =" + EPADResources.getEPADWebServerUploadDir());
 			while (true) {
 				if (shutdownSignal.hasShutdown())
 					return;

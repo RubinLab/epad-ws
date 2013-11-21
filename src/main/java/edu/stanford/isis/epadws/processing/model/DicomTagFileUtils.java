@@ -23,7 +23,7 @@ import java.util.Set;
 
 import edu.stanford.isis.epad.common.util.EPADFileUtils;
 import edu.stanford.isis.epad.common.util.EPADLogger;
-import edu.stanford.isis.epad.common.util.ResourceUtils;
+import edu.stanford.isis.epad.common.util.EPADResources;
 
 public class DicomTagFileUtils
 {
@@ -102,7 +102,7 @@ public class DicomTagFileUtils
 				String tagPath = createTagFilePath(dicomFile);
 				String[] command = { "./dcm2txt", "-w", "120", dicomFile.getAbsolutePath() };
 				ProcessBuilder processBuilder = new ProcessBuilder(command);
-				String dicomBinDirectory = ResourceUtils.getEPADWebServerDICOMBinDir();
+				String dicomBinDirectory = EPADResources.getEPADWebServerDICOMBinDir();
 				processBuilder.directory(new File(dicomBinDirectory));
 
 				Process process = processBuilder.start();

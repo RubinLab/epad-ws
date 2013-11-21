@@ -23,7 +23,7 @@ import edu.stanford.isis.epad.common.dicom.DicomSeriesUID;
 import edu.stanford.isis.epad.common.dicom.DicomStudyUID;
 import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epad.common.util.FileKey;
-import edu.stanford.isis.epad.common.util.ResourceUtils;
+import edu.stanford.isis.epad.common.util.EPADResources;
 import edu.stanford.isis.epadws.processing.model.DicomTagFileUtils;
 
 public class DatabaseUtils
@@ -228,7 +228,7 @@ public class DatabaseUtils
 		DicomSeriesUID seriesUID = new DicomSeriesUID(tags.get(DicomTagFileUtils.SERIES_UID));
 		DicomStudyUID studyUID = new DicomStudyUID(tags.get(DicomTagFileUtils.STUDY_UID));
 
-		return ResourceUtils.makeThumbnailFilePath(studyUID, seriesUID);
+		return EPADResources.makeThumbnailFilePath(studyUID, seriesUID);
 	}
 
 	/**

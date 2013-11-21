@@ -24,7 +24,7 @@ import javax.imageio.ImageIO;
 import edu.stanford.isis.epad.common.dicom.DicomReader;
 import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epad.common.util.FileKey;
-import edu.stanford.isis.epad.common.util.ResourceUtils;
+import edu.stanford.isis.epad.common.util.EPADResources;
 import edu.stanford.isis.epadws.processing.model.DicomTagFileUtils;
 import edu.stanford.isis.epadws.processing.pipeline.ThumbnailManager;
 
@@ -64,7 +64,7 @@ public class JPEGThumbnailGeneratorTask implements Callable<File>
 			// ToDo: Determine the values that are truly leveled.
 
 			ProcessBuilder pb = new ProcessBuilder(command);
-			String dicomBinDirectory = ResourceUtils.getEPADWebServerDICOMBinDir();
+			String dicomBinDirectory = EPADResources.getEPADWebServerDICOMBinDir();
 			pb.directory(new File(dicomBinDirectory));
 
 			process = pb.start();
@@ -152,7 +152,7 @@ public class JPEGThumbnailGeneratorTask implements Callable<File>
 					jpegFile.getAbsolutePath() };
 
 			ProcessBuilder pb = new ProcessBuilder(command);
-			String dicomBinDirectory = ResourceUtils.getEPADWebServerDICOMBinDir();
+			String dicomBinDirectory = EPADResources.getEPADWebServerDICOMBinDir();
 			pb.directory(new File(dicomBinDirectory));
 
 			Process process = null;

@@ -85,7 +85,7 @@ public class EventSearchHandler extends AbstractHandler
 					String template_name = getTemplateNameFromRequest(queryString);
 					String plugin_name = getPluginNameFromRequest(queryString);
 
-					log.info("Save event : " + aim_uid + " for user " + userName);
+					log.info("Save event for AIM ID " + aim_uid + " for user " + userName);
 					if (userName != null && event_status != null && aim_uid != null && aim_uid != null && aim_name != null
 							&& patient_id != null && patient_name != null && template_id != null && template_name != null
 							&& plugin_name != null) {

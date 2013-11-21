@@ -21,7 +21,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import edu.stanford.isis.epad.common.util.EPADFileUtils;
 import edu.stanford.isis.epad.common.util.EPADLogger;
-import edu.stanford.isis.epad.common.util.ResourceUtils;
+import edu.stanford.isis.epad.common.util.EPADResources;
 
 /**
  * Holds RSNA search results.
@@ -75,7 +75,7 @@ public class RsnaSearchResultMap
 	private File[] getRsnaSearchFilesOfType(final String extension)
 	{
 		try {
-			File baseDir = new File(ResourceUtils.getEPADWebServerRSNADir());
+			File baseDir = new File(EPADResources.getEPADWebServerRSNADir());
 			log.info("RSNA Search " + extension + " reading from: " + baseDir.getAbsolutePath());
 
 			// get all the result files.
@@ -242,7 +242,7 @@ public class RsnaSearchResultMap
 
 		try {
 
-			File rsnaEverythingFile = new File(ResourceUtils.getEPADWebServerUploadDir() + "rsnaEverything.results");
+			File rsnaEverythingFile = new File(EPADResources.getEPADWebServerUploadDir() + "rsnaEverything.results");
 			if (!rsnaEverythingFile.exists()) {
 				log.info("WARNING: rsnaEverythingFile not found. Will not add the following line: " + resultLine);
 			}

@@ -11,7 +11,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import edu.stanford.isis.epad.common.util.EPADFileUtils;
 import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epad.common.util.FileKey;
-import edu.stanford.isis.epad.common.util.ResourceUtils;
+import edu.stanford.isis.epad.common.util.EPADResources;
 import edu.stanford.isis.epadws.processing.model.DatabaseState;
 
 /**
@@ -88,7 +88,7 @@ public class MySqlInstance
 	private void updateMySqlTables()
 	{
 		try { // For now we are just creating the loading the first version.
-			String mySQLScriptDir = ResourceUtils.getEPADWebServerMySQLScriptDir();
+			String mySQLScriptDir = EPADResources.getEPADWebServerMySQLScriptDir();
 			String sqlFilePath = FileKey.getCanonicalPath(new File(mySQLScriptDir + "dcm4chee-extensions.sql"));
 			File createDbTablesFile = new File(sqlFilePath);
 			logger.info("Reading sql file: " + sqlFilePath);

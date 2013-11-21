@@ -12,7 +12,7 @@ import java.util.concurrent.TimeUnit;
 
 import edu.stanford.isis.epad.common.util.EPADFileUtils;
 import edu.stanford.isis.epad.common.util.EPADLogger;
-import edu.stanford.isis.epad.common.util.ResourceUtils;
+import edu.stanford.isis.epad.common.util.EPADResources;
 import edu.stanford.isis.epadws.processing.pipeline.threads.ShutdownSignal;
 
 /**
@@ -25,12 +25,12 @@ public class PipelineStatusWatcher implements Runnable
 
 	public static void countDicomFileInUploadDir()
 	{
-		int nDcmFiles = EPADFileUtils.countFilesWithEnding(ResourceUtils.getEPADWebServerUploadDir(), ".dcm");
+		int nDcmFiles = EPADFileUtils.countFilesWithEnding(EPADResources.getEPADWebServerUploadDir(), ".dcm");
 		StringBuilder sb = new StringBuilder();
 		sb.append("files remaining: ").append(nDcmFiles).append("\n");
 		sb.append("last update:").append(System.currentTimeMillis());
 
-		File pipelineStatusFile = new File(ResourceUtils.getEPADWebServerPNGDir() + "pipeline.status");
+		File pipelineStatusFile = new File(EPADResources.getEPADWebServerPNGDir() + "pipeline.status");
 		EPADFileUtils.overwrite(pipelineStatusFile, sb.toString());
 	}
 

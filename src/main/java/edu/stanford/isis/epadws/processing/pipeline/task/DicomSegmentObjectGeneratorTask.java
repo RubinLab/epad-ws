@@ -43,7 +43,7 @@ import edu.stanford.isis.epad.common.dicom.DicomSegmentationObject;
 import edu.stanford.isis.epad.common.pixelmed.PixelMedUtils;
 import edu.stanford.isis.epad.common.util.EPADConfig;
 import edu.stanford.isis.epad.common.util.EPADLogger;
-import edu.stanford.isis.epad.common.util.ResourceUtils;
+import edu.stanford.isis.epad.common.util.EPADResources;
 import edu.stanford.isis.epadws.processing.model.DicomTagFileUtils;
 import edu.stanford.isis.epadws.processing.model.PngProcessingStatus;
 import edu.stanford.isis.epadws.processing.persistence.Dcm4CheeDatabaseUtils;
@@ -69,9 +69,9 @@ public class DicomSegmentObjectGeneratorTask implements GeneratorTask
 	public String dbpath = EPADConfig.getInstance().getParam("dbpath");
 	public String templatePath = EPADConfig.getInstance().getParam("baseTemplatesDir");
 	public String wadoProxy = EPADConfig.getInstance().getParam("wadoProxy");
-	private static EPADLogger logger = EPADLogger.getInstance();
 
-	static final String baseDicomDirectory = ResourceUtils.getEPADWebServerPNGDir();
+	private static final EPADLogger logger = EPADLogger.getInstance();
+	private static final String baseDicomDirectory = EPADResources.getEPADWebServerPNGDir();
 
 	private final File dicomInputFile;
 	private final File segObjectOutputFile;
@@ -85,23 +85,6 @@ public class DicomSegmentObjectGeneratorTask implements GeneratorTask
 	@Override
 	public void run()
 	{
-		logger.info("Processing DSO for file " + dicomInputFile.getAbsolutePath());
-
-		SourceImage sourceImage = null;
-		DicomSegmentationObject dso = null;
-		// AttributeList list = null;
-		// GeometryOfVolume geometry = null;
-
-		// ArrayList<String> retPngs = new ArrayList<String>();
-		// List<String> pngs = null;
-		// String encoded = null;
-		// byte[] bytes;
-
-		// String studyId = (String) getRequestAttributes().get("id1");
-		// String seriesId = (String) getRequestAttributes().get("id2");
-		// String imageId = (String) getRequestAttributes().get("id3");
-		// String objectId = (String) getRequestAttributes().get("id4");
-		// above needs to be replace with below.
 		Map<String, String> ids = readTagsFromDicomFile(dicomInputFile);
 		String studyId = ids.get("study-id");
 		String seriesId = ids.get("series-id");
@@ -113,53 +96,36 @@ public class DicomSegmentObjectGeneratorTask implements GeneratorTask
 		imageId = imageId.replaceAll("\\.", "_");
 		objectId = objectId.replaceAll("\\.", "_");
 
+		logger.info("Processing DSO for file " + dicomInputFile.getAbsolutePath());
 		logger.info("getSegmentation study " + studyId + " series " + seriesId + " image " + imageId + " object "
 				+ objectId);
 
-		// test out some pixelmed calls
-		dso = new DicomSegmentationObject();
-		// should be able to get one image url to do the attribute thing here
-		// String imageUrl = baseDicomDirectory + studyId + "/" + seriesId + "/" + imageId + ".dcm";
-		// String objectUrl = baseDicomDirectory + studyId + "/" + seriesId + "/segmentation/" + objectId + ".dcm";
-		// File imageFile = new File(imageUrl);
-		// File objectFile = new File(objectUrl);
-
 		try {
-			// sourceImage = dso.convert(objectUrl);
-			sourceImage = dso.convert(dicomInputFile.getAbsolutePath());
+			DicomSegmentationObject dicomSegmentationObject = new DicomSegmentationObject();
+			SourceImage sourceImage = dicomSegmentationObject.convert(dicomInputFile.getAbsolutePath());
 			int count = sourceImage.getNumberOfBufferedImages();
-
-			// File repDest = new File(baseDicomDirectory + studyId + "/" + seriesId + "/segmentation/");
 			File repDest = new File(baseDicomDirectory + studyId + "/" + seriesId + "/");
 			repDest.mkdirs();
 
-			// Create the mask images
 			MySqlQueries queries = MySqlInstance.getInstance().getMysqlQueries();
-			for (int i = 0; i < count; i++) {
+			for (int i = 0; i < count; i++) { // Create the mask images
 				BufferedImage source = sourceImage.getBufferedImage(count - i - 1);
 				BufferedImage sourceWithTransparency = generateTransparentImage(source); // Generate a transparent image
-
-				// String pngUrl = baseDicomDirectory + studyId + "/" + seriesId + "/segmentation/" + objectId + "-" + i +
-				// ".png";
 				String pngUrl = baseDicomDirectory + studyId + "/" + seriesId + "/" + objectId + "-" + i + ".png";
 				File sourceFile = new File(pngUrl);
 				try {
 					insertEpadFile(queries, sourceFile);
 					ImageIO.write(sourceWithTransparency, "png", sourceFile);
-
 					// bytes = DicomSegObj.getFileBytes(sourceFile);
 					// encoded = DicomSegObj.base64EncodeBytes(bytes);
 					// retPngs.add(encoded);
-
 					queries.updateEpadFile(pngUrl, PngProcessingStatus.DONE, 77, "");
 				} catch (IOException e) {
-					logger.warning("failed to write segmentation png", e);
+					logger.warning("Failed to write segmentation PNG", e);
 				}
 				source = null;
 				sourceWithTransparency = null;
 			}
-
-			// --------------Create a tag file for the DSO
 			File tagFile = new File(repDest.getAbsolutePath() + "/" + objectId + ".tag");
 			if (!tagFile.exists()) {
 				tagFile.createNewFile();
@@ -169,12 +135,12 @@ public class DicomSegmentObjectGeneratorTask implements GeneratorTask
 			}
 			File tagFileTemp = File.createTempFile(tagFile.getName(), ".temptag");
 			tagFileTemp.createNewFile();
-			DicomHeadersTask dht = new DicomHeadersTask(dicomInputFile, tagFileTemp);
-			dht.run();
+			DicomHeadersTask dicomHeadersTask = new DicomHeadersTask(dicomInputFile, tagFileTemp);
+			dicomHeadersTask.run();
 			generateAIMFile(tagFileTemp);
 			System.gc();
 		} catch (Exception e) {
-			logger.warning("Error: when trying to write PNGs for segmentation object " + e.getMessage());
+			logger.warning("Error: when trying to write PNGs for segmentation object" + e.getMessage());
 		}
 	}
 
@@ -436,7 +402,7 @@ public class DicomSegmentObjectGeneratorTask implements GeneratorTask
 		return uidPart;
 	}
 
-	// TODO Replace this with direct call to databae
+	// TODO Replace this with direct call to database
 	private String getDicomSeriesUIDFromImageUID(String imageUID) throws Exception
 	{
 		String url = "http://localhost:8080/segmentationpath/" + "?image_iuid=" + imageUID;

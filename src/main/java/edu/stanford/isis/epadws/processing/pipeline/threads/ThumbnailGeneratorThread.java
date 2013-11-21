@@ -20,7 +20,7 @@ import edu.stanford.isis.epad.common.dicom.DicomSeriesUID;
 import edu.stanford.isis.epad.common.dicom.DicomStudyUID;
 import edu.stanford.isis.epad.common.util.EPADConfig;
 import edu.stanford.isis.epad.common.util.EPADLogger;
-import edu.stanford.isis.epad.common.util.ResourceUtils;
+import edu.stanford.isis.epad.common.util.EPADResources;
 import edu.stanford.isis.epad.common.util.WadoUrlBuilder;
 
 /**
@@ -88,7 +88,7 @@ public class ThumbnailGeneratorThread implements Runnable
 				log.debug("Thumbnail URL: " + wadoThumbnailUrl);
 
 				File thumbnailFile = createThumbnailFile(studyId, seriesId);
-				ResourceUtils.writeJpgUrlToFile(wadoThumbnailUrl, thumbnailFile);
+				EPADResources.writeJpgUrlToFile(wadoThumbnailUrl, thumbnailFile);
 
 			}// while
 
@@ -110,9 +110,9 @@ public class ThumbnailGeneratorThread implements Runnable
 	 */
 	private File createThumbnailFile(DicomStudyUID studyUID, DicomSeriesUID seriesUID) throws IOException
 	{
-		String thumbnailFilePath = ResourceUtils.makeThumbnailFilePath(studyUID, seriesUID);
+		String thumbnailFilePath = EPADResources.makeThumbnailFilePath(studyUID, seriesUID);
 
-		return ResourceUtils.generateFile(thumbnailFilePath);
+		return EPADResources.generateFile(thumbnailFilePath);
 	}
 }
 

@@ -10,7 +10,7 @@ import java.util.concurrent.TimeUnit;
 import edu.stanford.isis.epad.common.dicom.DicomFormatUtil;
 import edu.stanford.isis.epad.common.util.EPADConfig;
 import edu.stanford.isis.epad.common.util.EPADLogger;
-import edu.stanford.isis.epad.common.util.ResourceUtils;
+import edu.stanford.isis.epad.common.util.EPADResources;
 import edu.stanford.isis.epadws.processing.model.DicomImageProcessingState;
 import edu.stanford.isis.epadws.processing.model.DicomSeriesDescription;
 import edu.stanford.isis.epadws.processing.model.DicomSeriesProcessingStatus;
@@ -190,7 +190,7 @@ public class DicomSeriesWatcher implements Runnable
 		String imageUID = currImage.get("sop_iuid");
 		StringBuilder outputPath = new StringBuilder();
 
-		outputPath.append(ResourceUtils.getEPADWebServerPNGGridDir());
+		outputPath.append(EPADResources.getEPADWebServerPNGGridDir());
 		outputPath.append(DicomFormatUtil.formatUidToDir(studyUID)).append("/");
 		outputPath.append(DicomFormatUtil.formatUidToDir(seriesIUID)).append("/");
 		outputPath.append(DicomFormatUtil.formatUidToDir(imageUID)).append(".png");

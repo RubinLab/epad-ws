@@ -16,7 +16,7 @@ import java.util.concurrent.Callable;
 
 import edu.stanford.isis.epad.common.util.EPADFileUtils;
 import edu.stanford.isis.epad.common.util.EPADLogger;
-import edu.stanford.isis.epad.common.util.ResourceUtils;
+import edu.stanford.isis.epad.common.util.EPADResources;
 import edu.stanford.isis.epadws.processing.model.DicomUploadPipelineFiles;
 
 public class ReadDicomTagsTask implements Callable<File>
@@ -47,7 +47,7 @@ public class ReadDicomTagsTask implements Callable<File>
 			String tagPath = createTagFilePath(dicomFile);
 			String[] command = { "./dcm2txt", "-w", "120", dicomFile.getAbsolutePath() };
 			ProcessBuilder processBuilder = new ProcessBuilder(command);
-			String dicomBinDirectory = ResourceUtils.getEPADWebServerDICOMBinDir();
+			String dicomBinDirectory = EPADResources.getEPADWebServerDICOMBinDir();
 
 			processBuilder.directory(new File(dicomBinDirectory));
 

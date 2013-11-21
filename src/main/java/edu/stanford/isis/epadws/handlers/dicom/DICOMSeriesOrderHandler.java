@@ -96,7 +96,7 @@ public class DicomSeriesOrderHandler extends AbstractHandler
 		List<Map<String, String>> orderQueryEntries = queries.getOrderFile(seriesIUID);
 		List<DicomImageDescriptionSearchResult> imageDescriptions = new ArrayList<DicomImageDescriptionSearchResult>();
 
-		log.info("DICOMSeriesDescriptionHandler, series_iuid=" + seriesIUID);
+		log.info("DICOMSeriesOrderHandler for series " + seriesIUID);
 
 		for (Map<String, String> entry : orderQueryEntries) {
 			String sopInstanceUID = entry.get("sop_iuid");

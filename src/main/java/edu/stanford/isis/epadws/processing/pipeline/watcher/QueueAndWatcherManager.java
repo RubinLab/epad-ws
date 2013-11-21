@@ -13,8 +13,8 @@ import edu.stanford.isis.epad.common.dicom.DicomFormatUtil;
 import edu.stanford.isis.epad.common.pixelmed.PixelMedUtils;
 import edu.stanford.isis.epad.common.util.EPADConfig;
 import edu.stanford.isis.epad.common.util.EPADLogger;
+import edu.stanford.isis.epad.common.util.EPADResources;
 import edu.stanford.isis.epad.common.util.EPADTools;
-import edu.stanford.isis.epad.common.util.ResourceUtils;
 import edu.stanford.isis.epadws.processing.model.DicomSeriesDescription;
 import edu.stanford.isis.epadws.processing.model.PngProcessingStatus;
 import edu.stanford.isis.epadws.processing.persistence.Dcm4CheeDatabaseUtils;
@@ -159,7 +159,7 @@ public class QueueAndWatcherManager
 
 		DicomSegmentObjectGeneratorTask dsoTask = new DicomSegmentObjectGeneratorTask(inFile, outFile);
 		pngGeneratorTaskQueue.offer(dsoTask);
-		logger.info("Segmentation object found: " + inputFilePath);
+		logger.info("Segmentation object found at " + inputFilePath);
 	}
 
 	private void createPNGFileForDICOMImage(String outputPNGFilePath, File inputDICOMFile)
@@ -191,7 +191,7 @@ public class QueueAndWatcherManager
 		String imageUID = dicomImageDescription.get("sop_iuid");
 		StringBuilder outputPath = new StringBuilder();
 
-		outputPath.append(ResourceUtils.getEPADWebServerPNGDir());
+		outputPath.append(EPADResources.getEPADWebServerPNGDir());
 		outputPath.append(DicomFormatUtil.formatUidToDir(studyUID)).append("/");
 		outputPath.append(DicomFormatUtil.formatUidToDir(seriesIUID)).append("/");
 		outputPath.append(DicomFormatUtil.formatUidToDir(imageUID)).append(".png");

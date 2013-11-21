@@ -45,7 +45,7 @@ import edu.stanford.hakan.aim3api.usage.AnnotationBuilder;
 import edu.stanford.hakan.aim3api.usage.AnnotationGetter;
 import edu.stanford.isis.epad.common.plugins.PluginConfig;
 import edu.stanford.isis.epad.common.util.EPADConfig;
-import edu.stanford.isis.epad.common.util.ResourceUtils;
+import edu.stanford.isis.epad.common.util.EPADResources;
 import edu.stanford.isis.epad.common.util.XmlNamespaceTranslator;
 
 /**
@@ -92,7 +92,7 @@ public class AIMServerResource extends BaseServerResource
 	public String uploadAIM(Representation representation)
 	{
 		log.info("AIMServerResource received POST method");
-		String filePath = ResourceUtils.getEPADWebServerAnnotationsUploadDir();
+		String filePath = EPADResources.getEPADWebServerAnnotationsUploadDir();
 
 		try { // Create the directory for AIM file upload
 			StringBuilder out = new StringBuilder();

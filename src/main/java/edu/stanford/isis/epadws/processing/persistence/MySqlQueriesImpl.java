@@ -652,7 +652,7 @@ public class MySqlQueriesImpl implements MySqlQueries
 		Connection c = null;
 		PreparedStatement ps = null;
 		try {
-			logger.info("Inserting into event table: " + userName + " EVENT:" + aim_uid);
+			// logger.info("Inserting into event table: " + userName + " EVENT:" + aim_uid);
 
 			c = getConnection();
 			ps = c.prepareStatement(MySqlCalls.INSERT_INTO_EVENT);
@@ -1115,14 +1115,14 @@ public class MySqlQueriesImpl implements MySqlQueries
 			}
 
 			if (!rows.isEmpty()) { // Delete events up the most recent event for user
-				logger.info("Event search found " + rows + " event(s) for user " + username);
+				logger.info("Event search found " + rows.size() + " event(s) for user " + username);
 
 				String pk = rows.get(0).get("pk"); // We order by pk, an auto-increment field (which does not wrap)
 				ps = c.prepareStatement(MySqlCalls.DELETE_EVENTS_FOR_USER);
 				ps.setString(1, username);
 				ps.setString(2, pk);
 				int rowsAffected = ps.executeUpdate();
-				logger.info("" + rowsAffected + " event(s) deleted for user " + username);
+				logger.info("" + rowsAffected + " old event(s) deleted for user " + username);
 			}
 		} catch (SQLException sqle) {
 			String debugInfo = DatabaseUtils.getDebugData(rs);

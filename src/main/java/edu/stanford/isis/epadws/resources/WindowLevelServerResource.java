@@ -10,7 +10,7 @@ import org.restlet.data.Status;
 
 import edu.stanford.isis.epad.common.dicom.DicomFormatUtil;
 import edu.stanford.isis.epad.common.util.FileKey;
-import edu.stanford.isis.epad.common.util.ResourceUtils;
+import edu.stanford.isis.epad.common.util.EPADResources;
 import edu.stanford.isis.epadws.processing.leveling.WindowLevelFactory;
 
 /**
@@ -208,12 +208,12 @@ public class WindowLevelServerResource extends BaseServerResource implements Win
 			return cachedStudyDir;
 		}
 
-		String dicomBaseDirPath = ResourceUtils.getEPADWebServerDicomDir();
+		String dicomBaseDirPath = EPADResources.getEPADWebServerDicomDir();
 
 		if (dicomBaseDirPath == null)
 			throw new RuntimeException("no DICOM directory specified");
 
-		File baseDicomDir = new File(ResourceUtils.getEPADWebServerDicomDir());
+		File baseDicomDir = new File(EPADResources.getEPADWebServerDicomDir());
 
 		File[] studyDirs = baseDicomDir.listFiles();
 

@@ -32,7 +32,7 @@ import edu.stanford.isis.epad.common.plugins.impl.ClassFinderTestUtils;
 import edu.stanford.isis.epad.common.plugins.impl.EPadFilesImpl;
 import edu.stanford.isis.epad.common.util.EPADConfig;
 import edu.stanford.isis.epad.common.util.EPADLogger;
-import edu.stanford.isis.epad.common.util.ResourceUtils;
+import edu.stanford.isis.epad.common.util.EPADResources;
 import edu.stanford.isis.epadws.handlers.admin.ImageCheckHandler;
 import edu.stanford.isis.epadws.handlers.admin.ResourceCheckHandler;
 import edu.stanford.isis.epadws.handlers.admin.ServerStatusHandler;
@@ -202,7 +202,7 @@ public class Main
 		addWebAppAtContextPath(handlerList, "ePad.war", "/epad");
 
 		addHandlerAtContextPath(new ResourceCheckHandler(), "/resources", handlerList);
-		addFileServerAtContextPath(ResourceUtils.getEPADWebServerResourcesDir(), handlerList, "/resources");
+		addFileServerAtContextPath(EPADResources.getEPADWebServerResourcesDir(), handlerList, "/resources");
 
 		ContextHandlerCollection contexts = new ContextHandlerCollection();
 		contexts.setHandlers(handlerList.toArray(new Handler[handlerList.size()]));
@@ -237,7 +237,7 @@ public class Main
 	 */
 	private static void addWebAppAtContextPath(List<Handler> handlerList, String warFileName, String contextPath)
 	{
-		String webAppPath = ResourceUtils.getEPADWebServerWebappsDir() + warFileName;
+		String webAppPath = EPADResources.getEPADWebServerWebappsDir() + warFileName;
 		if (!contextPath.startsWith("/")) {
 			contextPath = "/" + contextPath;
 		}

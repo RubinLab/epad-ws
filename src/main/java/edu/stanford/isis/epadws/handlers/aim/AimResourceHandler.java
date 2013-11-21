@@ -47,7 +47,7 @@ import edu.stanford.hakan.aim3api.usage.AnnotationGetter;
 import edu.stanford.isis.epad.common.plugins.PluginConfig;
 import edu.stanford.isis.epad.common.util.EPADConfig;
 import edu.stanford.isis.epad.common.util.EPADLogger;
-import edu.stanford.isis.epad.common.util.ResourceUtils;
+import edu.stanford.isis.epad.common.util.EPADResources;
 import edu.stanford.isis.epad.common.util.XmlNamespaceTranslator;
 import edu.stanford.isis.epadws.xnat.XNATUtil;
 
@@ -110,7 +110,7 @@ public class AimResourceHandler extends AbstractHandler
 						statusCode = HttpServletResponse.SC_BAD_REQUEST;
 					}
 				} else if ("POST".equalsIgnoreCase(method)) { // http://www.tutorialspoint.com/servlets/servlets-file-uploading.htm
-					String annotationsUploadDirPath = ResourceUtils.getEPADWebServerAnnotationsUploadDir();
+					String annotationsUploadDirPath = EPADResources.getEPADWebServerAnnotationsUploadDir();
 					logger.info("Uploading annotations to directory " + annotationsUploadDirPath);
 					try {
 						boolean saveError = uploadAIMAnnotations(httpRequest, responseStream, annotationsUploadDirPath);
@@ -224,7 +224,7 @@ public class AimResourceHandler extends AbstractHandler
 			ImageAnnotation ia = AnnotationGetter.getImageAnnotationFromFile(f.getAbsolutePath(), xsdFilePath);
 			if (ia != null) {
 				String jsessionID = XNATUtil.getJSessionIDFromRequest(httpRequest);
-				saveToServer(ia, jsessionID);
+				saveImageAnnotationToServer(ia, jsessionID);
 				responseStream.println("-- Add to AIM server: " + ia.getUniqueIdentifier() + "<br>");
 			} else {
 				responseStream.println("-- Failed ! not added to AIM server<br>");
@@ -335,7 +335,7 @@ public class AimResourceHandler extends AbstractHandler
 	 * @return String
 	 * @throws AimException
 	 */
-	public String saveToServer(ImageAnnotation aim, String jsessionID) throws AimException
+	public String saveImageAnnotationToServer(ImageAnnotation aim, String jsessionID) throws AimException
 	{
 		String result = "";
 
@@ -362,7 +362,8 @@ public class AimResourceHandler extends AbstractHandler
 
 			if (aim.getCodingSchemeDesignator().equals("epad-plugin")) { // Which template has been used to fill the AIM file
 				String templateName = aim.getCodeValue(); // ex: jjv-5
-				logger.info("Template name for plugin " + templateName);
+				logger.info("Found an AIM plugin template with name " + templateName + " and AIM ID "
+						+ aim.getUniqueIdentifier());
 				boolean templateHasBeenFound = false;
 				String handlerName = null;
 				String pluginName = null;
@@ -380,7 +381,7 @@ public class AimResourceHandler extends AbstractHandler
 				if (templateHasBeenFound) {
 					HttpClient client = new HttpClient();
 					String url = "http://localhost:8080/plugin/" + pluginName + "/?aimFile=" + aim.getUniqueIdentifier();
-					logger.info("Triggering plugin at " + url + ", handler name " + handlerName);
+					logger.info("Triggering ePAD plugin at " + url + ", handler name " + handlerName);
 					GetMethod method = new GetMethod(url);
 					method.setRequestHeader("Cookie", "JSESSIONID=" + jsessionID);
 					try {

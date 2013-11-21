@@ -78,7 +78,7 @@ public class DICOMHeadersServerResource extends BaseServerResource
 			FileNotFoundException
 	{
 		File tempDicom = File.createTempFile(imageIdKey, ".tmp");
-		EPADTools.feedFileWithDICOMFromWADO(tempDicom, studyIdKey, seriesIdKey, imageIdKey);
+		EPADTools.downloadDICOMFileFromWADO(tempDicom, studyIdKey, seriesIdKey, imageIdKey);
 		File tempTag = File.createTempFile(imageIdKey, "_tag.tmp");
 		StringBuilder out = new StringBuilder();
 

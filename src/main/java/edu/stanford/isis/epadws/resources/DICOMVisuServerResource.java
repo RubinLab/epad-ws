@@ -79,7 +79,7 @@ public class DICOMVisuServerResource extends BaseServerResource
 	{
 		StringBuilder out = new StringBuilder();
 		File tempDicom = File.createTempFile(imageIdKey, ".tmp");
-		EPADTools.feedFileWithDICOMFromWADO(tempDicom, studyIdKey, seriesIdKey, imageIdKey);
+		EPADTools.downloadDICOMFileFromWADO(tempDicom, studyIdKey, seriesIdKey, imageIdKey);
 		SourceImage srcDicomImage = new SourceImage(tempDicom.getAbsolutePath());
 		double windowWidth = 0.0;
 		double windowCenter = 0.0;

@@ -11,7 +11,7 @@ import java.io.Writer;
 import edu.stanford.isis.epad.common.util.EPADConfig;
 import edu.stanford.isis.epad.common.util.EPADFileUtils;
 import edu.stanford.isis.epad.common.util.EPADLogger;
-import edu.stanford.isis.epad.common.util.ResourceUtils;
+import edu.stanford.isis.epad.common.util.EPADResources;
 
 public class DicomSendTask implements Runnable
 {
@@ -96,7 +96,7 @@ public class DicomSendTask implements Runnable
 			String[] command = { "./dcmsnd", dcmServerTitlePort, dirPath };
 
 			ProcessBuilder pb = new ProcessBuilder(command);
-			String dicomScriptsDir = ResourceUtils.getEPADWebServerDICOMBinDir();
+			String dicomScriptsDir = EPADResources.getEPADWebServerDICOMBinDir();
 			pb.directory(new File(dicomScriptsDir));
 			pb.redirectErrorStream(true);
 			Process process = pb.start();
@@ -166,7 +166,7 @@ public class DicomSendTask implements Runnable
 	 */
 	private static void writeUploadLog(String contents)
 	{
-		String logDirectory = ResourceUtils.getEPADWebServerLogDir();
+		String logDirectory = EPADResources.getEPADWebServerLogDir();
 		String fileName = logDirectory + "upload_" + System.currentTimeMillis() + ".log";
 		EPADFileUtils.write(new File(fileName), contents);
 	}
