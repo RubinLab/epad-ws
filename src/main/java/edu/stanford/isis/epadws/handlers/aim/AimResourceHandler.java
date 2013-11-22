@@ -69,10 +69,10 @@ public class AimResourceHandler extends AbstractHandler
 	public String wadoProxy = EPADConfig.getInstance().getParam("wadoProxy");
 
 	private static final String INTERNAL_EXCEPTION_MESSAGE = "Internal error in AIM handler";
-	private static final String INVALID_METHOD_MESSAGE = "Only POST and GET methods valid for this route";
-	private static final String FILE_UPLOAD_ERROR_MESSAGE = "File upload failures; see response for details";
+	private static final String INVALID_METHOD_MESSAGE = "Only POST and GET methods valid for the AIM route";
+	private static final String FILE_UPLOAD_ERROR_MESSAGE = "AIM file upload failures; see response for details";
 	private static final String MISSING_QUERY_MESSAGE = "No series or study query in AIM request";
-	private static final String INVALID_SESSION_TOKEN_MESSAGE = "Session token is invalid";
+	private static final String INVALID_SESSION_TOKEN_MESSAGE = "Session token is invalid for AIM request";
 
 	/**
 	 * To test the post try:

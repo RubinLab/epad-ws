@@ -33,11 +33,11 @@ public class DicomHeadersHandler extends AbstractHandler
 {
 	private static final EPADLogger log = EPADLogger.getInstance();
 
-	private static final String INTERNAL_ERROR_MESSAGE = "Internal error on delete";
-	private static final String INVALID_SESSION_TOKEN_MESSAGE = "Session token is invalid";
-	private static final String MISSING_QUERY_MESSAGE = "No query paramaters specified";
-	private static final String BADLY_FORMED_QUERY_MESSAGE = "Invalid query paramaters specified";
-	private static final String WADO_INVOCATION_ERROR_MESSAGE = "Error retrieving header from WADO";
+	private static final String INTERNAL_ERROR_MESSAGE = "Internal error on DICOM headers route";
+	private static final String INVALID_SESSION_TOKEN_MESSAGE = "Session token is invalid on DICOM headers route";
+	private static final String MISSING_QUERY_MESSAGE = "No query paramaters specified  on DICOM headers route";
+	private static final String BADLY_FORMED_QUERY_MESSAGE = "Invalid query paramaters specified  on DICOM headers route";
+	private static final String WADO_INVOCATION_ERROR_MESSAGE = "Error retrieving header from WADO on DICOM headers route";
 
 	@Override
 	public void handle(String s, Request request, HttpServletRequest httpRequest, HttpServletResponse httpResponse)

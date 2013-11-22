@@ -19,8 +19,8 @@ public class ProjectEventHandler extends AbstractHandler
 
 	private static final EventTracker eventTracker = EventTracker.getInstance();
 
-	private static final String INTERNAL_EXCEPTION_MESSAGE = "Internal error on project event handler";
-	private static final String INVALID_SESSION_TOKEN_MESSAGE = "Session token is invalid";
+	private static final String INTERNAL_EXCEPTION_MESSAGE = "Internal error in event route";
+	private static final String INVALID_SESSION_TOKEN_MESSAGE = "Session token is invalid in event route";
 
 	@Override
 	public void handle(String s, Request request, HttpServletRequest httpRequest, HttpServletResponse httpResponse)

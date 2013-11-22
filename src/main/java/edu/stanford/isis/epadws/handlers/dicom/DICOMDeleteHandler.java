@@ -23,9 +23,9 @@ public class DicomDeleteHandler extends AbstractHandler
 {
 	private static final EPADLogger log = EPADLogger.getInstance();
 
-	private static final String INTERNAL_ERROR_MESSAGE = "Internal error on delete";
-	private static final String INVALID_SESSION_TOKEN_MESSAGE = "Session token is invalid";
-	private static final String MISSING_QUERY_MESSAGE = "No query parameters specified";
+	private static final String INTERNAL_ERROR_MESSAGE = "Internal error in DICOM delete route";
+	private static final String INVALID_SESSION_TOKEN_MESSAGE = "Session token is invalid on DICOM delete route";
+	private static final String MISSING_QUERY_MESSAGE = "No query parameters specified  on DICOM delete route";
 
 	@Override
 	public void handle(String s, Request request, HttpServletRequest httpRequest, HttpServletResponse httpResponse)
@@ -52,8 +52,7 @@ public class DicomDeleteHandler extends AbstractHandler
 					}
 					responseCode = HttpServletResponse.SC_OK;
 				} catch (Throwable t) {
-					log.warning(INTERNAL_ERROR_MESSAGE, t);
-					responseStream.print(INTERNAL_ERROR_MESSAGE + ": " + t.getMessage());
+					log.severe(INTERNAL_ERROR_MESSAGE, t);
 					responseCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 				}
 			} else {

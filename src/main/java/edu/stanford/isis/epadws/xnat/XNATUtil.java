@@ -21,10 +21,10 @@ import org.apache.commons.httpclient.methods.PostMethod;
 import org.apache.commons.httpclient.methods.PutMethod;
 
 import edu.stanford.isis.epad.common.dicom.DicomReader;
+import edu.stanford.isis.epad.common.dicom.DicomTagFileUtils;
 import edu.stanford.isis.epad.common.util.EPADConfig;
 import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epadws.processing.events.EventTracker;
-import edu.stanford.isis.epadws.processing.model.DicomTagFileUtils;
 
 /**
  * @author martin
@@ -159,11 +159,10 @@ public class XNATUtil
 				int numberOfDICOMFiles = 0;
 				if (xnatProjectID != null && xnatSessionID != null) {
 					for (File dicomFile : DicomTagFileUtils.listDICOMFiles(uploadDirectory)) {
-						DicomReader dicomReader = new DicomReader(dicomFile);
 						// DCM4CHEE stores the patient name as upper case so we match. TODO get original from database?
-						String dicomPatientName = dicomReader.getPatientName().toUpperCase();
-						String dicomPatientID = dicomReader.getPatientID();
-						String dicomStudyUID = dicomReader.getStudyIUID();
+						String dicomPatientName = DicomReader.getPatientName(dicomFile).toUpperCase();
+						String dicomPatientID = DicomReader.getPatientID(dicomFile);
+						String dicomStudyUID = DicomReader.getStudyIUID(dicomFile);
 
 						if (dicomPatientName != null) {
 							if (dicomPatientID == null) // TODO Check that this is a valid thing to do.
@@ -219,7 +218,7 @@ public class XNATUtil
 		}
 
 		if (xnatStatusCode != HttpServletResponse.SC_OK)
-			log.warning("XNAT delete session call returned status code " + xnatStatusCode);
+			log.info("XNAT delete session call returned status code " + xnatStatusCode);
 
 		return xnatStatusCode;
 	}

@@ -40,11 +40,11 @@ import edu.stanford.hakan.aim3api.base.SegmentationCollection;
 import edu.stanford.hakan.aim3api.base.TwoDimensionSpatialCoordinate;
 import edu.stanford.hakan.aim3api.usage.AnnotationBuilder;
 import edu.stanford.isis.epad.common.dicom.DicomSegmentationObject;
+import edu.stanford.isis.epad.common.dicom.DicomTagFileUtils;
 import edu.stanford.isis.epad.common.pixelmed.PixelMedUtils;
 import edu.stanford.isis.epad.common.util.EPADConfig;
 import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epad.common.util.EPADResources;
-import edu.stanford.isis.epadws.processing.model.DicomTagFileUtils;
 import edu.stanford.isis.epadws.processing.model.PngProcessingStatus;
 import edu.stanford.isis.epadws.processing.persistence.Dcm4CheeDatabaseUtils;
 import edu.stanford.isis.epadws.processing.persistence.MySqlInstance;
@@ -55,17 +55,17 @@ import edu.stanford.isis.epadws.processing.persistence.MySqlQueries;
  * 
  * @author alansnyder
  */
-public class DicomSegmentObjectGeneratorTask implements GeneratorTask
+public class DicomSegmentationObjectPNGMaskGeneratorTask implements GeneratorTask
 {
 	public String serverProxy = EPADConfig.getInstance().getParam("serverProxy");
 	public String namespace = EPADConfig.getInstance().getParam("namespace");
-	public String serverUrl = EPADConfig.getInstance().getParam("serverUrl");
-	public String username = EPADConfig.getInstance().getParam("username");
-	public String password = EPADConfig.getInstance().getParam("password");
+	public String eXistServerUrl = EPADConfig.getInstance().getParam("serverUrl");
+	public String eXistUsername = EPADConfig.getInstance().getParam("username");
+	public String eXistPassword = EPADConfig.getInstance().getParam("password");
 	public String baseAnnotationDir = EPADConfig.getInstance().getParam("baseAnnotationDir");
 	public String xsdFile = EPADConfig.getInstance().getParam("xsdFile");
 	public String xsdFilePath = EPADConfig.getInstance().getParam("baseSchemaDir") + xsdFile;
-	public String collection = EPADConfig.getInstance().getParam("collection");
+	public String eXistCollection = EPADConfig.getInstance().getParam("collection");
 	public String dbpath = EPADConfig.getInstance().getParam("dbpath");
 	public String templatePath = EPADConfig.getInstance().getParam("baseTemplatesDir");
 	public String wadoProxy = EPADConfig.getInstance().getParam("wadoProxy");
@@ -76,7 +76,7 @@ public class DicomSegmentObjectGeneratorTask implements GeneratorTask
 	private final File dicomInputFile;
 	private final File segObjectOutputFile;
 
-	public DicomSegmentObjectGeneratorTask(File dicomInputFile, File segObjectOutputFile)
+	public DicomSegmentationObjectPNGMaskGeneratorTask(File dicomInputFile, File segObjectOutputFile)
 	{
 		this.dicomInputFile = dicomInputFile;
 		this.segObjectOutputFile = segObjectOutputFile;
@@ -116,12 +116,9 @@ public class DicomSegmentObjectGeneratorTask implements GeneratorTask
 				try {
 					insertEpadFile(queries, sourceFile);
 					ImageIO.write(sourceWithTransparency, "png", sourceFile);
-					// bytes = DicomSegObj.getFileBytes(sourceFile);
-					// encoded = DicomSegObj.base64EncodeBytes(bytes);
-					// retPngs.add(encoded);
 					queries.updateEpadFile(pngUrl, PngProcessingStatus.DONE, 77, "");
 				} catch (IOException e) {
-					logger.warning("Failed to write segmentation PNG", e);
+					logger.warning("Failed to write DICOM segmentation object PNG", e);
 				}
 				source = null;
 				sourceWithTransparency = null;
@@ -234,6 +231,11 @@ public class DicomSegmentObjectGeneratorTask implements GeneratorTask
 		} catch (AimException e) {
 			logger.warning("Exception saving AIM file to server", e);
 		}
+
+		/*
+		 * ServerEventUtil.postEvent(username, "DSOReady", imageAnnotation.getUniqueIdentifier(), aimName, patientID,
+		 * patientName, "", "", "");
+		 */
 	}
 
 	private BufferedImage generateTransparentImage(BufferedImage source)
@@ -383,7 +385,8 @@ public class DicomSegmentObjectGeneratorTask implements GeneratorTask
 			}
 			tempFile.renameTo(storeFile);
 
-			AnnotationBuilder.saveToServer(aim, serverUrl, namespace, collection, xsdFilePath, username, password);
+			AnnotationBuilder.saveToServer(aim, eXistServerUrl, namespace, eXistCollection, xsdFilePath, eXistUsername,
+					eXistPassword);
 			res = AnnotationBuilder.getAimXMLsaveResult();
 			logger.info("AnnotationBuilder.saveToServer result: " + res);
 		}

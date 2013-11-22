@@ -55,7 +55,7 @@ public class Dcm4CheeDatabaseWatcher implements Runnable
 					submitSeriesForXNATGeneration(dicomSeriesDescription); // Submit this series to generate XNAT information.
 
 					logger.info("New DICOM series (" + patientName + ", " + seriesDesc + ") found in DCM4CHEE with "
-							+ numInstances + " images and ID " + seriesIUid);
+							+ numInstances + " image(s) and series ID " + seriesIUid);
 				}
 				Thread.sleep(500);
 			} catch (Exception e) {

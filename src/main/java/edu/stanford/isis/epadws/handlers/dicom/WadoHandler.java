@@ -25,10 +25,10 @@ public class WadoHandler extends AbstractHandler
 	private static final EPADLogger log = EPADLogger.getInstance();
 	private static final EPADConfig config = EPADConfig.getInstance();
 
-	private static final String INTERNAL_EXCEPTION_MESSAGE = "Internal error";
-	private static final String MISSING_QUERY_MESSAGE = "No query in request";
+	private static final String INTERNAL_EXCEPTION_MESSAGE = "Internal error in WADO route";
+	private static final String MISSING_QUERY_MESSAGE = "No query in WADO request";
 
-	// private static final String INVALID_SESSION_TOKEN_MESSAGE = "Session token is invalid";
+	// private static final String INVALID_SESSION_TOKEN_MESSAGE = "Session token is invalid in WADO route";
 
 	@Override
 	public void handle(String s, Request request, HttpServletRequest httpRequest, HttpServletResponse httpResponse)

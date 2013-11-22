@@ -19,17 +19,17 @@ import edu.stanford.isis.epadws.processing.persistence.MySqlInstance;
 import edu.stanford.isis.epadws.processing.persistence.MySqlQueries;
 import edu.stanford.isis.epadws.xnat.XNATUtil;
 
-public class EventSearchHandler extends AbstractHandler
+public class EventHandler extends AbstractHandler
 {
 	private static final EPADLogger log = EPADLogger.getInstance();
 	private static final EPADConfig config = EPADConfig.getInstance();
 
-	private static final String INVALID_METHOD_MESSAGE = "Only POST and GET methods valid for this route";
+	private static final String INVALID_METHOD_MESSAGE = "Only POST and GET methods valid for the events route";
 	private static final String INTERNAL_EXCEPTION_MESSAGE = "Internal error on event search";
-	private static final String MISSING_USER_NAME_MESSAGE = "No user name in query";
-	private static final String BAD_PARAMETERS_MESSAGE = "Missing parameters in query";
-	private static final String MISSING_QUERY_MESSAGE = "No query in request";
-	private static final String INVALID_SESSION_TOKEN_MESSAGE = "Session token is invalid";
+	private static final String MISSING_USER_NAME_MESSAGE = "No user name in event query";
+	private static final String BAD_PARAMETERS_MESSAGE = "Missing parameters in event query";
+	private static final String MISSING_QUERY_MESSAGE = "No query in event request";
+	private static final String INVALID_SESSION_TOKEN_MESSAGE = "Session token is invalid on event route";
 
 	@Override
 	public void handle(String base, Request request, HttpServletRequest httpRequest, HttpServletResponse httpResponse)
@@ -71,7 +71,7 @@ public class EventSearchHandler extends AbstractHandler
 			} else if ("POST".equalsIgnoreCase(method)) {
 				if (queryString != null) {
 					queryString = queryString.trim();
-					String userName = getUserNameFromRequest(queryString);
+					String username = getUserNameFromRequest(queryString);
 					String event_status = getEventStatusFromRequest(queryString);
 					String aim_uid = getAimUidFromRequest(queryString);
 					String aim_name = getAimNameFromRequest(queryString);
@@ -81,12 +81,12 @@ public class EventSearchHandler extends AbstractHandler
 					String template_name = getTemplateNameFromRequest(queryString);
 					String plugin_name = getPluginNameFromRequest(queryString);
 
-					log.info("Save event for AIM ID " + aim_uid + " for user " + userName);
-					if (userName != null && event_status != null && aim_uid != null && aim_uid != null && aim_name != null
+					log.info("Save event for AIM ID " + aim_uid + " for user " + username);
+					if (username != null && event_status != null && aim_uid != null && aim_uid != null && aim_name != null
 							&& patient_id != null && patient_name != null && template_id != null && template_name != null
 							&& plugin_name != null) {
 						MySqlQueries dbQueries = MySqlInstance.getInstance().getMysqlQueries();
-						dbQueries.insertEventInDb(userName, event_status, aim_uid, aim_name, patient_id, patient_name, template_id,
+						dbQueries.insertEvent(username, event_status, aim_uid, aim_name, patient_id, patient_name, template_id,
 								template_name, plugin_name);
 						httpResponse.setStatus(HttpServletResponse.SC_OK);
 					} else {

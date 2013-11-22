@@ -22,10 +22,10 @@ import java.util.concurrent.Callable;
 import javax.imageio.ImageIO;
 
 import edu.stanford.isis.epad.common.dicom.DicomReader;
+import edu.stanford.isis.epad.common.dicom.DicomTagFileUtils;
 import edu.stanford.isis.epad.common.util.EPADLogger;
-import edu.stanford.isis.epad.common.util.FileKey;
 import edu.stanford.isis.epad.common.util.EPADResources;
-import edu.stanford.isis.epadws.processing.model.DicomTagFileUtils;
+import edu.stanford.isis.epad.common.util.FileKey;
 import edu.stanford.isis.epadws.processing.pipeline.ThumbnailManager;
 
 /**
@@ -52,7 +52,6 @@ public class JPEGThumbnailGeneratorTask implements Callable<File>
 
 		try {
 			log.info("Starting JPEG thumbnail generator task...");
-
 			// File tagFile = getTagFileFromDcm(file);
 			// Map<String,String> tags = DicomTagFileUtils.readTagFile(tagFile);
 
@@ -80,26 +79,17 @@ public class JPEGThumbnailGeneratorTask implements Callable<File>
 				sb.append(line).append("\n");
 			}
 
-			// Wait to get exit value
 			try {
 				process.waitFor(); // keep.
-
 				log.info("JPEGTask call: " + sb.toString());
 			} catch (InterruptedException e) {
 				log.warning("Couldn't get tags for: " + file.getAbsolutePath(), e);
 			}
-
 			// we might want to try a 4096, 2048 with an offset of zero.
-
 			// writeJpegsLeveled(4096,2048);
 			writeJpegsLeveled(4096, 1024); // this is the value that I assume is "unleveled".
-
-			// ToDo: This is temp code.
 			writePackedPngs();
-
-			// write thumbnail if needed, by shrinking an *.jpg file.
 			writeThumbnailIfNeeded(file);
-
 		} catch (Exception e) {
 			log.warning("Failed to generate a thumbnail for " + file.getAbsolutePath(), e);
 		} finally {
@@ -135,14 +125,11 @@ public class JPEGThumbnailGeneratorTask implements Callable<File>
 	 */
 	public void writeJpegsLeveled(int width, int level)
 	{
-
 		try {
 			String leveledJPegDir = file.getParent();
 			String name = file.getName();
-
 			String jpegPath = FileKey.getCanonicalPath(new File(leveledJPegDir)) + "/" + name.replaceAll("\\.dcm", ".jpg");
 			// String jpegPath = file.getAbsolutePath().replaceAll("\\.dcm","_ww"+width+"_wl"+level+".jpg");
-
 			File jpegFile = new File(jpegPath);
 
 			log.info("JPEGTask: start writing: " + jpegPath);
@@ -227,7 +214,7 @@ public class JPEGThumbnailGeneratorTask implements Callable<File>
 	 * 
 	 * @param dicomFile File the Dicom file that will be made into a JPEG.
 	 */
-	public static void writeThumbnailIfNeeded(File dicomFile)
+	private void writeThumbnailIfNeeded(File dicomFile)
 	{
 		String tagFilePath = DicomTagFileUtils.createTagFilePath(dicomFile.getAbsolutePath());
 		Map<String, String> tags = DicomTagFileUtils.readTagFile(new File(tagFilePath));
@@ -235,26 +222,24 @@ public class JPEGThumbnailGeneratorTask implements Callable<File>
 		thumbnailManager.writeThumbnailIfNeeded(tags, dicomFile);
 	}
 
-	public void writePackedPngs()
+	private void writePackedPngs()
 	{
 		File input = file;
 		File outputFile = null;
 		OutputStream outputStream = null;
 		try {
-
 			DicomReader instance = new DicomReader(input);
 			String pngFilePath = file.getAbsolutePath().replaceAll("\\.dcm", ".png");
 
-			log.info("JPEGTask:Creating png file: " + pngFilePath);
+			log.info("JPEGTask:Creating PNG file: " + pngFilePath);
 
 			outputFile = new File(pngFilePath); // create the real file name here.
 			outputStream = new FileOutputStream(outputFile);
 			ImageIO.write(instance.getPackedImage(), "png", outputStream);
-
 		} catch (FileNotFoundException e) {
-			log.warning("failed to create packed png for: " + file.getAbsolutePath(), e);
+			log.warning("Dailed to create packed png for: " + file.getAbsolutePath(), e);
 		} catch (IOException e) {
-			log.warning("failed to create packed PNG for: " + file.getAbsolutePath(), e);
+			log.warning("Failed to create packed PNG for: " + file.getAbsolutePath(), e);
 		} finally {
 			if (outputStream != null) {
 				try {

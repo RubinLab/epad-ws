@@ -21,8 +21,8 @@ public class ResourceCheckHandler extends AbstractHandler
 {
 	// private final EPADLogger log = EPADLogger.getInstance();
 
-	// private static final String INTERNAL_ERROR_MESSAGE = "Internal server error";
-	// private static final String INVALID_SESSION_TOKEN_MESSAGE = "Session token is invalid";
+	// private static final String INTERNAL_ERROR_MESSAGE = "Internal server error on resource route";
+	// private static final String INVALID_SESSION_TOKEN_MESSAGE = "Session token is invalid on resource route";
 
 	@Override
 	public void handle(String base, Request request, HttpServletRequest httpRequest, HttpServletResponse httpResponse)

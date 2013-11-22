@@ -9,6 +9,7 @@ package edu.stanford.isis.epadws.processing.model;
 
 import java.util.Map;
 
+import edu.stanford.isis.epad.common.dicom.DicomTagFileUtils;
 import edu.stanford.isis.epad.common.util.EPADLogger;
 
 /**

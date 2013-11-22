@@ -87,7 +87,7 @@ public interface MySqlQueries
 
 	float getPercentComplete(String seriesUID);
 
-	List<Map<String, String>> getOrderFile(String seriesUID);
+	List<Map<String, String>> getDicomSeriesOrder(String seriesUID);
 
 	int getStudyKey(String studyUID);
 
@@ -111,7 +111,7 @@ public interface MySqlQueries
 
 	InputStream getInstanceAttrsAsStream(String sopInstanceUID);
 
-	void insertEventInDb(String userName, String event_status, String aim_uid, String aim_name, String patient_id,
+	void insertEvent(String userName, String event_status, String aim_uid, String aim_name, String patient_id,
 			String patient_name, String template_id, String template_name, String plugin_name);
 
 	List<Map<String, String>> getEventsForUser(String username);

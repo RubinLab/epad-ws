@@ -47,7 +47,7 @@ import edu.stanford.isis.epadws.handlers.dicom.DicomSeriesTagHandler;
 import edu.stanford.isis.epadws.handlers.dicom.DicomWindowingHandler;
 import edu.stanford.isis.epadws.handlers.dicom.PatientDeleteHandler;
 import edu.stanford.isis.epadws.handlers.dicom.WadoHandler;
-import edu.stanford.isis.epadws.handlers.event.EventSearchHandler;
+import edu.stanford.isis.epadws.handlers.event.EventHandler;
 import edu.stanford.isis.epadws.handlers.event.ProjectEventHandler;
 import edu.stanford.isis.epadws.handlers.plugin.EPadPluginHandler;
 import edu.stanford.isis.epadws.handlers.xnat.XNATProjectHandler;
@@ -195,7 +195,7 @@ public class Main
 		addHandlerAtContextPath(new PatientDeleteHandler(), "/patientdelete", handlerList);
 		addHandlerAtContextPath(new AimResourceHandler(), "/aimresource", handlerList);
 		addHandlerAtContextPath(new WadoHandler(), "/eWado", handlerList);
-		addHandlerAtContextPath(new EventSearchHandler(), "/eventresource", handlerList);
+		addHandlerAtContextPath(new EventHandler(), "/eventresource", handlerList);
 		addHandlerAtContextPath(new ProjectEventHandler(), "/events", handlerList);
 		addHandlerAtContextPath(new EPadPluginHandler(), "/plugin", handlerList);
 

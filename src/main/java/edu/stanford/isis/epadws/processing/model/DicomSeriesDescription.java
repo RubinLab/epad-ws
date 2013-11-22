@@ -147,7 +147,7 @@ public class DicomSeriesDescription
 			// }
 			// //ToDo: delete above once debugged.
 
-			int instanceNumber = Integer.parseInt(instanceNumberString);
+			int instanceNumber = instanceNumberString == null ? 1 : Integer.parseInt(instanceNumberString);
 			String sopInstanceUID = dicomImageFileDescription.get("sop_iuid");
 			addCompletedInstance(instanceNumber, sopInstanceUID);
 		}

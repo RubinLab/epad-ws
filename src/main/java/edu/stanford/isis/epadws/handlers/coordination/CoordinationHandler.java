@@ -78,14 +78,14 @@ public class CoordinationHandler extends AbstractHandler
 	private static final String SERVER_PREFIX_PARAM_NAME = "coordinationTermPrefix";
 	private static final String SERVER_DEFAULT_PREFIX = "0";
 
-	private static final String FORBIDDEN_MESSAGE = "Forbidden method - only GET supported!";
-	private static final String BAD_TERMS_MESSAGE = "Two or more terms should be provided!";
-	private static final String INTERNAL_ERROR_MESSAGE = "Internal server error";
-	private static final String INTERNAL_IO_ERROR_MESSAGE = "Internal server IO error";
-	private static final String INTERNAL_SQL_ERROR_MESSAGE = "Internal server SQL error";
+	private static final String FORBIDDEN_MESSAGE = "Forbidden method - only GET supported on coordination route!";
+	private static final String BAD_TERMS_MESSAGE = "Two or more terms should be provided on coordination route!";
+	private static final String INTERNAL_ERROR_MESSAGE = "Internal server error  on coordination route";
+	private static final String INTERNAL_IO_ERROR_MESSAGE = "Internal server IO error  on coordination route";
+	private static final String INTERNAL_SQL_ERROR_MESSAGE = "Internal server SQL error on coordination route";
 	private static final String BAD_JSON_ERROR_MESSAGE = "Bad JSON - does not represent a valid coordination";
-	private static final String UNPARSABLE_JSON_ERROR_MESSAGE = "Unparsable JSON";
-	private static final String INVALID_SESSION_TOKEN_MESSAGE = "Session token is invalid";
+	private static final String UNPARSABLE_JSON_ERROR_MESSAGE = "Unparsable JSON in coordination route";
+	private static final String INVALID_SESSION_TOKEN_MESSAGE = "Session token is invalid on coordination route";
 
 	private final static int MIN_COORDINATION_TERMS = 2;
 

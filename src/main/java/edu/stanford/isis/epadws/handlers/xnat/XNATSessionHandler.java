@@ -75,7 +75,7 @@ public class XNATSessionHandler extends AbstractHandler
 						statusCode = xnatSessionResponse.statusCode;
 					}
 				} catch (Throwable t) {
-					log.warning(LOGIN_EXCEPTION_MESSAGE, t);
+					log.severe(LOGIN_EXCEPTION_MESSAGE, t);
 					responseStream.append(LOGIN_EXCEPTION_MESSAGE + ": " + t.getMessage());
 					statusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 				}
@@ -91,7 +91,7 @@ public class XNATSessionHandler extends AbstractHandler
 				log.info("XNAT delete session returns status code " + xnatStatusCode);
 				statusCode = xnatStatusCode;
 			} catch (Throwable t) {
-				log.warning(LOGOUT_EXCEPTION_MESSAGE, t);
+				log.severe(LOGOUT_EXCEPTION_MESSAGE, t);
 				responseStream.append(LOGOUT_EXCEPTION_MESSAGE + ": " + t.getMessage());
 				statusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 			}

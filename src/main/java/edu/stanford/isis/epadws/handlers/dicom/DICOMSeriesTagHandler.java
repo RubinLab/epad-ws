@@ -31,9 +31,9 @@ public class DicomSeriesTagHandler extends AbstractHandler
 {
 	private static final EPADLogger log = EPADLogger.getInstance();
 
-	private static final String INTERNAL_ERROR_MESSAGE = "Internal error on delete";
-	private static final String INVALID_SESSION_TOKEN_MESSAGE = "Session token is invalid";
-	private static final String MISSING_SERIES_IUID_MESSAGE = "No Series IUID parameter in request";
+	private static final String INTERNAL_ERROR_MESSAGE = "Internal error on DICOM series tag route";
+	private static final String INVALID_SESSION_TOKEN_MESSAGE = "Session token is invalid on DICOM series tag route";
+	private static final String MISSING_SERIES_IUID_MESSAGE = "No Series IUID parameter in DICOM series tag request";
 
 	@Override
 	public void handle(String s, Request request, HttpServletRequest httpRequest, HttpServletResponse httpResponse)
@@ -60,11 +60,11 @@ public class DicomSeriesTagHandler extends AbstractHandler
 						handleDICOMSeriesTagQuery(responseStream, seriesIUID, useBase64);
 						statusCode = HttpServletResponse.SC_OK;
 					} catch (IOException e) {
-						log.warning(INTERNAL_ERROR_MESSAGE, e);
+						log.severe(INTERNAL_ERROR_MESSAGE, e);
 						responseStream.print(INTERNAL_ERROR_MESSAGE + ": " + e.getMessage());
 						statusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 					} catch (DicomException e) {
-						log.warning(INTERNAL_ERROR_MESSAGE, e);
+						log.severe(INTERNAL_ERROR_MESSAGE, e);
 						responseStream.print(INTERNAL_ERROR_MESSAGE + ": " + e.getMessage());
 						statusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 					}

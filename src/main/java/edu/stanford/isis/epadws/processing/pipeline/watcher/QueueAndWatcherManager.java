@@ -21,7 +21,7 @@ import edu.stanford.isis.epadws.processing.persistence.Dcm4CheeDatabaseUtils;
 import edu.stanford.isis.epadws.processing.persistence.MySqlInstance;
 import edu.stanford.isis.epadws.processing.persistence.MySqlQueries;
 import edu.stanford.isis.epadws.processing.pipeline.process.PngGeneratorProcess;
-import edu.stanford.isis.epadws.processing.pipeline.task.DicomSegmentObjectGeneratorTask;
+import edu.stanford.isis.epadws.processing.pipeline.task.DicomSegmentationObjectPNGMaskGeneratorTask;
 import edu.stanford.isis.epadws.processing.pipeline.task.GeneratorTask;
 import edu.stanford.isis.epadws.processing.pipeline.task.PngGeneratorTask;
 
@@ -157,7 +157,7 @@ public class QueueAndWatcherManager
 		File inFile = new File(inputFilePath);
 		File outFile = new File(outputFilePath);
 
-		DicomSegmentObjectGeneratorTask dsoTask = new DicomSegmentObjectGeneratorTask(inFile, outFile);
+		DicomSegmentationObjectPNGMaskGeneratorTask dsoTask = new DicomSegmentationObjectPNGMaskGeneratorTask(inFile, outFile);
 		pngGeneratorTaskQueue.offer(dsoTask);
 		logger.info("Segmentation object found at " + inputFilePath);
 	}

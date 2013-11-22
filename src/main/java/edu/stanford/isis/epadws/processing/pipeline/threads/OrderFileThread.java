@@ -20,12 +20,12 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 
+import edu.stanford.isis.epad.common.dicom.DicomTagFileUtils;
 import edu.stanford.isis.epad.common.util.EPADFileUtils;
 import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epadws.processing.model.DicomImageOrder;
 import edu.stanford.isis.epadws.processing.model.DicomOrderFileUtils;
 import edu.stanford.isis.epadws.processing.model.DicomSeriesFileUtils;
-import edu.stanford.isis.epadws.processing.model.DicomTagFileUtils;
 
 /**
  * This thread updates order files about once per seconds as new data arrives.

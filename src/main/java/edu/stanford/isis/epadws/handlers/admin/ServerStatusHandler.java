@@ -35,7 +35,7 @@ public class ServerStatusHandler extends AbstractHandler
 {
 	private static final EPADLogger log = EPADLogger.getInstance();
 
-	private static final String INVALID_SESSION_TOKEN_MESSAGE = "Session token is invalid";
+	private static final String INVALID_SESSION_TOKEN_MESSAGE = "Session token is invalid on status route";
 	private static final String INTERNAL_EXCEPTION_MESSAGE = "Internal error getting server status";
 
 	private final long startTime;

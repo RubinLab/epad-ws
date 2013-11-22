@@ -60,7 +60,6 @@ public class DicomHeadersTask implements Runnable
 			}
 
 			EPADFileUtils.createDirsAndFile(outputFile);
-
 			File tagFile = outputFile;
 			tagFileWriter = new FileWriter(tagFile);
 			tagFileWriter.write(sb.toString());

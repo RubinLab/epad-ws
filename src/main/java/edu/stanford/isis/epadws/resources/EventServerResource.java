@@ -80,7 +80,7 @@ public class EventServerResource extends BaseServerResource
 					&& patient_id != null && patient_name != null && template_id != null && template_name != null
 					&& plugin_name != null) {
 				MySqlQueries dbQueries = MySqlInstance.getInstance().getMysqlQueries();
-				dbQueries.insertEventInDb(userName, event_status, aim_uid, aim_name, patient_id, patient_name, template_id,
+				dbQueries.insertEvent(userName, event_status, aim_uid, aim_name, patient_id, patient_name, template_id,
 						template_name, plugin_name);
 
 				log.info(INSERT_SUCCESS_MESSAGE);

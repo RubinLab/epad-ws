@@ -35,10 +35,10 @@ public class XNATSubjectHandler extends AbstractHandler
 {
 	private static final EPADLogger log = EPADLogger.getInstance();
 
-	private static final String INVALID_SESSION_TOKEN_MESSAGE = "Invalid session token";
-	private static final String INTERNAL_EXCEPTION_MESSAGE = "Internal error invoking XNAT";
-	private static final String XNAT_INVOCATION_ERROR_MESSAGE = "Error invoking XNAT";
-	private static final String INVALID_METHOD_MESSAGE = "Only GET, POST, PUT, DELETE methods valid for this route";
+	private static final String INVALID_SESSION_TOKEN_MESSAGE = "Invalid session token on XNAT subject route";
+	private static final String INTERNAL_EXCEPTION_MESSAGE = "Internal error invoking XNAT on subject route";
+	private static final String XNAT_INVOCATION_ERROR_MESSAGE = "Error invoking XNAT on subject route";
+	private static final String INVALID_METHOD_MESSAGE = "Only GET, POST, PUT, DELETE methods valid for the XNAT subject route";
 
 	@Override
 	public void handle(String base, Request request, HttpServletRequest httpRequest, HttpServletResponse httpResponse)

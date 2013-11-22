@@ -79,7 +79,7 @@ public class DICOMSeriesDescriptionServerResource extends BaseServerResource
 
 		MySqlQueries queries = MySqlInstance.getInstance().getMysqlQueries();
 
-		List<Map<String, String>> orderQueryEntires = queries.getOrderFile(seriesIUID);
+		List<Map<String, String>> orderQueryEntires = queries.getDicomSeriesOrder(seriesIUID);
 
 		for (Map<String, String> entry : orderQueryEntires) {
 			String sopInstanceUID = entry.get("sop_iuid");

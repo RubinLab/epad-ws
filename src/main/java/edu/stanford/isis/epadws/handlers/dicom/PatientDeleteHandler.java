@@ -27,13 +27,13 @@ public class PatientDeleteHandler extends AbstractHandler
 {
 	private static final EPADLogger log = EPADLogger.getInstance();
 
-	private static final String INTERNAL_ERROR_MESSAGE = "Internal error on delete";
-	private static final String INVALID_SESSION_TOKEN_MESSAGE = "Session token is invalid";
-	private static final String MISSING_QUERY_MESSAGE = "No query parameters specified";
+	private static final String INTERNAL_ERROR_MESSAGE = "Internal error on patient delete route";
+	private static final String INVALID_SESSION_TOKEN_MESSAGE = "Session token is invalid on patient delete route";
+	private static final String MISSING_QUERY_MESSAGE = "No query parameters specified in patient delete route";
 
 	@Override
 	public void handle(String s, Request request, HttpServletRequest httpRequest, HttpServletResponse httpResponse)
-			throws IOException
+			throws IOException // TODO Get rid of
 	{
 		PrintWriter responseStream = httpResponse.getWriter();
 		int responseCode;

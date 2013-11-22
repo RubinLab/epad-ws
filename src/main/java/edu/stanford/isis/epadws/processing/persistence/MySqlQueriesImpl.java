@@ -646,7 +646,7 @@ public class MySqlQueriesImpl implements MySqlQueries
 	}
 
 	@Override
-	public void insertEventInDb(String userName, String event_status, String aim_uid, String aim_name, String patient_id,
+	public void insertEvent(String userName, String event_status, String aim_uid, String aim_name, String patient_id,
 			String patient_name, String template_id, String template_name, String plugin_name)
 	{
 		Connection c = null;
@@ -745,7 +745,7 @@ public class MySqlQueriesImpl implements MySqlQueries
 	}
 
 	@Override
-	public List<Map<String, String>> getOrderFile(String seriesUID)
+	public List<Map<String, String>> getDicomSeriesOrder(String seriesUID)
 	{
 		List<Map<String, String>> retVal = new ArrayList<Map<String, String>>();
 
@@ -761,8 +761,7 @@ public class MySqlQueriesImpl implements MySqlQueries
 			while (rs.next()) {
 				Map<String, String> resultMap = createResultMap(rs);
 				retVal.add(resultMap);
-			}// while
-
+			}
 		} catch (SQLException e) {
 			String debugInfo = DatabaseUtils.getDebugData(rs);
 			logger.warning("database operation failed. debugInfo=" + debugInfo, e);

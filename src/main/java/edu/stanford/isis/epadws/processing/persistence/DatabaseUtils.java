@@ -21,10 +21,10 @@ import java.util.Map;
 
 import edu.stanford.isis.epad.common.dicom.DicomSeriesUID;
 import edu.stanford.isis.epad.common.dicom.DicomStudyUID;
+import edu.stanford.isis.epad.common.dicom.DicomTagFileUtils;
 import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epad.common.util.FileKey;
 import edu.stanford.isis.epad.common.util.EPADResources;
-import edu.stanford.isis.epadws.processing.model.DicomTagFileUtils;
 
 public class DatabaseUtils
 {

@@ -50,9 +50,9 @@ public class DicomSeriesOrderHandler extends AbstractHandler
 {
 	private static final EPADLogger log = EPADLogger.getInstance();
 
-	private static final String MISSING_SERIES_IUID_MESSAGE = "No Series IUID parameter in request";
-	private static final String INVALID_SESSION_TOKEN_MESSAGE = "Session token is invalid";
-	private static final String INTERNAL_EXCEPTION_MESSAGE = "Internal error in series order handler";
+	private static final String MISSING_SERIES_IUID_MESSAGE = "No Series IUID parameter in DICOM series request";
+	private static final String INVALID_SESSION_TOKEN_MESSAGE = "Session token is invalid on DICOM series order route";
+	private static final String INTERNAL_EXCEPTION_MESSAGE = "Internal error in DICOM series order handler";
 
 	@Override
 	public void handle(String s, Request request, HttpServletRequest httpRequest, HttpServletResponse httpResponse)
@@ -93,15 +93,16 @@ public class DicomSeriesOrderHandler extends AbstractHandler
 	private void peformDICOMSeriesDescriptionQuery(PrintWriter outputStream, String seriesIUID)
 	{
 		MySqlQueries queries = MySqlInstance.getInstance().getMysqlQueries();
-		List<Map<String, String>> orderQueryEntries = queries.getOrderFile(seriesIUID);
+		List<Map<String, String>> orderQueryEntries = queries.getDicomSeriesOrder(seriesIUID);
 		List<DicomImageDescriptionSearchResult> imageDescriptions = new ArrayList<DicomImageDescriptionSearchResult>();
 
 		log.info("DICOMSeriesOrderHandler for series " + seriesIUID);
 
 		for (Map<String, String> entry : orderQueryEntries) {
-			String sopInstanceUID = entry.get("sop_iuid");
-			String fileName = createFileNameField(sopInstanceUID);
-			int instanceNumber = Integer.parseInt(entry.get("inst_no"));
+			String imageUID = entry.get("sop_iuid");
+			String fileName = createFileNameField(imageUID);
+			String instanceNumberString = entry.get("inst_no");
+			int instanceNumber = getInstanceNumber(instanceNumberString, seriesIUID, imageUID);
 			String sliceLocation = createSliceLocation(entry);// entry.get("inst_custom1");
 			String contentTime = "null"; // TODO Can we find this somewhere?
 
@@ -112,6 +113,20 @@ public class DicomSeriesOrderHandler extends AbstractHandler
 		DicomSeriesDescriptionSearchResult dicomSeriesDescriptionSearchResult = new DicomSeriesDescriptionSearchResult(
 				imageDescriptions);
 		outputStream.print(dicomSeriesDescriptionSearchResult2JSON(dicomSeriesDescriptionSearchResult));
+	}
+
+	private int getInstanceNumber(String instanceNumberString, String seriesIUID, String imageUID)
+	{
+		if (instanceNumberString != null)
+			try {
+				return Integer.parseInt(instanceNumberString);
+			} catch (NumberFormatException e) {
+				log.warning("Invalid instance number " + instanceNumberString + " in image " + imageUID + " in series "
+						+ seriesIUID);
+				return 1; // Invalid instance number; default to 1
+			}
+		else
+			return 1; // Missing instance number; default to 1.
 	}
 
 	private String createSliceLocation(Map<String, String> entry)

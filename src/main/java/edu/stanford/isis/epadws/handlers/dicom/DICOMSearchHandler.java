@@ -35,10 +35,10 @@ public class DicomSearchHandler extends AbstractHandler
 {
 	private static final EPADLogger log = EPADLogger.getInstance();
 
-	private static final String MISSING_QUERY_MESSAGE = "No series or study query in request";
+	private static final String MISSING_QUERY_MESSAGE = "No series or study query in DICOM search request";
 	private static final String MISSING_STUDY_SEARCH_TYPE_MESSAGE = "Missing DICOM study search type";
-	private static final String INTERNAL_EXCEPTION_MESSAGE = "Internal error running query";
-	private static final String INVALID_SESSION_TOKEN_MESSAGE = "Session token is invalid";
+	private static final String INTERNAL_EXCEPTION_MESSAGE = "Internal error running query  on DICOM search route";
+	private static final String INVALID_SESSION_TOKEN_MESSAGE = "Session token is invalid on DICOM search route";
 
 	@Override
 	public void handle(String s, Request request, HttpServletRequest httpRequest, HttpServletResponse httpResponse)

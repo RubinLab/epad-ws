@@ -31,11 +31,11 @@ public class DicomWindowingHandler extends AbstractHandler
 	private static final EPADLogger log = EPADLogger.getInstance();
 	private static final EPADConfig config = EPADConfig.getInstance();
 
-	private static final String WADO_ERROR_MESSAGE = "WADO error";
-	private static final String INTERNAL_ERROR_MESSAGE = "Internal error windowing";
-	private static final String INVALID_SESSION_TOKEN_MESSAGE = "Session token is invalid";
-	private static final String MISSING_QUERY_MESSAGE = "No query in request";
-	private static final String BADLY_FORMED_QUERY_MESSAGE = "Invalid query paramaters specified";
+	private static final String WADO_ERROR_MESSAGE = "WADO error in DICOM windowing route";
+	private static final String INTERNAL_ERROR_MESSAGE = "Internal error in DICOM windowing route";
+	private static final String INVALID_SESSION_TOKEN_MESSAGE = "Session token is invalid on DICOM windowing route";
+	private static final String MISSING_QUERY_MESSAGE = "No query in DICOM windowing request";
+	private static final String BADLY_FORMED_QUERY_MESSAGE = "Invalid query paramaters specified in DICOM windowing request";
 
 	@Override
 	public void handle(String s, Request request, HttpServletRequest httpRequest, HttpServletResponse httpResponse)
@@ -83,7 +83,7 @@ public class DicomWindowingHandler extends AbstractHandler
 				statusCode = HttpServletResponse.SC_UNAUTHORIZED;
 			}
 		} catch (Throwable t) {
-			log.warning(INTERNAL_ERROR_MESSAGE, t);
+			log.severe(INTERNAL_ERROR_MESSAGE, t);
 			if (responseStream != null)
 				responseStream.print(INTERNAL_ERROR_MESSAGE + ": " + t.getMessage());
 			statusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;

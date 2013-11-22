@@ -36,16 +36,18 @@ public class XNATProjectHandler extends AbstractHandler
 {
 	private static final EPADLogger log = EPADLogger.getInstance();
 
-	private static final String INVALID_SESSION_TOKEN_MESSAGE = "Invalid session token";
-	private static final String INTERNAL_EXCEPTION_MESSAGE = "Internal error invoking XNAT";
-	private static final String XNAT_INVOCATION_ERROR_MESSAGE = "Error invoking XNAT";
-	private static final String INVALID_METHOD_MESSAGE = "Only GET, POST, PUT, DELETE methods valid for this route";
+	private static final String INVALID_SESSION_TOKEN_MESSAGE = "Invalid session token for XNAT project call";
+	private static final String INTERNAL_EXCEPTION_MESSAGE = "Internal error invoking XNAT project call";
+	private static final String XNAT_INVOCATION_ERROR_MESSAGE = "Error invoking XNAT project call";
+	private static final String INVALID_METHOD_MESSAGE = "Only GET, POST, PUT, DELETE methods valid for the XNAT project route";
 
 	@Override
 	public void handle(String base, Request request, HttpServletRequest httpRequest, HttpServletResponse httpResponse)
 	{
 		ServletOutputStream responseStream = null;
 		int statusCode;
+
+		log.info("Invoking XNAT project service " + request.getRequestURI());
 
 		httpResponse.setContentType("application/json");
 		httpResponse.setHeader("Access-Control-Allow-Origin", "*");
