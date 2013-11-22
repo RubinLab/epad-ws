@@ -25,7 +25,7 @@ public class EventSearchHandler extends AbstractHandler
 	private static final EPADConfig config = EPADConfig.getInstance();
 
 	private static final String INVALID_METHOD_MESSAGE = "Only POST and GET methods valid for this route";
-	private static final String INTERNAL_EXCEPTION_MESSAGE = "Internal error";
+	private static final String INTERNAL_EXCEPTION_MESSAGE = "Internal error on event search";
 	private static final String MISSING_USER_NAME_MESSAGE = "No user name in query";
 	private static final String BAD_PARAMETERS_MESSAGE = "Missing parameters in query";
 	private static final String MISSING_QUERY_MESSAGE = "No query in request";
@@ -33,7 +33,7 @@ public class EventSearchHandler extends AbstractHandler
 
 	@Override
 	public void handle(String base, Request request, HttpServletRequest httpRequest, HttpServletResponse httpResponse)
-			throws IOException
+			throws IOException // TODO Remove this
 	{
 		PrintWriter out = httpResponse.getWriter();
 
@@ -53,12 +53,8 @@ public class EventSearchHandler extends AbstractHandler
 						try {
 							findEventsForUser(out, userName);
 							httpResponse.setStatus(HttpServletResponse.SC_OK);
-						} catch (Exception e) {
-							log.info(INTERNAL_EXCEPTION_MESSAGE);
-							out.append(INTERNAL_EXCEPTION_MESSAGE);
-							httpResponse.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-						} catch (Error e) {
-							log.info(INTERNAL_EXCEPTION_MESSAGE);
+						} catch (Throwable t) {
+							log.severe(INTERNAL_EXCEPTION_MESSAGE, t);
 							out.append(INTERNAL_EXCEPTION_MESSAGE);
 							httpResponse.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 						}

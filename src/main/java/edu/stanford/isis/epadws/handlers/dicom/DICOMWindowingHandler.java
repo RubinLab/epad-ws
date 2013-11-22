@@ -32,7 +32,7 @@ public class DicomWindowingHandler extends AbstractHandler
 	private static final EPADConfig config = EPADConfig.getInstance();
 
 	private static final String WADO_ERROR_MESSAGE = "WADO error";
-	private static final String INTERNAL_ERROR_MESSAGE = "Internal error";
+	private static final String INTERNAL_ERROR_MESSAGE = "Internal error windowing";
 	private static final String INVALID_SESSION_TOKEN_MESSAGE = "Session token is invalid";
 	private static final String MISSING_QUERY_MESSAGE = "No query in request";
 	private static final String BADLY_FORMED_QUERY_MESSAGE = "Invalid query paramaters specified";

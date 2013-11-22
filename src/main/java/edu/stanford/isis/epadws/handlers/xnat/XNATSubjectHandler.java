@@ -42,7 +42,6 @@ public class XNATSubjectHandler extends AbstractHandler
 
 	@Override
 	public void handle(String base, Request request, HttpServletRequest httpRequest, HttpServletResponse httpResponse)
-			throws IOException
 	{
 		ServletOutputStream responseStream = null;
 		int statusCode;
@@ -62,9 +61,7 @@ public class XNATSubjectHandler extends AbstractHandler
 				statusCode = HttpServletResponse.SC_UNAUTHORIZED;
 			}
 		} catch (Throwable t) {
-			log.warning(INTERNAL_EXCEPTION_MESSAGE, t);
-			if (responseStream != null)
-				responseStream.print(JsonHelper.createJSONErrorResponse(INTERNAL_EXCEPTION_MESSAGE, t));
+			log.severe(INTERNAL_EXCEPTION_MESSAGE, t);
 			statusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 		}
 		httpResponse.setStatus(statusCode);

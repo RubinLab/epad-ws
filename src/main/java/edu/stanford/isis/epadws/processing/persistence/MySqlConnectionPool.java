@@ -93,10 +93,10 @@ public class MySqlConnectionPool implements Runnable
 				Thread.sleep(10);
 			}
 		} catch (SQLException sqle) {
-			logger.sever("SQL Exception. Lost the connection pool.", sqle);
+			logger.severe("SQL Exception. Lost the connection pool.", sqle);
 			sqle.printStackTrace();
 		} catch (Exception e) {
-			logger.sever("Lost MySQL connection pool! ", e);
+			logger.severe("Lost MySQL connection pool! ", e);
 			e.printStackTrace();
 		}
 	}
@@ -131,7 +131,7 @@ public class MySqlConnectionPool implements Runnable
 				closeExcessConnections();
 			}
 		} catch (SQLException sqle) {
-			logger.sever("Failed to dispose of connections.", sqle);
+			logger.severe("Failed to dispose of connections.", sqle);
 		}
 	}
 }

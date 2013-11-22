@@ -118,15 +118,15 @@ public class Main
 			 */
 			server.join();
 		} catch (BindException be) {
-			log.sever("Bind exception", be);
+			log.severe("Bind exception", be);
 			Throwable t = be.getCause();
 			log.warning("Bind exception cause: " + be.getMessage(), t);
 		} catch (SocketException se) {
-			log.sever("Cannot bind to all sockets.", se);
+			log.severe("Cannot bind to all sockets.", se);
 		} catch (Exception e) {
-			log.sever("Fatal Exception. Shutting down EPad Web Service.", e);
+			log.severe("Fatal Exception. Shutting down EPad Web Service.", e);
 		} catch (Error err) {
-			log.sever("Fatal Error. Shutting down EPad Web Service.", err);
+			log.severe("Fatal Error. Shutting down EPad Web Service.", err);
 		} finally {
 			log.info("#####################################################");
 			log.info("############# Shutting down EPad Web Service ########");

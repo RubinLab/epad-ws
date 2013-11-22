@@ -52,7 +52,7 @@ public class DicomSeriesOrderHandler extends AbstractHandler
 
 	private static final String MISSING_SERIES_IUID_MESSAGE = "No Series IUID parameter in request";
 	private static final String INVALID_SESSION_TOKEN_MESSAGE = "Session token is invalid";
-	private static final String INTERNAL_EXCEPTION_MESSAGE = "Internal error";
+	private static final String INTERNAL_EXCEPTION_MESSAGE = "Internal error in series order handler";
 
 	@Override
 	public void handle(String s, Request request, HttpServletRequest httpRequest, HttpServletResponse httpResponse)
@@ -82,7 +82,7 @@ public class DicomSeriesOrderHandler extends AbstractHandler
 				statusCode = HttpServletResponse.SC_UNAUTHORIZED;
 			}
 		} catch (Throwable t) {
-			log.warning(INTERNAL_EXCEPTION_MESSAGE, t);
+			log.severe(INTERNAL_EXCEPTION_MESSAGE, t);
 			if (responseStream != null)
 				responseStream.append(JsonHelper.createJSONErrorResponse(INTERNAL_EXCEPTION_MESSAGE, t));
 			statusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;

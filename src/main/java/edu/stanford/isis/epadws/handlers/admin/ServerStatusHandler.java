@@ -89,7 +89,7 @@ public class ServerStatusHandler extends AbstractHandler
 				statusCode = HttpServletResponse.SC_UNAUTHORIZED;
 			}
 		} catch (Throwable t) {
-			log.warning(INTERNAL_EXCEPTION_MESSAGE, t);
+			log.severe(INTERNAL_EXCEPTION_MESSAGE, t);
 			if (responseStream != null)
 				responseStream.append(INTERNAL_EXCEPTION_MESSAGE + ": " + t.getMessage());
 			statusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;

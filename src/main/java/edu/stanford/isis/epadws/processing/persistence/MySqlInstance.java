@@ -52,7 +52,7 @@ public class MySqlInstance
 
 			mySqlQueries = new MySqlQueriesImpl(connectionPool);
 		} catch (Exception e) {
-			logger.sever("Failed to init connection pool to database database", e);
+			logger.severe("Failed to init connection pool to database database", e);
 			dbState.set(DatabaseState.ERROR);
 		}
 	}
@@ -74,7 +74,7 @@ public class MySqlInstance
 			dbState.set(DatabaseState.READY);
 			logger.info("Database took " + startupTime + " ms to start.");
 		} catch (Exception e) {
-			logger.sever("Failed to start-up database", e);
+			logger.severe("Failed to start-up database", e);
 			dbState.set(DatabaseState.ERROR);
 		}
 	}

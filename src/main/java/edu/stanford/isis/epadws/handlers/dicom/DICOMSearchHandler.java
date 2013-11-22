@@ -13,9 +13,9 @@ import org.eclipse.jetty.server.handler.AbstractHandler;
 
 import com.google.gson.Gson;
 
+import edu.stanford.isis.epad.common.dicom.DicomFormatUtil;
 import edu.stanford.isis.epad.common.dicom.DicomSeriesSearchResult;
 import edu.stanford.isis.epad.common.dicom.DicomStudySearchResult;
-import edu.stanford.isis.epad.common.dicom.DicomFormatUtil;
 import edu.stanford.isis.epad.common.dicom.DicomStudySearchType;
 import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epad.common.util.JsonHelper;
@@ -83,7 +83,7 @@ public class DicomSearchHandler extends AbstractHandler
 				statusCode = HttpServletResponse.SC_UNAUTHORIZED;
 			}
 		} catch (Throwable t) {
-			log.warning(INTERNAL_EXCEPTION_MESSAGE, t);
+			log.severe(INTERNAL_EXCEPTION_MESSAGE, t);
 			if (responseStream != null)
 				responseStream.append(JsonHelper.createJSONErrorResponse(INTERNAL_EXCEPTION_MESSAGE, t));
 			statusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;

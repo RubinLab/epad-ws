@@ -60,7 +60,7 @@ public class EPADUploadDirWatcher implements Runnable
 				TimeUnit.MILLISECONDS.sleep(CHECK_INTERVAL);
 			}
 		} catch (Exception e) {
-			log.sever("EPADUploadDirWatcher thread error", e);
+			log.severe("EPADUploadDirWatcher thread error", e);
 		} finally {
 			log.info("EPADUploadDirWatcher thread done.");
 		}

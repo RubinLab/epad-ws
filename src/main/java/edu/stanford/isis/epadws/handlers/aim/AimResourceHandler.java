@@ -68,7 +68,7 @@ public class AimResourceHandler extends AbstractHandler
 	public String templatePath = EPADConfig.getInstance().getParam("baseTemplatesDir");
 	public String wadoProxy = EPADConfig.getInstance().getParam("wadoProxy");
 
-	private static final String INTERNAL_EXCEPTION_MESSAGE = "Internal error";
+	private static final String INTERNAL_EXCEPTION_MESSAGE = "Internal error in AIM handler";
 	private static final String INVALID_METHOD_MESSAGE = "Only POST and GET methods valid for this route";
 	private static final String FILE_UPLOAD_ERROR_MESSAGE = "File upload failures; see response for details";
 	private static final String MISSING_QUERY_MESSAGE = "No series or study query in AIM request";
@@ -139,7 +139,7 @@ public class AimResourceHandler extends AbstractHandler
 				statusCode = HttpServletResponse.SC_UNAUTHORIZED;
 			}
 		} catch (Throwable t) {
-			logger.warning(INTERNAL_EXCEPTION_MESSAGE, t);
+			logger.severe(INTERNAL_EXCEPTION_MESSAGE, t);
 			if (responseStream != null)
 				responseStream.append(INTERNAL_EXCEPTION_MESSAGE + t.getMessage() + "<br>");
 			statusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;

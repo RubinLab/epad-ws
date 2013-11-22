@@ -206,7 +206,7 @@ public class JPEGThumbnailGeneratorTask implements Callable<File>
 			}
 			log.info("JPEGTask: finished writing: " + jpegPath);
 		} catch (Exception e) {
-			log.sever("Failed to create JPEG", e);
+			log.severe("Failed to create JPEG", e);
 		}
 	}
 

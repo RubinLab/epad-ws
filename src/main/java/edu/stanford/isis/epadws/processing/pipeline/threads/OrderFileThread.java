@@ -75,7 +75,7 @@ public class OrderFileThread implements Runnable
 				TimeUnit.MILLISECONDS.sleep(ORDER_FILE_SLEEP_TIME_MS);
 			} while (!shutdownSignal.hasShutdown());
 		} catch (Exception e) {
-			logger.sever("OrderFile Process had error.", e);
+			logger.severe("OrderFile Process had error.", e);
 		} finally {
 			logger.info("Stopping OrderFileRunnable thread.");
 		}

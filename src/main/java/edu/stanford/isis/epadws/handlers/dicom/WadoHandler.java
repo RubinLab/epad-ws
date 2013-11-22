@@ -68,7 +68,7 @@ public class WadoHandler extends AbstractHandler
 				// }
 			}
 		} catch (Throwable t) {
-			log.warning(INTERNAL_EXCEPTION_MESSAGE, t);
+			log.severe(INTERNAL_EXCEPTION_MESSAGE, t);
 			statusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 		}
 		httpResponse.setStatus(statusCode);
@@ -103,7 +103,7 @@ public class WadoHandler extends AbstractHandler
 				}
 			}
 		} else {
-			log.warning(INTERNAL_EXCEPTION_MESSAGE);
+			log.warning("Unexpected response from WADO; statusCode=" + statusCode);
 		}
 		return statusCode;
 	}

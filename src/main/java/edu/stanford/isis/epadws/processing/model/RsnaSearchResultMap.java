@@ -68,7 +68,7 @@ public class RsnaSearchResultMap
 			}// for
 
 		} catch (Exception e) {
-			log.sever("Failed to read all RSNA results files.", e);
+			log.severe("Failed to read all RSNA results files.", e);
 		}
 	}// readResultsFiles
 
@@ -148,9 +148,9 @@ public class RsnaSearchResultMap
 				in.close();
 			}
 		} catch (FileNotFoundException e) {
-			log.sever("Failed to read file: " + resultFile.getAbsolutePath(), e);
+			log.severe("Failed to read file: " + resultFile.getAbsolutePath(), e);
 		} catch (IOException e) {
-			log.sever("I/O Error. File: " + resultFile.getAbsolutePath(), e);
+			log.severe("I/O Error. File: " + resultFile.getAbsolutePath(), e);
 		} finally {
 			log.info("################## END Parsing RSNA file ##########################");
 		}

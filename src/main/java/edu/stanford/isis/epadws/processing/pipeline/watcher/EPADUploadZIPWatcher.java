@@ -82,7 +82,7 @@ public class EPADUploadZIPWatcher implements Runnable
 				TimeUnit.MILLISECONDS.sleep(CHECK_INTERVAL);
 			}
 		} catch (Exception e) {
-			log.sever("UploadDirWatcher error.", e);
+			log.severe("UploadDirWatcher error.", e);
 		} finally {
 			log.info("Done. UploadDirWatcher thread.");
 		}

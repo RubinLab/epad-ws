@@ -51,7 +51,7 @@ public class PipelineStatusWatcher implements Runnable
 				TimeUnit.MILLISECONDS.sleep(checkInterval);
 			}
 		} catch (Exception e) {
-			log.sever("Exiting PipelineStatusWatcher thread!!", e);
+			log.severe("Exiting PipelineStatusWatcher thread!!", e);
 		} finally {
 			log.info("Done PipelineStatusWatcher runnable.");
 		}

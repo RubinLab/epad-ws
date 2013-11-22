@@ -52,10 +52,10 @@ public abstract class AbstractPipelineProcess<V> implements Runnable
 			} catch (InterruptedException e) {
 				logger.warning("Interrupted Exception", e);
 			} catch (ExecutionException e) {
-				logger.sever(getProcessName() + " process ExecutionException", e);
+				logger.severe(getProcessName() + " process ExecutionException", e);
 				e.printStackTrace();
 			} catch (Exception e) {
-				logger.sever(getProcessName() + " process had exception", e);
+				logger.severe(getProcessName() + " process had exception", e);
 				e.printStackTrace();
 			}
 		}

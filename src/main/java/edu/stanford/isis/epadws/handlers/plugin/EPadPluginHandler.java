@@ -116,11 +116,11 @@ public class EPadPluginHandler extends AbstractHandler
 
 			} catch (UnsatisfiedLinkError ule) {
 				String javaLibPath = System.getProperty("java.library.path");
-				log.sever("UnsatisfiedLinkError java.library.path=" + javaLibPath, ule);
+				log.severe("UnsatisfiedLinkError java.library.path=" + javaLibPath, ule);
 			} catch (Exception e) {
 				log.warning("Plugin: " + key + " failed init().", e);
 			} catch (Error err) {
-				log.sever("ERROR: Plugin: " + key + " failed init().", err);
+				log.severe("ERROR: Plugin: " + key + " failed init().", err);
 			}
 		}
 	}
