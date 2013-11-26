@@ -21,7 +21,7 @@ import edu.stanford.isis.epadws.processing.persistence.MySqlInstance;
 import edu.stanford.isis.epadws.processing.persistence.MySqlQueries;
 import edu.stanford.isis.epadws.processing.pipeline.task.GeneratorTask;
 import edu.stanford.isis.epadws.processing.pipeline.task.PngGeneratorTask;
-import edu.stanford.isis.epadws.processing.pipeline.task.PngGridGeneratorTask;
+import edu.stanford.isis.epadws.processing.pipeline.task.PNGGridGeneratorTask;
 import edu.stanford.isis.epadws.processing.pipeline.threads.ShutdownSignal;
 
 /**
@@ -33,7 +33,7 @@ import edu.stanford.isis.epadws.processing.pipeline.threads.ShutdownSignal;
  * This watcher submits these to the PNG generation task queue to be processed by the {@link PngGeneratorTask}. It also
  * maintains order information for the series using the {@link DicomSeriesOrderTracker} class.
  */
-public class DicomSeriesWatcher implements Runnable
+public class DICOMSeriesWatcher implements Runnable
 {
 	private final BlockingQueue<DicomSeriesDescription> dicomSeriesWatcherQueue;
 	private final BlockingQueue<GeneratorTask> pngGeneratorTaskQueue;
@@ -46,7 +46,7 @@ public class DicomSeriesWatcher implements Runnable
 
 	private QueueAndWatcherManager queueAndWatcherManager;
 
-	public DicomSeriesWatcher(BlockingQueue<DicomSeriesDescription> dicomSeriesWatcherQueue,
+	public DICOMSeriesWatcher(BlockingQueue<DicomSeriesDescription> dicomSeriesWatcherQueue,
 			BlockingQueue<GeneratorTask> pngGeneratorTaskQueue)
 	{
 		logger.info("Starting the DICOM series watcher");
@@ -161,7 +161,7 @@ public class DicomSeriesWatcher implements Runnable
 		MySqlQueries queries = MySqlInstance.getInstance().getMysqlQueries();
 		insertEpadFile(queries, outputPNGFile);
 
-		PngGridGeneratorTask pngGridGeneratorTask = new PngGridGeneratorTask(inputPNGFile, inputPNGGridFiles, outputPNGFile);
+		PNGGridGeneratorTask pngGridGeneratorTask = new PNGGridGeneratorTask(inputPNGFile, inputPNGGridFiles, outputPNGFile);
 		pngGeneratorTaskQueue.offer(pngGridGeneratorTask);
 	}
 

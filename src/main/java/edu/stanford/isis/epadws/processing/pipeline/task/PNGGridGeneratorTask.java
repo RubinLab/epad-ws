@@ -19,7 +19,7 @@ import edu.stanford.isis.epadws.processing.persistence.MySqlQueries;
  * 
  * @author martin
  */
-public class PngGridGeneratorTask implements GeneratorTask
+public class PNGGridGeneratorTask implements GeneratorTask
 {
 	private final File pngInputFile;
 	private final List<File> inputPNGGridFiles;
@@ -29,7 +29,7 @@ public class PngGridGeneratorTask implements GeneratorTask
 	private static final int IMAGES_PER_AXIS = 4;
 	private static final EPADLogger logger = EPADLogger.getInstance();
 
-	public PngGridGeneratorTask(File pngInputFile, List<File> inputPNGGridFiles, File outputPNGFile)
+	public PNGGridGeneratorTask(File pngInputFile, List<File> inputPNGGridFiles, File outputPNGFile)
 	{
 		this.pngInputFile = pngInputFile;
 		this.inputPNGGridFiles = new ArrayList<File>(inputPNGGridFiles);

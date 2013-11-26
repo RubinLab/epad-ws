@@ -31,7 +31,7 @@ import edu.stanford.isis.epadws.xnat.XNATUtil;
  * 
  * @author martin
  */
-public class DicomSearchHandler extends AbstractHandler
+public class DICOMSearchHandler extends AbstractHandler
 {
 	private static final EPADLogger log = EPADLogger.getInstance();
 

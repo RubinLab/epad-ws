@@ -46,7 +46,7 @@ public class QueueAndWatcherManager
 	private final ExecutorService epadUploadDirWatcherExec = Executors.newSingleThreadExecutor();
 
 	private final Dcm4CheeDatabaseWatcher dcm4CheeDatabaseWatcher;
-	private final DicomSeriesWatcher dicomSeriesWatcher;
+	private final DICOMSeriesWatcher dicomSeriesWatcher;
 	private final XNATSeriesWatcher xnatSeriesWatcher;
 	private final PngGeneratorProcess pngGeneratorProcess;
 	private final EPADUploadDirWatcher epadUploadDirWatcher;
@@ -64,7 +64,7 @@ public class QueueAndWatcherManager
 	{
 		logger.info("Starting QueueAndWatcherManager...");
 		dcm4CheeDatabaseWatcher = new Dcm4CheeDatabaseWatcher(dicomSeriesWatcherQueue, xnatSeriesWatcherQueue);
-		dicomSeriesWatcher = new DicomSeriesWatcher(dicomSeriesWatcherQueue, pngGeneratorTaskQueue);
+		dicomSeriesWatcher = new DICOMSeriesWatcher(dicomSeriesWatcherQueue, pngGeneratorTaskQueue);
 		xnatSeriesWatcher = new XNATSeriesWatcher(xnatSeriesWatcherQueue);
 		pngGeneratorProcess = new PngGeneratorProcess(pngGeneratorTaskQueue);
 		epadUploadDirWatcher = new EPADUploadDirWatcher();
