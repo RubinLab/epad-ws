@@ -15,7 +15,7 @@ import com.google.gson.Gson;
 
 import edu.stanford.isis.epad.common.dicom.DicomFormatUtil;
 import edu.stanford.isis.epad.common.dicom.DicomImageDescriptionSearchResult;
-import edu.stanford.isis.epad.common.dicom.DicomSeriesDescriptionSearchResult;
+import edu.stanford.isis.epad.common.dicom.DICOMSeriesDescriptionSearchResult;
 import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epad.common.util.JsonHelper;
 import edu.stanford.isis.epadws.processing.persistence.MySqlInstance;
@@ -110,7 +110,7 @@ public class DicomSeriesOrderHandler extends AbstractHandler
 					instanceNumber, sliceLocation, contentTime);
 			imageDescriptions.add(dicomImageDescription);
 		}
-		DicomSeriesDescriptionSearchResult dicomSeriesDescriptionSearchResult = new DicomSeriesDescriptionSearchResult(
+		DICOMSeriesDescriptionSearchResult dicomSeriesDescriptionSearchResult = new DICOMSeriesDescriptionSearchResult(
 				imageDescriptions);
 		outputStream.print(dicomSeriesDescriptionSearchResult2JSON(dicomSeriesDescriptionSearchResult));
 	}
@@ -149,7 +149,7 @@ public class DicomSeriesOrderHandler extends AbstractHandler
 	}
 
 	private String dicomSeriesDescriptionSearchResult2JSON(
-			DicomSeriesDescriptionSearchResult dicomSeriesDescriptionSearchResult)
+			DICOMSeriesDescriptionSearchResult dicomSeriesDescriptionSearchResult)
 	{
 		Gson gson = new Gson();
 

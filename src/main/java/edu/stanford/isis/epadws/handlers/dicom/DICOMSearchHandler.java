@@ -14,8 +14,8 @@ import org.eclipse.jetty.server.handler.AbstractHandler;
 import com.google.gson.Gson;
 
 import edu.stanford.isis.epad.common.dicom.DicomFormatUtil;
-import edu.stanford.isis.epad.common.dicom.DicomSeriesSearchResult;
-import edu.stanford.isis.epad.common.dicom.DicomStudySearchResult;
+import edu.stanford.isis.epad.common.dicom.DICOMSeriesSearchResult;
+import edu.stanford.isis.epad.common.dicom.DICOMStudySearchResult;
 import edu.stanford.isis.epad.common.dicom.DicomStudySearchType;
 import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epad.common.util.JsonHelper;
@@ -129,7 +129,7 @@ public class DicomSearchHandler extends AbstractHandler
 			final String physicianName = getStringValueFromRow(row, "ref_physician");
 			final String birthdate = getStringValueFromRow(row, "pat_birthdate");
 			final String sex = getStringValueFromRow(row, "pat_sex");
-			final DicomStudySearchResult studySearchResult = new DicomStudySearchResult(studyUID, patientName, patientID,
+			final DICOMStudySearchResult studySearchResult = new DICOMStudySearchResult(studyUID, patientName, patientID,
 					examType, dateAcquired, studyStatus, seriesCount, firstSeriesUID, firstSeriesDateAcquired,
 					studyAccessionNumber, imagesCount, stuidID, studyDescription, physicianName, birthdate, sex);
 			if (!isFirst)
@@ -179,7 +179,7 @@ public class DicomSearchHandler extends AbstractHandler
 			final String stationName = getStringValueFromRow(row, "station_name");
 			final String department = getStringValueFromRow(row, "department");
 			final String accessionNumber = getStringValueFromRow(row, "accession_no");
-			final DicomSeriesSearchResult seriesSearchResult = new DicomSeriesSearchResult(seriesID, patientID, patientName,
+			final DICOMSeriesSearchResult seriesSearchResult = new DICOMSeriesSearchResult(seriesID, patientID, patientName,
 					seriesDate, examType, thumbnailURL, seriesDescription, numberOfSeriesRelatedInstances, imagesInSeries,
 					seriesStatus, bodyPart, institution, stationName, department, accessionNumber);
 			if (!isFirst)
@@ -190,7 +190,7 @@ public class DicomSearchHandler extends AbstractHandler
 		outputStream.append("] }");
 	}
 
-	private String seriesSearchResult2JSON(DicomSeriesSearchResult seriesSearchResult)
+	private String seriesSearchResult2JSON(DICOMSeriesSearchResult seriesSearchResult)
 	{
 		Gson gson = new Gson();
 
@@ -301,7 +301,7 @@ public class DicomSearchHandler extends AbstractHandler
 		}
 	}
 
-	private String studySearchResult2JSON(DicomStudySearchResult studySearchResult)
+	private String studySearchResult2JSON(DICOMStudySearchResult studySearchResult)
 	{
 		Gson gson = new Gson();
 
