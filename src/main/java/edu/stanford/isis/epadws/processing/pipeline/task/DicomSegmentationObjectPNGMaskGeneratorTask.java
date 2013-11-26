@@ -117,6 +117,7 @@ public class DicomSegmentationObjectPNGMaskGeneratorTask implements GeneratorTas
 					insertEpadFile(queries, sourceFile);
 					ImageIO.write(sourceWithTransparency, "png", sourceFile);
 					queries.updateEpadFile(pngUrl, PngProcessingStatus.DONE, 77, "");
+					logger.warning("Failed  PNG mask" + pngUrl);
 				} catch (IOException e) {
 					logger.warning("Failed to write DICOM segmentation object PNG", e);
 				}
@@ -172,7 +173,7 @@ public class DicomSegmentationObjectPNGMaskGeneratorTask implements GeneratorTas
 		logger.info("SOP Class UID=" + sopClassUID);
 		logger.info("DSO Study Instance UID=" + dsoStudyInstanceUID);
 		logger.info("DSO Series Instance UID=" + dsoSeriesInstanceUID);
-		logger.info("DOO SOP Instance UID=" + dsoSopInstanceUID);
+		logger.info("DSO SOP Instance UID=" + dsoSopInstanceUID);
 		logger.info("Referenced SOP Instance UID=" + referencedSOPInstanceUID);
 		logger.info("Referenced Series Instance UID=" + referencedSeriesInstanceUID);
 

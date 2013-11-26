@@ -81,7 +81,8 @@ public class EventHandler extends AbstractHandler
 					String template_name = getTemplateNameFromRequest(queryString);
 					String plugin_name = getPluginNameFromRequest(queryString);
 
-					log.info("Save event for AIM ID " + aim_uid + " for user " + username);
+					log.info("Got event for AIM ID " + aim_uid + " for user " + username);
+
 					if (username != null && event_status != null && aim_uid != null && aim_uid != null && aim_name != null
 							&& patient_id != null && patient_name != null && template_id != null && template_name != null
 							&& plugin_name != null) {
@@ -134,6 +135,7 @@ public class EventHandler extends AbstractHandler
 			sb.append(row.get("plugin_name"));
 			sb.append("\n");
 			responseStrean.print(sb.toString());
+			log.info(sb.toString());
 		}
 	}
 
