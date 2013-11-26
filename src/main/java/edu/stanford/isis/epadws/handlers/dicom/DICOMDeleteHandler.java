@@ -19,7 +19,7 @@ import edu.stanford.isis.epadws.xnat.XNATUtil;
  * Delete a study or a series.
  * 
  */
-public class DicomDeleteHandler extends AbstractHandler
+public class DICOMDeleteHandler extends AbstractHandler
 {
 	private static final EPADLogger log = EPADLogger.getInstance();
 

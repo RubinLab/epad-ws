@@ -27,7 +27,7 @@ import edu.stanford.isis.epadws.processing.persistence.MySqlInstance;
 import edu.stanford.isis.epadws.processing.persistence.MySqlQueries;
 import edu.stanford.isis.epadws.xnat.XNATUtil;
 
-public class DicomSeriesTagHandler extends AbstractHandler
+public class DICOMSeriesTagHandler extends AbstractHandler
 {
 	private static final EPADLogger log = EPADLogger.getInstance();
 
