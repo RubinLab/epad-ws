@@ -45,6 +45,8 @@ public class EventHandler extends AbstractHandler
 			String queryString = httpRequest.getQueryString();
 			queryString = URLDecoder.decode(queryString, "UTF-8");
 
+			log.info("EventHandler: " + request.getRequestURI());
+
 			if ("GET".equalsIgnoreCase(method)) {
 				if (queryString != null) {
 					queryString = queryString.trim();
