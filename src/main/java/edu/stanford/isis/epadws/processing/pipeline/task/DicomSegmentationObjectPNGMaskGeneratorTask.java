@@ -117,9 +117,9 @@ public class DicomSegmentationObjectPNGMaskGeneratorTask implements GeneratorTas
 					insertEpadFile(queries, sourceFile);
 					ImageIO.write(sourceWithTransparency, "png", sourceFile);
 					queries.updateEpadFile(pngUrl, PngProcessingStatus.DONE, 77, "");
-					logger.warning("Failed  PNG mask" + pngUrl);
+					logger.warning("Writing DSO PNG mask " + pngUrl);
 				} catch (IOException e) {
-					logger.warning("Failed to write DICOM segmentation object PNG", e);
+					logger.warning("Failed to write DSO PNG mask ", e);
 				}
 				source = null;
 				sourceWithTransparency = null;
