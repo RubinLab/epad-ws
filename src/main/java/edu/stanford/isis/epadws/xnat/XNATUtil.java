@@ -152,7 +152,7 @@ public class XNATUtil
 				log.info("Found XNAT upload properties file " + propertiesFilePath);
 				propertiesFileStream = new FileInputStream(xnatUploadPropertiesFile);
 				xnatUploadProperties.load(propertiesFileStream);
-				String xnatProjectID = xnatUploadProperties.getProperty("XNATProjectName");
+				String xnatProjectID = projectName2XNATProjectID(xnatUploadProperties.getProperty("XNATProjectName"));
 				String xnatSessionID = xnatUploadProperties.getProperty("XNATSessionID");
 				log.info("xnatProjectID " + xnatProjectID);
 
@@ -230,7 +230,8 @@ public class XNATUtil
 		return hasValidXNATSessionID(jsessionID);
 	}
 
-	public static boolean createXNATProject(String xnatProjectID, String xnatProjectName, String jsessionID)
+	@SuppressWarnings("unused")
+	private static boolean createXNATProject(String xnatProjectID, String xnatProjectName, String jsessionID)
 	{
 		String xnatHost = config.getStringConfigurationParameter("XNATServer");
 		int xnatPort = config.getIntegerConfigurationParameter("XNATPort");
@@ -375,9 +376,9 @@ public class XNATUtil
 			return "";
 	}
 
-	private static String projectName2XNATProjectID(String xnatProjectName)
-	{
-		String result = xnatProjectName.replaceAll("[^a-zA-Z0-9\\\\.\\\\-_]", "_");
+	public static String projectName2XNATProjectID(String xnatProjectName)
+	{ // Alphanumeric and dot and dash only
+		String result = xnatProjectName.replaceAll("[^a-zA-Z0-9\\\\-_]", "_");
 
 		// log.info("projectName2XNATProjectID: in=" + projectName + ", out=" + result);
 
