@@ -43,6 +43,7 @@ public class ProjectEventHandler extends AbstractHandler
 				responseStream.append(JsonHelper.createJSONErrorResponse(INVALID_SESSION_TOKEN_MESSAGE));
 				statusCode = HttpServletResponse.SC_UNAUTHORIZED;
 			}
+			responseStream.flush();
 		} catch (Throwable t) {
 			log.severe(INTERNAL_EXCEPTION_MESSAGE, t);
 			if (responseStream != null)

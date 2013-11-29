@@ -61,6 +61,7 @@ public class PatientDeleteHandler extends AbstractHandler
 				responseStream.append(MISSING_QUERY_MESSAGE);
 				responseCode = HttpServletResponse.SC_BAD_REQUEST;
 			}
+			responseStream.flush();
 		} else {
 			log.info(INVALID_SESSION_TOKEN_MESSAGE);
 			responseStream.append(JsonHelper.createJSONErrorResponse(INVALID_SESSION_TOKEN_MESSAGE));

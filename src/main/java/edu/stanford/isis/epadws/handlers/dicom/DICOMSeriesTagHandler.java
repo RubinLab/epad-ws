@@ -73,6 +73,7 @@ public class DICOMSeriesTagHandler extends AbstractHandler
 					responseStream.append(MISSING_SERIES_IUID_MESSAGE);
 					statusCode = HttpServletResponse.SC_BAD_REQUEST;
 				}
+				responseStream.flush();
 			} else {
 				log.info(INVALID_SESSION_TOKEN_MESSAGE);
 				responseStream.append(INVALID_SESSION_TOKEN_MESSAGE);

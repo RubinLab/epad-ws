@@ -13,9 +13,9 @@ import org.eclipse.jetty.server.handler.AbstractHandler;
 
 import com.google.gson.Gson;
 
-import edu.stanford.isis.epad.common.dicom.DicomFormatUtil;
 import edu.stanford.isis.epad.common.dicom.DICOMSeriesSearchResult;
 import edu.stanford.isis.epad.common.dicom.DICOMStudySearchResult;
+import edu.stanford.isis.epad.common.dicom.DicomFormatUtil;
 import edu.stanford.isis.epad.common.dicom.DicomStudySearchType;
 import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epad.common.util.JsonHelper;
@@ -71,6 +71,7 @@ public class DICOMSearchHandler extends AbstractHandler
 							statusCode = HttpServletResponse.SC_BAD_REQUEST;
 						}
 					}
+					responseStream.flush();
 					statusCode = HttpServletResponse.SC_OK;
 				} else {
 					log.info(MISSING_QUERY_MESSAGE);

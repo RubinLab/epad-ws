@@ -35,7 +35,7 @@ public class EventHandler extends AbstractHandler
 	public void handle(String base, Request request, HttpServletRequest httpRequest, HttpServletResponse httpResponse)
 			throws IOException // TODO Remove this
 	{
-		PrintWriter out = httpResponse.getWriter();
+		PrintWriter responseStream = httpResponse.getWriter();
 
 		httpResponse.setContentType("text/plain");
 		request.setHandled(true);
@@ -51,21 +51,21 @@ public class EventHandler extends AbstractHandler
 					String userName = getUserNameFromRequest(queryString);
 					if (userName != null) {
 						try {
-							findEventsForUser(out, userName);
+							findEventsForUser(responseStream, userName);
 							httpResponse.setStatus(HttpServletResponse.SC_OK);
 						} catch (Throwable t) {
 							log.severe(INTERNAL_EXCEPTION_MESSAGE, t);
-							out.append(INTERNAL_EXCEPTION_MESSAGE);
+							responseStream.append(INTERNAL_EXCEPTION_MESSAGE);
 							httpResponse.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 						}
 					} else {
 						log.info(MISSING_USER_NAME_MESSAGE);
-						out.append(MISSING_USER_NAME_MESSAGE);
+						responseStream.append(MISSING_USER_NAME_MESSAGE);
 						httpResponse.setStatus(HttpServletResponse.SC_BAD_REQUEST);
 					}
 				} else {
 					log.info(MISSING_QUERY_MESSAGE);
-					out.append(MISSING_QUERY_MESSAGE);
+					responseStream.append(MISSING_QUERY_MESSAGE);
 					httpResponse.setStatus(HttpServletResponse.SC_BAD_REQUEST);
 				}
 			} else if ("POST".equalsIgnoreCase(method)) {
@@ -92,25 +92,26 @@ public class EventHandler extends AbstractHandler
 						httpResponse.setStatus(HttpServletResponse.SC_OK);
 					} else {
 						log.info(BAD_PARAMETERS_MESSAGE);
-						out.append(BAD_PARAMETERS_MESSAGE);
+						responseStream.append(BAD_PARAMETERS_MESSAGE);
 						httpResponse.setStatus(HttpServletResponse.SC_BAD_REQUEST);
 					}
 				} else {
 					log.info(MISSING_QUERY_MESSAGE);
-					out.append(MISSING_QUERY_MESSAGE);
+					responseStream.append(MISSING_QUERY_MESSAGE);
 					httpResponse.setStatus(HttpServletResponse.SC_BAD_REQUEST);
 				}
 			} else {
 				log.info(INVALID_METHOD_MESSAGE);
-				out.append(INVALID_METHOD_MESSAGE);
+				responseStream.append(INVALID_METHOD_MESSAGE);
 				httpResponse.setHeader("Access-Control-Allow-Methods", "POST, GET");
 				httpResponse.setStatus(HttpServletResponse.SC_METHOD_NOT_ALLOWED);
 			}
 		} else {
 			log.info(INVALID_SESSION_TOKEN_MESSAGE);
-			out.append(INVALID_SESSION_TOKEN_MESSAGE);
+			responseStream.append(INVALID_SESSION_TOKEN_MESSAGE);
 			httpResponse.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
 		}
+		responseStream.flush();
 	}
 
 	private void findEventsForUser(PrintWriter responseStrean, String userName)

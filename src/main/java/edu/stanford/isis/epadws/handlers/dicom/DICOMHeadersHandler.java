@@ -66,6 +66,7 @@ public class DICOMHeadersHandler extends AbstractHandler
 				responseStream.append(JsonHelper.createJSONErrorResponse(INVALID_SESSION_TOKEN_MESSAGE));
 				statusCode = HttpServletResponse.SC_UNAUTHORIZED;
 			}
+			responseStream.flush();
 		} catch (Throwable t) {
 			log.warning(INTERNAL_ERROR_MESSAGE, t);
 			if (responseStream != null)

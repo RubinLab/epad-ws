@@ -13,9 +13,9 @@ import org.eclipse.jetty.server.handler.AbstractHandler;
 
 import com.google.gson.Gson;
 
+import edu.stanford.isis.epad.common.dicom.DICOMSeriesDescriptionSearchResult;
 import edu.stanford.isis.epad.common.dicom.DicomFormatUtil;
 import edu.stanford.isis.epad.common.dicom.DicomImageDescriptionSearchResult;
-import edu.stanford.isis.epad.common.dicom.DICOMSeriesDescriptionSearchResult;
 import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epad.common.util.JsonHelper;
 import edu.stanford.isis.epadws.processing.persistence.MySqlInstance;
@@ -81,6 +81,7 @@ public class DICOMSeriesOrderHandler extends AbstractHandler
 				responseStream.append(JsonHelper.createJSONErrorResponse(INVALID_SESSION_TOKEN_MESSAGE));
 				statusCode = HttpServletResponse.SC_UNAUTHORIZED;
 			}
+			responseStream.flush();
 		} catch (Throwable t) {
 			log.severe(INTERNAL_EXCEPTION_MESSAGE, t);
 			if (responseStream != null)

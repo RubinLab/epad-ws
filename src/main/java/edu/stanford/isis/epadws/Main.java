@@ -7,6 +7,9 @@
 package edu.stanford.isis.epadws;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.net.BindException;
 import java.net.SocketException;
 import java.util.ArrayList;
@@ -21,6 +24,8 @@ import org.eclipse.jetty.server.handler.DefaultHandler;
 import org.eclipse.jetty.server.handler.HandlerList;
 import org.eclipse.jetty.server.handler.ResourceHandler;
 import org.eclipse.jetty.webapp.WebAppContext;
+import org.eclipse.jetty.xml.XmlConfiguration;
+import org.xml.sax.SAXException;
 
 import edu.stanford.isis.epad.common.plugins.EPadFiles;
 import edu.stanford.isis.epad.common.plugins.PluginConfig;
@@ -41,10 +46,10 @@ import edu.stanford.isis.epadws.handlers.coordination.CoordinationHandler;
 import edu.stanford.isis.epadws.handlers.dicom.DICOMDeleteHandler;
 import edu.stanford.isis.epadws.handlers.dicom.DICOMHeadersHandler;
 import edu.stanford.isis.epadws.handlers.dicom.DICOMSearchHandler;
-import edu.stanford.isis.epadws.handlers.dicom.DicomSegmentationPathHandler;
 import edu.stanford.isis.epadws.handlers.dicom.DICOMSeriesOrderHandler;
 import edu.stanford.isis.epadws.handlers.dicom.DICOMSeriesTagHandler;
 import edu.stanford.isis.epadws.handlers.dicom.DICOMWindowingHandler;
+import edu.stanford.isis.epadws.handlers.dicom.DicomSegmentationPathHandler;
 import edu.stanford.isis.epadws.handlers.dicom.PatientDeleteHandler;
 import edu.stanford.isis.epadws.handlers.dicom.WadoHandler;
 import edu.stanford.isis.epadws.handlers.event.EventHandler;
@@ -96,10 +101,10 @@ public class Main
 			initPlugins(); // Initialize plugin classes
 			startSupportThreads();
 			server = new Server(port);
+			configureJettyServer(server);
 			addHandlers(server);
 			testPluginImpl();
 			Runtime.getRuntime().addShutdownHook(new ShutdownHookThread());
-
 			// See: http://restlet-discuss.1400322.n2.nabble.com/Jetty-Webapp-td7313234.html
 
 			log.info("Starting Jetty on port " + port);
@@ -134,11 +139,9 @@ public class Main
 
 			shutdownSignal.shutdownNow();
 			stopServer(server);
-
 			MySqlInstance.getInstance().shutdown();
 			QueueAndWatcherManager.getInstance().shutdown();
 			WindowLevelFactory.getInstance().shutdown();
-
 			try { // Wait just long enough for some messages to be printed out.
 				TimeUnit.MILLISECONDS.sleep(2000);
 			} catch (InterruptedException e) {
@@ -148,6 +151,26 @@ public class Main
 		log.info("#####################################################");
 		log.info("################## Exit  EPad Web Service ###########");
 		log.info("#####################################################");
+	}
+
+	private static void configureJettyServer(Server server)
+	{
+		try {
+			String jettyConfigFilePath = EPADResources.getEPADWebServerJettyConfigFilePath();
+			FileInputStream jettyConfigFileStream = new FileInputStream(jettyConfigFilePath);
+			XmlConfiguration configuration = new XmlConfiguration(jettyConfigFileStream);
+			configuration.configure(server);
+			log.info("Jetty server configured using configuration file " + jettyConfigFilePath);
+		} catch (FileNotFoundException e) {
+			log.warning("Could not find Jetty configuration file " + EPADResources.getEPADWebServerJettyConfigFilePath());
+		} catch (SAXException e) {
+			log.warning("SAX error reading Jetty configuration file " + EPADResources.getEPADWebServerJettyConfigFilePath(),
+					e);
+		} catch (IOException e) {
+			log.warning("IO error reading Jetty configuration file " + EPADResources.getEPADWebServerJettyConfigFilePath(), e);
+		} catch (Exception e) {
+			log.warning("Error processing Jetty configuration file " + EPADResources.getEPADWebServerJettyConfigFilePath(), e);
+		}
 	}
 
 	/**

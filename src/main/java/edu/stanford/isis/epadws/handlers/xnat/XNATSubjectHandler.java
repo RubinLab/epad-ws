@@ -60,6 +60,7 @@ public class XNATSubjectHandler extends AbstractHandler
 				responseStream.print(JsonHelper.createJSONErrorResponse(INVALID_SESSION_TOKEN_MESSAGE));
 				statusCode = HttpServletResponse.SC_UNAUTHORIZED;
 			}
+			responseStream.flush();
 		} catch (Throwable t) {
 			log.severe(INTERNAL_EXCEPTION_MESSAGE, t);
 			statusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
