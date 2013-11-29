@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xdat:search ID="fred" allow-diff-columns="0" secure="false" brief-description="Simple XNAT Query" xmlns:cnda="http://nrg.wustl.edu/cnda" xmlns:arc="http://nrg.wustl.edu/arc" xmlns:pipe="http://nrg.wustl.edu/pipe" xmlns:fs="http://nrg.wustl.edu/fs" xmlns:wrk="http://nrg.wustl.edu/workflow" xmlns:xdat="http://nrg.wustl.edu/security" xmlns:cat="http://nrg.wustl.edu/catalog" xmlns:prov="http://www.nbirn.net/prov" xmlns:xnat="http://nrg.wustl.edu/xnat" xmlns:xnat_a="http://nrg.wustl.edu/xnat_assessments" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <xdat:root_element_name>xnat:projectData</xdat:root_element_name>
+  <xdat:search_where method="OR">
+    <xdat:criteria override_value_formatting="0">
+      <xdat:schema_field>xnat:projectData/name</xdat:schema_field>
+      <xdat:comparison_type>=</xdat:comparison_type>
+      <xdat:value>%red</xdat:value>
+    </xdat:criteria>
+  </xdat:search_where>
+</xdat:search>
