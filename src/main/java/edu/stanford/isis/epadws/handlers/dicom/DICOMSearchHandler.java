@@ -157,7 +157,7 @@ public class DICOMSearchHandler extends AbstractHandler
 		final String studyIdKey = getStudyUIDFromRequest(queryString);
 		final String studyUID = DicomFormatUtil.formatDirToUid(studyIdKey);
 		final MySqlQueries dbQueries = MySqlInstance.getInstance().getMysqlQueries();
-		final List<Map<String, String>> series = dbQueries.findSeriesInStudyInDcm4Chee(studyUID);
+		final List<Map<String, String>> series = dbQueries.findAllSeriesInStudyInDcm4Chee(studyUID);
 		boolean isFirst = true;
 
 		log.info("DICOMSearchHandler series search found " + series.size() + " result(s) for study " + studyUID);

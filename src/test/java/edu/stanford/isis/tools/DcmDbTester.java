@@ -240,7 +240,7 @@ public class DcmDbTester
 
 			MySqlQueries mySqlQueries = MySqlInstance.getInstance().getMysqlQueries();
 			List<Map<String, String>> results = mySqlQueries
-					.findSeriesInStudyInDcm4Chee("1.2.826.0.1.3680043.8.420.30757817405477639080180001130587461759");
+					.findAllSeriesInStudyInDcm4Chee("1.2.826.0.1.3680043.8.420.30757817405477639080180001130587461759");
 
 			// String[] keys = {"study_iuid", "pat_id", "modality", "study_datetime", "pat_name"};
 			StringBuilder sb = new StringBuilder("Series Results \n");

@@ -14,7 +14,7 @@ public interface MySqlQueries
 {
 	List<Map<String, String>> doStudySearchInDcm4Chee(String type, String searchString);
 
-	List<Map<String, String>> findSeriesInStudyInDcm4Chee(String studyUID);
+	List<Map<String, String>> findAllSeriesInStudyInDcm4Chee(String studyUID);
 
 	void doDeleteDicomStudyInEPadDatabase(String uid);
 

@@ -16,7 +16,7 @@ import edu.stanford.isis.epadws.processing.persistence.MySqlInstance;
 import edu.stanford.isis.epadws.processing.persistence.MySqlQueries;
 
 /**
- * Delete all studies for a patient in the ePAD and DCMCHEE databases.
+ * Delete a patient and all studies for that patient in the ePAD and DCMCHEE databases.
  * 
  * @author martin
  * 
@@ -40,7 +40,7 @@ public class PatientDeleteTask implements Runnable
 			List<String> studies = dbQueries.getStudyIDsForPatientFromDcm4Chee(patientID);
 
 			for (String studyID : studies) {
-				List<Map<String, String>> matchingSeries = dbQueries.findSeriesInStudyInDcm4Chee(studyID);
+				List<Map<String, String>> matchingSeries = dbQueries.findAllSeriesInStudyInDcm4Chee(studyID);
 				logger.info("Found " + matchingSeries.size() + " series in study " + patientID);
 
 				dcm4CheeDeleteDicomStudy(patientID); // Must run after finding series in DCM4CHEE
@@ -55,7 +55,7 @@ public class PatientDeleteTask implements Runnable
 				deletePNGsforDicomStudy(patientID);
 			}
 		} catch (Exception e) {
-			logger.warning("run had: " + e.getMessage(), e);
+			logger.warning("Patient delete task has error: " + e.getMessage(), e);
 		}
 	}
 

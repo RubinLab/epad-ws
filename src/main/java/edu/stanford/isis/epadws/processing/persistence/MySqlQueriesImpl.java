@@ -81,7 +81,7 @@ public class MySqlQueriesImpl implements MySqlQueries
 	}
 
 	@Override
-	public List<Map<String, String>> findSeriesInStudyInDcm4Chee(String studyUID)
+	public List<Map<String, String>> findAllSeriesInStudyInDcm4Chee(String studyUID)
 	{
 		List<Map<String, String>> retVal = new ArrayList<Map<String, String>>();
 

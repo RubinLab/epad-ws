@@ -32,7 +32,7 @@ import edu.stanford.isis.epad.common.plugins.PluginConfig;
 import edu.stanford.isis.epad.common.plugins.PluginHandler;
 import edu.stanford.isis.epad.common.plugins.PluginHandlerMap;
 import edu.stanford.isis.epad.common.plugins.PluginServletHandler;
-import edu.stanford.isis.epad.common.plugins.ePadPluginController;
+import edu.stanford.isis.epad.common.plugins.PluginController;
 import edu.stanford.isis.epad.common.plugins.impl.ClassFinderTestUtils;
 import edu.stanford.isis.epad.common.plugins.impl.EPadFilesImpl;
 import edu.stanford.isis.epad.common.util.EPADConfig;
@@ -178,7 +178,7 @@ public class Main
 	 */
 	private static void initPlugins()
 	{
-		ePadPluginController controller = ePadPluginController.getInstance();
+		PluginController controller = PluginController.getInstance();
 		controller.setImpl(new EPadFilesImpl());
 	}
 

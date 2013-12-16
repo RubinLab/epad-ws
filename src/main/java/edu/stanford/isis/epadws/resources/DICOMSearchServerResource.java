@@ -13,7 +13,7 @@ import edu.stanford.isis.epad.common.dicom.DICOMSeriesSearchResult;
 import edu.stanford.isis.epad.common.dicom.DICOMStudySearchResult;
 import edu.stanford.isis.epad.common.dicom.DicomFormatUtil;
 import edu.stanford.isis.epad.common.dicom.DicomStudySearchType;
-import edu.stanford.isis.epad.common.dicom.RSeriesData;
+import edu.stanford.isis.epad.common.dicom.ResultSeriesData;
 import edu.stanford.isis.epadws.processing.persistence.MySqlInstance;
 import edu.stanford.isis.epadws.processing.persistence.MySqlQueries;
 
@@ -142,11 +142,11 @@ public class DICOMSearchServerResource extends BaseServerResource
 		final String studyIdKey = getStudyUIDFromRequest(searchString);
 		final String studyUID = DicomFormatUtil.formatDirToUid(studyIdKey);
 		final MySqlQueries dbQueries = MySqlInstance.getInstance().getMysqlQueries();
-		final List<Map<String, String>> series = dbQueries.findSeriesInStudyInDcm4Chee(studyUID);
+		final List<Map<String, String>> series = dbQueries.findAllSeriesInStudyInDcm4Chee(studyUID);
 		final StringBuilder result = new StringBuilder();
 		boolean isFirst = true;
 
-		log.info("Series search column header: " + RSeriesData.getHeaderColumn());
+		log.info("Series search column header: " + ResultSeriesData.getHeaderColumn());
 		log.info("dbQueries.doSeriesSearch() had " + series.size() + " results, for studyUID=" + studyUID);
 
 		result.append("{ \"ResultSet\": [");

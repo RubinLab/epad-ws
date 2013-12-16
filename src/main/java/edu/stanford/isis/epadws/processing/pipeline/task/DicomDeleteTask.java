@@ -39,7 +39,7 @@ public class DicomDeleteTask implements Runnable
 
 		try {
 			if (deleteStudy) {
-				List<Map<String, String>> study2series = dbQueries.findSeriesInStudyInDcm4Chee(uidToDelete);
+				List<Map<String, String>> study2series = dbQueries.findAllSeriesInStudyInDcm4Chee(uidToDelete);
 				logger.info("Found " + study2series.size() + " series in study " + uidToDelete);
 
 				dcm4CheeDeleteDicomStudy(uidToDelete); // Must run after finding series in DCM4CHEE
