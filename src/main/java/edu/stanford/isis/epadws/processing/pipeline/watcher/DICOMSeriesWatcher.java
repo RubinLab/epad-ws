@@ -81,7 +81,7 @@ public class DICOMSeriesWatcher implements Runnable
 							.getDicomSeriesDescription();
 					// Each entry in list is map with keys: sop_iuid, inst_no, series_iuid, filepath, file_size.
 					List<Map<String, String>> unprocessedDicomImageFileDescriptions = mySqlQueries
-							.getUnprocessedDicomImageFileDescriptions(currentDicomSeriesDescription.getSeriesUID());
+							.getUnprocessedDicomImageFileDescriptionsForSeries(currentDicomSeriesDescription.getSeriesUID());
 
 					if (unprocessedDicomImageFileDescriptions.size() > 0) {
 						logger.info("Found " + unprocessedDicomImageFileDescriptions.size()

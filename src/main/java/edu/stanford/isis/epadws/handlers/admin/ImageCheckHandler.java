@@ -92,11 +92,10 @@ public class ImageCheckHandler extends AbstractHandler
 		int numberOfMissingPNGFiles = 0;
 
 		// Verify that each image in a DICOM series in DCM4CHEE has an entry for a generated PNG file in the ePAD database,
-		// which indicates that the images existence was correctly detected. Below, we then detect that the PNG file itself
-		// exists.
+		// which indicates that the images existence was detected. We then detect that the PNG file itself exists.
 		for (String seriesIUID : seriesIUIDs) {
 			final List<Map<String, String>> unprocessedDICOMImageFileDescriptionsInSeries = dbQueries
-					.getUnprocessedDicomImageFileDescriptions(seriesIUID);
+					.getUnprocessedDicomImageFileDescriptionsForSeries(seriesIUID);
 			final int numberOfUnprocessedImages = unprocessedDICOMImageFileDescriptionsInSeries.size();
 
 			if (numberOfUnprocessedImages != 0) {
@@ -107,17 +106,6 @@ public class ImageCheckHandler extends AbstractHandler
 			} else {
 				// responseStream.write("All instances detected for series " + seriesIUID + "\n");
 			}
-
-			// Each file description is a map with keys: sop_iuid, inst_no, series_iuid, filepath, file_size.
-			// for (Map<String, String> unprocessedImageFileDescription : unprocessedImageFileDescriptions) {
-			// final String sop_iuid = unprocessedImageFileDescription.get("sop_iuid");
-			// final String series_iuid = unprocessedImageFileDescription.get("series_iuid");
-			// final String inst_no = unprocessedImageFileDescription.get("inst_no");
-			// final String filepath = unprocessedImageFileDescription.get("filepath");
-			// final String message = "DICOM instance with no ePAD database entry: sop_iuid: " + sop_iuid + ", series_iuid: "
-			// + series_iuid + ", inst_no: " + inst_no + ", filepath: " + filepath;
-			// out.write(message + "\n");
-			// }
 		}
 		// Verify existence of all PNG files listed in the ePAD database (in epaddb.epad_files table).
 		// TODO: DICOM segmentation objects will not have PNGs. How to test? Tags should have indication.

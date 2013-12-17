@@ -1,6 +1,5 @@
 package edu.stanford.isis.epadws.handlers.event;
 
-import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.URLDecoder;
 import java.util.List;
@@ -33,85 +32,84 @@ public class EventHandler extends AbstractHandler
 
 	@Override
 	public void handle(String base, Request request, HttpServletRequest httpRequest, HttpServletResponse httpResponse)
-			throws IOException // TODO Remove this
 	{
-		PrintWriter responseStream = httpResponse.getWriter();
+		PrintWriter responseStream;
 
 		httpResponse.setContentType("text/plain");
 		request.setHandled(true);
 
 		if (XNATUtil.hasValidXNATSessionID(httpRequest)) {
-			String method = httpRequest.getMethod();
-			String queryString = httpRequest.getQueryString();
-			queryString = URLDecoder.decode(queryString, "UTF-8");
+			try {
+				responseStream = httpResponse.getWriter();
 
-			if ("GET".equalsIgnoreCase(method)) {
-				if (queryString != null) {
-					queryString = queryString.trim();
-					String userName = getUserNameFromRequest(queryString);
-					if (userName != null) {
-						try {
+				String method = httpRequest.getMethod();
+				String queryString = httpRequest.getQueryString();
+				queryString = URLDecoder.decode(queryString, "UTF-8");
+
+				if ("GET".equalsIgnoreCase(method)) {
+					if (queryString != null) {
+						queryString = queryString.trim();
+						String userName = getUserNameFromRequest(queryString);
+						if (userName != null) {
 							findEventsForUser(responseStream, userName);
 							httpResponse.setStatus(HttpServletResponse.SC_OK);
-						} catch (Throwable t) {
-							log.severe(INTERNAL_EXCEPTION_MESSAGE, t);
-							responseStream.append(INTERNAL_EXCEPTION_MESSAGE);
-							httpResponse.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+						} else {
+							log.info(MISSING_USER_NAME_MESSAGE);
+							responseStream.append(MISSING_USER_NAME_MESSAGE);
+							httpResponse.setStatus(HttpServletResponse.SC_BAD_REQUEST);
 						}
 					} else {
-						log.info(MISSING_USER_NAME_MESSAGE);
-						responseStream.append(MISSING_USER_NAME_MESSAGE);
+						log.info(MISSING_QUERY_MESSAGE);
+						responseStream.append(MISSING_QUERY_MESSAGE);
 						httpResponse.setStatus(HttpServletResponse.SC_BAD_REQUEST);
 					}
-				} else {
-					log.info(MISSING_QUERY_MESSAGE);
-					responseStream.append(MISSING_QUERY_MESSAGE);
-					httpResponse.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-				}
-			} else if ("POST".equalsIgnoreCase(method)) {
-				if (queryString != null) {
-					queryString = queryString.trim();
-					String username = getUserNameFromRequest(queryString);
-					String event_status = getEventStatusFromRequest(queryString);
-					String aim_uid = getAimUidFromRequest(queryString);
-					String aim_name = getAimNameFromRequest(queryString);
-					String patient_id = getPatientIdFromRequest(queryString);
-					String patient_name = getPatientNameFromRequest(queryString);
-					String template_id = getTemplateIdFromRequest(queryString);
-					String template_name = getTemplateNameFromRequest(queryString);
-					String plugin_name = getPluginNameFromRequest(queryString);
+				} else if ("POST".equalsIgnoreCase(method)) {
+					if (queryString != null) {
+						queryString = queryString.trim();
+						String username = getUserNameFromRequest(queryString);
+						String event_status = getEventStatusFromRequest(queryString);
+						String aim_uid = getAimUidFromRequest(queryString);
+						String aim_name = getAimNameFromRequest(queryString);
+						String patient_id = getPatientIdFromRequest(queryString);
+						String patient_name = getPatientNameFromRequest(queryString);
+						String template_id = getTemplateIdFromRequest(queryString);
+						String template_name = getTemplateNameFromRequest(queryString);
+						String plugin_name = getPluginNameFromRequest(queryString);
 
-					log.info("Got event for AIM ID " + aim_uid + " for user " + username);
+						log.info("Got event for AIM ID " + aim_uid + " for user " + username);
 
-					if (username != null && event_status != null && aim_uid != null && aim_uid != null && aim_name != null
-							&& patient_id != null && patient_name != null && template_id != null && template_name != null
-							&& plugin_name != null) {
-						MySqlQueries dbQueries = MySqlInstance.getInstance().getMysqlQueries();
-						dbQueries.insertEvent(username, event_status, aim_uid, aim_name, patient_id, patient_name, template_id,
-								template_name, plugin_name);
-						httpResponse.setStatus(HttpServletResponse.SC_OK);
+						if (username != null && event_status != null && aim_uid != null && aim_uid != null && aim_name != null
+								&& patient_id != null && patient_name != null && template_id != null && template_name != null
+								&& plugin_name != null) {
+							MySqlQueries dbQueries = MySqlInstance.getInstance().getMysqlQueries();
+							dbQueries.insertEvent(username, event_status, aim_uid, aim_name, patient_id, patient_name, template_id,
+									template_name, plugin_name);
+							responseStream.flush();
+							httpResponse.setStatus(HttpServletResponse.SC_OK);
+						} else {
+							log.info(BAD_PARAMETERS_MESSAGE);
+							responseStream.append(BAD_PARAMETERS_MESSAGE);
+							httpResponse.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+						}
 					} else {
-						log.info(BAD_PARAMETERS_MESSAGE);
-						responseStream.append(BAD_PARAMETERS_MESSAGE);
+						log.info(MISSING_QUERY_MESSAGE);
+						responseStream.append(MISSING_QUERY_MESSAGE);
 						httpResponse.setStatus(HttpServletResponse.SC_BAD_REQUEST);
 					}
 				} else {
-					log.info(MISSING_QUERY_MESSAGE);
-					responseStream.append(MISSING_QUERY_MESSAGE);
-					httpResponse.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+					log.info(INVALID_METHOD_MESSAGE);
+					responseStream.append(INVALID_METHOD_MESSAGE);
+					httpResponse.setHeader("Access-Control-Allow-Methods", "POST, GET");
+					httpResponse.setStatus(HttpServletResponse.SC_METHOD_NOT_ALLOWED);
 				}
-			} else {
-				log.info(INVALID_METHOD_MESSAGE);
-				responseStream.append(INVALID_METHOD_MESSAGE);
-				httpResponse.setHeader("Access-Control-Allow-Methods", "POST, GET");
-				httpResponse.setStatus(HttpServletResponse.SC_METHOD_NOT_ALLOWED);
+			} catch (Throwable t) {
+				log.severe(INTERNAL_EXCEPTION_MESSAGE, t);
+				httpResponse.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 			}
 		} else {
 			log.info(INVALID_SESSION_TOKEN_MESSAGE);
-			responseStream.append(INVALID_SESSION_TOKEN_MESSAGE);
 			httpResponse.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
 		}
-		responseStream.flush();
 	}
 
 	private void findEventsForUser(PrintWriter responseStrean, String userName)
@@ -139,6 +137,8 @@ public class EventHandler extends AbstractHandler
 			log.info(sb.toString());
 		}
 	}
+
+	// TODO clean up this mess
 
 	private static String getUserNameFromRequest(String queryString)
 	{

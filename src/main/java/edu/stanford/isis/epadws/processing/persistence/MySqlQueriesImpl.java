@@ -15,9 +15,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import javax.xml.bind.DatatypeConverter;
-
-import edu.stanford.isis.epad.common.dicom.DicomFormatUtil;
 import edu.stanford.isis.epad.common.dicom.DicomParentCache;
 import edu.stanford.isis.epad.common.dicom.DicomParentType;
 import edu.stanford.isis.epad.common.util.EPADLogger;
@@ -163,38 +160,6 @@ public class MySqlQueriesImpl implements MySqlQueries
 		}
 	}
 
-	/**
-	 * Get all the studies with the study-stats of zero.
-	 * 
-	 * @return a list of studyUIDs.
-	 */
-	@Override
-	public List<String> getNewStudiesInDcm4Chee()
-	{
-		List<String> retVal = new ArrayList<String>();
-
-		Connection c = null;
-		PreparedStatement ps = null;
-		ResultSet rs = null;
-		try {
-			c = getConnection();
-			ps = c.prepareStatement(MySqlCalls.DCM4CHEE_SELECT_STUDY_BY_STATUS);
-			ps.setInt(1, 0);
-
-			rs = ps.executeQuery();
-			while (rs.next()) {
-				retVal.add(rs.getString("study_iuid"));
-			}// while
-		} catch (SQLException sqle) {
-			String debugInfo = DatabaseUtils.getDebugData(rs);
-			logger.warning("database operation failed. debugInfo=" + debugInfo, sqle);
-		} finally {
-			close(c, ps, rs);
-		}
-
-		return retVal;
-	}
-
 	@Override
 	public List<String> getNewSeriesInDcm4Chee()
 	{
@@ -207,7 +172,6 @@ public class MySqlQueriesImpl implements MySqlQueries
 			c = getConnection();
 			ps = c.prepareStatement(MySqlCalls.DCM4CHEE_SELECT_SERIES_BY_STATUS);
 			ps.setInt(1, 0);
-
 			rs = ps.executeQuery();
 			while (rs.next()) {
 				retVal.add(rs.getString("series_iuid"));
@@ -219,33 +183,6 @@ public class MySqlQueriesImpl implements MySqlQueries
 			close(c, ps, rs);
 		}
 
-		return retVal;
-	}
-
-	@Override
-	public List<Map<String, String>> getStudiesForStatusInEPadDatabase(int statusCode)
-	{
-		List<Map<String, String>> retVal = new ArrayList<Map<String, String>>();
-
-		Connection c = null;
-		PreparedStatement ps = null;
-		ResultSet rs = null;
-		try {
-			c = getConnection();
-			ps = c.prepareStatement(MySqlCalls.DCM4CHEE_SELECT_STUDY_BY_STATUS);
-			ps.setInt(1, statusCode);
-
-			rs = ps.executeQuery();
-			while (rs.next()) {
-				Map<String, String> resultMap = createResultMap(rs);
-				retVal.add(resultMap);
-			}
-		} catch (SQLException sqle) {
-			String debugInfo = DatabaseUtils.getDebugData(rs);
-			logger.warning("database operation failed. debugInfo=" + debugInfo, sqle);
-		} finally {
-			close(c, ps, rs);
-		}
 		return retVal;
 	}
 
@@ -376,37 +313,10 @@ public class MySqlQueriesImpl implements MySqlQueries
 			c = getConnection();
 			ps = c.prepareStatement(MySqlCalls.DCM4CHEE_SELECT_PARENT_STUDY_FOR_SERIES);
 			ps.setString(1, seriesIUID);
-
 			rs = ps.executeQuery();
 			if (rs.next()) {
 				retVal = createResultMap(rs);
-			}// while
-		} catch (SQLException sqle) {
-			String debugInfo = DatabaseUtils.getDebugData(rs);
-			logger.warning("database operation failed. debugInfo=" + debugInfo, sqle);
-		} finally {
-			close(c, ps, rs);
-		}
-		return retVal;
-	}
-
-	@Override
-	public Map<String, String> getParentSeriesForImage(String sopInstanceUID)
-	{
-		Map<String, String> retVal = new HashMap<String, String>();
-
-		Connection c = null;
-		PreparedStatement ps = null;
-		ResultSet rs = null;
-		try {
-			c = getConnection();
-			ps = c.prepareStatement(MySqlCalls.DCM4CHEE_SELECT_PARENT_SERIES_FOR_IMAGE);
-			ps.setString(1, sopInstanceUID);
-
-			rs = ps.executeQuery();
-			if (rs.next()) {
-				retVal = createResultMap(rs);
-			}// while
+			}
 		} catch (SQLException sqle) {
 			String debugInfo = DatabaseUtils.getDebugData(rs);
 			logger.warning("database operation failed. debugInfo=" + debugInfo, sqle);
@@ -421,11 +331,9 @@ public class MySqlQueriesImpl implements MySqlQueries
 	{
 		DicomParentCache cache = DicomParentCache.getInstance();
 
-		if (cache.hasParent(seriesIUID)) {
+		if (cache.hasParent(seriesIUID))
 			return cache.getParent(seriesIUID).getDicomUID();
-		}
 
-		// else call the database and cache the result.
 		Map<String, String> dbResult = getParentStudyForSeries(seriesIUID);
 		String studyIUID = dbResult.get("study_iuid");
 		cache.setParent(seriesIUID, studyIUID, DicomParentType.STUDY);
@@ -433,82 +341,11 @@ public class MySqlQueriesImpl implements MySqlQueries
 		return studyIUID;
 	}
 
-	@Override
-	public String getSeriesUIDForImage(String sopInstanceUID)
-	{
-		DicomParentCache cache = DicomParentCache.getInstance();
-
-		if (cache.hasParent(sopInstanceUID)) {
-			return cache.getParent(sopInstanceUID).getDicomUID();
-		}
-
-		// else call the database and cache the result.
-		Map<String, String> dbResult = getParentSeriesForImage(sopInstanceUID);
-		String seriesIUID = dbResult.get("series_iuid");
-		cache.setParent(sopInstanceUID, seriesIUID, DicomParentType.SERIES);
-		return seriesIUID;
-	}
-
-	@Override
-	public List<String> getSopInstanceUidsForSeries(String seriesIUID)
-	{
-		List<String> retVal = new ArrayList<String>();
-
-		Connection c = null;
-		PreparedStatement ps = null;
-		ResultSet rs = null;
-		try {
-			c = getConnection();
-			ps = c.prepareStatement(MySqlCalls.DCM4CHEE_SELECT_INSTANCE_FOR_SERIES);
-			ps.setString(1, seriesIUID);
-
-			rs = ps.executeQuery();
-			while (rs.next()) {
-
-			}// while
-
-		} catch (SQLException sqle) {
-			String debugInfo = DatabaseUtils.getDebugData(rs);
-			logger.warning("database operation failed. debugInfo=" + debugInfo, sqle);
-		} finally {
-			close(c, ps, rs);
-		}
-		return retVal;
-	}
-
-	@Override
-	public List<Map<String, String>> getDICOMImageFilesDescriptionsOrdered(String seriesIUID)
-	{
-		List<Map<String, String>> retVal = new ArrayList<Map<String, String>>();
-
-		Connection c = null;
-		PreparedStatement ps = null;
-		ResultSet rs = null;
-		try {
-			c = getConnection();
-			ps = c.prepareStatement(MySqlCalls.DCM4CHEE_SELECT_FILES_FOR_SERIES_ORDERED);
-			ps.setString(1, seriesIUID);
-
-			rs = ps.executeQuery();
-			while (rs.next()) {
-				Map<String, String> resultMap = createResultMap(rs);
-				retVal.add(resultMap);
-			}// while
-
-		} catch (SQLException sqle) {
-			String debugInfo = DatabaseUtils.getDebugData(rs);
-			logger.warning("database operation failed. debugInfo=" + debugInfo, sqle);
-		} finally {
-			close(c, ps, rs);
-		}
-		return retVal;
-	}
-
 	/**
 	 * Looks in dcm4chee database to find a list of all DICOM image descriptions (table is pacsdb.files).
 	 */
 	@Override
-	public List<Map<String, String>> getDICOMImageFileDescriptions(String seriesIUID)
+	public List<Map<String, String>> getDICOMImageFileDescriptionsForSeries(String seriesIUID)
 	{
 		List<Map<String, String>> retVal = new ArrayList<Map<String, String>>();
 
@@ -519,13 +356,11 @@ public class MySqlQueriesImpl implements MySqlQueries
 			c = getConnection();
 			ps = c.prepareStatement(MySqlCalls.DCM4CHEE_SELECT_FILES_FOR_SERIES);
 			ps.setString(1, seriesIUID);
-
 			rs = ps.executeQuery();
 			while (rs.next()) {
 				Map<String, String> resultMap = createResultMap(rs);
 				retVal.add(resultMap);
-			}// while
-
+			}
 		} catch (SQLException sqle) {
 			String debugInfo = DatabaseUtils.getDebugData(rs);
 			logger.warning("database operation failed. debugInfo=" + debugInfo, sqle);
@@ -547,7 +382,6 @@ public class MySqlQueriesImpl implements MySqlQueries
 			c = getConnection();
 			ps = c.prepareStatement(MySqlCalls.DCM4CHEE_SELECT_INSTANCE_FOR_SERIES);
 			ps.setString(1, seriesIUID);
-
 			rs = ps.executeQuery();
 
 			if (rs.next()) {
@@ -563,13 +397,13 @@ public class MySqlQueriesImpl implements MySqlQueries
 	}
 
 	@Override
-	public List<Map<String, String>> getUnprocessedDicomImageFileDescriptions(String seriesIUID)
+	public List<Map<String, String>> getUnprocessedDicomImageFileDescriptionsForSeries(String seriesIUID)
 	{
 		List<Map<String, String>> dicomFilesWithoutPNGImagesFileDescriptions = new ArrayList<Map<String, String>>();
 		try {
 			// Get list of DICOM image descriptions from DCM4CHEE database table (pacsdb.files). Each image description is a
 			// map with keys: i.sop_iuid, i.inst_no, s.series_iuid, f.filepath, f.file_size.
-			List<Map<String, String>> dicomImageFileDescriptions = getDICOMImageFileDescriptions(seriesIUID);
+			List<Map<String, String>> dicomImageFileDescriptions = getDICOMImageFileDescriptionsForSeries(seriesIUID);
 
 			// Get list of instance IDs for images in series from ePAD database table (epaddb.epad_files).
 			List<String> finishedDICOMImageInstanceIDs = getFinishedDICOMImageInstanceIDsForSeries(seriesIUID);
@@ -588,33 +422,6 @@ public class MySqlQueriesImpl implements MySqlQueries
 			logger.warning("getUnprocessedDICOMImageFileDescriptions had " + e.getMessage(), e);
 		}
 		return dicomFilesWithoutPNGImagesFileDescriptions;
-	}
-
-	@Override
-	public List<Map<String, String>> getProcessedDICOMImageFileDescriptionsOrdered(String seriesIUID)
-	{
-		List<Map<String, String>> dicomWithPNGImageFileDescriptions = new ArrayList<Map<String, String>>();
-		try {
-			/* i.sop_iuid, i.inst_no, s.series_iuid, f.filepath, f.file_size */
-			List<Map<String, String>> dicomImageFileDescriptions = getDICOMImageFilesDescriptionsOrdered(seriesIUID);
-
-			/* sop_iuid */
-			List<String> finishedImageInstanceIDs = getFinishedDICOMImageInstanceIDsForSeries(seriesIUID);
-
-			logger.info("getImagesWithoutPngFile... has: " + dicomImageFileDescriptions.size() + " images with files and "
-					+ finishedImageInstanceIDs.size() + " finished images for series=" + shortenSting(seriesIUID));
-
-			for (Map<String, String> dicomImageFileDescription : dicomImageFileDescriptions) {
-				String sopIdWithFile = dicomImageFileDescription.get("sop_iuid");
-
-				if (finishedImageInstanceIDs.contains(sopIdWithFile)) {
-					dicomWithPNGImageFileDescriptions.add(dicomImageFileDescription);
-				}
-			}
-		} catch (Exception e) {
-			logger.warning("getImagesWithPngFileForSeries had " + e.getMessage(), e);
-		}
-		return dicomWithPNGImageFileDescriptions;
 	}
 
 	@Override
@@ -724,27 +531,6 @@ public class MySqlQueriesImpl implements MySqlQueries
 	}
 
 	@Override
-	public int countEpadFilesLike(String likePath)
-	{
-		return 0; // To change body of implemented methods use File | Settings | File Templates.
-	}
-
-	@Override
-	public float getPercentComplete(String seriesUID)
-	{
-		// for a given series look at the number is instance. vs the number that has a unique file.
-		int nPngFiles = getNumberOfPngFiles(seriesUID);
-		int nInstances = getNumberOfInstances(seriesUID);
-
-		if (nInstances <= 0) {
-			logger.info("WARNING: series " + seriesUID + " with zero instances might be segmentation object");
-			return 0.01f;
-		}
-		float percent = nPngFiles / nInstances;
-		return percent;
-	}
-
-	@Override
 	public List<Map<String, String>> getDicomSeriesOrder(String seriesUID)
 	{
 		List<Map<String, String>> retVal = new ArrayList<Map<String, String>>();
@@ -772,48 +558,6 @@ public class MySqlQueriesImpl implements MySqlQueries
 	}
 
 	@Override
-	public void updateStudiesStatusCode(int newStatusCode, String studyIUID)
-	{
-		Connection c = null;
-		PreparedStatement ps = null;
-		ResultSet rs = null;
-		try {
-			c = getConnection();
-			ps = c.prepareStatement(MySqlCalls.DCM4CHEE_UPDATE_STUDY_STATUS_CODE);
-			ps.setInt(1, newStatusCode);
-			ps.setString(2, studyIUID);
-			ps.execute();
-
-		} catch (SQLException sqle) {
-			String debugInfo = DatabaseUtils.getDebugData(rs);
-			logger.warning("database operation failed. debugInfo=" + debugInfo, sqle);
-		} finally {
-			close(c, ps, rs);
-		}
-	}
-
-	@Override
-	public void updateSeriesStatusCode(int newStatusCode, String seriesIUID)
-	{
-		Connection c = null;
-		PreparedStatement ps = null;
-		ResultSet rs = null;
-		try {
-			c = getConnection();
-			ps = c.prepareStatement(MySqlCalls.DCM4CHEE_UPDATE_SERIES_STATUS_CODE);
-			ps.setInt(1, newStatusCode);
-			ps.setString(2, seriesIUID);
-			ps.execute();
-
-		} catch (SQLException sqle) {
-			String debugInfo = DatabaseUtils.getDebugData(rs);
-			logger.warning("database operation failed. debugInfo=" + debugInfo, sqle);
-		} finally {
-			close(c, ps, rs);
-		}
-	}
-
-	@Override
 	public void updateSeriesStatusCodeEx(int newStatusCode, String seriesIUID)
 	{
 		if (!hasSeriesInEPadDb(seriesIUID)) {
@@ -825,8 +569,6 @@ public class MySqlQueriesImpl implements MySqlQueries
 
 	public void insertSeriesInEPadDb(int newStatusCode, String seriesIUID)
 	{
-		// INSERT_INTO_EPAD_SERIES_STATUS
-
 		Connection c = null;
 		PreparedStatement ps = null;
 		try {
@@ -834,7 +576,6 @@ public class MySqlQueriesImpl implements MySqlQueries
 			ps = c.prepareStatement(MySqlCalls.INSERT_INTO_EPAD_SERIES_STATUS);
 			ps.setString(1, seriesIUID);
 			ps.setInt(2, newStatusCode);
-
 			ps.execute();
 		} catch (SQLException sqle) {
 			logger.warning("database operation failed.", sqle);
@@ -843,13 +584,10 @@ public class MySqlQueriesImpl implements MySqlQueries
 		} finally {
 			close(c, ps);
 		}
-
 	}
 
 	public boolean hasSeriesInEPadDb(String seriesIUID)
 	{
-		// SELECT_EPAD_SERIES_BY_ID
-
 		Connection c = null;
 		PreparedStatement ps = null;
 		ResultSet rs = null;
@@ -857,10 +595,8 @@ public class MySqlQueriesImpl implements MySqlQueries
 			c = getConnection();
 			ps = c.prepareStatement(MySqlCalls.SELECT_EPAD_SERIES_BY_ID);
 			ps.setString(1, seriesIUID);
-
 			rs = ps.executeQuery();
 			return rs.next();
-
 		} catch (SQLException sqle) {
 			String debugInfo = DatabaseUtils.getDebugData(rs);
 			logger.warning("database operation failed. debugInfo=" + debugInfo, sqle);
@@ -872,9 +608,6 @@ public class MySqlQueriesImpl implements MySqlQueries
 
 	public void updateSeriesInEPadDb(int newStatusCode, String seriesIUID)
 	{
-
-		// UPDATE_EPAD_SERIES_STATUS
-
 		Connection c = null;
 		PreparedStatement ps = null;
 		ResultSet rs = null;
@@ -884,75 +617,16 @@ public class MySqlQueriesImpl implements MySqlQueries
 			ps.setInt(1, newStatusCode);
 			ps.setString(2, seriesIUID);
 			ps.execute();
-
 		} catch (SQLException sqle) {
 			String debugInfo = DatabaseUtils.getDebugData(rs);
 			logger.warning("database operation failed. debugInfo=" + debugInfo, sqle);
 		} finally {
 			close(c, ps, rs);
 		}
-
 	}
 
 	@Override
-	public int getStudyKey(String studyUID)
-	{
-		Connection c = null;
-		PreparedStatement ps = null;
-		ResultSet rs = null;
-		StringBuilder sb = new StringBuilder();
-		try {
-			c = getConnection();
-			ps = c.prepareStatement(MySqlCalls.DCM4CHEE_PK_FOR_STUDY);
-			ps.setString(1, studyUID);
-
-			sb.append("getStudyKey(").append(studyUID).append(").");
-
-			rs = ps.executeQuery();
-			if (rs.next()) {
-				sb.append(" Found a study.");
-				return rs.getInt(1);
-			} else {
-				sb.append(" Didn't find a study.");
-				return -1;
-			}
-		} catch (SQLException sqle) {
-			String debugInfo = DatabaseUtils.getDebugData(rs);
-			logger.warning("database operation failed. debugInfo=" + debugInfo, sqle);
-			return -1;
-		} finally {
-			logger.info(sb.toString());
-			close(c, ps, rs);
-		}
-	}
-
-	@Override
-	public int getSeriesKey(String seriesUID)
-	{
-		Connection c = null;
-		PreparedStatement ps = null;
-		ResultSet rs = null;
-		try {
-			c = getConnection();
-			ps = c.prepareStatement(MySqlCalls.DCM4CHEE_PK_FOR_SERIES);
-			ps.setString(1, seriesUID);
-			rs = ps.executeQuery();
-			if (rs.next()) {
-				return rs.getInt(1);
-			} else {
-				return -1;
-			}
-		} catch (SQLException sqle) {
-			String debugInfo = DatabaseUtils.getDebugData(rs);
-			logger.warning("database operation failed. debugInfo=" + debugInfo, sqle);
-			return -1;
-		} finally {
-			close(c, ps, rs);
-		}
-	}
-
-	@Override
-	public int getInstanceKey(String sopInstanceUID)
+	public int getInstanceKeyForInstance(String sopInstanceUID)
 	{
 		Connection c = null;
 		PreparedStatement ps = null;
@@ -973,54 +647,6 @@ public class MySqlQueriesImpl implements MySqlQueries
 			return -1;
 		} finally {
 			close(c, ps, rs);
-		}
-	}
-
-	@Override
-	public String getSeriesAttrs(String seriesUID)
-	{
-
-		byte[] blobBytes = getSeriesAttrsAsBytes(seriesUID);
-		if (blobBytes != null) {
-			return convertBytes2Base64(blobBytes);
-		} else {
-			return "";
-		}
-	}
-
-	@Override
-	public String getInstanceAttrs(String sopInstanceUID)
-	{
-
-		byte[] blobBytes = getInstanceAttrsAsBytes(sopInstanceUID);
-		if (blobBytes != null) {
-			return convertBytes2Base64(blobBytes);
-		} else {
-			return "";
-		}
-	}
-
-	@Override
-	public byte[] getSeriesAttrsAsBytes(String seriesUID)
-	{
-		try {
-			Blob blob = getSeriesAttrsAsBlob(seriesUID);
-			return blob.getBytes(1, (int)blob.length());
-		} catch (SQLException sqle) {
-			logger.warning("database operation failed.", sqle);
-			return null;
-		}
-	}
-
-	@Override
-	public byte[] getInstanceAttrsAsBytes(String sopInstanceUID)
-	{
-		try {
-			Blob blob = getInstanceAttrsAsBlob(sopInstanceUID);
-			return blob.getBytes(1, (int)blob.length());
-		} catch (SQLException sqle) {
-			logger.warning("database operation failed.", sqle);
-			return null;
 		}
 	}
 
@@ -1053,18 +679,6 @@ public class MySqlQueriesImpl implements MySqlQueries
 	{
 		try {
 			Blob blob = getSeriesAttrsAsBlob(seriesUID);
-			return blob.getBinaryStream();
-		} catch (SQLException sqle) {
-			logger.warning("database operation failed.", sqle);
-			return null;
-		}
-	}
-
-	@Override
-	public InputStream getInstanceAttrsAsStream(String sopInstanceUID)
-	{
-		try {
-			Blob blob = getInstanceAttrsAsBlob(sopInstanceUID);
 			return blob.getBinaryStream();
 		} catch (SQLException sqle) {
 			logger.warning("database operation failed.", sqle);
@@ -1130,23 +744,6 @@ public class MySqlQueriesImpl implements MySqlQueries
 			close(c, ps, rs);
 		}
 		return rows;
-	}
-
-	@Override
-	public void deleteEventsForUser(String username)
-	{
-		Connection c = null;
-		PreparedStatement ps = null;
-		try {
-			c = getConnection();
-			ps = c.prepareStatement(MySqlCalls.DELETE_EVENTS_FOR_USER);
-			ps.setString(1, username);
-			ps.executeUpdate();
-		} catch (SQLException sqle) {
-			logger.warning("Delete events operation failed", sqle);
-		} finally {
-			close(c, ps);
-		}
 	}
 
 	@Override
@@ -1471,33 +1068,9 @@ public class MySqlQueriesImpl implements MySqlQueries
 		DatabaseUtils.close(rs);
 	}
 
-	private String shortenSting(String longString)
-	{
-		if (longString.length() > 10) {
-			StringBuilder sb = new StringBuilder();
-			sb.append("...");
-			int index = longString.length() - 5;
-			sb.append(longString.substring(index));
-			return sb.toString();
-		}
-		return longString;
-	}
-
 	private static boolean isStudyDateColumn(String currKey)
 	{
 		return (currKey.toLowerCase().indexOf("date") > 0 || currKey.toLowerCase().indexOf("time") > 0);
-	}
-
-	private int getNumberOfPngFiles(String seriesUID)
-	{
-		List<String> list = getSopInstanceUidsForSeries(seriesUID);
-		return list.size();
-	}
-
-	private int getNumberOfInstances(String seriesUID)
-	{
-		List<String> list = getFinishedDICOMImageInstanceIDsForSeries(seriesUID);
-		return list.size();
 	}
 
 	private int getFileStatus(Map<String, String> data)
@@ -1531,12 +1104,6 @@ public class MySqlQueriesImpl implements MySqlQueries
 			return def;
 		}
 		return value;
-	}
-
-	@SuppressWarnings("unused")
-	private boolean findPngFile(String studyUID, String seriesUID, String sopInstanceUID)
-	{
-		return DicomFormatUtil.hasFileWithExtension(studyUID, seriesUID, sopInstanceUID, ".png");
 	}
 
 	private Blob getPatientAttrsAsBlob(String patientID)
@@ -1609,35 +1176,6 @@ public class MySqlQueriesImpl implements MySqlQueries
 		} finally {
 			close(c, ps, rs);
 		}
-	}
-
-	private Blob getInstanceAttrsAsBlob(String sopInstanceUID)
-	{
-		Connection c = null;
-		PreparedStatement ps = null;
-		ResultSet rs = null;
-		try {
-			c = getConnection();
-			ps = c.prepareStatement(MySqlCalls.DCM4CHEE_SELECT_INSTANCE_ATTRS);
-			ps.setString(1, sopInstanceUID);
-			rs = ps.executeQuery();
-			if (rs.next()) {
-				return rs.getBlob(1);
-			} else {
-				return null;
-			}
-		} catch (SQLException sqle) {
-			String debugInfo = DatabaseUtils.getDebugData(rs);
-			logger.warning("database operation failed. debugInfo=" + debugInfo, sqle);
-			return null;
-		} finally {
-			close(c, ps, rs);
-		}
-	}
-
-	private static String convertBytes2Base64(byte[] bytes)
-	{
-		return DatatypeConverter.printBase64Binary(bytes);
 	}
 
 	private Set<String> getNewSeriesFromPacsDb()

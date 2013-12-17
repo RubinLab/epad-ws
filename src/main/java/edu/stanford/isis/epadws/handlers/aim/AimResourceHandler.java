@@ -33,7 +33,6 @@ import org.apache.commons.httpclient.HttpException;
 import org.apache.commons.httpclient.methods.GetMethod;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
-import org.restlet.resource.Get;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
@@ -240,8 +239,7 @@ public class AimResourceHandler extends AbstractHandler
 	 * 
 	 * @return ArrayList<ImageAnnotation>
 	 */
-	@Get
-	public ArrayList<ImageAnnotation> getAIMImageAnnotations(String id1, String id2, String user)
+	private ArrayList<ImageAnnotation> getAIMImageAnnotations(String id1, String id2, String user)
 	{
 		ArrayList<ImageAnnotation> retAims = new ArrayList<ImageAnnotation>();
 		List<ImageAnnotation> aims = null;
@@ -335,7 +333,7 @@ public class AimResourceHandler extends AbstractHandler
 	 * @return String
 	 * @throws AimException
 	 */
-	public String saveImageAnnotationToServer(ImageAnnotation aim, String jsessionID) throws AimException
+	private String saveImageAnnotationToServer(ImageAnnotation aim, String jsessionID) throws AimException
 	{
 		String result = "";
 
@@ -419,18 +417,15 @@ public class AimResourceHandler extends AbstractHandler
 		return result;
 	}
 
-	// Create an xml document from a String
-	public static String XmlDocumentToString(Document document)
+	// Create an XML document from a String
+	private static String XmlDocumentToString(Document document)
 	{
-
-		// add the good namespace
 		new XmlNamespaceTranslator().addTranslation(null, "gme://caCORE.caCORE/3.2/edu.northwestern.radiology.AIM")
 				.addTranslation("", "gme://caCORE.caCORE/3.2/edu.northwestern.radiology.AIM").translateNamespaces(document);
 
-		// set up a transformer
 		TransformerFactory transfac = TransformerFactory.newInstance();
 		Transformer trans = null;
-		;
+
 		try {
 			trans = transfac.newTransformer();
 		} catch (TransformerConfigurationException e1) {
@@ -440,7 +435,6 @@ public class AimResourceHandler extends AbstractHandler
 
 		trans.setOutputProperty(OutputKeys.INDENT, "yes");
 
-		// create string from xml tree
 		StringWriter sw = new StringWriter();
 		StreamResult result = new StreamResult(sw);
 		DOMSource source = new DOMSource(document);
@@ -451,14 +445,12 @@ public class AimResourceHandler extends AbstractHandler
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-
 		return sw.toString();
 	}
 
-	// rename namespace of the nodes
+	// Rename namespace of the nodes
 	private static Node renameNodeNS(Node node, String newName)
 	{
-
 		Element newNode = node.getOwnerDocument().createElementNS("gme://caCORE.caCORE/3.2/edu.northwestern.radiology.AIM",
 				newName);
 		NamedNodeMap map = node.getAttributes();
@@ -470,8 +462,6 @@ public class AimResourceHandler extends AbstractHandler
 		for (int i = 0; i < tempList.getLength(); i++) {
 			newNode.appendChild(tempList.item(i).cloneNode(true));
 		}
-
 		return newNode;
 	}
-
 }

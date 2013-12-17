@@ -112,26 +112,6 @@ public class DicomSeriesDescription
 		return instances.get(index) != null;
 	}
 
-	public int set(DicomImageDescription dicomImageDescription)
-	{
-		int index = dicomImageDescription.getInstanceNum();
-		instances.set(index, dicomImageDescription);
-		return index;
-	}
-
-	public DicomImageDescription getByInstanceNo(int index) throws Exception
-	{
-		try {
-			if (!hasInstance(index)) {
-				return null;
-			}
-			return instances.get(index);
-		} catch (Exception e) {
-			logger.info("SeriesOrder: " + e.getMessage() + " size=" + size() + " seriesUID=" + seriesUID);
-			throw e;
-		}
-	}
-
 	public void updateWithDicomImageFileDescriptions(List<Map<String, String>> dicomImageFileDescriptions)
 	{
 		for (Map<String, String> dicomImageFileDescription : dicomImageFileDescriptions) {

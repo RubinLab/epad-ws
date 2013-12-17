@@ -19,8 +19,8 @@ import org.apache.commons.io.FileUtils;
 import edu.stanford.isis.epad.common.dicom.DicomTagFileUtils;
 import edu.stanford.isis.epad.common.util.EPADFileUtils;
 import edu.stanford.isis.epad.common.util.EPADLogger;
-import edu.stanford.isis.epad.common.util.FileKey;
 import edu.stanford.isis.epad.common.util.EPADResources;
+import edu.stanford.isis.epad.common.util.FileKey;
 import edu.stanford.isis.epadws.processing.model.ThumbnailFileUtil;
 
 /**
@@ -100,31 +100,6 @@ public class ThumbnailManager
 		}
 	}
 
-	// ToDo: Uncomment if we are using 2-channel PNG files. It depends on PixelMed jar files though.
-	/**
-	 * Submit to the queue to create the PNG file.
-	 * 
-	 * @param tags Map
-	 * @param dcmFile File
-	 */
-	public void writeTwoChannelPngFile(Map<String, String> tags, File dcmFile)
-	{
-
-		try {
-
-			// ToDo: Just the PackPNGTask call working on this.
-
-		} catch (Exception e) {
-			logger.warning("Failed to write 2 channel PNG file.", e);
-		}
-	}
-
-	@SuppressWarnings("unused")
-	private static File createPngFile(String dcmFilePath)
-	{
-		return new File(dcmFilePath.replaceAll(".dcm", ".png"));
-	}
-
 	// //Get back to this later.
 	// private static byte[] createTwoChannelPngData(byte[] rawDicom, TransferSyntax transferSyntax, float slope, float
 	// intercept, int xSize, int ySize)
@@ -140,30 +115,6 @@ public class ThumbnailManager
 	// }//for
 	// return retVal;
 	// }
-
-	/**
-	 * 
-	 * @param x int
-	 * @param y int
-	 * @return int
-	 */
-	@SuppressWarnings("unused")
-	private static int getIndex(int x, int y)
-	{
-		return (x * y) + x;
-	}
-
-	@SuppressWarnings("unused")
-	private static float forceRange(float value, float min, float max)
-	{
-		if (value > max) {
-			return max;
-		}
-		if (value < min) {
-			return min;
-		}
-		return value;
-	}
 
 	/**
 	 * Shrinks a jpeg file down to create the thumbnail.
@@ -310,11 +261,6 @@ public class ThumbnailManager
 			int midPoint = ((maxOrder - minOrder) / 2) + minOrder;
 
 			return Math.abs(midPoint - instanceNumber) < Math.abs(midPoint - lastOrder);
-		}
-
-		public void setStatus(ThumbnailStatus tStatus)
-		{
-			status = tStatus;
 		}
 	}
 

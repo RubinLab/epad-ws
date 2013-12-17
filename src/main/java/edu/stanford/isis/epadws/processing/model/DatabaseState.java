@@ -7,13 +7,6 @@
  */
 package edu.stanford.isis.epadws.processing.model;
 
-/**
- * The state of the database.
- */
 public enum DatabaseState {
-    INIT,
-    STARTING,
-    READY,
-    SHUTDOWN,
-    ERROR;
+	INIT, STARTING, READY, SHUTDOWN, ERROR;
 }

@@ -9,16 +9,13 @@ package edu.stanford.isis.epadws.processing.model;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import edu.stanford.isis.epad.common.dicom.DicomFormatUtil;
 import edu.stanford.isis.epad.common.dicom.DicomTagFileUtils;
 import edu.stanford.isis.epad.common.util.EPADConfig;
 import edu.stanford.isis.epad.common.util.EPADFileUtils;
 import edu.stanford.isis.epad.common.util.EPADLogger;
-import edu.stanford.isis.epad.common.util.EPADResources;
 
 /**
  * The central location for reading and writing series files.
@@ -222,75 +219,4 @@ public class DicomSeriesFileUtils
 		sb.append(IMAGES_IN_SERIES).append("\n");
 		return sb.toString();
 	}
-
-	/**
-	 * Parse all the *.series files in a directory. It reads the series files into a generic map, so they can be written
-	 * out. A Map is used so additions or changes to the files with minimal changes in other places.
-	 * 
-	 * 
-	 * @param seriesFiles List of series files from one directory.
-	 * @return String The results of a series file.
-	 */
-	public static String parseSeriesFiles(List<File> seriesFiles)
-	{
-
-		StringBuilder sb = new StringBuilder();
-		sb.append(writeKeys());
-
-		EPADConfig config = EPADConfig.getInstance();
-		String separator = config.getParam("fieldSeparator");
-
-		try {
-			for (File seriesFile : seriesFiles) {
-				List<Map<String, String>> values = EPADFileUtils.readCsvFormattedFile(seriesFile);
-
-				for (Map<String, String> valueMap : values) {
-					sb.append(valueMap.get(SERIES_ID)).append(separator);
-					sb.append(valueMap.get(PATIENT_ID)).append(separator);
-					sb.append(valueMap.get(PATIENT_NAME)).append(separator);
-					sb.append(valueMap.get(SERIES_DATE)).append(separator);
-					sb.append(valueMap.get(EXAM_TYPE)).append(separator);
-					sb.append(valueMap.get(THUMBNAIL_URL)).append(separator);
-					sb.append(valueMap.get(SERIES_DESC)).append(separator);
-					sb.append(valueMap.get(NUM_SERIES_REL_INSTANCES)).append(separator);
-					sb.append(valueMap.get(IMAGES_IN_SERIES)).append("\n");
-
-					// Debug - RSNA Search.
-					if (valueMap.get(PATIENT_NAME) == null) {
-						log.info("Does this file have a null value? :" + seriesFile.getAbsoluteFile());
-						log.info("* valueMap: " + valueMap.toString());
-					}// if
-
-				}// for
-			}// for
-		} catch (Exception e) {
-			log.warning("parseSeriesFile", e);
-		}
-		return sb.toString();
-	}
-
-	/**
-	 * Look in the /resources/[studyId] directory for any file [seriesID].series
-	 * 
-	 * @param studyId String Can be in either 1.2.840... format or 1_2_840...
-	 * @return List of File that are type *.series
-	 */
-	public static List<File> getSeriesFileFor(String studyId)
-	{
-		List<File> retVal = new ArrayList<File>();
-		try {
-			String studyDirName = DicomFormatUtil.formatUidToDir(studyId);
-			File studyDir = new File(EPADResources.getEPADWebServerPNGDir() + studyDirName);
-			if (!studyDir.exists()) {
-				log.info("WARNING: Could not find directory for: " + studyId + ". Dir doesn't exist. dir="
-						+ studyDir.getCanonicalPath());
-				return retVal;
-			}
-			retVal = EPADFileUtils.getAllFilesWithExtension(studyDir, ".series");
-		} catch (Exception e) {
-			log.warning("getSeriesFileFor", e);
-		}
-		return retVal;
-	}// getSeriesFileFor
-
 }

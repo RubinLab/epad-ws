@@ -1,6 +1,5 @@
 package edu.stanford.isis.epadws.handlers.dicom;
 
-import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.URLDecoder;
 
@@ -11,7 +10,6 @@ import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 
 import edu.stanford.isis.epad.common.util.EPADLogger;
-import edu.stanford.isis.epad.common.util.JsonHelper;
 import edu.stanford.isis.epadws.processing.pipeline.task.PatientDeleteTask;
 import edu.stanford.isis.epadws.xnat.XNATUtil;
 
@@ -33,38 +31,38 @@ public class PatientDeleteHandler extends AbstractHandler
 
 	@Override
 	public void handle(String s, Request request, HttpServletRequest httpRequest, HttpServletResponse httpResponse)
-			throws IOException // TODO Get rid of
 	{
-		PrintWriter responseStream = httpResponse.getWriter();
+		PrintWriter responseStream;
 		int responseCode;
 
 		httpResponse.setContentType("text/plain");
 		request.setHandled(true);
 
 		if (XNATUtil.hasValidXNATSessionID(httpRequest)) {
-			String queryString = httpRequest.getQueryString();
-			queryString = URLDecoder.decode(queryString, "UTF-8");
-			log.info("Patient delete handler query: " + queryString);
+			try {
+				String queryString = httpRequest.getQueryString();
+				queryString = URLDecoder.decode(queryString, "UTF-8");
+				log.info("Patient delete handler query: " + queryString);
 
-			if (queryString != null) {
-				queryString = queryString.trim();
-				try {
+				responseStream = httpResponse.getWriter();
+
+				if (queryString != null) {
+					queryString = queryString.trim();
+
 					handlePatientDeleteRequest(queryString);
 					responseCode = HttpServletResponse.SC_OK;
-				} catch (Throwable t) {
-					log.warning(INTERNAL_ERROR_MESSAGE, t);
-					responseStream.print(INTERNAL_ERROR_MESSAGE + ": " + t.getMessage());
-					responseCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+				} else {
+					log.info(MISSING_QUERY_MESSAGE);
+					responseStream.append(MISSING_QUERY_MESSAGE);
+					responseCode = HttpServletResponse.SC_BAD_REQUEST;
 				}
-			} else {
-				log.info(MISSING_QUERY_MESSAGE);
-				responseStream.append(MISSING_QUERY_MESSAGE);
-				responseCode = HttpServletResponse.SC_BAD_REQUEST;
+				responseStream.flush();
+			} catch (Throwable t) {
+				log.warning(INTERNAL_ERROR_MESSAGE, t);
+				responseCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 			}
-			responseStream.flush();
 		} else {
 			log.info(INVALID_SESSION_TOKEN_MESSAGE);
-			responseStream.append(JsonHelper.createJSONErrorResponse(INVALID_SESSION_TOKEN_MESSAGE));
 			responseCode = HttpServletResponse.SC_UNAUTHORIZED;
 		}
 		httpResponse.setStatus(responseCode);

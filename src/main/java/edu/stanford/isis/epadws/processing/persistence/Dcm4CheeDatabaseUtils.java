@@ -11,27 +11,20 @@ import edu.stanford.isis.epadws.processing.model.PngProcessingStatus;
 
 public class Dcm4CheeDatabaseUtils
 {
-	public static Map<String, String> addErrorMsg(Map<String, String> map, PngProcessingStatus pngStatus, String errMsg)
-	{
-		map.put("file_status", "" + pngStatus.getCode());
-		map.put("err_msg", errMsg);
-		return map;
-	}
-
 	/**
 	 * Given a file generate the data to update the ePAD database table that contains information about that file.
 	 * 
-	 * @param outputFile File
+	 * @param file File
 	 * @return Map of String to String. The key is the database column name.
 	 */
-	public static Map<String, String> createEPadFilesTableData(File outputFile)
+	public static Map<String, String> createEPadFilesTableData(File file)
 	{
-		FileKey fileKey = new FileKey(outputFile);
+		FileKey fileKey = new FileKey(file);
 		String filePath = fileKey.toString();
-		long fileSize = outputFile.length();
+		long fileSize = file.length();
 		MySqlQueries queries = MySqlInstance.getInstance().getMysqlQueries();
 		String sopInstanceUID = getSOPInstanceUIDFromPath(filePath);
-		int instanceKey = queries.getInstanceKey(sopInstanceUID);
+		int instanceKey = queries.getInstanceKeyForInstance(sopInstanceUID);
 
 		Map<String, String> retVal = new HashMap<String, String>();
 		retVal.put("instance_fk", "" + instanceKey);

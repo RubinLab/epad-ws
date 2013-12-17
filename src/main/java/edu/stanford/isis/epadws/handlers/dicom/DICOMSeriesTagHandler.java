@@ -317,7 +317,6 @@ public class DICOMSeriesTagHandler extends AbstractHandler
 		createDicomTagEntry(sb, attributeList, new AttributeTag(0x0008, 0x103e));// "Series Description"
 		createDicomTagEntry(sb, attributeList, new AttributeTag(0x0020, 0x000e));// "Series Instance UID"
 
-		// logger.info("SeriesTagHandler.getSeriesTags [TEMP]\n"+sb.toString());
 		return sb.toString();
 	}
 
@@ -334,7 +333,6 @@ public class DICOMSeriesTagHandler extends AbstractHandler
 			} else {
 				log.info("[Temp] didn't find tag: " + key);
 			}
-
 		} catch (Exception e) {
 			if (key == null) {
 				key = tag.toString();

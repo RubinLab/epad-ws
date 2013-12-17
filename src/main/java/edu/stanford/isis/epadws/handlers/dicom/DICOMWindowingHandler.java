@@ -133,6 +133,7 @@ public class DICOMWindowingHandler extends AbstractHandler
 		return success;
 	}
 
+	// TODO Clean up this mess
 	private static String getStudyUIDFromRequest(String queryString)
 	{
 		String[] parts = queryString.split("&");

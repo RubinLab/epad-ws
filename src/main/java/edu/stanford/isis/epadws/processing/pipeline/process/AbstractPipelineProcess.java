@@ -26,7 +26,6 @@ import edu.stanford.isis.epadws.processing.pipeline.threads.ShutdownSignal;
  */
 public abstract class AbstractPipelineProcess<V> implements Runnable
 {
-	// ToDo: See if all the <File> references can change to <V> to make it more general.
 	protected static final EPADLogger logger = EPADLogger.getInstance();
 	protected final ShutdownSignal signal = ShutdownSignal.getInstance();
 
@@ -96,7 +95,6 @@ public abstract class AbstractPipelineProcess<V> implements Runnable
 			if (currTask.isDone()) {
 				File currFile = (File)currTask.get();
 				if (currFile == null) {
-					// logger.info("Null returned from " + getProcessName() + ". Don't submit to next queue.");
 					tasksInProgress.remove(currTask);
 					continue;
 				}
@@ -107,7 +105,6 @@ public abstract class AbstractPipelineProcess<V> implements Runnable
 				}
 
 				boolean taken = outQueue.offer(currFile, 500, TimeUnit.MILLISECONDS);
-				// logger.info("Submitting: " + currFile + ", to next queue from " + getProcessName());
 				if (taken) {
 					tasksInProgress.remove(currTask);
 				} else {

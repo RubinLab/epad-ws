@@ -25,11 +25,7 @@ public interface MySqlQueries
 	 * 
 	 * @return a list of studyUIDs.
 	 */
-	List<String> getNewStudiesInDcm4Chee();
-
 	List<String> getNewSeriesInDcm4Chee();
-
-	List<Map<String, String>> getStudiesForStatusInEPadDatabase(int statusCode);
 
 	List<Map<String, String>> getSeriesForStatusInEPadDatabase(int statusCode);
 
@@ -43,23 +39,11 @@ public interface MySqlQueries
 
 	Map<String, String> getParentStudyForSeries(String seriesIUID);
 
-	Map<String, String> getParentSeriesForImage(String sopInstanceUID);
-
 	String getStudyUIDForSeries(String seriesUID);
 
-	String getSeriesUIDForImage(String sopInstanceUID);
-
-	List<String> getSopInstanceUidsForSeries(String seriesIUID);
-
-	List<Map<String, String>> getDICOMImageFileDescriptions(String seriesIUID);
-
-	List<Map<String, String>> getDICOMImageFilesDescriptionsOrdered(String seriesIUID);
+	List<Map<String, String>> getDICOMImageFileDescriptionsForSeries(String seriesIUID);
 
 	Blob getImageBlobDataForSeries(String seriesIUID);
-
-	void updateStudiesStatusCode(int newStatusCode, String studyIUID);
-
-	void updateSeriesStatusCode(int newStatusCode, String seriesIUID);
 
 	void updateSeriesStatusCodeEx(int newStatusCode, String seriesIUID);
 
@@ -69,9 +53,7 @@ public interface MySqlQueries
 	 * <p>
 	 * Each description is a map with keys: sop_iuid, inst_no, series_iuid, filepath, file_size.
 	 */
-	List<Map<String, String>> getUnprocessedDicomImageFileDescriptions(String seriesIUID);
-
-	List<Map<String, String>> getProcessedDICOMImageFileDescriptionsOrdered(String seriesIUID);
+	List<Map<String, String>> getUnprocessedDicomImageFileDescriptionsForSeries(String seriesIUID);
 
 	void insertEpadFile(Map<String, String> data);
 
@@ -79,29 +61,13 @@ public interface MySqlQueries
 
 	void updateEpadFile(String filePath, PngProcessingStatus newStatus, int fileSize, String errorMsg);
 
-	int countEpadFilesLike(String likePath);
-
 	String selectEpadFilePathLike(String sopInstanceUID);
 
 	List<String> selectEpadFilePath();
 
-	float getPercentComplete(String seriesUID);
-
 	List<Map<String, String>> getDicomSeriesOrder(String seriesUID);
 
-	int getStudyKey(String studyUID);
-
-	int getSeriesKey(String seriesUID);
-
-	int getInstanceKey(String sopInstanceUID);
-
-	String getSeriesAttrs(String seriesUID);
-
-	String getInstanceAttrs(String sopInstanceUID);
-
-	byte[] getSeriesAttrsAsBytes(String seriesUID);
-
-	byte[] getInstanceAttrsAsBytes(String sopInstanceUID);
+	int getInstanceKeyForInstance(String sopInstanceUID);
 
 	InputStream getPatientAttrsAsStream(String patId);
 
@@ -109,14 +75,10 @@ public interface MySqlQueries
 
 	InputStream getSeriesAttrsAsStream(String seriesUID);
 
-	InputStream getInstanceAttrsAsStream(String sopInstanceUID);
-
 	void insertEvent(String userName, String event_status, String aim_uid, String aim_name, String patient_id,
 			String patient_name, String template_id, String template_name, String plugin_name);
 
 	List<Map<String, String>> getEventsForUser(String username);
-
-	void deleteEventsForUser(String username);
 
 	/**
 	 * Return the key of a {@link Term}.

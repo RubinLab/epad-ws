@@ -66,19 +66,9 @@ public class DicomImageDescription
 		this.dicomHeaderFilePath = dicomHeaderFilePath;
 	}
 
-	public String getDicomHeaderFilePath()
-	{
-		return dicomHeaderFilePath;
-	}
-
 	public boolean hasError()
 	{
 		return errorMessage != null;
-	}
-
-	public String getErrorMessage()
-	{
-		return errorMessage;
 	}
 
 	/**

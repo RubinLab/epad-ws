@@ -20,6 +20,7 @@ import java.io.OutputStream;
 import javax.imageio.ImageIO;
 import javax.swing.ImageIcon;
 
+import edu.stanford.isis.epad.common.util.EPADLogger;
 /*
  * The JPEGCodec and JPEGImageEncoder are classes that are not
  * to be used to the application software.  They are intended to
@@ -27,10 +28,7 @@ import javax.swing.ImageIcon;
  import com.sun.image.codec.jpeg.JPEGCodec;
  import com.sun.image.codec.jpeg.JPEGImageEncoder;
  */
-
-
 import edu.stanford.isis.epad.common.dicom.DicomFormatUtil;
-import edu.stanford.isis.epad.common.util.EPADLogger;
 
 /**
  * Produce thumbnail images of the DICOM images.
@@ -54,21 +52,7 @@ public class ThumbnailFileUtil
 	{
 		return DicomFormatUtil.createDicomDirPath(studyId) + "/thumbnail_" + DicomFormatUtil.formatUidToDir(seriesId)
 				+ ".jpg";
-	}// createThumbnailPath
-
-	/**
-	 * createJPegPath which is in study, series
-	 * 
-	 * @param studyId String
-	 * @param seriesId String
-	 * @param sopInstanceId String
-	 * @return String
-	 */
-	public static String createJPEGPath(String studyId, String seriesId, String sopInstanceId)
-	{
-		return DicomFormatUtil.createDicomDirPath(studyId, seriesId) + "/" + DicomFormatUtil.formatUidToDir(sopInstanceId)
-				+ ".jpg";
-	}// createJPEGPath
+	}
 
 	/**
 	 * Takes a large jpeg file and reduces the size.

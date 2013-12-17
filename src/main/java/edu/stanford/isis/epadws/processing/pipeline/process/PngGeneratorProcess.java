@@ -14,7 +14,7 @@ import edu.stanford.isis.epadws.processing.pipeline.threads.ShutdownSignal;
 /**
  * Create one or multiple of these processes to listen for PngGeneratorTask on the queue and run them when ready.
  * 
- * NOTE: This has been extended to include Dicom-Segmentation-Object tasks too.
+ * NOTE: This has been extended to include DICOM Segmentation Object tasks too.
  * 
  * @author alansnyder
  */

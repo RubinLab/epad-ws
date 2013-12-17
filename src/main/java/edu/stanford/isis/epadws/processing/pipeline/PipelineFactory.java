@@ -149,9 +149,6 @@ public class PipelineFactory
 		pipelineStatusWatchExec.shutdown();
 		statusCheckService.shutdown();
 		uploadDirWatchExec.shutdown();
-
-		// ?? Do we need this.
-		// processService.shutdown(); //ToDo: uncomment and test.
 	}
 
 	public void printPipelineStats()
