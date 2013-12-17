@@ -112,7 +112,6 @@ public class PNGGridGenerator
 	 */
 	static BufferedImage joinImages(int inputSize, BufferedImage img1, BufferedImage img2)
 	{
-
 		BufferedImage auxImg = new BufferedImage(inputSize, inputSize, BufferedImage.TYPE_INT_ARGB);
 		auxImg.createGraphics().fillRect(0, 0, inputSize - 1, inputSize - 1);
 
@@ -134,7 +133,6 @@ public class PNGGridGenerator
 				auxPixel[2] = pixel2[0]; // blue
 				auxPixel[3] = pixel2[1]; // alpha DOESN'T work, png modifies everything when
 				// we include it, the problem maybe here or in the browser
-
 				auxRaster.setPixel(xAux, yAux, auxPixel);
 			}
 		}
@@ -149,8 +147,7 @@ public class PNGGridGenerator
 	 * @param pngFile
 	 * @throws IOException
 	 */
-	@SuppressWarnings("unused")
-	static private void png2JPG(File pngFile) throws IOException
+	public static void png2JPG(File pngFile) throws IOException
 	{
 		BufferedImage input = ImageIO.read(pngFile);
 

@@ -25,7 +25,7 @@ import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epad.common.util.EPADResources;
 
 /**
- * Holds RSNA search results.
+ * Holds RSNA search results
  */
 public class RsnaSearchResultMap
 {
@@ -43,11 +43,6 @@ public class RsnaSearchResultMap
 	{
 		log = EPADLogger.getInstance();
 		readResultsFiles();
-	}
-
-	public Map<String, String> getResultMap()
-	{
-		return resultMap;
 	}
 
 	public String getDefaultResult()
@@ -193,15 +188,6 @@ public class RsnaSearchResultMap
 	}
 
 	/**
-	 * 
-	 * @return String
-	 */
-	public String debugPrintResultsMap()
-	{
-		return resultMap.toString();
-	}
-
-	/**
 	 * Add a line to all the results.
 	 * 
 	 * @param resultLine String
@@ -240,9 +226,7 @@ public class RsnaSearchResultMap
 	 */
 	private boolean updateRSNAFile(String resultLine)
 	{
-
 		try {
-
 			File rsnaEverythingFile = new File(EPADResources.getEPADWebServerUploadDir() + "rsnaEverything.results");
 			if (!rsnaEverythingFile.exists()) {
 				log.info("WARNING: rsnaEverythingFile not found. Will not add the following line: " + resultLine);
@@ -267,7 +251,5 @@ public class RsnaSearchResultMap
 			log.warning("Failed to update rsnaEverything.results file for: " + e.getMessage(), e);
 			return false;
 		}
-
 	}
-
 }
