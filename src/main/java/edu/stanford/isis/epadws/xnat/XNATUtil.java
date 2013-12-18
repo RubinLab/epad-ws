@@ -93,10 +93,9 @@ public class XNATUtil
 
 		if (xnatStatusCode == HttpServletResponse.SC_OK) {
 			log.info("Successfully invoked XNAT session service");
-			InputStreamReader isr = null;
 			try {
 				StringBuilder sb = new StringBuilder();
-				isr = null;
+				InputStreamReader isr = null;
 				try {
 					isr = new InputStreamReader(postMethod.getResponseBodyAsStream());
 					int read = 0;

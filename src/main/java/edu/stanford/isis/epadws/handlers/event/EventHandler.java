@@ -30,6 +30,7 @@ public class EventHandler extends AbstractHandler
 	private static final String MISSING_QUERY_MESSAGE = "No query in event request";
 	private static final String INVALID_SESSION_TOKEN_MESSAGE = "Session token is invalid on event route";
 
+	// TODO Use session ID rather than username in event table
 	@Override
 	public void handle(String base, Request request, HttpServletRequest httpRequest, HttpServletResponse httpResponse)
 	{
