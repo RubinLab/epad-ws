@@ -28,17 +28,17 @@ import com.pixelmed.dicom.AttributeList;
 import com.pixelmed.dicom.TagFromName;
 import com.pixelmed.display.SourceImage;
 
-import edu.stanford.hakan.aim3api.base.AimException;
-import edu.stanford.hakan.aim3api.base.DICOMImageReference;
-import edu.stanford.hakan.aim3api.base.ImageAnnotation;
-import edu.stanford.hakan.aim3api.base.ImageSeries;
-import edu.stanford.hakan.aim3api.base.ImageStudy;
-import edu.stanford.hakan.aim3api.base.Person;
-import edu.stanford.hakan.aim3api.base.Polyline;
-import edu.stanford.hakan.aim3api.base.Segmentation;
-import edu.stanford.hakan.aim3api.base.SegmentationCollection;
-import edu.stanford.hakan.aim3api.base.TwoDimensionSpatialCoordinate;
-import edu.stanford.hakan.aim3api.usage.AnnotationBuilder;
+import edu.stanford.hakan.aim4api.base.AimException;
+import edu.stanford.hakan.aim4api.base.DicomImageReferenceEntity;
+import edu.stanford.hakan.aim4api.base.II;
+import edu.stanford.hakan.aim4api.base.ImageAnnotation;
+import edu.stanford.hakan.aim4api.base.ImageAnnotationCollection;
+import edu.stanford.hakan.aim4api.base.ImageSeries;
+import edu.stanford.hakan.aim4api.base.ImageStudy;
+import edu.stanford.hakan.aim4api.base.Person;
+import edu.stanford.hakan.aim4api.base.ST;
+import edu.stanford.hakan.aim4api.base.TwoDimensionPolyline;
+import edu.stanford.hakan.aim4api.usage.AnnotationBuilder;
 import edu.stanford.isis.epad.common.dicom.DicomSegmentationObject;
 import edu.stanford.isis.epad.common.dicom.DicomTagFileUtils;
 import edu.stanford.isis.epad.common.pixelmed.PixelMedUtils;
@@ -177,56 +177,53 @@ public class DicomSegmentationObjectPNGMaskGeneratorTask implements GeneratorTas
 		logger.info("Referenced SOP Instance UID=" + referencedSOPInstanceUID);
 		logger.info("Referenced Series Instance UID=" + referencedSeriesInstanceUID);
 
-		ImageAnnotation imageAnnotation = new ImageAnnotation(0, "", "2012-10-17T10:22:40", "segmentation", "SEG",
-				"SEG Only", "", "", "");
+		ImageAnnotation imageAnnotation = new ImageAnnotation();
+		// TODO AIM ImageAnnotation imageAnnotation = new ImageAnnotation(0, "", "2012-10-17T10:22:40", "segmentation",
+		// "SEG", "SEG Only", "", "", "");
 
-		SegmentationCollection sc = new SegmentationCollection();
-		sc.AddSegmentation(new Segmentation(0, dsoSopInstanceUID, sopClassUID, referencedSOPInstanceUID, 1));
-		imageAnnotation.setSegmentationCollection(sc);
+		// TODO AIM sc.AddSegmentation(new Segmentation(0, dsoSopInstanceUID, sopClassUID, referencedSOPInstanceUID, 1));
+		// TODO AIM imageAnnotation.setSegmentationCollection(sc);
 
-		DICOMImageReference dicomImageReference = new DICOMImageReference();
-		dicomImageReference.setCagridId(0);
+		DicomImageReferenceEntity dicomImageReference = new DicomImageReferenceEntity();
 
 		ImageStudy imageStudy = new ImageStudy();
-		imageStudy.setCagridId(0);
-		imageStudy.setInstanceUID(referencedStudyInstanceUID);
+		II ii = new II(referencedStudyInstanceUID);
+		imageStudy.setInstanceUid(ii);
 		imageStudy.setStartDate("2012-01-16T00:00:00");
 		imageStudy.setStartTime("12:45:34");
 
 		ImageSeries imageSeries = new ImageSeries();
-		imageSeries.setCagridId(0);
-		imageSeries.setInstanceUID(referencedSeriesInstanceUID);
+		// TODO AIM imageSeries.setInstanceUID(referencedSeriesInstanceUID);
 
-		edu.stanford.hakan.aim3api.base.Image image = new edu.stanford.hakan.aim3api.base.Image();
-		image.setCagridId(0);
-		image.setSopClassUID("112233"); // TODO
-		image.setSopInstanceUID(referencedSOPInstanceUID);
+		edu.stanford.hakan.aim4api.base.Image image = new edu.stanford.hakan.aim4api.base.Image();
+		// TODO AIM image.setSopClassUID("112233"); // TODO
+		// TODO AIM image.setSop (referencedSOPInstanceUID);
 
 		imageSeries.addImage(image); // Add Image to ImageSeries
 		imageStudy.setImageSeries(imageSeries); // Add ImageSeries to ImageStudy
 		dicomImageReference.setImageStudy(imageStudy); // Add ImageStudy to ImageReference
-		imageAnnotation.addImageReference(dicomImageReference); // Add DicomImageReference to ImageAnnotation
+		imageAnnotation.addImageReferenceEntity(dicomImageReference); // Add DicomImageReference to ImageAnnotation
 
-		Polyline polyline = new Polyline();
-		polyline.setCagridId(0);
+		// Need to add shapte to make legitimate AIM file 1 geometirc shape or image observation
+		TwoDimensionPolyline polyline = new TwoDimensionPolyline();
 		polyline.setIncludeFlag(false);
 		polyline.setShapeIdentifier(0);
-		polyline.addSpatialCoordinate(new TwoDimensionSpatialCoordinate(0, 0, "0", 0, 2693.0, 1821.0));
-		polyline.addSpatialCoordinate(new TwoDimensionSpatialCoordinate(0, 1, "0", 0, 3236.0, 1821.0));
-		polyline.addSpatialCoordinate(new TwoDimensionSpatialCoordinate(0, 2, "0", 0, 3236.0, 2412.0));
-		polyline.addSpatialCoordinate(new TwoDimensionSpatialCoordinate(0, 3, "0", 0, 2693.0, 2412.0));
-		polyline.setLineStyle("lineStyle");
-		imageAnnotation.addGeometricShape(polyline);
+		imageAnnotation.addMarkupEntity(polyline);
 
 		Person person = new Person();
-		person.setSex("F");
-		person.setBirthDate("1965-02-12T00:00:00");
-		person.setId(patientID);
-		person.setName(patientName);
-		person.setCagridId(0);
-		imageAnnotation.addPerson(person);
+		ST name = new ST(patientName);
+		person.setName(name);
+		ST sex = new ST("F"); // TOD Pull from original AIM
+		person.setSex(sex);
+		// TODO AIM person.setBirthDate("1965-02-12T00:00:00");
+		// TODO AIM person.setId(patientID);
+		// TODO AIM person.setName(patientName);
+		// TODO AIM person.setCagridId(0);
+		// TODO AIM imageAnnotation.addPerson(person);
 
-		logger.info("Saving AIM file to server " + imageAnnotation.getUniqueIdentifier());
+		// TODO AIM logger.info("Saving AIM file to server " + imageAnnotation.getUniqueIdentifier());
+		// TODO AIM
+
 		try {
 			saveImageAnnotationToServer(imageAnnotation);
 		} catch (AimException e) {
@@ -369,28 +366,30 @@ public class DicomSegmentationObjectPNGMaskGeneratorTask implements GeneratorTas
 		return "DicomSegmentationObject";
 	}
 
+	// TODO AIM
+
 	private String saveImageAnnotationToServer(ImageAnnotation aim) throws AimException
 	{
 		String res = "";
+		ImageAnnotationCollection aic = new ImageAnnotationCollection(); // TODO Probably pass these around
+		aic.addImageAnnotation(aim);
 
-		if (aim.getCodeValue() != null) { // First, write a backup file
-			String tempXmlPath = this.baseAnnotationDir + "temp-" + aim.getUniqueIdentifier() + ".xml";
-			String storeXmlPath = this.baseAnnotationDir + aim.getUniqueIdentifier() + ".xml";
-			File tempFile = new File(tempXmlPath);
-			File storeFile = new File(storeXmlPath);
-			AnnotationBuilder.saveToFile(aim, tempXmlPath, xsdFilePath);
-			res = AnnotationBuilder.getAimXMLsaveResult();
-			logger.info("AnnotationBuilder.saveToFile result: " + res);
-			if (storeFile.exists()) {
-				storeFile.delete();
-			}
-			tempFile.renameTo(storeFile);
-
-			AnnotationBuilder.saveToServer(aim, eXistServerUrl, namespace, eXistCollection, xsdFilePath, eXistUsername,
-					eXistPassword);
-			res = AnnotationBuilder.getAimXMLsaveResult();
-			logger.info("AnnotationBuilder.saveToServer result: " + res);
+		String tempXmlPath = this.baseAnnotationDir + "temp-" + aim.getUniqueIdentifier() + ".xml";
+		String storeXmlPath = this.baseAnnotationDir + aim.getUniqueIdentifier() + ".xml";
+		File tempFile = new File(tempXmlPath);
+		File storeFile = new File(storeXmlPath);
+		AnnotationBuilder.saveToFile(aic, tempXmlPath, xsdFilePath);
+		res = AnnotationBuilder.getAimXMLsaveResult();
+		logger.info("AnnotationBuilder.saveToFile result: " + res);
+		if (storeFile.exists()) {
+			storeFile.delete();
 		}
+		tempFile.renameTo(storeFile);
+
+		AnnotationBuilder.saveToServer(aic, eXistServerUrl, namespace, eXistCollection, xsdFilePath, eXistUsername,
+				eXistPassword);
+		res = AnnotationBuilder.getAimXMLsaveResult();
+		logger.info("AnnotationBuilder.saveToServer result: " + res);
 		return res;
 	}
 

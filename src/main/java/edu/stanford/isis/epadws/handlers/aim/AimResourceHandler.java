@@ -39,10 +39,10 @@ import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
-import edu.stanford.hakan.aim3api.base.AimException;
-import edu.stanford.hakan.aim3api.base.ImageAnnotation;
-import edu.stanford.hakan.aim3api.usage.AnnotationBuilder;
-import edu.stanford.hakan.aim3api.usage.AnnotationGetter;
+import edu.stanford.hakan.aim4api.base.AimException;
+import edu.stanford.hakan.aim4api.base.ImageAnnotationCollection;
+import edu.stanford.hakan.aim4api.usage.AnnotationBuilder;
+import edu.stanford.hakan.aim4api.usage.AnnotationGetter;
 import edu.stanford.isis.epad.common.plugins.PluginConfig;
 import edu.stanford.isis.epad.common.util.EPADConfig;
 import edu.stanford.isis.epad.common.util.EPADLogger;
@@ -161,8 +161,8 @@ public class AimResourceHandler extends AbstractHandler
 			id2 = patientIDString[1];
 			user = userString[1];
 		}
-		ArrayList<ImageAnnotation> aims = getAIMImageAnnotations(id1, id2, user);
-		logger.info("AimResourceHandler, number of AIM files found: " + aims.size());
+		List<ImageAnnotationCollection> aicl = getAIMImageAnnotationCollection(id1, id2, user);
+		logger.info("AimResourceHandler, number of AIM files found: " + aicl.size());
 
 		DocumentBuilderFactory dbfac = DocumentBuilderFactory.newInstance();
 		DocumentBuilder docBuilder = dbfac.newDocumentBuilder();
@@ -170,8 +170,8 @@ public class AimResourceHandler extends AbstractHandler
 		Element root = doc.createElement("imageAnnotations");
 		doc.appendChild(root);
 
-		for (ImageAnnotation aim : aims) {
-			Node node = aim.getXMLNode(docBuilder.newDocument());
+		for (ImageAnnotationCollection aic : aicl) {
+			Node node = aic.getXMLNode(docBuilder.newDocument());
 			Node copyNode = doc.importNode(node, true);
 			Element res = (Element)copyNode; // Copy the node
 			res.setAttributeNS("http://www.w3.org/2000/xmlns/", "xmlns:rdf", "http://www.w3.org/1999/02/22-rdf-syntax-ns#");
@@ -220,11 +220,12 @@ public class AimResourceHandler extends AbstractHandler
 				}
 			}
 			responseStream.print("added (" + fileCount + "): " + name);
-			ImageAnnotation ia = AnnotationGetter.getImageAnnotationFromFile(f.getAbsolutePath(), xsdFilePath);
-			if (ia != null) {
+			ImageAnnotationCollection iac = AnnotationGetter.getImageAnnotationCollectionFromFile(f.getAbsolutePath(),
+					xsdFilePath);
+			if (iac != null) {
 				String jsessionID = XNATUtil.getJSessionIDFromRequest(httpRequest);
-				saveImageAnnotationToServer(ia, jsessionID);
-				responseStream.println("-- Add to AIM server: " + ia.getUniqueIdentifier() + "<br>");
+				saveImageAnnotationToServer(iac, jsessionID);
+				responseStream.println("-- Add to AIM server: " + iac.getUniqueIdentifier() + "<br>");
 			} else {
 				responseStream.println("-- Failed ! not added to AIM server<br>");
 				saveError = true;
@@ -239,79 +240,75 @@ public class AimResourceHandler extends AbstractHandler
 	 * 
 	 * @return ArrayList<ImageAnnotation>
 	 */
-	private ArrayList<ImageAnnotation> getAIMImageAnnotations(String id1, String id2, String user)
+	private List<ImageAnnotationCollection> getAIMImageAnnotationCollection(String id1, String id2, String user)
 	{
-		ArrayList<ImageAnnotation> retAims = new ArrayList<ImageAnnotation>();
-		List<ImageAnnotation> aims = null;
-		ImageAnnotation aim = null;
+		List<ImageAnnotationCollection> aicl = new ArrayList<ImageAnnotationCollection>();
+		List<ImageAnnotationCollection> retAims = new ArrayList<ImageAnnotationCollection>();
+		ImageAnnotationCollection aic = new ImageAnnotationCollection();
 
 		if (id1.equals("personName")) {
 			String personName = id2;
-			try {
-				aims = AnnotationGetter.getImageAnnotationsFromServerByPersonNameEqual(serverUrl, namespace, collection,
-						username, password, personName, xsdFilePath);
 
+			try {
+				aicl = AnnotationGetter.getImageAnnotationCollectionByPersonNameEqual(serverUrl, namespace, collection,
+						username, password, personName);
 			} catch (AimException e) {
 				logger.warning("Exception on AnnotationGetter.getImageAnnotationsFromServerByPersonNameEqual " + personName, e);
 			}
-			if (aims != null) {
-				retAims.addAll(aims);
+
+			if (aicl != null) {
+				retAims.addAll(aicl);
 			}
 		} else if (id1.equals("patientId")) {
 			String patientId = id2;
 			try {
-				/*
-				 * aims = AnnotationGetter.getImageAnnotationsFromServerByPersonIdEqual(serverUrl, namespace, collection,
-				 * username, password, patientId, xsdFilePath);
-				 */
-				aims = AnnotationGetter.getImageAnnotationsFromServerByPersonIDAndUserNameEqual(serverUrl, namespace,
-						collection, username, password, patientId, user, xsdFilePath);
+				aicl = AnnotationGetter.getImageAnnotationCollectionByPersonIdEqual(serverUrl, namespace, collection, username,
+						password, patientId);
 			} catch (AimException e) {
 				logger.warning("Exception on AnnotationGetter.getImageAnnotationsFromServerByPersonIdEqual " + patientId, e);
 			}
-			if (aims != null) {
-				retAims.addAll(aims);
+
+			if (aicl != null) {
+				retAims.addAll(aicl);
 			}
 		} else if (id1.equals("seriesUID")) {
 			String seriesUID = id2;
-			try {
-				aims = AnnotationGetter.getImageAnnotationsFromServerByImageSeriesInstanceUIDEqual(serverUrl, namespace,
-						collection, username, password, seriesUID, xsdFilePath);
-			} catch (AimException e) {
-				logger.warning("Exception on AnnotationGetter.getImageAnnotationsFromServerByImageSeriesInstanceUIDEqual "
-						+ seriesUID, e);
-			}
-			if (aims != null) {
-				retAims.addAll(aims);
+			// try {
+			// aicl = AnnotationGetter.getImageAnnotationCollectionByImageSeriesInstanceUIDEqual(serverUrl, namespace,
+			// collection, username, password, seriesUID);
+			// } catch (AimException e) {
+			// logger.warning("Exception on AnnotationGetter.getImageAnnotationsFromServerByImageSeriesInstanceUIDEqual "
+			// + seriesUID, e);
+			// }
+			if (aicl != null) {
+				retAims.addAll(aicl);
 			}
 		} else if (id1.equals("annotationUID")) {
 			String annotationUID = id2;
 			if (id2.equals("all")) {
 
-				// String query = "SELECT FROM " + collection + " WHERE (ImageAnnotation.cagridId like '0')";
+				String query = "SELECT FROM " + collection + " WHERE (ImageAnnotation.cagridId like '0')";
 				try {
-					aims = AnnotationGetter.getImageAnnotationsFromServerByUserLoginNameContains(serverUrl, namespace,
-							collection, username, password, user);
-					/*
-					 * aims = AnnotationGetter.getImageAnnotationsFromServerWithAimQuery(serverUrl, namespace, username, password,
-					 * query, xsdFilePath);
-					 */
+					aicl = AnnotationGetter.getImageAnnotationCollectionByUserLoginNameContains(serverUrl, namespace, collection,
+							username, password, user);
+					aicl = AnnotationGetter.getWithAimQuery(serverUrl, namespace, username, password, query, xsdFilePath);
 				} catch (AimException e) {
 					logger.warning("Exception on AnnotationGetter.getImageAnnotationsFromServerWithAimQuery ", e);
 				}
-				if (aims != null) {
-					retAims.addAll(aims);
+
+				if (aicl != null) {
+					retAims.addAll(aicl);
 				}
 			} else {
 				try {
-					aim = AnnotationGetter.getImageAnnotationFromServerByUniqueIdentifier(serverUrl, namespace, collection,
-							username, password, annotationUID, xsdFilePath);
+					aic = AnnotationGetter.getImageAnnotationCollectionByUniqueIdentifier(serverUrl, namespace, collection,
+							username, password, annotationUID);
 				} catch (AimException e) {
 					logger.warning("Exception on AnnotationGetter.getImageAnnotationFromServerByUniqueIdentifier "
 							+ annotationUID, e);
 				}
-				if (aim != null) {
-					retAims.add(aim);
+				if (aicl != null) {
+					retAims.add(aic);
 				}
 			}
 		} else if (id1.equals("deleteUID")) {
@@ -333,63 +330,66 @@ public class AimResourceHandler extends AbstractHandler
 	 * @return String
 	 * @throws AimException
 	 */
-	private String saveImageAnnotationToServer(ImageAnnotation aim, String jsessionID) throws AimException
+	// TODO AIM
+
+	private String saveImageAnnotationToServer(ImageAnnotationCollection aic, String jsessionID) throws AimException
 	{
 		String result = "";
 
-		if (aim.getCodeValue() != null) { // For safety, write a backup file
-			String tempXmlPath = this.baseAnnotationDir + "temp-" + aim.getUniqueIdentifier() + ".xml";
-			String storeXmlPath = this.baseAnnotationDir + aim.getUniqueIdentifier() + ".xml";
-			File tempFile = new File(tempXmlPath);
-			File storeFile = new File(storeXmlPath);
-			AnnotationBuilder.saveToFile(aim, tempXmlPath, xsdFilePath);
+		String tempXmlPath = this.baseAnnotationDir + "temp-" + aic.getUniqueIdentifier() + ".xml";
+		String storeXmlPath = this.baseAnnotationDir + aic.getUniqueIdentifier() + ".xml";
+		File tempFile = new File(tempXmlPath);
+		File storeFile = new File(storeXmlPath);
+		AnnotationBuilder.saveToFile(aic, tempXmlPath, xsdFilePath);
 
-			logger.info("Saving AIM file with ID " + aim.getUniqueIdentifier());
+		logger.info("Saving AIM file with ID " + aic.getUniqueIdentifier());
 
-			result = AnnotationBuilder.getAimXMLsaveResult();
+		result = AnnotationBuilder.getAimXMLsaveResult();
 
-			logger.info("AnnotationBuilder.saveToFile result: " + result);
-			if (storeFile.exists()) {
-				storeFile.delete();
-			}
-			tempFile.renameTo(storeFile);
+		logger.info("AnnotationBuilder.saveToFile result: " + result);
+		if (storeFile.exists()) {
+			storeFile.delete();
+		}
+		tempFile.renameTo(storeFile);
 
-			AnnotationBuilder.saveToServer(aim, serverUrl, namespace, collection, xsdFilePath, username, password);
-			result = AnnotationBuilder.getAimXMLsaveResult();
-			logger.info("AnnotationBuilder.saveToServer result: " + result);
+		AnnotationBuilder.saveToServer(aic, serverUrl, namespace, collection, xsdFilePath, username, password);
+		result = AnnotationBuilder.getAimXMLsaveResult();
+		logger.info("AnnotationBuilder.saveToServer result: " + result);
 
-			if (aim.getCodingSchemeDesignator().equals("epad-plugin")) { // Which template has been used to fill the AIM file
-				String templateName = aim.getCodeValue(); // ex: jjv-5
-				logger.info("Found an AIM plugin template with name " + templateName + " and AIM ID "
-						+ aim.getUniqueIdentifier());
-				boolean templateHasBeenFound = false;
-				String handlerName = null;
-				String pluginName = null;
+		// TODO AIM if (aic.getCodingSchemeDesignator().equals("epad-plugin")) { // Which template has been used to fill the
+		// AIM file
+		if (true) {
+			// TODO AIM String templateName = aic.getCodeValue(); // ex: jjv-5
+			String templateName = "";
+			logger
+					.info("Found an AIM plugin template with name " + templateName + " and AIM ID " + aic.getUniqueIdentifier());
+			boolean templateHasBeenFound = false;
+			String handlerName = null;
+			String pluginName = null;
 
-				List<String> list = PluginConfig.getInstance().getPluginTemplateList();
-				for (int i = 0; i < list.size(); i++) {
-					String templateNameFounded = list.get(i);
-					if (templateNameFounded.equals(templateName)) {
-						handlerName = PluginConfig.getInstance().getPluginHandlerList().get(i);
-						pluginName = PluginConfig.getInstance().getPluginNameList().get(i);
-						templateHasBeenFound = true;
-					}
+			List<String> list = PluginConfig.getInstance().getPluginTemplateList();
+			for (int i = 0; i < list.size(); i++) {
+				String templateNameFounded = list.get(i);
+				if (templateNameFounded.equals(templateName)) {
+					handlerName = PluginConfig.getInstance().getPluginHandlerList().get(i);
+					pluginName = PluginConfig.getInstance().getPluginNameList().get(i);
+					templateHasBeenFound = true;
 				}
+			}
 
-				if (templateHasBeenFound) {
-					HttpClient client = new HttpClient();
-					String url = "http://localhost:8080/plugin/" + pluginName + "/?aimFile=" + aim.getUniqueIdentifier();
-					logger.info("Triggering ePAD plugin at " + url + ", handler name " + handlerName);
-					GetMethod method = new GetMethod(url);
-					method.setRequestHeader("Cookie", "JSESSIONID=" + jsessionID);
-					try {
-						int statusCode = client.executeMethod(method);
-						logger.info("Status code returned from plugin " + statusCode);
-					} catch (HttpException e) {
-						logger.warning("HTTP error calling plugin ", e);
-					} catch (IOException e) {
-						logger.warning("IO exception calling plugin ", e);
-					}
+			if (templateHasBeenFound) {
+				HttpClient client = new HttpClient();
+				String url = "http://localhost:8080/plugin/" + pluginName + "/?aimFile=" + aic.getUniqueIdentifier();
+				logger.info("Triggering ePAD plugin at " + url + ", handler name " + handlerName);
+				GetMethod method = new GetMethod(url);
+				method.setRequestHeader("Cookie", "JSESSIONID=" + jsessionID);
+				try {
+					int statusCode = client.executeMethod(method);
+					logger.info("Status code returned from plugin " + statusCode);
+				} catch (HttpException e) {
+					logger.warning("HTTP error calling plugin ", e);
+				} catch (IOException e) {
+					logger.warning("IO exception calling plugin ", e);
 				}
 			}
 		}
@@ -405,7 +405,8 @@ public class AimResourceHandler extends AbstractHandler
 		try {
 			// AnnotationGetter.deleteImageAnnotationFromServer(serverUrl, namespace, collection, xsdFilePath,username,
 			// password, uid);
-			AnnotationGetter.removeImageAnnotationFromServer(serverUrl, namespace, collection, username, password, uid);
+			// TODO AIM AnnotationGetter.removeImageAnnotationFromServer(serverUrl, namespace, collection, username, password,
+			// uid);
 
 			logger.info("after deletion on : " + uid);
 
