@@ -18,8 +18,8 @@ import edu.stanford.isis.epad.common.dicom.DicomFormatUtil;
 import edu.stanford.isis.epad.common.dicom.DicomImageDescriptionSearchResult;
 import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epad.common.util.JsonHelper;
-import edu.stanford.isis.epadws.processing.persistence.MySqlInstance;
-import edu.stanford.isis.epadws.processing.persistence.MySqlQueries;
+import edu.stanford.isis.epadws.persistence.Database;
+import edu.stanford.isis.epadws.persistence.DatabaseOperations;
 import edu.stanford.isis.epadws.xnat.XNATUtil;
 
 /**
@@ -43,7 +43,7 @@ import edu.stanford.isis.epadws.xnat.XNATUtil;
  * To test:
  * <p>
  * <code>
- * curl -b JSESSIONID=<id> -X GET "http://[host]:[port]/seriesorderj/?series_iuid=1.2.840.113619.2.55.3.25168424.5576.1168603848.697"
+ * curl -b JSESSIONID=<id> -X GET "http://[host]:[port]/epad/seriesorderj/?series_iuid=1.2.840.113619.2.55.3.25168424.5576.1168603848.697"
  * </code>
  */
 public class DICOMSeriesOrderHandler extends AbstractHandler
@@ -93,7 +93,7 @@ public class DICOMSeriesOrderHandler extends AbstractHandler
 
 	private void peformDICOMSeriesDescriptionQuery(PrintWriter outputStream, String seriesIUID)
 	{
-		MySqlQueries queries = MySqlInstance.getInstance().getMysqlQueries();
+		DatabaseOperations queries = Database.getInstance().getDatabaseOperations();
 		List<Map<String, String>> orderQueryEntries = queries.getDicomSeriesOrder(seriesIUID);
 		List<DicomImageDescriptionSearchResult> imageDescriptions = new ArrayList<DicomImageDescriptionSearchResult>();
 

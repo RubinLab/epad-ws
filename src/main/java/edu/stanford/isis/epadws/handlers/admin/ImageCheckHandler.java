@@ -16,8 +16,8 @@ import org.eclipse.jetty.server.handler.AbstractHandler;
 
 import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epad.common.util.JsonHelper;
-import edu.stanford.isis.epadws.processing.persistence.MySqlInstance;
-import edu.stanford.isis.epadws.processing.persistence.MySqlQueries;
+import edu.stanford.isis.epadws.persistence.DatabaseOperations;
+import edu.stanford.isis.epadws.persistence.Database;
 import edu.stanford.isis.epadws.processing.pipeline.watcher.QueueAndWatcherManager;
 import edu.stanford.isis.epadws.xnat.XNATUtil;
 
@@ -84,8 +84,8 @@ public class ImageCheckHandler extends AbstractHandler
 
 	private void verifyImageGeneration(PrintWriter responseStream) throws SQLException, IOException
 	{
-		final MySqlQueries dbQueries = MySqlInstance.getInstance().getMysqlQueries();
-		final List<String> seriesIUIDs = dbQueries.getNewSeriesInDcm4Chee();
+		final DatabaseOperations dbQueries = Database.getInstance().getDatabaseOperations();
+		final List<String> seriesIUIDs = dbQueries.getNewSeries();
 		List<Map<String, String>> allUnprocessedDICOMImageFileDescriptions = new ArrayList<Map<String, String>>();
 
 		int numberOfSeriesWithMissingEPADDatabaseEntry = 0;

@@ -7,8 +7,8 @@ import org.restlet.data.Status;
 import org.restlet.resource.Get;
 
 import edu.stanford.isis.epad.common.dicom.DicomFormatUtil;
-import edu.stanford.isis.epadws.processing.persistence.MySqlInstance;
-import edu.stanford.isis.epadws.processing.persistence.MySqlQueries;
+import edu.stanford.isis.epadws.persistence.DatabaseOperations;
+import edu.stanford.isis.epadws.persistence.Database;
 
 /**
  * Create and "order-file" by calling the MySql database. It will look like the following (to be compatible with the
@@ -77,7 +77,7 @@ public class DICOMSeriesDescriptionServerResource extends BaseServerResource
 
 		out.append("filename,order,Slice Location,Content Time\n");
 
-		MySqlQueries queries = MySqlInstance.getInstance().getMysqlQueries();
+		DatabaseOperations queries = Database.getInstance().getDatabaseOperations();
 
 		List<Map<String, String>> orderQueryEntires = queries.getDicomSeriesOrder(seriesIUID);
 

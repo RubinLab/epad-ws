@@ -16,6 +16,7 @@ import org.eclipse.jetty.server.handler.AbstractHandler;
 
 import edu.stanford.isis.epad.common.util.EPADConfig;
 import edu.stanford.isis.epad.common.util.EPADLogger;
+import edu.stanford.isis.epadws.xnat.XNATUtil;
 
 /**
  * WADO Handler
@@ -28,7 +29,7 @@ public class WadoHandler extends AbstractHandler
 	private static final String INTERNAL_EXCEPTION_MESSAGE = "Internal error in WADO route";
 	private static final String MISSING_QUERY_MESSAGE = "No query in WADO request";
 
-	// private static final String INVALID_SESSION_TOKEN_MESSAGE = "Session token is invalid in WADO route";
+	private static final String INVALID_SESSION_TOKEN_MESSAGE = "Session token is invalid in WADO route";
 
 	@Override
 	public void handle(String s, Request request, HttpServletRequest httpRequest, HttpServletResponse httpResponse)
@@ -49,8 +50,7 @@ public class WadoHandler extends AbstractHandler
 		try {
 			responseStream = httpResponse.getOutputStream();
 
-			// if (XNATUtil.hasValidXNATSessionID(httpRequest)) {
-			if (1 < 2) { // TODO Temporarily turn off authentication on this route.
+			if (XNATUtil.hasValidXNATSessionID(httpRequest)) {
 				String queryString = httpRequest.getQueryString();
 				queryString = URLDecoder.decode(queryString, "UTF-8");
 				if (queryString != null) {
@@ -62,10 +62,9 @@ public class WadoHandler extends AbstractHandler
 					statusCode = HttpServletResponse.SC_BAD_REQUEST;
 				}
 				responseStream.flush();
-				// } else {
-				// log.info(INVALID_SESSION_TOKEN_MESSAGE);
-				// statusCode = HttpServletResponse.SC_UNAUTHORIZED;
-				// }
+			} else {
+				log.info(INVALID_SESSION_TOKEN_MESSAGE);
+				statusCode = HttpServletResponse.SC_UNAUTHORIZED;
 			}
 		} catch (Throwable t) {
 			log.severe(INTERNAL_EXCEPTION_MESSAGE, t);

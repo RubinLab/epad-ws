@@ -8,11 +8,11 @@ import java.util.Map;
 
 import edu.stanford.isis.epad.common.util.EPADFileUtils;
 import edu.stanford.isis.epad.common.util.EPADLogger;
+import edu.stanford.isis.epadws.persistence.Dcm4CheeDatabaseUtils;
+import edu.stanford.isis.epadws.persistence.DatabaseOperations;
+import edu.stanford.isis.epadws.persistence.Database;
 import edu.stanford.isis.epadws.processing.model.PNGGridGenerator;
 import edu.stanford.isis.epadws.processing.model.PngProcessingStatus;
-import edu.stanford.isis.epadws.processing.persistence.Dcm4CheeDatabaseUtils;
-import edu.stanford.isis.epadws.processing.persistence.MySqlInstance;
-import edu.stanford.isis.epadws.processing.persistence.MySqlQueries;
 
 /**
  * Given a set of PNG files, generate a single PNG containing a grid of these files.
@@ -44,7 +44,7 @@ public class PNGGridGeneratorTask implements GeneratorTask
 
 	private void writePNGGridFile()
 	{
-		MySqlQueries queries = MySqlInstance.getInstance().getMysqlQueries();
+		DatabaseOperations queries = Database.getInstance().getDatabaseOperations();
 		Map<String, String> epadFilesTable = new HashMap<String, String>();
 		try {
 			logger.info("PNGGridGeneratorTask: creating PNG grid file: " + outputPNGFile.getAbsolutePath());

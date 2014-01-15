@@ -5,8 +5,8 @@ import java.util.Map;
 import java.util.Set;
 
 import edu.stanford.isis.epad.common.util.EPADLogger;
-import edu.stanford.isis.epadws.processing.persistence.MySqlInstance;
-import edu.stanford.isis.epadws.processing.persistence.MySqlQueries;
+import edu.stanford.isis.epadws.persistence.DatabaseOperations;
+import edu.stanford.isis.epadws.persistence.Database;
 
 /**
  * A connection test for DCM4CHEE MySQL database.
@@ -25,7 +25,7 @@ public class DcmDbTester
 	public static void main(String[] args)
 	{
 		try {
-			MySqlInstance mySqlInstance = MySqlInstance.getInstance();
+			Database mySqlInstance = Database.getInstance();
 			mySqlInstance.startup();
 
 			logConnectionStatus();
@@ -44,7 +44,7 @@ public class DcmDbTester
 			logger.warning("  ", e);
 			e.printStackTrace();
 		} finally {
-			MySqlInstance.getInstance().shutdown();
+			Database.getInstance().shutdown();
 		}
 	}
 
@@ -56,8 +56,8 @@ public class DcmDbTester
 		try {
 			logger.info("######## Start test #2 - basic search ########");
 
-			MySqlQueries mySqlQueries = MySqlInstance.getInstance().getMysqlQueries();
-			List<Map<String, String>> results = mySqlQueries.doStudySearchInDcm4Chee("patientName", "*");
+			DatabaseOperations mySqlQueries = Database.getInstance().getDatabaseOperations();
+			List<Map<String, String>> results = mySqlQueries.studySearch("patientName", "*");
 
 			String[] keys = { "study_iuid", "pat_id", "modality", "study_datetime", "pat_name" };
 			StringBuilder sb = new StringBuilder("Study Results \n");
@@ -91,8 +91,8 @@ public class DcmDbTester
 		try {
 			logger.info("######## Start test #3 - wildcard search ########");
 
-			MySqlQueries mySqlQueries = MySqlInstance.getInstance().getMysqlQueries();
-			List<Map<String, String>> results = mySqlQueries.doStudySearchInDcm4Chee("patientName", "A*");
+			DatabaseOperations mySqlQueries = Database.getInstance().getDatabaseOperations();
+			List<Map<String, String>> results = mySqlQueries.studySearch("patientName", "A*");
 
 			String[] keys = { "study_iuid", "pat_id", "modality", "study_datetime", "pat_name" };
 			StringBuilder sb = new StringBuilder("Study Results \n");
@@ -125,9 +125,9 @@ public class DcmDbTester
 		try {
 			logger.info("######## Start test #4 - case insensitive search ########");
 
-			MySqlQueries mySqlQueries = MySqlInstance.getInstance().getMysqlQueries();
-			List<Map<String, String>> resultsUpperCase = mySqlQueries.doStudySearchInDcm4Chee("patientName", "A*");
-			List<Map<String, String>> resultsLowerCase = mySqlQueries.doStudySearchInDcm4Chee("patientName", "a*");
+			DatabaseOperations mySqlQueries = Database.getInstance().getDatabaseOperations();
+			List<Map<String, String>> resultsUpperCase = mySqlQueries.studySearch("patientName", "A*");
+			List<Map<String, String>> resultsLowerCase = mySqlQueries.studySearch("patientName", "a*");
 
 			if (resultsUpperCase.size() != resultsLowerCase.size()) {
 				logger.info("FAILED: Case insensitive search test." + " upper-case=" + resultsUpperCase.size() + " lower-case="
@@ -149,8 +149,8 @@ public class DcmDbTester
 		try {
 			logger.info("######## Start test #5 - patient id search ########");
 
-			MySqlQueries mySqlQueries = MySqlInstance.getInstance().getMysqlQueries();
-			List<Map<String, String>> results = mySqlQueries.doStudySearchInDcm4Chee("patientId", "2228*");
+			DatabaseOperations mySqlQueries = Database.getInstance().getDatabaseOperations();
+			List<Map<String, String>> results = mySqlQueries.studySearch("patientId", "2228*");
 			String[] keys = { "study_iuid", "pat_id", "modality", "study_datetime", "pat_name" };
 			StringBuilder sb = new StringBuilder("Study Results \n");
 			int resultIndex = 1;
@@ -177,8 +177,8 @@ public class DcmDbTester
 		try {
 			logger.info("######## Start test #6 - exam-type search ########");
 
-			MySqlQueries mySqlQueries = MySqlInstance.getInstance().getMysqlQueries();
-			List<Map<String, String>> results = mySqlQueries.doStudySearchInDcm4Chee("examType", "DX");
+			DatabaseOperations mySqlQueries = Database.getInstance().getDatabaseOperations();
+			List<Map<String, String>> results = mySqlQueries.studySearch("examType", "DX");
 
 			String[] keys = { "study_iuid", "pat_id", "modality", "study_datetime", "pat_name" };
 			StringBuilder sb = new StringBuilder("Study Results \n");
@@ -206,8 +206,8 @@ public class DcmDbTester
 		try {
 			logger.info("######## Start test #7 - study-time search ########");
 
-			MySqlQueries mySqlQueries = MySqlInstance.getInstance().getMysqlQueries();
-			List<Map<String, String>> results = mySqlQueries.doStudySearchInDcm4Chee("studyDate", "2002");
+			DatabaseOperations mySqlQueries = Database.getInstance().getDatabaseOperations();
+			List<Map<String, String>> results = mySqlQueries.studySearch("studyDate", "2002");
 
 			String[] keys = { "study_iuid", "pat_id", "modality", "study_datetime", "pat_name" };
 			StringBuilder sb = new StringBuilder("Study Results \n");
@@ -238,9 +238,9 @@ public class DcmDbTester
 		try {
 			logger.info("######## Start test #8 - study-time search ########");
 
-			MySqlQueries mySqlQueries = MySqlInstance.getInstance().getMysqlQueries();
+			DatabaseOperations mySqlQueries = Database.getInstance().getDatabaseOperations();
 			List<Map<String, String>> results = mySqlQueries
-					.findAllSeriesInStudyInDcm4Chee("1.2.826.0.1.3680043.8.420.30757817405477639080180001130587461759");
+					.findAllSeriesInStudy("1.2.826.0.1.3680043.8.420.30757817405477639080180001130587461759");
 
 			// String[] keys = {"study_iuid", "pat_id", "modality", "study_datetime", "pat_name"};
 			StringBuilder sb = new StringBuilder("Series Results \n");
@@ -300,8 +300,8 @@ public class DcmDbTester
 	{
 		StringBuilder sb = new StringBuilder("Connection status - ");
 
-		sb.append(" #avail: ").append(MySqlInstance.getInstance().getConnectionPoolAvailCount());
-		sb.append(" #used: ").append(MySqlInstance.getInstance().getConnectionPoolUsedCount());
+		sb.append(" #avail: ").append(Database.getInstance().getConnectionPoolAvailCount());
+		sb.append(" #used: ").append(Database.getInstance().getConnectionPoolUsedCount());
 
 		logger.info(sb.toString());
 	}

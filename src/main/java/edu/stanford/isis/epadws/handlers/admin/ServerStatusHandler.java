@@ -20,13 +20,13 @@ import edu.stanford.isis.epad.common.plugins.impl.EPadPluginImpl;
 import edu.stanford.isis.epad.common.util.EPADConfig;
 import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epadws.EPadWebServerVersion;
-import edu.stanford.isis.epadws.processing.persistence.MySqlInstance;
+import edu.stanford.isis.epadws.persistence.Database;
 import edu.stanford.isis.epadws.processing.pipeline.PipelineFactory;
 import edu.stanford.isis.epadws.xnat.XNATUtil;
 
 /**
  * <code>
- * curl -v -b JSESSIOND=<id> -X GET "http://<ip>:<port>/status/"
+ * curl -v -b JSESSIOND=<id> -X GET "http://<ip>:<port>/epad/status/"
  * </code>
  * 
  * @author martin
@@ -75,7 +75,7 @@ public class ServerStatusHandler extends AbstractHandler
 				responseStream.println();
 				responseStream.println("Plugin Version - interface:      " + EPadPlugin.PLUGIN_INTERFACE_VERSION);
 				responseStream.println("Plugin Version - implementation: " + ePadPlugin.getPluginImplVersion());
-				MySqlInstance instance = MySqlInstance.getInstance();
+				Database instance = Database.getInstance();
 				responseStream.println();
 				responseStream.println("Database startup time: " + instance.getStartupTime() + " ms");
 				responseStream.println();

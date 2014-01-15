@@ -12,8 +12,8 @@ import edu.stanford.isis.epad.common.dicom.DicomFormatUtil;
 import edu.stanford.isis.epad.common.util.EPADFileUtils;
 import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epad.common.util.EPADResources;
-import edu.stanford.isis.epadws.processing.persistence.MySqlInstance;
-import edu.stanford.isis.epadws.processing.persistence.MySqlQueries;
+import edu.stanford.isis.epadws.persistence.DatabaseOperations;
+import edu.stanford.isis.epadws.persistence.Database;
 
 /**
  * Delete a patient and all studies for that patient in the ePAD and DCMCHEE databases.
@@ -34,13 +34,13 @@ public class PatientDeleteTask implements Runnable
 	@Override
 	public void run()
 	{
-		MySqlQueries dbQueries = MySqlInstance.getInstance().getMysqlQueries();
+		DatabaseOperations dbQueries = Database.getInstance().getDatabaseOperations();
 
 		try {
-			List<String> studies = dbQueries.getStudyIDsForPatientFromDcm4Chee(patientID);
+			List<String> studies = dbQueries.getStudyIDsForPatient(patientID);
 
 			for (String studyID : studies) {
-				List<Map<String, String>> matchingSeries = dbQueries.findAllSeriesInStudyInDcm4Chee(studyID);
+				List<Map<String, String>> matchingSeries = dbQueries.findAllSeriesInStudy(studyID);
 				logger.info("Found " + matchingSeries.size() + " series in study " + patientID);
 
 				dcm4CheeDeleteDicomStudy(patientID); // Must run after finding series in DCM4CHEE
@@ -49,9 +49,9 @@ public class PatientDeleteTask implements Runnable
 				for (Map<String, String> series : matchingSeries) {
 					String seriesID = series.get("series_iuid");
 					logger.info("SeriesID to delete in ePAD database: " + seriesID);
-					dbQueries.doDeleteSeriesInEPadDatabase(seriesID);
+					dbQueries.deleteSeries(seriesID);
 				}
-				dbQueries.doDeleteDicomStudyInEPadDatabase(patientID);
+				dbQueries.deleteDicomStudy(patientID);
 				deletePNGsforDicomStudy(patientID);
 			}
 		} catch (Exception e) {
@@ -87,7 +87,7 @@ public class PatientDeleteTask implements Runnable
 	private static void deletePNGforSeries(String seriesUID) throws Exception
 	{
 
-		MySqlQueries queries = MySqlInstance.getInstance().getMysqlQueries();
+		DatabaseOperations queries = Database.getInstance().getDatabaseOperations();
 		String studyUID = queries.getStudyUIDForSeries(seriesUID);
 		StringBuilder outputPath = new StringBuilder();
 		outputPath.append(EPADResources.getEPADWebServerPNGDir());

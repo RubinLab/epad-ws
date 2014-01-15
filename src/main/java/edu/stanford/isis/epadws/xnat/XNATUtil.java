@@ -229,42 +229,6 @@ public class XNATUtil
 		return hasValidXNATSessionID(jsessionID);
 	}
 
-	@SuppressWarnings("unused")
-	private static boolean createXNATProject(String xnatProjectID, String xnatProjectName, String jsessionID)
-	{
-		String xnatHost = config.getStringConfigurationParameter("XNATServer");
-		int xnatPort = config.getIntegerConfigurationParameter("XNATPort");
-		String xnatProjectURL = buildXNATProjectCreationURL(xnatHost, xnatPort, XNAT_PROJECT_BASE, xnatProjectID,
-				xnatProjectName);
-		HttpClient client = new HttpClient();
-		PostMethod postMethod = new PostMethod(xnatProjectURL);
-		int xnatStatusCode;
-
-		postMethod.setRequestHeader("Cookie", "JSESSIONID=" + jsessionID);
-
-		try {
-			log.info("Invoking XNAT with URL " + xnatProjectURL);
-			xnatStatusCode = client.executeMethod(postMethod);
-			if (unexpectedCreationStatusCode(xnatStatusCode))
-				log.warning("Failure calling XNAT; status code = " + xnatStatusCode);
-			else
-				eventTracker.recordProjectEvent(jsessionID, xnatProjectID);
-		} catch (IOException e) {
-			log.warning("Error calling XNAT", e);
-			xnatStatusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
-		}
-		return (!unexpectedCreationStatusCode(xnatStatusCode));
-	}
-
-	private static String buildXNATProjectCreationURL(String host, int port, String base, String xnatProjectID,
-			String xnatProjectName)
-	{
-		String queryString = "?ID=" + projectName2XNATProjectID(xnatProjectName) + "&name=" + encode(xnatProjectName);
-		String urlString = buildURLString(host, port, base) + queryString;
-
-		return urlString;
-	}
-
 	public static void createXNATSubjectFromDICOMPatient(String xnatProjectID, String xnatSubjectLabel,
 			String dicomPatientName, String jsessionID)
 	{
@@ -288,20 +252,6 @@ public class XNATUtil
 		} catch (IOException e) {
 			log.warning("Error calling XNAT", e);
 		}
-	}
-
-	private static String buildXNATSubjectCreationURL(String host, int port, String base, String xnatProjectID,
-			String xnatSubjectLabel, String dicomPatientName)
-	{
-		String queryPart = "?label=" + xnatSubjectLabel + "&src=" + encode(dicomPatientName);
-		String urlString = buildURLString(host, port, base) + xnatProjectID + "/subjects" + queryPart;
-
-		return urlString;
-	}
-
-	private static boolean unexpectedCreationStatusCode(int statusCode)
-	{
-		return !(statusCode == HttpServletResponse.SC_OK || statusCode == HttpServletResponse.SC_CREATED || statusCode == HttpServletResponse.SC_CONFLICT);
 	}
 
 	public static boolean createXNATExperimentFromDICOMStudy(String xnatProjectID, String xnatSubjectLabel,
@@ -330,18 +280,6 @@ public class XNATUtil
 			xnatStatusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 		}
 		return (!unexpectedCreationStatusCode(xnatStatusCode));
-	}
-
-	// Setting the label field explicitly in this URL causes duplicate experiments to be created for
-	// the same study.
-	private static String buildXNATExperimentCreationURL(String host, int port, String base, String xnatProjectID,
-			String xnatSubjectLabel, String dicomStudyUID)
-	{
-		String experimentID = dicomStudyUID2XNATExperimentID(dicomStudyUID);
-		String urlString = buildURLString(host, port, base) + xnatProjectID + "/subjects/" + xnatSubjectLabel
-				+ "/experiments/" + experimentID + "?name=" + dicomStudyUID + "&xsiType=xnat:otherDicomSessionData";
-
-		return urlString;
 	}
 
 	public static boolean hasValidXNATSessionID(String jsessionID)
@@ -395,37 +333,6 @@ public class XNATUtil
 		return result;
 	}
 
-	private static String dicomStudyUID2XNATExperimentID(String dicomStudyUID)
-	{
-		return dicomStudyUID.replace('.', '_');
-	}
-
-	private static String encode(String urlString)
-	{
-		try {
-			return URLEncoder.encode(urlString, "UTF-8");
-		} catch (UnsupportedEncodingException e) {
-			log.warning("Error encoding URL " + urlString, e);
-			return null;
-		}
-	}
-
-	public static String buildURLString(String host, int port, String base)
-	{
-		return buildURLString(host, port, base, "");
-	}
-
-	public static String buildURLString(String host, int port, String base, String ext)
-	{
-		StringBuilder sb = new StringBuilder();
-		sb.append("http://").append(host);
-		sb.append(":").append(port);
-		sb.append(base);
-		sb.append(ext);
-
-		return sb.toString();
-	}
-
 	public static String buildProjectURLString(String base)
 	{
 		String xnatHost = config.getStringConfigurationParameter("XNATServer");
@@ -464,6 +371,99 @@ public class XNATUtil
 		if (jSessionID == null)
 			log.warning("No JSESESSIONID cookie present in request " + servletRequest.getRequestURL());
 		return jSessionID;
+	}
+
+	private static String buildURLString(String host, int port, String base)
+	{
+		return buildURLString(host, port, base, "");
+	}
+
+	private static String buildURLString(String host, int port, String base, String ext)
+	{
+		StringBuilder sb = new StringBuilder();
+		sb.append("http://").append(host);
+		sb.append(":").append(port);
+		sb.append(base);
+		sb.append(ext);
+
+		return sb.toString();
+	}
+
+	// Setting the label field explicitly in this URL causes duplicate experiments to be created for
+	// the same study.
+	private static String buildXNATExperimentCreationURL(String host, int port, String base, String xnatProjectID,
+			String xnatSubjectLabel, String dicomStudyUID)
+	{
+		String experimentID = dicomStudyUID2XNATExperimentID(dicomStudyUID);
+		String urlString = buildURLString(host, port, base) + xnatProjectID + "/subjects/" + xnatSubjectLabel
+				+ "/experiments/" + experimentID + "?name=" + dicomStudyUID + "&xsiType=xnat:otherDicomSessionData";
+
+		return urlString;
+	}
+
+	private static String buildXNATSubjectCreationURL(String host, int port, String base, String xnatProjectID,
+			String xnatSubjectLabel, String dicomPatientName)
+	{
+		String queryPart = "?label=" + xnatSubjectLabel + "&src=" + encode(dicomPatientName);
+		String urlString = buildURLString(host, port, base) + xnatProjectID + "/subjects" + queryPart;
+
+		return urlString;
+	}
+
+	private static boolean unexpectedCreationStatusCode(int statusCode)
+	{
+		return !(statusCode == HttpServletResponse.SC_OK || statusCode == HttpServletResponse.SC_CREATED || statusCode == HttpServletResponse.SC_CONFLICT);
+	}
+
+	@SuppressWarnings("unused")
+	private static boolean createXNATProject(String xnatProjectID, String xnatProjectName, String jsessionID)
+	{
+		String xnatHost = config.getStringConfigurationParameter("XNATServer");
+		int xnatPort = config.getIntegerConfigurationParameter("XNATPort");
+		String xnatProjectURL = buildXNATProjectCreationURL(xnatHost, xnatPort, XNAT_PROJECT_BASE, xnatProjectID,
+				xnatProjectName);
+		HttpClient client = new HttpClient();
+		PostMethod postMethod = new PostMethod(xnatProjectURL);
+		int xnatStatusCode;
+
+		postMethod.setRequestHeader("Cookie", "JSESSIONID=" + jsessionID);
+
+		try {
+			log.info("Invoking XNAT with URL " + xnatProjectURL);
+			xnatStatusCode = client.executeMethod(postMethod);
+			if (unexpectedCreationStatusCode(xnatStatusCode))
+				log.warning("Failure calling XNAT; status code = " + xnatStatusCode);
+			else
+				eventTracker.recordProjectEvent(jsessionID, xnatProjectID);
+		} catch (IOException e) {
+			log.warning("Error calling XNAT", e);
+			xnatStatusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+		}
+		return (!unexpectedCreationStatusCode(xnatStatusCode));
+	}
+
+	private static String buildXNATProjectCreationURL(String host, int port, String base, String xnatProjectID,
+			String xnatProjectName)
+	{
+		String queryString = "?ID=" + projectName2XNATProjectID(xnatProjectName) + "&name=" + encode(xnatProjectName);
+		String urlString = buildURLString(host, port, base) + queryString;
+
+		return urlString;
+	}
+
+	private static String dicomStudyUID2XNATExperimentID(String dicomStudyUID)
+	{
+		return dicomStudyUID.replace('.', '_');
+	}
+
+	private static String encode(String urlString)
+	{
+		try {
+			return URLEncoder.encode(urlString, "UTF-8");
+		} catch (UnsupportedEncodingException e) {
+			log.warning("Error encoding URL " + urlString, e);
+			return null;
+		}
 	}
 
 	private static String buildAuthorizatonString(String username, String password)

@@ -8,7 +8,7 @@ import edu.stanford.isis.epad.common.plugins.EPadPlugin;
 import edu.stanford.isis.epad.common.plugins.impl.EPadPluginImpl;
 import edu.stanford.isis.epad.common.util.EPADConfig;
 import edu.stanford.isis.epadws.EPadWebServerVersion;
-import edu.stanford.isis.epadws.processing.persistence.MySqlInstance;
+import edu.stanford.isis.epadws.persistence.Database;
 import edu.stanford.isis.epadws.processing.pipeline.PipelineFactory;
 
 /**
@@ -91,7 +91,7 @@ public class EPadWebServiceServerResource extends BaseServerResource implements 
 					+ proxyConfig.getParam("ListenPort") + "\n\n");
 			out.append("Plugin Version - interface:      " + EPadPlugin.PLUGIN_INTERFACE_VERSION + "\n");
 			out.append("Plugin Version - implementation: " + ePadPlugin.getPluginImplVersion() + "\n\n");
-			MySqlInstance instance = MySqlInstance.getInstance();
+			Database instance = Database.getInstance();
 			out.append("DB Startup Time: " + instance.getStartupTime() + " ms\n\n");
 			out.append("pipelineActivity : " + getPipelineActivityLevel() + "\n");
 			setStatus(Status.SUCCESS_OK);

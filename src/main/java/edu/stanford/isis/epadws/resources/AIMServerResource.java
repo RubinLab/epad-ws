@@ -290,7 +290,7 @@ public class AIMServerResource extends BaseServerResource
 					// Trigger the plugin
 					// String nameAIM=aim.getUniqueIdentifier() + ".xml";
 
-					String url = "http://localhost:8080/plugin/" + pluginName + "/?aimFile=" + aim.getUniqueIdentifier();
+					String url = "http://localhost:8080/epad/plugin/" + pluginName + "/?aimFile=" + aim.getUniqueIdentifier();
 					// --Post to the plugin
 					HttpClient client = new HttpClient();
 

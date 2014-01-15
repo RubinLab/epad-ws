@@ -50,6 +50,12 @@ import edu.stanford.isis.epad.common.util.EPADResources;
 import edu.stanford.isis.epad.common.util.XmlNamespaceTranslator;
 import edu.stanford.isis.epadws.xnat.XNATUtil;
 
+/**
+ * 
+ * 
+ * 
+ * @author martin
+ */
 public class AimResourceHandler extends AbstractHandler
 {
 	private static final EPADLogger logger = EPADLogger.getInstance();
@@ -378,7 +384,7 @@ public class AimResourceHandler extends AbstractHandler
 
 				if (templateHasBeenFound) {
 					HttpClient client = new HttpClient();
-					String url = "http://localhost:8080/plugin/" + pluginName + "/?aimFile=" + aim.getUniqueIdentifier();
+					String url = "http://localhost:8080/epad/plugin/" + pluginName + "/?aimFile=" + aim.getUniqueIdentifier();
 					logger.info("Triggering ePAD plugin at " + url + ", handler name " + handlerName);
 					GetMethod method = new GetMethod(url);
 					method.setRequestHeader("Cookie", "JSESSIONID=" + jsessionID);

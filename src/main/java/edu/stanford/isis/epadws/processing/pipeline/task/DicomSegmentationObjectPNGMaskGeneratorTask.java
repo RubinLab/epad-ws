@@ -45,10 +45,10 @@ import edu.stanford.isis.epad.common.pixelmed.PixelMedUtils;
 import edu.stanford.isis.epad.common.util.EPADConfig;
 import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epad.common.util.EPADResources;
+import edu.stanford.isis.epadws.persistence.Dcm4CheeDatabaseUtils;
+import edu.stanford.isis.epadws.persistence.DatabaseOperations;
+import edu.stanford.isis.epadws.persistence.Database;
 import edu.stanford.isis.epadws.processing.model.PngProcessingStatus;
-import edu.stanford.isis.epadws.processing.persistence.Dcm4CheeDatabaseUtils;
-import edu.stanford.isis.epadws.processing.persistence.MySqlInstance;
-import edu.stanford.isis.epadws.processing.persistence.MySqlQueries;
 
 /**
  * This task generates DICOM Segmentation Objects.
@@ -107,7 +107,7 @@ public class DicomSegmentationObjectPNGMaskGeneratorTask implements GeneratorTas
 			File repDest = new File(baseDicomDirectory + studyId + "/" + seriesId + "/");
 			repDest.mkdirs();
 
-			MySqlQueries queries = MySqlInstance.getInstance().getMysqlQueries();
+			DatabaseOperations queries = Database.getInstance().getDatabaseOperations();
 			for (int i = 0; i < count; i++) { // Create the mask images
 				BufferedImage source = sourceImage.getBufferedImage(count - i - 1);
 				BufferedImage sourceWithTransparency = generateTransparentImage(source); // Generate a transparent image
@@ -309,7 +309,7 @@ public class DicomSegmentationObjectPNGMaskGeneratorTask implements GeneratorTas
 		return Toolkit.getDefaultToolkit().createImage(ip);
 	}
 
-	private void insertEpadFile(MySqlQueries queries, File outputFile)
+	private void insertEpadFile(DatabaseOperations queries, File outputFile)
 	{
 		Map<String, String> epadFilesTable = Dcm4CheeDatabaseUtils.createEPadFilesTableData(outputFile);
 		epadFilesTable.put("file_status", "" + PngProcessingStatus.IN_PIPELINE.getCode());

@@ -26,7 +26,7 @@ import edu.stanford.isis.epadws.xnat.XNATUtil;
  * for search.
  * <p>
  * <code>
- * curl -b JSESSIONID=<session_id> -X GET "http://[host:port]/subjects?project=*&src=*nice*&columns=label,src" 
+ * curl -b JSESSIONID=<session_id> -X GET "http://[host:port]/epad/subjects?project=*&src=*nice*&columns=label,src" 
  * </code>
  * 
  * @author martin

@@ -11,17 +11,17 @@ import edu.stanford.isis.epad.common.dicom.DicomFormatUtil;
 import edu.stanford.isis.epad.common.util.EPADConfig;
 import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epad.common.util.EPADResources;
+import edu.stanford.isis.epadws.persistence.Dcm4CheeDatabaseUtils;
+import edu.stanford.isis.epadws.persistence.DatabaseOperations;
+import edu.stanford.isis.epadws.persistence.Database;
 import edu.stanford.isis.epadws.processing.model.DicomImageProcessingState;
 import edu.stanford.isis.epadws.processing.model.DicomSeriesDescription;
 import edu.stanford.isis.epadws.processing.model.DicomSeriesProcessingStatus;
 import edu.stanford.isis.epadws.processing.model.DicomSeriesProcessingStatusTracker;
 import edu.stanford.isis.epadws.processing.model.PngProcessingStatus;
-import edu.stanford.isis.epadws.processing.persistence.Dcm4CheeDatabaseUtils;
-import edu.stanford.isis.epadws.processing.persistence.MySqlInstance;
-import edu.stanford.isis.epadws.processing.persistence.MySqlQueries;
 import edu.stanford.isis.epadws.processing.pipeline.task.GeneratorTask;
-import edu.stanford.isis.epadws.processing.pipeline.task.PngGeneratorTask;
 import edu.stanford.isis.epadws.processing.pipeline.task.PNGGridGeneratorTask;
+import edu.stanford.isis.epadws.processing.pipeline.task.PngGeneratorTask;
 import edu.stanford.isis.epadws.processing.pipeline.threads.ShutdownSignal;
 
 /**
@@ -60,7 +60,7 @@ public class DICOMSeriesWatcher implements Runnable
 	@Override
 	public void run()
 	{
-		MySqlQueries mySqlQueries = MySqlInstance.getInstance().getMysqlQueries();
+		DatabaseOperations mySqlQueries = Database.getInstance().getDatabaseOperations();
 		queueAndWatcherManager = QueueAndWatcherManager.getInstance();
 
 		while (!shutdownSignal.hasShutdown()) {
@@ -122,7 +122,7 @@ public class DICOMSeriesWatcher implements Runnable
 	@SuppressWarnings("unused")
 	private void addToPNGGridGeneratorTaskPipeline(List<Map<String, String>> unprocessedPNGImageDescriptions)
 	{
-		MySqlQueries queries = MySqlInstance.getInstance().getMysqlQueries();
+		DatabaseOperations queries = Database.getInstance().getDatabaseOperations();
 		int currentImageIndex = 0;
 		for (Map<String, String> currentPNGImage : unprocessedPNGImageDescriptions) {
 			String inputPNGFilePath = getInputFilePath(currentPNGImage); // Get the input file path.
@@ -158,14 +158,14 @@ public class DICOMSeriesWatcher implements Runnable
 		// inputPNGFile.getAbsolutePath());
 
 		File outputPNGFile = new File(outputPNGGridFilePath);
-		MySqlQueries queries = MySqlInstance.getInstance().getMysqlQueries();
+		DatabaseOperations queries = Database.getInstance().getDatabaseOperations();
 		insertEpadFile(queries, outputPNGFile);
 
 		PNGGridGeneratorTask pngGridGeneratorTask = new PNGGridGeneratorTask(inputPNGFile, inputPNGGridFiles, outputPNGFile);
 		pngGeneratorTaskQueue.offer(pngGridGeneratorTask);
 	}
 
-	private void insertEpadFile(MySqlQueries queries, File outputPNGFile)
+	private void insertEpadFile(DatabaseOperations queries, File outputPNGFile)
 	{
 		Map<String, String> epadFilesTable = Dcm4CheeDatabaseUtils.createEPadFilesTableData(outputPNGFile);
 		epadFilesTable.put("file_status", "" + PngProcessingStatus.IN_PIPELINE.getCode());
@@ -185,7 +185,7 @@ public class DICOMSeriesWatcher implements Runnable
 	private String createOutputFilePathForDicomPNGGridImage(Map<String, String> currImage)
 	{
 		String seriesIUID = currImage.get("series_iuid");
-		MySqlQueries queries = MySqlInstance.getInstance().getMysqlQueries();
+		DatabaseOperations queries = Database.getInstance().getDatabaseOperations();
 		String studyUID = queries.getStudyUIDForSeries(seriesIUID);
 		String imageUID = currImage.get("sop_iuid");
 		StringBuilder outputPath = new StringBuilder();

@@ -15,19 +15,16 @@ import edu.stanford.isis.epad.common.util.EPADConfig;
 import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epad.common.util.EPADResources;
 import edu.stanford.isis.epad.common.util.EPADTools;
+import edu.stanford.isis.epadws.persistence.Dcm4CheeDatabaseUtils;
+import edu.stanford.isis.epadws.persistence.DatabaseOperations;
+import edu.stanford.isis.epadws.persistence.Database;
 import edu.stanford.isis.epadws.processing.model.DicomSeriesDescription;
 import edu.stanford.isis.epadws.processing.model.PngProcessingStatus;
-import edu.stanford.isis.epadws.processing.persistence.Dcm4CheeDatabaseUtils;
-import edu.stanford.isis.epadws.processing.persistence.MySqlInstance;
-import edu.stanford.isis.epadws.processing.persistence.MySqlQueries;
 import edu.stanford.isis.epadws.processing.pipeline.process.PngGeneratorProcess;
 import edu.stanford.isis.epadws.processing.pipeline.task.DicomSegmentationObjectPNGMaskGeneratorTask;
 import edu.stanford.isis.epadws.processing.pipeline.task.GeneratorTask;
 import edu.stanford.isis.epadws.processing.pipeline.task.PngGeneratorTask;
 
-/**
- * @author amsnyder
- */
 public class QueueAndWatcherManager
 {
 	private static final EPADLogger logger = EPADLogger.getInstance();
@@ -95,7 +92,7 @@ public class QueueAndWatcherManager
 	// Each entry in list is map with keys: sop_iuid, inst_no, series_iuid, filepath, file_size.
 	public void addToPNGGeneratorTaskPipeline(List<Map<String, String>> dicomImageFileDescriptions)
 	{
-		MySqlQueries queries = MySqlInstance.getInstance().getMysqlQueries();
+		DatabaseOperations queries = Database.getInstance().getDatabaseOperations();
 
 		for (Map<String, String> dicomImageDescription : dicomImageFileDescriptions) {
 			String inputDICOMFilePath = getInputFilePath(dicomImageDescription); // Get the input file path.
@@ -157,7 +154,8 @@ public class QueueAndWatcherManager
 		File inFile = new File(inputFilePath);
 		File outFile = new File(outputFilePath);
 
-		DicomSegmentationObjectPNGMaskGeneratorTask dsoTask = new DicomSegmentationObjectPNGMaskGeneratorTask(inFile, outFile);
+		DicomSegmentationObjectPNGMaskGeneratorTask dsoTask = new DicomSegmentationObjectPNGMaskGeneratorTask(inFile,
+				outFile);
 		pngGeneratorTaskQueue.offer(dsoTask);
 		logger.info("Segmentation object found at " + inputFilePath);
 	}
@@ -165,13 +163,13 @@ public class QueueAndWatcherManager
 	private void createPNGFileForDICOMImage(String outputPNGFilePath, File inputDICOMFile)
 	{
 		File outputPNGFile = new File(outputPNGFilePath);
-		MySqlQueries queries = MySqlInstance.getInstance().getMysqlQueries();
+		DatabaseOperations queries = Database.getInstance().getDatabaseOperations();
 		insertEpadFile(queries, outputPNGFile);
 		PngGeneratorTask pngTask = new PngGeneratorTask(inputDICOMFile, outputPNGFile);
 		pngGeneratorTaskQueue.offer(pngTask);
 	}
 
-	private void insertEpadFile(MySqlQueries queries, File outputPNGFile)
+	private void insertEpadFile(DatabaseOperations queries, File outputPNGFile)
 	{
 		Map<String, String> epadFilesTable = Dcm4CheeDatabaseUtils.createEPadFilesTableData(outputPNGFile);
 		epadFilesTable.put("file_status", "" + PngProcessingStatus.IN_PIPELINE.getCode());
@@ -186,7 +184,7 @@ public class QueueAndWatcherManager
 	private String createOutputPNGFilePathForDicomImage(Map<String, String> dicomImageDescription)
 	{
 		String seriesIUID = dicomImageDescription.get("series_iuid");
-		MySqlQueries queries = MySqlInstance.getInstance().getMysqlQueries();
+		DatabaseOperations queries = Database.getInstance().getDatabaseOperations();
 		String studyUID = queries.getStudyUIDForSeries(seriesIUID);
 		String imageUID = dicomImageDescription.get("sop_iuid");
 		StringBuilder outputPath = new StringBuilder();

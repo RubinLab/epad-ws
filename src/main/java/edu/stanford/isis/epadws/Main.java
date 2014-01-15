@@ -29,10 +29,10 @@ import org.xml.sax.SAXException;
 
 import edu.stanford.isis.epad.common.plugins.EPadFiles;
 import edu.stanford.isis.epad.common.plugins.PluginConfig;
+import edu.stanford.isis.epad.common.plugins.PluginController;
 import edu.stanford.isis.epad.common.plugins.PluginHandler;
 import edu.stanford.isis.epad.common.plugins.PluginHandlerMap;
 import edu.stanford.isis.epad.common.plugins.PluginServletHandler;
-import edu.stanford.isis.epad.common.plugins.PluginController;
 import edu.stanford.isis.epad.common.plugins.impl.ClassFinderTestUtils;
 import edu.stanford.isis.epad.common.plugins.impl.EPadFilesImpl;
 import edu.stanford.isis.epad.common.util.EPADConfig;
@@ -47,7 +47,6 @@ import edu.stanford.isis.epadws.handlers.dicom.DICOMDeleteHandler;
 import edu.stanford.isis.epadws.handlers.dicom.DICOMHeadersHandler;
 import edu.stanford.isis.epadws.handlers.dicom.DICOMSearchHandler;
 import edu.stanford.isis.epadws.handlers.dicom.DICOMSeriesOrderHandler;
-import edu.stanford.isis.epadws.handlers.dicom.DICOMSeriesTagHandler;
 import edu.stanford.isis.epadws.handlers.dicom.DICOMWindowingHandler;
 import edu.stanford.isis.epadws.handlers.dicom.DicomSegmentationPathHandler;
 import edu.stanford.isis.epadws.handlers.dicom.PatientDeleteHandler;
@@ -58,8 +57,8 @@ import edu.stanford.isis.epadws.handlers.plugin.EPadPluginHandler;
 import edu.stanford.isis.epadws.handlers.xnat.XNATProjectHandler;
 import edu.stanford.isis.epadws.handlers.xnat.XNATSessionHandler;
 import edu.stanford.isis.epadws.handlers.xnat.XNATSubjectHandler;
+import edu.stanford.isis.epadws.persistence.Database;
 import edu.stanford.isis.epadws.processing.leveling.WindowLevelFactory;
-import edu.stanford.isis.epadws.processing.persistence.MySqlInstance;
 import edu.stanford.isis.epadws.processing.pipeline.threads.ShutdownHookThread;
 import edu.stanford.isis.epadws.processing.pipeline.threads.ShutdownSignal;
 import edu.stanford.isis.epadws.processing.pipeline.watcher.QueueAndWatcherManager;
@@ -139,7 +138,7 @@ public class Main
 
 			shutdownSignal.shutdownNow();
 			stopServer(server);
-			MySqlInstance.getInstance().shutdown();
+			Database.getInstance().shutdown();
 			QueueAndWatcherManager.getInstance().shutdown();
 			WindowLevelFactory.getInstance().shutdown();
 			try { // Wait just long enough for some messages to be printed out.
@@ -188,7 +187,7 @@ public class Main
 
 		try {
 			QueueAndWatcherManager.getInstance().buildAndStart();
-			MySqlInstance.getInstance().startup();
+			Database.getInstance().startup();
 			log.info("Startup of MySql database was successful.");
 		} catch (Exception e) {
 			log.warning("Failed to start MySql database.", e);
@@ -202,30 +201,29 @@ public class Main
 
 		loadPluginClasses();
 
-		addHandlerAtContextPath(new XNATSessionHandler(), "/session", handlerList);
-		addHandlerAtContextPath(new XNATProjectHandler(), "/projects", handlerList);
-		addHandlerAtContextPath(new XNATSubjectHandler(), "/subjects", handlerList);
-		addHandlerAtContextPath(new ServerStatusHandler(), "/status", handlerList);
-		addHandlerAtContextPath(new ImageCheckHandler(), "/imagecheck", handlerList);
-		addHandlerAtContextPath(new CoordinationHandler(), "/coordination", handlerList);
-		addHandlerAtContextPath(new DICOMSearchHandler(), "/searchj", handlerList);
-		addHandlerAtContextPath(new DICOMSeriesOrderHandler(), "/seriesorderj", handlerList);
-		addHandlerAtContextPath(new DICOMDeleteHandler(), "/dicomdelete", handlerList);
-		addHandlerAtContextPath(new DICOMHeadersHandler(), "/dicomtagj", handlerList);
-		addHandlerAtContextPath(new DICOMSeriesTagHandler(), "/seriestag", handlerList);
-		addHandlerAtContextPath(new DicomSegmentationPathHandler(), "/segmentationpath", handlerList);
-		addHandlerAtContextPath(new DICOMWindowingHandler(), "/dicomparam", handlerList);
-		addHandlerAtContextPath(new PatientDeleteHandler(), "/patientdelete", handlerList);
-		addHandlerAtContextPath(new AimResourceHandler(), "/aimresource", handlerList);
-		addHandlerAtContextPath(new WadoHandler(), "/eWado", handlerList);
-		addHandlerAtContextPath(new EventHandler(), "/eventresource", handlerList);
-		addHandlerAtContextPath(new ProjectEventHandler(), "/events", handlerList);
-		addHandlerAtContextPath(new EPadPluginHandler(), "/plugin", handlerList);
+		addHandlerAtContextPath(new XNATSessionHandler(), "/epad/session", handlerList);
+		addHandlerAtContextPath(new XNATProjectHandler(), "/epad/projects", handlerList);
+		addHandlerAtContextPath(new XNATSubjectHandler(), "/epad/subjects", handlerList);
+		addHandlerAtContextPath(new ServerStatusHandler(), "/epad/status", handlerList);
+		addHandlerAtContextPath(new ImageCheckHandler(), "/epad/imagecheck", handlerList);
+		addHandlerAtContextPath(new CoordinationHandler(), "/epad/coordination", handlerList);
+		addHandlerAtContextPath(new DICOMSearchHandler(), "/epad/searchj", handlerList);
+		addHandlerAtContextPath(new DICOMSeriesOrderHandler(), "/epad/seriesorderj", handlerList);
+		addHandlerAtContextPath(new DICOMDeleteHandler(), "/epad/dicomdelete", handlerList);
+		addHandlerAtContextPath(new DICOMHeadersHandler(), "/epad/dicomtagj", handlerList);
+		addHandlerAtContextPath(new DicomSegmentationPathHandler(), "/epad/segmentationpath", handlerList);
+		addHandlerAtContextPath(new DICOMWindowingHandler(), "/epad/dicomparam", handlerList);
+		addHandlerAtContextPath(new PatientDeleteHandler(), "/epad/patientdelete", handlerList);
+		addHandlerAtContextPath(new AimResourceHandler(), "/epad/aimresource", handlerList);
+		addHandlerAtContextPath(new WadoHandler(), "/epad/wado", handlerList);
+		addHandlerAtContextPath(new EventHandler(), "/epad/eventresource", handlerList);
+		addHandlerAtContextPath(new ProjectEventHandler(), "/epad/events", handlerList);
+		addHandlerAtContextPath(new EPadPluginHandler(), "/epad/plugin", handlerList);
 
 		addWebAppAtContextPath(handlerList, "ePad.war", "/epad");
 
-		addHandlerAtContextPath(new ResourceCheckHandler(), "/resources", handlerList);
-		addFileServerAtContextPath(EPADResources.getEPADWebServerResourcesDir(), handlerList, "/resources");
+		addHandlerAtContextPath(new ResourceCheckHandler(), "/epad/resources", handlerList);
+		addFileServerAtContextPath(EPADResources.getEPADWebServerResourcesDir(), handlerList, "/epad/resources");
 
 		ContextHandlerCollection contexts = new ContextHandlerCollection();
 		contexts.setHandlers(handlerList.toArray(new Handler[handlerList.size()]));

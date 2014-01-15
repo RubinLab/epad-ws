@@ -19,8 +19,8 @@ import com.google.gson.JsonParseException;
 import edu.stanford.isis.epad.common.util.EPADConfig;
 import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epad.common.util.JsonHelper;
-import edu.stanford.isis.epadws.processing.persistence.MySqlInstance;
-import edu.stanford.isis.epadws.processing.persistence.MySqlQueries;
+import edu.stanford.isis.epadws.persistence.Database;
+import edu.stanford.isis.epadws.persistence.DatabaseOperations;
 import edu.stanford.isis.epadws.xnat.XNATUtil;
 
 /**
@@ -64,8 +64,8 @@ import edu.stanford.isis.epadws.xnat.XNATUtil;
  * Basic test invocation:
  * 
  * <pre>
- * curl -v -H "Accept: application/json" -H "Content-type: application/json" -X POST -d ' {"terms" : [] }' http://<server>:<port>/coordination/
- * curl -v -H "Accept: application/json" -H "Content-type: application/json" -X POST --data @<filename>  http://<server>:<port>/coordination/
+ * curl -v -H "Accept: application/json" -H "Content-type: application/json" -X POST -d ' {"terms" : [] }' http://<server>:<port>/epad/coordination/
+ * curl -v -H "Accept: application/json" -H "Content-type: application/json" -X POST --data @<filename>  http://<server>:<port>/epad/coordination/
  * </pre>
  * 
  * @author martin
@@ -198,7 +198,7 @@ public class CoordinationHandler extends AbstractHandler
 	private Term getCoordinationTerm(Coordination coordination) throws SQLException
 	{
 		List<Integer> termKeys = new ArrayList<Integer>();
-		MySqlQueries dbQueries = MySqlInstance.getInstance().getMysqlQueries();
+		DatabaseOperations dbQueries = Database.getInstance().getDatabaseOperations();
 
 		for (Term term : coordination.getTerms()) {
 			int termKey = getTermKey(dbQueries, term);
@@ -232,7 +232,7 @@ public class CoordinationHandler extends AbstractHandler
 	 * @param term
 	 * @return The key of the term; should not be null
 	 */
-	private int getTermKey(MySqlQueries dbQueries, Term term) throws SQLException
+	private int getTermKey(DatabaseOperations dbQueries, Term term) throws SQLException
 	{
 		int termKey = dbQueries.getKeyForTerm(term); // TODO Cache rather than hit database each time.
 		if (termKey == -1) {

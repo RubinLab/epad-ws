@@ -1,16 +1,16 @@
-package edu.stanford.isis.epadws.processing.persistence;
+package edu.stanford.isis.epadws.persistence;
 
 /**
  * 
  * @author amsnyder
  */
-public class MySqlStudyQueryBuilder
+public class Dcm4CheeStudyQueryBuilder
 {
 	private final String type;
 	private final boolean useLike;
 	private final String typeValue;
 
-	public MySqlStudyQueryBuilder(String type, String typeValue)
+	public Dcm4CheeStudyQueryBuilder(String type, String typeValue)
 	{
 		this.type = type;
 		this.typeValue = typeValue;

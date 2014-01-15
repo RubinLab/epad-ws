@@ -13,6 +13,12 @@ import edu.stanford.isis.epad.common.util.JsonHelper;
 import edu.stanford.isis.epadws.processing.events.EventTracker;
 import edu.stanford.isis.epadws.xnat.XNATUtil;
 
+/**
+ * 
+ * 
+ * 
+ * @author martin
+ */
 public class ProjectEventHandler extends AbstractHandler
 {
 	private static final EPADLogger log = EPADLogger.getInstance();

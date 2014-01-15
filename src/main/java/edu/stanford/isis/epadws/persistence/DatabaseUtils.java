@@ -5,7 +5,7 @@
  * Software License Agreement available at:
  *   http://epad.stanford.edu/license/
  */
-package edu.stanford.isis.epadws.processing.persistence;
+package edu.stanford.isis.epadws.persistence;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -79,7 +79,6 @@ public class DatabaseUtils
 	{
 		try {
 			StringBuilder sb = new StringBuilder();
-
 			ResultSetMetaData rsmd = rs.getMetaData();
 			int colCount = rsmd.getColumnCount();
 			sb.append("#columns = " + colCount);
@@ -87,9 +86,8 @@ public class DatabaseUtils
 			for (int i = 0; i < colCount; i++) {
 				sb.append(" | ");
 				sb.append(rsmd.getColumnName(i + 1));
-			}// for
+			}
 			return sb.toString();
-
 		} catch (Exception e) {
 			return "No debug data do to: " + e.getMessage();
 		}
@@ -106,7 +104,6 @@ public class DatabaseUtils
 	{
 		try {
 			if (dateTime != null) {
-				// logger.info("input date to modified = "+dateTime);
 				dateTime = dateTime.trim();
 				String[] justDate = dateTime.split(" ");
 				if (justDate[0] != null) {
@@ -122,7 +119,6 @@ public class DatabaseUtils
 		} catch (Exception e) {
 			logger.warning("MySql didn't parse date: " + dateTime, e);
 		}
-
 		return dateTime;
 	}
 }

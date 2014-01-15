@@ -12,8 +12,8 @@ import edu.stanford.isis.epad.common.dicom.DicomFormatUtil;
 import edu.stanford.isis.epad.common.util.EPADFileUtils;
 import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epad.common.util.EPADResources;
-import edu.stanford.isis.epadws.processing.persistence.MySqlInstance;
-import edu.stanford.isis.epadws.processing.persistence.MySqlQueries;
+import edu.stanford.isis.epadws.persistence.DatabaseOperations;
+import edu.stanford.isis.epadws.persistence.Database;
 
 /**
  * Task to delete a DICOM study
@@ -35,11 +35,11 @@ public class DicomDeleteTask implements Runnable
 	@Override
 	public void run()
 	{
-		MySqlQueries dbQueries = MySqlInstance.getInstance().getMysqlQueries();
+		DatabaseOperations dbQueries = Database.getInstance().getDatabaseOperations();
 
 		try {
 			if (deleteStudy) {
-				List<Map<String, String>> study2series = dbQueries.findAllSeriesInStudyInDcm4Chee(uidToDelete);
+				List<Map<String, String>> study2series = dbQueries.findAllSeriesInStudy(uidToDelete);
 				logger.info("Found " + study2series.size() + " series in study " + uidToDelete);
 
 				dcm4CheeDeleteDicomStudy(uidToDelete); // Must run after finding series in DCM4CHEE
@@ -48,9 +48,9 @@ public class DicomDeleteTask implements Runnable
 				for (Map<String, String> series : study2series) {
 					String seriesID = series.get("series_iuid");
 					logger.info("SeriesID to delete in ePAD database: " + seriesID);
-					dbQueries.doDeleteSeriesInEPadDatabase(seriesID);
+					dbQueries.deleteSeries(seriesID);
 				}
-				dbQueries.doDeleteDicomStudyInEPadDatabase(uidToDelete);
+				dbQueries.deleteDicomStudy(uidToDelete);
 				deletePNGsforDicomStudy(uidToDelete);
 			} else {
 				logger.warning("Attempt at (currently unsupported) delete of individual series " + uidToDelete);
@@ -94,7 +94,7 @@ public class DicomDeleteTask implements Runnable
 	private static void deletePNGforSeries(String seriesUID) throws Exception
 	{
 
-		MySqlQueries queries = MySqlInstance.getInstance().getMysqlQueries();
+		DatabaseOperations queries = Database.getInstance().getDatabaseOperations();
 		String studyUID = queries.getStudyUIDForSeries(seriesUID);
 		StringBuilder outputPath = new StringBuilder();
 		outputPath.append(EPADResources.getEPADWebServerPNGDir());

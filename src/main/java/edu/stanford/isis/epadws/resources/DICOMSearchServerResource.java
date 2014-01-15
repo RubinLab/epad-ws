@@ -14,8 +14,8 @@ import edu.stanford.isis.epad.common.dicom.DICOMStudySearchResult;
 import edu.stanford.isis.epad.common.dicom.DicomFormatUtil;
 import edu.stanford.isis.epad.common.dicom.DicomStudySearchType;
 import edu.stanford.isis.epad.common.dicom.ResultSeriesData;
-import edu.stanford.isis.epadws.processing.persistence.MySqlInstance;
-import edu.stanford.isis.epadws.processing.persistence.MySqlQueries;
+import edu.stanford.isis.epadws.persistence.DatabaseOperations;
+import edu.stanford.isis.epadws.persistence.Database;
 
 /**
  * Query the database using DICOM series or study search parameters.
@@ -79,8 +79,9 @@ public class DICOMSearchServerResource extends BaseServerResource
 
 	private String performDICOMStudySearch(DicomStudySearchType searchType, String searchString) throws Exception
 	{
-		final MySqlQueries dbQueries = MySqlInstance.getInstance().getMysqlQueries();
-		final List<Map<String, String>> searchResult = dbQueries.doStudySearchInDcm4Chee(searchType.toString(), searchString);
+		final DatabaseOperations dbQueries = Database.getInstance().getDatabaseOperations();
+		final List<Map<String, String>> searchResult = dbQueries.studySearch(searchType.toString(),
+				searchString);
 		boolean isFirst = true;
 		StringBuilder result = new StringBuilder();
 
@@ -141,8 +142,8 @@ public class DICOMSearchServerResource extends BaseServerResource
 	{
 		final String studyIdKey = getStudyUIDFromRequest(searchString);
 		final String studyUID = DicomFormatUtil.formatDirToUid(studyIdKey);
-		final MySqlQueries dbQueries = MySqlInstance.getInstance().getMysqlQueries();
-		final List<Map<String, String>> series = dbQueries.findAllSeriesInStudyInDcm4Chee(studyUID);
+		final DatabaseOperations dbQueries = Database.getInstance().getDatabaseOperations();
+		final List<Map<String, String>> series = dbQueries.findAllSeriesInStudy(studyUID);
 		final StringBuilder result = new StringBuilder();
 		boolean isFirst = true;
 

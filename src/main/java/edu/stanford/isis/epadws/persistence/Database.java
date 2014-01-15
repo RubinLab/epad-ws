@@ -1,4 +1,4 @@
-package edu.stanford.isis.epadws.processing.persistence;
+package edu.stanford.isis.epadws.persistence;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -7,47 +7,34 @@ import java.sql.Statement;
 import java.util.concurrent.atomic.AtomicReference;
 
 import edu.stanford.isis.epad.common.util.EPADLogger;
-import edu.stanford.isis.epadws.processing.model.DatabaseState;
 
 /**
  * @author amsnyder
  */
-public class MySqlInstance
+public class Database
 {
 	private static EPADLogger logger = EPADLogger.getInstance();
 
 	private static final String USER = "pacs";
 	private static final String PWD = "pacs";
 
-	private static final MySqlInstance ourInstance = new MySqlInstance();
+	private static final Database ourInstance = new Database();
 
-	private MySqlConnectionPool connectionPool;
-	private MySqlQueries mySqlQueries;
+	private ConnectionPool connectionPool;
+	private DatabaseOperations databaseOperations;
 
 	private final AtomicReference<DatabaseState> dbState = new AtomicReference<DatabaseState>(DatabaseState.INIT);
 
 	private long startupTime = -1;
 
-	public static MySqlInstance getInstance()
+	public static Database getInstance()
 	{
 		return ourInstance;
 	}
 
-	private MySqlInstance()
+	private Database()
 	{
 		initConnectionPool();
-	}
-
-	private void initConnectionPool()
-	{
-		try {
-			logger.info("Creating connection pool.");
-			createConnectionPool();
-			mySqlQueries = new MySqlQueriesImpl(connectionPool);
-		} catch (Exception e) {
-			logger.severe("Failed to create connection pool", e);
-			dbState.set(DatabaseState.ERROR);
-		}
 	}
 
 	public void startup()
@@ -74,6 +61,57 @@ public class MySqlInstance
 	public long getStartupTime()
 	{
 		return startupTime;
+	}
+
+	public void shutdown()
+	{
+		dbState.set(DatabaseState.SHUTDOWN);
+		long time = System.currentTimeMillis();
+		logger.info("Shutting down database.");
+
+		closeConnectionPool();
+		logger.info("The database took " + (System.currentTimeMillis() - time) + " ms, to shutdown.");
+	}
+
+	public DatabaseOperations getDatabaseOperations()
+	{
+		return databaseOperations;
+	}
+
+	public int getConnectionPoolAvailCount()
+	{
+		return connectionPool.availableConnectionCount();
+	}
+
+	public int getConnectionPoolUsedCount()
+	{
+		return connectionPool.usedConnectionCount();
+	}
+
+	private void initConnectionPool()
+	{
+		try {
+			logger.info("Creating connection pool.");
+			createConnectionPool();
+			databaseOperations = new DatabaseOperationsImpl(connectionPool);
+		} catch (Exception e) {
+			logger.severe("Failed to create connection pool", e);
+			dbState.set(DatabaseState.ERROR);
+		}
+	}
+
+	private void createConnectionPool() throws SQLException
+	{
+		String localHostConnStr = "jdbc:mysql://localhost:3306?autoReconnect=true";
+
+		logger.info("MySql using connection string: " + localHostConnStr);
+
+		connectionPool = new ConnectionPool(localHostConnStr, USER, PWD);
+	}
+
+	private void closeConnectionPool()
+	{
+		connectionPool.dispose();
 	}
 
 	private boolean tablesUpToDate()
@@ -108,44 +146,5 @@ public class MySqlInstance
 			DatabaseUtils.close(conn);
 		}
 		return result;
-	}
-
-	public void shutdown()
-	{
-		dbState.set(DatabaseState.SHUTDOWN);
-		long time = System.currentTimeMillis();
-		logger.info("Shutting down database.");
-
-		closeConnectionPool();
-		logger.info("The database took " + (System.currentTimeMillis() - time) + " ms, to shutdown.");
-	}
-
-	public MySqlQueries getMysqlQueries()
-	{
-		return mySqlQueries;
-	}
-
-	private void createConnectionPool() throws SQLException
-	{
-		String localHostConnStr = "jdbc:mysql://localhost:3306?autoReconnect=true";
-
-		logger.info("MySql using connection string: " + localHostConnStr);
-
-		connectionPool = new MySqlConnectionPool(localHostConnStr, USER, PWD);
-	}
-
-	private void closeConnectionPool()
-	{
-		connectionPool.dispose();
-	}
-
-	public int getConnectionPoolAvailCount()
-	{
-		return connectionPool.availableConnectionCount();
-	}
-
-	public int getConnectionPoolUsedCount()
-	{
-		return connectionPool.usedConnectionCount();
 	}
 }

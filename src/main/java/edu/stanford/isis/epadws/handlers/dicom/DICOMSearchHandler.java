@@ -19,14 +19,14 @@ import edu.stanford.isis.epad.common.dicom.DicomFormatUtil;
 import edu.stanford.isis.epad.common.dicom.DicomStudySearchType;
 import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epad.common.util.JsonHelper;
-import edu.stanford.isis.epadws.processing.persistence.MySqlInstance;
-import edu.stanford.isis.epadws.processing.persistence.MySqlQueries;
+import edu.stanford.isis.epadws.persistence.Database;
+import edu.stanford.isis.epadws.persistence.DatabaseOperations;
 import edu.stanford.isis.epadws.xnat.XNATUtil;
 
 /**
  * <code>
- * curl -v -b JSESSIOND=<id> -X GET "http://<ip>:<port>/searchj?patientName=*
- * curl -v -b JSESSIOND=<id> -X GET "http://<ip>:<port>/searchj?searchType=series&studyUID=[studyID]"
+ * curl -v -b JSESSIOND=<id> -X GET "http://<ip>:<port>/epad/searchj?patientName=*
+ * curl -v -b JSESSIOND=<id> -X GET "http://<ip>:<port>/epad/searchj?searchType=series&studyUID=[studyID]"
  * </code>
  * 
  * @author martin
@@ -102,10 +102,10 @@ public class DICOMSearchHandler extends AbstractHandler
 	 */
 	private void performDICOMStudySearch(PrintWriter outputStream, DicomStudySearchType searchType, String queryString)
 	{
-		final MySqlQueries dbQueries = MySqlInstance.getInstance().getMysqlQueries();
+		final DatabaseOperations dbQueries = Database.getInstance().getDatabaseOperations();
 		final String[] parts = queryString.split("=");
 		final String searchString = parts[1].trim();
-		final List<Map<String, String>> searchResult = dbQueries.doStudySearchInDcm4Chee(searchType.toString(),
+		final List<Map<String, String>> searchResult = dbQueries.studySearch(searchType.toString(),
 				searchString);
 		boolean isFirst = true;
 
@@ -156,8 +156,8 @@ public class DICOMSearchHandler extends AbstractHandler
 	{
 		final String studyIdKey = getStudyUIDFromRequest(queryString);
 		final String studyUID = DicomFormatUtil.formatDirToUid(studyIdKey);
-		final MySqlQueries dbQueries = MySqlInstance.getInstance().getMysqlQueries();
-		final List<Map<String, String>> series = dbQueries.findAllSeriesInStudyInDcm4Chee(studyUID);
+		final DatabaseOperations dbQueries = Database.getInstance().getDatabaseOperations();
+		final List<Map<String, String>> series = dbQueries.findAllSeriesInStudy(studyUID);
 		boolean isFirst = true;
 
 		log.info("DICOMSearchHandler series search found " + series.size() + " result(s) for study " + studyUID);

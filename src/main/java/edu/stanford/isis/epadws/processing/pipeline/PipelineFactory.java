@@ -44,9 +44,9 @@ public class PipelineFactory
 	private final ExecutorService moverService = Executors.newFixedThreadPool(10);
 	private final ExecutorService orderService = Executors.newFixedThreadPool(3);
 	private final ExecutorService thumbnailService = Executors.newFixedThreadPool(15);
-
 	private final ExecutorService processService = Executors.newFixedThreadPool(5);
 	private final ScheduledExecutorService statusCheckService = Executors.newScheduledThreadPool(1);
+
 	/**
 	 * There is only one pipeline service, and this contains a reference to the pipeline service.
 	 */
@@ -75,7 +75,6 @@ public class PipelineFactory
 		orderFileRunnable = new OrderFileThread(orderService, orderQueue);
 		thumbnailProcess = new ThumbnailProcess(thumbnailService, thumbnailQueue, null);
 
-		// print every 60 seconds.
 		statusCheckService.scheduleAtFixedRate(new Runnable() {
 			private String lastQueueSize = "00000000000";
 			private long lastUpdate = -1;
@@ -118,7 +117,7 @@ public class PipelineFactory
 			}
 
 			private boolean updateTimeExceeded()
-			{ // true if more than one minute
+			{
 				return ((System.currentTimeMillis() - lastUpdate) > (1000 * 60));
 			}
 		}, 5, 1, TimeUnit.SECONDS);
@@ -131,7 +130,6 @@ public class PipelineFactory
 	 */
 	public void buildAndStart()
 	{
-
 		processService.submit(thumbnailProcess);
 		processService.submit(orderFileRunnable);
 		processService.submit(moverProcess);

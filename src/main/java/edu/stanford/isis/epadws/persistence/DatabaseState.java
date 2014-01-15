@@ -5,7 +5,7 @@
  * Software License Agreement available at:
  *   http://epad.stanford.edu/license/
  */
-package edu.stanford.isis.epadws.processing.model;
+package edu.stanford.isis.epadws.persistence;
 
 public enum DatabaseState {
 	INIT, STARTING, READY, SHUTDOWN, ERROR;

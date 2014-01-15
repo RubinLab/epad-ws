@@ -1,4 +1,4 @@
-package edu.stanford.isis.epadws.processing.persistence;
+package edu.stanford.isis.epadws.persistence;
 
 import java.io.File;
 import java.util.HashMap;
@@ -11,6 +11,10 @@ import edu.stanford.isis.epadws.processing.model.PngProcessingStatus;
 
 public class Dcm4CheeDatabaseUtils
 {
+	private Dcm4CheeDatabaseUtils()
+	{
+	}
+
 	/**
 	 * Given a file generate the data to update the ePAD database table that contains information about that file.
 	 * 
@@ -22,7 +26,7 @@ public class Dcm4CheeDatabaseUtils
 		FileKey fileKey = new FileKey(file);
 		String filePath = fileKey.toString();
 		long fileSize = file.length();
-		MySqlQueries queries = MySqlInstance.getInstance().getMysqlQueries();
+		DatabaseOperations queries = Database.getInstance().getDatabaseOperations();
 		String sopInstanceUID = getSOPInstanceUIDFromPath(filePath);
 		int instanceKey = queries.getInstanceKeyForInstance(sopInstanceUID);
 

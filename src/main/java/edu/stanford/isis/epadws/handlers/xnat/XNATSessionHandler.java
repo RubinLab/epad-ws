@@ -24,7 +24,7 @@ import edu.stanford.isis.epadws.xnat.XNATUtil.XNATSessionResponse;
  * <p>
  * To deactivate that key:
  * <p>
- * <code>curl -v -b JSESSIONID=[session_key] -X DELETE http://[host:port]/session/</code>
+ * <code>curl -v -b JSESSIONID=[session_key] -X DELETE http://[host:port]/epad/session/</code>
  * 
  * @author martin
  */
@@ -60,8 +60,8 @@ public class XNATSessionHandler extends AbstractHandler
 					if (xnatSessionResponse.statusCode == HttpServletResponse.SC_OK) {
 						String jsessionID = xnatSessionResponse.response;
 						responseStream.append(jsessionID);
-						httpResponse.addHeader("Set-Cookie", "JSESSIONID=" + jsessionID + ";path=/");
-						httpResponse.addHeader("Set-Cookie", "ePADLoggedinUser=" + username + ";path=/");
+						httpResponse.addHeader("Set-Cookie", "JSESSIONID=" + jsessionID);
+						httpResponse.addHeader("Set-Cookie", "ePADLoggedinUser=" + username);
 						httpResponse.addHeader("Access-Control-Allow-Origin", origin);
 						httpResponse.addHeader("Access-Control-Allow-Credentials", "true");
 						statusCode = HttpServletResponse.SC_OK;

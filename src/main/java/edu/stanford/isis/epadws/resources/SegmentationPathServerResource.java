@@ -14,8 +14,8 @@ import org.restlet.resource.Get;
 
 import edu.stanford.isis.epad.common.util.EPADConfig;
 import edu.stanford.isis.epad.common.util.EPADFileUtils;
-import edu.stanford.isis.epadws.processing.persistence.MySqlInstance;
-import edu.stanford.isis.epadws.processing.persistence.MySqlQueries;
+import edu.stanford.isis.epadws.persistence.DatabaseOperations;
+import edu.stanford.isis.epadws.persistence.Database;
 
 public class SegmentationPathServerResource extends BaseServerResource
 {
@@ -181,7 +181,7 @@ public class SegmentationPathServerResource extends BaseServerResource
 
 		String imageIdKeyWithoutDot = imageIdKey.replaceAll("\\.", "_");
 
-		MySqlQueries queries = MySqlInstance.getInstance().getMysqlQueries();
+		DatabaseOperations queries = Database.getInstance().getDatabaseOperations();
 		String path = queries.selectEpadFilePathLike(imageIdKeyWithoutDot);
 
 		log.info("Segmentation path found : " + path);

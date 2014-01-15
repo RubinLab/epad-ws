@@ -26,7 +26,7 @@ import edu.stanford.isis.epadws.xnat.XNATUtil;
  * XNAT-based project retrieval handler. At present, a pretty thin wrapper around an XNAT projects call.
  * <p>
  * <code>
- * curl -b JSESSIONID=<session_id> -X GET "http://[host:port]/projects/"
+ * curl -b JSESSIONID=<session_id> -X GET "http://[host:port]/epad/projects/"
  * </code>
  * 
  * @author martin
@@ -55,6 +55,10 @@ public class XNATProjectHandler extends AbstractHandler
 
 		try {
 			responseStream = httpResponse.getOutputStream();
+
+			String jsessionID = XNATUtil.getJSessionIDFromRequest(httpRequest);
+
+			log.info("JSESSION ID on /projects route " + jsessionID);
 
 			if (XNATUtil.hasValidXNATSessionID(httpRequest)) {
 				statusCode = invokeXNATProjectService(base, httpRequest, httpResponse, responseStream);

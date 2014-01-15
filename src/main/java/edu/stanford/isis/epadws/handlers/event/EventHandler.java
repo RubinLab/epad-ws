@@ -14,10 +14,16 @@ import org.eclipse.jetty.server.handler.AbstractHandler;
 import edu.stanford.isis.epad.common.util.EPADConfig;
 import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epad.common.util.SearchResultUtils;
-import edu.stanford.isis.epadws.processing.persistence.MySqlInstance;
-import edu.stanford.isis.epadws.processing.persistence.MySqlQueries;
+import edu.stanford.isis.epadws.persistence.Database;
+import edu.stanford.isis.epadws.persistence.DatabaseOperations;
 import edu.stanford.isis.epadws.xnat.XNATUtil;
 
+/**
+ * 
+ * 
+ * 
+ * @author martin
+ */
 public class EventHandler extends AbstractHandler
 {
 	private static final EPADLogger log = EPADLogger.getInstance();
@@ -25,12 +31,11 @@ public class EventHandler extends AbstractHandler
 
 	private static final String INVALID_METHOD_MESSAGE = "Only POST and GET methods valid for the events route";
 	private static final String INTERNAL_EXCEPTION_MESSAGE = "Internal error on event search";
-	private static final String MISSING_USER_NAME_MESSAGE = "No user name in event query";
+	private static final String MISSING_JSESSIONID_MESSAGE = "No session identifier in event query";
 	private static final String BAD_PARAMETERS_MESSAGE = "Missing parameters in event query";
 	private static final String MISSING_QUERY_MESSAGE = "No query in event request";
 	private static final String INVALID_SESSION_TOKEN_MESSAGE = "Session token is invalid on event route";
 
-	// TODO Use session ID rather than username in event table
 	@Override
 	public void handle(String base, Request request, HttpServletRequest httpRequest, HttpServletResponse httpResponse)
 	{
@@ -50,13 +55,13 @@ public class EventHandler extends AbstractHandler
 				if ("GET".equalsIgnoreCase(method)) {
 					if (queryString != null) {
 						queryString = queryString.trim();
-						String userName = getUserNameFromRequest(queryString);
-						if (userName != null) {
-							findEventsForUser(responseStream, userName);
+						String jsessionID = XNATUtil.getJSessionIDFromRequest(httpRequest);
+						if (jsessionID != null) {
+							findEventsForSessionID(responseStream, jsessionID);
 							httpResponse.setStatus(HttpServletResponse.SC_OK);
 						} else {
-							log.info(MISSING_USER_NAME_MESSAGE);
-							responseStream.append(MISSING_USER_NAME_MESSAGE);
+							log.info(MISSING_JSESSIONID_MESSAGE);
+							responseStream.append(MISSING_JSESSIONID_MESSAGE);
 							httpResponse.setStatus(HttpServletResponse.SC_BAD_REQUEST);
 						}
 					} else {
@@ -67,7 +72,7 @@ public class EventHandler extends AbstractHandler
 				} else if ("POST".equalsIgnoreCase(method)) {
 					if (queryString != null) {
 						queryString = queryString.trim();
-						String username = getUserNameFromRequest(queryString);
+						String jsessionID = XNATUtil.getJSessionIDFromRequest(httpRequest);
 						String event_status = getEventStatusFromRequest(queryString);
 						String aim_uid = getAimUidFromRequest(queryString);
 						String aim_name = getAimNameFromRequest(queryString);
@@ -77,14 +82,14 @@ public class EventHandler extends AbstractHandler
 						String template_name = getTemplateNameFromRequest(queryString);
 						String plugin_name = getPluginNameFromRequest(queryString);
 
-						log.info("Got event for AIM ID " + aim_uid + " for user " + username);
+						log.info("Got event for AIM ID " + aim_uid + " with JSESSIONID " + jsessionID);
 
-						if (username != null && event_status != null && aim_uid != null && aim_uid != null && aim_name != null
+						if (jsessionID != null && event_status != null && aim_uid != null && aim_uid != null && aim_name != null
 								&& patient_id != null && patient_name != null && template_id != null && template_name != null
 								&& plugin_name != null) {
-							MySqlQueries dbQueries = MySqlInstance.getInstance().getMysqlQueries();
-							dbQueries.insertEvent(username, event_status, aim_uid, aim_name, patient_id, patient_name, template_id,
-									template_name, plugin_name);
+							DatabaseOperations dbQueries = Database.getInstance().getDatabaseOperations();
+							dbQueries.insertEpadEvent(jsessionID, event_status, aim_uid, aim_name, patient_id, patient_name,
+									template_id, template_name, plugin_name);
 							responseStream.flush();
 							httpResponse.setStatus(HttpServletResponse.SC_OK);
 						} else {
@@ -113,10 +118,10 @@ public class EventHandler extends AbstractHandler
 		}
 	}
 
-	private void findEventsForUser(PrintWriter responseStrean, String userName)
+	private void findEventsForSessionID(PrintWriter responseStrean, String sessionID)
 	{
-		MySqlQueries dbQueries = MySqlInstance.getInstance().getMysqlQueries();
-		List<Map<String, String>> eventMap = dbQueries.getEventsForUser(userName);
+		DatabaseOperations dbQueries = Database.getInstance().getDatabaseOperations();
+		List<Map<String, String>> eventMap = dbQueries.getEpadEventsForSessionID(sessionID);
 
 		responseStrean.print(new SearchResultUtils().get_EVENT_SEARCH_HEADER());
 
@@ -137,17 +142,6 @@ public class EventHandler extends AbstractHandler
 			responseStrean.print(sb.toString());
 			log.info(sb.toString());
 		}
-	}
-
-	// TODO clean up this mess
-
-	private static String getUserNameFromRequest(String queryString)
-	{
-		String[] parts = queryString.split("&");
-		String value = parts[0].trim();
-		parts = value.split("=");
-		value = parts[1].trim();
-		return value;
 	}
 
 	private static String getEventStatusFromRequest(String queryString)

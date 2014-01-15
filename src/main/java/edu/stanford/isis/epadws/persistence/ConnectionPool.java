@@ -1,4 +1,4 @@
-package edu.stanford.isis.epadws.processing.persistence;
+package edu.stanford.isis.epadws.persistence;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -14,7 +14,7 @@ import edu.stanford.isis.epadws.processing.pipeline.threads.ShutdownSignal;
  * 
  * @author amsnyder
  */
-public class MySqlConnectionPool implements Runnable
+public class ConnectionPool implements Runnable
 {
 	private static final EPADLogger logger = EPADLogger.getInstance();
 
@@ -27,7 +27,7 @@ public class MySqlConnectionPool implements Runnable
 
 	private int initialConnections = 5;
 
-	public MySqlConnectionPool(String url, String userName, String userPass) throws SQLException
+	public ConnectionPool(String url, String userName, String userPass) throws SQLException
 	{
 		this.connectionUrl = url;
 		this.userName = userName;
@@ -52,9 +52,7 @@ public class MySqlConnectionPool implements Runnable
 	{
 		Connection newConnection = null;
 		if (connectionsAvailable.size() == 0) {
-			// creating a new Connection
 			newConnection = createConnection();
-			// adding Connection to used list
 			connectionsUsed.add(newConnection);
 		} else {
 			int size = connectionsAvailable.size();
@@ -104,7 +102,7 @@ public class MySqlConnectionPool implements Runnable
 	/**
 	 * Private method to close excess connections.
 	 * 
-	 * @throws SQLException -
+	 * @throws SQLException
 	 */
 	private void closeExcessConnections() throws SQLException
 	{
@@ -126,7 +124,6 @@ public class MySqlConnectionPool implements Runnable
 			synchronized (this) {
 				logger.info("Shutting down mysql database connection pool. #avail: " + connectionsAvailable.size() + " #used: "
 						+ connectionsUsed.size());
-
 				initialConnections = 0;
 				closeExcessConnections();
 			}

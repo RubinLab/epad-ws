@@ -9,8 +9,8 @@ import org.restlet.resource.Get;
 import org.restlet.resource.Post;
 
 import edu.stanford.isis.epad.common.util.SearchResultUtils;
-import edu.stanford.isis.epadws.processing.persistence.MySqlInstance;
-import edu.stanford.isis.epadws.processing.persistence.MySqlQueries;
+import edu.stanford.isis.epadws.persistence.DatabaseOperations;
+import edu.stanford.isis.epadws.persistence.Database;
 
 public class EventServerResource extends BaseServerResource
 {
@@ -79,8 +79,8 @@ public class EventServerResource extends BaseServerResource
 			if (userName != null && event_status != null && aim_uid != null && aim_uid != null && aim_name != null
 					&& patient_id != null && patient_name != null && template_id != null && template_name != null
 					&& plugin_name != null) {
-				MySqlQueries dbQueries = MySqlInstance.getInstance().getMysqlQueries();
-				dbQueries.insertEvent(userName, event_status, aim_uid, aim_name, patient_id, patient_name, template_id,
+				DatabaseOperations dbQueries = Database.getInstance().getDatabaseOperations();
+				dbQueries.insertEpadEvent(userName, event_status, aim_uid, aim_name, patient_id, patient_name, template_id,
 						template_name, plugin_name);
 
 				log.info(INSERT_SUCCESS_MESSAGE);
@@ -101,8 +101,8 @@ public class EventServerResource extends BaseServerResource
 	private String executeEventQuery(String userName)
 	{
 		StringBuilder out = new StringBuilder();
-		MySqlQueries dbQueries = MySqlInstance.getInstance().getMysqlQueries();
-		List<Map<String, String>> result = dbQueries.getEventsForUser(userName);
+		DatabaseOperations dbQueries = Database.getInstance().getDatabaseOperations();
+		List<Map<String, String>> result = dbQueries.getEpadEventsForSessionID(userName);
 
 		out.append(new SearchResultUtils().get_EVENT_SEARCH_HEADER());
 		log.info("Found " + result.size() + " result(s).");
