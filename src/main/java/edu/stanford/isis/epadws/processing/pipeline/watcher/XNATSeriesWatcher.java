@@ -38,9 +38,9 @@ public class XNATSeriesWatcher implements Runnable
 	{
 		this.xnatSeriesWatcherQueue = xnatSeriesWatcherQueue;
 
-		xnatUploadProjectID = config.getStringConfigurationParameter("XNATUploadProjectID");
-		xnatUploadProjectUser = config.getStringConfigurationParameter("XNATUploadProjectUser");
-		xnatUploadProjectPassword = config.getStringConfigurationParameter("XNATUploadProjectPassword");
+		xnatUploadProjectID = config.getStringPropertyValue("XNATUploadProjectID");
+		xnatUploadProjectUser = config.getStringPropertyValue("XNATUploadProjectUser");
+		xnatUploadProjectPassword = config.getStringPropertyValue("XNATUploadProjectPassword");
 
 		jsessionID = "";
 		logger.info("Starting the XNAT series watcher");

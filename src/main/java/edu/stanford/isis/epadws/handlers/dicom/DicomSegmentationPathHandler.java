@@ -11,8 +11,8 @@ import org.eclipse.jetty.server.handler.AbstractHandler;
 
 import edu.stanford.isis.epad.common.util.EPADConfig;
 import edu.stanford.isis.epad.common.util.EPADLogger;
-import edu.stanford.isis.epadws.persistence.DatabaseOperations;
 import edu.stanford.isis.epadws.persistence.Database;
+import edu.stanford.isis.epadws.persistence.DatabaseOperations;
 import edu.stanford.isis.epadws.xnat.XNATUtil;
 
 /**
@@ -50,7 +50,7 @@ public class DicomSegmentationPathHandler extends AbstractHandler
 					String imageUID = getImageUIDFromRequest(queryString);
 					if (imageUID != null) {
 						String[] studySeriesAndImageIDs = retrieveStudySeriesAndImageIDsFromEpadDatabase(imageUID);
-						String separator = config.getParam("fieldSeparator");
+						String separator = config.getStringPropertyValue("fieldSeparator");
 						log.info("SegmentationPath query from ePAD for image " + imageUID);
 
 						if (studySeriesAndImageIDs[0] != null && studySeriesAndImageIDs[1] != null

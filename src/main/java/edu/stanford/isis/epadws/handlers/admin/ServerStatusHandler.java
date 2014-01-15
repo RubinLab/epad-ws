@@ -70,8 +70,8 @@ public class ServerStatusHandler extends AbstractHandler
 				responseStream.println();
 				responseStream.println("Version: " + EPadWebServerVersion.getBuildDate());
 				responseStream.println();
-				responseStream.println("Listening on: " + proxyConfig.getParam("ListenIP") + ":"
-						+ proxyConfig.getParam("ListenPort"));
+				responseStream.println("Listening on: " + proxyConfig.getIntegerPropertyValue("ListenIP") + ":"
+						+ proxyConfig.getIntegerPropertyValue("ListenPort"));
 				responseStream.println();
 				responseStream.println("Plugin Version - interface:      " + EPadPlugin.PLUGIN_INTERFACE_VERSION);
 				responseStream.println("Plugin Version - implementation: " + ePadPlugin.getPluginImplVersion());

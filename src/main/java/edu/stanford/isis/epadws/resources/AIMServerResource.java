@@ -55,14 +55,14 @@ import edu.stanford.isis.epad.common.util.XmlNamespaceTranslator;
  */
 public class AIMServerResource extends BaseServerResource
 {
-	private final String namespace = EPADConfig.getInstance().getParam("namespace"); // TODO Constants for these names
-	private final String serverUrl = EPADConfig.getInstance().getParam("serverUrl");
-	private final String username = EPADConfig.getInstance().getParam("username");
-	private final String password = EPADConfig.getInstance().getParam("password");
-	private final String baseAnnotationDir = EPADConfig.getInstance().getParam("baseAnnotationDir");
-	private final String xsdFile = EPADConfig.getInstance().getParam("xsdFile");
-	private final String xsdFilePath = EPADConfig.getInstance().getParam("baseSchemaDir") + xsdFile;
-	private final String collection = EPADConfig.getInstance().getParam("collection");
+	private final String namespace = EPADConfig.getInstance().getStringPropertyValue("namespace");
+	private final String serverUrl = EPADConfig.getInstance().getStringPropertyValue("serverUrl");
+	private final String username = EPADConfig.getInstance().getStringPropertyValue("username");
+	private final String password = EPADConfig.getInstance().getStringPropertyValue("password");
+	private final String baseAnnotationDir = EPADConfig.getInstance().getStringPropertyValue("baseAnnotationDir");
+	private final String xsdFile = EPADConfig.getInstance().getStringPropertyValue("xsdFile");
+	private final String xsdFilePath = EPADConfig.getInstance().getStringPropertyValue("baseSchemaDir") + xsdFile;
+	private final String collection = EPADConfig.getInstance().getStringPropertyValue("collection");
 
 	private static final String PARSER_ERROR_MESSAGE = "XML parser error: ";
 	private static final String DOM_ERROR_MESSAGE = "DOM error: ";

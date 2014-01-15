@@ -125,7 +125,7 @@ public class EventHandler extends AbstractHandler
 
 		responseStrean.print(new SearchResultUtils().get_EVENT_SEARCH_HEADER());
 
-		String separator = config.getParam("fieldSeparator");
+		String separator = config.getStringPropertyValue("fieldSeparator");
 		for (Map<String, String> row : eventMap) {
 			StringBuilder sb = new StringBuilder();
 			sb.append(row.get("pk")).append(separator);

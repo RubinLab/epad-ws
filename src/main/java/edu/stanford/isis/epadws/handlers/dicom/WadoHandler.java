@@ -75,9 +75,9 @@ public class WadoHandler extends AbstractHandler
 
 	private int performWADOQuery(String queryString, ServletOutputStream outputStream) throws IOException, HttpException
 	{
-		String host = config.getParam("NameServer");
-		int port = config.getIntParam("DicomServerWadoPort");
-		String base = config.getParam("WadoUrlExtension");
+		String host = config.getStringPropertyValue("NameServer");
+		int port = config.getIntegerPropertyValue("DicomServerWadoPort");
+		String base = config.getStringPropertyValue("WadoUrlExtension");
 		String wadoUrl = buildWADOURL(host, port, base, queryString);
 		HttpClient client = new HttpClient();
 		GetMethod method = new GetMethod(wadoUrl);

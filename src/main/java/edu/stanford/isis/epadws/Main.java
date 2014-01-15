@@ -27,13 +27,10 @@ import org.eclipse.jetty.webapp.WebAppContext;
 import org.eclipse.jetty.xml.XmlConfiguration;
 import org.xml.sax.SAXException;
 
-import edu.stanford.isis.epad.common.plugins.EPadFiles;
 import edu.stanford.isis.epad.common.plugins.PluginConfig;
 import edu.stanford.isis.epad.common.plugins.PluginController;
-import edu.stanford.isis.epad.common.plugins.PluginHandler;
 import edu.stanford.isis.epad.common.plugins.PluginHandlerMap;
 import edu.stanford.isis.epad.common.plugins.PluginServletHandler;
-import edu.stanford.isis.epad.common.plugins.impl.ClassFinderTestUtils;
 import edu.stanford.isis.epad.common.plugins.impl.EPadFilesImpl;
 import edu.stanford.isis.epad.common.util.EPADConfig;
 import edu.stanford.isis.epad.common.util.EPADLogger;
@@ -76,15 +73,15 @@ import edu.stanford.isis.epadws.processing.pipeline.watcher.QueueAndWatcherManag
 public class Main
 {
 	private static final EPADLogger log = EPADLogger.getInstance();
-	private static final EPADConfig proxyConfig = EPADConfig.getInstance();
+	private static final EPADConfig epadConfig = EPADConfig.getInstance();
 
 	/**
-	 * Starts EPad web server and sets several contexts to be used by restlets.
+	 * Starts EPad web server
 	 * <p>
 	 * The application listens on the port indicated by the property <i>ePadClientPort</i> in proxy-config.properties.
 	 * <p>
-	 * The current directory must be set to the bin subdirectory before calling the start scripts associated with this
-	 * application.
+	 * The current directory must be set to the ePAD bin subdirectory before calling the start scripts associated with
+	 * this application.
 	 * 
 	 * @param args String[]
 	 * @see EPADConfig
@@ -95,42 +92,27 @@ public class Main
 		Server server = null;
 
 		try {
-			int port = proxyConfig.getIntParam("ePadClientPort");
+			int port = epadConfig.getIntegerPropertyValue("ePadClientPort");
 			log.info("Starting the ePAD web service. Build date: " + EPadWebServerVersion.getBuildDate());
-			initPlugins(); // Initialize plugin classes
+			initializePlugins();
 			startSupportThreads();
 			server = new Server(port);
 			configureJettyServer(server);
 			addHandlers(server);
-			testPluginImpl();
 			Runtime.getRuntime().addShutdownHook(new ShutdownHookThread());
-			// See: http://restlet-discuss.1400322.n2.nabble.com/Jetty-Webapp-td7313234.html
-
 			log.info("Starting Jetty on port " + port);
 			server.start();
-			/*
-			 * Component component = new Component(); component.getServers().add(Protocol.HTTP, 8081);
-			 * component.getDefaultHost().attach(new EPADWebService());
-			 * 
-			 * log.info("Starting test Restlet component"); component.start();
-			 */
-			/*
-			 * ServletContextHandler restletContext = new ServletContextHandler(ServletContextHandler.SESSIONS);
-			 * restletContext.setContextPath("/restlet"); ServerServlet serverServlet = new ServerServlet(); ServletHolder
-			 * servletHolder = new ServletHolder(serverServlet); servletHolder.setInitParameter("org.restlet.application",
-			 * "edu.stanford.isis.epadws.EPADWebService"); restletContext.addServlet(servletHolder, "/*");
-			 */
 			server.join();
 		} catch (BindException be) {
 			log.severe("Bind exception", be);
 			Throwable t = be.getCause();
 			log.warning("Bind exception cause: " + be.getMessage(), t);
 		} catch (SocketException se) {
-			log.severe("Cannot bind to all sockets.", se);
+			log.severe("Cannot bind to all sockets", se);
 		} catch (Exception e) {
-			log.severe("Fatal Exception. Shutting down EPad Web Service.", e);
+			log.severe("Fatal Exception. Shutting down EPad Web Service", e);
 		} catch (Error err) {
-			log.severe("Fatal Error. Shutting down EPad Web Service.", err);
+			log.severe("Fatal Error. Shutting down EPad Web Service", err);
 		} finally {
 			log.info("#####################################################");
 			log.info("############# Shutting down EPad Web Service ########");
@@ -172,10 +154,7 @@ public class Main
 		}
 	}
 
-	/**
-	 * Make sure plugin has implementations.
-	 */
-	private static void initPlugins()
+	private static void initializePlugins()
 	{
 		PluginController controller = PluginController.getInstance();
 		controller.setImpl(new EPadFilesImpl());
@@ -183,14 +162,14 @@ public class Main
 
 	private static void startSupportThreads()
 	{
-		log.info("Starting support threads.");
+		log.info("Starting support threads....");
 
 		try {
 			QueueAndWatcherManager.getInstance().buildAndStart();
 			Database.getInstance().startup();
-			log.info("Startup of MySql database was successful.");
+			log.info("Startup of database was successful");
 		} catch (Exception e) {
-			log.warning("Failed to start MySql database.", e);
+			log.warning("Failed to start database", e);
 		}
 		WindowLevelFactory.getInstance().buildAndStart();
 	}
@@ -250,7 +229,7 @@ public class Main
 	}
 
 	/**
-	 * Adds a WAR file from the web-apps directory at a context path.
+	 * Adds a WAR file from the webapps directory at a context path.
 	 * 
 	 * @param handlerList List of handlers
 	 * @param warFileName String war file name, with or without extension (e.g., ePad.war)
@@ -293,23 +272,18 @@ public class Main
 		PluginConfig pluginConfig = PluginConfig.getInstance();
 		List<String> pluginHandlerList = pluginConfig.getPluginHandlerList();
 
-		for (String currClassName : pluginHandlerList) {
-			log.info("Loading plugin class: " + currClassName);
-			PluginServletHandler psh = pluginHandlerMap.loadFromClassName(currClassName);
+		for (String pluginClassName : pluginHandlerList) {
+			log.info("Loading plugin class: " + pluginClassName);
+			PluginServletHandler psh = pluginHandlerMap.loadFromClassName(pluginClassName);
 			if (psh != null) {
 				String pluginName = psh.getName();
 				pluginHandlerMap.setPluginServletHandler(pluginName, psh);
 			} else {
-				log.info("WARNING: Didn't find plugin class: " + currClassName);
+				log.warning("Could not find plugin class: " + pluginClassName);
 			}
 		}
 	}
 
-	/**
-	 * Stop the server cleanly by checking it isn't null and catching exceptions.
-	 * 
-	 * @param server The server
-	 */
 	private static void stopServer(Server server)
 	{
 		try {
@@ -320,60 +294,7 @@ public class Main
 				server.stop();
 			}
 		} catch (Exception e) {
-			log.warning("Failed to stop the jetty server.", e);
-		}
-	}
-
-	private static void testPluginImpl()
-	{
-		try {
-			EPadFiles ePadFiles = new EPadFilesImpl();
-			File baseDirFile = ePadFiles.getBaseDir();
-			log.info("baseDirFile = " + baseDirFile.getAbsolutePath());
-			String baseDirPath = ePadFiles.getBaseDirPath();
-			log.info("baseDirPath = " + baseDirPath);
-
-			// List<String> allStudies = ePadFiles.getStudies();
-			// for (String currStudy : allStudies) {
-			// log.info("Study: " + currStudy);
-			// }
-		} catch (Exception e) {
-			log.warning("Failed ePadPlugin test.", e);
-		} catch (Error err) {
-			log.warning("Failed ePadPlugin with an error.", err);
-		}
-	}
-
-	/**
-	 * Temporary test to find best way to get plugin classes using reflection.
-	 */
-	@SuppressWarnings("unused")
-	private static void pluginReflectionsTests()
-	{
-		try {
-			// Look for a class that has annotation EPadPluginHandler
-			String packageName = "edu.stanford.isis.plugins.first";
-			List<Class<?>> pluginClasses = ClassFinderTestUtils.getClasses(packageName);
-
-			log.info("Found :" + pluginClasses.size() + " classes in package: " + packageName);
-			for (Class<?> pluginClass : pluginClasses) {
-				if (ClassFinderTestUtils.hasAnnotation(pluginClass, PluginHandler.class)) {
-					log.info("Found PluginHandler class: " + pluginClass.getName());
-				}
-			}
-			PluginHandlerMap pluginHandlerMap = PluginHandlerMap.getInstance();
-			pluginHandlerMap.classLoaderForName();
-			// ClassFinderTestUtils.classForName();
-			// ClassFinderTestUtils.dynamicClassLoader();
-			// ClassFinderTestUtils.classFinderMethod();
-
-			// try to read the class-path for some
-			log.info("Classpath: \n" + ClassFinderTestUtils.printClasspath());
-
-			// Read the Manifest of classes in some jar files.
-			ClassFinderTestUtils.readJarManifestForClass(pluginHandlerMap.getClass());
-		} catch (Exception e) {
-			log.warning("Failed plugin reflections test.", e);
+			log.warning("Failed to stop the Jetty server", e);
 		}
 	}
 }

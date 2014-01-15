@@ -217,7 +217,7 @@ public class CoordinationHandler extends AbstractHandler
 
 	private String getTermIDPrefix()
 	{
-		String serverPrefix = config.getParam(SERVER_PREFIX_PARAM_NAME);
+		String serverPrefix = config.getStringPropertyValue(SERVER_PREFIX_PARAM_NAME);
 
 		if (serverPrefix == null)
 			serverPrefix = SERVER_DEFAULT_PREFIX;

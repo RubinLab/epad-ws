@@ -73,8 +73,8 @@ public class XNATUtil
 
 	public static XNATSessionResponse getXNATSessionID(String username, String password)
 	{
-		String xnatHost = config.getStringConfigurationParameter("XNATServer");
-		int xnatPort = config.getIntegerConfigurationParameter("XNATPort");
+		String xnatHost = config.getStringPropertyValue("XNATServer");
+		int xnatPort = config.getIntegerPropertyValue("XNATPort");
 		String xnatSessionURL = buildURLString(xnatHost, xnatPort, XNAT_SESSION_BASE);
 		HttpClient client = new HttpClient();
 		PostMethod postMethod = new PostMethod(xnatSessionURL);
@@ -199,8 +199,8 @@ public class XNATUtil
 
 	public static int invalidateXNATSessionID(HttpServletRequest httpRequest)
 	{
-		String xnatHost = config.getStringConfigurationParameter("XNATServer");
-		int xnatPort = config.getIntegerConfigurationParameter("XNATPort");
+		String xnatHost = config.getStringPropertyValue("XNATServer");
+		int xnatPort = config.getIntegerPropertyValue("XNATPort");
 		String xnatSessionURL = buildURLString(xnatHost, xnatPort, XNAT_SESSION_BASE);
 		HttpClient client = new HttpClient();
 		DeleteMethod deleteMethod = new DeleteMethod(xnatSessionURL);
@@ -232,8 +232,8 @@ public class XNATUtil
 	public static void createXNATSubjectFromDICOMPatient(String xnatProjectID, String xnatSubjectLabel,
 			String dicomPatientName, String jsessionID)
 	{
-		String xnatHost = config.getStringConfigurationParameter("XNATServer");
-		int xnatPort = config.getIntegerConfigurationParameter("XNATPort");
+		String xnatHost = config.getStringPropertyValue("XNATServer");
+		int xnatPort = config.getIntegerPropertyValue("XNATPort");
 		String xnatSubjectURL = buildXNATSubjectCreationURL(xnatHost, xnatPort, XNAT_PROJECT_BASE, xnatProjectID,
 				xnatSubjectLabel, dicomPatientName);
 		HttpClient client = new HttpClient();
@@ -257,8 +257,8 @@ public class XNATUtil
 	public static boolean createXNATExperimentFromDICOMStudy(String xnatProjectID, String xnatSubjectLabel,
 			String dicomStudyUID, String jsessionID)
 	{
-		String xnatHost = config.getStringConfigurationParameter("XNATServer");
-		int xnatPort = config.getIntegerConfigurationParameter("XNATPort");
+		String xnatHost = config.getStringPropertyValue("XNATServer");
+		int xnatPort = config.getIntegerPropertyValue("XNATPort");
 		String xnatStudyURL = buildXNATExperimentCreationURL(xnatHost, xnatPort, XNAT_PROJECT_BASE, xnatProjectID,
 				xnatSubjectLabel, dicomStudyUID);
 
@@ -284,8 +284,8 @@ public class XNATUtil
 
 	public static boolean hasValidXNATSessionID(String jsessionID)
 	{
-		String xnatHost = config.getStringConfigurationParameter("XNATServer");
-		int xnatPort = config.getIntegerConfigurationParameter("XNATPort");
+		String xnatHost = config.getStringPropertyValue("XNATServer");
+		int xnatPort = config.getIntegerPropertyValue("XNATPort");
 		String xnatSessionURL = buildURLString(xnatHost, xnatPort, XNAT_SESSION_BASE);
 		HttpClient client = new HttpClient();
 		GetMethod getMethod = new GetMethod(xnatSessionURL);
@@ -335,8 +335,8 @@ public class XNATUtil
 
 	public static String buildProjectURLString(String base)
 	{
-		String xnatHost = config.getStringConfigurationParameter("XNATServer");
-		int xnatPort = config.getIntegerConfigurationParameter("XNATPort");
+		String xnatHost = config.getStringPropertyValue("XNATServer");
+		int xnatPort = config.getIntegerPropertyValue("XNATPort");
 
 		if (base.startsWith("/"))
 			base = base.substring(1, base.length());
@@ -346,8 +346,8 @@ public class XNATUtil
 
 	public static String buildSubjectURLString(String base)
 	{
-		String xnatHost = config.getStringConfigurationParameter("XNATServer");
-		int xnatPort = config.getIntegerConfigurationParameter("XNATPort");
+		String xnatHost = config.getStringPropertyValue("XNATServer");
+		int xnatPort = config.getIntegerPropertyValue("XNATPort");
 
 		if (base.startsWith("/"))
 			base = base.substring(1, base.length());
@@ -418,8 +418,8 @@ public class XNATUtil
 	@SuppressWarnings("unused")
 	private static boolean createXNATProject(String xnatProjectID, String xnatProjectName, String jsessionID)
 	{
-		String xnatHost = config.getStringConfigurationParameter("XNATServer");
-		int xnatPort = config.getIntegerConfigurationParameter("XNATPort");
+		String xnatHost = config.getStringPropertyValue("XNATServer");
+		int xnatPort = config.getIntegerPropertyValue("XNATPort");
 		String xnatProjectURL = buildXNATProjectCreationURL(xnatHost, xnatPort, XNAT_PROJECT_BASE, xnatProjectID,
 				xnatProjectName);
 		HttpClient client = new HttpClient();

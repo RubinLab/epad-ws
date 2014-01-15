@@ -18,15 +18,8 @@ import edu.stanford.isis.epadws.processing.pipeline.PipelineFactory;
  */
 public class ShutdownHookThread extends Thread
 {
-
 	private static final EPADLogger logger = EPADLogger.getInstance();
-
 	private static final AtomicBoolean hasRun = new AtomicBoolean(false);
-
-	public ShutdownHookThread()
-	{
-
-	}
 
 	/**
 	 * This is the shutdown thread.
@@ -34,33 +27,24 @@ public class ShutdownHookThread extends Thread
 	@Override
 	public void run()
 	{
-
 		synchronized (hasRun) {
 			logger.info("Shutdown hook called.");
 
 			if (hasRun.get() == true) {
-				// don't call this twice.
 				return;
 			}
 			hasRun.set(true);
 
-			// signal all threads to shutdown.
 			ShutdownSignal shutdownSignal = ShutdownSignal.getInstance();
 			shutdownSignal.shutdownNow();
 
-			// stop any schedule services in pipeline.
 			PipelineFactory.getInstance().shutdown();
-
-			// shutdown the database.
 			Database.getInstance().shutdown();
-
 		}
-
-	}// run
+	}
 
 	public void shutdown()
 	{
 		run();
 	}
-
 }

@@ -87,8 +87,8 @@ public class EPadWebServiceServerResource extends BaseServerResource implements 
 			out.append("--------------  ePAD Web Service status  --------------\n\n");
 			out.append("ePAD Web Service uptime: " + upTimeSec + " sec\n\n");
 			out.append("Version: " + EPadWebServerVersion.getBuildDate() + "\n\n");
-			out.append("ePAD Web Service listening on: " + proxyConfig.getParam("ListenIP") + ":"
-					+ proxyConfig.getParam("ListenPort") + "\n\n");
+			out.append("ePAD Web Service listening on: " + proxyConfig.getStringPropertyValue("ListenIP") + ":"
+					+ proxyConfig.getIntegerPropertyValue("ListenPort") + "\n\n");
 			out.append("Plugin Version - interface:      " + EPadPlugin.PLUGIN_INTERFACE_VERSION + "\n");
 			out.append("Plugin Version - implementation: " + ePadPlugin.getPluginImplVersion() + "\n\n");
 			Database instance = Database.getInstance();

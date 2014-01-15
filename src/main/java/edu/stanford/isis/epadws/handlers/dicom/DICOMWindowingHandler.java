@@ -119,7 +119,7 @@ public class DICOMWindowingHandler extends AbstractHandler
 				windowWidth = (maxValue - minValue);
 				windowCenter = (minValue + windowWidth / 2.0);
 			}
-			String separator = config.getParam("fieldSeparator");
+			String separator = config.getStringPropertyValue("fieldSeparator");
 			responseStream.println("windowWidth" + separator + "windowCenter");
 			responseStream.println(windowWidth + separator + windowCenter);
 			success = true;

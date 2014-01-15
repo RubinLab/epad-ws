@@ -14,8 +14,8 @@ import org.restlet.resource.Get;
 
 import edu.stanford.isis.epad.common.util.EPADConfig;
 import edu.stanford.isis.epad.common.util.EPADFileUtils;
-import edu.stanford.isis.epadws.persistence.DatabaseOperations;
 import edu.stanford.isis.epadws.persistence.Database;
+import edu.stanford.isis.epadws.persistence.DatabaseOperations;
 
 public class SegmentationPathServerResource extends BaseServerResource
 {
@@ -65,7 +65,7 @@ public class SegmentationPathServerResource extends BaseServerResource
 			log.info("DCMQR: " + imageIdKey);
 			result = retrieveFromEpadDB(imageIdKey); // res=dcmqr(imageIdKey);
 		}
-		String separator = config.getParam("fieldSeparator");
+		String separator = config.getStringPropertyValue("fieldSeparator");
 		out.append("StudyUID" + separator + "SeriesUID" + separator + "ImageUID\n");
 		if (result[0] != null && result[1] != null && result[2] != null)
 			out.append(result[0] + separator + result[1] + separator + result[2] + "\n");
@@ -97,8 +97,8 @@ public class SegmentationPathServerResource extends BaseServerResource
 
 		try {
 			EPADConfig pc = EPADConfig.getInstance();
-			String aeTitle = pc.getParam("DicomServerAETitle");
-			String dsPort = pc.getParam("DicomServerPort");
+			String aeTitle = pc.getStringPropertyValue("DicomServerAETitle");
+			String dsPort = pc.getStringPropertyValue("DicomServerPort");
 
 			String dcmServerTitlePort = aeTitle + "@localhost:" + dsPort;
 			dcmServerTitlePort = dcmServerTitlePort.trim();

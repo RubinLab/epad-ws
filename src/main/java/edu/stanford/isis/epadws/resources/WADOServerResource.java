@@ -83,9 +83,9 @@ public class WADOServerResource extends BaseServerResource
 
 	private String buildWADOURL(String queryString)
 	{
-		String host = config.getParam("NameServer"); // TODO DICOM name constants
-		int port = config.getIntParam("DicomServerWadoPort");
-		String base = config.getParam("WadoUrlExtension");
+		String host = config.getStringPropertyValue("NameServer"); // TODO DICOM name constants
+		int port = config.getIntegerPropertyValue("DicomServerWadoPort");
+		String base = config.getStringPropertyValue("WadoUrlExtension");
 
 		StringBuilder sb = new StringBuilder();
 		sb.append("http://").append(host);

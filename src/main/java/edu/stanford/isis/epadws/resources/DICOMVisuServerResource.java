@@ -108,7 +108,7 @@ public class DICOMVisuServerResource extends BaseServerResource
 			windowCenter = (minValue + windowWidth / 2.0);
 		}
 
-		String separator = config.getParam("fieldSeparator"); // TODO Constants for these names
+		String separator = config.getStringPropertyValue("fieldSeparator"); // TODO Constants for these names
 		out.append("windowWidth" + separator + "windowCenten");
 		out.append(windowWidth + separator + windowCenter + "\n");
 

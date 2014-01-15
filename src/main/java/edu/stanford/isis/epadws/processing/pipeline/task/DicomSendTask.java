@@ -72,10 +72,10 @@ public class DicomSendTask implements Runnable
 		FileWriter tagFileWriter = null;
 
 		try {
-			EPADConfig pc = EPADConfig.getInstance();
-			String aeTitle = pc.getParam("DicomServerAETitle");
-			String dsIP = pc.getParam("DicomServerIP");
-			String dsPort = pc.getParam("DicomServerPort");
+			EPADConfig epadConfig = EPADConfig.getInstance();
+			String aeTitle = epadConfig.getStringPropertyValue("DicomServerAETitle");
+			String dsIP = epadConfig.getStringPropertyValue("DicomServerIP");
+			String dsPort = epadConfig.getStringPropertyValue("DicomServerPort");
 			String dcmServerTitlePort = aeTitle + "@" + dsIP + ":" + dsPort;
 			dcmServerTitlePort = dcmServerTitlePort.trim();
 
@@ -95,11 +95,11 @@ public class DicomSendTask implements Runnable
 
 			String[] command = { "./dcmsnd", dcmServerTitlePort, dirPath };
 
-			ProcessBuilder pb = new ProcessBuilder(command);
+			ProcessBuilder processBuilder = new ProcessBuilder(command);
 			String dicomScriptsDir = EPADResources.getEPADWebServerDICOMBinDir();
-			pb.directory(new File(dicomScriptsDir));
-			pb.redirectErrorStream(true);
-			Process process = pb.start();
+			processBuilder.directory(new File(dicomScriptsDir));
+			processBuilder.redirectErrorStream(true);
+			Process process = processBuilder.start();
 
 			is = process.getInputStream();
 			isr = new InputStreamReader(is);

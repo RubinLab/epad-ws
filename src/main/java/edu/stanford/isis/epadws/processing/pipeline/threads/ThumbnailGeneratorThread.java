@@ -69,9 +69,9 @@ public class ThumbnailGeneratorThread implements Runnable
 
 				// Build WADO call.
 				EPADConfig config = EPADConfig.getInstance();
-				String host = config.getParam("DicomServerIP");
-				int port = config.getIntParam("DicomServerWadoPort");
-				String base = config.getParam("WadoUrlExtension");
+				String host = config.getStringPropertyValue("DicomServerIP");
+				int port = config.getIntegerPropertyValue("DicomServerWadoPort");
+				String base = config.getStringPropertyValue("WadoUrlExtension");
 				// String base = "/wado?";
 
 				WadoUrlBuilder wadoUrlBuilder = new WadoUrlBuilder(host, port, base, WadoUrlBuilder.ContentType.IMAGE);

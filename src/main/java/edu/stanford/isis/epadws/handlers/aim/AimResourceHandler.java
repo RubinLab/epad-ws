@@ -60,18 +60,18 @@ public class AimResourceHandler extends AbstractHandler
 {
 	private static final EPADLogger logger = EPADLogger.getInstance();
 
-	public String serverProxy = EPADConfig.getInstance().getParam("serverProxy");
-	public String namespace = EPADConfig.getInstance().getParam("namespace");
-	public String serverUrl = EPADConfig.getInstance().getParam("serverUrl");
-	public String username = EPADConfig.getInstance().getParam("username");
-	public String password = EPADConfig.getInstance().getParam("password");
-	public String baseAnnotationDir = EPADConfig.getInstance().getParam("baseAnnotationDir");
-	public String xsdFile = EPADConfig.getInstance().getParam("xsdFile");
-	public String xsdFilePath = EPADConfig.getInstance().getParam("baseSchemaDir") + xsdFile;
-	public String collection = EPADConfig.getInstance().getParam("collection");
-	public String dbpath = EPADConfig.getInstance().getParam("dbpath");
-	public String templatePath = EPADConfig.getInstance().getParam("baseTemplatesDir");
-	public String wadoProxy = EPADConfig.getInstance().getParam("wadoProxy");
+	public String serverProxy = EPADConfig.getInstance().getStringPropertyValue("serverProxy");
+	public String namespace = EPADConfig.getInstance().getStringPropertyValue("namespace");
+	public String serverUrl = EPADConfig.getInstance().getStringPropertyValue("serverUrl");
+	public String username = EPADConfig.getInstance().getStringPropertyValue("username");
+	public String password = EPADConfig.getInstance().getStringPropertyValue("password");
+	public String baseAnnotationDir = EPADConfig.getInstance().getStringPropertyValue("baseAnnotationDir");
+	public String xsdFile = EPADConfig.getInstance().getStringPropertyValue("xsdFile");
+	public String xsdFilePath = EPADConfig.getInstance().getStringPropertyValue("baseSchemaDir") + xsdFile;
+	public String collection = EPADConfig.getInstance().getStringPropertyValue("collection");
+	public String dbpath = EPADConfig.getInstance().getStringPropertyValue("dbpath");
+	public String templatePath = EPADConfig.getInstance().getStringPropertyValue("baseTemplatesDir");
+	public String wadoProxy = EPADConfig.getInstance().getStringPropertyValue("wadoProxy");
 
 	private static final String INTERNAL_EXCEPTION_MESSAGE = "Internal error in AIM handler";
 	private static final String INVALID_METHOD_MESSAGE = "Only POST and GET methods valid for the AIM route";

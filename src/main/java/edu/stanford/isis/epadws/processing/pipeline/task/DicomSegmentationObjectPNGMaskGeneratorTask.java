@@ -45,9 +45,9 @@ import edu.stanford.isis.epad.common.pixelmed.PixelMedUtils;
 import edu.stanford.isis.epad.common.util.EPADConfig;
 import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epad.common.util.EPADResources;
-import edu.stanford.isis.epadws.persistence.Dcm4CheeDatabaseUtils;
-import edu.stanford.isis.epadws.persistence.DatabaseOperations;
 import edu.stanford.isis.epadws.persistence.Database;
+import edu.stanford.isis.epadws.persistence.DatabaseOperations;
+import edu.stanford.isis.epadws.persistence.Dcm4CheeDatabaseUtils;
 import edu.stanford.isis.epadws.processing.model.PngProcessingStatus;
 
 /**
@@ -57,18 +57,18 @@ import edu.stanford.isis.epadws.processing.model.PngProcessingStatus;
  */
 public class DicomSegmentationObjectPNGMaskGeneratorTask implements GeneratorTask
 {
-	public String serverProxy = EPADConfig.getInstance().getParam("serverProxy");
-	public String namespace = EPADConfig.getInstance().getParam("namespace");
-	public String eXistServerUrl = EPADConfig.getInstance().getParam("serverUrl");
-	public String eXistUsername = EPADConfig.getInstance().getParam("username");
-	public String eXistPassword = EPADConfig.getInstance().getParam("password");
-	public String baseAnnotationDir = EPADConfig.getInstance().getParam("baseAnnotationDir");
-	public String xsdFile = EPADConfig.getInstance().getParam("xsdFile");
-	public String xsdFilePath = EPADConfig.getInstance().getParam("baseSchemaDir") + xsdFile;
-	public String eXistCollection = EPADConfig.getInstance().getParam("collection");
-	public String dbpath = EPADConfig.getInstance().getParam("dbpath");
-	public String templatePath = EPADConfig.getInstance().getParam("baseTemplatesDir");
-	public String wadoProxy = EPADConfig.getInstance().getParam("wadoProxy");
+	public String serverProxy = EPADConfig.getInstance().getStringPropertyValue("serverProxy");
+	public String namespace = EPADConfig.getInstance().getStringPropertyValue("namespace");
+	public String eXistServerUrl = EPADConfig.getInstance().getStringPropertyValue("serverUrl");
+	public String eXistUsername = EPADConfig.getInstance().getStringPropertyValue("username");
+	public String eXistPassword = EPADConfig.getInstance().getStringPropertyValue("password");
+	public String baseAnnotationDir = EPADConfig.getInstance().getStringPropertyValue("baseAnnotationDir");
+	public String xsdFile = EPADConfig.getInstance().getStringPropertyValue("xsdFile");
+	public String xsdFilePath = EPADConfig.getInstance().getStringPropertyValue("baseSchemaDir") + xsdFile;
+	public String eXistCollection = EPADConfig.getInstance().getStringPropertyValue("collection");
+	public String dbpath = EPADConfig.getInstance().getStringPropertyValue("dbpath");
+	public String templatePath = EPADConfig.getInstance().getStringPropertyValue("baseTemplatesDir");
+	public String wadoProxy = EPADConfig.getInstance().getStringPropertyValue("wadoProxy");
 
 	private static final EPADLogger logger = EPADLogger.getInstance();
 	private static final String baseDicomDirectory = EPADResources.getEPADWebServerPNGDir();

@@ -9,8 +9,8 @@ import org.restlet.resource.Get;
 import org.restlet.resource.Post;
 
 import edu.stanford.isis.epad.common.util.SearchResultUtils;
-import edu.stanford.isis.epadws.persistence.DatabaseOperations;
 import edu.stanford.isis.epadws.persistence.Database;
+import edu.stanford.isis.epadws.persistence.DatabaseOperations;
 
 public class EventServerResource extends BaseServerResource
 {
@@ -106,7 +106,7 @@ public class EventServerResource extends BaseServerResource
 
 		out.append(new SearchResultUtils().get_EVENT_SEARCH_HEADER());
 		log.info("Found " + result.size() + " result(s).");
-		String separator = config.getParam("fieldSeparator");
+		String separator = config.getStringPropertyValue("fieldSeparator");
 
 		for (Map<String, String> row : result) { // Write the result
 			StringBuilder sb = new StringBuilder();

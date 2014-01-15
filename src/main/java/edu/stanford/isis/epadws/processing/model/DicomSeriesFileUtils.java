@@ -205,7 +205,7 @@ public class DicomSeriesFileUtils
 	{
 
 		EPADConfig config = EPADConfig.getInstance();
-		String separator = config.getParam("fieldSeparator");
+		String separator = config.getStringPropertyValue("fieldSeparator");
 
 		StringBuilder sb = new StringBuilder();
 		sb.append(SERIES_ID).append(separator);
