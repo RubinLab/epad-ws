@@ -48,6 +48,7 @@ import edu.stanford.isis.epad.common.util.EPADConfig;
 import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epad.common.util.EPADResources;
 import edu.stanford.isis.epad.common.util.XmlNamespaceTranslator;
+import edu.stanford.isis.epadws.xnat.XNATOperations;
 import edu.stanford.isis.epadws.xnat.XNATUtil;
 
 /**
@@ -100,7 +101,7 @@ public class AimResourceHandler extends AbstractHandler
 		try {
 			responseStream = httpResponse.getWriter();
 
-			if (XNATUtil.hasValidXNATSessionID(httpRequest)) {
+			if (XNATOperations.hasValidXNATSessionID(httpRequest)) {
 				String method = httpRequest.getMethod();
 				if ("GET".equalsIgnoreCase(method)) {
 					String queryString = httpRequest.getQueryString();

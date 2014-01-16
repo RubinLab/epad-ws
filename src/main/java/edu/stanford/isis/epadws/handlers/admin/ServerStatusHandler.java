@@ -22,7 +22,7 @@ import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epadws.EPadWebServerVersion;
 import edu.stanford.isis.epadws.persistence.Database;
 import edu.stanford.isis.epadws.processing.pipeline.PipelineFactory;
-import edu.stanford.isis.epadws.xnat.XNATUtil;
+import edu.stanford.isis.epadws.xnat.XNATOperations;
 
 /**
  * <code>
@@ -57,7 +57,7 @@ public class ServerStatusHandler extends AbstractHandler
 		try {
 			responseStream = httpResponse.getWriter();
 
-			if (XNATUtil.hasValidXNATSessionID(httpRequest)) {
+			if (XNATOperations.hasValidXNATSessionID(httpRequest)) {
 				EPADConfig proxyConfig = EPADConfig.getInstance();
 				EPadPlugin ePadPlugin = new EPadPluginImpl();
 				long upTime = System.currentTimeMillis() - startTime;

@@ -16,7 +16,7 @@ import org.eclipse.jetty.server.handler.AbstractHandler;
 
 import edu.stanford.isis.epad.common.util.EPADConfig;
 import edu.stanford.isis.epad.common.util.EPADLogger;
-import edu.stanford.isis.epadws.xnat.XNATUtil;
+import edu.stanford.isis.epadws.xnat.XNATOperations;
 
 /**
  * WADO Handler
@@ -50,7 +50,7 @@ public class WadoHandler extends AbstractHandler
 		try {
 			responseStream = httpResponse.getOutputStream();
 
-			if (XNATUtil.hasValidXNATSessionID(httpRequest)) {
+			if (XNATOperations.hasValidXNATSessionID(httpRequest)) {
 				String queryString = httpRequest.getQueryString();
 				queryString = URLDecoder.decode(queryString, "UTF-8");
 				if (queryString != null) {

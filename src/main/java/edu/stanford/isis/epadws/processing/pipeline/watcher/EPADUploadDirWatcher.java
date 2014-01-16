@@ -10,12 +10,12 @@ import java.util.concurrent.TimeUnit;
 
 import edu.stanford.isis.epad.common.util.EPADFileUtils;
 import edu.stanford.isis.epad.common.util.EPADLogger;
-import edu.stanford.isis.epad.common.util.FileKey;
 import edu.stanford.isis.epad.common.util.EPADResources;
+import edu.stanford.isis.epad.common.util.FileKey;
 import edu.stanford.isis.epadws.processing.model.DicomUploadFile;
 import edu.stanford.isis.epadws.processing.pipeline.task.DicomSendTask;
 import edu.stanford.isis.epadws.processing.pipeline.threads.ShutdownSignal;
-import edu.stanford.isis.epadws.xnat.XNATUtil;
+import edu.stanford.isis.epadws.xnat.XNATOperations;
 
 /**
  * Watches for a new directory containing ZIP or DICOM files in the ePAD upload directory. When a new directory is found
@@ -100,7 +100,7 @@ public class EPADUploadDirWatcher implements Runnable
 				File zipFile = waitForZipUploadToComplete(dir);
 				unzipFiles(zipFile);
 			}
-			XNATUtil.createXNATEntitiesFromDICOMFilesInDirectory(dir);
+			XNATOperations.createXNATEntitiesFromDICOMFilesInDirectory(dir);
 			cleanUploadDirectory(dir);
 			sendFilesToDcm4Chee(dir);
 			deleteUploadDir(dir);

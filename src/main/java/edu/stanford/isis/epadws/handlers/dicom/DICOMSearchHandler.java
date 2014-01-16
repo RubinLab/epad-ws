@@ -21,7 +21,7 @@ import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epad.common.util.JsonHelper;
 import edu.stanford.isis.epadws.persistence.Database;
 import edu.stanford.isis.epadws.persistence.DatabaseOperations;
-import edu.stanford.isis.epadws.xnat.XNATUtil;
+import edu.stanford.isis.epadws.xnat.XNATOperations;
 
 /**
  * <code>
@@ -52,7 +52,7 @@ public class DICOMSearchHandler extends AbstractHandler
 		try {
 			responseStream = httpResponse.getWriter();
 
-			if (XNATUtil.hasValidXNATSessionID(httpRequest)) {
+			if (XNATOperations.hasValidXNATSessionID(httpRequest)) {
 				String queryString = httpRequest.getQueryString();
 
 				if (queryString != null) {
@@ -105,8 +105,7 @@ public class DICOMSearchHandler extends AbstractHandler
 		final DatabaseOperations dbQueries = Database.getInstance().getDatabaseOperations();
 		final String[] parts = queryString.split("=");
 		final String searchString = parts[1].trim();
-		final List<Map<String, String>> searchResult = dbQueries.studySearch(searchType.toString(),
-				searchString);
+		final List<Map<String, String>> searchResult = dbQueries.studySearch(searchType.toString(), searchString);
 		boolean isFirst = true;
 
 		log.info("DICOMSearchHandler study search found " + searchResult.size() + " result(s).");

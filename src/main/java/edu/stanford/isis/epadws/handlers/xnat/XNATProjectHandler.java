@@ -20,6 +20,7 @@ import org.eclipse.jetty.server.handler.AbstractHandler;
 import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epad.common.util.JsonHelper;
 import edu.stanford.isis.epad.common.xnat.XNATProjectDescription;
+import edu.stanford.isis.epadws.xnat.XNATOperations;
 import edu.stanford.isis.epadws.xnat.XNATUtil;
 
 /**
@@ -60,7 +61,7 @@ public class XNATProjectHandler extends AbstractHandler
 
 			log.info("JSESSION ID on /projects route " + jsessionID);
 
-			if (XNATUtil.hasValidXNATSessionID(httpRequest)) {
+			if (XNATOperations.hasValidXNATSessionID(httpRequest)) {
 				statusCode = invokeXNATProjectService(base, httpRequest, httpResponse, responseStream);
 			} else {
 				log.info(INVALID_SESSION_TOKEN_MESSAGE);
