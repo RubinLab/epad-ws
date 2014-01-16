@@ -56,8 +56,8 @@ public class DcmDbTester
 		try {
 			logger.info("######## Start test #2 - basic search ########");
 
-			DatabaseOperations mySqlQueries = Database.getInstance().getDatabaseOperations();
-			List<Map<String, String>> results = mySqlQueries.studySearch("patientName", "*");
+			DatabaseOperations databaseOperations = Database.getInstance().getDatabaseOperations();
+			List<Map<String, String>> results = databaseOperations.studySearch("patientName", "*");
 
 			String[] keys = { "study_iuid", "pat_id", "modality", "study_datetime", "pat_name" };
 			StringBuilder sb = new StringBuilder("Study Results \n");
@@ -91,8 +91,8 @@ public class DcmDbTester
 		try {
 			logger.info("######## Start test #3 - wildcard search ########");
 
-			DatabaseOperations mySqlQueries = Database.getInstance().getDatabaseOperations();
-			List<Map<String, String>> results = mySqlQueries.studySearch("patientName", "A*");
+			DatabaseOperations databaseOperations = Database.getInstance().getDatabaseOperations();
+			List<Map<String, String>> results = databaseOperations.studySearch("patientName", "A*");
 
 			String[] keys = { "study_iuid", "pat_id", "modality", "study_datetime", "pat_name" };
 			StringBuilder sb = new StringBuilder("Study Results \n");
@@ -125,9 +125,9 @@ public class DcmDbTester
 		try {
 			logger.info("######## Start test #4 - case insensitive search ########");
 
-			DatabaseOperations mySqlQueries = Database.getInstance().getDatabaseOperations();
-			List<Map<String, String>> resultsUpperCase = mySqlQueries.studySearch("patientName", "A*");
-			List<Map<String, String>> resultsLowerCase = mySqlQueries.studySearch("patientName", "a*");
+			DatabaseOperations databaseOperations = Database.getInstance().getDatabaseOperations();
+			List<Map<String, String>> resultsUpperCase = databaseOperations.studySearch("patientName", "A*");
+			List<Map<String, String>> resultsLowerCase = databaseOperations.studySearch("patientName", "a*");
 
 			if (resultsUpperCase.size() != resultsLowerCase.size()) {
 				logger.info("FAILED: Case insensitive search test." + " upper-case=" + resultsUpperCase.size() + " lower-case="
@@ -149,8 +149,8 @@ public class DcmDbTester
 		try {
 			logger.info("######## Start test #5 - patient id search ########");
 
-			DatabaseOperations mySqlQueries = Database.getInstance().getDatabaseOperations();
-			List<Map<String, String>> results = mySqlQueries.studySearch("patientId", "2228*");
+			DatabaseOperations databaseOperations = Database.getInstance().getDatabaseOperations();
+			List<Map<String, String>> results = databaseOperations.studySearch("patientId", "2228*");
 			String[] keys = { "study_iuid", "pat_id", "modality", "study_datetime", "pat_name" };
 			StringBuilder sb = new StringBuilder("Study Results \n");
 			int resultIndex = 1;
@@ -177,8 +177,8 @@ public class DcmDbTester
 		try {
 			logger.info("######## Start test #6 - exam-type search ########");
 
-			DatabaseOperations mySqlQueries = Database.getInstance().getDatabaseOperations();
-			List<Map<String, String>> results = mySqlQueries.studySearch("examType", "DX");
+			DatabaseOperations databaseOperations = Database.getInstance().getDatabaseOperations();
+			List<Map<String, String>> results = databaseOperations.studySearch("examType", "DX");
 
 			String[] keys = { "study_iuid", "pat_id", "modality", "study_datetime", "pat_name" };
 			StringBuilder sb = new StringBuilder("Study Results \n");
@@ -206,8 +206,8 @@ public class DcmDbTester
 		try {
 			logger.info("######## Start test #7 - study-time search ########");
 
-			DatabaseOperations mySqlQueries = Database.getInstance().getDatabaseOperations();
-			List<Map<String, String>> results = mySqlQueries.studySearch("studyDate", "2002");
+			DatabaseOperations databaseOperations = Database.getInstance().getDatabaseOperations();
+			List<Map<String, String>> results = databaseOperations.studySearch("studyDate", "2002");
 
 			String[] keys = { "study_iuid", "pat_id", "modality", "study_datetime", "pat_name" };
 			StringBuilder sb = new StringBuilder("Study Results \n");
@@ -238,8 +238,8 @@ public class DcmDbTester
 		try {
 			logger.info("######## Start test #8 - study-time search ########");
 
-			DatabaseOperations mySqlQueries = Database.getInstance().getDatabaseOperations();
-			List<Map<String, String>> results = mySqlQueries
+			DatabaseOperations databaseOperations = Database.getInstance().getDatabaseOperations();
+			List<Map<String, String>> results = databaseOperations
 					.findAllSeriesInStudy("1.2.826.0.1.3680043.8.420.30757817405477639080180001130587461759");
 
 			// String[] keys = {"study_iuid", "pat_id", "modality", "study_datetime", "pat_name"};

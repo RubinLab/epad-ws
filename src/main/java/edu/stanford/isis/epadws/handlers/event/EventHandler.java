@@ -87,8 +87,8 @@ public class EventHandler extends AbstractHandler
 						if (jsessionID != null && event_status != null && aim_uid != null && aim_uid != null && aim_name != null
 								&& patient_id != null && patient_name != null && template_id != null && template_name != null
 								&& plugin_name != null) {
-							DatabaseOperations dbQueries = Database.getInstance().getDatabaseOperations();
-							dbQueries.insertEpadEvent(jsessionID, event_status, aim_uid, aim_name, patient_id, patient_name,
+							DatabaseOperations databaseOperations = Database.getInstance().getDatabaseOperations();
+							databaseOperations.insertEpadEvent(jsessionID, event_status, aim_uid, aim_name, patient_id, patient_name,
 									template_id, template_name, plugin_name);
 							responseStream.flush();
 							httpResponse.setStatus(HttpServletResponse.SC_OK);
@@ -120,8 +120,8 @@ public class EventHandler extends AbstractHandler
 
 	private void findEventsForSessionID(PrintWriter responseStrean, String sessionID)
 	{
-		DatabaseOperations dbQueries = Database.getInstance().getDatabaseOperations();
-		List<Map<String, String>> eventMap = dbQueries.getEpadEventsForSessionID(sessionID);
+		DatabaseOperations databaseOperations = Database.getInstance().getDatabaseOperations();
+		List<Map<String, String>> eventMap = databaseOperations.getEpadEventsForSessionID(sessionID);
 
 		responseStrean.print(new SearchResultUtils().get_EVENT_SEARCH_HEADER());
 

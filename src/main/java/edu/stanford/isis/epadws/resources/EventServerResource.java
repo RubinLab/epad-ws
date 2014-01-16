@@ -79,8 +79,8 @@ public class EventServerResource extends BaseServerResource
 			if (userName != null && event_status != null && aim_uid != null && aim_uid != null && aim_name != null
 					&& patient_id != null && patient_name != null && template_id != null && template_name != null
 					&& plugin_name != null) {
-				DatabaseOperations dbQueries = Database.getInstance().getDatabaseOperations();
-				dbQueries.insertEpadEvent(userName, event_status, aim_uid, aim_name, patient_id, patient_name, template_id,
+				DatabaseOperations databaseOperations = Database.getInstance().getDatabaseOperations();
+				databaseOperations.insertEpadEvent(userName, event_status, aim_uid, aim_name, patient_id, patient_name, template_id,
 						template_name, plugin_name);
 
 				log.info(INSERT_SUCCESS_MESSAGE);
@@ -101,8 +101,8 @@ public class EventServerResource extends BaseServerResource
 	private String executeEventQuery(String userName)
 	{
 		StringBuilder out = new StringBuilder();
-		DatabaseOperations dbQueries = Database.getInstance().getDatabaseOperations();
-		List<Map<String, String>> result = dbQueries.getEpadEventsForSessionID(userName);
+		DatabaseOperations databaseOperations = Database.getInstance().getDatabaseOperations();
+		List<Map<String, String>> result = databaseOperations.getEpadEventsForSessionID(userName);
 
 		out.append(new SearchResultUtils().get_EVENT_SEARCH_HEADER());
 		log.info("Found " + result.size() + " result(s).");

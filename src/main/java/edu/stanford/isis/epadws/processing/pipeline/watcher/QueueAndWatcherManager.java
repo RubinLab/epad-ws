@@ -92,7 +92,7 @@ public class QueueAndWatcherManager
 	// Each entry in list is map with keys: sop_iuid, inst_no, series_iuid, filepath, file_size.
 	public void addToPNGGeneratorTaskPipeline(List<Map<String, String>> dicomImageFileDescriptions)
 	{
-		DatabaseOperations queries = Database.getInstance().getDatabaseOperations();
+		DatabaseOperations databaseOperations = Database.getInstance().getDatabaseOperations();
 
 		for (Map<String, String> dicomImageDescription : dicomImageFileDescriptions) {
 			String inputDICOMFilePath = getInputFilePath(dicomImageDescription); // Get the input file path.
@@ -108,7 +108,7 @@ public class QueueAndWatcherManager
 				}
 			}
 			String outputPNGFilePath = createOutputPNGFilePathForDicomImage(dicomImageDescription);
-			if (!queries.hasEpadFile(outputPNGFilePath)) {
+			if (!databaseOperations.hasEpadFile(outputPNGFilePath)) {
 				if (PixelMedUtils.isDicomSegmentationObject(inputDICOMFilePath)) { // Generate slices of PNG mask
 					processDicomSegmentationObject(outputPNGFilePath, inputDICOMFilePath);
 				} else { // Generate PNG file.
@@ -163,17 +163,17 @@ public class QueueAndWatcherManager
 	private void createPNGFileForDICOMImage(String outputPNGFilePath, File inputDICOMFile)
 	{
 		File outputPNGFile = new File(outputPNGFilePath);
-		DatabaseOperations queries = Database.getInstance().getDatabaseOperations();
-		insertEpadFile(queries, outputPNGFile);
+		DatabaseOperations databaseOperations = Database.getInstance().getDatabaseOperations();
+		insertEpadFile(databaseOperations, outputPNGFile);
 		PngGeneratorTask pngTask = new PngGeneratorTask(inputDICOMFile, outputPNGFile);
 		pngGeneratorTaskQueue.offer(pngTask);
 	}
 
-	private void insertEpadFile(DatabaseOperations queries, File outputPNGFile)
+	private void insertEpadFile(DatabaseOperations databaseOperations, File outputPNGFile)
 	{
 		Map<String, String> epadFilesTable = Dcm4CheeDatabaseUtils.createEPadFilesTableData(outputPNGFile);
 		epadFilesTable.put("file_status", "" + PngProcessingStatus.IN_PIPELINE.getCode());
-		queries.insertEpadFile(epadFilesTable);
+		databaseOperations.insertEpadFile(epadFilesTable);
 	}
 
 	/**
@@ -184,8 +184,8 @@ public class QueueAndWatcherManager
 	private String createOutputPNGFilePathForDicomImage(Map<String, String> dicomImageDescription)
 	{
 		String seriesIUID = dicomImageDescription.get("series_iuid");
-		DatabaseOperations queries = Database.getInstance().getDatabaseOperations();
-		String studyUID = queries.getStudyUIDForSeries(seriesIUID);
+		DatabaseOperations databaseOperations = Database.getInstance().getDatabaseOperations();
+		String studyUID = databaseOperations.getStudyUIDForSeries(seriesIUID);
 		String imageUID = dicomImageDescription.get("sop_iuid");
 		StringBuilder outputPath = new StringBuilder();
 

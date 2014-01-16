@@ -26,9 +26,9 @@ public class Dcm4CheeDatabaseUtils
 		FileKey fileKey = new FileKey(file);
 		String filePath = fileKey.toString();
 		long fileSize = file.length();
-		DatabaseOperations queries = Database.getInstance().getDatabaseOperations();
+		DatabaseOperations databaseOperations = Database.getInstance().getDatabaseOperations();
 		String sopInstanceUID = getSOPInstanceUIDFromPath(filePath);
-		int instanceKey = queries.getInstanceKeyForInstance(sopInstanceUID);
+		int instanceKey = databaseOperations.getInstanceKeyForInstance(sopInstanceUID);
 
 		Map<String, String> retVal = new HashMap<String, String>();
 		retVal.put("instance_fk", "" + instanceKey);

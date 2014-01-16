@@ -44,7 +44,7 @@ public class PNGGridGeneratorTask implements GeneratorTask
 
 	private void writePNGGridFile()
 	{
-		DatabaseOperations queries = Database.getInstance().getDatabaseOperations();
+		DatabaseOperations databaseOperations = Database.getInstance().getDatabaseOperations();
 		Map<String, String> epadFilesTable = new HashMap<String, String>();
 		try {
 			logger.info("PNGGridGeneratorTask: creating PNG grid file: " + outputPNGFile.getAbsolutePath());
@@ -58,14 +58,14 @@ public class PNGGridGeneratorTask implements GeneratorTask
 			if (success) {
 				logger.info("Finished writing PNG grid file: " + outputPNGFile);
 				int fileSize = getFileSize(epadFilesTable);
-				queries.updateEpadFile(epadFilesTable.get("file_path"), PngProcessingStatus.DONE, fileSize, "");
+				databaseOperations.updateEpadFile(epadFilesTable.get("file_path"), PngProcessingStatus.DONE, fileSize, "");
 			} else {
 				logger.info("Failed to create grid PNG file: " + outputPNGFile.getAbsolutePath());
-				queries.updateEpadFile(epadFilesTable.get("file_path"), PngProcessingStatus.ERROR, 0, "Error generating grid");
+				databaseOperations.updateEpadFile(epadFilesTable.get("file_path"), PngProcessingStatus.ERROR, 0, "Error generating grid");
 			}
 		} catch (Exception e) {
 			logger.warning("Failed to create grid PNG file: " + outputPNGFile.getAbsolutePath(), e);
-			queries.updateEpadFile(epadFilesTable.get("file_path"), PngProcessingStatus.ERROR, 0,
+			databaseOperations.updateEpadFile(epadFilesTable.get("file_path"), PngProcessingStatus.ERROR, 0,
 					"General Exception: " + e.getMessage());
 		}
 	}

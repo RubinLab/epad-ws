@@ -178,11 +178,9 @@ public class SegmentationPathServerResource extends BaseServerResource
 		String study = null;
 		String series = null;
 		String[] res = new String[3];
-
 		String imageIdKeyWithoutDot = imageIdKey.replaceAll("\\.", "_");
-
-		DatabaseOperations queries = Database.getInstance().getDatabaseOperations();
-		String path = queries.selectEpadFilePathLike(imageIdKeyWithoutDot);
+		DatabaseOperations databaseOperations = Database.getInstance().getDatabaseOperations();
+		String path = databaseOperations.selectEpadFilePathLike(imageIdKeyWithoutDot);
 
 		log.info("Segmentation path found : " + path);
 

@@ -77,9 +77,9 @@ public class DICOMSeriesDescriptionServerResource extends BaseServerResource
 
 		out.append("filename,order,Slice Location,Content Time\n");
 
-		DatabaseOperations queries = Database.getInstance().getDatabaseOperations();
+		DatabaseOperations databaseOperations = Database.getInstance().getDatabaseOperations();
 
-		List<Map<String, String>> orderQueryEntires = queries.getDicomSeriesOrder(seriesIUID);
+		List<Map<String, String>> orderQueryEntires = databaseOperations.getDicomSeriesOrder(seriesIUID);
 
 		for (Map<String, String> entry : orderQueryEntires) {
 			String sopInstanceUID = entry.get("sop_iuid");

@@ -156,8 +156,8 @@ public class DICOMSearchHandler extends AbstractHandler
 	{
 		final String studyIdKey = getStudyUIDFromRequest(queryString);
 		final String studyUID = DicomFormatUtil.formatDirToUid(studyIdKey);
-		final DatabaseOperations dbQueries = Database.getInstance().getDatabaseOperations();
-		final List<Map<String, String>> series = dbQueries.findAllSeriesInStudy(studyUID);
+		final DatabaseOperations databaseOperations = Database.getInstance().getDatabaseOperations();
+		final List<Map<String, String>> series = databaseOperations.findAllSeriesInStudy(studyUID);
 		boolean isFirst = true;
 
 		log.info("DICOMSearchHandler series search found " + series.size() + " result(s) for study " + studyUID);

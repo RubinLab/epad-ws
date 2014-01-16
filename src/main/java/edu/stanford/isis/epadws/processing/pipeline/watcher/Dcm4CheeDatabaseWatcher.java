@@ -34,23 +34,23 @@ public class Dcm4CheeDatabaseWatcher implements Runnable
 	public void run()
 	{
 		ShutdownSignal signal = ShutdownSignal.getInstance();
-		DatabaseOperations mySqlQueries = Database.getInstance().getDatabaseOperations();
+		DatabaseOperations databaseOperations = Database.getInstance().getDatabaseOperations();
 
 		while (!signal.hasShutdown()) {
 			try {
-				List<Map<String, String>> series = mySqlQueries.getSeriesForStatus(0);
+				List<Map<String, String>> series = databaseOperations.getSeriesForStatus(0);
 
 				for (Map<String, String> currSeries : series) {
 					String seriesIUid = currSeries.get("series_iuid");
-					String studyIUID = mySqlQueries.getStudyUIDForSeries(seriesIUid);
-					Map<String, String> patient = mySqlQueries.getPatientForStudy(studyIUID);
+					String studyIUID = databaseOperations.getStudyUIDForSeries(seriesIUid);
+					Map<String, String> patient = databaseOperations.getPatientForStudy(studyIUID);
 					String patientName = patient.get("pat_name");
 					String patientID = patient.get("pat_id");
 					String seriesDesc = currSeries.get("series_desc");
 					String numInstances = currSeries.get("num_instances");
 					DicomSeriesDescription dicomSeriesDescription = new DicomSeriesDescription(Integer.parseInt(numInstances),
 							seriesIUid, studyIUID, patientName, patientID);
-					mySqlQueries.updateSeriesStatusCode(325, seriesIUid);
+					databaseOperations.updateSeriesStatusCode(325, seriesIUid);
 					submitSeriesForPngGeneration(dicomSeriesDescription); // Submit this series to generate all the PNG files.
 					submitSeriesForXNATGeneration(dicomSeriesDescription); // Submit this series to generate XNAT information.
 

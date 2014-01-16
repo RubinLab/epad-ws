@@ -93,8 +93,8 @@ public class DICOMSeriesOrderHandler extends AbstractHandler
 
 	private void peformDICOMSeriesDescriptionQuery(PrintWriter outputStream, String seriesIUID)
 	{
-		DatabaseOperations queries = Database.getInstance().getDatabaseOperations();
-		List<Map<String, String>> orderQueryEntries = queries.getDicomSeriesOrder(seriesIUID);
+		DatabaseOperations databaseOperations = Database.getInstance().getDatabaseOperations();
+		List<Map<String, String>> orderQueryEntries = databaseOperations.getDicomSeriesOrder(seriesIUID);
 		List<DicomImageDescriptionSearchResult> imageDescriptions = new ArrayList<DicomImageDescriptionSearchResult>();
 
 		log.info("DICOMSeriesOrderHandler for series " + seriesIUID);

@@ -94,8 +94,8 @@ public class DicomDeleteTask implements Runnable
 	private static void deletePNGforSeries(String seriesUID) throws Exception
 	{
 
-		DatabaseOperations queries = Database.getInstance().getDatabaseOperations();
-		String studyUID = queries.getStudyUIDForSeries(seriesUID);
+		DatabaseOperations databaseOperations = Database.getInstance().getDatabaseOperations();
+		String studyUID = databaseOperations.getStudyUIDForSeries(seriesUID);
 		StringBuilder outputPath = new StringBuilder();
 		outputPath.append(EPADResources.getEPADWebServerPNGDir());
 		outputPath.append(DicomFormatUtil.formatUidToDir(studyUID)).append("/");

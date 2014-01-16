@@ -107,16 +107,16 @@ public class DicomSegmentationObjectPNGMaskGeneratorTask implements GeneratorTas
 			File repDest = new File(baseDicomDirectory + studyId + "/" + seriesId + "/");
 			repDest.mkdirs();
 
-			DatabaseOperations queries = Database.getInstance().getDatabaseOperations();
+			DatabaseOperations databaseOperations = Database.getInstance().getDatabaseOperations();
 			for (int i = 0; i < count; i++) { // Create the mask images
 				BufferedImage source = sourceImage.getBufferedImage(count - i - 1);
 				BufferedImage sourceWithTransparency = generateTransparentImage(source); // Generate a transparent image
 				String pngUrl = baseDicomDirectory + studyId + "/" + seriesId + "/" + objectId + "-" + i + ".png";
 				File sourceFile = new File(pngUrl);
 				try {
-					insertEpadFile(queries, sourceFile);
+					insertEpadFile(databaseOperations, sourceFile);
 					ImageIO.write(sourceWithTransparency, "png", sourceFile);
-					queries.updateEpadFile(pngUrl, PngProcessingStatus.DONE, 77, "");
+					databaseOperations.updateEpadFile(pngUrl, PngProcessingStatus.DONE, 77, "");
 					logger.info("Writing DSO PNG mask " + pngUrl);
 				} catch (IOException e) {
 					logger.warning("Failed to write DSO PNG mask ", e);

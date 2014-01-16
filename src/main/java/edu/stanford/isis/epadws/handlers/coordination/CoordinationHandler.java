@@ -198,18 +198,18 @@ public class CoordinationHandler extends AbstractHandler
 	private Term getCoordinationTerm(Coordination coordination) throws SQLException
 	{
 		List<Integer> termKeys = new ArrayList<Integer>();
-		DatabaseOperations dbQueries = Database.getInstance().getDatabaseOperations();
+		DatabaseOperations databaseOperations = Database.getInstance().getDatabaseOperations();
 
 		for (Term term : coordination.getTerms()) {
-			int termKey = getTermKey(dbQueries, term);
+			int termKey = getTermKey(databaseOperations, term);
 			termKeys.add(termKey);
 		}
 
-		Term term = dbQueries.getCoordinationTerm(termKeys);
+		Term term = databaseOperations.getCoordinationTerm(termKeys);
 		if (term == null) { // No coordination existed
 			String description = coordination.generateDescription();
 			String termIDPrefix = getTermIDPrefix();
-			term = dbQueries.insertCoordinationTerm(termIDPrefix, EPAD_SCHEMA_NAME, EPAD_SCHEMA_VERSION, description,
+			term = databaseOperations.insertCoordinationTerm(termIDPrefix, EPAD_SCHEMA_NAME, EPAD_SCHEMA_VERSION, description,
 					termKeys);
 		}
 		return term;

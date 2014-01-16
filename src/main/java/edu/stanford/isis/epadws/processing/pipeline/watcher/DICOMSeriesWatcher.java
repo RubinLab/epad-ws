@@ -122,13 +122,13 @@ public class DICOMSeriesWatcher implements Runnable
 	@SuppressWarnings("unused")
 	private void addToPNGGridGeneratorTaskPipeline(List<Map<String, String>> unprocessedPNGImageDescriptions)
 	{
-		DatabaseOperations queries = Database.getInstance().getDatabaseOperations();
+		DatabaseOperations databaseOperations = Database.getInstance().getDatabaseOperations();
 		int currentImageIndex = 0;
 		for (Map<String, String> currentPNGImage : unprocessedPNGImageDescriptions) {
 			String inputPNGFilePath = getInputFilePath(currentPNGImage); // Get the input file path.
 			File inputPNGFile = new File(inputPNGFilePath);
 			String outputPNGGridFilePath = createOutputFilePathForDicomPNGGridImage(currentPNGImage);
-			if (!queries.hasEpadFile(outputPNGGridFilePath)) {
+			if (!databaseOperations.hasEpadFile(outputPNGGridFilePath)) {
 				logger.info("SeriesWatcher has: " + currentPNGImage.get("sop_iuid") + " PNG for grid processing.");
 				// Need to get slice for PNG files.
 				List<File> inputPNGGridFiles = getSliceOfPNGFiles(unprocessedPNGImageDescriptions, currentImageIndex, 16);
@@ -158,8 +158,8 @@ public class DICOMSeriesWatcher implements Runnable
 		// inputPNGFile.getAbsolutePath());
 
 		File outputPNGFile = new File(outputPNGGridFilePath);
-		DatabaseOperations queries = Database.getInstance().getDatabaseOperations();
-		insertEpadFile(queries, outputPNGFile);
+		DatabaseOperations databaseOperations = Database.getInstance().getDatabaseOperations();
+		insertEpadFile(databaseOperations, outputPNGFile);
 
 		PNGGridGeneratorTask pngGridGeneratorTask = new PNGGridGeneratorTask(inputPNGFile, inputPNGGridFiles, outputPNGFile);
 		pngGeneratorTaskQueue.offer(pngGridGeneratorTask);
@@ -185,8 +185,8 @@ public class DICOMSeriesWatcher implements Runnable
 	private String createOutputFilePathForDicomPNGGridImage(Map<String, String> currImage)
 	{
 		String seriesIUID = currImage.get("series_iuid");
-		DatabaseOperations queries = Database.getInstance().getDatabaseOperations();
-		String studyUID = queries.getStudyUIDForSeries(seriesIUID);
+		DatabaseOperations databaseOperations = Database.getInstance().getDatabaseOperations();
+		String studyUID = databaseOperations.getStudyUIDForSeries(seriesIUID);
 		String imageUID = currImage.get("sop_iuid");
 		StringBuilder outputPath = new StringBuilder();
 

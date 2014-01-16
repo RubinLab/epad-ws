@@ -79,8 +79,8 @@ public class DICOMSearchServerResource extends BaseServerResource
 
 	private String performDICOMStudySearch(DicomStudySearchType searchType, String searchString) throws Exception
 	{
-		final DatabaseOperations dbQueries = Database.getInstance().getDatabaseOperations();
-		final List<Map<String, String>> searchResult = dbQueries.studySearch(searchType.toString(),
+		final DatabaseOperations databaseOperations = Database.getInstance().getDatabaseOperations();
+		final List<Map<String, String>> searchResult = databaseOperations.studySearch(searchType.toString(),
 				searchString);
 		boolean isFirst = true;
 		StringBuilder result = new StringBuilder();
@@ -142,8 +142,8 @@ public class DICOMSearchServerResource extends BaseServerResource
 	{
 		final String studyIdKey = getStudyUIDFromRequest(searchString);
 		final String studyUID = DicomFormatUtil.formatDirToUid(studyIdKey);
-		final DatabaseOperations dbQueries = Database.getInstance().getDatabaseOperations();
-		final List<Map<String, String>> series = dbQueries.findAllSeriesInStudy(studyUID);
+		final DatabaseOperations databaseOperations = Database.getInstance().getDatabaseOperations();
+		final List<Map<String, String>> series = databaseOperations.findAllSeriesInStudy(studyUID);
 		final StringBuilder result = new StringBuilder();
 		boolean isFirst = true;
 

@@ -34,13 +34,13 @@ public class PatientDeleteTask implements Runnable
 	@Override
 	public void run()
 	{
-		DatabaseOperations dbQueries = Database.getInstance().getDatabaseOperations();
+		DatabaseOperations databaseOperations = Database.getInstance().getDatabaseOperations();
 
 		try {
-			List<String> studies = dbQueries.getStudyIDsForPatient(patientID);
+			List<String> studies = databaseOperations.getStudyIDsForPatient(patientID);
 
 			for (String studyID : studies) {
-				List<Map<String, String>> matchingSeries = dbQueries.findAllSeriesInStudy(studyID);
+				List<Map<String, String>> matchingSeries = databaseOperations.findAllSeriesInStudy(studyID);
 				logger.info("Found " + matchingSeries.size() + " series in study " + patientID);
 
 				dcm4CheeDeleteDicomStudy(patientID); // Must run after finding series in DCM4CHEE
@@ -49,9 +49,9 @@ public class PatientDeleteTask implements Runnable
 				for (Map<String, String> series : matchingSeries) {
 					String seriesID = series.get("series_iuid");
 					logger.info("SeriesID to delete in ePAD database: " + seriesID);
-					dbQueries.deleteSeries(seriesID);
+					databaseOperations.deleteSeries(seriesID);
 				}
-				dbQueries.deleteDicomStudy(patientID);
+				databaseOperations.deleteDicomStudy(patientID);
 				deletePNGsforDicomStudy(patientID);
 			}
 		} catch (Exception e) {
@@ -87,8 +87,8 @@ public class PatientDeleteTask implements Runnable
 	private static void deletePNGforSeries(String seriesUID) throws Exception
 	{
 
-		DatabaseOperations queries = Database.getInstance().getDatabaseOperations();
-		String studyUID = queries.getStudyUIDForSeries(seriesUID);
+		DatabaseOperations databaseOperations = Database.getInstance().getDatabaseOperations();
+		String studyUID = databaseOperations.getStudyUIDForSeries(seriesUID);
 		StringBuilder outputPath = new StringBuilder();
 		outputPath.append(EPADResources.getEPADWebServerPNGDir());
 		outputPath.append(DicomFormatUtil.formatUidToDir(studyUID)).append("/");
