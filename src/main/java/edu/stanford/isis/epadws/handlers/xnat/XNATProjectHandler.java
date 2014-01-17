@@ -57,10 +57,6 @@ public class XNATProjectHandler extends AbstractHandler
 		try {
 			responseStream = httpResponse.getOutputStream();
 
-			String jsessionID = XNATUtil.getJSessionIDFromRequest(httpRequest);
-
-			log.info("JSESSION ID on /projects route " + jsessionID);
-
 			if (XNATOperations.hasValidXNATSessionID(httpRequest)) {
 				statusCode = invokeXNATProjectService(base, httpRequest, httpResponse, responseStream);
 			} else {
