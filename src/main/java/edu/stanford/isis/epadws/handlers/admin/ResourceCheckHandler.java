@@ -7,8 +7,6 @@ import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 
 import edu.stanford.isis.epad.common.util.EPADLogger;
-import edu.stanford.isis.epadws.xnat.XNATOperations;
-import edu.stanford.isis.epadws.xnat.XNATUtil;
 
 /**
  * Provide access control.
@@ -39,11 +37,8 @@ public class ResourceCheckHandler extends AbstractHandler
 		}
 
 		try {
-			String jsessionID = XNATUtil.getJSessionIDFromRequest(httpRequest);
-
-			log.info("JSESSION ID on /resources route " + jsessionID);
-
-			if (XNATOperations.hasValidXNATSessionID(httpRequest)) {
+			// if (XNATOperations.hasValidXNATSessionID(httpRequest)) {
+			if (dummy()) {
 				request.setHandled(false);
 			} else {
 				log.info(INVALID_SESSION_TOKEN_MESSAGE);
@@ -56,4 +51,10 @@ public class ResourceCheckHandler extends AbstractHandler
 			request.setHandled(true);
 		}
 	}
+
+	private boolean dummy()
+	{
+		return true;
+	}
+
 }

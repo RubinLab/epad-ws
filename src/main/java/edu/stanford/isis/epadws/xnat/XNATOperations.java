@@ -206,7 +206,10 @@ public class XNATOperations
 	{
 		String jsessionID = XNATUtil.getJSessionIDFromRequest(httpRequest);
 
-		return hasValidXNATSessionID(jsessionID);
+		if (jsessionID == null) // The getJSessionIDFromRequest method logs warning in this case.
+			return false;
+		else
+			return hasValidXNATSessionID(jsessionID);
 	}
 
 	public static boolean hasValidXNATSessionID(String jsessionID)

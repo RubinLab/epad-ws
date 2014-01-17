@@ -102,6 +102,7 @@ public class XNATUtil
 		}
 		if (jSessionID == null)
 			log.warning("No JSESESSIONID cookie present in request " + servletRequest.getRequestURL());
+
 		return jSessionID;
 	}
 

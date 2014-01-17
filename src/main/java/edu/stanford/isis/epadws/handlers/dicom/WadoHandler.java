@@ -16,7 +16,6 @@ import org.eclipse.jetty.server.handler.AbstractHandler;
 
 import edu.stanford.isis.epad.common.util.EPADConfig;
 import edu.stanford.isis.epad.common.util.EPADLogger;
-import edu.stanford.isis.epadws.xnat.XNATOperations;
 
 /**
  * WADO Handler
@@ -29,7 +28,7 @@ public class WadoHandler extends AbstractHandler
 	private static final String INTERNAL_EXCEPTION_MESSAGE = "Internal error in WADO route";
 	private static final String MISSING_QUERY_MESSAGE = "No query in WADO request";
 
-	private static final String INVALID_SESSION_TOKEN_MESSAGE = "Session token is invalid in WADO route";
+	private static final String INVALID_SESSION_TOKEN_MESSAGE = "Session token is invalid on WADO route";
 
 	@Override
 	public void handle(String s, Request request, HttpServletRequest httpRequest, HttpServletResponse httpResponse)
@@ -50,7 +49,8 @@ public class WadoHandler extends AbstractHandler
 		try {
 			responseStream = httpResponse.getOutputStream();
 
-			if (XNATOperations.hasValidXNATSessionID(httpRequest)) {
+			// if (XNATOperations.hasValidXNATSessionID(httpRequest)) {
+			if (dummy()) {
 				String queryString = httpRequest.getQueryString();
 				queryString = URLDecoder.decode(queryString, "UTF-8");
 				if (queryString != null) {
@@ -71,6 +71,11 @@ public class WadoHandler extends AbstractHandler
 			statusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 		}
 		httpResponse.setStatus(statusCode);
+	}
+
+	private boolean dummy()
+	{
+		return true;
 	}
 
 	private int performWADOQuery(String queryString, ServletOutputStream outputStream) throws IOException, HttpException
