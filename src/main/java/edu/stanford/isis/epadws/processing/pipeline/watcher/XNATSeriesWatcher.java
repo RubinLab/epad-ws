@@ -9,7 +9,8 @@ import edu.stanford.isis.epad.common.util.EPADConfig;
 import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epadws.processing.model.DicomSeriesDescription;
 import edu.stanford.isis.epadws.processing.pipeline.threads.ShutdownSignal;
-import edu.stanford.isis.epadws.xnat.XNATOperations;
+import edu.stanford.isis.epadws.xnat.XNATCreationOperations;
+import edu.stanford.isis.epadws.xnat.XNATSessionOperations;
 import edu.stanford.isis.epadws.xnat.XNATUtil;
 
 /**
@@ -75,9 +76,9 @@ public class XNATSeriesWatcher implements Runnable
 			String dicomStudyUID)
 	{
 		if (updateSessionID()) {
-			XNATOperations.createXNATSubjectFromDICOMPatient(xnatProjectID, xnatSubjectLabel, dicomPatientName, jsessionID);
+			XNATCreationOperations.createXNATSubjectFromDICOMPatient(xnatProjectID, xnatSubjectLabel, dicomPatientName, jsessionID);
 
-			XNATOperations.createXNATExperimentFromDICOMStudy(xnatProjectID, xnatSubjectLabel, dicomStudyUID, jsessionID);
+			XNATCreationOperations.createXNATExperimentFromDICOMStudy(xnatProjectID, xnatSubjectLabel, dicomStudyUID, jsessionID);
 		} else {
 			logger.warning("Could not log into XNAT to upload DICOM study " + dicomStudyUID);
 		}
@@ -89,8 +90,8 @@ public class XNATSeriesWatcher implements Runnable
 	 */
 	private boolean updateSessionID()
 	{
-		if (!XNATOperations.hasValidXNATSessionID(jsessionID)) { // Validating will extend validity
-			XNATUtil.XNATSessionResponse xnatSessionResponse = XNATOperations.getXNATSessionID(xnatUploadProjectUser,
+		if (!XNATSessionOperations.hasValidXNATSessionID(jsessionID)) { // Validating will extend validity
+			XNATUtil.XNATSessionResponse xnatSessionResponse = XNATSessionOperations.getXNATSessionID(xnatUploadProjectUser,
 					xnatUploadProjectPassword);
 			if (xnatSessionResponse.statusCode != HttpServletResponse.SC_OK) {
 				logger.warning("Error invoking XNAT session service for study upload; statusCode = "

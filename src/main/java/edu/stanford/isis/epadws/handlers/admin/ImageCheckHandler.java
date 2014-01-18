@@ -19,7 +19,7 @@ import edu.stanford.isis.epad.common.util.JsonHelper;
 import edu.stanford.isis.epadws.persistence.Database;
 import edu.stanford.isis.epadws.persistence.DatabaseOperations;
 import edu.stanford.isis.epadws.processing.pipeline.watcher.QueueAndWatcherManager;
-import edu.stanford.isis.epadws.xnat.XNATOperations;
+import edu.stanford.isis.epadws.xnat.XNATSessionOperations;
 
 /**
  * @author martin
@@ -48,7 +48,7 @@ public class ImageCheckHandler extends AbstractHandler
 		try {
 			responseStream = httpResponse.getWriter();
 
-			if (XNATOperations.hasValidXNATSessionID(httpRequest)) {
+			if (XNATSessionOperations.hasValidXNATSessionID(httpRequest)) {
 				String method = httpRequest.getMethod();
 				if ("GET".equalsIgnoreCase(method)) {
 					try {

@@ -24,7 +24,7 @@ import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epad.common.util.EPADTools;
 import edu.stanford.isis.epad.common.util.JsonHelper;
 import edu.stanford.isis.epadws.processing.pipeline.task.DicomHeadersTask;
-import edu.stanford.isis.epadws.xnat.XNATOperations;
+import edu.stanford.isis.epadws.xnat.XNATSessionOperations;
 
 /**
  * Download headers for a series or study in one quick step.
@@ -51,7 +51,7 @@ public class DICOMHeadersHandler extends AbstractHandler
 		try {
 			responseStream = httpResponse.getWriter();
 
-			if (XNATOperations.hasValidXNATSessionID(httpRequest)) {
+			if (XNATSessionOperations.hasValidXNATSessionID(httpRequest)) {
 				String queryString = httpRequest.getQueryString();
 				queryString = URLDecoder.decode(queryString, "UTF-8");
 				if (queryString != null) {

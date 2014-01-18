@@ -11,7 +11,7 @@ import org.eclipse.jetty.server.handler.AbstractHandler;
 
 import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epadws.processing.pipeline.task.PatientDeleteTask;
-import edu.stanford.isis.epadws.xnat.XNATOperations;
+import edu.stanford.isis.epadws.xnat.XNATSessionOperations;
 
 /**
  * Delete a patient. Deletes the studies associated with that patient from the ePAD and DCM4CHEE databases.
@@ -38,7 +38,7 @@ public class PatientDeleteHandler extends AbstractHandler
 		httpResponse.setContentType("text/plain");
 		request.setHandled(true);
 
-		if (XNATOperations.hasValidXNATSessionID(httpRequest)) {
+		if (XNATSessionOperations.hasValidXNATSessionID(httpRequest)) {
 			try {
 				String queryString = httpRequest.getQueryString();
 				queryString = URLDecoder.decode(queryString, "UTF-8");

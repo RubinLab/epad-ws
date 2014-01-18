@@ -13,7 +13,7 @@ import edu.stanford.isis.epad.common.util.EPADConfig;
 import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epadws.persistence.Database;
 import edu.stanford.isis.epadws.persistence.DatabaseOperations;
-import edu.stanford.isis.epadws.xnat.XNATOperations;
+import edu.stanford.isis.epadws.xnat.XNATSessionOperations;
 
 /**
  * Given an image identifier for an image in a DICOM study return a three-column CSV with the study, series and image
@@ -40,7 +40,7 @@ public class DicomSegmentationPathHandler extends AbstractHandler
 		request.setHandled(true);
 
 		try {
-			if (XNATOperations.hasValidXNATSessionID(httpRequest)) {
+			if (XNATSessionOperations.hasValidXNATSessionID(httpRequest)) {
 				String queryString = httpRequest.getQueryString();
 
 				if (queryString != null) {

@@ -21,7 +21,7 @@ import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epad.common.util.JsonHelper;
 import edu.stanford.isis.epadws.persistence.Database;
 import edu.stanford.isis.epadws.persistence.DatabaseOperations;
-import edu.stanford.isis.epadws.xnat.XNATOperations;
+import edu.stanford.isis.epadws.xnat.XNATSessionOperations;
 
 /**
  * The coordination handler is responsible for taking a set of ordered terms and returning a unique ID for those terms.
@@ -103,7 +103,7 @@ public class CoordinationHandler extends AbstractHandler
 
 		try {
 			responseStream = httpResponse.getWriter();
-			if (XNATOperations.hasValidXNATSessionID(httpRequest)) {
+			if (XNATSessionOperations.hasValidXNATSessionID(httpRequest)) {
 				String method = httpRequest.getMethod();
 				if ("POST".equalsIgnoreCase(method)) {
 					Coordination coordination = readCoordination(request);

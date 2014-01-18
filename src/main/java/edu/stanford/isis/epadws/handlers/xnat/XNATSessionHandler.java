@@ -10,7 +10,7 @@ import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 
 import edu.stanford.isis.epad.common.util.EPADLogger;
-import edu.stanford.isis.epadws.xnat.XNATOperations;
+import edu.stanford.isis.epadws.xnat.XNATSessionOperations;
 import edu.stanford.isis.epadws.xnat.XNATUtil;
 import edu.stanford.isis.epadws.xnat.XNATUtil.XNATSessionResponse;
 
@@ -57,7 +57,7 @@ public class XNATSessionHandler extends AbstractHandler
 			if (username.length() != 0) {
 				log.info("XNATSessionHandler, login request from user " + username);
 				try {
-					XNATSessionResponse xnatSessionResponse = XNATOperations.invokeXNATSessionIDService(httpRequest);
+					XNATSessionResponse xnatSessionResponse = XNATSessionOperations.invokeXNATSessionIDService(httpRequest);
 					if (xnatSessionResponse.statusCode == HttpServletResponse.SC_OK) {
 						String jsessionID = xnatSessionResponse.response;
 						responseStream.append(jsessionID);
@@ -88,7 +88,7 @@ public class XNATSessionHandler extends AbstractHandler
 		} else if ("DELETE".equalsIgnoreCase(method)) {
 			log.info("XNATSessionHandler, logout request");
 			try {
-				int xnatStatusCode = XNATOperations.invalidateXNATSessionID(httpRequest);
+				int xnatStatusCode = XNATSessionOperations.invalidateXNATSessionID(httpRequest);
 				log.info("XNAT delete session returns status code " + xnatStatusCode);
 				statusCode = xnatStatusCode;
 			} catch (Throwable t) {

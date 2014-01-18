@@ -20,7 +20,7 @@ import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epad.common.util.JsonHelper;
 import edu.stanford.isis.epadws.persistence.Database;
 import edu.stanford.isis.epadws.persistence.DatabaseOperations;
-import edu.stanford.isis.epadws.xnat.XNATOperations;
+import edu.stanford.isis.epadws.xnat.XNATSessionOperations;
 
 /**
  * Create description of the images in a series and their order.
@@ -66,7 +66,7 @@ public class DICOMSeriesOrderHandler extends AbstractHandler
 
 		try {
 			responseStream = httpResponse.getWriter();
-			if (XNATOperations.hasValidXNATSessionID(httpRequest)) {
+			if (XNATSessionOperations.hasValidXNATSessionID(httpRequest)) {
 				String seriesIUID = httpRequest.getParameter("series_iuid");
 				if (seriesIUID != null) {
 					peformDICOMSeriesDescriptionQuery(responseStream, seriesIUID);

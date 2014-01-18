@@ -1,5 +1,7 @@
 package edu.stanford.isis.epadws.xnat;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.nio.charset.Charset;
 
 import javax.servlet.http.Cookie;
@@ -15,9 +17,10 @@ import edu.stanford.isis.epad.common.util.EPADLogger;
  */
 public class XNATUtil
 {
-	public static final String XNAT_SESSION_BASE = "/xnat/data/JSESSION";
-	public static final String XNAT_PROJECT_BASE = "/xnat/data/projects/";
-	public static final String XNAT_SUBJECT_BASE = "/xnat/data/subjects/";
+	private static final String XNAT_SESSION_BASE = "/xnat/data/JSESSION";
+	private static final String XNAT_PROJECTS_BASE = "/xnat/data/projects/";
+	private static final String XNAT_SUBJECTS_BASE = "/xnat/data/subjects/";
+	private static final String XNAT_EXPERIMENTS_BASE = "/xnat/data/experiments/";
 
 	private static final EPADLogger log = EPADLogger.getInstance();
 	private static final EPADConfig config = EPADConfig.getInstance();
@@ -73,7 +76,7 @@ public class XNATUtil
 		if (base.startsWith("/"))
 			base = base.substring(1, base.length());
 
-		return buildURLString(xnatHost, xnatPort, XNAT_PROJECT_BASE, base);
+		return buildXNATBaseURL(xnatHost, xnatPort, XNAT_PROJECTS_BASE, base);
 	}
 
 	public static String buildSubjectURLString(String base)
@@ -84,7 +87,45 @@ public class XNATUtil
 		if (base.startsWith("/"))
 			base = base.substring(1, base.length());
 
-		return buildURLString(xnatHost, xnatPort, XNAT_SUBJECT_BASE, base);
+		return buildXNATBaseURL(xnatHost, xnatPort, XNAT_SUBJECTS_BASE, base);
+	}
+
+	// Setting the label field explicitly in this URL causes duplicate experiments to be created for
+	// the same study.
+	public static String buildXNATExperimentCreationURL(String xnatProjectID, String xnatSubjectLabel,
+			String dicomStudyUID)
+	{
+		String xnatHost = config.getStringPropertyValue("XNATServer");
+		int xnatPort = config.getIntegerPropertyValue("XNATPort");
+		String experimentID = XNATUtil.dicomStudyUID2XNATExperimentID(dicomStudyUID);
+		String urlString = XNATUtil.buildXNATBaseURL(xnatHost, xnatPort, XNAT_PROJECTS_BASE) + xnatProjectID + "/subjects/"
+				+ xnatSubjectLabel + "/experiments/" + experimentID + "?name=" + dicomStudyUID
+				+ "&xsiType=xnat:otherDicomSessionData";
+
+		return urlString;
+	}
+
+	public static String buildXNATSubjectCreationURL(String xnatProjectID, String xnatSubjectLabel,
+			String dicomPatientName)
+	{
+		String xnatHost = config.getStringPropertyValue("XNATServer");
+		int xnatPort = config.getIntegerPropertyValue("XNATPort");
+		String queryPart = "?label=" + xnatSubjectLabel + "&src=" + encode(dicomPatientName);
+		String urlString = XNATUtil.buildXNATBaseURL(xnatHost, xnatPort, XNAT_PROJECTS_BASE) + xnatProjectID + "/subjects"
+				+ queryPart;
+
+		return urlString;
+	}
+
+	public static String buildXNATProjectCreationURL(String xnatProjectID, String xnatProjectName)
+	{
+		String xnatHost = config.getStringPropertyValue("XNATServer");
+		int xnatPort = config.getIntegerPropertyValue("XNATPort");
+		String queryString = "?ID=" + XNATUtil.projectName2XNATProjectID(xnatProjectName) + "&name="
+				+ encode(xnatProjectName);
+		String urlString = XNATUtil.buildXNATBaseURL(xnatHost, xnatPort, XNAT_PROJECTS_BASE) + queryString;
+
+		return urlString;
 	}
 
 	public static String getJSessionIDFromRequest(HttpServletRequest servletRequest)
@@ -116,12 +157,44 @@ public class XNATUtil
 			return "";
 	}
 
-	public static String buildURLString(String host, int port, String base)
+	public static String buildXNATBaseURL(String host, int port, String base)
 	{
-		return buildURLString(host, port, base, "");
+		return buildXNATBaseURL(host, port, base, "");
 	}
 
-	private static String buildURLString(String host, int port, String base, String ext)
+	public static String buildXNATSessionURL()
+	{
+		String xnatHost = config.getStringPropertyValue("XNATServer");
+		int xnatPort = config.getIntegerPropertyValue("XNATPort");
+
+		return buildXNATBaseURL(xnatHost, xnatPort, XNATUtil.XNAT_SESSION_BASE);
+	}
+
+	public static String buildXNATProjectsURL()
+	{
+		String xnatHost = config.getStringPropertyValue("XNATServer");
+		int xnatPort = config.getIntegerPropertyValue("XNATPort");
+
+		return buildXNATBaseURL(xnatHost, xnatPort, XNATUtil.XNAT_PROJECTS_BASE);
+	}
+
+	public static String buildXNATSubjectsURL()
+	{
+		String xnatHost = config.getStringPropertyValue("XNATServer");
+		int xnatPort = config.getIntegerPropertyValue("XNATPort");
+
+		return buildXNATBaseURL(xnatHost, xnatPort, XNATUtil.XNAT_SUBJECTS_BASE);
+	}
+
+	public static String buildXNATExperimentsURL()
+	{
+		String xnatHost = config.getStringPropertyValue("XNATServer");
+		int xnatPort = config.getIntegerPropertyValue("XNATPort");
+
+		return buildXNATBaseURL(xnatHost, xnatPort, XNATUtil.XNAT_EXPERIMENTS_BASE);
+	}
+
+	private static String buildXNATBaseURL(String host, int port, String base, String ext)
 	{
 		StringBuilder sb = new StringBuilder();
 		sb.append("http://").append(host);
@@ -148,4 +221,15 @@ public class XNATUtil
 		}
 		return credentials;
 	}
+
+	private static String encode(String urlString)
+	{
+		try {
+			return URLEncoder.encode(urlString, "UTF-8");
+		} catch (UnsupportedEncodingException e) {
+			log.warning("Error encoding URL " + urlString, e);
+			return null;
+		}
+	}
+
 }

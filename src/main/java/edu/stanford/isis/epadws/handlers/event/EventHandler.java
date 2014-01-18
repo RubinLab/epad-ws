@@ -16,7 +16,7 @@ import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epad.common.util.SearchResultUtils;
 import edu.stanford.isis.epadws.persistence.Database;
 import edu.stanford.isis.epadws.persistence.DatabaseOperations;
-import edu.stanford.isis.epadws.xnat.XNATOperations;
+import edu.stanford.isis.epadws.xnat.XNATSessionOperations;
 import edu.stanford.isis.epadws.xnat.XNATUtil;
 
 /**
@@ -45,7 +45,7 @@ public class EventHandler extends AbstractHandler
 		httpResponse.setContentType("text/plain");
 		request.setHandled(true);
 
-		if (XNATOperations.hasValidXNATSessionID(httpRequest)) {
+		if (XNATSessionOperations.hasValidXNATSessionID(httpRequest)) {
 			try {
 				responseStream = httpResponse.getWriter();
 

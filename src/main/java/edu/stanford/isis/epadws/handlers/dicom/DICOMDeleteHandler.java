@@ -13,7 +13,7 @@ import org.eclipse.jetty.server.handler.AbstractHandler;
 import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epad.common.util.JsonHelper;
 import edu.stanford.isis.epadws.processing.pipeline.task.DicomDeleteTask;
-import edu.stanford.isis.epadws.xnat.XNATOperations;
+import edu.stanford.isis.epadws.xnat.XNATSessionOperations;
 
 /**
  * Delete a study or a series.
@@ -37,7 +37,7 @@ public class DICOMDeleteHandler extends AbstractHandler
 		httpResponse.setContentType("text/plain");
 		request.setHandled(true);
 
-		if (XNATOperations.hasValidXNATSessionID(httpRequest)) {
+		if (XNATSessionOperations.hasValidXNATSessionID(httpRequest)) {
 			String queryString = httpRequest.getQueryString();
 			queryString = URLDecoder.decode(queryString, "UTF-8");
 			log.info("DICOM delete handler query: " + queryString);
