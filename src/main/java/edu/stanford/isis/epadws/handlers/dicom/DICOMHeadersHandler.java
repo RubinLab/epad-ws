@@ -22,7 +22,6 @@ import com.google.gson.Gson;
 import edu.stanford.isis.epad.common.dicom.DICOMElementResult;
 import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epad.common.util.EPADTools;
-import edu.stanford.isis.epad.common.util.JsonHelper;
 import edu.stanford.isis.epadws.handlers.HandlerUtil;
 import edu.stanford.isis.epadws.processing.pipeline.task.DicomHeadersTask;
 import edu.stanford.isis.epadws.xnat.XNATSessionOperations;
@@ -58,21 +57,15 @@ public class DICOMHeadersHandler extends AbstractHandler
 				if (queryString != null) {
 					statusCode = performDICOMHeaderRequest(responseStream, queryString.trim());
 				} else {
-					log.info(MISSING_QUERY_MESSAGE);
-					responseStream.append(JsonHelper.createJSONErrorResponse(MISSING_QUERY_MESSAGE));
-					statusCode = HttpServletResponse.SC_BAD_REQUEST;
+					statusCode = HandlerUtil.infoJSONResponse(HttpServletResponse.SC_BAD_REQUEST, MISSING_QUERY_MESSAGE,
+							responseStream, log);
 				}
 			} else {
-				log.info(INVALID_SESSION_TOKEN_MESSAGE);
-				responseStream.append(JsonHelper.createJSONErrorResponse(INVALID_SESSION_TOKEN_MESSAGE));
-				statusCode = HttpServletResponse.SC_UNAUTHORIZED;
+				statusCode = HandlerUtil.invalidTokenJSONResponse(INVALID_SESSION_TOKEN_MESSAGE, responseStream, log);
 			}
 			responseStream.flush();
 		} catch (Throwable t) {
-			log.warning(INTERNAL_ERROR_MESSAGE, t);
-			if (responseStream != null)
-				responseStream.print(JsonHelper.createJSONErrorResponse(INTERNAL_ERROR_MESSAGE, t));
-			statusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+			statusCode = HandlerUtil.internalErrorJSONResponse(INTERNAL_ERROR_MESSAGE, t, responseStream, log);
 		}
 		httpResponse.setStatus(statusCode);
 	}

@@ -7,6 +7,7 @@ import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 
 import edu.stanford.isis.epad.common.util.EPADLogger;
+import edu.stanford.isis.epadws.handlers.HandlerUtil;
 
 /**
  * Provide access control.
@@ -27,6 +28,7 @@ public class ResourceCheckHandler extends AbstractHandler
 	public void handle(String base, Request request, HttpServletRequest httpRequest, HttpServletResponse httpResponse)
 	{
 		String origin = httpRequest.getHeader("Origin"); // CORS request should have Origin header
+		int statusCode;
 
 		// Origin header indicates a possible CORS requests, which we support to allow drawing on canvas in GWT Dev Mode.
 		if (origin != null) {
@@ -40,21 +42,20 @@ public class ResourceCheckHandler extends AbstractHandler
 			// if (XNATOperations.hasValidXNATSessionID(httpRequest)) {
 			if (dummy()) {
 				request.setHandled(false);
+				statusCode = HttpServletResponse.SC_OK;
 			} else {
-				log.info(INVALID_SESSION_TOKEN_MESSAGE);
-				httpResponse.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+				statusCode = HandlerUtil.invalidTokenResponse(INVALID_SESSION_TOKEN_MESSAGE, log);
 				request.setHandled(true);
 			}
 		} catch (Throwable t) {
-			log.warning(INTERNAL_ERROR_MESSAGE, t);
-			httpResponse.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+			statusCode = HandlerUtil.internalErrorResponse(INTERNAL_ERROR_MESSAGE, t, log);
 			request.setHandled(true);
 		}
+		httpResponse.setStatus(statusCode);
 	}
 
 	private boolean dummy()
 	{
 		return true;
 	}
-
 }

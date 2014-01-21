@@ -9,6 +9,12 @@ import javax.servlet.http.HttpServletResponse;
 import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epad.common.util.JsonHelper;
 
+/**
+ * Utility methods for creating and logging handler responses
+ * 
+ * 
+ * @author martin
+ */
 public class HandlerUtil
 {
 	public static int infoResponse(int responseCode, String message, PrintWriter responseStream, EPADLogger log)

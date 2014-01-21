@@ -84,7 +84,7 @@ public class CoordinationHandler extends AbstractHandler
 	private static final String INTERNAL_IO_ERROR_MESSAGE = "Internal server IO error  on coordination route";
 	private static final String INTERNAL_SQL_ERROR_MESSAGE = "Internal server SQL error on coordination route";
 	private static final String BAD_JSON_MESSAGE = "Bad JSON - does not represent a valid coordination";
-	private static final String UNPARSABLE_JSON_ERROR_MESSAGE = "Unparsable JSON in coordination route";
+	private static final String UNPARSABLE_JSON = "Unparsable JSON in coordination route";
 	private static final String INVALID_TOKEN_MESSAGE = "Session token is invalid on coordination route";
 
 	private final static int MIN_COORDINATION_TERMS = 2;
@@ -128,17 +128,14 @@ public class CoordinationHandler extends AbstractHandler
 				statusCode = HandlerUtil.invalidTokenJSONResponse(INVALID_TOKEN_MESSAGE, log);
 			}
 		} catch (JsonParseException e) {
-			statusCode = HandlerUtil.warningJSONResponse(HttpServletResponse.SC_BAD_REQUEST, UNPARSABLE_JSON_ERROR_MESSAGE,
-					e, responseStream, log);
+			statusCode = HandlerUtil.warningJSONResponse(HttpServletResponse.SC_BAD_REQUEST, UNPARSABLE_JSON, e,
+					responseStream, log);
 		} catch (IOException e) {
-			statusCode = HandlerUtil.warningJSONResponse(HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
-					INTERNAL_IO_ERROR_MESSAGE, e, responseStream, log);
+			statusCode = HandlerUtil.internalErrorJSONResponse(INTERNAL_IO_ERROR_MESSAGE, e, responseStream, log);
 		} catch (SQLException e) {
-			statusCode = HandlerUtil.warningJSONResponse(HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
-					INTERNAL_SQL_ERROR_MESSAGE, e, responseStream, log);
+			statusCode = HandlerUtil.internalErrorJSONResponse(INTERNAL_SQL_ERROR_MESSAGE, e, responseStream, log);
 		} catch (Throwable t) {
-			statusCode = HandlerUtil.warningJSONResponse(HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
-					INTERNAL_ERROR_MESSAGE, t, responseStream, log);
+			statusCode = HandlerUtil.internalErrorJSONResponse(INTERNAL_ERROR_MESSAGE, t, responseStream, log);
 		}
 		httpResponse.setStatus(statusCode);
 	}

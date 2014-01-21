@@ -20,6 +20,7 @@ import edu.stanford.isis.epad.common.plugins.impl.EPadPluginImpl;
 import edu.stanford.isis.epad.common.util.EPADConfig;
 import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epadws.EPadWebServerVersion;
+import edu.stanford.isis.epadws.handlers.HandlerUtil;
 import edu.stanford.isis.epadws.persistence.Database;
 import edu.stanford.isis.epadws.processing.pipeline.PipelineFactory;
 import edu.stanford.isis.epadws.xnat.XNATSessionOperations;
@@ -84,15 +85,10 @@ public class ServerStatusHandler extends AbstractHandler
 
 				statusCode = HttpServletResponse.SC_OK;
 			} else {
-				log.info(INVALID_SESSION_TOKEN_MESSAGE);
-				responseStream.append(INVALID_SESSION_TOKEN_MESSAGE);
-				statusCode = HttpServletResponse.SC_UNAUTHORIZED;
+				statusCode = HandlerUtil.invalidTokenResponse(INVALID_SESSION_TOKEN_MESSAGE, responseStream, log);
 			}
 		} catch (Throwable t) {
-			log.severe(INTERNAL_EXCEPTION_MESSAGE, t);
-			if (responseStream != null)
-				responseStream.append(INTERNAL_EXCEPTION_MESSAGE + ": " + t.getMessage());
-			statusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+			statusCode = HandlerUtil.internalErrorResponse(INTERNAL_EXCEPTION_MESSAGE, responseStream, log);
 		}
 		httpResponse.setStatus(statusCode);
 	}
