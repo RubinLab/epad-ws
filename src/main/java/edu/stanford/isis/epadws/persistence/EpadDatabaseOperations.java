@@ -9,7 +9,7 @@ import edu.stanford.isis.epadws.handlers.coordination.Term;
 import edu.stanford.isis.epadws.processing.model.PngProcessingStatus;
 
 /**
- * Defines all operations on ePAD's database.
+ * Defines all operations on ePAD's database
  * 
  * 
  * @author martin

@@ -18,7 +18,7 @@ import edu.stanford.isis.epad.common.dicom.DICOMStudySearchResult;
 import edu.stanford.isis.epad.common.dicom.DicomFormatUtil;
 import edu.stanford.isis.epad.common.dicom.DicomStudySearchType;
 import edu.stanford.isis.epad.common.util.EPADLogger;
-import edu.stanford.isis.epad.common.util.JsonHelper;
+import edu.stanford.isis.epadws.handlers.HandlerUtil;
 import edu.stanford.isis.epadws.persistence.Database;
 import edu.stanford.isis.epadws.persistence.DatabaseOperations;
 import edu.stanford.isis.epadws.xnat.XNATSessionOperations;
@@ -37,7 +37,7 @@ public class DICOMSearchHandler extends AbstractHandler
 
 	private static final String MISSING_QUERY_MESSAGE = "No series or study query in DICOM search request";
 	private static final String MISSING_STUDY_SEARCH_TYPE_MESSAGE = "Missing DICOM study search type";
-	private static final String INTERNAL_EXCEPTION_MESSAGE = "Internal error running query  on DICOM search route";
+	private static final String INTERNAL_EXCEPTION_MESSAGE = "Warning: internal error running query  on DICOM search route";
 	private static final String INVALID_SESSION_TOKEN_MESSAGE = "Session token is invalid on DICOM search route";
 
 	@Override
@@ -66,28 +66,21 @@ public class DICOMSearchHandler extends AbstractHandler
 						if (searchType != null) {
 							performDICOMStudySearch(responseStream, searchType, queryString);
 						} else {
-							log.info(MISSING_STUDY_SEARCH_TYPE_MESSAGE);
-							responseStream.append(JsonHelper.createJSONErrorResponse(MISSING_STUDY_SEARCH_TYPE_MESSAGE));
-							statusCode = HttpServletResponse.SC_BAD_REQUEST;
+							statusCode = HandlerUtil.infoJSONResponse(HttpServletResponse.SC_BAD_REQUEST,
+									MISSING_STUDY_SEARCH_TYPE_MESSAGE, responseStream, log);
 						}
 					}
 					responseStream.flush();
 					statusCode = HttpServletResponse.SC_OK;
 				} else {
-					log.info(MISSING_QUERY_MESSAGE);
-					responseStream.append(JsonHelper.createJSONErrorResponse(MISSING_QUERY_MESSAGE));
-					statusCode = HttpServletResponse.SC_BAD_REQUEST;
+					statusCode = HandlerUtil.infoJSONResponse(HttpServletResponse.SC_BAD_REQUEST, MISSING_QUERY_MESSAGE,
+							responseStream, log);
 				}
 			} else {
-				log.info(INVALID_SESSION_TOKEN_MESSAGE);
-				responseStream.append(JsonHelper.createJSONErrorResponse(INVALID_SESSION_TOKEN_MESSAGE));
-				statusCode = HttpServletResponse.SC_UNAUTHORIZED;
+				statusCode = HandlerUtil.invalidTokenJSONResponse(INVALID_SESSION_TOKEN_MESSAGE, responseStream, log);
 			}
 		} catch (Throwable t) {
-			log.severe(INTERNAL_EXCEPTION_MESSAGE, t);
-			if (responseStream != null)
-				responseStream.append(JsonHelper.createJSONErrorResponse(INTERNAL_EXCEPTION_MESSAGE, t));
-			statusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+			statusCode = HandlerUtil.internalErrorJSONResponse(INTERNAL_EXCEPTION_MESSAGE, t, responseStream, log);
 		}
 		httpResponse.setStatus(statusCode);
 	}

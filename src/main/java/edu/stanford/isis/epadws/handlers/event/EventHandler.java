@@ -20,7 +20,7 @@ import edu.stanford.isis.epadws.xnat.XNATSessionOperations;
 import edu.stanford.isis.epadws.xnat.XNATUtil;
 
 /**
- * 
+ * Initial version of ePAD's new event notification system
  * 
  * 
  * @author martin

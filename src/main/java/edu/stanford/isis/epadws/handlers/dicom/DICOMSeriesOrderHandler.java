@@ -17,7 +17,7 @@ import edu.stanford.isis.epad.common.dicom.DICOMSeriesDescriptionSearchResult;
 import edu.stanford.isis.epad.common.dicom.DicomFormatUtil;
 import edu.stanford.isis.epad.common.dicom.DicomImageDescriptionSearchResult;
 import edu.stanford.isis.epad.common.util.EPADLogger;
-import edu.stanford.isis.epad.common.util.JsonHelper;
+import edu.stanford.isis.epadws.handlers.HandlerUtil;
 import edu.stanford.isis.epadws.persistence.Database;
 import edu.stanford.isis.epadws.persistence.DatabaseOperations;
 import edu.stanford.isis.epadws.xnat.XNATSessionOperations;
@@ -52,7 +52,7 @@ public class DICOMSeriesOrderHandler extends AbstractHandler
 
 	private static final String MISSING_SERIES_IUID_MESSAGE = "No Series IUID parameter in DICOM series request";
 	private static final String INVALID_SESSION_TOKEN_MESSAGE = "Session token is invalid on DICOM series order route";
-	private static final String INTERNAL_EXCEPTION_MESSAGE = "Internal error in DICOM series order handler";
+	private static final String INTERNAL_EXCEPTION_MESSAGE = "Warning: internal error in DICOM series order handler";
 
 	@Override
 	public void handle(String s, Request request, HttpServletRequest httpRequest, HttpServletResponse httpResponse)
@@ -72,21 +72,15 @@ public class DICOMSeriesOrderHandler extends AbstractHandler
 					peformDICOMSeriesDescriptionQuery(responseStream, seriesIUID);
 					statusCode = HttpServletResponse.SC_OK;
 				} else {
-					log.info(MISSING_SERIES_IUID_MESSAGE);
-					responseStream.append(JsonHelper.createJSONErrorResponse(MISSING_SERIES_IUID_MESSAGE));
-					statusCode = HttpServletResponse.SC_BAD_REQUEST;
+					statusCode = HandlerUtil.infoJSONResponse(HttpServletResponse.SC_BAD_REQUEST, MISSING_SERIES_IUID_MESSAGE,
+							responseStream, log);
 				}
 			} else {
-				log.info(INVALID_SESSION_TOKEN_MESSAGE);
-				responseStream.append(JsonHelper.createJSONErrorResponse(INVALID_SESSION_TOKEN_MESSAGE));
-				statusCode = HttpServletResponse.SC_UNAUTHORIZED;
+				statusCode = HandlerUtil.invalidTokenJSONResponse(INVALID_SESSION_TOKEN_MESSAGE, responseStream, log);
 			}
 			responseStream.flush();
 		} catch (Throwable t) {
-			log.severe(INTERNAL_EXCEPTION_MESSAGE, t);
-			if (responseStream != null)
-				responseStream.append(JsonHelper.createJSONErrorResponse(INTERNAL_EXCEPTION_MESSAGE, t));
-			statusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+			statusCode = HandlerUtil.internalErrorJSONResponse(INTERNAL_EXCEPTION_MESSAGE, responseStream, log);
 		}
 		httpResponse.setStatus(statusCode);
 	}

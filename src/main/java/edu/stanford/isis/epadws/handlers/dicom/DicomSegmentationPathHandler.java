@@ -11,6 +11,7 @@ import org.eclipse.jetty.server.handler.AbstractHandler;
 
 import edu.stanford.isis.epad.common.util.EPADConfig;
 import edu.stanford.isis.epad.common.util.EPADLogger;
+import edu.stanford.isis.epadws.handlers.HandlerUtil;
 import edu.stanford.isis.epadws.persistence.Database;
 import edu.stanford.isis.epadws.persistence.DatabaseOperations;
 import edu.stanford.isis.epadws.xnat.XNATSessionOperations;
@@ -60,25 +61,21 @@ public class DicomSegmentationPathHandler extends AbstractHandler
 									+ studySeriesAndImageIDs[2]);
 							statusCode = HttpServletResponse.SC_OK;
 						} else {
-							log.warning("Could not find study for image with UID" + imageUID);
-							statusCode = HttpServletResponse.SC_NOT_FOUND;
+							statusCode = HandlerUtil.infoResponse(HttpServletResponse.SC_NOT_FOUND,
+									"Could not find study for image with UID" + imageUID, log);
 						}
 					} else {
-						log.warning("No image ID in request query!");
-						statusCode = HttpServletResponse.SC_BAD_REQUEST;
+						statusCode = HandlerUtil.infoResponse(HttpServletResponse.SC_BAD_REQUEST, "No image ID inquery!", log);
 					}
 				} else {
-					log.warning("No query in request!");
-					statusCode = HttpServletResponse.SC_BAD_REQUEST;
+					statusCode = HandlerUtil.infoResponse(HttpServletResponse.SC_BAD_REQUEST, "No query in request!", log);
 				}
 				responseStream.flush();
 			} else {
-				log.info(INVALID_SESSION_TOKEN_MESSAGE);
-				statusCode = HttpServletResponse.SC_UNAUTHORIZED;
+				statusCode = HandlerUtil.invalidTokenResponse(INVALID_SESSION_TOKEN_MESSAGE, log);
 			}
 		} catch (Throwable t) {
-			log.warning("Internal server error handling series path request", t);
-			statusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+			statusCode = HandlerUtil.internalErrorResponse("Warning: internal server error on series path request", t, log);
 		}
 
 		httpResponse.setStatus(statusCode);

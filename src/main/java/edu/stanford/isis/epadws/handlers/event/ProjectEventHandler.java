@@ -9,7 +9,7 @@ import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 
 import edu.stanford.isis.epad.common.util.EPADLogger;
-import edu.stanford.isis.epad.common.util.JsonHelper;
+import edu.stanford.isis.epadws.handlers.HandlerUtil;
 import edu.stanford.isis.epadws.processing.events.EventTracker;
 import edu.stanford.isis.epadws.xnat.XNATSessionOperations;
 import edu.stanford.isis.epadws.xnat.XNATUtil;
@@ -46,16 +46,11 @@ public class ProjectEventHandler extends AbstractHandler
 				performEventHandle(responseStream, jsessionID);
 				statusCode = HttpServletResponse.SC_OK;
 			} else {
-				log.info(INVALID_SESSION_TOKEN_MESSAGE);
-				responseStream.append(JsonHelper.createJSONErrorResponse(INVALID_SESSION_TOKEN_MESSAGE));
-				statusCode = HttpServletResponse.SC_UNAUTHORIZED;
+				statusCode = HandlerUtil.invalidTokenJSONResponse(INVALID_SESSION_TOKEN_MESSAGE, responseStream, log);
 			}
 			responseStream.flush();
 		} catch (Throwable t) {
-			log.severe(INTERNAL_EXCEPTION_MESSAGE, t);
-			if (responseStream != null)
-				responseStream.append(JsonHelper.createJSONErrorResponse(INTERNAL_EXCEPTION_MESSAGE, t));
-			statusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+			statusCode = HandlerUtil.internalErrorJSONResponse(INTERNAL_EXCEPTION_MESSAGE, responseStream, log);
 		}
 		httpResponse.setStatus(statusCode);
 	}

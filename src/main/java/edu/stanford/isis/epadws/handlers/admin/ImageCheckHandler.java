@@ -15,7 +15,7 @@ import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 
 import edu.stanford.isis.epad.common.util.EPADLogger;
-import edu.stanford.isis.epad.common.util.JsonHelper;
+import edu.stanford.isis.epadws.handlers.HandlerUtil;
 import edu.stanford.isis.epadws.persistence.Database;
 import edu.stanford.isis.epadws.persistence.DatabaseOperations;
 import edu.stanford.isis.epadws.processing.pipeline.watcher.QueueAndWatcherManager;
@@ -28,7 +28,7 @@ public class ImageCheckHandler extends AbstractHandler
 {
 	private static final EPADLogger log = EPADLogger.getInstance();
 
-	private static final String FORBIDDEN_MESSAGE = "Forbidden method - only GET supported! on image check route";
+	private static final String FORBIDDEN = "Forbidden method - only GET supported! on image check route";
 	private static final String INTERNAL_ERROR_MESSAGE = "Internal server error on image check route";
 	private static final String INTERNAL_IO_ERROR_MESSAGE = "Internal server IO error on image check route";
 	private static final String INTERNAL_SQL_ERROR_MESSAGE = "Internal server SQL error on image check route";
@@ -55,29 +55,18 @@ public class ImageCheckHandler extends AbstractHandler
 						verifyImageGeneration(responseStream);
 						statusCode = HttpServletResponse.SC_OK;
 					} catch (IOException e) {
-						log.warning(INTERNAL_IO_ERROR_MESSAGE, e);
-						responseStream.print(INTERNAL_IO_ERROR_MESSAGE + ": " + e.getMessage());
-						statusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+						statusCode = HandlerUtil.internalErrorResponse(INTERNAL_IO_ERROR_MESSAGE, e, responseStream, log);
 					} catch (SQLException e) {
-						log.warning(INTERNAL_SQL_ERROR_MESSAGE, e);
-						responseStream.print(INTERNAL_SQL_ERROR_MESSAGE + ": " + e.getMessage());
-						statusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+						statusCode = HandlerUtil.internalErrorResponse(INTERNAL_SQL_ERROR_MESSAGE, e, responseStream, log);
 					}
 				} else {
-					log.info(FORBIDDEN_MESSAGE);
-					responseStream.print(FORBIDDEN_MESSAGE);
-					statusCode = HttpServletResponse.SC_FORBIDDEN;
+					statusCode = HandlerUtil.warningResponse(HttpServletResponse.SC_FORBIDDEN, FORBIDDEN, responseStream, log);
 				}
 			} else {
-				log.info(INVALID_SESSION_TOKEN_MESSAGE);
-				responseStream.append(JsonHelper.createJSONErrorResponse(INVALID_SESSION_TOKEN_MESSAGE));
-				statusCode = HttpServletResponse.SC_UNAUTHORIZED;
+				statusCode = HandlerUtil.invalidTokenJSONResponse(INVALID_SESSION_TOKEN_MESSAGE, responseStream, log);
 			}
 		} catch (Throwable t) {
-			log.warning(INTERNAL_ERROR_MESSAGE, t);
-			if (responseStream != null)
-				responseStream.print(INTERNAL_ERROR_MESSAGE + ": " + t.getMessage());
-			statusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+			statusCode = HandlerUtil.internalErrorJSONResponse(INTERNAL_ERROR_MESSAGE, t, responseStream, log);
 		}
 		httpResponse.setStatus(statusCode);
 	}

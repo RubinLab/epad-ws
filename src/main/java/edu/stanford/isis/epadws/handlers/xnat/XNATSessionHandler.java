@@ -10,6 +10,7 @@ import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 
 import edu.stanford.isis.epad.common.util.EPADLogger;
+import edu.stanford.isis.epadws.handlers.HandlerUtil;
 import edu.stanford.isis.epadws.xnat.XNATSessionOperations;
 import edu.stanford.isis.epadws.xnat.XNATUtil;
 import edu.stanford.isis.epadws.xnat.XNATUtil.XNATSessionResponse;
@@ -33,11 +34,11 @@ public class XNATSessionHandler extends AbstractHandler
 {
 	private static final EPADLogger log = EPADLogger.getInstance();
 
-	private static final String MISSING_USERNAME_MESSAGE = "Missing user name";
+	private static final String MISSING_USER = "Missing user name";
 	private static final String INVALID_METHOD_MESSAGE = "Only POST and DELETE methods valid for this route";
-	private static final String LOGIN_EXCEPTION_MESSAGE = "Internal login error";
-	private static final String LOGOUT_EXCEPTION_MESSAGE = "Internal logout error";
-	private static final String UNEXPECTED_XNAT_RESPONSE_MESSAGE = "Unexpected response code from XNAT";
+	private static final String LOGIN_EXCEPTION_MESSAGE = "Warning: internal login error";
+	private static final String LOGOUT_EXCEPTION_MESSAGE = "Warning: internal logout error";
+	private static final String UNEXPECTED_XNAT_RESPONSE_MESSAGE = "Warning: unexpected response code from XNAT";
 	private static final String UNAUTHORIZED_USER_XNAT_RESPONSE_MESSAGE = "Invalid username or password";
 
 	@Override
@@ -67,23 +68,16 @@ public class XNATSessionHandler extends AbstractHandler
 						httpResponse.addHeader("Access-Control-Allow-Credentials", "true");
 						statusCode = HttpServletResponse.SC_OK;
 					} else if (xnatSessionResponse.statusCode == HttpServletResponse.SC_UNAUTHORIZED) {
-						log.info(UNAUTHORIZED_USER_XNAT_RESPONSE_MESSAGE);
-						responseStream.append(UNAUTHORIZED_USER_XNAT_RESPONSE_MESSAGE);
-						statusCode = HttpServletResponse.SC_UNAUTHORIZED;
+						statusCode = HandlerUtil.invalidTokenResponse(UNAUTHORIZED_USER_XNAT_RESPONSE_MESSAGE, responseStream, log);
 					} else {
-						log.info(UNEXPECTED_XNAT_RESPONSE_MESSAGE + ";statusCode = " + xnatSessionResponse.statusCode);
-						responseStream.append(UNEXPECTED_XNAT_RESPONSE_MESSAGE + ";statusCode = " + xnatSessionResponse.statusCode);
-						statusCode = xnatSessionResponse.statusCode;
+						statusCode = HandlerUtil.warningResponse(xnatSessionResponse.statusCode, UNEXPECTED_XNAT_RESPONSE_MESSAGE
+								+ ";statusCode = " + xnatSessionResponse.statusCode, responseStream, log);
 					}
 				} catch (Throwable t) {
-					log.severe(LOGIN_EXCEPTION_MESSAGE, t);
-					responseStream.append(LOGIN_EXCEPTION_MESSAGE + ": " + t.getMessage());
-					statusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+					statusCode = HandlerUtil.internalErrorResponse(LOGIN_EXCEPTION_MESSAGE, t, responseStream, log);
 				}
 			} else {
-				log.info(MISSING_USERNAME_MESSAGE);
-				responseStream.append(MISSING_USERNAME_MESSAGE);
-				statusCode = HttpServletResponse.SC_BAD_REQUEST;
+				statusCode = HandlerUtil.infoResponse(HttpServletResponse.SC_BAD_REQUEST, MISSING_USER, responseStream, log);
 			}
 		} else if ("DELETE".equalsIgnoreCase(method)) {
 			log.info("XNATSessionHandler, logout request");
@@ -92,9 +86,7 @@ public class XNATSessionHandler extends AbstractHandler
 				log.info("XNAT delete session returns status code " + xnatStatusCode);
 				statusCode = xnatStatusCode;
 			} catch (Throwable t) {
-				log.severe(LOGOUT_EXCEPTION_MESSAGE, t);
-				responseStream.append(LOGOUT_EXCEPTION_MESSAGE + ": " + t.getMessage());
-				statusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+				statusCode = HandlerUtil.internalErrorResponse(LOGOUT_EXCEPTION_MESSAGE, t, responseStream, log);
 			}
 		} else if ("OPTIONS".equalsIgnoreCase(method)) {
 			log.info("XNATSessionHandler, CORS preflight OPTIONS request");

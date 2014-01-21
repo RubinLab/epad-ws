@@ -14,6 +14,12 @@ import com.google.gson.Gson;
 import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epad.common.xnat.XNATExperiments;
 
+/**
+ * Methods for querying XNAT
+ * 
+ * 
+ * @author martin
+ */
 public class XNATQueries
 {
 	private static final EPADLogger log = EPADLogger.getInstance();

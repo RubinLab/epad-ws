@@ -23,6 +23,7 @@ import edu.stanford.isis.epad.common.dicom.DICOMElementResult;
 import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epad.common.util.EPADTools;
 import edu.stanford.isis.epad.common.util.JsonHelper;
+import edu.stanford.isis.epadws.handlers.HandlerUtil;
 import edu.stanford.isis.epadws.processing.pipeline.task.DicomHeadersTask;
 import edu.stanford.isis.epadws.xnat.XNATSessionOperations;
 
@@ -33,11 +34,11 @@ public class DICOMHeadersHandler extends AbstractHandler
 {
 	private static final EPADLogger log = EPADLogger.getInstance();
 
-	private static final String INTERNAL_ERROR_MESSAGE = "Internal error on DICOM headers route";
+	private static final String INTERNAL_ERROR_MESSAGE = "Warning: internal error on DICOM headers route";
 	private static final String INVALID_SESSION_TOKEN_MESSAGE = "Session token is invalid on DICOM headers route";
 	private static final String MISSING_QUERY_MESSAGE = "No query paramaters specified  on DICOM headers route";
 	private static final String BADLY_FORMED_QUERY_MESSAGE = "Invalid query paramaters specified  on DICOM headers route";
-	private static final String WADO_INVOCATION_ERROR_MESSAGE = "Error retrieving header from WADO on DICOM headers route";
+	private static final String WADO_INVOCATION_ERROR_MESSAGE = "Warning: error retrieving header from WADO on DICOM headers route";
 
 	@Override
 	public void handle(String s, Request request, HttpServletRequest httpRequest, HttpServletResponse httpResponse)
@@ -125,21 +126,17 @@ public class DICOMHeadersHandler extends AbstractHandler
 					}
 					statusCode = HttpServletResponse.SC_OK;
 				} catch (InterruptedException e) {
-					log.info("DICOM headers task interrupted");
-					responseStream.print(JsonHelper.createJSONErrorResponse("DICOM headers task interrupted"));
 					Thread.currentThread().interrupt();
-					statusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+					statusCode = HandlerUtil.warningJSONResponse(HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
+							"Warning: DICOM headers task interrupted!", responseStream, log);
 				}
 			} else {
-				log.info(WADO_INVOCATION_ERROR_MESSAGE + "; status code=" + wadoStatusCode);
-				responseStream.print(JsonHelper.createJSONErrorResponse(WADO_INVOCATION_ERROR_MESSAGE + "; status code="
-						+ wadoStatusCode));
-				statusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+				statusCode = HandlerUtil.warningJSONResponse(HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
+						WADO_INVOCATION_ERROR_MESSAGE + "; status code=" + wadoStatusCode, responseStream, log);
 			}
 		} else {
-			log.info(BADLY_FORMED_QUERY_MESSAGE);
-			responseStream.append(JsonHelper.createJSONErrorResponse(BADLY_FORMED_QUERY_MESSAGE));
-			statusCode = HttpServletResponse.SC_BAD_REQUEST;
+			statusCode = HandlerUtil.infoJSONResponse(HttpServletResponse.SC_BAD_REQUEST, BADLY_FORMED_QUERY_MESSAGE,
+					responseStream, log);
 		}
 		return statusCode;
 	}

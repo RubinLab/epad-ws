@@ -21,6 +21,7 @@ import com.pixelmed.display.SourceImage;
 import edu.stanford.isis.epad.common.util.EPADConfig;
 import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epad.common.util.EPADTools;
+import edu.stanford.isis.epadws.handlers.HandlerUtil;
 import edu.stanford.isis.epadws.xnat.XNATSessionOperations;
 
 /**
@@ -31,8 +32,8 @@ public class DICOMWindowingHandler extends AbstractHandler
 	private static final EPADLogger log = EPADLogger.getInstance();
 	private static final EPADConfig config = EPADConfig.getInstance();
 
-	private static final String WADO_ERROR_MESSAGE = "WADO error in DICOM windowing route";
-	private static final String INTERNAL_ERROR_MESSAGE = "Internal error in DICOM windowing route";
+	private static final String WADO_ERROR_MESSAGE = "Warining: WADO error in DICOM windowing route";
+	private static final String INTERNAL_ERROR_MESSAGE = "Warning: internal error in DICOM windowing route";
 	private static final String INVALID_SESSION_TOKEN_MESSAGE = "Session token is invalid on DICOM windowing route";
 	private static final String MISSING_QUERY_MESSAGE = "No query in DICOM windowing request";
 	private static final String BADLY_FORMED_QUERY_MESSAGE = "Invalid query paramaters specified in DICOM windowing request";
@@ -63,31 +64,21 @@ public class DICOMWindowingHandler extends AbstractHandler
 						if (handleDICOMWindowing(responseStream, studyIdKey, seriesIdKey, imageIdKey))
 							statusCode = HttpServletResponse.SC_OK;
 						else {
-							log.warning(WADO_ERROR_MESSAGE);
-							responseStream.print(INTERNAL_ERROR_MESSAGE);
-							statusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+							statusCode = HandlerUtil.warningResponse(HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
+									WADO_ERROR_MESSAGE, log);
 						}
 					} else {
-						log.info(BADLY_FORMED_QUERY_MESSAGE);
-						responseStream.append(BADLY_FORMED_QUERY_MESSAGE);
-						statusCode = HttpServletResponse.SC_BAD_REQUEST;
+						statusCode = HandlerUtil.infoResponse(HttpServletResponse.SC_BAD_REQUEST, BADLY_FORMED_QUERY_MESSAGE, log);
 					}
 				} else {
-					log.info(MISSING_QUERY_MESSAGE);
-					responseStream.append(MISSING_QUERY_MESSAGE);
-					statusCode = HttpServletResponse.SC_BAD_REQUEST;
+					statusCode = HandlerUtil.infoResponse(HttpServletResponse.SC_BAD_REQUEST, MISSING_QUERY_MESSAGE, log);
 				}
 				responseStream.flush();
 			} else {
-				log.info(INVALID_SESSION_TOKEN_MESSAGE);
-				responseStream.append(INVALID_SESSION_TOKEN_MESSAGE);
-				statusCode = HttpServletResponse.SC_UNAUTHORIZED;
+				statusCode = HandlerUtil.invalidTokenResponse(INVALID_SESSION_TOKEN_MESSAGE, log);
 			}
 		} catch (Throwable t) {
-			log.severe(INTERNAL_ERROR_MESSAGE, t);
-			if (responseStream != null)
-				responseStream.print(INTERNAL_ERROR_MESSAGE + ": " + t.getMessage());
-			statusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+			statusCode = HandlerUtil.internalErrorResponse(INTERNAL_ERROR_MESSAGE, responseStream, log);
 		}
 		httpResponse.setStatus(statusCode);
 	}

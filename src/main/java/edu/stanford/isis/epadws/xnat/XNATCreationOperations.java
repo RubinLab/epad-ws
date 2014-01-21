@@ -16,6 +16,12 @@ import edu.stanford.isis.epad.common.dicom.DicomTagFileUtils;
 import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epadws.processing.events.EventTracker;
 
+/**
+ * Methods for creating XNAT entities, such as projects, subjects, and experiments.
+ * 
+ * 
+ * @author martin
+ */
 public class XNATCreationOperations
 {
 	private static final EPADLogger log = EPADLogger.getInstance();

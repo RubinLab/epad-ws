@@ -18,7 +18,7 @@ import com.google.gson.JsonParseException;
 
 import edu.stanford.isis.epad.common.util.EPADConfig;
 import edu.stanford.isis.epad.common.util.EPADLogger;
-import edu.stanford.isis.epad.common.util.JsonHelper;
+import edu.stanford.isis.epadws.handlers.HandlerUtil;
 import edu.stanford.isis.epadws.persistence.Database;
 import edu.stanford.isis.epadws.persistence.DatabaseOperations;
 import edu.stanford.isis.epadws.xnat.XNATSessionOperations;
@@ -83,9 +83,9 @@ public class CoordinationHandler extends AbstractHandler
 	private static final String INTERNAL_ERROR_MESSAGE = "Internal server error  on coordination route";
 	private static final String INTERNAL_IO_ERROR_MESSAGE = "Internal server IO error  on coordination route";
 	private static final String INTERNAL_SQL_ERROR_MESSAGE = "Internal server SQL error on coordination route";
-	private static final String BAD_JSON_ERROR_MESSAGE = "Bad JSON - does not represent a valid coordination";
+	private static final String BAD_JSON_MESSAGE = "Bad JSON - does not represent a valid coordination";
 	private static final String UNPARSABLE_JSON_ERROR_MESSAGE = "Unparsable JSON in coordination route";
-	private static final String INVALID_SESSION_TOKEN_MESSAGE = "Session token is invalid on coordination route";
+	private static final String INVALID_TOKEN_MESSAGE = "Session token is invalid on coordination route";
 
 	private final static int MIN_COORDINATION_TERMS = 2;
 
@@ -116,42 +116,29 @@ public class CoordinationHandler extends AbstractHandler
 							// TODO Should also return SC_CREATED with location header if new.
 							statusCode = HttpServletResponse.SC_OK;
 						} else {
-							log.info(BAD_TERMS_MESSAGE);
-							responseStream.print(JsonHelper.createJSONErrorResponse(BAD_TERMS_MESSAGE));
-							statusCode = HttpServletResponse.SC_BAD_REQUEST;
+							statusCode = HandlerUtil.infoJSONResponse(HttpServletResponse.SC_BAD_REQUEST, BAD_TERMS_MESSAGE, log);
 						}
 					} else {
-						log.info(BAD_JSON_ERROR_MESSAGE);
-						responseStream.print(JsonHelper.createJSONErrorResponse(BAD_JSON_ERROR_MESSAGE));
-						statusCode = HttpServletResponse.SC_BAD_REQUEST;
+						statusCode = HandlerUtil.infoJSONResponse(HttpServletResponse.SC_BAD_REQUEST, BAD_JSON_MESSAGE, log);
 					}
 				} else {
-					log.info(FORBIDDEN_MESSAGE);
-					responseStream.print(JsonHelper.createJSONErrorResponse(FORBIDDEN_MESSAGE));
-					statusCode = HttpServletResponse.SC_FORBIDDEN;
+					statusCode = HandlerUtil.infoJSONResponse(HttpServletResponse.SC_FORBIDDEN, FORBIDDEN_MESSAGE, log);
 				}
 			} else {
-				log.info(INVALID_SESSION_TOKEN_MESSAGE);
-				responseStream.append(INVALID_SESSION_TOKEN_MESSAGE);
-				statusCode = HttpServletResponse.SC_UNAUTHORIZED;
+				statusCode = HandlerUtil.invalidTokenJSONResponse(INVALID_TOKEN_MESSAGE, log);
 			}
 		} catch (JsonParseException e) {
-			log.warning(UNPARSABLE_JSON_ERROR_MESSAGE, e);
-			responseStream.print(JsonHelper.createJSONErrorResponse(UNPARSABLE_JSON_ERROR_MESSAGE, e));
-			statusCode = HttpServletResponse.SC_BAD_REQUEST;
+			statusCode = HandlerUtil.warningJSONResponse(HttpServletResponse.SC_BAD_REQUEST, UNPARSABLE_JSON_ERROR_MESSAGE,
+					e, responseStream, log);
 		} catch (IOException e) {
-			log.warning(INTERNAL_IO_ERROR_MESSAGE, e);
-			responseStream.print(JsonHelper.createJSONErrorResponse(INTERNAL_IO_ERROR_MESSAGE, e));
-			statusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+			statusCode = HandlerUtil.warningJSONResponse(HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
+					INTERNAL_IO_ERROR_MESSAGE, e, responseStream, log);
 		} catch (SQLException e) {
-			log.warning(INTERNAL_SQL_ERROR_MESSAGE, e);
-			responseStream.print(JsonHelper.createJSONErrorResponse(INTERNAL_SQL_ERROR_MESSAGE, e));
-			statusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+			statusCode = HandlerUtil.warningJSONResponse(HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
+					INTERNAL_SQL_ERROR_MESSAGE, e, responseStream, log);
 		} catch (Throwable t) {
-			log.warning(INTERNAL_ERROR_MESSAGE, t);
-			if (responseStream != null)
-				responseStream.print(JsonHelper.createJSONErrorResponse(INTERNAL_ERROR_MESSAGE, t));
-			statusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+			statusCode = HandlerUtil.warningJSONResponse(HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
+					INTERNAL_ERROR_MESSAGE, t, responseStream, log);
 		}
 		httpResponse.setStatus(statusCode);
 	}

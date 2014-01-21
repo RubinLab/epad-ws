@@ -15,6 +15,12 @@ import org.apache.commons.httpclient.methods.PostMethod;
 import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epadws.xnat.XNATUtil.XNATSessionResponse;
 
+/**
+ * XNAT session management methods
+ * 
+ * 
+ * @author martin
+ */
 public class XNATSessionOperations
 {
 	private static final EPADLogger log = EPADLogger.getInstance();

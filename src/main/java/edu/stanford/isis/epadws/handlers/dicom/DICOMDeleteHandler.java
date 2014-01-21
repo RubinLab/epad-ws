@@ -11,7 +11,7 @@ import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 
 import edu.stanford.isis.epad.common.util.EPADLogger;
-import edu.stanford.isis.epad.common.util.JsonHelper;
+import edu.stanford.isis.epadws.handlers.HandlerUtil;
 import edu.stanford.isis.epadws.processing.pipeline.task.DicomDeleteTask;
 import edu.stanford.isis.epadws.xnat.XNATSessionOperations;
 
@@ -52,18 +52,14 @@ public class DICOMDeleteHandler extends AbstractHandler
 					}
 					responseCode = HttpServletResponse.SC_OK;
 				} catch (Throwable t) {
-					log.severe(INTERNAL_ERROR_MESSAGE, t);
-					responseCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+					responseCode = HandlerUtil.internalErrorResponse(INTERNAL_ERROR_MESSAGE, t, log);
 				}
 			} else {
-				log.info(MISSING_QUERY_MESSAGE);
-				responseStream.append(MISSING_QUERY_MESSAGE);
-				responseCode = HttpServletResponse.SC_BAD_REQUEST;
+				responseCode = HandlerUtil.infoResponse(HttpServletResponse.SC_BAD_REQUEST, MISSING_QUERY_MESSAGE,
+						responseStream, log);
 			}
 		} else {
-			log.info(INVALID_SESSION_TOKEN_MESSAGE);
-			responseStream.append(JsonHelper.createJSONErrorResponse(INVALID_SESSION_TOKEN_MESSAGE));
-			responseCode = HttpServletResponse.SC_UNAUTHORIZED;
+			responseCode = HandlerUtil.invalidTokenResponse(INVALID_SESSION_TOKEN_MESSAGE, responseStream, log);
 		}
 		httpResponse.setStatus(responseCode);
 	}
