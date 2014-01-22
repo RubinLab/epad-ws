@@ -20,6 +20,7 @@ import org.eclipse.jetty.server.handler.AbstractHandler;
 import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epad.common.util.JsonHelper;
 import edu.stanford.isis.epad.common.xnat.XNATProjectDescription;
+import edu.stanford.isis.epadws.handlers.HandlerUtil;
 import edu.stanford.isis.epadws.xnat.XNATSessionOperations;
 import edu.stanford.isis.epadws.xnat.XNATUtil;
 
@@ -75,12 +76,11 @@ public class XNATProjectHandler extends AbstractHandler
 	private int invokeXNATProjectService(String base, HttpServletRequest httpRequest, HttpServletResponse httpResponse,
 			OutputStream responseStream) throws IOException
 	{
-		String xnatProjectURL = XNATUtil.buildProjectURLString(base);
+		String xnatProjectURL = XNATUtil.buildProjectBaseURL(base);
 		HttpClient client = new HttpClient();
 		String jsessionID = XNATUtil.getJSessionIDFromRequest(httpRequest);
-		int xnatStatusCode;
-
 		String queryString = httpRequest.getQueryString();
+		int xnatStatusCode;
 
 		if (queryString != null) {
 			queryString = queryString.trim();
@@ -125,8 +125,9 @@ public class XNATProjectHandler extends AbstractHandler
 				log.info(XNAT_INVOCATION_ERROR_MESSAGE + ";status code=" + xnatStatusCode);
 			}
 		} else {
-			log.info(INVALID_METHOD_MESSAGE + "; got " + method);
 			httpResponse.setHeader("Access-Control-Allow-Methods", "GET, PUT, POST, DELETE");
+			xnatStatusCode = HandlerUtil.infoResponse(HttpServletResponse.SC_METHOD_NOT_ALLOWED, INVALID_METHOD_MESSAGE
+					+ "; got " + method, log);
 			xnatStatusCode = HttpServletResponse.SC_METHOD_NOT_ALLOWED;
 		}
 		return xnatStatusCode;

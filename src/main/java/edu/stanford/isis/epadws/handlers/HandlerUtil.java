@@ -17,6 +17,8 @@ import edu.stanford.isis.epad.common.util.JsonHelper;
  */
 public class HandlerUtil
 {
+	private static final EPADLogger log = EPADLogger.getInstance();
+
 	public static int infoResponse(int responseCode, String message, PrintWriter responseStream, EPADLogger log)
 	{
 		log.info(message);
@@ -169,18 +171,20 @@ public class HandlerUtil
 		return warningResponse(HttpServletResponse.SC_UNAUTHORIZED, message, log);
 	}
 
-	public static Map<String, String> extractParameters(String queryString)
+	public static Map<String, String> extractQueryParameters(String queryString)
 	{
 		Map<String, String> result = new HashMap<String, String>();
-		String[] avPairs = queryString.trim().split("&");
+		String[] attributeValuePairs = queryString.trim().split("&");
 
-		for (int i = 0; i < avPairs.length; i++) {
-			String[] avPair = avPairs[i].trim().split("=");
-			String attribute = avPair[0];
-			String value = avPair[1];
-			result.put(attribute, value);
+		for (int i = 0; i < attributeValuePairs.length; i++) {
+			String[] attributeValuePair = attributeValuePairs[i].trim().split("=");
+			if (attributeValuePair.length == 2) {
+				String attribute = attributeValuePair[0];
+				String value = attributeValuePair[1];
+				result.put(attribute, value);
+			} else
+				log.warning("Warning: invalid attribute value pair " + attributeValuePair + " + in query " + queryString);
 		}
 		return result;
 	}
-
 }

@@ -12,8 +12,8 @@ import edu.stanford.isis.epad.common.dicom.DicomFormatUtil;
 import edu.stanford.isis.epad.common.util.EPADFileUtils;
 import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epad.common.util.EPADResources;
-import edu.stanford.isis.epadws.persistence.DatabaseOperations;
 import edu.stanford.isis.epadws.persistence.Database;
+import edu.stanford.isis.epadws.persistence.DatabaseOperations;
 
 /**
  * Delete a patient and all studies for that patient in the ePAD and DCMCHEE databases.
@@ -24,10 +24,13 @@ import edu.stanford.isis.epadws.persistence.Database;
 public class PatientDeleteTask implements Runnable
 {
 	private static EPADLogger logger = EPADLogger.getInstance();
+
+	private final String projectID;
 	private final String patientID;
 
-	public PatientDeleteTask(String patientID)
+	public PatientDeleteTask(String projectID, String patientID)
 	{
+		this.projectID = projectID;
 		this.patientID = patientID;
 	}
 

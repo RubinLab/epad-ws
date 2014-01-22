@@ -68,7 +68,7 @@ public class XNATUtil
 		return result;
 	}
 
-	public static String buildProjectURLString(String base)
+	public static String buildProjectBaseURL(String base)
 	{
 		String xnatHost = config.getStringPropertyValue("XNATServer");
 		int xnatPort = config.getIntegerPropertyValue("XNATPort");
@@ -79,7 +79,12 @@ public class XNATUtil
 		return buildXNATBaseURL(xnatHost, xnatPort, XNAT_PROJECTS_BASE, base);
 	}
 
-	public static String buildSubjectURLString(String base)
+	public static String buildProjectsQueryURL(String base, String projectID)
+	{
+		return buildProjectBaseURL(base) + "/" + projectID;
+	}
+
+	public static String buildSubjectsBaseURL(String base)
 	{
 		String xnatHost = config.getStringPropertyValue("XNATServer");
 		int xnatPort = config.getIntegerPropertyValue("XNATPort");
@@ -90,8 +95,60 @@ public class XNATUtil
 		return buildXNATBaseURL(xnatHost, xnatPort, XNAT_SUBJECTS_BASE, base);
 	}
 
-	// Setting the label field explicitly in this URL causes duplicate experiments to be created for
-	// the same study.
+	public static String buildExperimentsBaseURL(String base)
+	{
+		String xnatHost = config.getStringPropertyValue("XNATServer");
+		int xnatPort = config.getIntegerPropertyValue("XNATPort");
+
+		if (base.startsWith("/"))
+			base = base.substring(1, base.length());
+
+		return buildXNATBaseURL(xnatHost, xnatPort, XNAT_EXPERIMENTS_BASE, base);
+	}
+
+	public static String buildSubjectsQueryURL(String base, String subjectID)
+	{
+		return buildSubjectsBaseURL(base) + "/" + subjectID;
+	}
+
+	public static String buildProjectsSubjectsURL(String base, String projectID)
+	{
+		return buildProjectBaseURL(base) + projectID + "/subjects/";
+	}
+
+	public static String buildProjectsPatientsURL(String base, String projectID, String patientID)
+	{
+		return buildSubjectsBaseURL(base) + "?project=" + projectID + "&src=" + patientID + "&format=json";
+	}
+
+	// Query to find all DICOM studies
+	public static String buildDICOMExperimentsURL(String base)
+	{ // XNAT appears to require that the format=json parameter is at the end.
+		return buildExperimentsBaseURL(base) + "?xsiType=xnat:otherDicomSessionData&format=json";
+	}
+
+	// Query to find a DICOM study with the specified studyUID for a particular project
+	public static String buildProjectsDICOMExperimentsURL(String base, String projectID, String studyUID)
+	{
+		return buildExperimentsBaseURL(base) + "?project=" + projectID + "&name=" + studyUID
+				+ "&xsiType=xnat:otherDicomSessionData&format=json";
+	}
+
+	// Query to find all DICOM studies for a particular project
+	public static String buildProjectsPatientsDICOMExperimentsURL(String base, String projectID)
+	{
+		return buildExperimentsBaseURL(base) + "?project=" + projectID + "&xsiType=xnat:otherDicomSessionData&format=json";
+	}
+
+	// Query to find all DICOM studies for a particular project and patient
+	public static String buildProjectsPatientsDICOMExperimentsURL(String base, String projectID, String patientID)
+	{
+		return buildSubjectsBaseURL(base) + "?project=" + projectID + "&src=" + patientID
+				+ "&xsiType=xnat:otherDicomSessionData&format=json";
+	}
+
+	// Setting the label field explicitly in this URL causes a new experiment to be created for
+	// the same study in different projects. Otherwise we have a shared experiment, which is not what we want.
 	public static String buildXNATExperimentCreationURL(String xnatProjectID, String xnatSubjectLabel,
 			String dicomStudyUID)
 	{
@@ -197,6 +254,7 @@ public class XNATUtil
 	private static String buildXNATBaseURL(String host, int port, String base, String ext)
 	{
 		StringBuilder sb = new StringBuilder();
+
 		sb.append("http://").append(host);
 		sb.append(":").append(port);
 		sb.append(base);
@@ -227,9 +285,8 @@ public class XNATUtil
 		try {
 			return URLEncoder.encode(urlString, "UTF-8");
 		} catch (UnsupportedEncodingException e) {
-			log.warning("Error encoding URL " + urlString, e);
+			log.warning("Warning: error encoding URL " + urlString, e);
 			return null;
 		}
 	}
-
 }

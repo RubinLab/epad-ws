@@ -19,6 +19,7 @@ import org.eclipse.jetty.server.handler.AbstractHandler;
 
 import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epad.common.util.JsonHelper;
+import edu.stanford.isis.epadws.handlers.HandlerUtil;
 import edu.stanford.isis.epadws.xnat.XNATSessionOperations;
 import edu.stanford.isis.epadws.xnat.XNATUtil;
 
@@ -63,8 +64,7 @@ public class XNATSubjectHandler extends AbstractHandler
 			}
 			responseStream.flush();
 		} catch (Throwable t) {
-			log.severe(INTERNAL_EXCEPTION_MESSAGE, t);
-			statusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+			statusCode = HandlerUtil.internalErrorJSONResponse(INTERNAL_EXCEPTION_MESSAGE, t, log);
 		}
 		httpResponse.setStatus(statusCode);
 	}
@@ -72,7 +72,7 @@ public class XNATSubjectHandler extends AbstractHandler
 	private int invokeXNATSubjectService(String base, HttpServletRequest httpRequest, HttpServletResponse httpResponse,
 			OutputStream responseStream) throws IOException
 	{
-		String xnatURL = XNATUtil.buildSubjectURLString(base);
+		String xnatURL = XNATUtil.buildSubjectsBaseURL(base);
 		HttpClient client = new HttpClient();
 		String jsessionID = XNATUtil.getJSessionIDFromRequest(httpRequest);
 		String queryString = httpRequest.getQueryString();
@@ -118,7 +118,7 @@ public class XNATSubjectHandler extends AbstractHandler
 					}
 				}
 			} else {
-				log.info(XNAT_INVOCATION_ERROR_MESSAGE + ";status code=" + statusCode);
+				log.info(XNAT_INVOCATION_ERROR_MESSAGE + "; status code=" + statusCode);
 			}
 		} else {
 			log.info(INVALID_METHOD_MESSAGE + "; got " + method);

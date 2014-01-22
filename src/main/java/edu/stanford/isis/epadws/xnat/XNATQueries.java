@@ -12,7 +12,7 @@ import org.apache.commons.httpclient.methods.GetMethod;
 import com.google.gson.Gson;
 
 import edu.stanford.isis.epad.common.util.EPADLogger;
-import edu.stanford.isis.epad.common.xnat.XNATExperiments;
+import edu.stanford.isis.epad.common.xnat.XNATExperimentsResult;
 
 /**
  * Methods for querying XNAT
@@ -24,26 +24,26 @@ public class XNATQueries
 {
 	private static final EPADLogger log = EPADLogger.getInstance();
 
-	public static XNATExperiments experiments(String sessionID)
+	public static XNATExperimentsResult experiments(String sessionID)
 	{
 		String xnatExperimentsQueryURL = XNATUtil.buildXNATExperimentsURL();
 
 		return invokeXNATExperimentsQuery(xnatExperimentsQueryURL);
 	}
 
-	public static XNATExperiments experimentsForProject(String projectID)
+	public static XNATExperimentsResult experimentsForProject(String sessionID, String projectID)
 	{
 		// TODO
-		return new XNATExperiments();
+		return new XNATExperimentsResult();
 	}
 
-	public static XNATExperiments experimentsForProjectAndSubject(String projectID, String subjectID)
+	public static XNATExperimentsResult experimentsForProjectAndSubject(String projectID, String subjectID)
 	{
 		// TODO
-		return new XNATExperiments();
+		return new XNATExperimentsResult();
 	}
 
-	private static XNATExperiments invokeXNATExperimentsQuery(String xnatExperimentsQueryURL)
+	private static XNATExperimentsResult invokeXNATExperimentsQuery(String xnatExperimentsQueryURL)
 	{
 		HttpClient client = new HttpClient();
 		GetMethod method = new GetMethod(xnatExperimentsQueryURL);
@@ -59,29 +59,29 @@ public class XNATQueries
 		return processXNATExperimentsQueryResponse(method, xnatStatusCode);
 	}
 
-	private static XNATExperiments processXNATExperimentsQueryResponse(GetMethod method, int xnatStatusCode)
+	private static XNATExperimentsResult processXNATExperimentsQueryResponse(GetMethod method, int xnatStatusCode)
 	{
 		if (xnatStatusCode == HttpServletResponse.SC_OK) {
 			return extractXNATExperimentsFromResponse(method);
 		} else if (xnatStatusCode == HttpServletResponse.SC_UNAUTHORIZED) {
 			log.warning("Warning: invalid session token for XNAT experiments query");
-			return XNATExperiments.emptyExperiments();
+			return XNATExperimentsResult.emptyExperiments();
 		} else {
 			log.warning("Warning: error performing XNAT experiments query; XNAT status code = " + xnatStatusCode);
-			return XNATExperiments.emptyExperiments();
+			return XNATExperimentsResult.emptyExperiments();
 		}
 	}
 
-	private static XNATExperiments extractXNATExperimentsFromResponse(GetMethod method)
+	private static XNATExperimentsResult extractXNATExperimentsFromResponse(GetMethod method)
 	{
 		try {
 			BufferedReader reader = new BufferedReader(new InputStreamReader(method.getResponseBodyAsStream(), "UTF-8"));
 			Gson gson = new Gson();
-			XNATExperiments xnatExperiments = gson.fromJson(reader, XNATExperiments.class);
+			XNATExperimentsResult xnatExperiments = gson.fromJson(reader, XNATExperimentsResult.class);
 			return xnatExperiments;
 		} catch (IOException e) {
 			log.warning("Warning: error processing XNAT experiments query result", e);
-			return XNATExperiments.emptyExperiments();
+			return XNATExperimentsResult.emptyExperiments();
 		}
 	}
 }

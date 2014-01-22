@@ -49,7 +49,7 @@ public class PatientDeleteHandler extends AbstractHandler
 				responseStream = httpResponse.getWriter();
 
 				if (queryString != null) {
-					Map<String, String> parameters = HandlerUtil.extractParameters(queryString);
+					Map<String, String> parameters = HandlerUtil.extractQueryParameters(queryString);
 					String projectID = parameters.get("projectID");
 					String patientID = parameters.get("patientID");
 
@@ -75,8 +75,8 @@ public class PatientDeleteHandler extends AbstractHandler
 
 	private void handlePatientDeleteRequest(String projectID, String patientID)
 	{
-		log.info("Deleting patient = " + patientID);
+		log.info("Deleting patient " + patientID + " from project " + projectID);
 
-		(new Thread(new PatientDeleteTask(patientID))).start();
+		(new Thread(new PatientDeleteTask(projectID, patientID))).start();
 	}
 }

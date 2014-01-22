@@ -40,7 +40,7 @@ public class ResourceCheckHandler extends AbstractHandler
 
 		try {
 			// if (XNATOperations.hasValidXNATSessionID(httpRequest)) {
-			if (dummy()) {
+			if (dummy()) { // TODO Turn off authorization for the moment
 				request.setHandled(false);
 				statusCode = HttpServletResponse.SC_OK;
 			} else {
