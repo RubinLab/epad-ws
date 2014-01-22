@@ -25,12 +25,12 @@ public class PatientDeleteTask implements Runnable
 {
 	private static EPADLogger logger = EPADLogger.getInstance();
 
-	private final String projectID;
+	// private final String projectID;
 	private final String patientID;
 
 	public PatientDeleteTask(String projectID, String patientID)
 	{
-		this.projectID = projectID;
+		// this.projectID = projectID;
 		this.patientID = patientID;
 	}
 

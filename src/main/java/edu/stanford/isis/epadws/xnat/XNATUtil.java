@@ -68,82 +68,73 @@ public class XNATUtil
 		return result;
 	}
 
-	public static String buildProjectBaseURL(String base)
+	public static String buildProjectBaseURL()
 	{
 		String xnatHost = config.getStringPropertyValue("XNATServer");
 		int xnatPort = config.getIntegerPropertyValue("XNATPort");
 
-		if (base.startsWith("/"))
-			base = base.substring(1, base.length());
-
-		return buildXNATBaseURL(xnatHost, xnatPort, XNAT_PROJECTS_BASE, base);
+		return buildXNATBaseURL(xnatHost, xnatPort, XNAT_PROJECTS_BASE);
 	}
 
 	public static String buildProjectsQueryURL(String base, String projectID)
 	{
-		return buildProjectBaseURL(base) + "/" + projectID;
+		return buildProjectBaseURL() + "/" + projectID;
 	}
 
-	public static String buildSubjectsBaseURL(String base)
+	public static String buildSubjectsBaseURL()
 	{
 		String xnatHost = config.getStringPropertyValue("XNATServer");
 		int xnatPort = config.getIntegerPropertyValue("XNATPort");
 
-		if (base.startsWith("/"))
-			base = base.substring(1, base.length());
-
-		return buildXNATBaseURL(xnatHost, xnatPort, XNAT_SUBJECTS_BASE, base);
+		return buildXNATBaseURL(xnatHost, xnatPort, XNAT_SUBJECTS_BASE);
 	}
 
-	public static String buildExperimentsBaseURL(String base)
+	public static String buildExperimentsBaseURL()
 	{
 		String xnatHost = config.getStringPropertyValue("XNATServer");
 		int xnatPort = config.getIntegerPropertyValue("XNATPort");
 
-		if (base.startsWith("/"))
-			base = base.substring(1, base.length());
-
-		return buildXNATBaseURL(xnatHost, xnatPort, XNAT_EXPERIMENTS_BASE, base);
+		return buildXNATBaseURL(xnatHost, xnatPort, XNAT_EXPERIMENTS_BASE);
 	}
 
-	public static String buildSubjectsQueryURL(String base, String subjectID)
+	public static String buildSubjectsURL(String subjectID)
 	{
-		return buildSubjectsBaseURL(base) + "/" + subjectID;
+		return buildSubjectsBaseURL() + "/" + subjectID;
 	}
 
-	public static String buildProjectsSubjectsURL(String base, String projectID)
+	public static String buildProjectsSubjectsURL(String projectID)
 	{
-		return buildProjectBaseURL(base) + projectID + "/subjects/";
+		return buildProjectBaseURL() + projectID + "/subjects/";
 	}
 
-	public static String buildProjectsPatientsURL(String base, String projectID, String patientID)
+	public static String buildProjectsPatientsURL(String projectID, String patientID)
 	{
-		return buildSubjectsBaseURL(base) + "?project=" + projectID + "&src=" + patientID + "&format=json";
+		return buildSubjectsBaseURL() + "?project=" + projectID + "&src=" + patientID + "&format=json";
 	}
 
 	// Query to find all DICOM studies
-	public static String buildDICOMExperimentsURL(String base)
+	public static String buildDICOMExperimentsURL()
 	{ // XNAT appears to require that the format=json parameter is at the end.
-		return buildExperimentsBaseURL(base) + "?xsiType=xnat:otherDicomSessionData&format=json";
+		return buildExperimentsBaseURL() + "?xsiType=xnat:otherDicomSessionData&format=json";
 	}
 
 	// Query to find a DICOM study with the specified studyUID for a particular project
-	public static String buildProjectsDICOMExperimentsURL(String base, String projectID, String studyUID)
+	public static String buildDICOMExperimentsURLForProjectAndStudy(String projectID, String studyUID)
 	{
-		return buildExperimentsBaseURL(base) + "?project=" + projectID + "&name=" + studyUID
+		return buildExperimentsBaseURL() + "?project=" + projectID + "&name=" + studyUID
 				+ "&xsiType=xnat:otherDicomSessionData&format=json";
 	}
 
 	// Query to find all DICOM studies for a particular project
-	public static String buildProjectsPatientsDICOMExperimentsURL(String base, String projectID)
+	public static String buildDICOMExperimentsURLForProject(String projectID)
 	{
-		return buildExperimentsBaseURL(base) + "?project=" + projectID + "&xsiType=xnat:otherDicomSessionData&format=json";
+		return buildExperimentsBaseURL() + "?project=" + projectID + "&xsiType=xnat:otherDicomSessionData&format=json";
 	}
 
 	// Query to find all DICOM studies for a particular project and patient
-	public static String buildProjectsPatientsDICOMExperimentsURL(String base, String projectID, String patientID)
+	public static String buildDICOMExperimentsURLForProjectAndPatient(String projectID, String patientID)
 	{
-		return buildSubjectsBaseURL(base) + "?project=" + projectID + "&src=" + patientID
+		return buildSubjectsBaseURL() + "?project=" + projectID + "&src=" + patientID
 				+ "&xsiType=xnat:otherDicomSessionData&format=json";
 	}
 
@@ -235,22 +226,6 @@ public class XNATUtil
 		return buildXNATBaseURL(xnatHost, xnatPort, XNATUtil.XNAT_PROJECTS_BASE);
 	}
 
-	public static String buildXNATSubjectsURL()
-	{
-		String xnatHost = config.getStringPropertyValue("XNATServer");
-		int xnatPort = config.getIntegerPropertyValue("XNATPort");
-
-		return buildXNATBaseURL(xnatHost, xnatPort, XNATUtil.XNAT_SUBJECTS_BASE);
-	}
-
-	public static String buildXNATExperimentsURL()
-	{
-		String xnatHost = config.getStringPropertyValue("XNATServer");
-		int xnatPort = config.getIntegerPropertyValue("XNATPort");
-
-		return buildXNATBaseURL(xnatHost, xnatPort, XNATUtil.XNAT_EXPERIMENTS_BASE);
-	}
-
 	private static String buildXNATBaseURL(String host, int port, String base, String ext)
 	{
 		StringBuilder sb = new StringBuilder();
@@ -261,6 +236,14 @@ public class XNATUtil
 		sb.append(ext);
 
 		return sb.toString();
+	}
+
+	public static String buildXNATSubjectsURL()
+	{
+		String xnatHost = config.getStringPropertyValue("XNATServer");
+		int xnatPort = config.getIntegerPropertyValue("XNATPort");
+
+		return buildXNATBaseURL(xnatHost, xnatPort, XNATUtil.XNAT_SUBJECTS_BASE);
 	}
 
 	public static String dicomStudyUID2XNATExperimentID(String dicomStudyUID)

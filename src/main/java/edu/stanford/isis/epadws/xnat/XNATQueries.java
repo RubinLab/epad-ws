@@ -24,33 +24,38 @@ public class XNATQueries
 {
 	private static final EPADLogger log = EPADLogger.getInstance();
 
-	public static XNATExperimentsResult experiments(String sessionID)
+	public static XNATExperimentsResult dicomExperiments(String sessionID)
 	{
-		String xnatExperimentsQueryURL = XNATUtil.buildXNATExperimentsURL();
+		String xnatExperimentsQueryURL = XNATUtil.buildDICOMExperimentsURL();
 
-		return invokeXNATExperimentsQuery(xnatExperimentsQueryURL);
+		return invokeXNATDICOMExperimentsQuery(sessionID, xnatExperimentsQueryURL);
 	}
 
-	public static XNATExperimentsResult experimentsForProject(String sessionID, String projectID)
+	public static XNATExperimentsResult dicomExperimentsForProject(String sessionID, String projectID)
 	{
-		// TODO
-		return new XNATExperimentsResult();
+		String xnatExperimentsQueryURL = XNATUtil.buildDICOMExperimentsURLForProject(projectID);
+
+		return invokeXNATDICOMExperimentsQuery(sessionID, xnatExperimentsQueryURL);
 	}
 
-	public static XNATExperimentsResult experimentsForProjectAndSubject(String projectID, String subjectID)
+	public static XNATExperimentsResult dicomExperimentsForProjectAndPatient(String sessionID, String projectID,
+			String patientID)
 	{
-		// TODO
-		return new XNATExperimentsResult();
+		String xnatExperimentsQueryURL = XNATUtil.buildDICOMExperimentsURLForProjectAndPatient(projectID, patientID);
+
+		return invokeXNATDICOMExperimentsQuery(sessionID, xnatExperimentsQueryURL);
 	}
 
-	private static XNATExperimentsResult invokeXNATExperimentsQuery(String xnatExperimentsQueryURL)
+	private static XNATExperimentsResult invokeXNATDICOMExperimentsQuery(String sessionID, String xnatDICOMExperimentsQueryURL)
 	{
 		HttpClient client = new HttpClient();
-		GetMethod method = new GetMethod(xnatExperimentsQueryURL);
+		GetMethod method = new GetMethod(xnatDICOMExperimentsQueryURL);
 		int xnatStatusCode;
 
+		method.setRequestHeader("Cookie", "JSESSIONID=" + sessionID);
+
 		try {
-			log.info("Invoking XNAT query at " + xnatExperimentsQueryURL);
+			log.info("Invoking XNAT query at " + xnatDICOMExperimentsQueryURL);
 			xnatStatusCode = client.executeMethod(method);
 		} catch (IOException e) {
 			log.warning("Warning: error performing XNAT query", e);

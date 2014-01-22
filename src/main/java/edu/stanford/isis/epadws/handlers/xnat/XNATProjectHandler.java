@@ -59,7 +59,7 @@ public class XNATProjectHandler extends AbstractHandler
 			responseStream = httpResponse.getOutputStream();
 
 			if (XNATSessionOperations.hasValidXNATSessionID(httpRequest)) {
-				statusCode = invokeXNATProjectService(base, httpRequest, httpResponse, responseStream);
+				statusCode = invokeXNATProjectService(httpRequest, httpResponse, responseStream);
 			} else {
 				log.info(INVALID_SESSION_TOKEN_MESSAGE);
 				responseStream.print(JsonHelper.createJSONErrorResponse(INVALID_SESSION_TOKEN_MESSAGE));
@@ -73,10 +73,10 @@ public class XNATProjectHandler extends AbstractHandler
 		httpResponse.setStatus(statusCode);
 	}
 
-	private int invokeXNATProjectService(String base, HttpServletRequest httpRequest, HttpServletResponse httpResponse,
+	private int invokeXNATProjectService(HttpServletRequest httpRequest, HttpServletResponse httpResponse,
 			OutputStream responseStream) throws IOException
 	{
-		String xnatProjectURL = XNATUtil.buildProjectBaseURL(base);
+		String xnatProjectURL = XNATUtil.buildProjectBaseURL();
 		HttpClient client = new HttpClient();
 		String jsessionID = XNATUtil.getJSessionIDFromRequest(httpRequest);
 		String queryString = httpRequest.getQueryString();
