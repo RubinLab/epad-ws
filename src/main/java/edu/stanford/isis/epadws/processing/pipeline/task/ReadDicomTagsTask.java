@@ -34,11 +34,7 @@ public class ReadDicomTagsTask implements Callable<File>
 	@Override
 	public File call() throws Exception
 	{
-		// rename this file to something with a lower extension right now.
-		// file.renameTo(new File(file.getName().toLowerCase()));
-
 		try {
-			// Only DICOM files should pass here.
 			if (!EPADFileUtils.isFileType(dicomFile, ".dcm")) {
 				log.info(dicomFile + " is NOT a DICOM file.");
 				return null;

@@ -212,15 +212,15 @@ public class CoordinationHandler extends AbstractHandler
 	/**
 	 * Get the ID of a term from the database. If the term is not recorded, record it and get its new ID.
 	 * 
-	 * @param dbQueries
+	 * @param databaseOperations
 	 * @param term
 	 * @return The key of the term; should not be null
 	 */
-	private int getTermKey(DatabaseOperations dbQueries, Term term) throws SQLException
+	private int getTermKey(DatabaseOperations databaseOperations, Term term) throws SQLException
 	{
-		int termKey = dbQueries.getKeyForTerm(term); // TODO Cache rather than hit database each time.
+		int termKey = databaseOperations.getKeyForTerm(term); // TODO Cache rather than hit database each time.
 		if (termKey == -1) {
-			termKey = dbQueries.insertTerm(term);
+			termKey = databaseOperations.insertTerm(term);
 		}
 		return termKey;
 	}

@@ -95,10 +95,10 @@ public class DICOMSearchHandler extends AbstractHandler
 	 */
 	private void performDICOMStudySearch(PrintWriter outputStream, DicomStudySearchType searchType, String queryString)
 	{
-		final DatabaseOperations dbQueries = Database.getInstance().getDatabaseOperations();
+		final DatabaseOperations databaseOperations = Database.getInstance().getDatabaseOperations();
 		final String[] parts = queryString.split("=");
 		final String searchString = parts[1].trim();
-		final List<Map<String, String>> searchResult = dbQueries.studySearch(searchType.toString(), searchString);
+		final List<Map<String, String>> searchResult = databaseOperations.studySearch(searchType.toString(), searchString);
 		boolean isFirst = true;
 
 		log.info("DICOMSearchHandler study search found " + searchResult.size() + " result(s).");

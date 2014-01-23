@@ -12,8 +12,8 @@ import edu.stanford.isis.epad.common.util.EPADFileUtils;
 import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epad.common.util.EPADResources;
 import edu.stanford.isis.epad.common.util.FileKey;
+import edu.stanford.isis.epadws.persistence.Dcm4CheeOperations;
 import edu.stanford.isis.epadws.processing.model.DicomUploadFile;
-import edu.stanford.isis.epadws.processing.pipeline.task.DicomSendTask;
 import edu.stanford.isis.epadws.processing.pipeline.threads.ShutdownSignal;
 import edu.stanford.isis.epadws.xnat.XNATCreationOperations;
 
@@ -214,7 +214,7 @@ public class EPADUploadDirWatcher implements Runnable
 	private void sendFilesToDcm4Chee(File dir) throws Exception
 	{
 		log.info("EPADUploadDirWatcher: sending directory " + dir.getAbsolutePath() + " to DCM4CHEE");
-		DicomSendTask.dcmsnd(dir, true);
+		Dcm4CheeOperations.dcmsnd(dir, true);
 	}
 
 	private void deleteUploadDir(File dir)

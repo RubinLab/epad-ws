@@ -14,8 +14,8 @@ import edu.stanford.isis.epad.common.dicom.DICOMStudySearchResult;
 import edu.stanford.isis.epad.common.dicom.DicomFormatUtil;
 import edu.stanford.isis.epad.common.dicom.DicomStudySearchType;
 import edu.stanford.isis.epad.common.dicom.ResultSeriesData;
-import edu.stanford.isis.epadws.persistence.DatabaseOperations;
 import edu.stanford.isis.epadws.persistence.Database;
+import edu.stanford.isis.epadws.persistence.DatabaseOperations;
 
 /**
  * Query the database using DICOM series or study search parameters.
@@ -80,8 +80,7 @@ public class DICOMSearchServerResource extends BaseServerResource
 	private String performDICOMStudySearch(DicomStudySearchType searchType, String searchString) throws Exception
 	{
 		final DatabaseOperations databaseOperations = Database.getInstance().getDatabaseOperations();
-		final List<Map<String, String>> searchResult = databaseOperations.studySearch(searchType.toString(),
-				searchString);
+		final List<Map<String, String>> searchResult = databaseOperations.studySearch(searchType.toString(), searchString);
 		boolean isFirst = true;
 		StringBuilder result = new StringBuilder();
 
@@ -148,7 +147,7 @@ public class DICOMSearchServerResource extends BaseServerResource
 		boolean isFirst = true;
 
 		log.info("Series search column header: " + ResultSeriesData.getHeaderColumn());
-		log.info("dbQueries.doSeriesSearch() had " + series.size() + " results, for studyUID=" + studyUID);
+		log.info("doSeriesSearch() had " + series.size() + " results, for studyUID=" + studyUID);
 
 		result.append("{ \"ResultSet\": [");
 
