@@ -85,7 +85,7 @@ public class DicomSegmentationPathHandler extends AbstractHandler
 	{
 		DatabaseOperations databaseOperations = Database.getInstance().getDatabaseOperations();
 
-		return databaseOperations.retrieveStudySeriesAndImageIDs(imageUID);
+		return databaseOperations.retrieveDicomStudySeriesAndImageIDs(imageUID);
 	}
 
 	private String getImageUIDFromRequest(String queryString)

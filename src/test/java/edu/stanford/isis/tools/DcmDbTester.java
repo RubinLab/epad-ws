@@ -57,7 +57,7 @@ public class DcmDbTester
 			logger.info("######## Start test #2 - basic search ########");
 
 			DatabaseOperations databaseOperations = Database.getInstance().getDatabaseOperations();
-			List<Map<String, String>> results = databaseOperations.studySearch("patientName", "*");
+			List<Map<String, String>> results = databaseOperations.dicomStudySearch("patientName", "*");
 
 			String[] keys = { "study_iuid", "pat_id", "modality", "study_datetime", "pat_name" };
 			StringBuilder sb = new StringBuilder("Study Results \n");
@@ -92,7 +92,7 @@ public class DcmDbTester
 			logger.info("######## Start test #3 - wildcard search ########");
 
 			DatabaseOperations databaseOperations = Database.getInstance().getDatabaseOperations();
-			List<Map<String, String>> results = databaseOperations.studySearch("patientName", "A*");
+			List<Map<String, String>> results = databaseOperations.dicomStudySearch("patientName", "A*");
 
 			String[] keys = { "study_iuid", "pat_id", "modality", "study_datetime", "pat_name" };
 			StringBuilder sb = new StringBuilder("Study Results \n");
@@ -126,8 +126,8 @@ public class DcmDbTester
 			logger.info("######## Start test #4 - case insensitive search ########");
 
 			DatabaseOperations databaseOperations = Database.getInstance().getDatabaseOperations();
-			List<Map<String, String>> resultsUpperCase = databaseOperations.studySearch("patientName", "A*");
-			List<Map<String, String>> resultsLowerCase = databaseOperations.studySearch("patientName", "a*");
+			List<Map<String, String>> resultsUpperCase = databaseOperations.dicomStudySearch("patientName", "A*");
+			List<Map<String, String>> resultsLowerCase = databaseOperations.dicomStudySearch("patientName", "a*");
 
 			if (resultsUpperCase.size() != resultsLowerCase.size()) {
 				logger.info("FAILED: Case insensitive search test." + " upper-case=" + resultsUpperCase.size() + " lower-case="
@@ -150,7 +150,7 @@ public class DcmDbTester
 			logger.info("######## Start test #5 - patient id search ########");
 
 			DatabaseOperations databaseOperations = Database.getInstance().getDatabaseOperations();
-			List<Map<String, String>> results = databaseOperations.studySearch("patientId", "2228*");
+			List<Map<String, String>> results = databaseOperations.dicomStudySearch("patientId", "2228*");
 			String[] keys = { "study_iuid", "pat_id", "modality", "study_datetime", "pat_name" };
 			StringBuilder sb = new StringBuilder("Study Results \n");
 			int resultIndex = 1;
@@ -178,7 +178,7 @@ public class DcmDbTester
 			logger.info("######## Start test #6 - exam-type search ########");
 
 			DatabaseOperations databaseOperations = Database.getInstance().getDatabaseOperations();
-			List<Map<String, String>> results = databaseOperations.studySearch("examType", "DX");
+			List<Map<String, String>> results = databaseOperations.dicomStudySearch("examType", "DX");
 
 			String[] keys = { "study_iuid", "pat_id", "modality", "study_datetime", "pat_name" };
 			StringBuilder sb = new StringBuilder("Study Results \n");
@@ -207,7 +207,7 @@ public class DcmDbTester
 			logger.info("######## Start test #7 - study-time search ########");
 
 			DatabaseOperations databaseOperations = Database.getInstance().getDatabaseOperations();
-			List<Map<String, String>> results = databaseOperations.studySearch("studyDate", "2002");
+			List<Map<String, String>> results = databaseOperations.dicomStudySearch("studyDate", "2002");
 
 			String[] keys = { "study_iuid", "pat_id", "modality", "study_datetime", "pat_name" };
 			StringBuilder sb = new StringBuilder("Study Results \n");
@@ -240,7 +240,7 @@ public class DcmDbTester
 
 			DatabaseOperations databaseOperations = Database.getInstance().getDatabaseOperations();
 			List<Map<String, String>> results = databaseOperations
-					.findAllSeriesInStudy("1.2.826.0.1.3680043.8.420.30757817405477639080180001130587461759");
+					.findAllDicomSeriesInStudy("1.2.826.0.1.3680043.8.420.30757817405477639080180001130587461759");
 
 			// String[] keys = {"study_iuid", "pat_id", "modality", "study_datetime", "pat_name"};
 			StringBuilder sb = new StringBuilder("Series Results \n");

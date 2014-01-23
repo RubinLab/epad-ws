@@ -16,17 +16,17 @@ import edu.stanford.isis.epadws.processing.model.PngProcessingStatus;
  */
 public interface EpadDatabaseOperations
 {
-	List<Map<String, String>> getSeriesForStatus(int statusCode);
+	List<Map<String, String>> getDicomSeriesForStatus(int statusCode);
 
-	String[] retrieveStudySeriesAndImageIDs(String imageUID);
+	String[] retrieveDicomStudySeriesAndImageIDs(String imageUID);
 
-	Map<String, String> getSeriesById(String seriesIUID);
+	Map<String, String> getDicomSeriesById(String seriesIUID);
 
 	void deleteDicomStudy(String uid);
 
-	void deleteSeries(String uid);
+	void deleteDicomSeries(String uid);
 
-	void updateSeriesStatusCode(int newStatusCode, String seriesIUID);
+	void updateDicomSeriesStatusCode(int newStatusCode, String seriesIUID);
 
 	void insertEpadFile(Map<String, String> data);
 

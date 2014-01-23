@@ -14,7 +14,7 @@ import edu.stanford.isis.epadws.processing.model.PNGGridGenerator;
 import edu.stanford.isis.epadws.processing.model.PngProcessingStatus;
 
 /**
- * 
+ * Operations on files maintained by ePAD
  * 
  * 
  * @author martin
@@ -81,7 +81,7 @@ public class FileOperations
 	public static void deletePNGforSeries(String seriesUID) throws Exception
 	{
 		DatabaseOperations databaseOperations = Database.getInstance().getDatabaseOperations();
-		String studyUID = databaseOperations.getStudyUIDForSeries(seriesUID);
+		String studyUID = databaseOperations.getDicomStudyUIDForSeries(seriesUID);
 		StringBuilder outputPath = new StringBuilder();
 		outputPath.append(EPADResources.getEPADWebServerPNGDir());
 		outputPath.append(DicomFormatUtil.formatUidToDir(studyUID)).append("/");
@@ -93,22 +93,10 @@ public class FileOperations
 		log.info("Deleting the PNG for series at " + outputPath.toString() + " success = " + success);
 	}
 
-	private static int getFileSize(Map<String, String> epadFilesTable)
-	{
-		try {
-			String fileSize = epadFilesTable.get("file_size");
-			return Integer.parseInt(fileSize);
-		} catch (Exception e) {
-			log.warning("Failed to get file.", e);
-			return 0;
-		}
-	}
-
 	private static boolean delete(File file) throws IOException
 	{
 		boolean success = false;
 		if (file.isDirectory()) {
-
 			if (file.list().length == 0) {
 				success = file.delete();
 			} else {
@@ -125,5 +113,16 @@ public class FileOperations
 			success = file.delete();
 		}
 		return success;
+	}
+
+	private static int getFileSize(Map<String, String> epadFilesTable)
+	{
+		try {
+			String fileSize = epadFilesTable.get("file_size");
+			return Integer.parseInt(fileSize);
+		} catch (Exception e) {
+			log.warning("Failed to get file.", e);
+			return 0;
+		}
 	}
 }

@@ -186,7 +186,7 @@ public class DICOMSeriesWatcher implements Runnable
 	{
 		String seriesIUID = currImage.get("series_iuid");
 		DatabaseOperations databaseOperations = Database.getInstance().getDatabaseOperations();
-		String studyUID = databaseOperations.getStudyUIDForSeries(seriesIUID);
+		String studyUID = databaseOperations.getDicomStudyUIDForSeries(seriesIUID);
 		String imageUID = currImage.get("sop_iuid");
 		StringBuilder outputPath = new StringBuilder();
 

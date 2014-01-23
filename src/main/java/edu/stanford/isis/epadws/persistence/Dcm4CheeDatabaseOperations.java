@@ -16,19 +16,21 @@ public interface Dcm4CheeDatabaseOperations
 	 * 
 	 * @return a list of studyUIDs.
 	 */
-	List<String> getNewSeries();
+	List<String> getNewDicomSeries();
 
-	List<Map<String, String>> studySearch(String type, String searchString);
+	List<Map<String, String>> dicomStudySearch(String type, String searchString);
 
-	List<Map<String, String>> findAllSeriesInStudy(String studyUID);
+	List<Map<String, String>> findAllDicomSeriesInStudy(String studyUID);
 
-	Map<String, String> getPatientForStudy(String studyIUID);
+	List<String> findAllSeriesUIDsInStudy(String studyUID);
 
-	List<String> getStudyIDsForPatient(String patientID);
+	Map<String, String> getPatientForDicomStudy(String studyIUID);
 
-	Map<String, String> getParentStudyForSeries(String seriesIUID);
+	List<String> getDicomStudyUIDsForPatient(String patientID);
 
-	String getStudyUIDForSeries(String seriesUID);
+	Map<String, String> getParentStudyForDicomSeries(String seriesIUID);
+
+	String getDicomStudyUIDForSeries(String seriesUID);
 
 	List<Map<String, String>> getDICOMImageFileDescriptionsForSeries(String seriesIUID);
 

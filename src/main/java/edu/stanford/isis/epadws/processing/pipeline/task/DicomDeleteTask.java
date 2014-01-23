@@ -33,7 +33,7 @@ public class DicomDeleteTask implements Runnable
 
 		try {
 			if (deleteStudy) {
-				List<Map<String, String>> study2series = databaseOperations.findAllSeriesInStudy(uidToDelete);
+				List<Map<String, String>> study2series = databaseOperations.findAllDicomSeriesInStudy(uidToDelete);
 				logger.info("Found " + study2series.size() + " series in study " + uidToDelete);
 
 				Dcm4CheeOperations.deleteDicomStudy(uidToDelete); // Must run after finding series in DCM4CHEE
@@ -42,7 +42,7 @@ public class DicomDeleteTask implements Runnable
 				for (Map<String, String> series : study2series) {
 					String seriesID = series.get("series_iuid");
 					logger.info("SeriesID to delete in ePAD database: " + seriesID);
-					databaseOperations.deleteSeries(seriesID);
+					databaseOperations.deleteDicomSeries(seriesID);
 				}
 				databaseOperations.deleteDicomStudy(uidToDelete);
 				FileOperations.deletePNGsforDicomStudy(uidToDelete);

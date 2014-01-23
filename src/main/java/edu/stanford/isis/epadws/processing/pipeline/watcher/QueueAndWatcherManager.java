@@ -185,7 +185,7 @@ public class QueueAndWatcherManager
 	{
 		String seriesIUID = dicomImageDescription.get("series_iuid");
 		DatabaseOperations databaseOperations = Database.getInstance().getDatabaseOperations();
-		String studyUID = databaseOperations.getStudyUIDForSeries(seriesIUID);
+		String studyUID = databaseOperations.getDicomStudyUIDForSeries(seriesIUID);
 		String imageUID = dicomImageDescription.get("sop_iuid");
 		StringBuilder outputPath = new StringBuilder();
 

@@ -1,7 +1,6 @@
 package edu.stanford.isis.epadws.processing.pipeline.task;
 
 import java.util.List;
-import java.util.Map;
 
 import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epadws.persistence.Database;
@@ -33,23 +32,31 @@ public class PatientDeleteTask implements Runnable
 	{
 		DatabaseOperations databaseOperations = Database.getInstance().getDatabaseOperations();
 
+		// We assume patient and associated studies already deleted from XNAT.
+		// TODO Need to do this deletion here instead of at the client side!!!
+
+		// Now ask XNAT if we have some of these studies remaining. Need to use admin password to find all!
+		// If we have some, don't delete ePAD PNGs or Dcm4Chee DICOMS.
+		// public static XNATSessionResponse getXNATSessionID(admin, admin)
+		// XNATQueries.dicomExperiments(sessionID);
+		// public static XNATSessionResponse deleteXNATSessionID(admin, admin)
+
 		try {
-			List<String> studies = databaseOperations.getStudyIDsForPatient(patientID);
+			List<String> studyUIDs = databaseOperations.getDicomStudyUIDsForPatient(patientID);
 
-			for (String studyID : studies) {
-				List<Map<String, String>> matchingSeries = databaseOperations.findAllSeriesInStudy(studyID);
-				logger.info("Found " + matchingSeries.size() + " series in study " + patientID);
+			for (String studyID : studyUIDs) {
+				List<String> seriesUIDs = databaseOperations.findAllSeriesUIDsInStudy(studyID);
+				logger.info("Found " + seriesUIDs.size() + " series in study " + patientID);
 
-				Dcm4CheeOperations.deleteDicomStudy(patientID); // Must run after finding series in DCM4CHEE
+				Dcm4CheeOperations.deleteDicomStudy(studyID); // Must run after finding series in DCM4CHEE
 
 				// Should not delete until after deleting study in DCM4CHEE or PNG pipeline will activate.
-				for (Map<String, String> series : matchingSeries) {
-					String seriesID = series.get("series_iuid");
-					logger.info("SeriesID to delete in ePAD database: " + seriesID);
-					databaseOperations.deleteSeries(seriesID);
+				for (String seriesUID : seriesUIDs) {
+					logger.info("SeriesUID to delete in ePAD database: " + seriesUID);
+					databaseOperations.deleteDicomSeries(seriesUID);
 				}
-				databaseOperations.deleteDicomStudy(patientID);
-				FileOperations.deletePNGsforDicomStudy(patientID);
+				databaseOperations.deleteDicomStudy(studyID);
+				FileOperations.deletePNGsforDicomStudy(studyID);
 			}
 		} catch (Exception e) {
 			logger.warning("Patient delete task has error: " + e.getMessage(), e);

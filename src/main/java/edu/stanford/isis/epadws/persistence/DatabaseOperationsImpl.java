@@ -75,7 +75,7 @@ public class DatabaseOperationsImpl implements DatabaseOperations
 
 		} catch (SQLException sqle) {
 			String debugInfo = DatabaseUtils.getDebugData(rs);
-			logger.warning("database operation failed. debugInfo=" + debugInfo, sqle);
+			logger.warning("Warning: database operation failed. debugInfo=" + debugInfo, sqle);
 			return false;
 		} finally {
 			close(c, ps, rs);
@@ -99,7 +99,7 @@ public class DatabaseOperationsImpl implements DatabaseOperations
 			}
 		} catch (SQLException sqle) {
 			String debugInfo = DatabaseUtils.getDebugData(rs);
-			logger.warning("database operation failed. debugInfo=" + debugInfo, sqle);
+			logger.warning("Warning: database operation failed. debugInfo=" + debugInfo, sqle);
 			return null;
 		} finally {
 			close(c, ps, rs);
@@ -108,7 +108,7 @@ public class DatabaseOperationsImpl implements DatabaseOperations
 	}
 
 	@Override
-	public Map<String, String> getSeriesById(String seriesIUID)
+	public Map<String, String> getDicomSeriesById(String seriesIUID)
 	{
 		Map<String, String> retVal = new HashMap<String, String>();
 
@@ -126,7 +126,7 @@ public class DatabaseOperationsImpl implements DatabaseOperations
 			}
 		} catch (SQLException sqle) {
 			String debugInfo = DatabaseUtils.getDebugData(rs);
-			logger.warning("database operation failed. debugInfo=" + debugInfo, sqle);
+			logger.warning("Warning: database operation failed. debugInfo=" + debugInfo, sqle);
 		} finally {
 			close(c, ps, rs);
 		}
@@ -153,7 +153,7 @@ public class DatabaseOperationsImpl implements DatabaseOperations
 			}
 		} catch (SQLException e) {
 			String debugInfo = DatabaseUtils.getDebugData(rs);
-			logger.warning("database operation failed. debugInfo=" + debugInfo, e);
+			logger.warning("Warning: database operation failed. debugInfo=" + debugInfo, e);
 			throw e;
 		} finally {
 			close(c, ps, rs);
@@ -202,7 +202,7 @@ public class DatabaseOperationsImpl implements DatabaseOperations
 				}
 			} catch (SQLException e) {
 				String debugInfo = DatabaseUtils.getDebugData(rs);
-				logger.warning("database operation failed. debugInfo=" + debugInfo, e);
+				logger.warning("Warning: database operation failed. debugInfo=" + debugInfo, e);
 				throw e;
 			} finally {
 				close(c, ps, rs);
@@ -252,7 +252,7 @@ public class DatabaseOperationsImpl implements DatabaseOperations
 			return new Term(coordinationTermID, schemaName, schemaVersion, description);
 		} catch (SQLException e) {
 			String debugInfo = DatabaseUtils.getDebugData(rs);
-			logger.warning("database operation failed. debugInfo=" + debugInfo, e);
+			logger.warning("Warning: database operation failed. debugInfo=" + debugInfo, e);
 			throw e;
 		} finally {
 			close(c, ps, rs);
@@ -283,7 +283,7 @@ public class DatabaseOperationsImpl implements DatabaseOperations
 			return termID;
 		} catch (SQLException e) {
 			String debugInfo = DatabaseUtils.getDebugData(rs);
-			logger.warning("database operation failed. debugInfo=" + debugInfo, e);
+			logger.warning("Warning: database operation failed. debugInfo=" + debugInfo, e);
 			throw e;
 		} finally {
 			close(c, ps, rs);
@@ -305,14 +305,14 @@ public class DatabaseOperationsImpl implements DatabaseOperations
 			logger.info("Rows affected " + rowsAffected);
 		} catch (SQLException sqle) {
 			String debugInfo = DatabaseUtils.getDebugData(rs);
-			logger.warning("database operation failed. debugInfo=" + debugInfo, sqle);
+			logger.warning("Warning: database operation failed. debugInfo=" + debugInfo, sqle);
 		} finally {
 			close(c, ps, rs);
 		}
 	}
 
 	@Override
-	public void deleteSeries(String uid)
+	public void deleteDicomSeries(String uid)
 	{
 		Connection c = null;
 		PreparedStatement ps = null;
@@ -333,7 +333,7 @@ public class DatabaseOperationsImpl implements DatabaseOperations
 			logger.info("Rows affected " + rowsAffected);
 		} catch (SQLException sqle) {
 			String debugInfo = DatabaseUtils.getDebugData(rs);
-			logger.warning("database operation failed. debugInfo=" + debugInfo, sqle);
+			logger.warning("Warning: database operation failed. debugInfo=" + debugInfo, sqle);
 		} finally {
 			close(c, ps, rs);
 		}
@@ -344,7 +344,7 @@ public class DatabaseOperationsImpl implements DatabaseOperations
 	 * know about.
 	 */
 	@Override
-	public List<Map<String, String>> getSeriesForStatus(int statusCode)
+	public List<Map<String, String>> getDicomSeriesForStatus(int statusCode)
 	{
 		List<Map<String, String>> retVal = new ArrayList<Map<String, String>>();
 
@@ -359,7 +359,7 @@ public class DatabaseOperationsImpl implements DatabaseOperations
 			List<String> seriesList = new ArrayList<String>(pacsSet);
 
 			for (String currSeries : seriesList) {
-				Map<String, String> currSeriesData = getSeriesById(currSeries);
+				Map<String, String> currSeriesData = getDicomSeriesById(currSeries);
 				if (currSeriesData != null) {
 					if (!currSeriesData.isEmpty()) {
 						retVal.add(currSeriesData);
@@ -367,7 +367,7 @@ public class DatabaseOperationsImpl implements DatabaseOperations
 				}
 			}
 		} catch (Exception e) {
-			logger.warning("database operation failed", e);
+			logger.warning("Warning: database operation failed", e);
 		}
 		return retVal;
 	}
@@ -392,7 +392,7 @@ public class DatabaseOperationsImpl implements DatabaseOperations
 			ps.setString(7, row.get("file_md5"));// file_md5
 			ps.execute();
 		} catch (SQLException sqle) {
-			logger.warning("database operation failed.", sqle);
+			logger.warning("Warning: database operation failed.", sqle);
 		} catch (Exception e) {
 			logger.warning("database operation (insert epad_file) failed. data=" + row, e);
 		} finally {
@@ -419,7 +419,7 @@ public class DatabaseOperationsImpl implements DatabaseOperations
 
 		} catch (SQLException sqle) {
 			String debugInfo = DatabaseUtils.getDebugData(rs);
-			logger.warning("database operation failed. debugInfo=" + debugInfo, sqle);
+			logger.warning("Warning: database operation failed. debugInfo=" + debugInfo, sqle);
 		} finally {
 			close(c, ps, rs);
 		}
@@ -447,7 +447,7 @@ public class DatabaseOperationsImpl implements DatabaseOperations
 			ps.setString(9, plugin_name);
 			ps.execute();
 		} catch (SQLException sqle) {
-			logger.warning("database operation failed.", sqle);
+			logger.warning("Warning: database operation failed.", sqle);
 		} catch (Exception e) {
 			logger.warning("database operation (insert event) failed for AIM ID " + aim_uid, e);
 		} finally {
@@ -457,7 +457,7 @@ public class DatabaseOperationsImpl implements DatabaseOperations
 
 	// TODO This is very low level and brittle. See if we can get information from DCM4CHEE database.
 	@Override
-	public String[] retrieveStudySeriesAndImageIDs(String imageUID)
+	public String[] retrieveDicomStudySeriesAndImageIDs(String imageUID)
 	{
 		String study = null;
 		String series = null;
@@ -478,7 +478,7 @@ public class DatabaseOperationsImpl implements DatabaseOperations
 	}
 
 	@Override
-	public List<Map<String, String>> studySearch(String type, String searchString)
+	public List<Map<String, String>> dicomStudySearch(String type, String searchString)
 	{
 		List<Map<String, String>> retVal = new ArrayList<Map<String, String>>();
 		Dcm4CheeStudyQueryBuilder queryBuilder = new Dcm4CheeStudyQueryBuilder(type, searchString);
@@ -514,7 +514,7 @@ public class DatabaseOperationsImpl implements DatabaseOperations
 			}
 		} catch (SQLException sqle) {
 			String debugInfo = DatabaseUtils.getDebugData(rs);
-			logger.warning("database operation failed for: _" + searchSql + "_ debugInfo=" + debugInfo, sqle);
+			logger.warning("Warning: database operation failed for: _" + searchSql + "_ debugInfo=" + debugInfo, sqle);
 		} finally {
 			close(c, s, rs);
 		}
@@ -522,7 +522,7 @@ public class DatabaseOperationsImpl implements DatabaseOperations
 	}
 
 	@Override
-	public List<Map<String, String>> findAllSeriesInStudy(String studyUID)
+	public List<Map<String, String>> findAllDicomSeriesInStudy(String studyUID)
 	{
 		List<Map<String, String>> retVal = new ArrayList<Map<String, String>>();
 		Connection c = null;
@@ -548,7 +548,7 @@ public class DatabaseOperationsImpl implements DatabaseOperations
 			}
 		} catch (SQLException sqle) {
 			String debugInfo = DatabaseUtils.getDebugData(rs);
-			logger.warning("database operation failed. debugInfo=" + debugInfo, sqle);
+			logger.warning("Warning: database operation failed. debugInfo=" + debugInfo, sqle);
 		} finally {
 			close(c, ps, rs);
 		}
@@ -556,7 +556,20 @@ public class DatabaseOperationsImpl implements DatabaseOperations
 	}
 
 	@Override
-	public List<String> getNewSeries()
+	public List<String> findAllSeriesUIDsInStudy(String studyUID)
+	{
+		List<Map<String, String>> seriesInStudy = findAllDicomSeriesInStudy(studyUID);
+		List<String> result = new ArrayList<String>();
+
+		for (Map<String, String> series : seriesInStudy) {
+			String seriesID = series.get("series_iuid");
+			result.add(seriesID);
+		}
+		return result;
+	}
+
+	@Override
+	public List<String> getNewDicomSeries()
 	{
 		List<String> retVal = new ArrayList<String>();
 		Connection c = null;
@@ -573,7 +586,7 @@ public class DatabaseOperationsImpl implements DatabaseOperations
 			}
 		} catch (SQLException sqle) {
 			String debugInfo = DatabaseUtils.getDebugData(rs);
-			logger.warning("database operation failed. debugInfo=" + debugInfo, sqle);
+			logger.warning("Warning: database operation failed. debugInfo=" + debugInfo, sqle);
 		} finally {
 			close(c, ps, rs);
 		}
@@ -581,7 +594,7 @@ public class DatabaseOperationsImpl implements DatabaseOperations
 	}
 
 	@Override
-	public Map<String, String> getPatientForStudy(String studyIUID)
+	public Map<String, String> getPatientForDicomStudy(String studyIUID)
 	{
 		Map<String, String> retVal = new HashMap<String, String>();
 
@@ -599,7 +612,7 @@ public class DatabaseOperationsImpl implements DatabaseOperations
 			}
 		} catch (SQLException sqle) {
 			String debugInfo = DatabaseUtils.getDebugData(rs);
-			logger.warning("database operation failed. debugInfo=" + debugInfo, sqle);
+			logger.warning("Warning: database operation failed. debugInfo=" + debugInfo, sqle);
 		} finally {
 			close(c, ps, rs);
 		}
@@ -611,7 +624,7 @@ public class DatabaseOperationsImpl implements DatabaseOperations
 	 * @return A list of study IDs
 	 */
 	@Override
-	public List<String> getStudyIDsForPatient(String patientID)
+	public List<String> getDicomStudyUIDsForPatient(String patientID)
 	{
 		List<String> retVal = new ArrayList<String>();
 
@@ -629,7 +642,7 @@ public class DatabaseOperationsImpl implements DatabaseOperations
 			}
 		} catch (SQLException sqle) {
 			String debugInfo = DatabaseUtils.getDebugData(rs);
-			logger.warning("database operation failed. debugInfo=" + debugInfo, sqle);
+			logger.warning("Warning: database operation failed. debugInfo=" + debugInfo, sqle);
 		} finally {
 			close(c, ps, rs);
 		}
@@ -637,7 +650,7 @@ public class DatabaseOperationsImpl implements DatabaseOperations
 	}
 
 	@Override
-	public Map<String, String> getParentStudyForSeries(String seriesIUID)
+	public Map<String, String> getParentStudyForDicomSeries(String seriesIUID)
 	{
 		Map<String, String> retVal = new HashMap<String, String>();
 
@@ -654,7 +667,7 @@ public class DatabaseOperationsImpl implements DatabaseOperations
 			}
 		} catch (SQLException sqle) {
 			String debugInfo = DatabaseUtils.getDebugData(rs);
-			logger.warning("database operation failed. debugInfo=" + debugInfo, sqle);
+			logger.warning("Warning: database operation failed. debugInfo=" + debugInfo, sqle);
 		} finally {
 			close(c, ps, rs);
 		}
@@ -662,14 +675,14 @@ public class DatabaseOperationsImpl implements DatabaseOperations
 	}
 
 	@Override
-	public String getStudyUIDForSeries(String seriesIUID)
+	public String getDicomStudyUIDForSeries(String seriesIUID)
 	{
 		DicomParentCache cache = DicomParentCache.getInstance();
 
 		if (cache.hasParent(seriesIUID))
 			return cache.getParent(seriesIUID).getDicomUID();
 
-		Map<String, String> dbResult = getParentStudyForSeries(seriesIUID);
+		Map<String, String> dbResult = getParentStudyForDicomSeries(seriesIUID);
 		String studyIUID = dbResult.get("study_iuid");
 		cache.setParent(seriesIUID, studyIUID, DicomParentType.STUDY);
 
@@ -698,7 +711,7 @@ public class DatabaseOperationsImpl implements DatabaseOperations
 			}
 		} catch (SQLException sqle) {
 			String debugInfo = DatabaseUtils.getDebugData(rs);
-			logger.warning("database operation failed. debugInfo=" + debugInfo, sqle);
+			logger.warning("Warning: database operation failed. debugInfo=" + debugInfo, sqle);
 		} finally {
 			close(c, ps, rs);
 		}
@@ -725,7 +738,7 @@ public class DatabaseOperationsImpl implements DatabaseOperations
 			}
 		} catch (SQLException e) {
 			String debugInfo = DatabaseUtils.getDebugData(rs);
-			logger.warning("database operation failed. debugInfo=" + debugInfo, e);
+			logger.warning("Warning: database operation failed. debugInfo=" + debugInfo, e);
 		} finally {
 			close(c, ps, rs);
 		}
@@ -733,7 +746,7 @@ public class DatabaseOperationsImpl implements DatabaseOperations
 	}
 
 	@Override
-	public void updateSeriesStatusCode(int newStatusCode, String seriesIUID)
+	public void updateDicomSeriesStatusCode(int newStatusCode, String seriesIUID)
 	{
 		if (!hasSeriesInEPadDatabase(seriesIUID)) {
 			insertSeriesInEPadDatabase(newStatusCode, seriesIUID);
@@ -760,7 +773,7 @@ public class DatabaseOperationsImpl implements DatabaseOperations
 			}
 		} catch (SQLException sqle) {
 			String debugInfo = DatabaseUtils.getDebugData(rs);
-			logger.warning("database operation failed. debugInfo=" + debugInfo, sqle);
+			logger.warning("Warning: database operation failed. debugInfo=" + debugInfo, sqle);
 			return -1;
 		} finally {
 			close(c, ps, rs);
@@ -820,7 +833,7 @@ public class DatabaseOperationsImpl implements DatabaseOperations
 			}
 		} catch (SQLException sqle) {
 			String debugInfo = DatabaseUtils.getDebugData(rs);
-			logger.warning("database operation failed. debugInfo=" + debugInfo, sqle);
+			logger.warning("Warning: database operation failed. debugInfo=" + debugInfo, sqle);
 		} finally {
 			close(c, ps, rs);
 		}
@@ -845,7 +858,7 @@ public class DatabaseOperationsImpl implements DatabaseOperations
 			}
 		} catch (SQLException sqle) {
 			String debugInfo = DatabaseUtils.getDebugData(rs);
-			logger.warning("database operation failed. debugInfo=" + debugInfo, sqle);
+			logger.warning("Warning: database operation failed. debugInfo=" + debugInfo, sqle);
 			return null;
 		} finally {
 			close(c, ps, rs);
@@ -863,9 +876,9 @@ public class DatabaseOperationsImpl implements DatabaseOperations
 			ps.setInt(2, newStatusCode);
 			ps.execute();
 		} catch (SQLException sqle) {
-			logger.warning("database operation failed.", sqle);
+			logger.warning("Warning: database operation failed.", sqle);
 		} catch (Exception e) {
-			logger.warning("database operation failed. statusCode=" + newStatusCode + ", series=" + seriesIUID, e);
+			logger.warning("Warning: database operation failed. statusCode=" + newStatusCode + ", series=" + seriesIUID, e);
 		} finally {
 			close(c, ps);
 		}
@@ -884,7 +897,7 @@ public class DatabaseOperationsImpl implements DatabaseOperations
 			return rs.next();
 		} catch (SQLException sqle) {
 			String debugInfo = DatabaseUtils.getDebugData(rs);
-			logger.warning("database operation failed. debugInfo=" + debugInfo, sqle);
+			logger.warning("Warning: database operation failed. debugInfo=" + debugInfo, sqle);
 			return false;
 		} finally {
 			close(c, ps, rs);
@@ -904,7 +917,7 @@ public class DatabaseOperationsImpl implements DatabaseOperations
 			ps.execute();
 		} catch (SQLException sqle) {
 			String debugInfo = DatabaseUtils.getDebugData(rs);
-			logger.warning("database operation failed. debugInfo=" + debugInfo, sqle);
+			logger.warning("Warning: database operation failed. debugInfo=" + debugInfo, sqle);
 		} finally {
 			close(c, ps, rs);
 		}
@@ -942,7 +955,7 @@ public class DatabaseOperationsImpl implements DatabaseOperations
 			}
 		} catch (SQLException e) {
 			String debugInfo = DatabaseUtils.getDebugData(rs);
-			logger.warning("database operation failed. debugInfo=" + debugInfo, e);
+			logger.warning("Warning: database operation failed. debugInfo=" + debugInfo, e);
 			throw e;
 		} finally {
 			close(c, ps, rs);
@@ -1043,7 +1056,7 @@ public class DatabaseOperationsImpl implements DatabaseOperations
 
 	private Set<String> getNewSeriesFromPacsDb()
 	{
-		List<String> pacsList = getNewSeries();
+		List<String> pacsList = getNewDicomSeries();
 		return new HashSet<String>(pacsList);
 	}
 
@@ -1064,7 +1077,7 @@ public class DatabaseOperationsImpl implements DatabaseOperations
 			}
 		} catch (SQLException sqle) {
 			String debugInfo = DatabaseUtils.getDebugData(rs);
-			logger.warning("database operation failed. debugInfo=" + debugInfo, sqle);
+			logger.warning("Warning: database operation failed. debugInfo=" + debugInfo, sqle);
 		} finally {
 			close(c, ps, rs);
 		}
@@ -1095,7 +1108,7 @@ public class DatabaseOperationsImpl implements DatabaseOperations
 			}
 		} catch (SQLException sqle) {
 			String debugInfo = DatabaseUtils.getDebugData(rs);
-			logger.warning("database operation failed. debugInfo=" + debugInfo, sqle);
+			logger.warning("Warning: database operation failed. debugInfo=" + debugInfo, sqle);
 		} finally {
 			close(c, ps, rs);
 		}
