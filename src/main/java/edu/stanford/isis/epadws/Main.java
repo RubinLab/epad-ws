@@ -35,6 +35,7 @@ import edu.stanford.isis.epad.common.plugins.impl.EPadFilesImpl;
 import edu.stanford.isis.epad.common.util.EPADConfig;
 import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epad.common.util.EPADResources;
+import edu.stanford.isis.epadws.handlers.admin.DICOMReprocessingHandler;
 import edu.stanford.isis.epadws.handlers.admin.ImageCheckHandler;
 import edu.stanford.isis.epadws.handlers.admin.ResourceCheckHandler;
 import edu.stanford.isis.epadws.handlers.admin.ServerStatusHandler;
@@ -185,6 +186,7 @@ public class Main
 		addHandlerAtContextPath(new XNATSubjectHandler(), "/epad/subjects", handlerList);
 		addHandlerAtContextPath(new ServerStatusHandler(), "/epad/status", handlerList);
 		addHandlerAtContextPath(new ImageCheckHandler(), "/epad/imagecheck", handlerList);
+		addHandlerAtContextPath(new DICOMReprocessingHandler(), "/epad/imagereprocess", handlerList);
 		addHandlerAtContextPath(new CoordinationHandler(), "/epad/coordination", handlerList);
 		addHandlerAtContextPath(new DICOMSearchHandler(), "/epad/searchj", handlerList);
 		addHandlerAtContextPath(new DICOMSeriesOrderHandler(), "/epad/seriesorderj", handlerList);

@@ -865,6 +865,24 @@ public class DatabaseOperationsImpl implements DatabaseOperations
 		}
 	}
 
+	@Override
+	public void forceDICOMReprocessing()
+	{
+		Connection c = null;
+		PreparedStatement ps = null;
+		ResultSet rs = null;
+		try {
+			c = getConnection();
+			ps = c.prepareStatement(EpadDatabaseCommands.DELETE_ALL_FROM_SERIES_STATUS);
+			ps.executeUpdate();
+		} catch (SQLException sqle) {
+			String debugInfo = DatabaseUtils.getDebugData(rs);
+			logger.warning("Warning: database operation failed. debugInfo=" + debugInfo, sqle);
+		} finally {
+			close(c, ps, rs);
+		}
+	}
+
 	private void insertSeriesInEPadDatabase(int newStatusCode, String seriesIUID)
 	{
 		Connection c = null;

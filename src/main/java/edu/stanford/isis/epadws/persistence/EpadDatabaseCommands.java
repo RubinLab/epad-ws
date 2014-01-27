@@ -8,6 +8,8 @@ package edu.stanford.isis.epadws.persistence;
  */
 public interface EpadDatabaseCommands
 {
+	public static final String DELETE_ALL_FROM_SERIES_STATUS = "delete from epaddb.series_status";
+
 	public static final String DELETE_SERIES_FROM_SERIES_STATUS = "delete from epaddb.series_status where series_iuid=?";
 	public static final String DELETE_FROM_EPAD_FILES = "delete from epaddb.epad_files where file_path like ?";
 

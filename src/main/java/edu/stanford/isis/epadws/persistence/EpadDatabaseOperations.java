@@ -43,6 +43,8 @@ public interface EpadDatabaseOperations
 
 	List<Map<String, String>> getEpadEventsForSessionID(String sessionID);
 
+	void forceDICOMReprocessing();
+
 	/**
 	 * Return the key of a {@link Term}.
 	 * 

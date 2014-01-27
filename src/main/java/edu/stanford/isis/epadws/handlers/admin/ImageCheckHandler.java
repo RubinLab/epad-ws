@@ -28,7 +28,7 @@ public class ImageCheckHandler extends AbstractHandler
 {
 	private static final EPADLogger log = EPADLogger.getInstance();
 
-	private static final String FORBIDDEN = "Forbidden method - only GET supported! on image check route";
+	private static final String FORBIDDEN = "Forbidden method - only GET supported on image check route";
 	private static final String INTERNAL_ERROR_MESSAGE = "Internal server error on image check route";
 	private static final String INTERNAL_IO_ERROR_MESSAGE = "Internal server IO error on image check route";
 	private static final String INTERNAL_SQL_ERROR_MESSAGE = "Internal server SQL error on image check route";
