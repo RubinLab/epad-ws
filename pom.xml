@@ -4,7 +4,7 @@
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
-    <groupId>edu.stanford.isis.epad</groupId>
+    <groupId>edu.stanford.epad</groupId>
     <artifactId>epad-project</artifactId>
     <version>1.1</version>
     <relativePath>../isis-epad-project/pom.xml</relativePath>
@@ -17,19 +17,19 @@
   <dependencies>
 
     <dependency>
-      <groupId>edu.stanford.isis.epad</groupId>
+      <groupId>edu.stanford.epad</groupId>
       <artifactId>epad-common</artifactId>
       <version>${project.version}</version> 
     </dependency>
 
     <dependency>
-      <groupId>edu.stanford.isis.epad.plugins</groupId>
+      <groupId>edu.stanford.epad.plugins</groupId>
       <artifactId>tedseg</artifactId>
       <version>${tedseg.plugin.version}</version>
     </dependency>
 
     <dependency>
-      <groupId>edu.stanford.isis.epad.plugins</groupId>
+      <groupId>edu.stanford.epad.plugins</groupId>
       <artifactId>jjvector</artifactId>
       <version>${jjvector.plugin.version}</version>
     </dependency>
