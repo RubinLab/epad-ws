@@ -39,30 +39,30 @@ public class EPADUploadDirWatcher implements Runnable
 	{
 		try {
 			ShutdownSignal shutdownSignal = ShutdownSignal.getInstance();
-			File rootDir = new File(EPADResources.getEPADWebServerUploadDir());
-			log.info("Startying the ePAD upload directory watcher; directory =" + EPADResources.getEPADWebServerUploadDir());
+			File rootUploadDirectory = new File(EPADResources.getEPADWebServerUploadDir());
+			log.info("Starting the ePAD upload directory watcher; directory =" + EPADResources.getEPADWebServerUploadDir());
 			while (true) {
 				if (shutdownSignal.hasShutdown())
 					return;
 
 				try {
-					List<File> newDirList = findNewUploadDirectory(rootDir);
-					if (newDirList != null) {
-						for (File currDir : newDirList) {
-							processUploadDirectory(currDir);
+					List<File> newUploadDirectories = findNewUploadDirectory(rootUploadDirectory);
+					if (newUploadDirectories != null) {
+						for (File newUploadDirectory : newUploadDirectories) {
+							processUploadDirectory(newUploadDirectory);
 						}
 					}
 				} catch (ConcurrentModificationException e) {
-					log.warning("EPADUploadDirWatcher thread error ", e);
+					log.warning("Warning: EPADUploadDirWatcher thread error ", e);
 				}
 				if (shutdownSignal.hasShutdown())
 					return;
 				TimeUnit.MILLISECONDS.sleep(CHECK_INTERVAL);
 			}
 		} catch (Exception e) {
-			log.severe("EPADUploadDirWatcher thread error", e);
+			log.severe("Warning: EPADUploadDirWatcher thread error", e);
 		} finally {
-			log.info("EPADUploadDirWatcher thread done.");
+			log.info("Warning: EPADUploadDirWatcher thread done.");
 		}
 	}
 
@@ -92,37 +92,38 @@ public class EPADUploadDirWatcher implements Runnable
 		return false;
 	}
 
-	private void processUploadDirectory(File dir) throws InterruptedException
+	private void processUploadDirectory(File directory) throws InterruptedException
 	{
 		try {
-			boolean hasZipFile = waitOnEmptyUploadDirectory(dir);
+			boolean hasZipFile = waitOnEmptyUploadDirectory(directory);
 			if (hasZipFile) {
-				File zipFile = waitForZipUploadToComplete(dir);
+				File zipFile = waitForZipUploadToComplete(directory);
 				unzipFiles(zipFile);
 			}
-			XNATCreationOperations.createXNATEntitiesFromDICOMFilesInDirectory(dir);
-			cleanUploadDirectory(dir);
-			sendFilesToDcm4Chee(dir);
-			deleteUploadDir(dir);
+			// TODO Should not create XNAT entities until the DICOM send succeeds.
+			XNATCreationOperations.createXNATEntitiesFromDICOMFilesInDirectory(directory);
+			cleanUploadDirectory(directory);
+			sendFilesToDcm4Chee(directory);
 		} catch (IOException ioe) {
-			log.warning("EPADUploadDirWatcher: error (IOException);dir=" + dir.getAbsolutePath(), ioe);
-			writeExceptionLog(dir, ioe);
+			log.warning("EPADUploadDirWatcher: error (IOException);dir=" + directory.getAbsolutePath(), ioe);
+			writeExceptionLog(directory, ioe);
 		} catch (IllegalStateException e) {
-			log.warning("EPADUploadDirWatcher: error (IllegalStateException); dir=" + dir.getAbsolutePath(), e);
-			writeExceptionLog(dir, e);
+			log.warning("EPADUploadDirWatcher: error (IllegalStateException); dir=" + directory.getAbsolutePath(), e);
+			writeExceptionLog(directory, e);
 		} catch (Exception e) {
-			log.warning("EPADUploadDirWatcher: error (Exception); dir=" + dir.getAbsolutePath(), e);
-			writeExceptionLog(dir, e);
+			log.warning("EPADUploadDirWatcher: error (Exception); dir=" + directory.getAbsolutePath(), e);
+			writeExceptionLog(directory, e);
 		} finally {
-			log.info("EPADUploadDirWatcher: upload finished: " + dir.getAbsolutePath());
+			log.info("EPADUploadDirWatcher: upload of directory finished " + directory.getAbsolutePath());
+			deleteUploadDirectory(directory);
 		}
 	}
 
 	private void cleanUploadDirectory(File dir)
 	{
-		EPADFileUtils.deleteFilesInDirWithExtension(dir, "properties");
-		EPADFileUtils.deleteFilesInDirWithExtension(dir, "zip");
-		EPADFileUtils.deleteFilesInDirWithExtension(dir, "log");
+		EPADFileUtils.deleteFilesInDirectoryWithExtension(dir, "properties");
+		EPADFileUtils.deleteFilesInDirectoryWithExtension(dir, "zip");
+		EPADFileUtils.deleteFilesInDirectoryWithExtension(dir, "log");
 	}
 
 	private boolean waitOnEmptyUploadDirectory(File dir) throws InterruptedException
@@ -211,16 +212,16 @@ public class EPADUploadDirWatcher implements Runnable
 		EPADFileUtils.extractFolder(zipFile.getAbsolutePath());
 	}
 
-	private void sendFilesToDcm4Chee(File dir) throws Exception
+	private void sendFilesToDcm4Chee(File directory) throws Exception
 	{
-		log.info("EPADUploadDirWatcher: sending directory " + dir.getAbsolutePath() + " to DCM4CHEE");
-		Dcm4CheeOperations.dcmsnd(dir, true);
+		log.info("EPADUploadDirWatcher: sending directory " + directory.getAbsolutePath() + " to DCM4CHEE");
+		Dcm4CheeOperations.dcmsnd(directory, true);
 	}
 
-	private void deleteUploadDir(File dir)
+	private void deleteUploadDirectory(File dir)
 	{
-		log.info("EPADUploadDirWatcher: deleting directory: " + dir.getAbsolutePath());
-		EPADFileUtils.deleteDirAndContents(dir);
+		log.info("EPADUploadDirWatcher: deleting upload directory " + dir.getAbsolutePath());
+		EPADFileUtils.deleteDirectoryAndContents(dir);
 	}
 
 	private void writeExceptionLog(File dir, Exception e)

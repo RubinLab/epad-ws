@@ -99,7 +99,7 @@ public class EPADUploadZIPWatcher implements Runnable
 			Long timestamp = emptyDir.get(currKey);
 			if (deleteTime > timestamp) {
 				File dirToDelete = currKey.getFile();
-				if (EPADFileUtils.deleteDirAndContents(dirToDelete)) {
+				if (EPADFileUtils.deleteDirectoryAndContents(dirToDelete)) {
 					log.info("DELETED DIR: " + dirToDelete.getAbsolutePath());
 					emptyDir.remove(currKey);
 				} else {
