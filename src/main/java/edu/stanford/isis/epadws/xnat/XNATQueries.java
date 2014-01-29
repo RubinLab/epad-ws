@@ -26,14 +26,14 @@ public class XNATQueries
 
 	public static XNATExperimentsResult dicomExperiments(String sessionID)
 	{
-		String xnatExperimentsQueryURL = XNATUtil.buildDICOMExperimentsURL();
+		String xnatExperimentsQueryURL = XNATUtil.buildDICOMExperimentsQueryURL();
 
 		return invokeXNATDICOMExperimentsQuery(sessionID, xnatExperimentsQueryURL);
 	}
 
 	public static XNATExperimentsResult dicomExperimentsForProject(String sessionID, String projectID)
 	{
-		String xnatExperimentsQueryURL = XNATUtil.buildDICOMExperimentsURLForProject(projectID);
+		String xnatExperimentsQueryURL = XNATUtil.buildDICOMExperimentsForProjectQueryURL(projectID);
 
 		return invokeXNATDICOMExperimentsQuery(sessionID, xnatExperimentsQueryURL);
 	}
@@ -41,7 +41,7 @@ public class XNATQueries
 	public static XNATExperimentsResult dicomExperimentsForProjectAndPatient(String sessionID, String projectID,
 			String patientID)
 	{
-		String xnatExperimentsQueryURL = XNATUtil.buildDICOMExperimentsURLForProjectAndPatient(projectID, patientID);
+		String xnatExperimentsQueryURL = XNATUtil.buildDICOMExperimentsForProjectAndPatientQueryURL(projectID, patientID);
 
 		return invokeXNATDICOMExperimentsQuery(sessionID, xnatExperimentsQueryURL);
 	}
