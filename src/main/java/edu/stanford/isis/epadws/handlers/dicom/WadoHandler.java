@@ -50,13 +50,13 @@ public class WadoHandler extends AbstractHandler
 			responseStream = httpResponse.getOutputStream();
 
 			// if (XNATOperations.hasValidXNATSessionID(httpRequest)) {
-			if (dummy()) {
+			if (dummy()) { // TODO Re-enable authentication
 				String queryString = httpRequest.getQueryString();
 				queryString = URLDecoder.decode(queryString, "UTF-8");
 				if (queryString != null) {
 					statusCode = performWADOQuery(queryString, responseStream);
 					if (statusCode != HttpServletResponse.SC_OK)
-						log.warning("WADOHandler query" + queryString + " failed; statusCode=" + statusCode);
+						log.warning("Warning: WADOHandler query" + queryString + " failed; statusCode=" + statusCode);
 				} else {
 					log.info(MISSING_QUERY_MESSAGE);
 					statusCode = HttpServletResponse.SC_BAD_REQUEST;
@@ -102,12 +102,12 @@ public class WadoHandler extends AbstractHandler
 					try {
 						res.close();
 					} catch (IOException e) {
-						log.warning("Error closing WADO response stream", e);
+						log.warning("Warning: error closing WADO response stream", e);
 					}
 				}
 			}
 		} else {
-			log.warning("Unexpected response from WADO; statusCode=" + statusCode);
+			log.warning("Warning: unexpected response from WADO; statusCode=" + statusCode);
 		}
 		return statusCode;
 	}

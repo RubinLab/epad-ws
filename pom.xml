@@ -16,6 +16,12 @@
 
   <dependencies>
 
+		<dependency>
+			<groupId>com.sun.media</groupId>
+			<artifactId>jai_imageio</artifactId>
+			<version>${jai.imageio.version}</version>
+		</dependency>
+
     <dependency>
       <groupId>edu.stanford.epad</groupId>
       <artifactId>epad-common</artifactId>
@@ -235,29 +241,34 @@
   <build>
 
     <plugins>
-
       <plugin>
-	<artifactId>maven-assembly-plugin</artifactId>
-	<configuration>
-	  <archive>
-	    <manifest>
-              <!-- <mainClass>edu.stanford.isis.epadws.EPADWebService</mainClass> -->
-              <mainClass>edu.stanford.isis.epadws.Main</mainClass>
-	    </manifest>
-	  </archive>
-	  <descriptorRefs>
-	    <descriptorRef>jar-with-dependencies</descriptorRef>
-	  </descriptorRefs>
-	</configuration>
-	<executions>
-	  <execution>
-	    <id>make-assembly</id> <!-- this is used for inheritance merges -->
-	    <phase>package</phase> <!-- bind to the packaging phase -->
-	    <goals>
+				<artifactId>maven-assembly-plugin</artifactId>
+				<configuration>
+					<archive>
+						<manifest>
+							<!-- <mainClass>edu.stanford.isis.epadws.EPADWebService</mainClass> -->
+							<mainClass>edu.stanford.isis.epadws.Main</mainClass>
+							<addDefaultImplementationEntries>true</addDefaultImplementationEntries>
+							<addDefaultSpecificationEntries>true</addDefaultSpecificationEntries>
+						</manifest>
+						<manifestEntries>
+							<Specification-Vendor>Oracle</Specification-Vendor>
+							<Implementation-Vendor>Oracle</Implementation-Vendor>
+						</manifestEntries>
+					</archive>
+					<descriptorRefs>
+						<descriptorRef>jar-with-dependencies</descriptorRef>
+					</descriptorRefs>
+				</configuration>
+				<executions>
+					<execution>
+						<id>make-assembly</id> <!-- this is used for inheritance merges -->
+						<phase>package</phase> <!-- bind to the packaging phase -->
+						<goals>
               <goal>single</goal>
-	    </goals>
-	  </execution>
-	</executions>
+						</goals>
+					</execution>
+				</executions>
       </plugin>
 
       <plugin>
