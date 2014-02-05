@@ -77,7 +77,7 @@ public class XNATCreationOperations
 						numberOfDICOMFiles++;
 					}
 					if (numberOfDICOMFiles != 0)
-						log.info("Found " + numberOfDICOMFiles + " DICOM files in upload directory");
+						log.info("Found " + numberOfDICOMFiles + " DICOM file(s) in upload directory");
 					else
 						log.warning("No DICOM files found in upload directory!");
 				} else {
