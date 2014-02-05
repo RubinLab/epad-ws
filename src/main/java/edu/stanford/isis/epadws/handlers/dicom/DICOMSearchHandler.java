@@ -98,7 +98,8 @@ public class DICOMSearchHandler extends AbstractHandler
 		final DatabaseOperations databaseOperations = Database.getInstance().getDatabaseOperations();
 		final String[] parts = queryString.split("=");
 		final String searchString = parts[1].trim();
-		final List<Map<String, String>> searchResult = databaseOperations.dicomStudySearch(searchType.toString(), searchString);
+		final List<Map<String, String>> searchResult = databaseOperations.dicomStudySearch(searchType.toString(),
+				searchString);
 		boolean isFirst = true;
 
 		log.info("DICOMSearchHandler study search found " + searchResult.size() + " result(s).");
@@ -176,7 +177,7 @@ public class DICOMSearchHandler extends AbstractHandler
 					seriesDate, examType, thumbnailURL, seriesDescription, numberOfSeriesRelatedInstances, imagesInSeries,
 					seriesStatus, bodyPart, institution, stationName, department, accessionNumber);
 			if (!isFirst)
-				outputStream.append(",\n");
+				outputStream.append(", ");
 			isFirst = false;
 			outputStream.append(seriesSearchResult2JSON(seriesSearchResult));
 		}
