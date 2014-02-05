@@ -16,7 +16,8 @@
 
   <dependencies>
 
-		<dependency>
+		<!-- See manifest additions below for default and vendor specification and implemention entries -->
+		<dependency> 
 			<groupId>com.sun.media</groupId>
 			<artifactId>jai_imageio</artifactId>
 			<version>${jai.imageio.version}</version>
@@ -244,9 +245,9 @@
       <plugin>
 				<artifactId>maven-assembly-plugin</artifactId>
 				<configuration>
-					<archive>
+					<!-- Default and vendor specification and implemention entries for runtime jai_imageio loading -->
+					<archive> 
 						<manifest>
-							<!-- <mainClass>edu.stanford.isis.epadws.EPADWebService</mainClass> -->
 							<mainClass>edu.stanford.isis.epadws.Main</mainClass>
 							<addDefaultImplementationEntries>true</addDefaultImplementationEntries>
 							<addDefaultSpecificationEntries>true</addDefaultSpecificationEntries>
