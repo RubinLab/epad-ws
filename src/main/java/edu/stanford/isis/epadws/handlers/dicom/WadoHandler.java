@@ -41,6 +41,8 @@ public class WadoHandler extends AbstractHandler
 		if (origin != null) {
 			httpResponse.setHeader("Access-Control-Allow-Origin", origin);
 			httpResponse.setHeader("Access-Control-Allow-Credentials", "true"); // Needed to allow cookies.
+		} else {
+			httpResponse.setHeader("Access-Control-Allow-Origin", "*");
 		}
 
 		httpResponse.setContentType("image/jpeg");
