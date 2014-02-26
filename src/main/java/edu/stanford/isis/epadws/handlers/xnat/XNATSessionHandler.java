@@ -20,7 +20,7 @@ import edu.stanford.isis.epadws.xnat.XNATUtil.XNATSessionResponse;
  * <p>
  * To create a session key:
  * <p>
- * <code>curl -v -u [username:password] -X POST http://[host:port]/session/ </code>
+ * <code>curl -v -u [username:password] -X POST http://[host:port]/epad/session/ </code>
  * <p>
  * Returns a session key.
  * <p>

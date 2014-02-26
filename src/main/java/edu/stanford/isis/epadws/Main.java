@@ -244,7 +244,7 @@ public class Main
 			contextPath = "/" + contextPath;
 		}
 		WebAppContext webAppContext = new WebAppContext(webAppPath, contextPath);
-		webAppContext.setTempDirectory(new File("../jetty"));
+		webAppContext.setTempDirectory(new File("/home/epad/DicomProxy/jetty")); // TODO Read from config file
 
 		handlerList.add(webAppContext);
 		log.info("Added " + warFileName + " at context path " + contextPath);
@@ -262,7 +262,7 @@ public class Main
 
 		addHandlerAtContextPath(handlers, contextPath, handlerList);
 
-		log.info("Added file server from " + baseDir + " directory.");
+		log.info("Added file server for " + baseDir + " directory.");
 	}
 
 	/**
