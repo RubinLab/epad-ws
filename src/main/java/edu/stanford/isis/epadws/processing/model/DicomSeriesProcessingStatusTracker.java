@@ -28,7 +28,7 @@ public class DicomSeriesProcessingStatusTracker
 		if (dicomSeriesProcessingStatus == null) {
 			throw new IllegalArgumentException("dicomSeriesProcessingStatus cannot be null");
 		}
-		DicomSeriesDescription dicomSeriesDescription = dicomSeriesProcessingStatus.getDicomSeriesDescription();
+		DicomSeriesProcessingDescription dicomSeriesDescription = dicomSeriesProcessingStatus.getDicomSeriesProcessingDescription();
 		if (dicomSeriesDescription == null) {
 			throw new IllegalArgumentException("dicomSeriesDescription cannot be null");
 		}
@@ -38,7 +38,7 @@ public class DicomSeriesProcessingStatusTracker
 
 	public void removeDicomSeriesProcessingStatus(DicomSeriesProcessingStatus dicomSeriesProcessingStatus)
 	{
-		String seriesUID = dicomSeriesProcessingStatus.getDicomSeriesDescription().getSeriesUID();
+		String seriesUID = dicomSeriesProcessingStatus.getDicomSeriesProcessingDescription().getSeriesUID();
 		statusMap.remove(seriesUID);
 	}
 

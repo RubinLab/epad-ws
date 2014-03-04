@@ -13,9 +13,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import edu.stanford.isis.epad.common.dicom.DICOMSeriesDescription;
+import edu.stanford.isis.epad.common.dicom.EPADSeries;
 import edu.stanford.isis.epad.common.dicom.DicomFormatUtil;
-import edu.stanford.isis.epad.common.dicom.DicomImageDescription;
+import edu.stanford.isis.epad.common.dicom.EPADImage;
 import edu.stanford.isis.epad.common.dicom.DicomParentCache;
 import edu.stanford.isis.epad.common.dicom.DicomParentType;
 import edu.stanford.isis.epad.common.util.EPADLogger;
@@ -41,11 +41,11 @@ public class EpadQueriesImpl implements EpadQueries
 	}
 
 	@Override
-	public DICOMSeriesDescription peformDICOMSeriesDescriptionQuery(String seriesIUID)
+	public EPADSeries peformEPADSeriesQuery(String seriesIUID)
 	{
 		EpadQueries databaseOperations = EpadDatabase.getInstance().getDatabaseOperations();
 		List<Map<String, String>> orderQueryEntries = databaseOperations.getDicomSeriesOrder(seriesIUID);
-		List<DicomImageDescription> imageDescriptions = new ArrayList<DicomImageDescription>();
+		List<EPADImage> imageDescriptions = new ArrayList<EPADImage>();
 
 		log.info("DICOMSeriesOrderHandler for series " + seriesIUID);
 
@@ -57,12 +57,11 @@ public class EpadQueriesImpl implements EpadQueries
 			String sliceLocation = createSliceLocation(entry); // entry.get("inst_custom1");
 			String contentTime = "null"; // TODO Can we find this somewhere?
 
-			DicomImageDescription dicomImageDescription = new DicomImageDescription(fileName,
-					instanceNumber, sliceLocation, contentTime);
+			EPADImage dicomImageDescription = new EPADImage(fileName, instanceNumber, sliceLocation,
+					contentTime);
 			imageDescriptions.add(dicomImageDescription);
 		}
-		DICOMSeriesDescription dicomSeriesDescriptionSearchResult = new DICOMSeriesDescription(
-				imageDescriptions);
+		EPADSeries dicomSeriesDescriptionSearchResult = new EPADSeries(imageDescriptions);
 		return dicomSeriesDescriptionSearchResult;
 	}
 
@@ -513,12 +512,11 @@ public class EpadQueriesImpl implements EpadQueries
 	}
 
 	@Override
-	public List<Map<String, String>> dicomStudySearch(String type, String searchString)
+	public List<Map<String, String>> dicomStudySearch(String type, String typeValue)
 	{
 		List<Map<String, String>> retVal = new ArrayList<Map<String, String>>();
-		Dcm4CheeStudyQueryBuilder queryBuilder = new Dcm4CheeStudyQueryBuilder(type, searchString);
+		Dcm4CheeStudyQueryBuilder queryBuilder = new Dcm4CheeStudyQueryBuilder(type, typeValue);
 		String searchSql = queryBuilder.createStudySearchQuery();
-		// logger.info("Performing study search with SQL " + searchSql);
 
 		Connection c = null;
 		Statement s = null;

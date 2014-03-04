@@ -10,7 +10,7 @@ import edu.stanford.isis.epad.common.util.EPADLogger;
  * Keeps all the information about each instance in a series and the instance order. A
  * {@link DicomSeriesProcessingStatus} tracks this series when it is in the pipeline.
  */
-public class DicomSeriesDescription
+public class DicomSeriesProcessingDescription
 {
 	private static final EPADLogger logger = EPADLogger.getInstance();
 
@@ -21,7 +21,7 @@ public class DicomSeriesDescription
 	private final String patientName;
 	private final String patientID;
 
-	public DicomSeriesDescription(int numberOfInstances, String seriesUID, String studyIUID, String patientName,
+	public DicomSeriesProcessingDescription(int numberOfInstances, String seriesUID, String studyIUID, String patientName,
 			String patientID)
 	{
 		if (numberOfInstances < 1)

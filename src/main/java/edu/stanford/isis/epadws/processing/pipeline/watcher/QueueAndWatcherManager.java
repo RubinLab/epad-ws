@@ -17,7 +17,7 @@ import edu.stanford.isis.epad.common.util.EPADResources;
 import edu.stanford.isis.epad.common.util.EPADTools;
 import edu.stanford.isis.epadws.dcm4chee.Dcm4CheeDatabaseUtils;
 import edu.stanford.isis.epadws.epaddb.EpadDatabase;
-import edu.stanford.isis.epadws.processing.model.DicomSeriesDescription;
+import edu.stanford.isis.epadws.processing.model.DicomSeriesProcessingDescription;
 import edu.stanford.isis.epadws.processing.model.PngProcessingStatus;
 import edu.stanford.isis.epadws.processing.pipeline.process.PngGeneratorProcess;
 import edu.stanford.isis.epadws.processing.pipeline.task.DicomSegmentationObjectPNGMaskGeneratorTask;
@@ -28,9 +28,9 @@ import edu.stanford.isis.epadws.queries.EpadQueries;
 public class QueueAndWatcherManager
 {
 	private static final EPADLogger logger = EPADLogger.getInstance();
-	private static final BlockingQueue<DicomSeriesDescription> dicomSeriesWatcherQueue = new ArrayBlockingQueue<DicomSeriesDescription>(
+	private static final BlockingQueue<DicomSeriesProcessingDescription> dicomSeriesWatcherQueue = new ArrayBlockingQueue<DicomSeriesProcessingDescription>(
 			2000);
-	private static final BlockingQueue<DicomSeriesDescription> xnatSeriesWatcherQueue = new ArrayBlockingQueue<DicomSeriesDescription>(
+	private static final BlockingQueue<DicomSeriesProcessingDescription> xnatSeriesWatcherQueue = new ArrayBlockingQueue<DicomSeriesProcessingDescription>(
 			2000);
 	private static final BlockingQueue<GeneratorTask> pngGeneratorTaskQueue = new ArrayBlockingQueue<GeneratorTask>(2000);
 	// private static final BlockingQueue<DicomHeadersTask> dicomHeadersTaskQueue = new

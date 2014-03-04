@@ -3,7 +3,7 @@ package edu.stanford.isis.epadws.queries;
 import java.util.List;
 import java.util.Map;
 
-import edu.stanford.isis.epad.common.dicom.DICOMSeriesDescription;
+import edu.stanford.isis.epad.common.dicom.EPADSeries;
 import edu.stanford.isis.epadws.dcm4chee.Dcm4CheeDatabaseOperations;
 import edu.stanford.isis.epadws.epaddb.EpadDatabaseOperations;
 
@@ -13,7 +13,7 @@ import edu.stanford.isis.epadws.epaddb.EpadDatabaseOperations;
  */
 public interface EpadQueries extends EpadDatabaseOperations, Dcm4CheeDatabaseOperations
 {
-	DICOMSeriesDescription peformDICOMSeriesDescriptionQuery(String seriesIUID);
+	EPADSeries peformEPADSeriesQuery(String seriesIUID);
 
 	/**
 	 * For the specified series, return a list of DICOM image file descriptions for instances that have no corresponding

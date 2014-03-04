@@ -7,7 +7,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import edu.stanford.isis.epad.common.util.EPADConfig;
 import edu.stanford.isis.epad.common.util.EPADLogger;
-import edu.stanford.isis.epadws.processing.model.DicomSeriesDescription;
+import edu.stanford.isis.epadws.processing.model.DicomSeriesProcessingDescription;
 import edu.stanford.isis.epadws.processing.pipeline.threads.ShutdownSignal;
 import edu.stanford.isis.epadws.xnat.XNATCreationOperations;
 import edu.stanford.isis.epadws.xnat.XNATSessionOperations;
@@ -15,7 +15,7 @@ import edu.stanford.isis.epadws.xnat.XNATUtil;
 
 /**
  * Monitors the XNAT series queue. The queue contains descriptions of new DICOM series that have been uploaded to ePAD's
- * DCM4CHEE instance (and are modeled by {@link DicomSeriesDescription} objects).
+ * DCM4CHEE instance (and are modeled by {@link DicomSeriesProcessingDescription} objects).
  * <p>
  * This queue is populated by a {@link Dcm4CheeDatabaseWatcher}, which monitors a DCM4CHEE MySQL database for new DICOM
  * series.
@@ -25,7 +25,7 @@ import edu.stanford.isis.epadws.xnat.XNATUtil;
  */
 public class XNATSeriesWatcher implements Runnable
 {
-	private final BlockingQueue<DicomSeriesDescription> xnatSeriesWatcherQueue;
+	private final BlockingQueue<DicomSeriesProcessingDescription> xnatSeriesWatcherQueue;
 	private final ShutdownSignal shutdownSignal = ShutdownSignal.getInstance();
 
 	private static final EPADLogger logger = EPADLogger.getInstance();
@@ -36,7 +36,7 @@ public class XNATSeriesWatcher implements Runnable
 	private final String xnatUploadProjectPassword;
 	private String jsessionID;
 
-	public XNATSeriesWatcher(BlockingQueue<DicomSeriesDescription> xnatSeriesWatcherQueue)
+	public XNATSeriesWatcher(BlockingQueue<DicomSeriesProcessingDescription> xnatSeriesWatcherQueue)
 	{
 		this.xnatSeriesWatcherQueue = xnatSeriesWatcherQueue;
 
@@ -53,7 +53,7 @@ public class XNATSeriesWatcher implements Runnable
 	{
 		while (!shutdownSignal.hasShutdown()) {
 			try {
-				DicomSeriesDescription dicomSeriesDescription = xnatSeriesWatcherQueue.poll(5000, TimeUnit.MILLISECONDS);
+				DicomSeriesProcessingDescription dicomSeriesDescription = xnatSeriesWatcherQueue.poll(5000, TimeUnit.MILLISECONDS);
 
 				if (dicomSeriesDescription != null) {
 					String dicomStudyIUID = dicomSeriesDescription.getStudyIUID();

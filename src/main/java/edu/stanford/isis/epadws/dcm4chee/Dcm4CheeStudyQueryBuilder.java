@@ -36,8 +36,6 @@ public class Dcm4CheeStudyQueryBuilder
 
 	private String createStudySelectClause()
 	{
-		// return
-		// "select st.study_iuid, p.pat_name, p.pat_id, s.modality, st.study_datetime, st.accession_no from pacsdb.study as st, pacsdb.patient as p, pacsdb.series as s";
 		return "select st.study_iuid, p.pat_name, p.pat_id, s.modality, st.study_datetime, st.study_status, "
 				+ " count(s.series_iuid) as number_series, s.series_iuid, s.pps_start, st.accession_no, "
 				+ " sum(s.num_instances) as sum_images, st.study_id, st.study_desc, st.ref_physician, p.pat_birthdate, p.pat_sex "
@@ -68,9 +66,6 @@ public class Dcm4CheeStudyQueryBuilder
 		}
 		sb.append(" and s.study_fk=st.pk");
 		sb.append(" and st.patient_fk=p.pk");
-
-		// For not include unavailable study
-		// sb.append(" and st.availability=0");
 
 		return sb.toString();
 	}

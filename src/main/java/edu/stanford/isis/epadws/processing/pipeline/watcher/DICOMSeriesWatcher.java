@@ -14,7 +14,7 @@ import edu.stanford.isis.epad.common.util.EPADResources;
 import edu.stanford.isis.epadws.dcm4chee.Dcm4CheeDatabaseUtils;
 import edu.stanford.isis.epadws.epaddb.EpadDatabase;
 import edu.stanford.isis.epadws.processing.model.DicomImageProcessingState;
-import edu.stanford.isis.epadws.processing.model.DicomSeriesDescription;
+import edu.stanford.isis.epadws.processing.model.DicomSeriesProcessingDescription;
 import edu.stanford.isis.epadws.processing.model.DicomSeriesProcessingStatus;
 import edu.stanford.isis.epadws.processing.model.DicomSeriesProcessingStatusTracker;
 import edu.stanford.isis.epadws.processing.model.PngProcessingStatus;
@@ -25,7 +25,7 @@ import edu.stanford.isis.epadws.processing.pipeline.threads.ShutdownSignal;
 import edu.stanford.isis.epadws.queries.EpadQueries;
 
 /**
- * Process new DICOM series appearing in the series queue. Each series is described by a {@link DicomSeriesDescription}.
+ * Process new DICOM series appearing in the series queue. Each series is described by a {@link DicomSeriesProcessingDescription}.
  * <p>
  * These descriptions are placed in the queue by a {@link Dcm4CheeDatabaseWatcher}, which picks up new series by
  * monitoring a DCM4CHEE MySQL database.
@@ -35,7 +35,7 @@ import edu.stanford.isis.epadws.queries.EpadQueries;
  */
 public class DICOMSeriesWatcher implements Runnable
 {
-	private final BlockingQueue<DicomSeriesDescription> dicomSeriesWatcherQueue;
+	private final BlockingQueue<DicomSeriesProcessingDescription> dicomSeriesWatcherQueue;
 	private final BlockingQueue<GeneratorTask> pngGeneratorTaskQueue;
 	private final DicomSeriesProcessingStatusTracker dicomSeriesDescriptionTracker;
 
@@ -46,7 +46,7 @@ public class DICOMSeriesWatcher implements Runnable
 
 	private QueueAndWatcherManager queueAndWatcherManager;
 
-	public DICOMSeriesWatcher(BlockingQueue<DicomSeriesDescription> dicomSeriesWatcherQueue,
+	public DICOMSeriesWatcher(BlockingQueue<DicomSeriesProcessingDescription> dicomSeriesWatcherQueue,
 			BlockingQueue<GeneratorTask> pngGeneratorTaskQueue)
 	{
 		logger.info("Starting the DICOM series watcher");
@@ -65,7 +65,7 @@ public class DICOMSeriesWatcher implements Runnable
 
 		while (!shutdownSignal.hasShutdown()) {
 			try {
-				DicomSeriesDescription dicomSeriesDescription = dicomSeriesWatcherQueue.poll(1000, TimeUnit.MILLISECONDS);
+				DicomSeriesProcessingDescription dicomSeriesDescription = dicomSeriesWatcherQueue.poll(1000, TimeUnit.MILLISECONDS);
 
 				if (dicomSeriesDescription != null) {
 					logger.info("Series watcher found new series with " + dicomSeriesDescription.getNumberOfInstances()
@@ -77,8 +77,8 @@ public class DICOMSeriesWatcher implements Runnable
 				// Update their status to reflect this so that we can monitor percent completion for each series.
 				for (DicomSeriesProcessingStatus currentDicomSeriesProcessingStatus : dicomSeriesDescriptionTracker
 						.getDicomSeriesProcessingStatusSet()) {
-					DicomSeriesDescription currentDicomSeriesDescription = currentDicomSeriesProcessingStatus
-							.getDicomSeriesDescription();
+					DicomSeriesProcessingDescription currentDicomSeriesDescription = currentDicomSeriesProcessingStatus
+							.getDicomSeriesProcessingDescription();
 					// Each entry in list is map with keys: sop_iuid, inst_no, series_iuid, filepath, file_size.
 					List<Map<String, String>> unprocessedDicomImageFileDescriptions = mySqlQueries
 							.getUnprocessedDicomImageFileDescriptionsForSeries(currentDicomSeriesDescription.getSeriesUID());

@@ -6,7 +6,7 @@ import java.util.concurrent.BlockingQueue;
 
 import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epadws.epaddb.EpadDatabase;
-import edu.stanford.isis.epadws.processing.model.DicomSeriesDescription;
+import edu.stanford.isis.epadws.processing.model.DicomSeriesProcessingDescription;
 import edu.stanford.isis.epadws.processing.pipeline.threads.ShutdownSignal;
 import edu.stanford.isis.epadws.queries.EpadQueries;
 
@@ -19,11 +19,11 @@ public class Dcm4CheeDatabaseWatcher implements Runnable
 {
 	private final EPADLogger logger = EPADLogger.getInstance();
 
-	private final BlockingQueue<DicomSeriesDescription> dcm4CheeSeriesWatcherQueue;
-	private final BlockingQueue<DicomSeriesDescription> xnatSeriesWatcherQueue;
+	private final BlockingQueue<DicomSeriesProcessingDescription> dcm4CheeSeriesWatcherQueue;
+	private final BlockingQueue<DicomSeriesProcessingDescription> xnatSeriesWatcherQueue;
 
-	public Dcm4CheeDatabaseWatcher(BlockingQueue<DicomSeriesDescription> dicomSeriesWatcherQueue,
-			BlockingQueue<DicomSeriesDescription> xnatSeriesWatcherQueue)
+	public Dcm4CheeDatabaseWatcher(BlockingQueue<DicomSeriesProcessingDescription> dicomSeriesWatcherQueue,
+			BlockingQueue<DicomSeriesProcessingDescription> xnatSeriesWatcherQueue)
 	{
 		logger.info("Starting ePAD's DCM4CHEE database watcher");
 		this.dcm4CheeSeriesWatcherQueue = dicomSeriesWatcherQueue;
@@ -48,7 +48,7 @@ public class Dcm4CheeDatabaseWatcher implements Runnable
 					String patientID = patient.get("pat_id");
 					String seriesDesc = currSeries.get("series_desc");
 					String numInstances = currSeries.get("num_instances");
-					DicomSeriesDescription dicomSeriesDescription = new DicomSeriesDescription(Integer.parseInt(numInstances),
+					DicomSeriesProcessingDescription dicomSeriesDescription = new DicomSeriesProcessingDescription(Integer.parseInt(numInstances),
 							seriesIUid, studyIUID, patientName, patientID);
 					databaseOperations.updateDicomSeriesStatusCode(325, seriesIUid);
 					submitSeriesForPngGeneration(dicomSeriesDescription); // Submit this series to generate all the PNG files.
@@ -64,12 +64,12 @@ public class Dcm4CheeDatabaseWatcher implements Runnable
 		}
 	}
 
-	private void submitSeriesForPngGeneration(DicomSeriesDescription dicomSeriesDescription)
+	private void submitSeriesForPngGeneration(DicomSeriesProcessingDescription dicomSeriesDescription)
 	{
 		dcm4CheeSeriesWatcherQueue.offer(dicomSeriesDescription);
 	}
 
-	private void submitSeriesForXNATGeneration(DicomSeriesDescription dicomSeriesDescription)
+	private void submitSeriesForXNATGeneration(DicomSeriesProcessingDescription dicomSeriesDescription)
 	{
 		xnatSeriesWatcherQueue.offer(dicomSeriesDescription);
 	}

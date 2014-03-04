@@ -18,7 +18,8 @@ public interface Dcm4CheeDatabaseOperations
 	 */
 	List<String> getNewDicomSeries();
 
-	List<Map<String, String>> dicomStudySearch(String type, String searchString);
+	// typeValue one of: patientName, patientId", studyDate, accessionNum, examType
+	List<Map<String, String>> dicomStudySearch(String searchType, String typeValue);
 
 	List<Map<String, String>> findAllDicomSeriesInStudy(String studyUID);
 

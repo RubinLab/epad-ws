@@ -16,11 +16,11 @@ public class DicomSeriesProcessingStatus
 
 	private long lastActivityTimeStamp;
 
-	private final DicomSeriesDescription dicomSeriesDescription;
+	private final DicomSeriesProcessingDescription dicomSeriesDescription;
 
 	private DicomImageProcessingState dicomImageProcessingState;
 
-	public DicomSeriesProcessingStatus(DicomSeriesDescription dicomSeriesDescription)
+	public DicomSeriesProcessingStatus(DicomSeriesProcessingDescription dicomSeriesDescription)
 	{
 		if (dicomSeriesDescription == null)
 			throw new IllegalArgumentException("DICOM series description cannot be null");
@@ -35,7 +35,7 @@ public class DicomSeriesProcessingStatus
 		return dicomSeriesDescription.percentComplete();
 	}
 
-	public DicomSeriesDescription getDicomSeriesDescription()
+	public DicomSeriesProcessingDescription getDicomSeriesProcessingDescription()
 	{
 		return dicomSeriesDescription;
 	}

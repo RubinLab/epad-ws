@@ -19,7 +19,7 @@ import edu.stanford.isis.epadws.xnat.XNATSessionOperations;
  * Delete a study or a series.
  * 
  */
-public class DICOMDeleteHandler extends AbstractHandler
+public class StudyDeleteHandler extends AbstractHandler
 {
 	private static final EPADLogger log = EPADLogger.getInstance();
 
@@ -46,9 +46,9 @@ public class DICOMDeleteHandler extends AbstractHandler
 				queryString = queryString.trim();
 				try {
 					if (isSeriesRequest(queryString)) {
-						handleDICOMSeriesDeleteRequest(queryString);
+						handleSeriesDeleteRequest(queryString);
 					} else {
-						handleDICOMStudyDeleteRequest(queryString);
+						handleStudyDeleteRequest(queryString);
 					}
 					responseCode = HttpServletResponse.SC_OK;
 				} catch (Throwable t) {
@@ -64,7 +64,7 @@ public class DICOMDeleteHandler extends AbstractHandler
 		httpResponse.setStatus(responseCode);
 	}
 
-	private void handleDICOMStudyDeleteRequest(String queryString)
+	private void handleStudyDeleteRequest(String queryString)
 	{
 		log.info(queryString);
 		String[] parts = queryString.split("&");
@@ -72,11 +72,11 @@ public class DICOMDeleteHandler extends AbstractHandler
 		parts = studyUID.split("=");
 		studyUID = parts[1].trim();
 
-		log.info("DICOM delete handler (study) = " + studyUID);
+		log.info("DeleteHandler(study) = " + studyUID);
 		(new Thread(new DicomDeleteTask(studyUID, true))).start();
 	}
 
-	private void handleDICOMSeriesDeleteRequest(String queryString)
+	private void handleSeriesDeleteRequest(String queryString)
 	{
 		log.info(queryString);
 		String[] parts = queryString.split("&");
@@ -84,7 +84,7 @@ public class DICOMDeleteHandler extends AbstractHandler
 		parts = seriesUID.split("=");
 		seriesUID = parts[1].trim();
 
-		log.info("DicomDeleteHandler(series) = " + seriesUID);
+		log.info("DeleteHandler(series) = " + seriesUID);
 		(new Thread(new DicomDeleteTask(seriesUID, false))).start();
 	}
 

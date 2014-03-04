@@ -8,9 +8,7 @@ import javax.servlet.http.HttpServletResponse;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 
-import com.google.gson.Gson;
-
-import edu.stanford.isis.epad.common.dicom.DICOMSeriesDescription;
+import edu.stanford.isis.epad.common.dicom.EPADSeries;
 import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epadws.epaddb.EpadDatabase;
 import edu.stanford.isis.epadws.handlers.HandlerUtil;
@@ -41,7 +39,7 @@ import edu.stanford.isis.epadws.xnat.XNATSessionOperations;
  * curl -b JSESSIONID=<id> -X GET "http://[host]:[port]/epad/seriesorderj/?series_iuid=1.2.840.113619.2.55.3.25168424.5576.1168603848.697"
  * </code>
  */
-public class DICOMSeriesOrderHandler extends AbstractHandler
+public class EPADSeriesHandler extends AbstractHandler
 {
 	private static final EPADLogger log = EPADLogger.getInstance();
 
@@ -65,9 +63,8 @@ public class DICOMSeriesOrderHandler extends AbstractHandler
 			if (XNATSessionOperations.hasValidXNATSessionID(httpRequest)) {
 				String seriesIUID = httpRequest.getParameter("series_iuid");
 				if (seriesIUID != null) {
-					DICOMSeriesDescription dicomSeriesDescription = databaseOperations
-							.peformDICOMSeriesDescriptionQuery(seriesIUID);
-					responseStream.print(dicomSeriesDescription2JSON(dicomSeriesDescription));
+					EPADSeries epadSeries = databaseOperations.peformEPADSeriesQuery(seriesIUID);
+					responseStream.print(epadSeries.toJSON());
 					statusCode = HttpServletResponse.SC_OK;
 				} else {
 					statusCode = HandlerUtil.infoJSONResponse(HttpServletResponse.SC_BAD_REQUEST, MISSING_SERIES_IUID_MESSAGE,
@@ -81,12 +78,5 @@ public class DICOMSeriesOrderHandler extends AbstractHandler
 			statusCode = HandlerUtil.internalErrorJSONResponse(INTERNAL_EXCEPTION_MESSAGE, responseStream, log);
 		}
 		httpResponse.setStatus(statusCode);
-	}
-
-	private String dicomSeriesDescription2JSON(DICOMSeriesDescription dicomSeriesDescription)
-	{
-		Gson gson = new Gson();
-
-		return gson.toJson(dicomSeriesDescription);
 	}
 }
