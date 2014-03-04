@@ -5,10 +5,10 @@ import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 
 import edu.stanford.isis.epad.common.util.EPADLogger;
-import edu.stanford.isis.epadws.persistence.DatabaseOperations;
-import edu.stanford.isis.epadws.persistence.Database;
+import edu.stanford.isis.epadws.epaddb.EpadDatabase;
 import edu.stanford.isis.epadws.processing.model.DicomSeriesDescription;
 import edu.stanford.isis.epadws.processing.pipeline.threads.ShutdownSignal;
+import edu.stanford.isis.epadws.queries.EpadQueries;
 
 /**
  * Watch for new studies that appear with ePAD's DCM4CHEE MySQL database with the 'study-status' field set to zero,
@@ -34,7 +34,7 @@ public class Dcm4CheeDatabaseWatcher implements Runnable
 	public void run()
 	{
 		ShutdownSignal signal = ShutdownSignal.getInstance();
-		DatabaseOperations databaseOperations = Database.getInstance().getDatabaseOperations();
+		EpadQueries databaseOperations = EpadDatabase.getInstance().getDatabaseOperations();
 
 		while (!signal.hasShutdown()) {
 			try {

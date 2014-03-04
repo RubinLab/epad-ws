@@ -1,4 +1,4 @@
-package edu.stanford.isis.epadws.persistence;
+package edu.stanford.isis.epadws.dcm4chee;
 
 import java.io.File;
 import java.util.HashMap;
@@ -7,7 +7,9 @@ import java.util.Map;
 import edu.stanford.isis.epad.common.dicom.DicomFormatUtil;
 import edu.stanford.isis.epad.common.util.EPADFileUtils;
 import edu.stanford.isis.epad.common.util.FileKey;
+import edu.stanford.isis.epadws.epaddb.EpadDatabase;
 import edu.stanford.isis.epadws.processing.model.PngProcessingStatus;
+import edu.stanford.isis.epadws.queries.EpadQueries;
 
 public class Dcm4CheeDatabaseUtils
 {
@@ -26,7 +28,7 @@ public class Dcm4CheeDatabaseUtils
 		FileKey fileKey = new FileKey(file);
 		String filePath = fileKey.toString();
 		long fileSize = file.length();
-		DatabaseOperations databaseOperations = Database.getInstance().getDatabaseOperations();
+		EpadQueries databaseOperations = EpadDatabase.getInstance().getDatabaseOperations();
 		String sopInstanceUID = getSOPInstanceUIDFromPath(filePath);
 		int instanceKey = databaseOperations.getInstanceKeyForInstance(sopInstanceUID);
 

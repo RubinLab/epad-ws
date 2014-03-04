@@ -14,8 +14,8 @@ import org.eclipse.jetty.server.handler.AbstractHandler;
 import edu.stanford.isis.epad.common.util.EPADConfig;
 import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epad.common.util.SearchResultUtils;
-import edu.stanford.isis.epadws.persistence.Database;
-import edu.stanford.isis.epadws.persistence.DatabaseOperations;
+import edu.stanford.isis.epadws.epaddb.EpadDatabase;
+import edu.stanford.isis.epadws.queries.EpadQueries;
 import edu.stanford.isis.epadws.xnat.XNATSessionOperations;
 import edu.stanford.isis.epadws.xnat.XNATUtil;
 
@@ -88,7 +88,7 @@ public class EventHandler extends AbstractHandler
 						if (jsessionID != null && event_status != null && aim_uid != null && aim_uid != null && aim_name != null
 								&& patient_id != null && patient_name != null && template_id != null && template_name != null
 								&& plugin_name != null) {
-							DatabaseOperations databaseOperations = Database.getInstance().getDatabaseOperations();
+							EpadQueries databaseOperations = EpadDatabase.getInstance().getDatabaseOperations();
 							databaseOperations.insertEpadEvent(jsessionID, event_status, aim_uid, aim_name, patient_id, patient_name,
 									template_id, template_name, plugin_name);
 							responseStream.flush();
@@ -121,7 +121,7 @@ public class EventHandler extends AbstractHandler
 
 	private void findEventsForSessionID(PrintWriter responseStrean, String sessionID)
 	{
-		DatabaseOperations databaseOperations = Database.getInstance().getDatabaseOperations();
+		EpadQueries databaseOperations = EpadDatabase.getInstance().getDatabaseOperations();
 		List<Map<String, String>> eventMap = databaseOperations.getEpadEventsForSessionID(sessionID);
 
 		responseStrean.print(new SearchResultUtils().get_EVENT_SEARCH_HEADER());

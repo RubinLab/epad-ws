@@ -1,4 +1,4 @@
-package edu.stanford.isis.epadws.persistence;
+package edu.stanford.isis.epadws.epaddb;
 
 import java.io.File;
 import java.io.IOException;
@@ -10,8 +10,10 @@ import edu.stanford.isis.epad.common.dicom.DicomFormatUtil;
 import edu.stanford.isis.epad.common.util.EPADFileUtils;
 import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epad.common.util.EPADResources;
+import edu.stanford.isis.epadws.dcm4chee.Dcm4CheeDatabaseUtils;
 import edu.stanford.isis.epadws.processing.model.PNGGridGenerator;
 import edu.stanford.isis.epadws.processing.model.PngProcessingStatus;
+import edu.stanford.isis.epadws.queries.EpadQueries;
 
 /**
  * Operations on files maintained by ePAD
@@ -45,7 +47,7 @@ public class FileOperations
 
 	public static void writePNGGridFile(File pngInputFile, List<File> inputPNGGridFiles, File outputPNGFile)
 	{
-		DatabaseOperations databaseOperations = Database.getInstance().getDatabaseOperations();
+		EpadQueries databaseOperations = EpadDatabase.getInstance().getDatabaseOperations();
 		Map<String, String> epadFilesTable = new HashMap<String, String>();
 		try {
 			log.info("PNGGridGeneratorTask: creating PNG grid file: " + outputPNGFile.getAbsolutePath());
@@ -80,7 +82,7 @@ public class FileOperations
 	 */
 	public static void deletePNGforSeries(String seriesUID) throws Exception
 	{
-		DatabaseOperations databaseOperations = Database.getInstance().getDatabaseOperations();
+		EpadQueries databaseOperations = EpadDatabase.getInstance().getDatabaseOperations();
 		String studyUID = databaseOperations.getDicomStudyUIDForSeries(seriesUID);
 		StringBuilder outputPath = new StringBuilder();
 		outputPath.append(EPADResources.getEPADWebServerPNGDir());

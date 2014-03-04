@@ -1,4 +1,4 @@
-package edu.stanford.isis.epadws.persistence;
+package edu.stanford.isis.epadws.epaddb;
 
 /**
  * This interface defines SQL commands to work with ePAD's MySQL database.

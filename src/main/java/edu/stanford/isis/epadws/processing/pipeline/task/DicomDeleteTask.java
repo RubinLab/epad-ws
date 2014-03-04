@@ -4,10 +4,10 @@ import java.util.List;
 import java.util.Map;
 
 import edu.stanford.isis.epad.common.util.EPADLogger;
-import edu.stanford.isis.epadws.persistence.Database;
-import edu.stanford.isis.epadws.persistence.DatabaseOperations;
-import edu.stanford.isis.epadws.persistence.Dcm4CheeOperations;
-import edu.stanford.isis.epadws.persistence.FileOperations;
+import edu.stanford.isis.epadws.dcm4chee.Dcm4CheeOperations;
+import edu.stanford.isis.epadws.epaddb.EpadDatabase;
+import edu.stanford.isis.epadws.epaddb.FileOperations;
+import edu.stanford.isis.epadws.queries.EpadQueries;
 
 /**
  * Task to delete a DICOM study
@@ -29,7 +29,7 @@ public class DicomDeleteTask implements Runnable
 	@Override
 	public void run()
 	{
-		DatabaseOperations databaseOperations = Database.getInstance().getDatabaseOperations();
+		EpadQueries databaseOperations = EpadDatabase.getInstance().getDatabaseOperations();
 
 		try {
 			if (deleteStudy) {

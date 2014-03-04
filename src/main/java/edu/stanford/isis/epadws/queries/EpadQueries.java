@@ -1,15 +1,16 @@
-package edu.stanford.isis.epadws.persistence;
+package edu.stanford.isis.epadws.queries;
 
 import java.util.List;
 import java.util.Map;
 
+import edu.stanford.isis.epadws.dcm4chee.Dcm4CheeDatabaseOperations;
+import edu.stanford.isis.epadws.epaddb.EpadDatabaseOperations;
+
 /**
- * Defines all operations on ePAD's databases.
- * 
  * 
  * @author martin
  */
-public interface DatabaseOperations extends EpadDatabaseOperations, Dcm4CheeDatabaseOperations
+public interface EpadQueries extends EpadDatabaseOperations, Dcm4CheeDatabaseOperations
 {
 	/**
 	 * For the specified series, return a list of DICOM image file descriptions for instances that have no corresponding

@@ -4,7 +4,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
-import edu.stanford.isis.epadws.persistence.FileOperations;
+import edu.stanford.isis.epadws.epaddb.FileOperations;
 
 /**
  * Given a set of PNG files, generate a single PNG containing a grid of these files.

@@ -35,6 +35,7 @@ import edu.stanford.isis.epad.common.plugins.impl.EPadFilesImpl;
 import edu.stanford.isis.epad.common.util.EPADConfig;
 import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epad.common.util.EPADResources;
+import edu.stanford.isis.epadws.epaddb.EpadDatabase;
 import edu.stanford.isis.epadws.handlers.admin.DICOMReprocessingHandler;
 import edu.stanford.isis.epadws.handlers.admin.ImageCheckHandler;
 import edu.stanford.isis.epadws.handlers.admin.ResourceCheckHandler;
@@ -55,7 +56,6 @@ import edu.stanford.isis.epadws.handlers.plugin.EPadPluginHandler;
 import edu.stanford.isis.epadws.handlers.xnat.XNATProjectHandler;
 import edu.stanford.isis.epadws.handlers.xnat.XNATSessionHandler;
 import edu.stanford.isis.epadws.handlers.xnat.XNATSubjectHandler;
-import edu.stanford.isis.epadws.persistence.Database;
 import edu.stanford.isis.epadws.processing.leveling.WindowLevelFactory;
 import edu.stanford.isis.epadws.processing.pipeline.threads.ShutdownHookThread;
 import edu.stanford.isis.epadws.processing.pipeline.threads.ShutdownSignal;
@@ -121,7 +121,7 @@ public class Main
 
 			shutdownSignal.shutdownNow();
 			stopServer(server);
-			Database.getInstance().shutdown();
+			EpadDatabase.getInstance().shutdown();
 			QueueAndWatcherManager.getInstance().shutdown();
 			WindowLevelFactory.getInstance().shutdown();
 			try { // Wait just long enough for some messages to be printed out.
@@ -167,7 +167,7 @@ public class Main
 
 		try {
 			QueueAndWatcherManager.getInstance().buildAndStart();
-			Database.getInstance().startup();
+			EpadDatabase.getInstance().startup();
 			log.info("Startup of database was successful");
 		} catch (Exception e) {
 			log.warning("Failed to start database", e);

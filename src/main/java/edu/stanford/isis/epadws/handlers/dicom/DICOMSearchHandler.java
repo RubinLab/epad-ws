@@ -18,9 +18,9 @@ import edu.stanford.isis.epad.common.dicom.DICOMStudySearchResult;
 import edu.stanford.isis.epad.common.dicom.DicomFormatUtil;
 import edu.stanford.isis.epad.common.dicom.DicomStudySearchType;
 import edu.stanford.isis.epad.common.util.EPADLogger;
+import edu.stanford.isis.epadws.epaddb.EpadDatabase;
 import edu.stanford.isis.epadws.handlers.HandlerUtil;
-import edu.stanford.isis.epadws.persistence.Database;
-import edu.stanford.isis.epadws.persistence.DatabaseOperations;
+import edu.stanford.isis.epadws.queries.EpadQueries;
 import edu.stanford.isis.epadws.xnat.XNATSessionOperations;
 
 /**
@@ -95,7 +95,7 @@ public class DICOMSearchHandler extends AbstractHandler
 	 */
 	private void performDICOMStudySearch(PrintWriter outputStream, DicomStudySearchType searchType, String queryString)
 	{
-		final DatabaseOperations databaseOperations = Database.getInstance().getDatabaseOperations();
+		final EpadQueries databaseOperations = EpadDatabase.getInstance().getDatabaseOperations();
 		final String[] parts = queryString.split("=");
 		final String searchString = parts[1].trim();
 		final List<Map<String, String>> searchResult = databaseOperations.dicomStudySearch(searchType.toString(),
@@ -149,7 +149,7 @@ public class DICOMSearchHandler extends AbstractHandler
 	{
 		final String studyIdKey = getStudyUIDFromRequest(queryString);
 		final String studyUID = DicomFormatUtil.formatDirToUid(studyIdKey);
-		final DatabaseOperations databaseOperations = Database.getInstance().getDatabaseOperations();
+		final EpadQueries databaseOperations = EpadDatabase.getInstance().getDatabaseOperations();
 		final List<Map<String, String>> series = databaseOperations.findAllDicomSeriesInStudy(studyUID);
 		boolean isFirst = true;
 

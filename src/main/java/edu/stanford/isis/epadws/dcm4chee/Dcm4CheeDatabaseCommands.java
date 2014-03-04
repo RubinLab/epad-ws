@@ -1,4 +1,4 @@
-package edu.stanford.isis.epadws.persistence;
+package edu.stanford.isis.epadws.dcm4chee;
 
 /**
  * This interface defines SQL commands to work with DCM4CHEE's MySQL database.

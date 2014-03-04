@@ -13,10 +13,10 @@ import javax.imageio.ImageIO;
 import edu.stanford.isis.epad.common.dicom.DicomReader;
 import edu.stanford.isis.epad.common.util.EPADFileUtils;
 import edu.stanford.isis.epad.common.util.EPADLogger;
-import edu.stanford.isis.epadws.persistence.Database;
-import edu.stanford.isis.epadws.persistence.DatabaseOperations;
-import edu.stanford.isis.epadws.persistence.Dcm4CheeDatabaseUtils;
+import edu.stanford.isis.epadws.dcm4chee.Dcm4CheeDatabaseUtils;
+import edu.stanford.isis.epadws.epaddb.EpadDatabase;
 import edu.stanford.isis.epadws.processing.model.PngProcessingStatus;
+import edu.stanford.isis.epadws.queries.EpadQueries;
 
 /**
  * Generate a PNG file from a DICOM file.
@@ -44,7 +44,7 @@ public class PngGeneratorTask implements GeneratorTask
 
 	private void writePackedPNGs()
 	{
-		DatabaseOperations databaseOperations = Database.getInstance().getDatabaseOperations();
+		EpadQueries databaseOperations = EpadDatabase.getInstance().getDatabaseOperations();
 		File inputDICOMFile = dicomInputFile;
 		File outputPNGFile = pngOutputFile;
 		Map<String, String> epadFilesTable = new HashMap<String, String>();

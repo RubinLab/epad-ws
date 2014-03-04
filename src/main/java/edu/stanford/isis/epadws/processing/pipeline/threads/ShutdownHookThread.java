@@ -10,7 +10,7 @@ package edu.stanford.isis.epadws.processing.pipeline.threads;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import edu.stanford.isis.epad.common.util.EPADLogger;
-import edu.stanford.isis.epadws.persistence.Database;
+import edu.stanford.isis.epadws.epaddb.EpadDatabase;
 import edu.stanford.isis.epadws.processing.pipeline.PipelineFactory;
 
 /**
@@ -39,7 +39,7 @@ public class ShutdownHookThread extends Thread
 			shutdownSignal.shutdownNow();
 
 			PipelineFactory.getInstance().shutdown();
-			Database.getInstance().shutdown();
+			EpadDatabase.getInstance().shutdown();
 		}
 	}
 

@@ -20,8 +20,8 @@ import edu.stanford.isis.epad.common.plugins.impl.EPadPluginImpl;
 import edu.stanford.isis.epad.common.util.EPADConfig;
 import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epadws.EPadWebServerVersion;
+import edu.stanford.isis.epadws.epaddb.EpadDatabase;
 import edu.stanford.isis.epadws.handlers.HandlerUtil;
-import edu.stanford.isis.epadws.persistence.Database;
 import edu.stanford.isis.epadws.processing.pipeline.PipelineFactory;
 import edu.stanford.isis.epadws.xnat.XNATSessionOperations;
 
@@ -76,7 +76,7 @@ public class ServerStatusHandler extends AbstractHandler
 				responseStream.println();
 				responseStream.println("Plugin Version - interface:      " + EPadPlugin.PLUGIN_INTERFACE_VERSION);
 				responseStream.println("Plugin Version - implementation: " + ePadPlugin.getPluginImplVersion());
-				Database instance = Database.getInstance();
+				EpadDatabase instance = EpadDatabase.getInstance();
 				responseStream.println();
 				responseStream.println("Database startup time: " + instance.getStartupTime() + " ms");
 				responseStream.println();

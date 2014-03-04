@@ -3,7 +3,7 @@ package edu.stanford.isis.epadws.processing.pipeline.task;
 import java.io.File;
 
 import edu.stanford.isis.epad.common.util.EPADLogger;
-import edu.stanford.isis.epadws.persistence.Dcm4CheeOperations;
+import edu.stanford.isis.epadws.dcm4chee.Dcm4CheeOperations;
 
 public class DicomSendTask implements Runnable
 {

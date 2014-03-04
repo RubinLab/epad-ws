@@ -46,10 +46,10 @@ import edu.stanford.isis.epad.common.pixelmed.PixelMedUtils;
 import edu.stanford.isis.epad.common.util.EPADConfig;
 import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epad.common.util.EPADResources;
-import edu.stanford.isis.epadws.persistence.Database;
-import edu.stanford.isis.epadws.persistence.DatabaseOperations;
-import edu.stanford.isis.epadws.persistence.Dcm4CheeDatabaseUtils;
+import edu.stanford.isis.epadws.dcm4chee.Dcm4CheeDatabaseUtils;
+import edu.stanford.isis.epadws.epaddb.EpadDatabase;
 import edu.stanford.isis.epadws.processing.model.PngProcessingStatus;
+import edu.stanford.isis.epadws.queries.EpadQueries;
 
 /**
  * This task generates DICOM Segmentation Objects.
@@ -108,7 +108,7 @@ public class DicomSegmentationObjectPNGMaskGeneratorTask implements GeneratorTas
 			File repDest = new File(baseDicomDirectory + studyId + "/" + seriesId + "/");
 			repDest.mkdirs();
 
-			DatabaseOperations databaseOperations = Database.getInstance().getDatabaseOperations();
+			EpadQueries databaseOperations = EpadDatabase.getInstance().getDatabaseOperations();
 			logger.info("Writing DSO PNG masks...");
 
 			for (int i = 0; i < count; i++) { // Create the mask images
@@ -324,7 +324,7 @@ public class DicomSegmentationObjectPNGMaskGeneratorTask implements GeneratorTas
 		return Toolkit.getDefaultToolkit().createImage(ip);
 	}
 
-	private void insertEpadFile(DatabaseOperations queries, File outputFile)
+	private void insertEpadFile(EpadQueries queries, File outputFile)
 	{
 		Map<String, String> epadFilesTable = Dcm4CheeDatabaseUtils.createEPadFilesTableData(outputFile);
 		epadFilesTable.put("file_status", "" + PngProcessingStatus.IN_PIPELINE.getCode());

@@ -1,4 +1,4 @@
-package edu.stanford.isis.epadws.persistence;
+package edu.stanford.isis.epadws.epaddb;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -7,32 +7,34 @@ import java.sql.Statement;
 import java.util.concurrent.atomic.AtomicReference;
 
 import edu.stanford.isis.epad.common.util.EPADLogger;
+import edu.stanford.isis.epadws.queries.EpadQueries;
+import edu.stanford.isis.epadws.queries.EpadQueriesImpl;
 
 /**
  * @author amsnyder
  */
-public class Database
+public class EpadDatabase
 {
 	private static EPADLogger logger = EPADLogger.getInstance();
 
 	private static final String USER = "pacs";
 	private static final String PWD = "pacs";
 
-	private static final Database ourInstance = new Database();
+	private static final EpadDatabase ourInstance = new EpadDatabase();
 
 	private ConnectionPool connectionPool;
-	private DatabaseOperations databaseOperations;
+	private EpadQueries databaseOperations;
 
 	private final AtomicReference<DatabaseState> dbState = new AtomicReference<DatabaseState>(DatabaseState.INIT);
 
 	private long startupTime = -1;
 
-	public static Database getInstance()
+	public static EpadDatabase getInstance()
 	{
 		return ourInstance;
 	}
 
-	private Database()
+	private EpadDatabase()
 	{
 		initConnectionPool();
 	}
@@ -73,7 +75,7 @@ public class Database
 		logger.info("The database took " + (System.currentTimeMillis() - time) + " ms, to shutdown.");
 	}
 
-	public DatabaseOperations getDatabaseOperations()
+	public EpadQueries getDatabaseOperations()
 	{
 		return databaseOperations;
 	}
@@ -93,7 +95,7 @@ public class Database
 		try {
 			logger.info("Creating connection pool.");
 			createConnectionPool();
-			databaseOperations = new DatabaseOperationsImpl(connectionPool);
+			databaseOperations = new EpadQueriesImpl(connectionPool);
 		} catch (Exception e) {
 			logger.severe("Failed to create connection pool", e);
 			dbState.set(DatabaseState.ERROR);

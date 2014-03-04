@@ -5,8 +5,8 @@ import java.util.Map;
 import java.util.Set;
 
 import edu.stanford.isis.epad.common.util.EPADLogger;
-import edu.stanford.isis.epadws.persistence.DatabaseOperations;
-import edu.stanford.isis.epadws.persistence.Database;
+import edu.stanford.isis.epadws.epaddb.EpadDatabase;
+import edu.stanford.isis.epadws.queries.EpadQueries;
 
 /**
  * A connection test for DCM4CHEE MySQL database.
@@ -25,7 +25,7 @@ public class DcmDbTester
 	public static void main(String[] args)
 	{
 		try {
-			Database mySqlInstance = Database.getInstance();
+			EpadDatabase mySqlInstance = EpadDatabase.getInstance();
 			mySqlInstance.startup();
 
 			logConnectionStatus();
@@ -44,7 +44,7 @@ public class DcmDbTester
 			logger.warning("  ", e);
 			e.printStackTrace();
 		} finally {
-			Database.getInstance().shutdown();
+			EpadDatabase.getInstance().shutdown();
 		}
 	}
 
@@ -56,7 +56,7 @@ public class DcmDbTester
 		try {
 			logger.info("######## Start test #2 - basic search ########");
 
-			DatabaseOperations databaseOperations = Database.getInstance().getDatabaseOperations();
+			EpadQueries databaseOperations = EpadDatabase.getInstance().getDatabaseOperations();
 			List<Map<String, String>> results = databaseOperations.dicomStudySearch("patientName", "*");
 
 			String[] keys = { "study_iuid", "pat_id", "modality", "study_datetime", "pat_name" };
@@ -91,7 +91,7 @@ public class DcmDbTester
 		try {
 			logger.info("######## Start test #3 - wildcard search ########");
 
-			DatabaseOperations databaseOperations = Database.getInstance().getDatabaseOperations();
+			EpadQueries databaseOperations = EpadDatabase.getInstance().getDatabaseOperations();
 			List<Map<String, String>> results = databaseOperations.dicomStudySearch("patientName", "A*");
 
 			String[] keys = { "study_iuid", "pat_id", "modality", "study_datetime", "pat_name" };
@@ -125,7 +125,7 @@ public class DcmDbTester
 		try {
 			logger.info("######## Start test #4 - case insensitive search ########");
 
-			DatabaseOperations databaseOperations = Database.getInstance().getDatabaseOperations();
+			EpadQueries databaseOperations = EpadDatabase.getInstance().getDatabaseOperations();
 			List<Map<String, String>> resultsUpperCase = databaseOperations.dicomStudySearch("patientName", "A*");
 			List<Map<String, String>> resultsLowerCase = databaseOperations.dicomStudySearch("patientName", "a*");
 
@@ -149,7 +149,7 @@ public class DcmDbTester
 		try {
 			logger.info("######## Start test #5 - patient id search ########");
 
-			DatabaseOperations databaseOperations = Database.getInstance().getDatabaseOperations();
+			EpadQueries databaseOperations = EpadDatabase.getInstance().getDatabaseOperations();
 			List<Map<String, String>> results = databaseOperations.dicomStudySearch("patientId", "2228*");
 			String[] keys = { "study_iuid", "pat_id", "modality", "study_datetime", "pat_name" };
 			StringBuilder sb = new StringBuilder("Study Results \n");
@@ -177,7 +177,7 @@ public class DcmDbTester
 		try {
 			logger.info("######## Start test #6 - exam-type search ########");
 
-			DatabaseOperations databaseOperations = Database.getInstance().getDatabaseOperations();
+			EpadQueries databaseOperations = EpadDatabase.getInstance().getDatabaseOperations();
 			List<Map<String, String>> results = databaseOperations.dicomStudySearch("examType", "DX");
 
 			String[] keys = { "study_iuid", "pat_id", "modality", "study_datetime", "pat_name" };
@@ -206,7 +206,7 @@ public class DcmDbTester
 		try {
 			logger.info("######## Start test #7 - study-time search ########");
 
-			DatabaseOperations databaseOperations = Database.getInstance().getDatabaseOperations();
+			EpadQueries databaseOperations = EpadDatabase.getInstance().getDatabaseOperations();
 			List<Map<String, String>> results = databaseOperations.dicomStudySearch("studyDate", "2002");
 
 			String[] keys = { "study_iuid", "pat_id", "modality", "study_datetime", "pat_name" };
@@ -238,7 +238,7 @@ public class DcmDbTester
 		try {
 			logger.info("######## Start test #8 - study-time search ########");
 
-			DatabaseOperations databaseOperations = Database.getInstance().getDatabaseOperations();
+			EpadQueries databaseOperations = EpadDatabase.getInstance().getDatabaseOperations();
 			List<Map<String, String>> results = databaseOperations
 					.findAllDicomSeriesInStudy("1.2.826.0.1.3680043.8.420.30757817405477639080180001130587461759");
 
@@ -300,8 +300,8 @@ public class DcmDbTester
 	{
 		StringBuilder sb = new StringBuilder("Connection status - ");
 
-		sb.append(" #avail: ").append(Database.getInstance().getConnectionPoolAvailCount());
-		sb.append(" #used: ").append(Database.getInstance().getConnectionPoolUsedCount());
+		sb.append(" #avail: ").append(EpadDatabase.getInstance().getConnectionPoolAvailCount());
+		sb.append(" #used: ").append(EpadDatabase.getInstance().getConnectionPoolUsedCount());
 
 		logger.info(sb.toString());
 	}

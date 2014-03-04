@@ -5,7 +5,7 @@
  * Software License Agreement available at:
  *   http://epad.stanford.edu/license/
  */
-package edu.stanford.isis.epadws.persistence;
+package edu.stanford.isis.epadws.epaddb;
 
 public enum DatabaseState {
 	INIT, STARTING, READY, SHUTDOWN, ERROR;

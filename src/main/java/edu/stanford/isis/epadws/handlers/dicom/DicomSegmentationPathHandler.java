@@ -11,9 +11,9 @@ import org.eclipse.jetty.server.handler.AbstractHandler;
 
 import edu.stanford.isis.epad.common.util.EPADConfig;
 import edu.stanford.isis.epad.common.util.EPADLogger;
+import edu.stanford.isis.epadws.epaddb.EpadDatabase;
 import edu.stanford.isis.epadws.handlers.HandlerUtil;
-import edu.stanford.isis.epadws.persistence.Database;
-import edu.stanford.isis.epadws.persistence.DatabaseOperations;
+import edu.stanford.isis.epadws.queries.EpadQueries;
 
 /**
  * Given an image identifier for an image in a DICOM study return a three-column CSV with the study, series and image
@@ -88,7 +88,7 @@ public class DicomSegmentationPathHandler extends AbstractHandler
 
 	private String[] retrieveStudySeriesAndImageIDsFromEpadDatabase(String imageUID)
 	{
-		DatabaseOperations databaseOperations = Database.getInstance().getDatabaseOperations();
+		EpadQueries databaseOperations = EpadDatabase.getInstance().getDatabaseOperations();
 
 		return databaseOperations.retrieveDicomStudySeriesAndImageIDs(imageUID);
 	}

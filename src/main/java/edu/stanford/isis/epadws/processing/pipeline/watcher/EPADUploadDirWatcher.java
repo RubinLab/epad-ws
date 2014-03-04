@@ -12,7 +12,7 @@ import edu.stanford.isis.epad.common.util.EPADFileUtils;
 import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epad.common.util.EPADResources;
 import edu.stanford.isis.epad.common.util.FileKey;
-import edu.stanford.isis.epadws.persistence.Dcm4CheeOperations;
+import edu.stanford.isis.epadws.dcm4chee.Dcm4CheeOperations;
 import edu.stanford.isis.epadws.processing.model.DicomUploadFile;
 import edu.stanford.isis.epadws.processing.pipeline.threads.ShutdownSignal;
 import edu.stanford.isis.epadws.xnat.XNATCreationOperations;

@@ -3,10 +3,10 @@ package edu.stanford.isis.epadws.processing.pipeline.task;
 import java.util.List;
 
 import edu.stanford.isis.epad.common.util.EPADLogger;
-import edu.stanford.isis.epadws.persistence.Database;
-import edu.stanford.isis.epadws.persistence.DatabaseOperations;
-import edu.stanford.isis.epadws.persistence.Dcm4CheeOperations;
-import edu.stanford.isis.epadws.persistence.FileOperations;
+import edu.stanford.isis.epadws.dcm4chee.Dcm4CheeOperations;
+import edu.stanford.isis.epadws.epaddb.EpadDatabase;
+import edu.stanford.isis.epadws.epaddb.FileOperations;
+import edu.stanford.isis.epadws.queries.EpadQueries;
 
 /**
  * Delete a patient and all studies for that patient in the ePAD and DCMCHEE databases.
@@ -30,7 +30,7 @@ public class PatientDeleteTask implements Runnable
 	@Override
 	public void run()
 	{
-		DatabaseOperations databaseOperations = Database.getInstance().getDatabaseOperations();
+		EpadQueries databaseOperations = EpadDatabase.getInstance().getDatabaseOperations();
 
 		// We assume patient and associated studies already deleted from XNAT.
 		// TODO Need to do this deletion here instead of at the client side!!!

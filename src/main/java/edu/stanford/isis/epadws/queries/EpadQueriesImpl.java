@@ -1,4 +1,4 @@
-package edu.stanford.isis.epadws.persistence;
+package edu.stanford.isis.epadws.queries;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -16,17 +16,22 @@ import java.util.Set;
 import edu.stanford.isis.epad.common.dicom.DicomParentCache;
 import edu.stanford.isis.epad.common.dicom.DicomParentType;
 import edu.stanford.isis.epad.common.util.EPADLogger;
+import edu.stanford.isis.epadws.dcm4chee.Dcm4CheeDatabaseCommands;
+import edu.stanford.isis.epadws.dcm4chee.Dcm4CheeStudyQueryBuilder;
+import edu.stanford.isis.epadws.epaddb.ConnectionPool;
+import edu.stanford.isis.epadws.epaddb.DatabaseUtils;
+import edu.stanford.isis.epadws.epaddb.EpadDatabaseCommands;
 import edu.stanford.isis.epadws.handlers.coordination.Term;
 import edu.stanford.isis.epadws.processing.model.PngProcessingStatus;
 import edu.stanford.isis.epadws.processing.pipeline.watcher.Dcm4CheeDatabaseWatcher;
 
-public class DatabaseOperationsImpl implements DatabaseOperations
+public class EpadQueriesImpl implements EpadQueries
 {
 	private static final EPADLogger logger = EPADLogger.getInstance();
 
 	private final ConnectionPool connectionPool;
 
-	public DatabaseOperationsImpl(ConnectionPool connectionPool)
+	public EpadQueriesImpl(ConnectionPool connectionPool)
 	{
 		this.connectionPool = connectionPool;
 	}

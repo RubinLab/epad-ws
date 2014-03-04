@@ -1,4 +1,4 @@
-package edu.stanford.isis.epadws.persistence;
+package edu.stanford.isis.epadws.epaddb;
 
 import java.sql.Connection;
 import java.sql.DriverManager;

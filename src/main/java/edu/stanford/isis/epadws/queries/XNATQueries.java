@@ -1,4 +1,4 @@
-package edu.stanford.isis.epadws.xnat;
+package edu.stanford.isis.epadws.queries;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -13,6 +13,7 @@ import com.google.gson.Gson;
 
 import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epad.common.xnat.XNATExperimentsResult;
+import edu.stanford.isis.epadws.xnat.XNATUtil;
 
 /**
  * Methods for querying XNAT
