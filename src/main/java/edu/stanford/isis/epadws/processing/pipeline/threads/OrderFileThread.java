@@ -221,7 +221,7 @@ public class OrderFileThread implements Runnable
 			// read the tag file.
 			try {
 				File currTagFile = new File(DicomTagFileUtils.createTagFilePath(currFile.getAbsolutePath()));
-				currTagsMap = DicomTagFileUtils.readTagFile(currTagFile);
+				currTagsMap = DicomTagFileUtils.readDICOMTagFile(currTagFile);
 				OrderFileEntry orderFileEntry = createOrderFileEntry(currTagsMap, currFile);
 
 				String currStudyUID = currTagsMap.get(DicomTagFileUtils.STUDY_UID);

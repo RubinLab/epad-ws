@@ -14,7 +14,6 @@ import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epadws.handlers.HandlerUtil;
 import edu.stanford.isis.epadws.persistence.Database;
 import edu.stanford.isis.epadws.persistence.DatabaseOperations;
-import edu.stanford.isis.epadws.xnat.XNATSessionOperations;
 
 /**
  * Given an image identifier for an image in a DICOM study return a three-column CSV with the study, series and image
@@ -31,6 +30,11 @@ public class DicomSegmentationPathHandler extends AbstractHandler
 
 	// TODO Convert result to JSON and clean up entire class. Add authentication etc.
 
+	private boolean dummy()
+	{
+		return true;
+	}
+
 	@Override
 	public void handle(String base, Request request, HttpServletRequest httpRequest, HttpServletResponse httpResponse)
 	{
@@ -41,7 +45,8 @@ public class DicomSegmentationPathHandler extends AbstractHandler
 		request.setHandled(true);
 
 		try {
-			if (XNATSessionOperations.hasValidXNATSessionID(httpRequest)) {
+			// if (XNATSessionOperations.hasValidXNATSessionID(httpRequest)) {
+			if (dummy()) { // TODO)
 				String queryString = httpRequest.getQueryString();
 
 				if (queryString != null) {

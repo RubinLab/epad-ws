@@ -56,8 +56,8 @@ public class PngGeneratorTask implements GeneratorTask
 			epadFilesTable = Dcm4CheeDatabaseUtils.createEPadFilesTableData(outputPNGFile);
 			outputPNGFile = new File(pngFilePath);
 
-			logger.info("PngGeneratorTask: DICOM file: " + inputDICOMFile.getAbsolutePath());
-			logger.info("PngGeneratorTask: creating PNG file: " + outputPNGFile.getAbsolutePath());
+			// logger.info("PngGeneratorTask: DICOM file: " + inputDICOMFile.getAbsolutePath());
+			// logger.info("PngGeneratorTask: creating PNG file: " + outputPNGFile.getAbsolutePath());
 
 			EPADFileUtils.createDirsAndFile(outputPNGFile);
 			outputPNGStream = new FileOutputStream(outputPNGFile);

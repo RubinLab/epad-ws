@@ -38,7 +38,7 @@ public class MoverTask implements Callable<File>
 	{
 		try {
 			File tagFile = new File(DicomTagFileUtils.createTagFilePath(dicomFile.getAbsolutePath()));
-			Map<String, String> tags = DicomTagFileUtils.readTagFile(tagFile);
+			Map<String, String> tags = DicomTagFileUtils.readDICOMTagFile(tagFile);
 
 			// Determine the directory, i.e., study/series.
 			String studyId = DicomTagFileUtils.getTag(DicomTagFileUtils.STUDY_UID, tags);

@@ -120,7 +120,7 @@ public class EPADUploadDirWatcher implements Runnable
 	}
 
 	private void cleanUploadDirectory(File dir)
-	{
+	{ // TODO Should be deleteFilesInDirectoryWithoutExtension("dcm");
 		EPADFileUtils.deleteFilesInDirectoryWithExtension(dir, "properties");
 		EPADFileUtils.deleteFilesInDirectoryWithExtension(dir, "zip");
 		EPADFileUtils.deleteFilesInDirectoryWithExtension(dir, "log");

@@ -98,7 +98,7 @@ public class DICOMSeriesOrderHandler extends AbstractHandler
 			String fileName = createFileNameField(imageUID);
 			String instanceNumberString = entry.get("inst_no");
 			int instanceNumber = getInstanceNumber(instanceNumberString, seriesIUID, imageUID);
-			String sliceLocation = createSliceLocation(entry);// entry.get("inst_custom1");
+			String sliceLocation = createSliceLocation(entry); // entry.get("inst_custom1");
 			String contentTime = "null"; // TODO Can we find this somewhere?
 
 			DicomImageDescriptionSearchResult dicomImageDescription = new DicomImageDescriptionSearchResult(fileName,

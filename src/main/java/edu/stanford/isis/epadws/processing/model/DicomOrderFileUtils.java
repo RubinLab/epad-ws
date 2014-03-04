@@ -73,7 +73,7 @@ public class DicomOrderFileUtils
 			List<File> tagFiles = EPADFileUtils.getAllFilesWithExtension(seriesDir, ".tag");
 
 			for (File currTagFile : tagFiles) {
-				Map<String, String> currTagMap = DicomTagFileUtils.readTagFile(currTagFile);
+				Map<String, String> currTagMap = DicomTagFileUtils.readDICOMTagFile(currTagFile);
 				String order = currTagMap.get(DicomTagFileUtils.INSTANCE_NUMBER);
 				String sopInstanceID = currTagMap.get(DicomTagFileUtils.SOP_INST_UID);
 

@@ -217,7 +217,7 @@ public class JPEGThumbnailGeneratorTask implements Callable<File>
 	private void writeThumbnailIfNeeded(File dicomFile)
 	{
 		String tagFilePath = DicomTagFileUtils.createTagFilePath(dicomFile.getAbsolutePath());
-		Map<String, String> tags = DicomTagFileUtils.readTagFile(new File(tagFilePath));
+		Map<String, String> tags = DicomTagFileUtils.readDICOMTagFile(new File(tagFilePath));
 		ThumbnailManager thumbnailManager = ThumbnailManager.getInstance();
 		thumbnailManager.writeThumbnailIfNeeded(tags, dicomFile);
 	}
