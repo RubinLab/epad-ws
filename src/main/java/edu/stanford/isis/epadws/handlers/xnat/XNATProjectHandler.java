@@ -17,9 +17,9 @@ import org.apache.commons.httpclient.methods.PutMethod;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 
+import edu.stanford.isis.epad.common.query.XNATProject;
 import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epad.common.util.JsonHelper;
-import edu.stanford.isis.epad.common.xnat.XNATProjectDescription;
 import edu.stanford.isis.epadws.handlers.HandlerUtil;
 import edu.stanford.isis.epadws.xnat.XNATSessionOperations;
 import edu.stanford.isis.epadws.xnat.XNATUtil;
@@ -32,7 +32,7 @@ import edu.stanford.isis.epadws.xnat.XNATUtil;
  * </code>
  * 
  * @author martin
- * @see XNATProjectDescription
+ * @see XNATProject
  */
 public class XNATProjectHandler extends AbstractHandler
 {

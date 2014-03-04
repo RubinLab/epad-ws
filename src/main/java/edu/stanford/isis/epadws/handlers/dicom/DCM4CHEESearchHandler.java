@@ -9,10 +9,10 @@ import javax.servlet.http.HttpServletResponse;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 
-import edu.stanford.isis.epad.common.dicom.DCM4CHEESeriesList;
-import edu.stanford.isis.epad.common.dicom.DCM4CHEEStudyList;
-import edu.stanford.isis.epad.common.dicom.DCM4CHEEStudySearchType;
 import edu.stanford.isis.epad.common.dicom.DicomFormatUtil;
+import edu.stanford.isis.epad.common.query.DCM4CHEESeriesList;
+import edu.stanford.isis.epad.common.query.DCM4CHEEStudyList;
+import edu.stanford.isis.epad.common.query.DCM4CHEEStudySearchType;
 import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epadws.handlers.HandlerUtil;
 import edu.stanford.isis.epadws.queries.Dcm4CheeQueries;

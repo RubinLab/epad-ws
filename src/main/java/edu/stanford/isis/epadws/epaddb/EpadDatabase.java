@@ -7,8 +7,8 @@ import java.sql.Statement;
 import java.util.concurrent.atomic.AtomicReference;
 
 import edu.stanford.isis.epad.common.util.EPADLogger;
+import edu.stanford.isis.epadws.queries.EpadDatabaseQueries;
 import edu.stanford.isis.epadws.queries.EpadQueries;
-import edu.stanford.isis.epadws.queries.EpadQueriesImpl;
 
 /**
  * @author amsnyder
@@ -95,7 +95,7 @@ public class EpadDatabase
 		try {
 			logger.info("Creating connection pool.");
 			createConnectionPool();
-			databaseOperations = new EpadQueriesImpl(connectionPool);
+			databaseOperations = new EpadDatabaseQueries(connectionPool);
 		} catch (Exception e) {
 			logger.severe("Failed to create connection pool", e);
 			dbState.set(DatabaseState.ERROR);

@@ -13,11 +13,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import edu.stanford.isis.epad.common.dicom.EPADSeries;
 import edu.stanford.isis.epad.common.dicom.DicomFormatUtil;
-import edu.stanford.isis.epad.common.dicom.EPADImage;
 import edu.stanford.isis.epad.common.dicom.DicomParentCache;
 import edu.stanford.isis.epad.common.dicom.DicomParentType;
+import edu.stanford.isis.epad.common.query.EPADImage;
+import edu.stanford.isis.epad.common.query.EPADSeries;
 import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epadws.dcm4chee.Dcm4CheeDatabaseCommands;
 import edu.stanford.isis.epadws.dcm4chee.Dcm4CheeStudyQueryBuilder;
@@ -29,13 +29,13 @@ import edu.stanford.isis.epadws.handlers.coordination.Term;
 import edu.stanford.isis.epadws.processing.model.PngProcessingStatus;
 import edu.stanford.isis.epadws.processing.pipeline.watcher.Dcm4CheeDatabaseWatcher;
 
-public class EpadQueriesImpl implements EpadQueries
+public class EpadDatabaseQueries implements EpadQueries
 {
 	private static final EPADLogger log = EPADLogger.getInstance();
 
 	private final ConnectionPool connectionPool;
 
-	public EpadQueriesImpl(ConnectionPool connectionPool)
+	public EpadDatabaseQueries(ConnectionPool connectionPool)
 	{
 		this.connectionPool = connectionPool;
 	}
@@ -57,8 +57,7 @@ public class EpadQueriesImpl implements EpadQueries
 			String sliceLocation = createSliceLocation(entry); // entry.get("inst_custom1");
 			String contentTime = "null"; // TODO Can we find this somewhere?
 
-			EPADImage dicomImageDescription = new EPADImage(fileName, instanceNumber, sliceLocation,
-					contentTime);
+			EPADImage dicomImageDescription = new EPADImage(fileName, instanceNumber, sliceLocation, contentTime);
 			imageDescriptions.add(dicomImageDescription);
 		}
 		EPADSeries dicomSeriesDescriptionSearchResult = new EPADSeries(imageDescriptions);
