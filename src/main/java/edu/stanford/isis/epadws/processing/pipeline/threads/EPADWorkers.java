@@ -8,8 +8,6 @@
 package edu.stanford.isis.epadws.processing.pipeline.threads;
 
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 
 import edu.stanford.isis.epad.common.dicom.DicomSeriesUID;
@@ -30,10 +28,7 @@ public class EPADWorkers
 	private static EPADLogger logger = EPADLogger.getInstance();
 
 	private final BlockingQueue<DicomSeriesUID> thumbnailQueue = new LinkedBlockingQueue<DicomSeriesUID>();
-	private final Executor thumbnailExec = Executors.newFixedThreadPool(1);
 	private final PipelineFactory pipelineFactory;
-
-	private Runnable thumbnailProcess;
 
 	public static EPADWorkers getInstance()
 	{
@@ -42,19 +37,8 @@ public class EPADWorkers
 
 	private EPADWorkers()
 	{
-		thumbnailProcess = new ThumbnailGeneratorThread(thumbnailQueue);
-		thumbnailExec.execute(thumbnailProcess);
 		pipelineFactory = PipelineFactory.getInstance();
 		pipelineFactory.buildAndStart();
-	}
-
-	/**
-   *
-   */
-	@SuppressWarnings("unused")
-	private void startThreads()
-	{
-		thumbnailProcess = new ThumbnailGeneratorThread(thumbnailQueue);
 	}
 
 	/**

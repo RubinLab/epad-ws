@@ -1,9 +1,6 @@
 package edu.stanford.isis.epadws.handlers.dicom;
 
 import java.io.PrintWriter;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -13,9 +10,7 @@ import org.eclipse.jetty.server.handler.AbstractHandler;
 
 import com.google.gson.Gson;
 
-import edu.stanford.isis.epad.common.dicom.DICOMSeriesDescriptionSearchResult;
-import edu.stanford.isis.epad.common.dicom.DicomFormatUtil;
-import edu.stanford.isis.epad.common.dicom.DicomImageDescriptionSearchResult;
+import edu.stanford.isis.epad.common.dicom.DICOMSeriesDescription;
 import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epadws.epaddb.EpadDatabase;
 import edu.stanford.isis.epadws.handlers.HandlerUtil;
@@ -57,6 +52,7 @@ public class DICOMSeriesOrderHandler extends AbstractHandler
 	@Override
 	public void handle(String s, Request request, HttpServletRequest httpRequest, HttpServletResponse httpResponse)
 	{
+		EpadQueries databaseOperations = EpadDatabase.getInstance().getDatabaseOperations();
 		PrintWriter responseStream = null;
 		int statusCode;
 
@@ -69,7 +65,9 @@ public class DICOMSeriesOrderHandler extends AbstractHandler
 			if (XNATSessionOperations.hasValidXNATSessionID(httpRequest)) {
 				String seriesIUID = httpRequest.getParameter("series_iuid");
 				if (seriesIUID != null) {
-					peformDICOMSeriesDescriptionQuery(responseStream, seriesIUID);
+					DICOMSeriesDescription dicomSeriesDescription = databaseOperations
+							.peformDICOMSeriesDescriptionQuery(seriesIUID);
+					responseStream.print(dicomSeriesDescription2JSON(dicomSeriesDescription));
 					statusCode = HttpServletResponse.SC_OK;
 				} else {
 					statusCode = HandlerUtil.infoJSONResponse(HttpServletResponse.SC_BAD_REQUEST, MISSING_SERIES_IUID_MESSAGE,
@@ -85,69 +83,10 @@ public class DICOMSeriesOrderHandler extends AbstractHandler
 		httpResponse.setStatus(statusCode);
 	}
 
-	private void peformDICOMSeriesDescriptionQuery(PrintWriter outputStream, String seriesIUID)
-	{
-		EpadQueries databaseOperations = EpadDatabase.getInstance().getDatabaseOperations();
-		List<Map<String, String>> orderQueryEntries = databaseOperations.getDicomSeriesOrder(seriesIUID);
-		List<DicomImageDescriptionSearchResult> imageDescriptions = new ArrayList<DicomImageDescriptionSearchResult>();
-
-		log.info("DICOMSeriesOrderHandler for series " + seriesIUID);
-
-		for (Map<String, String> entry : orderQueryEntries) {
-			String imageUID = entry.get("sop_iuid");
-			String fileName = createFileNameField(imageUID);
-			String instanceNumberString = entry.get("inst_no");
-			int instanceNumber = getInstanceNumber(instanceNumberString, seriesIUID, imageUID);
-			String sliceLocation = createSliceLocation(entry); // entry.get("inst_custom1");
-			String contentTime = "null"; // TODO Can we find this somewhere?
-
-			DicomImageDescriptionSearchResult dicomImageDescription = new DicomImageDescriptionSearchResult(fileName,
-					instanceNumber, sliceLocation, contentTime);
-			imageDescriptions.add(dicomImageDescription);
-		}
-		DICOMSeriesDescriptionSearchResult dicomSeriesDescriptionSearchResult = new DICOMSeriesDescriptionSearchResult(
-				imageDescriptions);
-		outputStream.print(dicomSeriesDescriptionSearchResult2JSON(dicomSeriesDescriptionSearchResult));
-	}
-
-	private int getInstanceNumber(String instanceNumberString, String seriesIUID, String imageUID)
-	{
-		if (instanceNumberString != null)
-			try {
-				return Integer.parseInt(instanceNumberString);
-			} catch (NumberFormatException e) {
-				log.warning("Invalid instance number " + instanceNumberString + " in image " + imageUID + " in series "
-						+ seriesIUID);
-				return 1; // Invalid instance number; default to 1
-			}
-		else
-			return 1; // Missing instance number; default to 1.
-	}
-
-	private String createSliceLocation(Map<String, String> entry)
-	{
-		String sliceLoc = entry.get("inst_custom1");
-		if (sliceLoc == null)
-			return "0.0";
-		else
-			return sliceLoc;
-	}
-
-	/**
-	 * 
-	 * @param sopInstanceUID String
-	 * @return String
-	 */
-	private String createFileNameField(String sopInstanceUID)
-	{
-		return DicomFormatUtil.formatUidToDir(sopInstanceUID) + ".dcm";
-	}
-
-	private String dicomSeriesDescriptionSearchResult2JSON(
-			DICOMSeriesDescriptionSearchResult dicomSeriesDescriptionSearchResult)
+	private String dicomSeriesDescription2JSON(DICOMSeriesDescription dicomSeriesDescription)
 	{
 		Gson gson = new Gson();
 
-		return gson.toJson(dicomSeriesDescriptionSearchResult);
+		return gson.toJson(dicomSeriesDescription);
 	}
 }

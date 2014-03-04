@@ -185,7 +185,6 @@ public class Main
 		addHandlerAtContextPath(new XNATProjectHandler(), "/epad/projects", handlerList);
 		addHandlerAtContextPath(new XNATSubjectHandler(), "/epad/subjects", handlerList);
 		addHandlerAtContextPath(new ServerStatusHandler(), "/epad/status", handlerList);
-		addHandlerAtContextPath(new ImageCheckHandler(), "/epad/imagecheck", handlerList);
 		addHandlerAtContextPath(new DICOMReprocessingHandler(), "/epad/imagereprocess", handlerList);
 		addHandlerAtContextPath(new CoordinationHandler(), "/epad/coordination", handlerList);
 		addHandlerAtContextPath(new DICOMSearchHandler(), "/epad/searchj", handlerList);
@@ -200,6 +199,7 @@ public class Main
 		addHandlerAtContextPath(new EventHandler(), "/epad/eventresource", handlerList);
 		addHandlerAtContextPath(new ProjectEventHandler(), "/epad/events", handlerList);
 		addHandlerAtContextPath(new EPadPluginHandler(), "/epad/plugin", handlerList);
+		addHandlerAtContextPath(new ImageCheckHandler(), "/epad/imagecheck", handlerList);
 
 		addWebAppAtContextPath(handlerList, "ePad.war", "/epad");
 
