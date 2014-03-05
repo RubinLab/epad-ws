@@ -20,16 +20,18 @@ import edu.stanford.isis.epad.common.query.EPADImage;
 import edu.stanford.isis.epad.common.query.EPADSeries;
 import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epadws.dcm4chee.Dcm4CheeDatabaseCommands;
+import edu.stanford.isis.epadws.dcm4chee.Dcm4CheeDatabaseOperations;
 import edu.stanford.isis.epadws.dcm4chee.Dcm4CheeStudyQueryBuilder;
 import edu.stanford.isis.epadws.epaddb.ConnectionPool;
 import edu.stanford.isis.epadws.epaddb.DatabaseUtils;
 import edu.stanford.isis.epadws.epaddb.EpadDatabase;
 import edu.stanford.isis.epadws.epaddb.EpadDatabaseCommands;
+import edu.stanford.isis.epadws.epaddb.EpadDatabaseOperations;
 import edu.stanford.isis.epadws.handlers.coordination.Term;
 import edu.stanford.isis.epadws.processing.model.PngProcessingStatus;
 import edu.stanford.isis.epadws.processing.pipeline.watcher.Dcm4CheeDatabaseWatcher;
 
-public class EpadDatabaseQueries implements EpadQueries
+public class EpadDatabaseQueries implements EpadQueries, EpadDatabaseOperations, Dcm4CheeDatabaseOperations
 {
 	private static final EPADLogger log = EPADLogger.getInstance();
 
@@ -45,9 +47,7 @@ public class EpadDatabaseQueries implements EpadQueries
 	{
 		EpadQueries databaseOperations = EpadDatabase.getInstance().getDatabaseOperations();
 		List<Map<String, String>> orderQueryEntries = databaseOperations.getDicomSeriesOrder(seriesIUID);
-		List<EPADImage> imageDescriptions = new ArrayList<EPADImage>();
-
-		log.info("DICOMSeriesOrderHandler for series " + seriesIUID);
+		List<EPADImage> epadImageList = new ArrayList<EPADImage>();
 
 		for (Map<String, String> entry : orderQueryEntries) {
 			String imageUID = entry.get("sop_iuid");
@@ -57,11 +57,11 @@ public class EpadDatabaseQueries implements EpadQueries
 			String sliceLocation = createSliceLocation(entry); // entry.get("inst_custom1");
 			String contentTime = "null"; // TODO Can we find this somewhere?
 
-			EPADImage dicomImageDescription = new EPADImage(fileName, instanceNumber, sliceLocation, contentTime);
-			imageDescriptions.add(dicomImageDescription);
+			EPADImage epadImage = new EPADImage(fileName, instanceNumber, sliceLocation, contentTime);
+			epadImageList.add(epadImage);
 		}
-		EPADSeries dicomSeriesDescriptionSearchResult = new EPADSeries(imageDescriptions);
-		return dicomSeriesDescriptionSearchResult;
+		EPADSeries epadSeries = new EPADSeries(epadImageList);
+		return epadSeries;
 	}
 
 	@Override

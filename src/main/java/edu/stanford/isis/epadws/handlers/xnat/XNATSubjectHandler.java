@@ -20,6 +20,7 @@ import org.eclipse.jetty.server.handler.AbstractHandler;
 import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epad.common.util.JsonHelper;
 import edu.stanford.isis.epadws.handlers.HandlerUtil;
+import edu.stanford.isis.epadws.xnat.XNATQueryUtil;
 import edu.stanford.isis.epadws.xnat.XNATSessionOperations;
 import edu.stanford.isis.epadws.xnat.XNATUtil;
 
@@ -72,7 +73,7 @@ public class XNATSubjectHandler extends AbstractHandler
 	private int invokeXNATSubjectService(String base, HttpServletRequest httpRequest, HttpServletResponse httpResponse,
 			OutputStream responseStream) throws IOException
 	{
-		String xnatURL = XNATUtil.buildSubjectsURL(base);
+		String xnatURL = XNATQueryUtil.buildSubjectsURL(base);
 		HttpClient client = new HttpClient();
 		String jsessionID = XNATUtil.getJSessionIDFromRequest(httpRequest);
 		String queryString = httpRequest.getQueryString();

@@ -21,6 +21,7 @@ import edu.stanford.isis.epad.common.query.XNATProject;
 import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epad.common.util.JsonHelper;
 import edu.stanford.isis.epadws.handlers.HandlerUtil;
+import edu.stanford.isis.epadws.xnat.XNATQueryUtil;
 import edu.stanford.isis.epadws.xnat.XNATSessionOperations;
 import edu.stanford.isis.epadws.xnat.XNATUtil;
 
@@ -76,7 +77,7 @@ public class XNATProjectHandler extends AbstractHandler
 	private int invokeXNATProjectService(String base, HttpServletRequest httpRequest, HttpServletResponse httpResponse,
 			OutputStream responseStream) throws IOException
 	{
-		String xnatProjectURL = XNATUtil.buildProjectsURL(base);
+		String xnatProjectURL = XNATQueryUtil.buildProjectsURL(base);
 		HttpClient client = new HttpClient();
 		String jsessionID = XNATUtil.getJSessionIDFromRequest(httpRequest);
 		String queryString = httpRequest.getQueryString();
