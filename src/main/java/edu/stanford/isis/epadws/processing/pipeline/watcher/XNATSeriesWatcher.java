@@ -21,7 +21,6 @@ import edu.stanford.isis.epadws.xnat.XNATUtil;
  * series.
  * 
  * @author martin
- * 
  */
 public class XNATSeriesWatcher implements Runnable
 {
@@ -53,7 +52,8 @@ public class XNATSeriesWatcher implements Runnable
 	{
 		while (!shutdownSignal.hasShutdown()) {
 			try {
-				DicomSeriesProcessingDescription dicomSeriesDescription = xnatSeriesWatcherQueue.poll(5000, TimeUnit.MILLISECONDS);
+				DicomSeriesProcessingDescription dicomSeriesDescription = xnatSeriesWatcherQueue.poll(5000,
+						TimeUnit.MILLISECONDS);
 
 				if (dicomSeriesDescription != null) {
 					String dicomStudyIUID = dicomSeriesDescription.getStudyIUID();
@@ -76,9 +76,11 @@ public class XNATSeriesWatcher implements Runnable
 			String dicomStudyUID)
 	{
 		if (updateSessionID()) {
-			XNATCreationOperations.createXNATSubjectFromDICOMPatient(xnatProjectID, xnatSubjectLabel, dicomPatientName, jsessionID);
+			XNATCreationOperations.createXNATSubjectFromDICOMPatient(xnatProjectID, xnatSubjectLabel, dicomPatientName,
+					jsessionID);
 
-			XNATCreationOperations.createXNATExperimentFromDICOMStudy(xnatProjectID, xnatSubjectLabel, dicomStudyUID, jsessionID);
+			XNATCreationOperations.createXNATExperimentFromDICOMStudy(xnatProjectID, xnatSubjectLabel, dicomStudyUID,
+					jsessionID);
 		} else {
 			logger.warning("Could not log into XNAT to upload DICOM study " + dicomStudyUID);
 		}

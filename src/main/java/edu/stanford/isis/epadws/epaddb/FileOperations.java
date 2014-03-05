@@ -92,7 +92,7 @@ public class FileOperations
 		File dirToDelete = new File(outputPath.toString());
 		boolean success = delete(dirToDelete);
 
-		log.info("Deleting the PNG for series at " + outputPath.toString() + " success = " + success);
+		log.info("Deleting the PNG for series at " + outputPath.toString() + "; success = " + success);
 	}
 
 	private static boolean delete(File file) throws IOException
@@ -123,7 +123,7 @@ public class FileOperations
 			String fileSize = epadFilesTable.get("file_size");
 			return Integer.parseInt(fileSize);
 		} catch (Exception e) {
-			log.warning("Failed to get file.", e);
+			log.warning("Failed to get file", e);
 			return 0;
 		}
 	}
