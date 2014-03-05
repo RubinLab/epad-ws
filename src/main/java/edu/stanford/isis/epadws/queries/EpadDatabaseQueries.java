@@ -16,8 +16,8 @@ import java.util.Set;
 import edu.stanford.isis.epad.common.dicom.DicomFormatUtil;
 import edu.stanford.isis.epad.common.dicom.DicomParentCache;
 import edu.stanford.isis.epad.common.dicom.DicomParentType;
-import edu.stanford.isis.epad.common.query.EPADImage;
-import edu.stanford.isis.epad.common.query.EPADSeries;
+import edu.stanford.isis.epad.common.query.EPADDatabaseImage;
+import edu.stanford.isis.epad.common.query.EPADDatabaseSeries;
 import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epadws.dcm4chee.Dcm4CheeDatabaseCommands;
 import edu.stanford.isis.epadws.dcm4chee.Dcm4CheeDatabaseOperations;
@@ -43,11 +43,11 @@ public class EpadDatabaseQueries implements EpadQueries, EpadDatabaseOperations,
 	}
 
 	@Override
-	public EPADSeries peformEPADSeriesQuery(String seriesIUID)
+	public EPADDatabaseSeries peformEPADSeriesQuery(String seriesIUID)
 	{
 		EpadQueries databaseOperations = EpadDatabase.getInstance().getDatabaseOperations();
 		List<Map<String, String>> orderQueryEntries = databaseOperations.getDicomSeriesOrder(seriesIUID);
-		List<EPADImage> epadImageList = new ArrayList<EPADImage>();
+		List<EPADDatabaseImage> epadImageList = new ArrayList<EPADDatabaseImage>();
 
 		for (Map<String, String> entry : orderQueryEntries) {
 			String imageUID = entry.get("sop_iuid");
@@ -57,10 +57,10 @@ public class EpadDatabaseQueries implements EpadQueries, EpadDatabaseOperations,
 			String sliceLocation = createSliceLocation(entry); // entry.get("inst_custom1");
 			String contentTime = "null"; // TODO Can we find this somewhere?
 
-			EPADImage epadImage = new EPADImage(fileName, instanceNumber, sliceLocation, contentTime);
+			EPADDatabaseImage epadImage = new EPADDatabaseImage(fileName, instanceNumber, sliceLocation, contentTime);
 			epadImageList.add(epadImage);
 		}
-		EPADSeries epadSeries = new EPADSeries(epadImageList);
+		EPADDatabaseSeries epadSeries = new EPADDatabaseSeries(epadImageList);
 		return epadSeries;
 	}
 
