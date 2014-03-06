@@ -55,21 +55,35 @@ public class XNATSeriesWatcher implements Runnable
 				DicomSeriesProcessingDescription dicomSeriesDescription = xnatSeriesWatcherQueue.poll(5000,
 						TimeUnit.MILLISECONDS);
 
-				if (dicomSeriesDescription != null) {
-					String dicomStudyIUID = dicomSeriesDescription.getStudyIUID();
-					String dicomPatientID = dicomSeriesDescription.getPatientID();
-					String dicomPatientName = dicomSeriesDescription.getPatientName();
-					String xnatSubjectLabel = XNATUtil.dicomPatientID2XNATSubjectLabel(dicomPatientID);
+				validateDICOMSeriesProcessingDescription(dicomSeriesDescription);
 
-					logger.info("XNAT series watcher found new DICOM study " + dicomStudyIUID + " for patient "
-							+ dicomPatientName + " with ID " + dicomPatientID);
+				String dicomStudyIUID = dicomSeriesDescription.getStudyIUID();
+				String dicomPatientID = dicomSeriesDescription.getPatientID();
+				String dicomPatientName = dicomSeriesDescription.getPatientName();
 
-					createXNATStudy(xnatUploadProjectID, xnatSubjectLabel, dicomPatientName, dicomStudyIUID);
-				}
+				String xnatSubjectLabel = XNATUtil.dicomPatientID2XNATSubjectLabel(dicomPatientID);
+
+				logger.info("XNAT series watcher found new DICOM study " + dicomStudyIUID + " for patient " + dicomPatientName
+						+ " with ID " + dicomPatientID);
+
+				createXNATStudy(xnatUploadProjectID, xnatSubjectLabel, dicomPatientName, dicomStudyIUID);
 			} catch (Exception e) {
 				logger.warning("Exception in XNAT series watcher thread", e);
 			}
 		}
+	}
+
+	private void validateDICOMSeriesProcessingDescription(DicomSeriesProcessingDescription dicomSeriesDescription)
+			throws IllegalArgumentException
+	{
+		if (dicomSeriesDescription == null)
+			throw new IllegalArgumentException("Missing series description");
+		if (dicomSeriesDescription.getSeriesUID().length() == 0)
+			throw new IllegalArgumentException("Missing series IUID in series description");
+		if (dicomSeriesDescription.getPatientID().length() == 0)
+			throw new IllegalArgumentException("Missing  patient ID in series description");
+		if (dicomSeriesDescription.getPatientName().length() == 0)
+			throw new IllegalArgumentException("Missing patient name in series description");
 	}
 
 	private void createXNATStudy(String xnatProjectID, String xnatSubjectLabel, String dicomPatientName,
