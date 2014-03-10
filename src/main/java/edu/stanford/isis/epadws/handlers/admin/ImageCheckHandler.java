@@ -7,6 +7,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -15,9 +16,13 @@ import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 
 import edu.stanford.isis.epad.common.util.EPADLogger;
+import edu.stanford.isis.epadws.dcm4chee.Dcm4CheeDatabase;
+import edu.stanford.isis.epadws.dcm4chee.Dcm4CheeDatabaseOperations;
 import edu.stanford.isis.epadws.epaddb.EpadDatabase;
+import edu.stanford.isis.epadws.epaddb.EpadDatabaseOperations;
 import edu.stanford.isis.epadws.handlers.HandlerUtil;
 import edu.stanford.isis.epadws.processing.pipeline.watcher.QueueAndWatcherManager;
+import edu.stanford.isis.epadws.queries.DefaultEpadQueries;
 import edu.stanford.isis.epadws.queries.EpadQueries;
 import edu.stanford.isis.epadws.xnat.XNATSessionOperations;
 
@@ -73,8 +78,11 @@ public class ImageCheckHandler extends AbstractHandler
 
 	private void verifyImageGeneration(PrintWriter responseStream) throws SQLException, IOException
 	{
-		final EpadQueries databaseOperations = EpadDatabase.getInstance().getDatabaseOperations();
-		final List<String> seriesIUIDs = databaseOperations.getNewDicomSeries();
+		EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
+		Dcm4CheeDatabaseOperations dcm4CheeDatabaseOperations = Dcm4CheeDatabase.getInstance()
+				.getDcm4CheeDatabaseOperations();
+		EpadQueries epadQueries = DefaultEpadQueries.getInstance();
+		Set<String> seriesIUIDs = dcm4CheeDatabaseOperations.getNewDicomSeries();
 		List<Map<String, String>> allUnprocessedDICOMImageFileDescriptions = new ArrayList<Map<String, String>>();
 
 		int numberOfSeriesWithMissingEPADDatabaseEntry = 0;
@@ -83,7 +91,7 @@ public class ImageCheckHandler extends AbstractHandler
 		// Verify that each image in a DICOM series in DCM4CHEE has an entry for a generated PNG file in the ePAD database,
 		// which indicates that the images existence was detected. We then detect that the PNG file itself exists.
 		for (String seriesIUID : seriesIUIDs) {
-			final List<Map<String, String>> unprocessedDICOMImageFileDescriptionsInSeries = databaseOperations
+			final List<Map<String, String>> unprocessedDICOMImageFileDescriptionsInSeries = epadQueries
 					.getUnprocessedDicomImageFileDescriptionsForSeries(seriesIUID);
 			final int numberOfUnprocessedImages = unprocessedDICOMImageFileDescriptionsInSeries.size();
 
@@ -99,7 +107,7 @@ public class ImageCheckHandler extends AbstractHandler
 		// Verify existence of all PNG files listed in the ePAD database (in epaddb.epad_files table).
 		// TODO: DICOM segmentation objects will not have PNGs. How to test? Tags should have indication.
 		// See: PixelMedUtils.isDicomSegmentationObject(inputDICOMFilePath)
-		List<String> pngFileNames = databaseOperations.selectEpadFilePath();
+		List<String> pngFileNames = epadDatabaseOperations.selectEpadFilePath();
 		// out.write("The following PNG files listed in ePAD database do not exist in the file system:\n");
 		for (String pngFileName : pngFileNames) {
 			File pngFile = new File(pngFileName);

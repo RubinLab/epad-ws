@@ -15,8 +15,8 @@ import edu.stanford.isis.epad.common.util.EPADFileUtils;
 import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epadws.dcm4chee.Dcm4CheeDatabaseUtils;
 import edu.stanford.isis.epadws.epaddb.EpadDatabase;
+import edu.stanford.isis.epadws.epaddb.EpadDatabaseOperations;
 import edu.stanford.isis.epadws.processing.model.PngProcessingStatus;
-import edu.stanford.isis.epadws.queries.EpadQueries;
 
 /**
  * Generate a PNG file from a DICOM file.
@@ -44,7 +44,7 @@ public class PngGeneratorTask implements GeneratorTask
 
 	private void writePackedPNGs()
 	{
-		EpadQueries databaseOperations = EpadDatabase.getInstance().getDatabaseOperations();
+		EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
 		File inputDICOMFile = dicomInputFile;
 		File outputPNGFile = pngOutputFile;
 		Map<String, String> epadFilesTable = new HashMap<String, String>();
@@ -65,21 +65,22 @@ public class PngGeneratorTask implements GeneratorTask
 			epadFilesTable = Dcm4CheeDatabaseUtils.createEPadFilesTableData(outputPNGFile);
 			logger.info("PngGeneratorTask: PNG file size: " + getFileSize(epadFilesTable));
 
-			databaseOperations.updateEpadFile(epadFilesTable.get("file_path"), PngProcessingStatus.DONE,
+			epadDatabaseOperations.updateEpadFileRecord(epadFilesTable.get("file_path"), PngProcessingStatus.DONE,
 					getFileSize(epadFilesTable), "");
 		} catch (FileNotFoundException e) {
 			logger.info("III");
 			logger.warning("Warning: failed to create packed PNG for: " + inputDICOMFile.getAbsolutePath(), e);
-			databaseOperations.updateEpadFile(epadFilesTable.get("file_path"), PngProcessingStatus.ERROR, 0,
+			epadDatabaseOperations.updateEpadFileRecord(epadFilesTable.get("file_path"), PngProcessingStatus.ERROR, 0,
 					"Dicom file not found.");
 		} catch (IOException e) {
 			logger.info("VVV");
 			logger.warning("Warning: failed to create packed PNG for: " + inputDICOMFile.getAbsolutePath(), e);
-			databaseOperations.updateEpadFile(epadFilesTable.get("file_path"), PngProcessingStatus.ERROR, 0, "IO Error.");
+			epadDatabaseOperations.updateEpadFileRecord(epadFilesTable.get("file_path"), PngProcessingStatus.ERROR, 0,
+					"IO Error.");
 		} catch (Throwable t) {
 			logger.info("YYY");
 			logger.warning("Warning: failed to create packed PNG for: " + inputDICOMFile.getAbsolutePath(), t);
-			databaseOperations.updateEpadFile(epadFilesTable.get("file_path"), PngProcessingStatus.ERROR, 0,
+			epadDatabaseOperations.updateEpadFileRecord(epadFilesTable.get("file_path"), PngProcessingStatus.ERROR, 0,
 					"General Exception: " + t.getMessage());
 		} finally {
 			if (inputDICOMFile.getName().endsWith(".tmp")) {

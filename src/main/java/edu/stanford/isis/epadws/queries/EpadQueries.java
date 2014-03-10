@@ -4,15 +4,15 @@ import java.util.List;
 import java.util.Map;
 
 import edu.stanford.isis.epad.common.query.EPADDatabaseSeries;
-import edu.stanford.isis.epadws.dcm4chee.Dcm4CheeDatabaseOperations;
-import edu.stanford.isis.epadws.epaddb.EpadDatabaseOperations;
 
 /**
  * 
  * @author martin
  */
-public interface EpadQueries extends EpadDatabaseOperations, Dcm4CheeDatabaseOperations
+public interface EpadQueries
 {
+	List<Map<String, String>> getDicomSeriesForStatus(int statusCode);
+
 	EPADDatabaseSeries peformEPADSeriesQuery(String seriesIUID);
 
 	/**

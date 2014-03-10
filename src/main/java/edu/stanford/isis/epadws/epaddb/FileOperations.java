@@ -10,10 +10,11 @@ import edu.stanford.isis.epad.common.dicom.DicomFormatUtil;
 import edu.stanford.isis.epad.common.util.EPADFileUtils;
 import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epad.common.util.EPADResources;
+import edu.stanford.isis.epadws.dcm4chee.Dcm4CheeDatabase;
+import edu.stanford.isis.epadws.dcm4chee.Dcm4CheeDatabaseOperations;
 import edu.stanford.isis.epadws.dcm4chee.Dcm4CheeDatabaseUtils;
 import edu.stanford.isis.epadws.processing.model.PNGGridGenerator;
 import edu.stanford.isis.epadws.processing.model.PngProcessingStatus;
-import edu.stanford.isis.epadws.queries.EpadQueries;
 
 /**
  * Operations on files maintained by ePAD
@@ -47,7 +48,7 @@ public class FileOperations
 
 	public static void writePNGGridFile(File pngInputFile, List<File> inputPNGGridFiles, File outputPNGFile)
 	{
-		EpadQueries databaseOperations = EpadDatabase.getInstance().getDatabaseOperations();
+		EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
 		Map<String, String> epadFilesTable = new HashMap<String, String>();
 		try {
 			log.info("PNGGridGeneratorTask: creating PNG grid file: " + outputPNGFile.getAbsolutePath());
@@ -61,15 +62,16 @@ public class FileOperations
 			if (success) {
 				log.info("Finished writing PNG grid file: " + outputPNGFile);
 				int fileSize = getFileSize(epadFilesTable);
-				databaseOperations.updateEpadFile(epadFilesTable.get("file_path"), PngProcessingStatus.DONE, fileSize, "");
+				epadDatabaseOperations.updateEpadFileRecord(epadFilesTable.get("file_path"), PngProcessingStatus.DONE,
+						fileSize, "");
 			} else {
 				log.info("Failed to create grid PNG file: " + outputPNGFile.getAbsolutePath());
-				databaseOperations.updateEpadFile(epadFilesTable.get("file_path"), PngProcessingStatus.ERROR, 0,
+				epadDatabaseOperations.updateEpadFileRecord(epadFilesTable.get("file_path"), PngProcessingStatus.ERROR, 0,
 						"Error generating grid");
 			}
 		} catch (Exception e) {
 			log.warning("Failed to create grid PNG file: " + outputPNGFile.getAbsolutePath(), e);
-			databaseOperations.updateEpadFile(epadFilesTable.get("file_path"), PngProcessingStatus.ERROR, 0,
+			epadDatabaseOperations.updateEpadFileRecord(epadFilesTable.get("file_path"), PngProcessingStatus.ERROR, 0,
 					"General Exception: " + e.getMessage());
 		}
 	}
@@ -82,8 +84,8 @@ public class FileOperations
 	 */
 	public static void deletePNGforSeries(String seriesUID) throws Exception
 	{
-		EpadQueries databaseOperations = EpadDatabase.getInstance().getDatabaseOperations();
-		String studyUID = databaseOperations.getDicomStudyUIDForSeries(seriesUID);
+		Dcm4CheeDatabaseOperations dcm4CheeDatabaseOperations = Dcm4CheeDatabase.getInstance().getDcm4CheeDatabaseOperations();
+		String studyUID = dcm4CheeDatabaseOperations.getDicomStudyUIDForSeries(seriesUID);
 		StringBuilder outputPath = new StringBuilder();
 		outputPath.append(EPADResources.getEPADWebServerPNGDir());
 		outputPath.append(DicomFormatUtil.formatUidToDir(studyUID)).append("/");

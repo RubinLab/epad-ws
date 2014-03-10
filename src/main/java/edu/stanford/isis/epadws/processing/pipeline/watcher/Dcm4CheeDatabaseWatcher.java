@@ -5,9 +5,13 @@ import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 
 import edu.stanford.isis.epad.common.util.EPADLogger;
+import edu.stanford.isis.epadws.dcm4chee.Dcm4CheeDatabase;
+import edu.stanford.isis.epadws.dcm4chee.Dcm4CheeDatabaseOperations;
 import edu.stanford.isis.epadws.epaddb.EpadDatabase;
+import edu.stanford.isis.epadws.epaddb.EpadDatabaseOperations;
 import edu.stanford.isis.epadws.processing.model.DicomSeriesProcessingDescription;
 import edu.stanford.isis.epadws.processing.pipeline.threads.ShutdownSignal;
+import edu.stanford.isis.epadws.queries.DefaultEpadQueries;
 import edu.stanford.isis.epadws.queries.EpadQueries;
 
 /**
@@ -34,23 +38,26 @@ public class Dcm4CheeDatabaseWatcher implements Runnable
 	public void run()
 	{
 		ShutdownSignal signal = ShutdownSignal.getInstance();
-		EpadQueries databaseOperations = EpadDatabase.getInstance().getDatabaseOperations();
+		EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
+		Dcm4CheeDatabaseOperations dcm4CheeDatabaseOperations = Dcm4CheeDatabase.getInstance()
+				.getDcm4CheeDatabaseOperations();
+		EpadQueries epadQueries = DefaultEpadQueries.getInstance();
 
 		while (!signal.hasShutdown()) {
 			try {
-				List<Map<String, String>> series = databaseOperations.getDicomSeriesForStatus(0);
+				List<Map<String, String>> series = epadQueries.getDicomSeriesForStatus(0);
 
 				for (Map<String, String> currSeries : series) {
 					String seriesIUid = currSeries.get("series_iuid");
-					String studyIUID = databaseOperations.getDicomStudyUIDForSeries(seriesIUid);
-					Map<String, String> patient = databaseOperations.getPatientForDicomStudy(studyIUID);
+					String studyIUID = dcm4CheeDatabaseOperations.getDicomStudyUIDForSeries(seriesIUid);
+					Map<String, String> patient = dcm4CheeDatabaseOperations.getPatientForDicomStudy(studyIUID);
 					String patientName = patient.get("pat_name");
 					String patientID = patient.get("pat_id");
 					String seriesDesc = currSeries.get("series_desc");
 					String numInstances = currSeries.get("num_instances");
-					DicomSeriesProcessingDescription dicomSeriesDescription = new DicomSeriesProcessingDescription(Integer.parseInt(numInstances),
-							seriesIUid, studyIUID, patientName, patientID);
-					databaseOperations.updateDicomSeriesStatusCode(325, seriesIUid);
+					DicomSeriesProcessingDescription dicomSeriesDescription = new DicomSeriesProcessingDescription(
+							Integer.parseInt(numInstances), seriesIUid, studyIUID, patientName, patientID);
+					epadDatabaseOperations.updateDicomSeriesStatusCode(325, seriesIUid);
 					submitSeriesForPngGeneration(dicomSeriesDescription); // Submit this series to generate all the PNG files.
 					submitSeriesForXNATGeneration(dicomSeriesDescription); // Submit this series to generate XNAT information.
 

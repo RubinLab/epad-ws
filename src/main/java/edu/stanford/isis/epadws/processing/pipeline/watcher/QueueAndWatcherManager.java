@@ -15,15 +15,17 @@ import edu.stanford.isis.epad.common.util.EPADConfig;
 import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epad.common.util.EPADResources;
 import edu.stanford.isis.epad.common.util.EPADTools;
+import edu.stanford.isis.epadws.dcm4chee.Dcm4CheeDatabase;
+import edu.stanford.isis.epadws.dcm4chee.Dcm4CheeDatabaseOperations;
 import edu.stanford.isis.epadws.dcm4chee.Dcm4CheeDatabaseUtils;
 import edu.stanford.isis.epadws.epaddb.EpadDatabase;
+import edu.stanford.isis.epadws.epaddb.EpadDatabaseOperations;
 import edu.stanford.isis.epadws.processing.model.DicomSeriesProcessingDescription;
 import edu.stanford.isis.epadws.processing.model.PngProcessingStatus;
 import edu.stanford.isis.epadws.processing.pipeline.process.PngGeneratorProcess;
 import edu.stanford.isis.epadws.processing.pipeline.task.DicomSegmentationObjectPNGMaskGeneratorTask;
 import edu.stanford.isis.epadws.processing.pipeline.task.GeneratorTask;
 import edu.stanford.isis.epadws.processing.pipeline.task.PngGeneratorTask;
-import edu.stanford.isis.epadws.queries.EpadQueries;
 
 public class QueueAndWatcherManager
 {
@@ -92,7 +94,7 @@ public class QueueAndWatcherManager
 	// Each entry in list is map with keys: sop_iuid, inst_no, series_iuid, filepath, file_size.
 	public void addToPNGGeneratorTaskPipeline(List<Map<String, String>> dicomImageFileDescriptions)
 	{
-		EpadQueries databaseOperations = EpadDatabase.getInstance().getDatabaseOperations();
+		EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
 
 		for (Map<String, String> dicomImageDescription : dicomImageFileDescriptions) {
 			String inputDICOMFilePath = getInputFilePath(dicomImageDescription); // Get the input file path.
@@ -108,7 +110,7 @@ public class QueueAndWatcherManager
 				}
 			}
 			String outputPNGFilePath = createOutputPNGFilePathForDicomImage(dicomImageDescription);
-			if (!databaseOperations.hasEpadFile(outputPNGFilePath)) {
+			if (!epadDatabaseOperations.hasEpadFileRecord(outputPNGFilePath)) {
 				if (PixelMedUtils.isDicomSegmentationObject(inputDICOMFilePath)) { // Generate slices of PNG mask
 					processDicomSegmentationObject(outputPNGFilePath, inputDICOMFilePath);
 				} else { // Generate PNG file.
@@ -163,17 +165,17 @@ public class QueueAndWatcherManager
 	private void createPNGFileForDICOMImage(String outputPNGFilePath, File inputDICOMFile)
 	{
 		File outputPNGFile = new File(outputPNGFilePath);
-		EpadQueries databaseOperations = EpadDatabase.getInstance().getDatabaseOperations();
-		insertEpadFile(databaseOperations, outputPNGFile);
+		EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
+		insertEpadFile(epadDatabaseOperations, outputPNGFile);
 		PngGeneratorTask pngTask = new PngGeneratorTask(inputDICOMFile, outputPNGFile);
 		pngGeneratorTaskQueue.offer(pngTask);
 	}
 
-	private void insertEpadFile(EpadQueries databaseOperations, File outputPNGFile)
+	private void insertEpadFile(EpadDatabaseOperations epadDatabaseOperations, File outputPNGFile)
 	{
 		Map<String, String> epadFilesTable = Dcm4CheeDatabaseUtils.createEPadFilesTableData(outputPNGFile);
 		epadFilesTable.put("file_status", "" + PngProcessingStatus.IN_PIPELINE.getCode());
-		databaseOperations.insertEpadFile(epadFilesTable);
+		epadDatabaseOperations.insertEpadFileRecord(epadFilesTable);
 	}
 
 	/**
@@ -184,8 +186,9 @@ public class QueueAndWatcherManager
 	private String createOutputPNGFilePathForDicomImage(Map<String, String> dicomImageDescription)
 	{
 		String seriesIUID = dicomImageDescription.get("series_iuid");
-		EpadQueries databaseOperations = EpadDatabase.getInstance().getDatabaseOperations();
-		String studyUID = databaseOperations.getDicomStudyUIDForSeries(seriesIUID);
+		Dcm4CheeDatabaseOperations dcm4CheeDatabaseOperations = Dcm4CheeDatabase.getInstance()
+				.getDcm4CheeDatabaseOperations();
+		String studyUID = dcm4CheeDatabaseOperations.getDicomStudyUIDForSeries(seriesIUID);
 		String imageUID = dicomImageDescription.get("sop_iuid");
 		StringBuilder outputPath = new StringBuilder();
 

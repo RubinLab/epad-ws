@@ -3,6 +3,7 @@ package edu.stanford.isis.epadws.epaddb;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import edu.stanford.isis.epadws.handlers.coordination.CoordinationHandler;
 import edu.stanford.isis.epadws.handlers.coordination.Term;
@@ -16,10 +17,6 @@ import edu.stanford.isis.epadws.processing.model.PngProcessingStatus;
  */
 public interface EpadDatabaseOperations
 {
-	List<Map<String, String>> getDicomSeriesForStatus(int statusCode);
-
-	String[] retrieveDicomStudySeriesAndImageIDs(String imageUID);
-
 	Map<String, String> getDicomSeriesById(String seriesIUID);
 
 	void deleteDicomStudy(String uid);
@@ -28,22 +25,32 @@ public interface EpadDatabaseOperations
 
 	void updateDicomSeriesStatusCode(int newStatusCode, String seriesIUID);
 
-	void insertEpadFile(Map<String, String> data);
-
-	boolean hasEpadFile(String filePath);
-
-	void updateEpadFile(String filePath, PngProcessingStatus newStatus, int fileSize, String errorMsg);
-
-	String selectEpadFilePathLike(String sopInstanceUID);
-
-	List<String> selectEpadFilePath();
-
 	void insertEpadEvent(String sessionID, String event_status, String aim_uid, String aim_name, String patient_id,
 			String patient_name, String template_id, String template_name, String plugin_name);
 
 	List<Map<String, String>> getEpadEventsForSessionID(String sessionID);
 
 	void forceDICOMReprocessing();
+
+	// Database recording of PNG files generated from DICOM images
+
+	void insertEpadFileRecord(Map<String, String> data);
+
+	boolean hasEpadFileRecord(String filePath);
+
+	void updateEpadFileRecord(String filePath, PngProcessingStatus newStatus, int fileSize, String errorMsg);
+
+	String selectEpadFilePathLike(String sopInstanceUID);
+
+	List<String> selectEpadFilePath();
+
+	String[] retrieveDicomStudySeriesAndImageIDs(String imageUID);
+
+	Set<String> getAllSeriesFromEPadDatabase();
+
+	List<String> getFinishedDICOMImageInstanceIDsForSeriesFromEPadDatabase(String seriesIUID);
+
+	// Coordination methods; will disappear with AIM 4
 
 	/**
 	 * Return the key of a {@link Term}.

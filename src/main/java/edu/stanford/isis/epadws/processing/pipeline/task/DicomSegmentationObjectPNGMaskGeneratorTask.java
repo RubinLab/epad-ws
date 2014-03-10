@@ -48,8 +48,8 @@ import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epad.common.util.EPADResources;
 import edu.stanford.isis.epadws.dcm4chee.Dcm4CheeDatabaseUtils;
 import edu.stanford.isis.epadws.epaddb.EpadDatabase;
+import edu.stanford.isis.epadws.epaddb.EpadDatabaseOperations;
 import edu.stanford.isis.epadws.processing.model.PngProcessingStatus;
-import edu.stanford.isis.epadws.queries.EpadQueries;
 
 /**
  * This task generates DICOM Segmentation Objects.
@@ -108,7 +108,7 @@ public class DicomSegmentationObjectPNGMaskGeneratorTask implements GeneratorTas
 			File repDest = new File(baseDicomDirectory + studyId + "/" + seriesId + "/");
 			repDest.mkdirs();
 
-			EpadQueries databaseOperations = EpadDatabase.getInstance().getDatabaseOperations();
+			EpadDatabaseOperations databaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
 			logger.info("Writing DSO PNG masks...");
 
 			for (int i = 0; i < count; i++) { // Create the mask images
@@ -119,7 +119,7 @@ public class DicomSegmentationObjectPNGMaskGeneratorTask implements GeneratorTas
 				try {
 					insertEpadFile(databaseOperations, sourceFile);
 					ImageIO.write(sourceWithTransparency, "png", sourceFile);
-					databaseOperations.updateEpadFile(pngUrl, PngProcessingStatus.DONE, 77, "");
+					databaseOperations.updateEpadFileRecord(pngUrl, PngProcessingStatus.DONE, 77, "");
 				} catch (IOException e) {
 					logger.warning("Failed to write DSO PNG mask ", e);
 				}
@@ -324,11 +324,11 @@ public class DicomSegmentationObjectPNGMaskGeneratorTask implements GeneratorTas
 		return Toolkit.getDefaultToolkit().createImage(ip);
 	}
 
-	private void insertEpadFile(EpadQueries queries, File outputFile)
+	private void insertEpadFile(EpadDatabaseOperations epadDatabaseOperations, File outputFile)
 	{
 		Map<String, String> epadFilesTable = Dcm4CheeDatabaseUtils.createEPadFilesTableData(outputFile);
 		epadFilesTable.put("file_status", "" + PngProcessingStatus.IN_PIPELINE.getCode());
-		queries.insertEpadFile(epadFilesTable);
+		epadDatabaseOperations.insertEpadFileRecord(epadFilesTable);
 	}
 
 	private static Map<String, String> readTagsFromDicomFile(File dicomInputFile)

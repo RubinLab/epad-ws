@@ -21,8 +21,8 @@ public class AIMUtil
 
 	private static String namespace = EPADConfig.getInstance().getStringPropertyValue("namespace");
 	private static String serverUrl = EPADConfig.getInstance().getStringPropertyValue("serverUrl");
-	private static String username = EPADConfig.getInstance().getStringPropertyValue("username");
-	private static String password = EPADConfig.getInstance().getStringPropertyValue("password");
+	private static String eXistUsername = EPADConfig.getInstance().getStringPropertyValue("username");
+	private static String eXistPassword = EPADConfig.getInstance().getStringPropertyValue("password");
 	private static String baseAnnotationDir = EPADConfig.getInstance().getStringPropertyValue("baseAnnotationDir");
 	private static String xsdFile = EPADConfig.getInstance().getStringPropertyValue("xsdFile");
 	private static String xsdFilePath = EPADConfig.getInstance().getStringPropertyValue("baseSchemaDir") + xsdFile;
@@ -57,7 +57,7 @@ public class AIMUtil
 			}
 			tempFile.renameTo(storeFile);
 
-			AnnotationBuilder.saveToServer(aim, serverUrl, namespace, collection, xsdFilePath, username, password);
+			AnnotationBuilder.saveToServer(aim, serverUrl, namespace, collection, xsdFilePath, eXistUsername, eXistPassword);
 			result = AnnotationBuilder.getAimXMLsaveResult();
 			logger.info("AnnotationBuilder.saveToServer result: " + result);
 

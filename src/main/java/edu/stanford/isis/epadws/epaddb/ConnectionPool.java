@@ -45,7 +45,18 @@ public class ConnectionPool implements Runnable
 
 	private Connection createConnection() throws SQLException
 	{
-		return DriverManager.getConnection(connectionUrl, userName, userPassword);
+		logger.info("About to call driver manager " + connectionUrl + userName + userPassword);
+		Connection connection = null;
+
+		try {
+			connection = DriverManager.getConnection(connectionUrl, userName, userPassword);
+		} catch (SQLException e) {
+			logger.info("e: " + e.getMessage());
+		}
+
+		logger.info("After call");
+
+		return connection;
 	}
 
 	public synchronized Connection getConnection() throws SQLException

@@ -12,8 +12,8 @@ import org.eclipse.jetty.server.handler.AbstractHandler;
 
 import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epadws.epaddb.EpadDatabase;
+import edu.stanford.isis.epadws.epaddb.EpadDatabaseOperations;
 import edu.stanford.isis.epadws.handlers.HandlerUtil;
-import edu.stanford.isis.epadws.queries.EpadQueries;
 import edu.stanford.isis.epadws.xnat.XNATSessionOperations;
 
 /**
@@ -66,9 +66,9 @@ public class DICOMReprocessingHandler extends AbstractHandler
 
 	private void forceImageReload() throws SQLException, IOException
 	{
-		final EpadQueries databaseOperations = EpadDatabase.getInstance().getDatabaseOperations();
+		final EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
 
 		log.info("Forcing reprocessing of all DICOM images");
-		databaseOperations.forceDICOMReprocessing();
+		epadDatabaseOperations.forceDICOMReprocessing();
 	}
 }

@@ -5,8 +5,9 @@ import java.util.Map;
 import java.util.Set;
 
 import edu.stanford.isis.epad.common.util.EPADLogger;
+import edu.stanford.isis.epadws.dcm4chee.Dcm4CheeDatabase;
+import edu.stanford.isis.epadws.dcm4chee.Dcm4CheeDatabaseOperations;
 import edu.stanford.isis.epadws.epaddb.EpadDatabase;
-import edu.stanford.isis.epadws.queries.EpadQueries;
 
 /**
  * A connection test for DCM4CHEE MySQL database.
@@ -56,8 +57,9 @@ public class DcmDbTester
 		try {
 			logger.info("######## Start test #2 - basic search ########");
 
-			EpadQueries databaseOperations = EpadDatabase.getInstance().getDatabaseOperations();
-			List<Map<String, String>> results = databaseOperations.dicomStudySearch("patientName", "*");
+			Dcm4CheeDatabaseOperations dcm4CheeDatabaseOperations = Dcm4CheeDatabase.getInstance()
+					.getDcm4CheeDatabaseOperations();
+			List<Map<String, String>> results = dcm4CheeDatabaseOperations.dicomStudySearch("patientName", "*");
 
 			String[] keys = { "study_iuid", "pat_id", "modality", "study_datetime", "pat_name" };
 			StringBuilder sb = new StringBuilder("Study Results \n");
@@ -91,8 +93,9 @@ public class DcmDbTester
 		try {
 			logger.info("######## Start test #3 - wildcard search ########");
 
-			EpadQueries databaseOperations = EpadDatabase.getInstance().getDatabaseOperations();
-			List<Map<String, String>> results = databaseOperations.dicomStudySearch("patientName", "A*");
+			Dcm4CheeDatabaseOperations dcm4CheeDatabaseOperations = Dcm4CheeDatabase.getInstance()
+					.getDcm4CheeDatabaseOperations();
+			List<Map<String, String>> results = dcm4CheeDatabaseOperations.dicomStudySearch("patientName", "A*");
 
 			String[] keys = { "study_iuid", "pat_id", "modality", "study_datetime", "pat_name" };
 			StringBuilder sb = new StringBuilder("Study Results \n");
@@ -125,9 +128,10 @@ public class DcmDbTester
 		try {
 			logger.info("######## Start test #4 - case insensitive search ########");
 
-			EpadQueries databaseOperations = EpadDatabase.getInstance().getDatabaseOperations();
-			List<Map<String, String>> resultsUpperCase = databaseOperations.dicomStudySearch("patientName", "A*");
-			List<Map<String, String>> resultsLowerCase = databaseOperations.dicomStudySearch("patientName", "a*");
+			Dcm4CheeDatabaseOperations dcm4CheeDatabaseOperations = Dcm4CheeDatabase.getInstance()
+					.getDcm4CheeDatabaseOperations();
+			List<Map<String, String>> resultsUpperCase = dcm4CheeDatabaseOperations.dicomStudySearch("patientName", "A*");
+			List<Map<String, String>> resultsLowerCase = dcm4CheeDatabaseOperations.dicomStudySearch("patientName", "a*");
 
 			if (resultsUpperCase.size() != resultsLowerCase.size()) {
 				logger.info("FAILED: Case insensitive search test." + " upper-case=" + resultsUpperCase.size() + " lower-case="
@@ -149,8 +153,9 @@ public class DcmDbTester
 		try {
 			logger.info("######## Start test #5 - patient id search ########");
 
-			EpadQueries databaseOperations = EpadDatabase.getInstance().getDatabaseOperations();
-			List<Map<String, String>> results = databaseOperations.dicomStudySearch("patientId", "2228*");
+			Dcm4CheeDatabaseOperations dcm4CheeDatabaseOperations = Dcm4CheeDatabase.getInstance()
+					.getDcm4CheeDatabaseOperations();
+			List<Map<String, String>> results = dcm4CheeDatabaseOperations.dicomStudySearch("patientId", "2228*");
 			String[] keys = { "study_iuid", "pat_id", "modality", "study_datetime", "pat_name" };
 			StringBuilder sb = new StringBuilder("Study Results \n");
 			int resultIndex = 1;
@@ -177,8 +182,9 @@ public class DcmDbTester
 		try {
 			logger.info("######## Start test #6 - exam-type search ########");
 
-			EpadQueries databaseOperations = EpadDatabase.getInstance().getDatabaseOperations();
-			List<Map<String, String>> results = databaseOperations.dicomStudySearch("examType", "DX");
+			Dcm4CheeDatabaseOperations dcm4CheeDatabaseOperations = Dcm4CheeDatabase.getInstance()
+					.getDcm4CheeDatabaseOperations();
+			List<Map<String, String>> results = dcm4CheeDatabaseOperations.dicomStudySearch("examType", "DX");
 
 			String[] keys = { "study_iuid", "pat_id", "modality", "study_datetime", "pat_name" };
 			StringBuilder sb = new StringBuilder("Study Results \n");
@@ -206,8 +212,9 @@ public class DcmDbTester
 		try {
 			logger.info("######## Start test #7 - study-time search ########");
 
-			EpadQueries databaseOperations = EpadDatabase.getInstance().getDatabaseOperations();
-			List<Map<String, String>> results = databaseOperations.dicomStudySearch("studyDate", "2002");
+			Dcm4CheeDatabaseOperations dcm4CheeDatabaseOperations = Dcm4CheeDatabase.getInstance()
+					.getDcm4CheeDatabaseOperations();
+			List<Map<String, String>> results = dcm4CheeDatabaseOperations.dicomStudySearch("studyDate", "2002");
 
 			String[] keys = { "study_iuid", "pat_id", "modality", "study_datetime", "pat_name" };
 			StringBuilder sb = new StringBuilder("Study Results \n");
@@ -238,8 +245,8 @@ public class DcmDbTester
 		try {
 			logger.info("######## Start test #8 - study-time search ########");
 
-			EpadQueries databaseOperations = EpadDatabase.getInstance().getDatabaseOperations();
-			List<Map<String, String>> results = databaseOperations
+			Dcm4CheeDatabaseOperations dcm4CheeDatabaseOperations = Dcm4CheeDatabase.getInstance().getDcm4CheeDatabaseOperations();
+			List<Map<String, String>> results = dcm4CheeDatabaseOperations
 					.findAllDicomSeriesInStudy("1.2.826.0.1.3680043.8.420.30757817405477639080180001130587461759");
 
 			// String[] keys = {"study_iuid", "pat_id", "modality", "study_datetime", "pat_name"};

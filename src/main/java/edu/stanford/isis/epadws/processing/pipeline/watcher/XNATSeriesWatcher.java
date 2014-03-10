@@ -55,18 +55,21 @@ public class XNATSeriesWatcher implements Runnable
 				DicomSeriesProcessingDescription dicomSeriesDescription = xnatSeriesWatcherQueue.poll(5000,
 						TimeUnit.MILLISECONDS);
 
-				validateDICOMSeriesProcessingDescription(dicomSeriesDescription);
+				if (dicomSeriesDescription != null) {
 
-				String dicomStudyIUID = dicomSeriesDescription.getStudyIUID();
-				String dicomPatientID = dicomSeriesDescription.getPatientID();
-				String dicomPatientName = dicomSeriesDescription.getPatientName();
+					validateDICOMSeriesProcessingDescription(dicomSeriesDescription);
 
-				String xnatSubjectLabel = XNATUtil.dicomPatientID2XNATSubjectLabel(dicomPatientID);
+					String dicomStudyIUID = dicomSeriesDescription.getStudyIUID();
+					String dicomPatientID = dicomSeriesDescription.getPatientID();
+					String dicomPatientName = dicomSeriesDescription.getPatientName();
 
-				logger.info("XNAT series watcher found new DICOM study " + dicomStudyIUID + " for patient " + dicomPatientName
-						+ " with ID " + dicomPatientID);
+					String xnatSubjectLabel = XNATUtil.dicomPatientID2XNATSubjectLabel(dicomPatientID);
 
-				createXNATStudy(xnatUploadProjectID, xnatSubjectLabel, dicomPatientName, dicomStudyIUID);
+					logger.info("XNAT series watcher found new DICOM study " + dicomStudyIUID + " for patient "
+							+ dicomPatientName + " with ID " + dicomPatientID);
+
+					createXNATStudy(xnatUploadProjectID, xnatSubjectLabel, dicomPatientName, dicomStudyIUID);
+				}
 			} catch (Exception e) {
 				logger.warning("Exception in XNAT series watcher thread", e);
 			}

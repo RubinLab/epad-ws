@@ -7,23 +7,16 @@ import java.sql.Statement;
 import java.util.concurrent.atomic.AtomicReference;
 
 import edu.stanford.isis.epad.common.util.EPADLogger;
-import edu.stanford.isis.epadws.queries.EpadDatabaseQueries;
-import edu.stanford.isis.epadws.queries.EpadQueries;
+import edu.stanford.isis.epad.common.util.EPADTools;
 
-/**
- * @author amsnyder
- */
 public class EpadDatabase
 {
 	private static EPADLogger logger = EPADLogger.getInstance();
 
-	private static final String USER = "pacs";
-	private static final String PWD = "pacs";
-
 	private static final EpadDatabase ourInstance = new EpadDatabase();
 
 	private ConnectionPool connectionPool;
-	private EpadQueries databaseOperations;
+	private EpadDatabaseOperations epadDatabaseOperations;
 
 	private final AtomicReference<DatabaseState> dbState = new AtomicReference<DatabaseState>(DatabaseState.INIT);
 
@@ -47,7 +40,6 @@ public class EpadDatabase
 
 			if (!tablesUpToDate()) {
 				logger.info("IMPORTANT: NEED to add the epaddb tables using MySQL command-line!!");
-				// updateMySqlTables();
 			} else {
 				logger.info("ePad's extra MySQL tables appear to be up to date.");
 			}
@@ -75,9 +67,9 @@ public class EpadDatabase
 		logger.info("The database took " + (System.currentTimeMillis() - time) + " ms, to shutdown.");
 	}
 
-	public EpadQueries getDatabaseOperations()
+	public EpadDatabaseOperations getEPADDatabaseOperations()
 	{
-		return databaseOperations;
+		return epadDatabaseOperations;
 	}
 
 	public int getConnectionPoolAvailCount()
@@ -95,7 +87,7 @@ public class EpadDatabase
 		try {
 			logger.info("Creating connection pool.");
 			createConnectionPool();
-			databaseOperations = new EpadDatabaseQueries(connectionPool);
+			epadDatabaseOperations = new DefaultEpadDatabaseOperations(connectionPool);
 		} catch (Exception e) {
 			logger.severe("Failed to create connection pool", e);
 			dbState.set(DatabaseState.ERROR);
@@ -104,11 +96,13 @@ public class EpadDatabase
 
 	private void createConnectionPool() throws SQLException
 	{
-		String localHostConnStr = "jdbc:mysql://localhost:3306?autoReconnect=true";
+		String username = EPADTools.epadDatabaseUsername;
+		String password = EPADTools.epadDatabasePassword;
+		String epadDatabaseURL = EPADTools.epadDatabaseURL;
 
-		logger.info("MySql using connection string: " + localHostConnStr);
+		logger.info("MySql using connection string for ePAD database: " + epadDatabaseURL);
 
-		connectionPool = new ConnectionPool(localHostConnStr, USER, PWD);
+		connectionPool = new ConnectionPool(epadDatabaseURL, username, password);
 	}
 
 	private void closeConnectionPool()

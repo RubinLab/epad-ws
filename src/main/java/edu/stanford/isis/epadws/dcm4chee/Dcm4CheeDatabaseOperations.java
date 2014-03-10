@@ -2,6 +2,7 @@ package edu.stanford.isis.epadws.dcm4chee;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Defines all operations on the Dcm4Chee database used by ePAD.
@@ -16,7 +17,7 @@ public interface Dcm4CheeDatabaseOperations
 	 * 
 	 * @return a list of studyUIDs.
 	 */
-	List<String> getNewDicomSeries();
+	Set<String> getNewDicomSeries();
 
 	// typeValue one of: patientName, patientId", studyDate, accessionNum, examType
 	List<Map<String, String>> dicomStudySearch(String searchType, String typeValue);

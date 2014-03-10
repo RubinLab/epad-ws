@@ -11,8 +11,11 @@ import edu.stanford.isis.epad.common.dicom.DicomFormatUtil;
 import edu.stanford.isis.epad.common.util.EPADConfig;
 import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epad.common.util.EPADResources;
+import edu.stanford.isis.epadws.dcm4chee.Dcm4CheeDatabase;
+import edu.stanford.isis.epadws.dcm4chee.Dcm4CheeDatabaseOperations;
 import edu.stanford.isis.epadws.dcm4chee.Dcm4CheeDatabaseUtils;
 import edu.stanford.isis.epadws.epaddb.EpadDatabase;
+import edu.stanford.isis.epadws.epaddb.EpadDatabaseOperations;
 import edu.stanford.isis.epadws.processing.model.DicomImageProcessingState;
 import edu.stanford.isis.epadws.processing.model.DicomSeriesProcessingDescription;
 import edu.stanford.isis.epadws.processing.model.DicomSeriesProcessingStatus;
@@ -22,10 +25,12 @@ import edu.stanford.isis.epadws.processing.pipeline.task.GeneratorTask;
 import edu.stanford.isis.epadws.processing.pipeline.task.PNGGridGeneratorTask;
 import edu.stanford.isis.epadws.processing.pipeline.task.PngGeneratorTask;
 import edu.stanford.isis.epadws.processing.pipeline.threads.ShutdownSignal;
+import edu.stanford.isis.epadws.queries.DefaultEpadQueries;
 import edu.stanford.isis.epadws.queries.EpadQueries;
 
 /**
- * Process new DICOM series appearing in the series queue. Each series is described by a {@link DicomSeriesProcessingDescription}.
+ * Process new DICOM series appearing in the series queue. Each series is described by a
+ * {@link DicomSeriesProcessingDescription}.
  * <p>
  * These descriptions are placed in the queue by a {@link Dcm4CheeDatabaseWatcher}, which picks up new series by
  * monitoring a DCM4CHEE MySQL database.
@@ -60,12 +65,14 @@ public class DICOMSeriesWatcher implements Runnable
 	@Override
 	public void run()
 	{
-		EpadQueries mySqlQueries = EpadDatabase.getInstance().getDatabaseOperations();
+		EpadQueries epadQueries = DefaultEpadQueries.getInstance();
+
 		queueAndWatcherManager = QueueAndWatcherManager.getInstance();
 
 		while (!shutdownSignal.hasShutdown()) {
 			try {
-				DicomSeriesProcessingDescription dicomSeriesDescription = dicomSeriesWatcherQueue.poll(1000, TimeUnit.MILLISECONDS);
+				DicomSeriesProcessingDescription dicomSeriesDescription = dicomSeriesWatcherQueue.poll(1000,
+						TimeUnit.MILLISECONDS);
 
 				if (dicomSeriesDescription != null) {
 					logger.info("Series watcher found new series with " + dicomSeriesDescription.getNumberOfInstances()
@@ -80,7 +87,7 @@ public class DICOMSeriesWatcher implements Runnable
 					DicomSeriesProcessingDescription currentDicomSeriesDescription = currentDicomSeriesProcessingStatus
 							.getDicomSeriesProcessingDescription();
 					// Each entry in list is map with keys: sop_iuid, inst_no, series_iuid, filepath, file_size.
-					List<Map<String, String>> unprocessedDicomImageFileDescriptions = mySqlQueries
+					List<Map<String, String>> unprocessedDicomImageFileDescriptions = epadQueries
 							.getUnprocessedDicomImageFileDescriptionsForSeries(currentDicomSeriesDescription.getSeriesUID());
 
 					if (unprocessedDicomImageFileDescriptions.size() > 0) {
@@ -122,13 +129,13 @@ public class DICOMSeriesWatcher implements Runnable
 	@SuppressWarnings("unused")
 	private void addToPNGGridGeneratorTaskPipeline(List<Map<String, String>> unprocessedPNGImageDescriptions)
 	{
-		EpadQueries databaseOperations = EpadDatabase.getInstance().getDatabaseOperations();
+		EpadDatabaseOperations databaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
 		int currentImageIndex = 0;
 		for (Map<String, String> currentPNGImage : unprocessedPNGImageDescriptions) {
 			String inputPNGFilePath = getInputFilePath(currentPNGImage); // Get the input file path.
 			File inputPNGFile = new File(inputPNGFilePath);
 			String outputPNGGridFilePath = createOutputFilePathForDicomPNGGridImage(currentPNGImage);
-			if (!databaseOperations.hasEpadFile(outputPNGGridFilePath)) {
+			if (!databaseOperations.hasEpadFileRecord(outputPNGGridFilePath)) {
 				logger.info("SeriesWatcher has: " + currentPNGImage.get("sop_iuid") + " PNG for grid processing.");
 				// Need to get slice for PNG files.
 				List<File> inputPNGGridFiles = getSliceOfPNGFiles(unprocessedPNGImageDescriptions, currentImageIndex, 16);
@@ -158,18 +165,18 @@ public class DICOMSeriesWatcher implements Runnable
 		// inputPNGFile.getAbsolutePath());
 
 		File outputPNGFile = new File(outputPNGGridFilePath);
-		EpadQueries databaseOperations = EpadDatabase.getInstance().getDatabaseOperations();
+		EpadDatabaseOperations databaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
 		insertEpadFile(databaseOperations, outputPNGFile);
 
 		PNGGridGeneratorTask pngGridGeneratorTask = new PNGGridGeneratorTask(inputPNGFile, inputPNGGridFiles, outputPNGFile);
 		pngGeneratorTaskQueue.offer(pngGridGeneratorTask);
 	}
 
-	private void insertEpadFile(EpadQueries queries, File outputPNGFile)
+	private void insertEpadFile(EpadDatabaseOperations epadDatabaseOperations, File outputPNGFile)
 	{
 		Map<String, String> epadFilesTable = Dcm4CheeDatabaseUtils.createEPadFilesTableData(outputPNGFile);
 		epadFilesTable.put("file_status", "" + PngProcessingStatus.IN_PIPELINE.getCode());
-		queries.insertEpadFile(epadFilesTable);
+		epadDatabaseOperations.insertEpadFileRecord(epadFilesTable);
 	}
 
 	String getInputFilePath(Map<String, String> currImage)
@@ -185,7 +192,7 @@ public class DICOMSeriesWatcher implements Runnable
 	private String createOutputFilePathForDicomPNGGridImage(Map<String, String> currImage)
 	{
 		String seriesIUID = currImage.get("series_iuid");
-		EpadQueries databaseOperations = EpadDatabase.getInstance().getDatabaseOperations();
+		Dcm4CheeDatabaseOperations databaseOperations = Dcm4CheeDatabase.getInstance().getDcm4CheeDatabaseOperations();
 		String studyUID = databaseOperations.getDicomStudyUIDForSeries(seriesIUID);
 		String imageUID = currImage.get("sop_iuid");
 		StringBuilder outputPath = new StringBuilder();

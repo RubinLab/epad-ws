@@ -9,7 +9,8 @@ import edu.stanford.isis.epad.common.query.DCM4CHEEStudy;
 import edu.stanford.isis.epad.common.query.DCM4CHEEStudyList;
 import edu.stanford.isis.epad.common.query.DCM4CHEEStudySearchType;
 import edu.stanford.isis.epad.common.util.EPADLogger;
-import edu.stanford.isis.epadws.epaddb.EpadDatabase;
+import edu.stanford.isis.epadws.dcm4chee.Dcm4CheeDatabase;
+import edu.stanford.isis.epadws.dcm4chee.Dcm4CheeDatabaseOperations;
 
 /**
  * @author martin
@@ -26,8 +27,9 @@ public class Dcm4CheeQueries
 	 */
 	public static DCM4CHEEStudyList studySearch(DCM4CHEEStudySearchType searchType, String searchValue)
 	{
-		EpadQueries databaseOperations = EpadDatabase.getInstance().getDatabaseOperations();
-		List<Map<String, String>> studySearchResult = databaseOperations.dicomStudySearch(searchType.toString(),
+		Dcm4CheeDatabaseOperations dcm4CheeDatabaseOperations = Dcm4CheeDatabase.getInstance()
+				.getDcm4CheeDatabaseOperations();
+		List<Map<String, String>> studySearchResult = dcm4CheeDatabaseOperations.dicomStudySearch(searchType.toString(),
 				searchValue);
 		DCM4CHEEStudyList dicomStudiesDescription = new DCM4CHEEStudyList();
 
@@ -65,8 +67,9 @@ public class Dcm4CheeQueries
 	 */
 	public static DCM4CHEESeriesList seriesSearch(String studyUID)
 	{
-		final EpadQueries databaseOperations = EpadDatabase.getInstance().getDatabaseOperations();
-		final List<Map<String, String>> series = databaseOperations.findAllDicomSeriesInStudy(studyUID);
+		final Dcm4CheeDatabaseOperations dcm4CheeDatabaseOperations = Dcm4CheeDatabase.getInstance()
+				.getDcm4CheeDatabaseOperations();
+		final List<Map<String, String>> series = dcm4CheeDatabaseOperations.findAllDicomSeriesInStudy(studyUID);
 		DCM4CHEESeriesList dcm4cheeSeriesDescriptionList = new DCM4CHEESeriesList();
 
 		for (Map<String, String> row : series) {

@@ -7,9 +7,7 @@ import java.util.Map;
 import edu.stanford.isis.epad.common.dicom.DicomFormatUtil;
 import edu.stanford.isis.epad.common.util.EPADFileUtils;
 import edu.stanford.isis.epad.common.util.FileKey;
-import edu.stanford.isis.epadws.epaddb.EpadDatabase;
 import edu.stanford.isis.epadws.processing.model.PngProcessingStatus;
-import edu.stanford.isis.epadws.queries.EpadQueries;
 
 public class Dcm4CheeDatabaseUtils
 {
@@ -28,9 +26,9 @@ public class Dcm4CheeDatabaseUtils
 		FileKey fileKey = new FileKey(file);
 		String filePath = fileKey.toString();
 		long fileSize = file.length();
-		EpadQueries databaseOperations = EpadDatabase.getInstance().getDatabaseOperations();
+		Dcm4CheeDatabaseOperations dcm4CheeDatabaseOperations = Dcm4CheeDatabase.getInstance().getDcm4CheeDatabaseOperations();
 		String sopInstanceUID = getSOPInstanceUIDFromPath(filePath);
-		int instanceKey = databaseOperations.getInstanceKeyForInstance(sopInstanceUID);
+		int instanceKey = dcm4CheeDatabaseOperations.getInstanceKeyForInstance(sopInstanceUID);
 
 		Map<String, String> retVal = new HashMap<String, String>();
 		retVal.put("instance_fk", "" + instanceKey);

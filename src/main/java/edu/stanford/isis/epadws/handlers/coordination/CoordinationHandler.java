@@ -19,8 +19,8 @@ import com.google.gson.JsonParseException;
 import edu.stanford.isis.epad.common.util.EPADConfig;
 import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epadws.epaddb.EpadDatabase;
+import edu.stanford.isis.epadws.epaddb.EpadDatabaseOperations;
 import edu.stanford.isis.epadws.handlers.HandlerUtil;
-import edu.stanford.isis.epadws.queries.EpadQueries;
 import edu.stanford.isis.epadws.xnat.XNATSessionOperations;
 
 /**
@@ -182,7 +182,7 @@ public class CoordinationHandler extends AbstractHandler
 	private Term getCoordinationTerm(Coordination coordination) throws SQLException
 	{
 		List<Integer> termKeys = new ArrayList<Integer>();
-		EpadQueries databaseOperations = EpadDatabase.getInstance().getDatabaseOperations();
+		EpadDatabaseOperations databaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
 
 		for (Term term : coordination.getTerms()) {
 			int termKey = getTermKey(databaseOperations, term);
@@ -212,15 +212,15 @@ public class CoordinationHandler extends AbstractHandler
 	/**
 	 * Get the ID of a term from the database. If the term is not recorded, record it and get its new ID.
 	 * 
-	 * @param databaseOperations
+	 * @param epadDatabaseOperations
 	 * @param term
 	 * @return The key of the term; should not be null
 	 */
-	private int getTermKey(EpadQueries databaseOperations, Term term) throws SQLException
+	private int getTermKey(EpadDatabaseOperations epadDatabaseOperations, Term term) throws SQLException
 	{
-		int termKey = databaseOperations.getKeyForTerm(term); // TODO Cache rather than hit database each time.
+		int termKey = epadDatabaseOperations.getKeyForTerm(term); // TODO Cache rather than hit database each time.
 		if (termKey == -1) {
-			termKey = databaseOperations.insertTerm(term);
+			termKey = epadDatabaseOperations.insertTerm(term);
 		}
 		return termKey;
 	}

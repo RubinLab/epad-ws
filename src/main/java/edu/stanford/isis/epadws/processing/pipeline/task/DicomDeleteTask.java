@@ -4,10 +4,12 @@ import java.util.List;
 import java.util.Map;
 
 import edu.stanford.isis.epad.common.util.EPADLogger;
+import edu.stanford.isis.epadws.dcm4chee.Dcm4CheeDatabase;
+import edu.stanford.isis.epadws.dcm4chee.Dcm4CheeDatabaseOperations;
 import edu.stanford.isis.epadws.dcm4chee.Dcm4CheeOperations;
 import edu.stanford.isis.epadws.epaddb.EpadDatabase;
+import edu.stanford.isis.epadws.epaddb.EpadDatabaseOperations;
 import edu.stanford.isis.epadws.epaddb.FileOperations;
-import edu.stanford.isis.epadws.queries.EpadQueries;
 
 /**
  * Task to delete a DICOM study
@@ -29,11 +31,13 @@ public class DicomDeleteTask implements Runnable
 	@Override
 	public void run()
 	{
-		EpadQueries databaseOperations = EpadDatabase.getInstance().getDatabaseOperations();
+		EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
+		Dcm4CheeDatabaseOperations dcm4CheeDatabaseOperations = Dcm4CheeDatabase.getInstance()
+				.getDcm4CheeDatabaseOperations();
 
 		try {
 			if (deleteStudy) {
-				List<Map<String, String>> study2series = databaseOperations.findAllDicomSeriesInStudy(uidToDelete);
+				List<Map<String, String>> study2series = dcm4CheeDatabaseOperations.findAllDicomSeriesInStudy(uidToDelete);
 				logger.info("Found " + study2series.size() + " series in study " + uidToDelete);
 
 				Dcm4CheeOperations.deleteDicomStudy(uidToDelete); // Must run after finding series in DCM4CHEE
@@ -42,9 +46,9 @@ public class DicomDeleteTask implements Runnable
 				for (Map<String, String> series : study2series) {
 					String seriesID = series.get("series_iuid");
 					logger.info("SeriesID to delete in ePAD database: " + seriesID);
-					databaseOperations.deleteDicomSeries(seriesID);
+					epadDatabaseOperations.deleteDicomSeries(seriesID);
 				}
-				databaseOperations.deleteDicomStudy(uidToDelete);
+				epadDatabaseOperations.deleteDicomStudy(uidToDelete);
 				FileOperations.deletePNGsforDicomStudy(uidToDelete);
 			} else {
 				logger.warning("Attempt at (currently unsupported) delete of individual series " + uidToDelete);
