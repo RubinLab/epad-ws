@@ -64,10 +64,11 @@ public class Dcm4CheeOperations
 		try {
 			EPADConfig epadConfig = EPADConfig.getInstance();
 			String aeTitle = epadConfig.getStringPropertyValue("DicomServerAETitle");
-			String dsIP = epadConfig.getStringPropertyValue("DicomServerIP");
-			String dsPort = epadConfig.getStringPropertyValue("DicomServerPort");
-			String dcmServerTitlePort = aeTitle + "@" + dsIP + ":" + dsPort;
-			dcmServerTitlePort = dcmServerTitlePort.trim();
+			String dicomServerIP = epadConfig.getStringPropertyValue("DicomServerIP");
+			String dicomServerPort = epadConfig.getStringPropertyValue("DicomServerPort");
+			String dicomServerTitleAndPort = aeTitle + "@" + dicomServerIP + ":" + dicomServerPort;
+
+			dicomServerTitleAndPort = dicomServerTitleAndPort.trim();
 
 			String dirPath = inputDirFile.getAbsolutePath();
 			if (pathContainsSpaces(dirPath))
@@ -80,9 +81,10 @@ public class Dcm4CheeOperations
 				if (filePaths != null)
 					nbFiles = filePaths.length;
 			}
-			log.info("./dcmsnd: sending " + nbFiles + " file(s) - command: ./dcmsnd " + dcmServerTitlePort + " " + dirPath);
+			log.info("./dcmsnd: sending " + nbFiles + " file(s) - command: ./dcmsnd " + dicomServerTitleAndPort + " "
+					+ dirPath);
 
-			String[] command = { "./dcmsnd", dcmServerTitlePort, dirPath };
+			String[] command = { "./dcmsnd", dicomServerTitleAndPort, dirPath };
 
 			ProcessBuilder processBuilder = new ProcessBuilder(command);
 			String dicomScriptsDir = EPADResources.getEPADWebServerDICOMBinDir();

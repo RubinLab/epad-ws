@@ -20,6 +20,7 @@ import edu.stanford.isis.epad.common.plugins.impl.EPadPluginImpl;
 import edu.stanford.isis.epad.common.util.EPADConfig;
 import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epadws.EPadWebServerVersion;
+import edu.stanford.isis.epadws.dcm4chee.Dcm4CheeDatabase;
 import edu.stanford.isis.epadws.epaddb.EpadDatabase;
 import edu.stanford.isis.epadws.handlers.HandlerUtil;
 import edu.stanford.isis.epadws.processing.pipeline.PipelineFactory;
@@ -71,14 +72,14 @@ public class ServerStatusHandler extends AbstractHandler
 				responseStream.println();
 				responseStream.println("Version: " + EPadWebServerVersion.getBuildDate());
 				responseStream.println();
-				responseStream.println("Listening on: " + proxyConfig.getIntegerPropertyValue("ListenIP") + ":"
-						+ proxyConfig.getIntegerPropertyValue("ListenPort"));
-				responseStream.println();
 				responseStream.println("Plugin Version - interface:      " + EPadPlugin.PLUGIN_INTERFACE_VERSION);
 				responseStream.println("Plugin Version - implementation: " + ePadPlugin.getPluginImplVersion());
-				EpadDatabase instance = EpadDatabase.getInstance();
+				EpadDatabase epadDatabase = EpadDatabase.getInstance();
 				responseStream.println();
-				responseStream.println("Database startup time: " + instance.getStartupTime() + " ms");
+				responseStream.println("ePAD database startup time: " + epadDatabase.getStartupTime() + " ms");
+				Dcm4CheeDatabase dcm4CheeDatabase = Dcm4CheeDatabase.getInstance();
+				responseStream.println();
+				responseStream.println("DCM4CHEE database startup time: " + dcm4CheeDatabase.getStartupTime() + " ms");
 				responseStream.println();
 				responseStream.println();
 				responseStream.println("Pipeline activity level: " + getPipelineActivityLevel());

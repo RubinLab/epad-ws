@@ -17,8 +17,6 @@ import javax.servlet.http.HttpServletResponse;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 
-import com.google.gson.Gson;
-
 import edu.stanford.epad.dtos.DICOMElement;
 import edu.stanford.epad.dtos.DICOMElementList;
 import edu.stanford.isis.epad.common.util.EPADLogger;
@@ -130,13 +128,6 @@ public class DICOMHeadersHandler extends AbstractHandler
 					responseStream, log);
 		}
 		return statusCode;
-	}
-
-	private String dicomElementResult2JSON(DICOMElement dicomElementResult)
-	{
-		Gson gson = new Gson();
-
-		return gson.toJson(dicomElementResult);
 	}
 
 	// TODO This code is very brittle. Rewrite to make more robust. Also ignores DICOM sequences.

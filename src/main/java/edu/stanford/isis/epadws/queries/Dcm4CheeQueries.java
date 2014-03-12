@@ -31,7 +31,7 @@ public class Dcm4CheeQueries
 				.getDcm4CheeDatabaseOperations();
 		List<Map<String, String>> studySearchResult = dcm4CheeDatabaseOperations.dicomStudySearch(searchType.toString(),
 				searchValue);
-		DCM4CHEEStudyList dicomStudiesDescription = new DCM4CHEEStudyList();
+		DCM4CHEEStudyList dcm4CheeStudyList = new DCM4CHEEStudyList();
 
 		for (Map<String, String> row : studySearchResult) {
 			final String studyUID = getStringValueFromRow(row, "study_iuid");
@@ -50,12 +50,12 @@ public class Dcm4CheeQueries
 			final String physicianName = getStringValueFromRow(row, "ref_physician");
 			final String birthdate = getStringValueFromRow(row, "pat_birthdate");
 			final String sex = getStringValueFromRow(row, "pat_sex");
-			final DCM4CHEEStudy dicomStudyDescription = new DCM4CHEEStudy(studyUID, patientName, patientID, examType,
+			final DCM4CHEEStudy dcm4CheeStudy = new DCM4CHEEStudy(studyUID, patientName, patientID, examType,
 					dateAcquired, studyStatus, seriesCount, firstSeriesUID, firstSeriesDateAcquired, studyAccessionNumber,
 					imagesCount, stuidID, studyDescription, physicianName, birthdate, sex);
-			dicomStudiesDescription.addDICOMStudyDescription(dicomStudyDescription);
+			dcm4CheeStudyList.addDCM4CHEEStudy(dcm4CheeStudy);
 		}
-		return dicomStudiesDescription;
+		return dcm4CheeStudyList;
 	}
 
 	/**
@@ -91,7 +91,7 @@ public class Dcm4CheeQueries
 			final DCM4CHEESeries dcm4cheeSeriesDescription = new DCM4CHEESeries(seriesID, patientID, patientName, seriesDate,
 					examType, thumbnailURL, seriesDescription, numberOfSeriesRelatedInstances, imagesInSeries, seriesStatus,
 					bodyPart, institution, stationName, department, accessionNumber);
-			dcm4cheeSeriesDescriptionList.addDCM4CHEESeriesDescription(dcm4cheeSeriesDescription);
+			dcm4cheeSeriesDescriptionList.addDCM4CHEESeries(dcm4cheeSeriesDescription);
 		}
 		return dcm4cheeSeriesDescriptionList;
 	}

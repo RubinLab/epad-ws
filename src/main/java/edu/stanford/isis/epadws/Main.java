@@ -93,15 +93,15 @@ public class Main
 		Server server = null;
 
 		try {
-			int port = epadConfig.getIntegerPropertyValue("ePadClientPort");
+			int epadClientPort = epadConfig.getIntegerPropertyValue("ePadClientPort");
 			log.info("Starting the ePAD web service. Build date: " + EPadWebServerVersion.getBuildDate());
 			initializePlugins();
 			startSupportThreads();
-			server = new Server(port);
+			server = new Server(epadClientPort);
 			configureJettyServer(server);
 			addHandlers(server);
 			Runtime.getRuntime().addShutdownHook(new ShutdownHookThread());
-			log.info("Starting Jetty on port " + port);
+			log.info("Starting Jetty on port " + epadClientPort);
 			server.start();
 			server.join();
 		} catch (BindException be) {
