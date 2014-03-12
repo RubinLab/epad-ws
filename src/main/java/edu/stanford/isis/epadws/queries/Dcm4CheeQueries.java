@@ -3,11 +3,11 @@ package edu.stanford.isis.epadws.queries;
 import java.util.List;
 import java.util.Map;
 
-import edu.stanford.isis.epad.common.query.DCM4CHEESeries;
-import edu.stanford.isis.epad.common.query.DCM4CHEESeriesList;
-import edu.stanford.isis.epad.common.query.DCM4CHEEStudy;
-import edu.stanford.isis.epad.common.query.DCM4CHEEStudyList;
-import edu.stanford.isis.epad.common.query.DCM4CHEEStudySearchType;
+import edu.stanford.epad.dtos.DCM4CHEESeries;
+import edu.stanford.epad.dtos.DCM4CHEESeriesList;
+import edu.stanford.epad.dtos.DCM4CHEEStudy;
+import edu.stanford.epad.dtos.DCM4CHEEStudyList;
+import edu.stanford.epad.dtos.DCM4CHEEStudySearchType;
 import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epadws.dcm4chee.Dcm4CheeDatabase;
 import edu.stanford.isis.epadws.dcm4chee.Dcm4CheeDatabaseOperations;

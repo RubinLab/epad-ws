@@ -3,7 +3,7 @@ package edu.stanford.isis.epadws.queries;
 import java.util.List;
 import java.util.Map;
 
-import edu.stanford.isis.epad.common.query.EPADDatabaseSeries;
+import edu.stanford.epad.dtos.EPADDatabaseSeries;
 
 /**
  * 

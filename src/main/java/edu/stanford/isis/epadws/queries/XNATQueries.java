@@ -11,9 +11,9 @@ import org.apache.commons.httpclient.methods.GetMethod;
 
 import com.google.gson.Gson;
 
-import edu.stanford.isis.epad.common.query.XNATExperimentList;
-import edu.stanford.isis.epad.common.query.XNATProjectList;
-import edu.stanford.isis.epad.common.query.XNATSubjectList;
+import edu.stanford.epad.dtos.XNATExperimentList;
+import edu.stanford.epad.dtos.XNATProjectList;
+import edu.stanford.epad.dtos.XNATSubjectList;
 import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epadws.xnat.XNATQueryUtil;
 

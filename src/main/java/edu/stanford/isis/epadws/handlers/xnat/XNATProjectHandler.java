@@ -17,7 +17,7 @@ import org.apache.commons.httpclient.methods.PutMethod;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 
-import edu.stanford.isis.epad.common.query.XNATProject;
+import edu.stanford.epad.dtos.XNATProject;
 import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epad.common.util.JsonHelper;
 import edu.stanford.isis.epadws.handlers.HandlerUtil;

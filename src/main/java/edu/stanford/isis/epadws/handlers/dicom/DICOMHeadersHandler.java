@@ -19,7 +19,8 @@ import org.eclipse.jetty.server.handler.AbstractHandler;
 
 import com.google.gson.Gson;
 
-import edu.stanford.isis.epad.common.dicom.DICOMElementResult;
+import edu.stanford.epad.dtos.DICOMElement;
+import edu.stanford.epad.dtos.DICOMElementList;
 import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epad.common.util.EPADTools;
 import edu.stanford.isis.epadws.handlers.HandlerUtil;
@@ -92,22 +93,19 @@ public class DICOMHeadersHandler extends AbstractHandler
 					taskExecutor.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
 					BufferedReader tagReader = null;
 					try {
-						boolean isFirst = true;
-						String dicomElement;
+						String dicomElementString;
 						tagReader = new BufferedReader(new FileReader(tempTag.getAbsolutePath()));
+						DICOMElementList dicomElementList = new DICOMElementList();
 
-						responseStream.append("{ \"ResultSet\": [");
-
-						while ((dicomElement = tagReader.readLine()) != null) {
-							DICOMElementResult dicomElementResult = decodeDICOMElement(dicomElement);
-							if (dicomElementResult != null) {
-								if (!isFirst)
-									responseStream.append(",\n");
-								isFirst = false;
-								responseStream.println(dicomElementResult2JSON(dicomElementResult));
+						while ((dicomElementString = tagReader.readLine()) != null) {
+							DICOMElement dicomElement = decodeDICOMElementString(dicomElementString);
+							if (dicomElement != null) {
+								dicomElementList.addDICOMElement(dicomElement);
+							} else {
+								log.warning("Warning: could not decode DICOM element " + dicomElementString + "; skipping");
 							}
 						}
-						responseStream.append("] }");
+						responseStream.append(dicomElementList.toJSON());
 					} finally {
 						if (tagReader != null) {
 							try {
@@ -134,7 +132,7 @@ public class DICOMHeadersHandler extends AbstractHandler
 		return statusCode;
 	}
 
-	private String dicomElementResult2JSON(DICOMElementResult dicomElementResult)
+	private String dicomElementResult2JSON(DICOMElement dicomElementResult)
 	{
 		Gson gson = new Gson();
 
@@ -142,7 +140,7 @@ public class DICOMHeadersHandler extends AbstractHandler
 	}
 
 	// TODO This code is very brittle. Rewrite to make more robust. Also ignores DICOM sequences.
-	private DICOMElementResult decodeDICOMElement(String dicomElement)
+	private DICOMElement decodeDICOMElementString(String dicomElement)
 	{
 		String[] fields = dicomElement.split(" ");
 
@@ -155,7 +153,7 @@ public class DICOMHeadersHandler extends AbstractHandler
 				String value = stripBraces(assembleValue(fields, valueFieldStartIndex, valueFieldEndIndex));
 				String tagName = assembleValue(fields, valueFieldEndIndex + 1, fields.length - 1);
 
-				return new DICOMElementResult(tagCode, tagName, value);
+				return new DICOMElement(tagCode, tagName, value);
 			} else {
 				return null;
 			}

@@ -5,9 +5,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import edu.stanford.epad.dtos.EPADDatabaseImage;
+import edu.stanford.epad.dtos.EPADDatabaseSeries;
 import edu.stanford.isis.epad.common.dicom.DicomFormatUtil;
-import edu.stanford.isis.epad.common.query.EPADDatabaseImage;
-import edu.stanford.isis.epad.common.query.EPADDatabaseSeries;
 import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epadws.dcm4chee.Dcm4CheeDatabase;
 import edu.stanford.isis.epadws.dcm4chee.Dcm4CheeDatabaseOperations;

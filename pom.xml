@@ -30,6 +30,12 @@
     </dependency>
 
     <dependency>
+      <groupId>edu.stanford.epad</groupId>
+      <artifactId>epad-dto</artifactId>
+      <version>${project.version}</version> 
+    </dependency>
+
+    <dependency>
       <groupId>edu.stanford.epad.plugins</groupId>
       <artifactId>tedseg</artifactId>
       <version>${tedseg.plugin.version}</version>

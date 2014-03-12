@@ -45,7 +45,6 @@ public class ConnectionPool implements Runnable
 
 	private Connection createConnection() throws SQLException
 	{
-		logger.info("About to call driver manager " + connectionUrl + userName + userPassword);
 		Connection connection = null;
 
 		try {

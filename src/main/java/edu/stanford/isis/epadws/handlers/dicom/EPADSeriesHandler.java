@@ -8,7 +8,7 @@ import javax.servlet.http.HttpServletResponse;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 
-import edu.stanford.isis.epad.common.query.EPADDatabaseSeries;
+import edu.stanford.epad.dtos.EPADDatabaseSeries;
 import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epadws.handlers.HandlerUtil;
 import edu.stanford.isis.epadws.queries.DefaultEpadQueries;
@@ -64,8 +64,8 @@ public class EPADSeriesHandler extends AbstractHandler
 			if (XNATSessionOperations.hasValidXNATSessionID(httpRequest)) {
 				String seriesIUID = httpRequest.getParameter("series_iuid");
 				if (seriesIUID != null) {
-					EPADDatabaseSeries epadSeries = epadQueries.peformEPADSeriesQuery(seriesIUID);
-					responseStream.print(epadSeries.toJSON());
+					EPADDatabaseSeries epadDatabaseSeries = epadQueries.peformEPADSeriesQuery(seriesIUID);
+					responseStream.print(epadDatabaseSeries.toJSON());
 					statusCode = HttpServletResponse.SC_OK;
 				} else {
 					statusCode = HandlerUtil.infoJSONResponse(HttpServletResponse.SC_BAD_REQUEST, MISSING_SERIES_IUID_MESSAGE,
