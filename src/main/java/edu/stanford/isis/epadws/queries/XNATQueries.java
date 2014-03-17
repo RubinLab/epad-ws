@@ -105,14 +105,17 @@ public class XNATQueries
 
 	private static XNATExperimentList extractXNATExperimentsFromResponse(GetMethod method)
 	{
+		InputStreamReader responseStream = null;
 		try {
-			BufferedReader reader = new BufferedReader(new InputStreamReader(method.getResponseBodyAsStream(), "UTF-8"));
 			Gson gson = new Gson();
-			XNATExperimentList xnatExperiments = gson.fromJson(reader, XNATExperimentList.class);
-			return xnatExperiments;
+			responseStream = new InputStreamReader(method.getResponseBodyAsStream(), "UTF-8");
+			return gson.fromJson(new BufferedReader(responseStream), XNATExperimentList.class);
 		} catch (IOException e) {
 			log.warning("Error processing XNAT experiments query result", e);
 			return XNATExperimentList.emptyExperiments();
+		} finally {
+			if (responseStream != null)
+				responseStream = null;
 		}
 	}
 
@@ -149,14 +152,23 @@ public class XNATQueries
 
 	private static XNATSubjectList extractXNATSubjectsFromResponse(GetMethod method)
 	{
+		InputStreamReader streamReader = null;
 		try {
-			BufferedReader reader = new BufferedReader(new InputStreamReader(method.getResponseBodyAsStream(), "UTF-8"));
 			Gson gson = new Gson();
-			XNATSubjectList xnatSubjects = gson.fromJson(reader, XNATSubjectList.class);
-			return xnatSubjects;
+			streamReader = new InputStreamReader(method.getResponseBodyAsStream(), "UTF-8");
+
+			return gson.fromJson(new BufferedReader(streamReader), XNATSubjectList.class);
 		} catch (IOException e) {
 			log.warning("Error processing XNAT subjects query result", e);
 			return XNATSubjectList.emptySubjects();
+		} finally {
+			if (streamReader != null) {
+				try {
+					streamReader.close();
+				} catch (IOException e) {
+					log.warning("Error closing XNAT subject response stream ", e);
+				}
+			}
 		}
 	}
 
@@ -172,7 +184,7 @@ public class XNATQueries
 			log.info("Invoking XNAT query at " + xnatProjectsQueryURL);
 			xnatStatusCode = client.executeMethod(method);
 		} catch (IOException e) {
-			log.warning("Warning: error performing XNAT projects query", e);
+			log.warning("Error performing XNAT projects query", e);
 			xnatStatusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 		}
 		return processXNATProjectsQueryResponse(method, xnatStatusCode);
@@ -193,15 +205,22 @@ public class XNATQueries
 
 	private static XNATProjectList extractXNATProjectsFromResponse(GetMethod method)
 	{
+		InputStreamReader streamReader = null;
 		try {
-			BufferedReader reader = new BufferedReader(new InputStreamReader(method.getResponseBodyAsStream(), "UTF-8"));
 			Gson gson = new Gson();
-			XNATProjectList xnatProjects = gson.fromJson(reader, XNATProjectList.class);
-			return xnatProjects;
+			streamReader = new InputStreamReader(method.getResponseBodyAsStream(), "UTF-8");
+			return gson.fromJson(new BufferedReader(streamReader), XNATProjectList.class);
 		} catch (IOException e) {
 			log.warning("Error processing XNAT projects query result", e);
 			return XNATProjectList.emptyProjects();
+		} finally {
+			if (streamReader != null) {
+				try {
+					streamReader.close();
+				} catch (IOException e) {
+					log.warning("Error closing XNAT project response stream ", e);
+				}
+			}
 		}
 	}
-
 }

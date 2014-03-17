@@ -181,6 +181,8 @@ public class Main
 
 		loadPluginClasses();
 
+		addWebAppAtContextPath(handlerList, "ePad.war", "/epad");
+
 		addHandlerAtContextPath(new XNATSessionHandler(), "/epad/session", handlerList);
 		addHandlerAtContextPath(new XNATProjectHandler(), "/epad/projects", handlerList);
 		addHandlerAtContextPath(new XNATSubjectHandler(), "/epad/subjects", handlerList);
@@ -200,8 +202,6 @@ public class Main
 		addHandlerAtContextPath(new ImageCheckHandler(), "/epad/imagecheck", handlerList);
 		addHandlerAtContextPath(new DICOMReprocessingHandler(), "/epad/imagereprocess", handlerList);
 		addHandlerAtContextPath(new CoordinationHandler(), "/epad/coordination", handlerList);
-
-		addWebAppAtContextPath(handlerList, "ePad.war", "/epad");
 
 		addHandlerAtContextPath(new ResourceCheckHandler(), "/epad/resources", handlerList);
 		addFileServerAtContextPath(EPADResources.getEPADWebServerResourcesDir(), handlerList, "/epad/resources");
