@@ -40,7 +40,7 @@ public class WadoHandler extends AbstractHandler
 		// Origin header indicates a possible CORS requests, which we support to allow drawing on canvas in GWT Dev Mode.
 		if (origin != null) {
 			httpResponse.setHeader("Access-Control-Allow-Origin", origin);
-			httpResponse.setHeader("Access-Control-Allow-Credentials", "true"); // Needed to allow cookies.
+			httpResponse.setHeader("Access-Control-Allow-Credentials", "true"); // Needed to allow cookies
 		} else {
 			httpResponse.setHeader("Access-Control-Allow-Origin", "*");
 		}
@@ -48,29 +48,35 @@ public class WadoHandler extends AbstractHandler
 		httpResponse.setContentType("image/jpeg");
 		request.setHandled(true);
 
-		try {
-			responseStream = httpResponse.getOutputStream();
+		String method = httpRequest.getMethod();
+		if ("GET".equalsIgnoreCase(method)) {
+			try {
+				responseStream = httpResponse.getOutputStream();
 
-			// if (XNATOperations.hasValidXNATSessionID(httpRequest)) {
-			if (dummy()) { // TODO Re-enable authentication
-				String queryString = httpRequest.getQueryString();
-				queryString = URLDecoder.decode(queryString, "UTF-8");
-				if (queryString != null) {
-					statusCode = performWADOQuery(queryString, responseStream);
-					if (statusCode != HttpServletResponse.SC_OK)
-						log.warning("Warning: WADOHandler query" + queryString + " failed; statusCode=" + statusCode);
+				// if (XNATOperations.hasValidXNATSessionID(httpRequest)) {
+				if (dummy()) { // TODO Re-enable authentication
+					String queryString = httpRequest.getQueryString();
+					queryString = URLDecoder.decode(queryString, "UTF-8");
+					if (queryString != null) {
+						statusCode = performWADOQuery(queryString, responseStream);
+						if (statusCode != HttpServletResponse.SC_OK)
+							log.warning("Warning: WADOHandler query" + queryString + " failed; statusCode=" + statusCode);
+					} else {
+						log.info(MISSING_QUERY_MESSAGE);
+						statusCode = HttpServletResponse.SC_BAD_REQUEST;
+					}
+					responseStream.flush();
 				} else {
-					log.info(MISSING_QUERY_MESSAGE);
-					statusCode = HttpServletResponse.SC_BAD_REQUEST;
+					log.info(INVALID_SESSION_TOKEN_MESSAGE);
+					statusCode = HttpServletResponse.SC_UNAUTHORIZED;
 				}
-				responseStream.flush();
-			} else {
-				log.info(INVALID_SESSION_TOKEN_MESSAGE);
-				statusCode = HttpServletResponse.SC_UNAUTHORIZED;
+			} catch (Throwable t) {
+				log.severe(INTERNAL_EXCEPTION_MESSAGE, t);
+				statusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 			}
-		} catch (Throwable t) {
-			log.severe(INTERNAL_EXCEPTION_MESSAGE, t);
-			statusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+		} else {
+			log.warning("WADOHandler received unexpected method " + method);
+			statusCode = HttpServletResponse.SC_BAD_REQUEST;
 		}
 		httpResponse.setStatus(statusCode);
 	}
@@ -82,10 +88,10 @@ public class WadoHandler extends AbstractHandler
 
 	private int performWADOQuery(String queryString, ServletOutputStream outputStream) throws IOException, HttpException
 	{
-		String host = config.getStringPropertyValue("NameServer");
-		int port = config.getIntegerPropertyValue("DicomServerWadoPort");
-		String base = config.getStringPropertyValue("WadoUrlExtension");
-		String wadoUrl = buildWADOURL(host, port, base, queryString);
+		String wadoHost = config.getStringPropertyValue("NameServer");
+		int wadoPort = config.getIntegerPropertyValue("DicomServerWadoPort");
+		String wadoBase = config.getStringPropertyValue("WadoUrlExtension");
+		String wadoUrl = buildWADOURL(wadoHost, wadoPort, wadoBase, queryString);
 		HttpClient client = new HttpClient();
 		GetMethod method = new GetMethod(wadoUrl);
 		int statusCode = client.executeMethod(method);

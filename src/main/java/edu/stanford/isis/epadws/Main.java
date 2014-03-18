@@ -53,6 +53,7 @@ import edu.stanford.isis.epadws.handlers.dicom.WindowingHandler;
 import edu.stanford.isis.epadws.handlers.event.EventHandler;
 import edu.stanford.isis.epadws.handlers.event.ProjectEventHandler;
 import edu.stanford.isis.epadws.handlers.plugin.EPadPluginHandler;
+import edu.stanford.isis.epadws.handlers.search.EPADSearchHandler;
 import edu.stanford.isis.epadws.handlers.xnat.XNATProjectHandler;
 import edu.stanford.isis.epadws.handlers.xnat.XNATSessionHandler;
 import edu.stanford.isis.epadws.handlers.xnat.XNATSubjectHandler;
@@ -187,6 +188,9 @@ public class Main
 		addHandlerAtContextPath(new XNATProjectHandler(), "/epad/projects", handlerList);
 		addHandlerAtContextPath(new XNATSubjectHandler(), "/epad/subjects", handlerList);
 		addHandlerAtContextPath(new DCM4CHEESearchHandler(), "/epad/searchj", handlerList);
+
+		addHandlerAtContextPath(new EPADSearchHandler(), "/epad/v2", handlerList);
+
 		addHandlerAtContextPath(new EPADSeriesHandler(), "/epad/seriesorderj", handlerList);
 		addHandlerAtContextPath(new PatientDeleteHandler(), "/epad/patientdelete", handlerList);
 		addHandlerAtContextPath(new StudyDeleteHandler(), "/epad/dicomdelete", handlerList);

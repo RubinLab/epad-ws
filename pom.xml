@@ -66,6 +66,12 @@
       <version>${servlet.api.version}</version>
     </dependency>
 
+     <dependency>
+        <groupId>com.sun.jersey</groupId>
+        <artifactId>jersey-core</artifactId>
+        <version>0.9-ea</version>
+      </dependency>
+
     <dependency>
       <groupId>com.google.code.gson</groupId>
       <artifactId>gson</artifactId>

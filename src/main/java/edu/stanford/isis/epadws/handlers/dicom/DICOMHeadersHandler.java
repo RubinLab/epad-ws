@@ -100,7 +100,7 @@ public class DICOMHeadersHandler extends AbstractHandler
 							if (dicomElement != null) {
 								dicomElementList.addDICOMElement(dicomElement);
 							} else {
-								log.warning("Warning: could not decode DICOM element " + dicomElementString + "; skipping");
+								// log.warning("Warning: could not decode DICOM element " + dicomElementString + "; skipping");
 							}
 						}
 						responseStream.append(dicomElementList.toJSON());
