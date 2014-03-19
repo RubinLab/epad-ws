@@ -1,6 +1,7 @@
 package edu.stanford.isis.epadws.handlers.search;
 
 import java.io.PrintWriter;
+import java.util.Set;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -12,9 +13,9 @@ import edu.stanford.epad.dtos.EPADProject;
 import edu.stanford.epad.dtos.EPADProjectList;
 import edu.stanford.epad.dtos.XNATProject;
 import edu.stanford.epad.dtos.XNATProjectList;
-import edu.stanford.epad.dtos.XNATSubjectList;
 import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epadws.handlers.HandlerUtil;
+import edu.stanford.isis.epadws.queries.AIMQueries;
 import edu.stanford.isis.epadws.queries.XNATQueries;
 import edu.stanford.isis.epadws.xnat.XNATSessionOperations;
 import edu.stanford.isis.epadws.xnat.XNATUtil;
@@ -47,14 +48,18 @@ public class EPADSearchHandler extends AbstractHandler
 		httpResponse.setContentType("application/json");
 		request.setHandled(true);
 
+		log.info("ePADSearch path=" + httpRequest.getPathInfo() + ", query=" + httpRequest.getQueryString());
+
 		try {
 			responseStream = httpResponse.getWriter();
 
 			if (XNATSessionOperations.hasValidXNATSessionID(httpRequest)) {
 				String jsessionID = XNATUtil.getJSessionIDFromRequest(httpRequest);
+				String username = httpRequest.getParameter("username");
+				log.info("username " + username);
 				String pathInfo = httpRequest.getPathInfo();
 				if (HandlerUtil.matchesTemplate(PROJECTS_TEMPLATE, pathInfo)) {
-					EPADProjectList projectList = performAllProjectsQuery(jsessionID);
+					EPADProjectList projectList = performAllProjectsQuery(jsessionID, username);
 					responseStream.append(projectList.toJSON());
 				} else {
 					// TODO
@@ -72,33 +77,52 @@ public class EPADSearchHandler extends AbstractHandler
 		httpResponse.setStatus(statusCode);
 	}
 
-	private EPADProjectList performAllProjectsQuery(String sessionID)
+	// TODO Think about getting a list of users for each project from XNAT and using that user list to query
+	// for the AIM annotations
+	private EPADProjectList performAllProjectsQuery(String sessionID, String username)
 	{
 		EPADProjectList epadProjectList = new EPADProjectList();
 		XNATProjectList xnatProjectList = XNATQueries.allProjects(sessionID);
 
 		for (XNATProject xnatProject : xnatProjectList.ResultSet.Result) {
-			String secondaryID = xnatProject.secondaryID;
-			String piLastName = xnatProject.piLastName;
+			String secondaryID = xnatProject.secondary_ID;
+			String piLastName = xnatProject.pi_lastname;
 			String description = xnatProject.description;
 			String name = xnatProject.name;
-			String id = xnatProject.id;
-			String piFirstName = xnatProject.piFirstName;
-			String uri = xnatProject.uri;
-			int numberOfSubjects = numberOfSubjectsForProject(sessionID, xnatProject.id);
-			int numberOfAnnotations = 0;
+			String id = xnatProject.ID;
+			String piFirstName = xnatProject.pi_firstname;
+			String uri = xnatProject.URI;
+			int numberOfSubjects = XNATQueries.numberOfSubjectsForProject(sessionID, xnatProject.ID);
+			int numberOfStudies = numberOfStudiesForProject(sessionID, xnatProject.ID);
+			int numberOfAnnotations = isEmptyUsername(username) ? 0 : numberOfAIMAnnotationsForProject(sessionID,
+					xnatProject.ID, username);
 			EPADProject epadProject = new EPADProject(secondaryID, piLastName, description, name, id, piFirstName, uri,
-					numberOfSubjects, numberOfAnnotations);
+					numberOfSubjects, numberOfStudies, numberOfAnnotations);
 
 			epadProjectList.addEPADProject(epadProject);
 		}
 		return epadProjectList;
 	}
 
-	private int numberOfSubjectsForProject(String sessionID, String projectID)
+	private boolean isEmptyUsername(String username)
 	{
-		XNATSubjectList xnatSubjectList = XNATQueries.allSubjectsForProject(sessionID, projectID);
+		return username == null || username.length() == 0;
+	}
 
-		return xnatSubjectList.ResultSet.totalRecords;
+	private int numberOfAIMAnnotationsForProject(String sessionID, String projectID, String username)
+	{
+		Set<String> subjectIDs = XNATQueries.subjectIDsForProject(sessionID, projectID);
+		int totalAIMAnnotations = 0;
+
+		for (String subjectID : subjectIDs) {
+			totalAIMAnnotations += AIMQueries.getNumberOfAIMImageAnnotationsForPatientId(subjectID, username);
+		}
+
+		return totalAIMAnnotations;
+	}
+
+	private int numberOfStudiesForProject(String sessionID, String projectID)
+	{
+		return XNATQueries.numberOfDICOMExperimentsForProject(sessionID, projectID);
 	}
 }

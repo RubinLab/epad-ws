@@ -60,7 +60,7 @@ public class WadoHandler extends AbstractHandler
 					if (queryString != null) {
 						statusCode = performWADOQuery(queryString, responseStream);
 						if (statusCode != HttpServletResponse.SC_OK)
-							log.warning("Warning: WADOHandler query" + queryString + " failed; statusCode=" + statusCode);
+							log.warning("WADOHandler query " + queryString + " failed; statusCode=" + statusCode);
 					} else {
 						log.info(MISSING_QUERY_MESSAGE);
 						statusCode = HttpServletResponse.SC_BAD_REQUEST;

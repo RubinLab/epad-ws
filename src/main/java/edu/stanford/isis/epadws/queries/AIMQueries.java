@@ -15,30 +15,55 @@ public class AIMQueries
 
 	private static String namespace = EPADConfig.getInstance().getStringPropertyValue("namespace");
 	private static String serverUrl = EPADConfig.getInstance().getStringPropertyValue("serverUrl");
-	private static String username = EPADConfig.getInstance().getStringPropertyValue("username");
-	private static String password = EPADConfig.getInstance().getStringPropertyValue("password");
+	private static String eXistUsername = EPADConfig.getInstance().getStringPropertyValue("username");
+	private static String eXistPassword = EPADConfig.getInstance().getStringPropertyValue("password");
 	private static String xsdFile = EPADConfig.getInstance().getStringPropertyValue("xsdFile");
 	private static String xsdFilePath = EPADConfig.getInstance().getStringPropertyValue("baseSchemaDir") + xsdFile;
 	private static String collection = EPADConfig.getInstance().getStringPropertyValue("collection");
 
-	public static List<ImageAnnotation> getAIMImageAnnotationsForPerson(String personName, String user)
+	public static List<ImageAnnotation> getAIMImageAnnotationsForPerson(String personName, String username)
 	{
-		return getAIMImageAnnotations("personName", personName, user);
+		return getAIMImageAnnotations("personName", personName, username);
 	}
 
-	public static List<ImageAnnotation> getAIMImageAnnotationsForPatientId(String patientId, String user)
+	public static List<ImageAnnotation> getAIMImageAnnotationsForPatientId(String patientId, String username)
 	{
-		return getAIMImageAnnotations("patientID", patientId, user);
+		return getAIMImageAnnotations("patientID", patientId, username);
 	}
 
-	public static List<ImageAnnotation> getAIMImageAnnotationsForSeriesUID(String seriesUID, String user)
+	public static List<ImageAnnotation> getAIMImageAnnotationsForSeriesUID(String seriesUID, String username)
 	{
-		return getAIMImageAnnotations("seriesUID", seriesUID, user);
+		return getAIMImageAnnotations("seriesUID", seriesUID, username);
 	}
 
-	public static List<ImageAnnotation> getAIMImageAnnotationsForAnnotationUID(String annotationUID, String user)
+	public static List<ImageAnnotation> getAIMImageAnnotationsForAnnotationUID(String annotationUID, String username)
 	{
-		return getAIMImageAnnotations("annotationUID", annotationUID, user);
+		return getAIMImageAnnotations("annotationUID", annotationUID, username);
+	}
+
+	public static int getNumberOfAIMImageAnnotationsForPerson(String personName, String username)
+	{
+		return getNumberOfAIMImageAnnotations("personName", personName, username);
+	}
+
+	public static int getNumberOfAIMImageAnnotationsForPatientId(String patientId, String username)
+	{
+		return getNumberOfAIMImageAnnotations("patientID", patientId, username);
+	}
+
+	public static int getNumberOfAIMImageAnnotationsForSeriesUID(String seriesUID, String username)
+	{
+		return getNumberOfAIMImageAnnotations("seriesUID", seriesUID, username);
+	}
+
+	public static int getNumberOfAIMImageAnnotationsForAnnotationUID(String annotationUID, String username)
+	{
+		return getNumberOfAIMImageAnnotations("annotationUID", annotationUID, username);
+	}
+
+	public static int getNumberOfAIMImageAnnotations(String valueType, String value, String username)
+	{ // TODO In AIM 4 API there is AnnotationGetter.getCountImageAnnotationCollectionByUserNameEqual method.
+		return getAIMImageAnnotations(valueType, value, username).size();
 	}
 
 	/**
@@ -50,7 +75,7 @@ public class AIMQueries
 	 * @param user
 	 * @return List<ImageAnnotation>
 	 */
-	public static List<ImageAnnotation> getAIMImageAnnotations(String valueType, String value, String user)
+	public static List<ImageAnnotation> getAIMImageAnnotations(String valueType, String value, String username)
 	{
 		List<ImageAnnotation> retAims = new ArrayList<ImageAnnotation>();
 		List<ImageAnnotation> aims = null;
@@ -60,7 +85,7 @@ public class AIMQueries
 			String personName = value;
 			try {
 				aims = AnnotationGetter.getImageAnnotationsFromServerByPersonNameEqual(serverUrl, namespace, collection,
-						username, password, personName, xsdFilePath);
+						eXistUsername, eXistPassword, personName, xsdFilePath);
 
 			} catch (AimException e) {
 				logger.warning("Exception on AnnotationGetter.getImageAnnotationsFromServerByPersonNameEqual " + personName, e);
@@ -76,7 +101,7 @@ public class AIMQueries
 				 * username, password, patientId, xsdFilePath);
 				 */
 				aims = AnnotationGetter.getImageAnnotationsFromServerByPersonIDAndUserNameEqual(serverUrl, namespace,
-						collection, username, password, patientId, user, xsdFilePath);
+						collection, eXistUsername, eXistPassword, patientId, username, xsdFilePath);
 			} catch (AimException e) {
 				logger.warning("Exception on AnnotationGetter.getImageAnnotationsFromServerByPersonIdEqual " + patientId, e);
 			}
@@ -87,7 +112,7 @@ public class AIMQueries
 			String seriesUID = value;
 			try {
 				aims = AnnotationGetter.getImageAnnotationsFromServerByImageSeriesInstanceUIDEqual(serverUrl, namespace,
-						collection, username, password, seriesUID, xsdFilePath);
+						collection, eXistUsername, eXistPassword, seriesUID, xsdFilePath);
 			} catch (AimException e) {
 				logger.warning("Exception on AnnotationGetter.getImageAnnotationsFromServerByImageSeriesInstanceUIDEqual "
 						+ seriesUID, e);
@@ -102,7 +127,7 @@ public class AIMQueries
 				// String query = "SELECT FROM " + collection + " WHERE (ImageAnnotation.cagridId like '0')";
 				try {
 					aims = AnnotationGetter.getImageAnnotationsFromServerByUserLoginNameContains(serverUrl, namespace,
-							collection, username, password, user);
+							collection, eXistUsername, eXistPassword, username);
 					/*
 					 * aims = AnnotationGetter.getImageAnnotationsFromServerWithAimQuery(serverUrl, namespace, username, password,
 					 * query, xsdFilePath);
@@ -116,7 +141,7 @@ public class AIMQueries
 			} else {
 				try {
 					aim = AnnotationGetter.getImageAnnotationFromServerByUniqueIdentifier(serverUrl, namespace, collection,
-							username, password, annotationUID, xsdFilePath);
+							eXistUsername, eXistPassword, annotationUID, xsdFilePath);
 				} catch (AimException e) {
 					logger.warning("Exception on AnnotationGetter.getImageAnnotationFromServerByUniqueIdentifier "
 							+ annotationUID, e);
@@ -144,7 +169,8 @@ public class AIMQueries
 		try {
 			// AnnotationGetter.deleteImageAnnotationFromServer(serverUrl, namespace, collection, xsdFilePath,username,
 			// password, uid);
-			AnnotationGetter.removeImageAnnotationFromServer(serverUrl, namespace, collection, username, password, uid);
+			AnnotationGetter.removeImageAnnotationFromServer(serverUrl, namespace, collection, eXistUsername, eXistPassword,
+					uid);
 
 			logger.info("after deletion on : " + uid);
 
@@ -155,5 +181,4 @@ public class AIMQueries
 		logger.info("AnnotationGetter.deleteImageAnnotationFromServer result: " + result);
 		return result;
 	}
-
 }

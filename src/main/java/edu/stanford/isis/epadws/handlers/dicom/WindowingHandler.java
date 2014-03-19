@@ -37,7 +37,7 @@ public class WindowingHandler extends AbstractHandler
 	private static final String INVALID_SESSION_TOKEN_MESSAGE = "Session token is invalid on DICOM windowing route";
 	private static final String INVALID_METHOD_MESSAGE = "Only GET methods valid for the windowing route";
 	private static final String MISSING_QUERY_MESSAGE = "No query in DICOM windowing request";
-	private static final String BADLY_FORMED_QUERY_MESSAGE = "Invalid query paramaters specified in DICOM windowing request";
+	private static final String BADLY_FORMED_QUERY_MESSAGE = "Invalid query parameters specified in DICOM windowing request";
 
 	@Override
 	public void handle(String s, Request request, HttpServletRequest httpRequest, HttpServletResponse httpResponse)
@@ -59,9 +59,9 @@ public class WindowingHandler extends AbstractHandler
 				if ("GET".equalsIgnoreCase(method)) {
 					if (queryString != null) {
 						queryString = queryString.trim();
-						String studyIdKey = httpRequest.getParameter("studyUID");
-						String seriesIdKey = httpRequest.getParameter("seriesUID");
-						String imageIdKey = httpRequest.getParameter("imageUID");
+						String studyIdKey = httpRequest.getParameter("studyuid");
+						String seriesIdKey = httpRequest.getParameter("seriesuid");
+						String imageIdKey = httpRequest.getParameter("instanceuid");
 
 						if (studyIdKey != null && seriesIdKey != null && imageIdKey != null) {
 							if (handleDICOMWindowing(responseStream, studyIdKey, seriesIdKey, imageIdKey))
@@ -71,14 +71,14 @@ public class WindowingHandler extends AbstractHandler
 										WADO_ERROR_MESSAGE, log);
 							}
 						} else {
-							statusCode = HandlerUtil
-									.infoResponse(HttpServletResponse.SC_BAD_REQUEST, BADLY_FORMED_QUERY_MESSAGE, log);
+							statusCode = HandlerUtil.warningResponse(HttpServletResponse.SC_BAD_REQUEST, BADLY_FORMED_QUERY_MESSAGE,
+									log);
 						}
 					} else {
-						statusCode = HandlerUtil.infoResponse(HttpServletResponse.SC_BAD_REQUEST, MISSING_QUERY_MESSAGE, log);
+						statusCode = HandlerUtil.warningResponse(HttpServletResponse.SC_BAD_REQUEST, MISSING_QUERY_MESSAGE, log);
 					}
 				} else {
-					log.info(INVALID_METHOD_MESSAGE);
+					log.warning(INVALID_METHOD_MESSAGE);
 					responseStream.append(INVALID_METHOD_MESSAGE);
 					httpResponse.setHeader("Access-Control-Allow-Methods", "GET");
 					statusCode = HttpServletResponse.SC_METHOD_NOT_ALLOWED;
