@@ -61,12 +61,12 @@ public class EventHandler extends AbstractHandler
 							findEventsForSessionID(responseStream, jsessionID);
 							httpResponse.setStatus(HttpServletResponse.SC_OK);
 						} else {
-							log.info(MISSING_JSESSIONID_MESSAGE);
+							log.warning(MISSING_JSESSIONID_MESSAGE);
 							responseStream.append(MISSING_JSESSIONID_MESSAGE);
 							httpResponse.setStatus(HttpServletResponse.SC_BAD_REQUEST);
 						}
 					} else {
-						log.info(MISSING_QUERY_MESSAGE);
+						log.warning(MISSING_QUERY_MESSAGE);
 						responseStream.append(MISSING_QUERY_MESSAGE);
 						httpResponse.setStatus(HttpServletResponse.SC_BAD_REQUEST);
 					}
@@ -74,14 +74,14 @@ public class EventHandler extends AbstractHandler
 					if (queryString != null) {
 						queryString = queryString.trim();
 						String jsessionID = XNATUtil.getJSessionIDFromRequest(httpRequest);
-						String event_status = getEventStatusFromRequest(queryString);
-						String aim_uid = getAimUidFromRequest(queryString);
-						String aim_name = getAimNameFromRequest(queryString);
-						String patient_id = getPatientIdFromRequest(queryString);
-						String patient_name = getPatientNameFromRequest(queryString);
-						String template_id = getTemplateIdFromRequest(queryString);
-						String template_name = getTemplateNameFromRequest(queryString);
-						String plugin_name = getPluginNameFromRequest(queryString);
+						String event_status = httpRequest.getParameter("event_status");
+						String aim_uid = httpRequest.getParameter("aim_uid");
+						String aim_name = httpRequest.getParameter("aim_name");
+						String patient_id = httpRequest.getParameter("patient_id");
+						String patient_name = httpRequest.getParameter("patient_name");
+						String template_id = httpRequest.getParameter("template_id");
+						String template_name = httpRequest.getParameter("template_name");
+						String plugin_name = httpRequest.getParameter("plugin_name");
 
 						log.info("Got event for AIM ID " + aim_uid + " with JSESSIONID " + jsessionID);
 
@@ -143,77 +143,5 @@ public class EventHandler extends AbstractHandler
 			responseStrean.print(sb.toString());
 			log.info(sb.toString());
 		}
-	}
-
-	private static String getEventStatusFromRequest(String queryString)
-	{
-		String[] parts = queryString.split("&");
-		String value = parts[1].trim();
-		parts = value.split("=");
-		value = parts[1].trim();
-		return value;
-	}
-
-	private static String getAimUidFromRequest(String queryString)
-	{
-		String[] parts = queryString.split("&");
-		String value = parts[2].trim();
-		parts = value.split("=");
-		value = parts[1].trim();
-		return value;
-	}
-
-	private static String getAimNameFromRequest(String queryString)
-	{
-		String[] parts = queryString.split("&");
-		String value = parts[3].trim();
-		parts = value.split("=");
-		value = parts[1].trim();
-		return value;
-	}
-
-	private static String getPatientIdFromRequest(String queryString)
-	{
-		String[] parts = queryString.split("&");
-		String value = parts[4].trim();
-		parts = value.split("=");
-		value = parts[1].trim();
-		return value;
-	}
-
-	private static String getPatientNameFromRequest(String queryString)
-	{
-		String[] parts = queryString.split("&");
-		String value = parts[5].trim();
-		parts = value.split("=");
-		value = parts[1].trim();
-		return value;
-	}
-
-	private static String getTemplateIdFromRequest(String queryString)
-	{
-		String[] parts = queryString.split("&");
-		String value = parts[6].trim();
-		parts = value.split("=");
-		value = parts[1].trim();
-		return value;
-	}
-
-	private static String getTemplateNameFromRequest(String queryString)
-	{
-		String[] parts = queryString.split("&");
-		String value = parts[7].trim();
-		parts = value.split("=");
-		value = parts[1].trim();
-		return value;
-	}
-
-	private static String getPluginNameFromRequest(String queryString)
-	{
-		String[] parts = queryString.split("&");
-		String value = parts[8].trim();
-		parts = value.split("=");
-		value = parts[1].trim();
-		return value;
 	}
 }

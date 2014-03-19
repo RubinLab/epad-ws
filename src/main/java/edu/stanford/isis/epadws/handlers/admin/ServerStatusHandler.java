@@ -17,7 +17,6 @@ import org.eclipse.jetty.server.handler.AbstractHandler;
 
 import edu.stanford.isis.epad.common.plugins.EPadPlugin;
 import edu.stanford.isis.epad.common.plugins.impl.EPadPluginImpl;
-import edu.stanford.isis.epad.common.util.EPADConfig;
 import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epadws.EPadWebServerVersion;
 import edu.stanford.isis.epadws.dcm4chee.Dcm4CheeDatabase;
@@ -60,7 +59,6 @@ public class ServerStatusHandler extends AbstractHandler
 			responseStream = httpResponse.getWriter();
 
 			if (XNATSessionOperations.hasValidXNATSessionID(httpRequest)) {
-				EPADConfig proxyConfig = EPADConfig.getInstance();
 				EPadPlugin ePadPlugin = new EPadPluginImpl();
 				long upTime = System.currentTimeMillis() - startTime;
 				long upTimeSec = upTime / 1000;

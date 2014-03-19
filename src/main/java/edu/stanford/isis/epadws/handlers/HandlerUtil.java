@@ -1,24 +1,25 @@
 package edu.stanford.isis.epadws.handlers;
 
 import java.io.PrintWriter;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
 import javax.servlet.http.HttpServletResponse;
 
+import com.sun.jersey.api.uri.UriTemplate;
+
 import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epad.common.util.JsonHelper;
 
 /**
- * Utility methods for creating and logging handler responses
+ * Utility methods for handlers
  * 
  * 
  * @author martin
  */
 public class HandlerUtil
 {
-	private static final EPADLogger log = EPADLogger.getInstance();
-
 	public static int infoResponse(int responseCode, String message, PrintWriter responseStream, EPADLogger log)
 	{
 		log.info(message);
@@ -171,20 +172,31 @@ public class HandlerUtil
 		return warningResponse(HttpServletResponse.SC_UNAUTHORIZED, message, log);
 	}
 
-	public static Map<String, String> extractQueryParameters(String queryString)
+	public static String getParameter(Map<String, String> templateMap, String parameterName)
 	{
-		Map<String, String> result = new HashMap<String, String>();
-		String[] attributeValuePairs = queryString.trim().split("&");
+		if (templateMap.containsKey(parameterName)) {
+			return templateMap.get(parameterName);
+		} else
+			throw new IllegalArgumentException("no " + parameterName + " parameter in request");
+	}
 
-		for (int i = 0; i < attributeValuePairs.length; i++) {
-			String[] attributeValuePair = attributeValuePairs[i].trim().split("=");
-			if (attributeValuePair.length == 2) {
-				String attribute = attributeValuePair[0];
-				String value = attributeValuePair[1];
-				result.put(attribute, value);
-			} else
-				log.warning("Warning: invalid attribute value pair " + attributeValuePair + " + in query " + queryString);
+	public static Map<String, String> getTemplateMap(String template, String path)
+	{
+		Map<String, String> map = new HashMap<String, String>();
+
+		UriTemplate uriTemplate = new UriTemplate(template);
+		if (uriTemplate.match(path, map)) {
+			return map;
+		} else {
+			return Collections.<String, String> emptyMap();
 		}
-		return result;
+	}
+
+	public static boolean matchesTemplate(String template, String path)
+	{
+		Map<String, String> map = new HashMap<String, String>();
+
+		UriTemplate uriTemplate = new UriTemplate(template);
+		return uriTemplate.match(path, map);
 	}
 }

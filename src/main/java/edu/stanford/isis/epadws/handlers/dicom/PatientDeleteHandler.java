@@ -2,7 +2,6 @@ package edu.stanford.isis.epadws.handlers.dicom;
 
 import java.io.PrintWriter;
 import java.net.URLDecoder;
-import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -49,9 +48,8 @@ public class PatientDeleteHandler extends AbstractHandler
 				responseStream = httpResponse.getWriter();
 
 				if (queryString != null) {
-					Map<String, String> parameters = HandlerUtil.extractQueryParameters(queryString);
-					String projectID = parameters.get("projectID");
-					String patientID = parameters.get("patientID");
+					String projectID = httpRequest.getParameter("projectID");
+					String patientID = httpRequest.getParameter("patientID");
 
 					if (projectID != null && patientID != null) {
 						handlePatientDeleteRequest(projectID, patientID);

@@ -70,6 +70,7 @@ public class ImageCheckHandler extends AbstractHandler
 			} else {
 				statusCode = HandlerUtil.invalidTokenJSONResponse(INVALID_SESSION_TOKEN_MESSAGE, responseStream, log);
 			}
+			responseStream.flush();
 		} catch (Throwable t) {
 			statusCode = HandlerUtil.internalErrorJSONResponse(INTERNAL_ERROR_MESSAGE, t, responseStream, log);
 		}

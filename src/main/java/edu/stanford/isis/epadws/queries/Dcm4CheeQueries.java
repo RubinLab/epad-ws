@@ -1,16 +1,29 @@
 package edu.stanford.isis.epadws.queries;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+
+import javax.servlet.http.HttpServletResponse;
 
 import edu.stanford.epad.dtos.DCM4CHEESeries;
 import edu.stanford.epad.dtos.DCM4CHEESeriesList;
 import edu.stanford.epad.dtos.DCM4CHEEStudy;
 import edu.stanford.epad.dtos.DCM4CHEEStudyList;
 import edu.stanford.epad.dtos.DCM4CHEEStudySearchType;
+import edu.stanford.epad.dtos.DICOMElement;
+import edu.stanford.epad.dtos.DICOMElementList;
 import edu.stanford.isis.epad.common.util.EPADLogger;
+import edu.stanford.isis.epad.common.util.EPADTools;
 import edu.stanford.isis.epadws.dcm4chee.Dcm4CheeDatabase;
 import edu.stanford.isis.epadws.dcm4chee.Dcm4CheeDatabaseOperations;
+import edu.stanford.isis.epadws.processing.pipeline.task.DicomHeadersTask;
 
 /**
  * @author martin
@@ -50,9 +63,9 @@ public class Dcm4CheeQueries
 			final String physicianName = getStringValueFromRow(row, "ref_physician");
 			final String birthdate = getStringValueFromRow(row, "pat_birthdate");
 			final String sex = getStringValueFromRow(row, "pat_sex");
-			final DCM4CHEEStudy dcm4CheeStudy = new DCM4CHEEStudy(studyUID, patientName, patientID, examType,
-					dateAcquired, studyStatus, seriesCount, firstSeriesUID, firstSeriesDateAcquired, studyAccessionNumber,
-					imagesCount, stuidID, studyDescription, physicianName, birthdate, sex);
+			final DCM4CHEEStudy dcm4CheeStudy = new DCM4CHEEStudy(studyUID, patientName, patientID, examType, dateAcquired,
+					studyStatus, seriesCount, firstSeriesUID, firstSeriesDateAcquired, studyAccessionNumber, imagesCount,
+					stuidID, studyDescription, physicianName, birthdate, sex);
 			dcm4CheeStudyList.addDCM4CHEEStudy(dcm4CheeStudy);
 		}
 		return dcm4CheeStudyList;
@@ -94,6 +107,124 @@ public class Dcm4CheeQueries
 			dcm4cheeSeriesDescriptionList.addDCM4CHEESeries(dcm4cheeSeriesDescription);
 		}
 		return dcm4cheeSeriesDescriptionList;
+	}
+
+	public static DICOMElementList getDICOMElementsFromWADO(String studyUID, String seriesUID, String imageUID)
+	{
+		DICOMElementList dicomElementList = new DICOMElementList();
+
+		try {
+			File tempDICOMFile = File.createTempFile(imageUID, ".tmp");
+			int wadoStatusCode = EPADTools.downloadDICOMFileFromWADO(tempDICOMFile, studyUID, seriesUID, imageUID);
+			if (wadoStatusCode == HttpServletResponse.SC_OK) {
+				File tempTag = File.createTempFile(imageUID, "_tag.tmp");
+				ExecutorService taskExecutor = Executors.newFixedThreadPool(4);
+				taskExecutor.execute(new DicomHeadersTask(tempDICOMFile, tempTag));
+				taskExecutor.shutdown();
+				try {
+					taskExecutor.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
+					BufferedReader tagReader = null;
+					try {
+						String dicomElementString;
+						tagReader = new BufferedReader(new FileReader(tempTag.getAbsolutePath()));
+
+						while ((dicomElementString = tagReader.readLine()) != null) {
+							DICOMElement dicomElement = decodeDICOMElementString(dicomElementString);
+							if (dicomElement != null) {
+								dicomElementList.addDICOMElement(dicomElement);
+							} else {
+								// log.warning("Warning: could not decode DICOM element " + dicomElementString + "; skipping");
+							}
+						}
+					} finally {
+						if (tagReader != null) {
+							try {
+								tagReader.close();
+							} catch (IOException e) {
+								log.warning("Error closing DICOM tag response stream", e);
+							}
+						}
+					}
+				} catch (InterruptedException e) {
+					Thread.currentThread().interrupt();
+					log.warning("DICOM headers task interrupted!");
+				}
+			} else {
+				log.warning("Error invoking WADO to get DICOM headers; status code=" + wadoStatusCode);
+			}
+		} catch (IOException e) {
+			log.warning("IOException retrieving DICOM headers", e);
+		}
+		return dicomElementList;
+	}
+
+	// TODO This code is very brittle. Rewrite to make more robust. Also ignores DICOM sequences.
+	private static DICOMElement decodeDICOMElementString(String dicomElement)
+	{
+		String[] fields = dicomElement.split(" ");
+
+		int valueFieldStartIndex = valueFieldStartIndex(fields);
+		if (valueFieldStartIndex != -1) {
+			int valueFieldEndIndex = valueFieldEndIndex(fields);
+
+			if (valueFieldEndIndex != -1 && ((valueFieldEndIndex - valueFieldStartIndex) < 10)) {
+				String tagCode = extractTagCodeFromField(fields[0]);
+				String value = stripBraces(assembleValue(fields, valueFieldStartIndex, valueFieldEndIndex));
+				String tagName = assembleValue(fields, valueFieldEndIndex + 1, fields.length - 1);
+
+				return new DICOMElement(tagCode, tagName, value);
+			} else {
+				return null;
+			}
+		} else {
+			return null;
+		}
+	}
+
+	private static String extractTagCodeFromField(String field)
+	{
+		String subFields[] = field.split(":>*");
+
+		if (subFields.length == 2) {
+			return subFields[1];
+		} else
+			return "";
+	}
+
+	private static String assembleValue(String[] fields, int startIndex, int finishIndex)
+	{
+		String value = "";
+		for (int i = startIndex; i <= finishIndex; i++) {
+			if (i > startIndex)
+				value += " ";
+			value += fields[i];
+		}
+		return value;
+	}
+
+	private static int valueFieldStartIndex(String[] fields)
+	{
+		for (int i = 0; i < fields.length; i++)
+			if (fields[i].startsWith("["))
+				return i;
+		return -1;
+	}
+
+	private static int valueFieldEndIndex(String[] fields)
+	{
+		for (int i = 0; i < fields.length; i++)
+			if (fields[i].endsWith("]"))
+				return i;
+		return -1;
+	}
+
+	private static String stripBraces(String valueField)
+	{
+		if (valueField.startsWith("[") && valueField.endsWith("]")) {
+			return valueField.substring(1, valueField.length() - 1);
+		} else {
+			return "";
+		}
 	}
 
 	private static String getStringValueFromRow(Map<String, String> row, String columnName)

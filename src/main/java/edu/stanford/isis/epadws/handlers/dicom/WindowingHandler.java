@@ -35,6 +35,7 @@ public class WindowingHandler extends AbstractHandler
 	private static final String WADO_ERROR_MESSAGE = "Warining: WADO error in DICOM windowing route";
 	private static final String INTERNAL_ERROR_MESSAGE = "Warning: internal error in DICOM windowing route";
 	private static final String INVALID_SESSION_TOKEN_MESSAGE = "Session token is invalid on DICOM windowing route";
+	private static final String INVALID_METHOD_MESSAGE = "Only GET methods valid for the windowing route";
 	private static final String MISSING_QUERY_MESSAGE = "No query in DICOM windowing request";
 	private static final String BADLY_FORMED_QUERY_MESSAGE = "Invalid query paramaters specified in DICOM windowing request";
 
@@ -51,27 +52,36 @@ public class WindowingHandler extends AbstractHandler
 			responseStream = httpResponse.getWriter();
 
 			if (XNATSessionOperations.hasValidXNATSessionID(httpRequest)) {
+				String method = httpRequest.getMethod();
 				String queryString = httpRequest.getQueryString();
 				queryString = URLDecoder.decode(queryString, "UTF-8");
 
-				if (queryString != null) {
-					queryString = queryString.trim();
-					String studyIdKey = getStudyUIDFromRequest(queryString);
-					String seriesIdKey = getSeriesUIDFromRequest(queryString);
-					String imageIdKey = getInstanceUIDFromRequest(queryString);
+				if ("GET".equalsIgnoreCase(method)) {
+					if (queryString != null) {
+						queryString = queryString.trim();
+						String studyIdKey = httpRequest.getParameter("studyUID");
+						String seriesIdKey = httpRequest.getParameter("seriesUID");
+						String imageIdKey = httpRequest.getParameter("imageUID");
 
-					if (studyIdKey != null && seriesIdKey != null && imageIdKey != null) {
-						if (handleDICOMWindowing(responseStream, studyIdKey, seriesIdKey, imageIdKey))
-							statusCode = HttpServletResponse.SC_OK;
-						else {
-							statusCode = HandlerUtil.warningResponse(HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
-									WADO_ERROR_MESSAGE, log);
+						if (studyIdKey != null && seriesIdKey != null && imageIdKey != null) {
+							if (handleDICOMWindowing(responseStream, studyIdKey, seriesIdKey, imageIdKey))
+								statusCode = HttpServletResponse.SC_OK;
+							else {
+								statusCode = HandlerUtil.warningResponse(HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
+										WADO_ERROR_MESSAGE, log);
+							}
+						} else {
+							statusCode = HandlerUtil
+									.infoResponse(HttpServletResponse.SC_BAD_REQUEST, BADLY_FORMED_QUERY_MESSAGE, log);
 						}
 					} else {
-						statusCode = HandlerUtil.infoResponse(HttpServletResponse.SC_BAD_REQUEST, BADLY_FORMED_QUERY_MESSAGE, log);
+						statusCode = HandlerUtil.infoResponse(HttpServletResponse.SC_BAD_REQUEST, MISSING_QUERY_MESSAGE, log);
 					}
 				} else {
-					statusCode = HandlerUtil.infoResponse(HttpServletResponse.SC_BAD_REQUEST, MISSING_QUERY_MESSAGE, log);
+					log.info(INVALID_METHOD_MESSAGE);
+					responseStream.append(INVALID_METHOD_MESSAGE);
+					httpResponse.setHeader("Access-Control-Allow-Methods", "GET");
+					statusCode = HttpServletResponse.SC_METHOD_NOT_ALLOWED;
 				}
 				responseStream.flush();
 			} else {
@@ -122,33 +132,5 @@ public class WindowingHandler extends AbstractHandler
 			success = false;
 		}
 		return success;
-	}
-
-	// TODO Clean up this mess
-	private static String getStudyUIDFromRequest(String queryString)
-	{
-		String[] parts = queryString.split("&");
-		String value = parts[0].trim();
-		parts = value.split("=");
-		value = parts[1].trim();
-		return value;
-	}
-
-	private static String getSeriesUIDFromRequest(String queryString)
-	{
-		String[] parts = queryString.split("&");
-		String value = parts[1].trim();
-		parts = value.split("=");
-		value = parts[1].trim();
-		return value;
-	}
-
-	private static String getInstanceUIDFromRequest(String queryString)
-	{
-		String[] parts = queryString.split("&");
-		String value = parts[2].trim();
-		parts = value.split("=");
-		value = parts[1].trim();
-		return value;
 	}
 }

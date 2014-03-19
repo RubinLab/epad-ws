@@ -1,17 +1,12 @@
 package edu.stanford.isis.epadws.handlers.search;
 
 import java.io.PrintWriter;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
-
-import com.sun.jersey.api.uri.UriTemplate;
 
 import edu.stanford.epad.dtos.EPADProject;
 import edu.stanford.epad.dtos.EPADProjectList;
@@ -58,7 +53,7 @@ public class EPADSearchHandler extends AbstractHandler
 			if (XNATSessionOperations.hasValidXNATSessionID(httpRequest)) {
 				String jsessionID = XNATUtil.getJSessionIDFromRequest(httpRequest);
 				String pathInfo = httpRequest.getPathInfo();
-				if (matchesTemplate(PROJECTS_TEMPLATE, pathInfo)) {
+				if (HandlerUtil.matchesTemplate(PROJECTS_TEMPLATE, pathInfo)) {
 					EPADProjectList projectList = performAllProjectsQuery(jsessionID);
 					responseStream.append(projectList.toJSON());
 				} else {
@@ -105,34 +100,5 @@ public class EPADSearchHandler extends AbstractHandler
 		XNATSubjectList xnatSubjectList = XNATQueries.allSubjectsForProject(sessionID, projectID);
 
 		return xnatSubjectList.ResultSet.totalRecords;
-	}
-
-	@SuppressWarnings("unused")
-	private String getParameter(Map<String, String> templateMap, String parameterName)
-	{
-		if (templateMap.containsKey(parameterName)) {
-			return templateMap.get(parameterName);
-		} else
-			throw new IllegalArgumentException("no " + parameterName + " parameter in request");
-	}
-
-	private Map<String, String> getTemplateMap(String template, String path)
-	{
-		Map<String, String> map = new HashMap<String, String>();
-
-		UriTemplate uriTemplate = new UriTemplate(template);
-		if (uriTemplate.match(path, map)) {
-			return map;
-		} else {
-			return Collections.<String, String> emptyMap();
-		}
-	}
-
-	private boolean matchesTemplate(String template, String path)
-	{
-		Map<String, String> map = new HashMap<String, String>();
-
-		UriTemplate uriTemplate = new UriTemplate(template);
-		return uriTemplate.match(path, map);
 	}
 }

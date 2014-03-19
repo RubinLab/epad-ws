@@ -93,7 +93,7 @@ public class AimResourceHandler extends AbstractHandler
 					String queryString = httpRequest.getQueryString();
 					queryString = URLDecoder.decode(queryString, "UTF-8");
 					logger.info("AimResourceHandler received query: " + queryString);
-					if (queryString != null) {
+					if (queryString != null) { // TODO httpRequest.getParameter with "patientID", "user"
 						queryAIMImageAnnotations(responseStream, queryString);
 						statusCode = HttpServletResponse.SC_OK;
 					} else {
@@ -101,7 +101,7 @@ public class AimResourceHandler extends AbstractHandler
 						responseStream.append(MISSING_QUERY_MESSAGE);
 						statusCode = HttpServletResponse.SC_BAD_REQUEST;
 					}
-				} else if ("POST".equalsIgnoreCase(method)) { // http://www.tutorialspoint.com/servlets/servlets-file-uploading.htm
+				} else if ("POST".equalsIgnoreCase(method)) {
 					String annotationsUploadDirPath = EPADResources.getEPADWebServerAnnotationsUploadDir();
 					logger.info("Uploading annotations to directory " + annotationsUploadDirPath);
 					try {
@@ -180,7 +180,7 @@ public class AimResourceHandler extends AbstractHandler
 
 	private boolean uploadAIMAnnotations(HttpServletRequest httpRequest, PrintWriter responseStream,
 			String annotationsUploadDirPath) throws FileUploadException, IOException, FileNotFoundException, AimException
-	{
+	{ // http://www.tutorialspoint.com/servlets/servlets-file-uploading.htm
 		ServletFileUpload upload = new ServletFileUpload();
 		FileItemIterator iter = upload.getItemIterator(httpRequest);
 		int fileCount = 0;
@@ -191,7 +191,6 @@ public class AimResourceHandler extends AbstractHandler
 			logger.debug("Uploading annotation number " + fileCount);
 			FileItemStream item = iter.next();
 			String name = item.getFieldName();
-			// logger.debug("FieldName = " + name);
 			InputStream stream = item.openStream();
 			String tempName = "temp-" + System.currentTimeMillis() + ".xml";
 			File f = new File(annotationsUploadDirPath + tempName);

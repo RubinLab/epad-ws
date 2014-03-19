@@ -90,7 +90,7 @@ public class CoordinationHandler extends AbstractHandler
 	private final static int MIN_COORDINATION_TERMS = 2;
 
 	private static final EPADLogger log = EPADLogger.getInstance();
-	private final EPADConfig config = EPADConfig.getInstance();
+	private static final EPADConfig config = EPADConfig.getInstance();
 
 	@Override
 	public void handle(String s, Request request, HttpServletRequest httpRequest, HttpServletResponse httpResponse)
@@ -105,6 +105,7 @@ public class CoordinationHandler extends AbstractHandler
 			responseStream = httpResponse.getWriter();
 			if (XNATSessionOperations.hasValidXNATSessionID(httpRequest)) {
 				String method = httpRequest.getMethod();
+
 				if ("POST".equalsIgnoreCase(method)) {
 					Coordination coordination = readCoordination(request);
 					log.info("Received AIM Template coordination: " + coordination);

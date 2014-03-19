@@ -53,8 +53,8 @@ public class DCM4CHEESearchHandler extends AbstractHandler
 				if (queryString != null) {
 					queryString = URLDecoder.decode(queryString, "UTF-8");
 					queryString = queryString.trim();
-					log.info("DICOMSearchHandler query: " + queryString);
-					if (isDICOMSeriesRequest(queryString)) {
+					log.info("DCM4CHEESearchHandler query: " + queryString);
+					if (isDICOMSeriesRequest(queryString)) { // TODO httpRequest.getParameter: searchtype=series&studyUID=
 						String studyIdKey = getStudyUIDFromRequest(queryString);
 						String studyUID = DicomFormatUtil.formatDirToUid(studyIdKey);
 						DCM4CHEESeriesList dcm4CheeSeriesList = Dcm4CheeQueries.seriesSearch(studyUID);
@@ -86,6 +86,7 @@ public class DCM4CHEESearchHandler extends AbstractHandler
 		httpResponse.setStatus(statusCode);
 	}
 
+	// TODO Fix this nastiness.
 	private static String getStudyUIDFromRequest(String queryString)
 	{
 		queryString = queryString.toLowerCase();
