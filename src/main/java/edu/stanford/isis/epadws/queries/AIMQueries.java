@@ -21,10 +21,33 @@ public class AIMQueries
 	private static String xsdFilePath = EPADConfig.getInstance().getStringPropertyValue("baseSchemaDir") + xsdFile;
 	private static String collection = EPADConfig.getInstance().getStringPropertyValue("collection");
 
+	public static List<ImageAnnotation> getAIMImageAnnotationsForPerson(String personName, String user)
+	{
+		return getAIMImageAnnotations("personName", personName, user);
+	}
+
+	public static List<ImageAnnotation> getAIMImageAnnotationsForPatientId(String patientId, String user)
+	{
+		return getAIMImageAnnotations("patientID", patientId, user);
+	}
+
+	public static List<ImageAnnotation> getAIMImageAnnotationsForSeriesUID(String seriesUID, String user)
+	{
+		return getAIMImageAnnotations("seriesUID", seriesUID, user);
+	}
+
+	public static List<ImageAnnotation> getAIMImageAnnotationsForAnnotationUID(String annotationUID, String user)
+	{
+		return getAIMImageAnnotations("annotationUID", annotationUID, user);
+	}
+
 	/**
 	 * Read the annotations from the AIM database by patient name, patient id, series id, annotation id, or just get all
 	 * of them on a GET. Can also delete by annotation id.
 	 * 
+	 * @param valueType One of personName, patientId, seriesUID, annotationUID, deleteUID
+	 * @param value
+	 * @param user
 	 * @return List<ImageAnnotation>
 	 */
 	public static List<ImageAnnotation> getAIMImageAnnotations(String valueType, String value, String user)
