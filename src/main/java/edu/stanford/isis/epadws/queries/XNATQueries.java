@@ -81,13 +81,18 @@ public class XNATQueries
 		return invokeXNATDICOMExperimentsQuery(sessionID, xnatExperimentsQueryURL).ResultSet.totalRecords;
 	}
 
-	public static XNATExperimentList allDICOMExperimentsForProjectAndPatient(String sessionID, String projectID,
-			String patientID)
+	public static XNATExperimentList allDICOMExperimentsForProjectAndSubject(String sessionID, String projectID,
+			String subjectID)
 	{
-		String xnatExperimentsQueryURL = XNATQueryUtil.buildDICOMExperimentsForProjectAndPatientQueryURL(projectID,
-				patientID);
+		String xnatExperimentsQueryURL = XNATQueryUtil.buildDICOMExperimentsForProjectAndSubjectQueryURL(projectID,
+				subjectID);
 
 		return invokeXNATDICOMExperimentsQuery(sessionID, xnatExperimentsQueryURL);
+	}
+
+	public static int numberOfDICOMExperimentsForProjectAndSubject(String sessionID, String projectID, String subjectID)
+	{ // TODO Need a count without getting all records.
+		return allDICOMExperimentsForProjectAndSubject(sessionID, projectID, subjectID).ResultSet.totalRecords;
 	}
 
 	public static Set<String> subjectIDsForProject(String sessionID, String projectID)
@@ -102,51 +107,55 @@ public class XNATQueries
 		return subjectIDs;
 	}
 
-	private static XNATExperimentList invokeXNATDICOMExperimentsQuery(String sessionID,
-			String xnatDICOMExperimentsQueryURL)
+	private static XNATProjectList invokeXNATProjectsQuery(String sessionID, String xnatProjectsQueryURL)
 	{
 		HttpClient client = new HttpClient();
-		GetMethod method = new GetMethod(xnatDICOMExperimentsQueryURL);
+		GetMethod method = new GetMethod(xnatProjectsQueryURL);
 		int xnatStatusCode;
 
 		method.setRequestHeader("Cookie", "JSESSIONID=" + sessionID);
 
 		try {
-			log.info("Invoking XNAT query at " + xnatDICOMExperimentsQueryURL);
+			log.info("Invoking XNAT query at " + xnatProjectsQueryURL);
 			xnatStatusCode = client.executeMethod(method);
 		} catch (IOException e) {
-			log.warning("Warning: error performing XNAT query", e);
+			log.warning("Error performing XNAT projects query", e);
 			xnatStatusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 		}
-		return processXNATExperimentsQueryResponse(method, xnatStatusCode);
+		return processXNATProjectsQueryResponse(method, xnatStatusCode);
 	}
 
-	private static XNATExperimentList processXNATExperimentsQueryResponse(GetMethod method, int xnatStatusCode)
+	private static XNATProjectList processXNATProjectsQueryResponse(GetMethod method, int xnatStatusCode)
 	{
 		if (xnatStatusCode == HttpServletResponse.SC_OK) {
-			return extractXNATExperimentsFromResponse(method);
+			return extractXNATProjectsFromResponse(method);
 		} else if (xnatStatusCode == HttpServletResponse.SC_UNAUTHORIZED) {
-			log.warning("Invalid session token for XNAT experiments query");
-			return XNATExperimentList.emptyExperiments();
+			log.warning("Invalid session token for XNAT projects query");
+			return XNATProjectList.emptyProjects();
 		} else {
-			log.warning("Error performing XNAT experiments query; XNAT status code = " + xnatStatusCode);
-			return XNATExperimentList.emptyExperiments();
+			log.warning("Error performing XNAT projects query; XNAT status code = " + xnatStatusCode);
+			return XNATProjectList.emptyProjects();
 		}
 	}
 
-	private static XNATExperimentList extractXNATExperimentsFromResponse(GetMethod method)
+	private static XNATProjectList extractXNATProjectsFromResponse(GetMethod method)
 	{
-		InputStreamReader responseStream = null;
+		InputStreamReader streamReader = null;
 		try {
 			Gson gson = new Gson();
-			responseStream = new InputStreamReader(method.getResponseBodyAsStream(), "UTF-8");
-			return gson.fromJson(new BufferedReader(responseStream), XNATExperimentList.class);
+			streamReader = new InputStreamReader(method.getResponseBodyAsStream(), "UTF-8");
+			return gson.fromJson(new BufferedReader(streamReader), XNATProjectList.class);
 		} catch (IOException e) {
-			log.warning("Error processing XNAT experiments query result", e);
-			return XNATExperimentList.emptyExperiments();
+			log.warning("Error processing XNAT projects query result", e);
+			return XNATProjectList.emptyProjects();
 		} finally {
-			if (responseStream != null)
-				responseStream = null;
+			if (streamReader != null) {
+				try {
+					streamReader.close();
+				} catch (IOException e) {
+					log.warning("Error closing XNAT projects response stream ", e);
+				}
+			}
 		}
 	}
 
@@ -203,55 +212,52 @@ public class XNATQueries
 		}
 	}
 
-	private static XNATProjectList invokeXNATProjectsQuery(String sessionID, String xnatProjectsQueryURL)
+	private static XNATExperimentList invokeXNATDICOMExperimentsQuery(String sessionID,
+			String xnatDICOMExperimentsQueryURL)
 	{
 		HttpClient client = new HttpClient();
-		GetMethod method = new GetMethod(xnatProjectsQueryURL);
+		GetMethod method = new GetMethod(xnatDICOMExperimentsQueryURL);
 		int xnatStatusCode;
 
 		method.setRequestHeader("Cookie", "JSESSIONID=" + sessionID);
 
 		try {
-			log.info("Invoking XNAT query at " + xnatProjectsQueryURL);
+			log.info("Invoking XNAT query at " + xnatDICOMExperimentsQueryURL);
 			xnatStatusCode = client.executeMethod(method);
 		} catch (IOException e) {
-			log.warning("Error performing XNAT projects query", e);
+			log.warning("Warning: error performing XNAT query", e);
 			xnatStatusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 		}
-		return processXNATProjectsQueryResponse(method, xnatStatusCode);
+		return processXNATExperimentsQueryResponse(method, xnatStatusCode);
 	}
 
-	private static XNATProjectList processXNATProjectsQueryResponse(GetMethod method, int xnatStatusCode)
+	private static XNATExperimentList processXNATExperimentsQueryResponse(GetMethod method, int xnatStatusCode)
 	{
 		if (xnatStatusCode == HttpServletResponse.SC_OK) {
-			return extractXNATProjectsFromResponse(method);
+			return extractXNATExperimentsFromResponse(method);
 		} else if (xnatStatusCode == HttpServletResponse.SC_UNAUTHORIZED) {
-			log.warning("Invalid session token for XNAT subjects query");
-			return XNATProjectList.emptyProjects();
+			log.warning("Invalid session token for XNAT experiments query");
+			return XNATExperimentList.emptyExperiments();
 		} else {
-			log.warning("Error performing XNAT subjects query; XNAT status code = " + xnatStatusCode);
-			return XNATProjectList.emptyProjects();
+			log.warning("Error performing XNAT experiments query; XNAT status code = " + xnatStatusCode);
+			return XNATExperimentList.emptyExperiments();
 		}
 	}
 
-	private static XNATProjectList extractXNATProjectsFromResponse(GetMethod method)
+	private static XNATExperimentList extractXNATExperimentsFromResponse(GetMethod method)
 	{
-		InputStreamReader streamReader = null;
+		InputStreamReader responseStream = null;
 		try {
 			Gson gson = new Gson();
-			streamReader = new InputStreamReader(method.getResponseBodyAsStream(), "UTF-8");
-			return gson.fromJson(new BufferedReader(streamReader), XNATProjectList.class);
+			responseStream = new InputStreamReader(method.getResponseBodyAsStream(), "UTF-8");
+			return gson.fromJson(new BufferedReader(responseStream), XNATExperimentList.class);
 		} catch (IOException e) {
-			log.warning("Error processing XNAT projects query result", e);
-			return XNATProjectList.emptyProjects();
+			log.warning("Error processing XNAT experiments query result", e);
+			return XNATExperimentList.emptyExperiments();
 		} finally {
-			if (streamReader != null) {
-				try {
-					streamReader.close();
-				} catch (IOException e) {
-					log.warning("Error closing XNAT project response stream ", e);
-				}
-			}
+			if (responseStream != null)
+				responseStream = null;
 		}
 	}
+
 }

@@ -40,9 +40,14 @@ public class XNATQueryUtil
 		return buildProjectBaseURL();
 	}
 
+	public static String buildProjectQueryURL(String projectID)
+	{
+		return buildProjectBaseURL() + projectID + "?format=json";
+	}
+
 	public static String buildSubjectsQueryURL(String subjectID)
 	{
-		return buildSubjectsBaseURL() + "/" + subjectID;
+		return buildSubjectsBaseURL() + "/" + subjectID + "?format=json";
 	}
 
 	/**
@@ -53,7 +58,7 @@ public class XNATQueryUtil
 	 */
 	public static String buildAllSubjectsForProjectQueryURL(String projectID)
 	{
-		return buildProjectBaseURL() + projectID + "/subjects/";
+		return buildProjectBaseURL() + projectID + "/subjects/?columns=label,src,insert_user,insert_date,project";
 	}
 
 	/**
@@ -88,7 +93,7 @@ public class XNATQueryUtil
 	}
 
 	// Query to find all DICOM studies for a particular project and patient
-	public static String buildDICOMExperimentsForProjectAndPatientQueryURL(String projectID, String patientID)
+	public static String buildDICOMExperimentsForProjectAndSubjectQueryURL(String projectID, String patientID)
 	{
 		return buildSubjectsBaseURL() + "?project=" + projectID + "&src=" + patientID
 				+ "&xsiType=xnat:otherDicomSessionData&format=json";
