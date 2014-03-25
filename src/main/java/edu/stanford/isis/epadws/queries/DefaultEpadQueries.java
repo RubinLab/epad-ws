@@ -10,6 +10,15 @@ import edu.stanford.epad.dtos.DCM4CHEESeries;
 import edu.stanford.epad.dtos.DCM4CHEESeriesList;
 import edu.stanford.epad.dtos.EPADDatabaseImage;
 import edu.stanford.epad.dtos.EPADDatabaseSeries;
+import edu.stanford.epad.dtos.EPADProject;
+import edu.stanford.epad.dtos.EPADProjectList;
+import edu.stanford.epad.dtos.EPADSubject;
+import edu.stanford.epad.dtos.EPADSubjectList;
+import edu.stanford.epad.dtos.XNATProject;
+import edu.stanford.epad.dtos.XNATProjectList;
+import edu.stanford.epad.dtos.XNATSubject;
+import edu.stanford.epad.dtos.XNATSubjectList;
+import edu.stanford.epad.dtos.XNATUserList;
 import edu.stanford.isis.epad.common.dicom.DicomFormatUtil;
 import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epadws.dcm4chee.Dcm4CheeDatabase;
@@ -31,6 +40,31 @@ public class DefaultEpadQueries implements EpadQueries
 	public static DefaultEpadQueries getInstance()
 	{
 		return ourInstance;
+	}
+
+	public EPADProjectList performAllProjectsQuery(String sessionID, String username)
+	{
+		EPADProjectList epadProjectList = new EPADProjectList();
+		XNATProjectList xnatProjectList = XNATQueries.allProjects(sessionID);
+
+		for (XNATProject xnatProject : xnatProjectList.ResultSet.Result) {
+			EPADProject epadProject = xnatProject2EPADProject(sessionID, username, xnatProject);
+			epadProjectList.addEPADProject(epadProject);
+		}
+		return epadProjectList;
+	}
+
+	public EPADSubjectList performSubjectsQuery(String sessionID, String projectID)
+	{
+		EPADSubjectList epadSubjectList = new EPADSubjectList();
+		XNATSubjectList xnatSubjectList = XNATQueries.subjectsForProject(sessionID, projectID);
+		XNATUserList xnatUsers = XNATQueries.usersForProject(sessionID, projectID);
+
+		for (XNATSubject xnatSubject : xnatSubjectList.ResultSet.Result) {
+			EPADSubject epadSubject = xnatSubject2EPADSubject(sessionID, xnatUsers.getLoginNames(), xnatSubject);
+			epadSubjectList.addEPADSubject(epadSubject);
+		}
+		return epadSubjectList;
 	}
 
 	@Override
@@ -178,4 +212,46 @@ public class DefaultEpadQueries implements EpadQueries
 		else
 			return sliceLoc;
 	}
+
+	private EPADProject xnatProject2EPADProject(String sessionID, String username, XNATProject xnatProject)
+	{
+		String secondaryID = xnatProject.secondary_ID;
+		String piLastName = xnatProject.pi_lastname;
+		String description = xnatProject.description;
+		String name = xnatProject.name;
+		String id = xnatProject.ID;
+		String piFirstName = xnatProject.pi_firstname;
+		String uri = xnatProject.URI;
+		int numberOfSubjects = XNATQueries.numberOfSubjectsForProject(sessionID, xnatProject.ID);
+		int numberOfStudies = XNATQueries.numberOfStudiesForProject(sessionID, xnatProject.ID);
+		XNATUserList xnatUsers = XNATQueries.usersForProject(sessionID, xnatProject.ID);
+		Set<String> usernames = xnatUsers.getLoginNames();
+		int numberOfAnnotations = AIMQueries.numberOfAIMAnnotationsForProject(sessionID, usernames, xnatProject.ID);
+
+		EPADProject epadProject = new EPADProject(secondaryID, piLastName, description, name, id, piFirstName, uri,
+				numberOfSubjects, numberOfStudies, numberOfAnnotations, xnatUsers.getLoginNames());
+
+		return epadProject;
+	}
+
+	private EPADSubject xnatSubject2EPADSubject(String sessionID, Set<String> users, XNATSubject xnatSubject)
+	{
+		EpadQueries epadQueries = DefaultEpadQueries.getInstance();
+
+		String project = xnatSubject.project;
+		String subjectName = xnatSubject.src;
+		String xnatID = xnatSubject.ID;
+		String uri = xnatSubject.URI;
+		String insertUser = xnatSubject.insert_user;
+		String insertDate = xnatSubject.insert_date;
+		String label = xnatSubject.label;
+		int numberOfStudies = XNATQueries.numberOfStudiesForSubject(sessionID, xnatSubject.project, xnatSubject.ID);
+		int numberOfAnnotations = AIMQueries.numberOfAIMAnnotationsForSubject(sessionID, users, xnatSubject.ID);
+		Set<String> examTypes = epadQueries.examTypesForSubject(sessionID, xnatSubject.project, xnatSubject.ID);
+		EPADSubject epadSubject = new EPADSubject(project, subjectName, insertUser, xnatID, insertDate, label, uri,
+				numberOfStudies, numberOfAnnotations, examTypes);
+
+		return epadSubject;
+	}
+
 }
