@@ -31,6 +31,32 @@ public class DefaultDcm4CheeDatabaseOperations implements Dcm4CheeDatabaseOperat
 	}
 
 	@Override
+	public Map<String, String> getDcm4CheeSeriesDataWithUID(String seriesIUID)
+	{
+		Map<String, String> retVal = new HashMap<String, String>();
+
+		Connection c = null;
+		PreparedStatement ps = null;
+		ResultSet rs = null;
+		try {
+			c = getConnection();
+			ps = c.prepareStatement(Dcm4CheeDatabaseCommands.SELECT_SERIES_BY_ID);
+			ps.setString(1, seriesIUID);
+
+			rs = ps.executeQuery();
+			if (rs.next()) {
+				retVal = createResultMap(rs);
+			}
+		} catch (SQLException sqle) {
+			String debugInfo = DatabaseUtils.getDebugData(rs);
+			log.warning("Warning: database operation failed. debugInfo=" + debugInfo, sqle);
+		} finally {
+			close(c, ps, rs);
+		}
+		return retVal;
+	}
+
+	@Override
 	public List<Map<String, String>> dicomStudySearch(String type, String typeValue)
 	{
 		List<Map<String, String>> retVal = new ArrayList<Map<String, String>>();
@@ -121,7 +147,7 @@ public class DefaultDcm4CheeDatabaseOperations implements Dcm4CheeDatabaseOperat
 	}
 
 	@Override
-	public Set<String> getNewDicomSeries()
+	public Set<String> getNewDcm4CheeSeriesUIDs()
 	{
 		Set<String> retVal = new HashSet<String>();
 		Connection c = null;
@@ -227,7 +253,7 @@ public class DefaultDcm4CheeDatabaseOperations implements Dcm4CheeDatabaseOperat
 	}
 
 	@Override
-	public String getDicomStudyUIDForSeries(String seriesIUID)
+	public String getStudyUIDForSeries(String seriesIUID)
 	{
 		DicomParentCache cache = DicomParentCache.getInstance();
 

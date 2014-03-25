@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import edu.stanford.epad.dtos.DCM4CHEESeries;
 import edu.stanford.epad.dtos.EPADDatabaseImage;
 import edu.stanford.epad.dtos.EPADDatabaseSeries;
 import edu.stanford.isis.epad.common.dicom.DicomFormatUtil;
@@ -35,36 +36,29 @@ public class DefaultEpadQueries implements EpadQueries
 	 * know about.
 	 */
 	@Override
-	public List<Map<String, String>> getDicomSeriesForStatus(int statusCode)
+	public List<DCM4CHEESeries> getNewDcm4CheeSeriesWithStatus(int statusCode)
 	{
 		Dcm4CheeDatabaseOperations dcm4CheeDatabaseOperations = Dcm4CheeDatabase.getInstance()
 				.getDcm4CheeDatabaseOperations();
 		EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
+		List<DCM4CHEESeries> dcm4CheeSeriesList = new ArrayList<DCM4CHEESeries>();
 
-		List<Map<String, String>> retVal = new ArrayList<Map<String, String>>();
+		Set<String> dcm4CheeSeriesUIDs = dcm4CheeDatabaseOperations.getNewDcm4CheeSeriesUIDs();
+		Set<String> epadSeriesUIDs = epadDatabaseOperations.getAllSeriesUIDsFromEPadDatabase();
+		dcm4CheeSeriesUIDs.removeAll(epadSeriesUIDs);
 
-		try {
-			Set<String> pacsSet = dcm4CheeDatabaseOperations.getNewDicomSeries();
-			Set<String> epadSet = epadDatabaseOperations.getAllSeriesFromEPadDatabase();
-			pacsSet.removeAll(epadSet);
+		// logger.info("There " + pacsSet.size() + " studies in DCM4CHEE database and " + epadSet.size()
+		// + " in the ePAD database");
 
-			// logger.info("There " + pacsSet.size() + " studies in DCM4CHEE database and " + epadSet.size()
-			// + " in the ePAD database");
+		List<String> seriesUIDList = new ArrayList<String>(dcm4CheeSeriesUIDs);
 
-			List<String> seriesList = new ArrayList<String>(pacsSet);
-
-			for (String currSeries : seriesList) {
-				Map<String, String> currSeriesData = epadDatabaseOperations.getDicomSeriesById(currSeries);
-				if (currSeriesData != null) {
-					if (!currSeriesData.isEmpty()) {
-						retVal.add(currSeriesData);
-					}
-				}
+		for (String seriesUID : seriesUIDList) {
+			DCM4CHEESeries dcm4CheeSeries = Dcm4CheeQueries.getSeriesWithUID(seriesUID);
+			if (dcm4CheeSeries != null) {
+				dcm4CheeSeriesList.add(dcm4CheeSeries);
 			}
-		} catch (Exception e) {
-			log.warning("Warning: database operation failed", e);
 		}
-		return retVal;
+		return dcm4CheeSeriesList;
 	}
 
 	@Override

@@ -83,7 +83,7 @@ public class ImageCheckHandler extends AbstractHandler
 		Dcm4CheeDatabaseOperations dcm4CheeDatabaseOperations = Dcm4CheeDatabase.getInstance()
 				.getDcm4CheeDatabaseOperations();
 		EpadQueries epadQueries = DefaultEpadQueries.getInstance();
-		Set<String> seriesIUIDs = dcm4CheeDatabaseOperations.getNewDicomSeries();
+		Set<String> seriesIUIDs = dcm4CheeDatabaseOperations.getNewDcm4CheeSeriesUIDs();
 		List<Map<String, String>> allUnprocessedDICOMImageFileDescriptions = new ArrayList<Map<String, String>>();
 
 		int numberOfSeriesWithMissingEPADDatabaseEntry = 0;

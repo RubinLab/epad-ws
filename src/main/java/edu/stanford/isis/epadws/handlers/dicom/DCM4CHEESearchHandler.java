@@ -57,7 +57,7 @@ public class DCM4CHEESearchHandler extends AbstractHandler
 					if (isDICOMSeriesRequest(queryString)) { // TODO httpRequest.getParameter: searchtype=series&studyUID=
 						String studyIdKey = getStudyUIDFromRequest(queryString);
 						String studyUID = DicomFormatUtil.formatDirToUid(studyIdKey);
-						DCM4CHEESeriesList dcm4CheeSeriesList = Dcm4CheeQueries.seriesSearch(studyUID);
+						DCM4CHEESeriesList dcm4CheeSeriesList = Dcm4CheeQueries.getSeriesInStudy(studyUID);
 						responseStream.append(dcm4CheeSeriesList.toJSON());
 					} else {
 						DCM4CHEEStudySearchType dcm4CheeSearchType = getSearchType(httpRequest);

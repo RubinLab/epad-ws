@@ -193,7 +193,7 @@ public class DICOMSeriesWatcher implements Runnable
 	{
 		String seriesIUID = currImage.get("series_iuid");
 		Dcm4CheeDatabaseOperations databaseOperations = Dcm4CheeDatabase.getInstance().getDcm4CheeDatabaseOperations();
-		String studyUID = databaseOperations.getDicomStudyUIDForSeries(seriesIUID);
+		String studyUID = databaseOperations.getStudyUIDForSeries(seriesIUID);
 		String imageUID = currImage.get("sop_iuid");
 		StringBuilder outputPath = new StringBuilder();
 

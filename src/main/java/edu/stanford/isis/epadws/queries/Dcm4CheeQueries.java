@@ -30,7 +30,7 @@ import edu.stanford.isis.epadws.processing.pipeline.task.DicomHeadersTask;
  */
 public class Dcm4CheeQueries
 {
-	private static final EPADLogger log = EPADLogger.getInstance();
+	private static EPADLogger log = EPADLogger.getInstance();
 
 	/**
 	 * Query the DCM4CHEE database and return a list of study descriptions.
@@ -46,24 +46,24 @@ public class Dcm4CheeQueries
 				searchValue);
 		DCM4CHEEStudyList dcm4CheeStudyList = new DCM4CHEEStudyList();
 
-		for (Map<String, String> row : studySearchResult) {
-			final String studyUID = getStringValueFromRow(row, "study_iuid");
-			final String patientName = getStringValueFromRow(row, "pat_name");
-			final String patientID = getStringValueFromRow(row, "pat_id");
-			final String examType = getStringValueFromRow(row, "modality");
-			final String dateAcquired = getStringValueFromRow(row, "study_datetime");
-			final int studyStatus = getIntegerFromRow(row, "study_status");
-			final int seriesCount = getIntegerFromRow(row, "number_series");
-			final String firstSeriesUID = getStringValueFromRow(row, "series_iuid");
-			final String firstSeriesDateAcquired = getStringValueFromRow(row, "pps_start");
-			final String studyAccessionNumber = getStringValueFromRow(row, "accession_no");
-			final int imagesCount = getIntegerFromRow(row, "sum_images");
-			final String stuidID = getStringValueFromRow(row, "study_id");
-			final String studyDescription = getStringValueFromRow(row, "study_desc");
-			final String physicianName = getStringValueFromRow(row, "ref_physician");
-			final String birthdate = getStringValueFromRow(row, "pat_birthdate");
-			final String sex = getStringValueFromRow(row, "pat_sex");
-			final DCM4CHEEStudy dcm4CheeStudy = new DCM4CHEEStudy(studyUID, patientName, patientID, examType, dateAcquired,
+		for (Map<String, String> dcm4CheeStudyData : studySearchResult) {
+			String studyUID = getStringValueFromRow(dcm4CheeStudyData, "study_iuid");
+			String patientName = getStringValueFromRow(dcm4CheeStudyData, "pat_name");
+			String patientID = getStringValueFromRow(dcm4CheeStudyData, "pat_id");
+			String examType = getStringValueFromRow(dcm4CheeStudyData, "modality");
+			String dateAcquired = getStringValueFromRow(dcm4CheeStudyData, "study_datetime");
+			int studyStatus = getIntegerFromRow(dcm4CheeStudyData, "study_status");
+			int seriesCount = getIntegerFromRow(dcm4CheeStudyData, "number_series");
+			String firstSeriesUID = getStringValueFromRow(dcm4CheeStudyData, "series_iuid");
+			String firstSeriesDateAcquired = getStringValueFromRow(dcm4CheeStudyData, "pps_start");
+			String studyAccessionNumber = getStringValueFromRow(dcm4CheeStudyData, "accession_no");
+			int imagesCount = getIntegerFromRow(dcm4CheeStudyData, "sum_images");
+			String stuidID = getStringValueFromRow(dcm4CheeStudyData, "study_id");
+			String studyDescription = getStringValueFromRow(dcm4CheeStudyData, "study_desc");
+			String physicianName = getStringValueFromRow(dcm4CheeStudyData, "ref_physician");
+			String birthdate = getStringValueFromRow(dcm4CheeStudyData, "pat_birthdate");
+			String sex = getStringValueFromRow(dcm4CheeStudyData, "pat_sex");
+			DCM4CHEEStudy dcm4CheeStudy = new DCM4CHEEStudy(studyUID, patientName, patientID, examType, dateAcquired,
 					studyStatus, seriesCount, firstSeriesUID, firstSeriesDateAcquired, studyAccessionNumber, imagesCount,
 					stuidID, studyDescription, physicianName, birthdate, sex);
 			dcm4CheeStudyList.addDCM4CHEEStudy(dcm4CheeStudy);
@@ -78,35 +78,53 @@ public class Dcm4CheeQueries
 	 *          http://[ip:port]/search?searchType=series&studyUID=[studyID].
 	 * 
 	 */
-	public static DCM4CHEESeriesList seriesSearch(String studyUID)
+	public static DCM4CHEESeriesList getSeriesInStudy(String studyUID)
 	{
-		final Dcm4CheeDatabaseOperations dcm4CheeDatabaseOperations = Dcm4CheeDatabase.getInstance()
+		Dcm4CheeDatabaseOperations dcm4CheeDatabaseOperations = Dcm4CheeDatabase.getInstance()
 				.getDcm4CheeDatabaseOperations();
-		final List<Map<String, String>> series = dcm4CheeDatabaseOperations.findAllDicomSeriesInStudy(studyUID);
-		DCM4CHEESeriesList dcm4cheeSeriesDescriptionList = new DCM4CHEESeriesList();
+		List<Map<String, String>> series = dcm4CheeDatabaseOperations.findAllDicomSeriesInStudy(studyUID);
+		DCM4CHEESeriesList dcm4cheeSeriesList = new DCM4CHEESeriesList();
 
-		for (Map<String, String> row : series) {
-			final String seriesID = getStringValueFromRow(row, "series_iuid");
-			final String patientID = getStringValueFromRow(row, "pat_id");
-			final String patientName = getStringValueFromRow(row, "pat_name");
-			final String seriesDate = reformatSeriesDate(getStringValueFromRow(row, "study_datetime"));
-			final String examType = getStringValueFromRow(row, "modality");
-			final String thumbnailURL = getStringValueFromRow(row, "thumbnail_url");
-			final String seriesDescription = getStringValueFromRow(row, "series_desc");
-			final int numberOfSeriesRelatedInstances = Integer.parseInt(getStringValueFromRow(row, "num_instances"));
-			final int imagesInSeries = getIntegerFromRow(row, "num_instances");
-			final int seriesStatus = getIntegerFromRow(row, "series_status");
-			final String bodyPart = getStringValueFromRow(row, "body_part");
-			final String institution = getStringValueFromRow(row, "institution");
-			final String stationName = getStringValueFromRow(row, "station_name");
-			final String department = getStringValueFromRow(row, "department");
-			final String accessionNumber = getStringValueFromRow(row, "accession_no");
-			final DCM4CHEESeries dcm4cheeSeriesDescription = new DCM4CHEESeries(seriesID, patientID, patientName, seriesDate,
-					examType, thumbnailURL, seriesDescription, numberOfSeriesRelatedInstances, imagesInSeries, seriesStatus,
-					bodyPart, institution, stationName, department, accessionNumber);
-			dcm4cheeSeriesDescriptionList.addDCM4CHEESeries(dcm4cheeSeriesDescription);
+		for (Map<String, String> dcm4CheeSeriesData : series) {
+			DCM4CHEESeries dcm4cheeSeries = extractDCM4CHEESeries(dcm4CheeSeriesData);
+			dcm4cheeSeriesList.addDCM4CHEESeries(dcm4cheeSeries);
 		}
-		return dcm4cheeSeriesDescriptionList;
+		return dcm4cheeSeriesList;
+	}
+
+	public static DCM4CHEESeries getSeriesWithUID(String seriesUID)
+	{
+		Dcm4CheeDatabaseOperations dcm4CheeDatabaseOperations = Dcm4CheeDatabase.getInstance()
+				.getDcm4CheeDatabaseOperations();
+		Map<String, String> dcm4CheeSeriesData = dcm4CheeDatabaseOperations.getDcm4CheeSeriesDataWithUID(seriesUID);
+
+		DCM4CHEESeries dcm4cheeSeries = extractDCM4CHEESeries(dcm4CheeSeriesData);
+		return dcm4cheeSeries;
+	}
+
+	private static DCM4CHEESeries extractDCM4CHEESeries(Map<String, String> dcm4CheeSeriesData)
+	{
+		String studyUID = getStringValueFromRow(dcm4CheeSeriesData, "study_iuid");
+		String seriesUID = getStringValueFromRow(dcm4CheeSeriesData, "series_iuid");
+		String patientID = getStringValueFromRow(dcm4CheeSeriesData, "pat_id");
+		String patientName = getStringValueFromRow(dcm4CheeSeriesData, "pat_name");
+		String seriesDate = reformatSeriesDate(getStringValueFromRow(dcm4CheeSeriesData, "study_datetime"));
+		String examType = getStringValueFromRow(dcm4CheeSeriesData, "modality");
+		String thumbnailURL = getStringValueFromRow(dcm4CheeSeriesData, "thumbnail_url");
+		String seriesDescription = getStringValueFromRow(dcm4CheeSeriesData, "series_desc");
+		int numberOfSeriesRelatedInstances = Integer.parseInt(getStringValueFromRow(dcm4CheeSeriesData, "num_instances"));
+		int imagesInSeries = getIntegerFromRow(dcm4CheeSeriesData, "num_instances");
+		int seriesStatus = getIntegerFromRow(dcm4CheeSeriesData, "series_status");
+		String bodyPart = getStringValueFromRow(dcm4CheeSeriesData, "body_part");
+		String institution = getStringValueFromRow(dcm4CheeSeriesData, "institution");
+		String stationName = getStringValueFromRow(dcm4CheeSeriesData, "station_name");
+		String department = getStringValueFromRow(dcm4CheeSeriesData, "department");
+		String accessionNumber = getStringValueFromRow(dcm4CheeSeriesData, "accession_no");
+		DCM4CHEESeries dcm4cheeSeries = new DCM4CHEESeries(studyUID, seriesUID, patientID, patientName, seriesDate,
+				examType, thumbnailURL, seriesDescription, numberOfSeriesRelatedInstances, imagesInSeries, seriesStatus,
+				bodyPart, institution, stationName, department, accessionNumber);
+		return dcm4cheeSeries;
+
 	}
 
 	public static DICOMElementList getDICOMElementsFromWADO(String studyUID, String seriesUID, String imageUID)

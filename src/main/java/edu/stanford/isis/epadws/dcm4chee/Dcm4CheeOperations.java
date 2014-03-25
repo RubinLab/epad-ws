@@ -24,36 +24,6 @@ public class Dcm4CheeOperations
 {
 	private static EPADLogger log = EPADLogger.getInstance();
 
-	/**
-	 * 
-	 * @param dirPath String
-	 * @return boolean true if this path contains spaces.
-	 */
-	private static boolean pathContainsSpaces(String dirPath)
-	{
-		return dirPath.indexOf(' ') > 0;
-	}
-
-	/**
-	 * 
-	 * @param path String
-	 * @return String
-	 */
-	private static String escapeSpacesInDirPath(String path)
-	{
-		StringBuilder sb = new StringBuilder();
-		String[] parts = path.split(" ");
-		boolean isFirst = true;
-		for (String part : parts) {
-			if (!isFirst) {
-				sb.append("\\ ");
-			}
-			sb.append(part);
-			isFirst = false;
-		}
-		return sb.toString();
-	}
-
 	public static void dcmsnd(File inputDirFile, boolean throwException) throws Exception
 	{
 		InputStream is = null;
@@ -199,16 +169,16 @@ public class Dcm4CheeOperations
 		}
 	}
 
-	public static void deleteDicomStudy(String uid) throws Exception
+	public static void deleteStudy(String studyUID) throws Exception
 	{
 		InputStream is = null;
 		InputStreamReader isr = null;
 		BufferedReader br = null;
 
 		try {
-			log.info("Deleting study " + uid + " files - command: ./dcmdeleteStudy " + uid);
+			log.info("Deleting study " + studyUID + " files - command: ./dcmdeleteStudy " + studyUID);
 
-			String[] command = { "./dcmdeleteStudy", uid };
+			String[] command = { "./dcmdeleteStudy", studyUID };
 
 			ProcessBuilder pb = new ProcessBuilder(command);
 			String myScriptsBinDirectory = EPADResources.getEPADWebServerMyScriptsDir();
@@ -230,7 +200,7 @@ public class Dcm4CheeOperations
 				int exitValue = process.waitFor(); // keep.
 				log.info("DICOM delete study exit value is: " + exitValue);
 			} catch (Exception e) {
-				log.warning("Didn't delete DICOM files in: " + uid, e);
+				log.warning("Failed to delete DICOM study " + studyUID, e);
 			}
 			String cmdLineOutput = sb.toString();
 			writeDeleteLog(cmdLineOutput);
@@ -239,26 +209,26 @@ public class Dcm4CheeOperations
 				throw new IllegalStateException("Failed for: " + parseError(cmdLineOutput));
 			}
 		} catch (Exception e) {
-			log.warning("Didn't delete DICOM files in: " + uid, e);
+			log.warning("Failed to delete DICOM study " + studyUID, e);
 		}
 	}
 
 	/**
 	 * Delete from DCM4CHEE
 	 * 
-	 * @param uid
+	 * @param seriesUID
 	 * @throws Exception
 	 */
-	public static void deleteSeries(String uid) throws Exception
+	public static void deleteSeries(String seriesUID) throws Exception
 	{
 		InputStream is = null;
 		InputStreamReader isr = null;
 		BufferedReader br = null;
 
 		try {
-			log.info("Deleting series " + uid + " files - command: ./dcmdeleteSeries " + uid);
+			log.info("Deleting series " + seriesUID + " files - command: ./dcmdeleteSeries " + seriesUID);
 
-			String[] command = { "./dcmdeleteSeries", uid };
+			String[] command = { "./dcmdeleteSeries", seriesUID };
 
 			ProcessBuilder pb = new ProcessBuilder(command);
 			String myScriptsDirectory = EPADResources.getEPADWebServerMyScriptsDir();
@@ -266,10 +236,8 @@ public class Dcm4CheeOperations
 
 			Process process = pb.start();
 			process.getOutputStream();// get the output stream.
-			// Read out dir output
 			is = process.getInputStream();
 			isr = new InputStreamReader(is);
-
 			br = new BufferedReader(isr);
 			String line;
 			StringBuilder sb = new StringBuilder();
@@ -277,11 +245,10 @@ public class Dcm4CheeOperations
 				sb.append(line).append("\n");
 			}
 			try {
-				// int exitValue = process.waitFor(); //keep.
-				// long totalTime = System.currentTimeMillis() - startTime;
-				// log.info("Tags exit value is: " + exitValue+" and took: "+totalTime+" ms");
+				int exitValue = process.waitFor();
+				log.info("DICOM delete series exit value is: " + exitValue);
 			} catch (Exception e) {
-				log.warning("Didn't delete DICOM files in: " + uid, e);
+				log.warning("Failed to delete DICOM series " + seriesUID, e);
 			}
 
 			String cmdLineOutput = sb.toString();
@@ -291,7 +258,7 @@ public class Dcm4CheeOperations
 				throw new IllegalStateException("Failed for: " + parseError(cmdLineOutput));
 			}
 		} catch (Exception e) {
-			log.warning("Didn't delete dicom files in: " + uid, e);
+			log.warning("Failed to delete DICOM series " + seriesUID, e);
 		}
 	}
 
@@ -305,5 +272,35 @@ public class Dcm4CheeOperations
 		String logDirectory = EPADResources.getEPADWebServerLogDir();
 		String fileName = logDirectory + "delete_" + System.currentTimeMillis() + ".log";
 		EPADFileUtils.write(new File(fileName), contents);
+	}
+
+	/**
+	 * 
+	 * @param dirPath String
+	 * @return boolean true if this path contains spaces.
+	 */
+	private static boolean pathContainsSpaces(String dirPath)
+	{
+		return dirPath.indexOf(' ') > 0;
+	}
+
+	/**
+	 * 
+	 * @param path String
+	 * @return String
+	 */
+	private static String escapeSpacesInDirPath(String path)
+	{
+		StringBuilder sb = new StringBuilder();
+		String[] parts = path.split(" ");
+		boolean isFirst = true;
+		for (String part : parts) {
+			if (!isFirst) {
+				sb.append("\\ ");
+			}
+			sb.append(part);
+			isFirst = false;
+		}
+		return sb.toString();
 	}
 }

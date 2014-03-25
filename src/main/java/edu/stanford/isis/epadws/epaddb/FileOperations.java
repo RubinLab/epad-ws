@@ -46,6 +46,18 @@ public class FileOperations
 		log.info("Deleting the PNG for study at " + outputPath.toString() + " success = " + success);
 	}
 
+	public static void deletePNGsforDicomSeries(String studyUID, String seriesUID) throws Exception
+	{
+		StringBuilder outputPath = new StringBuilder();
+		outputPath.append(EPADResources.getEPADWebServerPNGDir());
+		outputPath.append(DicomFormatUtil.formatUidToDir(studyUID)).append("/" + DicomFormatUtil.formatUidToDir(seriesUID));
+
+		File dirToDelete = new File(outputPath.toString());
+		boolean success = delete(dirToDelete);
+
+		log.info("Deleting the PNG for study at " + outputPath.toString() + " success = " + success);
+	}
+
 	public static void writePNGGridFile(File pngInputFile, List<File> inputPNGGridFiles, File outputPNGFile)
 	{
 		EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
@@ -84,8 +96,9 @@ public class FileOperations
 	 */
 	public static void deletePNGforSeries(String seriesUID) throws Exception
 	{
-		Dcm4CheeDatabaseOperations dcm4CheeDatabaseOperations = Dcm4CheeDatabase.getInstance().getDcm4CheeDatabaseOperations();
-		String studyUID = dcm4CheeDatabaseOperations.getDicomStudyUIDForSeries(seriesUID);
+		Dcm4CheeDatabaseOperations dcm4CheeDatabaseOperations = Dcm4CheeDatabase.getInstance()
+				.getDcm4CheeDatabaseOperations();
+		String studyUID = dcm4CheeDatabaseOperations.getStudyUIDForSeries(seriesUID);
 		StringBuilder outputPath = new StringBuilder();
 		outputPath.append(EPADResources.getEPADWebServerPNGDir());
 		outputPath.append(DicomFormatUtil.formatUidToDir(studyUID)).append("/");

@@ -52,7 +52,7 @@ public class PatientDeleteTask implements Runnable
 				List<String> seriesUIDs = dcm4CheeDatabaseOperations.findAllSeriesUIDsInStudy(studyID);
 				logger.info("Found " + seriesUIDs.size() + " series in study " + patientID);
 
-				Dcm4CheeOperations.deleteDicomStudy(studyID); // Must run after finding series in DCM4CHEE
+				Dcm4CheeOperations.deleteStudy(studyID); // Must run after finding series in DCM4CHEE
 
 				// Should not delete until after deleting study in DCM4CHEE or PNG pipeline will activate.
 				for (String seriesUID : seriesUIDs) {

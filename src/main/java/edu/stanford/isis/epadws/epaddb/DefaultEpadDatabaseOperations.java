@@ -14,7 +14,6 @@ import java.util.Map;
 import java.util.Set;
 
 import edu.stanford.isis.epad.common.util.EPADLogger;
-import edu.stanford.isis.epadws.dcm4chee.Dcm4CheeDatabaseCommands;
 import edu.stanford.isis.epadws.handlers.coordination.Term;
 import edu.stanford.isis.epadws.processing.model.PngProcessingStatus;
 
@@ -219,32 +218,6 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 	}
 
 	@Override
-	public Map<String, String> getDicomSeriesById(String seriesIUID)
-	{
-		Map<String, String> retVal = new HashMap<String, String>();
-
-		Connection c = null;
-		PreparedStatement ps = null;
-		ResultSet rs = null;
-		try {
-			c = getConnection();
-			ps = c.prepareStatement(Dcm4CheeDatabaseCommands.SELECT_SERIES_BY_ID);
-			ps.setString(1, seriesIUID);
-
-			rs = ps.executeQuery();
-			if (rs.next()) {
-				retVal = createResultMap(rs);
-			}
-		} catch (SQLException sqle) {
-			String debugInfo = DatabaseUtils.getDebugData(rs);
-			log.warning("Warning: database operation failed. debugInfo=" + debugInfo, sqle);
-		} finally {
-			close(c, ps, rs);
-		}
-		return retVal;
-	}
-
-	@Override
 	public int getKeyForTerm(Term term) throws SQLException
 	{
 		Connection c = null;
@@ -402,7 +375,7 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 	}
 
 	@Override
-	public Set<String> getAllSeriesFromEPadDatabase()
+	public Set<String> getAllSeriesUIDsFromEPadDatabase()
 	{ // This is a "select series_iuid from epaddb.series_status";
 		Set<String> retVal = new HashSet<String>();
 

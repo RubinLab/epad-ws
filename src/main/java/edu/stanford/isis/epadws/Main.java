@@ -47,7 +47,7 @@ import edu.stanford.isis.epadws.handlers.dicom.DICOMHeadersHandler;
 import edu.stanford.isis.epadws.handlers.dicom.DicomSegmentationPathHandler;
 import edu.stanford.isis.epadws.handlers.dicom.EPADSeriesHandler;
 import edu.stanford.isis.epadws.handlers.dicom.PatientDeleteHandler;
-import edu.stanford.isis.epadws.handlers.dicom.StudyDeleteHandler;
+import edu.stanford.isis.epadws.handlers.dicom.DicomDeleteHandler;
 import edu.stanford.isis.epadws.handlers.dicom.WadoHandler;
 import edu.stanford.isis.epadws.handlers.dicom.WindowingHandler;
 import edu.stanford.isis.epadws.handlers.event.EventHandler;
@@ -193,7 +193,7 @@ public class Main
 
 		addHandlerAtContextPath(new EPADSeriesHandler(), "/epad/seriesorderj", handlerList);
 		addHandlerAtContextPath(new PatientDeleteHandler(), "/epad/patientdelete", handlerList);
-		addHandlerAtContextPath(new StudyDeleteHandler(), "/epad/dicomdelete", handlerList);
+		addHandlerAtContextPath(new DicomDeleteHandler(), "/epad/dicomdelete", handlerList);
 		addHandlerAtContextPath(new DICOMHeadersHandler(), "/epad/dicomtagj", handlerList);
 		addHandlerAtContextPath(new DicomSegmentationPathHandler(), "/epad/segmentationpath", handlerList);
 		addHandlerAtContextPath(new WindowingHandler(), "/epad/dicomparam", handlerList);

@@ -17,8 +17,6 @@ import edu.stanford.isis.epadws.processing.model.PngProcessingStatus;
  */
 public interface EpadDatabaseOperations
 {
-	Map<String, String> getDicomSeriesById(String seriesIUID);
-
 	void deleteDicomStudy(String uid);
 
 	void deleteDicomSeries(String uid);
@@ -46,7 +44,7 @@ public interface EpadDatabaseOperations
 
 	String[] retrieveDicomStudySeriesAndImageIDs(String imageUID);
 
-	Set<String> getAllSeriesFromEPadDatabase();
+	Set<String> getAllSeriesUIDsFromEPadDatabase();
 
 	List<String> getFinishedDICOMImageInstanceIDsForSeriesFromEPadDatabase(String seriesIUID);
 

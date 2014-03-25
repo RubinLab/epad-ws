@@ -188,7 +188,7 @@ public class QueueAndWatcherManager
 		String seriesIUID = dicomImageDescription.get("series_iuid");
 		Dcm4CheeDatabaseOperations dcm4CheeDatabaseOperations = Dcm4CheeDatabase.getInstance()
 				.getDcm4CheeDatabaseOperations();
-		String studyUID = dcm4CheeDatabaseOperations.getDicomStudyUIDForSeries(seriesIUID);
+		String studyUID = dcm4CheeDatabaseOperations.getStudyUIDForSeries(seriesIUID);
 		String imageUID = dicomImageDescription.get("sop_iuid");
 		StringBuilder outputPath = new StringBuilder();
 
