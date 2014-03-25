@@ -69,7 +69,7 @@ public class EPADSearchHandler extends AbstractHandler
 				} else if (HandlerUtil.matchesTemplate(SUBJECTS_TEMPLATE, pathInfo)) {
 					Map<String, String> templateMap = HandlerUtil.getTemplateMap(SUBJECTS_TEMPLATE, pathInfo);
 					String projectID = HandlerUtil.getParameter(templateMap, "project");
-					EPADSubjectList subjectList = performSubjectsQuery(jsessionID, username, projectID);
+					EPADSubjectList subjectList = performSubjectsQuery(jsessionID, projectID);
 					responseStream.append(subjectList.toJSON());
 				} else {
 					// TODO
@@ -101,13 +101,14 @@ public class EPADSearchHandler extends AbstractHandler
 		return epadProjectList;
 	}
 
-	private EPADSubjectList performSubjectsQuery(String sessionID, String username, String projectID)
+	private EPADSubjectList performSubjectsQuery(String sessionID, String projectID)
 	{
 		EPADSubjectList epadSubjectList = new EPADSubjectList();
-		XNATSubjectList xnatSubjectList = XNATQueries.allSubjectsForProject(sessionID, projectID);
+		XNATSubjectList xnatSubjectList = XNATQueries.subjectsForProject(sessionID, projectID);
+		XNATUserList xnatUsers = XNATQueries.usersForProject(sessionID, projectID);
 
 		for (XNATSubject xnatSubject : xnatSubjectList.ResultSet.Result) {
-			EPADSubject epadSubject = xnatSubject2EPADSubject(sessionID, username, xnatSubject);
+			EPADSubject epadSubject = xnatSubject2EPADSubject(sessionID, xnatUsers.getLoginNames(), xnatSubject);
 			epadSubjectList.addEPADSubject(epadSubject);
 		}
 		return epadSubjectList;
@@ -124,16 +125,17 @@ public class EPADSearchHandler extends AbstractHandler
 		String uri = xnatProject.URI;
 		int numberOfSubjects = XNATQueries.numberOfSubjectsForProject(sessionID, xnatProject.ID);
 		int numberOfStudies = numberOfStudiesForProject(sessionID, xnatProject.ID);
-		int numberOfAnnotations = isEmptyUsername(username) ? 0 : numberOfAIMAnnotationsForProject(sessionID, username,
-				xnatProject.ID);
-		XNATUserList users = XNATQueries.usersForProject(sessionID, xnatProject.ID);
+		XNATUserList xnatUsers = XNATQueries.usersForProject(sessionID, xnatProject.ID);
+		Set<String> usernames = xnatUsers.getLoginNames();
+		int numberOfAnnotations = numberOfAIMAnnotationsForProject(sessionID, usernames, xnatProject.ID);
+
 		EPADProject epadProject = new EPADProject(secondaryID, piLastName, description, name, id, piFirstName, uri,
-				numberOfSubjects, numberOfStudies, numberOfAnnotations, users);
+				numberOfSubjects, numberOfStudies, numberOfAnnotations, xnatUsers.getLoginNames());
 
 		return epadProject;
 	}
 
-	private EPADSubject xnatSubject2EPADSubject(String sessionID, String username, XNATSubject xnatSubject)
+	private EPADSubject xnatSubject2EPADSubject(String sessionID, Set<String> users, XNATSubject xnatSubject)
 	{
 		String project = xnatSubject.project;
 		String subjectName = xnatSubject.src;
@@ -143,8 +145,7 @@ public class EPADSearchHandler extends AbstractHandler
 		String insertDate = xnatSubject.insert_date;
 		String label = xnatSubject.label;
 		int numberOfStudies = numberOfStudiesForSubject(sessionID, xnatSubject.project, xnatSubject.ID);
-		int numberOfAnnotations = isEmptyUsername(username) ? 0 : numberOfAIMAnnotationsForSubject(sessionID, username,
-				xnatSubject.ID);
+		int numberOfAnnotations = numberOfAIMAnnotationsForSubject(sessionID, users, xnatSubject.ID);
 		Set<String> examTypes = new HashSet<String>(); // TODO
 		EPADSubject epadSubject = new EPADSubject(project, subjectName, insertUser, xnatID, insertDate, label, uri,
 				numberOfStudies, numberOfAnnotations, examTypes);
@@ -152,16 +153,28 @@ public class EPADSearchHandler extends AbstractHandler
 		return epadSubject;
 	}
 
-	private boolean isEmptyUsername(String username)
+	private int numberOfAIMAnnotationsForSubject(String sessionID, Set<String> users, String subjectID)
 	{
-		return username == null || username.length() == 0;
+		int numberOfAIMAnnotations = 0;
+
+		for (String user : users)
+			numberOfAIMAnnotations += AIMQueries.getNumberOfAIMImageAnnotationsForPatientId(subjectID, user);
+
+		return numberOfAIMAnnotations;
 	}
 
-	private int numberOfAIMAnnotationsForSubject(String sessionID, String username, String subjectID)
+	private int numberOfAIMAnnotationsForProject(String sessionID, Set<String> usernames, String projectID)
 	{
-		return AIMQueries.getNumberOfAIMImageAnnotationsForPatientId(subjectID, username);
+		int totalAIMAnnotations = 0;
+
+		for (String username : usernames) {
+			totalAIMAnnotations += numberOfAIMAnnotationsForProject(sessionID, username, projectID);
+		}
+
+		return totalAIMAnnotations;
 	}
 
+	// Only count annotations for subjects in this project
 	private int numberOfAIMAnnotationsForProject(String sessionID, String username, String projectID)
 	{
 		Set<String> subjectIDs = XNATQueries.subjectIDsForProject(sessionID, projectID);

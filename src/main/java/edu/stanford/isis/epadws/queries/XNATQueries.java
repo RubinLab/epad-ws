@@ -46,7 +46,7 @@ public class XNATQueries
 
 	}
 
-	public static XNATSubjectList allSubjectsForProject(String sessionID, String projectID)
+	public static XNATSubjectList subjectsForProject(String sessionID, String projectID)
 	{
 		String allSubjectsForProjectQueryURL = XNATQueryUtil.buildAllSubjectsForProjectQueryURL(projectID);
 
@@ -106,7 +106,7 @@ public class XNATQueries
 
 	public static Set<String> subjectIDsForProject(String sessionID, String projectID)
 	{
-		XNATSubjectList xnatSubjectList = XNATQueries.allSubjectsForProject(sessionID, projectID);
+		XNATSubjectList xnatSubjectList = XNATQueries.subjectsForProject(sessionID, projectID);
 		Set<String> subjectIDs = new HashSet<String>();
 
 		for (XNATSubject subject : xnatSubjectList.ResultSet.Result) {
