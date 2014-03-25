@@ -8,12 +8,18 @@ import java.util.Set;
 
 import edu.stanford.epad.dtos.DCM4CHEESeries;
 import edu.stanford.epad.dtos.DCM4CHEESeriesList;
+import edu.stanford.epad.dtos.DCM4CHEEStudy;
+import edu.stanford.epad.dtos.DCM4CHEEStudyList;
 import edu.stanford.epad.dtos.EPADDatabaseImage;
 import edu.stanford.epad.dtos.EPADDatabaseSeries;
 import edu.stanford.epad.dtos.EPADProject;
 import edu.stanford.epad.dtos.EPADProjectList;
+import edu.stanford.epad.dtos.EPADStudy;
+import edu.stanford.epad.dtos.EPADStudyList;
 import edu.stanford.epad.dtos.EPADSubject;
 import edu.stanford.epad.dtos.EPADSubjectList;
+import edu.stanford.epad.dtos.XNATExperiment;
+import edu.stanford.epad.dtos.XNATExperimentList;
 import edu.stanford.epad.dtos.XNATProject;
 import edu.stanford.epad.dtos.XNATProjectList;
 import edu.stanford.epad.dtos.XNATSubject;
@@ -42,6 +48,7 @@ public class DefaultEpadQueries implements EpadQueries
 		return ourInstance;
 	}
 
+	@Override
 	public EPADProjectList performAllProjectsQuery(String sessionID, String username)
 	{
 		EPADProjectList epadProjectList = new EPADProjectList();
@@ -54,6 +61,7 @@ public class DefaultEpadQueries implements EpadQueries
 		return epadProjectList;
 	}
 
+	@Override
 	public EPADSubjectList performSubjectsQuery(String sessionID, String projectID)
 	{
 		EPADSubjectList epadSubjectList = new EPADSubjectList();
@@ -68,16 +76,63 @@ public class DefaultEpadQueries implements EpadQueries
 	}
 
 	@Override
+	public EPADStudyList performStudiesQuery(String sessionID, String projectID, String subjectID)
+	{
+		EPADStudyList epadStudyList = new EPADStudyList();
+		XNATUserList xnatUsers = XNATQueries.usersForProject(sessionID, projectID);
+		XNATExperimentList xnatExperimentList = XNATQueries.getDICOMExperimentsForProjectAndSubject(sessionID, projectID,
+				subjectID);
+		DCM4CHEEStudyList dcm4CheeStudyList = Dcm4CheeQueries.studiesForPatient(subjectID);
+		Dcm4CheeDatabaseOperations dcm4CheeDatabaseOperations = Dcm4CheeDatabase.getInstance()
+				.getDcm4CheeDatabaseOperations();
+		Map<String, DCM4CHEEStudy> dcm4CheeStudyUIDMap = dcm4CheeStudyList.generateStudyUIDMap();
+
+		for (XNATExperiment xnatExperiment : xnatExperimentList.ResultSet.Result) {
+			String studyUID = xnatExperiment.label;
+			if (dcm4CheeStudyUIDMap.containsKey(studyUID)) {
+				DCM4CHEEStudy dcm4CheeStudy = dcm4CheeStudyUIDMap.get(studyUID);
+				String insertDate = xnatExperiment.insert_date;
+				String date = xnatExperiment.date;
+				String uri = xnatExperiment.URI;
+				String studyDescription = dcm4CheeStudy.studyDescription;
+				String studyAccessionNumber = dcm4CheeStudy.studyAccessionNumber;
+				Set<String> examTypes = examTypesForStudy(sessionID, projectID, subjectID, studyUID);
+				Set<String> seriesUIDs = dcm4CheeDatabaseOperations.findAllSeriesUIDsInStudy(studyUID);
+				int numberOfSeries = seriesUIDs.size();
+				int numberOfAnnotations = AIMQueries.getNumberOfAIMAnnotationsForSeriesUIDs(seriesUIDs,
+						xnatUsers.getLoginNames());
+
+				EPADStudy epadStudy = new EPADStudy(projectID, studyUID, insertDate, date, uri, examTypes, studyDescription,
+						studyAccessionNumber, numberOfSeries, numberOfAnnotations);
+				epadStudyList.addEPADStudy(epadStudy);
+			} else
+				log.warning("Found study " + studyUID + " in XNAT with no corresponding DCM4CHEE study; project =" + projectID
+						+ ", subjectID =" + subjectID);
+		}
+		return epadStudyList;
+
+	}
+
+	@Override
 	public Set<String> examTypesForSubject(String sessionID, String projectID, String subjectID)
 	{
 		Set<String> studyUIDs = XNATQueries.dicomStudyUIDsForSubject(sessionID, projectID, subjectID);
 		Set<String> examTypes = new HashSet<String>();
 
-		for (String studyUID : studyUIDs) {
-			DCM4CHEESeriesList dcm4CheeSeriesList = Dcm4CheeQueries.getSeriesInStudy(studyUID);
-			for (DCM4CHEESeries dcm4CheeSeries : dcm4CheeSeriesList.ResultSet.Result) {
-				examTypes.add(dcm4CheeSeries.examType);
-			}
+		for (String studyUID : studyUIDs)
+			examTypes.addAll(examTypesForStudy(sessionID, projectID, subjectID, studyUID));
+
+		return examTypes;
+	}
+
+	@Override
+	public Set<String> examTypesForStudy(String sessionID, String projectID, String subjectID, String studyUID)
+	{
+		Set<String> examTypes = new HashSet<String>();
+
+		DCM4CHEESeriesList dcm4CheeSeriesList = Dcm4CheeQueries.getSeriesInStudy(studyUID);
+		for (DCM4CHEESeries dcm4CheeSeries : dcm4CheeSeriesList.ResultSet.Result) {
+			examTypes.add(dcm4CheeSeries.examType);
 		}
 		return examTypes;
 	}
@@ -253,5 +308,4 @@ public class DefaultEpadQueries implements EpadQueries
 
 		return epadSubject;
 	}
-
 }

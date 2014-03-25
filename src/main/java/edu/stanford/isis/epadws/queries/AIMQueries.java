@@ -27,7 +27,7 @@ public class AIMQueries
 		int numberOfAIMAnnotations = 0;
 
 		for (String user : users)
-			numberOfAIMAnnotations += AIMQueries.getNumberOfAIMImageAnnotationsForPatientId(subjectID, user);
+			numberOfAIMAnnotations += getNumberOfAIMAnnotationsForPatientId(subjectID, user);
 
 		return numberOfAIMAnnotations;
 	}
@@ -50,55 +50,78 @@ public class AIMQueries
 		int totalAIMAnnotations = 0;
 
 		for (String subjectID : subjectIDs) {
-			totalAIMAnnotations += AIMQueries.getNumberOfAIMImageAnnotationsForPatientId(subjectID, username);
+			totalAIMAnnotations += getNumberOfAIMAnnotationsForPatientId(subjectID, username);
 		}
 
 		return totalAIMAnnotations;
 	}
 
-	public static List<ImageAnnotation> getAIMImageAnnotationsForPerson(String personName, String username)
+	public static List<ImageAnnotation> getAIMAnnotationsForPerson(String personName, String username)
 	{
 		return getAIMImageAnnotations("personName", personName, username);
 	}
 
-	public static List<ImageAnnotation> getAIMImageAnnotationsForPatientId(String patientId, String username)
+	public static List<ImageAnnotation> getAIMAnnotationsForPatientId(String patientId, String username)
 	{
 		return getAIMImageAnnotations("patientID", patientId, username);
 	}
 
-	public static List<ImageAnnotation> getAIMImageAnnotationsForSeriesUID(String seriesUID, String username)
+	public static List<ImageAnnotation> getAIMAnnotationsForSeriesUID(String seriesUID, String username)
 	{
 		return getAIMImageAnnotations("seriesUID", seriesUID, username);
 	}
 
-	public static List<ImageAnnotation> getAIMImageAnnotationsForAnnotationUID(String annotationUID, String username)
+	public static List<ImageAnnotation> getAIMAnnotationsForAnnotationUID(String annotationUID, String username)
 	{
 		return getAIMImageAnnotations("annotationUID", annotationUID, username);
 	}
 
-	public static int getNumberOfAIMImageAnnotationsForPerson(String personName, String username)
+	public static int getNumberOfAIMAnnotationsForPerson(String personName, String username)
 	{
-		return getNumberOfAIMImageAnnotations("personName", personName, username);
+		return getNumberOfAIMAnnotations("personName", personName, username);
 	}
 
-	public static int getNumberOfAIMImageAnnotationsForPatientId(String patientId, String username)
+	public static int getNumberOfAIMAnnotationsForPatientId(String patientId, String username)
 	{
-		return getNumberOfAIMImageAnnotations("patientID", patientId, username);
+		return getNumberOfAIMAnnotations("patientID", patientId, username);
 	}
 
-	public static int getNumberOfAIMImageAnnotationsForSeriesUID(String seriesUID, String username)
+	public static int getNumberOfAIMAnnotationsForSeriesUID(String seriesUID, String username)
 	{
-		return getNumberOfAIMImageAnnotations("seriesUID", seriesUID, username);
+		return getNumberOfAIMAnnotations("seriesUID", seriesUID, username);
 	}
 
-	public static int getNumberOfAIMImageAnnotationsForAnnotationUID(String annotationUID, String username)
+	public static int getNumberOfAIMAnnotationsForSeriesUID(String seriesUID, Set<String> usernames)
 	{
-		return getNumberOfAIMImageAnnotations("annotationUID", annotationUID, username);
+		return getNumberOfAIMAnnotations("seriesUID", seriesUID, usernames);
 	}
 
-	public static int getNumberOfAIMImageAnnotations(String valueType, String value, String username)
+	public static int getNumberOfAIMAnnotationsForSeriesUIDs(Set<String> seriesUIDs, Set<String> usernames)
+	{
+		int numberOfAIMAnnotations = 0;
+		for (String seriesUID : seriesUIDs)
+			numberOfAIMAnnotations += getNumberOfAIMAnnotations("seriesUID", seriesUID, usernames);
+		return numberOfAIMAnnotations;
+	}
+
+	public static int getNumberOfAIMAnnotationsForAnnotationUID(String annotationUID, String username)
+	{
+		return getNumberOfAIMAnnotations("annotationUID", annotationUID, username);
+	}
+
+	public static int getNumberOfAIMAnnotations(String valueType, String value, String username)
 	{ // TODO In AIM 4 API there is AnnotationGetter.getCountImageAnnotationCollectionByUserNameEqual method.
 		return getAIMImageAnnotations(valueType, value, username).size();
+	}
+
+	public static int getNumberOfAIMAnnotations(String valueType, String value, Set<String> usernames)
+	{
+		int numberOfAIMAnnotations = 0;
+
+		for (String username : usernames)
+			numberOfAIMAnnotations += getAIMImageAnnotations(valueType, value, username).size();
+
+		return numberOfAIMAnnotations;
 	}
 
 	/**

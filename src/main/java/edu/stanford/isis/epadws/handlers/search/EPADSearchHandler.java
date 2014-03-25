@@ -10,6 +10,7 @@ import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 
 import edu.stanford.epad.dtos.EPADProjectList;
+import edu.stanford.epad.dtos.EPADStudyList;
 import edu.stanford.epad.dtos.EPADSubjectList;
 import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epadws.handlers.HandlerUtil;
@@ -27,8 +28,8 @@ public class EPADSearchHandler extends AbstractHandler
 	private static final String PROJECTS_TEMPLATE = "/projects/";
 	private static final String PROJECT_TEMPLATE = PROJECTS_TEMPLATE + "{project}";
 	private static final String SUBJECTS_TEMPLATE = PROJECT_TEMPLATE + "/subjects/";
-	// private static final String SUBJECT_TEMPLATE = SUBJECTS_TEMPLATE + "{subject}";
-	// private static final String STUDIES_TEMPLATE = SUBJECT_TEMPLATE + "/studies/";
+	private static final String SUBJECT_TEMPLATE = SUBJECTS_TEMPLATE + "{subject}";
+	private static final String STUDIES_TEMPLATE = SUBJECT_TEMPLATE + "/studies/";
 	// private static final String STUDY_TEMPLATE = STUDIES_TEMPLATE + "/studies/{study}";
 	// private static final String SERIES_TEMPLATE = STUDY_TEMPLATE + "/series/";
 	// private static final String SERIES_ID_TEMPLATE = SERIES_TEMPLATE + "/series/{series}";
@@ -64,6 +65,12 @@ public class EPADSearchHandler extends AbstractHandler
 					String projectID = HandlerUtil.getParameter(templateMap, "project");
 					EPADSubjectList subjectList = epadQueries.performSubjectsQuery(jsessionID, projectID);
 					responseStream.append(subjectList.toJSON());
+				} else if (HandlerUtil.matchesTemplate(STUDIES_TEMPLATE, pathInfo)) {
+					Map<String, String> templateMap = HandlerUtil.getTemplateMap(STUDIES_TEMPLATE, pathInfo);
+					String projectID = HandlerUtil.getParameter(templateMap, "project");
+					String subjectID = HandlerUtil.getParameter(templateMap, "subject");
+					EPADStudyList studyList = epadQueries.performStudyQuery(jsessionID, projectID, subjectID);
+					responseStream.append(studyList.toJSON());
 				} else {
 					// TODO
 					log.warning("Not implemented");

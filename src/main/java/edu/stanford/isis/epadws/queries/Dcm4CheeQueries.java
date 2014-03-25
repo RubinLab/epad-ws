@@ -32,6 +32,11 @@ public class Dcm4CheeQueries
 {
 	private static EPADLogger log = EPADLogger.getInstance();
 
+	public static DCM4CHEEStudyList studiesForPatient(String patientID)
+	{
+		return studySearch(DCM4CHEEStudySearchType.PATIENT_ID, patientID);
+	}
+
 	/**
 	 * Query the DCM4CHEE database and return a list of study descriptions.
 	 * <p>
