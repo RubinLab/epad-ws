@@ -134,10 +134,10 @@ public class DefaultDcm4CheeDatabaseOperations implements Dcm4CheeDatabaseOperat
 	}
 
 	@Override
-	public List<String> findAllSeriesUIDsInStudy(String studyUID)
+	public Set<String> findAllSeriesUIDsInStudy(String studyUID)
 	{
 		List<Map<String, String>> seriesInStudy = findAllDicomSeriesInStudy(studyUID);
-		List<String> result = new ArrayList<String>();
+		Set<String> result = new HashSet<String>();
 
 		for (Map<String, String> series : seriesInStudy) {
 			String seriesID = series.get("series_iuid");

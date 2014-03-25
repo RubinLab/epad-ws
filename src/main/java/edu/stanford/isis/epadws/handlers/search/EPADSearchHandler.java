@@ -1,7 +1,6 @@
 package edu.stanford.isis.epadws.handlers.search;
 
 import java.io.PrintWriter;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -23,6 +22,8 @@ import edu.stanford.epad.dtos.XNATUserList;
 import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epadws.handlers.HandlerUtil;
 import edu.stanford.isis.epadws.queries.AIMQueries;
+import edu.stanford.isis.epadws.queries.DefaultEpadQueries;
+import edu.stanford.isis.epadws.queries.EpadQueries;
 import edu.stanford.isis.epadws.queries.XNATQueries;
 import edu.stanford.isis.epadws.xnat.XNATSessionOperations;
 
@@ -124,10 +125,10 @@ public class EPADSearchHandler extends AbstractHandler
 		String piFirstName = xnatProject.pi_firstname;
 		String uri = xnatProject.URI;
 		int numberOfSubjects = XNATQueries.numberOfSubjectsForProject(sessionID, xnatProject.ID);
-		int numberOfStudies = numberOfStudiesForProject(sessionID, xnatProject.ID);
+		int numberOfStudies = XNATQueries.numberOfStudiesForProject(sessionID, xnatProject.ID);
 		XNATUserList xnatUsers = XNATQueries.usersForProject(sessionID, xnatProject.ID);
 		Set<String> usernames = xnatUsers.getLoginNames();
-		int numberOfAnnotations = numberOfAIMAnnotationsForProject(sessionID, usernames, xnatProject.ID);
+		int numberOfAnnotations = AIMQueries.numberOfAIMAnnotationsForProject(sessionID, usernames, xnatProject.ID);
 
 		EPADProject epadProject = new EPADProject(secondaryID, piLastName, description, name, id, piFirstName, uri,
 				numberOfSubjects, numberOfStudies, numberOfAnnotations, xnatUsers.getLoginNames());
@@ -137,6 +138,8 @@ public class EPADSearchHandler extends AbstractHandler
 
 	private EPADSubject xnatSubject2EPADSubject(String sessionID, Set<String> users, XNATSubject xnatSubject)
 	{
+		EpadQueries epadQueries = DefaultEpadQueries.getInstance();
+
 		String project = xnatSubject.project;
 		String subjectName = xnatSubject.src;
 		String xnatID = xnatSubject.ID;
@@ -144,56 +147,12 @@ public class EPADSearchHandler extends AbstractHandler
 		String insertUser = xnatSubject.insert_user;
 		String insertDate = xnatSubject.insert_date;
 		String label = xnatSubject.label;
-		int numberOfStudies = numberOfStudiesForSubject(sessionID, xnatSubject.project, xnatSubject.ID);
-		int numberOfAnnotations = numberOfAIMAnnotationsForSubject(sessionID, users, xnatSubject.ID);
-		Set<String> examTypes = new HashSet<String>(); // TODO
+		int numberOfStudies = XNATQueries.numberOfStudiesForSubject(sessionID, xnatSubject.project, xnatSubject.ID);
+		int numberOfAnnotations = AIMQueries.numberOfAIMAnnotationsForSubject(sessionID, users, xnatSubject.ID);
+		Set<String> examTypes = epadQueries.examTypesForSubject(sessionID, xnatSubject.project, xnatSubject.ID);
 		EPADSubject epadSubject = new EPADSubject(project, subjectName, insertUser, xnatID, insertDate, label, uri,
 				numberOfStudies, numberOfAnnotations, examTypes);
 
 		return epadSubject;
-	}
-
-	private int numberOfAIMAnnotationsForSubject(String sessionID, Set<String> users, String subjectID)
-	{
-		int numberOfAIMAnnotations = 0;
-
-		for (String user : users)
-			numberOfAIMAnnotations += AIMQueries.getNumberOfAIMImageAnnotationsForPatientId(subjectID, user);
-
-		return numberOfAIMAnnotations;
-	}
-
-	private int numberOfAIMAnnotationsForProject(String sessionID, Set<String> usernames, String projectID)
-	{
-		int totalAIMAnnotations = 0;
-
-		for (String username : usernames) {
-			totalAIMAnnotations += numberOfAIMAnnotationsForProject(sessionID, username, projectID);
-		}
-
-		return totalAIMAnnotations;
-	}
-
-	// Only count annotations for subjects in this project
-	private int numberOfAIMAnnotationsForProject(String sessionID, String username, String projectID)
-	{
-		Set<String> subjectIDs = XNATQueries.subjectIDsForProject(sessionID, projectID);
-		int totalAIMAnnotations = 0;
-
-		for (String subjectID : subjectIDs) {
-			totalAIMAnnotations += AIMQueries.getNumberOfAIMImageAnnotationsForPatientId(subjectID, username);
-		}
-
-		return totalAIMAnnotations;
-	}
-
-	private int numberOfStudiesForProject(String sessionID, String projectID)
-	{
-		return XNATQueries.numberOfDICOMExperimentsForProject(sessionID, projectID);
-	}
-
-	private int numberOfStudiesForSubject(String sessionID, String projectID, String subjectID)
-	{
-		return XNATQueries.numberOfDICOMExperimentsForProjectAndSubject(sessionID, projectID, subjectID);
 	}
 }

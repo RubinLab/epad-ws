@@ -1,11 +1,13 @@
 package edu.stanford.isis.epadws.queries;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 import edu.stanford.epad.dtos.DCM4CHEESeries;
+import edu.stanford.epad.dtos.DCM4CHEESeriesList;
 import edu.stanford.epad.dtos.EPADDatabaseImage;
 import edu.stanford.epad.dtos.EPADDatabaseSeries;
 import edu.stanford.isis.epad.common.dicom.DicomFormatUtil;
@@ -29,6 +31,36 @@ public class DefaultEpadQueries implements EpadQueries
 	public static DefaultEpadQueries getInstance()
 	{
 		return ourInstance;
+	}
+
+	@Override
+	public Set<String> examTypesForSubject(String sessionID, String projectID, String subjectID)
+	{
+		Set<String> studyUIDs = XNATQueries.dicomStudyUIDsForSubject(sessionID, projectID, subjectID);
+		Set<String> examTypes = new HashSet<String>();
+
+		for (String studyUID : studyUIDs) {
+			DCM4CHEESeriesList dcm4CheeSeriesList = Dcm4CheeQueries.getSeriesInStudy(studyUID);
+			for (DCM4CHEESeries dcm4CheeSeries : dcm4CheeSeriesList.ResultSet.Result) {
+				examTypes.add(dcm4CheeSeries.examType);
+			}
+		}
+		return examTypes;
+	}
+
+	@Override
+	public Set<String> dicomSeriesIDsForSubject(String sessionID, String projectID, String subjectID)
+	{
+		Dcm4CheeDatabaseOperations dcm4CheeDatabaseOperations = Dcm4CheeDatabase.getInstance()
+				.getDcm4CheeDatabaseOperations();
+		Set<String> seriesIDs = new HashSet<String>();
+		Set<String> studyIDs = XNATQueries.dicomStudyUIDsForSubject(sessionID, projectID, subjectID);
+
+		for (String studyID : studyIDs) {
+			Set<String> seriesIDsForStudy = dcm4CheeDatabaseOperations.findAllSeriesUIDsInStudy(studyID);
+			seriesIDs.addAll(seriesIDsForStudy);
+		}
+		return seriesIDs;
 	}
 
 	/**

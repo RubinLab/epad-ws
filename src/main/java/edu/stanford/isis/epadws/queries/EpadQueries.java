@@ -2,6 +2,7 @@ package edu.stanford.isis.epadws.queries;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import edu.stanford.epad.dtos.DCM4CHEESeries;
 import edu.stanford.epad.dtos.EPADDatabaseSeries;
@@ -29,4 +30,8 @@ public interface EpadQueries
 	 * Each description is a map with keys: sop_iuid, inst_no, series_iuid, filepath, file_size.
 	 */
 	List<Map<String, String>> getUnprocessedDicomImageFileDescriptionsForSeries(String seriesIUID);
+
+	Set<String> dicomSeriesIDsForSubject(String sessionID, String projectID, String subjectID);
+
+	Set<String> examTypesForSubject(String sessionID, String projectID, String subjectID);
 }

@@ -2,6 +2,7 @@ package edu.stanford.isis.epadws.queries;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 import edu.stanford.hakan.aim3api.base.AimException;
 import edu.stanford.hakan.aim3api.base.ImageAnnotation;
@@ -20,6 +21,40 @@ public class AIMQueries
 	private static String xsdFile = EPADConfig.getInstance().getStringPropertyValue("xsdFile");
 	private static String xsdFilePath = EPADConfig.getInstance().getStringPropertyValue("baseSchemaDir") + xsdFile;
 	private static String collection = EPADConfig.getInstance().getStringPropertyValue("collection");
+
+	public static int numberOfAIMAnnotationsForSubject(String sessionID, Set<String> users, String subjectID)
+	{
+		int numberOfAIMAnnotations = 0;
+
+		for (String user : users)
+			numberOfAIMAnnotations += AIMQueries.getNumberOfAIMImageAnnotationsForPatientId(subjectID, user);
+
+		return numberOfAIMAnnotations;
+	}
+
+	public static int numberOfAIMAnnotationsForProject(String sessionID, Set<String> usernames, String projectID)
+	{
+		int totalAIMAnnotations = 0;
+
+		for (String username : usernames) {
+			totalAIMAnnotations += numberOfAIMAnnotationsForProject(sessionID, username, projectID);
+		}
+
+		return totalAIMAnnotations;
+	}
+
+	// Only count annotations for subjects in this project
+	public static int numberOfAIMAnnotationsForProject(String sessionID, String username, String projectID)
+	{
+		Set<String> subjectIDs = XNATQueries.subjectIDsForProject(sessionID, projectID);
+		int totalAIMAnnotations = 0;
+
+		for (String subjectID : subjectIDs) {
+			totalAIMAnnotations += AIMQueries.getNumberOfAIMImageAnnotationsForPatientId(subjectID, username);
+		}
+
+		return totalAIMAnnotations;
+	}
 
 	public static List<ImageAnnotation> getAIMImageAnnotationsForPerson(String personName, String username)
 	{

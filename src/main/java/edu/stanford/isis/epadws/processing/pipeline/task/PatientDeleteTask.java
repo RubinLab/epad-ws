@@ -1,6 +1,7 @@
 package edu.stanford.isis.epadws.processing.pipeline.task;
 
 import java.util.List;
+import java.util.Set;
 
 import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epadws.dcm4chee.Dcm4CheeDatabase;
@@ -49,7 +50,7 @@ public class PatientDeleteTask implements Runnable
 			List<String> studyUIDs = dcm4CheeDatabaseOperations.getDicomStudyUIDsForPatient(patientID);
 
 			for (String studyID : studyUIDs) {
-				List<String> seriesUIDs = dcm4CheeDatabaseOperations.findAllSeriesUIDsInStudy(studyID);
+				Set<String> seriesUIDs = dcm4CheeDatabaseOperations.findAllSeriesUIDsInStudy(studyID);
 				logger.info("Found " + seriesUIDs.size() + " series in study " + patientID);
 
 				Dcm4CheeOperations.deleteStudy(studyID); // Must run after finding series in DCM4CHEE
