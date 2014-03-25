@@ -2,12 +2,6 @@ package edu.stanford.isis.epadws.xnat;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
-import java.nio.charset.Charset;
-
-import javax.servlet.http.Cookie;
-import javax.servlet.http.HttpServletRequest;
-
-import org.apache.commons.codec.binary.Base64;
 
 import edu.stanford.isis.epad.common.util.EPADConfig;
 import edu.stanford.isis.epad.common.util.EPADLogger;
@@ -34,17 +28,6 @@ public class XNATUtil
 			this.statusCode = responseCode;
 			this.response = response;
 		}
-	}
-
-	public static String extractUserNameFromAuthorizationHeader(HttpServletRequest httpRequest)
-	{
-		String credentials = extractCredentialsFromAuthorizationHeader(httpRequest);
-		String[] values = credentials.split(":", 2);
-
-		if (values.length != 0 && values[0] != null)
-			return values[0];
-		else
-			return "";
 	}
 
 	public static String projectName2XNATProjectID(String xnatProjectName)
@@ -105,35 +88,6 @@ public class XNATUtil
 		return urlString;
 	}
 
-	public static String getJSessionIDFromRequest(HttpServletRequest servletRequest)
-	{
-		String jSessionID = null;
-
-		Cookie[] cookies = servletRequest.getCookies();
-		if (cookies != null) {
-			for (Cookie cookie : cookies) {
-				if ("JSESSIONID".equalsIgnoreCase(cookie.getName())) {
-					jSessionID = cookie.getValue();
-					break;
-				}
-			}
-		}
-		if (jSessionID == null)
-			log.warning("No JSESESSIONID cookie present in request " + servletRequest.getRequestURL());
-
-		return jSessionID;
-	}
-
-	public static String extractPasswordFromAuthorizationHeader(HttpServletRequest request)
-	{
-		String credentials = extractCredentialsFromAuthorizationHeader(request);
-		String[] values = credentials.split(":", 2);
-		if (values.length > 1 && values[1] != null)
-			return values[1];
-		else
-			return "";
-	}
-
 	public static String buildXNATBaseURL(String host, int port, String base)
 	{
 		return buildXNATBaseURL(host, port, base, "");
@@ -162,18 +116,6 @@ public class XNATUtil
 		sb.append(ext);
 
 		return sb.toString();
-	}
-
-	private static String extractCredentialsFromAuthorizationHeader(HttpServletRequest request)
-	{
-		String authorizationHeader = request.getHeader("Authorization");
-		String credentials = "";
-
-		if (authorizationHeader != null && authorizationHeader.startsWith("Basic")) {
-			String base64Credentials = authorizationHeader.substring("Basic".length()).trim();
-			credentials = new String(Base64.decodeBase64(base64Credentials), Charset.forName("UTF-8"));
-		}
-		return credentials;
 	}
 
 	private static String encode(String urlString)

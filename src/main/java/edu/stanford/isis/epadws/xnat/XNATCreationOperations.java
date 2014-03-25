@@ -105,6 +105,8 @@ public class XNATCreationOperations
 	 * Take a directory containing a list of DICOM files and create XNAT representations of the each DICOM image. This
 	 * method expects a properties file called xnat_upload.properties in the directory. This file should contain an XNAT
 	 * project name, which identified the project for the new patients and their studies, and an XNAT session ID.
+	 * <p>
+	 * In general, pushing DICOM files through a DCM4CHEE server monitored by ePAD is preferred to using this method.
 	 * 
 	 * @param uploadDirectory
 	 */

@@ -2,7 +2,9 @@ package edu.stanford.isis.epadws.xnat;
 
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.nio.charset.Charset;
 
+import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -12,6 +14,7 @@ import org.apache.commons.httpclient.methods.DeleteMethod;
 import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.httpclient.methods.PostMethod;
 
+import edu.stanford.isis.epad.common.util.EPADConfig;
 import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epadws.xnat.XNATUtil.XNATSessionResponse;
 
@@ -24,6 +27,9 @@ import edu.stanford.isis.epadws.xnat.XNATUtil.XNATSessionResponse;
 public class XNATSessionOperations
 {
 	private static final EPADLogger log = EPADLogger.getInstance();
+	private static final EPADConfig config = EPADConfig.getInstance();
+
+	private static final String XNAT_SESSION_BASE = "/xnat/data/JSESSION";
 
 	private static final String LOGIN_EXCEPTION_MESSAGE = "Internal login error";
 	private static final String XNAT_UNAUTHORIZED_MESSAGE = "XNAT login not successful";
@@ -36,15 +42,15 @@ public class XNATSessionOperations
 	 */
 	public static XNATSessionResponse invokeXNATSessionIDService(HttpServletRequest httpRequest)
 	{
-		String username = XNATUtil.extractUserNameFromAuthorizationHeader(httpRequest);
-		String password = XNATUtil.extractPasswordFromAuthorizationHeader(httpRequest);
+		String username = extractUserNameFromAuthorizationHeader(httpRequest);
+		String password = extractPasswordFromAuthorizationHeader(httpRequest);
 
 		return getXNATSessionID(username, password);
 	}
 
 	public static XNATSessionResponse getXNATSessionID(String username, String password)
 	{
-		String xnatSessionURL = XNATUtil.buildXNATSessionURL();
+		String xnatSessionURL = buildXNATSessionURL();
 		HttpClient client = new HttpClient();
 		PostMethod postMethod = new PostMethod(xnatSessionURL);
 		String authString = buildAuthorizationString(username, password);
@@ -101,10 +107,10 @@ public class XNATSessionOperations
 
 	public static int invalidateXNATSessionID(HttpServletRequest httpRequest)
 	{
-		String xnatSessionURL = XNATUtil.buildXNATSessionURL();
+		String xnatSessionURL = buildXNATSessionURL();
 		HttpClient client = new HttpClient();
 		DeleteMethod deleteMethod = new DeleteMethod(xnatSessionURL);
-		String jsessionID = XNATUtil.getJSessionIDFromRequest(httpRequest);
+		String jsessionID = getJSessionIDFromRequest(httpRequest);
 		int xnatStatusCode;
 
 		deleteMethod.setRequestHeader("Cookie", "JSESSIONID=" + jsessionID);
@@ -124,7 +130,7 @@ public class XNATSessionOperations
 
 	public static boolean hasValidXNATSessionID(HttpServletRequest httpRequest)
 	{
-		String jsessionID = XNATUtil.getJSessionIDFromRequest(httpRequest);
+		String jsessionID = XNATSessionOperations.getJSessionIDFromRequest(httpRequest);
 
 		if (jsessionID == null) // The getJSessionIDFromRequest method logs warning in this case.
 			return false;
@@ -148,6 +154,83 @@ public class XNATSessionOperations
 			xnatStatusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 		}
 		return (xnatStatusCode == HttpServletResponse.SC_OK);
+	}
+
+	public static String getJSessionIDFromRequest(HttpServletRequest servletRequest)
+	{
+		String jSessionID = null;
+
+		Cookie[] cookies = servletRequest.getCookies();
+		if (cookies != null) {
+			for (Cookie cookie : cookies) {
+				if ("JSESSIONID".equalsIgnoreCase(cookie.getName())) {
+					jSessionID = cookie.getValue();
+					break;
+				}
+			}
+		}
+		if (jSessionID == null)
+			log.warning("No JSESESSIONID cookie present in request " + servletRequest.getRequestURL());
+
+		return jSessionID;
+	}
+
+	public static String extractUserNameFromAuthorizationHeader(HttpServletRequest httpRequest)
+	{
+		String credentials = extractCredentialsFromAuthorizationHeader(httpRequest);
+		String[] values = credentials.split(":", 2);
+
+		if (values.length != 0 && values[0] != null)
+			return values[0];
+		else
+			return "";
+	}
+
+	private static String extractPasswordFromAuthorizationHeader(HttpServletRequest request)
+	{
+		String credentials = extractCredentialsFromAuthorizationHeader(request);
+		String[] values = credentials.split(":", 2);
+		if (values.length > 1 && values[1] != null)
+			return values[1];
+		else
+			return "";
+	}
+
+	private static String extractCredentialsFromAuthorizationHeader(HttpServletRequest request)
+	{
+		String authorizationHeader = request.getHeader("Authorization");
+		String credentials = "";
+
+		if (authorizationHeader != null && authorizationHeader.startsWith("Basic")) {
+			String base64Credentials = authorizationHeader.substring("Basic".length()).trim();
+			credentials = new String(Base64.decodeBase64(base64Credentials), Charset.forName("UTF-8"));
+		}
+		return credentials;
+	}
+
+	private static String buildXNATSessionURL()
+	{
+		String xnatHost = config.getStringPropertyValue("XNATServer");
+		int xnatPort = config.getIntegerPropertyValue("XNATPort");
+
+		return buildXNATBaseURL(xnatHost, xnatPort, XNAT_SESSION_BASE);
+	}
+
+	public static String buildXNATBaseURL(String host, int port, String base)
+	{
+		return buildXNATBaseURL(host, port, base, "");
+	}
+
+	private static String buildXNATBaseURL(String host, int port, String base, String ext)
+	{
+		StringBuilder sb = new StringBuilder();
+
+		sb.append("http://").append(host);
+		sb.append(":").append(port);
+		sb.append(base);
+		sb.append(ext);
+
+		return sb.toString();
 	}
 
 	private static String buildAuthorizationString(String username, String password)

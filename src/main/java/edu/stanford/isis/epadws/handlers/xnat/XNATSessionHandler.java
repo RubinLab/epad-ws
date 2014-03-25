@@ -12,7 +12,6 @@ import org.eclipse.jetty.server.handler.AbstractHandler;
 import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epadws.handlers.HandlerUtil;
 import edu.stanford.isis.epadws.xnat.XNATSessionOperations;
-import edu.stanford.isis.epadws.xnat.XNATUtil;
 import edu.stanford.isis.epadws.xnat.XNATUtil.XNATSessionResponse;
 
 /**
@@ -54,7 +53,7 @@ public class XNATSessionHandler extends AbstractHandler
 
 		String method = httpRequest.getMethod();
 		if ("POST".equalsIgnoreCase(method)) {
-			String username = XNATUtil.extractUserNameFromAuthorizationHeader(httpRequest);
+			String username = XNATSessionOperations.extractUserNameFromAuthorizationHeader(httpRequest);
 			if (username.length() != 0) {
 				log.info("XNATSessionHandler, login request from user " + username);
 				try {

@@ -12,7 +12,6 @@ import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epadws.handlers.HandlerUtil;
 import edu.stanford.isis.epadws.processing.events.EventTracker;
 import edu.stanford.isis.epadws.xnat.XNATSessionOperations;
-import edu.stanford.isis.epadws.xnat.XNATUtil;
 
 /**
  * 
@@ -42,7 +41,7 @@ public class ProjectEventHandler extends AbstractHandler
 			responseStream = httpResponse.getWriter();
 
 			if (XNATSessionOperations.hasValidXNATSessionID(httpRequest)) {
-				String jsessionID = XNATUtil.getJSessionIDFromRequest(httpRequest);
+				String jsessionID = XNATSessionOperations.getJSessionIDFromRequest(httpRequest);
 				performEventHandle(responseStream, jsessionID);
 				statusCode = HttpServletResponse.SC_OK;
 			} else {

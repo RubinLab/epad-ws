@@ -17,7 +17,6 @@ import edu.stanford.isis.epad.common.util.SearchResultUtils;
 import edu.stanford.isis.epadws.epaddb.EpadDatabase;
 import edu.stanford.isis.epadws.epaddb.EpadDatabaseOperations;
 import edu.stanford.isis.epadws.xnat.XNATSessionOperations;
-import edu.stanford.isis.epadws.xnat.XNATUtil;
 
 /**
  * Initial version of ePAD's new event notification system
@@ -56,7 +55,7 @@ public class EventHandler extends AbstractHandler
 				if ("GET".equalsIgnoreCase(method)) {
 					if (queryString != null) {
 						queryString = queryString.trim();
-						String jsessionID = XNATUtil.getJSessionIDFromRequest(httpRequest);
+						String jsessionID = XNATSessionOperations.getJSessionIDFromRequest(httpRequest);
 						if (jsessionID != null) {
 							findEventsForSessionID(responseStream, jsessionID);
 							httpResponse.setStatus(HttpServletResponse.SC_OK);
@@ -73,7 +72,7 @@ public class EventHandler extends AbstractHandler
 				} else if ("POST".equalsIgnoreCase(method)) {
 					if (queryString != null) {
 						queryString = queryString.trim();
-						String jsessionID = XNATUtil.getJSessionIDFromRequest(httpRequest);
+						String jsessionID = XNATSessionOperations.getJSessionIDFromRequest(httpRequest);
 						String event_status = httpRequest.getParameter("event_status");
 						String aim_uid = httpRequest.getParameter("aim_uid");
 						String aim_name = httpRequest.getParameter("aim_name");

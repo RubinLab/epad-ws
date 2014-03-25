@@ -45,7 +45,6 @@ import edu.stanford.isis.epad.common.util.XmlNamespaceTranslator;
 import edu.stanford.isis.epadws.aim.AIMUtil;
 import edu.stanford.isis.epadws.queries.AIMQueries;
 import edu.stanford.isis.epadws.xnat.XNATSessionOperations;
-import edu.stanford.isis.epadws.xnat.XNATUtil;
 
 /**
  * 
@@ -214,7 +213,7 @@ public class AimResourceHandler extends AbstractHandler
 			responseStream.print("added (" + fileCount + "): " + name);
 			ImageAnnotation ia = AnnotationGetter.getImageAnnotationFromFile(f.getAbsolutePath(), xsdFilePath);
 			if (ia != null) {
-				String jsessionID = XNATUtil.getJSessionIDFromRequest(httpRequest);
+				String jsessionID = XNATSessionOperations.getJSessionIDFromRequest(httpRequest);
 				AIMUtil.saveImageAnnotationToServer(ia, jsessionID);
 				responseStream.println("-- Add to AIM server: " + ia.getUniqueIdentifier() + "<br>");
 			} else {

@@ -24,7 +24,6 @@ import edu.stanford.isis.epadws.handlers.HandlerUtil;
 import edu.stanford.isis.epadws.queries.AIMQueries;
 import edu.stanford.isis.epadws.queries.XNATQueries;
 import edu.stanford.isis.epadws.xnat.XNATSessionOperations;
-import edu.stanford.isis.epadws.xnat.XNATUtil;
 
 /**
  * @author martin
@@ -60,7 +59,7 @@ public class EPADSearchHandler extends AbstractHandler
 			responseStream = httpResponse.getWriter();
 
 			if (XNATSessionOperations.hasValidXNATSessionID(httpRequest)) {
-				String jsessionID = XNATUtil.getJSessionIDFromRequest(httpRequest);
+				String jsessionID = XNATSessionOperations.getJSessionIDFromRequest(httpRequest);
 				String username = httpRequest.getParameter("username");
 				String pathInfo = httpRequest.getPathInfo();
 				if (HandlerUtil.matchesTemplate(PROJECTS_TEMPLATE, pathInfo)) {

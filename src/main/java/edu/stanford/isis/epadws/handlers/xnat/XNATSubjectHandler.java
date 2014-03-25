@@ -22,7 +22,6 @@ import edu.stanford.isis.epad.common.util.JsonHelper;
 import edu.stanford.isis.epadws.handlers.HandlerUtil;
 import edu.stanford.isis.epadws.xnat.XNATQueryUtil;
 import edu.stanford.isis.epadws.xnat.XNATSessionOperations;
-import edu.stanford.isis.epadws.xnat.XNATUtil;
 
 /**
  * XNAT-based subject retrieval handler. At present, a pretty thin wrapper around an XNAT subjects call. Primarily used
@@ -75,7 +74,7 @@ public class XNATSubjectHandler extends AbstractHandler
 	{
 		String xnatURL = XNATQueryUtil.buildSubjectsURL(base);
 		HttpClient client = new HttpClient();
-		String jsessionID = XNATUtil.getJSessionIDFromRequest(httpRequest);
+		String jsessionID = XNATSessionOperations.getJSessionIDFromRequest(httpRequest);
 		String queryString = httpRequest.getQueryString();
 		int statusCode;
 
