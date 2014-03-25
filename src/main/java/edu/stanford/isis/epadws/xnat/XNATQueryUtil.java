@@ -40,6 +40,11 @@ public class XNATQueryUtil
 		return buildProjectBaseURL();
 	}
 
+	public static String buildAllUsersForProjectQueryURL(String projectID)
+	{
+		return buildProjectBaseURL() + projectID + "/users" + "?format=json";
+	}
+
 	public static String buildProjectQueryURL(String projectID)
 	{
 		return buildProjectBaseURL() + projectID + "?format=json";

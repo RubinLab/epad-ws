@@ -17,6 +17,7 @@ import edu.stanford.epad.dtos.XNATExperimentList;
 import edu.stanford.epad.dtos.XNATProjectList;
 import edu.stanford.epad.dtos.XNATSubject;
 import edu.stanford.epad.dtos.XNATSubjectList;
+import edu.stanford.epad.dtos.XNATUserList;
 import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epadws.xnat.XNATQueryUtil;
 
@@ -35,6 +36,14 @@ public class XNATQueries
 		String allProjectsQueryURL = XNATQueryUtil.buildAllProjectsQueryURL();
 
 		return invokeXNATProjectsQuery(sessionID, allProjectsQueryURL);
+	}
+
+	public static XNATUserList usersForProject(String sessionID, String projectID)
+	{
+		String allUsersForProjectQueryURL = XNATQueryUtil.buildAllUsersForProjectQueryURL(projectID);
+
+		return invokeXNATUsersQuery(sessionID, allUsersForProjectQueryURL);
+
 	}
 
 	public static XNATSubjectList allSubjectsForProject(String sessionID, String projectID)
@@ -125,6 +134,37 @@ public class XNATQueries
 		return processXNATProjectsQueryResponse(method, xnatStatusCode);
 	}
 
+	private static XNATUserList invokeXNATUsersQuery(String sessionID, String xnatUsersQueryURL)
+	{
+		HttpClient client = new HttpClient();
+		GetMethod method = new GetMethod(xnatUsersQueryURL);
+		int xnatStatusCode;
+
+		method.setRequestHeader("Cookie", "JSESSIONID=" + sessionID);
+
+		try {
+			log.info("Invoking XNAT query at " + xnatUsersQueryURL);
+			xnatStatusCode = client.executeMethod(method);
+		} catch (IOException e) {
+			log.warning("Error performing XNAT projects query", e);
+			xnatStatusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+		}
+		return processXNATUsersQueryResponse(method, xnatStatusCode);
+	}
+
+	private static XNATUserList processXNATUsersQueryResponse(GetMethod method, int xnatStatusCode)
+	{
+		if (xnatStatusCode == HttpServletResponse.SC_OK) {
+			return extractXNATUsersFromResponse(method);
+		} else if (xnatStatusCode == HttpServletResponse.SC_UNAUTHORIZED) {
+			log.warning("Invalid session token for XNAT projects query");
+			return XNATUserList.emptyUsers();
+		} else {
+			log.warning("Error performing XNAT projects query; XNAT status code = " + xnatStatusCode);
+			return XNATUserList.emptyUsers();
+		}
+	}
+
 	private static XNATProjectList processXNATProjectsQueryResponse(GetMethod method, int xnatStatusCode)
 	{
 		if (xnatStatusCode == HttpServletResponse.SC_OK) {
@@ -135,6 +175,27 @@ public class XNATQueries
 		} else {
 			log.warning("Error performing XNAT projects query; XNAT status code = " + xnatStatusCode);
 			return XNATProjectList.emptyProjects();
+		}
+	}
+
+	private static XNATUserList extractXNATUsersFromResponse(GetMethod method)
+	{
+		InputStreamReader streamReader = null;
+		try {
+			Gson gson = new Gson();
+			streamReader = new InputStreamReader(method.getResponseBodyAsStream(), "UTF-8");
+			return gson.fromJson(new BufferedReader(streamReader), XNATUserList.class);
+		} catch (IOException e) {
+			log.warning("Error processing XNAT users query result", e);
+			return XNATUserList.emptyUsers();
+		} finally {
+			if (streamReader != null) {
+				try {
+					streamReader.close();
+				} catch (IOException e) {
+					log.warning("Error closing XNAT users response stream ", e);
+				}
+			}
 		}
 	}
 

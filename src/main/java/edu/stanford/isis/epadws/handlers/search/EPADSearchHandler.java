@@ -19,6 +19,7 @@ import edu.stanford.epad.dtos.XNATProject;
 import edu.stanford.epad.dtos.XNATProjectList;
 import edu.stanford.epad.dtos.XNATSubject;
 import edu.stanford.epad.dtos.XNATSubjectList;
+import edu.stanford.epad.dtos.XNATUserList;
 import edu.stanford.isis.epad.common.util.EPADLogger;
 import edu.stanford.isis.epadws.handlers.HandlerUtil;
 import edu.stanford.isis.epadws.queries.AIMQueries;
@@ -125,8 +126,9 @@ public class EPADSearchHandler extends AbstractHandler
 		int numberOfStudies = numberOfStudiesForProject(sessionID, xnatProject.ID);
 		int numberOfAnnotations = isEmptyUsername(username) ? 0 : numberOfAIMAnnotationsForProject(sessionID, username,
 				xnatProject.ID);
+		XNATUserList users = XNATQueries.usersForProject(sessionID, xnatProject.ID);
 		EPADProject epadProject = new EPADProject(secondaryID, piLastName, description, name, id, piFirstName, uri,
-				numberOfSubjects, numberOfStudies, numberOfAnnotations);
+				numberOfSubjects, numberOfStudies, numberOfAnnotations, users);
 
 		return epadProject;
 	}
