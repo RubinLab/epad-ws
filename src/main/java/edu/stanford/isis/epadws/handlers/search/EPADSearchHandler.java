@@ -35,6 +35,7 @@ public class EPADSearchHandler extends AbstractHandler
 	private static final String SERIES_TEMPLATE = STUDY_TEMPLATE + "/series/";
 	// private static final String SERIES_ID_TEMPLATE = SERIES_TEMPLATE + "/series/{series}";
 
+	private static final String BAD_REQUEST_MESSAGE = "Bad request on search route";
 	private static final String INTERNAL_EXCEPTION_MESSAGE = "Internal error running query on search route";
 	private static final String INVALID_SESSION_TOKEN_MESSAGE = "Session token is invalid on search route";
 
@@ -80,9 +81,7 @@ public class EPADSearchHandler extends AbstractHandler
 					EPADSeriesList seriesList = epadQueries.performSeriesQuery(jsessionID, projectID, subjectID, studyUID);
 					responseStream.append(seriesList.toJSON());
 				} else {
-					// TODO
-					log.warning("Not implemented");
-					throw new RuntimeException("Not implemented");
+					statusCode = HandlerUtil.warningJSONResponse(HttpServletResponse.SC_BAD_REQUEST, BAD_REQUEST_MESSAGE, log);
 				}
 				responseStream.flush();
 				statusCode = HttpServletResponse.SC_OK;

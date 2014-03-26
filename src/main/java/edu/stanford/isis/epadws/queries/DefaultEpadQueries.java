@@ -162,9 +162,9 @@ public class DefaultEpadQueries implements EpadQueries
 	@Override
 	public Set<String> examTypesForStudy(String sessionID, String projectID, String subjectID, String studyUID)
 	{
+		DCM4CHEESeriesList dcm4CheeSeriesList = Dcm4CheeQueries.getSeriesInStudy(studyUID);
 		Set<String> examTypes = new HashSet<String>();
 
-		DCM4CHEESeriesList dcm4CheeSeriesList = Dcm4CheeQueries.getSeriesInStudy(studyUID);
 		for (DCM4CHEESeries dcm4CheeSeries : dcm4CheeSeriesList.ResultSet.Result) {
 			examTypes.add(dcm4CheeSeries.examType);
 		}
@@ -172,12 +172,12 @@ public class DefaultEpadQueries implements EpadQueries
 	}
 
 	@Override
-	public Set<String> dicomSeriesIDsForSubject(String sessionID, String projectID, String subjectID)
+	public Set<String> seriesUIDsForSubject(String sessionID, String projectID, String subjectID)
 	{
 		Dcm4CheeDatabaseOperations dcm4CheeDatabaseOperations = Dcm4CheeDatabase.getInstance()
 				.getDcm4CheeDatabaseOperations();
-		Set<String> seriesIDs = new HashSet<String>();
 		Set<String> studyIDs = XNATQueries.dicomStudyUIDsForSubject(sessionID, projectID, subjectID);
+		Set<String> seriesIDs = new HashSet<String>();
 
 		for (String studyID : studyIDs) {
 			Set<String> seriesIDsForStudy = dcm4CheeDatabaseOperations.findAllSeriesUIDsInStudy(studyID);
