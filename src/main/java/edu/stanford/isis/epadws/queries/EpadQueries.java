@@ -7,6 +7,7 @@ import java.util.Set;
 import edu.stanford.epad.dtos.DCM4CHEESeries;
 import edu.stanford.epad.dtos.EPADDatabaseSeries;
 import edu.stanford.epad.dtos.EPADProjectList;
+import edu.stanford.epad.dtos.EPADSeriesList;
 import edu.stanford.epad.dtos.EPADStudyList;
 import edu.stanford.epad.dtos.EPADSubjectList;
 
@@ -44,5 +45,7 @@ public interface EpadQueries
 
 	EPADSubjectList performSubjectsQuery(String sessionID, String projectID);
 
-	EPADStudyList performStudiesQuery(String sessionID, String projectID, String studyID);
+	EPADStudyList performStudiesQuery(String sessionID, String projectID, String subjectID);
+
+	EPADSeriesList performSeriesQuery(String sessionID, String projectID, String subjectID, String studyUID);
 }

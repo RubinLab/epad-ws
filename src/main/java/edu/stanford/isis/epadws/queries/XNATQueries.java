@@ -100,6 +100,19 @@ public class XNATQueries
 		return invokeXNATDICOMExperimentsQuery(sessionID, xnatExperimentsQueryURL);
 	}
 
+	// TODO Fix this so that it makes a direct query with the subjectUID to XNAT
+	public static XNATExperiment getDICOMExperimentForProjectAndSubjectAndStudyUID(String sessionID, String projectID,
+			String subjectID, String studyUID)
+	{
+		XNATExperimentList xnatExperimentList = getDICOMExperimentsForProjectAndSubject(sessionID, projectID, subjectID);
+
+		for (XNATExperiment xnatExperiment : xnatExperimentList.ResultSet.Result)
+			if (xnatExperiment.label.equals(studyUID))
+				return xnatExperiment;
+
+		return null;
+	}
+
 	public static int numberOfDICOMExperimentsForProjectAndSubject(String sessionID, String projectID, String subjectID)
 	{ // TODO Need a count without getting all records.
 		return getDICOMExperimentsForProjectAndSubject(sessionID, projectID, subjectID).ResultSet.totalRecords;

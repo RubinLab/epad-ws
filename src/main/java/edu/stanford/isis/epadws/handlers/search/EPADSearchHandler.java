@@ -10,6 +10,7 @@ import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 
 import edu.stanford.epad.dtos.EPADProjectList;
+import edu.stanford.epad.dtos.EPADSeriesList;
 import edu.stanford.epad.dtos.EPADStudyList;
 import edu.stanford.epad.dtos.EPADSubjectList;
 import edu.stanford.isis.epad.common.util.EPADLogger;
@@ -30,8 +31,8 @@ public class EPADSearchHandler extends AbstractHandler
 	private static final String SUBJECTS_TEMPLATE = PROJECT_TEMPLATE + "/subjects/";
 	private static final String SUBJECT_TEMPLATE = SUBJECTS_TEMPLATE + "{subject}";
 	private static final String STUDIES_TEMPLATE = SUBJECT_TEMPLATE + "/studies/";
-	// private static final String STUDY_TEMPLATE = STUDIES_TEMPLATE + "/studies/{study}";
-	// private static final String SERIES_TEMPLATE = STUDY_TEMPLATE + "/series/";
+	private static final String STUDY_TEMPLATE = STUDIES_TEMPLATE + "/studies/{study}";
+	private static final String SERIES_TEMPLATE = STUDY_TEMPLATE + "/series/";
 	// private static final String SERIES_ID_TEMPLATE = SERIES_TEMPLATE + "/series/{series}";
 
 	private static final String INTERNAL_EXCEPTION_MESSAGE = "Internal error running query on search route";
@@ -71,6 +72,13 @@ public class EPADSearchHandler extends AbstractHandler
 					String subjectID = HandlerUtil.getParameter(templateMap, "subject");
 					EPADStudyList studyList = epadQueries.performStudiesQuery(jsessionID, projectID, subjectID);
 					responseStream.append(studyList.toJSON());
+				} else if (HandlerUtil.matchesTemplate(SERIES_TEMPLATE, pathInfo)) {
+					Map<String, String> templateMap = HandlerUtil.getTemplateMap(SERIES_TEMPLATE, pathInfo);
+					String projectID = HandlerUtil.getParameter(templateMap, "project");
+					String subjectID = HandlerUtil.getParameter(templateMap, "subject");
+					String studyUID = HandlerUtil.getParameter(templateMap, "study");
+					EPADSeriesList seriesList = epadQueries.performSeriesQuery(jsessionID, projectID, subjectID, studyUID);
+					responseStream.append(seriesList.toJSON());
 				} else {
 					// TODO
 					log.warning("Not implemented");

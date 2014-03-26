@@ -22,39 +22,6 @@ public class AIMQueries
 	private static String xsdFilePath = EPADConfig.getInstance().getStringPropertyValue("baseSchemaDir") + xsdFile;
 	private static String collection = EPADConfig.getInstance().getStringPropertyValue("collection");
 
-	public static int numberOfAIMAnnotationsForSubject(String sessionID, Set<String> users, String subjectID)
-	{
-		int numberOfAIMAnnotations = 0;
-
-		for (String user : users)
-			numberOfAIMAnnotations += getNumberOfAIMAnnotationsForPatientId(subjectID, user);
-
-		return numberOfAIMAnnotations;
-	}
-
-	public static int numberOfAIMAnnotationsForProject(String sessionID, Set<String> usernames, String projectID)
-	{
-		int totalAIMAnnotations = 0;
-
-		for (String username : usernames) {
-			totalAIMAnnotations += numberOfAIMAnnotationsForProject(sessionID, username, projectID);
-		}
-
-		return totalAIMAnnotations;
-	}
-
-	// Only count annotations for subjects in this project
-	public static int numberOfAIMAnnotationsForProject(String sessionID, String username, String projectID)
-	{
-		Set<String> subjectIDs = XNATQueries.subjectIDsForProject(sessionID, projectID);
-		int totalAIMAnnotations = 0;
-
-		for (String subjectID : subjectIDs) {
-			totalAIMAnnotations += getNumberOfAIMAnnotationsForPatientId(subjectID, username);
-		}
-
-		return totalAIMAnnotations;
-	}
 
 	public static List<ImageAnnotation> getAIMAnnotationsForPerson(String personName, String username)
 	{
@@ -74,6 +41,40 @@ public class AIMQueries
 	public static List<ImageAnnotation> getAIMAnnotationsForAnnotationUID(String annotationUID, String username)
 	{
 		return getAIMImageAnnotations("annotationUID", annotationUID, username);
+	}
+
+	public static int getNumberOfAIMAnnotationsForPatientID(String sessionID, Set<String> users, String patientID)
+	{
+		int numberOfAIMAnnotations = 0;
+
+		for (String user : users)
+			numberOfAIMAnnotations += getNumberOfAIMAnnotationsForPatientId(patientID, user);
+
+		return numberOfAIMAnnotations;
+	}
+
+	public static int getNumberOfAIMAnnotationsForProject(String sessionID, Set<String> usernames, String projectID)
+	{
+		int totalAIMAnnotations = 0;
+
+		for (String username : usernames) {
+			totalAIMAnnotations += getNumberOfAIMAnnotationsForProject(sessionID, username, projectID);
+		}
+
+		return totalAIMAnnotations;
+	}
+
+	// Only count annotations for subjects in this project
+	public static int getNumberOfAIMAnnotationsForProject(String sessionID, String username, String projectID)
+	{
+		Set<String> subjectIDs = XNATQueries.subjectIDsForProject(sessionID, projectID);
+		int totalAIMAnnotations = 0;
+
+		for (String subjectID : subjectIDs) {
+			totalAIMAnnotations += getNumberOfAIMAnnotationsForPatientId(subjectID, username);
+		}
+
+		return totalAIMAnnotations;
 	}
 
 	public static int getNumberOfAIMAnnotationsForPerson(String personName, String username)

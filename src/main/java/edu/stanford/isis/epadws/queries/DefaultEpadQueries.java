@@ -14,6 +14,8 @@ import edu.stanford.epad.dtos.EPADDatabaseImage;
 import edu.stanford.epad.dtos.EPADDatabaseSeries;
 import edu.stanford.epad.dtos.EPADProject;
 import edu.stanford.epad.dtos.EPADProjectList;
+import edu.stanford.epad.dtos.EPADSeries;
+import edu.stanford.epad.dtos.EPADSeriesList;
 import edu.stanford.epad.dtos.EPADStudy;
 import edu.stanford.epad.dtos.EPADStudyList;
 import edu.stanford.epad.dtos.EPADSubject;
@@ -111,6 +113,38 @@ public class DefaultEpadQueries implements EpadQueries
 		}
 		return epadStudyList;
 
+	}
+
+	@Override
+	public EPADSeriesList performSeriesQuery(String sessionID, String projectID, String subjectID, String studyUID)
+	{
+		EPADSeriesList epadSeriesList = new EPADSeriesList();
+		XNATUserList xnatUsers = XNATQueries.usersForProject(sessionID, projectID);
+		Set<String> usernames = xnatUsers.getLoginNames();
+		XNATExperiment xnatExperiment = XNATQueries.getDICOMExperimentForProjectAndSubjectAndStudyUID(sessionID, projectID,
+				subjectID, studyUID);
+
+		if (xnatExperiment == null) {
+			DCM4CHEESeriesList dcm4CheeSeriesList = Dcm4CheeQueries.getSeriesInStudy(studyUID);
+			for (DCM4CHEESeries dcm4CheeSeries : dcm4CheeSeriesList.ResultSet.Result) {
+				String seriesUID = dcm4CheeSeries.seriesUID;
+				String patientID = dcm4CheeSeries.patientID;
+				String patientName = dcm4CheeSeries.patientName;
+				String seriesDate = dcm4CheeSeries.seriesDate;
+				String seriesDescription = dcm4CheeSeries.seriesDate;
+				String examType = dcm4CheeSeries.examType;
+				String bodyPart = dcm4CheeSeries.bodyPart;
+				int numberOfImages = dcm4CheeSeries.imagesInSeries;
+				int numberOfAnnotations = AIMQueries.getNumberOfAIMAnnotationsForSeriesUID(seriesUID, usernames);
+
+				EPADSeries epadSeries = new EPADSeries(studyUID, seriesUID, patientID, patientName, seriesDate,
+						seriesDescription, examType, bodyPart, numberOfImages, numberOfAnnotations);
+				epadSeriesList.addEPADSeries(epadSeries);
+			}
+		} else
+			log.warning("Could not find  study " + studyUID + " in XNAT; project =" + projectID + ", subjectID =" + subjectID);
+
+		return epadSeriesList;
 	}
 
 	@Override
@@ -281,7 +315,7 @@ public class DefaultEpadQueries implements EpadQueries
 		int numberOfStudies = XNATQueries.numberOfStudiesForProject(sessionID, xnatProject.ID);
 		XNATUserList xnatUsers = XNATQueries.usersForProject(sessionID, xnatProject.ID);
 		Set<String> usernames = xnatUsers.getLoginNames();
-		int numberOfAnnotations = AIMQueries.numberOfAIMAnnotationsForProject(sessionID, usernames, xnatProject.ID);
+		int numberOfAnnotations = AIMQueries.getNumberOfAIMAnnotationsForProject(sessionID, usernames, xnatProject.ID);
 
 		EPADProject epadProject = new EPADProject(secondaryID, piLastName, description, name, id, piFirstName, uri,
 				numberOfSubjects, numberOfStudies, numberOfAnnotations, xnatUsers.getLoginNames());
@@ -301,7 +335,7 @@ public class DefaultEpadQueries implements EpadQueries
 		String insertDate = xnatSubject.insert_date;
 		String label = xnatSubject.label;
 		int numberOfStudies = XNATQueries.numberOfStudiesForSubject(sessionID, xnatSubject.project, xnatSubject.ID);
-		int numberOfAnnotations = AIMQueries.numberOfAIMAnnotationsForSubject(sessionID, users, xnatSubject.ID);
+		int numberOfAnnotations = AIMQueries.getNumberOfAIMAnnotationsForPatientID(sessionID, users, xnatSubject.ID);
 		Set<String> examTypes = epadQueries.examTypesForSubject(sessionID, xnatSubject.project, xnatSubject.ID);
 		EPADSubject epadSubject = new EPADSubject(project, subjectName, insertUser, xnatID, insertDate, label, uri,
 				numberOfStudies, numberOfAnnotations, examTypes);
