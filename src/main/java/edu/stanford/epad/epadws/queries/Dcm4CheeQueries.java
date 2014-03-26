@@ -47,7 +47,7 @@ public class Dcm4CheeQueries
 	{
 		Dcm4CheeDatabaseOperations dcm4CheeDatabaseOperations = Dcm4CheeDatabase.getInstance()
 				.getDcm4CheeDatabaseOperations();
-		List<Map<String, String>> studySearchResult = dcm4CheeDatabaseOperations.dicomStudySearch(searchType.toString(),
+		List<Map<String, String>> studySearchResult = dcm4CheeDatabaseOperations.dicomStudySearch(searchType.getName(),
 				searchValue);
 		DCM4CHEEStudyList dcm4CheeStudyList = new DCM4CHEEStudyList();
 
@@ -80,7 +80,7 @@ public class Dcm4CheeQueries
 	 * Get all the series for a study from DCM4CHEE.
 	 * 
 	 * @param queryString String - query string which contains the study id. The query line looks like the following:
-	 *          http://[ip:port]/search?searchType=series&studyUID=[studyID].
+	 *          http://[ip:port]/search?searchType=series&studyUID=[studyUID].
 	 * 
 	 */
 	public static DCM4CHEESeriesList getSeriesInStudy(String studyUID)

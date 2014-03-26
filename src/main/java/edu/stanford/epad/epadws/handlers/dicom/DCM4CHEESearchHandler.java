@@ -9,7 +9,6 @@ import javax.servlet.http.HttpServletResponse;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 
-import edu.stanford.epad.common.dicom.DicomFormatUtil;
 import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.epad.dtos.DCM4CHEESeriesList;
 import edu.stanford.epad.dtos.DCM4CHEEStudyList;
@@ -31,8 +30,9 @@ public class DCM4CHEESearchHandler extends AbstractHandler
 	private static final EPADLogger log = EPADLogger.getInstance();
 
 	private static final String MISSING_QUERY_MESSAGE = "No series or study query in DCM4CHEE search request";
-	private static final String MISSING_STUDY_SEARCH_TYPE_MESSAGE = "Missing DCM4CHEE study search type";
-	private static final String INTERNAL_EXCEPTION_MESSAGE = "Warning: internal error running query on DCM4CHEE search route";
+	private static final String MISSING_STUDY_UID_MESSAGE = "Missing study UID in query";
+	private static final String MISSING_STUDY_SEARCH_TYPE_MESSAGE = "Missing the study search type in query";
+	private static final String INTERNAL_EXCEPTION_MESSAGE = "Internal error running query on DCM4CHEE search route";
 	private static final String INVALID_SESSION_TOKEN_MESSAGE = "Session token is invalid on DCM4CHEE search route";
 
 	@Override
@@ -51,20 +51,25 @@ public class DCM4CHEESearchHandler extends AbstractHandler
 				String queryString = httpRequest.getQueryString();
 
 				if (queryString != null) {
-					queryString = URLDecoder.decode(queryString, "UTF-8");
-					queryString = queryString.trim();
-					log.info("DCM4CHEESearchHandler query: " + queryString);
-					if (isDICOMSeriesRequest(queryString)) { // TODO httpRequest.getParameter: searchtype=series&studyUID=
-						String studyIdKey = getStudyUIDFromRequest(queryString);
-						String studyUID = DicomFormatUtil.formatDirToUid(studyIdKey);
-						DCM4CHEESeriesList dcm4CheeSeriesList = Dcm4CheeQueries.getSeriesInStudy(studyUID);
-						responseStream.append(dcm4CheeSeriesList.toJSON());
+					queryString = URLDecoder.decode(queryString, "UTF-8").trim();
+					log.info("DCM4CHEESearchHandler: query " + queryString);
+					String searchType = httpRequest.getParameter("searchtype");
+					if (searchType != null && searchType.equals("series")) {
+						String studyUID = httpRequest.getParameter("studyUID");
+						if (studyUID != null) {
+							DCM4CHEESeriesList dcm4CheeSeriesList = Dcm4CheeQueries.getSeriesInStudy(studyUID);
+							log.info("DCM4CHEESearchHandler: " + dcm4CheeSeriesList.getNumberOfSeries() + " series result(s)");
+							responseStream.append(dcm4CheeSeriesList.toJSON());
+						} else {
+							statusCode = HandlerUtil.infoJSONResponse(HttpServletResponse.SC_BAD_REQUEST, MISSING_STUDY_UID_MESSAGE,
+									responseStream, log);
+						}
 					} else {
-						DCM4CHEEStudySearchType dcm4CheeSearchType = getSearchType(httpRequest);
-						if (dcm4CheeSearchType != null) {
-							String[] parts = queryString.split("=");
-							String searchValue = parts[1].trim();
-							DCM4CHEEStudyList dcm4CheeStudyList = Dcm4CheeQueries.studySearch(dcm4CheeSearchType, searchValue);
+						DCM4CHEEStudySearchType studySearchType = getStudySearchType(httpRequest);
+						if (studySearchType != null) {
+							String searchValue = httpRequest.getParameter(studySearchType.getName());
+							DCM4CHEEStudyList dcm4CheeStudyList = Dcm4CheeQueries.studySearch(studySearchType, searchValue);
+							log.info("DCM4CHEESearchHandler: " + dcm4CheeStudyList.getNumberOfStudies() + " study result(s)");
 							responseStream.append(dcm4CheeStudyList.toJSON());
 						} else {
 							statusCode = HandlerUtil.infoJSONResponse(HttpServletResponse.SC_BAD_REQUEST,
@@ -86,41 +91,14 @@ public class DCM4CHEESearchHandler extends AbstractHandler
 		httpResponse.setStatus(statusCode);
 	}
 
-	// TODO Fix this nastiness.
-	private static String getStudyUIDFromRequest(String queryString)
-	{
-		queryString = queryString.toLowerCase();
-		int index = queryString.indexOf("&studyuid=");
-		String end = queryString.substring(index);
-		end = end.replace('=', ' ');
-		String[] parts = end.split(" ");
-		String key = parts[1].replace('.', '_');
-		// log.info("key=" + key + ",   queryString=" + queryString);
-		return key;
-	}
-
-	/**
-	 * Look for searchtype=series in the request to determine if it is a series request.
-	 * 
-	 * @param queryString String
-	 * @return boolean
-	 */
-	private static boolean isDICOMSeriesRequest(String queryString)
-	{
-		String check = queryString.toLowerCase().trim();
-		boolean isSeries = check.indexOf("earchtype=series") > 0;
-
-		return isSeries;
-	}
-
-	private DCM4CHEEStudySearchType getSearchType(HttpServletRequest httpRequest)
+	private DCM4CHEEStudySearchType getStudySearchType(HttpServletRequest httpRequest)
 	{
 		for (DCM4CHEEStudySearchType curr : DCM4CHEEStudySearchType.values()) {
-			if ((httpRequest.getParameter(curr.toString()) != null)) {
+			if ((httpRequest.getParameter(curr.getName()) != null)) {
 				return curr;
 			}
 		}
-		log.warning("ERROR: Request missing search parameter. req=" + httpRequest.toString());
-		throw new IllegalArgumentException("Request missing search parameter. Req=" + httpRequest.toString());
+		log.warning("Request missing study search type parameter. req=" + httpRequest.toString());
+		throw new IllegalArgumentException("Missing study search type search parameter. Req=" + httpRequest.toString());
 	}
 }
