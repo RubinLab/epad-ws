@@ -260,7 +260,7 @@
 					<!-- Default and vendor specification and implemention entries for runtime jai_imageio loading -->
 					<archive> 
 						<manifest>
-							<mainClass>edu.stanford.isis.epadws.Main</mainClass>
+							<mainClass>edu.stanford.epad.epadws.Main</mainClass>
 							<addDefaultImplementationEntries>true</addDefaultImplementationEntries>
 							<addDefaultSpecificationEntries>true</addDefaultSpecificationEntries>
 						</manifest>
