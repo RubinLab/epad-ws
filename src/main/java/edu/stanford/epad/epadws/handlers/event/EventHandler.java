@@ -1,7 +1,6 @@
 package edu.stanford.epad.epadws.handlers.event;
 
 import java.io.PrintWriter;
-import java.net.URLDecoder;
 import java.util.List;
 import java.util.Map;
 
@@ -16,10 +15,11 @@ import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.epad.common.util.SearchResultUtils;
 import edu.stanford.epad.epadws.epaddb.EpadDatabase;
 import edu.stanford.epad.epadws.epaddb.EpadDatabaseOperations;
+import edu.stanford.epad.epadws.handlers.HandlerUtil;
 import edu.stanford.epad.epadws.xnat.XNATSessionOperations;
 
 /**
- * Initial version of ePAD's new event notification system
+ * 
  * 
  * 
  * @author martin
@@ -30,7 +30,7 @@ public class EventHandler extends AbstractHandler
 	private static final EPADConfig config = EPADConfig.getInstance();
 
 	private static final String INVALID_METHOD_MESSAGE = "Only POST and GET methods valid for the events route";
-	private static final String INTERNAL_EXCEPTION_MESSAGE = "Internal error on event search";
+	private static final String INTERNAL_ERROR_MESSAGE = "Internal error on event search";
 	private static final String MISSING_JSESSIONID_MESSAGE = "No session identifier in event query";
 	private static final String BAD_PARAMETERS_MESSAGE = "Missing parameters in event query";
 	private static final String MISSING_QUERY_MESSAGE = "No query in event request";
@@ -40,6 +40,7 @@ public class EventHandler extends AbstractHandler
 	public void handle(String base, Request request, HttpServletRequest httpRequest, HttpServletResponse httpResponse)
 	{
 		PrintWriter responseStream;
+		int statusCode;
 
 		httpResponse.setContentType("text/plain");
 		request.setHandled(true);
@@ -49,29 +50,19 @@ public class EventHandler extends AbstractHandler
 				responseStream = httpResponse.getWriter();
 
 				String method = httpRequest.getMethod();
-				String queryString = httpRequest.getQueryString();
-				queryString = URLDecoder.decode(queryString, "UTF-8");
 
 				if ("GET".equalsIgnoreCase(method)) {
-					if (queryString != null) {
-						queryString = queryString.trim();
-						String jsessionID = XNATSessionOperations.getJSessionIDFromRequest(httpRequest);
-						if (jsessionID != null) {
-							findEventsForSessionID(responseStream, jsessionID);
-							httpResponse.setStatus(HttpServletResponse.SC_OK);
-						} else {
-							log.warning(MISSING_JSESSIONID_MESSAGE);
-							responseStream.append(MISSING_JSESSIONID_MESSAGE);
-							httpResponse.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-						}
+					String jsessionID = XNATSessionOperations.getJSessionIDFromRequest(httpRequest);
+					if (jsessionID != null) {
+						findEventsForSessionID(responseStream, jsessionID);
+						statusCode = HttpServletResponse.SC_OK;
 					} else {
-						log.warning(MISSING_QUERY_MESSAGE);
-						responseStream.append(MISSING_QUERY_MESSAGE);
-						httpResponse.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+						statusCode = HandlerUtil.warningResponse(HttpServletResponse.SC_BAD_REQUEST, MISSING_JSESSIONID_MESSAGE,
+								log);
 					}
 				} else if ("POST".equalsIgnoreCase(method)) {
+					String queryString = httpRequest.getQueryString();
 					if (queryString != null) {
-						queryString = queryString.trim();
 						String jsessionID = XNATSessionOperations.getJSessionIDFromRequest(httpRequest);
 						String event_status = httpRequest.getParameter("event_status");
 						String aim_uid = httpRequest.getParameter("aim_uid");
@@ -91,31 +82,26 @@ public class EventHandler extends AbstractHandler
 							epadDatabaseOperations.insertEpadEvent(jsessionID, event_status, aim_uid, aim_name, patient_id,
 									patient_name, template_id, template_name, plugin_name);
 							responseStream.flush();
-							httpResponse.setStatus(HttpServletResponse.SC_OK);
+							statusCode = HttpServletResponse.SC_OK;
 						} else {
-							log.info(BAD_PARAMETERS_MESSAGE);
-							responseStream.append(BAD_PARAMETERS_MESSAGE);
-							httpResponse.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+							statusCode = HandlerUtil.warningResponse(HttpServletResponse.SC_BAD_REQUEST, BAD_PARAMETERS_MESSAGE, log);
 						}
 					} else {
-						log.info(MISSING_QUERY_MESSAGE);
-						responseStream.append(MISSING_QUERY_MESSAGE);
-						httpResponse.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+						statusCode = HandlerUtil.warningResponse(HttpServletResponse.SC_BAD_REQUEST, MISSING_QUERY_MESSAGE, log);
 					}
 				} else {
-					log.info(INVALID_METHOD_MESSAGE);
-					responseStream.append(INVALID_METHOD_MESSAGE);
+					statusCode = HandlerUtil.warningResponse(HttpServletResponse.SC_METHOD_NOT_ALLOWED, INVALID_METHOD_MESSAGE,
+							log);
 					httpResponse.setHeader("Access-Control-Allow-Methods", "POST, GET");
-					httpResponse.setStatus(HttpServletResponse.SC_METHOD_NOT_ALLOWED);
 				}
 			} catch (Throwable t) {
-				log.severe(INTERNAL_EXCEPTION_MESSAGE, t);
-				httpResponse.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+				statusCode = HandlerUtil.warningResponse(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, INTERNAL_ERROR_MESSAGE,
+						log);
 			}
 		} else {
-			log.info(INVALID_SESSION_TOKEN_MESSAGE);
-			httpResponse.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+			statusCode = HandlerUtil.warningResponse(HttpServletResponse.SC_UNAUTHORIZED, INVALID_SESSION_TOKEN_MESSAGE, log);
 		}
+		httpResponse.setStatus(statusCode);
 	}
 
 	private void findEventsForSessionID(PrintWriter responseStrean, String sessionID)

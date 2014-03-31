@@ -147,16 +147,6 @@ public class HandlerUtil
 		return warningJSONResponse(HttpServletResponse.SC_UNAUTHORIZED, message, log);
 	}
 
-	public static int invalidTokenResponse(String message, Throwable t, PrintWriter responseStream, EPADLogger log)
-	{
-		return warningJSONResponse(HttpServletResponse.SC_UNAUTHORIZED, message, t, responseStream, log);
-	}
-
-	public static int invalidTokenJSONResponse(String message, Throwable t, PrintWriter responseStream, EPADLogger log)
-	{
-		return warningJSONResponse(HttpServletResponse.SC_UNAUTHORIZED, message, t, responseStream, log);
-	}
-
 	public static int invalidTokenResponse(String message, PrintWriter responseStream, EPADLogger log)
 	{
 		return warningResponse(HttpServletResponse.SC_UNAUTHORIZED, message, responseStream, log);

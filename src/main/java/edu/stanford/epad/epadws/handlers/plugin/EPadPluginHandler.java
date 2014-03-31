@@ -19,6 +19,7 @@ import org.eclipse.jetty.server.handler.AbstractHandler;
 import edu.stanford.epad.common.plugins.PluginHandlerMap;
 import edu.stanford.epad.common.plugins.PluginServletHandler;
 import edu.stanford.epad.common.util.EPADLogger;
+import edu.stanford.epad.epadws.handlers.HandlerUtil;
 import edu.stanford.epad.epadws.xnat.XNATSessionOperations;
 
 /**
@@ -41,6 +42,7 @@ public class EPadPluginHandler extends AbstractHandler
 	public void handle(String s, Request request, HttpServletRequest httpRequest, HttpServletResponse httpResponse)
 	{
 		PrintWriter responseStream = null;
+		int statusCode;
 
 		httpResponse.setContentType("text/plain");
 		httpResponse.setHeader("Access-Control-Allow-Origin", "*");
@@ -55,61 +57,25 @@ public class EPadPluginHandler extends AbstractHandler
 				if (pluginServletHandler != null) {
 					String method = httpRequest.getMethod();
 					if ("GET".equalsIgnoreCase(method)) {
-						pluginServletHandler.doGet(httpRequest, httpResponse); // Status set by plugin
+						statusCode = pluginServletHandler.doGet(httpRequest, httpResponse); // Status set by plugin
 					} else if ("POST".equalsIgnoreCase(method)) {
-						pluginServletHandler.doPost(httpRequest, httpResponse); // Status set by plugin
+						statusCode = pluginServletHandler.doPost(httpRequest, httpResponse); // Status set by plugin
 					} else {
-						log.info(INVALID_METHOD_MESSAGE);
-						responseStream.append(INVALID_METHOD_MESSAGE);
-						writeDebugInfo(request, responseStream);
+						statusCode = HandlerUtil.warningResponse(HttpServletResponse.SC_METHOD_NOT_ALLOWED, INVALID_METHOD_MESSAGE,
+								log);
 						httpResponse.setHeader("Access-Control-Allow-Methods", "POST, GET");
-						httpResponse.setStatus(HttpServletResponse.SC_METHOD_NOT_ALLOWED);
 					}
 				} else {
-					log.warning(PLUGIN_NOT_FOUND_MESSAGE + " " + pluginName);
-					responseStream.append(PLUGIN_NOT_FOUND_MESSAGE + " " + pluginName);
-					writeDebugInfo(request, responseStream);
-					httpResponse.setStatus(HttpServletResponse.SC_NOT_FOUND);
+					statusCode = HandlerUtil.warningResponse(HttpServletResponse.SC_NOT_FOUND, PLUGIN_NOT_FOUND_MESSAGE + " "
+							+ pluginName, log);
 				}
 			} else {
-				log.info(INVALID_SESSION_TOKEN_MESSAGE);
-				responseStream.append(INVALID_SESSION_TOKEN_MESSAGE);
-				httpResponse.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+				statusCode = HandlerUtil.invalidTokenResponse(INVALID_SESSION_TOKEN_MESSAGE, responseStream, log);
 			}
 		} catch (Throwable t) {
-			log.severe(INTERNAL_ERROR_MESSAGE, t);
-			responseStream.append(INTERNAL_ERROR_MESSAGE);
-			httpResponse.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+			statusCode = HandlerUtil.internalErrorResponse(INTERNAL_ERROR_MESSAGE, responseStream, log);
 		}
-	}
-
-	private void writeDebugInfo(Request request, PrintWriter out)
-	{
-		String contextPath = request.getContextPath();
-		String contentType = request.getContentType();
-		String method = request.getMethod();
-		String protocol = request.getProtocol();
-		String queryString = request.getQueryString();
-		String queryEncoding = request.getQueryEncoding();
-		String remoteAddr = request.getRemoteAddr();
-		String requestURI = request.getRequestURI();
-		String pluginName = request.getPathInfo();
-
-		StringBuilder sb = new StringBuilder();
-		sb.append("\n");
-		sb.append("Plugin Name:    ").append(pluginName).append("\n");
-		sb.append("Method:         ").append(method).append("\n");
-		sb.append("----------------").append("\n");
-		sb.append("Context Path:   ").append(contextPath).append("\n");
-		sb.append("Content Type:   ").append(contentType).append("\n");
-		sb.append("Protocol:       ").append(protocol).append("\n");
-		sb.append("Query String:   ").append(queryString).append("\n");
-		sb.append("Query Encoding: ").append(queryEncoding).append("\n");
-		sb.append("Remote Addr:    ").append(remoteAddr).append("\n");
-		sb.append("Request URI:    ").append(requestURI).append("\n");
-
-		log.info(sb.toString());
-		out.append(sb.toString());
+		httpResponse.setStatus(statusCode);
 	}
 
 	@Override
