@@ -604,21 +604,6 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 		return query.toString();
 	}
 
-	private Map<String, String> createResultMap(ResultSet resultSet) throws SQLException
-	{
-		Map<String, String> retVal = new HashMap<String, String>();
-		ResultSetMetaData metaData = resultSet.getMetaData();
-
-		int columnCount = metaData.getColumnCount();
-		for (int i = 1; i <= columnCount; i++) {
-			String columnName = metaData.getColumnName(i);
-			String columnData = resultSet.getString(i);
-			retVal.put(columnName, columnData);
-		}
-
-		return retVal;
-	}
-
 	private int getFileStatus(Map<String, String> data)
 	{
 		try {
