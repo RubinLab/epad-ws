@@ -64,7 +64,7 @@ public class EPADSeriesHandler extends AbstractHandler
 			if (XNATSessionOperations.hasValidXNATSessionID(httpRequest)) {
 				String seriesIUID = httpRequest.getParameter("series_iuid");
 				if (seriesIUID != null) {
-					EPADDatabaseSeries epadDatabaseSeries = epadQueries.peformEPADSeriesQuery(seriesIUID);
+					EPADDatabaseSeries epadDatabaseSeries = epadQueries.getSeries(seriesIUID);
 					responseStream.print(epadDatabaseSeries.toJSON());
 					statusCode = HttpServletResponse.SC_OK;
 				} else {

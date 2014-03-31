@@ -45,7 +45,7 @@ public class Dcm4CheeDatabaseWatcher implements Runnable
 
 		while (!signal.hasShutdown()) {
 			try {
-				List<DCM4CHEESeries> dcm4CheeSeriesList = epadQueries.getNewDcm4CheeSeriesWithStatus(0);
+				List<DCM4CHEESeries> dcm4CheeSeriesList = epadQueries.getNewDcm4CheeSeries();
 
 				for (DCM4CHEESeries dcm4CheeSeries : dcm4CheeSeriesList) {
 					String seriesUID = dcm4CheeSeries.seriesUID;

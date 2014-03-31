@@ -32,10 +32,10 @@ public class WindowingHandler extends AbstractHandler
 	private static final EPADLogger log = EPADLogger.getInstance();
 	private static final EPADConfig config = EPADConfig.getInstance();
 
-	private static final String WADO_ERROR_MESSAGE = "Warining: WADO error in DICOM windowing route";
-	private static final String INTERNAL_ERROR_MESSAGE = "Warning: internal error in DICOM windowing route";
+	private static final String WADO_ERROR_MESSAGE = "WADO error in DICOM windowing route";
+	private static final String INTERNAL_ERROR_MESSAGE = "Internal error in DICOM windowing route";
 	private static final String INVALID_SESSION_TOKEN_MESSAGE = "Session token is invalid on DICOM windowing route";
-	private static final String INVALID_METHOD_MESSAGE = "Only GET methods valid for the windowing route";
+	private static final String INVALID_METHOD = "Only GET methods valid for the windowing route";
 	private static final String MISSING_QUERY_MESSAGE = "No query in DICOM windowing request";
 	private static final String BADLY_FORMED_QUERY_MESSAGE = "Invalid query parameters specified in DICOM windowing request";
 
@@ -78,10 +78,8 @@ public class WindowingHandler extends AbstractHandler
 						statusCode = HandlerUtil.warningResponse(HttpServletResponse.SC_BAD_REQUEST, MISSING_QUERY_MESSAGE, log);
 					}
 				} else {
-					log.warning(INVALID_METHOD_MESSAGE);
-					responseStream.append(INVALID_METHOD_MESSAGE);
 					httpResponse.setHeader("Access-Control-Allow-Methods", "GET");
-					statusCode = HttpServletResponse.SC_METHOD_NOT_ALLOWED;
+					statusCode = HandlerUtil.warningResponse(HttpServletResponse.SC_METHOD_NOT_ALLOWED, INVALID_METHOD, log);
 				}
 				responseStream.flush();
 			} else {

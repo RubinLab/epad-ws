@@ -27,8 +27,12 @@ public class DicomSegmentationPathHandler extends AbstractHandler
 	private static final EPADConfig config = EPADConfig.getInstance();
 
 	private static final String INVALID_SESSION_TOKEN_MESSAGE = "Session token is invalid on DICOM segmentation path route";
+	private static final String NO_STUDY_FOUND_MESSAGE = "Could not find study for image with UID ";
+	private static final String MISSING_IMAGE_ID_MESSAGE = "No image ID on segmentation path route";
+	private static final String MISSING_QUERY_MESSAGE = "Missing query on segmentation path route";
+	private static final String INTERNAL_ERROR_MESSAGE = "Internal server error on segmentation path request";
 
-	// TODO Convert result to JSON and clean up entire class. Add authentication etc.
+	// TODO Convert result to JSON and clean up entire class.
 
 	private boolean dummy()
 	{
@@ -46,7 +50,7 @@ public class DicomSegmentationPathHandler extends AbstractHandler
 
 		try {
 			// if (XNATSessionOperations.hasValidXNATSessionID(httpRequest)) {
-			if (dummy()) { // TODO)
+			if (dummy()) { // TODO
 				String queryString = httpRequest.getQueryString();
 
 				if (queryString != null) {
@@ -67,20 +71,20 @@ public class DicomSegmentationPathHandler extends AbstractHandler
 							statusCode = HttpServletResponse.SC_OK;
 						} else {
 							statusCode = HandlerUtil.infoResponse(HttpServletResponse.SC_NOT_FOUND,
-									"Could not find study for image with UID" + imageUID, log);
+									NO_STUDY_FOUND_MESSAGE + imageUID, log);
 						}
 					} else {
-						statusCode = HandlerUtil.infoResponse(HttpServletResponse.SC_BAD_REQUEST, "No image ID inquery!", log);
+						statusCode = HandlerUtil.infoResponse(HttpServletResponse.SC_BAD_REQUEST, MISSING_IMAGE_ID_MESSAGE, log);
 					}
 				} else {
-					statusCode = HandlerUtil.infoResponse(HttpServletResponse.SC_BAD_REQUEST, "No query in request!", log);
+					statusCode = HandlerUtil.infoResponse(HttpServletResponse.SC_BAD_REQUEST, MISSING_QUERY_MESSAGE, log);
 				}
 				responseStream.flush();
 			} else {
 				statusCode = HandlerUtil.invalidTokenResponse(INVALID_SESSION_TOKEN_MESSAGE, log);
 			}
 		} catch (Throwable t) {
-			statusCode = HandlerUtil.internalErrorResponse("Warning: internal server error on series path request", t, log);
+			statusCode = HandlerUtil.internalErrorResponse(INTERNAL_ERROR_MESSAGE, t, log);
 		}
 
 		httpResponse.setStatus(statusCode);

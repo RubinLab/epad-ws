@@ -60,25 +60,25 @@ public class EPADSearchHandler extends AbstractHandler
 				String pathInfo = httpRequest.getPathInfo();
 
 				if (HandlerUtil.matchesTemplate(PROJECTS_TEMPLATE, pathInfo)) {
-					EPADProjectList projectList = epadQueries.performAllProjectsQuery(jsessionID, username);
+					EPADProjectList projectList = epadQueries.getAllProjectsForUser(jsessionID, username);
 					responseStream.append(projectList.toJSON());
 				} else if (HandlerUtil.matchesTemplate(SUBJECTS_TEMPLATE, pathInfo)) {
 					Map<String, String> templateMap = HandlerUtil.getTemplateMap(SUBJECTS_TEMPLATE, pathInfo);
 					String projectID = HandlerUtil.getParameter(templateMap, "project");
-					EPADSubjectList subjectList = epadQueries.performSubjectsQuery(jsessionID, projectID);
+					EPADSubjectList subjectList = epadQueries.getAllSubjectsForProject(jsessionID, projectID);
 					responseStream.append(subjectList.toJSON());
 				} else if (HandlerUtil.matchesTemplate(STUDIES_TEMPLATE, pathInfo)) {
 					Map<String, String> templateMap = HandlerUtil.getTemplateMap(STUDIES_TEMPLATE, pathInfo);
 					String projectID = HandlerUtil.getParameter(templateMap, "project");
 					String subjectID = HandlerUtil.getParameter(templateMap, "subject");
-					EPADStudyList studyList = epadQueries.performStudiesQuery(jsessionID, projectID, subjectID);
+					EPADStudyList studyList = epadQueries.getAllStudiesForSubject(jsessionID, projectID, subjectID);
 					responseStream.append(studyList.toJSON());
 				} else if (HandlerUtil.matchesTemplate(SERIES_TEMPLATE, pathInfo)) {
 					Map<String, String> templateMap = HandlerUtil.getTemplateMap(SERIES_TEMPLATE, pathInfo);
 					String projectID = HandlerUtil.getParameter(templateMap, "project");
 					String subjectID = HandlerUtil.getParameter(templateMap, "subject");
 					String studyUID = HandlerUtil.getParameter(templateMap, "study");
-					EPADSeriesList seriesList = epadQueries.performSeriesQuery(jsessionID, projectID, subjectID, studyUID);
+					EPADSeriesList seriesList = epadQueries.getAllSeriesForStudy(jsessionID, projectID, subjectID, studyUID);
 					responseStream.append(seriesList.toJSON());
 				} else {
 					statusCode = HandlerUtil.warningJSONResponse(HttpServletResponse.SC_BAD_REQUEST, BAD_REQUEST_MESSAGE, log);

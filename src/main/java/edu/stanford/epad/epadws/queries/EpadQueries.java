@@ -17,17 +17,23 @@ import edu.stanford.epad.dtos.EPADSubjectList;
  */
 public interface EpadQueries
 {
-	EPADProjectList performAllProjectsQuery(String sessionID, String username);
+	EPADProjectList getAllProjectsForUser(String sessionID, String username);
 
-	EPADSubjectList performSubjectsQuery(String sessionID, String projectID);
+	EPADSubjectList getAllSubjectsForProject(String sessionID, String projectID);
 
-	EPADStudyList performStudiesQuery(String sessionID, String projectID, String subjectID);
+	EPADStudyList getAllStudiesForSubject(String sessionID, String projectID, String subjectID);
 
-	EPADSeriesList performSeriesQuery(String sessionID, String projectID, String subjectID, String studyUID);
+	EPADSeriesList getAllSeriesForStudy(String sessionID, String projectID, String subjectID, String studyUID);
 
-	List<DCM4CHEESeries> getNewDcm4CheeSeriesWithStatus(int statusCode);
+	/**
+	 * See if new series have been uploaded to DCM4CHEE that ePAD does not know about.
+	 */
+	List<DCM4CHEESeries> getNewDcm4CheeSeries();
 
-	EPADDatabaseSeries peformEPADSeriesQuery(String seriesUID);
+	/**
+	 * Query both the ePAD and DCM4CHEE database to get information on a series.
+	 */
+	EPADDatabaseSeries getSeries(String seriesUID);
 
 	/**
 	 * For the specified series, return a list of DICOM image file descriptions for instances that have no corresponding
@@ -37,10 +43,10 @@ public interface EpadQueries
 	 */
 	List<Map<String, String>> getUnprocessedDicomImageFileDescriptionsForSeries(String seriesIUID);
 
-	Set<String> seriesUIDsForSubject(String sessionID, String projectID, String subjectID);
+	Set<String> getSeriesUIDsForSubject(String sessionID, String projectID, String subjectID);
 
-	Set<String> examTypesForSubject(String sessionID, String projectID, String subjectID);
+	Set<String> getExamTypesForSubject(String sessionID, String projectID, String subjectID);
 
-	Set<String> examTypesForStudy(String sessionID, String projectID, String subjectID, String studyUID);
+	Set<String> getExamTypesForStudy(String sessionID, String projectID, String subjectID, String studyUID);
 
 }

@@ -1,11 +1,18 @@
 package edu.stanford.epad.epadws.handlers;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.io.PrintWriter;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
+import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletResponse;
+
+import org.apache.commons.httpclient.HttpClient;
+import org.apache.commons.httpclient.HttpException;
+import org.apache.commons.httpclient.methods.GetMethod;
 
 import com.sun.jersey.api.uri.UriTemplate;
 
@@ -189,4 +196,36 @@ public class HandlerUtil
 		UriTemplate uriTemplate = new UriTemplate(template);
 		return uriTemplate.match(path, map);
 	}
+
+	public static void streamGetResponse(String url, ServletOutputStream outputStream, EPADLogger log)
+			throws IOException, HttpException
+	{
+		HttpClient client = new HttpClient();
+		GetMethod method = new GetMethod(url);
+
+		int wadoStatusCode = client.executeMethod(method);
+
+		if (wadoStatusCode == HttpServletResponse.SC_OK) {
+			InputStream res = null;
+			try {
+				res = method.getResponseBodyAsStream();
+				int read = 0;
+				byte[] bytes = new byte[4096];
+				while ((read = res.read(bytes)) != -1) {
+					outputStream.write(bytes, 0, read);
+				}
+			} finally {
+				if (res != null) {
+					try {
+						res.close();
+					} catch (IOException e) {
+						log.warning("Error closing response stream", e);
+					}
+				}
+			}
+		} else {
+			log.warning("Unexpected response from " + url + ";statusCode=" + wadoStatusCode);
+		}
+	}
+
 }
