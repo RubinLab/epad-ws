@@ -18,7 +18,6 @@ import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 
 import edu.stanford.epad.common.util.EPADLogger;
-import edu.stanford.epad.common.util.JsonHelper;
 import edu.stanford.epad.dtos.XNATProject;
 import edu.stanford.epad.epadws.handlers.HandlerUtil;
 import edu.stanford.epad.epadws.xnat.XNATQueryUtil;
@@ -58,17 +57,13 @@ public class XNATProjectHandler extends AbstractHandler
 		try {
 			responseStream = httpResponse.getOutputStream();
 
-			if (XNATSessionOperations.hasValidXNATSessionID(httpRequest)) {
+			if (XNATSessionOperations.hasValidXNATSessionID(httpRequest))
 				statusCode = invokeXNATProjectService(base, httpRequest, httpResponse, responseStream);
-			} else {
-				log.info(INVALID_SESSION_TOKEN_MESSAGE);
-				responseStream.print(JsonHelper.createJSONErrorResponse(INVALID_SESSION_TOKEN_MESSAGE));
-				statusCode = HttpServletResponse.SC_UNAUTHORIZED;
-			}
+			else
+				statusCode = HandlerUtil.invalidTokenJSONResponse(INVALID_SESSION_TOKEN_MESSAGE, log);
 			responseStream.flush();
 		} catch (Throwable t) {
-			log.severe(INTERNAL_EXCEPTION_MESSAGE, t);
-			statusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+			statusCode = HandlerUtil.internalErrorJSONResponse(INTERNAL_EXCEPTION_MESSAGE, t, log);
 		}
 		httpResponse.setStatus(statusCode);
 	}
@@ -128,7 +123,6 @@ public class XNATProjectHandler extends AbstractHandler
 			httpResponse.setHeader("Access-Control-Allow-Methods", "GET, PUT, POST, DELETE");
 			xnatStatusCode = HandlerUtil.infoResponse(HttpServletResponse.SC_METHOD_NOT_ALLOWED, INVALID_METHOD_MESSAGE
 					+ "; got " + method, log);
-			xnatStatusCode = HttpServletResponse.SC_METHOD_NOT_ALLOWED;
 		}
 		return xnatStatusCode;
 	}

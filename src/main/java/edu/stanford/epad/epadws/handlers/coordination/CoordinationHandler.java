@@ -117,13 +117,13 @@ public class CoordinationHandler extends AbstractHandler
 							// TODO Should also return SC_CREATED with location header if new.
 							statusCode = HttpServletResponse.SC_OK;
 						} else {
-							statusCode = HandlerUtil.infoJSONResponse(HttpServletResponse.SC_BAD_REQUEST, BAD_TERMS_MESSAGE, log);
+							statusCode = HandlerUtil.warningJSONResponse(HttpServletResponse.SC_BAD_REQUEST, BAD_TERMS_MESSAGE, log);
 						}
 					} else {
-						statusCode = HandlerUtil.infoJSONResponse(HttpServletResponse.SC_BAD_REQUEST, BAD_JSON_MESSAGE, log);
+						statusCode = HandlerUtil.warningJSONResponse(HttpServletResponse.SC_BAD_REQUEST, BAD_JSON_MESSAGE, log);
 					}
 				} else {
-					statusCode = HandlerUtil.infoJSONResponse(HttpServletResponse.SC_FORBIDDEN, FORBIDDEN_MESSAGE, log);
+					statusCode = HandlerUtil.warningJSONResponse(HttpServletResponse.SC_FORBIDDEN, FORBIDDEN_MESSAGE, log);
 				}
 			} else {
 				statusCode = HandlerUtil.invalidTokenJSONResponse(INVALID_TOKEN_MESSAGE, log);

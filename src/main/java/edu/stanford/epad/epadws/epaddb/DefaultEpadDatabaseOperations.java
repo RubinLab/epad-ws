@@ -34,23 +34,22 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 		Connection c = null;
 		PreparedStatement ps = null;
 		try {
-			// logger.info("Inserting into epad_file table. data=" + row);
 			c = getConnection();
 			ps = c.prepareStatement(EpadDatabaseCommands.INSERT_INTO_EPAD_FILES);
-			ps.setInt(1, Integer.parseInt(row.get("instance_fk")));// instance_fk
-			ps.setInt(2, Integer.parseInt(row.get("file_type")));// file_type
-			ps.setString(3, row.get("file_path"));// file_path
-			ps.setInt(4, Integer.parseInt(row.get("file_size")));// file_size
+			ps.setInt(1, Integer.parseInt(row.get("instance_fk")));
+			ps.setInt(2, Integer.parseInt(row.get("file_type")));
+			ps.setString(3, row.get("file_path"));
+			ps.setInt(4, Integer.parseInt(row.get("file_size")));
 			int fileStatus = getFileStatus(row);
-			ps.setInt(5, fileStatus);// file_status
+			ps.setInt(5, fileStatus);
 			String errMsg = getErrMsg(row);
 			ps.setString(6, errMsg);// err_msg
-			ps.setString(7, row.get("file_md5"));// file_md5
+			ps.setString(7, row.get("file_md5"));
 			ps.execute();
 		} catch (SQLException sqle) {
-			log.warning("Warning: database operation failed.", sqle);
+			log.warning("Database operation failed", sqle);
 		} catch (Exception e) {
-			log.warning("database operation (insert epad_file) failed. data=" + row, e);
+			log.warning("database operation (insert epad_file) failed; row=" + row, e);
 		} finally {
 			close(c, ps);
 		}
@@ -65,17 +64,14 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 		try {
 			c = getConnection();
 			ps = c.prepareStatement(EpadDatabaseCommands.UPDATE_EPAD_FILES_FOR_EXACT_PATH);
-
 			ps.setInt(1, pngStatus.getCode());
 			ps.setInt(2, fileSize);
 			ps.setString(3, getValueOrDefault(errorMsg, ""));
 			ps.setString(4, filePath);
-
 			ps.execute();
-
 		} catch (SQLException sqle) {
 			String debugInfo = DatabaseUtils.getDebugData(rs);
-			log.warning("Warning: database operation failed. debugInfo=" + debugInfo, sqle);
+			log.warning("Database operation failed; debugInfo=" + debugInfo, sqle);
 		} finally {
 			close(c, ps, rs);
 		}
@@ -91,13 +87,11 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 			c = getConnection();
 			ps = c.prepareStatement(EpadDatabaseCommands.SELECT_EPAD_FILES_FOR_EXACT_PATH);
 			ps.setString(1, filePath);
-
 			rs = ps.executeQuery();
 			return rs.next();
-
 		} catch (SQLException sqle) {
 			String debugInfo = DatabaseUtils.getDebugData(rs);
-			log.warning("Warning: database operation failed. debugInfo=" + debugInfo, sqle);
+			log.warning("Database operation failed; debugInfo=" + debugInfo, sqle);
 			return false;
 		} finally {
 			close(c, ps, rs);
@@ -121,7 +115,7 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 			}
 		} catch (SQLException sqle) {
 			String debugInfo = DatabaseUtils.getDebugData(rs);
-			log.warning("Warning: database operation failed. debugInfo=" + debugInfo, sqle);
+			log.warning("Database operation failed; debugInfo=" + debugInfo, sqle);
 			return null;
 		} finally {
 			close(c, ps, rs);
@@ -147,7 +141,7 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 			}
 		} catch (SQLException sqle) {
 			String debugInfo = DatabaseUtils.getDebugData(rs);
-			log.warning("Warning: database operation failed. debugInfo=" + debugInfo, sqle);
+			log.warning("Database operation failed; debugInfo=" + debugInfo, sqle);
 			return null;
 		} finally {
 			close(c, ps, rs);
@@ -182,7 +176,6 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 
 			if (!rows.isEmpty()) { // Delete events up the most recent event for user
 				log.info("Event search found " + rows.size() + " event(s) for session ID " + sessionID);
-
 				String pk = rows.get(0).get("pk"); // We order by pk, an auto-increment field (which does not wrap)
 				ps = c.prepareStatement(EpadDatabaseCommands.DELETE_EVENTS_FOR_SESSIONID);
 				ps.setString(1, sessionID);
@@ -192,7 +185,7 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 			}
 		} catch (SQLException sqle) {
 			String debugInfo = DatabaseUtils.getDebugData(rs);
-			log.warning("Warning: database operation failed. debugInfo=" + debugInfo, sqle);
+			log.warning("Database operation failed; debugInfo=" + debugInfo, sqle);
 		} finally {
 			close(c, ps, rs);
 		}
@@ -211,7 +204,7 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 			ps.executeUpdate();
 		} catch (SQLException sqle) {
 			String debugInfo = DatabaseUtils.getDebugData(rs);
-			log.warning("Warning: database operation failed. debugInfo=" + debugInfo, sqle);
+			log.warning("Database operation failed; debugInfo=" + debugInfo, sqle);
 		} finally {
 			close(c, ps, rs);
 		}
@@ -237,7 +230,7 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 			}
 		} catch (SQLException e) {
 			String debugInfo = DatabaseUtils.getDebugData(rs);
-			log.warning("Warning: database operation failed. debugInfo=" + debugInfo, e);
+			log.warning("Database operation failed; debugInfo=" + debugInfo, e);
 			throw e;
 		} finally {
 			close(c, ps, rs);
@@ -286,7 +279,7 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 				}
 			} catch (SQLException e) {
 				String debugInfo = DatabaseUtils.getDebugData(rs);
-				log.warning("Warning: database operation failed. debugInfo=" + debugInfo, e);
+				log.warning("Database operation failed; debugInfo=" + debugInfo, e);
 				throw e;
 			} finally {
 				close(c, ps, rs);
@@ -316,6 +309,7 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 			if (rs.next()) {
 				coordinationTermKey = rs.getInt(1);
 			} else {
+				log.warning("MySQL error getting auto increment key");
 				throw new RuntimeException("MySQL error getting auto increment key");
 			}
 			for (int position = 0; position < termKeys.size(); position++) {
@@ -336,7 +330,7 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 			return new Term(coordinationTermID, schemaName, schemaVersion, description);
 		} catch (SQLException e) {
 			String debugInfo = DatabaseUtils.getDebugData(rs);
-			log.warning("Warning: database operation failed. debugInfo=" + debugInfo, e);
+			log.warning("Database operation failed; debugInfo=" + debugInfo, e);
 			throw e;
 		} finally {
 			close(c, ps, rs);
@@ -362,12 +356,13 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 			if (rs.next()) {
 				termID = rs.getInt(1);
 			} else {
+				log.warning("MySQL error getting auto increment key");
 				throw new RuntimeException("MySQL error getting auto increment key");
 			}
 			return termID;
 		} catch (SQLException e) {
 			String debugInfo = DatabaseUtils.getDebugData(rs);
-			log.warning("Warning: database operation failed. debugInfo=" + debugInfo, e);
+			log.warning("Database operation failed;debugInfo=" + debugInfo, e);
 			throw e;
 		} finally {
 			close(c, ps, rs);
@@ -392,7 +387,7 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 			}
 		} catch (SQLException sqle) {
 			String debugInfo = DatabaseUtils.getDebugData(rs);
-			log.warning("Warning: database operation failed. debugInfo=" + debugInfo, sqle);
+			log.warning("Database operation failed; debugInfo=" + debugInfo, sqle);
 		} finally {
 			close(c, ps, rs);
 		}
@@ -414,7 +409,7 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 			log.info("Rows affected " + rowsAffected);
 		} catch (SQLException sqle) {
 			String debugInfo = DatabaseUtils.getDebugData(rs);
-			log.warning("Warning: database operation failed. debugInfo=" + debugInfo, sqle);
+			log.warning("Database operation failed; debugInfo=" + debugInfo, sqle);
 		} finally {
 			close(c, ps, rs);
 		}
@@ -442,7 +437,7 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 			log.info("Rows affected " + rowsAffected);
 		} catch (SQLException sqle) {
 			String debugInfo = DatabaseUtils.getDebugData(rs);
-			log.warning("Warning: database operation failed. debugInfo=" + debugInfo, sqle);
+			log.warning("Database operation failed; debugInfo=" + debugInfo, sqle);
 		} finally {
 			close(c, ps, rs);
 		}
@@ -470,9 +465,9 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 			ps.setString(9, plugin_name);
 			ps.execute();
 		} catch (SQLException sqle) {
-			log.warning("Warning: database operation failed.", sqle);
+			log.warning("Database operation failed.", sqle);
 		} catch (Exception e) {
-			log.warning("database operation (insert event) failed for AIM ID " + aim_uid, e);
+			log.warning("Database operation (insert event) failed for AIM ID " + aim_uid, e);
 		} finally {
 			close(c, ps);
 		}
@@ -535,7 +530,7 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 			}
 		} catch (SQLException sqle) {
 			String debugInfo = DatabaseUtils.getDebugData(rs);
-			log.warning("Warning: database operation failed. debugInfo=" + debugInfo, sqle);
+			log.warning("Database operation failed; debugInfo=" + debugInfo, sqle);
 		} finally {
 			close(c, ps, rs);
 		}
@@ -574,7 +569,7 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 			}
 		} catch (SQLException e) {
 			String debugInfo = DatabaseUtils.getDebugData(rs);
-			log.warning("Warning: database operation failed. debugInfo=" + debugInfo, e);
+			log.warning("Database operation failed; debugInfo=" + debugInfo, e);
 			throw e;
 		} finally {
 			close(c, ps, rs);
@@ -650,7 +645,7 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 			return rs.next();
 		} catch (SQLException sqle) {
 			String debugInfo = DatabaseUtils.getDebugData(rs);
-			log.warning("Warning: database operation failed. debugInfo=" + debugInfo, sqle);
+			log.warning("Database operation failed; debugInfo=" + debugInfo, sqle);
 			return false;
 		} finally {
 			close(c, ps, rs);
@@ -668,9 +663,9 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 			ps.setInt(2, newStatusCode);
 			ps.execute();
 		} catch (SQLException sqle) {
-			log.warning("Warning: database operation failed.", sqle);
+			log.warning("Database operation failed", sqle);
 		} catch (Exception e) {
-			log.warning("Warning: database operation failed. statusCode=" + newStatusCode + ", series=" + seriesIUID, e);
+			log.warning("Database operation failed; statusCode=" + newStatusCode + ", series=" + seriesIUID, e);
 		} finally {
 			close(c, ps);
 		}
@@ -689,13 +684,11 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 			ps.execute();
 		} catch (SQLException sqle) {
 			String debugInfo = DatabaseUtils.getDebugData(rs);
-			log.warning("Warning: database operation failed. debugInfo=" + debugInfo, sqle);
+			log.warning("Database operation failed; debugInfo=" + debugInfo, sqle);
 		} finally {
 			close(c, ps, rs);
 		}
 	}
-
-	// /*** Database utilities ***/
 
 	private Connection getConnection() throws SQLException
 	{
@@ -713,5 +706,4 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 		close(c, ps);
 		DatabaseUtils.close(rs);
 	}
-
 }

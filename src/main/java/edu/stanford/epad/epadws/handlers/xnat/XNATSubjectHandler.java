@@ -18,7 +18,6 @@ import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 
 import edu.stanford.epad.common.util.EPADLogger;
-import edu.stanford.epad.common.util.JsonHelper;
 import edu.stanford.epad.epadws.handlers.HandlerUtil;
 import edu.stanford.epad.epadws.xnat.XNATQueryUtil;
 import edu.stanford.epad.epadws.xnat.XNATSessionOperations;
@@ -55,13 +54,10 @@ public class XNATSubjectHandler extends AbstractHandler
 		try {
 			responseStream = httpResponse.getOutputStream();
 
-			if (XNATSessionOperations.hasValidXNATSessionID(httpRequest)) {
+			if (XNATSessionOperations.hasValidXNATSessionID(httpRequest))
 				statusCode = invokeXNATSubjectService(base, httpRequest, httpResponse, responseStream);
-			} else {
-				log.info(INVALID_SESSION_TOKEN_MESSAGE);
-				responseStream.print(JsonHelper.createJSONErrorResponse(INVALID_SESSION_TOKEN_MESSAGE));
-				statusCode = HttpServletResponse.SC_UNAUTHORIZED;
-			}
+			else
+				statusCode = HandlerUtil.invalidTokenJSONResponse(INVALID_SESSION_TOKEN_MESSAGE, log);
 			responseStream.flush();
 		} catch (Throwable t) {
 			statusCode = HandlerUtil.internalErrorJSONResponse(INTERNAL_EXCEPTION_MESSAGE, t, log);
@@ -76,7 +72,7 @@ public class XNATSubjectHandler extends AbstractHandler
 		HttpClient client = new HttpClient();
 		String jsessionID = XNATSessionOperations.getJSessionIDFromRequest(httpRequest);
 		String queryString = httpRequest.getQueryString();
-		int statusCode;
+		int xnatStatusCode;
 
 		if (queryString != null) {
 			queryString = queryString.trim();
@@ -98,8 +94,8 @@ public class XNATSubjectHandler extends AbstractHandler
 		if (xnatMethod != null) {
 			log.info("Invoking " + xnatMethod.getName() + " on XNAT at " + xnatURL);
 			xnatMethod.setRequestHeader("Cookie", "JSESSIONID=" + jsessionID);
-			statusCode = client.executeMethod(xnatMethod);
-			if (statusCode == HttpServletResponse.SC_OK) {
+			xnatStatusCode = client.executeMethod(xnatMethod);
+			if (xnatStatusCode == HttpServletResponse.SC_OK) {
 				InputStream xnatResponse = null;
 				try {
 					xnatResponse = xnatMethod.getResponseBodyAsStream();
@@ -118,13 +114,13 @@ public class XNATSubjectHandler extends AbstractHandler
 					}
 				}
 			} else {
-				log.info(XNAT_INVOCATION_ERROR_MESSAGE + "; status code=" + statusCode);
+				log.info(XNAT_INVOCATION_ERROR_MESSAGE + "; status code=" + xnatStatusCode);
 			}
 		} else {
-			log.info(INVALID_METHOD_MESSAGE + "; got " + method);
 			httpResponse.setHeader("Access-Control-Allow-Methods", "GET, PUT, POST, DELETE");
-			statusCode = HttpServletResponse.SC_METHOD_NOT_ALLOWED;
+			xnatStatusCode = HandlerUtil.warningResponse(HttpServletResponse.SC_METHOD_NOT_ALLOWED, INVALID_METHOD_MESSAGE
+					+ "; got " + method, log);
 		}
-		return statusCode;
+		return xnatStatusCode;
 	}
 }

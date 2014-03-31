@@ -40,21 +40,16 @@ import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.epad.common.util.EPADResources;
 import edu.stanford.epad.common.util.XmlNamespaceTranslator;
 import edu.stanford.epad.epadws.aim.AIMUtil;
+import edu.stanford.epad.epadws.handlers.HandlerUtil;
 import edu.stanford.epad.epadws.queries.AIMQueries;
 import edu.stanford.epad.epadws.xnat.XNATSessionOperations;
 import edu.stanford.hakan.aim3api.base.AimException;
 import edu.stanford.hakan.aim3api.base.ImageAnnotation;
 import edu.stanford.hakan.aim3api.usage.AnnotationGetter;
 
-/**
- * 
- * 
- * 
- * @author martin
- */
 public class AimResourceHandler extends AbstractHandler
 {
-	private static final EPADLogger logger = EPADLogger.getInstance();
+	private static final EPADLogger log = EPADLogger.getInstance();
 
 	private static String xsdFile = EPADConfig.getInstance().getStringPropertyValue("xsdFile");
 	private static String xsdFilePath = EPADConfig.getInstance().getStringPropertyValue("baseSchemaDir") + xsdFile;
@@ -91,56 +86,46 @@ public class AimResourceHandler extends AbstractHandler
 				if ("GET".equalsIgnoreCase(method)) {
 					String queryString = httpRequest.getQueryString();
 					queryString = URLDecoder.decode(queryString, "UTF-8");
-					logger.info("AimResourceHandler received query: " + queryString);
+					log.info("AimResourceHandler received query: " + queryString);
 					if (queryString != null) { // TODO httpRequest.getParameter with "patientID", "user"
 						queryAIMImageAnnotations(responseStream, queryString);
 						statusCode = HttpServletResponse.SC_OK;
 					} else {
-						logger.info(MISSING_QUERY_MESSAGE);
-						responseStream.append(MISSING_QUERY_MESSAGE);
-						statusCode = HttpServletResponse.SC_BAD_REQUEST;
+						statusCode = HandlerUtil.warningResponse(HttpServletResponse.SC_BAD_REQUEST, MISSING_QUERY_MESSAGE, log);
 					}
 				} else if ("POST".equalsIgnoreCase(method)) {
 					String annotationsUploadDirPath = EPADResources.getEPADWebServerAnnotationsUploadDir();
-					logger.info("Uploading annotations to directory " + annotationsUploadDirPath);
+					log.info("Uploading annotations to directory " + annotationsUploadDirPath);
 					try {
 						boolean saveError = uploadAIMAnnotations(httpRequest, responseStream, annotationsUploadDirPath);
 						if (saveError) {
-							logger.warning(FILE_UPLOAD_ERROR_MESSAGE);
-							responseStream.append(FILE_UPLOAD_ERROR_MESSAGE + "<br>");
-							statusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+							statusCode = HandlerUtil.internalErrorResponse(FILE_UPLOAD_ERROR_MESSAGE + "<br>", log);
 						} else {
 							statusCode = HttpServletResponse.SC_OK;
 						}
 					} catch (Throwable t) {
-						logger.warning("Failed to upload AIM files to directory" + annotationsUploadDirPath, t);
-						responseStream.append("Failed to upload AIM files to directory " + annotationsUploadDirPath + "; error="
-								+ t.getMessage());
-						statusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+						String errorMessage = "Failed to upload AIM files to directory " + annotationsUploadDirPath;
+						statusCode = HandlerUtil.internalErrorResponse(errorMessage, t, log);
 					}
 				} else {
-					logger.warning(INVALID_METHOD_MESSAGE);
-					responseStream.append(INVALID_METHOD_MESSAGE);
 					httpResponse.setHeader("Access-Control-Allow-Methods", "POST, GET");
-					statusCode = HttpServletResponse.SC_METHOD_NOT_ALLOWED;
+					statusCode = HandlerUtil.warningResponse(HttpServletResponse.SC_METHOD_NOT_ALLOWED, INVALID_METHOD_MESSAGE,
+							log);
 				}
 			} else {
-				logger.warning(INVALID_SESSION_TOKEN_MESSAGE);
-				responseStream.append(INVALID_SESSION_TOKEN_MESSAGE);
-				statusCode = HttpServletResponse.SC_UNAUTHORIZED;
+				statusCode = HandlerUtil.invalidTokenResponse(INVALID_SESSION_TOKEN_MESSAGE, log);
 			}
 		} catch (Throwable t) {
-			logger.severe(INTERNAL_EXCEPTION_MESSAGE, t);
-			if (responseStream != null)
-				responseStream.append(INTERNAL_EXCEPTION_MESSAGE + t.getMessage() + "<br>");
-			statusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+			statusCode = HandlerUtil.internalErrorResponse(INTERNAL_EXCEPTION_MESSAGE + t.getMessage() + "<br>", t,
+					responseStream, log);
 		}
 		httpResponse.setStatus(statusCode);
 	}
 
-	private void queryAIMImageAnnotations(PrintWriter out, String queryString) throws ParserConfigurationException,
-			AimException
+	private void queryAIMImageAnnotations(PrintWriter responseStream, String queryString)
+			throws ParserConfigurationException, AimException
 	{
+		// TODO Replace this mess with getParameter calls on request.
 		queryString = queryString.trim();
 		String[] queryStrings = queryString.split("&");
 		String valueType = null;
@@ -154,7 +139,7 @@ public class AimResourceHandler extends AbstractHandler
 			user = userString[1];
 		}
 		List<ImageAnnotation> aims = AIMQueries.getAIMImageAnnotations(valueType, value, user);
-		logger.info("AimResourceHandler, number of AIM files found: " + aims.size());
+		log.info("AimResourceHandler, number of AIM files found: " + aims.size());
 
 		DocumentBuilderFactory dbfac = DocumentBuilderFactory.newInstance();
 		DocumentBuilder docBuilder = dbfac.newDocumentBuilder();
@@ -174,7 +159,7 @@ public class AimResourceHandler extends AbstractHandler
 			root.appendChild(n); // Adding to the root
 		}
 		String queryResults = XmlDocumentToString(doc);
-		out.print(queryResults);
+		responseStream.print(queryResults);
 	}
 
 	private boolean uploadAIMAnnotations(HttpServletRequest httpRequest, PrintWriter responseStream,
@@ -187,7 +172,7 @@ public class AimResourceHandler extends AbstractHandler
 
 		while (iter.hasNext()) {
 			fileCount++;
-			logger.debug("Uploading annotation number " + fileCount);
+			log.debug("Uploading annotation number " + fileCount);
 			FileItemStream item = iter.next();
 			String name = item.getFieldName();
 			InputStream stream = item.openStream();
@@ -206,7 +191,7 @@ public class AimResourceHandler extends AbstractHandler
 					try {
 						fos.close();
 					} catch (IOException e) {
-						logger.warning("Error closing AIM upload stream", e);
+						log.warning("Error closing AIM upload stream", e);
 					}
 				}
 			}
