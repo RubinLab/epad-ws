@@ -23,6 +23,7 @@ import javax.imageio.ImageIO;
 
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.methods.GetMethod;
+import org.apache.commons.io.IOUtils;
 
 import com.pixelmed.dicom.Attribute;
 import com.pixelmed.dicom.AttributeList;
@@ -428,13 +429,16 @@ public class DicomSegmentationObjectPNGMaskGeneratorTask implements GeneratorTas
 		HttpClient client = new HttpClient();
 		GetMethod method = new GetMethod(url);
 
+		InputStreamReader isr = null;
+		BufferedReader bufferedReader = null;
 		try {
 			int statusCode = client.executeMethod(method);
 
 			if (statusCode != -1) {
-				BufferedReader reader = new BufferedReader(new InputStreamReader(method.getResponseBodyAsStream(), "UTF-8"));
+				isr = new InputStreamReader(method.getResponseBodyAsStream(), "UTF-8");
+				bufferedReader = new BufferedReader(isr);
 				String line;
-				while ((line = reader.readLine()) != null) {
+				while ((line = bufferedReader.readLine()) != null) {
 					String[] cols = line.split(",");
 					if (cols != null && cols.length > 1) {
 						String seriesUD = cols[1];
@@ -449,6 +453,9 @@ public class DicomSegmentationObjectPNGMaskGeneratorTask implements GeneratorTas
 		} catch (Exception e) {
 			logger.warning("Error getting seriesUID for imageUID " + imageUID, e);
 			return "";
+		} finally {
+			IOUtils.closeQuietly(bufferedReader);
+			IOUtils.closeQuietly(isr);
 		}
 	}
 

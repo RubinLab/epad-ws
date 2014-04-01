@@ -16,6 +16,8 @@ import java.util.concurrent.Callable;
 
 import javax.imageio.ImageIO;
 
+import org.apache.commons.io.IOUtils;
+
 import edu.stanford.epad.common.dicom.DicomReader;
 import edu.stanford.epad.common.util.EPADLogger;
 
@@ -41,10 +43,10 @@ public class PackedPngTask implements Callable<File>
 		File inputFile = file;
 		File outputFile = null;
 		OutputStream outputStream = null;
+
 		try {
 			DicomReader instance = new DicomReader(inputFile);
 			String pngFilePath = file.getAbsolutePath().replaceAll("\\.dcm", ".png");
-
 			logger.info("Creating PNG file: " + pngFilePath);
 			outputFile = new File(pngFilePath);
 			outputStream = new FileOutputStream(outputFile);
@@ -54,14 +56,7 @@ public class PackedPngTask implements Callable<File>
 		} catch (IOException e) {
 			logger.warning("failed to create packed PNG for: " + file.getAbsolutePath(), e);
 		} finally {
-			if (outputStream != null) {
-				try {
-					outputStream.close();
-					outputStream = null;
-				} catch (Exception e) {
-					logger.warning("Error closing packed PNG output stream", e);
-				}
-			}
+			IOUtils.closeQuietly(outputStream);
 		}
 		return outputFile;
 	}

@@ -10,6 +10,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.methods.GetMethod;
+import org.apache.commons.io.IOUtils;
 
 import com.google.gson.Gson;
 
@@ -218,43 +219,39 @@ public class XNATQueries
 
 	private static XNATUserList extractXNATUsersFromResponse(GetMethod method)
 	{
-		InputStreamReader streamReader = null;
+		InputStreamReader isr = null;
+		BufferedReader br = null;
+
 		try {
 			Gson gson = new Gson();
-			streamReader = new InputStreamReader(method.getResponseBodyAsStream(), "UTF-8");
-			return gson.fromJson(new BufferedReader(streamReader), XNATUserList.class);
+			isr = new InputStreamReader(method.getResponseBodyAsStream(), "UTF-8");
+			br = new BufferedReader(isr);
+			return gson.fromJson(br, XNATUserList.class);
 		} catch (IOException e) {
 			log.warning("Error processing XNAT users query result", e);
 			return XNATUserList.emptyUsers();
 		} finally {
-			if (streamReader != null) {
-				try {
-					streamReader.close();
-				} catch (IOException e) {
-					log.warning("Error closing XNAT users response stream ", e);
-				}
-			}
+			IOUtils.closeQuietly(isr);
+			IOUtils.closeQuietly(br);
 		}
 	}
 
 	private static XNATProjectList extractXNATProjectsFromResponse(GetMethod method)
 	{
-		InputStreamReader streamReader = null;
+		InputStreamReader isr = null;
+		BufferedReader br = null;
+
 		try {
 			Gson gson = new Gson();
-			streamReader = new InputStreamReader(method.getResponseBodyAsStream(), "UTF-8");
-			return gson.fromJson(new BufferedReader(streamReader), XNATProjectList.class);
+			isr = new InputStreamReader(method.getResponseBodyAsStream(), "UTF-8");
+			br = new BufferedReader(isr);
+			return gson.fromJson(br, XNATProjectList.class);
 		} catch (IOException e) {
 			log.warning("Error processing XNAT projects query result", e);
 			return XNATProjectList.emptyProjects();
 		} finally {
-			if (streamReader != null) {
-				try {
-					streamReader.close();
-				} catch (IOException e) {
-					log.warning("Error closing XNAT projects response stream ", e);
-				}
-			}
+			IOUtils.closeQuietly(isr);
+			IOUtils.closeQuietly(br);
 		}
 	}
 
@@ -291,23 +288,20 @@ public class XNATQueries
 
 	private static XNATSubjectList extractXNATSubjectsFromResponse(GetMethod method)
 	{
-		InputStreamReader streamReader = null;
+		InputStreamReader isr = null;
+		BufferedReader br = null;
+
 		try {
 			Gson gson = new Gson();
-			streamReader = new InputStreamReader(method.getResponseBodyAsStream(), "UTF-8");
-
-			return gson.fromJson(new BufferedReader(streamReader), XNATSubjectList.class);
+			isr = new InputStreamReader(method.getResponseBodyAsStream(), "UTF-8");
+			br = new BufferedReader(isr);
+			return gson.fromJson(br, XNATSubjectList.class);
 		} catch (IOException e) {
 			log.warning("Error processing XNAT subjects query result", e);
 			return XNATSubjectList.emptySubjects();
 		} finally {
-			if (streamReader != null) {
-				try {
-					streamReader.close();
-				} catch (IOException e) {
-					log.warning("Error closing XNAT subject response stream ", e);
-				}
-			}
+			IOUtils.closeQuietly(isr);
+			IOUtils.closeQuietly(br);
 		}
 	}
 
@@ -345,17 +339,20 @@ public class XNATQueries
 
 	private static XNATExperimentList extractXNATExperimentsFromResponse(GetMethod method)
 	{
-		InputStreamReader responseStream = null;
+		InputStreamReader isr = null;
+		BufferedReader br = null;
+
 		try {
 			Gson gson = new Gson();
-			responseStream = new InputStreamReader(method.getResponseBodyAsStream(), "UTF-8");
-			return gson.fromJson(new BufferedReader(responseStream), XNATExperimentList.class);
+			isr = new InputStreamReader(method.getResponseBodyAsStream(), "UTF-8");
+			br = new BufferedReader(isr);
+			return gson.fromJson(br, XNATExperimentList.class);
 		} catch (IOException e) {
 			log.warning("Error processing XNAT experiments query result", e);
 			return XNATExperimentList.emptyExperiments();
 		} finally {
-			if (responseStream != null)
-				responseStream = null;
+			IOUtils.closeQuietly(isr);
+			IOUtils.closeQuietly(br);
 		}
 	}
 

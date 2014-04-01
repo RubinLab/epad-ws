@@ -14,6 +14,8 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.concurrent.Callable;
 
+import org.apache.commons.io.IOUtils;
+
 import edu.stanford.epad.common.util.EPADFileUtils;
 import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.epad.common.util.EPADResources;
@@ -121,14 +123,16 @@ public class JPEGLevelingTask implements Callable<File>
 		String dicomBinDirectory = EPADResources.getEPADWebServerDICOMBinDir();
 		pb.directory(new File(dicomBinDirectory));
 
+		InputStream is = null;
+		InputStreamReader isr = null;
+		BufferedReader br = null;
 		try {
 			Process process = pb.start();
-			process.getOutputStream();// get the output stream.
-			// Read out dir output
-			InputStream is = process.getInputStream();
-			InputStreamReader isr = new InputStreamReader(is);
+			process.getOutputStream();
+			is = process.getInputStream();
+			isr = new InputStreamReader(is);
+			br = new BufferedReader(isr);
 
-			BufferedReader br = new BufferedReader(isr);
 			String line;
 			StringBuilder sb = new StringBuilder();
 			while ((line = br.readLine()) != null) {
@@ -136,13 +140,16 @@ public class JPEGLevelingTask implements Callable<File>
 			}
 
 			try {
-				process.waitFor(); // keep.
-				// log.info("JPEGTask: "+sb.toString());
+				process.waitFor();
 			} catch (InterruptedException e) {
 				log.warning("Couldn't get tags for: " + file.getAbsolutePath(), e);
 			}
 		} catch (IOException ioe) {
 			log.warning("Failed to make leveled image (" + width + "," + level + ")", ioe);
+		} finally {
+			IOUtils.closeQuietly(is);
+			IOUtils.closeQuietly(isr);
+			IOUtils.closeQuietly(br);
 		}
 	}
 }

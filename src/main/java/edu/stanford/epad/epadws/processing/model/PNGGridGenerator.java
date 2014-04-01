@@ -214,13 +214,12 @@ public class PNGGridGenerator
 		// Then, choose the first image writer available (unless you want to
 		// choose a specific writer) and create an ImageWriter instance:
 		ImageWriter writer = iter.next();
-		// instantiate an ImageWriteParam object with default compression
-		// options
+		// Instantiate an ImageWriteParam object with default compression options
 		ImageWriteParam iwp = writer.getDefaultWriteParam();
 
 		// Now, we can set the compression quality:
 		iwp.setCompressionMode(ImageWriteParam.MODE_EXPLICIT);
-		iwp.setCompressionQuality(COMPRESSION); // an float between 0 and 1
+		iwp.setCompressionQuality(COMPRESSION); // A float between 0 and 1
 		// 1 specifies minimum compression and maximum quality
 
 		// Output the file:
@@ -228,32 +227,16 @@ public class PNGGridGenerator
 		if (file.exists()) {
 			file.delete();
 		}
-		FileImageOutputStream output = new FileImageOutputStream(file);
-		writer.setOutput(output);
-		IIOImage image = new IIOImage(input, null, null);
-		writer.write(null, image, iwp);
-		writer.dispose();
+		FileImageOutputStream output = null;
+		try {
+			output = new FileImageOutputStream(file);
+			writer.setOutput(output);
+			IIOImage image = new IIOImage(input, null, null);
+			writer.write(null, image, iwp);
+		} finally {
+			if (output != null)
+				output.close();
+			writer.dispose();
+		}
 	}
-
-	// static void readJpg(String fileName, String imgId) throws IOException {
-	//
-	// URL url = new URL("http://epad-prod1.stanford.edu:9080/wado/wado?requestType=WADO&studyUID="
-	// + STUDY_ID.replace('_', '.') + "&seriesUID=" + SERIES_ID.replace('_', '.') + "&objectUID="
-	// + imgId.replace('_', '.'));
-	// InputStream is = url.openConnection().getInputStream();
-	//
-	// BufferedInputStream input = new BufferedInputStream(is);
-	//
-	// File file = new File(fileName + ".jpg");
-	// BufferedOutputStream output = new BufferedOutputStream(new FileOutputStream(file));
-	//
-	// byte[] buf = new byte[1024];
-	//
-	// int i;
-	// while ((i = input.read(buf)) != -1) {
-	// output.write(buf, 0, i);
-	// }
-	// input.close();
-	// output.close();
-	// }
 }

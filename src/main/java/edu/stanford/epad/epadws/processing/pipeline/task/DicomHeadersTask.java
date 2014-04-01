@@ -5,8 +5,8 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.Reader;
-import java.io.Writer;
+
+import org.apache.commons.io.IOUtils;
 
 import edu.stanford.epad.common.util.EPADFileUtils;
 import edu.stanford.epad.common.util.EPADLogger;
@@ -30,10 +30,10 @@ public class DicomHeadersTask implements Runnable
 	@Override
 	public void run()
 	{
+		FileWriter tagFileWriter = null;
 		InputStream is = null;
 		InputStreamReader isr = null;
 		BufferedReader br = null;
-		FileWriter tagFileWriter = null;
 		Process process = null;
 
 		try {
@@ -68,49 +68,12 @@ public class DicomHeadersTask implements Runnable
 		} catch (OutOfMemoryError oome) {
 			logger.warning("DicomHeadersTask OutOfMemoryError: ", oome);
 		} finally {
-			close(tagFileWriter);
-			close(br);
-			close(isr);
-			close(is);
+			IOUtils.closeQuietly(is);
+			IOUtils.closeQuietly(isr);
+			IOUtils.closeQuietly(br);
+			IOUtils.closeQuietly(tagFileWriter);
 			if (process != null)
 				process.destroy();
-		}
-	}
-
-	private static void close(Writer writer)
-	{
-		try {
-			if (writer != null) {
-				writer.flush();
-				writer.close();
-				writer = null;
-			}
-		} catch (Exception e) {
-			logger.warning("Failed to close writer", e);
-		}
-	}
-
-	private static void close(Reader reader)
-	{
-		try {
-			if (reader != null) {
-				reader.close();
-				reader = null;
-			}
-		} catch (Exception e) {
-			logger.warning("Failed to close reader", e);
-		}
-	}
-
-	private static void close(InputStream stream)
-	{
-		try {
-			if (stream != null) {
-				stream.close();
-				stream = null;
-			}
-		} catch (Exception e) {
-			logger.warning("Failed to close stream", e);
 		}
 	}
 }

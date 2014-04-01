@@ -10,6 +10,8 @@ import java.util.Map;
 
 import javax.imageio.ImageIO;
 
+import org.apache.commons.io.IOUtils;
+
 import edu.stanford.epad.common.dicom.DicomReader;
 import edu.stanford.epad.common.util.EPADFileUtils;
 import edu.stanford.epad.common.util.EPADLogger;
@@ -80,17 +82,9 @@ public class PngGeneratorTask implements GeneratorTask
 			epadDatabaseOperations.updateEpadFileRecord(epadFilesTable.get("file_path"), PngProcessingStatus.ERROR, 0,
 					"General Exception: " + t.getMessage());
 		} finally {
+			IOUtils.closeQuietly(outputPNGStream);
 			if (inputDICOMFile.getName().endsWith(".tmp")) {
 				inputDICOMFile.delete();
-			}
-			if (outputPNGStream != null) {
-				try {
-					outputPNGStream.flush();
-					outputPNGStream.close();
-					outputPNGStream = null;
-				} catch (Exception e) {
-					logger.warning("Warning: failed to close PNG output stream", e);
-				}
 			}
 		}
 	}

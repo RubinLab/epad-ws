@@ -27,6 +27,7 @@ import org.apache.commons.fileupload.FileItemIterator;
 import org.apache.commons.fileupload.FileItemStream;
 import org.apache.commons.fileupload.FileUploadException;
 import org.apache.commons.fileupload.servlet.ServletFileUpload;
+import org.apache.commons.io.IOUtils;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.w3c.dom.Document;
@@ -187,13 +188,7 @@ public class AimResourceHandler extends AbstractHandler
 					fos.write(buffer, 0, len);
 				}
 			} finally {
-				if (fos != null) {
-					try {
-						fos.close();
-					} catch (IOException e) {
-						log.warning("Error closing AIM upload stream", e);
-					}
-				}
+				IOUtils.closeQuietly(fos);
 			}
 			responseStream.print("added (" + fileCount + "): " + name);
 			ImageAnnotation ia = AnnotationGetter.getImageAnnotationFromFile(f.getAbsolutePath(), xsdFilePath);

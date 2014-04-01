@@ -5,8 +5,9 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.Reader;
 import java.io.Writer;
+
+import org.apache.commons.io.IOUtils;
 
 import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADFileUtils;
@@ -98,10 +99,10 @@ public class Dcm4CheeOperations
 				throw new IllegalStateException("DicomSendTask out of memory: ", oome);
 			}
 		} finally {
-			close(tagFileWriter);
-			close(br);
-			close(isr);
-			close(is);
+			IOUtils.closeQuietly(is);
+			IOUtils.closeQuietly(isr);
+			IOUtils.closeQuietly(br);
+			IOUtils.closeQuietly(tagFileWriter);
 		}
 	}
 
@@ -142,30 +143,6 @@ public class Dcm4CheeOperations
 			}
 		} catch (Exception e) {
 			log.warning("Failed to close writer", e);
-		}
-	}
-
-	private static void close(Reader reader)
-	{
-		try {
-			if (reader != null) {
-				reader.close();
-				reader = null;
-			}
-		} catch (Exception e) {
-			log.warning("Failed to close reader", e);
-		}
-	}
-
-	private static void close(InputStream stream)
-	{
-		try {
-			if (stream != null) {
-				stream.close();
-				stream = null;
-			}
-		} catch (Exception e) {
-			log.warning("Failed to close stream", e);
 		}
 	}
 

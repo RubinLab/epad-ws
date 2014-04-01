@@ -15,11 +15,12 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
-import java.io.Reader;
 import java.util.Map;
 import java.util.concurrent.Callable;
 
 import javax.imageio.ImageIO;
+
+import org.apache.commons.io.IOUtils;
 
 import edu.stanford.epad.common.dicom.DicomReader;
 import edu.stanford.epad.common.dicom.DicomTagFileUtils;
@@ -29,7 +30,7 @@ import edu.stanford.epad.common.util.FileKey;
 import edu.stanford.epad.epadws.processing.pipeline.ThumbnailManager;
 
 /**
- * Given a DICOM file create the thumbnail file.
+ * Given a DICOM file create the thumbnail JPEG file.
  */
 public class JPEGThumbnailGeneratorTask implements Callable<File>
 {
@@ -52,9 +53,6 @@ public class JPEGThumbnailGeneratorTask implements Callable<File>
 
 		try {
 			log.info("Starting JPEG thumbnail generator task...");
-			// File tagFile = getTagFileFromDcm(file);
-			// Map<String,String> tags = DicomTagFileUtils.readTagFile(tagFile);
-
 			String jpegPath = file.getAbsolutePath().replaceAll("\\.dcm", ".jpg");
 			File jpegFile = new File(jpegPath);
 
@@ -67,8 +65,7 @@ public class JPEGThumbnailGeneratorTask implements Callable<File>
 			pb.directory(new File(dicomBinDirectory));
 
 			process = pb.start();
-			process.getOutputStream();// get the output stream.
-			// Read out dir output
+			process.getOutputStream();
 			is = process.getInputStream();
 			isr = new InputStreamReader(is);
 
@@ -85,31 +82,17 @@ public class JPEGThumbnailGeneratorTask implements Callable<File>
 			} catch (InterruptedException e) {
 				log.warning("Couldn't get tags for: " + file.getAbsolutePath(), e);
 			}
-			// we might want to try a 4096, 2048 with an offset of zero.
-			// writeJpegsLeveled(4096,2048);
 			writeJpegsLeveled(4096, 1024); // this is the value that I assume is "unleveled".
 			writePackedPngs();
 			writeThumbnailIfNeeded(file);
 		} catch (Exception e) {
 			log.warning("Failed to generate a thumbnail for " + file.getAbsolutePath(), e);
 		} finally {
-			closeReader(br);
-			closeReader(isr);
-			if (is != null) {
-				try {
-					is.close();
-					is = null;
-				} catch (Exception e) {
-					log.warning("Failed to close InputStream.", e);
-				}
-			}
-			if (process != null) {
-				try {
-					process.destroy();
-				} catch (Exception e) {
-					log.warning("Failed to destroy process.", e);
-				}
-			}
+			IOUtils.closeQuietly(br);
+			IOUtils.closeQuietly(isr);
+			IOUtils.closeQuietly(is);
+			if (process != null)
+				process.destroy();
 		}
 		return null;
 	}
@@ -149,11 +132,10 @@ public class JPEGThumbnailGeneratorTask implements Callable<File>
 
 			try {
 				process = pb.start();
-				process.getOutputStream();// get the output stream.
-				// Read out dir output
+				process.getOutputStream();
+
 				is = process.getInputStream();
 				isr = new InputStreamReader(is);
-
 				br = new BufferedReader(isr);
 
 				String line;
@@ -173,16 +155,9 @@ public class JPEGThumbnailGeneratorTask implements Callable<File>
 			} catch (IOException ioe) {
 				log.warning("Failed to make leveled image (" + width + "," + level + ")", ioe);
 			} finally {
-				closeReader(br);
-				closeReader(isr);
-				if (is != null) {
-					try {
-						is.close();
-						is = null;
-					} catch (Exception e) {
-						log.warning("Failed to close InputStream.", e);
-					}
-				}
+				IOUtils.closeQuietly(is);
+				IOUtils.closeQuietly(isr);
+				IOUtils.closeQuietly(br);
 				if (process != null) {
 					try {
 						process.destroy();
@@ -193,19 +168,7 @@ public class JPEGThumbnailGeneratorTask implements Callable<File>
 			}
 			log.info("JPEGTask: finished writing: " + jpegPath);
 		} catch (Exception e) {
-			log.severe("Failed to create JPEG", e);
-		}
-	}
-
-	private void closeReader(Reader reader)
-	{
-		if (reader != null) {
-			try {
-				reader.close();
-				reader = null;
-			} catch (Exception e) {
-				log.warning("Failed to close reader.", e);
-			}
+			log.warning("Failed to create JPEG", e);
 		}
 	}
 
@@ -225,7 +188,6 @@ public class JPEGThumbnailGeneratorTask implements Callable<File>
 	private void writePackedPngs()
 	{
 		File input = file;
-		File outputFile = null;
 		OutputStream outputStream = null;
 		try {
 			DicomReader instance = new DicomReader(input);
@@ -233,7 +195,7 @@ public class JPEGThumbnailGeneratorTask implements Callable<File>
 
 			log.info("JPEGTask:Creating PNG file: " + pngFilePath);
 
-			outputFile = new File(pngFilePath); // create the real file name here.
+			File outputFile = new File(pngFilePath); // create the real file name here.
 			outputStream = new FileOutputStream(outputFile);
 			ImageIO.write(instance.getPackedImage(), "png", outputStream);
 		} catch (FileNotFoundException e) {
@@ -241,13 +203,7 @@ public class JPEGThumbnailGeneratorTask implements Callable<File>
 		} catch (IOException e) {
 			log.warning("Failed to create packed PNG for: " + file.getAbsolutePath(), e);
 		} finally {
-			if (outputStream != null) {
-				try {
-					outputStream.close();
-					outputStream = null;
-				} catch (Exception e) {
-				}
-			}
+			IOUtils.closeQuietly(outputStream);
 		}
 	}
 

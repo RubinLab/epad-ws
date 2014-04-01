@@ -13,6 +13,7 @@ import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.methods.DeleteMethod;
 import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.httpclient.methods.PostMethod;
+import org.apache.commons.io.IOUtils;
 
 import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADLogger;
@@ -79,13 +80,7 @@ public class XNATSessionOperations
 						sb.append(chars, 0, read);
 					}
 				} finally {
-					if (isr != null) {
-						try {
-							isr.close();
-						} catch (IOException e) {
-							log.warning("Error closing XNAT session response stream", e);
-						}
-					}
+					IOUtils.closeQuietly(isr);
 				}
 				String jsessionID = sb.toString();
 				xnatSessionResponse = new XNATSessionResponse(HttpServletResponse.SC_OK, jsessionID);

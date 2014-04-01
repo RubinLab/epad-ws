@@ -16,6 +16,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
+import org.apache.commons.io.IOUtils;
 import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.handler.ContextHandler;
@@ -133,9 +134,10 @@ public class Main
 
 	private static void configureJettyServer(Server server)
 	{
+		FileInputStream jettyConfigFileStream = null;
 		try {
 			String jettyConfigFilePath = EPADResources.getEPADWebServerJettyConfigFilePath();
-			FileInputStream jettyConfigFileStream = new FileInputStream(jettyConfigFilePath);
+			jettyConfigFileStream = new FileInputStream(jettyConfigFilePath);
 			XmlConfiguration configuration = new XmlConfiguration(jettyConfigFileStream);
 			configuration.configure(server);
 			log.info("Jetty server configured using configuration file " + jettyConfigFilePath);
@@ -148,6 +150,8 @@ public class Main
 			log.warning("IO error reading Jetty configuration file " + EPADResources.getEPADWebServerJettyConfigFilePath(), e);
 		} catch (Exception e) {
 			log.warning("Error processing Jetty configuration file " + EPADResources.getEPADWebServerJettyConfigFilePath(), e);
+		} finally {
+			IOUtils.closeQuietly(jettyConfigFileStream);
 		}
 	}
 

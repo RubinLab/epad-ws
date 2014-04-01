@@ -20,8 +20,11 @@ import java.io.OutputStream;
 import javax.imageio.ImageIO;
 import javax.swing.ImageIcon;
 
+import org.apache.commons.io.IOUtils;
+
 import edu.stanford.epad.common.dicom.DicomFormatUtil;
 import edu.stanford.epad.common.util.EPADLogger;
+
 /*
  * The JPEGCodec and JPEGImageEncoder are classes that are not
  * to be used to the application software.  They are intended to
@@ -156,16 +159,20 @@ public class ThumbnailFileUtil
 						g2d.dispose();
 					}
 					// JPEG-encode the image and write to file.
-					OutputStream os = new FileOutputStream(outFilename);
-					ImageIO.write(outImage, "jpeg", os);
-					/*
-					 * The JPEGImageEncoder and JPEGCodec classes used here are part of the internals of the Java run time and
-					 * will not necessarily be the same for all implementations. ImageIO should be used (with a very few
-					 * exceptions) to get the ImageWriter and ImageReader objects. JPEGImageEncoder encoder =
-					 * JPEGCodec.createJPEGEncoder(os); encoder.encode(outImage);
-					 */
-					os.flush();
-					os.close();
+					OutputStream os = null;
+					try {
+						os = new FileOutputStream(outFilename);
+						ImageIO.write(outImage, "jpeg", os);
+						/*
+						 * The JPEGImageEncoder and JPEGCodec classes used here are part of the internals of the Java run time and
+						 * will not necessarily be the same for all implementations. ImageIO should be used (with a very few
+						 * exceptions) to get the ImageWriter and ImageReader objects. JPEGImageEncoder encoder =
+						 * JPEGCodec.createJPEGEncoder(os); encoder.encode(outImage);
+						 */
+						os.flush();
+					} finally {
+						IOUtils.closeQuietly(os);
+					}
 				}
 			}
 		} catch (Exception ex) {

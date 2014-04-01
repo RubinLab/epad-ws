@@ -10,6 +10,7 @@ import javax.servlet.http.HttpServletResponse;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.methods.PostMethod;
 import org.apache.commons.httpclient.methods.PutMethod;
+import org.apache.commons.io.IOUtils;
 
 import edu.stanford.epad.common.dicom.DicomReader;
 import edu.stanford.epad.common.dicom.DicomTagFileUtils;
@@ -159,13 +160,7 @@ public class XNATCreationOperations
 			} catch (IOException e) {
 				log.warning("Error processing upload in directory " + propertiesFilePath, e);
 			} finally {
-				if (propertiesFileStream != null) {
-					try {
-						propertiesFileStream.close();
-					} catch (IOException e) {
-						log.warning("Error closing XNAT upload properties file " + propertiesFilePath, e);
-					}
-				}
+				IOUtils.closeQuietly(propertiesFileStream);
 			}
 		}
 	}
@@ -174,5 +169,4 @@ public class XNATCreationOperations
 	{
 		return !(statusCode == HttpServletResponse.SC_OK || statusCode == HttpServletResponse.SC_CREATED || statusCode == HttpServletResponse.SC_CONFLICT);
 	}
-
 }
