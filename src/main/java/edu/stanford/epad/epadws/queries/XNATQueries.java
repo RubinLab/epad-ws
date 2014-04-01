@@ -250,8 +250,8 @@ public class XNATQueries
 			log.warning("Error processing XNAT projects query result", e);
 			return XNATProjectList.emptyProjects();
 		} finally {
-			IOUtils.closeQuietly(isr);
 			IOUtils.closeQuietly(br);
+			IOUtils.closeQuietly(isr);
 		}
 	}
 
@@ -300,8 +300,8 @@ public class XNATQueries
 			log.warning("Error processing XNAT subjects query result", e);
 			return XNATSubjectList.emptySubjects();
 		} finally {
-			IOUtils.closeQuietly(isr);
 			IOUtils.closeQuietly(br);
+			IOUtils.closeQuietly(isr);
 		}
 	}
 
@@ -351,9 +351,8 @@ public class XNATQueries
 			log.warning("Error processing XNAT experiments query result", e);
 			return XNATExperimentList.emptyExperiments();
 		} finally {
-			IOUtils.closeQuietly(isr);
 			IOUtils.closeQuietly(br);
+			IOUtils.closeQuietly(isr);
 		}
 	}
-
 }

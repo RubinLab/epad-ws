@@ -44,9 +44,11 @@ public class DicomHeadersTask implements Runnable
 			processBuilder.directory(new File(dicomBinDir));
 			process = processBuilder.start();
 			process.getOutputStream();
+
 			is = process.getInputStream();
 			isr = new InputStreamReader(is);
 			br = new BufferedReader(isr);
+
 			String line;
 			StringBuilder sb = new StringBuilder();
 			while ((line = br.readLine()) != null) {
@@ -68,10 +70,11 @@ public class DicomHeadersTask implements Runnable
 		} catch (OutOfMemoryError oome) {
 			logger.warning("DicomHeadersTask OutOfMemoryError: ", oome);
 		} finally {
-			IOUtils.closeQuietly(is);
-			IOUtils.closeQuietly(isr);
-			IOUtils.closeQuietly(br);
 			IOUtils.closeQuietly(tagFileWriter);
+			IOUtils.closeQuietly(br);
+			IOUtils.closeQuietly(isr);
+			IOUtils.closeQuietly(is);
+
 			if (process != null)
 				process.destroy();
 		}

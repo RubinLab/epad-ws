@@ -147,9 +147,9 @@ public class JPEGLevelingTask implements Callable<File>
 		} catch (IOException ioe) {
 			log.warning("Failed to make leveled image (" + width + "," + level + ")", ioe);
 		} finally {
-			IOUtils.closeQuietly(is);
-			IOUtils.closeQuietly(isr);
 			IOUtils.closeQuietly(br);
+			IOUtils.closeQuietly(isr);
+			IOUtils.closeQuietly(is);
 		}
 	}
 }

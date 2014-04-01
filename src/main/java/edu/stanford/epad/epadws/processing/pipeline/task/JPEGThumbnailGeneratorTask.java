@@ -68,7 +68,6 @@ public class JPEGThumbnailGeneratorTask implements Callable<File>
 			process.getOutputStream();
 			is = process.getInputStream();
 			isr = new InputStreamReader(is);
-
 			br = new BufferedReader(isr);
 			String line;
 			StringBuilder sb = new StringBuilder();
@@ -155,9 +154,9 @@ public class JPEGThumbnailGeneratorTask implements Callable<File>
 			} catch (IOException ioe) {
 				log.warning("Failed to make leveled image (" + width + "," + level + ")", ioe);
 			} finally {
-				IOUtils.closeQuietly(is);
-				IOUtils.closeQuietly(isr);
 				IOUtils.closeQuietly(br);
+				IOUtils.closeQuietly(isr);
+				IOUtils.closeQuietly(is);
 				if (process != null) {
 					try {
 						process.destroy();

@@ -65,8 +65,8 @@ public class Dcm4CheeOperations
 
 			is = process.getInputStream();
 			isr = new InputStreamReader(is);
-
 			br = new BufferedReader(isr);
+
 			String line;
 			StringBuilder sb = new StringBuilder();
 			while ((line = br.readLine()) != null) {
@@ -99,10 +99,10 @@ public class Dcm4CheeOperations
 				throw new IllegalStateException("DicomSendTask out of memory: ", oome);
 			}
 		} finally {
-			IOUtils.closeQuietly(is);
-			IOUtils.closeQuietly(isr);
-			IOUtils.closeQuietly(br);
 			IOUtils.closeQuietly(tagFileWriter);
+			IOUtils.closeQuietly(br);
+			IOUtils.closeQuietly(isr);
+			IOUtils.closeQuietly(is);
 		}
 	}
 

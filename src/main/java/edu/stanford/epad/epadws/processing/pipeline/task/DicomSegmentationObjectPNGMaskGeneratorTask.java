@@ -430,15 +430,15 @@ public class DicomSegmentationObjectPNGMaskGeneratorTask implements GeneratorTas
 		GetMethod method = new GetMethod(url);
 
 		InputStreamReader isr = null;
-		BufferedReader bufferedReader = null;
+		BufferedReader br = null;
 		try {
 			int statusCode = client.executeMethod(method);
 
 			if (statusCode != -1) {
 				isr = new InputStreamReader(method.getResponseBodyAsStream(), "UTF-8");
-				bufferedReader = new BufferedReader(isr);
+				br = new BufferedReader(isr);
 				String line;
-				while ((line = bufferedReader.readLine()) != null) {
+				while ((line = br.readLine()) != null) {
 					String[] cols = line.split(",");
 					if (cols != null && cols.length > 1) {
 						String seriesUD = cols[1];
@@ -454,8 +454,8 @@ public class DicomSegmentationObjectPNGMaskGeneratorTask implements GeneratorTas
 			logger.warning("Error getting seriesUID for imageUID " + imageUID, e);
 			return "";
 		} finally {
-			IOUtils.closeQuietly(bufferedReader);
 			IOUtils.closeQuietly(isr);
+			IOUtils.closeQuietly(br);
 		}
 	}
 
