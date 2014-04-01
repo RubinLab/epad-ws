@@ -428,9 +428,9 @@ public class DicomSegmentationObjectPNGMaskGeneratorTask implements GeneratorTas
 		String url = "http://localhost:8080/epad/segmentationpath/" + "?image_iuid=" + imageUID; // TODO
 		HttpClient client = new HttpClient();
 		GetMethod method = new GetMethod(url);
-
 		InputStreamReader isr = null;
 		BufferedReader br = null;
+
 		try {
 			int statusCode = client.executeMethod(method);
 
@@ -454,8 +454,9 @@ public class DicomSegmentationObjectPNGMaskGeneratorTask implements GeneratorTas
 			logger.warning("Error getting seriesUID for imageUID " + imageUID, e);
 			return "";
 		} finally {
-			IOUtils.closeQuietly(isr);
 			IOUtils.closeQuietly(br);
+			IOUtils.closeQuietly(isr);
+			method.releaseConnection();
 		}
 	}
 

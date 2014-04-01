@@ -36,20 +36,22 @@ public class XNATCreationOperations
 	{
 		String xnatSubjectURL = XNATUtil.buildXNATSubjectCreationURL(xnatProjectID, xnatSubjectLabel, dicomPatientName);
 		HttpClient client = new HttpClient();
-		PostMethod postMethod = new PostMethod(xnatSubjectURL);
+		PostMethod method = new PostMethod(xnatSubjectURL);
 		int xnatStatusCode;
 
-		postMethod.setRequestHeader("Cookie", "JSESSIONID=" + jsessionID);
+		method.setRequestHeader("Cookie", "JSESSIONID=" + jsessionID);
 
 		try {
 			log.info("Invoking XNAT with URL " + xnatSubjectURL);
-			xnatStatusCode = client.executeMethod(postMethod);
+			xnatStatusCode = client.executeMethod(method);
 			if (unexpectedCreationStatusCode(xnatStatusCode))
 				log.warning("Failure calling XNAT; status code = " + xnatStatusCode);
 			else
 				eventTracker.recordPatientEvent(jsessionID, xnatProjectID, xnatSubjectLabel);
 		} catch (IOException e) {
 			log.warning("Error calling XNAT", e);
+		} finally {
+			method.releaseConnection();
 		}
 	}
 
@@ -83,14 +85,14 @@ public class XNATCreationOperations
 	{
 		String xnatProjectURL = XNATUtil.buildXNATProjectCreationURL(xnatProjectID, xnatProjectName);
 		HttpClient client = new HttpClient();
-		PostMethod postMethod = new PostMethod(xnatProjectURL);
+		PostMethod method = new PostMethod(xnatProjectURL);
 		int xnatStatusCode;
 
-		postMethod.setRequestHeader("Cookie", "JSESSIONID=" + jsessionID);
+		method.setRequestHeader("Cookie", "JSESSIONID=" + jsessionID);
 
 		try {
 			log.info("Invoking XNAT with URL " + xnatProjectURL);
-			xnatStatusCode = client.executeMethod(postMethod);
+			xnatStatusCode = client.executeMethod(method);
 			if (unexpectedCreationStatusCode(xnatStatusCode))
 				log.warning("Failure calling XNAT; status code = " + xnatStatusCode);
 			else
@@ -98,6 +100,8 @@ public class XNATCreationOperations
 		} catch (IOException e) {
 			log.warning("Error calling XNAT", e);
 			xnatStatusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+		} finally {
+			method.releaseConnection();
 		}
 		return (!unexpectedCreationStatusCode(xnatStatusCode));
 	}

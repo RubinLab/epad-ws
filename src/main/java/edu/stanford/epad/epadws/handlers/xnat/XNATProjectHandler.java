@@ -14,6 +14,7 @@ import org.apache.commons.httpclient.methods.DeleteMethod;
 import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.httpclient.methods.PostMethod;
 import org.apache.commons.httpclient.methods.PutMethod;
+import org.apache.commons.io.IOUtils;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 
@@ -94,35 +95,33 @@ public class XNATProjectHandler extends AbstractHandler
 			xnatMethod = new PutMethod(xnatProjectURL);
 		}
 
-		if (xnatMethod != null) {
-			log.info("Invoking " + xnatMethod.getName() + " on XNAT at " + xnatProjectURL);
-			xnatMethod.setRequestHeader("Cookie", "JSESSIONID=" + jsessionID);
-			xnatStatusCode = client.executeMethod(xnatMethod);
-			if (xnatStatusCode == HttpServletResponse.SC_OK) {
-				InputStream xnatResponse = null;
-				try {
-					xnatResponse = xnatMethod.getResponseBodyAsStream();
-					int read = 0;
-					byte[] bytes = new byte[4096];
-					while ((read = xnatResponse.read(bytes)) != -1) {
-						responseStream.write(bytes, 0, read);
-					}
-				} finally {
-					if (xnatResponse != null) {
-						try {
-							xnatResponse.close();
-						} catch (IOException e) {
-							log.warning("Error closing XNAT response stream", e);
+		try {
+			if (xnatMethod != null) {
+				log.info("Invoking " + xnatMethod.getName() + " on XNAT at " + xnatProjectURL);
+				xnatMethod.setRequestHeader("Cookie", "JSESSIONID=" + jsessionID);
+				xnatStatusCode = client.executeMethod(xnatMethod);
+				if (xnatStatusCode == HttpServletResponse.SC_OK) {
+					InputStream xnatResponse = null;
+					try {
+						xnatResponse = xnatMethod.getResponseBodyAsStream();
+						int read = 0;
+						byte[] bytes = new byte[4096];
+						while ((read = xnatResponse.read(bytes)) != -1) {
+							responseStream.write(bytes, 0, read);
 						}
+					} finally {
+						IOUtils.closeQuietly(xnatResponse);
 					}
+				} else {
+					log.info(XNAT_INVOCATION_ERROR_MESSAGE + ";status code=" + xnatStatusCode);
 				}
 			} else {
-				log.info(XNAT_INVOCATION_ERROR_MESSAGE + ";status code=" + xnatStatusCode);
+				httpResponse.setHeader("Access-Control-Allow-Methods", "GET, PUT, POST, DELETE");
+				xnatStatusCode = HandlerUtil.infoResponse(HttpServletResponse.SC_METHOD_NOT_ALLOWED, INVALID_METHOD_MESSAGE
+						+ "; got " + method, log);
 			}
-		} else {
-			httpResponse.setHeader("Access-Control-Allow-Methods", "GET, PUT, POST, DELETE");
-			xnatStatusCode = HandlerUtil.infoResponse(HttpServletResponse.SC_METHOD_NOT_ALLOWED, INVALID_METHOD_MESSAGE
-					+ "; got " + method, log);
+		} finally {
+			xnatMethod.releaseConnection();
 		}
 		return xnatStatusCode;
 	}

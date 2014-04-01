@@ -92,29 +92,22 @@ public class XNATSubjectHandler extends AbstractHandler
 		}
 
 		if (xnatMethod != null) {
-			log.info("Invoking " + xnatMethod.getName() + " on XNAT at " + xnatURL);
-			xnatMethod.setRequestHeader("Cookie", "JSESSIONID=" + jsessionID);
-			xnatStatusCode = client.executeMethod(xnatMethod);
-			if (xnatStatusCode == HttpServletResponse.SC_OK) {
-				InputStream xnatResponse = null;
-				try {
-					xnatResponse = xnatMethod.getResponseBodyAsStream();
+			try {
+				log.info("Invoking " + xnatMethod.getName() + " on XNAT at " + xnatURL);
+				xnatMethod.setRequestHeader("Cookie", "JSESSIONID=" + jsessionID);
+				xnatStatusCode = client.executeMethod(xnatMethod);
+				if (xnatStatusCode == HttpServletResponse.SC_OK) {
+					InputStream xnatResponse = xnatMethod.getResponseBodyAsStream();
 					int read = 0;
 					byte[] bytes = new byte[4096];
 					while ((read = xnatResponse.read(bytes)) != -1) {
 						responseStream.write(bytes, 0, read);
 					}
-				} finally {
-					if (xnatResponse != null) {
-						try {
-							xnatResponse.close();
-						} catch (IOException e) {
-							log.warning("Error closing XNAT response stream", e);
-						}
-					}
+				} else {
+					log.info(XNAT_INVOCATION_ERROR_MESSAGE + "; status code=" + xnatStatusCode);
 				}
-			} else {
-				log.info(XNAT_INVOCATION_ERROR_MESSAGE + "; status code=" + xnatStatusCode);
+			} finally {
+				xnatMethod.releaseConnection();
 			}
 		} else {
 			httpResponse.setHeader("Access-Control-Allow-Methods", "GET, PUT, POST, DELETE");

@@ -170,7 +170,7 @@ public class XNATQueries
 			log.warning("Error performing XNAT projects query", e);
 			xnatStatusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 		}
-		return processXNATProjectsQueryResponse(method, xnatStatusCode);
+		return processXNATProjectsQueryResponse(method, xnatStatusCode); // Will release connection
 	}
 
 	private static XNATUserList invokeXNATUsersQuery(String sessionID, String xnatUsersQueryURL)
@@ -188,32 +188,40 @@ public class XNATQueries
 			log.warning("Error performing XNAT projects query", e);
 			xnatStatusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 		}
-		return processXNATUsersQueryResponse(method, xnatStatusCode);
+		return processXNATUsersQueryResponse(method, xnatStatusCode); // Will release connection
 	}
 
 	private static XNATUserList processXNATUsersQueryResponse(GetMethod method, int xnatStatusCode)
 	{
-		if (xnatStatusCode == HttpServletResponse.SC_OK) {
-			return extractXNATUsersFromResponse(method);
-		} else if (xnatStatusCode == HttpServletResponse.SC_UNAUTHORIZED) {
-			log.warning("Invalid session token for XNAT projects query");
-			return XNATUserList.emptyUsers();
-		} else {
-			log.warning("Error performing XNAT projects query; XNAT status code = " + xnatStatusCode);
-			return XNATUserList.emptyUsers();
+		try {
+			if (xnatStatusCode == HttpServletResponse.SC_OK) {
+				return extractXNATUsersFromResponse(method);
+			} else if (xnatStatusCode == HttpServletResponse.SC_UNAUTHORIZED) {
+				log.warning("Invalid session token for XNAT projects query");
+				return XNATUserList.emptyUsers();
+			} else {
+				log.warning("Error performing XNAT projects query; XNAT status code = " + xnatStatusCode);
+				return XNATUserList.emptyUsers();
+			}
+		} finally {
+			method.releaseConnection();
 		}
 	}
 
 	private static XNATProjectList processXNATProjectsQueryResponse(GetMethod method, int xnatStatusCode)
 	{
-		if (xnatStatusCode == HttpServletResponse.SC_OK) {
-			return extractXNATProjectsFromResponse(method);
-		} else if (xnatStatusCode == HttpServletResponse.SC_UNAUTHORIZED) {
-			log.warning("Invalid session token for XNAT projects query");
-			return XNATProjectList.emptyProjects();
-		} else {
-			log.warning("Error performing XNAT projects query; XNAT status code = " + xnatStatusCode);
-			return XNATProjectList.emptyProjects();
+		try {
+			if (xnatStatusCode == HttpServletResponse.SC_OK) {
+				return extractXNATProjectsFromResponse(method);
+			} else if (xnatStatusCode == HttpServletResponse.SC_UNAUTHORIZED) {
+				log.warning("Invalid session token for XNAT projects query");
+				return XNATProjectList.emptyProjects();
+			} else {
+				log.warning("Error performing XNAT projects query; XNAT status code = " + xnatStatusCode);
+				return XNATProjectList.emptyProjects();
+			}
+		} finally {
+			method.releaseConnection();
 		}
 	}
 
@@ -233,6 +241,7 @@ public class XNATQueries
 		} finally {
 			IOUtils.closeQuietly(isr);
 			IOUtils.closeQuietly(br);
+			method.releaseConnection();
 		}
 	}
 
@@ -270,19 +279,23 @@ public class XNATQueries
 			log.warning("Warning: error performing XNAT subject query", e);
 			xnatStatusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 		}
-		return processXNATSubjectQueryResponse(method, xnatStatusCode);
+		return processXNATSubjectQueryResponse(method, xnatStatusCode); // Will release connection
 	}
 
 	private static XNATSubjectList processXNATSubjectQueryResponse(GetMethod method, int xnatStatusCode)
 	{
-		if (xnatStatusCode == HttpServletResponse.SC_OK) {
-			return extractXNATSubjectsFromResponse(method);
-		} else if (xnatStatusCode == HttpServletResponse.SC_UNAUTHORIZED) {
-			log.warning("Invalid session token for XNAT subjects query");
-			return XNATSubjectList.emptySubjects();
-		} else {
-			log.warning("Error performing XNAT subjects query; XNAT status code = " + xnatStatusCode);
-			return XNATSubjectList.emptySubjects();
+		try {
+			if (xnatStatusCode == HttpServletResponse.SC_OK) {
+				return extractXNATSubjectsFromResponse(method);
+			} else if (xnatStatusCode == HttpServletResponse.SC_UNAUTHORIZED) {
+				log.warning("Invalid session token for XNAT subjects query");
+				return XNATSubjectList.emptySubjects();
+			} else {
+				log.warning("Error performing XNAT subjects query; XNAT status code = " + xnatStatusCode);
+				return XNATSubjectList.emptySubjects();
+			}
+		} finally {
+			method.releaseConnection();
 		}
 	}
 
@@ -321,19 +334,23 @@ public class XNATQueries
 			log.warning("Warning: error performing XNAT query", e);
 			xnatStatusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 		}
-		return processXNATExperimentsQueryResponse(method, xnatStatusCode);
+		return processXNATExperimentsQueryResponse(method, xnatStatusCode); // Will release connection
 	}
 
 	private static XNATExperimentList processXNATExperimentsQueryResponse(GetMethod method, int xnatStatusCode)
 	{
-		if (xnatStatusCode == HttpServletResponse.SC_OK) {
-			return extractXNATExperimentsFromResponse(method);
-		} else if (xnatStatusCode == HttpServletResponse.SC_UNAUTHORIZED) {
-			log.warning("Invalid session token for XNAT experiments query");
-			return XNATExperimentList.emptyExperiments();
-		} else {
-			log.warning("Error performing XNAT experiments query; XNAT status code = " + xnatStatusCode);
-			return XNATExperimentList.emptyExperiments();
+		try {
+			if (xnatStatusCode == HttpServletResponse.SC_OK) {
+				return extractXNATExperimentsFromResponse(method);
+			} else if (xnatStatusCode == HttpServletResponse.SC_UNAUTHORIZED) {
+				log.warning("Invalid session token for XNAT experiments query");
+				return XNATExperimentList.emptyExperiments();
+			} else {
+				log.warning("Error performing XNAT experiments query; XNAT status code = " + xnatStatusCode);
+				return XNATExperimentList.emptyExperiments();
+			}
+		} finally {
+			method.releaseConnection();
 		}
 	}
 

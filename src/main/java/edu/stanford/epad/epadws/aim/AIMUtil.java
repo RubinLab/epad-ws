@@ -92,6 +92,8 @@ public class AIMUtil
 						logger.warning("HTTP error calling plugin ", e);
 					} catch (IOException e) {
 						logger.warning("IO exception calling plugin ", e);
+					} finally {
+						method.releaseConnection();
 					}
 				}
 			}

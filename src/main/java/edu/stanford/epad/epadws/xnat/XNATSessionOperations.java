@@ -53,49 +53,53 @@ public class XNATSessionOperations
 	{
 		String xnatSessionURL = buildXNATSessionURL();
 		HttpClient client = new HttpClient();
-		PostMethod postMethod = new PostMethod(xnatSessionURL);
+		PostMethod method = new PostMethod(xnatSessionURL);
 		String authString = buildAuthorizationString(username, password);
 		XNATSessionResponse xnatSessionResponse;
 		int xnatStatusCode;
 
 		try {
 			log.info("Invoking XNAT session service at " + xnatSessionURL);
-			postMethod.setRequestHeader("Authorization", "Basic " + authString);
-			xnatStatusCode = client.executeMethod(postMethod);
+			method.setRequestHeader("Authorization", "Basic " + authString);
+			xnatStatusCode = client.executeMethod(method);
 		} catch (IOException e) {
 			log.warning("Error calling XNAT session service", e);
 			xnatStatusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 		}
 
-		if (xnatStatusCode == HttpServletResponse.SC_OK) {
-			log.info("Successfully invoked XNAT session service");
-			try {
-				StringBuilder sb = new StringBuilder();
-				InputStreamReader isr = null;
+		try {
+			if (xnatStatusCode == HttpServletResponse.SC_OK) {
+				log.info("Successfully invoked XNAT session service");
 				try {
-					isr = new InputStreamReader(postMethod.getResponseBodyAsStream());
-					int read = 0;
-					char[] chars = new char[128];
-					while ((read = isr.read(chars)) > 0) {
-						sb.append(chars, 0, read);
+					StringBuilder sb = new StringBuilder();
+					InputStreamReader isr = null;
+					try {
+						isr = new InputStreamReader(method.getResponseBodyAsStream());
+						int read = 0;
+						char[] chars = new char[128];
+						while ((read = isr.read(chars)) > 0) {
+							sb.append(chars, 0, read);
+						}
+					} finally {
+						IOUtils.closeQuietly(isr);
 					}
-				} finally {
-					IOUtils.closeQuietly(isr);
+					String jsessionID = sb.toString();
+					xnatSessionResponse = new XNATSessionResponse(HttpServletResponse.SC_OK, jsessionID);
+				} catch (IOException e) {
+					log.warning(LOGIN_EXCEPTION_MESSAGE, e);
+					xnatSessionResponse = new XNATSessionResponse(HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
+							LOGIN_EXCEPTION_MESSAGE + ": " + e.getMessage());
 				}
-				String jsessionID = sb.toString();
-				xnatSessionResponse = new XNATSessionResponse(HttpServletResponse.SC_OK, jsessionID);
-			} catch (IOException e) {
-				log.warning(LOGIN_EXCEPTION_MESSAGE, e);
+			} else if (xnatStatusCode == HttpServletResponse.SC_UNAUTHORIZED) {
+				log.warning(XNAT_UNAUTHORIZED_MESSAGE);
+				xnatSessionResponse = new XNATSessionResponse(xnatStatusCode, XNAT_UNAUTHORIZED_MESSAGE);
+			} else {
+				log.warning(XNAT_LOGIN_ERROR_MESSAGE + "; XNAT status code = " + xnatStatusCode);
 				xnatSessionResponse = new XNATSessionResponse(HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
-						LOGIN_EXCEPTION_MESSAGE + ": " + e.getMessage());
+						XNAT_LOGIN_ERROR_MESSAGE + "; XNAT status code = " + xnatStatusCode);
 			}
-		} else if (xnatStatusCode == HttpServletResponse.SC_UNAUTHORIZED) {
-			log.warning(XNAT_UNAUTHORIZED_MESSAGE);
-			xnatSessionResponse = new XNATSessionResponse(xnatStatusCode, XNAT_UNAUTHORIZED_MESSAGE);
-		} else {
-			log.warning(XNAT_LOGIN_ERROR_MESSAGE + "; XNAT status code = " + xnatStatusCode);
-			xnatSessionResponse = new XNATSessionResponse(HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
-					XNAT_LOGIN_ERROR_MESSAGE + "; XNAT status code = " + xnatStatusCode);
+		} finally {
+			method.releaseConnection();
 		}
 		return xnatSessionResponse;
 	}
@@ -104,17 +108,19 @@ public class XNATSessionOperations
 	{
 		String xnatSessionURL = buildXNATSessionURL();
 		HttpClient client = new HttpClient();
-		DeleteMethod deleteMethod = new DeleteMethod(xnatSessionURL);
+		DeleteMethod method = new DeleteMethod(xnatSessionURL);
 		String jsessionID = getJSessionIDFromRequest(httpRequest);
 		int xnatStatusCode;
 
-		deleteMethod.setRequestHeader("Cookie", "JSESSIONID=" + jsessionID);
+		method.setRequestHeader("Cookie", "JSESSIONID=" + jsessionID);
 
 		try {
-			xnatStatusCode = client.executeMethod(deleteMethod);
+			xnatStatusCode = client.executeMethod(method);
 		} catch (IOException e) {
 			log.warning("Error calling XNAT session service to invalidate session ID", e);
 			xnatStatusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+		} finally {
+			method.releaseConnection();
 		}
 
 		if (xnatStatusCode != HttpServletResponse.SC_OK)
@@ -137,16 +143,18 @@ public class XNATSessionOperations
 	{
 		String xnatSessionURL = XNATUtil.buildXNATSessionURL();
 		HttpClient client = new HttpClient();
-		GetMethod getMethod = new GetMethod(xnatSessionURL);
+		GetMethod method = new GetMethod(xnatSessionURL);
 		int xnatStatusCode;
 
-		getMethod.setRequestHeader("Cookie", "JSESSIONID=" + jsessionID);
+		method.setRequestHeader("Cookie", "JSESSIONID=" + jsessionID);
 
 		try {
-			xnatStatusCode = client.executeMethod(getMethod);
+			xnatStatusCode = client.executeMethod(method);
 		} catch (IOException e) {
 			log.warning("Error calling XNAT", e);
 			xnatStatusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+		} finally {
+			method.releaseConnection();
 		}
 		return (xnatStatusCode == HttpServletResponse.SC_OK);
 	}

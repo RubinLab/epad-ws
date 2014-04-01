@@ -203,29 +203,21 @@ public class HandlerUtil
 		HttpClient client = new HttpClient();
 		GetMethod method = new GetMethod(url);
 
-		int wadoStatusCode = client.executeMethod(method);
+		try {
+			int wadoStatusCode = client.executeMethod(method);
 
-		if (wadoStatusCode == HttpServletResponse.SC_OK) {
-			InputStream res = null;
-			try {
-				res = method.getResponseBodyAsStream();
+			if (wadoStatusCode == HttpServletResponse.SC_OK) {
+				InputStream is = method.getResponseBodyAsStream();
 				int read = 0;
 				byte[] bytes = new byte[4096];
-				while ((read = res.read(bytes)) != -1) {
+				while ((read = is.read(bytes)) != -1) {
 					outputStream.write(bytes, 0, read);
 				}
-			} finally {
-				if (res != null) {
-					try {
-						res.close();
-					} catch (IOException e) {
-						log.warning("Error closing response stream", e);
-					}
-				}
+			} else {
+				log.warning("Unexpected response from " + url + ";statusCode=" + wadoStatusCode);
 			}
-		} else {
-			log.warning("Unexpected response from " + url + ";statusCode=" + wadoStatusCode);
+		} finally {
+			method.releaseConnection();
 		}
 	}
-
 }
