@@ -28,7 +28,7 @@ public class Dcm4CheeDatabaseUtils
 		long fileSize = file.length();
 		Dcm4CheeDatabaseOperations dcm4CheeDatabaseOperations = Dcm4CheeDatabase.getInstance().getDcm4CheeDatabaseOperations();
 		String sopInstanceUID = getSOPInstanceUIDFromPath(filePath);
-		int instanceKey = dcm4CheeDatabaseOperations.getInstanceKeyForInstance(sopInstanceUID);
+		int instanceKey = dcm4CheeDatabaseOperations.getPrimaryKeyForInstanceUID(sopInstanceUID);
 
 		Map<String, String> retVal = new HashMap<String, String>();
 		retVal.put("instance_fk", "" + instanceKey);

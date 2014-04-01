@@ -41,7 +41,6 @@ public class EPadPluginHandler extends AbstractHandler
 	@Override
 	public void handle(String s, Request request, HttpServletRequest httpRequest, HttpServletResponse httpResponse)
 	{
-		PrintWriter responseStream = null;
 		int statusCode;
 
 		httpResponse.setContentType("text/plain");
@@ -52,7 +51,7 @@ public class EPadPluginHandler extends AbstractHandler
 		PluginServletHandler pluginServletHandler = pluginHandlerMap.getPluginServletHandler(pluginName);
 
 		try {
-			responseStream = httpResponse.getWriter();
+			PrintWriter responseStream = httpResponse.getWriter();
 			if (XNATSessionOperations.hasValidXNATSessionID(httpRequest)) {
 				if (pluginServletHandler != null) {
 					String method = httpRequest.getMethod();
@@ -73,7 +72,7 @@ public class EPadPluginHandler extends AbstractHandler
 				statusCode = HandlerUtil.invalidTokenResponse(INVALID_SESSION_TOKEN_MESSAGE, responseStream, log);
 			}
 		} catch (Throwable t) {
-			statusCode = HandlerUtil.internalErrorResponse(INTERNAL_ERROR_MESSAGE, responseStream, log);
+			statusCode = HandlerUtil.internalErrorResponse(INTERNAL_ERROR_MESSAGE, log);
 		}
 		httpResponse.setStatus(statusCode);
 	}

@@ -39,7 +39,7 @@ public class EventHandler extends AbstractHandler
 	@Override
 	public void handle(String base, Request request, HttpServletRequest httpRequest, HttpServletResponse httpResponse)
 	{
-		PrintWriter responseStream;
+		PrintWriter responseStream = null;
 		int statusCode;
 
 		httpResponse.setContentType("text/plain");

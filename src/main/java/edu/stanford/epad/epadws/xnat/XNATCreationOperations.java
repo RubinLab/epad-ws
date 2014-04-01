@@ -59,7 +59,6 @@ public class XNATCreationOperations
 			String dicomStudyUID, String jsessionID)
 	{
 		String xnatStudyURL = XNATUtil.buildXNATExperimentCreationURL(xnatProjectID, xnatSubjectLabel, dicomStudyUID);
-
 		HttpClient client = new HttpClient();
 		PutMethod putMethod = new PutMethod(xnatStudyURL);
 		int xnatStatusCode;
@@ -76,6 +75,8 @@ public class XNATCreationOperations
 		} catch (IOException e) {
 			log.warning("Error calling XNAT", e);
 			xnatStatusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+		} finally {
+			putMethod.releaseConnection();
 		}
 		return (!unexpectedCreationStatusCode(xnatStatusCode));
 	}
@@ -107,17 +108,17 @@ public class XNATCreationOperations
 	}
 
 	/**
-	 * Take a directory containing a list of DICOM files and create XNAT representations of the each DICOM image. This
-	 * method expects a properties file called xnat_upload.properties in the directory. This file should contain an XNAT
-	 * project name, which identified the project for the new patients and their studies, and an XNAT session ID.
+	 * Take a directory containing a list of DICOM files and create XNAT representations of the each DICOM image.
 	 * <p>
-	 * In general, pushing DICOM files through a DCM4CHEE server monitored by ePAD is preferred to using this method.
+	 * This method expects a properties file called xnat_upload.properties in the directory. This file should contain an
+	 * XNAT project name, which identified the project for the new patients and their studies, and an XNAT session ID.
 	 * 
-	 * @param uploadDirectory
+	 * @param dicomUploadDirectory
 	 */
-	public static void createXNATEntitiesFromDICOMFilesInDirectory(File uploadDirectory)
+	public static void createXNATEntitiesFromDICOMFilesInUploadDirectory(File dicomUploadDirectory)
 	{
-		String propertiesFilePath = uploadDirectory.getAbsolutePath() + File.separator + XNAT_UPLOAD_PROPERTIES_FILE_NAME;
+		String propertiesFilePath = dicomUploadDirectory.getAbsolutePath() + File.separator
+				+ XNAT_UPLOAD_PROPERTIES_FILE_NAME;
 		File xnatUploadPropertiesFile = new File(propertiesFilePath);
 
 		if (!xnatUploadPropertiesFile.exists())
@@ -135,7 +136,7 @@ public class XNATCreationOperations
 
 				int numberOfDICOMFiles = 0;
 				if (xnatProjectID != null && xnatSessionID != null) {
-					for (File dicomFile : DicomTagFileUtils.listDICOMFiles(uploadDirectory)) {
+					for (File dicomFile : DicomTagFileUtils.listDICOMFiles(dicomUploadDirectory)) {
 						// DCM4CHEE stores the patient name as upper case so we match. TODO get original from database?
 						String dicomPatientName = DicomReader.getPatientName(dicomFile).toUpperCase();
 						String dicomPatientID = DicomReader.getPatientID(dicomFile);

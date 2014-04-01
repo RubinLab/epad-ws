@@ -31,7 +31,7 @@ public class DefaultDcm4CheeDatabaseOperations implements Dcm4CheeDatabaseOperat
 	}
 
 	@Override
-	public Map<String, String> getDcm4CheeSeriesDataWithUID(String seriesIUID)
+	public Map<String, String> getDcm4CheeSeriesDataWithUID(String seriesUID)
 	{
 		Map<String, String> retVal = new HashMap<String, String>();
 
@@ -41,7 +41,7 @@ public class DefaultDcm4CheeDatabaseOperations implements Dcm4CheeDatabaseOperat
 		try {
 			c = getConnection();
 			ps = c.prepareStatement(Dcm4CheeDatabaseCommands.SELECT_SERIES_BY_ID);
-			ps.setString(1, seriesIUID);
+			ps.setString(1, seriesUID);
 
 			rs = ps.executeQuery();
 			if (rs.next()) {
@@ -49,7 +49,7 @@ public class DefaultDcm4CheeDatabaseOperations implements Dcm4CheeDatabaseOperat
 			}
 		} catch (SQLException sqle) {
 			String debugInfo = DatabaseUtils.getDebugData(rs);
-			log.warning("Warning: database operation failed. debugInfo=" + debugInfo, sqle);
+			log.warning("Database operation failed; debugInfo=" + debugInfo, sqle);
 		} finally {
 			close(c, ps, rs);
 		}
@@ -92,7 +92,7 @@ public class DefaultDcm4CheeDatabaseOperations implements Dcm4CheeDatabaseOperat
 			}
 		} catch (SQLException sqle) {
 			String debugInfo = DatabaseUtils.getDebugData(rs);
-			log.warning("Warning: database operation failed for: _" + searchSql + "_ debugInfo=" + debugInfo, sqle);
+			log.warning("Database operation failed for: SQL = " + searchSql + "; debugInfo=" + debugInfo, sqle);
 		} finally {
 			close(c, s, rs);
 		}
@@ -126,7 +126,7 @@ public class DefaultDcm4CheeDatabaseOperations implements Dcm4CheeDatabaseOperat
 			}
 		} catch (SQLException sqle) {
 			String debugInfo = DatabaseUtils.getDebugData(rs);
-			log.warning("Warning: database operation failed. debugInfo=" + debugInfo, sqle);
+			log.warning("Database operation failed; debugInfo=" + debugInfo, sqle);
 		} finally {
 			close(c, ps, rs);
 		}
@@ -164,7 +164,7 @@ public class DefaultDcm4CheeDatabaseOperations implements Dcm4CheeDatabaseOperat
 			}
 		} catch (SQLException sqle) {
 			String debugInfo = DatabaseUtils.getDebugData(rs);
-			log.warning("Warning: database operation failed. debugInfo=" + debugInfo, sqle);
+			log.warning("Database operation failed; debugInfo=" + debugInfo, sqle);
 		} finally {
 			close(c, ps, rs);
 		}
@@ -172,7 +172,7 @@ public class DefaultDcm4CheeDatabaseOperations implements Dcm4CheeDatabaseOperat
 	}
 
 	@Override
-	public Map<String, String> getPatientForDicomStudy(String studyIUID)
+	public Map<String, String> getPatientForStudy(String studyIUID)
 	{
 		Map<String, String> retVal = new HashMap<String, String>();
 
@@ -190,7 +190,7 @@ public class DefaultDcm4CheeDatabaseOperations implements Dcm4CheeDatabaseOperat
 			}
 		} catch (SQLException sqle) {
 			String debugInfo = DatabaseUtils.getDebugData(rs);
-			log.warning("Warning: database operation failed. debugInfo=" + debugInfo, sqle);
+			log.warning("Database operation failed; debugInfo=" + debugInfo, sqle);
 		} finally {
 			close(c, ps, rs);
 		}
@@ -220,7 +220,7 @@ public class DefaultDcm4CheeDatabaseOperations implements Dcm4CheeDatabaseOperat
 			}
 		} catch (SQLException sqle) {
 			String debugInfo = DatabaseUtils.getDebugData(rs);
-			log.warning("Warning: database operation failed. debugInfo=" + debugInfo, sqle);
+			log.warning("Database operation failed; debugInfo=" + debugInfo, sqle);
 		} finally {
 			close(c, ps, rs);
 		}
@@ -228,7 +228,7 @@ public class DefaultDcm4CheeDatabaseOperations implements Dcm4CheeDatabaseOperat
 	}
 
 	@Override
-	public Map<String, String> getParentStudyForDicomSeries(String seriesIUID)
+	public Map<String, String> getParentStudyForSeries(String seriesIUID)
 	{
 		Map<String, String> retVal = new HashMap<String, String>();
 
@@ -245,7 +245,7 @@ public class DefaultDcm4CheeDatabaseOperations implements Dcm4CheeDatabaseOperat
 			}
 		} catch (SQLException sqle) {
 			String debugInfo = DatabaseUtils.getDebugData(rs);
-			log.warning("Warning: database operation failed. debugInfo=" + debugInfo, sqle);
+			log.warning("Database operation failed; debugInfo=" + debugInfo, sqle);
 		} finally {
 			close(c, ps, rs);
 		}
@@ -260,7 +260,7 @@ public class DefaultDcm4CheeDatabaseOperations implements Dcm4CheeDatabaseOperat
 		if (cache.hasParent(seriesIUID))
 			return cache.getParent(seriesIUID).getDicomUID();
 
-		Map<String, String> dbResult = getParentStudyForDicomSeries(seriesIUID);
+		Map<String, String> dbResult = getParentStudyForSeries(seriesIUID);
 		String studyIUID = dbResult.get("study_iuid");
 		cache.setParent(seriesIUID, studyIUID, DicomParentType.STUDY);
 
@@ -271,7 +271,7 @@ public class DefaultDcm4CheeDatabaseOperations implements Dcm4CheeDatabaseOperat
 	 * Looks in DCM4CHEE database to find a list of all DICOM image descriptions (table is pacsdb.files).
 	 */
 	@Override
-	public List<Map<String, String>> getDICOMImageFileDescriptionsForSeries(String seriesIUID)
+	public List<Map<String, String>> getDicomImageFileDescriptionsForSeries(String seriesIUID)
 	{
 		List<Map<String, String>> retVal = new ArrayList<Map<String, String>>();
 		Connection c = null;
@@ -289,7 +289,7 @@ public class DefaultDcm4CheeDatabaseOperations implements Dcm4CheeDatabaseOperat
 			}
 		} catch (SQLException sqle) {
 			String debugInfo = DatabaseUtils.getDebugData(rs);
-			log.warning("Warning: database operation failed. debugInfo=" + debugInfo, sqle);
+			log.warning("Database operation failed; debugInfo=" + debugInfo, sqle);
 		} finally {
 			close(c, ps, rs);
 		}
@@ -297,7 +297,7 @@ public class DefaultDcm4CheeDatabaseOperations implements Dcm4CheeDatabaseOperat
 	}
 
 	@Override
-	public List<Map<String, String>> getDicomSeriesOrder(String seriesUID)
+	public List<Map<String, String>> getSeriesOrder(String seriesUID)
 	{
 		List<Map<String, String>> retVal = new ArrayList<Map<String, String>>();
 
@@ -316,7 +316,7 @@ public class DefaultDcm4CheeDatabaseOperations implements Dcm4CheeDatabaseOperat
 			}
 		} catch (SQLException e) {
 			String debugInfo = DatabaseUtils.getDebugData(rs);
-			log.warning("Warning: database operation failed. debugInfo=" + debugInfo, e);
+			log.warning("Database operation failed; debugInfo=" + debugInfo, e);
 		} finally {
 			close(c, ps, rs);
 		}
@@ -324,7 +324,7 @@ public class DefaultDcm4CheeDatabaseOperations implements Dcm4CheeDatabaseOperat
 	}
 
 	@Override
-	public int getInstanceKeyForInstance(String sopInstanceUID)
+	public int getPrimaryKeyForInstanceUID(String imageUID)
 	{
 		Connection c = null;
 		PreparedStatement ps = null;
@@ -332,7 +332,7 @@ public class DefaultDcm4CheeDatabaseOperations implements Dcm4CheeDatabaseOperat
 		try {
 			c = getConnection();
 			ps = c.prepareStatement(Dcm4CheeDatabaseCommands.PK_FOR_INSTANCE);
-			ps.setString(1, sopInstanceUID);
+			ps.setString(1, imageUID);
 			rs = ps.executeQuery();
 			if (rs.next()) {
 				return rs.getInt(1);
@@ -341,7 +341,7 @@ public class DefaultDcm4CheeDatabaseOperations implements Dcm4CheeDatabaseOperat
 			}
 		} catch (SQLException sqle) {
 			String debugInfo = DatabaseUtils.getDebugData(rs);
-			log.warning("Warning: database operation failed. debugInfo=" + debugInfo, sqle);
+			log.warning("Database operation failed; debugInfo=" + debugInfo, sqle);
 			return -1;
 		} finally {
 			close(c, ps, rs);
@@ -367,8 +367,6 @@ public class DefaultDcm4CheeDatabaseOperations implements Dcm4CheeDatabaseOperat
 
 		return retVal;
 	}
-
-	// /*** Database utilities ***/
 
 	private Connection getConnection() throws SQLException
 	{

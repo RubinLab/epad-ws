@@ -17,11 +17,11 @@ import edu.stanford.epad.epadws.processing.model.PngProcessingStatus;
  */
 public interface EpadDatabaseOperations
 {
-	void deleteDicomStudy(String uid);
+	void deleteStudy(String studyUID);
 
-	void deleteDicomSeries(String uid);
+	void deleteSeries(String seriesUID);
 
-	void updateDicomSeriesStatusCode(int newStatusCode, String seriesIUID);
+	void updateSeriesStatusCode(int newStatusCode, String seriesUID);
 
 	void insertEpadEvent(String sessionID, String event_status, String aim_uid, String aim_name, String patient_id,
 			String patient_name, String template_id, String template_name, String plugin_name);
@@ -32,21 +32,27 @@ public interface EpadDatabaseOperations
 
 	// Database recording of PNG files generated from DICOM images
 
-	void insertEpadFileRecord(Map<String, String> data);
+	void insertEpadFileRecord(Map<String, String> fileRecord);
 
 	boolean hasEpadFileRecord(String filePath);
 
+	/**
+	 * Update the processing status, file size and error message of an ePAD file record.
+	 */
 	void updateEpadFileRecord(String filePath, PngProcessingStatus newStatus, int fileSize, String errorMsg);
 
 	String selectEpadFilePathLike(String sopInstanceUID);
 
 	List<String> selectEpadFilePath();
 
-	String[] retrieveDicomStudySeriesAndImageIDs(String imageUID);
+	/**
+	 * Returns a triple containing studyUID, seriesUID, and imageUID for the specified imageUID.
+	 */
+	String[] retrieveDicomStudySeriesAndImageUIDs(String imageUID);
 
 	Set<String> getAllSeriesUIDsFromEPadDatabase();
 
-	List<String> getFinishedDICOMImageInstanceIDsForSeriesFromEPadDatabase(String seriesIUID);
+	List<String> getFinishedDICOMImageInstanceUIDsForSeriesFromEPadDatabase(String seriesIUID);
 
 	// Coordination methods; will disappear with AIM 4
 

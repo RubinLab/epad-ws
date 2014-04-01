@@ -58,10 +58,10 @@ public class PatientDeleteTask implements Runnable
 				// Should not delete until after deleting study in DCM4CHEE or PNG pipeline will activate.
 				for (String seriesUID : seriesUIDs) {
 					logger.info("SeriesUID to delete in ePAD database: " + seriesUID);
-					epadDatabaseOperations.deleteDicomSeries(seriesUID);
+					epadDatabaseOperations.deleteSeries(seriesUID);
 				}
-				epadDatabaseOperations.deleteDicomStudy(studyID);
-				FileOperations.deletePNGsforDicomStudy(studyID);
+				epadDatabaseOperations.deleteStudy(studyID);
+				FileOperations.deletePNGsForStudy(studyID);
 			}
 		} catch (Exception e) {
 			logger.warning("Patient delete task has error: " + e.getMessage(), e);

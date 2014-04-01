@@ -44,7 +44,6 @@ public class XNATSubjectHandler extends AbstractHandler
 	@Override
 	public void handle(String base, Request request, HttpServletRequest httpRequest, HttpServletResponse httpResponse)
 	{
-		ServletOutputStream responseStream = null;
 		int statusCode;
 
 		httpResponse.setContentType("application/json");
@@ -52,7 +51,7 @@ public class XNATSubjectHandler extends AbstractHandler
 		request.setHandled(true);
 
 		try {
-			responseStream = httpResponse.getOutputStream();
+			ServletOutputStream responseStream = httpResponse.getOutputStream();
 
 			if (XNATSessionOperations.hasValidXNATSessionID(httpRequest))
 				statusCode = invokeXNATSubjectService(base, httpRequest, httpResponse, responseStream);

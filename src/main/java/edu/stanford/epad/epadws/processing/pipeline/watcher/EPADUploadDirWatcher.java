@@ -101,7 +101,7 @@ public class EPADUploadDirWatcher implements Runnable
 				unzipFiles(zipFile);
 			}
 			// TODO Should not create XNAT entities until the DICOM send succeeds.
-			XNATCreationOperations.createXNATEntitiesFromDICOMFilesInDirectory(directory);
+			XNATCreationOperations.createXNATEntitiesFromDICOMFilesInUploadDirectory(directory);
 			cleanUploadDirectory(directory);
 			sendFilesToDcm4Chee(directory);
 		} catch (IOException ioe) {

@@ -37,10 +37,10 @@ public class DicomStudyDeleteTask implements Runnable
 			// Should not delete until after deleting study in DCM4CHEE or PNG pipeline will activate.
 			for (DCM4CHEESeries series : dcm4CheeSeriesList.ResultSet.Result) {
 				logger.info("SeriesID to delete in ePAD database: " + series.seriesUID);
-				epadDatabaseOperations.deleteDicomSeries(series.seriesUID);
+				epadDatabaseOperations.deleteSeries(series.seriesUID);
 			}
-			epadDatabaseOperations.deleteDicomStudy(studyUID);
-			FileOperations.deletePNGsforDicomStudy(studyUID);
+			epadDatabaseOperations.deleteStudy(studyUID);
+			FileOperations.deletePNGsForStudy(studyUID);
 		} catch (Exception e) {
 			logger.warning("run had: " + e.getMessage(), e);
 		}

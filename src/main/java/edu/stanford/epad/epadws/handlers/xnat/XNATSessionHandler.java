@@ -1,6 +1,5 @@
 package edu.stanford.epad.epadws.handlers.xnat;
 
-import java.io.IOException;
 import java.io.PrintWriter;
 
 import javax.servlet.http.HttpServletRequest;
@@ -42,9 +41,7 @@ public class XNATSessionHandler extends AbstractHandler
 
 	@Override
 	public void handle(String s, Request request, HttpServletRequest httpRequest, HttpServletResponse httpResponse)
-			throws IOException
 	{
-		PrintWriter responseStream = httpResponse.getWriter();
 		String origin = httpRequest.getHeader("Origin");
 		int statusCode;
 
@@ -57,6 +54,7 @@ public class XNATSessionHandler extends AbstractHandler
 			if (username.length() != 0) {
 				log.info("XNATSessionHandler, login request from user " + username);
 				try {
+					PrintWriter responseStream = httpResponse.getWriter();
 					XNATSessionResponse xnatSessionResponse = XNATSessionOperations.invokeXNATSessionIDService(httpRequest);
 					if (xnatSessionResponse.statusCode == HttpServletResponse.SC_OK) {
 						String jsessionID = xnatSessionResponse.response;
@@ -73,10 +71,10 @@ public class XNATSessionHandler extends AbstractHandler
 								+ ";statusCode = " + xnatSessionResponse.statusCode, responseStream, log);
 					}
 				} catch (Throwable t) {
-					statusCode = HandlerUtil.internalErrorResponse(LOGIN_EXCEPTION_MESSAGE, t, responseStream, log);
+					statusCode = HandlerUtil.internalErrorResponse(LOGIN_EXCEPTION_MESSAGE, t, log);
 				}
 			} else {
-				statusCode = HandlerUtil.infoResponse(HttpServletResponse.SC_BAD_REQUEST, MISSING_USER, responseStream, log);
+				statusCode = HandlerUtil.warningResponse(HttpServletResponse.SC_BAD_REQUEST, MISSING_USER, log);
 			}
 		} else if ("DELETE".equalsIgnoreCase(method)) {
 			log.info("XNATSessionHandler, logout request");
@@ -85,7 +83,7 @@ public class XNATSessionHandler extends AbstractHandler
 				log.info("XNAT delete session returns status code " + xnatStatusCode);
 				statusCode = xnatStatusCode;
 			} catch (Throwable t) {
-				statusCode = HandlerUtil.internalErrorResponse(LOGOUT_EXCEPTION_MESSAGE, t, responseStream, log);
+				statusCode = HandlerUtil.internalErrorResponse(LOGOUT_EXCEPTION_MESSAGE, t, log);
 			}
 		} else if ("OPTIONS".equalsIgnoreCase(method)) {
 			log.info("XNATSessionHandler, CORS preflight OPTIONS request");
@@ -94,10 +92,9 @@ public class XNATSessionHandler extends AbstractHandler
 			httpResponse.setHeader("Access-Control-Allow-Headers", "Authorization");
 			statusCode = HttpServletResponse.SC_OK;
 		} else {
-			log.info(INVALID_METHOD_MESSAGE + "; got " + method);
-			responseStream.append(INVALID_METHOD_MESSAGE + "; got " + method);
 			httpResponse.setHeader("Access-Control-Allow-Methods", "POST, DELETE, OPTIONS");
-			statusCode = HttpServletResponse.SC_METHOD_NOT_ALLOWED;
+			statusCode = HandlerUtil.warningResponse(HttpServletResponse.SC_METHOD_NOT_ALLOWED, INVALID_METHOD_MESSAGE
+					+ "; got " + method, log);
 		}
 		httpResponse.setStatus(statusCode);
 	}

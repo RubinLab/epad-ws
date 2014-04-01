@@ -46,7 +46,6 @@ public class XNATProjectHandler extends AbstractHandler
 	@Override
 	public void handle(String base, Request request, HttpServletRequest httpRequest, HttpServletResponse httpResponse)
 	{
-		ServletOutputStream responseStream = null;
 		int statusCode;
 
 		log.info("Invoking XNAT project service " + request.getRequestURI());
@@ -56,12 +55,13 @@ public class XNATProjectHandler extends AbstractHandler
 		request.setHandled(true);
 
 		try {
-			responseStream = httpResponse.getOutputStream();
+			ServletOutputStream responseStream = httpResponse.getOutputStream();
 
 			if (XNATSessionOperations.hasValidXNATSessionID(httpRequest))
 				statusCode = invokeXNATProjectService(base, httpRequest, httpResponse, responseStream);
 			else
 				statusCode = HandlerUtil.invalidTokenJSONResponse(INVALID_SESSION_TOKEN_MESSAGE, log);
+
 			responseStream.flush();
 		} catch (Throwable t) {
 			statusCode = HandlerUtil.internalErrorJSONResponse(INTERNAL_EXCEPTION_MESSAGE, t, log);
@@ -101,16 +101,16 @@ public class XNATProjectHandler extends AbstractHandler
 				xnatMethod.setRequestHeader("Cookie", "JSESSIONID=" + jsessionID);
 				xnatStatusCode = client.executeMethod(xnatMethod);
 				if (xnatStatusCode == HttpServletResponse.SC_OK) {
-					InputStream xnatResponse = null;
+					InputStream xnatResponseStream = null;
 					try {
-						xnatResponse = xnatMethod.getResponseBodyAsStream();
+						xnatResponseStream = xnatMethod.getResponseBodyAsStream();
 						int read = 0;
 						byte[] bytes = new byte[4096];
-						while ((read = xnatResponse.read(bytes)) != -1) {
+						while ((read = xnatResponseStream.read(bytes)) != -1) {
 							responseStream.write(bytes, 0, read);
 						}
 					} finally {
-						IOUtils.closeQuietly(xnatResponse);
+						IOUtils.closeQuietly(xnatResponseStream);
 					}
 				} else {
 					log.info(XNAT_INVOCATION_ERROR_MESSAGE + ";status code=" + xnatStatusCode);

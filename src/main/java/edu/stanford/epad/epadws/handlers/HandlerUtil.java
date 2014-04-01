@@ -79,7 +79,8 @@ public class HandlerUtil
 			EPADLogger log)
 	{
 		log.warning(message, t);
-		responseStream.append(message);
+		if (responseStream != null)
+			responseStream.append(message);
 		return responseCode;
 	}
 
@@ -87,7 +88,8 @@ public class HandlerUtil
 			EPADLogger log)
 	{
 		log.warning(message, t);
-		responseStream.append(JsonHelper.createJSONErrorResponse(message));
+		if (responseStream != null)
+			responseStream.append(JsonHelper.createJSONErrorResponse(message));
 		return responseCode;
 	}
 

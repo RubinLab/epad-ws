@@ -56,7 +56,7 @@ public class Dcm4CheeDatabaseWatcher implements Runnable
 					int numInstances = dcm4CheeSeries.imagesInSeries;
 					DicomSeriesProcessingDescription dicomSeriesDescription = new DicomSeriesProcessingDescription(numInstances,
 							seriesUID, studyUID, patientName, patientID);
-					epadDatabaseOperations.updateDicomSeriesStatusCode(325, seriesUID);
+					epadDatabaseOperations.updateSeriesStatusCode(325, seriesUID);
 					submitSeriesForPngGeneration(dicomSeriesDescription); // Submit this series to generate all the PNG files.
 					submitSeriesForXNATGeneration(dicomSeriesDescription); // Submit this series to generate XNAT information.
 

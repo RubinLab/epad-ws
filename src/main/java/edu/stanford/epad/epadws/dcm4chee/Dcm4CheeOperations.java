@@ -5,7 +5,6 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.Writer;
 
 import org.apache.commons.io.IOUtils;
 
@@ -131,19 +130,6 @@ public class Dcm4CheeOperations
 		String logDirectory = EPADResources.getEPADWebServerLogDir();
 		String fileName = logDirectory + "upload_" + System.currentTimeMillis() + ".log";
 		EPADFileUtils.write(new File(fileName), contents);
-	}
-
-	private static void close(Writer writer)
-	{
-		try {
-			if (writer != null) {
-				writer.flush();
-				writer.close();
-				writer = null;
-			}
-		} catch (Exception e) {
-			log.warning("Failed to close writer", e);
-		}
 	}
 
 	public static void deleteStudy(String studyUID) throws Exception

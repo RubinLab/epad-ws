@@ -221,7 +221,7 @@ public class DefaultEpadQueries implements EpadQueries
 	{
 		Dcm4CheeDatabaseOperations dcm4CheeDatabaseOperations = Dcm4CheeDatabase.getInstance()
 				.getDcm4CheeDatabaseOperations();
-		List<Map<String, String>> orderQueryEntries = dcm4CheeDatabaseOperations.getDicomSeriesOrder(seriesIUID);
+		List<Map<String, String>> orderQueryEntries = dcm4CheeDatabaseOperations.getSeriesOrder(seriesIUID);
 		List<EPADDatabaseImage> epadImageList = new ArrayList<EPADDatabaseImage>();
 
 		for (Map<String, String> entry : orderQueryEntries) {
@@ -252,11 +252,11 @@ public class DefaultEpadQueries implements EpadQueries
 			// Get list of DICOM image descriptions from DCM4CHEE database table (pacsdb.files). Each image description is a
 			// map with keys: i.sop_iuid, i.inst_no, s.series_iuid, f.filepath, f.file_size.
 			List<Map<String, String>> dicomImageFileDescriptions = dcm4CheeDatabaseOperations
-					.getDICOMImageFileDescriptionsForSeries(seriesIUID);
+					.getDicomImageFileDescriptionsForSeries(seriesIUID);
 
 			// Get list of instance IDs for images in series from ePAD database table (epaddb.epad_files).
 			List<String> finishedDICOMImageInstanceIDs = epadDatabaseOperations
-					.getFinishedDICOMImageInstanceIDsForSeriesFromEPadDatabase(seriesIUID);
+					.getFinishedDICOMImageInstanceUIDsForSeriesFromEPadDatabase(seriesIUID);
 
 			// logger.info("Found " + dicomImageFileDescriptions.size() + " unprocessed DICOM image(s) with files and "
 			// + finishedDICOMImageInstanceIDs.size() + " processed image(s) for series " + shortenSting(seriesIUID));
@@ -323,7 +323,7 @@ public class DefaultEpadQueries implements EpadQueries
 		return epadProject;
 	}
 
-	private EPADSubject xnatSubject2EPADSubject(String sessionID, Set<String> users, XNATSubject xnatSubject)
+	private EPADSubject xnatSubject2EPADSubject(String sessionID, Set<String> usernames, XNATSubject xnatSubject)
 	{
 		EpadQueries epadQueries = DefaultEpadQueries.getInstance();
 
@@ -335,7 +335,7 @@ public class DefaultEpadQueries implements EpadQueries
 		String insertDate = xnatSubject.insert_date;
 		String label = xnatSubject.label;
 		int numberOfStudies = XNATQueries.numberOfStudiesForSubject(sessionID, xnatSubject.project, xnatSubject.ID);
-		int numberOfAnnotations = AIMQueries.getNumberOfAIMAnnotationsForPatientID(sessionID, users, xnatSubject.ID);
+		int numberOfAnnotations = AIMQueries.getNumberOfAIMAnnotationsForPatientID(usernames, xnatSubject.ID);
 		Set<String> examTypes = epadQueries.getExamTypesForSubject(sessionID, xnatSubject.project, xnatSubject.ID);
 		EPADSubject epadSubject = new EPADSubject(project, subjectName, insertUser, xnatID, insertDate, label, uri,
 				numberOfStudies, numberOfAnnotations, examTypes);

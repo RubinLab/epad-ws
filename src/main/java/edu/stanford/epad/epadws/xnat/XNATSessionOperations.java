@@ -124,7 +124,7 @@ public class XNATSessionOperations
 		}
 
 		if (xnatStatusCode != HttpServletResponse.SC_OK)
-			log.info("XNAT delete session call returned status code " + xnatStatusCode);
+			log.warning("XNAT delete session call returned status code " + xnatStatusCode);
 
 		return xnatStatusCode;
 	}
@@ -244,5 +244,4 @@ public class XNATSessionOperations
 
 		return authStringEnc;
 	}
-
 }

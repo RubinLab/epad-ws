@@ -25,6 +25,7 @@ import edu.stanford.epad.epadws.processing.model.PngProcessingStatus;
 public class FileOperations
 {
 	private static EPADLogger log = EPADLogger.getInstance();
+
 	private static final int INSET_IMAGE_SIZE = 512;
 	private static final int IMAGES_PER_AXIS = 4;
 
@@ -34,7 +35,7 @@ public class FileOperations
 	 * @param uid
 	 * @throws Exception
 	 */
-	public static void deletePNGsforDicomStudy(String studyUID) throws Exception
+	public static void deletePNGsForStudy(String studyUID) throws Exception
 	{
 		StringBuilder outputPath = new StringBuilder();
 		outputPath.append(EPADResources.getEPADWebServerPNGDir());
@@ -46,7 +47,7 @@ public class FileOperations
 		log.info("Deleting the PNG for study at " + outputPath.toString() + " success = " + success);
 	}
 
-	public static void deletePNGsforDicomSeries(String studyUID, String seriesUID) throws Exception
+	public static void deletePNGsForSeries(String studyUID, String seriesUID) throws Exception
 	{
 		StringBuilder outputPath = new StringBuilder();
 		outputPath.append(EPADResources.getEPADWebServerPNGDir());

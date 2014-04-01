@@ -49,7 +49,7 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 		} catch (SQLException sqle) {
 			log.warning("Database operation failed", sqle);
 		} catch (Exception e) {
-			log.warning("database operation (insert epad_file) failed; row=" + row, e);
+			log.warning("Database operation (insert epad_file) failed; row=" + row, e);
 		} finally {
 			close(c, ps);
 		}
@@ -395,7 +395,7 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 	}
 
 	@Override
-	public void deleteDicomStudy(String uid)
+	public void deleteStudy(String uid)
 	{
 		Connection c = null;
 		PreparedStatement ps = null;
@@ -416,7 +416,7 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 	}
 
 	@Override
-	public void deleteDicomSeries(String uid)
+	public void deleteSeries(String uid)
 	{
 		Connection c = null;
 		PreparedStatement ps = null;
@@ -474,7 +474,7 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 	}
 
 	@Override
-	public void updateDicomSeriesStatusCode(int newStatusCode, String seriesIUID)
+	public void updateSeriesStatusCode(int newStatusCode, String seriesIUID)
 	{
 		if (!hasSeriesInEPadDatabase(seriesIUID)) {
 			insertSeriesInEPadDatabase(newStatusCode, seriesIUID);
@@ -485,7 +485,7 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 
 	// TODO This is very low level and brittle. See if we can get information from DCM4CHEE database.
 	@Override
-	public String[] retrieveDicomStudySeriesAndImageIDs(String imageUID)
+	public String[] retrieveDicomStudySeriesAndImageUIDs(String imageUID)
 	{
 		String study = null;
 		String series = null;
@@ -512,7 +512,7 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 	 * @return List of String (sopInstanceIds).
 	 */
 	@Override
-	public List<String> getFinishedDICOMImageInstanceIDsForSeriesFromEPadDatabase(String seriesIUID)
+	public List<String> getFinishedDICOMImageInstanceUIDsForSeriesFromEPadDatabase(String seriesIUID)
 	{
 		List<String> retVal = new ArrayList<String>();
 

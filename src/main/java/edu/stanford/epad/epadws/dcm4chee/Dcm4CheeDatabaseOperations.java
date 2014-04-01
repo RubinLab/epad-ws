@@ -28,7 +28,7 @@ public interface Dcm4CheeDatabaseOperations
 	 * perf_phys_p_name, pps_start, series_custom1, series_custom2, series_custom3, num_instances, src_aet, ext_retr_aet,
 	 * retrieve_aets, fileset_iuid, fileset_id, availability, series_status, created_time, updated_time, series_attrs
 	 */
-	Map<String, String> getDcm4CheeSeriesDataWithUID(String seriesIUID);
+	Map<String, String> getDcm4CheeSeriesDataWithUID(String seriesUID);
 
 	// typeValue one of: patientName, patientId", studyDate, accessionNum, examType
 	List<Map<String, String>> dicomStudySearch(String searchType, String typeValue);
@@ -37,17 +37,17 @@ public interface Dcm4CheeDatabaseOperations
 
 	Set<String> findAllSeriesUIDsInStudy(String studyUID);
 
-	Map<String, String> getPatientForDicomStudy(String studyIUID);
+	Map<String, String> getPatientForStudy(String studyIUID);
 
 	List<String> getDicomStudyUIDsForPatient(String patientID);
 
-	Map<String, String> getParentStudyForDicomSeries(String seriesIUID);
+	Map<String, String> getParentStudyForSeries(String seriesIUID);
 
 	String getStudyUIDForSeries(String seriesUID);
 
-	List<Map<String, String>> getDICOMImageFileDescriptionsForSeries(String seriesIUID);
+	List<Map<String, String>> getDicomImageFileDescriptionsForSeries(String seriesUID);
 
-	List<Map<String, String>> getDicomSeriesOrder(String seriesUID);
+	List<Map<String, String>> getSeriesOrder(String seriesUID);
 
-	int getInstanceKeyForInstance(String sopInstanceUID);
+	int getPrimaryKeyForInstanceUID(String imageUID);
 }

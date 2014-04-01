@@ -30,8 +30,8 @@ public class DicomSeriesDeleteTask implements Runnable
 			Dcm4CheeOperations.deleteSeries(seriesUID);
 
 			// Should not delete until after deleting series in DCM4CHEE or PNG pipeline will activate.
-			epadDatabaseOperations.deleteDicomSeries(seriesUID);
-			FileOperations.deletePNGsforDicomSeries(studyUID, seriesUID);
+			epadDatabaseOperations.deleteSeries(seriesUID);
+			FileOperations.deletePNGsForSeries(studyUID, seriesUID);
 		} catch (Exception e) {
 			logger.warning("run had: " + e.getMessage(), e);
 		}

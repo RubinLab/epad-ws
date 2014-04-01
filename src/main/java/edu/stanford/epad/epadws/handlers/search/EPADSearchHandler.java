@@ -42,7 +42,6 @@ public class EPADSearchHandler extends AbstractHandler
 	@Override
 	public void handle(String s, Request request, HttpServletRequest httpRequest, HttpServletResponse httpResponse)
 	{
-		PrintWriter responseStream = null;
 		int statusCode;
 
 		httpResponse.setContentType("application/json");
@@ -51,7 +50,7 @@ public class EPADSearchHandler extends AbstractHandler
 		log.info("ePADSearch path=" + httpRequest.getPathInfo() + ", query=" + httpRequest.getQueryString());
 
 		try {
-			responseStream = httpResponse.getWriter();
+			PrintWriter responseStream = httpResponse.getWriter();
 
 			if (XNATSessionOperations.hasValidXNATSessionID(httpRequest)) {
 				EpadQueries epadQueries = DefaultEpadQueries.getInstance();
@@ -89,7 +88,7 @@ public class EPADSearchHandler extends AbstractHandler
 				statusCode = HandlerUtil.invalidTokenJSONResponse(INVALID_SESSION_TOKEN_MESSAGE, responseStream, log);
 			}
 		} catch (Throwable t) {
-			statusCode = HandlerUtil.internalErrorJSONResponse(INTERNAL_EXCEPTION_MESSAGE, t, responseStream, log);
+			statusCode = HandlerUtil.internalErrorJSONResponse(INTERNAL_EXCEPTION_MESSAGE, t, log);
 		}
 		httpResponse.setStatus(statusCode);
 	}
