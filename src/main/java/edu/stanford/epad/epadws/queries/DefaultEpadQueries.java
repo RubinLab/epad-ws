@@ -24,7 +24,6 @@ import edu.stanford.epad.dtos.EPADStudyList;
 import edu.stanford.epad.dtos.EPADSubject;
 import edu.stanford.epad.dtos.EPADSubjectList;
 import edu.stanford.epad.dtos.XNATExperiment;
-import edu.stanford.epad.dtos.XNATExperimentList;
 import edu.stanford.epad.dtos.XNATProject;
 import edu.stanford.epad.dtos.XNATProjectList;
 import edu.stanford.epad.dtos.XNATSubject;
@@ -84,43 +83,39 @@ public class DefaultEpadQueries implements EpadQueries
 			EPADSearchFilter searchFilter)
 	{
 		EPADStudyList epadStudyList = new EPADStudyList();
-		XNATUserList xnatUsers = XNATQueries.usersForProject(sessionID, projectID);
-		XNATExperimentList xnatExperimentList = XNATQueries.getDICOMExperimentsForProjectAndSubject(sessionID, projectID,
-				subjectID);
-		DCM4CHEEStudyList dcm4CheeStudyList = Dcm4CheeQueries.studiesForPatient(subjectID);
+		// XNATUserList xnatUsers = XNATQueries.usersForProject(sessionID, projectID);
+		DCM4CHEEStudyList dcm4CheeStudyList = Dcm4CheeQueries.studiesForPatientID(subjectID);
+
 		Dcm4CheeDatabaseOperations dcm4CheeDatabaseOperations = Dcm4CheeDatabase.getInstance()
 				.getDcm4CheeDatabaseOperations();
 		Map<String, DCM4CHEEStudy> dcm4CheeStudyUIDMap = dcm4CheeStudyList.generateStudyUIDMap();
+		log.info("dcm4CHee Studie mpa " + dcm4CheeStudyUIDMap);
 
-		for (XNATExperiment xnatExperiment : xnatExperimentList.ResultSet.Result) {
-			String studyUID = xnatExperiment.label;
-			if (dcm4CheeStudyUIDMap.containsKey(studyUID)) {
-				DCM4CHEEStudy dcm4CheeStudy = dcm4CheeStudyUIDMap.get(studyUID);
-				String insertDate = xnatExperiment.insert_date;
-				String date = xnatExperiment.date;
-				String xnatURI = xnatExperiment.URI;
-				String firstSeriesUID = dcm4CheeStudy.firstSeriesUID;
-				String firstSeriesDateAcquired = dcm4CheeStudy.firstSeriesDateAcquired;
-				String physicianName = dcm4CheeStudy.physicianName;
-				String birthdate = dcm4CheeStudy.birthdate;
-				String sex = dcm4CheeStudy.sex;
-				int studyStatus = dcm4CheeStudy.studyStatus;
-				String studyDescription = dcm4CheeStudy.studyDescription;
-				String studyAccessionNumber = dcm4CheeStudy.studyAccessionNumber;
-				Set<String> examTypes = getExamTypesForStudy(sessionID, projectID, subjectID, studyUID, searchFilter);
-				int numberOfSeries = dcm4CheeStudy.seriesCount;
-				int numberOfImages = dcm4CheeStudy.imagesCount;
-				Set<String> seriesUIDs = dcm4CheeDatabaseOperations.findAllSeriesUIDsInStudy(studyUID);
-				int numberOfAnnotations = AIMQueries.getNumberOfAIMAnnotationsForSeriesUIDs(seriesUIDs,
-						xnatUsers.getLoginNames());
+		for (DCM4CHEEStudy dcm4CheeStudy : dcm4CheeStudyList.ResultSet.Result) {
+			String studyUID = dcm4CheeStudy.studyUID;
+			String insertDate = dcm4CheeStudy.dateAcquired;
+			String firstSeriesUID = dcm4CheeStudy.firstSeriesUID;
+			String firstSeriesDateAcquired = dcm4CheeStudy.firstSeriesDateAcquired;
+			String physicianName = dcm4CheeStudy.physicianName;
+			String birthdate = dcm4CheeStudy.birthdate;
+			String sex = dcm4CheeStudy.sex;
+			int studyStatus = dcm4CheeStudy.studyStatus;
+			String studyDescription = dcm4CheeStudy.studyDescription;
+			String studyAccessionNumber = dcm4CheeStudy.studyAccessionNumber;
+			Set<String> examTypes = getExamTypesForStudy(sessionID, projectID, subjectID, studyUID, searchFilter);
+			int numberOfSeries = dcm4CheeStudy.seriesCount;
+			int numberOfImages = dcm4CheeStudy.imagesCount;
+			Set<String> seriesUIDs = dcm4CheeDatabaseOperations.findAllSeriesUIDsInStudy(studyUID);
+			log.info("number of series " + seriesUIDs.size());
+			log.info("UIDs " + seriesUIDs);
+			// int numberOfAnnotations = (seriesUIDs.size() <= 0) ? 0 : AIMQueries.getNumberOfAIMAnnotationsForSeriesUIDs(
+			// seriesUIDs, xnatUsers.getLoginNames());
+			int numberOfAnnotations = 0; // TODO
 
-				EPADStudy epadStudy = new EPADStudy(projectID, studyUID, insertDate, date, xnatURI, firstSeriesUID,
-						firstSeriesDateAcquired, physicianName, birthdate, sex, studyStatus, examTypes, studyDescription,
-						studyAccessionNumber, numberOfSeries, numberOfImages, numberOfAnnotations);
-				epadStudyList.addEPADStudy(epadStudy);
-			} else
-				log.warning("Found study " + studyUID + " in XNAT with no corresponding DCM4CHEE study; project =" + projectID
-						+ ", subjectID =" + subjectID);
+			EPADStudy epadStudy = new EPADStudy(projectID, studyUID, insertDate, firstSeriesUID, firstSeriesDateAcquired,
+					physicianName, birthdate, sex, studyStatus, examTypes, studyDescription, studyAccessionNumber,
+					numberOfSeries, numberOfImages, numberOfAnnotations);
+			epadStudyList.addEPADStudy(epadStudy);
 		}
 		return epadStudyList;
 
@@ -133,7 +128,7 @@ public class DefaultEpadQueries implements EpadQueries
 		EPADSeriesList epadSeriesList = new EPADSeriesList();
 		XNATUserList xnatUsers = XNATQueries.usersForProject(sessionID, projectID);
 		Set<String> usernames = xnatUsers.getLoginNames();
-		XNATExperiment xnatExperiment = XNATQueries.getDICOMExperimentForProjectAndSubjectAndStudyUID(sessionID, projectID,
+		XNATExperiment xnatExperiment = XNATQueries.getDICOMExperimentForProjectAndSubjectAndStudy(sessionID, projectID,
 				subjectID, studyUID);
 
 		if (xnatExperiment == null) {
@@ -166,7 +161,7 @@ public class DefaultEpadQueries implements EpadQueries
 		EPADImageList epadImageList = new EPADImageList();
 		// XNATUserList xnatUsers = XNATQueries.usersForProject(sessionID, projectID);
 		// Set<String> usernames = xnatUsers.getLoginNames();
-		XNATExperiment xnatExperiment = XNATQueries.getDICOMExperimentForProjectAndSubjectAndStudyUID(sessionID, projectID,
+		XNATExperiment xnatExperiment = XNATQueries.getDICOMExperimentForProjectAndSubjectAndStudy(sessionID, projectID,
 				subjectUID, studyUID);
 
 		if (xnatExperiment == null) {
@@ -374,8 +369,13 @@ public class DefaultEpadQueries implements EpadQueries
 	{
 		EpadQueries epadQueries = DefaultEpadQueries.getInstance();
 
-		String project = xnatSubject.project;
+		if (searchFilter.hasPatientNameMatch()) {
+			// String subjectName = xnatSubject.src;
+			// TODO
+		}
+
 		String subjectName = xnatSubject.src;
+		String project = xnatSubject.project;
 		String xnatID = xnatSubject.ID;
 		String uri = xnatSubject.URI;
 		String insertUser = xnatSubject.insert_user;

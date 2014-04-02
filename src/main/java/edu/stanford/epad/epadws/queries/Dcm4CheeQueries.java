@@ -32,7 +32,7 @@ public class Dcm4CheeQueries
 {
 	private static EPADLogger log = EPADLogger.getInstance();
 
-	public static DCM4CHEEStudyList studiesForPatient(String patientID)
+	public static DCM4CHEEStudyList studiesForPatientID(String patientID)
 	{
 		return studySearch(DCM4CHEEStudySearchType.PATIENT_ID, patientID);
 	}
@@ -47,11 +47,11 @@ public class Dcm4CheeQueries
 	{
 		Dcm4CheeDatabaseOperations dcm4CheeDatabaseOperations = Dcm4CheeDatabase.getInstance()
 				.getDcm4CheeDatabaseOperations();
-		List<Map<String, String>> studySearchResult = dcm4CheeDatabaseOperations.dicomStudySearch(searchType.getName(),
-				searchValue);
+		List<Map<String, String>> dcm4CheeStudySearchResult = dcm4CheeDatabaseOperations.dicomStudySearch(
+				searchType.getName(), searchValue);
 		DCM4CHEEStudyList dcm4CheeStudyList = new DCM4CHEEStudyList();
 
-		for (Map<String, String> dcm4CheeStudyData : studySearchResult) {
+		for (Map<String, String> dcm4CheeStudyData : dcm4CheeStudySearchResult) {
 			String studyUID = getStringValueFromRow(dcm4CheeStudyData, "study_iuid");
 			String patientName = getStringValueFromRow(dcm4CheeStudyData, "pat_name");
 			String patientID = getStringValueFromRow(dcm4CheeStudyData, "pat_id");

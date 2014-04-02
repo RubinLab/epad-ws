@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import edu.stanford.epad.dtos.DCM4CHEEStudySearchType;
 import edu.stanford.epad.epadws.queries.Dcm4CheeQueries;
 
 /**
@@ -30,7 +31,11 @@ public interface Dcm4CheeDatabaseOperations
 	 */
 	Map<String, String> getDcm4CheeSeriesDataWithUID(String seriesUID);
 
-	// typeValue one of: patientName, patientId", studyDate, accessionNum, examType
+	/**
+	 * typeValue one of: patientName, patientId, studyDate, accessionNum, examType
+	 * 
+	 * @see DCM4CHEEStudySearchType
+	 */
 	List<Map<String, String>> dicomStudySearch(String searchType, String typeValue);
 
 	List<Map<String, String>> findAllDicomSeriesInStudy(String studyUID);

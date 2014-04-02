@@ -97,10 +97,9 @@ public class XNATQueryUtil
 		return buildExperimentsBaseURL() + "?project=" + projectID + "&xsiType=xnat:otherDicomSessionData&format=json";
 	}
 
-	// Query to find all DICOM studies for a particular project and patient
-	public static String buildDICOMExperimentsForProjectAndSubjectQueryURL(String projectID, String patientID)
+	public static String buildDICOMExperimentsForProjectAndStudyUIDQueryURL(String projectID, String studyUID)
 	{
-		return buildSubjectsBaseURL() + "?project=" + projectID + "&src=" + patientID
+		return buildExperimentsBaseURL() + "?project=" + projectID + "&label=" + studyUID
 				+ "&xsiType=xnat:otherDicomSessionData&format=json";
 	}
 
