@@ -333,11 +333,11 @@ public class DefaultEpadQueries implements EpadQueries
 		String uri = xnatSubject.URI;
 		String insertUser = xnatSubject.insert_user;
 		String insertDate = xnatSubject.insert_date;
-		String label = xnatSubject.label;
+		String subjectID = xnatSubject.label;
 		int numberOfStudies = XNATQueries.numberOfStudiesForSubject(sessionID, xnatSubject.project, xnatSubject.ID);
 		int numberOfAnnotations = AIMQueries.getNumberOfAIMAnnotationsForPatientID(usernames, xnatSubject.ID);
 		Set<String> examTypes = epadQueries.getExamTypesForSubject(sessionID, xnatSubject.project, xnatSubject.ID);
-		EPADSubject epadSubject = new EPADSubject(project, subjectName, insertUser, xnatID, insertDate, label, uri,
+		EPADSubject epadSubject = new EPADSubject(project, subjectName, insertUser, xnatID, insertDate, subjectID, uri,
 				numberOfStudies, numberOfAnnotations, examTypes);
 
 		return epadSubject;
