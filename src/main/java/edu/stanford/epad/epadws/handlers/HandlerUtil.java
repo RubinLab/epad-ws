@@ -171,7 +171,7 @@ public class HandlerUtil
 		return warningResponse(HttpServletResponse.SC_UNAUTHORIZED, message, log);
 	}
 
-	public static String getParameter(Map<String, String> templateMap, String parameterName)
+	public static String getTemplateParameter(Map<String, String> templateMap, String parameterName)
 	{
 		if (templateMap.containsKey(parameterName)) {
 			return templateMap.get(parameterName);
