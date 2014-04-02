@@ -14,6 +14,7 @@ import edu.stanford.epad.dtos.DCM4CHEEStudy;
 import edu.stanford.epad.dtos.DCM4CHEEStudyList;
 import edu.stanford.epad.dtos.EPADDatabaseImage;
 import edu.stanford.epad.dtos.EPADDatabaseSeries;
+import edu.stanford.epad.dtos.EPADImageList;
 import edu.stanford.epad.dtos.EPADProject;
 import edu.stanford.epad.dtos.EPADProjectList;
 import edu.stanford.epad.dtos.EPADSeries;
@@ -156,6 +157,37 @@ public class DefaultEpadQueries implements EpadQueries
 			log.warning("Could not find  study " + studyUID + " in XNAT; project =" + projectID + ", subjectID =" + subjectID);
 
 		return epadSeriesList;
+	}
+
+	@Override
+	public EPADImageList getAllImagesForSeries(String sessionID, String projectID, String subjectUID, String studyUID,
+			String seriesUID, EPADSearchFilter searchFilter)
+	{
+		EPADImageList epadImageList = new EPADImageList();
+		// XNATUserList xnatUsers = XNATQueries.usersForProject(sessionID, projectID);
+		// Set<String> usernames = xnatUsers.getLoginNames();
+		XNATExperiment xnatExperiment = XNATQueries.getDICOMExperimentForProjectAndSubjectAndStudyUID(sessionID, projectID,
+				subjectUID, studyUID);
+
+		if (xnatExperiment == null) {
+			// TODO Need to add some call to Dcm4CheeDatabaseOperations to get image information
+			// DCM4CHEEImageList dcm4CheeImageList = Dcm4CheeQueries.getImages(seriesUID);
+			// Loop through images
+			// String imageUID = dcm4CheeSeries.
+			// String insertDate =
+			// String imageDate =
+			// int sliceLocation =
+			// int instanceNumber =
+			//
+			// EPADImage epadImage = new EPADImage(imageUID, seriesUID, studyUID, subjectUID, insertDate, imageDate,
+			// sliceLocation, instanceNumber);
+			//
+			// epadImageList.addEPADImage(epadImage);
+		} else
+			log.warning("Could not find  study " + studyUID + " in XNAT; project =" + projectID + ", subjectID ="
+					+ subjectUID);
+
+		return epadImageList;
 	}
 
 	@Override

@@ -6,6 +6,7 @@ import java.util.Set;
 
 import edu.stanford.epad.dtos.DCM4CHEESeries;
 import edu.stanford.epad.dtos.EPADDatabaseSeries;
+import edu.stanford.epad.dtos.EPADImageList;
 import edu.stanford.epad.dtos.EPADProjectList;
 import edu.stanford.epad.dtos.EPADSeriesList;
 import edu.stanford.epad.dtos.EPADStudyList;
@@ -27,6 +28,9 @@ public interface EpadQueries
 
 	EPADSeriesList getAllSeriesForStudy(String sessionID, String projectID, String subjectID, String studyUID,
 			EPADSearchFilter searchFilter);
+
+	EPADImageList getAllImagesForSeries(String sessionID, String projectID, String subjectID, String studyUID,
+			String seriesUID, EPADSearchFilter searchFilter);
 
 	Set<String> getExamTypesForSubject(String sessionID, String projectID, String subjectID, EPADSearchFilter searchFilter);
 
