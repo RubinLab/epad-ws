@@ -83,13 +83,10 @@ public class DefaultEpadQueries implements EpadQueries
 			EPADSearchFilter searchFilter)
 	{
 		EPADStudyList epadStudyList = new EPADStudyList();
-		// XNATUserList xnatUsers = XNATQueries.usersForProject(sessionID, projectID);
+		XNATUserList xnatUsers = XNATQueries.usersForProject(sessionID, projectID);
 		DCM4CHEEStudyList dcm4CheeStudyList = Dcm4CheeQueries.studiesForPatientID(subjectID);
-
 		Dcm4CheeDatabaseOperations dcm4CheeDatabaseOperations = Dcm4CheeDatabase.getInstance()
 				.getDcm4CheeDatabaseOperations();
-		Map<String, DCM4CHEEStudy> dcm4CheeStudyUIDMap = dcm4CheeStudyList.generateStudyUIDMap();
-		log.info("dcm4CHee Studie mpa " + dcm4CheeStudyUIDMap);
 
 		for (DCM4CHEEStudy dcm4CheeStudy : dcm4CheeStudyList.ResultSet.Result) {
 			String studyUID = dcm4CheeStudy.studyUID;
@@ -106,11 +103,8 @@ public class DefaultEpadQueries implements EpadQueries
 			int numberOfSeries = dcm4CheeStudy.seriesCount;
 			int numberOfImages = dcm4CheeStudy.imagesCount;
 			Set<String> seriesUIDs = dcm4CheeDatabaseOperations.findAllSeriesUIDsInStudy(studyUID);
-			log.info("number of series " + seriesUIDs.size());
-			log.info("UIDs " + seriesUIDs);
-			// int numberOfAnnotations = (seriesUIDs.size() <= 0) ? 0 : AIMQueries.getNumberOfAIMAnnotationsForSeriesUIDs(
-			// seriesUIDs, xnatUsers.getLoginNames());
-			int numberOfAnnotations = 0; // TODO
+			int numberOfAnnotations = (seriesUIDs.size() <= 0) ? 0 : AIMQueries.getNumberOfAIMAnnotationsForSeriesUIDs(
+					seriesUIDs, xnatUsers.getLoginNames());
 
 			EPADStudy epadStudy = new EPADStudy(projectID, studyUID, insertDate, firstSeriesUID, firstSeriesDateAcquired,
 					physicianName, birthdate, sex, studyStatus, examTypes, studyDescription, studyAccessionNumber,
@@ -118,7 +112,6 @@ public class DefaultEpadQueries implements EpadQueries
 			epadStudyList.addEPADStudy(epadStudy);
 		}
 		return epadStudyList;
-
 	}
 
 	@Override

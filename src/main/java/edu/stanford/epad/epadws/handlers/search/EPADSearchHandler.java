@@ -36,7 +36,7 @@ public class EPADSearchHandler extends AbstractHandler
 	private static final String SERIES_LIST_TEMPLATE = STUDY_TEMPLATE + "/series/";
 	private static final String SERIES_TEMPLATE = STUDY_TEMPLATE + "/series/{series}";
 	private static final String IMAGE_LIST_TEMPLATE = SERIES_TEMPLATE + "/images/";
-	private static final String IMAGE_TEMPLATE = SERIES_TEMPLATE + "/images/{image}";
+	// private static final String IMAGE_TEMPLATE = SERIES_TEMPLATE + "/images/{image}";
 
 	private static final String BAD_REQUEST_MESSAGE = "Bad request on search route";
 	private static final String INTERNAL_EXCEPTION_MESSAGE = "Internal error running query on search route";

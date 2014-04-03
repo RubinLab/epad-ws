@@ -40,7 +40,7 @@ public class Dcm4CheeQueries
 	/**
 	 * Query the DCM4CHEE database and return a list of study descriptions.
 	 * <p>
-	 * The {@link DCM4CHEEStudySearchType} specified the search type, e.g, patientName, patientID.
+	 * The {@link DCM4CHEEStudySearchType} enum specifies the search type, e.g, patientName, patientID.
 	 * 
 	 */
 	public static DCM4CHEEStudyList studySearch(DCM4CHEEStudySearchType searchType, String searchValue)

@@ -143,7 +143,7 @@ public class AIMQueries
 			String personName = value;
 			try {
 				aims = AnnotationGetter.getImageAnnotationsFromServerByPersonNameEqual(eXistServerUrl, aimNamespace,
-						eXistAIMCollection, username, eXistPassword, personName, aimXSDFilePath);
+						eXistAIMCollection, eXistUsername, eXistPassword, personName, aimXSDFilePath);
 
 			} catch (AimException e) {
 				logger.warning("Exception on AnnotationGetter.getImageAnnotationsFromServerByPersonNameEqual " + personName, e);
@@ -166,7 +166,7 @@ public class AIMQueries
 			String seriesUID = value;
 			try {
 				aims = AnnotationGetter.getImageAnnotationsFromServerByImageSeriesInstanceUIDEqual(eXistServerUrl,
-						aimNamespace, eXistAIMCollection, username, eXistPassword, seriesUID, aimXSDFilePath);
+						aimNamespace, eXistAIMCollection, eXistUsername, eXistPassword, seriesUID, aimXSDFilePath);
 			} catch (AimException e) {
 				logger.warning("Exception on AnnotationGetter.getImageAnnotationsFromServerByImageSeriesInstanceUIDEqual "
 						+ seriesUID, e);
@@ -181,7 +181,7 @@ public class AIMQueries
 				// String query = "SELECT FROM " + collection + " WHERE (ImageAnnotation.cagridId like '0')";
 				try {
 					aims = AnnotationGetter.getImageAnnotationsFromServerByUserLoginNameContains(eXistServerUrl, aimNamespace,
-							eXistAIMCollection, username, eXistPassword, username);
+							eXistAIMCollection, eXistUsername, eXistPassword, username);
 					/*
 					 * aims = AnnotationGetter.getImageAnnotationsFromServerWithAimQuery(serverUrl, namespace, username, password,
 					 * query, xsdFilePath);
@@ -195,7 +195,7 @@ public class AIMQueries
 			} else {
 				try {
 					aim = AnnotationGetter.getImageAnnotationFromServerByUniqueIdentifier(eXistServerUrl, aimNamespace,
-							eXistAIMCollection, username, eXistPassword, annotationUID, aimXSDFilePath);
+							eXistAIMCollection, eXistUsername, eXistPassword, annotationUID, aimXSDFilePath);
 				} catch (AimException e) {
 					logger.warning("Exception on AnnotationGetter.getImageAnnotationFromServerByUniqueIdentifier "
 							+ annotationUID, e);
