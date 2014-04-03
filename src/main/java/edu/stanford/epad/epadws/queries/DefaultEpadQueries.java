@@ -72,8 +72,11 @@ public class DefaultEpadQueries implements EpadQueries
 		XNATUserList xnatUsers = XNATQueries.usersForProject(sessionID, projectID);
 
 		for (XNATSubject xnatSubject : xnatSubjectList.ResultSet.Result) {
-			EPADSubject epadSubject = xnatSubject2EPADSubject(sessionID, xnatUsers.getLoginNames(), xnatSubject, searchFilter);
-			epadSubjectList.addEPADSubject(epadSubject);
+			if (!XNATQueries.filterSubject(xnatSubject, searchFilter)) {
+				EPADSubject epadSubject = xnatSubject2EPADSubject(sessionID, xnatUsers.getLoginNames(), xnatSubject,
+						searchFilter);
+				epadSubjectList.addEPADSubject(epadSubject);
+			}
 		}
 		return epadSubjectList;
 	}
@@ -361,11 +364,6 @@ public class DefaultEpadQueries implements EpadQueries
 			EPADSearchFilter searchFilter)
 	{
 		EpadQueries epadQueries = DefaultEpadQueries.getInstance();
-
-		if (searchFilter.hasPatientNameMatch()) {
-			// String subjectName = xnatSubject.src;
-			// TODO
-		}
 
 		String subjectName = xnatSubject.src;
 		String project = xnatSubject.project;
