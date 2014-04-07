@@ -182,10 +182,6 @@ public class AIMQueries
 				try {
 					aims = AnnotationGetter.getImageAnnotationsFromServerByUserLoginNameContains(eXistServerUrl, aimNamespace,
 							eXistAIMCollection, eXistUsername, eXistPassword, username);
-					/*
-					 * aims = AnnotationGetter.getImageAnnotationsFromServerWithAimQuery(serverUrl, namespace, username, password,
-					 * query, xsdFilePath);
-					 */
 				} catch (AimException e) {
 					logger.warning("Exception on AnnotationGetter.getImageAnnotationsFromServerWithAimQuery ", e);
 				}
