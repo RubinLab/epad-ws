@@ -6,6 +6,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -32,9 +33,25 @@ public class Dcm4CheeQueries
 {
 	private static EPADLogger log = EPADLogger.getInstance();
 
-	public static DCM4CHEEStudyList studiesForPatientID(String patientID)
+	public static DCM4CHEEStudyList studiesForPatient(String patientID)
 	{
 		return studySearch(DCM4CHEEStudySearchType.PATIENT_ID, patientID);
+	}
+
+	public static int getNumberOfStudiesForPatient(String patientID)
+	{
+		Dcm4CheeDatabaseOperations dcm4CheeDatabaseOperations = Dcm4CheeDatabase.getInstance()
+				.getDcm4CheeDatabaseOperations();
+
+		return dcm4CheeDatabaseOperations.getNumberOfStudiesForPatient(patientID);
+	}
+
+	public static int getNumberOfStudiesForPatients(Set<String> patientIDs)
+	{
+		Dcm4CheeDatabaseOperations dcm4CheeDatabaseOperations = Dcm4CheeDatabase.getInstance()
+				.getDcm4CheeDatabaseOperations();
+
+		return dcm4CheeDatabaseOperations.getNumberOfStudiesForPatients(patientIDs);
 	}
 
 	/**
@@ -107,31 +124,6 @@ public class Dcm4CheeQueries
 		return dcm4cheeSeries;
 	}
 
-	private static DCM4CHEESeries extractDCM4CHEESeries(Map<String, String> dcm4CheeSeriesData)
-	{
-		String studyUID = getStringValueFromRow(dcm4CheeSeriesData, "study_iuid");
-		String seriesUID = getStringValueFromRow(dcm4CheeSeriesData, "series_iuid");
-		String patientID = getStringValueFromRow(dcm4CheeSeriesData, "pat_id");
-		String patientName = getStringValueFromRow(dcm4CheeSeriesData, "pat_name");
-		String seriesDate = reformatSeriesDate(getStringValueFromRow(dcm4CheeSeriesData, "study_datetime"));
-		String examType = getStringValueFromRow(dcm4CheeSeriesData, "modality");
-		String thumbnailURL = getStringValueFromRow(dcm4CheeSeriesData, "thumbnail_url");
-		String seriesDescription = getStringValueFromRow(dcm4CheeSeriesData, "series_desc");
-		int numberOfSeriesRelatedInstances = Integer.parseInt(getStringValueFromRow(dcm4CheeSeriesData, "num_instances"));
-		int imagesInSeries = getIntegerFromRow(dcm4CheeSeriesData, "num_instances");
-		int seriesStatus = getIntegerFromRow(dcm4CheeSeriesData, "series_status");
-		String bodyPart = getStringValueFromRow(dcm4CheeSeriesData, "body_part");
-		String institution = getStringValueFromRow(dcm4CheeSeriesData, "institution");
-		String stationName = getStringValueFromRow(dcm4CheeSeriesData, "station_name");
-		String department = getStringValueFromRow(dcm4CheeSeriesData, "department");
-		String accessionNumber = getStringValueFromRow(dcm4CheeSeriesData, "accession_no");
-		DCM4CHEESeries dcm4cheeSeries = new DCM4CHEESeries(studyUID, seriesUID, patientID, patientName, seriesDate,
-				examType, thumbnailURL, seriesDescription, numberOfSeriesRelatedInstances, imagesInSeries, seriesStatus,
-				bodyPart, institution, stationName, department, accessionNumber);
-		return dcm4cheeSeries;
-
-	}
-
 	public static DICOMElementList getDICOMElementsFromWADO(String studyUID, String seriesUID, String imageUID)
 	{
 		DICOMElementList dicomElementList = new DICOMElementList();
@@ -179,6 +171,31 @@ public class Dcm4CheeQueries
 			log.warning("IOException retrieving DICOM headers", e);
 		}
 		return dicomElementList;
+	}
+
+	private static DCM4CHEESeries extractDCM4CHEESeries(Map<String, String> dcm4CheeSeriesData)
+	{
+		String studyUID = getStringValueFromRow(dcm4CheeSeriesData, "study_iuid");
+		String seriesUID = getStringValueFromRow(dcm4CheeSeriesData, "series_iuid");
+		String patientID = getStringValueFromRow(dcm4CheeSeriesData, "pat_id");
+		String patientName = getStringValueFromRow(dcm4CheeSeriesData, "pat_name");
+		String seriesDate = reformatSeriesDate(getStringValueFromRow(dcm4CheeSeriesData, "study_datetime"));
+		String examType = getStringValueFromRow(dcm4CheeSeriesData, "modality");
+		String thumbnailURL = getStringValueFromRow(dcm4CheeSeriesData, "thumbnail_url");
+		String seriesDescription = getStringValueFromRow(dcm4CheeSeriesData, "series_desc");
+		int numberOfSeriesRelatedInstances = Integer.parseInt(getStringValueFromRow(dcm4CheeSeriesData, "num_instances"));
+		int imagesInSeries = getIntegerFromRow(dcm4CheeSeriesData, "num_instances");
+		int seriesStatus = getIntegerFromRow(dcm4CheeSeriesData, "series_status");
+		String bodyPart = getStringValueFromRow(dcm4CheeSeriesData, "body_part");
+		String institution = getStringValueFromRow(dcm4CheeSeriesData, "institution");
+		String stationName = getStringValueFromRow(dcm4CheeSeriesData, "station_name");
+		String department = getStringValueFromRow(dcm4CheeSeriesData, "department");
+		String accessionNumber = getStringValueFromRow(dcm4CheeSeriesData, "accession_no");
+		DCM4CHEESeries dcm4cheeSeries = new DCM4CHEESeries(studyUID, seriesUID, patientID, patientName, seriesDate,
+				examType, thumbnailURL, seriesDescription, numberOfSeriesRelatedInstances, imagesInSeries, seriesStatus,
+				bodyPart, institution, stationName, department, accessionNumber);
+		return dcm4cheeSeries;
+
 	}
 
 	// TODO This code is very brittle. Rewrite to make more robust. Also ignores DICOM sequences.

@@ -74,7 +74,7 @@ public class EPADSearchHandler extends AbstractHandler
 					Map<String, String> templateMap = HandlerUtil.getTemplateMap(STUDY_LIST_TEMPLATE, pathInfo);
 					String projectID = HandlerUtil.getTemplateParameter(templateMap, "project");
 					String subjectID = HandlerUtil.getTemplateParameter(templateMap, "subject");
-					EPADStudyList studyList = epadQueries.getAllStudiesForSubject(jsessionID, projectID, subjectID, searchFilter);
+					EPADStudyList studyList = epadQueries.getAllStudiesForPatient(jsessionID, projectID, subjectID, searchFilter);
 					responseStream.append(studyList.toJSON());
 				} else if (HandlerUtil.matchesTemplate(SERIES_LIST_TEMPLATE, pathInfo)) {
 					Map<String, String> templateMap = HandlerUtil.getTemplateMap(SERIES_LIST_TEMPLATE, pathInfo);

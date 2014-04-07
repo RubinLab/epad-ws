@@ -202,9 +202,9 @@ public class DefaultDcm4CheeDatabaseOperations implements Dcm4CheeDatabaseOperat
 	 * @return A list of study IDs
 	 */
 	@Override
-	public List<String> getDicomStudyUIDsForPatient(String patientID)
+	public Set<String> getStudyUIDsForPatient(String patientID)
 	{
-		List<String> retVal = new ArrayList<String>();
+		Set<String> retVal = new HashSet<String>();
 
 		Connection c = null;
 		PreparedStatement ps = null;
@@ -225,6 +225,43 @@ public class DefaultDcm4CheeDatabaseOperations implements Dcm4CheeDatabaseOperat
 			close(c, ps, rs);
 		}
 		return retVal;
+	}
+
+	@Override
+	public int getNumberOfStudiesForPatients(Set<String> patientIDs)
+	{
+		int numberOfStudies = 0;
+		for (String patientID : patientIDs) {
+			numberOfStudies += getNumberOfStudiesForPatient(patientID);
+		}
+		return numberOfStudies;
+	}
+
+	@Override
+	public int getNumberOfStudiesForPatient(String patientID)
+	{
+		Connection c = null;
+		PreparedStatement ps = null;
+		ResultSet rs = null;
+		int count = 0;
+
+		try {
+			c = getConnection();
+			ps = c.prepareStatement(Dcm4CheeDatabaseCommands.SELECT_COUNT_STUDY_FOR_PATIENT);
+			ps.setString(1, patientID);
+
+			rs = ps.executeQuery();
+			if (rs.next())
+				count = rs.getInt(1);
+			else
+				log.warning("Error getting study count from dcm4chee for patient ID " + patientID);
+		} catch (SQLException sqle) {
+			String debugInfo = DatabaseUtils.getDebugData(rs);
+			log.warning("Database operation failed; debugInfo=" + debugInfo, sqle);
+		} finally {
+			close(c, ps, rs);
+		}
+		return count;
 	}
 
 	@Override

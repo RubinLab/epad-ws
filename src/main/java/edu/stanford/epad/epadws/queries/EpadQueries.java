@@ -23,7 +23,7 @@ public interface EpadQueries
 
 	EPADSubjectList getAllSubjectsForProject(String sessionID, String projectID, EPADSearchFilter searchFilter);
 
-	EPADStudyList getAllStudiesForSubject(String sessionID, String projectID, String subjectID,
+	EPADStudyList getAllStudiesForPatient(String sessionID, String projectID, String subjectID,
 			EPADSearchFilter searchFilter);
 
 	EPADSeriesList getAllSeriesForStudy(String sessionID, String projectID, String subjectID, String studyUID,
@@ -32,12 +32,12 @@ public interface EpadQueries
 	EPADImageList getAllImagesForSeries(String sessionID, String projectID, String subjectID, String studyUID,
 			String seriesUID, EPADSearchFilter searchFilter);
 
-	Set<String> getExamTypesForSubject(String sessionID, String projectID, String subjectID, EPADSearchFilter searchFilter);
+	Set<String> getExamTypesForPatient(String sessionID, String projectID, String subjectID, EPADSearchFilter searchFilter);
 
 	Set<String> getExamTypesForStudy(String sessionID, String projectID, String subjectID, String studyUID,
 			EPADSearchFilter searchFilter);
 
-	Set<String> getSeriesUIDsForSubject(String sessionID, String projectID, String subjectID,
+	Set<String> getSeriesUIDsForPatient(String sessionID, String projectID, String subjectID,
 			EPADSearchFilter searchFilter);
 
 	/**

@@ -15,7 +15,8 @@ public interface Dcm4CheeDatabaseCommands
 	public static final String SELECT_SERIES_BY_STATUS = "SELECT st.study_iuid, s.series_iuid, p.pat_id, p.pat_name, st.study_datetime, s.modality, s.series_desc, s.num_instances, s.series_status, s.body_part, s.institution, s.station_name, s.department from pacsdb.series as s, pacsdb.study as st, pacsdb.patient as p where s.series_status=? and s.study_fk=st.pk and st.patient_fk=p.pk";
 	// public static final String SELECT_SERIES_BY_STATUS = "SELECT * from pacsdb.series where series_status=?";
 	public static final String SELECT_SERIES_BY_ID = "SELECT * from pacsdb.series where series_iuid=?";
-	public static final String SELECT_STUDY_FOR_PATIENT = "SELECT * from pacsdb.patient as p, pacsdb.study as st WHERE p.pk=st.patient_fk and patient.pat_id=?";
+	public static final String SELECT_STUDY_FOR_PATIENT = "SELECT * from pacsdb.patient as p, pacsdb.study as st WHERE p.pk=st.patient_fk and p.pat_id=?";
+	public static final String SELECT_COUNT_STUDY_FOR_PATIENT = "SELECT COUNT(*) from pacsdb.patient as p, pacsdb.study as st WHERE p.pk=st.patient_fk and p.pat_id=?";
 	public static final String SELECT_PATIENT_FOR_STUDY = "SELECT * from pacsdb.patient as p, pacsdb.study as st WHERE p.pk=st.patient_fk and st.study_iuid=?";
 	public static final String SELECT_PARENT_STUDY_FOR_SERIES = "SELECT * from pacsdb.study as st, pacsdb.series as s WHERE st.pk=s.study_fk and s.series_iuid=?";
 	public static final String PK_FOR_INSTANCE = "SELECT pk from pacsdb.instance where sop_iuid=?";

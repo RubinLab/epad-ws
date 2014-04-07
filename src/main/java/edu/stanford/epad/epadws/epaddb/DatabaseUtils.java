@@ -89,7 +89,7 @@ public class DatabaseUtils
 			}
 			return sb.toString();
 		} catch (Exception e) {
-			return "No debug data do to: " + e.getMessage();
+			return "No debug data because of exception: " + e.getMessage();
 		}
 	}
 

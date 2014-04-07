@@ -1,6 +1,5 @@
 package edu.stanford.epad.epadws.processing.pipeline.task;
 
-import java.util.List;
 import java.util.Set;
 
 import edu.stanford.epad.common.util.EPADLogger;
@@ -47,7 +46,7 @@ public class PatientDeleteTask implements Runnable
 		// public static XNATSessionResponse deleteXNATSessionID(admin, admin)
 
 		try {
-			List<String> studyUIDs = dcm4CheeDatabaseOperations.getDicomStudyUIDsForPatient(patientID);
+			Set<String> studyUIDs = dcm4CheeDatabaseOperations.getStudyUIDsForPatient(patientID);
 
 			for (String studyID : studyUIDs) {
 				Set<String> seriesUIDs = dcm4CheeDatabaseOperations.findAllSeriesUIDsInStudy(studyID);
