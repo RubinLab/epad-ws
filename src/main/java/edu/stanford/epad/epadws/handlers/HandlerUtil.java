@@ -206,9 +206,8 @@ public class HandlerUtil
 		GetMethod method = new GetMethod(url);
 
 		try {
-			int wadoStatusCode = client.executeMethod(method);
-
-			if (wadoStatusCode == HttpServletResponse.SC_OK) {
+			int statusCode = client.executeMethod(method);
+			if (statusCode == HttpServletResponse.SC_OK) {
 				InputStream is = method.getResponseBodyAsStream();
 				int read = 0;
 				byte[] bytes = new byte[4096];
@@ -216,7 +215,7 @@ public class HandlerUtil
 					outputStream.write(bytes, 0, read);
 				}
 			} else {
-				log.warning("Unexpected response from " + url + ";statusCode=" + wadoStatusCode);
+				log.warning("Unexpected response from " + url + ";statusCode=" + statusCode);
 			}
 		} finally {
 			method.releaseConnection();

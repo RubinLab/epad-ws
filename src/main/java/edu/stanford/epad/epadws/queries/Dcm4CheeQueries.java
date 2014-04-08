@@ -13,6 +13,8 @@ import java.util.concurrent.TimeUnit;
 
 import javax.servlet.http.HttpServletResponse;
 
+import org.apache.commons.io.IOUtils;
+
 import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.epad.common.util.EPADTools;
 import edu.stanford.epad.dtos.DCM4CHEESeries;
@@ -130,7 +132,7 @@ public class Dcm4CheeQueries
 
 		try {
 			File tempDICOMFile = File.createTempFile(imageUID, ".tmp");
-			int wadoStatusCode = EPADTools.downloadDICOMFileFromWADO(tempDICOMFile, studyUID, seriesUID, imageUID);
+			int wadoStatusCode = EPADTools.downloadDICOMFileFromWADO(studyUID, seriesUID, imageUID, tempDICOMFile);
 			if (wadoStatusCode == HttpServletResponse.SC_OK) {
 				File tempTag = File.createTempFile(imageUID, "_tag.tmp");
 				ExecutorService taskExecutor = Executors.newFixedThreadPool(4);
@@ -141,7 +143,8 @@ public class Dcm4CheeQueries
 					BufferedReader tagReader = null;
 					try {
 						String dicomElementString;
-						tagReader = new BufferedReader(new FileReader(tempTag.getAbsolutePath()));
+						FileReader tagFileReader = new FileReader(tempTag.getAbsolutePath());
+						tagReader = new BufferedReader(tagFileReader);
 
 						while ((dicomElementString = tagReader.readLine()) != null) {
 							DICOMElement dicomElement = decodeDICOMElementString(dicomElementString);
@@ -152,13 +155,7 @@ public class Dcm4CheeQueries
 							}
 						}
 					} finally {
-						if (tagReader != null) {
-							try {
-								tagReader.close();
-							} catch (IOException e) {
-								log.warning("Error closing DICOM tag response stream", e);
-							}
-						}
+						IOUtils.closeQuietly(tagReader);
 					}
 				} catch (InterruptedException e) {
 					Thread.currentThread().interrupt();

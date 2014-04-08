@@ -70,6 +70,7 @@ public class AIMQueries
 
 		for (String patientID : patientIDs) {
 			totalAIMAnnotations += getNumberOfAIMAnnotationsForPatient(patientID, username);
+			log.info("nm " + totalAIMAnnotations);
 		}
 
 		return totalAIMAnnotations;
@@ -137,6 +138,8 @@ public class AIMQueries
 		List<ImageAnnotation> retAims = new ArrayList<ImageAnnotation>();
 		List<ImageAnnotation> aims = null;
 		ImageAnnotation aim = null;
+
+		log.info("valueType " + valueType + " value " + value + " username " + username);
 
 		if (valueType.equals("personName")) {
 			String personName = value;
@@ -207,6 +210,7 @@ public class AIMQueries
 		} else if (valueType.equals("key")) {
 			log.info("id1 is key id2 is " + value);
 		}
+		log.info("retAims.size() " + retAims.size());
 		return retAims;
 	}
 

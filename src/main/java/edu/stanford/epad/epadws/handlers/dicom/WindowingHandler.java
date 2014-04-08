@@ -99,7 +99,7 @@ public class WindowingHandler extends AbstractHandler
 		try {
 			File tempDicom = File.createTempFile(imageIdKey, ".tmp");
 
-			EPADTools.downloadDICOMFileFromWADO(tempDicom, studyIdKey, seriesIdKey, imageIdKey);
+			EPADTools.downloadDICOMFileFromWADO(studyIdKey, seriesIdKey, imageIdKey, tempDicom);
 
 			SourceImage srcDicomImage = new SourceImage(tempDicom.getAbsolutePath());
 			double windowWidth = 0.0;
