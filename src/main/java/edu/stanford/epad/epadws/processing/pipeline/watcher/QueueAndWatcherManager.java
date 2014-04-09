@@ -30,6 +30,7 @@ import edu.stanford.epad.epadws.processing.pipeline.task.PngGeneratorTask;
 public class QueueAndWatcherManager
 {
 	private static final EPADLogger log = EPADLogger.getInstance();
+
 	private static final BlockingQueue<DicomSeriesProcessingDescription> dicomSeriesWatcherQueue = new ArrayBlockingQueue<DicomSeriesProcessingDescription>(
 			2000);
 	private static final BlockingQueue<DicomSeriesProcessingDescription> xnatSeriesWatcherQueue = new ArrayBlockingQueue<DicomSeriesProcessingDescription>(
@@ -143,10 +144,11 @@ public class QueueAndWatcherManager
 		File inFile = new File(inputFilePath);
 		File outFile = new File(outputFilePath);
 
+		log.info("DICOM segmentation object found at " + inputFilePath);
+
 		DicomSegmentationObjectPNGMaskGeneratorTask dsoTask = new DicomSegmentationObjectPNGMaskGeneratorTask(inFile,
 				outFile);
 		pngGeneratorTaskQueue.offer(dsoTask);
-		log.info("Segmentation object found at " + inputFilePath);
 	}
 
 	private void createPNGFileForDICOMImage(String outputPNGFilePath, File inputDICOMFile)

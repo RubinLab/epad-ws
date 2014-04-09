@@ -43,6 +43,7 @@ import edu.stanford.epad.common.util.XmlNamespaceTranslator;
 import edu.stanford.epad.epadws.aim.AIMUtil;
 import edu.stanford.epad.epadws.handlers.HandlerUtil;
 import edu.stanford.epad.epadws.queries.AIMQueries;
+import edu.stanford.epad.epadws.queries.AIMSearchType;
 import edu.stanford.epad.epadws.xnat.XNATSessionOperations;
 import edu.stanford.hakan.aim3api.base.AimException;
 import edu.stanford.hakan.aim3api.base.ImageAnnotation;
@@ -58,8 +59,19 @@ public class AimResourceHandler extends AbstractHandler
 	private static final String INTERNAL_EXCEPTION_MESSAGE = "Internal error in AIM handler";
 	private static final String INVALID_METHOD_MESSAGE = "Only POST and GET methods valid for the AIM route";
 	private static final String FILE_UPLOAD_ERROR_MESSAGE = "AIM file upload failures; see response for details";
-	private static final String MISSING_QUERY_MESSAGE = "No series or study query in AIM request";
+	private static final String MISSING_QUERY_MESSAGE = "No query in AIM request";
+	private static final String BAD_QUERY_MESSAGE = "Bad query in AIM request; should have search type and user";
 	private static final String INVALID_SESSION_TOKEN_MESSAGE = "Session token is invalid for AIM request";
+
+	private AIMSearchType getAIMSearchType(HttpServletRequest httpRequest)
+	{
+		for (AIMSearchType aimSearchType : AIMSearchType.values()) {
+			if (httpRequest.getParameter(aimSearchType.name()) != null)
+				return aimSearchType;
+		}
+		log.warning("No valid AIM search type parameter found");
+		return null;
+	}
 
 	/**
 	 * To test the post try:
@@ -89,11 +101,17 @@ public class AimResourceHandler extends AbstractHandler
 					queryString = URLDecoder.decode(queryString, "UTF-8");
 					log.info("AimResourceHandler received query: " + queryString);
 					if (queryString != null) { // TODO httpRequest.getParameter with "patientID", "user"
-						queryAIMImageAnnotations(responseStream, queryString);
-						statusCode = HttpServletResponse.SC_OK;
-					} else {
+						AIMSearchType aimSearchType = getAIMSearchType(httpRequest);
+						String searchValue = aimSearchType != null ? httpRequest.getParameter(aimSearchType.name()) : null;
+						String user = httpRequest.getParameter("user");
+
+						if (aimSearchType != null & searchValue != null && user != null) {
+							queryAIMImageAnnotations(responseStream, aimSearchType, searchValue, user);
+							statusCode = HttpServletResponse.SC_OK;
+						} else
+							statusCode = HandlerUtil.warningResponse(HttpServletResponse.SC_BAD_REQUEST, BAD_QUERY_MESSAGE, log);
+					} else
 						statusCode = HandlerUtil.warningResponse(HttpServletResponse.SC_BAD_REQUEST, MISSING_QUERY_MESSAGE, log);
-					}
 				} else if ("POST".equalsIgnoreCase(method)) {
 					String annotationsUploadDirPath = EPADResources.getEPADWebServerAnnotationsUploadDir();
 					log.info("Uploading annotations to directory " + annotationsUploadDirPath);
@@ -123,23 +141,10 @@ public class AimResourceHandler extends AbstractHandler
 		httpResponse.setStatus(statusCode);
 	}
 
-	private void queryAIMImageAnnotations(PrintWriter responseStream, String queryString)
-			throws ParserConfigurationException, AimException
+	private void queryAIMImageAnnotations(PrintWriter responseStream, AIMSearchType aimSearchType, String searchValue,
+			String user) throws ParserConfigurationException, AimException
 	{
-		// TODO Replace this mess with getParameter calls on request.
-		queryString = queryString.trim();
-		String[] queryStrings = queryString.split("&");
-		String valueType = null;
-		String value = null;
-		String user = null;
-		if (queryStrings.length == 2) {
-			String[] patientIDString = queryStrings[0].split("=");
-			String[] userString = queryStrings[1].split("=");
-			valueType = patientIDString[0];
-			value = patientIDString[1];
-			user = userString[1];
-		}
-		List<ImageAnnotation> aims = AIMQueries.getAIMImageAnnotations(valueType, value, user);
+		List<ImageAnnotation> aims = AIMQueries.getAIMImageAnnotations(aimSearchType, searchValue, user);
 		log.info("AimResourceHandler, number of AIM files found: " + aims.size());
 
 		DocumentBuilderFactory dbfac = DocumentBuilderFactory.newInstance();

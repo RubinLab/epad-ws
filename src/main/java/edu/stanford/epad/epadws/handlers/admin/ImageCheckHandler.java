@@ -57,7 +57,9 @@ public class ImageCheckHandler extends AbstractHandler
 				String method = httpRequest.getMethod();
 				if ("GET".equalsIgnoreCase(method)) {
 					try {
-						verifyImageGeneration(responseStream);
+						String fixValue = httpRequest.getParameter("fix");
+						boolean fix = fixValue != null && fixValue.equalsIgnoreCase("true");
+						verifyImageGeneration(responseStream, fix);
 						statusCode = HttpServletResponse.SC_OK;
 					} catch (IOException e) {
 						statusCode = HandlerUtil.internalErrorResponse(INTERNAL_IO_ERROR_MESSAGE, e, responseStream, log);
@@ -77,7 +79,7 @@ public class ImageCheckHandler extends AbstractHandler
 		httpResponse.setStatus(statusCode);
 	}
 
-	private void verifyImageGeneration(PrintWriter responseStream) throws SQLException, IOException
+	private void verifyImageGeneration(PrintWriter responseStream, boolean fix) throws SQLException, IOException
 	{
 		EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
 		Dcm4CheeDatabaseOperations dcm4CheeDatabaseOperations = Dcm4CheeDatabase.getInstance()
@@ -128,11 +130,14 @@ public class ImageCheckHandler extends AbstractHandler
 		if (numberOfMissingPNGFiles != 0)
 			responseStream.write("Number of missing PNG files = " + numberOfMissingPNGFiles + "\n");
 
-		if (allUnprocessedDICOMImageFileDescriptions.size() != 0) {
-			responseStream.write("Adding " + allUnprocessedDICOMImageFileDescriptions.size()
-					+ " unprocessed images to PNG pipeline...");
-			responseStream.flush();
-			queueAndWatcherManager.addToPNGGeneratorTaskPipeline(allUnprocessedDICOMImageFileDescriptions);
+		if (fix) {
+			if (allUnprocessedDICOMImageFileDescriptions.size() != 0) {
+				responseStream.write("Adding " + allUnprocessedDICOMImageFileDescriptions.size()
+						+ " unprocessed images to PNG pipeline...");
+				responseStream.flush();
+				queueAndWatcherManager.addToPNGGeneratorTaskPipeline(allUnprocessedDICOMImageFileDescriptions);
+				responseStream.write("All unprocessed files added");
+			}
 		}
 	}
 }

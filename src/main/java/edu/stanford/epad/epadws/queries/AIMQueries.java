@@ -24,22 +24,22 @@ public class AIMQueries
 
 	public static List<ImageAnnotation> getAIMAnnotationsForPerson(String personName, String username)
 	{
-		return getAIMImageAnnotations("personName", personName, username);
+		return getAIMImageAnnotations(AIMSearchType.PERSON_NAME, personName, username);
 	}
 
-	public static List<ImageAnnotation> getAIMAnnotationsForPatientId(String patientId, String username)
+	public static List<ImageAnnotation> getAIMAnnotationsForPatient(String patientId, String username)
 	{
-		return getAIMImageAnnotations("patientID", patientId, username);
+		return getAIMImageAnnotations(AIMSearchType.PATIENT_ID, patientId, username);
 	}
 
 	public static List<ImageAnnotation> getAIMAnnotationsForSeriesUID(String seriesUID, String username)
 	{
-		return getAIMImageAnnotations("seriesUID", seriesUID, username);
+		return getAIMImageAnnotations(AIMSearchType.SERIES_UID, seriesUID, username);
 	}
 
 	public static List<ImageAnnotation> getAIMAnnotationsForAnnotationUID(String annotationUID, String username)
 	{
-		return getAIMImageAnnotations("annotationUID", annotationUID, username);
+		return getAIMImageAnnotations(AIMSearchType.ANNOTATION_UID, annotationUID, username);
 	}
 
 	public static int getNumberOfAIMAnnotationsForPatient(Set<String> usernames, String patientID)
@@ -70,7 +70,6 @@ public class AIMQueries
 
 		for (String patientID : patientIDs) {
 			totalAIMAnnotations += getNumberOfAIMAnnotationsForPatient(patientID, username);
-			log.info("nm " + totalAIMAnnotations);
 		}
 
 		return totalAIMAnnotations;
@@ -78,43 +77,38 @@ public class AIMQueries
 
 	public static int getNumberOfAIMAnnotationsForPerson(String personName, String username)
 	{
-		return getNumberOfAIMAnnotations("personName", personName, username);
+		return getNumberOfAIMAnnotations(AIMSearchType.PERSON_NAME, personName, username);
 	}
 
 	public static int getNumberOfAIMAnnotationsForPatient(String patientId, String username)
 	{
-		return getNumberOfAIMAnnotations("patientID", patientId, username);
+		return getNumberOfAIMAnnotations(AIMSearchType.PATIENT_ID, patientId, username);
 	}
 
 	public static int getNumberOfAIMAnnotationsForSeriesUID(String seriesUID, String username)
 	{
-		return getNumberOfAIMAnnotations("seriesUID", seriesUID, username);
+		return getNumberOfAIMAnnotations(AIMSearchType.SERIES_UID, seriesUID, username);
 	}
 
 	public static int getNumberOfAIMAnnotationsForSeriesUID(String seriesUID, Set<String> usernames)
 	{
-		return getNumberOfAIMAnnotations("seriesUID", seriesUID, usernames);
+		return getNumberOfAIMAnnotations(AIMSearchType.SERIES_UID, seriesUID, usernames);
 	}
 
 	public static int getNumberOfAIMAnnotationsForSeriesUIDs(Set<String> seriesUIDs, Set<String> usernames)
 	{
 		int numberOfAIMAnnotations = 0;
 		for (String seriesUID : seriesUIDs)
-			numberOfAIMAnnotations += getNumberOfAIMAnnotations("seriesUID", seriesUID, usernames);
+			numberOfAIMAnnotations += getNumberOfAIMAnnotations(AIMSearchType.SERIES_UID, seriesUID, usernames);
 		return numberOfAIMAnnotations;
 	}
 
 	public static int getNumberOfAIMAnnotationsForAnnotationUID(String annotationUID, String username)
 	{
-		return getNumberOfAIMAnnotations("annotationUID", annotationUID, username);
+		return getNumberOfAIMAnnotations(AIMSearchType.ANNOTATION_UID, annotationUID, username);
 	}
 
-	public static int getNumberOfAIMAnnotations(String valueType, String value, String username)
-	{ // TODO In AIM 4 API there is AnnotationGetter.getCountImageAnnotationCollectionByUserNameEqual method.
-		return getAIMImageAnnotations(valueType, value, username).size();
-	}
-
-	public static int getNumberOfAIMAnnotations(String valueType, String value, Set<String> usernames)
+	public static int getNumberOfAIMAnnotations(AIMSearchType valueType, String value, Set<String> usernames)
 	{
 		int numberOfAIMAnnotations = 0;
 
@@ -128,20 +122,18 @@ public class AIMQueries
 	 * Read the annotations from the AIM database by patient name, patient id, series id, annotation id, or just get all
 	 * of them on a GET. Can also delete by annotation id.
 	 * 
-	 * @param valueType One of personName, patientId, seriesUID, annotationUID, deleteUID
+	 * @param aimSearchType One of personName, patientId, seriesUID, annotationUID, deleteUID
 	 * @param value
 	 * @param user
 	 * @return List<ImageAnnotation>
 	 */
-	public static List<ImageAnnotation> getAIMImageAnnotations(String valueType, String value, String username)
+	public static List<ImageAnnotation> getAIMImageAnnotations(AIMSearchType aimSearchType, String value, String username)
 	{
 		List<ImageAnnotation> retAims = new ArrayList<ImageAnnotation>();
 		List<ImageAnnotation> aims = null;
 		ImageAnnotation aim = null;
 
-		log.info("valueType " + valueType + " value " + value + " username " + username);
-
-		if (valueType.equals("personName")) {
+		if (aimSearchType == AIMSearchType.PERSON_NAME) {
 			String personName = value;
 			try {
 				aims = AnnotationGetter.getImageAnnotationsFromServerByPersonNameEqual(eXistServerUrl, aimNamespace,
@@ -153,7 +145,7 @@ public class AIMQueries
 			if (aims != null) {
 				retAims.addAll(aims);
 			}
-		} else if (valueType.equals("patientId")) {
+		} else if (aimSearchType == AIMSearchType.PATIENT_ID) {
 			String patientId = value;
 			try {
 				aims = AnnotationGetter.getImageAnnotationsFromServerByPersonIDAndUserNameEqual(eXistServerUrl, aimNamespace,
@@ -164,7 +156,7 @@ public class AIMQueries
 			if (aims != null) {
 				retAims.addAll(aims);
 			}
-		} else if (valueType.equals("seriesUID")) {
+		} else if (aimSearchType == AIMSearchType.SERIES_UID) {
 			String seriesUID = value;
 			try {
 				aims = AnnotationGetter.getImageAnnotationsFromServerByImageSeriesInstanceUIDEqual(eXistServerUrl,
@@ -176,7 +168,7 @@ public class AIMQueries
 			if (aims != null) {
 				retAims.addAll(aims);
 			}
-		} else if (valueType.equals("annotationUID")) {
+		} else if (aimSearchType == AIMSearchType.ANNOTATION_UID) {
 			String annotationUID = value;
 			if (value.equals("all")) {
 
@@ -202,16 +194,78 @@ public class AIMQueries
 					retAims.add(aim);
 				}
 			}
-		} else if (valueType.equals("deleteUID")) {
+		} else if (aimSearchType == AIMSearchType.DELETE_UID) { // TODO Fix this route
 			String annotationUID = value;
-			log.info("calling performDelete with deleteUID on GET ");
+			log.info("Calling performDelete with deleteUID on GET ");
 			performDelete(annotationUID, eXistAIMCollection, eXistServerUrl);
 			retAims = null;
-		} else if (valueType.equals("key")) {
-			log.info("id1 is key id2 is " + value);
+		} else if (aimSearchType == AIMSearchType.KEY) {
+			log.warning("id1 is key id2 is " + value);
+		} else {
+			log.warning("Unknown AIM search type " + aimSearchType.getName());
 		}
-		log.info("retAims.size() " + retAims.size());
 		return retAims;
+	}
+
+	private static int getNumberOfAIMAnnotations(AIMSearchType valueType, String value, String username)
+	{
+		return getAIMImageAnnotations(valueType, value, username).size();
+		// TODO Use the following when Hakan fixes bug in new counting methods
+		// return getCountAIMImageAnnotations(valueType, value, username);
+	}
+
+	@SuppressWarnings("unused")
+	private static int getCountAIMImageAnnotations(AIMSearchType aimSearchType, String value, String username)
+	{
+		int count = 0;
+
+		if (aimSearchType == AIMSearchType.PERSON_NAME) {
+			String personName = value;
+			try {
+				count = AnnotationGetter.getCountImageAnnotationByPersonNameEqual(eXistServerUrl, aimNamespace,
+						eXistAIMCollection, eXistUsername, eXistPassword, personName);
+			} catch (AimException e) {
+				log.warning("Exception on AnnotationGetter.getCountImageAnnotationByPersonNameEqual " + personName, e);
+			}
+		} else if (aimSearchType == AIMSearchType.PATIENT_ID) {
+			String patientId = value;
+			try {
+				count = AnnotationGetter.getCountImageAnnotationByPersonIdAndUserNameEqual(eXistServerUrl, aimNamespace,
+						eXistAIMCollection, eXistUsername, eXistPassword, patientId, username);
+			} catch (AimException e) {
+				log.warning("Exception on AnnotationGetter.getCountImageAnnotationByPersonIdEqual " + patientId, e);
+			}
+		} else if (aimSearchType == AIMSearchType.SERIES_UID) {
+			String seriesUID = value;
+			try {
+				count = AnnotationGetter.getCountImageAnnotationByImageSeriesInstanceUidEqual(eXistServerUrl, aimNamespace,
+						eXistAIMCollection, eXistUsername, eXistPassword, seriesUID);
+			} catch (AimException e) {
+				log.warning("Exception on AnnotationGetter.getCountImageAnnotationByImageSeriesInstanceUIDEqual " + seriesUID,
+						e);
+			}
+		} else if (aimSearchType == AIMSearchType.ANNOTATION_UID) {
+			String annotationUID = value;
+			if (value.equals("all")) {
+				try {
+					count = AnnotationGetter.getCountImageAnnotationByUserLoginNameContains(eXistServerUrl, aimNamespace,
+							eXistAIMCollection, eXistUsername, eXistPassword, username);
+				} catch (AimException e) {
+					log.warning("Exception on AnnotationGetter.getImageAnnotationsFromServerWithAimQuery ", e);
+				}
+			} else {
+				try {
+					count = AnnotationGetter.getCountImageAnnotationByUniqueIdentifierEqual(eXistServerUrl, aimNamespace,
+							eXistAIMCollection, eXistUsername, eXistPassword, annotationUID);
+				} catch (AimException e) {
+					log.warning("Exception on AnnotationGetter.getCountImageAnnotationByUniqueIdentifier " + annotationUID, e);
+				}
+			}
+		} else {
+			log.warning("Unknown AIM search type " + aimSearchType.getName());
+			count = 0;
+		}
+		return count;
 	}
 
 	private static String performDelete(String uid, String collection, String serverURL)
