@@ -1,5 +1,7 @@
 package edu.stanford.epad.epadws.dcm4chee;
 
+import edu.stanford.epad.dtos.DCM4CHEEStudySearchType;
+
 /**
  * 
  * @author amsnyder
@@ -10,9 +12,9 @@ public class Dcm4CheeStudyQueryBuilder
 	private final boolean useLike;
 	private final String typeValue;
 
-	public Dcm4CheeStudyQueryBuilder(String type, String typeValue)
+	public Dcm4CheeStudyQueryBuilder(DCM4CHEEStudySearchType searchType, String typeValue)
 	{
-		this.type = type;
+		this.type = searchType.getName();
 		this.typeValue = typeValue;
 		useLike = checkForWildCard(typeValue);
 	}
@@ -63,6 +65,9 @@ public class Dcm4CheeStudyQueryBuilder
 		} else if ("examType".equals(type)) {
 			sb.append("s.modality ");
 			sb.append(upperCaseEqualOrLikeClause(typeValue));
+		} else if ("studyUID".equals(type)) {
+			sb.append("st.study_iuid ");
+			sb.append(equalClause(typeValue));
 		}
 		sb.append(" and s.study_fk=st.pk");
 		sb.append(" and st.patient_fk=p.pk");
@@ -82,6 +87,11 @@ public class Dcm4CheeStudyQueryBuilder
 		StringBuilder sb = new StringBuilder();
 		sb.append(" order by s.created_time ");
 		return sb.toString();
+	}
+
+	private String equalClause(String typeValue)
+	{
+		return "= '" + typeValue + "'";
 	}
 
 	private String equalOrLikeClause(String typeValue)

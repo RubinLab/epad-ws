@@ -29,14 +29,16 @@ public interface Dcm4CheeDatabaseOperations
 	 * perf_phys_p_name, pps_start, series_custom1, series_custom2, series_custom3, num_instances, src_aet, ext_retr_aet,
 	 * retrieve_aets, fileset_iuid, fileset_id, availability, series_status, created_time, updated_time, series_attrs
 	 */
-	Map<String, String> getDcm4CheeSeriesDataWithUID(String seriesUID);
+	Map<String, String> getSeriesData(String seriesUID);
 
 	/**
 	 * typeValue one of: patientName, patientId, studyDate, accessionNum, examType
 	 * 
 	 * @see DCM4CHEEStudySearchType
 	 */
-	List<Map<String, String>> dicomStudySearch(String searchType, String typeValue);
+	List<Map<String, String>> studySearch(DCM4CHEEStudySearchType searchType, String typeValue);
+
+	Map<String, String> studySearch(String studyUID);
 
 	List<Map<String, String>> findAllDicomSeriesInStudy(String studyUID);
 

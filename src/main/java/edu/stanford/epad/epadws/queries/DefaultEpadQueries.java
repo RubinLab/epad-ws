@@ -81,14 +81,23 @@ public class DefaultEpadQueries implements EpadQueries
 	}
 
 	@Override
+	public EPADStudy getStudy(String jsessionID, String studyUID, EPADSearchFilter searchFilter)
+	{
+		// Dcm4CheeDatabaseOperations dcm4CheeDatabaseOperations = Dcm4CheeDatabase.getInstance()
+		// .getDcm4CheeDatabaseOperations();
+
+		// DCM4CHEEStudy dcm4CheeStudy = dcm4CheeDatabaseOperations.getStudy(studyUID);
+		return null;
+	}
+
+	@Override
 	public EPADStudyList getAllStudiesForPatient(String sessionID, String projectID, String patientID,
 			EPADSearchFilter searchFilter)
 	{
 		EPADStudyList epadStudyList = new EPADStudyList();
 		XNATUserList xnatUsers = XNATQueries.usersForProject(sessionID, projectID);
-		// TODO Need to restrict to only studies that are in XNAT - not just return all dcm4chee studies for this patient.
-		// Set<String> studyUIDsInXNAT = XNATQueries.studyUIDsForSubject(sessionID, projectID, patientID);
-		DCM4CHEEStudyList dcm4CheeStudyList = Dcm4CheeQueries.studiesForPatient(patientID);
+		Set<String> studyUIDsInXNAT = XNATQueries.studyUIDsForSubject(sessionID, projectID, patientID);
+		DCM4CHEEStudyList dcm4CheeStudyList = Dcm4CheeQueries.getStudies(studyUIDsInXNAT);
 		Dcm4CheeDatabaseOperations dcm4CheeDatabaseOperations = Dcm4CheeDatabase.getInstance()
 				.getDcm4CheeDatabaseOperations();
 
@@ -172,6 +181,19 @@ public class DefaultEpadQueries implements EpadQueries
 	}
 
 	@Override
+	public EPADSeriesList getAllSeriesForStudy(String jsessionID, String studyUID, EPADSearchFilter searchFilter)
+	{
+		return null;
+	}
+
+	@Override
+	public EPADImageList getAllImagesForSeries(String jsessionID, String studyUID, String seriesUID,
+			EPADSearchFilter searchFilter)
+	{
+		return null;
+	}
+
+	@Override
 	public Set<String> getExamTypesForPatient(String sessionID, String projectID, String patientID,
 			EPADSearchFilter searchFilter)
 	{
@@ -240,7 +262,7 @@ public class DefaultEpadQueries implements EpadQueries
 		List<String> seriesUIDList = new ArrayList<String>(dcm4CheeSeriesUIDs);
 
 		for (String seriesUID : seriesUIDList) {
-			DCM4CHEESeries dcm4CheeSeries = Dcm4CheeQueries.getSeriesWithUID(seriesUID);
+			DCM4CHEESeries dcm4CheeSeries = Dcm4CheeQueries.getSeries(seriesUID);
 			if (dcm4CheeSeries != null) {
 				dcm4CheeSeriesList.add(dcm4CheeSeries);
 			}
@@ -365,18 +387,18 @@ public class DefaultEpadQueries implements EpadQueries
 	{
 		EpadQueries epadQueries = DefaultEpadQueries.getInstance();
 
+		String patientID = xnatSubject.label;
 		String patientName = xnatSubject.src;
 		String project = xnatSubject.project;
 		String xnatID = xnatSubject.ID;
 		String uri = xnatSubject.URI;
 		String insertUser = xnatSubject.insert_user;
 		String insertDate = xnatSubject.insert_date;
-		String patientID = xnatSubject.label;
 		int numberOfStudies = Dcm4CheeQueries.getNumberOfStudiesForPatient(patientID);
 		int numberOfAnnotations = AIMQueries.getNumberOfAIMAnnotationsForPatient(usernames, patientID);
 		Set<String> examTypes = epadQueries.getExamTypesForPatient(sessionID, xnatSubject.project, xnatSubject.ID,
 				searchFilter);
-		EPADSubject epadSubject = new EPADSubject(project, patientName, insertUser, xnatID, insertDate, patientID, uri,
+		EPADSubject epadSubject = new EPADSubject(project, patientID, patientName, insertUser, xnatID, insertDate, uri,
 				numberOfStudies, numberOfAnnotations, examTypes);
 
 		return epadSubject;

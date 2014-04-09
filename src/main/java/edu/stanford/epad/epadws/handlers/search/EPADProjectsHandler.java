@@ -23,7 +23,7 @@ import edu.stanford.epad.epadws.xnat.XNATSessionOperations;
 /**
  * @author martin
  */
-public class EPADSearchHandler extends AbstractHandler
+public class EPADProjectsHandler extends AbstractHandler
 {
 	private static final EPADLogger log = EPADLogger.getInstance();
 
@@ -38,9 +38,9 @@ public class EPADSearchHandler extends AbstractHandler
 	private static final String IMAGE_LIST_TEMPLATE = SERIES_TEMPLATE + "/images/";
 	// private static final String IMAGE_TEMPLATE = SERIES_TEMPLATE + "/images/{image}";
 
-	private static final String BAD_REQUEST_MESSAGE = "Bad request on search route";
-	private static final String INTERNAL_EXCEPTION_MESSAGE = "Internal error running query on search route";
-	private static final String INVALID_SESSION_TOKEN_MESSAGE = "Session token is invalid on search route";
+	private static final String BAD_REQUEST_MESSAGE = "Bad request on projects route";
+	private static final String INTERNAL_EXCEPTION_MESSAGE = "Internal error running query on projects route";
+	private static final String INVALID_SESSION_TOKEN_MESSAGE = "Session token is invalid on projects route";
 
 	@Override
 	public void handle(String s, Request request, HttpServletRequest httpRequest, HttpServletResponse httpResponse)
@@ -50,7 +50,7 @@ public class EPADSearchHandler extends AbstractHandler
 		httpResponse.setContentType("application/json");
 		request.setHandled(true);
 
-		log.info("ePADSearch path=" + httpRequest.getPathInfo() + ", query=" + httpRequest.getQueryString());
+		log.info("Project path=" + httpRequest.getPathInfo() + ", query=" + httpRequest.getQueryString());
 
 		try {
 			PrintWriter responseStream = httpResponse.getWriter();

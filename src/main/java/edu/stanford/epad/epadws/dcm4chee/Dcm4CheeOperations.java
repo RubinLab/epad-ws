@@ -73,7 +73,7 @@ public class Dcm4CheeOperations
 				log.info("./dcmsend output: " + line);
 			}
 
-			try { // Wait to get exit value
+			try {
 				int exitValue = process.waitFor();
 				log.info("DICOM send exit value is: " + exitValue);
 			} catch (InterruptedException e) {

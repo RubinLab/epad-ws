@@ -29,7 +29,7 @@ import edu.stanford.epad.epadws.processing.pipeline.task.PngGeneratorTask;
 
 public class QueueAndWatcherManager
 {
-	private static final EPADLogger logger = EPADLogger.getInstance();
+	private static final EPADLogger log = EPADLogger.getInstance();
 	private static final BlockingQueue<DicomSeriesProcessingDescription> dicomSeriesWatcherQueue = new ArrayBlockingQueue<DicomSeriesProcessingDescription>(
 			2000);
 	private static final BlockingQueue<DicomSeriesProcessingDescription> xnatSeriesWatcherQueue = new ArrayBlockingQueue<DicomSeriesProcessingDescription>(
@@ -61,19 +61,19 @@ public class QueueAndWatcherManager
 
 	private QueueAndWatcherManager()
 	{
-		logger.info("Starting QueueAndWatcherManager...");
+		log.info("Starting QueueAndWatcherManager...");
 		dcm4CheeDatabaseWatcher = new Dcm4CheeDatabaseWatcher(dicomSeriesWatcherQueue, xnatSeriesWatcherQueue);
 		dicomSeriesWatcher = new DICOMSeriesWatcher(dicomSeriesWatcherQueue, pngGeneratorTaskQueue);
 		xnatSeriesWatcher = new XNATSeriesWatcher(xnatSeriesWatcherQueue);
 		pngGeneratorProcess = new PngGeneratorProcess(pngGeneratorTaskQueue);
 		epadUploadDirWatcher = new EPADUploadDirWatcher();
 		dcm4cheeRootDir = EPADConfig.getInstance().getStringPropertyValue("dcm4cheeDirRoot");
-		logger.info("Started QueueAndWatcherManager...");
+		log.info("Started QueueAndWatcherManager...");
 	}
 
 	public void buildAndStart()
 	{
-		logger.info("Starting pipelines...");
+		log.info("Starting pipelines...");
 		dcm4CheeDatabaseWatcherExec.execute(dcm4CheeDatabaseWatcher);
 		dicomSeriesWatcherExec.execute(dicomSeriesWatcher);
 		xnatSeriesWatcherExec.execute(xnatSeriesWatcher);
@@ -83,7 +83,7 @@ public class QueueAndWatcherManager
 
 	public void shutdown()
 	{
-		logger.info("Stopping pipelines...");
+		log.info("Stopping pipelines...");
 		dcm4CheeDatabaseWatcherExec.shutdown();
 		dicomSeriesWatcherExec.shutdown();
 		xnatSeriesWatcherExec.shutdown();
@@ -91,51 +91,38 @@ public class QueueAndWatcherManager
 		epadUploadDirWatcherExec.shutdown();
 	}
 
-	// Each entry in list is map with keys: sop_iuid, inst_no, series_iuid, filepath, file_size.
+	// Each entry in list is map with keys sop_iuid, inst_no, series_iuid, filepath, and file_size.
 	public void addToPNGGeneratorTaskPipeline(List<Map<String, String>> dicomImageFileDescriptions)
 	{
-		EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
-
 		for (Map<String, String> dicomImageDescription : dicomImageFileDescriptions) {
 			String inputDICOMFilePath = getInputFilePath(dicomImageDescription); // Get the input file path.
 			File inputDICOMFile = new File(inputDICOMFilePath);
-			if (!inputDICOMFile.exists()) { // If the file does not exist (stored on another file system)
-				try { // We create a temporary file
-					logger.info("Creating temporary image ");
-					File temp = File.createTempFile(dicomImageDescription.get("sop_iuid"), ".tmp");
-					EPADTools.feedFileWithDICOMFromWADO(temp, dicomImageDescription);
-					inputDICOMFile = temp;
+
+			// If the file does not exist locally (because it is stored on another file system), download it.
+			if (!inputDICOMFile.exists()) {
+				try {
+					String imageUID = dicomImageDescription.get("sop_iuid");
+					log.info("Downloading remote DICOM file for image " + imageUID);
+					File downloadedDICOMFile = File.createTempFile(imageUID, ".tmp");
+					EPADTools.feedFileWithDICOMFromWADO(downloadedDICOMFile, dicomImageDescription);
+					inputDICOMFile = downloadedDICOMFile;
 				} catch (IOException e) {
-					logger.warning("Exception when creating temporary image : " + dicomImageDescription.get("sop_iuid"), e);
+					log.warning("Exception when downloading DICOM file with image ID " + dicomImageDescription.get("sop_iuid"), e);
 				}
 			}
+
 			String outputPNGFilePath = createOutputPNGFilePathForDicomImage(dicomImageDescription);
-			if (!epadDatabaseOperations.hasEpadFileRecord(outputPNGFilePath)) {
-				if (PixelMedUtils.isDicomSegmentationObject(inputDICOMFilePath)) { // Generate slices of PNG mask
-					processDicomSegmentationObject(outputPNGFilePath, inputDICOMFilePath);
-				} else { // Generate PNG file.
-					createPNGFileForDICOMImage(outputPNGFilePath, inputDICOMFile);
-				}
+			if (PixelMedUtils.isDicomSegmentationObject(inputDICOMFilePath)) { // Generate slices of PNG mask
+				processDicomSegmentationObject(outputPNGFilePath, inputDICOMFilePath);
+			} else { // Generate PNG file.
+				createPNGFileForDICOMImage(outputPNGFilePath, inputDICOMFile);
 			}
 		}
 	}
 
-	String getInputFilePath(Map<String, String> currImage)
+	private String getInputFilePath(Map<String, String> dicomImageFileDescription)
 	{
-		// NOTE: Maybe we want to get this from the 'files' directory.
-
-		// StringBuilder sb = new StringBuilder();
-		// sb.append("[TEMP] PNG Creation. ");
-		// sb.append("file_size=").append(currImage.get("file_size"));
-		// sb.append(", inst_no=").append(currImage.get("inst_no"));
-		// sb.append(", sop_iuid=").append(currImage.get("sop_iuid"));
-		// sb.append(", series_iuid=").append(currImage.get("series_iuid"));
-		// sb.append(", filepath=").append(currImage.get("filepath"));
-		// logger.info(sb.toString());
-
-		String retVal = getDcm4cheeRootDir() + currImage.get("filepath");
-
-		return retVal;
+		return getDcm4cheeRootDir() + dicomImageFileDescription.get("filepath");
 	}
 
 	/**
@@ -159,7 +146,7 @@ public class QueueAndWatcherManager
 		DicomSegmentationObjectPNGMaskGeneratorTask dsoTask = new DicomSegmentationObjectPNGMaskGeneratorTask(inFile,
 				outFile);
 		pngGeneratorTaskQueue.offer(dsoTask);
-		logger.info("Segmentation object found at " + inputFilePath);
+		log.info("Segmentation object found at " + inputFilePath);
 	}
 
 	private void createPNGFileForDICOMImage(String outputPNGFilePath, File inputDICOMFile)
@@ -167,8 +154,8 @@ public class QueueAndWatcherManager
 		File outputPNGFile = new File(outputPNGFilePath);
 		EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
 		insertEpadFile(epadDatabaseOperations, outputPNGFile);
-		PngGeneratorTask pngTask = new PngGeneratorTask(inputDICOMFile, outputPNGFile);
-		pngGeneratorTaskQueue.offer(pngTask);
+		PngGeneratorTask pngGeneratorTask = new PngGeneratorTask(inputDICOMFile, outputPNGFile);
+		pngGeneratorTaskQueue.offer(pngGeneratorTask);
 	}
 
 	private void insertEpadFile(EpadDatabaseOperations epadDatabaseOperations, File outputPNGFile)

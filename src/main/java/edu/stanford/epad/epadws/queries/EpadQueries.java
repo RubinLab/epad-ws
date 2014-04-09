@@ -9,6 +9,7 @@ import edu.stanford.epad.dtos.EPADDatabaseSeries;
 import edu.stanford.epad.dtos.EPADImageList;
 import edu.stanford.epad.dtos.EPADProjectList;
 import edu.stanford.epad.dtos.EPADSeriesList;
+import edu.stanford.epad.dtos.EPADStudy;
 import edu.stanford.epad.dtos.EPADStudyList;
 import edu.stanford.epad.dtos.EPADSubjectList;
 import edu.stanford.epad.epadws.handlers.search.EPADSearchFilter;
@@ -31,6 +32,13 @@ public interface EpadQueries
 
 	EPADImageList getAllImagesForSeries(String sessionID, String projectID, String subjectID, String studyUID,
 			String seriesUID, EPADSearchFilter searchFilter);
+
+	EPADStudy getStudy(String jsessionID, String studyUID, EPADSearchFilter searchFilter);
+
+	EPADSeriesList getAllSeriesForStudy(String jsessionID, String studyUID, EPADSearchFilter searchFilter);
+
+	EPADImageList getAllImagesForSeries(String jsessionID, String studyUID, String seriesUID,
+			EPADSearchFilter searchFilter);
 
 	Set<String> getExamTypesForPatient(String sessionID, String projectID, String subjectID, EPADSearchFilter searchFilter);
 

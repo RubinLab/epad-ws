@@ -16,6 +16,7 @@ import java.util.Set;
 import edu.stanford.epad.common.dicom.DicomParentCache;
 import edu.stanford.epad.common.dicom.DicomParentType;
 import edu.stanford.epad.common.util.EPADLogger;
+import edu.stanford.epad.dtos.DCM4CHEEStudySearchType;
 import edu.stanford.epad.epadws.epaddb.ConnectionPool;
 import edu.stanford.epad.epadws.epaddb.DatabaseUtils;
 
@@ -31,7 +32,7 @@ public class DefaultDcm4CheeDatabaseOperations implements Dcm4CheeDatabaseOperat
 	}
 
 	@Override
-	public Map<String, String> getDcm4CheeSeriesDataWithUID(String seriesUID)
+	public Map<String, String> getSeriesData(String seriesUID)
 	{
 		Map<String, String> retVal = new HashMap<String, String>();
 
@@ -57,7 +58,47 @@ public class DefaultDcm4CheeDatabaseOperations implements Dcm4CheeDatabaseOperat
 	}
 
 	@Override
-	public List<Map<String, String>> dicomStudySearch(String type, String typeValue)
+	public Map<String, String> studySearch(String studyUID)
+	{
+		Map<String, String> retVal = new HashMap<String, String>();
+		Dcm4CheeStudyQueryBuilder queryBuilder = new Dcm4CheeStudyQueryBuilder(DCM4CHEEStudySearchType.STUDY_UID, studyUID);
+		String searchSql = queryBuilder.createStudySearchQuery();
+
+		Connection c = null;
+		Statement s = null;
+		ResultSet rs = null;
+		try {
+			c = getConnection();
+			s = c.createStatement();
+			rs = s.executeQuery(searchSql);
+
+			ResultSetMetaData metaData = rs.getMetaData();
+			int colCount = metaData.getColumnCount();
+			List<String> colNameKeys = new ArrayList<String>();
+			for (int i = 1; i < colCount + 1; i++) {
+				colNameKeys.add(metaData.getColumnName(i));
+			}
+
+			if (rs.next()) {
+				for (String currKey : colNameKeys) {
+					String value = rs.getString(currKey);
+					if (isStudyDateColumn(currKey)) {
+						value = DatabaseUtils.formatMySqlStudyDateToYYYYMMDDFormat(value);
+					}
+					retVal.put(currKey, value);
+				}
+			}
+		} catch (SQLException sqle) {
+			String debugInfo = DatabaseUtils.getDebugData(rs);
+			log.warning("Database operation failed for: SQL = " + searchSql + "; debugInfo=" + debugInfo, sqle);
+		} finally {
+			close(c, s, rs);
+		}
+		return retVal;
+	}
+
+	@Override
+	public List<Map<String, String>> studySearch(DCM4CHEEStudySearchType type, String typeValue)
 	{
 		List<Map<String, String>> retVal = new ArrayList<Map<String, String>>();
 		Dcm4CheeStudyQueryBuilder queryBuilder = new Dcm4CheeStudyQueryBuilder(type, typeValue);

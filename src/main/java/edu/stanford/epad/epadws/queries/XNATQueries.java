@@ -13,6 +13,7 @@ import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.io.IOUtils;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonSyntaxException;
 
 import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.epad.dtos.XNATExperiment;
@@ -46,7 +47,6 @@ public class XNATQueries
 		String allUsersForProjectQueryURL = XNATQueryUtil.buildAllUsersForProjectQueryURL(projectID);
 
 		return invokeXNATUsersQuery(sessionID, allUsersForProjectQueryURL);
-
 	}
 
 	public static Set<String> patientNamesForProject(String sessionID, String projectID)
@@ -106,11 +106,11 @@ public class XNATQueries
 	public static Set<String> studyUIDsForSubject(String sessionID, String projectID, String subjectID)
 	{
 		Set<String> studyIDs = new HashSet<String>();
-		XNATExperimentList xnatExperiments = XNATQueries.getDICOMExperimentsForProjectAndStudyUID(sessionID, projectID,
+		XNATExperimentList xnatExperiments = XNATQueries.getDICOMExperimentsForProjectAndSubject(sessionID, projectID,
 				subjectID);
 
 		for (XNATExperiment xnatExperiment : xnatExperiments.ResultSet.Result) {
-			String studyID = xnatExperiment.ID;
+			String studyID = xnatExperiment.label.replace("_", ".");
 			studyIDs.add(studyID);
 		}
 
@@ -167,7 +167,16 @@ public class XNATQueries
 		return invokeXNATDICOMExperimentsQuery(sessionID, xnatExperimentsQueryURL).ResultSet.totalRecords;
 	}
 
-	public static XNATExperimentList getDICOMExperimentsForProjectAndStudyUID(String sessionID, String projectID,
+	public static XNATExperimentList getDICOMExperimentsForProjectAndSubject(String sessionID, String projectID,
+			String subjectID)
+	{
+		String xnatExperimentsQueryURL = XNATQueryUtil.buildDICOMExperimentsForProjectAndSubjectQueryURL(projectID,
+				subjectID);
+
+		return invokeXNATDICOMExperimentsQuery(sessionID, xnatExperimentsQueryURL);
+	}
+
+	public static XNATExperimentList getDICOMExperimentsForProjectAndStudy(String sessionID, String projectID,
 			String studyUID)
 	{
 		String xnatExperimentsQueryURL = XNATQueryUtil.buildDICOMExperimentsForProjectAndStudyUIDQueryURL(projectID,
@@ -180,7 +189,7 @@ public class XNATQueries
 	public static XNATExperiment getDICOMExperimentForProjectAndSubjectAndStudy(String sessionID, String projectID,
 			String subjectID, String studyUID)
 	{
-		XNATExperimentList xnatExperimentList = getDICOMExperimentsForProjectAndStudyUID(sessionID, projectID, subjectID);
+		XNATExperimentList xnatExperimentList = getDICOMExperimentsForProjectAndSubject(sessionID, projectID, subjectID);
 
 		for (XNATExperiment xnatExperiment : xnatExperimentList.ResultSet.Result)
 			if (xnatExperiment.label.equals(studyUID))
@@ -189,10 +198,9 @@ public class XNATQueries
 		return null;
 	}
 
-	public static int numberOfDICOMExperimentsForProjectIDAndSubjectID(String sessionID, String projectID,
-			String subjectID)
+	public static int numberOfDICOMExperimentsForProjectAndSubject(String sessionID, String projectID, String subjectID)
 	{ // TODO Need a count without getting all records.
-		return getDICOMExperimentsForProjectAndStudyUID(sessionID, projectID, subjectID).ResultSet.totalRecords;
+		return getDICOMExperimentsForProjectAndStudy(sessionID, projectID, subjectID).ResultSet.totalRecords;
 	}
 
 	public static int numberOfStudiesForProject(String sessionID, String projectID)
@@ -202,7 +210,7 @@ public class XNATQueries
 
 	public static int numberOfStudiesForSubject(String sessionID, String projectID, String subjectID)
 	{
-		return XNATQueries.numberOfDICOMExperimentsForProjectIDAndSubjectID(sessionID, projectID, subjectID);
+		return XNATQueries.numberOfDICOMExperimentsForProjectAndSubject(sessionID, projectID, subjectID);
 	}
 
 	private static XNATProjectList invokeXNATProjectsQuery(String sessionID, String xnatProjectsQueryURL)
@@ -288,6 +296,9 @@ public class XNATQueries
 		} catch (IOException e) {
 			log.warning("Error processing XNAT users query result", e);
 			return XNATUserList.emptyUsers();
+		} catch (JsonSyntaxException e) {
+			log.warning("Error processing XNAT users query result", e);
+			return XNATUserList.emptyUsers();
 		} finally {
 			IOUtils.closeQuietly(isr);
 			IOUtils.closeQuietly(br);
@@ -306,6 +317,9 @@ public class XNATQueries
 			br = new BufferedReader(isr);
 			return gson.fromJson(br, XNATProjectList.class);
 		} catch (IOException e) {
+			log.warning("Error processing XNAT projects query result", e);
+			return XNATProjectList.emptyProjects();
+		} catch (JsonSyntaxException e) {
 			log.warning("Error processing XNAT projects query result", e);
 			return XNATProjectList.emptyProjects();
 		} finally {
@@ -362,6 +376,9 @@ public class XNATQueries
 		} catch (IOException e) {
 			log.warning("Error processing XNAT subjects query result", e);
 			return XNATSubjectList.emptySubjects();
+		} catch (JsonSyntaxException e) {
+			log.warning("Error processing XNAT subjects query result", e);
+			return XNATSubjectList.emptySubjects();
 		} finally {
 			IOUtils.closeQuietly(br);
 			IOUtils.closeQuietly(isr);
@@ -381,7 +398,7 @@ public class XNATQueries
 			log.info("Invoking XNAT query at " + xnatDICOMExperimentsQueryURL);
 			xnatStatusCode = client.executeMethod(method);
 		} catch (IOException e) {
-			log.warning("Warning: error performing XNAT query", e);
+			log.warning("Error performing XNAT experiment query", e);
 			xnatStatusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 		}
 		return processXNATExperimentsQueryResponse(method, xnatStatusCode); // Will release connection
@@ -415,6 +432,9 @@ public class XNATQueries
 			br = new BufferedReader(isr);
 			return gson.fromJson(br, XNATExperimentList.class);
 		} catch (IOException e) {
+			log.warning("Error processing XNAT experiments query result", e);
+			return XNATExperimentList.emptyExperiments();
+		} catch (JsonSyntaxException e) {
 			log.warning("Error processing XNAT experiments query result", e);
 			return XNATExperimentList.emptyExperiments();
 		} finally {

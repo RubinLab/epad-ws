@@ -97,6 +97,12 @@ public class XNATQueryUtil
 		return buildExperimentsBaseURL() + "?project=" + projectID + "&xsiType=xnat:otherDicomSessionData&format=json";
 	}
 
+	public static String buildDICOMExperimentsForProjectAndSubjectQueryURL(String projectID, String subjectID)
+	{
+		return buildProjectBaseURL() + projectID + "/subjects/" + subjectID
+				+ "/experiments/?xsiType=xnat:otherDicomSessionData&format=json";
+	}
+
 	public static String buildDICOMExperimentsForProjectAndStudyUIDQueryURL(String projectID, String studyUID)
 	{
 		return buildExperimentsBaseURL() + "?project=" + projectID + "&label=" + studyUID
