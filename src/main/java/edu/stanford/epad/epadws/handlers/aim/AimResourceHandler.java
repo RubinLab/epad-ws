@@ -63,16 +63,6 @@ public class AimResourceHandler extends AbstractHandler
 	private static final String BAD_QUERY_MESSAGE = "Bad query in AIM request; should have search type and user";
 	private static final String INVALID_SESSION_TOKEN_MESSAGE = "Session token is invalid for AIM request";
 
-	private AIMSearchType getAIMSearchType(HttpServletRequest httpRequest)
-	{
-		for (AIMSearchType aimSearchType : AIMSearchType.values()) {
-			if (httpRequest.getParameter(aimSearchType.name()) != null)
-				return aimSearchType;
-		}
-		log.warning("No valid AIM search type parameter found");
-		return null;
-	}
-
 	/**
 	 * To test the post try:
 	 * 
@@ -102,10 +92,10 @@ public class AimResourceHandler extends AbstractHandler
 					log.info("AimResourceHandler received query: " + queryString);
 					if (queryString != null) { // TODO httpRequest.getParameter with "patientID", "user"
 						AIMSearchType aimSearchType = getAIMSearchType(httpRequest);
-						String searchValue = aimSearchType != null ? httpRequest.getParameter(aimSearchType.name()) : null;
+						String searchValue = aimSearchType != null ? httpRequest.getParameter(aimSearchType.getName()) : null;
 						String user = httpRequest.getParameter("user");
 
-						if (aimSearchType != null & searchValue != null && user != null) {
+						if (aimSearchType != null && searchValue != null && user != null) {
 							queryAIMImageAnnotations(responseStream, aimSearchType, searchValue, user);
 							statusCode = HttpServletResponse.SC_OK;
 						} else
@@ -139,6 +129,16 @@ public class AimResourceHandler extends AbstractHandler
 					responseStream, log);
 		}
 		httpResponse.setStatus(statusCode);
+	}
+
+	private AIMSearchType getAIMSearchType(HttpServletRequest httpRequest)
+	{
+		for (AIMSearchType aimSearchType : AIMSearchType.values()) {
+			if (httpRequest.getParameter(aimSearchType.getName()) != null)
+				return aimSearchType;
+		}
+		log.warning("No valid AIM search type parameter found");
+		return null;
 	}
 
 	private void queryAIMImageAnnotations(PrintWriter responseStream, AIMSearchType aimSearchType, String searchValue,

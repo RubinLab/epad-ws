@@ -65,11 +65,11 @@ public class XNATQueries
 		if (searchFilter.hasPatientNameMatch()) {
 			String subjectName = xnatSubject.src;
 			String patientNameMatch = searchFilter.getPatientNameMatch();
-			String patientNameRegex = "\\.\\*" + patientNameMatch + "\\.\\*";
-			if (subjectName.matches(patientNameRegex))
-				return false;
-			else
+			String patientNameRegex = ".*" + patientNameMatch + ".*";
+			if (!subjectName.matches(patientNameRegex))
 				return true;
+			else
+				return false;
 		} else
 			return false;
 	}
