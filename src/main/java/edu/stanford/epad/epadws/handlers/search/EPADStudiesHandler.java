@@ -53,26 +53,28 @@ public class EPADStudiesHandler extends AbstractHandler
 				EpadQueries epadQueries = DefaultEpadQueries.getInstance();
 				String jsessionID = XNATSessionOperations.getJSessionIDFromRequest(httpRequest);
 				EPADSearchFilter searchFilter = EPADSearchFilterBuilder.build(httpRequest);
-				String username = httpRequest.getParameter("username");
+				// String username = httpRequest.getParameter("username");
 				String pathInfo = httpRequest.getPathInfo();
 
 				if (HandlerUtil.matchesTemplate(STUDY_TEMPLATE, pathInfo)) {
 					Map<String, String> templateMap = HandlerUtil.getTemplateMap(STUDY_LIST_TEMPLATE, pathInfo);
 					String studyUID = HandlerUtil.getTemplateParameter(templateMap, "study");
 					EPADStudy study = epadQueries.getStudy(jsessionID, studyUID, searchFilter);
+
 					responseStream.append(study.toJSON());
 				} else if (HandlerUtil.matchesTemplate(SERIES_LIST_TEMPLATE, pathInfo)) {
 					Map<String, String> templateMap = HandlerUtil.getTemplateMap(SERIES_LIST_TEMPLATE, pathInfo);
 					String studyUID = HandlerUtil.getTemplateParameter(templateMap, "study");
 					EPADSeriesList seriesList = epadQueries.getAllSeriesForStudy(jsessionID, studyUID, searchFilter);
+
 					responseStream.append(seriesList.toJSON());
 				} else if (HandlerUtil.matchesTemplate(IMAGE_LIST_TEMPLATE, pathInfo)) {
 					Map<String, String> templateMap = HandlerUtil.getTemplateMap(IMAGE_LIST_TEMPLATE, pathInfo);
 					String studyUID = HandlerUtil.getTemplateParameter(templateMap, "study");
 					String seriesUID = HandlerUtil.getTemplateParameter(templateMap, "series");
 					EPADImageList imageList = epadQueries.getAllImagesForSeries(jsessionID, studyUID, seriesUID, searchFilter);
-					responseStream.append(imageList.toJSON());
 
+					responseStream.append(imageList.toJSON());
 				} else {
 					statusCode = HandlerUtil.warningJSONResponse(HttpServletResponse.SC_BAD_REQUEST, BAD_REQUEST_MESSAGE, log);
 				}

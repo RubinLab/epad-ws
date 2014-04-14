@@ -15,9 +15,6 @@ import javax.servlet.http.HttpServletResponse;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 
-import com.pixelmed.dicom.DicomException;
-import com.pixelmed.display.SourceImage;
-
 import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.epad.common.util.EPADTools;
@@ -59,12 +56,12 @@ public class WindowingHandler extends AbstractHandler
 				if ("GET".equalsIgnoreCase(method)) {
 					if (queryString != null) {
 						queryString = queryString.trim();
-						String studyIdKey = httpRequest.getParameter("studyuid");
-						String seriesIdKey = httpRequest.getParameter("seriesuid");
-						String imageIdKey = httpRequest.getParameter("instanceuid");
+						String studyUID = httpRequest.getParameter("studyuid");
+						String seriesUID = httpRequest.getParameter("seriesuid");
+						String imageUID = httpRequest.getParameter("instanceuid");
 
-						if (studyIdKey != null && seriesIdKey != null && imageIdKey != null) {
-							if (handleDICOMWindowing(responseStream, studyIdKey, seriesIdKey, imageIdKey))
+						if (studyUID != null && seriesUID != null && imageUID != null) {
+							if (handleDICOMWindowing(responseStream, studyUID, seriesUID, imageUID))
 								statusCode = HttpServletResponse.SC_OK;
 							else {
 								statusCode = HandlerUtil.warningResponse(HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
@@ -86,48 +83,66 @@ public class WindowingHandler extends AbstractHandler
 				statusCode = HandlerUtil.invalidTokenResponse(INVALID_SESSION_TOKEN_MESSAGE, log);
 			}
 		} catch (Throwable t) {
-			statusCode = HandlerUtil.internalErrorResponse(INTERNAL_ERROR_MESSAGE, responseStream, log);
+			statusCode = HandlerUtil.internalErrorResponse(INTERNAL_ERROR_MESSAGE, t, responseStream, log);
 		}
 		httpResponse.setStatus(statusCode);
 	}
 
-	private boolean handleDICOMWindowing(PrintWriter responseStream, String studyIdKey, String seriesIdKey,
-			String imageIdKey)
+	private boolean handleDICOMWindowing(PrintWriter responseStream, String studyUID, String seriesUID, String imageUID)
 	{
-		boolean success;
+		boolean dicomFileDownloaded = false;
+		boolean success = false;
+		File tempDicomFile = null;
 
 		try {
-			File tempDicom = File.createTempFile(imageIdKey, ".tmp");
+			tempDicomFile = File.createTempFile(imageUID, ".tmp");
 
-			EPADTools.downloadDICOMFileFromWADO(studyIdKey, seriesIdKey, imageIdKey, tempDicom);
-
-			SourceImage srcDicomImage = new SourceImage(tempDicom.getAbsolutePath());
-			double windowWidth = 0.0;
-			double windowCenter = 0.0;
-
-			if (srcDicomImage != null) {
-				Opener opener = new Opener();
-				String imageFilePath = tempDicom.getAbsolutePath();
-				ImagePlus imp = opener.openImage(imageFilePath);// ImageProcessor ip = imp.getProcessor();
-				double min = imp.getDisplayRangeMin();
-				double max = imp.getDisplayRangeMax();
-				Calibration cal = imp.getCalibration();
-				// int digits = (ip instanceof FloatProcessor) || cal.calibrated() ? 2 : 0;
-				double minValue = cal.getCValue(min);
-				double maxValue = cal.getCValue(max);
-				windowWidth = (maxValue - minValue);
-				windowCenter = (minValue + windowWidth / 2.0);
-			}
-			String separator = config.getStringPropertyValue("fieldSeparator");
-			responseStream.println("windowWidth" + separator + "windowCenter");
-			responseStream.println(windowWidth + separator + windowCenter);
-			success = true;
-		} catch (DicomException e) {
-			log.warning("DICOM windowing handler: error reading DICOM image ", e);
-			success = false;
+			EPADTools.downloadDICOMFileFromWADO(studyUID, seriesUID, imageUID, tempDicomFile);
+			dicomFileDownloaded = true;
 		} catch (IOException e) {
-			log.warning("DICOM windowing handler: error getting DICOM image from WADO", e);
-			success = false;
+			log.warning("Error getting DICOM file from WADO for image " + imageUID + " in series " + seriesUID, e);
+		}
+
+		if (dicomFileDownloaded) {
+			try {
+				double windowWidth = 1.0;
+				double windowCenter = 0.0;
+
+				Opener opener = new Opener();
+				String imageFilePath = tempDicomFile.getAbsolutePath();
+				ImagePlus imp = opener.openImage(imageFilePath);// ImageProcessor ip = imp.getProcessor();
+
+				if (imp != null) { // ImageJ failed to open DICOM file
+					double min = imp.getDisplayRangeMin();
+					double max = imp.getDisplayRangeMax();
+					Calibration cal = imp.getCalibration();
+					// int digits = (ip instanceof FloatProcessor) || cal.calibrated() ? 2 : 0;
+
+					double minValue = cal.getCValue(min);
+					double maxValue = cal.getCValue(max);
+					windowWidth = (maxValue - minValue);
+					windowCenter = (minValue + windowWidth / 2.0);
+
+					log.info("Image " + imageUID + " in series " + seriesUID + " has a calculated window width of " + windowWidth
+							+ " and window center of " + windowCenter);
+				} else {
+					log.warning("ImageJ failed to load DICOM file for image " + imageUID + " in series " + seriesUID
+							+ " to calculate windowing");
+				}
+				// This is Pixelmed variant (though does not seem to be correct).
+				// SourceImage srcDicomImage = new SourceImage(tempDicomFile.getAbsolutePath());
+				// ImageEnhancer imageEnhancer = new ImageEnhancer(srcDicomImage);
+				// imageEnhancer.findVisuParametersImage();
+				// windowWidth = imageEnhancer.getWindowWidth();
+				// windowCenter = imageEnhancer.getWindowCenter();
+
+				String separator = config.getStringPropertyValue("fieldSeparator");
+				responseStream.println("windowWidth" + separator + "windowCenter");
+				responseStream.println(windowWidth + separator + windowCenter);
+				success = true;
+			} catch (Exception e) {
+				log.warning("Exception calculating windowing for image " + imageUID + " in series " + seriesUID, e);
+			}
 		}
 		return success;
 	}

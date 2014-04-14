@@ -96,7 +96,8 @@ public class QueueAndWatcherManager
 	public void addToPNGGeneratorTaskPipeline(List<Map<String, String>> dicomImageFileDescriptions)
 	{
 		for (Map<String, String> dicomImageDescription : dicomImageFileDescriptions) {
-			String inputDICOMFilePath = getInputFilePath(dicomImageDescription); // Get the input file path.
+			String seriesUID = dicomImageDescription.get("series_iuid");
+			String inputDICOMFilePath = getInputFilePath(dicomImageDescription); // Get the input file path
 			File inputDICOMFile = new File(inputDICOMFilePath);
 
 			// If the file does not exist locally (because it is stored on another file system), download it.
@@ -108,15 +109,16 @@ public class QueueAndWatcherManager
 					EPADTools.feedFileWithDICOMFromWADO(downloadedDICOMFile, dicomImageDescription);
 					inputDICOMFile = downloadedDICOMFile;
 				} catch (IOException e) {
-					log.warning("Exception when downloading DICOM file with image ID " + dicomImageDescription.get("sop_iuid"), e);
+					log.warning("Exception when downloading DICOM file with series ID " + seriesUID + " and image ID "
+							+ dicomImageDescription.get("sop_iuid"), e);
 				}
 			}
 
 			String outputPNGFilePath = createOutputPNGFilePathForDicomImage(dicomImageDescription);
 			if (PixelMedUtils.isDicomSegmentationObject(inputDICOMFilePath)) { // Generate slices of PNG mask
-				processDicomSegmentationObject(outputPNGFilePath, inputDICOMFilePath);
+				processDicomSegmentationObject(seriesUID, outputPNGFilePath, inputDICOMFilePath);
 			} else { // Generate PNG file.
-				createPNGFileForDICOMImage(outputPNGFilePath, inputDICOMFile);
+				createPNGFileForDICOMImage(seriesUID, outputPNGFilePath, inputDICOMFile);
 			}
 		}
 	}
@@ -139,24 +141,24 @@ public class QueueAndWatcherManager
 			return dcm4cheeRootDir + "/";
 	}
 
-	private void processDicomSegmentationObject(String outputFilePath, String inputFilePath)
+	private void processDicomSegmentationObject(String seriesUID, String outputFilePath, String inputFilePath)
 	{
 		File inFile = new File(inputFilePath);
 		File outFile = new File(outputFilePath);
 
-		log.info("DICOM segmentation object found at " + inputFilePath);
+		log.info("DICOM segmentation object found for series " + seriesUID);
 
-		DicomSegmentationObjectPNGMaskGeneratorTask dsoTask = new DicomSegmentationObjectPNGMaskGeneratorTask(inFile,
-				outFile);
+		DicomSegmentationObjectPNGMaskGeneratorTask dsoTask = new DicomSegmentationObjectPNGMaskGeneratorTask(seriesUID,
+				inFile, outFile);
 		pngGeneratorTaskQueue.offer(dsoTask);
 	}
 
-	private void createPNGFileForDICOMImage(String outputPNGFilePath, File inputDICOMFile)
+	private void createPNGFileForDICOMImage(String seriesUID, String outputPNGFilePath, File inputDICOMFile)
 	{
 		File outputPNGFile = new File(outputPNGFilePath);
 		EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
 		insertEpadFile(epadDatabaseOperations, outputPNGFile);
-		PngGeneratorTask pngGeneratorTask = new PngGeneratorTask(inputDICOMFile, outputPNGFile);
+		PngGeneratorTask pngGeneratorTask = new PngGeneratorTask(seriesUID, inputDICOMFile, outputPNGFile);
 		pngGeneratorTaskQueue.offer(pngGeneratorTask);
 	}
 

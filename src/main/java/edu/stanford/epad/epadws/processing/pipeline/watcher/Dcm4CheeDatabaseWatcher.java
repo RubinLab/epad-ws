@@ -60,8 +60,8 @@ public class Dcm4CheeDatabaseWatcher implements Runnable
 					submitSeriesForPngGeneration(dicomSeriesDescription); // Submit this series to generate all the PNG files.
 					submitSeriesForXNATGeneration(dicomSeriesDescription); // Submit this series to generate XNAT information.
 
-					logger.info("New DICOM series (" + patientName + ", " + seriesDesc + ") found in DCM4CHEE with "
-							+ numInstances + " image(s) and series ID " + seriesUID);
+					logger.info("New DICOM series " + seriesUID + " (" + patientName + ", " + seriesDesc
+							+ ") found in DCM4CHEE with " + numInstances + " image(s)");
 				}
 				Thread.sleep(500);
 			} catch (Exception e) {

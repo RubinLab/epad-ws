@@ -13,12 +13,14 @@ import edu.stanford.epad.epadws.epaddb.FileOperations;
  */
 public class PNGGridGeneratorTask implements GeneratorTask
 {
+	private final String seriesUID;
 	private final File pngInputFile;
 	private final List<File> inputPNGGridFiles;
 	private final File outputPNGFile;
 
-	public PNGGridGeneratorTask(File pngInputFile, List<File> inputPNGGridFiles, File outputPNGFile)
+	public PNGGridGeneratorTask(String seriesUID, File pngInputFile, List<File> inputPNGGridFiles, File outputPNGFile)
 	{
+		this.seriesUID = seriesUID;
 		this.pngInputFile = pngInputFile;
 		this.inputPNGGridFiles = new ArrayList<File>(inputPNGGridFiles);
 		this.outputPNGFile = outputPNGFile;
@@ -27,7 +29,7 @@ public class PNGGridGeneratorTask implements GeneratorTask
 	@Override
 	public void run()
 	{
-		FileOperations.writePNGGridFile(pngInputFile, inputPNGGridFiles, outputPNGFile);
+		FileOperations.writePNGGridFile(seriesUID, pngInputFile, inputPNGGridFiles, outputPNGFile);
 	}
 
 	@Override
@@ -40,6 +42,12 @@ public class PNGGridGeneratorTask implements GeneratorTask
 		sb.append(" out=").append(outputPNGFile).append("]");
 
 		return sb.toString();
+	}
+
+	@Override
+	public String getSeriesUID()
+	{
+		return this.seriesUID;
 	}
 
 	@Override

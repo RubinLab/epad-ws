@@ -16,12 +16,12 @@ public class DicomSeriesProcessingDescription
 
 	private final int numberOfInstances;
 	private final ArrayList<DicomImageDescription> instances;
-	private final String studyIUID;
+	private final String studyUID;
 	private final String seriesUID;
 	private final String patientName;
 	private final String patientID;
 
-	public DicomSeriesProcessingDescription(int numberOfInstances, String seriesUID, String studyIUID, String patientName,
+	public DicomSeriesProcessingDescription(int numberOfInstances, String seriesUID, String studyUID, String patientName,
 			String patientID)
 	{
 		if (numberOfInstances < 1)
@@ -37,7 +37,7 @@ public class DicomSeriesProcessingDescription
 			instances.add(null); // Indicates that it is not processed yet
 
 		this.seriesUID = seriesUID;
-		this.studyIUID = studyIUID;
+		this.studyUID = studyUID;
 		this.patientName = patientName;
 		this.patientID = patientID;
 	}
@@ -49,7 +49,7 @@ public class DicomSeriesProcessingDescription
 
 	public String getStudyIUID()
 	{
-		return studyIUID;
+		return studyUID;
 	}
 
 	public String getPatientName()

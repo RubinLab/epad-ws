@@ -59,7 +59,8 @@ public class PngGeneratorProcess implements Runnable
 		try {
 			taskType = task.getTaskType();
 			String tagPath = task.getTagFilePath();
-			DicomHeadersTask dicomHeadersTask = new DicomHeadersTask(task.getInputFile(), new File(tagPath));
+			String seriesUID = task.getSeriesUID();
+			DicomHeadersTask dicomHeadersTask = new DicomHeadersTask(seriesUID, task.getInputFile(), new File(tagPath));
 			tagExec.execute(dicomHeadersTask);
 		} catch (Exception e) {
 			logger.warning("Dicom tags file not created. taskType=" + taskType, e);

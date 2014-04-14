@@ -168,7 +168,7 @@ public class Dcm4CheeQueries
 			if (wadoStatusCode == HttpServletResponse.SC_OK) {
 				File tempTag = File.createTempFile(imageUID, "_tag.tmp");
 				ExecutorService taskExecutor = Executors.newFixedThreadPool(4);
-				taskExecutor.execute(new DicomHeadersTask(tempDICOMFile, tempTag));
+				taskExecutor.execute(new DicomHeadersTask(seriesUID, tempDICOMFile, tempTag));
 				taskExecutor.shutdown();
 				try {
 					taskExecutor.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
@@ -191,13 +191,14 @@ public class Dcm4CheeQueries
 					}
 				} catch (InterruptedException e) {
 					Thread.currentThread().interrupt();
-					log.warning("DICOM headers task interrupted!");
+					log.warning("DICOM headers task for series " + seriesUID + " interrupted!");
 				}
 			} else {
-				log.warning("Error invoking WADO to get DICOM headers; status code=" + wadoStatusCode);
+				log.warning("Error invoking WADO to get DICOM headers for series " + seriesUID + "; status code="
+						+ wadoStatusCode);
 			}
 		} catch (IOException e) {
-			log.warning("IOException retrieving DICOM headers", e);
+			log.warning("IOException retrieving DICOM headers for series " + seriesUID, e);
 		}
 		return dicomElementList;
 	}

@@ -52,13 +52,13 @@ public class DCM4CHEESearchHandler extends AbstractHandler
 
 				if (queryString != null) {
 					queryString = URLDecoder.decode(queryString, "UTF-8").trim();
-					log.info("DCM4CHEESearchHandler: query " + queryString);
 					String searchType = httpRequest.getParameter("searchtype");
 					if (searchType != null && searchType.equals("series")) {
 						String studyUID = httpRequest.getParameter("studyUID");
 						if (studyUID != null) {
+							log.info("Searching for series in study " + studyUID);
 							DCM4CHEESeriesList dcm4CheeSeriesList = Dcm4CheeQueries.getSeriesInStudy(studyUID);
-							log.info("DCM4CHEESearchHandler: " + dcm4CheeSeriesList.getNumberOfSeries() + " series result(s)");
+							log.info("Found " + dcm4CheeSeriesList.getNumberOfSeries() + " series in study " + studyUID);
 							responseStream.append(dcm4CheeSeriesList.toJSON());
 						} else {
 							statusCode = HandlerUtil.infoJSONResponse(HttpServletResponse.SC_BAD_REQUEST, MISSING_STUDY_UID_MESSAGE,

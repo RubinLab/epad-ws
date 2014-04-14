@@ -16,28 +16,28 @@ public class DicomSeriesProcessingStatus
 
 	private long lastActivityTimeStamp;
 
-	private final DicomSeriesProcessingDescription dicomSeriesDescription;
+	private final DicomSeriesProcessingDescription dicomSeriesProcessingDescription;
 
 	private DicomImageProcessingState dicomImageProcessingState;
 
-	public DicomSeriesProcessingStatus(DicomSeriesProcessingDescription dicomSeriesDescription)
+	public DicomSeriesProcessingStatus(DicomSeriesProcessingDescription dicomSeriesProcessingDescription)
 	{
-		if (dicomSeriesDescription == null)
-			throw new IllegalArgumentException("DICOM series description cannot be null");
+		if (dicomSeriesProcessingDescription == null)
+			throw new IllegalArgumentException("DICOM series processing description cannot be null");
 
-		this.dicomSeriesDescription = dicomSeriesDescription;
+		this.dicomSeriesProcessingDescription = dicomSeriesProcessingDescription;
 		lastActivityTimeStamp = System.currentTimeMillis();
 		dicomImageProcessingState = DicomImageProcessingState.NEW;
 	}
 
 	public float percentComplete()
 	{
-		return dicomSeriesDescription.percentComplete();
+		return dicomSeriesProcessingDescription.percentComplete();
 	}
 
 	public DicomSeriesProcessingDescription getDicomSeriesProcessingDescription()
 	{
-		return dicomSeriesDescription;
+		return dicomSeriesProcessingDescription;
 	}
 
 	public void setState(DicomImageProcessingState pState)
@@ -59,12 +59,12 @@ public class DicomSeriesProcessingStatus
 	{
 		long currTime = System.currentTimeMillis();
 		if (currTime > lastActivityTimeStamp + MAX_IDLE_TIME) {
-			logger.info("Series " + dicomSeriesDescription.getSeriesUID() + " has completed processing.");
+			logger.info("Series " + dicomSeriesProcessingDescription.getSeriesUID() + " has completed processing.");
 			return true;
 		}
-		if (dicomSeriesDescription.isComplete()) {
-			logger.info("Series: " + dicomSeriesDescription.getSeriesUID() + " is complete with "
-					+ dicomSeriesDescription.getNumberOfInstances() + " instances");
+		if (dicomSeriesProcessingDescription.isComplete()) {
+			logger.info("Series: " + dicomSeriesProcessingDescription.getSeriesUID() + " is complete with "
+					+ dicomSeriesProcessingDescription.getNumberOfInstances() + " instances");
 			return true;
 		}
 		return false;

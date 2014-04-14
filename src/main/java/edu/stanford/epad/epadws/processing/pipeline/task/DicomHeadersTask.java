@@ -18,11 +18,13 @@ import edu.stanford.epad.common.util.EPADResources;
 public class DicomHeadersTask implements Runnable
 {
 	private static final EPADLogger logger = EPADLogger.getInstance();
+	private final String seriesUID;
 	private final File dicomInputFile;
 	private final File outputFile;
 
-	public DicomHeadersTask(File dicomInputFile, File outputFile)
+	public DicomHeadersTask(String seriesUID, File dicomInputFile, File outputFile)
 	{
+		this.seriesUID = seriesUID;
 		this.dicomInputFile = dicomInputFile;
 		this.outputFile = outputFile;
 	}
@@ -58,7 +60,7 @@ public class DicomHeadersTask implements Runnable
 			try {
 				process.waitFor();
 			} catch (InterruptedException e) {
-				logger.warning("Couldn't get tags for: " + dicomInputFile.getAbsolutePath(), e);
+				logger.warning("Couldn't get tags for series " + seriesUID + "; file=" + dicomInputFile.getAbsolutePath(), e);
 			}
 
 			EPADFileUtils.createDirsAndFile(outputFile);
@@ -66,14 +68,12 @@ public class DicomHeadersTask implements Runnable
 			tagFileWriter = new FileWriter(tagFile);
 			tagFileWriter.write(sb.toString());
 		} catch (Exception e) {
-			logger.warning("DicomHeadersTask failed to create DICOM tags file:" + e.getMessage());
+			logger.warning("DicomHeadersTask failed to create DICOM tags for series " + seriesUID + ": " + e.getMessage());
 		} catch (OutOfMemoryError oome) {
-			logger.warning("DicomHeadersTask OutOfMemoryError: ", oome);
+			logger.warning("DicomHeadersTask for series " + seriesUID + " out of memory: ", oome);
 		} finally {
 			IOUtils.closeQuietly(tagFileWriter);
 			IOUtils.closeQuietly(br);
-			IOUtils.closeQuietly(isr);
-			IOUtils.closeQuietly(is);
 
 			if (process != null)
 				process.destroy();

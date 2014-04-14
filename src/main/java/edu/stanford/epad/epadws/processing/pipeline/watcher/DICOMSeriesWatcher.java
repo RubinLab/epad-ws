@@ -75,8 +75,8 @@ public class DICOMSeriesWatcher implements Runnable
 						TimeUnit.MILLISECONDS);
 
 				if (dicomSeriesDescription != null) {
-					log.info("Series watcher found new series with " + dicomSeriesDescription.getNumberOfInstances()
-							+ " instance(s) and series UID " + dicomSeriesDescription.getSeriesUID());
+					log.info("Series watcher found new series " + dicomSeriesDescription.getSeriesUID() + " with "
+							+ dicomSeriesDescription.getNumberOfInstances() + " instance(s).");
 					dicomSeriesDescriptionTracker.addDicomSeriesProcessingStatus(new DicomSeriesProcessingStatus(
 							dicomSeriesDescription));
 				}
@@ -87,12 +87,13 @@ public class DICOMSeriesWatcher implements Runnable
 					DicomSeriesProcessingDescription currentDicomSeriesDescription = currentDicomSeriesProcessingStatus
 							.getDicomSeriesProcessingDescription();
 					// Each entry in list is map with keys: sop_iuid, inst_no, series_iuid, filepath, file_size.
+					String seriesUID = currentDicomSeriesDescription.getSeriesUID();
 					List<Map<String, String>> unprocessedDicomImageFileDescriptions = epadQueries
-							.getUnprocessedDicomImageFileDescriptionsForSeries(currentDicomSeriesDescription.getSeriesUID());
+							.getUnprocessedDicomImageFileDescriptionsForSeries(seriesUID);
 
 					if (unprocessedDicomImageFileDescriptions.size() > 0) {
-						log.info("Found " + unprocessedDicomImageFileDescriptions.size()
-								+ " unprocessed DICOM image(s) for series " + currentDicomSeriesDescription.getSeriesUID());
+						log.info("Found series " + currentDicomSeriesDescription.getSeriesUID() + " with "
+								+ unprocessedDicomImageFileDescriptions.size() + " unprocessed DICOM image(s).");
 						currentDicomSeriesDescription.updateWithDicomImageFileDescriptions(unprocessedDicomImageFileDescriptions);
 						currentDicomSeriesProcessingStatus.registerActivity();
 						currentDicomSeriesProcessingStatus.setState(DicomImageProcessingState.IN_PIPELINE);
@@ -128,19 +129,20 @@ public class DICOMSeriesWatcher implements Runnable
 	}
 
 	@SuppressWarnings("unused")
-	private void addToPNGGridGeneratorTaskPipeline(List<Map<String, String>> unprocessedPNGImageDescriptions)
+	private void addToPNGGridGeneratorTaskPipeline(String seriesUID,
+			List<Map<String, String>> unprocessedPNGImageDescriptions)
 	{
 		EpadDatabaseOperations databaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
 		int currentImageIndex = 0;
-		for (Map<String, String> currentPNGImage : unprocessedPNGImageDescriptions) {
-			String inputPNGFilePath = getInputFilePath(currentPNGImage); // Get the input file path.
+		for (Map<String, String> currentPNGImageDescription : unprocessedPNGImageDescriptions) {
+			String inputPNGFilePath = getInputFilePath(currentPNGImageDescription); // Get the input file path.
 			File inputPNGFile = new File(inputPNGFilePath);
-			String outputPNGGridFilePath = createOutputFilePathForDicomPNGGridImage(currentPNGImage);
+			String outputPNGGridFilePath = createOutputFilePathForDicomPNGGridImage(currentPNGImageDescription);
 			if (!databaseOperations.hasEpadFileRecord(outputPNGGridFilePath)) {
-				log.info("SeriesWatcher has: " + currentPNGImage.get("sop_iuid") + " PNG for grid processing.");
+				log.info("SeriesWatcher has: " + currentPNGImageDescription.get("sop_iuid") + " PNG for grid processing.");
 				// Need to get slice for PNG files.
 				List<File> inputPNGGridFiles = getSliceOfPNGFiles(unprocessedPNGImageDescriptions, currentImageIndex, 16);
-				createPngGridFileForPNGImages(inputPNGFile, inputPNGGridFiles, outputPNGGridFilePath);
+				createPngGridFileForPNGImages(seriesUID, inputPNGFile, inputPNGGridFiles, outputPNGGridFilePath);
 			}
 			currentImageIndex++;
 		}
@@ -159,7 +161,7 @@ public class DICOMSeriesWatcher implements Runnable
 		return sliceOfPNGFiles;
 	}
 
-	private void createPngGridFileForPNGImages(File inputPNGFile, List<File> inputPNGGridFiles,
+	private void createPngGridFileForPNGImages(String seriesUID, File inputPNGFile, List<File> inputPNGGridFiles,
 			String outputPNGGridFilePath)
 	{
 		// logger.info("Offering to PNGGridTaskQueue: out=" + outputPNGGridFilePath + " in=" +
@@ -169,7 +171,8 @@ public class DICOMSeriesWatcher implements Runnable
 		EpadDatabaseOperations databaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
 		insertEpadFile(databaseOperations, outputPNGFile);
 
-		PNGGridGeneratorTask pngGridGeneratorTask = new PNGGridGeneratorTask(inputPNGFile, inputPNGGridFiles, outputPNGFile);
+		PNGGridGeneratorTask pngGridGeneratorTask = new PNGGridGeneratorTask(seriesUID, inputPNGFile, inputPNGGridFiles,
+				outputPNGFile);
 		pngGeneratorTaskQueue.offer(pngGridGeneratorTask);
 	}
 

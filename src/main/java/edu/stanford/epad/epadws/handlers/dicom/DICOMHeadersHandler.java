@@ -1,7 +1,6 @@
 package edu.stanford.epad.epadws.handlers.dicom;
 
 import java.io.PrintWriter;
-import java.net.URLDecoder;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -43,10 +42,11 @@ public class DICOMHeadersHandler extends AbstractHandler
 			if (XNATSessionOperations.hasValidXNATSessionID(httpRequest)) {
 				String queryString = httpRequest.getQueryString();
 				if (queryString != null) {
-					log.info("DICOMHeadersHandler query: " + URLDecoder.decode(queryString, "UTF-8"));
 					String studyUID = httpRequest.getParameter("studyuid");
 					String seriesUID = httpRequest.getParameter("seriesuid");
 					String imageUID = httpRequest.getParameter("instanceuid");
+
+					log.info("Retrieving DICOM headers for image " + imageUID + " in series " + seriesUID);
 
 					if (studyUID != null && seriesUID != null && imageUID != null) {
 						DICOMElementList dicomElementList = Dcm4CheeQueries.getDICOMElementsFromWADO(studyUID, seriesUID, imageUID);

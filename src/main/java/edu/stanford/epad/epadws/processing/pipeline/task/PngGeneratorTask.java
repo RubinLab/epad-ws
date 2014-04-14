@@ -29,13 +29,21 @@ public class PngGeneratorTask implements GeneratorTask
 {
 	private static final EPADLogger log = EPADLogger.getInstance();
 
+	private final String seriesUID;
 	private final File dicomInputFile;
 	private final File pngOutputFile;
 
-	public PngGeneratorTask(File dicomInputFile, File pngOutputFile)
+	public PngGeneratorTask(String seriesUID, File dicomInputFile, File pngOutputFile)
 	{
+		this.seriesUID = seriesUID;
 		this.dicomInputFile = dicomInputFile;
 		this.pngOutputFile = pngOutputFile;
+	}
+
+	@Override
+	public String getSeriesUID()
+	{
+		return this.seriesUID;
 	}
 
 	@Override
@@ -62,20 +70,20 @@ public class PngGeneratorTask implements GeneratorTask
 			outputPNGStream = new FileOutputStream(outputPNGFile);
 			ImageIO.write(instance.getPackedImage(), "png", outputPNGStream);
 			epadFilesTable = Dcm4CheeDatabaseUtils.createEPadFilesTableData(outputPNGFile);
-			log.info("PngGeneratorTask: PNG file size: " + getFileSize(epadFilesTable));
+			log.info("PNG generated for series " + seriesUID);
 
 			epadDatabaseOperations.updateEpadFileRecord(epadFilesTable.get("file_path"), PngProcessingStatus.DONE,
 					getFileSize(epadFilesTable), "");
 		} catch (FileNotFoundException e) {
-			log.warning("Failed to create packed PNG for: " + inputDICOMFile.getAbsolutePath(), e);
+			log.warning("Failed to create PNG for series " + seriesUID, e);
 			epadDatabaseOperations.updateEpadFileRecord(epadFilesTable.get("file_path"), PngProcessingStatus.ERROR, 0,
 					"Dicom file not found.");
 		} catch (IOException e) {
-			log.warning("Failed to create packed PNG for: " + inputDICOMFile.getAbsolutePath(), e);
+			log.warning("Failed to create PNG for series " + seriesUID, e);
 			epadDatabaseOperations.updateEpadFileRecord(epadFilesTable.get("file_path"), PngProcessingStatus.ERROR, 0,
 					"IO Error.");
 		} catch (Throwable t) {
-			log.warning("Failed to create packed PNG for: " + inputDICOMFile.getAbsolutePath(), t);
+			log.warning("Failed to create PNG for series " + seriesUID, t);
 			epadDatabaseOperations.updateEpadFileRecord(epadFilesTable.get("file_path"), PngProcessingStatus.ERROR, 0,
 					"General Exception: " + t.getMessage());
 		} finally {

@@ -75,11 +75,13 @@ public class DicomSegmentationObjectPNGMaskGeneratorTask implements GeneratorTas
 	private static final EPADLogger logger = EPADLogger.getInstance();
 	private static final String baseDicomDirectory = EPADResources.getEPADWebServerPNGDir();
 
+	private final String seriesUID;
 	private final File dicomInputFile;
 	private final File segObjectOutputFile;
 
-	public DicomSegmentationObjectPNGMaskGeneratorTask(File dicomInputFile, File segObjectOutputFile)
+	public DicomSegmentationObjectPNGMaskGeneratorTask(String seriesUID, File dicomInputFile, File segObjectOutputFile)
 	{
+		this.seriesUID = seriesUID;
 		this.dicomInputFile = dicomInputFile;
 		this.segObjectOutputFile = segObjectOutputFile;
 	}
@@ -98,7 +100,7 @@ public class DicomSegmentationObjectPNGMaskGeneratorTask implements GeneratorTas
 		imageId = imageId.replaceAll("\\.", "_");
 		objectId = objectId.replaceAll("\\.", "_");
 
-		logger.info("Processing DSO for file " + dicomInputFile.getAbsolutePath());
+		logger.info("Processing DSO for series ID " + seriesUID + "; file=" + dicomInputFile.getAbsolutePath());
 		logger.info("getSegmentation study " + studyId + " series " + seriesId + " image " + imageId + " object "
 				+ objectId);
 
@@ -110,7 +112,7 @@ public class DicomSegmentationObjectPNGMaskGeneratorTask implements GeneratorTas
 			repDest.mkdirs();
 
 			EpadDatabaseOperations databaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
-			logger.info("Writing DSO PNG masks...");
+			logger.info("Writing DSO PNG masks for series " + seriesUID + "...");
 
 			for (int i = 0; i < count; i++) { // Create the mask images
 				BufferedImage source = sourceImage.getBufferedImage(count - i - 1);
@@ -122,27 +124,27 @@ public class DicomSegmentationObjectPNGMaskGeneratorTask implements GeneratorTas
 					ImageIO.write(sourceWithTransparency, "png", sourceFile);
 					databaseOperations.updateEpadFileRecord(pngUrl, PngProcessingStatus.DONE, 77, "");
 				} catch (IOException e) {
-					logger.warning("Failed to write DSO PNG mask ", e);
+					logger.warning("Failed to write DSO PNG mask for series " + seriesUID, e);
 				}
 				source = null;
 				sourceWithTransparency = null;
 			}
-			logger.info("...finished writing DSO PNG masks");
+			logger.info("...finished writing DSO PNG masks for series " + seriesUID);
 			File dsoTagFile = new File(repDest.getAbsolutePath() + "/" + objectId + ".tag");
 			if (!dsoTagFile.exists()) {
 				dsoTagFile.createNewFile();
 				ExecutorService taskExecutor = Executors.newFixedThreadPool(1);
-				taskExecutor.execute(new DicomHeadersTask(dicomInputFile, dsoTagFile));
+				taskExecutor.execute(new DicomHeadersTask(seriesUID, dicomInputFile, dsoTagFile));
 				taskExecutor.shutdown();
 			}
 			File tempDSOTagFile = File.createTempFile(dsoTagFile.getName(), ".temptag");
 			tempDSOTagFile.createNewFile();
-			DicomHeadersTask dicomHeadersTask = new DicomHeadersTask(dicomInputFile, tempDSOTagFile);
+			DicomHeadersTask dicomHeadersTask = new DicomHeadersTask(seriesUID, dicomInputFile, tempDSOTagFile);
 			dicomHeadersTask.run();
 			generateAIMFileForDSO(tempDSOTagFile);
 			System.gc();
 		} catch (Exception e) {
-			logger.warning("Error: when trying to write PNGs for segmentation object" + e.getMessage());
+			logger.warning("Error when trying to write PNGs for DSO series " + seriesUID + ": " + e.getMessage());
 		}
 	}
 
@@ -538,11 +540,11 @@ public class DicomSegmentationObjectPNGMaskGeneratorTask implements GeneratorTas
 					// encoded = DicomSegmentationObject.base64EncodeBytes(bytes);
 					retPngs.add(encoded);
 				} catch (IOException e) {
-					logger.warning("Failed to write segmentation PNG", e);
+					logger.warning("Failed to write segmentation PNG for series " + seriesUID, e);
 				}
 			}
 		} catch (Exception e) {
-			logger.info("Error: when trying to write pngs for segmentation object" + e.getMessage());
+			logger.warning("Error when trying to write PNG for DSO series " + seriesUID, e);
 		}
 
 		// test out some pixelmed calls
@@ -550,5 +552,11 @@ public class DicomSegmentationObjectPNGMaskGeneratorTask implements GeneratorTas
 		// if (geometry != null) logger.info(geometry.toString());
 
 		return retPngs;
+	}
+
+	@Override
+	public String getSeriesUID()
+	{
+		return this.seriesUID;
 	}
 }

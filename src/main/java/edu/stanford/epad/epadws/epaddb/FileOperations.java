@@ -44,7 +44,7 @@ public class FileOperations
 		File dirToDelete = new File(outputPath.toString());
 		boolean success = delete(dirToDelete);
 
-		log.info("Deleting the PNG for study at " + outputPath.toString() + " success = " + success);
+		log.info("Deleting the PNGs for study " + studyUID + " at " + outputPath.toString() + "; success = " + success);
 	}
 
 	public static void deletePNGsForSeries(String studyUID, String seriesUID) throws Exception
@@ -56,15 +56,16 @@ public class FileOperations
 		File dirToDelete = new File(outputPath.toString());
 		boolean success = delete(dirToDelete);
 
-		log.info("Deleting the PNG for study at " + outputPath.toString() + " success = " + success);
+		log.info("Deleting the PNGs for series " + seriesUID + " at " + outputPath.toString() + "; success = " + success);
 	}
 
-	public static void writePNGGridFile(File pngInputFile, List<File> inputPNGGridFiles, File outputPNGFile)
+	public static void writePNGGridFile(String seriesUID, File pngInputFile, List<File> inputPNGGridFiles,
+			File outputPNGFile)
 	{
 		EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
 		Map<String, String> epadFilesTable = new HashMap<String, String>();
 		try {
-			log.info("PNGGridGeneratorTask: creating PNG grid file: " + outputPNGFile.getAbsolutePath());
+			log.info("Creating PNG grid file " + outputPNGFile.getAbsolutePath() + " for series " + seriesUID);
 			epadFilesTable = Dcm4CheeDatabaseUtils.createEPadFilesTableData(outputPNGFile);
 
 			EPADFileUtils.createDirsAndFile(outputPNGFile);
@@ -73,17 +74,17 @@ public class FileOperations
 					IMAGES_PER_AXIS, 0, false);
 
 			if (success) {
-				log.info("Finished writing PNG grid file: " + outputPNGFile);
+				log.info("Finished writing PNG grid file " + outputPNGFile + " for series " + seriesUID);
 				int fileSize = getFileSize(epadFilesTable);
 				epadDatabaseOperations.updateEpadFileRecord(epadFilesTable.get("file_path"), PngProcessingStatus.DONE,
 						fileSize, "");
 			} else {
-				log.info("Failed to create grid PNG file: " + outputPNGFile.getAbsolutePath());
+				log.info("Failed to create grid PNG file " + outputPNGFile.getAbsolutePath() + " for series " + seriesUID);
 				epadDatabaseOperations.updateEpadFileRecord(epadFilesTable.get("file_path"), PngProcessingStatus.ERROR, 0,
 						"Error generating grid");
 			}
 		} catch (Exception e) {
-			log.warning("Failed to create grid PNG file: " + outputPNGFile.getAbsolutePath(), e);
+			log.warning("Failed to create grid PNG file " + outputPNGFile.getAbsolutePath() + " for series " + seriesUID, e);
 			epadDatabaseOperations.updateEpadFileRecord(epadFilesTable.get("file_path"), PngProcessingStatus.ERROR, 0,
 					"General Exception: " + e.getMessage());
 		}
@@ -108,7 +109,7 @@ public class FileOperations
 		File dirToDelete = new File(outputPath.toString());
 		boolean success = delete(dirToDelete);
 
-		log.info("Deleting the PNG for series at " + outputPath.toString() + "; success = " + success);
+		log.info("Deleting PNGs for series " + seriesUID + " at " + outputPath.toString() + "; success = " + success);
 	}
 
 	private static boolean delete(File file) throws IOException

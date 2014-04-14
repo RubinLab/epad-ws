@@ -172,9 +172,9 @@ public class JPEGThumbnailGeneratorTask implements Callable<File>
 	}
 
 	/**
-	 * Using the current dicom file read the tag to figure out if a thumbnail file should be created using it.
+	 * Using the current DICOM file read the tag to figure out if a thumbnail file should be created using it.
 	 * 
-	 * @param dicomFile File the Dicom file that will be made into a JPEG.
+	 * @param dicomFile File the DICOM file that will be made into a JPEG.
 	 */
 	private void writeThumbnailIfNeeded(File dicomFile)
 	{
@@ -198,9 +198,9 @@ public class JPEGThumbnailGeneratorTask implements Callable<File>
 			outputStream = new FileOutputStream(outputFile);
 			ImageIO.write(instance.getPackedImage(), "png", outputStream);
 		} catch (FileNotFoundException e) {
-			log.warning("Dailed to create packed png for: " + file.getAbsolutePath(), e);
+			log.warning("Dailed to create PNG for: " + file.getAbsolutePath(), e);
 		} catch (IOException e) {
-			log.warning("Failed to create packed PNG for: " + file.getAbsolutePath(), e);
+			log.warning("Failed to create PNG for: " + file.getAbsolutePath(), e);
 		} finally {
 			IOUtils.closeQuietly(outputStream);
 		}
