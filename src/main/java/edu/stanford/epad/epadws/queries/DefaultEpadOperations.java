@@ -303,7 +303,7 @@ public class DefaultEpadOperations implements EpadOperations
 	}
 
 	@Override
-	public List<Map<String, String>> getUnprocessedDicomImageFileDescriptionsForSeries(String seriesIUID)
+	public List<Map<String, String>> getUnprocessedDicomImageFileDescriptionsForSeries(String seriesUID)
 	{
 		Dcm4CheeDatabaseOperations dcm4CheeDatabaseOperations = Dcm4CheeDatabase.getInstance()
 				.getDcm4CheeDatabaseOperations();
@@ -315,11 +315,11 @@ public class DefaultEpadOperations implements EpadOperations
 			// Get list of DICOM image descriptions from DCM4CHEE database table (pacsdb.files). Each image description is a
 			// map with keys: i.sop_iuid, i.inst_no, s.series_iuid, f.filepath, f.file_size.
 			List<Map<String, String>> dicomImageFileDescriptions = dcm4CheeDatabaseOperations
-					.getDicomImageFileDescriptionsForSeries(seriesIUID);
+					.getDicomImageFileDescriptionsForSeries(seriesUID);
 
 			// Get list of instance IDs for images in series from ePAD database table (epaddb.epad_files).
 			List<String> finishedDICOMImageInstanceIDs = epadDatabaseOperations
-					.getFinishedDICOMImageInstanceUIDsForSeriesFromEPadDatabase(seriesIUID);
+					.getFinishedDICOMImageInstanceUIDsForSeriesFromEPadDatabase(seriesUID);
 
 			// logger.info("Found " + dicomImageFileDescriptions.size() + " unprocessed DICOM image(s) with files and "
 			// + finishedDICOMImageInstanceIDs.size() + " processed image(s) for series " + shortenSting(seriesIUID));
