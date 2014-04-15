@@ -42,7 +42,7 @@ public class ProjectDeleteTask implements Runnable
 			for (String patientID : patientIDs) {
 				logger.info("Deleting patient " + patientID + " in project " + projectID);
 
-				Set<String> studyUIDs = XNATQueries.studyUIDsForSubject(sessionID, projectID, patientID);
+				Set<String> studyUIDs = XNATQueries.dicomStudyUIDsForSubject(sessionID, projectID, patientID);
 
 				XNATDeletionOperations.deleteXNATSubject(projectID, patientID, sessionID);
 

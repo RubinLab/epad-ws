@@ -103,7 +103,7 @@ public class XNATQueries
 		return subjectIDs;
 	}
 
-	public static Set<String> studyUIDsForSubject(String sessionID, String projectID, String subjectID)
+	public static Set<String> dicomStudyUIDsForSubject(String sessionID, String projectID, String subjectID)
 	{
 		Set<String> studyIDs = new HashSet<String>();
 		XNATExperimentList xnatExperiments = XNATQueries.getDICOMExperimentsForProjectAndSubject(sessionID, projectID,

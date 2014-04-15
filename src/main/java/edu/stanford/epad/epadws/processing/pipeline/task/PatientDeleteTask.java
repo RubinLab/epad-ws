@@ -41,7 +41,7 @@ public class PatientDeleteTask implements Runnable
 				.getDcm4CheeDatabaseOperations();
 
 		try {
-			Set<String> studyUIDs = XNATQueries.studyUIDsForSubject(sessionID, projectID, patientID);
+			Set<String> studyUIDs = XNATQueries.dicomStudyUIDsForSubject(sessionID, projectID, patientID);
 
 			logger.info("Deleting patient " + patientID + " in project " + projectID);
 

@@ -101,7 +101,7 @@ public class DefaultEpadOperations implements EpadOperations
 	{
 		EPADStudyList epadStudyList = new EPADStudyList();
 		XNATUserList xnatUsers = XNATQueries.usersForProject(sessionID, projectID);
-		Set<String> studyUIDsInXNAT = XNATQueries.studyUIDsForSubject(sessionID, projectID, patientID);
+		Set<String> studyUIDsInXNAT = XNATQueries.dicomStudyUIDsForSubject(sessionID, projectID, patientID);
 		DCM4CHEEStudyList dcm4CheeStudyList = Dcm4CheeQueries.getStudies(studyUIDsInXNAT);
 		Dcm4CheeDatabaseOperations dcm4CheeDatabaseOperations = Dcm4CheeDatabase.getInstance()
 				.getDcm4CheeDatabaseOperations();
@@ -202,10 +202,11 @@ public class DefaultEpadOperations implements EpadOperations
 	public Set<String> getExamTypesForPatient(String sessionID, String projectID, String patientID,
 			EPADSearchFilter searchFilter)
 	{
-		Dcm4CheeDatabaseOperations dcm4CheeDatabaseOperations = Dcm4CheeDatabase.getInstance()
-				.getDcm4CheeDatabaseOperations();
-		// Set<String> studyUIDs = XNATQueries.dicomStudyUIDsForSubject(sessionID, projectID, subjectID);
-		Set<String> studyUIDs = dcm4CheeDatabaseOperations.getStudyUIDsForPatient(patientID);
+		// Dcm4CheeDatabaseOperations dcm4CheeDatabaseOperations = Dcm4CheeDatabase.getInstance()
+		// .getDcm4CheeDatabaseOperations();
+		log.info("projectID " + projectID + " patientID " + patientID);
+		Set<String> studyUIDs = XNATQueries.dicomStudyUIDsForSubject(sessionID, projectID, patientID);
+		// Set<String> studyUIDs = dcm4CheeDatabaseOperations.getStudyUIDsForPatient(patientID);
 
 		Set<String> examTypes = new HashSet<String>();
 
@@ -411,14 +412,10 @@ public class DefaultEpadOperations implements EpadOperations
 		String uri = xnatProject.URI;
 		Set<String> patientIDs = XNATQueries.patientIDsForProject(sessionID, xnatProject.ID);
 		int numberOfPatients = patientIDs.size();
-		log.info("numberOfPatients " + numberOfPatients);
 		int numberOfStudies = Dcm4CheeQueries.getNumberOfStudiesForPatients(patientIDs);
-		log.info("numberOfStudies " + numberOfStudies);
 		XNATUserList xnatUsers = XNATQueries.usersForProject(sessionID, xnatProject.ID);
 		Set<String> usernames = xnatUsers.getLoginNames();
-		log.info("usernames " + usernames);
 		int numberOfAnnotations = AIMQueries.getNumberOfAIMAnnotationsForPatients(sessionID, usernames, patientIDs);
-		log.info("numberOfAnnotations " + numberOfAnnotations);
 
 		EPADProject epadProject = new EPADProject(secondaryID, piLastName, description, name, id, piFirstName, uri,
 				numberOfPatients, numberOfStudies, numberOfAnnotations, patientIDs, xnatUsers.getLoginNames());
@@ -433,16 +430,15 @@ public class DefaultEpadOperations implements EpadOperations
 
 		String patientID = xnatSubject.label;
 		String patientName = xnatSubject.src;
-		String project = xnatSubject.project;
+		String projectID = xnatSubject.project;
 		String xnatID = xnatSubject.ID;
 		String uri = xnatSubject.URI;
 		String insertUser = xnatSubject.insert_user;
 		String insertDate = xnatSubject.insert_date;
 		int numberOfStudies = Dcm4CheeQueries.getNumberOfStudiesForPatient(patientID);
 		int numberOfAnnotations = AIMQueries.getNumberOfAIMAnnotationsForPatient(usernames, patientID);
-		Set<String> examTypes = epadQueries.getExamTypesForPatient(sessionID, xnatSubject.project, xnatSubject.ID,
-				searchFilter);
-		EPADSubject epadSubject = new EPADSubject(project, patientID, patientName, insertUser, xnatID, insertDate, uri,
+		Set<String> examTypes = epadQueries.getExamTypesForPatient(sessionID, projectID, patientID, searchFilter);
+		EPADSubject epadSubject = new EPADSubject(projectID, patientID, patientName, insertUser, xnatID, insertDate, uri,
 				numberOfStudies, numberOfAnnotations, examTypes);
 
 		return epadSubject;
