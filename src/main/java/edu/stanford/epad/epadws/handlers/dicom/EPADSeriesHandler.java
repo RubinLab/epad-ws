@@ -11,8 +11,8 @@ import org.eclipse.jetty.server.handler.AbstractHandler;
 import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.epad.dtos.EPADDatabaseSeries;
 import edu.stanford.epad.epadws.handlers.HandlerUtil;
-import edu.stanford.epad.epadws.queries.DefaultEpadQueries;
-import edu.stanford.epad.epadws.queries.EpadQueries;
+import edu.stanford.epad.epadws.queries.DefaultEpadOperations;
+import edu.stanford.epad.epadws.queries.EpadOperations;
 import edu.stanford.epad.epadws.xnat.XNATSessionOperations;
 
 /**
@@ -50,7 +50,7 @@ public class EPADSeriesHandler extends AbstractHandler
 	@Override
 	public void handle(String s, Request request, HttpServletRequest httpRequest, HttpServletResponse httpResponse)
 	{
-		EpadQueries epadQueries = DefaultEpadQueries.getInstance();
+		EpadOperations epadQueries = DefaultEpadOperations.getInstance();
 
 		PrintWriter responseStream = null;
 		int statusCode;

@@ -25,8 +25,8 @@ import edu.stanford.epad.epadws.processing.pipeline.task.GeneratorTask;
 import edu.stanford.epad.epadws.processing.pipeline.task.PNGGridGeneratorTask;
 import edu.stanford.epad.epadws.processing.pipeline.task.PngGeneratorTask;
 import edu.stanford.epad.epadws.processing.pipeline.threads.ShutdownSignal;
-import edu.stanford.epad.epadws.queries.DefaultEpadQueries;
-import edu.stanford.epad.epadws.queries.EpadQueries;
+import edu.stanford.epad.epadws.queries.DefaultEpadOperations;
+import edu.stanford.epad.epadws.queries.EpadOperations;
 
 /**
  * Process new DICOM series appearing in the series queue. Each series is described by a
@@ -65,7 +65,7 @@ public class DICOMSeriesWatcher implements Runnable
 	@Override
 	public void run()
 	{
-		EpadQueries epadQueries = DefaultEpadQueries.getInstance();
+		EpadOperations epadQueries = DefaultEpadOperations.getInstance();
 
 		queueAndWatcherManager = QueueAndWatcherManager.getInstance();
 

@@ -11,8 +11,8 @@ import edu.stanford.epad.epadws.epaddb.EpadDatabase;
 import edu.stanford.epad.epadws.epaddb.EpadDatabaseOperations;
 import edu.stanford.epad.epadws.processing.model.DicomSeriesProcessingDescription;
 import edu.stanford.epad.epadws.processing.pipeline.threads.ShutdownSignal;
-import edu.stanford.epad.epadws.queries.DefaultEpadQueries;
-import edu.stanford.epad.epadws.queries.EpadQueries;
+import edu.stanford.epad.epadws.queries.DefaultEpadOperations;
+import edu.stanford.epad.epadws.queries.EpadOperations;
 
 /**
  * Watch for new studies that appear with ePAD's DCM4CHEE MySQL database with the 'study-status' field set to zero,
@@ -41,7 +41,7 @@ public class Dcm4CheeDatabaseWatcher implements Runnable
 		EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
 		Dcm4CheeDatabaseOperations dcm4CheeDatabaseOperations = Dcm4CheeDatabase.getInstance()
 				.getDcm4CheeDatabaseOperations();
-		EpadQueries epadQueries = DefaultEpadQueries.getInstance();
+		EpadOperations epadQueries = DefaultEpadOperations.getInstance();
 
 		while (!signal.hasShutdown()) {
 			try {

@@ -11,7 +11,8 @@ import org.eclipse.jetty.server.handler.AbstractHandler;
 
 import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.epad.epadws.handlers.HandlerUtil;
-import edu.stanford.epad.epadws.processing.pipeline.task.PatientDeleteTask;
+import edu.stanford.epad.epadws.queries.DefaultEpadOperations;
+import edu.stanford.epad.epadws.queries.EpadOperations;
 import edu.stanford.epad.epadws.xnat.XNATSessionOperations;
 
 /**
@@ -43,16 +44,19 @@ public class PatientDeleteHandler extends AbstractHandler
 		if (XNATSessionOperations.hasValidXNATSessionID(httpRequest)) {
 			try {
 				String queryString = httpRequest.getQueryString();
+				String sessionID = XNATSessionOperations.getJSessionIDFromRequest(httpRequest);
+
 				queryString = URLDecoder.decode(queryString, "UTF-8");
 				log.info("Patient delete handler query: " + queryString);
 				responseStream = httpResponse.getWriter();
 
 				if (queryString != null) {
+					EpadOperations epadOperations = DefaultEpadOperations.getInstance();
 					String projectID = httpRequest.getParameter("projectID");
 					String patientID = httpRequest.getParameter("patientID");
 
 					if (projectID != null && patientID != null) {
-						handlePatientDeleteRequest(projectID, patientID);
+						epadOperations.schedulePatientDelete(sessionID, projectID, patientID);
 						responseCode = HttpServletResponse.SC_OK;
 					} else {
 						responseCode = HandlerUtil.infoResponse(HttpServletResponse.SC_BAD_REQUEST, BAD_QUERY, responseStream, log);
@@ -69,12 +73,5 @@ public class PatientDeleteHandler extends AbstractHandler
 			responseCode = HandlerUtil.invalidTokenResponse(INVALID_SESSION_TOKEN_MESSAGE, log);
 		}
 		httpResponse.setStatus(responseCode);
-	}
-
-	private void handlePatientDeleteRequest(String projectID, String patientID)
-	{
-		log.info("Deleting patient " + patientID + " from project " + projectID);
-
-		(new Thread(new PatientDeleteTask(projectID, patientID))).start();
 	}
 }

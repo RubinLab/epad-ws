@@ -33,19 +33,24 @@ import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeDatabaseOperations;
 import edu.stanford.epad.epadws.epaddb.EpadDatabase;
 import edu.stanford.epad.epadws.epaddb.EpadDatabaseOperations;
 import edu.stanford.epad.epadws.handlers.search.EPADSearchFilter;
+import edu.stanford.epad.epadws.processing.pipeline.task.DicomSeriesDeleteTask;
+import edu.stanford.epad.epadws.processing.pipeline.task.DicomStudyDeleteTask;
+import edu.stanford.epad.epadws.processing.pipeline.task.PatientDeleteTask;
+import edu.stanford.epad.epadws.processing.pipeline.task.ProjectDeleteTask;
+import edu.stanford.epad.epadws.processing.pipeline.task.StudyDeleteTask;
 import edu.stanford.epad.epadws.processing.pipeline.watcher.Dcm4CheeDatabaseWatcher;
 
-public class DefaultEpadQueries implements EpadQueries
+public class DefaultEpadOperations implements EpadOperations
 {
 	private static final EPADLogger log = EPADLogger.getInstance();
 
-	private static final DefaultEpadQueries ourInstance = new DefaultEpadQueries();
+	private static final DefaultEpadOperations ourInstance = new DefaultEpadOperations();
 
-	private DefaultEpadQueries()
+	private DefaultEpadOperations()
 	{
 	}
 
-	public static DefaultEpadQueries getInstance()
+	public static DefaultEpadOperations getInstance()
 	{
 		return ourInstance;
 	}
@@ -328,6 +333,45 @@ public class DefaultEpadQueries implements EpadQueries
 		return dicomFilesWithoutPNGImagesFileDescriptions;
 	}
 
+	@Override
+	public void scheduleStudyDelete(String studyUID)
+	{
+		log.info("Scheduling deletion task for study " + studyUID);
+		(new Thread(new DicomStudyDeleteTask(studyUID))).start();
+	}
+
+	@Override
+	public void scheduleSeriesDelete(String studyUID, String seriesUID)
+	{
+		log.info("Scheduling deletion task for series " + seriesUID);
+
+		(new Thread(new DicomSeriesDeleteTask(studyUID, seriesUID))).start();
+	}
+
+	@Override
+	public void scheduleProjectDelete(String sessionID, String projectID)
+	{
+		log.info("Scheduling deletion task for project " + projectID);
+
+		(new Thread(new ProjectDeleteTask(sessionID, projectID))).start();
+	}
+
+	@Override
+	public void schedulePatientDelete(String sessionID, String projectID, String patientID)
+	{
+		log.info("Scheduling deletion task for " + patientID + " in project " + projectID);
+
+		(new Thread(new PatientDeleteTask(sessionID, projectID, patientID))).start();
+	}
+
+	@Override
+	public void scheduleStudyDelete(String sessionID, String projectID, String patientID, String studyUID)
+	{
+		log.info("Scheduling deletion task for study " + studyUID + " for " + patientID + " in project " + projectID);
+
+		(new Thread(new StudyDeleteTask(sessionID, projectID, patientID, studyUID))).start();
+	}
+
 	private String createFileNameField(String sopInstanceUID)
 	{
 		return DicomFormatUtil.formatUidToDir(sopInstanceUID) + ".dcm";
@@ -385,7 +429,7 @@ public class DefaultEpadQueries implements EpadQueries
 	private EPADSubject xnatSubject2EPADSubject(String sessionID, Set<String> usernames, XNATSubject xnatSubject,
 			EPADSearchFilter searchFilter)
 	{
-		EpadQueries epadQueries = DefaultEpadQueries.getInstance();
+		EpadOperations epadQueries = DefaultEpadOperations.getInstance();
 
 		String patientID = xnatSubject.label;
 		String patientName = xnatSubject.src;

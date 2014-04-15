@@ -14,8 +14,8 @@ import edu.stanford.epad.dtos.EPADImageList;
 import edu.stanford.epad.dtos.EPADSeriesList;
 import edu.stanford.epad.dtos.EPADStudy;
 import edu.stanford.epad.epadws.handlers.HandlerUtil;
-import edu.stanford.epad.epadws.queries.DefaultEpadQueries;
-import edu.stanford.epad.epadws.queries.EpadQueries;
+import edu.stanford.epad.epadws.queries.DefaultEpadOperations;
+import edu.stanford.epad.epadws.queries.EpadOperations;
 import edu.stanford.epad.epadws.xnat.XNATSessionOperations;
 
 /**
@@ -50,7 +50,7 @@ public class EPADStudiesHandler extends AbstractHandler
 			PrintWriter responseStream = httpResponse.getWriter();
 
 			if (XNATSessionOperations.hasValidXNATSessionID(httpRequest)) {
-				EpadQueries epadQueries = DefaultEpadQueries.getInstance();
+				EpadOperations epadQueries = DefaultEpadOperations.getInstance();
 				String jsessionID = XNATSessionOperations.getJSessionIDFromRequest(httpRequest);
 				EPADSearchFilter searchFilter = EPADSearchFilterBuilder.build(httpRequest);
 				// String username = httpRequest.getParameter("username");

@@ -68,7 +68,7 @@ public class XNATSeriesWatcher implements Runnable
 					logger.info("XNAT series watcher found new DICOM study " + dicomStudyIUID + " for patient "
 							+ dicomPatientName + " with ID " + dicomPatientID);
 
-					createXNATStudy(xnatUploadProjectID, xnatSubjectLabel, dicomPatientName, dicomStudyIUID);
+					createXNATDICOMExperiment(xnatUploadProjectID, xnatSubjectLabel, dicomPatientName, dicomStudyIUID);
 				}
 			} catch (Exception e) {
 				logger.warning("Exception in XNAT series watcher thread", e);
@@ -89,17 +89,18 @@ public class XNATSeriesWatcher implements Runnable
 			throw new IllegalArgumentException("Missing patient name in series description");
 	}
 
-	private void createXNATStudy(String xnatProjectID, String xnatSubjectLabel, String dicomPatientName,
+	private void createXNATDICOMExperiment(String xnatProjectLabelOrID, String xnatSubjectLabel, String dicomPatientName,
 			String dicomStudyUID)
 	{
 		if (updateSessionID()) {
-			XNATCreationOperations.createXNATSubjectFromDICOMPatient(xnatProjectID, xnatSubjectLabel, dicomPatientName,
-					jsessionID);
+			XNATCreationOperations.createXNATSubjectFromDICOMPatient(xnatProjectLabelOrID, xnatSubjectLabel,
+					dicomPatientName, jsessionID);
 
-			XNATCreationOperations.createXNATExperimentFromDICOMStudy(xnatProjectID, xnatSubjectLabel, dicomStudyUID,
+			XNATCreationOperations.createXNATExperimentFromDICOMStudy(xnatProjectLabelOrID, xnatSubjectLabel, dicomStudyUID,
 					jsessionID);
 		} else {
-			logger.warning("Could not log into XNAT to upload DICOM study " + dicomStudyUID);
+			logger.warning("Could not log into XNAT to create DICOM study " + dicomStudyUID + " for patient "
+					+ xnatSubjectLabel);
 		}
 	}
 

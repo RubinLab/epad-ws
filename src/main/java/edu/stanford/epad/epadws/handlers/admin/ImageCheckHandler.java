@@ -22,8 +22,8 @@ import edu.stanford.epad.epadws.epaddb.EpadDatabase;
 import edu.stanford.epad.epadws.epaddb.EpadDatabaseOperations;
 import edu.stanford.epad.epadws.handlers.HandlerUtil;
 import edu.stanford.epad.epadws.processing.pipeline.watcher.QueueAndWatcherManager;
-import edu.stanford.epad.epadws.queries.DefaultEpadQueries;
-import edu.stanford.epad.epadws.queries.EpadQueries;
+import edu.stanford.epad.epadws.queries.DefaultEpadOperations;
+import edu.stanford.epad.epadws.queries.EpadOperations;
 import edu.stanford.epad.epadws.xnat.XNATSessionOperations;
 
 /**
@@ -84,7 +84,7 @@ public class ImageCheckHandler extends AbstractHandler
 		EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
 		Dcm4CheeDatabaseOperations dcm4CheeDatabaseOperations = Dcm4CheeDatabase.getInstance()
 				.getDcm4CheeDatabaseOperations();
-		EpadQueries epadQueries = DefaultEpadQueries.getInstance();
+		EpadOperations epadQueries = DefaultEpadOperations.getInstance();
 		Set<String> seriesIUIDs = dcm4CheeDatabaseOperations.getNewDcm4CheeSeriesUIDs();
 		List<Map<String, String>> allUnprocessedDICOMImageFileDescriptions = new ArrayList<Map<String, String>>();
 

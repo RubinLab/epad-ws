@@ -31,10 +31,11 @@ public class XNATCreationOperations
 
 	private static final EventTracker eventTracker = EventTracker.getInstance();
 
-	public static void createXNATSubjectFromDICOMPatient(String xnatProjectID, String xnatSubjectLabel,
+	public static void createXNATSubjectFromDICOMPatient(String xnatProjectLabelOrID, String xnatSubjectLabel,
 			String dicomPatientName, String jsessionID)
 	{
-		String xnatSubjectURL = XNATUtil.buildXNATSubjectCreationURL(xnatProjectID, xnatSubjectLabel, dicomPatientName);
+		String xnatSubjectURL = XNATUtil.buildXNATSubjectCreationURL(xnatProjectLabelOrID, xnatSubjectLabel,
+				dicomPatientName);
 		HttpClient client = new HttpClient();
 		PostMethod method = new PostMethod(xnatSubjectURL);
 		int xnatStatusCode;
@@ -47,7 +48,7 @@ public class XNATCreationOperations
 			if (unexpectedCreationStatusCode(xnatStatusCode))
 				log.warning("Failure calling XNAT; status code = " + xnatStatusCode);
 			else
-				eventTracker.recordPatientEvent(jsessionID, xnatProjectID, xnatSubjectLabel);
+				eventTracker.recordPatientEvent(jsessionID, xnatProjectLabelOrID, xnatSubjectLabel);
 		} catch (IOException e) {
 			log.warning("Error calling XNAT", e);
 		} finally {
@@ -55,10 +56,10 @@ public class XNATCreationOperations
 		}
 	}
 
-	public static boolean createXNATExperimentFromDICOMStudy(String xnatProjectID, String xnatSubjectLabel,
+	public static boolean createXNATExperimentFromDICOMStudy(String xnatProjectLabelOrID, String xnatSubjectLabelOrID,
 			String dicomStudyUID, String jsessionID)
 	{
-		String xnatStudyURL = XNATUtil.buildXNATExperimentCreationURL(xnatProjectID, xnatSubjectLabel, dicomStudyUID);
+		String xnatStudyURL = XNATUtil.buildXNATDICOMExperimentCreationURL(xnatProjectLabelOrID, xnatSubjectLabelOrID, dicomStudyUID);
 		HttpClient client = new HttpClient();
 		PutMethod putMethod = new PutMethod(xnatStudyURL);
 		int xnatStatusCode;
@@ -71,7 +72,7 @@ public class XNATCreationOperations
 			if (unexpectedCreationStatusCode(xnatStatusCode))
 				log.warning("Failure calling XNAT; status code = " + xnatStatusCode);
 			else
-				eventTracker.recordStudyEvent(jsessionID, xnatProjectID, xnatSubjectLabel, dicomStudyUID);
+				eventTracker.recordStudyEvent(jsessionID, xnatProjectLabelOrID, xnatSubjectLabelOrID, dicomStudyUID);
 		} catch (IOException e) {
 			log.warning("Error calling XNAT", e);
 			xnatStatusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
@@ -82,9 +83,9 @@ public class XNATCreationOperations
 	}
 
 	@SuppressWarnings("unused")
-	private static boolean createXNATProject(String xnatProjectID, String xnatProjectName, String jsessionID)
+	private static boolean createXNATProject(String xnatProjectName, String jsessionID)
 	{
-		String xnatProjectURL = XNATUtil.buildXNATProjectCreationURL(xnatProjectID, xnatProjectName);
+		String xnatProjectURL = XNATUtil.buildXNATProjectCreationURL(xnatProjectName);
 		HttpClient client = new HttpClient();
 		PostMethod method = new PostMethod(xnatProjectURL);
 		int xnatStatusCode;
@@ -97,7 +98,7 @@ public class XNATCreationOperations
 			if (unexpectedCreationStatusCode(xnatStatusCode))
 				log.warning("Failure calling XNAT; status code = " + xnatStatusCode);
 			else
-				eventTracker.recordProjectEvent(jsessionID, xnatProjectID);
+				eventTracker.recordProjectEvent(jsessionID, xnatProjectName);
 		} catch (IOException e) {
 			log.warning("Error calling XNAT", e);
 			xnatStatusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
@@ -108,10 +109,12 @@ public class XNATCreationOperations
 	}
 
 	/**
-	 * Take a directory containing a list of DICOM files and create XNAT representations of the each DICOM image.
+	 * Take a directory containing a list of DICOM files and create XNAT representations of the each DICOM image in the
+	 * directory.
 	 * <p>
-	 * This method expects a properties file called xnat_upload.properties in the directory. This file should contain an
-	 * XNAT project name, which identified the project for the new patients and their studies, and an XNAT session ID.
+	 * This method expects a properties file called xnat_upload.properties in the upload directory. This file should
+	 * contain a property called XNATProjectName, which identified the project for the new patients and their studies, and
+	 * XNATSessionID, which contains the session key of the user initiating the upload.
 	 * 
 	 * @param dicomUploadDirectory
 	 */
@@ -137,7 +140,7 @@ public class XNATCreationOperations
 				int numberOfDICOMFiles = 0;
 				if (xnatProjectID != null && xnatSessionID != null) {
 					for (File dicomFile : DicomTagFileUtils.listDICOMFiles(dicomUploadDirectory)) {
-						// DCM4CHEE stores the patient name as upper case so we match. TODO get original from database?
+						// DCM4CHEE stores the patient name as upper case so we match.
 						String dicomPatientName = DicomReader.getPatientName(dicomFile).toUpperCase();
 						String dicomPatientID = DicomReader.getPatientID(dicomFile);
 						String dicomStudyUID = DicomReader.getStudyIUID(dicomFile);

@@ -10,7 +10,7 @@ import edu.stanford.epad.epadws.epaddb.FileOperations;
 import edu.stanford.epad.epadws.queries.Dcm4CheeQueries;
 
 /**
- * Task to delete a DICOM study
+ * Task to delete a DICOM study from ePAD's and dcm4chee's databases.
  * 
  */
 public class DicomStudyDeleteTask implements Runnable
@@ -32,13 +32,15 @@ public class DicomStudyDeleteTask implements Runnable
 			DCM4CHEESeriesList dcm4CheeSeriesList = Dcm4CheeQueries.getSeriesInStudy(studyUID);
 			logger.info("Found " + dcm4CheeSeriesList.ResultSet.totalRecords + " series in study " + studyUID);
 
+			logger.info("Deleting study " + studyUID + " from dcm4chee's database");
 			Dcm4CheeOperations.deleteStudy(studyUID); // Must run after finding series in DCM4CHEE
 
 			// Should not delete until after deleting study in DCM4CHEE or PNG pipeline will activate.
 			for (DCM4CHEESeries series : dcm4CheeSeriesList.ResultSet.Result) {
-				logger.info("SeriesID to delete in ePAD database: " + series.seriesUID);
+				logger.info("Deleting series " + series.seriesUID + " from ePAD database");
 				epadDatabaseOperations.deleteSeries(series.seriesUID);
 			}
+			logger.info("Deleting study " + studyUID + " from ePAD database");
 			epadDatabaseOperations.deleteStudy(studyUID);
 			FileOperations.deletePNGsForStudy(studyUID);
 		} catch (Exception e) {

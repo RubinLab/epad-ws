@@ -18,7 +18,7 @@ import edu.stanford.epad.epadws.handlers.search.EPADSearchFilter;
  * 
  * @author martin
  */
-public interface EpadQueries
+public interface EpadOperations
 {
 	EPADProjectList getAllProjectsForUser(String sessionID, String username, EPADSearchFilter searchFilter);
 
@@ -65,4 +65,14 @@ public interface EpadQueries
 	 * Each description is a map with keys: sop_iuid, inst_no, series_iuid, filepath, file_size.
 	 */
 	List<Map<String, String>> getUnprocessedDicomImageFileDescriptionsForSeries(String seriesIUID);
+
+	void scheduleProjectDelete(String sessionID, String projectID);
+
+	void schedulePatientDelete(String sessionID, String projectID, String patientID);
+
+	void scheduleStudyDelete(String sessionID, String projectID, String patientID, String studyUID);
+
+	void scheduleStudyDelete(String studyUID);
+
+	void scheduleSeriesDelete(String studyUID, String seriesUID);
 }

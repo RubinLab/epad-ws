@@ -11,8 +11,8 @@ import org.eclipse.jetty.server.handler.AbstractHandler;
 
 import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.epad.epadws.handlers.HandlerUtil;
-import edu.stanford.epad.epadws.processing.pipeline.task.DicomSeriesDeleteTask;
-import edu.stanford.epad.epadws.processing.pipeline.task.DicomStudyDeleteTask;
+import edu.stanford.epad.epadws.queries.DefaultEpadOperations;
+import edu.stanford.epad.epadws.queries.EpadOperations;
 import edu.stanford.epad.epadws.xnat.XNATSessionOperations;
 
 /**
@@ -46,13 +46,15 @@ public class DicomDeleteHandler extends AbstractHandler
 
 				if (queryString != null) {
 					try {
+						EpadOperations epadOperations = DefaultEpadOperations.getInstance();
+
 						String studyUID = httpRequest.getParameter("studyuid");
 						String seriesUID = httpRequest.getParameter("seriesuid");
 						if (studyUID != null) {
 							if (seriesUID == null)
-								handleStudyDeleteRequest(studyUID);
+								epadOperations.scheduleStudyDelete(studyUID);
 							else
-								handleSeriesDeleteRequest(studyUID, seriesUID);
+								epadOperations.scheduleSeriesDelete(studyUID, seriesUID);
 							statusCode = HttpServletResponse.SC_OK;
 						} else {
 							statusCode = HandlerUtil.warningResponse(HttpServletResponse.SC_BAD_REQUEST, BAD_QUERY_MESSAGE,
@@ -72,17 +74,5 @@ public class DicomDeleteHandler extends AbstractHandler
 			statusCode = HandlerUtil.internalErrorJSONResponse(INTERNAL_ERROR_MESSAGE, t, responseStream, log);
 		}
 		httpResponse.setStatus(statusCode);
-	}
-
-	private void handleStudyDeleteRequest(String studyUID)
-	{
-		log.info("DeleteHandler(study) = " + studyUID);
-		(new Thread(new DicomStudyDeleteTask(studyUID))).start();
-	}
-
-	private void handleSeriesDeleteRequest(String studyUID, String seriesUID)
-	{
-		log.info("DeleteHandler(series) = " + seriesUID);
-		(new Thread(new DicomSeriesDeleteTask(studyUID, seriesUID))).start();
 	}
 }

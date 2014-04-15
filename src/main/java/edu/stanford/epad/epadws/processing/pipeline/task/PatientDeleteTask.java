@@ -9,6 +9,8 @@ import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeOperations;
 import edu.stanford.epad.epadws.epaddb.EpadDatabase;
 import edu.stanford.epad.epadws.epaddb.EpadDatabaseOperations;
 import edu.stanford.epad.epadws.epaddb.FileOperations;
+import edu.stanford.epad.epadws.queries.XNATQueries;
+import edu.stanford.epad.epadws.xnat.XNATDeletionOperations;
 
 /**
  * Delete a patient and all studies for that patient in the ePAD and DCMCHEE databases.
@@ -20,12 +22,14 @@ public class PatientDeleteTask implements Runnable
 {
 	private static EPADLogger logger = EPADLogger.getInstance();
 
-	// private final String projectID;
+	private final String sessionID;
+	private final String projectID;
 	private final String patientID;
 
-	public PatientDeleteTask(String projectID, String patientID)
+	public PatientDeleteTask(String sessionID, String projectID, String patientID)
 	{
-		// this.projectID = projectID;
+		this.sessionID = sessionID;
+		this.projectID = projectID;
 		this.patientID = patientID;
 	}
 
@@ -36,34 +40,32 @@ public class PatientDeleteTask implements Runnable
 		Dcm4CheeDatabaseOperations dcm4CheeDatabaseOperations = Dcm4CheeDatabase.getInstance()
 				.getDcm4CheeDatabaseOperations();
 
-		// We assume patient and associated studies already deleted from XNAT.
-		// TODO Need to do this deletion here instead of at the client side!!!
-
-		// Now ask XNAT if we have some of these studies remaining. Need to use admin password to find all!
-		// If we have some, don't delete ePAD PNGs or Dcm4Chee DICOMS.
-		// public static XNATSessionResponse getXNATSessionID(admin, admin)
-		// XNATQueries.dicomExperiments(sessionID);
-		// public static XNATSessionResponse deleteXNATSessionID(admin, admin)
-
 		try {
-			Set<String> studyUIDs = dcm4CheeDatabaseOperations.getStudyUIDsForPatient(patientID);
+			Set<String> studyUIDs = XNATQueries.studyUIDsForSubject(sessionID, projectID, patientID);
 
-			for (String studyID : studyUIDs) {
-				Set<String> seriesUIDs = dcm4CheeDatabaseOperations.findAllSeriesUIDsInStudy(studyID);
-				logger.info("Found " + seriesUIDs.size() + " series in study " + patientID);
+			logger.info("Deleting patient " + patientID + " in project " + projectID);
 
-				Dcm4CheeOperations.deleteStudy(studyID); // Must run after finding series in DCM4CHEE
+			XNATDeletionOperations.deleteXNATSubject(projectID, patientID, sessionID);
+
+			// Now delete studies from dcm4chee and ePAD's database; includes deleting PNGs for studies.
+			for (String studyUID : studyUIDs) {
+				Set<String> seriesUIDs = dcm4CheeDatabaseOperations.findAllSeriesUIDsInStudy(studyUID);
+				logger.info("Found " + seriesUIDs.size() + " series in study " + studyUID);
+
+				logger.info("Deleting study " + studyUID + " from dcm4chee's database");
+				Dcm4CheeOperations.deleteStudy(studyUID); // Must run after finding series in DCM4CHEE
 
 				// Should not delete until after deleting study in DCM4CHEE or PNG pipeline will activate.
 				for (String seriesUID : seriesUIDs) {
-					logger.info("SeriesUID to delete in ePAD database: " + seriesUID);
+					logger.info("Deleting series " + seriesUID + " from ePAD database");
 					epadDatabaseOperations.deleteSeries(seriesUID);
 				}
-				epadDatabaseOperations.deleteStudy(studyID);
-				FileOperations.deletePNGsForStudy(studyID);
+				logger.info("Deleting study " + studyUID + " from ePAD database");
+				epadDatabaseOperations.deleteStudy(studyUID);
+				FileOperations.deletePNGsForStudy(studyUID);
 			}
 		} catch (Exception e) {
-			logger.warning("Patient delete task has error: " + e.getMessage(), e);
+			logger.warning("Error deleting patient " + patientID + " in project " + projectID, e);
 		}
 	}
 }
