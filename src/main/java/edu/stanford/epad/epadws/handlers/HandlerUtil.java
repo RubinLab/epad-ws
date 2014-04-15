@@ -78,30 +78,34 @@ public class HandlerUtil
 	public static int warningResponse(int responseCode, String message, Throwable t, PrintWriter responseStream,
 			EPADLogger log)
 	{
-		log.warning(message, t);
+		String finalMessage = message + (t == null ? "" : ((t.getMessage() == null) ? "" : ": " + t.getMessage()));
+		log.warning(finalMessage);
 		if (responseStream != null)
-			responseStream.append(message);
+			responseStream.append(finalMessage);
 		return responseCode;
 	}
 
 	public static int warningJSONResponse(int responseCode, String message, Throwable t, PrintWriter responseStream,
 			EPADLogger log)
 	{
-		log.warning(message, t);
+		String finalMessage = message + (t == null ? "" : ((t.getMessage() == null) ? "" : ": " + t.getMessage()));
+		log.warning(finalMessage);
 		if (responseStream != null)
-			responseStream.append(JsonHelper.createJSONErrorResponse(message));
+			responseStream.append(JsonHelper.createJSONErrorResponse(finalMessage));
 		return responseCode;
 	}
 
 	public static int warningJSONResponse(int responseCode, String message, Throwable t, EPADLogger log)
 	{
-		log.warning(message, t);
+		String finalMessage = message + (t == null ? "" : ((t.getMessage() == null) ? "" : ": " + t.getMessage()));
+		log.warning(finalMessage);
 		return responseCode;
 	}
 
 	public static int warningResponse(int responseCode, String message, Throwable t, EPADLogger log)
 	{
-		log.warning(message, t);
+		String finalMessage = message + (t == null ? "" : ((t.getMessage() == null) ? "" : ": " + t.getMessage()));
+		log.warning(finalMessage);
 		return responseCode;
 	}
 

@@ -81,7 +81,6 @@ public class EPADProjectsHandler extends AbstractHandler
 
 	private int handleQuery(HttpServletRequest httpRequest, PrintWriter responseStream)
 	{
-		EPADSearchFilter searchFilter = EPADSearchFilterBuilder.build(httpRequest);
 		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
 		String jsessionID = XNATSessionOperations.getJSessionIDFromRequest(httpRequest);
 		String username = httpRequest.getParameter("username");
@@ -89,6 +88,8 @@ public class EPADProjectsHandler extends AbstractHandler
 		int statusCode;
 
 		try {
+			EPADSearchFilter searchFilter = EPADSearchFilterBuilder.build(httpRequest);
+
 			if (HandlerUtil.matchesTemplate(PROJECT_LIST_TEMPLATE, pathInfo)) {
 				EPADProjectList projectList = epadOperations.getAllProjectsForUser(jsessionID, username, searchFilter);
 				responseStream.append(projectList.toJSON());
