@@ -98,7 +98,7 @@ public class DCM4CHEESearchHandler extends AbstractHandler
 				return curr;
 			}
 		}
-		log.warning("Request missing study search type parameter. req=" + httpRequest.toString());
-		throw new IllegalArgumentException("Missing study search type search parameter. Req=" + httpRequest.toString());
+		log.warning("Request missing study search type parameter; request=" + httpRequest.toString());
+		throw new IllegalArgumentException("Missing study search type search parameter; request=" + httpRequest.toString());
 	}
 }

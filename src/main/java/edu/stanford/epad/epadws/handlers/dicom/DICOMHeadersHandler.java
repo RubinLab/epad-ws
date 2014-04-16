@@ -48,7 +48,7 @@ public class DICOMHeadersHandler extends AbstractHandler
 
 					log.info("Retrieving DICOM headers for image " + imageUID + " in series " + seriesUID);
 
-					if (studyUID != null && seriesUID != null && imageUID != null) {
+					if (validParameters(studyUID, seriesUID, imageUID)) {
 						DICOMElementList dicomElementList = Dcm4CheeQueries.getDICOMElementsFromWADO(studyUID, seriesUID, imageUID);
 						if (dicomElementList.ResultSet.totalRecords != 0) {
 							responseStream.append(dicomElementList.toJSON());
@@ -72,5 +72,10 @@ public class DICOMHeadersHandler extends AbstractHandler
 			statusCode = HandlerUtil.internalErrorJSONResponse(INTERNAL_ERROR_MESSAGE, t, responseStream, log);
 		}
 		httpResponse.setStatus(statusCode);
+	}
+
+	private boolean validParameters(String studyUID, String seriesUID, String imageUID)
+	{
+		return (studyUID != null && seriesUID != null && imageUID != null);
 	}
 }

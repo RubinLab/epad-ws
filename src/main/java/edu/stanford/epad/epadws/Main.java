@@ -40,6 +40,7 @@ import edu.stanford.epad.epadws.epaddb.EpadDatabase;
 import edu.stanford.epad.epadws.handlers.admin.DICOMReprocessingHandler;
 import edu.stanford.epad.epadws.handlers.admin.ImageCheckHandler;
 import edu.stanford.epad.epadws.handlers.admin.ResourceCheckHandler;
+import edu.stanford.epad.epadws.handlers.admin.ResourceFailureLogHandler;
 import edu.stanford.epad.epadws.handlers.admin.ServerStatusHandler;
 import edu.stanford.epad.epadws.handlers.aim.AimResourceHandler;
 import edu.stanford.epad.epadws.handlers.coordination.CoordinationHandler;
@@ -250,22 +251,22 @@ public class Main
 		webAppContext.setTempDirectory(new File("/home/epad/DicomProxy/jetty")); // TODO Read from config file
 
 		handlerList.add(webAppContext);
-		log.info("Added " + warFileName + " at context path " + contextPath);
+		log.info("Added WAR " + warFileName + " at context path " + contextPath);
 	}
 
-	private static void addFileServerAtContextPath(String baseDir, List<Handler> handlerList, String contextPath)
+	private static void addFileServerAtContextPath(String baseDirectory, List<Handler> handlerList, String contextPath)
 	{
 		ResourceHandler resourceHandler = new ResourceHandler();
-		resourceHandler.setDirectoriesListed(true);
+		resourceHandler.setDirectoriesListed(false);
 		resourceHandler.setWelcomeFiles(new String[] { "index.html" });
-		resourceHandler.setResourceBase(baseDir);
+		resourceHandler.setResourceBase(baseDirectory);
 
 		HandlerList handlers = new HandlerList();
-		handlers.setHandlers(new Handler[] { resourceHandler, new DefaultHandler() });
+		handlers.setHandlers(new Handler[] { resourceHandler, new ResourceFailureLogHandler(), new DefaultHandler() });
 
 		addHandlerAtContextPath(handlers, contextPath, handlerList);
 
-		log.info("Added file server for " + baseDir + " directory.");
+		log.info("Added file server for " + baseDirectory + " directory.");
 	}
 
 	/**

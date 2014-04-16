@@ -57,34 +57,34 @@ public class PngGeneratorTask implements GeneratorTask
 		EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
 		File inputDICOMFile = dicomInputFile;
 		File outputPNGFile = pngOutputFile;
-		Map<String, String> epadFilesTable = new HashMap<String, String>();
+		Map<String, String> epadFilesTableData = new HashMap<String, String>();
 		OutputStream outputPNGStream = null;
 
 		try {
 			DicomReader instance = new DicomReader(inputDICOMFile);
 			String pngFilePath = outputPNGFile.getAbsolutePath();
-			epadFilesTable = Dcm4CheeDatabaseUtils.createEPadFilesTableData(outputPNGFile);
+			epadFilesTableData = Dcm4CheeDatabaseUtils.createEPadFilesTableData(outputPNGFile);
 			outputPNGFile = new File(pngFilePath);
 
 			EPADFileUtils.createDirsAndFile(outputPNGFile);
 			outputPNGStream = new FileOutputStream(outputPNGFile);
 			ImageIO.write(instance.getPackedImage(), "png", outputPNGStream);
-			epadFilesTable = Dcm4CheeDatabaseUtils.createEPadFilesTableData(outputPNGFile);
+			epadFilesTableData = Dcm4CheeDatabaseUtils.createEPadFilesTableData(outputPNGFile);
 			log.info("PNG generated for series " + seriesUID);
 
-			epadDatabaseOperations.updateEpadFileRecord(epadFilesTable.get("file_path"), PngProcessingStatus.DONE,
-					getFileSize(epadFilesTable), "");
+			epadDatabaseOperations.updateEpadFileRecord(epadFilesTableData.get("file_path"), PngProcessingStatus.DONE,
+					getFileSize(epadFilesTableData), "");
 		} catch (FileNotFoundException e) {
 			log.warning("Failed to create PNG for series " + seriesUID, e);
-			epadDatabaseOperations.updateEpadFileRecord(epadFilesTable.get("file_path"), PngProcessingStatus.ERROR, 0,
+			epadDatabaseOperations.updateEpadFileRecord(epadFilesTableData.get("file_path"), PngProcessingStatus.ERROR, 0,
 					"Dicom file not found.");
 		} catch (IOException e) {
 			log.warning("Failed to create PNG for series " + seriesUID, e);
-			epadDatabaseOperations.updateEpadFileRecord(epadFilesTable.get("file_path"), PngProcessingStatus.ERROR, 0,
+			epadDatabaseOperations.updateEpadFileRecord(epadFilesTableData.get("file_path"), PngProcessingStatus.ERROR, 0,
 					"IO Error.");
 		} catch (Throwable t) {
 			log.warning("Failed to create PNG for series " + seriesUID, t);
-			epadDatabaseOperations.updateEpadFileRecord(epadFilesTable.get("file_path"), PngProcessingStatus.ERROR, 0,
+			epadDatabaseOperations.updateEpadFileRecord(epadFilesTableData.get("file_path"), PngProcessingStatus.ERROR, 0,
 					"General Exception: " + t.getMessage());
 		} finally {
 			IOUtils.closeQuietly(outputPNGStream);

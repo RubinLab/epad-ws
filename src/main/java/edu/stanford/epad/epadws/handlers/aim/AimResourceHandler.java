@@ -95,7 +95,7 @@ public class AimResourceHandler extends AbstractHandler
 						String searchValue = aimSearchType != null ? httpRequest.getParameter(aimSearchType.getName()) : null;
 						String user = httpRequest.getParameter("user");
 
-						if (aimSearchType != null && searchValue != null && user != null) {
+						if (validParameters(aimSearchType, searchValue, user)) {
 							queryAIMImageAnnotations(responseStream, aimSearchType, searchValue, user);
 							statusCode = HttpServletResponse.SC_OK;
 						} else
@@ -255,5 +255,10 @@ public class AimResourceHandler extends AbstractHandler
 			newNode.appendChild(tempList.item(i).cloneNode(true));
 		}
 		return newNode;
+	}
+
+	private boolean validParameters(AIMSearchType aimSearchType, String searchValue, String user)
+	{
+		return (aimSearchType != null && searchValue != null && user != null);
 	}
 }
