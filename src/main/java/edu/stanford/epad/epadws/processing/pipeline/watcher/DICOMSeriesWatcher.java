@@ -16,7 +16,7 @@ import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeDatabaseOperations;
 import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeDatabaseUtils;
 import edu.stanford.epad.epadws.epaddb.EpadDatabase;
 import edu.stanford.epad.epadws.epaddb.EpadDatabaseOperations;
-import edu.stanford.epad.epadws.processing.model.DicomImageProcessingState;
+import edu.stanford.epad.epadws.processing.model.DicomSeriesProcessingState;
 import edu.stanford.epad.epadws.processing.model.DicomSeriesProcessingDescription;
 import edu.stanford.epad.epadws.processing.model.DicomSeriesProcessingStatus;
 import edu.stanford.epad.epadws.processing.model.DicomSeriesProcessingStatusTracker;
@@ -96,11 +96,11 @@ public class DICOMSeriesWatcher implements Runnable
 								+ unprocessedDicomImageFileDescriptions.size() + " unprocessed DICOM image(s).");
 						currentDicomSeriesDescription.updateWithDicomImageFileDescriptions(unprocessedDicomImageFileDescriptions);
 						currentDicomSeriesProcessingStatus.registerActivity();
-						currentDicomSeriesProcessingStatus.setState(DicomImageProcessingState.IN_PIPELINE);
+						currentDicomSeriesProcessingStatus.setSeriesProcessingState(DicomSeriesProcessingState.IN_PIPELINE);
 						queueAndWatcherManager.addToPNGGeneratorTaskPipeline(unprocessedDicomImageFileDescriptions);
 						log.info("Submitted series " + currentDicomSeriesDescription.getSeriesUID() + " to PNG generator");
 					} else { // There are no unprocessed PNG files left.
-						if (currentDicomSeriesProcessingStatus.getProcessingState() == DicomImageProcessingState.IN_PIPELINE) {
+						if (currentDicomSeriesProcessingStatus.getDicomSeriesProcessingState() == DicomSeriesProcessingState.IN_PIPELINE) {
 							// logger.info("No unprocessed PNG files left for series " +
 							// currentDicomSeriesDescription.getSeriesUID());
 							/*

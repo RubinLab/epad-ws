@@ -44,7 +44,10 @@ public class ProjectDeleteTask implements Runnable
 
 				Set<String> studyUIDs = XNATQueries.dicomStudyUIDsForSubject(sessionID, projectID, patientID);
 
-				XNATDeletionOperations.deleteXNATSubject(projectID, patientID, sessionID);
+				if (XNATDeletionOperations.deleteXNATSubject(projectID, patientID, sessionID))
+					logger.info("Deleted patient " + patientID + " in project " + projectID + " from XNAT");
+				else
+					logger.warning("Error in deleting patient " + patientID + " in project " + projectID + " from XNAT");
 
 				// Now delete studies from dcm4chee and ePAD's database; includes deleting PNGs for studies.
 				for (String studyUID : studyUIDs) {
@@ -64,10 +67,13 @@ public class ProjectDeleteTask implements Runnable
 					FileOperations.deletePNGsForStudy(studyUID);
 				}
 			}
-			XNATDeletionOperations.deleteXNATProject(projectID, sessionID);
+			if (XNATDeletionOperations.deleteXNATProject(projectID, sessionID))
+				logger.info("Deleted project " + projectID + " from XNAT");
+			else
+				logger.warning("Error in deleting project " + projectID + " from XNAT");
 
 		} catch (Exception e) {
-			logger.warning("Error deleting project " + projectID, e);
+			logger.warning("Error deleting project " + projectID + " from XNAT", e);
 		}
 	}
 }

@@ -30,16 +30,16 @@ public class Dcm4CheeDatabaseUtils
 		String sopInstanceUID = getSOPInstanceUIDFromPath(filePath);
 		int instanceKey = dcm4CheeDatabaseOperations.getPrimaryKeyForInstanceUID(sopInstanceUID);
 
-		Map<String, String> retVal = new HashMap<String, String>();
-		retVal.put("instance_fk", "" + instanceKey);
-		retVal.put("file_type", "" + getFileTypeFromName(filePath));
-		retVal.put("file_path", filePath);
-		retVal.put("file_size", "" + fileSize);
-		retVal.put("file_md5", "n/a");
-		retVal.put("file_status", "" + PngProcessingStatus.DONE.getCode());
-		retVal.put("err_msg", "");
+		Map<String, String> fileTableData = new HashMap<String, String>();
+		fileTableData.put("instance_fk", "" + instanceKey);
+		fileTableData.put("file_type", "" + getFileTypeFromName(filePath));
+		fileTableData.put("file_path", filePath);
+		fileTableData.put("file_size", "" + fileSize);
+		fileTableData.put("file_md5", "n/a");
+		fileTableData.put("file_status", "" + PngProcessingStatus.DONE.getCode());
+		fileTableData.put("err_msg", "");
 
-		return retVal;
+		return fileTableData;
 	}
 
 	public static final int FILE_TYPE_UNKNOWN = 0;

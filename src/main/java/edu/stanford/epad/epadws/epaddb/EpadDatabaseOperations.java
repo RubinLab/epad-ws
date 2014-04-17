@@ -21,10 +21,12 @@ public interface EpadDatabaseOperations
 
 	void deleteSeries(String seriesUID);
 
-	void updateSeriesStatusCode(int newStatusCode, String seriesUID);
+	void updateOrInsertSeries(String seriesUID, PngProcessingStatus pngProcessingStatus);
 
 	void insertEpadEvent(String sessionID, String event_status, String aim_uid, String aim_name, String patient_id,
 			String patient_name, String template_id, String template_name, String plugin_name);
+
+	int getPNGProcessingStatusForSeries(String seriesUID);
 
 	List<Map<String, String>> getEpadEventsForSessionID(String sessionID);
 

@@ -47,7 +47,7 @@ public class DicomSeriesProcessingDescription
 		return seriesUID;
 	}
 
-	public String getStudyIUID()
+	public String getStudyUID()
 	{
 		return studyUID;
 	}

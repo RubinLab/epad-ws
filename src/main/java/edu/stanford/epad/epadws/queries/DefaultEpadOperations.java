@@ -143,9 +143,10 @@ public class DefaultEpadOperations implements EpadOperations
 	public EPADSeriesList getAllSeriesForStudy(String sessionID, String projectID, String subjectID, String studyUID,
 			EPADSearchFilter searchFilter)
 	{
-		EPADSeriesList epadSeriesList = new EPADSeriesList();
+		EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
 		XNATUserList xnatUsers = XNATQueries.usersForProject(sessionID, projectID);
 		Set<String> usernames = xnatUsers.getLoginNames();
+		EPADSeriesList epadSeriesList = new EPADSeriesList();
 
 		DCM4CHEESeriesList dcm4CheeSeriesList = Dcm4CheeQueries.getSeriesInStudy(studyUID);
 		for (DCM4CHEESeries dcm4CheeSeries : dcm4CheeSeriesList.ResultSet.Result) {
@@ -156,17 +157,24 @@ public class DefaultEpadOperations implements EpadOperations
 			String seriesDescription = dcm4CheeSeries.seriesDate;
 			String examType = dcm4CheeSeries.examType;
 			String bodyPart = dcm4CheeSeries.bodyPart;
+			String accessionNumber = dcm4CheeSeries.accessionNumber;
+			String institution = dcm4CheeSeries.institution;
+			String stationName = dcm4CheeSeries.stationName;
+			String department = dcm4CheeSeries.department;
 			int numberOfImages = dcm4CheeSeries.imagesInSeries;
+			int numberOfSeriesRelatedInstances = dcm4CheeSeries.numberOfSeriesRelatedInstances;
 			int numberOfAnnotations = AIMQueries.getNumberOfAIMAnnotationsForSeriesUID(seriesUID, usernames);
-			boolean filter = searchFilter.shouldFilterSeries(patientID, patientName, examType, numberOfAnnotations);
+			int pngProcessingStatus = epadDatabaseOperations.getPNGProcessingStatusForSeries(seriesUID);
+			boolean filter = searchFilter.shouldFilterSeries(patientID, patientName, examType, accessionNumber,
+					numberOfAnnotations);
 
 			if (!filter) {
 				EPADSeries epadSeries = new EPADSeries(studyUID, seriesUID, patientID, patientName, seriesDate,
-						seriesDescription, examType, bodyPart, numberOfImages, numberOfAnnotations);
+						seriesDescription, examType, bodyPart, accessionNumber, numberOfImages, numberOfSeriesRelatedInstances,
+						numberOfAnnotations, institution, stationName, department, pngProcessingStatus);
 				epadSeriesList.addEPADSeries(epadSeries);
 			}
 		}
-
 		return epadSeriesList;
 	}
 
@@ -363,7 +371,7 @@ public class DefaultEpadOperations implements EpadOperations
 	@Override
 	public void schedulePatientDelete(String sessionID, String projectID, String patientID)
 	{
-		log.info("Scheduling deletion task for " + patientID + " in project " + projectID);
+		log.info("Scheduling deletion task for patient " + patientID + " in project " + projectID);
 
 		(new Thread(new PatientDeleteTask(sessionID, projectID, patientID))).start();
 	}
@@ -371,7 +379,8 @@ public class DefaultEpadOperations implements EpadOperations
 	@Override
 	public void scheduleStudyDelete(String sessionID, String projectID, String patientID, String studyUID)
 	{
-		log.info("Scheduling deletion task for study " + studyUID + " for " + patientID + " in project " + projectID);
+		log.info("Scheduling deletion task for study " + studyUID + " for patient " + patientID + " in project "
+				+ projectID);
 
 		(new Thread(new StudyDeleteTask(sessionID, projectID, patientID, studyUID))).start();
 	}

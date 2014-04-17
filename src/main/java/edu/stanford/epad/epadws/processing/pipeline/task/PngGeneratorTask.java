@@ -30,12 +30,14 @@ public class PngGeneratorTask implements GeneratorTask
 	private static final EPADLogger log = EPADLogger.getInstance();
 
 	private final String seriesUID;
+	private final String instanceNumber;
 	private final File dicomInputFile;
 	private final File pngOutputFile;
 
-	public PngGeneratorTask(String seriesUID, File dicomInputFile, File pngOutputFile)
+	public PngGeneratorTask(String seriesUID, String instanceNumber, File dicomInputFile, File pngOutputFile)
 	{
 		this.seriesUID = seriesUID;
+		this.instanceNumber = instanceNumber;
 		this.dicomInputFile = dicomInputFile;
 		this.pngOutputFile = pngOutputFile;
 	}
@@ -70,22 +72,26 @@ public class PngGeneratorTask implements GeneratorTask
 			outputPNGStream = new FileOutputStream(outputPNGFile);
 			ImageIO.write(instance.getPackedImage(), "png", outputPNGStream);
 			epadFilesTableData = Dcm4CheeDatabaseUtils.createEPadFilesTableData(outputPNGFile);
-			log.info("PNG generated for series " + seriesUID);
+			log.info("PNG generated for instance " + instanceNumber + " in series " + seriesUID);
 
 			epadDatabaseOperations.updateEpadFileRecord(epadFilesTableData.get("file_path"), PngProcessingStatus.DONE,
 					getFileSize(epadFilesTableData), "");
 		} catch (FileNotFoundException e) {
-			log.warning("Failed to create PNG for series " + seriesUID, e);
+			log.warning("Failed to create PNG for instance " + instanceNumber + " in series " + seriesUID, e);
 			epadDatabaseOperations.updateEpadFileRecord(epadFilesTableData.get("file_path"), PngProcessingStatus.ERROR, 0,
 					"Dicom file not found.");
+			epadDatabaseOperations.updateOrInsertSeries(seriesUID, PngProcessingStatus.ERROR);
 		} catch (IOException e) {
-			log.warning("Failed to create PNG for series " + seriesUID, e);
+			log.warning("Failed to create PNG for instance " + instanceNumber + " in series " + seriesUID, e);
 			epadDatabaseOperations.updateEpadFileRecord(epadFilesTableData.get("file_path"), PngProcessingStatus.ERROR, 0,
 					"IO Error.");
+			epadDatabaseOperations.updateOrInsertSeries(seriesUID, PngProcessingStatus.ERROR);
+
 		} catch (Throwable t) {
-			log.warning("Failed to create PNG for series " + seriesUID, t);
+			log.warning("Failed to create PNG for instance " + instanceNumber + " in series " + seriesUID, t);
 			epadDatabaseOperations.updateEpadFileRecord(epadFilesTableData.get("file_path"), PngProcessingStatus.ERROR, 0,
 					"General Exception: " + t.getMessage());
+			epadDatabaseOperations.updateOrInsertSeries(seriesUID, PngProcessingStatus.ERROR);
 		} finally {
 			IOUtils.closeQuietly(outputPNGStream);
 			if (inputDICOMFile.getName().endsWith(".tmp")) {

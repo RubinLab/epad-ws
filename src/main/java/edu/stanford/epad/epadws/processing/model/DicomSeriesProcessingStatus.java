@@ -18,7 +18,7 @@ public class DicomSeriesProcessingStatus
 
 	private final DicomSeriesProcessingDescription dicomSeriesProcessingDescription;
 
-	private DicomImageProcessingState dicomImageProcessingState;
+	private DicomSeriesProcessingState dicomSeriesProcessingState;
 
 	public DicomSeriesProcessingStatus(DicomSeriesProcessingDescription dicomSeriesProcessingDescription)
 	{
@@ -27,12 +27,12 @@ public class DicomSeriesProcessingStatus
 
 		this.dicomSeriesProcessingDescription = dicomSeriesProcessingDescription;
 		lastActivityTimeStamp = System.currentTimeMillis();
-		dicomImageProcessingState = DicomImageProcessingState.NEW;
+		dicomSeriesProcessingState = DicomSeriesProcessingState.NEW;
 	}
 
 	public float percentComplete()
 	{
-		return dicomSeriesProcessingDescription.percentComplete();
+		return this.dicomSeriesProcessingDescription.percentComplete();
 	}
 
 	public DicomSeriesProcessingDescription getDicomSeriesProcessingDescription()
@@ -40,14 +40,14 @@ public class DicomSeriesProcessingStatus
 		return dicomSeriesProcessingDescription;
 	}
 
-	public void setState(DicomImageProcessingState pState)
+	public void setSeriesProcessingState(DicomSeriesProcessingState pState)
 	{
-		dicomImageProcessingState = pState;
+		this.dicomSeriesProcessingState = pState;
 	}
 
-	public DicomImageProcessingState getProcessingState()
+	public DicomSeriesProcessingState getDicomSeriesProcessingState()
 	{
-		return dicomImageProcessingState;
+		return this.dicomSeriesProcessingState;
 	}
 
 	/**
@@ -58,13 +58,14 @@ public class DicomSeriesProcessingStatus
 	public boolean isDone()
 	{
 		long currTime = System.currentTimeMillis();
-		if (currTime > lastActivityTimeStamp + MAX_IDLE_TIME) {
-			logger.info("Series " + dicomSeriesProcessingDescription.getSeriesUID() + " has completed processing.");
+
+		if (dicomSeriesProcessingDescription.isComplete()) {
+			logger.info("Series " + dicomSeriesProcessingDescription.getSeriesUID() + " is complete with "
+					+ dicomSeriesProcessingDescription.getNumberOfInstances() + " instances");
 			return true;
 		}
-		if (dicomSeriesProcessingDescription.isComplete()) {
-			logger.info("Series: " + dicomSeriesProcessingDescription.getSeriesUID() + " is complete with "
-					+ dicomSeriesProcessingDescription.getNumberOfInstances() + " instances");
+		if (currTime > lastActivityTimeStamp + MAX_IDLE_TIME) {
+			logger.info("Series " + dicomSeriesProcessingDescription.getSeriesUID() + " has completed processing.");
 			return true;
 		}
 		return false;
@@ -72,6 +73,6 @@ public class DicomSeriesProcessingStatus
 
 	public void registerActivity()
 	{
-		lastActivityTimeStamp = System.currentTimeMillis();
+		this.lastActivityTimeStamp = System.currentTimeMillis();
 	}
 }

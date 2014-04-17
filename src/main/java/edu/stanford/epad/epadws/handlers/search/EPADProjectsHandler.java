@@ -152,7 +152,7 @@ public class EPADProjectsHandler extends AbstractHandler
 			// Map<String, String> templateMap = HandlerUtil.getTemplateMap(PROJECT_TEMPLATE, pathInfo);
 			// String projectID = HandlerUtil.getTemplateParameter(templateMap, "project");
 
-			statusCode = HttpServletResponse.SC_OK;
+			statusCode = HttpServletResponse.SC_ACCEPTED;
 
 		} else if (HandlerUtil.matchesTemplate(SUBJECT_TEMPLATE, pathInfo)) {
 			Map<String, String> templateMap = HandlerUtil.getTemplateMap(SUBJECT_TEMPLATE, pathInfo);
@@ -161,7 +161,7 @@ public class EPADProjectsHandler extends AbstractHandler
 
 			epadOperations.schedulePatientDelete(sessionID, projectID, subjectID);
 
-			statusCode = HttpServletResponse.SC_OK;
+			statusCode = HttpServletResponse.SC_ACCEPTED;
 
 		} else if (HandlerUtil.matchesTemplate(STUDY_TEMPLATE, pathInfo)) {
 			Map<String, String> templateMap = HandlerUtil.getTemplateMap(STUDY_TEMPLATE, pathInfo);
@@ -171,7 +171,7 @@ public class EPADProjectsHandler extends AbstractHandler
 
 			epadOperations.scheduleStudyDelete(sessionID, projectID, subjectID, studyUID);
 
-			statusCode = HttpServletResponse.SC_OK;
+			statusCode = HttpServletResponse.SC_ACCEPTED;
 		} else {
 			statusCode = HandlerUtil.warningJSONResponse(HttpServletResponse.SC_BAD_REQUEST, BAD_DELETE_MESSAGE,
 					responseStream, log);

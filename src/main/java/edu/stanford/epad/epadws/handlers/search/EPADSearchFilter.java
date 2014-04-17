@@ -272,34 +272,36 @@ public class EPADSearchFilter
 
 	public boolean shouldFilterProject(String projectName, int numberOfAnnotations)
 	{
-		return (this.hasProjectNameMatch() && !projectNameMatches(projectName))
-				|| (this.hasAnnotationMatch() && !annotationNumberMatches(numberOfAnnotations));
+		return (hasProjectNameMatch() && !projectNameMatches(projectName))
+				|| (hasAnnotationMatch() && !annotationNumberMatches(numberOfAnnotations));
 	}
 
 	public boolean shouldFilterSubject(String patientID, String patientName, Set<String> examTypes,
 			int numberOfAnnotations)
 	{
-		return (this.hasPatientIDMatch() && !patientIDMatches(patientID))
-				|| (this.hasPatientNameMatch() && !patientNameMatches(patientName))
-				|| (this.hasModalityMatch() && !modalitiesMatch(examTypes))
-				|| (this.hasAnnotationMatch() && !annotationNumberMatches(numberOfAnnotations));
+		return (hasPatientIDMatch() && !patientIDMatches(patientID))
+				|| (hasPatientNameMatch() && !patientNameMatches(patientName))
+				|| (hasModalityMatch() && !modalitiesMatch(examTypes))
+				|| (hasAnnotationMatch() && !annotationNumberMatches(numberOfAnnotations));
 	}
 
-	public boolean shouldFilterStudy(String patientID, String studyAccessionNumber, Set<String> examTypes,
+	public boolean shouldFilterStudy(String patientID, String accessionNumber, Set<String> examTypes,
 			int numberOfAnnotations)
 	{
-		return (this.hasPatientIDMatch() && !patientIDMatches(patientID))
-				|| (this.hasAccessionNumberMatch() && !accessionNumberMatches(studyAccessionNumber))
-				|| (this.hasModalityMatch() && !modalitiesMatch(examTypes))
-				|| (this.hasAnnotationMatch() && !annotationNumberMatches(numberOfAnnotations));
+		return (hasPatientIDMatch() && !patientIDMatches(patientID))
+				|| (hasAccessionNumberMatch() && !accessionNumberMatches(accessionNumber))
+				|| (hasModalityMatch() && !modalitiesMatch(examTypes))
+				|| (hasAnnotationMatch() && !annotationNumberMatches(numberOfAnnotations));
 	}
 
-	public boolean shouldFilterSeries(String patientID, String patientName, String examType, int numberOfAnnotations)
+	public boolean shouldFilterSeries(String patientID, String patientName, String examType, String accessionNumber,
+			int numberOfAnnotations)
 	{
-		return (this.hasPatientIDMatch() && !patientIDMatches(patientID))
-				|| (this.hasPatientNameMatch() && !patientNameMatches(patientName))
-				|| (this.hasModalityMatch() && !modalityMatches(examType))
-				|| (this.hasAnnotationMatch() && !annotationNumberMatches(numberOfAnnotations));
+		return (hasPatientIDMatch() && !patientIDMatches(patientID))
+				|| (hasPatientNameMatch() && !patientNameMatches(patientName))
+				|| (hasModalityMatch() && !modalityMatches(examType))
+				|| (hasAccessionNumberMatch() && !accessionNumberMatches(accessionNumber))
+				|| (hasAnnotationMatch() && !annotationNumberMatches(numberOfAnnotations));
 	}
 
 	private enum AnnotationMatch {

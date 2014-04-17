@@ -12,13 +12,13 @@ public class DicomImageDescription
 	private final String errorMessage = null;
 	private String pngFilePath = null;
 	private String dicomHeaderFilePath = null;
-	private DicomImageProcessingState state;
+	private DicomSeriesProcessingState state;
 
 	public DicomImageDescription(int instanceNum, String sopInstanceUID)
 	{
 		this.instanceNum = instanceNum;
 		this.sopInstanceUID = sopInstanceUID;
-		state = DicomImageProcessingState.NEW;
+		state = DicomSeriesProcessingState.NEW;
 	}
 
 	public int getInstanceNum()
@@ -31,12 +31,12 @@ public class DicomImageDescription
 		return sopInstanceUID;
 	}
 
-	public DicomImageProcessingState getState()
+	public DicomSeriesProcessingState getState()
 	{
 		return state;
 	}
 
-	public void setState(DicomImageProcessingState newState)
+	public void setState(DicomSeriesProcessingState newState)
 	{
 		state = newState;
 	}

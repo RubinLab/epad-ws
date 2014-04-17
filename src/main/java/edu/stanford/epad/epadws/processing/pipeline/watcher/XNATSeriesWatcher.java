@@ -59,7 +59,7 @@ public class XNATSeriesWatcher implements Runnable
 
 					validateDICOMSeriesProcessingDescription(dicomSeriesDescription);
 
-					String dicomStudyIUID = dicomSeriesDescription.getStudyIUID();
+					String dicomStudyIUID = dicomSeriesDescription.getStudyUID();
 					String dicomPatientID = dicomSeriesDescription.getPatientID();
 					String dicomPatientName = dicomSeriesDescription.getPatientName();
 

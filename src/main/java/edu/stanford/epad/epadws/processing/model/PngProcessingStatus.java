@@ -8,7 +8,7 @@ public enum PngProcessingStatus {
 
 	private int statusCode;
 
-	PngProcessingStatus(int status)
+	private PngProcessingStatus(int status)
 	{
 		this.statusCode = status;
 	}

@@ -40,10 +40,10 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 			ps.setInt(2, Integer.parseInt(row.get("file_type")));
 			ps.setString(3, row.get("file_path"));
 			ps.setInt(4, Integer.parseInt(row.get("file_size")));
-			int fileStatus = getFileStatus(row);
-			ps.setInt(5, fileStatus);
+			int pngProcessingStatus = getPNGProcessingStatusCode(row);
+			ps.setInt(5, pngProcessingStatus);
 			String errMsg = getErrMsg(row);
-			ps.setString(6, errMsg);// err_msg
+			ps.setString(6, errMsg);
 			ps.setString(7, row.get("file_md5"));
 			ps.execute();
 		} catch (SQLException sqle) {
@@ -56,7 +56,8 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 	}
 
 	@Override
-	public void updateEpadFileRecord(String filePath, PngProcessingStatus pngStatus, int fileSize, String errorMsg)
+	public void updateEpadFileRecord(String filePath, PngProcessingStatus pngProcessingStatus, int fileSize,
+			String errorMsg)
 	{
 		Connection c = null;
 		PreparedStatement ps = null;
@@ -64,7 +65,7 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 		try {
 			c = getConnection();
 			ps = c.prepareStatement(EpadDatabaseCommands.UPDATE_EPAD_FILES_FOR_EXACT_PATH);
-			ps.setInt(1, pngStatus.getCode());
+			ps.setInt(1, pngProcessingStatus.getCode());
 			ps.setInt(2, fileSize);
 			ps.setString(3, getValueOrDefault(errorMsg, ""));
 			ps.setString(4, filePath);
@@ -237,6 +238,29 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 		}
 	}
 
+	public int getPNGProcessingStatusForSeries(String seriesUID)
+	{
+		Connection c = null;
+		PreparedStatement ps = null;
+		ResultSet rs = null;
+		int status = -1;
+
+		try {
+			c = getConnection();
+			ps = c.prepareStatement(EpadDatabaseCommands.SELECT_STATUS_FOR_SERIES_BY_ID);
+			ps.setString(1, seriesUID);
+			rs = ps.executeQuery();
+			if (rs.next())
+				status = rs.getInt(1);
+		} catch (SQLException sqle) {
+			String debugInfo = DatabaseUtils.getDebugData(rs);
+			log.warning("Database operation failed; debugInfo=" + debugInfo, sqle);
+		} finally {
+			close(c, ps, rs);
+		}
+		return status;
+	}
+
 	/**
 	 * Query <core>epaddb.coordination_description</code> table to find a description of a coordination and return this
 	 * description as a {@link Term}.
@@ -395,7 +419,7 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 	}
 
 	@Override
-	public void deleteStudy(String uid)
+	public void deleteStudy(String studyUID)
 	{
 		Connection c = null;
 		PreparedStatement ps = null;
@@ -404,9 +428,8 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 			c = getConnection();
 
 			ps = c.prepareStatement(EpadDatabaseCommands.DELETE_FROM_EPAD_FILES);
-			ps.setString(1, "%" + uid.replace('.', '_') + "%");
-			int rowsAffected = ps.executeUpdate();
-			log.info("Rows affected " + rowsAffected);
+			ps.setString(1, "%" + studyUID.replace('.', '_') + "%");
+			ps.executeUpdate();
 		} catch (SQLException sqle) {
 			String debugInfo = DatabaseUtils.getDebugData(rs);
 			log.warning("Database operation failed; debugInfo=" + debugInfo, sqle);
@@ -416,7 +439,7 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 	}
 
 	@Override
-	public void deleteSeries(String uid)
+	public void deleteSeries(String seriesUID)
 	{
 		Connection c = null;
 		PreparedStatement ps = null;
@@ -424,17 +447,15 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 		try {
 			c = getConnection();
 
-			log.info("Deleting series " + uid + " from ePAD file table in database");
+			log.info("Deleting series " + seriesUID + " from ePAD files table");
 			ps = c.prepareStatement(EpadDatabaseCommands.DELETE_FROM_EPAD_FILES);
-			ps.setString(1, "%" + uid.replace('.', '_') + "%");
-			int rowsAffected = ps.executeUpdate();
-			log.info("Rows affected " + rowsAffected);
+			ps.setString(1, "%" + seriesUID.replace('.', '_') + "%");
+			ps.executeUpdate();
 
-			log.info("Deleting series " + uid + " from ePAD status table in database");
+			log.info("Deleting series " + seriesUID + " from ePAD status table");
 			ps = c.prepareStatement(EpadDatabaseCommands.DELETE_SERIES_FROM_SERIES_STATUS);
-			ps.setString(1, uid);
-			rowsAffected = ps.executeUpdate();
-			log.info("Rows affected " + rowsAffected);
+			ps.setString(1, seriesUID);
+			ps.executeUpdate();
 		} catch (SQLException sqle) {
 			String debugInfo = DatabaseUtils.getDebugData(rs);
 			log.warning("Database operation failed; debugInfo=" + debugInfo, sqle);
@@ -474,12 +495,12 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 	}
 
 	@Override
-	public void updateSeriesStatusCode(int newStatusCode, String seriesIUID)
+	public void updateOrInsertSeries(String seriesUID, PngProcessingStatus pngProcessingStatus)
 	{
-		if (!hasSeriesInEPadDatabase(seriesIUID)) {
-			insertSeriesInEPadDatabase(newStatusCode, seriesIUID);
+		if (!hasSeriesInEPadDatabase(seriesUID)) {
+			recordNewSeries(pngProcessingStatus, seriesUID);
 		} else {
-			updateSeriesInEPadDatabase(newStatusCode, seriesIUID);
+			updatePNGProcessingStatusForSeries(pngProcessingStatus, seriesUID);
 		}
 	}
 
@@ -599,18 +620,18 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 		return query.toString();
 	}
 
-	private int getFileStatus(Map<String, String> data)
+	private int getPNGProcessingStatusCode(Map<String, String> filesTableRowData)
 	{
 		try {
-			String fileStatus = data.get("file_status");
+			String fileStatus = filesTableRowData.get("file_status");
 			if (fileStatus != null) {
 				return Integer.parseInt(fileStatus);
-			}
-			return PngProcessingStatus.DONE.getCode();
+			} else
+				return PngProcessingStatus.ERROR.getCode();
 		} catch (Exception e) {
 			log.warning("failed to parse file_status.", e);
+			return PngProcessingStatus.ERROR.getCode();
 		}
-		return PngProcessingStatus.DONE.getCode();
 	}
 
 	private String getErrMsg(Map<String, String> data)
@@ -652,26 +673,26 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 		}
 	}
 
-	private void insertSeriesInEPadDatabase(int newStatusCode, String seriesIUID)
+	private void recordNewSeries(PngProcessingStatus pngProcessingStatus, String seriesUID)
 	{
 		Connection c = null;
 		PreparedStatement ps = null;
 		try {
 			c = getConnection();
 			ps = c.prepareStatement(EpadDatabaseCommands.INSERT_INTO_EPAD_SERIES_STATUS);
-			ps.setString(1, seriesIUID);
-			ps.setInt(2, newStatusCode);
+			ps.setString(1, seriesUID);
+			ps.setInt(2, pngProcessingStatus.getCode());
 			ps.execute();
 		} catch (SQLException sqle) {
 			log.warning("Database operation failed", sqle);
 		} catch (Exception e) {
-			log.warning("Database operation failed; statusCode=" + newStatusCode + ", series=" + seriesIUID, e);
+			log.warning("Database operation failed; series=" + seriesUID, e);
 		} finally {
 			close(c, ps);
 		}
 	}
 
-	private void updateSeriesInEPadDatabase(int newStatusCode, String seriesIUID)
+	private void updatePNGProcessingStatusForSeries(PngProcessingStatus newPNGProcessingStatus, String seriesUID)
 	{
 		Connection c = null;
 		PreparedStatement ps = null;
@@ -679,8 +700,8 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 		try {
 			c = getConnection();
 			ps = c.prepareStatement(EpadDatabaseCommands.UPDATE_EPAD_SERIES_STATUS);
-			ps.setInt(1, newStatusCode);
-			ps.setString(2, seriesIUID);
+			ps.setInt(1, newPNGProcessingStatus.getCode());
+			ps.setString(2, seriesUID);
 			ps.execute();
 		} catch (SQLException sqle) {
 			String debugInfo = DatabaseUtils.getDebugData(rs);

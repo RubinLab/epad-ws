@@ -26,6 +26,7 @@ public interface EpadDatabaseCommands
 	public static final String INSERT_INTO_EPAD_SERIES_STATUS = "INSERT INTO epaddb.series_status(series_iuid,status) VALUES (?,?)";
 	public static final String UPDATE_EPAD_SERIES_STATUS = "UPDATE epaddb.series_status SET status=? where series_iuid=?";
 	public static final String SELECT_EPAD_SERIES_BY_ID = "SELECT * from epaddb.series_status where series_iuid=?";
+	public static final String SELECT_STATUS_FOR_SERIES_BY_ID = "SELECT status from epaddb.series_status where series_iuid=?";
 	public static final String SELECT_PATH = "select file_path from epaddb.epad_files as f where f.file_path LIKE ? LIMIT 1";
 	public static final String SELECT_ALL_EPAD_FILE_PATHS = "select file_path from epaddb.epad_files";
 

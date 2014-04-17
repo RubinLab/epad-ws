@@ -45,7 +45,10 @@ public class PatientDeleteTask implements Runnable
 
 			logger.info("Deleting patient " + patientID + " in project " + projectID);
 
-			XNATDeletionOperations.deleteXNATSubject(projectID, patientID, sessionID);
+			if (XNATDeletionOperations.deleteXNATSubject(projectID, patientID, sessionID))
+				logger.info("Deleted patient " + patientID + " in project " + projectID + " from XNAT");
+			else
+				logger.warning("Error in deleting patient " + patientID + " in project " + projectID + " from XNAT");
 
 			// Now delete studies from dcm4chee and ePAD's database; includes deleting PNGs for studies.
 			for (String studyUID : studyUIDs) {
