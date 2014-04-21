@@ -42,7 +42,7 @@ public class EPADSearchFilter
 		if (this.projectNameMatch == null)
 			return true;
 		else {
-			String projectNameRegex = ".*" + projectNameMatch + ".*";
+			String projectNameRegex = "(?i).*" + projectNameMatch + ".*";
 			if (projectName.matches(projectNameRegex))
 				return true;
 			else
@@ -70,7 +70,7 @@ public class EPADSearchFilter
 		if (this.patientNameMatch == null)
 			return true;
 		else {
-			String patientNameRegex = ".*" + patientNameMatch + ".*";
+			String patientNameRegex = "(?i).*" + patientNameMatch + ".*";
 			if (patientName.matches(patientNameRegex))
 				return true;
 			else
@@ -98,7 +98,7 @@ public class EPADSearchFilter
 		if (this.patientIDMatch == null)
 			return true;
 		else {
-			String patientIDRegex = ".*" + patientIDMatch + ".*";
+			String patientIDRegex = "(?i).*" + patientIDMatch + ".*";
 			if (patientID.matches(patientIDRegex))
 				return true;
 			else
@@ -126,7 +126,7 @@ public class EPADSearchFilter
 		if (this.accessionNumberMatch == null)
 			return true;
 		else {
-			String accessionNumberRegex = ".*" + accessionNumberMatch + ".*";
+			String accessionNumberRegex = "(?i).*" + accessionNumberMatch + ".*";
 			if (accessionNumber.matches(accessionNumberRegex))
 				return true;
 			else
@@ -162,7 +162,7 @@ public class EPADSearchFilter
 		if (this.modalityMatch == null)
 			return true;
 		else {
-			String modalityRegex = ".*" + modalityMatch + ".*";
+			String modalityRegex = "(?i).*" + modalityMatch + ".*";
 			if (modality.matches(modalityRegex))
 				return true;
 			else
