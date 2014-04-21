@@ -72,7 +72,13 @@ public interface EpadOperations
 
 	void scheduleStudyDelete(String sessionID, String projectID, String patientID, String studyUID);
 
+	void deleteStudyFromEPadAndDcm4CheeDatabases(String studyUID);
+
+	void deleteStudiesFromEPadAndDcm4CheeDatabases(Set<String> studyUIDs);
+
+	@Deprecated
 	void scheduleStudyDelete(String studyUID);
 
+	@Deprecated
 	void scheduleSeriesDelete(String studyUID, String seriesUID);
 }

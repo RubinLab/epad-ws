@@ -2,8 +2,6 @@ package edu.stanford.epad.epadws.handlers.search;
 
 import javax.servlet.http.HttpServletRequest;
 
-import edu.stanford.epad.common.util.EPADLogger;
-
 /**
  * 
  * 
@@ -14,7 +12,6 @@ import edu.stanford.epad.common.util.EPADLogger;
  */
 public class EPADSearchFilterBuilder
 {
-	private static final EPADLogger log = EPADLogger.getInstance();
 	private static final String PROJECT_NAME_MATCH_PARAMETER_NAME = "projectName";
 	private static final String PATIENT_NAME_MATCH_PARAMETER_NAME = "patientName";
 	private static final String PATIENT_ID_MATCH_PARAMETER_NAME = "patientID";

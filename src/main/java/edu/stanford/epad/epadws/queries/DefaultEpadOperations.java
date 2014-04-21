@@ -30,8 +30,10 @@ import edu.stanford.epad.dtos.XNATSubjectList;
 import edu.stanford.epad.dtos.XNATUserList;
 import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeDatabase;
 import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeDatabaseOperations;
+import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeOperations;
 import edu.stanford.epad.epadws.epaddb.EpadDatabase;
 import edu.stanford.epad.epadws.epaddb.EpadDatabaseOperations;
+import edu.stanford.epad.epadws.epaddb.FileOperations;
 import edu.stanford.epad.epadws.handlers.search.EPADSearchFilter;
 import edu.stanford.epad.epadws.processing.pipeline.task.DicomSeriesDeleteTask;
 import edu.stanford.epad.epadws.processing.pipeline.task.DicomStudyDeleteTask;
@@ -383,6 +385,40 @@ public class DefaultEpadOperations implements EpadOperations
 				+ projectID);
 
 		(new Thread(new StudyDeleteTask(sessionID, projectID, patientID, studyUID))).start();
+	}
+
+	@Override
+	public void deleteStudyFromEPadAndDcm4CheeDatabases(String studyUID)
+	{
+		EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
+		Dcm4CheeDatabaseOperations dcm4CheeDatabaseOperations = Dcm4CheeDatabase.getInstance()
+				.getDcm4CheeDatabaseOperations();
+
+		// Now delete studies from dcm4chee and ePAD's database; includes deleting PNGs for studies.
+		Set<String> seriesUIDs = dcm4CheeDatabaseOperations.findAllSeriesUIDsInStudy(studyUID);
+		log.info("Found " + seriesUIDs.size() + " series in study " + studyUID);
+
+		log.info("Deleting study " + studyUID + " from dcm4chee's database");
+		Dcm4CheeOperations.deleteStudy(studyUID); // Must run after finding series in DCM4CHEE
+
+		// First delete all series in study from ePAD's database; then delete the study itself.
+		// Should not delete until after deleting study in DCM4CHEE or PNG pipeline will activate.
+		for (String seriesUID : seriesUIDs) {
+			log.info("Deleting series " + seriesUID + " from ePAD database");
+			epadDatabaseOperations.deleteSeries(seriesUID);
+		}
+		log.info("Deleting study " + studyUID + " from ePAD database");
+		epadDatabaseOperations.deleteStudy(studyUID);
+
+		// Delete the underlying PNGs for the study
+		FileOperations.deletePNGsForStudy(studyUID);
+	}
+
+	@Override
+	public void deleteStudiesFromEPadAndDcm4CheeDatabases(Set<String> studyUIDs)
+	{
+		for (String studyUID : studyUIDs)
+			deleteStudyFromEPadAndDcm4CheeDatabases(studyUID);
 	}
 
 	private String createFileNameField(String sopInstanceUID)

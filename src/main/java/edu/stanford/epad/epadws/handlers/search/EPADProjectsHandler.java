@@ -149,11 +149,12 @@ public class EPADProjectsHandler extends AbstractHandler
 		int statusCode;
 
 		if (HandlerUtil.matchesTemplate(PROJECT_TEMPLATE, pathInfo)) {
-			// Map<String, String> templateMap = HandlerUtil.getTemplateMap(PROJECT_TEMPLATE, pathInfo);
-			// String projectID = HandlerUtil.getTemplateParameter(templateMap, "project");
+			Map<String, String> templateMap = HandlerUtil.getTemplateMap(PROJECT_TEMPLATE, pathInfo);
+			String projectID = HandlerUtil.getTemplateParameter(templateMap, "project");
+
+			epadOperations.scheduleProjectDelete(sessionID, projectID);
 
 			statusCode = HttpServletResponse.SC_ACCEPTED;
-
 		} else if (HandlerUtil.matchesTemplate(SUBJECT_TEMPLATE, pathInfo)) {
 			Map<String, String> templateMap = HandlerUtil.getTemplateMap(SUBJECT_TEMPLATE, pathInfo);
 			String projectID = HandlerUtil.getTemplateParameter(templateMap, "project");

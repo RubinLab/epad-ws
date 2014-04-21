@@ -65,10 +65,11 @@ import edu.stanford.epad.epadws.processing.pipeline.threads.ShutdownSignal;
 import edu.stanford.epad.epadws.processing.pipeline.watcher.QueueAndWatcherManager;
 
 /**
- * Entry point for the EPad Web Service.
+ * Entry point for the ePAD Web Service.
  * <p>
  * Start an embedded Jetty server and all the threads required for this application.
  */
+@SuppressWarnings("deprecation")
 public class Main
 {
 	private static final EPADLogger log = EPADLogger.getInstance();
@@ -176,6 +177,8 @@ public class Main
 		WindowLevelFactory.getInstance().buildAndStart();
 	}
 
+	// TODO Need to remove deprecated routes after testing.
+	@SuppressWarnings("deprecation")
 	private static void addHandlers(Server server)
 	{
 		List<Handler> handlerList = new ArrayList<Handler>();

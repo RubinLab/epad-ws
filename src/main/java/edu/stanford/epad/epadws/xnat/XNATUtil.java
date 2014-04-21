@@ -17,18 +17,6 @@ public class XNATUtil
 	private static final EPADLogger log = EPADLogger.getInstance();
 	private static final EPADConfig config = EPADConfig.getInstance();
 
-	public static final class XNATSessionResponse
-	{
-		public final int statusCode;
-		public final String response;
-
-		public XNATSessionResponse(int responseCode, String response)
-		{
-			this.statusCode = responseCode;
-			this.response = response;
-		}
-	}
-
 	public static String projectName2XNATProjectID(String xnatProjectName)
 	{ // Alphanumeric and dot and dash only
 		String result = xnatProjectName.replaceAll("[^a-zA-Z0-9\\\\-_]", "_");

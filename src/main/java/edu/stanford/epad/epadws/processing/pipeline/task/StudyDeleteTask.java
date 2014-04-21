@@ -3,12 +3,9 @@ package edu.stanford.epad.epadws.processing.pipeline.task;
 import java.util.Set;
 
 import edu.stanford.epad.common.util.EPADLogger;
-import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeDatabase;
-import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeDatabaseOperations;
-import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeOperations;
-import edu.stanford.epad.epadws.epaddb.EpadDatabase;
-import edu.stanford.epad.epadws.epaddb.EpadDatabaseOperations;
-import edu.stanford.epad.epadws.epaddb.FileOperations;
+import edu.stanford.epad.epadws.queries.DefaultEpadOperations;
+import edu.stanford.epad.epadws.queries.EpadOperations;
+import edu.stanford.epad.epadws.queries.XNATQueries;
 import edu.stanford.epad.epadws.xnat.XNATDeletionOperations;
 
 /**
@@ -18,7 +15,7 @@ import edu.stanford.epad.epadws.xnat.XNATDeletionOperations;
  */
 public class StudyDeleteTask implements Runnable
 {
-	private static EPADLogger logger = EPADLogger.getInstance();
+	private static EPADLogger log = EPADLogger.getInstance();
 
 	private final String sessionID;
 	private final String projectID;
@@ -36,31 +33,20 @@ public class StudyDeleteTask implements Runnable
 	@Override
 	public void run()
 	{
-		EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
-		Dcm4CheeDatabaseOperations dcm4CheeDatabaseOperations = Dcm4CheeDatabase.getInstance()
-				.getDcm4CheeDatabaseOperations();
+		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
 
 		try {
-			logger.info("Deleting study " + studyUID + " for patient " + patientID + " in project " + projectID);
+			log.info("Deleting study " + studyUID + " for patient " + patientID + " in project " + projectID);
 
 			XNATDeletionOperations.deleteXNATDICOMStudy(projectID, patientID, studyUID, sessionID);
 
-			Set<String> seriesUIDs = dcm4CheeDatabaseOperations.findAllSeriesUIDsInStudy(studyUID);
-			logger.info("Found " + seriesUIDs.size() + " series in study " + studyUID);
-
-			logger.info("Deleting study " + studyUID + " from dcm4chee's database");
-			Dcm4CheeOperations.deleteStudy(studyUID); // Must run after finding series in DCM4CHEE
-
-			// Should not delete until after deleting study in DCM4CHEE or PNG pipeline will activate.
-			for (String seriesUID : seriesUIDs) {
-				logger.info("Deleting series " + seriesUID + " from ePAD database");
-				epadDatabaseOperations.deleteSeries(seriesUID);
-			}
-			logger.info("Deleting study " + studyUID + " from ePAD database");
-			epadDatabaseOperations.deleteStudy(studyUID);
-			FileOperations.deletePNGsForStudy(studyUID);
+			Set<String> allStudyUIDs = XNATQueries.allDICOMStudyUIDs();
+			if (!allStudyUIDs.contains(studyUID))
+				epadOperations.deleteStudyFromEPadAndDcm4CheeDatabases(studyUID);
+			else
+				log.info("Study " + studyUID + " in use by other projects or subjects so will not be deleted from DCM4CHEE");
 		} catch (Exception e) {
-			logger.warning("Error deleting study " + studyUID + " for patient " + patientID + " in project " + projectID, e);
+			log.warning("Error deleting study " + studyUID + " for patient " + patientID + " in project " + projectID, e);
 		}
 	}
 }

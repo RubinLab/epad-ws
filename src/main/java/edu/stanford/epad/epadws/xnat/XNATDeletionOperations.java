@@ -42,7 +42,7 @@ public class XNATDeletionOperations
 				successfulDelete = true;
 			}
 		} catch (IOException e) {
-			log.warning("Error calling XNAT to delete from project " + xnatProjectLabelOrID, e);
+			log.warning("Error calling XNAT to delete for project " + xnatProjectLabelOrID, e);
 		} finally {
 			method.releaseConnection();
 		}

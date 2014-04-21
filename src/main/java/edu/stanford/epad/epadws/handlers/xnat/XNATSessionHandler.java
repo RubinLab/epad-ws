@@ -11,7 +11,7 @@ import org.eclipse.jetty.server.handler.AbstractHandler;
 import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.epad.epadws.handlers.HandlerUtil;
 import edu.stanford.epad.epadws.xnat.XNATSessionOperations;
-import edu.stanford.epad.epadws.xnat.XNATUtil.XNATSessionResponse;
+import edu.stanford.epad.epadws.xnat.XNATSessionOperations.XNATSessionResponse;
 
 /**
  * Handler for XNAT-based session management.

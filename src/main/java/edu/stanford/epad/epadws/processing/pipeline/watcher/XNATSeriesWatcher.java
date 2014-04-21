@@ -3,8 +3,6 @@ package edu.stanford.epad.epadws.processing.pipeline.watcher;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
 
-import javax.servlet.http.HttpServletResponse;
-
 import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.epad.epadws.processing.model.DicomSeriesProcessingDescription;
@@ -27,24 +25,19 @@ public class XNATSeriesWatcher implements Runnable
 	private final BlockingQueue<DicomSeriesProcessingDescription> xnatSeriesWatcherQueue;
 	private final ShutdownSignal shutdownSignal = ShutdownSignal.getInstance();
 
-	private static final EPADLogger logger = EPADLogger.getInstance();
+	private static final EPADLogger log = EPADLogger.getInstance();
 	private static final EPADConfig config = EPADConfig.getInstance();
 
 	private final String xnatUploadProjectID;
-	private final String xnatUploadProjectUser;
-	private final String xnatUploadProjectPassword;
-	private String jsessionID;
+	private final String jsessionID = null;
 
 	public XNATSeriesWatcher(BlockingQueue<DicomSeriesProcessingDescription> xnatSeriesWatcherQueue)
 	{
 		this.xnatSeriesWatcherQueue = xnatSeriesWatcherQueue;
 
 		xnatUploadProjectID = config.getStringPropertyValue("XNATUploadProjectID");
-		xnatUploadProjectUser = config.getStringPropertyValue("XNATUploadProjectUser");
-		xnatUploadProjectPassword = config.getStringPropertyValue("XNATUploadProjectPassword");
 
-		jsessionID = "";
-		logger.info("Starting the XNAT series watcher");
+		log.info("Starting the XNAT series watcher");
 	}
 
 	@Override
@@ -65,13 +58,13 @@ public class XNATSeriesWatcher implements Runnable
 
 					String xnatSubjectLabel = XNATUtil.dicomPatientID2XNATSubjectLabel(dicomPatientID);
 
-					logger.info("XNAT series watcher found new DICOM study " + dicomStudyIUID + " for patient "
-							+ dicomPatientName + " with ID " + dicomPatientID);
+					log.info("XNAT series watcher found new DICOM study " + dicomStudyIUID + " for patient " + dicomPatientName
+							+ " with ID " + dicomPatientID);
 
 					createXNATDICOMExperiment(xnatUploadProjectID, xnatSubjectLabel, dicomPatientName, dicomStudyIUID);
 				}
 			} catch (Exception e) {
-				logger.warning("Exception in XNAT series watcher thread", e);
+				log.warning("Exception in XNAT series watcher thread", e);
 			}
 		}
 	}
@@ -92,15 +85,14 @@ public class XNATSeriesWatcher implements Runnable
 	private void createXNATDICOMExperiment(String xnatProjectLabelOrID, String xnatSubjectLabel, String dicomPatientName,
 			String dicomStudyUID)
 	{
-		if (updateSessionID()) {
+		if (updateSessionIDIfNecessary()) {
 			XNATCreationOperations.createXNATSubjectFromDICOMPatient(xnatProjectLabelOrID, xnatSubjectLabel,
 					dicomPatientName, jsessionID);
 
 			XNATCreationOperations.createXNATExperimentFromDICOMStudy(xnatProjectLabelOrID, xnatSubjectLabel, dicomStudyUID,
 					jsessionID);
 		} else {
-			logger.warning("Could not log into XNAT to create DICOM study " + dicomStudyUID + " for patient "
-					+ xnatSubjectLabel);
+			log.warning("Could not log into XNAT to create DICOM study " + dicomStudyUID + " for patient " + xnatSubjectLabel);
 		}
 	}
 
@@ -108,20 +100,14 @@ public class XNATSeriesWatcher implements Runnable
 	 * 
 	 * @return True if successfully updated, false otherwise
 	 */
-	private boolean updateSessionID()
+	private boolean updateSessionIDIfNecessary()
 	{
 		if (!XNATSessionOperations.hasValidXNATSessionID(jsessionID)) { // Validating will extend validity
-			XNATUtil.XNATSessionResponse xnatSessionResponse = XNATSessionOperations.getXNATSessionID(xnatUploadProjectUser,
-					xnatUploadProjectPassword);
-			if (xnatSessionResponse.statusCode != HttpServletResponse.SC_OK) {
-				logger.warning("Error invoking XNAT session service for study upload; statusCode = "
-						+ xnatSessionResponse.statusCode);
-				jsessionID = null;
-				return false;
-			} else {
-				jsessionID = xnatSessionResponse.response;
+			String sessionID = XNATSessionOperations.getXNATAdminSessionID();
+			if (sessionID != null)
 				return true;
-			}
+			else
+				return false;
 		} else
 			return true;
 	}

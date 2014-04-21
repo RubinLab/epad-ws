@@ -17,7 +17,6 @@ import org.apache.commons.io.IOUtils;
 
 import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADLogger;
-import edu.stanford.epad.epadws.xnat.XNATUtil.XNATSessionResponse;
 
 /**
  * XNAT session management methods
@@ -35,6 +34,18 @@ public class XNATSessionOperations
 	private static final String LOGIN_EXCEPTION_MESSAGE = "Internal login error";
 	private static final String XNAT_UNAUTHORIZED_MESSAGE = "XNAT login not successful";
 	private static final String XNAT_LOGIN_ERROR_MESSAGE = "Unexpected XNAT login response";
+
+	public static final class XNATSessionResponse
+	{
+		public final int statusCode;
+		public final String response;
+
+		public XNATSessionResponse(int responseCode, String response)
+		{
+			this.statusCode = responseCode;
+			this.response = response;
+		}
+	}
 
 	/**
 	 * @param HttpServlerRequest
@@ -187,6 +198,22 @@ public class XNATSessionOperations
 			return values[0];
 		else
 			return "";
+	}
+
+	public static String getXNATAdminSessionID()
+	{
+		String xnatUploadProjectUser = config.getStringPropertyValue("XNATUploadProjectUser");
+		String xnatUploadProjectPassword = config.getStringPropertyValue("XNATUploadProjectPassword");
+
+		XNATSessionResponse xnatSessionResponse = XNATSessionOperations.getXNATSessionID(xnatUploadProjectUser,
+				xnatUploadProjectPassword);
+		if (xnatSessionResponse.statusCode != HttpServletResponse.SC_OK) {
+			log.warning("Error invoking XNAT session service for study upload; statusCode = "
+					+ xnatSessionResponse.statusCode);
+			return null;
+		} else {
+			return xnatSessionResponse.response;
+		}
 	}
 
 	private static String extractPasswordFromAuthorizationHeader(HttpServletRequest request)

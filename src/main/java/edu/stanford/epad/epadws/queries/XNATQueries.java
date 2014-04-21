@@ -24,6 +24,7 @@ import edu.stanford.epad.dtos.XNATSubjectList;
 import edu.stanford.epad.dtos.XNATUserList;
 import edu.stanford.epad.epadws.handlers.search.EPADSearchFilter;
 import edu.stanford.epad.epadws.xnat.XNATQueryUtil;
+import edu.stanford.epad.epadws.xnat.XNATSessionOperations;
 
 /**
  * Methods for querying XNAT
@@ -145,11 +146,23 @@ public class XNATQueries
 		return invokeXNATSubjectsQuery(sessionID, projectSubjectQueryURL);
 	}
 
-	public static XNATExperimentList allDICOMExperiments(String sessionID)
+	public static Set<String> allDICOMStudyUIDs()
+	{
+		XNATExperimentList dicomExperiments = allDICOMExperiments();
+		Set<String> result = new HashSet<String>();
+
+		for (XNATExperiment dicomExperiment : dicomExperiments.ResultSet.Result)
+			result.add(dicomExperiment.label);
+
+		return result;
+	}
+
+	public static XNATExperimentList allDICOMExperiments()
 	{
 		String xnatExperimentsQueryURL = XNATQueryUtil.buildDICOMExperimentsQueryURL();
+		String adminSessionID = XNATSessionOperations.getXNATAdminSessionID();
 
-		return invokeXNATDICOMExperimentsQuery(sessionID, xnatExperimentsQueryURL);
+		return invokeXNATDICOMExperimentsQuery(adminSessionID, xnatExperimentsQueryURL);
 	}
 
 	public static XNATExperimentList allDICOMExperimentsForProject(String sessionID, String projectID)

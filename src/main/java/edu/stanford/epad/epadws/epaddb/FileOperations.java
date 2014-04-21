@@ -29,34 +29,34 @@ public class FileOperations
 	private static final int INSET_IMAGE_SIZE = 512;
 	private static final int IMAGES_PER_AXIS = 4;
 
-	/**
-	 * Delete PNGs
-	 * 
-	 * @param uid
-	 * @throws Exception
-	 */
-	public static void deletePNGsForStudy(String studyUID) throws Exception
+	public static void deletePNGsForStudy(String studyUID)
 	{
 		StringBuilder outputPath = new StringBuilder();
 		outputPath.append(EPADResources.getEPADWebServerPNGDir());
 		outputPath.append(DicomFormatUtil.formatUidToDir(studyUID)).append("");
 
-		File dirToDelete = new File(outputPath.toString());
-		boolean success = delete(dirToDelete);
-
-		log.info("Deleting the PNGs for study " + studyUID + " at " + outputPath.toString() + "; success = " + success);
+		try {
+			File dirToDelete = new File(outputPath.toString());
+			boolean success = delete(dirToDelete);
+			log.info("Deleted the PNGs for study " + studyUID + " at " + outputPath.toString() + "; success = " + success);
+		} catch (IOException e) {
+			log.warning("Error deleting the PNGs for study " + studyUID + " at " + outputPath.toString(), e);
+		}
 	}
 
-	public static void deletePNGsForSeries(String studyUID, String seriesUID) throws Exception
+	public static void deletePNGsForSeries(String studyUID, String seriesUID)
 	{
 		StringBuilder outputPath = new StringBuilder();
 		outputPath.append(EPADResources.getEPADWebServerPNGDir());
 		outputPath.append(DicomFormatUtil.formatUidToDir(studyUID)).append("/" + DicomFormatUtil.formatUidToDir(seriesUID));
 
-		File dirToDelete = new File(outputPath.toString());
-		boolean success = delete(dirToDelete);
-
-		log.info("Deleting the PNGs for series " + seriesUID + " at " + outputPath.toString() + "; success = " + success);
+		try {
+			File dirToDelete = new File(outputPath.toString());
+			boolean success = delete(dirToDelete);
+			log.info("Deleteed the PNGs for series " + seriesUID + " at " + outputPath.toString() + "; success = " + success);
+		} catch (IOException e) {
+			log.warning("Error deleting the PNGs for series " + seriesUID + " at " + outputPath.toString(), e);
+		}
 	}
 
 	public static void writePNGGridFile(String seriesUID, File pngInputFile, List<File> inputPNGGridFiles,

@@ -132,7 +132,7 @@ public class Dcm4CheeOperations
 		EPADFileUtils.write(new File(fileName), contents);
 	}
 
-	public static void deleteStudy(String studyUID) throws Exception
+	public static void deleteStudy(String studyUID)
 	{
 		InputStream is = null;
 		InputStreamReader isr = null;
