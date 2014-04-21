@@ -5,9 +5,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import edu.stanford.epad.dtos.SeriesProcessingStatus;
 import edu.stanford.epad.epadws.handlers.coordination.CoordinationHandler;
 import edu.stanford.epad.epadws.handlers.coordination.Term;
-import edu.stanford.epad.epadws.processing.model.PngProcessingStatus;
 
 /**
  * Defines all operations on ePAD's database
@@ -21,12 +21,12 @@ public interface EpadDatabaseOperations
 
 	void deleteSeries(String seriesUID);
 
-	void updateOrInsertSeries(String seriesUID, PngProcessingStatus pngProcessingStatus);
+	void updateOrInsertSeries(String seriesUID, SeriesProcessingStatus seriesProcessingStatus);
 
 	void insertEpadEvent(String sessionID, String event_status, String aim_uid, String aim_name, String patient_id,
 			String patient_name, String template_id, String template_name, String plugin_name);
 
-	int getPNGProcessingStatusForSeries(String seriesUID);
+	SeriesProcessingStatus getSeriesProcessingStatus(String seriesUID);
 
 	List<Map<String, String>> getEpadEventsForSessionID(String sessionID);
 
@@ -41,7 +41,7 @@ public interface EpadDatabaseOperations
 	/**
 	 * Update the processing status, file size and error message of an ePAD file record.
 	 */
-	void updateEpadFileRecord(String filePath, PngProcessingStatus newStatus, int fileSize, String errorMsg);
+	void updateEpadFileRecord(String filePath, SeriesProcessingStatus newStatus, int fileSize, String errorMsg);
 
 	String selectEpadFilePathLike(String sopInstanceUID);
 

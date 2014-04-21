@@ -15,13 +15,13 @@ import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.epad.common.util.EPADResources;
 import edu.stanford.epad.common.util.EPADTools;
+import edu.stanford.epad.dtos.SeriesProcessingStatus;
 import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeDatabase;
 import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeDatabaseOperations;
 import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeDatabaseUtils;
 import edu.stanford.epad.epadws.epaddb.EpadDatabase;
 import edu.stanford.epad.epadws.epaddb.EpadDatabaseOperations;
 import edu.stanford.epad.epadws.processing.model.DicomSeriesProcessingDescription;
-import edu.stanford.epad.epadws.processing.model.PngProcessingStatus;
 import edu.stanford.epad.epadws.processing.pipeline.process.PngGeneratorProcess;
 import edu.stanford.epad.epadws.processing.pipeline.task.DicomSegmentationObjectPNGMaskGeneratorTask;
 import edu.stanford.epad.epadws.processing.pipeline.task.GeneratorTask;
@@ -167,7 +167,7 @@ public class QueueAndWatcherManager
 	private void insertEpadFile(EpadDatabaseOperations epadDatabaseOperations, File outputPNGFile)
 	{
 		Map<String, String> epadFilesTable = Dcm4CheeDatabaseUtils.createEPadFilesTableData(outputPNGFile);
-		epadFilesTable.put("file_status", "" + PngProcessingStatus.IN_PIPELINE.getCode());
+		epadFilesTable.put("file_status", "" + SeriesProcessingStatus.IN_PIPELINE.getCode());
 		epadDatabaseOperations.insertEpadFileRecord(epadFilesTable);
 	}
 

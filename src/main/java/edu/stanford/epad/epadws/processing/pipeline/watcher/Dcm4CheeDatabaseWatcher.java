@@ -5,12 +5,12 @@ import java.util.concurrent.BlockingQueue;
 
 import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.epad.dtos.DCM4CHEESeries;
+import edu.stanford.epad.dtos.SeriesProcessingStatus;
 import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeDatabase;
 import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeDatabaseOperations;
 import edu.stanford.epad.epadws.epaddb.EpadDatabase;
 import edu.stanford.epad.epadws.epaddb.EpadDatabaseOperations;
 import edu.stanford.epad.epadws.processing.model.DicomSeriesProcessingDescription;
-import edu.stanford.epad.epadws.processing.model.PngProcessingStatus;
 import edu.stanford.epad.epadws.processing.pipeline.threads.ShutdownSignal;
 import edu.stanford.epad.epadws.queries.DefaultEpadOperations;
 import edu.stanford.epad.epadws.queries.EpadOperations;
@@ -57,7 +57,7 @@ public class Dcm4CheeDatabaseWatcher implements Runnable
 					int numInstances = dcm4CheeSeries.imagesInSeries;
 					DicomSeriesProcessingDescription dicomSeriesDescription = new DicomSeriesProcessingDescription(numInstances,
 							seriesUID, studyUID, patientName, patientID);
-					epadDatabaseOperations.updateOrInsertSeries(seriesUID, PngProcessingStatus.IN_PIPELINE);
+					epadDatabaseOperations.updateOrInsertSeries(seriesUID, SeriesProcessingStatus.IN_PIPELINE);
 					submitSeriesForPngGeneration(dicomSeriesDescription); // Submit this series to generate all the PNG files.
 					submitSeriesForXNATGeneration(dicomSeriesDescription); // Submit this series to generate XNAT information.
 

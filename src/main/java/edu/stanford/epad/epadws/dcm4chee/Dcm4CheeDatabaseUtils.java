@@ -7,7 +7,7 @@ import java.util.Map;
 import edu.stanford.epad.common.dicom.DicomFormatUtil;
 import edu.stanford.epad.common.util.EPADFileUtils;
 import edu.stanford.epad.common.util.FileKey;
-import edu.stanford.epad.epadws.processing.model.PngProcessingStatus;
+import edu.stanford.epad.dtos.SeriesProcessingStatus;
 
 public class Dcm4CheeDatabaseUtils
 {
@@ -26,7 +26,8 @@ public class Dcm4CheeDatabaseUtils
 		FileKey fileKey = new FileKey(file);
 		String filePath = fileKey.toString();
 		long fileSize = file.length();
-		Dcm4CheeDatabaseOperations dcm4CheeDatabaseOperations = Dcm4CheeDatabase.getInstance().getDcm4CheeDatabaseOperations();
+		Dcm4CheeDatabaseOperations dcm4CheeDatabaseOperations = Dcm4CheeDatabase.getInstance()
+				.getDcm4CheeDatabaseOperations();
 		String sopInstanceUID = getSOPInstanceUIDFromPath(filePath);
 		int instanceKey = dcm4CheeDatabaseOperations.getPrimaryKeyForInstanceUID(sopInstanceUID);
 
@@ -36,7 +37,7 @@ public class Dcm4CheeDatabaseUtils
 		fileTableData.put("file_path", filePath);
 		fileTableData.put("file_size", "" + fileSize);
 		fileTableData.put("file_md5", "n/a");
-		fileTableData.put("file_status", "" + PngProcessingStatus.DONE.getCode());
+		fileTableData.put("file_status", "" + SeriesProcessingStatus.DONE.getCode());
 		fileTableData.put("err_msg", "");
 
 		return fileTableData;

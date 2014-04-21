@@ -10,11 +10,11 @@ import edu.stanford.epad.common.dicom.DicomFormatUtil;
 import edu.stanford.epad.common.util.EPADFileUtils;
 import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.epad.common.util.EPADResources;
+import edu.stanford.epad.dtos.SeriesProcessingStatus;
 import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeDatabase;
 import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeDatabaseOperations;
 import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeDatabaseUtils;
 import edu.stanford.epad.epadws.processing.model.PNGGridGenerator;
-import edu.stanford.epad.epadws.processing.model.PngProcessingStatus;
 
 /**
  * Operations on files maintained by ePAD
@@ -76,16 +76,16 @@ public class FileOperations
 			if (success) {
 				log.info("Finished writing PNG grid file " + outputPNGFile + " for series " + seriesUID);
 				int fileSize = getFileSize(epadFilesTable);
-				epadDatabaseOperations.updateEpadFileRecord(epadFilesTable.get("file_path"), PngProcessingStatus.DONE,
+				epadDatabaseOperations.updateEpadFileRecord(epadFilesTable.get("file_path"), SeriesProcessingStatus.DONE,
 						fileSize, "");
 			} else {
 				log.info("Failed to create grid PNG file " + outputPNGFile.getAbsolutePath() + " for series " + seriesUID);
-				epadDatabaseOperations.updateEpadFileRecord(epadFilesTable.get("file_path"), PngProcessingStatus.ERROR, 0,
+				epadDatabaseOperations.updateEpadFileRecord(epadFilesTable.get("file_path"), SeriesProcessingStatus.ERROR, 0,
 						"Error generating grid");
 			}
 		} catch (Exception e) {
 			log.warning("Failed to create grid PNG file " + outputPNGFile.getAbsolutePath() + " for series " + seriesUID, e);
-			epadDatabaseOperations.updateEpadFileRecord(epadFilesTable.get("file_path"), PngProcessingStatus.ERROR, 0,
+			epadDatabaseOperations.updateEpadFileRecord(epadFilesTable.get("file_path"), SeriesProcessingStatus.ERROR, 0,
 					"General Exception: " + e.getMessage());
 		}
 	}

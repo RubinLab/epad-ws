@@ -22,7 +22,6 @@ import edu.stanford.epad.dtos.XNATProjectList;
 import edu.stanford.epad.dtos.XNATSubject;
 import edu.stanford.epad.dtos.XNATSubjectList;
 import edu.stanford.epad.dtos.XNATUserList;
-import edu.stanford.epad.epadws.handlers.search.EPADSearchFilter;
 import edu.stanford.epad.epadws.xnat.XNATQueryUtil;
 import edu.stanford.epad.epadws.xnat.XNATSessionOperations;
 
@@ -59,20 +58,6 @@ public class XNATQueries
 			subjectIDs.add(subject.src);
 		}
 		return subjectIDs;
-	}
-
-	public static boolean filterSubject(XNATSubject xnatSubject, EPADSearchFilter searchFilter)
-	{
-		if (searchFilter.hasPatientNameMatch()) {
-			String subjectName = xnatSubject.src;
-			String patientNameMatch = searchFilter.getPatientNameMatch();
-			String patientNameRegex = ".*" + patientNameMatch + ".*";
-			if (!subjectName.matches(patientNameRegex))
-				return true;
-			else
-				return false;
-		} else
-			return false;
 	}
 
 	public static Set<String> patientIDsForProject(String sessionID, String projectID)

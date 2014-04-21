@@ -36,10 +36,10 @@ import edu.stanford.epad.common.pixelmed.PixelMedUtils;
 import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.epad.common.util.EPADResources;
+import edu.stanford.epad.dtos.SeriesProcessingStatus;
 import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeDatabaseUtils;
 import edu.stanford.epad.epadws.epaddb.EpadDatabase;
 import edu.stanford.epad.epadws.epaddb.EpadDatabaseOperations;
-import edu.stanford.epad.epadws.processing.model.PngProcessingStatus;
 import edu.stanford.hakan.aim3api.base.AimException;
 import edu.stanford.hakan.aim3api.base.DICOMImageReference;
 import edu.stanford.hakan.aim3api.base.ImageAnnotation;
@@ -122,7 +122,7 @@ public class DicomSegmentationObjectPNGMaskGeneratorTask implements GeneratorTas
 				try {
 					insertEpadFile(databaseOperations, sourceFile);
 					ImageIO.write(sourceWithTransparency, "png", sourceFile);
-					databaseOperations.updateEpadFileRecord(pngUrl, PngProcessingStatus.DONE, 77, "");
+					databaseOperations.updateEpadFileRecord(pngUrl, SeriesProcessingStatus.DONE, 77, "");
 				} catch (IOException e) {
 					logger.warning("Failed to write DSO PNG mask for series " + seriesUID, e);
 				}
@@ -330,7 +330,7 @@ public class DicomSegmentationObjectPNGMaskGeneratorTask implements GeneratorTas
 	private void insertEpadFile(EpadDatabaseOperations epadDatabaseOperations, File outputFile)
 	{
 		Map<String, String> epadFilesTable = Dcm4CheeDatabaseUtils.createEPadFilesTableData(outputFile);
-		epadFilesTable.put("file_status", "" + PngProcessingStatus.IN_PIPELINE.getCode());
+		epadFilesTable.put("file_status", "" + SeriesProcessingStatus.IN_PIPELINE.getCode());
 		epadDatabaseOperations.insertEpadFileRecord(epadFilesTable);
 	}
 

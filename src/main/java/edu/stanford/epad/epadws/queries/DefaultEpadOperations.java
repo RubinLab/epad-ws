@@ -23,6 +23,8 @@ import edu.stanford.epad.dtos.EPADStudy;
 import edu.stanford.epad.dtos.EPADStudyList;
 import edu.stanford.epad.dtos.EPADSubject;
 import edu.stanford.epad.dtos.EPADSubjectList;
+import edu.stanford.epad.dtos.SeriesProcessingStatus;
+import edu.stanford.epad.dtos.StudyProcessingStatus;
 import edu.stanford.epad.dtos.XNATProject;
 import edu.stanford.epad.dtos.XNATProjectList;
 import edu.stanford.epad.dtos.XNATSubject;
@@ -80,12 +82,9 @@ public class DefaultEpadOperations implements EpadOperations
 		XNATUserList xnatUsers = XNATQueries.usersForProject(sessionID, projectID);
 
 		for (XNATSubject xnatSubject : xnatSubjectList.ResultSet.Result) {
-			if (!XNATQueries.filterSubject(xnatSubject, searchFilter)) {
-				EPADSubject epadSubject = xnatSubject2EPADSubject(sessionID, xnatUsers.getLoginNames(), xnatSubject,
-						searchFilter);
-				if (epadSubject != null)
-					epadSubjectList.addEPADSubject(epadSubject);
-			}
+			EPADSubject epadSubject = xnatSubject2EPADSubject(sessionID, xnatUsers.getLoginNames(), xnatSubject, searchFilter);
+			if (epadSubject != null)
+				epadSubjectList.addEPADSubject(epadSubject);
 		}
 		return epadSubjectList;
 	}
@@ -119,13 +118,13 @@ public class DefaultEpadOperations implements EpadOperations
 			String physicianName = dcm4CheeStudy.physicianName;
 			String birthdate = dcm4CheeStudy.birthdate;
 			String sex = dcm4CheeStudy.sex;
-			int studyStatus = dcm4CheeStudy.studyStatus;
 			String studyDescription = dcm4CheeStudy.studyDescription;
 			String studyAccessionNumber = dcm4CheeStudy.studyAccessionNumber;
 			Set<String> examTypes = getExamTypesForStudy(sessionID, projectID, patientID, studyUID, searchFilter);
 			int numberOfSeries = dcm4CheeStudy.seriesCount;
 			int numberOfImages = dcm4CheeStudy.imagesCount;
 			Set<String> seriesUIDs = dcm4CheeDatabaseOperations.findAllSeriesUIDsInStudy(studyUID);
+			StudyProcessingStatus studyProcessingStatus = getStudyProcessingStatus(studyUID);
 			int numberOfAnnotations = (seriesUIDs.size() <= 0) ? 0 : AIMQueries.getNumberOfAIMAnnotationsForSeriesUIDs(
 					seriesUIDs, xnatUsers.getLoginNames());
 
@@ -133,12 +132,43 @@ public class DefaultEpadOperations implements EpadOperations
 
 			if (!filter) {
 				EPADStudy epadStudy = new EPADStudy(projectID, studyUID, insertDate, firstSeriesUID, firstSeriesDateAcquired,
-						physicianName, birthdate, sex, studyStatus, examTypes, studyDescription, studyAccessionNumber,
+						physicianName, birthdate, sex, studyProcessingStatus, examTypes, studyDescription, studyAccessionNumber,
 						numberOfSeries, numberOfImages, numberOfAnnotations);
 				epadStudyList.addEPADStudy(epadStudy);
 			}
 		}
 		return epadStudyList;
+	}
+
+	private StudyProcessingStatus getStudyProcessingStatus(String studyUID)
+	{
+		EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
+		Dcm4CheeDatabaseOperations dcm4CheeDatabaseOperations = Dcm4CheeDatabase.getInstance()
+				.getDcm4CheeDatabaseOperations();
+		boolean seriesWithNoDICOM = false;
+		boolean seriesInPipeline = false;
+		boolean seriesWithError = false;
+
+		Set<String> seriesUIDs = dcm4CheeDatabaseOperations.findAllSeriesUIDsInStudy(studyUID);
+
+		for (String seriesUID : seriesUIDs) {
+			SeriesProcessingStatus seriesProcessingStatus = epadDatabaseOperations.getSeriesProcessingStatus(seriesUID);
+			if (seriesProcessingStatus == SeriesProcessingStatus.NO_DICOM)
+				seriesWithNoDICOM = true;
+			if (seriesProcessingStatus == SeriesProcessingStatus.ERROR)
+				seriesWithError = true;
+			if (seriesProcessingStatus == SeriesProcessingStatus.IN_PIPELINE)
+				seriesInPipeline = true;
+		}
+
+		if (seriesWithError)
+			return StudyProcessingStatus.STUDY_STATUS_ERROR_MISSING_PNG;
+		else if (seriesWithNoDICOM)
+			return StudyProcessingStatus.STUDY_STATUS_ERROR_MISSING_DICOM;
+		else if (seriesInPipeline)
+			return StudyProcessingStatus.STUDY_STATUS_PROCESSING;
+		else
+			return StudyProcessingStatus.STUDY_STATUS_COMPLETED;
 	}
 
 	@Override
@@ -166,14 +196,14 @@ public class DefaultEpadOperations implements EpadOperations
 			int numberOfImages = dcm4CheeSeries.imagesInSeries;
 			int numberOfSeriesRelatedInstances = dcm4CheeSeries.numberOfSeriesRelatedInstances;
 			int numberOfAnnotations = AIMQueries.getNumberOfAIMAnnotationsForSeriesUID(seriesUID, usernames);
-			int pngProcessingStatus = epadDatabaseOperations.getPNGProcessingStatusForSeries(seriesUID);
+			SeriesProcessingStatus seriesProcessingStatus = epadDatabaseOperations.getSeriesProcessingStatus(seriesUID);
 			boolean filter = searchFilter.shouldFilterSeries(patientID, patientName, examType, accessionNumber,
 					numberOfAnnotations);
 
 			if (!filter) {
 				EPADSeries epadSeries = new EPADSeries(studyUID, seriesUID, patientID, patientName, seriesDate,
 						seriesDescription, examType, bodyPart, accessionNumber, numberOfImages, numberOfSeriesRelatedInstances,
-						numberOfAnnotations, institution, stationName, department, pngProcessingStatus);
+						numberOfAnnotations, institution, stationName, department, seriesProcessingStatus);
 				epadSeriesList.addEPADSeries(epadSeries);
 			}
 		}
@@ -290,18 +320,18 @@ public class DefaultEpadOperations implements EpadOperations
 	}
 
 	@Override
-	public EPADDatabaseSeries getSeries(String seriesIUID)
+	public EPADDatabaseSeries getSeries(String seriesUID)
 	{
 		Dcm4CheeDatabaseOperations dcm4CheeDatabaseOperations = Dcm4CheeDatabase.getInstance()
 				.getDcm4CheeDatabaseOperations();
-		List<Map<String, String>> orderQueryEntries = dcm4CheeDatabaseOperations.getSeriesOrder(seriesIUID);
+		List<Map<String, String>> orderQueryEntries = dcm4CheeDatabaseOperations.getSeriesOrder(seriesUID);
 		List<EPADDatabaseImage> epadImageList = new ArrayList<EPADDatabaseImage>();
 
 		for (Map<String, String> entry : orderQueryEntries) {
 			String imageUID = entry.get("sop_iuid");
 			String fileName = createFileNameField(imageUID);
 			String instanceNumberString = entry.get("inst_no");
-			int instanceNumber = getInstanceNumber(instanceNumberString, seriesIUID, imageUID);
+			int instanceNumber = getInstanceNumber(instanceNumberString, seriesUID, imageUID);
 			String sliceLocation = createSliceLocation(entry); // entry.get("inst_custom1");
 			String contentTime = "null"; // TODO Can we find this somewhere?
 
