@@ -61,7 +61,7 @@ public class DefaultEpadOperations implements EpadOperations
 	}
 
 	@Override
-	public EPADProjectList getAllProjectsForUser(String sessionID, String username, EPADSearchFilter searchFilter)
+	public EPADProjectList getAllProjectsForUser(String username, String sessionID, EPADSearchFilter searchFilter)
 	{
 		EPADProjectList epadProjectList = new EPADProjectList();
 		XNATProjectList xnatProjectList = XNATQueries.allProjects(sessionID);
