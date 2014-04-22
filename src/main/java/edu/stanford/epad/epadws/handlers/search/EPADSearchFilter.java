@@ -2,8 +2,6 @@ package edu.stanford.epad.epadws.handlers.search;
 
 import java.util.Set;
 
-import edu.stanford.epad.common.util.EPADLogger;
-
 /**
  * 
  * 
@@ -13,8 +11,6 @@ import edu.stanford.epad.common.util.EPADLogger;
  */
 public class EPADSearchFilter
 {
-	private static final EPADLogger log = EPADLogger.getInstance();
-
 	private String projectNameMatch = null;
 	private String patientNameMatch = null;
 	private String patientIDMatch = null;

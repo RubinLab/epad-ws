@@ -1,6 +1,6 @@
 package edu.stanford.epad.epadws.dcm4chee;
 
-import edu.stanford.epad.dtos.DCM4CHEEStudySearchType;
+import edu.stanford.epad.dtos.internal.DCM4CHEEStudySearchType;
 
 /**
  * 

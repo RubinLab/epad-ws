@@ -16,7 +16,7 @@ import java.util.Set;
 import edu.stanford.epad.common.dicom.DicomParentCache;
 import edu.stanford.epad.common.dicom.DicomParentType;
 import edu.stanford.epad.common.util.EPADLogger;
-import edu.stanford.epad.dtos.DCM4CHEEStudySearchType;
+import edu.stanford.epad.dtos.internal.DCM4CHEEStudySearchType;
 import edu.stanford.epad.epadws.epaddb.ConnectionPool;
 import edu.stanford.epad.epadws.epaddb.DatabaseUtils;
 
@@ -375,7 +375,7 @@ public class DefaultDcm4CheeDatabaseOperations implements Dcm4CheeDatabaseOperat
 	}
 
 	@Override
-	public List<Map<String, String>> getSeriesOrder(String seriesUID)
+	public List<Map<String, String>> getImageDescriptions(String seriesUID)
 	{
 		List<Map<String, String>> retVal = new ArrayList<Map<String, String>>();
 

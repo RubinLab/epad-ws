@@ -4,7 +4,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import edu.stanford.epad.dtos.DCM4CHEEStudySearchType;
+import edu.stanford.epad.dtos.internal.DCM4CHEEStudySearchType;
 import edu.stanford.epad.epadws.queries.Dcm4CheeQueries;
 
 /**
@@ -58,7 +58,9 @@ public interface Dcm4CheeDatabaseOperations
 
 	List<Map<String, String>> getDicomImageFileDescriptionsForSeries(String seriesUID);
 
-	List<Map<String, String>> getSeriesOrder(String seriesUID);
+	// Returns a list of image descriptions; each description is a map containing the keys to the instance table in the
+	// pscsdb MySql database. The keys to get the image ID and instance number are sop_iuid and inst_no, respectively.
+	List<Map<String, String>> getImageDescriptions(String seriesUID);
 
 	int getPrimaryKeyForInstanceUID(String imageUID);
 }

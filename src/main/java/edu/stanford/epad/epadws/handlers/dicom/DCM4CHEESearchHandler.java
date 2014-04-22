@@ -10,9 +10,9 @@ import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 
 import edu.stanford.epad.common.util.EPADLogger;
-import edu.stanford.epad.dtos.DCM4CHEESeriesList;
-import edu.stanford.epad.dtos.DCM4CHEEStudyList;
-import edu.stanford.epad.dtos.DCM4CHEEStudySearchType;
+import edu.stanford.epad.dtos.internal.DCM4CHEESeriesList;
+import edu.stanford.epad.dtos.internal.DCM4CHEEStudyList;
+import edu.stanford.epad.dtos.internal.DCM4CHEEStudySearchType;
 import edu.stanford.epad.epadws.handlers.HandlerUtil;
 import edu.stanford.epad.epadws.queries.Dcm4CheeQueries;
 import edu.stanford.epad.epadws.xnat.XNATSessionOperations;

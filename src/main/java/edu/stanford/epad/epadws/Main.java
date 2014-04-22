@@ -69,7 +69,6 @@ import edu.stanford.epad.epadws.processing.pipeline.watcher.QueueAndWatcherManag
  * <p>
  * Start an embedded Jetty server and all the threads required for this application.
  */
-@SuppressWarnings("deprecation")
 public class Main
 {
 	private static final EPADLogger log = EPADLogger.getInstance();
@@ -178,7 +177,6 @@ public class Main
 	}
 
 	// TODO Need to remove deprecated routes after testing.
-	@SuppressWarnings("deprecation")
 	private static void addHandlers(Server server)
 	{
 		List<Handler> handlerList = new ArrayList<Handler>();
@@ -188,30 +186,35 @@ public class Main
 		addWebAppAtContextPath(handlerList, "ePad.war", "/epad");
 
 		addHandlerAtContextPath(new XNATSessionHandler(), "/epad/session", handlerList);
-		addHandlerAtContextPath(new XNATProjectHandler(), "/epad/projects", handlerList);
-		addHandlerAtContextPath(new XNATSubjectHandler(), "/epad/subjects", handlerList);
-		addHandlerAtContextPath(new DCM4CHEESearchHandler(), "/epad/searchj", handlerList);
 
 		addHandlerAtContextPath(new EPADProjectsHandler(), "/epad/v2", handlerList);
 
-		addHandlerAtContextPath(new EPADSeriesHandler(), "/epad/seriesorderj", handlerList);
-		addHandlerAtContextPath(new PatientDeleteHandler(), "/epad/patientdelete", handlerList);
-		addHandlerAtContextPath(new DicomDeleteHandler(), "/epad/dicomdelete", handlerList);
 		addHandlerAtContextPath(new DICOMHeadersHandler(), "/epad/dicomtagj", handlerList);
-		addHandlerAtContextPath(new DicomSegmentationPathHandler(), "/epad/segmentationpath", handlerList);
 		addHandlerAtContextPath(new WindowingHandler(), "/epad/dicomparam", handlerList);
 		addHandlerAtContextPath(new AimResourceHandler(), "/epad/aimresource", handlerList);
+		addHandlerAtContextPath(new DicomSegmentationPathHandler(), "/epad/segmentationpath", handlerList);
 		addHandlerAtContextPath(new WadoHandler(), "/epad/wado", handlerList);
+
 		addHandlerAtContextPath(new EventHandler(), "/epad/eventresource", handlerList);
 		addHandlerAtContextPath(new ProjectEventHandler(), "/epad/events", handlerList);
+
 		addHandlerAtContextPath(new EPadPluginHandler(), "/epad/plugin", handlerList);
+
 		addHandlerAtContextPath(new ServerStatusHandler(), "/epad/status", handlerList);
 		addHandlerAtContextPath(new ImageCheckHandler(), "/epad/imagecheck", handlerList);
 		addHandlerAtContextPath(new DICOMReprocessingHandler(), "/epad/imagereprocess", handlerList);
-		addHandlerAtContextPath(new CoordinationHandler(), "/epad/coordination", handlerList);
 
 		addHandlerAtContextPath(new ResourceCheckHandler(), "/epad/resources", handlerList);
 		addFileServerAtContextPath(EPADResources.getEPADWebServerResourcesDir(), handlerList, "/epad/resources");
+
+		// The following well be removed soon
+		addHandlerAtContextPath(new EPADSeriesHandler(), "/epad/seriesorderj", handlerList);
+		addHandlerAtContextPath(new XNATProjectHandler(), "/epad/projects", handlerList);
+		addHandlerAtContextPath(new XNATSubjectHandler(), "/epad/subjects", handlerList);
+		addHandlerAtContextPath(new DCM4CHEESearchHandler(), "/epad/searchj", handlerList);
+		addHandlerAtContextPath(new PatientDeleteHandler(), "/epad/patientdelete", handlerList);
+		addHandlerAtContextPath(new DicomDeleteHandler(), "/epad/dicomdelete", handlerList);
+		addHandlerAtContextPath(new CoordinationHandler(), "/epad/coordination", handlerList);
 
 		ContextHandlerCollection contexts = new ContextHandlerCollection();
 		contexts.setHandlers(handlerList.toArray(new Handler[handlerList.size()]));

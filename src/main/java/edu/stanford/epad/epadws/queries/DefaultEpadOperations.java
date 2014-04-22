@@ -8,12 +8,9 @@ import java.util.Set;
 
 import edu.stanford.epad.common.dicom.DicomFormatUtil;
 import edu.stanford.epad.common.util.EPADLogger;
-import edu.stanford.epad.dtos.DCM4CHEESeries;
-import edu.stanford.epad.dtos.DCM4CHEESeriesList;
-import edu.stanford.epad.dtos.DCM4CHEEStudy;
-import edu.stanford.epad.dtos.DCM4CHEEStudyList;
 import edu.stanford.epad.dtos.EPADDatabaseImage;
 import edu.stanford.epad.dtos.EPADDatabaseSeries;
+import edu.stanford.epad.dtos.EPADImage;
 import edu.stanford.epad.dtos.EPADImageList;
 import edu.stanford.epad.dtos.EPADProject;
 import edu.stanford.epad.dtos.EPADProjectList;
@@ -25,11 +22,15 @@ import edu.stanford.epad.dtos.EPADSubject;
 import edu.stanford.epad.dtos.EPADSubjectList;
 import edu.stanford.epad.dtos.SeriesProcessingStatus;
 import edu.stanford.epad.dtos.StudyProcessingStatus;
-import edu.stanford.epad.dtos.XNATProject;
-import edu.stanford.epad.dtos.XNATProjectList;
-import edu.stanford.epad.dtos.XNATSubject;
-import edu.stanford.epad.dtos.XNATSubjectList;
-import edu.stanford.epad.dtos.XNATUserList;
+import edu.stanford.epad.dtos.internal.DCM4CHEESeries;
+import edu.stanford.epad.dtos.internal.DCM4CHEESeriesList;
+import edu.stanford.epad.dtos.internal.DCM4CHEEStudy;
+import edu.stanford.epad.dtos.internal.DCM4CHEEStudyList;
+import edu.stanford.epad.dtos.internal.XNATProject;
+import edu.stanford.epad.dtos.internal.XNATProjectList;
+import edu.stanford.epad.dtos.internal.XNATSubject;
+import edu.stanford.epad.dtos.internal.XNATSubjectList;
+import edu.stanford.epad.dtos.internal.XNATUserList;
 import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeDatabase;
 import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeDatabaseOperations;
 import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeOperations;
@@ -75,7 +76,7 @@ public class DefaultEpadOperations implements EpadOperations
 	}
 
 	@Override
-	public EPADSubjectList getAllSubjectsForProject(String sessionID, String projectID, EPADSearchFilter searchFilter)
+	public EPADSubjectList getAllSubjectsForProject(String projectID, String sessionID, EPADSearchFilter searchFilter)
 	{
 		EPADSubjectList epadSubjectList = new EPADSubjectList();
 		XNATSubjectList xnatSubjectList = XNATQueries.subjectsForProject(sessionID, projectID);
@@ -90,17 +91,7 @@ public class DefaultEpadOperations implements EpadOperations
 	}
 
 	@Override
-	public EPADStudy getStudy(String jsessionID, String studyUID, EPADSearchFilter searchFilter)
-	{
-		// Dcm4CheeDatabaseOperations dcm4CheeDatabaseOperations = Dcm4CheeDatabase.getInstance()
-		// .getDcm4CheeDatabaseOperations();
-
-		// DCM4CHEEStudy dcm4CheeStudy = dcm4CheeDatabaseOperations.getStudy(studyUID);
-		return null;
-	}
-
-	@Override
-	public EPADStudyList getAllStudiesForPatient(String sessionID, String projectID, String patientID,
+	public EPADStudyList getAllStudiesForPatient(String projectID, String patientID, String sessionID,
 			EPADSearchFilter searchFilter)
 	{
 		EPADStudyList epadStudyList = new EPADStudyList();
@@ -111,6 +102,7 @@ public class DefaultEpadOperations implements EpadOperations
 				.getDcm4CheeDatabaseOperations();
 
 		for (DCM4CHEEStudy dcm4CheeStudy : dcm4CheeStudyList.ResultSet.Result) {
+			String patientName = dcm4CheeStudy.patientName;
 			String studyUID = dcm4CheeStudy.studyUID;
 			String insertDate = dcm4CheeStudy.dateAcquired;
 			String firstSeriesUID = dcm4CheeStudy.firstSeriesUID;
@@ -120,7 +112,7 @@ public class DefaultEpadOperations implements EpadOperations
 			String sex = dcm4CheeStudy.sex;
 			String studyDescription = dcm4CheeStudy.studyDescription;
 			String studyAccessionNumber = dcm4CheeStudy.studyAccessionNumber;
-			Set<String> examTypes = getExamTypesForStudy(sessionID, projectID, patientID, studyUID, searchFilter);
+			Set<String> examTypes = getExamTypesForStudy(projectID, patientID, studyUID, sessionID, searchFilter);
 			int numberOfSeries = dcm4CheeStudy.seriesCount;
 			int numberOfImages = dcm4CheeStudy.imagesCount;
 			Set<String> seriesUIDs = dcm4CheeDatabaseOperations.findAllSeriesUIDsInStudy(studyUID);
@@ -131,9 +123,9 @@ public class DefaultEpadOperations implements EpadOperations
 			boolean filter = searchFilter.shouldFilterStudy(patientID, studyAccessionNumber, examTypes, numberOfAnnotations);
 
 			if (!filter) {
-				EPADStudy epadStudy = new EPADStudy(projectID, studyUID, insertDate, firstSeriesUID, firstSeriesDateAcquired,
-						physicianName, birthdate, sex, studyProcessingStatus, examTypes, studyDescription, studyAccessionNumber,
-						numberOfSeries, numberOfImages, numberOfAnnotations);
+				EPADStudy epadStudy = new EPADStudy(projectID, patientID, patientName, studyUID, insertDate, firstSeriesUID,
+						firstSeriesDateAcquired, physicianName, birthdate, sex, studyProcessingStatus, examTypes, studyDescription,
+						studyAccessionNumber, numberOfSeries, numberOfImages, numberOfAnnotations);
 				epadStudyList.addEPADStudy(epadStudy);
 			}
 		}
@@ -172,7 +164,7 @@ public class DefaultEpadOperations implements EpadOperations
 	}
 
 	@Override
-	public EPADSeriesList getAllSeriesForStudy(String sessionID, String projectID, String subjectID, String studyUID,
+	public EPADSeriesList getAllSeriesForStudy(String projectID, String subjectID, String studyUID, String sessionID,
 			EPADSearchFilter searchFilter)
 	{
 		EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
@@ -201,7 +193,7 @@ public class DefaultEpadOperations implements EpadOperations
 					numberOfAnnotations);
 
 			if (!filter) {
-				EPADSeries epadSeries = new EPADSeries(studyUID, seriesUID, patientID, patientName, seriesDate,
+				EPADSeries epadSeries = new EPADSeries(projectID, patientID, patientName, studyUID, seriesUID, seriesDate,
 						seriesDescription, examType, bodyPart, accessionNumber, numberOfImages, numberOfSeriesRelatedInstances,
 						numberOfAnnotations, institution, stationName, department, seriesProcessingStatus);
 				epadSeriesList.addEPADSeries(epadSeries);
@@ -211,45 +203,31 @@ public class DefaultEpadOperations implements EpadOperations
 	}
 
 	@Override
-	public EPADImageList getAllImagesForSeries(String sessionID, String projectID, String subjectUID, String studyUID,
-			String seriesUID, EPADSearchFilter searchFilter)
+	public EPADImageList getAllImagesForSeries(String projectID, String patientID, String studyUID, String seriesUID,
+			String sessionID, EPADSearchFilter searchFilter)
 	{
+		Dcm4CheeDatabaseOperations dcm4CheeDatabaseOperations = Dcm4CheeDatabase.getInstance()
+				.getDcm4CheeDatabaseOperations();
+		List<Map<String, String>> imageDescriptions = dcm4CheeDatabaseOperations.getImageDescriptions(seriesUID);
 		EPADImageList epadImageList = new EPADImageList();
-		// XNATUserList xnatUsers = XNATQueries.usersForProject(sessionID, projectID);
-		// Set<String> usernames = xnatUsers.getLoginNames();
 
-		// TODO Need to add some call to Dcm4CheeDatabaseOperations to get image information
-		// DCM4CHEEImageList dcm4CheeImageList = Dcm4CheeQueries.getImages(seriesUID);
-		// Loop through images
-		// String imageUID = dcm4CheeSeries.
-		// String insertDate =
-		// String imageDate =
-		// int sliceLocation =
-		// int instanceNumber =
-		//
-		// EPADImage epadImage = new EPADImage(imageUID, seriesUID, studyUID, subjectUID, insertDate, imageDate,
-		// sliceLocation, instanceNumber);
-		//
-		// epadImageList.addEPADImage(epadImage);
+		for (Map<String, String> imageDescription : imageDescriptions) {
+			String imageUID = imageDescription.get("sop_iuid");
+			String instanceNumberString = imageDescription.get("inst_no");
+			int instanceNumber = getInstanceNumber(instanceNumberString, seriesUID, imageUID);
+			String sliceLocation = getSliceLocation(imageDescription); // entry.get("inst_custom1");
+			String imageDate = imageDescription.get("content_datetime");
+			String insertDate = imageDescription.get("created_time");
 
+			EPADImage epadImage = new EPADImage(projectID, patientID, studyUID, seriesUID, imageUID, insertDate, imageDate,
+					sliceLocation, instanceNumber);
+			epadImageList.addImage(epadImage);
+		}
 		return epadImageList;
 	}
 
 	@Override
-	public EPADSeriesList getAllSeriesForStudy(String jsessionID, String studyUID, EPADSearchFilter searchFilter)
-	{
-		return null;
-	}
-
-	@Override
-	public EPADImageList getAllImagesForSeries(String jsessionID, String studyUID, String seriesUID,
-			EPADSearchFilter searchFilter)
-	{
-		return null;
-	}
-
-	@Override
-	public Set<String> getExamTypesForPatient(String sessionID, String projectID, String patientID,
+	public Set<String> getExamTypesForPatient(String projectID, String patientID, String sessionID,
 			EPADSearchFilter searchFilter)
 	{
 		Set<String> studyUIDs = XNATQueries.dicomStudyUIDsForSubject(sessionID, projectID, patientID);
@@ -257,13 +235,13 @@ public class DefaultEpadOperations implements EpadOperations
 		Set<String> examTypes = new HashSet<String>();
 
 		for (String studyUID : studyUIDs)
-			examTypes.addAll(getExamTypesForStudy(sessionID, projectID, patientID, studyUID, searchFilter));
+			examTypes.addAll(getExamTypesForStudy(projectID, patientID, studyUID, sessionID, searchFilter));
 
 		return examTypes;
 	}
 
 	@Override
-	public Set<String> getExamTypesForStudy(String sessionID, String projectID, String subjectID, String studyUID,
+	public Set<String> getExamTypesForStudy(String projectID, String subjectID, String studyUID, String sessionID,
 			EPADSearchFilter searchFilter)
 	{
 		DCM4CHEESeriesList dcm4CheeSeriesList = Dcm4CheeQueries.getSeriesInStudy(studyUID);
@@ -276,7 +254,7 @@ public class DefaultEpadOperations implements EpadOperations
 	}
 
 	@Override
-	public Set<String> getSeriesUIDsForPatient(String sessionID, String projectID, String patientID,
+	public Set<String> getSeriesUIDsForPatient(String projectID, String patientID, String sessionID,
 			EPADSearchFilter searchFilter)
 	{
 		Dcm4CheeDatabaseOperations dcm4CheeDatabaseOperations = Dcm4CheeDatabase.getInstance()
@@ -324,15 +302,15 @@ public class DefaultEpadOperations implements EpadOperations
 	{
 		Dcm4CheeDatabaseOperations dcm4CheeDatabaseOperations = Dcm4CheeDatabase.getInstance()
 				.getDcm4CheeDatabaseOperations();
-		List<Map<String, String>> orderQueryEntries = dcm4CheeDatabaseOperations.getSeriesOrder(seriesUID);
+		List<Map<String, String>> imageDescriptions = dcm4CheeDatabaseOperations.getImageDescriptions(seriesUID);
 		List<EPADDatabaseImage> epadImageList = new ArrayList<EPADDatabaseImage>();
 
-		for (Map<String, String> entry : orderQueryEntries) {
-			String imageUID = entry.get("sop_iuid");
+		for (Map<String, String> imageDescription : imageDescriptions) {
+			String imageUID = imageDescription.get("sop_iuid");
 			String fileName = createFileNameField(imageUID);
-			String instanceNumberString = entry.get("inst_no");
+			String instanceNumberString = imageDescription.get("inst_no");
 			int instanceNumber = getInstanceNumber(instanceNumberString, seriesUID, imageUID);
-			String sliceLocation = createSliceLocation(entry); // entry.get("inst_custom1");
+			String sliceLocation = getSliceLocation(imageDescription);
 			String contentTime = "null"; // TODO Can we find this somewhere?
 
 			EPADDatabaseImage epadImage = new EPADDatabaseImage(fileName, instanceNumber, sliceLocation, contentTime);
@@ -456,21 +434,21 @@ public class DefaultEpadOperations implements EpadOperations
 		return DicomFormatUtil.formatUidToDir(sopInstanceUID) + ".dcm";
 	}
 
-	private int getInstanceNumber(String instanceNumberString, String seriesIUID, String imageUID)
+	private int getInstanceNumber(String instanceNumberString, String seriesUID, String imageUID)
 	{
 		if (instanceNumberString != null)
 			try {
 				return Integer.parseInt(instanceNumberString);
 			} catch (NumberFormatException e) {
 				log.warning("Invalid instance number " + instanceNumberString + " in image " + imageUID + " in series "
-						+ seriesIUID);
+						+ seriesUID);
 				return 1; // Invalid instance number; default to 1
 			}
 		else
 			return 1; // Missing instance number; default to 1.
 	}
 
-	private String createSliceLocation(Map<String, String> entry)
+	private String getSliceLocation(Map<String, String> entry)
 	{
 		String sliceLoc = entry.get("inst_custom1");
 		if (sliceLoc == null)
@@ -489,7 +467,7 @@ public class DefaultEpadOperations implements EpadOperations
 		String projectID = xnatProject.ID;
 		String piFirstName = xnatProject.pi_firstname;
 		String uri = xnatProject.URI;
-		Set<String> patientIDs = XNATQueries.patientIDsForProject(sessionID, projectID);
+		Set<String> patientIDs = XNATQueries.subjectIDsForProject(sessionID, projectID);
 		int numberOfPatients = patientIDs.size();
 		int numberOfStudies = Dcm4CheeQueries.getNumberOfStudiesForPatients(patientIDs);
 		XNATUserList xnatUsers = XNATQueries.usersForProject(sessionID, projectID);
@@ -518,7 +496,7 @@ public class DefaultEpadOperations implements EpadOperations
 		String insertDate = xnatSubject.insert_date;
 		int numberOfStudies = Dcm4CheeQueries.getNumberOfStudiesForPatient(patientID);
 		int numberOfAnnotations = AIMQueries.getNumberOfAIMAnnotationsForPatient(usernames, patientID);
-		Set<String> examTypes = epadQueries.getExamTypesForPatient(sessionID, projectID, patientID, searchFilter);
+		Set<String> examTypes = epadQueries.getExamTypesForPatient(projectID, patientID, sessionID, searchFilter);
 		boolean filter = searchFilter.shouldFilterSubject(patientID, patientName, examTypes, numberOfAnnotations);
 
 		if (!filter)

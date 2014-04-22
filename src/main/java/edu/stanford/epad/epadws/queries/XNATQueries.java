@@ -16,12 +16,12 @@ import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
 
 import edu.stanford.epad.common.util.EPADLogger;
-import edu.stanford.epad.dtos.XNATExperiment;
-import edu.stanford.epad.dtos.XNATExperimentList;
-import edu.stanford.epad.dtos.XNATProjectList;
-import edu.stanford.epad.dtos.XNATSubject;
-import edu.stanford.epad.dtos.XNATSubjectList;
-import edu.stanford.epad.dtos.XNATUserList;
+import edu.stanford.epad.dtos.internal.XNATExperiment;
+import edu.stanford.epad.dtos.internal.XNATExperimentList;
+import edu.stanford.epad.dtos.internal.XNATProjectList;
+import edu.stanford.epad.dtos.internal.XNATSubject;
+import edu.stanford.epad.dtos.internal.XNATSubjectList;
+import edu.stanford.epad.dtos.internal.XNATUserList;
 import edu.stanford.epad.epadws.xnat.XNATQueryUtil;
 import edu.stanford.epad.epadws.xnat.XNATSessionOperations;
 
@@ -60,24 +60,6 @@ public class XNATQueries
 		return subjectIDs;
 	}
 
-	public static Set<String> patientIDsForProject(String sessionID, String projectID)
-	{
-		XNATSubjectList xnatSubjectList = XNATQueries.subjectsForProject(sessionID, projectID);
-		Set<String> subjectIDs = new HashSet<String>();
-
-		for (XNATSubject subject : xnatSubjectList.ResultSet.Result) {
-			subjectIDs.add(subject.label);
-		}
-		return subjectIDs;
-	}
-
-	public static XNATSubjectList subjectsForProject(String sessionID, String projectID)
-	{
-		String allSubjectsForProjectQueryURL = XNATQueryUtil.buildAllSubjectsForProjectQueryURL(projectID);
-
-		return invokeXNATSubjectsQuery(sessionID, allSubjectsForProjectQueryURL);
-	}
-
 	public static Set<String> subjectIDsForProject(String sessionID, String projectID)
 	{
 		XNATSubjectList xnatSubjectList = XNATQueries.subjectsForProject(sessionID, projectID);
@@ -87,6 +69,13 @@ public class XNATQueries
 			subjectIDs.add(subject.ID);
 		}
 		return subjectIDs;
+	}
+
+	public static XNATSubjectList subjectsForProject(String sessionID, String projectID)
+	{
+		String allSubjectsForProjectQueryURL = XNATQueryUtil.buildAllSubjectsForProjectQueryURL(projectID);
+
+		return invokeXNATSubjectsQuery(sessionID, allSubjectsForProjectQueryURL);
 	}
 
 	public static Set<String> dicomStudyUIDsForSubject(String sessionID, String projectID, String subjectID)

@@ -91,35 +91,44 @@ public class EPADProjectsHandler extends AbstractHandler
 			EPADSearchFilter searchFilter = EPADSearchFilterBuilder.build(httpRequest);
 
 			if (HandlerUtil.matchesTemplate(PROJECT_LIST_TEMPLATE, pathInfo)) {
-				EPADProjectList projectList = epadOperations.getAllProjectsForUser(jsessionID, username, searchFilter);
+				EPADProjectList projectList = epadOperations.getAllProjectsForUser(username, jsessionID, searchFilter);
 				responseStream.append(projectList.toJSON());
 				statusCode = HttpServletResponse.SC_OK;
 
 			} else if (HandlerUtil.matchesTemplate(SUBJECT_LIST_TEMPLATE, pathInfo)) {
 				Map<String, String> templateMap = HandlerUtil.getTemplateMap(SUBJECT_LIST_TEMPLATE, pathInfo);
 				String projectID = HandlerUtil.getTemplateParameter(templateMap, "project");
-				EPADSubjectList subjectList = epadOperations.getAllSubjectsForProject(jsessionID, projectID, searchFilter);
-				responseStream.append(subjectList.toJSON());
-				statusCode = HttpServletResponse.SC_OK;
+				if (parametersAreValid(projectID)) {
+					EPADSubjectList subjectList = epadOperations.getAllSubjectsForProject(projectID, jsessionID, searchFilter);
+					responseStream.append(subjectList.toJSON());
+					statusCode = HttpServletResponse.SC_OK;
+				} else
+					statusCode = HandlerUtil.warningJSONResponse(HttpServletResponse.SC_BAD_REQUEST, BAD_GET_MESSAGE, log);
 
 			} else if (HandlerUtil.matchesTemplate(STUDY_LIST_TEMPLATE, pathInfo)) {
 				Map<String, String> templateMap = HandlerUtil.getTemplateMap(STUDY_LIST_TEMPLATE, pathInfo);
 				String projectID = HandlerUtil.getTemplateParameter(templateMap, "project");
 				String subjectID = HandlerUtil.getTemplateParameter(templateMap, "subject");
-				EPADStudyList studyList = epadOperations
-						.getAllStudiesForPatient(jsessionID, projectID, subjectID, searchFilter);
-				responseStream.append(studyList.toJSON());
-				statusCode = HttpServletResponse.SC_OK;
+				if (parametersAreValid(projectID, subjectID)) {
+					EPADStudyList studyList = epadOperations.getAllStudiesForPatient(projectID, subjectID, jsessionID,
+							searchFilter);
+					responseStream.append(studyList.toJSON());
+					statusCode = HttpServletResponse.SC_OK;
+				} else
+					statusCode = HandlerUtil.warningJSONResponse(HttpServletResponse.SC_BAD_REQUEST, BAD_GET_MESSAGE, log);
 
 			} else if (HandlerUtil.matchesTemplate(SERIES_LIST_TEMPLATE, pathInfo)) {
 				Map<String, String> templateMap = HandlerUtil.getTemplateMap(SERIES_LIST_TEMPLATE, pathInfo);
 				String projectID = HandlerUtil.getTemplateParameter(templateMap, "project");
 				String subjectID = HandlerUtil.getTemplateParameter(templateMap, "subject");
 				String studyUID = HandlerUtil.getTemplateParameter(templateMap, "study");
-				EPADSeriesList seriesList = epadOperations.getAllSeriesForStudy(jsessionID, projectID, subjectID, studyUID,
-						searchFilter);
-				responseStream.append(seriesList.toJSON());
-				statusCode = HttpServletResponse.SC_OK;
+				if (parametersAreValid(projectID, subjectID, studyUID)) {
+					EPADSeriesList seriesList = epadOperations.getAllSeriesForStudy(projectID, subjectID, studyUID, jsessionID,
+							searchFilter);
+					responseStream.append(seriesList.toJSON());
+					statusCode = HttpServletResponse.SC_OK;
+				} else
+					statusCode = HandlerUtil.warningJSONResponse(HttpServletResponse.SC_BAD_REQUEST, BAD_GET_MESSAGE, log);
 
 			} else if (HandlerUtil.matchesTemplate(IMAGE_LIST_TEMPLATE, pathInfo)) {
 				Map<String, String> templateMap = HandlerUtil.getTemplateMap(IMAGE_LIST_TEMPLATE, pathInfo);
@@ -127,14 +136,15 @@ public class EPADProjectsHandler extends AbstractHandler
 				String subjectID = HandlerUtil.getTemplateParameter(templateMap, "subject");
 				String studyUID = HandlerUtil.getTemplateParameter(templateMap, "study");
 				String seriesUID = HandlerUtil.getTemplateParameter(templateMap, "series");
-				EPADImageList imageList = epadOperations.getAllImagesForSeries(jsessionID, projectID, subjectID, studyUID,
-						seriesUID, searchFilter);
-				responseStream.append(imageList.toJSON());
-				statusCode = HttpServletResponse.SC_OK;
-
-			} else {
+				if (parametersAreValid(projectID, subjectID, studyUID, seriesUID)) {
+					EPADImageList imageList = epadOperations.getAllImagesForSeries(projectID, subjectID, studyUID, seriesUID,
+							jsessionID, searchFilter);
+					responseStream.append(imageList.toJSON());
+					statusCode = HttpServletResponse.SC_OK;
+				} else
+					statusCode = HandlerUtil.warningJSONResponse(HttpServletResponse.SC_BAD_REQUEST, BAD_GET_MESSAGE, log);
+			} else
 				statusCode = HandlerUtil.warningJSONResponse(HttpServletResponse.SC_BAD_REQUEST, BAD_GET_MESSAGE, log);
-			}
 		} catch (Throwable t) {
 			statusCode = HandlerUtil.internalErrorJSONResponse(INTERNAL_ERROR_MESSAGE, t, responseStream, log);
 		}
@@ -180,4 +190,48 @@ public class EPADProjectsHandler extends AbstractHandler
 		return statusCode;
 	}
 
+	private boolean parametersAreValid(String projectID)
+	{
+		if (projectID == null) {
+			log.warning("Missing project ID parameter");
+			return false;
+		} else
+			return true;
+	}
+
+	private boolean parametersAreValid(String projectID, String subjectID)
+	{
+		if (parametersAreValid(projectID)) {
+			if (subjectID == null) {
+				log.warning("Missing subject ID parameter");
+				return false;
+			} else
+				return true;
+		} else
+			return false;
+	}
+
+	private boolean parametersAreValid(String projectID, String subjectID, String studyUID)
+	{
+		if (parametersAreValid(projectID, subjectID)) {
+			if (studyUID == null) {
+				log.warning("Missing study UID parameter");
+				return false;
+			} else
+				return true;
+		} else
+			return false;
+	}
+
+	private boolean parametersAreValid(String projectID, String subjectID, String studyUID, String seriesUID)
+	{
+		if (parametersAreValid(projectID, subjectID, studyUID)) {
+			if (seriesUID == null) {
+				log.warning("Missing series UID parameter");
+				return false;
+			} else
+				return true;
+		} else
+			return false;
+	}
 }

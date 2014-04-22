@@ -1,8 +1,8 @@
 package edu.stanford.epad.epadws.processing.pipeline.task;
 
 import edu.stanford.epad.common.util.EPADLogger;
-import edu.stanford.epad.dtos.DCM4CHEESeries;
-import edu.stanford.epad.dtos.DCM4CHEESeriesList;
+import edu.stanford.epad.dtos.internal.DCM4CHEESeries;
+import edu.stanford.epad.dtos.internal.DCM4CHEESeriesList;
 import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeOperations;
 import edu.stanford.epad.epadws.epaddb.EpadDatabase;
 import edu.stanford.epad.epadws.epaddb.EpadDatabaseOperations;

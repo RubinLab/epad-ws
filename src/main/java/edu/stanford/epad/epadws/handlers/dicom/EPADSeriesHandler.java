@@ -43,15 +43,14 @@ public class EPADSeriesHandler extends AbstractHandler
 {
 	private static final EPADLogger log = EPADLogger.getInstance();
 
-	private static final String MISSING_SERIES_IUID_MESSAGE = "No Series IUID parameter in DICOM series request";
+	private static final String MISSING_SERIES_IUID_MESSAGE = "No series ID parameter in DICOM series request";
 	private static final String INVALID_SESSION_TOKEN_MESSAGE = "Session token is invalid on DICOM series order route";
-	private static final String INTERNAL_EXCEPTION_MESSAGE = "Warning: internal error in DICOM series order handler";
+	private static final String INTERNAL_EXCEPTION_MESSAGE = "Internal error in DICOM series order handler";
 
 	@Override
 	public void handle(String s, Request request, HttpServletRequest httpRequest, HttpServletResponse httpResponse)
 	{
 		EpadOperations epadQueries = DefaultEpadOperations.getInstance();
-
 		PrintWriter responseStream = null;
 		int statusCode;
 
@@ -62,9 +61,9 @@ public class EPADSeriesHandler extends AbstractHandler
 		try {
 			responseStream = httpResponse.getWriter();
 			if (XNATSessionOperations.hasValidXNATSessionID(httpRequest)) {
-				String seriesIUID = httpRequest.getParameter("series_iuid");
-				if (seriesIUID != null) {
-					EPADDatabaseSeries epadDatabaseSeries = epadQueries.getSeries(seriesIUID);
+				String seriesUID = httpRequest.getParameter("series_iuid");
+				if (seriesUID != null) {
+					EPADDatabaseSeries epadDatabaseSeries = epadQueries.getSeries(seriesUID);
 					responseStream.print(epadDatabaseSeries.toJSON());
 					statusCode = HttpServletResponse.SC_OK;
 				} else {

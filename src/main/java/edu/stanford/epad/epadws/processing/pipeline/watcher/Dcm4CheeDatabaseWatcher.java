@@ -4,8 +4,8 @@ import java.util.List;
 import java.util.concurrent.BlockingQueue;
 
 import edu.stanford.epad.common.util.EPADLogger;
-import edu.stanford.epad.dtos.DCM4CHEESeries;
 import edu.stanford.epad.dtos.SeriesProcessingStatus;
+import edu.stanford.epad.dtos.internal.DCM4CHEESeries;
 import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeDatabase;
 import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeDatabaseOperations;
 import edu.stanford.epad.epadws.epaddb.EpadDatabase;

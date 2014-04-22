@@ -19,7 +19,7 @@ import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 
 import edu.stanford.epad.common.util.EPADLogger;
-import edu.stanford.epad.dtos.XNATProject;
+import edu.stanford.epad.dtos.internal.XNATProject;
 import edu.stanford.epad.epadws.handlers.HandlerUtil;
 import edu.stanford.epad.epadws.xnat.XNATQueryUtil;
 import edu.stanford.epad.epadws.xnat.XNATSessionOperations;

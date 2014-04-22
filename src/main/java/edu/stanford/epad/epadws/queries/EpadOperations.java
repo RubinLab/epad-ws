@@ -4,14 +4,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import edu.stanford.epad.dtos.DCM4CHEESeries;
 import edu.stanford.epad.dtos.EPADDatabaseSeries;
 import edu.stanford.epad.dtos.EPADImageList;
 import edu.stanford.epad.dtos.EPADProjectList;
 import edu.stanford.epad.dtos.EPADSeriesList;
-import edu.stanford.epad.dtos.EPADStudy;
 import edu.stanford.epad.dtos.EPADStudyList;
 import edu.stanford.epad.dtos.EPADSubjectList;
+import edu.stanford.epad.dtos.internal.DCM4CHEESeries;
 import edu.stanford.epad.epadws.handlers.search.EPADSearchFilter;
 
 /**
@@ -20,32 +19,25 @@ import edu.stanford.epad.epadws.handlers.search.EPADSearchFilter;
  */
 public interface EpadOperations
 {
-	EPADProjectList getAllProjectsForUser(String sessionID, String username, EPADSearchFilter searchFilter);
+	EPADProjectList getAllProjectsForUser(String username, String sessionID, EPADSearchFilter searchFilter);
 
-	EPADSubjectList getAllSubjectsForProject(String sessionID, String projectID, EPADSearchFilter searchFilter);
+	EPADSubjectList getAllSubjectsForProject(String projectID, String sessionID, EPADSearchFilter searchFilter);
 
-	EPADStudyList getAllStudiesForPatient(String sessionID, String projectID, String subjectID,
+	EPADStudyList getAllStudiesForPatient(String projectID, String subjectID, String sessionID,
 			EPADSearchFilter searchFilter);
 
-	EPADSeriesList getAllSeriesForStudy(String sessionID, String projectID, String subjectID, String studyUID,
+	EPADSeriesList getAllSeriesForStudy(String projectID, String subjectID, String studyUID, String sessionID,
 			EPADSearchFilter searchFilter);
 
-	EPADImageList getAllImagesForSeries(String sessionID, String projectID, String subjectID, String studyUID,
-			String seriesUID, EPADSearchFilter searchFilter);
-
-	EPADStudy getStudy(String jsessionID, String studyUID, EPADSearchFilter searchFilter);
-
-	EPADSeriesList getAllSeriesForStudy(String jsessionID, String studyUID, EPADSearchFilter searchFilter);
-
-	EPADImageList getAllImagesForSeries(String jsessionID, String studyUID, String seriesUID,
-			EPADSearchFilter searchFilter);
+	EPADImageList getAllImagesForSeries(String projectID, String subjectID, String studyUID, String seriesUID,
+			String sessionID, EPADSearchFilter searchFilter);
 
 	Set<String> getExamTypesForPatient(String sessionID, String projectID, String subjectID, EPADSearchFilter searchFilter);
 
-	Set<String> getExamTypesForStudy(String sessionID, String projectID, String subjectID, String studyUID,
+	Set<String> getExamTypesForStudy(String projectID, String subjectID, String studyUID, String sessionID,
 			EPADSearchFilter searchFilter);
 
-	Set<String> getSeriesUIDsForPatient(String sessionID, String projectID, String subjectID,
+	Set<String> getSeriesUIDsForPatient(String projectID, String subjectID, String sessionID,
 			EPADSearchFilter searchFilter);
 
 	/**
@@ -76,9 +68,9 @@ public interface EpadOperations
 
 	void deleteStudiesFromEPadAndDcm4CheeDatabases(Set<String> studyUIDs);
 
-	@Deprecated
+	// TODO Remove soon
 	void scheduleStudyDelete(String studyUID);
 
-	@Deprecated
+	// TODO Remove soon
 	void scheduleSeriesDelete(String studyUID, String seriesUID);
 }

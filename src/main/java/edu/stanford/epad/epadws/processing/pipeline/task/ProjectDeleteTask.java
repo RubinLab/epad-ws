@@ -31,7 +31,7 @@ public class ProjectDeleteTask implements Runnable
 		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
 
 		try {
-			Set<String> patientIDs = XNATQueries.patientIDsForProject(sessionID, projectID);
+			Set<String> patientIDs = XNATQueries.subjectIDsForProject(sessionID, projectID);
 
 			for (String patientID : patientIDs) {
 				log.info("Deleting patient " + patientID + " in project " + projectID);

@@ -19,7 +19,6 @@ import edu.stanford.epad.epadws.xnat.XNATSessionOperations;
  * Delete a study or a series.
  * 
  */
-@Deprecated
 public class DicomDeleteHandler extends AbstractHandler
 {
 	private static final EPADLogger log = EPADLogger.getInstance();
