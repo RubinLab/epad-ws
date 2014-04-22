@@ -36,9 +36,9 @@ public class EPADHandler extends AbstractHandler
 	private static final String STUDY_LIST_TEMPLATE = SUBJECT_TEMPLATE + "/studies/";
 	private static final String STUDY_TEMPLATE = STUDY_LIST_TEMPLATE + "{study}";
 	private static final String SERIES_LIST_TEMPLATE = STUDY_TEMPLATE + "/series/";
-	private static final String SERIES_TEMPLATE = STUDY_LIST_TEMPLATE + "{series}";
+	private static final String SERIES_TEMPLATE = SERIES_LIST_TEMPLATE + "{series}";
 	private static final String IMAGE_LIST_TEMPLATE = SERIES_TEMPLATE + "/images/";
-	private static final String IMAGE_TEMPLATE = SERIES_TEMPLATE + "/images/{image}";
+	private static final String IMAGE_TEMPLATE = IMAGE_LIST_TEMPLATE + "{image}";
 
 	private static final String INTERNAL_ERROR_MESSAGE = "Internal error running query on projects route";
 	private static final String INVALID_SESSION_TOKEN_MESSAGE = "Session token is invalid on projects route";

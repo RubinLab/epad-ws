@@ -271,6 +271,16 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 
 	}
 
+	@Override
+	public void updateOrInsertSeries(String seriesUID, SeriesProcessingStatus seriesProcessingStatus)
+	{
+		if (!hasSeriesInEPadDatabase(seriesUID)) {
+			recordNewSeries(seriesProcessingStatus, seriesUID);
+		} else {
+			updateSeriesProcessingStatus(seriesProcessingStatus, seriesUID);
+		}
+	}
+
 	/**
 	 * Query <core>epaddb.coordination_description</code> table to find a description of a coordination and return this
 	 * description as a {@link Term}.
@@ -501,16 +511,6 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 			log.warning("Database operation (insert event) failed for AIM ID " + aim_uid, e);
 		} finally {
 			close(c, ps);
-		}
-	}
-
-	@Override
-	public void updateOrInsertSeries(String seriesUID, SeriesProcessingStatus seriesProcessingStatus)
-	{
-		if (!hasSeriesInEPadDatabase(seriesUID)) {
-			recordNewSeries(seriesProcessingStatus, seriesUID);
-		} else {
-			updateSeriesProcessingStatus(seriesProcessingStatus, seriesUID);
 		}
 	}
 

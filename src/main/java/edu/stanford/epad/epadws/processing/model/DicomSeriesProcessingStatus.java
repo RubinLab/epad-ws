@@ -61,12 +61,15 @@ public class DicomSeriesProcessingStatus
 
 		if (this.dicomSeriesProcessingState == DicomSeriesProcessingState.COMPLETE
 				|| dicomSeriesProcessingDescription.isComplete()) {
-			logger.info("Series " + dicomSeriesProcessingDescription.getSeriesUID() + " is complete with "
+			String seriesUID = dicomSeriesProcessingDescription.getSeriesUID();
+			logger.info("Series " + seriesUID + " is complete with "
 					+ dicomSeriesProcessingDescription.getNumberOfInstances() + " instances");
+
 			return true;
 		}
 		if (currTime > lastActivityTimeStamp + MAX_IDLE_TIME) {
-			logger.info("Series " + dicomSeriesProcessingDescription.getSeriesUID() + " has completed processing.");
+			String seriesUID = dicomSeriesProcessingDescription.getSeriesUID();
+			logger.info("Series " + seriesUID + " has completed processing.");
 			return true;
 		}
 		return false;

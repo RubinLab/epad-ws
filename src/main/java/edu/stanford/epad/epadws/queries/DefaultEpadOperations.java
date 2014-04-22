@@ -215,7 +215,7 @@ public class DefaultEpadOperations implements EpadOperations
 			String imageUID = imageDescription.get("sop_iuid");
 			String instanceNumberString = imageDescription.get("inst_no");
 			int instanceNumber = getInstanceNumber(instanceNumberString, seriesUID, imageUID);
-			String sliceLocation = getSliceLocation(imageDescription); // entry.get("inst_custom1");
+			String sliceLocation = getSliceLocation(imageDescription);
 			String imageDate = imageDescription.get("content_datetime");
 			String insertDate = imageDescription.get("created_time");
 

@@ -12,6 +12,7 @@ import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.epad.common.util.EPADResources;
 import edu.stanford.epad.dtos.PNGFileProcessingStatus;
+import edu.stanford.epad.dtos.SeriesProcessingStatus;
 import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeDatabase;
 import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeDatabaseOperations;
 import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeDatabaseUtils;
@@ -60,12 +61,14 @@ public class DICOMSeriesWatcher implements Runnable
 		this.pngGeneratorTaskQueue = pngGeneratorTaskQueue;
 		this.dicomSeriesDescriptionTracker = DicomSeriesProcessingStatusTracker.getInstance();
 		this.dcm4cheeRootDir = EPADConfig.getInstance().getStringPropertyValue("dcm4cheeDirRoot");
+
 	}
 
 	@Override
 	public void run()
 	{
-		EpadOperations epadQueries = DefaultEpadOperations.getInstance();
+		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
+		EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
 
 		queueAndWatcherManager = QueueAndWatcherManager.getInstance();
 
@@ -89,7 +92,7 @@ public class DICOMSeriesWatcher implements Runnable
 					// Each entry in list is map with keys: sop_iuid, inst_no, series_iuid, filepath, file_size.
 					String seriesUID = dicomSeriesProcessingDescription.getSeriesUID();
 					int numberOfInstances = dicomSeriesProcessingDescription.getNumberOfInstances();
-					List<Map<String, String>> unprocessedDicomImageFileDescriptions = epadQueries
+					List<Map<String, String>> unprocessedDicomImageFileDescriptions = epadOperations
 							.getUnprocessedDicomImageFileDescriptionsForSeries(seriesUID);
 
 					if (unprocessedDicomImageFileDescriptions.size() > 0) {
@@ -100,7 +103,7 @@ public class DICOMSeriesWatcher implements Runnable
 						dicomSeriesProcessingStatus.registerActivity();
 						dicomSeriesProcessingStatus.setSeriesProcessingState(DicomSeriesProcessingState.IN_PIPELINE);
 						queueAndWatcherManager.addToPNGGeneratorTaskPipeline(unprocessedDicomImageFileDescriptions);
-						log.info("Submitted series " + seriesUID + " with " + numberOfInstances + " images to PNG generator");
+						log.info("Submitted series " + seriesUID + " with " + numberOfInstances + " image(s) to PNG generator");
 					} else { // All images have been submitted for PNG processing.
 						/*
 						 * List<Map<String, String>> processedPNGImages = mySqlQueries
@@ -118,7 +121,9 @@ public class DICOMSeriesWatcher implements Runnable
 				for (DicomSeriesProcessingStatus dicomSeriesProcessingStatus : dicomSeriesDescriptionTracker
 						.getDicomSeriesProcessingStatusSet()) {
 					if (dicomSeriesProcessingStatus.isDone()) { // Remove finished series
+						String seriesUID = dicomSeriesProcessingStatus.getDicomSeriesProcessingDescription().getSeriesUID();
 						dicomSeriesDescriptionTracker.removeDicomSeriesProcessingStatus(dicomSeriesProcessingStatus);
+						epadDatabaseOperations.updateOrInsertSeries(seriesUID, SeriesProcessingStatus.DONE);
 					}
 				}
 			} catch (Exception e) {
