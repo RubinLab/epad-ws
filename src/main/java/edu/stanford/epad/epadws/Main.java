@@ -55,7 +55,7 @@ import edu.stanford.epad.epadws.handlers.dicom.WindowingHandler;
 import edu.stanford.epad.epadws.handlers.event.EventHandler;
 import edu.stanford.epad.epadws.handlers.event.ProjectEventHandler;
 import edu.stanford.epad.epadws.handlers.plugin.EPadPluginHandler;
-import edu.stanford.epad.epadws.handlers.search.EPADProjectsHandler;
+import edu.stanford.epad.epadws.handlers.search.EPADHandler;
 import edu.stanford.epad.epadws.handlers.xnat.XNATProjectHandler;
 import edu.stanford.epad.epadws.handlers.xnat.XNATSessionHandler;
 import edu.stanford.epad.epadws.handlers.xnat.XNATSubjectHandler;
@@ -187,10 +187,11 @@ public class Main
 
 		addHandlerAtContextPath(new XNATSessionHandler(), "/epad/session", handlerList);
 
-		addHandlerAtContextPath(new EPADProjectsHandler(), "/epad/v2", handlerList);
+		addHandlerAtContextPath(new EPADHandler(), "/epad/v2", handlerList);
 
 		addHandlerAtContextPath(new DICOMHeadersHandler(), "/epad/dicomtagj", handlerList);
 		addHandlerAtContextPath(new WindowingHandler(), "/epad/dicomparam", handlerList);
+
 		addHandlerAtContextPath(new AimResourceHandler(), "/epad/aimresource", handlerList);
 		addHandlerAtContextPath(new DicomSegmentationPathHandler(), "/epad/segmentationpath", handlerList);
 		addHandlerAtContextPath(new WadoHandler(), "/epad/wado", handlerList);
@@ -207,7 +208,7 @@ public class Main
 		addHandlerAtContextPath(new ResourceCheckHandler(), "/epad/resources", handlerList);
 		addFileServerAtContextPath(EPADResources.getEPADWebServerResourcesDir(), handlerList, "/epad/resources");
 
-		// The following well be removed soon
+		// The following well be removed soon as calls go through RESTful EPADHandler route.
 		addHandlerAtContextPath(new EPADSeriesHandler(), "/epad/seriesorderj", handlerList);
 		addHandlerAtContextPath(new XNATProjectHandler(), "/epad/projects", handlerList);
 		addHandlerAtContextPath(new XNATSubjectHandler(), "/epad/subjects", handlerList);

@@ -36,6 +36,7 @@ import edu.stanford.epad.common.pixelmed.PixelMedUtils;
 import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.epad.common.util.EPADResources;
+import edu.stanford.epad.dtos.PNGFileProcessingStatus;
 import edu.stanford.epad.dtos.SeriesProcessingStatus;
 import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeDatabaseUtils;
 import edu.stanford.epad.epadws.epaddb.EpadDatabase;
@@ -122,7 +123,7 @@ public class DicomSegmentationObjectPNGMaskGeneratorTask implements GeneratorTas
 				try {
 					insertEpadFile(databaseOperations, sourceFile);
 					ImageIO.write(sourceWithTransparency, "png", sourceFile);
-					databaseOperations.updateEpadFileRecord(pngUrl, SeriesProcessingStatus.DONE, 77, "");
+					databaseOperations.updateEpadFileRecord(pngUrl, PNGFileProcessingStatus.DONE, 77, "");
 				} catch (IOException e) {
 					logger.warning("Failed to write DSO PNG mask for series " + seriesUID, e);
 				}

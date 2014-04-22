@@ -5,6 +5,7 @@ import java.util.Map;
 import java.util.Set;
 
 import edu.stanford.epad.dtos.EPADDatabaseSeries;
+import edu.stanford.epad.dtos.EPADImage;
 import edu.stanford.epad.dtos.EPADImageList;
 import edu.stanford.epad.dtos.EPADProjectList;
 import edu.stanford.epad.dtos.EPADSeriesList;
@@ -32,6 +33,9 @@ public interface EpadOperations
 	EPADImageList getAllImagesForSeries(String projectID, String subjectID, String studyUID, String seriesUID,
 			String sessionID, EPADSearchFilter searchFilter);
 
+	EPADImage getImage(String projectID, String subjectID, String studyUID, String seriesUID, String imageID,
+			String sessionID, EPADSearchFilter searchFilter);
+
 	Set<String> getExamTypesForPatient(String sessionID, String projectID, String subjectID, EPADSearchFilter searchFilter);
 
 	Set<String> getExamTypesForStudy(String projectID, String subjectID, String studyUID, String sessionID,
@@ -56,7 +60,7 @@ public interface EpadOperations
 	 * <p>
 	 * Each description is a map with keys: sop_iuid, inst_no, series_iuid, filepath, file_size.
 	 */
-	List<Map<String, String>> getUnprocessedDicomImageFileDescriptionsForSeries(String seriesIUID);
+	List<Map<String, String>> getUnprocessedDicomImageFileDescriptionsForSeries(String seriesUID);
 
 	void scheduleProjectDelete(String sessionID, String projectID);
 

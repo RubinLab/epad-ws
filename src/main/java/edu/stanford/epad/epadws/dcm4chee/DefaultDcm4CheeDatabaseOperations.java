@@ -402,6 +402,12 @@ public class DefaultDcm4CheeDatabaseOperations implements Dcm4CheeDatabaseOperat
 	}
 
 	@Override
+	public Map<String, String> getImageDescription(String seriesUID, String imageID)
+	{
+		return null; // TODO
+	}
+
+	@Override
 	public int getPrimaryKeyForInstanceUID(String imageUID)
 	{
 		Connection c = null;

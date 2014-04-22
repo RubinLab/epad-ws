@@ -178,7 +178,7 @@ public class DefaultEpadOperations implements EpadOperations
 			String patientID = dcm4CheeSeries.patientID;
 			String patientName = dcm4CheeSeries.patientName;
 			String seriesDate = dcm4CheeSeries.seriesDate;
-			String seriesDescription = dcm4CheeSeries.seriesDate;
+			String seriesDescription = dcm4CheeSeries.seriesDescription;
 			String examType = dcm4CheeSeries.examType;
 			String bodyPart = dcm4CheeSeries.bodyPart;
 			String accessionNumber = dcm4CheeSeries.accessionNumber;
@@ -224,6 +224,27 @@ public class DefaultEpadOperations implements EpadOperations
 			epadImageList.addImage(epadImage);
 		}
 		return epadImageList;
+	}
+
+	@Override
+	public EPADImage getImage(String projectID, String patientID, String studyUID, String seriesUID, String imageID,
+			String sessionID, EPADSearchFilter searchFilter)
+	{
+		Dcm4CheeDatabaseOperations dcm4CheeDatabaseOperations = Dcm4CheeDatabase.getInstance()
+				.getDcm4CheeDatabaseOperations();
+		Map<String, String> imageDescription = dcm4CheeDatabaseOperations.getImageDescription(seriesUID, imageID);
+
+		String imageUID = imageDescription.get("sop_iuid");
+		String instanceNumberString = imageDescription.get("inst_no");
+		int instanceNumber = getInstanceNumber(instanceNumberString, seriesUID, imageUID);
+		String sliceLocation = getSliceLocation(imageDescription); // entry.get("inst_custom1");
+		String imageDate = imageDescription.get("content_datetime");
+		String insertDate = imageDescription.get("created_time");
+
+		EPADImage epadImage = new EPADImage(projectID, patientID, studyUID, seriesUID, imageUID, insertDate, imageDate,
+				sliceLocation, instanceNumber);
+
+		return epadImage;
 	}
 
 	@Override
@@ -327,7 +348,7 @@ public class DefaultEpadOperations implements EpadOperations
 				.getDcm4CheeDatabaseOperations();
 		EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
 
-		List<Map<String, String>> dicomFilesWithoutPNGImagesFileDescriptions = new ArrayList<Map<String, String>>();
+		List<Map<String, String>> dicomImagesWithoutPNGImageFileDescriptions = new ArrayList<Map<String, String>>();
 
 		try {
 			// Get list of DICOM image descriptions from DCM4CHEE database table (pacsdb.files). Each image description is a
@@ -335,24 +356,20 @@ public class DefaultEpadOperations implements EpadOperations
 			List<Map<String, String>> dicomImageFileDescriptions = dcm4CheeDatabaseOperations
 					.getDicomImageFileDescriptionsForSeries(seriesUID);
 
-			// Get list of instance IDs for images in series from ePAD database table (epaddb.epad_files).
-			List<String> finishedDICOMImageInstanceIDs = epadDatabaseOperations
-					.getFinishedDICOMImageInstanceUIDsForSeriesFromEPadDatabase(seriesUID);
-
-			// logger.info("Found " + dicomImageFileDescriptions.size() + " unprocessed DICOM image(s) with files and "
-			// + finishedDICOMImageInstanceIDs.size() + " processed image(s) for series " + shortenSting(seriesIUID));
+			// Get list of image ID in series from ePAD database table (epaddb.epad_files).
+			List<String> seriesImageUIDs = epadDatabaseOperations.getSeriesImageUIDs(seriesUID);
 
 			for (Map<String, String> dicomImageFileDescription : dicomImageFileDescriptions) {
-				String sopIdWithFile = dicomImageFileDescription.get("sop_iuid");
+				String imageUID = dicomImageFileDescription.get("sop_iuid");
 
-				if (!finishedDICOMImageInstanceIDs.contains(sopIdWithFile)) {
-					dicomFilesWithoutPNGImagesFileDescriptions.add(dicomImageFileDescription);
+				if (!seriesImageUIDs.contains(imageUID)) {
+					dicomImagesWithoutPNGImageFileDescriptions.add(dicomImageFileDescription);
 				}
 			}
 		} catch (Exception e) {
 			log.warning("getUnprocessedDICOMImageFileDescriptions had " + e.getMessage(), e);
 		}
-		return dicomFilesWithoutPNGImagesFileDescriptions;
+		return dicomImagesWithoutPNGImageFileDescriptions;
 	}
 
 	@Override

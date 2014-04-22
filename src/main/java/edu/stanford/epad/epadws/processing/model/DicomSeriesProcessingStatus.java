@@ -59,7 +59,8 @@ public class DicomSeriesProcessingStatus
 	{
 		long currTime = System.currentTimeMillis();
 
-		if (dicomSeriesProcessingDescription.isComplete()) {
+		if (this.dicomSeriesProcessingState == DicomSeriesProcessingState.COMPLETE
+				|| dicomSeriesProcessingDescription.isComplete()) {
 			logger.info("Series " + dicomSeriesProcessingDescription.getSeriesUID() + " is complete with "
 					+ dicomSeriesProcessingDescription.getNumberOfInstances() + " instances");
 			return true;

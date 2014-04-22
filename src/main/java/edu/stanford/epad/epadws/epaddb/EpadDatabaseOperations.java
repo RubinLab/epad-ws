@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import edu.stanford.epad.dtos.PNGFileProcessingStatus;
 import edu.stanford.epad.dtos.SeriesProcessingStatus;
 import edu.stanford.epad.epadws.handlers.coordination.CoordinationHandler;
 import edu.stanford.epad.epadws.handlers.coordination.Term;
@@ -41,7 +42,7 @@ public interface EpadDatabaseOperations
 	/**
 	 * Update the processing status, file size and error message of an ePAD file record.
 	 */
-	void updateEpadFileRecord(String filePath, SeriesProcessingStatus newStatus, int fileSize, String errorMsg);
+	void updateEpadFileRecord(String filePath, PNGFileProcessingStatus newStatus, int fileSize, String errorMsg);
 
 	String selectEpadFilePathLike(String sopInstanceUID);
 
@@ -54,7 +55,7 @@ public interface EpadDatabaseOperations
 
 	Set<String> getAllSeriesUIDsFromEPadDatabase();
 
-	List<String> getFinishedDICOMImageInstanceUIDsForSeriesFromEPadDatabase(String seriesIUID);
+	List<String> getSeriesImageUIDs(String seriesUID);
 
 	// Coordination methods; will disappear with AIM 4
 

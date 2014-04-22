@@ -62,5 +62,7 @@ public interface Dcm4CheeDatabaseOperations
 	// pscsdb MySql database. The keys to get the image ID and instance number are sop_iuid and inst_no, respectively.
 	List<Map<String, String>> getImageDescriptions(String seriesUID);
 
+	Map<String, String> getImageDescription(String seriesUID, String imageID);
+
 	int getPrimaryKeyForInstanceUID(String imageUID);
 }

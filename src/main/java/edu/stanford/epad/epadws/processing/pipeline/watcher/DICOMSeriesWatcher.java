@@ -11,7 +11,7 @@ import edu.stanford.epad.common.dicom.DicomFormatUtil;
 import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.epad.common.util.EPADResources;
-import edu.stanford.epad.dtos.SeriesProcessingStatus;
+import edu.stanford.epad.dtos.PNGFileProcessingStatus;
 import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeDatabase;
 import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeDatabaseOperations;
 import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeDatabaseUtils;
@@ -82,44 +82,43 @@ public class DICOMSeriesWatcher implements Runnable
 				}
 				// Loop through all new series and find images that have no corresponding PNG file recorded in ePAD database.
 				// Update their status to reflect this so that we can monitor percent completion for each series.
-				for (DicomSeriesProcessingStatus currentDicomSeriesProcessingStatus : dicomSeriesDescriptionTracker
+				for (DicomSeriesProcessingStatus dicomSeriesProcessingStatus : dicomSeriesDescriptionTracker
 						.getDicomSeriesProcessingStatusSet()) {
-					DicomSeriesProcessingDescription currentDicomSeriesDescription = currentDicomSeriesProcessingStatus
+					DicomSeriesProcessingDescription dicomSeriesProcessingDescription = dicomSeriesProcessingStatus
 							.getDicomSeriesProcessingDescription();
 					// Each entry in list is map with keys: sop_iuid, inst_no, series_iuid, filepath, file_size.
-					String seriesUID = currentDicomSeriesDescription.getSeriesUID();
+					String seriesUID = dicomSeriesProcessingDescription.getSeriesUID();
+					int numberOfInstances = dicomSeriesProcessingDescription.getNumberOfInstances();
 					List<Map<String, String>> unprocessedDicomImageFileDescriptions = epadQueries
 							.getUnprocessedDicomImageFileDescriptionsForSeries(seriesUID);
 
 					if (unprocessedDicomImageFileDescriptions.size() > 0) {
-						log.info("Found series " + currentDicomSeriesDescription.getSeriesUID() + " with "
+						log.info("Found series " + dicomSeriesProcessingDescription.getSeriesUID() + " with "
 								+ unprocessedDicomImageFileDescriptions.size() + " unprocessed DICOM image(s).");
-						currentDicomSeriesDescription.updateWithDicomImageFileDescriptions(unprocessedDicomImageFileDescriptions);
-						currentDicomSeriesProcessingStatus.registerActivity();
-						currentDicomSeriesProcessingStatus.setSeriesProcessingState(DicomSeriesProcessingState.IN_PIPELINE);
+						dicomSeriesProcessingDescription
+								.updateWithDicomImageFileDescriptions(unprocessedDicomImageFileDescriptions);
+						dicomSeriesProcessingStatus.registerActivity();
+						dicomSeriesProcessingStatus.setSeriesProcessingState(DicomSeriesProcessingState.IN_PIPELINE);
 						queueAndWatcherManager.addToPNGGeneratorTaskPipeline(unprocessedDicomImageFileDescriptions);
-						log.info("Submitted series " + currentDicomSeriesDescription.getSeriesUID() + " to PNG generator");
-					} else { // There are no unprocessed PNG files left.
-						if (currentDicomSeriesProcessingStatus.getDicomSeriesProcessingState() == DicomSeriesProcessingState.IN_PIPELINE) {
-							// logger.info("No unprocessed PNG files left for series " +
-							// currentDicomSeriesDescription.getSeriesUID());
-							/*
-							 * List<Map<String, String>> processedPNGImages = mySqlQueries
-							 * .getProcessedDICOMImageFileDescriptionsOrdered(currentSeriesDescription.getSeriesUID());
-							 * 
-							 * if (processedPNGImages.size() > 0) { // Convert processed PNG files to PNG grid files
-							 * logger.info("Found " + processedPNGImages.size() + " PNG images. Converting to grid images.");
-							 * currentSeriesStatus.setState(DicomImageProcessingState.IN_PNG_GRID_PIPELINE);
-							 * addToPNGGridGeneratorTaskPipeline(unprocessedDICOMImageFileDescriptions); }
-							 */
-						}
+						log.info("Submitted series " + seriesUID + " with " + numberOfInstances + " images to PNG generator");
+					} else { // All images have been submitted for PNG processing.
+						/*
+						 * List<Map<String, String>> processedPNGImages = mySqlQueries
+						 * .getProcessedDICOMImageFileDescriptionsOrdered(currentSeriesDescription.getSeriesUID());
+						 * 
+						 * if (processedPNGImages.size() > 0) { // Convert processed PNG files to PNG grid files
+						 * logger.info("Found " + processedPNGImages.size() + " PNG images. Converting to grid images.");
+						 * currentSeriesStatus.setState(DicomImageProcessingState.IN_PNG_GRID_PIPELINE);
+						 * addToPNGGridGeneratorTaskPipeline(unprocessedDICOMImageFileDescriptions); }
+						 */
+						// }
 					}
 				}
 				// Loop through all current active series and remove them if they are done.
-				for (DicomSeriesProcessingStatus currentSeriesOrderStatus : dicomSeriesDescriptionTracker
+				for (DicomSeriesProcessingStatus dicomSeriesProcessingStatus : dicomSeriesDescriptionTracker
 						.getDicomSeriesProcessingStatusSet()) {
-					if (currentSeriesOrderStatus.isDone()) { // Remove finished series
-						dicomSeriesDescriptionTracker.removeDicomSeriesProcessingStatus(currentSeriesOrderStatus);
+					if (dicomSeriesProcessingStatus.isDone()) { // Remove finished series
+						dicomSeriesDescriptionTracker.removeDicomSeriesProcessingStatus(dicomSeriesProcessingStatus);
 					}
 				}
 			} catch (Exception e) {
@@ -179,7 +178,7 @@ public class DICOMSeriesWatcher implements Runnable
 	private void insertEpadFile(EpadDatabaseOperations epadDatabaseOperations, File outputPNGFile)
 	{
 		Map<String, String> epadFilesTable = Dcm4CheeDatabaseUtils.createEPadFilesTableData(outputPNGFile);
-		epadFilesTable.put("file_status", "" + SeriesProcessingStatus.IN_PIPELINE.getCode());
+		epadFilesTable.put("file_status", "" + PNGFileProcessingStatus.IN_PIPELINE.getCode());
 		epadDatabaseOperations.insertEpadFileRecord(epadFilesTable);
 	}
 

@@ -14,6 +14,7 @@ import java.util.Map;
 import java.util.Set;
 
 import edu.stanford.epad.common.util.EPADLogger;
+import edu.stanford.epad.dtos.PNGFileProcessingStatus;
 import edu.stanford.epad.dtos.SeriesProcessingStatus;
 import edu.stanford.epad.epadws.handlers.coordination.Term;
 
@@ -56,7 +57,7 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 	}
 
 	@Override
-	public void updateEpadFileRecord(String filePath, SeriesProcessingStatus seriesProcessingStatus, int fileSize,
+	public void updateEpadFileRecord(String filePath, PNGFileProcessingStatus pngFileProcessingStatus, int fileSize,
 			String errorMsg)
 	{
 		Connection c = null;
@@ -65,7 +66,9 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 		try {
 			c = getConnection();
 			ps = c.prepareStatement(EpadDatabaseCommands.UPDATE_EPAD_FILES_FOR_EXACT_PATH);
-			ps.setInt(1, seriesProcessingStatus.getCode());
+			// log.info("Updating processing status code = " + pngFileProcessingStatus.getCode());
+
+			ps.setInt(1, pngFileProcessingStatus.getCode());
 			ps.setInt(2, fileSize);
 			ps.setString(3, getValueOrDefault(errorMsg, ""));
 			ps.setString(4, filePath);
@@ -534,13 +537,13 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 	}
 
 	/**
-	 * Cross database query that gets finished image instance IDs for a series.
+	 * Cross database query that gets image ID for a series.
 	 * 
 	 * @param seriesIUID String
 	 * @return List of String (sopInstanceIds).
 	 */
 	@Override
-	public List<String> getFinishedDICOMImageInstanceUIDsForSeriesFromEPadDatabase(String seriesIUID)
+	public List<String> getSeriesImageUIDs(String seriesUID)
 	{
 		List<String> retVal = new ArrayList<String>();
 
@@ -550,7 +553,7 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 		try {
 			c = getConnection();
 			ps = c.prepareStatement(EpadDatabaseCommands.SELECT_EPAD_FILES_FOR_SERIES);
-			ps.setString(1, seriesIUID);
+			ps.setString(1, seriesUID);
 
 			rs = ps.executeQuery();
 			while (rs.next()) {

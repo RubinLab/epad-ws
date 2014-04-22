@@ -29,7 +29,7 @@ public class XNATSeriesWatcher implements Runnable
 	private static final EPADConfig config = EPADConfig.getInstance();
 
 	private final String xnatUploadProjectID;
-	private final String jsessionID = null;
+	private String jsessionID = null;
 
 	public XNATSeriesWatcher(BlockingQueue<DicomSeriesProcessingDescription> xnatSeriesWatcherQueue)
 	{
@@ -104,9 +104,10 @@ public class XNATSeriesWatcher implements Runnable
 	{
 		if (!XNATSessionOperations.hasValidXNATSessionID(jsessionID)) { // Validating will extend validity
 			String sessionID = XNATSessionOperations.getXNATAdminSessionID();
-			if (sessionID != null)
+			if (sessionID != null) {
+				jsessionID = sessionID;
 				return true;
-			else
+			} else
 				return false;
 		} else
 			return true;

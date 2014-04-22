@@ -128,8 +128,8 @@ public class DicomSeriesProcessingDescription
 			// //ToDo: delete above once debugged.
 
 			int instanceNumber = instanceNumberString == null ? 1 : Integer.parseInt(instanceNumberString);
-			String sopInstanceUID = dicomImageFileDescription.get("sop_iuid");
-			addCompletedInstance(instanceNumber, sopInstanceUID);
+			String imageUID = dicomImageFileDescription.get("sop_iuid");
+			addCompletedInstance(instanceNumber, imageUID);
 		}
 	}
 
