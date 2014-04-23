@@ -254,10 +254,11 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 			ps = c.prepareStatement(EpadDatabaseCommands.SELECT_STATUS_FOR_SERIES_BY_ID);
 			ps.setString(1, seriesUID);
 			rs = ps.executeQuery();
-			if (rs.next())
+			if (rs.next()) {
 				status = rs.getInt(1);
-
-			return SeriesProcessingStatus.getValue(status);
+				return SeriesProcessingStatus.getValue(status);
+			} else
+				return null;
 		} catch (IllegalArgumentException e) {
 			log.warning("Invalid enum value for " + SeriesProcessingStatus.class.getName(), e);
 			return null;

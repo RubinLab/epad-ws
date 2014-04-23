@@ -137,6 +137,7 @@ public class DefaultEpadOperations implements EpadOperations
 		EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
 		Dcm4CheeDatabaseOperations dcm4CheeDatabaseOperations = Dcm4CheeDatabase.getInstance()
 				.getDcm4CheeDatabaseOperations();
+		boolean seriesNotStarted = false;
 		boolean seriesWithNoDICOM = false;
 		boolean seriesInPipeline = false;
 		boolean seriesWithError = false;
@@ -145,6 +146,8 @@ public class DefaultEpadOperations implements EpadOperations
 
 		for (String seriesUID : seriesUIDs) {
 			SeriesProcessingStatus seriesProcessingStatus = epadDatabaseOperations.getSeriesProcessingStatus(seriesUID);
+			if (seriesProcessingStatus == null)
+				seriesNotStarted = true;
 			if (seriesProcessingStatus == SeriesProcessingStatus.NO_DICOM)
 				seriesWithNoDICOM = true;
 			if (seriesProcessingStatus == SeriesProcessingStatus.ERROR)
@@ -153,6 +156,8 @@ public class DefaultEpadOperations implements EpadOperations
 				seriesInPipeline = true;
 		}
 
+		if (seriesNotStarted)
+			return StudyProcessingStatus.STUDY_STATUS_NOT_STARTED;
 		if (seriesWithError)
 			return StudyProcessingStatus.STUDY_STATUS_ERROR_MISSING_PNG;
 		else if (seriesWithNoDICOM)

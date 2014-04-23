@@ -27,6 +27,7 @@ public class DicomDeleteHandler extends AbstractHandler
 	private static final String INVALID_SESSION_TOKEN_MESSAGE = "Session token is invalid on DICOM delete route";
 	private static final String MISSING_QUERY_MESSAGE = "No query parameters specified  on DICOM delete route";
 	private static final String BAD_QUERY_MESSAGE = "No study specified on DICOM delete route";
+	private static final String NO_SERIES_DELETE_MESSAGE = "Only studies can be deleted";
 
 	@Override
 	public void handle(String s, Request request, HttpServletRequest httpRequest, HttpServletResponse httpResponse)
@@ -47,15 +48,15 @@ public class DicomDeleteHandler extends AbstractHandler
 				if (queryString != null) {
 					try {
 						EpadOperations epadOperations = DefaultEpadOperations.getInstance();
-
-						String studyUID = httpRequest.getParameter("studyuid");
-						String seriesUID = httpRequest.getParameter("seriesuid");
-						if (studyUID != null) {
-							if (seriesUID == null)
-								epadOperations.scheduleStudyDelete(studyUID);
-							else
-								epadOperations.scheduleSeriesDelete(studyUID, seriesUID);
-							statusCode = HttpServletResponse.SC_OK;
+						String deleteType = httpRequest.getParameter("deletetype");
+						String uid = httpRequest.getParameter("uid");
+						if (deleteType == null || uid == null) {
+							if (deleteType.equals("study")) {
+								epadOperations.scheduleStudyDelete(uid);
+								statusCode = HttpServletResponse.SC_OK;
+							} else
+								statusCode = HandlerUtil.warningResponse(HttpServletResponse.SC_BAD_REQUEST, NO_SERIES_DELETE_MESSAGE,
+										responseStream, log);
 						} else {
 							statusCode = HandlerUtil.warningResponse(HttpServletResponse.SC_BAD_REQUEST, BAD_QUERY_MESSAGE,
 									responseStream, log);
