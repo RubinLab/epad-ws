@@ -2,6 +2,8 @@ package edu.stanford.epad.epadws.handlers.search;
 
 import javax.servlet.http.HttpServletRequest;
 
+import edu.stanford.epad.common.util.EPADLogger;
+
 /**
  * 
  * 
@@ -24,6 +26,8 @@ public class EPADSearchFilterBuilder
 	private static final String ANNOTATION_MATCH_PARAMETER_NAME = "annotation";
 	private static final String ANNOTATION_MATCH_HAS_ANNOTATIONS_PARAMETER_VALUE = "hasAnnotations";
 	private static final String ANNOTATION_MATCH_HAS_NO_ANNOTATIONS_PARAMETER_VALUE = "hasNoAnnotations";
+
+	private static final EPADLogger log = EPADLogger.getInstance();
 
 	public static EPADSearchFilter build(HttpServletRequest httpRequest)
 	{
@@ -59,14 +63,18 @@ public class EPADSearchFilterBuilder
 			searchFilter.setStudyDateFinishMatch(httpRequest.getParameter(STUDY_DATE_FINISH_MATCH_PARAMETER_NAME));
 
 		if (httpRequest.getParameter(ANNOTATION_MATCH_PARAMETER_NAME) != null) {
-			String paramaterValue = httpRequest.getParameter(ANNOTATION_MATCH_PARAMETER_NAME);
+			String parameterValue = httpRequest.getParameter(ANNOTATION_MATCH_PARAMETER_NAME);
 
-			if (paramaterValue.equalsIgnoreCase(ANNOTATION_MATCH_HAS_ANNOTATIONS_PARAMETER_VALUE))
+			if (parameterValue.equalsIgnoreCase(ANNOTATION_MATCH_HAS_ANNOTATIONS_PARAMETER_VALUE))
 				searchFilter.setHasAnnotationsAnnotationMatch();
-			else if (paramaterValue.equalsIgnoreCase(ANNOTATION_MATCH_HAS_NO_ANNOTATIONS_PARAMETER_VALUE))
+			else if (parameterValue.equalsIgnoreCase(ANNOTATION_MATCH_HAS_NO_ANNOTATIONS_PARAMETER_VALUE))
 				searchFilter.setHasNoAnnotationsAnnotationMatch();
 			else
 				throw new IllegalArgumentException("Invalid " + ANNOTATION_MATCH_PARAMETER_NAME + " filter parameter value");
+
+			log.info("" + searchFilter.hasAnnotationMatch());
+			log.info("" + searchFilter.hasAnnotationsAnnotationMatch());
+			log.info("" + searchFilter.hasNoAnnotationsAnnotationMatch());
 		}
 
 		return searchFilter;

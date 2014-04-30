@@ -221,9 +221,10 @@ public class Dcm4CheeQueries
 		String stationName = getStringValueFromRow(dcm4CheeSeriesData, "station_name");
 		String department = getStringValueFromRow(dcm4CheeSeriesData, "department");
 		String accessionNumber = getStringValueFromRow(dcm4CheeSeriesData, "accession_no");
+		java.sql.Timestamp createdTime = getTimestampFromRow(dcm4CheeSeriesData, "created_time");
 		DCM4CHEESeries dcm4cheeSeries = new DCM4CHEESeries(studyUID, seriesUID, patientID, patientName, seriesDate,
 				examType, thumbnailURL, seriesDescription, numberOfSeriesRelatedInstances, imagesInSeries, seriesStatus,
-				bodyPart, institution, stationName, department, accessionNumber);
+				bodyPart, institution, stationName, department, accessionNumber, createdTime);
 		return dcm4cheeSeries;
 
 	}
@@ -305,6 +306,22 @@ public class Dcm4CheeQueries
 			return "";
 		else
 			return value;
+	}
+
+	private static java.sql.Timestamp getTimestampFromRow(Map<String, String> row, String columnName)
+	{
+		String value = row.get(columnName);
+
+		if (value == null)
+			return null;
+		else {
+			try {
+				return java.sql.Timestamp.valueOf("value");
+			} catch (IllegalArgumentException e) {
+				log.warning("Invalid timestamp " + value + " in column " + columnName, e);
+				return null;
+			}
+		}
 	}
 
 	// TODO Perhaps throw exception rather than returning -1 for missing or erroneous values.

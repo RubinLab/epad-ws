@@ -53,7 +53,7 @@ public class EPADUploadDirWatcher implements Runnable
 						}
 					}
 				} catch (ConcurrentModificationException e) {
-					log.warning("Warning: EPADUploadDirWatcher thread error ", e);
+					log.warning("EPADUploadDirWatcher thread error ", e);
 				}
 				if (shutdownSignal.hasShutdown())
 					return;
@@ -181,7 +181,7 @@ public class EPADUploadDirWatcher implements Runnable
 			});
 
 			if (zipFiles == null) {
-				throw new IllegalStateException("No ZIP file in directory: " + dir.getAbsolutePath());
+				throw new IllegalStateException("No ZIP file in directory " + dir.getAbsolutePath());
 			} else if (zipFiles.length > 1) {
 				int numZipFiles = zipFiles.length;
 				throw new IllegalStateException("Too many ZIP files (" + numZipFiles + ") in directory:"
@@ -194,13 +194,13 @@ public class EPADUploadDirWatcher implements Runnable
 			long currZipFileLastUpdated = zipFile.getLastUpdated();
 
 			if (prevZipFileSize == currZipFileSize && prevZipFileLastUpdated == currZipFileLastUpdated) {
-				return zipFileKey.getFile(); // Uploading complete.
+				return zipFileKey.getFile(); // Uploading complete
 			} else {
 				prevZipFileSize = currZipFileSize;
 				prevZipFileLastUpdated = currZipFileLastUpdated;
 			}
 			if ((System.currentTimeMillis() - zipFileStartWaitTime) > MAX_WAIT_TIME) {
-				throw new IllegalStateException("Zip file upload time exceeded.");
+				throw new IllegalStateException("ZIP file upload time exceeded.");
 			}
 			Thread.sleep(1000);
 		}

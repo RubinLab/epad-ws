@@ -16,13 +16,15 @@ import edu.stanford.epad.epadws.queries.DefaultEpadOperations;
 import edu.stanford.epad.epadws.queries.EpadOperations;
 
 /**
- * Watch for new studies that appear with ePAD's DCM4CHEE MySQL database with the 'study-status' field set to zero,
- * which indicates that they are a new series. Add them to ePAD's series watcher queues to be subsequently processed by
+ * Watch for new studies that appear in ePAD's DCM4CHEE MySQL database with the 'study_status' field set to zero, which
+ * indicates that they are a new series. Add them to ePAD's series watcher queues to be subsequently processed by
  * watchers (currently {@link DICOMSeriesWatcher} and {@link XNATSeriesWatcher}).
  */
 public class Dcm4CheeDatabaseWatcher implements Runnable
 {
 	private final EPADLogger logger = EPADLogger.getInstance();
+
+	private final int SleepTimeInMilliseconds = 500;
 
 	private final BlockingQueue<DicomSeriesProcessingDescription> dcm4CheeSeriesWatcherQueue;
 	private final BlockingQueue<DicomSeriesProcessingDescription> xnatSeriesWatcherQueue;
@@ -64,7 +66,7 @@ public class Dcm4CheeDatabaseWatcher implements Runnable
 					logger.info("New DICOM series " + seriesUID + " (" + patientName + ", " + seriesDesc
 							+ ") found in DCM4CHEE with " + numInstances + " image(s)");
 				}
-				Thread.sleep(500);
+				Thread.sleep(SleepTimeInMilliseconds);
 			} catch (Exception e) {
 				logger.warning("Dcm4CheeDatabaseWatcher error", e);
 			}

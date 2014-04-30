@@ -6,6 +6,7 @@ import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -269,7 +270,40 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 		} finally {
 			close(c, ps, rs);
 		}
+	}
 
+	@Override
+	public Timestamp getSeriesProcessingDate(String seriesUID)
+	{
+		Connection c = null;
+		PreparedStatement ps = null;
+		ResultSet rs = null;
+		int status = -1;
+
+		try {
+			c = getConnection();
+			ps = c.prepareStatement(EpadDatabaseCommands.SELECT_STATUS_AND_CREATED_TIME_FOR_SERIES_BY_ID);
+			ps.setString(1, seriesUID);
+			rs = ps.executeQuery();
+			if (rs.next()) {
+				status = rs.getInt(1);
+				if (status != SeriesProcessingStatus.IN_PIPELINE.getCode())
+					return rs.getTimestamp(2);
+				else {
+					log.warning("Failed to get series processing date for series " + seriesUID);
+					return null;
+				}
+			} else {
+				log.warning("Failed to get series processing date for series " + seriesUID);
+				return null;
+			}
+		} catch (SQLException sqle) {
+			String debugInfo = DatabaseUtils.getDebugData(rs);
+			log.warning("Database operation failed; debugInfo=" + debugInfo, sqle);
+			return null;
+		} finally {
+			close(c, ps, rs);
+		}
 	}
 
 	@Override
@@ -416,7 +450,7 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 
 	@Override
 	public Set<String> getAllSeriesUIDsFromEPadDatabase()
-	{ // This is a "select series_iuid from epaddb.series_status";
+	{
 		Set<String> retVal = new HashSet<String>();
 
 		Connection c = null;

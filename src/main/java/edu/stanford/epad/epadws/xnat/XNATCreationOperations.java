@@ -43,23 +43,24 @@ public class XNATCreationOperations
 		method.setRequestHeader("Cookie", "JSESSIONID=" + jsessionID);
 
 		try {
-			log.info("Invoking XNAT with URL " + xnatSubjectURL);
+			// log.info("Creating patient " + dicomPatientName + " in project " + xnatProjectLabelOrID + " in XNAT");
 			xnatStatusCode = client.executeMethod(method);
 			if (unexpectedCreationStatusCode(xnatStatusCode))
-				log.warning("Failure calling XNAT; status code = " + xnatStatusCode);
+				log.warning("Failure calling XNAT with URL " + xnatSubjectURL + "; status code = " + xnatStatusCode);
 			else
 				eventTracker.recordPatientEvent(jsessionID, xnatProjectLabelOrID, xnatSubjectLabel);
 		} catch (IOException e) {
-			log.warning("Error calling XNAT", e);
+			log.warning("Error calling XNAT with URL " + xnatSubjectURL, e);
 		} finally {
 			method.releaseConnection();
 		}
 	}
 
 	public static boolean createXNATExperimentFromDICOMStudy(String xnatProjectLabelOrID, String xnatSubjectLabelOrID,
-			String dicomStudyUID, String jsessionID)
+			String studyUID, String jsessionID)
 	{
-		String xnatStudyURL = XNATUtil.buildXNATDICOMExperimentCreationURL(xnatProjectLabelOrID, xnatSubjectLabelOrID, dicomStudyUID);
+		String xnatStudyURL = XNATUtil.buildXNATDICOMExperimentCreationURL(xnatProjectLabelOrID, xnatSubjectLabelOrID,
+				studyUID);
 		HttpClient client = new HttpClient();
 		PutMethod putMethod = new PutMethod(xnatStudyURL);
 		int xnatStatusCode;
@@ -67,14 +68,15 @@ public class XNATCreationOperations
 		putMethod.setRequestHeader("Cookie", "JSESSIONID=" + jsessionID);
 
 		try {
-			log.info("Invoking XNAT with URL " + xnatStudyURL);
+			// log.info("Creating study " + studyUID + " for patient " + xnatSubjectLabelOrID + " in project "
+			// + xnatProjectLabelOrID + " in XNAT");
 			xnatStatusCode = client.executeMethod(putMethod);
 			if (unexpectedCreationStatusCode(xnatStatusCode))
-				log.warning("Failure calling XNAT; status code = " + xnatStatusCode);
+				log.warning("Failure calling XNAT with URL " + xnatStudyURL + "; status code = " + xnatStatusCode);
 			else
-				eventTracker.recordStudyEvent(jsessionID, xnatProjectLabelOrID, xnatSubjectLabelOrID, dicomStudyUID);
+				eventTracker.recordStudyEvent(jsessionID, xnatProjectLabelOrID, xnatSubjectLabelOrID, studyUID);
 		} catch (IOException e) {
-			log.warning("Error calling XNAT", e);
+			log.warning("Error calling XNAT with URL " + xnatStudyURL, e);
 			xnatStatusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 		} finally {
 			putMethod.releaseConnection();
@@ -135,27 +137,21 @@ public class XNATCreationOperations
 				xnatUploadProperties.load(propertiesFileStream);
 				String xnatProjectID = XNATUtil.projectName2XNATProjectID(xnatUploadProperties.getProperty("XNATProjectName"));
 				String xnatSessionID = xnatUploadProperties.getProperty("XNATSessionID");
-				log.info("xnatProjectID " + xnatProjectID);
 
 				int numberOfDICOMFiles = 0;
 				if (xnatProjectID != null && xnatSessionID != null) {
 					for (File dicomFile : DicomTagFileUtils.listDICOMFiles(dicomUploadDirectory)) {
-						// DCM4CHEE stores the patient name as upper case so we match.
-						String dicomPatientName = DicomReader.getPatientName(dicomFile).toUpperCase();
+						String dicomPatientName = DicomReader.getPatientName(dicomFile);
 						String dicomPatientID = DicomReader.getPatientID(dicomFile);
-						String dicomStudyUID = DicomReader.getStudyIUID(dicomFile);
+						String studyUID = DicomReader.getStudyIUID(dicomFile);
 
-						if (dicomPatientName != null) {
-							if (dicomPatientID == null) // TODO Check that this is a valid thing to do.
-								dicomPatientID = dicomPatientName;
+						if (dicomPatientID != null && dicomPatientName != null && studyUID != null) {
+							dicomPatientName = dicomPatientName.toUpperCase(); // DCM4CHEE stores the patient name as upper case
 							String xnatSubjectLabel = XNATUtil.dicomPatientID2XNATSubjectLabel(dicomPatientID);
 							createXNATSubjectFromDICOMPatient(xnatProjectID, xnatSubjectLabel, dicomPatientName, xnatSessionID);
-							if (dicomStudyUID != null)
-								createXNATExperimentFromDICOMStudy(xnatProjectID, xnatSubjectLabel, dicomStudyUID, xnatSessionID);
-							else
-								log.warning("Missing study UID in DICOM file " + dicomFile.getAbsolutePath());
+							createXNATExperimentFromDICOMStudy(xnatProjectID, xnatSubjectLabel, studyUID, xnatSessionID);
 						} else
-							log.warning("Missing patient name in DICOM file " + dicomFile.getAbsolutePath());
+							log.warning("Missing patient name, ID or studyUID in DICOM file " + dicomFile.getAbsolutePath());
 						numberOfDICOMFiles++;
 					}
 					if (numberOfDICOMFiles != 0)

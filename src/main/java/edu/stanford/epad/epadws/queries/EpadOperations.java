@@ -22,13 +22,14 @@ public interface EpadOperations
 {
 	EPADProjectList getAllProjectsForUser(String username, String sessionID, EPADSearchFilter searchFilter);
 
-	EPADSubjectList getAllSubjectsForProject(String projectID, String sessionID, EPADSearchFilter searchFilter);
-
-	EPADStudyList getAllStudiesForPatient(String projectID, String subjectID, String sessionID,
+	EPADSubjectList getAllSubjectsForProject(String projectID, String username, String sessionID,
 			EPADSearchFilter searchFilter);
 
-	EPADSeriesList getAllSeriesForStudy(String projectID, String subjectID, String studyUID, String sessionID,
+	EPADStudyList getAllStudiesForPatient(String projectID, String subjectID, String username, String sessionID,
 			EPADSearchFilter searchFilter);
+
+	EPADSeriesList getAllSeriesForStudy(String projectID, String subjectID, String studyUID, String username,
+			String sessionID, EPADSearchFilter searchFilter);
 
 	EPADImageList getAllImagesForSeries(String projectID, String subjectID, String studyUID, String seriesUID,
 			String sessionID, EPADSearchFilter searchFilter);

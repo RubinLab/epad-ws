@@ -42,11 +42,12 @@ public class XNATQueries
 		return invokeXNATProjectsQuery(sessionID, allProjectsQueryURL);
 	}
 
-	public static XNATUserList usersForProject(String sessionID, String projectID)
+	public static XNATUserList usersForProject(String projectID)
 	{
 		String allUsersForProjectQueryURL = XNATQueryUtil.buildAllUsersForProjectQueryURL(projectID);
+		String adminSessionID = XNATSessionOperations.getXNATAdminSessionID();
 
-		return invokeXNATUsersQuery(sessionID, allUsersForProjectQueryURL);
+		return invokeXNATUsersQuery(adminSessionID, allUsersForProjectQueryURL);
 	}
 
 	public static Set<String> patientNamesForProject(String sessionID, String projectID)
@@ -66,7 +67,7 @@ public class XNATQueries
 		Set<String> subjectIDs = new HashSet<String>();
 
 		for (XNATSubject subject : xnatSubjectList.ResultSet.Result) {
-			subjectIDs.add(subject.ID);
+			subjectIDs.add(subject.label);
 		}
 		return subjectIDs;
 	}
@@ -209,7 +210,7 @@ public class XNATQueries
 		method.setRequestHeader("Cookie", "JSESSIONID=" + sessionID);
 
 		try {
-			log.info("Invoking XNAT query at " + xnatProjectsQueryURL);
+			log.info("Invoking XNAT projects query at " + xnatProjectsQueryURL);
 			xnatStatusCode = client.executeMethod(method);
 		} catch (IOException e) {
 			log.warning("Error performing XNAT projects query", e);
@@ -227,7 +228,7 @@ public class XNATQueries
 		method.setRequestHeader("Cookie", "JSESSIONID=" + sessionID);
 
 		try {
-			log.info("Invoking XNAT query at " + xnatUsersQueryURL);
+			log.info("Invoking XNAT users query at " + xnatUsersQueryURL);
 			xnatStatusCode = client.executeMethod(method);
 		} catch (IOException e) {
 			log.warning("Error performing XNAT projects query", e);
@@ -324,7 +325,7 @@ public class XNATQueries
 		method.setRequestHeader("Cookie", "JSESSIONID=" + sessionID);
 
 		try {
-			log.info("Invoking XNAT query at " + xnatSubjectsQueryURL);
+			log.info("Invoking XNAT subjects query at " + xnatSubjectsQueryURL);
 			xnatStatusCode = client.executeMethod(method);
 		} catch (IOException e) {
 			log.warning("Warning: error performing XNAT subject query", e);
@@ -382,10 +383,10 @@ public class XNATQueries
 		method.setRequestHeader("Cookie", "JSESSIONID=" + sessionID);
 
 		try {
-			log.info("Invoking XNAT query at " + xnatDICOMExperimentsQueryURL);
+			log.info("Invoking XNAT experiments query at " + xnatDICOMExperimentsQueryURL);
 			xnatStatusCode = client.executeMethod(method);
 		} catch (IOException e) {
-			log.warning("Error performing XNAT experiment query", e);
+			log.warning("Error performing XNAT experiment query with URL " + xnatDICOMExperimentsQueryURL, e);
 			xnatStatusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 		}
 		return processXNATExperimentsQueryResponse(method, xnatStatusCode); // Will release connection

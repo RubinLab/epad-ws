@@ -1,6 +1,5 @@
 package edu.stanford.epad.epadws.handlers.search;
 
-import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.Map;
 
@@ -45,6 +44,7 @@ public class EPADHandler extends AbstractHandler
 	private static final String BAD_GET_MESSAGE = "Invalid GET request.";
 	private static final String BAD_DELETE_MESSAGE = "Invalid DELETE request!";
 	private static final String FORBIDDEN_MESSAGE = "Forbidden method - only GET and DELETE supported on projects route!";
+	private static final String NO_USERNAME_MESSAGE = "Must have username parameter for queries!";
 
 	@Override
 	public void handle(String s, Request request, HttpServletRequest httpRequest, HttpServletResponse httpResponse)
@@ -64,28 +64,31 @@ public class EPADHandler extends AbstractHandler
 				String method = httpRequest.getMethod();
 
 				if ("GET".equalsIgnoreCase(method)) {
-					statusCode = handleQuery(httpRequest, responseStream);
+					String username = httpRequest.getParameter("username");
+					if (username != null)
+						statusCode = handleQuery(httpRequest, responseStream, username);
+					else
+						statusCode = HandlerUtil.warningJSONResponse(HttpServletResponse.SC_BAD_REQUEST, NO_USERNAME_MESSAGE,
+								responseStream, log);
 				} else if ("DELETE".equalsIgnoreCase(method)) {
 					statusCode = handleDelete(httpRequest, responseStream);
 				} else {
 					statusCode = HandlerUtil.warningJSONResponse(HttpServletResponse.SC_BAD_REQUEST, FORBIDDEN_MESSAGE,
 							responseStream, log);
 				}
-				responseStream.flush();
 			} else {
 				statusCode = HandlerUtil.invalidTokenJSONResponse(INVALID_SESSION_TOKEN_MESSAGE, responseStream, log);
 			}
-		} catch (IOException e) {
+		} catch (Exception e) {
 			statusCode = HandlerUtil.internalErrorJSONResponse(INTERNAL_ERROR_MESSAGE, e, responseStream, log);
 		}
 		httpResponse.setStatus(statusCode);
 	}
 
-	private int handleQuery(HttpServletRequest httpRequest, PrintWriter responseStream)
+	private int handleQuery(HttpServletRequest httpRequest, PrintWriter responseStream, String username)
 	{
 		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
 		String jsessionID = XNATSessionOperations.getJSessionIDFromRequest(httpRequest);
-		String username = httpRequest.getParameter("username");
 		String pathInfo = httpRequest.getPathInfo();
 		int statusCode;
 
@@ -101,7 +104,8 @@ public class EPADHandler extends AbstractHandler
 				Map<String, String> templateMap = HandlerUtil.getTemplateMap(SUBJECT_LIST_TEMPLATE, pathInfo);
 				String projectID = HandlerUtil.getTemplateParameter(templateMap, "project");
 				if (parametersAreValid(projectID)) {
-					EPADSubjectList subjectList = epadOperations.getAllSubjectsForProject(projectID, jsessionID, searchFilter);
+					EPADSubjectList subjectList = epadOperations.getAllSubjectsForProject(projectID, username, jsessionID,
+							searchFilter);
 					responseStream.append(subjectList.toJSON());
 					statusCode = HttpServletResponse.SC_OK;
 				} else
@@ -113,7 +117,7 @@ public class EPADHandler extends AbstractHandler
 				String projectID = HandlerUtil.getTemplateParameter(templateMap, "project");
 				String subjectID = HandlerUtil.getTemplateParameter(templateMap, "subject");
 				if (parametersAreValid(projectID, subjectID)) {
-					EPADStudyList studyList = epadOperations.getAllStudiesForPatient(projectID, subjectID, jsessionID,
+					EPADStudyList studyList = epadOperations.getAllStudiesForPatient(projectID, subjectID, username, jsessionID,
 							searchFilter);
 					responseStream.append(studyList.toJSON());
 					statusCode = HttpServletResponse.SC_OK;
@@ -127,8 +131,8 @@ public class EPADHandler extends AbstractHandler
 				String subjectID = HandlerUtil.getTemplateParameter(templateMap, "subject");
 				String studyUID = HandlerUtil.getTemplateParameter(templateMap, "study");
 				if (parametersAreValid(projectID, subjectID, studyUID)) {
-					EPADSeriesList seriesList = epadOperations.getAllSeriesForStudy(projectID, subjectID, studyUID, jsessionID,
-							searchFilter);
+					EPADSeriesList seriesList = epadOperations.getAllSeriesForStudy(projectID, subjectID, studyUID, username,
+							jsessionID, searchFilter);
 					responseStream.append(seriesList.toJSON());
 					statusCode = HttpServletResponse.SC_OK;
 				} else

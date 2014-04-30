@@ -1,6 +1,7 @@
 package edu.stanford.epad.epadws.epaddb;
 
 import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -22,10 +23,12 @@ public interface EpadDatabaseOperations
 
 	void deleteSeries(String seriesUID);
 
-	void insertEpadEvent(String sessionID, String event_status, String aim_uid, String aim_name, String patient_id,
-			String patient_name, String template_id, String template_name, String plugin_name);
+	void insertEpadEvent(String sessionID, String eventStatus, String aimUID, String aimName, String patientID,
+			String patientName, String templateID, String templateName, String pluginName);
 
 	SeriesProcessingStatus getSeriesProcessingStatus(String seriesUID);
+
+	Timestamp getSeriesProcessingDate(String seriesUID);
 
 	void updateOrInsertSeries(String seriesUID, SeriesProcessingStatus seriesProcessingStatus);
 

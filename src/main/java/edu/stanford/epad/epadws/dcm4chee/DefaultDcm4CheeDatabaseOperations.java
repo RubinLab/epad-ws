@@ -188,7 +188,7 @@ public class DefaultDcm4CheeDatabaseOperations implements Dcm4CheeDatabaseOperat
 	}
 
 	@Override
-	public Set<String> getNewDcm4CheeSeriesUIDs()
+	public Set<String> getAllReadyDcm4CheeSeriesUIDs()
 	{
 		Set<String> retVal = new HashSet<String>();
 		Connection c = null;
@@ -198,7 +198,7 @@ public class DefaultDcm4CheeDatabaseOperations implements Dcm4CheeDatabaseOperat
 		try {
 			c = getConnection();
 			ps = c.prepareStatement(Dcm4CheeDatabaseCommands.SELECT_SERIES_BY_STATUS);
-			ps.setInt(1, 0);
+			ps.setInt(1, 0); // A status of zero signals that DCM4CHEE processing has completed and the series is ready
 			rs = ps.executeQuery();
 			while (rs.next()) {
 				retVal.add(rs.getString("series_iuid"));

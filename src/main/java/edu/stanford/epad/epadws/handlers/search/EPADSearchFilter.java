@@ -22,14 +22,39 @@ public class EPADSearchFilter
 	private String studyDateStartMatch = null;
 	private String studyDateFinishMatch = null;
 
-	public String getProjectNameMatch()
-	{
-		return this.projectNameMatch;
-	}
-
 	public boolean hasProjectNameMatch()
 	{
 		return this.projectNameMatch != null;
+	}
+
+	public boolean hasPatientNameMatch()
+	{
+		return this.patientNameMatch != null;
+	}
+
+	public boolean hasPatientIDMatch()
+	{
+		return this.patientIDMatch != null;
+	}
+
+	public boolean hasAccessionNumberMatch()
+	{
+		return this.accessionNumberMatch != null;
+	}
+
+	public boolean hasModalityMatch()
+	{
+		return this.modalityMatch != null;
+	}
+
+	public boolean hasAnnotationMatch()
+	{
+		return this.annotationMatch != null && this.annotationMatch != AnnotationMatch.NONE;
+	}
+
+	public String getProjectNameMatch()
+	{
+		return this.projectNameMatch;
 	}
 
 	public void setProjectNameMatch(String projectNameMatch)
@@ -55,11 +80,6 @@ public class EPADSearchFilter
 		return this.patientNameMatch;
 	}
 
-	public boolean hasPatientNameMatch()
-	{
-		return this.patientNameMatch != null;
-	}
-
 	public void setPatientNameMatch(String patientNameMatch)
 	{
 		this.patientNameMatch = patientNameMatch;
@@ -81,11 +101,6 @@ public class EPADSearchFilter
 	public String getPatientIDMatch()
 	{
 		return this.patientIDMatch;
-	}
-
-	public boolean hasPatientIDMatch()
-	{
-		return this.patientIDMatch != null;
 	}
 
 	public void setPatientIDMatch(String patientIDMatch)
@@ -111,11 +126,6 @@ public class EPADSearchFilter
 		return this.accessionNumberMatch;
 	}
 
-	public boolean hasAccessionNumberMatch()
-	{
-		return this.accessionNumberMatch != null;
-	}
-
 	public void setAccessionNumberMatch(String accessionNumberMatch)
 	{
 		this.accessionNumberMatch = accessionNumberMatch;
@@ -137,11 +147,6 @@ public class EPADSearchFilter
 	public String getModalityMatch()
 	{
 		return this.modalityMatch;
-	}
-
-	public boolean hasModalityMatch()
-	{
-		return this.modalityMatch != null;
 	}
 
 	public void setModalityMatch(String modalityMatch)
@@ -170,19 +175,9 @@ public class EPADSearchFilter
 		}
 	}
 
-	public boolean hasAnnotationMatch()
-	{
-		return this.annotationMatch != AnnotationMatch.NONE;
-	}
-
 	public boolean hasAnnotationsAnnotationMatch()
 	{
 		return this.annotationMatch == AnnotationMatch.HAS_ANNOTATIONS;
-	}
-
-	public void setHasAnnotationsAnnotationMatch()
-	{
-		this.annotationMatch = AnnotationMatch.HAS_ANNOTATIONS;
 	}
 
 	public boolean hasNoAnnotationsAnnotationMatch()
@@ -193,6 +188,11 @@ public class EPADSearchFilter
 	public void setHasNoAnnotationsAnnotationMatch()
 	{
 		this.annotationMatch = AnnotationMatch.HAS_NO_ANNOTATIONS;
+	}
+
+	public void setHasAnnotationsAnnotationMatch()
+	{
+		this.annotationMatch = AnnotationMatch.HAS_ANNOTATIONS;
 	}
 
 	public boolean annotationNumberMatches(int numberOfAnnotations)
@@ -270,10 +270,21 @@ public class EPADSearchFilter
 		this.studyDateFinishMatch = studyDateFinishMatch;
 	}
 
+	public boolean shouldFilterProject(String projectName)
+	{
+		return (hasProjectNameMatch() && !projectNameMatches(projectName));
+	}
+
 	public boolean shouldFilterProject(String projectName, int numberOfAnnotations)
 	{
 		return (hasProjectNameMatch() && !projectNameMatches(projectName))
 				|| (hasAnnotationMatch() && !annotationNumberMatches(numberOfAnnotations));
+	}
+
+	public boolean shouldFilterSubject(String patientID, String patientName)
+	{
+		return (hasPatientIDMatch() && !patientIDMatches(patientID))
+				|| (hasPatientNameMatch() && !patientNameMatches(patientName));
 	}
 
 	public boolean shouldFilterSubject(String patientID, String patientName, Set<String> examTypes,
@@ -282,6 +293,13 @@ public class EPADSearchFilter
 		return (hasPatientIDMatch() && !patientIDMatches(patientID))
 				|| (hasPatientNameMatch() && !patientNameMatches(patientName))
 				|| (hasModalityMatch() && !modalitiesMatch(examTypes))
+				|| (hasAnnotationMatch() && !annotationNumberMatches(numberOfAnnotations));
+	}
+
+	public boolean shouldFilterSubject(String patientID, String patientName, int numberOfAnnotations)
+	{
+		return (hasPatientIDMatch() && !patientIDMatches(patientID))
+				|| (hasPatientNameMatch() && !patientNameMatches(patientName))
 				|| (hasAnnotationMatch() && !annotationNumberMatches(numberOfAnnotations));
 	}
 

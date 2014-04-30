@@ -42,45 +42,19 @@ public class AIMQueries
 		return getAIMImageAnnotations(AIMSearchType.ANNOTATION_UID, annotationUID, username);
 	}
 
-	public static int getNumberOfAIMAnnotationsForPatient(Set<String> usernames, String patientID)
-	{
-		int numberOfAIMAnnotations = 0;
-
-		for (String username : usernames)
-			numberOfAIMAnnotations += getNumberOfAIMAnnotationsForPatient(patientID, username);
-
-		return numberOfAIMAnnotations;
-	}
-
-	public static int getNumberOfAIMAnnotationsForPatients(String sessionID, Set<String> usernames, Set<String> patientIDs)
-	{
-		int totalAIMAnnotations = 0;
-
-		for (String username : usernames) {
-			totalAIMAnnotations += getNumberOfAIMAnnotationsForPatients(sessionID, username, patientIDs);
-		}
-
-		return totalAIMAnnotations;
-	}
-
 	// Only count annotations for subjects in this project
 	public static int getNumberOfAIMAnnotationsForPatients(String sessionID, String username, Set<String> patientIDs)
 	{
 		int totalAIMAnnotations = 0;
 
 		for (String patientID : patientIDs) {
-			totalAIMAnnotations += getNumberOfAIMAnnotationsForPatient(patientID, username);
+			totalAIMAnnotations += getNumberOfAIMAnnotationsForPatientID(patientID, username);
 		}
 
 		return totalAIMAnnotations;
 	}
 
-	public static int getNumberOfAIMAnnotationsForPerson(String personName, String username)
-	{
-		return getNumberOfAIMAnnotations(AIMSearchType.PERSON_NAME, personName, username);
-	}
-
-	public static int getNumberOfAIMAnnotationsForPatient(String patientId, String username)
+	public static int getNumberOfAIMAnnotationsForPatientID(String patientId, String username)
 	{
 		return getNumberOfAIMAnnotations(AIMSearchType.PATIENT_ID, patientId, username);
 	}
@@ -90,32 +64,19 @@ public class AIMQueries
 		return getNumberOfAIMAnnotations(AIMSearchType.SERIES_UID, seriesUID, username);
 	}
 
-	public static int getNumberOfAIMAnnotationsForSeriesUID(String seriesUID, Set<String> usernames)
-	{
-		return getNumberOfAIMAnnotations(AIMSearchType.SERIES_UID, seriesUID, usernames);
-	}
-
-	public static int getNumberOfAIMAnnotationsForSeriesUIDs(Set<String> seriesUIDs, Set<String> usernames)
+	public static int getNumberOfAIMAnnotationsForSeriesUIDs(Set<String> seriesUIDs, String username)
 	{
 		int numberOfAIMAnnotations = 0;
+
 		for (String seriesUID : seriesUIDs)
-			numberOfAIMAnnotations += getNumberOfAIMAnnotations(AIMSearchType.SERIES_UID, seriesUID, usernames);
+			numberOfAIMAnnotations += getNumberOfAIMAnnotations(AIMSearchType.SERIES_UID, seriesUID, username);
+
 		return numberOfAIMAnnotations;
 	}
 
 	public static int getNumberOfAIMAnnotationsForAnnotationUID(String annotationUID, String username)
 	{
 		return getNumberOfAIMAnnotations(AIMSearchType.ANNOTATION_UID, annotationUID, username);
-	}
-
-	public static int getNumberOfAIMAnnotations(AIMSearchType valueType, String value, Set<String> usernames)
-	{
-		int numberOfAIMAnnotations = 0;
-
-		for (String username : usernames)
-			numberOfAIMAnnotations += getAIMImageAnnotations(valueType, value, username).size();
-
-		return numberOfAIMAnnotations;
 	}
 
 	/**
@@ -129,7 +90,7 @@ public class AIMQueries
 	 */
 	public static List<ImageAnnotation> getAIMImageAnnotations(AIMSearchType aimSearchType, String value, String username)
 	{
-		List<ImageAnnotation> retAims = new ArrayList<ImageAnnotation>();
+		List<ImageAnnotation> resultAims = new ArrayList<ImageAnnotation>();
 		List<ImageAnnotation> aims = null;
 		ImageAnnotation aim = null;
 
@@ -140,10 +101,10 @@ public class AIMQueries
 						eXistAIMCollection, eXistUsername, eXistPassword, personName, aimXSDFilePath);
 
 			} catch (AimException e) {
-				log.warning("Exception on AnnotationGetter.getImageAnnotationsFromServerByPersonNameEqual " + personName, e);
+				log.warning("Exception in AnnotationGetter.getImageAnnotationsFromServerByPersonNameEqual " + personName, e);
 			}
 			if (aims != null) {
-				retAims.addAll(aims);
+				resultAims.addAll(aims);
 			}
 		} else if (aimSearchType == AIMSearchType.PATIENT_ID) {
 			String patientId = value;
@@ -151,10 +112,10 @@ public class AIMQueries
 				aims = AnnotationGetter.getImageAnnotationsFromServerByPersonIDAndUserNameEqual(eXistServerUrl, aimNamespace,
 						eXistAIMCollection, eXistUsername, eXistPassword, patientId, username, aimXSDFilePath);
 			} catch (AimException e) {
-				log.warning("Exception on AnnotationGetter.getImageAnnotationsFromServerByPersonIdEqual " + patientId, e);
+				log.warning("Exception in AnnotationGetter.getImageAnnotationsFromServerByPersonIdEqual " + patientId, e);
 			}
 			if (aims != null) {
-				retAims.addAll(aims);
+				resultAims.addAll(aims);
 			}
 		} else if (aimSearchType == AIMSearchType.SERIES_UID) {
 			String seriesUID = value;
@@ -162,11 +123,11 @@ public class AIMQueries
 				aims = AnnotationGetter.getImageAnnotationsFromServerByImageSeriesInstanceUIDEqual(eXistServerUrl,
 						aimNamespace, eXistAIMCollection, eXistUsername, eXistPassword, seriesUID, aimXSDFilePath);
 			} catch (AimException e) {
-				log.warning("Exception on AnnotationGetter.getImageAnnotationsFromServerByImageSeriesInstanceUIDEqual "
+				log.warning("Exception in AnnotationGetter.getImageAnnotationsFromServerByImageSeriesInstanceUIDEqual "
 						+ seriesUID, e);
 			}
 			if (aims != null) {
-				retAims.addAll(aims);
+				resultAims.addAll(aims);
 			}
 		} else if (aimSearchType == AIMSearchType.ANNOTATION_UID) {
 			String annotationUID = value;
@@ -177,71 +138,71 @@ public class AIMQueries
 					aims = AnnotationGetter.getImageAnnotationsFromServerByUserLoginNameContains(eXistServerUrl, aimNamespace,
 							eXistAIMCollection, eXistUsername, eXistPassword, username);
 				} catch (AimException e) {
-					log.warning("Exception on AnnotationGetter.getImageAnnotationsFromServerWithAimQuery ", e);
+					log.warning("Exception in AnnotationGetter.getImageAnnotationsFromServerWithAimQuery ", e);
 				}
 				if (aims != null) {
-					retAims.addAll(aims);
+					resultAims.addAll(aims);
 				}
 			} else {
 				try {
 					aim = AnnotationGetter.getImageAnnotationFromServerByUniqueIdentifier(eXistServerUrl, aimNamespace,
 							eXistAIMCollection, eXistUsername, eXistPassword, annotationUID, aimXSDFilePath);
 				} catch (AimException e) {
-					log.warning("Exception on AnnotationGetter.getImageAnnotationFromServerByUniqueIdentifier " + annotationUID,
+					log.warning("Exception in AnnotationGetter.getImageAnnotationFromServerByUniqueIdentifier " + annotationUID,
 							e);
 				}
 				if (aim != null) {
-					retAims.add(aim);
+					resultAims.add(aim);
 				}
 			}
 		} else if (aimSearchType == AIMSearchType.DELETE_UID) { // TODO Fix this route
 			String annotationUID = value;
 			log.info("Calling performDelete with deleteUID on GET ");
 			performDelete(annotationUID, eXistAIMCollection, eXistServerUrl);
-			retAims = null;
+			resultAims = null;
 		} else if (aimSearchType == AIMSearchType.KEY) {
 			log.warning("id1 is key id2 is " + value);
 		} else {
 			log.warning("Unknown AIM search type " + aimSearchType.getName());
 		}
-		return retAims;
+		return resultAims;
 	}
 
 	private static int getNumberOfAIMAnnotations(AIMSearchType valueType, String value, String username)
 	{
-		return getAIMImageAnnotations(valueType, value, username).size();
+		// return getAIMImageAnnotations(valueType, value, username).size();
 		// TODO Use the following when Hakan fixes bug in new counting methods
-		// return getCountAIMImageAnnotations(valueType, value, username);
+		return getCountAIMImageAnnotations(valueType, value, username);
 	}
 
-	@SuppressWarnings("unused")
 	private static int getCountAIMImageAnnotations(AIMSearchType aimSearchType, String value, String username)
 	{
 		int count = 0;
 
+		log.info("AIM count query with search type " + aimSearchType + ", value " + value + ", username " + username);
 		if (aimSearchType == AIMSearchType.PERSON_NAME) {
 			String personName = value;
 			try {
 				count = AnnotationGetter.getCountImageAnnotationByPersonNameEqual(eXistServerUrl, aimNamespace,
 						eXistAIMCollection, eXistUsername, eXistPassword, personName);
-			} catch (AimException e) {
-				log.warning("Exception on AnnotationGetter.getCountImageAnnotationByPersonNameEqual " + personName, e);
+			} catch (Exception e) {
+				log.warning("Exception in AnnotationGetter.getCountImageAnnotationByPersonNameEqual " + personName, e);
 			}
 		} else if (aimSearchType == AIMSearchType.PATIENT_ID) {
 			String patientId = value;
 			try {
 				count = AnnotationGetter.getCountImageAnnotationByPersonIdAndUserNameEqual(eXistServerUrl, aimNamespace,
 						eXistAIMCollection, eXistUsername, eXistPassword, patientId, username);
-			} catch (AimException e) {
-				log.warning("Exception on AnnotationGetter.getCountImageAnnotationByPersonIdEqual " + patientId, e);
+			} catch (Exception e) {
+				log.warning("Exception in AnnotationGetter.getCountImageAnnotationByPersonIdEqual " + patientId, e);
 			}
 		} else if (aimSearchType == AIMSearchType.SERIES_UID) {
 			String seriesUID = value;
 			try {
 				count = AnnotationGetter.getCountImageAnnotationByImageSeriesInstanceUidEqual(eXistServerUrl, aimNamespace,
 						eXistAIMCollection, eXistUsername, eXistPassword, seriesUID);
-			} catch (AimException e) {
-				log.warning("Exception on AnnotationGetter.getCountImageAnnotationByImageSeriesInstanceUIDEqual " + seriesUID,
+			} catch (Exception e) {
+				log.warning("Exception in AnnotationGetter.getCountImageAnnotationByImageSeriesInstanceUIDEqual " + seriesUID,
 						e);
 			}
 		} else if (aimSearchType == AIMSearchType.ANNOTATION_UID) {
@@ -250,21 +211,22 @@ public class AIMQueries
 				try {
 					count = AnnotationGetter.getCountImageAnnotationByUserLoginNameContains(eXistServerUrl, aimNamespace,
 							eXistAIMCollection, eXistUsername, eXistPassword, username);
-				} catch (AimException e) {
-					log.warning("Exception on AnnotationGetter.getImageAnnotationsFromServerWithAimQuery ", e);
+				} catch (Exception e) {
+					log.warning("Exception in AnnotationGetter.getImageAnnotationsFromServerWithAimQuery ", e);
 				}
 			} else {
 				try {
 					count = AnnotationGetter.getCountImageAnnotationByUniqueIdentifierEqual(eXistServerUrl, aimNamespace,
 							eXistAIMCollection, eXistUsername, eXistPassword, annotationUID);
-				} catch (AimException e) {
-					log.warning("Exception on AnnotationGetter.getCountImageAnnotationByUniqueIdentifier " + annotationUID, e);
+				} catch (Exception e) {
+					log.warning("Exception in AnnotationGetter.getCountImageAnnotationByUniqueIdentifier " + annotationUID, e);
 				}
 			}
 		} else {
 			log.warning("Unknown AIM search type " + aimSearchType.getName());
 			count = 0;
 		}
+		log.info("Number of annotations " + count);
 		return count;
 	}
 
