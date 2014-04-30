@@ -525,7 +525,8 @@ public class DefaultEpadOperations implements EpadOperations
 			String insertDate = xnatSubject.insert_date;
 			int numberOfAnnotations = AIMQueries.getNumberOfAIMAnnotationsForPatientID(patientID, username);
 			if (!searchFilter.shouldFilterSubject(patientID, patientName, numberOfAnnotations)) {
-				Set<String> examTypes = epadQueries.getExamTypesForPatient(projectID, patientID, sessionID, searchFilter);
+				// Set<String> examTypes = epadQueries.getExamTypesForPatient(projectID, patientID, sessionID, searchFilter);
+				Set<String> examTypes = new HashSet<String>();
 
 				if (!searchFilter.shouldFilterSubject(patientID, patientName, examTypes, numberOfAnnotations)) {
 					int numberOfStudies = Dcm4CheeQueries.getNumberOfStudiesForPatient(patientID);

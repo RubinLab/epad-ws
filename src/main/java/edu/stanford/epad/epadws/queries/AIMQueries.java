@@ -170,9 +170,10 @@ public class AIMQueries
 
 	private static int getNumberOfAIMAnnotations(AIMSearchType valueType, String value, String username)
 	{
+		return 1;
 		// return getAIMImageAnnotations(valueType, value, username).size();
 		// TODO Use the following when Hakan fixes bug in new counting methods
-		return getCountAIMImageAnnotations(valueType, value, username);
+		// return getCountAIMImageAnnotations(valueType, value, username);
 	}
 
 	private static int getCountAIMImageAnnotations(AIMSearchType aimSearchType, String value, String username)

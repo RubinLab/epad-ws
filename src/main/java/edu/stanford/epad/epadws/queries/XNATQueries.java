@@ -385,6 +385,7 @@ public class XNATQueries
 		try {
 			log.info("Invoking XNAT experiments query at " + xnatDICOMExperimentsQueryURL);
 			xnatStatusCode = client.executeMethod(method);
+			log.info("XNAT experiments query returned");
 		} catch (IOException e) {
 			log.warning("Error performing XNAT experiment query with URL " + xnatDICOMExperimentsQueryURL, e);
 			xnatStatusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
