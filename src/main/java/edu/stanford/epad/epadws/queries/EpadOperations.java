@@ -39,8 +39,9 @@ public interface EpadOperations
 
 	Set<String> getExamTypesForPatient(String sessionID, String projectID, String subjectID, EPADSearchFilter searchFilter);
 
-	Set<String> getExamTypesForStudy(String projectID, String subjectID, String studyUID, String sessionID,
-			EPADSearchFilter searchFilter);
+	Set<String> getExamTypesForPatient(String subjectID);
+
+	Set<String> getExamTypesForStudy(String studyUID);
 
 	Set<String> getSeriesUIDsForPatient(String projectID, String subjectID, String sessionID,
 			EPADSearchFilter searchFilter);

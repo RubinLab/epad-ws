@@ -62,7 +62,6 @@ public class WadoHandler extends AbstractHandler
 					} else {
 						statusCode = HandlerUtil.warningResponse(HttpServletResponse.SC_BAD_REQUEST, MISSING_QUERY_MESSAGE, log);
 					}
-					responseStream.flush();
 				} else {
 					statusCode = HandlerUtil.invalidTokenResponse(INVALID_SESSION_TOKEN_MESSAGE, log);
 				}

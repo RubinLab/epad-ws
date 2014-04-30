@@ -110,7 +110,7 @@ public class ImageCheckHandler extends AbstractHandler
 		// Verify existence of all PNG files listed in the ePAD database (in epaddb.epad_files table).
 		// TODO: DICOM segmentation objects will not have PNGs. How to test? Tags should have indication.
 		// See: PixelMedUtils.isDicomSegmentationObject(inputDICOMFilePath)
-		List<String> pngFileNames = epadDatabaseOperations.selectEpadFilePath();
+		List<String> pngFileNames = epadDatabaseOperations.getAllEPadFilePaths();
 		// out.write("The following PNG files listed in ePAD database do not exist in the file system:\n");
 		for (String pngFileName : pngFileNames) {
 			File pngFile = new File(pngFileName);
@@ -120,12 +120,12 @@ public class ImageCheckHandler extends AbstractHandler
 				// numberOfMissingPNGFiles++;
 			}
 		}
-		responseStream.write("Number of series in DICOM database = " + seriesIUIDs.size() + "\n");
+		responseStream.write("Number of series in dcm4chee database = " + seriesIUIDs.size() + "\n");
 		if (numberOfSeriesWithMissingEPADDatabaseEntry != 0)
 			responseStream.write("Number of series with missing ePAD database entries = "
 					+ numberOfSeriesWithMissingEPADDatabaseEntry + "\n");
-		responseStream.write("Total number of unprocessed instances " + allUnprocessedDICOMImageFileDescriptions.size()
-				+ "\n");
+		responseStream.write("Total number of images that do not have PNGs"
+				+ allUnprocessedDICOMImageFileDescriptions.size() + "\n");
 		responseStream.write("Total number of PNG files = " + pngFileNames.size() + "\n");
 		if (numberOfMissingPNGFiles != 0)
 			responseStream.write("Number of missing PNG files = " + numberOfMissingPNGFiles + "\n");
@@ -136,8 +136,9 @@ public class ImageCheckHandler extends AbstractHandler
 						+ " unprocessed image(s) to PNG pipeline...");
 				responseStream.flush();
 				queueAndWatcherManager.addToPNGGeneratorTaskPipeline(allUnprocessedDICOMImageFileDescriptions);
-				responseStream.write("All unprocessed files added");
+				responseStream.write("All unprocessed files added\n");
 			}
-		}
+		} else if (allUnprocessedDICOMImageFileDescriptions.size() != 0)
+			responseStream.write("Use fix=true to attempt to regenerate any broken PNGs\n");
 	}
 }

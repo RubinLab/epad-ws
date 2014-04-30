@@ -104,7 +104,7 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 	}
 
 	@Override
-	public List<String> selectEpadFilePath()
+	public List<String> getAllEPadFilePaths()
 	{
 		Connection c = null;
 		PreparedStatement ps = null;
@@ -129,7 +129,7 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 	}
 
 	@Override
-	public String selectEpadFilePathLike(String sopInstanceUID)
+	public String getEpadFilePathLike(String sopInstanceUID)
 	{
 		Connection c = null;
 		PreparedStatement ps = null;
@@ -557,7 +557,7 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 		String series = null;
 		String[] studySeriesAndImageIDs = new String[3];
 		String imageIdKeyWithoutDot = imageUID.replaceAll("\\.", "_");
-		String path = selectEpadFilePathLike(imageIdKeyWithoutDot);
+		String path = getEpadFilePathLike(imageIdKeyWithoutDot);
 
 		if (path != null) {
 			String[] tab = path.split("\\/");

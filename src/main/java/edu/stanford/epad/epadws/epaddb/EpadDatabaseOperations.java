@@ -47,9 +47,9 @@ public interface EpadDatabaseOperations
 	 */
 	void updateEpadFileRecord(String filePath, PNGFileProcessingStatus newStatus, int fileSize, String errorMsg);
 
-	String selectEpadFilePathLike(String sopInstanceUID);
+	String getEpadFilePathLike(String sopInstanceUID);
 
-	List<String> selectEpadFilePath();
+	List<String> getAllEPadFilePaths();
 
 	/**
 	 * Returns a triple containing studyUID, seriesUID, and imageUID for the specified imageUID.

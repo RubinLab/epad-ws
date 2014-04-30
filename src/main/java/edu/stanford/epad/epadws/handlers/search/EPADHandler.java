@@ -41,7 +41,7 @@ public class EPADHandler extends AbstractHandler
 
 	private static final String INTERNAL_ERROR_MESSAGE = "Internal error running query on projects route";
 	private static final String INVALID_SESSION_TOKEN_MESSAGE = "Session token is invalid on projects route";
-	private static final String BAD_GET_MESSAGE = "Invalid GET request.";
+	private static final String BAD_GET_MESSAGE = "Invalid GET request - parameters are invalid";
 	private static final String BAD_DELETE_MESSAGE = "Invalid DELETE request!";
 	private static final String FORBIDDEN_MESSAGE = "Forbidden method - only GET and DELETE supported on projects route!";
 	private static final String NO_USERNAME_MESSAGE = "Must have username parameter for queries!";

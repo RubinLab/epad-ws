@@ -74,6 +74,14 @@ public class Dcm4CheeQueries
 		return dcm4CheeDatabaseOperations.getNumberOfStudiesForPatient(patientID);
 	}
 
+	public static Set<String> getStudyUIDsForPatient(String patientID)
+	{
+		Dcm4CheeDatabaseOperations dcm4CheeDatabaseOperations = Dcm4CheeDatabase.getInstance()
+				.getDcm4CheeDatabaseOperations();
+
+		return dcm4CheeDatabaseOperations.getStudyUIDsForPatient(patientID);
+	}
+
 	public static int getNumberOfStudiesForPatients(Set<String> patientIDs)
 	{
 		Dcm4CheeDatabaseOperations dcm4CheeDatabaseOperations = Dcm4CheeDatabase.getInstance()

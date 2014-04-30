@@ -133,7 +133,7 @@ public class DefaultDcm4CheeDatabaseOperations implements Dcm4CheeDatabaseOperat
 			}
 		} catch (SQLException sqle) {
 			String debugInfo = DatabaseUtils.getDebugData(rs);
-			log.warning("Database operation failed for: SQL = " + searchSql + "; debugInfo=" + debugInfo, sqle);
+			log.warning("Database operation failed; SQL = " + searchSql + "; debugInfo=" + debugInfo, sqle);
 		} finally {
 			close(c, s, rs);
 		}
@@ -238,10 +238,6 @@ public class DefaultDcm4CheeDatabaseOperations implements Dcm4CheeDatabaseOperat
 		return retVal;
 	}
 
-	/**
-	 * @param patientID
-	 * @return A list of study IDs
-	 */
 	@Override
 	public Set<String> getStudyUIDsForPatient(String patientID)
 	{
@@ -306,7 +302,7 @@ public class DefaultDcm4CheeDatabaseOperations implements Dcm4CheeDatabaseOperat
 	}
 
 	@Override
-	public Map<String, String> getParentStudyForSeries(String seriesIUID)
+	public Map<String, String> getParentStudyForSeries(String seriesUID)
 	{
 		Map<String, String> retVal = new HashMap<String, String>();
 
@@ -316,7 +312,7 @@ public class DefaultDcm4CheeDatabaseOperations implements Dcm4CheeDatabaseOperat
 		try {
 			c = getConnection();
 			ps = c.prepareStatement(Dcm4CheeDatabaseCommands.SELECT_PARENT_STUDY_FOR_SERIES);
-			ps.setString(1, seriesIUID);
+			ps.setString(1, seriesUID);
 			rs = ps.executeQuery();
 			if (rs.next()) {
 				retVal = createResultMap(rs);
@@ -331,16 +327,16 @@ public class DefaultDcm4CheeDatabaseOperations implements Dcm4CheeDatabaseOperat
 	}
 
 	@Override
-	public String getStudyUIDForSeries(String seriesIUID)
+	public String getStudyUIDForSeries(String seriesUID)
 	{
 		DicomParentCache cache = DicomParentCache.getInstance();
 
-		if (cache.hasParent(seriesIUID))
-			return cache.getParent(seriesIUID).getDicomUID();
+		if (cache.hasParent(seriesUID))
+			return cache.getParent(seriesUID).getDicomUID();
 
-		Map<String, String> dbResult = getParentStudyForSeries(seriesIUID);
+		Map<String, String> dbResult = getParentStudyForSeries(seriesUID);
 		String studyIUID = dbResult.get("study_iuid");
-		cache.setParent(seriesIUID, studyIUID, DicomParentType.STUDY);
+		cache.setParent(seriesUID, studyIUID, DicomParentType.STUDY);
 
 		return studyIUID;
 	}
@@ -349,7 +345,7 @@ public class DefaultDcm4CheeDatabaseOperations implements Dcm4CheeDatabaseOperat
 	 * Looks in DCM4CHEE database to find a list of all DICOM image descriptions (table is pacsdb.files).
 	 */
 	@Override
-	public List<Map<String, String>> getDicomImageFileDescriptionsForSeries(String seriesIUID)
+	public List<Map<String, String>> getDicomImageFileDescriptionsForSeries(String seriesUID)
 	{
 		List<Map<String, String>> retVal = new ArrayList<Map<String, String>>();
 		Connection c = null;
@@ -359,7 +355,7 @@ public class DefaultDcm4CheeDatabaseOperations implements Dcm4CheeDatabaseOperat
 		try {
 			c = getConnection();
 			ps = c.prepareStatement(Dcm4CheeDatabaseCommands.SELECT_FILES_FOR_SERIES);
-			ps.setString(1, seriesIUID);
+			ps.setString(1, seriesUID);
 			rs = ps.executeQuery();
 			while (rs.next()) {
 				Map<String, String> resultMap = createResultMap(rs);

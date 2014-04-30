@@ -30,7 +30,6 @@ import edu.stanford.epad.dtos.internal.XNATProject;
 import edu.stanford.epad.dtos.internal.XNATProjectList;
 import edu.stanford.epad.dtos.internal.XNATSubject;
 import edu.stanford.epad.dtos.internal.XNATSubjectList;
-import edu.stanford.epad.dtos.internal.XNATUserList;
 import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeDatabase;
 import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeDatabaseOperations;
 import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeOperations;
@@ -111,7 +110,7 @@ public class DefaultEpadOperations implements EpadOperations
 			String sex = dcm4CheeStudy.sex;
 			String studyDescription = dcm4CheeStudy.studyDescription;
 			String studyAccessionNumber = dcm4CheeStudy.studyAccessionNumber;
-			Set<String> examTypes = getExamTypesForStudy(projectID, patientID, studyUID, sessionID, searchFilter);
+			Set<String> examTypes = getExamTypesForStudy(studyUID);
 			int numberOfSeries = dcm4CheeStudy.seriesCount;
 			int numberOfImages = dcm4CheeStudy.imagesCount;
 			Set<String> seriesUIDs = dcm4CheeDatabaseOperations.findAllSeriesUIDsInStudy(studyUID);
@@ -259,15 +258,27 @@ public class DefaultEpadOperations implements EpadOperations
 		Set<String> examTypes = new HashSet<String>();
 
 		for (String studyUID : studyUIDs)
-			examTypes.addAll(getExamTypesForStudy(projectID, patientID, studyUID, sessionID, searchFilter));
+			examTypes.addAll(getExamTypesForStudy(studyUID));
 
 		return examTypes;
 	}
 
 	@Override
-	public Set<String> getExamTypesForStudy(String projectID, String subjectID, String studyUID, String sessionID,
-			EPADSearchFilter searchFilter)
-	{
+	public Set<String> getExamTypesForPatient(String patientID)
+	{ // TODO Probably could make this a single query to dcm4chee database.
+		Set<String> studyUIDs = Dcm4CheeQueries.getStudyUIDsForPatient(patientID);
+
+		Set<String> examTypes = new HashSet<String>();
+
+		for (String studyUID : studyUIDs)
+			examTypes.addAll(getExamTypesForStudy(studyUID));
+
+		return examTypes;
+	}
+
+	@Override
+	public Set<String> getExamTypesForStudy(String studyUID)
+	{ // TODO Probably could make this a single query to dcm4chee database.
 		DCM4CHEESeriesList dcm4CheeSeriesList = Dcm4CheeQueries.getSeriesInStudy(studyUID);
 		Set<String> examTypes = new HashSet<String>();
 
@@ -498,8 +509,9 @@ public class DefaultEpadOperations implements EpadOperations
 
 			if (!searchFilter.shouldFilterProject(projectName, numberOfAnnotations)) {
 				int numberOfStudies = Dcm4CheeQueries.getNumberOfStudiesForPatients(patientIDs);
-				XNATUserList xnatUsers = XNATQueries.usersForProject(projectID);
-				Set<String> usernames = xnatUsers.getLoginNames();
+				// XNATUserList xnatUsers = XNATQueries.usersForProject(projectID);
+				// Set<String> usernames = xnatUsers.getLoginNames();
+				Set<String> usernames = new HashSet<String>();
 
 				return new EPADProject(secondaryID, piLastName, description, projectName, projectID, piFirstName, uri,
 						numberOfPatients, numberOfStudies, numberOfAnnotations, patientIDs, usernames);
@@ -526,7 +538,7 @@ public class DefaultEpadOperations implements EpadOperations
 			int numberOfAnnotations = AIMQueries.getNumberOfAIMAnnotationsForPatientID(patientID, username);
 			if (!searchFilter.shouldFilterSubject(patientID, patientName, numberOfAnnotations)) {
 				// Set<String> examTypes = epadQueries.getExamTypesForPatient(projectID, patientID, sessionID, searchFilter);
-				Set<String> examTypes = new HashSet<String>();
+				Set<String> examTypes = epadQueries.getExamTypesForPatient(patientID);
 
 				if (!searchFilter.shouldFilterSubject(patientID, patientName, examTypes, numberOfAnnotations)) {
 					int numberOfStudies = Dcm4CheeQueries.getNumberOfStudiesForPatient(patientID);

@@ -238,7 +238,7 @@ public class Main
 		contextHandler.setHandler(handler);
 		handlerList.add(contextHandler);
 
-		log.info("Added " + handler.getClass().getName() + " at context: " + contextPath);
+		log.info("Added " + handler.getClass().getName() + " at context " + contextPath);
 	}
 
 	/**
