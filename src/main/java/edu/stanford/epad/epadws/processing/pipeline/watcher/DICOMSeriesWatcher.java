@@ -78,8 +78,11 @@ public class DICOMSeriesWatcher implements Runnable
 						TimeUnit.MILLISECONDS);
 
 				if (dicomSeriesDescription != null) {
-					log.info("Series watcher found new series " + dicomSeriesDescription.getSeriesUID() + " with "
-							+ dicomSeriesDescription.getNumberOfInstances() + " instance(s).");
+					String seriesUID = dicomSeriesDescription.getSeriesUID();
+					String patientName = dicomSeriesDescription.getPatientName();
+					int numberOfInstances = dicomSeriesDescription.getNumberOfInstances();
+					log.info("Series watcher found new series " + seriesUID + " for patient " + patientName + " with "
+							+ numberOfInstances + " instance(s).");
 					dicomSeriesDescriptionTracker.addDicomSeriesProcessingStatus(new DicomSeriesProcessingStatus(
 							dicomSeriesDescription));
 				}

@@ -69,7 +69,8 @@ public class DicomSeriesProcessingStatus
 		}
 		if (currTime > lastActivityTimeStamp + MAX_IDLE_TIME) {
 			String seriesUID = dicomSeriesProcessingDescription.getSeriesUID();
-			logger.info("Series " + seriesUID + " has completed processing.");
+			String patientName = dicomSeriesProcessingDescription.getPatientName();
+			logger.info("Series " + seriesUID + " for patient " + patientName + " has completed processing.");
 			return true;
 		}
 		return false;

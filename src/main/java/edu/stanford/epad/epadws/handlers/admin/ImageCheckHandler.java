@@ -117,15 +117,17 @@ public class ImageCheckHandler extends AbstractHandler
 				missingPNGFileNames.add(pngFileName);
 		}
 
+		// TODO Look for series that have a status in epaddb.series_status of processing or error or in pipeline
+
 		responseStream.write("Number of series in dcm4chee database = " + seriesIUIDs.size() + "\n");
 		responseStream.write("Total number of PNG files = " + pngFileNames.size() + "\n");
 		if (numberOfSeriesWithMissingEPADDatabaseEntry != 0)
 			responseStream.write("Number of series with missing ePAD database entries = "
 					+ numberOfSeriesWithMissingEPADDatabaseEntry + "\n");
-		responseStream.write("Total number of images that do not have PNGs"
+		responseStream.write("Total number of images that do not have PNGs = "
 				+ allUnprocessedDICOMImageFileDescriptions.size() + "\n");
 		if (!missingPNGFileNames.isEmpty())
-			responseStream.write("Total number of PNGs that are missing from the file system" + missingPNGFileNames.size()
+			responseStream.write("Total number of PNGs that are missing from the file system = " + missingPNGFileNames.size()
 					+ "\n");
 
 		if (fix) {
