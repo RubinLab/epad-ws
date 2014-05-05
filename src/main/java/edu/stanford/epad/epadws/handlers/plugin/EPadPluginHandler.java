@@ -72,7 +72,7 @@ public class EPadPluginHandler extends AbstractHandler
 				statusCode = HandlerUtil.invalidTokenResponse(INVALID_SESSION_TOKEN_MESSAGE, responseStream, log);
 			}
 		} catch (Throwable t) {
-			statusCode = HandlerUtil.internalErrorResponse(INTERNAL_ERROR_MESSAGE, log);
+			statusCode = HandlerUtil.internalErrorResponse(INTERNAL_ERROR_MESSAGE, t, log);
 		}
 		httpResponse.setStatus(statusCode);
 	}

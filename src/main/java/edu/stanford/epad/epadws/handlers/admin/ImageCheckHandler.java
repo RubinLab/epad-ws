@@ -89,7 +89,6 @@ public class ImageCheckHandler extends AbstractHandler
 		List<Map<String, String>> allUnprocessedDICOMImageFileDescriptions = new ArrayList<Map<String, String>>();
 
 		int numberOfSeriesWithMissingEPADDatabaseEntry = 0;
-		int numberOfMissingPNGFiles = 0;
 
 		// Verify that each image in a DICOM series in DCM4CHEE has an entry for a generated PNG file in the ePAD database,
 		// which indicates that the images existence was detected. We then detect that the PNG file itself exists.
@@ -111,24 +110,23 @@ public class ImageCheckHandler extends AbstractHandler
 		// TODO: DICOM segmentation objects will not have PNGs. How to test? Tags should have indication.
 		// See: PixelMedUtils.isDicomSegmentationObject(inputDICOMFilePath)
 		List<String> pngFileNames = epadDatabaseOperations.getAllEPadFilePaths();
-		// out.write("The following PNG files listed in ePAD database do not exist in the file system:\n");
+		List<String> missingPNGFileNames = new ArrayList<String>();
 		for (String pngFileName : pngFileNames) {
 			File pngFile = new File(pngFileName);
-			if (!pngFile.isFile()) {
-				String message = pngFileName;
-				responseStream.write(message + " \n");
-				// numberOfMissingPNGFiles++;
-			}
+			if (!pngFile.isFile())
+				missingPNGFileNames.add(pngFileName);
 		}
+
 		responseStream.write("Number of series in dcm4chee database = " + seriesIUIDs.size() + "\n");
+		responseStream.write("Total number of PNG files = " + pngFileNames.size() + "\n");
 		if (numberOfSeriesWithMissingEPADDatabaseEntry != 0)
 			responseStream.write("Number of series with missing ePAD database entries = "
 					+ numberOfSeriesWithMissingEPADDatabaseEntry + "\n");
 		responseStream.write("Total number of images that do not have PNGs"
 				+ allUnprocessedDICOMImageFileDescriptions.size() + "\n");
-		responseStream.write("Total number of PNG files = " + pngFileNames.size() + "\n");
-		if (numberOfMissingPNGFiles != 0)
-			responseStream.write("Number of missing PNG files = " + numberOfMissingPNGFiles + "\n");
+		if (!missingPNGFileNames.isEmpty())
+			responseStream.write("Total number of PNGs that are missing from the file system" + missingPNGFileNames.size()
+					+ "\n");
 
 		if (fix) {
 			if (allUnprocessedDICOMImageFileDescriptions.size() != 0) {
