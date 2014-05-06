@@ -85,25 +85,25 @@ public class ImageCheckHandler extends AbstractHandler
 		Dcm4CheeDatabaseOperations dcm4CheeDatabaseOperations = Dcm4CheeDatabase.getInstance()
 				.getDcm4CheeDatabaseOperations();
 		EpadOperations epadQueries = DefaultEpadOperations.getInstance();
-		Set<String> seriesIUIDs = dcm4CheeDatabaseOperations.getAllReadyDcm4CheeSeriesUIDs();
+		Set<String> seriesUIDs = dcm4CheeDatabaseOperations.getAllReadyDcm4CheeSeriesUIDs();
 		List<Map<String, String>> allUnprocessedDICOMImageFileDescriptions = new ArrayList<Map<String, String>>();
 
 		int numberOfSeriesWithMissingEPADDatabaseEntry = 0;
 
 		// Verify that each image in a DICOM series in DCM4CHEE has an entry for a generated PNG file in the ePAD database,
 		// which indicates that the images existence was detected. We then detect that the PNG file itself exists.
-		for (String seriesIUID : seriesIUIDs) {
+		for (String seriesUID : seriesUIDs) {
 			final List<Map<String, String>> unprocessedDICOMImageFileDescriptionsInSeries = epadQueries
-					.getUnprocessedDicomImageFileDescriptionsForSeries(seriesIUID);
+					.getUnprocessedDicomImageFileDescriptionsForSeries(seriesUID);
 			final int numberOfUnprocessedImages = unprocessedDICOMImageFileDescriptionsInSeries.size();
 
 			if (numberOfUnprocessedImages != 0) {
-				responseStream.write("Number of instances in series " + seriesIUID
+				responseStream.write("Number of instances in series " + seriesUID
 						+ " for which there is no ePAD database entry for a PNG file = " + numberOfUnprocessedImages + "\n");
 				numberOfSeriesWithMissingEPADDatabaseEntry++;
 				allUnprocessedDICOMImageFileDescriptions.addAll(unprocessedDICOMImageFileDescriptionsInSeries);
 			} else {
-				// responseStream.write("All instances detected for series " + seriesIUID + "\n");
+				// responseStream.write("All instances detected for series " + seriesUID + "\n");
 			}
 		}
 		// Verify existence of all PNG files listed in the ePAD database (in epaddb.epad_files table).
@@ -113,18 +113,20 @@ public class ImageCheckHandler extends AbstractHandler
 		List<String> missingPNGFileNames = new ArrayList<String>();
 		for (String pngFileName : pngFileNames) {
 			File pngFile = new File(pngFileName);
-			if (!pngFile.isFile())
+			if (!pngFile.isFile()) {
+				responseStream.write("PNG file " + pngFile.getAbsolutePath() + " missing from file system\n");
 				missingPNGFileNames.add(pngFileName);
+			}
 		}
 
 		// TODO Look for series that have a status in epaddb.series_status of processing or error or in pipeline
 
-		responseStream.write("Number of series in dcm4chee database = " + seriesIUIDs.size() + "\n");
-		responseStream.write("Total number of PNG files = " + pngFileNames.size() + "\n");
+		responseStream.write("Number of DICOM series in dcm4chee database = " + seriesUIDs.size() + "\n");
+		responseStream.write("Total number of PNG files in ePAD = " + pngFileNames.size() + "\n");
 		if (numberOfSeriesWithMissingEPADDatabaseEntry != 0)
-			responseStream.write("Number of series with missing ePAD database entries = "
+			responseStream.write("Number of DICOM series in dcm4chee that ePAD has no record of = "
 					+ numberOfSeriesWithMissingEPADDatabaseEntry + "\n");
-		responseStream.write("Total number of images that do not have PNGs = "
+		responseStream.write("Total number of DICOM images that do not have PNGs in ePAD = "
 				+ allUnprocessedDICOMImageFileDescriptions.size() + "\n");
 		if (!missingPNGFileNames.isEmpty())
 			responseStream.write("Total number of PNGs that are missing from the file system = " + missingPNGFileNames.size()

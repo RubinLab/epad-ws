@@ -72,6 +72,7 @@ public class PngGeneratorTask implements GeneratorTask
 			EPADFileUtils.createDirsAndFile(outputPNGFile);
 			outputPNGStream = new FileOutputStream(outputPNGFile);
 			ImageIO.write(instance.getPackedImage(), "png", outputPNGStream);
+			outputPNGStream.close();
 			epadFilesTableData = Dcm4CheeDatabaseUtils.createEPadFilesTableData(outputPNGFile);
 			log.info("PNG generated for instance " + instanceNumber + " in series " + seriesUID);
 
