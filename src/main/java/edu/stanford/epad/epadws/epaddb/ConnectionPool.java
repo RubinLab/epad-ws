@@ -22,16 +22,18 @@ public class ConnectionPool implements Runnable
 	private final List<Connection> connectionsUsed = Collections.synchronizedList(new ArrayList<Connection>());
 
 	private final String connectionUrl;
-	private final String userName;
-	private final String userPassword;
+	private final String username;
+	private final String password;
 
 	private int initialConnections = 5;
 
-	public ConnectionPool(String url, String userName, String userPass) throws SQLException
+	public ConnectionPool(String connectionUrl, String username, String password) throws SQLException
 	{
-		this.connectionUrl = url;
-		this.userName = userName;
-		this.userPassword = userPass;
+		this.connectionUrl = connectionUrl;
+		this.username = username;
+		this.password = password;
+
+		logger.info("Creating connection pool for URL " + connectionUrl);
 
 		try {
 			Class.forName("com.mysql.jdbc.Driver");
@@ -45,22 +47,22 @@ public class ConnectionPool implements Runnable
 
 	private Connection createConnection() throws SQLException
 	{
-		return DriverManager.getConnection(connectionUrl, userName, userPassword);
+		return DriverManager.getConnection(connectionUrl, username, password);
 	}
 
 	public synchronized Connection getConnection() throws SQLException
 	{
-		Connection newConnection = null;
 		if (connectionsAvailable.size() == 0) {
-			newConnection = createConnection();
-			connectionsUsed.add(newConnection);
+			Connection connection = createConnection();
+			connectionsUsed.add(connection);
+			return connection;
 		} else {
 			int size = connectionsAvailable.size();
-			newConnection = connectionsAvailable.get(size - 1);
-			connectionsAvailable.remove(newConnection);
-			connectionsUsed.add(newConnection);
+			Connection connection = connectionsAvailable.get(size - 1);
+			connectionsAvailable.remove(connection);
+			connectionsUsed.add(connection);
+			return connection;
 		}
-		return newConnection;
 	}
 
 	public synchronized void freeConnection(Connection connection)

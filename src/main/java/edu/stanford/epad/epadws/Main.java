@@ -208,7 +208,7 @@ public class Main
 		addHandlerAtContextPath(new ResourceCheckHandler(), "/epad/resources", handlerList);
 		addFileServerAtContextPath(EPADResources.getEPADWebServerResourcesDir(), handlerList, "/epad/resources");
 
-		// The following well be removed soon as calls go through RESTful EPADHandler route.
+		// The following will be removed soon as calls go through RESTful EPADHandler route.
 		addHandlerAtContextPath(new EPADSeriesHandler(), "/epad/seriesorderj", handlerList);
 		addHandlerAtContextPath(new XNATProjectHandler(), "/epad/projects", handlerList);
 		addHandlerAtContextPath(new XNATSubjectHandler(), "/epad/subjects", handlerList);

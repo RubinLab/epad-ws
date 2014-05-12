@@ -176,6 +176,7 @@ public class AIMQueries
 		// return getCountAIMImageAnnotations(valueType, value, username);
 	}
 
+	@SuppressWarnings("unused")
 	private static int getCountAIMImageAnnotations(AIMSearchType aimSearchType, String value, String username)
 	{
 		int count = 0;
