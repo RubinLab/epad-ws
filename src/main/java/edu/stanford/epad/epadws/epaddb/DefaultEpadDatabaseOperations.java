@@ -104,32 +104,18 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 	}
 
 	@Override
-	public List<String> getAllEPadFilePaths()
+	public List<String> getAllEPadInPipelineFilePaths()
 	{
-		Connection c = null;
-		PreparedStatement ps = null;
-		ResultSet rs = null;
-		List<String> result = new ArrayList<String>();
-
-		try {
-			c = getConnection();
-			ps = c.prepareStatement(EpadDatabaseCommands.SELECT_ALL_EPAD_FILE_PATHS);
-			rs = ps.executeQuery();
-			while (rs.next()) {
-				result.add(rs.getString(1));
-			}
-		} catch (SQLException sqle) {
-			String debugInfo = DatabaseUtils.getDebugData(rs);
-			log.warning("Database operation failed; debugInfo=" + debugInfo, sqle);
-			return null;
-		} finally {
-			close(c, ps, rs);
-		}
-		return result;
+		return getAllEPadFilePathsWithStatus(PNGFileProcessingStatus.IN_PIPELINE);
 	}
 
 	@Override
 	public List<String> getAllEPadFilePathsWithErrors()
+	{
+		return getAllEPadFilePathsWithStatus(PNGFileProcessingStatus.ERROR);
+	}
+
+	private List<String> getAllEPadFilePathsWithStatus(PNGFileProcessingStatus pngFileProcessingStatus)
 	{
 		Connection c = null;
 		PreparedStatement ps = null;
@@ -139,7 +125,7 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 		try {
 			c = getConnection();
 			ps = c.prepareStatement(EpadDatabaseCommands.SELECT_ALL_EPAD_FILE_PATHS_WITH_STATUS);
-			ps.setInt(1, PNGFileProcessingStatus.ERROR.getCode());
+			ps.setInt(1, pngFileProcessingStatus.getCode());
 			rs = ps.executeQuery();
 			while (rs.next()) {
 				result.add(rs.getString(1));
@@ -600,7 +586,8 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 	}
 
 	/**
-	 * Cross database query that gets image ID for a series.
+	 * Cross database query that gets all image UIDs for a series if the corresponding image is recorded in the epad_files
+	 * table.
 	 * 
 	 * @param seriesIUID String
 	 * @return List of String (sopInstanceIds).

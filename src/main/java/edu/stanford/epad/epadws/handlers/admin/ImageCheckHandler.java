@@ -1,6 +1,5 @@
 package edu.stanford.epad.epadws.handlers.admin;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.sql.SQLException;
@@ -91,7 +90,7 @@ public class ImageCheckHandler extends AbstractHandler
 		int numberOfSeriesWithMissingEPADDatabaseEntry = 0;
 
 		// Verify that each image in a DICOM series in DCM4CHEE has an entry for a generated PNG file in the ePAD database,
-		// which indicates that the images existence was detected. We then detect that the PNG file itself exists.
+		// which indicates that the image's existence was detected. We then detect that the PNG file itself exists.
 		for (String seriesUID : seriesUIDs) {
 			final List<Map<String, String>> unprocessedDICOMImageFileDescriptionsInSeries = epadQueries
 					.getUnprocessedDicomImageFileDescriptionsForSeries(seriesUID);
@@ -106,19 +105,8 @@ public class ImageCheckHandler extends AbstractHandler
 				// responseStream.write("All instances detected for series " + seriesUID + "\n");
 			}
 		}
-		// Verify existence of all PNG files listed in the ePAD database (in epaddb.epad_files table).
 		// TODO: DICOM segmentation objects will not have PNGs. How to test? Tags should have indication.
 		// See: PixelMedUtils.isDicomSegmentationObject(inputDICOMFilePath)
-		int numberOfPNGFiles = 0;
-		int numberOfMissingPNGFiles = 0;
-		for (String pngFileName : epadDatabaseOperations.getAllEPadFilePaths()) {
-			File pngFile = new File(pngFileName);
-			if (!pngFile.isFile()) {
-				responseStream.write("PNG file " + pngFile.getAbsolutePath() + " missing from file system\n");
-				numberOfMissingPNGFiles++;
-			} else
-				numberOfPNGFiles++;
-		}
 
 		int numberOfPNGFilesWithErrors = 0;
 		for (String pngFileName : epadDatabaseOperations.getAllEPadFilePathsWithErrors()) {
@@ -126,7 +114,11 @@ public class ImageCheckHandler extends AbstractHandler
 			numberOfPNGFilesWithErrors++;
 		}
 
-		// TODO Look for series that have a status in epaddb.series_status of processing or error or in pipeline
+		int numberOfPNGFilesInPipeline = 0;
+		for (String pngFileName : epadDatabaseOperations.getAllEPadInPipelineFilePaths()) {
+			responseStream.write("PNG file " + pngFileName + " in pipeline\n");
+			numberOfPNGFilesInPipeline++;
+		}
 
 		responseStream.write("Number of dcm4chee series  = " + seriesUIDs.size() + "\n");
 		if (numberOfSeriesWithMissingEPADDatabaseEntry != 0)
@@ -134,9 +126,8 @@ public class ImageCheckHandler extends AbstractHandler
 					+ numberOfSeriesWithMissingEPADDatabaseEntry + "\n");
 		responseStream.write("Total number of dcm4chee images that do not have PNGs in ePAD = "
 				+ allUnprocessedDICOMImageFileDescriptions.size() + "\n");
-		responseStream.write("Total number of PNG files = " + numberOfPNGFiles + "\n");
 		responseStream.write("Total number of invalid PNG files = " + numberOfPNGFilesWithErrors + "\n");
-		responseStream.write("Total number of missing PNG files = " + numberOfMissingPNGFiles + "\n");
+		responseStream.write("Total number of pending PNG files = " + numberOfPNGFilesInPipeline + "\n");
 
 		if (fix) {
 			if (allUnprocessedDICOMImageFileDescriptions.size() != 0) {

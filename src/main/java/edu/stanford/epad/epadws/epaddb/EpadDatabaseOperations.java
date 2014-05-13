@@ -49,9 +49,9 @@ public interface EpadDatabaseOperations
 
 	String getEpadFilePathLike(String sopInstanceUID);
 
-	List<String> getAllEPadFilePaths();
-
 	List<String> getAllEPadFilePathsWithErrors();
+
+	List<String> getAllEPadInPipelineFilePaths();
 
 	/**
 	 * Returns a triple containing studyUID, seriesUID, and imageUID for the specified imageUID.
