@@ -70,17 +70,17 @@ public class XNATSessionOperations
 		int xnatStatusCode;
 
 		try {
-			log.info("Invoking XNAT session service at " + xnatSessionURL);
+			log.info("Invoking XNAT session service for user " + username + " at " + xnatSessionURL);
 			method.setRequestHeader("Authorization", "Basic " + authString);
 			xnatStatusCode = client.executeMethod(method);
 		} catch (IOException e) {
-			log.warning("Error calling XNAT session service", e);
+			log.warning("Error calling XNAT session service for user " + username, e);
 			xnatStatusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 		}
 
 		try {
 			if (xnatStatusCode == HttpServletResponse.SC_OK) {
-				log.info("Successfully invoked XNAT session service");
+				log.info("Successfully invoked XNAT session service for user " + username);
 				try {
 					StringBuilder sb = new StringBuilder();
 					InputStreamReader isr = null;

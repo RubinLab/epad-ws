@@ -129,6 +129,32 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 	}
 
 	@Override
+	public List<String> getAllEPadFilePathsWithErrors()
+	{
+		Connection c = null;
+		PreparedStatement ps = null;
+		ResultSet rs = null;
+		List<String> result = new ArrayList<String>();
+
+		try {
+			c = getConnection();
+			ps = c.prepareStatement(EpadDatabaseCommands.SELECT_ALL_EPAD_FILE_PATHS_WITH_STATUS);
+			ps.setInt(1, PNGFileProcessingStatus.ERROR.getCode());
+			rs = ps.executeQuery();
+			while (rs.next()) {
+				result.add(rs.getString(1));
+			}
+		} catch (SQLException sqle) {
+			String debugInfo = DatabaseUtils.getDebugData(rs);
+			log.warning("Database operation failed; debugInfo=" + debugInfo, sqle);
+			return null;
+		} finally {
+			close(c, ps, rs);
+		}
+		return result;
+	}
+
+	@Override
 	public String getEpadFilePathLike(String sopInstanceUID)
 	{
 		Connection c = null;
@@ -205,6 +231,8 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 		ResultSet rs = null;
 		try {
 			c = getConnection();
+			ps = c.prepareStatement(EpadDatabaseCommands.DELETE_ALL_FROM_EPAD_FILES);
+			ps.executeUpdate();
 			ps = c.prepareStatement(EpadDatabaseCommands.DELETE_ALL_FROM_SERIES_STATUS);
 			ps.executeUpdate();
 		} catch (SQLException sqle) {

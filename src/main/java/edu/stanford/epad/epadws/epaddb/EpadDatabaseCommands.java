@@ -9,6 +9,7 @@ package edu.stanford.epad.epadws.epaddb;
 public interface EpadDatabaseCommands
 {
 	public static final String DELETE_ALL_FROM_SERIES_STATUS = "delete from epaddb.series_status";
+	public static final String DELETE_ALL_FROM_EPAD_FILES = "delete from epaddb.epad_files";
 
 	public static final String DELETE_SERIES_FROM_SERIES_STATUS = "delete from epaddb.series_status where series_iuid=?";
 	public static final String DELETE_FROM_EPAD_FILES = "delete from epaddb.epad_files where file_path like ?";
@@ -31,6 +32,7 @@ public interface EpadDatabaseCommands
 
 	public static final String SELECT_PATH = "select file_path from epaddb.epad_files as f where f.file_path LIKE ? LIMIT 1";
 	public static final String SELECT_ALL_EPAD_FILE_PATHS = "select file_path from epaddb.epad_files";
+	public static final String SELECT_ALL_EPAD_FILE_PATHS_WITH_STATUS = "select file_path from epaddb.epad_files where file_status = ?";
 
 	public static final String SELECT_COORDINATION_USING_KEY = "select coordination_id, schema_name, schema_version, description "
 			+ "from epaddb.coordinations as c where c.coordination_key = ?";

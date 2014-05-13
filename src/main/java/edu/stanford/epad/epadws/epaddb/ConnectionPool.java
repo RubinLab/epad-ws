@@ -60,6 +60,11 @@ public class ConnectionPool implements Runnable
 			int size = connectionsAvailable.size();
 			Connection connection = connectionsAvailable.get(size - 1);
 			connectionsAvailable.remove(connection);
+			if (!connection.isValid(1)) {
+				logger.info("Closing invalid/expired connection for URL " + connectionUrl); // TODO Remove this log eventually
+				connection.close();
+				connection = createConnection();
+			}
 			connectionsUsed.add(connection);
 			return connection;
 		}

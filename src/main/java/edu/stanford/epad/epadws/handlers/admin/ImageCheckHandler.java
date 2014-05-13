@@ -109,28 +109,34 @@ public class ImageCheckHandler extends AbstractHandler
 		// Verify existence of all PNG files listed in the ePAD database (in epaddb.epad_files table).
 		// TODO: DICOM segmentation objects will not have PNGs. How to test? Tags should have indication.
 		// See: PixelMedUtils.isDicomSegmentationObject(inputDICOMFilePath)
-		List<String> pngFileNames = epadDatabaseOperations.getAllEPadFilePaths();
-		List<String> missingPNGFileNames = new ArrayList<String>();
-		for (String pngFileName : pngFileNames) {
+		int numberOfPNGFiles = 0;
+		int numberOfMissingPNGFiles = 0;
+		for (String pngFileName : epadDatabaseOperations.getAllEPadFilePaths()) {
 			File pngFile = new File(pngFileName);
 			if (!pngFile.isFile()) {
 				responseStream.write("PNG file " + pngFile.getAbsolutePath() + " missing from file system\n");
-				missingPNGFileNames.add(pngFileName);
-			}
+				numberOfMissingPNGFiles++;
+			} else
+				numberOfPNGFiles++;
+		}
+
+		int numberOfPNGFilesWithErrors = 0;
+		for (String pngFileName : epadDatabaseOperations.getAllEPadFilePathsWithErrors()) {
+			responseStream.write("PNG file " + pngFileName + " generation failed\n");
+			numberOfPNGFilesWithErrors++;
 		}
 
 		// TODO Look for series that have a status in epaddb.series_status of processing or error or in pipeline
 
-		responseStream.write("Number of DICOM series in dcm4chee database = " + seriesUIDs.size() + "\n");
-		responseStream.write("Total number of PNG files in ePAD = " + pngFileNames.size() + "\n");
+		responseStream.write("Number of dcm4chee series  = " + seriesUIDs.size() + "\n");
 		if (numberOfSeriesWithMissingEPADDatabaseEntry != 0)
-			responseStream.write("Number of DICOM series in dcm4chee that ePAD has no record of = "
+			responseStream.write("Number of series in dcm4chee that ePAD has no record of = "
 					+ numberOfSeriesWithMissingEPADDatabaseEntry + "\n");
-		responseStream.write("Total number of DICOM images that do not have PNGs in ePAD = "
+		responseStream.write("Total number of dcm4chee images that do not have PNGs in ePAD = "
 				+ allUnprocessedDICOMImageFileDescriptions.size() + "\n");
-		if (!missingPNGFileNames.isEmpty())
-			responseStream.write("Total number of PNGs that are missing from the file system = " + missingPNGFileNames.size()
-					+ "\n");
+		responseStream.write("Total number of PNG files = " + numberOfPNGFiles + "\n");
+		responseStream.write("Total number of invalid PNG files = " + numberOfPNGFilesWithErrors + "\n");
+		responseStream.write("Total number of missing PNG files = " + numberOfMissingPNGFiles + "\n");
 
 		if (fix) {
 			if (allUnprocessedDICOMImageFileDescriptions.size() != 0) {

@@ -51,6 +51,8 @@ public interface EpadDatabaseOperations
 
 	List<String> getAllEPadFilePaths();
 
+	List<String> getAllEPadFilePathsWithErrors();
+
 	/**
 	 * Returns a triple containing studyUID, seriesUID, and imageUID for the specified imageUID.
 	 */
