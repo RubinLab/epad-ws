@@ -93,7 +93,7 @@ public class QueueAndWatcherManager
 	}
 
 	// Each entry in list is map with keys sop_iuid, inst_no, series_iuid, filepath, and file_size.
-	public void addToPNGGeneratorTaskPipeline(List<Map<String, String>> dicomImageFileDescriptions)
+	public void addToPNGGeneratorTaskPipeline(String patientName, List<Map<String, String>> dicomImageFileDescriptions)
 	{
 		for (Map<String, String> dicomImageDescription : dicomImageFileDescriptions) {
 			String seriesUID = dicomImageDescription.get("series_iuid");
@@ -119,7 +119,7 @@ public class QueueAndWatcherManager
 			if (PixelMedUtils.isDicomSegmentationObject(inputDICOMFilePath)) { // Generate slices of PNG mask
 				processDicomSegmentationObject(seriesUID, outputPNGFilePath, inputDICOMFilePath);
 			} else { // Generate PNG file.
-				createPNGFileForDICOMImage(seriesUID, instanceNumber, outputPNGFilePath, inputDICOMFile);
+				createPNGFileForDICOMImage(patientName, seriesUID, instanceNumber, outputPNGFilePath, inputDICOMFile);
 			}
 		}
 	}
@@ -154,13 +154,14 @@ public class QueueAndWatcherManager
 		pngGeneratorTaskQueue.offer(dsoTask);
 	}
 
-	private void createPNGFileForDICOMImage(String seriesUID, String instanceNumber, String outputPNGFilePath,
-			File inputDICOMFile)
+	private void createPNGFileForDICOMImage(String patientName, String seriesUID, String instanceNumber,
+			String outputPNGFilePath, File inputDICOMFile)
 	{
 		File outputPNGFile = new File(outputPNGFilePath);
 		EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
 		insertEpadFile(epadDatabaseOperations, outputPNGFile);
-		PngGeneratorTask pngGeneratorTask = new PngGeneratorTask(seriesUID, instanceNumber, inputDICOMFile, outputPNGFile);
+		PngGeneratorTask pngGeneratorTask = new PngGeneratorTask(patientName, seriesUID, instanceNumber, inputDICOMFile,
+				outputPNGFile);
 		pngGeneratorTaskQueue.offer(pngGeneratorTask);
 	}
 
@@ -177,7 +178,7 @@ public class QueueAndWatcherManager
 	 * @return String
 	 */
 	private String createOutputPNGFilePathForDicomImage(Map<String, String> dicomImageDescription)
-	{
+	{ // TODO This is very inefficient - should not be making database call
 		String seriesIUID = dicomImageDescription.get("series_iuid");
 		Dcm4CheeDatabaseOperations dcm4CheeDatabaseOperations = Dcm4CheeDatabase.getInstance()
 				.getDcm4CheeDatabaseOperations();

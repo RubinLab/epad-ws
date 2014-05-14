@@ -30,13 +30,16 @@ public class PngGeneratorTask implements GeneratorTask
 {
 	private static final EPADLogger log = EPADLogger.getInstance();
 
+	private final String patientName;
 	private final String seriesUID;
 	private final String instanceNumber;
 	private final File dicomInputFile;
 	private final File pngOutputFile;
 
-	public PngGeneratorTask(String seriesUID, String instanceNumber, File dicomInputFile, File pngOutputFile)
+	public PngGeneratorTask(String patientName, String seriesUID, String instanceNumber, File dicomInputFile,
+			File pngOutputFile)
 	{
+		this.patientName = patientName;
 		this.seriesUID = seriesUID;
 		this.instanceNumber = instanceNumber;
 		this.dicomInputFile = dicomInputFile;
@@ -74,19 +77,20 @@ public class PngGeneratorTask implements GeneratorTask
 			ImageIO.write(instance.getPackedImage(), "png", outputPNGStream);
 			outputPNGStream.close();
 			epadFilesTableData = Dcm4CheeDatabaseUtils.createEPadFilesTableData(outputPNGFile);
-			log.info("PNG generated for instance " + instanceNumber + " in series " + seriesUID);
+			log.info("PNG of size " + getFileSize(epadFilesTableData) + " generated for instance " + instanceNumber
+					+ " in series " + seriesUID + " for patient " + patientName);
 
 			epadDatabaseOperations.updateEpadFileRecord(epadFilesTableData.get("file_path"), PNGFileProcessingStatus.DONE,
 					getFileSize(epadFilesTableData), "");
 		} catch (FileNotFoundException e) {
 			log.warning("Failed to create PNG for instance " + instanceNumber + " in series " + seriesUID, e);
 			epadDatabaseOperations.updateEpadFileRecord(epadFilesTableData.get("file_path"), PNGFileProcessingStatus.ERROR,
-					0, "Dicom file not found.");
+					0, "DICOM file not found.");
 			epadDatabaseOperations.updateOrInsertSeries(seriesUID, SeriesProcessingStatus.ERROR);
 		} catch (IOException e) {
 			log.warning("Failed to create PNG for instance " + instanceNumber + " in series " + seriesUID, e);
 			epadDatabaseOperations.updateEpadFileRecord(epadFilesTableData.get("file_path"), PNGFileProcessingStatus.ERROR,
-					0, "IO Error.");
+					0, "IO Error: " + e.getMessage());
 			epadDatabaseOperations.updateOrInsertSeries(seriesUID, SeriesProcessingStatus.ERROR);
 
 		} catch (Throwable t) {

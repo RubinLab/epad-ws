@@ -94,6 +94,7 @@ public class DICOMSeriesWatcher implements Runnable
 							.getDicomSeriesProcessingDescription();
 					// Each entry in list is map with keys: sop_iuid, inst_no, series_iuid, filepath, file_size.
 					String seriesUID = dicomSeriesProcessingDescription.getSeriesUID();
+					String patientName = dicomSeriesProcessingDescription.getPatientName();
 					int numberOfInstances = dicomSeriesProcessingDescription.getNumberOfInstances();
 					List<Map<String, String>> unprocessedDicomImageFileDescriptions = epadOperations
 							.getUnprocessedDicomImageFileDescriptionsForSeries(seriesUID);
@@ -105,7 +106,7 @@ public class DICOMSeriesWatcher implements Runnable
 								.updateWithDicomImageFileDescriptions(unprocessedDicomImageFileDescriptions);
 						dicomSeriesProcessingStatus.registerActivity();
 						dicomSeriesProcessingStatus.setSeriesProcessingState(DicomSeriesProcessingState.IN_PIPELINE);
-						queueAndWatcherManager.addToPNGGeneratorTaskPipeline(unprocessedDicomImageFileDescriptions);
+						queueAndWatcherManager.addToPNGGeneratorTaskPipeline(patientName, unprocessedDicomImageFileDescriptions);
 						log.info("Submitted series " + seriesUID + " with " + numberOfInstances + " image(s) to PNG generator");
 					} else { // All images have been submitted for PNG processing.
 						/*

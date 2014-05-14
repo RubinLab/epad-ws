@@ -109,12 +109,12 @@ public class Main
 		} catch (SocketException se) {
 			log.severe("Cannot bind to all sockets", se);
 		} catch (Exception e) {
-			log.severe("Fatal Exception. Shutting down EPad Web Service", e);
+			log.severe("Fatal Exception. Shutting down ePAD Web Service", e);
 		} catch (Error err) {
-			log.severe("Fatal Error. Shutting down EPad Web Service", err);
+			log.severe("Fatal Error. Shutting down ePAD Web Service", err);
 		} finally {
 			log.info("#####################################################");
-			log.info("############# Shutting down EPad Web Service ########");
+			log.info("############# Shutting down ePAD Web Service ########");
 			log.info("#####################################################");
 
 			shutdownSignal.shutdownNow();
@@ -129,7 +129,7 @@ public class Main
 			}
 		}
 		log.info("#####################################################");
-		log.info("################## Exit  EPad Web Service ###########");
+		log.info("################## Exit ePAD Web Service ###########");
 		log.info("#####################################################");
 	}
 
@@ -176,9 +176,8 @@ public class Main
 		WindowLevelFactory.getInstance().buildAndStart();
 	}
 
-	// TODO Need to remove deprecated routes after testing.
 	private static void addHandlers(Server server)
-	{
+	{ // TODO Need to remove deprecated routes after testing.
 		List<Handler> handlerList = new ArrayList<Handler>();
 
 		loadPluginClasses();
@@ -189,9 +188,10 @@ public class Main
 
 		addHandlerAtContextPath(new EPADHandler(), "/epad/v2", handlerList);
 
+		// Most of the following calls will soon be moved to the EPADHandler to make them RESTful.
+
 		addHandlerAtContextPath(new DICOMHeadersHandler(), "/epad/dicomtagj", handlerList);
 		addHandlerAtContextPath(new WindowingHandler(), "/epad/dicomparam", handlerList);
-
 		addHandlerAtContextPath(new AimResourceHandler(), "/epad/aimresource", handlerList);
 		addHandlerAtContextPath(new DicomSegmentationPathHandler(), "/epad/segmentationpath", handlerList);
 		addHandlerAtContextPath(new WadoHandler(), "/epad/wado", handlerList);
@@ -208,7 +208,7 @@ public class Main
 		addHandlerAtContextPath(new ResourceCheckHandler(), "/epad/resources", handlerList);
 		addFileServerAtContextPath(EPADResources.getEPADWebServerResourcesDir(), handlerList, "/epad/resources");
 
-		// The following will be removed soon as calls go through RESTful EPADHandler route.
+		// The following will be removed soon as calls now go through RESTful EPADHandler route.
 		addHandlerAtContextPath(new EPADSeriesHandler(), "/epad/seriesorderj", handlerList);
 		addHandlerAtContextPath(new XNATProjectHandler(), "/epad/projects", handlerList);
 		addHandlerAtContextPath(new XNATSubjectHandler(), "/epad/subjects", handlerList);

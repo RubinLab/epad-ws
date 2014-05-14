@@ -134,7 +134,7 @@ public class ImageCheckHandler extends AbstractHandler
 				responseStream.write("Adding " + allUnprocessedDICOMImageFileDescriptions.size()
 						+ " unprocessed image(s) to PNG pipeline...");
 				responseStream.flush();
-				queueAndWatcherManager.addToPNGGeneratorTaskPipeline(allUnprocessedDICOMImageFileDescriptions);
+				queueAndWatcherManager.addToPNGGeneratorTaskPipeline("REPROCESS", allUnprocessedDICOMImageFileDescriptions);
 				responseStream.write("All unprocessed files added\n");
 			}
 		} else if (allUnprocessedDICOMImageFileDescriptions.size() != 0)
