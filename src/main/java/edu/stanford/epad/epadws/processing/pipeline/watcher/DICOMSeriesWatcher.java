@@ -61,7 +61,6 @@ public class DICOMSeriesWatcher implements Runnable
 		this.pngGeneratorTaskQueue = pngGeneratorTaskQueue;
 		this.dicomSeriesDescriptionTracker = DicomSeriesProcessingStatusTracker.getInstance();
 		this.dcm4cheeRootDir = EPADConfig.getInstance().getStringPropertyValue("dcm4cheeDirRoot");
-
 	}
 
 	@Override
@@ -107,7 +106,8 @@ public class DICOMSeriesWatcher implements Runnable
 						dicomSeriesProcessingStatus.registerActivity();
 						dicomSeriesProcessingStatus.setSeriesProcessingState(DicomSeriesProcessingState.IN_PIPELINE);
 						queueAndWatcherManager.addToPNGGeneratorTaskPipeline(patientName, unprocessedDicomImageFileDescriptions);
-						log.info("Submitted series " + seriesUID + " with " + numberOfInstances + " image(s) to PNG generator");
+						log.info("Submitted series " + seriesUID + " for patient " + patientName + " with " + numberOfInstances
+								+ " image(s) to PNG generator");
 					} else { // All images have been submitted for PNG processing.
 						/*
 						 * List<Map<String, String>> processedPNGImages = mySqlQueries

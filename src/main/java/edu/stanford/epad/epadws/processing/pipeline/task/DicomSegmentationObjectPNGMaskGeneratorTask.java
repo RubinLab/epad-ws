@@ -69,7 +69,6 @@ public class DicomSegmentationObjectPNGMaskGeneratorTask implements GeneratorTas
 	public String xsdFile = EPADConfig.getInstance().getStringPropertyValue("xsdFile");
 	public String xsdFilePath = EPADConfig.getInstance().getStringPropertyValue("baseSchemaDir") + xsdFile;
 	public String eXistCollection = EPADConfig.getInstance().getStringPropertyValue("collection");
-	public String dbpath = EPADConfig.getInstance().getStringPropertyValue("dbpath");
 	public String templatePath = EPADConfig.getInstance().getStringPropertyValue("baseTemplatesDir");
 	public String wadoProxy = EPADConfig.getInstance().getStringPropertyValue("wadoProxy");
 

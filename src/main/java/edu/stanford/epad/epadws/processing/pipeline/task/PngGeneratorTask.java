@@ -83,18 +83,20 @@ public class PngGeneratorTask implements GeneratorTask
 			epadDatabaseOperations.updateEpadFileRecord(epadFilesTableData.get("file_path"), PNGFileProcessingStatus.DONE,
 					getFileSize(epadFilesTableData), "");
 		} catch (FileNotFoundException e) {
-			log.warning("Failed to create PNG for instance " + instanceNumber + " in series " + seriesUID, e);
+			log.warning("Failed to create PNG for instance " + instanceNumber + " in series " + seriesUID + " for patient "
+					+ patientName, e);
 			epadDatabaseOperations.updateEpadFileRecord(epadFilesTableData.get("file_path"), PNGFileProcessingStatus.ERROR,
 					0, "DICOM file not found.");
 			epadDatabaseOperations.updateOrInsertSeries(seriesUID, SeriesProcessingStatus.ERROR);
 		} catch (IOException e) {
-			log.warning("Failed to create PNG for instance " + instanceNumber + " in series " + seriesUID, e);
+			log.warning("Failed to create PNG for instance " + instanceNumber + " in series " + seriesUID + " for patient "
+					+ patientName, e);
 			epadDatabaseOperations.updateEpadFileRecord(epadFilesTableData.get("file_path"), PNGFileProcessingStatus.ERROR,
 					0, "IO Error: " + e.getMessage());
 			epadDatabaseOperations.updateOrInsertSeries(seriesUID, SeriesProcessingStatus.ERROR);
-
 		} catch (Throwable t) {
-			log.warning("Failed to create PNG for instance " + instanceNumber + " in series " + seriesUID, t);
+			log.warning("Failed to create PNG for instance " + instanceNumber + " in series " + seriesUID + " for patient "
+					+ patientName, t);
 			epadDatabaseOperations.updateEpadFileRecord(epadFilesTableData.get("file_path"), PNGFileProcessingStatus.ERROR,
 					0, "General Exception: " + t.getMessage());
 			epadDatabaseOperations.updateOrInsertSeries(seriesUID, SeriesProcessingStatus.ERROR);
