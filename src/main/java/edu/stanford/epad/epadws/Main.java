@@ -188,25 +188,30 @@ public class Main
 
 		addHandlerAtContextPath(new EPADHandler(), "/epad/v2", handlerList);
 
-		// Most of the following calls will soon be moved to the EPADHandler to make them RESTful.
-
-		addHandlerAtContextPath(new DICOMHeadersHandler(), "/epad/dicomtagj", handlerList);
-		addHandlerAtContextPath(new WindowingHandler(), "/epad/dicomparam", handlerList);
 		addHandlerAtContextPath(new AimResourceHandler(), "/epad/aimresource", handlerList);
 		addHandlerAtContextPath(new DicomSegmentationPathHandler(), "/epad/segmentationpath", handlerList);
-		addHandlerAtContextPath(new WadoHandler(), "/epad/wado", handlerList);
 
 		addHandlerAtContextPath(new EventHandler(), "/epad/eventresource", handlerList);
 		addHandlerAtContextPath(new ProjectEventHandler(), "/epad/events", handlerList);
 
 		addHandlerAtContextPath(new EPadPluginHandler(), "/epad/plugin", handlerList);
 
+		// TODO This call will disappear when we switch to AIM4
+		addHandlerAtContextPath(new CoordinationHandler(), "/epad/coordination", handlerList);
+
 		addHandlerAtContextPath(new ServerStatusHandler(), "/epad/status", handlerList);
 		addHandlerAtContextPath(new ImageCheckHandler(), "/epad/imagecheck", handlerList);
 		addHandlerAtContextPath(new DICOMReprocessingHandler(), "/epad/imagereprocess", handlerList);
 
+		// TODO Should get PNGs and WADO via route: /project/<pid>/subjects/<sid>/studies/<sid>/series/<sid>/images/<iid>/
+		// Have parameter imageType=WADO or PNG
 		addHandlerAtContextPath(new ResourceCheckHandler(), "/epad/resources", handlerList);
 		addFileServerAtContextPath(EPADResources.getEPADWebServerResourcesDir(), handlerList, "/epad/resources");
+		addHandlerAtContextPath(new WadoHandler(), "/epad/wado", handlerList);
+
+		// TODO Should get via route: /project/<pid>/subjects/<sid>/studies/<sid>/series/<sid>/images/<iid>/
+		addHandlerAtContextPath(new DICOMHeadersHandler(), "/epad/dicomtagj", handlerList);
+		addHandlerAtContextPath(new WindowingHandler(), "/epad/dicomparam", handlerList);
 
 		// The following will be removed soon as calls now go through RESTful EPADHandler route.
 		addHandlerAtContextPath(new EPADSeriesHandler(), "/epad/seriesorderj", handlerList);
@@ -215,7 +220,6 @@ public class Main
 		addHandlerAtContextPath(new DCM4CHEESearchHandler(), "/epad/searchj", handlerList);
 		addHandlerAtContextPath(new PatientDeleteHandler(), "/epad/patientdelete", handlerList);
 		addHandlerAtContextPath(new DicomDeleteHandler(), "/epad/dicomdelete", handlerList);
-		addHandlerAtContextPath(new CoordinationHandler(), "/epad/coordination", handlerList);
 
 		ContextHandlerCollection contexts = new ContextHandlerCollection();
 		contexts.setHandlers(handlerList.toArray(new Handler[handlerList.size()]));
