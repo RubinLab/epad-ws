@@ -13,7 +13,6 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
@@ -33,6 +32,7 @@ import com.pixelmed.display.SourceImage;
 import edu.stanford.epad.common.dicom.DicomSegmentationObject;
 import edu.stanford.epad.common.dicom.DicomTagFileUtils;
 import edu.stanford.epad.common.pixelmed.PixelMedUtils;
+import edu.stanford.epad.common.plugins.PluginAIMUtil;
 import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.epad.common.util.EPADResources;
@@ -44,8 +44,6 @@ import edu.stanford.epad.epadws.epaddb.EpadDatabaseOperations;
 import edu.stanford.hakan.aim3api.base.AimException;
 import edu.stanford.hakan.aim3api.base.DICOMImageReference;
 import edu.stanford.hakan.aim3api.base.ImageAnnotation;
-import edu.stanford.hakan.aim3api.base.ImageSeries;
-import edu.stanford.hakan.aim3api.base.ImageStudy;
 import edu.stanford.hakan.aim3api.base.Person;
 import edu.stanford.hakan.aim3api.base.Polyline;
 import edu.stanford.hakan.aim3api.base.Segmentation;
@@ -72,7 +70,7 @@ public class DicomSegmentationObjectPNGMaskGeneratorTask implements GeneratorTas
 	public String templatePath = EPADConfig.getInstance().getStringPropertyValue("baseTemplatesDir");
 	public String wadoProxy = EPADConfig.getInstance().getStringPropertyValue("wadoProxy");
 
-	private static final EPADLogger logger = EPADLogger.getInstance();
+	private static final EPADLogger log = EPADLogger.getInstance();
 	private static final String baseDicomDirectory = EPADResources.getEPADWebServerPNGDir();
 
 	private final String seriesUID;
@@ -100,9 +98,7 @@ public class DicomSegmentationObjectPNGMaskGeneratorTask implements GeneratorTas
 		imageId = imageId.replaceAll("\\.", "_");
 		objectId = objectId.replaceAll("\\.", "_");
 
-		logger.info("Processing DSO for series ID " + seriesUID + "; file=" + dicomInputFile.getAbsolutePath());
-		logger.info("getSegmentation study " + studyId + " series " + seriesId + " image " + imageId + " object "
-				+ objectId);
+		log.info("Processing DSO for series  " + seriesUID + "; file=" + dicomInputFile.getAbsolutePath());
 
 		try {
 			DicomSegmentationObject dicomSegmentationObject = new DicomSegmentationObject();
@@ -112,24 +108,26 @@ public class DicomSegmentationObjectPNGMaskGeneratorTask implements GeneratorTas
 			repDest.mkdirs();
 
 			EpadDatabaseOperations databaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
-			logger.info("Writing DSO PNG masks for series " + seriesUID + "...");
+			log.info("Writing DSO PNG masks for series " + seriesUID + "...");
 
 			for (int i = 0; i < count; i++) { // Create the mask images
 				BufferedImage source = sourceImage.getBufferedImage(count - i - 1);
 				BufferedImage sourceWithTransparency = generateTransparentImage(source); // Generate a transparent image
-				String pngUrl = baseDicomDirectory + studyId + "/" + seriesId + "/" + objectId + "-" + i + ".png";
-				File sourceFile = new File(pngUrl);
+				String pngMaskFilePath = baseDicomDirectory + studyId + "/" + seriesId + "/" + objectId + "-" + i + ".png";
+				File pngMaskFile = new File(pngMaskFilePath);
 				try {
-					insertEpadFile(databaseOperations, sourceFile);
-					ImageIO.write(sourceWithTransparency, "png", sourceFile);
-					databaseOperations.updateEpadFileRecord(pngUrl, PNGFileProcessingStatus.DONE, 77, "");
+					insertEpadFile(databaseOperations, pngMaskFile);
+					log.info("Writing DSO PNG mask file " + i + " for series " + seriesUID);
+					ImageIO.write(sourceWithTransparency, "png", pngMaskFile);
+					databaseOperations.updateEpadFileRecord(pngMaskFilePath, PNGFileProcessingStatus.DONE, 77, "");
 				} catch (IOException e) {
-					logger.warning("Failed to write DSO PNG mask for series " + seriesUID, e);
+					log.warning("Failed to write DSO PNG mask for series " + seriesUID, e);
 				}
 				source = null;
 				sourceWithTransparency = null;
 			}
-			logger.info("...finished writing DSO PNG masks for series " + seriesUID);
+			log.info("... finished writing DSO PNG masks for series " + seriesUID);
+
 			File dsoTagFile = new File(repDest.getAbsolutePath() + "/" + objectId + ".tag");
 			if (!dsoTagFile.exists()) {
 				dsoTagFile.createNewFile();
@@ -142,9 +140,8 @@ public class DicomSegmentationObjectPNGMaskGeneratorTask implements GeneratorTas
 			DicomHeadersTask dicomHeadersTask = new DicomHeadersTask(seriesUID, dicomInputFile, tempDSOTagFile);
 			dicomHeadersTask.run();
 			generateAIMFileForDSO(tempDSOTagFile);
-			System.gc();
 		} catch (Exception e) {
-			logger.warning("Error when trying to write PNGs for DSO series " + seriesUID + ": " + e.getMessage());
+			log.warning("Error writing PNGs for DSO series " + seriesUID + ": " + e.getMessage());
 		}
 	}
 
@@ -152,19 +149,18 @@ public class DicomSegmentationObjectPNGMaskGeneratorTask implements GeneratorTas
 	 * Generate an AIM file for a new DICOM Segmentation Object (DSO). This AIM file actually annotates the original
 	 * image, NOT the DSO. The Referenced SOP Instance UID field in the DICOM DSO tag file identifies the image from which
 	 * the segmentation object is derived from. It contains the imageID of the original image but does not contain the
-	 * study or series identifiers for that image - so we need to discover it by querying ePAD.
-	 * <p>
-	 * We link this AIM file to the DSO by storing the DSO's image ID in the sopInstanceUID field in a Segmentation
-	 * element. When processing this AIM file, the user can find the DSO's series by searching using this imageID.
+	 * study or series identifiers for that image - so we need to discover them by querying ePAD.
+	 */
+
+	/**
+	 * {@link PluginAIMUtil#generateAIMFileForDSO} is very similar - should merge
 	 * 
-	 * @param dsoTagFile
-	 * @throws Exception
 	 */
 	private void generateAIMFileForDSO(File dsoTagFile) throws Exception
 	{
 		Map<String, String> dsoDICOMTags = DicomTagFileUtils.readDICOMTagFile(dsoTagFile);
 
-		String patientID = dsoDICOMTags.get("Patient ID");
+		String patientID = dsoDICOMTags.get("Patient ID"); // TODO Replace with constants from DicomTagFileUtils
 		String patientName = dsoDICOMTags.get("Patient's Name");
 		String sopClassUID = dsoDICOMTags.get("SOP Class UID");
 		String dsoStudyInstanceUID = dsoDICOMTags.get("Study Instance UID"); // Study ID of the DSO (same as original image)
@@ -174,14 +170,13 @@ public class DicomSegmentationObjectPNGMaskGeneratorTask implements GeneratorTas
 		String referencedSeriesInstanceUID = getDicomSeriesUIDFromImageUID(referencedSOPInstanceUID); // Series ID for same
 		String referencedStudyInstanceUID = dsoStudyInstanceUID; // Will be same study as DSO
 
-		logger.info("Patient ID=" + patientID);
-		logger.info("Patient's Name=" + patientName);
-		logger.info("SOP Class UID=" + sopClassUID);
-		logger.info("DSO Study Instance UID=" + dsoStudyInstanceUID);
-		logger.info("DSO Series Instance UID=" + dsoSeriesInstanceUID);
-		logger.info("DSO SOP Instance UID=" + dsoSOPInstanceUID);
-		logger.info("Referenced SOP Instance UID=" + referencedSOPInstanceUID);
-		logger.info("Referenced Series Instance UID=" + referencedSeriesInstanceUID);
+		log.info("Generating AIM file for DSO series " + dsoSeriesInstanceUID + " for patient " + patientName);
+		log.info("SOP Class UID=" + sopClassUID);
+		log.info("DSO Study Instance UID=" + dsoStudyInstanceUID);
+		log.info("DSO Series Instance UID=" + dsoSeriesInstanceUID);
+		log.info("DSO SOP Instance UID=" + dsoSOPInstanceUID);
+		log.info("Referenced SOP Instance UID=" + referencedSOPInstanceUID);
+		log.info("Referenced Series Instance UID=" + referencedSeriesInstanceUID);
 
 		ImageAnnotation imageAnnotation = new ImageAnnotation(0, "", "2000-10-17T10:22:40", "segmentation", "SEG",
 				"SEG Only", "", "", "");
@@ -190,11 +185,11 @@ public class DicomSegmentationObjectPNGMaskGeneratorTask implements GeneratorTas
 		sc.AddSegmentation(new Segmentation(0, dsoSOPInstanceUID, sopClassUID, referencedSOPInstanceUID, 1));
 		imageAnnotation.setSegmentationCollection(sc);
 
-		DICOMImageReference originalDICOMImageReference = createDICOMImageReference(referencedStudyInstanceUID,
-				referencedSeriesInstanceUID, referencedSOPInstanceUID);
+		DICOMImageReference originalDICOMImageReference = PluginAIMUtil.createDICOMImageReference(
+				referencedStudyInstanceUID, referencedSeriesInstanceUID, referencedSOPInstanceUID);
 		imageAnnotation.addImageReference(originalDICOMImageReference);
-		DICOMImageReference dsoDICOMImageReference = createDICOMImageReference(dsoStudyInstanceUID, dsoSeriesInstanceUID,
-				dsoSOPInstanceUID);
+		DICOMImageReference dsoDICOMImageReference = PluginAIMUtil.createDICOMImageReference(dsoStudyInstanceUID,
+				dsoSeriesInstanceUID, dsoSOPInstanceUID);
 		imageAnnotation.addImageReference(dsoDICOMImageReference);
 
 		Polyline polyline = new Polyline();
@@ -216,45 +211,18 @@ public class DicomSegmentationObjectPNGMaskGeneratorTask implements GeneratorTas
 		person.setCagridId(0);
 		imageAnnotation.addPerson(person);
 
-		logger.info("Saving AIM file to server " + imageAnnotation.getUniqueIdentifier());
+		log.info("Saving AIM file for DSO series " + dsoSeriesInstanceUID + " with ID "
+				+ imageAnnotation.getUniqueIdentifier());
 		try {
 			saveImageAnnotationToServer(imageAnnotation);
 		} catch (AimException e) {
-			logger.warning("Exception saving AIM file to server", e);
+			log.warning("Exception saving AIM file for DSO series " + dsoSeriesInstanceUID, e);
 		}
 
 		/*
 		 * ServerEventUtil.postEvent(username, "DSOReady", imageAnnotation.getUniqueIdentifier(), aimName, patientID,
 		 * patientName, "", "", "");
 		 */
-	}
-
-	private DICOMImageReference createDICOMImageReference(String dsoStudyInstanceUID, String dsoSeriesInstanceUID,
-			String dsoSOPInstanceUID)
-	{
-		DICOMImageReference dicomImageReference = new DICOMImageReference();
-		dicomImageReference.setCagridId(0);
-
-		ImageStudy imageStudy = new ImageStudy();
-		imageStudy.setCagridId(0);
-		imageStudy.setInstanceUID(dsoStudyInstanceUID);
-		imageStudy.setStartDate("2012-01-16T00:00:00"); // TODO
-		imageStudy.setStartTime("12:45:34"); // TODO
-
-		ImageSeries imageSeries = new ImageSeries();
-		imageSeries.setCagridId(0);
-		imageSeries.setInstanceUID(dsoSeriesInstanceUID);
-
-		edu.stanford.hakan.aim3api.base.Image image = new edu.stanford.hakan.aim3api.base.Image();
-		image.setCagridId(0);
-		image.setSopClassUID("112233"); // TODO
-		image.setSopInstanceUID(dsoSOPInstanceUID);
-
-		imageSeries.addImage(image); // Add Image to ImageSeries
-		imageStudy.setImageSeries(imageSeries); // Add ImageSeries to ImageStudy
-		dicomImageReference.setImageStudy(imageStudy); // Add ImageStudy to ImageReference
-
-		return dicomImageReference;
 	}
 
 	private BufferedImage generateTransparentImage(BufferedImage source)
@@ -348,7 +316,8 @@ public class DicomSegmentationObjectPNGMaskGeneratorTask implements GeneratorTas
 			String studyIUID = Attribute.getSingleStringValueOrEmptyString(attbList, TagFromName.StudyInstanceUID);
 			String seriesIUID = Attribute.getSingleStringValueOrEmptyString(attbList, TagFromName.SeriesInstanceUID);
 			String imageID = Attribute.getSingleStringValueOrEmptyString(attbList, TagFromName.SOPInstanceUID);
-			// String refID = Attribute.getSingleStringValueOrEmptyString(attbList, TagFromName.ReferencedSOPInstanceUID);
+			// TODO Not there - String refID = Attribute.getSingleStringValueOrEmptyString(attbList,
+			// TagFromName.ReferencedSOPInstanceUID);
 
 			retVal.put("study-id", studyIUID);
 			retVal.put("series-id", seriesIUID);
@@ -357,13 +326,12 @@ public class DicomSegmentationObjectPNGMaskGeneratorTask implements GeneratorTas
 			retVal.put("ref-sop-inst-id", imageID);
 
 			// NOTE: This is for debugging. Is this the frame # of the segmentation object? Need to compare to InstanceNumber.
-			String segmentNumber = Attribute.getSingleStringValueOrEmptyString(attbList, TagFromName.SegmentNumber);
-			String instanceNumber = Attribute.getSingleStringValueOrEmptyString(attbList, TagFromName.InstanceNumber);
-
-			logger.info("[TEMP] Segmentation Object. Is segmentNumber Tag there? Segment Number=[" + segmentNumber + "]."
-					+ " Is it the same as the Instance Number Tag? Instance Number=[" + instanceNumber + "].");
+			// String segmentNumber = Attribute.getSingleStringValueOrEmptyString(attbList, TagFromName.SegmentNumber);
+			// String instanceNumber = Attribute.getSingleStringValueOrEmptyString(attbList, TagFromName.InstanceNumber);
+			// logger.info("[TEMP] Segmentation Object. Is segmentNumber Tag there? Segment Number=[" + segmentNumber + "]."
+			// + " Is it the same as the Instance Number Tag? Instance Number=[" + instanceNumber + "].");
 		} catch (Exception e) {
-			logger.warning("Failed to read Dicom header tags of segmentation object: " + dicomInputFile.getAbsolutePath(), e);
+			log.warning("Failed to read DICOM header tags of DSO " + dicomInputFile.getAbsolutePath(), e);
 		}
 		return retVal;
 	}
@@ -398,7 +366,7 @@ public class DicomSegmentationObjectPNGMaskGeneratorTask implements GeneratorTas
 			File storeFile = new File(storeXmlPath);
 			AnnotationBuilder.saveToFile(aim, tempXmlPath, xsdFilePath);
 			res = AnnotationBuilder.getAimXMLsaveResult();
-			logger.info("AnnotationBuilder.saveToFile result: " + res);
+			log.info("AnnotationBuilder.saveToFile result: " + res);
 			if (storeFile.exists()) {
 				storeFile.delete();
 			}
@@ -407,7 +375,7 @@ public class DicomSegmentationObjectPNGMaskGeneratorTask implements GeneratorTas
 			AnnotationBuilder.saveToServer(aim, eXistServerUrl, namespace, eXistCollection, xsdFilePath, eXistUsername,
 					eXistPassword);
 			res = AnnotationBuilder.getAimXMLsaveResult();
-			logger.info("AnnotationBuilder.saveToServer result: " + res);
+			log.info("AnnotationBuilder.saveToServer result: " + res);
 		}
 		return res;
 	}
@@ -450,108 +418,16 @@ public class DicomSegmentationObjectPNGMaskGeneratorTask implements GeneratorTas
 					}
 				}
 			}
-			logger.warning("Cound not find seriesUID for imageUID " + imageUID);
+			log.warning("Cound not find seriesUID for imageUID " + imageUID);
 			return "";
 		} catch (Exception e) {
-			logger.warning("Error getting seriesUID for imageUID " + imageUID, e);
+			log.warning("Error getting seriesUID for imageUID " + imageUID, e);
 			return "";
 		} finally {
 			IOUtils.closeQuietly(br);
 			IOUtils.closeQuietly(isr);
 			method.releaseConnection();
 		}
-	}
-
-	// <?xml version="1.0"?>
-	// <ImageAnnotation xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" dateTime="2012-10-24T11:03:31"
-	// uniqueIdentifier="1.2.276.0.7230010.3.1.3.2225507198.6232.1351101811.798"
-	// xmlns="gme://caCORE.caCORE/3.2/edu.northwestern.radiology.AIM" codingSchemeDesignator="na" codeMeaning="na"
-	// aimVersion="3.0" xsi:schemaLocation="gme://caCORE.caCORE/3.2/edu.northwestern.radiology.AIM AIM_v3_rv11_XML.xsd"
-	// codeValue="na" name="NA__2012-10-24T11:03:31" cagridId="0">
-	// <user>
-	// <User numberWithinRoleOfClinicalTrial="1" loginName="" roleInTrial="Performing" name="" cagridId="0"/>
-	// </user>
-	// <equipment>
-	// <Equipment softwareVersion="Slicer 4.1.0-2012-10-22 r21223 Reporting 7cbc2f3"
-	// manufacturerName="Brigham and Women's Hospital, Surgical Planning Lab" cagridId="0"
-	// manufacturerModelName="3D_Slicer_4_Reporting"/>
-	// </equipment>
-	// <anatomicEntityCollection>
-	// <AnatomicEntity annotatorConfidence="0.0" codingSchemeDesignator="3DSlicer" codeMeaning="tissue" codeValue="1"
-	// label="tissue" cagridId="0"/>
-	// </anatomicEntityCollection>
-	// <segmentationCollection>
-	// <Segmentation sopClassUID="1.2.840.10008.5.1.4.1.1.66.4" referencedSopInstanceUID="" segmentNumber="1"
-	// sopInstanceUID="1.2.276.0.7230010.3.1.4.2225507198.6232.1351101812.800" cagridId="0"/>
-	// </segmentationCollection>
-	// <imageReferenceCollection/>
-	// <geometricShapeCollection/>
-	// <person>
-	// <Person birthDate="1928-04-17T00:00:00" id="NA" name="NA" sex="M" cagridId="0"/>
-	// </person>
-	// </ImageAnnotation>
-
-	// Generate PNGs from a DSO. TODO Will need to resurrect this code.
-	public ArrayList<String> getSegmentation()
-	{
-		SourceImage sourceImage = null;
-		DicomSegmentationObject dso = null;
-		String encoded = null;
-		ArrayList<String> retPngs = new ArrayList<String>();
-		// AttributeList list = null;
-		// GeometryOfVolume geometry = null;
-		// List<String> pngs = null;
-		// byte[] bytes;
-
-		String studyId = ""; // (String)getRequestAttributes().get("id1");
-		String seriesId = ""; // (String)getRequestAttributes().get("id2");
-		String imageId = ""; // (String)getRequestAttributes().get("id3");
-		String objectId = ""; // (String)getRequestAttributes().get("id4");
-
-		studyId = studyId.replaceAll("\\.", "_");
-		seriesId = seriesId.replaceAll("\\.", "_");
-		imageId = imageId.replaceAll("\\.", "_");
-		objectId = objectId.replaceAll("\\.", "_");
-
-		logger.info("getSegmentation study " + studyId + " series " + seriesId + " image " + imageId + " object "
-				+ objectId);
-
-		// test out some pixelmed calls
-		dso = new DicomSegmentationObject();
-		// should be able to get one image url to do the attribute thing here
-
-		// String imageUrl = baseDicomDirectory + studyId + "/" + seriesId + "/" + imageId + ".dcm";
-		String objectUrl = baseDicomDirectory + studyId + "/" + seriesId + "/segmentation/" + objectId + ".dcm";
-
-		// File imageFile = new File(imageUrl);
-		// File objectFile = new File(objectUrl);
-
-		try {
-			sourceImage = dso.convert(objectUrl);
-			int count = sourceImage.getNumberOfBufferedImages();
-
-			for (int i = 0; i < count; i++) {
-				BufferedImage source = sourceImage.getBufferedImage(i);
-				String pngUrl = baseDicomDirectory + studyId + "/" + seriesId + "/segmentation/" + objectId + "-" + i + ".png";
-				File sourceFile = new File(pngUrl);
-				try {
-					ImageIO.write(source, "png", sourceFile);
-					// bytes = DicomSegmentationObject.getFileBytes(sourceFile);
-					// encoded = DicomSegmentationObject.base64EncodeBytes(bytes);
-					retPngs.add(encoded);
-				} catch (IOException e) {
-					logger.warning("Failed to write segmentation PNG for series " + seriesUID, e);
-				}
-			}
-		} catch (Exception e) {
-			logger.warning("Error when trying to write PNG for DSO series " + seriesUID, e);
-		}
-
-		// test out some pixelmed calls
-		// geometry = dso.getGeometry(list);
-		// if (geometry != null) logger.info(geometry.toString());
-
-		return retPngs;
 	}
 
 	@Override

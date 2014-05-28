@@ -89,11 +89,11 @@ public class AimResourceHandler extends AbstractHandler
 				if ("GET".equalsIgnoreCase(method)) {
 					String queryString = httpRequest.getQueryString();
 					queryString = URLDecoder.decode(queryString, "UTF-8");
-					log.info("AimResourceHandler received query: " + queryString);
 					if (queryString != null) { // TODO httpRequest.getParameter with "patientID", "user"
 						AIMSearchType aimSearchType = getAIMSearchType(httpRequest);
 						String searchValue = aimSearchType != null ? httpRequest.getParameter(aimSearchType.getName()) : null;
 						String user = httpRequest.getParameter("user");
+						log.info("AIM query from user " + user + "; query type is " + aimSearchType + ", value " + searchValue);
 
 						if (validParameters(aimSearchType, searchValue, user)) {
 							queryAIMImageAnnotations(responseStream, aimSearchType, searchValue, user);
@@ -145,7 +145,7 @@ public class AimResourceHandler extends AbstractHandler
 			String user) throws ParserConfigurationException, AimException
 	{
 		List<ImageAnnotation> aims = AIMQueries.getAIMImageAnnotations(aimSearchType, searchValue, user);
-		log.info("AimResourceHandler, number of AIM files found: " + aims.size());
+		log.info("" + aims.size() + " AIM file(s) found for user " + user);
 
 		DocumentBuilderFactory dbfac = DocumentBuilderFactory.newInstance();
 		DocumentBuilder docBuilder = dbfac.newDocumentBuilder();

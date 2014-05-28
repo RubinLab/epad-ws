@@ -32,7 +32,7 @@ public class DicomSegmentationPathHandler extends AbstractHandler
 	private static final String MISSING_QUERY_MESSAGE = "Missing query on segmentation path route";
 	private static final String INTERNAL_ERROR_MESSAGE = "Internal server error on segmentation path request";
 
-	// TODO Convert result to JSON and clean up entire class.
+	// TODO Remove this handler. Should not be needed as server assembled all necessary information for clients.
 
 	private boolean dummy()
 	{

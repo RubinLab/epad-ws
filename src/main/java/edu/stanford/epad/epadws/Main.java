@@ -189,6 +189,8 @@ public class Main
 		addHandlerAtContextPath(new EPADHandler(), "/epad/v2", handlerList);
 
 		addHandlerAtContextPath(new AimResourceHandler(), "/epad/aimresource", handlerList);
+
+		// TODO remove this.
 		addHandlerAtContextPath(new DicomSegmentationPathHandler(), "/epad/segmentationpath", handlerList);
 
 		addHandlerAtContextPath(new EventHandler(), "/epad/eventresource", handlerList);

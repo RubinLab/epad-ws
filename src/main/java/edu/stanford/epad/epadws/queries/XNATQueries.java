@@ -331,6 +331,7 @@ public class XNATQueries
 			log.warning("Warning: error performing XNAT subject query", e);
 			xnatStatusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 		}
+		// Will release connection
 		return processXNATSubjectQueryResponse(method, xnatStatusCode); // Will release connection
 	}
 
