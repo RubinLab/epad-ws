@@ -67,8 +67,7 @@ public class AimResourceHandler extends AbstractHandler
 	 * To test the post try:
 	 * 
 	 * <pre>
-	 * curl --form upload=@/home/kurtz/Bureau/AIM_83ga0zjofj3y8ncm8wb1k3mlitis1glyugamx0zl.xml
-	 * http://epad-prod1.stanford.edu:8080/epad/aimresource/
+	 * curl --form upload=@/tmp/AIM_83ga0zjofj3y8ncm8wb1k3mlitis1glyugamx0zl.xml http://[host]:[port]/epad/aimresource/
 	 * </pre>
 	 */
 	@Override
@@ -170,37 +169,38 @@ public class AimResourceHandler extends AbstractHandler
 
 	private boolean uploadAIMAnnotations(HttpServletRequest httpRequest, PrintWriter responseStream,
 			String annotationsUploadDirPath) throws FileUploadException, IOException, FileNotFoundException, AimException
-	{ // http://www.tutorialspoint.com/servlets/servlets-file-uploading.htm
-		ServletFileUpload upload = new ServletFileUpload();
-		FileItemIterator iter = upload.getItemIterator(httpRequest);
+	{ // See http://www.tutorialspoint.com/servlets/servlets-file-uploading.htm
+		ServletFileUpload servletFileUpload = new ServletFileUpload();
+		FileItemIterator fileItemIterator = servletFileUpload.getItemIterator(httpRequest);
 		int fileCount = 0;
 		boolean saveError = false;
 
-		while (iter.hasNext()) {
+		while (fileItemIterator.hasNext()) {
 			fileCount++;
 			log.debug("Uploading annotation number " + fileCount);
-			FileItemStream item = iter.next();
-			String name = item.getFieldName();
-			InputStream stream = item.openStream();
-			String tempName = "temp-" + System.currentTimeMillis() + ".xml";
-			File f = new File(annotationsUploadDirPath + tempName);
+			FileItemStream fileItemStream = fileItemIterator.next();
+			String name = fileItemStream.getFieldName();
+			InputStream inputStream = fileItemStream.openStream();
+			String tempXMLFileName = "temp-" + System.currentTimeMillis() + ".xml";
+			File f = new File(annotationsUploadDirPath + tempXMLFileName);
 			FileOutputStream fos = null;
 			try {
-				fos = new FileOutputStream(f);
 				int len;
 				byte[] buffer = new byte[32768];
-				while ((len = stream.read(buffer, 0, buffer.length)) != -1) {
+				fos = new FileOutputStream(f);
+				while ((len = inputStream.read(buffer, 0, buffer.length)) != -1) {
 					fos.write(buffer, 0, len);
 				}
 			} finally {
+				IOUtils.closeQuietly(inputStream);
 				IOUtils.closeQuietly(fos);
 			}
 			responseStream.print("added (" + fileCount + "): " + name);
-			ImageAnnotation ia = AnnotationGetter.getImageAnnotationFromFile(f.getAbsolutePath(), xsdFilePath);
-			if (ia != null) {
+			ImageAnnotation imageAnnotation = AnnotationGetter.getImageAnnotationFromFile(f.getAbsolutePath(), xsdFilePath);
+			if (imageAnnotation != null) {
 				String jsessionID = XNATSessionOperations.getJSessionIDFromRequest(httpRequest);
-				AIMUtil.saveImageAnnotationToServer(ia, jsessionID);
-				responseStream.println("-- Add to AIM server: " + ia.getUniqueIdentifier() + "<br>");
+				AIMUtil.saveImageAnnotationToServer(imageAnnotation, jsessionID);
+				responseStream.println("-- Add to AIM server: " + imageAnnotation.getUniqueIdentifier() + "<br>");
 			} else {
 				responseStream.println("-- Failed ! not added to AIM server<br>");
 				saveError = true;
@@ -209,9 +209,8 @@ public class AimResourceHandler extends AbstractHandler
 		return saveError;
 	}
 
-	// Create an XML document from a String
 	private static String XmlDocumentToString(Document document)
-	{
+	{ // Create an XML document from a String
 		new XmlNamespaceTranslator().addTranslation(null, "gme://caCORE.caCORE/3.2/edu.northwestern.radiology.AIM")
 				.addTranslation("", "gme://caCORE.caCORE/3.2/edu.northwestern.radiology.AIM").translateNamespaces(document);
 
@@ -220,9 +219,8 @@ public class AimResourceHandler extends AbstractHandler
 
 		try {
 			trans = transfac.newTransformer();
-		} catch (TransformerConfigurationException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
+		} catch (TransformerConfigurationException e) {
+			log.warning("Error transforming XML document", e);
 		}
 
 		trans.setOutputProperty(OutputKeys.INDENT, "yes");
@@ -234,8 +232,7 @@ public class AimResourceHandler extends AbstractHandler
 		try {
 			trans.transform(source, result);
 		} catch (TransformerException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			log.warning("Error transforming XML document", e);
 		}
 		return sw.toString();
 	}
