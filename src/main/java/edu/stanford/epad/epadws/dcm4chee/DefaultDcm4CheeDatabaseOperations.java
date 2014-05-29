@@ -327,6 +327,30 @@ public class DefaultDcm4CheeDatabaseOperations implements Dcm4CheeDatabaseOperat
 	}
 
 	@Override
+	public String getSeriesUIDForImage(String imageUID)
+	{
+		Connection c = null;
+		PreparedStatement ps = null;
+		ResultSet rs = null;
+		try {
+			c = getConnection();
+			ps = c.prepareStatement(Dcm4CheeDatabaseCommands.SELECT_STUDY_AND_SERIES_FOR_INSTANCE);
+			ps.setString(1, imageUID);
+
+			rs = ps.executeQuery();
+			if (rs.next())
+				return rs.getString("series_iuid");
+			else
+				return "";
+		} catch (SQLException sqle) {
+			String debugInfo = DatabaseUtils.getDebugData(rs);
+			log.warning("Database operation failed; debugInfo=" + debugInfo, sqle);
+		} finally {
+			close(c, ps, rs);
+		}
+	}
+
+	@Override
 	public String getStudyUIDForSeries(String seriesUID)
 	{
 		DicomParentCache cache = DicomParentCache.getInstance();

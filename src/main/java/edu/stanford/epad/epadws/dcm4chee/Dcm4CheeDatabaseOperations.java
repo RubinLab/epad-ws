@@ -54,6 +54,8 @@ public interface Dcm4CheeDatabaseOperations
 
 	String getStudyUIDForSeries(String seriesUID);
 
+	String getSeriesUIDForImage(String imageUID);
+
 	List<Map<String, String>> getDicomImageFileDescriptionsForSeries(String seriesUID);
 
 	// Returns a list of image descriptions; each description is a map containing the keys to the instance table in the

@@ -153,12 +153,13 @@ public class DicomSegmentationObjectPNGMaskGeneratorTask implements GeneratorTas
 	 */
 
 	/**
-	 * {@link PluginAIMUtil#generateAIMFileForDSO} is very similar - should merge
+	 * {@link PluginAIMUtil#generateAIMFileForDSO} is very similar.
 	 * 
 	 */
 	private void generateAIMFileForDSO(File dsoTagFile) throws Exception
 	{
 		Map<String, String> dsoDICOMTags = DicomTagFileUtils.readDICOMTagFile(dsoTagFile);
+		// Dcm4CheeDatabaseOperations databaseOperations = Dcm4CheeDatabase.getInstance().getDcm4CheeDatabaseOperations();
 
 		String patientID = dsoDICOMTags.get("Patient ID"); // TODO Replace with constants from DicomTagFileUtils
 		String patientName = dsoDICOMTags.get("Patient's Name");
@@ -167,6 +168,8 @@ public class DicomSegmentationObjectPNGMaskGeneratorTask implements GeneratorTas
 		String dsoSeriesInstanceUID = dsoDICOMTags.get("Series Instance UID"); // Series ID of DSO (DSO gets new series)
 		String dsoSOPInstanceUID = dsoDICOMTags.get("SOP Instance UID"); // Image ID of DSO
 		String referencedSOPInstanceUID = dsoDICOMTags.get("Referenced SOP Instance UID"); // DSO derived from this image
+		// TODO Use following direct database call instead of web service call and kill /epad/segmentationpath call
+		// String referencedSeriesInstanceUID = databaseOperations.getSeriesUIDForImage(referencedSOPInstanceUID);
 		String referencedSeriesInstanceUID = getDicomSeriesUIDFromImageUID(referencedSOPInstanceUID); // Series ID for same
 		String referencedStudyInstanceUID = dsoStudyInstanceUID; // Will be same study as DSO
 

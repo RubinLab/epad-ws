@@ -177,7 +177,7 @@ public class Main
 	}
 
 	private static void addHandlers(Server server)
-	{ // TODO Need to remove deprecated routes after testing.
+	{
 		List<Handler> handlerList = new ArrayList<Handler>();
 
 		loadPluginClasses();
@@ -190,20 +190,20 @@ public class Main
 
 		addHandlerAtContextPath(new AimResourceHandler(), "/epad/aimresource", handlerList);
 
-		// TODO remove this.
-		addHandlerAtContextPath(new DicomSegmentationPathHandler(), "/epad/segmentationpath", handlerList);
-
 		addHandlerAtContextPath(new EventHandler(), "/epad/eventresource", handlerList);
 		addHandlerAtContextPath(new ProjectEventHandler(), "/epad/events", handlerList);
 
 		addHandlerAtContextPath(new EPadPluginHandler(), "/epad/plugin", handlerList);
 
-		// TODO This call will disappear when we switch to AIM4
-		addHandlerAtContextPath(new CoordinationHandler(), "/epad/coordination", handlerList);
-
 		addHandlerAtContextPath(new ServerStatusHandler(), "/epad/status", handlerList);
 		addHandlerAtContextPath(new ImageCheckHandler(), "/epad/imagecheck", handlerList);
 		addHandlerAtContextPath(new DICOMReprocessingHandler(), "/epad/imagereprocess", handlerList);
+
+		// TODO This call will disappear when we switch to AIM4
+		addHandlerAtContextPath(new CoordinationHandler(), "/epad/coordination", handlerList);
+
+		// TODO Remove this after deleting call in DicomSegmentationObjectPNGMaskGeneratorTask
+		addHandlerAtContextPath(new DicomSegmentationPathHandler(), "/epad/segmentationpath", handlerList);
 
 		// TODO Should get PNGs and WADO via route: /project/<pid>/subjects/<sid>/studies/<sid>/series/<sid>/images/<iid>/
 		// Have parameter imageType=WADO or PNG
@@ -215,7 +215,7 @@ public class Main
 		addHandlerAtContextPath(new DICOMHeadersHandler(), "/epad/dicomtagj", handlerList);
 		addHandlerAtContextPath(new WindowingHandler(), "/epad/dicomparam", handlerList);
 
-		// The following will be removed soon as calls now go through RESTful EPADHandler route.
+		// TODO The following will be removed soon as calls now go through RESTful EPADHandler route.
 		addHandlerAtContextPath(new EPADSeriesHandler(), "/epad/seriesorderj", handlerList);
 		addHandlerAtContextPath(new XNATProjectHandler(), "/epad/projects", handlerList);
 		addHandlerAtContextPath(new XNATSubjectHandler(), "/epad/subjects", handlerList);
