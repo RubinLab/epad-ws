@@ -106,59 +106,6 @@
 
     <!-- End of DCM4CHEE dependencies -->
 
-    <!-- Start of Restlet dependencies -->
-    
-    <dependency>
-      <groupId>org.restlet.jee</groupId>
-      <artifactId>org.restlet</artifactId>
-      <version>${restlet.version}</version>
-    </dependency>
-
-    <dependency> 
-      <groupId>org.restlet.jee</groupId>
-      <artifactId>org.restlet.ext.servlet</artifactId>
-      <version>${restlet.version}</version>
-    </dependency>
-
-    <dependency>
-      <groupId>org.restlet.jse</groupId>
-      <artifactId>org.restlet.ext.jetty</artifactId>
-      <version>${restlet.version}</version>
-    </dependency>
-
-<!--
-    <dependency>
-      <groupId>org.restlet.jee</groupId>
-      <artifactId>org.restlet.ext.ssl</artifactId>
-      <version>${restlet.version}</version>
-    </dependency>
--->
-    <dependency>
-      <groupId>org.restlet.jee</groupId>
-      <artifactId>org.restlet.ext.httpclient</artifactId>
-      <version>${restlet.version}</version>
-    </dependency>
-
-    <dependency>
-      <groupId>org.restlet.jee</groupId>
-      <artifactId>org.restlet.ext.net</artifactId>
-      <version>${restlet.version}</version>
-    </dependency>
-
-    <dependency>
-      <groupId>org.restlet.jee</groupId>
-      <artifactId>org.restlet.ext.fileupload</artifactId>
-      <version>${restlet.version}</version>
-    </dependency>
-
-    <dependency>
-      <groupId>org.restlet.jee</groupId>
-      <artifactId>org.restlet.ext.json</artifactId>
-      <version>${restlet.version}</version>
-    </dependency>
-
-    <!-- End of Restlet dependencies -->
-
     <!-- Start of Commons dependencies -->
 
     <dependency>
