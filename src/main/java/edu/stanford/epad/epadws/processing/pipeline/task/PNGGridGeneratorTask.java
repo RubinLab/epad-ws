@@ -51,7 +51,7 @@ public class PNGGridGeneratorTask implements GeneratorTask
 	}
 
 	@Override
-	public File getInputFile()
+	public File getDSOFile()
 	{
 		return pngInputFile;
 	}

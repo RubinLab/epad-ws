@@ -1,18 +1,27 @@
 package edu.stanford.epad.epadws.handlers;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletResponse;
 
+import org.apache.commons.fileupload.FileItemIterator;
+import org.apache.commons.fileupload.FileItemStream;
+import org.apache.commons.fileupload.FileUploadException;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpException;
 import org.apache.commons.httpclient.methods.GetMethod;
+import org.apache.commons.io.IOUtils;
 
 import com.sun.jersey.api.uri.UriTemplate;
 
@@ -175,6 +184,11 @@ public class HandlerUtil
 		return warningResponse(HttpServletResponse.SC_UNAUTHORIZED, message, log);
 	}
 
+	public static int badRequestJSONResponse(String message, PrintWriter responseStream, EPADLogger log)
+	{
+		return warningJSONResponse(HttpServletResponse.SC_BAD_REQUEST, message, responseStream, log);
+	}
+
 	public static String getTemplateParameter(Map<String, String> templateMap, String parameterName)
 	{
 		if (templateMap.containsKey(parameterName)) {
@@ -225,4 +239,31 @@ public class HandlerUtil
 			method.releaseConnection();
 		}
 	}
+
+	public static List<File> extractFiles(FileItemIterator fileItemIterator, String prefix, String extension)
+			throws FileUploadException, IOException, FileNotFoundException
+	{
+		List<File> files = new ArrayList<>();
+		int sliceCount = 0;
+		while (fileItemIterator.hasNext()) {
+			FileItemStream fileItemStream = fileItemIterator.next();
+			InputStream inputStream = fileItemStream.openStream();
+			File temporaryFile = File.createTempFile(prefix + sliceCount + "_", extension);
+			FileOutputStream fos = null;
+			files.add(temporaryFile);
+			try {
+				int len;
+				byte[] buffer = new byte[32768];
+				fos = new FileOutputStream(temporaryFile);
+				while ((len = inputStream.read(buffer, 0, buffer.length)) != -1) {
+					fos.write(buffer, 0, len);
+				}
+			} finally {
+				IOUtils.closeQuietly(inputStream);
+				IOUtils.closeQuietly(fos);
+			}
+		}
+		return files;
+	}
+
 }

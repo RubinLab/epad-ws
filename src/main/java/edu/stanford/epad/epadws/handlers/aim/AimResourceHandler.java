@@ -181,6 +181,7 @@ public class AimResourceHandler extends AbstractHandler
 			FileItemStream fileItemStream = fileItemIterator.next();
 			String name = fileItemStream.getFieldName();
 			InputStream inputStream = fileItemStream.openStream();
+			// TODO Use File.createTempFile
 			String tempXMLFileName = "temp-" + System.currentTimeMillis() + ".xml";
 			File f = new File(annotationsUploadDirPath + tempXMLFileName);
 			FileOutputStream fos = null;

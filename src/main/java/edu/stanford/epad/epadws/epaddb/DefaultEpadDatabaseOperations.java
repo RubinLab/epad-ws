@@ -178,6 +178,7 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 			ps = c.prepareStatement(EpadDatabaseCommands.SELECT_EVENTS_FOR_SESSIONID);
 			ps.setString(1, sessionID);
 			rs = ps.executeQuery();
+			ps.close();
 			ResultSetMetaData metaData = rs.getMetaData();
 
 			while (rs.next()) {
@@ -219,6 +220,7 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 			c = getConnection();
 			ps = c.prepareStatement(EpadDatabaseCommands.DELETE_ALL_FROM_EPAD_FILES);
 			ps.executeUpdate();
+			ps.close();
 			ps = c.prepareStatement(EpadDatabaseCommands.DELETE_ALL_FROM_SERIES_STATUS);
 			ps.executeUpdate();
 		} catch (SQLException sqle) {
@@ -412,6 +414,7 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 				ps.setInt(2, termKey);
 				ps.setInt(3, position);
 				ps.executeUpdate();
+				ps.close();
 			}
 
 			String coordinationTermID = termIDPrefix + coordinationTermKey;
@@ -520,6 +523,7 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 			ps = c.prepareStatement(EpadDatabaseCommands.DELETE_FROM_EPAD_FILES);
 			ps.setString(1, "%" + seriesUID.replace('.', '_') + "%");
 			ps.executeUpdate();
+			ps.close();
 
 			log.info("Deleting series " + seriesUID + " from ePAD status table");
 			ps = c.prepareStatement(EpadDatabaseCommands.DELETE_SERIES_FROM_SERIES_STATUS);

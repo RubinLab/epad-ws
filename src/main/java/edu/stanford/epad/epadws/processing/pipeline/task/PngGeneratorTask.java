@@ -119,7 +119,7 @@ public class PngGeneratorTask implements GeneratorTask
 	}
 
 	@Override
-	public File getInputFile()
+	public File getDSOFile()
 	{
 		return dicomInputFile;
 	}
