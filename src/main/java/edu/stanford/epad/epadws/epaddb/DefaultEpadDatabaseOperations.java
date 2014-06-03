@@ -178,7 +178,6 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 			ps = c.prepareStatement(EpadDatabaseCommands.SELECT_EVENTS_FOR_SESSIONID);
 			ps.setString(1, sessionID);
 			rs = ps.executeQuery();
-			ps.close();
 			ResultSetMetaData metaData = rs.getMetaData();
 
 			while (rs.next()) {
@@ -195,6 +194,7 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 			if (!rows.isEmpty()) { // Delete events up the most recent event for user
 				log.info("Event search found " + rows.size() + " event(s) for session ID " + sessionID);
 				String pk = rows.get(0).get("pk"); // We order by pk, an auto-increment field (which does not wrap)
+				ps.close();
 				ps = c.prepareStatement(EpadDatabaseCommands.DELETE_EVENTS_FOR_SESSIONID);
 				ps.setString(1, sessionID);
 				ps.setString(2, pk);
