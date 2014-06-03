@@ -11,6 +11,8 @@ import java.awt.image.ImageProducer;
 import java.awt.image.RGBImageFilter;
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 import javax.imageio.ImageIO;
@@ -37,9 +39,26 @@ public class DSOUtil
 
 	private static final String baseDicomDirectory = EPADResources.getEPADWebServerPNGDir();
 
+	public static List<File> getDSOFrameFiles(String studyUID, String seriesUID, String imageUID)
+	{
+		return new ArrayList<>(); // TODO
+	}
+
+	public static File createDSO(String studyUID, String seriesUID, String imageUID, List<File> frames)
+	{
+		// File temporaryDSOFile = File.createTempFile(sourceImageUID, ".tmpDSO");
+		// EPADTools.downloadDICOMFileFromWADO(studyUID, seriesUID, imageUID, temporaryDSOFile);
+
+		// TIFFMasksToDSOConverter converter = new TIFFMasksToDSOConverter();
+		// converter.convert(maskFilePaths, dicomImageFilePaths, dsoFile.getAbsolutePath());
+		return null;
+	}
+
 	public static boolean writeDSOMaskPNGs(String seriesUID, File dsoFile)
 	{
 		boolean success;
+
+		log.info("Writing DSO PNG masks for series " + seriesUID + "...");
 
 		try {
 			EpadDatabaseOperations databaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
@@ -53,8 +72,6 @@ public class DSOUtil
 					+ seriesUID.replaceAll("\\.", "_") + "/");
 
 			pngMaskFilesDirectory.mkdirs();
-
-			log.info("Writing DSO PNG masks for series " + seriesUID + "...");
 
 			for (int frameNumber = 0; frameNumber < numberOfFrames; frameNumber++) {
 				BufferedImage bufferedImage = sourceDSOImage.getBufferedImage(numberOfFrames - frameNumber - 1);

@@ -111,30 +111,6 @@ public class Dcm4CheeQueries
 		return dcm4CheeStudyList;
 	}
 
-	private static DCM4CHEEStudy extractDCM4CHEEStudyFromData(Map<String, String> dcm4CheeStudyData)
-	{
-		String studyUID = getStringValueFromRow(dcm4CheeStudyData, "study_iuid");
-		String patientName = getStringValueFromRow(dcm4CheeStudyData, "pat_name");
-		String patientID = getStringValueFromRow(dcm4CheeStudyData, "pat_id");
-		String examType = getStringValueFromRow(dcm4CheeStudyData, "modality");
-		String dateAcquired = getStringValueFromRow(dcm4CheeStudyData, "study_datetime");
-		int studyStatus = getIntegerFromRow(dcm4CheeStudyData, "study_status");
-		int seriesCount = getIntegerFromRow(dcm4CheeStudyData, "number_series");
-		String firstSeriesUID = getStringValueFromRow(dcm4CheeStudyData, "series_iuid");
-		String firstSeriesDateAcquired = getStringValueFromRow(dcm4CheeStudyData, "pps_start");
-		String studyAccessionNumber = getStringValueFromRow(dcm4CheeStudyData, "accession_no");
-		int imagesCount = getIntegerFromRow(dcm4CheeStudyData, "sum_images");
-		String stuidID = getStringValueFromRow(dcm4CheeStudyData, "study_id");
-		String studyDescription = getStringValueFromRow(dcm4CheeStudyData, "study_desc");
-		String physicianName = getStringValueFromRow(dcm4CheeStudyData, "ref_physician");
-		String birthdate = getStringValueFromRow(dcm4CheeStudyData, "pat_birthdate");
-		String sex = getStringValueFromRow(dcm4CheeStudyData, "pat_sex");
-		DCM4CHEEStudy dcm4CheeStudy = new DCM4CHEEStudy(studyUID, patientName, patientID, examType, dateAcquired,
-				studyStatus, seriesCount, firstSeriesUID, firstSeriesDateAcquired, studyAccessionNumber, imagesCount, stuidID,
-				studyDescription, physicianName, birthdate, sex);
-		return dcm4CheeStudy;
-	}
-
 	/**
 	 * Get all the series for a study from DCM4CHEE.
 	 * 
@@ -209,6 +185,30 @@ public class Dcm4CheeQueries
 			log.warning("IOException retrieving DICOM headers for series " + seriesUID, e);
 		}
 		return dicomElementList;
+	}
+
+	private static DCM4CHEEStudy extractDCM4CHEEStudyFromData(Map<String, String> dcm4CheeStudyData)
+	{
+		String studyUID = getStringValueFromRow(dcm4CheeStudyData, "study_iuid");
+		String patientName = getStringValueFromRow(dcm4CheeStudyData, "pat_name");
+		String patientID = getStringValueFromRow(dcm4CheeStudyData, "pat_id");
+		String examType = getStringValueFromRow(dcm4CheeStudyData, "modality");
+		String dateAcquired = getStringValueFromRow(dcm4CheeStudyData, "study_datetime");
+		int studyStatus = getIntegerFromRow(dcm4CheeStudyData, "study_status");
+		int seriesCount = getIntegerFromRow(dcm4CheeStudyData, "number_series");
+		String firstSeriesUID = getStringValueFromRow(dcm4CheeStudyData, "series_iuid");
+		String firstSeriesDateAcquired = getStringValueFromRow(dcm4CheeStudyData, "pps_start");
+		String studyAccessionNumber = getStringValueFromRow(dcm4CheeStudyData, "accession_no");
+		int imagesCount = getIntegerFromRow(dcm4CheeStudyData, "sum_images");
+		String stuidID = getStringValueFromRow(dcm4CheeStudyData, "study_id");
+		String studyDescription = getStringValueFromRow(dcm4CheeStudyData, "study_desc");
+		String physicianName = getStringValueFromRow(dcm4CheeStudyData, "ref_physician");
+		String birthdate = getStringValueFromRow(dcm4CheeStudyData, "pat_birthdate");
+		String sex = getStringValueFromRow(dcm4CheeStudyData, "pat_sex");
+		DCM4CHEEStudy dcm4CheeStudy = new DCM4CHEEStudy(studyUID, patientName, patientID, examType, dateAcquired,
+				studyStatus, seriesCount, firstSeriesUID, firstSeriesDateAcquired, studyAccessionNumber, imagesCount, stuidID,
+				studyDescription, physicianName, birthdate, sex);
+		return dcm4CheeStudy;
 	}
 
 	private static DCM4CHEESeries extractDCM4CHEESeriesFromSeriesData(Map<String, String> dcm4CheeSeriesData)

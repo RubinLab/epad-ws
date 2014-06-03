@@ -20,6 +20,8 @@ import edu.stanford.epad.common.plugins.PluginAIMUtil;
 import edu.stanford.epad.common.plugins.PluginConfig;
 import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADLogger;
+import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeDatabase;
+import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeDatabaseOperations;
 import edu.stanford.hakan.aim3api.base.AimException;
 import edu.stanford.hakan.aim3api.base.DICOMImageReference;
 import edu.stanford.hakan.aim3api.base.ImageAnnotation;
@@ -131,7 +133,6 @@ public class AIMUtil
 	public static void generateAIMFileForDSO(File dsoFile) throws AimException
 	{
 		AttributeList dsoDICOMAttributes = PixelMedUtils.readDICOMAttributeList(dsoFile);
-
 		String patientID = Attribute.getSingleStringValueOrEmptyString(dsoDICOMAttributes, TagFromName.PatientID);
 		String patientName = Attribute.getSingleStringValueOrEmptyString(dsoDICOMAttributes, TagFromName.PatientName);
 		String sopClassUID = Attribute.getSingleStringValueOrEmptyString(dsoDICOMAttributes, TagFromName.SOPClassUID);
@@ -140,9 +141,9 @@ public class AIMUtil
 		String imageUID = Attribute.getSingleStringValueOrEmptyString(dsoDICOMAttributes, TagFromName.SOPInstanceUID);
 		String referencedImageUID = Attribute.getSingleStringValueOrEmptyString(dsoDICOMAttributes,
 				TagFromName.ReferencedSOPInstanceUID);
-		// TODO Use following direct database call instead of web service call and kill /epad/segmentationpath call
-		// String referencedSeriesInstanceUID = databaseOperations.getSeriesUIDForImage(referencedSOPInstanceUID);
-		String referencedSeriesUID = getDicomSeriesUIDFromImageUID(referencedImageUID); // Series ID for same
+		Dcm4CheeDatabaseOperations dcm4CheeDatabaseOperations = Dcm4CheeDatabase.getInstance()
+				.getDcm4CheeDatabaseOperations();
+		String referencedSeriesUID = dcm4CheeDatabaseOperations.getSeriesUIDForImage(referencedImageUID);
 		String referencedStudyUID = studyUID; // Will be same study as DSO
 
 		log.info("Generating AIM file for DSO series " + seriesUID + " for patient " + patientName);
@@ -224,6 +225,7 @@ public class AIMUtil
 	}
 
 	// TODO Replace this with direct call to database
+	@SuppressWarnings("unused")
 	private static String getDicomSeriesUIDFromImageUID(String imageUID)
 	{
 		String url = "http://localhost:8080/epad/segmentationpath/" + "?image_iuid=" + imageUID; // TODO

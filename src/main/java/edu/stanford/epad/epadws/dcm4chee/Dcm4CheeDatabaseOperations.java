@@ -46,6 +46,8 @@ public interface Dcm4CheeDatabaseOperations
 
 	Set<String> getStudyUIDsForPatient(String patientID);
 
+	Set<String> getImageUIDsForSeries(String seriesID);
+
 	int getNumberOfStudiesForPatient(String patientID);
 
 	int getNumberOfStudiesForPatients(Set<String> patientIDs);

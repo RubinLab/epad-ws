@@ -10,7 +10,7 @@ import edu.stanford.hakan.aim3api.base.AimException;
 /**
  * This task generates a DICOM Segmentation Object
  */
-public class DicomSegmentationObjectPNGMaskGeneratorTask implements GeneratorTask
+public class DSOMaskGeneratorTask implements GeneratorTask
 {
 	private static final EPADLogger log = EPADLogger.getInstance();
 
@@ -18,7 +18,7 @@ public class DicomSegmentationObjectPNGMaskGeneratorTask implements GeneratorTas
 	private final File dsoFile;
 	private final File segObjectOutputFile;
 
-	public DicomSegmentationObjectPNGMaskGeneratorTask(String seriesUID, File dsoFile, File segObjectOutputFile)
+	public DSOMaskGeneratorTask(String seriesUID, File dsoFile, File segObjectOutputFile)
 	{
 		this.seriesUID = seriesUID;
 		this.dsoFile = dsoFile;
@@ -32,7 +32,6 @@ public class DicomSegmentationObjectPNGMaskGeneratorTask implements GeneratorTas
 
 		try {
 			DSOUtil.writeDSOMaskPNGs(seriesUID, dsoFile);
-
 			AIMUtil.generateAIMFileForDSO(dsoFile);
 		} catch (AimException e) {
 			log.warning("Error writing AIM file for DSO series " + seriesUID, e);

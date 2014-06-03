@@ -23,7 +23,7 @@ import edu.stanford.epad.epadws.epaddb.EpadDatabase;
 import edu.stanford.epad.epadws.epaddb.EpadDatabaseOperations;
 import edu.stanford.epad.epadws.processing.model.DicomSeriesProcessingDescription;
 import edu.stanford.epad.epadws.processing.pipeline.process.PngGeneratorProcess;
-import edu.stanford.epad.epadws.processing.pipeline.task.DicomSegmentationObjectPNGMaskGeneratorTask;
+import edu.stanford.epad.epadws.processing.pipeline.task.DSOMaskGeneratorTask;
 import edu.stanford.epad.epadws.processing.pipeline.task.GeneratorTask;
 import edu.stanford.epad.epadws.processing.pipeline.task.PngGeneratorTask;
 
@@ -149,7 +149,7 @@ public class QueueAndWatcherManager
 
 		log.info("DICOM segmentation object found for series " + seriesUID);
 
-		DicomSegmentationObjectPNGMaskGeneratorTask dsoTask = new DicomSegmentationObjectPNGMaskGeneratorTask(seriesUID,
+		DSOMaskGeneratorTask dsoTask = new DSOMaskGeneratorTask(seriesUID,
 				inFile, outFile);
 		pngGeneratorTaskQueue.offer(dsoTask);
 	}

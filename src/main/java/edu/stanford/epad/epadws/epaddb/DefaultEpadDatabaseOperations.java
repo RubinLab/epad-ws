@@ -498,7 +498,6 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 		ResultSet rs = null;
 		try {
 			c = getConnection();
-
 			ps = c.prepareStatement(EpadDatabaseCommands.DELETE_FROM_EPAD_FILES);
 			ps.setString(1, "%" + studyUID.replace('.', '_') + "%");
 			ps.executeUpdate();

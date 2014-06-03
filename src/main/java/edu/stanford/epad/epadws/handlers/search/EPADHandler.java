@@ -7,6 +7,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -32,18 +33,19 @@ import edu.stanford.epad.dtos.EPADProjectList;
 import edu.stanford.epad.dtos.EPADSeriesList;
 import edu.stanford.epad.dtos.EPADStudyList;
 import edu.stanford.epad.dtos.EPADSubjectList;
+import edu.stanford.epad.epadws.aim.AIMUtil;
 import edu.stanford.epad.epadws.handlers.HandlerUtil;
+import edu.stanford.epad.epadws.handlers.dicom.DSOUtil;
 import edu.stanford.epad.epadws.queries.DefaultEpadOperations;
 import edu.stanford.epad.epadws.queries.EpadOperations;
 import edu.stanford.epad.epadws.xnat.XNATSessionOperations;
+import edu.stanford.hakan.aim3api.base.AimException;
 
 /**
  * @author martin
  */
 public class EPADHandler extends AbstractHandler
 {
-	private static final EPADLogger log = EPADLogger.getInstance();
-
 	private static final String PROJECT_LIST_TEMPLATE = "/projects/";
 	private static final String PROJECT_TEMPLATE = PROJECT_LIST_TEMPLATE + "{project}";
 	private static final String SUBJECT_LIST_TEMPLATE = PROJECT_TEMPLATE + "/subjects/";
@@ -63,6 +65,8 @@ public class EPADHandler extends AbstractHandler
 	private static final String BAD_POST_MESSAGE = "Invalid POST request!";
 	private static final String FORBIDDEN_MESSAGE = "Forbidden method - only GET, DELETE, and POST allowed!";
 	private static final String NO_USERNAME_MESSAGE = "Must have username parameter for queries!";
+
+	private static final EPADLogger log = EPADLogger.getInstance();
 
 	@Override
 	public void handle(String s, Request request, HttpServletRequest httpRequest, HttpServletResponse httpResponse)
@@ -383,9 +387,28 @@ public class EPADHandler extends AbstractHandler
 		String dsoSeriesUID = "";
 		String dsoImageUID = "";
 		String aimID = "";
-		// Find existing PNG mask files for DSO
-		// Create the DSO, supplying all mask files
-		// Create the AIM
-		return new DSOEditResult(projectID, patientID, dsoStudyUID, dsoSeriesUID, dsoImageUID, aimID);
+		// List<File> dsoFrames = new ArrayList<>();
+
+		try {
+			List<File> existingDSOFrameFiles = DSOUtil.getDSOFrameFiles(dsoStudyUID, dsoSeriesUID, dsoImageUID);
+			List<File> finalDSOFrames = new ArrayList<>(existingDSOFrameFiles);
+			int frameMaskFilesIndex = 0;
+			for (Integer frameNumber : dsoEditRequest.editedFrameNumbers) {
+				if (frameNumber >= 0 || frameNumber < existingDSOFrameFiles.size()) {
+					finalDSOFrames.set(frameNumber, editFramesMaskFiles.get(frameMaskFilesIndex++));
+				} else {
+					log.warning("Frame number " + frameNumber + " is out of range for DSO image " + dsoImageUID + " in series "
+							+ dsoSeriesUID);
+					return null;
+				}
+			}
+			File dsoFile = DSOUtil.createDSO(dsoStudyUID, dsoSeriesUID, dsoImageUID, finalDSOFrames);
+			AIMUtil.generateAIMFileForDSO(dsoFile);
+			return new DSOEditResult(projectID, patientID, dsoStudyUID, dsoSeriesUID, dsoImageUID, aimID);
+
+		} catch (AimException e) {
+			log.warning("Error generating AIM file for DSO image " + dsoImageUID + " in series " + dsoSeriesUID, e);
+			return null;
+		}
 	}
 }
