@@ -46,19 +46,14 @@ import edu.stanford.epad.epadws.handlers.aim.AimResourceHandler;
 import edu.stanford.epad.epadws.handlers.coordination.CoordinationHandler;
 import edu.stanford.epad.epadws.handlers.dicom.DCM4CHEESearchHandler;
 import edu.stanford.epad.epadws.handlers.dicom.DICOMHeadersHandler;
-import edu.stanford.epad.epadws.handlers.dicom.DicomDeleteHandler;
-import edu.stanford.epad.epadws.handlers.dicom.DicomSegmentationPathHandler;
 import edu.stanford.epad.epadws.handlers.dicom.EPADSeriesHandler;
-import edu.stanford.epad.epadws.handlers.dicom.PatientDeleteHandler;
 import edu.stanford.epad.epadws.handlers.dicom.WadoHandler;
 import edu.stanford.epad.epadws.handlers.dicom.WindowingHandler;
 import edu.stanford.epad.epadws.handlers.event.EventHandler;
 import edu.stanford.epad.epadws.handlers.event.ProjectEventHandler;
 import edu.stanford.epad.epadws.handlers.plugin.EPadPluginHandler;
 import edu.stanford.epad.epadws.handlers.search.EPADHandler;
-import edu.stanford.epad.epadws.handlers.xnat.XNATProjectHandler;
 import edu.stanford.epad.epadws.handlers.xnat.XNATSessionHandler;
-import edu.stanford.epad.epadws.handlers.xnat.XNATSubjectHandler;
 import edu.stanford.epad.epadws.processing.leveling.WindowLevelFactory;
 import edu.stanford.epad.epadws.processing.pipeline.threads.ShutdownHookThread;
 import edu.stanford.epad.epadws.processing.pipeline.threads.ShutdownSignal;
@@ -188,8 +183,6 @@ public class Main
 
 		addHandlerAtContextPath(new EPADHandler(), "/epad/v2", handlerList);
 
-		addHandlerAtContextPath(new AimResourceHandler(), "/epad/aimresource", handlerList);
-
 		addHandlerAtContextPath(new EventHandler(), "/epad/eventresource", handlerList);
 		addHandlerAtContextPath(new ProjectEventHandler(), "/epad/events", handlerList);
 
@@ -199,29 +192,25 @@ public class Main
 		addHandlerAtContextPath(new ImageCheckHandler(), "/epad/imagecheck", handlerList);
 		addHandlerAtContextPath(new DICOMReprocessingHandler(), "/epad/imagereprocess", handlerList);
 
-		// TODO This call will disappear when we switch to AIM4
-		addHandlerAtContextPath(new CoordinationHandler(), "/epad/coordination", handlerList);
+		// TODO Remove after RESTful conversion. AIMs should be retrieved via routes studies/<sid>/aims,
+		// studies/<sid>/series/<sid>aims, studies/<sid>/series/<sid>/images/<iid>/aims,
+		addHandlerAtContextPath(new AimResourceHandler(), "/epad/aimresource", handlerList);
 
-		// TODO Remove this after deleting call in DicomSegmentationObjectPNGMaskGeneratorTask
-		addHandlerAtContextPath(new DicomSegmentationPathHandler(), "/epad/segmentationpath", handlerList);
-
-		// TODO Should get PNGs and WADO via route: /project/<pid>/subjects/<sid>/studies/<sid>/series/<sid>/images/<iid>/
-		// Have parameter imageType=WADO or PNG
+		// TODO Remove after RESTful conversion. Should get PNGs and WADO via route:
+		// /studies/<sid>/series/<sid>/images/<iid>/frame/<frame#>?format=PNG
 		addHandlerAtContextPath(new ResourceCheckHandler(), "/epad/resources", handlerList);
 		addFileServerAtContextPath(EPADResources.getEPADWebServerResourcesDir(), handlerList, "/epad/resources");
 		addHandlerAtContextPath(new WadoHandler(), "/epad/wado", handlerList);
 
-		// TODO Should get via route: /project/<pid>/subjects/<sid>/studies/<sid>/series/<sid>/images/<iid>/
+		// TODO Remove after RESTful conversion. Should get all necessary information via route:
+		// /project/<pid>/subjects/<sid>/studies/<sid>/series/<sid>/images/<iid>/
 		addHandlerAtContextPath(new DICOMHeadersHandler(), "/epad/dicomtagj", handlerList);
 		addHandlerAtContextPath(new WindowingHandler(), "/epad/dicomparam", handlerList);
-
-		// TODO The following will be removed soon as calls now go through RESTful EPADHandler route.
 		addHandlerAtContextPath(new EPADSeriesHandler(), "/epad/seriesorderj", handlerList);
-		addHandlerAtContextPath(new XNATProjectHandler(), "/epad/projects", handlerList);
-		addHandlerAtContextPath(new XNATSubjectHandler(), "/epad/subjects", handlerList);
 		addHandlerAtContextPath(new DCM4CHEESearchHandler(), "/epad/searchj", handlerList);
-		addHandlerAtContextPath(new PatientDeleteHandler(), "/epad/patientdelete", handlerList);
-		addHandlerAtContextPath(new DicomDeleteHandler(), "/epad/dicomdelete", handlerList);
+
+		// TODO This call will disappear when we switch to AIM4
+		addHandlerAtContextPath(new CoordinationHandler(), "/epad/coordination", handlerList);
 
 		ContextHandlerCollection contexts = new ContextHandlerCollection();
 		contexts.setHandlers(handlerList.toArray(new Handler[handlerList.size()]));

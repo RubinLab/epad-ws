@@ -35,7 +35,7 @@ import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeDatabaseOperations;
 import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeOperations;
 import edu.stanford.epad.epadws.epaddb.EpadDatabase;
 import edu.stanford.epad.epadws.epaddb.EpadDatabaseOperations;
-import edu.stanford.epad.epadws.epaddb.FileOperations;
+import edu.stanford.epad.epadws.epaddb.PNGFilesOperations;
 import edu.stanford.epad.epadws.handlers.search.EPADSearchFilter;
 import edu.stanford.epad.epadws.processing.pipeline.task.DicomSeriesDeleteTask;
 import edu.stanford.epad.epadws.processing.pipeline.task.DicomStudyDeleteTask;
@@ -454,7 +454,7 @@ public class DefaultEpadOperations implements EpadOperations
 		epadDatabaseOperations.deleteStudy(studyUID);
 
 		// Delete the underlying PNGs for the study
-		FileOperations.deletePNGsForStudy(studyUID);
+		PNGFilesOperations.deletePNGsForStudy(studyUID);
 	}
 
 	@Override

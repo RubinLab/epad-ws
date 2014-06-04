@@ -4,7 +4,7 @@ import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeOperations;
 import edu.stanford.epad.epadws.epaddb.EpadDatabase;
 import edu.stanford.epad.epadws.epaddb.EpadDatabaseOperations;
-import edu.stanford.epad.epadws.epaddb.FileOperations;
+import edu.stanford.epad.epadws.epaddb.PNGFilesOperations;
 
 /**
  * Task to delete a DICOM series from ePAD's and dcm4chee's databases.
@@ -33,7 +33,7 @@ public class DicomSeriesDeleteTask implements Runnable
 			// Should not delete until after deleting series in DCM4CHEE or PNG pipeline will activate.
 			logger.info("Deleting series " + seriesUID + " from ePAD's database");
 			epadDatabaseOperations.deleteSeries(seriesUID);
-			FileOperations.deletePNGsForSeries(studyUID, seriesUID);
+			PNGFilesOperations.deletePNGsForSeries(studyUID, seriesUID);
 		} catch (Exception e) {
 			logger.warning("run had: " + e.getMessage(), e);
 		}

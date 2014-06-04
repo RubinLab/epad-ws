@@ -6,7 +6,7 @@ import edu.stanford.epad.dtos.internal.DCM4CHEESeriesList;
 import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeOperations;
 import edu.stanford.epad.epadws.epaddb.EpadDatabase;
 import edu.stanford.epad.epadws.epaddb.EpadDatabaseOperations;
-import edu.stanford.epad.epadws.epaddb.FileOperations;
+import edu.stanford.epad.epadws.epaddb.PNGFilesOperations;
 import edu.stanford.epad.epadws.queries.Dcm4CheeQueries;
 
 /**
@@ -42,7 +42,7 @@ public class DicomStudyDeleteTask implements Runnable
 			}
 			logger.info("Deleting study " + studyUID + " from ePAD database");
 			epadDatabaseOperations.deleteStudy(studyUID);
-			FileOperations.deletePNGsForStudy(studyUID);
+			PNGFilesOperations.deletePNGsForStudy(studyUID);
 		} catch (Exception e) {
 			logger.warning("run had: " + e.getMessage(), e);
 		}

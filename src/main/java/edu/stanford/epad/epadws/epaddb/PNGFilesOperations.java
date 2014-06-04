@@ -17,12 +17,12 @@ import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeDatabaseUtils;
 import edu.stanford.epad.epadws.processing.model.PNGGridGenerator;
 
 /**
- * Operations on files maintained by ePAD
+ * Operations on PNG files maintained by ePAD
  * 
  * 
  * @author martin
  */
-public class FileOperations
+public class PNGFilesOperations
 {
 	private static EPADLogger log = EPADLogger.getInstance();
 
@@ -37,7 +37,7 @@ public class FileOperations
 
 		try {
 			File dirToDelete = new File(outputPath.toString());
-			boolean success = delete(dirToDelete);
+			boolean success = deleteFile(dirToDelete);
 			log.info("Deleted the PNGs for study " + studyUID + " at " + outputPath.toString() + "; success = " + success);
 		} catch (IOException e) {
 			log.warning("Error deleting the PNGs for study " + studyUID + " at " + outputPath.toString(), e);
@@ -52,7 +52,7 @@ public class FileOperations
 
 		try {
 			File dirToDelete = new File(outputPath.toString());
-			boolean success = delete(dirToDelete);
+			boolean success = deleteFile(dirToDelete);
 			log.info("Deleteed the PNGs for series " + seriesUID + " at " + outputPath.toString() + "; success = " + success);
 		} catch (IOException e) {
 			log.warning("Error deleting the PNGs for series " + seriesUID + " at " + outputPath.toString(), e);
@@ -90,12 +90,6 @@ public class FileOperations
 		}
 	}
 
-	/**
-	 * Delete PNGs
-	 * 
-	 * @param uid
-	 * @throws Exception
-	 */
 	public static void deletePNGforSeries(String seriesUID) throws Exception
 	{
 		Dcm4CheeDatabaseOperations dcm4CheeDatabaseOperations = Dcm4CheeDatabase.getInstance()
@@ -107,12 +101,12 @@ public class FileOperations
 		outputPath.append(DicomFormatUtil.formatUidToDir(seriesUID)).append("/");
 
 		File dirToDelete = new File(outputPath.toString());
-		boolean success = delete(dirToDelete);
+		boolean success = deleteFile(dirToDelete);
 
 		log.info("Deleting PNGs for series " + seriesUID + " at " + outputPath.toString() + "; success = " + success);
 	}
 
-	private static boolean delete(File file) throws IOException
+	private static boolean deleteFile(File file) throws IOException
 	{
 		boolean success = false;
 		if (file.isDirectory()) {
@@ -122,7 +116,7 @@ public class FileOperations
 				String files[] = file.list();
 				for (String temp : files) {
 					File fileDelete = new File(file, temp);
-					delete(fileDelete);
+					deleteFile(fileDelete);
 				}
 				if (file.list().length == 0) { // Check the directory again; if empty then delete it.
 					success = file.delete();

@@ -4,7 +4,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
-import edu.stanford.epad.epadws.epaddb.FileOperations;
+import edu.stanford.epad.epadws.epaddb.PNGFilesOperations;
 
 /**
  * Given a set of PNG files, generate a single PNG containing a grid of these files.
@@ -29,7 +29,7 @@ public class PNGGridGeneratorTask implements GeneratorTask
 	@Override
 	public void run()
 	{
-		FileOperations.writePNGGridFile(seriesUID, pngInputFile, inputPNGGridFiles, outputPNGFile);
+		PNGFilesOperations.writePNGGridFile(seriesUID, pngInputFile, inputPNGGridFiles, outputPNGFile);
 	}
 
 	@Override
