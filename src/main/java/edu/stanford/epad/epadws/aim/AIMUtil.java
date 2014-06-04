@@ -1,15 +1,13 @@
 package edu.stanford.epad.epadws.aim;
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStreamReader;
+import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpException;
 import org.apache.commons.httpclient.methods.GetMethod;
-import org.apache.commons.io.IOUtils;
 
 import com.pixelmed.dicom.Attribute;
 import com.pixelmed.dicom.AttributeList;
@@ -30,6 +28,7 @@ import edu.stanford.hakan.aim3api.base.Polyline;
 import edu.stanford.hakan.aim3api.base.Segmentation;
 import edu.stanford.hakan.aim3api.base.SegmentationCollection;
 import edu.stanford.hakan.aim3api.base.TwoDimensionSpatialCoordinate;
+import edu.stanford.hakan.aim3api.base.User;
 import edu.stanford.hakan.aim3api.usage.AnnotationBuilder;
 
 public class AIMUtil
@@ -120,10 +119,13 @@ public class AIMUtil
 	}
 
 	/**
-	 * Generate an AIM file for a new DICOM Segmentation Object (DSO). This AIM file actually annotates the original
-	 * image, NOT the DSO. The Referenced SOP Instance UID field in the DICOM DSO tag file identifies the image from which
-	 * the segmentation object is derived from. It contains the imageID of the original image but does not contain the
-	 * study or series identifiers for that image - so we need to discover them by querying ePAD.
+	 * Generate an AIM file for a new DICOM Segmentation Object (DSO). This generation process is used when a new DSO is
+	 * detected in dcm4chee. For the moment, we set the owner of the AIM annotation to admin.
+	 * <p>
+	 * This AIM file actually annotates the original image, NOT the DSO. The Referenced SOP Instance UID field in the
+	 * DICOM DSO tag file identifies the image from which the segmentation object is derived from. It contains the imageID
+	 * of the original image but does not contain the study or series identifiers for that image - so we need to discover
+	 * them by querying ePAD.
 	 */
 
 	/**
@@ -144,59 +146,76 @@ public class AIMUtil
 		Dcm4CheeDatabaseOperations dcm4CheeDatabaseOperations = Dcm4CheeDatabase.getInstance()
 				.getDcm4CheeDatabaseOperations();
 		String referencedSeriesUID = dcm4CheeDatabaseOperations.getSeriesUIDForImage(referencedImageUID);
-		String referencedStudyUID = studyUID; // Will be same study as DSO
 
-		log.info("Generating AIM file for DSO series " + seriesUID + " for patient " + patientName);
-		log.info("SOP Class UID=" + sopClassUID);
-		log.info("DSO Study UID=" + studyUID);
-		log.info("DSO Series UID=" + seriesUID);
-		log.info("DSO Image UID=" + imageUID);
-		log.info("Referenced SOP Instance UID=" + referencedImageUID);
-		log.info("Referenced Series Instance UID=" + referencedSeriesUID);
+		if (referencedSeriesUID.length() != 0) { // Found corresponding series in dcm4chee
+			String referencedStudyUID = studyUID; // Will be same study as DSO
 
-		ImageAnnotation imageAnnotation = new ImageAnnotation(0, "", "2000-10-17T10:22:40", "segmentation", "SEG",
-				"SEG Only", "", "", "");
+			log.info("Generating AIM file for DSO series " + seriesUID + " for patient " + patientName);
+			log.info("SOP Class UID=" + sopClassUID);
+			log.info("DSO Study UID=" + studyUID);
+			log.info("DSO Series UID=" + seriesUID);
+			log.info("DSO Image UID=" + imageUID);
+			log.info("Referenced SOP Instance UID=" + referencedImageUID);
+			log.info("Referenced Series Instance UID=" + referencedSeriesUID);
 
-		SegmentationCollection sc = new SegmentationCollection();
-		sc.AddSegmentation(new Segmentation(0, imageUID, sopClassUID, referencedImageUID, 1));
-		imageAnnotation.setSegmentationCollection(sc);
+			ImageAnnotation imageAnnotation = new ImageAnnotation(0, "", "2000-10-17T10:22:40", "segmentation", "SEG",
+					"SEG Only", "", "", "");
 
-		DICOMImageReference originalDICOMImageReference = PluginAIMUtil.createDICOMImageReference(referencedStudyUID,
-				referencedSeriesUID, referencedImageUID);
-		imageAnnotation.addImageReference(originalDICOMImageReference);
-		DICOMImageReference dsoDICOMImageReference = PluginAIMUtil.createDICOMImageReference(studyUID, seriesUID, imageUID);
-		imageAnnotation.addImageReference(dsoDICOMImageReference);
+			SegmentationCollection sc = new SegmentationCollection();
+			sc.AddSegmentation(new Segmentation(0, imageUID, sopClassUID, referencedImageUID, 1));
+			imageAnnotation.setSegmentationCollection(sc);
 
-		Polyline polyline = new Polyline();
-		polyline.setCagridId(0);
-		polyline.setIncludeFlag(false);
-		polyline.setShapeIdentifier(0);
-		polyline.addSpatialCoordinate(new TwoDimensionSpatialCoordinate(0, 0, "0", 0, 2693.0, 1821.0));
-		polyline.addSpatialCoordinate(new TwoDimensionSpatialCoordinate(0, 1, "0", 0, 3236.0, 1821.0));
-		polyline.addSpatialCoordinate(new TwoDimensionSpatialCoordinate(0, 2, "0", 0, 3236.0, 2412.0));
-		polyline.addSpatialCoordinate(new TwoDimensionSpatialCoordinate(0, 3, "0", 0, 2693.0, 2412.0));
-		polyline.setLineStyle("lineStyle");
-		imageAnnotation.addGeometricShape(polyline);
+			DICOMImageReference originalDICOMImageReference = PluginAIMUtil.createDICOMImageReference(referencedStudyUID,
+					referencedSeriesUID, referencedImageUID);
+			imageAnnotation.addImageReference(originalDICOMImageReference);
+			DICOMImageReference dsoDICOMImageReference = PluginAIMUtil.createDICOMImageReference(studyUID, seriesUID,
+					imageUID);
+			imageAnnotation.addImageReference(dsoDICOMImageReference);
 
-		Person person = new Person();
-		person.setSex("F"); // TODO
-		person.setBirthDate("1965-02-12T00:00:00"); // TODO
-		person.setId(patientID);
-		person.setName(patientName);
-		person.setCagridId(0);
-		imageAnnotation.addPerson(person);
+			Polyline polyline = new Polyline();
+			polyline.setCagridId(0);
+			polyline.setIncludeFlag(false);
+			polyline.setShapeIdentifier(0);
+			polyline.addSpatialCoordinate(new TwoDimensionSpatialCoordinate(0, 0, "0", 0, 2693.0, 1821.0));
+			polyline.addSpatialCoordinate(new TwoDimensionSpatialCoordinate(0, 1, "0", 0, 3236.0, 1821.0));
+			polyline.addSpatialCoordinate(new TwoDimensionSpatialCoordinate(0, 2, "0", 0, 3236.0, 2412.0));
+			polyline.addSpatialCoordinate(new TwoDimensionSpatialCoordinate(0, 3, "0", 0, 2693.0, 2412.0));
+			polyline.setLineStyle("lineStyle");
+			imageAnnotation.addGeometricShape(polyline);
 
-		log.info("Saving AIM file for DSO series " + seriesUID + " with ID " + imageAnnotation.getUniqueIdentifier());
-		try {
-			saveImageAnnotationToServer(imageAnnotation);
-		} catch (AimException e) {
-			log.warning("Exception saving AIM file for DSO series " + seriesUID, e);
+			Person person = new Person();
+			person.setSex("F"); // TODO
+			person.setBirthDate("1965-02-12T00:00:00"); // TODO
+			person.setId(patientID);
+			person.setName(patientName);
+			person.setCagridId(0);
+			imageAnnotation.addPerson(person);
+
+			// TODO Not general. See if we can generate AIM on GUI upload of DSO with correct user.
+			setImageAnnotationUser(imageAnnotation, "admin");
+
+			log.info("Saving AIM file for DSO series " + seriesUID + " with ID " + imageAnnotation.getUniqueIdentifier());
+			try {
+				saveImageAnnotationToServer(imageAnnotation);
+			} catch (AimException e) {
+				log.warning("Exception saving AIM file for DSO series " + seriesUID, e);
+			}
+		} else {
+			log.warning("Found DSO " + imageUID + " in series " + seriesUID + " with no corresponding DICOM image");
 		}
 
 		/*
 		 * ServerEventUtil.postEvent(username, "DSOReady", imageAnnotation.getUniqueIdentifier(), aimName, patientID,
 		 * patientName, "", "", "");
 		 */
+	}
+
+	public static void setImageAnnotationUser(ImageAnnotation imageAnnotation, String username)
+	{
+		List<User> userList = new ArrayList<User>();
+		User user = new User();
+		user.setLoginName(username);
+		imageAnnotation.setListUser(userList);
 	}
 
 	private static String saveImageAnnotationToServer(ImageAnnotation aim) throws AimException
@@ -223,56 +242,4 @@ public class AIMUtil
 		}
 		return res;
 	}
-
-	// TODO Replace this with direct call to database
-	@SuppressWarnings("unused")
-	private static String getDicomSeriesUIDFromImageUID(String imageUID)
-	{
-		String url = "http://localhost:8080/epad/segmentationpath/" + "?image_iuid=" + imageUID; // TODO
-		HttpClient client = new HttpClient();
-		GetMethod method = new GetMethod(url);
-		InputStreamReader isr = null;
-		BufferedReader br = null;
-
-		try {
-			int statusCode = client.executeMethod(method);
-
-			if (statusCode != -1) {
-				isr = new InputStreamReader(method.getResponseBodyAsStream(), "UTF-8");
-				br = new BufferedReader(isr);
-				String line;
-				while ((line = br.readLine()) != null) {
-					String[] cols = line.split(",");
-					if (cols != null && cols.length > 1) {
-						String seriesUD = cols[1];
-						if (!seriesUD.equals("SeriesUID")) {
-							return convertDicomFileNameToImageUID(seriesUD);
-						}
-					}
-				}
-			}
-			log.warning("Cound not find seriesUID for imageUID " + imageUID);
-			return "";
-		} catch (Exception e) {
-			log.warning("Error getting seriesUID for imageUID " + imageUID, e);
-			return "";
-		} finally {
-			IOUtils.closeQuietly(br);
-			IOUtils.closeQuietly(isr);
-			method.releaseConnection();
-		}
-	}
-
-	private static String convertDicomFileNameToImageUID(String currFileName)
-	{
-		int lastDotIndex = currFileName.lastIndexOf('.');
-
-		String uidPart = currFileName;
-		if (lastDotIndex > 0) {
-			uidPart = currFileName.substring(0, lastDotIndex);
-		}
-		uidPart = uidPart.replaceAll("_", ".");
-		return uidPart;
-	}
-
 }

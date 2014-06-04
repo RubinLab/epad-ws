@@ -31,7 +31,7 @@ public class DSOMaskGeneratorTask implements GeneratorTask
 		log.info("Processing DSO for series  " + seriesUID + "; file=" + dsoFile.getAbsolutePath());
 
 		try {
-			DSOUtil.writeDSOMaskPNGs(seriesUID, dsoFile);
+			DSOUtil.writeDSOMaskPNGs(dsoFile);
 			AIMUtil.generateAIMFileForDSO(dsoFile);
 		} catch (AimException e) {
 			log.warning("Error writing AIM file for DSO series " + seriesUID, e);

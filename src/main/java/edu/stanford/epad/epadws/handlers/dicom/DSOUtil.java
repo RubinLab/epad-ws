@@ -54,22 +54,23 @@ public class DSOUtil
 		return null;
 	}
 
-	public static boolean writeDSOMaskPNGs(String seriesUID, File dsoFile)
+	public static boolean writeDSOMaskPNGs(File dsoFile)
 	{
 		boolean success;
-
-		log.info("Writing DSO PNG masks for series " + seriesUID + "...");
 
 		try {
 			EpadDatabaseOperations databaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
 			DicomSegmentationObject dso = new DicomSegmentationObject();
 			SourceImage sourceDSOImage = dso.convert(dsoFile.getAbsolutePath());
 			int numberOfFrames = sourceDSOImage.getNumberOfBufferedImages();
-			AttributeList attbList = PixelMedUtils.readAttributeListFromDicomFile(dsoFile.getAbsolutePath());
-			String studyUID = Attribute.getSingleStringValueOrEmptyString(attbList, TagFromName.StudyInstanceUID);
-			String imageUID = Attribute.getSingleStringValueOrEmptyString(attbList, TagFromName.SOPInstanceUID);
+			AttributeList dicomAttributes = PixelMedUtils.readAttributeListFromDicomFile(dsoFile.getAbsolutePath());
+			String studyUID = Attribute.getSingleStringValueOrEmptyString(dicomAttributes, TagFromName.StudyInstanceUID);
+			String seriesUID = Attribute.getSingleStringValueOrEmptyString(dicomAttributes, TagFromName.SeriesInstanceUID);
+			String imageUID = Attribute.getSingleStringValueOrEmptyString(dicomAttributes, TagFromName.SOPInstanceUID);
 			File pngMaskFilesDirectory = new File(baseDicomDirectory + studyUID.replaceAll("\\.", "_") + "/"
 					+ seriesUID.replaceAll("\\.", "_") + "/");
+
+			log.info("Writing PNG masks for DSO " + imageUID + " in series " + seriesUID + "...");
 
 			pngMaskFilesDirectory.mkdirs();
 
@@ -81,20 +82,23 @@ public class DSOUtil
 				File pngMaskFile = new File(pngMaskFilePath);
 				try {
 					insertEpadFile(databaseOperations, pngMaskFile);
-					log.info("Writing DSO PNG mask file " + frameNumber + " for series " + seriesUID);
+					log.info("Writing PNG mask file frame " + frameNumber + " for DSO image " + imageUID + " in series "
+							+ seriesUID);
+					log.info("Mask file width " + bufferedImage.getWidth() + ", height " + bufferedImage.getHeight());
 					ImageIO.write(bufferedImageWithTransparency, "png", pngMaskFile);
 					databaseOperations.updateEpadFileRecord(pngMaskFilePath, PNGFileProcessingStatus.DONE, 77, "");
 				} catch (IOException e) {
-					log.warning("Failed to write DSO PNG mask file " + pngMaskFilePath + " for series " + seriesUID, e);
+					log.warning("Failure writing PNG mask file " + pngMaskFilePath + " for image " + imageUID + " in series "
+							+ seriesUID, e);
 				}
 			}
-			log.info("... finished writing DSO PNG masks for series " + seriesUID);
+			log.info("... finished writing PNG masks for DSO image " + imageUID + " in series " + seriesUID);
 			success = true;
 		} catch (DicomException e) {
-			log.warning("DICOM exception writing DSO PNG masks for series " + seriesUID, e);
+			log.warning("DICOM exception writing DSO PNG masks", e);
 			success = false;
 		} catch (IOException e) {
-			log.warning("IO exception writing DSO PNG masks for series " + seriesUID, e);
+			log.warning("IO exception writing DSO PNG masks", e);
 			success = false;
 		}
 		return success;
@@ -102,13 +106,10 @@ public class DSOUtil
 
 	private static BufferedImage generateTransparentImage(BufferedImage source)
 	{
-		Image image = makeColorTransparent(source, Color.BLACK);
+		Image image = makeColorOpaque(source, Color.BLACK);
 		BufferedImage transparent = imageToBufferedImage(image);
-		Image image2 = makeColorSemiTransparent(transparent, Color.WHITE);
+		Image image2 = makeColorBlackAndTransparent(transparent, Color.WHITE);
 		BufferedImage transparent2 = imageToBufferedImage(image2);
-		image = null;
-		transparent = null;
-		image2 = null;
 		return transparent2;
 	}
 
@@ -122,18 +123,17 @@ public class DSOUtil
 		return bufferedImage;
 	}
 
-	private static Image makeColorTransparent(BufferedImage im, final Color color)
+	private static Image makeColorOpaque(BufferedImage im, final Color color)
 	{
 		ImageFilter filter = new RGBImageFilter() {
-			public int markerRGB = color.getRGB() | 0xFF000000; // the color we are looking for... Alpha bits are set to
-																													// opaque
+			public int markerRGB = color.getRGB() | 0xFF000000;
 
 			@Override
 			public final int filterRGB(int x, int y, int rgb)
 			{
-				if ((rgb | 0xFF000000) == markerRGB) { // Mark the alpha bits as zero - transparent
-					return 0x00FFFFFF & rgb;
-				} else { // nothing to do
+				if ((rgb | 0xFF000000) == markerRGB) {
+					return 0xFF000000 | rgb;
+				} else {
 					return rgb;
 				}
 			}
@@ -143,24 +143,43 @@ public class DSOUtil
 		return Toolkit.getDefaultToolkit().createImage(ip);
 	}
 
-	private static Image makeColorSemiTransparent(BufferedImage im, final Color color)
+	@SuppressWarnings("unused")
+	private static Image makeColorTransparent(BufferedImage im, final Color color)
 	{
 		ImageFilter filter = new RGBImageFilter() {
-
-			// the color we are looking for... Alpha bits are set to opaque
 			public int markerRGB = color.getRGB() | 0xFF000000;
 
 			@Override
 			public final int filterRGB(int x, int y, int rgb)
 			{
-				if ((rgb | 0xFF000000) == markerRGB) { // Mark the alpha bits as zero - transparent
+				if ((rgb | 0xFF000000) == markerRGB) {
+					return 0x00FFFFFF & rgb;
+				} else {
+					return rgb;
+				}
+			}
+		};
+
+		ImageProducer ip = new FilteredImageSource(im.getSource(), filter);
+		return Toolkit.getDefaultToolkit().createImage(ip);
+	}
+
+	private static Image makeColorBlackAndTransparent(BufferedImage im, final Color color)
+	{
+		ImageFilter filter = new RGBImageFilter() {
+			public int markerRGB = color.getRGB() | 0xFF000000;
+
+			@Override
+			public final int filterRGB(int x, int y, int rgb)
+			{
+				if ((rgb | 0xFF000000) == markerRGB) {
 					int r = 255;
-					int g = 0;
-					int b = 0;
-					int a = 80;
+					int g = 255;
+					int b = 255;
+					int a = 0;
 					int col = (a << 24) | (r << 16) | (g << 8) | b;
 					return col;
-				} else { // nothing to do
+				} else {
 					return rgb;
 				}
 			}

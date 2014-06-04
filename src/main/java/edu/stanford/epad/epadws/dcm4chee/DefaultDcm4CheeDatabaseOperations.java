@@ -366,8 +366,10 @@ public class DefaultDcm4CheeDatabaseOperations implements Dcm4CheeDatabaseOperat
 			rs = ps.executeQuery();
 			if (rs.next())
 				return rs.getString("series_iuid");
-			else
+			else {
+				log.warning("Could not find series for image " + imageUID);
 				return "";
+			}
 		} catch (SQLException sqle) {
 			String debugInfo = DatabaseUtils.getDebugData(rs);
 			log.warning("Database operation failed; debugInfo=" + debugInfo, sqle);
