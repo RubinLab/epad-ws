@@ -18,7 +18,6 @@ import java.util.concurrent.TimeUnit;
 import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.epad.epadws.processing.pipeline.process.MoverProcess;
 import edu.stanford.epad.epadws.processing.pipeline.process.ReadTagsProcess;
-import edu.stanford.epad.epadws.processing.pipeline.process.ThumbnailProcess;
 import edu.stanford.epad.epadws.processing.pipeline.process.UnzipProcess;
 import edu.stanford.epad.epadws.processing.pipeline.threads.OrderFileThread;
 import edu.stanford.epad.epadws.processing.pipeline.watcher.EPADUploadZIPWatcher;
@@ -43,7 +42,6 @@ public class PipelineFactory
 	private final ExecutorService taggerService = Executors.newFixedThreadPool(20);
 	private final ExecutorService moverService = Executors.newFixedThreadPool(10);
 	private final ExecutorService orderService = Executors.newFixedThreadPool(3);
-	private final ExecutorService thumbnailService = Executors.newFixedThreadPool(15);
 	private final ExecutorService processService = Executors.newFixedThreadPool(5);
 	private final ScheduledExecutorService statusCheckService = Executors.newScheduledThreadPool(1);
 
@@ -57,7 +55,6 @@ public class PipelineFactory
 	private final ReadTagsProcess readTagsProcess;
 	private final MoverProcess moverProcess;
 	private final OrderFileThread orderFileRunnable;
-	private final ThumbnailProcess thumbnailProcess;
 
 	public static PipelineFactory getInstance()
 	{
@@ -73,7 +70,6 @@ public class PipelineFactory
 		readTagsProcess = new ReadTagsProcess(taggerService, taggerQueue, moverQueue);
 		moverProcess = new MoverProcess(moverService, moverQueue, orderQueue);
 		orderFileRunnable = new OrderFileThread(orderService, orderQueue);
-		thumbnailProcess = new ThumbnailProcess(thumbnailService, thumbnailQueue, null);
 
 		statusCheckService.scheduleAtFixedRate(new Runnable() {
 			private String lastQueueSize = "00000000000";
@@ -104,7 +100,6 @@ public class PipelineFactory
 				sb.append(unzipProcess.getTasksInProgressCount());
 				sb.append(readTagsProcess.getTasksInProgressCount());
 				sb.append(moverProcess.getTasksInProgressCount());
-				sb.append(thumbnailProcess.getTasksInProgressCount());
 				sb.append(uploadDirWatcher.getErrorFileCount());
 
 				String currQueue = sb.toString();
@@ -130,7 +125,6 @@ public class PipelineFactory
 	 */
 	public void buildAndStart()
 	{
-		processService.submit(thumbnailProcess);
 		processService.submit(orderFileRunnable);
 		processService.submit(moverProcess);
 		processService.submit(readTagsProcess);
@@ -167,7 +161,6 @@ public class PipelineFactory
 		sb.append(" tuz=").append(unzipProcess.getTasksInProgressCount());
 		sb.append(" ttg=").append(readTagsProcess.getTasksInProgressCount());
 		sb.append(" tmv=").append(moverProcess.getTasksInProgressCount());
-		sb.append(" tth=").append(thumbnailProcess.getTasksInProgressCount());
 		sb.append("; error file count=").append(uploadDirWatcher.getErrorFileCount());
 
 		return sb.toString();
@@ -189,7 +182,6 @@ public class PipelineFactory
 		itemsInQueue += unzipProcess.getTasksInProgressCount();
 		itemsInQueue += readTagsProcess.getTasksInProgressCount();
 		itemsInQueue += moverProcess.getTasksInProgressCount();
-		itemsInQueue += thumbnailProcess.getTasksInProgressCount();
 
 		return itemsInQueue;
 	}
