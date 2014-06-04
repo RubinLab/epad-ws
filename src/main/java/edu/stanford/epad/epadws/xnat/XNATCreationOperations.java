@@ -3,7 +3,10 @@ package edu.stanford.epad.epadws.xnat;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.Properties;
+import java.util.Set;
 
 import javax.servlet.http.HttpServletResponse;
 
@@ -13,7 +16,6 @@ import org.apache.commons.httpclient.methods.PutMethod;
 import org.apache.commons.io.IOUtils;
 
 import edu.stanford.epad.common.dicom.DicomReader;
-import edu.stanford.epad.common.dicom.DicomTagFileUtils;
 import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.epad.epadws.processing.events.EventTracker;
 
@@ -140,7 +142,7 @@ public class XNATCreationOperations
 
 				int numberOfDICOMFiles = 0;
 				if (xnatProjectID != null && xnatSessionID != null) {
-					for (File dicomFile : DicomTagFileUtils.listDICOMFiles(dicomUploadDirectory)) {
+					for (File dicomFile : listDICOMFiles(dicomUploadDirectory)) {
 						String dicomPatientName = DicomReader.getPatientName(dicomFile);
 						String dicomPatientID = DicomReader.getPatientID(dicomFile);
 						String studyUID = DicomReader.getStudyIUID(dicomFile);
@@ -173,4 +175,25 @@ public class XNATCreationOperations
 	{
 		return !(statusCode == HttpServletResponse.SC_OK || statusCode == HttpServletResponse.SC_CREATED || statusCode == HttpServletResponse.SC_CONFLICT);
 	}
+
+	private static Collection<File> listDICOMFiles(File dir)
+	{
+		Set<File> files = new HashSet<File>();
+		if (dir.listFiles() != null) {
+			for (File entry : dir.listFiles()) {
+				if (isDicomFile(entry))
+					files.add(entry);
+				else
+					files.addAll(listDICOMFiles(entry));
+			}
+		}
+		return files;
+	}
+
+	private static boolean isDicomFile(File file)
+	{
+		return file.isFile() && file.getName().toLowerCase().endsWith(".dcm");
+		// return file.isFile() && DicomFileUtil.hasMagicWordInHeader(file);
+	}
+
 }
