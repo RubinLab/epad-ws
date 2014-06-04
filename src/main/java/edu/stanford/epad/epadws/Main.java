@@ -37,8 +37,8 @@ import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.epad.common.util.EPADResources;
 import edu.stanford.epad.epadws.epaddb.EpadDatabase;
-import edu.stanford.epad.epadws.handlers.admin.ImageReprocessingHandler;
 import edu.stanford.epad.epadws.handlers.admin.ImageCheckHandler;
+import edu.stanford.epad.epadws.handlers.admin.ImageReprocessingHandler;
 import edu.stanford.epad.epadws.handlers.admin.ResourceCheckHandler;
 import edu.stanford.epad.epadws.handlers.admin.ResourceFailureLogHandler;
 import edu.stanford.epad.epadws.handlers.admin.ServerStatusHandler;
@@ -54,7 +54,6 @@ import edu.stanford.epad.epadws.handlers.event.ProjectEventHandler;
 import edu.stanford.epad.epadws.handlers.plugin.EPadPluginHandler;
 import edu.stanford.epad.epadws.handlers.search.EPADHandler;
 import edu.stanford.epad.epadws.handlers.xnat.XNATSessionHandler;
-import edu.stanford.epad.epadws.processing.leveling.WindowLevelFactory;
 import edu.stanford.epad.epadws.processing.pipeline.threads.ShutdownHookThread;
 import edu.stanford.epad.epadws.processing.pipeline.threads.ShutdownSignal;
 import edu.stanford.epad.epadws.processing.pipeline.watcher.QueueAndWatcherManager;
@@ -116,7 +115,6 @@ public class Main
 			stopServer(server);
 			EpadDatabase.getInstance().shutdown();
 			QueueAndWatcherManager.getInstance().shutdown();
-			WindowLevelFactory.getInstance().shutdown();
 			try { // Wait just long enough for some messages to be printed out.
 				TimeUnit.MILLISECONDS.sleep(2000);
 			} catch (InterruptedException e) {
@@ -168,7 +166,6 @@ public class Main
 		} catch (Exception e) {
 			log.warning("Failed to start database", e);
 		}
-		WindowLevelFactory.getInstance().buildAndStart();
 	}
 
 	private static void addHandlers(Server server)
