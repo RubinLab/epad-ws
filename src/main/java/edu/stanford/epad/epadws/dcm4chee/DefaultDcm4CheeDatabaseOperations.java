@@ -141,7 +141,7 @@ public class DefaultDcm4CheeDatabaseOperations implements Dcm4CheeDatabaseOperat
 	}
 
 	@Override
-	public List<Map<String, String>> findAllDicomSeriesInStudy(String studyUID)
+	public List<Map<String, String>> getAllSeriesInStudy(String studyUID)
 	{
 		List<Map<String, String>> retVal = new ArrayList<Map<String, String>>();
 		Connection c = null;
@@ -175,9 +175,9 @@ public class DefaultDcm4CheeDatabaseOperations implements Dcm4CheeDatabaseOperat
 	}
 
 	@Override
-	public Set<String> findAllSeriesUIDsInStudy(String studyUID)
+	public Set<String> getAllSeriesUIDsInStudy(String studyUID)
 	{
-		List<Map<String, String>> seriesInStudy = findAllDicomSeriesInStudy(studyUID);
+		List<Map<String, String>> seriesInStudy = getAllSeriesInStudy(studyUID);
 		Set<String> result = new HashSet<String>();
 
 		for (Map<String, String> series : seriesInStudy) {
@@ -213,7 +213,7 @@ public class DefaultDcm4CheeDatabaseOperations implements Dcm4CheeDatabaseOperat
 	}
 
 	@Override
-	public Map<String, String> getPatientForStudy(String studyIUID)
+	public Map<String, String> getPatientForStudy(String studyUID)
 	{
 		Map<String, String> retVal = new HashMap<String, String>();
 
@@ -223,7 +223,7 @@ public class DefaultDcm4CheeDatabaseOperations implements Dcm4CheeDatabaseOperat
 		try {
 			c = getConnection();
 			ps = c.prepareStatement(Dcm4CheeDatabaseCommands.SELECT_PATIENT_FOR_STUDY);
-			ps.setString(1, studyIUID);
+			ps.setString(1, studyUID);
 
 			rs = ps.executeQuery();
 			if (rs.next()) {
@@ -265,7 +265,7 @@ public class DefaultDcm4CheeDatabaseOperations implements Dcm4CheeDatabaseOperat
 	}
 
 	@Override
-	public Set<String> getImageUIDsForSeries(String seriesID)
+	public Set<String> getImageUIDsForSeries(String seriesUID)
 	{
 		Set<String> retVal = new HashSet<String>();
 
@@ -275,7 +275,7 @@ public class DefaultDcm4CheeDatabaseOperations implements Dcm4CheeDatabaseOperat
 		try {
 			c = getConnection();
 			ps = c.prepareStatement(Dcm4CheeDatabaseCommands.SELECT_INSTANCE_FOR_SERIES);
-			ps.setString(1, seriesID);
+			ps.setString(1, seriesUID);
 
 			rs = ps.executeQuery();
 			if (rs.next()) {
@@ -388,17 +388,17 @@ public class DefaultDcm4CheeDatabaseOperations implements Dcm4CheeDatabaseOperat
 			return cache.getParent(seriesUID).getDicomUID();
 
 		Map<String, String> dbResult = getParentStudyForSeries(seriesUID);
-		String studyIUID = dbResult.get("study_iuid");
-		cache.setParent(seriesUID, studyIUID, DicomParentType.STUDY);
+		String studyUID = dbResult.get("study_iuid");
+		cache.setParent(seriesUID, studyUID, DicomParentType.STUDY);
 
-		return studyIUID;
+		return studyUID;
 	}
 
 	/**
 	 * Looks in DCM4CHEE database to find a list of all DICOM image descriptions (table is pacsdb.files).
 	 */
 	@Override
-	public List<Map<String, String>> getDicomImageFileDescriptionsForSeries(String seriesUID)
+	public List<Map<String, String>> getImageFileDescriptionsForSeries(String seriesUID)
 	{
 		List<Map<String, String>> retVal = new ArrayList<Map<String, String>>();
 		Connection c = null;
@@ -457,7 +457,7 @@ public class DefaultDcm4CheeDatabaseOperations implements Dcm4CheeDatabaseOperat
 	}
 
 	@Override
-	public int getPrimaryKeyForInstanceUID(String imageUID)
+	public int getPrimaryKeyForImageUID(String imageUID)
 	{
 		Connection c = null;
 		PreparedStatement ps = null;

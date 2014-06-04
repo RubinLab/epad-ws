@@ -42,7 +42,7 @@ public class XNATQueries
 		return invokeXNATProjectsQuery(sessionID, allProjectsQueryURL);
 	}
 
-	public static XNATUserList usersForProject(String projectID)
+	public static XNATUserList getUsersForProject(String projectID)
 	{
 		String allUsersForProjectQueryURL = XNATQueryUtil.buildAllUsersForProjectQueryURL(projectID);
 		String adminSessionID = XNATSessionOperations.getXNATAdminSessionID();
@@ -50,9 +50,9 @@ public class XNATQueries
 		return invokeXNATUsersQuery(adminSessionID, allUsersForProjectQueryURL);
 	}
 
-	public static Set<String> patientNamesForProject(String sessionID, String projectID)
+	public static Set<String> getPatientNamesForProject(String sessionID, String projectID)
 	{
-		XNATSubjectList xnatSubjectList = XNATQueries.subjectsForProject(sessionID, projectID);
+		XNATSubjectList xnatSubjectList = XNATQueries.getSubjectsForProject(sessionID, projectID);
 		Set<String> subjectIDs = new HashSet<String>();
 
 		for (XNATSubject subject : xnatSubjectList.ResultSet.Result) {
@@ -61,9 +61,9 @@ public class XNATQueries
 		return subjectIDs;
 	}
 
-	public static Set<String> subjectIDsForProject(String sessionID, String projectID)
+	public static Set<String> getSubjectIDsForProject(String sessionID, String projectID)
 	{
-		XNATSubjectList xnatSubjectList = XNATQueries.subjectsForProject(sessionID, projectID);
+		XNATSubjectList xnatSubjectList = XNATQueries.getSubjectsForProject(sessionID, projectID);
 		Set<String> subjectIDs = new HashSet<String>();
 
 		for (XNATSubject subject : xnatSubjectList.ResultSet.Result) {
@@ -72,14 +72,14 @@ public class XNATQueries
 		return subjectIDs;
 	}
 
-	public static XNATSubjectList subjectsForProject(String sessionID, String projectID)
+	public static XNATSubjectList getSubjectsForProject(String sessionID, String projectID)
 	{
 		String allSubjectsForProjectQueryURL = XNATQueryUtil.buildAllSubjectsForProjectQueryURL(projectID);
 
 		return invokeXNATSubjectsQuery(sessionID, allSubjectsForProjectQueryURL);
 	}
 
-	public static Set<String> dicomStudyUIDsForSubject(String sessionID, String projectID, String subjectID)
+	public static Set<String> getDICOMStudyUIDsForSubject(String sessionID, String projectID, String subjectID)
 	{
 		Set<String> studyIDs = new HashSet<String>();
 		XNATExperimentList xnatExperiments = XNATQueries.getDICOMExperimentsForProjectAndSubject(sessionID, projectID,
@@ -93,7 +93,7 @@ public class XNATQueries
 		return studyIDs;
 	}
 
-	public static int numberOfSubjectsForProject(String sessionID, String projectID)
+	public static int getNumberOfSubjectsForProject(String sessionID, String projectID)
 	{
 		String allSubjectsForProjectQueryURL = XNATQueryUtil.buildAllSubjectsForProjectQueryURL(projectID);
 
@@ -101,29 +101,9 @@ public class XNATQueries
 		return invokeXNATSubjectsQuery(sessionID, allSubjectsForProjectQueryURL).ResultSet.totalRecords;
 	}
 
-	public static Set<String> subjectsIDForProject(String sessionID, String projectID)
+	public static Set<String> getAllDICOMStudyUIDs()
 	{
-		String allSubjectsForProjectQueryURL = XNATQueryUtil.buildAllSubjectsForProjectQueryURL(projectID);
-		XNATSubjectList subjectList = invokeXNATSubjectsQuery(sessionID, allSubjectsForProjectQueryURL);
-		Set<String> subjectIDs = new HashSet<String>();
-
-		for (XNATSubject subject : subjectList.ResultSet.Result) {
-			subjectIDs.add(subject.label);
-		}
-
-		return subjectIDs;
-	}
-
-	public static XNATSubjectList subjectForProject(String sessionID, String projectID, String subjectName)
-	{
-		String projectSubjectQueryURL = XNATQueryUtil.buildProjectsSubjectQueryURL(projectID, subjectName);
-
-		return invokeXNATSubjectsQuery(sessionID, projectSubjectQueryURL);
-	}
-
-	public static Set<String> allDICOMStudyUIDs()
-	{
-		XNATExperimentList dicomExperiments = allDICOMExperiments();
+		XNATExperimentList dicomExperiments = getAllDICOMExperiments();
 		Set<String> result = new HashSet<String>();
 
 		for (XNATExperiment dicomExperiment : dicomExperiments.ResultSet.Result)
@@ -132,7 +112,7 @@ public class XNATQueries
 		return result;
 	}
 
-	public static XNATExperimentList allDICOMExperiments()
+	public static XNATExperimentList getAllDICOMExperiments()
 	{
 		String xnatExperimentsQueryURL = XNATQueryUtil.buildDICOMExperimentsQueryURL();
 		String adminSessionID = XNATSessionOperations.getXNATAdminSessionID();
@@ -140,14 +120,14 @@ public class XNATQueries
 		return invokeXNATDICOMExperimentsQuery(adminSessionID, xnatExperimentsQueryURL);
 	}
 
-	public static XNATExperimentList allDICOMExperimentsForProject(String sessionID, String projectID)
+	public static XNATExperimentList getAllDICOMExperimentsForProject(String sessionID, String projectID)
 	{
 		String xnatExperimentsQueryURL = XNATQueryUtil.buildDICOMExperimentsForProjectQueryURL(projectID);
 
 		return invokeXNATDICOMExperimentsQuery(sessionID, xnatExperimentsQueryURL);
 	}
 
-	public static int numberOfDICOMExperimentsForProject(String sessionID, String projectID)
+	public static int getNumberOfDICOMExperimentsForProject(String sessionID, String projectID)
 	{
 		String xnatExperimentsQueryURL = XNATQueryUtil.buildDICOMExperimentsForProjectQueryURL(projectID);
 
@@ -186,19 +166,19 @@ public class XNATQueries
 		return null;
 	}
 
-	public static int numberOfDICOMExperimentsForProjectAndSubject(String sessionID, String projectID, String subjectID)
+	public static int getNumberOfDICOMExperimentsForProjectAndSubject(String sessionID, String projectID, String subjectID)
 	{ // TODO Need a count without getting all records.
 		return getDICOMExperimentsForProjectAndStudy(sessionID, projectID, subjectID).ResultSet.totalRecords;
 	}
 
-	public static int numberOfStudiesForProject(String sessionID, String projectID)
+	public static int getNumberOfStudiesForProject(String sessionID, String projectID)
 	{
-		return XNATQueries.numberOfDICOMExperimentsForProject(sessionID, projectID);
+		return XNATQueries.getNumberOfDICOMExperimentsForProject(sessionID, projectID);
 	}
 
-	public static int numberOfStudiesForSubject(String sessionID, String projectID, String subjectID)
+	public static int getNumberOfStudiesForSubject(String sessionID, String projectID, String subjectID)
 	{
-		return XNATQueries.numberOfDICOMExperimentsForProjectAndSubject(sessionID, projectID, subjectID);
+		return XNATQueries.getNumberOfDICOMExperimentsForProjectAndSubject(sessionID, projectID, subjectID);
 	}
 
 	private static XNATProjectList invokeXNATProjectsQuery(String sessionID, String xnatProjectsQueryURL)

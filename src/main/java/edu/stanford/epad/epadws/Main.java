@@ -37,7 +37,7 @@ import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.epad.common.util.EPADResources;
 import edu.stanford.epad.epadws.epaddb.EpadDatabase;
-import edu.stanford.epad.epadws.handlers.admin.DICOMReprocessingHandler;
+import edu.stanford.epad.epadws.handlers.admin.ImageReprocessingHandler;
 import edu.stanford.epad.epadws.handlers.admin.ImageCheckHandler;
 import edu.stanford.epad.epadws.handlers.admin.ResourceCheckHandler;
 import edu.stanford.epad.epadws.handlers.admin.ResourceFailureLogHandler;
@@ -190,7 +190,7 @@ public class Main
 
 		addHandlerAtContextPath(new ServerStatusHandler(), "/epad/status", handlerList);
 		addHandlerAtContextPath(new ImageCheckHandler(), "/epad/imagecheck", handlerList);
-		addHandlerAtContextPath(new DICOMReprocessingHandler(), "/epad/imagereprocess", handlerList);
+		addHandlerAtContextPath(new ImageReprocessingHandler(), "/epad/imagereprocess", handlerList);
 
 		// TODO Remove after RESTful conversion. AIMs should be retrieved via routes studies/<sid>/aims,
 		// studies/<sid>/series/<sid>aims, studies/<sid>/series/<sid>/images/<iid>/aims,

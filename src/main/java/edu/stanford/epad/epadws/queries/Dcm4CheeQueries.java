@@ -122,7 +122,7 @@ public class Dcm4CheeQueries
 	{
 		Dcm4CheeDatabaseOperations dcm4CheeDatabaseOperations = Dcm4CheeDatabase.getInstance()
 				.getDcm4CheeDatabaseOperations();
-		List<Map<String, String>> series = dcm4CheeDatabaseOperations.findAllDicomSeriesInStudy(studyUID);
+		List<Map<String, String>> series = dcm4CheeDatabaseOperations.getAllSeriesInStudy(studyUID);
 		DCM4CHEESeriesList dcm4cheeSeriesList = new DCM4CHEESeriesList();
 
 		for (Map<String, String> dcm4CheeSeriesData : series) {

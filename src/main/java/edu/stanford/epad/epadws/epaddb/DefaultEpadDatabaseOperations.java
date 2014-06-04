@@ -115,31 +115,6 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 		return getAllEPadFilePathsWithStatus(PNGFileProcessingStatus.ERROR);
 	}
 
-	private List<String> getAllEPadFilePathsWithStatus(PNGFileProcessingStatus pngFileProcessingStatus)
-	{
-		Connection c = null;
-		PreparedStatement ps = null;
-		ResultSet rs = null;
-		List<String> result = new ArrayList<String>();
-
-		try {
-			c = getConnection();
-			ps = c.prepareStatement(EpadDatabaseCommands.SELECT_ALL_EPAD_FILE_PATHS_WITH_STATUS);
-			ps.setInt(1, pngFileProcessingStatus.getCode());
-			rs = ps.executeQuery();
-			while (rs.next()) {
-				result.add(rs.getString(1));
-			}
-		} catch (SQLException sqle) {
-			String debugInfo = DatabaseUtils.getDebugData(rs);
-			log.warning("Database operation failed; debugInfo=" + debugInfo, sqle);
-			return null;
-		} finally {
-			close(c, ps, rs);
-		}
-		return result;
-	}
-
 	@Override
 	public String getEpadFilePathLike(String sopInstanceUID)
 	{
@@ -619,6 +594,31 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 			close(c, ps, rs);
 		}
 		return retVal;
+	}
+
+	private List<String> getAllEPadFilePathsWithStatus(PNGFileProcessingStatus pngFileProcessingStatus)
+	{
+		Connection c = null;
+		PreparedStatement ps = null;
+		ResultSet rs = null;
+		List<String> result = new ArrayList<String>();
+	
+		try {
+			c = getConnection();
+			ps = c.prepareStatement(EpadDatabaseCommands.SELECT_ALL_EPAD_FILE_PATHS_WITH_STATUS);
+			ps.setInt(1, pngFileProcessingStatus.getCode());
+			rs = ps.executeQuery();
+			while (rs.next()) {
+				result.add(rs.getString(1));
+			}
+		} catch (SQLException sqle) {
+			String debugInfo = DatabaseUtils.getDebugData(rs);
+			log.warning("Database operation failed; debugInfo=" + debugInfo, sqle);
+			return null;
+		} finally {
+			close(c, ps, rs);
+		}
+		return result;
 	}
 
 	/**

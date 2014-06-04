@@ -35,7 +35,7 @@ public class PatientDeleteTask implements Runnable
 		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
 
 		try {
-			Set<String> subjectStudyUIDs = XNATQueries.dicomStudyUIDsForSubject(sessionID, projectID, patientID);
+			Set<String> subjectStudyUIDs = XNATQueries.getDICOMStudyUIDsForSubject(sessionID, projectID, patientID);
 
 			log.info("Deleting patient " + patientID + " in project " + projectID);
 
@@ -44,7 +44,7 @@ public class PatientDeleteTask implements Runnable
 			else
 				log.warning("Error deleting patient " + patientID + " in project " + projectID + " from XNAT");
 
-			Set<String> allStudyUIDs = XNATQueries.allDICOMStudyUIDs();
+			Set<String> allStudyUIDs = XNATQueries.getAllDICOMStudyUIDs();
 			subjectStudyUIDs.removeAll(allStudyUIDs); // Remove studies used elsewhere so that they are not deleted
 
 			epadOperations.deleteStudiesFromEPadAndDcm4CheeDatabases(subjectStudyUIDs);

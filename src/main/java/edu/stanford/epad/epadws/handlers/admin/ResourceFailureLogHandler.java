@@ -9,7 +9,7 @@ import org.eclipse.jetty.server.handler.AbstractHandler;
 import edu.stanford.epad.common.util.EPADLogger;
 
 /**
- * 
+ * Log any failures on resource route.
  * 
  * 
  * @author martin

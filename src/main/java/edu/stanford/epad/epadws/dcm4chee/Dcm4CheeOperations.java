@@ -105,33 +105,6 @@ public class Dcm4CheeOperations
 		}
 	}
 
-	private static String parseError(String output)
-	{
-		try {
-			String[] lines = output.split("\n");
-			for (String currLine : lines) {
-				if (currLine.toLowerCase().contains("error")) {
-					return currLine;
-				}
-			}
-		} catch (Exception e) {
-			log.warning("DicomSendTask.parseError had: " + e.getMessage() + " for: " + output, e);
-		}
-		return output;
-	}
-
-	/**
-	 * Log the result of this upload to the log directory.
-	 * 
-	 * @param contents String
-	 */
-	private static void writeUploadLog(String contents)
-	{
-		String logDirectory = EPADResources.getEPADWebServerLogDir();
-		String fileName = logDirectory + "upload_" + System.currentTimeMillis() + ".log";
-		EPADFileUtils.write(new File(fileName), contents);
-	}
-
 	public static void deleteStudy(String studyUID)
 	{
 		InputStream is = null;
@@ -160,7 +133,7 @@ public class Dcm4CheeOperations
 			}
 
 			try {
-				int exitValue = process.waitFor(); // keep.
+				int exitValue = process.waitFor();
 				log.info("DICOM delete study exit value is: " + exitValue);
 			} catch (Exception e) {
 				log.warning("Failed to delete DICOM study " + studyUID, e);
@@ -198,7 +171,7 @@ public class Dcm4CheeOperations
 			pb.directory(new File(myScriptsDirectory));
 
 			Process process = pb.start();
-			process.getOutputStream();// get the output stream.
+			process.getOutputStream();
 			is = process.getInputStream();
 			isr = new InputStreamReader(is);
 			br = new BufferedReader(isr);
@@ -223,6 +196,33 @@ public class Dcm4CheeOperations
 		} catch (Exception e) {
 			log.warning("Failed to delete DICOM series " + seriesUID, e);
 		}
+	}
+
+	private static String parseError(String output)
+	{
+		try {
+			String[] lines = output.split("\n");
+			for (String currLine : lines) {
+				if (currLine.toLowerCase().contains("error")) {
+					return currLine;
+				}
+			}
+		} catch (Exception e) {
+			log.warning("DicomSendTask.parseError had: " + e.getMessage() + " for: " + output, e);
+		}
+		return output;
+	}
+
+	/**
+	 * Log the result of this upload to the log directory.
+	 * 
+	 * @param contents String
+	 */
+	private static void writeUploadLog(String contents)
+	{
+		String logDirectory = EPADResources.getEPADWebServerLogDir();
+		String fileName = logDirectory + "upload_" + System.currentTimeMillis() + ".log";
+		EPADFileUtils.write(new File(fileName), contents);
 	}
 
 	/**

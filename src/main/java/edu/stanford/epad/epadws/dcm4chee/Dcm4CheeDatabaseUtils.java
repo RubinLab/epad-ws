@@ -29,7 +29,7 @@ public class Dcm4CheeDatabaseUtils
 		Dcm4CheeDatabaseOperations dcm4CheeDatabaseOperations = Dcm4CheeDatabase.getInstance()
 				.getDcm4CheeDatabaseOperations();
 		String sopInstanceUID = getSOPInstanceUIDFromPath(filePath);
-		int instanceKey = dcm4CheeDatabaseOperations.getPrimaryKeyForInstanceUID(sopInstanceUID);
+		int instanceKey = dcm4CheeDatabaseOperations.getPrimaryKeyForImageUID(sopInstanceUID);
 
 		Map<String, String> fileTableData = new HashMap<String, String>();
 		fileTableData.put("instance_fk", "" + instanceKey);

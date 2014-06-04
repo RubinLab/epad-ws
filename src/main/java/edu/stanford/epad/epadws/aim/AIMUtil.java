@@ -35,16 +35,16 @@ public class AIMUtil
 {
 	private static final EPADLogger log = EPADLogger.getInstance();
 
-	private static String namespace = EPADConfig.getInstance().getStringPropertyValue("namespace");
-	private static String serverUrl = EPADConfig.getInstance().getStringPropertyValue("serverUrl");
-	private static String eXistUsername = EPADConfig.getInstance().getStringPropertyValue("username");
-	private static String eXistPassword = EPADConfig.getInstance().getStringPropertyValue("password");
+	private static final String namespace = EPADConfig.getInstance().getStringPropertyValue("namespace");
+	private static final String serverUrl = EPADConfig.getInstance().getStringPropertyValue("serverUrl");
+	private static final String eXistUsername = EPADConfig.getInstance().getStringPropertyValue("username");
+	private static final String eXistPassword = EPADConfig.getInstance().getStringPropertyValue("password");
 	private static final String eXistServerUrl = EPADConfig.getInstance().getStringPropertyValue("serverUrl");
 	private static final String eXistCollection = EPADConfig.getInstance().getStringPropertyValue("collection");
-	private static String baseAnnotationDir = EPADConfig.getInstance().getStringPropertyValue("baseAnnotationDir");
-	private static String xsdFile = EPADConfig.getInstance().getStringPropertyValue("xsdFile");
-	private static String xsdFilePath = EPADConfig.getInstance().getStringPropertyValue("baseSchemaDir") + xsdFile;
-	private static String collection = EPADConfig.getInstance().getStringPropertyValue("collection");
+	private static final String baseAnnotationDir = EPADConfig.getInstance().getStringPropertyValue("baseAnnotationDir");
+	private static final String xsdFile = EPADConfig.getInstance().getStringPropertyValue("xsdFile");
+	private static final String xsdFilePath = EPADConfig.getInstance().getStringPropertyValue("baseSchemaDir") + xsdFile;
+	private static final String collection = EPADConfig.getInstance().getStringPropertyValue("collection");
 
 	/**
 	 * Save the annotation to the server in the AIM database. An invalid annotation will not be saved. Save a file backup
@@ -210,7 +210,7 @@ public class AIMUtil
 		 */
 	}
 
-	public static void setImageAnnotationUser(ImageAnnotation imageAnnotation, String username)
+	private static void setImageAnnotationUser(ImageAnnotation imageAnnotation, String username)
 	{
 		List<User> userList = new ArrayList<User>();
 		User user = new User();

@@ -73,10 +73,4 @@ public interface EpadOperations
 	void deleteStudyFromEPadAndDcm4CheeDatabases(String studyUID);
 
 	void deleteStudiesFromEPadAndDcm4CheeDatabases(Set<String> studyUIDs);
-
-	// TODO Remove soon
-	void scheduleStudyDelete(String studyUID);
-
-	// TODO Remove soon
-	void scheduleSeriesDelete(String studyUID, String seriesUID);
 }

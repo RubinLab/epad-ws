@@ -37,8 +37,6 @@ import edu.stanford.epad.epadws.epaddb.EpadDatabase;
 import edu.stanford.epad.epadws.epaddb.EpadDatabaseOperations;
 import edu.stanford.epad.epadws.epaddb.PNGFilesOperations;
 import edu.stanford.epad.epadws.handlers.search.EPADSearchFilter;
-import edu.stanford.epad.epadws.processing.pipeline.task.DicomSeriesDeleteTask;
-import edu.stanford.epad.epadws.processing.pipeline.task.DicomStudyDeleteTask;
 import edu.stanford.epad.epadws.processing.pipeline.task.PatientDeleteTask;
 import edu.stanford.epad.epadws.processing.pipeline.task.ProjectDeleteTask;
 import edu.stanford.epad.epadws.processing.pipeline.task.StudyDeleteTask;
@@ -79,7 +77,7 @@ public class DefaultEpadOperations implements EpadOperations
 			EPADSearchFilter searchFilter)
 	{
 		EPADSubjectList epadSubjectList = new EPADSubjectList();
-		XNATSubjectList xnatSubjectList = XNATQueries.subjectsForProject(sessionID, projectID);
+		XNATSubjectList xnatSubjectList = XNATQueries.getSubjectsForProject(sessionID, projectID);
 
 		for (XNATSubject xnatSubject : xnatSubjectList.ResultSet.Result) {
 			EPADSubject epadSubject = xnatSubject2EPADSubject(sessionID, username, xnatSubject, searchFilter);
@@ -94,7 +92,7 @@ public class DefaultEpadOperations implements EpadOperations
 			EPADSearchFilter searchFilter)
 	{
 		EPADStudyList epadStudyList = new EPADStudyList();
-		Set<String> studyUIDsInXNAT = XNATQueries.dicomStudyUIDsForSubject(sessionID, projectID, patientID);
+		Set<String> studyUIDsInXNAT = XNATQueries.getDICOMStudyUIDsForSubject(sessionID, projectID, patientID);
 		DCM4CHEEStudyList dcm4CheeStudyList = Dcm4CheeQueries.getStudies(studyUIDsInXNAT);
 		Dcm4CheeDatabaseOperations dcm4CheeDatabaseOperations = Dcm4CheeDatabase.getInstance()
 				.getDcm4CheeDatabaseOperations();
@@ -113,7 +111,7 @@ public class DefaultEpadOperations implements EpadOperations
 			Set<String> examTypes = getExamTypesForStudy(studyUID);
 			int numberOfSeries = dcm4CheeStudy.seriesCount;
 			int numberOfImages = dcm4CheeStudy.imagesCount;
-			Set<String> seriesUIDs = dcm4CheeDatabaseOperations.findAllSeriesUIDsInStudy(studyUID);
+			Set<String> seriesUIDs = dcm4CheeDatabaseOperations.getAllSeriesUIDsInStudy(studyUID);
 			StudyProcessingStatus studyProcessingStatus = getStudyProcessingStatus(studyUID);
 			int numberOfAnnotations = (seriesUIDs.size() <= 0) ? 0 : AIMQueries.getNumberOfAIMAnnotationsForSeriesUIDs(
 					seriesUIDs, username);
@@ -140,7 +138,7 @@ public class DefaultEpadOperations implements EpadOperations
 		boolean seriesInPipeline = false;
 		boolean seriesWithError = false;
 
-		Set<String> seriesUIDs = dcm4CheeDatabaseOperations.findAllSeriesUIDsInStudy(studyUID);
+		Set<String> seriesUIDs = dcm4CheeDatabaseOperations.getAllSeriesUIDsInStudy(studyUID);
 
 		for (String seriesUID : seriesUIDs) {
 			SeriesProcessingStatus seriesProcessingStatus = epadDatabaseOperations.getSeriesProcessingStatus(seriesUID);
@@ -253,7 +251,7 @@ public class DefaultEpadOperations implements EpadOperations
 	public Set<String> getExamTypesForPatient(String projectID, String patientID, String sessionID,
 			EPADSearchFilter searchFilter)
 	{
-		Set<String> studyUIDs = XNATQueries.dicomStudyUIDsForSubject(sessionID, projectID, patientID);
+		Set<String> studyUIDs = XNATQueries.getDICOMStudyUIDsForSubject(sessionID, projectID, patientID);
 
 		Set<String> examTypes = new HashSet<String>();
 
@@ -299,7 +297,7 @@ public class DefaultEpadOperations implements EpadOperations
 		Set<String> seriesIDs = new HashSet<String>();
 
 		for (String studyUID : studyUIDs) {
-			Set<String> seriesIDsForStudy = dcm4CheeDatabaseOperations.findAllSeriesUIDsInStudy(studyUID);
+			Set<String> seriesIDsForStudy = dcm4CheeDatabaseOperations.getAllSeriesUIDsInStudy(studyUID);
 			seriesIDs.addAll(seriesIDsForStudy);
 		}
 		return seriesIDs;
@@ -371,7 +369,7 @@ public class DefaultEpadOperations implements EpadOperations
 			// Get list of DICOM image descriptions from DCM4CHEE database table (pacsdb.files). Each image description is a
 			// map with keys: i.sop_iuid, i.inst_no, s.series_iuid, f.filepath, f.file_size.
 			List<Map<String, String>> dicomImageFileDescriptions = dcm4CheeDatabaseOperations
-					.getDicomImageFileDescriptionsForSeries(seriesUID);
+					.getImageFileDescriptionsForSeries(seriesUID);
 
 			// Get list of image UIDs in series for images recorded in ePAD database table epaddb.epad_files.
 			List<String> seriesImageUIDs = epadDatabaseOperations.getSeriesImageUIDs(seriesUID);
@@ -388,21 +386,6 @@ public class DefaultEpadOperations implements EpadOperations
 			log.warning("getUnprocessedDICOMImageFileDescriptions had " + e.getMessage(), e);
 		}
 		return dicomImagesWithoutPNGImageFileDescriptions;
-	}
-
-	@Override
-	public void scheduleStudyDelete(String studyUID)
-	{
-		log.info("Scheduling deletion task for study " + studyUID);
-		(new Thread(new DicomStudyDeleteTask(studyUID))).start();
-	}
-
-	@Override
-	public void scheduleSeriesDelete(String studyUID, String seriesUID)
-	{
-		log.info("Scheduling deletion task for series " + seriesUID);
-
-		(new Thread(new DicomSeriesDeleteTask(studyUID, seriesUID))).start();
 	}
 
 	@Override
@@ -438,7 +421,7 @@ public class DefaultEpadOperations implements EpadOperations
 				.getDcm4CheeDatabaseOperations();
 
 		// Now delete studies from dcm4chee and ePAD's database; includes deleting PNGs for studies.
-		Set<String> seriesUIDs = dcm4CheeDatabaseOperations.findAllSeriesUIDsInStudy(studyUID);
+		Set<String> seriesUIDs = dcm4CheeDatabaseOperations.getAllSeriesUIDsInStudy(studyUID);
 		log.info("Found " + seriesUIDs.size() + " series in study " + studyUID);
 
 		log.info("Deleting study " + studyUID + " from dcm4chee's database");
@@ -504,7 +487,7 @@ public class DefaultEpadOperations implements EpadOperations
 			String description = xnatProject.description;
 			String piFirstName = xnatProject.pi_firstname;
 			String uri = xnatProject.URI;
-			Set<String> patientIDs = XNATQueries.subjectIDsForProject(sessionID, projectID);
+			Set<String> patientIDs = XNATQueries.getSubjectIDsForProject(sessionID, projectID);
 			int numberOfPatients = patientIDs.size();
 			int numberOfAnnotations = AIMQueries.getNumberOfAIMAnnotationsForPatients(sessionID, username, patientIDs);
 

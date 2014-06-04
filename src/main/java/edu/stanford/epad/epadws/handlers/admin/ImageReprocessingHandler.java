@@ -17,7 +17,7 @@ import edu.stanford.epad.epadws.xnat.XNATSessionOperations;
 /**
  * @author martin
  */
-public class DICOMReprocessingHandler extends AbstractHandler
+public class ImageReprocessingHandler extends AbstractHandler
 {
 	private static final EPADLogger log = EPADLogger.getInstance();
 

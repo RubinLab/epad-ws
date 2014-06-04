@@ -40,7 +40,7 @@ public class StudyDeleteTask implements Runnable
 
 			XNATDeletionOperations.deleteXNATDICOMStudy(projectID, patientID, studyUID, sessionID);
 
-			Set<String> allStudyUIDs = XNATQueries.allDICOMStudyUIDs();
+			Set<String> allStudyUIDs = XNATQueries.getAllDICOMStudyUIDs();
 			if (!allStudyUIDs.contains(studyUID))
 				epadOperations.deleteStudyFromEPadAndDcm4CheeDatabases(studyUID);
 			else
