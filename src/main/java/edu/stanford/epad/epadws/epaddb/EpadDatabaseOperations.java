@@ -19,6 +19,10 @@ import edu.stanford.epad.epadws.handlers.coordination.Term;
  */
 public interface EpadDatabaseOperations
 {
+	Set<String> getAllSeriesUIDsFromEPadDatabase();
+
+	List<String> getAllImageUIDsInSeries(String seriesUID);
+
 	void deleteStudy(String studyUID);
 
 	void deleteSeries(String seriesUID);
@@ -52,15 +56,6 @@ public interface EpadDatabaseOperations
 	List<String> getAllEPadFilePathsWithErrors();
 
 	List<String> getAllEPadInPipelineFilePaths();
-
-	/**
-	 * Returns a triple containing studyUID, seriesUID, and imageUID for the specified imageUID.
-	 */
-	String[] retrieveDicomStudySeriesAndImageUIDs(String imageUID);
-
-	Set<String> getAllSeriesUIDsFromEPadDatabase();
-
-	List<String> getSeriesImageUIDs(String seriesUID);
 
 	// Coordination methods; will disappear with AIM 4
 

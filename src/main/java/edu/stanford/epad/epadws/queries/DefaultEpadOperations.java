@@ -372,7 +372,7 @@ public class DefaultEpadOperations implements EpadOperations
 					.getImageFileDescriptionsForSeries(seriesUID);
 
 			// Get list of image UIDs in series for images recorded in ePAD database table epaddb.epad_files.
-			List<String> seriesImageUIDs = epadDatabaseOperations.getSeriesImageUIDs(seriesUID);
+			List<String> seriesImageUIDs = epadDatabaseOperations.getAllImageUIDsInSeries(seriesUID);
 
 			// Make a list of image UIDs that have no entry in ePAD files_table.
 			for (Map<String, String> dicomImageFileDescription : dicomImageFileDescriptions) {

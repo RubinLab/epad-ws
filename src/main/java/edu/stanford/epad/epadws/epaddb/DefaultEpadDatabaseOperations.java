@@ -541,28 +541,6 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 		}
 	}
 
-	// TODO This is very low level and brittle. See if we can get information from DCM4CHEE database.
-	@Override
-	public String[] retrieveDicomStudySeriesAndImageUIDs(String imageUID)
-	{
-		String study = null;
-		String series = null;
-		String[] studySeriesAndImageIDs = new String[3];
-		String imageIdKeyWithoutDot = imageUID.replaceAll("\\.", "_");
-		String path = getEpadFilePathLike(imageIdKeyWithoutDot);
-
-		if (path != null) {
-			String[] tab = path.split("\\/");
-			series = tab[tab.length - 2];
-			study = tab[tab.length - 3];
-		}
-		studySeriesAndImageIDs[0] = study;
-		studySeriesAndImageIDs[1] = series;
-		studySeriesAndImageIDs[2] = imageIdKeyWithoutDot;
-
-		return studySeriesAndImageIDs;
-	}
-
 	/**
 	 * Cross database query that gets all image UIDs for a series if the corresponding image is recorded in the epad_files
 	 * table.
@@ -571,7 +549,7 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 	 * @return List of String (sopInstanceIds).
 	 */
 	@Override
-	public List<String> getSeriesImageUIDs(String seriesUID)
+	public List<String> getAllImageUIDsInSeries(String seriesUID)
 	{
 		List<String> retVal = new ArrayList<String>();
 
@@ -602,7 +580,7 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 		PreparedStatement ps = null;
 		ResultSet rs = null;
 		List<String> result = new ArrayList<String>();
-	
+
 		try {
 			c = getConnection();
 			ps = c.prepareStatement(EpadDatabaseCommands.SELECT_ALL_EPAD_FILE_PATHS_WITH_STATUS);
