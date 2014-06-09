@@ -175,6 +175,7 @@ public class Main
 		loadPluginClasses();
 
 		addWebAppAtContextPath(handlerList, "ePad.war", "/epad");
+		addWebAppAtContextPath(handlerList, "lesionTracking.war", "/lt");
 
 		addHandlerAtContextPath(new XNATSessionHandler(), "/epad/session", handlerList);
 

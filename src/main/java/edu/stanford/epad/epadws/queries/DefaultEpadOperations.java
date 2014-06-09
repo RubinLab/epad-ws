@@ -30,6 +30,7 @@ import edu.stanford.epad.dtos.internal.XNATProject;
 import edu.stanford.epad.dtos.internal.XNATProjectList;
 import edu.stanford.epad.dtos.internal.XNATSubject;
 import edu.stanford.epad.dtos.internal.XNATSubjectList;
+import edu.stanford.epad.dtos.internal.XNATUserList;
 import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeDatabase;
 import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeDatabaseOperations;
 import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeOperations;
@@ -493,9 +494,9 @@ public class DefaultEpadOperations implements EpadOperations
 
 			if (!searchFilter.shouldFilterProject(projectName, numberOfAnnotations)) {
 				int numberOfStudies = Dcm4CheeQueries.getNumberOfStudiesForPatients(patientIDs);
-				// XNATUserList xnatUsers = XNATQueries.usersForProject(projectID);
-				// Set<String> usernames = xnatUsers.getLoginNames();
-				Set<String> usernames = new HashSet<String>();
+				XNATUserList xnatUsers = XNATQueries.getUsersForProject(projectID);
+				Set<String> usernames = xnatUsers.getLoginNames();
+				// Set<String> usernames = new HashSet<String>();
 
 				return new EPADProject(secondaryID, piLastName, description, projectName, projectID, piFirstName, uri,
 						numberOfPatients, numberOfStudies, numberOfAnnotations, patientIDs, usernames);
