@@ -96,11 +96,14 @@ public class AIMQueries
 
 		if (username.equals("")) { // TODO Temporary hack to get all annotations!
 			try {
+				log.info("Getting all AIM annotations");
 				aims = AnnotationGetter.getImageAnnotationsFromServerByCagridIdEqual(eXistServerUrl, aimNamespace,
 						eXistAIMCollection, eXistUsername, eXistPassword, "0", aimXSDFilePath);
 			} catch (AimException e) {
 				log.warning("Exception in AnnotationGetter.getImageAnnotationsFromServerByCagridIdEqual", e);
 			}
+			if (aims != null)
+				resultAims.addAll(aims);
 		} else if (aimSearchType == AIMSearchType.PERSON_NAME) {
 			String personName = value;
 			try {
@@ -110,9 +113,8 @@ public class AIMQueries
 			} catch (AimException e) {
 				log.warning("Exception in AnnotationGetter.getImageAnnotationsFromServerByPersonNameEqual " + personName, e);
 			}
-			if (aims != null) {
+			if (aims != null)
 				resultAims.addAll(aims);
-			}
 		} else if (aimSearchType == AIMSearchType.PATIENT_ID) {
 			String patientId = value;
 			try {
@@ -121,9 +123,8 @@ public class AIMQueries
 			} catch (AimException e) {
 				log.warning("Exception in AnnotationGetter.getImageAnnotationsFromServerByPersonIdEqual " + patientId, e);
 			}
-			if (aims != null) {
+			if (aims != null)
 				resultAims.addAll(aims);
-			}
 		} else if (aimSearchType == AIMSearchType.SERIES_UID) {
 			String seriesUID = value;
 			try {
@@ -147,9 +148,8 @@ public class AIMQueries
 				} catch (AimException e) {
 					log.warning("Exception in AnnotationGetter.getImageAnnotationsFromServerWithAimQuery ", e);
 				}
-				if (aims != null) {
+				if (aims != null)
 					resultAims.addAll(aims);
-				}
 			} else {
 				try {
 					aim = AnnotationGetter.getImageAnnotationFromServerByUniqueIdentifier(eXistServerUrl, aimNamespace,
@@ -158,9 +158,8 @@ public class AIMQueries
 					log.warning("Exception in AnnotationGetter.getImageAnnotationFromServerByUniqueIdentifier " + annotationUID,
 							e);
 				}
-				if (aim != null) {
+				if (aim != null)
 					resultAims.add(aim);
-				}
 			}
 		} else if (aimSearchType == AIMSearchType.DELETE_UID) { // TODO Fix this route
 			String annotationUID = value;
