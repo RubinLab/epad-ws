@@ -94,7 +94,14 @@ public class AIMQueries
 		List<ImageAnnotation> aims = null;
 		ImageAnnotation aim = null;
 
-		if (aimSearchType == AIMSearchType.PERSON_NAME) {
+		if (username.equals("")) { // TODO Temporary hack to get all annotations!
+			try {
+				aims = AnnotationGetter.getImageAnnotationsFromServerByCagridIdEqual(eXistServerUrl, aimNamespace,
+						eXistAIMCollection, eXistUsername, eXistPassword, "0", aimXSDFilePath);
+			} catch (AimException e) {
+				log.warning("Exception in AnnotationGetter.getImageAnnotationsFromServerByCagridIdEqual", e);
+			}
+		} else if (aimSearchType == AIMSearchType.PERSON_NAME) {
 			String personName = value;
 			try {
 				aims = AnnotationGetter.getImageAnnotationsFromServerByPersonNameEqual(eXistServerUrl, aimNamespace,
