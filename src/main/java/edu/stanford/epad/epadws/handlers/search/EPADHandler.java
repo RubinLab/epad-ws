@@ -84,22 +84,19 @@ public class EPADHandler extends AbstractHandler
 
 			if (XNATSessionOperations.hasValidXNATSessionID(httpRequest)) {
 				String method = httpRequest.getMethod();
-
-				if ("GET".equalsIgnoreCase(method)) {
-					String username = httpRequest.getParameter("username");
-					if (username != null)
+				String username = httpRequest.getParameter("username");
+				if (username != null) {
+					if ("GET".equalsIgnoreCase(method)) {
 						statusCode = handleQuery(httpRequest, responseStream, username);
-					else
-						statusCode = HandlerUtil.warningJSONResponse(HttpServletResponse.SC_BAD_REQUEST, NO_USERNAME_MESSAGE,
-								responseStream, log);
-				} else if ("DELETE".equalsIgnoreCase(method)) {
-					statusCode = handleDelete(httpRequest, responseStream);
-				} else if ("POST".equalsIgnoreCase(method)) {
-					statusCode = handlePost(httpRequest, responseStream);
-				} else {
-					statusCode = HandlerUtil.warningJSONResponse(HttpServletResponse.SC_BAD_REQUEST, FORBIDDEN_MESSAGE,
-							responseStream, log);
-				}
+					} else if ("DELETE".equalsIgnoreCase(method)) {
+						statusCode = handleDelete(httpRequest, responseStream, username);
+					} else if ("POST".equalsIgnoreCase(method)) {
+						statusCode = handlePost(httpRequest, responseStream, username);
+					} else {
+						statusCode = HandlerUtil.badRequestJSONResponse(FORBIDDEN_MESSAGE, responseStream, log);
+					}
+				} else
+					statusCode = HandlerUtil.badRequestJSONResponse(NO_USERNAME_MESSAGE, responseStream, log);
 			} else {
 				statusCode = HandlerUtil.invalidTokenJSONResponse(INVALID_SESSION_TOKEN_MESSAGE, responseStream, log);
 			}
@@ -196,7 +193,7 @@ public class EPADHandler extends AbstractHandler
 		return statusCode;
 	}
 
-	private int handleDelete(HttpServletRequest httpRequest, PrintWriter responseStream)
+	private int handleDelete(HttpServletRequest httpRequest, PrintWriter responseStream, String username)
 	{
 		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
 		String sessionID = XNATSessionOperations.getJSessionIDFromRequest(httpRequest);
@@ -207,14 +204,14 @@ public class EPADHandler extends AbstractHandler
 			Map<String, String> templateMap = HandlerUtil.getTemplateMap(PROJECT_TEMPLATE, pathInfo);
 			String projectID = HandlerUtil.getTemplateParameter(templateMap, "project");
 
-			epadOperations.scheduleProjectDelete(sessionID, projectID);
+			epadOperations.scheduleProjectDelete(sessionID, username, projectID);
 			statusCode = HttpServletResponse.SC_ACCEPTED;
 		} else if (HandlerUtil.matchesTemplate(SUBJECT_TEMPLATE, pathInfo)) {
 			Map<String, String> templateMap = HandlerUtil.getTemplateMap(SUBJECT_TEMPLATE, pathInfo);
 			String projectID = HandlerUtil.getTemplateParameter(templateMap, "project");
 			String subjectID = HandlerUtil.getTemplateParameter(templateMap, "subject");
 
-			epadOperations.schedulePatientDelete(sessionID, projectID, subjectID);
+			epadOperations.schedulePatientDelete(sessionID, username, projectID, subjectID);
 			statusCode = HttpServletResponse.SC_ACCEPTED;
 		} else if (HandlerUtil.matchesTemplate(STUDY_TEMPLATE, pathInfo)) {
 			Map<String, String> templateMap = HandlerUtil.getTemplateMap(STUDY_TEMPLATE, pathInfo);
@@ -222,7 +219,7 @@ public class EPADHandler extends AbstractHandler
 			String subjectID = HandlerUtil.getTemplateParameter(templateMap, "subject");
 			String studyUID = HandlerUtil.getTemplateParameter(templateMap, "study");
 
-			epadOperations.scheduleStudyDelete(sessionID, projectID, subjectID, studyUID);
+			epadOperations.scheduleStudyDelete(sessionID, username, projectID, subjectID, studyUID);
 			statusCode = HttpServletResponse.SC_ACCEPTED;
 		} else {
 			statusCode = HandlerUtil.badRequestJSONResponse(BAD_DELETE_MESSAGE, responseStream, log);
@@ -230,7 +227,7 @@ public class EPADHandler extends AbstractHandler
 		return statusCode;
 	}
 
-	private int handlePost(HttpServletRequest httpRequest, PrintWriter responseStream)
+	private int handlePost(HttpServletRequest httpRequest, PrintWriter responseStream, String username)
 	{
 		String pathInfo = httpRequest.getPathInfo();
 		int statusCode;

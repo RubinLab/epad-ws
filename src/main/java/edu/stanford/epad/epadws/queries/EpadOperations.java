@@ -64,11 +64,11 @@ public interface EpadOperations
 	 */
 	List<Map<String, String>> getUnprocessedDicomImageFileDescriptionsForSeries(String seriesUID);
 
-	void scheduleProjectDelete(String sessionID, String projectID);
+	void scheduleProjectDelete(String sessionID, String username, String projectID);
 
-	void schedulePatientDelete(String sessionID, String projectID, String patientID);
+	void schedulePatientDelete(String sessionID, String username, String projectID, String patientID);
 
-	void scheduleStudyDelete(String sessionID, String projectID, String patientID, String studyUID);
+	void scheduleStudyDelete(String sessionID, String username, String projectID, String patientID, String studyUID);
 
 	void deleteStudyFromEPadAndDcm4CheeDatabases(String studyUID);
 

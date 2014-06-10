@@ -390,26 +390,27 @@ public class DefaultEpadOperations implements EpadOperations
 	}
 
 	@Override
-	public void scheduleProjectDelete(String sessionID, String projectID)
+	public void scheduleProjectDelete(String sessionID, String projectID, String username)
 	{
-		log.info("Scheduling deletion task for project " + projectID);
+		log.info("Scheduling deletion task for project " + projectID + " from user " + username);
 
 		(new Thread(new ProjectDeleteTask(sessionID, projectID))).start();
 	}
 
 	@Override
-	public void schedulePatientDelete(String sessionID, String projectID, String patientID)
+	public void schedulePatientDelete(String sessionID, String username, String projectID, String patientID)
 	{
-		log.info("Scheduling deletion task for patient " + patientID + " in project " + projectID);
+		log.info("Scheduling deletion task for patient " + patientID + " in project " + projectID + " from user "
+				+ username);
 
 		(new Thread(new PatientDeleteTask(sessionID, projectID, patientID))).start();
 	}
 
 	@Override
-	public void scheduleStudyDelete(String sessionID, String projectID, String patientID, String studyUID)
+	public void scheduleStudyDelete(String sessionID, String username, String projectID, String patientID, String studyUID)
 	{
 		log.info("Scheduling deletion task for study " + studyUID + " for patient " + patientID + " in project "
-				+ projectID);
+				+ projectID + " from user " + username);
 
 		(new Thread(new StudyDeleteTask(sessionID, projectID, patientID, studyUID))).start();
 	}
