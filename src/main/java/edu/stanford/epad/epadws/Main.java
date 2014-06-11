@@ -174,11 +174,11 @@ public class Main
 
 		loadPluginClasses();
 
-		addWebAppAtContextPath(handlerList, "ePad.war", "/epad");
-
 		addHandlerAtContextPath(new XNATSessionHandler(), "/epad/session", handlerList);
 
 		addHandlerAtContextPath(new EPADHandler(), "/epad/v2", handlerList);
+
+		addWebAppAtContextPath(handlerList, "ePad.war", "/epad");
 
 		addHandlerAtContextPath(new EventHandler(), "/epad/eventresource", handlerList);
 		addHandlerAtContextPath(new ProjectEventHandler(), "/epad/events", handlerList);
