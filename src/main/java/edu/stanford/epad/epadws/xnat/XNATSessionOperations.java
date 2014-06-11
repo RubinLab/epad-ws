@@ -80,7 +80,6 @@ public class XNATSessionOperations
 
 		try {
 			if (xnatStatusCode == HttpServletResponse.SC_OK) {
-				log.info("Successfully invoked XNAT session service for user " + username);
 				try {
 					StringBuilder sb = new StringBuilder();
 					InputStreamReader isr = null;

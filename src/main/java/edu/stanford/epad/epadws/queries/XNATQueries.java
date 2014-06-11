@@ -190,10 +190,9 @@ public class XNATQueries
 		method.setRequestHeader("Cookie", "JSESSIONID=" + sessionID);
 
 		try {
-			log.info("Invoking XNAT projects query at " + xnatProjectsQueryURL);
 			xnatStatusCode = client.executeMethod(method);
 		} catch (IOException e) {
-			log.warning("Error performing XNAT projects query", e);
+			log.warning("Error performing XNAT projects query " + xnatProjectsQueryURL, e);
 			xnatStatusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 		}
 		return processXNATProjectsQueryResponse(method, xnatStatusCode); // Will release connection
@@ -208,10 +207,9 @@ public class XNATQueries
 		method.setRequestHeader("Cookie", "JSESSIONID=" + sessionID);
 
 		try {
-			log.info("Invoking XNAT users query at " + xnatUsersQueryURL);
 			xnatStatusCode = client.executeMethod(method);
 		} catch (IOException e) {
-			log.warning("Error performing XNAT projects query", e);
+			log.warning("Error performing XNAT projects query " + xnatUsersQueryURL, e);
 			xnatStatusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 		}
 		return processXNATUsersQueryResponse(method, xnatStatusCode); // Will release connection
@@ -305,13 +303,11 @@ public class XNATQueries
 		method.setRequestHeader("Cookie", "JSESSIONID=" + sessionID);
 
 		try {
-			log.info("Invoking XNAT subjects query at " + xnatSubjectsQueryURL);
 			xnatStatusCode = client.executeMethod(method);
 		} catch (IOException e) {
-			log.warning("Warning: error performing XNAT subject query", e);
+			log.warning("Warning: error performing XNAT subject query " + xnatSubjectsQueryURL, e);
 			xnatStatusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 		}
-		// Will release connection
 		return processXNATSubjectQueryResponse(method, xnatStatusCode); // Will release connection
 	}
 
@@ -364,10 +360,9 @@ public class XNATQueries
 		method.setRequestHeader("Cookie", "JSESSIONID=" + sessionID);
 
 		try {
-			log.info("Invoking XNAT experiments query at " + xnatDICOMExperimentsQueryURL);
 			xnatStatusCode = client.executeMethod(method);
 		} catch (IOException e) {
-			log.warning("Error performing XNAT experiment query with URL " + xnatDICOMExperimentsQueryURL, e);
+			log.warning("Error performing XNAT experiment query " + xnatDICOMExperimentsQueryURL, e);
 			xnatStatusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 		}
 		return processXNATExperimentsQueryResponse(method, xnatStatusCode); // Will release connection
