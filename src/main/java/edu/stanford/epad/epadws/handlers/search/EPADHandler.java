@@ -245,7 +245,7 @@ public class EPADHandler extends AbstractHandler
 				statusCode = HandlerUtil.badRequestJSONResponse(BAD_POST_MESSAGE, responseStream, log);
 
 		} else if (HandlerUtil.matchesTemplate(SUBJECT_LIST_TEMPLATE, pathInfo)) {
-			Map<String, String> templateMap = HandlerUtil.getTemplateMap(SUBJECT_TEMPLATE, pathInfo);
+			Map<String, String> templateMap = HandlerUtil.getTemplateMap(SUBJECT_LIST_TEMPLATE, pathInfo);
 			String projectID = HandlerUtil.getTemplateParameter(templateMap, "project");
 			String subjectID = httpRequest.getParameter("subjectID");
 			String subjectName = httpRequest.getParameter("subjectName");
@@ -255,7 +255,7 @@ public class EPADHandler extends AbstractHandler
 			} else
 				statusCode = HandlerUtil.badRequestJSONResponse(BAD_POST_MESSAGE, responseStream, log);
 		} else if (HandlerUtil.matchesTemplate(STUDY_LIST_TEMPLATE, pathInfo)) {
-			Map<String, String> templateMap = HandlerUtil.getTemplateMap(STUDY_TEMPLATE, pathInfo);
+			Map<String, String> templateMap = HandlerUtil.getTemplateMap(STUDY_LIST_TEMPLATE, pathInfo);
 			String projectID = HandlerUtil.getTemplateParameter(templateMap, "project");
 			String subjectID = HandlerUtil.getTemplateParameter(templateMap, "subject");
 			String studyUID = httpRequest.getParameter("studyUID");
