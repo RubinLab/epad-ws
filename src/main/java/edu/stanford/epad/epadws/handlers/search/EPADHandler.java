@@ -38,6 +38,7 @@ import edu.stanford.epad.epadws.handlers.HandlerUtil;
 import edu.stanford.epad.epadws.handlers.dicom.DSOUtil;
 import edu.stanford.epad.epadws.queries.DefaultEpadOperations;
 import edu.stanford.epad.epadws.queries.EpadOperations;
+import edu.stanford.epad.epadws.xnat.XNATCreationOperations;
 import edu.stanford.epad.epadws.xnat.XNATSessionOperations;
 import edu.stanford.hakan.aim3api.base.AimException;
 
@@ -125,7 +126,7 @@ public class EPADHandler extends AbstractHandler
 			} else if (HandlerUtil.matchesTemplate(SUBJECT_LIST_TEMPLATE, pathInfo)) {
 				Map<String, String> templateMap = HandlerUtil.getTemplateMap(SUBJECT_LIST_TEMPLATE, pathInfo);
 				String projectID = HandlerUtil.getTemplateParameter(templateMap, "project");
-				if (parametersAreValid(projectID)) {
+				if (projectParametersAreValid(projectID)) {
 					EPADSubjectList subjectList = epadOperations.getAllSubjectsForProject(projectID, username, jsessionID,
 							searchFilter);
 					responseStream.append(subjectList.toJSON());
@@ -137,7 +138,7 @@ public class EPADHandler extends AbstractHandler
 				Map<String, String> templateMap = HandlerUtil.getTemplateMap(STUDY_LIST_TEMPLATE, pathInfo);
 				String projectID = HandlerUtil.getTemplateParameter(templateMap, "project");
 				String subjectID = HandlerUtil.getTemplateParameter(templateMap, "subject");
-				if (parametersAreValid(projectID, subjectID)) {
+				if (subjectParametersAreValid(projectID, subjectID)) {
 					EPADStudyList studyList = epadOperations.getAllStudiesForPatient(projectID, subjectID, username, jsessionID,
 							searchFilter);
 					responseStream.append(studyList.toJSON());
@@ -150,7 +151,7 @@ public class EPADHandler extends AbstractHandler
 				String projectID = HandlerUtil.getTemplateParameter(templateMap, "project");
 				String subjectID = HandlerUtil.getTemplateParameter(templateMap, "subject");
 				String studyUID = HandlerUtil.getTemplateParameter(templateMap, "study");
-				if (parametersAreValid(projectID, subjectID, studyUID)) {
+				if (studyParametersAreValid(projectID, subjectID, studyUID)) {
 					EPADSeriesList seriesList = epadOperations.getAllSeriesForStudy(projectID, subjectID, studyUID, username,
 							jsessionID, searchFilter);
 					responseStream.append(seriesList.toJSON());
@@ -164,7 +165,7 @@ public class EPADHandler extends AbstractHandler
 				String subjectID = HandlerUtil.getTemplateParameter(templateMap, "subject");
 				String studyUID = HandlerUtil.getTemplateParameter(templateMap, "study");
 				String seriesUID = HandlerUtil.getTemplateParameter(templateMap, "series");
-				if (parametersAreValid(projectID, subjectID, studyUID, seriesUID)) {
+				if (seriesParametersAreValid(projectID, subjectID, studyUID, seriesUID)) {
 					EPADImageList imageList = epadOperations.getAllImagesForSeries(projectID, subjectID, studyUID, seriesUID,
 							jsessionID, searchFilter);
 					responseStream.append(imageList.toJSON());
@@ -178,7 +179,7 @@ public class EPADHandler extends AbstractHandler
 				String studyUID = HandlerUtil.getTemplateParameter(templateMap, "study");
 				String seriesUID = HandlerUtil.getTemplateParameter(templateMap, "series");
 				String imageID = HandlerUtil.getTemplateParameter(templateMap, "image");
-				if (parametersAreValid(projectID, subjectID, studyUID, seriesUID, imageID)) {
+				if (frameEditParametersAreValid(projectID, subjectID, studyUID, seriesUID, imageID)) {
 					EPADImage image = epadOperations.getImage(projectID, subjectID, studyUID, seriesUID, imageID, jsessionID,
 							searchFilter);
 					responseStream.append(image.toJSON());
@@ -229,19 +230,51 @@ public class EPADHandler extends AbstractHandler
 
 	private int handlePost(HttpServletRequest httpRequest, PrintWriter responseStream, String username)
 	{
+		String sessionID = XNATSessionOperations.getJSessionIDFromRequest(httpRequest);
 		String pathInfo = httpRequest.getPathInfo();
 		int statusCode;
 
-		if (HandlerUtil.matchesTemplate(FRAME_LIST_TEMPLATE, pathInfo)) {
+		if (HandlerUtil.matchesTemplate(PROJECT_LIST_TEMPLATE, pathInfo)) {
+			String projectID = httpRequest.getParameter("projectID");
+			String projectName = httpRequest.getParameter("projectName");
+			String projectDescription = httpRequest.getParameter("projectDescription");
+
+			if (projectCreationParametersAreValid(projectID, projectName, projectDescription, username)) {
+				statusCode = XNATCreationOperations.createXNATProject(projectID, projectName, projectDescription, sessionID);
+			} else
+				statusCode = HandlerUtil.badRequestJSONResponse(BAD_POST_MESSAGE, responseStream, log);
+
+		} else if (HandlerUtil.matchesTemplate(SUBJECT_LIST_TEMPLATE, pathInfo)) {
+			Map<String, String> templateMap = HandlerUtil.getTemplateMap(SUBJECT_TEMPLATE, pathInfo);
+			String projectID = HandlerUtil.getTemplateParameter(templateMap, "project");
+			String subjectID = httpRequest.getParameter("subjectID");
+			String subjectName = httpRequest.getParameter("subjectName");
+
+			if (subjectCreationParametersAreValid(projectID, subjectID, subjectName, username)) {
+				statusCode = XNATCreationOperations.createXNATSubject(projectID, subjectID, subjectName, sessionID);
+			} else
+				statusCode = HandlerUtil.badRequestJSONResponse(BAD_POST_MESSAGE, responseStream, log);
+		} else if (HandlerUtil.matchesTemplate(STUDY_LIST_TEMPLATE, pathInfo)) {
+			Map<String, String> templateMap = HandlerUtil.getTemplateMap(STUDY_TEMPLATE, pathInfo);
+			String projectID = HandlerUtil.getTemplateParameter(templateMap, "project");
+			String subjectID = HandlerUtil.getTemplateParameter(templateMap, "subject");
+			String studyUID = httpRequest.getParameter("studyUID");
+
+			if (studyCreationParametersAreValid(projectID, subjectID, studyUID, username)) {
+				statusCode = XNATCreationOperations.createXNATDICOMStudyExperiment(projectID, subjectID, studyUID, sessionID);
+			} else
+				statusCode = HandlerUtil.badRequestJSONResponse(BAD_POST_MESSAGE, responseStream, log);
+
+		} else if (HandlerUtil.matchesTemplate(FRAME_LIST_TEMPLATE, pathInfo)) {
 			Map<String, String> templateMap = HandlerUtil.getTemplateMap(FRAME_LIST_TEMPLATE, pathInfo);
 			String projectID = HandlerUtil.getTemplateParameter(templateMap, "project");
 			String subjectID = HandlerUtil.getTemplateParameter(templateMap, "subject");
 			String studyUID = HandlerUtil.getTemplateParameter(templateMap, "study");
 			String seriesUID = HandlerUtil.getTemplateParameter(templateMap, "series");
 			String imageUID = HandlerUtil.getTemplateParameter(templateMap, "image");
-			if (parametersAreValid(projectID, subjectID, studyUID, seriesUID, imageUID)) {
+			if (frameEditParametersAreValid(projectID, subjectID, studyUID, seriesUID, imageUID)) {
 				if (handleDSOFramesEdit(projectID, subjectID, studyUID, seriesUID, imageUID, httpRequest, responseStream))
-					statusCode = HttpServletResponse.SC_OK;
+					statusCode = HttpServletResponse.SC_CREATED;
 				else
 					statusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 			} else
@@ -318,7 +351,7 @@ public class EPADHandler extends AbstractHandler
 		return dsoEditRequest;
 	}
 
-	private boolean parametersAreValid(String projectID)
+	private boolean projectParametersAreValid(String projectID)
 	{
 		if (projectID == null) {
 			log.warning("Missing project ID parameter");
@@ -327,9 +360,9 @@ public class EPADHandler extends AbstractHandler
 			return true;
 	}
 
-	private boolean parametersAreValid(String projectID, String subjectID)
+	private boolean subjectParametersAreValid(String projectID, String subjectID)
 	{
-		if (parametersAreValid(projectID)) {
+		if (projectParametersAreValid(projectID)) {
 			if (subjectID == null) {
 				log.warning("Missing subject ID parameter");
 				return false;
@@ -339,9 +372,9 @@ public class EPADHandler extends AbstractHandler
 			return false;
 	}
 
-	private boolean parametersAreValid(String projectID, String subjectID, String studyUID)
+	private boolean studyParametersAreValid(String projectID, String subjectID, String studyUID)
 	{
-		if (parametersAreValid(projectID, subjectID)) {
+		if (subjectParametersAreValid(projectID, subjectID)) {
 			if (studyUID == null) {
 				log.warning("Missing study UID parameter");
 				return false;
@@ -351,9 +384,9 @@ public class EPADHandler extends AbstractHandler
 			return false;
 	}
 
-	private boolean parametersAreValid(String projectID, String subjectID, String studyUID, String seriesUID)
+	private boolean seriesParametersAreValid(String projectID, String subjectID, String studyUID, String seriesUID)
 	{
-		if (parametersAreValid(projectID, subjectID, studyUID)) {
+		if (studyParametersAreValid(projectID, subjectID, studyUID)) {
 			if (seriesUID == null) {
 				log.warning("Missing series UID parameter");
 				return false;
@@ -363,10 +396,10 @@ public class EPADHandler extends AbstractHandler
 			return false;
 	}
 
-	private boolean parametersAreValid(String projectID, String subjectID, String studyUID, String seriesUID,
+	private boolean frameEditParametersAreValid(String projectID, String subjectID, String studyUID, String seriesUID,
 			String imageUID)
 	{
-		if (parametersAreValid(projectID, subjectID, studyUID, seriesUID)) {
+		if (seriesParametersAreValid(projectID, subjectID, studyUID, seriesUID)) {
 			if (imageUID == null) {
 				log.warning("Missing image UID parameter");
 				return false;
@@ -374,6 +407,40 @@ public class EPADHandler extends AbstractHandler
 				return true;
 		} else
 			return false;
+	}
+
+	private boolean projectCreationParametersAreValid(String projectID, String projectName, String projectDescription,
+			String username)
+	{
+		if (projectParametersAreValid(projectID)) {
+			if (projectName == null) {
+				log.warning("Missing projectName parameter from user " + username);
+				return false;
+			} else if (projectDescription == null) {
+				log.warning("Missing projectDescription parameter from user " + username);
+				return false;
+			} else
+				return true;
+		} else
+			return false;
+	}
+
+	private boolean subjectCreationParametersAreValid(String projectID, String subjectID, String subjectName,
+			String username)
+	{
+		if (subjectParametersAreValid(projectID, subjectID)) {
+			if (subjectName == null) {
+				log.warning("Missing subjectName parameter from user " + username);
+				return false;
+			} else
+				return true;
+		} else
+			return false;
+	}
+
+	private boolean studyCreationParametersAreValid(String projectID, String subjectID, String studyUID, String username)
+	{
+		return studyParametersAreValid(projectID, subjectID, studyUID);
 	}
 
 	private DSOEditResult createEditedDSO(DSOEditRequest dsoEditRequest, List<File> editFramesMaskFiles)

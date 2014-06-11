@@ -56,12 +56,12 @@ public class XNATSeriesWatcher implements Runnable
 					String dicomPatientID = dicomSeriesDescription.getPatientID();
 					String dicomPatientName = dicomSeriesDescription.getPatientName();
 
-					String xnatSubjectLabel = XNATUtil.dicomPatientID2XNATSubjectLabel(dicomPatientID);
+					String xnatSubjectLabel = XNATUtil.patientID2XNATSubjectLabel(dicomPatientID);
 
 					log.info("XNAT series watcher found new DICOM study " + dicomStudyIUID + " for patient " + dicomPatientName
 							+ " with ID " + dicomPatientID);
 
-					createXNATDICOMExperiment(xnatUploadProjectID, xnatSubjectLabel, dicomPatientName, dicomStudyIUID);
+					createXNATDICOMStudyExperiment(xnatUploadProjectID, xnatSubjectLabel, dicomPatientName, dicomStudyIUID);
 				}
 			} catch (Exception e) {
 				log.warning("Exception in XNAT series watcher thread", e);
@@ -82,17 +82,23 @@ public class XNATSeriesWatcher implements Runnable
 			throw new IllegalArgumentException("Missing patient name in series description");
 	}
 
-	private void createXNATDICOMExperiment(String xnatProjectLabelOrID, String xnatSubjectLabel, String dicomPatientName,
-			String dicomStudyUID)
+	private void createXNATDICOMStudyExperiment(String xnatProjectLabelOrID, String xnatSubjectLabel,
+			String dicomPatientName, String studyUID)
 	{
 		if (updateSessionIDIfNecessary()) {
-			XNATCreationOperations.createXNATSubjectFromDICOMPatient(xnatProjectLabelOrID, xnatSubjectLabel,
+			int xnatStatusCode = XNATCreationOperations.createXNATSubject(xnatProjectLabelOrID, xnatSubjectLabel,
 					dicomPatientName, jsessionID);
+			if (XNATUtil.unexpectedXNATCreationStatusCode(xnatStatusCode))
+				log.warning("Error creating XNAT subject " + dicomPatientName + " for study " + studyUID + "; status code="
+						+ xnatStatusCode);
 
-			XNATCreationOperations.createXNATExperimentFromDICOMStudy(xnatProjectLabelOrID, xnatSubjectLabel, dicomStudyUID,
-					jsessionID);
+			xnatStatusCode = XNATCreationOperations.createXNATDICOMStudyExperiment(xnatProjectLabelOrID, xnatSubjectLabel,
+					studyUID, jsessionID);
+			if (XNATUtil.unexpectedXNATCreationStatusCode(xnatStatusCode))
+				log.warning("Error creating XNAT experiment for study " + studyUID + "; status code=" + xnatStatusCode);
+
 		} else {
-			log.warning("Could not log into XNAT to create DICOM study " + dicomStudyUID + " for patient " + xnatSubjectLabel);
+			log.warning("Could not log into XNAT to create DICOM study " + studyUID + " for patient " + xnatSubjectLabel);
 		}
 	}
 

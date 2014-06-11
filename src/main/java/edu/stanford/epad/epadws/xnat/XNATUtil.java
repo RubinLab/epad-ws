@@ -3,6 +3,8 @@ package edu.stanford.epad.epadws.xnat;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 
+import javax.servlet.http.HttpServletResponse;
+
 import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADLogger;
 
@@ -20,15 +22,18 @@ public class XNATUtil
 	public static String projectName2XNATProjectID(String xnatProjectName)
 	{ // Alphanumeric and dot and dash only
 		String result = xnatProjectName.replaceAll("[^a-zA-Z0-9\\\\-_]", "_");
+		return result;
+	}
 
-		// log.info("projectName2XNATProjectID: in=" + projectName + ", out=" + result);
-
+	public static String projectID2XNATProjectID(String projectID)
+	{ // Alphanumeric and dot and dash only
+		String result = projectID.replaceAll("[^a-zA-Z0-9\\\\-_]", "_");
 		return result;
 	}
 
 	// Only a-zA-Z0-9, dash, underscore, and space allowed. Replace with underscore. Here we also replace spaces with
 	// underscores though XNAT would allow spaces in labels.
-	public static String dicomPatientID2XNATSubjectLabel(String dicomPatientID)
+	public static String patientID2XNATSubjectLabel(String dicomPatientID)
 	{
 		String result = dicomPatientID.replaceAll("[^a-zA-Z0-9\\\\-_]", "_").replaceAll("\\\\^", "_");
 
@@ -94,12 +99,12 @@ public class XNATUtil
 		return urlString;
 	}
 
-	public static String buildXNATProjectCreationURL(String xnatProjectName)
+	public static String buildXNATProjectCreationURL(String xnatProjectID, String xnatProjectName, String description)
 	{
 		String xnatHost = config.getStringPropertyValue("XNATServer");
 		int xnatPort = config.getIntegerPropertyValue("XNATPort");
-		String queryString = "?ID=" + XNATUtil.projectName2XNATProjectID(xnatProjectName) + "&name="
-				+ encode(xnatProjectName);
+		String queryString = "?ID=" + xnatProjectID + "&name=" + encode(xnatProjectName) + "&description="
+				+ encode(description) + "&accessibility=private";
 		String urlString = XNATUtil.buildXNATBaseURL(xnatHost, xnatPort, XNAT_PROJECTS_BASE) + queryString;
 
 		return urlString;
@@ -121,6 +126,11 @@ public class XNATUtil
 	public static String dicomStudyUID2XNATExperimentID(String dicomStudyUID)
 	{
 		return dicomStudyUID.replace('.', '_');
+	}
+
+	public static boolean unexpectedXNATCreationStatusCode(int statusCode)
+	{
+		return !(statusCode == HttpServletResponse.SC_OK || statusCode == HttpServletResponse.SC_CREATED || statusCode == HttpServletResponse.SC_CONFLICT);
 	}
 
 	private static String buildXNATBaseURL(String host, int port, String base, String ext)
