@@ -390,7 +390,7 @@ public class DefaultEpadOperations implements EpadOperations
 	}
 
 	@Override
-	public void scheduleProjectDelete(String sessionID, String projectID, String username)
+	public void scheduleProjectDelete(String sessionID, String username, String projectID)
 	{
 		log.info("Scheduling deletion task for project " + projectID + " from user " + username);
 
