@@ -105,16 +105,16 @@ public class EPADUploadDirWatcher implements Runnable
 			cleanUploadDirectory(directory);
 			sendFilesToDcm4Chee(directory);
 		} catch (IOException ioe) {
-			log.warning("EPADUploadDirWatcher: error (IOException);dir=" + directory.getAbsolutePath(), ioe);
+			log.warning("IOException uploading " + directory.getAbsolutePath(), ioe);
 			writeExceptionLog(directory, ioe);
 		} catch (IllegalStateException e) {
-			log.warning("EPADUploadDirWatcher: error (IllegalStateException); dir=" + directory.getAbsolutePath(), e);
+			log.warning("IllegalStateException uploading " + directory.getAbsolutePath(), e);
 			writeExceptionLog(directory, e);
 		} catch (Exception e) {
-			log.warning("EPADUploadDirWatcher: error (Exception); dir=" + directory.getAbsolutePath(), e);
+			log.warning("Exception uploading " + directory.getAbsolutePath(), e);
 			writeExceptionLog(directory, e);
 		} finally {
-			log.info("EPADUploadDirWatcher: upload of directory finished " + directory.getAbsolutePath());
+			log.info("Upload of directory " + directory.getAbsolutePath() + " finished");
 			deleteUploadDirectory(directory);
 		}
 	}
@@ -128,7 +128,7 @@ public class EPADUploadDirWatcher implements Runnable
 
 	private boolean waitOnEmptyUploadDirectory(File dir) throws InterruptedException
 	{
-		log.info("EPADUploadDirWatcher: upload waiting for upload to complete in directory " + dir.getAbsolutePath());
+		log.info("Found new upload - waiting for it to complete in directory " + dir.getAbsolutePath());
 		// If this file has only one ZIP file, wait for it to complete upload.
 		long emptyDirStartWaitTime = System.currentTimeMillis();
 		boolean hasZipFile = false;
@@ -159,14 +159,14 @@ public class EPADUploadDirWatcher implements Runnable
 				}
 			}
 			if ((System.currentTimeMillis() - emptyDirStartWaitTime) > MAX_WAIT_TIME)
-				throw new IllegalStateException("Exceeded maximum wait time to upload a ZIP file.");
+				throw new IllegalStateException("Exceeded maximum wait time to upload a ZIP file");
 			Thread.sleep(2000);
 		}
 	}
 
 	private File waitForZipUploadToComplete(File dir) throws InterruptedException
 	{
-		log.info("EPADUploadDirWatcher: waiting for completion of unzip in directory " + dir.getAbsolutePath());
+		log.info("Waiting for completion of unzip in upload directory " + dir.getAbsolutePath());
 		long zipFileStartWaitTime = System.currentTimeMillis();
 		long prevZipFileSize = -1;
 		long prevZipFileLastUpdated = 0;
@@ -181,10 +181,10 @@ public class EPADUploadDirWatcher implements Runnable
 			});
 
 			if (zipFiles == null) {
-				throw new IllegalStateException("No ZIP file in directory " + dir.getAbsolutePath());
+				throw new IllegalStateException("No ZIP file in upload directory " + dir.getAbsolutePath());
 			} else if (zipFiles.length > 1) {
 				int numZipFiles = zipFiles.length;
-				throw new IllegalStateException("Too many ZIP files (" + numZipFiles + ") in directory:"
+				throw new IllegalStateException("Too many ZIP files (" + numZipFiles + ") in upload directory:"
 						+ dir.getAbsolutePath());
 			}
 			FileKey zipFileKey = new FileKey(zipFiles[0]);
@@ -200,7 +200,7 @@ public class EPADUploadDirWatcher implements Runnable
 				prevZipFileLastUpdated = currZipFileLastUpdated;
 			}
 			if ((System.currentTimeMillis() - zipFileStartWaitTime) > MAX_WAIT_TIME) {
-				throw new IllegalStateException("ZIP file upload time exceeded.");
+				throw new IllegalStateException("ZIP file upload time exceeded");
 			}
 			Thread.sleep(1000);
 		}
@@ -208,19 +208,19 @@ public class EPADUploadDirWatcher implements Runnable
 
 	private void unzipFiles(File zipFile) throws IOException
 	{
-		log.info("EPADUploadDirWatcher: unzipping " + zipFile.getAbsolutePath());
+		log.info("Unzipping " + zipFile.getAbsolutePath());
 		EPADFileUtils.extractFolder(zipFile.getAbsolutePath());
 	}
 
 	private void sendFilesToDcm4Chee(File directory) throws Exception
 	{
-		log.info("EPADUploadDirWatcher: sending directory " + directory.getAbsolutePath() + " to DCM4CHEE");
+		log.info("Sending DICOM files in upload directory " + directory.getAbsolutePath() + " to DCM4CHEE");
 		Dcm4CheeOperations.dcmsnd(directory, true);
 	}
 
 	private void deleteUploadDirectory(File dir)
 	{
-		log.info("EPADUploadDirWatcher: deleting upload directory " + dir.getAbsolutePath());
+		log.info("Deleting upload directory " + dir.getAbsolutePath());
 		EPADFileUtils.deleteDirectoryAndContents(dir);
 	}
 

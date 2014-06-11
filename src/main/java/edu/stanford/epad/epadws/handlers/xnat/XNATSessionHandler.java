@@ -52,7 +52,7 @@ public class XNATSessionHandler extends AbstractHandler
 		if ("POST".equalsIgnoreCase(method)) {
 			String username = XNATSessionOperations.extractUserNameFromAuthorizationHeader(httpRequest);
 			if (username.length() != 0) {
-				log.info("XNATSessionHandler, login request from user " + username);
+				log.info("Login request from user " + username);
 				try {
 					PrintWriter responseStream = httpResponse.getWriter();
 					XNATSessionResponse xnatSessionResponse = XNATSessionOperations.invokeXNATSessionIDService(httpRequest);
@@ -77,7 +77,7 @@ public class XNATSessionHandler extends AbstractHandler
 				statusCode = HandlerUtil.warningResponse(HttpServletResponse.SC_BAD_REQUEST, MISSING_USER, log);
 			}
 		} else if ("DELETE".equalsIgnoreCase(method)) {
-			log.info("XNATSessionHandler, logout request");
+			log.info("Logout request");
 			try {
 				int xnatStatusCode = XNATSessionOperations.invalidateXNATSessionID(httpRequest);
 				log.info("XNAT delete session returns status code " + xnatStatusCode);
@@ -86,7 +86,7 @@ public class XNATSessionHandler extends AbstractHandler
 				statusCode = HandlerUtil.internalErrorResponse(LOGOUT_EXCEPTION_MESSAGE, t, log);
 			}
 		} else if ("OPTIONS".equalsIgnoreCase(method)) {
-			log.info("XNATSessionHandler, CORS preflight OPTIONS request");
+			log.info("CORS preflight OPTIONS request to session route");
 			httpResponse.setHeader("Access-Control-Allow-Origin", origin);
 			httpResponse.setHeader("Access-Control-Allow-Credentials", "true");
 			httpResponse.setHeader("Access-Control-Allow-Headers", "Authorization");

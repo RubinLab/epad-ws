@@ -52,16 +52,16 @@ public class XNATSeriesWatcher implements Runnable
 
 					validateDICOMSeriesProcessingDescription(dicomSeriesDescription);
 
-					String dicomStudyIUID = dicomSeriesDescription.getStudyUID();
-					String dicomPatientID = dicomSeriesDescription.getPatientID();
-					String dicomPatientName = dicomSeriesDescription.getPatientName();
+					String studyUID = dicomSeriesDescription.getStudyUID();
+					String patientID = dicomSeriesDescription.getPatientID();
+					String patientName = dicomSeriesDescription.getPatientName();
 
-					String xnatSubjectLabel = XNATUtil.patientID2XNATSubjectLabel(dicomPatientID);
+					String xnatSubjectLabel = XNATUtil.patientID2XNATSubjectLabel(patientID);
 
-					log.info("XNAT series watcher found new DICOM study " + dicomStudyIUID + " for patient " + dicomPatientName
-							+ " with ID " + dicomPatientID);
+					log.info("XNAT series watcher processing study " + studyUID + " for patient " + patientName + " with ID "
+							+ patientID);
 
-					createXNATDICOMStudyExperiment(xnatUploadProjectID, xnatSubjectLabel, dicomPatientName, dicomStudyIUID);
+					createXNATDICOMStudyExperiment(xnatUploadProjectID, xnatSubjectLabel, patientName, studyUID);
 				}
 			} catch (Exception e) {
 				log.warning("Exception in XNAT series watcher thread", e);
@@ -75,7 +75,7 @@ public class XNATSeriesWatcher implements Runnable
 		if (dicomSeriesDescription == null)
 			throw new IllegalArgumentException("Missing series description");
 		if (dicomSeriesDescription.getSeriesUID().length() == 0)
-			throw new IllegalArgumentException("Missing series IUID in series description");
+			throw new IllegalArgumentException("Missing series UID in series description");
 		if (dicomSeriesDescription.getPatientID().length() == 0)
 			throw new IllegalArgumentException("Missing patient ID in series description");
 		if (dicomSeriesDescription.getPatientName().length() == 0)
@@ -88,12 +88,14 @@ public class XNATSeriesWatcher implements Runnable
 		if (updateSessionIDIfNecessary()) {
 			int xnatStatusCode = XNATCreationOperations.createXNATSubject(xnatProjectLabelOrID, xnatSubjectLabel,
 					dicomPatientName, jsessionID);
+
 			if (XNATUtil.unexpectedXNATCreationStatusCode(xnatStatusCode))
 				log.warning("Error creating XNAT subject " + dicomPatientName + " for study " + studyUID + "; status code="
 						+ xnatStatusCode);
 
 			xnatStatusCode = XNATCreationOperations.createXNATDICOMStudyExperiment(xnatProjectLabelOrID, xnatSubjectLabel,
 					studyUID, jsessionID);
+
 			if (XNATUtil.unexpectedXNATCreationStatusCode(xnatStatusCode))
 				log.warning("Error creating XNAT experiment for study " + studyUID + "; status code=" + xnatStatusCode);
 
