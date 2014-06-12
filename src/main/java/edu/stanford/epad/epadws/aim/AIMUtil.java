@@ -69,7 +69,7 @@ public class AIMUtil
 
 			result = AnnotationBuilder.getAimXMLsaveResult();
 
-			log.info("AnnotationBuilder.saveToFile result: " + result);
+			log.info(result);
 			if (storeFile.exists()) {
 				storeFile.delete();
 			}
@@ -77,7 +77,7 @@ public class AIMUtil
 
 			AnnotationBuilder.saveToServer(aim, serverUrl, namespace, collection, xsdFilePath, eXistUsername, eXistPassword);
 			result = AnnotationBuilder.getAimXMLsaveResult();
-			log.info("AnnotationBuilder.saveToServer result: " + result);
+			log.info(result);
 
 			if (aim.getCodingSchemeDesignator().equals("epad-plugin")) { // Which template has been used to fill the AIM file
 				String templateName = aim.getCodeValue(); // ex: jjv-5
@@ -220,7 +220,7 @@ public class AIMUtil
 
 	private static String saveImageAnnotationToServer(ImageAnnotation aim) throws AimException
 	{
-		String res = "";
+		String result = "";
 
 		if (aim.getCodeValue() != null) { // First, write a backup file
 			String tempXmlPath = baseAnnotationDir + "temp-" + aim.getUniqueIdentifier() + ".xml";
@@ -228,8 +228,8 @@ public class AIMUtil
 			File tempFile = new File(tempXmlPath);
 			File storeFile = new File(storeXmlPath);
 			AnnotationBuilder.saveToFile(aim, tempXmlPath, xsdFilePath);
-			res = AnnotationBuilder.getAimXMLsaveResult();
-			log.info("AnnotationBuilder.saveToFile result: " + res);
+			result = AnnotationBuilder.getAimXMLsaveResult();
+			log.info(result);
 			if (storeFile.exists()) {
 				storeFile.delete();
 			}
@@ -237,9 +237,9 @@ public class AIMUtil
 
 			AnnotationBuilder.saveToServer(aim, eXistServerUrl, namespace, eXistCollection, xsdFilePath, eXistUsername,
 					eXistPassword);
-			res = AnnotationBuilder.getAimXMLsaveResult();
-			log.info("AnnotationBuilder.saveToServer result: " + res);
+			result = AnnotationBuilder.getAimXMLsaveResult();
+			log.info(result);
 		}
-		return res;
+		return result;
 	}
 }

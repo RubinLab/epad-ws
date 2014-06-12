@@ -60,58 +60,20 @@ public class XNATSessionOperations
 		return getXNATSessionID(username, password);
 	}
 
-	public static XNATSessionResponse getXNATSessionID(String username, String password)
+	public static String getXNATAdminSessionID()
 	{
-		String xnatSessionURL = buildXNATSessionURL();
-		HttpClient client = new HttpClient();
-		PostMethod method = new PostMethod(xnatSessionURL);
-		String authString = buildAuthorizationString(username, password);
-		XNATSessionResponse xnatSessionResponse;
-		int xnatStatusCode;
+		String xnatUploadProjectUser = config.getStringPropertyValue("XNATUploadProjectUser");
+		String xnatUploadProjectPassword = config.getStringPropertyValue("XNATUploadProjectPassword");
 
-		try {
-			log.info("Invoking XNAT session service for user " + username + " at " + xnatSessionURL);
-			method.setRequestHeader("Authorization", "Basic " + authString);
-			xnatStatusCode = client.executeMethod(method);
-		} catch (IOException e) {
-			log.warning("Error calling XNAT session service for user " + username, e);
-			xnatStatusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+		XNATSessionResponse xnatSessionResponse = XNATSessionOperations.getXNATSessionID(xnatUploadProjectUser,
+				xnatUploadProjectPassword);
+		if (xnatSessionResponse.statusCode != HttpServletResponse.SC_OK) {
+			log.warning("Error invoking XNAT session service for study upload; statusCode = "
+					+ xnatSessionResponse.statusCode);
+			return null;
+		} else {
+			return xnatSessionResponse.response;
 		}
-
-		try {
-			if (xnatStatusCode == HttpServletResponse.SC_OK) {
-				try {
-					StringBuilder sb = new StringBuilder();
-					InputStreamReader isr = null;
-					try {
-						isr = new InputStreamReader(method.getResponseBodyAsStream());
-						int read = 0;
-						char[] chars = new char[128];
-						while ((read = isr.read(chars)) > 0) {
-							sb.append(chars, 0, read);
-						}
-					} finally {
-						IOUtils.closeQuietly(isr);
-					}
-					String jsessionID = sb.toString();
-					xnatSessionResponse = new XNATSessionResponse(HttpServletResponse.SC_OK, jsessionID);
-				} catch (IOException e) {
-					log.warning(LOGIN_EXCEPTION_MESSAGE, e);
-					xnatSessionResponse = new XNATSessionResponse(HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
-							LOGIN_EXCEPTION_MESSAGE + ": " + e.getMessage());
-				}
-			} else if (xnatStatusCode == HttpServletResponse.SC_UNAUTHORIZED) {
-				log.warning(XNAT_UNAUTHORIZED_MESSAGE);
-				xnatSessionResponse = new XNATSessionResponse(xnatStatusCode, XNAT_UNAUTHORIZED_MESSAGE);
-			} else {
-				log.warning(XNAT_LOGIN_ERROR_MESSAGE + "; XNAT status code = " + xnatStatusCode);
-				xnatSessionResponse = new XNATSessionResponse(HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
-						XNAT_LOGIN_ERROR_MESSAGE + "; XNAT status code = " + xnatStatusCode);
-			}
-		} finally {
-			method.releaseConnection();
-		}
-		return xnatSessionResponse;
 	}
 
 	public static int invalidateXNATSessionID(HttpServletRequest httpRequest)
@@ -199,20 +161,58 @@ public class XNATSessionOperations
 			return "";
 	}
 
-	public static String getXNATAdminSessionID()
+	private static XNATSessionResponse getXNATSessionID(String username, String password)
 	{
-		String xnatUploadProjectUser = config.getStringPropertyValue("XNATUploadProjectUser");
-		String xnatUploadProjectPassword = config.getStringPropertyValue("XNATUploadProjectPassword");
+		String xnatSessionURL = buildXNATSessionURL();
+		HttpClient client = new HttpClient();
+		PostMethod method = new PostMethod(xnatSessionURL);
+		String authString = buildAuthorizationString(username, password);
+		XNATSessionResponse xnatSessionResponse;
+		int xnatStatusCode;
 
-		XNATSessionResponse xnatSessionResponse = XNATSessionOperations.getXNATSessionID(xnatUploadProjectUser,
-				xnatUploadProjectPassword);
-		if (xnatSessionResponse.statusCode != HttpServletResponse.SC_OK) {
-			log.warning("Error invoking XNAT session service for study upload; statusCode = "
-					+ xnatSessionResponse.statusCode);
-			return null;
-		} else {
-			return xnatSessionResponse.response;
+		try {
+			log.info("Invoking XNAT session service for user " + username + " at " + xnatSessionURL);
+			method.setRequestHeader("Authorization", "Basic " + authString);
+			xnatStatusCode = client.executeMethod(method);
+		} catch (IOException e) {
+			log.warning("Error calling XNAT session service for user " + username, e);
+			xnatStatusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 		}
+
+		try {
+			if (xnatStatusCode == HttpServletResponse.SC_OK) {
+				try {
+					StringBuilder sb = new StringBuilder();
+					InputStreamReader isr = null;
+					try {
+						isr = new InputStreamReader(method.getResponseBodyAsStream());
+						int read = 0;
+						char[] chars = new char[128];
+						while ((read = isr.read(chars)) > 0) {
+							sb.append(chars, 0, read);
+						}
+					} finally {
+						IOUtils.closeQuietly(isr);
+					}
+					String jsessionID = sb.toString();
+					xnatSessionResponse = new XNATSessionResponse(HttpServletResponse.SC_OK, jsessionID);
+				} catch (IOException e) {
+					log.warning(LOGIN_EXCEPTION_MESSAGE, e);
+					xnatSessionResponse = new XNATSessionResponse(HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
+							LOGIN_EXCEPTION_MESSAGE + ": " + e.getMessage());
+				}
+			} else if (xnatStatusCode == HttpServletResponse.SC_UNAUTHORIZED) {
+				log.warning(XNAT_UNAUTHORIZED_MESSAGE);
+				xnatSessionResponse = new XNATSessionResponse(xnatStatusCode, XNAT_UNAUTHORIZED_MESSAGE);
+			} else {
+				log.warning(XNAT_LOGIN_ERROR_MESSAGE + "; XNAT status code = " + xnatStatusCode);
+				xnatSessionResponse = new XNATSessionResponse(HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
+						XNAT_LOGIN_ERROR_MESSAGE + "; XNAT status code = " + xnatStatusCode);
+			}
+		} finally {
+			method.releaseConnection();
+		}
+		return xnatSessionResponse;
 	}
 
 	private static String extractPasswordFromAuthorizationHeader(HttpServletRequest request)
@@ -245,7 +245,7 @@ public class XNATSessionOperations
 		return buildXNATBaseURL(xnatHost, xnatPort, XNAT_SESSION_BASE);
 	}
 
-	public static String buildXNATBaseURL(String host, int port, String base)
+	private static String buildXNATBaseURL(String host, int port, String base)
 	{
 		return buildXNATBaseURL(host, port, base, "");
 	}

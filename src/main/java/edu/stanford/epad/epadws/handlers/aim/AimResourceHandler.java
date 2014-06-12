@@ -92,7 +92,8 @@ public class AimResourceHandler extends AbstractHandler
 						AIMSearchType aimSearchType = getAIMSearchType(httpRequest);
 						String searchValue = aimSearchType != null ? httpRequest.getParameter(aimSearchType.getName()) : null;
 						String user = httpRequest.getParameter("user");
-						log.info("AIM query from user " + user + "; query type is " + aimSearchType + ", value " + searchValue);
+						log.info("GET request for AIM resource from user " + user + "; query type is " + aimSearchType + ", value "
+								+ searchValue);
 
 						if (validParameters(aimSearchType, searchValue, user)) {
 							queryAIMImageAnnotations(responseStream, aimSearchType, searchValue, user);
@@ -103,7 +104,7 @@ public class AimResourceHandler extends AbstractHandler
 						statusCode = HandlerUtil.warningResponse(HttpServletResponse.SC_BAD_REQUEST, MISSING_QUERY_MESSAGE, log);
 				} else if ("POST".equalsIgnoreCase(method)) {
 					String annotationsUploadDirPath = EPADResources.getEPADWebServerAnnotationsUploadDir();
-					log.info("Uploading annotations to directory " + annotationsUploadDirPath);
+					log.info("Uploading AIM annotation(s) to directory " + annotationsUploadDirPath);
 					try {
 						boolean saveError = uploadAIMAnnotations(httpRequest, responseStream, annotationsUploadDirPath);
 						if (saveError) {

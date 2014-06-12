@@ -78,7 +78,7 @@ public class EPADHandler extends AbstractHandler
 		httpResponse.setContentType("application/json");
 		request.setHandled(true);
 
-		log.info(httpRequest.getMethod() + " request " + httpRequest.getPathInfo() + " with parameters "
+		log.info(httpRequest.getMethod() + " request " + httpRequest.getPathInfo() + " with, parameters "
 				+ httpRequest.getQueryString());
 
 		try {
