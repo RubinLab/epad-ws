@@ -93,14 +93,6 @@ public class XNATQueries
 		return studyIDs;
 	}
 
-	public static int getNumberOfSubjectsForProject(String sessionID, String projectID)
-	{
-		String allSubjectsForProjectQueryURL = XNATQueryUtil.buildAllSubjectsForProjectQueryURL(projectID);
-
-		// TODO Need a count without getting all records.
-		return invokeXNATSubjectsQuery(sessionID, allSubjectsForProjectQueryURL).ResultSet.totalRecords;
-	}
-
 	public static Set<String> getAllDICOMStudyUIDs()
 	{
 		XNATExperimentList dicomExperiments = getAllDICOMExperiments();

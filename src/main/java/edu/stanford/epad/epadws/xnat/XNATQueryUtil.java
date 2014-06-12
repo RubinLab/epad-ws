@@ -34,11 +34,6 @@ public class XNATQueryUtil
 		return buildProjectBaseURL() + projectID + "/users" + "?format=json";
 	}
 
-	public static String buildProjectQueryURL(String projectID)
-	{
-		return buildProjectBaseURL() + projectID + "?format=json";
-	}
-
 	public static String buildSubjectsQueryURL(String subjectID)
 	{
 		return buildSubjectsBaseURL() + "/" + subjectID + "?format=json";
