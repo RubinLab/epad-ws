@@ -9,15 +9,6 @@ package edu.stanford.epad.epadws;
 
 public class EPadWebServerVersion
 {
-	private EPadWebServerVersion()
-	{
-	}
-
-	public static String getVersion()
-	{
-		return "1.2";
-	}
-
 	public static String getBuildDate()
 	{
 		return "December 2013"; // TODO Make part of build process.

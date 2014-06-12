@@ -24,17 +24,6 @@ public class XNATQueryUtil
 		return buildURL(xnatHost, xnatPort, XNAT_PROJECTS_BASE, base);
 	}
 
-	public static String buildSubjectsURL(String base)
-	{
-		String xnatHost = config.getStringPropertyValue("XNATServer");
-		int xnatPort = config.getIntegerPropertyValue("XNATPort");
-
-		if (base.startsWith("/"))
-			base = base.substring(1, base.length());
-
-		return buildURL(xnatHost, xnatPort, XNAT_SUBJECTS_BASE, base);
-	}
-
 	public static String buildAllProjectsQueryURL()
 	{
 		return buildProjectBaseURL();
@@ -127,14 +116,6 @@ public class XNATQueryUtil
 	public static String buildXNATBaseURL(String host, int port, String base)
 	{
 		return buildXNATBaseURL(host, port, base, "");
-	}
-
-	public static String buildXNATProjectsURL()
-	{
-		String xnatHost = config.getStringPropertyValue("XNATServer");
-		int xnatPort = config.getIntegerPropertyValue("XNATPort");
-
-		return buildXNATBaseURL(xnatHost, xnatPort, XNATUtil.XNAT_PROJECTS_BASE);
 	}
 
 	private static String buildXNATBaseURL(String host, int port, String base, String ext)

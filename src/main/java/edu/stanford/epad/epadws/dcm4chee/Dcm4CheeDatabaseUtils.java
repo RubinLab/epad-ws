@@ -11,10 +11,6 @@ import edu.stanford.epad.dtos.SeriesProcessingStatus;
 
 public class Dcm4CheeDatabaseUtils
 {
-	private Dcm4CheeDatabaseUtils()
-	{
-	}
-
 	/**
 	 * Given a file generate the data to update the ePAD database table that contains information about that file.
 	 * 

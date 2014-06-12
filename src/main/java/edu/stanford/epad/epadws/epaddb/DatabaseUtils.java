@@ -20,10 +20,6 @@ public class DatabaseUtils
 {
 	private static EPADLogger logger = EPADLogger.getInstance();
 
-	private DatabaseUtils()
-	{
-	}
-
 	public static void close(Connection conn)
 	{
 		if (conn != null) {
