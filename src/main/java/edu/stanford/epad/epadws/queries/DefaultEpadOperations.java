@@ -39,10 +39,11 @@ import edu.stanford.epad.epadws.epaddb.EpadDatabase;
 import edu.stanford.epad.epadws.epaddb.EpadDatabaseOperations;
 import edu.stanford.epad.epadws.epaddb.PNGFilesOperations;
 import edu.stanford.epad.epadws.handlers.search.EPADSearchFilter;
-import edu.stanford.epad.epadws.processing.pipeline.task.PatientDeleteTask;
-import edu.stanford.epad.epadws.processing.pipeline.task.ProjectDeleteTask;
-import edu.stanford.epad.epadws.processing.pipeline.task.StudyDeleteTask;
+import edu.stanford.epad.epadws.processing.pipeline.task.PatientDataDeleteTask;
+import edu.stanford.epad.epadws.processing.pipeline.task.ProjectDataDeleteTask;
+import edu.stanford.epad.epadws.processing.pipeline.task.StudyDataDeleteTask;
 import edu.stanford.epad.epadws.processing.pipeline.watcher.Dcm4CheeDatabaseWatcher;
+import edu.stanford.epad.epadws.xnat.XNATDeletionOperations;
 
 public class DefaultEpadOperations implements EpadOperations
 {
@@ -391,29 +392,53 @@ public class DefaultEpadOperations implements EpadOperations
 	}
 
 	@Override
-	public void scheduleProjectDelete(String sessionID, String username, String projectID)
+	public int projectDelete(String sessionID, String username, String projectID)
 	{
-		log.info("Scheduling deletion task for project " + projectID + " from user " + username);
+		int xnatStatusCode;
 
-		(new Thread(new ProjectDeleteTask(sessionID, projectID))).start();
+		Set<String> subjectIDs = XNATQueries.getSubjectIDsForProject(sessionID, projectID);
+
+		for (String patientID : subjectIDs) {
+			log.info("Deleting patient " + patientID + " in project " + projectID);
+			xnatStatusCode = XNATDeletionOperations.deleteXNATSubject(projectID, patientID, sessionID);
+		}
+		xnatStatusCode = XNATDeletionOperations.deleteXNATProject(projectID, sessionID);
+
+		log.info("Scheduling dcm4chee deletion task for project" + projectID + " from user " + username);
+
+		(new Thread(new ProjectDataDeleteTask(projectID))).start();
+
+		return xnatStatusCode;
 	}
 
 	@Override
-	public void schedulePatientDelete(String sessionID, String username, String projectID, String patientID)
+	public int patientDelete(String sessionID, String username, String projectID, String patientID)
 	{
+		int xnatStatusCode;
+
 		log.info("Scheduling deletion task for patient " + patientID + " in project " + projectID + " from user "
 				+ username);
 
-		(new Thread(new PatientDeleteTask(sessionID, projectID, patientID))).start();
+		xnatStatusCode = XNATDeletionOperations.deleteXNATSubject(projectID, patientID, sessionID);
+
+		(new Thread(new PatientDataDeleteTask(projectID, patientID))).start();
+
+		return xnatStatusCode;
 	}
 
 	@Override
-	public void scheduleStudyDelete(String sessionID, String username, String projectID, String patientID, String studyUID)
+	public int studyDelete(String sessionID, String username, String projectID, String patientID, String studyUID)
 	{
+		int xnatStatusCode;
+
 		log.info("Scheduling deletion task for study " + studyUID + " for patient " + patientID + " in project "
 				+ projectID + " from user " + username);
 
-		(new Thread(new StudyDeleteTask(sessionID, projectID, patientID, studyUID))).start();
+		xnatStatusCode = XNATDeletionOperations.deleteXNATDICOMStudy(projectID, patientID, studyUID, sessionID);
+
+		(new Thread(new StudyDataDeleteTask(projectID, patientID, studyUID))).start();
+
+		return xnatStatusCode;
 	}
 
 	@Override

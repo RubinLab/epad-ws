@@ -20,11 +20,11 @@ import edu.stanford.epad.epadws.handlers.search.EPADSearchFilter;
  */
 public interface EpadOperations
 {
-	void scheduleProjectDelete(String sessionID, String username, String projectID);
+	int projectDelete(String sessionID, String username, String projectID);
 
-	void schedulePatientDelete(String sessionID, String username, String projectID, String patientID);
+	int patientDelete(String sessionID, String username, String projectID, String patientID);
 
-	void scheduleStudyDelete(String sessionID, String username, String projectID, String patientID, String studyUID);
+	int studyDelete(String sessionID, String username, String projectID, String patientID, String studyUID);
 
 	EPADProjectList getAllProjectsForUser(String username, String sessionID, EPADSearchFilter searchFilter);
 

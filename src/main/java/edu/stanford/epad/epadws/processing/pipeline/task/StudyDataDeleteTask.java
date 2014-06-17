@@ -1,25 +1,22 @@
 package edu.stanford.epad.epadws.processing.pipeline.task;
 
 import edu.stanford.epad.common.util.EPADLogger;
-import edu.stanford.epad.epadws.xnat.XNATDeletionOperations;
 
 /**
  * 
  * @author martin
  * 
  */
-public class StudyDeleteTask implements Runnable
+public class StudyDataDeleteTask implements Runnable
 {
 	private static EPADLogger log = EPADLogger.getInstance();
 
-	private final String sessionID;
 	private final String projectID;
 	private final String patientID;
 	private final String studyUID;
 
-	public StudyDeleteTask(String sessionID, String projectID, String patientID, String studyUID)
+	public StudyDataDeleteTask(String projectID, String patientID, String studyUID)
 	{
-		this.sessionID = sessionID;
 		this.projectID = projectID;
 		this.patientID = patientID;
 		this.studyUID = studyUID;
@@ -31,10 +28,6 @@ public class StudyDeleteTask implements Runnable
 		// EpadOperations epadOperations = DefaultEpadOperations.getInstance();
 
 		try {
-			log.info("Deleting study " + studyUID + " for patient " + patientID + " in project " + projectID);
-
-			XNATDeletionOperations.deleteXNATDICOMStudy(projectID, patientID, studyUID, sessionID);
-
 			// TODO Fix. Seems to delete study even if used elsewhere.
 			// Set<String> allStudyUIDs = XNATQueries.getAllDICOMStudyUIDs();
 			// if (!allStudyUIDs.contains(studyUID))
