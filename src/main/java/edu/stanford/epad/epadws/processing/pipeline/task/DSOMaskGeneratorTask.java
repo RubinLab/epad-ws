@@ -5,7 +5,6 @@ import java.io.File;
 import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.epad.epadws.aim.AIMUtil;
 import edu.stanford.epad.epadws.handlers.dicom.DSOUtil;
-import edu.stanford.hakan.aim3api.base.AimException;
 
 /**
  * This task generates a DICOM Segmentation Object
@@ -33,7 +32,7 @@ public class DSOMaskGeneratorTask implements GeneratorTask
 		try {
 			DSOUtil.writeDSOMaskPNGs(dsoFile);
 			AIMUtil.generateAIMFileForDSO(dsoFile);
-		} catch (AimException e) {
+		} catch (Exception e) {
 			log.warning("Error writing AIM file for DSO series " + seriesUID, e);
 		}
 	}

@@ -40,7 +40,6 @@ import edu.stanford.epad.epadws.queries.DefaultEpadOperations;
 import edu.stanford.epad.epadws.queries.EpadOperations;
 import edu.stanford.epad.epadws.xnat.XNATCreationOperations;
 import edu.stanford.epad.epadws.xnat.XNATSessionOperations;
-import edu.stanford.hakan.aim3api.base.AimException;
 
 /**
  * @author martin
@@ -471,7 +470,7 @@ public class EPADHandler extends AbstractHandler
 			AIMUtil.generateAIMFileForDSO(dsoFile);
 			return new DSOEditResult(projectID, patientID, dsoStudyUID, dsoSeriesUID, dsoImageUID, aimID);
 
-		} catch (AimException e) {
+		} catch (Exception e) {
 			log.warning("Error generating AIM file for DSO image " + dsoImageUID + " in series " + dsoSeriesUID, e);
 			return null;
 		}

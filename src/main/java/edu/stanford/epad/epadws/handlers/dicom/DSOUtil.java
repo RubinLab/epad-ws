@@ -54,10 +54,8 @@ public class DSOUtil
 		return null;
 	}
 
-	public static boolean writeDSOMaskPNGs(File dsoFile)
+	public static void writeDSOMaskPNGs(File dsoFile) throws Exception
 	{
-		boolean success;
-
 		try {
 			EpadDatabaseOperations databaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
 			DicomSegmentationObject dso = new DicomSegmentationObject();
@@ -93,15 +91,13 @@ public class DSOUtil
 				}
 			}
 			log.info("... finished writing PNG masks for DSO image " + imageUID + " in series " + seriesUID);
-			success = true;
 		} catch (DicomException e) {
 			log.warning("DICOM exception writing DSO PNG masks", e);
-			success = false;
+			throw new Exception("DICOM exception writing DSO PNG masks", e);
 		} catch (IOException e) {
 			log.warning("IO exception writing DSO PNG masks", e);
-			success = false;
+			throw new Exception("IO exception writing DSO PNG masks", e);
 		}
-		return success;
 	}
 
 	private static BufferedImage generateTransparentImage(BufferedImage source)

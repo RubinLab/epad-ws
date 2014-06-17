@@ -1,4 +1,4 @@
-package edu.stanford.epad.epadws.queries;
+package edu.stanford.epad.epadws.aim;
 
 import java.util.HashSet;
 import java.util.Set;

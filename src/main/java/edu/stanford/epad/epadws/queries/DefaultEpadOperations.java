@@ -31,6 +31,7 @@ import edu.stanford.epad.dtos.internal.XNATProjectList;
 import edu.stanford.epad.dtos.internal.XNATSubject;
 import edu.stanford.epad.dtos.internal.XNATSubjectList;
 import edu.stanford.epad.dtos.internal.XNATUserList;
+import edu.stanford.epad.epadws.aim.AIMQueries;
 import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeDatabase;
 import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeDatabaseOperations;
 import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeOperations;

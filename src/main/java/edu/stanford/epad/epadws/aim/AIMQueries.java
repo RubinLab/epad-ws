@@ -1,4 +1,4 @@
-package edu.stanford.epad.epadws.queries;
+package edu.stanford.epad.epadws.aim;
 
 import java.util.ArrayList;
 import java.util.List;

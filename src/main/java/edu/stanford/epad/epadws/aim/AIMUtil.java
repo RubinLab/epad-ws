@@ -132,7 +132,7 @@ public class AIMUtil
 	 * {@link PluginAIMUtil#generateAIMFileForDSO} is very similar.
 	 * 
 	 */
-	public static void generateAIMFileForDSO(File dsoFile) throws AimException
+	public static void generateAIMFileForDSO(File dsoFile) throws Exception
 	{
 		AttributeList dsoDICOMAttributes = PixelMedUtils.readDICOMAttributeList(dsoFile);
 		String patientID = Attribute.getSingleStringValueOrEmptyString(dsoDICOMAttributes, TagFromName.PatientID);
