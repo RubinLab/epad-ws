@@ -56,7 +56,7 @@ public class XNATSeriesWatcher implements Runnable
 					String patientID = dicomSeriesDescription.getPatientID();
 					String patientName = dicomSeriesDescription.getPatientName();
 
-					String xnatSubjectLabel = XNATUtil.patientID2XNATSubjectLabel(patientID);
+					String xnatSubjectLabel = XNATUtil.subjectID2XNATSubjectLabel(patientID);
 
 					log.info("XNAT series watcher processing study " + studyUID + " for patient " + patientName + " with ID "
 							+ patientID);
@@ -82,18 +82,18 @@ public class XNATSeriesWatcher implements Runnable
 			throw new IllegalArgumentException("Missing patient name in series description");
 	}
 
-	private void createXNATDICOMStudyExperiment(String xnatProjectLabelOrID, String xnatSubjectLabel,
+	private void createXNATDICOMStudyExperiment(String xnatProjectLabel, String xnatSubjectLabel,
 			String dicomPatientName, String studyUID)
 	{
 		if (updateSessionIDIfNecessary()) {
-			int xnatStatusCode = XNATCreationOperations.createXNATSubject(xnatProjectLabelOrID, xnatSubjectLabel,
+			int xnatStatusCode = XNATCreationOperations.createXNATSubject(xnatProjectLabel, xnatSubjectLabel,
 					dicomPatientName, jsessionID);
 
 			if (XNATUtil.unexpectedXNATCreationStatusCode(xnatStatusCode))
 				log.warning("Error creating XNAT subject " + dicomPatientName + " for study " + studyUID + "; status code="
 						+ xnatStatusCode);
 
-			xnatStatusCode = XNATCreationOperations.createXNATDICOMStudyExperiment(xnatProjectLabelOrID, xnatSubjectLabel,
+			xnatStatusCode = XNATCreationOperations.createXNATDICOMStudyExperiment(xnatProjectLabel, xnatSubjectLabel,
 					studyUID, jsessionID);
 
 			if (XNATUtil.unexpectedXNATCreationStatusCode(xnatStatusCode))

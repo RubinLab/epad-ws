@@ -20,6 +20,12 @@ import edu.stanford.epad.epadws.handlers.search.EPADSearchFilter;
  */
 public interface EpadOperations
 {
+	void scheduleProjectDelete(String sessionID, String username, String projectID);
+
+	void schedulePatientDelete(String sessionID, String username, String projectID, String patientID);
+
+	void scheduleStudyDelete(String sessionID, String username, String projectID, String patientID, String studyUID);
+
 	EPADProjectList getAllProjectsForUser(String username, String sessionID, EPADSearchFilter searchFilter);
 
 	EPADSubjectList getAllSubjectsForProject(String projectID, String username, String sessionID,
@@ -63,12 +69,6 @@ public interface EpadOperations
 	 * Each description is a map with keys: sop_iuid, inst_no, series_iuid, filepath, file_size.
 	 */
 	List<Map<String, String>> getUnprocessedDicomImageFileDescriptionsForSeries(String seriesUID);
-
-	void scheduleProjectDelete(String sessionID, String username, String projectID);
-
-	void schedulePatientDelete(String sessionID, String username, String projectID, String patientID);
-
-	void scheduleStudyDelete(String sessionID, String username, String projectID, String patientID, String studyUID);
 
 	void deleteStudyFromEPadAndDcm4CheeDatabases(String studyUID);
 

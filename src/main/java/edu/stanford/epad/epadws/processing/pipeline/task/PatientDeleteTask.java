@@ -1,11 +1,6 @@
 package edu.stanford.epad.epadws.processing.pipeline.task;
 
-import java.util.Set;
-
 import edu.stanford.epad.common.util.EPADLogger;
-import edu.stanford.epad.epadws.queries.DefaultEpadOperations;
-import edu.stanford.epad.epadws.queries.EpadOperations;
-import edu.stanford.epad.epadws.queries.XNATQueries;
 import edu.stanford.epad.epadws.xnat.XNATDeletionOperations;
 
 /**
@@ -32,22 +27,22 @@ public class PatientDeleteTask implements Runnable
 	@Override
 	public void run()
 	{
-		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
-
 		try {
-			Set<String> subjectStudyUIDs = XNATQueries.getDICOMStudyUIDsForSubject(sessionID, projectID, patientID);
+			// Set<String> subjectStudyUIDs = XNATQueries.getDICOMStudyUIDsForSubject(sessionID, projectID, patientID);
 
 			log.info("Deleting patient " + patientID + " in project " + projectID);
 
-			if (XNATDeletionOperations.deleteXNATSubject(projectID, patientID, sessionID))
+			if (XNATDeletionOperations.deleteXNATSubject(projectID, patientID, sessionID)) {
 				log.info("Deleted patient " + patientID + " in project " + projectID + " from XNAT");
-			else
+				// TODO Fix. Seems to delete study even if used elsewhere.
+				// EpadOperations epadOperations = DefaultEpadOperations.getInstance();
+				// Set<String> allStudyUIDs = XNATQueries.getAllDICOMStudyUIDs();
+				// subjectStudyUIDs.removeAll(allStudyUIDs); // Remove studies used elsewhere so that they are not deleted
+				// epadOperations.deleteStudiesFromEPadAndDcm4CheeDatabases(subjectStudyUIDs);
+
+			} else
 				log.warning("Error deleting patient " + patientID + " in project " + projectID + " from XNAT");
 
-			Set<String> allStudyUIDs = XNATQueries.getAllDICOMStudyUIDs();
-			subjectStudyUIDs.removeAll(allStudyUIDs); // Remove studies used elsewhere so that they are not deleted
-
-			epadOperations.deleteStudiesFromEPadAndDcm4CheeDatabases(subjectStudyUIDs);
 		} catch (Exception e) {
 			log.warning("Error deleting patient " + patientID + " in project " + projectID, e);
 		}

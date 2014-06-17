@@ -19,40 +19,39 @@ public class XNATUtil
 	private static final EPADLogger log = EPADLogger.getInstance();
 	private static final EPADConfig config = EPADConfig.getInstance();
 
-	public static String projectName2XNATProjectID(String xnatProjectName)
+	public static String projectID2XNATProjectLabel(String projectID)
 	{ // Alphanumeric and dot and dash only
-		String result = xnatProjectName.replaceAll("[^a-zA-Z0-9\\\\-_]", "_");
+		String result = projectID.replaceAll("[^a-zA-Z0-9-\\\\.]", "_");
 		return result;
 	}
 
-	public static String projectID2XNATProjectID(String projectID)
-	{ // Alphanumeric and dot and dash only
-		String result = projectID.replaceAll("[^a-zA-Z0-9\\\\-_]", "_");
-		return result;
-	}
-
-	// Only a-zA-Z0-9, dash, underscore, and space allowed. Replace with underscore. Here we also replace spaces with
-	// underscores though XNAT would allow spaces in labels.
-	public static String patientID2XNATSubjectLabel(String dicomPatientID)
+	// Only a-zA-Z0-9, dash, and underscore allowed. Replace everything else with underscore. We replace
+	// spaces with underscores though XNAT would allow spaces in labels.
+	public static String subjectID2XNATSubjectLabel(String dicomPatientID)
 	{
-		String result = dicomPatientID.replaceAll("[^a-zA-Z0-9\\\\-_]", "_").replaceAll("\\\\^", "_");
+		String result = dicomPatientID.replaceAll("[^a-zA-Z0-9-_]", "_").replaceAll("\\\\^", "_");
 
 		// log.info("dicomPatientID2XNATSubjectLabel: in=" + dicomPatientID + ", out=" + result);
 
 		return result;
 	}
 
-	// Setting the label field explicitly in this URL causes a new experiment to be created for
-	// the same study in different projects. Otherwise we have a shared experiment, which is not what we want.
-	public static String buildXNATDICOMExperimentCreationURL(String xnatProjectLabelOrID, String xnatSubjectLabelOrID,
-			String dicomStudyUID)
+	public static String buildXNATProjectCreationURL(String xnatProjectID, String xnatProjectName, String description)
 	{
 		String xnatHost = config.getStringPropertyValue("XNATServer");
 		int xnatPort = config.getIntegerPropertyValue("XNATPort");
-		String experimentID = XNATUtil.dicomStudyUID2XNATExperimentID(dicomStudyUID);
-		String urlString = XNATUtil.buildXNATBaseURL(xnatHost, xnatPort, XNAT_PROJECTS_BASE) + xnatProjectLabelOrID
-				+ "/subjects/" + xnatSubjectLabelOrID + "/experiments/" + experimentID + "?name=" + dicomStudyUID
-				+ "&xsiType=xnat:otherDicomSessionData";
+		String queryString = "?ID=" + xnatProjectID + "&name=" + encode(xnatProjectName) + "&description="
+				+ encode(description) + "&accessibility=private";
+		String urlString = XNATUtil.buildXNATBaseURL(xnatHost, xnatPort, XNAT_PROJECTS_BASE) + queryString;
+
+		return urlString;
+	}
+
+	public static String buildXNATProjectDeletionURL(String xnatProjectLabelOrID)
+	{
+		String xnatHost = config.getStringPropertyValue("XNATServer");
+		int xnatPort = config.getIntegerPropertyValue("XNATPort");
+		String urlString = XNATUtil.buildXNATBaseURL(xnatHost, xnatPort, XNAT_PROJECTS_BASE) + xnatProjectLabelOrID;
 
 		return urlString;
 	}
@@ -69,21 +68,27 @@ public class XNATUtil
 		return urlString;
 	}
 
-	public static String buildXNATProjectDeletionURL(String xnatProjectLabelOrID)
-	{
-		String xnatHost = config.getStringPropertyValue("XNATServer");
-		int xnatPort = config.getIntegerPropertyValue("XNATPort");
-		String urlString = XNATUtil.buildXNATBaseURL(xnatHost, xnatPort, XNAT_PROJECTS_BASE) + xnatProjectLabelOrID;
-
-		return urlString;
-	}
-
 	public static String buildXNATSubjectDeletionURL(String xnatProjectLabelOrID, String xnatSubjectLabelOrID)
 	{
 		String xnatHost = config.getStringPropertyValue("XNATServer");
 		int xnatPort = config.getIntegerPropertyValue("XNATPort");
 		String urlString = XNATUtil.buildXNATBaseURL(xnatHost, xnatPort, XNAT_PROJECTS_BASE) + xnatProjectLabelOrID
 				+ "/subjects/" + xnatSubjectLabelOrID;
+
+		return urlString;
+	}
+
+	// Setting the label field explicitly in this URL causes a new experiment to be created for
+	// the same study in different projects. Otherwise we have a shared experiment, which is not what we want.
+	public static String buildXNATDICOMStudyCreationURL(String xnatProjectLabelOrID, String xnatSubjectLabelOrID,
+			String dicomStudyUID)
+	{
+		String xnatHost = config.getStringPropertyValue("XNATServer");
+		int xnatPort = config.getIntegerPropertyValue("XNATPort");
+		String experimentID = XNATUtil.dicomStudyUID2XNATExperimentID(dicomStudyUID);
+		String urlString = XNATUtil.buildXNATBaseURL(xnatHost, xnatPort, XNAT_PROJECTS_BASE) + xnatProjectLabelOrID
+				+ "/subjects/" + xnatSubjectLabelOrID + "/experiments/" + experimentID + "?name=" + dicomStudyUID
+				+ "&xsiType=xnat:otherDicomSessionData";
 
 		return urlString;
 	}
@@ -95,17 +100,6 @@ public class XNATUtil
 		int xnatPort = config.getIntegerPropertyValue("XNATPort");
 		String urlString = XNATUtil.buildXNATBaseURL(xnatHost, xnatPort, XNAT_PROJECTS_BASE) + xnatProjectLabelOrID
 				+ "/subjects/" + xnatSubjectLabelOrID + "/experiments/" + dicomStudyUID2XNATExperimentID(studyUID);
-
-		return urlString;
-	}
-
-	public static String buildXNATProjectCreationURL(String xnatProjectID, String xnatProjectName, String description)
-	{
-		String xnatHost = config.getStringPropertyValue("XNATServer");
-		int xnatPort = config.getIntegerPropertyValue("XNATPort");
-		String queryString = "?ID=" + xnatProjectID + "&name=" + encode(xnatProjectName) + "&description="
-				+ encode(description) + "&accessibility=private";
-		String urlString = XNATUtil.buildXNATBaseURL(xnatHost, xnatPort, XNAT_PROJECTS_BASE) + queryString;
 
 		return urlString;
 	}
