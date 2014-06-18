@@ -30,13 +30,13 @@ import edu.stanford.hakan.aim3api.base.SegmentationCollection;
 import edu.stanford.hakan.aim3api.base.TwoDimensionSpatialCoordinate;
 import edu.stanford.hakan.aim3api.base.User;
 import edu.stanford.hakan.aim3api.usage.AnnotationBuilder;
+import edu.stanford.hakan.aim3api.usage.AnnotationGetter;
 
 public class AIMUtil
 {
 	private static final EPADLogger log = EPADLogger.getInstance();
 
-	private static final String namespace = EPADConfig.getInstance().getStringPropertyValue("namespace");
-	private static final String serverUrl = EPADConfig.getInstance().getStringPropertyValue("serverUrl");
+	private static final String aim3Namespace = EPADConfig.getInstance().getStringPropertyValue("namespace");
 	private static final String eXistUsername = EPADConfig.getInstance().getStringPropertyValue("username");
 	private static final String eXistPassword = EPADConfig.getInstance().getStringPropertyValue("password");
 	private static final String eXistServerUrl = EPADConfig.getInstance().getStringPropertyValue("serverUrl");
@@ -44,7 +44,6 @@ public class AIMUtil
 	private static final String baseAnnotationDir = EPADConfig.getInstance().getStringPropertyValue("baseAnnotationDir");
 	private static final String xsdFile = EPADConfig.getInstance().getStringPropertyValue("xsdFile");
 	private static final String xsdFilePath = EPADConfig.getInstance().getStringPropertyValue("baseSchemaDir") + xsdFile;
-	private static final String collection = EPADConfig.getInstance().getStringPropertyValue("collection");
 
 	/**
 	 * Save the annotation to the server in the AIM database. An invalid annotation will not be saved. Save a file backup
@@ -75,7 +74,8 @@ public class AIMUtil
 			}
 			tempFile.renameTo(storeFile);
 
-			AnnotationBuilder.saveToServer(aim, serverUrl, namespace, collection, xsdFilePath, eXistUsername, eXistPassword);
+			AnnotationBuilder.saveToServer(aim, eXistServerUrl, aim3Namespace, eXistCollection, xsdFilePath, eXistUsername,
+					eXistPassword);
 			result = AnnotationBuilder.getAimXMLsaveResult();
 			log.info(result);
 
@@ -210,6 +210,31 @@ public class AIMUtil
 		 */
 	}
 
+	public static ImageAnnotation getImageAnnotationFromFile(File file) throws AimException
+	{
+		return AnnotationGetter.getImageAnnotationFromFile(getRealPath(file));
+	}
+
+	public static ImageAnnotation getImageAnnotationFromFile(File file, String xsdFilePath) throws AimException
+	{
+		return AnnotationGetter.getImageAnnotationFromFile(file.getAbsolutePath(), xsdFilePath);
+	}
+
+	/**
+	 * Get the canonical path if possible, otherwise get the absolute path.
+	 * 
+	 * @param file File
+	 * @return String path of file. Concurrent path if possible.
+	 */
+	private static String getRealPath(File file)
+	{
+		try {
+			return file.getCanonicalPath();
+		} catch (IOException ioe) {
+			return file.getAbsolutePath();
+		}
+	}
+
 	private static void setImageAnnotationUser(ImageAnnotation imageAnnotation, String username)
 	{
 		List<User> userList = new ArrayList<User>();
@@ -235,7 +260,7 @@ public class AIMUtil
 			}
 			tempFile.renameTo(storeFile);
 
-			AnnotationBuilder.saveToServer(aim, eXistServerUrl, namespace, eXistCollection, xsdFilePath, eXistUsername,
+			AnnotationBuilder.saveToServer(aim, eXistServerUrl, aim3Namespace, eXistCollection, xsdFilePath, eXistUsername,
 					eXistPassword);
 			result = AnnotationBuilder.getAimXMLsaveResult();
 			log.info(result);

@@ -116,7 +116,7 @@ public class DefaultEpadOperations implements EpadOperations
 			int numberOfImages = dcm4CheeStudy.imagesCount;
 			Set<String> seriesUIDs = dcm4CheeDatabaseOperations.getAllSeriesUIDsInStudy(studyUID);
 			StudyProcessingStatus studyProcessingStatus = getStudyProcessingStatus(studyUID);
-			int numberOfAnnotations = (seriesUIDs.size() <= 0) ? 0 : AIMQueries.getNumberOfAIMAnnotationsForSeriesUIDs(
+			int numberOfAnnotations = (seriesUIDs.size() <= 0) ? 0 : AIMQueries.getNumberOfAIMAnnotationsForSeriesSet(
 					seriesUIDs, username);
 
 			boolean filter = searchFilter.shouldFilterStudy(patientID, studyAccessionNumber, examTypes, numberOfAnnotations);
@@ -189,7 +189,7 @@ public class DefaultEpadOperations implements EpadOperations
 			String department = dcm4CheeSeries.department;
 			int numberOfImages = dcm4CheeSeries.imagesInSeries;
 			int numberOfSeriesRelatedInstances = dcm4CheeSeries.numberOfSeriesRelatedInstances;
-			int numberOfAnnotations = AIMQueries.getNumberOfAIMAnnotationsForSeriesUID(seriesUID, username);
+			int numberOfAnnotations = AIMQueries.getNumberOfAIMAnnotationsForSeries(seriesUID, username);
 			SeriesProcessingStatus seriesProcessingStatus = epadDatabaseOperations.getSeriesProcessingStatus(seriesUID);
 			String createdTime = dcm4CheeSeries.createdTime != null ? dcm4CheeSeries.createdTime.toString() : "";
 			boolean filter = searchFilter.shouldFilterSeries(patientID, patientName, examType, accessionNumber,
@@ -547,7 +547,7 @@ public class DefaultEpadOperations implements EpadOperations
 			String uri = xnatSubject.URI;
 			String insertUser = xnatSubject.insert_user;
 			String insertDate = xnatSubject.insert_date;
-			int numberOfAnnotations = AIMQueries.getNumberOfAIMAnnotationsForPatientID(patientID, username);
+			int numberOfAnnotations = AIMQueries.getNumberOfAIMAnnotationsForPatient(patientID, username);
 			if (!searchFilter.shouldFilterSubject(patientID, patientName, numberOfAnnotations)) {
 				// Set<String> examTypes = epadQueries.getExamTypesForPatient(projectID, patientID, sessionID, searchFilter);
 				Set<String> examTypes = epadQueries.getExamTypesForPatient(patientID);

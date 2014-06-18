@@ -47,7 +47,6 @@ import edu.stanford.epad.epadws.handlers.HandlerUtil;
 import edu.stanford.epad.epadws.xnat.XNATSessionOperations;
 import edu.stanford.hakan.aim3api.base.AimException;
 import edu.stanford.hakan.aim3api.base.ImageAnnotation;
-import edu.stanford.hakan.aim3api.usage.AnnotationGetter;
 
 public class AimResourceHandler extends AbstractHandler
 {
@@ -184,12 +183,12 @@ public class AimResourceHandler extends AbstractHandler
 			InputStream inputStream = fileItemStream.openStream();
 			// TODO Use File.createTempFile
 			String tempXMLFileName = "temp-" + System.currentTimeMillis() + ".xml";
-			File f = new File(annotationsUploadDirPath + tempXMLFileName);
+			File aimFile = new File(annotationsUploadDirPath + tempXMLFileName);
 			FileOutputStream fos = null;
 			try {
 				int len;
 				byte[] buffer = new byte[32768];
-				fos = new FileOutputStream(f);
+				fos = new FileOutputStream(aimFile);
 				while ((len = inputStream.read(buffer, 0, buffer.length)) != -1) {
 					fos.write(buffer, 0, len);
 				}
@@ -198,7 +197,7 @@ public class AimResourceHandler extends AbstractHandler
 				IOUtils.closeQuietly(fos);
 			}
 			responseStream.print("added (" + fileCount + "): " + name);
-			ImageAnnotation imageAnnotation = AnnotationGetter.getImageAnnotationFromFile(f.getAbsolutePath(), xsdFilePath);
+			ImageAnnotation imageAnnotation = AIMUtil.getImageAnnotationFromFile(aimFile, xsdFilePath);
 			if (imageAnnotation != null) {
 				String jsessionID = XNATSessionOperations.getJSessionIDFromRequest(httpRequest);
 				AIMUtil.saveImageAnnotationToServer(imageAnnotation, jsessionID);

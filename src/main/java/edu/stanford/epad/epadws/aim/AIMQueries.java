@@ -14,13 +14,14 @@ public class AIMQueries
 {
 	private static final EPADLogger log = EPADLogger.getInstance();
 
-	private static String aimNamespace = EPADConfig.getInstance().getStringPropertyValue("namespace");
-	private static String eXistServerUrl = EPADConfig.getInstance().getStringPropertyValue("serverUrl");
-	private static String eXistUsername = EPADConfig.getInstance().getStringPropertyValue("username");
-	private static String eXistPassword = EPADConfig.getInstance().getStringPropertyValue("password");
-	private static String aimXSDFile = EPADConfig.getInstance().getStringPropertyValue("xsdFile");
-	private static String aimXSDFilePath = EPADConfig.getInstance().getStringPropertyValue("baseSchemaDir") + aimXSDFile;
-	private static String eXistAIMCollection = EPADConfig.getInstance().getStringPropertyValue("collection");
+	private static final String aimNamespace = EPADConfig.getInstance().getStringPropertyValue("namespace");
+	private static final String eXistServerUrl = EPADConfig.getInstance().getStringPropertyValue("serverUrl");
+	private static final String eXistUsername = EPADConfig.getInstance().getStringPropertyValue("username");
+	private static final String eXistPassword = EPADConfig.getInstance().getStringPropertyValue("password");
+	private static final String aimXSDFile = EPADConfig.getInstance().getStringPropertyValue("xsdFile");
+	private static final String aimXSDFilePath = EPADConfig.getInstance().getStringPropertyValue("baseSchemaDir")
+			+ aimXSDFile;
+	private static final String eXistAIMCollection = EPADConfig.getInstance().getStringPropertyValue("collection");
 
 	public static List<ImageAnnotation> getAIMAnnotationsForPerson(String personName, String username)
 	{
@@ -42,29 +43,27 @@ public class AIMQueries
 		return getAIMImageAnnotations(AIMSearchType.ANNOTATION_UID, annotationUID, username);
 	}
 
-	// Only count annotations for subjects in this project
 	public static int getNumberOfAIMAnnotationsForPatients(String sessionID, String username, Set<String> patientIDs)
-	{
+	{ // Only count annotations for subjects in this project
 		int totalAIMAnnotations = 0;
 
-		for (String patientID : patientIDs) {
-			totalAIMAnnotations += getNumberOfAIMAnnotationsForPatientID(patientID, username);
-		}
+		for (String patientID : patientIDs)
+			totalAIMAnnotations += getNumberOfAIMAnnotationsForPatient(patientID, username);
 
 		return totalAIMAnnotations;
 	}
 
-	public static int getNumberOfAIMAnnotationsForPatientID(String patientId, String username)
+	public static int getNumberOfAIMAnnotationsForPatient(String patientId, String username)
 	{
 		return getNumberOfAIMAnnotations(AIMSearchType.PATIENT_ID, patientId, username);
 	}
 
-	public static int getNumberOfAIMAnnotationsForSeriesUID(String seriesUID, String username)
+	public static int getNumberOfAIMAnnotationsForSeries(String seriesUID, String username)
 	{
 		return getNumberOfAIMAnnotations(AIMSearchType.SERIES_UID, seriesUID, username);
 	}
 
-	public static int getNumberOfAIMAnnotationsForSeriesUIDs(Set<String> seriesUIDs, String username)
+	public static int getNumberOfAIMAnnotationsForSeriesSet(Set<String> seriesUIDs, String username)
 	{
 		int numberOfAIMAnnotations = 0;
 
@@ -176,9 +175,7 @@ public class AIMQueries
 
 	private static int getNumberOfAIMAnnotations(AIMSearchType valueType, String value, String username)
 	{
-		return 1; // TODO This call is too slow so we need an alternative mechanism.
-		// return getAIMImageAnnotations(valueType, value, username).size();
-		// TODO Use the following when Hakan fixes bug in new counting methods
+		return 1; // TODO This call is too slow if we have a lot of data on an ePAD instance so we disable for the moment.
 		// return getCountAIMImageAnnotations(valueType, value, username);
 	}
 
@@ -188,6 +185,7 @@ public class AIMQueries
 		int count = 0;
 
 		log.info("AIM count query with search type " + aimSearchType + ", value " + value + ", username " + username);
+
 		if (aimSearchType == AIMSearchType.PERSON_NAME) {
 			String personName = value;
 			try {
