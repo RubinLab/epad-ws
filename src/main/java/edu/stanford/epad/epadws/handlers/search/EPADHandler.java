@@ -205,23 +205,20 @@ public class EPADHandler extends AbstractHandler
 			Map<String, String> templateMap = HandlerUtil.getTemplateMap(PROJECT_TEMPLATE, pathInfo);
 			String projectID = HandlerUtil.getTemplateParameter(templateMap, "project");
 
-			epadOperations.projectDelete(sessionID, username, projectID);
-			statusCode = HttpServletResponse.SC_ACCEPTED;
+			statusCode = epadOperations.projectDelete(sessionID, username, projectID);
 		} else if (HandlerUtil.matchesTemplate(SUBJECT_TEMPLATE, pathInfo)) {
 			Map<String, String> templateMap = HandlerUtil.getTemplateMap(SUBJECT_TEMPLATE, pathInfo);
 			String projectID = HandlerUtil.getTemplateParameter(templateMap, "project");
 			String subjectID = HandlerUtil.getTemplateParameter(templateMap, "subject");
 
-			epadOperations.patientDelete(sessionID, username, projectID, subjectID);
-			statusCode = HttpServletResponse.SC_ACCEPTED;
+			statusCode = epadOperations.patientDelete(sessionID, username, projectID, subjectID);
 		} else if (HandlerUtil.matchesTemplate(STUDY_TEMPLATE, pathInfo)) {
 			Map<String, String> templateMap = HandlerUtil.getTemplateMap(STUDY_TEMPLATE, pathInfo);
 			String projectID = HandlerUtil.getTemplateParameter(templateMap, "project");
 			String subjectID = HandlerUtil.getTemplateParameter(templateMap, "subject");
 			String studyUID = HandlerUtil.getTemplateParameter(templateMap, "study");
 
-			epadOperations.studyDelete(sessionID, username, projectID, subjectID, studyUID);
-			statusCode = HttpServletResponse.SC_ACCEPTED;
+			statusCode = epadOperations.studyDelete(sessionID, username, projectID, subjectID, studyUID);
 		} else {
 			statusCode = HandlerUtil.badRequestJSONResponse(BAD_DELETE_MESSAGE, responseStream, log);
 		}
