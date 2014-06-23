@@ -36,7 +36,7 @@ public class WadoHandler extends AbstractHandler
 		String origin = httpRequest.getHeader("Origin"); // CORS request should have Origin header
 		int statusCode;
 
-		// Origin header indicates a possible CORS requests, which we support to allow drawing on canvas in GWT Dev Mode.
+		// Origin header indicates a possible CORS requests
 		if (origin != null) {
 			httpResponse.setHeader("Access-Control-Allow-Origin", origin);
 			httpResponse.setHeader("Access-Control-Allow-Credentials", "true"); // Needed to allow cookies
@@ -57,10 +57,9 @@ public class WadoHandler extends AbstractHandler
 					String queryString = httpRequest.getQueryString();
 					queryString = URLDecoder.decode(queryString, "UTF-8");
 					if (queryString != null) {
-						performWADOQuery(queryString, responseStream);
-						statusCode = HttpServletResponse.SC_OK;
+						statusCode = performWADOQuery(queryString, responseStream);
 					} else {
-						statusCode = HandlerUtil.warningResponse(HttpServletResponse.SC_BAD_REQUEST, MISSING_QUERY_MESSAGE, log);
+						statusCode = HandlerUtil.badRequestResponse(MISSING_QUERY_MESSAGE, log);
 					}
 				} else {
 					statusCode = HandlerUtil.invalidTokenResponse(INVALID_SESSION_TOKEN_MESSAGE, log);
@@ -80,14 +79,25 @@ public class WadoHandler extends AbstractHandler
 		return true;
 	}
 
-	private void performWADOQuery(String queryString, ServletOutputStream outputStream) throws IOException, HttpException
+	private int performWADOQuery(String queryString, ServletOutputStream outputStream)
+
 	{
 		String wadoHost = config.getStringPropertyValue("NameServer");
 		int wadoPort = config.getIntegerPropertyValue("DicomServerWadoPort");
 		String wadoBase = config.getStringPropertyValue("WadoUrlExtension");
-		String wadoUrl = buildWADOURL(wadoHost, wadoPort, wadoBase, queryString);
+		String wadoURL = buildWADOURL(wadoHost, wadoPort, wadoBase, queryString);
+		int statusCode;
 
-		HandlerUtil.streamGetResponse(wadoUrl, outputStream, log);
+		try {
+			statusCode = HandlerUtil.streamGetResponse(wadoURL, outputStream, log);
+			if (statusCode != HttpServletResponse.SC_OK)
+				log.warning("Unexpected response " + statusCode + " to WADO request " + wadoURL);
+		} catch (HttpException e) {
+			statusCode = HandlerUtil.internalErrorResponse(INTERNAL_EXCEPTION_MESSAGE, log);
+		} catch (IOException e) {
+			statusCode = HandlerUtil.internalErrorResponse(INTERNAL_EXCEPTION_MESSAGE, log);
+		}
+		return statusCode;
 	}
 
 	private String buildWADOURL(String host, int port, String base, String queryString)

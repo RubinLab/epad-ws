@@ -174,6 +174,16 @@ public class HandlerUtil
 		return warningResponse(HttpServletResponse.SC_UNAUTHORIZED, message, responseStream, log);
 	}
 
+	public static int badRequestResponse(String message, PrintWriter responseStream, EPADLogger log)
+	{
+		return warningResponse(HttpServletResponse.SC_BAD_REQUEST, message, responseStream, log);
+	}
+
+	public static int badRequestResponse(String message, EPADLogger log)
+	{
+		return warningResponse(HttpServletResponse.SC_BAD_REQUEST, message, log);
+	}
+
 	public static int invalidTokenResponse(String message, Throwable t, EPADLogger log)
 	{
 		return warningResponse(HttpServletResponse.SC_UNAUTHORIZED, message, t, log);
@@ -217,14 +227,15 @@ public class HandlerUtil
 		return uriTemplate.match(path, map);
 	}
 
-	public static void streamGetResponse(String url, ServletOutputStream outputStream, EPADLogger log)
-			throws IOException, HttpException
+	public static int streamGetResponse(String url, ServletOutputStream outputStream, EPADLogger log) throws IOException,
+			HttpException
 	{
 		HttpClient client = new HttpClient();
 		GetMethod method = new GetMethod(url);
+		int statusCode;
 
 		try {
-			int statusCode = client.executeMethod(method);
+			statusCode = client.executeMethod(method);
 			if (statusCode == HttpServletResponse.SC_OK) {
 				InputStream is = method.getResponseBodyAsStream();
 				int read = 0;
@@ -238,6 +249,7 @@ public class HandlerUtil
 		} finally {
 			method.releaseConnection();
 		}
+		return statusCode;
 	}
 
 	public static List<File> extractFiles(FileItemIterator fileItemIterator, String prefix, String extension)

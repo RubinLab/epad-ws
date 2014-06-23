@@ -85,9 +85,9 @@ public class XNATUtil
 	{
 		String xnatHost = config.getStringPropertyValue("XNATServer");
 		int xnatPort = config.getIntegerPropertyValue("XNATPort");
-		String experimentID = XNATUtil.dicomStudyUID2XNATExperimentID(dicomStudyUID);
+		String xnatExperimentID = XNATUtil.dicomStudyUID2XNATExperimentID(dicomStudyUID);
 		String urlString = XNATUtil.buildXNATBaseURL(xnatHost, xnatPort, XNAT_PROJECTS_BASE) + xnatProjectLabelOrID
-				+ "/subjects/" + xnatSubjectLabelOrID + "/experiments/" + experimentID + "?name=" + dicomStudyUID
+				+ "/subjects/" + xnatSubjectLabelOrID + "/experiments/" + xnatExperimentID + "?name=" + dicomStudyUID
 				+ "&xsiType=xnat:otherDicomSessionData";
 
 		return urlString;
