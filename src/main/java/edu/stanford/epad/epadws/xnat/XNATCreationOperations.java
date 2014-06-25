@@ -50,7 +50,7 @@ public class XNATCreationOperations
 			else
 				eventTracker.recordProjectEvent(jsessionID, projectName);
 		} catch (IOException e) {
-			log.warning("Error calling XNAT", e);
+			log.warning("IO exception calling XNAT", e);
 			xnatStatusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 		} finally {
 			method.releaseConnection();
@@ -126,8 +126,11 @@ public class XNATCreationOperations
 	 * directory.
 	 * <p>
 	 * This method expects a properties file called xnat_upload.properties in the upload directory. This file should
-	 * contain a property called XNATProjectName, which identified the project for the new patients and their studies, and
-	 * XNATSessionID, which contains the session key of the user initiating the upload.
+	 * contain a property called XNATProjectName, which identifies the project ID for the new patients and their studies,
+	 * and XNATSessionID, which contains the session key of the user initiating the upload.
+	 * <p>
+	 * If the header of a DICOM image is missing the patient name, patient ID, or study instance UID field then it is
+	 * skipped.
 	 * 
 	 * @param dicomUploadDirectory
 	 */

@@ -6,39 +6,6 @@
 
   <display-name>ePAD Web Service wiring to support jetty:run from Maven</display-name>
   
-  <!-- Here we wire up our main Restlet application class. mvn jetty:run will cause it to be created. -->
-  <servlet>
-    <servlet-name>Restlet</servlet-name>
-    <description>Example Restlet Servlet</description>
-    <servlet-class>org.restlet.ext.servlet.ServerServlet</servlet-class>
-    <init-param>
-      <param-name>org.restlet.clients</param-name>
-      <param-value>HTTP FILE CLAP</param-value>
-    </init-param>
-    <init-param>
-      <param-name>org.restlet.application</param-name>
-      <param-value>edu.stanford.isis.epadws.EPADWebService</param-value> 
-    </init-param>
-    <load-on-startup>1</load-on-startup>
-  </servlet>
-
- <!-- Restlet adapter -->
-   <servlet>
-      <servlet-name>RestletServlet</servlet-name>
-      <servlet-class>
-         org.restlet.ext.servlet.ServerServlet
-      </servlet-class>
-   </servlet>
-  
-  <servlet-mapping>
-    <servlet-name>Restlet</servlet-name>
-    <url-pattern>/*</url-pattern>
-  </servlet-mapping>
-  
-  <welcome-file-list>
-    <welcome-file>Web_pad.html</welcome-file>
-  </welcome-file-list>
-
 <filter>
    <filter-name>cross-origin</filter-name>
    <filter-class>org.eclipse.jetty.servlets.CrossOriginFilter</filter-class>

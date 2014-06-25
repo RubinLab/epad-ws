@@ -238,6 +238,7 @@ public class EPADHandler extends AbstractHandler
 
 			if (projectCreationParametersAreValid(projectID, projectName, projectDescription, username)) {
 				statusCode = XNATCreationOperations.createXNATProject(projectID, projectName, projectDescription, sessionID);
+				log.info("Crate project " + projectID + " returned statusCode " + statusCode);
 			} else
 				statusCode = HandlerUtil.badRequestJSONResponse(BAD_POST_MESSAGE, responseStream, log);
 

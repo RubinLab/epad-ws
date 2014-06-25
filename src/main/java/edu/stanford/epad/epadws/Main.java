@@ -247,7 +247,8 @@ public class Main
 			contextPath = "/" + contextPath;
 		}
 		WebAppContext webAppContext = new WebAppContext(webAppPath, contextPath);
-		webAppContext.setTempDirectory(new File("/home/epad/DicomProxy/jetty")); // TODO Read from config file
+		String home = System.getProperty("user.home");
+		webAppContext.setTempDirectory(new File(home + "/DicomProxy/jetty")); // TODO Read from config file
 
 		handlerList.add(webAppContext);
 		log.info("Added WAR " + warFileName + " at context path " + contextPath);
