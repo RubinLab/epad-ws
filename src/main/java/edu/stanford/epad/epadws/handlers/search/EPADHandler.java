@@ -52,11 +52,20 @@ public class EPADHandler extends AbstractHandler
 	private static final String SUBJECT_TEMPLATE = SUBJECT_LIST_TEMPLATE + "{subject}";
 	private static final String STUDY_LIST_TEMPLATE = SUBJECT_TEMPLATE + "/studies/";
 	private static final String STUDY_TEMPLATE = STUDY_LIST_TEMPLATE + "{study}";
+	private static final String STUDY_AIM_LIST_TEMPLATE = STUDY_TEMPLATE + "/aims/";
+	private static final String STUDY_AIM_TEMPLATE = STUDY_AIM_LIST_TEMPLATE + "{aid}";
 	private static final String SERIES_LIST_TEMPLATE = STUDY_TEMPLATE + "/series/";
 	private static final String SERIES_TEMPLATE = SERIES_LIST_TEMPLATE + "{series}";
+	private static final String SERIES_AIM_LIST_TEMPLATE = SERIES_TEMPLATE + "/aims/";
+	private static final String SERIES_AIM_TEMPLATE = SERIES_AIM_LIST_TEMPLATE + "{aid}";
 	private static final String IMAGE_LIST_TEMPLATE = SERIES_TEMPLATE + "/images/";
 	private static final String IMAGE_TEMPLATE = IMAGE_LIST_TEMPLATE + "{image}";
+	private static final String IMAGE_AIM_LIST_TEMPLATE = IMAGE_TEMPLATE + "/aims/";
+	private static final String IMAGE_AIM_TEMPLATE = IMAGE_AIM_LIST_TEMPLATE + "{aid}";
 	private static final String FRAME_LIST_TEMPLATE = IMAGE_TEMPLATE + "/frames/";
+	private static final String FRAME_TEMPLATE = FRAME_LIST_TEMPLATE + "{frame}";
+	private static final String FRAME_AIM_LIST_TEMPLATE = FRAME_TEMPLATE + "/aims/";
+	private static final String FRAME_AIM_TEMPLATE = FRAME_AIM_LIST_TEMPLATE + "{aid}";
 
 	private static final String INTERNAL_ERROR_MESSAGE = "Internal error running query on projects route";
 	private static final String INVALID_SESSION_TOKEN_MESSAGE = "Session token is invalid on projects route";
@@ -91,6 +100,8 @@ public class EPADHandler extends AbstractHandler
 						statusCode = handleQuery(httpRequest, responseStream, username);
 					} else if ("DELETE".equalsIgnoreCase(method)) {
 						statusCode = handleDelete(httpRequest, responseStream, username);
+					} else if ("PUT".equalsIgnoreCase(method)) {
+						statusCode = handlePut(httpRequest, responseStream, username);
 					} else if ("POST".equalsIgnoreCase(method)) {
 						statusCode = handlePost(httpRequest, responseStream, username);
 					} else {
@@ -179,7 +190,7 @@ public class EPADHandler extends AbstractHandler
 				String studyUID = HandlerUtil.getTemplateParameter(templateMap, "study");
 				String seriesUID = HandlerUtil.getTemplateParameter(templateMap, "series");
 				String imageID = HandlerUtil.getTemplateParameter(templateMap, "image");
-				if (frameEditParametersAreValid(projectID, subjectID, studyUID, seriesUID, imageID)) {
+				if (imageParametersAreValid(projectID, subjectID, studyUID, seriesUID, imageID)) {
 					EPADImage image = epadOperations.getImage(projectID, subjectID, studyUID, seriesUID, imageID, jsessionID,
 							searchFilter);
 					responseStream.append(image.toJSON());
@@ -225,24 +236,127 @@ public class EPADHandler extends AbstractHandler
 		return statusCode;
 	}
 
+	private int handlePut(HttpServletRequest httpRequest, PrintWriter responseStream, String username)
+	{
+		String sessionID = XNATSessionOperations.getJSessionIDFromRequest(httpRequest);
+		String pathInfo = httpRequest.getPathInfo();
+		int statusCode;
+
+		if (HandlerUtil.matchesTemplate(PROJECT_TEMPLATE, pathInfo)) {
+			Map<String, String> templateMap = HandlerUtil.getTemplateMap(PROJECT_TEMPLATE, pathInfo);
+			String projectID = HandlerUtil.getTemplateParameter(templateMap, "project");
+			String projectName = httpRequest.getParameter("projectName");
+			String projectDescription = httpRequest.getParameter("projectDescription");
+
+			if (projectCreationParametersAreValid(projectID, projectName, projectDescription, username)) {
+				statusCode = XNATCreationOperations.createXNATProject(projectID, projectName, projectDescription, sessionID);
+			} else
+				statusCode = HandlerUtil.badRequestJSONResponse(BAD_POST_MESSAGE, responseStream, log);
+		} else if (HandlerUtil.matchesTemplate(SUBJECT_TEMPLATE, pathInfo)) {
+			Map<String, String> templateMap = HandlerUtil.getTemplateMap(SUBJECT_TEMPLATE, pathInfo);
+			String projectID = HandlerUtil.getTemplateParameter(templateMap, "project");
+			String subjectID = HandlerUtil.getTemplateParameter(templateMap, "subject");
+			String subjectName = httpRequest.getParameter("subjectName");
+
+			if (subjectCreationParametersAreValid(projectID, subjectID, subjectName, username)) {
+				statusCode = XNATCreationOperations.createXNATSubject(projectID, subjectID, subjectName, sessionID);
+			} else
+				statusCode = HandlerUtil.badRequestJSONResponse(BAD_POST_MESSAGE, responseStream, log);
+		} else if (HandlerUtil.matchesTemplate(STUDY_TEMPLATE, pathInfo)) {
+			Map<String, String> templateMap = HandlerUtil.getTemplateMap(STUDY_LIST_TEMPLATE, pathInfo);
+			String projectID = HandlerUtil.getTemplateParameter(templateMap, "project");
+			String subjectID = HandlerUtil.getTemplateParameter(templateMap, "subject");
+			String studyUID = HandlerUtil.getTemplateParameter(templateMap, "study");
+
+			if (studyCreationParametersAreValid(projectID, subjectID, studyUID, username)) {
+				statusCode = XNATCreationOperations.createXNATDICOMStudyExperiment(projectID, subjectID, studyUID, sessionID);
+			} else
+				statusCode = HandlerUtil.badRequestJSONResponse(BAD_POST_MESSAGE, responseStream, log);
+		} else if (HandlerUtil.matchesTemplate(STUDY_AIM_TEMPLATE, pathInfo)) {
+			Map<String, String> templateMap = HandlerUtil.getTemplateMap(STUDY_AIM_TEMPLATE, pathInfo);
+			String projectID = HandlerUtil.getTemplateParameter(templateMap, "project");
+			String subjectID = HandlerUtil.getTemplateParameter(templateMap, "subject");
+			String studyUID = HandlerUtil.getTemplateParameter(templateMap, "study");
+			String aimID = HandlerUtil.getTemplateParameter(templateMap, "aid");
+
+			if (studyAIMParametersAreValid(projectID, subjectID, studyUID, aimID)) {
+				statusCode = HttpServletResponse.SC_NOT_IMPLEMENTED; // TODO
+			} else
+				statusCode = HandlerUtil.badRequestJSONResponse(BAD_POST_MESSAGE, responseStream, log);
+		} else if (HandlerUtil.matchesTemplate(SERIES_TEMPLATE, pathInfo)) {
+			Map<String, String> templateMap = HandlerUtil.getTemplateMap(STUDY_LIST_TEMPLATE, pathInfo);
+			String projectID = HandlerUtil.getTemplateParameter(templateMap, "project");
+			String subjectID = HandlerUtil.getTemplateParameter(templateMap, "subject");
+			String studyUID = HandlerUtil.getTemplateParameter(templateMap, "study");
+			String seriesUID = HandlerUtil.getTemplateParameter(templateMap, "series");
+
+			if (seriesCreationParametersAreValid(projectID, subjectID, studyUID, seriesUID, username)) {
+				statusCode = HttpServletResponse.SC_NOT_IMPLEMENTED; // TODO
+			} else
+				statusCode = HandlerUtil.badRequestJSONResponse(BAD_POST_MESSAGE, responseStream, log);
+		} else if (HandlerUtil.matchesTemplate(SERIES_AIM_TEMPLATE, pathInfo)) {
+			Map<String, String> templateMap = HandlerUtil.getTemplateMap(SERIES_AIM_TEMPLATE, pathInfo);
+			String projectID = HandlerUtil.getTemplateParameter(templateMap, "project");
+			String subjectID = HandlerUtil.getTemplateParameter(templateMap, "subject");
+			String studyUID = HandlerUtil.getTemplateParameter(templateMap, "study");
+			String seriesUID = HandlerUtil.getTemplateParameter(templateMap, "series");
+			String aimID = HandlerUtil.getTemplateParameter(templateMap, "aid");
+
+			if (seriesAIMParametersAreValid(projectID, subjectID, studyUID, seriesUID, aimID)) {
+				statusCode = HttpServletResponse.SC_NOT_IMPLEMENTED; // TODO
+			} else
+				statusCode = HandlerUtil.badRequestJSONResponse(BAD_POST_MESSAGE, responseStream, log);
+		} else if (HandlerUtil.matchesTemplate(IMAGE_AIM_TEMPLATE, pathInfo)) {
+			Map<String, String> templateMap = HandlerUtil.getTemplateMap(IMAGE_AIM_TEMPLATE, pathInfo);
+			String projectID = HandlerUtil.getTemplateParameter(templateMap, "project");
+			String subjectID = HandlerUtil.getTemplateParameter(templateMap, "subject");
+			String studyUID = HandlerUtil.getTemplateParameter(templateMap, "study");
+			String seriesUID = HandlerUtil.getTemplateParameter(templateMap, "series");
+			String imageUID = HandlerUtil.getTemplateParameter(templateMap, "image");
+			String aimID = HandlerUtil.getTemplateParameter(templateMap, "aid");
+
+			if (imageAIMParametersAreValid(projectID, subjectID, studyUID, seriesUID, imageUID, aimID)) {
+				statusCode = HttpServletResponse.SC_NOT_IMPLEMENTED; // TODO
+			} else
+				statusCode = HandlerUtil.badRequestJSONResponse(BAD_POST_MESSAGE, responseStream, log);
+		} else if (HandlerUtil.matchesTemplate(FRAME_AIM_TEMPLATE, pathInfo)) {
+			Map<String, String> templateMap = HandlerUtil.getTemplateMap(FRAME_AIM_TEMPLATE, pathInfo);
+			String projectID = HandlerUtil.getTemplateParameter(templateMap, "project");
+			String subjectID = HandlerUtil.getTemplateParameter(templateMap, "subject");
+			String studyUID = HandlerUtil.getTemplateParameter(templateMap, "study");
+			String seriesUID = HandlerUtil.getTemplateParameter(templateMap, "series");
+			String imageUID = HandlerUtil.getTemplateParameter(templateMap, "image");
+			String frameNumber = HandlerUtil.getTemplateParameter(templateMap, "frame");
+			String aimID = HandlerUtil.getTemplateParameter(templateMap, "aid");
+
+			if (frameAIMParametersAreValid(projectID, subjectID, studyUID, seriesUID, imageUID, frameNumber, aimID)) {
+				statusCode = HttpServletResponse.SC_NOT_IMPLEMENTED; // TODO
+			} else
+				statusCode = HandlerUtil.badRequestJSONResponse(BAD_POST_MESSAGE, responseStream, log);
+		} else {
+			statusCode = HandlerUtil.badRequestJSONResponse(BAD_DELETE_MESSAGE, responseStream, log);
+		}
+		return statusCode;
+	}
+
 	private int handlePost(HttpServletRequest httpRequest, PrintWriter responseStream, String username)
 	{
 		String sessionID = XNATSessionOperations.getJSessionIDFromRequest(httpRequest);
 		String pathInfo = httpRequest.getPathInfo();
 		int statusCode;
 
-		if (HandlerUtil.matchesTemplate(PROJECT_LIST_TEMPLATE, pathInfo)) {
+		if (HandlerUtil.matchesTemplate(PROJECT_LIST_TEMPLATE, pathInfo)) { // TODO This should be deleted and PUT used
 			String projectID = httpRequest.getParameter("projectID");
 			String projectName = httpRequest.getParameter("projectName");
 			String projectDescription = httpRequest.getParameter("projectDescription");
 
 			if (projectCreationParametersAreValid(projectID, projectName, projectDescription, username)) {
 				statusCode = XNATCreationOperations.createXNATProject(projectID, projectName, projectDescription, sessionID);
-				log.info("Crate project " + projectID + " returned statusCode " + statusCode);
 			} else
 				statusCode = HandlerUtil.badRequestJSONResponse(BAD_POST_MESSAGE, responseStream, log);
 
-		} else if (HandlerUtil.matchesTemplate(SUBJECT_LIST_TEMPLATE, pathInfo)) {
+		} else if (HandlerUtil.matchesTemplate(SUBJECT_LIST_TEMPLATE, pathInfo)) { // TODO This should be deleted and PUT
+																																								// used
 			Map<String, String> templateMap = HandlerUtil.getTemplateMap(SUBJECT_LIST_TEMPLATE, pathInfo);
 			String projectID = HandlerUtil.getTemplateParameter(templateMap, "project");
 			String subjectID = httpRequest.getParameter("subjectID");
@@ -252,7 +366,7 @@ public class EPADHandler extends AbstractHandler
 				statusCode = XNATCreationOperations.createXNATSubject(projectID, subjectID, subjectName, sessionID);
 			} else
 				statusCode = HandlerUtil.badRequestJSONResponse(BAD_POST_MESSAGE, responseStream, log);
-		} else if (HandlerUtil.matchesTemplate(STUDY_LIST_TEMPLATE, pathInfo)) {
+		} else if (HandlerUtil.matchesTemplate(STUDY_LIST_TEMPLATE, pathInfo)) { // TODO This should be deleted and PUT used
 			Map<String, String> templateMap = HandlerUtil.getTemplateMap(STUDY_LIST_TEMPLATE, pathInfo);
 			String projectID = HandlerUtil.getTemplateParameter(templateMap, "project");
 			String subjectID = HandlerUtil.getTemplateParameter(templateMap, "subject");
@@ -270,7 +384,7 @@ public class EPADHandler extends AbstractHandler
 			String studyUID = HandlerUtil.getTemplateParameter(templateMap, "study");
 			String seriesUID = HandlerUtil.getTemplateParameter(templateMap, "series");
 			String imageUID = HandlerUtil.getTemplateParameter(templateMap, "image");
-			if (frameEditParametersAreValid(projectID, subjectID, studyUID, seriesUID, imageUID)) {
+			if (imageParametersAreValid(projectID, subjectID, studyUID, seriesUID, imageUID)) {
 				if (handleDSOFramesEdit(projectID, subjectID, studyUID, seriesUID, imageUID, httpRequest, responseStream))
 					statusCode = HttpServletResponse.SC_CREATED;
 				else
@@ -362,7 +476,7 @@ public class EPADHandler extends AbstractHandler
 	{
 		if (projectParametersAreValid(projectID)) {
 			if (subjectID == null) {
-				log.warning("Missing subject ID parameter");
+				log.warning("Missing subject ID");
 				return false;
 			} else
 				return true;
@@ -374,7 +488,19 @@ public class EPADHandler extends AbstractHandler
 	{
 		if (subjectParametersAreValid(projectID, subjectID)) {
 			if (studyUID == null) {
-				log.warning("Missing study UID parameter");
+				log.warning("Missing study UID");
+				return false;
+			} else
+				return true;
+		} else
+			return false;
+	}
+
+	private boolean studyAIMParametersAreValid(String projectID, String subjectID, String studyUID, String aimID)
+	{
+		if (studyParametersAreValid(projectID, subjectID, studyUID)) {
+			if (aimID == null) {
+				log.warning("Missing aim ID");
 				return false;
 			} else
 				return true;
@@ -386,7 +512,7 @@ public class EPADHandler extends AbstractHandler
 	{
 		if (studyParametersAreValid(projectID, subjectID, studyUID)) {
 			if (seriesUID == null) {
-				log.warning("Missing series UID parameter");
+				log.warning("Missing series UID");
 				return false;
 			} else
 				return true;
@@ -394,12 +520,64 @@ public class EPADHandler extends AbstractHandler
 			return false;
 	}
 
-	private boolean frameEditParametersAreValid(String projectID, String subjectID, String studyUID, String seriesUID,
+	private boolean seriesAIMParametersAreValid(String projectID, String subjectID, String studyUID, String seriesUID,
+			String aimID)
+	{
+		if (seriesParametersAreValid(projectID, subjectID, studyUID, seriesUID)) {
+			if (aimID == null) {
+				log.warning("Missing AIM ID");
+				return false;
+			} else
+				return true;
+		} else
+			return false;
+	}
+
+	private boolean imageParametersAreValid(String projectID, String subjectID, String studyUID, String seriesUID,
 			String imageUID)
 	{
 		if (seriesParametersAreValid(projectID, subjectID, studyUID, seriesUID)) {
 			if (imageUID == null) {
-				log.warning("Missing image UID parameter");
+				log.warning("Missing image UID");
+				return false;
+			} else
+				return true;
+		} else
+			return false;
+	}
+
+	private boolean imageAIMParametersAreValid(String projectID, String subjectID, String studyUID, String seriesUID,
+			String imageUID, String aimID)
+	{
+		if (imageParametersAreValid(projectID, subjectID, studyUID, seriesUID, imageUID)) {
+			if (aimID == null) {
+				log.warning("Missing AIM ID");
+				return false;
+			} else
+				return true;
+		} else
+			return false;
+	}
+
+	private boolean frameParametersAreValid(String projectID, String subjectID, String studyUID, String seriesUID,
+			String imageUID, String frameNumber)
+	{
+		if (imageParametersAreValid(projectID, subjectID, studyUID, seriesUID, imageUID)) {
+			if (frameNumber == null) {
+				log.warning("Missing frame number");
+				return false;
+			} else
+				return true;
+		} else
+			return false;
+	}
+
+	private boolean frameAIMParametersAreValid(String projectID, String subjectID, String studyUID, String seriesUID,
+			String imageUID, String frameNumber, String aimID)
+	{
+		if (frameParametersAreValid(projectID, subjectID, studyUID, seriesUID, imageUID, frameNumber)) {
+			if (aimID == null) {
+				log.warning("Missing AIM ID");
 				return false;
 			} else
 				return true;
@@ -439,6 +617,12 @@ public class EPADHandler extends AbstractHandler
 	private boolean studyCreationParametersAreValid(String projectID, String subjectID, String studyUID, String username)
 	{
 		return studyParametersAreValid(projectID, subjectID, studyUID);
+	}
+
+	private boolean seriesCreationParametersAreValid(String projectID, String subjectID, String studyUID,
+			String seriesUID, String username)
+	{
+		return seriesParametersAreValid(projectID, subjectID, studyUID, seriesUID);
 	}
 
 	private DSOEditResult createEditedDSO(DSOEditRequest dsoEditRequest, List<File> editFramesMaskFiles)
