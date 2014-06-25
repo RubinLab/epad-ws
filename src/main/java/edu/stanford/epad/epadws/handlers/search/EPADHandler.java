@@ -156,9 +156,9 @@ public class EPADHandler extends AbstractHandler
 			} else if (HandlerUtil.matchesTemplate(PROJECT_AIM_TEMPLATE, pathInfo)) {
 				Map<String, String> templateMap = HandlerUtil.getTemplateMap(PROJECT_AIM_TEMPLATE, pathInfo);
 				String projectID = HandlerUtil.getTemplateParameter(templateMap, "project");
-				// String aimID = HandlerUtil.getTemplateParameter(templateMap, "aid");
+				String aimID = HandlerUtil.getTemplateParameter(templateMap, "aid");
 
-				if (projectParametersAreValid(projectID))
+				if (projectAIMParametersAreValid(projectID, aimID))
 					statusCode = HttpServletResponse.SC_NOT_IMPLEMENTED; // TODO
 				else
 					statusCode = HandlerUtil.badRequestJSONResponse(BAD_GET_MESSAGE, responseStream, log);
@@ -309,6 +309,8 @@ public class EPADHandler extends AbstractHandler
 				String studyUID = HandlerUtil.getTemplateParameter(templateMap, "study");
 				String seriesUID = HandlerUtil.getTemplateParameter(templateMap, "series");
 				String imageID = HandlerUtil.getTemplateParameter(templateMap, "image");
+				// String format = httpRequest.getParameter("format");
+
 				if (imageParametersAreValid(projectID, subjectID, studyUID, seriesUID, imageID)) {
 					EPADImage image = epadOperations.getImage(projectID, subjectID, studyUID, seriesUID, imageID, sessionID,
 							searchFilter);
@@ -358,6 +360,7 @@ public class EPADHandler extends AbstractHandler
 				String seriesUID = HandlerUtil.getTemplateParameter(templateMap, "series");
 				String imageID = HandlerUtil.getTemplateParameter(templateMap, "image");
 				String frameNumber = HandlerUtil.getTemplateParameter(templateMap, "frame");
+				// String format = httpRequest.getParameter("format");
 				if (frameParametersAreValid(projectID, subjectID, studyUID, seriesUID, imageID, frameNumber)) {
 					statusCode = HttpServletResponse.SC_NOT_IMPLEMENTED; // TODO
 				} else
@@ -727,6 +730,15 @@ public class EPADHandler extends AbstractHandler
 	{
 		if (projectID == null) {
 			log.warning("Missing project ID");
+			return false;
+		} else
+			return true;
+	}
+
+	private boolean projectAIMParametersAreValid(String projectID, String aimID)
+	{
+		if (projectParametersAreValid(projectID)) {
+			log.warning("Missing AIM ID");
 			return false;
 		} else
 			return true;
