@@ -1,4 +1,4 @@
-package edu.stanford.epad.epadws.handlers.search;
+package edu.stanford.epad.epadws.handlers.core;
 
 import javax.servlet.http.HttpServletRequest;
 

@@ -12,7 +12,7 @@ import edu.stanford.epad.dtos.EPADSeriesList;
 import edu.stanford.epad.dtos.EPADStudyList;
 import edu.stanford.epad.dtos.EPADSubjectList;
 import edu.stanford.epad.dtos.internal.DCM4CHEESeries;
-import edu.stanford.epad.epadws.handlers.search.EPADSearchFilter;
+import edu.stanford.epad.epadws.handlers.core.EPADSearchFilter;
 
 /**
  * 
