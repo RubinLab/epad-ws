@@ -26,8 +26,11 @@ import com.google.gson.Gson;
 import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.epad.dtos.DSOEditRequest;
 import edu.stanford.epad.dtos.DSOEditResult;
+import edu.stanford.epad.dtos.EPADAIM;
+import edu.stanford.epad.dtos.EPADAIMList;
 import edu.stanford.epad.dtos.EPADImage;
 import edu.stanford.epad.dtos.EPADImageList;
+import edu.stanford.epad.dtos.EPADProject;
 import edu.stanford.epad.dtos.EPADProjectList;
 import edu.stanford.epad.dtos.EPADSeriesList;
 import edu.stanford.epad.dtos.EPADStudyList;
@@ -108,104 +111,141 @@ public class EPADHandler extends AbstractHandler
 			EPADSearchFilter searchFilter = EPADSearchFilterBuilder.build(httpRequest);
 
 			if (HandlerUtil.matchesTemplate(RouteTemplates.PROJECT_LIST, pathInfo)) {
-				EPADProjectList projectList = epadOperations.getAllProjectsForUser(username, sessionID, searchFilter);
+				EPADProjectList projectList = epadOperations
+						.getAllProjectDescriptionsForUser(username, sessionID, searchFilter);
 				responseStream.append(projectList.toJSON());
+
 				statusCode = HttpServletResponse.SC_OK;
 			} else if (HandlerUtil.matchesTemplate(RouteTemplates.PROJECT, pathInfo)) {
 				ProjectReference projectReference = ProjectReference.extract(RouteTemplates.PROJECT, pathInfo);
+				EPADProject project = epadOperations.getProjectDescription(projectReference.projectID, username, sessionID);
+				responseStream.append(project.toJSON());
+				statusCode = HttpServletResponse.SC_OK;
 
-				statusCode = HttpServletResponse.SC_NOT_IMPLEMENTED; // TODO
-			} else if (HandlerUtil.matchesTemplate(RouteTemplates.PROJECT_AIM, pathInfo)) {
-				ProjectReference projectReference = ProjectReference.extract(RouteTemplates.PROJECT, pathInfo);
-				AIMReference aimReference = AIMReference.extract(RouteTemplates.SUBJECT_AIM, pathInfo);
-
-				statusCode = HttpServletResponse.SC_NOT_IMPLEMENTED; // TODO
 			} else if (HandlerUtil.matchesTemplate(RouteTemplates.PROJECT_AIM_LIST, pathInfo)) {
 				ProjectReference projectReference = ProjectReference.extract(RouteTemplates.PROJECT_AIM_LIST, pathInfo);
+				EPADAIMList aims = epadOperations.getProjectAIMDescriptions(projectReference.projectID, username, sessionID);
+				responseStream.append(aims.toJSON());
+				statusCode = HttpServletResponse.SC_OK;
 
-				statusCode = HttpServletResponse.SC_NOT_IMPLEMENTED; // TODO
+			} else if (HandlerUtil.matchesTemplate(RouteTemplates.PROJECT_AIM, pathInfo)) {
+				ProjectReference projectReference = ProjectReference.extract(RouteTemplates.PROJECT_AIM, pathInfo);
+				AIMReference aimReference = AIMReference.extract(RouteTemplates.PROJECT_AIM, pathInfo);
+				EPADAIM aim = epadOperations.getProjectAIMDescription(projectReference.projectID, aimReference.aimID, username,
+						sessionID);
+				responseStream.append(aim.toJSON());
+				statusCode = HttpServletResponse.SC_OK;
+
 			} else if (HandlerUtil.matchesTemplate(RouteTemplates.SUBJECT_LIST, pathInfo)) {
 				ProjectReference projectReference = ProjectReference.extract(RouteTemplates.SUBJECT_LIST, pathInfo);
-				EPADSubjectList subjectList = epadOperations.getAllSubjectsForProject(projectReference.projectID, username,
-						sessionID, searchFilter);
+				EPADSubjectList subjectList = epadOperations.getAllSubjectDescriptionsForProject(projectReference.projectID,
+						username, sessionID, searchFilter);
 				responseStream.append(subjectList.toJSON());
 				statusCode = HttpServletResponse.SC_OK;
+
 			} else if (HandlerUtil.matchesTemplate(RouteTemplates.SUBJECT, pathInfo)) {
 				SubjectReference subjectReference = SubjectReference.extract(RouteTemplates.SUBJECT, pathInfo);
 
 				statusCode = HttpServletResponse.SC_NOT_IMPLEMENTED; // TODO
 			} else if (HandlerUtil.matchesTemplate(RouteTemplates.SUBJECT_AIM_LIST, pathInfo)) {
 				SubjectReference subjectReference = SubjectReference.extract(RouteTemplates.SUBJECT_AIM_LIST, pathInfo);
+				EPADAIMList aims = epadOperations.getSubjectAIMDescriptions(subjectReference.projectID,
+						subjectReference.subjectID, username, sessionID);
+				responseStream.append(aims.toJSON());
+				statusCode = HttpServletResponse.SC_OK;
 
-				statusCode = HttpServletResponse.SC_NOT_IMPLEMENTED; // TODO
 			} else if (HandlerUtil.matchesTemplate(RouteTemplates.SUBJECT_AIM, pathInfo)) {
 				SubjectReference subjectReference = SubjectReference.extract(RouteTemplates.SUBJECT_AIM, pathInfo);
 				AIMReference aimReference = AIMReference.extract(RouteTemplates.SUBJECT_AIM, pathInfo);
+				EPADAIM aim = epadOperations.getSubjectAIMDescription(subjectReference.projectID, subjectReference.subjectID,
+						aimReference.aimID, username, sessionID);
+				responseStream.append(aim.toJSON());
+				statusCode = HttpServletResponse.SC_OK;
 
-				statusCode = HttpServletResponse.SC_NOT_IMPLEMENTED; // TODO
 			} else if (HandlerUtil.matchesTemplate(RouteTemplates.STUDY_LIST, pathInfo)) {
 				SubjectReference subjectReference = SubjectReference.extract(RouteTemplates.STUDY_LIST, pathInfo);
-
-				EPADStudyList studyList = epadOperations.getAllStudiesForPatient(subjectReference.projectID,
+				EPADStudyList studyList = epadOperations.getAllStudyDescriptionsForSubject(subjectReference.projectID,
 						subjectReference.subjectID, username, sessionID, searchFilter);
 				responseStream.append(studyList.toJSON());
 				statusCode = HttpServletResponse.SC_OK;
+
 			} else if (HandlerUtil.matchesTemplate(RouteTemplates.STUDY, pathInfo)) {
 				StudyReference studyReference = StudyReference.extract(RouteTemplates.STUDY, pathInfo);
 
 				statusCode = HttpServletResponse.SC_NOT_IMPLEMENTED; // TODO
 			} else if (HandlerUtil.matchesTemplate(RouteTemplates.STUDY_AIM_LIST, pathInfo)) {
 				StudyReference studyReference = StudyReference.extract(RouteTemplates.STUDY_AIM_LIST, pathInfo);
+				EPADAIMList aims = epadOperations.getStudyAIMDescriptions(studyReference.projectID, studyReference.subjectID,
+						studyReference.studyUID, username, sessionID);
+				responseStream.append(aims.toJSON());
+				statusCode = HttpServletResponse.SC_OK;
 
-				statusCode = HttpServletResponse.SC_NOT_IMPLEMENTED; // TODO
 			} else if (HandlerUtil.matchesTemplate(RouteTemplates.STUDY_AIM, pathInfo)) {
 				StudyReference studyReference = StudyReference.extract(RouteTemplates.STUDY_AIM, pathInfo);
 				AIMReference aimReference = AIMReference.extract(RouteTemplates.STUDY_AIM, pathInfo);
+				EPADAIM aim = epadOperations.getStudyAIMDescription(studyReference.projectID, studyReference.subjectID,
+						studyReference.studyUID, aimReference.aimID, username, sessionID);
+				responseStream.append(aim.toJSON());
+				statusCode = HttpServletResponse.SC_OK;
 
-				statusCode = HttpServletResponse.SC_NOT_IMPLEMENTED; // TODO
 			} else if (HandlerUtil.matchesTemplate(RouteTemplates.SERIES_LIST, pathInfo)) {
 				StudyReference studyReference = StudyReference.extract(RouteTemplates.SERIES_LIST, pathInfo);
-				EPADSeriesList seriesList = epadOperations.getAllSeriesForStudy(studyReference.projectID,
+				EPADSeriesList seriesList = epadOperations.getAllSeriesDescriptionsForStudy(studyReference.projectID,
 						studyReference.subjectID, studyReference.studyUID, username, sessionID, searchFilter);
 				responseStream.append(seriesList.toJSON());
 				statusCode = HttpServletResponse.SC_OK;
+
 			} else if (HandlerUtil.matchesTemplate(RouteTemplates.SERIES, pathInfo)) {
 				SeriesReference seriesReference = SeriesReference.extract(RouteTemplates.STUDY, pathInfo);
 
 				statusCode = HttpServletResponse.SC_NOT_IMPLEMENTED; // TODO
 			} else if (HandlerUtil.matchesTemplate(RouteTemplates.SERIES_AIM_LIST, pathInfo)) {
 				SeriesReference seriesReference = SeriesReference.extract(RouteTemplates.SERIES_AIM_LIST, pathInfo);
+				EPADAIMList aims = epadOperations.getSeriesAIMDescriptions(seriesReference.projectID,
+						seriesReference.subjectID, seriesReference.studyUID, seriesReference.seriesUID, username, sessionID);
+				responseStream.append(aims.toJSON());
+				statusCode = HttpServletResponse.SC_OK;
 
-				statusCode = HttpServletResponse.SC_NOT_IMPLEMENTED; // TODO
 			} else if (HandlerUtil.matchesTemplate(RouteTemplates.SERIES_AIM, pathInfo)) {
 				SeriesReference seriesReference = SeriesReference.extract(RouteTemplates.SERIES_AIM, pathInfo);
 				AIMReference aimReference = AIMReference.extract(RouteTemplates.SERIES_AIM, pathInfo);
+				EPADAIM aim = epadOperations.getSeriesAIMDescription(seriesReference.projectID, seriesReference.subjectID,
+						seriesReference.studyUID, seriesReference.seriesUID, aimReference.aimID, username, sessionID);
+				responseStream.append(aim.toJSON());
+				statusCode = HttpServletResponse.SC_OK;
 
-				statusCode = HttpServletResponse.SC_NOT_IMPLEMENTED; // TODO
 			} else if (HandlerUtil.matchesTemplate(RouteTemplates.IMAGE_LIST, pathInfo)) {
 				SeriesReference seriesReference = SeriesReference.extract(RouteTemplates.IMAGE_LIST, pathInfo);
 
-				EPADImageList imageList = epadOperations.getAllImagesForSeries(seriesReference.projectID,
+				EPADImageList imageList = epadOperations.getAllImageDescriptionsForSeries(seriesReference.projectID,
 						seriesReference.subjectID, seriesReference.studyUID, seriesReference.seriesUID, sessionID, searchFilter);
 				responseStream.append(imageList.toJSON());
 				statusCode = HttpServletResponse.SC_OK;
+
 			} else if (HandlerUtil.matchesTemplate(RouteTemplates.IMAGE, pathInfo)) {
 				ImageReference imageReference = ImageReference.extract(RouteTemplates.IMAGE, pathInfo);
 				// String format = httpRequest.getParameter("format");
 
-				EPADImage image = epadOperations.getImage(imageReference.projectID, imageReference.subjectID,
-						imageReference.studyUID, imageReference.seriesUID, imageReference.imageUID, sessionID, searchFilter);
+				EPADImage image = epadOperations.getImageDescription(imageReference.projectID, imageReference.subjectID,
+						imageReference.studyUID, imageReference.seriesUID, imageReference.imageUID, sessionID);
 				responseStream.append(image.toJSON());
 				statusCode = HttpServletResponse.SC_OK;
 			} else if (HandlerUtil.matchesTemplate(RouteTemplates.IMAGE_AIM_LIST, pathInfo)) {
 				ImageReference imageReference = ImageReference.extract(RouteTemplates.IMAGE_AIM_LIST, pathInfo);
+				EPADAIMList aims = epadOperations.getImageAIMDescriptions(imageReference.projectID, imageReference.subjectID,
+						imageReference.studyUID, imageReference.seriesUID, imageReference.imageUID, username, sessionID);
+				responseStream.append(aims.toJSON());
+				statusCode = HttpServletResponse.SC_OK;
 
-				statusCode = HttpServletResponse.SC_NOT_IMPLEMENTED; // TODO
 			} else if (HandlerUtil.matchesTemplate(RouteTemplates.IMAGE_AIM, pathInfo)) {
 				ImageReference imageReference = ImageReference.extract(RouteTemplates.IMAGE_AIM, pathInfo);
 				AIMReference aimReference = AIMReference.extract(RouteTemplates.SERIES_AIM, pathInfo);
+				EPADAIM aim = epadOperations.getImageAIMDescription(imageReference.projectID, imageReference.subjectID,
+						imageReference.studyUID, imageReference.seriesUID, imageReference.imageUID, aimReference.aimID, username,
+						sessionID);
+				responseStream.append(aim.toJSON());
+				statusCode = HttpServletResponse.SC_OK;
 
-				statusCode = HttpServletResponse.SC_NOT_IMPLEMENTED; // TODO
 			} else if (HandlerUtil.matchesTemplate(RouteTemplates.FRAME_LIST, pathInfo)) {
 				ImageReference imageReference = ImageReference.extract(RouteTemplates.FRAME_LIST, pathInfo);
 				statusCode = HttpServletResponse.SC_NOT_IMPLEMENTED; // TODO
@@ -215,63 +255,25 @@ public class EPADHandler extends AbstractHandler
 				statusCode = HttpServletResponse.SC_NOT_IMPLEMENTED; // TODO
 			} else if (HandlerUtil.matchesTemplate(RouteTemplates.FRAME_AIM_LIST, pathInfo)) {
 				FrameReference frameReference = FrameReference.extract(RouteTemplates.FRAME_AIM_LIST, pathInfo);
-				statusCode = HttpServletResponse.SC_NOT_IMPLEMENTED; // TODO
+				EPADAIMList aims = epadOperations.getFrameAIMDescriptions(frameReference.projectID, frameReference.subjectID,
+						frameReference.studyUID, frameReference.seriesUID, frameReference.imageUID, frameReference.frameNumber,
+						username, sessionID);
+				responseStream.append(aims.toJSON());
+				statusCode = HttpServletResponse.SC_OK;
+
 			} else if (HandlerUtil.matchesTemplate(RouteTemplates.FRAME_AIM, pathInfo)) {
 				FrameReference frameReference = FrameReference.extract(RouteTemplates.FRAME_AIM, pathInfo);
 				AIMReference aimReference = AIMReference.extract(RouteTemplates.FRAME_AIM, pathInfo);
-				statusCode = HttpServletResponse.SC_NOT_IMPLEMENTED; // TODO
+				EPADAIM aim = epadOperations.getFrameAIMDescription(frameReference.projectID, frameReference.subjectID,
+						frameReference.studyUID, frameReference.seriesUID, frameReference.imageUID, frameReference.frameNumber,
+						aimReference.aimID, username, sessionID);
+				responseStream.append(aim.toJSON());
+				statusCode = HttpServletResponse.SC_OK;
+
 			} else
 				statusCode = HandlerUtil.badRequestJSONResponse(BAD_GET_MESSAGE, responseStream, log);
 		} catch (Throwable t) {
 			statusCode = HandlerUtil.internalErrorJSONResponse(INTERNAL_ERROR_MESSAGE, t, responseStream, log);
-		}
-		return statusCode;
-	}
-
-	private int handleDelete(HttpServletRequest httpRequest, PrintWriter responseStream, String username)
-	{
-		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
-		String sessionID = XNATSessionOperations.getJSessionIDFromRequest(httpRequest);
-		String pathInfo = httpRequest.getPathInfo();
-		int statusCode;
-
-		if (HandlerUtil.matchesTemplate(RouteTemplates.PROJECT, pathInfo)) {
-			ProjectReference projectReference = ProjectReference.extract(RouteTemplates.PROJECT, pathInfo);
-			statusCode = epadOperations.projectDelete(sessionID, username, projectReference.projectID);
-		} else if (HandlerUtil.matchesTemplate(RouteTemplates.SUBJECT, pathInfo)) {
-			SubjectReference subjectReference = SubjectReference.extract(RouteTemplates.SUBJECT, pathInfo);
-			statusCode = epadOperations.patientDelete(sessionID, username, subjectReference.projectID,
-					subjectReference.subjectID);
-		} else if (HandlerUtil.matchesTemplate(RouteTemplates.STUDY, pathInfo)) {
-			StudyReference studyReference = StudyReference.extract(RouteTemplates.STUDY, pathInfo);
-			statusCode = epadOperations.studyDelete(sessionID, username, studyReference.projectID, studyReference.subjectID,
-					studyReference.studyUID);
-		} else if (HandlerUtil.matchesTemplate(RouteTemplates.STUDY_AIM, pathInfo)) {
-			StudyReference studyReference = StudyReference.extract(RouteTemplates.STUDY_AIM, pathInfo);
-			AIMReference aimReference = AIMReference.extract(RouteTemplates.STUDY_AIM, pathInfo);
-
-			statusCode = HttpServletResponse.SC_NOT_IMPLEMENTED; // TODO
-		} else if (HandlerUtil.matchesTemplate(RouteTemplates.SERIES, pathInfo)) {
-			SeriesReference seriesReference = SeriesReference.extract(RouteTemplates.SERIES, pathInfo);
-
-			statusCode = HttpServletResponse.SC_NOT_IMPLEMENTED; // TODO
-		} else if (HandlerUtil.matchesTemplate(RouteTemplates.SERIES_AIM, pathInfo)) {
-			SeriesReference seriesReference = SeriesReference.extract(RouteTemplates.SERIES_AIM, pathInfo);
-			AIMReference aimReference = AIMReference.extract(RouteTemplates.SERIES_AIM, pathInfo);
-
-			statusCode = HttpServletResponse.SC_NOT_IMPLEMENTED; // TODO
-		} else if (HandlerUtil.matchesTemplate(RouteTemplates.IMAGE_AIM, pathInfo)) {
-			ImageReference imageReference = ImageReference.extract(RouteTemplates.IMAGE_AIM, pathInfo);
-			AIMReference aimReference = AIMReference.extract(RouteTemplates.IMAGE_AIM, pathInfo);
-
-			statusCode = HttpServletResponse.SC_NOT_IMPLEMENTED; // TODO
-		} else if (HandlerUtil.matchesTemplate(RouteTemplates.FRAME_AIM, pathInfo)) {
-			FrameReference frameReference = FrameReference.extract(RouteTemplates.FRAME_AIM, pathInfo);
-			AIMReference aimReference = AIMReference.extract(RouteTemplates.FRAME_AIM, pathInfo);
-
-			statusCode = HttpServletResponse.SC_NOT_IMPLEMENTED; // TODO
-		} else {
-			statusCode = HandlerUtil.badRequestJSONResponse(BAD_DELETE_MESSAGE, responseStream, log);
 		}
 		return statusCode;
 	}
@@ -356,6 +358,54 @@ public class EPADHandler extends AbstractHandler
 				statusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 		} else {
 			statusCode = HandlerUtil.badRequestJSONResponse(BAD_POST_MESSAGE, responseStream, log);
+		}
+		return statusCode;
+	}
+
+	private int handleDelete(HttpServletRequest httpRequest, PrintWriter responseStream, String username)
+	{
+		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
+		String sessionID = XNATSessionOperations.getJSessionIDFromRequest(httpRequest);
+		String pathInfo = httpRequest.getPathInfo();
+		int statusCode;
+
+		if (HandlerUtil.matchesTemplate(RouteTemplates.PROJECT, pathInfo)) {
+			ProjectReference projectReference = ProjectReference.extract(RouteTemplates.PROJECT, pathInfo);
+			statusCode = epadOperations.projectDelete(projectReference.projectID, sessionID, username);
+		} else if (HandlerUtil.matchesTemplate(RouteTemplates.SUBJECT, pathInfo)) {
+			SubjectReference subjectReference = SubjectReference.extract(RouteTemplates.SUBJECT, pathInfo);
+			statusCode = epadOperations.patientDelete(subjectReference.projectID, subjectReference.subjectID, sessionID,
+					username);
+		} else if (HandlerUtil.matchesTemplate(RouteTemplates.STUDY, pathInfo)) {
+			StudyReference studyReference = StudyReference.extract(RouteTemplates.STUDY, pathInfo);
+			statusCode = epadOperations.studyDelete(studyReference.projectID, studyReference.subjectID,
+					studyReference.studyUID, sessionID, username);
+		} else if (HandlerUtil.matchesTemplate(RouteTemplates.STUDY_AIM, pathInfo)) {
+			StudyReference studyReference = StudyReference.extract(RouteTemplates.STUDY_AIM, pathInfo);
+			AIMReference aimReference = AIMReference.extract(RouteTemplates.STUDY_AIM, pathInfo);
+
+			statusCode = HttpServletResponse.SC_NOT_IMPLEMENTED; // TODO
+		} else if (HandlerUtil.matchesTemplate(RouteTemplates.SERIES, pathInfo)) {
+			SeriesReference seriesReference = SeriesReference.extract(RouteTemplates.SERIES, pathInfo);
+
+			statusCode = HttpServletResponse.SC_NOT_IMPLEMENTED; // TODO
+		} else if (HandlerUtil.matchesTemplate(RouteTemplates.SERIES_AIM, pathInfo)) {
+			SeriesReference seriesReference = SeriesReference.extract(RouteTemplates.SERIES_AIM, pathInfo);
+			AIMReference aimReference = AIMReference.extract(RouteTemplates.SERIES_AIM, pathInfo);
+
+			statusCode = HttpServletResponse.SC_NOT_IMPLEMENTED; // TODO
+		} else if (HandlerUtil.matchesTemplate(RouteTemplates.IMAGE_AIM, pathInfo)) {
+			ImageReference imageReference = ImageReference.extract(RouteTemplates.IMAGE_AIM, pathInfo);
+			AIMReference aimReference = AIMReference.extract(RouteTemplates.IMAGE_AIM, pathInfo);
+
+			statusCode = HttpServletResponse.SC_NOT_IMPLEMENTED; // TODO
+		} else if (HandlerUtil.matchesTemplate(RouteTemplates.FRAME_AIM, pathInfo)) {
+			FrameReference frameReference = FrameReference.extract(RouteTemplates.FRAME_AIM, pathInfo);
+			AIMReference aimReference = AIMReference.extract(RouteTemplates.FRAME_AIM, pathInfo);
+
+			statusCode = HttpServletResponse.SC_NOT_IMPLEMENTED; // TODO
+		} else {
+			statusCode = HandlerUtil.badRequestJSONResponse(BAD_DELETE_MESSAGE, responseStream, log);
 		}
 		return statusCode;
 	}
