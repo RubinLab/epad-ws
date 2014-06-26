@@ -21,6 +21,11 @@ import edu.stanford.epad.dtos.EPADSubject;
 import edu.stanford.epad.dtos.EPADSubjectList;
 import edu.stanford.epad.dtos.internal.DCM4CHEESeries;
 import edu.stanford.epad.epadws.handlers.core.EPADSearchFilter;
+import edu.stanford.epad.epadws.handlers.core.FrameReference;
+import edu.stanford.epad.epadws.handlers.core.ImageReference;
+import edu.stanford.epad.epadws.handlers.core.SeriesReference;
+import edu.stanford.epad.epadws.handlers.core.StudyReference;
+import edu.stanford.epad.epadws.handlers.core.SubjectReference;
 
 /**
  * 
@@ -37,34 +42,31 @@ public interface EpadOperations
 			EPADSearchFilter searchFilter);
 
 	// TODO
-	EPADSubject getSubjectDescription(String projectID, String subjectID, String username, String sessionID);
+	EPADSubject getSubjectDescription(SubjectReference subjectReference, String username, String sessionID);
 
-	EPADStudyList getAllStudyDescriptionsForSubject(String projectID, String subjectID, String username,
-			String sessionID, EPADSearchFilter searchFilter);
-
-	// TODO
-	EPADStudy getStudyDescription(String projectID, String subjectID, String studyUID, String username, String sessionID);
-
-	EPADSeriesList getAllSeriesDescriptionsForStudy(String projectID, String subjectID, String studyUID, String username,
-			String sessionID, EPADSearchFilter searchFilter);
+	EPADStudyList getAllStudyDescriptionsForSubject(SubjectReference subjectReference, String username, String sessionID,
+			EPADSearchFilter searchFilter);
 
 	// TODO
-	EPADSeries getSeriesDescription(String projectID, String subjectID, String studyUID, String seriesUID,
-			String username, String sessionID);
+	EPADStudy getStudyDescription(StudyReference studyReference, String username, String sessionID);
 
-	EPADImageList getAllImageDescriptionsForSeries(String projectID, String subjectID, String studyUID, String seriesUID,
-			String sessionID, EPADSearchFilter searchFilter);
-
-	EPADImage getImageDescription(String projectID, String subjectID, String studyUID, String seriesUID, String imageUID,
-			String sessionID);
+	EPADSeriesList getAllSeriesDescriptionsForStudy(StudyReference studyReference, String username, String sessionID,
+			EPADSearchFilter searchFilter);
 
 	// TODO
-	EPADFrameList getAllFrameDescriptionsForImage(String projectID, String subjectID, String studyUID, String seriesUID,
-			String imageUID, String sessionID, EPADSearchFilter searchFilter);
+	EPADSeries getSeriesDescription(SeriesReference seriesReference, String username, String sessionID);
+
+	EPADImageList getAllImageDescriptionsForSeries(SeriesReference seriesReference, String sessionID,
+			EPADSearchFilter searchFilter);
+
+	EPADImage getImageDescription(ImageReference imageReference, String sessionID);
 
 	// TODO
-	EPADFrame getFrameDescription(String projectID, String subjectID, String studyUID, String seriesUID, String imageUID,
-			int frameNumber, String sessionID);
+	EPADFrameList getAllFrameDescriptionsForImage(ImageReference imageReference, String sessionID,
+			EPADSearchFilter searchFilter);
+
+	// TODO
+	EPADFrame getFrameDescription(FrameReference frameReference, String sessionID);
 
 	Set<String> getExamTypesForSubject(String sessionID, String projectID, String subjectID, EPADSearchFilter searchFilter);
 
@@ -90,42 +92,34 @@ public interface EpadOperations
 	EPADAIM getProjectAIMDescription(String projectID, String aimID, String username, String sessionID);
 
 	// TODO
-	EPADAIMList getSubjectAIMDescriptions(String projectID, String subjectID, String username, String sessionID);
+	EPADAIMList getSubjectAIMDescriptions(SubjectReference subjectReference, String username, String sessionID);
 
 	// TODO
-	EPADAIM getSubjectAIMDescription(String projectID, String subjectID, String aimID, String username, String sessionID);
+	EPADAIM getSubjectAIMDescription(SubjectReference subjectReference, String aimID, String username, String sessionID);
 
 	// TODO
-	EPADAIMList getStudyAIMDescriptions(String projectID, String subjectID, String studyUID, String username,
-			String sessionID);
+	EPADAIMList getStudyAIMDescriptions(StudyReference studyReference, String username, String sessionID);
 
 	// TODO
-	EPADAIM getStudyAIMDescription(String projectID, String subjectID, String studyUID, String aimID, String username,
-			String sessionID);
+	EPADAIM getStudyAIMDescription(StudyReference studyReference, String aimID, String username, String sessionID);
 
 	// TODO
-	EPADAIMList getSeriesAIMDescriptions(String projectID, String subjectID, String studyUID, String seriesUID,
-			String username, String sessionID);
+	EPADAIMList getSeriesAIMDescriptions(SeriesReference seriesReference, String username, String sessionID);
 
 	// TODO
-	EPADAIM getSeriesAIMDescription(String projectID, String subjectID, String studyUID, String seriesUID, String aimID,
-			String username, String sessionID);
+	EPADAIM getSeriesAIMDescription(SeriesReference seriesReference, String aimID, String username, String sessionID);
 
 	// TODO
-	EPADAIMList getImageAIMDescriptions(String projectID, String subjectID, String studyUID, String seriesUID,
-			String imageUID, String username, String sessionID);
+	EPADAIMList getImageAIMDescriptions(ImageReference imageReference, String username, String sessionID);
 
 	// TODO
-	EPADAIM getImageAIMDescription(String projectID, String subjectID, String studyUID, String seriesUID,
-			String imageUID, String aimID, String username, String sessionID);
+	EPADAIM getImageAIMDescription(ImageReference imageReference, String aimID, String username, String sessionID);
 
 	// TODO
-	EPADAIMList getFrameAIMDescriptions(String projectID, String subjectID, String studyUID, String seriesUID,
-			String imageUID, int frameNumber, String username, String sessionID);
+	EPADAIMList getFrameAIMDescriptions(FrameReference frameReference, String username, String sessionID);
 
 	// TODO
-	EPADAIM getFrameAIMDescription(String projectID, String subjectID, String studyUID, String seriesUID,
-			String imageUID, int frameNumber, String aimID, String username, String sessionID);
+	EPADAIM getFrameAIMDescription(FrameReference frameReference, String aimID, String username, String sessionID);
 
 	/**
 	 * See if new series have been uploaded to DCM4CHEE that ePAD does not know about.
