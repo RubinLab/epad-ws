@@ -6,6 +6,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import javax.servlet.http.HttpServletResponse;
+
 import edu.stanford.epad.common.dicom.DicomFormatUtil;
 import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.epad.dtos.EPADAIM;
@@ -465,33 +467,42 @@ public class DefaultEpadOperations implements EpadOperations
 	}
 
 	@Override
-	public int patientDelete(String projectID, String patientID, String sessionID, String username)
+	public int subjectDelete(SubjectReference subjectReference, String sessionID, String username)
 	{
 		int xnatStatusCode;
 
-		log.info("Scheduling deletion task for patient " + patientID + " in project " + projectID + " from user "
-				+ username);
+		log.info("Scheduling deletion task for patient " + subjectReference.subjectID + " in project "
+				+ subjectReference.projectID + " from user " + username);
 
-		xnatStatusCode = XNATDeletionOperations.deleteXNATSubject(projectID, patientID, sessionID);
+		xnatStatusCode = XNATDeletionOperations.deleteXNATSubject(subjectReference.projectID, subjectReference.subjectID,
+				sessionID);
 
-		(new Thread(new PatientDataDeleteTask(projectID, patientID))).start();
+		(new Thread(new PatientDataDeleteTask(subjectReference.projectID, subjectReference.subjectID))).start();
 
 		return xnatStatusCode;
 	}
 
 	@Override
-	public int studyDelete(String projectID, String patientID, String studyUID, String sessionID, String username)
+	public int studyDelete(StudyReference studyReference, String sessionID, String username)
 	{
 		int xnatStatusCode;
 
-		log.info("Scheduling deletion task for study " + studyUID + " for patient " + patientID + " in project "
-				+ projectID + " from user " + username);
+		log.info("Scheduling deletion task for study " + studyReference.studyUID + " for patient "
+				+ studyReference.subjectID + " in project " + studyReference.projectID + " from user " + username);
 
-		xnatStatusCode = XNATDeletionOperations.deleteXNATDICOMStudy(projectID, patientID, studyUID, sessionID);
+		xnatStatusCode = XNATDeletionOperations.deleteXNATDICOMStudy(studyReference.projectID, studyReference.studyUID,
+				studyReference.studyUID, sessionID);
 
-		(new Thread(new StudyDataDeleteTask(projectID, patientID, studyUID))).start();
+		(new Thread(new StudyDataDeleteTask(studyReference.projectID, studyReference.subjectID, studyReference.studyUID)))
+				.start();
 
 		return xnatStatusCode;
+	}
+
+	@Override
+	public int seriesDelete(SeriesReference seriesReference, String sessionID, String username)
+	{
+		return HttpServletResponse.SC_NOT_IMPLEMENTED; // TODO
 	}
 
 	@Override
@@ -526,6 +537,30 @@ public class DefaultEpadOperations implements EpadOperations
 	{
 		for (String studyUID : studyUIDs)
 			deleteStudyFromEPadAndDcm4CheeDatabases(studyUID);
+	}
+
+	@Override
+	public int studyAIMDelete(StudyReference studyReference, String aimID, String sessionID, String username)
+	{
+		return HttpServletResponse.SC_NOT_IMPLEMENTED; // TODO
+	}
+
+	@Override
+	public int seriesAIMDelete(SeriesReference seriesReference, String aimID, String sessionID, String username)
+	{
+		return HttpServletResponse.SC_NOT_IMPLEMENTED; // TODO
+	}
+
+	@Override
+	public int imageAIMDelete(ImageReference imageReference, String aimID, String sessionID, String username)
+	{
+		return HttpServletResponse.SC_NOT_IMPLEMENTED; // TODO
+	}
+
+	@Override
+	public int frameAIMDelete(FrameReference frameReference, String aimID, String sessionID, String username)
+	{
+		return HttpServletResponse.SC_NOT_IMPLEMENTED; // TODO
 	}
 
 	@Override

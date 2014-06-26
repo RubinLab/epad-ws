@@ -79,11 +79,25 @@ public interface EpadOperations
 
 	int projectDelete(String projectID, String sessionID, String username);
 
-	int patientDelete(String projectID, String patientID, String sessionID, String username);
+	int subjectDelete(SubjectReference subjectReference, String sessionID, String username);
 
-	int studyDelete(String projectID, String patientID, String studyUID, String sessionID, String username);
+	int studyDelete(StudyReference studyReference, String sessionID, String username);
+
+	int seriesDelete(SeriesReference seriesReference, String sessionID, String username);
 
 	// AIM
+
+	// TODO
+	int studyAIMDelete(StudyReference studyReference, String aimID, String sessionID, String username);
+
+	// TODO
+	int seriesAIMDelete(SeriesReference seriesReference, String aimID, String sessionID, String username);
+
+	// TODO
+	int imageAIMDelete(ImageReference imageReference, String aimID, String sessionID, String username);
+
+	// TODO
+	int frameAIMDelete(FrameReference frameReference, String aimID, String sessionID, String username);
 
 	// TODO
 	EPADAIMList getProjectAIMDescriptions(String projectID, String username, String sessionID);
