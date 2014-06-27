@@ -219,7 +219,7 @@ public class CoordinationHandler extends AbstractHandler
 	 */
 	private int getTermKey(EpadDatabaseOperations epadDatabaseOperations, Term term) throws SQLException
 	{
-		int termKey = epadDatabaseOperations.getKeyForTerm(term); // TODO Cache rather than hit database each time.
+		int termKey = epadDatabaseOperations.getKeyForTerm(term);
 		if (termKey == -1) {
 			termKey = epadDatabaseOperations.insertTerm(term);
 		}

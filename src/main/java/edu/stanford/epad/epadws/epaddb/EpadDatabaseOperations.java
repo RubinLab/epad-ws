@@ -26,6 +26,18 @@ import edu.stanford.epad.epadws.handlers.core.SubjectReference;
  */
 public interface EpadDatabaseOperations
 {
+	EPADAIM getAIM(ProjectReference projectReference, String aimID);
+
+	EPADAIM getAIM(SubjectReference subjectReference, String aimID);
+
+	EPADAIM getAIM(StudyReference studyReference, String aimID);
+
+	EPADAIM getAIM(SeriesReference seriesReference, String aimID);
+
+	EPADAIM getAIM(ImageReference imageReference, String aimID);
+
+	EPADAIM getAIM(FrameReference frameReference, String aimID);
+
 	Set<EPADAIM> getAIMs(ProjectReference projectReference);
 
 	Set<EPADAIM> getAIMs(SubjectReference subjectReference);

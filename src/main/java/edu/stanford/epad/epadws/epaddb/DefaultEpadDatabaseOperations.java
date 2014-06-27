@@ -38,6 +38,42 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 	}
 
 	@Override
+	public EPADAIM getAIM(ProjectReference projectReference, String aimID)
+	{
+		return null; // TODO
+	}
+
+	@Override
+	public EPADAIM getAIM(SubjectReference subjectReference, String aimID)
+	{
+		return null; // TODO
+	}
+
+	@Override
+	public EPADAIM getAIM(StudyReference studyReference, String aimID)
+	{
+		return null; // TODO
+	}
+
+	@Override
+	public EPADAIM getAIM(SeriesReference seriesReference, String aimID)
+	{
+		return null; // TODO
+	}
+
+	@Override
+	public EPADAIM getAIM(ImageReference imageReference, String aimID)
+	{
+		return null; // TODO
+	}
+
+	@Override
+	public EPADAIM getAIM(FrameReference frameReference, String aimID)
+	{
+		return null; // TODO
+	}
+
+	@Override
 	public Set<EPADAIM> getAIMs(ProjectReference reference)
 	{
 		return new HashSet<>(); // TODO

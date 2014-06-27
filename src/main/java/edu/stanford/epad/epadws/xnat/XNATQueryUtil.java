@@ -10,14 +10,12 @@ public class XNATQueryUtil
 	private static final String XNAT_PROJECTS_BASE = "/xnat/data/projects/";
 	private static final String XNAT_SUBJECTS_BASE = "/xnat/data/subjects/";
 	private static final String XNAT_EXPERIMENTS_BASE = "/xnat/data/experiments/";
-
 	private static final EPADConfig config = EPADConfig.getInstance();
+	private static final String xnatHost = config.getStringPropertyValue("XNATServer");
+	private static final int xnatPort = config.getIntegerPropertyValue("XNATPort");
 
 	public static String buildProjectsURL(String base)
 	{
-		String xnatHost = config.getStringPropertyValue("XNATServer");
-		int xnatPort = config.getIntegerPropertyValue("XNATPort");
-
 		if (base.startsWith("/"))
 			base = base.substring(1, base.length());
 
@@ -98,8 +96,6 @@ public class XNATQueryUtil
 	public static String buildXNATExperimentCreationURL(String xnatProjectID, String xnatSubjectLabel,
 			String dicomStudyUID)
 	{
-		String xnatHost = config.getStringPropertyValue("XNATServer");
-		int xnatPort = config.getIntegerPropertyValue("XNATPort");
 		String experimentID = XNATUtil.dicomStudyUID2XNATExperimentID(dicomStudyUID);
 		String urlString = XNATUtil.buildXNATBaseURL(xnatHost, xnatPort, XNAT_PROJECTS_BASE) + xnatProjectID + "/subjects/"
 				+ xnatSubjectLabel + "/experiments/" + experimentID + "?name=" + dicomStudyUID
@@ -127,9 +123,6 @@ public class XNATQueryUtil
 
 	private static String buildProjectBaseURL()
 	{
-		String xnatHost = config.getStringPropertyValue("XNATServer");
-		int xnatPort = config.getIntegerPropertyValue("XNATPort");
-
 		return buildXNATBaseURL(xnatHost, xnatPort, XNAT_PROJECTS_BASE);
 	}
 
@@ -146,17 +139,11 @@ public class XNATQueryUtil
 
 	private static String buildSubjectsBaseURL()
 	{
-		String xnatHost = config.getStringPropertyValue("XNATServer");
-		int xnatPort = config.getIntegerPropertyValue("XNATPort");
-
 		return buildXNATBaseURL(xnatHost, xnatPort, XNAT_SUBJECTS_BASE);
 	}
 
 	private static String buildExperimentsBaseURL()
 	{
-		String xnatHost = config.getStringPropertyValue("XNATServer");
-		int xnatPort = config.getIntegerPropertyValue("XNATPort");
-
 		return buildXNATBaseURL(xnatHost, xnatPort, XNAT_EXPERIMENTS_BASE);
 	}
 }

@@ -47,7 +47,7 @@ import edu.stanford.epad.epadws.handlers.coordination.CoordinationHandler;
 import edu.stanford.epad.epadws.handlers.core.EPADHandler;
 import edu.stanford.epad.epadws.handlers.dicom.DCM4CHEESearchHandler;
 import edu.stanford.epad.epadws.handlers.dicom.DICOMHeadersHandler;
-import edu.stanford.epad.epadws.handlers.dicom.EPADSeriesHandler;
+import edu.stanford.epad.epadws.handlers.dicom.EPADSeriesOrderHandler;
 import edu.stanford.epad.epadws.handlers.dicom.WadoHandler;
 import edu.stanford.epad.epadws.handlers.dicom.WindowingHandler;
 import edu.stanford.epad.epadws.handlers.event.EventHandler;
@@ -203,7 +203,7 @@ public class Main
 		// /project/<pid>/subjects/<sid>/studies/<sid>/series/<sid>/images/<iid>/
 		addHandlerAtContextPath(new DICOMHeadersHandler(), "/epad/dicomtagj", handlerList);
 		addHandlerAtContextPath(new WindowingHandler(), "/epad/dicomparam", handlerList);
-		addHandlerAtContextPath(new EPADSeriesHandler(), "/epad/seriesorderj", handlerList);
+		addHandlerAtContextPath(new EPADSeriesOrderHandler(), "/epad/seriesorderj", handlerList);
 		addHandlerAtContextPath(new DCM4CHEESearchHandler(), "/epad/searchj", handlerList);
 
 		// TODO This call will disappear when we switch to AIM4

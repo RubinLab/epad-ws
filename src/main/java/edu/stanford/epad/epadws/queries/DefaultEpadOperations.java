@@ -68,7 +68,6 @@ public class DefaultEpadOperations implements EpadOperations
 
 	private DefaultEpadOperations()
 	{
-
 	}
 
 	public static DefaultEpadOperations getInstance()
@@ -80,6 +79,43 @@ public class DefaultEpadOperations implements EpadOperations
 	public EPADProject getProjectDescription(ProjectReference projectReference, String username, String sessionID)
 	{
 		return null; // TODO
+	}
+
+	@Override
+	public EPADSeries getSeriesDescription(SeriesReference seriesReference, String username, String sessionID)
+	{
+		return null; // TODO See getSeries below.
+	}
+
+	@Override
+	public EPADSubject getSubjectDescription(SubjectReference subjectReference, String username, String sessionID)
+	{
+		return null; // TODO
+	}
+
+	@Override
+	public EPADFrameList getAllFrameDescriptionsForImage(ImageReference imageReference, String sessionID,
+			EPADSearchFilter searchFilter)
+	{
+		return new EPADFrameList(); // TODO
+	}
+
+	@Override
+	public EPADFrame getFrameDescription(FrameReference frameReference, String sessionID)
+	{
+		return null; // TODO
+	}
+
+	@Override
+	public int createSeries(SeriesReference seriesReference, String sessionID)
+	{
+		return HttpServletResponse.SC_NOT_IMPLEMENTED; // TODO
+	}
+
+	@Override
+	public int seriesDelete(SeriesReference seriesReference, String sessionID, String username)
+	{
+		return HttpServletResponse.SC_NOT_IMPLEMENTED; // TODO
 	}
 
 	@Override
@@ -111,12 +147,6 @@ public class DefaultEpadOperations implements EpadOperations
 				epadSubjectList.addEPADSubject(epadSubject);
 		}
 		return epadSubjectList;
-	}
-
-	@Override
-	public EPADSubject getSubjectDescription(SubjectReference subjectReference, String username, String sessionID)
-	{
-		return null; // TODO
 	}
 
 	@Override
@@ -161,12 +191,6 @@ public class DefaultEpadOperations implements EpadOperations
 				return null;
 			}
 		}
-	}
-
-	@Override
-	public EPADSeries getSeriesDescription(SeriesReference seriesReference, String username, String sessionID)
-	{
-		return null; // TODO
 	}
 
 	@Override
@@ -256,19 +280,6 @@ public class DefaultEpadOperations implements EpadOperations
 	}
 
 	@Override
-	public EPADFrameList getAllFrameDescriptionsForImage(ImageReference imageReference, String sessionID,
-			EPADSearchFilter searchFilter)
-	{
-		return new EPADFrameList(); // TODO
-	}
-
-	@Override
-	public EPADFrame getFrameDescription(FrameReference frameReference, String sessionID)
-	{
-		return null; // TODO
-	}
-
-	@Override
 	public Set<String> getExamTypesForSubject(String projectID, String patientID, String sessionID,
 			EPADSearchFilter searchFilter)
 	{
@@ -284,7 +295,7 @@ public class DefaultEpadOperations implements EpadOperations
 
 	@Override
 	public Set<String> getExamTypesForSubject(String patientID)
-	{ // TODO Probably could make this a single query to dcm4chee database.
+	{ // Probably could make this a single query to dcm4chee database.
 		Set<String> studyUIDs = Dcm4CheeQueries.getStudyUIDsForPatient(patientID);
 
 		Set<String> examTypes = new HashSet<String>();
@@ -297,7 +308,7 @@ public class DefaultEpadOperations implements EpadOperations
 
 	@Override
 	public Set<String> getExamTypesForStudy(String studyUID)
-	{ // TODO Probably could make this a single query to dcm4chee database.
+	{ // Probably could make this a single query to dcm4chee database.
 		DCM4CHEESeriesList dcm4CheeSeriesList = Dcm4CheeQueries.getSeriesInStudy(studyUID);
 		Set<String> examTypes = new HashSet<String>();
 
@@ -368,13 +379,12 @@ public class DefaultEpadOperations implements EpadOperations
 			String instanceNumberString = imageDescription.get("inst_no");
 			int instanceNumber = getInstanceNumber(instanceNumberString, seriesUID, imageUID);
 			String sliceLocation = getSliceLocation(imageDescription);
-			String contentTime = "null"; // TODO Can we find this somewhere?
+			String contentTime = "null"; // TODO In "created_time" field of pacsdb.instance? What about updated time?
 
 			EPADDatabaseImage epadImage = new EPADDatabaseImage(fileName, instanceNumber, sliceLocation, contentTime);
 			epadImageList.add(epadImage);
 		}
-		EPADDatabaseSeries epadSeries = new EPADDatabaseSeries(epadImageList);
-		return epadSeries;
+		return new EPADDatabaseSeries(epadImageList);
 	}
 
 	@Override
@@ -432,12 +442,6 @@ public class DefaultEpadOperations implements EpadOperations
 	}
 
 	@Override
-	public int createSeries(SeriesReference seriesReference, String sessionID)
-	{
-		return HttpServletResponse.SC_NOT_IMPLEMENTED; // TODO
-	}
-
-	@Override
 	public int projectDelete(String projectID, String sessionID, String username)
 	{
 		int xnatStatusCode;
@@ -491,12 +495,6 @@ public class DefaultEpadOperations implements EpadOperations
 	}
 
 	@Override
-	public int seriesDelete(SeriesReference seriesReference, String sessionID, String username)
-	{
-		return HttpServletResponse.SC_NOT_IMPLEMENTED; // TODO
-	}
-
-	@Override
 	public void deleteStudyFromEPadAndDcm4CheeDatabases(String studyUID)
 	{
 		EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
@@ -530,7 +528,6 @@ public class DefaultEpadOperations implements EpadOperations
 			deleteStudyFromEPadAndDcm4CheeDatabases(studyUID);
 	}
 
-	// TODO
 	@Override
 	public int createStudyAIM(StudyReference studyReference, String aimID, String sessionID)
 	{
@@ -628,13 +625,6 @@ public class DefaultEpadOperations implements EpadOperations
 	}
 
 	@Override
-	public EPADAIM getProjectAIMDescription(ProjectReference projectReference, String aimID, String username,
-			String sessionID)
-	{
-		return null; // TODO
-	}
-
-	@Override
 	public EPADAIMList getSubjectAIMDescriptions(SubjectReference subjectReference, String username, String sessionID)
 	{
 		Set<EPADAIM> aims = epadDatabaseOperations.getAIMs(subjectReference);
@@ -643,10 +633,42 @@ public class DefaultEpadOperations implements EpadOperations
 	}
 
 	@Override
+	public EPADAIM getProjectAIMDescription(ProjectReference projectReference, String aimID, String username,
+			String sessionID)
+	{
+		return epadDatabaseOperations.getAIM(projectReference, aimID);
+	}
+
+	@Override
 	public EPADAIM getSubjectAIMDescription(SubjectReference subjectReference, String aimID, String username,
 			String sessionID)
 	{
-		return null; // TODO
+		return epadDatabaseOperations.getAIM(subjectReference, aimID);
+	}
+
+	@Override
+	public EPADAIM getStudyAIMDescription(StudyReference studyReference, String aimID, String username, String sessionID)
+	{
+		return epadDatabaseOperations.getAIM(studyReference, aimID);
+	}
+
+	@Override
+	public EPADAIM getSeriesAIMDescription(SeriesReference seriesReference, String aimID, String username,
+			String sessionID)
+	{
+		return epadDatabaseOperations.getAIM(seriesReference, aimID);
+	}
+
+	@Override
+	public EPADAIM getImageAIMDescription(ImageReference imageReference, String aimID, String username, String sessionID)
+	{
+		return epadDatabaseOperations.getAIM(imageReference, aimID);
+	}
+
+	@Override
+	public EPADAIM getFrameAIMDescription(FrameReference frameReference, String aimID, String username, String sessionID)
+	{
+		return epadDatabaseOperations.getAIM(frameReference, aimID);
 	}
 
 	@Override
@@ -658,24 +680,11 @@ public class DefaultEpadOperations implements EpadOperations
 	}
 
 	@Override
-	public EPADAIM getStudyAIMDescription(StudyReference studyReference, String aimID, String username, String sessionID)
-	{
-		return null; // TODO
-	}
-
-	@Override
 	public EPADAIMList getSeriesAIMDescriptions(SeriesReference seriesReference, String username, String sessionID)
 	{
 		Set<EPADAIM> aims = epadDatabaseOperations.getAIMs(seriesReference);
 
 		return new EPADAIMList(new ArrayList<EPADAIM>(aims));
-	}
-
-	@Override
-	public EPADAIM getSeriesAIMDescription(SeriesReference seriesReference, String aimID, String username,
-			String sessionID)
-	{
-		return null; // TODO
 	}
 
 	@Override
@@ -687,25 +696,11 @@ public class DefaultEpadOperations implements EpadOperations
 	}
 
 	@Override
-	public EPADAIM getImageAIMDescription(ImageReference imageReference, String aimID, String username, String sessionID)
-	{
-		return null; // TODO
-	}
-
-	// TODO
-	@Override
 	public EPADAIMList getFrameAIMDescriptions(FrameReference frameReference, String username, String sessionID)
 	{
 		Set<EPADAIM> aims = epadDatabaseOperations.getAIMs(frameReference);
 
 		return new EPADAIMList(new ArrayList<EPADAIM>(aims));
-	}
-
-	// TODO
-	@Override
-	public EPADAIM getFrameAIMDescription(FrameReference frameReference, String aimID, String username, String sessionID)
-	{
-		return null; // TODO
 	}
 
 	private EPADStudy dcm4CheeStudy2EpadStudy(String projectID, String subjectID, DCM4CHEEStudy dcm4CheeStudy,

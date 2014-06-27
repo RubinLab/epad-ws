@@ -11,6 +11,6 @@ public class EPadWebServerVersion
 {
 	public static String getBuildDate()
 	{
-		return "December 2013"; // TODO Make part of build process.
+		return "July 2014"; // TODO See if we can generate as part of build process.
 	}
 }

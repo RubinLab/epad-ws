@@ -39,7 +39,7 @@ import edu.stanford.epad.epadws.xnat.XNATSessionOperations;
  * curl -b JSESSIONID=<id> -X GET "http://[host]:[port]/epad/seriesorderj/?series_iuid=1.2.840.113619.2.55.3.25168424.5576.1168603848.697"
  * </code>
  */
-public class EPADSeriesHandler extends AbstractHandler
+public class EPADSeriesOrderHandler extends AbstractHandler
 {
 	private static final EPADLogger log = EPADLogger.getInstance();
 
@@ -67,8 +67,7 @@ public class EPADSeriesHandler extends AbstractHandler
 					responseStream.print(epadDatabaseSeries.toJSON());
 					statusCode = HttpServletResponse.SC_OK;
 				} else {
-					statusCode = HandlerUtil.infoJSONResponse(HttpServletResponse.SC_BAD_REQUEST, MISSING_SERIES_IUID_MESSAGE,
-							responseStream, log);
+					statusCode = HandlerUtil.badRequestJSONResponse(MISSING_SERIES_IUID_MESSAGE, responseStream, log);
 				}
 			} else {
 				statusCode = HandlerUtil.invalidTokenJSONResponse(INVALID_SESSION_TOKEN_MESSAGE, responseStream, log);
