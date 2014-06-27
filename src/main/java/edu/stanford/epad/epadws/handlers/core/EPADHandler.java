@@ -45,7 +45,6 @@ import edu.stanford.epad.epadws.handlers.HandlerUtil;
 import edu.stanford.epad.epadws.handlers.dicom.DSOUtil;
 import edu.stanford.epad.epadws.queries.DefaultEpadOperations;
 import edu.stanford.epad.epadws.queries.EpadOperations;
-import edu.stanford.epad.epadws.xnat.XNATCreationOperations;
 import edu.stanford.epad.epadws.xnat.XNATSessionOperations;
 
 /**
@@ -256,7 +255,9 @@ public class EPADHandler extends AbstractHandler
 
 			} else if (HandlerUtil.matchesTemplate(RouteTemplates.FRAME, pathInfo)) {
 				FrameReference frameReference = FrameReference.extract(RouteTemplates.FRAME, pathInfo);
+				// String format = httpRequest.getParameter("format");
 				EPADFrame frame = epadOperations.getFrameDescription(frameReference, sessionID);
+
 				responseStream.append(frame.toJSON());
 				statusCode = HttpServletResponse.SC_OK;
 
@@ -283,6 +284,7 @@ public class EPADHandler extends AbstractHandler
 
 	private int handlePut(HttpServletRequest httpRequest, PrintWriter responseStream, String username)
 	{
+		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
 		String sessionID = XNATSessionOperations.getJSessionIDFromRequest(httpRequest);
 		String pathInfo = httpRequest.getPathInfo();
 		int statusCode;
@@ -291,49 +293,40 @@ public class EPADHandler extends AbstractHandler
 			ProjectReference projectReference = ProjectReference.extract(RouteTemplates.PROJECT, pathInfo);
 			String projectName = httpRequest.getParameter("projectName");
 			String projectDescription = httpRequest.getParameter("projectDescription");
+			statusCode = epadOperations.createProject(projectReference, projectName, projectDescription, sessionID);
 
-			if (projectCreationParametersAreValid(projectName, projectDescription, username)) {
-				statusCode = XNATCreationOperations.createXNATProject(projectReference.projectID, projectName,
-						projectDescription, sessionID);
-			} else
-				statusCode = HandlerUtil.badRequestJSONResponse(BAD_PUT_MESSAGE, responseStream, log);
 		} else if (HandlerUtil.matchesTemplate(RouteTemplates.SUBJECT, pathInfo)) {
 			SubjectReference subjectReference = SubjectReference.extract(RouteTemplates.SUBJECT, pathInfo);
 			String subjectName = httpRequest.getParameter("subjectName");
+			statusCode = epadOperations.createSubject(subjectReference, subjectName, sessionID);
 
-			if (subjectCreationParametersAreValid(subjectName, username)) {
-				statusCode = XNATCreationOperations.createXNATSubject(subjectReference.projectID, subjectReference.subjectID,
-						subjectName, sessionID);
-			} else
-				statusCode = HandlerUtil.badRequestJSONResponse(BAD_PUT_MESSAGE, responseStream, log);
 		} else if (HandlerUtil.matchesTemplate(RouteTemplates.STUDY, pathInfo)) {
 			StudyReference studyReference = StudyReference.extract(RouteTemplates.STUDY, pathInfo);
+			statusCode = epadOperations.createStudy(studyReference, sessionID);
 
-			statusCode = XNATCreationOperations.createXNATDICOMStudyExperiment(studyReference.projectID,
-					studyReference.subjectID, studyReference.studyUID, sessionID);
 		} else if (HandlerUtil.matchesTemplate(RouteTemplates.STUDY_AIM, pathInfo)) {
 			StudyReference studyReference = StudyReference.extract(RouteTemplates.STUDY_AIM, pathInfo);
 			AIMReference aimReference = AIMReference.extract(RouteTemplates.STUDY_AIM, pathInfo);
+			statusCode = epadOperations.createStudyAIM(studyReference, aimReference.aimID, sessionID);
 
-			statusCode = HttpServletResponse.SC_NOT_IMPLEMENTED; // TODO
 		} else if (HandlerUtil.matchesTemplate(RouteTemplates.SERIES, pathInfo)) {
 			SeriesReference seriesReference = SeriesReference.extract(RouteTemplates.SERIES, pathInfo);
-			statusCode = HttpServletResponse.SC_NOT_IMPLEMENTED; // TODO
+			statusCode = epadOperations.createSeries(seriesReference, sessionID);
+
 		} else if (HandlerUtil.matchesTemplate(RouteTemplates.SERIES_AIM, pathInfo)) {
 			SeriesReference seriesReference = SeriesReference.extract(RouteTemplates.SERIES_AIM, pathInfo);
 			AIMReference aimReference = AIMReference.extract(RouteTemplates.SERIES_AIM, pathInfo);
-
-			statusCode = HttpServletResponse.SC_NOT_IMPLEMENTED; // TODO
+			statusCode = epadOperations.createSeriesAIM(seriesReference, aimReference.aimID, sessionID);
 		} else if (HandlerUtil.matchesTemplate(RouteTemplates.IMAGE_AIM, pathInfo)) {
 			ImageReference imageReference = ImageReference.extract(RouteTemplates.IMAGE_AIM, pathInfo);
 			AIMReference aimReference = AIMReference.extract(RouteTemplates.IMAGE_AIM, pathInfo);
+			statusCode = epadOperations.createImageAIM(imageReference, aimReference.aimID, sessionID);
 
-			statusCode = HttpServletResponse.SC_NOT_IMPLEMENTED; // TODO
 		} else if (HandlerUtil.matchesTemplate(RouteTemplates.FRAME_AIM, pathInfo)) {
 			FrameReference frameReference = FrameReference.extract(RouteTemplates.FRAME_AIM, pathInfo);
 			AIMReference aimReference = AIMReference.extract(RouteTemplates.FRAME_AIM, pathInfo);
+			statusCode = epadOperations.createFrameAIM(frameReference, aimReference.aimID, sessionID);
 
-			statusCode = HttpServletResponse.SC_NOT_IMPLEMENTED; // TODO
 		} else {
 			statusCode = HandlerUtil.badRequestJSONResponse(BAD_PUT_MESSAGE, responseStream, log);
 		}
@@ -342,7 +335,6 @@ public class EPADHandler extends AbstractHandler
 
 	private int handlePost(HttpServletRequest httpRequest, PrintWriter responseStream, String username)
 	{
-		String sessionID = XNATSessionOperations.getJSessionIDFromRequest(httpRequest);
 		String pathInfo = httpRequest.getPathInfo();
 		int statusCode;
 
@@ -478,27 +470,6 @@ public class EPADHandler extends AbstractHandler
 			IOUtils.closeQuietly(isr);
 		}
 		return dsoEditRequest;
-	}
-
-	private boolean projectCreationParametersAreValid(String projectName, String projectDescription, String username)
-	{
-		if (projectName == null) {
-			log.warning("Missing projectName parameter from user " + username);
-			return false;
-		} else if (projectDescription == null) {
-			log.warning("Missing projectDescription parameter from user " + username);
-			return false;
-		} else
-			return true;
-	}
-
-	private boolean subjectCreationParametersAreValid(String subjectName, String username)
-	{
-		if (subjectName == null) {
-			log.warning("Missing subjectName parameter from user " + username);
-			return false;
-		} else
-			return true;
 	}
 
 	private DSOEditResult createEditedDSO(DSOEditRequest dsoEditRequest, List<File> editFramesMaskFiles)

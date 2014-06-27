@@ -23,6 +23,7 @@ import edu.stanford.epad.dtos.internal.DCM4CHEESeries;
 import edu.stanford.epad.epadws.handlers.core.EPADSearchFilter;
 import edu.stanford.epad.epadws.handlers.core.FrameReference;
 import edu.stanford.epad.epadws.handlers.core.ImageReference;
+import edu.stanford.epad.epadws.handlers.core.ProjectReference;
 import edu.stanford.epad.epadws.handlers.core.SeriesReference;
 import edu.stanford.epad.epadws.handlers.core.StudyReference;
 import edu.stanford.epad.epadws.handlers.core.SubjectReference;
@@ -35,47 +36,51 @@ public interface EpadOperations
 {
 	EPADProjectList getAllProjectDescriptionsForUser(String username, String sessionID, EPADSearchFilter searchFilter);
 
-	// TODO
-	EPADProject getProjectDescription(String projectID, String username, String sessionID);
+	EPADStudyList getAllStudyDescriptionsForSubject(SubjectReference subjectReference, String username, String sessionID,
+			EPADSearchFilter searchFilter);
 
 	EPADSubjectList getAllSubjectDescriptionsForProject(String projectID, String username, String sessionID,
 			EPADSearchFilter searchFilter);
 
-	// TODO
-	EPADSubject getSubjectDescription(SubjectReference subjectReference, String username, String sessionID);
-
-	EPADStudyList getAllStudyDescriptionsForSubject(SubjectReference subjectReference, String username, String sessionID,
-			EPADSearchFilter searchFilter);
-
-	// TODO
-	EPADStudy getStudyDescription(StudyReference studyReference, String username, String sessionID);
-
 	EPADSeriesList getAllSeriesDescriptionsForStudy(StudyReference studyReference, String username, String sessionID,
 			EPADSearchFilter searchFilter);
 
-	// TODO
-	EPADSeries getSeriesDescription(SeriesReference seriesReference, String username, String sessionID);
-
 	EPADImageList getAllImageDescriptionsForSeries(SeriesReference seriesReference, String sessionID,
 			EPADSearchFilter searchFilter);
-
-	EPADImage getImageDescription(ImageReference imageReference, String sessionID);
 
 	// TODO
 	EPADFrameList getAllFrameDescriptionsForImage(ImageReference imageReference, String sessionID,
 			EPADSearchFilter searchFilter);
 
 	// TODO
+	EPADProject getProjectDescription(String projectID, String username, String sessionID);
+
+	// TODO
+	EPADSubject getSubjectDescription(SubjectReference subjectReference, String username, String sessionID);
+
+	// TODO
+	EPADStudy getStudyDescription(StudyReference studyReference, String username, String sessionID);
+
+	// TODO
+	EPADSeries getSeriesDescription(SeriesReference seriesReference, String username, String sessionID);
+
+	EPADImage getImageDescription(ImageReference imageReference, String sessionID);
+
+	// TODO
 	EPADFrame getFrameDescription(FrameReference frameReference, String sessionID);
 
-	Set<String> getExamTypesForSubject(String sessionID, String projectID, String subjectID, EPADSearchFilter searchFilter);
+	// Creation
 
-	Set<String> getExamTypesForSubject(String subjectID);
+	int createProject(ProjectReference projectReference, String projectName, String projectDescription, String sessionID);
 
-	Set<String> getExamTypesForStudy(String studyUID);
+	int createSubject(SubjectReference subjectRefernece, String subjectName, String sessionID);
 
-	Set<String> getSeriesUIDsForSubject(String projectID, String subjectID, String sessionID,
-			EPADSearchFilter searchFilter);
+	int createStudy(StudyReference studyReference, String sessionID);
+
+	// TODO
+	int createSeries(SeriesReference seriesReference, String sessionID);
+
+	// Deletion
 
 	int projectDelete(String projectID, String sessionID, String username);
 
@@ -83,9 +88,22 @@ public interface EpadOperations
 
 	int studyDelete(StudyReference studyReference, String sessionID, String username);
 
+	// TODO
 	int seriesDelete(SeriesReference seriesReference, String sessionID, String username);
 
 	// AIM
+
+	// TODO
+	int createStudyAIM(StudyReference studyReference, String aimID, String sessionID);
+
+	// TODO
+	int createSeriesAIM(SeriesReference seriesReference, String aimID, String sessionID);
+
+	// TODO
+	int createImageAIM(ImageReference imageReference, String aimID, String sessionID);
+
+	// TODO
+	int createFrameAIM(FrameReference frameReference, String aimID, String sessionID);
 
 	// TODO
 	int studyAIMDelete(StudyReference studyReference, String aimID, String sessionID, String username);
@@ -156,4 +174,13 @@ public interface EpadOperations
 	void deleteStudyFromEPadAndDcm4CheeDatabases(String studyUID);
 
 	void deleteStudiesFromEPadAndDcm4CheeDatabases(Set<String> studyUIDs);
+
+	Set<String> getExamTypesForSubject(String sessionID, String projectID, String subjectID, EPADSearchFilter searchFilter);
+
+	Set<String> getExamTypesForSubject(String subjectID);
+
+	Set<String> getExamTypesForStudy(String studyUID);
+
+	Set<String> getSeriesUIDsForSubject(String projectID, String subjectID, String sessionID,
+			EPADSearchFilter searchFilter);
 }
