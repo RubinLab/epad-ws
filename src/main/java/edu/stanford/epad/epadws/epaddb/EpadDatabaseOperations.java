@@ -6,10 +6,17 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import edu.stanford.epad.dtos.EPADAIM;
 import edu.stanford.epad.dtos.PNGFileProcessingStatus;
 import edu.stanford.epad.dtos.SeriesProcessingStatus;
 import edu.stanford.epad.epadws.handlers.coordination.CoordinationHandler;
 import edu.stanford.epad.epadws.handlers.coordination.Term;
+import edu.stanford.epad.epadws.handlers.core.FrameReference;
+import edu.stanford.epad.epadws.handlers.core.ImageReference;
+import edu.stanford.epad.epadws.handlers.core.ProjectReference;
+import edu.stanford.epad.epadws.handlers.core.SeriesReference;
+import edu.stanford.epad.epadws.handlers.core.StudyReference;
+import edu.stanford.epad.epadws.handlers.core.SubjectReference;
 
 /**
  * Defines all operations on ePAD's database
@@ -19,6 +26,46 @@ import edu.stanford.epad.epadws.handlers.coordination.Term;
  */
 public interface EpadDatabaseOperations
 {
+	Set<EPADAIM> getAIMs(ProjectReference projectReference);
+
+	Set<EPADAIM> getAIMs(SubjectReference subjectReference);
+
+	Set<EPADAIM> getAIMs(StudyReference studyReference);
+
+	Set<EPADAIM> getAIMs(SeriesReference seriesReference);
+
+	Set<EPADAIM> getAIMs(ImageReference imageReference);
+
+	Set<EPADAIM> getAIMs(FrameReference frameReference);
+
+	int getNumberOfAIMs(ProjectReference reference);
+
+	int getNumberOfAIMs(SubjectReference reference);
+
+	int getNumberOfAIMs(StudyReference reference);
+
+	int getNumberOfAIMs(SeriesReference reference);
+
+	int getNumberOfAIMs(ImageReference reference);
+
+	int getNumberOfAIMs(FrameReference reference);
+
+	void addAIM(StudyReference reference, String aimID);
+
+	void addAIM(SeriesReference reference, String aimID);
+
+	void addAIM(ImageReference reference, String aimID);
+
+	void addAIM(FrameReference reference, String aimID);
+
+	void deleteAIM(StudyReference reference, String aimID);
+
+	void deleteAIM(SeriesReference reference, String aimID);
+
+	void deleteAIM(ImageReference reference, String aimID);
+
+	void deleteAIM(FrameReference reference, String aimID);
+
 	Set<String> getAllSeriesUIDsFromEPadDatabase();
 
 	List<String> getAllImageUIDsInSeries(String seriesUID);
@@ -27,10 +74,10 @@ public interface EpadDatabaseOperations
 
 	void deleteSeries(String seriesUID);
 
+	SeriesProcessingStatus getSeriesProcessingStatus(String seriesUID);
+
 	void insertEpadEvent(String sessionID, String eventStatus, String aimUID, String aimName, String patientID,
 			String patientName, String templateID, String templateName, String pluginName);
-
-	SeriesProcessingStatus getSeriesProcessingStatus(String seriesUID);
 
 	Timestamp getSeriesProcessingDate(String seriesUID);
 

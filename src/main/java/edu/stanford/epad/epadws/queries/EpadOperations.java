@@ -53,7 +53,7 @@ public interface EpadOperations
 			EPADSearchFilter searchFilter);
 
 	// TODO
-	EPADProject getProjectDescription(String projectID, String username, String sessionID);
+	EPADProject getProjectDescription(ProjectReference projectReference, String username, String sessionID);
 
 	// TODO
 	EPADSubject getSubjectDescription(SubjectReference subjectReference, String username, String sessionID);
@@ -93,61 +93,47 @@ public interface EpadOperations
 
 	// AIM
 
-	// TODO
 	int createStudyAIM(StudyReference studyReference, String aimID, String sessionID);
 
-	// TODO
 	int createSeriesAIM(SeriesReference seriesReference, String aimID, String sessionID);
 
-	// TODO
 	int createImageAIM(ImageReference imageReference, String aimID, String sessionID);
 
-	// TODO
 	int createFrameAIM(FrameReference frameReference, String aimID, String sessionID);
 
-	// TODO
 	int studyAIMDelete(StudyReference studyReference, String aimID, String sessionID, String username);
 
-	// TODO
 	int seriesAIMDelete(SeriesReference seriesReference, String aimID, String sessionID, String username);
 
-	// TODO
 	int imageAIMDelete(ImageReference imageReference, String aimID, String sessionID, String username);
 
-	// TODO
 	int frameAIMDelete(FrameReference frameReference, String aimID, String sessionID, String username);
 
-	// TODO
-	EPADAIMList getProjectAIMDescriptions(String projectID, String username, String sessionID);
+	EPADAIMList getProjectAIMDescriptions(ProjectReference projectReference, String username, String sessionID);
 
 	// TODO
-	EPADAIM getProjectAIMDescription(String projectID, String aimID, String username, String sessionID);
+	EPADAIM getProjectAIMDescription(ProjectReference projectReference, String aimID, String username, String sessionID);
 
-	// TODO
 	EPADAIMList getSubjectAIMDescriptions(SubjectReference subjectReference, String username, String sessionID);
 
 	// TODO
 	EPADAIM getSubjectAIMDescription(SubjectReference subjectReference, String aimID, String username, String sessionID);
 
-	// TODO
 	EPADAIMList getStudyAIMDescriptions(StudyReference studyReference, String username, String sessionID);
 
 	// TODO
 	EPADAIM getStudyAIMDescription(StudyReference studyReference, String aimID, String username, String sessionID);
 
-	// TODO
 	EPADAIMList getSeriesAIMDescriptions(SeriesReference seriesReference, String username, String sessionID);
 
 	// TODO
 	EPADAIM getSeriesAIMDescription(SeriesReference seriesReference, String aimID, String username, String sessionID);
 
-	// TODO
 	EPADAIMList getImageAIMDescriptions(ImageReference imageReference, String username, String sessionID);
 
 	// TODO
 	EPADAIM getImageAIMDescription(ImageReference imageReference, String aimID, String username, String sessionID);
 
-	// TODO
 	EPADAIMList getFrameAIMDescriptions(FrameReference frameReference, String username, String sessionID);
 
 	// TODO

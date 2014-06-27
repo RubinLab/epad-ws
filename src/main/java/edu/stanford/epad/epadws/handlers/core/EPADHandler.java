@@ -122,21 +122,21 @@ public class EPADHandler extends AbstractHandler
 				statusCode = HttpServletResponse.SC_OK;
 			} else if (HandlerUtil.matchesTemplate(RouteTemplates.PROJECT, pathInfo)) {
 				ProjectReference projectReference = ProjectReference.extract(RouteTemplates.PROJECT, pathInfo);
-				EPADProject project = epadOperations.getProjectDescription(projectReference.projectID, username, sessionID);
+				EPADProject project = epadOperations.getProjectDescription(projectReference, username, sessionID);
 				responseStream.append(project.toJSON());
 				statusCode = HttpServletResponse.SC_OK;
 
 			} else if (HandlerUtil.matchesTemplate(RouteTemplates.PROJECT_AIM_LIST, pathInfo)) {
 				ProjectReference projectReference = ProjectReference.extract(RouteTemplates.PROJECT_AIM_LIST, pathInfo);
-				EPADAIMList aims = epadOperations.getProjectAIMDescriptions(projectReference.projectID, username, sessionID);
+				EPADAIMList aims = epadOperations.getProjectAIMDescriptions(projectReference, username, sessionID);
 				responseStream.append(aims.toJSON());
 				statusCode = HttpServletResponse.SC_OK;
 
 			} else if (HandlerUtil.matchesTemplate(RouteTemplates.PROJECT_AIM, pathInfo)) {
 				ProjectReference projectReference = ProjectReference.extract(RouteTemplates.PROJECT_AIM, pathInfo);
 				AIMReference aimReference = AIMReference.extract(RouteTemplates.PROJECT_AIM, pathInfo);
-				EPADAIM aim = epadOperations.getProjectAIMDescription(projectReference.projectID, aimReference.aimID, username,
-						sessionID);
+				EPADAIM aim = epadOperations
+						.getProjectAIMDescription(projectReference, aimReference.aimID, username, sessionID);
 				responseStream.append(aim.toJSON());
 				statusCode = HttpServletResponse.SC_OK;
 

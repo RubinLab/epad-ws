@@ -15,9 +15,16 @@ import java.util.Map;
 import java.util.Set;
 
 import edu.stanford.epad.common.util.EPADLogger;
+import edu.stanford.epad.dtos.EPADAIM;
 import edu.stanford.epad.dtos.PNGFileProcessingStatus;
 import edu.stanford.epad.dtos.SeriesProcessingStatus;
 import edu.stanford.epad.epadws.handlers.coordination.Term;
+import edu.stanford.epad.epadws.handlers.core.FrameReference;
+import edu.stanford.epad.epadws.handlers.core.ImageReference;
+import edu.stanford.epad.epadws.handlers.core.ProjectReference;
+import edu.stanford.epad.epadws.handlers.core.SeriesReference;
+import edu.stanford.epad.epadws.handlers.core.StudyReference;
+import edu.stanford.epad.epadws.handlers.core.SubjectReference;
 
 public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 {
@@ -28,6 +35,126 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 	public DefaultEpadDatabaseOperations(ConnectionPool connectionPool)
 	{
 		this.connectionPool = connectionPool;
+	}
+
+	@Override
+	public Set<EPADAIM> getAIMs(ProjectReference reference)
+	{
+		return new HashSet<>(); // TODO
+	}
+
+	@Override
+	public Set<EPADAIM> getAIMs(SubjectReference reference)
+	{
+		return new HashSet<>(); // TODO
+	}
+
+	@Override
+	public Set<EPADAIM> getAIMs(StudyReference reference)
+	{
+		return new HashSet<>(); // TODO
+	}
+
+	@Override
+	public Set<EPADAIM> getAIMs(SeriesReference reference)
+	{
+		return new HashSet<>(); // TODO
+	}
+
+	@Override
+	public Set<EPADAIM> getAIMs(ImageReference reference)
+	{
+		return new HashSet<>(); // TODO
+	}
+
+	@Override
+	public Set<EPADAIM> getAIMs(FrameReference reference)
+	{
+		return new HashSet<>(); // TODO
+	}
+
+	@Override
+	public int getNumberOfAIMs(ProjectReference reference)
+	{
+		return 0; // TODO
+	}
+
+	@Override
+	public int getNumberOfAIMs(SubjectReference reference)
+	{
+		return 0; // TODO
+	}
+
+	@Override
+	public int getNumberOfAIMs(StudyReference reference)
+	{
+		return 0; // TODO
+	}
+
+	@Override
+	public int getNumberOfAIMs(SeriesReference reference)
+	{
+		return 0; // TODO
+	}
+
+	@Override
+	public int getNumberOfAIMs(ImageReference reference)
+	{
+		return 0; // TODO
+	}
+
+	@Override
+	public int getNumberOfAIMs(FrameReference reference)
+	{
+		return 0; // TODO
+	}
+
+	@Override
+	public void addAIM(StudyReference reference, String aimID)
+	{
+		// TODO
+	}
+
+	@Override
+	public void addAIM(SeriesReference reference, String aimID)
+	{
+		// TODO
+	}
+
+	@Override
+	public void addAIM(ImageReference reference, String aimID)
+	{
+		// TODO
+	}
+
+	@Override
+	public void addAIM(FrameReference reference, String aimID)
+	{
+		// TODO
+	}
+
+	@Override
+	public void deleteAIM(StudyReference reference, String aimID)
+	{
+		// TODO
+	}
+
+	@Override
+	public void deleteAIM(SeriesReference reference, String aimID)
+	{
+		// TODO
+	}
+
+	@Override
+	public void deleteAIM(ImageReference reference, String aimID)
+	{
+		// TODO
+	}
+
+	@Override
+	public void deleteAIM(FrameReference reference, String aimID)
+	{
+		// TODO
 	}
 
 	@Override

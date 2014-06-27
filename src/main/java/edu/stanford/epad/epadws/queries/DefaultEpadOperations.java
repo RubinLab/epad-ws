@@ -64,9 +64,11 @@ public class DefaultEpadOperations implements EpadOperations
 	private static final EPADLogger log = EPADLogger.getInstance();
 
 	private static final DefaultEpadOperations ourInstance = new DefaultEpadOperations();
+	private final EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
 
 	private DefaultEpadOperations()
 	{
+
 	}
 
 	public static DefaultEpadOperations getInstance()
@@ -75,7 +77,7 @@ public class DefaultEpadOperations implements EpadOperations
 	}
 
 	@Override
-	public EPADProject getProjectDescription(String projectID, String username, String sessionID)
+	public EPADProject getProjectDescription(ProjectReference projectReference, String username, String sessionID)
 	{
 		return null; // TODO
 	}
@@ -159,71 +161,6 @@ public class DefaultEpadOperations implements EpadOperations
 				return null;
 			}
 		}
-	}
-
-	private EPADStudy dcm4CheeStudy2EpadStudy(String projectID, String subjectID, DCM4CHEEStudy dcm4CheeStudy,
-			String username)
-	{
-		Dcm4CheeDatabaseOperations dcm4CheeDatabaseOperations = Dcm4CheeDatabase.getInstance()
-				.getDcm4CheeDatabaseOperations();
-
-		String patientName = dcm4CheeStudy.patientName;
-		String studyUID = dcm4CheeStudy.studyUID;
-		String insertDate = dcm4CheeStudy.dateAcquired;
-		String firstSeriesUID = dcm4CheeStudy.firstSeriesUID;
-		String firstSeriesDateAcquired = dcm4CheeStudy.firstSeriesDateAcquired;
-		String physicianName = dcm4CheeStudy.physicianName;
-		String birthdate = dcm4CheeStudy.birthdate;
-		String sex = dcm4CheeStudy.sex;
-		String studyDescription = dcm4CheeStudy.studyDescription;
-		String studyAccessionNumber = dcm4CheeStudy.studyAccessionNumber;
-		Set<String> examTypes = getExamTypesForStudy(studyUID);
-		int numberOfSeries = dcm4CheeStudy.seriesCount;
-		int numberOfImages = dcm4CheeStudy.imagesCount;
-		Set<String> seriesUIDs = dcm4CheeDatabaseOperations.getAllSeriesUIDsInStudy(studyUID);
-		StudyProcessingStatus studyProcessingStatus = getStudyProcessingStatus(studyUID);
-		int numberOfAnnotations = (seriesUIDs.size() <= 0) ? 0 : AIMQueries.getNumberOfAIMAnnotationsForSeriesSet(
-				seriesUIDs, username);
-
-		return new EPADStudy(projectID, subjectID, patientName, studyUID, insertDate, firstSeriesUID,
-				firstSeriesDateAcquired, physicianName, birthdate, sex, studyProcessingStatus, examTypes, studyDescription,
-				studyAccessionNumber, numberOfSeries, numberOfImages, numberOfAnnotations);
-	}
-
-	private StudyProcessingStatus getStudyProcessingStatus(String studyUID)
-	{
-		EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
-		Dcm4CheeDatabaseOperations dcm4CheeDatabaseOperations = Dcm4CheeDatabase.getInstance()
-				.getDcm4CheeDatabaseOperations();
-		boolean seriesNotStarted = false;
-		boolean seriesWithNoDICOM = false;
-		boolean seriesInPipeline = false;
-		boolean seriesWithError = false;
-
-		Set<String> seriesUIDs = dcm4CheeDatabaseOperations.getAllSeriesUIDsInStudy(studyUID);
-
-		for (String seriesUID : seriesUIDs) {
-			SeriesProcessingStatus seriesProcessingStatus = epadDatabaseOperations.getSeriesProcessingStatus(seriesUID);
-			if (seriesProcessingStatus == null)
-				seriesNotStarted = true;
-			if (seriesProcessingStatus == SeriesProcessingStatus.NO_DICOM)
-				seriesWithNoDICOM = true;
-			if (seriesProcessingStatus == SeriesProcessingStatus.ERROR)
-				seriesWithError = true;
-			if (seriesProcessingStatus == SeriesProcessingStatus.IN_PIPELINE)
-				seriesInPipeline = true;
-		}
-
-		if (seriesNotStarted)
-			return StudyProcessingStatus.STUDY_STATUS_NOT_STARTED;
-		if (seriesWithError)
-			return StudyProcessingStatus.STUDY_STATUS_ERROR_MISSING_PNG;
-		else if (seriesWithNoDICOM)
-			return StudyProcessingStatus.STUDY_STATUS_ERROR_MISSING_DICOM;
-		else if (seriesInPipeline)
-			return StudyProcessingStatus.STUDY_STATUS_PROCESSING;
-		else
-			return StudyProcessingStatus.STUDY_STATUS_COMPLETED;
 	}
 
 	@Override
@@ -597,59 +534,102 @@ public class DefaultEpadOperations implements EpadOperations
 	@Override
 	public int createStudyAIM(StudyReference studyReference, String aimID, String sessionID)
 	{
-		return HttpServletResponse.SC_NOT_IMPLEMENTED; // TODO
+		try {
+			epadDatabaseOperations.addAIM(studyReference, aimID);
+			return HttpServletResponse.SC_OK;
+		} catch (Exception e) {
+			return HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+		}
 	}
 
 	@Override
 	public int createSeriesAIM(SeriesReference seriesReference, String aimID, String sessionID)
 	{
-		return HttpServletResponse.SC_NOT_IMPLEMENTED; // TODO
+		try {
+			epadDatabaseOperations.addAIM(seriesReference, aimID);
+			return HttpServletResponse.SC_OK;
+		} catch (Exception e) {
+			return HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+		}
 	}
 
 	@Override
 	public int createImageAIM(ImageReference imageReference, String aimID, String sessionID)
 	{
-		return HttpServletResponse.SC_NOT_IMPLEMENTED; // TODO
+		try {
+			epadDatabaseOperations.addAIM(imageReference, aimID);
+			return HttpServletResponse.SC_OK;
+		} catch (Exception e) {
+			return HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+		}
 	}
 
 	@Override
 	public int createFrameAIM(FrameReference frameReference, String aimID, String sessionID)
 	{
-		return HttpServletResponse.SC_NOT_IMPLEMENTED; // TODO
+		try {
+			epadDatabaseOperations.addAIM(frameReference, aimID);
+			return HttpServletResponse.SC_OK;
+		} catch (Exception e) {
+			return HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+		}
 	}
 
 	@Override
 	public int studyAIMDelete(StudyReference studyReference, String aimID, String sessionID, String username)
 	{
-		return HttpServletResponse.SC_NOT_IMPLEMENTED; // TODO
+		try {
+			epadDatabaseOperations.addAIM(studyReference, aimID);
+			return HttpServletResponse.SC_OK;
+		} catch (Exception e) {
+			return HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+		}
 	}
 
 	@Override
 	public int seriesAIMDelete(SeriesReference seriesReference, String aimID, String sessionID, String username)
 	{
-		return HttpServletResponse.SC_NOT_IMPLEMENTED; // TODO
+		try {
+			epadDatabaseOperations.addAIM(seriesReference, aimID);
+			return HttpServletResponse.SC_OK;
+		} catch (Exception e) {
+			return HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+		}
 	}
 
 	@Override
 	public int imageAIMDelete(ImageReference imageReference, String aimID, String sessionID, String username)
 	{
-		return HttpServletResponse.SC_NOT_IMPLEMENTED; // TODO
+		try {
+			epadDatabaseOperations.addAIM(imageReference, aimID);
+			return HttpServletResponse.SC_OK;
+		} catch (Exception e) {
+			return HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+		}
 	}
 
 	@Override
 	public int frameAIMDelete(FrameReference frameReference, String aimID, String sessionID, String username)
 	{
-		return HttpServletResponse.SC_NOT_IMPLEMENTED; // TODO
+		try {
+			epadDatabaseOperations.addAIM(frameReference, aimID);
+			return HttpServletResponse.SC_OK;
+		} catch (Exception e) {
+			return HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+		}
 	}
 
 	@Override
-	public EPADAIMList getProjectAIMDescriptions(String projectID, String username, String sessionID)
+	public EPADAIMList getProjectAIMDescriptions(ProjectReference projectReference, String username, String sessionID)
 	{
-		return new EPADAIMList(); // TODO
+		Set<EPADAIM> aims = epadDatabaseOperations.getAIMs(projectReference);
+
+		return new EPADAIMList(new ArrayList<EPADAIM>(aims));
 	}
 
 	@Override
-	public EPADAIM getProjectAIMDescription(String projectID, String aimID, String username, String sessionID)
+	public EPADAIM getProjectAIMDescription(ProjectReference projectReference, String aimID, String username,
+			String sessionID)
 	{
 		return null; // TODO
 	}
@@ -657,7 +637,9 @@ public class DefaultEpadOperations implements EpadOperations
 	@Override
 	public EPADAIMList getSubjectAIMDescriptions(SubjectReference subjectReference, String username, String sessionID)
 	{
-		return new EPADAIMList(); // TODO
+		Set<EPADAIM> aims = epadDatabaseOperations.getAIMs(subjectReference);
+
+		return new EPADAIMList(new ArrayList<EPADAIM>(aims));
 	}
 
 	@Override
@@ -670,7 +652,9 @@ public class DefaultEpadOperations implements EpadOperations
 	@Override
 	public EPADAIMList getStudyAIMDescriptions(StudyReference studyReference, String username, String sessionID)
 	{
-		return new EPADAIMList(); // TODO
+		Set<EPADAIM> aims = epadDatabaseOperations.getAIMs(studyReference);
+
+		return new EPADAIMList(new ArrayList<EPADAIM>(aims));
 	}
 
 	@Override
@@ -682,7 +666,9 @@ public class DefaultEpadOperations implements EpadOperations
 	@Override
 	public EPADAIMList getSeriesAIMDescriptions(SeriesReference seriesReference, String username, String sessionID)
 	{
-		return new EPADAIMList(); // TODO
+		Set<EPADAIM> aims = epadDatabaseOperations.getAIMs(seriesReference);
+
+		return new EPADAIMList(new ArrayList<EPADAIM>(aims));
 	}
 
 	@Override
@@ -695,7 +681,9 @@ public class DefaultEpadOperations implements EpadOperations
 	@Override
 	public EPADAIMList getImageAIMDescriptions(ImageReference imageReference, String username, String sessionID)
 	{
-		return new EPADAIMList(); // TODO
+		Set<EPADAIM> aims = epadDatabaseOperations.getAIMs(imageReference);
+
+		return new EPADAIMList(new ArrayList<EPADAIM>(aims));
 	}
 
 	@Override
@@ -708,7 +696,9 @@ public class DefaultEpadOperations implements EpadOperations
 	@Override
 	public EPADAIMList getFrameAIMDescriptions(FrameReference frameReference, String username, String sessionID)
 	{
-		return new EPADAIMList(); // TODO
+		Set<EPADAIM> aims = epadDatabaseOperations.getAIMs(frameReference);
+
+		return new EPADAIMList(new ArrayList<EPADAIM>(aims));
 	}
 
 	// TODO
@@ -716,6 +706,71 @@ public class DefaultEpadOperations implements EpadOperations
 	public EPADAIM getFrameAIMDescription(FrameReference frameReference, String aimID, String username, String sessionID)
 	{
 		return null; // TODO
+	}
+
+	private EPADStudy dcm4CheeStudy2EpadStudy(String projectID, String subjectID, DCM4CHEEStudy dcm4CheeStudy,
+			String username)
+	{
+		Dcm4CheeDatabaseOperations dcm4CheeDatabaseOperations = Dcm4CheeDatabase.getInstance()
+				.getDcm4CheeDatabaseOperations();
+
+		String patientName = dcm4CheeStudy.patientName;
+		String studyUID = dcm4CheeStudy.studyUID;
+		String insertDate = dcm4CheeStudy.dateAcquired;
+		String firstSeriesUID = dcm4CheeStudy.firstSeriesUID;
+		String firstSeriesDateAcquired = dcm4CheeStudy.firstSeriesDateAcquired;
+		String physicianName = dcm4CheeStudy.physicianName;
+		String birthdate = dcm4CheeStudy.birthdate;
+		String sex = dcm4CheeStudy.sex;
+		String studyDescription = dcm4CheeStudy.studyDescription;
+		String studyAccessionNumber = dcm4CheeStudy.studyAccessionNumber;
+		Set<String> examTypes = getExamTypesForStudy(studyUID);
+		int numberOfSeries = dcm4CheeStudy.seriesCount;
+		int numberOfImages = dcm4CheeStudy.imagesCount;
+		Set<String> seriesUIDs = dcm4CheeDatabaseOperations.getAllSeriesUIDsInStudy(studyUID);
+		StudyProcessingStatus studyProcessingStatus = getStudyProcessingStatus(studyUID);
+		int numberOfAnnotations = (seriesUIDs.size() <= 0) ? 0 : AIMQueries.getNumberOfAIMAnnotationsForSeriesSet(
+				seriesUIDs, username);
+
+		return new EPADStudy(projectID, subjectID, patientName, studyUID, insertDate, firstSeriesUID,
+				firstSeriesDateAcquired, physicianName, birthdate, sex, studyProcessingStatus, examTypes, studyDescription,
+				studyAccessionNumber, numberOfSeries, numberOfImages, numberOfAnnotations);
+	}
+
+	private StudyProcessingStatus getStudyProcessingStatus(String studyUID)
+	{
+		EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
+		Dcm4CheeDatabaseOperations dcm4CheeDatabaseOperations = Dcm4CheeDatabase.getInstance()
+				.getDcm4CheeDatabaseOperations();
+		boolean seriesNotStarted = false;
+		boolean seriesWithNoDICOM = false;
+		boolean seriesInPipeline = false;
+		boolean seriesWithError = false;
+
+		Set<String> seriesUIDs = dcm4CheeDatabaseOperations.getAllSeriesUIDsInStudy(studyUID);
+
+		for (String seriesUID : seriesUIDs) {
+			SeriesProcessingStatus seriesProcessingStatus = epadDatabaseOperations.getSeriesProcessingStatus(seriesUID);
+			if (seriesProcessingStatus == null)
+				seriesNotStarted = true;
+			if (seriesProcessingStatus == SeriesProcessingStatus.NO_DICOM)
+				seriesWithNoDICOM = true;
+			if (seriesProcessingStatus == SeriesProcessingStatus.ERROR)
+				seriesWithError = true;
+			if (seriesProcessingStatus == SeriesProcessingStatus.IN_PIPELINE)
+				seriesInPipeline = true;
+		}
+
+		if (seriesNotStarted)
+			return StudyProcessingStatus.STUDY_STATUS_NOT_STARTED;
+		if (seriesWithError)
+			return StudyProcessingStatus.STUDY_STATUS_ERROR_MISSING_PNG;
+		else if (seriesWithNoDICOM)
+			return StudyProcessingStatus.STUDY_STATUS_ERROR_MISSING_DICOM;
+		else if (seriesInPipeline)
+			return StudyProcessingStatus.STUDY_STATUS_PROCESSING;
+		else
+			return StudyProcessingStatus.STUDY_STATUS_COMPLETED;
 	}
 
 	private String createFileNameField(String sopInstanceUID)
