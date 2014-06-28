@@ -31,15 +31,17 @@ public class PngGeneratorTask implements GeneratorTask
 	private static final EPADLogger log = EPADLogger.getInstance();
 
 	private final String patientName;
+	private final String studyUID;
 	private final String seriesUID;
 	private final String instanceNumber;
 	private final File dicomInputFile;
 	private final File pngOutputFile;
 
-	public PngGeneratorTask(String patientName, String seriesUID, String instanceNumber, File dicomInputFile,
-			File pngOutputFile)
+	public PngGeneratorTask(String patientName, String studyUID, String seriesUID, String instanceNumber,
+			File dicomInputFile, File pngOutputFile)
 	{
 		this.patientName = patientName;
+		this.studyUID = studyUID;
 		this.seriesUID = seriesUID;
 		this.instanceNumber = instanceNumber;
 		this.dicomInputFile = dicomInputFile;
@@ -78,7 +80,7 @@ public class PngGeneratorTask implements GeneratorTask
 			outputPNGStream.close();
 			epadFilesTableData = Dcm4CheeDatabaseUtils.createEPadFilesTableData(outputPNGFile);
 			log.info("PNG of size " + getFileSize(epadFilesTableData) + " generated for instance " + instanceNumber
-					+ " in series " + seriesUID + " for patient " + patientName);
+					+ " in series " + seriesUID + ", study " + studyUID + " for patient " + patientName);
 
 			epadDatabaseOperations.updateEpadFileRecord(epadFilesTableData.get("file_path"), PNGFileProcessingStatus.DONE,
 					getFileSize(epadFilesTableData), "");

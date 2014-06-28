@@ -396,6 +396,8 @@ public class DefaultDcm4CheeDatabaseOperations implements Dcm4CheeDatabaseOperat
 
 	/**
 	 * Looks in DCM4CHEE database to find a list of all DICOM image descriptions (table is pacsdb.files).
+	 * 
+	 * Keys: study_iuid, sop_iuid, inst_no, series_iuid, filepath, file_size,
 	 */
 	@Override
 	public List<Map<String, String>> getImageFileDescriptionsForSeries(String seriesUID)

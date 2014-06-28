@@ -26,6 +26,60 @@ import edu.stanford.epad.epadws.handlers.core.SubjectReference;
  */
 public interface EpadDatabaseOperations
 {
+	void createEPADFile(ImageReference imageReference, String pngURL, String jpgURL);
+
+	void createEPADFile(FrameReference frameReference, String pngURL, String jpgURL);
+
+	void deleteEPADFile(ImageReference imageReference);
+
+	void deleteEPADFile(FrameReference frameReference);
+
+	String getPNGLocation(ImageReference imageReference);
+
+	String getJPGLocation(ImageReference imageReference);
+
+	String getPNGLocation(FrameReference frameReference);
+
+	String getJPGLocation(FrameReference frameReference);
+
+	Set<String> getAllSeriesUIDsFromEPadDatabase();
+
+	List<String> getAllImageUIDsInSeries(String seriesUID);
+
+	void deleteStudy(String studyUID);
+
+	void deleteSeries(String seriesUID);
+
+	SeriesProcessingStatus getSeriesProcessingStatus(String seriesUID);
+
+	void insertEpadEvent(String sessionID, String eventStatus, String aimUID, String aimName, String patientID,
+			String patientName, String templateID, String templateName, String pluginName);
+
+	Timestamp getSeriesProcessingDate(String seriesUID);
+
+	void updateOrInsertSeries(String seriesUID, SeriesProcessingStatus seriesProcessingStatus);
+
+	List<Map<String, String>> getEpadEventsForSessionID(String sessionID);
+
+	void forceDICOMReprocessing();
+
+	// Database recording of PNG files generated from DICOM images
+
+	void insertEpadFileRecord(Map<String, String> fileRecord);
+
+	boolean hasEpadFileRecord(String filePath);
+
+	/**
+	 * Update the processing status, file size and error message of an ePAD file record.
+	 */
+	void updateEpadFileRecord(String filePath, PNGFileProcessingStatus newStatus, int fileSize, String errorMsg);
+
+	String getEpadFilePathLike(String sopInstanceUID);
+
+	List<String> getAllEPadFilePathsWithErrors();
+
+	List<String> getAllEPadInPipelineFilePaths();
+
 	EPADAIM getAIM(ProjectReference projectReference, String aimID);
 
 	EPADAIM getAIM(SubjectReference subjectReference, String aimID);
@@ -77,44 +131,6 @@ public interface EpadDatabaseOperations
 	void deleteAIM(ImageReference reference, String aimID);
 
 	void deleteAIM(FrameReference reference, String aimID);
-
-	Set<String> getAllSeriesUIDsFromEPadDatabase();
-
-	List<String> getAllImageUIDsInSeries(String seriesUID);
-
-	void deleteStudy(String studyUID);
-
-	void deleteSeries(String seriesUID);
-
-	SeriesProcessingStatus getSeriesProcessingStatus(String seriesUID);
-
-	void insertEpadEvent(String sessionID, String eventStatus, String aimUID, String aimName, String patientID,
-			String patientName, String templateID, String templateName, String pluginName);
-
-	Timestamp getSeriesProcessingDate(String seriesUID);
-
-	void updateOrInsertSeries(String seriesUID, SeriesProcessingStatus seriesProcessingStatus);
-
-	List<Map<String, String>> getEpadEventsForSessionID(String sessionID);
-
-	void forceDICOMReprocessing();
-
-	// Database recording of PNG files generated from DICOM images
-
-	void insertEpadFileRecord(Map<String, String> fileRecord);
-
-	boolean hasEpadFileRecord(String filePath);
-
-	/**
-	 * Update the processing status, file size and error message of an ePAD file record.
-	 */
-	void updateEpadFileRecord(String filePath, PNGFileProcessingStatus newStatus, int fileSize, String errorMsg);
-
-	String getEpadFilePathLike(String sopInstanceUID);
-
-	List<String> getAllEPadFilePathsWithErrors();
-
-	List<String> getAllEPadInPipelineFilePaths();
 
 	// Coordination methods; will disappear with AIM 4
 

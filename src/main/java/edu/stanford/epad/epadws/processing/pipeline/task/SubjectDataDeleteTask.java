@@ -8,14 +8,14 @@ import edu.stanford.epad.common.util.EPADLogger;
  * @author martin
  * 
  */
-public class PatientDataDeleteTask implements Runnable
+public class SubjectDataDeleteTask implements Runnable
 {
 	private static EPADLogger log = EPADLogger.getInstance();
 
 	private final String projectID;
 	private final String patientID;
 
-	public PatientDataDeleteTask(String projectID, String patientID)
+	public SubjectDataDeleteTask(String projectID, String patientID)
 	{
 		this.projectID = projectID;
 		this.patientID = patientID;

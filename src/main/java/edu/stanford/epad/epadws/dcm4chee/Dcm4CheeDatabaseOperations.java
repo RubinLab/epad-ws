@@ -37,6 +37,7 @@ public interface Dcm4CheeDatabaseOperations
 
 	Map<String, String> getParentStudyForSeries(String seriesUID);
 
+	// study_iuid, sop_iuid, inst_no, series_iuid, filepath, file_size,
 	List<Map<String, String>> getImageFileDescriptionsForSeries(String seriesUID);
 
 	// Returns a list of image descriptions; each description is a map containing the keys to the instance table in the

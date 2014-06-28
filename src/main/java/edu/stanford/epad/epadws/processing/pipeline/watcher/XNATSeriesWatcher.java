@@ -7,9 +7,9 @@ import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.epad.epadws.processing.model.DicomSeriesProcessingDescription;
 import edu.stanford.epad.epadws.processing.pipeline.threads.ShutdownSignal;
-import edu.stanford.epad.epadws.xnat.XNATCreationOperations;
+import edu.stanford.epad.epadws.queries.DefaultEpadOperations;
+import edu.stanford.epad.epadws.queries.EpadOperations;
 import edu.stanford.epad.epadws.xnat.XNATSessionOperations;
-import edu.stanford.epad.epadws.xnat.XNATUtil;
 
 /**
  * Monitors the XNAT series queue. The queue contains descriptions of new DICOM series that have been uploaded to ePAD's
@@ -27,8 +27,10 @@ public class XNATSeriesWatcher implements Runnable
 
 	private static final EPADLogger log = EPADLogger.getInstance();
 	private static final EPADConfig config = EPADConfig.getInstance();
+	private static final EpadOperations epadOperations = DefaultEpadOperations.getInstance();
 
 	private final String xnatUploadProjectID;
+
 	private String jsessionID = null;
 
 	public XNATSeriesWatcher(BlockingQueue<DicomSeriesProcessingDescription> xnatSeriesWatcherQueue)
@@ -53,54 +55,24 @@ public class XNATSeriesWatcher implements Runnable
 					validateDICOMSeriesProcessingDescription(dicomSeriesDescription);
 
 					String studyUID = dicomSeriesDescription.getStudyUID();
-					String patientID = dicomSeriesDescription.getPatientID();
+					String subjectID = dicomSeriesDescription.getSubjectID();
 					String patientName = dicomSeriesDescription.getPatientName();
 
-					String xnatSubjectLabel = XNATUtil.subjectID2XNATSubjectLabel(patientID);
+					log.info("XNAT series watcher processing study " + studyUID + " for subject " + patientName + " with ID "
+							+ subjectID);
 
-					log.info("XNAT series watcher processing study " + studyUID + " for patient " + patientName + " with ID "
-							+ patientID);
+					// We create the subject and study here. The study will subsequently arrive from dcm4chee where it
+					// will be processed by the DICOMSeriesWatcher.
 
-					createXNATDICOMStudyExperiment(xnatUploadProjectID, xnatSubjectLabel, patientName, studyUID);
+					if (updateSessionIDIfNecessary())
+						epadOperations.createSubjectAndStudy(xnatUploadProjectID, subjectID, patientName, studyUID, jsessionID);
+					else
+						log.warning("Unable to validate to upload study " + studyUID + " for subject " + patientName
+								+ " in project " + xnatUploadProjectID);
 				}
 			} catch (Exception e) {
 				log.warning("Exception in XNAT series watcher thread", e);
 			}
-		}
-	}
-
-	private void validateDICOMSeriesProcessingDescription(DicomSeriesProcessingDescription dicomSeriesDescription)
-			throws IllegalArgumentException
-	{
-		if (dicomSeriesDescription == null)
-			throw new IllegalArgumentException("Missing series description");
-		if (dicomSeriesDescription.getSeriesUID().length() == 0)
-			throw new IllegalArgumentException("Missing series UID in series description");
-		if (dicomSeriesDescription.getPatientID().length() == 0)
-			throw new IllegalArgumentException("Missing patient ID in series description");
-		if (dicomSeriesDescription.getPatientName().length() == 0)
-			throw new IllegalArgumentException("Missing patient name in series description");
-	}
-
-	private void createXNATDICOMStudyExperiment(String xnatProjectLabel, String xnatSubjectLabel,
-			String dicomPatientName, String studyUID)
-	{
-		if (updateSessionIDIfNecessary()) {
-			int xnatStatusCode = XNATCreationOperations.createXNATSubject(xnatProjectLabel, xnatSubjectLabel,
-					dicomPatientName, jsessionID);
-
-			if (XNATUtil.unexpectedXNATCreationStatusCode(xnatStatusCode))
-				log.warning("Error creating XNAT subject " + dicomPatientName + " for study " + studyUID + "; status code="
-						+ xnatStatusCode);
-
-			xnatStatusCode = XNATCreationOperations.createXNATDICOMStudyExperiment(xnatProjectLabel, xnatSubjectLabel,
-					studyUID, jsessionID);
-
-			if (XNATUtil.unexpectedXNATCreationStatusCode(xnatStatusCode))
-				log.warning("Error creating XNAT experiment for study " + studyUID + "; status code=" + xnatStatusCode);
-
-		} else {
-			log.warning("Could not log into XNAT to create DICOM study " + studyUID + " for patient " + xnatSubjectLabel);
 		}
 	}
 
@@ -119,5 +91,18 @@ public class XNATSeriesWatcher implements Runnable
 				return false;
 		} else
 			return true;
+	}
+
+	private void validateDICOMSeriesProcessingDescription(DicomSeriesProcessingDescription dicomSeriesDescription)
+			throws IllegalArgumentException
+	{
+		if (dicomSeriesDescription == null)
+			throw new IllegalArgumentException("Missing series description");
+		if (dicomSeriesDescription.getSeriesUID().length() == 0)
+			throw new IllegalArgumentException("Missing series UID in series description");
+		if (dicomSeriesDescription.getSubjectID().length() == 0)
+			throw new IllegalArgumentException("Missing patient ID in series description");
+		if (dicomSeriesDescription.getPatientName().length() == 0)
+			throw new IllegalArgumentException("Missing patient name in series description");
 	}
 }

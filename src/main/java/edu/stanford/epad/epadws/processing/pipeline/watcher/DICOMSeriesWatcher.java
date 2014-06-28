@@ -33,8 +33,11 @@ import edu.stanford.epad.epadws.queries.EpadOperations;
  * Process new DICOM series appearing in the series queue. Each series is described by a
  * {@link DicomSeriesProcessingDescription}.
  * <p>
+ * The {@link XNATSeriesWatcher} will have created XNAT entities for the subject and study in the appropriate project.
+ * We now create ePAD representations for the studies that have arrived from dcm4chee.
+ * <p>
  * These descriptions are placed in the queue by a {@link Dcm4CheeDatabaseWatcher}, which picks up new series by
- * monitoring a DCM4CHEE MySQL database.
+ * monitoring a dcm4chee MySQL database.
  * <p>
  * This watcher submits these to the PNG generation task queue to be processed by the {@link PngGeneratorTask}. It also
  * maintains order information for the series using the {@link DicomSeriesOrderTracker} class.

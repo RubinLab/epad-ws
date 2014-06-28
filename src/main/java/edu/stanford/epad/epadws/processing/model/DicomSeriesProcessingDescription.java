@@ -18,11 +18,11 @@ public class DicomSeriesProcessingDescription
 	private final ArrayList<DicomImageDescription> instances;
 	private final String studyUID;
 	private final String seriesUID;
-	private final String patientName;
-	private final String patientID;
+	private final String subjectName;
+	private final String subjectID;
 
 	public DicomSeriesProcessingDescription(int numberOfInstances, String seriesUID, String studyUID, String patientName,
-			String patientID)
+			String subjectID)
 	{
 		if (numberOfInstances < 1)
 			throw new IllegalArgumentException("numInstances must be a positive value.");
@@ -38,8 +38,8 @@ public class DicomSeriesProcessingDescription
 
 		this.seriesUID = seriesUID;
 		this.studyUID = studyUID;
-		this.patientName = patientName;
-		this.patientID = patientID;
+		this.subjectName = patientName;
+		this.subjectID = subjectID;
 	}
 
 	public String getSeriesUID()
@@ -54,12 +54,12 @@ public class DicomSeriesProcessingDescription
 
 	public String getPatientName()
 	{
-		return patientName;
+		return subjectName;
 	}
 
-	public String getPatientID()
+	public String getSubjectID()
 	{
-		return patientID;
+		return subjectID;
 	}
 
 	public boolean isComplete()

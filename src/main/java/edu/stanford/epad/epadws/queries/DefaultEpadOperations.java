@@ -52,12 +52,13 @@ import edu.stanford.epad.epadws.handlers.core.ProjectReference;
 import edu.stanford.epad.epadws.handlers.core.SeriesReference;
 import edu.stanford.epad.epadws.handlers.core.StudyReference;
 import edu.stanford.epad.epadws.handlers.core.SubjectReference;
-import edu.stanford.epad.epadws.processing.pipeline.task.PatientDataDeleteTask;
 import edu.stanford.epad.epadws.processing.pipeline.task.ProjectDataDeleteTask;
 import edu.stanford.epad.epadws.processing.pipeline.task.StudyDataDeleteTask;
+import edu.stanford.epad.epadws.processing.pipeline.task.SubjectDataDeleteTask;
 import edu.stanford.epad.epadws.processing.pipeline.watcher.Dcm4CheeDatabaseWatcher;
 import edu.stanford.epad.epadws.xnat.XNATCreationOperations;
 import edu.stanford.epad.epadws.xnat.XNATDeletionOperations;
+import edu.stanford.epad.epadws.xnat.XNATUtil;
 
 public class DefaultEpadOperations implements EpadOperations
 {
@@ -104,6 +105,25 @@ public class DefaultEpadOperations implements EpadOperations
 	public EPADFrame getFrameDescription(FrameReference frameReference, String sessionID)
 	{
 		return null; // TODO
+	}
+
+	@Override
+	public void createSubjectAndStudy(String projectID, String subjectID, String subjectName, String studyUID,
+			String sessionID)
+	{
+		String xnatSubjectLabel = XNATUtil.subjectID2XNATSubjectLabel(subjectID);
+
+		int xnatStatusCode = XNATCreationOperations.createXNATSubject(projectID, xnatSubjectLabel, subjectName, sessionID);
+
+		if (XNATUtil.unexpectedXNATCreationStatusCode(xnatStatusCode))
+			log.warning("Error creating XNAT subject " + subjectName + " for study " + studyUID + "; status code="
+					+ xnatStatusCode);
+
+		xnatStatusCode = XNATCreationOperations.createXNATDICOMStudyExperiment(projectID, xnatSubjectLabel, studyUID,
+				sessionID);
+
+		if (XNATUtil.unexpectedXNATCreationStatusCode(xnatStatusCode))
+			log.warning("Error creating XNAT experiment for study " + studyUID + "; status code=" + xnatStatusCode);
 	}
 
 	@Override
@@ -249,10 +269,14 @@ public class DefaultEpadOperations implements EpadOperations
 			String sliceLocation = getSliceLocation(imageDescription);
 			String imageDate = imageDescription.get("content_datetime");
 			String insertDate = imageDescription.get("created_time");
+			int numberOfFrames = 0; // TODO Look for MF from dcm4chee
+			String pngURL = ""; // TODO
+			String jpgURL = ""; // TODO
 
 			EPADImage epadImage = new EPADImage(seriesReference.projectID, seriesReference.subjectID,
 					seriesReference.studyUID, seriesReference.seriesUID, imageUID, insertDate, imageDate, sliceLocation,
-					instanceNumber);
+					instanceNumber, numberOfFrames, pngURL, jpgURL);
+
 			epadImageList.addImage(epadImage);
 		}
 		return epadImageList;
@@ -272,9 +296,13 @@ public class DefaultEpadOperations implements EpadOperations
 		String sliceLocation = getSliceLocation(imageDescription); // entry.get("inst_custom1");
 		String imageDate = imageDescription.get("content_datetime");
 		String insertDate = imageDescription.get("created_time");
+		int numberOfFrames = 0; // TODO Look for MF from dcm4chee
+		String pngURL = ""; // TODO
+		String jpgURL = ""; // TODO
 
 		EPADImage epadImage = new EPADImage(imageReference.projectID, imageReference.subjectID, imageReference.studyUID,
-				imageReference.seriesUID, imageUID, insertDate, imageDate, sliceLocation, instanceNumber);
+				imageReference.seriesUID, imageUID, insertDate, imageDate, sliceLocation, instanceNumber, numberOfFrames,
+				pngURL, jpgURL);
 
 		return epadImage;
 	}
@@ -398,7 +426,7 @@ public class DefaultEpadOperations implements EpadOperations
 
 		try {
 			// Get list of DICOM image descriptions from DCM4CHEE database table (pacsdb.files). Each image description is a
-			// map with keys: i.sop_iuid, i.inst_no, s.series_iuid, f.filepath, f.file_size.
+			// map with keys: study_iuid, sop_iuid, inst_no, series_iuid, filepath, file_size.
 			List<Map<String, String>> dicomImageFileDescriptions = dcm4CheeDatabaseOperations
 					.getImageFileDescriptionsForSeries(seriesUID);
 
@@ -472,7 +500,7 @@ public class DefaultEpadOperations implements EpadOperations
 		xnatStatusCode = XNATDeletionOperations.deleteXNATSubject(subjectReference.projectID, subjectReference.subjectID,
 				sessionID);
 
-		(new Thread(new PatientDataDeleteTask(subjectReference.projectID, subjectReference.subjectID))).start();
+		(new Thread(new SubjectDataDeleteTask(subjectReference.projectID, subjectReference.subjectID))).start();
 
 		return xnatStatusCode;
 	}

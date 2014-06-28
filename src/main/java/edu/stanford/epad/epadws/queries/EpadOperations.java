@@ -63,7 +63,7 @@ public interface EpadOperations
 
 	EPADFrame getFrameDescription(FrameReference frameReference, String sessionID);
 
-	// Creation
+	void createSubjectAndStudy(String projectID, String subjectID, String subjectName, String studyUID, String sessionID);
 
 	int createProject(ProjectReference projectReference, String projectName, String projectDescription, String sessionID);
 
@@ -71,9 +71,15 @@ public interface EpadOperations
 
 	int createStudy(StudyReference studyReference, String sessionID);
 
+	int createStudyAIM(StudyReference studyReference, String aimID, String sessionID);
+
 	int createSeries(SeriesReference seriesReference, String sessionID);
 
-	// Deletion
+	int createSeriesAIM(SeriesReference seriesReference, String aimID, String sessionID);
+
+	int createImageAIM(ImageReference imageReference, String aimID, String sessionID);
+
+	int createFrameAIM(FrameReference frameReference, String aimID, String sessionID);
 
 	int projectDelete(String projectID, String sessionID, String username);
 
@@ -82,16 +88,6 @@ public interface EpadOperations
 	int studyDelete(StudyReference studyReference, String sessionID, String username);
 
 	int seriesDelete(SeriesReference seriesReference, String sessionID, String username);
-
-	// AIM
-
-	int createStudyAIM(StudyReference studyReference, String aimID, String sessionID);
-
-	int createSeriesAIM(SeriesReference seriesReference, String aimID, String sessionID);
-
-	int createImageAIM(ImageReference imageReference, String aimID, String sessionID);
-
-	int createFrameAIM(FrameReference frameReference, String aimID, String sessionID);
 
 	int studyAIMDelete(StudyReference studyReference, String aimID, String sessionID, String username);
 
@@ -139,7 +135,7 @@ public interface EpadOperations
 	 * For the specified series, return a list of DICOM image file descriptions for instances that have no corresponding
 	 * PNG file specified in the ePAD database.
 	 * <p>
-	 * Each description is a map with keys: sop_iuid, inst_no, series_iuid, filepath, file_size.
+	 * Each description is a map with keys: study_iuid, series_iuid, sop_iuid, inst_no, filepath, file_size.
 	 */
 	List<Map<String, String>> getUnprocessedDicomImageFileDescriptionsForSeries(String seriesUID);
 

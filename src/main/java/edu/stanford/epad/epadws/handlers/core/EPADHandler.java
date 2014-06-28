@@ -87,7 +87,7 @@ public class EPADHandler extends AbstractHandler
 					} else if ("DELETE".equalsIgnoreCase(method)) {
 						statusCode = handleDelete(httpRequest, responseStream, username);
 					} else if ("PUT".equalsIgnoreCase(method)) {
-						statusCode = handlePut(httpRequest, responseStream, username);
+						statusCode = handlePut(httpRequest, httpResponse, responseStream, username);
 					} else if ("POST".equalsIgnoreCase(method)) {
 						statusCode = handlePost(httpRequest, responseStream, username);
 					} else {
@@ -282,7 +282,8 @@ public class EPADHandler extends AbstractHandler
 		return statusCode;
 	}
 
-	private int handlePut(HttpServletRequest httpRequest, PrintWriter responseStream, String username)
+	private int handlePut(HttpServletRequest httpRequest, HttpServletResponse httpResponse, PrintWriter responseStream,
+			String username)
 	{
 		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
 		String sessionID = XNATSessionOperations.getJSessionIDFromRequest(httpRequest);
@@ -317,10 +318,18 @@ public class EPADHandler extends AbstractHandler
 			SeriesReference seriesReference = SeriesReference.extract(RouteTemplates.SERIES_AIM, pathInfo);
 			AIMReference aimReference = AIMReference.extract(RouteTemplates.SERIES_AIM, pathInfo);
 			statusCode = epadOperations.createSeriesAIM(seriesReference, aimReference.aimID, sessionID);
+		} else if (HandlerUtil.matchesTemplate(RouteTemplates.IMAGE, pathInfo)) {
+			statusCode = HttpServletResponse.SC_METHOD_NOT_ALLOWED;
+			httpResponse.addHeader("Allow", "GET, DELETE");
+
 		} else if (HandlerUtil.matchesTemplate(RouteTemplates.IMAGE_AIM, pathInfo)) {
 			ImageReference imageReference = ImageReference.extract(RouteTemplates.IMAGE_AIM, pathInfo);
 			AIMReference aimReference = AIMReference.extract(RouteTemplates.IMAGE_AIM, pathInfo);
 			statusCode = epadOperations.createImageAIM(imageReference, aimReference.aimID, sessionID);
+
+		} else if (HandlerUtil.matchesTemplate(RouteTemplates.FRAME, pathInfo)) {
+			statusCode = HttpServletResponse.SC_METHOD_NOT_ALLOWED;
+			httpResponse.addHeader("Allow", "GET, DELETE");
 
 		} else if (HandlerUtil.matchesTemplate(RouteTemplates.FRAME_AIM, pathInfo)) {
 			FrameReference frameReference = FrameReference.extract(RouteTemplates.FRAME_AIM, pathInfo);

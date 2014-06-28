@@ -9,15 +9,12 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import edu.stanford.epad.common.dicom.DicomFormatUtil;
 import edu.stanford.epad.common.pixelmed.PixelMedUtils;
 import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.epad.common.util.EPADResources;
 import edu.stanford.epad.common.util.EPADTools;
 import edu.stanford.epad.dtos.SeriesProcessingStatus;
-import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeDatabase;
-import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeDatabaseOperations;
 import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeDatabaseUtils;
 import edu.stanford.epad.epadws.epaddb.EpadDatabase;
 import edu.stanford.epad.epadws.epaddb.EpadDatabaseOperations;
@@ -96,6 +93,7 @@ public class QueueAndWatcherManager
 	public void addToPNGGeneratorTaskPipeline(String patientName, List<Map<String, String>> dicomImageFileDescriptions)
 	{
 		for (Map<String, String> dicomImageDescription : dicomImageFileDescriptions) {
+			String studyUID = dicomImageDescription.get("study_iuid");
 			String seriesUID = dicomImageDescription.get("series_iuid");
 			String instanceNumber = dicomImageDescription.get("inst_no");
 			String inputDICOMFilePath = getInputFilePath(dicomImageDescription); // Get the input file path
@@ -119,7 +117,7 @@ public class QueueAndWatcherManager
 			if (PixelMedUtils.isDicomSegmentationObject(inputDICOMFilePath)) { // Generate slices of PNG mask
 				processDicomSegmentationObject(seriesUID, outputPNGFilePath, inputDICOMFilePath);
 			} else { // Generate PNG file.
-				createPNGFileForDICOMImage(patientName, seriesUID, instanceNumber, outputPNGFilePath, inputDICOMFile);
+				createPNGFileForDICOMImage(patientName, studyUID, seriesUID, instanceNumber, outputPNGFilePath, inputDICOMFile);
 			}
 		}
 	}
@@ -149,19 +147,18 @@ public class QueueAndWatcherManager
 
 		log.info("DICOM segmentation object found for series " + seriesUID);
 
-		DSOMaskGeneratorTask dsoTask = new DSOMaskGeneratorTask(seriesUID,
-				inFile, outFile);
+		DSOMaskGeneratorTask dsoTask = new DSOMaskGeneratorTask(seriesUID, inFile, outFile);
 		pngGeneratorTaskQueue.offer(dsoTask);
 	}
 
-	private void createPNGFileForDICOMImage(String patientName, String seriesUID, String instanceNumber,
+	private void createPNGFileForDICOMImage(String patientName, String studyUID, String seriesUID, String instanceNumber,
 			String outputPNGFilePath, File inputDICOMFile)
 	{
 		File outputPNGFile = new File(outputPNGFilePath);
 		EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
 		insertEpadFile(epadDatabaseOperations, outputPNGFile);
-		PngGeneratorTask pngGeneratorTask = new PngGeneratorTask(patientName, seriesUID, instanceNumber, inputDICOMFile,
-				outputPNGFile);
+		PngGeneratorTask pngGeneratorTask = new PngGeneratorTask(patientName, studyUID, seriesUID, instanceNumber,
+				inputDICOMFile, outputPNGFile);
 		pngGeneratorTaskQueue.offer(pngGeneratorTask);
 	}
 
@@ -178,18 +175,16 @@ public class QueueAndWatcherManager
 	 * @return String
 	 */
 	private String createOutputPNGFilePathForDicomImage(Map<String, String> dicomImageDescription)
-	{ // TODO This is very inefficient - should not be making database call
-		String seriesIUID = dicomImageDescription.get("series_iuid");
-		Dcm4CheeDatabaseOperations dcm4CheeDatabaseOperations = Dcm4CheeDatabase.getInstance()
-				.getDcm4CheeDatabaseOperations();
-		String studyUID = dcm4CheeDatabaseOperations.getStudyUIDForSeries(seriesIUID);
+	{
+		String studyUID = dicomImageDescription.get("study_iuid");
+		String seriesUID = dicomImageDescription.get("series_iuid");
 		String imageUID = dicomImageDescription.get("sop_iuid");
 		StringBuilder outputPath = new StringBuilder();
 
 		outputPath.append(EPADResources.getEPADWebServerPNGDir());
-		outputPath.append(DicomFormatUtil.formatUidToDir(studyUID)).append("/");
-		outputPath.append(DicomFormatUtil.formatUidToDir(seriesIUID)).append("/");
-		outputPath.append(DicomFormatUtil.formatUidToDir(imageUID)).append(".png");
+		outputPath.append("/studies/" + studyUID);
+		outputPath.append("/series/" + seriesUID);
+		outputPath.append("/images/" + imageUID + ".png");
 
 		return outputPath.toString();
 	}

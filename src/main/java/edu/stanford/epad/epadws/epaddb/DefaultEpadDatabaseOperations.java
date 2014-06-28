@@ -26,6 +26,9 @@ import edu.stanford.epad.epadws.handlers.core.SeriesReference;
 import edu.stanford.epad.epadws.handlers.core.StudyReference;
 import edu.stanford.epad.epadws.handlers.core.SubjectReference;
 
+//TODO epad_images = SSIF, PNG, JPG
+//TODO epad_aims = PSSSIF, AIM
+
 public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 {
 	private static final EPADLogger log = EPADLogger.getInstance();
@@ -35,6 +38,54 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 	public DefaultEpadDatabaseOperations(ConnectionPool connectionPool)
 	{
 		this.connectionPool = connectionPool;
+	}
+
+	@Override
+	public void createEPADFile(ImageReference imageReference, String pngURL, String jpgURL)
+	{
+		// TODO
+	}
+
+	@Override
+	public void createEPADFile(FrameReference frameReference, String pngURL, String jpgURL)
+	{
+		// TODO
+	}
+
+	@Override
+	public void deleteEPADFile(ImageReference imageReference)
+	{
+		// TODO
+	}
+
+	@Override
+	public void deleteEPADFile(FrameReference frameReference)
+	{
+		// TODO
+	}
+
+	@Override
+	public String getPNGLocation(ImageReference imageReference)
+	{
+		return ""; // TODO
+	}
+
+	@Override
+	public String getJPGLocation(ImageReference imageReference)
+	{
+		return ""; // TODO
+	}
+
+	@Override
+	public String getPNGLocation(FrameReference frameReference)
+	{
+		return ""; // TODO
+	}
+
+	@Override
+	public String getJPGLocation(FrameReference frameReference)
+	{
+		return ""; // TODO
 	}
 
 	@Override
