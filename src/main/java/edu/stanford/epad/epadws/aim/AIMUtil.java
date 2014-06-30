@@ -8,6 +8,7 @@ import java.util.List;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpException;
 import org.apache.commons.httpclient.methods.GetMethod;
+import org.eclipse.jetty.util.log.Log;
 
 import com.pixelmed.dicom.Attribute;
 import com.pixelmed.dicom.AttributeList;
@@ -44,6 +45,13 @@ public class AIMUtil
 	private static final String baseAnnotationDir = EPADConfig.getInstance().getStringPropertyValue("baseAnnotationDir");
 	private static final String xsdFile = EPADConfig.getInstance().getStringPropertyValue("xsdFile");
 	private static final String xsdFilePath = EPADConfig.getInstance().getStringPropertyValue("baseSchemaDir") + xsdFile;
+	
+
+	private static final String useV4 = EPADConfig.getInstance().getStringPropertyValue("useV4");
+	private static final String aim4Namespace = EPADConfig.getInstance().getStringPropertyValue("namespaceV4");
+	private static final String eXistCollectionV4 = EPADConfig.getInstance().getStringPropertyValue("collectionV4");
+	private static final String xsdFileV4 = EPADConfig.getInstance().getStringPropertyValue("xsdFileV4");
+	private static final String xsdFilePathV4 = EPADConfig.getInstance().getStringPropertyValue("baseSchemaDir") + xsdFileV4;
 
 	/**
 	 * Save the annotation to the server in the AIM database. An invalid annotation will not be saved. Save a file backup
@@ -52,9 +60,10 @@ public class AIMUtil
 	 * @param ImageAnnotation
 	 * @return String
 	 * @throws AimException
+	 * @throws edu.stanford.hakan.aim4api.base.AimException 
 	 */
-	public static String saveImageAnnotationToServer(ImageAnnotation aim, String jsessionID) throws AimException
-	{
+	public static String saveImageAnnotationToServer(ImageAnnotation aim, String jsessionID) throws AimException, edu.stanford.hakan.aim4api.base.AimException
+	{		
 		String result = "";
 
 		if (aim.getCodeValue() != null) { // For safety, write a backup file
@@ -63,9 +72,7 @@ public class AIMUtil
 			File tempFile = new File(tempXmlPath);
 			File storeFile = new File(storeXmlPath);
 			AnnotationBuilder.saveToFile(aim, tempXmlPath, xsdFilePath);
-
 			log.info("Saving AIM file with ID " + aim.getUniqueIdentifier());
-
 			result = AnnotationBuilder.getAimXMLsaveResult();
 
 			log.info(result);
@@ -74,9 +81,17 @@ public class AIMUtil
 			}
 			tempFile.renameTo(storeFile);
 
-			AnnotationBuilder.saveToServer(aim, eXistServerUrl, aim3Namespace, eXistCollection, xsdFilePath, eXistUsername,
-					eXistPassword);
-			result = AnnotationBuilder.getAimXMLsaveResult();
+			if(useV4 == "false")
+			{
+				AnnotationBuilder.saveToServer(aim, eXistServerUrl, aim3Namespace, eXistCollection, xsdFilePath, eXistUsername, eXistPassword);
+				result = AnnotationBuilder.getAimXMLsaveResult();
+			}
+			else
+			{
+				edu.stanford.hakan.aim4api.usage.AnnotationBuilder.saveToServer(aim.toAimV4(), eXistServerUrl, aim4Namespace, eXistCollectionV4, xsdFilePathV4, eXistUsername, eXistPassword);				
+				result = edu.stanford.hakan.aim4api.usage.AnnotationBuilder.getAimXMLsaveResult();
+			}
+			
 			log.info(result);
 
 			if (aim.getCodingSchemeDesignator().equals("epad-plugin")) { // Which template has been used to fill the AIM file
@@ -210,12 +225,12 @@ public class AIMUtil
 		 */
 	}
 
-	public static ImageAnnotation getImageAnnotationFromFile(File file) throws AimException
+	public static ImageAnnotation getImageAnnotationFromFile(File file) throws AimException, edu.stanford.hakan.aim4api.base.AimException
 	{
 		return AnnotationGetter.getImageAnnotationFromFile(getRealPath(file));
 	}
 
-	public static ImageAnnotation getImageAnnotationFromFile(File file, String xsdFilePath) throws AimException
+	public static ImageAnnotation getImageAnnotationFromFile(File file, String xsdFilePath) throws AimException, edu.stanford.hakan.aim4api.base.AimException
 	{
 		return AnnotationGetter.getImageAnnotationFromFile(file.getAbsolutePath(), xsdFilePath);
 	}
@@ -243,7 +258,7 @@ public class AIMUtil
 		imageAnnotation.setListUser(userList);
 	}
 
-	private static String saveImageAnnotationToServer(ImageAnnotation aim) throws AimException
+	private static String saveImageAnnotationToServer(ImageAnnotation aim) throws AimException, edu.stanford.hakan.aim4api.base.AimException
 	{
 		String result = "";
 
@@ -252,17 +267,33 @@ public class AIMUtil
 			String storeXmlPath = baseAnnotationDir + aim.getUniqueIdentifier() + ".xml";
 			File tempFile = new File(tempXmlPath);
 			File storeFile = new File(storeXmlPath);
-			AnnotationBuilder.saveToFile(aim, tempXmlPath, xsdFilePath);
-			result = AnnotationBuilder.getAimXMLsaveResult();
+			
+			if(useV4 == "false")
+			{
+				AnnotationBuilder.saveToFile(aim, tempXmlPath, xsdFilePath);
+				result = AnnotationBuilder.getAimXMLsaveResult();
+			}
+			else
+			{
+				edu.stanford.hakan.aim4api.usage.AnnotationBuilder.saveToFile(aim.toAimV4(), tempXmlPath, xsdFilePathV4);
+				result = edu.stanford.hakan.aim4api.usage.AnnotationBuilder.getAimXMLsaveResult();
+			}
+			
 			log.info(result);
 			if (storeFile.exists()) {
 				storeFile.delete();
 			}
 			tempFile.renameTo(storeFile);
-
-			AnnotationBuilder.saveToServer(aim, eXistServerUrl, aim3Namespace, eXistCollection, xsdFilePath, eXistUsername,
-					eXistPassword);
-			result = AnnotationBuilder.getAimXMLsaveResult();
+			if(useV4 == "false")
+			{
+				AnnotationBuilder.saveToServer(aim, eXistServerUrl, aim3Namespace, eXistCollection, xsdFilePath, eXistUsername,	eXistPassword);
+				result = AnnotationBuilder.getAimXMLsaveResult();
+			}
+			else
+			{
+				edu.stanford.hakan.aim4api.usage.AnnotationBuilder.saveToServer(aim.toAimV4(), eXistServerUrl, aim4Namespace, eXistCollectionV4, xsdFilePathV4, eXistUsername, eXistPassword);			
+				result = edu.stanford.hakan.aim4api.usage.AnnotationBuilder.getAimXMLsaveResult();
+			}
 			log.info(result);
 		}
 		return result;

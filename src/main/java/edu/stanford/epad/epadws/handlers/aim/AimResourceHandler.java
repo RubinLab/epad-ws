@@ -168,7 +168,7 @@ public class AimResourceHandler extends AbstractHandler
 	}
 
 	private boolean uploadAIMAnnotations(HttpServletRequest httpRequest, PrintWriter responseStream,
-			String annotationsUploadDirPath) throws FileUploadException, IOException, FileNotFoundException, AimException
+			String annotationsUploadDirPath) throws FileUploadException, IOException, FileNotFoundException, AimException, edu.stanford.hakan.aim4api.base.AimException
 	{ // See http://www.tutorialspoint.com/servlets/servlets-file-uploading.htm
 		ServletFileUpload servletFileUpload = new ServletFileUpload();
 		FileItemIterator fileItemIterator = servletFileUpload.getItemIterator(httpRequest);
