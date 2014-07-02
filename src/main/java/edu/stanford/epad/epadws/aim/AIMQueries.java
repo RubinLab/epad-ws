@@ -104,9 +104,17 @@ public class AIMQueries
 				if (useV4 == "false")
 					aims = AnnotationGetter.getImageAnnotationsFromServerByCagridIdEqual(eXistServerUrl, aimNamespace,
 							eXistAIMCollection, eXistUsername, eXistPassword, "0", aimXSDFilePath);
-				else
-					log.warning("Exception in AnnotationGetter.getImageAnnotationsFromServerByCagridIdEqual; AimV4 does not contain CagridId field.");
-			} catch (AimException e) {
+				else {
+					List<edu.stanford.hakan.aim4api.base.ImageAnnotationCollection> iacs = edu.stanford.hakan.aim4api.usage.AnnotationGetter
+							.getAllImageAnnotationCollections(eXistServerUrl, aim4Namespace, eXistAIMCollectionV4, eXistUsername,
+									eXistPassword);
+					if (aims == null)
+						aims = new ArrayList<ImageAnnotation>();
+					for (int i = 0; i < iacs.size(); i++)
+						aims.add(new ImageAnnotation(iacs.get(i)));
+
+				}
+			} catch (AimException | edu.stanford.hakan.aim4api.base.AimException e) {
 				log.warning("Exception in AnnotationGetter.getImageAnnotationsFromServerByCagridIdEqual", e);
 			}
 			if (aims != null)
@@ -132,7 +140,6 @@ public class AIMQueries
 			if (aims != null)
 				resultAims.addAll(aims);
 		} else if (aimSearchType == AIMSearchType.PATIENT_ID) {
-			log.info("===== hakan =====  " + useV4);
 			String patientId = value;
 			try {
 				if (useV4 == "false")

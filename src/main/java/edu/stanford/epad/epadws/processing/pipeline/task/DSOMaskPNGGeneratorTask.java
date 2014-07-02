@@ -6,22 +6,17 @@ import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.epad.epadws.aim.AIMUtil;
 import edu.stanford.epad.epadws.handlers.dicom.DSOUtil;
 
-/**
- * This task generates a DICOM Segmentation Object
- */
-public class DSOMaskGeneratorTask implements GeneratorTask
+public class DSOMaskPNGGeneratorTask implements GeneratorTask
 {
 	private static final EPADLogger log = EPADLogger.getInstance();
 
 	private final String seriesUID;
 	private final File dsoFile;
-	private final File segObjectOutputFile;
 
-	public DSOMaskGeneratorTask(String seriesUID, File dsoFile, File segObjectOutputFile)
+	public DSOMaskPNGGeneratorTask(String seriesUID, File dsoFile)
 	{
 		this.seriesUID = seriesUID;
 		this.dsoFile = dsoFile;
-		this.segObjectOutputFile = segObjectOutputFile;
 	}
 
 	@Override
@@ -46,14 +41,13 @@ public class DSOMaskGeneratorTask implements GeneratorTask
 	@Override
 	public String getTagFilePath()
 	{
-		// ToDo: verify that path here. It might be in
-		return segObjectOutputFile.getAbsolutePath().replaceAll("\\.png", ".tag");
+		return ""; // TODO
 	}
 
 	@Override
 	public String getTaskType()
 	{
-		return "DicomSegmentationObject";
+		return "DSOPNGMaskGeneration";
 	}
 
 	@Override

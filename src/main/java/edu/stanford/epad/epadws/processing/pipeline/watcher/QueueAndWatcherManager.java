@@ -21,9 +21,9 @@ import edu.stanford.epad.epadws.epaddb.EpadDatabase;
 import edu.stanford.epad.epadws.epaddb.EpadDatabaseOperations;
 import edu.stanford.epad.epadws.processing.model.SeriesProcessingDescription;
 import edu.stanford.epad.epadws.processing.pipeline.process.PngGeneratorProcess;
-import edu.stanford.epad.epadws.processing.pipeline.task.DSOMaskGeneratorTask;
+import edu.stanford.epad.epadws.processing.pipeline.task.DSOMaskPNGGeneratorTask;
 import edu.stanford.epad.epadws.processing.pipeline.task.GeneratorTask;
-import edu.stanford.epad.epadws.processing.pipeline.task.PngGeneratorTask;
+import edu.stanford.epad.epadws.processing.pipeline.task.SingleFrameDICOMPngGeneratorTask;
 
 public class QueueAndWatcherManager
 {
@@ -90,34 +90,32 @@ public class QueueAndWatcherManager
 		epadUploadDirWatcherExec.shutdown();
 	}
 
-	public void addToPNGGeneratorTaskPipeline(String patientName, List<DICOMFileDescription> dicomFileDescriptions)
+	public void addDICOMFileToPNGGeneratorPipeline(String patientName, List<DICOMFileDescription> dicomFileDescriptions)
 	{
 		for (DICOMFileDescription dicomFileDescription : dicomFileDescriptions) {
-			String studyUID = dicomFileDescription.studyUID;
 			String seriesUID = dicomFileDescription.seriesUID;
-			int instanceNumber = dicomFileDescription.instanceNumber;
-			String inputDICOMFilePath = getDICOMFilePath(dicomFileDescription); // Get the input file path
-			File inputDICOMFile = new File(inputDICOMFilePath);
+			String imageUID = dicomFileDescription.imageUID;
+			String dicomFilePath = getDICOMFilePath(dicomFileDescription);
+			File inputDICOMFile = new File(dicomFilePath);
 
 			// If the file does not exist locally (because it is stored on another file system), download it.
 			if (!inputDICOMFile.exists()) {
 				try {
-					String imageUID = dicomFileDescription.imageUID;
-					log.info("Downloading remote DICOM file for image " + imageUID);
+					log.info("Downloading remote DICOM file with image " + imageUID + " for patient " + patientName);
 					File downloadedDICOMFile = File.createTempFile(imageUID, ".tmp");
-					EPADTools.feedFileWithDICOMFromWADO(downloadedDICOMFile, dicomFileDescription);
+					EPADTools.downloadDICOMFileFromWADO(dicomFileDescription, downloadedDICOMFile);
 					inputDICOMFile = downloadedDICOMFile;
 				} catch (IOException e) {
-					log.warning("Exception when downloading DICOM file with series ID " + seriesUID + " and image ID "
+					log.warning("Exception when downloading DICOM file with series UID " + seriesUID + " and image UID "
 							+ dicomFileDescription.imageUID, e);
 				}
 			}
 
-			String outputPNGFilePath = createOutputPNGFilePathForDicomImage(dicomFileDescription);
-			if (PixelMedUtils.isDicomSegmentationObject(inputDICOMFilePath)) { // Generate slices of PNG mask
-				processDicomSegmentationObject(seriesUID, outputPNGFilePath, inputDICOMFilePath);
-			} else { // Generate PNG file.
-				createPNGFileForDICOMImage(patientName, studyUID, seriesUID, instanceNumber, outputPNGFilePath, inputDICOMFile);
+			if (PixelMedUtils.isDicomSegmentationObject(dicomFilePath)) {
+				generatePNGsForDicomSegmentationObject(dicomFileDescription, dicomFilePath);
+			} else if (PixelMedUtils.isMultiframedDicom(dicomFilePath)) {
+			} else {
+				createPNGFileForSingleFrameDICOMImage(patientName, dicomFileDescription, inputDICOMFile);
 			}
 		}
 	}
@@ -140,25 +138,25 @@ public class QueueAndWatcherManager
 			return dcm4cheeRootDir + "/";
 	}
 
-	private void processDicomSegmentationObject(String seriesUID, String outputFilePath, String inputFilePath)
+	private void generatePNGsForDicomSegmentationObject(DICOMFileDescription dicomFileDescription, String dsoFilePath)
 	{
-		File inFile = new File(inputFilePath);
-		File outFile = new File(outputFilePath);
+		File dsoFile = new File(dsoFilePath);
 
-		log.info("DICOM segmentation object found for series " + seriesUID);
+		log.info("DICOM segmentation object found for series " + dicomFileDescription.seriesUID);
 
-		DSOMaskGeneratorTask dsoTask = new DSOMaskGeneratorTask(seriesUID, inFile, outFile);
-		pngGeneratorTaskQueue.offer(dsoTask);
+		DSOMaskPNGGeneratorTask dsoMaskGeneratorTask = new DSOMaskPNGGeneratorTask(dicomFileDescription.seriesUID, dsoFile);
+		pngGeneratorTaskQueue.offer(dsoMaskGeneratorTask);
 	}
 
-	private void createPNGFileForDICOMImage(String patientName, String studyUID, String seriesUID, int instanceNumber,
-			String outputPNGFilePath, File inputDICOMFile)
+	private void createPNGFileForSingleFrameDICOMImage(String patientName, DICOMFileDescription dicomFileDescription,
+			File dicomFile)
 	{
+		String outputPNGFilePath = createOutputPNGFilePathForSingleFrameDICOMImage(dicomFileDescription);
 		File outputPNGFile = new File(outputPNGFilePath);
 		EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
 		insertEpadFile(epadDatabaseOperations, outputPNGFile);
-		PngGeneratorTask pngGeneratorTask = new PngGeneratorTask(patientName, studyUID, seriesUID, instanceNumber,
-				inputDICOMFile, outputPNGFile);
+		SingleFrameDICOMPngGeneratorTask pngGeneratorTask = new SingleFrameDICOMPngGeneratorTask(patientName,
+				dicomFileDescription, dicomFile, outputPNGFile);
 		pngGeneratorTaskQueue.offer(pngGeneratorTask);
 	}
 
@@ -169,23 +167,18 @@ public class QueueAndWatcherManager
 		epadDatabaseOperations.insertEpadFileRecord(epadFilesTable);
 	}
 
-	/**
-	 * 
-	 * @param dicomFileDescription Map of String to String
-	 * @return String
-	 */
-	private String createOutputPNGFilePathForDicomImage(DICOMFileDescription dicomFileDescription)
+	private String createOutputPNGFilePathForSingleFrameDICOMImage(DICOMFileDescription dicomFileDescription)
 	{
 		String studyUID = dicomFileDescription.studyUID;
 		String seriesUID = dicomFileDescription.seriesUID;
 		String imageUID = dicomFileDescription.imageUID;
-		StringBuilder outputPath = new StringBuilder();
+		StringBuilder outputPNGFilePath = new StringBuilder();
 
-		outputPath.append(EPADResources.getEPADWebServerPNGDir());
-		outputPath.append("/studies/" + studyUID);
-		outputPath.append("/series/" + seriesUID);
-		outputPath.append("/images/" + imageUID + ".png");
+		outputPNGFilePath.append(EPADResources.getEPADWebServerPNGDir());
+		outputPNGFilePath.append("/studies/" + studyUID);
+		outputPNGFilePath.append("/series/" + seriesUID);
+		outputPNGFilePath.append("/images/" + imageUID + ".png");
 
-		return outputPath.toString();
+		return outputPNGFilePath.toString();
 	}
 }

@@ -25,7 +25,7 @@ import edu.stanford.epad.epadws.processing.model.DicomSeriesProcessingStatusTrac
 import edu.stanford.epad.epadws.processing.model.SeriesProcessingDescription;
 import edu.stanford.epad.epadws.processing.pipeline.task.GeneratorTask;
 import edu.stanford.epad.epadws.processing.pipeline.task.PNGGridGeneratorTask;
-import edu.stanford.epad.epadws.processing.pipeline.task.PngGeneratorTask;
+import edu.stanford.epad.epadws.processing.pipeline.task.SingleFrameDICOMPngGeneratorTask;
 import edu.stanford.epad.epadws.processing.pipeline.threads.ShutdownSignal;
 import edu.stanford.epad.epadws.queries.DefaultEpadOperations;
 import edu.stanford.epad.epadws.queries.EpadOperations;
@@ -40,7 +40,7 @@ import edu.stanford.epad.epadws.queries.EpadOperations;
  * These descriptions are placed in the queue by a {@link Dcm4CheeDatabaseWatcher}, which picks up new series by
  * monitoring a dcm4chee MySQL database.
  * <p>
- * This watcher submits these to the PNG generation task queue to be processed by the {@link PngGeneratorTask}.
+ * This watcher submits these to the PNG generation task queue to be processed by the {@link SingleFrameDICOMPngGeneratorTask}.
  * 
  * @see XNATSeriesWatcher
  */
@@ -109,7 +109,7 @@ public class DICOMSeriesWatcher implements Runnable
 						dicomSeriesProcessingDescription.updateWithDICOMFileDescriptions(unprocessedDICOMFileDescriptions);
 						dicomSeriesProcessingStatus.registerActivity();
 						dicomSeriesProcessingStatus.setSeriesProcessingState(DicomSeriesProcessingState.IN_PIPELINE);
-						queueAndWatcherManager.addToPNGGeneratorTaskPipeline(patientName, unprocessedDICOMFileDescriptions);
+						queueAndWatcherManager.addDICOMFileToPNGGeneratorPipeline(patientName, unprocessedDICOMFileDescriptions);
 						log.info("Submitted series " + seriesUID + " for patient " + patientName + " with " + numberOfInstances
 								+ " image(s) to PNG generator");
 					} else { // All images have been submitted for PNG processing.

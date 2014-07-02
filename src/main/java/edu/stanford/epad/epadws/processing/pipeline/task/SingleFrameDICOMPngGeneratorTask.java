@@ -12,6 +12,7 @@ import javax.imageio.ImageIO;
 
 import org.apache.commons.io.IOUtils;
 
+import edu.stanford.epad.common.dicom.DICOMFileDescription;
 import edu.stanford.epad.common.dicom.DicomReader;
 import edu.stanford.epad.common.util.EPADFileUtils;
 import edu.stanford.epad.common.util.EPADLogger;
@@ -21,7 +22,7 @@ import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeDatabaseUtils;
 import edu.stanford.epad.epadws.epaddb.EpadDatabase;
 import edu.stanford.epad.epadws.epaddb.EpadDatabaseOperations;
 
-public class PngGeneratorTask implements GeneratorTask
+public class SingleFrameDICOMPngGeneratorTask implements GeneratorTask
 {
 	private static final EPADLogger log = EPADLogger.getInstance();
 
@@ -29,18 +30,18 @@ public class PngGeneratorTask implements GeneratorTask
 	private final String studyUID;
 	private final String seriesUID;
 	private final int instanceNumber;
-	private final File dicomInputFile;
-	private final File pngOutputFile;
+	private final File dicomFile;
+	private final File pngFile;
 
-	public PngGeneratorTask(String patientName, String studyUID, String seriesUID, int instanceNumber,
-			File dicomInputFile, File pngOutputFile)
+	public SingleFrameDICOMPngGeneratorTask(String patientName, DICOMFileDescription dicomFileDescription,
+			File dicomFile, File pngFile)
 	{
 		this.patientName = patientName;
-		this.studyUID = studyUID;
-		this.seriesUID = seriesUID;
-		this.instanceNumber = instanceNumber;
-		this.dicomInputFile = dicomInputFile;
-		this.pngOutputFile = pngOutputFile;
+		this.studyUID = dicomFileDescription.studyUID;
+		this.seriesUID = dicomFileDescription.seriesUID;
+		this.instanceNumber = dicomFileDescription.instanceNumber;
+		this.dicomFile = dicomFile;
+		this.pngFile = pngFile;
 	}
 
 	@Override
@@ -52,14 +53,14 @@ public class PngGeneratorTask implements GeneratorTask
 	@Override
 	public void run()
 	{
-		writePackedPNGs();
+		generatePNGs();
 	}
 
-	private void writePackedPNGs()
+	private void generatePNGs()
 	{
 		EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
-		File inputDICOMFile = dicomInputFile;
-		File outputPNGFile = pngOutputFile;
+		File inputDICOMFile = dicomFile;
+		File outputPNGFile = pngFile;
 		Map<String, String> epadFilesTableData = new HashMap<String, String>();
 		OutputStream outputPNGStream = null;
 
@@ -109,8 +110,8 @@ public class PngGeneratorTask implements GeneratorTask
 	public String toString()
 	{
 		StringBuilder sb = new StringBuilder();
-		sb.append("PngGeneratorTask[").append(" in=").append(dicomInputFile);
-		sb.append(" out=").append(pngOutputFile).append("]");
+		sb.append("PngGeneratorTask[").append(" in=").append(dicomFile);
+		sb.append(" out=").append(pngFile).append("]");
 
 		return sb.toString();
 	}
@@ -118,13 +119,13 @@ public class PngGeneratorTask implements GeneratorTask
 	@Override
 	public File getDSOFile()
 	{
-		return dicomInputFile;
+		return dicomFile;
 	}
 
 	@Override
 	public String getTagFilePath()
 	{
-		return pngOutputFile.getAbsolutePath().replaceAll("\\.png", ".tag");
+		return pngFile.getAbsolutePath().replaceAll("\\.png", ".tag");
 	}
 
 	@Override

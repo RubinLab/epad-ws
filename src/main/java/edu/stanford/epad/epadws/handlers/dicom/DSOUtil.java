@@ -54,6 +54,51 @@ public class DSOUtil
 		return null;
 	}
 
+	public static void writeDSOPNGs(File dsoFile) throws Exception
+	{
+		try {
+			EpadDatabaseOperations databaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
+			DicomSegmentationObject dso = new DicomSegmentationObject();
+			SourceImage sourceDSOImage = dso.convert(dsoFile.getAbsolutePath());
+			int numberOfFrames = sourceDSOImage.getNumberOfBufferedImages();
+			AttributeList dicomAttributes = PixelMedUtils.readAttributeListFromDicomFile(dsoFile.getAbsolutePath());
+			String studyUID = Attribute.getSingleStringValueOrEmptyString(dicomAttributes, TagFromName.StudyInstanceUID);
+			String seriesUID = Attribute.getSingleStringValueOrEmptyString(dicomAttributes, TagFromName.SeriesInstanceUID);
+			String imageUID = Attribute.getSingleStringValueOrEmptyString(dicomAttributes, TagFromName.SOPInstanceUID);
+
+			String pngDirectoryPath = baseDicomDirectory + "/studies/" + studyUID + "/series/" + seriesUID + "/images/"
+					+ imageUID + "/frame/";
+			File pngFilesDirectory = new File(pngDirectoryPath);
+
+			log.info("Writing PNGs for DSO " + imageUID + " in series " + seriesUID);
+
+			pngFilesDirectory.mkdirs();
+
+			for (int frameNumber = 0; frameNumber < numberOfFrames; frameNumber++) {
+				BufferedImage bufferedImage = sourceDSOImage.getBufferedImage(numberOfFrames - frameNumber - 1);
+				String pngFilePath = pngDirectoryPath + frameNumber + ".png";
+				File pngFile = new File(pngFilePath);
+				try {
+					insertEpadFile(databaseOperations, pngFile);
+					log.info("Writing PNG for frame " + frameNumber + " for DSO image " + imageUID + " in series " + seriesUID);
+					log.info("File width " + bufferedImage.getWidth() + ", height " + bufferedImage.getHeight());
+					ImageIO.write(bufferedImage, "png", pngFile);
+					databaseOperations.updateEpadFileRecord(pngFilePath, PNGFileProcessingStatus.DONE, 77, "");
+				} catch (IOException e) {
+					log.warning("Failure writing PNG mask file " + pngFilePath + " for image " + imageUID + " in series "
+							+ seriesUID, e);
+				}
+			}
+			log.info("Finished writing PNGs for DSO " + imageUID + " in series " + seriesUID);
+		} catch (DicomException e) {
+			log.warning("DICOM exception writing DSO PNGs", e);
+			throw new Exception("DICOM exception writing DSO PNGs", e);
+		} catch (IOException e) {
+			log.warning("IO exception writing DSO PNGs", e);
+			throw new Exception("IO exception writing DSO PNGs", e);
+		}
+	}
+
 	public static void writeDSOMaskPNGs(File dsoFile) throws Exception
 	{
 		try {
@@ -65,8 +110,10 @@ public class DSOUtil
 			String studyUID = Attribute.getSingleStringValueOrEmptyString(dicomAttributes, TagFromName.StudyInstanceUID);
 			String seriesUID = Attribute.getSingleStringValueOrEmptyString(dicomAttributes, TagFromName.SeriesInstanceUID);
 			String imageUID = Attribute.getSingleStringValueOrEmptyString(dicomAttributes, TagFromName.SOPInstanceUID);
-			File pngMaskFilesDirectory = new File(baseDicomDirectory + studyUID.replaceAll("\\.", "_") + "/"
-					+ seriesUID.replaceAll("\\.", "_") + "/");
+
+			String pngMaskDirectoryPath = baseDicomDirectory + "/studies/" + studyUID + "/series/" + seriesUID + "/images/"
+					+ imageUID + "/masks/";
+			File pngMaskFilesDirectory = new File(pngMaskDirectoryPath);
 
 			log.info("Writing PNG masks for DSO " + imageUID + " in series " + seriesUID + "...");
 
@@ -75,8 +122,9 @@ public class DSOUtil
 			for (int frameNumber = 0; frameNumber < numberOfFrames; frameNumber++) {
 				BufferedImage bufferedImage = sourceDSOImage.getBufferedImage(numberOfFrames - frameNumber - 1);
 				BufferedImage bufferedImageWithTransparency = generateTransparentImage(bufferedImage);
-				String pngMaskFilePath = baseDicomDirectory + studyUID.replaceAll("\\.", "_") + "/"
-						+ seriesUID.replaceAll("\\.", "_") + "/" + imageUID.replaceAll("\\.", "_") + "-" + frameNumber + ".png";
+
+				String pngMaskFilePath = pngMaskDirectoryPath + frameNumber + ".png";
+
 				File pngMaskFile = new File(pngMaskFilePath);
 				try {
 					insertEpadFile(databaseOperations, pngMaskFile);
@@ -86,8 +134,8 @@ public class DSOUtil
 					ImageIO.write(bufferedImageWithTransparency, "png", pngMaskFile);
 					databaseOperations.updateEpadFileRecord(pngMaskFilePath, PNGFileProcessingStatus.DONE, 77, "");
 				} catch (IOException e) {
-					log.warning("Failure writing PNG mask file " + pngMaskFilePath + " for image " + imageUID + " in series "
-							+ seriesUID, e);
+					log.warning("Failure writing PNG mask file " + pngMaskFilePath + " for frame " + frameNumber + " of DSO "
+							+ imageUID + " in series " + seriesUID, e);
 				}
 			}
 			log.info("... finished writing PNG masks for DSO image " + imageUID + " in series " + seriesUID);
