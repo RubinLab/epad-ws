@@ -112,7 +112,6 @@ public class AIMQueries
 						aims = new ArrayList<ImageAnnotation>();
 					for (int i = 0; i < iacs.size(); i++)
 						aims.add(new ImageAnnotation(iacs.get(i)));
-
 				}
 			} catch (AimException | edu.stanford.hakan.aim4api.base.AimException e) {
 				log.warning("Exception in AnnotationGetter.getImageAnnotationsFromServerByCagridIdEqual", e);
