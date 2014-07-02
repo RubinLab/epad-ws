@@ -2,8 +2,8 @@ package edu.stanford.epad.epadws.processing.model;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
+import edu.stanford.epad.common.dicom.DICOMFileDescription;
 import edu.stanford.epad.common.util.EPADLogger;
 
 /**
@@ -113,12 +113,11 @@ public class SeriesProcessingDescription
 	}
 
 	// An image file description is a map with keys: study_iuid, sop_iuid, inst_no, series_iuid, filepath, file_size
-	public void updateWithDICOMFileDescriptions(List<Map<String, String>> dicomFileDescriptions)
+	public void updateWithDICOMFileDescriptions(List<DICOMFileDescription> dicomFileDescriptions)
 	{
-		for (Map<String, String> dicomFileDescription : dicomFileDescriptions) {
-			String instanceNumberString = dicomFileDescription.get("inst_no");
-			int instanceNumber = instanceNumberString == null ? 1 : Integer.parseInt(instanceNumberString);
-			String imageUID = dicomFileDescription.get("sop_iuid");
+		for (DICOMFileDescription dicomFileDescription : dicomFileDescriptions) {
+			int instanceNumber = dicomFileDescription.instanceNumber;
+			String imageUID = dicomFileDescription.imageUID;
 			addCompletedInstance(instanceNumber, imageUID);
 		}
 	}

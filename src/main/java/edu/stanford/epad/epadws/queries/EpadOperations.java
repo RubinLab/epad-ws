@@ -1,9 +1,9 @@
 package edu.stanford.epad.epadws.queries;
 
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
+import edu.stanford.epad.common.dicom.DICOMFileDescription;
 import edu.stanford.epad.dtos.EPADAIM;
 import edu.stanford.epad.dtos.EPADAIMList;
 import edu.stanford.epad.dtos.EPADDatabaseSeries;
@@ -137,7 +137,7 @@ public interface EpadOperations
 	 * <p>
 	 * Each description is a map with keys: study_iuid, series_iuid, sop_iuid, inst_no, filepath, file_size.
 	 */
-	List<Map<String, String>> getUnprocessedDICOMFileDescriptionsForSeries(String seriesUID);
+	List<DICOMFileDescription> getUnprocessedDICOMFileDescriptionsForSeries(String seriesUID);
 
 	void deleteStudyFromEPadAndDcm4CheeDatabases(String studyUID);
 

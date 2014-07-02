@@ -21,11 +21,6 @@ import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeDatabaseUtils;
 import edu.stanford.epad.epadws.epaddb.EpadDatabase;
 import edu.stanford.epad.epadws.epaddb.EpadDatabaseOperations;
 
-/**
- * Generate a PNG file from a DICOM file.
- * 
- * @author amsnyder
- */
 public class PngGeneratorTask implements GeneratorTask
 {
 	private static final EPADLogger log = EPADLogger.getInstance();
@@ -33,11 +28,11 @@ public class PngGeneratorTask implements GeneratorTask
 	private final String patientName;
 	private final String studyUID;
 	private final String seriesUID;
-	private final String instanceNumber;
+	private final int instanceNumber;
 	private final File dicomInputFile;
 	private final File pngOutputFile;
 
-	public PngGeneratorTask(String patientName, String studyUID, String seriesUID, String instanceNumber,
+	public PngGeneratorTask(String patientName, String studyUID, String seriesUID, int instanceNumber,
 			File dicomInputFile, File pngOutputFile)
 	{
 		this.patientName = patientName;

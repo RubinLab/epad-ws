@@ -5,7 +5,6 @@ import java.io.PrintWriter;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import javax.servlet.http.HttpServletRequest;
@@ -14,6 +13,7 @@ import javax.servlet.http.HttpServletResponse;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 
+import edu.stanford.epad.common.dicom.DICOMFileDescription;
 import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeDatabase;
 import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeDatabaseOperations;
@@ -85,14 +85,14 @@ public class ImageCheckHandler extends AbstractHandler
 				.getDcm4CheeDatabaseOperations();
 		EpadOperations epadQueries = DefaultEpadOperations.getInstance();
 		Set<String> seriesUIDs = dcm4CheeDatabaseOperations.getAllReadyDcm4CheeSeriesUIDs();
-		List<Map<String, String>> allUnprocessedDICOMFileDescriptions = new ArrayList<Map<String, String>>();
+		List<DICOMFileDescription> allUnprocessedDICOMFileDescriptions = new ArrayList<DICOMFileDescription>();
 
 		int numberOfSeriesWithMissingEPADDatabaseEntry = 0;
 
 		// Verify that each image in a DICOM series in DCM4CHEE has an entry for a generated PNG file in the ePAD database,
 		// which indicates that the image's existence was detected. We then detect that the PNG file itself exists.
 		for (String seriesUID : seriesUIDs) {
-			final List<Map<String, String>> unprocessedDICOMFileDescriptionsInSeries = epadQueries
+			final List<DICOMFileDescription> unprocessedDICOMFileDescriptionsInSeries = epadQueries
 					.getUnprocessedDICOMFileDescriptionsForSeries(seriesUID);
 			final int numberOfUnprocessedImages = unprocessedDICOMFileDescriptionsInSeries.size();
 

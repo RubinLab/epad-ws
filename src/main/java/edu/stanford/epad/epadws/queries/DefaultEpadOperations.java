@@ -8,6 +8,7 @@ import java.util.Set;
 
 import javax.servlet.http.HttpServletResponse;
 
+import edu.stanford.epad.common.dicom.DICOMFileDescription;
 import edu.stanford.epad.common.dicom.DicomFormatUtil;
 import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.epad.dtos.EPADAIM;
@@ -416,26 +417,24 @@ public class DefaultEpadOperations implements EpadOperations
 	}
 
 	@Override
-	public List<Map<String, String>> getUnprocessedDICOMFileDescriptionsForSeries(String seriesUID)
+	public List<DICOMFileDescription> getUnprocessedDICOMFileDescriptionsForSeries(String seriesUID)
 	{
 		Dcm4CheeDatabaseOperations dcm4CheeDatabaseOperations = Dcm4CheeDatabase.getInstance()
 				.getDcm4CheeDatabaseOperations();
 		EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
 
-		List<Map<String, String>> dicomFileDescriptionsWithoutPNGs = new ArrayList<Map<String, String>>();
+		List<DICOMFileDescription> dicomFileDescriptionsWithoutPNGs = new ArrayList<DICOMFileDescription>();
 
 		try {
-			// Get list of DICOM image descriptions from DCM4CHEE database table (pacsdb.files). Each image description is a
-			// map with keys: study_iuid, sop_iuid, inst_no, series_iuid, filepath, file_size.
-			List<Map<String, String>> dicomFileDescriptions = dcm4CheeDatabaseOperations
-					.getDICOMFileDescriptionsForSeries(seriesUID);
+			// Get list of DICOM image descriptions from DCM4CHEE.
+			List<DICOMFileDescription> dicomFileDescriptions = dcm4CheeDatabaseOperations.getDICOMFileDescriptions(seriesUID);
 
 			// Get list of image UIDs in series for images recorded in ePAD database table epaddb.epad_files.
 			List<String> seriesImageUIDs = epadDatabaseOperations.getAllImageUIDsInSeries(seriesUID);
 
 			// Make a list of image UIDs that have no entry in ePAD files_table.
-			for (Map<String, String> dicomFileDescription : dicomFileDescriptions) {
-				String imageUID = dicomFileDescription.get("sop_iuid");
+			for (DICOMFileDescription dicomFileDescription : dicomFileDescriptions) {
+				String imageUID = dicomFileDescription.imageUID;
 
 				if (!seriesImageUIDs.contains(imageUID))
 					dicomFileDescriptionsWithoutPNGs.add(dicomFileDescription);

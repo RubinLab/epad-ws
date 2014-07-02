@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import edu.stanford.epad.common.dicom.DICOMFileDescription;
 import edu.stanford.epad.common.dicom.DicomParentCache;
 import edu.stanford.epad.common.dicom.DicomParentType;
 import edu.stanford.epad.common.util.EPADLogger;
@@ -395,12 +396,51 @@ public class DefaultDcm4CheeDatabaseOperations implements Dcm4CheeDatabaseOperat
 	}
 
 	/**
+	 * Looks in DCM4CHEE database to find a list of all DICOM image descriptions.
+	 */
+	@Override
+	public List<DICOMFileDescription> getDICOMFileDescriptions(String seriesUID)
+	{
+		List<DICOMFileDescription> dicomFileDescriptions = new ArrayList<DICOMFileDescription>();
+		Connection c = null;
+		PreparedStatement ps = null;
+		ResultSet rs = null;
+
+		try {
+			c = getConnection();
+			ps = c.prepareStatement(Dcm4CheeDatabaseCommands.SELECT_FILES_FOR_SERIES);
+			ps.setString(1, seriesUID);
+			rs = ps.executeQuery();
+			while (rs.next()) {
+				Map<String, String> resultMap = createResultMap(rs);
+				String studyUID = resultMap.get("study_iuid");
+				String imageUID = resultMap.get("sop_iuid");
+				int instanceNumber = Integer.parseInt(resultMap.get("inst_no"));
+				String filePath = resultMap.get("file_path");
+				int fileSize = Integer.parseInt(resultMap.get("file_size"));
+
+				DICOMFileDescription dicomFileDescription = new DICOMFileDescription(studyUID, seriesUID, imageUID,
+						instanceNumber, filePath, fileSize);
+				dicomFileDescriptions.add(dicomFileDescription);
+			}
+		} catch (NumberFormatException e) {
+			log.warning("Number format error extracting DICOM file description", e);
+		} catch (SQLException sqle) {
+			String debugInfo = DatabaseUtils.getDebugData(rs);
+			log.warning("Database operation failed; debugInfo=" + debugInfo, sqle);
+		} finally {
+			close(c, ps, rs);
+		}
+		return dicomFileDescriptions;
+	}
+
+	/**
 	 * Looks in DCM4CHEE database to find a list of all DICOM image descriptions (table is pacsdb.files).
 	 * 
 	 * Keys: study_iuid, sop_iuid, inst_no, series_iuid, filepath, file_size,
 	 */
-	@Override
-	public List<Map<String, String>> getDICOMFileDescriptionsForSeries(String seriesUID)
+	@SuppressWarnings("unused")
+	private List<Map<String, String>> getDICOMFileDescriptionsForSeries(String seriesUID)
 	{
 		List<Map<String, String>> retVal = new ArrayList<Map<String, String>>();
 		Connection c = null;

@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
 
+import edu.stanford.epad.common.dicom.DICOMFileDescription;
 import edu.stanford.epad.common.dicom.DicomFormatUtil;
 import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADLogger;
@@ -99,7 +100,7 @@ public class DICOMSeriesWatcher implements Runnable
 					String seriesUID = dicomSeriesProcessingDescription.getSeriesUID();
 					String patientName = dicomSeriesProcessingDescription.getPatientName();
 					int numberOfInstances = dicomSeriesProcessingDescription.getNumberOfInstances();
-					List<Map<String, String>> unprocessedDICOMFileDescriptions = epadOperations
+					List<DICOMFileDescription> unprocessedDICOMFileDescriptions = epadOperations
 							.getUnprocessedDICOMFileDescriptionsForSeries(seriesUID);
 
 					if (unprocessedDICOMFileDescriptions.size() > 0) {

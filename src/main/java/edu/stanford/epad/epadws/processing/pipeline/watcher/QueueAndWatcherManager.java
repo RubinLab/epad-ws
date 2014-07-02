@@ -9,6 +9,7 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import edu.stanford.epad.common.dicom.DICOMFileDescription;
 import edu.stanford.epad.common.pixelmed.PixelMedUtils;
 import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADLogger;
@@ -89,27 +90,26 @@ public class QueueAndWatcherManager
 		epadUploadDirWatcherExec.shutdown();
 	}
 
-	// DICOM file description is map with keys study_iuid, series_iuid, sop_iuid, inst_no, filepath, file_size.
-	public void addToPNGGeneratorTaskPipeline(String patientName, List<Map<String, String>> dicomFileDescriptions)
+	public void addToPNGGeneratorTaskPipeline(String patientName, List<DICOMFileDescription> dicomFileDescriptions)
 	{
-		for (Map<String, String> dicomFileDescription : dicomFileDescriptions) {
-			String studyUID = dicomFileDescription.get("study_iuid");
-			String seriesUID = dicomFileDescription.get("series_iuid");
-			String instanceNumber = dicomFileDescription.get("inst_no");
+		for (DICOMFileDescription dicomFileDescription : dicomFileDescriptions) {
+			String studyUID = dicomFileDescription.studyUID;
+			String seriesUID = dicomFileDescription.seriesUID;
+			int instanceNumber = dicomFileDescription.instanceNumber;
 			String inputDICOMFilePath = getDICOMFilePath(dicomFileDescription); // Get the input file path
 			File inputDICOMFile = new File(inputDICOMFilePath);
 
 			// If the file does not exist locally (because it is stored on another file system), download it.
 			if (!inputDICOMFile.exists()) {
 				try {
-					String imageUID = dicomFileDescription.get("sop_iuid");
+					String imageUID = dicomFileDescription.imageUID;
 					log.info("Downloading remote DICOM file for image " + imageUID);
 					File downloadedDICOMFile = File.createTempFile(imageUID, ".tmp");
 					EPADTools.feedFileWithDICOMFromWADO(downloadedDICOMFile, dicomFileDescription);
 					inputDICOMFile = downloadedDICOMFile;
 				} catch (IOException e) {
 					log.warning("Exception when downloading DICOM file with series ID " + seriesUID + " and image ID "
-							+ dicomFileDescription.get("sop_iuid"), e);
+							+ dicomFileDescription.imageUID, e);
 				}
 			}
 
@@ -122,9 +122,9 @@ public class QueueAndWatcherManager
 		}
 	}
 
-	private String getDICOMFilePath(Map<String, String> dicomFileDescription)
+	private String getDICOMFilePath(DICOMFileDescription dicomFileDescription)
 	{
-		return getDcm4cheeRootDir() + dicomFileDescription.get("filepath");
+		return getDcm4cheeRootDir() + dicomFileDescription.filePath;
 	}
 
 	/**
@@ -151,7 +151,7 @@ public class QueueAndWatcherManager
 		pngGeneratorTaskQueue.offer(dsoTask);
 	}
 
-	private void createPNGFileForDICOMImage(String patientName, String studyUID, String seriesUID, String instanceNumber,
+	private void createPNGFileForDICOMImage(String patientName, String studyUID, String seriesUID, int instanceNumber,
 			String outputPNGFilePath, File inputDICOMFile)
 	{
 		File outputPNGFile = new File(outputPNGFilePath);
@@ -171,14 +171,14 @@ public class QueueAndWatcherManager
 
 	/**
 	 * 
-	 * @param dicomImageDescription Map of String to String
+	 * @param dicomFileDescription Map of String to String
 	 * @return String
 	 */
-	private String createOutputPNGFilePathForDicomImage(Map<String, String> dicomImageDescription)
+	private String createOutputPNGFilePathForDicomImage(DICOMFileDescription dicomFileDescription)
 	{
-		String studyUID = dicomImageDescription.get("study_iuid");
-		String seriesUID = dicomImageDescription.get("series_iuid");
-		String imageUID = dicomImageDescription.get("sop_iuid");
+		String studyUID = dicomFileDescription.studyUID;
+		String seriesUID = dicomFileDescription.seriesUID;
+		String imageUID = dicomFileDescription.imageUID;
 		StringBuilder outputPath = new StringBuilder();
 
 		outputPath.append(EPADResources.getEPADWebServerPNGDir());
