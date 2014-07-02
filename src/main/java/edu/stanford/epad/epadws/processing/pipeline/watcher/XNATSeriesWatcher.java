@@ -26,7 +26,7 @@ import edu.stanford.epad.epadws.xnat.XNATSessionOperations;
 public class XNATSeriesWatcher implements Runnable
 {
 	private static final EPADLogger log = EPADLogger.getInstance();
-	private static final EPADConfig config = EPADConfig.getInstance();
+
 	private static final EpadOperations epadOperations = DefaultEpadOperations.getInstance();
 
 	private final String xnatUploadProjectID;
@@ -38,7 +38,7 @@ public class XNATSeriesWatcher implements Runnable
 	public XNATSeriesWatcher(BlockingQueue<SeriesProcessingDescription> xnatSeriesWatcherQueue)
 	{
 		this.xnatSeriesWatcherQueue = xnatSeriesWatcherQueue;
-		this.xnatUploadProjectID = config.getStringPropertyValue("XNATUploadProjectID");
+		this.xnatUploadProjectID = EPADConfig.xnatUploadProjectID;
 
 		log.info("Starting the XNAT series watcher");
 	}

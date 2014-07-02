@@ -75,7 +75,6 @@ public class CoordinationHandler extends AbstractHandler
 	private static final String EPAD_TERM_PREFIX = "EPAD"; // TODO Should eventually be recorded in a configuration file.
 	private static final String EPAD_SCHEMA_NAME = "EPAD"; // TODO Should eventually be recorded in a configuration file.
 	private static final String EPAD_SCHEMA_VERSION = "1.0";
-	private static final String SERVER_PREFIX_PARAM_NAME = "coordinationTermPrefix";
 	private static final String SERVER_DEFAULT_PREFIX = "0";
 
 	private static final String FORBIDDEN_MESSAGE = "Forbidden method - only GET supported on coordination route!";
@@ -90,7 +89,6 @@ public class CoordinationHandler extends AbstractHandler
 	private final static int MIN_COORDINATION_TERMS = 2;
 
 	private static final EPADLogger log = EPADLogger.getInstance();
-	private static final EPADConfig config = EPADConfig.getInstance();
 
 	@Override
 	public void handle(String s, Request request, HttpServletRequest httpRequest, HttpServletResponse httpResponse)
@@ -202,7 +200,7 @@ public class CoordinationHandler extends AbstractHandler
 
 	private String getTermIDPrefix()
 	{
-		String serverPrefix = config.getStringPropertyValue(SERVER_PREFIX_PARAM_NAME);
+		String serverPrefix = EPADConfig.coordinationTermPrefix;
 
 		if (serverPrefix == null)
 			serverPrefix = SERVER_DEFAULT_PREFIX;

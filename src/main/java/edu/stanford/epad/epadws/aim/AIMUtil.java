@@ -36,21 +36,18 @@ public class AIMUtil
 {
 	private static final EPADLogger log = EPADLogger.getInstance();
 
-	private static final String aim3Namespace = EPADConfig.getInstance().getStringPropertyValue("namespace");
-	private static final String eXistUsername = EPADConfig.getInstance().getStringPropertyValue("username");
-	private static final String eXistPassword = EPADConfig.getInstance().getStringPropertyValue("password");
-	private static final String eXistServerUrl = EPADConfig.getInstance().getStringPropertyValue("serverUrl");
-	private static final String eXistCollection = EPADConfig.getInstance().getStringPropertyValue("collection");
-	private static final String baseAnnotationDir = EPADConfig.getInstance().getStringPropertyValue("baseAnnotationDir");
-	private static final String xsdFile = EPADConfig.getInstance().getStringPropertyValue("xsdFile");
-	private static final String xsdFilePath = EPADConfig.getInstance().getStringPropertyValue("baseSchemaDir") + xsdFile;
-
-	private static final String useV4 = EPADConfig.getInstance().getStringPropertyValue("useV4");
-	private static final String aim4Namespace = EPADConfig.getInstance().getStringPropertyValue("namespaceV4");
-	private static final String eXistCollectionV4 = EPADConfig.getInstance().getStringPropertyValue("collectionV4");
-	private static final String xsdFileV4 = EPADConfig.getInstance().getStringPropertyValue("xsdFileV4");
-	private static final String xsdFilePathV4 = EPADConfig.getInstance().getStringPropertyValue("baseSchemaDir")
-			+ xsdFileV4;
+	private static final String aim3Namespace = EPADConfig.aim3Namespace;
+	private static final String eXistUsername = EPADConfig.eXistUsername;
+	private static final String eXistPassword = EPADConfig.eXistPassword;
+	private static final String eXistServerUrl = EPADConfig.eXistServerUrl;
+	private static final String eXistCollection = EPADConfig.eXistCollection;
+	private static final String baseAnnotationDir = EPADConfig.baseAnnotationDir;
+	private static final String xsdFilePath = EPADConfig.xsdFilePath;
+	private static final String useV4 = EPADConfig.useV4;
+	private static final String aim4Namespace = EPADConfig.aim4Namespace;
+	private static final String eXistCollectionV4 = EPADConfig.eXistCollectionV4;
+	private static final String xsdFileV4 = EPADConfig.xsdFileV4;
+	private static final String xsdFilePathV4 = EPADConfig.xsdFilePathV4 + xsdFileV4;
 
 	/**
 	 * Save the annotation to the server in the AIM database. An invalid annotation will not be saved. Save a file backup

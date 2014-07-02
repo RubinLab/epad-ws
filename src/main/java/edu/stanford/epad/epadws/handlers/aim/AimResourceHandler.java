@@ -51,8 +51,7 @@ public class AimResourceHandler extends AbstractHandler
 {
 	private static final EPADLogger log = EPADLogger.getInstance();
 
-	private static String xsdFile = EPADConfig.getInstance().getStringPropertyValue("xsdFile");
-	private static String xsdFilePath = EPADConfig.getInstance().getStringPropertyValue("baseSchemaDir") + xsdFile;
+	private static String xsdFilePath = EPADConfig.xsdFilePath;
 
 	private static final String INTERNAL_EXCEPTION_MESSAGE = "Internal error in AIM handler";
 	private static final String INVALID_METHOD_MESSAGE = "Only POST and GET methods valid for the AIM route";

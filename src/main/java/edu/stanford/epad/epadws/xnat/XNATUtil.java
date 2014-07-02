@@ -17,7 +17,9 @@ public class XNATUtil
 	private static final String XNAT_SESSION_BASE = "/xnat/data/JSESSION";
 
 	private static final EPADLogger log = EPADLogger.getInstance();
-	private static final EPADConfig config = EPADConfig.getInstance();
+
+	private static String xnatHost = EPADConfig.xnatServer;
+	private static int xnatPort = EPADConfig.xnatPort;
 
 	public static String projectID2XNATProjectLabel(String projectID)
 	{ // Alphanumeric and dot and dash only
@@ -38,8 +40,8 @@ public class XNATUtil
 
 	public static String buildXNATProjectCreationURL(String xnatProjectID, String xnatProjectName, String description)
 	{
-		String xnatHost = config.getStringPropertyValue("XNATServer");
-		int xnatPort = config.getIntegerPropertyValue("XNATPort");
+		String xnatHost = EPADConfig.xnatServer;
+		int xnatPort = EPADConfig.xnatPort;
 		String queryString = "?ID=" + xnatProjectID + "&name=" + encode(xnatProjectName) + "&description="
 				+ encode(description) + "&accessibility=private";
 		String urlString = XNATUtil.buildXNATBaseURL(xnatHost, xnatPort, XNAT_PROJECTS_BASE) + queryString;
@@ -49,8 +51,6 @@ public class XNATUtil
 
 	public static String buildXNATProjectDeletionURL(String xnatProjectLabelOrID)
 	{
-		String xnatHost = config.getStringPropertyValue("XNATServer");
-		int xnatPort = config.getIntegerPropertyValue("XNATPort");
 		String urlString = XNATUtil.buildXNATBaseURL(xnatHost, xnatPort, XNAT_PROJECTS_BASE) + xnatProjectLabelOrID;
 
 		return urlString;
@@ -59,8 +59,6 @@ public class XNATUtil
 	public static String buildXNATSubjectCreationURL(String xnatProjectLabelOrID, String xnatSubjectLabel,
 			String dicomPatientName)
 	{
-		String xnatHost = config.getStringPropertyValue("XNATServer");
-		int xnatPort = config.getIntegerPropertyValue("XNATPort");
 		String queryPart = "?label=" + xnatSubjectLabel + "&src=" + encode(dicomPatientName);
 		String urlString = XNATUtil.buildXNATBaseURL(xnatHost, xnatPort, XNAT_PROJECTS_BASE) + xnatProjectLabelOrID
 				+ "/subjects" + queryPart;
@@ -70,8 +68,6 @@ public class XNATUtil
 
 	public static String buildXNATSubjectDeletionURL(String xnatProjectLabelOrID, String xnatSubjectLabelOrID)
 	{
-		String xnatHost = config.getStringPropertyValue("XNATServer");
-		int xnatPort = config.getIntegerPropertyValue("XNATPort");
 		String urlString = XNATUtil.buildXNATBaseURL(xnatHost, xnatPort, XNAT_PROJECTS_BASE) + xnatProjectLabelOrID
 				+ "/subjects/" + xnatSubjectLabelOrID;
 
@@ -83,8 +79,6 @@ public class XNATUtil
 	public static String buildXNATDICOMStudyCreationURL(String xnatProjectLabelOrID, String xnatSubjectLabelOrID,
 			String dicomStudyUID)
 	{
-		String xnatHost = config.getStringPropertyValue("XNATServer");
-		int xnatPort = config.getIntegerPropertyValue("XNATPort");
 		String xnatExperimentID = XNATUtil.dicomStudyUID2XNATExperimentID(dicomStudyUID);
 		String urlString = XNATUtil.buildXNATBaseURL(xnatHost, xnatPort, XNAT_PROJECTS_BASE) + xnatProjectLabelOrID
 				+ "/subjects/" + xnatSubjectLabelOrID + "/experiments/" + xnatExperimentID + "?name=" + dicomStudyUID
@@ -96,8 +90,6 @@ public class XNATUtil
 	public static String buildXNATDICOMStudyDeletionURL(String xnatProjectLabelOrID, String xnatSubjectLabelOrID,
 			String studyUID)
 	{
-		String xnatHost = config.getStringPropertyValue("XNATServer");
-		int xnatPort = config.getIntegerPropertyValue("XNATPort");
 		String urlString = XNATUtil.buildXNATBaseURL(xnatHost, xnatPort, XNAT_PROJECTS_BASE) + xnatProjectLabelOrID
 				+ "/subjects/" + xnatSubjectLabelOrID + "/experiments/" + dicomStudyUID2XNATExperimentID(studyUID);
 
@@ -111,9 +103,6 @@ public class XNATUtil
 
 	public static String buildXNATSessionURL()
 	{
-		String xnatHost = config.getStringPropertyValue("XNATServer");
-		int xnatPort = config.getIntegerPropertyValue("XNATPort");
-
 		return buildXNATBaseURL(xnatHost, xnatPort, XNATUtil.XNAT_SESSION_BASE);
 	}
 

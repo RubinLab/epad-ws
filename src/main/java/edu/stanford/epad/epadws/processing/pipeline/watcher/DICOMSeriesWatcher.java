@@ -65,7 +65,7 @@ public class DICOMSeriesWatcher implements Runnable
 		this.dicomSeriesWatcherQueue = dicomSeriesWatcherQueue;
 		this.pngGeneratorTaskQueue = pngGeneratorTaskQueue;
 		this.dicomSeriesDescriptionTracker = DicomSeriesProcessingStatusTracker.getInstance();
-		this.dcm4cheeRootDir = EPADConfig.getInstance().getStringPropertyValue("dcm4cheeDirRoot");
+		this.dcm4cheeRootDir = EPADConfig.dcm4cheeDirRoot;
 	}
 
 	@Override

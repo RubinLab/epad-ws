@@ -27,7 +27,6 @@ import edu.stanford.epad.common.util.EPADLogger;
 public class XNATSessionOperations
 {
 	private static final EPADLogger log = EPADLogger.getInstance();
-	private static final EPADConfig config = EPADConfig.getInstance();
 
 	private static final String XNAT_SESSION_BASE = "/xnat/data/JSESSION";
 
@@ -62,8 +61,8 @@ public class XNATSessionOperations
 
 	public static String getXNATAdminSessionID()
 	{
-		String xnatUploadProjectUser = config.getStringPropertyValue("XNATUploadProjectUser");
-		String xnatUploadProjectPassword = config.getStringPropertyValue("XNATUploadProjectPassword");
+		String xnatUploadProjectUser = EPADConfig.xnatUploadProjectUser;
+		String xnatUploadProjectPassword = EPADConfig.xnatUploadProjectPassword;
 
 		XNATSessionResponse xnatSessionResponse = XNATSessionOperations.getXNATSessionID(xnatUploadProjectUser,
 				xnatUploadProjectPassword);
@@ -239,8 +238,8 @@ public class XNATSessionOperations
 
 	private static String buildXNATSessionURL()
 	{
-		String xnatHost = config.getStringPropertyValue("XNATServer");
-		int xnatPort = config.getIntegerPropertyValue("XNATPort");
+		String xnatHost = EPADConfig.xnatServer;
+		int xnatPort = EPADConfig.xnatPort;
 
 		return buildXNATBaseURL(xnatHost, xnatPort, XNAT_SESSION_BASE);
 	}

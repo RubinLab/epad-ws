@@ -31,10 +31,9 @@ public class Dcm4CheeOperations
 		FileWriter tagFileWriter = null;
 
 		try {
-			EPADConfig epadConfig = EPADConfig.getInstance();
-			String aeTitle = epadConfig.getStringPropertyValue("DicomServerAETitle");
-			String dicomServerIP = epadConfig.getStringPropertyValue("DicomServerIP");
-			String dicomServerPort = epadConfig.getStringPropertyValue("DicomServerPort");
+			String aeTitle = EPADConfig.aeTitle;
+			String dicomServerIP = EPADConfig.dicomServerIP;
+			String dicomServerPort = EPADConfig.dicomServerPort;
 			String dicomServerTitleAndPort = aeTitle + "@" + dicomServerIP + ":" + dicomServerPort;
 
 			dicomServerTitleAndPort = dicomServerTitleAndPort.trim();

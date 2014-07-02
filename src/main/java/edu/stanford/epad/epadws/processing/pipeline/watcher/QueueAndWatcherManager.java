@@ -65,7 +65,7 @@ public class QueueAndWatcherManager
 		xnatSeriesWatcher = new XNATSeriesWatcher(xnatSeriesWatcherQueue);
 		pngGeneratorProcess = new PngGeneratorProcess(pngGeneratorTaskQueue);
 		epadUploadDirWatcher = new EPADUploadDirWatcher();
-		dcm4cheeRootDir = EPADConfig.getInstance().getStringPropertyValue("dcm4cheeDirRoot");
+		dcm4cheeRootDir = EPADConfig.dcm4cheeDirRoot;
 		log.info("Started QueueAndWatcherManager...");
 	}
 

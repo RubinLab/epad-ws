@@ -10,9 +10,8 @@ public class XNATQueryUtil
 	private static final String XNAT_PROJECTS_BASE = "/xnat/data/projects/";
 	private static final String XNAT_SUBJECTS_BASE = "/xnat/data/subjects/";
 	private static final String XNAT_EXPERIMENTS_BASE = "/xnat/data/experiments/";
-	private static final EPADConfig config = EPADConfig.getInstance();
-	private static final String xnatHost = config.getStringPropertyValue("XNATServer");
-	private static final int xnatPort = config.getIntegerPropertyValue("XNATPort");
+	private static final String xnatHost = EPADConfig.xnatServer;
+	private static final int xnatPort = EPADConfig.xnatPort;
 
 	public static String buildProjectsURL(String base)
 	{

@@ -27,7 +27,6 @@ import edu.stanford.epad.epadws.xnat.XNATSessionOperations;
 public class WindowingHandler extends AbstractHandler
 {
 	private static final EPADLogger log = EPADLogger.getInstance();
-	private static final EPADConfig config = EPADConfig.getInstance();
 
 	private static final String WADO_ERROR_MESSAGE = "WADO error in DICOM windowing route";
 	private static final String INTERNAL_ERROR_MESSAGE = "Internal error in DICOM windowing route";
@@ -136,7 +135,7 @@ public class WindowingHandler extends AbstractHandler
 				// windowWidth = imageEnhancer.getWindowWidth();
 				// windowCenter = imageEnhancer.getWindowCenter();
 
-				String separator = config.getStringPropertyValue("fieldSeparator");
+				String separator = EPADConfig.fieldSeparator;
 				responseStream.println("windowWidth" + separator + "windowCenter");
 				responseStream.println(windowWidth + separator + windowCenter);
 				success = true;

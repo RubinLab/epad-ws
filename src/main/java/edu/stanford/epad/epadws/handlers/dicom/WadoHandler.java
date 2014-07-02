@@ -21,7 +21,6 @@ import edu.stanford.epad.epadws.handlers.HandlerUtil;
 public class WadoHandler extends AbstractHandler
 {
 	private static final EPADLogger log = EPADLogger.getInstance();
-	private static final EPADConfig config = EPADConfig.getInstance();
 
 	private static final String INTERNAL_EXCEPTION_MESSAGE = "Internal error in WADO route";
 	private static final String MISSING_QUERY_MESSAGE = "No query in WADO request";
@@ -82,9 +81,9 @@ public class WadoHandler extends AbstractHandler
 	private int performWADOQuery(String queryString, ServletOutputStream outputStream)
 
 	{
-		String wadoHost = config.getStringPropertyValue("NameServer");
-		int wadoPort = config.getIntegerPropertyValue("DicomServerWadoPort");
-		String wadoBase = config.getStringPropertyValue("WadoUrlExtension");
+		String wadoHost = EPADConfig.nameServer;
+		int wadoPort = EPADConfig.dicomServerWadoPort;
+		String wadoBase = EPADConfig.wadoURLExtension;
 		String wadoURL = buildWADOURL(wadoHost, wadoPort, wadoBase, queryString);
 		int statusCode;
 

@@ -27,7 +27,6 @@ import edu.stanford.epad.epadws.xnat.XNATSessionOperations;
 public class EventHandler extends AbstractHandler
 {
 	private static final EPADLogger log = EPADLogger.getInstance();
-	private static final EPADConfig config = EPADConfig.getInstance();
 
 	private static final String INVALID_METHOD_MESSAGE = "Only POST and GET methods valid for the events route";
 	private static final String INTERNAL_ERROR_MESSAGE = "Internal error on event search";
@@ -111,7 +110,7 @@ public class EventHandler extends AbstractHandler
 
 		responseStrean.print(new SearchResultUtils().get_EVENT_SEARCH_HEADER());
 
-		String separator = config.getStringPropertyValue("fieldSeparator");
+		String separator = EPADConfig.fieldSeparator;
 		for (Map<String, String> row : eventMap) {
 			StringBuilder sb = new StringBuilder();
 			sb.append(row.get("pk")).append(separator);
