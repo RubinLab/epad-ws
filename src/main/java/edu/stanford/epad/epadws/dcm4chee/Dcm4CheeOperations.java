@@ -11,7 +11,6 @@ import org.apache.commons.io.IOUtils;
 import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADFileUtils;
 import edu.stanford.epad.common.util.EPADLogger;
-import edu.stanford.epad.common.util.EPADResources;
 
 /**
  * Operations on Dcm4Chee (as distinct from operations directly on DCM4CHEE's database).
@@ -57,7 +56,7 @@ public class Dcm4CheeOperations
 			String[] command = { "./dcmsnd", dicomServerTitleAndPort, dirPath };
 
 			ProcessBuilder processBuilder = new ProcessBuilder(command);
-			String dicomScriptsDir = EPADResources.getEPADWebServerDICOMBinDir();
+			String dicomScriptsDir = EPADConfig.getEPADWebServerDICOMBinDir();
 			processBuilder.directory(new File(dicomScriptsDir));
 			processBuilder.redirectErrorStream(true);
 			Process process = processBuilder.start();
@@ -117,7 +116,7 @@ public class Dcm4CheeOperations
 			String[] command = { "./dcmdeleteStudy", studyUID };
 
 			ProcessBuilder pb = new ProcessBuilder(command);
-			String myScriptsBinDirectory = EPADResources.getEPADWebServerMyScriptsDir();
+			String myScriptsBinDirectory = EPADConfig.getEPADWebServerMyScriptsDir();
 			pb.directory(new File(myScriptsBinDirectory));
 
 			Process process = pb.start();
@@ -167,7 +166,7 @@ public class Dcm4CheeOperations
 			String[] command = { "./dcmdeleteSeries", seriesUID };
 
 			ProcessBuilder pb = new ProcessBuilder(command);
-			String myScriptsDirectory = EPADResources.getEPADWebServerMyScriptsDir();
+			String myScriptsDirectory = EPADConfig.getEPADWebServerMyScriptsDir();
 			pb.directory(new File(myScriptsDirectory));
 
 			Process process = pb.start();
@@ -220,7 +219,7 @@ public class Dcm4CheeOperations
 	 */
 	private static void writeUploadLog(String contents)
 	{
-		String logDirectory = EPADResources.getEPADWebServerLogDir();
+		String logDirectory = EPADConfig.getEPADWebServerLogDir();
 		String fileName = logDirectory + "upload_" + System.currentTimeMillis() + ".log";
 		EPADFileUtils.write(new File(fileName), contents);
 	}
@@ -232,7 +231,7 @@ public class Dcm4CheeOperations
 	 */
 	private static void writeDeleteLog(String contents)
 	{
-		String logDirectory = EPADResources.getEPADWebServerLogDir();
+		String logDirectory = EPADConfig.getEPADWebServerLogDir();
 		String fileName = logDirectory + "delete_" + System.currentTimeMillis() + ".log";
 		EPADFileUtils.write(new File(fileName), contents);
 	}

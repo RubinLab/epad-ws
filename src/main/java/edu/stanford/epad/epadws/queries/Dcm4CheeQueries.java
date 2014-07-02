@@ -15,8 +15,8 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.apache.commons.io.IOUtils;
 
+import edu.stanford.epad.common.dicom.DCM4CHEEUtil;
 import edu.stanford.epad.common.util.EPADLogger;
-import edu.stanford.epad.common.util.EPADTools;
 import edu.stanford.epad.dtos.internal.DCM4CHEESeries;
 import edu.stanford.epad.dtos.internal.DCM4CHEESeriesList;
 import edu.stanford.epad.dtos.internal.DCM4CHEEStudy;
@@ -148,7 +148,7 @@ public class Dcm4CheeQueries
 
 		try {
 			File tempDICOMFile = File.createTempFile(imageUID, ".tmp");
-			int wadoStatusCode = EPADTools.downloadDICOMFileFromWADO(studyUID, seriesUID, imageUID, tempDICOMFile);
+			int wadoStatusCode = DCM4CHEEUtil.downloadDICOMFileFromWADO(studyUID, seriesUID, imageUID, tempDICOMFile);
 			if (wadoStatusCode == HttpServletResponse.SC_OK) {
 				File tempTag = File.createTempFile(imageUID, "_tag.tmp");
 				ExecutorService taskExecutor = Executors.newFixedThreadPool(4);

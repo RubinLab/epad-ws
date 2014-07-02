@@ -15,9 +15,9 @@ import javax.servlet.http.HttpServletResponse;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 
+import edu.stanford.epad.common.dicom.DCM4CHEEUtil;
 import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADLogger;
-import edu.stanford.epad.common.util.EPADTools;
 import edu.stanford.epad.epadws.handlers.HandlerUtil;
 import edu.stanford.epad.epadws.xnat.XNATSessionOperations;
 
@@ -97,7 +97,7 @@ public class WindowingHandler extends AbstractHandler
 		try {
 			tempDicomFile = File.createTempFile(imageUID, ".tmp");
 
-			EPADTools.downloadDICOMFileFromWADO(studyUID, seriesUID, imageUID, tempDicomFile);
+			DCM4CHEEUtil.downloadDICOMFileFromWADO(studyUID, seriesUID, imageUID, tempDicomFile);
 			dicomFileDownloaded = true;
 		} catch (IOException e) {
 			log.warning("Error getting DICOM file from WADO for image " + imageUID + " in series " + seriesUID, e);

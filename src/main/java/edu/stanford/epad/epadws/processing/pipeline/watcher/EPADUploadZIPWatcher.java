@@ -16,9 +16,9 @@ import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
 
+import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADFileUtils;
 import edu.stanford.epad.common.util.EPADLogger;
-import edu.stanford.epad.common.util.EPADResources;
 import edu.stanford.epad.common.util.FileKey;
 import edu.stanford.epad.epadws.processing.model.DicomUploadFile;
 import edu.stanford.epad.epadws.processing.model.DicomUploadPipelineFiles;
@@ -30,7 +30,7 @@ import edu.stanford.epad.epadws.processing.pipeline.threads.ShutdownSignal;
  */
 public class EPADUploadZIPWatcher implements Runnable
 {
-	public static final String UPLOAD_ROOT_DIR = EPADResources.getEPADWebServerUploadDir();
+	public static final String UPLOAD_ROOT_DIR = EPADConfig.getEPADWebServerUploadDir();
 	public static final int CHECK_INTERVAL = 5000; // Check every 5 seconds.
 	private final EPADLogger log = EPADLogger.getInstance();
 	private final BlockingQueue<File> unzipQueue;

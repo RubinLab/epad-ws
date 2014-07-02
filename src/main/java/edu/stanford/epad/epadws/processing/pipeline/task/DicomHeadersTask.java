@@ -8,9 +8,9 @@ import java.io.InputStreamReader;
 
 import org.apache.commons.io.IOUtils;
 
+import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADFileUtils;
 import edu.stanford.epad.common.util.EPADLogger;
-import edu.stanford.epad.common.util.EPADResources;
 
 /**
  * @author amsnyder
@@ -41,7 +41,7 @@ public class DicomHeadersTask implements Runnable
 		try {
 			String[] command = { "./dcm2txt", "-w", "250", "-l", "250", dicomInputFile.getAbsolutePath() };
 			ProcessBuilder processBuilder = new ProcessBuilder(command);
-			String dicomBinDir = EPADResources.getEPADWebServerDICOMBinDir();
+			String dicomBinDir = EPADConfig.getEPADWebServerDICOMBinDir();
 
 			processBuilder.directory(new File(dicomBinDir));
 			process = processBuilder.start();

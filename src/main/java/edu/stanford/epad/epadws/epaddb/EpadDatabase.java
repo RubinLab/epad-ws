@@ -6,8 +6,8 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.concurrent.atomic.AtomicReference;
 
+import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADLogger;
-import edu.stanford.epad.common.util.EPADTools;
 
 public class EpadDatabase
 {
@@ -96,9 +96,9 @@ public class EpadDatabase
 
 	private void createConnectionPool() throws SQLException
 	{
-		String username = EPADTools.epadDatabaseUsername;
-		String password = EPADTools.epadDatabasePassword;
-		String epadDatabaseURL = EPADTools.epadDatabaseURL;
+		String username = EPADConfig.epadDatabaseUsername;
+		String password = EPADConfig.epadDatabasePassword;
+		String epadDatabaseURL = EPADConfig.epadDatabaseURL;
 
 		log.info("MySql using connection string for ePAD database: " + epadDatabaseURL);
 

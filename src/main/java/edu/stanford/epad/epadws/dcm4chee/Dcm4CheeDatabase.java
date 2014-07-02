@@ -3,8 +3,8 @@ package edu.stanford.epad.epadws.dcm4chee;
 import java.sql.SQLException;
 import java.util.concurrent.atomic.AtomicReference;
 
+import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADLogger;
-import edu.stanford.epad.common.util.EPADTools;
 import edu.stanford.epad.epadws.epaddb.ConnectionPool;
 import edu.stanford.epad.epadws.epaddb.DatabaseState;
 
@@ -89,9 +89,9 @@ public class Dcm4CheeDatabase
 
 	private void createConnectionPool() throws SQLException
 	{
-		String username = EPADTools.dcm4CheeDatabaseUsername;
-		String password = EPADTools.dcm4CheeDatabasePassword;
-		String dcm4CheeDatabaseURL = EPADTools.dcm4CheeDatabaseURL;
+		String username = EPADConfig.dcm4CheeDatabaseUsername;
+		String password = EPADConfig.dcm4CheeDatabasePassword;
+		String dcm4CheeDatabaseURL = EPADConfig.dcm4CheeDatabaseURL;
 
 		logger.info("MySql using connection string for DCM4CHEE database: " + dcm4CheeDatabaseURL);
 

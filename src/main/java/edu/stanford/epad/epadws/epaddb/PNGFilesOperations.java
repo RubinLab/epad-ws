@@ -7,9 +7,9 @@ import java.util.List;
 import java.util.Map;
 
 import edu.stanford.epad.common.dicom.DicomFormatUtil;
+import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADFileUtils;
 import edu.stanford.epad.common.util.EPADLogger;
-import edu.stanford.epad.common.util.EPADResources;
 import edu.stanford.epad.dtos.PNGFileProcessingStatus;
 import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeDatabase;
 import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeDatabaseOperations;
@@ -32,7 +32,7 @@ public class PNGFilesOperations
 	public static void deletePNGsForStudy(String studyUID)
 	{
 		StringBuilder outputPath = new StringBuilder();
-		outputPath.append(EPADResources.getEPADWebServerPNGDir());
+		outputPath.append(EPADConfig.getEPADWebServerPNGDir());
 		outputPath.append(DicomFormatUtil.formatUidToDir(studyUID)).append("");
 
 		try {
@@ -47,7 +47,7 @@ public class PNGFilesOperations
 	public static void deletePNGsForSeries(String studyUID, String seriesUID)
 	{
 		StringBuilder outputPath = new StringBuilder();
-		outputPath.append(EPADResources.getEPADWebServerPNGDir());
+		outputPath.append(EPADConfig.getEPADWebServerPNGDir());
 		outputPath.append(DicomFormatUtil.formatUidToDir(studyUID)).append("/" + DicomFormatUtil.formatUidToDir(seriesUID));
 
 		try {
@@ -96,7 +96,7 @@ public class PNGFilesOperations
 				.getDcm4CheeDatabaseOperations();
 		String studyUID = dcm4CheeDatabaseOperations.getStudyUIDForSeries(seriesUID);
 		StringBuilder outputPath = new StringBuilder();
-		outputPath.append(EPADResources.getEPADWebServerPNGDir());
+		outputPath.append(EPADConfig.getEPADWebServerPNGDir());
 		outputPath.append(DicomFormatUtil.formatUidToDir(studyUID)).append("/");
 		outputPath.append(DicomFormatUtil.formatUidToDir(seriesUID)).append("/");
 

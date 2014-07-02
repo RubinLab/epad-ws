@@ -9,12 +9,11 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import edu.stanford.epad.common.dicom.DCM4CHEEUtil;
 import edu.stanford.epad.common.dicom.DICOMFileDescription;
 import edu.stanford.epad.common.pixelmed.PixelMedUtils;
 import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADLogger;
-import edu.stanford.epad.common.util.EPADResources;
-import edu.stanford.epad.common.util.EPADTools;
 import edu.stanford.epad.dtos.SeriesProcessingStatus;
 import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeDatabaseUtils;
 import edu.stanford.epad.epadws.epaddb.EpadDatabase;
@@ -103,7 +102,7 @@ public class QueueAndWatcherManager
 				try {
 					log.info("Downloading remote DICOM file with image " + imageUID + " for patient " + patientName);
 					File downloadedDICOMFile = File.createTempFile(imageUID, ".tmp");
-					EPADTools.downloadDICOMFileFromWADO(dicomFileDescription, downloadedDICOMFile);
+					DCM4CHEEUtil.downloadDICOMFileFromWADO(dicomFileDescription, downloadedDICOMFile);
 					inputDICOMFile = downloadedDICOMFile;
 				} catch (IOException e) {
 					log.warning("Exception when downloading DICOM file with series UID " + seriesUID + " and image UID "
@@ -174,7 +173,7 @@ public class QueueAndWatcherManager
 		String imageUID = dicomFileDescription.imageUID;
 		StringBuilder outputPNGFilePath = new StringBuilder();
 
-		outputPNGFilePath.append(EPADResources.getEPADWebServerPNGDir());
+		outputPNGFilePath.append(EPADConfig.getEPADWebServerPNGDir());
 		outputPNGFilePath.append("/studies/" + studyUID);
 		outputPNGFilePath.append("/series/" + seriesUID);
 		outputPNGFilePath.append("/images/" + imageUID + ".png");

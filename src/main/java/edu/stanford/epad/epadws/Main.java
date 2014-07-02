@@ -35,7 +35,6 @@ import edu.stanford.epad.common.plugins.PluginServletHandler;
 import edu.stanford.epad.common.plugins.impl.EPadFilesImpl;
 import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADLogger;
-import edu.stanford.epad.common.util.EPADResources;
 import edu.stanford.epad.epadws.epaddb.EpadDatabase;
 import edu.stanford.epad.epadws.handlers.admin.ImageCheckHandler;
 import edu.stanford.epad.epadws.handlers.admin.ImageReprocessingHandler;
@@ -130,20 +129,19 @@ public class Main
 	{
 		FileInputStream jettyConfigFileStream = null;
 		try {
-			String jettyConfigFilePath = EPADResources.getEPADWebServerJettyConfigFilePath();
+			String jettyConfigFilePath = EPADConfig.getEPADWebServerJettyConfigFilePath();
 			jettyConfigFileStream = new FileInputStream(jettyConfigFilePath);
 			XmlConfiguration configuration = new XmlConfiguration(jettyConfigFileStream);
 			configuration.configure(server);
 			log.info("Jetty server configured using configuration file " + jettyConfigFilePath);
 		} catch (FileNotFoundException e) {
-			log.warning("Could not find Jetty configuration file " + EPADResources.getEPADWebServerJettyConfigFilePath());
+			log.warning("Could not find Jetty configuration file " + EPADConfig.getEPADWebServerJettyConfigFilePath());
 		} catch (SAXException e) {
-			log.warning("SAX error reading Jetty configuration file " + EPADResources.getEPADWebServerJettyConfigFilePath(),
-					e);
+			log.warning("SAX error reading Jetty configuration file " + EPADConfig.getEPADWebServerJettyConfigFilePath(), e);
 		} catch (IOException e) {
-			log.warning("IO error reading Jetty configuration file " + EPADResources.getEPADWebServerJettyConfigFilePath(), e);
+			log.warning("IO error reading Jetty configuration file " + EPADConfig.getEPADWebServerJettyConfigFilePath(), e);
 		} catch (Exception e) {
-			log.warning("Error processing Jetty configuration file " + EPADResources.getEPADWebServerJettyConfigFilePath(), e);
+			log.warning("Error processing Jetty configuration file " + EPADConfig.getEPADWebServerJettyConfigFilePath(), e);
 		} finally {
 			IOUtils.closeQuietly(jettyConfigFileStream);
 		}
@@ -196,7 +194,7 @@ public class Main
 		// TODO Remove after RESTful conversion. Should get PNGs and WADO via route:
 		// /studies/<sid>/series/<sid>/images/<iid>/frame/<frame#>?format=PNG
 		addHandlerAtContextPath(new ResourceCheckHandler(), "/epad/resources", handlerList);
-		addFileServerAtContextPath(EPADResources.getEPADWebServerResourcesDir(), handlerList, "/epad/resources");
+		addFileServerAtContextPath(EPADConfig.getEPADWebServerResourcesDir(), handlerList, "/epad/resources");
 		addHandlerAtContextPath(new WadoHandler(), "/epad/wado", handlerList);
 
 		// TODO Remove after RESTful conversion. Should get all necessary information via route:
@@ -242,7 +240,7 @@ public class Main
 	 */
 	private static void addWebAppAtContextPath(List<Handler> handlerList, String warFileName, String contextPath)
 	{
-		String webAppPath = EPADResources.getEPADWebServerWebappsDir() + warFileName;
+		String webAppPath = EPADConfig.getEPADWebServerWebappsDir() + warFileName;
 		if (!contextPath.startsWith("/")) {
 			contextPath = "/" + contextPath;
 		}

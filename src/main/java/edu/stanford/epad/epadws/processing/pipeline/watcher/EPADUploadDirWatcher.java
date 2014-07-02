@@ -8,9 +8,9 @@ import java.util.ConcurrentModificationException;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
+import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADFileUtils;
 import edu.stanford.epad.common.util.EPADLogger;
-import edu.stanford.epad.common.util.EPADResources;
 import edu.stanford.epad.common.util.FileKey;
 import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeOperations;
 import edu.stanford.epad.epadws.processing.model.DicomUploadFile;
@@ -39,8 +39,8 @@ public class EPADUploadDirWatcher implements Runnable
 	{
 		try {
 			ShutdownSignal shutdownSignal = ShutdownSignal.getInstance();
-			File rootUploadDirectory = new File(EPADResources.getEPADWebServerUploadDir());
-			log.info("Starting the ePAD upload directory watcher; directory =" + EPADResources.getEPADWebServerUploadDir());
+			File rootUploadDirectory = new File(EPADConfig.getEPADWebServerUploadDir());
+			log.info("Starting the ePAD upload directory watcher; directory =" + EPADConfig.getEPADWebServerUploadDir());
 			while (true) {
 				if (shutdownSignal.hasShutdown())
 					return;

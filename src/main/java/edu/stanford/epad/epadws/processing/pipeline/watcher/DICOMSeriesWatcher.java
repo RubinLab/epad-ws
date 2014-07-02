@@ -11,7 +11,6 @@ import edu.stanford.epad.common.dicom.DICOMFileDescription;
 import edu.stanford.epad.common.dicom.DicomFormatUtil;
 import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADLogger;
-import edu.stanford.epad.common.util.EPADResources;
 import edu.stanford.epad.dtos.PNGFileProcessingStatus;
 import edu.stanford.epad.dtos.SeriesProcessingStatus;
 import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeDatabase;
@@ -40,7 +39,8 @@ import edu.stanford.epad.epadws.queries.EpadOperations;
  * These descriptions are placed in the queue by a {@link Dcm4CheeDatabaseWatcher}, which picks up new series by
  * monitoring a dcm4chee MySQL database.
  * <p>
- * This watcher submits these to the PNG generation task queue to be processed by the {@link SingleFrameDICOMPngGeneratorTask}.
+ * This watcher submits these to the PNG generation task queue to be processed by the
+ * {@link SingleFrameDICOMPngGeneratorTask}.
  * 
  * @see XNATSeriesWatcher
  */
@@ -214,7 +214,7 @@ public class DICOMSeriesWatcher implements Runnable
 		String imageUID = currImage.get("sop_iuid");
 		StringBuilder outputPath = new StringBuilder();
 
-		outputPath.append(EPADResources.getEPADWebServerPNGGridDir());
+		outputPath.append(EPADConfig.getEPADWebServerPNGGridDir());
 		outputPath.append(DicomFormatUtil.formatUidToDir(studyUID)).append("/");
 		outputPath.append(DicomFormatUtil.formatUidToDir(seriesIUID)).append("/");
 		outputPath.append(DicomFormatUtil.formatUidToDir(imageUID)).append(".png");

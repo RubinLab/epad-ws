@@ -38,7 +38,6 @@ import org.w3c.dom.NodeList;
 
 import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADLogger;
-import edu.stanford.epad.common.util.EPADResources;
 import edu.stanford.epad.common.util.XmlNamespaceTranslator;
 import edu.stanford.epad.epadws.aim.AIMQueries;
 import edu.stanford.epad.epadws.aim.AIMSearchType;
@@ -102,7 +101,7 @@ public class AimResourceHandler extends AbstractHandler
 					} else
 						statusCode = HandlerUtil.warningResponse(HttpServletResponse.SC_BAD_REQUEST, MISSING_QUERY_MESSAGE, log);
 				} else if ("POST".equalsIgnoreCase(method)) {
-					String annotationsUploadDirPath = EPADResources.getEPADWebServerAnnotationsUploadDir();
+					String annotationsUploadDirPath = EPADConfig.getEPADWebServerAnnotationsUploadDir();
 					log.info("Uploading AIM annotation(s) to directory " + annotationsUploadDirPath);
 					try {
 						boolean saveError = uploadAIMAnnotations(httpRequest, responseStream, annotationsUploadDirPath);
@@ -168,7 +167,8 @@ public class AimResourceHandler extends AbstractHandler
 	}
 
 	private boolean uploadAIMAnnotations(HttpServletRequest httpRequest, PrintWriter responseStream,
-			String annotationsUploadDirPath) throws FileUploadException, IOException, FileNotFoundException, AimException, edu.stanford.hakan.aim4api.base.AimException
+			String annotationsUploadDirPath) throws FileUploadException, IOException, FileNotFoundException, AimException,
+			edu.stanford.hakan.aim4api.base.AimException
 	{ // See http://www.tutorialspoint.com/servlets/servlets-file-uploading.htm
 		ServletFileUpload servletFileUpload = new ServletFileUpload();
 		FileItemIterator fileItemIterator = servletFileUpload.getItemIterator(httpRequest);

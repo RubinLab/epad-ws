@@ -25,8 +25,8 @@ import com.pixelmed.display.SourceImage;
 
 import edu.stanford.epad.common.dicom.DicomSegmentationObject;
 import edu.stanford.epad.common.pixelmed.PixelMedUtils;
+import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADLogger;
-import edu.stanford.epad.common.util.EPADResources;
 import edu.stanford.epad.dtos.PNGFileProcessingStatus;
 import edu.stanford.epad.dtos.SeriesProcessingStatus;
 import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeDatabaseUtils;
@@ -37,7 +37,7 @@ public class DSOUtil
 {
 	private static final EPADLogger log = EPADLogger.getInstance();
 
-	private static final String baseDicomDirectory = EPADResources.getEPADWebServerPNGDir();
+	private static final String baseDicomDirectory = EPADConfig.getEPADWebServerPNGDir();
 
 	public static List<File> getDSOFrameFiles(String studyUID, String seriesUID, String imageUID)
 	{
