@@ -85,22 +85,22 @@ public class ImageCheckHandler extends AbstractHandler
 				.getDcm4CheeDatabaseOperations();
 		EpadOperations epadQueries = DefaultEpadOperations.getInstance();
 		Set<String> seriesUIDs = dcm4CheeDatabaseOperations.getAllReadyDcm4CheeSeriesUIDs();
-		List<Map<String, String>> allUnprocessedDICOMImageFileDescriptions = new ArrayList<Map<String, String>>();
+		List<Map<String, String>> allUnprocessedDICOMFileDescriptions = new ArrayList<Map<String, String>>();
 
 		int numberOfSeriesWithMissingEPADDatabaseEntry = 0;
 
 		// Verify that each image in a DICOM series in DCM4CHEE has an entry for a generated PNG file in the ePAD database,
 		// which indicates that the image's existence was detected. We then detect that the PNG file itself exists.
 		for (String seriesUID : seriesUIDs) {
-			final List<Map<String, String>> unprocessedDICOMImageFileDescriptionsInSeries = epadQueries
-					.getUnprocessedDicomImageFileDescriptionsForSeries(seriesUID);
-			final int numberOfUnprocessedImages = unprocessedDICOMImageFileDescriptionsInSeries.size();
+			final List<Map<String, String>> unprocessedDICOMFileDescriptionsInSeries = epadQueries
+					.getUnprocessedDICOMFileDescriptionsForSeries(seriesUID);
+			final int numberOfUnprocessedImages = unprocessedDICOMFileDescriptionsInSeries.size();
 
 			if (numberOfUnprocessedImages != 0) {
 				responseStream.write("Number of instances in series " + seriesUID
 						+ " for which there is no ePAD database entry for a PNG file = " + numberOfUnprocessedImages + "\n");
 				numberOfSeriesWithMissingEPADDatabaseEntry++;
-				allUnprocessedDICOMImageFileDescriptions.addAll(unprocessedDICOMImageFileDescriptionsInSeries);
+				allUnprocessedDICOMFileDescriptions.addAll(unprocessedDICOMFileDescriptionsInSeries);
 			} else {
 				// responseStream.write("All instances detected for series " + seriesUID + "\n");
 			}
@@ -125,19 +125,19 @@ public class ImageCheckHandler extends AbstractHandler
 			responseStream.write("Number of series in dcm4chee that ePAD has no record of = "
 					+ numberOfSeriesWithMissingEPADDatabaseEntry + "\n");
 		responseStream.write("Total number of dcm4chee images that do not have PNGs in ePAD = "
-				+ allUnprocessedDICOMImageFileDescriptions.size() + "\n");
+				+ allUnprocessedDICOMFileDescriptions.size() + "\n");
 		responseStream.write("Total number of invalid PNG files = " + numberOfPNGFilesWithErrors + "\n");
 		responseStream.write("Total number of pending PNG files = " + numberOfPNGFilesInPipeline + "\n");
 
 		if (fix) {
-			if (allUnprocessedDICOMImageFileDescriptions.size() != 0) {
-				responseStream.write("Adding " + allUnprocessedDICOMImageFileDescriptions.size()
+			if (allUnprocessedDICOMFileDescriptions.size() != 0) {
+				responseStream.write("Adding " + allUnprocessedDICOMFileDescriptions.size()
 						+ " unprocessed image(s) to PNG pipeline...");
 				responseStream.flush();
-				queueAndWatcherManager.addToPNGGeneratorTaskPipeline("REPROCESS", allUnprocessedDICOMImageFileDescriptions);
+				queueAndWatcherManager.addToPNGGeneratorTaskPipeline("REPROCESS", allUnprocessedDICOMFileDescriptions);
 				responseStream.write("All unprocessed files added\n");
 			}
-		} else if (allUnprocessedDICOMImageFileDescriptions.size() != 0)
+		} else if (allUnprocessedDICOMFileDescriptions.size() != 0)
 			responseStream.write("Use fix=true to attempt to regenerate any broken PNGs\n");
 	}
 }

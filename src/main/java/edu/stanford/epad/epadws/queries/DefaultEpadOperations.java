@@ -416,35 +416,34 @@ public class DefaultEpadOperations implements EpadOperations
 	}
 
 	@Override
-	public List<Map<String, String>> getUnprocessedDicomImageFileDescriptionsForSeries(String seriesUID)
+	public List<Map<String, String>> getUnprocessedDICOMFileDescriptionsForSeries(String seriesUID)
 	{
 		Dcm4CheeDatabaseOperations dcm4CheeDatabaseOperations = Dcm4CheeDatabase.getInstance()
 				.getDcm4CheeDatabaseOperations();
 		EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
 
-		List<Map<String, String>> dicomImagesWithoutPNGImageFileDescriptions = new ArrayList<Map<String, String>>();
+		List<Map<String, String>> dicomFileDescriptionsWithoutPNGs = new ArrayList<Map<String, String>>();
 
 		try {
 			// Get list of DICOM image descriptions from DCM4CHEE database table (pacsdb.files). Each image description is a
 			// map with keys: study_iuid, sop_iuid, inst_no, series_iuid, filepath, file_size.
-			List<Map<String, String>> dicomImageFileDescriptions = dcm4CheeDatabaseOperations
-					.getImageFileDescriptionsForSeries(seriesUID);
+			List<Map<String, String>> dicomFileDescriptions = dcm4CheeDatabaseOperations
+					.getDICOMFileDescriptionsForSeries(seriesUID);
 
 			// Get list of image UIDs in series for images recorded in ePAD database table epaddb.epad_files.
 			List<String> seriesImageUIDs = epadDatabaseOperations.getAllImageUIDsInSeries(seriesUID);
 
 			// Make a list of image UIDs that have no entry in ePAD files_table.
-			for (Map<String, String> dicomImageFileDescription : dicomImageFileDescriptions) {
-				String imageUID = dicomImageFileDescription.get("sop_iuid");
+			for (Map<String, String> dicomFileDescription : dicomFileDescriptions) {
+				String imageUID = dicomFileDescription.get("sop_iuid");
 
-				if (!seriesImageUIDs.contains(imageUID)) {
-					dicomImagesWithoutPNGImageFileDescriptions.add(dicomImageFileDescription);
-				}
+				if (!seriesImageUIDs.contains(imageUID))
+					dicomFileDescriptionsWithoutPNGs.add(dicomFileDescription);
 			}
 		} catch (Exception e) {
-			log.warning("getUnprocessedDICOMImageFileDescriptions had " + e.getMessage(), e);
+			log.warning("getUnprocessedDICOMFileDescriptionsForSeries had error: " + e.getMessage(), e);
 		}
-		return dicomImagesWithoutPNGImageFileDescriptions;
+		return dicomFileDescriptionsWithoutPNGs;
 	}
 
 	@Override

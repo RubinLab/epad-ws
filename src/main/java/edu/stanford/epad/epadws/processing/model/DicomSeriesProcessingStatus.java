@@ -4,7 +4,7 @@ import edu.stanford.epad.common.util.EPADLogger;
 
 /**
  * Pipeline processing state of a DICOM series. A {@link DicomSeriesProcessingStatusTracker} holds these for all series
- * on the pipeline.
+ * currently in ePAD's pipeline.
  * <p>
  * When a new series is detected, it either runs to completion or until it is idle for a set amount of time.
  */
@@ -14,20 +14,18 @@ public class DicomSeriesProcessingStatus
 
 	private static final long MAX_IDLE_TIME = 30000;
 
+	private final SeriesProcessingDescription dicomSeriesProcessingDescription;
+	private DicomSeriesProcessingState dicomSeriesProcessingState;
 	private long lastActivityTimeStamp;
 
-	private final DicomSeriesProcessingDescription dicomSeriesProcessingDescription;
-
-	private DicomSeriesProcessingState dicomSeriesProcessingState;
-
-	public DicomSeriesProcessingStatus(DicomSeriesProcessingDescription dicomSeriesProcessingDescription)
+	public DicomSeriesProcessingStatus(SeriesProcessingDescription dicomSeriesProcessingDescription)
 	{
 		if (dicomSeriesProcessingDescription == null)
 			throw new IllegalArgumentException("DICOM series processing description cannot be null");
 
 		this.dicomSeriesProcessingDescription = dicomSeriesProcessingDescription;
-		lastActivityTimeStamp = System.currentTimeMillis();
-		dicomSeriesProcessingState = DicomSeriesProcessingState.NEW;
+		this.lastActivityTimeStamp = System.currentTimeMillis();
+		this.dicomSeriesProcessingState = DicomSeriesProcessingState.NEW;
 	}
 
 	public float percentComplete()
@@ -35,9 +33,9 @@ public class DicomSeriesProcessingStatus
 		return this.dicomSeriesProcessingDescription.percentComplete();
 	}
 
-	public DicomSeriesProcessingDescription getDicomSeriesProcessingDescription()
+	public SeriesProcessingDescription getDicomSeriesProcessingDescription()
 	{
-		return dicomSeriesProcessingDescription;
+		return this.dicomSeriesProcessingDescription;
 	}
 
 	public void setSeriesProcessingState(DicomSeriesProcessingState pState)

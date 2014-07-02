@@ -28,7 +28,7 @@ public class DicomSeriesProcessingStatusTracker
 		if (dicomSeriesProcessingStatus == null) {
 			throw new IllegalArgumentException("dicomSeriesProcessingStatus cannot be null");
 		}
-		DicomSeriesProcessingDescription dicomSeriesDescription = dicomSeriesProcessingStatus.getDicomSeriesProcessingDescription();
+		SeriesProcessingDescription dicomSeriesDescription = dicomSeriesProcessingStatus.getDicomSeriesProcessingDescription();
 		if (dicomSeriesDescription == null) {
 			throw new IllegalArgumentException("dicomSeriesDescription cannot be null");
 		}

@@ -10,7 +10,7 @@ import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeDatabase;
 import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeDatabaseOperations;
 import edu.stanford.epad.epadws.epaddb.EpadDatabase;
 import edu.stanford.epad.epadws.epaddb.EpadDatabaseOperations;
-import edu.stanford.epad.epadws.processing.model.DicomSeriesProcessingDescription;
+import edu.stanford.epad.epadws.processing.model.SeriesProcessingDescription;
 import edu.stanford.epad.epadws.processing.pipeline.threads.ShutdownSignal;
 import edu.stanford.epad.epadws.queries.DefaultEpadOperations;
 import edu.stanford.epad.epadws.queries.EpadOperations;
@@ -26,11 +26,11 @@ public class Dcm4CheeDatabaseWatcher implements Runnable
 
 	private final int SleepTimeInMilliseconds = 500;
 
-	private final BlockingQueue<DicomSeriesProcessingDescription> dcm4CheeSeriesWatcherQueue;
-	private final BlockingQueue<DicomSeriesProcessingDescription> xnatSeriesWatcherQueue;
+	private final BlockingQueue<SeriesProcessingDescription> dcm4CheeSeriesWatcherQueue;
+	private final BlockingQueue<SeriesProcessingDescription> xnatSeriesWatcherQueue;
 
-	public Dcm4CheeDatabaseWatcher(BlockingQueue<DicomSeriesProcessingDescription> dicomSeriesWatcherQueue,
-			BlockingQueue<DicomSeriesProcessingDescription> xnatSeriesWatcherQueue)
+	public Dcm4CheeDatabaseWatcher(BlockingQueue<SeriesProcessingDescription> dicomSeriesWatcherQueue,
+			BlockingQueue<SeriesProcessingDescription> xnatSeriesWatcherQueue)
 	{
 		logger.info("Starting ePAD's DCM4CHEE database watcher");
 		this.dcm4CheeSeriesWatcherQueue = dicomSeriesWatcherQueue;
@@ -57,7 +57,7 @@ public class Dcm4CheeDatabaseWatcher implements Runnable
 					String patientID = dcm4CheeSeries.patientID;
 					String seriesDesc = dcm4CheeSeries.seriesDescription;
 					int numInstances = dcm4CheeSeries.imagesInSeries;
-					DicomSeriesProcessingDescription dicomSeriesDescription = new DicomSeriesProcessingDescription(numInstances,
+					SeriesProcessingDescription dicomSeriesDescription = new SeriesProcessingDescription(numInstances,
 							seriesUID, studyUID, patientName, patientID);
 					epadDatabaseOperations.updateOrInsertSeries(seriesUID, SeriesProcessingStatus.IN_PIPELINE);
 					submitSeriesForPngGeneration(dicomSeriesDescription); // Submit this series to generate all the PNG files.
@@ -73,12 +73,12 @@ public class Dcm4CheeDatabaseWatcher implements Runnable
 		}
 	}
 
-	private void submitSeriesForPngGeneration(DicomSeriesProcessingDescription dicomSeriesDescription)
+	private void submitSeriesForPngGeneration(SeriesProcessingDescription dicomSeriesDescription)
 	{
 		dcm4CheeSeriesWatcherQueue.offer(dicomSeriesDescription);
 	}
 
-	private void submitSeriesForXNATGeneration(DicomSeriesProcessingDescription dicomSeriesDescription)
+	private void submitSeriesForXNATGeneration(SeriesProcessingDescription dicomSeriesDescription)
 	{
 		xnatSeriesWatcherQueue.offer(dicomSeriesDescription);
 	}

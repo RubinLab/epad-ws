@@ -137,7 +137,7 @@ public interface EpadOperations
 	 * <p>
 	 * Each description is a map with keys: study_iuid, series_iuid, sop_iuid, inst_no, filepath, file_size.
 	 */
-	List<Map<String, String>> getUnprocessedDicomImageFileDescriptionsForSeries(String seriesUID);
+	List<Map<String, String>> getUnprocessedDICOMFileDescriptionsForSeries(String seriesUID);
 
 	void deleteStudyFromEPadAndDcm4CheeDatabases(String studyUID);
 

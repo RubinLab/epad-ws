@@ -400,7 +400,7 @@ public class DefaultDcm4CheeDatabaseOperations implements Dcm4CheeDatabaseOperat
 	 * Keys: study_iuid, sop_iuid, inst_no, series_iuid, filepath, file_size,
 	 */
 	@Override
-	public List<Map<String, String>> getImageFileDescriptionsForSeries(String seriesUID)
+	public List<Map<String, String>> getDICOMFileDescriptionsForSeries(String seriesUID)
 	{
 		List<Map<String, String>> retVal = new ArrayList<Map<String, String>>();
 		Connection c = null;

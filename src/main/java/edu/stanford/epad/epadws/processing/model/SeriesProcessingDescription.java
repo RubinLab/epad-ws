@@ -7,10 +7,10 @@ import java.util.Map;
 import edu.stanford.epad.common.util.EPADLogger;
 
 /**
- * Keeps all the information about each instance in a series and the instance order. A
- * {@link DicomSeriesProcessingStatus} tracks this series when it is in the pipeline.
+ * Keeps all the information about an uploaded series that is being processed by ePAD. A
+ * {@link DicomSeriesProcessingStatus} tracks the processing state of this series when it is in the pipeline.
  */
-public class DicomSeriesProcessingDescription
+public class SeriesProcessingDescription
 {
 	private static final EPADLogger logger = EPADLogger.getInstance();
 
@@ -21,7 +21,7 @@ public class DicomSeriesProcessingDescription
 	private final String subjectName;
 	private final String subjectID;
 
-	public DicomSeriesProcessingDescription(int numberOfInstances, String seriesUID, String studyUID, String patientName,
+	public SeriesProcessingDescription(int numberOfInstances, String seriesUID, String studyUID, String patientName,
 			String subjectID)
 	{
 		if (numberOfInstances < 1)
@@ -112,23 +112,13 @@ public class DicomSeriesProcessingDescription
 		return instances.get(index) != null;
 	}
 
-	public void updateWithDicomImageFileDescriptions(List<Map<String, String>> dicomImageFileDescriptions)
+	// An image file description is a map with keys: study_iuid, sop_iuid, inst_no, series_iuid, filepath, file_size
+	public void updateWithDICOMFileDescriptions(List<Map<String, String>> dicomFileDescriptions)
 	{
-		for (Map<String, String> dicomImageFileDescription : dicomImageFileDescriptions) {
-			String instanceNumberString = dicomImageFileDescription.get("inst_no");
-
-			// //ToDo: delete below once debugged.
-			// if(instanceNum==null){
-			// Set<String> s = currImage.keySet();
-			// logger.info("WARNING: Didn't find 'inst_no' for key-set: "+s.toString());
-			// throw new IllegalArgumentException("didn't find 'inst_no' for key-set: "+s.toString());
-			// }else{
-			// logger.info("[TEMP] instanceNum="+instanceNum);
-			// }
-			// //ToDo: delete above once debugged.
-
+		for (Map<String, String> dicomFileDescription : dicomFileDescriptions) {
+			String instanceNumberString = dicomFileDescription.get("inst_no");
 			int instanceNumber = instanceNumberString == null ? 1 : Integer.parseInt(instanceNumberString);
-			String imageUID = dicomImageFileDescription.get("sop_iuid");
+			String imageUID = dicomFileDescription.get("sop_iuid");
 			addCompletedInstance(instanceNumber, imageUID);
 		}
 	}
@@ -141,10 +131,9 @@ public class DicomSeriesProcessingDescription
 	{
 		DicomImageDescription imageEntry = new DicomImageDescription(instanceNumber, sopInstanceUID);
 		if (!hasInstance(instanceNumber)) {
-			// logger.info("[TEMP LOG-DEBUGGING] adding: " + instNum + " sopInstanceUID: " + sopInstanceUID);
 			if (instances.size() < instanceNumber + 1) {
 				int start = instances.size();
-				logger.info("WARNING: resizing array from=" + instances.size() + " to=" + (instanceNumber + 1) + " series="
+				logger.warning("resizing array from=" + instances.size() + " to=" + (instanceNumber + 1) + " series="
 						+ seriesUID);
 				instances.ensureCapacity(instanceNumber + 1);
 				for (int i = start; i < instanceNumber + 1; i++) {

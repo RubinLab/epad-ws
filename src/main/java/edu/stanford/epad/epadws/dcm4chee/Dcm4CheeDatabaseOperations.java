@@ -38,7 +38,7 @@ public interface Dcm4CheeDatabaseOperations
 	Map<String, String> getParentStudyForSeries(String seriesUID);
 
 	// study_iuid, sop_iuid, inst_no, series_iuid, filepath, file_size,
-	List<Map<String, String>> getImageFileDescriptionsForSeries(String seriesUID);
+	List<Map<String, String>> getDICOMFileDescriptionsForSeries(String seriesUID);
 
 	// Returns a list of image descriptions; each description is a map containing the keys to the instance table in the
 	// pscsdb MySql database. The keys to get the image ID and instance number are sop_iuid and inst_no, respectively.

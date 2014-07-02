@@ -18,7 +18,7 @@ import edu.stanford.epad.dtos.SeriesProcessingStatus;
 import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeDatabaseUtils;
 import edu.stanford.epad.epadws.epaddb.EpadDatabase;
 import edu.stanford.epad.epadws.epaddb.EpadDatabaseOperations;
-import edu.stanford.epad.epadws.processing.model.DicomSeriesProcessingDescription;
+import edu.stanford.epad.epadws.processing.model.SeriesProcessingDescription;
 import edu.stanford.epad.epadws.processing.pipeline.process.PngGeneratorProcess;
 import edu.stanford.epad.epadws.processing.pipeline.task.DSOMaskGeneratorTask;
 import edu.stanford.epad.epadws.processing.pipeline.task.GeneratorTask;
@@ -28,9 +28,9 @@ public class QueueAndWatcherManager
 {
 	private static final EPADLogger log = EPADLogger.getInstance();
 
-	private static final BlockingQueue<DicomSeriesProcessingDescription> dicomSeriesWatcherQueue = new ArrayBlockingQueue<DicomSeriesProcessingDescription>(
+	private static final BlockingQueue<SeriesProcessingDescription> dicomSeriesWatcherQueue = new ArrayBlockingQueue<SeriesProcessingDescription>(
 			2000);
-	private static final BlockingQueue<DicomSeriesProcessingDescription> xnatSeriesWatcherQueue = new ArrayBlockingQueue<DicomSeriesProcessingDescription>(
+	private static final BlockingQueue<SeriesProcessingDescription> xnatSeriesWatcherQueue = new ArrayBlockingQueue<SeriesProcessingDescription>(
 			2000);
 	private static final BlockingQueue<GeneratorTask> pngGeneratorTaskQueue = new ArrayBlockingQueue<GeneratorTask>(2000);
 	// private static final BlockingQueue<DicomHeadersTask> dicomHeadersTaskQueue = new
@@ -89,31 +89,31 @@ public class QueueAndWatcherManager
 		epadUploadDirWatcherExec.shutdown();
 	}
 
-	// Each entry in list is map with keys sop_iuid, inst_no, series_iuid, filepath, and file_size.
-	public void addToPNGGeneratorTaskPipeline(String patientName, List<Map<String, String>> dicomImageFileDescriptions)
+	// DICOM file description is map with keys study_iuid, series_iuid, sop_iuid, inst_no, filepath, file_size.
+	public void addToPNGGeneratorTaskPipeline(String patientName, List<Map<String, String>> dicomFileDescriptions)
 	{
-		for (Map<String, String> dicomImageDescription : dicomImageFileDescriptions) {
-			String studyUID = dicomImageDescription.get("study_iuid");
-			String seriesUID = dicomImageDescription.get("series_iuid");
-			String instanceNumber = dicomImageDescription.get("inst_no");
-			String inputDICOMFilePath = getInputFilePath(dicomImageDescription); // Get the input file path
+		for (Map<String, String> dicomFileDescription : dicomFileDescriptions) {
+			String studyUID = dicomFileDescription.get("study_iuid");
+			String seriesUID = dicomFileDescription.get("series_iuid");
+			String instanceNumber = dicomFileDescription.get("inst_no");
+			String inputDICOMFilePath = getDICOMFilePath(dicomFileDescription); // Get the input file path
 			File inputDICOMFile = new File(inputDICOMFilePath);
 
 			// If the file does not exist locally (because it is stored on another file system), download it.
 			if (!inputDICOMFile.exists()) {
 				try {
-					String imageUID = dicomImageDescription.get("sop_iuid");
+					String imageUID = dicomFileDescription.get("sop_iuid");
 					log.info("Downloading remote DICOM file for image " + imageUID);
 					File downloadedDICOMFile = File.createTempFile(imageUID, ".tmp");
-					EPADTools.feedFileWithDICOMFromWADO(downloadedDICOMFile, dicomImageDescription);
+					EPADTools.feedFileWithDICOMFromWADO(downloadedDICOMFile, dicomFileDescription);
 					inputDICOMFile = downloadedDICOMFile;
 				} catch (IOException e) {
 					log.warning("Exception when downloading DICOM file with series ID " + seriesUID + " and image ID "
-							+ dicomImageDescription.get("sop_iuid"), e);
+							+ dicomFileDescription.get("sop_iuid"), e);
 				}
 			}
 
-			String outputPNGFilePath = createOutputPNGFilePathForDicomImage(dicomImageDescription);
+			String outputPNGFilePath = createOutputPNGFilePathForDicomImage(dicomFileDescription);
 			if (PixelMedUtils.isDicomSegmentationObject(inputDICOMFilePath)) { // Generate slices of PNG mask
 				processDicomSegmentationObject(seriesUID, outputPNGFilePath, inputDICOMFilePath);
 			} else { // Generate PNG file.
@@ -122,9 +122,9 @@ public class QueueAndWatcherManager
 		}
 	}
 
-	private String getInputFilePath(Map<String, String> dicomImageFileDescription)
+	private String getDICOMFilePath(Map<String, String> dicomFileDescription)
 	{
-		return getDcm4cheeRootDir() + dicomImageFileDescription.get("filepath");
+		return getDcm4cheeRootDir() + dicomFileDescription.get("filepath");
 	}
 
 	/**
