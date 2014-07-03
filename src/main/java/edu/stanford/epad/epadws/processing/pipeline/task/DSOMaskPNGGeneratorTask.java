@@ -33,7 +33,7 @@ public class DSOMaskPNGGeneratorTask implements GeneratorTask
 	}
 
 	@Override
-	public File getDSOFile()
+	public File getDICOMFile()
 	{
 		return dsoFile;
 	}

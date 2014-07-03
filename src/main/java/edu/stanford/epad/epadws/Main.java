@@ -65,10 +65,9 @@ import edu.stanford.epad.epadws.processing.pipeline.watcher.QueueAndWatcherManag
 public class Main
 {
 	private static final EPADLogger log = EPADLogger.getInstance();
-	private static final EPADConfig epadConfig = EPADConfig.getInstance();
 
 	/**
-	 * Starts EPad web server
+	 * EPad web server entry point
 	 * <p>
 	 * The application listens on the port indicated by the property <i>ePadClientPort</i> in proxy-config.properties.
 	 * <p>
@@ -84,15 +83,15 @@ public class Main
 		Server server = null;
 
 		try {
-			int epadClientPort = epadConfig.getIntegerPropertyValue("ePadClientPort");
+			int epadPort = EPADConfig.epadPort;
 			log.info("Starting the ePAD web service. Build date: " + EPadWebServerVersion.getBuildDate());
 			initializePlugins();
 			startSupportThreads();
-			server = new Server(epadClientPort);
+			server = new Server(epadPort);
 			configureJettyServer(server);
 			addHandlers(server);
 			Runtime.getRuntime().addShutdownHook(new ShutdownHookThread());
-			log.info("Starting Jetty on port " + epadClientPort);
+			log.info("Starting Jetty on port " + epadPort);
 			server.start();
 			server.join();
 		} catch (BindException be) {
@@ -191,14 +190,12 @@ public class Main
 		// studies/<sid>/series/<sid>aims, studies/<sid>/series/<sid>/images/<iid>/aims,
 		addHandlerAtContextPath(new AimResourceHandler(), "/epad/aimresource", handlerList);
 
-		// TODO Remove after RESTful conversion. Should get PNGs and WADO via route:
-		// /studies/<sid>/series/<sid>/images/<iid>/frame/<frame#>?format=PNG
 		addHandlerAtContextPath(new ResourceCheckHandler(), "/epad/resources", handlerList);
 		addFileServerAtContextPath(EPADConfig.getEPADWebServerResourcesDir(), handlerList, "/epad/resources");
 		addHandlerAtContextPath(new WadoHandler(), "/epad/wado", handlerList);
 
-		// TODO Remove after RESTful conversion. Should get all necessary information via route:
-		// /project/<pid>/subjects/<sid>/studies/<sid>/series/<sid>/images/<iid>/
+		// TODO Remove after RESTful conversion. Should get all necessary information via JSON returned from route:
+		// GET /project/<pid>/subjects/<sid>/studies/<sid>/series/<sid>/images/<iid>/
 		addHandlerAtContextPath(new DICOMHeadersHandler(), "/epad/dicomtagj", handlerList);
 		addHandlerAtContextPath(new WindowingHandler(), "/epad/dicomparam", handlerList);
 		addHandlerAtContextPath(new EPADSeriesOrderHandler(), "/epad/seriesorderj", handlerList);

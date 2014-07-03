@@ -81,8 +81,8 @@ public class WadoHandler extends AbstractHandler
 	private int performWADOQuery(String queryString, ServletOutputStream outputStream)
 
 	{
-		String wadoHost = EPADConfig.nameServer;
-		int wadoPort = EPADConfig.dicomServerWadoPort;
+		String wadoHost = EPADConfig.dcm4CheeServer;
+		int wadoPort = EPADConfig.dcm4cheeServerWadoPort;
 		String wadoBase = EPADConfig.wadoURLExtension;
 		String wadoURL = buildWADOURL(wadoHost, wadoPort, wadoBase, queryString);
 		int statusCode;

@@ -22,6 +22,7 @@ import edu.stanford.epad.epadws.processing.model.SeriesProcessingDescription;
 import edu.stanford.epad.epadws.processing.pipeline.process.PngGeneratorProcess;
 import edu.stanford.epad.epadws.processing.pipeline.task.DSOMaskPNGGeneratorTask;
 import edu.stanford.epad.epadws.processing.pipeline.task.GeneratorTask;
+import edu.stanford.epad.epadws.processing.pipeline.task.MultiFramePNGGeneratorTask;
 import edu.stanford.epad.epadws.processing.pipeline.task.SingleFrameDICOMPngGeneratorTask;
 
 public class QueueAndWatcherManager
@@ -111,10 +112,11 @@ public class QueueAndWatcherManager
 			}
 
 			if (PixelMedUtils.isDicomSegmentationObject(dicomFilePath)) {
-				generatePNGsForDicomSegmentationObject(dicomFileDescription, dicomFilePath);
+				generatePNGsForDicomSegmentationObject(dicomFileDescription, inputDICOMFile);
 			} else if (PixelMedUtils.isMultiframedDicom(dicomFilePath)) {
-			} else {
-				createPNGFileForSingleFrameDICOMImage(patientName, dicomFileDescription, inputDICOMFile);
+				generatePNGsForMultiFrameDicom(dicomFileDescription, inputDICOMFile);
+			} else { // Assume it is non multi-frame DICOM
+				generatePNGFileForSingleFrameDICOMImage(patientName, dicomFileDescription, inputDICOMFile);
 			}
 		}
 	}
@@ -137,17 +139,27 @@ public class QueueAndWatcherManager
 			return dcm4cheeRootDir + "/";
 	}
 
-	private void generatePNGsForDicomSegmentationObject(DICOMFileDescription dicomFileDescription, String dsoFilePath)
+	private void generatePNGsForDicomSegmentationObject(DICOMFileDescription dicomFileDescription, File dsoFile)
 	{
-		File dsoFile = new File(dsoFilePath);
-
 		log.info("DICOM segmentation object found for series " + dicomFileDescription.seriesUID);
 
-		DSOMaskPNGGeneratorTask dsoMaskGeneratorTask = new DSOMaskPNGGeneratorTask(dicomFileDescription.seriesUID, dsoFile);
-		pngGeneratorTaskQueue.offer(dsoMaskGeneratorTask);
+		DSOMaskPNGGeneratorTask dsoMaskPNGGeneratorTask = new DSOMaskPNGGeneratorTask(dicomFileDescription.seriesUID,
+				dsoFile);
+
+		pngGeneratorTaskQueue.offer(dsoMaskPNGGeneratorTask);
 	}
 
-	private void createPNGFileForSingleFrameDICOMImage(String patientName, DICOMFileDescription dicomFileDescription,
+	private void generatePNGsForMultiFrameDicom(DICOMFileDescription dicomFileDescription, File multiFrameDicomFile)
+	{
+		log.info("Multi-frame DICOM object found for series " + dicomFileDescription.seriesUID);
+
+		MultiFramePNGGeneratorTask dsoPNGGeneratorTask = new MultiFramePNGGeneratorTask(dicomFileDescription.seriesUID,
+				multiFrameDicomFile);
+
+		pngGeneratorTaskQueue.offer(dsoPNGGeneratorTask);
+	}
+
+	private void generatePNGFileForSingleFrameDICOMImage(String patientName, DICOMFileDescription dicomFileDescription,
 			File dicomFile)
 	{
 		String outputPNGFilePath = createOutputPNGFilePathForSingleFrameDICOMImage(dicomFileDescription);

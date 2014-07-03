@@ -54,7 +54,7 @@ public class DSOUtil
 		return null;
 	}
 
-	public static void writeDSOPNGs(File dsoFile) throws Exception
+	public static void writeMultiFramePNGs(File dsoFile) throws Exception
 	{
 		try {
 			EpadDatabaseOperations databaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();

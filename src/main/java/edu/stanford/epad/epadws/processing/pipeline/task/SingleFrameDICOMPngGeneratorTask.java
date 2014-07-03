@@ -117,7 +117,7 @@ public class SingleFrameDICOMPngGeneratorTask implements GeneratorTask
 	}
 
 	@Override
-	public File getDSOFile()
+	public File getDICOMFile()
 	{
 		return dicomFile;
 	}

@@ -11,7 +11,7 @@ public interface GeneratorTask extends Runnable
 {
 	String getSeriesUID();
 
-	File getDSOFile();
+	File getDICOMFile();
 
 	String getTagFilePath();
 

@@ -5,35 +5,36 @@ import java.io.File;
 import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.epad.epadws.handlers.dicom.DSOUtil;
 
-public class DSOPNGGeneratorTask implements GeneratorTask
+public class MultiFramePNGGeneratorTask implements GeneratorTask
 {
 	private static final EPADLogger log = EPADLogger.getInstance();
 
 	private final String seriesUID;
-	private final File dsoFile;
+	private final File multiFrameDICOMFile;
 
-	public DSOPNGGeneratorTask(String seriesUID, File dsoFile)
+	public MultiFramePNGGeneratorTask(String seriesUID, File multiFrameDICOMFile)
 	{
 		this.seriesUID = seriesUID;
-		this.dsoFile = dsoFile;
+		this.multiFrameDICOMFile = multiFrameDICOMFile;
 	}
 
 	@Override
 	public void run()
 	{
-		log.info("Processing DSO for series  " + seriesUID + "; file=" + dsoFile.getAbsolutePath());
+		log.info("Processing multi-frame DICOM for series  " + seriesUID + "; file="
+				+ multiFrameDICOMFile.getAbsolutePath());
 
 		try {
-			DSOUtil.writeDSOPNGs(dsoFile);
+			DSOUtil.writeMultiFramePNGs(multiFrameDICOMFile);
 		} catch (Exception e) {
-			log.warning("Error writing AIM file for DSO series " + seriesUID, e);
+			log.warning("Error writing AIM file for multi-frame series " + seriesUID, e);
 		}
 	}
 
 	@Override
-	public File getDSOFile()
+	public File getDICOMFile()
 	{
-		return dsoFile;
+		return multiFrameDICOMFile;
 	}
 
 	@Override

@@ -96,7 +96,6 @@ public class DICOMSeriesWatcher implements Runnable
 						.getDicomSeriesProcessingStatusSet()) {
 					SeriesProcessingDescription dicomSeriesProcessingDescription = dicomSeriesProcessingStatus
 							.getDicomSeriesProcessingDescription();
-					// Each entry in list is map with keys: study_iuid, sop_iuid, inst_no, series_iuid, filepath, file_size.
 					String seriesUID = dicomSeriesProcessingDescription.getSeriesUID();
 					String patientName = dicomSeriesProcessingDescription.getPatientName();
 					int numberOfInstances = dicomSeriesProcessingDescription.getNumberOfInstances();
@@ -113,9 +112,11 @@ public class DICOMSeriesWatcher implements Runnable
 						log.info("Submitted series " + seriesUID + " for patient " + patientName + " with " + numberOfInstances
 								+ " image(s) to PNG generator");
 					} else { // All images have been submitted for PNG processing.
-						/*
+						/**
 						 * Here is (not fully tested) code to generated 4x4 grids from the generated PNGs. This could be very
-						 * expensive so we do not activate. List<Map<String, String>> processedPNGImages = mySqlQueries
+						 * expensive both in terms of conversion time and space so we do not activate.
+						 * <p>
+						 * List<DICOMFIleDescription processedPNGImages = mySqlQueries
 						 * .getProcessedDICOMFileDescriptionsOrdered(currentSeriesDescription.getSeriesUID());
 						 * 
 						 * if (processedPNGImages.size() > 0) { // Convert processed PNG files to PNG grid files
