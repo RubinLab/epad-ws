@@ -83,6 +83,7 @@ public class Main
 		Server server = null;
 
 		try {
+			log.info("Starting the ePAD web service. Build date: " + EPadWebServerVersion.getBuildDate());
 			int epadPort = EPADConfig.epadPort;
 			log.info("Starting the ePAD web service. Build date: " + EPadWebServerVersion.getBuildDate());
 			initializePlugins();

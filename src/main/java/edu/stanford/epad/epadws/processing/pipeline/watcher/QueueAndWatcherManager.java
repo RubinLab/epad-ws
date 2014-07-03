@@ -112,7 +112,7 @@ public class QueueAndWatcherManager
 			}
 
 			if (PixelMedUtils.isDicomSegmentationObject(dicomFilePath)) {
-				generatePNGsForDicomSegmentationObject(dicomFileDescription, inputDICOMFile);
+				generateMaskPNGsForDicomSegmentationObject(dicomFileDescription, inputDICOMFile);
 			} else if (PixelMedUtils.isMultiframedDicom(dicomFilePath)) {
 				generatePNGsForMultiFrameDicom(dicomFileDescription, inputDICOMFile);
 			} else { // Assume it is non multi-frame DICOM
@@ -139,7 +139,7 @@ public class QueueAndWatcherManager
 			return dcm4cheeRootDir + "/";
 	}
 
-	private void generatePNGsForDicomSegmentationObject(DICOMFileDescription dicomFileDescription, File dsoFile)
+	private void generateMaskPNGsForDicomSegmentationObject(DICOMFileDescription dicomFileDescription, File dsoFile)
 	{
 		log.info("DICOM segmentation object found for series " + dicomFileDescription.seriesUID);
 
