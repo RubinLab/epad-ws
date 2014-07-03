@@ -417,32 +417,30 @@ public class DefaultEpadOperations implements EpadOperations
 	}
 
 	@Override
-	public List<DICOMFileDescription> getUnprocessedDICOMFileDescriptionsForSeries(String seriesUID)
+	public Set<DICOMFileDescription> getUnprocessedDICOMFilesInSeries(String seriesUID)
 	{
 		Dcm4CheeDatabaseOperations dcm4CheeDatabaseOperations = Dcm4CheeDatabase.getInstance()
 				.getDcm4CheeDatabaseOperations();
 		EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
 
-		List<DICOMFileDescription> dicomFileDescriptionsWithoutPNGs = new ArrayList<DICOMFileDescription>();
+		Set<DICOMFileDescription> dicomFilesWithoutPNGs = new HashSet<DICOMFileDescription>();
 
 		try {
-			// Get list of DICOM image descriptions from DCM4CHEE.
-			List<DICOMFileDescription> dicomFileDescriptions = dcm4CheeDatabaseOperations.getDICOMFileDescriptions(seriesUID);
+			// Get list of DICOM file descriptions from DCM4CHEE.
+			Set<DICOMFileDescription> dicomFileDescriptions = dcm4CheeDatabaseOperations.getDICOMFilesForSeries(seriesUID);
 
 			// Get list of image UIDs in series for images recorded in ePAD database table epaddb.epad_files.
-			List<String> seriesImageUIDs = epadDatabaseOperations.getAllImageUIDsInSeries(seriesUID);
+			Set<String> imageUIDs = epadDatabaseOperations.getImageUIDsInSeries(seriesUID);
 
 			// Make a list of image UIDs that have no entry in ePAD files_table.
 			for (DICOMFileDescription dicomFileDescription : dicomFileDescriptions) {
-				String imageUID = dicomFileDescription.imageUID;
-
-				if (!seriesImageUIDs.contains(imageUID))
-					dicomFileDescriptionsWithoutPNGs.add(dicomFileDescription);
+				if (!imageUIDs.contains(dicomFileDescription.imageUID))
+					dicomFilesWithoutPNGs.add(dicomFileDescription);
 			}
 		} catch (Exception e) {
-			log.warning("getUnprocessedDICOMFileDescriptionsForSeries had error: " + e.getMessage(), e);
+			log.warning("Error finding unprocessed file descriptions: " + e.getMessage(), e);
 		}
-		return dicomFileDescriptionsWithoutPNGs;
+		return dicomFilesWithoutPNGs;
 	}
 
 	@Override

@@ -6,13 +6,13 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Singleton class to keep track of all series in the pipeline. Each series has a {@link DicomSeriesProcessingStatus}
+ * Singleton class to keep track of all series in the pipeline. Each series has a {@link SeriesPipelineState}
  * object describing its processing status.
  */
 public class DicomSeriesProcessingStatusTracker
 {
 	private static final DicomSeriesProcessingStatusTracker ourInstance = new DicomSeriesProcessingStatusTracker();
-	private final Map<String, DicomSeriesProcessingStatus> statusMap = new ConcurrentHashMap<String, DicomSeriesProcessingStatus>();
+	private final Map<String, SeriesPipelineState> statusMap = new ConcurrentHashMap<String, SeriesPipelineState>();
 
 	public static DicomSeriesProcessingStatusTracker getInstance()
 	{
@@ -23,12 +23,12 @@ public class DicomSeriesProcessingStatusTracker
 	{
 	}
 
-	public void addDicomSeriesProcessingStatus(DicomSeriesProcessingStatus dicomSeriesProcessingStatus)
+	public void addSeriesPipelineState(SeriesPipelineState dicomSeriesProcessingStatus)
 	{
 		if (dicomSeriesProcessingStatus == null) {
 			throw new IllegalArgumentException("dicomSeriesProcessingStatus cannot be null");
 		}
-		SeriesProcessingDescription dicomSeriesDescription = dicomSeriesProcessingStatus.getDicomSeriesProcessingDescription();
+		SeriesProcessingDescription dicomSeriesDescription = dicomSeriesProcessingStatus.getSeriesProcessingDescription();
 		if (dicomSeriesDescription == null) {
 			throw new IllegalArgumentException("dicomSeriesDescription cannot be null");
 		}
@@ -36,18 +36,18 @@ public class DicomSeriesProcessingStatusTracker
 		statusMap.put(seriesUID, dicomSeriesProcessingStatus);
 	}
 
-	public void removeDicomSeriesProcessingStatus(DicomSeriesProcessingStatus dicomSeriesProcessingStatus)
+	public void removeSeriesPipelineState(SeriesPipelineState dicomSeriesProcessingStatus)
 	{
-		String seriesUID = dicomSeriesProcessingStatus.getDicomSeriesProcessingDescription().getSeriesUID();
+		String seriesUID = dicomSeriesProcessingStatus.getSeriesProcessingDescription().getSeriesUID();
 		statusMap.remove(seriesUID);
 	}
 
-	public Set<DicomSeriesProcessingStatus> getDicomSeriesProcessingStatusSet()
+	public Set<SeriesPipelineState> getSeriesPipelineStates()
 	{
-		return new HashSet<DicomSeriesProcessingStatus>(statusMap.values());
+		return new HashSet<SeriesPipelineState>(statusMap.values());
 	}
 
-	public DicomSeriesProcessingStatus getDicomSeriesProcessingStatus(String seriesUID)
+	public SeriesPipelineState getDicomSeriesProcessingStatus(String seriesUID)
 	{
 		return statusMap.get(seriesUID);
 	}

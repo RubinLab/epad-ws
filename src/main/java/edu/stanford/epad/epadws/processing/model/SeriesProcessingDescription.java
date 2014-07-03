@@ -1,14 +1,14 @@
 package edu.stanford.epad.epadws.processing.model;
 
 import java.util.ArrayList;
-import java.util.List;
+import java.util.Set;
 
 import edu.stanford.epad.common.dicom.DICOMFileDescription;
 import edu.stanford.epad.common.util.EPADLogger;
 
 /**
- * Keeps all the information about an uploaded series that is being processed by ePAD. A
- * {@link DicomSeriesProcessingStatus} tracks the processing state of this series when it is in the pipeline.
+ * Keeps all the information about an uploaded series that is being processed by ePAD. A {@link SeriesPipelineState}
+ * tracks the processing state of this series when it is in the pipeline.
  */
 public class SeriesProcessingDescription
 {
@@ -112,8 +112,7 @@ public class SeriesProcessingDescription
 		return instances.get(index) != null;
 	}
 
-	// An image file description is a map with keys: study_iuid, sop_iuid, inst_no, series_iuid, filepath, file_size
-	public void updateWithDICOMFileDescriptions(List<DICOMFileDescription> dicomFileDescriptions)
+	public void updateWithDICOMFileDescriptions(Set<DICOMFileDescription> dicomFileDescriptions)
 	{
 		for (DICOMFileDescription dicomFileDescription : dicomFileDescriptions) {
 			int instanceNumber = dicomFileDescription.instanceNumber;

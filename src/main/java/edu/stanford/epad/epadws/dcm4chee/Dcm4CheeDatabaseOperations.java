@@ -38,7 +38,7 @@ public interface Dcm4CheeDatabaseOperations
 
 	Map<String, String> getParentStudyForSeries(String seriesUID);
 
-	public List<DICOMFileDescription> getDICOMFileDescriptions(String seriesUID);
+	public Set<DICOMFileDescription> getDICOMFilesForSeries(String seriesUID);
 
 	// study_iuid, sop_iuid, inst_no, series_iuid, filepath, file_size,
 	// List<Map<String, String>> getDICOMFileDescriptionsForSeries(String seriesUID);

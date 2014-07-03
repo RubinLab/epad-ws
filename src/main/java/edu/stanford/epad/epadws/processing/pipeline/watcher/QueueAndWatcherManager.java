@@ -2,8 +2,8 @@ package edu.stanford.epad.epadws.processing.pipeline.watcher;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
@@ -90,7 +90,7 @@ public class QueueAndWatcherManager
 		epadUploadDirWatcherExec.shutdown();
 	}
 
-	public void addDICOMFileToPNGGeneratorPipeline(String patientName, List<DICOMFileDescription> dicomFileDescriptions)
+	public void addDICOMFileToPNGGeneratorPipeline(String patientName, Set<DICOMFileDescription> dicomFileDescriptions)
 	{
 		for (DICOMFileDescription dicomFileDescription : dicomFileDescriptions) {
 			String seriesUID = dicomFileDescription.seriesUID;
@@ -112,8 +112,10 @@ public class QueueAndWatcherManager
 			}
 
 			if (PixelMedUtils.isDicomSegmentationObject(dicomFilePath)) {
+				log.info("DSO!!!!!" + dicomFileDescription.seriesUID);
 				generateMaskPNGsForDicomSegmentationObject(dicomFileDescription, inputDICOMFile);
 			} else if (PixelMedUtils.isMultiframedDicom(dicomFilePath)) {
+				log.info("MF!!!!!" + dicomFileDescription.seriesUID);
 				generatePNGsForMultiFrameDicom(dicomFileDescription, inputDICOMFile);
 			} else { // Assume it is non multi-frame DICOM
 				generatePNGFileForSingleFrameDICOMImage(patientName, dicomFileDescription, inputDICOMFile);
@@ -165,15 +167,15 @@ public class QueueAndWatcherManager
 		String outputPNGFilePath = createOutputPNGFilePathForSingleFrameDICOMImage(dicomFileDescription);
 		File outputPNGFile = new File(outputPNGFilePath);
 		EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
-		insertEpadFile(epadDatabaseOperations, outputPNGFile);
+		insertEpadFile(epadDatabaseOperations, outputPNGFile, dicomFileDescription.imageUID);
 		SingleFrameDICOMPngGeneratorTask pngGeneratorTask = new SingleFrameDICOMPngGeneratorTask(patientName,
 				dicomFileDescription, dicomFile, outputPNGFile);
 		pngGeneratorTaskQueue.offer(pngGeneratorTask);
 	}
 
-	private void insertEpadFile(EpadDatabaseOperations epadDatabaseOperations, File outputPNGFile)
+	private void insertEpadFile(EpadDatabaseOperations epadDatabaseOperations, File outputPNGFile, String imageUID)
 	{
-		Map<String, String> epadFilesTable = Dcm4CheeDatabaseUtils.createEPadFilesTableData(outputPNGFile);
+		Map<String, String> epadFilesTable = Dcm4CheeDatabaseUtils.createEPadFilesTableData(outputPNGFile, imageUID);
 		epadFilesTable.put("file_status", "" + SeriesProcessingStatus.IN_PIPELINE.getCode());
 		epadDatabaseOperations.insertEpadFileRecord(epadFilesTable);
 	}

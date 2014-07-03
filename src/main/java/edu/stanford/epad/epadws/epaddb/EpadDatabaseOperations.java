@@ -44,7 +44,7 @@ public interface EpadDatabaseOperations
 
 	Set<String> getAllSeriesUIDsFromEPadDatabase();
 
-	List<String> getAllImageUIDsInSeries(String seriesUID);
+	Set<String> getImageUIDsInSeries(String seriesUID);
 
 	void deleteStudy(String studyUID);
 

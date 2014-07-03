@@ -67,7 +67,7 @@ public class DSOUtil
 			String imageUID = Attribute.getSingleStringValueOrEmptyString(dicomAttributes, TagFromName.SOPInstanceUID);
 
 			String pngDirectoryPath = baseDicomDirectory + "/studies/" + studyUID + "/series/" + seriesUID + "/images/"
-					+ imageUID + "/frame/";
+					+ imageUID + "/frames/";
 			File pngFilesDirectory = new File(pngDirectoryPath);
 
 			log.info("Writing PNGs for DSO " + imageUID + " in series " + seriesUID);
@@ -79,23 +79,23 @@ public class DSOUtil
 				String pngFilePath = pngDirectoryPath + frameNumber + ".png";
 				File pngFile = new File(pngFilePath);
 				try {
-					insertEpadFile(databaseOperations, pngFile);
-					log.info("Writing PNG for frame " + frameNumber + " for DSO image " + imageUID + " in series " + seriesUID);
-					log.info("File width " + bufferedImage.getWidth() + ", height " + bufferedImage.getHeight());
+					insertEpadFile(databaseOperations, pngFile, imageUID);
+					log.info("Writing PNG for frame " + frameNumber + " for multi-frame image " + imageUID + " in series "
+							+ seriesUID);
 					ImageIO.write(bufferedImage, "png", pngFile);
 					databaseOperations.updateEpadFileRecord(pngFilePath, PNGFileProcessingStatus.DONE, 77, "");
 				} catch (IOException e) {
-					log.warning("Failure writing PNG mask file " + pngFilePath + " for image " + imageUID + " in series "
-							+ seriesUID, e);
+					log.warning("Failure writing PNG file " + pngFilePath + " for frame " + frameNumber
+							+ " in multi-frame image " + imageUID + " in series " + seriesUID, e);
 				}
 			}
-			log.info("Finished writing PNGs for DSO " + imageUID + " in series " + seriesUID);
+			log.info("Finished writing PNGs for multi-frame DICOM " + imageUID + " in series " + seriesUID);
 		} catch (DicomException e) {
-			log.warning("DICOM exception writing DSO PNGs", e);
-			throw new Exception("DICOM exception writing DSO PNGs", e);
+			log.warning("DICOM exception writing multi-frame PNGs", e);
+			throw new Exception("DICOM exception writing multi-frame PNGs", e);
 		} catch (IOException e) {
-			log.warning("IO exception writing DSO PNGs", e);
-			throw new Exception("IO exception writing DSO PNGs", e);
+			log.warning("IO exception writing multi-frame PNGs", e);
+			throw new Exception("IO exception writing multi-frame PNGs", e);
 		}
 	}
 
@@ -122,15 +122,12 @@ public class DSOUtil
 			for (int frameNumber = 0; frameNumber < numberOfFrames; frameNumber++) {
 				BufferedImage bufferedImage = sourceDSOImage.getBufferedImage(numberOfFrames - frameNumber - 1);
 				BufferedImage bufferedImageWithTransparency = generateTransparentImage(bufferedImage);
-
 				String pngMaskFilePath = pngMaskDirectoryPath + frameNumber + ".png";
 
 				File pngMaskFile = new File(pngMaskFilePath);
 				try {
-					insertEpadFile(databaseOperations, pngMaskFile);
-					log.info("Writing PNG mask file frame " + frameNumber + " for DSO image " + imageUID + " in series "
-							+ seriesUID);
-					log.info("Mask file width " + bufferedImage.getWidth() + ", height " + bufferedImage.getHeight());
+					insertEpadFile(databaseOperations, pngMaskFile, imageUID);
+					log.info("Writing PNG mask file frame " + frameNumber + " for DSO " + imageUID + " in series " + seriesUID);
 					ImageIO.write(bufferedImageWithTransparency, "png", pngMaskFile);
 					databaseOperations.updateEpadFileRecord(pngMaskFilePath, PNGFileProcessingStatus.DONE, 77, "");
 				} catch (IOException e) {
@@ -233,9 +230,9 @@ public class DSOUtil
 		return Toolkit.getDefaultToolkit().createImage(ip);
 	}
 
-	private static void insertEpadFile(EpadDatabaseOperations epadDatabaseOperations, File outputFile)
+	private static void insertEpadFile(EpadDatabaseOperations epadDatabaseOperations, File outputFile, String imageUID)
 	{
-		Map<String, String> epadFilesTable = Dcm4CheeDatabaseUtils.createEPadFilesTableData(outputFile);
+		Map<String, String> epadFilesTable = Dcm4CheeDatabaseUtils.createEPadFilesTableData(outputFile, imageUID);
 		epadFilesTable.put("file_status", "" + SeriesProcessingStatus.IN_PIPELINE.getCode());
 		epadDatabaseOperations.insertEpadFileRecord(epadFilesTable);
 	}

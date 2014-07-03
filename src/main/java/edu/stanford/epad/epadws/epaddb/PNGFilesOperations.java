@@ -59,14 +59,14 @@ public class PNGFilesOperations
 		}
 	}
 
-	public static void writePNGGridFile(String seriesUID, File pngInputFile, List<File> inputPNGGridFiles,
-			File outputPNGFile)
+	public static void writePNGGridFile(String seriesUID, String imageUID, File pngInputFile,
+			List<File> inputPNGGridFiles, File outputPNGFile)
 	{
 		EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
 		Map<String, String> epadFilesTable = new HashMap<String, String>();
 		try {
 			log.info("Creating PNG grid file " + outputPNGFile.getAbsolutePath() + " for series " + seriesUID);
-			epadFilesTable = Dcm4CheeDatabaseUtils.createEPadFilesTableData(outputPNGFile);
+			epadFilesTable = Dcm4CheeDatabaseUtils.createEPadFilesTableData(outputPNGFile, imageUID);
 
 			EPADFileUtils.createDirsAndFile(outputPNGFile);
 

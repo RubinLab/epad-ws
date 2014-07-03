@@ -399,9 +399,9 @@ public class DefaultDcm4CheeDatabaseOperations implements Dcm4CheeDatabaseOperat
 	 * Looks in DCM4CHEE database to find a list of all DICOM image descriptions.
 	 */
 	@Override
-	public List<DICOMFileDescription> getDICOMFileDescriptions(String seriesUID)
+	public Set<DICOMFileDescription> getDICOMFilesForSeries(String seriesUID)
 	{
-		List<DICOMFileDescription> dicomFileDescriptions = new ArrayList<DICOMFileDescription>();
+		Set<DICOMFileDescription> dicomFileDescriptions = new HashSet<DICOMFileDescription>();
 		Connection c = null;
 		PreparedStatement ps = null;
 		ResultSet rs = null;
@@ -416,7 +416,7 @@ public class DefaultDcm4CheeDatabaseOperations implements Dcm4CheeDatabaseOperat
 				String studyUID = resultMap.get("study_iuid");
 				String imageUID = resultMap.get("sop_iuid");
 				int instanceNumber = Integer.parseInt(resultMap.get("inst_no"));
-				String filePath = resultMap.get("file_path");
+				String filePath = resultMap.get("filepath");
 				int fileSize = Integer.parseInt(resultMap.get("file_size"));
 
 				DICOMFileDescription dicomFileDescription = new DICOMFileDescription(studyUID, seriesUID, imageUID,
@@ -513,6 +513,7 @@ public class DefaultDcm4CheeDatabaseOperations implements Dcm4CheeDatabaseOperat
 			if (rs.next()) {
 				return rs.getInt(1);
 			} else {
+				log.warning("Could not find primary key for image " + imageUID);
 				return -1;
 			}
 		} catch (SQLException sqle) {

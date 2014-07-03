@@ -29,6 +29,7 @@ public class SingleFrameDICOMPngGeneratorTask implements GeneratorTask
 	private final String patientName;
 	private final String studyUID;
 	private final String seriesUID;
+	private final String imageUID;
 	private final int instanceNumber;
 	private final File dicomFile;
 	private final File pngFile;
@@ -39,6 +40,7 @@ public class SingleFrameDICOMPngGeneratorTask implements GeneratorTask
 		this.patientName = patientName;
 		this.studyUID = dicomFileDescription.studyUID;
 		this.seriesUID = dicomFileDescription.seriesUID;
+		this.imageUID = dicomFileDescription.imageUID;
 		this.instanceNumber = dicomFileDescription.instanceNumber;
 		this.dicomFile = dicomFile;
 		this.pngFile = pngFile;
@@ -67,14 +69,14 @@ public class SingleFrameDICOMPngGeneratorTask implements GeneratorTask
 		try {
 			DicomReader instance = new DicomReader(inputDICOMFile);
 			String pngFilePath = outputPNGFile.getAbsolutePath();
-			epadFilesTableData = Dcm4CheeDatabaseUtils.createEPadFilesTableData(outputPNGFile);
+			epadFilesTableData = Dcm4CheeDatabaseUtils.createEPadFilesTableData(outputPNGFile, imageUID);
 			outputPNGFile = new File(pngFilePath);
 
 			EPADFileUtils.createDirsAndFile(outputPNGFile);
 			outputPNGStream = new FileOutputStream(outputPNGFile);
 			ImageIO.write(instance.getPackedImage(), "png", outputPNGStream);
 			outputPNGStream.close();
-			epadFilesTableData = Dcm4CheeDatabaseUtils.createEPadFilesTableData(outputPNGFile);
+			epadFilesTableData = Dcm4CheeDatabaseUtils.createEPadFilesTableData(outputPNGFile, imageUID);
 			log.info("PNG of size " + getFileSize(epadFilesTableData) + " generated for instance " + instanceNumber
 					+ " in series " + seriesUID + ", study " + studyUID + " for patient " + patientName);
 

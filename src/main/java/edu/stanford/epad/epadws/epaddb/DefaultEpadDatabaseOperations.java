@@ -763,9 +763,9 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 	 * @return List of String (sopInstanceIds).
 	 */
 	@Override
-	public List<String> getAllImageUIDsInSeries(String seriesUID)
+	public Set<String> getImageUIDsInSeries(String seriesUID)
 	{
-		List<String> retVal = new ArrayList<String>();
+		Set<String> retVal = new HashSet<String>();
 
 		Connection c = null;
 		PreparedStatement ps = null;

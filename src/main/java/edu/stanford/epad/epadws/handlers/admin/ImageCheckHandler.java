@@ -3,8 +3,7 @@ package edu.stanford.epad.epadws.handlers.admin;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashSet;
 import java.util.Set;
 
 import javax.servlet.http.HttpServletRequest;
@@ -85,15 +84,15 @@ public class ImageCheckHandler extends AbstractHandler
 				.getDcm4CheeDatabaseOperations();
 		EpadOperations epadQueries = DefaultEpadOperations.getInstance();
 		Set<String> seriesUIDs = dcm4CheeDatabaseOperations.getAllReadyDcm4CheeSeriesUIDs();
-		List<DICOMFileDescription> allUnprocessedDICOMFileDescriptions = new ArrayList<DICOMFileDescription>();
+		Set<DICOMFileDescription> allUnprocessedDICOMFileDescriptions = new HashSet<DICOMFileDescription>();
 
 		int numberOfSeriesWithMissingEPADDatabaseEntry = 0;
 
 		// Verify that each image in a DICOM series in DCM4CHEE has an entry for a generated PNG file in the ePAD database,
 		// which indicates that the image's existence was detected. We then detect that the PNG file itself exists.
 		for (String seriesUID : seriesUIDs) {
-			final List<DICOMFileDescription> unprocessedDICOMFileDescriptionsInSeries = epadQueries
-					.getUnprocessedDICOMFileDescriptionsForSeries(seriesUID);
+			final Set<DICOMFileDescription> unprocessedDICOMFileDescriptionsInSeries = epadQueries
+					.getUnprocessedDICOMFilesInSeries(seriesUID);
 			final int numberOfUnprocessedImages = unprocessedDICOMFileDescriptionsInSeries.size();
 
 			if (numberOfUnprocessedImages != 0) {

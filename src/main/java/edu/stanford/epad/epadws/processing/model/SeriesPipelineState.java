@@ -8,34 +8,34 @@ import edu.stanford.epad.common.util.EPADLogger;
  * <p>
  * When a new series is detected, it either runs to completion or until it is idle for a set amount of time.
  */
-public class DicomSeriesProcessingStatus
+public class SeriesPipelineState
 {
 	private static final EPADLogger logger = EPADLogger.getInstance();
 
 	private static final long MAX_IDLE_TIME = 30000;
 
-	private final SeriesProcessingDescription dicomSeriesProcessingDescription;
+	private final SeriesProcessingDescription seriesProcessingDescription;
 	private DicomSeriesProcessingState dicomSeriesProcessingState;
 	private long lastActivityTimeStamp;
 
-	public DicomSeriesProcessingStatus(SeriesProcessingDescription dicomSeriesProcessingDescription)
+	public SeriesPipelineState(SeriesProcessingDescription seriesProcessingDescription)
 	{
-		if (dicomSeriesProcessingDescription == null)
+		if (seriesProcessingDescription == null)
 			throw new IllegalArgumentException("DICOM series processing description cannot be null");
 
-		this.dicomSeriesProcessingDescription = dicomSeriesProcessingDescription;
+		this.seriesProcessingDescription = seriesProcessingDescription;
 		this.lastActivityTimeStamp = System.currentTimeMillis();
 		this.dicomSeriesProcessingState = DicomSeriesProcessingState.NEW;
 	}
 
 	public float percentComplete()
 	{
-		return this.dicomSeriesProcessingDescription.percentComplete();
+		return this.seriesProcessingDescription.percentComplete();
 	}
 
-	public SeriesProcessingDescription getDicomSeriesProcessingDescription()
+	public SeriesProcessingDescription getSeriesProcessingDescription()
 	{
-		return this.dicomSeriesProcessingDescription;
+		return this.seriesProcessingDescription;
 	}
 
 	public void setSeriesProcessingState(DicomSeriesProcessingState pState)
@@ -58,16 +58,16 @@ public class DicomSeriesProcessingStatus
 		long currTime = System.currentTimeMillis();
 
 		if (this.dicomSeriesProcessingState == DicomSeriesProcessingState.COMPLETE
-				|| dicomSeriesProcessingDescription.isComplete()) {
-			String seriesUID = dicomSeriesProcessingDescription.getSeriesUID();
+				|| seriesProcessingDescription.isComplete()) {
+			String seriesUID = seriesProcessingDescription.getSeriesUID();
 			logger.info("Series " + seriesUID + " is complete with "
-					+ dicomSeriesProcessingDescription.getNumberOfInstances() + " instances");
+					+ seriesProcessingDescription.getNumberOfInstances() + " instances");
 
 			return true;
 		}
 		if (currTime > lastActivityTimeStamp + MAX_IDLE_TIME) {
-			String seriesUID = dicomSeriesProcessingDescription.getSeriesUID();
-			String patientName = dicomSeriesProcessingDescription.getPatientName();
+			String seriesUID = seriesProcessingDescription.getSeriesUID();
+			String patientName = seriesProcessingDescription.getPatientName();
 			logger.info("Series " + seriesUID + " for patient " + patientName + " has completed processing.");
 			return true;
 		}

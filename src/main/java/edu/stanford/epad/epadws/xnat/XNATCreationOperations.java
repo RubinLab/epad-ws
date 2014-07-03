@@ -199,7 +199,8 @@ public class XNATCreationOperations
 
 	private static boolean isDicomFile(File file)
 	{
-		return file.isFile() && file.getName().toLowerCase().endsWith(".dcm");
+		return file.isFile()
+				&& (file.getName().toLowerCase().endsWith(".dcm") || file.getName().toLowerCase().endsWith(".dso"));
 		// return file.isFile() && DicomFileUtil.hasMagicWordInHeader(file);
 	}
 }

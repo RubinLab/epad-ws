@@ -4,8 +4,6 @@ import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
 
-import edu.stanford.epad.common.dicom.DicomFormatUtil;
-import edu.stanford.epad.common.util.EPADFileUtils;
 import edu.stanford.epad.common.util.FileKey;
 import edu.stanford.epad.dtos.SeriesProcessingStatus;
 
@@ -17,15 +15,14 @@ public class Dcm4CheeDatabaseUtils
 	 * @param file File
 	 * @return Map of String to String. The key is the database column name.
 	 */
-	public static Map<String, String> createEPadFilesTableData(File file)
+	public static Map<String, String> createEPadFilesTableData(File file, String imageUID)
 	{
 		FileKey fileKey = new FileKey(file);
 		String filePath = fileKey.toString();
 		long fileSize = file.length();
 		Dcm4CheeDatabaseOperations dcm4CheeDatabaseOperations = Dcm4CheeDatabase.getInstance()
 				.getDcm4CheeDatabaseOperations();
-		String sopInstanceUID = getSOPInstanceUIDFromPath(filePath);
-		int instanceKey = dcm4CheeDatabaseOperations.getPrimaryKeyForImageUID(sopInstanceUID);
+		int instanceKey = dcm4CheeDatabaseOperations.getPrimaryKeyForImageUID(imageUID);
 
 		Map<String, String> fileTableData = new HashMap<String, String>();
 		fileTableData.put("instance_fk", "" + instanceKey);
@@ -57,21 +54,5 @@ public class Dcm4CheeDatabaseUtils
 			return Dcm4CheeDatabaseUtils.FILE_TYPE_TAG;
 		}
 		return Dcm4CheeDatabaseUtils.FILE_TYPE_UNKNOWN;
-	}
-
-	/**
-	 * @param path Expect study/series/instance directory structure.
-	 * @return Just the instance with dots notation.
-	 */
-	public static String getSOPInstanceUIDFromPath(String path)
-	{
-		String p = EPADFileUtils.fileAbsolutePathWithoutExtension(new File(path));
-
-		p = p.replace('/', ',');
-		String[] parts = p.split(",");
-		int num = parts.length;
-
-		String[] parts2 = parts[num - 1].split("-");
-		return DicomFormatUtil.formatDirToUid(parts2[0]);
 	}
 }
