@@ -129,7 +129,9 @@ public interface EpadOperations
 	/**
 	 * Query both the ePAD and DCM4CHEE database to get information on a series.
 	 */
-	EPADDatabaseSeries getSeries(String seriesUID);
+	EPADDatabaseSeries getSeries(String studyUID, String seriesUID);
+
+	// TODO This should be deleted shortly - used by seriesorderj call.
 
 	/**
 	 * For the specified series, return a list of DICOM image file descriptions for instances that have no corresponding

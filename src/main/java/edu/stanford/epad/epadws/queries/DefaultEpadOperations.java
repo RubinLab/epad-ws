@@ -3,14 +3,15 @@ package edu.stanford.epad.epadws.queries;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import javax.servlet.http.HttpServletResponse;
 
+import edu.stanford.epad.common.dicom.DCM4CHEEImageDescription;
 import edu.stanford.epad.common.dicom.DICOMFileDescription;
 import edu.stanford.epad.common.dicom.DicomFormatUtil;
 import edu.stanford.epad.common.util.EPADLogger;
+import edu.stanford.epad.dtos.DICOMAttribute;
 import edu.stanford.epad.dtos.EPADAIM;
 import edu.stanford.epad.dtos.EPADAIMList;
 import edu.stanford.epad.dtos.EPADDatabaseImage;
@@ -259,24 +260,25 @@ public class DefaultEpadOperations implements EpadOperations
 	{
 		Dcm4CheeDatabaseOperations dcm4CheeDatabaseOperations = Dcm4CheeDatabase.getInstance()
 				.getDcm4CheeDatabaseOperations();
-		List<Map<String, String>> imageDescriptions = dcm4CheeDatabaseOperations
-				.getImageDescriptions(seriesReference.seriesUID);
+		List<DCM4CHEEImageDescription> imageDescriptions = dcm4CheeDatabaseOperations.getImageDescriptions(
+				seriesReference.studyUID, seriesReference.seriesUID);
 		EPADImageList epadImageList = new EPADImageList();
 
-		for (Map<String, String> imageDescription : imageDescriptions) {
-			String imageUID = imageDescription.get("sop_iuid");
-			String instanceNumberString = imageDescription.get("inst_no");
-			int instanceNumber = getInstanceNumber(instanceNumberString, seriesReference.seriesUID, imageUID);
-			String sliceLocation = getSliceLocation(imageDescription);
-			String imageDate = imageDescription.get("content_datetime");
-			String insertDate = imageDescription.get("created_time");
+		for (DCM4CHEEImageDescription imageDescription : imageDescriptions) {
+			String imageUID = imageDescription.imageUID;
+			int instanceNumber = imageDescription.instanceNumber;
+			String sliceLocation = imageDescription.sliceLocation;
+			String imageDate = imageDescription.contentTime;
+			String insertDate = imageDescription.createdTime;
+			List<DICOMAttribute> dicomAttributes = new ArrayList<>(); // TODO
+			List<DICOMAttribute> calculatedDICOMAttributes = new ArrayList<>(); // TODO
 			int numberOfFrames = 0; // TODO Look for MF from dcm4chee
 			String pngURL = ""; // TODO
 			String jpgURL = ""; // TODO
 
 			EPADImage epadImage = new EPADImage(seriesReference.projectID, seriesReference.subjectID,
 					seriesReference.studyUID, seriesReference.seriesUID, imageUID, insertDate, imageDate, sliceLocation,
-					instanceNumber, numberOfFrames, pngURL, jpgURL);
+					instanceNumber, pngURL, jpgURL, dicomAttributes, calculatedDICOMAttributes, numberOfFrames, false);
 
 			epadImageList.addImage(epadImage);
 		}
@@ -288,22 +290,23 @@ public class DefaultEpadOperations implements EpadOperations
 	{
 		Dcm4CheeDatabaseOperations dcm4CheeDatabaseOperations = Dcm4CheeDatabase.getInstance()
 				.getDcm4CheeDatabaseOperations();
-		Map<String, String> imageDescription = dcm4CheeDatabaseOperations.getImageDescription(imageReference.seriesUID,
-				imageReference.imageUID);
+		DCM4CHEEImageDescription imageDescription = dcm4CheeDatabaseOperations.getImageDescription(imageReference.studyUID,
+				imageReference.seriesUID, imageReference.imageUID);
 
-		String imageUID = imageDescription.get("sop_iuid");
-		String instanceNumberString = imageDescription.get("inst_no");
-		int instanceNumber = getInstanceNumber(instanceNumberString, imageReference.seriesUID, imageUID);
-		String sliceLocation = getSliceLocation(imageDescription); // entry.get("inst_custom1");
-		String imageDate = imageDescription.get("content_datetime");
-		String insertDate = imageDescription.get("created_time");
+		String imageUID = imageDescription.imageUID;
+		int instanceNumber = imageDescription.instanceNumber;
+		String sliceLocation = imageDescription.sliceLocation;
+		String imageDate = imageDescription.contentTime;
+		String insertDate = imageDescription.createdTime;
+		List<DICOMAttribute> dicomAttributes = new ArrayList<>(); // TODO
+		List<DICOMAttribute> calculatedDICOMAttributes = new ArrayList<>(); // TODO
 		int numberOfFrames = 0; // TODO Look for MF from dcm4chee
 		String pngURL = ""; // TODO
 		String jpgURL = ""; // TODO
 
 		EPADImage epadImage = new EPADImage(imageReference.projectID, imageReference.subjectID, imageReference.studyUID,
-				imageReference.seriesUID, imageUID, insertDate, imageDate, sliceLocation, instanceNumber, numberOfFrames,
-				pngURL, jpgURL);
+				imageReference.seriesUID, imageUID, insertDate, imageDate, sliceLocation, instanceNumber, pngURL, jpgURL,
+				dicomAttributes, calculatedDICOMAttributes, numberOfFrames, false);
 
 		return epadImage;
 	}
@@ -395,22 +398,22 @@ public class DefaultEpadOperations implements EpadOperations
 	}
 
 	@Override
-	public EPADDatabaseSeries getSeries(String seriesUID)
+	public EPADDatabaseSeries getSeries(String studyUID, String seriesUID)
 	{
 		Dcm4CheeDatabaseOperations dcm4CheeDatabaseOperations = Dcm4CheeDatabase.getInstance()
 				.getDcm4CheeDatabaseOperations();
-		List<Map<String, String>> imageDescriptions = dcm4CheeDatabaseOperations.getImageDescriptions(seriesUID);
+		List<DCM4CHEEImageDescription> imageDescriptions = dcm4CheeDatabaseOperations.getImageDescriptions(studyUID,
+				seriesUID);
 		List<EPADDatabaseImage> epadImageList = new ArrayList<EPADDatabaseImage>();
 
-		for (Map<String, String> imageDescription : imageDescriptions) {
-			String imageUID = imageDescription.get("sop_iuid");
-			String fileName = createFileNameField(imageUID);
-			String instanceNumberString = imageDescription.get("inst_no");
-			int instanceNumber = getInstanceNumber(instanceNumberString, seriesUID, imageUID);
-			String sliceLocation = getSliceLocation(imageDescription);
-			String contentTime = "null"; // TODO In "created_time" field of pacsdb.instance? What about updated time?
+		for (DCM4CHEEImageDescription imageDescription : imageDescriptions) {
+			String imageUID = imageDescription.imageUID;
+			String fileName = createFileNameField(imageUID); // TODO
+			int instanceNumber = imageDescription.instanceNumber;
+			String sliceLocation = imageDescription.sliceLocation;
+			String imageDate = imageDescription.contentTime;
 
-			EPADDatabaseImage epadImage = new EPADDatabaseImage(fileName, instanceNumber, sliceLocation, contentTime);
+			EPADDatabaseImage epadImage = new EPADDatabaseImage(fileName, instanceNumber, sliceLocation, imageDate);
 			epadImageList.add(epadImage);
 		}
 		return new EPADDatabaseSeries(epadImageList);
@@ -795,29 +798,6 @@ public class DefaultEpadOperations implements EpadOperations
 	private String createFileNameField(String sopInstanceUID)
 	{
 		return DicomFormatUtil.formatUidToDir(sopInstanceUID) + ".dcm";
-	}
-
-	private int getInstanceNumber(String instanceNumberString, String seriesUID, String imageUID)
-	{
-		if (instanceNumberString != null)
-			try {
-				return Integer.parseInt(instanceNumberString);
-			} catch (NumberFormatException e) {
-				log.warning("Invalid instance number " + instanceNumberString + " in image " + imageUID + " in series "
-						+ seriesUID);
-				return 1; // Invalid instance number; default to 1
-			}
-		else
-			return 1; // Missing instance number; default to 1.
-	}
-
-	private String getSliceLocation(Map<String, String> entry)
-	{
-		String sliceLoc = entry.get("inst_custom1");
-		if (sliceLoc == null)
-			return "0.0";
-		else
-			return sliceLoc;
 	}
 
 	private EPADProject xnatProject2EPADProject(String sessionID, String username, XNATProject xnatProject,

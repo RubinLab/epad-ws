@@ -205,14 +205,15 @@ public class AIMUtil
 			// TODO Not general. See if we can generate AIM on GUI upload of DSO with correct user.
 			setImageAnnotationUser(imageAnnotation, "admin");
 
-			log.info("Saving AIM file for DSO series " + seriesUID + " with ID " + imageAnnotation.getUniqueIdentifier());
+			log.info("Saving AIM file for DSO " + imageUID + " in series " + seriesUID + " with ID "
+					+ imageAnnotation.getUniqueIdentifier());
 			try {
 				saveImageAnnotationToServer(imageAnnotation);
 			} catch (AimException e) {
-				log.warning("Exception saving AIM file for DSO series " + seriesUID, e);
+				log.warning("Exception saving AIM file for DSO image " + imageUID + " in series " + seriesUID, e);
 			}
 		} else {
-			log.warning("Found DSO " + imageUID + " in series " + seriesUID + " with no corresponding DICOM image");
+			log.warning("DSO " + imageUID + " in series " + seriesUID + " with no corresponding DICOM image");
 		}
 
 		/*

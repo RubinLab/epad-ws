@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import edu.stanford.epad.common.dicom.DCM4CHEEImageDescription;
 import edu.stanford.epad.common.dicom.DICOMFileDescription;
 import edu.stanford.epad.common.dicom.DicomParentCache;
 import edu.stanford.epad.common.dicom.DicomParentType;
@@ -275,7 +276,7 @@ public class DefaultDcm4CheeDatabaseOperations implements Dcm4CheeDatabaseOperat
 		ResultSet rs = null;
 		try {
 			c = getConnection();
-			ps = c.prepareStatement(Dcm4CheeDatabaseCommands.SELECT_INSTANCE_FOR_SERIES);
+			ps = c.prepareStatement(Dcm4CheeDatabaseCommands.SELECT_IMAGE_UID_FOR_SERIES);
 			ps.setString(1, seriesUID);
 
 			rs = ps.executeQuery();
@@ -467,22 +468,24 @@ public class DefaultDcm4CheeDatabaseOperations implements Dcm4CheeDatabaseOperat
 	}
 
 	@Override
-	public List<Map<String, String>> getImageDescriptions(String seriesUID)
+	public List<DCM4CHEEImageDescription> getImageDescriptions(String studyUID, String seriesUID)
 	{
-		List<Map<String, String>> retVal = new ArrayList<Map<String, String>>();
+		List<DCM4CHEEImageDescription> retVal = new ArrayList<>();
 
 		Connection c = null;
 		PreparedStatement ps = null;
 		ResultSet rs = null;
 		try {
 			c = getConnection();
-			ps = c.prepareStatement(Dcm4CheeDatabaseCommands.SELECT_INSTANCE_FOR_SERIES_ORDER_BY_INT);
+			ps = c.prepareStatement(Dcm4CheeDatabaseCommands.SELECT_IMAGES_FOR_SERIES_ORDER_BY_INSTNO);
 			ps.setString(1, seriesUID);
 
 			rs = ps.executeQuery();
 			while (rs.next()) {
 				Map<String, String> resultMap = createResultMap(rs);
-				retVal.add(resultMap);
+				DCM4CHEEImageDescription imageDescription = extractDCM4CHEEImageDescription(studyUID, seriesUID, resultMap);
+
+				retVal.add(imageDescription);
 			}
 		} catch (SQLException e) {
 			String debugInfo = DatabaseUtils.getDebugData(rs);
@@ -491,12 +494,53 @@ public class DefaultDcm4CheeDatabaseOperations implements Dcm4CheeDatabaseOperat
 			close(c, ps, rs);
 		}
 		return retVal;
+
 	}
 
 	@Override
-	public Map<String, String> getImageDescription(String seriesUID, String imageID)
+	public DCM4CHEEImageDescription getImageDescription(String studyUID, String seriesUID, String imageUID)
 	{
-		return null; // TODO
+		Connection c = null;
+		PreparedStatement ps = null;
+		ResultSet rs = null;
+		try {
+			c = getConnection();
+			ps = c.prepareStatement(Dcm4CheeDatabaseCommands.SELECT_IMAGE_FOR_SERIES);
+			ps.setString(1, seriesUID);
+			ps.setString(2, imageUID);
+
+			rs = ps.executeQuery();
+			if (rs.next()) {
+				Map<String, String> resultMap = createResultMap(rs);
+				return extractDCM4CHEEImageDescription(studyUID, seriesUID, resultMap);
+			} else {
+				log.warning("Could not find dcm4chee image data for  " + imageUID + " in series " + seriesUID);
+				return null;
+			}
+		} catch (NumberFormatException e) {
+			log.warning("Invalid instance number in dcm4chee image " + imageUID);
+		} catch (SQLException e) {
+			String debugInfo = DatabaseUtils.getDebugData(rs);
+			log.warning("Database operation failed; debugInfo=" + debugInfo, e);
+		} finally {
+			close(c, ps, rs);
+		}
+		return null;
+	}
+
+	private DCM4CHEEImageDescription extractDCM4CHEEImageDescription(String studyUID, String seriesUID,
+			Map<String, String> resultMap)
+	{
+		String imageUID = resultMap.get("sop_iuid");
+		int instanceNumber = Integer.parseInt(resultMap.get("inst_no"));
+		String sliceLocation = resultMap.get("inst_custom1") != null ? resultMap.get("inst_custom1") : "0.0";
+		String contentTime = resultMap.get("content_datetime");
+		String updatedTime = resultMap.get("updated_time");
+		String createdTime = resultMap.get("created_time");
+		String classUID = resultMap.get("sop_cuid");
+
+		return new DCM4CHEEImageDescription(studyUID, seriesUID, imageUID, instanceNumber, sliceLocation, contentTime,
+				updatedTime, createdTime, classUID);
 	}
 
 	@Override
