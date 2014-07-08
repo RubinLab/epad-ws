@@ -45,7 +45,7 @@ public interface EpadOperations
 	EPADSeriesList getAllSeriesDescriptionsForStudy(StudyReference studyReference, String username, String sessionID,
 			EPADSearchFilter searchFilter);
 
-	EPADImageList getAllImageDescriptionsForSeries(SeriesReference seriesReference, String sessionID,
+	EPADImageList getAllImageForSeries(SeriesReference seriesReference, String sessionID,
 			EPADSearchFilter searchFilter);
 
 	EPADFrameList getAllFrameDescriptionsForImage(ImageReference imageReference, String sessionID,

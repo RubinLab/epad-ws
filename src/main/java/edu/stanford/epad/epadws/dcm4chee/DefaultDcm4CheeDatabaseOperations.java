@@ -397,7 +397,7 @@ public class DefaultDcm4CheeDatabaseOperations implements Dcm4CheeDatabaseOperat
 	}
 
 	/**
-	 * Looks in DCM4CHEE database to find a list of all DICOM image descriptions.
+	 * Looks in DCM4CHEE database to find a list of all DICOM file descriptions.
 	 */
 	@Override
 	public Set<DICOMFileDescription> getDICOMFilesForSeries(String seriesUID)
@@ -435,38 +435,6 @@ public class DefaultDcm4CheeDatabaseOperations implements Dcm4CheeDatabaseOperat
 		return dicomFileDescriptions;
 	}
 
-	/**
-	 * Looks in DCM4CHEE database to find a list of all DICOM image descriptions (table is pacsdb.files).
-	 * 
-	 * Keys: study_iuid, sop_iuid, inst_no, series_iuid, filepath, file_size,
-	 */
-	@SuppressWarnings("unused")
-	// Replaced by getDICOMFileDescriptions. Delete after testing.
-	private List<Map<String, String>> getDICOMFileDescriptionsForSeries(String seriesUID)
-	{
-		List<Map<String, String>> retVal = new ArrayList<Map<String, String>>();
-		Connection c = null;
-		PreparedStatement ps = null;
-		ResultSet rs = null;
-
-		try {
-			c = getConnection();
-			ps = c.prepareStatement(Dcm4CheeDatabaseCommands.SELECT_FILES_FOR_SERIES);
-			ps.setString(1, seriesUID);
-			rs = ps.executeQuery();
-			while (rs.next()) {
-				Map<String, String> resultMap = createResultMap(rs);
-				retVal.add(resultMap);
-			}
-		} catch (SQLException sqle) {
-			String debugInfo = DatabaseUtils.getDebugData(rs);
-			log.warning("Database operation failed; debugInfo=" + debugInfo, sqle);
-		} finally {
-			close(c, ps, rs);
-		}
-		return retVal;
-	}
-
 	@Override
 	public List<DCM4CHEEImageDescription> getImageDescriptions(String studyUID, String seriesUID)
 	{
@@ -484,7 +452,6 @@ public class DefaultDcm4CheeDatabaseOperations implements Dcm4CheeDatabaseOperat
 			while (rs.next()) {
 				Map<String, String> resultMap = createResultMap(rs);
 				DCM4CHEEImageDescription imageDescription = extractDCM4CHEEImageDescription(studyUID, seriesUID, resultMap);
-
 				retVal.add(imageDescription);
 			}
 		} catch (SQLException e) {
@@ -494,7 +461,6 @@ public class DefaultDcm4CheeDatabaseOperations implements Dcm4CheeDatabaseOperat
 			close(c, ps, rs);
 		}
 		return retVal;
-
 	}
 
 	@Override
@@ -585,7 +551,6 @@ public class DefaultDcm4CheeDatabaseOperations implements Dcm4CheeDatabaseOperat
 			String columnData = resultSet.getString(i);
 			retVal.put(columnName, columnData);
 		}
-
 		return retVal;
 	}
 

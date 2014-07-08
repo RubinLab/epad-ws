@@ -221,7 +221,7 @@ public class EPADHandler extends AbstractHandler
 
 			} else if (HandlerUtil.matchesTemplate(RouteTemplates.IMAGE_LIST, pathInfo)) {
 				SeriesReference seriesReference = SeriesReference.extract(RouteTemplates.IMAGE_LIST, pathInfo);
-				EPADImageList imageList = epadOperations.getAllImageDescriptionsForSeries(seriesReference, sessionID,
+				EPADImageList imageList = epadOperations.getAllImageForSeries(seriesReference, sessionID,
 						searchFilter);
 				responseStream.append(imageList.toJSON());
 				statusCode = HttpServletResponse.SC_OK;

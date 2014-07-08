@@ -255,7 +255,7 @@ public class DefaultEpadOperations implements EpadOperations
 	}
 
 	@Override
-	public EPADImageList getAllImageDescriptionsForSeries(SeriesReference seriesReference, String sessionID,
+	public EPADImageList getAllImageForSeries(SeriesReference seriesReference, String sessionID,
 			EPADSearchFilter searchFilter)
 	{
 		Dcm4CheeDatabaseOperations dcm4CheeDatabaseOperations = Dcm4CheeDatabase.getInstance()
@@ -265,21 +265,8 @@ public class DefaultEpadOperations implements EpadOperations
 		EPADImageList epadImageList = new EPADImageList();
 
 		for (DCM4CHEEImageDescription imageDescription : imageDescriptions) {
-			String imageUID = imageDescription.imageUID;
-			int instanceNumber = imageDescription.instanceNumber;
-			String sliceLocation = imageDescription.sliceLocation;
-			String imageDate = imageDescription.contentTime;
-			String insertDate = imageDescription.createdTime;
-			List<DICOMAttribute> dicomAttributes = new ArrayList<>(); // TODO
-			List<DICOMAttribute> calculatedDICOMAttributes = new ArrayList<>(); // TODO
-			int numberOfFrames = 0; // TODO Look for MF from dcm4chee
-			String pngURL = ""; // TODO
-			String jpgURL = ""; // TODO
-
-			EPADImage epadImage = new EPADImage(seriesReference.projectID, seriesReference.subjectID,
-					seriesReference.studyUID, seriesReference.seriesUID, imageUID, insertDate, imageDate, sliceLocation,
-					instanceNumber, pngURL, jpgURL, dicomAttributes, calculatedDICOMAttributes, numberOfFrames, false);
-
+			EPADImage epadImage = createEPADImage(seriesReference.projectID, seriesReference.subjectID,
+					seriesReference.studyUID, seriesReference.seriesUID, imageDescription);
 			epadImageList.addImage(epadImage);
 		}
 		return epadImageList;
@@ -293,22 +280,8 @@ public class DefaultEpadOperations implements EpadOperations
 		DCM4CHEEImageDescription imageDescription = dcm4CheeDatabaseOperations.getImageDescription(imageReference.studyUID,
 				imageReference.seriesUID, imageReference.imageUID);
 
-		String imageUID = imageDescription.imageUID;
-		int instanceNumber = imageDescription.instanceNumber;
-		String sliceLocation = imageDescription.sliceLocation;
-		String imageDate = imageDescription.contentTime;
-		String insertDate = imageDescription.createdTime;
-		List<DICOMAttribute> dicomAttributes = new ArrayList<>(); // TODO
-		List<DICOMAttribute> calculatedDICOMAttributes = new ArrayList<>(); // TODO
-		int numberOfFrames = 0; // TODO Look for MF from dcm4chee
-		String pngURL = ""; // TODO
-		String jpgURL = ""; // TODO
-
-		EPADImage epadImage = new EPADImage(imageReference.projectID, imageReference.subjectID, imageReference.studyUID,
-				imageReference.seriesUID, imageUID, insertDate, imageDate, sliceLocation, instanceNumber, pngURL, jpgURL,
-				dicomAttributes, calculatedDICOMAttributes, numberOfFrames, false);
-
-		return epadImage;
+		return createEPADImage(imageReference.projectID, imageReference.subjectID, imageReference.studyUID,
+				imageReference.seriesUID, imageDescription);
 	}
 
 	@Override
@@ -846,7 +819,6 @@ public class DefaultEpadOperations implements EpadOperations
 			String insertDate = xnatSubject.insert_date;
 			int numberOfAnnotations = AIMQueries.getNumberOfAIMAnnotationsForPatient(patientID, username);
 			if (!searchFilter.shouldFilterSubject(patientID, patientName, numberOfAnnotations)) {
-				// Set<String> examTypes = epadQueries.getExamTypesForPatient(projectID, patientID, sessionID, searchFilter);
 				Set<String> examTypes = epadQueries.getExamTypesForSubject(patientID);
 
 				if (!searchFilter.shouldFilterSubject(patientID, patientName, examTypes, numberOfAnnotations)) {
@@ -860,5 +832,23 @@ public class DefaultEpadOperations implements EpadOperations
 				return null;
 		} else
 			return null;
+	}
+
+	private EPADImage createEPADImage(String projectID, String subjectID, String studyUID, String seriesUID,
+			DCM4CHEEImageDescription imageDescription)
+	{
+		String imageUID = imageDescription.imageUID;
+		int instanceNumber = imageDescription.instanceNumber;
+		String sliceLocation = imageDescription.sliceLocation;
+		String imageDate = imageDescription.contentTime;
+		String insertDate = imageDescription.createdTime;
+		List<DICOMAttribute> dicomAttributes = new ArrayList<>(); // TODO
+		List<DICOMAttribute> calculatedDICOMAttributes = new ArrayList<>(); // TODO
+		int numberOfFrames = 0; // TODO Look for MF from dcm4chee
+		String pngURL = ""; // TODO
+		String jpgURL = ""; // TODO
+
+		return new EPADImage(projectID, subjectID, studyUID, seriesUID, imageUID, insertDate, imageDate, sliceLocation,
+				instanceNumber, pngURL, jpgURL, dicomAttributes, calculatedDICOMAttributes, numberOfFrames, false);
 	}
 }

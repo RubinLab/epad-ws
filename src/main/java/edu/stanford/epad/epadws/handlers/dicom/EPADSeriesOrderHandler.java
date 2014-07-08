@@ -39,7 +39,7 @@ import edu.stanford.epad.epadws.xnat.XNATSessionOperations;
  * curl -b JSESSIONID=<id> -X GET "http://[host]:[port]/epad/seriesorderj/?series_iuid=1.2.840.113619.2.55.3.25168424.5576.1168603848.697"
  * </code>
  */
-public class EPADSeriesOrderHandler extends AbstractHandler
+public class EPADSeriesOrderHandler extends AbstractHandler // TODO This should be deleted soon
 {
 	private static final EPADLogger log = EPADLogger.getInstance();
 
