@@ -147,12 +147,12 @@ public class Dcm4CheeQueries
 		DICOMElementList dicomElementList = new DICOMElementList();
 
 		try {
-			File tempDICOMFile = File.createTempFile(imageUID, ".tmp");
-			int wadoStatusCode = DCM4CHEEUtil.downloadDICOMFileFromWADO(studyUID, seriesUID, imageUID, tempDICOMFile);
+			File temporaryDICOMFile = File.createTempFile(imageUID, ".tmp");
+			int wadoStatusCode = DCM4CHEEUtil.downloadDICOMFileFromWADO(studyUID, seriesUID, imageUID, temporaryDICOMFile);
 			if (wadoStatusCode == HttpServletResponse.SC_OK) {
 				File tempTag = File.createTempFile(imageUID, "_tag.tmp");
 				ExecutorService taskExecutor = Executors.newFixedThreadPool(4);
-				taskExecutor.execute(new DicomHeadersTask(seriesUID, tempDICOMFile, tempTag));
+				taskExecutor.execute(new DicomHeadersTask(seriesUID, temporaryDICOMFile, tempTag));
 				taskExecutor.shutdown();
 				try {
 					taskExecutor.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
@@ -178,11 +178,11 @@ public class Dcm4CheeQueries
 					log.warning("DICOM headers task for series " + seriesUID + " interrupted!");
 				}
 			} else {
-				log.warning("Error invoking WADO to get DICOM headers for series " + seriesUID + "; status code="
+				log.warning("Error invoking dcm4chee to get DICOM headers for series " + seriesUID + "; status code="
 						+ wadoStatusCode);
 			}
 		} catch (IOException e) {
-			log.warning("IOException retrieving DICOM headers for series " + seriesUID, e);
+			log.warning("IOException retrieving DICOM headers for image " + imageUID + " in series " + seriesUID, e);
 		}
 		return dicomElementList;
 	}

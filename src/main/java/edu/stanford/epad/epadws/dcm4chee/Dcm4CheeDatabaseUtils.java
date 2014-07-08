@@ -10,7 +10,8 @@ import edu.stanford.epad.dtos.SeriesProcessingStatus;
 public class Dcm4CheeDatabaseUtils
 {
 	/**
-	 * Given a file generate the data to update the ePAD database table that contains information about that file.
+	 * Given a file and an image UID, generate the data to update the ePAD database table that contains information about
+	 * that file.
 	 * 
 	 * @param file File
 	 * @return Map of String to String. The key is the database column name.

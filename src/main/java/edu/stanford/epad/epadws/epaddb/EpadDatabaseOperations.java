@@ -34,9 +34,9 @@ public interface EpadDatabaseOperations
 
 	void deleteEPADFile(FrameReference frameReference);
 
-	String getPNGLocation(ImageReference imageReference);
+	String getPNGLocation(String studyUID, String seriesUID, String imageUID);
 
-	String getJPGLocation(ImageReference imageReference);
+	String getPNGLocation(ImageReference imageReference);
 
 	String getPNGLocation(FrameReference frameReference);
 

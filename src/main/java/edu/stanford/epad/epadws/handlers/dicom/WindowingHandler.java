@@ -91,15 +91,14 @@ public class WindowingHandler extends AbstractHandler
 	{
 		boolean dicomFileDownloaded = false;
 		boolean success = false;
-		File tempDicomFile = null;
+		File temporaryDicomFile = null;
 
 		try {
-			tempDicomFile = File.createTempFile(imageUID, ".tmp");
-
-			DCM4CHEEUtil.downloadDICOMFileFromWADO(studyUID, seriesUID, imageUID, tempDicomFile);
+			temporaryDicomFile = File.createTempFile(imageUID, ".dcm");
+			DCM4CHEEUtil.downloadDICOMFileFromWADO(studyUID, seriesUID, imageUID, temporaryDicomFile);
 			dicomFileDownloaded = true;
 		} catch (IOException e) {
-			log.warning("Error getting DICOM file from WADO for image " + imageUID + " in series " + seriesUID, e);
+			log.warning("Error getting DICOM file from dcm4chee for image " + imageUID + " in series " + seriesUID, e);
 		}
 
 		if (dicomFileDownloaded) {
@@ -107,16 +106,14 @@ public class WindowingHandler extends AbstractHandler
 				double windowWidth = 1.0;
 				double windowCenter = 0.0;
 
+				String imageFilePath = temporaryDicomFile.getAbsolutePath();
 				Opener opener = new Opener();
-				String imageFilePath = tempDicomFile.getAbsolutePath();
-				ImagePlus imp = opener.openImage(imageFilePath);// ImageProcessor ip = imp.getProcessor();
+				ImagePlus image = opener.openImage(imageFilePath);
 
-				if (imp != null) { // ImageJ failed to open DICOM file
-					double min = imp.getDisplayRangeMin();
-					double max = imp.getDisplayRangeMax();
-					Calibration cal = imp.getCalibration();
-					// int digits = (ip instanceof FloatProcessor) || cal.calibrated() ? 2 : 0;
-
+				if (image != null) {
+					double min = image.getDisplayRangeMin();
+					double max = image.getDisplayRangeMax();
+					Calibration cal = image.getCalibration();
 					double minValue = cal.getCValue(min);
 					double maxValue = cal.getCValue(max);
 					windowWidth = (maxValue - minValue);
@@ -128,13 +125,6 @@ public class WindowingHandler extends AbstractHandler
 					log.warning("ImageJ failed to load DICOM file for image " + imageUID + " in series " + seriesUID
 							+ " to calculate windowing");
 				}
-				// This is Pixelmed variant (though does not seem to be correct).
-				// SourceImage srcDicomImage = new SourceImage(tempDicomFile.getAbsolutePath());
-				// ImageEnhancer imageEnhancer = new ImageEnhancer(srcDicomImage);
-				// imageEnhancer.findVisuParametersImage();
-				// windowWidth = imageEnhancer.getWindowWidth();
-				// windowCenter = imageEnhancer.getWindowCenter();
-
 				String separator = EPADConfig.fieldSeparator;
 				responseStream.println("windowWidth" + separator + "windowCenter");
 				responseStream.println(windowWidth + separator + windowCenter);

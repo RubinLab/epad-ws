@@ -67,13 +67,36 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 	@Override
 	public String getPNGLocation(ImageReference imageReference)
 	{
-		return ""; // TODO
+		return getPNGLocation(imageReference.studyUID, imageReference.seriesUID, imageReference.imageUID);
 	}
 
 	@Override
-	public String getJPGLocation(ImageReference imageReference)
+	public String getPNGLocation(String studyUID, String seriesUID, String imageUID)
 	{
-		return ""; // TODO
+		Connection c = null;
+		PreparedStatement ps = null;
+		ResultSet rs = null;
+		String pngFilePath = null;
+
+		try {
+			c = getConnection();
+			ps = c.prepareStatement(EpadDatabaseCommands.SELECT_EPAD_FILE_PATH_FOR_IMAGE);
+			ps.setString(1, imageUID);
+			rs = ps.executeQuery();
+			if (rs.next()) {
+				pngFilePath = rs.getString(1);
+			}
+		} catch (SQLException sqle) {
+			String debugInfo = DatabaseUtils.getDebugData(rs);
+			log.warning("Database operation failed; debugInfo=" + debugInfo, sqle);
+			return null;
+		} finally {
+			close(c, ps, rs);
+		}
+		if (pngFilePath == null)
+			log.warning("Could not get PNG file path for image " + imageUID);
+
+		return pngFilePath;
 	}
 
 	@Override
@@ -772,7 +795,7 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 		ResultSet rs = null;
 		try {
 			c = getConnection();
-			ps = c.prepareStatement(EpadDatabaseCommands.SELECT_EPAD_FILES_FOR_SERIES);
+			ps = c.prepareStatement(EpadDatabaseCommands.SELECT_EPAD_IMAGE_UIDS_FOR_SERIES);
 			ps.setString(1, seriesUID);
 
 			rs = ps.executeQuery();

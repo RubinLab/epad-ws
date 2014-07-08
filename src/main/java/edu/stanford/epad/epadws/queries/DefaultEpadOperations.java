@@ -1,5 +1,11 @@
 package edu.stanford.epad.epadws.queries;
 
+import ij.ImagePlus;
+import ij.io.Opener;
+import ij.measure.Calibration;
+
+import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -8,10 +14,11 @@ import java.util.Set;
 import javax.servlet.http.HttpServletResponse;
 
 import edu.stanford.epad.common.dicom.DCM4CHEEImageDescription;
+import edu.stanford.epad.common.dicom.DCM4CHEEUtil;
 import edu.stanford.epad.common.dicom.DICOMFileDescription;
 import edu.stanford.epad.common.dicom.DicomFormatUtil;
+import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADLogger;
-import edu.stanford.epad.dtos.DICOMAttribute;
 import edu.stanford.epad.dtos.EPADAIM;
 import edu.stanford.epad.dtos.EPADAIMList;
 import edu.stanford.epad.dtos.EPADDatabaseImage;
@@ -34,6 +41,7 @@ import edu.stanford.epad.dtos.internal.DCM4CHEESeries;
 import edu.stanford.epad.dtos.internal.DCM4CHEESeriesList;
 import edu.stanford.epad.dtos.internal.DCM4CHEEStudy;
 import edu.stanford.epad.dtos.internal.DCM4CHEEStudyList;
+import edu.stanford.epad.dtos.internal.DICOMElementList;
 import edu.stanford.epad.dtos.internal.XNATExperiment;
 import edu.stanford.epad.dtos.internal.XNATProject;
 import edu.stanford.epad.dtos.internal.XNATProjectList;
@@ -264,10 +272,25 @@ public class DefaultEpadOperations implements EpadOperations
 				seriesReference.studyUID, seriesReference.seriesUID);
 		EPADImageList epadImageList = new EPADImageList();
 
+		boolean isFirst = true;
 		for (DCM4CHEEImageDescription imageDescription : imageDescriptions) {
-			EPADImage epadImage = createEPADImage(seriesReference.projectID, seriesReference.subjectID,
-					seriesReference.studyUID, seriesReference.seriesUID, imageDescription);
-			epadImageList.addImage(epadImage);
+			if (isFirst) {
+				DICOMElementList dicomElements = getDICOMElements(imageDescription.studyUID, imageDescription.seriesUID,
+						imageDescription.imageUID);
+				DICOMElementList calculatedDICOMElements = getCalculatedDICOMElements(imageDescription.studyUID,
+						imageDescription.seriesUID, imageDescription.imageUID);
+
+				EPADImage epadImage = createEPADImage(seriesReference.projectID, seriesReference.subjectID,
+						seriesReference.studyUID, seriesReference.seriesUID, imageDescription, dicomElements,
+						calculatedDICOMElements);
+
+				epadImageList.addImage(epadImage);
+				isFirst = false;
+			} else {
+				EPADImage epadImage = createEPADImage(seriesReference.projectID, seriesReference.subjectID,
+						seriesReference.studyUID, seriesReference.seriesUID, imageDescription);
+				epadImageList.addImage(epadImage);
+			}
 		}
 		return epadImageList;
 	}
@@ -275,13 +298,18 @@ public class DefaultEpadOperations implements EpadOperations
 	@Override
 	public EPADImage getImageDescription(ImageReference imageReference, String sessionID)
 	{
+		String studyUID = imageReference.studyUID;
+		String seriesUID = imageReference.seriesUID;
+		String imageUID = imageReference.imageUID;
 		Dcm4CheeDatabaseOperations dcm4CheeDatabaseOperations = Dcm4CheeDatabase.getInstance()
 				.getDcm4CheeDatabaseOperations();
-		DCM4CHEEImageDescription imageDescription = dcm4CheeDatabaseOperations.getImageDescription(imageReference.studyUID,
-				imageReference.seriesUID, imageReference.imageUID);
+		DCM4CHEEImageDescription imageDescription = dcm4CheeDatabaseOperations.getImageDescription(studyUID, seriesUID,
+				imageUID);
+		DICOMElementList dicomElements = getDICOMElements(studyUID, seriesUID, imageUID);
+		DICOMElementList calculatedDICOMElements = getCalculatedDICOMElements(studyUID, seriesUID, imageUID);
 
 		return createEPADImage(imageReference.projectID, imageReference.subjectID, imageReference.studyUID,
-				imageReference.seriesUID, imageDescription);
+				imageReference.seriesUID, imageDescription, dicomElements, calculatedDICOMElements);
 	}
 
 	@Override
@@ -834,21 +862,95 @@ public class DefaultEpadOperations implements EpadOperations
 			return null;
 	}
 
+	// 1.2.840.10008.5.1.4.1.1.66.4 Segmentation Storage dcm4cheeImageDescription.classUID
 	private EPADImage createEPADImage(String projectID, String subjectID, String studyUID, String seriesUID,
-			DCM4CHEEImageDescription imageDescription)
+			DCM4CHEEImageDescription dcm4CheeImageDescription, DICOMElementList dicomElements,
+			DICOMElementList calculatedDICOMElements)
 	{
-		String imageUID = imageDescription.imageUID;
-		int instanceNumber = imageDescription.instanceNumber;
-		String sliceLocation = imageDescription.sliceLocation;
-		String imageDate = imageDescription.contentTime;
-		String insertDate = imageDescription.createdTime;
-		List<DICOMAttribute> dicomAttributes = new ArrayList<>(); // TODO
-		List<DICOMAttribute> calculatedDICOMAttributes = new ArrayList<>(); // TODO
+		String imageUID = dcm4CheeImageDescription.imageUID;
+		int instanceNumber = dcm4CheeImageDescription.instanceNumber;
+		String sliceLocation = dcm4CheeImageDescription.sliceLocation;
+		String imageDate = dcm4CheeImageDescription.contentTime;
+		String insertDate = dcm4CheeImageDescription.createdTime;
 		int numberOfFrames = 0; // TODO Look for MF from dcm4chee
-		String pngURL = ""; // TODO
-		String jpgURL = ""; // TODO
+		String pngPath = getPNGPath(studyUID, seriesUID, imageUID);
+		String jpgPath = "TODO"; // TODO
 
 		return new EPADImage(projectID, subjectID, studyUID, seriesUID, imageUID, insertDate, imageDate, sliceLocation,
-				instanceNumber, pngURL, jpgURL, dicomAttributes, calculatedDICOMAttributes, numberOfFrames, false);
+				instanceNumber, pngPath, jpgPath, dicomElements, calculatedDICOMElements, numberOfFrames, false);
+	}
+
+	private String getPNGPath(String studyUID, String seriesUID, String imageUID)
+	{ // TODO Look at this. Not very robust.
+		String pngLocation = epadDatabaseOperations.getPNGLocation(studyUID, seriesUID, imageUID);
+		String pngPath = pngLocation.substring(EPADConfig.getEPADWebServerPNGDir().length());
+
+		return pngPath;
+	}
+
+	private EPADImage createEPADImage(String projectID, String subjectID, String studyUID, String seriesUID,
+			DCM4CHEEImageDescription dcm4CheeImageDescription)
+	{
+		return createEPADImage(projectID, subjectID, studyUID, seriesUID, dcm4CheeImageDescription, null, null);
+	}
+
+	@SuppressWarnings("unused")
+	private DICOMElementList getDICOMElements(ImageReference imageReference)
+	{
+		return getDICOMElements(imageReference.studyUID, imageReference.seriesUID, imageReference.imageUID);
+	}
+
+	private DICOMElementList getDICOMElements(String studyUID, String seriesUID, String imageUID)
+	{
+		DICOMElementList dicomElementList = Dcm4CheeQueries.getDICOMElementsFromWADO(studyUID, seriesUID, imageUID);
+
+		if (dicomElementList == null)
+			log.warning("Could not get DICOM header for image " + imageUID + " in series " + seriesUID);
+
+		return dicomElementList;
+	}
+
+	private DICOMElementList getCalculatedDICOMElements(String studyUID, String seriesUID, String imageUID)
+	{
+		DICOMElementList dicomElementList = new DICOMElementList();
+
+		return dicomElementList;
+	}
+
+	@SuppressWarnings("unused")
+	// TODO
+	private DICOMElementList f(String studyUID, String seriesUID, String imageUID)
+	{
+		DICOMElementList result = new DICOMElementList();
+
+		try {
+			File temporaryDicomFile = File.createTempFile(imageUID, ".dcm");
+			DCM4CHEEUtil.downloadDICOMFileFromWADO(studyUID, seriesUID, imageUID, temporaryDicomFile);
+			double windowWidth = 1.0;
+			double windowCenter = 0.0;
+
+			String dicomImageFilePath = temporaryDicomFile.getAbsolutePath();
+			Opener opener = new Opener();
+			ImagePlus image = opener.openImage(dicomImageFilePath);
+
+			if (image != null) {
+				double min = image.getDisplayRangeMin();
+				double max = image.getDisplayRangeMax();
+				Calibration cal = image.getCalibration();
+				double minValue = cal.getCValue(min);
+				double maxValue = cal.getCValue(max);
+				windowWidth = (maxValue - minValue);
+				windowCenter = (minValue + windowWidth / 2.0);
+
+				log.info("Image " + imageUID + " in series " + seriesUID + " has a calculated window width of " + windowWidth
+						+ " and window center of " + windowCenter);
+			} else {
+				log.warning("ImageJ failed to load DICOM file for image " + imageUID + " in series " + seriesUID
+						+ " to calculate windowing");
+			}
+		} catch (IOException e) {
+			log.warning("Error getting DICOM file from dcm4chee for image " + imageUID + " in series " + seriesUID, e);
+		}
+		return result;
 	}
 }
