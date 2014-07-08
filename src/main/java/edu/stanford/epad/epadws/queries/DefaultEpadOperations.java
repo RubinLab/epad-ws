@@ -868,16 +868,18 @@ public class DefaultEpadOperations implements EpadOperations
 			DICOMElementList calculatedDICOMElements)
 	{
 		String imageUID = dcm4CheeImageDescription.imageUID;
+		String classUID = dcm4CheeImageDescription.classUID;
 		int instanceNumber = dcm4CheeImageDescription.instanceNumber;
 		String sliceLocation = dcm4CheeImageDescription.sliceLocation;
 		String imageDate = dcm4CheeImageDescription.contentTime;
 		String insertDate = dcm4CheeImageDescription.createdTime;
 		int numberOfFrames = 0; // TODO Look for MF from dcm4chee
-		String pngPath = getPNGPath(studyUID, seriesUID, imageUID);
-		String jpgPath = "TODO"; // TODO
+		String losslessImage = getPNGPath(studyUID, seriesUID, imageUID);
+		String lossyImage = "TODO"; // TODO
 
-		return new EPADImage(projectID, subjectID, studyUID, seriesUID, imageUID, insertDate, imageDate, sliceLocation,
-				instanceNumber, pngPath, jpgPath, dicomElements, calculatedDICOMElements, numberOfFrames, false);
+		return new EPADImage(projectID, subjectID, studyUID, seriesUID, imageUID, classUID, insertDate, imageDate,
+				sliceLocation, instanceNumber, losslessImage, lossyImage, dicomElements, calculatedDICOMElements,
+				numberOfFrames, false);
 	}
 
 	private String getPNGPath(String studyUID, String seriesUID, String imageUID)
