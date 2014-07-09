@@ -1,6 +1,6 @@
 package edu.stanford.epad.epadws.handlers.core;
 
-public class RouteTemplates
+public class ProjectsRouteTemplates
 {
 	public static final String PROJECT_LIST = "/projects/";
 	public static final String PROJECT = PROJECT_LIST + "{project}";

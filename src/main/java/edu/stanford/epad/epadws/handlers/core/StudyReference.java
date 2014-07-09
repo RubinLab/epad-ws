@@ -20,8 +20,8 @@ public class StudyReference
 	public static StudyReference extract(String template, String pathInfo)
 	{
 		Map<String, String> templateMap = HandlerUtil.getTemplateMap(template, pathInfo);
-		String projectID = HandlerUtil.getTemplateParameter(templateMap, "project");
-		String subjectID = HandlerUtil.getTemplateParameter(templateMap, "subject");
+		String projectID = HandlerUtil.getTemplateParameter(templateMap, "project", "");
+		String subjectID = HandlerUtil.getTemplateParameter(templateMap, "subject", "");
 		String studyUID = HandlerUtil.getTemplateParameter(templateMap, "study");
 
 		ProjectReference.validateProjectID(projectID);

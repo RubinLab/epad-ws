@@ -24,8 +24,8 @@ public class ImageReference
 	public static ImageReference extract(String template, String pathInfo)
 	{
 		Map<String, String> templateMap = HandlerUtil.getTemplateMap(template, pathInfo);
-		String projectID = HandlerUtil.getTemplateParameter(templateMap, "project");
-		String subjectID = HandlerUtil.getTemplateParameter(templateMap, "subject");
+		String projectID = HandlerUtil.getTemplateParameter(templateMap, "project", "");
+		String subjectID = HandlerUtil.getTemplateParameter(templateMap, "subject", "");
 		String studyUID = HandlerUtil.getTemplateParameter(templateMap, "study");
 		String seriesUID = HandlerUtil.getTemplateParameter(templateMap, "series");
 		String imageUID = HandlerUtil.getTemplateParameter(templateMap, "image");
