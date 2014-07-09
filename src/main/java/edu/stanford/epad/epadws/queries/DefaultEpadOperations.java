@@ -879,8 +879,8 @@ public class DefaultEpadOperations implements EpadOperations
 		String lossyImage = "TODO"; // TODO
 
 		return new EPADImage(projectID, subjectID, studyUID, seriesUID, imageUID, classUID, insertDate, imageDate,
-				sliceLocation, instanceNumber, losslessImage, lossyImage, dicomElements, defaultDICOMElements,
-				numberOfFrames, false);
+				sliceLocation, instanceNumber, losslessImage, lossyImage, dicomElements, defaultDICOMElements, numberOfFrames,
+				false);
 	}
 
 	private String getPNGPath(String studyUID, String seriesUID, String imageUID)
@@ -935,6 +935,11 @@ public class DefaultEpadOperations implements EpadOperations
 		dicomElements.add(new DICOMElement(PixelMedUtils.RowsTagCode, PixelMedUtils.RowsTagName, "512"));
 
 		dicomElements.add(new DICOMElement(PixelMedUtils.ColumnsTagCode, PixelMedUtils.ColumnsTagName, "512"));
+
+		dicomElements.add(new DICOMElement(PixelMedUtils.BitsStoredCode, PixelMedUtils.BitsStoredTagName, "16"));
+
+		dicomElements.add(new DICOMElement(PixelMedUtils.PixelRepresentationCode, PixelMedUtils.PixelRepresentationTagName,
+				"0"));
 
 		dicomElements.addAll(getCalculatedWindowingDICOMElements(studyUID, seriesUID, imageUID));
 
