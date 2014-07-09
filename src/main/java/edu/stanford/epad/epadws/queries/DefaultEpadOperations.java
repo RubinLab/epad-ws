@@ -17,6 +17,7 @@ import edu.stanford.epad.common.dicom.DCM4CHEEImageDescription;
 import edu.stanford.epad.common.dicom.DCM4CHEEUtil;
 import edu.stanford.epad.common.dicom.DICOMFileDescription;
 import edu.stanford.epad.common.dicom.DicomFormatUtil;
+import edu.stanford.epad.common.pixelmed.PixelMedUtils;
 import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.epad.dtos.EPADAIM;
@@ -41,6 +42,7 @@ import edu.stanford.epad.dtos.internal.DCM4CHEESeries;
 import edu.stanford.epad.dtos.internal.DCM4CHEESeriesList;
 import edu.stanford.epad.dtos.internal.DCM4CHEEStudy;
 import edu.stanford.epad.dtos.internal.DCM4CHEEStudyList;
+import edu.stanford.epad.dtos.internal.DICOMElement;
 import edu.stanford.epad.dtos.internal.DICOMElementList;
 import edu.stanford.epad.dtos.internal.XNATExperiment;
 import edu.stanford.epad.dtos.internal.XNATProject;
@@ -277,7 +279,7 @@ public class DefaultEpadOperations implements EpadOperations
 			if (isFirst) {
 				DICOMElementList dicomElements = getDICOMElements(imageDescription.studyUID, imageDescription.seriesUID,
 						imageDescription.imageUID);
-				DICOMElementList calculatedDICOMElements = getCalculatedDICOMElements(imageDescription.studyUID,
+				DICOMElementList calculatedDICOMElements = getDefaultDICOMElements(imageDescription.studyUID,
 						imageDescription.seriesUID, imageDescription.imageUID);
 
 				EPADImage epadImage = createEPADImage(seriesReference.projectID, seriesReference.subjectID,
@@ -306,7 +308,7 @@ public class DefaultEpadOperations implements EpadOperations
 		DCM4CHEEImageDescription imageDescription = dcm4CheeDatabaseOperations.getImageDescription(studyUID, seriesUID,
 				imageUID);
 		DICOMElementList dicomElements = getDICOMElements(studyUID, seriesUID, imageUID);
-		DICOMElementList calculatedDICOMElements = getCalculatedDICOMElements(studyUID, seriesUID, imageUID);
+		DICOMElementList calculatedDICOMElements = getDefaultDICOMElements(studyUID, seriesUID, imageUID);
 
 		return createEPADImage(imageReference.projectID, imageReference.subjectID, imageReference.studyUID,
 				imageReference.seriesUID, imageDescription, dicomElements, calculatedDICOMElements);
@@ -912,24 +914,42 @@ public class DefaultEpadOperations implements EpadOperations
 		return dicomElementList;
 	}
 
-	private DICOMElementList getCalculatedDICOMElements(String studyUID, String seriesUID, String imageUID)
+	private DICOMElementList getDefaultDICOMElements(String studyUID, String seriesUID, String imageUID)
 	{
-		DICOMElementList dicomElementList = new DICOMElementList();
+		List<DICOMElement> dicomElements = new ArrayList<>();
 
-		return dicomElementList;
+		dicomElements.add(new DICOMElement(PixelMedUtils.PatientBirthDateCode, PixelMedUtils.PatientBirthDateTagName,
+				"1900-01-01T00:00:00"));
+
+		dicomElements.add(new DICOMElement(PixelMedUtils.PixelSpacingCode, PixelMedUtils.PixelSpacingTagName, "1\\1"));
+
+		dicomElements.add(new DICOMElement(PixelMedUtils.RescaleInterceptCode, PixelMedUtils.RescaleInterceptTagName, "0"));
+
+		dicomElements.add(new DICOMElement(PixelMedUtils.RescaleSlopeCode, PixelMedUtils.RescaleSlopeTagName, "1"));
+
+		dicomElements.add(new DICOMElement(PixelMedUtils.StudyDateCode, PixelMedUtils.StudyDateTagName,
+				"1900-01-01T00:00:00"));
+
+		dicomElements.add(new DICOMElement(PixelMedUtils.StudyTimeCode, PixelMedUtils.StudyTimeTagName, "00:00:00"));
+
+		dicomElements.add(new DICOMElement(PixelMedUtils.RowsTagCode, PixelMedUtils.RowsTagName, "512"));
+
+		dicomElements.add(new DICOMElement(PixelMedUtils.ColumnsTagCode, PixelMedUtils.ColumnsTagName, "512"));
+
+		dicomElements.addAll(getCalculatedWindowingDICOMElements(studyUID, seriesUID, imageUID));
+
+		return new DICOMElementList(dicomElements);
 	}
 
-	@SuppressWarnings("unused")
-	// TODO
-	private DICOMElementList f(String studyUID, String seriesUID, String imageUID)
+	private List<DICOMElement> getCalculatedWindowingDICOMElements(String studyUID, String seriesUID, String imageUID)
 	{
-		DICOMElementList result = new DICOMElementList();
+		List<DICOMElement> dicomElements = new ArrayList<>();
+		double windowWidth = 1.0;
+		double windowCenter = 0.0;
 
 		try {
 			File temporaryDicomFile = File.createTempFile(imageUID, ".dcm");
 			DCM4CHEEUtil.downloadDICOMFileFromWADO(studyUID, seriesUID, imageUID, temporaryDicomFile);
-			double windowWidth = 1.0;
-			double windowCenter = 0.0;
 
 			String dicomImageFilePath = temporaryDicomFile.getAbsolutePath();
 			Opener opener = new Opener();
@@ -944,6 +964,13 @@ public class DefaultEpadOperations implements EpadOperations
 				windowWidth = (maxValue - minValue);
 				windowCenter = (minValue + windowWidth / 2.0);
 
+				// This is Pixelmed variant (though does not seem to be correct).
+				// SourceImage srcDicomImage = new SourceImage(temporaryDicomFile.getAbsolutePath());
+				// ImageEnhancer imageEnhancer = new ImageEnhancer(srcDicomImage);
+				// imageEnhancer.findVisuParametersImage();
+				// windowWidth = imageEnhancer.getWindowWidth();
+				// windowCenter = imageEnhancer.getWindowCenter();
+
 				log.info("Image " + imageUID + " in series " + seriesUID + " has a calculated window width of " + windowWidth
 						+ " and window center of " + windowCenter);
 			} else {
@@ -953,6 +980,12 @@ public class DefaultEpadOperations implements EpadOperations
 		} catch (IOException e) {
 			log.warning("Error getting DICOM file from dcm4chee for image " + imageUID + " in series " + seriesUID, e);
 		}
-		return result;
+
+		dicomElements.add(new DICOMElement(PixelMedUtils.WindowWidthTagCode, PixelMedUtils.WindowWidthTagCode, ""
+				+ windowWidth));
+		dicomElements.add(new DICOMElement(PixelMedUtils.WindowCenterTagCode, PixelMedUtils.WindowCenterTagCode, ""
+				+ windowCenter));
+
+		return dicomElements;
 	}
 }
