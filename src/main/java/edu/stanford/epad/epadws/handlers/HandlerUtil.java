@@ -207,6 +207,14 @@ public class HandlerUtil
 			throw new IllegalArgumentException("no " + parameterName + " parameter in request");
 	}
 
+	public static String getTemplateParameter(Map<String, String> templateMap, String parameterName, String defaultValue)
+	{
+		if (templateMap.containsKey(parameterName)) {
+			return templateMap.get(parameterName);
+		} else
+			return defaultValue;
+	}
+
 	public static Map<String, String> getTemplateMap(String template, String path)
 	{
 		Map<String, String> map = new HashMap<String, String>();

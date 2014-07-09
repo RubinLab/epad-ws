@@ -279,12 +279,11 @@ public class DefaultEpadOperations implements EpadOperations
 			if (isFirst) {
 				DICOMElementList dicomElements = getDICOMElements(imageDescription.studyUID, imageDescription.seriesUID,
 						imageDescription.imageUID);
-				DICOMElementList calculatedDICOMElements = getDefaultDICOMElements(imageDescription.studyUID,
+				DICOMElementList defaultDICOMElements = getDefaultDICOMElements(imageDescription.studyUID,
 						imageDescription.seriesUID, imageDescription.imageUID);
 
 				EPADImage epadImage = createEPADImage(seriesReference.projectID, seriesReference.subjectID,
-						seriesReference.studyUID, seriesReference.seriesUID, imageDescription, dicomElements,
-						calculatedDICOMElements);
+						seriesReference.studyUID, seriesReference.seriesUID, imageDescription, dicomElements, defaultDICOMElements);
 
 				epadImageList.addImage(epadImage);
 				isFirst = false;
@@ -308,10 +307,10 @@ public class DefaultEpadOperations implements EpadOperations
 		DCM4CHEEImageDescription imageDescription = dcm4CheeDatabaseOperations.getImageDescription(studyUID, seriesUID,
 				imageUID);
 		DICOMElementList dicomElements = getDICOMElements(studyUID, seriesUID, imageUID);
-		DICOMElementList calculatedDICOMElements = getDefaultDICOMElements(studyUID, seriesUID, imageUID);
+		DICOMElementList defaultDICOMElements = getDefaultDICOMElements(studyUID, seriesUID, imageUID);
 
 		return createEPADImage(imageReference.projectID, imageReference.subjectID, imageReference.studyUID,
-				imageReference.seriesUID, imageDescription, dicomElements, calculatedDICOMElements);
+				imageReference.seriesUID, imageDescription, dicomElements, defaultDICOMElements);
 	}
 
 	@Override
@@ -867,7 +866,7 @@ public class DefaultEpadOperations implements EpadOperations
 	// 1.2.840.10008.5.1.4.1.1.66.4 Segmentation Storage dcm4cheeImageDescription.classUID
 	private EPADImage createEPADImage(String projectID, String subjectID, String studyUID, String seriesUID,
 			DCM4CHEEImageDescription dcm4CheeImageDescription, DICOMElementList dicomElements,
-			DICOMElementList calculatedDICOMElements)
+			DICOMElementList defaultDICOMElements)
 	{
 		String imageUID = dcm4CheeImageDescription.imageUID;
 		String classUID = dcm4CheeImageDescription.classUID;
@@ -880,7 +879,7 @@ public class DefaultEpadOperations implements EpadOperations
 		String lossyImage = "TODO"; // TODO
 
 		return new EPADImage(projectID, subjectID, studyUID, seriesUID, imageUID, classUID, insertDate, imageDate,
-				sliceLocation, instanceNumber, losslessImage, lossyImage, dicomElements, calculatedDICOMElements,
+				sliceLocation, instanceNumber, losslessImage, lossyImage, dicomElements, defaultDICOMElements,
 				numberOfFrames, false);
 	}
 
@@ -895,7 +894,8 @@ public class DefaultEpadOperations implements EpadOperations
 	private EPADImage createEPADImage(String projectID, String subjectID, String studyUID, String seriesUID,
 			DCM4CHEEImageDescription dcm4CheeImageDescription)
 	{
-		return createEPADImage(projectID, subjectID, studyUID, seriesUID, dcm4CheeImageDescription, null, null);
+		return createEPADImage(projectID, subjectID, studyUID, seriesUID, dcm4CheeImageDescription, new DICOMElementList(),
+				new DICOMElementList());
 	}
 
 	@SuppressWarnings("unused")
