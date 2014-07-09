@@ -97,7 +97,29 @@ public class DefaultEpadOperations implements EpadOperations
 	@Override
 	public EPADSeries getSeriesDescription(SeriesReference seriesReference, String username, String sessionID)
 	{
-		return null; // TODO See getSeries below.
+		DCM4CHEESeries dcm4CheeSeries = Dcm4CheeQueries.getSeries(seriesReference.seriesUID);
+
+		String seriesUID = dcm4CheeSeries.seriesUID;
+		String patientID = dcm4CheeSeries.patientID;
+		String patientName = dcm4CheeSeries.patientName;
+		String seriesDate = dcm4CheeSeries.seriesDate;
+		String seriesDescription = dcm4CheeSeries.seriesDescription;
+		String examType = dcm4CheeSeries.examType;
+		String bodyPart = dcm4CheeSeries.bodyPart;
+		String accessionNumber = dcm4CheeSeries.accessionNumber;
+		String institution = dcm4CheeSeries.institution;
+		String stationName = dcm4CheeSeries.stationName;
+		String department = dcm4CheeSeries.department;
+		int numberOfImages = dcm4CheeSeries.imagesInSeries;
+		int numberOfSeriesRelatedInstances = dcm4CheeSeries.numberOfSeriesRelatedInstances;
+		int numberOfAnnotations = AIMQueries.getNumberOfAIMAnnotationsForSeries(seriesUID, username);
+		SeriesProcessingStatus seriesProcessingStatus = epadDatabaseOperations.getSeriesProcessingStatus(seriesUID);
+		String createdTime = dcm4CheeSeries.createdTime != null ? dcm4CheeSeries.createdTime.toString() : "";
+
+		return new EPADSeries(seriesReference.projectID, patientID, patientName, seriesReference.studyUID, seriesUID,
+				seriesDate, seriesDescription, examType, bodyPart, accessionNumber, numberOfImages,
+				numberOfSeriesRelatedInstances, numberOfAnnotations, institution, stationName, department,
+				seriesProcessingStatus, createdTime);
 	}
 
 	@Override
