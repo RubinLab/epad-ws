@@ -116,7 +116,7 @@ public class EPADHandler extends AbstractHandler
 
 			if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.PROJECT_LIST, pathInfo)) {
 				EPADProjectList projectList = epadOperations
-						.getAllProjectDescriptionsForUser(username, sessionID, searchFilter);
+						.getProjectDescriptions(username, sessionID, searchFilter);
 				responseStream.append(projectList.toJSON());
 
 				statusCode = HttpServletResponse.SC_OK;
@@ -125,6 +125,84 @@ public class EPADHandler extends AbstractHandler
 				EPADProject project = epadOperations.getProjectDescription(projectReference, username, sessionID);
 				responseStream.append(project.toJSON());
 				statusCode = HttpServletResponse.SC_OK;
+
+			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.SUBJECT_LIST, pathInfo)) {
+				ProjectReference projectReference = ProjectReference.extract(ProjectsRouteTemplates.SUBJECT_LIST, pathInfo);
+				EPADSubjectList subjectList = epadOperations.getSubjectDescriptions(projectReference.projectID,
+						username, sessionID, searchFilter);
+				responseStream.append(subjectList.toJSON());
+				statusCode = HttpServletResponse.SC_OK;
+
+			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.SUBJECT, pathInfo)) {
+				SubjectReference subjectReference = SubjectReference.extract(ProjectsRouteTemplates.SUBJECT, pathInfo);
+				EPADSubject subject = epadOperations.getSubjectDescription(subjectReference, username, sessionID);
+				responseStream.append(subject.toJSON());
+				statusCode = HttpServletResponse.SC_OK;
+
+			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.STUDY_LIST, pathInfo)) {
+				SubjectReference subjectReference = SubjectReference.extract(ProjectsRouteTemplates.STUDY_LIST, pathInfo);
+				EPADStudyList studyList = epadOperations.getStudyDescriptions(subjectReference, username,
+						sessionID, searchFilter);
+				responseStream.append(studyList.toJSON());
+				statusCode = HttpServletResponse.SC_OK;
+
+			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.STUDY, pathInfo)) {
+				StudyReference studyReference = StudyReference.extract(ProjectsRouteTemplates.STUDY, pathInfo);
+				EPADStudy study = epadOperations.getStudyDescription(studyReference, username, sessionID);
+				responseStream.append(study.toJSON());
+				statusCode = HttpServletResponse.SC_OK;
+
+			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.SERIES_LIST, pathInfo)) {
+				StudyReference studyReference = StudyReference.extract(ProjectsRouteTemplates.SERIES_LIST, pathInfo);
+				EPADSeriesList seriesList = epadOperations.getSeriesDescriptions(studyReference, username,
+						sessionID, searchFilter);
+				responseStream.append(seriesList.toJSON());
+				statusCode = HttpServletResponse.SC_OK;
+
+			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.SERIES, pathInfo)) {
+				SeriesReference seriesReference = SeriesReference.extract(ProjectsRouteTemplates.STUDY, pathInfo);
+				EPADSeries series = epadOperations.getSeriesDescription(seriesReference, username, sessionID);
+				responseStream.append(series.toJSON());
+				statusCode = HttpServletResponse.SC_OK;
+
+			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.IMAGE_LIST, pathInfo)) {
+				SeriesReference seriesReference = SeriesReference.extract(ProjectsRouteTemplates.IMAGE_LIST, pathInfo);
+				EPADImageList imageList = epadOperations.getImageDescriptions(seriesReference, sessionID, searchFilter);
+				responseStream.append(imageList.toJSON());
+				statusCode = HttpServletResponse.SC_OK;
+
+			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.IMAGE, pathInfo)) {
+				ImageReference imageReference = ImageReference.extract(ProjectsRouteTemplates.IMAGE, pathInfo);
+				EPADImage image = epadOperations.getImageDescription(imageReference, sessionID);
+				responseStream.append(image.toJSON());
+				statusCode = HttpServletResponse.SC_OK;
+
+			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.FRAME_LIST, pathInfo)) {
+				ImageReference imageReference = ImageReference.extract(ProjectsRouteTemplates.FRAME_LIST, pathInfo);
+				EPADFrameList frameList = epadOperations.getFrameDescriptions(imageReference, sessionID,
+						searchFilter);
+				responseStream.append(frameList.toJSON());
+				statusCode = HttpServletResponse.SC_OK;
+
+			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.FRAME, pathInfo)) {
+				FrameReference frameReference = FrameReference.extract(ProjectsRouteTemplates.FRAME, pathInfo);
+				EPADFrame frame = epadOperations.getFrameDescription(frameReference, sessionID);
+				responseStream.append(frame.toJSON());
+				statusCode = HttpServletResponse.SC_OK;
+
+				/**
+				 * Studies routes (TODO Incomplete at the moment)
+				 */
+
+			} else if (HandlerUtil.matchesTemplate(StudiesRouteTemplates.IMAGE_LIST, pathInfo)) {
+				SeriesReference seriesReference = SeriesReference.extract(StudiesRouteTemplates.IMAGE_LIST, pathInfo);
+				EPADImageList imageList = epadOperations.getImageDescriptions(seriesReference, sessionID, searchFilter);
+				responseStream.append(imageList.toJSON());
+				statusCode = HttpServletResponse.SC_OK;
+
+				/**
+				 * AIM-related routes
+				 */
 
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.PROJECT_AIM_LIST, pathInfo)) {
 				ProjectReference projectReference = ProjectReference.extract(ProjectsRouteTemplates.PROJECT_AIM_LIST, pathInfo);
@@ -140,19 +218,6 @@ public class EPADHandler extends AbstractHandler
 				responseStream.append(aim.toJSON());
 				statusCode = HttpServletResponse.SC_OK;
 
-			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.SUBJECT_LIST, pathInfo)) {
-				ProjectReference projectReference = ProjectReference.extract(ProjectsRouteTemplates.SUBJECT_LIST, pathInfo);
-				EPADSubjectList subjectList = epadOperations.getAllSubjectDescriptionsForProject(projectReference.projectID,
-						username, sessionID, searchFilter);
-				responseStream.append(subjectList.toJSON());
-				statusCode = HttpServletResponse.SC_OK;
-
-			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.SUBJECT, pathInfo)) {
-				SubjectReference subjectReference = SubjectReference.extract(ProjectsRouteTemplates.SUBJECT, pathInfo);
-				EPADSubject subject = epadOperations.getSubjectDescription(subjectReference, username, sessionID);
-				responseStream.append(subject.toJSON());
-				statusCode = HttpServletResponse.SC_OK;
-
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.SUBJECT_AIM_LIST, pathInfo)) {
 				SubjectReference subjectReference = SubjectReference.extract(ProjectsRouteTemplates.SUBJECT_AIM_LIST, pathInfo);
 				EPADAIMList aims = epadOperations.getSubjectAIMDescriptions(subjectReference, username, sessionID);
@@ -166,71 +231,6 @@ public class EPADHandler extends AbstractHandler
 						.getSubjectAIMDescription(subjectReference, aimReference.aimID, username, sessionID);
 				responseStream.append(aim.toJSON());
 				statusCode = HttpServletResponse.SC_OK;
-
-			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.STUDY_LIST, pathInfo)) {
-				SubjectReference subjectReference = SubjectReference.extract(ProjectsRouteTemplates.STUDY_LIST, pathInfo);
-				EPADStudyList studyList = epadOperations.getAllStudyDescriptionsForSubject(subjectReference, username,
-						sessionID, searchFilter);
-				responseStream.append(studyList.toJSON());
-				statusCode = HttpServletResponse.SC_OK;
-
-			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.STUDY, pathInfo)) {
-				StudyReference studyReference = StudyReference.extract(ProjectsRouteTemplates.STUDY, pathInfo);
-				EPADStudy study = epadOperations.getStudyDescription(studyReference, username, sessionID);
-				responseStream.append(study.toJSON());
-				statusCode = HttpServletResponse.SC_OK;
-
-			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.SERIES_LIST, pathInfo)) {
-				StudyReference studyReference = StudyReference.extract(ProjectsRouteTemplates.SERIES_LIST, pathInfo);
-				EPADSeriesList seriesList = epadOperations.getAllSeriesDescriptionsForStudy(studyReference, username,
-						sessionID, searchFilter);
-				responseStream.append(seriesList.toJSON());
-				statusCode = HttpServletResponse.SC_OK;
-
-			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.SERIES, pathInfo)) {
-				SeriesReference seriesReference = SeriesReference.extract(ProjectsRouteTemplates.STUDY, pathInfo);
-				EPADSeries series = epadOperations.getSeriesDescription(seriesReference, username, sessionID);
-				responseStream.append(series.toJSON());
-				statusCode = HttpServletResponse.SC_OK;
-
-			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.IMAGE_LIST, pathInfo)) {
-				SeriesReference seriesReference = SeriesReference.extract(ProjectsRouteTemplates.IMAGE_LIST, pathInfo);
-				EPADImageList imageList = epadOperations.getAllImageForSeries(seriesReference, sessionID, searchFilter);
-				responseStream.append(imageList.toJSON());
-				statusCode = HttpServletResponse.SC_OK;
-
-			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.IMAGE, pathInfo)) {
-				ImageReference imageReference = ImageReference.extract(ProjectsRouteTemplates.IMAGE, pathInfo);
-				EPADImage image = epadOperations.getImageDescription(imageReference, sessionID);
-				responseStream.append(image.toJSON());
-				statusCode = HttpServletResponse.SC_OK;
-
-			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.FRAME_LIST, pathInfo)) {
-				ImageReference imageReference = ImageReference.extract(ProjectsRouteTemplates.FRAME_LIST, pathInfo);
-				EPADFrameList frameList = epadOperations.getAllFrameDescriptionsForImage(imageReference, sessionID,
-						searchFilter);
-				responseStream.append(frameList.toJSON());
-				statusCode = HttpServletResponse.SC_OK;
-
-			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.FRAME, pathInfo)) {
-				FrameReference frameReference = FrameReference.extract(ProjectsRouteTemplates.FRAME, pathInfo);
-				EPADFrame frame = epadOperations.getFrameDescription(frameReference, sessionID);
-				responseStream.append(frame.toJSON());
-				statusCode = HttpServletResponse.SC_OK;
-
-				/**
-				 * Studies routes
-				 */
-
-			} else if (HandlerUtil.matchesTemplate(StudiesRouteTemplates.IMAGE_LIST, pathInfo)) {
-				SeriesReference seriesReference = SeriesReference.extract(StudiesRouteTemplates.IMAGE_LIST, pathInfo);
-				EPADImageList imageList = epadOperations.getAllImageForSeries(seriesReference, sessionID, searchFilter);
-				responseStream.append(imageList.toJSON());
-				statusCode = HttpServletResponse.SC_OK;
-
-				/**
-				 * AIM-related routes
-				 */
 
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.STUDY_AIM_LIST, pathInfo)) {
 				StudyReference studyReference = StudyReference.extract(ProjectsRouteTemplates.STUDY_AIM_LIST, pathInfo);

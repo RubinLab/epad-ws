@@ -7,8 +7,10 @@ import ij.measure.Calibration;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import javax.servlet.http.HttpServletResponse;
@@ -89,92 +91,7 @@ public class DefaultEpadOperations implements EpadOperations
 	}
 
 	@Override
-	public EPADProject getProjectDescription(ProjectReference projectReference, String username, String sessionID)
-	{
-		return null; // TODO
-	}
-
-	@Override
-	public EPADSeries getSeriesDescription(SeriesReference seriesReference, String username, String sessionID)
-	{
-		DCM4CHEESeries dcm4CheeSeries = Dcm4CheeQueries.getSeries(seriesReference.seriesUID);
-
-		String seriesUID = dcm4CheeSeries.seriesUID;
-		String patientID = dcm4CheeSeries.patientID;
-		String patientName = dcm4CheeSeries.patientName;
-		String seriesDate = dcm4CheeSeries.seriesDate;
-		String seriesDescription = dcm4CheeSeries.seriesDescription;
-		String examType = dcm4CheeSeries.examType;
-		String bodyPart = dcm4CheeSeries.bodyPart;
-		String accessionNumber = dcm4CheeSeries.accessionNumber;
-		String institution = dcm4CheeSeries.institution;
-		String stationName = dcm4CheeSeries.stationName;
-		String department = dcm4CheeSeries.department;
-		int numberOfImages = dcm4CheeSeries.imagesInSeries;
-		int numberOfSeriesRelatedInstances = dcm4CheeSeries.numberOfSeriesRelatedInstances;
-		int numberOfAnnotations = AIMQueries.getNumberOfAIMAnnotationsForSeries(seriesUID, username);
-		SeriesProcessingStatus seriesProcessingStatus = epadDatabaseOperations.getSeriesProcessingStatus(seriesUID);
-		String createdTime = dcm4CheeSeries.createdTime != null ? dcm4CheeSeries.createdTime.toString() : "";
-
-		return new EPADSeries(seriesReference.projectID, patientID, patientName, seriesReference.studyUID, seriesUID,
-				seriesDate, seriesDescription, examType, bodyPart, accessionNumber, numberOfImages,
-				numberOfSeriesRelatedInstances, numberOfAnnotations, institution, stationName, department,
-				seriesProcessingStatus, createdTime);
-	}
-
-	@Override
-	public EPADSubject getSubjectDescription(SubjectReference subjectReference, String username, String sessionID)
-	{
-		return null; // TODO
-	}
-
-	@Override
-	public EPADFrameList getAllFrameDescriptionsForImage(ImageReference imageReference, String sessionID,
-			EPADSearchFilter searchFilter)
-	{
-		return new EPADFrameList(); // TODO
-	}
-
-	@Override
-	public EPADFrame getFrameDescription(FrameReference frameReference, String sessionID)
-	{
-		return null; // TODO
-	}
-
-	@Override
-	public void createSubjectAndStudy(String projectID, String subjectID, String subjectName, String studyUID,
-			String sessionID)
-	{
-		String xnatSubjectLabel = XNATUtil.subjectID2XNATSubjectLabel(subjectID);
-
-		int xnatStatusCode = XNATCreationOperations.createXNATSubject(projectID, xnatSubjectLabel, subjectName, sessionID);
-
-		if (XNATUtil.unexpectedXNATCreationStatusCode(xnatStatusCode))
-			log.warning("Error creating XNAT subject " + subjectName + " for study " + studyUID + "; status code="
-					+ xnatStatusCode);
-
-		xnatStatusCode = XNATCreationOperations.createXNATDICOMStudyExperiment(projectID, xnatSubjectLabel, studyUID,
-				sessionID);
-
-		if (XNATUtil.unexpectedXNATCreationStatusCode(xnatStatusCode))
-			log.warning("Error creating XNAT experiment for study " + studyUID + "; status code=" + xnatStatusCode);
-	}
-
-	@Override
-	public int createSeries(SeriesReference seriesReference, String sessionID)
-	{
-		return HttpServletResponse.SC_NOT_IMPLEMENTED; // TODO
-	}
-
-	@Override
-	public int seriesDelete(SeriesReference seriesReference, String sessionID, String username)
-	{
-		return HttpServletResponse.SC_NOT_IMPLEMENTED; // TODO
-	}
-
-	@Override
-	public EPADProjectList getAllProjectDescriptionsForUser(String username, String sessionID,
-			EPADSearchFilter searchFilter)
+	public EPADProjectList getProjectDescriptions(String username, String sessionID, EPADSearchFilter searchFilter)
 	{
 		EPADProjectList epadProjectList = new EPADProjectList();
 		XNATProjectList xnatProjectList = XNATQueries.allProjects(sessionID);
@@ -189,7 +106,13 @@ public class DefaultEpadOperations implements EpadOperations
 	}
 
 	@Override
-	public EPADSubjectList getAllSubjectDescriptionsForProject(String projectID, String username, String sessionID,
+	public EPADProject getProjectDescription(ProjectReference projectReference, String username, String sessionID)
+	{
+		return null; // TODO
+	}
+
+	@Override
+	public EPADSubjectList getSubjectDescriptions(String projectID, String username, String sessionID,
 			EPADSearchFilter searchFilter)
 	{
 		EPADSubjectList epadSubjectList = new EPADSubjectList();
@@ -204,8 +127,14 @@ public class DefaultEpadOperations implements EpadOperations
 	}
 
 	@Override
-	public EPADStudyList getAllStudyDescriptionsForSubject(SubjectReference subjectReference, String username,
-			String sessionID, EPADSearchFilter searchFilter)
+	public EPADSubject getSubjectDescription(SubjectReference subjectReference, String username, String sessionID)
+	{
+		return null; // TODO
+	}
+
+	@Override
+	public EPADStudyList getStudyDescriptions(SubjectReference subjectReference, String username, String sessionID,
+			EPADSearchFilter searchFilter)
 	{
 		EPADStudyList epadStudyList = new EPADStudyList();
 		Set<String> studyUIDsInXNAT = XNATQueries.getStudyUIDsForSubject(sessionID, subjectReference.projectID,
@@ -248,8 +177,36 @@ public class DefaultEpadOperations implements EpadOperations
 	}
 
 	@Override
-	public EPADSeriesList getAllSeriesDescriptionsForStudy(StudyReference studyReference, String username,
-			String sessionID, EPADSearchFilter searchFilter)
+	public EPADSeries getSeriesDescription(SeriesReference seriesReference, String username, String sessionID)
+	{
+		DCM4CHEESeries dcm4CheeSeries = Dcm4CheeQueries.getSeries(seriesReference.seriesUID);
+
+		String seriesUID = dcm4CheeSeries.seriesUID;
+		String patientID = dcm4CheeSeries.patientID;
+		String patientName = dcm4CheeSeries.patientName;
+		String seriesDate = dcm4CheeSeries.seriesDate;
+		String seriesDescription = dcm4CheeSeries.seriesDescription;
+		String examType = dcm4CheeSeries.examType;
+		String bodyPart = dcm4CheeSeries.bodyPart;
+		String accessionNumber = dcm4CheeSeries.accessionNumber;
+		String institution = dcm4CheeSeries.institution;
+		String stationName = dcm4CheeSeries.stationName;
+		String department = dcm4CheeSeries.department;
+		int numberOfImages = dcm4CheeSeries.imagesInSeries;
+		int numberOfSeriesRelatedInstances = dcm4CheeSeries.numberOfSeriesRelatedInstances;
+		int numberOfAnnotations = AIMQueries.getNumberOfAIMAnnotationsForSeries(seriesUID, username);
+		SeriesProcessingStatus seriesProcessingStatus = epadDatabaseOperations.getSeriesProcessingStatus(seriesUID);
+		String createdTime = dcm4CheeSeries.createdTime != null ? dcm4CheeSeries.createdTime.toString() : "";
+
+		return new EPADSeries(seriesReference.projectID, patientID, patientName, seriesReference.studyUID, seriesUID,
+				seriesDate, seriesDescription, examType, bodyPart, accessionNumber, numberOfImages,
+				numberOfSeriesRelatedInstances, numberOfAnnotations, institution, stationName, department,
+				seriesProcessingStatus, createdTime);
+	}
+
+	@Override
+	public EPADSeriesList getSeriesDescriptions(StudyReference studyReference, String username, String sessionID,
+			EPADSearchFilter searchFilter)
 	{
 		EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
 		EPADSeriesList epadSeriesList = new EPADSeriesList();
@@ -287,7 +244,7 @@ public class DefaultEpadOperations implements EpadOperations
 	}
 
 	@Override
-	public EPADImageList getAllImageForSeries(SeriesReference seriesReference, String sessionID,
+	public EPADImageList getImageDescriptions(SeriesReference seriesReference, String sessionID,
 			EPADSearchFilter searchFilter)
 	{
 		Dcm4CheeDatabaseOperations dcm4CheeDatabaseOperations = Dcm4CheeDatabase.getInstance()
@@ -297,21 +254,22 @@ public class DefaultEpadOperations implements EpadOperations
 		EPADImageList epadImageList = new EPADImageList();
 
 		boolean isFirst = true;
-		for (DCM4CHEEImageDescription imageDescription : imageDescriptions) {
+		for (DCM4CHEEImageDescription dcm4cheeImageDescription : imageDescriptions) {
 			if (isFirst) {
-				DICOMElementList dicomElements = getDICOMElements(imageDescription.studyUID, imageDescription.seriesUID,
-						imageDescription.imageUID);
-				DICOMElementList defaultDICOMElements = getDefaultDICOMElements(imageDescription.studyUID,
-						imageDescription.seriesUID, imageDescription.imageUID);
+				DICOMElementList suppliedDICOMElements = getDICOMElements(dcm4cheeImageDescription.studyUID,
+						dcm4cheeImageDescription.seriesUID, dcm4cheeImageDescription.imageUID);
+				DICOMElementList defaultDICOMElements = getDefaultDICOMElements(dcm4cheeImageDescription.studyUID,
+						dcm4cheeImageDescription.seriesUID, dcm4cheeImageDescription.imageUID, suppliedDICOMElements);
 
 				EPADImage epadImage = createEPADImage(seriesReference.projectID, seriesReference.subjectID,
-						seriesReference.studyUID, seriesReference.seriesUID, imageDescription, dicomElements, defaultDICOMElements);
+						seriesReference.studyUID, seriesReference.seriesUID, dcm4cheeImageDescription, suppliedDICOMElements,
+						defaultDICOMElements);
 
 				epadImageList.addImage(epadImage);
 				isFirst = false;
 			} else {
 				EPADImage epadImage = createEPADImage(seriesReference.projectID, seriesReference.subjectID,
-						seriesReference.studyUID, seriesReference.seriesUID, imageDescription);
+						seriesReference.studyUID, seriesReference.seriesUID, dcm4cheeImageDescription);
 				epadImageList.addImage(epadImage);
 			}
 		}
@@ -328,11 +286,55 @@ public class DefaultEpadOperations implements EpadOperations
 				.getDcm4CheeDatabaseOperations();
 		DCM4CHEEImageDescription imageDescription = dcm4CheeDatabaseOperations.getImageDescription(studyUID, seriesUID,
 				imageUID);
-		DICOMElementList dicomElements = getDICOMElements(studyUID, seriesUID, imageUID);
-		DICOMElementList defaultDICOMElements = getDefaultDICOMElements(studyUID, seriesUID, imageUID);
+		DICOMElementList dicomElements = getDICOMElements(imageReference);
+		DICOMElementList defaultDICOMElements = getDefaultDICOMElements(imageReference, dicomElements);
 
 		return createEPADImage(imageReference.projectID, imageReference.subjectID, imageReference.studyUID,
 				imageReference.seriesUID, imageDescription, dicomElements, defaultDICOMElements);
+	}
+
+	@Override
+	public EPADFrameList getFrameDescriptions(ImageReference imageReference, String sessionID,
+			EPADSearchFilter searchFilter)
+	{
+		return new EPADFrameList(); // TODO
+	}
+
+	@Override
+	public EPADFrame getFrameDescription(FrameReference frameReference, String sessionID)
+	{
+		return null; // TODO
+	}
+
+	@Override
+	public void createSubjectAndStudy(String projectID, String subjectID, String subjectName, String studyUID,
+			String sessionID)
+	{
+		String xnatSubjectLabel = XNATUtil.subjectID2XNATSubjectLabel(subjectID);
+
+		int xnatStatusCode = XNATCreationOperations.createXNATSubject(projectID, xnatSubjectLabel, subjectName, sessionID);
+
+		if (XNATUtil.unexpectedXNATCreationStatusCode(xnatStatusCode))
+			log.warning("Error creating XNAT subject " + subjectName + " for study " + studyUID + "; status code="
+					+ xnatStatusCode);
+
+		xnatStatusCode = XNATCreationOperations.createXNATDICOMStudyExperiment(projectID, xnatSubjectLabel, studyUID,
+				sessionID);
+
+		if (XNATUtil.unexpectedXNATCreationStatusCode(xnatStatusCode))
+			log.warning("Error creating XNAT experiment for study " + studyUID + "; status code=" + xnatStatusCode);
+	}
+
+	@Override
+	public int createSeries(SeriesReference seriesReference, String sessionID)
+	{
+		return HttpServletResponse.SC_NOT_IMPLEMENTED; // TODO
+	}
+
+	@Override
+	public int seriesDelete(SeriesReference seriesReference, String sessionID, String username)
+	{
+		return HttpServletResponse.SC_NOT_IMPLEMENTED; // TODO
 	}
 
 	@Override
@@ -914,13 +916,12 @@ public class DefaultEpadOperations implements EpadOperations
 	}
 
 	private EPADImage createEPADImage(String projectID, String subjectID, String studyUID, String seriesUID,
-			DCM4CHEEImageDescription dcm4CheeImageDescription)
+			DCM4CHEEImageDescription dcm4cheeImageDescription)
 	{
-		return createEPADImage(projectID, subjectID, studyUID, seriesUID, dcm4CheeImageDescription, new DICOMElementList(),
+		return createEPADImage(projectID, subjectID, studyUID, seriesUID, dcm4cheeImageDescription, new DICOMElementList(),
 				new DICOMElementList());
 	}
 
-	@SuppressWarnings("unused")
 	private DICOMElementList getDICOMElements(ImageReference imageReference)
 	{
 		return getDICOMElements(imageReference.studyUID, imageReference.seriesUID, imageReference.imageUID);
@@ -936,36 +937,94 @@ public class DefaultEpadOperations implements EpadOperations
 		return dicomElementList;
 	}
 
-	private DICOMElementList getDefaultDICOMElements(String studyUID, String seriesUID, String imageUID)
+	private DICOMElementList getDefaultDICOMElements(ImageReference imageReference, DICOMElementList suppliedDICOMElements)
 	{
-		List<DICOMElement> dicomElements = new ArrayList<>();
+		return getDefaultDICOMElements(imageReference.studyUID, imageReference.seriesUID, imageReference.imageUID,
+				suppliedDICOMElements);
+	}
 
-		dicomElements.add(new DICOMElement(PixelMedUtils.PatientBirthDateCode, PixelMedUtils.PatientBirthDateTagName,
-				"1900-01-01T00:00:00"));
+	private DICOMElementList getDefaultDICOMElements(String studyUID, String seriesUID, String imageUID,
+			DICOMElementList suppliedDicomElements)
+	{
+		List<DICOMElement> defaultDicomElements = new ArrayList<>();
+		Map<String, DICOMElement> suppliedDICOMElementMap = generateDICOMElementMap(suppliedDicomElements);
 
-		dicomElements.add(new DICOMElement(PixelMedUtils.PixelSpacingCode, PixelMedUtils.PixelSpacingTagName, "1\\1"));
+		if (suppliedDICOMElementMap.containsKey(PixelMedUtils.PatientBirthDateCode))
+			defaultDicomElements.add(suppliedDICOMElementMap.get(PixelMedUtils.PatientBirthDateCode));
+		else
+			defaultDicomElements.add(new DICOMElement(PixelMedUtils.PatientBirthDateCode,
+					PixelMedUtils.PatientBirthDateTagName, "1900-01-01T00:00:00"));
 
-		dicomElements.add(new DICOMElement(PixelMedUtils.RescaleInterceptCode, PixelMedUtils.RescaleInterceptTagName, "0"));
+		if (suppliedDICOMElementMap.containsKey(PixelMedUtils.PixelSpacingCode))
+			defaultDicomElements.add(suppliedDICOMElementMap.get(PixelMedUtils.PixelSpacingCode));
+		else
+			defaultDicomElements.add(new DICOMElement(PixelMedUtils.PixelSpacingCode, PixelMedUtils.PixelSpacingTagName,
+					"1\\1"));
 
-		dicomElements.add(new DICOMElement(PixelMedUtils.RescaleSlopeCode, PixelMedUtils.RescaleSlopeTagName, "1"));
+		if (suppliedDICOMElementMap.containsKey(PixelMedUtils.RescaleInterceptCode))
+			defaultDicomElements.add(suppliedDICOMElementMap.get(PixelMedUtils.RescaleInterceptCode));
+		else
+			defaultDicomElements.add(new DICOMElement(PixelMedUtils.RescaleInterceptCode,
+					PixelMedUtils.RescaleInterceptTagName, "0"));
 
-		dicomElements.add(new DICOMElement(PixelMedUtils.StudyDateCode, PixelMedUtils.StudyDateTagName,
-				"1900-01-01T00:00:00"));
+		if (suppliedDICOMElementMap.containsKey(PixelMedUtils.RescaleSlopeCode))
+			defaultDicomElements.add(suppliedDICOMElementMap.get(PixelMedUtils.RescaleSlopeCode));
+		else
+			defaultDicomElements
+					.add(new DICOMElement(PixelMedUtils.RescaleSlopeCode, PixelMedUtils.RescaleSlopeTagName, "1"));
 
-		dicomElements.add(new DICOMElement(PixelMedUtils.StudyTimeCode, PixelMedUtils.StudyTimeTagName, "00:00:00"));
+		if (suppliedDICOMElementMap.containsKey(PixelMedUtils.StudyDateCode))
+			defaultDicomElements.add(suppliedDICOMElementMap.get(PixelMedUtils.StudyDateCode));
+		else
+			defaultDicomElements.add(new DICOMElement(PixelMedUtils.StudyDateCode, PixelMedUtils.StudyDateTagName,
+					"1900-01-01T00:00:00"));
 
-		dicomElements.add(new DICOMElement(PixelMedUtils.RowsTagCode, PixelMedUtils.RowsTagName, "512"));
+		if (suppliedDICOMElementMap.containsKey(PixelMedUtils.StudyTimeCode))
+			defaultDicomElements.add(suppliedDICOMElementMap.get(PixelMedUtils.StudyTimeCode));
+		else
+			defaultDicomElements
+					.add(new DICOMElement(PixelMedUtils.StudyTimeCode, PixelMedUtils.StudyTimeTagName, "00:00:00"));
 
-		dicomElements.add(new DICOMElement(PixelMedUtils.ColumnsTagCode, PixelMedUtils.ColumnsTagName, "512"));
+		if (suppliedDICOMElementMap.containsKey(PixelMedUtils.RowsCode))
+			defaultDicomElements.add(suppliedDICOMElementMap.get(PixelMedUtils.RowsCode));
+		else
+			defaultDicomElements.add(new DICOMElement(PixelMedUtils.RowsCode, PixelMedUtils.RowsTagName, "512"));
 
-		dicomElements.add(new DICOMElement(PixelMedUtils.BitsStoredCode, PixelMedUtils.BitsStoredTagName, "16"));
+		if (suppliedDICOMElementMap.containsKey(PixelMedUtils.ColumnsCode))
+			defaultDicomElements.add(suppliedDICOMElementMap.get(PixelMedUtils.ColumnsCode));
+		else
+			defaultDicomElements.add(new DICOMElement(PixelMedUtils.ColumnsCode, PixelMedUtils.ColumnsTagName, "512"));
 
-		dicomElements.add(new DICOMElement(PixelMedUtils.PixelRepresentationCode, PixelMedUtils.PixelRepresentationTagName,
-				"0"));
+		if (suppliedDICOMElementMap.containsKey(PixelMedUtils.BitsStoredCode))
+			defaultDicomElements.add(suppliedDICOMElementMap.get(PixelMedUtils.BitsStoredCode));
+		else
+			defaultDicomElements.add(new DICOMElement(PixelMedUtils.BitsStoredCode, PixelMedUtils.BitsStoredTagName, "16"));
 
-		dicomElements.addAll(getCalculatedWindowingDICOMElements(studyUID, seriesUID, imageUID));
+		if (suppliedDICOMElementMap.containsKey(PixelMedUtils.PixelRepresentationCode))
+			defaultDicomElements.add(suppliedDICOMElementMap.get(PixelMedUtils.PixelRepresentationCode));
+		else
+			defaultDicomElements.add(new DICOMElement(PixelMedUtils.PixelRepresentationCode,
+					PixelMedUtils.PixelRepresentationTagName, "0"));
 
-		return new DICOMElementList(dicomElements);
+		defaultDicomElements.addAll(getCalculatedWindowingDICOMElements(studyUID, seriesUID, imageUID));
+
+		return new DICOMElementList(defaultDicomElements);
+	}
+
+	/**
+	 * Return a map of tag code to value. Note that we ignore duplicate tags and just use the last one encountered.
+	 * <p>
+	 * May want to think about returning a map to a set of values.
+	 */
+	private Map<String, DICOMElement> generateDICOMElementMap(DICOMElementList dicomElements)
+	{
+		Map<String, DICOMElement> result = new HashMap<>();
+
+		for (DICOMElement dicomElement : dicomElements.ResultSet.Result) {
+			result.put(dicomElement.tagCode, dicomElement);
+		}
+
+		return result;
 	}
 
 	private List<DICOMElement> getCalculatedWindowingDICOMElements(String studyUID, String seriesUID, String imageUID)
@@ -1008,9 +1067,9 @@ public class DefaultEpadOperations implements EpadOperations
 			log.warning("Error getting DICOM file from dcm4chee for image " + imageUID + " in series " + seriesUID, e);
 		}
 
-		dicomElements.add(new DICOMElement(PixelMedUtils.WindowWidthTagCode, PixelMedUtils.WindowWidthTagCode, ""
+		dicomElements.add(new DICOMElement(PixelMedUtils.WindowWidthCode, PixelMedUtils.WindowWidthTagName, ""
 				+ windowWidth));
-		dicomElements.add(new DICOMElement(PixelMedUtils.WindowCenterTagCode, PixelMedUtils.WindowCenterTagCode, ""
+		dicomElements.add(new DICOMElement(PixelMedUtils.WindowCenterCode, PixelMedUtils.WindowCenterTagName, ""
 				+ windowCenter));
 
 		return dicomElements;

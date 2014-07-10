@@ -34,32 +34,30 @@ import edu.stanford.epad.epadws.handlers.core.SubjectReference;
  */
 public interface EpadOperations
 {
-	EPADProjectList getAllProjectDescriptionsForUser(String username, String sessionID, EPADSearchFilter searchFilter);
-
-	EPADStudyList getAllStudyDescriptionsForSubject(SubjectReference subjectReference, String username, String sessionID,
-			EPADSearchFilter searchFilter);
-
-	EPADSubjectList getAllSubjectDescriptionsForProject(String projectID, String username, String sessionID,
-			EPADSearchFilter searchFilter);
-
-	EPADSeriesList getAllSeriesDescriptionsForStudy(StudyReference studyReference, String username, String sessionID,
-			EPADSearchFilter searchFilter);
-
-	EPADImageList getAllImageForSeries(SeriesReference seriesReference, String sessionID,
-			EPADSearchFilter searchFilter);
-
-	EPADFrameList getAllFrameDescriptionsForImage(ImageReference imageReference, String sessionID,
-			EPADSearchFilter searchFilter);
+	EPADProjectList getProjectDescriptions(String username, String sessionID, EPADSearchFilter searchFilter);
 
 	EPADProject getProjectDescription(ProjectReference projectReference, String username, String sessionID);
 
+	EPADSubjectList getSubjectDescriptions(String projectID, String username, String sessionID,
+			EPADSearchFilter searchFilter);
+
 	EPADSubject getSubjectDescription(SubjectReference subjectReference, String username, String sessionID);
+
+	EPADStudyList getStudyDescriptions(SubjectReference subjectReference, String username, String sessionID,
+			EPADSearchFilter searchFilter);
 
 	EPADStudy getStudyDescription(StudyReference studyReference, String username, String sessionID);
 
+	EPADSeriesList getSeriesDescriptions(StudyReference studyReference, String username, String sessionID,
+			EPADSearchFilter searchFilter);
+
 	EPADSeries getSeriesDescription(SeriesReference seriesReference, String username, String sessionID);
 
+	EPADImageList getImageDescriptions(SeriesReference seriesReference, String sessionID, EPADSearchFilter searchFilter);
+
 	EPADImage getImageDescription(ImageReference imageReference, String sessionID);
+
+	EPADFrameList getFrameDescriptions(ImageReference imageReference, String sessionID, EPADSearchFilter searchFilter);
 
 	EPADFrame getFrameDescription(FrameReference frameReference, String sessionID);
 
