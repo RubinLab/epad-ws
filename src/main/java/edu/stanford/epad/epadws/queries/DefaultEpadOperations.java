@@ -756,13 +756,16 @@ public class DefaultEpadOperations implements EpadOperations
 		return new EPADAIMList(new ArrayList<EPADAIM>(aims));
 	}
 
-	private EPADStudy dcm4CheeStudy2EpadStudy(String projectID, String subjectID, DCM4CHEEStudy dcm4CheeStudy,
-			String username)
+	private EPADStudy dcm4CheeStudy2EpadStudy(String suppliedProjectID, String suppliedSubjectID,
+			DCM4CHEEStudy dcm4CheeStudy, String username)
 	{
 		Dcm4CheeDatabaseOperations dcm4CheeDatabaseOperations = Dcm4CheeDatabase.getInstance()
 				.getDcm4CheeDatabaseOperations();
 
+		String projectID = suppliedProjectID.equals("") ? EPADConfig.xnatUploadProjectID : suppliedProjectID;
 		String patientName = dcm4CheeStudy.patientName;
+		String xnatPatientID = XNATUtil.subjectID2XNATSubjectLabel(dcm4CheeStudy.patientID);
+		String subjectID = suppliedSubjectID.equals("") ? xnatPatientID : suppliedSubjectID;
 		String studyUID = dcm4CheeStudy.studyUID;
 		String insertDate = dcm4CheeStudy.dateAcquired;
 		String firstSeriesUID = dcm4CheeStudy.firstSeriesUID;
@@ -947,61 +950,61 @@ public class DefaultEpadOperations implements EpadOperations
 			DICOMElementList suppliedDicomElements)
 	{
 		List<DICOMElement> defaultDicomElements = new ArrayList<>();
-		Map<String, DICOMElement> suppliedDICOMElementMap = generateDICOMElementMap(suppliedDicomElements);
+		Map<String, List<DICOMElement>> suppliedDICOMElementMap = generateDICOMElementMap(suppliedDicomElements);
 
 		if (suppliedDICOMElementMap.containsKey(PixelMedUtils.PatientBirthDateCode))
-			defaultDicomElements.add(suppliedDICOMElementMap.get(PixelMedUtils.PatientBirthDateCode));
+			defaultDicomElements.add(suppliedDICOMElementMap.get(PixelMedUtils.PatientBirthDateCode).get(0));
 		else
 			defaultDicomElements.add(new DICOMElement(PixelMedUtils.PatientBirthDateCode,
 					PixelMedUtils.PatientBirthDateTagName, "1900-01-01T00:00:00"));
 
 		if (suppliedDICOMElementMap.containsKey(PixelMedUtils.PixelSpacingCode))
-			defaultDicomElements.add(suppliedDICOMElementMap.get(PixelMedUtils.PixelSpacingCode));
+			defaultDicomElements.add(suppliedDICOMElementMap.get(PixelMedUtils.PixelSpacingCode).get(0));
 		else
 			defaultDicomElements.add(new DICOMElement(PixelMedUtils.PixelSpacingCode, PixelMedUtils.PixelSpacingTagName,
 					"1\\1"));
 
 		if (suppliedDICOMElementMap.containsKey(PixelMedUtils.RescaleInterceptCode))
-			defaultDicomElements.add(suppliedDICOMElementMap.get(PixelMedUtils.RescaleInterceptCode));
+			defaultDicomElements.add(suppliedDICOMElementMap.get(PixelMedUtils.RescaleInterceptCode).get(0));
 		else
 			defaultDicomElements.add(new DICOMElement(PixelMedUtils.RescaleInterceptCode,
 					PixelMedUtils.RescaleInterceptTagName, "0"));
 
 		if (suppliedDICOMElementMap.containsKey(PixelMedUtils.RescaleSlopeCode))
-			defaultDicomElements.add(suppliedDICOMElementMap.get(PixelMedUtils.RescaleSlopeCode));
+			defaultDicomElements.add(suppliedDICOMElementMap.get(PixelMedUtils.RescaleSlopeCode).get(0));
 		else
 			defaultDicomElements
 					.add(new DICOMElement(PixelMedUtils.RescaleSlopeCode, PixelMedUtils.RescaleSlopeTagName, "1"));
 
 		if (suppliedDICOMElementMap.containsKey(PixelMedUtils.StudyDateCode))
-			defaultDicomElements.add(suppliedDICOMElementMap.get(PixelMedUtils.StudyDateCode));
+			defaultDicomElements.add(suppliedDICOMElementMap.get(PixelMedUtils.StudyDateCode).get(0));
 		else
 			defaultDicomElements.add(new DICOMElement(PixelMedUtils.StudyDateCode, PixelMedUtils.StudyDateTagName,
 					"1900-01-01T00:00:00"));
 
 		if (suppliedDICOMElementMap.containsKey(PixelMedUtils.StudyTimeCode))
-			defaultDicomElements.add(suppliedDICOMElementMap.get(PixelMedUtils.StudyTimeCode));
+			defaultDicomElements.add(suppliedDICOMElementMap.get(PixelMedUtils.StudyTimeCode).get(0));
 		else
 			defaultDicomElements
 					.add(new DICOMElement(PixelMedUtils.StudyTimeCode, PixelMedUtils.StudyTimeTagName, "00:00:00"));
 
 		if (suppliedDICOMElementMap.containsKey(PixelMedUtils.RowsCode))
-			defaultDicomElements.add(suppliedDICOMElementMap.get(PixelMedUtils.RowsCode));
+			defaultDicomElements.add(suppliedDICOMElementMap.get(PixelMedUtils.RowsCode).get(0));
 		else
 			defaultDicomElements.add(new DICOMElement(PixelMedUtils.RowsCode, PixelMedUtils.RowsTagName, "512"));
 
 		if (suppliedDICOMElementMap.containsKey(PixelMedUtils.ColumnsCode))
-			defaultDicomElements.add(suppliedDICOMElementMap.get(PixelMedUtils.ColumnsCode));
+			defaultDicomElements.add(suppliedDICOMElementMap.get(PixelMedUtils.ColumnsCode).get(0));
 		else
 			defaultDicomElements.add(new DICOMElement(PixelMedUtils.ColumnsCode, PixelMedUtils.ColumnsTagName, "512"));
 
 		if (suppliedDICOMElementMap.containsKey(PixelMedUtils.BitsStoredCode))
-			defaultDicomElements.add(suppliedDICOMElementMap.get(PixelMedUtils.BitsStoredCode));
+			defaultDicomElements.add(suppliedDICOMElementMap.get(PixelMedUtils.BitsStoredCode).get(0));
 		else
 			defaultDicomElements.add(new DICOMElement(PixelMedUtils.BitsStoredCode, PixelMedUtils.BitsStoredTagName, "16"));
 
 		if (suppliedDICOMElementMap.containsKey(PixelMedUtils.PixelRepresentationCode))
-			defaultDicomElements.add(suppliedDICOMElementMap.get(PixelMedUtils.PixelRepresentationCode));
+			defaultDicomElements.add(suppliedDICOMElementMap.get(PixelMedUtils.PixelRepresentationCode).get(0));
 		else
 			defaultDicomElements.add(new DICOMElement(PixelMedUtils.PixelRepresentationCode,
 					PixelMedUtils.PixelRepresentationTagName, "0"));
@@ -1011,19 +1014,19 @@ public class DefaultEpadOperations implements EpadOperations
 		return new DICOMElementList(defaultDicomElements);
 	}
 
-	/**
-	 * Return a map of tag code to value. Note that we ignore duplicate tags and just use the last one encountered.
-	 * <p>
-	 * May want to think about returning a map to a set of values.
-	 */
-	private Map<String, DICOMElement> generateDICOMElementMap(DICOMElementList dicomElements)
+	private Map<String, List<DICOMElement>> generateDICOMElementMap(DICOMElementList dicomElementList)
 	{
-		Map<String, DICOMElement> result = new HashMap<>();
+		Map<String, List<DICOMElement>> result = new HashMap<>();
 
-		for (DICOMElement dicomElement : dicomElements.ResultSet.Result) {
-			result.put(dicomElement.tagCode, dicomElement);
+		for (DICOMElement dicomElement : dicomElementList.ResultSet.Result) {
+			if (result.get(dicomElement.tagCode) != null)
+				result.get(dicomElement.tagCode).add(dicomElement);
+			else {
+				List<DICOMElement> dicomElements = new ArrayList<>();
+				dicomElements.add(dicomElement);
+				result.put(dicomElement.tagCode, dicomElements);
+			}
 		}
-
 		return result;
 	}
 
