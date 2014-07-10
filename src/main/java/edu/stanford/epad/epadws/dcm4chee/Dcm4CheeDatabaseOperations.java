@@ -7,6 +7,7 @@ import java.util.Set;
 import edu.stanford.epad.common.dicom.DCM4CHEEImageDescription;
 import edu.stanford.epad.common.dicom.DICOMFileDescription;
 import edu.stanford.epad.dtos.internal.DCM4CHEEStudySearchType;
+import edu.stanford.epad.epadws.handlers.core.ImageReference;
 import edu.stanford.epad.epadws.queries.Dcm4CheeQueries;
 
 /**
@@ -42,6 +43,8 @@ public interface Dcm4CheeDatabaseOperations
 	public Set<DICOMFileDescription> getDICOMFilesForSeries(String seriesUID);
 
 	List<DCM4CHEEImageDescription> getImageDescriptions(String studyUID, String seriesUID);
+
+	DCM4CHEEImageDescription getImageDescription(ImageReference imageReference);
 
 	DCM4CHEEImageDescription getImageDescription(String studyUID, String seriesUID, String imageUID);
 

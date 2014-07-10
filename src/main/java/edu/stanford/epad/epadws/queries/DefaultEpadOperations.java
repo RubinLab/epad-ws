@@ -74,12 +74,17 @@ import edu.stanford.epad.epadws.xnat.XNATCreationOperations;
 import edu.stanford.epad.epadws.xnat.XNATDeletionOperations;
 import edu.stanford.epad.epadws.xnat.XNATUtil;
 
+// TODO Too long - separate in to multiple classes
+
 public class DefaultEpadOperations implements EpadOperations
 {
 	private static final EPADLogger log = EPADLogger.getInstance();
 
 	private static final DefaultEpadOperations ourInstance = new DefaultEpadOperations();
+
 	private final EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
+	private final Dcm4CheeDatabaseOperations dcm4CheeDatabaseOperations = Dcm4CheeDatabase.getInstance()
+			.getDcm4CheeDatabaseOperations();
 
 	private DefaultEpadOperations()
 	{
@@ -89,6 +94,10 @@ public class DefaultEpadOperations implements EpadOperations
 	{
 		return ourInstance;
 	}
+
+	/**
+	 * Get operations
+	 */
 
 	@Override
 	public EPADProjectList getProjectDescriptions(String username, String sessionID, EPADSearchFilter searchFilter)
@@ -142,7 +151,7 @@ public class DefaultEpadOperations implements EpadOperations
 		DCM4CHEEStudyList dcm4CheeStudyList = Dcm4CheeQueries.getStudies(studyUIDsInXNAT);
 
 		for (DCM4CHEEStudy dcm4CheeStudy : dcm4CheeStudyList.ResultSet.Result) {
-			EPADStudy epadStudy = dcm4CheeStudy2EpadStudy(subjectReference.projectID, subjectReference.subjectID,
+			EPADStudy epadStudy = dcm4cheeStudy2EpadStudy(subjectReference.projectID, subjectReference.subjectID,
 					dcm4CheeStudy, username);
 
 			boolean filter = searchFilter.shouldFilterStudy(subjectReference.subjectID, epadStudy.studyAccessionNumber,
@@ -167,7 +176,7 @@ public class DefaultEpadOperations implements EpadOperations
 		} else {
 			DCM4CHEEStudy dcm4CheeStudy = Dcm4CheeQueries.getStudy(studyReference.studyUID);
 			if (dcm4CheeStudy != null)
-				return dcm4CheeStudy2EpadStudy(studyReference.projectID, studyReference.subjectID, dcm4CheeStudy, username);
+				return dcm4cheeStudy2EpadStudy(studyReference.projectID, studyReference.subjectID, dcm4CheeStudy, username);
 			else {
 				log.warning("Count not find dcm4chee study " + studyReference.studyUID + " for subject "
 						+ studyReference.subjectID + " in project " + studyReference.projectID);
@@ -179,66 +188,26 @@ public class DefaultEpadOperations implements EpadOperations
 	@Override
 	public EPADSeries getSeriesDescription(SeriesReference seriesReference, String username, String sessionID)
 	{
-		DCM4CHEESeries dcm4CheeSeries = Dcm4CheeQueries.getSeries(seriesReference.seriesUID);
+		DCM4CHEESeries dcm4cheeSeries = Dcm4CheeQueries.getSeries(seriesReference.seriesUID);
 
-		String seriesUID = dcm4CheeSeries.seriesUID;
-		String patientID = dcm4CheeSeries.patientID;
-		String patientName = dcm4CheeSeries.patientName;
-		String seriesDate = dcm4CheeSeries.seriesDate;
-		String seriesDescription = dcm4CheeSeries.seriesDescription;
-		String examType = dcm4CheeSeries.examType;
-		String bodyPart = dcm4CheeSeries.bodyPart;
-		String accessionNumber = dcm4CheeSeries.accessionNumber;
-		String institution = dcm4CheeSeries.institution;
-		String stationName = dcm4CheeSeries.stationName;
-		String department = dcm4CheeSeries.department;
-		int numberOfImages = dcm4CheeSeries.imagesInSeries;
-		int numberOfSeriesRelatedInstances = dcm4CheeSeries.numberOfSeriesRelatedInstances;
-		int numberOfAnnotations = AIMQueries.getNumberOfAIMAnnotationsForSeries(seriesUID, username);
-		SeriesProcessingStatus seriesProcessingStatus = epadDatabaseOperations.getSeriesProcessingStatus(seriesUID);
-		String createdTime = dcm4CheeSeries.createdTime != null ? dcm4CheeSeries.createdTime.toString() : "";
-
-		return new EPADSeries(seriesReference.projectID, patientID, patientName, seriesReference.studyUID, seriesUID,
-				seriesDate, seriesDescription, examType, bodyPart, accessionNumber, numberOfImages,
-				numberOfSeriesRelatedInstances, numberOfAnnotations, institution, stationName, department,
-				seriesProcessingStatus, createdTime);
+		return dcm4cheeSeries2EpadSeries(seriesReference.projectID, seriesReference.subjectID, dcm4cheeSeries, username);
 	}
 
 	@Override
 	public EPADSeriesList getSeriesDescriptions(StudyReference studyReference, String username, String sessionID,
 			EPADSearchFilter searchFilter)
 	{
-		EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
 		EPADSeriesList epadSeriesList = new EPADSeriesList();
 
 		DCM4CHEESeriesList dcm4CheeSeriesList = Dcm4CheeQueries.getSeriesInStudy(studyReference.studyUID);
 		for (DCM4CHEESeries dcm4CheeSeries : dcm4CheeSeriesList.ResultSet.Result) {
-			String seriesUID = dcm4CheeSeries.seriesUID;
-			String patientID = dcm4CheeSeries.patientID;
-			String patientName = dcm4CheeSeries.patientName;
-			String seriesDate = dcm4CheeSeries.seriesDate;
-			String seriesDescription = dcm4CheeSeries.seriesDescription;
-			String examType = dcm4CheeSeries.examType;
-			String bodyPart = dcm4CheeSeries.bodyPart;
-			String accessionNumber = dcm4CheeSeries.accessionNumber;
-			String institution = dcm4CheeSeries.institution;
-			String stationName = dcm4CheeSeries.stationName;
-			String department = dcm4CheeSeries.department;
-			int numberOfImages = dcm4CheeSeries.imagesInSeries;
-			int numberOfSeriesRelatedInstances = dcm4CheeSeries.numberOfSeriesRelatedInstances;
-			int numberOfAnnotations = AIMQueries.getNumberOfAIMAnnotationsForSeries(seriesUID, username);
-			SeriesProcessingStatus seriesProcessingStatus = epadDatabaseOperations.getSeriesProcessingStatus(seriesUID);
-			String createdTime = dcm4CheeSeries.createdTime != null ? dcm4CheeSeries.createdTime.toString() : "";
-			boolean filter = searchFilter.shouldFilterSeries(patientID, patientName, examType, accessionNumber,
-					numberOfAnnotations);
+			EPADSeries epadSeries = dcm4cheeSeries2EpadSeries(studyReference.projectID, studyReference.subjectID,
+					dcm4CheeSeries, username);
+			boolean filter = searchFilter.shouldFilterSeries(epadSeries.patientID, epadSeries.patientName,
+					epadSeries.examType, epadSeries.accessionNumber, epadSeries.numberOfAnnotations);
 
-			if (!filter) {
-				EPADSeries epadSeries = new EPADSeries(studyReference.projectID, patientID, patientName,
-						studyReference.studyUID, seriesUID, seriesDate, seriesDescription, examType, bodyPart, accessionNumber,
-						numberOfImages, numberOfSeriesRelatedInstances, numberOfAnnotations, institution, stationName, department,
-						seriesProcessingStatus, createdTime);
+			if (!filter)
 				epadSeriesList.addEPADSeries(epadSeries);
-			}
 		}
 		return epadSeriesList;
 	}
@@ -247,8 +216,6 @@ public class DefaultEpadOperations implements EpadOperations
 	public EPADImageList getImageDescriptions(SeriesReference seriesReference, String sessionID,
 			EPADSearchFilter searchFilter)
 	{
-		Dcm4CheeDatabaseOperations dcm4CheeDatabaseOperations = Dcm4CheeDatabase.getInstance()
-				.getDcm4CheeDatabaseOperations();
 		List<DCM4CHEEImageDescription> imageDescriptions = dcm4CheeDatabaseOperations.getImageDescriptions(
 				seriesReference.studyUID, seriesReference.seriesUID);
 		EPADImageList epadImageList = new EPADImageList();
@@ -267,7 +234,7 @@ public class DefaultEpadOperations implements EpadOperations
 
 				epadImageList.addImage(epadImage);
 				isFirst = false;
-			} else {
+			} else { // We do not add DICOM headers to remaining image descriptions because it would be too expensive
 				EPADImage epadImage = createEPADImage(seriesReference.projectID, seriesReference.subjectID,
 						seriesReference.studyUID, seriesReference.seriesUID, dcm4cheeImageDescription);
 				epadImageList.addImage(epadImage);
@@ -279,18 +246,12 @@ public class DefaultEpadOperations implements EpadOperations
 	@Override
 	public EPADImage getImageDescription(ImageReference imageReference, String sessionID)
 	{
-		String studyUID = imageReference.studyUID;
-		String seriesUID = imageReference.seriesUID;
-		String imageUID = imageReference.imageUID;
-		Dcm4CheeDatabaseOperations dcm4CheeDatabaseOperations = Dcm4CheeDatabase.getInstance()
-				.getDcm4CheeDatabaseOperations();
-		DCM4CHEEImageDescription imageDescription = dcm4CheeDatabaseOperations.getImageDescription(studyUID, seriesUID,
-				imageUID);
-		DICOMElementList dicomElements = getDICOMElements(imageReference);
-		DICOMElementList defaultDICOMElements = getDefaultDICOMElements(imageReference, dicomElements);
+		DCM4CHEEImageDescription imageDescription = dcm4CheeDatabaseOperations.getImageDescription(imageReference);
+		DICOMElementList suppliedDICOMElements = getDICOMElements(imageReference);
+		DICOMElementList defaultDICOMElements = getDefaultDICOMElements(imageReference, suppliedDICOMElements);
 
 		return createEPADImage(imageReference.projectID, imageReference.subjectID, imageReference.studyUID,
-				imageReference.seriesUID, imageDescription, dicomElements, defaultDICOMElements);
+				imageReference.seriesUID, imageDescription, suppliedDICOMElements, defaultDICOMElements);
 	}
 
 	@Override
@@ -305,6 +266,10 @@ public class DefaultEpadOperations implements EpadOperations
 	{
 		return null; // TODO
 	}
+
+	/**
+	 * Creation operations
+	 */
 
 	@Override
 	public void createSubjectAndStudy(String projectID, String subjectID, String subjectName, String studyUID,
@@ -380,8 +345,6 @@ public class DefaultEpadOperations implements EpadOperations
 	public Set<String> getSeriesUIDsForSubject(String projectID, String patientID, String sessionID,
 			EPADSearchFilter searchFilter)
 	{
-		Dcm4CheeDatabaseOperations dcm4CheeDatabaseOperations = Dcm4CheeDatabase.getInstance()
-				.getDcm4CheeDatabaseOperations();
 		// Set<String> studyUIDs = XNATQueries.dicomStudyUIDsForSubject(sessionID, projectID, patientID);
 		Set<String> studyUIDs = dcm4CheeDatabaseOperations.getStudyUIDsForPatient(patientID);
 		Set<String> seriesIDs = new HashSet<String>();
@@ -403,9 +366,6 @@ public class DefaultEpadOperations implements EpadOperations
 	@Override
 	public List<DCM4CHEESeries> getNewDcm4CheeSeries()
 	{
-		Dcm4CheeDatabaseOperations dcm4CheeDatabaseOperations = Dcm4CheeDatabase.getInstance()
-				.getDcm4CheeDatabaseOperations();
-		EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
 		List<DCM4CHEESeries> newDcm4CheeSeries = new ArrayList<DCM4CHEESeries>();
 
 		Set<String> allReadyDcm4CheeSeriesUIDs = dcm4CheeDatabaseOperations.getAllReadyDcm4CheeSeriesUIDs();
@@ -426,8 +386,6 @@ public class DefaultEpadOperations implements EpadOperations
 	@Override
 	public EPADDatabaseSeries getSeries(String studyUID, String seriesUID)
 	{
-		Dcm4CheeDatabaseOperations dcm4CheeDatabaseOperations = Dcm4CheeDatabase.getInstance()
-				.getDcm4CheeDatabaseOperations();
 		List<DCM4CHEEImageDescription> imageDescriptions = dcm4CheeDatabaseOperations.getImageDescriptions(studyUID,
 				seriesUID);
 		List<EPADDatabaseImage> epadImageList = new ArrayList<EPADDatabaseImage>();
@@ -448,10 +406,6 @@ public class DefaultEpadOperations implements EpadOperations
 	@Override
 	public Set<DICOMFileDescription> getUnprocessedDICOMFilesInSeries(String seriesUID)
 	{
-		Dcm4CheeDatabaseOperations dcm4CheeDatabaseOperations = Dcm4CheeDatabase.getInstance()
-				.getDcm4CheeDatabaseOperations();
-		EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
-
 		Set<DICOMFileDescription> dicomFilesWithoutPNGs = new HashSet<DICOMFileDescription>();
 
 		try {
@@ -550,10 +504,6 @@ public class DefaultEpadOperations implements EpadOperations
 	@Override
 	public void deleteStudyFromEPadAndDcm4CheeDatabases(String studyUID)
 	{
-		EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
-		Dcm4CheeDatabaseOperations dcm4CheeDatabaseOperations = Dcm4CheeDatabase.getInstance()
-				.getDcm4CheeDatabaseOperations();
-
 		// Now delete studies from dcm4chee and ePAD's database; includes deleting PNGs for studies.
 		Set<String> seriesUIDs = dcm4CheeDatabaseOperations.getAllSeriesUIDsInStudy(studyUID);
 		log.info("Found " + seriesUIDs.size() + " series in study " + studyUID);
@@ -756,12 +706,9 @@ public class DefaultEpadOperations implements EpadOperations
 		return new EPADAIMList(new ArrayList<EPADAIM>(aims));
 	}
 
-	private EPADStudy dcm4CheeStudy2EpadStudy(String suppliedProjectID, String suppliedSubjectID,
+	private EPADStudy dcm4cheeStudy2EpadStudy(String suppliedProjectID, String suppliedSubjectID,
 			DCM4CHEEStudy dcm4CheeStudy, String username)
 	{
-		Dcm4CheeDatabaseOperations dcm4CheeDatabaseOperations = Dcm4CheeDatabase.getInstance()
-				.getDcm4CheeDatabaseOperations();
-
 		String projectID = suppliedProjectID.equals("") ? EPADConfig.xnatUploadProjectID : suppliedProjectID;
 		String patientName = dcm4CheeStudy.patientName;
 		String xnatPatientID = XNATUtil.subjectID2XNATSubjectLabel(dcm4CheeStudy.patientID);
@@ -788,11 +735,36 @@ public class DefaultEpadOperations implements EpadOperations
 				studyAccessionNumber, numberOfSeries, numberOfImages, numberOfAnnotations);
 	}
 
+	private EPADSeries dcm4cheeSeries2EpadSeries(String suppliedProjectID, String suppliedSubjectID,
+			DCM4CHEESeries dcm4CheeSeries, String username)
+	{
+		String projectID = suppliedProjectID.equals("") ? EPADConfig.xnatUploadProjectID : suppliedProjectID;
+		String patientName = dcm4CheeSeries.patientName;
+		String xnatPatientID = XNATUtil.subjectID2XNATSubjectLabel(dcm4CheeSeries.patientID);
+		String subjectID = suppliedSubjectID.equals("") ? xnatPatientID : suppliedSubjectID;
+		String studyUID = dcm4CheeSeries.studyUID;
+		String seriesUID = dcm4CheeSeries.studyUID;
+		String seriesDate = dcm4CheeSeries.seriesDate;
+		String seriesDescription = dcm4CheeSeries.seriesDescription;
+		String examType = dcm4CheeSeries.examType;
+		String bodyPart = dcm4CheeSeries.bodyPart;
+		String accessionNumber = dcm4CheeSeries.accessionNumber;
+		String institution = dcm4CheeSeries.institution;
+		String stationName = dcm4CheeSeries.stationName;
+		String department = dcm4CheeSeries.department;
+		int numberOfImages = dcm4CheeSeries.imagesInSeries;
+		int numberOfSeriesRelatedInstances = dcm4CheeSeries.numberOfSeriesRelatedInstances;
+		int numberOfAnnotations = AIMQueries.getNumberOfAIMAnnotationsForSeries(seriesUID, username);
+		SeriesProcessingStatus seriesProcessingStatus = epadDatabaseOperations.getSeriesProcessingStatus(seriesUID);
+		String createdTime = dcm4CheeSeries.createdTime != null ? dcm4CheeSeries.createdTime.toString() : "";
+
+		return new EPADSeries(projectID, subjectID, patientName, studyUID, seriesUID, seriesDate, seriesDescription,
+				examType, bodyPart, accessionNumber, numberOfImages, numberOfSeriesRelatedInstances, numberOfAnnotations,
+				institution, stationName, department, seriesProcessingStatus, createdTime);
+	}
+
 	private StudyProcessingStatus getStudyProcessingStatus(String studyUID)
 	{
-		EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
-		Dcm4CheeDatabaseOperations dcm4CheeDatabaseOperations = Dcm4CheeDatabase.getInstance()
-				.getDcm4CheeDatabaseOperations();
 		boolean seriesNotStarted = false;
 		boolean seriesWithNoDICOM = false;
 		boolean seriesInPipeline = false;

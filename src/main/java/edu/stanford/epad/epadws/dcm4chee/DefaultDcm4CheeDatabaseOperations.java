@@ -21,6 +21,7 @@ import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.epad.dtos.internal.DCM4CHEEStudySearchType;
 import edu.stanford.epad.epadws.epaddb.ConnectionPool;
 import edu.stanford.epad.epadws.epaddb.DatabaseUtils;
+import edu.stanford.epad.epadws.handlers.core.ImageReference;
 
 public class DefaultDcm4CheeDatabaseOperations implements Dcm4CheeDatabaseOperations
 {
@@ -461,6 +462,12 @@ public class DefaultDcm4CheeDatabaseOperations implements Dcm4CheeDatabaseOperat
 			close(c, ps, rs);
 		}
 		return retVal;
+	}
+
+	@Override
+	public DCM4CHEEImageDescription getImageDescription(ImageReference imageReference)
+	{
+		return getImageDescription(imageReference.studyUID, imageReference.seriesUID, imageReference.imageUID);
 	}
 
 	@Override
