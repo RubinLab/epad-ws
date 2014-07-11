@@ -138,8 +138,12 @@ public class Dcm4CheeQueries
 				.getDcm4CheeDatabaseOperations();
 		Map<String, String> dcm4CheeSeriesData = dcm4CheeDatabaseOperations.getSeriesData(seriesUID);
 
-		DCM4CHEESeries dcm4cheeSeries = extractDCM4CHEESeriesFromSeriesData(dcm4CheeSeriesData);
-		return dcm4cheeSeries;
+		if (!dcm4CheeSeriesData.isEmpty())
+			return extractDCM4CHEESeriesFromSeriesData(dcm4CheeSeriesData);
+		else {
+			log.warning("Could not find series " + seriesUID + " in dcm4chee's database");
+			return null;
+		}
 	}
 
 	public static DICOMElementList getDICOMElementsFromWADO(String studyUID, String seriesUID, String imageUID)

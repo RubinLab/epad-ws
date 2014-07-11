@@ -148,8 +148,11 @@ public class EPADHandler extends AbstractHandler
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.STUDY, pathInfo)) {
 				StudyReference studyReference = StudyReference.extract(ProjectsRouteTemplates.STUDY, pathInfo);
 				EPADStudy study = epadOperations.getStudyDescription(studyReference, username, sessionID);
-				responseStream.append(study.toJSON());
-				statusCode = HttpServletResponse.SC_OK;
+				if (study != null) {
+					responseStream.append(study.toJSON());
+					statusCode = HttpServletResponse.SC_OK;
+				} else
+					statusCode = HttpServletResponse.SC_NOT_FOUND;
 
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.SERIES_LIST, pathInfo)) {
 				StudyReference studyReference = StudyReference.extract(ProjectsRouteTemplates.SERIES_LIST, pathInfo);
@@ -159,10 +162,13 @@ public class EPADHandler extends AbstractHandler
 				statusCode = HttpServletResponse.SC_OK;
 
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.SERIES, pathInfo)) {
-				SeriesReference seriesReference = SeriesReference.extract(ProjectsRouteTemplates.STUDY, pathInfo);
+				SeriesReference seriesReference = SeriesReference.extract(ProjectsRouteTemplates.SERIES, pathInfo);
 				EPADSeries series = epadOperations.getSeriesDescription(seriesReference, username, sessionID);
-				responseStream.append(series.toJSON());
-				statusCode = HttpServletResponse.SC_OK;
+				if (series != null) {
+					responseStream.append(series.toJSON());
+					statusCode = HttpServletResponse.SC_OK;
+				} else
+					statusCode = HttpServletResponse.SC_NOT_FOUND;
 
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.IMAGE_LIST, pathInfo)) {
 				SeriesReference seriesReference = SeriesReference.extract(ProjectsRouteTemplates.IMAGE_LIST, pathInfo);
@@ -173,8 +179,11 @@ public class EPADHandler extends AbstractHandler
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.IMAGE, pathInfo)) {
 				ImageReference imageReference = ImageReference.extract(ProjectsRouteTemplates.IMAGE, pathInfo);
 				EPADImage image = epadOperations.getImageDescription(imageReference, sessionID);
-				responseStream.append(image.toJSON());
-				statusCode = HttpServletResponse.SC_OK;
+				if (image != null) {
+					responseStream.append(image.toJSON());
+					statusCode = HttpServletResponse.SC_OK;
+				} else
+					statusCode = HttpServletResponse.SC_NOT_FOUND;
 
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.FRAME_LIST, pathInfo)) {
 				ImageReference imageReference = ImageReference.extract(ProjectsRouteTemplates.FRAME_LIST, pathInfo);
@@ -185,8 +194,11 @@ public class EPADHandler extends AbstractHandler
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.FRAME, pathInfo)) {
 				FrameReference frameReference = FrameReference.extract(ProjectsRouteTemplates.FRAME, pathInfo);
 				EPADFrame frame = epadOperations.getFrameDescription(frameReference, sessionID);
-				responseStream.append(frame.toJSON());
-				statusCode = HttpServletResponse.SC_OK;
+				if (frame != null) {
+					responseStream.append(frame.toJSON());
+					statusCode = HttpServletResponse.SC_OK;
+				} else
+					statusCode = HttpServletResponse.SC_NOT_FOUND;
 
 				/**
 				 * Studies routes
@@ -204,7 +216,7 @@ public class EPADHandler extends AbstractHandler
 				statusCode = HttpServletResponse.SC_OK;
 
 				/**
-				 * AIM-related routes
+				 * New AIM-related routes. TODO These have not been implemented yet
 				 */
 
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.PROJECT_AIM_LIST, pathInfo)) {

@@ -193,7 +193,12 @@ public class DefaultEpadOperations implements EpadOperations
 	{
 		DCM4CHEESeries dcm4cheeSeries = Dcm4CheeQueries.getSeries(seriesReference.seriesUID);
 
-		return dcm4cheeSeries2EpadSeries(seriesReference.projectID, seriesReference.subjectID, dcm4cheeSeries, username);
+		if (dcm4cheeSeries != null)
+			return dcm4cheeSeries2EpadSeries(seriesReference.projectID, seriesReference.subjectID, dcm4cheeSeries, username);
+		else {
+			log.warning("Could not find series description for series " + seriesReference.seriesUID);
+			return null;
+		}
 	}
 
 	@Override
@@ -454,6 +459,7 @@ public class DefaultEpadOperations implements EpadOperations
 		for (String seriesUID : newSeriesUIDs) {
 			DCM4CHEESeries dcm4CheeSeries = Dcm4CheeQueries.getSeries(seriesUID);
 			if (dcm4CheeSeries != null) {
+				log.warning("Could not find new series " + seriesUID + " in dcm4chee");
 				newDcm4CheeSeries.add(dcm4CheeSeries);
 			}
 		}
@@ -820,7 +826,7 @@ public class DefaultEpadOperations implements EpadOperations
 		String xnatPatientID = XNATUtil.subjectID2XNATSubjectLabel(dcm4CheeSeries.patientID);
 		String subjectID = suppliedSubjectID.equals("") ? xnatPatientID : suppliedSubjectID;
 		String studyUID = dcm4CheeSeries.studyUID;
-		String seriesUID = dcm4CheeSeries.studyUID;
+		String seriesUID = dcm4CheeSeries.seriesUID;
 		String seriesDate = dcm4CheeSeries.seriesDate;
 		String seriesDescription = dcm4CheeSeries.seriesDescription;
 		String examType = dcm4CheeSeries.examType;
