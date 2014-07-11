@@ -187,13 +187,14 @@ public class Main
 		addHandlerAtContextPath(new ImageCheckHandler(), "/epad/imagecheck", handlerList);
 		addHandlerAtContextPath(new ImageReprocessingHandler(), "/epad/imagereprocess", handlerList);
 
-		// TODO Remove after RESTful conversion. AIMs should be retrieved via routes studies/<sid>/aims,
-		// studies/<sid>/series/<sid>aims, studies/<sid>/series/<sid>/images/<iid>/aims,
-		addHandlerAtContextPath(new AimResourceHandler(), "/epad/aimresource", handlerList);
-
 		addHandlerAtContextPath(new ResourceCheckHandler(), "/epad/resources", handlerList);
 		addFileServerAtContextPath(EPADConfig.getEPADWebServerResourcesDir(), handlerList, "/epad/resources");
+
 		addHandlerAtContextPath(new WadoHandler(), "/epad/wado", handlerList);
+
+		// TODO Remove after RESTful conversion. AIMs should be retrieved via routes studies/<sid>/aims,
+		// studies/<sid>/series/<sid>/aims, studies/<sid>/series/<sid>/images/<iid>/aims,
+		addHandlerAtContextPath(new AimResourceHandler(), "/epad/aimresource", handlerList);
 
 		// TODO Remove after RESTful conversion. Should get all necessary information via JSON returned from route:
 		// GET /project/<pid>/subjects/<sid>/studies/<sid>/series/<sid>/images/<iid>/

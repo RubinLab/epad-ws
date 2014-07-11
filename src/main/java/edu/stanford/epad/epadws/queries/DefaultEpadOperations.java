@@ -15,6 +15,8 @@ import java.util.Set;
 
 import javax.servlet.http.HttpServletResponse;
 
+import com.pixelmed.dicom.SOPClass;
+
 import edu.stanford.epad.common.dicom.DCM4CHEEImageDescription;
 import edu.stanford.epad.common.dicom.DCM4CHEEUtil;
 import edu.stanford.epad.common.dicom.DICOMFileDescription;
@@ -24,6 +26,7 @@ import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.epad.dtos.EPADAIM;
 import edu.stanford.epad.dtos.EPADAIMList;
+import edu.stanford.epad.dtos.EPADDSOFrame;
 import edu.stanford.epad.dtos.EPADDatabaseImage;
 import edu.stanford.epad.dtos.EPADDatabaseSeries;
 import edu.stanford.epad.dtos.EPADFrame;
@@ -228,15 +231,13 @@ public class DefaultEpadOperations implements EpadOperations
 				DICOMElementList defaultDICOMElements = getDefaultDICOMElements(dcm4cheeImageDescription.studyUID,
 						dcm4cheeImageDescription.seriesUID, dcm4cheeImageDescription.imageUID, suppliedDICOMElements);
 
-				EPADImage epadImage = createEPADImage(seriesReference.projectID, seriesReference.subjectID,
-						seriesReference.studyUID, seriesReference.seriesUID, dcm4cheeImageDescription, suppliedDICOMElements,
+				EPADImage epadImage = createEPADImage(seriesReference, dcm4cheeImageDescription, suppliedDICOMElements,
 						defaultDICOMElements);
 
 				epadImageList.addImage(epadImage);
 				isFirst = false;
 			} else { // We do not add DICOM headers to remaining image descriptions because it would be too expensive
-				EPADImage epadImage = createEPADImage(seriesReference.projectID, seriesReference.subjectID,
-						seriesReference.studyUID, seriesReference.seriesUID, dcm4cheeImageDescription);
+				EPADImage epadImage = createEPADImage(seriesReference, dcm4cheeImageDescription);
 				epadImageList.addImage(epadImage);
 			}
 		}
@@ -246,19 +247,95 @@ public class DefaultEpadOperations implements EpadOperations
 	@Override
 	public EPADImage getImageDescription(ImageReference imageReference, String sessionID)
 	{
-		DCM4CHEEImageDescription imageDescription = dcm4CheeDatabaseOperations.getImageDescription(imageReference);
+		DCM4CHEEImageDescription dcm4cheeImageDescription = dcm4CheeDatabaseOperations.getImageDescription(imageReference);
 		DICOMElementList suppliedDICOMElements = getDICOMElements(imageReference);
 		DICOMElementList defaultDICOMElements = getDefaultDICOMElements(imageReference, suppliedDICOMElements);
 
-		return createEPADImage(imageReference.projectID, imageReference.subjectID, imageReference.studyUID,
-				imageReference.seriesUID, imageDescription, suppliedDICOMElements, defaultDICOMElements);
+		return createEPADImage(imageReference, dcm4cheeImageDescription, suppliedDICOMElements, defaultDICOMElements);
 	}
 
 	@Override
 	public EPADFrameList getFrameDescriptions(ImageReference imageReference, String sessionID,
 			EPADSearchFilter searchFilter)
 	{
-		return new EPADFrameList(); // TODO
+		DCM4CHEEImageDescription dcm4cheeImageDescription = dcm4CheeDatabaseOperations.getImageDescription(imageReference);
+		DICOMElementList suppliedDICOMElements = getDICOMElements(imageReference);
+		DICOMElementList defaultDICOMElements = getDefaultDICOMElements(imageReference, suppliedDICOMElements);
+		List<EPADFrame> frames = new ArrayList<>();
+
+		if (isDSO(dcm4cheeImageDescription)) {
+			List<DICOMElement> referencedSOPInstanceUIDDICOMElements = getDICOMElementsByCode(suppliedDICOMElements,
+					PixelMedUtils.ReferencedSOPInstanceUIDCode);
+			int numberOfFrames = referencedSOPInstanceUIDDICOMElements.size();
+
+			if (numberOfFrames > 0) {
+				DICOMElement firstDICOMElement = referencedSOPInstanceUIDDICOMElements.get(0);
+				String studyUID = imageReference.studyUID; // DSO will be in same study as original images
+				String referencedFirstImageUID = firstDICOMElement.value;
+				String referencedSeriesUID = dcm4CheeDatabaseOperations.getSeriesUIDForImage(referencedFirstImageUID);
+
+				if (!referencedSeriesUID.equals("")) {
+					boolean isFirst = true;
+					for (DICOMElement dicomElement : referencedSOPInstanceUIDDICOMElements) {
+						String referencedImageUID = dicomElement.value;
+						DCM4CHEEImageDescription dcm4cheeReferencedImageDescription = dcm4CheeDatabaseOperations
+								.getImageDescription(studyUID, referencedSeriesUID, referencedImageUID);
+						String insertDate = dcm4cheeReferencedImageDescription.createdTime;
+						String imageDate = dcm4cheeReferencedImageDescription.contentTime;
+						String sliceLocation = dcm4cheeReferencedImageDescription.sliceLocation;
+						int frameNumber = dcm4cheeReferencedImageDescription.instanceNumber;
+						String losslessImage = getPNGPath(studyUID, imageReference.seriesUID, imageReference.imageUID);
+						String lossyImage = "";
+						String sourceLosslessImage = getPNGPath(studyUID, referencedSeriesUID, referencedImageUID);
+						String sourceLossyImage = "";
+
+						if (isFirst) {
+							EPADDSOFrame frame = new EPADDSOFrame(imageReference.projectID, imageReference.subjectID,
+									imageReference.studyUID, imageReference.seriesUID, imageReference.imageUID, insertDate, imageDate,
+									sliceLocation, frameNumber, losslessImage, lossyImage, suppliedDICOMElements, defaultDICOMElements,
+									referencedSeriesUID, referencedImageUID, sourceLosslessImage, sourceLossyImage);
+							frames.add(frame);
+							isFirst = false;
+						} else { // We do not add DICOM headers to remaining frame descriptions because it would be too expensive
+							EPADDSOFrame frame = new EPADDSOFrame(imageReference.projectID, imageReference.subjectID,
+									imageReference.studyUID, imageReference.seriesUID, imageReference.imageUID, insertDate, imageDate,
+									sliceLocation, frameNumber, losslessImage, lossyImage, new DICOMElementList(),
+									new DICOMElementList(), referencedSeriesUID, referencedImageUID, sourceLosslessImage,
+									sourceLossyImage);
+							frames.add(frame);
+						}
+					}
+					return new EPADFrameList(frames);
+				} else {
+					log.warning("Could not find original series for DSO image " + imageReference.imageUID + " in series "
+							+ imageReference.seriesUID);
+				}
+			} else {
+				log.warning("Could not find frames for DSO image " + imageReference.imageUID + " in series "
+						+ imageReference.seriesUID);
+			}
+		} else {
+			log.warning("Attempt to get frames of non multi-frame image " + imageReference.imageUID + " in series "
+					+ imageReference.seriesUID);
+		}
+		return new EPADFrameList();
+	}
+
+	private List<DICOMElement> getDICOMElementsByCode(DICOMElementList dicomElementList, String tagCode)
+	{
+		List<DICOMElement> matchingDICOMElements = new ArrayList<>();
+
+		for (DICOMElement dicomElement : dicomElementList.ResultSet.Result) {
+			if (dicomElement.tagCode.equals(tagCode))
+				matchingDICOMElements.add(dicomElement);
+		}
+
+		return matchingDICOMElements;
+	}
+
+	private boolean isDSO(DCM4CHEEImageDescription dcm4cheeImageDescription)
+	{
+		return dcm4cheeImageDescription.classUID.equals(SOPClass.SegmentationStorage);
 	}
 
 	@Override
@@ -862,12 +939,41 @@ public class DefaultEpadOperations implements EpadOperations
 			return null;
 	}
 
-	// 1.2.840.10008.5.1.4.1.1.66.4 Segmentation Storage dcm4cheeImageDescription.classUID
+	private String getPNGPath(String studyUID, String seriesUID, String imageUID)
+	{ // TODO Look at this. Not very robust.
+		String pngLocation = epadDatabaseOperations.getPNGLocation(studyUID, seriesUID, imageUID);
+		String pngPath = pngLocation.substring(EPADConfig.getEPADWebServerPNGDir().length());
+
+		return pngPath;
+	}
+
+	private EPADImage createEPADImage(SeriesReference seriesReference, DCM4CHEEImageDescription dcm4cheeImageDescription,
+			DICOMElementList dicomElements, DICOMElementList defaultDICOMElements)
+	{
+		return createEPADImage(seriesReference.projectID, seriesReference.subjectID, seriesReference.studyUID,
+				seriesReference.seriesUID, dcm4cheeImageDescription.imageUID, dcm4cheeImageDescription, dicomElements,
+				defaultDICOMElements);
+	}
+
+	private EPADImage createEPADImage(SeriesReference seriesReference, DCM4CHEEImageDescription dcm4cheeImageDescription)
+	{
+		return createEPADImage(seriesReference.projectID, seriesReference.subjectID, seriesReference.studyUID,
+				seriesReference.seriesUID, dcm4cheeImageDescription.imageUID, dcm4cheeImageDescription, new DICOMElementList(),
+				new DICOMElementList());
+	}
+
+	private EPADImage createEPADImage(ImageReference imageReference, DCM4CHEEImageDescription dcm4CheeImageDescription,
+			DICOMElementList dicomElements, DICOMElementList defaultDICOMElements)
+	{
+		return createEPADImage(imageReference.projectID, imageReference.subjectID, imageReference.studyUID,
+				imageReference.seriesUID, imageReference.imageUID, dcm4CheeImageDescription, dicomElements,
+				defaultDICOMElements);
+	}
+
 	private EPADImage createEPADImage(String projectID, String subjectID, String studyUID, String seriesUID,
-			DCM4CHEEImageDescription dcm4CheeImageDescription, DICOMElementList dicomElements,
+			String imageUID, DCM4CHEEImageDescription dcm4CheeImageDescription, DICOMElementList dicomElements,
 			DICOMElementList defaultDICOMElements)
 	{
-		String imageUID = dcm4CheeImageDescription.imageUID;
 		String classUID = dcm4CheeImageDescription.classUID;
 		int instanceNumber = dcm4CheeImageDescription.instanceNumber;
 		String sliceLocation = dcm4CheeImageDescription.sliceLocation;
@@ -880,21 +986,6 @@ public class DefaultEpadOperations implements EpadOperations
 		return new EPADImage(projectID, subjectID, studyUID, seriesUID, imageUID, classUID, insertDate, imageDate,
 				sliceLocation, instanceNumber, losslessImage, lossyImage, dicomElements, defaultDICOMElements, numberOfFrames,
 				false);
-	}
-
-	private String getPNGPath(String studyUID, String seriesUID, String imageUID)
-	{ // TODO Look at this. Not very robust.
-		String pngLocation = epadDatabaseOperations.getPNGLocation(studyUID, seriesUID, imageUID);
-		String pngPath = pngLocation.substring(EPADConfig.getEPADWebServerPNGDir().length());
-
-		return pngPath;
-	}
-
-	private EPADImage createEPADImage(String projectID, String subjectID, String studyUID, String seriesUID,
-			DCM4CHEEImageDescription dcm4cheeImageDescription)
-	{
-		return createEPADImage(projectID, subjectID, studyUID, seriesUID, dcm4cheeImageDescription, new DICOMElementList(),
-				new DICOMElementList());
 	}
 
 	private DICOMElementList getDICOMElements(ImageReference imageReference)
