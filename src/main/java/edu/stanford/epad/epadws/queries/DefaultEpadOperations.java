@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -289,10 +290,11 @@ public class DefaultEpadOperations implements EpadOperations
 						String imageDate = dcm4cheeReferencedImageDescription.contentTime;
 						String sliceLocation = dcm4cheeReferencedImageDescription.sliceLocation;
 						int frameNumber = dcm4cheeReferencedImageDescription.instanceNumber;
-						String losslessImage = getPNGPath(studyUID, imageReference.seriesUID, imageReference.imageUID);
-						String lossyImage = "";
+						String losslessImage = getPNGMaskPath(studyUID, imageReference.seriesUID, imageReference.imageUID,
+								frameNumber);
+						String lossyImage = ""; // We do not have a lossy image for the DSO frame
 						String sourceLosslessImage = getPNGPath(studyUID, referencedSeriesUID, referencedImageUID);
-						String sourceLossyImage = "";
+						String sourceLossyImage = getWADOPath(studyUID, referencedSeriesUID, referencedImageUID);
 
 						if (isFirst) {
 							EPADDSOFrame frame = new EPADDSOFrame(imageReference.projectID, imageReference.subjectID,
@@ -328,14 +330,15 @@ public class DefaultEpadOperations implements EpadOperations
 
 	private List<DICOMElement> getDICOMElementsByCode(DICOMElementList dicomElementList, String tagCode)
 	{
-		List<DICOMElement> matchingDICOMElements = new ArrayList<>();
+		Set<DICOMElement> matchingDICOMElements = new LinkedHashSet<>(); // Maintain insertion order
 
 		for (DICOMElement dicomElement : dicomElementList.ResultSet.Result) {
-			if (dicomElement.tagCode.equals(tagCode))
+			// Do not allow duplicates.
+			if (dicomElement.tagCode.equals(tagCode) && !matchingDICOMElements.contains(dicomElement))
 				matchingDICOMElements.add(dicomElement);
 		}
 
-		return matchingDICOMElements;
+		return new ArrayList<>(matchingDICOMElements);
 	}
 
 	private boolean isDSO(DCM4CHEEImageDescription dcm4cheeImageDescription)
@@ -953,6 +956,16 @@ public class DefaultEpadOperations implements EpadOperations
 		return pngPath;
 	}
 
+	private String getPNGMaskPath(String studyUID, String seriesUID, String imageUID, int frameNumber)
+	{
+		return "studies/" + studyUID + "/series/" + seriesUID + "/images/" + imageUID + "/masks/" + frameNumber + ".png";
+	}
+
+	private String getWADOPath(String studyUID, String seriesUID, String imageUID)
+	{
+		return "?requestType=WADO&studyUID=" + studyUID + "&seriesUID=" + seriesUID + "&objectUID=" + imageUID;
+	}
+
 	private EPADImage createEPADImage(SeriesReference seriesReference, DCM4CHEEImageDescription dcm4cheeImageDescription,
 			DICOMElementList dicomElements, DICOMElementList defaultDICOMElements)
 	{
@@ -977,21 +990,22 @@ public class DefaultEpadOperations implements EpadOperations
 	}
 
 	private EPADImage createEPADImage(String projectID, String subjectID, String studyUID, String seriesUID,
-			String imageUID, DCM4CHEEImageDescription dcm4CheeImageDescription, DICOMElementList dicomElements,
+			String imageUID, DCM4CHEEImageDescription dcm4cheeImageDescription, DICOMElementList dicomElements,
 			DICOMElementList defaultDICOMElements)
 	{
-		String classUID = dcm4CheeImageDescription.classUID;
-		int instanceNumber = dcm4CheeImageDescription.instanceNumber;
-		String sliceLocation = dcm4CheeImageDescription.sliceLocation;
-		String imageDate = dcm4CheeImageDescription.contentTime;
-		String insertDate = dcm4CheeImageDescription.createdTime;
+		String classUID = dcm4cheeImageDescription.classUID;
+		int instanceNumber = dcm4cheeImageDescription.instanceNumber;
+		String sliceLocation = dcm4cheeImageDescription.sliceLocation;
+		String imageDate = dcm4cheeImageDescription.contentTime;
+		String insertDate = dcm4cheeImageDescription.createdTime;
 		int numberOfFrames = 0; // TODO Look for MF from dcm4chee
 		String losslessImage = getPNGPath(studyUID, seriesUID, imageUID);
-		String lossyImage = "TODO"; // TODO
+		String lossyImage = getWADOPath(studyUID, seriesUID, imageUID);
+		boolean isDSO = isDSO(dcm4cheeImageDescription);
 
 		return new EPADImage(projectID, subjectID, studyUID, seriesUID, imageUID, classUID, insertDate, imageDate,
 				sliceLocation, instanceNumber, losslessImage, lossyImage, dicomElements, defaultDICOMElements, numberOfFrames,
-				false);
+				isDSO);
 	}
 
 	private DICOMElementList getDICOMElements(ImageReference imageReference)

@@ -122,8 +122,11 @@ public class EPADHandler extends AbstractHandler
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.PROJECT, pathInfo)) {
 				ProjectReference projectReference = ProjectReference.extract(ProjectsRouteTemplates.PROJECT, pathInfo);
 				EPADProject project = epadOperations.getProjectDescription(projectReference, username, sessionID);
-				responseStream.append(project.toJSON());
-				statusCode = HttpServletResponse.SC_OK;
+				if (project != null) {
+					responseStream.append(project.toJSON());
+					statusCode = HttpServletResponse.SC_OK;
+				} else
+					statusCode = HttpServletResponse.SC_NOT_FOUND;
 
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.SUBJECT_LIST, pathInfo)) {
 				ProjectReference projectReference = ProjectReference.extract(ProjectsRouteTemplates.SUBJECT_LIST, pathInfo);
@@ -135,8 +138,11 @@ public class EPADHandler extends AbstractHandler
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.SUBJECT, pathInfo)) {
 				SubjectReference subjectReference = SubjectReference.extract(ProjectsRouteTemplates.SUBJECT, pathInfo);
 				EPADSubject subject = epadOperations.getSubjectDescription(subjectReference, username, sessionID);
-				responseStream.append(subject.toJSON());
-				statusCode = HttpServletResponse.SC_OK;
+				if (subject != null) {
+					responseStream.append(subject.toJSON());
+					statusCode = HttpServletResponse.SC_OK;
+				} else
+					statusCode = HttpServletResponse.SC_NOT_FOUND;
 
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.STUDY_LIST, pathInfo)) {
 				SubjectReference subjectReference = SubjectReference.extract(ProjectsRouteTemplates.STUDY_LIST, pathInfo);
