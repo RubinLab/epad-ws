@@ -840,13 +840,16 @@ public class DefaultEpadOperations implements EpadOperations
 		String department = dcm4CheeSeries.department;
 		int numberOfImages = dcm4CheeSeries.imagesInSeries;
 		int numberOfSeriesRelatedInstances = dcm4CheeSeries.numberOfSeriesRelatedInstances;
+		String firstImageUIDInSeries = (numberOfSeriesRelatedInstances != 1) ? "" : dcm4CheeDatabaseOperations
+				.getFirstImageUIDInSeries(seriesUID);
+
 		int numberOfAnnotations = AIMQueries.getNumberOfAIMAnnotationsForSeries(seriesUID, username);
 		SeriesProcessingStatus seriesProcessingStatus = epadDatabaseOperations.getSeriesProcessingStatus(seriesUID);
 		String createdTime = dcm4CheeSeries.createdTime != null ? dcm4CheeSeries.createdTime.toString() : "";
 
 		return new EPADSeries(projectID, subjectID, patientName, studyUID, seriesUID, seriesDate, seriesDescription,
 				examType, bodyPart, accessionNumber, numberOfImages, numberOfSeriesRelatedInstances, numberOfAnnotations,
-				institution, stationName, department, seriesProcessingStatus, createdTime);
+				institution, stationName, department, seriesProcessingStatus, createdTime, firstImageUIDInSeries);
 	}
 
 	private StudyProcessingStatus getStudyProcessingStatus(String studyUID)

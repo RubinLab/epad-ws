@@ -268,6 +268,17 @@ public class DefaultDcm4CheeDatabaseOperations implements Dcm4CheeDatabaseOperat
 	}
 
 	@Override
+	public String getFirstImageUIDInSeries(String seriesUID)
+	{
+		Set<String> imageUIDs = getImageUIDsForSeries(seriesUID);
+
+		if (!imageUIDs.isEmpty())
+			return imageUIDs.iterator().next();
+		else
+			return "";
+	}
+
+	@Override
 	public Set<String> getImageUIDsForSeries(String seriesUID)
 	{
 		Set<String> retVal = new HashSet<String>();

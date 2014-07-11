@@ -78,7 +78,7 @@ public class AIMUtil
 			}
 			tempFile.renameTo(storeFile);
 
-			if (useV4 == "false") {
+			if (useV4.equals("false")) {
 				AnnotationBuilder.saveToServer(aim, eXistServerUrl, aim3Namespace, eXistCollection, xsdFilePath, eXistUsername,
 						eXistPassword);
 				result = AnnotationBuilder.getAimXMLsaveResult();
@@ -268,7 +268,7 @@ public class AIMUtil
 			File tempFile = new File(tempXmlPath);
 			File storeFile = new File(storeXmlPath);
 
-			if (useV4 == "false") {
+			if (useV4.equals("false")) {
 				AnnotationBuilder.saveToFile(aim, tempXmlPath, xsdFilePath);
 				result = AnnotationBuilder.getAimXMLsaveResult();
 			} else {
@@ -281,7 +281,7 @@ public class AIMUtil
 				storeFile.delete();
 			}
 			tempFile.renameTo(storeFile);
-			if (useV4 == "false") {
+			if (useV4.equals("false")) {
 				AnnotationBuilder.saveToServer(aim, eXistServerUrl, aim3Namespace, eXistCollection, xsdFilePath, eXistUsername,
 						eXistPassword);
 				result = AnnotationBuilder.getAimXMLsaveResult();

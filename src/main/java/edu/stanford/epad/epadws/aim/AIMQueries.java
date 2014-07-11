@@ -98,7 +98,7 @@ public class AIMQueries
 		if (username.equals("")) { // TODO Temporary hack to get all annotations!
 			try {
 				log.info("Getting all AIM annotations");
-				if (useV4 == "false")
+				if (useV4.equals("false"))
 					aims = AnnotationGetter.getImageAnnotationsFromServerByCagridIdEqual(eXistServerUrl, aimNamespace,
 							eXistCollection, eXistUsername, eXistPassword, "0", xsdFilePath);
 				else {
@@ -118,7 +118,7 @@ public class AIMQueries
 		} else if (aimSearchType == AIMSearchType.PERSON_NAME) {
 			String personName = value;
 			try {
-				if (useV4 == "false")
+				if (useV4.equals("false"))
 					aims = AnnotationGetter.getImageAnnotationsFromServerByPersonNameEqual(eXistServerUrl, aimNamespace,
 							eXistCollection, eXistUsername, eXistPassword, personName, xsdFilePath);
 				else {
@@ -138,13 +138,13 @@ public class AIMQueries
 		} else if (aimSearchType == AIMSearchType.PATIENT_ID) {
 			String patientId = value;
 			try {
-				if (useV4 == "false")
+				if (useV4.equals("false"))
 					aims = AnnotationGetter.getImageAnnotationsFromServerByPersonIDAndUserNameEqual(eXistServerUrl, aimNamespace,
 							eXistCollection, eXistUsername, eXistPassword, patientId, username, xsdFilePath);
 				else {
 					List<edu.stanford.hakan.aim4api.base.ImageAnnotationCollection> iacs = edu.stanford.hakan.aim4api.usage.AnnotationGetter
-							.getImageAnnotationCollectionByUserNameAndPersonIdEqual(eXistServerUrl, aim4Namespace,
-									eXistCollectionV4, eXistUsername, eXistPassword, username, patientId);
+							.getImageAnnotationCollectionByUserNameAndPersonIdEqual(eXistServerUrl, aim4Namespace, eXistCollectionV4,
+									eXistUsername, eXistPassword, username, patientId);
 					if (aims == null)
 						aims = new ArrayList<ImageAnnotation>();
 					for (int i = 0; i < iacs.size(); i++)
@@ -158,7 +158,7 @@ public class AIMQueries
 		} else if (aimSearchType == AIMSearchType.SERIES_UID) {
 			String seriesUID = value;
 			try {
-				if (useV4 == "false")
+				if (useV4.equals("false"))
 					aims = AnnotationGetter.getImageAnnotationsFromServerByImageSeriesInstanceUIDEqual(eXistServerUrl,
 							aimNamespace, eXistCollection, eXistUsername, eXistPassword, seriesUID, xsdFilePath);
 				else {
@@ -183,13 +183,13 @@ public class AIMQueries
 
 				// String query = "SELECT FROM " + collection + " WHERE (ImageAnnotation.cagridId like '0')";
 				try {
-					if (useV4 == "false")
+					if (useV4.equals("false"))
 						aims = AnnotationGetter.getImageAnnotationsFromServerByUserLoginNameContains(eXistServerUrl, aimNamespace,
 								eXistCollection, eXistUsername, eXistPassword, username);
 					else {
 						List<edu.stanford.hakan.aim4api.base.ImageAnnotationCollection> iacs = edu.stanford.hakan.aim4api.usage.AnnotationGetter
-								.getImageAnnotationCollectionByUserLoginNameContains(eXistServerUrl, aim4Namespace,
-										eXistCollectionV4, eXistUsername, eXistPassword, username);
+								.getImageAnnotationCollectionByUserLoginNameContains(eXistServerUrl, aim4Namespace, eXistCollectionV4,
+										eXistUsername, eXistPassword, username);
 						if (aims == null)
 							aims = new ArrayList<ImageAnnotation>();
 						for (int i = 0; i < iacs.size(); i++)
@@ -203,7 +203,7 @@ public class AIMQueries
 					resultAims.addAll(aims);
 			} else {
 				try {
-					if (useV4 == "false")
+					if (useV4.equals("false"))
 						aim = AnnotationGetter.getImageAnnotationFromServerByUniqueIdentifier(eXistServerUrl, aimNamespace,
 								eXistCollection, eXistUsername, eXistPassword, annotationUID, xsdFilePath);
 					else {

@@ -221,6 +221,12 @@ public class EPADHandler extends AbstractHandler
 				responseStream.append(imageList.toJSON());
 				statusCode = HttpServletResponse.SC_OK;
 
+			} else if (HandlerUtil.matchesTemplate(StudiesRouteTemplates.FRAME_LIST, pathInfo)) {
+				ImageReference imageReference = ImageReference.extract(StudiesRouteTemplates.FRAME_LIST, pathInfo);
+				EPADFrameList frameList = epadOperations.getFrameDescriptions(imageReference, sessionID, searchFilter);
+				responseStream.append(frameList.toJSON());
+				statusCode = HttpServletResponse.SC_OK;
+
 				/**
 				 * New AIM-related routes. TODO These have not been implemented yet
 				 */
