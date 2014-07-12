@@ -225,12 +225,12 @@ public class AIMUtil
 		 */
 	}
 
-	public static ImageAnnotation getImageAnnotationFromFile(File file) throws AimException, edu.stanford.hakan.aim4api.base.AimException
+	public static ImageAnnotation getImageAnnotationFromFile(File file) throws AimException
 	{
 		return AnnotationGetter.getImageAnnotationFromFile(getRealPath(file));
 	}
 
-	public static ImageAnnotation getImageAnnotationFromFile(File file, String xsdFilePath) throws AimException, edu.stanford.hakan.aim4api.base.AimException
+	public static ImageAnnotation getImageAnnotationFromFile(File file, String xsdFilePath) throws AimException
 	{
 		return AnnotationGetter.getImageAnnotationFromFile(file.getAbsolutePath(), xsdFilePath);
 	}
