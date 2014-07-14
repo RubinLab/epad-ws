@@ -146,9 +146,9 @@ public class DSOUtil
 
 	private static BufferedImage generateTransparentImage(BufferedImage source)
 	{
-		Image image = makeColorOpaque(source, Color.BLACK);
+		Image image = makeColorOpaque(source, Color.WHITE);
 		BufferedImage transparent = imageToBufferedImage(image);
-		Image image2 = makeColorBlackAndTransparent(transparent, Color.WHITE);
+		Image image2 = makeColorBlackAndTransparent(transparent, Color.BLACK);
 		BufferedImage transparent2 = imageToBufferedImage(image2);
 		return transparent2;
 	}

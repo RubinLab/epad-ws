@@ -1119,8 +1119,8 @@ public class DefaultEpadOperations implements EpadOperations
 	private List<DICOMElement> getCalculatedWindowingDICOMElements(String studyUID, String seriesUID, String imageUID)
 	{
 		List<DICOMElement> dicomElements = new ArrayList<>();
-		double windowWidth = 1.0;
-		double windowCenter = 0.0;
+		long windowWidth = 1;
+		long windowCenter = 0;
 
 		try {
 			File temporaryDicomFile = File.createTempFile(imageUID, ".dcm");
@@ -1136,8 +1136,8 @@ public class DefaultEpadOperations implements EpadOperations
 				Calibration cal = image.getCalibration();
 				double minValue = cal.getCValue(min);
 				double maxValue = cal.getCValue(max);
-				windowWidth = (maxValue - minValue);
-				windowCenter = (minValue + windowWidth / 2.0);
+				windowWidth = Math.round(maxValue - minValue);
+				windowCenter = Math.round(minValue + windowWidth / 2.0);
 
 				// This is Pixelmed variant (though does not seem to be correct).
 				// SourceImage srcDicomImage = new SourceImage(temporaryDicomFile.getAbsolutePath());
