@@ -498,7 +498,7 @@ public class DefaultDcm4CheeDatabaseOperations implements Dcm4CheeDatabaseOperat
 				Map<String, String> resultMap = createResultMap(rs);
 				return extractDCM4CHEEImageDescription(studyUID, seriesUID, resultMap);
 			} else {
-				log.warning("Could not find dcm4chee image data for  " + imageUID + " in series " + seriesUID);
+				log.warning("Could not find dcm4chee image data for image " + imageUID + " in series " + seriesUID);
 				return null;
 			}
 		} catch (NumberFormatException e) {

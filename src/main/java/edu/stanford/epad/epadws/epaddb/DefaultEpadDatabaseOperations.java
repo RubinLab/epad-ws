@@ -268,7 +268,7 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 	}
 
 	@Override
-	public void insertEpadFileRecord(Map<String, String> row)
+	public void insertEpadFileRow(Map<String, String> row)
 	{
 		Connection c = null;
 		PreparedStatement ps = null;
@@ -295,7 +295,7 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 	}
 
 	@Override
-	public void updateEpadFileRecord(String filePath, PNGFileProcessingStatus pngFileProcessingStatus, int fileSize,
+	public void updateEpadFileRow(String filePath, PNGFileProcessingStatus pngFileProcessingStatus, long fileSize,
 			String errorMsg)
 	{
 		Connection c = null;
@@ -304,10 +304,8 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 		try {
 			c = getConnection();
 			ps = c.prepareStatement(EpadDatabaseCommands.UPDATE_EPAD_FILES_FOR_EXACT_PATH);
-			// log.info("Updating processing status code = " + pngFileProcessingStatus.getCode());
-
 			ps.setInt(1, pngFileProcessingStatus.getCode());
-			ps.setInt(2, fileSize);
+			ps.setLong(2, fileSize);
 			ps.setString(3, getValueOrDefault(errorMsg, ""));
 			ps.setString(4, filePath);
 			ps.execute();
@@ -320,7 +318,7 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 	}
 
 	@Override
-	public boolean hasEpadFileRecord(String filePath)
+	public boolean hasEpadFileRow(String filePath)
 	{
 		Connection c = null;
 		PreparedStatement ps = null;

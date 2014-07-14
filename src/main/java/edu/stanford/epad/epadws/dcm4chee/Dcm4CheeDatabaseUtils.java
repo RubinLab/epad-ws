@@ -1,11 +1,9 @@
 package edu.stanford.epad.epadws.dcm4chee;
 
-import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
 
-import edu.stanford.epad.common.util.FileKey;
-import edu.stanford.epad.dtos.SeriesProcessingStatus;
+import edu.stanford.epad.dtos.PNGFileProcessingStatus;
 
 public class Dcm4CheeDatabaseUtils
 {
@@ -16,11 +14,8 @@ public class Dcm4CheeDatabaseUtils
 	 * @param file File
 	 * @return Map of String to String. The key is the database column name.
 	 */
-	public static Map<String, String> createEPadFilesTableData(File file, String imageUID)
+	public static Map<String, String> createEPadFilesRowData(String filePath, long fileSize, String imageUID)
 	{
-		FileKey fileKey = new FileKey(file);
-		String filePath = fileKey.toString();
-		long fileSize = file.length();
 		Dcm4CheeDatabaseOperations dcm4CheeDatabaseOperations = Dcm4CheeDatabase.getInstance()
 				.getDcm4CheeDatabaseOperations();
 		int instanceKey = dcm4CheeDatabaseOperations.getPrimaryKeyForImageUID(imageUID);
@@ -31,7 +26,7 @@ public class Dcm4CheeDatabaseUtils
 		fileTableData.put("file_path", filePath);
 		fileTableData.put("file_size", "" + fileSize);
 		fileTableData.put("file_md5", "n/a");
-		fileTableData.put("file_status", "" + SeriesProcessingStatus.DONE.getCode());
+		fileTableData.put("file_status", "" + PNGFileProcessingStatus.IN_PIPELINE.getCode());
 		fileTableData.put("err_msg", "");
 
 		return fileTableData;

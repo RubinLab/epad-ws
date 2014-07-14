@@ -305,7 +305,7 @@ public class AIMQueries
 		try {
 			// AnnotationGetter.deleteImageAnnotationFromServer(serverUrl, namespace, collection, xsdFilePath,username,
 			// password, uid);
-			if (useV4 == "false")
+			if (useV4.equals("false"))
 				AnnotationGetter.removeImageAnnotationFromServer(eXistServerUrl, aimNamespace, collection, eXistUsername,
 						eXistPassword, uid);
 			else

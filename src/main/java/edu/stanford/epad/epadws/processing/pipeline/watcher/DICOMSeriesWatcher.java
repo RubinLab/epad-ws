@@ -148,7 +148,7 @@ public class DICOMSeriesWatcher implements Runnable
 			String inputPNGFilePath = getInputFilePath(currentPNGImageDescription); // Get the input file path.
 			File inputPNGFile = new File(inputPNGFilePath);
 			String outputPNGGridFilePath = createOutputFilePathForDicomPNGGridImage(currentPNGImageDescription);
-			if (!databaseOperations.hasEpadFileRecord(outputPNGGridFilePath)) {
+			if (!databaseOperations.hasEpadFileRow(outputPNGGridFilePath)) {
 				log.info("SeriesWatcher has: " + currentPNGImageDescription.get("sop_iuid") + " PNG for grid processing.");
 				// Need to get slice for PNG files.
 				List<File> inputPNGGridFiles = getSliceOfPNGFiles(unprocessedPNGImageDescriptions, currentImageIndex, 16);
@@ -179,18 +179,20 @@ public class DICOMSeriesWatcher implements Runnable
 
 		File outputPNGFile = new File(outputPNGGridFilePath);
 		EpadDatabaseOperations databaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
-		insertEpadFile(databaseOperations, outputPNGFile, imageUID);
+		insertEpadFile(databaseOperations, outputPNGGridFilePath, outputPNGFile.length(), imageUID);
 
 		PNGGridGeneratorTask pngGridGeneratorTask = new PNGGridGeneratorTask(seriesUID, imageUID, inputPNGFile,
 				inputPNGGridFiles, outputPNGFile);
 		pngGeneratorTaskQueue.offer(pngGridGeneratorTask);
 	}
 
-	private void insertEpadFile(EpadDatabaseOperations epadDatabaseOperations, File outputPNGFile, String imageUID)
+	private void insertEpadFile(EpadDatabaseOperations epadDatabaseOperations, String outputPNGFilePath, long fileSize,
+			String imageUID)
 	{
-		Map<String, String> epadFilesTable = Dcm4CheeDatabaseUtils.createEPadFilesTableData(outputPNGFile, imageUID);
+		Map<String, String> epadFilesTable = Dcm4CheeDatabaseUtils.createEPadFilesRowData(outputPNGFilePath, fileSize,
+				imageUID);
 		epadFilesTable.put("file_status", "" + PNGFileProcessingStatus.IN_PIPELINE.getCode());
-		epadDatabaseOperations.insertEpadFileRecord(epadFilesTable);
+		epadDatabaseOperations.insertEpadFileRow(epadFilesTable);
 	}
 
 	String getInputFilePath(Map<String, String> currImage)

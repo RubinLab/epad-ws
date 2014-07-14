@@ -66,7 +66,8 @@ public class PNGFilesOperations
 		Map<String, String> epadFilesTable = new HashMap<String, String>();
 		try {
 			log.info("Creating PNG grid file " + outputPNGFile.getAbsolutePath() + " for series " + seriesUID);
-			epadFilesTable = Dcm4CheeDatabaseUtils.createEPadFilesTableData(outputPNGFile, imageUID);
+			epadFilesTable = Dcm4CheeDatabaseUtils.createEPadFilesRowData(outputPNGFile.getAbsolutePath(),
+					outputPNGFile.length(), imageUID);
 
 			EPADFileUtils.createDirsAndFile(outputPNGFile);
 
@@ -76,16 +77,16 @@ public class PNGFilesOperations
 			if (success) {
 				log.info("Finished writing PNG grid file " + outputPNGFile + " for series " + seriesUID);
 				int fileSize = getFileSize(epadFilesTable);
-				epadDatabaseOperations.updateEpadFileRecord(epadFilesTable.get("file_path"), PNGFileProcessingStatus.DONE,
+				epadDatabaseOperations.updateEpadFileRow(epadFilesTable.get("file_path"), PNGFileProcessingStatus.DONE,
 						fileSize, "");
 			} else {
 				log.info("Failed to create grid PNG file " + outputPNGFile.getAbsolutePath() + " for series " + seriesUID);
-				epadDatabaseOperations.updateEpadFileRecord(epadFilesTable.get("file_path"), PNGFileProcessingStatus.ERROR, 0,
+				epadDatabaseOperations.updateEpadFileRow(epadFilesTable.get("file_path"), PNGFileProcessingStatus.ERROR, 0,
 						"Error generating grid");
 			}
 		} catch (Exception e) {
 			log.warning("Failed to create grid PNG file " + outputPNGFile.getAbsolutePath() + " for series " + seriesUID, e);
-			epadDatabaseOperations.updateEpadFileRecord(epadFilesTable.get("file_path"), PNGFileProcessingStatus.ERROR, 0,
+			epadDatabaseOperations.updateEpadFileRow(epadFilesTable.get("file_path"), PNGFileProcessingStatus.ERROR, 0,
 					"General Exception: " + e.getMessage());
 		}
 	}

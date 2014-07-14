@@ -41,7 +41,7 @@ public class ImageReference
 
 	protected static void validateImageUID(String imageUID)
 	{
-		if (imageUID == null)
+		if (imageUID == null || imageUID.equals(""))
 			throw new RuntimeException("Invalid image UID found in request");
 	}
 }

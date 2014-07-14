@@ -65,14 +65,11 @@ public interface EpadDatabaseOperations
 
 	// Database recording of PNG files generated from DICOM images
 
-	void insertEpadFileRecord(Map<String, String> fileRecord);
+	void insertEpadFileRow(Map<String, String> fileRecord);
 
-	boolean hasEpadFileRecord(String filePath);
+	void updateEpadFileRow(String filePath, PNGFileProcessingStatus newStatus, long fileSize, String errorMsg);
 
-	/**
-	 * Update the processing status, file size and error message of an ePAD file record.
-	 */
-	void updateEpadFileRecord(String filePath, PNGFileProcessingStatus newStatus, int fileSize, String errorMsg);
+	boolean hasEpadFileRow(String filePath);
 
 	String getEpadFilePathLike(String sopInstanceUID);
 

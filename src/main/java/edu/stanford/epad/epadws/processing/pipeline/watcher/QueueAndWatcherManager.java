@@ -167,17 +167,19 @@ public class QueueAndWatcherManager
 		String outputPNGFilePath = createOutputPNGFilePathForSingleFrameDICOMImage(dicomFileDescription);
 		File outputPNGFile = new File(outputPNGFilePath);
 		EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
-		insertEpadFile(epadDatabaseOperations, outputPNGFile, dicomFileDescription.imageUID);
+		insertEpadFile(epadDatabaseOperations, outputPNGFilePath, outputPNGFile.length(), dicomFileDescription.imageUID);
 		SingleFrameDICOMPngGeneratorTask pngGeneratorTask = new SingleFrameDICOMPngGeneratorTask(patientName,
 				dicomFileDescription, dicomFile, outputPNGFile);
 		pngGeneratorTaskQueue.offer(pngGeneratorTask);
 	}
 
-	private void insertEpadFile(EpadDatabaseOperations epadDatabaseOperations, File outputPNGFile, String imageUID)
+	private void insertEpadFile(EpadDatabaseOperations epadDatabaseOperations, String outputPNGFilePath, long fileSize,
+			String imageUID)
 	{
-		Map<String, String> epadFilesTable = Dcm4CheeDatabaseUtils.createEPadFilesTableData(outputPNGFile, imageUID);
-		epadFilesTable.put("file_status", "" + SeriesProcessingStatus.IN_PIPELINE.getCode());
-		epadDatabaseOperations.insertEpadFileRecord(epadFilesTable);
+		Map<String, String> epadFilesRow = Dcm4CheeDatabaseUtils.createEPadFilesRowData(outputPNGFilePath, fileSize,
+				imageUID);
+		epadFilesRow.put("file_status", "" + SeriesProcessingStatus.IN_PIPELINE.getCode());
+		epadDatabaseOperations.insertEpadFileRow(epadFilesRow);
 	}
 
 	private String createOutputPNGFilePathForSingleFrameDICOMImage(DICOMFileDescription dicomFileDescription)

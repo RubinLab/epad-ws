@@ -207,7 +207,7 @@ public class EPADHandler extends AbstractHandler
 					statusCode = HttpServletResponse.SC_NOT_FOUND;
 
 				/**
-				 * Studies routes
+				 * Studies routes. These short cuts are used when the invoker does not have a project or subject ID
 				 */
 			} else if (HandlerUtil.matchesTemplate(StudiesRouteTemplates.SERIES, pathInfo)) {
 				SeriesReference seriesReference = SeriesReference.extract(StudiesRouteTemplates.SERIES, pathInfo);

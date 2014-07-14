@@ -28,7 +28,6 @@ import edu.stanford.epad.common.pixelmed.PixelMedUtils;
 import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.epad.dtos.PNGFileProcessingStatus;
-import edu.stanford.epad.dtos.SeriesProcessingStatus;
 import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeDatabaseUtils;
 import edu.stanford.epad.epadws.epaddb.EpadDatabase;
 import edu.stanford.epad.epadws.epaddb.EpadDatabaseOperations;
@@ -79,11 +78,11 @@ public class DSOUtil
 				String pngFilePath = pngDirectoryPath + frameNumber + ".png";
 				File pngFile = new File(pngFilePath);
 				try {
-					insertEpadFile(databaseOperations, pngFile, imageUID);
+					insertEpadFile(databaseOperations, pngFilePath, 0, imageUID);
 					log.info("Writing PNG for frame " + frameNumber + " for multi-frame image " + imageUID + " in series "
 							+ seriesUID);
 					ImageIO.write(bufferedImage, "png", pngFile);
-					databaseOperations.updateEpadFileRecord(pngFilePath, PNGFileProcessingStatus.DONE, 77, "");
+					databaseOperations.updateEpadFileRow(pngFilePath, PNGFileProcessingStatus.DONE, pngFile.length(), "");
 				} catch (IOException e) {
 					log.warning("Failure writing PNG file " + pngFilePath + " for frame " + frameNumber
 							+ " in multi-frame image " + imageUID + " in series " + seriesUID, e);
@@ -126,10 +125,10 @@ public class DSOUtil
 
 				File pngMaskFile = new File(pngMaskFilePath);
 				try {
-					insertEpadFile(databaseOperations, pngMaskFile, imageUID);
+					insertEpadFile(databaseOperations, pngMaskFilePath, pngMaskFile.length(), imageUID);
 					log.info("Writing PNG mask file frame " + frameNumber + " for DSO " + imageUID + " in series " + seriesUID);
 					ImageIO.write(bufferedImageWithTransparency, "png", pngMaskFile);
-					databaseOperations.updateEpadFileRecord(pngMaskFilePath, PNGFileProcessingStatus.DONE, 77, "");
+					databaseOperations.updateEpadFileRow(pngMaskFilePath, PNGFileProcessingStatus.DONE, 0, "");
 				} catch (IOException e) {
 					log.warning("Failure writing PNG mask file " + pngMaskFilePath + " for frame " + frameNumber + " of DSO "
 							+ imageUID + " in series " + seriesUID, e);
@@ -230,10 +229,11 @@ public class DSOUtil
 		return Toolkit.getDefaultToolkit().createImage(ip);
 	}
 
-	private static void insertEpadFile(EpadDatabaseOperations epadDatabaseOperations, File outputFile, String imageUID)
+	private static void insertEpadFile(EpadDatabaseOperations epadDatabaseOperations, String outputFilePath,
+			long fileSize, String imageUID)
 	{
-		Map<String, String> epadFilesTable = Dcm4CheeDatabaseUtils.createEPadFilesTableData(outputFile, imageUID);
-		epadFilesTable.put("file_status", "" + SeriesProcessingStatus.IN_PIPELINE.getCode());
-		epadDatabaseOperations.insertEpadFileRecord(epadFilesTable);
+		Map<String, String> epadFilesRow = Dcm4CheeDatabaseUtils.createEPadFilesRowData(outputFilePath, fileSize, imageUID);
+		epadFilesRow.put("file_status", "" + PNGFileProcessingStatus.IN_PIPELINE.getCode());
+		epadDatabaseOperations.insertEpadFileRow(epadFilesRow);
 	}
 }

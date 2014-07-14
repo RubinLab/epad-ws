@@ -33,7 +33,7 @@ public class StudyReference
 
 	protected static void validateStudyUID(String studyUID)
 	{
-		if (studyUID == null)
+		if (studyUID == null || studyUID.equals(""))
 			throw new RuntimeException("Invalid study UID found in request");
 	}
 }

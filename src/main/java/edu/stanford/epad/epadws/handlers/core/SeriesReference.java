@@ -37,7 +37,7 @@ public class SeriesReference
 
 	protected static void validateSeriesUID(String seriesUID)
 	{
-		if (seriesUID == null)
+		if (seriesUID == null || seriesUID.equals(""))
 			throw new RuntimeException("Invalid series UID found in request");
 	}
 }
