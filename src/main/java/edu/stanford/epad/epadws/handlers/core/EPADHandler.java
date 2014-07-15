@@ -383,13 +383,7 @@ public class EPADHandler extends AbstractHandler
 		String pathInfo = httpRequest.getPathInfo();
 		int statusCode;
 
-		if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.PROJECT_LIST, pathInfo)) {
-			statusCode = HandlerUtil.badRequestJSONResponse(BAD_POST_MESSAGE, responseStream, log);
-		} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.SUBJECT_LIST, pathInfo)) {
-			statusCode = HandlerUtil.badRequestJSONResponse(BAD_POST_MESSAGE, responseStream, log);
-		} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.STUDY_LIST, pathInfo)) {
-			statusCode = HandlerUtil.badRequestJSONResponse(BAD_POST_MESSAGE, responseStream, log);
-		} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.FRAME_LIST, pathInfo)) {
+		if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.FRAME_LIST, pathInfo)) {
 			ImageReference imageReference = ImageReference.extract(ProjectsRouteTemplates.FRAME_LIST, pathInfo);
 			if (handleDSOFramesEdit(imageReference.projectID, imageReference.subjectID, imageReference.studyUID,
 					imageReference.seriesUID, imageReference.imageUID, httpRequest, responseStream))
@@ -451,7 +445,7 @@ public class EPADHandler extends AbstractHandler
 		return statusCode;
 	}
 
-	private boolean handleDSOFramesEdit(String projectID, String patientID, String studyUID, String seriesUID,
+	private boolean handleDSOFramesEdit(String projectID, String subjectID, String studyUID, String seriesUID,
 			String imageUID, HttpServletRequest httpRequest, PrintWriter responseStream)
 	{ // See http://www.tutorialspoint.com/servlets/servlets-file-uploading.htm
 		boolean uploadError = false;
@@ -468,7 +462,7 @@ public class EPADHandler extends AbstractHandler
 				if (dsoEditRequest != null) {
 					List<File> editedFramesPNGMaskFiles = HandlerUtil.extractFiles(fileItemIterator, "DSOEditedFrame", "PNG");
 					if (editedFramesPNGMaskFiles.isEmpty()) {
-						log.warning("No PNG masks supplied in DSO edit request for series " + seriesUID);
+						log.warning("No PNG masks supplied in DSO edit request for image " + imageUID + " in series " + seriesUID);
 						uploadError = true;
 					} else {
 						DSOEditResult dsoEditResult = createEditedDSO(dsoEditRequest, editedFramesPNGMaskFiles);

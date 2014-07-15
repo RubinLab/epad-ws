@@ -3,7 +3,7 @@ package edu.stanford.epad.epadws.processing.pipeline.task;
 import java.io.File;
 
 /**
- * Task generator for both DICOM images and DICOM Segmentation Objects and PNG grid generation..
+ * Task generator for both DICOM images and DICOM Segmentation Objects.
  * 
  * @author alansnyder
  */

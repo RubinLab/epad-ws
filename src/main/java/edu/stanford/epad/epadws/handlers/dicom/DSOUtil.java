@@ -120,6 +120,7 @@ public class DSOUtil
 
 			for (int frameNumber = 0; frameNumber < numberOfFrames; frameNumber++) {
 				BufferedImage bufferedImage = sourceDSOImage.getBufferedImage(numberOfFrames - frameNumber - 1);
+
 				BufferedImage bufferedImageWithTransparency = generateTransparentImage(bufferedImage);
 				String pngMaskFilePath = pngMaskDirectoryPath + frameNumber + ".png";
 
@@ -148,7 +149,7 @@ public class DSOUtil
 	{
 		Image image = makeColorOpaque(source, Color.WHITE);
 		BufferedImage transparent = imageToBufferedImage(image);
-		Image image2 = makeColorBlackAndTransparent(transparent, Color.BLACK);
+		Image image2 = makeColorTransparent(transparent, Color.BLACK);
 		BufferedImage transparent2 = imageToBufferedImage(image2);
 		return transparent2;
 	}
@@ -183,7 +184,6 @@ public class DSOUtil
 		return Toolkit.getDefaultToolkit().createImage(ip);
 	}
 
-	@SuppressWarnings("unused")
 	private static Image makeColorTransparent(BufferedImage im, final Color color)
 	{
 		ImageFilter filter = new RGBImageFilter() {
@@ -204,6 +204,7 @@ public class DSOUtil
 		return Toolkit.getDefaultToolkit().createImage(ip);
 	}
 
+	@SuppressWarnings("unused")
 	private static Image makeColorBlackAndTransparent(BufferedImage im, final Color color)
 	{
 		ImageFilter filter = new RGBImageFilter() {

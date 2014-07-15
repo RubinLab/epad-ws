@@ -462,9 +462,9 @@ public class DefaultEpadOperations implements EpadOperations
 		for (String seriesUID : newSeriesUIDs) {
 			DCM4CHEESeries dcm4CheeSeries = Dcm4CheeQueries.getSeries(seriesUID);
 			if (dcm4CheeSeries != null) {
-				log.warning("Could not find new series " + seriesUID + " in dcm4chee");
 				newDcm4CheeSeries.add(dcm4CheeSeries);
-			}
+			} else
+				log.warning("Could not find new series " + seriesUID + " in dcm4chee");
 		}
 		return newDcm4CheeSeries;
 	}
@@ -1139,13 +1139,6 @@ public class DefaultEpadOperations implements EpadOperations
 				windowWidth = Math.round(maxValue - minValue);
 				windowCenter = Math.round(minValue + windowWidth / 2.0);
 
-				// This is Pixelmed variant (though does not seem to be correct).
-				// SourceImage srcDicomImage = new SourceImage(temporaryDicomFile.getAbsolutePath());
-				// ImageEnhancer imageEnhancer = new ImageEnhancer(srcDicomImage);
-				// imageEnhancer.findVisuParametersImage();
-				// windowWidth = imageEnhancer.getWindowWidth();
-				// windowCenter = imageEnhancer.getWindowCenter();
-
 				log.info("Image " + imageUID + " in series " + seriesUID + " has a calculated window width of " + windowWidth
 						+ " and window center of " + windowCenter);
 			} else {
@@ -1163,4 +1156,12 @@ public class DefaultEpadOperations implements EpadOperations
 
 		return dicomElements;
 	}
+
+	// This is Pixelmed variant (though does not seem to be correct).
+	// SourceImage srcDicomImage = new SourceImage(temporaryDicomFile.getAbsolutePath());
+	// ImageEnhancer imageEnhancer = new ImageEnhancer(srcDicomImage);
+	// imageEnhancer.findVisuParametersImage();
+	// windowWidth = Math.round(imageEnhancer.getWindowWidth());
+	// windowCenter = Math.round(imageEnhancer.getWindowCenter());
+
 }

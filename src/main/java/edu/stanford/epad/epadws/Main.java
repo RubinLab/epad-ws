@@ -44,11 +44,7 @@ import edu.stanford.epad.epadws.handlers.admin.ServerStatusHandler;
 import edu.stanford.epad.epadws.handlers.aim.AimResourceHandler;
 import edu.stanford.epad.epadws.handlers.coordination.CoordinationHandler;
 import edu.stanford.epad.epadws.handlers.core.EPADHandler;
-import edu.stanford.epad.epadws.handlers.dicom.DCM4CHEESearchHandler;
-import edu.stanford.epad.epadws.handlers.dicom.DICOMHeadersHandler;
-import edu.stanford.epad.epadws.handlers.dicom.EPADSeriesOrderHandler;
 import edu.stanford.epad.epadws.handlers.dicom.WadoHandler;
-import edu.stanford.epad.epadws.handlers.dicom.WindowingHandler;
 import edu.stanford.epad.epadws.handlers.event.EventHandler;
 import edu.stanford.epad.epadws.handlers.event.ProjectEventHandler;
 import edu.stanford.epad.epadws.handlers.plugin.EPadPluginHandler;
@@ -178,30 +174,28 @@ public class Main
 
 		addWebAppAtContextPath(handlerList, "ePad.war", "/epad");
 
-		addHandlerAtContextPath(new EventHandler(), "/epad/eventresource", handlerList);
-		addHandlerAtContextPath(new ProjectEventHandler(), "/epad/events", handlerList);
-
-		addHandlerAtContextPath(new EPadPluginHandler(), "/epad/plugin", handlerList);
-
-		addHandlerAtContextPath(new ServerStatusHandler(), "/epad/status", handlerList);
-		addHandlerAtContextPath(new ImageCheckHandler(), "/epad/imagecheck", handlerList);
-		addHandlerAtContextPath(new ImageReprocessingHandler(), "/epad/imagereprocess", handlerList);
-
 		addHandlerAtContextPath(new ResourceCheckHandler(), "/epad/resources", handlerList);
 		addFileServerAtContextPath(EPADConfig.getEPADWebServerResourcesDir(), handlerList, "/epad/resources");
 
 		addHandlerAtContextPath(new WadoHandler(), "/epad/wado", handlerList);
 
-		// TODO Remove after RESTful conversion. AIMs should be retrieved via routes studies/<sid>/aims,
-		// studies/<sid>/series/<sid>/aims, studies/<sid>/series/<sid>/images/<iid>/aims,
 		addHandlerAtContextPath(new AimResourceHandler(), "/epad/aimresource", handlerList);
+
+		addHandlerAtContextPath(new EPadPluginHandler(), "/epad/plugin", handlerList);
+
+		addHandlerAtContextPath(new EventHandler(), "/epad/eventresource", handlerList);
+		addHandlerAtContextPath(new ProjectEventHandler(), "/epad/events", handlerList);
+
+		addHandlerAtContextPath(new ServerStatusHandler(), "/epad/status", handlerList);
+		addHandlerAtContextPath(new ImageCheckHandler(), "/epad/imagecheck", handlerList);
+		addHandlerAtContextPath(new ImageReprocessingHandler(), "/epad/imagereprocess", handlerList);
 
 		// TODO Remove after RESTful conversion. Should get all necessary information via JSON returned from route:
 		// GET /project/<pid>/subjects/<sid>/studies/<sid>/series/<sid>/images/<iid>/
-		addHandlerAtContextPath(new DICOMHeadersHandler(), "/epad/dicomtagj", handlerList);
-		addHandlerAtContextPath(new WindowingHandler(), "/epad/dicomparam", handlerList);
-		addHandlerAtContextPath(new EPADSeriesOrderHandler(), "/epad/seriesorderj", handlerList);
-		addHandlerAtContextPath(new DCM4CHEESearchHandler(), "/epad/searchj", handlerList);
+		// addHandlerAtContextPath(new DICOMHeadersHandler(), "/epad/dicomtagj", handlerList);
+		// addHandlerAtContextPath(new WindowingHandler(), "/epad/dicomparam", handlerList);
+		// addHandlerAtContextPath(new EPADSeriesOrderHandler(), "/epad/seriesorderj", handlerList);
+		// addHandlerAtContextPath(new DCM4CHEESearchHandler(), "/epad/searchj", handlerList);
 
 		// TODO This call will disappear when we switch to AIM4
 		addHandlerAtContextPath(new CoordinationHandler(), "/epad/coordination", handlerList);
