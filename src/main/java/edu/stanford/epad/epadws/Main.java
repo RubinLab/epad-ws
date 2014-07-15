@@ -190,13 +190,6 @@ public class Main
 		addHandlerAtContextPath(new ImageCheckHandler(), "/epad/imagecheck", handlerList);
 		addHandlerAtContextPath(new ImageReprocessingHandler(), "/epad/imagereprocess", handlerList);
 
-		// TODO Remove after RESTful conversion. Should get all necessary information via JSON returned from route:
-		// GET /project/<pid>/subjects/<sid>/studies/<sid>/series/<sid>/images/<iid>/
-		// addHandlerAtContextPath(new DICOMHeadersHandler(), "/epad/dicomtagj", handlerList);
-		// addHandlerAtContextPath(new WindowingHandler(), "/epad/dicomparam", handlerList);
-		// addHandlerAtContextPath(new EPADSeriesOrderHandler(), "/epad/seriesorderj", handlerList);
-		// addHandlerAtContextPath(new DCM4CHEESearchHandler(), "/epad/searchj", handlerList);
-
 		// TODO This call will disappear when we switch to AIM4
 		addHandlerAtContextPath(new CoordinationHandler(), "/epad/coordination", handlerList);
 
