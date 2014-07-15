@@ -265,11 +265,10 @@ public class DefaultEpadOperations implements EpadOperations
 			EPADSearchFilter searchFilter)
 	{
 		DCM4CHEEImageDescription dcm4cheeImageDescription = dcm4CheeDatabaseOperations.getImageDescription(imageReference);
-		DICOMElementList suppliedDICOMElements = getDICOMElements(imageReference);
-		DICOMElementList defaultDICOMElements = getDefaultDICOMElements(imageReference, suppliedDICOMElements);
 		List<EPADFrame> frames = new ArrayList<>();
 
 		if (isDSO(dcm4cheeImageDescription)) {
+			DICOMElementList suppliedDICOMElements = getDICOMElements(imageReference);
 			List<DICOMElement> referencedSOPInstanceUIDDICOMElements = getDICOMElementsByCode(suppliedDICOMElements,
 					PixelMedUtils.ReferencedSOPInstanceUIDCode);
 			int numberOfFrames = referencedSOPInstanceUIDDICOMElements.size();
@@ -279,6 +278,9 @@ public class DefaultEpadOperations implements EpadOperations
 				String studyUID = imageReference.studyUID; // DSO will be in same study as original images
 				String referencedFirstImageUID = firstDICOMElement.value;
 				String referencedSeriesUID = dcm4CheeDatabaseOperations.getSeriesUIDForImage(referencedFirstImageUID);
+				DICOMElementList referencedDICOMElements = getDICOMElements(studyUID, referencedSeriesUID,
+						referencedFirstImageUID);
+				DICOMElementList defaultDICOMElements = getDefaultDICOMElements(imageReference, referencedDICOMElements);
 
 				if (!referencedSeriesUID.equals("")) {
 					boolean isFirst = true;
@@ -1038,11 +1040,48 @@ public class DefaultEpadOperations implements EpadOperations
 		List<DICOMElement> defaultDicomElements = new ArrayList<>();
 		Map<String, List<DICOMElement>> suppliedDICOMElementMap = generateDICOMElementMap(suppliedDicomElements);
 
+		if (suppliedDICOMElementMap.containsKey(PixelMedUtils.PatientNameCode))
+			defaultDicomElements.add(suppliedDICOMElementMap.get(PixelMedUtils.PatientNameCode).get(0));
+		else
+			defaultDicomElements.add(new DICOMElement(PixelMedUtils.PatientNameCode, PixelMedUtils.PatientNameTagName, ""));
+
+		if (suppliedDICOMElementMap.containsKey(PixelMedUtils.ModalityCode))
+			defaultDicomElements.add(suppliedDICOMElementMap.get(PixelMedUtils.ModalityCode).get(0));
+		else
+			defaultDicomElements.add(new DICOMElement(PixelMedUtils.ModalityCode, PixelMedUtils.ModalityTagName, ""));
+
+		if (suppliedDICOMElementMap.containsKey(PixelMedUtils.SeriesDescriptionCode))
+			defaultDicomElements.add(suppliedDICOMElementMap.get(PixelMedUtils.SeriesDescriptionCode).get(0));
+		else
+			defaultDicomElements.add(new DICOMElement(PixelMedUtils.SeriesDescriptionCode,
+					PixelMedUtils.SeriesDescriptionTagName, ""));
+
 		if (suppliedDICOMElementMap.containsKey(PixelMedUtils.PatientBirthDateCode))
 			defaultDicomElements.add(suppliedDICOMElementMap.get(PixelMedUtils.PatientBirthDateCode).get(0));
 		else
 			defaultDicomElements.add(new DICOMElement(PixelMedUtils.PatientBirthDateCode,
 					PixelMedUtils.PatientBirthDateTagName, "1900-01-01T00:00:00"));
+
+		if (suppliedDICOMElementMap.containsKey(PixelMedUtils.PatientSexCode))
+			defaultDicomElements.add(suppliedDICOMElementMap.get(PixelMedUtils.PatientSexCode).get(0));
+		else
+			defaultDicomElements.add(new DICOMElement(PixelMedUtils.PatientSexCode, PixelMedUtils.PatientSexTagName, ""));
+
+		if (suppliedDICOMElementMap.containsKey(PixelMedUtils.ManufacturerCode))
+			defaultDicomElements.add(suppliedDICOMElementMap.get(PixelMedUtils.ManufacturerCode).get(0));
+		else
+			defaultDicomElements.add(new DICOMElement(PixelMedUtils.ManufacturerCode, PixelMedUtils.ManufacturerTagName, ""));
+
+		if (suppliedDICOMElementMap.containsKey(PixelMedUtils.ModelNameCode))
+			defaultDicomElements.add(suppliedDICOMElementMap.get(PixelMedUtils.ModelNameCode).get(0));
+		else
+			defaultDicomElements.add(new DICOMElement(PixelMedUtils.ModelNameCode, PixelMedUtils.ModelNameTagName, ""));
+
+		if (suppliedDICOMElementMap.containsKey(PixelMedUtils.SoftwareVersionCode))
+			defaultDicomElements.add(suppliedDICOMElementMap.get(PixelMedUtils.SoftwareVersionCode).get(0));
+		else
+			defaultDicomElements.add(new DICOMElement(PixelMedUtils.SoftwareVersionCode,
+					PixelMedUtils.SoftwareVersionTagName, ""));
 
 		if (suppliedDICOMElementMap.containsKey(PixelMedUtils.PixelSpacingCode))
 			defaultDicomElements.add(suppliedDICOMElementMap.get(PixelMedUtils.PixelSpacingCode).get(0));
@@ -1095,7 +1134,12 @@ public class DefaultEpadOperations implements EpadOperations
 			defaultDicomElements.add(new DICOMElement(PixelMedUtils.PixelRepresentationCode,
 					PixelMedUtils.PixelRepresentationTagName, "0"));
 
-		defaultDicomElements.addAll(getCalculatedWindowingDICOMElements(studyUID, seriesUID, imageUID));
+		if (suppliedDICOMElementMap.containsKey(PixelMedUtils.WindowWidthCode)
+				&& suppliedDICOMElementMap.containsKey(PixelMedUtils.WindowCenterCode)) {
+			defaultDicomElements.add(suppliedDICOMElementMap.get(PixelMedUtils.WindowWidthCode).get(0));
+			defaultDicomElements.add(suppliedDICOMElementMap.get(PixelMedUtils.WindowCenterCode).get(0));
+		} else
+			defaultDicomElements.addAll(getCalculatedWindowingDICOMElements(studyUID, seriesUID, imageUID));
 
 		return new DICOMElementList(defaultDicomElements);
 	}
