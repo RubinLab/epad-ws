@@ -23,14 +23,24 @@ import com.pixelmed.dicom.DicomException;
 import com.pixelmed.dicom.TagFromName;
 import com.pixelmed.display.SourceImage;
 
+import edu.stanford.epad.common.dicom.DCM4CHEEUtil;
 import edu.stanford.epad.common.dicom.DicomSegmentationObject;
 import edu.stanford.epad.common.pixelmed.PixelMedUtils;
+import edu.stanford.epad.common.pixelmed.TIFFMasksToDSOConverter;
 import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADLogger;
+import edu.stanford.epad.dtos.DSOEditRequest;
+import edu.stanford.epad.dtos.DSOEditResult;
+import edu.stanford.epad.dtos.EPADDSOFrame;
+import edu.stanford.epad.dtos.EPADFrame;
+import edu.stanford.epad.dtos.EPADFrameList;
 import edu.stanford.epad.dtos.PNGFileProcessingStatus;
 import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeDatabaseUtils;
 import edu.stanford.epad.epadws.epaddb.EpadDatabase;
 import edu.stanford.epad.epadws.epaddb.EpadDatabaseOperations;
+import edu.stanford.epad.epadws.handlers.core.ImageReference;
+import edu.stanford.epad.epadws.queries.DefaultEpadOperations;
+import edu.stanford.epad.epadws.queries.EpadOperations;
 
 public class DSOUtil
 {
@@ -38,19 +48,51 @@ public class DSOUtil
 
 	private static final String baseDicomDirectory = EPADConfig.getEPADWebServerPNGDir();
 
-	public static List<File> getDSOFrameFiles(String studyUID, String seriesUID, String imageUID)
+	public static DSOEditResult createEditedDSO(DSOEditRequest dsoEditRequest, List<File> editFramesPNGMaskFiles)
 	{
-		return new ArrayList<>(); // TODO
+		try {
+			ImageReference imageReference = new ImageReference(dsoEditRequest);
+			List<File> existingDSOTIFFMaskFiles = DSOUtil.getDSOTIFFMaskFiles(imageReference);
+			List<File> editFramesTIFFMaskFiles = generateTIFFsFromPNGs(editFramesPNGMaskFiles);
+			List<File> dsoTIFFMaskFiles = new ArrayList<>(existingDSOTIFFMaskFiles);
+			int frameMaskFilesIndex = 0;
+			for (Integer frameNumber : dsoEditRequest.editedFrameNumbers) {
+				if (frameNumber >= 0 || frameNumber < existingDSOTIFFMaskFiles.size()) {
+					dsoTIFFMaskFiles.set(frameNumber, editFramesTIFFMaskFiles.get(frameMaskFilesIndex++));
+				} else {
+					log.warning("Frame number " + frameNumber + " is out of range for DSO image " + dsoEditRequest.imageUID
+							+ " in series " + dsoEditRequest.seriesUID);
+					return null;
+				}
+			}
+			// AIMUtil.generateAIMFileForDSO(dsoFile);
+			if (DSOUtil.createDSO(imageReference, dsoTIFFMaskFiles))
+				return new DSOEditResult(imageReference.projectID, imageReference.subjectID, imageReference.studyUID,
+						imageReference.seriesUID, imageReference.imageUID, "");
+			else
+				return null;
+		} catch (Exception e) {
+			log.warning("Error generating DSO image " + dsoEditRequest.imageUID + " in series " + dsoEditRequest.seriesUID, e);
+			return null;
+		}
 	}
 
-	public static File createDSO(String studyUID, String seriesUID, String imageUID, List<File> frames)
+	public static boolean createDSO(ImageReference imageReference, List<File> tiffMaskFiles)
 	{
-		// File temporaryDSOFile = File.createTempFile(sourceImageUID, ".tmpDSO");
-		// EPADTools.downloadDICOMFileFromWADO(studyUID, seriesUID, imageUID, temporaryDSOFile);
+		try {
+			File temporaryDSOFile = File.createTempFile(imageReference.imageUID, ".dso");
+			List<String> dicomFilePaths = getSourceDICOMFilePathsForDSO(imageReference);
 
-		// TIFFMasksToDSOConverter converter = new TIFFMasksToDSOConverter();
-		// converter.convert(maskFilePaths, dicomImageFilePaths, dsoFile.getAbsolutePath());
-		return null;
+			TIFFMasksToDSOConverter converter = new TIFFMasksToDSOConverter();
+			converter.convert(files2FilePaths(tiffMaskFiles), dicomFilePaths, temporaryDSOFile.getAbsolutePath());
+
+			log.info("Sending generated DSO " + imageReference.imageUID + " to dcm4chee...");
+			DCM4CHEEUtil.dcmsnd(temporaryDSOFile.getAbsolutePath(), false);
+			return true;
+		} catch (Exception e) {
+			log.warning("Error generating DSO " + imageReference.imageUID + " in series " + imageReference.seriesUID, e);
+			return false;
+		}
 	}
 
 	public static void writeMultiFramePNGs(File dsoFile) throws Exception
@@ -145,6 +187,80 @@ public class DSOUtil
 		}
 	}
 
+	private static List<String> getSourceDICOMFilePathsForDSO(ImageReference dsoImageReference)
+	{
+		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
+		List<String> dicomFilePaths = new ArrayList<>();
+
+		EPADFrameList frameList = epadOperations.getFrameDescriptions(dsoImageReference);
+		for (EPADFrame frame : frameList.ResultSet.Result) {
+			if (frame instanceof EPADDSOFrame) {
+				EPADDSOFrame dsoFrame = (EPADDSOFrame)frame;
+				String studyUID = dsoFrame.studyUID;
+				String sourceSeriesUID = dsoFrame.sourceSeriesUID;
+				String sourceImageUID = dsoFrame.sourceImageUID;
+
+				try {
+					File temporaryDICOMFile = File.createTempFile(sourceImageUID, ".dcm");
+					log.info("Downloading source DICOM file for image " + sourceImageUID + " referenced by DSO image "
+							+ dsoImageReference.imageUID);
+					DCM4CHEEUtil.downloadDICOMFileFromWADO(studyUID, sourceSeriesUID, sourceImageUID, temporaryDICOMFile);
+					dicomFilePaths.add(temporaryDICOMFile.getAbsolutePath());
+				} catch (IOException e) {
+					log.warning("Error downloading DICOM file for referenced image " + sourceImageUID + " for DSO "
+							+ dsoImageReference.imageUID, e);
+				}
+			} else {
+				log.warning("Image " + dsoImageReference.imageUID + " in series " + dsoImageReference.seriesUID
+						+ " does not appear to be a DSO");
+			}
+		}
+		return dicomFilePaths;
+	}
+
+	private static List<File> getDSOTIFFMaskFiles(ImageReference imageReference)
+	{
+		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
+		List<File> dsoMaskFiles = new ArrayList<>();
+
+		EPADFrameList frameList = epadOperations.getFrameDescriptions(imageReference);
+
+		for (EPADFrame frame : frameList.ResultSet.Result) {
+			String maskFilePath = baseDicomDirectory + frame.losslessImage;
+			File maskFile = new File(maskFilePath);
+			log.info("Creating TIFF mask file " + maskFilePath + " for frame " + frame.frameNumber + " for DSO "
+					+ imageReference.imageUID);
+
+			try {
+				BufferedImage bufferedImage = ImageIO.read(maskFile);
+				File tiffFile = File.createTempFile(imageReference.imageUID + "_frame_" + frame.frameNumber, ".tif");
+				ImageIO.write(bufferedImage, "tif", tiffFile);
+				dsoMaskFiles.add(tiffFile);
+			} catch (IOException e) {
+				log.warning("Error creating TIFF mask file " + maskFilePath + " for frame " + frame.frameNumber + " for DSO "
+						+ imageReference.imageUID, e);
+			}
+		}
+		return dsoMaskFiles;
+	}
+
+	private static List<File> generateTIFFsFromPNGs(List<File> pngFiles)
+	{
+		List<File> tiffFiles = new ArrayList<>();
+
+		for (File pngFile : pngFiles) {
+			try {
+				BufferedImage bufferedImage = ImageIO.read(pngFile);
+				File tiffFile = File.createTempFile(pngFile.getName(), ".tif");
+				ImageIO.write(bufferedImage, "tif", tiffFile);
+				tiffFiles.add(tiffFile);
+			} catch (IOException e) {
+				log.warning("Error creating TIFF  file from PNG " + pngFile.getAbsolutePath());
+			}
+		}
+		return tiffFiles;
+	}
+
 	private static BufferedImage generateTransparentImage(BufferedImage source)
 	{
 		Image image = makeColorOpaque(source, Color.WHITE);
@@ -228,6 +344,16 @@ public class DSOUtil
 
 		ImageProducer ip = new FilteredImageSource(im.getSource(), filter);
 		return Toolkit.getDefaultToolkit().createImage(ip);
+	}
+
+	private static List<String> files2FilePaths(List<File> files)
+	{
+		List<String> filePaths = new ArrayList<>();
+
+		for (File file : files)
+			filePaths.add(file.getAbsolutePath());
+
+		return filePaths;
 	}
 
 	private static void insertEpadFile(EpadDatabaseOperations epadDatabaseOperations, String outputFilePath,

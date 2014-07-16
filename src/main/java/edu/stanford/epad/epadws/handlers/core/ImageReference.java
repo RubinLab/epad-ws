@@ -2,6 +2,7 @@ package edu.stanford.epad.epadws.handlers.core;
 
 import java.util.Map;
 
+import edu.stanford.epad.dtos.DSOEditRequest;
 import edu.stanford.epad.epadws.handlers.HandlerUtil;
 
 public class ImageReference
@@ -19,6 +20,12 @@ public class ImageReference
 		this.studyUID = studyUID;
 		this.seriesUID = seriesUID;
 		this.imageUID = imageUID;
+	}
+
+	public ImageReference(DSOEditRequest dsoEditRequest)
+	{
+		this(dsoEditRequest.projectID, dsoEditRequest.patientID, dsoEditRequest.studyUID, dsoEditRequest.seriesUID,
+				dsoEditRequest.imageUID);
 	}
 
 	public static ImageReference extract(String template, String pathInfo)

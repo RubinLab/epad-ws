@@ -261,8 +261,7 @@ public class DefaultEpadOperations implements EpadOperations
 	}
 
 	@Override
-	public EPADFrameList getFrameDescriptions(ImageReference imageReference, String sessionID,
-			EPADSearchFilter searchFilter)
+	public EPADFrameList getFrameDescriptions(ImageReference imageReference)
 	{
 		DCM4CHEEImageDescription dcm4cheeImageDescription = dcm4CheeDatabaseOperations.getImageDescription(imageReference);
 		List<EPADFrame> frames = new ArrayList<>();

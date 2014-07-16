@@ -57,7 +57,7 @@ public interface EpadOperations
 
 	EPADImage getImageDescription(ImageReference imageReference, String sessionID);
 
-	EPADFrameList getFrameDescriptions(ImageReference imageReference, String sessionID, EPADSearchFilter searchFilter);
+	EPADFrameList getFrameDescriptions(ImageReference imageReference);
 
 	EPADFrame getFrameDescription(FrameReference frameReference, String sessionID);
 

@@ -7,7 +7,6 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
-import java.util.ArrayList;
 import java.util.List;
 
 import javax.servlet.http.HttpServletRequest;
@@ -40,7 +39,6 @@ import edu.stanford.epad.dtos.EPADStudy;
 import edu.stanford.epad.dtos.EPADStudyList;
 import edu.stanford.epad.dtos.EPADSubject;
 import edu.stanford.epad.dtos.EPADSubjectList;
-import edu.stanford.epad.epadws.aim.AIMUtil;
 import edu.stanford.epad.epadws.handlers.HandlerUtil;
 import edu.stanford.epad.epadws.handlers.dicom.DSOUtil;
 import edu.stanford.epad.epadws.queries.DefaultEpadOperations;
@@ -52,14 +50,14 @@ import edu.stanford.epad.epadws.xnat.XNATSessionOperations;
  */
 public class EPADHandler extends AbstractHandler
 {
-	private static final String INTERNAL_ERROR_MESSAGE = "Internal error running query";
+	private static final String INTERNAL_ERROR_MESSAGE = "Internal error";
 	private static final String INVALID_SESSION_TOKEN_MESSAGE = "Session token is invalid";
 	private static final String BAD_GET_MESSAGE = "Invalid GET request - parameters are invalid";
 	private static final String BAD_DELETE_MESSAGE = "Invalid DELETE request!";
 	private static final String BAD_POST_MESSAGE = "Invalid POST request!";
 	private static final String BAD_PUT_MESSAGE = "Invalid PUT request!";
-	private static final String FORBIDDEN_MESSAGE = "Forbidden method - only GET, DELETE, and POST allowed!";
-	private static final String NO_USERNAME_MESSAGE = "Must have username parameter for queries!";
+	private static final String FORBIDDEN_MESSAGE = "Forbidden method - only GET, DELETE, PUT, and POST allowed!";
+	private static final String NO_USERNAME_MESSAGE = "Must have username parameter for requests!";
 
 	private static final EPADLogger log = EPADLogger.getInstance();
 
@@ -193,7 +191,7 @@ public class EPADHandler extends AbstractHandler
 
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.FRAME_LIST, pathInfo)) {
 				ImageReference imageReference = ImageReference.extract(ProjectsRouteTemplates.FRAME_LIST, pathInfo);
-				EPADFrameList frameList = epadOperations.getFrameDescriptions(imageReference, sessionID, searchFilter);
+				EPADFrameList frameList = epadOperations.getFrameDescriptions(imageReference);
 				responseStream.append(frameList.toJSON());
 				statusCode = HttpServletResponse.SC_OK;
 
@@ -207,7 +205,7 @@ public class EPADHandler extends AbstractHandler
 					statusCode = HttpServletResponse.SC_NOT_FOUND;
 
 				/**
-				 * Studies routes. These short cuts are used when the invoker does not have a project or subject ID
+				 * Studies routes. These short cuts are used when the invoker does not have a project or subject ID.
 				 */
 			} else if (HandlerUtil.matchesTemplate(StudiesRouteTemplates.SERIES, pathInfo)) {
 				SeriesReference seriesReference = SeriesReference.extract(StudiesRouteTemplates.SERIES, pathInfo);
@@ -223,12 +221,12 @@ public class EPADHandler extends AbstractHandler
 
 			} else if (HandlerUtil.matchesTemplate(StudiesRouteTemplates.FRAME_LIST, pathInfo)) {
 				ImageReference imageReference = ImageReference.extract(StudiesRouteTemplates.FRAME_LIST, pathInfo);
-				EPADFrameList frameList = epadOperations.getFrameDescriptions(imageReference, sessionID, searchFilter);
+				EPADFrameList frameList = epadOperations.getFrameDescriptions(imageReference);
 				responseStream.append(frameList.toJSON());
 				statusCode = HttpServletResponse.SC_OK;
 
 				/**
-				 * New AIM-related routes. TODO These have not been implemented yet
+				 * New AIM-related routes. TODO These have not been implemented yet.
 				 */
 
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.PROJECT_AIM_LIST, pathInfo)) {
@@ -465,7 +463,7 @@ public class EPADHandler extends AbstractHandler
 						log.warning("No PNG masks supplied in DSO edit request for image " + imageUID + " in series " + seriesUID);
 						uploadError = true;
 					} else {
-						DSOEditResult dsoEditResult = createEditedDSO(dsoEditRequest, editedFramesPNGMaskFiles);
+						DSOEditResult dsoEditResult = DSOUtil.createEditedDSO(dsoEditRequest, editedFramesPNGMaskFiles);
 						if (dsoEditResult != null)
 							responseStream.append(dsoEditResult.toJSON());
 						else
@@ -509,38 +507,5 @@ public class EPADHandler extends AbstractHandler
 			IOUtils.closeQuietly(isr);
 		}
 		return dsoEditRequest;
-	}
-
-	private DSOEditResult createEditedDSO(DSOEditRequest dsoEditRequest, List<File> editFramesMaskFiles)
-	{
-		String projectID = dsoEditRequest.projectID;
-		String patientID = dsoEditRequest.patientID;
-		String dsoStudyUID = dsoEditRequest.studyUID;
-		String dsoSeriesUID = "";
-		String dsoImageUID = "";
-		String aimID = "";
-		// List<File> dsoFrames = new ArrayList<>();
-
-		try {
-			List<File> existingDSOFrameFiles = DSOUtil.getDSOFrameFiles(dsoStudyUID, dsoSeriesUID, dsoImageUID);
-			List<File> finalDSOFrames = new ArrayList<>(existingDSOFrameFiles);
-			int frameMaskFilesIndex = 0;
-			for (Integer frameNumber : dsoEditRequest.editedFrameNumbers) {
-				if (frameNumber >= 0 || frameNumber < existingDSOFrameFiles.size()) {
-					finalDSOFrames.set(frameNumber, editFramesMaskFiles.get(frameMaskFilesIndex++));
-				} else {
-					log.warning("Frame number " + frameNumber + " is out of range for DSO image " + dsoImageUID + " in series "
-							+ dsoSeriesUID);
-					return null;
-				}
-			}
-			File dsoFile = DSOUtil.createDSO(dsoStudyUID, dsoSeriesUID, dsoImageUID, finalDSOFrames);
-			AIMUtil.generateAIMFileForDSO(dsoFile);
-			return new DSOEditResult(projectID, patientID, dsoStudyUID, dsoSeriesUID, dsoImageUID, aimID);
-
-		} catch (Exception e) {
-			log.warning("Error generating AIM file for DSO image " + dsoImageUID + " in series " + dsoSeriesUID, e);
-			return null;
-		}
 	}
 }
