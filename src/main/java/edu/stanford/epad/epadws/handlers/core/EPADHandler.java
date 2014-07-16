@@ -454,27 +454,24 @@ public class EPADHandler extends AbstractHandler
 			ServletFileUpload servletFileUpload = new ServletFileUpload();
 			FileItemIterator fileItemIterator = servletFileUpload.getItemIterator(httpRequest);
 
-			if (fileItemIterator.hasNext()) {
-				DSOEditRequest dsoEditRequest = extractDSOEditRequest(fileItemIterator);
+			DSOEditRequest dsoEditRequest = extractDSOEditRequest(fileItemIterator);
 
-				if (dsoEditRequest != null) {
-					List<File> editedFramesPNGMaskFiles = HandlerUtil.extractFiles(fileItemIterator, "DSOEditedFrame", "PNG");
-					if (editedFramesPNGMaskFiles.isEmpty()) {
-						log.warning("No PNG masks supplied in DSO edit request for image " + imageUID + " in series " + seriesUID);
-						uploadError = true;
-					} else {
-						DSOEditResult dsoEditResult = DSOUtil.createEditedDSO(dsoEditRequest, editedFramesPNGMaskFiles);
-						if (dsoEditResult != null)
-							responseStream.append(dsoEditResult.toJSON());
-						else
-							uploadError = true;
-					}
-				} else {
-					log.warning("Invalid JSON header in DSO edit request for series " + seriesUID);
+			if (dsoEditRequest != null) {
+				List<File> editedFramesPNGMaskFiles = HandlerUtil.extractFiles(fileItemIterator, "DSOEditedFrame", "PNG");
+				if (editedFramesPNGMaskFiles.isEmpty()) {
+					log.warning("No PNG masks supplied in DSO edit request for image " + imageUID + " in series " + seriesUID);
 					uploadError = true;
+				} else {
+					log.info("Extracted " + editedFramesPNGMaskFiles + " file mask(s) for DSO edit for image " + imageUID
+							+ " in  series " + seriesUID);
+					DSOEditResult dsoEditResult = DSOUtil.createEditedDSO(dsoEditRequest, editedFramesPNGMaskFiles);
+					if (dsoEditResult != null)
+						responseStream.append(dsoEditResult.toJSON());
+					else
+						uploadError = true;
 				}
 			} else {
-				log.warning("Missing body in DSO edit request for series " + seriesUID);
+				log.warning("Invalid JSON header in DSO edit request for image " + imageUID + " in  series " + seriesUID);
 				uploadError = true;
 			}
 		} catch (IOException e) {

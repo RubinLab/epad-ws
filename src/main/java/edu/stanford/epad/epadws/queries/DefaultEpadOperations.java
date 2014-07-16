@@ -290,7 +290,7 @@ public class DefaultEpadOperations implements EpadOperations
 						String insertDate = dcm4cheeReferencedImageDescription.createdTime;
 						String imageDate = dcm4cheeReferencedImageDescription.contentTime;
 						String sliceLocation = dcm4cheeReferencedImageDescription.sliceLocation;
-						int frameNumber = dcm4cheeReferencedImageDescription.instanceNumber;
+						int frameNumber = dcm4cheeReferencedImageDescription.instanceNumber - 1; // Frames 0-based, instances 1
 						String losslessImage = getPNGMaskPath(studyUID, imageReference.seriesUID, imageReference.imageUID,
 								frameNumber);
 						String lossyImage = ""; // We do not have a lossy image for the DSO frame

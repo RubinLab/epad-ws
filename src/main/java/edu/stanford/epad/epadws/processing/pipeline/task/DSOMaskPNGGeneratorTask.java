@@ -3,7 +3,6 @@ package edu.stanford.epad.epadws.processing.pipeline.task;
 import java.io.File;
 
 import edu.stanford.epad.common.util.EPADLogger;
-import edu.stanford.epad.epadws.aim.AIMUtil;
 import edu.stanford.epad.epadws.handlers.dicom.DSOUtil;
 
 public class DSOMaskPNGGeneratorTask implements GeneratorTask
@@ -26,7 +25,6 @@ public class DSOMaskPNGGeneratorTask implements GeneratorTask
 
 		try {
 			DSOUtil.writeDSOMaskPNGs(dsoFile);
-			AIMUtil.generateAIMFileForDSO(dsoFile);
 		} catch (Exception e) {
 			log.warning("Error writing AIM file for DSO series " + seriesUID, e);
 		}

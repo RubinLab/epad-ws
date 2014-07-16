@@ -84,7 +84,7 @@ public class DSOUtil
 			List<String> dicomFilePaths = getSourceDICOMFilePathsForDSO(imageReference);
 
 			TIFFMasksToDSOConverter converter = new TIFFMasksToDSOConverter();
-			converter.convert(files2FilePaths(tiffMaskFiles), dicomFilePaths, temporaryDSOFile.getAbsolutePath());
+			converter.generateDSO(files2FilePaths(tiffMaskFiles), dicomFilePaths, temporaryDSOFile.getAbsolutePath());
 
 			log.info("Sending generated DSO " + imageReference.imageUID + " to dcm4chee...");
 			DCM4CHEEUtil.dcmsnd(temporaryDSOFile.getAbsolutePath(), false);
