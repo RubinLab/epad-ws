@@ -79,6 +79,7 @@ public class DSOUtil
 
 	public static boolean createDSO(ImageReference imageReference, List<File> tiffMaskFiles)
 	{
+		log.info("Generating DSO " + imageReference.imageUID + " using " + tiffMaskFiles.size() + " TIDD mask file(s)...");
 		try {
 			File temporaryDSOFile = File.createTempFile(imageReference.imageUID, ".dso");
 			List<String> dicomFilePaths = getSourceDICOMFilePathsForDSO(imageReference);

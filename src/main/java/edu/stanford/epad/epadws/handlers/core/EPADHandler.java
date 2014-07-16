@@ -462,7 +462,7 @@ public class EPADHandler extends AbstractHandler
 					log.warning("No PNG masks supplied in DSO edit request for image " + imageUID + " in series " + seriesUID);
 					uploadError = true;
 				} else {
-					log.info("Extracted " + editedFramesPNGMaskFiles + " file mask(s) for DSO edit for image " + imageUID
+					log.info("Extracted " + editedFramesPNGMaskFiles.size() + " file mask(s) for DSO edit for image " + imageUID
 							+ " in  series " + seriesUID);
 					DSOEditResult dsoEditResult = DSOUtil.createEditedDSO(dsoEditRequest, editedFramesPNGMaskFiles);
 					if (dsoEditResult != null)

@@ -1061,6 +1061,18 @@ public class DefaultEpadOperations implements EpadOperations
 			defaultDicomElements.add(new DICOMElement(PixelMedUtils.PatientBirthDateCode,
 					PixelMedUtils.PatientBirthDateTagName, "1900-01-01T00:00:00"));
 
+		if (suppliedDICOMElementMap.containsKey(PixelMedUtils.SliceThicknessCode))
+			defaultDicomElements.add(suppliedDICOMElementMap.get(PixelMedUtils.SliceThicknessCode).get(0));
+		else
+			defaultDicomElements.add(new DICOMElement(PixelMedUtils.SliceLocationCode, PixelMedUtils.SliceThicknessTagName,
+					"0"));
+
+		if (suppliedDICOMElementMap.containsKey(PixelMedUtils.SliceLocationCode))
+			defaultDicomElements.add(suppliedDICOMElementMap.get(PixelMedUtils.SliceLocationCode).get(0));
+		else
+			defaultDicomElements.add(new DICOMElement(PixelMedUtils.SliceLocationCode, PixelMedUtils.SliceLocationTagName,
+					"0"));
+
 		if (suppliedDICOMElementMap.containsKey(PixelMedUtils.PatientSexCode))
 			defaultDicomElements.add(suppliedDICOMElementMap.get(PixelMedUtils.PatientSexCode).get(0));
 		else
