@@ -221,13 +221,6 @@ public class AIMQueries
 				if (aim != null)
 					resultAims.add(aim);
 			}
-		} else if (aimSearchType == AIMSearchType.DELETE_UID) { // TODO Fix this route
-			String annotationUID = value;
-			log.info("Calling performDelete with deleteUID on GET ");
-			performDelete(annotationUID, eXistCollection, eXistServerUrl);
-			resultAims = null;
-		} else if (aimSearchType == AIMSearchType.KEY) {
-			log.warning("id1 is key id2 is " + value);
 		} else {
 			log.warning("Unknown AIM search type " + aimSearchType.getName());
 		}
@@ -295,30 +288,5 @@ public class AIMQueries
 		}
 		log.info("Number of annotations " + count);
 		return count;
-	}
-
-	private static String performDelete(String uid, String collection, String serverURL)
-	{
-		String result = "";
-
-		log.info("performDelete on : " + uid);
-		try {
-			// AnnotationGetter.deleteImageAnnotationFromServer(serverUrl, namespace, collection, xsdFilePath,username,
-			// password, uid);
-			if (useV4.equals("false"))
-				AnnotationGetter.removeImageAnnotationFromServer(eXistServerUrl, aimNamespace, collection, eXistUsername,
-						eXistPassword, uid);
-			else
-				edu.stanford.hakan.aim4api.database.exist.ExistManager.removeImageAnnotationCollectionFromServer(
-						eXistServerUrl, aim4Namespace, eXistCollectionV4, eXistUsername, eXistPassword, uid);
-
-			log.info("after deletion on : " + uid);
-
-		} catch (Exception ex) {
-			result = "XML Deletion operation is Unsuccessful (Method Name; performDelete): " + ex.getLocalizedMessage();
-			log.info("XML Deletion operation is Unsuccessful (Method Name; performDelete): " + ex.getLocalizedMessage());
-		}
-		log.info("AnnotationGetter.deleteImageAnnotationFromServer result: " + result);
-		return result;
 	}
 }

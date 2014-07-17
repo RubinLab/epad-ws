@@ -42,6 +42,12 @@ import edu.stanford.epad.epadws.handlers.core.ImageReference;
 import edu.stanford.epad.epadws.queries.DefaultEpadOperations;
 import edu.stanford.epad.epadws.queries.EpadOperations;
 
+/**
+ * Code for handling DICOM Segmentation Objects
+ * 
+ * 
+ * @author martin
+ */
 public class DSOUtil
 {
 	private static final EPADLogger log = EPADLogger.getInstance();
@@ -79,7 +85,7 @@ public class DSOUtil
 
 	public static boolean createDSO(ImageReference imageReference, List<File> tiffMaskFiles)
 	{
-		log.info("Generating DSO " + imageReference.imageUID + " using " + tiffMaskFiles.size() + " TIDD mask file(s)...");
+		log.info("Generating DSO " + imageReference.imageUID + "  " + tiffMaskFiles.size() + " TIDD mask file(s)...");
 		try {
 			File temporaryDSOFile = File.createTempFile(imageReference.imageUID, ".dso");
 			List<String> dicomFilePaths = getSourceDICOMFilePathsForDSO(imageReference);
