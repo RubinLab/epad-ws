@@ -20,8 +20,5 @@ public interface Dcm4CheeDatabaseCommands
 	public static final String SELECT_PATIENT_FOR_STUDY = "SELECT * from pacsdb.patient as p, pacsdb.study as st WHERE p.pk=st.patient_fk and st.study_iuid=?";
 	public static final String SELECT_PARENT_STUDY_FOR_SERIES = "SELECT * from pacsdb.study as st, pacsdb.series as s WHERE st.pk=s.study_fk and s.series_iuid=?";
 	public static final String PK_FOR_INSTANCE = "SELECT pk from pacsdb.instance where sop_iuid=?";
-	public static final String SELECT_PATIENT_ATTRS = "select pat_attrs from pacsdb.patient where pat_id=?";
-	public static final String SELECT_STUDY_ATTRS = "select study_attrs from pacsdb.study where study_iuid=?";
-	public static final String SELECT_SERIES_ATTRS = "select series_attrs from pacsdb.series where series_iuid=?";
 	public static final String SELECT_STUDY_AND_SERIES_FOR_INSTANCE = "SELECT i.sop_iuid, s.series_iuid, st.study_iuid from pacsdb.instance as i, pacsdb.series as s, pacsdb.study as st WHERE i.sop_iuid=? and i.series_fk=s.pk and s.study_fk=st.pk";
 }
