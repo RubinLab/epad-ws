@@ -26,7 +26,6 @@ import edu.stanford.epad.common.plugins.PluginConfig;
 import edu.stanford.epad.common.plugins.PluginController;
 import edu.stanford.epad.common.plugins.PluginHandlerMap;
 import edu.stanford.epad.common.plugins.PluginServletHandler;
-import edu.stanford.epad.common.plugins.impl.EPadFilesImpl;
 import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.epad.epadws.epaddb.EpadDatabase;
@@ -134,8 +133,7 @@ public class Main
 
 	private static void initializePlugins()
 	{
-		PluginController controller = PluginController.getInstance();
-		controller.setImpl(new EPadFilesImpl());
+		PluginController.getInstance();
 	}
 
 	private static void startSupportThreads()
