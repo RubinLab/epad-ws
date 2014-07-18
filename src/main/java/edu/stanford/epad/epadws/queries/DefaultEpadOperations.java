@@ -21,15 +21,12 @@ import com.pixelmed.dicom.SOPClass;
 import edu.stanford.epad.common.dicom.DCM4CHEEImageDescription;
 import edu.stanford.epad.common.dicom.DCM4CHEEUtil;
 import edu.stanford.epad.common.dicom.DICOMFileDescription;
-import edu.stanford.epad.common.dicom.DicomFormatUtil;
 import edu.stanford.epad.common.pixelmed.PixelMedUtils;
 import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.epad.dtos.EPADAIM;
 import edu.stanford.epad.dtos.EPADAIMList;
 import edu.stanford.epad.dtos.EPADDSOFrame;
-import edu.stanford.epad.dtos.EPADDatabaseImage;
-import edu.stanford.epad.dtos.EPADDatabaseSeries;
 import edu.stanford.epad.dtos.EPADFrame;
 import edu.stanford.epad.dtos.EPADFrameList;
 import edu.stanford.epad.dtos.EPADImage;
@@ -470,26 +467,6 @@ public class DefaultEpadOperations implements EpadOperations
 	}
 
 	@Override
-	public EPADDatabaseSeries getSeries(String studyUID, String seriesUID)
-	{
-		List<DCM4CHEEImageDescription> imageDescriptions = dcm4CheeDatabaseOperations.getImageDescriptions(studyUID,
-				seriesUID);
-		List<EPADDatabaseImage> epadImageList = new ArrayList<EPADDatabaseImage>();
-
-		for (DCM4CHEEImageDescription imageDescription : imageDescriptions) {
-			String imageUID = imageDescription.imageUID;
-			String fileName = createFileNameField(imageUID); // TODO
-			int instanceNumber = imageDescription.instanceNumber;
-			String sliceLocation = imageDescription.sliceLocation;
-			String imageDate = imageDescription.contentTime;
-
-			EPADDatabaseImage epadImage = new EPADDatabaseImage(fileName, instanceNumber, sliceLocation, imageDate);
-			epadImageList.add(epadImage);
-		}
-		return new EPADDatabaseSeries(epadImageList);
-	}
-
-	@Override
 	public Set<DICOMFileDescription> getUnprocessedDICOMFilesInSeries(String seriesUID)
 	{
 		Set<DICOMFileDescription> dicomFilesWithoutPNGs = new HashSet<DICOMFileDescription>();
@@ -883,11 +860,6 @@ public class DefaultEpadOperations implements EpadOperations
 			return StudyProcessingStatus.STUDY_STATUS_PROCESSING;
 		else
 			return StudyProcessingStatus.STUDY_STATUS_COMPLETED;
-	}
-
-	private String createFileNameField(String sopInstanceUID)
-	{
-		return DicomFormatUtil.formatUidToDir(sopInstanceUID) + ".dcm";
 	}
 
 	private EPADProject xnatProject2EPADProject(String sessionID, String username, XNATProject xnatProject,

@@ -9,7 +9,6 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
 
 import edu.stanford.epad.common.dicom.DICOMFileDescription;
-import edu.stanford.epad.common.dicom.DicomFormatUtil;
 import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.epad.dtos.PNGFileProcessingStatus;
@@ -200,11 +199,6 @@ public class DICOMSeriesWatcher implements Runnable
 		return getDcm4cheeRootDir() + currImage.get("filepath");
 	}
 
-	/**
-	 * 
-	 * @param currImage Map of String to String
-	 * @return String
-	 */
 	private String createOutputFilePathForDicomPNGGridImage(Map<String, String> currImage)
 	{
 		String seriesIUID = currImage.get("series_iuid");
@@ -214,9 +208,9 @@ public class DICOMSeriesWatcher implements Runnable
 		StringBuilder outputPath = new StringBuilder();
 
 		outputPath.append(EPADConfig.getEPADWebServerPNGGridDir());
-		outputPath.append(DicomFormatUtil.formatUidToDir(studyUID)).append("/");
-		outputPath.append(DicomFormatUtil.formatUidToDir(seriesIUID)).append("/");
-		outputPath.append(DicomFormatUtil.formatUidToDir(imageUID)).append(".png");
+		outputPath.append("/studies/" + studyUID);
+		outputPath.append("/series/" + seriesIUID);
+		outputPath.append("/images/" + imageUID);
 
 		return outputPath.toString();
 	}

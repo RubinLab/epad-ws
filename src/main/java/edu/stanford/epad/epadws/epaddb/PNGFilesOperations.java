@@ -6,13 +6,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import edu.stanford.epad.common.dicom.DicomFormatUtil;
 import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADFileUtils;
 import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.epad.dtos.PNGFileProcessingStatus;
-import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeDatabase;
-import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeDatabaseOperations;
 import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeDatabaseUtils;
 import edu.stanford.epad.epadws.processing.model.PNGGridGenerator;
 
@@ -33,7 +30,7 @@ public class PNGFilesOperations
 	{
 		StringBuilder outputPath = new StringBuilder();
 		outputPath.append(EPADConfig.getEPADWebServerPNGDir());
-		outputPath.append(DicomFormatUtil.formatUidToDir(studyUID)).append("");
+		outputPath.append("/studies/" + studyUID);
 
 		try {
 			File dirToDelete = new File(outputPath.toString());
@@ -41,21 +38,6 @@ public class PNGFilesOperations
 			log.info("Deleted the PNGs for study " + studyUID + " at " + outputPath.toString() + "; success = " + success);
 		} catch (IOException e) {
 			log.warning("Error deleting the PNGs for study " + studyUID + " at " + outputPath.toString(), e);
-		}
-	}
-
-	public static void deletePNGsForSeries(String studyUID, String seriesUID)
-	{
-		StringBuilder outputPath = new StringBuilder();
-		outputPath.append(EPADConfig.getEPADWebServerPNGDir());
-		outputPath.append(DicomFormatUtil.formatUidToDir(studyUID)).append("/" + DicomFormatUtil.formatUidToDir(seriesUID));
-
-		try {
-			File dirToDelete = new File(outputPath.toString());
-			boolean success = deleteFile(dirToDelete);
-			log.info("Deleteed the PNGs for series " + seriesUID + " at " + outputPath.toString() + "; success = " + success);
-		} catch (IOException e) {
-			log.warning("Error deleting the PNGs for series " + seriesUID + " at " + outputPath.toString(), e);
 		}
 	}
 
@@ -89,22 +71,6 @@ public class PNGFilesOperations
 			epadDatabaseOperations.updateEpadFileRow(epadFilesTable.get("file_path"), PNGFileProcessingStatus.ERROR, 0,
 					"General Exception: " + e.getMessage());
 		}
-	}
-
-	public static void deletePNGforSeries(String seriesUID) throws Exception
-	{
-		Dcm4CheeDatabaseOperations dcm4CheeDatabaseOperations = Dcm4CheeDatabase.getInstance()
-				.getDcm4CheeDatabaseOperations();
-		String studyUID = dcm4CheeDatabaseOperations.getStudyUIDForSeries(seriesUID);
-		StringBuilder outputPath = new StringBuilder();
-		outputPath.append(EPADConfig.getEPADWebServerPNGDir());
-		outputPath.append(DicomFormatUtil.formatUidToDir(studyUID)).append("/");
-		outputPath.append(DicomFormatUtil.formatUidToDir(seriesUID)).append("/");
-
-		File dirToDelete = new File(outputPath.toString());
-		boolean success = deleteFile(dirToDelete);
-
-		log.info("Deleting PNGs for series " + seriesUID + " at " + outputPath.toString() + "; success = " + success);
 	}
 
 	private static boolean deleteFile(File file) throws IOException

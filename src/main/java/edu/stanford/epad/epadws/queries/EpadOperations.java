@@ -6,7 +6,6 @@ import java.util.Set;
 import edu.stanford.epad.common.dicom.DICOMFileDescription;
 import edu.stanford.epad.dtos.EPADAIM;
 import edu.stanford.epad.dtos.EPADAIMList;
-import edu.stanford.epad.dtos.EPADDatabaseSeries;
 import edu.stanford.epad.dtos.EPADFrame;
 import edu.stanford.epad.dtos.EPADFrameList;
 import edu.stanford.epad.dtos.EPADImage;
@@ -123,13 +122,6 @@ public interface EpadOperations
 	 * See if new series have been uploaded to DCM4CHEE that ePAD does not know about.
 	 */
 	List<DCM4CHEESeries> getNewDcm4CheeSeries();
-
-	/**
-	 * Query both the ePAD and DCM4CHEE database to get information on a series.
-	 */
-	EPADDatabaseSeries getSeries(String studyUID, String seriesUID);
-
-	// TODO This should be deleted shortly - used by seriesorderj call.
 
 	/**
 	 * For the specified series, return a list of DICOM image file descriptions for instances that have no corresponding
