@@ -362,7 +362,6 @@ public class DefaultEpadOperations implements EpadOperations
 			String sessionID)
 	{
 		String xnatSubjectLabel = XNATUtil.subjectID2XNATSubjectLabel(subjectID);
-
 		int xnatStatusCode = XNATCreationOperations.createXNATSubject(projectID, xnatSubjectLabel, subjectName, sessionID);
 
 		if (XNATUtil.unexpectedXNATCreationStatusCode(xnatStatusCode))

@@ -64,9 +64,9 @@ public class AimResourceHandler extends AbstractHandler
 							AIMUtil.queryAIMImageAnnotations(responseStream, aimSearchType, searchValue, user);
 							statusCode = HttpServletResponse.SC_OK;
 						} else
-							statusCode = HandlerUtil.warningResponse(HttpServletResponse.SC_BAD_REQUEST, BAD_QUERY_MESSAGE, log);
+							statusCode = HandlerUtil.badRequestResponse(BAD_QUERY_MESSAGE, log);
 					} else
-						statusCode = HandlerUtil.warningResponse(HttpServletResponse.SC_BAD_REQUEST, MISSING_QUERY_MESSAGE, log);
+						statusCode = HandlerUtil.badRequestResponse(MISSING_QUERY_MESSAGE, log);
 				} else if ("POST".equalsIgnoreCase(method)) {
 					String annotationsUploadDirPath = EPADConfig.getEPADWebServerAnnotationsUploadDir();
 					log.info("Uploading AIM annotation(s) to directory " + annotationsUploadDirPath);
@@ -98,9 +98,9 @@ public class AimResourceHandler extends AbstractHandler
 								statusCode = HandlerUtil.internalErrorResponse(errorMessage, t, log);
 							}
 						} else
-							statusCode = HandlerUtil.warningResponse(HttpServletResponse.SC_BAD_REQUEST, MISSING_AIM_ID_MESSAGE, log);
+							statusCode = HandlerUtil.badRequestResponse(MISSING_AIM_ID_MESSAGE, log);
 					} else
-						statusCode = HandlerUtil.warningResponse(HttpServletResponse.SC_BAD_REQUEST, MISSING_AIM_ID_MESSAGE, log);
+						statusCode = HandlerUtil.badRequestResponse(MISSING_AIM_ID_MESSAGE, log);
 
 				} else {
 					httpResponse.setHeader("Access-Control-Allow-Methods", "POST, GET, DELETE");
