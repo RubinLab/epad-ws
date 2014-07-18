@@ -1,9 +1,3 @@
-/*
- * Author: Daniel Rubin, Alan Snyder, Debra Willrett. All rights reserved. Possession
- * or use of this program is subject to the terms and conditions of the Academic
- * Software License Agreement available at:
- *   http://epad.stanford.edu/license/
- */
 package edu.stanford.epad.epadws;
 
 import java.io.File;
@@ -56,32 +50,27 @@ import edu.stanford.epad.epadws.processing.pipeline.watcher.QueueAndWatcherManag
 /**
  * Entry point for the ePAD Web Service.
  * <p>
- * Start an embedded Jetty server and all the threads required for this application.
+ * Start an embedded Jetty server and all the threads required for this application. The application listens on the port
+ * indicated by the property <i>ePadClientPort</i> in proxy-config.properties.
+ * <p>
+ * NOTE: The current directory must be set to the ePAD bin subdirectory (~epad/DicomProxy/bin) before calling the start
+ * scripts associated with this application. Code in the WAR file needs to be updated to remove this restriction.
  */
 public class Main
 {
 	private static final EPADLogger log = EPADLogger.getInstance();
 
-	/**
-	 * EPad web server entry point
-	 * <p>
-	 * The application listens on the port indicated by the property <i>ePadClientPort</i> in proxy-config.properties.
-	 * <p>
-	 * The current directory must be set to the ePAD bin subdirectory before calling the start scripts associated with
-	 * this application.
-	 * 
-	 * @param args String[]
-	 * @see EPADConfig
-	 */
 	public static void main(String[] args)
 	{
 		ShutdownSignal shutdownSignal = ShutdownSignal.getInstance();
 		Server server = null;
 
 		try {
-			log.info("Starting the ePAD web service. Build date: " + EPadWebServerVersion.getBuildDate());
+			log.info("#####################################################");
+			log.info("############# Starting ePAD Web Service #############");
+			log.info("#####################################################");
+
 			int epadPort = EPADConfig.epadPort;
-			log.info("Starting the ePAD web service. Build date: " + EPadWebServerVersion.getBuildDate());
 			initializePlugins();
 			startSupportThreads();
 			server = new Server(epadPort);
@@ -198,13 +187,6 @@ public class Main
 		server.setHandler(contexts);
 	}
 
-	/**
-	 * @param handler Handler
-	 * @param contextPath String
-	 * @param handlerList List of Handler
-	 * @see Handler
-	 * @see ContextHandler
-	 */
 	private static void addHandlerAtContextPath(Handler handler, String contextPath, List<Handler> handlerList)
 	{
 		ContextHandler contextHandler = new ContextHandler(contextPath);

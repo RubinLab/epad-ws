@@ -1,30 +1,14 @@
 package edu.stanford.epad.epadws.handlers.core;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.PrintWriter;
-import java.io.UnsupportedEncodingException;
-import java.util.List;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.apache.commons.fileupload.FileItemIterator;
-import org.apache.commons.fileupload.FileItemStream;
-import org.apache.commons.fileupload.FileUploadException;
-import org.apache.commons.fileupload.servlet.ServletFileUpload;
-import org.apache.commons.io.IOUtils;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 
-import com.google.gson.Gson;
-
 import edu.stanford.epad.common.util.EPADLogger;
-import edu.stanford.epad.dtos.DSOEditRequest;
-import edu.stanford.epad.dtos.DSOEditResult;
 import edu.stanford.epad.dtos.EPADAIM;
 import edu.stanford.epad.dtos.EPADAIMList;
 import edu.stanford.epad.dtos.EPADFrame;
@@ -383,7 +367,7 @@ public class EPADHandler extends AbstractHandler
 
 		if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.FRAME_LIST, pathInfo)) {
 			ImageReference imageReference = ImageReference.extract(ProjectsRouteTemplates.FRAME_LIST, pathInfo);
-			if (handleDSOFramesEdit(imageReference.projectID, imageReference.subjectID, imageReference.studyUID,
+			if (DSOUtil.handleDSOFramesEdit(imageReference.projectID, imageReference.subjectID, imageReference.studyUID,
 					imageReference.seriesUID, imageReference.imageUID, httpRequest, responseStream))
 				statusCode = HttpServletResponse.SC_CREATED;
 			else
@@ -441,68 +425,5 @@ public class EPADHandler extends AbstractHandler
 			statusCode = HandlerUtil.badRequestJSONResponse(BAD_DELETE_MESSAGE, responseStream, log);
 		}
 		return statusCode;
-	}
-
-	private boolean handleDSOFramesEdit(String projectID, String subjectID, String studyUID, String seriesUID,
-			String imageUID, HttpServletRequest httpRequest, PrintWriter responseStream)
-	{ // See http://www.tutorialspoint.com/servlets/servlets-file-uploading.htm
-		boolean uploadError = false;
-
-		log.info("Received DSO edit request for series " + seriesUID);
-
-		try {
-			ServletFileUpload servletFileUpload = new ServletFileUpload();
-			FileItemIterator fileItemIterator = servletFileUpload.getItemIterator(httpRequest);
-
-			DSOEditRequest dsoEditRequest = extractDSOEditRequest(fileItemIterator);
-
-			if (dsoEditRequest != null) {
-				List<File> editedFramesPNGMaskFiles = HandlerUtil.extractFiles(fileItemIterator, "DSOEditedFrame", "PNG");
-				if (editedFramesPNGMaskFiles.isEmpty()) {
-					log.warning("No PNG masks supplied in DSO edit request for image " + imageUID + " in series " + seriesUID);
-					uploadError = true;
-				} else {
-					log.info("Extracted " + editedFramesPNGMaskFiles.size() + " file mask(s) for DSO edit for image " + imageUID
-							+ " in  series " + seriesUID);
-					DSOEditResult dsoEditResult = DSOUtil.createEditedDSO(dsoEditRequest, editedFramesPNGMaskFiles);
-					if (dsoEditResult != null)
-						responseStream.append(dsoEditResult.toJSON());
-					else
-						uploadError = true;
-				}
-			} else {
-				log.warning("Invalid JSON header in DSO edit request for image " + imageUID + " in  series " + seriesUID);
-				uploadError = true;
-			}
-		} catch (IOException e) {
-			log.warning("IO exception handling DSO edits for series " + seriesUID, e);
-			uploadError = true;
-		} catch (FileUploadException e) {
-			log.warning("File upload exception handling DSO edits for series " + seriesUID, e);
-			uploadError = true;
-		}
-		return uploadError;
-	}
-
-	private DSOEditRequest extractDSOEditRequest(FileItemIterator fileItemIterator) throws FileUploadException,
-			IOException, UnsupportedEncodingException
-	{
-		DSOEditRequest dsoEditRequest = null;
-		Gson gson = new Gson();
-		FileItemStream headerJSONItemStream = fileItemIterator.next();
-		InputStream headerJSONStream = headerJSONItemStream.openStream();
-		InputStreamReader isr = null;
-		BufferedReader br = null;
-
-		try {
-			isr = new InputStreamReader(headerJSONStream, "UTF-8");
-			br = new BufferedReader(isr);
-
-			dsoEditRequest = gson.fromJson(br, DSOEditRequest.class);
-		} finally {
-			IOUtils.closeQuietly(br);
-			IOUtils.closeQuietly(isr);
-		}
-		return dsoEditRequest;
 	}
 }
