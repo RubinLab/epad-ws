@@ -400,31 +400,10 @@ public class AIMUtil
 		return newNode;
 	}
 
-	public static ImageAnnotation getImageAnnotationFromFile(File file) throws AimException,
-			edu.stanford.hakan.aim4api.base.AimException
-	{
-		return AnnotationGetter.getImageAnnotationFromFile(getRealPath(file));
-	}
-
 	public static ImageAnnotation getImageAnnotationFromFile(File file, String xsdFilePath) throws AimException,
 			edu.stanford.hakan.aim4api.base.AimException
 	{
 		return AnnotationGetter.getImageAnnotationFromFile(file.getAbsolutePath(), xsdFilePath);
-	}
-
-	/**
-	 * Get the canonical path if possible, otherwise get the absolute path.
-	 * 
-	 * @param file File
-	 * @return String path of file. Concurrent path if possible.
-	 */
-	private static String getRealPath(File file)
-	{
-		try {
-			return file.getCanonicalPath();
-		} catch (IOException ioe) {
-			return file.getAbsolutePath();
-		}
 	}
 
 	private static void setImageAnnotationUser(ImageAnnotation imageAnnotation, String username)

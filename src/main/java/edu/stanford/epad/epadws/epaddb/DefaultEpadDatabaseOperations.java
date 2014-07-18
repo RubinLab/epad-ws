@@ -41,30 +41,6 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 	}
 
 	@Override
-	public void createEPADFile(ImageReference imageReference, String pngURL, String jpgURL)
-	{
-		// TODO
-	}
-
-	@Override
-	public void createEPADFile(FrameReference frameReference, String pngURL, String jpgURL)
-	{
-		// TODO
-	}
-
-	@Override
-	public void deleteEPADFile(ImageReference imageReference)
-	{
-		// TODO
-	}
-
-	@Override
-	public void deleteEPADFile(FrameReference frameReference)
-	{
-		// TODO
-	}
-
-	@Override
 	public String getPNGLocation(ImageReference imageReference)
 	{
 		return getPNGLocation(imageReference.studyUID, imageReference.seriesUID, imageReference.imageUID);
@@ -244,30 +220,6 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 	}
 
 	@Override
-	public void deleteAIM(StudyReference reference, String aimID)
-	{
-		// TODO
-	}
-
-	@Override
-	public void deleteAIM(SeriesReference reference, String aimID)
-	{
-		// TODO
-	}
-
-	@Override
-	public void deleteAIM(ImageReference reference, String aimID)
-	{
-		// TODO
-	}
-
-	@Override
-	public void deleteAIM(FrameReference reference, String aimID)
-	{
-		// TODO
-	}
-
-	@Override
 	public void insertEpadFileRow(Map<String, String> row)
 	{
 		Connection c = null;
@@ -348,31 +300,6 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 	public List<String> getAllEPadFilePathsWithErrors()
 	{
 		return getAllEPadFilePathsWithStatus(PNGFileProcessingStatus.ERROR);
-	}
-
-	@Override
-	public String getEpadFilePathLike(String sopInstanceUID)
-	{
-		Connection c = null;
-		PreparedStatement ps = null;
-		ResultSet rs = null;
-		try {
-			c = getConnection();
-			ps = c.prepareStatement(EpadDatabaseCommands.SELECT_PATH);
-			ps.setString(1, "%" + sopInstanceUID + "%");
-			rs = ps.executeQuery();
-			if (rs.next()) {
-				return rs.getString(1);
-			} else {
-				return null;
-			}
-		} catch (SQLException sqle) {
-			String debugInfo = DatabaseUtils.getDebugData(rs);
-			log.warning("Database operation failed; debugInfo=" + debugInfo, sqle);
-			return null;
-		} finally {
-			close(c, ps, rs);
-		}
 	}
 
 	@Override

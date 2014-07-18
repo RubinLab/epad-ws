@@ -24,26 +24,6 @@ public class AIMQueries
 	private static final String aim4Namespace = EPADConfig.aim4Namespace;
 	private static final String eXistCollectionV4 = EPADConfig.eXistCollectionV4;
 
-	public static List<ImageAnnotation> getAIMAnnotationsForPerson(String personName, String username)
-	{
-		return getAIMImageAnnotations(AIMSearchType.PERSON_NAME, personName, username);
-	}
-
-	public static List<ImageAnnotation> getAIMAnnotationsForPatient(String patientId, String username)
-	{
-		return getAIMImageAnnotations(AIMSearchType.PATIENT_ID, patientId, username);
-	}
-
-	public static List<ImageAnnotation> getAIMAnnotationsForSeriesUID(String seriesUID, String username)
-	{
-		return getAIMImageAnnotations(AIMSearchType.SERIES_UID, seriesUID, username);
-	}
-
-	public static List<ImageAnnotation> getAIMAnnotationsForAnnotationUID(String annotationUID, String username)
-	{
-		return getAIMImageAnnotations(AIMSearchType.ANNOTATION_UID, annotationUID, username);
-	}
-
 	public static int getNumberOfAIMAnnotationsForPatients(String sessionID, String username, Set<String> patientIDs)
 	{ // Only count annotations for subjects in this project
 		int totalAIMAnnotations = 0;

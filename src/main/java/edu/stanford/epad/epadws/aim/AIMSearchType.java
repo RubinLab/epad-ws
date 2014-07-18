@@ -4,8 +4,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 public enum AIMSearchType {
-	PATIENT_ID("patientId"), SERIES_UID("seriesUID"), PERSON_NAME("personName"), ANNOTATION_UID("annotationUID"), DELETE_UID(
-			"deleteUID"), KEY("key");
+	PATIENT_ID("patientId"), SERIES_UID("seriesUID"), PERSON_NAME("personName"), ANNOTATION_UID("annotationUID");
 
 	private String name;
 

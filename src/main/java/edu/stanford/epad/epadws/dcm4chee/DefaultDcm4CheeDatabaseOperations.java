@@ -216,32 +216,6 @@ public class DefaultDcm4CheeDatabaseOperations implements Dcm4CheeDatabaseOperat
 	}
 
 	@Override
-	public Map<String, String> getPatientForStudy(String studyUID)
-	{
-		Map<String, String> retVal = new HashMap<String, String>();
-
-		Connection c = null;
-		PreparedStatement ps = null;
-		ResultSet rs = null;
-		try {
-			c = getConnection();
-			ps = c.prepareStatement(Dcm4CheeDatabaseCommands.SELECT_PATIENT_FOR_STUDY);
-			ps.setString(1, studyUID);
-
-			rs = ps.executeQuery();
-			if (rs.next()) {
-				retVal = createResultMap(rs);
-			}
-		} catch (SQLException sqle) {
-			String debugInfo = DatabaseUtils.getDebugData(rs);
-			log.warning("Database operation failed; debugInfo=" + debugInfo, sqle);
-		} finally {
-			close(c, ps, rs);
-		}
-		return retVal;
-	}
-
-	@Override
 	public Set<String> getStudyUIDsForPatient(String patientID)
 	{
 		Set<String> retVal = new HashSet<String>();

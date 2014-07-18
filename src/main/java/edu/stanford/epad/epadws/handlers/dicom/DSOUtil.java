@@ -68,6 +68,9 @@ public class DSOUtil
 
 	private static final String baseDicomDirectory = EPADConfig.getEPADWebServerPNGDir();
 
+	/**
+	 * Take an existing DSO and generate a new one (with new UIDs) with
+	 */
 	public static DSOEditResult createEditedDSO(DSOEditRequest dsoEditRequest, List<File> editFramesPNGMaskFiles)
 	{
 		try {
@@ -394,32 +397,6 @@ public class DSOUtil
 			{
 				if ((rgb | 0xFF000000) == markerRGB) {
 					return 0x00FFFFFF & rgb;
-				} else {
-					return rgb;
-				}
-			}
-		};
-
-		ImageProducer ip = new FilteredImageSource(im.getSource(), filter);
-		return Toolkit.getDefaultToolkit().createImage(ip);
-	}
-
-	@SuppressWarnings("unused")
-	private static Image makeColorBlackAndTransparent(BufferedImage im, final Color color)
-	{
-		ImageFilter filter = new RGBImageFilter() {
-			public int markerRGB = color.getRGB() | 0xFF000000;
-
-			@Override
-			public final int filterRGB(int x, int y, int rgb)
-			{
-				if ((rgb | 0xFF000000) == markerRGB) {
-					int r = 255;
-					int g = 255;
-					int b = 255;
-					int a = 0;
-					int col = (a << 24) | (r << 16) | (g << 8) | b;
-					return col;
 				} else {
 					return rgb;
 				}

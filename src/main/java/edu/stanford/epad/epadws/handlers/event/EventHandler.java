@@ -10,9 +10,7 @@ import javax.servlet.http.HttpServletResponse;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 
-import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADLogger;
-import edu.stanford.epad.common.util.SearchResultUtils;
 import edu.stanford.epad.epadws.epaddb.EpadDatabase;
 import edu.stanford.epad.epadws.epaddb.EpadDatabaseOperations;
 import edu.stanford.epad.epadws.handlers.HandlerUtil;
@@ -46,9 +44,8 @@ public class EventHandler extends AbstractHandler
 
 		if (XNATSessionOperations.hasValidXNATSessionID(httpRequest)) {
 			try {
-				responseStream = httpResponse.getWriter();
-
 				String method = httpRequest.getMethod();
+				responseStream = httpResponse.getWriter();
 
 				if ("GET".equalsIgnoreCase(method)) {
 					String jsessionID = XNATSessionOperations.getJSessionIDFromRequest(httpRequest);
@@ -56,8 +53,7 @@ public class EventHandler extends AbstractHandler
 						findEventsForSessionID(responseStream, jsessionID);
 						statusCode = HttpServletResponse.SC_OK;
 					} else {
-						statusCode = HandlerUtil.warningResponse(HttpServletResponse.SC_BAD_REQUEST, MISSING_JSESSIONID_MESSAGE,
-								log);
+						statusCode = HandlerUtil.badRequestResponse(MISSING_JSESSIONID_MESSAGE, log);
 					}
 				} else if ("POST".equalsIgnoreCase(method)) {
 					String queryString = httpRequest.getQueryString();
@@ -83,10 +79,10 @@ public class EventHandler extends AbstractHandler
 							responseStream.flush();
 							statusCode = HttpServletResponse.SC_OK;
 						} else {
-							statusCode = HandlerUtil.warningResponse(HttpServletResponse.SC_BAD_REQUEST, BAD_PARAMETERS_MESSAGE, log);
+							statusCode = HandlerUtil.badRequestResponse(BAD_PARAMETERS_MESSAGE, log);
 						}
 					} else {
-						statusCode = HandlerUtil.warningResponse(HttpServletResponse.SC_BAD_REQUEST, MISSING_QUERY_MESSAGE, log);
+						statusCode = HandlerUtil.badRequestResponse(MISSING_QUERY_MESSAGE, log);
 					}
 				} else {
 					statusCode = HandlerUtil.warningResponse(HttpServletResponse.SC_METHOD_NOT_ALLOWED, INVALID_METHOD_MESSAGE,
@@ -106,11 +102,13 @@ public class EventHandler extends AbstractHandler
 	private void findEventsForSessionID(PrintWriter responseStrean, String sessionID)
 	{
 		EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
+		// TODO This map should be replaced with a class describing an event.
 		List<Map<String, String>> eventMap = epadDatabaseOperations.getEpadEventsForSessionID(sessionID);
+		String separator = ", ";
 
-		responseStrean.print(new SearchResultUtils().get_EVENT_SEARCH_HEADER());
+		responseStrean.println("event_number, event_status, Date, aim_uid, aim_name, patient_id, patient_name, "
+				+ "template_id, template_name, plugin_name");
 
-		String separator = EPADConfig.fieldSeparator;
 		for (Map<String, String> row : eventMap) {
 			StringBuilder sb = new StringBuilder();
 			sb.append(row.get("pk")).append(separator);

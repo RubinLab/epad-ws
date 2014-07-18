@@ -26,14 +26,6 @@ import edu.stanford.epad.epadws.handlers.core.SubjectReference;
  */
 public interface EpadDatabaseOperations
 {
-	void createEPADFile(ImageReference imageReference, String pngURL, String jpgURL);
-
-	void createEPADFile(FrameReference frameReference, String pngURL, String jpgURL);
-
-	void deleteEPADFile(ImageReference imageReference);
-
-	void deleteEPADFile(FrameReference frameReference);
-
 	String getPNGLocation(String studyUID, String seriesUID, String imageUID);
 
 	String getPNGLocation(ImageReference imageReference);
@@ -70,8 +62,6 @@ public interface EpadDatabaseOperations
 	void updateEpadFileRow(String filePath, PNGFileProcessingStatus newStatus, long fileSize, String errorMsg);
 
 	boolean hasEpadFileRow(String filePath);
-
-	String getEpadFilePathLike(String sopInstanceUID);
 
 	List<String> getAllEPadFilePathsWithErrors();
 
@@ -120,14 +110,6 @@ public interface EpadDatabaseOperations
 	void addAIM(ImageReference reference, String aimID);
 
 	void addAIM(FrameReference reference, String aimID);
-
-	void deleteAIM(StudyReference reference, String aimID);
-
-	void deleteAIM(SeriesReference reference, String aimID);
-
-	void deleteAIM(ImageReference reference, String aimID);
-
-	void deleteAIM(FrameReference reference, String aimID);
 
 	// Coordination methods; will disappear with AIM 4
 
