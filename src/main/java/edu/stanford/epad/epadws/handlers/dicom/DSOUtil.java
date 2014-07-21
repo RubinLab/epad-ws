@@ -69,7 +69,7 @@ public class DSOUtil
 	private static final String baseDicomDirectory = EPADConfig.getEPADWebServerPNGDir();
 
 	/**
-	 * Take an existing DSO and generate a new one (with new UIDs) with
+	 * Take an existing DSO and generate a new one (with new UIDs) with substituted masked frames.
 	 */
 	public static DSOEditResult createEditedDSO(DSOEditRequest dsoEditRequest, List<File> editFramesPNGMaskFiles)
 	{

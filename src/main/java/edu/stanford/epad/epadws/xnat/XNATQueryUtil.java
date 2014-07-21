@@ -10,15 +10,15 @@ public class XNATQueryUtil
 	private static final String XNAT_PROJECTS_BASE = "/xnat/data/projects/";
 	private static final String XNAT_SUBJECTS_BASE = "/xnat/data/subjects/";
 	private static final String XNAT_EXPERIMENTS_BASE = "/xnat/data/experiments/";
-	private static final String xnatHost = EPADConfig.xnatServer;
-	private static final int xnatPort = EPADConfig.xnatPort;
+	private static final String XNAT_HOST = EPADConfig.xnatServer;
+	private static final int XNAT_PORT = EPADConfig.xnatPort;
 
 	public static String buildProjectsURL(String base)
 	{
 		if (base.startsWith("/"))
 			base = base.substring(1, base.length());
 
-		return buildURL(xnatHost, xnatPort, XNAT_PROJECTS_BASE, base);
+		return buildURL(XNAT_HOST, XNAT_PORT, XNAT_PROJECTS_BASE, base);
 	}
 
 	public static String buildAllProjectsQueryURL()
@@ -96,7 +96,7 @@ public class XNATQueryUtil
 			String dicomStudyUID)
 	{
 		String experimentID = XNATUtil.dicomStudyUID2XNATExperimentID(dicomStudyUID);
-		String urlString = XNATUtil.buildXNATBaseURL(xnatHost, xnatPort, XNAT_PROJECTS_BASE) + xnatProjectID + "/subjects/"
+		String urlString = XNATUtil.buildXNATBaseURL(XNAT_HOST, XNAT_PORT, XNAT_PROJECTS_BASE) + xnatProjectID + "/subjects/"
 				+ xnatSubjectLabel + "/experiments/" + experimentID + "?name=" + dicomStudyUID
 				+ "&xsiType=xnat:otherDicomSessionData";
 
@@ -122,7 +122,7 @@ public class XNATQueryUtil
 
 	private static String buildProjectBaseURL()
 	{
-		return buildXNATBaseURL(xnatHost, xnatPort, XNAT_PROJECTS_BASE);
+		return buildXNATBaseURL(XNAT_HOST, XNAT_PORT, XNAT_PROJECTS_BASE);
 	}
 
 	private static String buildURL(String host, int port, String base, String ext)
@@ -138,11 +138,11 @@ public class XNATQueryUtil
 
 	private static String buildSubjectsBaseURL()
 	{
-		return buildXNATBaseURL(xnatHost, xnatPort, XNAT_SUBJECTS_BASE);
+		return buildXNATBaseURL(XNAT_HOST, XNAT_PORT, XNAT_SUBJECTS_BASE);
 	}
 
 	private static String buildExperimentsBaseURL()
 	{
-		return buildXNATBaseURL(xnatHost, xnatPort, XNAT_EXPERIMENTS_BASE);
+		return buildXNATBaseURL(XNAT_HOST, XNAT_PORT, XNAT_EXPERIMENTS_BASE);
 	}
 }
