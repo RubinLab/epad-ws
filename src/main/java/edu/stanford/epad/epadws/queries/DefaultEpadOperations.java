@@ -234,13 +234,14 @@ public class DefaultEpadOperations implements EpadOperations
 				DICOMElementList defaultDICOMElements = getDefaultDICOMElements(dcm4cheeImageDescription.studyUID,
 						dcm4cheeImageDescription.seriesUID, dcm4cheeImageDescription.imageUID, suppliedDICOMElements);
 
-				EPADImage epadImage = createEPADImage(seriesReference, dcm4cheeImageDescription, suppliedDICOMElements,
+				EPADImage epadImage = createEPADImage(seriesReference, dcm4cheeImageDescription, new DICOMElementList(),
 						defaultDICOMElements);
 
 				epadImageList.addImage(epadImage);
 				isFirst = false;
 			} else { // We do not add DICOM headers to remaining image descriptions because it would be too expensive
-				EPADImage epadImage = createEPADImage(seriesReference, dcm4cheeImageDescription);
+				EPADImage epadImage = createEPADImage(seriesReference, dcm4cheeImageDescription, new DICOMElementList(),
+						new DICOMElementList());
 				epadImageList.addImage(epadImage);
 			}
 		}
@@ -947,13 +948,6 @@ public class DefaultEpadOperations implements EpadOperations
 		return createEPADImage(seriesReference.projectID, seriesReference.subjectID, seriesReference.studyUID,
 				seriesReference.seriesUID, dcm4cheeImageDescription.imageUID, dcm4cheeImageDescription, dicomElements,
 				defaultDICOMElements);
-	}
-
-	private EPADImage createEPADImage(SeriesReference seriesReference, DCM4CHEEImageDescription dcm4cheeImageDescription)
-	{
-		return createEPADImage(seriesReference.projectID, seriesReference.subjectID, seriesReference.studyUID,
-				seriesReference.seriesUID, dcm4cheeImageDescription.imageUID, dcm4cheeImageDescription, new DICOMElementList(),
-				new DICOMElementList());
 	}
 
 	private EPADImage createEPADImage(ImageReference imageReference, DCM4CHEEImageDescription dcm4CheeImageDescription,
