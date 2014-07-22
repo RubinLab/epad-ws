@@ -3,13 +3,13 @@ package edu.stanford.epad.epadws.dcm4chee;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileWriter;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 
 import org.apache.commons.io.IOUtils;
 
 import edu.stanford.epad.common.util.EPADConfig;
-import edu.stanford.epad.common.util.EPADFileUtils;
 import edu.stanford.epad.common.util.EPADLogger;
 
 /**
@@ -53,13 +53,11 @@ public class Dcm4CheeOperations
 					+ dirPath);
 
 			String[] command = { "./dcmsnd", dicomServerTitleAndPort, dirPath };
-
 			ProcessBuilder processBuilder = new ProcessBuilder(command);
 			String dicomScriptsDir = EPADConfig.getEPADWebServerDICOMBinDir();
 			processBuilder.directory(new File(dicomScriptsDir));
 			processBuilder.redirectErrorStream(true);
 			Process process = processBuilder.start();
-
 			is = process.getInputStream();
 			isr = new InputStreamReader(is);
 			br = new BufferedReader(isr);
@@ -78,7 +76,6 @@ public class Dcm4CheeOperations
 				log.warning("Didn't send DICOM files in: " + inputDirFile.getAbsolutePath(), e);
 			}
 			String cmdLineOutput = sb.toString();
-			writeUploadLog(cmdLineOutput);
 
 			if (cmdLineOutput.toLowerCase().contains("error"))
 				throw new IllegalStateException("Failed for: " + parseError(cmdLineOutput));
@@ -101,6 +98,64 @@ public class Dcm4CheeOperations
 			IOUtils.closeQuietly(isr);
 			IOUtils.closeQuietly(is);
 		}
+	}
+
+	/**
+	 * TODO This does not work. The ./dcmdeleteSeries script invoked the dcm4chee twiddle command but it appears that the
+	 * moveSeriesToTrash operation it calls has no effect in this version of dcm4chee. See:
+	 * http://www.dcm4che.org/jira/browse/WEB-955
+	 */
+	public static boolean deleteSeries(String seriesUID)
+	{
+		InputStream is = null;
+		InputStreamReader isr = null;
+		BufferedReader br = null;
+		boolean success = false;
+
+		try {
+			log.info("Deleting series " + seriesUID);
+
+			String[] command = { "./dcmdeleteSeries", seriesUID };
+			ProcessBuilder processBuilder = new ProcessBuilder(command);
+			String myScriptsDirectory = EPADConfig.getEPADWebServerMyScriptsDir();
+			processBuilder.directory(new File(myScriptsDirectory));
+			processBuilder.redirectErrorStream(true);
+			Process process = processBuilder.start();
+			process.getOutputStream();
+			is = process.getInputStream();
+			isr = new InputStreamReader(is);
+			br = new BufferedReader(isr);
+
+			String line;
+			StringBuilder sb = new StringBuilder();
+			while ((line = br.readLine()) != null) {
+				sb.append(line).append("\n");
+				log.info("./dcmdeleteSeries: " + line);
+			}
+			try {
+				int exitValue = process.waitFor();
+				if (exitValue == 0) {
+					log.info("Deleted DICOM series " + seriesUID);
+					success = true;
+				} else
+					log.warning("Failed to delete DICOM series " + seriesUID + "; exitValue=" + exitValue);
+			} catch (Exception e) {
+				log.warning("Failed to delete DICOM series " + seriesUID, e);
+			}
+
+			String cmdLineOutput = sb.toString();
+
+			if (cmdLineOutput.toLowerCase().contains("error")) {
+				throw new IllegalStateException("Failed for: " + parseError(cmdLineOutput));
+			}
+		} catch (IOException e) {
+			log.warning("Failed to delete DICOM series " + seriesUID, e);
+		} finally {
+			IOUtils.closeQuietly(br);
+			IOUtils.closeQuietly(isr);
+			IOUtils.closeQuietly(is);
+		}
+		return success;
 	}
 
 	public static void deleteStudy(String studyUID)
@@ -137,62 +192,12 @@ public class Dcm4CheeOperations
 				log.warning("Failed to delete DICOM study " + studyUID, e);
 			}
 			String cmdLineOutput = sb.toString();
-			writeDeleteLog(cmdLineOutput);
 
 			if (cmdLineOutput.toLowerCase().contains("error")) {
 				throw new IllegalStateException("Failed for: " + parseError(cmdLineOutput));
 			}
 		} catch (Exception e) {
 			log.warning("Failed to delete DICOM study " + studyUID, e);
-		}
-	}
-
-	/**
-	 * Delete from DCM4CHEE
-	 * 
-	 * @param seriesUID
-	 * @throws Exception
-	 */
-	public static void deleteSeries(String seriesUID) throws Exception
-	{
-		InputStream is = null;
-		InputStreamReader isr = null;
-		BufferedReader br = null;
-
-		try {
-			log.info("Deleting series " + seriesUID + " files - command: ./dcmdeleteSeries " + seriesUID);
-
-			String[] command = { "./dcmdeleteSeries", seriesUID };
-
-			ProcessBuilder pb = new ProcessBuilder(command);
-			String myScriptsDirectory = EPADConfig.getEPADWebServerMyScriptsDir();
-			pb.directory(new File(myScriptsDirectory));
-
-			Process process = pb.start();
-			process.getOutputStream();
-			is = process.getInputStream();
-			isr = new InputStreamReader(is);
-			br = new BufferedReader(isr);
-			String line;
-			StringBuilder sb = new StringBuilder();
-			while ((line = br.readLine()) != null) {
-				sb.append(line).append("\n");
-			}
-			try {
-				int exitValue = process.waitFor();
-				log.info("DICOM delete series exit value is: " + exitValue);
-			} catch (Exception e) {
-				log.warning("Failed to delete DICOM series " + seriesUID, e);
-			}
-
-			String cmdLineOutput = sb.toString();
-			writeDeleteLog(cmdLineOutput);
-
-			if (cmdLineOutput.toLowerCase().contains("error")) {
-				throw new IllegalStateException("Failed for: " + parseError(cmdLineOutput));
-			}
-		} catch (Exception e) {
-			log.warning("Failed to delete DICOM series " + seriesUID, e);
 		}
 	}
 
@@ -209,30 +214,6 @@ public class Dcm4CheeOperations
 			log.warning("DicomSendTask.parseError had: " + e.getMessage() + " for: " + output, e);
 		}
 		return output;
-	}
-
-	/**
-	 * Log the result of this upload to the log directory.
-	 * 
-	 * @param contents String
-	 */
-	private static void writeUploadLog(String contents)
-	{
-		String logDirectory = EPADConfig.getEPADWebServerLogDir();
-		String fileName = logDirectory + "upload_" + System.currentTimeMillis() + ".log";
-		EPADFileUtils.write(new File(fileName), contents);
-	}
-
-	/**
-	 * Log the result of this delete to the log directory.
-	 * 
-	 * @param contents String
-	 */
-	private static void writeDeleteLog(String contents)
-	{
-		String logDirectory = EPADConfig.getEPADWebServerLogDir();
-		String fileName = logDirectory + "delete_" + System.currentTimeMillis() + ".log";
-		EPADFileUtils.write(new File(fileName), contents);
 	}
 
 	/**

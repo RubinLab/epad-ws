@@ -382,7 +382,10 @@ public class DefaultEpadOperations implements EpadOperations
 	@Override
 	public int seriesDelete(SeriesReference seriesReference, String sessionID, String username)
 	{
-		return HttpServletResponse.SC_NOT_IMPLEMENTED; // TODO
+		if (Dcm4CheeOperations.deleteSeries(seriesReference.seriesUID))
+			return HttpServletResponse.SC_OK;
+		else
+			return HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 	}
 
 	@Override
