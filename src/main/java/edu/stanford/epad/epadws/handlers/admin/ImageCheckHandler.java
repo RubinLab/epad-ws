@@ -104,19 +104,11 @@ public class ImageCheckHandler extends AbstractHandler
 				// responseStream.write("All instances detected for series " + seriesUID + "\n");
 			}
 		}
-		// TODO: DICOM segmentation objects will not have PNGs. How to test? Tags should have indication.
-		// See: PixelMedUtils.isDicomSegmentationObject(inputDICOMFilePath)
 
 		int numberOfPNGFilesWithErrors = 0;
 		for (String pngFileName : epadDatabaseOperations.getAllEPadFilePathsWithErrors()) {
 			responseStream.write("PNG file " + pngFileName + " generation failed\n");
 			numberOfPNGFilesWithErrors++;
-		}
-
-		int numberOfPNGFilesInPipeline = 0;
-		for (String pngFileName : epadDatabaseOperations.getAllEPadInPipelineFilePaths()) {
-			responseStream.write("PNG file " + pngFileName + " in pipeline\n");
-			numberOfPNGFilesInPipeline++;
 		}
 
 		responseStream.write("Number of dcm4chee series  = " + seriesUIDs.size() + "\n");
@@ -126,7 +118,6 @@ public class ImageCheckHandler extends AbstractHandler
 		responseStream.write("Total number of dcm4chee images that do not have PNGs in ePAD = "
 				+ allUnprocessedDICOMFileDescriptions.size() + "\n");
 		responseStream.write("Total number of invalid PNG files = " + numberOfPNGFilesWithErrors + "\n");
-		responseStream.write("Total number of pending PNG files = " + numberOfPNGFilesInPipeline + "\n");
 
 		if (fix) {
 			if (allUnprocessedDICOMFileDescriptions.size() != 0) {
