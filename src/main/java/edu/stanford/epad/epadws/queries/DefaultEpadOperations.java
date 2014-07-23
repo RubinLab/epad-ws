@@ -268,7 +268,7 @@ public class DefaultEpadOperations implements EpadOperations
 			DICOMElementList suppliedDICOMElements = getDICOMElements(imageReference);
 			List<DICOMElement> referencedSOPInstanceUIDDICOMElements = getDICOMElementsByCode(suppliedDICOMElements,
 					PixelMedUtils.ReferencedSOPInstanceUIDCode);
-			int numberOfFrames = referencedSOPInstanceUIDDICOMElements.size();
+			int numberOfFrames = getNumberOfFrames(imageReference.imageUID, suppliedDICOMElements);
 
 			if (numberOfFrames > 0) {
 				DICOMElement firstDICOMElement = referencedSOPInstanceUIDDICOMElements.get(0);
@@ -970,7 +970,7 @@ public class DefaultEpadOperations implements EpadOperations
 		String sliceLocation = dcm4cheeImageDescription.sliceLocation;
 		String imageDate = dcm4cheeImageDescription.contentTime;
 		String insertDate = dcm4cheeImageDescription.createdTime;
-		int numberOfFrames = 0; // TODO Look for MF from dcm4chee
+		int numberOfFrames = getNumberOfFrames(imageUID, defaultDICOMElements);
 		String losslessImage = getPNGPath(studyUID, seriesUID, imageUID);
 		String lossyImage = getWADOPath(studyUID, seriesUID, imageUID);
 		boolean isDSO = isDSO(dcm4cheeImageDescription);
@@ -978,6 +978,22 @@ public class DefaultEpadOperations implements EpadOperations
 		return new EPADImage(projectID, subjectID, studyUID, seriesUID, imageUID, classUID, insertDate, imageDate,
 				sliceLocation, instanceNumber, losslessImage, lossyImage, dicomElements, defaultDICOMElements, numberOfFrames,
 				isDSO);
+	}
+
+	private int getNumberOfFrames(String imageUID, DICOMElementList dicomElements)
+	{
+		for (DICOMElement dicomElement : dicomElements.ResultSet.Result) {
+			if (dicomElement.tagCode.equals(PixelMedUtils.NumberOfFramesCode)) {
+				try {
+					return Integer.parseInt(dicomElement.value);
+				} catch (NumberFormatException e) {
+					log.warning("Invalid number of frames value " + dicomElement.value + " for image " + imageUID);
+					return 0;
+				}
+			}
+		}
+		log.warning("Could not find number of frames value  in DICOM headers for image " + imageUID);
+		return 0;
 	}
 
 	private DICOMElementList getDICOMElements(ImageReference imageReference)
@@ -1112,6 +1128,12 @@ public class DefaultEpadOperations implements EpadOperations
 		else
 			defaultDicomElements.add(new DICOMElement(PixelMedUtils.PixelRepresentationCode,
 					PixelMedUtils.PixelRepresentationTagName, "0"));
+
+		if (suppliedDICOMElementMap.containsKey(PixelMedUtils.NumberOfFramesCode))
+			defaultDicomElements.add(suppliedDICOMElementMap.get(PixelMedUtils.NumberOfFramesCode).get(0));
+		else
+			defaultDicomElements.add(new DICOMElement(PixelMedUtils.NumberOfFramesCode, PixelMedUtils.NumberOfFramesTagName,
+					"0"));
 
 		if (suppliedDICOMElementMap.containsKey(PixelMedUtils.WindowWidthCode)
 				&& suppliedDICOMElementMap.containsKey(PixelMedUtils.WindowCenterCode)) {

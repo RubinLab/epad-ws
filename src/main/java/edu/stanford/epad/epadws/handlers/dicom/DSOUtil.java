@@ -88,7 +88,7 @@ public class DSOUtil
 					return null;
 				}
 			}
-			// AIMUtil.generateAIMFileForDSO(dsoFile);
+
 			if (DSOUtil.createDSO(imageReference, dsoTIFFMaskFiles))
 				return new DSOEditResult(imageReference.projectID, imageReference.subjectID, imageReference.studyUID,
 						imageReference.seriesUID, imageReference.imageUID, "");
@@ -102,11 +102,13 @@ public class DSOUtil
 
 	public static boolean createDSO(ImageReference imageReference, List<File> tiffMaskFiles)
 	{
-		log.info("Generating DSO " + imageReference.imageUID + "  " + tiffMaskFiles.size() + " TIDD mask file(s)...");
+		log.info("Generating DSO " + imageReference.imageUID + " with " + tiffMaskFiles.size() + " TIFF mask file(s)...");
 		try {
 			File temporaryDSOFile = File.createTempFile(imageReference.imageUID, ".dso");
-			List<String> dicomFilePaths = getSourceDICOMFilePathsForDSO(imageReference);
+			List<String> dicomFilePaths = downloadDICOMFilesForDSO(imageReference);
+			log.info("Found " + dicomFilePaths.size() + " source DICOM file(s) for DSO " + imageReference.imageUID);
 
+			log.info("Generating new edited DSO from original DSO " + imageReference.imageUID);
 			TIFFMasksToDSOConverter converter = new TIFFMasksToDSOConverter();
 			converter.generateDSO(files2FilePaths(tiffMaskFiles), dicomFilePaths, temporaryDSOFile.getAbsolutePath());
 
@@ -274,7 +276,7 @@ public class DSOUtil
 		return dsoEditRequest;
 	}
 
-	private static List<String> getSourceDICOMFilePathsForDSO(ImageReference dsoImageReference)
+	private static List<String> downloadDICOMFilesForDSO(ImageReference dsoImageReference)
 	{
 		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
 		List<String> dicomFilePaths = new ArrayList<>();

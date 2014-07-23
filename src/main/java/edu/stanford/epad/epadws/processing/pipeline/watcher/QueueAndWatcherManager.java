@@ -112,10 +112,8 @@ public class QueueAndWatcherManager
 			}
 
 			if (PixelMedUtils.isDicomSegmentationObject(dicomFilePath)) {
-				log.info("DSO!!!!!" + dicomFileDescription.seriesUID);
 				generateMaskPNGsForDicomSegmentationObject(dicomFileDescription, inputDICOMFile);
 			} else if (PixelMedUtils.isMultiframedDicom(dicomFilePath)) {
-				log.info("MF!!!!!" + dicomFileDescription.seriesUID);
 				generatePNGsForMultiFrameDicom(dicomFileDescription, inputDICOMFile);
 			} else { // Assume it is non multi-frame DICOM
 				generatePNGFileForSingleFrameDICOMImage(patientName, dicomFileDescription, inputDICOMFile);

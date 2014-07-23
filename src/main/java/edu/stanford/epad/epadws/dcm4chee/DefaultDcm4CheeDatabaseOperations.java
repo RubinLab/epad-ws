@@ -402,16 +402,14 @@ public class DefaultDcm4CheeDatabaseOperations implements Dcm4CheeDatabaseOperat
 				Map<String, String> resultMap = createResultMap(rs);
 				String studyUID = resultMap.get("study_iuid");
 				String imageUID = resultMap.get("sop_iuid");
-				int instanceNumber = Integer.parseInt(resultMap.get("inst_no"));
+				int instanceNumber = extractInteger(seriesUID, "instance number", resultMap.get("inst_no"), 0);
 				String filePath = resultMap.get("filepath");
-				int fileSize = Integer.parseInt(resultMap.get("file_size"));
+				int fileSize = extractInteger(seriesUID, "file_size", resultMap.get("file_size"), 0);
 
 				DICOMFileDescription dicomFileDescription = new DICOMFileDescription(studyUID, seriesUID, imageUID,
 						instanceNumber, filePath, fileSize);
 				dicomFileDescriptions.add(dicomFileDescription);
 			}
-		} catch (NumberFormatException e) {
-			log.warning("Number format error extracting DICOM file description", e);
 		} catch (SQLException sqle) {
 			String debugInfo = DatabaseUtils.getDebugData(rs);
 			log.warning("Database operation failed; debugInfo=" + debugInfo, sqle);
@@ -490,7 +488,7 @@ public class DefaultDcm4CheeDatabaseOperations implements Dcm4CheeDatabaseOperat
 			Map<String, String> resultMap)
 	{
 		String imageUID = resultMap.get("sop_iuid");
-		int instanceNumber = Integer.parseInt(resultMap.get("inst_no"));
+		int instanceNumber = extractInteger(seriesUID, "instance number", resultMap.get("inst_no"), 0);
 		String sliceLocation = resultMap.get("inst_custom1") != null ? resultMap.get("inst_custom1") : "0.0";
 		String contentTime = resultMap.get("content_datetime");
 		String updatedTime = resultMap.get("updated_time");
@@ -544,6 +542,22 @@ public class DefaultDcm4CheeDatabaseOperations implements Dcm4CheeDatabaseOperat
 			retVal.put(columnName, columnData);
 		}
 		return retVal;
+	}
+
+	private int extractInteger(String seriesUID, String fieldName, String rawValue, int defaultValue)
+	{
+		if (rawValue == null) {
+			log.warning("Empty " + fieldName + " field  for series " + seriesUID + ", defaulting to " + defaultValue);
+			return defaultValue;
+		} else {
+			try {
+				return Integer.parseInt(rawValue);
+			} catch (NumberFormatException e) {
+				log.warning("Invalid format for integer in field " + fieldName + " for series " + seriesUID + "; rawValue = "
+						+ rawValue);
+				return defaultValue;
+			}
+		}
 	}
 
 	private Connection getConnection() throws SQLException
