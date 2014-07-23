@@ -201,6 +201,23 @@ public class AIMQueries
 				if (aim != null)
 					resultAims.add(aim);
 			}
+		} else if (aimSearchType.equals(AIMSearchType.AIM_QUERY)) {
+			String aimQuery = value;
+			try {
+				if (useV4.equals("false"))
+					aims = AnnotationGetter.getImageAnnotationsFromServerWithAimQuery(eXistServerUrl, aimNamespace, eXistUsername, eXistPassword, aimQuery, xsdFilePath);
+				else {
+					List<edu.stanford.hakan.aim4api.base.ImageAnnotationCollection> iacs = edu.stanford.hakan.aim4api.usage.AnnotationGetter
+							.getWithAimQuery(eXistServerUrl, aim4Namespace, eXistUsername, eXistPassword, aimQuery, xsdFilePath);
+					if (aims == null)
+						aims = new ArrayList<ImageAnnotation>();
+					for (int i = 0; i < iacs.size(); i++)
+						aims.add(new ImageAnnotation(iacs.get(i)));
+				}
+			} catch (AimException | edu.stanford.hakan.aim4api.base.AimException e) {
+				log.warning("Exception in AnnotationGetter.getWithAimQuery " + aimQuery,
+						e);
+			}
 		} else {
 			log.warning("Unknown AIM search type " + aimSearchType.getName());
 		}
