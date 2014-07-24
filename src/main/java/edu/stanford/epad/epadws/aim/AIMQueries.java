@@ -1,6 +1,10 @@
 package edu.stanford.epad.epadws.aim;
 
+import java.io.IOException;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.List;
 import java.util.Set;
 
@@ -10,8 +14,7 @@ import edu.stanford.hakan.aim3api.base.AimException;
 import edu.stanford.hakan.aim3api.base.ImageAnnotation;
 import edu.stanford.hakan.aim3api.usage.AnnotationGetter;
 
-public class AIMQueries
-{
+public class AIMQueries {
 	private static final EPADLogger log = EPADLogger.getInstance();
 
 	private static final String aimNamespace = EPADConfig.aim3Namespace;
@@ -24,94 +27,116 @@ public class AIMQueries
 	private static final String aim4Namespace = EPADConfig.aim4Namespace;
 	private static final String eXistCollectionV4 = EPADConfig.eXistCollectionV4;
 
-	public static List<ImageAnnotation> getAIMAnnotationsForPerson(String personName, String username)
-	{
-		return getAIMImageAnnotations(AIMSearchType.PERSON_NAME, personName, username);
+	public static List<ImageAnnotation> getAIMAnnotationsForPerson(
+			String personName, String username) {
+		return getAIMImageAnnotations(AIMSearchType.PERSON_NAME, personName,
+				username);
 	}
 
-	public static List<ImageAnnotation> getAIMAnnotationsForPatient(String patientId, String username)
-	{
-		return getAIMImageAnnotations(AIMSearchType.PATIENT_ID, patientId, username);
+	public static List<ImageAnnotation> getAIMAnnotationsForPatient(
+			String patientId, String username) {
+		return getAIMImageAnnotations(AIMSearchType.PATIENT_ID, patientId,
+				username);
 	}
 
-	public static List<ImageAnnotation> getAIMAnnotationsForSeriesUID(String seriesUID, String username)
-	{
-		return getAIMImageAnnotations(AIMSearchType.SERIES_UID, seriesUID, username);
+	public static List<ImageAnnotation> getAIMAnnotationsForSeriesUID(
+			String seriesUID, String username) {
+		return getAIMImageAnnotations(AIMSearchType.SERIES_UID, seriesUID,
+				username);
 	}
 
-	public static List<ImageAnnotation> getAIMAnnotationsForAnnotationUID(String annotationUID, String username)
-	{
-		return getAIMImageAnnotations(AIMSearchType.ANNOTATION_UID, annotationUID, username);
+	public static List<ImageAnnotation> getAIMAnnotationsForAnnotationUID(
+			String annotationUID, String username) {
+		return getAIMImageAnnotations(AIMSearchType.ANNOTATION_UID,
+				annotationUID, username);
 	}
 
-	public static int getNumberOfAIMAnnotationsForPatients(String sessionID, String username, Set<String> patientIDs)
-	{ // Only count annotations for subjects in this project
+	public static int getNumberOfAIMAnnotationsForPatients(String sessionID,
+			String username, Set<String> patientIDs) { // Only count annotations
+														// for subjects in this
+														// project
 		int totalAIMAnnotations = 0;
 
 		for (String patientID : patientIDs)
-			totalAIMAnnotations += getNumberOfAIMAnnotationsForPatient(patientID, username);
+			totalAIMAnnotations += getNumberOfAIMAnnotationsForPatient(
+					patientID, username);
 
 		return totalAIMAnnotations;
 	}
 
-	public static int getNumberOfAIMAnnotationsForPatient(String patientId, String username)
-	{
-		return getNumberOfAIMAnnotations(AIMSearchType.PATIENT_ID, patientId, username);
+	public static int getNumberOfAIMAnnotationsForPatient(String patientId,
+			String username) {
+		return getNumberOfAIMAnnotations(AIMSearchType.PATIENT_ID, patientId,
+				username);
 	}
 
-	public static int getNumberOfAIMAnnotationsForSeries(String seriesUID, String username)
-	{
-		return getNumberOfAIMAnnotations(AIMSearchType.SERIES_UID, seriesUID, username);
+	public static int getNumberOfAIMAnnotationsForSeries(String seriesUID,
+			String username) {
+		return getNumberOfAIMAnnotations(AIMSearchType.SERIES_UID, seriesUID,
+				username);
 	}
 
-	public static int getNumberOfAIMAnnotationsForSeriesSet(Set<String> seriesUIDs, String username)
-	{
+	public static int getNumberOfAIMAnnotationsForSeriesSet(
+			Set<String> seriesUIDs, String username) {
 		int numberOfAIMAnnotations = 0;
 
 		for (String seriesUID : seriesUIDs)
-			numberOfAIMAnnotations += getNumberOfAIMAnnotations(AIMSearchType.SERIES_UID, seriesUID, username);
+			numberOfAIMAnnotations += getNumberOfAIMAnnotations(
+					AIMSearchType.SERIES_UID, seriesUID, username);
 
 		return numberOfAIMAnnotations;
 	}
 
-	public static int getNumberOfAIMAnnotationsForAnnotationUID(String annotationUID, String username)
-	{
-		return getNumberOfAIMAnnotations(AIMSearchType.ANNOTATION_UID, annotationUID, username);
+	public static int getNumberOfAIMAnnotationsForAnnotationUID(
+			String annotationUID, String username) {
+		return getNumberOfAIMAnnotations(AIMSearchType.ANNOTATION_UID,
+				annotationUID, username);
 	}
 
 	/**
-	 * Read the annotations from the AIM database by patient name, patient id, series id, annotation id, or just get all
-	 * of them on a GET. Can also delete by annotation id.
+	 * Read the annotations from the AIM database by patient name, patient id,
+	 * series id, annotation id, or just get all of them on a GET. Can also
+	 * delete by annotation id.
 	 * 
-	 * @param aimSearchType One of personName, patientId, seriesUID, annotationUID, deleteUID
+	 * @param aimSearchType
+	 *            One of personName, patientId, seriesUID, annotationUID,
+	 *            deleteUID
 	 * @param value
 	 * @param user
 	 * @return List<ImageAnnotation>
 	 * @throws edu.stanford.hakan.aim4api.base.AimException
 	 */
-	public static List<ImageAnnotation> getAIMImageAnnotations(AIMSearchType aimSearchType, String value, String username)
-	{
+	public static List<ImageAnnotation> getAIMImageAnnotations(
+			AIMSearchType aimSearchType, String value, String username) {
 		List<ImageAnnotation> resultAims = new ArrayList<ImageAnnotation>();
 		List<ImageAnnotation> aims = null;
 		ImageAnnotation aim = null;
 
-		if (username.equals("")) { // TODO Temporary hack to get all annotations!
+		if (username.equals("")) { // TODO Temporary hack to get all
+									// annotations!
 			try {
 				log.info("Getting all AIM annotations");
 				if (useV4.equals("false"))
-					aims = AnnotationGetter.getImageAnnotationsFromServerByCagridIdEqual(eXistServerUrl, aimNamespace,
-							eXistCollection, eXistUsername, eXistPassword, "0", xsdFilePath);
+					aims = AnnotationGetter
+							.getImageAnnotationsFromServerByCagridIdEqual(
+									eXistServerUrl, aimNamespace,
+									eXistCollection, eXistUsername,
+									eXistPassword, "0", xsdFilePath);
 				else {
 					List<edu.stanford.hakan.aim4api.base.ImageAnnotationCollection> iacs = edu.stanford.hakan.aim4api.usage.AnnotationGetter
-							.getAllImageAnnotationCollections(eXistServerUrl, aim4Namespace, eXistCollectionV4, eXistUsername,
-									eXistPassword);
+							.getAllImageAnnotationCollections(eXistServerUrl,
+									aim4Namespace, eXistCollectionV4,
+									eXistUsername, eXistPassword);
 					if (aims == null)
 						aims = new ArrayList<ImageAnnotation>();
 					for (int i = 0; i < iacs.size(); i++)
 						aims.add(new ImageAnnotation(iacs.get(i)));
 				}
-			} catch (AimException | edu.stanford.hakan.aim4api.base.AimException e) {
-				log.warning("Exception in AnnotationGetter.getImageAnnotationsFromServerByCagridIdEqual", e);
+			} catch (AimException
+					| edu.stanford.hakan.aim4api.base.AimException e) {
+				log.warning(
+						"Exception in AnnotationGetter.getImageAnnotationsFromServerByCagridIdEqual",
+						e);
 			}
 			if (aims != null)
 				resultAims.addAll(aims);
@@ -119,19 +144,27 @@ public class AIMQueries
 			String personName = value;
 			try {
 				if (useV4.equals("false"))
-					aims = AnnotationGetter.getImageAnnotationsFromServerByPersonNameEqual(eXistServerUrl, aimNamespace,
-							eXistCollection, eXistUsername, eXistPassword, personName, xsdFilePath);
+					aims = AnnotationGetter
+							.getImageAnnotationsFromServerByPersonNameEqual(
+									eXistServerUrl, aimNamespace,
+									eXistCollection, eXistUsername,
+									eXistPassword, personName, xsdFilePath);
 				else {
 					List<edu.stanford.hakan.aim4api.base.ImageAnnotationCollection> iacs = edu.stanford.hakan.aim4api.usage.AnnotationGetter
-							.getImageAnnotationCollectionByPersonNameEqual(eXistServerUrl, aim4Namespace, eXistCollectionV4,
-									eXistUsername, eXistPassword, personName);
+							.getImageAnnotationCollectionByPersonNameEqual(
+									eXistServerUrl, aim4Namespace,
+									eXistCollectionV4, eXistUsername,
+									eXistPassword, personName);
 					if (aims == null)
 						aims = new ArrayList<ImageAnnotation>();
 					for (int i = 0; i < iacs.size(); i++)
 						aims.add(new ImageAnnotation(iacs.get(i)));
 				}
-			} catch (AimException | edu.stanford.hakan.aim4api.base.AimException e) {
-				log.warning("Exception in AnnotationGetter.getImageAnnotationsFromServerByPersonNameEqual " + personName, e);
+			} catch (AimException
+					| edu.stanford.hakan.aim4api.base.AimException e) {
+				log.warning(
+						"Exception in AnnotationGetter.getImageAnnotationsFromServerByPersonNameEqual "
+								+ personName, e);
 			}
 			if (aims != null)
 				resultAims.addAll(aims);
@@ -139,19 +172,28 @@ public class AIMQueries
 			String patientId = value;
 			try {
 				if (useV4.equals("false"))
-					aims = AnnotationGetter.getImageAnnotationsFromServerByPersonIDAndUserNameEqual(eXistServerUrl, aimNamespace,
-							eXistCollection, eXistUsername, eXistPassword, patientId, username, xsdFilePath);
+					aims = AnnotationGetter
+							.getImageAnnotationsFromServerByPersonIDAndUserNameEqual(
+									eXistServerUrl, aimNamespace,
+									eXistCollection, eXistUsername,
+									eXistPassword, patientId, username,
+									xsdFilePath);
 				else {
 					List<edu.stanford.hakan.aim4api.base.ImageAnnotationCollection> iacs = edu.stanford.hakan.aim4api.usage.AnnotationGetter
-							.getImageAnnotationCollectionByUserNameAndPersonIdEqual(eXistServerUrl, aim4Namespace, eXistCollectionV4,
-									eXistUsername, eXistPassword, username, patientId);
+							.getImageAnnotationCollectionByUserNameAndPersonIdEqual(
+									eXistServerUrl, aim4Namespace,
+									eXistCollectionV4, eXistUsername,
+									eXistPassword, username, patientId);
 					if (aims == null)
 						aims = new ArrayList<ImageAnnotation>();
 					for (int i = 0; i < iacs.size(); i++)
 						aims.add(new ImageAnnotation(iacs.get(i)));
 				}
-			} catch (AimException | edu.stanford.hakan.aim4api.base.AimException e) {
-				log.warning("Exception in AnnotationGetter.getImageAnnotationsFromServerByPersonIdEqual " + patientId, e);
+			} catch (AimException
+					| edu.stanford.hakan.aim4api.base.AimException e) {
+				log.warning(
+						"Exception in AnnotationGetter.getImageAnnotationsFromServerByPersonIdEqual "
+								+ patientId, e);
 			}
 			if (aims != null)
 				resultAims.addAll(aims);
@@ -159,20 +201,27 @@ public class AIMQueries
 			String seriesUID = value;
 			try {
 				if (useV4.equals("false"))
-					aims = AnnotationGetter.getImageAnnotationsFromServerByImageSeriesInstanceUIDEqual(eXistServerUrl,
-							aimNamespace, eXistCollection, eXistUsername, eXistPassword, seriesUID, xsdFilePath);
+					aims = AnnotationGetter
+							.getImageAnnotationsFromServerByImageSeriesInstanceUIDEqual(
+									eXistServerUrl, aimNamespace,
+									eXistCollection, eXistUsername,
+									eXistPassword, seriesUID, xsdFilePath);
 				else {
 					List<edu.stanford.hakan.aim4api.base.ImageAnnotationCollection> iacs = edu.stanford.hakan.aim4api.usage.AnnotationGetter
-							.getImageAnnotationCollectionByImageSeriesInstanceUIDEqual(eXistServerUrl, aim4Namespace,
-									eXistCollectionV4, eXistUsername, eXistPassword, seriesUID);
+							.getImageAnnotationCollectionByImageSeriesInstanceUIDEqual(
+									eXistServerUrl, aim4Namespace,
+									eXistCollectionV4, eXistUsername,
+									eXistPassword, seriesUID);
 					if (aims == null)
 						aims = new ArrayList<ImageAnnotation>();
 					for (int i = 0; i < iacs.size(); i++)
 						aims.add(new ImageAnnotation(iacs.get(i)));
 				}
-			} catch (AimException | edu.stanford.hakan.aim4api.base.AimException e) {
-				log.warning("Exception in AnnotationGetter.getImageAnnotationsFromServerByImageSeriesInstanceUIDEqual "
-						+ seriesUID, e);
+			} catch (AimException
+					| edu.stanford.hakan.aim4api.base.AimException e) {
+				log.warning(
+						"Exception in AnnotationGetter.getImageAnnotationsFromServerByImageSeriesInstanceUIDEqual "
+								+ seriesUID, e);
 			}
 			if (aims != null) {
 				resultAims.addAll(aims);
@@ -181,47 +230,65 @@ public class AIMQueries
 			String annotationUID = value;
 			if (value.equals("all")) {
 
-				// String query = "SELECT FROM " + collection + " WHERE (ImageAnnotation.cagridId like '0')";
+				// String query = "SELECT FROM " + collection +
+				// " WHERE (ImageAnnotation.cagridId like '0')";
 				try {
 					if (useV4.equals("false"))
-						aims = AnnotationGetter.getImageAnnotationsFromServerByUserLoginNameContains(eXistServerUrl, aimNamespace,
-								eXistCollection, eXistUsername, eXistPassword, username);
+						aims = AnnotationGetter
+								.getImageAnnotationsFromServerByUserLoginNameContains(
+										eXistServerUrl, aimNamespace,
+										eXistCollection, eXistUsername,
+										eXistPassword, username);
 					else {
 						List<edu.stanford.hakan.aim4api.base.ImageAnnotationCollection> iacs = edu.stanford.hakan.aim4api.usage.AnnotationGetter
-								.getImageAnnotationCollectionByUserLoginNameContains(eXistServerUrl, aim4Namespace, eXistCollectionV4,
-										eXistUsername, eXistPassword, username);
+								.getImageAnnotationCollectionByUserLoginNameContains(
+										eXistServerUrl, aim4Namespace,
+										eXistCollectionV4, eXistUsername,
+										eXistPassword, username);
 						if (aims == null)
 							aims = new ArrayList<ImageAnnotation>();
 						for (int i = 0; i < iacs.size(); i++)
 							aims.add(new ImageAnnotation(iacs.get(i)));
 					}
 
-				} catch (AimException | edu.stanford.hakan.aim4api.base.AimException e) {
-					log.warning("Exception in AnnotationGetter.getImageAnnotationsFromServerWithAimQuery ", e);
+				} catch (AimException
+						| edu.stanford.hakan.aim4api.base.AimException e) {
+					log.warning(
+							"Exception in AnnotationGetter.getImageAnnotationsFromServerWithAimQuery ",
+							e);
 				}
 				if (aims != null)
 					resultAims.addAll(aims);
 			} else {
 				try {
 					if (useV4.equals("false"))
-						aim = AnnotationGetter.getImageAnnotationFromServerByUniqueIdentifier(eXistServerUrl, aimNamespace,
-								eXistCollection, eXistUsername, eXistPassword, annotationUID, xsdFilePath);
+						aim = AnnotationGetter
+								.getImageAnnotationFromServerByUniqueIdentifier(
+										eXistServerUrl, aimNamespace,
+										eXistCollection, eXistUsername,
+										eXistPassword, annotationUID,
+										xsdFilePath);
 					else {
 						edu.stanford.hakan.aim4api.base.ImageAnnotationCollection iac = edu.stanford.hakan.aim4api.usage.AnnotationGetter
-								.getImageAnnotationCollectionByUniqueIdentifier(eXistServerUrl, aim4Namespace, eXistCollectionV4,
-										eXistUsername, eXistPassword, annotationUID);
+								.getImageAnnotationCollectionByUniqueIdentifier(
+										eXistServerUrl, aim4Namespace,
+										eXistCollectionV4, eXistUsername,
+										eXistPassword, annotationUID);
 						if (iac != null)
 							aim = new ImageAnnotation(iac);
 					}
 
-				} catch (AimException | edu.stanford.hakan.aim4api.base.AimException e) {
-					log.warning("Exception in AnnotationGetter.getImageAnnotationFromServerByUniqueIdentifier " + annotationUID,
-							e);
+				} catch (AimException
+						| edu.stanford.hakan.aim4api.base.AimException e) {
+					log.warning(
+							"Exception in AnnotationGetter.getImageAnnotationFromServerByUniqueIdentifier "
+									+ annotationUID, e);
 				}
 				if (aim != null)
 					resultAims.add(aim);
 			}
-		} else if (aimSearchType == AIMSearchType.DELETE_UID) { // TODO Fix this route
+		} else if (aimSearchType == AIMSearchType.DELETE_UID) { // TODO Fix this
+																// route
 			String annotationUID = value;
 			log.info("Calling performDelete with deleteUID on GET ");
 			performDelete(annotationUID, eXistCollection, eXistServerUrl);
@@ -234,59 +301,83 @@ public class AIMQueries
 		return resultAims;
 	}
 
-	private static int getNumberOfAIMAnnotations(AIMSearchType valueType, String value, String username)
-	{
-		return 1; // TODO This call is too slow if we have a lot of data on an ePAD instance so we disable for the moment.
+	private static int getNumberOfAIMAnnotations(AIMSearchType valueType,
+			String value, String username) {
+		return 1; // TODO This call is too slow if we have a lot of data on an
+					// ePAD instance so we disable for the moment.
 		// return getCountAIMImageAnnotations(valueType, value, username);
 	}
 
 	@SuppressWarnings("unused")
-	private static int getCountAIMImageAnnotations(AIMSearchType aimSearchType, String value, String username)
-	{
+	private static int getCountAIMImageAnnotations(AIMSearchType aimSearchType,
+			String value, String username) {
 		int count = 0;
 
-		log.info("AIM count query with search type " + aimSearchType + ", value " + value + ", username " + username);
+		log.info("AIM count query with search type " + aimSearchType
+				+ ", value " + value + ", username " + username);
 
 		if (aimSearchType == AIMSearchType.PERSON_NAME) {
 			String personName = value;
 			try {
-				count = AnnotationGetter.getCountImageAnnotationByPersonNameEqual(eXistServerUrl, aimNamespace,
-						eXistCollection, eXistUsername, eXistPassword, personName);
+				count = AnnotationGetter
+						.getCountImageAnnotationByPersonNameEqual(
+								eXistServerUrl, aimNamespace, eXistCollection,
+								eXistUsername, eXistPassword, personName);
 			} catch (Exception e) {
-				log.warning("Exception in AnnotationGetter.getCountImageAnnotationByPersonNameEqual " + personName, e);
+				log.warning(
+						"Exception in AnnotationGetter.getCountImageAnnotationByPersonNameEqual "
+								+ personName, e);
 			}
 		} else if (aimSearchType == AIMSearchType.PATIENT_ID) {
 			String patientId = value;
 			try {
-				count = AnnotationGetter.getCountImageAnnotationByPersonIdAndUserNameEqual(eXistServerUrl, aimNamespace,
-						eXistCollection, eXistUsername, eXistPassword, patientId, username);
+				count = AnnotationGetter
+						.getCountImageAnnotationByPersonIdAndUserNameEqual(
+								eXistServerUrl, aimNamespace, eXistCollection,
+								eXistUsername, eXistPassword, patientId,
+								username);
 			} catch (Exception e) {
-				log.warning("Exception in AnnotationGetter.getCountImageAnnotationByPersonIdEqual " + patientId, e);
+				log.warning(
+						"Exception in AnnotationGetter.getCountImageAnnotationByPersonIdEqual "
+								+ patientId, e);
 			}
 		} else if (aimSearchType == AIMSearchType.SERIES_UID) {
 			String seriesUID = value;
 			try {
-				count = AnnotationGetter.getCountImageAnnotationByImageSeriesInstanceUidEqual(eXistServerUrl, aimNamespace,
-						eXistCollection, eXistUsername, eXistPassword, seriesUID);
+				count = AnnotationGetter
+						.getCountImageAnnotationByImageSeriesInstanceUidEqual(
+								eXistServerUrl, aimNamespace, eXistCollection,
+								eXistUsername, eXistPassword, seriesUID);
 			} catch (Exception e) {
-				log.warning("Exception in AnnotationGetter.getCountImageAnnotationByImageSeriesInstanceUIDEqual " + seriesUID,
-						e);
+				log.warning(
+						"Exception in AnnotationGetter.getCountImageAnnotationByImageSeriesInstanceUIDEqual "
+								+ seriesUID, e);
 			}
 		} else if (aimSearchType == AIMSearchType.ANNOTATION_UID) {
 			String annotationUID = value;
 			if (value.equals("all")) {
 				try {
-					count = AnnotationGetter.getCountImageAnnotationByUserLoginNameContains(eXistServerUrl, aimNamespace,
-							eXistCollection, eXistUsername, eXistPassword, username);
+					count = AnnotationGetter
+							.getCountImageAnnotationByUserLoginNameContains(
+									eXistServerUrl, aimNamespace,
+									eXistCollection, eXistUsername,
+									eXistPassword, username);
 				} catch (Exception e) {
-					log.warning("Exception in AnnotationGetter.getImageAnnotationsFromServerWithAimQuery ", e);
+					log.warning(
+							"Exception in AnnotationGetter.getImageAnnotationsFromServerWithAimQuery ",
+							e);
 				}
 			} else {
 				try {
-					count = AnnotationGetter.getCountImageAnnotationByUniqueIdentifierEqual(eXistServerUrl, aimNamespace,
-							eXistCollection, eXistUsername, eXistPassword, annotationUID);
+					count = AnnotationGetter
+							.getCountImageAnnotationByUniqueIdentifierEqual(
+									eXistServerUrl, aimNamespace,
+									eXistCollection, eXistUsername,
+									eXistPassword, annotationUID);
 				} catch (Exception e) {
-					log.warning("Exception in AnnotationGetter.getCountImageAnnotationByUniqueIdentifier " + annotationUID, e);
+					log.warning(
+							"Exception in AnnotationGetter.getCountImageAnnotationByUniqueIdentifier "
+									+ annotationUID, e);
 				}
 			}
 		} else {
@@ -297,28 +388,54 @@ public class AIMQueries
 		return count;
 	}
 
-	private static String performDelete(String uid, String collection, String serverURL)
-	{
+	private static String performDelete(String uid, String collection,
+			String serverURL) {
 		String result = "";
 
 		log.info("performDelete on : " + uid);
 		try {
-			// AnnotationGetter.deleteImageAnnotationFromServer(serverUrl, namespace, collection, xsdFilePath,username,
+			// AnnotationGetter.deleteImageAnnotationFromServer(serverUrl,
+			// namespace, collection, xsdFilePath,username,
 			// password, uid);
 			if (useV4 == "false")
-				AnnotationGetter.removeImageAnnotationFromServer(eXistServerUrl, aimNamespace, collection, eXistUsername,
-						eXistPassword, uid);
-			else
-				edu.stanford.hakan.aim4api.database.exist.ExistManager.removeImageAnnotationCollectionFromServer(
-						eXistServerUrl, aim4Namespace, eXistCollectionV4, eXistUsername, eXistPassword, uid);
+				AnnotationGetter.removeImageAnnotationFromServer(
+						eXistServerUrl, aimNamespace, collection,
+						eXistUsername, eXistPassword, uid, false);
+			else {
+				edu.stanford.hakan.aim4api.database.exist.ExistManager
+						.removeImageAnnotationCollectionFromServer(
+								eXistServerUrl, aim4Namespace,
+								eXistCollectionV4, eXistUsername,
+								eXistPassword, uid);
+				try {
+					DateFormat dateFormat = new SimpleDateFormat(
+							"yyyy/MM/dd HH:mm:ss");
+					Calendar cal = Calendar.getInstance();
+					log.info("=== hakan: start to refresh the annotations list : "
+							+ dateFormat.format(cal.getTime()));
+					edu.stanford.hakan.aim4api.usage.AnnotationGetter
+							.refreshTheAnnotationCountXML(eXistServerUrl,
+									aim4Namespace, eXistCollectionV4,
+									eXistUsername, eXistPassword);
+					cal = Calendar.getInstance();
+					log.info("=== hakan: ended refresh the annotations list : "
+							+ dateFormat.format(cal.getTime()));
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
 
 			log.info("after deletion on : " + uid);
 
 		} catch (Exception ex) {
-			result = "XML Deletion operation is Unsuccessful (Method Name; performDelete): " + ex.getLocalizedMessage();
-			log.info("XML Deletion operation is Unsuccessful (Method Name; performDelete): " + ex.getLocalizedMessage());
+			result = "XML Deletion operation is Unsuccessful (Method Name; performDelete): "
+					+ ex.getLocalizedMessage();
+			log.info("XML Deletion operation is Unsuccessful (Method Name; performDelete): "
+					+ ex.getLocalizedMessage());
 		}
-		log.info("AnnotationGetter.deleteImageAnnotationFromServer result: " + result);
+		log.info("AnnotationGetter.deleteImageAnnotationFromServer result: "
+				+ result);
 		return result;
 	}
 }

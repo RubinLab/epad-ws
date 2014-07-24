@@ -2,12 +2,16 @@ package edu.stanford.epad.epadws.aim;
 
 import java.io.File;
 import java.io.IOException;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.List;
 
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpException;
 import org.apache.commons.httpclient.methods.GetMethod;
+import org.eclipse.jetty.util.log.Log;
 
 import com.pixelmed.dicom.Attribute;
 import com.pixelmed.dicom.AttributeList;
@@ -31,6 +35,7 @@ import edu.stanford.hakan.aim3api.base.TwoDimensionSpatialCoordinate;
 import edu.stanford.hakan.aim3api.base.User;
 import edu.stanford.hakan.aim3api.usage.AnnotationBuilder;
 import edu.stanford.hakan.aim3api.usage.AnnotationGetter;
+import edu.stanford.hakan.aim4api.utility.Globals;
 
 public class AIMUtil
 {
@@ -77,14 +82,36 @@ public class AIMUtil
 			}
 			tempFile.renameTo(storeFile);
 
+			log.info("=== hakan: v123 useV4 =  " + useV4);
+//			try
+//			{
+				log.info("=== hakan: v123 Globals.getAimQLXmlFilePath() =  " + Globals.getAimQLXmlFilePath());
+//			}
+//			catch(Exception ex)
+//			{
+//				log.info("=== hakan: v123 Error Globals.getAimQLXmlFilePath() =  " + ex.getMessage());
+//			}
 			if (useV4.equals("false")) {
 				AnnotationBuilder.saveToServer(aim, eXistServerUrl, aim3Namespace, eXistCollection, xsdFilePath, eXistUsername,
 						eXistPassword);
 				result = AnnotationBuilder.getAimXMLsaveResult();
 			} else {
+				log.info("=== hakan: 2");
 				edu.stanford.hakan.aim4api.usage.AnnotationBuilder.saveToServer(aim.toAimV4(), eXistServerUrl, aim4Namespace,
 						eXistCollectionV4, xsdFilePathV4, eXistUsername, eXistPassword);
 				result = edu.stanford.hakan.aim4api.usage.AnnotationBuilder.getAimXMLsaveResult();
+				log.info(result);
+				try {
+			        DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
+			        Calendar cal = Calendar.getInstance();
+			        log.info("=== hakan: start to refresh the annotations list : " + dateFormat.format(cal.getTime()));
+					edu.stanford.hakan.aim4api.usage.AnnotationGetter.refreshTheAnnotationCountXML(eXistServerUrl, aim4Namespace, eXistCollectionV4, eXistUsername, eXistPassword);
+			        cal = Calendar.getInstance();
+			        log.info("=== hakan: ended refresh the annotations list : " + dateFormat.format(cal.getTime()));
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
 			}
 
 			log.info(result);
@@ -280,14 +307,36 @@ public class AIMUtil
 				storeFile.delete();
 			}
 			tempFile.renameTo(storeFile);
+			
+			log.info("=== hakan: v123 useV4 =  " + useV4);
+//			try
+//			{
+				log.info("=== hakan: v123 Globals.getAimQLXmlFilePath() =  " + Globals.getAimQLXmlFilePath());
+//			}
+//			catch(Exception ex)
+//			{
+//				log.info("=== hakan: v123 Error Globals.getAimQLXmlFilePath() =  " + ex.getMessage());
+//			}
 			if (useV4.equals("false")) {
 				AnnotationBuilder.saveToServer(aim, eXistServerUrl, aim3Namespace, eXistCollection, xsdFilePath, eXistUsername,
 						eXistPassword);
 				result = AnnotationBuilder.getAimXMLsaveResult();
 			} else {
+				log.info("=== hakan: 1");
 				edu.stanford.hakan.aim4api.usage.AnnotationBuilder.saveToServer(aim.toAimV4(), eXistServerUrl, aim4Namespace,
 						eXistCollectionV4, xsdFilePathV4, eXistUsername, eXistPassword);
 				result = edu.stanford.hakan.aim4api.usage.AnnotationBuilder.getAimXMLsaveResult();
+				try {
+			        DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
+			        Calendar cal = Calendar.getInstance();
+			        log.info("=== hakan: start to refresh the annotations list : " + dateFormat.format(cal.getTime()));
+					edu.stanford.hakan.aim4api.usage.AnnotationGetter.refreshTheAnnotationCountXML(eXistServerUrl, aim4Namespace, eXistCollectionV4, eXistUsername, eXistPassword);
+			        cal = Calendar.getInstance();
+			        log.info("=== hakan: ended refresh the annotations list : " + dateFormat.format(cal.getTime()));
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
 			}
 			log.info(result);
 		}
