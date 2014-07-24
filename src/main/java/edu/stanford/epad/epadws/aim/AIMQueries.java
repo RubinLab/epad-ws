@@ -204,15 +204,21 @@ public class AIMQueries
 		} else if (aimSearchType.equals(AIMSearchType.AIM_QUERY)) {
 			String aimQuery = value;
 			try {
-				if (useV4.equals("false"))
+				if (useV4.equals("false")) {
+					log.info("Running AIM3 Query:" + aimQuery + " eXistServerUrl:" + eXistServerUrl + " aimNamespace:" + aimNamespace + " xsdFilePath:" + xsdFilePath);
 					aims = AnnotationGetter.getImageAnnotationsFromServerWithAimQuery(eXistServerUrl, aimNamespace, eXistUsername, eXistPassword, aimQuery, xsdFilePath);
-				else {
+					if (aims != null)
+						resultAims.addAll(aims);
+				} else {
+					log.info("Running AIM4 Query:" + aimQuery + " aimNamespace:" + aimNamespace + " xsdFilePath:" + xsdFilePath);
 					List<edu.stanford.hakan.aim4api.base.ImageAnnotationCollection> iacs = edu.stanford.hakan.aim4api.usage.AnnotationGetter
 							.getWithAimQuery(eXistServerUrl, aim4Namespace, eXistUsername, eXistPassword, aimQuery, xsdFilePath);
 					if (aims == null)
 						aims = new ArrayList<ImageAnnotation>();
 					for (int i = 0; i < iacs.size(); i++)
 						aims.add(new ImageAnnotation(iacs.get(i)));
+					if (aims != null)
+						resultAims.addAll(aims);
 				}
 			} catch (AimException | edu.stanford.hakan.aim4api.base.AimException e) {
 				log.warning("Exception in AnnotationGetter.getWithAimQuery " + aimQuery,
