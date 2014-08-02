@@ -63,6 +63,7 @@ public class XNATSessionHandler extends AbstractHandler
 						httpResponse.addHeader("Set-Cookie", "ePADLoggedinUser=" + username);
 						httpResponse.addHeader("Access-Control-Allow-Origin", origin);
 						httpResponse.addHeader("Access-Control-Allow-Credentials", "true");
+						log.info("Successful login to XNAT; JSESSIONID=" + jsessionID);
 						statusCode = HttpServletResponse.SC_OK;
 					} else if (xnatSessionResponse.statusCode == HttpServletResponse.SC_UNAUTHORIZED) {
 						statusCode = HandlerUtil.invalidTokenResponse(UNAUTHORIZED_USER_XNAT_RESPONSE_MESSAGE, responseStream, log);

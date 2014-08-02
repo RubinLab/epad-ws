@@ -173,6 +173,7 @@ public class XNATSessionOperations
 			log.info("Invoking XNAT session service for user " + username + " at " + xnatSessionURL);
 			method.setRequestHeader("Authorization", "Basic " + authString);
 			xnatStatusCode = client.executeMethod(method);
+			log.info("Successfully invoked XNAT session service for user " + username + "; status code = " + xnatStatusCode);
 		} catch (IOException e) {
 			log.warning("Error calling XNAT session service for user " + username, e);
 			xnatStatusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
@@ -195,6 +196,7 @@ public class XNATSessionOperations
 					}
 					String jsessionID = sb.toString();
 					xnatSessionResponse = new XNATSessionResponse(HttpServletResponse.SC_OK, jsessionID);
+					log.info("Session ID " + jsessionID + " generated for user " + username); // TODO temp
 				} catch (IOException e) {
 					log.warning(LOGIN_EXCEPTION_MESSAGE, e);
 					xnatSessionResponse = new XNATSessionResponse(HttpServletResponse.SC_INTERNAL_SERVER_ERROR,

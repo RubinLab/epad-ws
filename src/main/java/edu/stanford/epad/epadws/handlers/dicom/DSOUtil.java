@@ -80,7 +80,7 @@ public class DSOUtil
 			List<File> dsoTIFFMaskFiles = new ArrayList<>(existingDSOTIFFMaskFiles);
 			int frameMaskFilesIndex = 0;
 			for (Integer frameNumber : dsoEditRequest.editedFrameNumbers) {
-				if (frameNumber >= 0 || frameNumber < existingDSOTIFFMaskFiles.size()) {
+				if (frameNumber >= 0 && frameNumber < existingDSOTIFFMaskFiles.size()) {
 					dsoTIFFMaskFiles.set(frameNumber, editFramesTIFFMaskFiles.get(frameMaskFilesIndex++));
 				} else {
 					log.warning("Frame number " + frameNumber + " is out of range for DSO image " + dsoEditRequest.imageUID
@@ -147,8 +147,7 @@ public class DSOUtil
 				File pngFile = new File(pngFilePath);
 				try {
 					insertEpadFile(databaseOperations, pngFilePath, 0, imageUID);
-					log.info("Writing PNG for frame " + frameNumber + " for multi-frame image " + imageUID + " in series "
-							+ seriesUID);
+					log.info("Writing PNG frame " + frameNumber + " in multi-frame image " + imageUID + " in series " + seriesUID);
 					ImageIO.write(bufferedImage, "png", pngFile);
 					databaseOperations.updateEpadFileRow(pngFilePath, PNGFileProcessingStatus.DONE, pngFile.length(), "");
 				} catch (IOException e) {
@@ -188,6 +187,8 @@ public class DSOUtil
 
 			for (int frameNumber = 0; frameNumber < numberOfFrames; frameNumber++) {
 				BufferedImage bufferedImage = sourceDSOImage.getBufferedImage(numberOfFrames - frameNumber - 1);
+
+				log.info("Image dimensions - width " + bufferedImage.getWidth() + ", height " + bufferedImage.getHeight());
 
 				BufferedImage bufferedImageWithTransparency = generateTransparentImage(bufferedImage);
 				String pngMaskFilePath = pngMaskDirectoryPath + frameNumber + ".png";
