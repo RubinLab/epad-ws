@@ -81,10 +81,13 @@ public class DSOUtil
 			int frameMaskFilesIndex = 0;
 			for (Integer frameNumber : dsoEditRequest.editedFrameNumbers) {
 				if (frameNumber >= 0 && frameNumber < existingDSOTIFFMaskFiles.size()) {
-					dsoTIFFMaskFiles.set(frameNumber, editFramesTIFFMaskFiles.get(frameMaskFilesIndex++));
+					log.info("Editing frame: " + frameNumber + " in new DSO");
+					// For some reason the original DSO Masks are in reverse order
+					int editMaskFileIndex = existingDSOTIFFMaskFiles.size() - frameNumber -1;
+					dsoTIFFMaskFiles.set(editMaskFileIndex, editFramesTIFFMaskFiles.get(frameMaskFilesIndex++));
 				} else {
 					log.warning("Frame number " + frameNumber + " is out of range for DSO image " + dsoEditRequest.imageUID
-							+ " in series " + dsoEditRequest.seriesUID);
+							+ " in series " + dsoEditRequest.seriesUID + " which has only " + existingDSOTIFFMaskFiles.size() + " frames");
 					return null;
 				}
 			}
@@ -237,9 +240,14 @@ public class DSOUtil
 							+ " in  series " + seriesUID);
 					DSOEditResult dsoEditResult = DSOUtil.createEditedDSO(dsoEditRequest, editedFramesPNGMaskFiles);
 					if (dsoEditResult != null)
+					{
 						responseStream.append(dsoEditResult.toJSON());
+					}
 					else
+					{
+						log.info("Null return from createEditDSO");
 						uploadError = true;
+					}
 				}
 			} else {
 				log.warning("Invalid JSON header in DSO edit request for image " + imageUID + " in  series " + seriesUID);
@@ -323,7 +331,7 @@ public class DSOUtil
 
 			try {
 				BufferedImage bufferedImage = ImageIO.read(maskFile);
-				File tiffFile = File.createTempFile(imageReference.imageUID + "_frame_" + frame.frameNumber, ".tif");
+				File tiffFile = File.createTempFile(imageReference.imageUID + "_frame_" + frame.frameNumber + "_", ".tif");
 				ImageIO.write(bufferedImage, "tif", tiffFile);
 				dsoMaskFiles.add(tiffFile);
 			} catch (IOException e) {

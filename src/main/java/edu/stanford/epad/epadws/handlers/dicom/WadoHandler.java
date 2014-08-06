@@ -42,8 +42,12 @@ public class WadoHandler extends AbstractHandler
 		} else {
 			httpResponse.setHeader("Access-Control-Allow-Origin", "*");
 		}
-
-		httpResponse.setContentType("image/jpeg");
+		
+		if (httpRequest.getQueryString().indexOf("dicom") != -1)
+			httpResponse.setContentType("application/octet-stream");
+		else
+			httpResponse.setContentType("image/jpeg");
+		
 		request.setHandled(true);
 
 		String method = httpRequest.getMethod();
