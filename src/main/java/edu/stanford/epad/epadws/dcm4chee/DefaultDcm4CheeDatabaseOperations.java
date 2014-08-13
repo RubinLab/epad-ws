@@ -401,13 +401,14 @@ public class DefaultDcm4CheeDatabaseOperations implements Dcm4CheeDatabaseOperat
 			while (rs.next()) {
 				Map<String, String> resultMap = createResultMap(rs);
 				String studyUID = resultMap.get("study_iuid");
+				String createdTime = resultMap.get("created_time");
 				String imageUID = resultMap.get("sop_iuid");
 				int instanceNumber = extractInteger(seriesUID, "instance number", resultMap.get("inst_no"), 0);
 				String filePath = resultMap.get("filepath");
 				int fileSize = extractInteger(seriesUID, "file_size", resultMap.get("file_size"), 0);
 
 				DICOMFileDescription dicomFileDescription = new DICOMFileDescription(studyUID, seriesUID, imageUID,
-						instanceNumber, filePath, fileSize);
+						instanceNumber, filePath, fileSize, createdTime);
 				dicomFileDescriptions.add(dicomFileDescription);
 			}
 		} catch (SQLException sqle) {

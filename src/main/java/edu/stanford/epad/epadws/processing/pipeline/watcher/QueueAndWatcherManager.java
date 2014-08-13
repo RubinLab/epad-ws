@@ -2,6 +2,7 @@ package edu.stanford.epad.epadws.processing.pipeline.watcher;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -92,6 +93,18 @@ public class QueueAndWatcherManager
 
 	public void addDICOMFileToPNGGeneratorPipeline(String patientName, Set<DICOMFileDescription> dicomFileDescriptions)
 	{
+		boolean sameSeries = true; // This should always be the case, but who knows
+		String prevSeriesUID = null;
+		Set<DICOMFileDescription> dicomFilesCopy = new HashSet<DICOMFileDescription>();
+		for (DICOMFileDescription dicomFileDescription : dicomFileDescriptions)
+		{
+			if (prevSeriesUID != null && !prevSeriesUID.equals(dicomFileDescription.seriesUID))
+			{
+				sameSeries = false;
+				break;
+			}
+			dicomFilesCopy.add(dicomFileDescription);
+		}
 		for (DICOMFileDescription dicomFileDescription : dicomFileDescriptions) {
 			String seriesUID = dicomFileDescription.seriesUID;
 			String imageUID = dicomFileDescription.imageUID;
@@ -112,7 +125,24 @@ public class QueueAndWatcherManager
 			}
 
 			if (PixelMedUtils.isDicomSegmentationObject(dicomFilePath)) {
+				if (sameSeries)
+				{
+					// Get the last image (alphabetically last - looks like this is true all the time???)
+					String createdTime = dicomFileDescription.createdTime;
+					for (DICOMFileDescription dsoFile : dicomFilesCopy)
+					{
+						if (createdTime.compareTo(dsoFile.createdTime) < 0)
+						{
+							createdTime = dsoFile.createdTime;
+							dicomFileDescription = dsoFile;
+						}
+					}
+					log.info("DSO Shown filepath:" + dicomFileDescription.filePath + " createdTime:" + dicomFileDescription.createdTime);
+					dicomFilePath = getDICOMFilePath(dicomFileDescription); // TODO - need to check if download required
+					inputDICOMFile = new File(dicomFilePath);
+				}
 				generateMaskPNGsForDicomSegmentationObject(dicomFileDescription, inputDICOMFile);
+				if (sameSeries) break;
 			} else if (PixelMedUtils.isMultiframedDicom(dicomFilePath)) {
 				generatePNGsForMultiFrameDicom(dicomFileDescription, inputDICOMFile);
 			} else { // Assume it is non multi-frame DICOM

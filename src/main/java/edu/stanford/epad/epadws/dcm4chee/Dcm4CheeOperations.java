@@ -203,17 +203,21 @@ public class Dcm4CheeOperations
 
 	private static String parseError(String output)
 	{
+		String result = "";
 		try {
 			String[] lines = output.split("\n");
 			for (String currLine : lines) {
 				if (currLine.toLowerCase().contains("error")) {
-					return currLine;
+					result = result + currLine;
 				}
 			}
 		} catch (Exception e) {
 			log.warning("DicomSendTask.parseError had: " + e.getMessage() + " for: " + output, e);
 		}
-		return output;
+		if (result.length() > 0)
+			return result;
+		else
+			return output;
 	}
 
 	/**

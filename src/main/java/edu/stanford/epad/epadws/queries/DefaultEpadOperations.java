@@ -233,10 +233,10 @@ public class DefaultEpadOperations implements EpadOperations
 						dcm4cheeImageDescription.seriesUID, dcm4cheeImageDescription.imageUID);
 				DICOMElementList defaultDICOMElements = getDefaultDICOMElements(dcm4cheeImageDescription.studyUID,
 						dcm4cheeImageDescription.seriesUID, dcm4cheeImageDescription.imageUID, suppliedDICOMElements);
-
-				EPADImage epadImage = createEPADImage(seriesReference, dcm4cheeImageDescription, new DICOMElementList(),
+				
+				EPADImage epadImage = createEPADImage(seriesReference, dcm4cheeImageDescription, suppliedDICOMElements,
 						defaultDICOMElements);
-
+				log.info("Returning DICOM metadata, supplied Elements:" + suppliedDICOMElements.getNumberOfElements() + " default Elements:" + defaultDICOMElements.getNumberOfElements());
 				epadImageList.addImage(epadImage);
 				isFirst = false;
 			} else { // We do not add DICOM headers to remaining image descriptions because it would be too expensive
@@ -245,6 +245,7 @@ public class DefaultEpadOperations implements EpadOperations
 				epadImageList.addImage(epadImage);
 			}
 		}
+		log.info("Returning image list:" + imageDescriptions.size());
 		return epadImageList;
 	}
 
@@ -255,7 +256,9 @@ public class DefaultEpadOperations implements EpadOperations
 		DICOMElementList suppliedDICOMElements = getDICOMElements(imageReference);
 		DICOMElementList defaultDICOMElements = getDefaultDICOMElements(imageReference, suppliedDICOMElements);
 
-		return createEPADImage(imageReference, dcm4cheeImageDescription, suppliedDICOMElements, defaultDICOMElements);
+		EPADImage eImage = createEPADImage(imageReference, dcm4cheeImageDescription, suppliedDICOMElements, defaultDICOMElements);
+		log.info("Returning DICOM metadata, supplied Elements:" + suppliedDICOMElements.getNumberOfElements() + " default Elements:" + defaultDICOMElements.getNumberOfElements());
+		return eImage;
 	}
 
 	@Override
@@ -983,7 +986,7 @@ public class DefaultEpadOperations implements EpadOperations
 	private int getNumberOfFrames(String imageUID, DICOMElementList dicomElements)
 	{
 		for (DICOMElement dicomElement : dicomElements.ResultSet.Result) {
-			if (dicomElement.tagCode.equals(PixelMedUtils.NumberOfFramesCode)) {
+			if (dicomElement.tagCode.equalsIgnoreCase(PixelMedUtils.NumberOfFramesCode)) {
 				try {
 					return Integer.parseInt(dicomElement.value);
 				} catch (NumberFormatException e) {
