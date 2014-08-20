@@ -336,7 +336,7 @@ public class EPADHandler extends AbstractHandler
 		} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.STUDY_AIM, pathInfo)) {
 			StudyReference studyReference = StudyReference.extract(ProjectsRouteTemplates.STUDY_AIM, pathInfo);
 			AIMReference aimReference = AIMReference.extract(ProjectsRouteTemplates.STUDY_AIM, pathInfo);
-			statusCode = epadOperations.createStudyAIM(studyReference, aimReference.aimID, sessionID);
+			statusCode = epadOperations.createStudyAIM(username, studyReference, aimReference.aimID, sessionID);
 
 		} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.SERIES, pathInfo)) {
 			SeriesReference seriesReference = SeriesReference.extract(ProjectsRouteTemplates.SERIES, pathInfo);
@@ -345,7 +345,7 @@ public class EPADHandler extends AbstractHandler
 		} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.SERIES_AIM, pathInfo)) {
 			SeriesReference seriesReference = SeriesReference.extract(ProjectsRouteTemplates.SERIES_AIM, pathInfo);
 			AIMReference aimReference = AIMReference.extract(ProjectsRouteTemplates.SERIES_AIM, pathInfo);
-			statusCode = epadOperations.createSeriesAIM(seriesReference, aimReference.aimID, sessionID);
+			statusCode = epadOperations.createSeriesAIM(username, seriesReference, aimReference.aimID, sessionID);
 		} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.IMAGE, pathInfo)) {
 			statusCode = HttpServletResponse.SC_METHOD_NOT_ALLOWED;
 			httpResponse.addHeader("Allow", "GET, DELETE");
@@ -353,7 +353,7 @@ public class EPADHandler extends AbstractHandler
 		} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.IMAGE_AIM, pathInfo)) {
 			ImageReference imageReference = ImageReference.extract(ProjectsRouteTemplates.IMAGE_AIM, pathInfo);
 			AIMReference aimReference = AIMReference.extract(ProjectsRouteTemplates.IMAGE_AIM, pathInfo);
-			statusCode = epadOperations.createImageAIM(imageReference, aimReference.aimID, sessionID);
+			statusCode = epadOperations.createImageAIM(username, imageReference, aimReference.aimID, sessionID);
 
 		} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.FRAME, pathInfo)) {
 			statusCode = HttpServletResponse.SC_METHOD_NOT_ALLOWED;
@@ -362,7 +362,7 @@ public class EPADHandler extends AbstractHandler
 		} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.FRAME_AIM, pathInfo)) {
 			FrameReference frameReference = FrameReference.extract(ProjectsRouteTemplates.FRAME_AIM, pathInfo);
 			AIMReference aimReference = AIMReference.extract(ProjectsRouteTemplates.FRAME_AIM, pathInfo);
-			statusCode = epadOperations.createFrameAIM(frameReference, aimReference.aimID, sessionID);
+			statusCode = epadOperations.createFrameAIM(username, frameReference, aimReference.aimID, sessionID);
 
 		} else {
 			statusCode = HandlerUtil.badRequestJSONResponse(BAD_PUT_MESSAGE, responseStream, log);

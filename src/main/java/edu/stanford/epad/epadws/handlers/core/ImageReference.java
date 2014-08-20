@@ -10,8 +10,8 @@ public class ImageReference
 	public final String projectID;
 	public final String subjectID;
 	public final String studyUID;
-	public final String seriesUID;
-	public final String imageUID;
+	public String seriesUID;
+	public String imageUID;
 
 	public ImageReference(String projectID, String subjectID, String studyUID, String seriesUID, String imageUID)
 	{

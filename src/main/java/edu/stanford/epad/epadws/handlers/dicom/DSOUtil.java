@@ -137,8 +137,9 @@ public class DSOUtil
 
 			log.info("Generating new edited DSO from original DSO " + imageReference.imageUID);
 			TIFFMasksToDSOConverter converter = new TIFFMasksToDSOConverter();
-			converter.generateDSO(files2FilePaths(tiffMaskFiles), dicomFilePaths, temporaryDSOFile.getAbsolutePath(), dsoSeriesDescription, dsoSeriesUID, dsoInstanceUID);
-
+			String[] seriesImageUids = converter.generateDSO(files2FilePaths(tiffMaskFiles), dicomFilePaths, temporaryDSOFile.getAbsolutePath(), dsoSeriesDescription, dsoSeriesUID, dsoInstanceUID);
+			imageReference.seriesUID = seriesImageUids[0];
+			imageReference.imageUID = seriesImageUids[1];
 			log.info("Sending generated DSO " + temporaryDSOFile.getAbsolutePath() + " imageUID:" + imageReference.imageUID + " to dcm4chee...");
 			DCM4CHEEUtil.dcmsnd(temporaryDSOFile.getAbsolutePath(), false);
 			if (dsoSeriesUID != null)

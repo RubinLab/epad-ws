@@ -68,7 +68,7 @@ public class DicomHeadersTask implements Runnable
 			tagFileWriter = new FileWriter(tagFile);
 			tagFileWriter.write(sb.toString());
 		} catch (Exception e) {
-			logger.warning("DicomHeadersTask failed to create DICOM tags for series " + seriesUID + ": " + e.getMessage());
+			logger.warning("DicomHeadersTask failed to create DICOM tags for series " + seriesUID + ": " + e);
 		} catch (OutOfMemoryError oome) {
 			logger.warning("DicomHeadersTask for series " + seriesUID + " out of memory: ", oome);
 		} finally {

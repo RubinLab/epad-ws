@@ -169,7 +169,7 @@ public class AIMUtil
 		try {
 			if (useV4.equals("false"))
 				AnnotationGetter.removeImageAnnotationFromServer(eXistServerUrl, aim3Namespace, eXistCollection, eXistUsername,
-						eXistPassword, aimID);
+						eXistPassword, aimID, false);
 			else
 				edu.stanford.hakan.aim4api.database.exist.ExistManager.removeImageAnnotationCollectionFromServer(
 						eXistServerUrl, aim4Namespace, eXistCollectionV4, eXistUsername, eXistPassword, aimID);

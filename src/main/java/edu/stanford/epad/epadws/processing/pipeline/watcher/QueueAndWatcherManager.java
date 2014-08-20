@@ -113,15 +113,7 @@ public class QueueAndWatcherManager
 
 			// If the file does not exist locally (because it is stored on another file system), download it.
 			if (!inputDICOMFile.exists()) {
-				try {
-					log.info("Downloading remote DICOM file with image " + imageUID + " for patient " + patientName);
-					File downloadedDICOMFile = File.createTempFile(imageUID, ".tmp");
-					DCM4CHEEUtil.downloadDICOMFileFromWADO(dicomFileDescription, downloadedDICOMFile);
-					inputDICOMFile = downloadedDICOMFile;
-				} catch (IOException e) {
-					log.warning("Exception when downloading DICOM file with series UID " + seriesUID + " and image UID "
-							+ dicomFileDescription.imageUID, e);
-				}
+				inputDICOMFile = downloadRemoteDICOM(dicomFileDescription);
 			}
 
 			if (PixelMedUtils.isDicomSegmentationObject(dicomFilePath)) {
@@ -131,6 +123,7 @@ public class QueueAndWatcherManager
 					String createdTime = dicomFileDescription.createdTime;
 					for (DICOMFileDescription dsoFile : dicomFilesCopy)
 					{
+						// TODO - Should really convert to Date and then compare
 						if (createdTime.compareTo(dsoFile.createdTime) < 0)
 						{
 							createdTime = dsoFile.createdTime;
@@ -138,8 +131,11 @@ public class QueueAndWatcherManager
 						}
 					}
 					log.info("DSO Shown filepath:" + dicomFileDescription.filePath + " createdTime:" + dicomFileDescription.createdTime);
-					dicomFilePath = getDICOMFilePath(dicomFileDescription); // TODO - need to check if download required
+					dicomFilePath = getDICOMFilePath(dicomFileDescription);
 					inputDICOMFile = new File(dicomFilePath);
+					if (!inputDICOMFile.exists()) {
+						inputDICOMFile = downloadRemoteDICOM(dicomFileDescription);
+					}
 				}
 				generateMaskPNGsForDicomSegmentationObject(dicomFileDescription, inputDICOMFile);
 				if (sameSeries) break;
@@ -151,6 +147,22 @@ public class QueueAndWatcherManager
 		}
 	}
 
+	private File downloadRemoteDICOM(DICOMFileDescription dicomFileDescription)
+	{
+		String imageUID = dicomFileDescription.imageUID;
+		String seriesUID = dicomFileDescription.seriesUID;
+		try {
+			log.info("Downloading remote DICOM file with image " + imageUID + " for series UID " + seriesUID);
+			File downloadedDICOMFile = File.createTempFile(imageUID, ".tmp");
+			DCM4CHEEUtil.downloadDICOMFileFromWADO(dicomFileDescription, downloadedDICOMFile);
+			return downloadedDICOMFile;
+		} catch (IOException e) {
+			log.warning("Exception when downloading DICOM file with series UID " + seriesUID + " and image UID "
+					+ dicomFileDescription.imageUID, e);
+		}
+		return null;
+	}
+	
 	private String getDICOMFilePath(DICOMFileDescription dicomFileDescription)
 	{
 		return getDcm4cheeRootDir() + dicomFileDescription.filePath;

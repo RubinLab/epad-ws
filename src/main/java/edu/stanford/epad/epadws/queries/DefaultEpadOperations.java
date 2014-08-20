@@ -602,10 +602,10 @@ public class DefaultEpadOperations implements EpadOperations
 	}
 
 	@Override
-	public int createStudyAIM(StudyReference studyReference, String aimID, String sessionID)
+	public int createStudyAIM(String username, StudyReference studyReference, String aimID, String sessionID)
 	{
 		try {
-			epadDatabaseOperations.addAIM(studyReference, aimID);
+			epadDatabaseOperations.addAIM(username, studyReference, aimID);
 			return HttpServletResponse.SC_OK;
 		} catch (Exception e) {
 			return HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
@@ -613,10 +613,10 @@ public class DefaultEpadOperations implements EpadOperations
 	}
 
 	@Override
-	public int createSeriesAIM(SeriesReference seriesReference, String aimID, String sessionID)
+	public int createSeriesAIM(String username, SeriesReference seriesReference, String aimID, String sessionID)
 	{
 		try {
-			epadDatabaseOperations.addAIM(seriesReference, aimID);
+			epadDatabaseOperations.addAIM(username, seriesReference, aimID);
 			return HttpServletResponse.SC_OK;
 		} catch (Exception e) {
 			return HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
@@ -624,10 +624,10 @@ public class DefaultEpadOperations implements EpadOperations
 	}
 
 	@Override
-	public int createImageAIM(ImageReference imageReference, String aimID, String sessionID)
+	public int createImageAIM(String username, ImageReference imageReference, String aimID, String sessionID)
 	{
 		try {
-			epadDatabaseOperations.addAIM(imageReference, aimID);
+			epadDatabaseOperations.addAIM(username, imageReference, aimID);
 			return HttpServletResponse.SC_OK;
 		} catch (Exception e) {
 			return HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
@@ -635,10 +635,10 @@ public class DefaultEpadOperations implements EpadOperations
 	}
 
 	@Override
-	public int createFrameAIM(FrameReference frameReference, String aimID, String sessionID)
+	public int createFrameAIM(String username, FrameReference frameReference, String aimID, String sessionID)
 	{
 		try {
-			epadDatabaseOperations.addAIM(frameReference, aimID);
+			epadDatabaseOperations.addAIM(username, frameReference, aimID);
 			return HttpServletResponse.SC_OK;
 		} catch (Exception e) {
 			return HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
@@ -649,7 +649,7 @@ public class DefaultEpadOperations implements EpadOperations
 	public int studyAIMDelete(StudyReference studyReference, String aimID, String sessionID, String username)
 	{
 		try {
-			epadDatabaseOperations.addAIM(studyReference, aimID);
+			epadDatabaseOperations.addAIM(username, studyReference, aimID);
 			return HttpServletResponse.SC_OK;
 		} catch (Exception e) {
 			return HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
@@ -660,7 +660,7 @@ public class DefaultEpadOperations implements EpadOperations
 	public int seriesAIMDelete(SeriesReference seriesReference, String aimID, String sessionID, String username)
 	{
 		try {
-			epadDatabaseOperations.addAIM(seriesReference, aimID);
+			epadDatabaseOperations.addAIM(username, seriesReference, aimID);
 			return HttpServletResponse.SC_OK;
 		} catch (Exception e) {
 			return HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
@@ -671,7 +671,7 @@ public class DefaultEpadOperations implements EpadOperations
 	public int imageAIMDelete(ImageReference imageReference, String aimID, String sessionID, String username)
 	{
 		try {
-			epadDatabaseOperations.addAIM(imageReference, aimID);
+			epadDatabaseOperations.addAIM(username, imageReference, aimID);
 			return HttpServletResponse.SC_OK;
 		} catch (Exception e) {
 			return HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
@@ -682,7 +682,7 @@ public class DefaultEpadOperations implements EpadOperations
 	public int frameAIMDelete(FrameReference frameReference, String aimID, String sessionID, String username)
 	{
 		try {
-			epadDatabaseOperations.addAIM(frameReference, aimID);
+			epadDatabaseOperations.addAIM(username, frameReference, aimID);
 			return HttpServletResponse.SC_OK;
 		} catch (Exception e) {
 			return HttpServletResponse.SC_INTERNAL_SERVER_ERROR;

@@ -68,15 +68,15 @@ public interface EpadOperations
 
 	int createStudy(StudyReference studyReference, String sessionID);
 
-	int createStudyAIM(StudyReference studyReference, String aimID, String sessionID);
+	int createStudyAIM(String username, StudyReference studyReference, String aimID, String sessionID);
 
 	int createSeries(SeriesReference seriesReference, String sessionID);
 
-	int createSeriesAIM(SeriesReference seriesReference, String aimID, String sessionID);
+	int createSeriesAIM(String username, SeriesReference seriesReference, String aimID, String sessionID);
 
-	int createImageAIM(ImageReference imageReference, String aimID, String sessionID);
+	int createImageAIM(String username, ImageReference imageReference, String aimID, String sessionID);
 
-	int createFrameAIM(FrameReference frameReference, String aimID, String sessionID);
+	int createFrameAIM(String username, FrameReference frameReference, String aimID, String sessionID);
 
 	int projectDelete(String projectID, String sessionID, String username);
 

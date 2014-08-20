@@ -49,6 +49,7 @@ public class XNATSessionHandler extends AbstractHandler
 		request.setHandled(true);
 
 		String method = httpRequest.getMethod();
+		log.info("Request from client " + method + " s:" + s);
 		if ("POST".equalsIgnoreCase(method)) {
 			String username = XNATSessionOperations.extractUserNameFromAuthorizationHeader(httpRequest);
 			if (username.length() != 0) {
@@ -78,7 +79,7 @@ public class XNATSessionHandler extends AbstractHandler
 				statusCode = HandlerUtil.warningResponse(HttpServletResponse.SC_BAD_REQUEST, MISSING_USER, log);
 			}
 		} else if ("DELETE".equalsIgnoreCase(method)) {
-			log.info("Logout request");
+			log.info("Logout request, sessionId:" + XNATSessionOperations.getJSessionIDFromRequest(httpRequest));
 			try {
 				int xnatStatusCode = XNATSessionOperations.invalidateXNATSessionID(httpRequest);
 				log.info("XNAT delete session returns status code " + xnatStatusCode);

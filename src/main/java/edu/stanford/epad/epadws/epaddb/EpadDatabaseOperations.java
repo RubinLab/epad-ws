@@ -66,6 +66,10 @@ public interface EpadDatabaseOperations
 	List<String> getAllEPadFilePathsWithErrors();
 
 	List<String> getAllEPadInPipelineFilePaths();
+	
+	void checkAndRefreshAnnotationsTable();
+
+	EPADAIM getAIM(String aimID);
 
 	EPADAIM getAIM(ProjectReference projectReference, String aimID);
 
@@ -103,13 +107,15 @@ public interface EpadDatabaseOperations
 
 	int getNumberOfAIMs(FrameReference reference);
 
-	void addAIM(StudyReference reference, String aimID);
+	void addAIM(String userName, ProjectReference reference, String aimID);
 
-	void addAIM(SeriesReference reference, String aimID);
+	void addAIM(String userName, StudyReference reference, String aimID);
 
-	void addAIM(ImageReference reference, String aimID);
+	void addAIM(String userName, SeriesReference reference, String aimID);
 
-	void addAIM(FrameReference reference, String aimID);
+	void addAIM(String userName, ImageReference reference, String aimID);
+
+	void addAIM(String userName, FrameReference reference, String aimID);
 
 	// Coordination methods; will disappear with AIM 4
 

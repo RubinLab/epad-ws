@@ -56,7 +56,9 @@ public class XNATSessionOperations
 		String username = extractUserNameFromAuthorizationHeader(httpRequest);
 		String password = extractPasswordFromAuthorizationHeader(httpRequest);
 
-		return getXNATSessionID(username, password);
+		XNATSessionResponse response = getXNATSessionID(username, password);
+		log.info("Session ID " + response.response + " generated for user " + username); // TODO temp
+		return response;
 	}
 
 	public static String getXNATAdminSessionID()
@@ -64,6 +66,7 @@ public class XNATSessionOperations
 		String xnatUploadProjectUser = EPADConfig.xnatUploadProjectUser;
 		String xnatUploadProjectPassword = EPADConfig.xnatUploadProjectPassword;
 
+		log.info("Getting XNAT Admin Session");
 		XNATSessionResponse xnatSessionResponse = XNATSessionOperations.getXNATSessionID(xnatUploadProjectUser,
 				xnatUploadProjectPassword);
 		if (xnatSessionResponse.statusCode != HttpServletResponse.SC_OK) {
@@ -196,7 +199,7 @@ public class XNATSessionOperations
 					}
 					String jsessionID = sb.toString();
 					xnatSessionResponse = new XNATSessionResponse(HttpServletResponse.SC_OK, jsessionID);
-					log.info("Session ID " + jsessionID + " generated for user " + username); // TODO temp
+					log.debug("Session ID " + jsessionID + " generated for user " + username); // TODO temp
 				} catch (IOException e) {
 					log.warning(LOGIN_EXCEPTION_MESSAGE, e);
 					xnatSessionResponse = new XNATSessionResponse(HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
