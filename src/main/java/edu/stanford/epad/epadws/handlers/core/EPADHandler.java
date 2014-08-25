@@ -63,6 +63,7 @@ public class EPADHandler extends AbstractHandler
 			if (XNATSessionOperations.hasValidXNATSessionID(httpRequest)) {
 				String method = httpRequest.getMethod();
 				String username = httpRequest.getParameter("username");
+				log.info("Request from client:" + method + " user:" + username);
 				if (username != null) {
 					if ("GET".equalsIgnoreCase(method)) {
 						statusCode = handleGet(httpRequest, responseStream, username);
@@ -92,7 +93,7 @@ public class EPADHandler extends AbstractHandler
 		String sessionID = XNATSessionOperations.getJSessionIDFromRequest(httpRequest);
 		String pathInfo = httpRequest.getPathInfo();
 		int statusCode;
-
+		log.info("Request from client:" + pathInfo + " user:" + username + " sessionID:" + sessionID);
 		try {
 			EPADSearchFilter searchFilter = EPADSearchFilterBuilder.build(httpRequest);
 
@@ -203,6 +204,15 @@ public class EPADHandler extends AbstractHandler
 				responseStream.append(imageList.toJSON());
 				statusCode = HttpServletResponse.SC_OK;
 
+			} else if (HandlerUtil.matchesTemplate(StudiesRouteTemplates.IMAGE, pathInfo)) {
+				ImageReference imageReference = ImageReference.extract(StudiesRouteTemplates.IMAGE, pathInfo);
+				EPADImage image = epadOperations.getImageDescription(imageReference, sessionID);
+				if (image != null) {
+					responseStream.append(image.toJSON());
+					statusCode = HttpServletResponse.SC_OK;
+				} else
+					statusCode = HttpServletResponse.SC_NOT_FOUND;
+				
 			} else if (HandlerUtil.matchesTemplate(StudiesRouteTemplates.FRAME_LIST, pathInfo)) {
 				ImageReference imageReference = ImageReference.extract(StudiesRouteTemplates.FRAME_LIST, pathInfo);
 				EPADFrameList frameList = epadOperations.getFrameDescriptions(imageReference);
@@ -367,7 +377,7 @@ public class EPADHandler extends AbstractHandler
 
 		if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.FRAME_LIST, pathInfo)) {
 			ImageReference imageReference = ImageReference.extract(ProjectsRouteTemplates.FRAME_LIST, pathInfo);
-			if (DSOUtil.handleDSOFramesEdit(imageReference.projectID, imageReference.subjectID, imageReference.studyUID,
+			if (!DSOUtil.handleDSOFramesEdit(imageReference.projectID, imageReference.subjectID, imageReference.studyUID,
 					imageReference.seriesUID, imageReference.imageUID, httpRequest, responseStream))
 				statusCode = HttpServletResponse.SC_CREATED;
 			else
