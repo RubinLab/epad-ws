@@ -355,6 +355,33 @@ public class AIMUtil
 		responseStream.print(queryResults);
 	}
 
+	public static void queryAIMImageAnnotationsV4(PrintWriter responseStream, AIMSearchType aimSearchType,
+			String searchValue, String user) throws ParserConfigurationException, AimException
+	{
+		List<ImageAnnotation> aims = AIMQueries.getAIMImageAnnotations(aimSearchType, searchValue, user);
+		log.info("" + aims.size() + " AIM file(s) found for user " + user);
+
+		DocumentBuilderFactory dbfac = DocumentBuilderFactory.newInstance();
+		DocumentBuilder docBuilder = dbfac.newDocumentBuilder();
+		Document doc = docBuilder.newDocument();
+		Element root = doc.createElement("imageAnnotations");
+		doc.appendChild(root);
+
+		for (ImageAnnotation aim : aims) {
+			Node node = aim.getXMLNode(docBuilder.newDocument());
+			Node copyNode = doc.importNode(node, true);
+			Element res = (Element)copyNode; // Copy the node
+			res.setAttributeNS("http://www.w3.org/2000/xmlns/", "xmlns:rdf", "http://www.w3.org/1999/02/22-rdf-syntax-ns#");
+			res.setAttributeNS("http://www.w3.org/2000/xmlns/", "xmlns:xsi", "http://www.w3.org/2001/XMLSchema-instance");
+			res.setAttribute("xsi:schemaLocation",
+					"gme://caCORE.caCORE/3.2/edu.northwestern.radiology.AIM AIM_v3_rv11_XML.xsd");
+			Node n = renameNodeNS(res, "ImageAnnotation");
+			root.appendChild(n); // Adding to the root
+		}
+		String queryResults = XmlDocumentToString(doc);
+		responseStream.print(queryResults);
+	}
+
 	private static String XmlDocumentToString(Document document)
 	{ // Create an XML document from a String
 		new XmlNamespaceTranslator().addTranslation(null, "gme://caCORE.caCORE/3.2/edu.northwestern.radiology.AIM")
