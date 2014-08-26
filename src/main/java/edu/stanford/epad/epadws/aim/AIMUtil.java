@@ -60,6 +60,7 @@ import edu.stanford.hakan.aim3api.base.TwoDimensionSpatialCoordinate;
 import edu.stanford.hakan.aim3api.base.User;
 import edu.stanford.hakan.aim3api.usage.AnnotationBuilder;
 import edu.stanford.hakan.aim3api.usage.AnnotationGetter;
+import edu.stanford.hakan.aim4api.base.ImageAnnotationCollection;
 
 /**
  * 

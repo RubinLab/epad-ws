@@ -9,6 +9,7 @@ import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.hakan.aim3api.base.AimException;
 import edu.stanford.hakan.aim3api.base.ImageAnnotation;
 import edu.stanford.hakan.aim3api.usage.AnnotationGetter;
+import edu.stanford.hakan.aim4api.base.ImageAnnotationCollection;
 
 public class AIMQueries
 {
@@ -254,7 +255,7 @@ public class AIMQueries
 									eXistPassword);
 					if (aims == null)
 						aims = new ArrayList<ImageAnnotationCollection>();
-			} catch (AimException | edu.stanford.hakan.aim4api.base.AimException e) {
+			} catch (edu.stanford.hakan.aim4api.base.AimException e) {
 				log.warning("Exception in AnnotationGetter.getImageAnnotationsFromServerByCagridIdEqual", e);
 			}
 			if (aims != null)
@@ -266,8 +267,8 @@ public class AIMQueries
 							.getImageAnnotationCollectionByPersonNameEqual(eXistServerUrl, aim4Namespace, eXistCollectionV4,
 									eXistUsername, eXistPassword, personName);
 					if (aims == null)
-						aims = new ArrayList<ImageAnnotation>();
-			} catch (AimException | edu.stanford.hakan.aim4api.base.AimException e) {
+						aims = new ArrayList<ImageAnnotationCollection>();
+			} catch (edu.stanford.hakan.aim4api.base.AimException e) {
 				log.warning("Exception in AnnotationGetter.getImageAnnotationsFromServerByPersonNameEqual " + personName, e);
 			}
 			if (aims != null)
@@ -279,8 +280,8 @@ public class AIMQueries
 							.getImageAnnotationCollectionByUserNameAndPersonIdEqual(eXistServerUrl, aim4Namespace, eXistCollectionV4,
 									eXistUsername, eXistPassword, username, patientId);
 					if (aims == null)
-						aims = new ArrayList<ImageAnnotation>();
-			} catch (AimException | edu.stanford.hakan.aim4api.base.AimException e) {
+						aims = new ArrayList<ImageAnnotationCollection>();
+			} catch (edu.stanford.hakan.aim4api.base.AimException e) {
 				log.warning("Exception in AnnotationGetter.getImageAnnotationsFromServerByPersonIdEqual " + patientId, e);
 			}
 			if (aims != null)
@@ -292,8 +293,8 @@ public class AIMQueries
 							.getImageAnnotationCollectionByImageSeriesInstanceUIDEqual(eXistServerUrl, aim4Namespace,
 									eXistCollectionV4, eXistUsername, eXistPassword, seriesUID);
 					if (aims == null)
-						aims = new ArrayList<ImageAnnotation>();
-			} catch (AimException | edu.stanford.hakan.aim4api.base.AimException e) {
+						aims = new ArrayList<ImageAnnotationCollection>();
+			} catch (edu.stanford.hakan.aim4api.base.AimException e) {
 				log.warning("Exception in AnnotationGetter.getImageAnnotationsFromServerByImageSeriesInstanceUIDEqual "
 						+ seriesUID, e);
 			}
@@ -310,9 +311,9 @@ public class AIMQueries
 								.getImageAnnotationCollectionByUserLoginNameContains(eXistServerUrl, aim4Namespace, eXistCollectionV4,
 										eXistUsername, eXistPassword, username);
 						if (aims == null)
-							aims = new ArrayList<ImageAnnotation>();
+							aims = new ArrayList<ImageAnnotationCollection>();
 
-				} catch (AimException | edu.stanford.hakan.aim4api.base.AimException e) {
+				} catch (edu.stanford.hakan.aim4api.base.AimException e) {
 					log.warning("Exception in AnnotationGetter.getImageAnnotationsFromServerWithAimQuery ", e);
 				}
 				if (aims != null)
@@ -323,7 +324,7 @@ public class AIMQueries
 								.getImageAnnotationCollectionByUniqueIdentifier(eXistServerUrl, aim4Namespace, eXistCollectionV4,
 										eXistUsername, eXistPassword, annotationUID);
 
-				} catch (AimException | edu.stanford.hakan.aim4api.base.AimException e) {
+				} catch (edu.stanford.hakan.aim4api.base.AimException e) {
 					log.warning("Exception in AnnotationGetter.getImageAnnotationFromServerByUniqueIdentifier " + annotationUID,
 							e);
 				}
@@ -337,11 +338,10 @@ public class AIMQueries
 					aims = edu.stanford.hakan.aim4api.usage.AnnotationGetter
 							.getWithAimQuery(eXistServerUrl, aim4Namespace, eXistUsername, eXistPassword, aimQuery, xsdFilePath);
 					if (aims == null)
-						aims = new ArrayList<ImageAnnotation>();
+						aims = new ArrayList<ImageAnnotationCollection>();
 					if (aims != null)
 						resultAims.addAll(aims);
-				}
-			} catch (AimException | edu.stanford.hakan.aim4api.base.AimException e) {
+			} catch (edu.stanford.hakan.aim4api.base.AimException e) {
 				log.warning("Exception in AnnotationGetter.getWithAimQuery " + aimQuery,
 						e);
 			}
