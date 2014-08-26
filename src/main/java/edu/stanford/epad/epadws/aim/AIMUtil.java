@@ -358,7 +358,7 @@ public class AIMUtil
 	public static void queryAIMImageAnnotationsV4(PrintWriter responseStream, AIMSearchType aimSearchType,
 			String searchValue, String user) throws ParserConfigurationException, AimException
 	{
-		List<ImageAnnotation> aims = AIMQueries.getAIMImageAnnotations(aimSearchType, searchValue, user);
+		List<ImageAnnotationCollection> aims = AIMQueries.getAIMImageAnnotationsV4(aimSearchType, searchValue, user);
 		log.info("" + aims.size() + " AIM file(s) found for user " + user);
 
 		DocumentBuilderFactory dbfac = DocumentBuilderFactory.newInstance();
@@ -367,7 +367,7 @@ public class AIMUtil
 		Element root = doc.createElement("imageAnnotations");
 		doc.appendChild(root);
 
-		for (ImageAnnotation aim : aims) {
+		for (ImageAnnotationCollection aim : aims) {
 			Node node = aim.getXMLNode(docBuilder.newDocument());
 			Node copyNode = doc.importNode(node, true);
 			Element res = (Element)copyNode; // Copy the node
@@ -375,7 +375,7 @@ public class AIMUtil
 			res.setAttributeNS("http://www.w3.org/2000/xmlns/", "xmlns:xsi", "http://www.w3.org/2001/XMLSchema-instance");
 			res.setAttribute("xsi:schemaLocation",
 					"gme://caCORE.caCORE/3.2/edu.northwestern.radiology.AIM AIM_v3_rv11_XML.xsd");
-			Node n = renameNodeNS(res, "ImageAnnotation");
+			Node n = renameNodeNS(res, "ImageAnnotationCollection");
 			root.appendChild(n); // Adding to the root
 		}
 		String queryResults = XmlDocumentToString(doc);
