@@ -357,7 +357,7 @@ public class AIMUtil
 	}
 
 	public static void queryAIMImageAnnotationsV4(PrintWriter responseStream, AIMSearchType aimSearchType,
-			String searchValue, String user) throws ParserConfigurationException, AimException
+			String searchValue, String user) throws ParserConfigurationException, edu.stanford.hakan.aim4api.base.AimException
 	{
 		List<ImageAnnotationCollection> aims = AIMQueries.getAIMImageAnnotationsV4(aimSearchType, searchValue, user);
 		log.info("" + aims.size() + " AIM file(s) found for user " + user);

@@ -62,7 +62,7 @@ public class AimResourceHandler extends AbstractHandler
 
 						if (validParameters(aimSearchType, searchValue, user)) {
 							String format = httpRequest.getParameter("format");
-							if ("V4".equal(format))
+							if ("V4".equals(format))
 								AIMUtil.queryAIMImageAnnotationsV4(responseStream, aimSearchType, searchValue, user);
 							else
 								AIMUtil.queryAIMImageAnnotations(responseStream, aimSearchType, searchValue, user);
