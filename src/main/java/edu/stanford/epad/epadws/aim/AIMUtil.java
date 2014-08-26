@@ -82,7 +82,7 @@ public class AIMUtil
 	private static final String aim4Namespace = EPADConfig.aim4Namespace;
 	private static final String eXistCollectionV4 = EPADConfig.eXistCollectionV4;
 	private static final String xsdFileV4 = EPADConfig.xsdFileV4;
-	private static final String xsdFilePathV4 = EPADConfig.xsdFilePathV4 + xsdFileV4;
+	private static final String xsdFilePathV4 = EPADConfig.xsdFilePathV4;
 
 	/**
 	 * Save the annotation to the server in the AIM database. An invalid annotation will not be saved. Save a file backup
@@ -95,7 +95,7 @@ public class AIMUtil
 	 */
 	public static String saveImageAnnotationToServer(ImageAnnotation aim, String jsessionID) throws AimException,
 			edu.stanford.hakan.aim4api.base.AimException
-	{
+	{                        
 		String result = "";
 
 		if (aim.getCodeValue() != null) { // For safety, write a backup file
