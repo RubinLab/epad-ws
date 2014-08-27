@@ -29,6 +29,7 @@ import edu.stanford.epad.common.plugins.PluginServletHandler;
 import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.epad.epadws.epaddb.EpadDatabase;
+import edu.stanford.epad.epadws.epaddb.EpadDatabaseOperations;
 import edu.stanford.epad.epadws.handlers.admin.ImageCheckHandler;
 import edu.stanford.epad.epadws.handlers.admin.ImageReprocessingHandler;
 import edu.stanford.epad.epadws.handlers.admin.ResourceCheckHandler;
@@ -144,6 +145,9 @@ public class Main
 			QueueAndWatcherManager.getInstance().buildAndStart();
 			EpadDatabase.getInstance().startup();
 			log.info("Startup of database was successful");
+			EpadDatabaseOperations databaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
+			log.info("Checking annotations table");
+			databaseOperations.checkAndRefreshAnnotationsTable();
 		} catch (Exception e) {
 			log.warning("Failed to start database", e);
 		}

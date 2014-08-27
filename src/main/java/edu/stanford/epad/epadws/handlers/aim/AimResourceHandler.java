@@ -61,7 +61,11 @@ public class AimResourceHandler extends AbstractHandler
 								+ searchValue);
 
 						if (validParameters(aimSearchType, searchValue, user)) {
-							AIMUtil.queryAIMImageAnnotations(responseStream, aimSearchType, searchValue, user);
+							String projectID = httpRequest.getParameter("projectID");
+							if (projectID != null && projectID.trim().length() > 0)
+								AIMUtil.queryAIMImageAnnotations(responseStream, projectID, aimSearchType, searchValue, user);
+							else
+								AIMUtil.queryAIMImageAnnotations(responseStream, aimSearchType, searchValue, user);
 							statusCode = HttpServletResponse.SC_OK;
 						} else
 							statusCode = HandlerUtil.badRequestResponse(BAD_QUERY_MESSAGE, log);

@@ -53,7 +53,6 @@ import edu.stanford.epad.dtos.internal.XNATProjectList;
 import edu.stanford.epad.dtos.internal.XNATSubject;
 import edu.stanford.epad.dtos.internal.XNATSubjectList;
 import edu.stanford.epad.dtos.internal.XNATUserList;
-import edu.stanford.epad.epadws.aim.AIMQueries;
 import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeDatabase;
 import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeDatabaseOperations;
 import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeOperations;
@@ -118,7 +117,15 @@ public class DefaultEpadOperations implements EpadOperations
 	@Override
 	public EPADProject getProjectDescription(ProjectReference projectReference, String username, String sessionID)
 	{
-		return null; // TODO
+		XNATProjectList xnatProjectList = XNATQueries.allProjects(sessionID);
+
+		for (XNATProject xnatProject : xnatProjectList.ResultSet.Result) {
+			if (projectReference.projectID.equals(xnatProject.ID))
+			{
+				return xnatProject2EPADProject(sessionID, username, xnatProject, new EPADSearchFilter());
+			}
+		}
+		return null;
 	}
 
 	@Override
@@ -139,7 +146,15 @@ public class DefaultEpadOperations implements EpadOperations
 	@Override
 	public EPADSubject getSubjectDescription(SubjectReference subjectReference, String username, String sessionID)
 	{
-		return null; // TODO
+		XNATSubjectList xnatSubjectList = XNATQueries.getSubjectsForProject(sessionID, subjectReference.projectID);
+
+		for (XNATSubject xnatSubject : xnatSubjectList.ResultSet.Result) {
+			if (subjectReference.subjectID.equals(xnatSubject.ID))
+			{
+				return xnatSubject2EPADSubject(sessionID, username, xnatSubject, new EPADSearchFilter());
+			}
+		}
+		return null;
 	}
 
 	@Override
@@ -797,8 +812,8 @@ public class DefaultEpadOperations implements EpadOperations
 		int numberOfImages = dcm4CheeStudy.imagesCount;
 		Set<String> seriesUIDs = dcm4CheeDatabaseOperations.getAllSeriesUIDsInStudy(studyUID);
 		StudyProcessingStatus studyProcessingStatus = getStudyProcessingStatus(studyUID);
-		int numberOfAnnotations = (seriesUIDs.size() <= 0) ? 0 : AIMQueries.getNumberOfAIMAnnotationsForSeriesSet(
-				seriesUIDs, username);
+		//int numberOfAnnotations = (seriesUIDs.size() <= 0) ? 0 : AIMQueries.getNumberOfAIMAnnotationsForSeriesSet(seriesUIDs, username);
+		int numberOfAnnotations = (seriesUIDs.size() <= 0) ? 0 : epadDatabaseOperations.getNumberOfAIMsForSeriesSet(projectID, seriesUIDs, username);
 
 		return new EPADStudy(projectID, subjectID, patientName, studyUID, insertDate, firstSeriesUID,
 				firstSeriesDateAcquired, physicianName, birthdate, sex, studyProcessingStatus, examTypes, studyDescription,
@@ -827,7 +842,8 @@ public class DefaultEpadOperations implements EpadOperations
 		String firstImageUIDInSeries = (numberOfSeriesRelatedInstances != 1) ? "" : dcm4CheeDatabaseOperations
 				.getFirstImageUIDInSeries(seriesUID);
 
-		int numberOfAnnotations = AIMQueries.getNumberOfAIMAnnotationsForSeries(seriesUID, username);
+		//int numberOfAnnotations = AIMQueries.getNumberOfAIMAnnotationsForSeries(seriesUID, username);
+		int numberOfAnnotations = epadDatabaseOperations.getNumberOfAIMsForSeries(projectID, seriesUID, username);
 		SeriesProcessingStatus seriesProcessingStatus = epadDatabaseOperations.getSeriesProcessingStatus(seriesUID);
 		String createdTime = dcm4CheeSeries.createdTime != null ? dcm4CheeSeries.createdTime.toString() : "";
 
@@ -883,16 +899,17 @@ public class DefaultEpadOperations implements EpadOperations
 			String uri = xnatProject.URI;
 			Set<String> patientIDs = XNATQueries.getSubjectIDsForProject(sessionID, projectID);
 			int numberOfPatients = patientIDs.size();
-			int numberOfAnnotations = AIMQueries.getNumberOfAIMAnnotationsForPatients(sessionID, username, patientIDs);
+//			int numberOfAnnotations = AIMQueries.getNumberOfAIMAnnotationsForPatients(sessionID, username, patientIDs);
+			int numberOfAnnotations = epadDatabaseOperations.getNumberOfAIMsForPatients(projectID, patientIDs);
 
 			if (!searchFilter.shouldFilterProject(projectName, numberOfAnnotations)) {
 				int numberOfStudies = Dcm4CheeQueries.getNumberOfStudiesForPatients(patientIDs);
 				XNATUserList xnatUsers = XNATQueries.getUsersForProject(projectID);
 				Set<String> usernames = xnatUsers.getLoginNames();
-				// Set<String> usernames = new HashSet<String>();
+				Map<String,String> userRoles = xnatUsers.getRoles();
 
 				return new EPADProject(secondaryID, piLastName, description, projectName, projectID, piFirstName, uri,
-						numberOfPatients, numberOfStudies, numberOfAnnotations, patientIDs, usernames);
+						numberOfPatients, numberOfStudies, numberOfAnnotations, patientIDs, usernames, userRoles);
 			} else
 				return null;
 		} else
@@ -906,14 +923,14 @@ public class DefaultEpadOperations implements EpadOperations
 
 		String patientID = xnatSubject.label;
 		String patientName = xnatSubject.src;
-
 		if (!searchFilter.shouldFilterSubject(patientID, patientName)) {
 			String projectID = xnatSubject.project;
 			String xnatSubjectID = xnatSubject.ID;
 			String uri = xnatSubject.URI;
 			String insertUser = xnatSubject.insert_user;
 			String insertDate = xnatSubject.insert_date;
-			int numberOfAnnotations = AIMQueries.getNumberOfAIMAnnotationsForPatient(patientID, username);
+//			int numberOfAnnotations = AIMQueries.getNumberOfAIMAnnotationsForPatient(patientID, username);
+			int numberOfAnnotations = epadDatabaseOperations.getNumberOfAIMs(new SubjectReference(projectID, patientID));
 			if (!searchFilter.shouldFilterSubject(patientID, patientName, numberOfAnnotations)) {
 				Set<String> examTypes = epadQueries.getExamTypesForSubject(patientID);
 

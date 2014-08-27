@@ -9,6 +9,7 @@ import java.util.Set;
 import edu.stanford.epad.dtos.EPADAIM;
 import edu.stanford.epad.dtos.PNGFileProcessingStatus;
 import edu.stanford.epad.dtos.SeriesProcessingStatus;
+import edu.stanford.epad.epadws.aim.AIMSearchType;
 import edu.stanford.epad.epadws.handlers.coordination.CoordinationHandler;
 import edu.stanford.epad.epadws.handlers.coordination.Term;
 import edu.stanford.epad.epadws.handlers.core.FrameReference;
@@ -94,6 +95,8 @@ public interface EpadDatabaseOperations
 	Set<EPADAIM> getAIMs(ImageReference imageReference);
 
 	Set<EPADAIM> getAIMs(FrameReference frameReference);
+	
+	Set<EPADAIM> getAIMs(String projectID, AIMSearchType aimSearchType, String value);
 
 	int getNumberOfAIMs(ProjectReference reference);
 
@@ -106,6 +109,12 @@ public interface EpadDatabaseOperations
 	int getNumberOfAIMs(ImageReference reference);
 
 	int getNumberOfAIMs(FrameReference reference);
+
+	int getNumberOfAIMsForPatients(String projectID, Set<String> patientIDs);
+
+	int getNumberOfAIMsForSeriesSet(String projectID, Set<String> seriesIDs, String username);
+
+	int getNumberOfAIMsForSeries(String projectID, String seriesID, String username);
 
 	void addAIM(String userName, ProjectReference reference, String aimID);
 

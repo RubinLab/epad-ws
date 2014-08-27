@@ -1,6 +1,7 @@
 package edu.stanford.epad.epadws.handlers.core;
 
 import java.io.PrintWriter;
+import java.util.Set;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -23,6 +24,8 @@ import edu.stanford.epad.dtos.EPADStudy;
 import edu.stanford.epad.dtos.EPADStudyList;
 import edu.stanford.epad.dtos.EPADSubject;
 import edu.stanford.epad.dtos.EPADSubjectList;
+import edu.stanford.epad.epadws.aim.AIMSearchType;
+import edu.stanford.epad.epadws.aim.AIMUtil;
 import edu.stanford.epad.epadws.handlers.HandlerUtil;
 import edu.stanford.epad.epadws.handlers.dicom.DSOUtil;
 import edu.stanford.epad.epadws.queries.DefaultEpadOperations;
@@ -220,27 +223,50 @@ public class EPADHandler extends AbstractHandler
 				statusCode = HttpServletResponse.SC_OK;
 
 				/**
-				 * New AIM-related routes. TODO These have not been implemented yet.
+				 * New AIM-related routes.
 				 */
 
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.PROJECT_AIM_LIST, pathInfo)) {
 				ProjectReference projectReference = ProjectReference.extract(ProjectsRouteTemplates.PROJECT_AIM_LIST, pathInfo);
 				EPADAIMList aims = epadOperations.getProjectAIMDescriptions(projectReference, username, sessionID);
-				responseStream.append(aims.toJSON());
+				if (returnSummary(httpRequest))
+				{	
+					responseStream.append(aims.toJSON());
+				}
+				else
+				{
+					AIMUtil.queryAIMImageAnnotations(responseStream, AIMSearchType.ANNOTATION_UID,
+							getUIDCsvList(aims), username);					
+				}
 				statusCode = HttpServletResponse.SC_OK;
-
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.PROJECT_AIM, pathInfo)) {
 				ProjectReference projectReference = ProjectReference.extract(ProjectsRouteTemplates.PROJECT_AIM, pathInfo);
 				AIMReference aimReference = AIMReference.extract(ProjectsRouteTemplates.PROJECT_AIM, pathInfo);
 				EPADAIM aim = epadOperations
 						.getProjectAIMDescription(projectReference, aimReference.aimID, username, sessionID);
-				responseStream.append(aim.toJSON());
+				if (returnSummary(httpRequest))
+				{	
+					responseStream.append(aim.toJSON());
+				}
+				else
+				{
+					AIMUtil.queryAIMImageAnnotations(responseStream, AIMSearchType.ANNOTATION_UID,
+							aim.aimID, username);					
+				}
 				statusCode = HttpServletResponse.SC_OK;
 
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.SUBJECT_AIM_LIST, pathInfo)) {
 				SubjectReference subjectReference = SubjectReference.extract(ProjectsRouteTemplates.SUBJECT_AIM_LIST, pathInfo);
 				EPADAIMList aims = epadOperations.getSubjectAIMDescriptions(subjectReference, username, sessionID);
-				responseStream.append(aims.toJSON());
+				if (returnSummary(httpRequest))
+				{	
+					responseStream.append(aims.toJSON());
+				}
+				else
+				{
+					AIMUtil.queryAIMImageAnnotations(responseStream, AIMSearchType.ANNOTATION_UID,
+							getUIDCsvList(aims), username);					
+				}
 				statusCode = HttpServletResponse.SC_OK;
 
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.SUBJECT_AIM, pathInfo)) {
@@ -248,58 +274,246 @@ public class EPADHandler extends AbstractHandler
 				AIMReference aimReference = AIMReference.extract(ProjectsRouteTemplates.SUBJECT_AIM, pathInfo);
 				EPADAIM aim = epadOperations
 						.getSubjectAIMDescription(subjectReference, aimReference.aimID, username, sessionID);
-				responseStream.append(aim.toJSON());
+				if (returnSummary(httpRequest))
+				{	
+					responseStream.append(aim.toJSON());
+				}
+				else
+				{
+					AIMUtil.queryAIMImageAnnotations(responseStream, AIMSearchType.ANNOTATION_UID,
+							aim.aimID, username);					
+				}
 				statusCode = HttpServletResponse.SC_OK;
 
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.STUDY_AIM_LIST, pathInfo)) {
 				StudyReference studyReference = StudyReference.extract(ProjectsRouteTemplates.STUDY_AIM_LIST, pathInfo);
 				EPADAIMList aims = epadOperations.getStudyAIMDescriptions(studyReference, username, sessionID);
-				responseStream.append(aims.toJSON());
+				if (returnSummary(httpRequest))
+				{	
+					responseStream.append(aims.toJSON());
+				}
+				else
+				{
+					AIMUtil.queryAIMImageAnnotations(responseStream, AIMSearchType.ANNOTATION_UID,
+							getUIDCsvList(aims), username);					
+				}
 				statusCode = HttpServletResponse.SC_OK;
 
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.STUDY_AIM, pathInfo)) {
 				StudyReference studyReference = StudyReference.extract(ProjectsRouteTemplates.STUDY_AIM, pathInfo);
 				AIMReference aimReference = AIMReference.extract(ProjectsRouteTemplates.STUDY_AIM, pathInfo);
 				EPADAIM aim = epadOperations.getStudyAIMDescription(studyReference, aimReference.aimID, username, sessionID);
-				responseStream.append(aim.toJSON());
+				if (returnSummary(httpRequest))
+				{	
+					responseStream.append(aim.toJSON());
+				}
+				else
+				{
+					AIMUtil.queryAIMImageAnnotations(responseStream, AIMSearchType.ANNOTATION_UID,
+							aim.aimID, username);					
+				}
 				statusCode = HttpServletResponse.SC_OK;
 
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.SERIES_AIM_LIST, pathInfo)) {
 				SeriesReference seriesReference = SeriesReference.extract(ProjectsRouteTemplates.SERIES_AIM_LIST, pathInfo);
 				EPADAIMList aims = epadOperations.getSeriesAIMDescriptions(seriesReference, username, sessionID);
-				responseStream.append(aims.toJSON());
+				if (returnSummary(httpRequest))
+				{	
+					responseStream.append(aims.toJSON());
+				}
+				else
+				{
+					AIMUtil.queryAIMImageAnnotations(responseStream, AIMSearchType.ANNOTATION_UID,
+							getUIDCsvList(aims), username);					
+				}
+
 				statusCode = HttpServletResponse.SC_OK;
 
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.SERIES_AIM, pathInfo)) {
 				SeriesReference seriesReference = SeriesReference.extract(ProjectsRouteTemplates.SERIES_AIM, pathInfo);
 				AIMReference aimReference = AIMReference.extract(ProjectsRouteTemplates.SERIES_AIM, pathInfo);
 				EPADAIM aim = epadOperations.getSeriesAIMDescription(seriesReference, aimReference.aimID, username, sessionID);
-				responseStream.append(aim.toJSON());
+				if (returnSummary(httpRequest))
+				{	
+					responseStream.append(aim.toJSON());
+				}
+				else
+				{
+					AIMUtil.queryAIMImageAnnotations(responseStream, AIMSearchType.ANNOTATION_UID,
+							aim.aimID, username);					
+				}
 				statusCode = HttpServletResponse.SC_OK;
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.IMAGE_AIM_LIST, pathInfo)) {
 				ImageReference imageReference = ImageReference.extract(ProjectsRouteTemplates.IMAGE_AIM_LIST, pathInfo);
 				EPADAIMList aims = epadOperations.getImageAIMDescriptions(imageReference, username, sessionID);
-				responseStream.append(aims.toJSON());
+				if (returnSummary(httpRequest))
+				{	
+					responseStream.append(aims.toJSON());
+				}
+				else
+				{
+					AIMUtil.queryAIMImageAnnotations(responseStream, AIMSearchType.ANNOTATION_UID,
+							getUIDCsvList(aims), username);					
+				}
 				statusCode = HttpServletResponse.SC_OK;
 
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.IMAGE_AIM, pathInfo)) {
 				ImageReference imageReference = ImageReference.extract(ProjectsRouteTemplates.IMAGE_AIM, pathInfo);
 				AIMReference aimReference = AIMReference.extract(ProjectsRouteTemplates.SERIES_AIM, pathInfo);
 				EPADAIM aim = epadOperations.getImageAIMDescription(imageReference, aimReference.aimID, username, sessionID);
-				responseStream.append(aim.toJSON());
+				if (returnSummary(httpRequest))
+				{	
+					responseStream.append(aim.toJSON());
+				}
+				else
+				{
+					AIMUtil.queryAIMImageAnnotations(responseStream, AIMSearchType.ANNOTATION_UID,
+							aim.aimID, username);					
+				}
 				statusCode = HttpServletResponse.SC_OK;
 
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.FRAME_AIM_LIST, pathInfo)) {
 				FrameReference frameReference = FrameReference.extract(ProjectsRouteTemplates.FRAME_AIM_LIST, pathInfo);
 				EPADAIMList aims = epadOperations.getFrameAIMDescriptions(frameReference, username, sessionID);
-				responseStream.append(aims.toJSON());
+				if (returnSummary(httpRequest))
+				{	
+					responseStream.append(aims.toJSON());
+				}
+				else
+				{
+					AIMUtil.queryAIMImageAnnotations(responseStream, AIMSearchType.ANNOTATION_UID,
+							getUIDCsvList(aims), username);					
+				}
 				statusCode = HttpServletResponse.SC_OK;
 
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.FRAME_AIM, pathInfo)) {
 				FrameReference frameReference = FrameReference.extract(ProjectsRouteTemplates.FRAME_AIM, pathInfo);
 				AIMReference aimReference = AIMReference.extract(ProjectsRouteTemplates.FRAME_AIM, pathInfo);
 				EPADAIM aim = epadOperations.getFrameAIMDescription(frameReference, aimReference.aimID, username, sessionID);
-				responseStream.append(aim.toJSON());
+				if (returnSummary(httpRequest))
+				{	
+					responseStream.append(aim.toJSON());
+				}
+				else
+				{
+					AIMUtil.queryAIMImageAnnotations(responseStream, AIMSearchType.ANNOTATION_UID,
+							aim.aimID, username);					
+				}
+				statusCode = HttpServletResponse.SC_OK;
+			} else if (HandlerUtil.matchesTemplate(StudiesRouteTemplates.STUDY_AIM_LIST, pathInfo)) {
+				StudyReference studyReference = StudyReference.extract(StudiesRouteTemplates.STUDY_AIM_LIST, pathInfo);
+				EPADAIMList aims = epadOperations.getStudyAIMDescriptions(studyReference, username, sessionID);
+				if (returnSummary(httpRequest))
+				{	
+					responseStream.append(aims.toJSON());
+				}
+				else
+				{
+					AIMUtil.queryAIMImageAnnotations(responseStream, AIMSearchType.ANNOTATION_UID,
+							getUIDCsvList(aims), username);					
+				}
+				statusCode = HttpServletResponse.SC_OK;
+
+			} else if (HandlerUtil.matchesTemplate(StudiesRouteTemplates.STUDY_AIM, pathInfo)) {
+				StudyReference studyReference = StudyReference.extract(StudiesRouteTemplates.STUDY_AIM, pathInfo);
+				AIMReference aimReference = AIMReference.extract(StudiesRouteTemplates.STUDY_AIM, pathInfo);
+				EPADAIM aim = epadOperations.getStudyAIMDescription(studyReference, aimReference.aimID, username, sessionID);
+				if (returnSummary(httpRequest))
+				{	
+					responseStream.append(aim.toJSON());
+				}
+				else
+				{
+					AIMUtil.queryAIMImageAnnotations(responseStream, AIMSearchType.ANNOTATION_UID,
+							aim.aimID, username);					
+				}
+				statusCode = HttpServletResponse.SC_OK;
+
+			} else if (HandlerUtil.matchesTemplate(StudiesRouteTemplates.SERIES_AIM_LIST, pathInfo)) {
+				SeriesReference seriesReference = SeriesReference.extract(StudiesRouteTemplates.SERIES_AIM_LIST, pathInfo);
+				EPADAIMList aims = epadOperations.getSeriesAIMDescriptions(seriesReference, username, sessionID);
+				if (returnSummary(httpRequest))
+				{	
+					responseStream.append(aims.toJSON());
+				}
+				else
+				{
+					AIMUtil.queryAIMImageAnnotations(responseStream, AIMSearchType.ANNOTATION_UID,
+							getUIDCsvList(aims), username);					
+				}
+
+				statusCode = HttpServletResponse.SC_OK;
+
+			} else if (HandlerUtil.matchesTemplate(StudiesRouteTemplates.SERIES_AIM, pathInfo)) {
+				SeriesReference seriesReference = SeriesReference.extract(StudiesRouteTemplates.SERIES_AIM, pathInfo);
+				AIMReference aimReference = AIMReference.extract(StudiesRouteTemplates.SERIES_AIM, pathInfo);
+				EPADAIM aim = epadOperations.getSeriesAIMDescription(seriesReference, aimReference.aimID, username, sessionID);
+				if (returnSummary(httpRequest))
+				{	
+					responseStream.append(aim.toJSON());
+				}
+				else
+				{
+					AIMUtil.queryAIMImageAnnotations(responseStream, AIMSearchType.ANNOTATION_UID,
+							aim.aimID, username);					
+				}
+				statusCode = HttpServletResponse.SC_OK;
+			} else if (HandlerUtil.matchesTemplate(StudiesRouteTemplates.IMAGE_AIM_LIST, pathInfo)) {
+				ImageReference imageReference = ImageReference.extract(StudiesRouteTemplates.IMAGE_AIM_LIST, pathInfo);
+				EPADAIMList aims = epadOperations.getImageAIMDescriptions(imageReference, username, sessionID);
+				if (returnSummary(httpRequest))
+				{	
+					responseStream.append(aims.toJSON());
+				}
+				else
+				{
+					AIMUtil.queryAIMImageAnnotations(responseStream, AIMSearchType.ANNOTATION_UID,
+							getUIDCsvList(aims), username);					
+				}
+				statusCode = HttpServletResponse.SC_OK;
+
+			} else if (HandlerUtil.matchesTemplate(StudiesRouteTemplates.IMAGE_AIM, pathInfo)) {
+				ImageReference imageReference = ImageReference.extract(StudiesRouteTemplates.IMAGE_AIM, pathInfo);
+				AIMReference aimReference = AIMReference.extract(StudiesRouteTemplates.SERIES_AIM, pathInfo);
+				EPADAIM aim = epadOperations.getImageAIMDescription(imageReference, aimReference.aimID, username, sessionID);
+				if (returnSummary(httpRequest))
+				{	
+					responseStream.append(aim.toJSON());
+				}
+				else
+				{
+					AIMUtil.queryAIMImageAnnotations(responseStream, AIMSearchType.ANNOTATION_UID,
+							aim.aimID, username);					
+				}
+				statusCode = HttpServletResponse.SC_OK;
+
+			} else if (HandlerUtil.matchesTemplate(StudiesRouteTemplates.FRAME_AIM_LIST, pathInfo)) {
+				FrameReference frameReference = FrameReference.extract(StudiesRouteTemplates.FRAME_AIM_LIST, pathInfo);
+				EPADAIMList aims = epadOperations.getFrameAIMDescriptions(frameReference, username, sessionID);
+				if (returnSummary(httpRequest))
+				{	
+					responseStream.append(aims.toJSON());
+				}
+				else
+				{
+					AIMUtil.queryAIMImageAnnotations(responseStream, AIMSearchType.ANNOTATION_UID,
+							getUIDCsvList(aims), username);					
+				}
+				statusCode = HttpServletResponse.SC_OK;
+
+			} else if (HandlerUtil.matchesTemplate(StudiesRouteTemplates.FRAME_AIM, pathInfo)) {
+				FrameReference frameReference = FrameReference.extract(StudiesRouteTemplates.FRAME_AIM, pathInfo);
+				AIMReference aimReference = AIMReference.extract(StudiesRouteTemplates.FRAME_AIM, pathInfo);
+				EPADAIM aim = epadOperations.getFrameAIMDescription(frameReference, aimReference.aimID, username, sessionID);
+				if (returnSummary(httpRequest))
+				{	
+					responseStream.append(aim.toJSON());
+				}
+				else
+				{
+					AIMUtil.queryAIMImageAnnotations(responseStream, AIMSearchType.ANNOTATION_UID,
+							aim.aimID, username);					
+				}
 				statusCode = HttpServletResponse.SC_OK;
 
 			} else
@@ -440,5 +654,26 @@ public class EPADHandler extends AbstractHandler
 			statusCode = HandlerUtil.badRequestJSONResponse(BAD_DELETE_MESSAGE, responseStream, log);
 		}
 		return statusCode;
+	}
+	
+	private boolean returnSummary(HttpServletRequest httpRequest)
+	{
+		String summary = httpRequest.getParameter("format");
+		if (summary != null && summary.trim().equalsIgnoreCase("summary"))
+			return true;
+		else
+			return false;
+	}
+	
+	private String getUIDCsvList(EPADAIMList aims)
+	{
+		Set<String> aimIds = aims.getAIMIds();
+		if (aimIds.size() == 0) return "";
+		String csv = "";
+		for (String id: aimIds)
+		{
+			csv = csv + "," +  id;
+		}
+		return csv.substring(1);
 	}
 }
