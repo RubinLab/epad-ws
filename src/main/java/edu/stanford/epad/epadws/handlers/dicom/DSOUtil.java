@@ -117,7 +117,7 @@ public class DSOUtil
 			{
 				// TODO - need to delete all temporary mask files
 				return new DSOEditResult(imageReference.projectID, imageReference.subjectID, imageReference.studyUID,			
-						imageReference.seriesUID, imageReference.imageUID, "");
+						imageReference.seriesUID, imageReference.imageUID, dsoEditRequest.aimID);
 			}
 			else
 				return null;
@@ -259,7 +259,7 @@ public class DSOUtil
 			FileItemIterator fileItemIterator = servletFileUpload.getItemIterator(httpRequest);
 
 			DSOEditRequest dsoEditRequest = extractDSOEditRequest(fileItemIterator);
-
+			log.info("DSOEditRequest, imageUID:" + dsoEditRequest.imageUID + " aimID:" + dsoEditRequest.aimID + " number Frames:" + dsoEditRequest.editedFrameNumbers.size());
 			if (dsoEditRequest != null) {
 				List<File> editedFramesPNGMaskFiles = HandlerUtil.extractFiles(fileItemIterator, "DSOEditedFrame", "PNG");
 				if (editedFramesPNGMaskFiles.isEmpty()) {
