@@ -377,33 +377,26 @@ public class EPADHandler extends AbstractHandler
 
 		if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.FRAME_LIST, pathInfo)) {
 			ImageReference imageReference = ImageReference.extract(ProjectsRouteTemplates.FRAME_LIST, pathInfo);
-			if (!DSOUtil.handleDSOFramesEdit(imageReference.projectID, imageReference.subjectID, imageReference.studyUID,
+			String type = httpRequest.getParameter("type");
+			if ("new".equalsIgnoreCase(type))
+			{
+				boolean status = DSOUtil.handleCreateDSO(imageReference.projectID, imageReference.subjectID, imageReference.studyUID,
+						imageReference.seriesUID, httpRequest, responseStream);
+				if (status)
+					statusCode = HttpServletResponse.SC_CREATED;
+				else
+					statusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+			}
+			else if (!DSOUtil.handleDSOFramesEdit(imageReference.projectID, imageReference.subjectID, imageReference.studyUID,
 					imageReference.seriesUID, imageReference.imageUID, httpRequest, responseStream))
 			{
-				statusCode = HttpServletResponse.SC_CREATED;
+					statusCode = HttpServletResponse.SC_CREATED;
 			}
 			else
 			{
 				log.info("Error return from handleDSOFramesEdit");
 				statusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 			}
-		} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.SERIES, pathInfo)) {
-				SeriesReference seriesReference = SeriesReference.extract(ProjectsRouteTemplates.SERIES, pathInfo);
-				String type = httpRequest.getParameter("type");
-				if ("dso".equalsIgnoreCase(type))
-				{
-					boolean status = DSOUtil.handleCreateDSO(seriesReference.projectID, seriesReference.subjectID, seriesReference.studyUID,
-							seriesReference.seriesUID, httpRequest, responseStream);
-					if (status)
-						statusCode = HttpServletResponse.SC_CREATED;
-					else
-						statusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;						
-				}
-				else
-				{
-					log.info("Invalid series request from client:" + pathInfo + " type=" + type);
-					statusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
-				}
 		} else {
 			statusCode = HandlerUtil.badRequestJSONResponse(BAD_POST_MESSAGE, responseStream, log);
 		}
