@@ -167,7 +167,7 @@ public class DefaultEpadOperations implements EpadOperations
 		DCM4CHEEStudyList dcm4CheeStudyList = Dcm4CheeQueries.getStudies(studyUIDsInXNAT);
 
 		for (DCM4CHEEStudy dcm4CheeStudy : dcm4CheeStudyList.ResultSet.Result) {
-			EPADStudy epadStudy = dcm4cheeStudy2EpadStudy(subjectReference.projectID, subjectReference.subjectID,
+			EPADStudy epadStudy = dcm4cheeStudy2EpadStudy(sessionID, subjectReference.projectID, subjectReference.subjectID,
 					dcm4CheeStudy, username);
 
 			boolean filter = searchFilter.shouldFilterStudy(subjectReference.subjectID, epadStudy.studyAccessionNumber,
@@ -192,7 +192,7 @@ public class DefaultEpadOperations implements EpadOperations
 		} else {
 			DCM4CHEEStudy dcm4CheeStudy = Dcm4CheeQueries.getStudy(studyReference.studyUID);
 			if (dcm4CheeStudy != null)
-				return dcm4cheeStudy2EpadStudy(studyReference.projectID, studyReference.subjectID, dcm4CheeStudy, username);
+				return dcm4cheeStudy2EpadStudy(sessionID, studyReference.projectID, studyReference.subjectID, dcm4CheeStudy, username);
 			else {
 				log.warning("Count not find dcm4chee study " + studyReference.studyUID + " for subject "
 						+ studyReference.subjectID + " in project " + studyReference.projectID);
@@ -207,7 +207,7 @@ public class DefaultEpadOperations implements EpadOperations
 		DCM4CHEESeries dcm4cheeSeries = Dcm4CheeQueries.getSeries(seriesReference.seriesUID);
 
 		if (dcm4cheeSeries != null)
-			return dcm4cheeSeries2EpadSeries(seriesReference.projectID, seriesReference.subjectID, dcm4cheeSeries, username);
+			return dcm4cheeSeries2EpadSeries(sessionID, seriesReference.projectID, seriesReference.subjectID, dcm4cheeSeries, username);
 		else {
 			log.warning("Could not find series description for series " + seriesReference.seriesUID);
 			return null;
@@ -222,7 +222,7 @@ public class DefaultEpadOperations implements EpadOperations
 
 		DCM4CHEESeriesList dcm4CheeSeriesList = Dcm4CheeQueries.getSeriesInStudy(studyReference.studyUID);
 		for (DCM4CHEESeries dcm4CheeSeries : dcm4CheeSeriesList.ResultSet.Result) {
-			EPADSeries epadSeries = dcm4cheeSeries2EpadSeries(studyReference.projectID, studyReference.subjectID,
+			EPADSeries epadSeries = dcm4cheeSeries2EpadSeries(sessionID, studyReference.projectID, studyReference.subjectID,
 					dcm4CheeSeries, username);
 			boolean filter = searchFilter.shouldFilterSeries(epadSeries.patientID, epadSeries.patientName,
 					epadSeries.examType, epadSeries.accessionNumber, epadSeries.numberOfAnnotations);
@@ -474,9 +474,11 @@ public class DefaultEpadOperations implements EpadOperations
 
 		Set<String> allReadyDcm4CheeSeriesUIDs = dcm4CheeDatabaseOperations.getAllReadyDcm4CheeSeriesUIDs();
 		Set<String> allEPADSeriesUIDs = epadDatabaseOperations.getAllSeriesUIDsFromEPadDatabase();
+		//log.info("Series in dcm4chee:" + allReadyDcm4CheeSeriesUIDs.size()+ " Series in epad:" + allEPADSeriesUIDs.size());
 		allReadyDcm4CheeSeriesUIDs.removeAll(allEPADSeriesUIDs);
 
 		List<String> newSeriesUIDs = new ArrayList<String>(allReadyDcm4CheeSeriesUIDs);
+		//if (newSeriesUIDs.size() > 0) log.info("newSeriesUIDs:" + newSeriesUIDs.size());
 
 		for (String seriesUID : newSeriesUIDs) {
 			DCM4CHEESeries dcm4CheeSeries = Dcm4CheeQueries.getSeries(seriesUID);
@@ -791,7 +793,7 @@ public class DefaultEpadOperations implements EpadOperations
 		return new EPADAIMList(new ArrayList<EPADAIM>(aims));
 	}
 
-	private EPADStudy dcm4cheeStudy2EpadStudy(String suppliedProjectID, String suppliedSubjectID,
+	private EPADStudy dcm4cheeStudy2EpadStudy(String sessionID, String suppliedProjectID, String suppliedSubjectID,
 			DCM4CHEEStudy dcm4CheeStudy, String username)
 	{
 		String projectID = suppliedProjectID.equals("") ? EPADConfig.xnatUploadProjectID : suppliedProjectID;
@@ -812,6 +814,11 @@ public class DefaultEpadOperations implements EpadOperations
 		int numberOfImages = dcm4CheeStudy.imagesCount;
 		Set<String> seriesUIDs = dcm4CheeDatabaseOperations.getAllSeriesUIDsInStudy(studyUID);
 		StudyProcessingStatus studyProcessingStatus = getStudyProcessingStatus(studyUID);
+		try {
+			if (!XNATQueries.isCollaborator(sessionID, username, suppliedProjectID))
+						username = null;
+		} catch (Exception e) {
+		}
 		//int numberOfAnnotations = (seriesUIDs.size() <= 0) ? 0 : AIMQueries.getNumberOfAIMAnnotationsForSeriesSet(seriesUIDs, username);
 		int numberOfAnnotations = (seriesUIDs.size() <= 0) ? 0 : epadDatabaseOperations.getNumberOfAIMsForSeriesSet(projectID, seriesUIDs, username);
 
@@ -820,7 +827,7 @@ public class DefaultEpadOperations implements EpadOperations
 				studyAccessionNumber, numberOfSeries, numberOfImages, numberOfAnnotations);
 	}
 
-	private EPADSeries dcm4cheeSeries2EpadSeries(String suppliedProjectID, String suppliedSubjectID,
+	private EPADSeries dcm4cheeSeries2EpadSeries(String sessionID, String suppliedProjectID, String suppliedSubjectID,
 			DCM4CHEESeries dcm4CheeSeries, String username)
 	{
 		String projectID = suppliedProjectID.equals("") ? EPADConfig.xnatUploadProjectID : suppliedProjectID;
@@ -843,6 +850,11 @@ public class DefaultEpadOperations implements EpadOperations
 				.getFirstImageUIDInSeries(seriesUID);
 
 		//int numberOfAnnotations = AIMQueries.getNumberOfAIMAnnotationsForSeries(seriesUID, username);
+		try {
+			if (!XNATQueries.isCollaborator(sessionID, username, suppliedProjectID))
+						username = null;
+		} catch (Exception e) {
+		}
 		int numberOfAnnotations = epadDatabaseOperations.getNumberOfAIMsForSeries(projectID, seriesUID, username);
 		SeriesProcessingStatus seriesProcessingStatus = epadDatabaseOperations.getSeriesProcessingStatus(seriesUID);
 		String createdTime = dcm4CheeSeries.createdTime != null ? dcm4CheeSeries.createdTime.toString() : "";

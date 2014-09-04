@@ -68,6 +68,7 @@ public class DICOMSeriesWatcher implements Runnable
 		this.dcm4cheeRootDir = EPADConfig.dcm4cheeDirRoot;
 	}
 
+	static long count = 0;
 	@Override
 	public void run()
 	{
@@ -77,8 +78,9 @@ public class DICOMSeriesWatcher implements Runnable
 		queueAndWatcherManager = QueueAndWatcherManager.getInstance();
 
 		while (!shutdownSignal.hasShutdown()) {
+			count++;
 			try {
-				SeriesProcessingDescription seriesProcessingDescription = dicomSeriesWatcherQueue.poll(1000,
+				SeriesProcessingDescription seriesProcessingDescription = dicomSeriesWatcherQueue.poll(2000,
 						TimeUnit.MILLISECONDS);
 
 				if (seriesProcessingDescription != null) {
@@ -105,7 +107,7 @@ public class DICOMSeriesWatcher implements Runnable
 						activeSeriesPipelineState.registerActivity();
 						activeSeriesPipelineState.setSeriesProcessingState(DicomSeriesProcessingState.IN_PIPELINE);
 						queueAndWatcherManager.addDICOMFileToPNGGeneratorPipeline(patientName, unprocessedDICOMFiles);
-						log.info("Submitted " + unprocessedDICOMFiles.size() + " image(s) for series " + seriesUID
+						log.info("Run:" + count + " Submitted " + unprocessedDICOMFiles.size() + " image(s) for series " + seriesUID
 								+ " to PNG generator");
 					} else { // All images have been submitted for PNG processing.
 						/**

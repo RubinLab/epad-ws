@@ -30,6 +30,7 @@ import edu.stanford.epad.epadws.handlers.HandlerUtil;
 import edu.stanford.epad.epadws.handlers.dicom.DSOUtil;
 import edu.stanford.epad.epadws.queries.DefaultEpadOperations;
 import edu.stanford.epad.epadws.queries.EpadOperations;
+import edu.stanford.epad.epadws.queries.XNATQueries;
 import edu.stanford.epad.epadws.xnat.XNATSessionOperations;
 
 /**
@@ -98,6 +99,8 @@ public class EPADHandler extends AbstractHandler
 		int statusCode;
 		log.info("Request from client:" + pathInfo + " user:" + username + " sessionID:" + sessionID);
 		try {
+			if (sessionID == null)
+				throw new Exception("Invalid sessionID for user:" + username);
 			EPADSearchFilter searchFilter = EPADSearchFilterBuilder.build(httpRequest);
 
 			if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.PROJECT_LIST, pathInfo)) {
@@ -228,6 +231,8 @@ public class EPADHandler extends AbstractHandler
 
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.PROJECT_AIM_LIST, pathInfo)) {
 				ProjectReference projectReference = ProjectReference.extract(ProjectsRouteTemplates.PROJECT_AIM_LIST, pathInfo);
+				if (!XNATQueries.isCollaborator(sessionID, username, projectReference.projectID))
+					username = null;
 				EPADAIMList aims = epadOperations.getProjectAIMDescriptions(projectReference, username, sessionID);
 				if (returnSummary(httpRequest))
 				{	
@@ -241,6 +246,8 @@ public class EPADHandler extends AbstractHandler
 				statusCode = HttpServletResponse.SC_OK;
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.PROJECT_AIM, pathInfo)) {
 				ProjectReference projectReference = ProjectReference.extract(ProjectsRouteTemplates.PROJECT_AIM, pathInfo);
+				if (!XNATQueries.isCollaborator(sessionID, username, projectReference.projectID))
+					username = null;
 				AIMReference aimReference = AIMReference.extract(ProjectsRouteTemplates.PROJECT_AIM, pathInfo);
 				EPADAIM aim = epadOperations
 						.getProjectAIMDescription(projectReference, aimReference.aimID, username, sessionID);
@@ -591,7 +598,17 @@ public class EPADHandler extends AbstractHandler
 
 		if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.FRAME_LIST, pathInfo)) {
 			ImageReference imageReference = ImageReference.extract(ProjectsRouteTemplates.FRAME_LIST, pathInfo);
-			if (!DSOUtil.handleDSOFramesEdit(imageReference.projectID, imageReference.subjectID, imageReference.studyUID,
+			String type = httpRequest.getParameter("type");
+			if ("new".equalsIgnoreCase(type))
+			{
+				boolean status = DSOUtil.handleCreateDSO(imageReference.projectID, imageReference.subjectID, imageReference.studyUID,
+						imageReference.seriesUID, httpRequest, responseStream);
+				if (status)
+					statusCode = HttpServletResponse.SC_CREATED;
+				else
+					statusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;						
+			} 
+			else if (!DSOUtil.handleDSOFramesEdit(imageReference.projectID, imageReference.subjectID, imageReference.studyUID,
 					imageReference.seriesUID, imageReference.imageUID, httpRequest, responseStream))
 			{
 				statusCode = HttpServletResponse.SC_CREATED;

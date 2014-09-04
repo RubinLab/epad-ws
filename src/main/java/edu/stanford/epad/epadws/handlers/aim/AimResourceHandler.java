@@ -62,10 +62,11 @@ public class AimResourceHandler extends AbstractHandler
 
 						if (validParameters(aimSearchType, searchValue, user)) {
 							String projectID = httpRequest.getParameter("projectID");
-							if (projectID != null && projectID.trim().length() > 0)
-								AIMUtil.queryAIMImageAnnotations(responseStream, projectID, aimSearchType, searchValue, user);
-							else
-								AIMUtil.queryAIMImageAnnotations(responseStream, aimSearchType, searchValue, user);
+							int index = getInt(httpRequest.getParameter("index"));
+							if (index == 0) index = 1;
+							int count = getInt(httpRequest.getParameter("count"));
+							if (count == 0) count = 5000;
+							AIMUtil.queryAIMImageAnnotations(responseStream, projectID, aimSearchType, searchValue, user, index, count);
 							statusCode = HttpServletResponse.SC_OK;
 						} else
 							statusCode = HandlerUtil.badRequestResponse(BAD_QUERY_MESSAGE, log);
@@ -124,5 +125,14 @@ public class AimResourceHandler extends AbstractHandler
 	private boolean validParameters(AIMSearchType aimSearchType, String searchValue, String user)
 	{
 		return (aimSearchType != null && searchValue != null && user != null);
+	}
+	
+	private int getInt(String value)
+	{
+		try {
+			return new Integer(value.trim()).intValue();
+		} catch (Exception x) {
+			return 0;
+		}
 	}
 }

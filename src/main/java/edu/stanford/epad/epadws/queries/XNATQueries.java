@@ -99,6 +99,56 @@ public class XNATQueries
 		}
 		return studyIDs;
 	}
+	
+	public static boolean isCollaborator(String sessionID, String username, String projectID) throws Exception
+	{
+		String role = getUserProjectRole(sessionID, username, projectID);
+		if (role == null && username.equals("admin")) return false;
+		if (role == null)
+			throw new Exception("Does not exist in project:" + projectID);
+		if (role.toLowerCase().startsWith("collaborator"))
+			return true;
+		else
+			return false;
+	}
+	
+	public static boolean isMember(String sessionID, String username, String projectID) throws Exception
+	{
+		String role = getUserProjectRole(sessionID, username, projectID);
+		if (role == null && username.equals("admin")) return true;
+		if (role == null)
+			throw new Exception("Does not exist in project:" + projectID);
+		if (role.toLowerCase().startsWith("member"))
+			return true;
+		else
+			return false;
+	}
+	
+	public static boolean isOwner(String sessionID, String username, String projectID) throws Exception
+	{
+		String role = getUserProjectRole(sessionID, username, projectID);
+		if (role == null && username.equals("admin")) return true;
+		if (role == null)
+			throw new Exception("Does not exist in project:" + projectID);
+		if (role.toLowerCase().startsWith("owner"))
+			return true;
+		else
+			return false;
+	}
+	
+	public static String getUserProjectRole(String sessionID, String username, String projectID)
+	{
+		XNATUserList userList = getUsersForProject(projectID);
+		Map<String, String> roles = userList.getRoles();
+		for (String loginName: roles.keySet())
+		{
+			if (loginName.equals(username))
+			{
+				return roles.get(loginName);
+			}
+		}
+		return null;
+	}
 
 	public static Set<String> getAllStudyUIDs()
 	{
@@ -115,7 +165,7 @@ public class XNATQueries
 	{
 		String allUsersForProjectQueryURL = XNATQueryUtil.buildAllUsersForProjectQueryURL(projectID);
 		String adminSessionID = XNATSessionOperations.getXNATAdminSessionID();
-
+		log.info("Users query:" + allUsersForProjectQueryURL);
 		return invokeXNATUsersQuery(adminSessionID, allUsersForProjectQueryURL);
 	}
 

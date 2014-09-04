@@ -397,16 +397,16 @@ public class AIMUtil
 	public static void queryAIMImageAnnotations(PrintWriter responseStream, AIMSearchType aimSearchType,
 			String searchValue, String user) throws ParserConfigurationException, AimException
 	{
-		queryAIMImageAnnotations(responseStream, null, aimSearchType, searchValue, user);
+		queryAIMImageAnnotations(responseStream, null, aimSearchType, searchValue, user, 1, 5000);
 	}
 
 	public static void queryAIMImageAnnotations(PrintWriter responseStream, String projectID, AIMSearchType aimSearchType,
-			String searchValue, String user) throws ParserConfigurationException, AimException
+			String searchValue, String user, int index, int count) throws ParserConfigurationException, AimException
 		{
 		
-		List<ImageAnnotation> aims = AIMQueries.getAIMImageAnnotations(aimSearchType, searchValue, user);
+		List<ImageAnnotation> aims = AIMQueries.getAIMImageAnnotations(aimSearchType, searchValue, user, index, count);
 		Set<String> aimIds = null;
-		if (projectID != null)
+		if (projectID != null && projectID.trim().length() > 0)
 		{
 			Set<EPADAIM> aimRecords = EpadDatabase.getInstance().getEPADDatabaseOperations().getAIMs(projectID, aimSearchType, searchValue);
 			aimIds = new HashSet<String>();
