@@ -387,6 +387,23 @@ public class EPADHandler extends AbstractHandler
 				log.info("Error return from handleDSOFramesEdit");
 				statusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 			}
+		} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.SERIES, pathInfo)) {
+				SeriesReference seriesReference = SeriesReference.extract(ProjectsRouteTemplates.SERIES, pathInfo);
+				String type = httpRequest.getParameter("type");
+				if ("dso".equalsIgnoreCase(type))
+				{
+					boolean status = DSOUtil.handleCreateDSO(seriesReference.projectID, seriesReference.subjectID, seriesReference.studyUID,
+							seriesReference.seriesUID, httpRequest, responseStream);
+					if (status)
+						statusCode = HttpServletResponse.SC_CREATED;
+					else
+						statusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;						
+				}
+				else
+				{
+					log.info("Invalid series request from client:" + pathInfo + " type=" + type);
+					statusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+				}
 		} else {
 			statusCode = HandlerUtil.badRequestJSONResponse(BAD_POST_MESSAGE, responseStream, log);
 		}

@@ -36,11 +36,11 @@ import com.pixelmed.dicom.DicomException;
 import com.pixelmed.dicom.TagFromName;
 import com.pixelmed.display.SourceImage;
 
+import edu.stanford.epad.common.dicom.DCM4CHEEImageDescription;
 import edu.stanford.epad.common.dicom.DCM4CHEEUtil;
 import edu.stanford.epad.common.dicom.DicomSegmentationObject;
 import edu.stanford.epad.common.pixelmed.PixelMedUtils;
 import edu.stanford.epad.common.pixelmed.TIFFMasksToDSOConverter;
-import edu.stanford.epad.common.plugins.PluginAIMUtil;
 import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.epad.dtos.DSOEditRequest;
@@ -53,7 +53,8 @@ import edu.stanford.epad.dtos.internal.DICOMElement;
 import edu.stanford.epad.dtos.internal.DICOMElementList;
 import edu.stanford.epad.epadws.aim.AIMQueries;
 import edu.stanford.epad.epadws.aim.AIMSearchType;
-import edu.stanford.epad.epadws.aim.AIMUtil;
+import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeDatabase;
+import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeDatabaseOperations;
 import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeDatabaseUtils;
 import edu.stanford.epad.epadws.epaddb.EpadDatabase;
 import edu.stanford.epad.epadws.epaddb.EpadDatabaseOperations;
@@ -62,9 +63,6 @@ import edu.stanford.epad.epadws.handlers.core.ImageReference;
 import edu.stanford.epad.epadws.queries.Dcm4CheeQueries;
 import edu.stanford.epad.epadws.queries.DefaultEpadOperations;
 import edu.stanford.epad.epadws.queries.EpadOperations;
-import edu.stanford.epad.epadws.xnat.XNATSessionOperations;
-import edu.stanford.hakan.aim3api.base.AimException;
-import edu.stanford.hakan.aim3api.base.DICOMImageReference;
 import edu.stanford.hakan.aim3api.base.ImageAnnotation;
 
 /**
@@ -78,6 +76,9 @@ public class DSOUtil
 	private static final EPADLogger log = EPADLogger.getInstance();
 
 	private static final String baseDicomDirectory = EPADConfig.getEPADWebServerPNGDir();
+
+	private final static Dcm4CheeDatabaseOperations dcm4CheeDatabaseOperations = Dcm4CheeDatabase.getInstance()
+			.getDcm4CheeDatabaseOperations();
 
 	/**
 	 * Take an existing DSO and generate a new one (with new UIDs) with substituted masked frames.
@@ -140,6 +141,56 @@ public class DSOUtil
 		}
 	}
 
+	/**
+	 * Generate a new DSO from scratch given series and masked frames.
+	 */
+	public static DSOEditResult createNewDSO(String projectID, String subjectID, String studyUID, String seriesUID, List<File> editFramesPNGMaskFiles)
+	{
+		try {
+			List<DCM4CHEEImageDescription> imageDescriptions = dcm4CheeDatabaseOperations.getImageDescriptions(
+															studyUID, seriesUID);
+			List<String> dicomFilePaths = new ArrayList<String>();
+			for (DCM4CHEEImageDescription imageDescription : imageDescriptions) {
+				try {
+					File temporaryDICOMFile = File.createTempFile(imageDescription.imageUID, ".dcm");
+					log.info("Downloading source DICOM file for image " + imageDescription.imageUID);
+					DCM4CHEEUtil.downloadDICOMFileFromWADO(studyUID, seriesUID, imageDescription.imageUID, temporaryDICOMFile);
+					dicomFilePaths.add(temporaryDICOMFile.getAbsolutePath());
+				} catch (IOException e) {
+					log.warning("Error downloading DICOM file for referenced image " + imageDescription.imageUID + " for series "
+							+ seriesUID, e);
+					throw new Exception("Error downloading DICOM file for referenced image " + imageDescription.imageUID + " for series "
+							+ seriesUID);
+				}
+			}
+			List<File> tiffMaskFiles = generateTIFFsFromPNGs(editFramesPNGMaskFiles);
+			log.info("Generating DSO fro series " + seriesUID + " with " + tiffMaskFiles.size() + " TIFF mask file(s)...");
+			if (dicomFilePaths.size() != tiffMaskFiles.size()) {
+				log.warning("Incompatible source dicom and segmentation masks: " + dicomFilePaths.size() + " source dicoms " + tiffMaskFiles.size() + " mask files");
+			}
+			if (dicomFilePaths.size() > tiffMaskFiles.size()) {
+				log.warning("Insuffcient numbber of  mask files: " + tiffMaskFiles.size());
+				return null;
+			}
+
+			File temporaryDSOFile = File.createTempFile(seriesUID, ".dso");
+			log.info("Found " + dicomFilePaths.size() + " source DICOM file(s) for series " + seriesUID);
+
+			log.info("Generating new DSO for series " + seriesUID);
+			TIFFMasksToDSOConverter converter = new TIFFMasksToDSOConverter();
+			String[] seriesImageUids = converter.generateDSO(files2FilePaths(tiffMaskFiles), dicomFilePaths, temporaryDSOFile.getAbsolutePath(), null, null, null);
+			String dsoSeriesUID = seriesImageUids[0];
+			String dsoImageUID = seriesImageUids[1];
+			log.info("Sending generated DSO " + temporaryDSOFile.getAbsolutePath() + " imageUID:" + dsoImageUID + " to dcm4chee...");
+			DCM4CHEEUtil.dcmsnd(temporaryDSOFile.getAbsolutePath(), false);
+			return new DSOEditResult(projectID, subjectID, studyUID,	dsoSeriesUID, dsoImageUID, "");
+
+		} catch (Exception e) {
+			log.warning("Error generating DSO image for series " + seriesUID, e);
+			return null;
+		}
+	}
+	
 	private static void deleteQuietly(File file)
 	{
 		try {
@@ -282,6 +333,7 @@ public class DSOUtil
 
 			DSOEditRequest dsoEditRequest = extractDSOEditRequest(fileItemIterator);
 			log.info("DSOEditRequest, imageUID:" + dsoEditRequest.imageUID + " aimID:" + dsoEditRequest.aimID + " number Frames:" + dsoEditRequest.editedFrameNumbers.size());
+
 			if (dsoEditRequest != null) {
 				List<File> editedFramesPNGMaskFiles = HandlerUtil.extractFiles(fileItemIterator, "DSOEditedFrame", "PNG");
 				if (editedFramesPNGMaskFiles.isEmpty()) {
@@ -305,6 +357,44 @@ public class DSOUtil
 				log.warning("Invalid JSON header in DSO edit request for image " + imageUID + " in  series " + seriesUID);
 				uploadError = true;
 			}
+		} catch (IOException e) {
+			log.warning("IO exception handling DSO edits for series " + seriesUID, e);
+			uploadError = true;
+		} catch (FileUploadException e) {
+			log.warning("File upload exception handling DSO edits for series " + seriesUID, e);
+			uploadError = true;
+		}
+		return uploadError;
+	}
+
+	public static boolean handleCreateDSO(String projectID, String subjectID, String studyUID, String seriesUID,
+			HttpServletRequest httpRequest, PrintWriter responseStream)
+	{ // See http://www.tutorialspoint.com/servlets/servlets-file-uploading.htm
+		boolean uploadError = false;
+
+		log.info("Received DSO edit request for series " + seriesUID);
+
+		try {
+			ServletFileUpload servletFileUpload = new ServletFileUpload();
+			FileItemIterator fileItemIterator = servletFileUpload.getItemIterator(httpRequest);
+			List<File> framesPNGMaskFiles = HandlerUtil.extractFiles(fileItemIterator, "DSOFrame", "PNG");
+			if (framesPNGMaskFiles.isEmpty()) {
+				log.warning("No PNG masks supplied in DSO create request for series " + seriesUID);
+				uploadError = true;
+			} else {
+				log.info("Extracted " + framesPNGMaskFiles.size() + " file mask(s) for DSO create for series " + seriesUID);
+				DSOEditResult dsoEditResult = DSOUtil.createNewDSO(projectID, subjectID, studyUID, seriesUID, framesPNGMaskFiles);
+				if (dsoEditResult != null)
+				{					
+					responseStream.append(dsoEditResult.toJSON());
+				}
+				else
+				{
+					log.info("Null return from createEditDSO");
+					uploadError = true;
+				}
+			}
+
 		} catch (IOException e) {
 			log.warning("IO exception handling DSO edits for series " + seriesUID, e);
 			uploadError = true;
