@@ -100,13 +100,14 @@ public class DSOUtil
 					seriesDescription = dicomElement.value;
 				}
 			}
-			if (seriesDescription != null && seriesDescription.toLowerCase().contains("epad"))
+			// Always 'clobber' the orginal DSO
+//			if (seriesDescription != null && seriesDescription.toLowerCase().contains("epad"))
 			{
 				seriesUID = imageReference.seriesUID;
 				instanceUID = imageReference.imageUID;
 			}
-			else
-				seriesDescription = null;
+//			else
+//				seriesDescription = null;
 			List<File> existingDSOTIFFMaskFiles = DSOUtil.getDSOTIFFMaskFiles(imageReference);
 			List<File> editFramesTIFFMaskFiles = generateTIFFsFromPNGs(editFramesPNGMaskFiles);
 			List<File> dsoTIFFMaskFiles = new ArrayList<>(existingDSOTIFFMaskFiles);

@@ -53,6 +53,7 @@ import edu.stanford.epad.dtos.internal.XNATProjectList;
 import edu.stanford.epad.dtos.internal.XNATSubject;
 import edu.stanford.epad.dtos.internal.XNATSubjectList;
 import edu.stanford.epad.dtos.internal.XNATUserList;
+import edu.stanford.epad.epadws.aim.AIMUtil;
 import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeDatabase;
 import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeDatabaseOperations;
 import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeOperations;
@@ -619,44 +620,56 @@ public class DefaultEpadOperations implements EpadOperations
 	}
 
 	@Override
-	public int createStudyAIM(String username, StudyReference studyReference, String aimID, String sessionID)
+	public int createStudyAIM(String username, StudyReference studyReference, String aimID, File aimFile, String sessionID)
 	{
 		try {
 			epadDatabaseOperations.addAIM(username, studyReference, aimID);
-			return HttpServletResponse.SC_OK;
+			if (aimFile == null || !AIMUtil.saveAIMAnnotation(aimFile, sessionID, username))
+				return HttpServletResponse.SC_OK;
+			else
+				return HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 		} catch (Exception e) {
 			return HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 		}
 	}
 
 	@Override
-	public int createSeriesAIM(String username, SeriesReference seriesReference, String aimID, String sessionID)
+	public int createSeriesAIM(String username, SeriesReference seriesReference, String aimID, File aimFile, String sessionID)
 	{
 		try {
 			epadDatabaseOperations.addAIM(username, seriesReference, aimID);
-			return HttpServletResponse.SC_OK;
+			if (aimFile == null || !AIMUtil.saveAIMAnnotation(aimFile, sessionID, username))
+				return HttpServletResponse.SC_OK;
+			else
+				return HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 		} catch (Exception e) {
 			return HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 		}
 	}
 
 	@Override
-	public int createImageAIM(String username, ImageReference imageReference, String aimID, String sessionID)
+	public int createImageAIM(String username, ImageReference imageReference, String aimID, File aimFile, String sessionID)
 	{
 		try {
 			epadDatabaseOperations.addAIM(username, imageReference, aimID);
-			return HttpServletResponse.SC_OK;
+			if (aimFile == null || !AIMUtil.saveAIMAnnotation(aimFile, sessionID, username))
+				return HttpServletResponse.SC_OK;
+			else
+				return HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 		} catch (Exception e) {
 			return HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 		}
 	}
 
 	@Override
-	public int createFrameAIM(String username, FrameReference frameReference, String aimID, String sessionID)
+	public int createFrameAIM(String username, FrameReference frameReference, String aimID, File aimFile, String sessionID)
 	{
 		try {
 			epadDatabaseOperations.addAIM(username, frameReference, aimID);
-			return HttpServletResponse.SC_OK;
+			if (aimFile == null || !AIMUtil.saveAIMAnnotation(aimFile, sessionID, username))
+				return HttpServletResponse.SC_OK;
+			else
+				return HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 		} catch (Exception e) {
 			return HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 		}
@@ -1024,7 +1037,7 @@ public class DefaultEpadOperations implements EpadOperations
 				}
 			}
 		}
-		log.warning("Could not find number of frames value  in DICOM headers for image " + imageUID);
+		//log.warning("Could not find number of frames value  in DICOM headers for image " + imageUID);
 		return 0;
 	}
 

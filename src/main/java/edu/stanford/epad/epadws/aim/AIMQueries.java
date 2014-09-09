@@ -127,6 +127,10 @@ public class AIMQueries
 				if (useV4.equals("false")) {
 					aims = AnnotationGetter.getImageAnnotationsFromServerByPersonIDAndUserNameEqual(eXistServerUrl, aimNamespace,
 							eXistCollection, eXistUsername, eXistPassword, patientId, username, xsdFilePath);
+					List<ImageAnnotation> aims2 = AnnotationGetter.getImageAnnotationsFromServerByPersonIDAndUserNameEqual(eXistServerUrl, aimNamespace,
+							eXistCollection, eXistUsername, eXistPassword, patientId, "guest", xsdFilePath);
+					log.info("Number aims for user guest, for patientID:" + patientId +" :" + aims2.size());
+					aims.addAll(aims2);
 				} else {
 					List<edu.stanford.hakan.aim4api.base.ImageAnnotationCollection> iacs = edu.stanford.hakan.aim4api.usage.AnnotationGetter
 							.getImageAnnotationCollectionByUserNameAndPersonIdEqual(eXistServerUrl, aim4Namespace, eXistCollectionV4,

@@ -1,5 +1,8 @@
 package edu.stanford.epad.epadws.handlers.core;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.InputStream;
 import java.io.PrintWriter;
 import java.util.Set;
 
@@ -9,6 +12,7 @@ import javax.servlet.http.HttpServletResponse;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 
+import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.epad.dtos.EPADAIM;
 import edu.stanford.epad.dtos.EPADAIMList;
@@ -63,9 +67,14 @@ public class EPADHandler extends AbstractHandler
 
 		try {
 			responseStream = httpResponse.getWriter();
+			String method = httpRequest.getMethod();
+			File aimFile = null;
+			if ("PUT".equalsIgnoreCase(method)) {
+				// Note: This needs to be done, before anything else otherwise upload won't work
+				aimFile = this.getUploadedAIMFile(httpRequest);
+			}
 
 			if (XNATSessionOperations.hasValidXNATSessionID(httpRequest)) {
-				String method = httpRequest.getMethod();
 				String username = httpRequest.getParameter("username");
 				log.info("Request from client:" + method + " user:" + username);
 				if (username != null) {
@@ -74,7 +83,7 @@ public class EPADHandler extends AbstractHandler
 					} else if ("DELETE".equalsIgnoreCase(method)) {
 						statusCode = handleDelete(httpRequest, responseStream, username);
 					} else if ("PUT".equalsIgnoreCase(method)) {
-						statusCode = handlePut(httpRequest, httpResponse, responseStream, username);
+						statusCode = handlePut(httpRequest, httpResponse, responseStream, username, aimFile);
 					} else if ("POST".equalsIgnoreCase(method)) {
 						statusCode = handlePost(httpRequest, responseStream, username);
 					} else {
@@ -240,8 +249,12 @@ public class EPADHandler extends AbstractHandler
 				}
 				else
 				{
+					int start = getInt(httpRequest.getParameter("start"));
+					if (start == 0) start = 1;
+					int count = getInt(httpRequest.getParameter("count"));
+					if (count == 0) count = 5000;
 					AIMUtil.queryAIMImageAnnotations(responseStream, AIMSearchType.ANNOTATION_UID,
-							getUIDCsvList(aims), username);					
+							getUIDCsvList(aims), username, start, count);					
 				}
 				statusCode = HttpServletResponse.SC_OK;
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.PROJECT_AIM, pathInfo)) {
@@ -271,8 +284,12 @@ public class EPADHandler extends AbstractHandler
 				}
 				else
 				{
+					int start = getInt(httpRequest.getParameter("start"));
+					if (start == 0) start = 1;
+					int count = getInt(httpRequest.getParameter("count"));
+					if (count == 0) count = 5000;
 					AIMUtil.queryAIMImageAnnotations(responseStream, AIMSearchType.ANNOTATION_UID,
-							getUIDCsvList(aims), username);					
+							getUIDCsvList(aims), username, start, count);					
 				}
 				statusCode = HttpServletResponse.SC_OK;
 
@@ -301,8 +318,12 @@ public class EPADHandler extends AbstractHandler
 				}
 				else
 				{
+					int start = getInt(httpRequest.getParameter("start"));
+					if (start == 0) start = 1;
+					int count = getInt(httpRequest.getParameter("count"));
+					if (count == 0) count = 5000;
 					AIMUtil.queryAIMImageAnnotations(responseStream, AIMSearchType.ANNOTATION_UID,
-							getUIDCsvList(aims), username);					
+							getUIDCsvList(aims), username, start, count);					
 				}
 				statusCode = HttpServletResponse.SC_OK;
 
@@ -330,8 +351,12 @@ public class EPADHandler extends AbstractHandler
 				}
 				else
 				{
+					int start = getInt(httpRequest.getParameter("start"));
+					if (start == 0) start = 1;
+					int count = getInt(httpRequest.getParameter("count"));
+					if (count == 0) count = 5000;
 					AIMUtil.queryAIMImageAnnotations(responseStream, AIMSearchType.ANNOTATION_UID,
-							getUIDCsvList(aims), username);					
+							getUIDCsvList(aims), username, start, count);					
 				}
 
 				statusCode = HttpServletResponse.SC_OK;
@@ -359,8 +384,12 @@ public class EPADHandler extends AbstractHandler
 				}
 				else
 				{
+					int start = getInt(httpRequest.getParameter("start"));
+					if (start == 0) start = 1;
+					int count = getInt(httpRequest.getParameter("count"));
+					if (count == 0) count = 5000;
 					AIMUtil.queryAIMImageAnnotations(responseStream, AIMSearchType.ANNOTATION_UID,
-							getUIDCsvList(aims), username);					
+							getUIDCsvList(aims), username, start, count);					
 				}
 				statusCode = HttpServletResponse.SC_OK;
 
@@ -388,8 +417,12 @@ public class EPADHandler extends AbstractHandler
 				}
 				else
 				{
+					int start = getInt(httpRequest.getParameter("start"));
+					if (start == 0) start = 1;
+					int count = getInt(httpRequest.getParameter("count"));
+					if (count == 0) count = 5000;
 					AIMUtil.queryAIMImageAnnotations(responseStream, AIMSearchType.ANNOTATION_UID,
-							getUIDCsvList(aims), username);					
+							getUIDCsvList(aims), username, start, count);					
 				}
 				statusCode = HttpServletResponse.SC_OK;
 
@@ -416,8 +449,12 @@ public class EPADHandler extends AbstractHandler
 				}
 				else
 				{
+					int start = getInt(httpRequest.getParameter("start"));
+					if (start == 0) start = 1;
+					int count = getInt(httpRequest.getParameter("count"));
+					if (count == 0) count = 5000;
 					AIMUtil.queryAIMImageAnnotations(responseStream, AIMSearchType.ANNOTATION_UID,
-							getUIDCsvList(aims), username);					
+							getUIDCsvList(aims), username, start, count);					
 				}
 				statusCode = HttpServletResponse.SC_OK;
 
@@ -445,8 +482,12 @@ public class EPADHandler extends AbstractHandler
 				}
 				else
 				{
+					int start = getInt(httpRequest.getParameter("start"));
+					if (start == 0) start = 1;
+					int count = getInt(httpRequest.getParameter("count"));
+					if (count == 0) count = 5000;
 					AIMUtil.queryAIMImageAnnotations(responseStream, AIMSearchType.ANNOTATION_UID,
-							getUIDCsvList(aims), username);					
+							getUIDCsvList(aims), username, start, count);					
 				}
 
 				statusCode = HttpServletResponse.SC_OK;
@@ -474,8 +515,12 @@ public class EPADHandler extends AbstractHandler
 				}
 				else
 				{
+					int start = getInt(httpRequest.getParameter("start"));
+					if (start == 0) start = 1;
+					int count = getInt(httpRequest.getParameter("count"));
+					if (count == 0) count = 5000;
 					AIMUtil.queryAIMImageAnnotations(responseStream, AIMSearchType.ANNOTATION_UID,
-							getUIDCsvList(aims), username);					
+							getUIDCsvList(aims), username, start, count);					
 				}
 				statusCode = HttpServletResponse.SC_OK;
 
@@ -503,8 +548,12 @@ public class EPADHandler extends AbstractHandler
 				}
 				else
 				{
+					int start = getInt(httpRequest.getParameter("start"));
+					if (start == 0) start = 1;
+					int count = getInt(httpRequest.getParameter("count"));
+					if (count == 0) count = 5000;
 					AIMUtil.queryAIMImageAnnotations(responseStream, AIMSearchType.ANNOTATION_UID,
-							getUIDCsvList(aims), username);					
+							getUIDCsvList(aims), username, start, count);					
 				}
 				statusCode = HttpServletResponse.SC_OK;
 
@@ -532,12 +581,13 @@ public class EPADHandler extends AbstractHandler
 	}
 
 	private int handlePut(HttpServletRequest httpRequest, HttpServletResponse httpResponse, PrintWriter responseStream,
-			String username)
+			String username, File aimFile)
 	{
 		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
 		String sessionID = XNATSessionOperations.getJSessionIDFromRequest(httpRequest);
 		String pathInfo = httpRequest.getPathInfo();
 		int statusCode;
+		log.info("Request from client:" + pathInfo + " user:" + username + " sessionID:" + sessionID);
 
 		if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.PROJECT, pathInfo)) {
 			ProjectReference projectReference = ProjectReference.extract(ProjectsRouteTemplates.PROJECT, pathInfo);
@@ -557,7 +607,7 @@ public class EPADHandler extends AbstractHandler
 		} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.STUDY_AIM, pathInfo)) {
 			StudyReference studyReference = StudyReference.extract(ProjectsRouteTemplates.STUDY_AIM, pathInfo);
 			AIMReference aimReference = AIMReference.extract(ProjectsRouteTemplates.STUDY_AIM, pathInfo);
-			statusCode = epadOperations.createStudyAIM(username, studyReference, aimReference.aimID, sessionID);
+			statusCode = epadOperations.createStudyAIM(username, studyReference, aimReference.aimID, aimFile, sessionID);
 
 		} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.SERIES, pathInfo)) {
 			SeriesReference seriesReference = SeriesReference.extract(ProjectsRouteTemplates.SERIES, pathInfo);
@@ -566,7 +616,7 @@ public class EPADHandler extends AbstractHandler
 		} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.SERIES_AIM, pathInfo)) {
 			SeriesReference seriesReference = SeriesReference.extract(ProjectsRouteTemplates.SERIES_AIM, pathInfo);
 			AIMReference aimReference = AIMReference.extract(ProjectsRouteTemplates.SERIES_AIM, pathInfo);
-			statusCode = epadOperations.createSeriesAIM(username, seriesReference, aimReference.aimID, sessionID);
+			statusCode = epadOperations.createSeriesAIM(username, seriesReference, aimReference.aimID, aimFile, sessionID);
 		} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.IMAGE, pathInfo)) {
 			statusCode = HttpServletResponse.SC_METHOD_NOT_ALLOWED;
 			httpResponse.addHeader("Allow", "GET, DELETE");
@@ -574,7 +624,8 @@ public class EPADHandler extends AbstractHandler
 		} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.IMAGE_AIM, pathInfo)) {
 			ImageReference imageReference = ImageReference.extract(ProjectsRouteTemplates.IMAGE_AIM, pathInfo);
 			AIMReference aimReference = AIMReference.extract(ProjectsRouteTemplates.IMAGE_AIM, pathInfo);
-			statusCode = epadOperations.createImageAIM(username, imageReference, aimReference.aimID, sessionID);
+			log.info("Images AIM PUT");
+			statusCode = epadOperations.createImageAIM(username, imageReference, aimReference.aimID, aimFile, sessionID);
 
 		} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.FRAME, pathInfo)) {
 			statusCode = HttpServletResponse.SC_METHOD_NOT_ALLOWED;
@@ -583,12 +634,47 @@ public class EPADHandler extends AbstractHandler
 		} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.FRAME_AIM, pathInfo)) {
 			FrameReference frameReference = FrameReference.extract(ProjectsRouteTemplates.FRAME_AIM, pathInfo);
 			AIMReference aimReference = AIMReference.extract(ProjectsRouteTemplates.FRAME_AIM, pathInfo);
-			statusCode = epadOperations.createFrameAIM(username, frameReference, aimReference.aimID, sessionID);
+			statusCode = epadOperations.createFrameAIM(username, frameReference, aimReference.aimID, aimFile, sessionID);
 
 		} else {
 			statusCode = HandlerUtil.badRequestJSONResponse(BAD_PUT_MESSAGE, responseStream, log);
 		}
 		return statusCode;
+	}
+	
+	private File getUploadedAIMFile(HttpServletRequest httpRequest)
+	{
+		String annotationsUploadDirPath = EPADConfig.getEPADWebServerAnnotationsUploadDir();
+		String tempXMLFileName = "temp-" + System.currentTimeMillis() + ".xml";
+		File aimFile = new File(annotationsUploadDirPath + tempXMLFileName);
+		try
+		{
+			// opens input stream of the request for reading data
+			InputStream inputStream = httpRequest.getInputStream();
+			
+			// opens an output stream for writing file
+			FileOutputStream outputStream = new FileOutputStream(aimFile);
+			
+			byte[] buffer = new byte[4096];
+			int bytesRead = -1;
+			log.info("Receiving data...");
+			int len = 0;
+			while ((bytesRead = inputStream.read(buffer)) != -1) {
+				len = len + bytesRead;
+				outputStream.write(buffer, 0, bytesRead);
+			}
+			
+			log.info("Data received, len:" + len);
+			outputStream.close();
+			inputStream.close();
+			log.info("Created AIMFile:" + aimFile.getAbsolutePath());
+			return aimFile;
+		}
+		catch (Exception x)
+		{
+			log.warning("Error receiving Annotations file", x);
+		}
+		return null;
 	}
 
 	private int handlePost(HttpServletRequest httpRequest, PrintWriter responseStream, String username)
@@ -693,4 +779,14 @@ public class EPADHandler extends AbstractHandler
 		}
 		return csv.substring(1);
 	}
+	
+	private int getInt(String value)
+	{
+		try {
+			return new Integer(value.trim()).intValue();
+		} catch (Exception x) {
+			return 0;
+		}
+	}
+
 }

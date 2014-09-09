@@ -322,49 +322,56 @@ public class AIMDatabaseOperations {
 
     public void insert(String annotationUID, String userName, String projectID, String patientID, String seriesUID, String studyUID, String imageUID, int frameID) throws SQLException {
     	try {
-    	    this.statement = mySqlConnection.createStatement();
-            String sqlInsert = "INSERT into " + ANNOTATIONS_TABLE + " (AnnotationUID";
-            String values = "'" + annotationUID + "'";
-    		if (projectID != null && projectID.length() > 0)
+    		EPADAIM aim = getAIM(annotationUID);
+    		if (aim != null)
     		{
-                sqlInsert = sqlInsert + ",ProjectUID";
+    			return;
+    		}
+            String sql = "INSERT into " + ANNOTATIONS_TABLE + " (AnnotationUID";
+            String values = "'" + annotationUID + "'";
+            if (projectID != null && projectID.length() > 0)
+    		{
+                sql = sql + ",ProjectUID";
                 values = values + ",'" + projectID + "'";
     		}
-    		if (projectID != null && projectID.length() > 0)
+    		if (userName != null && userName.length() > 0)
     		{
-                sqlInsert = sqlInsert + ",ProjectUID";
-                values = values + ",'" + projectID + "'";
+                sql = sql + ",UserLoginName";
+                values = values + ",'" + userName + "'";
     		}
     		if (patientID != null && patientID.length() > 0)
     		{
-                sqlInsert = sqlInsert + ",PatientID";
+                sql = sql + ",PatientID";
        			values = values + ",'" + patientID + "'";
     		}
     		if (studyUID != null && studyUID.length() > 0)
     		{
-                sqlInsert = sqlInsert + ",StudyUID";
+                sql = sql + ",StudyUID";
        			values = values + ",'" + studyUID + "'";
     		}
     		if (seriesUID != null && seriesUID.length() > 0)
     		{
-                sqlInsert = sqlInsert + ",SeriesUID";
+                sql = sql + ",SeriesUID";
        			values = values + ",'" + seriesUID + "'";
     		}
     		if (imageUID != null && imageUID.length() > 0)
     		{
-                sqlInsert = sqlInsert + ",ImageUID";
+                sql = sql + ",ImageUID";
        			values = values + ",'" + imageUID + "'";
     		}
     		if (frameID != 0)
     		{
-                sqlInsert = sqlInsert + ",FrameID";
+                sql = sql + ",FrameID";
        			values = values + "," + frameID;
     		}
-            sqlInsert = sqlInsert + ") VALUES (" + values + ")";
-            log.debug("AIMs insert:" + sqlInsert);
- 	        this.statement.executeUpdate(sqlInsert);
+            sql = sql + ") VALUES (" + values + ")";
+            log.debug("AIMs insert:" + sql);
+    	    this.statement = mySqlConnection.createStatement();
+ 	        this.statement.executeUpdate(sql);
     	} finally {
-    		statement.close();
+    		if (statement != null)
+    			statement.close();
+    		statement = null;
     	}
     }
 
@@ -407,6 +414,7 @@ public class AIMDatabaseOperations {
         try
         {
     	    this.statement = mySqlConnection.createStatement();
+    	    log.info(sqlSelect);
         	rs = this.statement.executeQuery(sqlSelect);
 			while (rs.next()) {
 				String UserName = rs.getString(1);
@@ -419,6 +427,7 @@ public class AIMDatabaseOperations {
 				String AnnotationID = rs.getString(8);
 				aims.add(new EPADAIM(AnnotationID, UserName, ProjectID, PatientID, StudyUID, SeriesUID, ImageUID, FrameID));
 			}
+    	    log.info("AIM Records " + aims.size());
         }
         finally
         {
@@ -488,6 +497,7 @@ public class AIMDatabaseOperations {
         {
         	if (rs != null) rs.close();
         	statement.close();
+    		statement = null;
         }
 		return null;
     }
