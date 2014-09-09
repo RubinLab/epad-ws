@@ -995,7 +995,7 @@ public class DefaultEpadOperations implements EpadOperations
 				}
 			}
 		}
-		log.warning("Could not find number of frames value  in DICOM headers for image " + imageUID);
+		//log.warning("Could not find number of frames value  in DICOM headers for image " + imageUID);
 		return 0;
 	}
 
