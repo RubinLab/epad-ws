@@ -46,8 +46,12 @@ import edu.stanford.epad.common.plugins.PluginConfig;
 import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.epad.common.util.XmlNamespaceTranslator;
+import edu.stanford.epad.dtos.internal.DICOMElement;
+import edu.stanford.epad.dtos.internal.DICOMElementList;
 import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeDatabase;
 import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeDatabaseOperations;
+import edu.stanford.epad.epadws.handlers.core.ImageReference;
+import edu.stanford.epad.epadws.queries.Dcm4CheeQueries;
 import edu.stanford.epad.epadws.xnat.XNATSessionOperations;
 import edu.stanford.hakan.aim3api.base.AimException;
 import edu.stanford.hakan.aim3api.base.DICOMImageReference;
@@ -205,11 +209,24 @@ public class AIMUtil
 		String studyUID = Attribute.getSingleStringValueOrEmptyString(dsoDICOMAttributes, TagFromName.StudyInstanceUID);
 		String seriesUID = Attribute.getSingleStringValueOrEmptyString(dsoDICOMAttributes, TagFromName.SeriesInstanceUID);
 		String imageUID = Attribute.getSingleStringValueOrEmptyString(dsoDICOMAttributes, TagFromName.SOPInstanceUID);
-		String referencedImageUID = Attribute.getSingleStringValueOrEmptyString(dsoDICOMAttributes,
-				TagFromName.ReferencedSOPInstanceUID);
+		// TODO: This call to get Referenced Image does not work ???
+		String[] referencedImageUID = Attribute.getStringValues(dsoDICOMAttributes, TagFromName.ReferencedSOPInstanceUID);
 		Dcm4CheeDatabaseOperations dcm4CheeDatabaseOperations = Dcm4CheeDatabase.getInstance()
 				.getDcm4CheeDatabaseOperations();
-		String referencedSeriesUID = dcm4CheeDatabaseOperations.getSeriesUIDForImage(referencedImageUID);
+		if (referencedImageUID == null || referencedImageUID.length == 0)
+		{
+			referencedImageUID = new String[1];
+			DICOMElementList dicomElementList = Dcm4CheeQueries.getDICOMElementsFromWADO(studyUID, seriesUID, imageUID);
+			for (DICOMElement dicomElement : dicomElementList.ResultSet.Result) {
+				if (dicomElement.tagCode.equals(PixelMedUtils.ReferencedSOPInstanceUIDCode))
+				{
+					referencedImageUID[0] = dicomElement.value;
+				}
+			}
+			if (referencedImageUID[0] == null)
+				throw new Exception("DSO Referenced Image UID not found: " + referencedImageUID);
+		}
+		String referencedSeriesUID = dcm4CheeDatabaseOperations.getSeriesUIDForImage(referencedImageUID[0]);
 
 		if (referencedSeriesUID.length() != 0) { // Found corresponding series in dcm4chee
 			String referencedStudyUID = studyUID; // Will be same study as DSO
@@ -226,11 +243,11 @@ public class AIMUtil
 					"SEG Only", "", "", "");
 
 			SegmentationCollection sc = new SegmentationCollection();
-			sc.AddSegmentation(new Segmentation(0, imageUID, sopClassUID, referencedImageUID, 1));
+			sc.AddSegmentation(new Segmentation(0, imageUID, sopClassUID, referencedImageUID[0], 1));
 			imageAnnotation.setSegmentationCollection(sc);
 
 			DICOMImageReference originalDICOMImageReference = PluginAIMUtil.createDICOMImageReference(referencedStudyUID,
-					referencedSeriesUID, referencedImageUID);
+					referencedSeriesUID, referencedImageUID[0]);
 			imageAnnotation.addImageReference(originalDICOMImageReference);
 			DICOMImageReference dsoDICOMImageReference = PluginAIMUtil.createDICOMImageReference(studyUID, seriesUID,
 					imageUID);
@@ -256,7 +273,7 @@ public class AIMUtil
 			imageAnnotation.addPerson(person);
 
 			// TODO Not general. See if we can generate AIM on GUI upload of DSO with correct user.
-			setImageAnnotationUser(imageAnnotation, "admin");
+			setImageAnnotationUser(imageAnnotation, "guest");
 
 			log.info("Saving AIM file for DSO " + imageUID + " in series " + seriesUID + " with ID "
 					+ imageAnnotation.getUniqueIdentifier());
@@ -439,6 +456,9 @@ public class AIMUtil
 		List<User> userList = new ArrayList<User>();
 		User user = new User();
 		user.setLoginName(username);
+		user.setName(username);
+		user.setCagridId(0);
+		userList.add(user);
 		imageAnnotation.setListUser(userList);
 	}
 

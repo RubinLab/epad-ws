@@ -16,6 +16,7 @@ import edu.stanford.epad.common.pixelmed.PixelMedUtils;
 import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.epad.dtos.SeriesProcessingStatus;
+import edu.stanford.epad.epadws.aim.AIMUtil;
 import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeDatabaseUtils;
 import edu.stanford.epad.epadws.epaddb.EpadDatabase;
 import edu.stanford.epad.epadws.epaddb.EpadDatabaseOperations;
@@ -136,8 +137,9 @@ public class QueueAndWatcherManager
 					if (!inputDICOMFile.exists()) {
 						inputDICOMFile = downloadRemoteDICOM(dicomFileDescription);
 					}
-				}
-				generateMaskPNGsForDicomSegmentationObject(dicomFileDescription, inputDICOMFile);
+					}
+				// Generate mask PNGs, also AIMFile if this is the first time (only one image)
+				generateMaskPNGsForDicomSegmentationObject(dicomFileDescription, inputDICOMFile, dicomFilesCopy.size() == 1);
 				if (sameSeries) break;
 			} else if (PixelMedUtils.isMultiframedDicom(dicomFilePath)) {
 				generatePNGsForMultiFrameDicom(dicomFileDescription, inputDICOMFile);
@@ -181,12 +183,12 @@ public class QueueAndWatcherManager
 			return dcm4cheeRootDir + "/";
 	}
 
-	private void generateMaskPNGsForDicomSegmentationObject(DICOMFileDescription dicomFileDescription, File dsoFile)
+	private void generateMaskPNGsForDicomSegmentationObject(DICOMFileDescription dicomFileDescription, File dsoFile , boolean generateAIM)
 	{
-		log.info("DICOM segmentation object found for series " + dicomFileDescription.seriesUID);
-
+		log.info("DICOM segmentation object found for series " + dicomFileDescription.seriesUID + " dso:" + dsoFile.getAbsolutePath());
+		String tagFilePath = createOutputPNGFilePathForSingleFrameDICOMImage(dicomFileDescription).replace(".png", ".tag");
 		DSOMaskPNGGeneratorTask dsoMaskPNGGeneratorTask = new DSOMaskPNGGeneratorTask(dicomFileDescription.seriesUID,
-				dsoFile);
+				dsoFile, generateAIM, tagFilePath);
 
 		pngGeneratorTaskQueue.offer(dsoMaskPNGGeneratorTask);
 	}

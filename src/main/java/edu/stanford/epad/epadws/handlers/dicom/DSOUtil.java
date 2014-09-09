@@ -180,7 +180,7 @@ public class DSOUtil
 				if (!dsoEditRequest.editedFrameNumbers.contains(new Integer(i)))
 				{
 					String fileName = dicomFilePaths.get(i);
-					fileName = fileName.substring(fileName.lastIndexOf("/")+1);
+					fileName = fileName.substring(fileName.lastIndexOf("/")+1) + ".tif";
 					dsoTIFFMaskFiles.add(copyEmptyTiffFile(tiffMaskFiles.get(0), fileName));
 				}
 				else
