@@ -119,10 +119,14 @@ public class AIMQueries
 		} else if (aimSearchType == AIMSearchType.PATIENT_ID) {
 			String patientId = value;
 			try {
-				if (useV4.equals("false"))
+				if (useV4.equals("false")) {
 					aims = AnnotationGetter.getImageAnnotationsFromServerByPersonIDAndUserNameEqual(eXistServerUrl, aimNamespace,
 							eXistCollection, eXistUsername, eXistPassword, patientId, username, xsdFilePath);
-				else {
+					List<ImageAnnotation> aims2 = AnnotationGetter.getImageAnnotationsFromServerByPersonIDAndUserNameEqual(eXistServerUrl, aimNamespace,
+							eXistCollection, eXistUsername, eXistPassword, patientId, "guest", xsdFilePath);
+					log.info("Number aims for user guest, for patientID:" + patientId +" :" + aims2.size());
+					aims.addAll(aims2);
+				} else {
 					List<edu.stanford.hakan.aim4api.base.ImageAnnotationCollection> iacs = edu.stanford.hakan.aim4api.usage.AnnotationGetter
 							.getImageAnnotationCollectionByUserNameAndPersonIdEqual(eXistServerUrl, aim4Namespace, eXistCollectionV4,
 									eXistUsername, eXistPassword, username, patientId);

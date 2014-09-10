@@ -209,6 +209,8 @@ public class AIMUtil
 		String studyUID = Attribute.getSingleStringValueOrEmptyString(dsoDICOMAttributes, TagFromName.StudyInstanceUID);
 		String seriesUID = Attribute.getSingleStringValueOrEmptyString(dsoDICOMAttributes, TagFromName.SeriesInstanceUID);
 		String imageUID = Attribute.getSingleStringValueOrEmptyString(dsoDICOMAttributes, TagFromName.SOPInstanceUID);
+		String description = Attribute.getSingleStringValueOrEmptyString(dsoDICOMAttributes, TagFromName.SeriesDescription);
+		
 		// TODO: This call to get Referenced Image does not work ???
 		String[] referencedImageUID = Attribute.getStringValues(dsoDICOMAttributes, TagFromName.ReferencedSOPInstanceUID);
 		Dcm4CheeDatabaseOperations dcm4CheeDatabaseOperations = Dcm4CheeDatabase.getInstance()
@@ -239,7 +241,9 @@ public class AIMUtil
 			log.info("Referenced SOP Instance UID=" + referencedImageUID);
 			log.info("Referenced Series Instance UID=" + referencedSeriesUID);
 
-			ImageAnnotation imageAnnotation = new ImageAnnotation(0, "", "2000-10-17T10:22:40", "segmentation", "SEG",
+			String name = description;
+			if (name == null || name.trim().length() == 0) name = "segmentation";
+			ImageAnnotation imageAnnotation = new ImageAnnotation(0, "", "2000-10-17T10:22:40", name, "SEG",
 					"SEG Only", "", "", "");
 
 			SegmentationCollection sc = new SegmentationCollection();

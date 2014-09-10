@@ -103,10 +103,13 @@ public class DICOMSeriesWatcher implements Runnable
 								+ unprocessedDICOMFiles.size() + " unprocessed DICOM image(s) remaining.");
 						activeSeriesProcessingDescription.updateWithDICOMFileDescriptions(unprocessedDICOMFiles);
 						activeSeriesPipelineState.registerActivity();
-						activeSeriesPipelineState.setSeriesProcessingState(DicomSeriesProcessingState.IN_PIPELINE);
+						if (!activeSeriesPipelineState.equals(DicomSeriesProcessingState.IN_PIPELINE)) // 
+						{
 						queueAndWatcherManager.addDICOMFileToPNGGeneratorPipeline(patientName, unprocessedDICOMFiles);
-						log.info("Submitted " + unprocessedDICOMFiles.size() + " image(s) for series " + seriesUID
+							log.info("Submitted " + unprocessedDICOMFiles.size() + " image(s) for series " + seriesUID
 								+ " to PNG generator");
+						}
+						activeSeriesPipelineState.setSeriesProcessingState(DicomSeriesProcessingState.IN_PIPELINE);
 					} else { // All images have been submitted for PNG processing.
 						/**
 						 * Here is (not fully tested) code to generated 4x4 grids from the generated PNGs. This could be very
