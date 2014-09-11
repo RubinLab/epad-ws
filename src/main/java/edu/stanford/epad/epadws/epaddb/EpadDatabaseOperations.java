@@ -96,7 +96,7 @@ public interface EpadDatabaseOperations
 
 	Set<EPADAIM> getAIMs(FrameReference frameReference);
 	
-	Set<EPADAIM> getAIMs(String projectID, AIMSearchType aimSearchType, String value);
+	Set<EPADAIM> getAIMs(String projectID, AIMSearchType aimSearchType, String value, int start, int count);
 
 	int getNumberOfAIMs(ProjectReference reference);
 

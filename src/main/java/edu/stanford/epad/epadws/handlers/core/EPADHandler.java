@@ -106,7 +106,7 @@ public class EPADHandler extends AbstractHandler
 		String sessionID = XNATSessionOperations.getJSessionIDFromRequest(httpRequest);
 		String pathInfo = httpRequest.getPathInfo();
 		int statusCode;
-		log.info("Request from client:" + pathInfo + " user:" + username + " sessionID:" + sessionID);
+		log.info("GET Request from client:" + pathInfo + " user:" + username + " sessionID:" + sessionID);
 		try {
 			if (sessionID == null)
 				throw new Exception("Invalid sessionID for user:" + username);
@@ -572,6 +572,51 @@ public class EPADHandler extends AbstractHandler
 				}
 				statusCode = HttpServletResponse.SC_OK;
 
+			} else if (HandlerUtil.matchesTemplate(AimsRouteTemplates.AIMS_LIST, pathInfo)) {
+				AIMSearchType aimSearchType = AIMUtil.getAIMSearchType(httpRequest);
+				String searchValue = aimSearchType != null ? httpRequest.getParameter(aimSearchType.getName()) : null;
+				String projectID = httpRequest.getParameter("projectID");
+				log.info("GET request for AIMs from user " + username + "; query type is " + aimSearchType + ", value "
+						+ searchValue + ", project " + projectID);
+				int start = getInt(httpRequest.getParameter("start"));
+				if (start == 0) start = 1;
+				int count = getInt(httpRequest.getParameter("count"));
+				if (count == 0) count = 5000;
+
+				EPADAIMList aims = epadOperations.getAIMDescriptions(projectID, aimSearchType, searchValue, username, sessionID, start, count);
+				if (returnSummary(httpRequest))
+				{	
+					responseStream.append(aims.toJSON());
+				}
+				else
+				{
+					if (aimSearchType == null && username.equals("admin"))
+					{
+						AIMUtil.queryAIMImageAnnotations(responseStream, projectID, AIMSearchType.ANNOTATION_UID,
+								"all", "", start, count);
+					}
+					else
+					{
+						AIMUtil.queryAIMImageAnnotations(responseStream, projectID, AIMSearchType.ANNOTATION_UID,
+								getUIDCsvList(aims), username, start, count);
+					}
+				}
+				statusCode = HttpServletResponse.SC_OK;
+
+			} else if (HandlerUtil.matchesTemplate(AimsRouteTemplates.AIM, pathInfo)) {
+				AIMReference aimReference = AIMReference.extract(AimsRouteTemplates.AIM, pathInfo);
+				EPADAIM aim = epadOperations.getAIMDescription(aimReference.aimID, username, sessionID);
+				if (returnSummary(httpRequest))
+				{	
+					responseStream.append(aim.toJSON());
+				}
+				else
+				{
+					AIMUtil.queryAIMImageAnnotations(responseStream, AIMSearchType.ANNOTATION_UID,
+							aim.aimID, username);					
+				}
+				statusCode = HttpServletResponse.SC_OK;
+
 			} else
 				statusCode = HandlerUtil.badRequestJSONResponse(BAD_GET_MESSAGE, responseStream, log);
 		} catch (Throwable t) {
@@ -587,7 +632,7 @@ public class EPADHandler extends AbstractHandler
 		String sessionID = XNATSessionOperations.getJSessionIDFromRequest(httpRequest);
 		String pathInfo = httpRequest.getPathInfo();
 		int statusCode;
-		log.info("Request from client:" + pathInfo + " user:" + username + " sessionID:" + sessionID);
+		log.info("PUT Request from client:" + pathInfo + " user:" + username + " sessionID:" + sessionID);
 
 		if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.PROJECT, pathInfo)) {
 			ProjectReference projectReference = ProjectReference.extract(ProjectsRouteTemplates.PROJECT, pathInfo);
@@ -682,6 +727,7 @@ public class EPADHandler extends AbstractHandler
 		String pathInfo = httpRequest.getPathInfo();
 		int statusCode;
 
+		log.info("POST Request from client:" + pathInfo + " user:" + username);
 		if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.FRAME_LIST, pathInfo)) {
 			ImageReference imageReference = ImageReference.extract(ProjectsRouteTemplates.FRAME_LIST, pathInfo);
 			String type = httpRequest.getParameter("type");
@@ -717,6 +763,7 @@ public class EPADHandler extends AbstractHandler
 		String pathInfo = httpRequest.getPathInfo();
 		int statusCode;
 
+		log.info("DELETE Request from client:" + pathInfo + " user:" + username + " sessionID:" + sessionID);
 		if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.PROJECT, pathInfo)) {
 			ProjectReference projectReference = ProjectReference.extract(ProjectsRouteTemplates.PROJECT, pathInfo);
 			statusCode = epadOperations.projectDelete(projectReference.projectID, sessionID, username);

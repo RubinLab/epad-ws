@@ -53,6 +53,7 @@ import edu.stanford.epad.dtos.internal.XNATProjectList;
 import edu.stanford.epad.dtos.internal.XNATSubject;
 import edu.stanford.epad.dtos.internal.XNATSubjectList;
 import edu.stanford.epad.dtos.internal.XNATUserList;
+import edu.stanford.epad.epadws.aim.AIMSearchType;
 import edu.stanford.epad.epadws.aim.AIMUtil;
 import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeDatabase;
 import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeDatabaseOperations;
@@ -401,7 +402,22 @@ public class DefaultEpadOperations implements EpadOperations
 	@Override
 	public int seriesDelete(SeriesReference seriesReference, String sessionID, String username)
 	{
-		if (Dcm4CheeOperations.deleteSeries(seriesReference.seriesUID))
+		String seriesPk = null;
+		List<Map<String, String>> seriesList = dcm4CheeDatabaseOperations.getAllSeriesInStudy(seriesReference.studyUID);
+		for (Map<String, String> seriesData: seriesList)
+		{
+			String uid = seriesData.get("series_iuid");
+			if (uid.equals(seriesReference.seriesUID))
+			{
+				seriesPk = seriesData.get("pk");
+			}
+		}
+		if (seriesPk == null)
+		{
+			log.warning("Series not found in DCM4CHE database");
+			return HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+		}
+		if (Dcm4CheeOperations.deleteSeries(seriesReference.seriesUID, seriesPk))
 			return HttpServletResponse.SC_OK;
 		else
 			return HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
@@ -577,14 +593,19 @@ public class DefaultEpadOperations implements EpadOperations
 	{
 		int xnatStatusCode;
 
-		log.info("Scheduling deletion task for study " + studyReference.studyUID + " for patient "
+		log.info("Deleting in XNAT: study " + studyReference.studyUID + " for patient "
 				+ studyReference.subjectID + " in project " + studyReference.projectID + " from user " + username);
 
 		xnatStatusCode = XNATDeletionOperations.deleteXNATDICOMStudy(studyReference.projectID, studyReference.studyUID,
 				studyReference.studyUID, sessionID);
-
-		(new Thread(new StudyDataDeleteTask(studyReference.projectID, studyReference.subjectID, studyReference.studyUID)))
-				.start();
+		log.info("Delete Study Status from XNAT:" + xnatStatusCode);
+		if (XNATDeletionOperations.successStatusCode(xnatStatusCode))
+		{
+			log.info("Scheduling deletion task for study " + studyReference.studyUID + " for patient "
+					+ studyReference.subjectID + " in project " + studyReference.projectID + " from user " + username);
+			(new Thread(new StudyDataDeleteTask(studyReference.projectID, studyReference.subjectID, studyReference.studyUID)))
+					.start();
+		}
 
 		return xnatStatusCode;
 	}
@@ -804,6 +825,19 @@ public class DefaultEpadOperations implements EpadOperations
 		Set<EPADAIM> aims = epadDatabaseOperations.getAIMs(frameReference);
 
 		return new EPADAIMList(new ArrayList<EPADAIM>(aims));
+	}
+
+	@Override
+	public EPADAIMList getAIMDescriptions(String projectID, AIMSearchType aimSearchType, String searchValue, String username, String sessionID, int start, int count) {
+		Set<EPADAIM> aims = epadDatabaseOperations.getAIMs(projectID, aimSearchType, searchValue, start, count);
+
+		return new EPADAIMList(new ArrayList<EPADAIM>(aims));
+	}
+
+	@Override
+	public EPADAIM getAIMDescription(String aimID, String username,
+			String sessionID) {
+		return epadDatabaseOperations.getAIM(aimID);
 	}
 
 	private EPADStudy dcm4cheeStudy2EpadStudy(String sessionID, String suppliedProjectID, String suppliedSubjectID,

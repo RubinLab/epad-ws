@@ -105,7 +105,7 @@ public class Dcm4CheeOperations
 	 * moveSeriesToTrash operation it calls has no effect in this version of dcm4chee. See:
 	 * http://www.dcm4che.org/jira/browse/WEB-955
 	 */
-	public static boolean deleteSeries(String seriesUID)
+	public static boolean deleteSeries(String seriesUID, String seriesPk)
 	{
 		InputStream is = null;
 		InputStreamReader isr = null;
@@ -115,7 +115,7 @@ public class Dcm4CheeOperations
 		try {
 			log.info("Deleting series " + seriesUID);
 
-			String[] command = { "./dcmdeleteSeries", seriesUID };
+			String[] command = { "./dcmdeleteSeries", seriesPk };
 			ProcessBuilder processBuilder = new ProcessBuilder(command);
 			String myScriptsDirectory = EPADConfig.getEPADWebServerMyScriptsDir();
 			processBuilder.directory(new File(myScriptsDirectory));
@@ -135,7 +135,7 @@ public class Dcm4CheeOperations
 			try {
 				int exitValue = process.waitFor();
 				if (exitValue == 0) {
-					log.info("Deleted DICOM series " + seriesUID);
+					log.info("Deleted DICOM series " + seriesUID + " pk:" + seriesPk);
 					success = true;
 				} else
 					log.warning("Failed to delete DICOM series " + seriesUID + "; exitValue=" + exitValue);

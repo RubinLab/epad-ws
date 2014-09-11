@@ -374,13 +374,16 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 	}
 
 	@Override
-	public Set<EPADAIM> getAIMs(String projectID, AIMSearchType aimSearchType, String value) {
+	public Set<EPADAIM> getAIMs(String projectID, AIMSearchType aimSearchType, String value, int start, int count) {
 		Connection c = null;
 		try {
 			c = getConnection();
 			AIMDatabaseOperations adb = new AIMDatabaseOperations(c, EPADConfig.eXistServerUrl,
 					EPADConfig.aim4Namespace, EPADConfig.eXistCollection, EPADConfig.eXistUsername, EPADConfig.eXistPassword);
-			return adb.getAIMs(projectID, aimSearchType, value);
+			if (aimSearchType == null)
+				return adb.getAIMs(projectID, null, null, null, null, 0, start, count);
+			else
+				return adb.getAIMs(projectID, aimSearchType, value, start, count);
 		} catch (SQLException sqle) {
 			log.warning("AIM Database operation failed:", sqle);
 		} finally {

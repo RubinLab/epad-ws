@@ -215,8 +215,24 @@ public class AIMUtil
 		String studyUID = Attribute.getSingleStringValueOrEmptyString(dsoDICOMAttributes, TagFromName.StudyInstanceUID);
 		String seriesUID = Attribute.getSingleStringValueOrEmptyString(dsoDICOMAttributes, TagFromName.SeriesInstanceUID);
 		String imageUID = Attribute.getSingleStringValueOrEmptyString(dsoDICOMAttributes, TagFromName.SOPInstanceUID);
+		String description = Attribute.getSingleStringValueOrEmptyString(dsoDICOMAttributes, TagFromName.SeriesDescription);
+		log.info("DSO Series description:" + description);
 		// TODO: This call to get Referenced Image does not work ???
 		String[] referencedImageUID = Attribute.getStringValues(dsoDICOMAttributes, TagFromName.ReferencedSOPInstanceUID);
+//		Need to try this instead		
+//		SequenceAttribute referencedSeriesSequence =(SequenceAttribute)dsoDICOMAttributes.get(TagFromName.ReferencedSeriesSequence);
+//		if (referencedSeriesSequence != null) {
+//		    Iterator sitems = referencedSeriesSequence.iterator();
+//		    if (sitems.hasNext()) {
+//		        SequenceItem sitem = (SequenceItem)sitems.next();
+//		        if (sitem != null) {
+//		            AttributeList list = sitem.getAttributeList();
+//		            Attribute a = list.get(TagFromName.ReferencedSOPClassUID);
+//        			Attribute b = list.get(TagFromName.ReferencedSOPInstanceUID);
+//        			Attribute c = list.get(TagFromName.ReferencedFrameNumber);
+//		        }
+//		    }
+//		}
 		Dcm4CheeDatabaseOperations dcm4CheeDatabaseOperations = Dcm4CheeDatabase.getInstance()
 				.getDcm4CheeDatabaseOperations();
 		if (referencedImageUID == null || referencedImageUID.length == 0)
@@ -245,7 +261,9 @@ public class AIMUtil
 			log.info("Referenced SOP Instance UID=" + referencedImageUID);
 			log.info("Referenced Series Instance UID=" + referencedSeriesUID);
 
-			ImageAnnotation imageAnnotation = new ImageAnnotation(0, "", "2000-10-17T10:22:40", "segmentation", "SEG",
+			String name = description;
+			if (name == null || name.trim().length() == 0) name = "segmentation";
+			ImageAnnotation imageAnnotation = new ImageAnnotation(0, "", "2000-10-17T10:22:40", name, "SEG",
 					"SEG Only", "", "", "");
 
 			SegmentationCollection sc = new SegmentationCollection();
@@ -454,7 +472,7 @@ public class AIMUtil
 		Set<String> aimIds = null;
 		if (projectID != null && projectID.trim().length() > 0)
 		{
-			Set<EPADAIM> aimRecords = EpadDatabase.getInstance().getEPADDatabaseOperations().getAIMs(projectID, aimSearchType, searchValue);
+			Set<EPADAIM> aimRecords = EpadDatabase.getInstance().getEPADDatabaseOperations().getAIMs(projectID, aimSearchType, searchValue, index, count);
 			aimIds = new HashSet<String>();
 			for (EPADAIM aimRec: aimRecords)
 			{

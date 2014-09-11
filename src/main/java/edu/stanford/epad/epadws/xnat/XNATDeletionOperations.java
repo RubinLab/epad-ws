@@ -35,7 +35,7 @@ public class XNATDeletionOperations
 			log.info("Invoking XNAT with URL " + xnatProjectDeleteURL);
 			xnatStatusCode = client.executeMethod(method);
 			if (unexpectedDeletionStatusCode(xnatStatusCode))
-				log.warning("Failure calling XNAT; status code = " + xnatStatusCode);
+				log.warning("Failure calling XNAT to delete project; status code = " + xnatStatusCode);
 			else {
 				eventTracker.recordProjectEvent(jsessionID, xnatProjectLabelOrID);
 			}
@@ -61,7 +61,7 @@ public class XNATDeletionOperations
 			log.info("Invoking XNAT with URL " + xnatSubjectDeleteURL);
 			xnatStatusCode = client.executeMethod(method);
 			if (unexpectedDeletionStatusCode(xnatStatusCode))
-				log.warning("Failure calling XNAT; status code = " + xnatStatusCode);
+				log.warning("Failure calling XNAT to delete subject; status code = " + xnatStatusCode);
 			else {
 				eventTracker.recordPatientEvent(jsessionID, xnatProjectLabelOrID, xnatSubjectLabelOrID);
 			}
@@ -90,7 +90,7 @@ public class XNATDeletionOperations
 			log.info("Invoking XNAT with URL " + xnatStudyDeleteURL);
 			xnatStatusCode = client.executeMethod(method);
 			if (unexpectedDeletionStatusCode(xnatStatusCode))
-				log.warning("Failure calling XNAT; status code = " + xnatStatusCode);
+				log.warning("Failure calling XNAT to delete Study; status code = " + xnatStatusCode);
 			else {
 				eventTracker.recordStudyEvent(sessionID, xnatProjectLabelOrID, xnatSubjectLabelOrID, studyUID);
 			}
@@ -107,5 +107,10 @@ public class XNATDeletionOperations
 	private static boolean unexpectedDeletionStatusCode(int statusCode)
 	{
 		return !(statusCode == HttpServletResponse.SC_OK || statusCode == HttpServletResponse.SC_ACCEPTED);
+	}
+
+	public static boolean successStatusCode(int statusCode)
+	{
+		return (statusCode == HttpServletResponse.SC_OK || statusCode == HttpServletResponse.SC_ACCEPTED);
 	}
 }

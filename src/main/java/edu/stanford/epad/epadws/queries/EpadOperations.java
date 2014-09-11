@@ -20,6 +20,7 @@ import edu.stanford.epad.dtos.EPADStudyList;
 import edu.stanford.epad.dtos.EPADSubject;
 import edu.stanford.epad.dtos.EPADSubjectList;
 import edu.stanford.epad.dtos.internal.DCM4CHEESeries;
+import edu.stanford.epad.epadws.aim.AIMSearchType;
 import edu.stanford.epad.epadws.handlers.core.EPADSearchFilter;
 import edu.stanford.epad.epadws.handlers.core.FrameReference;
 import edu.stanford.epad.epadws.handlers.core.ImageReference;
@@ -119,6 +120,9 @@ public interface EpadOperations
 
 	EPADAIM getFrameAIMDescription(FrameReference frameReference, String aimID, String username, String sessionID);
 
+	EPADAIMList getAIMDescriptions(String projectID, AIMSearchType aimSearchType, String searchValue, String username, String sessionID, int start, int count);
+	
+	EPADAIM getAIMDescription(String aimID, String username, String sessionID);
 	/**
 	 * See if new series have been uploaded to DCM4CHEE that ePAD does not know about.
 	 */

@@ -77,13 +77,14 @@ public class AIMQueries
 	
 	public static List<ImageAnnotation> getAIMImageAnnotations(AIMSearchType aimSearchType, String value, String username, int startIndex, int count)
 	{
+		log.info("Getting AIM annotations, aimSearchType:" + aimSearchType + " value:" + value + " start:" + startIndex + " count:" + count);
 		List<ImageAnnotation> resultAims = new ArrayList<ImageAnnotation>();
 		List<ImageAnnotation> aims = null;
 		ImageAnnotation aim = null;
 		long time1 = System.currentTimeMillis();
 		if (username.equals("")) { // TODO Temporary hack to get all annotations!
 			try {
-				log.info("Getting all AIM annotations");
+				log.info("Getting all AIM annotations, start:" + startIndex + " count:" + count);
 				if (useV4.equals("false"))
 					aims = AnnotationGetter.getAllImageAnnotationsFromServer(eXistServerUrl, aimNamespace,
 							eXistCollection, eXistUsername, eXistPassword, xsdFilePath, startIndex, count);					

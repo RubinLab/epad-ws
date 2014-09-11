@@ -392,6 +392,9 @@ public class AIMDatabaseOperations {
     }
     
     public Set<EPADAIM> getAIMs(String projectID, String patientID, String studyUID, String seriesUID, String imageUID, int frameID) throws SQLException {
+    	return getAIMs(projectID, patientID, studyUID, seriesUID, imageUID, frameID, 1, 5000);
+    }
+    public Set<EPADAIM> getAIMs(String projectID, String patientID, String studyUID, String seriesUID, String imageUID, int frameID, int start, int count) throws SQLException {
         String sqlSelect = "SELECT UserLoginName, ProjectUID, PatientID, StudyUID, SeriesUID, ImageUID, frameID, AnnotationUID FROM annotations WHERE 1 = 1";
 		if (projectID != null && projectID.length() > 0)
 			sqlSelect = sqlSelect + " and ProjectUID = '" + projectID + "'";
@@ -413,10 +416,12 @@ public class AIMDatabaseOperations {
         Set<EPADAIM> aims = new HashSet<EPADAIM>();
         try
         {
+        	int row = 1;
     	    this.statement = mySqlConnection.createStatement();
     	    log.info(sqlSelect);
         	rs = this.statement.executeQuery(sqlSelect);
 			while (rs.next()) {
+				if (row++ < start) continue;
 				String UserName = rs.getString(1);
 				String ProjectID = rs.getString(2);
 				String PatientID = rs.getString(3);
@@ -426,6 +431,7 @@ public class AIMDatabaseOperations {
 				int FrameID = rs.getInt(7);
 				String AnnotationID = rs.getString(8);
 				aims.add(new EPADAIM(AnnotationID, UserName, ProjectID, PatientID, StudyUID, SeriesUID, ImageUID, FrameID));
+				if (row > start+count) break;
 			}
     	    log.info("AIM Records " + aims.size());
         }
@@ -504,6 +510,10 @@ public class AIMDatabaseOperations {
 	
 	public Set<EPADAIM> getAIMs(String projectID, AIMSearchType aimSearchType, String value) throws SQLException
 	{
+		return getAIMs(projectID, aimSearchType, value, 1, 5000);
+	}
+	public Set<EPADAIM> getAIMs(String projectID, AIMSearchType aimSearchType, String value, int start, int count) throws SQLException
+	{
 		Set<EPADAIM> aims = new HashSet<EPADAIM>();
 		long time1 = System.currentTimeMillis();
 		if (aimSearchType == AIMSearchType.PERSON_NAME) {
@@ -519,16 +529,16 @@ public class AIMDatabaseOperations {
     			}
     		}
 			if (patientID == null) return aims;
-		    return getAIMs(projectID, patientID, null, null, null, 0);
+		    return getAIMs(projectID, patientID, null, null, null, 0, start, count);
 		} else if (aimSearchType == AIMSearchType.PATIENT_ID) {
 			String patientID = value;
-		    return getAIMs(projectID, patientID, null, null, null, 0);
+		    return getAIMs(projectID, patientID, null, null, null, 0, start, count);
 		} else if (aimSearchType == AIMSearchType.SERIES_UID) {
 			String seriesID = value;
-		    return getAIMs(projectID, null, null, seriesID, null, 0);
+		    return getAIMs(projectID, null, null, seriesID, null, 0, start, count);
 		} else if (aimSearchType == AIMSearchType.ANNOTATION_UID) {
 			if (value.equals("all")) {
-				return this.getAIMs(projectID, null, null, null, null, 0);
+				return this.getAIMs(projectID, null, null, null, null, 0, start, count);
 			} else {
 				String annotationUID = value;
 				EPADAIM aim =  getAIM(annotationUID);
@@ -536,7 +546,7 @@ public class AIMDatabaseOperations {
 				return aims;
 			}
 		} else if (aimSearchType.equals(AIMSearchType.AIM_QUERY)) {
-			return this.getAIMs(projectID, null, null, null, null, 0);
+			return this.getAIMs(projectID, null, null, null, null, 0, start, count);
 		} else {
 			log.warning("Unknown AIM search type " + aimSearchType.getName());
 		}
