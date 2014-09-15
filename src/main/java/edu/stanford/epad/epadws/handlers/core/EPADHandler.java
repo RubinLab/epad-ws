@@ -776,14 +776,24 @@ public class EPADHandler extends AbstractHandler
 			StudyReference studyReference = StudyReference.extract(ProjectsRouteTemplates.STUDY, pathInfo);
 			statusCode = epadOperations.studyDelete(studyReference, sessionID, username);
 
+		} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.SERIES, pathInfo)) {
+			SeriesReference seriesReference = SeriesReference.extract(ProjectsRouteTemplates.SERIES, pathInfo);
+			statusCode = epadOperations.seriesDelete(seriesReference, sessionID, username);
+
+		} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.PROJECT_AIM, pathInfo)) {
+			ProjectReference projectReference = ProjectReference.extract(ProjectsRouteTemplates.PROJECT, pathInfo);
+			AIMReference aimReference = AIMReference.extract(ProjectsRouteTemplates.PROJECT_AIM, pathInfo);
+			statusCode = epadOperations.projectAIMDelete(projectReference, aimReference.aimID, sessionID, username);
+
+		} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.SUBJECT_AIM, pathInfo)) {
+			SubjectReference subjectReference = SubjectReference.extract(ProjectsRouteTemplates.SUBJECT_AIM, pathInfo);
+			AIMReference aimReference = AIMReference.extract(ProjectsRouteTemplates.SUBJECT_AIM, pathInfo);
+			statusCode = epadOperations.subjectAIMDelete(subjectReference, aimReference.aimID, sessionID, username);
+
 		} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.STUDY_AIM, pathInfo)) {
 			StudyReference studyReference = StudyReference.extract(ProjectsRouteTemplates.STUDY_AIM, pathInfo);
 			AIMReference aimReference = AIMReference.extract(ProjectsRouteTemplates.STUDY_AIM, pathInfo);
 			statusCode = epadOperations.studyAIMDelete(studyReference, aimReference.aimID, sessionID, username);
-
-		} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.SERIES, pathInfo)) {
-			SeriesReference seriesReference = SeriesReference.extract(ProjectsRouteTemplates.SERIES, pathInfo);
-			statusCode = epadOperations.seriesDelete(seriesReference, sessionID, username);
 
 		} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.SERIES_AIM, pathInfo)) {
 			SeriesReference seriesReference = SeriesReference.extract(ProjectsRouteTemplates.SERIES_AIM, pathInfo);
@@ -800,6 +810,9 @@ public class EPADHandler extends AbstractHandler
 			AIMReference aimReference = AIMReference.extract(ProjectsRouteTemplates.FRAME_AIM, pathInfo);
 			statusCode = epadOperations.frameAIMDelete(frameReference, aimReference.aimID, sessionID, username);
 
+		} else if (HandlerUtil.matchesTemplate(AimsRouteTemplates.AIM, pathInfo)) {
+			AIMReference aimReference = AIMReference.extract(AimsRouteTemplates.AIM, pathInfo);
+			statusCode = epadOperations.aimDelete(aimReference.aimID, sessionID, username);
 		} else {
 			statusCode = HandlerUtil.badRequestJSONResponse(BAD_DELETE_MESSAGE, responseStream, log);
 		}

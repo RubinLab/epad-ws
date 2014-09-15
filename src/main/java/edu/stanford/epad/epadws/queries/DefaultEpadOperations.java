@@ -61,6 +61,7 @@ import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeOperations;
 import edu.stanford.epad.epadws.epaddb.EpadDatabase;
 import edu.stanford.epad.epadws.epaddb.EpadDatabaseOperations;
 import edu.stanford.epad.epadws.epaddb.PNGFilesOperations;
+import edu.stanford.epad.epadws.handlers.core.AIMReference;
 import edu.stanford.epad.epadws.handlers.core.EPADSearchFilter;
 import edu.stanford.epad.epadws.handlers.core.FrameReference;
 import edu.stanford.epad.epadws.handlers.core.ImageReference;
@@ -697,10 +698,53 @@ public class DefaultEpadOperations implements EpadOperations
 	}
 
 	@Override
+	public int projectAIMDelete(ProjectReference projectReference, String aimID,
+			String sessionID, String username) {
+		try {
+			EPADAIM aim = getAIMDescription(aimID, username, sessionID);
+			if (!"admin".equals(username) && !aim.userName.equals(username) && !XNATQueries.isOwner(sessionID, username, aim.projectID))
+			{
+				log.warning("No permissions to delete AIM:" + aimID + " for user " + username);
+				return HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+			}
+			AIMUtil.deleteAIM(aimID);
+			epadDatabaseOperations.deleteAIM(username, projectReference, aimID);
+			return HttpServletResponse.SC_OK;
+		} catch (Exception e) {
+			return HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+		}
+	}
+
+	@Override
+	public int subjectAIMDelete(SubjectReference subjectReference, String aimID,
+			String sessionID, String username) {
+		try {
+			EPADAIM aim = getAIMDescription(aimID, username, sessionID);
+			if (!"admin".equals(username) && !aim.userName.equals(username) && !XNATQueries.isOwner(sessionID, username, aim.projectID))
+			{
+				log.warning("No permissions to delete AIM:" + aimID + " for user " + username);
+				return HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+			}
+			AIMUtil.deleteAIM(aimID);
+			epadDatabaseOperations.deleteAIM(username, subjectReference, aimID);
+			return HttpServletResponse.SC_OK;
+		} catch (Exception e) {
+			return HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+		}
+	}
+
+	@Override
 	public int studyAIMDelete(StudyReference studyReference, String aimID, String sessionID, String username)
 	{
 		try {
-			epadDatabaseOperations.addAIM(username, studyReference, aimID);
+			EPADAIM aim = getAIMDescription(aimID, username, sessionID);
+			if (!"admin".equals(username) && !aim.userName.equals(username) && !XNATQueries.isOwner(sessionID, username, aim.projectID))
+			{
+				log.warning("No permissions to delete AIM:" + aimID + " for user " + username);
+				return HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+			}
+			AIMUtil.deleteAIM(aimID);
+			epadDatabaseOperations.deleteAIM(username, studyReference, aimID);
 			return HttpServletResponse.SC_OK;
 		} catch (Exception e) {
 			return HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
@@ -711,7 +755,14 @@ public class DefaultEpadOperations implements EpadOperations
 	public int seriesAIMDelete(SeriesReference seriesReference, String aimID, String sessionID, String username)
 	{
 		try {
-			epadDatabaseOperations.addAIM(username, seriesReference, aimID);
+			EPADAIM aim = getAIMDescription(aimID, username, sessionID);
+			if (!"admin".equals(username) && !aim.userName.equals(username) && !XNATQueries.isOwner(sessionID, username, aim.projectID))
+			{
+				log.warning("No permissions to delete AIM:" + aimID + " for user " + username);
+				return HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+			}
+			AIMUtil.deleteAIM(aimID);
+			epadDatabaseOperations.deleteAIM(username, seriesReference, aimID);
 			return HttpServletResponse.SC_OK;
 		} catch (Exception e) {
 			return HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
@@ -722,7 +773,14 @@ public class DefaultEpadOperations implements EpadOperations
 	public int imageAIMDelete(ImageReference imageReference, String aimID, String sessionID, String username)
 	{
 		try {
-			epadDatabaseOperations.addAIM(username, imageReference, aimID);
+			EPADAIM aim = getAIMDescription(aimID, username, sessionID);
+			if (!"admin".equals(username) && !aim.userName.equals(username) && !XNATQueries.isOwner(sessionID, username, aim.projectID))
+			{
+				log.warning("No permissions to delete AIM:" + aimID + " for user " + username);
+				return HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+			}
+			AIMUtil.deleteAIM(aimID);
+			epadDatabaseOperations.deleteAIM(username, imageReference, aimID);
 			return HttpServletResponse.SC_OK;
 		} catch (Exception e) {
 			return HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
@@ -733,7 +791,31 @@ public class DefaultEpadOperations implements EpadOperations
 	public int frameAIMDelete(FrameReference frameReference, String aimID, String sessionID, String username)
 	{
 		try {
-			epadDatabaseOperations.addAIM(username, frameReference, aimID);
+			EPADAIM aim = getAIMDescription(aimID, username, sessionID);
+			if (!"admin".equals(username) && !aim.userName.equals(username) && !XNATQueries.isOwner(sessionID, username, aim.projectID))
+			{
+				log.warning("No permissions to delete AIM:" + aimID + " for user " + username);
+				return HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+			}
+			AIMUtil.deleteAIM(aimID);
+			epadDatabaseOperations.deleteAIM(username, frameReference, aimID);
+			return HttpServletResponse.SC_OK;
+		} catch (Exception e) {
+			return HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+		}
+	}
+
+	@Override
+	public int aimDelete(String aimID, String sessionID, String username) {
+		try {
+			EPADAIM aim = getAIMDescription(aimID, username, sessionID);
+			if (!"admin".equals(username) && !aim.userName.equals(username) && !XNATQueries.isOwner(sessionID, username, aim.projectID))
+			{
+				log.warning("No permissions to delete AIM:" + aimID + " for user " + username);
+				return HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+			}
+			AIMUtil.deleteAIM(aimID);
+			epadDatabaseOperations.deleteAIM(username, aimID);
 			return HttpServletResponse.SC_OK;
 		} catch (Exception e) {
 			return HttpServletResponse.SC_INTERNAL_SERVER_ERROR;

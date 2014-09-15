@@ -126,6 +126,20 @@ public interface EpadDatabaseOperations
 
 	void addAIM(String userName, FrameReference reference, String aimID);
 
+	void deleteAIM(String userName, ProjectReference reference, String aimID);
+
+	void deleteAIM(String userName, SubjectReference reference, String aimID);
+
+	void deleteAIM(String userName, StudyReference reference, String aimID);
+
+	void deleteAIM(String userName, SeriesReference reference, String aimID);
+
+	void deleteAIM(String userName, ImageReference reference, String aimID);
+
+	void deleteAIM(String userName, FrameReference reference, String aimID);
+
+	void deleteAIM(String userName, String aimID);
+
 	// Coordination methods; will disappear with AIM 4
 
 	/**

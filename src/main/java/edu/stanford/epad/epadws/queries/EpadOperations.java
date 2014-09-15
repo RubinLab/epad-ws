@@ -21,6 +21,7 @@ import edu.stanford.epad.dtos.EPADSubject;
 import edu.stanford.epad.dtos.EPADSubjectList;
 import edu.stanford.epad.dtos.internal.DCM4CHEESeries;
 import edu.stanford.epad.epadws.aim.AIMSearchType;
+import edu.stanford.epad.epadws.handlers.core.AIMReference;
 import edu.stanford.epad.epadws.handlers.core.EPADSearchFilter;
 import edu.stanford.epad.epadws.handlers.core.FrameReference;
 import edu.stanford.epad.epadws.handlers.core.ImageReference;
@@ -88,6 +89,10 @@ public interface EpadOperations
 
 	int seriesDelete(SeriesReference seriesReference, String sessionID, String username);
 
+	int projectAIMDelete(ProjectReference projectReference, String aimID, String sessionID, String username);
+
+	int subjectAIMDelete(SubjectReference subjectReference, String aimID, String sessionID, String username);
+
 	int studyAIMDelete(StudyReference studyReference, String aimID, String sessionID, String username);
 
 	int seriesAIMDelete(SeriesReference seriesReference, String aimID, String sessionID, String username);
@@ -95,6 +100,8 @@ public interface EpadOperations
 	int imageAIMDelete(ImageReference imageReference, String aimID, String sessionID, String username);
 
 	int frameAIMDelete(FrameReference frameReference, String aimID, String sessionID, String username);
+
+	int aimDelete(String aimID, String sessionID, String username);
 
 	EPADAIMList getProjectAIMDescriptions(ProjectReference projectReference, String username, String sessionID);
 
