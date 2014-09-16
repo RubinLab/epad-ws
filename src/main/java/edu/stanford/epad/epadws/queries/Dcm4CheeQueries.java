@@ -160,10 +160,14 @@ public class Dcm4CheeQueries
 						String dicomElementString;
 						FileReader tagFileReader = new FileReader(tempTag.getAbsolutePath());
 						tagReader = new BufferedReader(tagFileReader);
-
+						boolean skipThumbnail = false;
 						while ((dicomElementString = tagReader.readLine()) != null) {
+							if (dicomElementString.contains("(0009,1110)"))  // hard code for now TODO:???
+								skipThumbnail = true;
+							if (dicomElementString.contains("(FFFE,E0DD)"))
+								skipThumbnail = false;
 							DICOMElement dicomElement = decodeDICOMElementString(dicomElementString);
-							if (dicomElement != null) {
+							if (!skipThumbnail && dicomElement != null) {
 								dicomElementList.addDICOMElement(dicomElement);
 							} else {
 								// log.warning("Warning: could not decode DICOM element " + dicomElementString + "; skipping");
