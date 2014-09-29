@@ -172,8 +172,10 @@ public class Main
 
 		addHandlerAtContextPath(new AimResourceHandler(), "/epad/aimresource", handlerList);
 
-		addHandlerAtContextPath(new EPadPluginHandler(), "/epad/plugin", handlerList);
-
+		if (!"true".equalsIgnoreCase(EPADConfig.getParamValue("DISABLE_PULGINS")))
+		{	
+			addHandlerAtContextPath(new EPadPluginHandler(), "/epad/plugin", handlerList);
+		}
 		addHandlerAtContextPath(new EventHandler(), "/epad/eventresource", handlerList);
 		addHandlerAtContextPath(new ProjectEventHandler(), "/epad/events", handlerList);
 
@@ -187,6 +189,7 @@ public class Main
 		ContextHandlerCollection contexts = new ContextHandlerCollection();
 		contexts.setHandlers(handlerList.toArray(new Handler[handlerList.size()]));
 		server.setHandler(contexts);
+		log.info("Done setting up restapi handlers");
 	}
 
 	private static void addHandlerAtContextPath(Handler handler, String contextPath, List<Handler> handlerList)
@@ -242,6 +245,7 @@ public class Main
 	 */
 	private static void loadPluginClasses()
 	{
+		try {
 		PluginHandlerMap pluginHandlerMap = PluginHandlerMap.getInstance();
 		PluginConfig pluginConfig = PluginConfig.getInstance();
 		List<String> pluginHandlerList = pluginConfig.getPluginHandlerList();
@@ -256,6 +260,11 @@ public class Main
 				log.warning("Could not find plugin class: " + pluginClassName);
 			}
 		}
+		}
+		catch (Exception x) {
+			log.warning("Error loading plugin", x);
+		}
+		log.info("Done loading plugins");
 	}
 
 	private static void stopServer(Server server)

@@ -16,6 +16,7 @@ import javax.servlet.http.HttpServletResponse;
 import org.apache.commons.io.IOUtils;
 
 import edu.stanford.epad.common.dicom.DCM4CHEEUtil;
+import edu.stanford.epad.common.pixelmed.PixelMedUtils;
 import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.epad.dtos.internal.DCM4CHEESeries;
 import edu.stanford.epad.dtos.internal.DCM4CHEESeriesList;
@@ -119,7 +120,6 @@ public class Dcm4CheeQueries
 				.getDcm4CheeDatabaseOperations();
 		List<Map<String, String>> series = dcm4CheeDatabaseOperations.getAllSeriesInStudy(studyUID);
 		DCM4CHEESeriesList dcm4cheeSeriesList = new DCM4CHEESeriesList();
-
 		for (Map<String, String> dcm4CheeSeriesData : series) {
 			DCM4CHEESeries dcm4cheeSeries = extractDCM4CHEESeriesFromSeriesData(dcm4CheeSeriesData);
 			dcm4cheeSeriesList.addDCM4CHEESeries(dcm4cheeSeries);
@@ -160,10 +160,14 @@ public class Dcm4CheeQueries
 						String dicomElementString;
 						FileReader tagFileReader = new FileReader(tempTag.getAbsolutePath());
 						tagReader = new BufferedReader(tagFileReader);
-
+						boolean skipThumbnail = false;
 						while ((dicomElementString = tagReader.readLine()) != null) {
+							if (dicomElementString.contains("(0009,1110)"))  // hard code for now TODO:???
+								skipThumbnail = true;
+							if (dicomElementString.contains("(FFFE,E0DD)"))
+								skipThumbnail = false;
 							DICOMElement dicomElement = decodeDICOMElementString(dicomElementString);
-							if (dicomElement != null) {
+							if (!skipThumbnail && dicomElement != null) {
 								dicomElementList.addDICOMElement(dicomElement);
 							} else {
 								// log.warning("Warning: could not decode DICOM element " + dicomElementString + "; skipping");
@@ -229,9 +233,10 @@ public class Dcm4CheeQueries
 		String department = getStringValueFromRow(dcm4CheeSeriesData, "department");
 		String accessionNumber = getStringValueFromRow(dcm4CheeSeriesData, "accession_no");
 		String createdTime = getTimestampFromRow(dcm4CheeSeriesData, "created_time");
+		boolean isDSO = "SEG".equalsIgnoreCase(getStringValueFromRow(dcm4CheeSeriesData, "modality"));
 		DCM4CHEESeries dcm4cheeSeries = new DCM4CHEESeries(studyUID, seriesUID, patientID, patientName, seriesDate,
 				examType, thumbnailURL, seriesDescription, numberOfSeriesRelatedInstances, imagesInSeries, seriesStatus,
-				bodyPart, institution, stationName, department, accessionNumber, createdTime);
+				bodyPart, institution, stationName, department, accessionNumber, createdTime, isDSO);
 		return dcm4cheeSeries;
 
 	}

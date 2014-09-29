@@ -82,7 +82,7 @@ public class AIMQueries
 		List<ImageAnnotation> aims = null;
 		ImageAnnotation aim = null;
 		long time1 = System.currentTimeMillis();
-		if (username.equals("")) { // TODO Temporary hack to get all annotations!
+		if (username != null && username.equals("")) { // TODO Temporary hack to get all annotations!
 			try {
 				log.info("Getting all AIM annotations, start:" + startIndex + " count:" + count);
 				if (useV4.equals("false"))
@@ -129,8 +129,8 @@ public class AIMQueries
 					aims = AnnotationGetter.getImageAnnotationsFromServerByPersonIDAndUserNameEqual(eXistServerUrl, aimNamespace,
 							eXistCollection, eXistUsername, eXistPassword, patientId, username, xsdFilePath);
 					List<ImageAnnotation> aims2 = AnnotationGetter.getImageAnnotationsFromServerByPersonIDAndUserNameEqual(eXistServerUrl, aimNamespace,
-							eXistCollection, eXistUsername, eXistPassword, patientId, "guest", xsdFilePath);
-					log.info("Number aims for user guest, for patientID:" + patientId +" :" + aims2.size());
+							eXistCollection, eXistUsername, eXistPassword, patientId, "shared", xsdFilePath);
+					log.info("Number aims for user shared, for patientID:" + patientId +" :" + aims2.size());
 					aims.addAll(aims2);
 				} else {
 					List<edu.stanford.hakan.aim4api.base.ImageAnnotationCollection> iacs = edu.stanford.hakan.aim4api.usage.AnnotationGetter
@@ -175,11 +175,11 @@ public class AIMQueries
 				// String query = "SELECT FROM " + collection + " WHERE (ImageAnnotation.cagridId like '0')";
 				try {
 					if (useV4.equals("false"))
-						aims = AnnotationGetter.getImageAnnotationsFromServerByUserLoginNameContains(eXistServerUrl, aimNamespace,
+						aims = AnnotationGetter.getImageAnnotationsFromServerByUserLoginNameEqual(eXistServerUrl, aimNamespace,
 								eXistCollection, eXistUsername, eXistPassword, username);
 					else {
 						List<edu.stanford.hakan.aim4api.base.ImageAnnotationCollection> iacs = edu.stanford.hakan.aim4api.usage.AnnotationGetter
-								.getImageAnnotationCollectionByUserLoginNameContains(eXistServerUrl, aim4Namespace, eXistCollectionV4,
+								.getImageAnnotationCollectionByUserLoginNameEqual(eXistServerUrl, aim4Namespace, eXistCollectionV4,
 										eXistUsername, eXistPassword, username);
 						if (aims == null)
 							aims = new ArrayList<ImageAnnotation>();
@@ -214,6 +214,10 @@ public class AIMQueries
 				if (aims != null)
 					resultAims.addAll(aims);
 			} else {
+				if (annotationUID.trim().length() == 0)
+				{
+					return resultAims;
+				}
 				try {
 					if (useV4.equals("false"))
 						aim = AnnotationGetter.getImageAnnotationFromServerByUniqueIdentifier(eXistServerUrl, aimNamespace,
@@ -260,7 +264,7 @@ public class AIMQueries
 			log.warning("Unknown AIM search type " + aimSearchType.getName());
 		}
 		long time2 = System.currentTimeMillis();
-		log.info("AIM query took " + (time2-time1) + " msecs");
+		log.info("AIM query took " + (time2-time1) + " msecs for " + resultAims.size() + " aims");
 		return resultAims;
 	}
 
@@ -280,7 +284,7 @@ public class AIMQueries
 		List<ImageAnnotationCollection> aims = null;
 		ImageAnnotationCollection aim = null;
 
-		if (username.equals("")) { // TODO Temporary hack to get all annotations!
+		if (username != null && username.equals("")) { // TODO Temporary hack to get all annotations!
 			try {
 				log.info("Getting all AIM annotations");
 					aims = edu.stanford.hakan.aim4api.usage.AnnotationGetter

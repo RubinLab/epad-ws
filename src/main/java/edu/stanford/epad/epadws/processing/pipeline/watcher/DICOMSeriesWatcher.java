@@ -89,7 +89,13 @@ public class DICOMSeriesWatcher implements Runnable
 					int numberOfInstances = seriesProcessingDescription.getNumberOfInstances();
 					log.info("Series watcher found new series " + seriesUID + " for patient " + patientName + " with "
 							+ numberOfInstances + " instance(s).");
-					dicomSeriesTracker.addSeriesPipelineState(new SeriesPipelineState(seriesProcessingDescription));
+					if (!dicomSeriesTracker.getSeriesPipelineStates().contains(seriesUID))
+					{
+						dicomSeriesTracker.addSeriesPipelineState(new SeriesPipelineState(seriesProcessingDescription));
+					}
+					else
+						log.info("Series " + seriesUID + " is already on queue");
+
 				}
 				// Loop through all series being processed and find images that have no corresponding PNG file recorded in ePAD
 				// database. Update their status to reflect this so that we can monitor percent completion for each series.

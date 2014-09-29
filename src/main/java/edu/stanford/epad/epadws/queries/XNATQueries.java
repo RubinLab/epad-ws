@@ -17,6 +17,7 @@ import org.apache.commons.io.IOUtils;
 import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
 
+import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.epad.dtos.internal.XNATExperiment;
 import edu.stanford.epad.dtos.internal.XNATExperimentList;
@@ -76,6 +77,21 @@ public class XNATQueries
 		return result;
 	}
 
+	public static String getFirstProjectForStudy(String sessionID, String studyUID)
+	{
+		XNATProjectList xnatProjectList = allProjects(sessionID);
+
+		for (XNATProject project : xnatProjectList.ResultSet.Result)
+		{
+			if (project.name.equalsIgnoreCase(EPADConfig.xnatUploadProjectID)) continue;
+			XNATExperimentList dicomExperiments = getDICOMExperiments(sessionID, project.name);	
+			for (XNATExperiment dicomExperiment : dicomExperiments.ResultSet.Result)
+				if(dicomExperiment.label.equals(studyUID))
+					return project.name;
+		}
+		return EPADConfig.xnatUploadProjectID;
+	}
+
 	// Returns map: subjectID -> set of studyUIDs
 	public static Map<String, Set<String>> getSubjectsAndStudies(String sessionID, String projectID)
 	{
@@ -102,10 +118,18 @@ public class XNATQueries
 	
 	public static boolean isCollaborator(String sessionID, String username, String projectID) throws Exception
 	{
+		if (projectID == null || projectID.trim().length() == 0)
+		{
+			if (username.equals("admin")) 
+				return false;
+			else
+				return true;
+		}
 		String role = getUserProjectRole(sessionID, username, projectID);
 		if (role == null && username.equals("admin")) return false;
+		if (role == null && projectID.equals(EPADConfig.xnatUploadProjectID)) return true;
 		if (role == null)
-			throw new Exception("Does not exist in project:" + projectID);
+			throw new Exception("User " + username  + " does not exist in project:" + projectID);
 		if (role.toLowerCase().startsWith("collaborator"))
 			return true;
 		else
@@ -114,6 +138,8 @@ public class XNATQueries
 	
 	public static boolean isMember(String sessionID, String username, String projectID) throws Exception
 	{
+		if (projectID == null || projectID.trim().length() == 0)
+			return false;
 		String role = getUserProjectRole(sessionID, username, projectID);
 		if (role == null && username.equals("admin")) return true;
 		if (role == null)
@@ -126,6 +152,8 @@ public class XNATQueries
 	
 	public static boolean isOwner(String sessionID, String username, String projectID) throws Exception
 	{
+		if (projectID == null || projectID.trim().length() == 0)
+			return false;
 		String role = getUserProjectRole(sessionID, username, projectID);
 		if (role == null && username.equals("admin")) return true;
 		if (role == null)

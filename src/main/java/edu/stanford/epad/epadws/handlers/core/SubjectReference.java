@@ -18,10 +18,14 @@ public class SubjectReference
 	public static SubjectReference extract(String template, String pathInfo)
 	{
 		Map<String, String> templateMap = HandlerUtil.getTemplateMap(template, pathInfo);
-		String projectID = HandlerUtil.getTemplateParameter(templateMap, "project");
+		String projectID = null;
+		try
+		{
+			projectID = HandlerUtil.getTemplateParameter(templateMap, "project");
+		}
+		catch (Exception x) {}
 		String subjectID = HandlerUtil.getTemplateParameter(templateMap, "subject");
 
-		ProjectReference.validateProjectID(projectID);
 		validateSubjectID(subjectID);
 
 		return new SubjectReference(projectID, subjectID);

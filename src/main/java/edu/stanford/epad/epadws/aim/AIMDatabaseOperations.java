@@ -293,6 +293,7 @@ public class AIMDatabaseOperations {
 	                    userOK = false;
 	                String projectID = getProjectIdForAnnotation(userLoginName, patientID, studyID, seriesID);
 	                if (frameID.trim().length() == 0) frameID = "0";
+	                log.info("Inserting annotation uid:" + annotationID + " patientID:" + patientID + " studyUID:" + studyID + " seriesUID:" + seriesID + " imageUID:" +  imageID + " projectID:" + projectID + " user:" + userLoginName);
 	                String sqlInsert = "INSERT INTO annotations (UserLoginName,PatientID,SeriesUID,StudyUID,ImageUID,FrameID,AnnotationUID,ProjectUID) VALUES (" 
 	                				+ "'" + userLoginName + "', '" + patientID + "', '" + seriesID + "', '" 
 	                				+ studyID + "', '" + imageID + "', " + frameID + ", '" + annotationID + "', '" + projectID + "')";
@@ -311,16 +312,19 @@ public class AIMDatabaseOperations {
     	}
     }
 
-    public void delete(String annotationUID) throws SQLException {
+    public int delete(String annotationUID) throws SQLException {
     	try {
     	    this.statement = mySqlConnection.createStatement();
-    		this.statement.executeUpdate("DELETE FROM annotatons WHERE(AnnotationUID = " + annotationUID + ")");
+    	    String delSql = "DELETE FROM annotations WHERE(AnnotationUID = '" + annotationUID + "')";
+    		int count = this.statement.executeUpdate(delSql);
+    		log.info(delSql + " result:" + count);
+    		return count;
     	} finally {
     		statement.close();
     	}
     }
 
-    public void insert(String annotationUID, String userName, String projectID, String patientID, String seriesUID, String studyUID, String imageUID, int frameID) throws SQLException {
+    public void insert(String annotationUID, String userName, String projectID, String patientID, String studyUID, String seriesUID, String imageUID, int frameID) throws SQLException {
     	try {
     		EPADAIM aim = getAIM(annotationUID);
     		if (aim != null)
@@ -391,10 +395,10 @@ public class AIMDatabaseOperations {
 		return 0;
     }
     
-    public Set<EPADAIM> getAIMs(String projectID, String patientID, String studyUID, String seriesUID, String imageUID, int frameID) throws SQLException {
+    public List<EPADAIM> getAIMs(String projectID, String patientID, String studyUID, String seriesUID, String imageUID, int frameID) throws SQLException {
     	return getAIMs(projectID, patientID, studyUID, seriesUID, imageUID, frameID, 1, 5000);
     }
-    public Set<EPADAIM> getAIMs(String projectID, String patientID, String studyUID, String seriesUID, String imageUID, int frameID, int start, int count) throws SQLException {
+    public List<EPADAIM> getAIMs(String projectID, String patientID, String studyUID, String seriesUID, String imageUID, int frameID, int start, int count) throws SQLException {
         String sqlSelect = "SELECT UserLoginName, ProjectUID, PatientID, StudyUID, SeriesUID, ImageUID, frameID, AnnotationUID FROM annotations WHERE 1 = 1";
 		if (projectID != null && projectID.length() > 0)
 			sqlSelect = sqlSelect + " and ProjectUID = '" + projectID + "'";
@@ -413,7 +417,7 @@ public class AIMDatabaseOperations {
         log.info("AIMs select:" + sqlSelect);
        
 		ResultSet rs = null;
-        Set<EPADAIM> aims = new HashSet<EPADAIM>();
+        List<EPADAIM> aims = new ArrayList<EPADAIM>();
         try
         {
         	int row = 1;
@@ -443,7 +447,7 @@ public class AIMDatabaseOperations {
         log.info("Number of AIMs found in database:" + aims.size());
 		return aims;
     }
-    
+   
     public int getAIMCount(String userName, String projectID, String patientID, String studyUID, String seriesUID, String imageUID, int frameID) throws SQLException {
         String sqlSelect = "SELECT COUNT(*) FROM annotations WHERE 1 = 1";
 		if (userName != null && userName.length() > 0)
@@ -468,7 +472,9 @@ public class AIMDatabaseOperations {
     	    this.statement = mySqlConnection.createStatement();
         	rs = this.statement.executeQuery(sqlSelect);
 			if (rs.next()) {
-				return rs.getInt(1);
+				int count = rs.getInt(1);
+	    	    log.info(sqlSelect + " result:" + count);
+				return count;
 			}
         }
         finally
@@ -508,13 +514,13 @@ public class AIMDatabaseOperations {
 		return null;
     }
 	
-	public Set<EPADAIM> getAIMs(String projectID, AIMSearchType aimSearchType, String value) throws SQLException
+	public List<EPADAIM> getAIMs(String projectID, AIMSearchType aimSearchType, String value) throws SQLException
 	{
 		return getAIMs(projectID, aimSearchType, value, 1, 5000);
 	}
-	public Set<EPADAIM> getAIMs(String projectID, AIMSearchType aimSearchType, String value, int start, int count) throws SQLException
+	public List<EPADAIM> getAIMs(String projectID, AIMSearchType aimSearchType, String value, int start, int count) throws SQLException
 	{
-		Set<EPADAIM> aims = new HashSet<EPADAIM>();
+		List<EPADAIM> aims = new ArrayList<EPADAIM>();
 		long time1 = System.currentTimeMillis();
 		if (aimSearchType == AIMSearchType.PERSON_NAME) {
     		String adminSessionID = XNATSessionOperations.getXNATAdminSessionID();

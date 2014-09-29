@@ -69,7 +69,7 @@ public interface EpadDatabaseOperations
 	List<String> getAllEPadInPipelineFilePaths();
 	
 	void checkAndRefreshAnnotationsTable();
-
+	
 	EPADAIM getAIM(String aimID);
 
 	EPADAIM getAIM(ProjectReference projectReference, String aimID);
@@ -84,33 +84,33 @@ public interface EpadDatabaseOperations
 
 	EPADAIM getAIM(FrameReference frameReference, String aimID);
 
-	Set<EPADAIM> getAIMs(ProjectReference projectReference);
+	List<EPADAIM> getAIMs(ProjectReference projectReference);
 
-	Set<EPADAIM> getAIMs(SubjectReference subjectReference);
+	List<EPADAIM> getAIMs(SubjectReference subjectReference);
 
-	Set<EPADAIM> getAIMs(StudyReference studyReference);
+	List<EPADAIM> getAIMs(StudyReference studyReference);
 
-	Set<EPADAIM> getAIMs(SeriesReference seriesReference);
+	List<EPADAIM> getAIMs(SeriesReference seriesReference);
 
-	Set<EPADAIM> getAIMs(ImageReference imageReference);
+	List<EPADAIM> getAIMs(ImageReference imageReference);
 
-	Set<EPADAIM> getAIMs(FrameReference frameReference);
+	List<EPADAIM> getAIMs(FrameReference frameReference);
 	
-	Set<EPADAIM> getAIMs(String projectID, AIMSearchType aimSearchType, String value, int start, int count);
+	List<EPADAIM> getAIMs(String projectID, AIMSearchType aimSearchType, String value, int start, int count);
 
-	int getNumberOfAIMs(ProjectReference reference);
+	int getNumberOfAIMs(String userName, ProjectReference reference);
 
-	int getNumberOfAIMs(SubjectReference reference);
+	int getNumberOfAIMs(String userName, SubjectReference reference);
 
-	int getNumberOfAIMs(StudyReference reference);
+	int getNumberOfAIMs(String userName, StudyReference reference);
 
-	int getNumberOfAIMs(SeriesReference reference);
+	int getNumberOfAIMs(String userName, SeriesReference reference);
 
-	int getNumberOfAIMs(ImageReference reference);
+	int getNumberOfAIMs(String userName, ImageReference reference);
 
-	int getNumberOfAIMs(FrameReference reference);
+	int getNumberOfAIMs(String userName, FrameReference reference);
 
-	int getNumberOfAIMsForPatients(String projectID, Set<String> patientIDs);
+	int getNumberOfAIMsForPatients(String projectID, Set<String> patientIDs, String userName);
 
 	int getNumberOfAIMsForSeriesSet(String projectID, Set<String> seriesIDs, String username);
 

@@ -1,7 +1,9 @@
 package edu.stanford.epad.epadws.handlers.core;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.FileReader;
 import java.io.InputStream;
 import java.io.PrintWriter;
 import java.util.Set;
@@ -121,6 +123,7 @@ public class EPADHandler extends AbstractHandler
 				ProjectReference projectReference = ProjectReference.extract(ProjectsRouteTemplates.PROJECT, pathInfo);
 				EPADProject project = epadOperations.getProjectDescription(projectReference, username, sessionID);
 				if (project != null) {
+					log.info("Project aim count:" + project.numberOfAnnotations);
 					responseStream.append(project.toJSON());
 					statusCode = HttpServletResponse.SC_OK;
 				} else
@@ -137,6 +140,7 @@ public class EPADHandler extends AbstractHandler
 				SubjectReference subjectReference = SubjectReference.extract(ProjectsRouteTemplates.SUBJECT, pathInfo);
 				EPADSubject subject = epadOperations.getSubjectDescription(subjectReference, username, sessionID);
 				if (subject != null) {
+					log.info("subject aim count:" + subject.numberOfAnnotations);
 					responseStream.append(subject.toJSON());
 					statusCode = HttpServletResponse.SC_OK;
 				} else
@@ -159,9 +163,10 @@ public class EPADHandler extends AbstractHandler
 					statusCode = HttpServletResponse.SC_NOT_FOUND;
 
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.SERIES_LIST, pathInfo)) {
+				boolean filterDSO = "true".equalsIgnoreCase(httpRequest.getParameter("filterDSO"));
 				StudyReference studyReference = StudyReference.extract(ProjectsRouteTemplates.SERIES_LIST, pathInfo);
 				EPADSeriesList seriesList = epadOperations.getSeriesDescriptions(studyReference, username, sessionID,
-						searchFilter);
+						searchFilter, filterDSO);
 				responseStream.append(seriesList.toJSON());
 				statusCode = HttpServletResponse.SC_OK;
 
@@ -203,6 +208,23 @@ public class EPADHandler extends AbstractHandler
 					statusCode = HttpServletResponse.SC_OK;
 				} else
 					statusCode = HttpServletResponse.SC_NOT_FOUND;
+				
+			} else if (HandlerUtil.matchesTemplate(SubjectsRouteTemplates.SUBJECT, pathInfo)) {
+				SubjectReference subjectReference = SubjectReference.extract(SubjectsRouteTemplates.SUBJECT, pathInfo);
+				EPADSubject subject = epadOperations.getSubjectDescription(subjectReference, username, sessionID);
+				if (subject != null) {
+					responseStream.append(subject.toJSON());
+					statusCode = HttpServletResponse.SC_OK;
+				} else
+					statusCode = HttpServletResponse.SC_NOT_FOUND;
+
+			} else if (HandlerUtil.matchesTemplate(SubjectsRouteTemplates.SUBJECT_LIST, pathInfo)) {
+				SubjectReference subjectReference = SubjectReference.extract(SubjectsRouteTemplates.SUBJECT_LIST, pathInfo);
+				EPADStudyList studyList = epadOperations.getStudyDescriptions(subjectReference, username, sessionID,
+						searchFilter);
+				responseStream.append(studyList.toJSON());
+				statusCode = HttpServletResponse.SC_OK;
+
 
 				/**
 				 * Studies routes. These short cuts are used when the invoker does not have a project or subject ID.
@@ -240,8 +262,6 @@ public class EPADHandler extends AbstractHandler
 
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.PROJECT_AIM_LIST, pathInfo)) {
 				ProjectReference projectReference = ProjectReference.extract(ProjectsRouteTemplates.PROJECT_AIM_LIST, pathInfo);
-				if (!XNATQueries.isCollaborator(sessionID, username, projectReference.projectID))
-					username = null;
 				EPADAIMList aims = epadOperations.getProjectAIMDescriptions(projectReference, username, sessionID);
 				if (returnSummary(httpRequest))
 				{	
@@ -254,16 +274,16 @@ public class EPADHandler extends AbstractHandler
 					int count = getInt(httpRequest.getParameter("count"));
 					if (count == 0) count = 5000;
 					AIMUtil.queryAIMImageAnnotations(responseStream, AIMSearchType.ANNOTATION_UID,
-							getUIDCsvList(aims), username, start, count);					
+							getUIDCsvList(sessionID, aims, username), username, start, count);					
 				}
 				statusCode = HttpServletResponse.SC_OK;
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.PROJECT_AIM, pathInfo)) {
 				ProjectReference projectReference = ProjectReference.extract(ProjectsRouteTemplates.PROJECT_AIM, pathInfo);
-				if (!XNATQueries.isCollaborator(sessionID, username, projectReference.projectID))
-					username = null;
 				AIMReference aimReference = AIMReference.extract(ProjectsRouteTemplates.PROJECT_AIM, pathInfo);
 				EPADAIM aim = epadOperations
 						.getProjectAIMDescription(projectReference, aimReference.aimID, username, sessionID);
+				if (!XNATQueries.isCollaborator(sessionID, username, aim.projectID))
+					username = null;
 				if (returnSummary(httpRequest))
 				{	
 					responseStream.append(aim.toJSON());
@@ -289,7 +309,7 @@ public class EPADHandler extends AbstractHandler
 					int count = getInt(httpRequest.getParameter("count"));
 					if (count == 0) count = 5000;
 					AIMUtil.queryAIMImageAnnotations(responseStream, AIMSearchType.ANNOTATION_UID,
-							getUIDCsvList(aims), username, start, count);					
+							getUIDCsvList(sessionID, aims, username), username, start, count);					
 				}
 				statusCode = HttpServletResponse.SC_OK;
 
@@ -323,7 +343,7 @@ public class EPADHandler extends AbstractHandler
 					int count = getInt(httpRequest.getParameter("count"));
 					if (count == 0) count = 5000;
 					AIMUtil.queryAIMImageAnnotations(responseStream, AIMSearchType.ANNOTATION_UID,
-							getUIDCsvList(aims), username, start, count);					
+							getUIDCsvList(sessionID, aims, username), username, start, count);					
 				}
 				statusCode = HttpServletResponse.SC_OK;
 
@@ -356,7 +376,7 @@ public class EPADHandler extends AbstractHandler
 					int count = getInt(httpRequest.getParameter("count"));
 					if (count == 0) count = 5000;
 					AIMUtil.queryAIMImageAnnotations(responseStream, AIMSearchType.ANNOTATION_UID,
-							getUIDCsvList(aims), username, start, count);					
+							getUIDCsvList(sessionID, aims, username), username, start, count);					
 				}
 
 				statusCode = HttpServletResponse.SC_OK;
@@ -389,7 +409,7 @@ public class EPADHandler extends AbstractHandler
 					int count = getInt(httpRequest.getParameter("count"));
 					if (count == 0) count = 5000;
 					AIMUtil.queryAIMImageAnnotations(responseStream, AIMSearchType.ANNOTATION_UID,
-							getUIDCsvList(aims), username, start, count);					
+							getUIDCsvList(sessionID, aims, username), username, start, count);					
 				}
 				statusCode = HttpServletResponse.SC_OK;
 
@@ -422,7 +442,7 @@ public class EPADHandler extends AbstractHandler
 					int count = getInt(httpRequest.getParameter("count"));
 					if (count == 0) count = 5000;
 					AIMUtil.queryAIMImageAnnotations(responseStream, AIMSearchType.ANNOTATION_UID,
-							getUIDCsvList(aims), username, start, count);					
+							getUIDCsvList(sessionID, aims, username), username, start, count);					
 				}
 				statusCode = HttpServletResponse.SC_OK;
 
@@ -454,7 +474,7 @@ public class EPADHandler extends AbstractHandler
 					int count = getInt(httpRequest.getParameter("count"));
 					if (count == 0) count = 5000;
 					AIMUtil.queryAIMImageAnnotations(responseStream, AIMSearchType.ANNOTATION_UID,
-							getUIDCsvList(aims), username, start, count);					
+							getUIDCsvList(sessionID, aims, username), username, start, count);					
 				}
 				statusCode = HttpServletResponse.SC_OK;
 
@@ -487,7 +507,7 @@ public class EPADHandler extends AbstractHandler
 					int count = getInt(httpRequest.getParameter("count"));
 					if (count == 0) count = 5000;
 					AIMUtil.queryAIMImageAnnotations(responseStream, AIMSearchType.ANNOTATION_UID,
-							getUIDCsvList(aims), username, start, count);					
+							getUIDCsvList(sessionID, aims, username), username, start, count);					
 				}
 
 				statusCode = HttpServletResponse.SC_OK;
@@ -520,7 +540,7 @@ public class EPADHandler extends AbstractHandler
 					int count = getInt(httpRequest.getParameter("count"));
 					if (count == 0) count = 5000;
 					AIMUtil.queryAIMImageAnnotations(responseStream, AIMSearchType.ANNOTATION_UID,
-							getUIDCsvList(aims), username, start, count);					
+							getUIDCsvList(sessionID, aims, username), username, start, count);					
 				}
 				statusCode = HttpServletResponse.SC_OK;
 
@@ -553,7 +573,7 @@ public class EPADHandler extends AbstractHandler
 					int count = getInt(httpRequest.getParameter("count"));
 					if (count == 0) count = 5000;
 					AIMUtil.queryAIMImageAnnotations(responseStream, AIMSearchType.ANNOTATION_UID,
-							getUIDCsvList(aims), username, start, count);					
+							getUIDCsvList(sessionID, aims, username), username, start, count);					
 				}
 				statusCode = HttpServletResponse.SC_OK;
 
@@ -561,6 +581,39 @@ public class EPADHandler extends AbstractHandler
 				FrameReference frameReference = FrameReference.extract(StudiesRouteTemplates.FRAME_AIM, pathInfo);
 				AIMReference aimReference = AIMReference.extract(StudiesRouteTemplates.FRAME_AIM, pathInfo);
 				EPADAIM aim = epadOperations.getFrameAIMDescription(frameReference, aimReference.aimID, username, sessionID);
+				if (returnSummary(httpRequest))
+				{	
+					responseStream.append(aim.toJSON());
+				}
+				else
+				{
+					AIMUtil.queryAIMImageAnnotations(responseStream, AIMSearchType.ANNOTATION_UID,
+							aim.aimID, username);					
+				}
+				statusCode = HttpServletResponse.SC_OK;
+
+			} else if (HandlerUtil.matchesTemplate(SubjectsRouteTemplates.SUBJECT_AIM_LIST, pathInfo)) {
+				SubjectReference subjectReference = SubjectReference.extract(SubjectsRouteTemplates.SUBJECT_AIM_LIST, pathInfo);
+				EPADAIMList aims = epadOperations.getSubjectAIMDescriptions(subjectReference, username, sessionID);
+				if (returnSummary(httpRequest))
+				{	
+					responseStream.append(aims.toJSON());
+				}
+				else
+				{
+					int start = getInt(httpRequest.getParameter("start"));
+					if (start == 0) start = 1;
+					int count = getInt(httpRequest.getParameter("count"));
+					if (count == 0) count = 5000;
+					AIMUtil.queryAIMImageAnnotations(responseStream, AIMSearchType.ANNOTATION_UID,
+							getUIDCsvList(sessionID, aims, username), username, start, count);					
+				}
+				statusCode = HttpServletResponse.SC_OK;
+
+			} else if (HandlerUtil.matchesTemplate(SubjectsRouteTemplates.SUBJECT_AIM, pathInfo)) {
+				SubjectReference subjectReference = SubjectReference.extract(SubjectsRouteTemplates.SUBJECT_AIM_LIST, pathInfo);
+				AIMReference aimReference = AIMReference.extract(SubjectsRouteTemplates.SUBJECT_AIM, pathInfo);
+				EPADAIM aim = epadOperations.getSubjectAIMDescription(subjectReference, aimReference.aimID, username, sessionID);
 				if (returnSummary(httpRequest))
 				{	
 					responseStream.append(aim.toJSON());
@@ -582,7 +635,6 @@ public class EPADHandler extends AbstractHandler
 				if (start == 0) start = 1;
 				int count = getInt(httpRequest.getParameter("count"));
 				if (count == 0) count = 5000;
-
 				EPADAIMList aims = epadOperations.getAIMDescriptions(projectID, aimSearchType, searchValue, username, sessionID, start, count);
 				if (returnSummary(httpRequest))
 				{	
@@ -598,7 +650,7 @@ public class EPADHandler extends AbstractHandler
 					else
 					{
 						AIMUtil.queryAIMImageAnnotations(responseStream, projectID, AIMSearchType.ANNOTATION_UID,
-								getUIDCsvList(aims), username, start, count);
+								getUIDCsvList(sessionID, aims, username), username, start, count);
 					}
 				}
 				statusCode = HttpServletResponse.SC_OK;
@@ -620,6 +672,8 @@ public class EPADHandler extends AbstractHandler
 			} else
 				statusCode = HandlerUtil.badRequestJSONResponse(BAD_GET_MESSAGE, responseStream, log);
 		} catch (Throwable t) {
+			t.printStackTrace();
+			log.warning("Error handleget:", t);
 			statusCode = HandlerUtil.internalErrorJSONResponse(INTERNAL_ERROR_MESSAGE, t, responseStream, log);
 		}
 		return statusCode;
@@ -671,6 +725,12 @@ public class EPADHandler extends AbstractHandler
 			AIMReference aimReference = AIMReference.extract(ProjectsRouteTemplates.IMAGE_AIM, pathInfo);
 			log.info("Images AIM PUT");
 			statusCode = epadOperations.createImageAIM(username, imageReference, aimReference.aimID, aimFile, sessionID);
+		
+		} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.PROJECT_AIM, pathInfo)) {
+			ProjectReference projectReference = ProjectReference.extract(ProjectsRouteTemplates.PROJECT_AIM, pathInfo);
+			AIMReference aimReference = AIMReference.extract(ProjectsRouteTemplates.PROJECT_AIM, pathInfo);
+			log.info("Projects AIM PUT");
+			statusCode = epadOperations.createProjectAIM(username, projectReference, aimReference.aimID, aimFile, sessionID);
 
 		} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.FRAME, pathInfo)) {
 			statusCode = HttpServletResponse.SC_METHOD_NOT_ALLOWED;
@@ -713,6 +773,10 @@ public class EPADHandler extends AbstractHandler
 			outputStream.close();
 			inputStream.close();
 			log.info("Created AIMFile:" + aimFile.getAbsolutePath());
+			if (len > 0)
+			{
+				log.info("PUT Data:" + readFile(aimFile));
+			}
 			return aimFile;
 		}
 		catch (Exception x)
@@ -721,6 +785,25 @@ public class EPADHandler extends AbstractHandler
 		}
 		return null;
 	}
+	
+    private String readFile(File aimFile) throws Exception
+    {
+        BufferedReader in = new BufferedReader(new FileReader(aimFile));
+        StringBuilder sb = new StringBuilder();
+        String line;
+        try
+        {
+            while ((line = in.readLine()) != null)
+            {
+            	sb.append(line + "\n");
+            }
+        }
+        finally
+        {
+            in.close();
+        }
+        return sb.toString();
+    }
 
 	private int handlePost(HttpServletRequest httpRequest, PrintWriter responseStream, String username)
 	{
@@ -781,7 +864,7 @@ public class EPADHandler extends AbstractHandler
 			statusCode = epadOperations.seriesDelete(seriesReference, sessionID, username);
 
 		} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.PROJECT_AIM, pathInfo)) {
-			ProjectReference projectReference = ProjectReference.extract(ProjectsRouteTemplates.PROJECT, pathInfo);
+			ProjectReference projectReference = ProjectReference.extract(ProjectsRouteTemplates.PROJECT_AIM, pathInfo);
 			AIMReference aimReference = AIMReference.extract(ProjectsRouteTemplates.PROJECT_AIM, pathInfo);
 			statusCode = epadOperations.projectAIMDelete(projectReference, aimReference.aimID, sessionID, username);
 
@@ -828,15 +911,27 @@ public class EPADHandler extends AbstractHandler
 			return false;
 	}
 	
-	private String getUIDCsvList(EPADAIMList aims)
+	private String getUIDCsvList(String sessionID, EPADAIMList aimlist, String username)
 	{
-		Set<String> aimIds = aims.getAIMIds();
-		if (aimIds.size() == 0) return "";
+		Set<String> projectIDs = aimlist.getProjectIds();
 		String csv = "";
-		for (String id: aimIds)
+		for (String projectID: projectIDs)
 		{
-			csv = csv + "," +  id;
+			try
+			{
+				boolean isCollaborator = XNATQueries.isCollaborator(sessionID, username, projectID);
+				log.info("User:" + username + " projectID:" + projectID + " isCollaborator:" + isCollaborator);
+				Set<EPADAIM> aims = aimlist.getAIMsForProject(projectID);
+				for (EPADAIM aim: aims)
+				{
+					if (!isCollaborator || aim.userName.equals(username) || aim.userName.equals("shared"))
+						csv = csv + "," +  aim.aimID;
+				}
+			}
+			catch (Exception x) {}
 		}
+		if (csv.length() == 0) return "";
+		
 		return csv.substring(1);
 	}
 	

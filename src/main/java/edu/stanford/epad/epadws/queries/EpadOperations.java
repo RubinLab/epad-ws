@@ -51,7 +51,7 @@ public interface EpadOperations
 	EPADStudy getStudyDescription(StudyReference studyReference, String username, String sessionID);
 
 	EPADSeriesList getSeriesDescriptions(StudyReference studyReference, String username, String sessionID,
-			EPADSearchFilter searchFilter);
+			EPADSearchFilter searchFilter, boolean filterDSOs);
 
 	EPADSeries getSeriesDescription(SeriesReference seriesReference, String username, String sessionID);
 
@@ -74,6 +74,8 @@ public interface EpadOperations
 	int createStudyAIM(String username, StudyReference studyReference, String aimID, File aimFile, String sessionID);
 
 	int createSeries(SeriesReference seriesReference, String sessionID);
+
+	int createProjectAIM(String username, ProjectReference projectReference, String aimID, File aimFile, String sessionID);
 
 	int createSeriesAIM(String username, SeriesReference seriesReference, String aimID, File aimFile, String sessionID);
 
@@ -102,6 +104,10 @@ public interface EpadOperations
 	int frameAIMDelete(FrameReference frameReference, String aimID, String sessionID, String username);
 
 	int aimDelete(String aimID, String sessionID, String username);
+	
+	void deleteAllSeriesAims(String seriedUID);
+	
+	void deleteAllStudyAims(String studyUID);
 
 	EPADAIMList getProjectAIMDescriptions(ProjectReference projectReference, String username, String sessionID);
 

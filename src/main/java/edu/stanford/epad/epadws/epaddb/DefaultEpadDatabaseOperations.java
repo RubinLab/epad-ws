@@ -272,7 +272,7 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 	}
 
 	@Override
-	public Set<EPADAIM> getAIMs(ProjectReference reference)
+	public List<EPADAIM> getAIMs(ProjectReference reference)
 	{
 		Connection c = null;
 		try {
@@ -289,58 +289,58 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 	}
 
 	@Override
-	public Set<EPADAIM> getAIMs(SubjectReference reference)
+	public List<EPADAIM> getAIMs(SubjectReference reference)
 	{
 		Connection c = null;
 		try {
 			c = getConnection();
 			AIMDatabaseOperations adb = new AIMDatabaseOperations(c, EPADConfig.eXistServerUrl,
 					EPADConfig.aim4Namespace, EPADConfig.eXistCollection, EPADConfig.eXistUsername, EPADConfig.eXistPassword);
-			return adb.getAIMs(reference.projectID, reference.subjectID, null, null, null, 0);
+			return adb.getAIMs(null, reference.subjectID, null, null, null, 0);
 		} catch (SQLException sqle) {
 			log.warning("AIM Database operation failed:", sqle);
 		} finally {
 			close(c);
 		}
-		return new HashSet<EPADAIM>();
+		return new ArrayList<EPADAIM>();
 	}
 
 	@Override
-	public Set<EPADAIM> getAIMs(StudyReference reference)
+	public List<EPADAIM> getAIMs(StudyReference reference)
 	{
 		Connection c = null;
 		try {
 			c = getConnection();
 			AIMDatabaseOperations adb = new AIMDatabaseOperations(c, EPADConfig.eXistServerUrl,
 					EPADConfig.aim4Namespace, EPADConfig.eXistCollection, EPADConfig.eXistUsername, EPADConfig.eXistPassword);
-			return adb.getAIMs(reference.projectID, reference.subjectID, reference.studyUID, null, null, 0);
+			return adb.getAIMs(null, null, reference.studyUID, null, null, 0);
 		} catch (SQLException sqle) {
 			log.warning("AIM Database operation failed:", sqle);
 		} finally {
 			close(c);
 		}
-		return new HashSet<EPADAIM>();
+		return new ArrayList<EPADAIM>();
 	}
 
 	@Override
-	public Set<EPADAIM> getAIMs(SeriesReference reference)
+	public List<EPADAIM> getAIMs(SeriesReference reference)
 	{
 		Connection c = null;
 		try {
 			c = getConnection();
 			AIMDatabaseOperations adb = new AIMDatabaseOperations(c, EPADConfig.eXistServerUrl,
 					EPADConfig.aim4Namespace, EPADConfig.eXistCollection, EPADConfig.eXistUsername, EPADConfig.eXistPassword);
-			return adb.getAIMs(reference.projectID, reference.subjectID, reference.studyUID, reference.seriesUID, null, 0);
+			return adb.getAIMs(null, null, null, reference.seriesUID, null, 0);
 		} catch (SQLException sqle) {
 			log.warning("AIM Database operation failed:", sqle);
 		} finally {
 			close(c);
 		}
-		return new HashSet<EPADAIM>();
+		return new ArrayList<EPADAIM>();
 	}
 
 	@Override
-	public Set<EPADAIM> getAIMs(ImageReference reference)
+	public List<EPADAIM> getAIMs(ImageReference reference)
 	{
 		Connection c = null;
 		try {
@@ -353,11 +353,11 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 		} finally {
 			close(c);
 		}
-		return new HashSet<EPADAIM>();
+		return new ArrayList<EPADAIM>();
 	}
 
 	@Override
-	public Set<EPADAIM> getAIMs(FrameReference reference)
+	public List<EPADAIM> getAIMs(FrameReference reference)
 	{
 		Connection c = null;
 		try {
@@ -370,11 +370,11 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 		} finally {
 			close(c);
 		}
-		return new HashSet<EPADAIM>();
+		return new ArrayList<EPADAIM>();
 	}
 
 	@Override
-	public Set<EPADAIM> getAIMs(String projectID, AIMSearchType aimSearchType, String value, int start, int count) {
+	public List<EPADAIM> getAIMs(String projectID, AIMSearchType aimSearchType, String value, int start, int count) {
 		Connection c = null;
 		try {
 			c = getConnection();
@@ -389,11 +389,11 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 		} finally {
 			close(c);
 		}
-		return new HashSet<EPADAIM>();
+		return new ArrayList<EPADAIM>();
 	}
 
 	@Override
-	public int getNumberOfAIMs(ProjectReference reference)
+	public int getNumberOfAIMs(String userName, ProjectReference reference)
 	{
 		Connection c = null;
 		try {
@@ -410,7 +410,7 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 	}
 
 	@Override
-	public int getNumberOfAIMs(SubjectReference reference)
+	public int getNumberOfAIMs(String userName, SubjectReference reference)
 	{
 		Connection c = null;
 		try {
@@ -427,7 +427,7 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 	}
 
 	@Override
-	public int getNumberOfAIMs(StudyReference reference)
+	public int getNumberOfAIMs(String userName, StudyReference reference)
 	{
 		Connection c = null;
 		try {
@@ -444,7 +444,7 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 	}
 
 	@Override
-	public int getNumberOfAIMs(SeriesReference reference)
+	public int getNumberOfAIMs(String userName, SeriesReference reference)
 	{
 		Connection c = null;
 		try {
@@ -461,7 +461,7 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 	}
 
 	@Override
-	public int getNumberOfAIMs(ImageReference reference)
+	public int getNumberOfAIMs(String userName, ImageReference reference)
 	{
 		Connection c = null;
 		try {
@@ -479,7 +479,7 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 	}
 
 	@Override
-	public int getNumberOfAIMs(FrameReference reference)
+	public int getNumberOfAIMs(String userName, FrameReference reference)
 	{
 		Connection c = null;
 		try {
@@ -497,13 +497,13 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 	}
 
 	@Override
-	public int getNumberOfAIMsForPatients(String projectID, Set<String> patientIDs) {
+	public int getNumberOfAIMsForPatients(String projectID, Set<String> patientIDs, String userName) {
 		int count = 0;
 		for (String patientID: patientIDs)
-		{
-			count += this.getNumberOfAIMs(new SubjectReference(projectID, patientID));
+		{ 
+			count += this.getNumberOfAIMs(userName, new SubjectReference(projectID, patientID));
 		}
-		return 0;
+		return count;
 	}
 
 	@Override
@@ -513,7 +513,7 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 		{
 			count += this.getNumberOfAIMsForSeries(projectID, seriesID, username);
 		}
-		return 0;
+		return count;
 	}
 
 	@Override
