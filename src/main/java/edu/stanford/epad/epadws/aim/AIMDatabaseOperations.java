@@ -98,9 +98,12 @@ public class AIMDatabaseOperations {
 
 		log.info("Creating annotations table, AIMVersion:" + aimVersion);
     	try {
-    	    this.statement = mySqlConnection.createStatement();
-	        createAnnotationsTable();
-	        
+    	    if (mySqlConnection != null)
+    	    {
+    	    	this.statement = mySqlConnection.createStatement();
+    	    	createAnnotationsTable();
+    	    }
+    	    
 	        String query = " declare default element namespace '" + this.existNameSpace + "'; ";
 	        if (aimVersion == AimVersion.AIMv4_0) {
 	            query += " for $iac in collection('" + this.existCollectionName + "')/ImageAnnotationCollection ";
@@ -139,6 +142,7 @@ public class AIMDatabaseOperations {
 	            startIndex = startIndex + pageCount;
 	        }
 	
+	        log.info("Number of Threads:" + listThreads.size());
 	        for (ExistResponderThread thread : listThreads) {
 	            thread.start();
 	        }
@@ -162,7 +166,8 @@ public class AIMDatabaseOperations {
 	            serverResponse = serverResponse.replace("exist:type=\"xs:string\"", "");
 	            sb.append(serverResponse);
 	        }
-	
+	        //if (mySqlConnection == null)
+	        //	log.info(sb.toString());
 	        doc = XML.getDocumentFromString("<results>" + sb.toString() + "</results>");
 	
 	        Node node = doc.getFirstChild();
@@ -171,16 +176,19 @@ public class AIMDatabaseOperations {
 	        boolean irefOK = false;
 	        boolean patOK = false;
 	        boolean userOK = false;
+	        boolean nameOK = false;
 	
 	        String userLoginName = "";
 	        String patientID = "";
 	        String annotationID = "";
+	        String annotationName = "";
 	        String imageID = "";
 	        String frameID = "0";
 	        String studyID = "";
 	        String seriesID = "";
 	        
-	        this.statement.executeUpdate("DELETE FROM annotations");
+	        if (statement != null)
+	        	this.statement.executeUpdate("DELETE FROM annotations");
 	
 	        NodeList listChilds = node.getChildNodes();
 	        for (int i = 0; i < listChilds.getLength(); i++) {
@@ -253,7 +261,7 @@ public class AIMDatabaseOperations {
 	                    userLoginName = currentNode.getTextContent();
 	                    userOK = true;
 	
-	                } else if ("ImageStudy".equals(currentNode.getNodeName())) {
+	                } else if (uidOK && patOK && userOK && "ImageStudy".equals(currentNode.getNodeName())) {
 	                    studyID = currentNode.getAttributes().getNamedItem("instanceUID").getNodeValue();
 	                    NodeList childsImageStudy = currentNode.getChildNodes();
 	                    for (int j = 0; j < childsImageStudy.getLength(); j++) {
@@ -290,14 +298,18 @@ public class AIMDatabaseOperations {
 	                patOK = false;
 	                markupOK = false;
 	                irefOK = false;
-	                    userOK = false;
-	                String projectID = getProjectIdForAnnotation(userLoginName, patientID, studyID, seriesID);
+	                userOK = false;
+	                nameOK = false;
+	                String projectID = "";
+	                if (mySqlConnection != null)
+	                	projectID =	getProjectIdForAnnotation(userLoginName, patientID, studyID, seriesID);
 	                if (frameID.trim().length() == 0) frameID = "0";
-	                log.info("Inserting annotation uid:" + annotationID + " patientID:" + patientID + " studyUID:" + studyID + " seriesUID:" + seriesID + " imageUID:" +  imageID + " projectID:" + projectID + " user:" + userLoginName);
+	                log.info("uid:" + annotationID + " patientID:" + patientID + "\t studyUID:" + studyID + " seriesUID:" + seriesID + " imageUID:" +  imageID + " projectID:" + projectID + " user:" + userLoginName);
 	                String sqlInsert = "INSERT INTO annotations (UserLoginName,PatientID,SeriesUID,StudyUID,ImageUID,FrameID,AnnotationUID,ProjectUID) VALUES (" 
 	                				+ "'" + userLoginName + "', '" + patientID + "', '" + seriesID + "', '" 
 	                				+ studyID + "', '" + imageID + "', " + frameID + ", '" + annotationID + "', '" + projectID + "')";
-	                this.statement.executeUpdate(sqlInsert);
+	                if (statement != null)
+	                	this.statement.executeUpdate(sqlInsert);
 	
 	                annotationID = "";
 	                imageID = "";
@@ -305,10 +317,11 @@ public class AIMDatabaseOperations {
 	                studyID = "";
 	                seriesID = "";
 	                patientID = "";
+	                annotationName = "";
 	            }
 	        }
     	} finally {
-    		statement.close();
+    		if (statement != null) statement.close();
     	}
     }
 
@@ -422,7 +435,6 @@ public class AIMDatabaseOperations {
         {
         	int row = 1;
     	    this.statement = mySqlConnection.createStatement();
-    	    log.info(sqlSelect);
         	rs = this.statement.executeQuery(sqlSelect);
 			while (rs.next()) {
 				if (row++ < start) continue;
@@ -702,4 +714,18 @@ public class AIMDatabaseOperations {
 		return "";
     }
 
+    public static void main(String [ ] args)
+    {
+    	AIMDatabaseOperations adb;
+		try {
+			System.out.println("Running AIMDatabaseOperations");
+			adb = new AIMDatabaseOperations(null, "http://epad-dev2.stanford.edu:8899/exist/",
+			        "gme://caCORE.caCORE/3.2/edu.northwestern.radiology.AIM", "aim.dbxml", "epaduser", "3p4dus3r");
+	    	adb.refreshTheAnnotationTable(AimVersion.AIMv3_0_1);
+			System.out.println("Done");
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+    }
 }
