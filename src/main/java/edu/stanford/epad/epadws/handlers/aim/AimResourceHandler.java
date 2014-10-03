@@ -73,6 +73,10 @@ public class AimResourceHandler extends AbstractHandler
 						statusCode = HandlerUtil.badRequestResponse(MISSING_QUERY_MESSAGE, log);
 				} else if ("POST".equalsIgnoreCase(method)) {
 					String annotationsUploadDirPath = EPADConfig.getEPADWebServerAnnotationsUploadDir();
+                                        
+                                        
+                                        log.info("=+=+=+=+=+=+=+=+=+=+=+=+= handle");                    
+                        
 					log.info("Uploading AIM annotation(s) to directory " + annotationsUploadDirPath);
 					try {
 						boolean saveError = AIMUtil.uploadAIMAnnotations(httpRequest, responseStream, annotationsUploadDirPath);
