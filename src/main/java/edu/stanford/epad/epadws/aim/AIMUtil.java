@@ -512,11 +512,10 @@ public class AIMUtil
 		doc.appendChild(root);
 
 		for (ImageAnnotation aim : aims) {
-			Aim a = new Aim(aim);
 			if (aim.getListUser().size() > 0)
-				log.info("Aim name:" + aim.getName() + " Owner:" + aim.getListUser().get(0).getLoginName() + " Series:" + a.getFirstSeriesID());
+				log.info("Aim name:" + aim.getName() + " Owner:" + aim.getListUser().get(0).getLoginName() + " Series:" + aim.getFirstSeriesID());
 			else
-				log.info("Aim name:" + aim.getName() + " Owner:unknown, Series:" + a.getFirstSeriesID());
+				log.info("Aim name:" + aim.getName() + " Owner:unknown, Series:" + aim.getFirstSeriesID());
 			Node node = aim.getXMLNode(docBuilder.newDocument());
 			Node copyNode = doc.importNode(node, true);
 			Element res = (Element)copyNode; // Copy the node

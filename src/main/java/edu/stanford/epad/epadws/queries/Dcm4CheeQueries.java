@@ -207,10 +207,11 @@ public class Dcm4CheeQueries
 		String studyDescription = getStringValueFromRow(dcm4CheeStudyData, "study_desc");
 		String physicianName = getStringValueFromRow(dcm4CheeStudyData, "ref_physician");
 		String birthdate = getStringValueFromRow(dcm4CheeStudyData, "pat_birthdate");
+		String createdTime = getStringValueFromRow(dcm4CheeStudyData, "created_time");
 		String sex = getStringValueFromRow(dcm4CheeStudyData, "pat_sex");
 		DCM4CHEEStudy dcm4CheeStudy = new DCM4CHEEStudy(studyUID, patientName, patientID, examType, dateAcquired,
 				studyStatus, seriesCount, firstSeriesUID, firstSeriesDateAcquired, studyAccessionNumber, imagesCount, stuidID,
-				studyDescription, physicianName, birthdate, sex);
+				studyDescription, physicianName, birthdate, sex, createdTime);
 		return dcm4CheeStudy;
 	}
 

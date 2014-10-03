@@ -18,6 +18,7 @@ import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.epad.dtos.EPADAIM;
 import edu.stanford.epad.dtos.EPADAIMList;
+import edu.stanford.epad.dtos.EPADError;
 import edu.stanford.epad.dtos.EPADFrame;
 import edu.stanford.epad.dtos.EPADFrameList;
 import edu.stanford.epad.dtos.EPADImage;
@@ -857,11 +858,29 @@ public class EPADHandler extends AbstractHandler
 
 		} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.STUDY, pathInfo)) {
 			StudyReference studyReference = StudyReference.extract(ProjectsRouteTemplates.STUDY, pathInfo);
-			statusCode = epadOperations.studyDelete(studyReference, sessionID, username);
+			String err = epadOperations.studyDelete(studyReference, sessionID, username);
+			if (err == null || err.trim().length() == 0)
+			{
+				statusCode = HttpServletResponse.SC_OK;
+			}
+			else
+			{
+				responseStream.append(new EPADError(err).toJSON());
+				statusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+			}
 
 		} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.SERIES, pathInfo)) {
 			SeriesReference seriesReference = SeriesReference.extract(ProjectsRouteTemplates.SERIES, pathInfo);
-			statusCode = epadOperations.seriesDelete(seriesReference, sessionID, username);
+			String err = epadOperations.seriesDelete(seriesReference, sessionID, username);
+			if (err == null || err.trim().length() == 0)
+			{
+				statusCode = HttpServletResponse.SC_OK;
+			}
+			else
+			{
+				responseStream.append(new EPADError(err).toJSON());
+				statusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+			}
 
 		} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.PROJECT_AIM, pathInfo)) {
 			ProjectReference projectReference = ProjectReference.extract(ProjectsRouteTemplates.PROJECT_AIM, pathInfo);

@@ -66,13 +66,13 @@ public class DefaultDcm4CheeDatabaseOperations implements Dcm4CheeDatabaseOperat
 		Map<String, String> retVal = new HashMap<String, String>();
 		Dcm4CheeStudyQueryBuilder queryBuilder = new Dcm4CheeStudyQueryBuilder(DCM4CHEEStudySearchType.STUDY_UID, studyUID);
 		String searchSql = queryBuilder.createStudySearchQuery();
-
 		Connection c = null;
 		Statement s = null;
 		ResultSet rs = null;
 		try {
 			c = getConnection();
 			s = c.createStatement();
+			//log.info("studySearch:" + searchSql);
 			rs = s.executeQuery(searchSql);
 
 			ResultSetMetaData metaData = rs.getMetaData();
@@ -157,7 +157,6 @@ public class DefaultDcm4CheeDatabaseOperations implements Dcm4CheeDatabaseOperat
 			ps.setString(1, studyUID);
 			rs = ps.executeQuery();
 			ResultSetMetaData metaData = rs.getMetaData();
-
 			while (rs.next()) {
 				Map<String, String> rowMap = new HashMap<String, String>();
 				int nCols = metaData.getColumnCount();

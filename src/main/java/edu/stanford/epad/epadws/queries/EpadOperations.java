@@ -87,9 +87,9 @@ public interface EpadOperations
 
 	int subjectDelete(SubjectReference subjectReference, String sessionID, String username);
 
-	int studyDelete(StudyReference studyReference, String sessionID, String username);
+	String studyDelete(StudyReference studyReference, String sessionID, String username);
 
-	int seriesDelete(SeriesReference seriesReference, String sessionID, String username);
+	String seriesDelete(SeriesReference seriesReference, String sessionID, String username);
 
 	int projectAIMDelete(ProjectReference projectReference, String aimID, String sessionID, String username);
 

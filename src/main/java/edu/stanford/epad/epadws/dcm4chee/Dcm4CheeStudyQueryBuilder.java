@@ -39,7 +39,7 @@ public class Dcm4CheeStudyQueryBuilder
 	private String createStudySelectClause()
 	{
 		return "select st.study_iuid, p.pat_name, p.pat_id, s.modality, st.study_datetime, st.study_status, "
-				+ " count(s.series_iuid) as number_series, s.series_iuid, s.pps_start, st.accession_no, "
+				+ " count(s.series_iuid) as number_series, s.series_iuid, s.pps_start, st.accession_no, st.created_time,"
 				+ " sum(s.num_instances) as sum_images, st.study_id, st.study_desc, st.ref_physician, p.pat_birthdate, p.pat_sex "
 				+ " from pacsdb.study as st, pacsdb.patient as p, pacsdb.series as s";
 	}

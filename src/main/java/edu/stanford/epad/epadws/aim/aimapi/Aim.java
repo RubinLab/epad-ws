@@ -105,70 +105,6 @@ public class Aim extends ImageAnnotation implements Serializable, Aimapi {
 
 	}
 
-	// build the new imageAnnotation
-	public Aim(String name, String modality, String description,
-			String patientName, String patientId, String patientSex,
-			String patientBirthdate, String manufacturerName, String model,
-			String version, int activeImage, LoggedInUser user,
-			String imageUid, String seriesUid, String studyUid,
-			String studyDate, String studyTime) {
-
-		super();
-
-		setName(name);
-		setDateTime(todaysDate());
-		setCagridId(caGridId);
-		setComment(fillComment(modality, description, activeImage));
-
-		addUser(user);
-
-		addPerson(createPerson(patientName, patientId, patientSex,
-				patientBirthdate));
-		addEquipment(createEquipment(manufacturerName, model, version));
-
-		// don't add the image reference yet, we don't have any shapes or segs
-		addImageReference(createImageReference(imageUid, seriesUid, studyUid,
-				activeImage, studyDate, studyTime));
-
-		addAnatomicEntity(createAnatomicEntity());
-
-	}
-
-	// build the new imageAnnotation
-	public Aim(String name, String modality, String description,
-			String patientName, String patientId, String patientSex,
-			String patientBirthdate, String manufacturerName, String model,
-			String version, int activeImage, LoggedInUser user,
-			String imageUid, String seriesUid, String studyUid,
-			String studyDate, String studyTime, String sopClassUID,
-			String referencedSopInstanceUID, int segmentNumber,
-			String sopInstanceUID, String dsoSeriesUID) {
-
-		super();
-
-		setName(name);
-		setDateTime(todaysDate());
-		setCagridId(caGridId);
-		setComment(fillComment(modality, description, activeImage));
-		addUser(user);
-		addPerson(createPerson(patientName, patientId, patientSex,
-				patientBirthdate));
-		addEquipment(createEquipment(manufacturerName, model, version));
-
-		// add a reference pointing to the source dicom
-		addAnatomicEntity(createAnatomicEntity());
-		addImageReference(createImageReference(imageUid, seriesUid, studyUid,
-				activeImage, studyDate, studyTime));
-
-		// add the segmentation and an image reference pointing to the
-		// segmentation dso
-		addSegmentation(new Segmentation(caGridId, sopInstanceUID, sopClassUID,
-				referencedSopInstanceUID, segmentNumber));
-		addImageReference(createImageReference(sopInstanceUID, dsoSeriesUID,
-				studyUid, activeImage, studyDate, studyTime));
-
-	}
-
 	// create a default name for an annotation
 	private String todaysDate() {
 		Date today = new Date();
@@ -203,35 +139,6 @@ public class Aim extends ImageAnnotation implements Serializable, Aimapi {
 		equipment.setManufacturerModelName(model);
 		equipment.setSoftwareVersion(version);
 		return equipment;
-	}
-
-	// create the image reference
-	private DICOMImageReference createImageReference(String imageUid,
-			String seriesUid, String studyUid, int image, String studyDate,
-			String studyTime) {
-
-		// series reference
-		ImageSeries imageSeries = new ImageSeries();
-		imageSeries.setCagridId(caGridId);
-		imageSeries.setInstanceUID(seriesUid);
-		imageSeries.addImage(new edu.stanford.hakan.aim3api.base.Image(0, "",
-				imageUid));
-
-		// study reference
-		ImageStudy study = new ImageStudy();
-		study.setCagridId(0);
-		study.setStartDate(studyDate);
-		study.setStartTime(studyTime);
-		study.setImageSeries(imageSeries);
-		study.setInstanceUID(studyUid);
-
-		// image reference
-		DICOMImageReference imageReference = new DICOMImageReference();
-		imageReference.setImageStudy(study);
-		imageReference.setCagridId(caGridId);
-
-		return imageReference;
-
 	}
 
 	// update the image reference for the study and series to point to this

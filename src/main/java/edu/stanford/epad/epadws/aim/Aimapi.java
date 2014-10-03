@@ -1,16 +1,9 @@
 package edu.stanford.epad.epadws.aim;
 
-import java.util.List;
+import java.util.Date;
 
 import edu.stanford.epad.epadws.aim.aimapi.LoggedInUser;
 import edu.stanford.epad.epadws.aim.aimapi.Patient;
-import edu.stanford.hakan.aim3api.base.GeometricShape;
-import edu.stanford.hakan.aim4api.projects.epad.GeometricShape.ROIShape;
-import edu.stanford.hakan.aim4api.projects.epad.TwoDCoordinate;
-import edu.stanford.hakan.aim4api.wrappers.epad.old.AE;
-import edu.stanford.hakan.aim4api.wrappers.epad.old.GeoShape;
-import edu.stanford.hakan.aim4api.wrappers.epad.old.I;
-import edu.stanford.hakan.aim4api.wrappers.epad.old.IO;
 
 /**
  * Interface for aimapi which will be implemented in edu.stanford.hakan.aim4api
@@ -40,7 +33,21 @@ public interface Aimapi {
 	//
 	// aim
 	//
-
+	public boolean hasSeries(String seriesID);
+	public boolean hasImage(String imageID);
+	public String getFirstSeriesID();
+	public String getSeriesID(String imageID);
+	public String getFirstStudyID();
+	public String getStudyID(String seriesID);
+	public Date getFirstStudyDate();
+	public String getPatientID();
+	public String getPatientName();
+	public String getFirstImageID();
+	public boolean hasImage();
+	public boolean hasSegmentation();
+	public boolean hasSegmentationImage(String imageID);
+	public String getFirstSegmentationImageID();
+;
 	void clearValues();
 
 	//

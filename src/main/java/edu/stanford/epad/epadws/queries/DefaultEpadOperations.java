@@ -75,6 +75,7 @@ import edu.stanford.epad.epadws.processing.pipeline.task.SubjectDataDeleteTask;
 import edu.stanford.epad.epadws.processing.pipeline.watcher.Dcm4CheeDatabaseWatcher;
 import edu.stanford.epad.epadws.xnat.XNATCreationOperations;
 import edu.stanford.epad.epadws.xnat.XNATDeletionOperations;
+import edu.stanford.epad.epadws.xnat.XNATSessionOperations;
 import edu.stanford.epad.epadws.xnat.XNATUtil;
 
 // TODO Too long - separate in to multiple classes
@@ -428,8 +429,28 @@ public class DefaultEpadOperations implements EpadOperations
 	}
 
 	@Override
-	public int seriesDelete(SeriesReference seriesReference, String sessionID, String username)
+	public String seriesDelete(SeriesReference seriesReference, String sessionID, String username)
 	{
+		boolean deleteSeriesOK = true;
+		try {
+			String adminSessionID = XNATSessionOperations.getXNATAdminSessionID();
+    		Set<String>projectIds = XNATQueries.allProjectIDs(adminSessionID);
+    		for (String projectId: projectIds)
+    		{
+    			Set<String> allStudyUIDs = XNATQueries.getAllStudyUIDsForProject(projectId,adminSessionID);
+    			if (allStudyUIDs.contains(seriesReference.studyUID.replace('.', '_')) || allStudyUIDs.contains(seriesReference.studyUID))
+    			{
+        			if (projectId.equals(EPADConfig.xnatUploadProjectID))
+        			{
+        				continue;
+        			}
+   				 	log.info("Series " + seriesReference.studyUID + " in use by other projects or subjects so series will not be deleted from DCM4CHEE");
+   					return "Series " + seriesReference.seriesUID + " in use by other projects or subjects so series will not be deleted from DCM4CHEE";
+    			}
+    		}
+		} catch (Exception e) {
+			log.warning("Error deleting study " + seriesReference.studyUID + " for patient " + seriesReference.subjectID + " in project " + seriesReference.projectID, e);
+		}
 		String seriesPk = null;
 		List<Map<String, String>> seriesList = dcm4CheeDatabaseOperations.getAllSeriesInStudy(seriesReference.studyUID);
 		for (Map<String, String> seriesData: seriesList)
@@ -445,16 +466,16 @@ public class DefaultEpadOperations implements EpadOperations
 			log.warning("Series not found in DCM4CHE database");
 			epadDatabaseOperations.deleteSeries(seriesReference.seriesUID);
 			deleteAllSeriesAims(seriesReference.seriesUID);
-			return HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+			return "Series not found in DCM4CHE database";
 		}
 		if (Dcm4CheeOperations.deleteSeries(seriesReference.seriesUID, seriesPk))
 		{
 			epadDatabaseOperations.deleteSeries(seriesReference.seriesUID);
 			deleteAllSeriesAims(seriesReference.seriesUID);
-			return HttpServletResponse.SC_OK;
+			return "";
 		}
 		else
-			return HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+			return "Error deleting Series in DCM4CHE database";
 	}
 
 	@Override
@@ -635,7 +656,7 @@ public class DefaultEpadOperations implements EpadOperations
 	}
 
 	@Override
-	public int studyDelete(StudyReference studyReference, String sessionID, String username)
+	public String studyDelete(StudyReference studyReference, String sessionID, String username)
 	{
 		int xnatStatusCode;
 
@@ -651,9 +672,10 @@ public class DefaultEpadOperations implements EpadOperations
 					+ studyReference.subjectID + " in project " + studyReference.projectID + " from user " + username);
 			(new Thread(new StudyDataDeleteTask(studyReference.projectID, studyReference.subjectID, studyReference.studyUID)))
 					.start();
+			return "";
 		}
-
-		return xnatStatusCode;
+		else
+			return "Error deleting Study in XNAT";
 	}
 
 	@Override
@@ -1010,6 +1032,7 @@ public class DefaultEpadOperations implements EpadOperations
 		String sex = dcm4CheeStudy.sex;
 		String studyDescription = dcm4CheeStudy.studyDescription;
 		String studyAccessionNumber = dcm4CheeStudy.studyAccessionNumber;
+		String createdTime = dcm4CheeStudy.createdTime;
 		Set<String> examTypes = getExamTypesForStudy(studyUID);
 		int numberOfSeries = dcm4CheeStudy.seriesCount;
 		int numberOfImages = dcm4CheeStudy.imagesCount;
@@ -1021,7 +1044,7 @@ public class DefaultEpadOperations implements EpadOperations
 		int	numberOfAnnotations = getNumberOfAccessibleAims(sessionID, aims, username);
 		return new EPADStudy(projectID, subjectID, patientName, studyUID, insertDate, firstSeriesUID,
 				firstSeriesDateAcquired, physicianName, birthdate, sex, studyProcessingStatus, examTypes, studyDescription,
-				studyAccessionNumber, numberOfSeries, numberOfImages, numberOfAnnotations);
+				studyAccessionNumber, numberOfSeries, numberOfImages, numberOfAnnotations, createdTime);
 	}
 
 	private EPADSeries dcm4cheeSeries2EpadSeries(String sessionID, String suppliedProjectID, String suppliedSubjectID,

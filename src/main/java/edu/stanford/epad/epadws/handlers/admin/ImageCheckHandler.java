@@ -99,6 +99,8 @@ public class ImageCheckHandler extends AbstractHandler
 				responseStream.write("Number of instances in series " + seriesUID
 						+ " for which there is no ePAD database entry for a PNG file = " + numberOfUnprocessedImages + "\n");
 				numberOfSeriesWithMissingEPADDatabaseEntry++;
+				if (fix)
+					queueAndWatcherManager.addDICOMFileToPNGGeneratorPipeline("REPROCESS", unprocessedDICOMFileDescriptionsInSeries);
 				allUnprocessedDICOMFileDescriptions.addAll(unprocessedDICOMFileDescriptionsInSeries);
 			} else {
 				// responseStream.write("All instances detected for series " + seriesUID + "\n");
@@ -113,7 +115,7 @@ public class ImageCheckHandler extends AbstractHandler
 
 		responseStream.write("Number of dcm4chee series  = " + seriesUIDs.size() + "\n");
 		if (numberOfSeriesWithMissingEPADDatabaseEntry != 0)
-			responseStream.write("Number of series in dcm4chee that ePAD has no record of = "
+			responseStream.write("Number of series in dcm4chee with missing pngs = "
 					+ numberOfSeriesWithMissingEPADDatabaseEntry + "\n");
 		responseStream.write("Total number of dcm4chee images that do not have PNGs in ePAD = "
 				+ allUnprocessedDICOMFileDescriptions.size() + "\n");
@@ -124,7 +126,6 @@ public class ImageCheckHandler extends AbstractHandler
 				responseStream.write("Adding " + allUnprocessedDICOMFileDescriptions.size()
 						+ " unprocessed image(s) to PNG pipeline...");
 				responseStream.flush();
-				queueAndWatcherManager.addDICOMFileToPNGGeneratorPipeline("REPROCESS", allUnprocessedDICOMFileDescriptions);
 				responseStream.write("All unprocessed files added\n");
 			}
 		} else if (allUnprocessedDICOMFileDescriptions.size() != 0)

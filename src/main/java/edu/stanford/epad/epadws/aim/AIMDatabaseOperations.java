@@ -303,6 +303,7 @@ public class AIMDatabaseOperations {
 	                String projectID = "";
 	                if (mySqlConnection != null)
 	                	projectID =	getProjectIdForAnnotation(userLoginName, patientID, studyID, seriesID);
+	                if (projectID.trim().length() == 0) projectID = EPADConfig.xnatUploadProjectID;
 	                if (frameID.trim().length() == 0) frameID = "0";
 	                log.info("uid:" + annotationID + " patientID:" + patientID + "\t studyUID:" + studyID + " seriesUID:" + seriesID + " imageUID:" +  imageID + " projectID:" + projectID + " user:" + userLoginName);
 	                String sqlInsert = "INSERT INTO annotations (UserLoginName,PatientID,SeriesUID,StudyUID,ImageUID,FrameID,AnnotationUID,ProjectUID) VALUES (" 

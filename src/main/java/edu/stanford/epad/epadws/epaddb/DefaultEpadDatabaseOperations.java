@@ -76,7 +76,7 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 			close(c, ps, rs);
 		}
 		if (pngFilePath == null)
-			log.warning("Could not get PNG file path for image " + imageUID);
+			log.warning("Could not get PNG file path for image " + imageUID + " seriesUID:" + seriesUID);
 
 		return pngFilePath;
 	}
@@ -1142,6 +1142,7 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 			c = getConnection();
 			ps = c.prepareStatement(EpadDatabaseCommands.DELETE_FROM_EPAD_FILES);
 			ps.setString(1, "%" + studyUID.replace('.', '_') + "%");
+			log.info("delete sql:" + ps.toString());
 			ps.executeUpdate();
 		} catch (SQLException sqle) {
 			String debugInfo = DatabaseUtils.getDebugData(rs);
@@ -1163,6 +1164,7 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 			log.info("Deleting series " + seriesUID + " from ePAD files table");
 			ps = c.prepareStatement(EpadDatabaseCommands.DELETE_FROM_EPAD_FILES);
 			ps.setString(1, "%" + seriesUID.replace('.', '_') + "%");
+			log.info("delete sql:" + ps.toString());
 			int rows = ps.executeUpdate();
 			ps.close();
 			log.info("" + rows + " deleted from ePAD files table");
@@ -1170,6 +1172,7 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 			log.info("Deleting series " + seriesUID + " from ePAD status table");
 			ps = c.prepareStatement(EpadDatabaseCommands.DELETE_SERIES_FROM_SERIES_STATUS);
 			ps.setString(1, seriesUID);
+			log.info("delete sql:" + ps.toString());
 			rows = ps.executeUpdate();
 			log.info("" + rows + " deleted from ePAD series status table");
 		} catch (SQLException sqle) {
