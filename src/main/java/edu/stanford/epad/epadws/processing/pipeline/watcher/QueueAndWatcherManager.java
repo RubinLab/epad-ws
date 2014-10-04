@@ -136,7 +136,7 @@ public class QueueAndWatcherManager
 					if (!inputDICOMFile.exists()) {
 						inputDICOMFile = downloadRemoteDICOM(dicomFileDescription);
 					}
-					}
+				}
 				// Generate mask PNGs, also AIMFile if this is the first time (only one image)
 				generateMaskPNGsForDicomSegmentationObject(dicomFileDescription, inputDICOMFile, dicomFilesCopy.size() == 1);
 				if (sameSeries) break;

@@ -303,6 +303,13 @@ public class EPADSearchFilter
 				|| (hasAnnotationMatch() && !annotationNumberMatches(numberOfAnnotations));
 	}
 
+	public boolean shouldFilterSubject(String patientID, String patientName, String examType, String accessionNumber, int numberOfAnnotations)
+	{
+		return (hasPatientIDMatch() && !patientIDMatches(patientID))
+				|| (hasPatientNameMatch() && !patientNameMatches(patientName))
+				|| (hasAnnotationMatch() && !annotationNumberMatches(numberOfAnnotations));
+	}
+
 	public boolean shouldFilterStudy(String patientID, String accessionNumber, Set<String> examTypes,
 			int numberOfAnnotations)
 	{
@@ -312,13 +319,12 @@ public class EPADSearchFilter
 				|| (hasAnnotationMatch() && !annotationNumberMatches(numberOfAnnotations));
 	}
 
-	public boolean shouldFilterSeries(String patientID, String patientName, String examType, String accessionNumber,
+	public boolean shouldFilterSeries(String patientID, String patientName, String examType,
 			int numberOfAnnotations)
 	{
 		return (hasPatientIDMatch() && !patientIDMatches(patientID))
 				|| (hasPatientNameMatch() && !patientNameMatches(patientName))
 				|| (hasModalityMatch() && !modalityMatches(examType))
-				|| (hasAccessionNumberMatch() && !accessionNumberMatches(accessionNumber))
 				|| (hasAnnotationMatch() && !annotationNumberMatches(numberOfAnnotations));
 	}
 

@@ -68,6 +68,7 @@ public class DICOMSeriesWatcher implements Runnable
 		this.dcm4cheeRootDir = EPADConfig.dcm4cheeDirRoot;
 	}
 
+	static long count = 0;
 	@Override
 	public void run()
 	{
@@ -77,8 +78,9 @@ public class DICOMSeriesWatcher implements Runnable
 		queueAndWatcherManager = QueueAndWatcherManager.getInstance();
 
 		while (!shutdownSignal.hasShutdown()) {
+			count++;
 			try {
-				SeriesProcessingDescription seriesProcessingDescription = dicomSeriesWatcherQueue.poll(1000,
+				SeriesProcessingDescription seriesProcessingDescription = dicomSeriesWatcherQueue.poll(2000,
 						TimeUnit.MILLISECONDS);
 
 				if (seriesProcessingDescription != null) {
@@ -87,7 +89,13 @@ public class DICOMSeriesWatcher implements Runnable
 					int numberOfInstances = seriesProcessingDescription.getNumberOfInstances();
 					log.info("Series watcher found new series " + seriesUID + " for patient " + patientName + " with "
 							+ numberOfInstances + " instance(s).");
-					dicomSeriesTracker.addSeriesPipelineState(new SeriesPipelineState(seriesProcessingDescription));
+					if (!dicomSeriesTracker.getSeriesPipelineStates().contains(seriesUID))
+					{
+						dicomSeriesTracker.addSeriesPipelineState(new SeriesPipelineState(seriesProcessingDescription));
+					}
+					else
+						log.info("Series " + seriesUID + " is already on queue");
+
 				}
 				// Loop through all series being processed and find images that have no corresponding PNG file recorded in ePAD
 				// database. Update their status to reflect this so that we can monitor percent completion for each series.
@@ -105,9 +113,9 @@ public class DICOMSeriesWatcher implements Runnable
 						activeSeriesPipelineState.registerActivity();
 						if (!activeSeriesPipelineState.equals(DicomSeriesProcessingState.IN_PIPELINE)) // 
 						{
-						queueAndWatcherManager.addDICOMFileToPNGGeneratorPipeline(patientName, unprocessedDICOMFiles);
-							log.info("Submitted " + unprocessedDICOMFiles.size() + " image(s) for series " + seriesUID
-								+ " to PNG generator");
+							queueAndWatcherManager.addDICOMFileToPNGGeneratorPipeline(patientName, unprocessedDICOMFiles);
+							log.info("Run:" + count + " Submitted " + unprocessedDICOMFiles.size() + " image(s) for series " + seriesUID
+									+ " to PNG generator");
 						}
 						activeSeriesPipelineState.setSeriesProcessingState(DicomSeriesProcessingState.IN_PIPELINE);
 					} else { // All images have been submitted for PNG processing.

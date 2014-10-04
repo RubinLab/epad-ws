@@ -24,7 +24,7 @@ public class Dcm4CheeDatabaseWatcher implements Runnable
 {
 	private final EPADLogger logger = EPADLogger.getInstance();
 
-	private final int SleepTimeInMilliseconds = 500;
+	private final int SleepTimeInMilliseconds = 5000;
 
 	private final BlockingQueue<SeriesProcessingDescription> dcm4CheeSeriesWatcherQueue;
 	private final BlockingQueue<SeriesProcessingDescription> xnatSeriesWatcherQueue;
@@ -71,6 +71,7 @@ public class Dcm4CheeDatabaseWatcher implements Runnable
 				logger.warning("Dcm4CheeDatabaseWatcher error", e);
 			}
 		}
+		logger.info("Exiting ePAD's DCM4CHEE database watcher");
 	}
 
 	private void submitSeriesForPngGeneration(SeriesProcessingDescription dicomSeriesDescription)

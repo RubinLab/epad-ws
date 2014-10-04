@@ -192,8 +192,13 @@ public class CoordinationHandler extends AbstractHandler
 		if (term == null) { // No coordination existed
 			String description = coordination.generateDescription();
 			String termIDPrefix = getTermIDPrefix();
+			try {
 			term = databaseOperations.insertCoordinationTerm(termIDPrefix, EPAD_SCHEMA_NAME, EPAD_SCHEMA_VERSION,
 					description, termKeys);
+			} catch (SQLException x) {
+				log.warning("Error inserting into coordinations, description:'" + description + "'", x);
+				throw x;
+			}
 		}
 		return term;
 	}

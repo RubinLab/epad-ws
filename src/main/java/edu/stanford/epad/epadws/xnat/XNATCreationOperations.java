@@ -46,11 +46,11 @@ public class XNATCreationOperations
 			log.info("Invoking XNAT with URL " + xnatProjectURL);
 			xnatStatusCode = client.executeMethod(method);
 			if (XNATUtil.unexpectedXNATCreationStatusCode(xnatStatusCode))
-				log.warning("Failure calling XNAT; status code = " + xnatStatusCode);
+				log.warning("Failure calling XNAT to create project; status code = " + xnatStatusCode);
 			else
 				eventTracker.recordProjectEvent(jsessionID, projectName);
 		} catch (IOException e) {
-			log.warning("IO exception calling XNAT", e);
+			log.warning("IO exception calling XNAT to create project", e);
 			xnatStatusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 		} finally {
 			method.releaseConnection();

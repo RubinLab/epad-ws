@@ -60,6 +60,7 @@ public class PngGeneratorProcess implements Runnable
 			taskType = task.getTaskType();
 			String tagPath = task.getTagFilePath();
 			String seriesUID = task.getSeriesUID();
+			logger.info("readDicomHeadersTask, taskType:" + taskType + " seriesUID:" + seriesUID + " tagPath:" + tagPath);
 			DicomHeadersTask dicomHeadersTask = new DicomHeadersTask(seriesUID, task.getDICOMFile(), new File(tagPath));
 			tagExec.execute(dicomHeadersTask);
 		} catch (Exception e) {

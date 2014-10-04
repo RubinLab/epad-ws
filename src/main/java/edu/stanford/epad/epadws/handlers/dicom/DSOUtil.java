@@ -78,7 +78,7 @@ public class DSOUtil
 	private static final EPADLogger log = EPADLogger.getInstance();
 
 	private static final String baseDicomDirectory = EPADConfig.getEPADWebServerPNGDir();
-
+	
 	private final static Dcm4CheeDatabaseOperations dcm4CheeDatabaseOperations = Dcm4CheeDatabase.getInstance()
 			.getDcm4CheeDatabaseOperations();
 
@@ -196,7 +196,7 @@ public class DSOUtil
 				} else {
 					log.warning("Frame number " + frameNumber + " is out of range for DSO image " + dsoEditRequest.imageUID
 							+ " in series " + dsoEditRequest.seriesUID + " which has only " + dicomFilePaths.size() + " frames");
-				return null;
+					return null;
 				}
 			}
 
@@ -214,7 +214,7 @@ public class DSOUtil
 			return null;
 		}
 	}
-	
+
 	private static File copyEmptyTiffFile(File tifFile, String newFileName)
 	{
 		File newFile =  null;
@@ -384,6 +384,31 @@ public class DSOUtil
 					DSOEditResult dsoEditResult = DSOUtil.createEditedDSO(dsoEditRequest, editedFramesPNGMaskFiles);
 					if (dsoEditResult != null)
 					{
+						if (dsoEditResult.aimID != null && dsoEditResult.aimID.length() > 0)
+						{
+							List<ImageAnnotation> aims = AIMQueries.getAIMImageAnnotations(AIMSearchType.ANNOTATION_UID, dsoEditResult.aimID, "admin");
+							if (aims.size() > 0)
+							{
+								log.info(aims.get(0).toString());
+//								String sessionID = XNATSessionOperations.getJSessionIDFromRequest(httpRequest);
+//								ImageAnnotation imageAnnotation =  aims.get(0);
+//								PluginAIMUtil.addSegmentToImageAnnotation(imageAnnotation.getSegmentationCollection().getSegmentationList().get(0).getSopClassUID(), dsoEditResult.imageUID, imageAnnotation.getSegmentationCollection().getSegmentationList().get(0).getReferencedSopInstanceUID(),
+//										imageAnnotation);
+//								DICOMImageReference dsoDICOMImageReference = PluginAIMUtil.createDICOMImageReference(dsoEditResult.studyUID, dsoEditResult.seriesUID,
+//										dsoEditResult.imageUID);
+//								imageAnnotation.addImageReference(dsoDICOMImageReference);
+//								try {
+//									AIMUtil.saveImageAnnotationToServer(imageAnnotation, sessionID);
+//								} catch (AimException e) {
+//									// TODO Auto-generated catch block
+//									e.printStackTrace();
+//								} catch (edu.stanford.hakan.aim4api.base.AimException e) {
+//									// TODO Auto-generated catch block
+//									e.printStackTrace();
+//								}
+							}
+						}
+						
 						responseStream.append(dsoEditResult.toJSON());
 					}
 					else
@@ -405,7 +430,7 @@ public class DSOUtil
 		}
 		return uploadError;
 	}
-
+	
 	public static boolean handleCreateDSO(String projectID, String subjectID, String studyUID, String seriesUID,
 			HttpServletRequest httpRequest, PrintWriter responseStream)
 	{ // See http://www.tutorialspoint.com/servlets/servlets-file-uploading.htm
@@ -426,7 +451,7 @@ public class DSOUtil
 					uploadError = true;
 				} else {
 					log.info("Extracted " + framesPNGMaskFiles.size() + " file mask(s) for DSO create for series " + seriesUID);
-						DSOEditResult dsoEditResult = DSOUtil.createNewDSO(dsoEditRequest, framesPNGMaskFiles);
+					DSOEditResult dsoEditResult = DSOUtil.createNewDSO(dsoEditRequest, framesPNGMaskFiles);
 					if (dsoEditResult != null)
 					{					
 						responseStream.append(dsoEditResult.toJSON());

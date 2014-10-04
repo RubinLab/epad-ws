@@ -72,9 +72,9 @@ public class EPADSearchFilterBuilder
 			else
 				throw new IllegalArgumentException("Invalid " + ANNOTATION_MATCH_PARAMETER_NAME + " filter parameter value");
 
-			log.info("" + searchFilter.hasAnnotationMatch());
-			log.info("" + searchFilter.hasAnnotationsAnnotationMatch());
-			log.info("" + searchFilter.hasNoAnnotationsAnnotationMatch());
+			log.debug("HasAnnotationMatch:" + searchFilter.hasAnnotationMatch());
+			log.debug("HasAnnotations" + searchFilter.hasAnnotationsAnnotationMatch());
+			log.debug("HasNoAnnotations" + searchFilter.hasNoAnnotationsAnnotationMatch());
 		}
 
 		return searchFilter;

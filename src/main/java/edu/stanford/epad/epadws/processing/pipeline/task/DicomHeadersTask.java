@@ -53,14 +53,17 @@ public class DicomHeadersTask implements Runnable
 
 			String line;
 			StringBuilder sb = new StringBuilder();
+			StringBuilder log = new StringBuilder();
 			while ((line = br.readLine()) != null) {
 				sb.append(line).append("\n");
+				log.append("./dcm2txt: " + line).append("\n");
 			}
 
 			try {
 				process.waitFor();
 			} catch (InterruptedException e) {
-				logger.warning("Couldn't get tags for series " + seriesUID + "; file=" + dicomInputFile.getAbsolutePath(), e);
+				logger.info(log.toString());
+				logger.warning("Couldn't get tags for series " + seriesUID + "; dicom=" + dicomInputFile.getAbsolutePath() + " tagFile:"  + outputFile.getAbsolutePath(), e);
 			}
 
 			EPADFileUtils.createDirsAndFile(outputFile);
@@ -68,7 +71,7 @@ public class DicomHeadersTask implements Runnable
 			tagFileWriter = new FileWriter(tagFile);
 			tagFileWriter.write(sb.toString());
 		} catch (Exception e) {
-			logger.warning("DicomHeadersTask failed to create DICOM tags for series " + seriesUID + ": " + e);
+			logger.warning("DicomHeadersTask failed to create DICOM tags for series " + seriesUID + " dicom FIle:" + dicomInputFile.getAbsolutePath() + " : " + outputFile.getAbsolutePath(), e);
 		} catch (OutOfMemoryError oome) {
 			logger.warning("DicomHeadersTask for series " + seriesUID + " out of memory: ", oome);
 		} finally {
