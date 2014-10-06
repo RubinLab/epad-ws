@@ -114,7 +114,11 @@ public class EPADHandler extends AbstractHandler
 			if (sessionID == null)
 				throw new Exception("Invalid sessionID for user:" + username);
 			EPADSearchFilter searchFilter = EPADSearchFilterBuilder.build(httpRequest);
-
+			int start = getInt(httpRequest.getParameter("start"));
+			if (start == 0) start = 1;
+			int count = getInt(httpRequest.getParameter("count"));
+			if (count == 0) count = 5000;
+			long starttime = System.currentTimeMillis();
 			if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.PROJECT_LIST, pathInfo)) {
 				EPADProjectList projectList = epadOperations.getProjectDescriptions(username, sessionID, searchFilter);
 				responseStream.append(projectList.toJSON());
@@ -264,18 +268,17 @@ public class EPADHandler extends AbstractHandler
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.PROJECT_AIM_LIST, pathInfo)) {
 				ProjectReference projectReference = ProjectReference.extract(ProjectsRouteTemplates.PROJECT_AIM_LIST, pathInfo);
 				EPADAIMList aims = epadOperations.getProjectAIMDescriptions(projectReference, username, sessionID);
+				long dbtime = System.currentTimeMillis();
+				log.info("Time taken for AIM database query:" + (dbtime-starttime) + " msecs");
 				if (returnSummary(httpRequest))
-				{	
+				{
+					aims = AIMUtil.queryAIMImageAnnotationSummaries(aims, username, start, count, sessionID);					
 					responseStream.append(aims.toJSON());
 				}
 				else
 				{
-					int start = getInt(httpRequest.getParameter("start"));
-					if (start == 0) start = 1;
-					int count = getInt(httpRequest.getParameter("count"));
-					if (count == 0) count = 5000;
 					AIMUtil.queryAIMImageAnnotations(responseStream, AIMSearchType.ANNOTATION_UID,
-							getUIDCsvList(sessionID, aims, username), username, start, count);					
+							AIMUtil.getUIDCsvList(sessionID, aims, username), username, start, count);					
 				}
 				statusCode = HttpServletResponse.SC_OK;
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.PROJECT_AIM, pathInfo)) {
@@ -299,18 +302,17 @@ public class EPADHandler extends AbstractHandler
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.SUBJECT_AIM_LIST, pathInfo)) {
 				SubjectReference subjectReference = SubjectReference.extract(ProjectsRouteTemplates.SUBJECT_AIM_LIST, pathInfo);
 				EPADAIMList aims = epadOperations.getSubjectAIMDescriptions(subjectReference, username, sessionID);
+				long dbtime = System.currentTimeMillis();
+				log.info("Time taken for AIM database query:" + (dbtime-starttime) + " msecs");
 				if (returnSummary(httpRequest))
 				{	
+					aims = AIMUtil.queryAIMImageAnnotationSummaries(aims, username, start, count, sessionID);					
 					responseStream.append(aims.toJSON());
 				}
 				else
 				{
-					int start = getInt(httpRequest.getParameter("start"));
-					if (start == 0) start = 1;
-					int count = getInt(httpRequest.getParameter("count"));
-					if (count == 0) count = 5000;
 					AIMUtil.queryAIMImageAnnotations(responseStream, AIMSearchType.ANNOTATION_UID,
-							getUIDCsvList(sessionID, aims, username), username, start, count);					
+							AIMUtil.getUIDCsvList(sessionID, aims, username), username, start, count);					
 				}
 				statusCode = HttpServletResponse.SC_OK;
 
@@ -333,18 +335,17 @@ public class EPADHandler extends AbstractHandler
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.STUDY_AIM_LIST, pathInfo)) {
 				StudyReference studyReference = StudyReference.extract(ProjectsRouteTemplates.STUDY_AIM_LIST, pathInfo);
 				EPADAIMList aims = epadOperations.getStudyAIMDescriptions(studyReference, username, sessionID);
+				long dbtime = System.currentTimeMillis();
+				log.info("Time taken for AIM database query:" + (dbtime-starttime) + " msecs");
 				if (returnSummary(httpRequest))
 				{	
+					aims = AIMUtil.queryAIMImageAnnotationSummaries(aims, username, start, count, sessionID);					
 					responseStream.append(aims.toJSON());
 				}
 				else
 				{
-					int start = getInt(httpRequest.getParameter("start"));
-					if (start == 0) start = 1;
-					int count = getInt(httpRequest.getParameter("count"));
-					if (count == 0) count = 5000;
 					AIMUtil.queryAIMImageAnnotations(responseStream, AIMSearchType.ANNOTATION_UID,
-							getUIDCsvList(sessionID, aims, username), username, start, count);					
+							AIMUtil.getUIDCsvList(sessionID, aims, username), username, start, count);					
 				}
 				statusCode = HttpServletResponse.SC_OK;
 
@@ -366,18 +367,17 @@ public class EPADHandler extends AbstractHandler
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.SERIES_AIM_LIST, pathInfo)) {
 				SeriesReference seriesReference = SeriesReference.extract(ProjectsRouteTemplates.SERIES_AIM_LIST, pathInfo);
 				EPADAIMList aims = epadOperations.getSeriesAIMDescriptions(seriesReference, username, sessionID);
+				long dbtime = System.currentTimeMillis();
+				log.info("Time taken for AIM database query:" + (dbtime-starttime) + " msecs");
 				if (returnSummary(httpRequest))
 				{	
+					aims = AIMUtil.queryAIMImageAnnotationSummaries(aims, username, start, count, sessionID);					
 					responseStream.append(aims.toJSON());
 				}
 				else
 				{
-					int start = getInt(httpRequest.getParameter("start"));
-					if (start == 0) start = 1;
-					int count = getInt(httpRequest.getParameter("count"));
-					if (count == 0) count = 5000;
 					AIMUtil.queryAIMImageAnnotations(responseStream, AIMSearchType.ANNOTATION_UID,
-							getUIDCsvList(sessionID, aims, username), username, start, count);					
+							AIMUtil.getUIDCsvList(sessionID, aims, username), username, start, count);					
 				}
 
 				statusCode = HttpServletResponse.SC_OK;
@@ -399,18 +399,17 @@ public class EPADHandler extends AbstractHandler
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.IMAGE_AIM_LIST, pathInfo)) {
 				ImageReference imageReference = ImageReference.extract(ProjectsRouteTemplates.IMAGE_AIM_LIST, pathInfo);
 				EPADAIMList aims = epadOperations.getImageAIMDescriptions(imageReference, username, sessionID);
+				long dbtime = System.currentTimeMillis();
+				log.info("Time taken for AIM database query:" + (dbtime-starttime) + " msecs");
 				if (returnSummary(httpRequest))
 				{	
+					aims = AIMUtil.queryAIMImageAnnotationSummaries(aims, username, start, count, sessionID);					
 					responseStream.append(aims.toJSON());
 				}
 				else
 				{
-					int start = getInt(httpRequest.getParameter("start"));
-					if (start == 0) start = 1;
-					int count = getInt(httpRequest.getParameter("count"));
-					if (count == 0) count = 5000;
 					AIMUtil.queryAIMImageAnnotations(responseStream, AIMSearchType.ANNOTATION_UID,
-							getUIDCsvList(sessionID, aims, username), username, start, count);					
+							AIMUtil.getUIDCsvList(sessionID, aims, username), username, start, count);					
 				}
 				statusCode = HttpServletResponse.SC_OK;
 
@@ -432,18 +431,17 @@ public class EPADHandler extends AbstractHandler
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.FRAME_AIM_LIST, pathInfo)) {
 				FrameReference frameReference = FrameReference.extract(ProjectsRouteTemplates.FRAME_AIM_LIST, pathInfo);
 				EPADAIMList aims = epadOperations.getFrameAIMDescriptions(frameReference, username, sessionID);
+				long dbtime = System.currentTimeMillis();
+				log.info("Time taken for AIM database query:" + (dbtime-starttime) + " msecs");
 				if (returnSummary(httpRequest))
 				{	
+					aims = AIMUtil.queryAIMImageAnnotationSummaries(aims, username, start, count, sessionID);					
 					responseStream.append(aims.toJSON());
 				}
 				else
 				{
-					int start = getInt(httpRequest.getParameter("start"));
-					if (start == 0) start = 1;
-					int count = getInt(httpRequest.getParameter("count"));
-					if (count == 0) count = 5000;
 					AIMUtil.queryAIMImageAnnotations(responseStream, AIMSearchType.ANNOTATION_UID,
-							getUIDCsvList(sessionID, aims, username), username, start, count);					
+							AIMUtil.getUIDCsvList(sessionID, aims, username), username, start, count);					
 				}
 				statusCode = HttpServletResponse.SC_OK;
 
@@ -464,18 +462,17 @@ public class EPADHandler extends AbstractHandler
 			} else if (HandlerUtil.matchesTemplate(StudiesRouteTemplates.STUDY_AIM_LIST, pathInfo)) {
 				StudyReference studyReference = StudyReference.extract(StudiesRouteTemplates.STUDY_AIM_LIST, pathInfo);
 				EPADAIMList aims = epadOperations.getStudyAIMDescriptions(studyReference, username, sessionID);
+				long dbtime = System.currentTimeMillis();
+				log.info("Time taken for AIM database query:" + (dbtime-starttime) + " msecs");
 				if (returnSummary(httpRequest))
 				{	
+					aims = AIMUtil.queryAIMImageAnnotationSummaries(aims, username, start, count, sessionID);					
 					responseStream.append(aims.toJSON());
 				}
 				else
 				{
-					int start = getInt(httpRequest.getParameter("start"));
-					if (start == 0) start = 1;
-					int count = getInt(httpRequest.getParameter("count"));
-					if (count == 0) count = 5000;
 					AIMUtil.queryAIMImageAnnotations(responseStream, AIMSearchType.ANNOTATION_UID,
-							getUIDCsvList(sessionID, aims, username), username, start, count);					
+							AIMUtil.getUIDCsvList(sessionID, aims, username), username, start, count);					
 				}
 				statusCode = HttpServletResponse.SC_OK;
 
@@ -497,18 +494,17 @@ public class EPADHandler extends AbstractHandler
 			} else if (HandlerUtil.matchesTemplate(StudiesRouteTemplates.SERIES_AIM_LIST, pathInfo)) {
 				SeriesReference seriesReference = SeriesReference.extract(StudiesRouteTemplates.SERIES_AIM_LIST, pathInfo);
 				EPADAIMList aims = epadOperations.getSeriesAIMDescriptions(seriesReference, username, sessionID);
+				long dbtime = System.currentTimeMillis();
+				log.info("Time taken for AIM database query:" + (dbtime-starttime) + " msecs");
 				if (returnSummary(httpRequest))
 				{	
+					aims = AIMUtil.queryAIMImageAnnotationSummaries(aims, username, start, count, sessionID);					
 					responseStream.append(aims.toJSON());
 				}
 				else
 				{
-					int start = getInt(httpRequest.getParameter("start"));
-					if (start == 0) start = 1;
-					int count = getInt(httpRequest.getParameter("count"));
-					if (count == 0) count = 5000;
 					AIMUtil.queryAIMImageAnnotations(responseStream, AIMSearchType.ANNOTATION_UID,
-							getUIDCsvList(sessionID, aims, username), username, start, count);					
+							AIMUtil.getUIDCsvList(sessionID, aims, username), username, start, count);					
 				}
 
 				statusCode = HttpServletResponse.SC_OK;
@@ -530,18 +526,17 @@ public class EPADHandler extends AbstractHandler
 			} else if (HandlerUtil.matchesTemplate(StudiesRouteTemplates.IMAGE_AIM_LIST, pathInfo)) {
 				ImageReference imageReference = ImageReference.extract(StudiesRouteTemplates.IMAGE_AIM_LIST, pathInfo);
 				EPADAIMList aims = epadOperations.getImageAIMDescriptions(imageReference, username, sessionID);
+				long dbtime = System.currentTimeMillis();
+				log.info("Time taken for AIM database query:" + (dbtime-starttime) + " msecs");
 				if (returnSummary(httpRequest))
 				{	
+					aims = AIMUtil.queryAIMImageAnnotationSummaries(aims, username, start, count, sessionID);					
 					responseStream.append(aims.toJSON());
 				}
 				else
 				{
-					int start = getInt(httpRequest.getParameter("start"));
-					if (start == 0) start = 1;
-					int count = getInt(httpRequest.getParameter("count"));
-					if (count == 0) count = 5000;
 					AIMUtil.queryAIMImageAnnotations(responseStream, AIMSearchType.ANNOTATION_UID,
-							getUIDCsvList(sessionID, aims, username), username, start, count);					
+							AIMUtil.getUIDCsvList(sessionID, aims, username), username, start, count);					
 				}
 				statusCode = HttpServletResponse.SC_OK;
 
@@ -563,18 +558,17 @@ public class EPADHandler extends AbstractHandler
 			} else if (HandlerUtil.matchesTemplate(StudiesRouteTemplates.FRAME_AIM_LIST, pathInfo)) {
 				FrameReference frameReference = FrameReference.extract(StudiesRouteTemplates.FRAME_AIM_LIST, pathInfo);
 				EPADAIMList aims = epadOperations.getFrameAIMDescriptions(frameReference, username, sessionID);
+				long dbtime = System.currentTimeMillis();
+				log.info("Time taken for AIM database query:" + (dbtime-starttime) + " msecs");
 				if (returnSummary(httpRequest))
 				{	
+					aims = AIMUtil.queryAIMImageAnnotationSummaries(aims, username, start, count, sessionID);					
 					responseStream.append(aims.toJSON());
 				}
 				else
 				{
-					int start = getInt(httpRequest.getParameter("start"));
-					if (start == 0) start = 1;
-					int count = getInt(httpRequest.getParameter("count"));
-					if (count == 0) count = 5000;
 					AIMUtil.queryAIMImageAnnotations(responseStream, AIMSearchType.ANNOTATION_UID,
-							getUIDCsvList(sessionID, aims, username), username, start, count);					
+							AIMUtil.getUIDCsvList(sessionID, aims, username), username, start, count);					
 				}
 				statusCode = HttpServletResponse.SC_OK;
 
@@ -596,18 +590,17 @@ public class EPADHandler extends AbstractHandler
 			} else if (HandlerUtil.matchesTemplate(SubjectsRouteTemplates.SUBJECT_AIM_LIST, pathInfo)) {
 				SubjectReference subjectReference = SubjectReference.extract(SubjectsRouteTemplates.SUBJECT_AIM_LIST, pathInfo);
 				EPADAIMList aims = epadOperations.getSubjectAIMDescriptions(subjectReference, username, sessionID);
+				long dbtime = System.currentTimeMillis();
+				log.info("Time taken for AIM database query:" + (dbtime-starttime) + " msecs");
 				if (returnSummary(httpRequest))
 				{	
+					aims = AIMUtil.queryAIMImageAnnotationSummaries(aims, username, start, count, sessionID);					
 					responseStream.append(aims.toJSON());
 				}
 				else
 				{
-					int start = getInt(httpRequest.getParameter("start"));
-					if (start == 0) start = 1;
-					int count = getInt(httpRequest.getParameter("count"));
-					if (count == 0) count = 5000;
 					AIMUtil.queryAIMImageAnnotations(responseStream, AIMSearchType.ANNOTATION_UID,
-							getUIDCsvList(sessionID, aims, username), username, start, count);					
+							AIMUtil.getUIDCsvList(sessionID, aims, username), username, start, count);					
 				}
 				statusCode = HttpServletResponse.SC_OK;
 
@@ -632,13 +625,12 @@ public class EPADHandler extends AbstractHandler
 				String projectID = httpRequest.getParameter("projectID");
 				log.info("GET request for AIMs from user " + username + "; query type is " + aimSearchType + ", value "
 						+ searchValue + ", project " + projectID);
-				int start = getInt(httpRequest.getParameter("start"));
-				if (start == 0) start = 1;
-				int count = getInt(httpRequest.getParameter("count"));
-				if (count == 0) count = 5000;
 				EPADAIMList aims = epadOperations.getAIMDescriptions(projectID, aimSearchType, searchValue, username, sessionID, start, count);
+				long dbtime = System.currentTimeMillis();
+				log.info("Time taken for AIM database query:" + (dbtime-starttime) + " msecs");
 				if (returnSummary(httpRequest))
 				{	
+					aims = AIMUtil.queryAIMImageAnnotationSummaries(aims, username, start, count, sessionID);					
 					responseStream.append(aims.toJSON());
 				}
 				else
@@ -651,7 +643,7 @@ public class EPADHandler extends AbstractHandler
 					else
 					{
 						AIMUtil.queryAIMImageAnnotations(responseStream, projectID, AIMSearchType.ANNOTATION_UID,
-								getUIDCsvList(sessionID, aims, username), username, start, count);
+								AIMUtil.getUIDCsvList(sessionID, aims, username), username, start, count);
 					}
 				}
 				statusCode = HttpServletResponse.SC_OK;
@@ -928,30 +920,6 @@ public class EPADHandler extends AbstractHandler
 			return true;
 		else
 			return false;
-	}
-	
-	private String getUIDCsvList(String sessionID, EPADAIMList aimlist, String username)
-	{
-		Set<String> projectIDs = aimlist.getProjectIds();
-		String csv = "";
-		for (String projectID: projectIDs)
-		{
-			try
-			{
-				boolean isCollaborator = XNATQueries.isCollaborator(sessionID, username, projectID);
-				log.info("User:" + username + " projectID:" + projectID + " isCollaborator:" + isCollaborator);
-				Set<EPADAIM> aims = aimlist.getAIMsForProject(projectID);
-				for (EPADAIM aim: aims)
-				{
-					if (!isCollaborator || aim.userName.equals(username) || aim.userName.equals("shared"))
-						csv = csv + "," +  aim.aimID;
-				}
-			}
-			catch (Exception x) {}
-		}
-		if (csv.length() == 0) return "";
-		
-		return csv.substring(1);
 	}
 	
 	private int getInt(String value)

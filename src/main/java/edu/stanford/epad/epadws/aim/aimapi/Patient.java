@@ -45,5 +45,9 @@ public class Patient extends Person {
 		this(person.getName(), person.getId(), person.getSex(), person
 				.getBirthDate());
 	}
+	public Patient(edu.stanford.hakan.aim4api.compability.aimv3.Person person) {
+		this(person.getName(), person.getId(), person.getSex(), person
+				.getBirthDate());
+	}
 
 }

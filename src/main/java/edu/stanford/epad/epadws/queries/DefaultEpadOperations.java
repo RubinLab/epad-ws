@@ -166,7 +166,7 @@ public class DefaultEpadOperations implements EpadOperations
 				}
 				if (matchAccessionNumber)
 				{
-					log.info("subject " + epadSubject.subjectID + " aim count:" + epadSubject.numberOfAnnotations);
+					//log.info("subject " + epadSubject.subjectID + " aim count:" + epadSubject.numberOfAnnotations);
 					epadSubjectList.addEPADSubject(epadSubject);
 				}
 			}
@@ -1191,8 +1191,9 @@ public class DefaultEpadOperations implements EpadOperations
 			int numberOfAnnotations = 0;
 			for  (String studyUID: studyUIDs)
 			{
-				EPADAIMList aims = getStudyAIMDescriptions(new StudyReference(null, null, studyUID), username, sessionID);
-				numberOfAnnotations = numberOfAnnotations + getNumberOfAccessibleAims(sessionID, aims, username);
+				// Skip this, cause it is too slow and not that important
+				//EPADAIMList aims = getStudyAIMDescriptions(new StudyReference(null, null, studyUID), username, sessionID);
+				//numberOfAnnotations = numberOfAnnotations + getNumberOfAccessibleAims(sessionID, aims, username);
 			}
 			if (!searchFilter.shouldFilterSubject(patientID, patientName, numberOfAnnotations)) {
 				Set<String> examTypes = epadQueries.getExamTypesForSubject(patientID);

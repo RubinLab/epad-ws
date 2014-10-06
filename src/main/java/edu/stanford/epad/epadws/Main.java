@@ -172,7 +172,7 @@ public class Main
 
 		addHandlerAtContextPath(new AimResourceHandler(), "/epad/aimresource", handlerList);
 
-		if (!"true".equalsIgnoreCase(EPADConfig.getParamValue("DISABLE_PULGINS")))
+		if (!"true".equalsIgnoreCase(EPADConfig.getParamValue("DISABLE_PLUGINS")))
 		{	
 			addHandlerAtContextPath(new EPadPluginHandler(), "/epad/plugin", handlerList);
 		}
