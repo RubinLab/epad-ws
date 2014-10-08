@@ -697,6 +697,14 @@ public class EPADHandler extends AbstractHandler
 			String subjectName = httpRequest.getParameter("subjectName");
 			statusCode = epadOperations.createSubject(subjectReference, subjectName, sessionID);
 
+		} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.SUBJECT_STATUS, pathInfo)) {
+			SubjectReference subjectReference = SubjectReference.extract(ProjectsRouteTemplates.SUBJECT_STATUS, pathInfo);
+			String status = epadOperations.setSubjectStatus(subjectReference, sessionID, username);
+			if (status == null || status.length() == 0)
+				statusCode = HttpServletResponse.SC_OK;
+			else
+				statusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;				
+
 		} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.STUDY, pathInfo)) {
 			StudyReference studyReference = StudyReference.extract(ProjectsRouteTemplates.STUDY, pathInfo);
 			statusCode = epadOperations.createStudy(studyReference, sessionID);

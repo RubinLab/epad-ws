@@ -36,6 +36,20 @@ public class XNATQueryUtil
 		return buildSubjectsBaseURL() + "/" + subjectID + "?format=json";
 	}
 
+	public static String buildSubjectURL(String subjectID)
+	{
+		return buildSubjectsBaseURL() + subjectID;
+	}
+
+	public static String buildSubjectFieldXML(String name, String value)
+	{
+		return 	"<xnat:Subject xmlns:xnat=\"http://nrg.wustl.edu/xnat\" >" +
+				"<xnat:fields>" + 
+				"<xnat:field name=\"" +  name +"\">newval5</xnat:field>" + 
+				"</xnat:fields>" +
+				"</xnat:Subject>";
+	}
+
 	/**
 	 * Construct XNAT query to get all subjects for a project.
 	 * 

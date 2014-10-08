@@ -146,6 +146,9 @@ public class DefaultEpadOperations implements EpadOperations
 			EPADSubject epadSubject = xnatSubject2EPADSubject(sessionID, username, xnatSubject, searchFilter);
 			if (epadSubject != null)
 			{
+				//String status = XNATQueries.getXNATSubjectFieldValue(sessionID, xnatSubject.ID, username);
+				//log.info("User:" + username + " Subject:" + epadSubject.subjectName + " SubjectID" + epadSubject.subjectID + " status:" + status);
+				//epadSubject.setUserProjectStatus(status);
 				boolean matchAccessionNumber = true;
 				if (searchFilter.hasAccessionNumberMatch())
 				{
@@ -182,7 +185,9 @@ public class DefaultEpadOperations implements EpadOperations
 		for (XNATSubject xnatSubject : xnatSubjectList.ResultSet.Result) {
 			if (subjectReference.subjectID.equals(xnatSubject.ID))
 			{
-				return xnatSubject2EPADSubject(sessionID, username, xnatSubject, new EPADSearchFilter());
+				EPADSubject subject = xnatSubject2EPADSubject(sessionID, username, xnatSubject, new EPADSearchFilter());
+				String status = XNATQueries.getXNATSubjectFieldValue(sessionID, subjectReference.subjectID, username);
+				return subject;
 			}
 		}
 		return null;
@@ -619,6 +624,22 @@ public class DefaultEpadOperations implements EpadOperations
 	}
 
 	@Override
+	public String setSubjectStatus(SubjectReference subjectReference, String sessionID, String username) {
+		XNATSubjectList xnatSubjectList = XNATQueries.getSubjectsForProject(sessionID, subjectReference.projectID);
+
+		for (XNATSubject xnatSubject : xnatSubjectList.ResultSet.Result) {
+			if (xnatSubject.label.equalsIgnoreCase(subjectReference.subjectID)) {
+				int resp = XNATQueries.setXNATSubjectField(sessionID, subjectReference.subjectID, username, subjectReference.status);				
+				if (resp == HttpServletResponse.SC_OK) 
+					return "";
+				else
+					return "Error setting subject " + subjectReference.subjectID + " status " + subjectReference.status + " for user " + username;
+			}
+		}
+		return "Subject " + subjectReference.subjectID + " not found in XNAT";
+	}
+
+	@Override
 	public int projectDelete(String projectID, String sessionID, String username)
 	{
 		int xnatStatusCode;
@@ -732,6 +753,7 @@ public class DefaultEpadOperations implements EpadOperations
 			else
 				return HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 		} catch (Exception e) {
+			log.warning("Error saving AIM file ",e);
 			return HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 		}
 	}
@@ -745,6 +767,7 @@ public class DefaultEpadOperations implements EpadOperations
 			else
 				return HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 		} catch (Exception e) {
+			log.warning("Error saving AIM file ",e);
 			return HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 		}
 	}
@@ -758,6 +781,7 @@ public class DefaultEpadOperations implements EpadOperations
 			else
 				return HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 		} catch (Exception e) {
+			log.warning("Error saving AIM file ",e);
 			return HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 		}
 	}
@@ -772,6 +796,7 @@ public class DefaultEpadOperations implements EpadOperations
 			else
 				return HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 		} catch (Exception e) {
+			log.warning("Error saving AIM file ",e);
 			return HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 		}
 	}
@@ -786,6 +811,7 @@ public class DefaultEpadOperations implements EpadOperations
 			else
 				return HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 		} catch (Exception e) {
+			log.warning("Error saving AIM file ",e);
 			return HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 		}
 	}
@@ -805,6 +831,7 @@ public class DefaultEpadOperations implements EpadOperations
 			epadDatabaseOperations.deleteAIM(username, projectReference, aimID);
 			return HttpServletResponse.SC_OK;
 		} catch (Exception e) {
+			log.warning("Error deleting AIM file ",e);
 			return HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 		}
 	}
@@ -823,6 +850,7 @@ public class DefaultEpadOperations implements EpadOperations
 			epadDatabaseOperations.deleteAIM(username, subjectReference, aimID);
 			return HttpServletResponse.SC_OK;
 		} catch (Exception e) {
+			log.warning("Error deleting AIM file ",e);
 			return HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 		}
 	}
@@ -841,6 +869,7 @@ public class DefaultEpadOperations implements EpadOperations
 			epadDatabaseOperations.deleteAIM(username, studyReference, aimID);
 			return HttpServletResponse.SC_OK;
 		} catch (Exception e) {
+			log.warning("Error deleting AIM file ",e);
 			return HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 		}
 	}
@@ -859,6 +888,7 @@ public class DefaultEpadOperations implements EpadOperations
 			epadDatabaseOperations.deleteAIM(username, seriesReference, aimID);
 			return HttpServletResponse.SC_OK;
 		} catch (Exception e) {
+			log.warning("Error deleting AIM file ",e);
 			return HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 		}
 	}
@@ -877,6 +907,7 @@ public class DefaultEpadOperations implements EpadOperations
 			epadDatabaseOperations.deleteAIM(username, imageReference, aimID);
 			return HttpServletResponse.SC_OK;
 		} catch (Exception e) {
+			log.warning("Error deleting AIM file ",e);
 			return HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 		}
 	}
@@ -895,6 +926,7 @@ public class DefaultEpadOperations implements EpadOperations
 			epadDatabaseOperations.deleteAIM(username, frameReference, aimID);
 			return HttpServletResponse.SC_OK;
 		} catch (Exception e) {
+			log.warning("Error deleting AIM file ",e);
 			return HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 		}
 	}
@@ -912,6 +944,7 @@ public class DefaultEpadOperations implements EpadOperations
 			epadDatabaseOperations.deleteAIM(username, aimID);
 			return HttpServletResponse.SC_OK;
 		} catch (Exception e) {
+			log.warning("Error deleting AIM file ",e);
 			return HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 		}
 	}

@@ -83,6 +83,8 @@ public interface EpadOperations
 
 	int createFrameAIM(String username, FrameReference frameReference, String aimID, File aimFile, String sessionID);
 
+	String setSubjectStatus(SubjectReference subjectReference, String sessionID, String username);
+	
 	int projectDelete(String projectID, String sessionID, String username);
 
 	int subjectDelete(SubjectReference subjectReference, String sessionID, String username);

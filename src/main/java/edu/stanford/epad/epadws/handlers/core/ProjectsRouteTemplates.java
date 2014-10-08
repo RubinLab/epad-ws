@@ -8,6 +8,7 @@ public class ProjectsRouteTemplates
 	public static final String PROJECT_AIM = PROJECT_AIM_LIST + "{aid}";
 	public static final String SUBJECT_LIST = PROJECT + "/subjects/";
 	public static final String SUBJECT = SUBJECT_LIST + "{subject}";
+	public static final String SUBJECT_STATUS = SUBJECT + "/status/{status}";
 	public static final String SUBJECT_AIM_LIST = SUBJECT + "/aims/";
 	public static final String SUBJECT_AIM = SUBJECT_AIM_LIST + "{aid}";
 	public static final String STUDY_LIST = SUBJECT + "/studies/";
