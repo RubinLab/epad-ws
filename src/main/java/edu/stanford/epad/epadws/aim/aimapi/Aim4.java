@@ -33,6 +33,7 @@ import java.util.List;
 import java.util.logging.Logger;
 
 import edu.stanford.epad.epadws.aim.Aimapi;
+import edu.stanford.hakan.aim4api.base.ImageAnnotationCollection;
 import edu.stanford.hakan.aim4api.compability.aimv3.AnatomicEntity;
 import edu.stanford.hakan.aim4api.compability.aimv3.DICOMImageReference;
 import edu.stanford.hakan.aim4api.compability.aimv3.Equipment;
@@ -67,6 +68,11 @@ public class Aim4 extends ImageAnnotation implements Serializable, Aimapi {
 	String DSO_SOP_CLASSUID = "1.2.840.10008.5.1.4.1.1.66.4";
 
 	public Aim4() {
+	}
+	
+	public Aim4(ImageAnnotationCollection iac)
+	{
+		super(iac);
 	}
 
 	// create the aim from the imageAnnotation

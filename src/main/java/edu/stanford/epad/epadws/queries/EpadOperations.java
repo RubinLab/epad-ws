@@ -87,9 +87,9 @@ public interface EpadOperations
 
 	int subjectDelete(SubjectReference subjectReference, String sessionID, String username);
 
-	String studyDelete(StudyReference studyReference, String sessionID, String username);
+	String studyDelete(StudyReference studyReference, String sessionID, boolean deleteAims, String username);
 
-	String seriesDelete(SeriesReference seriesReference, String sessionID, String username);
+	String seriesDelete(SeriesReference seriesReference, String sessionID, boolean deleteAims, String username);
 
 	int projectAIMDelete(ProjectReference projectReference, String aimID, String sessionID, String username);
 
@@ -149,7 +149,7 @@ public interface EpadOperations
 	 */
 	Set<DICOMFileDescription> getUnprocessedDICOMFilesInSeries(String seriesUID);
 
-	void deleteStudyFromEPadAndDcm4CheeDatabases(String studyUID);
+	void deleteStudyFromEPadAndDcm4CheeDatabases(String studyUID, boolean deleteAims);
 
 	void deleteStudiesFromEPadAndDcm4CheeDatabases(Set<String> studyUIDs);
 

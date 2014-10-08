@@ -652,8 +652,11 @@ public class AIMUtil
 			ea.date = aim.getDateTime();
 			ea.comment = a.getComment();
 			ea.studyDate = a.getFirstStudyDate();
+			ea.patientName = a.getPatientName();
 			aims.addAIM(ea);
 		}
+		long parsetime = System.currentTimeMillis();
+		log.info("Time taken to parse annotations:" + (parsetime-starttime) + " msecs");
 		log.info("" + annotations.size() + " annotations returned to client");
 		return aims;
 	}
@@ -700,15 +703,14 @@ public class AIMUtil
 		aims = new EPADAIMList();
 		long starttime = System.currentTimeMillis();
 		for (ImageAnnotationCollection aim : annotations) {
-			// TODO ask Hakan about this issue
-			// Aim4 a = new Aim4(aim);
-			Aim4 a = new Aim4();
+			Aim4 a = new Aim4(aim);
 			EPADAIM ea = aimMAP.get(aim.getUniqueIdentifier());
 			ea.name = aim.getImageAnnotations().get(0).getName().toString();
 			ea.template = aim.getImageAnnotations().get(0).getListTypeCode().get(0).getCode();
 			ea.date = aim.getDateTime();
 			ea.comment = a.getComment();
 			ea.studyDate = a.getFirstStudyDate();
+			ea.patientName = a.getPatientName();
 			aims.addAIM(ea);
 		}
 		log.info("" + annotations.size() + " annotations returned to client");

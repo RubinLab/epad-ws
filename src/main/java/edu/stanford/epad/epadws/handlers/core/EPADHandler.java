@@ -98,6 +98,8 @@ public class EPADHandler extends AbstractHandler
 				statusCode = HandlerUtil.invalidTokenJSONResponse(INVALID_SESSION_TOKEN_MESSAGE, responseStream, log);
 			}
 		} catch (Exception e) {
+			e.printStackTrace();
+			log.warning("Error in handle request:", e);
 			statusCode = HandlerUtil.internalErrorJSONResponse(INTERNAL_ERROR_MESSAGE, e, responseStream, log);
 		}
 		httpResponse.setStatus(statusCode);
@@ -273,7 +275,10 @@ public class EPADHandler extends AbstractHandler
 				if (returnSummary(httpRequest))
 				{
 					aims = AIMUtil.queryAIMImageAnnotationSummaries(aims, username, start, count, sessionID);					
+					long starttime2 = System.currentTimeMillis();
 					responseStream.append(aims.toJSON());
+					long resptime = System.currentTimeMillis();
+					log.info("Time taken for write http response:" + (resptime-starttime2) + " msecs");
 				}
 				else
 				{
@@ -850,7 +855,8 @@ public class EPADHandler extends AbstractHandler
 
 		} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.STUDY, pathInfo)) {
 			StudyReference studyReference = StudyReference.extract(ProjectsRouteTemplates.STUDY, pathInfo);
-			String err = epadOperations.studyDelete(studyReference, sessionID, username);
+			boolean deleteAims = "true".equalsIgnoreCase(httpRequest.getParameter("deleteAims"));
+			String err = epadOperations.studyDelete(studyReference, sessionID, deleteAims, username);
 			if (err == null || err.trim().length() == 0)
 			{
 				statusCode = HttpServletResponse.SC_OK;
@@ -863,7 +869,8 @@ public class EPADHandler extends AbstractHandler
 
 		} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.SERIES, pathInfo)) {
 			SeriesReference seriesReference = SeriesReference.extract(ProjectsRouteTemplates.SERIES, pathInfo);
-			String err = epadOperations.seriesDelete(seriesReference, sessionID, username);
+			boolean deleteAims = "true".equalsIgnoreCase(httpRequest.getParameter("deleteAims"));
+			String err = epadOperations.seriesDelete(seriesReference, sessionID, deleteAims, username);
 			if (err == null || err.trim().length() == 0)
 			{
 				statusCode = HttpServletResponse.SC_OK;

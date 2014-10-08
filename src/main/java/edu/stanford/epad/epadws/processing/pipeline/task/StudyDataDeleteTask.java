@@ -22,12 +22,14 @@ public class StudyDataDeleteTask implements Runnable
 	private final String projectID;
 	private final String patientID;
 	private final String studyUID;
-
-	public StudyDataDeleteTask(String projectID, String patientID, String studyUID)
+	private final boolean deleteAims;
+	
+	public StudyDataDeleteTask(String projectID, String patientID, String studyUID, boolean deleteAims)
 	{
 		this.projectID = projectID;
 		this.patientID = patientID;
 		this.studyUID = studyUID;
+		this.deleteAims = deleteAims;
 	}
 
 	@Override
@@ -61,7 +63,7 @@ public class StudyDataDeleteTask implements Runnable
 					XNATDeletionOperations.deleteXNATDICOMStudy(projectID, patientID,
 						studyUID, adminSessionID);
 				}
-				epadOperations.deleteStudyFromEPadAndDcm4CheeDatabases(studyUID);
+				epadOperations.deleteStudyFromEPadAndDcm4CheeDatabases(studyUID, deleteAims);
 			}
 			else
 				 log.info("Study " + studyUID + " in use by other projects or subjects so will not be deleted from DCM4CHEE");

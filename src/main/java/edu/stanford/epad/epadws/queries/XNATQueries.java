@@ -42,7 +42,6 @@ public class XNATQueries
 	public static XNATProjectList allProjects(String sessionID)
 	{
 		String allProjectsQueryURL = XNATQueryUtil.buildAllProjectsQueryURL();
-
 		return invokeXNATProjectsQuery(sessionID, allProjectsQueryURL);
 	}
 
@@ -52,7 +51,7 @@ public class XNATQueries
 		Set<String> projectIDs = new HashSet<String>();
 
 		for (XNATProject project : xnatProjectList.ResultSet.Result)
-			projectIDs.add(project.name);
+			projectIDs.add(project.ID);
 		return projectIDs;
 	}
 

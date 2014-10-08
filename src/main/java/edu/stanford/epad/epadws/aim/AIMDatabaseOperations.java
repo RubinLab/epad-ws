@@ -415,7 +415,7 @@ public class AIMDatabaseOperations {
     public List<EPADAIM> getAIMs(String projectID, String patientID, String studyUID, String seriesUID, String imageUID, int frameID, int start, int count) throws SQLException {
         String sqlSelect = "SELECT UserLoginName, ProjectUID, PatientID, StudyUID, SeriesUID, ImageUID, frameID, AnnotationUID FROM annotations WHERE 1 = 1";
 		if (projectID != null && projectID.length() > 0)
-			sqlSelect = sqlSelect + " and ProjectUID = '" + projectID + "'";
+			sqlSelect = sqlSelect + " and (ProjectUID = '" + projectID + "' or ProjectUID = '" + EPADConfig.xnatUploadProjectID + "')";
 		if (patientID != null && patientID.length() > 0)
 			sqlSelect = sqlSelect + " and PatientID = '" + patientID + "'";
 		if (studyUID != null && studyUID.length() > 0)
@@ -466,7 +466,7 @@ public class AIMDatabaseOperations {
 		if (userName != null && userName.length() > 0)
 			sqlSelect = sqlSelect + " and userName = '" + userName + "'";
 		if (projectID != null && projectID.length() > 0)
-			sqlSelect = sqlSelect + " and ProjectUID = '" + projectID + "'";
+			sqlSelect = sqlSelect + " and (ProjectUID = '" + projectID + "' or ProjectUID = '" + EPADConfig.xnatUploadProjectID + "' or ProjectUID = '')";
 		if (patientID != null && patientID.length() > 0)
 			sqlSelect = sqlSelect + " and PatientID = '" + patientID + "'";
 		if (studyUID != null && studyUID.length() > 0)
@@ -477,7 +477,8 @@ public class AIMDatabaseOperations {
 			sqlSelect = sqlSelect + " AND ImageUID = '" + imageUID + "'";
 		if (frameID != 0)
 			sqlSelect = sqlSelect + " AND FrameID = " + frameID;
-        
+        log.info("AIMs count select:" + sqlSelect);
+       
 		ResultSet rs = null;
         Set<EPADAIM> aims = new HashSet<EPADAIM>();
         try
