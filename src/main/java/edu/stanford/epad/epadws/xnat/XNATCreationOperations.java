@@ -17,6 +17,7 @@ import org.apache.commons.io.IOUtils;
 
 import edu.stanford.epad.common.dicom.DicomReader;
 import edu.stanford.epad.common.util.EPADLogger;
+import edu.stanford.epad.epadws.aim.AIMUtil;
 import edu.stanford.epad.epadws.processing.events.EventTracker;
 
 /**
@@ -151,6 +152,7 @@ public class XNATCreationOperations
 				xnatUploadProperties.load(propertiesFileStream);
 				String xnatProjectLabel = xnatUploadProperties.getProperty("XNATProjectName");
 				String xnatSessionID = xnatUploadProperties.getProperty("XNATSessionID");
+				String xnatUserName = xnatUploadProperties.getProperty("XNATUserName");
 
 				int numberOfDICOMFiles = 0;
 				if (xnatProjectLabel != null && xnatSessionID != null) {
@@ -158,12 +160,21 @@ public class XNATCreationOperations
 						String dicomPatientName = DicomReader.getPatientName(dicomFile);
 						String dicomPatientID = DicomReader.getPatientID(dicomFile);
 						String studyUID = DicomReader.getStudyIUID(dicomFile);
+						String modality = DicomReader.getModality(dicomFile);
 
 						if (dicomPatientID != null && dicomPatientName != null && studyUID != null) {
 							dicomPatientName = dicomPatientName.toUpperCase(); // DCM4CHEE stores the patient name as upper case
 							String xnatSubjectLabel = XNATUtil.subjectID2XNATSubjectLabel(dicomPatientID);
 							createXNATSubject(xnatProjectLabel, xnatSubjectLabel, dicomPatientName, xnatSessionID);
 							createXNATDICOMStudyExperiment(xnatProjectLabel, xnatSubjectLabel, studyUID, xnatSessionID);
+							if ("SEG".equals(modality))
+							{
+								try {
+									AIMUtil.generateAIMFileForDSO(dicomFile, xnatUserName, xnatProjectLabel);
+								} catch (Exception x) {
+									log.warning("Error generating DSO Annotation:", x);
+								}
+							}
 						} else
 							log.warning("Missing patient name, ID or studyUID in DICOM file " + dicomFile.getAbsolutePath());
 						numberOfDICOMFiles++;

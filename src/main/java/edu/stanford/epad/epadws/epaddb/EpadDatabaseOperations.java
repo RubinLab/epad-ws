@@ -98,6 +98,8 @@ public interface EpadDatabaseOperations
 	
 	List<EPADAIM> getAIMs(String projectID, AIMSearchType aimSearchType, String value, int start, int count);
 
+	List<EPADAIM> getAIMs(String dsoSeriesUID);
+
 	int getNumberOfAIMs(String userName, ProjectReference reference);
 
 	int getNumberOfAIMs(String userName, SubjectReference reference);
@@ -126,6 +128,8 @@ public interface EpadDatabaseOperations
 
 	void addAIM(String userName, FrameReference reference, String aimID);
 
+	void addDSOAIM(String userName, ImageReference reference, String dsoSeriesUID, String aimID);
+	
 	void deleteAIM(String userName, ProjectReference reference, String aimID);
 
 	void deleteAIM(String userName, SubjectReference reference, String aimID);

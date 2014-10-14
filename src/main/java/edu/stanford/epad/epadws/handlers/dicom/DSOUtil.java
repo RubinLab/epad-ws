@@ -44,6 +44,7 @@ import edu.stanford.epad.common.dicom.DicomSegmentationObject;
 import edu.stanford.epad.common.pixelmed.PixelMedUtils;
 import edu.stanford.epad.common.pixelmed.TIFFMasksToDSOConverter;
 import edu.stanford.epad.common.util.EPADConfig;
+import edu.stanford.epad.common.util.EPADFileUtils;
 import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.epad.dtos.DSOEditRequest;
 import edu.stanford.epad.dtos.DSOEditResult;
@@ -256,8 +257,9 @@ public class DSOUtil
 			DCM4CHEEUtil.dcmsnd(temporaryDSOFile.getAbsolutePath(), false);
 			if (dsoSeriesUID != null)
 			{
-				EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
-				epadDatabaseOperations.deleteSeries(dsoSeriesUID);
+				// No longer needed since we are updating masks already
+				//EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
+				//epadDatabaseOperations.deleteSeries(dsoSeriesUID);
 			}
 			return true;
 		} catch (Exception e) {
@@ -381,9 +383,19 @@ public class DSOUtil
 				} else {
 					log.info("Extracted " + editedFramesPNGMaskFiles.size() + " file mask(s) for DSO edit for image " + imageUID
 							+ " in  series " + seriesUID);
+					if (editedFramesPNGMaskFiles.size() != dsoEditRequest.editedFrameNumbers.size())
+						throw new IOException("Number of files and frames number do not match");
 					DSOEditResult dsoEditResult = DSOUtil.createEditedDSO(dsoEditRequest, editedFramesPNGMaskFiles);
 					if (dsoEditResult != null)
 					{
+						for (int i = 0; i < dsoEditRequest.editedFrameNumbers.size(); i++)
+						{
+							Integer frameNumber = dsoEditRequest.editedFrameNumbers.get(i);
+							String pngMaskDirectoryPath = baseDicomDirectory + "/studies/" + studyUID + "/series/" + seriesUID + "/images/"
+									+ imageUID + "/masks/";
+							String pngMaskFilePath = pngMaskDirectoryPath + frameNumber + ".png";
+							EPADFileUtils.copyFile(editedFramesPNGMaskFiles.get(i), new File(pngMaskFilePath));
+						}
 						if (dsoEditResult.aimID != null && dsoEditResult.aimID.length() > 0)
 						{
 							List<ImageAnnotation> aims = AIMQueries.getAIMImageAnnotations(AIMSearchType.ANNOTATION_UID, dsoEditResult.aimID, "admin");

@@ -1,10 +1,14 @@
 package edu.stanford.epad.epadws.processing.pipeline.task;
 
 import java.io.File;
+import java.util.List;
 
 import edu.stanford.epad.common.util.EPADLogger;
+import edu.stanford.epad.epadws.aim.AIMQueries;
+import edu.stanford.epad.epadws.aim.AIMSearchType;
 import edu.stanford.epad.epadws.aim.AIMUtil;
 import edu.stanford.epad.epadws.handlers.dicom.DSOUtil;
+import edu.stanford.hakan.aim3api.base.ImageAnnotation;
 
 public class DSOMaskPNGGeneratorTask implements GeneratorTask
 {
@@ -33,7 +37,9 @@ public class DSOMaskPNGGeneratorTask implements GeneratorTask
 			if (generateAIM)
 			{
 				// Must be first upload, create AIM file
-				AIMUtil.generateAIMFileForDSO(dsoFile);
+				List<ImageAnnotation> ias = AIMQueries.getAIMImageAnnotations(AIMSearchType.SERIES_UID, seriesUID, "admin", 1, 50);
+				if (ias == null || ias.size() == 0)
+					AIMUtil.generateAIMFileForDSO(dsoFile);
 			}
 		} catch (Exception e) {
 			log.warning("Error writing AIM file for DSO series " + seriesUID, e);

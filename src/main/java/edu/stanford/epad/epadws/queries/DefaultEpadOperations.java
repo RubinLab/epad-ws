@@ -53,15 +53,16 @@ import edu.stanford.epad.dtos.internal.XNATProjectList;
 import edu.stanford.epad.dtos.internal.XNATSubject;
 import edu.stanford.epad.dtos.internal.XNATSubjectList;
 import edu.stanford.epad.dtos.internal.XNATUserList;
+import edu.stanford.epad.epadws.aim.AIMQueries;
 import edu.stanford.epad.epadws.aim.AIMSearchType;
 import edu.stanford.epad.epadws.aim.AIMUtil;
+import edu.stanford.epad.epadws.aim.aimapi.Aim;
 import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeDatabase;
 import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeDatabaseOperations;
 import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeOperations;
 import edu.stanford.epad.epadws.epaddb.EpadDatabase;
 import edu.stanford.epad.epadws.epaddb.EpadDatabaseOperations;
 import edu.stanford.epad.epadws.epaddb.PNGFilesOperations;
-import edu.stanford.epad.epadws.handlers.core.AIMReference;
 import edu.stanford.epad.epadws.handlers.core.EPADSearchFilter;
 import edu.stanford.epad.epadws.handlers.core.FrameReference;
 import edu.stanford.epad.epadws.handlers.core.ImageReference;
@@ -77,6 +78,7 @@ import edu.stanford.epad.epadws.xnat.XNATCreationOperations;
 import edu.stanford.epad.epadws.xnat.XNATDeletionOperations;
 import edu.stanford.epad.epadws.xnat.XNATSessionOperations;
 import edu.stanford.epad.epadws.xnat.XNATUtil;
+import edu.stanford.hakan.aim3api.base.ImageAnnotation;
 
 // TODO Too long - separate in to multiple classes
 
@@ -141,7 +143,7 @@ public class DefaultEpadOperations implements EpadOperations
 	{
 		EPADSubjectList epadSubjectList = new EPADSubjectList();
 		XNATSubjectList xnatSubjectList = XNATQueries.getSubjectsForProject(sessionID, projectID);
-
+		log.info("XNAT returned " + xnatSubjectList.ResultSet.Result.size() + " subjects for project:" + projectID);
 		for (XNATSubject xnatSubject : xnatSubjectList.ResultSet.Result) {
 			EPADSubject epadSubject = xnatSubject2EPADSubject(sessionID, username, xnatSubject, searchFilter);
 			if (epadSubject != null)
@@ -264,7 +266,52 @@ public class DefaultEpadOperations implements EpadOperations
 					epadSeries.examType, epadSeries.numberOfAnnotations);
 			//log.info("Series:" + epadSeries.seriesDescription + " filterDSO:" + filterDSOs + " isDSO:"+ epadSeries.isDSO);
 			if (!filter && !(filterDSOs && epadSeries.isDSO))
+			{
 				epadSeriesList.addEPADSeries(epadSeries);
+			}
+			else if (epadSeries.isDSO)
+			{
+				// Check if AIM exists
+				List<EPADAIM> aims = this.epadDatabaseOperations.getAIMs(epadSeries.seriesUID);
+				if (aims == null || aims.size() == 0)
+				{
+					Set<DICOMFileDescription> dicomFileDescriptions = dcm4CheeDatabaseOperations.getDICOMFilesForSeries(epadSeries.seriesUID);
+					if (dicomFileDescriptions.size() > 0)
+					{
+						File dsoDICOMFile = null;
+						DICOMFileDescription lastDSO = dicomFileDescriptions.iterator().next();
+						String createdTime = lastDSO.createdTime;
+						for (DICOMFileDescription dicomFileDescription : dicomFileDescriptions) {
+							if (createdTime.compareTo(dicomFileDescription.createdTime) < 0)
+							{
+								createdTime = dicomFileDescription.createdTime;
+								lastDSO = dicomFileDescription;
+							}
+						}
+						String dicomFilePath = EPADConfig.dcm4cheeDirRoot + "/" + lastDSO.filePath;
+						dsoDICOMFile = new File(dicomFilePath);
+						try {
+							List<ImageAnnotation> ias = AIMQueries.getAIMImageAnnotations(AIMSearchType.SERIES_UID, epadSeries.seriesUID, username, 1, 50);
+							if (ias == null || ias.size() == 0)
+							{
+								AIMUtil.generateAIMFileForDSO(dsoDICOMFile);
+							}
+							else
+							{
+								log.info("Adding entry to annotations table");
+								ImageAnnotation ia = ias.get(0);
+								Aim aim = new Aim(ia);
+								ImageReference reference = new ImageReference(epadSeries.projectID, epadSeries.patientID, epadSeries.studyUID, aim.getFirstSeriesID(), aim.getFirstImageID());
+								this.epadDatabaseOperations.addDSOAIM(username, reference, epadSeries.seriesUID, ia.getUniqueIdentifier());
+							}
+						} catch (Exception e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}
+					}
+				}
+			}
+			
 		}
 		return epadSeriesList;
 	}
@@ -468,14 +515,14 @@ public class DefaultEpadOperations implements EpadOperations
 		{
 			log.warning("Series not found in DCM4CHE database");
 			epadDatabaseOperations.deleteSeries(seriesReference.seriesUID);
-			deleteAllSeriesAims(seriesReference.seriesUID);
+			deleteAllSeriesAims(seriesReference.seriesUID, false);
 			return "Series not found in DCM4CHE database";
 		}
 		if (Dcm4CheeOperations.deleteSeries(seriesReference.seriesUID, seriesPk))
 		{
 			epadDatabaseOperations.deleteSeries(seriesReference.seriesUID);
 			if (deleteAims)
-				deleteAllSeriesAims(seriesReference.seriesUID);
+				deleteAllSeriesAims(seriesReference.seriesUID, false);
 			return "";
 		}
 		else
@@ -483,7 +530,7 @@ public class DefaultEpadOperations implements EpadOperations
 	}
 
 	@Override
-	public void deleteAllSeriesAims(String seriesUID) {
+	public void deleteAllSeriesAims(String seriesUID, boolean deleteDSOs) {
 		// Delete all Series AIMs
 		SeriesReference sref = new SeriesReference(null, null, null, seriesUID);
 		List<EPADAIM> aims = epadDatabaseOperations.getAIMs(sref);
@@ -721,11 +768,11 @@ public class DefaultEpadOperations implements EpadOperations
 		PNGFilesOperations.deletePNGsForStudy(studyUID);
 		
 		if (deleteAims)
-			deleteAllStudyAims(studyUID);
+			deleteAllStudyAims(studyUID, false);
 	}
 
 	@Override
-	public void deleteAllStudyAims(String studyUID) {
+	public void deleteAllStudyAims(String studyUID, boolean deleteDSOs) {
 		// Delete all Study AIMs
 		StudyReference sref = new StudyReference(null, null, studyUID);
 		List<EPADAIM> aims = epadDatabaseOperations.getAIMs(sref);
@@ -818,17 +865,21 @@ public class DefaultEpadOperations implements EpadOperations
 
 	@Override
 	public int projectAIMDelete(ProjectReference projectReference, String aimID,
-			String sessionID, String username) {
+			String sessionID, boolean deleteDSO, String username) {
 		try {
 			log.info("Getting aim desc");
 			EPADAIM aim = getAIMDescription(aimID, username, sessionID);
-			if (!"admin".equals(username) && !aim.userName.equals(username) && !XNATQueries.isOwner(sessionID, username, aim.projectID))
+			if (!"admin".equals(username) && !aim.userName.equals(username) && !aim.userName.equals("shared") && !XNATQueries.isOwner(sessionID, username, aim.projectID))
 			{
 				log.warning("No permissions to delete AIM:" + aimID + " for user " + username);
 				return HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 			}
 			AIMUtil.deleteAIM(aimID);
 			epadDatabaseOperations.deleteAIM(username, projectReference, aimID);
+			if (deleteDSO && aim.dsoSeriesUID != null && aim.dsoSeriesUID.length() > 0)
+			{
+				this.seriesDelete(new SeriesReference(null, aim.subjectID, aim.studyUID, aim.dsoSeriesUID), sessionID, false, username);
+			}
 			return HttpServletResponse.SC_OK;
 		} catch (Exception e) {
 			log.warning("Error deleting AIM file ",e);
@@ -838,7 +889,7 @@ public class DefaultEpadOperations implements EpadOperations
 
 	@Override
 	public int subjectAIMDelete(SubjectReference subjectReference, String aimID,
-			String sessionID, String username) {
+			String sessionID, boolean deleteDSO, String username) {
 		try {
 			EPADAIM aim = getAIMDescription(aimID, username, sessionID);
 			if (!"admin".equals(username) && !aim.userName.equals(username) && !XNATQueries.isOwner(sessionID, username, aim.projectID))
@@ -848,6 +899,10 @@ public class DefaultEpadOperations implements EpadOperations
 			}
 			AIMUtil.deleteAIM(aimID);
 			epadDatabaseOperations.deleteAIM(username, subjectReference, aimID);
+			if (deleteDSO && aim.dsoSeriesUID != null && aim.dsoSeriesUID.length() > 0)
+			{
+				this.seriesDelete(new SeriesReference(null, aim.subjectID, aim.studyUID, aim.dsoSeriesUID), sessionID, false, username);
+			}
 			return HttpServletResponse.SC_OK;
 		} catch (Exception e) {
 			log.warning("Error deleting AIM file ",e);
@@ -856,7 +911,7 @@ public class DefaultEpadOperations implements EpadOperations
 	}
 
 	@Override
-	public int studyAIMDelete(StudyReference studyReference, String aimID, String sessionID, String username)
+	public int studyAIMDelete(StudyReference studyReference, String aimID, String sessionID, boolean deleteDSO, String username)
 	{
 		try {
 			EPADAIM aim = getAIMDescription(aimID, username, sessionID);
@@ -867,6 +922,10 @@ public class DefaultEpadOperations implements EpadOperations
 			}
 			AIMUtil.deleteAIM(aimID);
 			epadDatabaseOperations.deleteAIM(username, studyReference, aimID);
+			if (deleteDSO && aim.dsoSeriesUID != null && aim.dsoSeriesUID.length() > 0)
+			{
+				this.seriesDelete(new SeriesReference(null, aim.subjectID, aim.studyUID, aim.dsoSeriesUID), sessionID, false, username);
+			}
 			return HttpServletResponse.SC_OK;
 		} catch (Exception e) {
 			log.warning("Error deleting AIM file ",e);
@@ -875,7 +934,7 @@ public class DefaultEpadOperations implements EpadOperations
 	}
 
 	@Override
-	public int seriesAIMDelete(SeriesReference seriesReference, String aimID, String sessionID, String username)
+	public int seriesAIMDelete(SeriesReference seriesReference, String aimID, String sessionID, boolean deleteDSO, String username)
 	{
 		try {
 			EPADAIM aim = getAIMDescription(aimID, username, sessionID);
@@ -886,6 +945,10 @@ public class DefaultEpadOperations implements EpadOperations
 			}
 			AIMUtil.deleteAIM(aimID);
 			epadDatabaseOperations.deleteAIM(username, seriesReference, aimID);
+			if (deleteDSO && aim.dsoSeriesUID != null && aim.dsoSeriesUID.length() > 0)
+			{
+				this.seriesDelete(new SeriesReference(null, aim.subjectID, aim.studyUID, aim.dsoSeriesUID), sessionID, false, username);
+			}
 			return HttpServletResponse.SC_OK;
 		} catch (Exception e) {
 			log.warning("Error deleting AIM file ",e);
@@ -894,7 +957,7 @@ public class DefaultEpadOperations implements EpadOperations
 	}
 
 	@Override
-	public int imageAIMDelete(ImageReference imageReference, String aimID, String sessionID, String username)
+	public int imageAIMDelete(ImageReference imageReference, String aimID, String sessionID, boolean deleteDSO, String username)
 	{
 		try {
 			EPADAIM aim = getAIMDescription(aimID, username, sessionID);
@@ -905,6 +968,10 @@ public class DefaultEpadOperations implements EpadOperations
 			}
 			AIMUtil.deleteAIM(aimID);
 			epadDatabaseOperations.deleteAIM(username, imageReference, aimID);
+			if (deleteDSO && aim.dsoSeriesUID != null && aim.dsoSeriesUID.length() > 0)
+			{
+				this.seriesDelete(new SeriesReference(null, aim.subjectID, aim.studyUID, aim.dsoSeriesUID), sessionID, false, username);
+			}
 			return HttpServletResponse.SC_OK;
 		} catch (Exception e) {
 			log.warning("Error deleting AIM file ",e);
@@ -913,7 +980,7 @@ public class DefaultEpadOperations implements EpadOperations
 	}
 
 	@Override
-	public int frameAIMDelete(FrameReference frameReference, String aimID, String sessionID, String username)
+	public int frameAIMDelete(FrameReference frameReference, String aimID, String sessionID, boolean deleteDSO, String username)
 	{
 		try {
 			EPADAIM aim = getAIMDescription(aimID, username, sessionID);
@@ -924,6 +991,10 @@ public class DefaultEpadOperations implements EpadOperations
 			}
 			AIMUtil.deleteAIM(aimID);
 			epadDatabaseOperations.deleteAIM(username, frameReference, aimID);
+			if (deleteDSO && aim.dsoSeriesUID != null && aim.dsoSeriesUID.length() > 0)
+			{
+				this.seriesDelete(new SeriesReference(null, aim.subjectID, aim.studyUID, aim.dsoSeriesUID), sessionID, false, username);
+			}
 			return HttpServletResponse.SC_OK;
 		} catch (Exception e) {
 			log.warning("Error deleting AIM file ",e);
@@ -932,7 +1003,7 @@ public class DefaultEpadOperations implements EpadOperations
 	}
 
 	@Override
-	public int aimDelete(String aimID, String sessionID, String username) {
+	public int aimDelete(String aimID, String sessionID, boolean deleteDSO, String username) {
 		try {
 			EPADAIM aim = getAIMDescription(aimID, username, sessionID);
 			if (!"admin".equals(username) && !aim.userName.equals(username) && !XNATQueries.isOwner(sessionID, username, aim.projectID))
@@ -942,6 +1013,10 @@ public class DefaultEpadOperations implements EpadOperations
 			}
 			AIMUtil.deleteAIM(aimID);
 			epadDatabaseOperations.deleteAIM(username, aimID);
+			if (deleteDSO && aim.dsoSeriesUID != null && aim.dsoSeriesUID.length() > 0)
+			{
+				this.seriesDelete(new SeriesReference(null, aim.subjectID, aim.studyUID, aim.dsoSeriesUID), sessionID, false, username);
+			}
 			return HttpServletResponse.SC_OK;
 		} catch (Exception e) {
 			log.warning("Error deleting AIM file ",e);

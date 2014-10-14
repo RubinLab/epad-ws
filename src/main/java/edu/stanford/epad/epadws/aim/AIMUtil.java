@@ -39,6 +39,8 @@ import org.w3c.dom.NodeList;
 
 import com.pixelmed.dicom.Attribute;
 import com.pixelmed.dicom.AttributeList;
+import com.pixelmed.dicom.SequenceAttribute;
+import com.pixelmed.dicom.SequenceItem;
 import com.pixelmed.dicom.TagFromName;
 
 import edu.stanford.epad.common.pixelmed.PixelMedUtils;
@@ -56,6 +58,7 @@ import edu.stanford.epad.epadws.aim.aimapi.Aim;
 import edu.stanford.epad.epadws.aim.aimapi.Aim4;
 import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeDatabase;
 import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeDatabaseOperations;
+import edu.stanford.epad.epadws.epaddb.EpadDatabase;
 import edu.stanford.epad.epadws.handlers.core.FrameReference;
 import edu.stanford.epad.epadws.handlers.core.ImageReference;
 import edu.stanford.epad.epadws.queries.Dcm4CheeQueries;
@@ -276,6 +279,12 @@ public class AIMUtil
 	 */
 	public static void generateAIMFileForDSO(File dsoFile) throws Exception
 	{
+		generateAIMFileForDSO(dsoFile, "shared", null);
+	}
+	
+	public static void generateAIMFileForDSO(File dsoFile, String username, String projectID) throws Exception
+	{
+		log.info("Creating DSO AIM for user " + username + " in project " + projectID);
 		AttributeList dsoDICOMAttributes = PixelMedUtils.readDICOMAttributeList(dsoFile);
 		String patientID = Attribute.getSingleStringValueOrEmptyString(dsoDICOMAttributes, TagFromName.PatientID);
 		String patientName = Attribute.getSingleStringValueOrEmptyString(dsoDICOMAttributes, TagFromName.PatientName);
@@ -290,23 +299,27 @@ public class AIMUtil
 		String seriesUID = Attribute.getSingleStringValueOrEmptyString(dsoDICOMAttributes, TagFromName.SeriesInstanceUID);
 		String imageUID = Attribute.getSingleStringValueOrEmptyString(dsoDICOMAttributes, TagFromName.SOPInstanceUID);
 		String description = Attribute.getSingleStringValueOrEmptyString(dsoDICOMAttributes, TagFromName.SeriesDescription);
-		log.info("DSO Series description:" + description);
 		// TODO: This call to get Referenced Image does not work ???
 		String[] referencedImageUID = Attribute.getStringValues(dsoDICOMAttributes, TagFromName.ReferencedSOPInstanceUID);
-//		Need to try this instead		
-//		SequenceAttribute referencedSeriesSequence =(SequenceAttribute)dsoDICOMAttributes.get(TagFromName.ReferencedSeriesSequence);
-//		if (referencedSeriesSequence != null) {
-//		    Iterator sitems = referencedSeriesSequence.iterator();
-//		    if (sitems.hasNext()) {
-//		        SequenceItem sitem = (SequenceItem)sitems.next();
-//		        if (sitem != null) {
-//		            AttributeList list = sitem.getAttributeList();
-//		            Attribute a = list.get(TagFromName.ReferencedSOPClassUID);
-//        			Attribute b = list.get(TagFromName.ReferencedSOPInstanceUID);
-//        			Attribute c = list.get(TagFromName.ReferencedFrameNumber);
-//		        }
-//		    }
-//		}
+		SequenceAttribute referencedSeriesSequence =(SequenceAttribute)dsoDICOMAttributes.get(TagFromName.ReferencedSeriesSequence);
+		if (referencedSeriesSequence != null) {
+		    Iterator sitems = referencedSeriesSequence.iterator();
+		    if (sitems.hasNext()) {
+		        SequenceItem sitem = (SequenceItem)sitems.next();
+		        if (sitem != null) {
+		            AttributeList list = sitem.getAttributeList();
+		            list = SequenceAttribute.getAttributeListFromWithinSequenceWithSingleItem(list,
+							TagFromName.ReferencedInstanceSequence);
+		            if (list.get(TagFromName.ReferencedSOPInstanceUID) != null)
+		            {
+		            	
+		    			referencedImageUID = new String[1];
+		    			referencedImageUID[0] = list.get(TagFromName.ReferencedSOPInstanceUID).getSingleStringValueOrEmptyString();
+			            log.info("ReferencedSOPInstanceUID:" + referencedImageUID[0]);
+		            }
+ 		        }
+		    }
+		}
 		Dcm4CheeDatabaseOperations dcm4CheeDatabaseOperations = Dcm4CheeDatabase.getInstance()
 				.getDcm4CheeDatabaseOperations();
 		if (referencedImageUID == null || referencedImageUID.length == 0)
@@ -320,7 +333,7 @@ public class AIMUtil
 				}
 			}
 			if (referencedImageUID[0] == null)
-				throw new Exception("DSO Referenced Image UID not found: " + referencedImageUID);
+				throw new Exception("DSO Referenced Image UID not found: " + seriesUID);
 		}
 		String referencedSeriesUID = dcm4CheeDatabaseOperations.getSeriesUIDForImage(referencedImageUID[0]);
 
@@ -332,7 +345,7 @@ public class AIMUtil
 			log.info("DSO Study UID=" + studyUID);
 			log.info("DSO Series UID=" + seriesUID);
 			log.info("DSO Image UID=" + imageUID);
-			log.info("Referenced SOP Instance UID=" + referencedImageUID);
+			log.info("Referenced SOP Instance UID=" + referencedImageUID[0]);
 			log.info("Referenced Series Instance UID=" + referencedSeriesUID);
 
 			String name = description;
@@ -361,7 +374,7 @@ public class AIMUtil
 			imageAnnotation.addPerson(person);
 
 			// TODO Not general. See if we can generate AIM on GUI upload of DSO with correct user.
-			setImageAnnotationUser(imageAnnotation, "shared");
+			setImageAnnotationUser(imageAnnotation, username);
 
 			log.info("Saving AIM file for DSO " + imageUID + " in series " + seriesUID + " with ID "
 					+ imageAnnotation.getUniqueIdentifier());
@@ -370,10 +383,10 @@ public class AIMUtil
 				if (result.toLowerCase().contains("success"))
 				{
 		    		String adminSessionID = XNATSessionOperations.getXNATAdminSessionID();
-					String projectID = XNATQueries.getFirstProjectForStudy(adminSessionID, referencedStudyUID);
-					EpadOperations epadOperations = DefaultEpadOperations.getInstance();
+		    		if (projectID == null || projectID.trim().length() == 0)
+		    			projectID = XNATQueries.getFirstProjectForStudy(adminSessionID, referencedStudyUID);
 					ImageReference imageReference = new ImageReference(projectID, patientID, referencedStudyUID, referencedSeriesUID, referencedImageUID[0]);
-					epadOperations.createImageAIM("shared", imageReference, imageAnnotation.getUniqueIdentifier(), null, "");
+					EpadDatabase.getInstance().getEPADDatabaseOperations().addDSOAIM(username, imageReference, seriesUID, imageAnnotation.getUniqueIdentifier());
 				}
 			} catch (AimException e) {
 				log.warning("Exception saving AIM file for DSO image " + imageUID + " in series " + seriesUID, e);
@@ -526,6 +539,7 @@ public class AIMUtil
 	{
 		if (aimFile == null)
 			return true;
+		
 		ImageAnnotation imageAnnotation = AIMUtil.getImageAnnotationFromFile(aimFile, xsdFilePath);
 		if (imageAnnotation != null) {
 			String patientID = imageAnnotation.getListPerson().get(0).getId();
