@@ -143,14 +143,14 @@ public class DefaultEpadOperations implements EpadOperations
 	{
 		EPADSubjectList epadSubjectList = new EPADSubjectList();
 		XNATSubjectList xnatSubjectList = XNATQueries.getSubjectsForProject(sessionID, projectID);
-		log.info("XNAT returned " + xnatSubjectList.ResultSet.Result.size() + " subjects for project:" + projectID);
+		//log.info("XNAT returned " + xnatSubjectList.ResultSet.Result.size() + " subjects for project:" + projectID);
 		for (XNATSubject xnatSubject : xnatSubjectList.ResultSet.Result) {
 			EPADSubject epadSubject = xnatSubject2EPADSubject(sessionID, username, xnatSubject, searchFilter);
 			if (epadSubject != null)
 			{
-				//String status = XNATQueries.getXNATSubjectFieldValue(sessionID, xnatSubject.ID, username);
+				String status = XNATQueries.getXNATSubjectFieldValue(sessionID, xnatSubject.ID, username);
 				//log.info("User:" + username + " Subject:" + epadSubject.subjectName + " SubjectID" + epadSubject.subjectID + " status:" + status);
-				//epadSubject.setUserProjectStatus(status);
+				epadSubject.setUserProjectStatus(status);
 				boolean matchAccessionNumber = true;
 				if (searchFilter.hasAccessionNumberMatch())
 				{
@@ -189,6 +189,7 @@ public class DefaultEpadOperations implements EpadOperations
 			{
 				EPADSubject subject = xnatSubject2EPADSubject(sessionID, username, xnatSubject, new EPADSearchFilter());
 				String status = XNATQueries.getXNATSubjectFieldValue(sessionID, subjectReference.subjectID, username);
+				subject.setUserProjectStatus(status);
 				return subject;
 			}
 		}
@@ -298,11 +299,13 @@ public class DefaultEpadOperations implements EpadOperations
 							}
 							else
 							{
-								log.info("Adding entry to annotations table");
-								ImageAnnotation ia = ias.get(0);
-								Aim aim = new Aim(ia);
-								ImageReference reference = new ImageReference(epadSeries.projectID, epadSeries.patientID, epadSeries.studyUID, aim.getFirstSeriesID(), aim.getFirstImageID());
-								this.epadDatabaseOperations.addDSOAIM(username, reference, epadSeries.seriesUID, ia.getUniqueIdentifier());
+								log.info("Adding entries to annotations table");
+								for (ImageAnnotation ia: ias)
+								{
+									Aim aim = new Aim(ia);
+									ImageReference reference = new ImageReference(epadSeries.projectID, epadSeries.patientID, epadSeries.studyUID, aim.getFirstSeriesID(), aim.getFirstImageID());
+									this.epadDatabaseOperations.addDSOAIM(username, reference, epadSeries.seriesUID, ia.getUniqueIdentifier());
+								}
 							}
 						} catch (Exception e) {
 							// TODO Auto-generated catch block
@@ -837,7 +840,8 @@ public class DefaultEpadOperations implements EpadOperations
 	public int createImageAIM(String username, ImageReference imageReference, String aimID, File aimFile, String sessionID)
 	{
 		try {
-			epadDatabaseOperations.addAIM(username, imageReference, aimID);
+			if (aimFile == null)
+				epadDatabaseOperations.addAIM(username, imageReference, aimID);
 			if (aimFile == null || !AIMUtil.saveAIMAnnotation(aimFile, imageReference.projectID, sessionID, username))
 				return HttpServletResponse.SC_OK;
 			else
@@ -852,7 +856,8 @@ public class DefaultEpadOperations implements EpadOperations
 	public int createFrameAIM(String username, FrameReference frameReference, String aimID, File aimFile, String sessionID)
 	{
 		try {
-			epadDatabaseOperations.addAIM(username, frameReference, aimID);
+			if (aimFile == null)
+				epadDatabaseOperations.addAIM(username, frameReference, aimID);
 			if (aimFile == null || !AIMUtil.saveAIMAnnotation(aimFile, frameReference.projectID, sessionID, username))
 				return HttpServletResponse.SC_OK;
 			else
@@ -867,18 +872,19 @@ public class DefaultEpadOperations implements EpadOperations
 	public int projectAIMDelete(ProjectReference projectReference, String aimID,
 			String sessionID, boolean deleteDSO, String username) {
 		try {
-			log.info("Getting aim desc");
 			EPADAIM aim = getAIMDescription(aimID, username, sessionID);
 			if (!"admin".equals(username) && !aim.userName.equals(username) && !aim.userName.equals("shared") && !XNATQueries.isOwner(sessionID, username, aim.projectID))
 			{
 				log.warning("No permissions to delete AIM:" + aimID + " for user " + username);
 				return HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 			}
+			log.info("Deleting AIM, deleteDSO:" + deleteDSO + " dsoSeriesUID:" + aim.dsoSeriesUID);
 			AIMUtil.deleteAIM(aimID);
 			epadDatabaseOperations.deleteAIM(username, projectReference, aimID);
 			if (deleteDSO && aim.dsoSeriesUID != null && aim.dsoSeriesUID.length() > 0)
 			{
-				this.seriesDelete(new SeriesReference(null, aim.subjectID, aim.studyUID, aim.dsoSeriesUID), sessionID, false, username);
+				log.info("Deleting Series:" + aim.dsoSeriesUID + " In project:" + aim.projectID);
+				this.seriesDelete(new SeriesReference(aim.projectID, aim.subjectID, aim.studyUID, aim.dsoSeriesUID), sessionID, false, username);
 			}
 			return HttpServletResponse.SC_OK;
 		} catch (Exception e) {
@@ -892,7 +898,7 @@ public class DefaultEpadOperations implements EpadOperations
 			String sessionID, boolean deleteDSO, String username) {
 		try {
 			EPADAIM aim = getAIMDescription(aimID, username, sessionID);
-			if (!"admin".equals(username) && !aim.userName.equals(username) && !XNATQueries.isOwner(sessionID, username, aim.projectID))
+			if (!"admin".equals(username) && !aim.userName.equals(username) && !aim.userName.equals("shared") && !XNATQueries.isOwner(sessionID, username, aim.projectID))
 			{
 				log.warning("No permissions to delete AIM:" + aimID + " for user " + username);
 				return HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
@@ -901,7 +907,7 @@ public class DefaultEpadOperations implements EpadOperations
 			epadDatabaseOperations.deleteAIM(username, subjectReference, aimID);
 			if (deleteDSO && aim.dsoSeriesUID != null && aim.dsoSeriesUID.length() > 0)
 			{
-				this.seriesDelete(new SeriesReference(null, aim.subjectID, aim.studyUID, aim.dsoSeriesUID), sessionID, false, username);
+				this.seriesDelete(new SeriesReference(aim.projectID, aim.subjectID, aim.studyUID, aim.dsoSeriesUID), sessionID, false, username);
 			}
 			return HttpServletResponse.SC_OK;
 		} catch (Exception e) {
@@ -915,7 +921,7 @@ public class DefaultEpadOperations implements EpadOperations
 	{
 		try {
 			EPADAIM aim = getAIMDescription(aimID, username, sessionID);
-			if (!"admin".equals(username) && !aim.userName.equals(username) && !XNATQueries.isOwner(sessionID, username, aim.projectID))
+			if (!"admin".equals(username) && !aim.userName.equals(username) && !aim.userName.equals("shared") && !XNATQueries.isOwner(sessionID, username, aim.projectID))
 			{
 				log.warning("No permissions to delete AIM:" + aimID + " for user " + username);
 				return HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
@@ -924,7 +930,7 @@ public class DefaultEpadOperations implements EpadOperations
 			epadDatabaseOperations.deleteAIM(username, studyReference, aimID);
 			if (deleteDSO && aim.dsoSeriesUID != null && aim.dsoSeriesUID.length() > 0)
 			{
-				this.seriesDelete(new SeriesReference(null, aim.subjectID, aim.studyUID, aim.dsoSeriesUID), sessionID, false, username);
+				this.seriesDelete(new SeriesReference(aim.projectID, aim.subjectID, aim.studyUID, aim.dsoSeriesUID), sessionID, false, username);
 			}
 			return HttpServletResponse.SC_OK;
 		} catch (Exception e) {
@@ -938,7 +944,7 @@ public class DefaultEpadOperations implements EpadOperations
 	{
 		try {
 			EPADAIM aim = getAIMDescription(aimID, username, sessionID);
-			if (!"admin".equals(username) && !aim.userName.equals(username) && !XNATQueries.isOwner(sessionID, username, aim.projectID))
+			if (!"admin".equals(username) && !aim.userName.equals(username) && !aim.userName.equals("shared") && !XNATQueries.isOwner(sessionID, username, aim.projectID))
 			{
 				log.warning("No permissions to delete AIM:" + aimID + " for user " + username);
 				return HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
@@ -947,7 +953,7 @@ public class DefaultEpadOperations implements EpadOperations
 			epadDatabaseOperations.deleteAIM(username, seriesReference, aimID);
 			if (deleteDSO && aim.dsoSeriesUID != null && aim.dsoSeriesUID.length() > 0)
 			{
-				this.seriesDelete(new SeriesReference(null, aim.subjectID, aim.studyUID, aim.dsoSeriesUID), sessionID, false, username);
+				this.seriesDelete(new SeriesReference(aim.projectID, aim.subjectID, aim.studyUID, aim.dsoSeriesUID), sessionID, false, username);
 			}
 			return HttpServletResponse.SC_OK;
 		} catch (Exception e) {
@@ -961,7 +967,7 @@ public class DefaultEpadOperations implements EpadOperations
 	{
 		try {
 			EPADAIM aim = getAIMDescription(aimID, username, sessionID);
-			if (!"admin".equals(username) && !aim.userName.equals(username) && !XNATQueries.isOwner(sessionID, username, aim.projectID))
+			if (!"admin".equals(username) && !aim.userName.equals(username) && !aim.userName.equals("shared") && !XNATQueries.isOwner(sessionID, username, aim.projectID))
 			{
 				log.warning("No permissions to delete AIM:" + aimID + " for user " + username);
 				return HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
@@ -970,7 +976,7 @@ public class DefaultEpadOperations implements EpadOperations
 			epadDatabaseOperations.deleteAIM(username, imageReference, aimID);
 			if (deleteDSO && aim.dsoSeriesUID != null && aim.dsoSeriesUID.length() > 0)
 			{
-				this.seriesDelete(new SeriesReference(null, aim.subjectID, aim.studyUID, aim.dsoSeriesUID), sessionID, false, username);
+				this.seriesDelete(new SeriesReference(aim.projectID, aim.subjectID, aim.studyUID, aim.dsoSeriesUID), sessionID, false, username);
 			}
 			return HttpServletResponse.SC_OK;
 		} catch (Exception e) {
@@ -984,7 +990,7 @@ public class DefaultEpadOperations implements EpadOperations
 	{
 		try {
 			EPADAIM aim = getAIMDescription(aimID, username, sessionID);
-			if (!"admin".equals(username) && !aim.userName.equals(username) && !XNATQueries.isOwner(sessionID, username, aim.projectID))
+			if (!"admin".equals(username) && !aim.userName.equals(username) && !aim.userName.equals("shared") && !XNATQueries.isOwner(sessionID, username, aim.projectID))
 			{
 				log.warning("No permissions to delete AIM:" + aimID + " for user " + username);
 				return HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
@@ -993,7 +999,7 @@ public class DefaultEpadOperations implements EpadOperations
 			epadDatabaseOperations.deleteAIM(username, frameReference, aimID);
 			if (deleteDSO && aim.dsoSeriesUID != null && aim.dsoSeriesUID.length() > 0)
 			{
-				this.seriesDelete(new SeriesReference(null, aim.subjectID, aim.studyUID, aim.dsoSeriesUID), sessionID, false, username);
+				this.seriesDelete(new SeriesReference(aim.projectID, aim.subjectID, aim.studyUID, aim.dsoSeriesUID), sessionID, false, username);
 			}
 			return HttpServletResponse.SC_OK;
 		} catch (Exception e) {
@@ -1006,7 +1012,7 @@ public class DefaultEpadOperations implements EpadOperations
 	public int aimDelete(String aimID, String sessionID, boolean deleteDSO, String username) {
 		try {
 			EPADAIM aim = getAIMDescription(aimID, username, sessionID);
-			if (!"admin".equals(username) && !aim.userName.equals(username) && !XNATQueries.isOwner(sessionID, username, aim.projectID))
+			if (!"admin".equals(username) && !aim.userName.equals(username) && !aim.userName.equals("shared") && !XNATQueries.isOwner(sessionID, username, aim.projectID))
 			{
 				log.warning("No permissions to delete AIM:" + aimID + " for user " + username);
 				return HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
@@ -1015,7 +1021,7 @@ public class DefaultEpadOperations implements EpadOperations
 			epadDatabaseOperations.deleteAIM(username, aimID);
 			if (deleteDSO && aim.dsoSeriesUID != null && aim.dsoSeriesUID.length() > 0)
 			{
-				this.seriesDelete(new SeriesReference(null, aim.subjectID, aim.studyUID, aim.dsoSeriesUID), sessionID, false, username);
+				this.seriesDelete(new SeriesReference(aim.projectID, aim.subjectID, aim.studyUID, aim.dsoSeriesUID), sessionID, false, username);
 			}
 			return HttpServletResponse.SC_OK;
 		} catch (Exception e) {

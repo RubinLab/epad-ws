@@ -79,6 +79,7 @@ public class ImageCheckHandler extends AbstractHandler
 
 	private void verifyImageGeneration(PrintWriter responseStream, boolean fix) throws SQLException, IOException
 	{
+		log.info("Starting ImageCheck, fix=" + fix);
 		EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
 		Dcm4CheeDatabaseOperations dcm4CheeDatabaseOperations = Dcm4CheeDatabase.getInstance()
 				.getDcm4CheeDatabaseOperations();
@@ -96,8 +97,9 @@ public class ImageCheckHandler extends AbstractHandler
 			final int numberOfUnprocessedImages = unprocessedDICOMFileDescriptionsInSeries.size();
 
 			if (numberOfUnprocessedImages != 0) {
-				responseStream.write("Number of instances in series " + seriesUID
-						+ " for which there is no ePAD database entry for a PNG file = " + numberOfUnprocessedImages + "\n");
+				String message = "Number of instances in series " + seriesUID
+						+ " for which there is no ePAD database entry for a PNG file = " + numberOfUnprocessedImages;
+				responseStream.write(message + "\n");
 				numberOfSeriesWithMissingEPADDatabaseEntry++;
 				if (fix)
 					queueAndWatcherManager.addDICOMFileToPNGGeneratorPipeline("REPROCESS", unprocessedDICOMFileDescriptionsInSeries);
@@ -109,7 +111,8 @@ public class ImageCheckHandler extends AbstractHandler
 
 		int numberOfPNGFilesWithErrors = 0;
 		for (String pngFileName : epadDatabaseOperations.getAllEPadFilePathsWithErrors()) {
-			responseStream.write("PNG file " + pngFileName + " generation failed\n");
+			String message = "PNG file " + pngFileName + " generation failed";
+			responseStream.write(message + "\n");
 			numberOfPNGFilesWithErrors++;
 		}
 
@@ -126,7 +129,8 @@ public class ImageCheckHandler extends AbstractHandler
 				responseStream.write("Adding " + allUnprocessedDICOMFileDescriptions.size()
 						+ " unprocessed image(s) to PNG pipeline...");
 				responseStream.flush();
-				responseStream.write("All unprocessed files added\n");
+				String message = "All unprocessed files added tp PNG queue";
+				responseStream.write(message + "\n");
 			}
 		} else if (allUnprocessedDICOMFileDescriptions.size() != 0)
 			responseStream.write("Use fix=true to attempt to regenerate any broken PNGs\n");

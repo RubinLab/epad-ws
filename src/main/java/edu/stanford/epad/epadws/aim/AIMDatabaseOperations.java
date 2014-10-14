@@ -100,7 +100,8 @@ public class AIMDatabaseOperations {
 	    	this.statement = mySqlConnection.createStatement();
 	        this.statement.executeUpdate("ALTER TABLE " + ANNOTATIONS_TABLE + " ADD COLUMN DSOSeriesUID VARCHAR(255)");
     	} catch (SQLException x) {
-    		log.warning("Error adding column", x);
+    		if (!x.getMessage().contains("Duplicate"))
+    			log.warning("Error adding column", x);
     	} finally {
     		if (statement != null) statement.close();
     	}
@@ -536,7 +537,7 @@ public class AIMDatabaseOperations {
     }
     
     public EPADAIM getAIM(String annotationID) throws SQLException {
-        String sqlSelect = "SELECT UserLoginName, ProjectUID, PatientID, StudyUID, SeriesUID, ImageUID, frameID FROM annotations WHERE AnnotationUID = '"
+        String sqlSelect = "SELECT UserLoginName, ProjectUID, PatientID, StudyUID, SeriesUID, ImageUID, frameID, DSOSeriesUID FROM annotations WHERE AnnotationUID = '"
         		+ annotationID + "'";
 		ResultSet rs = null;
         try
@@ -551,7 +552,8 @@ public class AIMDatabaseOperations {
 				String SeriesUID = rs.getString(5);
 				String ImageUID = rs.getString(6);
 				int FrameID = rs.getInt(7);
-				return new EPADAIM(annotationID, UserName, ProjectID, PatientID, StudyUID, SeriesUID, ImageUID, FrameID);
+				String DSOSeriesUID = rs.getString(8);
+				return new EPADAIM(annotationID, UserName, ProjectID, PatientID, StudyUID, SeriesUID, ImageUID, FrameID, DSOSeriesUID);
 			}
         }
         finally
