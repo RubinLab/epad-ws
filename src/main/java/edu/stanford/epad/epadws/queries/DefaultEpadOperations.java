@@ -149,9 +149,9 @@ public class DefaultEpadOperations implements EpadOperations
 			EPADSubject epadSubject = xnatSubject2EPADSubject(sessionID, username, xnatSubject, searchFilter);
 			if (epadSubject != null)
 			{
-				//String status = XNATQueries.getXNATSubjectFieldValue(sessionID, xnatSubject.ID, username);
+				String status = XNATQueries.getXNATSubjectFieldValue(sessionID, xnatSubject.ID, username);
 				//log.info("User:" + username + " Subject:" + epadSubject.subjectName + " SubjectID" + epadSubject.subjectID + " status:" + status);
-				//epadSubject.setUserProjectStatus(status);
+				epadSubject.setUserProjectStatus(status);
 				boolean matchAccessionNumber = true;
 				if (searchFilter.hasAccessionNumberMatch())
 				{
@@ -1338,9 +1338,9 @@ public class DefaultEpadOperations implements EpadOperations
 			String insertUser = xnatSubject.insert_user;
 			String insertDate = xnatSubject.insert_date;
 //			int numberOfAnnotations = AIMQueries.getNumberOfAIMAnnotationsForPatient(patientID, username);
-			Set<String> studyUIDs = XNATQueries.getStudyUIDsForSubject(sessionID, projectID, xnatSubjectID);
+			//Set<String> studyUIDs = XNATQueries.getStudyUIDsForSubject(sessionID, projectID, xnatSubjectID);
 			int numberOfAnnotations = 0;
-			for  (String studyUID: studyUIDs)
+			//for  (String studyUID: studyUIDs)
 			{
 				// Skip this, cause it is too slow and not that important
 				//EPADAIMList aims = getStudyAIMDescriptions(new StudyReference(null, null, studyUID), username, sessionID);
