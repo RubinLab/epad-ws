@@ -19,6 +19,8 @@ import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeDatabaseOperations;
 import edu.stanford.epad.epadws.epaddb.EpadDatabase;
 import edu.stanford.epad.epadws.epaddb.EpadDatabaseOperations;
 import edu.stanford.epad.epadws.handlers.HandlerUtil;
+import edu.stanford.epad.epadws.processing.pipeline.task.DSOMaskPNGGeneratorTask;
+import edu.stanford.epad.epadws.processing.pipeline.task.SingleFrameDICOMPngGeneratorTask;
 import edu.stanford.epad.epadws.processing.pipeline.watcher.QueueAndWatcherManager;
 import edu.stanford.epad.epadws.queries.DefaultEpadOperations;
 import edu.stanford.epad.epadws.queries.EpadOperations;
@@ -57,6 +59,12 @@ public class ImageCheckHandler extends AbstractHandler
 					try {
 						String fixValue = httpRequest.getParameter("fix");
 						boolean fix = fixValue != null && fixValue.equalsIgnoreCase("true");
+						String seriesUID = httpRequest.getParameter("seriesUID");
+						String imageUID = httpRequest.getParameter("imageUID");
+						if (seriesUID != null)
+						{
+							fixSeriesImages(responseStream, seriesUID, imageUID);
+						}
 						verifyImageGeneration(responseStream, fix);
 						statusCode = HttpServletResponse.SC_OK;
 					} catch (IOException e) {
@@ -95,11 +103,18 @@ public class ImageCheckHandler extends AbstractHandler
 			final Set<DICOMFileDescription> unprocessedDICOMFileDescriptionsInSeries = epadQueries
 					.getUnprocessedDICOMFilesInSeries(seriesUID);
 			final int numberOfUnprocessedImages = unprocessedDICOMFileDescriptionsInSeries.size();
-
 			if (numberOfUnprocessedImages != 0) {
-				String message = "Number of instances in series " + seriesUID
-						+ " for which there is no ePAD database entry for a PNG file = " + numberOfUnprocessedImages;
-				responseStream.write(message + "\n");
+				if (unprocessedDICOMFileDescriptionsInSeries.iterator().next().modality.equals("SEG"))
+				{
+					responseStream.write("Missing mask images for DSO series " + seriesUID + "\n");
+					log.info("Missing mask images for DSO series" + seriesUID);
+				}
+				else
+				{
+					String message = "Number of instances in series " + seriesUID
+							+ " for which there is no ePAD database entry for a PNG file = " + numberOfUnprocessedImages;
+					responseStream.write(message + "\n");
+				}
 				numberOfSeriesWithMissingEPADDatabaseEntry++;
 				if (fix)
 					queueAndWatcherManager.addDICOMFileToPNGGeneratorPipeline("REPROCESS", unprocessedDICOMFileDescriptionsInSeries);
@@ -129,10 +144,29 @@ public class ImageCheckHandler extends AbstractHandler
 				responseStream.write("Adding " + allUnprocessedDICOMFileDescriptions.size()
 						+ " unprocessed image(s) to PNG pipeline...");
 				responseStream.flush();
-				String message = "All unprocessed files added tp PNG queue";
+				String message = "All unprocessed files added to PNG queue";
 				responseStream.write(message + "\n");
 			}
 		} else if (allUnprocessedDICOMFileDescriptions.size() != 0)
 			responseStream.write("Use fix=true to attempt to regenerate any broken PNGs\n");
+		if (DSOMaskPNGGeneratorTask.seriesBeingProcessed.size() > 0)
+			log.info("DSO Series being processed:" + DSOMaskPNGGeneratorTask.seriesBeingProcessed);
+		if (SingleFrameDICOMPngGeneratorTask.imagesBeingProcessed.size() > 0)
+			log.info("DICOM Series being processed:" + SingleFrameDICOMPngGeneratorTask.imagesBeingProcessed);
+		log.info("ImageCheck done");
+	}
+	
+
+	private void fixSeriesImages(PrintWriter responseStream, String seriesUID, String imageUID) throws SQLException, IOException
+	{
+		log.info("Starting fixSeriesImages, seriesUID=" + seriesUID + " imageUID=" + imageUID);
+		EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
+		Dcm4CheeDatabaseOperations dcm4CheeDatabaseOperations = Dcm4CheeDatabase.getInstance()
+				.getDcm4CheeDatabaseOperations();
+		EpadOperations epadQueries = DefaultEpadOperations.getInstance();
+		Set<DICOMFileDescription> dicomFilesDescriptions = epadQueries.getDICOMFilesInSeries(seriesUID, imageUID);
+		queueAndWatcherManager.addDICOMFileToPNGGeneratorPipeline("REPROCESS", dicomFilesDescriptions);
+		log.info("Series " +  seriesUID + " added to PNG Pipeline");
+		responseStream.write("Series " +  seriesUID + " added to PNG Pipeline\n");
 	}
 }

@@ -151,6 +151,8 @@ public interface EpadOperations
 	 */
 	Set<DICOMFileDescription> getUnprocessedDICOMFilesInSeries(String seriesUID);
 
+	Set<DICOMFileDescription> getDICOMFilesInSeries(String seriesUID, String imagUID);
+
 	void deleteStudyFromEPadAndDcm4CheeDatabases(String studyUID, boolean deleteAims);
 
 	void deleteStudiesFromEPadAndDcm4CheeDatabases(Set<String> studyUIDs);

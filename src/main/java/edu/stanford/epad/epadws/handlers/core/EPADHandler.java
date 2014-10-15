@@ -140,8 +140,11 @@ public class EPADHandler extends AbstractHandler
 				ProjectReference projectReference = ProjectReference.extract(ProjectsRouteTemplates.SUBJECT_LIST, pathInfo);
 				EPADSubjectList subjectList = epadOperations.getSubjectDescriptions(projectReference.projectID, username,
 						sessionID, searchFilter);
-				log.info("Returning " + subjectList.ResultSet.totalRecords + " subjects to client");
+				long endtime = System.currentTimeMillis();
+				log.info("Returning " + subjectList.ResultSet.totalRecords + " subjects to client, took " + (endtime-starttime) + " msecs");
 				responseStream.append(subjectList.toJSON());
+				long resptime = System.currentTimeMillis();
+				log.info("Time taken for write http response:" + (resptime-endtime) + " msecs");
 				statusCode = HttpServletResponse.SC_OK;
 
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.SUBJECT, pathInfo)) {

@@ -405,9 +405,10 @@ public class DefaultDcm4CheeDatabaseOperations implements Dcm4CheeDatabaseOperat
 				int instanceNumber = extractInteger(seriesUID, "instance number", resultMap.get("inst_no"), 0);
 				String filePath = resultMap.get("filepath");
 				int fileSize = extractInteger(seriesUID, "file_size", resultMap.get("file_size"), 0);
-
+				String modality = resultMap.get("modality");
+				
 				DICOMFileDescription dicomFileDescription = new DICOMFileDescription(studyUID, seriesUID, imageUID,
-						instanceNumber, filePath, fileSize, createdTime);
+						instanceNumber, filePath, fileSize, createdTime, modality);
 				dicomFileDescriptions.add(dicomFileDescription);
 			}
 		} catch (SQLException sqle) {
@@ -547,7 +548,8 @@ public class DefaultDcm4CheeDatabaseOperations implements Dcm4CheeDatabaseOperat
 	private int extractInteger(String seriesUID, String fieldName, String rawValue, int defaultValue)
 	{
 		if (rawValue == null) {
-			log.warning("Empty " + fieldName + " field  for series " + seriesUID + ", defaulting to " + defaultValue);
+			if (!"instance number".equals(fieldName))
+				log.warning("Empty " + fieldName + " field  for series " + seriesUID + ", defaulting to " + defaultValue);
 			return defaultValue;
 		} else {
 			try {

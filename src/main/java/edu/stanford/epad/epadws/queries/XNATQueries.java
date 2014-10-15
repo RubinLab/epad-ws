@@ -205,6 +205,14 @@ public class XNATQueries
 		return invokeXNATUsersQuery(adminSessionID, allUsersForProjectQueryURL);
 	}
 
+	public static XNATUserList getAllUsers(String projectID)
+	{
+		String allUsersQueryURL = XNATQueryUtil.buildAllUsersQueryURL();
+		String adminSessionID = XNATSessionOperations.getXNATAdminSessionID();
+		log.info("Users query:" + allUsersQueryURL);
+		return invokeXNATUsersQuery(adminSessionID, allUsersQueryURL);
+	}
+
 	public static Set<String> getPatientNamesForProject(String sessionID, String projectID)
 	{
 		XNATSubjectList xnatSubjectList = XNATQueries.getSubjectsForProject(sessionID, projectID);

@@ -70,6 +70,7 @@ import edu.stanford.epad.epadws.handlers.core.ProjectReference;
 import edu.stanford.epad.epadws.handlers.core.SeriesReference;
 import edu.stanford.epad.epadws.handlers.core.StudyReference;
 import edu.stanford.epad.epadws.handlers.core.SubjectReference;
+import edu.stanford.epad.epadws.handlers.dicom.DSOUtil;
 import edu.stanford.epad.epadws.processing.pipeline.task.ProjectDataDeleteTask;
 import edu.stanford.epad.epadws.processing.pipeline.task.StudyDataDeleteTask;
 import edu.stanford.epad.epadws.processing.pipeline.task.SubjectDataDeleteTask;
@@ -148,9 +149,9 @@ public class DefaultEpadOperations implements EpadOperations
 			EPADSubject epadSubject = xnatSubject2EPADSubject(sessionID, username, xnatSubject, searchFilter);
 			if (epadSubject != null)
 			{
-				String status = XNATQueries.getXNATSubjectFieldValue(sessionID, xnatSubject.ID, username);
+				//String status = XNATQueries.getXNATSubjectFieldValue(sessionID, xnatSubject.ID, username);
 				//log.info("User:" + username + " Subject:" + epadSubject.subjectName + " SubjectID" + epadSubject.subjectID + " status:" + status);
-				epadSubject.setUserProjectStatus(status);
+				//epadSubject.setUserProjectStatus(status);
 				boolean matchAccessionNumber = true;
 				if (searchFilter.hasAccessionNumberMatch())
 				{
@@ -295,7 +296,7 @@ public class DefaultEpadOperations implements EpadOperations
 							List<ImageAnnotation> ias = AIMQueries.getAIMImageAnnotations(AIMSearchType.SERIES_UID, epadSeries.seriesUID, username, 1, 50);
 							if (ias == null || ias.size() == 0)
 							{
-								AIMUtil.generateAIMFileForDSO(dsoDICOMFile);
+								AIMUtil.generateAIMFileForDSO(dsoDICOMFile, null, studyReference.projectID);
 							}
 							else
 							{
@@ -643,10 +644,37 @@ public class DefaultEpadOperations implements EpadOperations
 			// Make a list of image UIDs that have no entry in ePAD files_table.
 			for (DICOMFileDescription dicomFileDescription : dicomFileDescriptions) {
 				if (!imageUIDs.contains(dicomFileDescription.imageUID))
+				{
 					dicomFilesWithoutPNGs.add(dicomFileDescription);
+				}
+				else if ("SEG".equalsIgnoreCase(dicomFileDescription.modality))
+				{
+					if (!DSOUtil.checkDSOMaskPNGs(new File(EPADConfig.dcm4cheeDirRoot + "/" + dicomFileDescription.filePath)))
+						dicomFilesWithoutPNGs.add(dicomFileDescription);						
+				}
 			}
 		} catch (Exception e) {
 			log.warning("Error finding unprocessed file descriptions: " + e.getMessage(), e);
+		}
+		return dicomFilesWithoutPNGs;
+	}
+
+	@Override
+	public Set<DICOMFileDescription> getDICOMFilesInSeries(String seriesUID, String imageUID)
+	{
+		Set<DICOMFileDescription> dicomFilesWithoutPNGs = new HashSet<DICOMFileDescription>();
+
+		try {
+			// Get list of DICOM file descriptions from DCM4CHEE.
+			Set<DICOMFileDescription> dicomFileDescriptions = dcm4CheeDatabaseOperations.getDICOMFilesForSeries(seriesUID);
+
+			// Make a list of image UIDs that have no entry in ePAD files_table.
+			for (DICOMFileDescription dicomFileDescription : dicomFileDescriptions) {
+				if (imageUID == null || imageUID.equals(dicomFileDescription.imageUID))
+					dicomFilesWithoutPNGs.add(dicomFileDescription);
+			}
+		} catch (Exception e) {
+			log.warning("Error finding DICOM file descriptions: " + e.getMessage(), e);
 		}
 		return dicomFilesWithoutPNGs;
 	}

@@ -5,8 +5,11 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 import javax.imageio.ImageIO;
 
@@ -33,6 +36,8 @@ public class SingleFrameDICOMPngGeneratorTask implements GeneratorTask
 	private final int instanceNumber;
 	private final File dicomFile;
 	private final File pngFile;
+	
+	static public Set imagesBeingProcessed = Collections.synchronizedSet(new HashSet());
 
 	public SingleFrameDICOMPngGeneratorTask(String patientName, DICOMFileDescription dicomFileDescription,
 			File dicomFile, File pngFile)
@@ -55,6 +60,11 @@ public class SingleFrameDICOMPngGeneratorTask implements GeneratorTask
 	@Override
 	public void run()
 	{
+		if (imagesBeingProcessed.contains(imageUID))
+		{
+			log.info("Image " + imageUID + " already being processed");
+			return;
+		}
 		generatePNGs();
 	}
 
@@ -67,6 +77,7 @@ public class SingleFrameDICOMPngGeneratorTask implements GeneratorTask
 		OutputStream outputPNGStream = null;
 
 		try {
+			imagesBeingProcessed.add(imageUID);
 			DicomReader instance = new DicomReader(inputDICOMFile);
 			String pngFilePath = outputPNGFile.getAbsolutePath();
 			outputPNGFile = new File(pngFilePath);
@@ -101,6 +112,7 @@ public class SingleFrameDICOMPngGeneratorTask implements GeneratorTask
 					"General Exception: " + t.getMessage());
 			epadDatabaseOperations.updateOrInsertSeries(seriesUID, SeriesProcessingStatus.ERROR);
 		} finally {
+			imagesBeingProcessed.remove(imageUID);
 			IOUtils.closeQuietly(outputPNGStream);
 			if (inputDICOMFile.getName().endsWith(".tmp")) {
 				inputDICOMFile.delete();

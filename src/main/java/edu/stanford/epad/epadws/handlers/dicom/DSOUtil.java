@@ -311,9 +311,10 @@ public class DSOUtil
 			throw new Exception("IO exception writing multi-frame PNGs", e);
 		}
 	}
-
-	public static void writeDSOMaskPNGs(File dsoFile) throws Exception
+	
+	public static boolean checkDSOMaskPNGs(File dsoFile)
 	{
+		String seriesUID = "";
 		try {
 			EpadDatabaseOperations databaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
 			DicomSegmentationObject dso = new DicomSegmentationObject();
@@ -321,7 +322,39 @@ public class DSOUtil
 			int numberOfFrames = sourceDSOImage.getNumberOfBufferedImages();
 			AttributeList dicomAttributes = PixelMedUtils.readAttributeListFromDicomFile(dsoFile.getAbsolutePath());
 			String studyUID = Attribute.getSingleStringValueOrEmptyString(dicomAttributes, TagFromName.StudyInstanceUID);
-			String seriesUID = Attribute.getSingleStringValueOrEmptyString(dicomAttributes, TagFromName.SeriesInstanceUID);
+			seriesUID = Attribute.getSingleStringValueOrEmptyString(dicomAttributes, TagFromName.SeriesInstanceUID);
+			String imageUID = Attribute.getSingleStringValueOrEmptyString(dicomAttributes, TagFromName.SOPInstanceUID);
+	
+			String pngMaskDirectoryPath = baseDicomDirectory + "/studies/" + studyUID + "/series/" + seriesUID + "/images/"
+					+ imageUID + "/masks/";
+			File pngMaskFilesDirectory = new File(pngMaskDirectoryPath);
+			if (!pngMaskFilesDirectory.exists()) return false;
+			if (pngMaskFilesDirectory.list().length == numberOfFrames)
+			{
+				return true;
+			}
+			else
+			{
+				log.info("DSO Series:" + seriesUID + " numberOfFrames:" + numberOfFrames + " mask files:" + pngMaskFilesDirectory.list().length + " dir:" + pngMaskDirectoryPath);
+				return false;
+			}
+		} catch (Exception e) {
+			log.warning("Exception checking DSO PNGs, series:" + seriesUID + " file:" + dsoFile.getAbsolutePath(), e);
+			return false;
+		}
+	}
+
+	public static void writeDSOMaskPNGs(File dsoFile) throws Exception
+	{
+		String seriesUID = "";
+		try {
+			EpadDatabaseOperations databaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
+			DicomSegmentationObject dso = new DicomSegmentationObject();
+			SourceImage sourceDSOImage = dso.convert(dsoFile.getAbsolutePath());
+			int numberOfFrames = sourceDSOImage.getNumberOfBufferedImages();
+			AttributeList dicomAttributes = PixelMedUtils.readAttributeListFromDicomFile(dsoFile.getAbsolutePath());
+			String studyUID = Attribute.getSingleStringValueOrEmptyString(dicomAttributes, TagFromName.StudyInstanceUID);
+			seriesUID = Attribute.getSingleStringValueOrEmptyString(dicomAttributes, TagFromName.SeriesInstanceUID);
 			String imageUID = Attribute.getSingleStringValueOrEmptyString(dicomAttributes, TagFromName.SOPInstanceUID);
 
 			String pngMaskDirectoryPath = baseDicomDirectory + "/studies/" + studyUID + "/series/" + seriesUID + "/images/"
@@ -343,7 +376,7 @@ public class DSOUtil
 				File pngMaskFile = new File(pngMaskFilePath);
 				try {
 					insertEpadFile(databaseOperations, pngMaskFilePath, pngMaskFile.length(), imageUID);
-					//log.info("Writing PNG mask file frame " + frameNumber + " for DSO " + imageUID + " in series " + seriesUID + " file:" + pngMaskFilePath);
+					log.info("Writing PNG mask file frame " + frameNumber + " of " + numberOfFrames + " for DSO " + imageUID + " in series " + seriesUID + " file:" + pngMaskFilePath);
 					ImageIO.write(bufferedImageWithTransparency, "png", pngMaskFile);
 					databaseOperations.updateEpadFileRow(pngMaskFilePath, PNGFileProcessingStatus.DONE, 0, "");
 				} catch (IOException e) {
@@ -351,13 +384,16 @@ public class DSOUtil
 							+ imageUID + " in series " + seriesUID, e);
 				}
 			}
-			log.info("... finished writing PNG masks for DSO image " + imageUID + " in series " + seriesUID);
+			log.info("... finished writing PNG " + numberOfFrames + " masks for DSO image " + imageUID + " in series " + seriesUID);
 		} catch (DicomException e) {
-			log.warning("DICOM exception writing DSO PNG masks", e);
-			throw new Exception("DICOM exception writing DSO PNG masks", e);
+			log.warning("DICOM exception writing DSO PNG masks, series:" + seriesUID, e);
+			throw new Exception("DICOM exception writing DSO PNG masks, series:" + seriesUID, e);
 		} catch (IOException e) {
-			log.warning("IO exception writing DSO PNG masks", e);
-			throw new Exception("IO exception writing DSO PNG masks", e);
+			log.warning("IO exception writing DSO PNG masks, series:" + seriesUID, e);
+			throw new Exception("IO exception writing DSO PNG masks, series:" + seriesUID, e);
+		} catch (Exception e) {
+			log.warning("Exception writing DSO PNG masks, series:" + seriesUID, e);
+			throw new Exception("Exception writing DSO PNG masks, series:" + seriesUID, e);
 		}
 	}
 
