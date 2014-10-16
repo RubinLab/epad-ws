@@ -578,7 +578,7 @@ public class DSOUtil
 		return dicomFilePaths;
 	}
 
-	private static List<File> getDSOTIFFMaskFiles(ImageReference imageReference)
+	private static List<File> getDSOTIFFMaskFiles(ImageReference imageReference) throws IOException
 	{
 		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
 		List<File> dsoMaskFiles = new ArrayList<>();
@@ -599,6 +599,7 @@ public class DSOUtil
 			} catch (IOException e) {
 				log.warning("Error creating TIFF mask file " + maskFilePath + " for frame " + frame.frameNumber + " for DSO "
 						+ imageReference.imageUID, e);
+				throw e;
 			}
 		}
 		return dsoMaskFiles;
