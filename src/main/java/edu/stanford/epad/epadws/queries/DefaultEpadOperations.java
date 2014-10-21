@@ -931,7 +931,7 @@ public class DefaultEpadOperations implements EpadOperations
 			if (deleteDSO && aim.dsoSeriesUID != null && aim.dsoSeriesUID.length() > 0)
 			{
 				log.info("Deleting Series:" + aim.dsoSeriesUID + " In project:" + aim.projectID);
-				this.seriesDelete(new SeriesReference(aim.projectID, aim.subjectID, aim.studyUID, aim.dsoSeriesUID), sessionID, false, username);
+				this.seriesDelete(new SeriesReference(projectReference.projectID, aim.subjectID, aim.studyUID, aim.dsoSeriesUID), sessionID, false, username);
 			}
 			return HttpServletResponse.SC_OK;
 		} catch (Exception e) {
@@ -954,7 +954,7 @@ public class DefaultEpadOperations implements EpadOperations
 			epadDatabaseOperations.deleteAIM(username, subjectReference, aimID);
 			if (deleteDSO && aim.dsoSeriesUID != null && aim.dsoSeriesUID.length() > 0)
 			{
-				this.seriesDelete(new SeriesReference(aim.projectID, aim.subjectID, aim.studyUID, aim.dsoSeriesUID), sessionID, false, username);
+				this.seriesDelete(new SeriesReference(subjectReference.projectID, aim.subjectID, aim.studyUID, aim.dsoSeriesUID), sessionID, false, username);
 			}
 			return HttpServletResponse.SC_OK;
 		} catch (Exception e) {
@@ -977,7 +977,7 @@ public class DefaultEpadOperations implements EpadOperations
 			epadDatabaseOperations.deleteAIM(username, studyReference, aimID);
 			if (deleteDSO && aim.dsoSeriesUID != null && aim.dsoSeriesUID.length() > 0)
 			{
-				this.seriesDelete(new SeriesReference(aim.projectID, aim.subjectID, aim.studyUID, aim.dsoSeriesUID), sessionID, false, username);
+				this.seriesDelete(new SeriesReference(studyReference.projectID, aim.subjectID, aim.studyUID, aim.dsoSeriesUID), sessionID, false, username);
 			}
 			return HttpServletResponse.SC_OK;
 		} catch (Exception e) {
@@ -1000,7 +1000,7 @@ public class DefaultEpadOperations implements EpadOperations
 			epadDatabaseOperations.deleteAIM(username, seriesReference, aimID);
 			if (deleteDSO && aim.dsoSeriesUID != null && aim.dsoSeriesUID.length() > 0)
 			{
-				this.seriesDelete(new SeriesReference(aim.projectID, aim.subjectID, aim.studyUID, aim.dsoSeriesUID), sessionID, false, username);
+				this.seriesDelete(new SeriesReference(seriesReference.projectID, aim.subjectID, aim.studyUID, aim.dsoSeriesUID), sessionID, false, username);
 			}
 			return HttpServletResponse.SC_OK;
 		} catch (Exception e) {
@@ -1023,7 +1023,7 @@ public class DefaultEpadOperations implements EpadOperations
 			epadDatabaseOperations.deleteAIM(username, imageReference, aimID);
 			if (deleteDSO && aim.dsoSeriesUID != null && aim.dsoSeriesUID.length() > 0)
 			{
-				this.seriesDelete(new SeriesReference(aim.projectID, aim.subjectID, aim.studyUID, aim.dsoSeriesUID), sessionID, false, username);
+				this.seriesDelete(new SeriesReference(imageReference.projectID, aim.subjectID, aim.studyUID, aim.dsoSeriesUID), sessionID, false, username);
 			}
 			return HttpServletResponse.SC_OK;
 		} catch (Exception e) {
@@ -1046,7 +1046,7 @@ public class DefaultEpadOperations implements EpadOperations
 			epadDatabaseOperations.deleteAIM(username, frameReference, aimID);
 			if (deleteDSO && aim.dsoSeriesUID != null && aim.dsoSeriesUID.length() > 0)
 			{
-				this.seriesDelete(new SeriesReference(aim.projectID, aim.subjectID, aim.studyUID, aim.dsoSeriesUID), sessionID, false, username);
+				this.seriesDelete(new SeriesReference(frameReference.projectID, aim.subjectID, aim.studyUID, aim.dsoSeriesUID), sessionID, false, username);
 			}
 			return HttpServletResponse.SC_OK;
 		} catch (Exception e) {
