@@ -71,6 +71,8 @@ public interface EpadOperations
 
 	int createStudy(StudyReference studyReference, String sessionID);
 
+	int createSubjectAIM(String username, SubjectReference subjectRefernece, String aimID, File aimFile, String sessionID);
+	
 	int createStudyAIM(String username, StudyReference studyReference, String aimID, File aimFile, String sessionID);
 
 	int createSeries(SeriesReference seriesReference, String sessionID);

@@ -59,6 +59,7 @@ import edu.stanford.epad.epadws.aim.aimapi.Aim4;
 import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeDatabase;
 import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeDatabaseOperations;
 import edu.stanford.epad.epadws.epaddb.EpadDatabase;
+import edu.stanford.epad.epadws.epaddb.EpadDatabaseOperations;
 import edu.stanford.epad.epadws.handlers.core.FrameReference;
 import edu.stanford.epad.epadws.handlers.core.ImageReference;
 import edu.stanford.epad.epadws.queries.Dcm4CheeQueries;
@@ -110,7 +111,13 @@ public class AIMUtil
 	 * @throws edu.stanford.hakan.aim4api.base.AimException
 	 */	
 	public static String saveImageAnnotationToServer(ImageAnnotation aim, String jsessionID) throws AimException,
-			edu.stanford.hakan.aim4api.base.AimException
+	edu.stanford.hakan.aim4api.base.AimException
+	{
+		return saveImageAnnotationToServer(aim, 0, jsessionID);
+	}
+	
+	public static String saveImageAnnotationToServer(ImageAnnotation aim, int frameNumber, String jsessionID) throws AimException,
+	edu.stanford.hakan.aim4api.base.AimException
 	{                        
 		String result = "";
 
@@ -160,7 +167,7 @@ public class AIMUtil
 
 				if (templateHasBeenFound) {
 					HttpClient client = new HttpClient(); // TODO Get rid of localhost
-					String url = "http://localhost:8080/epad/plugin/" + pluginName + "/?aimFile=" + aim.getUniqueIdentifier();
+					String url = "http://localhost:8080/epad/plugin/" + pluginName + "/?aimFile=" + aim.getUniqueIdentifier() + "&frameNumber=" + frameNumber;
 					log.info("Triggering ePAD plugin at " + url + ", handler name " + handlerName);
 					GetMethod method = new GetMethod(url);
 					method.setRequestHeader("Cookie", "JSESSIONID=" + jsessionID);
@@ -535,29 +542,55 @@ public class AIMUtil
 	 * @throws edu.stanford.hakan.aim4api.base.AimException
 	 */
 	public static boolean saveAIMAnnotation(File aimFile, String projectID, String sessionId, String username) throws AimException,
-			edu.stanford.hakan.aim4api.base.AimException
+	edu.stanford.hakan.aim4api.base.AimException
+	{
+		return saveAIMAnnotation(aimFile, projectID, 0, sessionId, username);
+	}
+	
+	public static boolean saveAIMAnnotation(File aimFile, String projectID, int frameNumber, String sessionId, String username) throws AimException,
+	edu.stanford.hakan.aim4api.base.AimException
 	{
 		if (aimFile == null)
 			return true;
-		
-		ImageAnnotation imageAnnotation = AIMUtil.getImageAnnotationFromFile(aimFile, xsdFilePath);
-		if (imageAnnotation != null) {
-			String patientID = imageAnnotation.getListPerson().get(0).getId();
-			Aim aim = new Aim(imageAnnotation);
-			String imageID = aim.getFirstImageID();
-			String seriesID = aim.getSeriesID(imageID);
-			String studyID = aim.getStudyID(seriesID);
-			log.info("Saving AIM file with ID " + imageAnnotation.getUniqueIdentifier() + " username:" + username);
-			String result = AIMUtil.saveImageAnnotationToServer(imageAnnotation, sessionId);
-			log.info("Save annotation:" + result);
-			if (result.toLowerCase().contains("success") && projectID != null && username != null)
-			{
-				EpadOperations epadOperations = DefaultEpadOperations.getInstance();
-				FrameReference frameReference = new FrameReference(projectID, patientID, studyID, seriesID, imageID, new Integer(0));
-				epadOperations.createFrameAIM(username, frameReference, imageAnnotation.getUniqueIdentifier(), null, sessionId);
+		if (useV4.equals("false")) {
+			ImageAnnotation imageAnnotation = AIMUtil.getImageAnnotationFromFile(aimFile, xsdFilePath);
+			if (imageAnnotation != null) {
+				String patientID = imageAnnotation.getListPerson().get(0).getId();
+				Aim aim = new Aim(imageAnnotation);
+				String imageID = aim.getFirstImageID();
+				String seriesID = aim.getSeriesID(imageID);
+				String studyID = aim.getStudyID(seriesID);
+				log.info("Saving AIM file with ID " + imageAnnotation.getUniqueIdentifier() + " username:" + username);
+				String result = AIMUtil.saveImageAnnotationToServer(imageAnnotation, sessionId);
+				log.info("Save annotation:" + result);
+				if (result.toLowerCase().contains("success") && projectID != null && username != null)
+				{
+					EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
+					FrameReference frameReference = new FrameReference(projectID, patientID, studyID, seriesID, imageID, new Integer(frameNumber));
+					epadDatabaseOperations.addAIM(username, frameReference, imageAnnotation.getUniqueIdentifier());
+				}
+				return false;
 			}
-			return false;
-		} 
+		} else {
+            ImageAnnotationCollection imageAnnotation = AIMUtil.getImageAnnotationFromFileV4(aimFile, xsdFilePathV4);
+            if (imageAnnotation != null) {
+				Aim4 aim = new Aim4(imageAnnotation);
+				String patientID = aim.getPatientID();
+				String imageID = aim.getFirstImageID();
+				String seriesID = aim.getSeriesID(imageID);
+				String studyID = aim.getStudyID(seriesID);
+				log.info("Saving AIM file with ID " + imageAnnotation.getUniqueIdentifier() + " username:" + username);
+				String result = AIMUtil.saveImageAnnotationToServer(imageAnnotation, sessionId);
+				log.info("Save annotation:" + result);
+				if (result.toLowerCase().contains("success") && projectID != null && username != null)
+				{
+					EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
+					FrameReference frameReference = new FrameReference(projectID, patientID, studyID, seriesID, imageID, new Integer(frameNumber));
+					epadDatabaseOperations.addAIM(username, frameReference, imageAnnotation.getUniqueIdentifier().getRoot());
+				}
+            } 
+			
+		}
 		return true;
 	}
 
