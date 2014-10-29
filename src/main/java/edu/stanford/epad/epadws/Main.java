@@ -30,11 +30,13 @@ import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.epad.epadws.epaddb.EpadDatabase;
 import edu.stanford.epad.epadws.epaddb.EpadDatabaseOperations;
+import edu.stanford.epad.epadws.handlers.admin.ConvertAIM4Handler;
 import edu.stanford.epad.epadws.handlers.admin.ImageCheckHandler;
 import edu.stanford.epad.epadws.handlers.admin.ImageReprocessingHandler;
 import edu.stanford.epad.epadws.handlers.admin.ResourceCheckHandler;
 import edu.stanford.epad.epadws.handlers.admin.ResourceFailureLogHandler;
 import edu.stanford.epad.epadws.handlers.admin.ServerStatusHandler;
+import edu.stanford.epad.epadws.handlers.admin.XNATSyncHandler;
 import edu.stanford.epad.epadws.handlers.aim.AimResourceHandler;
 import edu.stanford.epad.epadws.handlers.coordination.CoordinationHandler;
 import edu.stanford.epad.epadws.handlers.core.EPADHandler;
@@ -143,13 +145,14 @@ public class Main
 
 		try {
 			QueueAndWatcherManager.getInstance().buildAndStart();
-			EpadDatabase.getInstance().startup();
+			EpadDatabase.getInstance().startup("1.4");
 			log.info("Startup of database was successful");
 			EpadDatabaseOperations databaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
-			log.info("Checking annotations table");
+			//log.info("Checking annotations table");
 			databaseOperations.checkAndRefreshAnnotationsTable();
 		} catch (Exception e) {
 			log.warning("Failed to start database", e);
+			System.exit(1);
 		}
 	}
 
@@ -182,6 +185,9 @@ public class Main
 		addHandlerAtContextPath(new ServerStatusHandler(), "/epad/status", handlerList);
 		addHandlerAtContextPath(new ImageCheckHandler(), "/epad/imagecheck", handlerList);
 		addHandlerAtContextPath(new ImageReprocessingHandler(), "/epad/imagereprocess", handlerList);
+		addHandlerAtContextPath(new ConvertAIM4Handler(), "/epad/convertaim4", handlerList);
+		addHandlerAtContextPath(new XNATSyncHandler(), "/epad/syncxnat", handlerList);
+		
 
 		// TODO This call will disappear when we switch to AIM4
 		addHandlerAtContextPath(new CoordinationHandler(), "/epad/coordination", handlerList);
