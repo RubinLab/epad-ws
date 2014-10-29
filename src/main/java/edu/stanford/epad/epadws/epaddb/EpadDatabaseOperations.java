@@ -68,6 +68,8 @@ public interface EpadDatabaseOperations
 
 	List<String> getAllEPadInPipelineFilePaths();
 	
+	void deleteObsoleteEpadFileEntries();
+	
 	void checkAndRefreshAnnotationsTable();
 	
 	EPADAIM getAIM(String aimID);

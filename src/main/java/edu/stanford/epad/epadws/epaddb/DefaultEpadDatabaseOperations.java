@@ -1279,6 +1279,22 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 		return retVal;
 	}
 
+
+	@Override
+	public void deleteObsoleteEpadFileEntries() {
+		Connection c = null;
+		Statement s = null;
+		try {
+			c = getConnection();
+			s = c.createStatement();
+			log.info("delete sql:" + EpadDatabaseCommands.CLEANUP_OBSOLETE_EPAD_FILES);
+			s.executeUpdate(EpadDatabaseCommands.CLEANUP_OBSOLETE_EPAD_FILES);
+		} catch (SQLException sqle) {
+			log.warning("Database operation failed", sqle);
+		} finally {
+			close(c, s);
+		}
+	}
 	private List<String> getAllEPadFilePathsWithStatus(PNGFileProcessingStatus pngFileProcessingStatus)
 	{
 		Connection c = null;
@@ -1464,6 +1480,12 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 
 	private void close(Connection c)
 	{
+		connectionPool.freeConnection(c);
+	}
+
+	private void close(Connection c, Statement s)
+	{
+		DatabaseUtils.close(s);
 		connectionPool.freeConnection(c);
 	}
 
