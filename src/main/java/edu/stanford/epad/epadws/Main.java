@@ -44,7 +44,7 @@ import edu.stanford.epad.epadws.handlers.dicom.WadoHandler;
 import edu.stanford.epad.epadws.handlers.event.EventHandler;
 import edu.stanford.epad.epadws.handlers.event.ProjectEventHandler;
 import edu.stanford.epad.epadws.handlers.plugin.EPadPluginHandler;
-import edu.stanford.epad.epadws.handlers.xnat.XNATSessionHandler;
+import edu.stanford.epad.epadws.handlers.session.EPADSessionHandler;
 import edu.stanford.epad.epadws.processing.pipeline.threads.ShutdownHookThread;
 import edu.stanford.epad.epadws.processing.pipeline.threads.ShutdownSignal;
 import edu.stanford.epad.epadws.processing.pipeline.watcher.QueueAndWatcherManager;
@@ -162,7 +162,7 @@ public class Main
 
 		loadPluginClasses();
 
-		addHandlerAtContextPath(new XNATSessionHandler(), "/epad/session", handlerList);
+		addHandlerAtContextPath(new EPADSessionHandler(), "/epad/session", handlerList);
 
 		addHandlerAtContextPath(new EPADHandler(), "/epad/v2", handlerList);
 

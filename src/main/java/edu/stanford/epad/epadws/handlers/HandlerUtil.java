@@ -88,7 +88,7 @@ public class HandlerUtil
 			EPADLogger log)
 	{
 		String finalMessage = message + (t == null ? "" : ((t.getMessage() == null) ? "" : ": " + t.getMessage()));
-		log.warning(finalMessage);
+		log.warning(finalMessage, t);
 		if (responseStream != null)
 			responseStream.append(finalMessage);
 		return responseCode;
@@ -98,7 +98,7 @@ public class HandlerUtil
 			EPADLogger log)
 	{
 		String finalMessage = message + (t == null ? "" : ((t.getMessage() == null) ? "" : ": " + t.getMessage()));
-		log.warning(finalMessage);
+		log.warning(finalMessage, t);
 		if (responseStream != null)
 			responseStream.append(JsonHelper.createJSONErrorResponse(finalMessage));
 		return responseCode;
@@ -107,14 +107,14 @@ public class HandlerUtil
 	public static int warningJSONResponse(int responseCode, String message, Throwable t, EPADLogger log)
 	{
 		String finalMessage = message + (t == null ? "" : ((t.getMessage() == null) ? "" : ": " + t.getMessage()));
-		log.warning(finalMessage);
+		log.warning(finalMessage, t);
 		return responseCode;
 	}
 
 	public static int warningResponse(int responseCode, String message, Throwable t, EPADLogger log)
 	{
 		String finalMessage = message + (t == null ? "" : ((t.getMessage() == null) ? "" : ": " + t.getMessage()));
-		log.warning(finalMessage);
+		log.warning(finalMessage, t);
 		return responseCode;
 	}
 

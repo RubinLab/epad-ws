@@ -31,7 +31,7 @@ public class EPADUploadDirWatcher implements Runnable
 {
 	private static final int CHECK_INTERVAL = 5000; // Check every 5 seconds
 	private static final String FOUND_DIR_FILE = "dir.found";
-	private static final long MAX_WAIT_TIME = 1200000; // 120 seconds
+	private static final long MAX_WAIT_TIME = 3600000; // 1 hour (was 20 minutes before)
 	private static final EPADLogger log = EPADLogger.getInstance();
 
 	@Override

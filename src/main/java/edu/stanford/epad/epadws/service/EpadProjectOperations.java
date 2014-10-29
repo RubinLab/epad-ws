@@ -1,4 +1,4 @@
-package edu.stanford.epad.epadws.queries;
+package edu.stanford.epad.epadws.service;
 
 //Copyright (c) 2014 The Board of Trustees of the Leland Stanford Junior University
 //All rights reserved.
@@ -59,11 +59,19 @@ public interface EpadProjectOperations {
 	Study getStudy(String studyUID) throws Exception;
 	
 	List<Project> getAllProjects() throws Exception;
+	List<Project> getPublicProjects() throws Exception;
 	List<Project> getProjectsForUser(String username) throws Exception;
+	Project getProjectForUser(String username, String projectID) throws Exception;
+	List<User> getUsersForProject(String projectId) throws Exception;
 	List<Subject> getSubjectsForProject(String projectId) throws Exception;
+	Subject getSubjectForProject(String projectId, String subjectUID) throws Exception;
 	List<Project> getProjectsForSubject(String subjectUID) throws Exception;
+	Subject getSubjectFromName(String subjectName) throws Exception;
+	Subject getSubjectFromNameForProject(String subjectName, String projectID) throws Exception;
+	Project getFirstProjectForStudy(String studyUID) throws Exception;
 	
 	List<Study> getStudiesForProjectAndSubject(String projectId, String subjectUID) throws Exception;
+	boolean isStudyInProjectAndSubject(String projectId, String subjectUID, String studyUID) throws Exception;
 	List<Study> getAllStudiesForProject(String projectId) throws Exception;
 	List<Study> getStudiesForSubject(String subjectUID) throws Exception;
 
@@ -72,9 +80,12 @@ public interface EpadProjectOperations {
 	Map<String, String> getUserStatusForProjectSubjects(String loggedInUser, String projectID) throws Exception;
 	Map<Long, String> getUserStatusForProjectSubjectIds(String loggedInUser, String projectID) throws Exception;
 	
-	boolean isCollaborator(String sessionID, String username, String projectID) throws Exception;
-	boolean isMember(String sessionID, String username, String projectID) throws Exception;
-	boolean isOwner(String sessionID, String username, String projectID) throws Exception;
-	UserRole getUserProjectRole(String sessionID, String username, String projectID) throws Exception;
+	boolean isCollaborator(String username, String projectID) throws Exception;
+	boolean isMember(String username, String projectID) throws Exception;
+	boolean isOwner(String username, String projectID) throws Exception;
+	UserRole getUserProjectRole(String username, String projectID) throws Exception;
 
+	void deleteProject(String username, String projectID) throws Exception;
+	void deleteSubject(String username, String subjectUID, String projectID) throws Exception;
+	void deleteStudy(String username, String studyUID, String subjectUID, String projectID) throws Exception;
 }

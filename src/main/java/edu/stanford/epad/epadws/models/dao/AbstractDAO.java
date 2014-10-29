@@ -124,5 +124,15 @@ public abstract class AbstractDAO implements Serializable, Cloneable {
 		throws CloneNotSupportedException 
 	{ 
 		return super.clone(); 
+	}
+	
+	@Override
+	public boolean equals(Object obj) {
+		if (obj instanceof AbstractDAO)
+		{
+			if (this.getId() == ((AbstractDAO) obj).getId())
+				return true;
+		}
+		return super.equals(obj);
 	}		
 }

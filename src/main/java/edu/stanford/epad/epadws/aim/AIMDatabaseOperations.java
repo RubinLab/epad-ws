@@ -44,7 +44,10 @@ import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.epad.dtos.EPADAIM;
 import edu.stanford.epad.dtos.internal.XNATSubjectList;
 import edu.stanford.epad.dtos.internal.XNATUserList;
+import edu.stanford.epad.epadws.models.Subject;
 import edu.stanford.epad.epadws.queries.XNATQueries;
+import edu.stanford.epad.epadws.service.DefaultEpadProjectOperations;
+import edu.stanford.epad.epadws.service.EpadProjectOperations;
 import edu.stanford.epad.epadws.xnat.XNATSessionOperations;
 import edu.stanford.hakan.aim4api.base.AimException;
 import edu.stanford.hakan.aim4api.base.Enumerations.AimVersion;
@@ -68,6 +71,7 @@ public class AIMDatabaseOperations {
     private Connection mySqlConnection = null;
 
     public static final String ANNOTATIONS_TABLE = "annotations";
+	private final EpadProjectOperations projectOperations = DefaultEpadProjectOperations.getInstance();
     
     public AIMDatabaseOperations(Connection mySqlConnection, String existServerURL,
             String existNameSpace, String existCollectionName, String existUserName, String existUserPassword) throws SQLException {
@@ -106,6 +110,7 @@ public class AIMDatabaseOperations {
     		if (statement != null) statement.close();
     	}
     }
+    
     public void refreshTheAnnotationTable(AimVersion aimVersion) throws AimException, IOException, SQLException {
 
 		log.info("Creating annotations table, AIMVersion:" + aimVersion);
@@ -612,17 +617,25 @@ public class AIMDatabaseOperations {
 		List<EPADAIM> aims = new ArrayList<EPADAIM>();
 		long time1 = System.currentTimeMillis();
 		if (aimSearchType == AIMSearchType.PERSON_NAME) {
-    		String adminSessionID = XNATSessionOperations.getXNATAdminSessionID();
-    		XNATSubjectList subjects = XNATQueries.getSubjectsForProject(adminSessionID, projectID);
-    		Map<String, String> patientIdToName = subjects.getNameMap();
-    		String patientID = null;
-			for (String id: patientIdToName.keySet())
-    		{
-    			if (patientIdToName.get(id).equals(value))
-    			{
-    				patientID = id;
-    			}
-    		}
+			String patientID = null;
+			if (EPADConfig.UseEPADUsersProjects) {
+				Subject subject;
+				try {
+					subject = projectOperations.getSubjectFromNameForProject(value, projectID);
+					patientID = subject.getSubjectUID();
+				} catch (Exception e) {}
+			} else {
+	    		String adminSessionID = XNATSessionOperations.getXNATAdminSessionID();
+	    		XNATSubjectList subjects = XNATQueries.getSubjectsForProject(adminSessionID, projectID);
+	    		Map<String, String> patientIdToName = subjects.getNameMap();
+				for (String id: patientIdToName.keySet())
+	    		{
+	    			if (patientIdToName.get(id).equals(value))
+	    			{
+	    				patientID = id;
+	    			}
+	    		}
+			}
 			if (patientID == null) return aims;
 		    return getAIMs(projectID, patientID, null, null, null, 0, start, count);
 		} else if (aimSearchType == AIMSearchType.PATIENT_ID) {

@@ -29,10 +29,10 @@ import edu.stanford.epad.epadws.models.Subject;
 import edu.stanford.epad.epadws.models.User;
 import edu.stanford.epad.epadws.models.UserRole;
 import edu.stanford.epad.epadws.queries.DefaultEpadOperations;
-import edu.stanford.epad.epadws.queries.DefaultEpadProjectOperations;
 import edu.stanford.epad.epadws.queries.EpadOperations;
-import edu.stanford.epad.epadws.queries.EpadProjectOperations;
 import edu.stanford.epad.epadws.queries.XNATQueries;
+import edu.stanford.epad.epadws.service.DefaultEpadProjectOperations;
+import edu.stanford.epad.epadws.service.EpadProjectOperations;
 import edu.stanford.epad.epadws.xnat.XNATSessionOperations;
 
 /**
@@ -48,8 +48,8 @@ public class XNATSyncHandler extends AbstractHandler
 	private static final String INTERNAL_SQL_ERROR_MESSAGE = "Internal server SQL error on XNAT sync route";
 	private static final String INVALID_SESSION_TOKEN_MESSAGE = "Session token is invalid for XNAT sync route";
 
-	EpadProjectOperations projectOperations = DefaultEpadProjectOperations.getInstance();
-	EpadOperations epadOperations = DefaultEpadOperations.getInstance();
+	private final EpadProjectOperations projectOperations = DefaultEpadProjectOperations.getInstance();
+	private final EpadOperations epadOperations = DefaultEpadOperations.getInstance();
 	
 	@Override
 	public void handle(String str, Request request, HttpServletRequest httpRequest, HttpServletResponse httpResponse)

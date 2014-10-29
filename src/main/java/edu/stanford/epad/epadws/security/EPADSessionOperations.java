@@ -1,6 +1,5 @@
 package edu.stanford.epad.epadws.security;
 
-
 //Copyright (c) 2014 The Board of Trustees of the Leland Stanford Junior University
 //All rights reserved.
 //
@@ -25,8 +24,6 @@ package edu.stanford.epad.epadws.security;
 //WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE
 //USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-import java.io.IOException;
-import java.io.InputStreamReader;
 import java.nio.charset.Charset;
 import java.util.Date;
 import java.util.HashMap;
@@ -37,16 +34,13 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.apache.commons.codec.binary.Base64;
-import org.apache.commons.httpclient.HttpClient;
-import org.apache.commons.httpclient.methods.PostMethod;
-import org.apache.commons.io.IOUtils;
 import org.mindrot.jbcrypt.BCrypt;
 
 import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.epad.epadws.models.User;
-import edu.stanford.epad.epadws.queries.DefaultEpadProjectOperations;
-import edu.stanford.epad.epadws.queries.EpadProjectOperations;
+import edu.stanford.epad.epadws.service.DefaultEpadProjectOperations;
+import edu.stanford.epad.epadws.service.EpadProjectOperations;
 import edu.stanford.epad.epadws.xnat.XNATSessionOperations.XNATSessionResponse;
 
 /**
@@ -62,8 +56,22 @@ public class EPADSessionOperations
 	private static Map<String, EPADSession> currentSessions = new HashMap<String, EPADSession>();
 	private static final EpadProjectOperations projectOperations = DefaultEpadProjectOperations.getInstance();
 	private static final IdGenerator idGenerator = new IdGenerator();
-	private static final int SESSION_LIFESPAN = 60*60*1000;  // 1 hour in msecs 
+	private static final int SESSION_LIFESPAN = 3600;  // 1 hour in secs 
+	
+	public static class EPADSessionResponse
+	{
+		public final int statusCode;
+		public final String response;
+		public final String message;
 
+		public EPADSessionResponse(int responseCode, String response, String message)
+		{
+			this.statusCode = responseCode;
+			this.response = response;
+			this.message = message;
+		}
+	}
+	
 	public static String getAdminSessionID() throws Exception
 	{
 		String xnatUploadProjectUser = EPADConfig.xnatUploadProjectUser;
@@ -78,7 +86,22 @@ public class EPADSessionOperations
 			throw new Exception("Error getting admin session");
 	}
 
-	public static int invalidateSessionID(HttpServletRequest httpRequest) throws Exception
+	public static EPADSessionResponse authenticateUser(HttpServletRequest httpRequest)
+	{
+		String username = extractUserNameFromAuthorizationHeader(httpRequest);
+		String password = extractPasswordFromAuthorizationHeader(httpRequest);
+		try {
+			EPADSession session = EPADSessionOperations.createNewEPADSession(username, password);
+			EPADSessionResponse response = new EPADSessionResponse(HttpServletResponse.SC_OK, session.getSessionId(), "");
+			log.info("Session ID " + response.response + " generated for user " + username);
+			return response;
+		} catch (Exception x) {
+			EPADSessionResponse response = new EPADSessionResponse(HttpServletResponse.SC_UNAUTHORIZED, null, x.getMessage());
+			return response;
+		}
+	}
+
+	public static int invalidateSessionID(HttpServletRequest httpRequest)
 	{
 		String jsessionID = getJSessionIDFromRequest(httpRequest);
 		if (hasValidSessionID(jsessionID))
@@ -108,6 +131,7 @@ public class EPADSessionOperations
 			session.setLastActivity(new Date());
 			return true;
 		}
+		log.warning("SessionId:" + jsessionID + " not found in active sessions");
 		return false;
 	}
 
@@ -125,8 +149,15 @@ public class EPADSessionOperations
 			}
 		}
 		if (jSessionID == null)
+		{
 			log.warning("No JSESESSIONID cookie present in request " + servletRequest.getRequestURL());
-
+		}
+		else
+		{
+			int comma = jSessionID.indexOf(",");
+			if (comma != -1)
+				jSessionID = jSessionID.substring(0, comma);
+		}
 		return jSessionID;
 	}
 
@@ -148,7 +179,7 @@ public class EPADSessionOperations
 			throw new Exception("User " + username + " not found");
 		if (BCrypt.checkpw(password, user.getPassword()))
 		{
-			String sessionId = idGenerator.generateId(32);
+			String sessionId = idGenerator.generateId(16);
 			EPADSession session = new EPADSession(sessionId, username, SESSION_LIFESPAN);
 			currentSessions.put(sessionId, session);
 			return session;

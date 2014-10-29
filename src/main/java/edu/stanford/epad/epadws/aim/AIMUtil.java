@@ -66,7 +66,7 @@ import edu.stanford.epad.epadws.handlers.core.ProjectReference;
 import edu.stanford.epad.epadws.queries.Dcm4CheeQueries;
 import edu.stanford.epad.epadws.queries.DefaultEpadOperations;
 import edu.stanford.epad.epadws.queries.EpadOperations;
-import edu.stanford.epad.epadws.queries.XNATQueries;
+import edu.stanford.epad.epadws.service.UserProjectService;
 import edu.stanford.epad.epadws.xnat.XNATSessionOperations;
 import edu.stanford.hakan.aim3api.base.AimException;
 import edu.stanford.hakan.aim3api.base.DICOMImageReference;
@@ -408,9 +408,10 @@ public class AIMUtil
 				String result = saveImageAnnotationToServer(imageAnnotation, projectID);
 				if (result.toLowerCase().contains("success"))
 				{
-		    		String adminSessionID = XNATSessionOperations.getXNATAdminSessionID();
 		    		if (projectID == null || projectID.trim().length() == 0)
-		    			projectID = XNATQueries.getFirstProjectForStudy(adminSessionID, referencedStudyUID);
+		    		{
+						projectID = UserProjectService.getFirstProjectForStudy(referencedStudyUID);
+					}
 					ImageReference imageReference = new ImageReference(projectID, patientID, referencedStudyUID, referencedSeriesUID, referencedImageUID[0]);
 					EpadDatabase.getInstance().getEPADDatabaseOperations().addDSOAIM(username, imageReference, seriesUID, imageAnnotation.getUniqueIdentifier());
 				}
@@ -929,7 +930,7 @@ public class AIMUtil
 			try
 			{
 				String csv = "";
-				boolean isCollaborator = XNATQueries.isCollaborator(sessionID, username, projectID);
+				boolean isCollaborator = UserProjectService.isCollaborator(sessionID, username, projectID);
 				defProjectID = projectID;
 				log.info("User:" + username + " projectID:" + projectID + " isCollaborator:" + isCollaborator);
 				Set<EPADAIM> aims = aimlist.getAIMsForProject(projectID);

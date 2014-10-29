@@ -3,6 +3,8 @@ package edu.stanford.epad.epadws.models;
 import java.util.HashSet;
 import java.util.Set;
 
+import edu.stanford.epad.epadws.aim.AIMSearchType;
+
 public enum UserRole {
 	OWNER("Owner"), COLLABORATOR("Collaborator"), MEMBER("Member");
 
@@ -27,4 +29,13 @@ public enum UserRole {
 
 		return names;
 	}
+	
+	public static UserRole getRole(String role)
+	{
+		for (UserRole urole : UserRole.values()) {
+			if (urole.getName().equals(role))
+				return urole;
+		}
+		return null;
+	}		
 }

@@ -98,6 +98,7 @@ public class ImageCheckHandler extends AbstractHandler
 		Set<DICOMFileDescription> allUnprocessedDICOMFileDescriptions = new HashSet<DICOMFileDescription>();
 
 		int numberOfSeriesWithMissingEPADDatabaseEntry = 0;
+		epadDatabaseOperations.deleteObsoleteEpadFileEntries();
 
 		// Verify that each image in a DICOM series in DCM4CHEE has an entry for a generated PNG file in the ePAD database,
 		// which indicates that the image's existence was detected. We then detect that the PNG file itself exists.

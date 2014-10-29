@@ -6,7 +6,7 @@ import java.util.Set;
 
 import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADLogger;
-import edu.stanford.epad.epadws.queries.XNATQueries;
+import edu.stanford.epad.epadws.service.UserProjectService;
 import edu.stanford.epad.epadws.xnat.XNATSessionOperations;
 import edu.stanford.hakan.aim3api.base.AimException;
 import edu.stanford.hakan.aim3api.base.ImageAnnotation;
@@ -86,11 +86,15 @@ public class AIMQueries
 		else
 		{
 			List<ImageAnnotation> aims = new ArrayList<ImageAnnotation>();
-    		String adminSessionID = XNATSessionOperations.getXNATAdminSessionID();
-    		Set<String> projectIDs = XNATQueries.allProjectIDs(adminSessionID);
-			for (String projectID: projectIDs)
-			{
-				aims.addAll(getAIMImageAnnotations(projectID, aimSearchType, value, username, startIndex, count));
+    		Set<String> projectIDs;
+			try {
+				projectIDs = UserProjectService.getAllProjectIDs();
+				for (String projectID: projectIDs)
+				{
+					aims.addAll(getAIMImageAnnotations(projectID, aimSearchType, value, username, startIndex, count));
+				}
+			} catch (Exception e) {
+				log.warning("Error getting projects and annotations", e);;
 			}
 			return aims;
 		}

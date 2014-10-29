@@ -25,10 +25,7 @@ import edu.stanford.epad.epadws.handlers.core.SubjectReference;
  * 
  * @author martin
  */
-/**
- * @author Dev Gude
- *
- */
+
 public interface EpadDatabaseOperations
 {
 	String getPNGLocation(String studyUID, String seriesUID, String imageUID);

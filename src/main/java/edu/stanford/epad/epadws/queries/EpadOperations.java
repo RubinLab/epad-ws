@@ -36,22 +36,22 @@ import edu.stanford.epad.epadws.handlers.core.SubjectReference;
  */
 public interface EpadOperations
 {
-	EPADProjectList getProjectDescriptions(String username, String sessionID, EPADSearchFilter searchFilter);
+	EPADProjectList getProjectDescriptions(String username, String sessionID, EPADSearchFilter searchFilter) throws Exception;
 
-	EPADProject getProjectDescription(ProjectReference projectReference, String username, String sessionID);
+	EPADProject getProjectDescription(ProjectReference projectReference, String username, String sessionID) throws Exception;
 
 	EPADSubjectList getSubjectDescriptions(String projectID, String username, String sessionID,
-			EPADSearchFilter searchFilter);
+			EPADSearchFilter searchFilter) throws Exception;
 
-	EPADSubject getSubjectDescription(SubjectReference subjectReference, String username, String sessionID);
+	EPADSubject getSubjectDescription(SubjectReference subjectReference, String username, String sessionID) throws Exception;
 
 	EPADStudyList getStudyDescriptions(SubjectReference subjectReference, String username, String sessionID,
-			EPADSearchFilter searchFilter);
+			EPADSearchFilter searchFilter) throws Exception;
 
-	EPADStudy getStudyDescription(StudyReference studyReference, String username, String sessionID);
+	EPADStudy getStudyDescription(StudyReference studyReference, String username, String sessionID) throws Exception;
 
 	EPADSeriesList getSeriesDescriptions(StudyReference studyReference, String username, String sessionID,
-			EPADSearchFilter searchFilter, boolean filterDSOs);
+			EPADSearchFilter searchFilter, boolean filterDSOs) throws Exception;
 
 	EPADSeries getSeriesDescription(SeriesReference seriesReference, String username, String sessionID);
 
@@ -63,13 +63,13 @@ public interface EpadOperations
 
 	EPADFrame getFrameDescription(FrameReference frameReference, String sessionID);
 
-	void createSubjectAndStudy(String projectID, String subjectID, String subjectName, String studyUID, String sessionID);
+	void createSubjectAndStudy(String username, String projectID, String subjectID, String subjectName, String studyUID, String sessionID) throws Exception;
 
-	int createProject(ProjectReference projectReference, String projectName, String projectDescription, String sessionID);
+	int createProject(String username, ProjectReference projectReference, String projectName, String projectDescription, String sessionID) throws Exception;
 
-	int createSubject(SubjectReference subjectRefernece, String subjectName, String sessionID);
+	int createSubject(String username, SubjectReference subjectRefernece, String subjectName, String sessionID) throws Exception;
 
-	int createStudy(StudyReference studyReference, String sessionID);
+	int createStudy(String username, StudyReference studyReference, String sessionID) throws Exception;
 
 	String createSubjectAIM(String username, SubjectReference subjectRefernece, String aimID, File aimFile, String sessionID);
 	
@@ -85,13 +85,13 @@ public interface EpadOperations
 
 	String createFrameAIM(String username, FrameReference frameReference, String aimID, File aimFile, String sessionID);
 
-	String setSubjectStatus(SubjectReference subjectReference, String sessionID, String username);
+	String setSubjectStatus(SubjectReference subjectReference, String sessionID, String username) throws Exception;
 	
-	int projectDelete(String projectID, String sessionID, String username);
+	int projectDelete(String projectID, String sessionID, String username) throws Exception;
 
-	int subjectDelete(SubjectReference subjectReference, String sessionID, String username);
+	int subjectDelete(SubjectReference subjectReference, String sessionID, String username) throws Exception;
 
-	String studyDelete(StudyReference studyReference, String sessionID, boolean deleteAims, String username);
+	String studyDelete(StudyReference studyReference, String sessionID, boolean deleteAims, String username) throws Exception;
 
 	String seriesDelete(SeriesReference seriesReference, String sessionID, boolean deleteAims, String username);
 
@@ -159,7 +159,7 @@ public interface EpadOperations
 
 	void deleteStudiesFromEPadAndDcm4CheeDatabases(Set<String> studyUIDs);
 
-	Set<String> getExamTypesForSubject(String sessionID, String projectID, String subjectID, EPADSearchFilter searchFilter);
+	Set<String> getExamTypesForSubject(String sessionID, String projectID, String subjectID, EPADSearchFilter searchFilter) throws Exception;
 
 	Set<String> getExamTypesForSubject(String subjectID);
 

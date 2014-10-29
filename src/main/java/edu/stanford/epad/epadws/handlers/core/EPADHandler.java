@@ -6,7 +6,6 @@ import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.InputStream;
 import java.io.PrintWriter;
-import java.util.Set;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -37,8 +36,8 @@ import edu.stanford.epad.epadws.handlers.HandlerUtil;
 import edu.stanford.epad.epadws.handlers.dicom.DSOUtil;
 import edu.stanford.epad.epadws.queries.DefaultEpadOperations;
 import edu.stanford.epad.epadws.queries.EpadOperations;
-import edu.stanford.epad.epadws.queries.XNATQueries;
-import edu.stanford.epad.epadws.xnat.XNATSessionOperations;
+import edu.stanford.epad.epadws.service.SessionService;
+import edu.stanford.epad.epadws.service.UserProjectService;
 
 /**
  * @author martin
@@ -77,7 +76,7 @@ public class EPADHandler extends AbstractHandler
 				aimFile = this.getUploadedAIMFile(httpRequest);
 			}
 
-			if (XNATSessionOperations.hasValidXNATSessionID(httpRequest)) {
+			if (SessionService.hasValidSessionID(httpRequest)) {
 				String username = httpRequest.getParameter("username");
 				log.info("Request from client:" + method + " user:" + username);
 				if (username != null) {
@@ -108,7 +107,7 @@ public class EPADHandler extends AbstractHandler
 	private int handleGet(HttpServletRequest httpRequest, PrintWriter responseStream, String username)
 	{
 		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
-		String sessionID = XNATSessionOperations.getJSessionIDFromRequest(httpRequest);
+		String sessionID = SessionService.getJSessionIDFromRequest(httpRequest);
 		String pathInfo = httpRequest.getPathInfo();
 		int statusCode;
 		log.info("GET Request from client:" + pathInfo + " user:" + username + " sessionID:" + sessionID);
@@ -295,7 +294,7 @@ public class EPADHandler extends AbstractHandler
 				AIMReference aimReference = AIMReference.extract(ProjectsRouteTemplates.PROJECT_AIM, pathInfo);
 				EPADAIM aim = epadOperations
 						.getProjectAIMDescription(projectReference, aimReference.aimID, username, sessionID);
-				if (!XNATQueries.isCollaborator(sessionID, username, aim.projectID))
+				if (!UserProjectService.isCollaborator(sessionID, username, aim.projectID))
 					username = null;
 				if (returnSummary(httpRequest))
 				{	
@@ -685,77 +684,83 @@ public class EPADHandler extends AbstractHandler
 			String username, File aimFile)
 	{
 		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
-		String sessionID = XNATSessionOperations.getJSessionIDFromRequest(httpRequest);
+		String sessionID = SessionService.getJSessionIDFromRequest(httpRequest);
 		String pathInfo = httpRequest.getPathInfo();
 		int statusCode = HttpServletResponse.SC_OK;
 		String status = null;
 		log.info("PUT Request from client:" + pathInfo + " user:" + username + " sessionID:" + sessionID);
-
-		if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.PROJECT, pathInfo)) {
-			ProjectReference projectReference = ProjectReference.extract(ProjectsRouteTemplates.PROJECT, pathInfo);
-			String projectName = httpRequest.getParameter("projectName");
-			String projectDescription = httpRequest.getParameter("projectDescription");
-			statusCode = epadOperations.createProject(projectReference, projectName, projectDescription, sessionID);
-
-		} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.SUBJECT, pathInfo)) {
-			SubjectReference subjectReference = SubjectReference.extract(ProjectsRouteTemplates.SUBJECT, pathInfo);
-			String subjectName = httpRequest.getParameter("subjectName");
-			statusCode = epadOperations.createSubject(subjectReference, subjectName, sessionID);
-
-		} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.SUBJECT_STATUS, pathInfo)) {
-			SubjectReference subjectReference = SubjectReference.extract(ProjectsRouteTemplates.SUBJECT_STATUS, pathInfo);
-			status = epadOperations.setSubjectStatus(subjectReference, sessionID, username);
-
-		} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.SUBJECT_AIM, pathInfo)) {
-			SubjectReference subjectReference = SubjectReference.extract(ProjectsRouteTemplates.SUBJECT_AIM, pathInfo);
-			AIMReference aimReference = AIMReference.extract(ProjectsRouteTemplates.SUBJECT_AIM, pathInfo);
-			status = epadOperations.createSubjectAIM(username, subjectReference, aimReference.aimID, aimFile, sessionID);
+		try
+		{
+			if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.PROJECT, pathInfo)) {
+				ProjectReference projectReference = ProjectReference.extract(ProjectsRouteTemplates.PROJECT, pathInfo);
+				String projectName = httpRequest.getParameter("projectName");
+				String projectDescription = httpRequest.getParameter("projectDescription");
+				statusCode = epadOperations.createProject(username, projectReference, projectName, projectDescription, sessionID);
+	
+			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.SUBJECT, pathInfo)) {
+				SubjectReference subjectReference = SubjectReference.extract(ProjectsRouteTemplates.SUBJECT, pathInfo);
+				String subjectName = httpRequest.getParameter("subjectName");
+				statusCode = epadOperations.createSubject(username, subjectReference, subjectName, sessionID);
+	
+			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.SUBJECT_STATUS, pathInfo)) {
+				SubjectReference subjectReference = SubjectReference.extract(ProjectsRouteTemplates.SUBJECT_STATUS, pathInfo);
+				status = epadOperations.setSubjectStatus(subjectReference, sessionID, username);
+	
+			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.SUBJECT_AIM, pathInfo)) {
+				SubjectReference subjectReference = SubjectReference.extract(ProjectsRouteTemplates.SUBJECT_AIM, pathInfo);
+				AIMReference aimReference = AIMReference.extract(ProjectsRouteTemplates.SUBJECT_AIM, pathInfo);
+				status = epadOperations.createSubjectAIM(username, subjectReference, aimReference.aimID, aimFile, sessionID);
+				
+			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.STUDY, pathInfo)) {
+				StudyReference studyReference = StudyReference.extract(ProjectsRouteTemplates.STUDY, pathInfo);
+				statusCode = epadOperations.createStudy(username, studyReference, sessionID);
+	
+			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.STUDY_AIM, pathInfo)) {
+				StudyReference studyReference = StudyReference.extract(ProjectsRouteTemplates.STUDY_AIM, pathInfo);
+				AIMReference aimReference = AIMReference.extract(ProjectsRouteTemplates.STUDY_AIM, pathInfo);
+				status = epadOperations.createStudyAIM(username, studyReference, aimReference.aimID, aimFile, sessionID);
+	
+			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.SERIES, pathInfo)) {
+				SeriesReference seriesReference = SeriesReference.extract(ProjectsRouteTemplates.SERIES, pathInfo);
+				statusCode = epadOperations.createSeries(seriesReference, sessionID);
+	
+			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.SERIES_AIM, pathInfo)) {
+				SeriesReference seriesReference = SeriesReference.extract(ProjectsRouteTemplates.SERIES_AIM, pathInfo);
+				AIMReference aimReference = AIMReference.extract(ProjectsRouteTemplates.SERIES_AIM, pathInfo);
+				status = epadOperations.createSeriesAIM(username, seriesReference, aimReference.aimID, aimFile, sessionID);
+	
+			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.IMAGE, pathInfo)) {
+				statusCode = HttpServletResponse.SC_METHOD_NOT_ALLOWED;
+				httpResponse.addHeader("Allow", "GET, DELETE");
+	
+			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.IMAGE_AIM, pathInfo)) {
+				ImageReference imageReference = ImageReference.extract(ProjectsRouteTemplates.IMAGE_AIM, pathInfo);
+				AIMReference aimReference = AIMReference.extract(ProjectsRouteTemplates.IMAGE_AIM, pathInfo);
+				log.info("Images AIM PUT");
+				status = epadOperations.createImageAIM(username, imageReference, aimReference.aimID, aimFile, sessionID);
 			
-		} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.STUDY, pathInfo)) {
-			StudyReference studyReference = StudyReference.extract(ProjectsRouteTemplates.STUDY, pathInfo);
-			statusCode = epadOperations.createStudy(studyReference, sessionID);
-
-		} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.STUDY_AIM, pathInfo)) {
-			StudyReference studyReference = StudyReference.extract(ProjectsRouteTemplates.STUDY_AIM, pathInfo);
-			AIMReference aimReference = AIMReference.extract(ProjectsRouteTemplates.STUDY_AIM, pathInfo);
-			status = epadOperations.createStudyAIM(username, studyReference, aimReference.aimID, aimFile, sessionID);
-
-		} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.SERIES, pathInfo)) {
-			SeriesReference seriesReference = SeriesReference.extract(ProjectsRouteTemplates.SERIES, pathInfo);
-			statusCode = epadOperations.createSeries(seriesReference, sessionID);
-
-		} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.SERIES_AIM, pathInfo)) {
-			SeriesReference seriesReference = SeriesReference.extract(ProjectsRouteTemplates.SERIES_AIM, pathInfo);
-			AIMReference aimReference = AIMReference.extract(ProjectsRouteTemplates.SERIES_AIM, pathInfo);
-			status = epadOperations.createSeriesAIM(username, seriesReference, aimReference.aimID, aimFile, sessionID);
-
-		} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.IMAGE, pathInfo)) {
-			statusCode = HttpServletResponse.SC_METHOD_NOT_ALLOWED;
-			httpResponse.addHeader("Allow", "GET, DELETE");
-
-		} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.IMAGE_AIM, pathInfo)) {
-			ImageReference imageReference = ImageReference.extract(ProjectsRouteTemplates.IMAGE_AIM, pathInfo);
-			AIMReference aimReference = AIMReference.extract(ProjectsRouteTemplates.IMAGE_AIM, pathInfo);
-			log.info("Images AIM PUT");
-			status = epadOperations.createImageAIM(username, imageReference, aimReference.aimID, aimFile, sessionID);
-		
-		} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.PROJECT_AIM, pathInfo)) {
-			ProjectReference projectReference = ProjectReference.extract(ProjectsRouteTemplates.PROJECT_AIM, pathInfo);
-			AIMReference aimReference = AIMReference.extract(ProjectsRouteTemplates.PROJECT_AIM, pathInfo);
-			log.info("Projects AIM PUT");
-			status = epadOperations.createProjectAIM(username, projectReference, aimReference.aimID, aimFile, sessionID);
-
-		} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.FRAME, pathInfo)) {
-			statusCode = HttpServletResponse.SC_METHOD_NOT_ALLOWED;
-			httpResponse.addHeader("Allow", "GET, DELETE");
-
-		} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.FRAME_AIM, pathInfo)) {
-			FrameReference frameReference = FrameReference.extract(ProjectsRouteTemplates.FRAME_AIM, pathInfo);
-			AIMReference aimReference = AIMReference.extract(ProjectsRouteTemplates.FRAME_AIM, pathInfo);
-			status = epadOperations.createFrameAIM(username, frameReference, aimReference.aimID, aimFile, sessionID);
-
-		} else {
-			statusCode = HandlerUtil.badRequestJSONResponse(BAD_PUT_MESSAGE, responseStream, log);
+			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.PROJECT_AIM, pathInfo)) {
+				ProjectReference projectReference = ProjectReference.extract(ProjectsRouteTemplates.PROJECT_AIM, pathInfo);
+				AIMReference aimReference = AIMReference.extract(ProjectsRouteTemplates.PROJECT_AIM, pathInfo);
+				log.info("Projects AIM PUT");
+				status = epadOperations.createProjectAIM(username, projectReference, aimReference.aimID, aimFile, sessionID);
+	
+			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.FRAME, pathInfo)) {
+				statusCode = HttpServletResponse.SC_METHOD_NOT_ALLOWED;
+				httpResponse.addHeader("Allow", "GET, DELETE");
+	
+			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.FRAME_AIM, pathInfo)) {
+				FrameReference frameReference = FrameReference.extract(ProjectsRouteTemplates.FRAME_AIM, pathInfo);
+				AIMReference aimReference = AIMReference.extract(ProjectsRouteTemplates.FRAME_AIM, pathInfo);
+				status = epadOperations.createFrameAIM(username, frameReference, aimReference.aimID, aimFile, sessionID);
+	
+			} else {
+				statusCode = HandlerUtil.badRequestJSONResponse(BAD_PUT_MESSAGE, responseStream, log);
+			}
+		}
+		catch (Exception x) {
+			log.warning("Error handling put", x);
+			status = x.getMessage();
 		}
 		if (status == null || status.length() == 0)
 		{
@@ -863,82 +868,88 @@ public class EPADHandler extends AbstractHandler
 	private int handleDelete(HttpServletRequest httpRequest, PrintWriter responseStream, String username)
 	{
 		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
-		String sessionID = XNATSessionOperations.getJSessionIDFromRequest(httpRequest);
+		String sessionID = SessionService.getJSessionIDFromRequest(httpRequest);
 		String pathInfo = httpRequest.getPathInfo();
 		int statusCode;
 
 		log.info("DELETE Request from client:" + pathInfo + " user:" + username + " sessionID:" + sessionID);
 		boolean deleteDSO = "true".equalsIgnoreCase(httpRequest.getParameter("deleteDSO"));
 		boolean deleteAims = "true".equalsIgnoreCase(httpRequest.getParameter("deleteAims"));
-		if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.PROJECT, pathInfo)) {
-			ProjectReference projectReference = ProjectReference.extract(ProjectsRouteTemplates.PROJECT, pathInfo);
-			statusCode = epadOperations.projectDelete(projectReference.projectID, sessionID, username);
-
-		} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.SUBJECT, pathInfo)) {
-			SubjectReference subjectReference = SubjectReference.extract(ProjectsRouteTemplates.SUBJECT, pathInfo);
-			statusCode = epadOperations.subjectDelete(subjectReference, sessionID, username);
-
-		} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.STUDY, pathInfo)) {
-			StudyReference studyReference = StudyReference.extract(ProjectsRouteTemplates.STUDY, pathInfo);
-			String err = epadOperations.studyDelete(studyReference, sessionID, deleteAims, username);
-			if (err == null || err.trim().length() == 0)
-			{
-				statusCode = HttpServletResponse.SC_OK;
+		try
+		{
+			if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.PROJECT, pathInfo)) {
+				ProjectReference projectReference = ProjectReference.extract(ProjectsRouteTemplates.PROJECT, pathInfo);
+				statusCode = epadOperations.projectDelete(projectReference.projectID, sessionID, username);
+	
+			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.SUBJECT, pathInfo)) {
+				SubjectReference subjectReference = SubjectReference.extract(ProjectsRouteTemplates.SUBJECT, pathInfo);
+				statusCode = epadOperations.subjectDelete(subjectReference, sessionID, username);
+	
+			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.STUDY, pathInfo)) {
+				StudyReference studyReference = StudyReference.extract(ProjectsRouteTemplates.STUDY, pathInfo);
+				String err = epadOperations.studyDelete(studyReference, sessionID, deleteAims, username);
+				if (err == null || err.trim().length() == 0)
+				{
+					statusCode = HttpServletResponse.SC_OK;
+				}
+				else
+				{
+					responseStream.append(new EPADError(err).toJSON());
+					statusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+				}
+	
+			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.SERIES, pathInfo)) {
+				SeriesReference seriesReference = SeriesReference.extract(ProjectsRouteTemplates.SERIES, pathInfo);
+				String err = epadOperations.seriesDelete(seriesReference, sessionID, deleteAims, username);
+				if (err == null || err.trim().length() == 0)
+				{
+					statusCode = HttpServletResponse.SC_OK;
+				}
+				else
+				{
+					responseStream.append(new EPADError(err).toJSON());
+					statusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+				}
+	
+			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.PROJECT_AIM, pathInfo)) {
+				ProjectReference projectReference = ProjectReference.extract(ProjectsRouteTemplates.PROJECT_AIM, pathInfo);
+				AIMReference aimReference = AIMReference.extract(ProjectsRouteTemplates.PROJECT_AIM, pathInfo);
+				statusCode = epadOperations.projectAIMDelete(projectReference, aimReference.aimID, sessionID, deleteDSO, username);
+	
+			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.SUBJECT_AIM, pathInfo)) {
+				SubjectReference subjectReference = SubjectReference.extract(ProjectsRouteTemplates.SUBJECT_AIM, pathInfo);
+				AIMReference aimReference = AIMReference.extract(ProjectsRouteTemplates.SUBJECT_AIM, pathInfo);
+				statusCode = epadOperations.subjectAIMDelete(subjectReference, aimReference.aimID, sessionID, deleteDSO, username);
+	
+			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.STUDY_AIM, pathInfo)) {
+				StudyReference studyReference = StudyReference.extract(ProjectsRouteTemplates.STUDY_AIM, pathInfo);
+				AIMReference aimReference = AIMReference.extract(ProjectsRouteTemplates.STUDY_AIM, pathInfo);
+				statusCode = epadOperations.studyAIMDelete(studyReference, aimReference.aimID, sessionID, deleteDSO, username);
+	
+			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.SERIES_AIM, pathInfo)) {
+				SeriesReference seriesReference = SeriesReference.extract(ProjectsRouteTemplates.SERIES_AIM, pathInfo);
+				AIMReference aimReference = AIMReference.extract(ProjectsRouteTemplates.SERIES_AIM, pathInfo);
+				statusCode = epadOperations.seriesAIMDelete(seriesReference, aimReference.aimID, sessionID, deleteDSO, username);
+	
+			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.IMAGE_AIM, pathInfo)) {
+				ImageReference imageReference = ImageReference.extract(ProjectsRouteTemplates.IMAGE_AIM, pathInfo);
+				AIMReference aimReference = AIMReference.extract(ProjectsRouteTemplates.IMAGE_AIM, pathInfo);
+				statusCode = epadOperations.imageAIMDelete(imageReference, aimReference.aimID, sessionID, deleteDSO, username);
+	
+			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.FRAME_AIM, pathInfo)) {
+				FrameReference frameReference = FrameReference.extract(ProjectsRouteTemplates.FRAME_AIM, pathInfo);
+				AIMReference aimReference = AIMReference.extract(ProjectsRouteTemplates.FRAME_AIM, pathInfo);
+				statusCode = epadOperations.frameAIMDelete(frameReference, aimReference.aimID, sessionID, deleteDSO, username);
+	
+			} else if (HandlerUtil.matchesTemplate(AimsRouteTemplates.AIM, pathInfo)) {
+				AIMReference aimReference = AIMReference.extract(AimsRouteTemplates.AIM, pathInfo);
+				statusCode = epadOperations.aimDelete(aimReference.aimID, sessionID, deleteDSO, username);
+			} else {
+				statusCode = HandlerUtil.badRequestJSONResponse(BAD_DELETE_MESSAGE, responseStream, log);
 			}
-			else
-			{
-				responseStream.append(new EPADError(err).toJSON());
-				statusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
-			}
-
-		} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.SERIES, pathInfo)) {
-			SeriesReference seriesReference = SeriesReference.extract(ProjectsRouteTemplates.SERIES, pathInfo);
-			String err = epadOperations.seriesDelete(seriesReference, sessionID, deleteAims, username);
-			if (err == null || err.trim().length() == 0)
-			{
-				statusCode = HttpServletResponse.SC_OK;
-			}
-			else
-			{
-				responseStream.append(new EPADError(err).toJSON());
-				statusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
-			}
-
-		} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.PROJECT_AIM, pathInfo)) {
-			ProjectReference projectReference = ProjectReference.extract(ProjectsRouteTemplates.PROJECT_AIM, pathInfo);
-			AIMReference aimReference = AIMReference.extract(ProjectsRouteTemplates.PROJECT_AIM, pathInfo);
-			statusCode = epadOperations.projectAIMDelete(projectReference, aimReference.aimID, sessionID, deleteDSO, username);
-
-		} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.SUBJECT_AIM, pathInfo)) {
-			SubjectReference subjectReference = SubjectReference.extract(ProjectsRouteTemplates.SUBJECT_AIM, pathInfo);
-			AIMReference aimReference = AIMReference.extract(ProjectsRouteTemplates.SUBJECT_AIM, pathInfo);
-			statusCode = epadOperations.subjectAIMDelete(subjectReference, aimReference.aimID, sessionID, deleteDSO, username);
-
-		} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.STUDY_AIM, pathInfo)) {
-			StudyReference studyReference = StudyReference.extract(ProjectsRouteTemplates.STUDY_AIM, pathInfo);
-			AIMReference aimReference = AIMReference.extract(ProjectsRouteTemplates.STUDY_AIM, pathInfo);
-			statusCode = epadOperations.studyAIMDelete(studyReference, aimReference.aimID, sessionID, deleteDSO, username);
-
-		} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.SERIES_AIM, pathInfo)) {
-			SeriesReference seriesReference = SeriesReference.extract(ProjectsRouteTemplates.SERIES_AIM, pathInfo);
-			AIMReference aimReference = AIMReference.extract(ProjectsRouteTemplates.SERIES_AIM, pathInfo);
-			statusCode = epadOperations.seriesAIMDelete(seriesReference, aimReference.aimID, sessionID, deleteDSO, username);
-
-		} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.IMAGE_AIM, pathInfo)) {
-			ImageReference imageReference = ImageReference.extract(ProjectsRouteTemplates.IMAGE_AIM, pathInfo);
-			AIMReference aimReference = AIMReference.extract(ProjectsRouteTemplates.IMAGE_AIM, pathInfo);
-			statusCode = epadOperations.imageAIMDelete(imageReference, aimReference.aimID, sessionID, deleteDSO, username);
-
-		} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.FRAME_AIM, pathInfo)) {
-			FrameReference frameReference = FrameReference.extract(ProjectsRouteTemplates.FRAME_AIM, pathInfo);
-			AIMReference aimReference = AIMReference.extract(ProjectsRouteTemplates.FRAME_AIM, pathInfo);
-			statusCode = epadOperations.frameAIMDelete(frameReference, aimReference.aimID, sessionID, deleteDSO, username);
-
-		} else if (HandlerUtil.matchesTemplate(AimsRouteTemplates.AIM, pathInfo)) {
-			AIMReference aimReference = AIMReference.extract(AimsRouteTemplates.AIM, pathInfo);
-			statusCode = epadOperations.aimDelete(aimReference.aimID, sessionID, deleteDSO, username);
-		} else {
-			statusCode = HandlerUtil.badRequestJSONResponse(BAD_DELETE_MESSAGE, responseStream, log);
+		} catch (Exception x) {
+			responseStream.append(new EPADError(x.getMessage()).toJSON());
+			statusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 		}
 		return statusCode;
 	}

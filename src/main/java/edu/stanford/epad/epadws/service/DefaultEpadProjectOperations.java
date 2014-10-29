@@ -1,4 +1,4 @@
-package edu.stanford.epad.epadws.queries;
+package edu.stanford.epad.epadws.service;
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -8,6 +8,7 @@ import java.util.Map;
 
 import org.mindrot.jbcrypt.BCrypt;
 
+import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.epad.epadws.models.Project;
 import edu.stanford.epad.epadws.models.ProjectToSubject;
@@ -243,16 +244,58 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 	}
 
 	@Override
+	public List<Project> getPublicProjects() throws Exception {
+		List objects = new Project().getObjects("type = '" + ProjectType.PUBLIC + "' order by projectId");
+		List<Project> projects = new ArrayList<Project>();
+		projects.addAll(objects);
+		return projects;
+	}
+
+	@Override
 	public List<Project> getProjectsForUser(String username) throws Exception {
 		User user = getUser(username);
 		List objects = new Project().getObjects("id in (select project_id from " 
 													+ ProjectToUser.DBTABLE 
 													+ " where user_id =" + user.getId() + ") order by projectId");
 		List<Project> projects = new ArrayList<Project>();
-		projects.addAll(objects);		
+		projects.addAll(objects);
+		List<Project> publicProjs = getPublicProjects();
+		for (Project project: publicProjs)
+		{
+			if (!projects.contains(project))
+				projects.add(project);
+		}
 		return projects;
 	}
 
+	@Override
+	public Project getProjectForUser(String username, String projectID) throws Exception {
+		Project project = getProject(projectID);
+		User user = getUser(username);
+		List objects = new Project().getObjects("id in (select project_id from " 
+													+ ProjectToUser.DBTABLE 
+													+ " where user_id =" + user.getId() + " and project_id=" + project.getId());
+		return project;
+	}
+
+	@Override
+	public List<User> getUsersForProject(String projectId) throws Exception {
+		Project project = getProject(projectId);
+		
+		return getUsersByProjectId(project.getId());
+	}
+
+	private List<User> getUsersByProjectId(long id)
+			throws Exception {
+		List objects = new User().getObjects("id in (select user_id from " 
+													+ ProjectToUser.DBTABLE 
+													+ " where project_id =" + id + ")");
+		List<User> users = new ArrayList<User>();
+		users.addAll(objects);
+		
+		return users;
+	}
+	
 	@Override
 	public List<Subject> getSubjectsForProject(String projectId)
 			throws Exception {
@@ -260,7 +303,6 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		
 		return getSubjectsByProjectId(project.getId());
 	}
-
 
 	private List<Subject> getSubjectsByProjectId(long id)
 			throws Exception {
@@ -271,6 +313,39 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		subjects.addAll(objects);
 		
 		return subjects;
+	}
+	
+	@Override
+	public Subject getSubjectForProject(String projectId, String subjectUID)
+			throws Exception {
+		Project project = getProject(projectId);
+		Subject subject = getSubject(subjectUID);
+		if (subject == null) return null;
+		if (new ProjectToSubject().getCount("subject_id=" + subject.getId() + " and project_id=" + project.getId()) > 0)
+			return subject;
+		else
+			return null;
+	}
+
+	@Override
+	public Subject getSubjectFromName(String subjectName) throws Exception {
+		Subject subject = new Subject();
+		List<Subject> subjects = subject.getObjects("name =" +subject.toSQL(subjectName));
+		if (subjects.size() > 0)
+			return subjects.get(0);
+		else
+			return null;
+	}
+
+	@Override
+	public Subject getSubjectFromNameForProject(String subjectName,
+			String projectID) throws Exception {
+		if (projectID == null || projectID.trim().length() == 0)
+			return getSubjectFromName(subjectName);
+		List<Subject> subjects = this.getSubjectsForProject(projectID);
+		for (Subject subject: subjects)
+			if (subjectName.equals(subject.getName())) return subject;
+		return null;
 	}
 
 	@Override
@@ -299,6 +374,35 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		studies.addAll(objects);
 
 		return studies;
+	}
+
+	@Override
+	public Project getFirstProjectForStudy(String studyUID) throws Exception {
+		Study study = getStudy(studyUID);
+		List<ProjectToSubject> ptoss = new ProjectToSubject().getObjects("subject_id=" + study.getSubjectId());
+		Map<Long, ProjectToSubject> ptosIdMap = new HashMap<Long, ProjectToSubject>();
+		for (ProjectToSubject ptos: ptoss)
+			ptosIdMap.put(ptos.getId(), ptos);
+		List<ProjectToSubjectToStudy> psss = new ProjectToSubjectToStudy().getObjects("proj_subj_id in " + study.toSQL(ptosIdMap.keySet()) + " and study_id=" + study.getId());
+		if (psss.size() > 0)
+		{
+			Project project = new Project();
+			long ptosId = ((ProjectToSubjectToStudy)psss.get(0)).getProjSubjId();
+			project.setId(ptosIdMap.get(ptosId).getId());
+			project.retrieve();
+			return project;
+		}
+		return null;
+	}
+
+	@Override
+	public boolean isStudyInProjectAndSubject(String projectId,
+			String subjectUID, String studyUID) throws Exception {
+		Project project = getProject(projectId);
+		Subject subject = getSubject(subjectUID);
+		Study study = getStudy(studyUID);
+		ProjectToSubject ptos = (ProjectToSubject) new ProjectToSubject().getObject("project_id = " + project.getId() + " and subject_id=" + subject.getId());
+		return new ProjectToSubjectToStudy().getCount("proj_subj_id = " + ptos.getId() + " and study_id=" + study.getId()) > 0;
 	}
 
 	@Override
@@ -415,34 +519,103 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 	}
 
 	@Override
-	public boolean isCollaborator(String sessionID, String username,
-			String projectID) throws Exception {
-		// TODO Auto-generated method stub
-		return false;
+	public boolean isCollaborator(String username, String projectID) throws Exception {
+		if (projectID == null || projectID.trim().length() == 0)
+		{
+			if (username.equals("admin")) 
+				return false;
+			else
+				return true;
+		}
+		UserRole role = getUserProjectRole(username, projectID);
+		if (role == null && username.equals("admin")) return false;
+		if (role == null && projectID.equals(EPADConfig.xnatUploadProjectID)) return true;
+		if (role == null)
+			throw new Exception("User " + username  + " does not exist in project:" + projectID);
+		if (role.equals(UserRole.COLLABORATOR))
+			return true;
+		else
+			return false;
 	}
 
 	@Override
-	public boolean isMember(String sessionID, String username, String projectID)
+	public boolean isMember(String username, String projectID)
 			throws Exception {
-		// TODO Auto-generated method stub
-		return false;
+		if (projectID == null || projectID.trim().length() == 0)
+			return false;
+		UserRole role = getUserProjectRole(username, projectID);
+		if (role == null && username.equals("admin")) return true;
+		if (role == null)
+			throw new Exception("Does not exist in project:" + projectID);
+		if (role.equals(UserRole.MEMBER))
+			return true;
+		else
+			return false;
 	}
 
 	@Override
-	public boolean isOwner(String sessionID, String username, String projectID)
+	public boolean isOwner(String username, String projectID)
 			throws Exception {
-		// TODO Auto-generated method stub
-		return false;
+		if (projectID == null || projectID.trim().length() == 0)
+			return false;
+		Project project = getProject(projectID);
+		if (project.getCreator().equals(username))
+			return true;
+		UserRole role = getUserProjectRole(username, projectID);
+		if (role == null && username.equals("admin")) return true;
+		if (role == null)
+			throw new Exception("Does not exist in project:" + projectID);
+		if (role.equals(UserRole.OWNER))
+			return true;
+		else
+			return false;
 	}
 
 	@Override
-	public UserRole getUserProjectRole(String sessionID, String username,
+	public UserRole getUserProjectRole(String username,
 			String projectID) throws Exception {
 		User user = getUser(username);
 		Project project = getProject(projectID);
-		ProjectToUser pu = new ProjectToUser("project_id =" + project.getId() + " and user_id=" + user.getId());
-		
-		return null;
+		ProjectToUser pu = (ProjectToUser) new ProjectToUser().getObject("project_id =" + project.getId() + " and user_id=" + user.getId());
+		if (pu == null)
+			return null;
+		String role = pu.getRole();
+		return UserRole.getRole(role);
+	}
+
+	@Override
+	public void deleteProject(String username, String projectID)
+			throws Exception {
+		Project project = getProject(projectID);
+		new ProjectToUser().deleteObjects("project_id=" + project.getId());		
+		new ProjectToSubjectToUser().deleteObjects("proj_subj_id in (select id from " + new ProjectToSubject().returnDBTABLE() + " where project_id=" + project.getId() + ")");
+		new ProjectToSubjectToStudy().deleteObjects("proj_subj_id in (select id from " + new ProjectToSubject().returnDBTABLE() + " where project_id=" + project.getId() + ")");
+		new ProjectToSubject().deleteObjects("project_id=" + project.getId());
+		project.delete();
+	}
+
+	@Override
+	public void deleteSubject(String username, String subjectUID,
+			String projectID) throws Exception {
+		Subject subject = getSubject(subjectUID);
+		Project project = getProject(projectID);
+		ProjectToSubject projSubj = (ProjectToSubject) new ProjectToSubject().getObject("project_id =" + project.getId() + " and subject_id=" + subject.getId());
+		new ProjectToSubjectToUser().deleteObjects("proj_subj_id =" + projSubj.getId());
+		new ProjectToSubjectToStudy().deleteObjects("proj_subj_id =" + projSubj.getId());
+		projSubj.delete();
+		// TODO: delete subject if not used any more
+	}
+
+	@Override
+	public void deleteStudy(String username, String studyUID,
+			String subjectUID, String projectID) throws Exception {
+		Subject subject = getSubject(subjectUID);
+		Project project = getProject(projectID);
+		Study study = getStudy(studyUID);
+		ProjectToSubject projSubj = (ProjectToSubject) new ProjectToSubject().getObject("project_id =" + project.getId() + " and subject_id=" + subject.getId());
+		ProjectToSubjectToStudy projSubjStudy = (ProjectToSubjectToStudy) new ProjectToSubjectToStudy().getObject("proj_subj_id =" + projSubj.getId() + " and study_id=" + study.getId());
+		projSubjStudy.delete();
+		// TODO: delete study if not used any more
 	}
 
 }
