@@ -726,6 +726,8 @@ public class DefaultEpadOperations implements EpadOperations
 	{
 		int xnatStatusCode;
 
+		if (projectID.equals(EPADConfig.xnatUploadProjectID)) 
+			throw new RuntimeException("Project " + EPADConfig.xnatUploadProjectID + " can not be deleted");
 		Set<String> subjectIDs = XNATQueries.getSubjectIDsForProject(sessionID, projectID);
 
 		for (String patientID : subjectIDs) {
@@ -749,10 +751,13 @@ public class DefaultEpadOperations implements EpadOperations
 		log.info("Scheduling deletion task for patient " + subjectReference.subjectID + " in project "
 				+ subjectReference.projectID + " from user " + username);
 
+		(new Thread(new SubjectDataDeleteTask(subjectReference.projectID, subjectReference.subjectID, username))).start();
+		try {
+			Thread.sleep(1000);
+		} catch (InterruptedException e) {
+		}
 		xnatStatusCode = XNATDeletionOperations.deleteXNATSubject(subjectReference.projectID, subjectReference.subjectID,
 				sessionID);
-
-		(new Thread(new SubjectDataDeleteTask(subjectReference.projectID, subjectReference.subjectID))).start();
 
 		return xnatStatusCode;
 	}
@@ -826,92 +831,92 @@ public class DefaultEpadOperations implements EpadOperations
 	}
 
 	@Override
-	public int createProjectAIM(String username,
+	public String createProjectAIM(String username,
 			ProjectReference projectReference, String aimID, File aimFile,
 			String sessionID) {
 		try {
 			if (aimFile == null || !AIMUtil.saveAIMAnnotation(aimFile, projectReference.projectID, sessionID, username))
-				return HttpServletResponse.SC_OK;
+				return "";
 			else
-				return HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+				return "Error saving AIM file";
 		} catch (Exception e) {
 			log.warning("Error saving AIM file ",e);
-			return HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+			return "Error saving AIM file " + e.getMessage();
 		}
 	}
 
 	@Override
-	public int createSubjectAIM(String username,
+	public String createSubjectAIM(String username,
 			SubjectReference subjectReference, String aimID, File aimFile,
 			String sessionID) {
 		try {
 			if (aimFile == null || !AIMUtil.saveAIMAnnotation(aimFile, subjectReference.projectID, sessionID, username))
-				return HttpServletResponse.SC_OK;
+				return "";
 			else
-				return HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+				return "Error saving AIM file";
 		} catch (Exception e) {
 			log.warning("Error saving AIM file ",e);
-			return HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+			return "Error saving AIM file " + e.getMessage();
 		}
 	}
 
 	@Override
-	public int createStudyAIM(String username, StudyReference studyReference, String aimID, File aimFile, String sessionID)
+	public String createStudyAIM(String username, StudyReference studyReference, String aimID, File aimFile, String sessionID)
 	{
 		try {
 			if (aimFile == null || !AIMUtil.saveAIMAnnotation(aimFile, studyReference.projectID, sessionID, username))
-				return HttpServletResponse.SC_OK;
+				return "";
 			else
-				return HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+				return "Error saving AIM file";
 		} catch (Exception e) {
 			log.warning("Error saving AIM file ",e);
-			return HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+			return "Error saving AIM file " + e.getMessage();
 		}
 	}
 
 	@Override
-	public int createSeriesAIM(String username, SeriesReference seriesReference, String aimID, File aimFile, String sessionID)
+	public String createSeriesAIM(String username, SeriesReference seriesReference, String aimID, File aimFile, String sessionID)
 	{
 		try {
 			if (aimFile == null || !AIMUtil.saveAIMAnnotation(aimFile, seriesReference.projectID, sessionID, username))
-				return HttpServletResponse.SC_OK;
+				return "";
 			else
-				return HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+				return "Error saving AIM file";
 		} catch (Exception e) {
 			log.warning("Error saving AIM file ",e);
-			return HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+			return "Error saving AIM file " + e.getMessage();
 		}
 	}
 
 	@Override
-	public int createImageAIM(String username, ImageReference imageReference, String aimID, File aimFile, String sessionID)
+	public String createImageAIM(String username, ImageReference imageReference, String aimID, File aimFile, String sessionID)
 	{
 		try {
 			if (aimFile == null)
 				epadDatabaseOperations.addAIM(username, imageReference, aimID);
 			if (aimFile == null || !AIMUtil.saveAIMAnnotation(aimFile, imageReference.projectID, sessionID, username))
-				return HttpServletResponse.SC_OK;
+				return "";
 			else
-				return HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+				return "Error saving AIM file";
 		} catch (Exception e) {
 			log.warning("Error saving AIM file ",e);
-			return HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+			return "Error saving AIM file " + e.getMessage();
 		}
 	}
 
 	@Override
-	public int createFrameAIM(String username, FrameReference frameReference, String aimID, File aimFile, String sessionID)
+	public String createFrameAIM(String username, FrameReference frameReference, String aimID, File aimFile, String sessionID)
 	{
 		try {
 			if (aimFile == null)
 				epadDatabaseOperations.addAIM(username, frameReference, aimID);
 			if (aimFile == null || !AIMUtil.saveAIMAnnotation(aimFile, frameReference.projectID, frameReference.frameNumber, sessionID, username))
-				return HttpServletResponse.SC_OK;
+				return "";
 			else
-				return HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+				return "Error saving AIM file";
 		} catch (Exception e) {
 			log.warning("Error saving AIM file ",e);
-			return HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+			return "Error saving AIM file " + e.getMessage();
 		}
 	}
 
@@ -931,7 +936,7 @@ public class DefaultEpadOperations implements EpadOperations
 			if (deleteDSO && aim.dsoSeriesUID != null && aim.dsoSeriesUID.length() > 0)
 			{
 				log.info("Deleting Series:" + aim.dsoSeriesUID + " In project:" + aim.projectID);
-				this.seriesDelete(new SeriesReference(aim.projectID, aim.subjectID, aim.studyUID, aim.dsoSeriesUID), sessionID, false, username);
+				this.seriesDelete(new SeriesReference(projectReference.projectID, aim.subjectID, aim.studyUID, aim.dsoSeriesUID), sessionID, false, username);
 			}
 			return HttpServletResponse.SC_OK;
 		} catch (Exception e) {
@@ -954,7 +959,7 @@ public class DefaultEpadOperations implements EpadOperations
 			epadDatabaseOperations.deleteAIM(username, subjectReference, aimID);
 			if (deleteDSO && aim.dsoSeriesUID != null && aim.dsoSeriesUID.length() > 0)
 			{
-				this.seriesDelete(new SeriesReference(aim.projectID, aim.subjectID, aim.studyUID, aim.dsoSeriesUID), sessionID, false, username);
+				this.seriesDelete(new SeriesReference(subjectReference.projectID, aim.subjectID, aim.studyUID, aim.dsoSeriesUID), sessionID, false, username);
 			}
 			return HttpServletResponse.SC_OK;
 		} catch (Exception e) {
@@ -977,7 +982,7 @@ public class DefaultEpadOperations implements EpadOperations
 			epadDatabaseOperations.deleteAIM(username, studyReference, aimID);
 			if (deleteDSO && aim.dsoSeriesUID != null && aim.dsoSeriesUID.length() > 0)
 			{
-				this.seriesDelete(new SeriesReference(aim.projectID, aim.subjectID, aim.studyUID, aim.dsoSeriesUID), sessionID, false, username);
+				this.seriesDelete(new SeriesReference(studyReference.projectID, aim.subjectID, aim.studyUID, aim.dsoSeriesUID), sessionID, false, username);
 			}
 			return HttpServletResponse.SC_OK;
 		} catch (Exception e) {
@@ -1000,7 +1005,7 @@ public class DefaultEpadOperations implements EpadOperations
 			epadDatabaseOperations.deleteAIM(username, seriesReference, aimID);
 			if (deleteDSO && aim.dsoSeriesUID != null && aim.dsoSeriesUID.length() > 0)
 			{
-				this.seriesDelete(new SeriesReference(aim.projectID, aim.subjectID, aim.studyUID, aim.dsoSeriesUID), sessionID, false, username);
+				this.seriesDelete(new SeriesReference(seriesReference.projectID, aim.subjectID, aim.studyUID, aim.dsoSeriesUID), sessionID, false, username);
 			}
 			return HttpServletResponse.SC_OK;
 		} catch (Exception e) {
@@ -1023,7 +1028,7 @@ public class DefaultEpadOperations implements EpadOperations
 			epadDatabaseOperations.deleteAIM(username, imageReference, aimID);
 			if (deleteDSO && aim.dsoSeriesUID != null && aim.dsoSeriesUID.length() > 0)
 			{
-				this.seriesDelete(new SeriesReference(aim.projectID, aim.subjectID, aim.studyUID, aim.dsoSeriesUID), sessionID, false, username);
+				this.seriesDelete(new SeriesReference(imageReference.projectID, aim.subjectID, aim.studyUID, aim.dsoSeriesUID), sessionID, false, username);
 			}
 			return HttpServletResponse.SC_OK;
 		} catch (Exception e) {
@@ -1046,7 +1051,7 @@ public class DefaultEpadOperations implements EpadOperations
 			epadDatabaseOperations.deleteAIM(username, frameReference, aimID);
 			if (deleteDSO && aim.dsoSeriesUID != null && aim.dsoSeriesUID.length() > 0)
 			{
-				this.seriesDelete(new SeriesReference(aim.projectID, aim.subjectID, aim.studyUID, aim.dsoSeriesUID), sessionID, false, username);
+				this.seriesDelete(new SeriesReference(frameReference.projectID, aim.subjectID, aim.studyUID, aim.dsoSeriesUID), sessionID, false, username);
 			}
 			return HttpServletResponse.SC_OK;
 		} catch (Exception e) {
@@ -1208,7 +1213,7 @@ public class DefaultEpadOperations implements EpadOperations
 		Set<String> seriesUIDs = dcm4CheeDatabaseOperations.getAllSeriesUIDsInStudy(studyUID);
 		StudyProcessingStatus studyProcessingStatus = getStudyProcessingStatus(studyUID);
 		//int numberOfAnnotations = (seriesUIDs.size() <= 0) ? 0 : AIMQueries.getNumberOfAIMAnnotationsForSeriesSet(seriesUIDs, username);
-		EPADAIMList aims = getStudyAIMDescriptions(new StudyReference(null, null, studyUID), null, sessionID);
+		EPADAIMList aims = getStudyAIMDescriptions(new StudyReference(suppliedProjectID, null, studyUID), null, sessionID);
 		log.info("Number of study aims:" + aims.ResultSet.totalRecords);
 		int	numberOfAnnotations = getNumberOfAccessibleAims(sessionID, suppliedProjectID, aims, username);
 		return new EPADStudy(projectID, subjectID, patientName, studyUID, insertDate, firstSeriesUID,
@@ -1309,7 +1314,8 @@ public class DefaultEpadOperations implements EpadOperations
 				XNATUserList xnatUsers = XNATQueries.getUsersForProject(projectID);
 				Set<String> usernames = xnatUsers.getLoginNames();
 				Map<String,String> userRoles = xnatUsers.getRoles();
-
+				if (!userRoles.keySet().contains(username))
+					userRoles.put(username, "Collaborator");
 				return new EPADProject(secondaryID, piLastName, description, projectName, projectID, piFirstName, uri,
 						numberOfPatients, numberOfStudies, numberOfAnnotations, patientIDs, usernames, userRoles);
 			} else

@@ -303,7 +303,7 @@ public class EPADHandler extends AbstractHandler
 				}
 				else
 				{
-					AIMUtil.queryAIMImageAnnotations(responseStream, AIMSearchType.ANNOTATION_UID,
+					AIMUtil.queryAIMImageAnnotations(responseStream, projectReference.projectID, AIMSearchType.ANNOTATION_UID,
 							aim.aimID, username);					
 				}
 				statusCode = HttpServletResponse.SC_OK;
@@ -336,7 +336,7 @@ public class EPADHandler extends AbstractHandler
 				}
 				else
 				{
-					AIMUtil.queryAIMImageAnnotations(responseStream, AIMSearchType.ANNOTATION_UID,
+					AIMUtil.queryAIMImageAnnotations(responseStream, subjectReference.projectID, AIMSearchType.ANNOTATION_UID,
 							aim.aimID, username);					
 				}
 				statusCode = HttpServletResponse.SC_OK;
@@ -368,7 +368,7 @@ public class EPADHandler extends AbstractHandler
 				}
 				else
 				{
-					AIMUtil.queryAIMImageAnnotations(responseStream, AIMSearchType.ANNOTATION_UID,
+					AIMUtil.queryAIMImageAnnotations(responseStream, studyReference.projectID, AIMSearchType.ANNOTATION_UID,
 							aim.aimID, username);					
 				}
 				statusCode = HttpServletResponse.SC_OK;
@@ -401,7 +401,7 @@ public class EPADHandler extends AbstractHandler
 				}
 				else
 				{
-					AIMUtil.queryAIMImageAnnotations(responseStream, AIMSearchType.ANNOTATION_UID,
+					AIMUtil.queryAIMImageAnnotations(responseStream, seriesReference.projectID, AIMSearchType.ANNOTATION_UID,
 							aim.aimID, username);					
 				}
 				statusCode = HttpServletResponse.SC_OK;
@@ -432,7 +432,7 @@ public class EPADHandler extends AbstractHandler
 				}
 				else
 				{
-					AIMUtil.queryAIMImageAnnotations(responseStream, AIMSearchType.ANNOTATION_UID,
+					AIMUtil.queryAIMImageAnnotations(responseStream, imageReference.projectID, AIMSearchType.ANNOTATION_UID,
 							aim.aimID, username);					
 				}
 				statusCode = HttpServletResponse.SC_OK;
@@ -464,7 +464,7 @@ public class EPADHandler extends AbstractHandler
 				}
 				else
 				{
-					AIMUtil.queryAIMImageAnnotations(responseStream, AIMSearchType.ANNOTATION_UID,
+					AIMUtil.queryAIMImageAnnotations(responseStream, frameReference.projectID, AIMSearchType.ANNOTATION_UID,
 							aim.aimID, username);					
 				}
 				statusCode = HttpServletResponse.SC_OK;
@@ -495,7 +495,7 @@ public class EPADHandler extends AbstractHandler
 				}
 				else
 				{
-					AIMUtil.queryAIMImageAnnotations(responseStream, AIMSearchType.ANNOTATION_UID,
+					AIMUtil.queryAIMImageAnnotations(responseStream, studyReference.projectID, AIMSearchType.ANNOTATION_UID,
 							aim.aimID, username);					
 				}
 				statusCode = HttpServletResponse.SC_OK;
@@ -528,7 +528,7 @@ public class EPADHandler extends AbstractHandler
 				}
 				else
 				{
-					AIMUtil.queryAIMImageAnnotations(responseStream, AIMSearchType.ANNOTATION_UID,
+					AIMUtil.queryAIMImageAnnotations(responseStream, seriesReference.projectID, AIMSearchType.ANNOTATION_UID,
 							aim.aimID, username);					
 				}
 				statusCode = HttpServletResponse.SC_OK;
@@ -559,7 +559,7 @@ public class EPADHandler extends AbstractHandler
 				}
 				else
 				{
-					AIMUtil.queryAIMImageAnnotations(responseStream, AIMSearchType.ANNOTATION_UID,
+					AIMUtil.queryAIMImageAnnotations(responseStream, imageReference.projectID, AIMSearchType.ANNOTATION_UID,
 							aim.aimID, username);					
 				}
 				statusCode = HttpServletResponse.SC_OK;
@@ -591,7 +591,7 @@ public class EPADHandler extends AbstractHandler
 				}
 				else
 				{
-					AIMUtil.queryAIMImageAnnotations(responseStream, AIMSearchType.ANNOTATION_UID,
+					AIMUtil.queryAIMImageAnnotations(responseStream, frameReference.projectID, AIMSearchType.ANNOTATION_UID,
 							aim.aimID, username);					
 				}
 				statusCode = HttpServletResponse.SC_OK;
@@ -623,7 +623,7 @@ public class EPADHandler extends AbstractHandler
 				}
 				else
 				{
-					AIMUtil.queryAIMImageAnnotations(responseStream, AIMSearchType.ANNOTATION_UID,
+					AIMUtil.queryAIMImageAnnotations(responseStream, subjectReference.projectID, AIMSearchType.ANNOTATION_UID,
 							aim.aimID, username);					
 				}
 				statusCode = HttpServletResponse.SC_OK;
@@ -651,7 +651,7 @@ public class EPADHandler extends AbstractHandler
 					}
 					else
 					{
-						AIMUtil.queryAIMImageAnnotations(responseStream, projectID, AIMSearchType.ANNOTATION_UID,
+						AIMUtil.queryAIMImageAnnotations(responseStream, AIMSearchType.ANNOTATION_UID,
 								AIMUtil.getUIDCsvList(sessionID, aims, username), username, start, count);
 					}
 				}
@@ -666,7 +666,7 @@ public class EPADHandler extends AbstractHandler
 				}
 				else
 				{
-					AIMUtil.queryAIMImageAnnotations(responseStream, AIMSearchType.ANNOTATION_UID,
+					AIMUtil.queryAIMImageAnnotations(responseStream, null, AIMSearchType.ANNOTATION_UID,
 							aim.aimID, username);					
 				}
 				statusCode = HttpServletResponse.SC_OK;
@@ -687,7 +687,8 @@ public class EPADHandler extends AbstractHandler
 		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
 		String sessionID = XNATSessionOperations.getJSessionIDFromRequest(httpRequest);
 		String pathInfo = httpRequest.getPathInfo();
-		int statusCode;
+		int statusCode = HttpServletResponse.SC_OK;
+		String status = null;
 		log.info("PUT Request from client:" + pathInfo + " user:" + username + " sessionID:" + sessionID);
 
 		if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.PROJECT, pathInfo)) {
@@ -703,17 +704,13 @@ public class EPADHandler extends AbstractHandler
 
 		} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.SUBJECT_STATUS, pathInfo)) {
 			SubjectReference subjectReference = SubjectReference.extract(ProjectsRouteTemplates.SUBJECT_STATUS, pathInfo);
-			String status = epadOperations.setSubjectStatus(subjectReference, sessionID, username);
-			if (status == null || status.length() == 0)
-				statusCode = HttpServletResponse.SC_OK;
-			else
-				statusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;				
+			status = epadOperations.setSubjectStatus(subjectReference, sessionID, username);
 
 		} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.SUBJECT_AIM, pathInfo)) {
 			SubjectReference subjectReference = SubjectReference.extract(ProjectsRouteTemplates.SUBJECT_AIM, pathInfo);
 			AIMReference aimReference = AIMReference.extract(ProjectsRouteTemplates.SUBJECT_AIM, pathInfo);
-			statusCode = epadOperations.createSubjectAIM(username, subjectReference, aimReference.aimID, aimFile, sessionID);
-
+			status = epadOperations.createSubjectAIM(username, subjectReference, aimReference.aimID, aimFile, sessionID);
+			
 		} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.STUDY, pathInfo)) {
 			StudyReference studyReference = StudyReference.extract(ProjectsRouteTemplates.STUDY, pathInfo);
 			statusCode = epadOperations.createStudy(studyReference, sessionID);
@@ -721,7 +718,7 @@ public class EPADHandler extends AbstractHandler
 		} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.STUDY_AIM, pathInfo)) {
 			StudyReference studyReference = StudyReference.extract(ProjectsRouteTemplates.STUDY_AIM, pathInfo);
 			AIMReference aimReference = AIMReference.extract(ProjectsRouteTemplates.STUDY_AIM, pathInfo);
-			statusCode = epadOperations.createStudyAIM(username, studyReference, aimReference.aimID, aimFile, sessionID);
+			status = epadOperations.createStudyAIM(username, studyReference, aimReference.aimID, aimFile, sessionID);
 
 		} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.SERIES, pathInfo)) {
 			SeriesReference seriesReference = SeriesReference.extract(ProjectsRouteTemplates.SERIES, pathInfo);
@@ -730,7 +727,8 @@ public class EPADHandler extends AbstractHandler
 		} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.SERIES_AIM, pathInfo)) {
 			SeriesReference seriesReference = SeriesReference.extract(ProjectsRouteTemplates.SERIES_AIM, pathInfo);
 			AIMReference aimReference = AIMReference.extract(ProjectsRouteTemplates.SERIES_AIM, pathInfo);
-			statusCode = epadOperations.createSeriesAIM(username, seriesReference, aimReference.aimID, aimFile, sessionID);
+			status = epadOperations.createSeriesAIM(username, seriesReference, aimReference.aimID, aimFile, sessionID);
+
 		} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.IMAGE, pathInfo)) {
 			statusCode = HttpServletResponse.SC_METHOD_NOT_ALLOWED;
 			httpResponse.addHeader("Allow", "GET, DELETE");
@@ -739,13 +737,13 @@ public class EPADHandler extends AbstractHandler
 			ImageReference imageReference = ImageReference.extract(ProjectsRouteTemplates.IMAGE_AIM, pathInfo);
 			AIMReference aimReference = AIMReference.extract(ProjectsRouteTemplates.IMAGE_AIM, pathInfo);
 			log.info("Images AIM PUT");
-			statusCode = epadOperations.createImageAIM(username, imageReference, aimReference.aimID, aimFile, sessionID);
+			status = epadOperations.createImageAIM(username, imageReference, aimReference.aimID, aimFile, sessionID);
 		
 		} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.PROJECT_AIM, pathInfo)) {
 			ProjectReference projectReference = ProjectReference.extract(ProjectsRouteTemplates.PROJECT_AIM, pathInfo);
 			AIMReference aimReference = AIMReference.extract(ProjectsRouteTemplates.PROJECT_AIM, pathInfo);
 			log.info("Projects AIM PUT");
-			statusCode = epadOperations.createProjectAIM(username, projectReference, aimReference.aimID, aimFile, sessionID);
+			status = epadOperations.createProjectAIM(username, projectReference, aimReference.aimID, aimFile, sessionID);
 
 		} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.FRAME, pathInfo)) {
 			statusCode = HttpServletResponse.SC_METHOD_NOT_ALLOWED;
@@ -754,12 +752,20 @@ public class EPADHandler extends AbstractHandler
 		} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.FRAME_AIM, pathInfo)) {
 			FrameReference frameReference = FrameReference.extract(ProjectsRouteTemplates.FRAME_AIM, pathInfo);
 			AIMReference aimReference = AIMReference.extract(ProjectsRouteTemplates.FRAME_AIM, pathInfo);
-			statusCode = epadOperations.createFrameAIM(username, frameReference, aimReference.aimID, aimFile, sessionID);
+			status = epadOperations.createFrameAIM(username, frameReference, aimReference.aimID, aimFile, sessionID);
 
 		} else {
 			statusCode = HandlerUtil.badRequestJSONResponse(BAD_PUT_MESSAGE, responseStream, log);
 		}
-		return statusCode;
+		if (status == null || status.length() == 0)
+		{
+			return statusCode;
+		}
+		else
+		{
+			responseStream.write(new EPADError(status).toJSON());
+			return HttpServletResponse.SC_INTERNAL_SERVER_ERROR;				
+		}
 	}
 	
 	private File getUploadedAIMFile(HttpServletRequest httpRequest)
