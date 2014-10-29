@@ -50,4 +50,6 @@ public interface EpadDatabaseCommands
 	public static final String INSERT_COORDINATION_TERM = "insert into epaddb.terms values(NULL, ?, ?, ?, ?)";
 
 	public static final String SELECT_COORDINATION_TERM_KEY = "select term_key from epaddb.terms as t where t.term_id = ? and t.schema_name = ? and t.schema_version = ?";
+
+	public static final String CLEANUP_OBSOLETE_EPAD_FILES = "delete from epad_files where instance_fk not in (select pk from pacsdb.instance)";
 }

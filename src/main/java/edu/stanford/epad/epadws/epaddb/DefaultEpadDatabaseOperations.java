@@ -1,6 +1,7 @@
 package edu.stanford.epad.epadws.epaddb;
 
 import java.io.IOException;
+import java.lang.reflect.Method;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -9,6 +10,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Timestamp;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -1277,8 +1279,517 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 			close(c, ps, rs);
 		}
 		return retVal;
+	}	
+
+
+	@Override
+	public void deleteObsoleteEpadFileEntries() {
+		Connection c = null;
+		Statement s = null;
+		try {
+			c = getConnection();
+			s = c.createStatement();
+			log.info("delete sql:" + EpadDatabaseCommands.CLEANUP_OBSOLETE_EPAD_FILES);
+			s.executeUpdate(EpadDatabaseCommands.CLEANUP_OBSOLETE_EPAD_FILES);
+		} catch (SQLException sqle) {
+			log.warning("Database operation failed", sqle);
+		} finally {
+			close(c, s);
+		}
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see edu.stanford.epad.epadws.epaddb.EpadDatabaseOperations#insertDBObject(edu.stanford.epad.epadws.models.dao.AbstractDAO, java.lang.String, java.lang.String[][])
+	 * Structure of dbColumns array in all methods below:
+	 * java fieldName,java fieldType,db columnName,db columnType
+	 * eg:
+	 * 	{"id","long","Id",""}, // autoincrement
+	 * 	{"name","String","name","varchar"},
+	 *	{"numOfErrors","int","num_of_errors","integer"},
+	 */
+	@Override
+	public Object insertDBObject(Object dbObject, String tableName, String[][] columns) throws Exception
+	{
+		Connection dbCon = getConnection();
+		PreparedStatement ps = null;
+		ResultSet rs = null;
+		String insertSQL = getInsertSQL(tableName, columns);
+		try
+		{
+            ps = dbCon.prepareStatement(insertSQL, Statement.RETURN_GENERATED_KEYS);
+            setSQLValues(columns, ps, dbObject);
+            log.debug("insert sql:" + ps.toString());
+            ps.executeUpdate();
+		    rs = ps.getGeneratedKeys();
+		    if (rs.next())
+		    {
+                String methodName = "set" + columns[0][0].substring(0,1).toUpperCase() + columns[0][0].substring(1);
+                Integer value = rs.getInt(1);
+                try
+                {
+                    Method method = dbObject.getClass().getMethod(methodName, new Class[] {int.class});
+                    method.invoke(dbObject, new Object[] {value});
+                }
+                catch(NoSuchMethodException ne)
+                {
+                    try
+                    {
+                        Method method = dbObject.getClass().getMethod(methodName, new Class[] {long.class});
+                        method.invoke(dbObject, new Object[] {value});
+                    }catch(Exception e)
+                    {
+                        e.printStackTrace();
+                        throw new IllegalArgumentException(e.getMessage());
+                    }
+                }
+                catch (Exception e)
+                {
+                    e.printStackTrace();
+                    throw new IllegalArgumentException(e.getMessage());
+                }
+		    }
+		}
+		catch (SQLException x)
+		{
+			x.printStackTrace();
+			throw x;
+		}
+		finally
+		{
+			close(dbCon, ps, rs);
+		}
+	    return dbObject;
+	}
+		
+
+	@Override
+	public Object updateDBObject(Object dbObject, String dbTable, String[][] dbColumns) throws Exception
+	{	   
+		PreparedStatement ps = null;
+		ResultSet rs = null;
+
+		String updateSQL = getUpdateSQL(dbTable, dbColumns);
+		Connection dbCon = null;
+		try
+		{
+			dbCon = getConnection();
+			//log.debug("Update:" + updateSQL);
+			ps = dbCon.prepareStatement(updateSQL);
+			setSQLValues(dbColumns, ps, dbObject);
+			String methodName = "get" + dbColumns[0][0].substring(0,1).toUpperCase() + dbColumns[0][0].substring(1);
+			try
+			{
+				Method method = dbObject.getClass().getMethod(methodName, (Class[])null);
+				if (dbColumns[0][3].equalsIgnoreCase("Id") && dbColumns[0][1].equalsIgnoreCase("long"))
+				{
+					Long value = (Long) method.invoke(dbObject, (Object[])null);
+					ps.setLong(dbColumns.length, value);					
+				}
+				else if (dbColumns[0][3].equalsIgnoreCase("Id"))
+				{
+					Integer value = (Integer) method.invoke(dbObject, (Object[])null);
+					ps.setInt(dbColumns.length, value);					
+				}
+				else if (dbColumns[0][2].equalsIgnoreCase("String"))
+				{
+					String value = (String) method.invoke(dbObject, (Object[])null);
+					ps.setString(dbColumns.length, value);					
+				}
+			}
+			catch (Exception e)
+			{
+				log.warning("Error setting DB values", e);
+				throw new IllegalArgumentException(e.getMessage());
+			}
+            log.debug("update sql:" + ps.toString());
+			ps.executeUpdate();
+			ps.close();
+		}
+		finally
+		{
+			close(dbCon, ps, rs);
+		}
+	    return dbObject;
+	}
+	
+	@Override
+	public int deleteDBObject(String dbTable, long id) throws Exception {
+		return deleteDBObjects(dbTable, "id =" + id);
+	}
+
+	@Override
+	public int deleteDBObjects(String dbTable, String criteria)
+			throws Exception {
+		criteria = criteria.trim();
+		if (!criteria.toLowerCase().startsWith("where"))
+			criteria = "where " + criteria;
+		PreparedStatement ps = null;
+		Connection dbCon = null;
+		try
+		{
+			log.debug("delete from " + dbTable + " " + criteria);
+			dbCon = getConnection();
+			ps = dbCon.prepareStatement("delete from " + dbTable + " " + criteria);
+			int rows = ps.executeUpdate();
+			log.debug("" + rows + " rows deleted");
+			return rows;
+		}
+		finally
+		{
+			close(dbCon, ps);
+		}
+	}
+
+	@Override
+	public List getDBObjects(Class dbClass, String dbTable, String[][] dbColumns, String criteria, int startRecord, int maxRecords, boolean distinct) throws Exception {
+		criteria = criteria.trim();
+		if (criteria.length() > 0 && !criteria.toLowerCase().startsWith("where"))
+			criteria = "where " + criteria;
+		Statement stmt = null;
+		PreparedStatement ps = null;
+		ResultSet rs = null;
+		List datas = new ArrayList();
+		Connection dbCon = null;
+		try
+		{
+            dbCon = getConnection();
+            if (startRecord == 0)
+                stmt = dbCon.createStatement();
+            else
+                stmt = dbCon.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
+            String sql = "SELECT * FROM "  + dbTable + " " + criteria;
+            if (distinct)
+            	sql = "SELECT DISTINCT * FROM "  + dbTable + " " + criteria;
+            if (maxRecords <= 0)
+            	maxRecords = 5000;
+            if (startRecord > 0)
+            {
+                sql = sql + " LIMIT " + (startRecord+1) + "," + maxRecords;
+            }
+            else
+               stmt.setMaxRows(maxRecords);
+            log.debug("Query:" + sql);
+            rs = stmt.executeQuery(sql);
+            Object data = null;
+		    while (rs.next()) 
+		    {
+		    	data = dbClass.newInstance();
+		    	getSQLValues(dbColumns, rs, data);
+		    	datas.add(data);
+		    }
+		    log.debug("Returned:" + datas.size() + " rows");
+		    return datas;
+		}
+		finally
+		{
+			close(dbCon, ps, rs);
+		}
+	}
+
+	@Override
+	public List<Long> getDBIds(String dbTable, String criteria,
+			int startRecord, int maxRecords) throws Exception {
+		criteria = criteria.trim();
+		if (criteria.length() > 0 && !criteria.toLowerCase().startsWith("where"))
+			criteria = "where " + criteria;
+		Statement stmt = null;
+		PreparedStatement ps = null;
+		ResultSet rs = null;
+		List datas = new ArrayList();
+		Connection dbCon = null;
+		try
+		{
+            dbCon = getConnection();
+            if (startRecord == 0)
+                stmt = dbCon.createStatement();
+            else
+                stmt = dbCon.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
+            String sql = "SELECT id FROM "  + dbTable + " " + criteria;
+            if (maxRecords <= 0)
+            	maxRecords = 5000;
+            if (startRecord > 0)
+            {
+                sql = sql + " LIMIT " + (startRecord+1) + "," + maxRecords;
+            }
+            else
+               stmt.setMaxRows(maxRecords);
+            log.debug("Query:" + sql);
+            rs = stmt.executeQuery(sql);
+		    while (rs.next()) 
+		    {
+		    	Long id = rs.getLong(1);
+		    	datas.add(id);
+		    }
+		    log.debug("Returned:" + datas.size() + " rows");
+		    return datas;
+		}
+		finally
+		{
+			close(dbCon, ps, rs);
+		}
+	}
+
+	@Override
+	public int getDBCount(String dbTable, String criteria) throws Exception {
+		criteria = criteria.trim();
+		if (criteria.length() > 0 && !criteria.toLowerCase().startsWith("where"))
+			criteria = "where " + criteria;
+		Statement stmt = null;
+		ResultSet rs = null;
+		Connection dbCon = null;
+		try
+		{
+            dbCon = getConnection();
+            stmt = dbCon.createStatement();
+            String sql = "SELECT count(*) FROM "  + dbTable + " " + criteria;
+            log.info("Query:" + sql);
+            rs = stmt.executeQuery(sql);
+		    if (rs.next()) 
+		    {
+		    	int count = rs.getInt(1);
+                log.debug("Returned:" + count + " rows");
+                return count;
+		    }
+		    else
+		    	throw new SQLException ("Error retrieve count");
+		}
+		finally
+		{
+			close(dbCon, stmt, rs);
+		}
+	}
+	
+	private String getInsertSQL(String tableName, String[][]columns)
+	{
+		String insertSQL = "INSERT INTO " + tableName + " (";
+		String values = ") VALUES (";
+		String delim = "";
+		for (int i = 0; i < columns.length; i++)
+		{
+			if (columns[i][3].equalsIgnoreCase("Id")) continue;
+			insertSQL = insertSQL + delim + columns[i][2];
+			values = values + delim + "?";
+			delim = ",";
+		}
+		insertSQL = insertSQL + values +")";
+		return insertSQL;
+	}
+	
+	protected String getUpdateSQL(String tableName, String[][]columns)
+	{
+		String updateSQL = "UPDATE " + tableName + " set ";
+		String idcol = "id";
+		String comma = "";
+		String whereClause = null;
+		for (int i = 0; i < columns.length; i++)
+		{
+			if (columns[i][3].equalsIgnoreCase("Id") || columns[i][3].equalsIgnoreCase("RID") || columns[i][3].equalsIgnoreCase("CID"))
+			{
+				idcol = columns[i][2];				
+				if (whereClause == null)
+					whereClause = idcol + " = ?";
+				else
+					whereClause = " and " + idcol + " = ?";
+				continue;
+			}
+			updateSQL = updateSQL + comma + columns[i][2] + " = ?";
+			comma = ",";
+		}
+		updateSQL = updateSQL + " where " + whereClause;
+		return updateSQL;		
+	}
+	
+	/**
+	 * Sets data values in insert/update preparedStatement using the object's column structure.
+	 * @param columns - see above
+	 * @param ps
+	 * @param data
+	 * @throws SQLException
+	 */
+	protected void setSQLValues(String[][]columns, PreparedStatement ps, Object data)
+		throws SQLException
+	{
+		int i = 1;
+		int j = 0;
+		try
+		{
+			for (j = 0; j < columns.length; j++)	
+			{
+				if (columns[j][3].equalsIgnoreCase("Id"))
+				{
+					continue;				
+				}
+				String methodName = "get" + columns[j][0].substring(0,1).toUpperCase() + columns[j][0].substring(1);
+				if (columns[j][1].equalsIgnoreCase("Boolean"))
+					methodName = "is" + columns[j][0].substring(0,1).toUpperCase() + columns[j][0].substring(1);
+				Method method = null;
+				try {
+					method = data.getClass().getMethod(methodName, (Class[])null);
+				} catch (Exception x) {
+					if (methodName.startsWith("is"))
+						method = data.getClass().getMethod("get" + methodName.substring(2), (Class[])null);
+				}
+				if (columns[j][1].equalsIgnoreCase("String"))
+				{
+					String value = (String) method.invoke(data, (Object[])null);
+					if (value != null)
+						ps.setString(i, value);
+					else
+						ps.setNull(i, java.sql.Types.VARCHAR);		
+				}
+				else if (columns[j][1].equalsIgnoreCase("Integer") || columns[j][1].equalsIgnoreCase("int"))
+				{
+					Integer value = (Integer) method.invoke(data, (Object[])null);
+					if (value != null)
+						ps.setInt(i, value);
+					else
+						ps.setNull(i, java.sql.Types.INTEGER);		
+				}
+				else if (columns[j][1].equalsIgnoreCase("Long") || columns[j][1].equalsIgnoreCase("long"))
+				{
+					Long value = (Long) method.invoke(data, (Object[])null);
+					if (value != null)
+						ps.setLong(i, value);
+					else
+						ps.setNull(i, java.sql.Types.INTEGER);		
+				}
+				else if (columns[j][1].equalsIgnoreCase("Double"))
+				{
+					Double value = (Double) method.invoke(data, (Object[])null);
+					if (value != null)
+						ps.setDouble(i, value);
+					else
+						ps.setNull(i, java.sql.Types.DOUBLE);		
+				}
+				else if (columns[j][1].equalsIgnoreCase("Boolean"))
+				{
+					Boolean value = (Boolean) method.invoke(data, (Object[])null);
+					if (value != null)
+						ps.setBoolean(i, value);
+					else
+						ps.setInt(i, 0);		
+				}
+				else if (columns[j][1].equalsIgnoreCase("Timestamp"))
+				{
+					Timestamp value = (Timestamp) method.invoke(data, (Object[])null);
+					if (value != null)
+						ps.setTimestamp(i, new java.sql.Timestamp(value.getTime()));
+					else
+						ps.setNull(i, java.sql.Types.TIMESTAMP);		
+				}
+				else if (columns[j][1].equalsIgnoreCase("Date"))
+				{
+					Date value = (Date) method.invoke(data, (Object[])null);
+					if (value != null)
+						ps.setTimestamp(i, new java.sql.Timestamp(value.getTime()));
+					else
+						ps.setNull(i, java.sql.Types.DATE);		
+				}
+				i++;
+			}
+		}
+		catch (Exception x)
+		{
+			x.printStackTrace();
+			throw new SQLException("Error setting values for " + columns[j][0] + " : " + x.getMessage());
+		}
+	}
+	
+	/**
+	 * Gets data values from result set and populates object using the object's column structure.
+	 * @param columns - see above
+	 * @param rs
+	 * @param data
+	 * @throws SQLException
+	 */
+	protected void getSQLValues(String[][]columns, ResultSet rs, Object data)
+		throws SQLException
+	{
+		int i = 0;
+		try
+		{
+			for (i = 0; i < columns.length; i++)	
+			{
+				String methodName = "set" + columns[i][0].substring(0,1).toUpperCase() + columns[i][0].substring(1);
+				if (columns[i][1].equals("String"))
+				{
+					String value = rs.getString(columns[i][2]);
+					Method method = data.getClass().getMethod(methodName, new Class[] {String.class});
+					method.invoke(data, new Object[] {value});
+				}
+				else if (columns[i][1].equals("Integer"))
+				{
+					Integer value = rs.getInt(columns[i][2]);
+					Method method = data.getClass().getMethod(methodName, new Class[] {Integer.class});
+					method.invoke(data, new Object[] {value});
+				}
+				else if (columns[i][1].equals("int"))
+				{
+					Integer value = rs.getInt(columns[i][2]);
+					Method method = data.getClass().getMethod(methodName, new Class[] {int.class});
+					method.invoke(data, new Object[] {value});
+				}
+				else if (columns[i][1].equals("Long"))
+				{
+					Long value = rs.getLong(columns[i][2]);
+					Method method = data.getClass().getMethod(methodName, new Class[] {Long.class});
+					method.invoke(data, new Object[] {value});
+				}
+				else if (columns[i][1].equals("long"))
+				{
+					Long value = rs.getLong(columns[i][2]);
+					Method method = data.getClass().getMethod(methodName, new Class[] {long.class});
+					method.invoke(data, new Object[] {value});
+				}
+				else if (columns[i][1].equals("Boolean"))
+				{
+					Boolean value = rs.getBoolean(columns[i][2]);
+					Method method = data.getClass().getMethod(methodName, new Class[] {Boolean.class});
+					method.invoke(data, new Object[] {value});
+				}
+				else if (columns[i][1].equals("boolean"))
+				{
+					Boolean value = rs.getBoolean(columns[i][2]);
+					Method method = data.getClass().getMethod(methodName, new Class[] {boolean.class});
+					method.invoke(data, new Object[] {value});
+				}
+				else if (columns[i][1].equals("Timestamp"))
+				{
+					Timestamp value = rs.getTimestamp(columns[i][2]);
+					Method method = data.getClass().getMethod(methodName, new Class[] {Timestamp.class});
+					method.invoke(data, new Object[] {value});
+				}
+				else if (columns[i][1].equals("Date"))
+				{
+					Timestamp stamp = rs.getTimestamp((columns[i][2]));
+					Date value = null;
+					if (stamp != null)
+						value = new Date(stamp.getTime());
+					Method method = data.getClass().getMethod(methodName, new Class[] {Date.class});
+					method.invoke(data, new Object[] {value});
+				}
+				else if (columns[i][1].equals("Double"))
+				{
+					Double value = rs.getDouble(columns[i][2]);
+					Method method = data.getClass().getMethod(methodName, new Class[] {Double.class});
+					method.invoke(data, new Object[] {value});
+				}
+				else if (columns[i][1].equals("double"))
+				{
+					Double value = rs.getDouble(columns[i][2]);
+					Method method = data.getClass().getMethod(methodName, new Class[] {double.class});
+					method.invoke(data, new Object[] {value});
+				}
+			}
+		}
+		catch (Exception x)
+		{
+			x.printStackTrace();
+			throw new SQLException("Error setting values for " + columns[i][0] + ":" + x.getMessage());
+		}
+	}
+	
 	private List<String> getAllEPadFilePathsWithStatus(PNGFileProcessingStatus pngFileProcessingStatus)
 	{
 		Connection c = null;
@@ -1380,6 +1891,29 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 		}
 	}
 
+	@Override
+	public boolean runSQLScript(String script) {
+		Connection c = null;
+		Statement s = null;
+		String[] sqlstatements = script.split(";");
+		try {
+			c = getConnection();
+			s = c.createStatement();
+			for (String sql: sqlstatements)
+			{
+				if (sql.trim().length() != 0 && !sql.trim().startsWith("-- "))
+					s.addBatch(sql.trim());
+			}
+			s.executeBatch();
+			return true;
+		} catch (Exception e) {
+			log.warning("Database operation failed", e);
+		} finally {
+			close(c);
+		}
+		return false;
+	}
+
 	private String getErrMsg(Map<String, String> data)
 	{
 		String errMsg = data.get("err_msg");
@@ -1467,12 +2001,24 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 		connectionPool.freeConnection(c);
 	}
 
+	private void close(Connection c, Statement s)
+	{
+		DatabaseUtils.close(s);
+		connectionPool.freeConnection(c);
+	}
+
 	private void close(Connection c, PreparedStatement ps)
 	{
 		DatabaseUtils.close(ps);
 		connectionPool.freeConnection(c);
 	}
 
+	private void close(Connection c, Statement s, ResultSet rs)
+	{
+		close(c, s);
+		DatabaseUtils.close(rs);
+	}
+	
 	private void close(Connection c, PreparedStatement ps, ResultSet rs)
 	{
 		close(c, ps);

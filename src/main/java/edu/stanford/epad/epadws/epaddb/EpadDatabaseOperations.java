@@ -25,6 +25,10 @@ import edu.stanford.epad.epadws.handlers.core.SubjectReference;
  * 
  * @author martin
  */
+/**
+ * @author Dev Gude
+ *
+ */
 public interface EpadDatabaseOperations
 {
 	String getPNGLocation(String studyUID, String seriesUID, String imageUID);
@@ -67,6 +71,8 @@ public interface EpadDatabaseOperations
 	List<String> getAllEPadFilePathsWithErrors();
 
 	List<String> getAllEPadInPipelineFilePaths();
+	
+	void deleteObsoleteEpadFileEntries();
 	
 	void checkAndRefreshAnnotationsTable();
 	
@@ -185,4 +191,28 @@ public interface EpadDatabaseOperations
 	 */
 	Term insertCoordinationTerm(String termIDPrefix, String schemaName, String schemaVersion, String description,
 			List<Integer> termKeys) throws SQLException;
+	
+	/* 
+	 * New DB Operations methods for schema to replace XNAT
+	 * 
+	 * Structure of dbColumns array in all methods below:
+	 * fieldName,fieldType,columnName,columnType
+	 * eg:
+	 * 	{"name","String","name","varchar"},
+	 *	{"numOfErrors","int","num_of_errors","integer"},
+	 */
+	Object insertDBObject(Object dbObject, String dbTable, String[][] dbColumns) throws Exception;
+	Object updateDBObject(Object dbObject, String dbTable, String[][] dbColumns) throws Exception;
+	int deleteDBObject(String dbTable, long id) throws Exception;
+	int deleteDBObjects(String dbTable, String criteria) throws Exception;
+	List getDBObjects(Class dbClass, String dbTable, String[][] dbColumns, String criteria, int startRecords, int maxRecords, boolean distinct) throws Exception;
+	List<Long> getDBIds(String dbTable, String criteria, int startRecords, int maxRecords) throws Exception;
+	int getDBCount(String dbTable, String criteria) throws Exception;	
+	/**
+	 * @param script
+	 * @return true on success
+	 */
+	boolean runSQLScript(String script);
+
+
 }

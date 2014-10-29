@@ -13,6 +13,7 @@ import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.Collection;
 
 import edu.stanford.epad.common.util.EPADLogger;
 
@@ -117,4 +118,51 @@ public class DatabaseUtils
 		}
 		return dateTime;
 	}
+	
+    public static String toSQL(Object value)
+    {
+        if (value == null) return null;
+
+        if (value instanceof String)
+        {
+            return "'" + escapeQuote((String)value) + "'";
+        }
+        else if (value instanceof Collection)
+        {
+            StringBuffer sqlBuf = new StringBuffer();
+            Collection values = (Collection) value;
+            String delim = "(";
+            for (Object val : values)
+            {
+                sqlBuf.append(delim);
+                sqlBuf.append(toSQL(val));
+                delim = ",";
+            }
+            sqlBuf.append(")");
+            return sqlBuf.toString();
+        }
+        else if (value instanceof Number)
+        {
+            return value.toString();
+        }
+        else
+            return "'" + value.toString() + "'";
+    }
+
+    /**
+     * Escapes single quotes
+     */
+    public static String escapeQuote( String value )
+    {
+        int ind = value.indexOf("'");
+        if (ind == -1)
+            return value;
+        else if (ind == 0)
+            return "''" + escapeQuote(value.substring(ind+1));
+        else if (ind == (value.length() - 1))
+            return value.substring(0,ind) + "''";
+        else
+            return value.substring(0,ind) + "''" + escapeQuote(value.substring(ind+1));
+    }
+	
 }

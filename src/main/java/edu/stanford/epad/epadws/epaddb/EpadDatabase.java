@@ -1,9 +1,13 @@
 package edu.stanford.epad.epadws.epaddb;
 
+import java.io.BufferedReader;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.text.DecimalFormat;
 import java.util.concurrent.atomic.AtomicReference;
 
 import edu.stanford.epad.common.util.EPADConfig;
@@ -32,16 +36,14 @@ public class EpadDatabase
 		initConnectionPool();
 	}
 
-	public void startup()
+	public void startup(String dbVersion)
 	{
 		try {
 			databaseState.set(DatabaseState.STARTING);
 			long time = System.currentTimeMillis();
 
-			if (!tablesUpToDate()) {
+			if (!tablesUpToDate(dbVersion, true)) {
 				log.info("IMPORTANT: NEED to add the epaddb tables using MySQL command-line!!");
-			} else {
-				log.info("ePad's extra MySQL tables appear to be up to date.");
 			}
 			startupTime = System.currentTimeMillis() - time;
 			databaseState.set(DatabaseState.READY);
@@ -110,15 +112,16 @@ public class EpadDatabase
 		connectionPool.dispose();
 	}
 
-	private boolean tablesUpToDate()
+	private boolean tablesUpToDate(String requiredVersion, boolean update)
 	{
 		boolean result = false;
 		Connection conn = null;
 		Statement s = null;
 		ResultSet rs = null;
 		StringBuilder sb = new StringBuilder();
+		String version = "";
 		try {
-			sb.append("Checking MySQL database.");
+			sb.append("Checking MySQL database. ");
 			conn = connectionPool.getConnection();
 			s = conn.createStatement();
 
@@ -130,7 +133,8 @@ public class EpadDatabase
 			}
 			if (rs.next()) {
 				result = true;
-				sb.append("Database version is: ").append(rs.getString("version")).append(" ");
+				version = rs.getString("version");
+				sb.append("Database version is: ").append(version).append(" ");
 			}
 		} catch (SQLException sqle) {
 			log.warning("SQL error when checking for database version", sqle);
@@ -141,6 +145,62 @@ public class EpadDatabase
 			DatabaseUtils.close(s);
 			DatabaseUtils.close(conn);
 		}
+		if (getDouble(version) == getDouble(requiredVersion))
+		{
+			log.info("ePad's MySQL tables appear to be up to date.");
+		}
+		else if (getDouble(version) > getDouble(requiredVersion))
+		{
+			log.info("ePad's MySQL tables appear to be a new version, maybe OK.");
+		}
+		else if (update)
+		{
+			log.info("ePad's MySQL tables appear to be an older version, attempting to update");
+			result = false;
+			try
+			{
+				double reqdVersion = getDouble(requiredVersion);
+				double nextVersion = getDouble(version) + 0.001;
+				for (double vers = nextVersion; vers < (reqdVersion+0.001); vers = vers + 0.001)
+				{
+					String verstr = new DecimalFormat("#.###").format(vers);
+					InputStream is = this.getClass().getClassLoader().getResourceAsStream("sql/epaddb" + verstr + ".sql");
+					if (is != null)
+					{
+						log.info("Running script: epaddb" + verstr + ".sql");
+						BufferedReader br = new BufferedReader(new InputStreamReader(is));
+				        String script = "";
+		                String inputLine;
+		                while ((inputLine = br.readLine()) != null)
+		                {
+		                	script = script + "\n" + inputLine;
+		                }
+		                br.close();
+						log.info("Script:" + script + "\n -- end of script --");
+						if (Math.abs(vers - reqdVersion) < 0.001)
+							result = true;
+						getEPADDatabaseOperations().runSQLScript(script);
+					}
+				}
+			}
+			catch (Exception x) {
+				log.warning("Error updating db version", x);
+			}
+		}
+		else
+		{
+			log.warning("ePad's MySQL tables appear to be an older version.");
+			result = false;
+		}
 		return result;
+	}
+	
+	private static double getDouble(String value)
+	{
+		try {
+			return new Double(value.trim()).doubleValue();
+		} catch (Exception x) {
+			return 0;
+		}
 	}
 }
