@@ -273,7 +273,16 @@ public class EPADHandler extends AbstractHandler
 
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.PROJECT_AIM_LIST, pathInfo)) {
 				ProjectReference projectReference = ProjectReference.extract(ProjectsRouteTemplates.PROJECT_AIM_LIST, pathInfo);
-				EPADAIMList aims = epadOperations.getProjectAIMDescriptions(projectReference, username, sessionID);
+				AIMSearchType aimSearchType = AIMUtil.getAIMSearchType(httpRequest);
+				String searchValue = aimSearchType != null ? httpRequest.getParameter(aimSearchType.getName()) : null;
+				String projectID = projectReference.projectID;
+				log.info("GET request for AIMs from user " + username + "; query type is " + aimSearchType + ", value "
+						+ searchValue + ", project " + projectID);
+				EPADAIMList aims = null;
+				if (aimSearchType != null)
+					aims = epadOperations.getAIMDescriptions(projectID, aimSearchType, searchValue, username, sessionID, start, count);
+				else
+					aims = epadOperations.getProjectAIMDescriptions(projectReference, username, sessionID);
 				long dbtime = System.currentTimeMillis();
 				log.info("Time taken for AIM database query:" + (dbtime-starttime) + " msecs");
 				if (returnSummary(httpRequest))

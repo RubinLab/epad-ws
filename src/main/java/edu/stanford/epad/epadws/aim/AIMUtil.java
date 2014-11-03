@@ -878,10 +878,17 @@ public class AIMUtil
 		String csv = "";
 		for (String projectID: projectIDs)
 		{
+			boolean isCollaborator = false;
 			try
 			{
-				boolean isCollaborator = XNATQueries.isCollaborator(sessionID, username, projectID);
+				isCollaborator = XNATQueries.isCollaborator(sessionID, username, projectID);
 				log.info("User:" + username + " projectID:" + projectID + " isCollaborator:" + isCollaborator);
+			}
+			catch (Exception x) {
+				log.warning("Error checking project role:", x);
+			}
+			try
+			{
 				Set<EPADAIM> aims = aimlist.getAIMsForProject(projectID);
 				for (EPADAIM aim: aims)
 				{
@@ -889,7 +896,9 @@ public class AIMUtil
 						csv = csv + "," +  aim.aimID;
 				}
 			}
-			catch (Exception x) {}
+			catch (Exception x) {
+				log.warning("Error checking AIM permission:", x);
+			}
 		}
 		long endtime = System.currentTimeMillis();
 		log.info("Time taken for checking AIM permissions:" + (endtime-starttime) + " msecs, username:" + username);
