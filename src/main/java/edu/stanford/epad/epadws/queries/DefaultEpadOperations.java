@@ -834,7 +834,8 @@ public class DefaultEpadOperations implements EpadOperations
 			ProjectReference projectReference, String aimID, File aimFile,
 			String sessionID) {
 		try {
-			if (aimFile == null || !AIMUtil.saveAIMAnnotation(aimFile, projectReference.projectID, sessionID, username))
+			EPADAIM aim = epadDatabaseOperations.addAIM(username, projectReference, aimID);
+			if (!AIMUtil.saveAIMAnnotation(aimFile, aim.projectID, sessionID, username))
 				return "";
 			else
 				return "Error saving AIM file";
@@ -849,7 +850,8 @@ public class DefaultEpadOperations implements EpadOperations
 			SubjectReference subjectReference, String aimID, File aimFile,
 			String sessionID) {
 		try {
-			if (aimFile == null || !AIMUtil.saveAIMAnnotation(aimFile, subjectReference.projectID, sessionID, username))
+			EPADAIM aim = epadDatabaseOperations.addAIM(username, subjectReference, aimID);
+			if (!AIMUtil.saveAIMAnnotation(aimFile, aim.projectID, sessionID, username))
 				return "";
 			else
 				return "Error saving AIM file";
@@ -863,7 +865,8 @@ public class DefaultEpadOperations implements EpadOperations
 	public String createStudyAIM(String username, StudyReference studyReference, String aimID, File aimFile, String sessionID)
 	{
 		try {
-			if (aimFile == null || !AIMUtil.saveAIMAnnotation(aimFile, studyReference.projectID, sessionID, username))
+			EPADAIM aim = epadDatabaseOperations.addAIM(username, studyReference, aimID);
+			if (!AIMUtil.saveAIMAnnotation(aimFile, aim.projectID, sessionID, username))
 				return "";
 			else
 				return "Error saving AIM file";
@@ -877,7 +880,8 @@ public class DefaultEpadOperations implements EpadOperations
 	public String createSeriesAIM(String username, SeriesReference seriesReference, String aimID, File aimFile, String sessionID)
 	{
 		try {
-			if (aimFile == null || !AIMUtil.saveAIMAnnotation(aimFile, seriesReference.projectID, sessionID, username))
+			EPADAIM aim = epadDatabaseOperations.addAIM(username, seriesReference, aimID);
+			if (!AIMUtil.saveAIMAnnotation(aimFile, aim.projectID, sessionID, username))
 				return "";
 			else
 				return "Error saving AIM file";
@@ -891,9 +895,8 @@ public class DefaultEpadOperations implements EpadOperations
 	public String createImageAIM(String username, ImageReference imageReference, String aimID, File aimFile, String sessionID)
 	{
 		try {
-			if (aimFile == null)
-				epadDatabaseOperations.addAIM(username, imageReference, aimID);
-			if (aimFile == null || !AIMUtil.saveAIMAnnotation(aimFile, imageReference.projectID, sessionID, username))
+			EPADAIM aim = epadDatabaseOperations.addAIM(username, imageReference, aimID);
+			if (!AIMUtil.saveAIMAnnotation(aimFile, aim.projectID, sessionID, username))
 				return "";
 			else
 				return "Error saving AIM file";
@@ -907,9 +910,8 @@ public class DefaultEpadOperations implements EpadOperations
 	public String createFrameAIM(String username, FrameReference frameReference, String aimID, File aimFile, String sessionID)
 	{
 		try {
-			if (aimFile == null)
-				epadDatabaseOperations.addAIM(username, frameReference, aimID);
-			if (aimFile == null || !AIMUtil.saveAIMAnnotation(aimFile, frameReference.projectID, frameReference.frameNumber, sessionID, username))
+			EPADAIM aim = epadDatabaseOperations.addAIM(username, frameReference, aimID);
+			if (!AIMUtil.saveAIMAnnotation(aimFile, aim.projectID, frameReference.frameNumber, sessionID, username))
 				return "";
 			else
 				return "Error saving AIM file";
@@ -932,7 +934,7 @@ public class DefaultEpadOperations implements EpadOperations
 			log.info("Deleting AIM, deleteDSO:" + deleteDSO + " dsoSeriesUID:" + aim.dsoSeriesUID);
 			AIMUtil.deleteAIM(aimID);
 			epadDatabaseOperations.deleteAIM(username, projectReference, aimID);
-			if (deleteDSO && aim.dsoSeriesUID != null && aim.dsoSeriesUID.length() > 0)
+			if (deleteDSO && aim.dsoSeriesUID != null && aim.dsoSeriesUID.length() > 0 && epadDatabaseOperations.getAIMs(aim.dsoSeriesUID).size() == 0)
 			{
 				log.info("Deleting Series:" + aim.dsoSeriesUID + " In project:" + aim.projectID);
 				this.seriesDelete(new SeriesReference(projectReference.projectID, aim.subjectID, aim.studyUID, aim.dsoSeriesUID), sessionID, false, username);
@@ -956,7 +958,7 @@ public class DefaultEpadOperations implements EpadOperations
 			}
 			AIMUtil.deleteAIM(aimID);
 			epadDatabaseOperations.deleteAIM(username, subjectReference, aimID);
-			if (deleteDSO && aim.dsoSeriesUID != null && aim.dsoSeriesUID.length() > 0)
+			if (deleteDSO && aim.dsoSeriesUID != null && aim.dsoSeriesUID.length() > 0 && epadDatabaseOperations.getAIMs(aim.dsoSeriesUID).size() == 0)
 			{
 				this.seriesDelete(new SeriesReference(subjectReference.projectID, aim.subjectID, aim.studyUID, aim.dsoSeriesUID), sessionID, false, username);
 			}
@@ -979,7 +981,7 @@ public class DefaultEpadOperations implements EpadOperations
 			}
 			AIMUtil.deleteAIM(aimID);
 			epadDatabaseOperations.deleteAIM(username, studyReference, aimID);
-			if (deleteDSO && aim.dsoSeriesUID != null && aim.dsoSeriesUID.length() > 0)
+			if (deleteDSO && aim.dsoSeriesUID != null && aim.dsoSeriesUID.length() > 0 && epadDatabaseOperations.getAIMs(aim.dsoSeriesUID).size() == 0)
 			{
 				this.seriesDelete(new SeriesReference(studyReference.projectID, aim.subjectID, aim.studyUID, aim.dsoSeriesUID), sessionID, false, username);
 			}
@@ -1002,7 +1004,7 @@ public class DefaultEpadOperations implements EpadOperations
 			}
 			AIMUtil.deleteAIM(aimID);
 			epadDatabaseOperations.deleteAIM(username, seriesReference, aimID);
-			if (deleteDSO && aim.dsoSeriesUID != null && aim.dsoSeriesUID.length() > 0)
+			if (deleteDSO && aim.dsoSeriesUID != null && aim.dsoSeriesUID.length() > 0 && epadDatabaseOperations.getAIMs(aim.dsoSeriesUID).size() == 0)
 			{
 				this.seriesDelete(new SeriesReference(seriesReference.projectID, aim.subjectID, aim.studyUID, aim.dsoSeriesUID), sessionID, false, username);
 			}
@@ -1025,7 +1027,7 @@ public class DefaultEpadOperations implements EpadOperations
 			}
 			AIMUtil.deleteAIM(aimID);
 			epadDatabaseOperations.deleteAIM(username, imageReference, aimID);
-			if (deleteDSO && aim.dsoSeriesUID != null && aim.dsoSeriesUID.length() > 0)
+			if (deleteDSO && aim.dsoSeriesUID != null && aim.dsoSeriesUID.length() > 0 && epadDatabaseOperations.getAIMs(aim.dsoSeriesUID).size() == 0)
 			{
 				this.seriesDelete(new SeriesReference(imageReference.projectID, aim.subjectID, aim.studyUID, aim.dsoSeriesUID), sessionID, false, username);
 			}
@@ -1048,7 +1050,7 @@ public class DefaultEpadOperations implements EpadOperations
 			}
 			AIMUtil.deleteAIM(aimID);
 			epadDatabaseOperations.deleteAIM(username, frameReference, aimID);
-			if (deleteDSO && aim.dsoSeriesUID != null && aim.dsoSeriesUID.length() > 0)
+			if (deleteDSO && aim.dsoSeriesUID != null && aim.dsoSeriesUID.length() > 0 && epadDatabaseOperations.getAIMs(aim.dsoSeriesUID).size() == 0)
 			{
 				this.seriesDelete(new SeriesReference(frameReference.projectID, aim.subjectID, aim.studyUID, aim.dsoSeriesUID), sessionID, false, username);
 			}
@@ -1070,7 +1072,7 @@ public class DefaultEpadOperations implements EpadOperations
 			}
 			AIMUtil.deleteAIM(aimID);
 			epadDatabaseOperations.deleteAIM(username, aimID);
-			if (deleteDSO && aim.dsoSeriesUID != null && aim.dsoSeriesUID.length() > 0)
+			if (deleteDSO && aim.dsoSeriesUID != null && aim.dsoSeriesUID.length() > 0 && epadDatabaseOperations.getAIMs(aim.dsoSeriesUID).size() == 0)
 			{
 				this.seriesDelete(new SeriesReference(aim.projectID, aim.subjectID, aim.studyUID, aim.dsoSeriesUID), sessionID, false, username);
 			}
