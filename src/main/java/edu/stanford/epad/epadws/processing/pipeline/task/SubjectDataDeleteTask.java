@@ -7,7 +7,8 @@ import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.epad.epadws.handlers.core.StudyReference;
 import edu.stanford.epad.epadws.queries.DefaultEpadOperations;
 import edu.stanford.epad.epadws.queries.EpadOperations;
-import edu.stanford.epad.epadws.queries.XNATQueries;
+import edu.stanford.epad.epadws.security.EPADSessionOperations;
+import edu.stanford.epad.epadws.service.UserProjectService;
 import edu.stanford.epad.epadws.xnat.XNATSessionOperations;
 
 /**
@@ -35,13 +36,12 @@ public class SubjectDataDeleteTask implements Runnable
 	public void run()
 	{
 		try {
-			String adminSessionID = XNATSessionOperations.getXNATAdminSessionID();
-    		Set<String>projectIds = XNATQueries.allProjectIDs(adminSessionID);
+    		Set<String>projectIds = UserProjectService.getAllProjectIDs();
     		boolean deleteCompletely = true;
     		for (String projectId: projectIds)
     		{
     			if (projectId.equals(projectID)) continue;
-    			Set<String> allSubjectIDs = XNATQueries.getSubjectIDsForProject(adminSessionID, projectId);
+    			Set<String> allSubjectIDs = UserProjectService.getSubjectIDsForProject(projectId);
     			if (allSubjectIDs.contains(patientID.replace('.', '_')) || allSubjectIDs.contains(patientID))
     			{
     				log.info("Subject:" + patientID + " still exists in " + projectId);
@@ -51,11 +51,17 @@ public class SubjectDataDeleteTask implements Runnable
     		}
     		if (deleteCompletely)
     		{
-				Set<String> subjectStudyUIDs = XNATQueries.getStudyUIDsForSubject(adminSessionID, projectID, patientID);
+				Set<String> subjectStudyUIDs = UserProjectService.getStudyUIDsForSubject(projectID, patientID);
 				EpadOperations epadOperations = DefaultEpadOperations.getInstance();
 				for (String studyUID: subjectStudyUIDs)
 				{
 					StudyReference studyReference = new StudyReference(projectID, patientID, studyUID);
+					String adminSessionID = "";
+					if (!EPADConfig.UseEPADUsersProjects) {
+						adminSessionID = XNATSessionOperations.getXNATAdminSessionID();
+					} else {
+						adminSessionID = EPADSessionOperations.getAdminSessionID();
+					}
 					epadOperations.studyDelete(studyReference, adminSessionID, false, username);
 				}
     		}

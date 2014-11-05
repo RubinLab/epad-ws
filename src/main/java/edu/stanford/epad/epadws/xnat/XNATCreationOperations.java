@@ -16,9 +16,12 @@ import org.apache.commons.httpclient.methods.PutMethod;
 import org.apache.commons.io.IOUtils;
 
 import edu.stanford.epad.common.dicom.DicomReader;
+import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.epad.epadws.aim.AIMUtil;
 import edu.stanford.epad.epadws.processing.events.EventTracker;
+import edu.stanford.epad.epadws.service.DefaultEpadProjectOperations;
+import edu.stanford.epad.epadws.service.EpadProjectOperations;
 
 /**
  * Methods for creating XNAT entities, such as projects, subjects, and experiments.
@@ -33,6 +36,8 @@ public class XNATCreationOperations
 	private static final String XNAT_UPLOAD_PROPERTIES_FILE_NAME = "xnat_upload.properties";
 
 	private static final EventTracker eventTracker = EventTracker.getInstance();
+	
+	private static final EpadProjectOperations projectOperations = DefaultEpadProjectOperations.getInstance();	
 
 	public static int createXNATProject(String xnatProjectLabel, String projectName, String description, String jsessionID)
 	{
@@ -140,7 +145,9 @@ public class XNATCreationOperations
 		String propertiesFilePath = dicomUploadDirectory.getAbsolutePath() + File.separator
 				+ XNAT_UPLOAD_PROPERTIES_FILE_NAME;
 		File xnatUploadPropertiesFile = new File(propertiesFilePath);
-
+		try {
+			Thread.sleep(2000); // Give it a couple of seconds for the property file to appear
+		} catch (InterruptedException e1) {}
 		if (!xnatUploadPropertiesFile.exists())
 			log.warning("Could not find XNAT upload properties file " + propertiesFilePath);
 		else {
@@ -164,9 +171,21 @@ public class XNATCreationOperations
 
 						if (dicomPatientID != null && dicomPatientName != null && studyUID != null) {
 							dicomPatientName = dicomPatientName.toUpperCase(); // DCM4CHEE stores the patient name as upper case
-							String xnatSubjectLabel = XNATUtil.subjectID2XNATSubjectLabel(dicomPatientID);
-							createXNATSubject(xnatProjectLabel, xnatSubjectLabel, dicomPatientName, xnatSessionID);
-							createXNATDICOMStudyExperiment(xnatProjectLabel, xnatSubjectLabel, studyUID, xnatSessionID);
+							if (!EPADConfig.UseEPADUsersProjects) {
+								String xnatSubjectLabel = XNATUtil.subjectID2XNATSubjectLabel(dicomPatientID);
+								createXNATSubject(xnatProjectLabel, xnatSubjectLabel, dicomPatientName, xnatSessionID);
+								createXNATDICOMStudyExperiment(xnatProjectLabel, xnatSubjectLabel, studyUID, xnatSessionID);
+							} else {
+								try {
+									projectOperations.createSubject(xnatUserName, dicomPatientID, dicomPatientName, null, null);
+									projectOperations.createStudy(xnatUserName, studyUID, dicomPatientID);
+									log.info("Upload: Adding Study" +  studyUID + " Subject" + dicomPatientID + " to Project:" + xnatProjectLabel);
+									projectOperations.addStudyToProject(xnatUserName, studyUID, dicomPatientID, xnatProjectLabel);
+								} catch (Exception e) {
+									log.warning("Error creating subject/study in EPAD:", e);
+								}
+							}
+							
 							if ("SEG".equals(modality))
 							{
 								try {

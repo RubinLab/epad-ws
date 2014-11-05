@@ -9,6 +9,8 @@ import edu.stanford.epad.epadws.processing.model.SeriesProcessingDescription;
 import edu.stanford.epad.epadws.processing.pipeline.threads.ShutdownSignal;
 import edu.stanford.epad.epadws.queries.DefaultEpadOperations;
 import edu.stanford.epad.epadws.queries.EpadOperations;
+import edu.stanford.epad.epadws.service.DefaultEpadProjectOperations;
+import edu.stanford.epad.epadws.service.EpadProjectOperations;
 import edu.stanford.epad.epadws.xnat.XNATSessionOperations;
 
 /**
@@ -28,6 +30,8 @@ public class XNATSeriesWatcher implements Runnable
 	private static final EPADLogger log = EPADLogger.getInstance();
 
 	private static final EpadOperations epadOperations = DefaultEpadOperations.getInstance();
+	
+	private static final EpadProjectOperations projectOperations = DefaultEpadProjectOperations.getInstance();	
 
 	private final String xnatUploadProjectID;
 	private final String xnatUploadProjectUser;
@@ -66,8 +70,13 @@ public class XNATSeriesWatcher implements Runnable
 					if (updateSessionIDIfNecessary()) {
 						// We create the XNAT subject and study here. The series will subsequently arrive from dcm4chee where it
 						// will be processed by the DICOMSeriesWatcher, which will process the series images.
-
-						epadOperations.createSubjectAndStudy(xnatUploadProjectUser, xnatUploadProjectID, subjectID, patientName, studyUID, jsessionID);
+						if (!EPADConfig.UseEPADUsersProjects) {
+							epadOperations.createSubjectAndStudy(xnatUploadProjectUser, xnatUploadProjectID, subjectID, patientName, studyUID, jsessionID);
+						} else {
+							projectOperations.createSubject(xnatUploadProjectUser, subjectID, patientName, null, null);
+							projectOperations.createStudy(xnatUploadProjectUser, studyUID, subjectID);
+							projectOperations.addStudyToProject(xnatUploadProjectUser, studyUID, subjectID, xnatUploadProjectID);
+						}
 					} else
 						log.warning("Unable to validate with XNAT to upload study " + studyUID + " for subject " + patientName
 								+ " in project " + xnatUploadProjectID);

@@ -7,6 +7,9 @@ import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.epad.epadws.queries.DefaultEpadOperations;
 import edu.stanford.epad.epadws.queries.EpadOperations;
 import edu.stanford.epad.epadws.queries.XNATQueries;
+import edu.stanford.epad.epadws.service.DefaultEpadProjectOperations;
+import edu.stanford.epad.epadws.service.EpadProjectOperations;
+import edu.stanford.epad.epadws.service.UserProjectService;
 import edu.stanford.epad.epadws.xnat.XNATDeletionOperations;
 import edu.stanford.epad.epadws.xnat.XNATSessionOperations;
 
@@ -24,6 +27,8 @@ public class StudyDataDeleteTask implements Runnable
 	private final String studyUID;
 	private final boolean deleteAims;
 	
+	private static final EpadProjectOperations projectOperations = DefaultEpadProjectOperations.getInstance();	
+	
 	public StudyDataDeleteTask(String projectID, String patientID, String studyUID, boolean deleteAims)
 	{
 		this.projectID = projectID;
@@ -38,13 +43,12 @@ public class StudyDataDeleteTask implements Runnable
 		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
 
 		try {
-			String adminSessionID = XNATSessionOperations.getXNATAdminSessionID();
-    		Set<String>projectIds = XNATQueries.allProjectIDs(adminSessionID);
+    		Set<String>projectIds = UserProjectService.getAllProjectIDs();
     		boolean deleteCompletely = true;
     		boolean deleteInUnassigned = false;
     		for (String projectId: projectIds)
     		{
-    			Set<String> allStudyUIDs = XNATQueries.getAllStudyUIDsForProject(projectId,adminSessionID);
+    			Set<String> allStudyUIDs = UserProjectService.getAllStudyUIDsForProject(projectId);
     			if (allStudyUIDs.contains(studyUID.replace('.', '_')) || allStudyUIDs.contains(studyUID))
     			{
         			if (projectId.equals(EPADConfig.xnatUploadProjectID))
@@ -60,8 +64,14 @@ public class StudyDataDeleteTask implements Runnable
 			{
 				if (deleteInUnassigned)
 				{
-					XNATDeletionOperations.deleteXNATDICOMStudy(projectID, patientID,
-						studyUID, adminSessionID);
+					if (!EPADConfig.UseEPADUsersProjects) {
+						String adminSessionID = XNATSessionOperations.getXNATAdminSessionID();
+						XNATDeletionOperations.deleteXNATDICOMStudy(projectID, patientID,
+								studyUID, adminSessionID);
+					} else {
+						projectOperations.deleteStudy("admin", studyUID, patientID, projectID);
+						projectOperations.deleteStudy("admin", studyUID);
+					}
 				}
 				epadOperations.deleteStudyFromEPadAndDcm4CheeDatabases(studyUID, deleteAims);
 			}

@@ -815,7 +815,10 @@ public class DefaultEpadOperations implements EpadOperations
 			return XNATCreationOperations.createXNATProject(projectReference.projectID, projectName, projectDescription,
 				sessionID);
 		} else {
-			projectOperations.updateProject(username, projectReference.projectID, projectName, projectDescription, null);
+			if (projectOperations.isOwner(username, projectReference.projectID))
+				projectOperations.updateProject(username, projectReference.projectID, projectName, projectDescription, null);
+			else
+				throw new Exception("No privilege to modify project:" + projectReference.projectID);
 			return HttpServletResponse.SC_OK;
 		}
 	}
@@ -830,7 +833,8 @@ public class DefaultEpadOperations implements EpadOperations
 			Subject subject = projectOperations.getSubject(subjectReference.subjectID);
 			if (subject == null)
 				subject = projectOperations.createSubject(username, subjectReference.subjectID, subjectName, null, "");
-			projectOperations.addSubjectToProject(username, subjectReference.subjectID, subjectReference.projectID);
+			if (subjectReference.projectID != null && subjectReference.projectID.length() == 0)
+				projectOperations.addSubjectToProject(username, subjectReference.subjectID, subjectReference.projectID);
 			return HttpServletResponse.SC_OK;
 		}
 	}
@@ -845,7 +849,8 @@ public class DefaultEpadOperations implements EpadOperations
 			Study study = projectOperations.getStudy(studyReference.studyUID);
 			if (study == null)
 				study = projectOperations.createStudy(username, studyReference.studyUID, studyReference.subjectID);
-			projectOperations.addStudyToProject(username, studyReference.studyUID, studyReference.subjectID, studyReference.projectID);
+			if (studyReference.projectID != null && studyReference.projectID.length() == 0)
+				projectOperations.addStudyToProject(username, studyReference.studyUID, studyReference.subjectID, studyReference.projectID);
 			return HttpServletResponse.SC_OK;
 		}
 	}
@@ -1990,9 +1995,13 @@ public class DefaultEpadOperations implements EpadOperations
 		if (!projectOperations.getUser(loggedInUser).isAdmin() && (user == null || !loggedInUser.equals(username)))
 			throw new Exception("User " + username + " does not have privilege to create/modify users");
 		if (user == null)
+		{
 			projectOperations.createUser(loggedInUser, username, firstname, lastname, oldpassword);
+		}
 		else
+		{
 			projectOperations.updateUser(loggedInUser, username, firstname, lastname, password, oldpassword);
+		}
 		
 	}
 

@@ -54,6 +54,7 @@ public class EPADSessionOperations
 	private static final EPADLogger log = EPADLogger.getInstance();
 	private static final String LOGIN_EXCEPTION_MESSAGE = "Internal login error";
 	private static Map<String, EPADSession> currentSessions = new HashMap<String, EPADSession>();
+	private static EPADSession adminSession = null;
 	private static final EpadProjectOperations projectOperations = DefaultEpadProjectOperations.getInstance();
 	private static final IdGenerator idGenerator = new IdGenerator();
 	private static final int SESSION_LIFESPAN = 3600;  // 1 hour in secs 
@@ -74,6 +75,11 @@ public class EPADSessionOperations
 	
 	public static String getAdminSessionID() throws Exception
 	{
+		if (adminSession != null && adminSession.isValid())
+		{
+			return adminSession.getSessionId();
+		}
+
 		String xnatUploadProjectUser = EPADConfig.xnatUploadProjectUser;
 		String xnatUploadProjectPassword = EPADConfig.xnatUploadProjectPassword;
 
@@ -81,7 +87,10 @@ public class EPADSessionOperations
 		EPADSession session = EPADSessionOperations.createNewEPADSession(xnatUploadProjectUser,
 				xnatUploadProjectPassword);
 		if (session != null)
+		{
+			adminSession = session;
 			return session.getSessionId();
+		}
 		else
 			throw new Exception("Error getting admin session");
 	}

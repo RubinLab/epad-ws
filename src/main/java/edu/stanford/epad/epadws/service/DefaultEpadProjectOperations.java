@@ -173,12 +173,13 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 	@Override
 	public Subject createSubject(String loggedInUser, String subjectUID,
 			String name, Date dob, String gender) throws Exception {
-		Subject subject = new Subject();
+		Subject subject = getSubject(subjectUID);
+		if (subject == null) subject = new Subject();
 		subject.setSubjectUID(subjectUID);
-		subject.setName(name);
-		subject.setDob(dob);
-		subject.setGender(gender);
-		subject.setCreator(loggedInUser);
+		if (name != null) subject.setName(name);
+		if (dob != null) subject.setDob(dob);
+		if (gender != null) subject.setGender(gender);
+		if (subject.getId() == 0) subject.setCreator(loggedInUser);
 		subject.save();
 		subjectCache.put(subject.getSubjectUID(), subject);
 		return subject;
@@ -187,12 +188,15 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 	@Override
 	public Study createStudy(String loggedInUser, String studyUID,
 			String subjectUID) throws Exception {
-		Subject subject = new Subject();
-		subject = (Subject) subject.getObject("subjectuid = " + subject.toSQL(subjectUID));
-		Study study = new Study();
+		Subject subject = getSubject(subjectUID);
+		Study study = getStudy(studyUID);
+		if (study == null)
+		{
+			study = new Study();
+			study.setCreator(loggedInUser);
+		}
 		study.setStudyUID(studyUID);
 		study.setSubjectId(subject.getId());
-		study.setCreator(loggedInUser);
 		study.save();
 		return study;
 	}
@@ -223,12 +227,8 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		}
 		else	
 		{
-			subject = (Subject) subject.getObject("subjectuid = " + subject.toSQL(subjectUID));
+			subject = getSubject(subjectUID);
 		}
-		Project project = new Project();
-		project = (Project) project.getObject("projectId = " + project.toSQL(projectId));
-		ProjectToSubject ptos = new ProjectToSubject();
-		ptos = (ProjectToSubject) ptos.getObject("project_id = " + project.getId() + " and subject_id =" + subject.getId());
 		if (study == null)
 		{
 			study = new Study();
@@ -237,11 +237,27 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 			study.setCreator(loggedInUser);
 			study.save();
 		}
-		ProjectToSubjectToStudy pss = new ProjectToSubjectToStudy();
-		pss.setProjSubjId(ptos.getId());
-		pss.setStudyId(study.getId());
-		pss.setCreator(loggedInUser);
-		pss.save();
+		
+		Project project = getProject(projectId);
+		ProjectToSubject ptos = new ProjectToSubject();
+		ptos = (ProjectToSubject) ptos.getObject("project_id = " + project.getId() + " and subject_id =" + subject.getId());
+		if (ptos == null)
+		{
+			ptos = new ProjectToSubject();
+			ptos.setProjectId(project.getId());
+			ptos.setSubjectId(subject.getId());
+			ptos.setCreator(loggedInUser);
+			ptos.save();
+		}
+		ProjectToSubjectToStudy pss = (ProjectToSubjectToStudy) new ProjectToSubjectToStudy().getObject("proj_subj_id = " + ptos.getId() + " and study_id=" + study.getId());
+		if (pss == null)
+		{
+			pss = new ProjectToSubjectToStudy();
+			pss.setProjSubjId(ptos.getId());
+			pss.setStudyId(study.getId());
+			pss.setCreator(loggedInUser);
+			pss.save();
+		}
 	}
 
 	@Override
@@ -734,6 +750,18 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		ProjectToSubjectToStudy projSubjStudy = (ProjectToSubjectToStudy) new ProjectToSubjectToStudy().getObject("proj_subj_id =" + projSubj.getId() + " and study_id=" + study.getId());
 		projSubjStudy.delete();
 		// TODO: delete study if not used any more
+	}
+
+	@Override
+	public void deleteSubject(String username, String subjectUID) throws Exception {
+		Subject subject = getSubject(subjectUID);
+		subject.delete();
+	}
+
+	@Override
+	public void deleteStudy(String username, String studyUID) throws Exception {
+		Study study = getStudy(studyUID);
+		study.delete();
 	}
 
 }

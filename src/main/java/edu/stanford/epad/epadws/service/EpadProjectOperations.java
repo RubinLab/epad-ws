@@ -99,4 +99,6 @@ public interface EpadProjectOperations {
 	void deleteProject(String username, String projectID) throws Exception;
 	void deleteSubject(String username, String subjectUID, String projectID) throws Exception;
 	void deleteStudy(String username, String studyUID, String subjectUID, String projectID) throws Exception;
+	void deleteSubject(String username, String subjectUID) throws Exception;
+	void deleteStudy(String username, String studyUID) throws Exception;
 }

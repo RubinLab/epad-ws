@@ -9,6 +9,7 @@ public class EPADSession {
 	int lifespan; // milliseconds
 	Date createdTime;
 	Date lastActivity;
+	boolean valid;
 	
 	EPADSession(String sessionId, String username, int lifespan)
 	{
@@ -17,6 +18,7 @@ public class EPADSession {
 		this.lifespan = lifespan;
 		this.createdTime = new Date();
 		this.lastActivity = new Date();
+		this.valid = true;
 	}
 
 	public String getSessionId() {
@@ -49,6 +51,22 @@ public class EPADSession {
 
 	public void setLastActivity(Date lastActivity) {
 		this.lastActivity = lastActivity;
+	}
+
+	public int getLifespan() {
+		return lifespan;
+	}
+
+	public void setLifespan(int lifespan) {
+		this.lifespan = lifespan;
+	}
+
+	public boolean isValid() {
+		return valid;
+	}
+
+	public void setValid(boolean valid) {
+		this.valid = valid;
 	}
 	
 }

@@ -7,6 +7,7 @@ import java.util.Set;
 import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.epadws.models.Project;
 import edu.stanford.epad.epadws.models.Study;
+import edu.stanford.epad.epadws.models.Subject;
 import edu.stanford.epad.epadws.queries.XNATQueries;
 import edu.stanford.epad.epadws.xnat.XNATSessionOperations;
 
@@ -64,7 +65,7 @@ public class UserProjectService {
 		}				
 	}
 	
-	public static Set<String> getStudyUIDsForSubject(String sessionID, String projectID, String patientID) throws Exception {
+	public static Set<String> getStudyUIDsForSubject(String projectID, String patientID) throws Exception {
 		if (EPADConfig.UseEPADUsersProjects) {
 			List<Study> studies = projectOperations.getStudiesForProjectAndSubject(projectID, patientID);
 			Set<String> studyIDs = new HashSet<String>();
@@ -72,7 +73,8 @@ public class UserProjectService {
 				studyIDs.add(study.getStudyUID());
 			return studyIDs;
 		} else {
-			return XNATQueries.getStudyUIDsForSubject(sessionID, projectID, patientID);
+			String adminSessionID = XNATSessionOperations.getXNATAdminSessionID();
+			return XNATQueries.getStudyUIDsForSubject(adminSessionID, projectID, patientID);
 		}				
 	}
 	
@@ -83,7 +85,20 @@ public class UserProjectService {
 		} else {
 			String adminSessionID = XNATSessionOperations.getXNATAdminSessionID();
 			return XNATQueries.getFirstProjectForStudy(adminSessionID, studyUID);	
-		}				
-		
+		}						
 	}
+	
+	public static Set<String> getSubjectIDsForProject(String projectID) throws Exception {
+		if (EPADConfig.UseEPADUsersProjects) {
+			List<Subject> subjects = projectOperations.getSubjectsForProject(projectID);
+			Set<String> studyIDs = new HashSet<String>();
+			for (Subject subject: subjects)
+				studyIDs.add(subject.getSubjectUID());
+			return studyIDs;
+		} else {
+			String adminSessionID = XNATSessionOperations.getXNATAdminSessionID();
+			return XNATQueries.getSubjectIDsForProject(adminSessionID, projectID);
+		}						
+	}
+	
 }
