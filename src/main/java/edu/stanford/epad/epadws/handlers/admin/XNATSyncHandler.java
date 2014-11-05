@@ -10,6 +10,7 @@ import javax.servlet.http.HttpServletResponse;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 
+import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.epad.dtos.EPADProject;
 import edu.stanford.epad.dtos.internal.XNATExperiment;
@@ -31,6 +32,7 @@ import edu.stanford.epad.epadws.models.UserRole;
 import edu.stanford.epad.epadws.queries.DefaultEpadOperations;
 import edu.stanford.epad.epadws.queries.EpadOperations;
 import edu.stanford.epad.epadws.queries.XNATQueries;
+import edu.stanford.epad.epadws.security.IdGenerator;
 import edu.stanford.epad.epadws.service.DefaultEpadProjectOperations;
 import edu.stanford.epad.epadws.service.EpadProjectOperations;
 import edu.stanford.epad.epadws.xnat.XNATSessionOperations;
@@ -198,6 +200,8 @@ public class XNATSyncHandler extends AbstractHandler
 
 	private String generatePassword(String login)
 	{
-		return login;
+		if (login.equals(EPADConfig.xnatUploadProjectUser))
+			return EPADConfig.xnatUploadProjectPassword;
+		return "" + new IdGenerator().generateId(3) + login + new IdGenerator().generateId(3);
 	}
 }

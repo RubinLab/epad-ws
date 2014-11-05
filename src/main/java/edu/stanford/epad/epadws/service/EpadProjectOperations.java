@@ -38,11 +38,16 @@ import edu.stanford.epad.epadws.models.UserRole;
 
 public interface EpadProjectOperations {
 
+	void clearCache();
+	
 	Project createProject(String loggedInUser, String projectId, String projectName, String description, ProjectType type) throws Exception;
 	User createUser(String loggedInUser, String username, String firstName, String lastName, String password) throws Exception;
-	User updateUser(String loggedInUser, String username, String firstName, String lastName, String password) throws Exception;
+	User updateUser(String loggedInUser, String username, String firstName, String lastName, String password, String oldpassword) throws Exception;
+	void enableUser(String loggedInUser, String username) throws Exception;
+	void disableUser(String loggedInUser, String username) throws Exception;
 	
 	void addUserToProject(String loggedInUser, String projectId, String username, UserRole role) throws Exception;
+	void removeUserFromProject(String loggedInUser, String projectId, String username) throws Exception;
 	void setUserRoleForProject(String loggedInUser, String projectId, String username, UserRole role) throws Exception;
 	
 	Subject createSubject(String loggedInUser, String subjectUID, String name, Date dob, String gender) throws Exception;
@@ -54,15 +59,20 @@ public interface EpadProjectOperations {
 	void removeStudyFromProject(String loggedInUser, String studyUID, String projectId) throws Exception;
 	
 	Project getProject(String projectId) throws Exception;
+	
 	User getUser(String username) throws Exception;
+	User getUserByEmail(String email) throws Exception;
+	
 	Subject getSubject(String subjectUID) throws Exception;
 	Study getStudy(String studyUID) throws Exception;
 	
 	List<Project> getAllProjects() throws Exception;
+	List<User> getAllUsers() throws Exception;
 	List<Project> getPublicProjects() throws Exception;
 	List<Project> getProjectsForUser(String username) throws Exception;
 	Project getProjectForUser(String username, String projectID) throws Exception;
 	List<User> getUsersForProject(String projectId) throws Exception;
+	List<User> getUsersWithRoleForProject(String projectId) throws Exception;
 	List<Subject> getSubjectsForProject(String projectId) throws Exception;
 	Subject getSubjectForProject(String projectId, String subjectUID) throws Exception;
 	List<Project> getProjectsForSubject(String subjectUID) throws Exception;

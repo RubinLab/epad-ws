@@ -355,11 +355,31 @@ public class AIMDatabaseOperations {
     	}
     }
 
-    public void insert(String annotationUID, String userName, String projectID, String patientID, String studyUID, String seriesUID, String imageUID, int frameID) throws SQLException {
-        insert(annotationUID, userName, projectID, patientID, studyUID, seriesUID, imageUID, frameID, null);
+    public EPADAIM updateAIM(String annotationID, String newProjectID, String username) throws SQLException
+    {
+    	EPADAIM aim = this.getAIM(annotationID);
+    	if (aim != null)
+    	{
+    		try {
+	    	    this.statement = mySqlConnection.createStatement();
+	    	    String sql = "UPDATE " + ANNOTATIONS_TABLE + " set ProjectUID = '" + newProjectID + "', UserLoginName = '" + username + "'  where AnnotationUID = '" + annotationID + "'";
+	            log.info("AIMs update:" + sql);
+	            this.statement.executeUpdate(sql);   				
+				return new EPADAIM(aim.aimID, username, newProjectID, aim.subjectID, aim.subjectID, aim.seriesUID, aim.imageUID, aim.instanceOrFrameNumber, aim.dsoSeriesUID);
+        	} finally {
+        		if (statement != null)
+        			statement.close();
+        		statement = null;
+        	}
+    	}
+    	return aim;
+    }
+    
+    public EPADAIM insert(String annotationUID, String userName, String projectID, String patientID, String studyUID, String seriesUID, String imageUID, int frameID) throws SQLException {
+        return insert(annotationUID, userName, projectID, patientID, studyUID, seriesUID, imageUID, frameID, null);
     }
         
-    public void insert(String annotationUID, String userName, String projectID, String patientID, String studyUID, String seriesUID, String imageUID, int frameID, String dsoSeriesUID) throws SQLException {
+    public EPADAIM insert(String annotationUID, String userName, String projectID, String patientID, String studyUID, String seriesUID, String imageUID, int frameID, String dsoSeriesUID) throws SQLException {
     	try {
     		EPADAIM aim = getAIM(annotationUID);
     		if (aim != null)
@@ -372,7 +392,7 @@ public class AIMDatabaseOperations {
     	            log.info("AIMs update:" + sql);
     	            this.statement.executeUpdate(sql);   				
     			}
-    			return;
+				return new EPADAIM(aim.aimID, aim.userName, aim.projectID, aim.subjectID, aim.subjectID, aim.seriesUID, aim.imageUID, aim.instanceOrFrameNumber, dsoSeriesUID);
     		}
             String sql = "INSERT into " + ANNOTATIONS_TABLE + " (AnnotationUID";
             String values = "'" + annotationUID + "'";
@@ -420,6 +440,7 @@ public class AIMDatabaseOperations {
             log.info("AIMs insert:" + sql);
     	    this.statement = mySqlConnection.createStatement();
  	        this.statement.executeUpdate(sql);
+			return new EPADAIM(annotationUID, userName, projectID, patientID, studyUID, seriesUID, imageUID, frameID, dsoSeriesUID);
     	} finally {
     		if (statement != null)
     			statement.close();

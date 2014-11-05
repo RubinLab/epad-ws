@@ -26,6 +26,11 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 	private static final EPADLogger log = EPADLogger.getInstance();
 
 	private static final DefaultEpadProjectOperations ourInstance = new DefaultEpadProjectOperations();
+	
+	// Simple Project/Subject/User cache - maybe replace it with Ehcache someday
+	private static Map<String, Project> projectCache = new HashMap<String, Project>();
+	private static Map<String, User> userCache = new HashMap<String, User>();
+	private static Map<String, Subject> subjectCache = new HashMap<String, Subject>();
 
 	private DefaultEpadProjectOperations()
 	{
@@ -34,6 +39,13 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 	public static DefaultEpadProjectOperations getInstance()
 	{
 		return ourInstance;
+	}
+
+	@Override
+	public void clearCache() {
+		projectCache = new HashMap<String, Project>();
+		userCache = new HashMap<String, User>();
+		subjectCache = new HashMap<String, Subject>();
 	}
 
 	@Override
@@ -46,6 +58,7 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		project.setType(type.getName());
 		project.setCreator(loggedInUser);
 		project.save();
+		projectCache.put(project.getProjectId(), project);
 		return project;
 	}
 
@@ -59,48 +72,81 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		String hashedPW = BCrypt.hashpw(password, BCrypt.gensalt());
 		user.setPassword(hashedPW);
 		user.setCreator(loggedInUser);
+		user.setEnabled(true);
 		user.save();
+		userCache.put(user.getUsername(), user);
 		return user;
 	}
 
 	@Override
 	public User updateUser(String loggedInUser, String username,
-			String firstName, String lastName, String password)
+			String firstName, String lastName, String newpassword, String oldpassword)
 			throws Exception {
 		User user = new User();
 		user = (User) user.getObject("username = " + user.toSQL(username));
 		if (firstName != null) user.setFirstName(firstName);
 		if (lastName != null) user.setLastName(lastName);
-		if (password != null) {
-			String hashedPW = BCrypt.hashpw(password, BCrypt.gensalt());
-			user.setPassword(hashedPW);
+		if (newpassword != null) {
+			if (BCrypt.checkpw(oldpassword, user.getPassword()))
+			{
+				String hashedPW = BCrypt.hashpw(newpassword, BCrypt.gensalt());
+				user.setPassword(hashedPW);
+			}
+			throw new Exception("Invalid old password");
 		}
 		user.save();
-		return null;
+		userCache.put(user.getUsername(), user);
+		return user;
+	}
+
+	@Override
+	public void enableUser(String loggedInUser, String username) throws Exception {
+		User user = getUser(username);
+		user.setEnabled(true);
+		user.save();
+		userCache.put(user.getUsername(), user);
+	}
+
+	@Override
+	public void disableUser(String loggedInUser, String username) throws Exception {
+		User user = getUser(username);
+		user.setEnabled(false);
+		user.save();
+		userCache.put(user.getUsername(), user);
 	}
 
 	@Override
 	public void addUserToProject(String loggedInUser, String projectId,
 			String username, UserRole role) throws Exception {
-		User user = new User();
-		user = (User) user.getObject("username = " + user.toSQL(username));
-		Project project = new Project();
-		project = (Project) project.getObject("projectId = " + project.toSQL(projectId));
-		ProjectToUser ptou = new ProjectToUser();
+		User user = getUser(username);
+		Project project = getProject(projectId);
+		ProjectToUser ptou = (ProjectToUser) new ProjectToUser().getObject("projectId = " + project.toSQL(projectId) + " and user_id=" + user.getId());
+		if (ptou == null)
+		{
+			ptou = new ProjectToUser();
+			ptou.setCreator(loggedInUser);
+		}
 		ptou.setProjectId(project.getId());
 		ptou.setUserId(user.getId());
 		ptou.setRole(role.getName());
-		ptou.setCreator(loggedInUser);
 		ptou.save();
+	}
+
+	@Override
+	public void removeUserFromProject(String loggedInUser, String projectId,
+			String username) throws Exception {
+		User user = getUser(username);
+		Project project = getProject(projectId);
+		ProjectToUser ptou = (ProjectToUser) new ProjectToUser().getObject("projectId = " + project.toSQL(projectId) + " and user_id=" + user.getId());
+		if (ptou != null)
+			ptou.delete();
 	}
 
 	@Override
 	public void setUserRoleForProject(String loggedInUser, String projectId,
 			String username, UserRole role) throws Exception {
-		User user = new User();
-		user = (User) user.getObject("username = " + user.toSQL(username));
-		Project project = new Project();
-		project = (Project) project.getObject("projectId = " + project.toSQL(projectId));
+		User user = getUser(username);
+		Project project = getProject(projectId);
 		ProjectToUser ptou = new ProjectToUser();
 		ptou = (ProjectToUser) ptou.getObject("project_id = " + project.getId() + " and user_id =" + user.getId());
 		ptou.setRole(role.getName());
@@ -116,6 +162,7 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		subject.setGender(gender);
 		subject.setCreator(loggedInUser);
 		subject.save();
+		subjectCache.put(subject.getSubjectUID(), subject);
 		return subject;
 	}
 
@@ -209,21 +256,40 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 
 	@Override
 	public Project getProject(String projectId) throws Exception {
-		Project project = new Project();
+		Project project = projectCache.get(projectId);
+		if (project != null)
+			return project;
+		project = new Project();
 		project = (Project) project.getObject("projectId = " + project.toSQL(projectId));
 		return project;
 	}
 
 	@Override
 	public User getUser(String username) throws Exception {
-		User user = new User();
+		User user = userCache.get(username);
+		if (user != null)
+			return user;
+		user = new User();
 		user = (User) user.getObject("username = " + user.toSQL(username));
 		return user;
 	}
 
 	@Override
+	public User getUserByEmail(String email) throws Exception {
+		User user = new User();
+		List objects = user.getObjects("email = " + user.toSQL(email));
+		if (objects.size() > 0)
+			return (User) objects.get(0);
+		else
+			return null;
+	}
+
+	@Override
 	public Subject getSubject(String subjectUID) throws Exception {
-		Subject subject = new Subject();
+		Subject subject = subjectCache.get(subjectUID);
+		if (subject != null)
+			return subject;
+		subject = new Subject();
 		subject = (Subject) subject.getObject("subjectuid = " + subject.toSQL(subjectUID));
 		return subject;
 	}
@@ -249,6 +315,14 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		List<Project> projects = new ArrayList<Project>();
 		projects.addAll(objects);
 		return projects;
+	}
+
+	@Override
+	public List<User> getAllUsers() throws Exception {
+		List objects = new User().getObjects("1 = 1 order by username");
+		List<User> users = new ArrayList<User>();
+		users.addAll(objects);
+		return users;
 	}
 
 	@Override
@@ -296,6 +370,24 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		return users;
 	}
 	
+	@Override
+	public List<User> getUsersWithRoleForProject(String projectId)
+			throws Exception {
+		Project project = getProject(projectId);
+		List ptous = new ProjectToUser().getObjects("project_id = " + project.getId());
+		List<User> users = new ArrayList<User>();
+		for (Object ptou: ptous)
+		{
+			long userId = ((ProjectToUser) ptou).getUserId();
+			User user = new User();
+			user.setId(userId);
+			user.retrieve();
+			user.setRole(((ProjectToUser) ptou).getRole());
+			users.add(user);
+		}
+		return users;
+	}
+
 	@Override
 	public List<Subject> getSubjectsForProject(String projectId)
 			throws Exception {

@@ -6,6 +6,7 @@ import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.InputStream;
 import java.io.PrintWriter;
+import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -30,6 +31,8 @@ import edu.stanford.epad.dtos.EPADStudy;
 import edu.stanford.epad.dtos.EPADStudyList;
 import edu.stanford.epad.dtos.EPADSubject;
 import edu.stanford.epad.dtos.EPADSubjectList;
+import edu.stanford.epad.dtos.EPADUser;
+import edu.stanford.epad.dtos.EPADUserList;
 import edu.stanford.epad.epadws.aim.AIMSearchType;
 import edu.stanford.epad.epadws.aim.AIMUtil;
 import edu.stanford.epad.epadws.handlers.HandlerUtil;
@@ -77,17 +80,18 @@ public class EPADHandler extends AbstractHandler
 			}
 
 			if (SessionService.hasValidSessionID(httpRequest)) {
+				String sessionID = SessionService.getJSessionIDFromRequest(httpRequest, true);
 				String username = httpRequest.getParameter("username");
 				log.info("Request from client:" + method + " user:" + username);
 				if (username != null) {
 					if ("GET".equalsIgnoreCase(method)) {
-						statusCode = handleGet(httpRequest, responseStream, username);
+						statusCode = handleGet(httpRequest, responseStream, username, sessionID);
 					} else if ("DELETE".equalsIgnoreCase(method)) {
-						statusCode = handleDelete(httpRequest, responseStream, username);
+						statusCode = handleDelete(httpRequest, responseStream, username, sessionID);
 					} else if ("PUT".equalsIgnoreCase(method)) {
-						statusCode = handlePut(httpRequest, httpResponse, responseStream, username, aimFile);
+						statusCode = handlePut(httpRequest, httpResponse, responseStream, username, aimFile, sessionID);
 					} else if ("POST".equalsIgnoreCase(method)) {
-						statusCode = handlePost(httpRequest, responseStream, username);
+						statusCode = handlePost(httpRequest, responseStream, username, sessionID);
 					} else {
 						statusCode = HandlerUtil.badRequestJSONResponse(FORBIDDEN_MESSAGE, responseStream, log);
 					}
@@ -104,10 +108,9 @@ public class EPADHandler extends AbstractHandler
 		httpResponse.setStatus(statusCode);
 	}
 
-	private int handleGet(HttpServletRequest httpRequest, PrintWriter responseStream, String username)
+	private int handleGet(HttpServletRequest httpRequest, PrintWriter responseStream, String username, String sessionID)
 	{
 		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
-		String sessionID = SessionService.getJSessionIDFromRequest(httpRequest);
 		String pathInfo = httpRequest.getPathInfo();
 		int statusCode;
 		log.info("GET Request from client:" + pathInfo + " user:" + username + " sessionID:" + sessionID);
@@ -272,7 +275,16 @@ public class EPADHandler extends AbstractHandler
 
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.PROJECT_AIM_LIST, pathInfo)) {
 				ProjectReference projectReference = ProjectReference.extract(ProjectsRouteTemplates.PROJECT_AIM_LIST, pathInfo);
-				EPADAIMList aims = epadOperations.getProjectAIMDescriptions(projectReference, username, sessionID);
+				AIMSearchType aimSearchType = AIMUtil.getAIMSearchType(httpRequest);
+				String searchValue = aimSearchType != null ? httpRequest.getParameter(aimSearchType.getName()) : null;
+				String projectID = projectReference.projectID;
+				log.info("GET request for AIMs from user " + username + "; query type is " + aimSearchType + ", value "
+						+ searchValue + ", project " + projectID);
+				EPADAIMList aims = null;
+				if (aimSearchType != null)
+					aims = epadOperations.getAIMDescriptions(projectID, aimSearchType, searchValue, username, sessionID, start, count);
+				else
+					aims = epadOperations.getProjectAIMDescriptions(projectReference, username, sessionID);
 				long dbtime = System.currentTimeMillis();
 				log.info("Time taken for AIM database query:" + (dbtime-starttime) + " msecs");
 				if (returnSummary(httpRequest))
@@ -467,6 +479,12 @@ public class EPADHandler extends AbstractHandler
 							aim.aimID, username);					
 				}
 				statusCode = HttpServletResponse.SC_OK;
+			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.USER_LIST, pathInfo)) {
+				ProjectReference projectReference = ProjectReference.extract(ProjectsRouteTemplates.USER_LIST, pathInfo);
+				EPADUserList users = epadOperations.getUserDescriptions(username, projectReference, sessionID);
+				responseStream.append(users.toJSON());
+				statusCode = HttpServletResponse.SC_OK;
+
 			} else if (HandlerUtil.matchesTemplate(StudiesRouteTemplates.STUDY_AIM_LIST, pathInfo)) {
 				StudyReference studyReference = StudyReference.extract(StudiesRouteTemplates.STUDY_AIM_LIST, pathInfo);
 				EPADAIMList aims = epadOperations.getStudyAIMDescriptions(studyReference, username, sessionID);
@@ -670,6 +688,18 @@ public class EPADHandler extends AbstractHandler
 				}
 				statusCode = HttpServletResponse.SC_OK;
 
+			} else if (HandlerUtil.matchesTemplate(UsersRouteTemplates.USER_LIST, pathInfo)) {
+				EPADUserList userlist = epadOperations.getUserDescriptions(username, sessionID);
+				responseStream.append(userlist.toJSON());
+				statusCode = HttpServletResponse.SC_OK;
+
+			} else if (HandlerUtil.matchesTemplate(UsersRouteTemplates.USER, pathInfo)) {
+				Map<String, String> templateMap = HandlerUtil.getTemplateMap(UsersRouteTemplates.USER, pathInfo);
+				String return_username = HandlerUtil.getTemplateParameter(templateMap, "username");
+				EPADUser user = epadOperations.getUserDescription(username, return_username, sessionID);
+				responseStream.append(user.toJSON());
+				statusCode = HttpServletResponse.SC_OK;
+
 			} else
 				statusCode = HandlerUtil.badRequestJSONResponse(BAD_GET_MESSAGE, responseStream, log);
 		} catch (Throwable t) {
@@ -681,10 +711,9 @@ public class EPADHandler extends AbstractHandler
 	}
 
 	private int handlePut(HttpServletRequest httpRequest, HttpServletResponse httpResponse, PrintWriter responseStream,
-			String username, File aimFile)
+			String username, File aimFile, String sessionID)
 	{
 		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
-		String sessionID = SessionService.getJSessionIDFromRequest(httpRequest);
 		String pathInfo = httpRequest.getPathInfo();
 		int statusCode = HttpServletResponse.SC_OK;
 		String status = null;
@@ -754,6 +783,25 @@ public class EPADHandler extends AbstractHandler
 				AIMReference aimReference = AIMReference.extract(ProjectsRouteTemplates.FRAME_AIM, pathInfo);
 				status = epadOperations.createFrameAIM(username, frameReference, aimReference.aimID, aimFile, sessionID);
 	
+			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.USER, pathInfo)) {
+				ProjectReference projectReference = ProjectReference.extract(ProjectsRouteTemplates.USER, pathInfo);
+				Map<String, String> templateMap = HandlerUtil.getTemplateMap(ProjectsRouteTemplates.USER, pathInfo);
+				String add_username = HandlerUtil.getTemplateParameter(templateMap, "username");
+				String role = httpRequest.getParameter("username");
+				epadOperations.addUserToProject(username, projectReference, add_username, role, sessionID);
+				statusCode = HttpServletResponse.SC_OK;
+	
+			} else if (HandlerUtil.matchesTemplate(UsersRouteTemplates.USER, pathInfo)) {
+				Map<String, String> templateMap = HandlerUtil.getTemplateMap(UsersRouteTemplates.USER, pathInfo);
+				String create_username = HandlerUtil.getTemplateParameter(templateMap, "username");
+				String firstname = httpRequest.getParameter("firstname");
+				String lastname = httpRequest.getParameter("lastname");
+				String email = httpRequest.getParameter("email");
+				String password = httpRequest.getParameter("password");
+				String oldpassword = httpRequest.getParameter("oldpassword");
+				epadOperations.createOrModifyUser(username, create_username, firstname, lastname, email, password, oldpassword);
+				statusCode = HttpServletResponse.SC_OK;
+				
 			} else {
 				statusCode = HandlerUtil.badRequestJSONResponse(BAD_PUT_MESSAGE, responseStream, log);
 			}
@@ -831,7 +879,7 @@ public class EPADHandler extends AbstractHandler
         return sb.toString();
     }
 
-	private int handlePost(HttpServletRequest httpRequest, PrintWriter responseStream, String username)
+	private int handlePost(HttpServletRequest httpRequest, PrintWriter responseStream, String username, String sessionID)
 	{
 		String pathInfo = httpRequest.getPathInfo();
 		int statusCode;
@@ -865,10 +913,9 @@ public class EPADHandler extends AbstractHandler
 		return statusCode;
 	}
 
-	private int handleDelete(HttpServletRequest httpRequest, PrintWriter responseStream, String username)
+	private int handleDelete(HttpServletRequest httpRequest, PrintWriter responseStream, String username, String sessionID)
 	{
 		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
-		String sessionID = SessionService.getJSessionIDFromRequest(httpRequest);
 		String pathInfo = httpRequest.getPathInfo();
 		int statusCode;
 
@@ -944,6 +991,13 @@ public class EPADHandler extends AbstractHandler
 			} else if (HandlerUtil.matchesTemplate(AimsRouteTemplates.AIM, pathInfo)) {
 				AIMReference aimReference = AIMReference.extract(AimsRouteTemplates.AIM, pathInfo);
 				statusCode = epadOperations.aimDelete(aimReference.aimID, sessionID, deleteDSO, username);
+				
+			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.USER, pathInfo)) {
+				ProjectReference projectReference = ProjectReference.extract(ProjectsRouteTemplates.USER, pathInfo);
+				Map<String, String> templateMap = HandlerUtil.getTemplateMap(ProjectsRouteTemplates.USER, pathInfo);
+				String delete_username = HandlerUtil.getTemplateParameter(templateMap, "username");
+				epadOperations.removeUserFromProject(username, projectReference, delete_username, sessionID);
+				statusCode = HttpServletResponse.SC_OK;
 			} else {
 				statusCode = HandlerUtil.badRequestJSONResponse(BAD_DELETE_MESSAGE, responseStream, log);
 			}

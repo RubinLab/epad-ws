@@ -19,9 +19,10 @@ import edu.stanford.epad.dtos.EPADStudy;
 import edu.stanford.epad.dtos.EPADStudyList;
 import edu.stanford.epad.dtos.EPADSubject;
 import edu.stanford.epad.dtos.EPADSubjectList;
+import edu.stanford.epad.dtos.EPADUser;
+import edu.stanford.epad.dtos.EPADUserList;
 import edu.stanford.epad.dtos.internal.DCM4CHEESeries;
 import edu.stanford.epad.epadws.aim.AIMSearchType;
-import edu.stanford.epad.epadws.handlers.core.AIMReference;
 import edu.stanford.epad.epadws.handlers.core.EPADSearchFilter;
 import edu.stanford.epad.epadws.handlers.core.FrameReference;
 import edu.stanford.epad.epadws.handlers.core.ImageReference;
@@ -63,6 +64,16 @@ public interface EpadOperations
 
 	EPADFrame getFrameDescription(FrameReference frameReference, String sessionID);
 
+	EPADUserList getUserDescriptions(String username, ProjectReference projectReference, String sessionID) throws Exception;
+
+	void addUserToProject(String loggedInusername, ProjectReference projectReference, String username, String role, String sessionID) throws Exception;
+
+	void removeUserFromProject(String loggedInusername, ProjectReference projectReference, String username, String sessionID) throws Exception;
+
+	EPADUserList getUserDescriptions(String username, String sessionID) throws Exception;
+
+	EPADUser getUserDescription(String loggedInusername, String username, String sessionID) throws Exception;
+	
 	void createSubjectAndStudy(String username, String projectID, String subjectID, String subjectName, String studyUID, String sessionID) throws Exception;
 
 	int createProject(String username, ProjectReference projectReference, String projectName, String projectDescription, String sessionID) throws Exception;
@@ -86,6 +97,8 @@ public interface EpadOperations
 	String createFrameAIM(String username, FrameReference frameReference, String aimID, File aimFile, String sessionID);
 
 	String setSubjectStatus(SubjectReference subjectReference, String sessionID, String username) throws Exception;
+	
+	void createOrModifyUser(String loggedInUser, String username, String firstname, String lastname, String email, String password, String oldpassword) throws Exception;
 	
 	int projectDelete(String projectID, String sessionID, String username) throws Exception;
 
@@ -144,6 +157,10 @@ public interface EpadOperations
 	 * See if new series have been uploaded to DCM4CHEE that ePAD does not know about.
 	 */
 	List<DCM4CHEESeries> getNewDcm4CheeSeries();
+	/**
+	 * See if any series have been deleted from DCM4CHEE that are still in ePAD.
+	 */
+	Set<String> getDeletedDcm4CheeSeries();
 
 	/**
 	 * For the specified series, return a list of DICOM image file descriptions for instances that have no corresponding

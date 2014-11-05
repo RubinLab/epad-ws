@@ -70,10 +70,14 @@ import edu.stanford.epad.epadws.service.UserProjectService;
 import edu.stanford.epad.epadws.xnat.XNATSessionOperations;
 import edu.stanford.hakan.aim3api.base.AimException;
 import edu.stanford.hakan.aim3api.base.DICOMImageReference;
+import edu.stanford.hakan.aim3api.base.GeometricShape;
+import edu.stanford.hakan.aim3api.base.GeometricShapeCollection;
 import edu.stanford.hakan.aim3api.base.ImageAnnotation;
 import edu.stanford.hakan.aim3api.base.Person;
 import edu.stanford.hakan.aim3api.base.Segmentation;
 import edu.stanford.hakan.aim3api.base.SegmentationCollection;
+import edu.stanford.hakan.aim3api.base.SpatialCoordinate;
+import edu.stanford.hakan.aim3api.base.TwoDimensionSpatialCoordinate;
 import edu.stanford.hakan.aim3api.base.User;
 import edu.stanford.hakan.aim3api.usage.AnnotationBuilder;
 import edu.stanford.hakan.aim3api.usage.AnnotationGetter;
@@ -413,7 +417,17 @@ public class AIMUtil
 						projectID = UserProjectService.getFirstProjectForStudy(referencedStudyUID);
 					}
 					ImageReference imageReference = new ImageReference(projectID, patientID, referencedStudyUID, referencedSeriesUID, referencedImageUID[0]);
-					EpadDatabase.getInstance().getEPADDatabaseOperations().addDSOAIM(username, imageReference, seriesUID, imageAnnotation.getUniqueIdentifier());
+					EpadDatabaseOperations dbOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
+					List<EPADAIM> aims = dbOperations.getAIMs(seriesUID);
+					if (aims.size() > 0)
+					{
+						if (!username.equals("shared"))
+							dbOperations.updateAIM(aims.get(0).aimID, projectID, username);
+					}
+					else
+					{
+						dbOperations.addDSOAIM(username, imageReference, seriesUID, imageAnnotation.getUniqueIdentifier());
+					}
 				}
 			} catch (AimException e) {
 				log.warning("Exception saving AIM file for DSO image " + imageUID + " in series " + seriesUID, e);
@@ -807,6 +821,37 @@ public class AIMUtil
 		}
 		log.info("" + annotations.size() + " annotations returned to client");
 		return aims;
+	}
+
+	public static List<Double> extractPoints (ImageAnnotation templateImageAnnotation) {
+		List<Double> points = new ArrayList<Double>();
+		double[] roixData = null;
+		double[] roiyData = null;
+
+		GeometricShapeCollection geometricShapeCollection = templateImageAnnotation.getGeometricShapeCollection();
+		for (int i = 0; i < geometricShapeCollection.getGeometricShapeList().size(); i++) {
+			GeometricShape geometricShape = geometricShapeCollection.getGeometricShapeList().get(i);
+			if (geometricShape.getXsiType().equals("MultiPoint")) {
+				int numberOfROIs = geometricShape.getSpatialCoordinateCollection().getSpatialCoordinateList().size();
+				roixData = new double[numberOfROIs];
+				roiyData = new double[numberOfROIs];
+				for (int j = 0; j < numberOfROIs; j++) {
+					SpatialCoordinate spatialCoordinate = geometricShape.getSpatialCoordinateCollection()
+							.getSpatialCoordinateList().get(j);
+					if ("TwoDimensionSpatialCoordinate".equals(spatialCoordinate.getXsiType())) {
+						TwoDimensionSpatialCoordinate twoDimensionSpatialCoordinate = (TwoDimensionSpatialCoordinate)spatialCoordinate;
+						int idx = twoDimensionSpatialCoordinate.getCoordinateIndex();
+						roixData[idx] = twoDimensionSpatialCoordinate.getX();
+						roiyData[idx] = twoDimensionSpatialCoordinate.getY();
+						
+						points.add(roixData[idx]);
+						points.add(roiyData[idx]);
+					}
+				}
+			}
+		}
+		
+		return points;
 	}
 
 	private static String XmlDocumentToString(Document document)

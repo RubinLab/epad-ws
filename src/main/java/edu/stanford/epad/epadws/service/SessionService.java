@@ -45,11 +45,22 @@ public class SessionService {
 	}
 	
 	public static String getJSessionIDFromRequest(HttpServletRequest httpRequest) {
+		return getJSessionIDFromRequest(httpRequest, false);
+	}
+	
+	public static String getJSessionIDFromRequest(HttpServletRequest httpRequest, boolean createNew) {
+		String sessionID = null;
 		if (EPADConfig.UseEPADUsersProjects) {
-			return EPADSessionOperations.getJSessionIDFromRequest(httpRequest);
+			sessionID = EPADSessionOperations.getJSessionIDFromRequest(httpRequest);
 		} else {
-			return XNATSessionOperations.getJSessionIDFromRequest(httpRequest);
+			sessionID = XNATSessionOperations.getJSessionIDFromRequest(httpRequest);
 		}		
+		if (createNew && (sessionID == null || sessionID.length() == 0))
+		{
+			EPADSessionResponse response = EPADSessionOperations.authenticateUser(httpRequest);
+			sessionID =  response.response;
+		}
+		return sessionID;
 	}
 
 	public static String extractUserNameFromAuthorizationHeader(HttpServletRequest httpRequest)

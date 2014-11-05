@@ -40,6 +40,8 @@ import edu.stanford.epad.dtos.EPADStudy;
 import edu.stanford.epad.dtos.EPADStudyList;
 import edu.stanford.epad.dtos.EPADSubject;
 import edu.stanford.epad.dtos.EPADSubjectList;
+import edu.stanford.epad.dtos.EPADUser;
+import edu.stanford.epad.dtos.EPADUserList;
 import edu.stanford.epad.dtos.SeriesProcessingStatus;
 import edu.stanford.epad.dtos.StudyProcessingStatus;
 import edu.stanford.epad.dtos.internal.DCM4CHEESeries;
@@ -53,6 +55,7 @@ import edu.stanford.epad.dtos.internal.XNATProject;
 import edu.stanford.epad.dtos.internal.XNATProjectList;
 import edu.stanford.epad.dtos.internal.XNATSubject;
 import edu.stanford.epad.dtos.internal.XNATSubjectList;
+import edu.stanford.epad.dtos.internal.XNATUser;
 import edu.stanford.epad.dtos.internal.XNATUserList;
 import edu.stanford.epad.epadws.aim.AIMQueries;
 import edu.stanford.epad.epadws.aim.AIMSearchType;
@@ -77,6 +80,7 @@ import edu.stanford.epad.epadws.models.ProjectType;
 import edu.stanford.epad.epadws.models.Study;
 import edu.stanford.epad.epadws.models.Subject;
 import edu.stanford.epad.epadws.models.User;
+import edu.stanford.epad.epadws.models.UserRole;
 import edu.stanford.epad.epadws.processing.pipeline.task.ProjectDataDeleteTask;
 import edu.stanford.epad.epadws.processing.pipeline.task.StudyDataDeleteTask;
 import edu.stanford.epad.epadws.processing.pipeline.task.SubjectDataDeleteTask;
@@ -480,6 +484,7 @@ public class DefaultEpadOperations implements EpadOperations
 						String referencedImageUID = dicomElement.value;
 						DCM4CHEEImageDescription dcm4cheeReferencedImageDescription = dcm4CheeDatabaseOperations
 								.getImageDescription(studyUID, referencedSeriesUID, referencedImageUID);
+						if (dcm4cheeReferencedImageDescription == null) continue;
 						String insertDate = dcm4cheeReferencedImageDescription.createdTime;
 						String imageDate = dcm4cheeReferencedImageDescription.contentTime;
 						String sliceLocation = dcm4cheeReferencedImageDescription.sliceLocation;
@@ -599,7 +604,7 @@ public class DefaultEpadOperations implements EpadOperations
     			}
     		}
 		} catch (Exception e) {
-			log.warning("Error deleting study " + seriesReference.studyUID + " for patient " + seriesReference.subjectID + " in project " + seriesReference.projectID, e);
+			log.warning("Error deleting Series " + seriesReference.seriesUID + " for patient " + seriesReference.subjectID + " in project " + seriesReference.projectID, e);
 		}
 		String seriesPk = null;
 		List<Map<String, String>> seriesList = dcm4CheeDatabaseOperations.getAllSeriesInStudy(seriesReference.studyUID);
@@ -628,7 +633,6 @@ public class DefaultEpadOperations implements EpadOperations
 		}
 		else
 		{
-			epadDatabaseOperations.deleteSeries(seriesReference.seriesUID);
 			return "Error deleting Series in DCM4CHE database";
 		}
 	}
@@ -727,6 +731,16 @@ public class DefaultEpadOperations implements EpadOperations
 				log.warning("Could not find new series " + seriesUID + " in dcm4chee");
 		}
 		return newDcm4CheeSeries;
+	}
+
+	@Override
+	public Set<String> getDeletedDcm4CheeSeries() {
+		Set<String> allReadyDcm4CheeSeriesUIDs = dcm4CheeDatabaseOperations.getAllReadyDcm4CheeSeriesUIDs();
+		Set<String> allEPADSeriesUIDs = epadDatabaseOperations.getAllSeriesUIDsFromEPadDatabase();
+		//log.info("Series in dcm4chee:" + allReadyDcm4CheeSeriesUIDs.size()+ " Series in epad:" + allEPADSeriesUIDs.size());
+		allEPADSeriesUIDs.removeAll(allReadyDcm4CheeSeriesUIDs);
+
+		return allEPADSeriesUIDs;
 	}
 
 	@Override
@@ -973,7 +987,8 @@ public class DefaultEpadOperations implements EpadOperations
 			ProjectReference projectReference, String aimID, File aimFile,
 			String sessionID) {
 		try {
-			if (aimFile == null || !AIMUtil.saveAIMAnnotation(aimFile, projectReference.projectID, sessionID, username))
+			EPADAIM aim = epadDatabaseOperations.addAIM(username, projectReference, aimID);
+			if (!AIMUtil.saveAIMAnnotation(aimFile, aim.projectID, sessionID, username))
 				return "";
 			else
 				return "Error saving AIM file";
@@ -988,7 +1003,8 @@ public class DefaultEpadOperations implements EpadOperations
 			SubjectReference subjectReference, String aimID, File aimFile,
 			String sessionID) {
 		try {
-			if (aimFile == null || !AIMUtil.saveAIMAnnotation(aimFile, subjectReference.projectID, sessionID, username))
+			EPADAIM aim = epadDatabaseOperations.addAIM(username, subjectReference, aimID);
+			if (!AIMUtil.saveAIMAnnotation(aimFile, aim.projectID, sessionID, username))
 				return "";
 			else
 				return "Error saving AIM file";
@@ -1002,7 +1018,8 @@ public class DefaultEpadOperations implements EpadOperations
 	public String createStudyAIM(String username, StudyReference studyReference, String aimID, File aimFile, String sessionID)
 	{
 		try {
-			if (aimFile == null || !AIMUtil.saveAIMAnnotation(aimFile, studyReference.projectID, sessionID, username))
+			EPADAIM aim = epadDatabaseOperations.addAIM(username, studyReference, aimID);
+			if (!AIMUtil.saveAIMAnnotation(aimFile, aim.projectID, sessionID, username))
 				return "";
 			else
 				return "Error saving AIM file";
@@ -1016,7 +1033,8 @@ public class DefaultEpadOperations implements EpadOperations
 	public String createSeriesAIM(String username, SeriesReference seriesReference, String aimID, File aimFile, String sessionID)
 	{
 		try {
-			if (aimFile == null || !AIMUtil.saveAIMAnnotation(aimFile, seriesReference.projectID, sessionID, username))
+			EPADAIM aim = epadDatabaseOperations.addAIM(username, seriesReference, aimID);
+			if (!AIMUtil.saveAIMAnnotation(aimFile, aim.projectID, sessionID, username))
 				return "";
 			else
 				return "Error saving AIM file";
@@ -1030,9 +1048,8 @@ public class DefaultEpadOperations implements EpadOperations
 	public String createImageAIM(String username, ImageReference imageReference, String aimID, File aimFile, String sessionID)
 	{
 		try {
-			if (aimFile == null)
-				epadDatabaseOperations.addAIM(username, imageReference, aimID);
-			if (aimFile == null || !AIMUtil.saveAIMAnnotation(aimFile, imageReference.projectID, sessionID, username))
+			EPADAIM aim = epadDatabaseOperations.addAIM(username, imageReference, aimID);
+			if (!AIMUtil.saveAIMAnnotation(aimFile, aim.projectID, sessionID, username))
 				return "";
 			else
 				return "Error saving AIM file";
@@ -1046,9 +1063,8 @@ public class DefaultEpadOperations implements EpadOperations
 	public String createFrameAIM(String username, FrameReference frameReference, String aimID, File aimFile, String sessionID)
 	{
 		try {
-			if (aimFile == null)
-				epadDatabaseOperations.addAIM(username, frameReference, aimID);
-			if (aimFile == null || !AIMUtil.saveAIMAnnotation(aimFile, frameReference.projectID, frameReference.frameNumber, sessionID, username))
+			EPADAIM aim = epadDatabaseOperations.addAIM(username, frameReference, aimID);
+			if (!AIMUtil.saveAIMAnnotation(aimFile, aim.projectID, frameReference.frameNumber, sessionID, username))
 				return "";
 			else
 				return "Error saving AIM file";
@@ -1071,7 +1087,7 @@ public class DefaultEpadOperations implements EpadOperations
 			log.info("Deleting AIM, deleteDSO:" + deleteDSO + " dsoSeriesUID:" + aim.dsoSeriesUID);
 			AIMUtil.deleteAIM(aimID);
 			epadDatabaseOperations.deleteAIM(username, projectReference, aimID);
-			if (deleteDSO && aim.dsoSeriesUID != null && aim.dsoSeriesUID.length() > 0)
+			if (deleteDSO && aim.dsoSeriesUID != null && aim.dsoSeriesUID.length() > 0 && epadDatabaseOperations.getAIMs(aim.dsoSeriesUID).size() == 0)
 			{
 				log.info("Deleting Series:" + aim.dsoSeriesUID + " In project:" + aim.projectID);
 				this.seriesDelete(new SeriesReference(projectReference.projectID, aim.subjectID, aim.studyUID, aim.dsoSeriesUID), sessionID, false, username);
@@ -1095,7 +1111,7 @@ public class DefaultEpadOperations implements EpadOperations
 			}
 			AIMUtil.deleteAIM(aimID);
 			epadDatabaseOperations.deleteAIM(username, subjectReference, aimID);
-			if (deleteDSO && aim.dsoSeriesUID != null && aim.dsoSeriesUID.length() > 0)
+			if (deleteDSO && aim.dsoSeriesUID != null && aim.dsoSeriesUID.length() > 0 && epadDatabaseOperations.getAIMs(aim.dsoSeriesUID).size() == 0)
 			{
 				this.seriesDelete(new SeriesReference(subjectReference.projectID, aim.subjectID, aim.studyUID, aim.dsoSeriesUID), sessionID, false, username);
 			}
@@ -1118,7 +1134,7 @@ public class DefaultEpadOperations implements EpadOperations
 			}
 			AIMUtil.deleteAIM(aimID);
 			epadDatabaseOperations.deleteAIM(username, studyReference, aimID);
-			if (deleteDSO && aim.dsoSeriesUID != null && aim.dsoSeriesUID.length() > 0)
+			if (deleteDSO && aim.dsoSeriesUID != null && aim.dsoSeriesUID.length() > 0 && epadDatabaseOperations.getAIMs(aim.dsoSeriesUID).size() == 0)
 			{
 				this.seriesDelete(new SeriesReference(studyReference.projectID, aim.subjectID, aim.studyUID, aim.dsoSeriesUID), sessionID, false, username);
 			}
@@ -1141,7 +1157,7 @@ public class DefaultEpadOperations implements EpadOperations
 			}
 			AIMUtil.deleteAIM(aimID);
 			epadDatabaseOperations.deleteAIM(username, seriesReference, aimID);
-			if (deleteDSO && aim.dsoSeriesUID != null && aim.dsoSeriesUID.length() > 0)
+			if (deleteDSO && aim.dsoSeriesUID != null && aim.dsoSeriesUID.length() > 0 && epadDatabaseOperations.getAIMs(aim.dsoSeriesUID).size() == 0)
 			{
 				this.seriesDelete(new SeriesReference(seriesReference.projectID, aim.subjectID, aim.studyUID, aim.dsoSeriesUID), sessionID, false, username);
 			}
@@ -1164,7 +1180,7 @@ public class DefaultEpadOperations implements EpadOperations
 			}
 			AIMUtil.deleteAIM(aimID);
 			epadDatabaseOperations.deleteAIM(username, imageReference, aimID);
-			if (deleteDSO && aim.dsoSeriesUID != null && aim.dsoSeriesUID.length() > 0)
+			if (deleteDSO && aim.dsoSeriesUID != null && aim.dsoSeriesUID.length() > 0 && epadDatabaseOperations.getAIMs(aim.dsoSeriesUID).size() == 0)
 			{
 				this.seriesDelete(new SeriesReference(imageReference.projectID, aim.subjectID, aim.studyUID, aim.dsoSeriesUID), sessionID, false, username);
 			}
@@ -1187,7 +1203,7 @@ public class DefaultEpadOperations implements EpadOperations
 			}
 			AIMUtil.deleteAIM(aimID);
 			epadDatabaseOperations.deleteAIM(username, frameReference, aimID);
-			if (deleteDSO && aim.dsoSeriesUID != null && aim.dsoSeriesUID.length() > 0)
+			if (deleteDSO && aim.dsoSeriesUID != null && aim.dsoSeriesUID.length() > 0 && epadDatabaseOperations.getAIMs(aim.dsoSeriesUID).size() == 0)
 			{
 				this.seriesDelete(new SeriesReference(frameReference.projectID, aim.subjectID, aim.studyUID, aim.dsoSeriesUID), sessionID, false, username);
 			}
@@ -1209,7 +1225,7 @@ public class DefaultEpadOperations implements EpadOperations
 			}
 			AIMUtil.deleteAIM(aimID);
 			epadDatabaseOperations.deleteAIM(username, aimID);
-			if (deleteDSO && aim.dsoSeriesUID != null && aim.dsoSeriesUID.length() > 0)
+			if (deleteDSO && aim.dsoSeriesUID != null && aim.dsoSeriesUID.length() > 0 && epadDatabaseOperations.getAIMs(aim.dsoSeriesUID).size() == 0)
 			{
 				this.seriesDelete(new SeriesReference(aim.projectID, aim.subjectID, aim.studyUID, aim.dsoSeriesUID), sessionID, false, username);
 			}
@@ -1901,6 +1917,104 @@ public class DefaultEpadOperations implements EpadOperations
 				+ windowCenter));
 
 		return dicomElements;
+	}
+
+	@Override
+	public EPADUserList getUserDescriptions(String username, String sessionID)
+			throws Exception {
+		EPADUserList userlist = new EPADUserList();
+		if (!EPADConfig.UseEPADUsersProjects) {
+			XNATUserList xusers = XNATQueries.getAllUsers();
+			for (XNATUser user: xusers.ResultSet.Result) {
+				EPADUser epadUser = new EPADUser(user.displayname, user.login, 
+						user.firstname, user.lastname, user.email, "");
+				userlist.addEPADUser(epadUser);
+			}
+			
+		} else {
+			List<User> users = projectOperations.getAllUsers();
+			for (User user: users) {
+				EPADUser epadUser = new EPADUser(user.getFullName(), user.getUsername(), 
+						user.getFirstName(), user.getLastName(), user.getEmail(), user.isAdmin()?"admin":"user");
+				userlist.addEPADUser(epadUser);
+			}
+		}
+		return userlist;
+	}
+
+	@Override
+	public EPADUser getUserDescription(String loggedInusername,
+			String username, String sessionID) throws Exception {
+		if (!EPADConfig.UseEPADUsersProjects) {
+			XNATUserList xusers = XNATQueries.getAllUsers();
+			for (XNATUser user: xusers.ResultSet.Result) {
+				if (username.equalsIgnoreCase(user.login) || username.equalsIgnoreCase(user.email)) {
+					EPADUser epadUser = new EPADUser(user.displayname, user.login, 
+						user.firstname, user.lastname, user.email, "");
+					return epadUser;
+				};
+			}
+			
+		} else {
+			User user = projectOperations.getUser(username);
+			if (user == null) {
+				user = projectOperations.getUserByEmail(username);
+				if (user == null) return null;
+			}
+			EPADUser epadUser = new EPADUser(user.getFullName(), user.getUsername(), 
+						user.getFirstName(), user.getLastName(), user.getEmail(), user.isAdmin()?"admin":"user");
+			return epadUser;
+		}
+		return null;
+	}
+
+	@Override
+	public void createOrModifyUser(String loggedInUser, String username,
+			String firstname, String lastname, String email, String password,
+			String oldpassword) throws Exception {
+		User user = projectOperations.getUser(username);
+		if (!projectOperations.getUser(loggedInUser).isAdmin() && (user == null || !loggedInUser.equals(username)))
+			throw new Exception("User " + username + " does not have privilege to create/modify users");
+		if (user == null)
+			projectOperations.createUser(loggedInUser, username, firstname, lastname, oldpassword);
+		else
+			projectOperations.updateUser(loggedInUser, username, firstname, lastname, password, oldpassword);
+		
+	}
+
+	@Override
+	public EPADUserList getUserDescriptions(String username,
+			ProjectReference projectReference, String sessionID)
+			throws Exception {
+		EPADUserList userlist = new EPADUserList();
+		List<User> users = projectOperations.getUsersWithRoleForProject(projectReference.projectID);
+		for (User user: users) {
+			EPADUser epadUser = new EPADUser(user.getFullName(), user.getUsername(), 
+					user.getFirstName(), user.getLastName(), user.getEmail(), user.getRole());
+			userlist.addEPADUser(epadUser);
+		}
+		return userlist;
+	}
+
+	@Override
+	public void addUserToProject(String loggedInusername,
+			ProjectReference projectReference, String username, String roleName, String sessionID)
+			throws Exception {
+		if (!projectOperations.isMember(loggedInusername, projectReference.projectID))
+			throw new Exception("User " + username + " is not the owner of " + projectReference.projectID);
+		UserRole role = UserRole.getRole(roleName);
+		if (role == null) role = UserRole.COLLABORATOR;
+		projectOperations.addUserToProject(loggedInusername, projectReference.projectID, username, role);
+		
+	}
+
+	@Override
+	public void removeUserFromProject(String loggedInusername,
+			ProjectReference projectReference, String username, String sessionID)
+			throws Exception {
+		if (!projectOperations.isMember(loggedInusername, projectReference.projectID))
+			throw new Exception("User " + username + " is not the owner of " + projectReference.projectID);
+		projectOperations.removeUserFromProject(loggedInusername, projectReference.projectID, username);
 	}
 
 	// This is Pixelmed variant (though does not seem to be correct).

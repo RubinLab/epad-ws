@@ -1,6 +1,7 @@
 package edu.stanford.epad.epadws.processing.pipeline.watcher;
 
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 
 import edu.stanford.epad.common.util.EPADLogger;
@@ -10,10 +11,12 @@ import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeDatabase;
 import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeDatabaseOperations;
 import edu.stanford.epad.epadws.epaddb.EpadDatabase;
 import edu.stanford.epad.epadws.epaddb.EpadDatabaseOperations;
+import edu.stanford.epad.epadws.handlers.core.SeriesReference;
 import edu.stanford.epad.epadws.processing.model.SeriesProcessingDescription;
 import edu.stanford.epad.epadws.processing.pipeline.threads.ShutdownSignal;
 import edu.stanford.epad.epadws.queries.DefaultEpadOperations;
 import edu.stanford.epad.epadws.queries.EpadOperations;
+import edu.stanford.epad.epadws.xnat.XNATSessionOperations;
 
 /**
  * Watch for new studies that appear in ePAD's DCM4CHEE MySQL database with the 'study_status' field set to zero, which
@@ -45,7 +48,7 @@ public class Dcm4CheeDatabaseWatcher implements Runnable
 		Dcm4CheeDatabaseOperations dcm4CheeDatabaseOperations = Dcm4CheeDatabase.getInstance()
 				.getDcm4CheeDatabaseOperations();
 		EpadOperations epadQueries = DefaultEpadOperations.getInstance();
-
+		int run = 0;
 		while (!signal.hasShutdown()) {
 			try {
 				List<DCM4CHEESeries> dcm4CheeSeriesList = epadQueries.getNewDcm4CheeSeries();
@@ -66,6 +69,27 @@ public class Dcm4CheeDatabaseWatcher implements Runnable
 					logger.info("New DICOM series " + seriesUID + " (" + patientName + ", " + seriesDesc
 							+ ") found in DCM4CHEE with " + numInstances + " image(s)");
 				}
+				// Every tenth time check deleted dcm4che series
+				if (run >= 10)
+				{
+					run = 0;
+					Set<String> deletedSeriesUIDs = epadQueries.getDeletedDcm4CheeSeries();
+					for (String seriesUID: deletedSeriesUIDs)
+					{
+						try
+						{
+							logger.info("Series + " + seriesUID + " no longer in DCM4CHE, deleting from epad database");
+							epadDatabaseOperations.deleteSeries(seriesUID);
+						} catch (Exception x) {
+							logger.warning("Error deleting series from database");
+						}
+					}
+				}
+				else
+				{
+					run++;
+				}
+				
 				Thread.sleep(SleepTimeInMilliseconds);
 			} catch (Exception e) {
 				logger.warning("Dcm4CheeDatabaseWatcher error", e);

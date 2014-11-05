@@ -42,6 +42,7 @@ public class User extends AbstractDAO {
 	String creator;
 	Date createdTime;
 	Date updateTime;
+	transient String role;
 	
 	@Override
 	public long getId() {
@@ -138,6 +139,18 @@ public class User extends AbstractDAO {
 
 	public void setUpdateTime(Date updateTime) {
 		this.updateTime = updateTime;
+	}
+
+	public String getFullName() {
+		return firstName + " " + lastName;
+	}
+	
+	public String getRole() {
+		return role;
+	}
+
+	public void setRole(String role) {
+		this.role = role;
 	}
 
 	public final static String DBTABLE = "user";

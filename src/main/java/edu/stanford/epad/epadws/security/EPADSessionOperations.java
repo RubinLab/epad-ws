@@ -177,6 +177,8 @@ public class EPADSessionOperations
 		User user = projectOperations.getUser(username);
 		if (user == null)
 			throw new Exception("User " + username + " not found");
+		if (!user.isEnabled())
+			throw new Exception("User " + username + " is disabled");
 		if (BCrypt.checkpw(password, user.getPassword()))
 		{
 			String sessionId = idGenerator.generateId(16);
@@ -185,7 +187,19 @@ public class EPADSessionOperations
 			return session;
 		}
 		else
+		{
+			if (user.getPassword().length() < 60) // clear password set by admin manually on rare occasions
+			{
+				if (password.equals(user.getPassword()))
+				{
+					String sessionId = idGenerator.generateId(16);
+					EPADSession session = new EPADSession(sessionId, username, SESSION_LIFESPAN);
+					currentSessions.put(sessionId, session);
+					return session;
+				}
+			}
 			throw new Exception("Error creating new session, invalid password");
+		}
 	}
 
 	private static String extractPasswordFromAuthorizationHeader(HttpServletRequest request)

@@ -121,17 +121,21 @@ public interface EpadDatabaseOperations
 
 	int getNumberOfAIMsForSeries(String projectID, String seriesID, String username);
 
-	void addAIM(String userName, ProjectReference reference, String aimID);
+	EPADAIM addAIM(String userName, ProjectReference reference, String aimID);
 
-	void addAIM(String userName, StudyReference reference, String aimID);
+	EPADAIM addAIM(String userName, SubjectReference reference, String aimID);
 
-	void addAIM(String userName, SeriesReference reference, String aimID);
+	EPADAIM addAIM(String userName, StudyReference reference, String aimID);
 
-	void addAIM(String userName, ImageReference reference, String aimID);
+	EPADAIM addAIM(String userName, SeriesReference reference, String aimID);
 
-	void addAIM(String userName, FrameReference reference, String aimID);
+	EPADAIM addAIM(String userName, ImageReference reference, String aimID);
 
-	void addDSOAIM(String userName, ImageReference reference, String dsoSeriesUID, String aimID);
+	EPADAIM addAIM(String userName, FrameReference reference, String aimID);
+
+	EPADAIM addDSOAIM(String userName, ImageReference reference, String dsoSeriesUID, String aimID);
+	
+	EPADAIM updateAIM(String aimID, String projectID, String username);
 	
 	void deleteAIM(String userName, ProjectReference reference, String aimID);
 
