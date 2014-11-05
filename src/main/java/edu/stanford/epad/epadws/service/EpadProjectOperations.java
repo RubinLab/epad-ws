@@ -41,6 +41,7 @@ public interface EpadProjectOperations {
 	void clearCache();
 	
 	Project createProject(String loggedInUser, String projectId, String projectName, String description, ProjectType type) throws Exception;
+	Project updateProject(String loggedInUser, String projectId, String projectName, String description, ProjectType type) throws Exception;
 	User createUser(String loggedInUser, String username, String firstName, String lastName, String password) throws Exception;
 	User updateUser(String loggedInUser, String username, String firstName, String lastName, String password, String oldpassword) throws Exception;
 	void enableUser(String loggedInUser, String username) throws Exception;

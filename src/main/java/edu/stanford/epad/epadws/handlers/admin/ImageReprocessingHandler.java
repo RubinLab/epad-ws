@@ -12,7 +12,7 @@ import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.epad.epadws.epaddb.EpadDatabase;
 import edu.stanford.epad.epadws.epaddb.EpadDatabaseOperations;
 import edu.stanford.epad.epadws.handlers.HandlerUtil;
-import edu.stanford.epad.epadws.xnat.XNATSessionOperations;
+import edu.stanford.epad.epadws.service.SessionService;
 
 /**
  * @author martin
@@ -37,7 +37,7 @@ public class ImageReprocessingHandler extends AbstractHandler
 		try {
 			responseStream = httpResponse.getWriter();
 
-			if (XNATSessionOperations.hasValidXNATSessionID(httpRequest)) {
+			if (SessionService.hasValidSessionID(httpRequest)) {
 				String method = httpRequest.getMethod();
 				if ("GET".equalsIgnoreCase(method)) {
 					forceImageReload();

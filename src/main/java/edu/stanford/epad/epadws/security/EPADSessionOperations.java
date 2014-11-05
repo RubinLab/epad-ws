@@ -179,7 +179,7 @@ public class EPADSessionOperations
 			throw new Exception("User " + username + " not found");
 		if (!user.isEnabled())
 			throw new Exception("User " + username + " is disabled");
-		if (BCrypt.checkpw(password, user.getPassword()))
+		if (user.getPassword().length() >= 60 && BCrypt.checkpw(password, user.getPassword()))
 		{
 			String sessionId = idGenerator.generateId(16);
 			EPADSession session = new EPADSession(sessionId, username, SESSION_LIFESPAN);
@@ -188,8 +188,10 @@ public class EPADSessionOperations
 		}
 		else
 		{
+			log.debug("Invalid Password:" + user.getPassword() + " Entered:" + password);
 			if (user.getPassword().length() < 60) // clear password set by admin manually on rare occasions
 			{
+				log.debug("Password:" + user.getPassword() + " Entered:" + password);
 				if (password.equals(user.getPassword()))
 				{
 					String sessionId = idGenerator.generateId(16);

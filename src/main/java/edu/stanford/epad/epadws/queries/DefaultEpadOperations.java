@@ -807,6 +807,20 @@ public class DefaultEpadOperations implements EpadOperations
 	}
 
 	@Override
+	public int updateProject(String username,
+			ProjectReference projectReference, String projectName,
+			String projectDescription, String sessionID) throws Exception {
+		if (!EPADConfig.UseEPADUsersProjects) {
+			// TODO: update in XNAT
+			return XNATCreationOperations.createXNATProject(projectReference.projectID, projectName, projectDescription,
+				sessionID);
+		} else {
+			projectOperations.updateProject(username, projectReference.projectID, projectName, projectDescription, null);
+			return HttpServletResponse.SC_OK;
+		}
+	}
+
+	@Override
 	public int createSubject(String username, SubjectReference subjectReference, String subjectName, String sessionID) throws Exception
 	{
 		if (!EPADConfig.UseEPADUsersProjects) {

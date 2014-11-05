@@ -320,7 +320,7 @@ public class XNATQueries
 			if (xnatStatusCode == HttpServletResponse.SC_OK) {
 				return extractXNATUsersFromResponse(method);
 			} else if (xnatStatusCode == HttpServletResponse.SC_UNAUTHORIZED) {
-				log.warning("Invalid session token for XNAT projects query");
+				log.warning("Invalid session token for XNAT users query");
 				return XNATUserList.emptyUsers();
 			} else {
 				log.warning("Error performing XNAT projects query; XNAT status code = " + xnatStatusCode);

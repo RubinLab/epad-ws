@@ -724,8 +724,15 @@ public class EPADHandler extends AbstractHandler
 				ProjectReference projectReference = ProjectReference.extract(ProjectsRouteTemplates.PROJECT, pathInfo);
 				String projectName = httpRequest.getParameter("projectName");
 				String projectDescription = httpRequest.getParameter("projectDescription");
-				statusCode = epadOperations.createProject(username, projectReference, projectName, projectDescription, sessionID);
-	
+				EPADProject project = epadOperations.getProjectDescription(projectReference, username, sessionID);
+				if (project != null)
+				{
+					statusCode = epadOperations.updateProject(username, projectReference, projectName, projectDescription, sessionID);
+				}
+				else
+				{
+					statusCode = epadOperations.createProject(username, projectReference, projectName, projectDescription, sessionID);
+				}
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.SUBJECT, pathInfo)) {
 				SubjectReference subjectReference = SubjectReference.extract(ProjectsRouteTemplates.SUBJECT, pathInfo);
 				String subjectName = httpRequest.getParameter("subjectName");

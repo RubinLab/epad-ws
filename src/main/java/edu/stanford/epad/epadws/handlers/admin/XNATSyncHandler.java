@@ -35,6 +35,7 @@ import edu.stanford.epad.epadws.queries.XNATQueries;
 import edu.stanford.epad.epadws.security.IdGenerator;
 import edu.stanford.epad.epadws.service.DefaultEpadProjectOperations;
 import edu.stanford.epad.epadws.service.EpadProjectOperations;
+import edu.stanford.epad.epadws.service.SessionService;
 import edu.stanford.epad.epadws.xnat.XNATSessionOperations;
 
 /**
@@ -62,35 +63,64 @@ public class XNATSyncHandler extends AbstractHandler
 		httpResponse.setContentType("text/plain;charset=UTF-8");
 		request.setHandled(true);
 
+		String response = "";
 		try {
 			responseStream = httpResponse.getWriter();
-
-			if (XNATSessionOperations.hasValidXNATSessionID(httpRequest)) {
+			responseStream.write(response);
+			responseStream.flush();
+			
+			if (SessionService.hasValidSessionID(httpRequest)) {
 				String sessionID = XNATSessionOperations.getJSessionIDFromRequest(httpRequest);
+				boolean xnatsession = true;
+				if (sessionID == null) // We must be logged into EPAD Session, get a new session ID from XNAT
+				{
+					xnatsession = false;
+					sessionID = XNATSessionOperations.getXNATAdminSessionID();
+				}
 				String username = httpRequest.getParameter("username");
+				if (username == null || !username.equals("admin"))
+					throw new Exception("Invalid username in request");
 				String method = httpRequest.getMethod();
 				if ("GET".equalsIgnoreCase(method)) {
 					try {
-						String response = "";
+						log.info("Starting sync with XNAT Database");
 						XNATUserList xusers = XNATQueries.getAllUsers();
 						for (XNATUser xuser: xusers.ResultSet.Result)
 						{
-							if (projectOperations.getUser(xuser.login) == null)
+							log.info("Processing user:" + xuser.login);
+							response = response + "\nProcessing user:" + xuser.login;
+							String password = generatePassword(xuser.login);
+							User user = projectOperations.getUser(xuser.login);
+							if (user == null)
 							{
-								String passw = generatePassword(xuser.login);
+								user = projectOperations.createUser(username, xuser.login, xuser.firstname, xuser.lastname, password);
 								// TODO: mail password to user
-								User user = projectOperations.createUser(username, xuser.login, xuser.firstname, xuser.lastname, passw);
-								if (xuser.login.equals("admin"))
-								{
-									user.setAdmin(true);
-									user.save();
-								}
-								response = response + "\nCreated user " + user.getUsername();
-							}		
+								log.info("Created user:" + xuser.login + " password:" + password);
+								response = response + "\nCreated user: " + user.getUsername() + " password:" + password;
+							}
+							else if (user.getUsername().equals("admin"))
+							{
+								try {
+									// Update password, but ignore errors
+									user = projectOperations.updateUser(username, xuser.login, null, null, password, "admin");
+									log.info("Updated admin password");
+								} catch (Exception x) {}
+							}
+							if (xuser.login.equals("admin"))
+							{
+								user.setAdmin(true);
+								user.save();
+							}
+	
 						}
+						log.info("Getting all projects, xnatsession:" + xnatsession);
+						// Why is this needed???  Looks like processing all users, somehow kills the xnat session
+						sessionID = XNATSessionOperations.getXNATAdminSessionID();
 						XNATProjectList xnatProjectList = XNATQueries.allProjects(sessionID);
 						for (XNATProject xproject: xnatProjectList.ResultSet.Result)
 						{						
+							log.info("Processing project:" + xproject.name);
+							response = response + "\nProcessing project:" + xproject.name;
 							Project project = projectOperations.getProject(xproject.ID);
 							if (project == null)
 							{
@@ -100,9 +130,12 @@ public class XNATSyncHandler extends AbstractHandler
 								if (type.toLowerCase().startsWith("public"))
 									pt = ProjectType.PUBLIC;
 								project = projectOperations.createProject(username, xproject.ID, xproject.name, xproject.description, pt);
+								log.info("Created project:" + xproject.name);
 								response = response + "\nCreated project " + xproject.name;
 							}
+							log.info("Getting project desc:" + xproject.ID);
 							EPADProject eproject = epadOperations.getProjectDescription(new ProjectReference(xproject.ID), username, sessionID);
+							log.info("Project users:" + eproject.loginToRole);
 							for (String login: eproject.loginToRole.keySet())
 							{
 								log.info("Getting projects for " + login);
@@ -137,6 +170,7 @@ public class XNATSyncHandler extends AbstractHandler
 							List<Subject> psubjects = projectOperations.getSubjectsForProject(xproject.ID);
 							for (XNATSubject xsubject: xsubjects.ResultSet.Result)
 							{
+								log.info("Processing subject:" + xsubject.label);
 								Subject subject = projectOperations.getSubject(xsubject.label);
 								if (subject == null)
 								{
@@ -146,6 +180,7 @@ public class XNATSyncHandler extends AbstractHandler
 								XNATExperimentList experiments = XNATQueries.getDICOMExperiments(sessionID, xproject.ID, xsubject.ID);
 								for (XNATExperiment experiment: experiments.ResultSet.Result)
 								{
+									log.info("Processing study:" + experiment.label.replace('_', '.'));
 									Study study = projectOperations.getStudy(experiment.label.replace('_', '.'));
 									if (study == null)
 									{
@@ -158,7 +193,9 @@ public class XNATSyncHandler extends AbstractHandler
 									projectOperations.addSubjectToProject(username, subject.getSubjectUID(), project.getProjectId());
 									response = response + "\nAdded Subject " + subject.getName() + ":" + subject.getSubjectUID() + " to project " + project.getProjectId();
 								}
+								log.info("Getting XNAT studies for project:" + project.getProjectId());
 								Set<String> studyUIDs = XNATQueries.getStudyUIDsForSubject(sessionID, project.getProjectId(), xsubject.ID);
+								log.info("Getting EPAD studies for project:" + project.getProjectId());
 								List<Study> studies = projectOperations.getStudiesForProjectAndSubject(project.getProjectId(), subject.getSubjectUID());
 								for (String studyUID: studyUIDs)
 								{
@@ -177,9 +214,13 @@ public class XNATSyncHandler extends AbstractHandler
 										response = response + "\nAdded Study " + studyUID.replace('_', '.') + " to project " + project.getProjectId();
 									}
 								}
+								log.info("Done with subject:" + xsubject.label);
 							}
+							log.info("Done with project:" + project.getProjectId());
 						}
-						log.info(response);
+						log.info("Done with all projects");
+						response = response + "\nSyncing with XNAT Completed";
+						log.info("Output Log:" + response);
 						responseStream.write(response);
 						statusCode = HttpServletResponse.SC_OK;
 					} catch (Exception e) {
@@ -193,6 +234,7 @@ public class XNATSyncHandler extends AbstractHandler
 			}
 			responseStream.flush();
 		} catch (Throwable t) {
+			responseStream.write(response);
 			statusCode = HandlerUtil.internalErrorJSONResponse(INTERNAL_ERROR_MESSAGE, t, responseStream, log);
 		}
 		httpResponse.setStatus(statusCode);
@@ -202,6 +244,8 @@ public class XNATSyncHandler extends AbstractHandler
 	{
 		if (login.equals(EPADConfig.xnatUploadProjectUser))
 			return EPADConfig.xnatUploadProjectPassword;
-		return "" + new IdGenerator().generateId(3) + login + new IdGenerator().generateId(3);
+		if (login.equals("guest"))
+			return "guest";
+		return "" + new IdGenerator().generateId(2) + login + new IdGenerator().generateId(2);
 	}
 }
