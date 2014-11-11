@@ -24,7 +24,11 @@ package edu.stanford.epad.epadws.models;
 //WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE
 //USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
+
+import org.apache.log4j.Level;
 
 import edu.stanford.epad.epadws.models.dao.AbstractDAO;
 
@@ -43,6 +47,21 @@ public class User extends AbstractDAO {
 	Date createdTime;
 	Date updateTime;
 	transient String role;
+	transient List<EventLog> eventLogs = new ArrayList<EventLog>();
+
+	public static final class EventLog
+	{
+		public final Date date;
+		public final Level level;
+		public final String message;		
+
+		public EventLog(Level level, String message)
+		{
+			this.level = level;
+			this.message = message;
+			this.date = new Date();
+		}
+	}
 	
 	@Override
 	public long getId() {
@@ -151,6 +170,14 @@ public class User extends AbstractDAO {
 
 	public void setRole(String role) {
 		this.role = role;
+	}
+
+	public List<EventLog> getEventLogs() {
+		return eventLogs;
+	}
+
+	public void setEventLogs(List<EventLog> eventLogs) {
+		this.eventLogs = eventLogs;
 	}
 
 	public final static String DBTABLE = "user";

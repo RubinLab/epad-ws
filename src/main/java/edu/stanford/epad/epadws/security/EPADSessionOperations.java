@@ -25,8 +25,10 @@ package edu.stanford.epad.epadws.security;
 //USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import java.nio.charset.Charset;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import javax.servlet.http.Cookie;
@@ -41,7 +43,6 @@ import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.epad.epadws.models.User;
 import edu.stanford.epad.epadws.service.DefaultEpadProjectOperations;
 import edu.stanford.epad.epadws.service.EpadProjectOperations;
-import edu.stanford.epad.epadws.xnat.XNATSessionOperations.XNATSessionResponse;
 
 /**
  * EPAD session management methods
@@ -57,7 +58,7 @@ public class EPADSessionOperations
 	private static EPADSession adminSession = null;
 	private static final EpadProjectOperations projectOperations = DefaultEpadProjectOperations.getInstance();
 	private static final IdGenerator idGenerator = new IdGenerator();
-	private static final int SESSION_LIFESPAN = 3600;  // 1 hour in secs 
+	private static final int SESSION_LIFESPAN = 60;  // 1 hour in mins 
 	
 	public static class EPADSessionResponse
 	{
@@ -138,6 +139,7 @@ public class EPADSessionOperations
 		if (session != null)
 		{
 			session.setLastActivity(new Date());
+			session.setLifespan(EPADSessionOperations.SESSION_LIFESPAN);
 			return true;
 		}
 		log.warning("SessionId:" + jsessionID + " not found in active sessions");
@@ -181,6 +183,27 @@ public class EPADSessionOperations
 			return "";
 	}
 
+	public static void checkSessionTimeout()
+	{
+		List<String> expiredSessions = new ArrayList<String>();
+		for (String sessionID: currentSessions.keySet())
+		{
+			EPADSession session = currentSessions.get(sessionID);
+			int lifespan = session.getLifespan();
+			lifespan--;
+			session.setLifespan(lifespan);
+			if (lifespan == 0)
+			{
+				session.setValid(false);
+				expiredSessions.add(sessionID);
+			}
+		}
+		for (String sessionID: expiredSessions)
+		{
+			currentSessions.remove(sessionID);
+		}
+	}
+	
 	private static EPADSession createNewEPADSession(String username, String password) throws Exception
 	{
 		User user = projectOperations.getUser(username);

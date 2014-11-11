@@ -27,6 +27,8 @@ import edu.stanford.epad.common.util.EPADLogger;
 public class XNATSessionOperations
 {
 	private static final EPADLogger log = EPADLogger.getInstance();
+	
+	private static String adminSessionID = null;
 
 	private static final String XNAT_SESSION_BASE = "/xnat/data/JSESSION";
 
@@ -63,6 +65,8 @@ public class XNATSessionOperations
 
 	public static String getXNATAdminSessionID()
 	{
+		if (adminSessionID != null && hasValidXNATSessionID(adminSessionID))
+			return adminSessionID;
 		String xnatUploadProjectUser = EPADConfig.xnatUploadProjectUser;
 		String xnatUploadProjectPassword = EPADConfig.xnatUploadProjectPassword;
 
@@ -74,6 +78,7 @@ public class XNATSessionOperations
 					+ xnatSessionResponse.statusCode);
 			return null;
 		} else {
+			adminSessionID = xnatSessionResponse.response;
 			return xnatSessionResponse.response;
 		}
 	}

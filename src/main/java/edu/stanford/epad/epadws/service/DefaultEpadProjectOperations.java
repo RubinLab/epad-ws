@@ -19,6 +19,7 @@ import edu.stanford.epad.epadws.models.ProjectType;
 import edu.stanford.epad.epadws.models.Study;
 import edu.stanford.epad.epadws.models.Subject;
 import edu.stanford.epad.epadws.models.User;
+import edu.stanford.epad.epadws.models.User.EventLog;
 import edu.stanford.epad.epadws.models.UserRole;
 
 public class DefaultEpadProjectOperations implements EpadProjectOperations {
@@ -79,12 +80,13 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 	}
 
 	@Override
-	public User createUser(String loggedInUser, String username, String firstName, String lastName,
+	public User createUser(String loggedInUser, String username, String firstName, String lastName, String email,
 			String password) throws Exception {
 		User user = new User();
 		user.setUsername(username);
 		user.setFirstName(firstName);
 		user.setLastName(lastName);
+		user.setEmail(email);
 		String hashedPW = BCrypt.hashpw(password, BCrypt.gensalt());
 		user.setPassword(hashedPW);
 		user.setCreator(loggedInUser);
@@ -95,15 +97,17 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 	}
 
 	@Override
-	public User updateUser(String loggedInUser, String username,
-			String firstName, String lastName, String newpassword, String oldpassword)
+	public User updateUser(String loggedInUserName, String username,
+			String firstName, String lastName, String email, String newpassword, String oldpassword)
 			throws Exception {
+		User loggedInUser = getUser(loggedInUserName);
 		User user = new User();
 		user = (User) user.getObject("username = " + user.toSQL(username));
 		if (firstName != null) user.setFirstName(firstName);
 		if (lastName != null) user.setLastName(lastName);
+		if (email != null) user.setEmail(email);
 		if (newpassword != null) {
-			if ((user.getPassword().length() < 60 && oldpassword.equals(user.getPassword())) 
+			if (loggedInUser.isAdmin() || (user.getPassword().length() < 60 && oldpassword.equals(user.getPassword())) 
 					|| BCrypt.checkpw(oldpassword, user.getPassword()))
 			{
 				String hashedPW = BCrypt.hashpw(newpassword, BCrypt.gensalt());
@@ -762,6 +766,27 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 	public void deleteStudy(String username, String studyUID) throws Exception {
 		Study study = getStudy(studyUID);
 		study.delete();
+	}
+
+	@Override
+	public List<EventLog> getUserLogs(String username) {
+		try {
+			User user = getUser(username);
+			if (user != null)
+				return user.getEventLogs();
+		} catch (Exception e) {
+		}
+		return null;
+	}
+
+	@Override
+	public void addUserLog(String username, EventLog eventLog) {
+		try {
+			User user = getUser(username);
+			if (user != null)
+				user.getEventLogs().add(eventLog);
+		} catch (Exception e) {
+		}
 	}
 
 }

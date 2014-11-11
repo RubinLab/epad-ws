@@ -28,9 +28,6 @@ import org.apache.commons.fileupload.FileItem;
 import org.apache.commons.fileupload.FileUploadException;
 import org.apache.commons.fileupload.disk.DiskFileItemFactory;
 import org.apache.commons.fileupload.servlet.ServletFileUpload;
-import org.apache.commons.httpclient.HttpClient;
-import org.apache.commons.httpclient.HttpException;
-import org.apache.commons.httpclient.methods.GetMethod;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
@@ -63,6 +60,7 @@ import edu.stanford.epad.epadws.epaddb.EpadDatabaseOperations;
 import edu.stanford.epad.epadws.handlers.core.FrameReference;
 import edu.stanford.epad.epadws.handlers.core.ImageReference;
 import edu.stanford.epad.epadws.handlers.core.ProjectReference;
+import edu.stanford.epad.epadws.processing.pipeline.task.PluginStartTask;
 import edu.stanford.epad.epadws.queries.Dcm4CheeQueries;
 import edu.stanford.epad.epadws.queries.DefaultEpadOperations;
 import edu.stanford.epad.epadws.queries.EpadOperations;
@@ -168,21 +166,7 @@ public class AIMUtil
 				}
 
 				if (templateHasBeenFound) {
-					HttpClient client = new HttpClient(); // TODO Get rid of localhost
-					String url = "http://localhost:8080/epad/plugin/" + pluginName + "/?aimFile=" + aim.getUniqueIdentifier() + "&frameNumber=" + frameNumber;
-					log.info("Triggering ePAD plugin at " + url + ", handler name " + handlerName);
-					GetMethod method = new GetMethod(url);
-					method.setRequestHeader("Cookie", "JSESSIONID=" + jsessionID);
-					try {
-						int statusCode = client.executeMethod(method);
-						log.info("Status code returned from plugin " + statusCode);
-					} catch (HttpException e) {
-						log.warning("HTTP error calling plugin ", e);
-					} catch (IOException e) {
-						log.warning("IO exception calling plugin ", e);
-					} finally {
-						method.releaseConnection();
-					}
+					(new Thread(new PluginStartTask(jsessionID, pluginName, aim.getUniqueIdentifier(), frameNumber))).start();				
 				}
 			}
 		}
@@ -245,21 +229,8 @@ public class AIMUtil
 		        }
 		
 		        if (templateHasBeenFound) {
-		            HttpClient client = new HttpClient(); // TODO Get rid of localhost
-		            String url = "http://localhost:8080/epad/plugin/" + pluginName + "/?aimFile=" + aim.getUniqueIdentifier() + "&frameNumber=" + frameNumber;
-		            log.info("Triggering ePAD plugin at " + url + ", handler name " + handlerName);
-		            GetMethod method = new GetMethod(url);
-		            method.setRequestHeader("Cookie", "JSESSIONID=" + jsessionID);
-		            try {
-		                int statusCode = client.executeMethod(method);
-		                log.info("Status code returned from plugin " + statusCode);
-		            } catch (HttpException e) {
-		                log.warning("HTTP error calling plugin ", e);
-		            } catch (IOException e) {
-		                log.warning("IO exception calling plugin ", e);
-		            } finally {
-		                method.releaseConnection();
-		            }
+		        	// Start plugin task
+					(new Thread(new PluginStartTask(jsessionID, pluginName, aim.getUniqueIdentifier().getRoot(), frameNumber))).start();				
 		        }
 		    }
 		}
@@ -326,6 +297,7 @@ public class AIMUtil
 		if (dsoDate.trim().length() != 8) dsoDate = "20001017";
 		String sopClassUID = Attribute.getSingleStringValueOrEmptyString(dsoDICOMAttributes, TagFromName.SOPClassUID);
 		String studyUID = Attribute.getSingleStringValueOrEmptyString(dsoDICOMAttributes, TagFromName.StudyInstanceUID);
+		log.info("DSO:" + dsoFile.getAbsolutePath() + " PatientID:" + patientID + " studyUID:" + studyUID);
 		String seriesUID = Attribute.getSingleStringValueOrEmptyString(dsoDICOMAttributes, TagFromName.SeriesInstanceUID);
 		String imageUID = Attribute.getSingleStringValueOrEmptyString(dsoDICOMAttributes, TagFromName.SOPInstanceUID);
 		String description = Attribute.getSingleStringValueOrEmptyString(dsoDICOMAttributes, TagFromName.SeriesDescription);

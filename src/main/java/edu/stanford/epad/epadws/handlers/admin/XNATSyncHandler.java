@@ -12,6 +12,7 @@ import org.eclipse.jetty.server.handler.AbstractHandler;
 
 import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADLogger;
+import edu.stanford.epad.common.util.MailUtil;
 import edu.stanford.epad.dtos.EPADProject;
 import edu.stanford.epad.dtos.internal.XNATExperiment;
 import edu.stanford.epad.dtos.internal.XNATExperimentList;
@@ -32,7 +33,6 @@ import edu.stanford.epad.epadws.models.UserRole;
 import edu.stanford.epad.epadws.queries.DefaultEpadOperations;
 import edu.stanford.epad.epadws.queries.EpadOperations;
 import edu.stanford.epad.epadws.queries.XNATQueries;
-import edu.stanford.epad.epadws.security.IdGenerator;
 import edu.stanford.epad.epadws.service.DefaultEpadProjectOperations;
 import edu.stanford.epad.epadws.service.EpadProjectOperations;
 import edu.stanford.epad.epadws.service.SessionService;
@@ -93,16 +93,19 @@ public class XNATSyncHandler extends AbstractHandler
 							User user = projectOperations.getUser(xuser.login);
 							if (user == null)
 							{
-								user = projectOperations.createUser(username, xuser.login, xuser.firstname, xuser.lastname, password);
+								user = projectOperations.createUser(username, xuser.login, xuser.firstname, xuser.lastname, xuser.email, password);
 								// TODO: mail password to user
 								log.info("Created user:" + xuser.login + " password:" + password);
 								response = response + "\nCreated user: " + user.getUsername() + " password:" + password;
+								if (user.getEmail() != null && user.getEmail().trim().length() > 0)
+									new MailUtil().send(user.getEmail(), "admin@epad.stanford.edu", "Password Reset", "Hello " + user.getFullName() 
+										+ "\nYour password on EPAD has been reset to your username.\nPlease login and change it.\nThank you.");
 							}
 							else if (user.getUsername().equals("admin"))
 							{
 								try {
 									// Update password, but ignore errors
-									user = projectOperations.updateUser(username, xuser.login, null, null, password, "admin");
+									user = projectOperations.updateUser(username, xuser.login, null, null, xuser.email, password, "admin");
 									log.info("Updated admin password");
 								} catch (Exception x) {}
 							}
@@ -115,7 +118,8 @@ public class XNATSyncHandler extends AbstractHandler
 						}
 						log.info("Getting all projects, xnatsession:" + xnatsession);
 						// Why is this needed???  Looks like processing all users, somehow kills the xnat session
-						sessionID = XNATSessionOperations.getXNATAdminSessionID();
+						if (!XNATSessionOperations.hasValidXNATSessionID(sessionID))
+							sessionID = XNATSessionOperations.getXNATAdminSessionID();
 						XNATProjectList xnatProjectList = XNATQueries.allProjects(sessionID);
 						for (XNATProject xproject: xnatProjectList.ResultSet.Result)
 						{						
@@ -246,6 +250,7 @@ public class XNATSyncHandler extends AbstractHandler
 			return EPADConfig.xnatUploadProjectPassword;
 		if (login.equals("guest"))
 			return "guest";
-		return "" + new IdGenerator().generateId(2) + login + new IdGenerator().generateId(2);
+		return login;  // Keep password same as login
+//		return "" + new IdGenerator().generateId(2) + login + new IdGenerator().generateId(2);
 	}
 }

@@ -28,12 +28,12 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
-import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.epadws.models.Project;
 import edu.stanford.epad.epadws.models.ProjectType;
 import edu.stanford.epad.epadws.models.Study;
 import edu.stanford.epad.epadws.models.Subject;
 import edu.stanford.epad.epadws.models.User;
+import edu.stanford.epad.epadws.models.User.EventLog;
 import edu.stanford.epad.epadws.models.UserRole;
 
 public interface EpadProjectOperations {
@@ -42,8 +42,8 @@ public interface EpadProjectOperations {
 	
 	Project createProject(String loggedInUser, String projectId, String projectName, String description, ProjectType type) throws Exception;
 	Project updateProject(String loggedInUser, String projectId, String projectName, String description, ProjectType type) throws Exception;
-	User createUser(String loggedInUser, String username, String firstName, String lastName, String password) throws Exception;
-	User updateUser(String loggedInUser, String username, String firstName, String lastName, String password, String oldpassword) throws Exception;
+	User createUser(String loggedInUser, String username, String firstName, String lastName, String email, String password) throws Exception;
+	User updateUser(String loggedInUser, String username, String firstName, String lastName, String email, String password, String oldpassword) throws Exception;
 	void enableUser(String loggedInUser, String username) throws Exception;
 	void disableUser(String loggedInUser, String username) throws Exception;
 	
@@ -101,4 +101,7 @@ public interface EpadProjectOperations {
 	void deleteStudy(String username, String studyUID, String subjectUID, String projectID) throws Exception;
 	void deleteSubject(String username, String subjectUID) throws Exception;
 	void deleteStudy(String username, String studyUID) throws Exception;
+	
+	List<EventLog> getUserLogs(String username);
+	void addUserLog(String username, EventLog eventLog);
 }

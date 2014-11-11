@@ -653,7 +653,7 @@ public class DefaultEpadOperations implements EpadOperations
 	public Set<String> getExamTypesForSubject(String projectID, String patientID, String sessionID,
 			EPADSearchFilter searchFilter) throws Exception
 	{
-		Set<String> studyUIDs = UserProjectService.getStudyUIDsForSubject(sessionID, projectID, patientID);
+		Set<String> studyUIDs = UserProjectService.getStudyUIDsForSubject(projectID, patientID);
 
 		Set<String> examTypes = new HashSet<String>();
 
@@ -1996,11 +1996,11 @@ public class DefaultEpadOperations implements EpadOperations
 			throw new Exception("User " + username + " does not have privilege to create/modify users");
 		if (user == null)
 		{
-			projectOperations.createUser(loggedInUser, username, firstname, lastname, oldpassword);
+			projectOperations.createUser(loggedInUser, username, firstname, lastname, email, oldpassword);
 		}
 		else
 		{
-			projectOperations.updateUser(loggedInUser, username, firstname, lastname, password, oldpassword);
+			projectOperations.updateUser(loggedInUser, username, firstname, lastname, email, password, oldpassword);
 		}
 		
 	}
@@ -2023,7 +2023,7 @@ public class DefaultEpadOperations implements EpadOperations
 	public void addUserToProject(String loggedInusername,
 			ProjectReference projectReference, String username, String roleName, String sessionID)
 			throws Exception {
-		if (!projectOperations.isMember(loggedInusername, projectReference.projectID))
+		if (!projectOperations.isOwner(loggedInusername, projectReference.projectID))
 			throw new Exception("User " + username + " is not the owner of " + projectReference.projectID);
 		UserRole role = UserRole.getRole(roleName);
 		if (role == null) role = UserRole.COLLABORATOR;
@@ -2035,7 +2035,7 @@ public class DefaultEpadOperations implements EpadOperations
 	public void removeUserFromProject(String loggedInusername,
 			ProjectReference projectReference, String username, String sessionID)
 			throws Exception {
-		if (!projectOperations.isMember(loggedInusername, projectReference.projectID))
+		if (!projectOperations.isOwner(loggedInusername, projectReference.projectID))
 			throw new Exception("User " + username + " is not the owner of " + projectReference.projectID);
 		projectOperations.removeUserFromProject(loggedInusername, projectReference.projectID, username);
 	}

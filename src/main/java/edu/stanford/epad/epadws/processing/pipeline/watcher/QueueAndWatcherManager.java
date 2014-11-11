@@ -43,12 +43,14 @@ public class QueueAndWatcherManager
 	private final ExecutorService xnatSeriesWatcherExec = Executors.newSingleThreadExecutor();
 	private final ExecutorService pngGeneratorProcessExec = Executors.newSingleThreadExecutor();
 	private final ExecutorService epadUploadDirWatcherExec = Executors.newSingleThreadExecutor();
+	private final ExecutorService epadSessionWatcherExec = Executors.newSingleThreadExecutor();
 
 	private final Dcm4CheeDatabaseWatcher dcm4CheeDatabaseWatcher;
 	private final DICOMSeriesWatcher dicomSeriesWatcher;
 	private final XNATSeriesWatcher xnatSeriesWatcher;
 	private final PngGeneratorProcess pngGeneratorProcess;
 	private final EPADUploadDirWatcher epadUploadDirWatcher;
+	private final EPADSessionWatcher epadSessionWatcher;
 
 	private final String dcm4cheeRootDir;
 
@@ -67,6 +69,7 @@ public class QueueAndWatcherManager
 		xnatSeriesWatcher = new XNATSeriesWatcher(xnatSeriesWatcherQueue);
 		pngGeneratorProcess = new PngGeneratorProcess(pngGeneratorTaskQueue);
 		epadUploadDirWatcher = new EPADUploadDirWatcher();
+		epadSessionWatcher = new EPADSessionWatcher();
 		dcm4cheeRootDir = EPADConfig.dcm4cheeDirRoot;
 		log.info("Started QueueAndWatcherManager...");
 	}
@@ -79,6 +82,7 @@ public class QueueAndWatcherManager
 		xnatSeriesWatcherExec.execute(xnatSeriesWatcher);
 		pngGeneratorProcessExec.execute(pngGeneratorProcess);
 		epadUploadDirWatcherExec.execute(epadUploadDirWatcher);
+		epadSessionWatcherExec.execute(epadSessionWatcher);
 	}
 
 	public void shutdown()

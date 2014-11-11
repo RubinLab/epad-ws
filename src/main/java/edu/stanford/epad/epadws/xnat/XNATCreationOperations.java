@@ -168,7 +168,14 @@ public class XNATCreationOperations
 						String dicomPatientID = DicomReader.getPatientID(dicomFile);
 						String studyUID = DicomReader.getStudyIUID(dicomFile);
 						String modality = DicomReader.getModality(dicomFile);
-
+						if (dicomPatientID == null || dicomPatientID.trim().length() == 0 
+								|| dicomPatientID.equalsIgnoreCase("ANON") 
+								|| dicomPatientID.equalsIgnoreCase("Anonymous"))
+						{
+							log.warning("Invalid patientID:" + dicomPatientID + " file:" + dicomFile.getName() + ", Rejecting file");
+							dicomFile.delete();
+							continue;
+						}
 						if (dicomPatientID != null && dicomPatientName != null && studyUID != null) {
 							dicomPatientName = dicomPatientName.toUpperCase(); // DCM4CHEE stores the patient name as upper case
 							if (!EPADConfig.UseEPADUsersProjects) {
