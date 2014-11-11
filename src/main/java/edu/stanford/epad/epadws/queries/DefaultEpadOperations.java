@@ -269,6 +269,7 @@ public class DefaultEpadOperations implements EpadOperations
 			//log.info("Series:" + epadSeries.seriesDescription + " filterDSO:" + filterDSOs + " isDSO:"+ epadSeries.isDSO);
 			if (!filter && !(filterDSOs && epadSeries.isDSO))
 			{
+				log.info("Series:" + epadSeries.seriesDescription + " createdtime:" + epadSeries.createdTime);
 				epadSeriesList.addEPADSeries(epadSeries);
 			}
 			else if (epadSeries.isDSO)
@@ -1301,7 +1302,7 @@ public class DefaultEpadOperations implements EpadOperations
 			int numberOfAnnotations = 0;
 			for  (String studyUID: studyUIDs)
 			{
-				EPADAIMList aims = getStudyAIMDescriptions(new StudyReference(null, null, studyUID), username, sessionID);
+				EPADAIMList aims = getStudyAIMDescriptions(new StudyReference(null, null, studyUID.replace('_', '.')), username, sessionID);
 				numberOfAnnotations = numberOfAnnotations + getNumberOfAccessibleAims(sessionID, projectID, aims, username);
 			}
 			if (!searchFilter.shouldFilterProject(projectName, numberOfAnnotations)) {
