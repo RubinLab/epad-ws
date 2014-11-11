@@ -44,6 +44,7 @@ import edu.stanford.epad.common.dicom.DicomSegmentationObject;
 import edu.stanford.epad.common.pixelmed.PixelMedUtils;
 import edu.stanford.epad.common.pixelmed.TIFFMasksToDSOConverter;
 import edu.stanford.epad.common.util.EPADConfig;
+import edu.stanford.epad.common.util.EPADFileUtils;
 import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.epad.dtos.DSOEditRequest;
 import edu.stanford.epad.dtos.DSOEditResult;
@@ -256,8 +257,9 @@ public class DSOUtil
 			DCM4CHEEUtil.dcmsnd(temporaryDSOFile.getAbsolutePath(), false);
 			if (dsoSeriesUID != null)
 			{
-				EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
-				epadDatabaseOperations.deleteSeries(dsoSeriesUID);
+				// No longer needed since we are updating masks already
+				//EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
+				//epadDatabaseOperations.deleteSeries(dsoSeriesUID);
 			}
 			return true;
 		} catch (Exception e) {
@@ -309,9 +311,10 @@ public class DSOUtil
 			throw new Exception("IO exception writing multi-frame PNGs", e);
 		}
 	}
-
-	public static void writeDSOMaskPNGs(File dsoFile) throws Exception
+	
+	public static boolean checkDSOMaskPNGs(File dsoFile)
 	{
+		String seriesUID = "";
 		try {
 			EpadDatabaseOperations databaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
 			DicomSegmentationObject dso = new DicomSegmentationObject();
@@ -319,7 +322,41 @@ public class DSOUtil
 			int numberOfFrames = sourceDSOImage.getNumberOfBufferedImages();
 			AttributeList dicomAttributes = PixelMedUtils.readAttributeListFromDicomFile(dsoFile.getAbsolutePath());
 			String studyUID = Attribute.getSingleStringValueOrEmptyString(dicomAttributes, TagFromName.StudyInstanceUID);
-			String seriesUID = Attribute.getSingleStringValueOrEmptyString(dicomAttributes, TagFromName.SeriesInstanceUID);
+			seriesUID = Attribute.getSingleStringValueOrEmptyString(dicomAttributes, TagFromName.SeriesInstanceUID);
+			String imageUID = Attribute.getSingleStringValueOrEmptyString(dicomAttributes, TagFromName.SOPInstanceUID);
+	
+			String pngMaskDirectoryPath = baseDicomDirectory + "/studies/" + studyUID + "/series/" + seriesUID + "/images/"
+					+ imageUID + "/masks/";
+			File pngMaskFilesDirectory = new File(pngMaskDirectoryPath);
+			if (!pngMaskFilesDirectory.exists()) return false;
+			if (pngMaskFilesDirectory.list().length == numberOfFrames)
+			{
+				return true;
+			}
+			else
+			{
+				log.info("DSO Series:" + seriesUID + " numberOfFrames:" + numberOfFrames + " mask files:" + pngMaskFilesDirectory.list().length + " dir:" + pngMaskDirectoryPath);
+				return false;
+			}
+		} catch (Exception e) {
+			log.warning("Exception checking DSO PNGs, series:" + seriesUID + " file:" + dsoFile.getAbsolutePath(), e);
+			return false;
+		}
+	}
+
+	public static void writeDSOMaskPNGs(File dsoFile) throws Exception
+	{
+		String seriesUID = "";
+		File tmpDSO = File.createTempFile("DSO_" + dsoFile.getName(), ".dcm");
+		try {
+			EPADFileUtils.copyFile(dsoFile, tmpDSO);
+			EpadDatabaseOperations databaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
+			DicomSegmentationObject dso = new DicomSegmentationObject();
+			SourceImage sourceDSOImage = dso.convert(tmpDSO.getAbsolutePath());
+			int numberOfFrames = sourceDSOImage.getNumberOfBufferedImages();
+			AttributeList dicomAttributes = PixelMedUtils.readAttributeListFromDicomFile(tmpDSO.getAbsolutePath());
+			String studyUID = Attribute.getSingleStringValueOrEmptyString(dicomAttributes, TagFromName.StudyInstanceUID);
+			seriesUID = Attribute.getSingleStringValueOrEmptyString(dicomAttributes, TagFromName.SeriesInstanceUID);
 			String imageUID = Attribute.getSingleStringValueOrEmptyString(dicomAttributes, TagFromName.SOPInstanceUID);
 
 			String pngMaskDirectoryPath = baseDicomDirectory + "/studies/" + studyUID + "/series/" + seriesUID + "/images/"
@@ -341,7 +378,7 @@ public class DSOUtil
 				File pngMaskFile = new File(pngMaskFilePath);
 				try {
 					insertEpadFile(databaseOperations, pngMaskFilePath, pngMaskFile.length(), imageUID);
-					//log.info("Writing PNG mask file frame " + frameNumber + " for DSO " + imageUID + " in series " + seriesUID + " file:" + pngMaskFilePath);
+					log.info("Writing PNG mask file frame " + frameNumber + " of " + numberOfFrames + " for DSO " + imageUID + " in series " + seriesUID + " file:" + pngMaskFilePath);
 					ImageIO.write(bufferedImageWithTransparency, "png", pngMaskFile);
 					databaseOperations.updateEpadFileRow(pngMaskFilePath, PNGFileProcessingStatus.DONE, 0, "");
 				} catch (IOException e) {
@@ -349,13 +386,20 @@ public class DSOUtil
 							+ imageUID + " in series " + seriesUID, e);
 				}
 			}
-			log.info("... finished writing PNG masks for DSO image " + imageUID + " in series " + seriesUID);
+			log.info("... finished writing PNG " + numberOfFrames + " masks for DSO image " + imageUID + " in series " + seriesUID);
 		} catch (DicomException e) {
-			log.warning("DICOM exception writing DSO PNG masks", e);
-			throw new Exception("DICOM exception writing DSO PNG masks", e);
+			log.warning("DICOM exception writing DSO PNG masks, series:" + seriesUID, e);
+			throw new Exception("DICOM exception writing DSO PNG masks, series:" + seriesUID, e);
 		} catch (IOException e) {
-			log.warning("IO exception writing DSO PNG masks", e);
-			throw new Exception("IO exception writing DSO PNG masks", e);
+			log.warning("IO exception writing DSO PNG masks, series:" + seriesUID, e);
+			throw new Exception("IO exception writing DSO PNG masks, series:" + seriesUID, e);
+		} catch (Exception e) {
+			log.warning("Exception writing DSO PNG masks, series:" + seriesUID, e);
+			throw new Exception("Exception writing DSO PNG masks, series:" + seriesUID, e);
+		} finally {
+			try {
+				tmpDSO.delete();
+			} catch (Exception e) {};
 		}
 	}
 
@@ -381,9 +425,20 @@ public class DSOUtil
 				} else {
 					log.info("Extracted " + editedFramesPNGMaskFiles.size() + " file mask(s) for DSO edit for image " + imageUID
 							+ " in  series " + seriesUID);
+					if (editedFramesPNGMaskFiles.size() != dsoEditRequest.editedFrameNumbers.size())
+						throw new IOException("Number of files and frames number do not match");
 					DSOEditResult dsoEditResult = DSOUtil.createEditedDSO(dsoEditRequest, editedFramesPNGMaskFiles);
 					if (dsoEditResult != null)
 					{
+						for (int i = 0; i < dsoEditRequest.editedFrameNumbers.size(); i++)
+						{
+							Integer frameNumber = dsoEditRequest.editedFrameNumbers.get(i);
+							String pngMaskDirectoryPath = baseDicomDirectory + "/studies/" + studyUID + "/series/" + seriesUID + "/images/"
+									+ imageUID + "/masks/";
+							String pngMaskFilePath = pngMaskDirectoryPath + frameNumber + ".png";
+							EPADFileUtils.copyFile(editedFramesPNGMaskFiles.get(i), new File(pngMaskFilePath));
+							editedFramesPNGMaskFiles.get(i).delete();
+						}
 						if (dsoEditResult.aimID != null && dsoEditResult.aimID.length() > 0)
 						{
 							List<ImageAnnotation> aims = AIMQueries.getAIMImageAnnotations(AIMSearchType.ANNOTATION_UID, dsoEditResult.aimID, "admin");
@@ -530,7 +585,7 @@ public class DSOUtil
 		return dicomFilePaths;
 	}
 
-	private static List<File> getDSOTIFFMaskFiles(ImageReference imageReference)
+	private static List<File> getDSOTIFFMaskFiles(ImageReference imageReference) throws IOException
 	{
 		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
 		List<File> dsoMaskFiles = new ArrayList<>();
@@ -551,6 +606,7 @@ public class DSOUtil
 			} catch (IOException e) {
 				log.warning("Error creating TIFF mask file " + maskFilePath + " for frame " + frame.frameNumber + " for DSO "
 						+ imageReference.imageUID, e);
+				throw e;
 			}
 		}
 		return dsoMaskFiles;

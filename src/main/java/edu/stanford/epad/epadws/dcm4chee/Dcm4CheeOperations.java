@@ -137,8 +137,9 @@ public class Dcm4CheeOperations
 				if (exitValue == 0) {
 					log.info("Deleted DICOM series " + seriesUID + " pk:" + seriesPk);
 					success = true;
-				} else
-					log.warning("Failed to delete DICOM series " + seriesUID + "; exitValue=" + exitValue);
+				} else {
+					log.warning("Failed to delete DICOM series " + seriesUID + "; exitValue=" + exitValue + "\n" + sb.toString());
+				}
 			} catch (Exception e) {
 				log.warning("Failed to delete DICOM series " + seriesUID, e);
 			}

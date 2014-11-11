@@ -2,17 +2,26 @@ package edu.stanford.epad.epadws.queries;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.StringBufferInputStream;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
 import javax.servlet.http.HttpServletResponse;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
 
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.methods.GetMethod;
+import org.apache.commons.httpclient.methods.PutMethod;
 import org.apache.commons.io.IOUtils;
+import org.w3c.dom.Document;
+import org.w3c.dom.NamedNodeMap;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
@@ -42,7 +51,6 @@ public class XNATQueries
 	public static XNATProjectList allProjects(String sessionID)
 	{
 		String allProjectsQueryURL = XNATQueryUtil.buildAllProjectsQueryURL();
-
 		return invokeXNATProjectsQuery(sessionID, allProjectsQueryURL);
 	}
 
@@ -52,7 +60,7 @@ public class XNATQueries
 		Set<String> projectIDs = new HashSet<String>();
 
 		for (XNATProject project : xnatProjectList.ResultSet.Result)
-			projectIDs.add(project.name);
+			projectIDs.add(project.ID);
 		return projectIDs;
 	}
 
@@ -195,6 +203,14 @@ public class XNATQueries
 		String adminSessionID = XNATSessionOperations.getXNATAdminSessionID();
 		log.info("Users query:" + allUsersForProjectQueryURL);
 		return invokeXNATUsersQuery(adminSessionID, allUsersForProjectQueryURL);
+	}
+
+	public static XNATUserList getAllUsers(String projectID)
+	{
+		String allUsersQueryURL = XNATQueryUtil.buildAllUsersQueryURL();
+		String adminSessionID = XNATSessionOperations.getXNATAdminSessionID();
+		log.info("Users query:" + allUsersQueryURL);
+		return invokeXNATUsersQuery(adminSessionID, allUsersQueryURL);
 	}
 
 	public static Set<String> getPatientNamesForProject(String sessionID, String projectID)
@@ -425,6 +441,74 @@ public class XNATQueries
 			IOUtils.closeQuietly(br);
 			IOUtils.closeQuietly(isr);
 		}
+	}
+
+	public static int setXNATSubjectField(String sessionID, String subjectID, String fieldName, String fieldValue)
+	{
+		HttpClient client = new HttpClient();
+		//HttpPut httpput = new HttpPut(XNATQueryUtil.buildSubjectURL(subjectID));
+		PutMethod method = new PutMethod(XNATQueryUtil.buildSubjectURL(subjectID));
+		int xnatStatusCode;
+
+		method.setRequestHeader("Cookie", "JSESSIONID=" + sessionID);
+
+		try {
+			//httpput.setHeader("Cookie", "JSESSIONID=" + sessionID);
+			//httpput.setEntity(new StringEntity(, "text/xml", "utf8"));
+			method.setRequestBody(XNATQueryUtil.buildSubjectFieldXML(fieldName, fieldValue));
+			//HttpResponse response = client.execute(httpput);
+			xnatStatusCode = client.executeMethod(method);
+		} catch (IOException e) {
+			log.warning("Warning: error performing XNAT subject query " + XNATQueryUtil.buildSubjectURL(subjectID), e);
+			xnatStatusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+		} finally {
+			method.releaseConnection();
+		}
+		return xnatStatusCode;
+	}
+
+	public static String getXNATSubjectFieldValue(String sessionID, String xnatSubjectID, String fieldName)
+	{
+		HttpClient client = new HttpClient();
+		GetMethod method = new GetMethod(XNATQueryUtil.buildSubjectURL(xnatSubjectID) + "?format=xml");
+		int xnatStatusCode;
+		//log.info("Calling XNAT Subject info:" + XNATQueryUtil.buildSubjectURL(xnatSubjectID) + "?format=xml");
+		method.setRequestHeader("Cookie", "JSESSIONID=" + sessionID);
+
+		try {
+			xnatStatusCode = client.executeMethod(method);
+			String xmlResp = method.getResponseBodyAsString(10000);
+			log.debug(xmlResp);
+		    DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+		    DocumentBuilder db = dbf.newDocumentBuilder();
+		    InputStream is = new StringBufferInputStream(xmlResp);
+		    Document doc = db .parse(is);
+		    doc.getDocumentElement().normalize();
+		    NodeList nodes = doc.getElementsByTagName("xnat:field");
+		    String value = "";
+		    String subjfieldname = "";
+		    for (int i = 0; i < nodes.getLength(); i++)
+		    {
+		    	Node node = nodes.item(i);
+		    	value = node.getTextContent();
+		    	if (value != null) value = value.replace('\n',' ').trim();
+		        NamedNodeMap attrs = node.getAttributes() ;
+	        	String attrName = null;
+		        for (int j = 0 ; attrs != null && j < attrs.getLength() ; j++)
+		        {  
+		        	attrName = attrs.item(j).getNodeName();
+		        	subjfieldname = attrs.item(j).getNodeValue();
+		        	if (fieldName.equalsIgnoreCase(subjfieldname)) return value;
+		        }
+		    }
+			return value;
+		} catch (Exception e) {
+			log.warning("Warning: error performing XNAT subject query " + XNATQueryUtil.buildSubjectURL(xnatSubjectID), e);
+			xnatStatusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+		} finally {
+			method.releaseConnection();
+		}
+		return null;
 	}
 
 	private static XNATExperimentList invokeXNATDICOMExperimentsQuery(String sessionID,

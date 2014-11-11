@@ -7,11 +7,13 @@ import edu.stanford.epad.common.util.EPADConfig;
  */
 public class XNATQueryUtil
 {
+	private static final String XNAT_SYSTEM_BASE = "/xnat/data/";
 	private static final String XNAT_PROJECTS_BASE = "/xnat/data/projects/";
 	private static final String XNAT_SUBJECTS_BASE = "/xnat/data/subjects/";
 	private static final String XNAT_EXPERIMENTS_BASE = "/xnat/data/experiments/";
 	private static final String XNAT_HOST = EPADConfig.xnatServer;
 	private static final int XNAT_PORT = EPADConfig.xnatPort;
+
 
 	public static String buildProjectsURL(String base)
 	{
@@ -31,9 +33,28 @@ public class XNATQueryUtil
 		return buildProjectBaseURL() + projectID + "/users" + "?format=json";
 	}
 
+	public static String buildAllUsersQueryURL()
+	{
+		return buildSystemBaseURL() + "users" + "?format=json";
+	}
+
 	public static String buildSubjectsQueryURL(String subjectID)
 	{
 		return buildSubjectsBaseURL() + "/" + subjectID + "?format=json";
+	}
+
+	public static String buildSubjectURL(String subjectID)
+	{
+		return buildSubjectsBaseURL() + subjectID;
+	}
+
+	public static String buildSubjectFieldXML(String name, String value)
+	{
+		return 	"<xnat:Subject xmlns:xnat=\"http://nrg.wustl.edu/xnat\" >" +
+				"<xnat:fields>" + 
+				"<xnat:field name=\"" +  name +"\">newval5</xnat:field>" + 
+				"</xnat:fields>" +
+				"</xnat:Subject>";
 	}
 
 	/**
@@ -118,6 +139,11 @@ public class XNATQueryUtil
 		sb.append(ext);
 
 		return sb.toString();
+	}
+
+	private static String buildSystemBaseURL()
+	{
+		return buildXNATBaseURL(XNAT_HOST, XNAT_PORT, XNAT_SYSTEM_BASE);
 	}
 
 	private static String buildProjectBaseURL()

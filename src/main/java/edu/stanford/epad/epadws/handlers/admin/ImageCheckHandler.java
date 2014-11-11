@@ -3,6 +3,7 @@ package edu.stanford.epad.epadws.handlers.admin;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.sql.SQLException;
+import java.text.DecimalFormat;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -19,6 +20,8 @@ import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeDatabaseOperations;
 import edu.stanford.epad.epadws.epaddb.EpadDatabase;
 import edu.stanford.epad.epadws.epaddb.EpadDatabaseOperations;
 import edu.stanford.epad.epadws.handlers.HandlerUtil;
+import edu.stanford.epad.epadws.processing.pipeline.task.DSOMaskPNGGeneratorTask;
+import edu.stanford.epad.epadws.processing.pipeline.task.SingleFrameDICOMPngGeneratorTask;
 import edu.stanford.epad.epadws.processing.pipeline.watcher.QueueAndWatcherManager;
 import edu.stanford.epad.epadws.queries.DefaultEpadOperations;
 import edu.stanford.epad.epadws.queries.EpadOperations;
@@ -36,8 +39,6 @@ public class ImageCheckHandler extends AbstractHandler
 	private static final String INTERNAL_IO_ERROR_MESSAGE = "Internal server IO error on image check route";
 	private static final String INTERNAL_SQL_ERROR_MESSAGE = "Internal server SQL error on image check route";
 	private static final String INVALID_SESSION_TOKEN_MESSAGE = "Session token is invalid for image check route";
-
-	private final QueueAndWatcherManager queueAndWatcherManager = QueueAndWatcherManager.getInstance();
 
 	@Override
 	public void handle(String s, Request request, HttpServletRequest httpRequest, HttpServletResponse httpResponse)
@@ -57,7 +58,14 @@ public class ImageCheckHandler extends AbstractHandler
 					try {
 						String fixValue = httpRequest.getParameter("fix");
 						boolean fix = fixValue != null && fixValue.equalsIgnoreCase("true");
-						verifyImageGeneration(responseStream, fix);
+						String seriesUID = httpRequest.getParameter("seriesUID");
+						String imageUID = httpRequest.getParameter("imageUID");
+						if (seriesUID != null)
+						{
+							fixSeriesImages(responseStream, seriesUID, imageUID);
+						}
+						String response = verifyImageGeneration(fix);
+						responseStream.write(response);
 						statusCode = HttpServletResponse.SC_OK;
 					} catch (IOException e) {
 						statusCode = HandlerUtil.internalErrorResponse(INTERNAL_IO_ERROR_MESSAGE, e, responseStream, log);
@@ -77,8 +85,11 @@ public class ImageCheckHandler extends AbstractHandler
 		httpResponse.setStatus(statusCode);
 	}
 
-	private void verifyImageGeneration(PrintWriter responseStream, boolean fix) throws SQLException, IOException
+	public static String verifyImageGeneration(boolean fix) throws SQLException, IOException
 	{
+		log.info("Starting ImageCheck, fix=" + fix);
+		long startTime = System.currentTimeMillis();
+		String response = "";
 		EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
 		Dcm4CheeDatabaseOperations dcm4CheeDatabaseOperations = Dcm4CheeDatabase.getInstance()
 				.getDcm4CheeDatabaseOperations();
@@ -94,41 +105,71 @@ public class ImageCheckHandler extends AbstractHandler
 			final Set<DICOMFileDescription> unprocessedDICOMFileDescriptionsInSeries = epadQueries
 					.getUnprocessedDICOMFilesInSeries(seriesUID);
 			final int numberOfUnprocessedImages = unprocessedDICOMFileDescriptionsInSeries.size();
-
 			if (numberOfUnprocessedImages != 0) {
-				responseStream.write("Number of instances in series " + seriesUID
-						+ " for which there is no ePAD database entry for a PNG file = " + numberOfUnprocessedImages + "\n");
+				if (unprocessedDICOMFileDescriptionsInSeries.iterator().next().modality.equals("SEG"))
+				{
+					response = response + "Missing mask images for DSO series " + seriesUID + "\n";
+					log.info("Missing mask images for DSO series" + seriesUID);
+				}
+				else
+				{
+					String message = "Number of instances in series " + seriesUID
+							+ " for which there is no ePAD database entry for a PNG file = " + numberOfUnprocessedImages;
+					response = response + message + "\n";
+				}
 				numberOfSeriesWithMissingEPADDatabaseEntry++;
 				if (fix)
-					queueAndWatcherManager.addDICOMFileToPNGGeneratorPipeline("REPROCESS", unprocessedDICOMFileDescriptionsInSeries);
+					QueueAndWatcherManager.getInstance().addDICOMFileToPNGGeneratorPipeline("REPROCESS", unprocessedDICOMFileDescriptionsInSeries);
 				allUnprocessedDICOMFileDescriptions.addAll(unprocessedDICOMFileDescriptionsInSeries);
 			} else {
-				// responseStream.write("All instances detected for series " + seriesUID + "\n");
+				// response = response + "All instances detected for series " + seriesUID + "\n";
 			}
 		}
 
 		int numberOfPNGFilesWithErrors = 0;
 		for (String pngFileName : epadDatabaseOperations.getAllEPadFilePathsWithErrors()) {
-			responseStream.write("PNG file " + pngFileName + " generation failed\n");
+			String message = "PNG file " + pngFileName + " generation failed";
+			response = response + message + "\n";
 			numberOfPNGFilesWithErrors++;
 		}
 
-		responseStream.write("Number of dcm4chee series  = " + seriesUIDs.size() + "\n");
+		response = response + "Number of dcm4chee series  = " + seriesUIDs.size() + "\n";
 		if (numberOfSeriesWithMissingEPADDatabaseEntry != 0)
-			responseStream.write("Number of series in dcm4chee with missing pngs = "
-					+ numberOfSeriesWithMissingEPADDatabaseEntry + "\n");
-		responseStream.write("Total number of dcm4chee images that do not have PNGs in ePAD = "
-				+ allUnprocessedDICOMFileDescriptions.size() + "\n");
-		responseStream.write("Total number of invalid PNG files = " + numberOfPNGFilesWithErrors + "\n");
+			response = response + "Number of series in dcm4chee with missing pngs = "
+					+ numberOfSeriesWithMissingEPADDatabaseEntry + "\n";
+		response = response + "Total number of dcm4chee images that do not have PNGs in ePAD = "
+				+ allUnprocessedDICOMFileDescriptions.size() + "\n";
+		response = response + "Total number of invalid PNG files = " + numberOfPNGFilesWithErrors + "\n";
 
 		if (fix) {
 			if (allUnprocessedDICOMFileDescriptions.size() != 0) {
-				responseStream.write("Adding " + allUnprocessedDICOMFileDescriptions.size()
-						+ " unprocessed image(s) to PNG pipeline...");
-				responseStream.flush();
-				responseStream.write("All unprocessed files added\n");
+				response = response + "Adding " + allUnprocessedDICOMFileDescriptions.size()
+						+ " unprocessed image(s) to PNG pipeline...";
+				String message = "All unprocessed files added to PNG queue";
+				response = response + message + "\n";
 			}
 		} else if (allUnprocessedDICOMFileDescriptions.size() != 0)
-			responseStream.write("Use fix=true to attempt to regenerate any broken PNGs\n");
+			response = response + "Use fix=true to attempt to regenerate any broken PNGs\n";
+		if (DSOMaskPNGGeneratorTask.seriesBeingProcessed.size() > 0)
+			log.info("DSO Series being processed:" + DSOMaskPNGGeneratorTask.seriesBeingProcessed);
+		if (SingleFrameDICOMPngGeneratorTask.imagesBeingProcessed.size() > 0)
+			log.info("DICOM Series being processed:" + SingleFrameDICOMPngGeneratorTask.imagesBeingProcessed);
+		long endTime = System.currentTimeMillis();
+		log.info("ImageCheck done, took " + (endTime-startTime)/1000.0 + " secs");
+		return response;
+	}
+	
+
+	private void fixSeriesImages(PrintWriter responseStream, String seriesUID, String imageUID) throws SQLException, IOException
+	{
+		log.info("Starting fixSeriesImages, seriesUID=" + seriesUID + " imageUID=" + imageUID);
+		EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
+		Dcm4CheeDatabaseOperations dcm4CheeDatabaseOperations = Dcm4CheeDatabase.getInstance()
+				.getDcm4CheeDatabaseOperations();
+		EpadOperations epadQueries = DefaultEpadOperations.getInstance();
+		Set<DICOMFileDescription> dicomFilesDescriptions = epadQueries.getDICOMFilesInSeries(seriesUID, imageUID);
+		QueueAndWatcherManager.getInstance().addDICOMFileToPNGGeneratorPipeline("REPROCESS", dicomFilesDescriptions);
+		log.info("Series " +  seriesUID + " added to PNG Pipeline");
+		responseStream.write("Series " +  seriesUID + " added to PNG Pipeline\n");
 	}
 }

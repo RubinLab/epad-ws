@@ -2,6 +2,7 @@ package edu.stanford.epad.epadws.processing.pipeline.watcher;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -23,6 +24,7 @@ import edu.stanford.epad.epadws.processing.model.DicomSeriesProcessingStatusTrac
 import edu.stanford.epad.epadws.processing.model.SeriesPipelineState;
 import edu.stanford.epad.epadws.processing.model.SeriesProcessingDescription;
 import edu.stanford.epad.epadws.processing.pipeline.task.GeneratorTask;
+import edu.stanford.epad.epadws.processing.pipeline.task.ImageCheckTask;
 import edu.stanford.epad.epadws.processing.pipeline.task.PNGGridGeneratorTask;
 import edu.stanford.epad.epadws.processing.pipeline.task.SingleFrameDICOMPngGeneratorTask;
 import edu.stanford.epad.epadws.processing.pipeline.threads.ShutdownSignal;
@@ -76,6 +78,7 @@ public class DICOMSeriesWatcher implements Runnable
 		EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
 
 		queueAndWatcherManager = QueueAndWatcherManager.getInstance();
+		Calendar prevTime = null;
 
 		while (!shutdownSignal.hasShutdown()) {
 			count++;
@@ -142,6 +145,21 @@ public class DICOMSeriesWatcher implements Runnable
 						epadDatabaseOperations.updateOrInsertSeries(seriesUID, SeriesProcessingStatus.DONE);
 					}
 				}
+				Calendar now = Calendar.getInstance();
+				if (now.get(Calendar.HOUR_OF_DAY) == 1 && prevTime != null && prevTime.get(Calendar.HOUR_OF_DAY) != 1)
+				{
+					// Run at 1 am.
+					try {
+						if (!"true".equalsIgnoreCase(EPADConfig.getParamValue("DISABLE_IMAGECHECK")))
+						{	
+							ImageCheckTask ict = new ImageCheckTask();
+							new Thread(ict).start();
+						}
+					} catch (Exception x) {
+						log.warning("Exception running ImageCheck", x);
+					}
+				}
+				prevTime = now;
 			} catch (Exception e) {
 				log.severe("Exception in DICOM series watcher thread", e);
 			}

@@ -8,6 +8,7 @@ public class SubjectReference
 {
 	public final String projectID;
 	public final String subjectID;
+	public String status;
 
 	public SubjectReference(String projectID, String subjectID)
 	{
@@ -28,7 +29,10 @@ public class SubjectReference
 
 		validateSubjectID(subjectID);
 
-		return new SubjectReference(projectID, subjectID);
+		SubjectReference sr = new SubjectReference(projectID, subjectID);
+		String status = HandlerUtil.getTemplateParameter(templateMap, "status", "");
+		sr.status = status;
+		return sr;
 	}
 
 	protected static void validateSubjectID(String subjectID)

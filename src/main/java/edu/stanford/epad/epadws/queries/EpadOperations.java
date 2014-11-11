@@ -71,6 +71,8 @@ public interface EpadOperations
 
 	int createStudy(StudyReference studyReference, String sessionID);
 
+	int createSubjectAIM(String username, SubjectReference subjectRefernece, String aimID, File aimFile, String sessionID);
+	
 	int createStudyAIM(String username, StudyReference studyReference, String aimID, File aimFile, String sessionID);
 
 	int createSeries(SeriesReference seriesReference, String sessionID);
@@ -83,31 +85,33 @@ public interface EpadOperations
 
 	int createFrameAIM(String username, FrameReference frameReference, String aimID, File aimFile, String sessionID);
 
+	String setSubjectStatus(SubjectReference subjectReference, String sessionID, String username);
+	
 	int projectDelete(String projectID, String sessionID, String username);
 
 	int subjectDelete(SubjectReference subjectReference, String sessionID, String username);
 
-	String studyDelete(StudyReference studyReference, String sessionID, String username);
+	String studyDelete(StudyReference studyReference, String sessionID, boolean deleteAims, String username);
 
-	String seriesDelete(SeriesReference seriesReference, String sessionID, String username);
+	String seriesDelete(SeriesReference seriesReference, String sessionID, boolean deleteAims, String username);
 
-	int projectAIMDelete(ProjectReference projectReference, String aimID, String sessionID, String username);
+	int projectAIMDelete(ProjectReference projectReference, String aimID, String sessionID, boolean deleteDSO, String username);
 
-	int subjectAIMDelete(SubjectReference subjectReference, String aimID, String sessionID, String username);
+	int subjectAIMDelete(SubjectReference subjectReference, String aimID, String sessionID, boolean deleteDSO, String username);
 
-	int studyAIMDelete(StudyReference studyReference, String aimID, String sessionID, String username);
+	int studyAIMDelete(StudyReference studyReference, String aimID, String sessionID, boolean deleteDSO, String username);
 
-	int seriesAIMDelete(SeriesReference seriesReference, String aimID, String sessionID, String username);
+	int seriesAIMDelete(SeriesReference seriesReference, String aimID, String sessionID, boolean deleteDSO, String username);
 
-	int imageAIMDelete(ImageReference imageReference, String aimID, String sessionID, String username);
+	int imageAIMDelete(ImageReference imageReference, String aimID, String sessionID, boolean deleteDSO, String username);
 
-	int frameAIMDelete(FrameReference frameReference, String aimID, String sessionID, String username);
+	int frameAIMDelete(FrameReference frameReference, String aimID, String sessionID, boolean deleteDSO, String username);
 
-	int aimDelete(String aimID, String sessionID, String username);
+	int aimDelete(String aimID, String sessionID, boolean deleteDSO, String username);
 	
-	void deleteAllSeriesAims(String seriedUID);
+	void deleteAllSeriesAims(String seriedUID, boolean deleteDSOs);
 	
-	void deleteAllStudyAims(String studyUID);
+	void deleteAllStudyAims(String studyUID, boolean deleteDSOs);
 
 	EPADAIMList getProjectAIMDescriptions(ProjectReference projectReference, String username, String sessionID);
 
@@ -149,7 +153,9 @@ public interface EpadOperations
 	 */
 	Set<DICOMFileDescription> getUnprocessedDICOMFilesInSeries(String seriesUID);
 
-	void deleteStudyFromEPadAndDcm4CheeDatabases(String studyUID);
+	Set<DICOMFileDescription> getDICOMFilesInSeries(String seriesUID, String imagUID);
+
+	void deleteStudyFromEPadAndDcm4CheeDatabases(String studyUID, boolean deleteAims);
 
 	void deleteStudiesFromEPadAndDcm4CheeDatabases(Set<String> studyUIDs);
 
