@@ -49,8 +49,8 @@
 
     <dependency>
 		<groupId>edu.stanford.epad.plugins</groupId>
-		<artifactId>mriseg</artifactId>
-		<version>${mriseg.plugin.version}</version>
+		<artifactId>lesionseg</artifactId>
+		<version>${lesionseg.plugin.version}</version>
 	</dependency>
 
 	<dependency>
