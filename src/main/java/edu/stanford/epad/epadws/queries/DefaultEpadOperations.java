@@ -328,9 +328,10 @@ public class DefaultEpadOperations implements EpadOperations
 		List<DCM4CHEEImageDescription> imageDescriptions = dcm4CheeDatabaseOperations.getImageDescriptions(
 				seriesReference.studyUID, seriesReference.seriesUID);
 		EPADImageList epadImageList = new EPADImageList();
-
+		int i = 0;
 		boolean isFirst = true;
 		for (DCM4CHEEImageDescription dcm4cheeImageDescription : imageDescriptions) {
+			i++;
 			if (isFirst) {
 				DICOMElementList suppliedDICOMElements = getDICOMElements(dcm4cheeImageDescription.studyUID,
 						dcm4cheeImageDescription.seriesUID, dcm4cheeImageDescription.imageUID);
@@ -381,6 +382,12 @@ public class DefaultEpadOperations implements EpadOperations
 				String studyUID = imageReference.studyUID; // DSO will be in same study as original images
 				String referencedFirstImageUID = firstDICOMElement.value;
 				String referencedSeriesUID = dcm4CheeDatabaseOperations.getSeriesUIDForImage(referencedFirstImageUID);
+				if (referencedSeriesUID == null || referencedSeriesUID.equals(""))
+				{
+					firstDICOMElement = referencedSOPInstanceUIDDICOMElements.get(1);
+					referencedFirstImageUID = firstDICOMElement.value;
+					referencedSeriesUID = dcm4CheeDatabaseOperations.getSeriesUIDForImage(referencedFirstImageUID);
+				}
 				DICOMElementList referencedDICOMElements = getDICOMElements(studyUID, referencedSeriesUID,
 						referencedFirstImageUID);
 				DICOMElementList defaultDICOMElements = getDefaultDICOMElements(imageReference, referencedDICOMElements);
@@ -391,7 +398,12 @@ public class DefaultEpadOperations implements EpadOperations
 						String referencedImageUID = dicomElement.value;
 						DCM4CHEEImageDescription dcm4cheeReferencedImageDescription = dcm4CheeDatabaseOperations
 								.getImageDescription(studyUID, referencedSeriesUID, referencedImageUID);
-						if (dcm4cheeReferencedImageDescription == null) continue;
+						if (dcm4cheeReferencedImageDescription == null)
+						{
+							log.info("Did not find referenced image, seriesuid:" + referencedSeriesUID + " imageuid:" + referencedImageUID 
+								+ " for DSO seriesUID:" + imageReference.seriesUID + " DSO imageUID:" + imageReference.imageUID);
+							continue;
+						}
 						String insertDate = dcm4cheeReferencedImageDescription.createdTime;
 						String imageDate = dcm4cheeReferencedImageDescription.contentTime;
 						String sliceLocation = dcm4cheeReferencedImageDescription.sliceLocation;
@@ -921,6 +933,11 @@ public class DefaultEpadOperations implements EpadOperations
 			String sessionID, boolean deleteDSO, String username) {
 		try {
 			EPADAIM aim = getAIMDescription(aimID, username, sessionID);
+			if (aim == null)
+			{
+				log.warning("AIM " + aimID + " not found");
+				return HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+			}
 			if (!"admin".equals(username) && !aim.userName.equals(username) && !aim.userName.equals("shared") && !EPADConfig.xnatUploadProjectID.equals(aim.projectID) && !XNATQueries.isOwner(sessionID, username, aim.projectID))
 			{
 				log.warning("No permissions to delete AIM:" + aimID + " for user " + username);
