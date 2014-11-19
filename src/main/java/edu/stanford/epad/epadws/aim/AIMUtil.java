@@ -541,7 +541,7 @@ public class AIMUtil
 				String seriesID = aim.getSeriesID(imageID);
 				String studyID = aim.getStudyID(seriesID);
 				log.info("Saving AIM file with ID " + imageAnnotation.getUniqueIdentifier() + " username:" + username);
-				String result = AIMUtil.saveImageAnnotationToServer(imageAnnotation, sessionId);
+				String result = AIMUtil.saveImageAnnotationToServer(imageAnnotation, projectID, frameNumber, sessionId);
 				log.info("Save annotation:" + result);
 				if (result.toLowerCase().contains("success") && projectID != null && username != null)
 				{
