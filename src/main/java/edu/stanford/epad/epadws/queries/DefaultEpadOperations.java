@@ -372,6 +372,8 @@ public class DefaultEpadOperations implements EpadOperations
 		List<EPADFrame> frames = new ArrayList<>();
 
 		if (isDSO(dcm4cheeImageDescription)) {
+			log.info("Getting referenced series for DSO, subjectID:" + imageReference.subjectID 
+					+ " seriesID:" +imageReference.seriesUID + " imageUID:" + imageReference.imageUID);
 			DICOMElementList suppliedDICOMElements = getDICOMElements(imageReference);
 			List<DICOMElement> referencedSOPInstanceUIDDICOMElements = getDICOMElementsByCode(suppliedDICOMElements,
 					PixelMedUtils.ReferencedSOPInstanceUIDCode);
