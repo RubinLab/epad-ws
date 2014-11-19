@@ -297,7 +297,7 @@ public class DefaultEpadOperations implements EpadOperations
 							List<ImageAnnotation> ias = AIMQueries.getAIMImageAnnotations(AIMSearchType.SERIES_UID, epadSeries.seriesUID, username, 1, 50);
 							if (ias == null || ias.size() == 0)
 							{
-								AIMUtil.generateAIMFileForDSO(dsoDICOMFile, null, studyReference.projectID);
+								AIMUtil.generateAIMFileForDSO(dsoDICOMFile, "shared", studyReference.projectID);
 							}
 							else
 							{
