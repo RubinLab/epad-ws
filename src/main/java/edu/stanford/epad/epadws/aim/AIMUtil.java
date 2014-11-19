@@ -28,9 +28,6 @@ import org.apache.commons.fileupload.FileItem;
 import org.apache.commons.fileupload.FileUploadException;
 import org.apache.commons.fileupload.disk.DiskFileItemFactory;
 import org.apache.commons.fileupload.servlet.ServletFileUpload;
-import org.apache.commons.httpclient.HttpClient;
-import org.apache.commons.httpclient.HttpException;
-import org.apache.commons.httpclient.methods.GetMethod;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
@@ -62,6 +59,8 @@ import edu.stanford.epad.epadws.epaddb.EpadDatabase;
 import edu.stanford.epad.epadws.epaddb.EpadDatabaseOperations;
 import edu.stanford.epad.epadws.handlers.core.FrameReference;
 import edu.stanford.epad.epadws.handlers.core.ImageReference;
+import edu.stanford.epad.epadws.handlers.core.ProjectReference;
+import edu.stanford.epad.epadws.processing.pipeline.task.PluginStartTask;
 import edu.stanford.epad.epadws.queries.Dcm4CheeQueries;
 import edu.stanford.epad.epadws.queries.DefaultEpadOperations;
 import edu.stanford.epad.epadws.queries.EpadOperations;
@@ -117,10 +116,10 @@ public class AIMUtil
 	public static String saveImageAnnotationToServer(ImageAnnotation aim, String jsessionID) throws AimException,
 	edu.stanford.hakan.aim4api.base.AimException
 	{
-		return saveImageAnnotationToServer(aim, 0, jsessionID);
+		return saveImageAnnotationToServer(aim, null, 0, jsessionID);
 	}
 	
-	public static String saveImageAnnotationToServer(ImageAnnotation aim, int frameNumber, String jsessionID) throws AimException,
+	public static String saveImageAnnotationToServer(ImageAnnotation aim, String projectID, int frameNumber, String jsessionID) throws AimException,
 	edu.stanford.hakan.aim4api.base.AimException
 	{                        
 		String result = "";
@@ -151,6 +150,7 @@ public class AIMUtil
 			}
 
 			log.info("Save AIM to Exist:" + result);
+			log.info("CodingSchemeDesignator:" + aim.getCodingSchemeDesignator());
 			
 			if (aim.getCodingSchemeDesignator().equals("epad-plugin")) { // Which template has been used to fill the AIM file
 				String templateName = aim.getCodeValue(); // ex: jjv-5
@@ -170,21 +170,8 @@ public class AIMUtil
 				}
 
 				if (templateHasBeenFound) {
-					HttpClient client = new HttpClient(); // TODO Get rid of localhost
-					String url = "http://localhost:8080/epad/plugin/" + pluginName + "/?aimFile=" + aim.getUniqueIdentifier() + "&frameNumber=" + frameNumber;
-					log.info("Triggering ePAD plugin at " + url + ", handler name " + handlerName);
-					GetMethod method = new GetMethod(url);
-					method.setRequestHeader("Cookie", "JSESSIONID=" + jsessionID);
-					try {
-						int statusCode = client.executeMethod(method);
-						log.info("Status code returned from plugin " + statusCode);
-					} catch (HttpException e) {
-						log.warning("HTTP error calling plugin ", e);
-					} catch (IOException e) {
-						log.warning("IO exception calling plugin ", e);
-					} finally {
-						method.releaseConnection();
-					}
+					log.info("Starting Plugin task for:" + pluginName);
+					(new Thread(new PluginStartTask(jsessionID, pluginName, aim.getUniqueIdentifier(), frameNumber, projectID))).start();				
 				}
 			}
 		}
@@ -236,21 +223,9 @@ public class AIMUtil
 		        }
 		
 		        if (templateHasBeenFound) {
-		            HttpClient client = new HttpClient(); // TODO Get rid of localhost
-		            String url = "http://localhost:8080/epad/plugin/" + pluginName + "/?aimFile=" + aim.getUniqueIdentifier();
-		            log.info("Triggering ePAD plugin at " + url + ", handler name " + handlerName);
-		            GetMethod method = new GetMethod(url);
-		            method.setRequestHeader("Cookie", "JSESSIONID=" + jsessionID);
-		            try {
-		                int statusCode = client.executeMethod(method);
-		                log.info("Status code returned from plugin " + statusCode);
-		            } catch (HttpException e) {
-		                log.warning("HTTP error calling plugin ", e);
-		            } catch (IOException e) {
-		                log.warning("IO exception calling plugin ", e);
-		            } finally {
-		                method.releaseConnection();
-		            }
+		        	// Start plugin task
+					log.info("Starting Plugin task for:" + pluginName);
+					(new Thread(new PluginStartTask(jsessionID, pluginName, aim.getUniqueIdentifier().getRoot(), 0, "unassigned"))).start();				
 		        }
 		    }
 		}

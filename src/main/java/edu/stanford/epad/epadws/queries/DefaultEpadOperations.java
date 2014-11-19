@@ -269,7 +269,7 @@ public class DefaultEpadOperations implements EpadOperations
 			//log.info("Series:" + epadSeries.seriesDescription + " filterDSO:" + filterDSOs + " isDSO:"+ epadSeries.isDSO);
 			if (!filter && !(filterDSOs && epadSeries.isDSO))
 			{
-				log.info("Series:" + epadSeries.seriesDescription + " createdtime:" + epadSeries.createdTime);
+				//log.info("Series:" + epadSeries.seriesDescription + " createdtime:" + epadSeries.createdTime);
 				epadSeriesList.addEPADSeries(epadSeries);
 			}
 			else if (epadSeries.isDSO)
