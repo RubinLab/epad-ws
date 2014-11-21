@@ -68,6 +68,8 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 			if (rs.next()) {
 				pngFilePath = rs.getString(1);
 			}
+			if (pngFilePath == null)
+				return pngFilePath;
 			String imagePath = imageUID.replace('.', '_');
 			if (!pngFilePath.contains(imagePath))
 			{
