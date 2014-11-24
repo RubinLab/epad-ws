@@ -95,19 +95,19 @@ public interface EpadOperations
 
 	String seriesDelete(SeriesReference seriesReference, String sessionID, boolean deleteAims, String username);
 
-	int projectAIMDelete(ProjectReference projectReference, String aimID, String sessionID, boolean deleteDSO, String username);
+	int projectAIMDelete(ProjectReference projectReference, String aimID, String sessionID, boolean deleteDSO, String username) throws Exception;
 
-	int subjectAIMDelete(SubjectReference subjectReference, String aimID, String sessionID, boolean deleteDSO, String username);
+	int subjectAIMDelete(SubjectReference subjectReference, String aimID, String sessionID, boolean deleteDSO, String username) throws Exception;
 
-	int studyAIMDelete(StudyReference studyReference, String aimID, String sessionID, boolean deleteDSO, String username);
+	int studyAIMDelete(StudyReference studyReference, String aimID, String sessionID, boolean deleteDSO, String username) throws Exception;
 
-	int seriesAIMDelete(SeriesReference seriesReference, String aimID, String sessionID, boolean deleteDSO, String username);
+	int seriesAIMDelete(SeriesReference seriesReference, String aimID, String sessionID, boolean deleteDSO, String username) throws Exception;
 
-	int imageAIMDelete(ImageReference imageReference, String aimID, String sessionID, boolean deleteDSO, String username);
+	int imageAIMDelete(ImageReference imageReference, String aimID, String sessionID, boolean deleteDSO, String username) throws Exception;
 
-	int frameAIMDelete(FrameReference frameReference, String aimID, String sessionID, boolean deleteDSO, String username);
+	int frameAIMDelete(FrameReference frameReference, String aimID, String sessionID, boolean deleteDSO, String username) throws Exception;
 
-	int aimDelete(String aimID, String sessionID, boolean deleteDSO, String username);
+	int aimDelete(String aimID, String sessionID, boolean deleteDSO, String username) throws Exception;
 	
 	void deleteAllSeriesAims(String seriedUID, boolean deleteDSOs);
 	

@@ -27,6 +27,7 @@ import com.sun.jersey.api.uri.UriTemplate;
 
 import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.epad.common.util.JsonHelper;
+import edu.stanford.epad.dtos.EPADMessage;
 
 /**
  * Utility methods for handlers
@@ -100,7 +101,7 @@ public class HandlerUtil
 		String finalMessage = message + (t == null ? "" : ((t.getMessage() == null) ? "" : ": " + t.getMessage()));
 		log.warning(finalMessage);
 		if (responseStream != null)
-			responseStream.append(JsonHelper.createJSONErrorResponse(finalMessage));
+			responseStream.append(new EPADMessage(finalMessage).toJSON());
 		return responseCode;
 	}
 

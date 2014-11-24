@@ -5,6 +5,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -678,7 +679,8 @@ public class AIMUtil
 			ea.template = aim.getCodeMeaning();
 			ea.date = aim.getDateTime();
 			ea.comment = a.getComment();
-			ea.studyDate = a.getFirstStudyDate();
+			if (a.getFirstStudyDate() != null)
+				ea.studyDate = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(a.getFirstStudyDate());
 			ea.patientName = a.getPatientName();
 			aims.addAIM(ea);
 		}
@@ -736,7 +738,8 @@ public class AIMUtil
 			ea.template = aim.getImageAnnotations().get(0).getListTypeCode().get(0).getCode();
 			ea.date = aim.getDateTime();
 			ea.comment = a.getComment();
-			ea.studyDate = a.getFirstStudyDate();
+			if (a.getFirstStudyDate() != null)
+				ea.studyDate = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(a.getFirstStudyDate());
 			ea.patientName = a.getPatientName();
 			aims.addAIM(ea);
 		}

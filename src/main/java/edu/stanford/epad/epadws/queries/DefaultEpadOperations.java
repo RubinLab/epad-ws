@@ -932,18 +932,18 @@ public class DefaultEpadOperations implements EpadOperations
 
 	@Override
 	public int projectAIMDelete(ProjectReference projectReference, String aimID,
-			String sessionID, boolean deleteDSO, String username) {
+			String sessionID, boolean deleteDSO, String username) throws Exception {
 		try {
 			EPADAIM aim = getAIMDescription(aimID, username, sessionID);
 			if (aim == null)
 			{
 				log.warning("AIM " + aimID + " not found");
-				return HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+				return HttpServletResponse.SC_NOT_FOUND;
 			}
 			if (!"admin".equals(username) && !aim.userName.equals(username) && !aim.userName.equals("shared") && !EPADConfig.xnatUploadProjectID.equals(aim.projectID) && !XNATQueries.isOwner(sessionID, username, aim.projectID))
 			{
 				log.warning("No permissions to delete AIM:" + aimID + " for user " + username);
-				return HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+				throw new Exception("No permissions to delete AIM:" + aimID + " for user " + username);
 			}
 			log.info("Deleting AIM, deleteDSO:" + deleteDSO + " dsoSeriesUID:" + aim.dsoSeriesUID);
 			AIMUtil.deleteAIM(aimID);
@@ -956,19 +956,24 @@ public class DefaultEpadOperations implements EpadOperations
 			return HttpServletResponse.SC_OK;
 		} catch (Exception e) {
 			log.warning("Error deleting AIM file ",e);
-			return HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+			throw e;
 		}
 	}
 
 	@Override
 	public int subjectAIMDelete(SubjectReference subjectReference, String aimID,
-			String sessionID, boolean deleteDSO, String username) {
+			String sessionID, boolean deleteDSO, String username) throws Exception {
 		try {
 			EPADAIM aim = getAIMDescription(aimID, username, sessionID);
+			if (aim == null)
+			{
+				log.warning("AIM " + aimID + " not found");
+				return HttpServletResponse.SC_NOT_FOUND;
+			}
 			if (!"admin".equals(username) && !aim.userName.equals(username) && !aim.userName.equals("shared") && !EPADConfig.xnatUploadProjectID.equals(aim.projectID) && !XNATQueries.isOwner(sessionID, username, aim.projectID))
 			{
 				log.warning("No permissions to delete AIM:" + aimID + " for user " + username);
-				return HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+				throw new Exception("No permissions to delete AIM:" + aimID + " for user " + username);
 			}
 			AIMUtil.deleteAIM(aimID);
 			epadDatabaseOperations.deleteAIM(username, subjectReference, aimID);
@@ -979,19 +984,24 @@ public class DefaultEpadOperations implements EpadOperations
 			return HttpServletResponse.SC_OK;
 		} catch (Exception e) {
 			log.warning("Error deleting AIM file ",e);
-			return HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+			throw e;
 		}
 	}
 
 	@Override
-	public int studyAIMDelete(StudyReference studyReference, String aimID, String sessionID, boolean deleteDSO, String username)
+	public int studyAIMDelete(StudyReference studyReference, String aimID, String sessionID, boolean deleteDSO, String username) throws Exception
 	{
 		try {
 			EPADAIM aim = getAIMDescription(aimID, username, sessionID);
+			if (aim == null)
+			{
+				log.warning("AIM " + aimID + " not found");
+				return HttpServletResponse.SC_NOT_FOUND;
+			}
 			if (!"admin".equals(username) && !aim.userName.equals(username) && !aim.userName.equals("shared") && !EPADConfig.xnatUploadProjectID.equals(aim.projectID) && !XNATQueries.isOwner(sessionID, username, aim.projectID))
 			{
 				log.warning("No permissions to delete AIM:" + aimID + " for user " + username);
-				return HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+				throw new Exception("No permissions to delete AIM:" + aimID + " for user " + username);
 			}
 			AIMUtil.deleteAIM(aimID);
 			epadDatabaseOperations.deleteAIM(username, studyReference, aimID);
@@ -1002,19 +1012,24 @@ public class DefaultEpadOperations implements EpadOperations
 			return HttpServletResponse.SC_OK;
 		} catch (Exception e) {
 			log.warning("Error deleting AIM file ",e);
-			return HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+			throw e;
 		}
 	}
 
 	@Override
-	public int seriesAIMDelete(SeriesReference seriesReference, String aimID, String sessionID, boolean deleteDSO, String username)
+	public int seriesAIMDelete(SeriesReference seriesReference, String aimID, String sessionID, boolean deleteDSO, String username) throws Exception
 	{
 		try {
 			EPADAIM aim = getAIMDescription(aimID, username, sessionID);
+			if (aim == null)
+			{
+				log.warning("AIM " + aimID + " not found");
+				return HttpServletResponse.SC_NOT_FOUND;
+			}
 			if (!"admin".equals(username) && !aim.userName.equals(username) && !aim.userName.equals("shared") && !EPADConfig.xnatUploadProjectID.equals(aim.projectID) && !XNATQueries.isOwner(sessionID, username, aim.projectID))
 			{
 				log.warning("No permissions to delete AIM:" + aimID + " for user " + username);
-				return HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+				throw new Exception("No permissions to delete AIM:" + aimID + " for user " + username);
 			}
 			AIMUtil.deleteAIM(aimID);
 			epadDatabaseOperations.deleteAIM(username, seriesReference, aimID);
@@ -1025,19 +1040,24 @@ public class DefaultEpadOperations implements EpadOperations
 			return HttpServletResponse.SC_OK;
 		} catch (Exception e) {
 			log.warning("Error deleting AIM file ",e);
-			return HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+			throw e;
 		}
 	}
 
 	@Override
-	public int imageAIMDelete(ImageReference imageReference, String aimID, String sessionID, boolean deleteDSO, String username)
+	public int imageAIMDelete(ImageReference imageReference, String aimID, String sessionID, boolean deleteDSO, String username) throws Exception
 	{
 		try {
 			EPADAIM aim = getAIMDescription(aimID, username, sessionID);
+			if (aim == null)
+			{
+				log.warning("AIM " + aimID + " not found");
+				return HttpServletResponse.SC_NOT_FOUND;
+			}
 			if (!"admin".equals(username) && !aim.userName.equals(username) && !aim.userName.equals("shared") && !EPADConfig.xnatUploadProjectID.equals(aim.projectID) && !XNATQueries.isOwner(sessionID, username, aim.projectID))
 			{
 				log.warning("No permissions to delete AIM:" + aimID + " for user " + username);
-				return HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+				throw new Exception("No permissions to delete AIM:" + aimID + " for user " + username);
 			}
 			AIMUtil.deleteAIM(aimID);
 			epadDatabaseOperations.deleteAIM(username, imageReference, aimID);
@@ -1048,19 +1068,24 @@ public class DefaultEpadOperations implements EpadOperations
 			return HttpServletResponse.SC_OK;
 		} catch (Exception e) {
 			log.warning("Error deleting AIM file ",e);
-			return HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+			throw e;
 		}
 	}
 
 	@Override
-	public int frameAIMDelete(FrameReference frameReference, String aimID, String sessionID, boolean deleteDSO, String username)
+	public int frameAIMDelete(FrameReference frameReference, String aimID, String sessionID, boolean deleteDSO, String username) throws Exception
 	{
 		try {
 			EPADAIM aim = getAIMDescription(aimID, username, sessionID);
+			if (aim == null)
+			{
+				log.warning("AIM " + aimID + " not found");
+				return HttpServletResponse.SC_NOT_FOUND;
+			}
 			if (!"admin".equals(username) && !aim.userName.equals(username) && !aim.userName.equals("shared") && !EPADConfig.xnatUploadProjectID.equals(aim.projectID) && !XNATQueries.isOwner(sessionID, username, aim.projectID))
 			{
 				log.warning("No permissions to delete AIM:" + aimID + " for user " + username);
-				return HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+				throw new Exception("No permissions to delete AIM:" + aimID + " for user " + username);
 			}
 			AIMUtil.deleteAIM(aimID);
 			epadDatabaseOperations.deleteAIM(username, frameReference, aimID);
@@ -1071,18 +1096,23 @@ public class DefaultEpadOperations implements EpadOperations
 			return HttpServletResponse.SC_OK;
 		} catch (Exception e) {
 			log.warning("Error deleting AIM file ",e);
-			return HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+			throw e;
 		}
 	}
 
 	@Override
-	public int aimDelete(String aimID, String sessionID, boolean deleteDSO, String username) {
+	public int aimDelete(String aimID, String sessionID, boolean deleteDSO, String username) throws Exception {
 		try {
 			EPADAIM aim = getAIMDescription(aimID, username, sessionID);
+			if (aim == null)
+			{
+				log.warning("AIM " + aimID + " not found");
+				return HttpServletResponse.SC_NOT_FOUND;
+			}
 			if (!"admin".equals(username) && !aim.userName.equals(username) && !aim.userName.equals("shared") && !EPADConfig.xnatUploadProjectID.equals(aim.projectID) && !XNATQueries.isOwner(sessionID, username, aim.projectID))
 			{
 				log.warning("No permissions to delete AIM:" + aimID + " for user " + username);
-				return HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+				throw new Exception("No permissions to delete AIM:" + aimID + " for user " + username);
 			}
 			AIMUtil.deleteAIM(aimID);
 			epadDatabaseOperations.deleteAIM(username, aimID);
@@ -1093,7 +1123,7 @@ public class DefaultEpadOperations implements EpadOperations
 			return HttpServletResponse.SC_OK;
 		} catch (Exception e) {
 			log.warning("Error deleting AIM file ",e);
-			return HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+			throw e;
 		}
 	}
 
