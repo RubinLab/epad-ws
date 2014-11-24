@@ -33,6 +33,8 @@ public class EventHandler extends AbstractHandler
 	private static final String MISSING_QUERY_MESSAGE = "No query in event request";
 	private static final String INVALID_SESSION_TOKEN_MESSAGE = "Session token is invalid on event route";
 
+	private static int count;
+	
 	@Override
 	public void handle(String base, Request request, HttpServletRequest httpRequest, HttpServletResponse httpResponse)
 	{
@@ -49,6 +51,11 @@ public class EventHandler extends AbstractHandler
 
 				if ("GET".equalsIgnoreCase(method)) {
 					String jsessionID = XNATSessionOperations.getJSessionIDFromRequest(httpRequest);
+					if (count++ == 12)
+					{
+						log.info("Get Event request with JSESSIONID " + jsessionID);
+						count = 0;
+					}
 					if (jsessionID != null) {
 						findEventsForSessionID(responseStream, jsessionID);
 						statusCode = HttpServletResponse.SC_OK;
@@ -106,9 +113,15 @@ public class EventHandler extends AbstractHandler
 		List<Map<String, String>> eventMap = epadDatabaseOperations.getEpadEventsForSessionID(sessionID);
 		String separator = ", ";
 
+		if (eventMap.size() == 0)
+		{
+			responseStrean.println("No new events posted");
+			//log.info("No new events posted");
+			return;
+		}
 		responseStrean.println("event_number, event_status, Date, aim_uid, aim_name, patient_id, patient_name, "
 				+ "template_id, template_name, plugin_name");
-
+		
 		for (Map<String, String> row : eventMap) {
 			StringBuilder sb = new StringBuilder();
 			sb.append(row.get("pk")).append(separator);
