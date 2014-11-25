@@ -22,11 +22,11 @@ import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpException;
 import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.io.IOUtils;
+import org.apache.log4j.Level;
 
 import com.sun.jersey.api.uri.UriTemplate;
 
 import edu.stanford.epad.common.util.EPADLogger;
-import edu.stanford.epad.common.util.JsonHelper;
 import edu.stanford.epad.dtos.EPADMessage;
 
 /**
@@ -54,7 +54,7 @@ public class HandlerUtil
 	{
 		log.info(message);
 		if (responseStream != null)
-			responseStream.append(JsonHelper.createJSONErrorResponse(message));
+			responseStream.append(new EPADMessage(message, Level.INFO).toJSON());
 		return responseCode;
 	}
 
@@ -67,7 +67,11 @@ public class HandlerUtil
 	{
 		log.warning(message);
 		if (responseStream != null)
+		{
+			if (!message.startsWith("{"))
+				message = new EPADMessage(message).toJSON();
 			responseStream.append(message);
+		}
 		return responseCode;
 	}
 
@@ -81,7 +85,7 @@ public class HandlerUtil
 	{
 		log.warning(message);
 		if (responseStream != null)
-			responseStream.append(JsonHelper.createJSONErrorResponse(message));
+			responseStream.append(new EPADMessage(message).toJSON());
 		return responseCode;
 	}
 
@@ -91,7 +95,7 @@ public class HandlerUtil
 		String finalMessage = message + (t == null ? "" : ((t.getMessage() == null) ? "" : ": " + t.getMessage()));
 		log.warning(finalMessage);
 		if (responseStream != null)
-			responseStream.append(finalMessage);
+			responseStream.append(new EPADMessage(finalMessage).toJSON());
 		return responseCode;
 	}
 
