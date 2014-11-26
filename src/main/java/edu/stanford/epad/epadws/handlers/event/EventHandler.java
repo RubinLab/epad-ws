@@ -51,7 +51,7 @@ public class EventHandler extends AbstractHandler
 
 				if ("GET".equalsIgnoreCase(method)) {
 					String jsessionID = XNATSessionOperations.getJSessionIDFromRequest(httpRequest);
-					if (count++ == 12)
+					if (count++ >= 100)
 					{
 						log.info("Get Event request with JSESSIONID " + jsessionID);
 						count = 0;
