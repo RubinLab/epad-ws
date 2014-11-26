@@ -70,6 +70,22 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 			if (rs.next()) {
 				pngFilePath = rs.getString(1);
 			}
+			if (pngFilePath == null)
+				return pngFilePath;
+			String imagePath = imageUID.replace('.', '_');
+			if (!pngFilePath.contains(imagePath))
+			{
+				rs.close();
+				ps.close();
+				ps = c.prepareStatement(EpadDatabaseCommands.SELECT_EPAD_FILE_PATH_BY_IMAGE_UID);
+				ps.setString(1, "%/" + imagePath + "%");
+				rs = ps.executeQuery();
+				if (rs.next()) {
+					pngFilePath = rs.getString(1);
+				}
+				else
+					return null;
+			}
 		} catch (SQLException sqle) {
 			String debugInfo = DatabaseUtils.getDebugData(rs);
 			log.warning("Database operation failed; debugInfo=" + debugInfo, sqle);
@@ -909,13 +925,47 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 
 			if (!rows.isEmpty()) { // Delete events up the most recent event for user
 				log.info("Event search found " + rows.size() + " event(s) for session ID " + sessionID);
-				String pk = rows.get(0).get("pk"); // We order by pk, an auto-increment field (which does not wrap)
+				String pk = rows.get(rows.size()-1).get("pk"); // We order by pk, an auto-increment field (which does not wrap)
 				ps.close();
 				ps = c.prepareStatement(EpadDatabaseCommands.DELETE_EVENTS_FOR_SESSIONID);
 				ps.setString(1, sessionID);
 				ps.setString(2, pk);
 				int rowsAffected = ps.executeUpdate();
 				log.info("" + rowsAffected + " old event(s) deleted for session ID " + sessionID);
+			}
+		} catch (SQLException sqle) {
+			String debugInfo = DatabaseUtils.getDebugData(rs);
+			log.warning("Database operation failed; debugInfo=" + debugInfo, sqle);
+		} finally {
+			close(c, ps, rs);
+		}
+		return rows;
+	}
+
+	@Override
+	public List<Map<String, String>> getEpadEventsForAimID(String aimID)
+	{
+		List<Map<String, String>> rows = new ArrayList<Map<String, String>>();
+
+		Connection c = null;
+		PreparedStatement ps = null;
+		ResultSet rs = null;
+		try {
+			c = getConnection();
+			ps = c.prepareStatement(EpadDatabaseCommands.SELECT_EVENTS_FOR_AIMID);
+			ps.setString(1, aimID);
+			rs = ps.executeQuery();
+			ResultSetMetaData metaData = rs.getMetaData();
+
+			while (rs.next()) {
+				Map<String, String> rowMap = new HashMap<String, String>();
+				int nCols = metaData.getColumnCount();
+				for (int i = 1; i < nCols + 1; i++) {
+					String columnName = metaData.getColumnName(i);
+					String value = rs.getString(i);
+					rowMap.put(columnName, value);
+				}
+				rows.add(rowMap);
 			}
 		} catch (SQLException sqle) {
 			String debugInfo = DatabaseUtils.getDebugData(rs);
@@ -1248,6 +1298,30 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 			ps.setString(1, seriesUID);
 			log.info("delete sql:" + ps.toString());
 			rows = ps.executeUpdate();
+			log.info("" + rows + " deleted from ePAD series status table");
+		} catch (SQLException sqle) {
+			String debugInfo = DatabaseUtils.getDebugData(rs);
+			log.warning("Database operation failed; debugInfo=" + debugInfo, sqle);
+		} finally {
+			close(c, ps, rs);
+		}
+	}
+
+	@Override
+	public void deleteSeriesOnly(String seriesUID)
+	{
+		Connection c = null;
+		PreparedStatement ps = null;
+		ResultSet rs = null;
+		try {
+			c = getConnection();
+
+
+			log.info("Deleting series " + seriesUID + " from ePAD status table");
+			ps = c.prepareStatement(EpadDatabaseCommands.DELETE_SERIES_FROM_SERIES_STATUS);
+			ps.setString(1, seriesUID);
+			log.info("delete sql:" + ps.toString());
+			int rows = ps.executeUpdate();
 			log.info("" + rows + " deleted from ePAD series status table");
 		} catch (SQLException sqle) {
 			String debugInfo = DatabaseUtils.getDebugData(rs);

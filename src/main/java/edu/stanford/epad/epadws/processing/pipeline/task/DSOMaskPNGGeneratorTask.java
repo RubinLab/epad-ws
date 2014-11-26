@@ -55,6 +55,7 @@ public class DSOMaskPNGGeneratorTask implements GeneratorTask
 		} catch (Exception e) {
 			log.warning("Error writing AIM file for DSO series " + seriesUID, e);
 		} finally {
+			log.info("DSO for series " + seriesUID + " completed");
 			seriesBeingProcessed.remove(seriesUID);
 		}
 	}

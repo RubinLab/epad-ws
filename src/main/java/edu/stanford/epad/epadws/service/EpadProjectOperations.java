@@ -24,10 +24,12 @@ package edu.stanford.epad.epadws.service;
 //WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE
 //USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+import java.io.File;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
+import edu.stanford.epad.epadws.models.EpadFile;
 import edu.stanford.epad.epadws.models.Project;
 import edu.stanford.epad.epadws.models.ProjectType;
 import edu.stanford.epad.epadws.models.Study;
@@ -50,6 +52,9 @@ public interface EpadProjectOperations {
 	void addUserToProject(String loggedInUser, String projectId, String username, UserRole role) throws Exception;
 	void removeUserFromProject(String loggedInUser, String projectId, String username) throws Exception;
 	void setUserRoleForProject(String loggedInUser, String projectId, String username, UserRole role) throws Exception;
+	void userErrorLog(String username, String message);
+	void userWarningLog(String username, String message);
+	void userInfoLog(String username, String message);
 	
 	Subject createSubject(String loggedInUser, String subjectUID, String name, Date dob, String gender) throws Exception;
 	Study createStudy(String loggedInUser, String studyUID, String subjectUID) throws Exception;
@@ -58,6 +63,8 @@ public interface EpadProjectOperations {
 	
 	void removeSubjectFromProject(String loggedInUser, String subjectUID, String projectId) throws Exception;
 	void removeStudyFromProject(String loggedInUser, String studyUID, String projectId) throws Exception;
+
+	EpadFile createFile(String loggedInUser, String projectID, String subjectUID, String studyUID, String seriesUID, File file, String filename, String description) throws Exception;
 	
 	Project getProject(String projectId) throws Exception;
 	
@@ -103,5 +110,4 @@ public interface EpadProjectOperations {
 	void deleteStudy(String username, String studyUID) throws Exception;
 	
 	List<EventLog> getUserLogs(String username);
-	void addUserLog(String username, EventLog eventLog);
 }

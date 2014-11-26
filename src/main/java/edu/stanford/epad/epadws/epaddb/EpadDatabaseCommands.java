@@ -18,7 +18,8 @@ public interface EpadDatabaseCommands
 			+ "VALUES (?,?,?,?,?,?,?,?,?)";
 	public static final String SELECT_EVENTS_FOR_SESSIONID = "SELECT * from epaddb.events where username=? ORDER BY pk";
 	public static final String DELETE_EVENTS_FOR_SESSIONID = "DELETE from epaddb.events where username=? and pk <= ?";
-
+	public static final String SELECT_EVENTS_FOR_AIMID = "SELECT * from epaddb.events where aim_uid=? ORDER BY pk desc";
+	
 	public static final String INSERT_INTO_EPAD_SERIES_STATUS = "INSERT INTO epaddb.series_status(series_iuid,status) VALUES (?,?)";
 	public static final String UPDATE_EPAD_SERIES_STATUS = "UPDATE epaddb.series_status SET status=? where series_iuid=?";
 	public static final String SELECT_EPAD_SERIES_BY_ID = "SELECT * from epaddb.series_status where series_iuid=?";
@@ -33,6 +34,7 @@ public interface EpadDatabaseCommands
 	public static final String INSERT_INTO_EPAD_FILES = "INSERT INTO epaddb.epad_files"
 			+ "(instance_fk,file_type,file_path,file_size,file_status,err_msg,file_md5)" + "VALUES (?,?,?,?,?,?,?)";
 	public static final String SELECT_EPAD_FILE_PATH_FOR_IMAGE = "SELECT file_path from epaddb.epad_files as f, pacsdb.instance as i where i.sop_iuid=? and i.pk = f.instance_fk";
+	public static final String SELECT_EPAD_FILE_PATH_BY_IMAGE_UID = "SELECT file_path from epaddb.epad_files as f where file_path like ?";
 
 	public static final String SELECT_COORDINATION_USING_KEY = "select coordination_id, schema_name, schema_version, description "
 			+ "from epaddb.coordinations as c where c.coordination_key = ?";

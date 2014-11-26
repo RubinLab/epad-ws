@@ -15,7 +15,9 @@ import edu.stanford.epad.common.util.FileKey;
 import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeOperations;
 import edu.stanford.epad.epadws.processing.model.DicomUploadFile;
 import edu.stanford.epad.epadws.processing.pipeline.threads.ShutdownSignal;
-import edu.stanford.epad.epadws.xnat.XNATCreationOperations;
+import edu.stanford.epad.epadws.service.DefaultEpadProjectOperations;
+import edu.stanford.epad.epadws.service.EpadProjectOperations;
+import edu.stanford.epad.epadws.service.UserProjectService;
 
 /**
  * Watches for a new directory containing ZIP or DICOM files in the ePAD upload directory. When a new directory is found
@@ -33,6 +35,7 @@ public class EPADUploadDirWatcher implements Runnable
 	private static final String FOUND_DIR_FILE = "dir.found";
 	private static final long MAX_WAIT_TIME = 3600000; // 1 hour (was 20 minutes before)
 	private static final EPADLogger log = EPADLogger.getInstance();
+	private final EpadProjectOperations projectOperations = DefaultEpadProjectOperations.getInstance();
 
 	@Override
 	public void run()
@@ -101,9 +104,9 @@ public class EPADUploadDirWatcher implements Runnable
 				unzipFiles(zipFile);
 			}
 			// TODO Should not create XNAT entities until the DICOM send succeeds.
-			XNATCreationOperations.createXNATEntitiesFromDICOMFilesInUploadDirectory(directory);
+			String username = UserProjectService.createProjectEntitiesFromDICOMFilesInUploadDirectory(directory);
 			cleanUploadDirectory(directory);
-			sendFilesToDcm4Chee(directory);
+			sendFilesToDcm4Chee(username, directory);
 		} catch (IOException ioe) {
 			log.warning("IOException uploading " + directory.getAbsolutePath(), ioe);
 			writeExceptionLog(directory, ioe);
@@ -212,10 +215,15 @@ public class EPADUploadDirWatcher implements Runnable
 		EPADFileUtils.extractFolder(zipFile.getAbsolutePath());
 	}
 
-	private void sendFilesToDcm4Chee(File directory) throws Exception
+	private void sendFilesToDcm4Chee(String username, File directory) throws Exception
 	{
-		log.info("Sending DICOM files in upload directory " + directory.getAbsolutePath() + " to DCM4CHEE");
-		Dcm4CheeOperations.dcmsnd(directory, true);
+		try {
+			log.info("Sending DICOM files in upload directory " + directory.getAbsolutePath() + " to DCM4CHEE");
+			projectOperations.userInfoLog(username, "Sending DICOM files in upload directory " + directory.getAbsolutePath() + " to DCM4CHEE");
+			Dcm4CheeOperations.dcmsnd(directory, true);
+		} catch (Exception x) {
+			projectOperations.userErrorLog(username, "Error sending files to DCM4CHEE:" + x);
+		}
 	}
 
 	private void deleteUploadDirectory(File dir)

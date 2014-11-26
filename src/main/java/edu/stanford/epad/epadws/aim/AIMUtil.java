@@ -5,7 +5,9 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -60,6 +62,7 @@ import edu.stanford.epad.epadws.epaddb.EpadDatabaseOperations;
 import edu.stanford.epad.epadws.handlers.core.FrameReference;
 import edu.stanford.epad.epadws.handlers.core.ImageReference;
 import edu.stanford.epad.epadws.handlers.core.ProjectReference;
+import edu.stanford.epad.epadws.handlers.event.EventHandler;
 import edu.stanford.epad.epadws.processing.pipeline.task.PluginStartTask;
 import edu.stanford.epad.epadws.queries.Dcm4CheeQueries;
 import edu.stanford.epad.epadws.queries.DefaultEpadOperations;
@@ -68,14 +71,10 @@ import edu.stanford.epad.epadws.service.UserProjectService;
 import edu.stanford.epad.epadws.xnat.XNATSessionOperations;
 import edu.stanford.hakan.aim3api.base.AimException;
 import edu.stanford.hakan.aim3api.base.DICOMImageReference;
-import edu.stanford.hakan.aim3api.base.GeometricShape;
-import edu.stanford.hakan.aim3api.base.GeometricShapeCollection;
 import edu.stanford.hakan.aim3api.base.ImageAnnotation;
 import edu.stanford.hakan.aim3api.base.Person;
 import edu.stanford.hakan.aim3api.base.Segmentation;
 import edu.stanford.hakan.aim3api.base.SegmentationCollection;
-import edu.stanford.hakan.aim3api.base.SpatialCoordinate;
-import edu.stanford.hakan.aim3api.base.TwoDimensionSpatialCoordinate;
 import edu.stanford.hakan.aim3api.base.User;
 import edu.stanford.hakan.aim3api.usage.AnnotationBuilder;
 import edu.stanford.hakan.aim3api.usage.AnnotationGetter;
@@ -118,7 +117,25 @@ public class AIMUtil
 	{                        
 		String result = "";
 
-		if (aim.getCodeValue() != null) { // For safety, write a backup file
+		if (aim.getCodeValue() != null) { 
+			EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
+			List<Map<String, String>> eventMaps = epadDatabaseOperations.getEpadEventsForAimID(aim.getUniqueIdentifier());
+			if (eventMaps.size() == 0)
+			{
+				eventMaps = new ArrayList<Map<String, String>>();
+				Map<String, String> eventMap = EventHandler.deletedEvents.get(aim.getUniqueIdentifier());
+				if (eventMap != null)
+					eventMaps.add(eventMap);
+			}
+			if (eventMaps.size() > 0)
+			{
+				log.info("last event:" + eventMaps.get(0));
+				if ("Started".equals(eventMaps.get(0).get("event_status")) && getTime(eventMaps.get(0).get("created_time")) > (System.currentTimeMillis()-10*60*60*1000))
+				{
+					throw new AimException("Previous version of this AIM " + aim.getUniqueIdentifier() + " is still being processed by the plugin");
+				}
+			}
+			// For safety, write a backup file
 			String tempXmlPath = baseAnnotationDir + "temp-" + aim.getUniqueIdentifier() + ".xml";
 			String storeXmlPath = baseAnnotationDir + aim.getUniqueIdentifier() + ".xml";
 			File tempFile = new File(tempXmlPath);
@@ -147,6 +164,7 @@ public class AIMUtil
 			}
 
 			log.info("Save AIM to Exist:" + result);
+			log.info("CodingSchemeDesignator:" + aim.getCodingSchemeDesignator());
 			
 			if (aim.getCodingSchemeDesignator().equals("epad-plugin")) { // Which template has been used to fill the AIM file
 				String templateName = aim.getCodeValue(); // ex: jjv-5
@@ -166,11 +184,25 @@ public class AIMUtil
 				}
 
 				if (templateHasBeenFound) {
-					(new Thread(new PluginStartTask(jsessionID, pluginName, aim.getUniqueIdentifier(), frameNumber))).start();				
+					log.info("Starting Plugin task for:" + pluginName);
+					(new Thread(new PluginStartTask(jsessionID, pluginName, aim.getUniqueIdentifier(), frameNumber, projectID))).start();				
 				}
 			}
 		}
 		return result;
+	}
+	
+	private static long getTime(String timestamp)
+	{
+		try
+		{
+			Date date = new SimpleDateFormat("yyyy-dd-MM HH:mm:ss").parse(timestamp);
+			return date.getTime();
+		}
+		catch (Exception x)
+		{
+			return 0;
+		}
 	}
 
     /**
@@ -230,7 +262,8 @@ public class AIMUtil
 		
 		        if (templateHasBeenFound) {
 		        	// Start plugin task
-					(new Thread(new PluginStartTask(jsessionID, pluginName, aim.getUniqueIdentifier().getRoot(), frameNumber))).start();				
+					log.info("Starting Plugin task for:" + pluginName);
+					(new Thread(new PluginStartTask(jsessionID, pluginName, aim.getUniqueIdentifier().getRoot(), frameNumber, projectID))).start();				
 		        }
 		    }
 		}
@@ -567,7 +600,7 @@ public class AIMUtil
 				String seriesID = aim.getSeriesID(imageID);
 				String studyID = aim.getStudyID(seriesID);
 				log.info("Saving AIM file with ID " + imageAnnotation.getUniqueIdentifier() + " username:" + username);
-				String result = AIMUtil.saveImageAnnotationToServer(imageAnnotation, sessionId);
+				String result = AIMUtil.saveImageAnnotationToServer(imageAnnotation, projectID, frameNumber, sessionId);
 				log.info("Save annotation:" + result);
 				if (result.toLowerCase().contains("success") && projectID != null && username != null)
 				{
@@ -725,7 +758,8 @@ public class AIMUtil
 			ea.template = aim.getCodeMeaning();
 			ea.date = aim.getDateTime();
 			ea.comment = a.getComment();
-			ea.studyDate = a.getFirstStudyDate();
+			if (a.getFirstStudyDate() != null)
+				ea.studyDate = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(a.getFirstStudyDate());
 			ea.patientName = a.getPatientName();
 			aims.addAIM(ea);
 		}
@@ -787,43 +821,13 @@ public class AIMUtil
 			ea.template = aim.getImageAnnotations().get(0).getListTypeCode().get(0).getCode();
 			ea.date = aim.getDateTime();
 			ea.comment = a.getComment();
-			ea.studyDate = a.getFirstStudyDate();
+			if (a.getFirstStudyDate() != null)
+				ea.studyDate = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(a.getFirstStudyDate());
 			ea.patientName = a.getPatientName();
 			aims.addAIM(ea);
 		}
 		log.info("" + annotations.size() + " annotations returned to client");
 		return aims;
-	}
-
-	public static List<Double> extractPoints (ImageAnnotation templateImageAnnotation) {
-		List<Double> points = new ArrayList<Double>();
-		double[] roixData = null;
-		double[] roiyData = null;
-
-		GeometricShapeCollection geometricShapeCollection = templateImageAnnotation.getGeometricShapeCollection();
-		for (int i = 0; i < geometricShapeCollection.getGeometricShapeList().size(); i++) {
-			GeometricShape geometricShape = geometricShapeCollection.getGeometricShapeList().get(i);
-			if (geometricShape.getXsiType().equals("MultiPoint")) {
-				int numberOfROIs = geometricShape.getSpatialCoordinateCollection().getSpatialCoordinateList().size();
-				roixData = new double[numberOfROIs];
-				roiyData = new double[numberOfROIs];
-				for (int j = 0; j < numberOfROIs; j++) {
-					SpatialCoordinate spatialCoordinate = geometricShape.getSpatialCoordinateCollection()
-							.getSpatialCoordinateList().get(j);
-					if ("TwoDimensionSpatialCoordinate".equals(spatialCoordinate.getXsiType())) {
-						TwoDimensionSpatialCoordinate twoDimensionSpatialCoordinate = (TwoDimensionSpatialCoordinate)spatialCoordinate;
-						int idx = twoDimensionSpatialCoordinate.getCoordinateIndex();
-						roixData[idx] = twoDimensionSpatialCoordinate.getX();
-						roiyData[idx] = twoDimensionSpatialCoordinate.getY();
-						
-						points.add(roixData[idx]);
-						points.add(roiyData[idx]);
-					}
-				}
-			}
-		}
-		
-		return points;
 	}
 
 	private static String XmlDocumentToString(Document document)

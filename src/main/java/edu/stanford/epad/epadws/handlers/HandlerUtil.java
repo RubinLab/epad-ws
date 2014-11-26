@@ -22,11 +22,13 @@ import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpException;
 import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.io.IOUtils;
+import org.apache.log4j.Level;
 
 import com.sun.jersey.api.uri.UriTemplate;
 
 import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.epad.common.util.JsonHelper;
+import edu.stanford.epad.dtos.EPADMessage;
 
 /**
  * Utility methods for handlers
@@ -90,7 +92,7 @@ public class HandlerUtil
 		String finalMessage = message + (t == null ? "" : ((t.getMessage() == null) ? "" : ": " + t.getMessage()));
 		log.warning(finalMessage, t);
 		if (responseStream != null)
-			responseStream.append(finalMessage);
+			responseStream.append(new EPADMessage(finalMessage, Level.WARN).toJSON());
 		return responseCode;
 	}
 
@@ -100,7 +102,7 @@ public class HandlerUtil
 		String finalMessage = message + (t == null ? "" : ((t.getMessage() == null) ? "" : ": " + t.getMessage()));
 		log.warning(finalMessage, t);
 		if (responseStream != null)
-			responseStream.append(JsonHelper.createJSONErrorResponse(finalMessage));
+			responseStream.append(new EPADMessage(finalMessage).toJSON());
 		return responseCode;
 	}
 

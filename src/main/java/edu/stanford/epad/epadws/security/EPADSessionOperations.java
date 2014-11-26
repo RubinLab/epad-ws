@@ -114,13 +114,20 @@ public class EPADSessionOperations
 	public static int invalidateSessionID(HttpServletRequest httpRequest)
 	{
 		String jsessionID = getJSessionIDFromRequest(httpRequest);
-		if (hasValidSessionID(jsessionID))
+		if (jsessionID != null)
 		{
-			currentSessions.remove(jsessionID);
+			invalidateSessionID(jsessionID);
 			return HttpServletResponse.SC_OK;
 		}
 		else
 			return HttpServletResponse.SC_BAD_REQUEST;
+	}
+
+	public static void invalidateSessionID(String jsessionID)
+	{
+		EPADSession session = currentSessions.remove(jsessionID);
+		if (session != null)
+			session.setValid(false);
 	}
 
 	public static boolean hasValidSessionID(HttpServletRequest httpRequest)
@@ -161,7 +168,7 @@ public class EPADSessionOperations
 		}
 		if (jSessionID == null)
 		{
-			log.warning("No JSESESSIONID cookie present in request " + servletRequest.getRequestURL());
+			log.warning("No JSESSIONID cookie present in request " + servletRequest.getRequestURL());
 		}
 		else
 		{
@@ -268,5 +275,17 @@ public class EPADSessionOperations
 		return credentials;
 	}
 
+	public static Map<String, EPADSession> getCurrentSessions() {
+		return currentSessions;
+	}
+	
+	public static String getSessionUser(String sessionID)
+	{
+		EPADSession session = currentSessions.get(sessionID);
+		if (session != null)
+			return session.getUsername();
+		else
+			return null;
+	}
 }
 

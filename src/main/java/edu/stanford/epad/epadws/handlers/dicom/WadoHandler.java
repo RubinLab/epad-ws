@@ -90,7 +90,6 @@ public class WadoHandler extends AbstractHandler
 		String wadoBase = EPADConfig.wadoURLExtension;
 		String wadoURL = buildWADOURL(wadoHost, wadoPort, wadoBase, queryString);
 		int statusCode;
-
 		try {
 			statusCode = HandlerUtil.streamGetResponse(wadoURL, outputStream, log);
 			if (statusCode != HttpServletResponse.SC_OK)

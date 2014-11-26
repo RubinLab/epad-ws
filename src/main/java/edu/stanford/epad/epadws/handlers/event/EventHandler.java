@@ -1,6 +1,10 @@
 package edu.stanford.epad.epadws.handlers.event;
 
 import java.io.PrintWriter;
+import java.text.SimpleDateFormat;
+import java.util.Collection;
+import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -99,6 +103,8 @@ public class EventHandler extends AbstractHandler
 		httpResponse.setStatus(statusCode);
 	}
 
+	public static Map<String, Map<String, String>> deletedEvents = new HashMap<String, Map<String, String>>();
+	
 	private void findEventsForSessionID(PrintWriter responseStrean, String sessionID)
 	{
 		EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
@@ -110,6 +116,7 @@ public class EventHandler extends AbstractHandler
 				+ "template_id, template_name, plugin_name");
 
 		for (Map<String, String> row : eventMap) {
+			deletedEvents.put(row.get("aim_uid"), row);
 			StringBuilder sb = new StringBuilder();
 			sb.append(row.get("pk")).append(separator);
 			sb.append(row.get("event_status")).append(separator);
@@ -124,6 +131,33 @@ public class EventHandler extends AbstractHandler
 			sb.append("\n");
 			responseStrean.print(sb.toString());
 			log.info(sb.toString());
+		}
+		if (deletedEvents.size() > 100) purgeDeletedEvents();
+	}
+	
+	private void purgeDeletedEvents()
+	{
+		Collection<Map<String, String>> eventMaps = deletedEvents.values();
+		for (Map<String, String> eventMap: eventMaps)
+		{
+			if (getTime(eventMap.get("created_time")) < (System.currentTimeMillis()-10*60*60*1000))
+			{
+				deletedEvents.remove(eventMap.get("aim_uid"));
+			}
+			
+		}
+	}
+	
+	private static long getTime(String timestamp)
+	{
+		try
+		{
+			Date date = new SimpleDateFormat("yyyy-dd-MM HH:mm:ss").parse(timestamp);
+			return date.getTime();
+		}
+		catch (Exception x)
+		{
+			return 0;
 		}
 	}
 }

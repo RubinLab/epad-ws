@@ -1,6 +1,7 @@
 package edu.stanford.epad.epadws.queries;
 
 import java.io.File;
+import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
@@ -30,6 +31,7 @@ import edu.stanford.epad.epadws.handlers.core.ProjectReference;
 import edu.stanford.epad.epadws.handlers.core.SeriesReference;
 import edu.stanford.epad.epadws.handlers.core.StudyReference;
 import edu.stanford.epad.epadws.handlers.core.SubjectReference;
+import edu.stanford.epad.epadws.security.EPADSession;
 
 /**
  * 
@@ -84,6 +86,16 @@ public interface EpadOperations
 
 	int createStudy(String username, StudyReference studyReference, String sessionID) throws Exception;
 
+	int createFile(String username, ProjectReference projectReference, File uploadedFile, String description, String sessionID) throws Exception;
+
+	int createFile(String username, SubjectReference subjectReference, File uploadedFile, String description, String sessionID) throws Exception;
+
+	int createFile(String username, StudyReference studyReference, File uploadedFile, String description, String sessionID) throws Exception;
+
+	int createFile(String username, SeriesReference seriesReference, File uploadedFile, String description, String sessionID) throws Exception;
+
+	int createImage(String username, ImageReference imageReference, File imageFile, String sessionID) throws Exception;
+
 	String createSubjectAIM(String username, SubjectReference subjectRefernece, String aimID, File aimFile, String sessionID);
 	
 	String createStudyAIM(String username, StudyReference studyReference, String aimID, File aimFile, String sessionID);
@@ -102,6 +114,10 @@ public interface EpadOperations
 	
 	void createOrModifyUser(String loggedInUser, String username, String firstname, String lastname, String email, String password, String oldpassword) throws Exception;
 	
+	void enableUser(String loggedInUser, String username) throws Exception;
+	
+	void disableUser(String loggedInUser, String username) throws Exception;
+	
 	int projectDelete(String projectID, String sessionID, String username) throws Exception;
 
 	int subjectDelete(SubjectReference subjectReference, String sessionID, String username) throws Exception;
@@ -110,19 +126,19 @@ public interface EpadOperations
 
 	String seriesDelete(SeriesReference seriesReference, String sessionID, boolean deleteAims, String username);
 
-	int projectAIMDelete(ProjectReference projectReference, String aimID, String sessionID, boolean deleteDSO, String username);
+	int projectAIMDelete(ProjectReference projectReference, String aimID, String sessionID, boolean deleteDSO, String username) throws Exception;
 
-	int subjectAIMDelete(SubjectReference subjectReference, String aimID, String sessionID, boolean deleteDSO, String username);
+	int subjectAIMDelete(SubjectReference subjectReference, String aimID, String sessionID, boolean deleteDSO, String username) throws Exception;
 
-	int studyAIMDelete(StudyReference studyReference, String aimID, String sessionID, boolean deleteDSO, String username);
+	int studyAIMDelete(StudyReference studyReference, String aimID, String sessionID, boolean deleteDSO, String username) throws Exception;
 
-	int seriesAIMDelete(SeriesReference seriesReference, String aimID, String sessionID, boolean deleteDSO, String username);
+	int seriesAIMDelete(SeriesReference seriesReference, String aimID, String sessionID, boolean deleteDSO, String username) throws Exception;
 
-	int imageAIMDelete(ImageReference imageReference, String aimID, String sessionID, boolean deleteDSO, String username);
+	int imageAIMDelete(ImageReference imageReference, String aimID, String sessionID, boolean deleteDSO, String username) throws Exception;
 
-	int frameAIMDelete(FrameReference frameReference, String aimID, String sessionID, boolean deleteDSO, String username);
+	int frameAIMDelete(FrameReference frameReference, String aimID, String sessionID, boolean deleteDSO, String username) throws Exception;
 
-	int aimDelete(String aimID, String sessionID, boolean deleteDSO, String username);
+	int aimDelete(String aimID, String sessionID, boolean deleteDSO, String username) throws Exception;
 	
 	void deleteAllSeriesAims(String seriedUID, boolean deleteDSOs);
 	
@@ -186,4 +202,6 @@ public interface EpadOperations
 
 	Set<String> getSeriesUIDsForSubject(String projectID, String subjectID, String sessionID,
 			EPADSearchFilter searchFilter);
+	
+	Collection<EPADSession> getCurrentSessions(String username) throws Exception;
 }

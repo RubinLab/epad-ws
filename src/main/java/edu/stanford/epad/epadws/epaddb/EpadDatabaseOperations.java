@@ -44,6 +44,8 @@ public interface EpadDatabaseOperations
 
 	void deleteSeries(String seriesUID);
 
+	void deleteSeriesOnly(String seriesUID);
+
 	SeriesProcessingStatus getSeriesProcessingStatus(String seriesUID);
 
 	void insertEpadEvent(String sessionID, String eventStatus, String aimUID, String aimName, String patientID,
@@ -54,6 +56,8 @@ public interface EpadDatabaseOperations
 	void updateOrInsertSeries(String seriesUID, SeriesProcessingStatus seriesProcessingStatus);
 
 	List<Map<String, String>> getEpadEventsForSessionID(String sessionID);
+
+	List<Map<String, String>> getEpadEventsForAimID(String sessionID);
 
 	void forceDICOMReprocessing();
 

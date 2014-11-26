@@ -1,15 +1,43 @@
 package edu.stanford.epad.epadws.service;
 
+//Copyright (c) 2014 The Board of Trustees of the Leland Stanford Junior University
+//All rights reserved.
+//
+//Redistribution and use in source and binary forms, with or without modification, are permitted provided that
+//the following conditions are met:
+//
+//Redistributions of source code must retain the above copyright notice, this list of conditions and the following
+//disclaimer.
+//
+//Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the
+//following disclaimer in the documentation and/or other materials provided with the distribution.
+//
+//Neither the name of The Board of Trustees of the Leland Stanford Junior University nor the names of its
+//contributors (Daniel Rubin, et al) may be used to endorse or promote products derived from this software without
+//specific prior written permission.
+//
+//THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES,
+//INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+//DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+//SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+//SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+//WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE
+//USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.io.FileUtils;
+import org.apache.log4j.Level;
 import org.mindrot.jbcrypt.BCrypt;
 
 import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADLogger;
+import edu.stanford.epad.epadws.models.EpadFile;
 import edu.stanford.epad.epadws.models.Project;
 import edu.stanford.epad.epadws.models.ProjectToSubject;
 import edu.stanford.epad.epadws.models.ProjectToSubjectToStudy;
@@ -135,6 +163,33 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		user.setEnabled(false);
 		user.save();
 		userCache.put(user.getUsername(), user);
+	}
+
+	@Override
+	public void userErrorLog(String username, String message) {
+		try {
+			User user = getUser(username);
+			if (user != null)
+				user.addEventLog(Level.ERROR, message);
+		} catch (Exception e) {	}
+	}
+
+	@Override
+	public void userWarningLog(String username, String message) {
+		try {
+			User user = getUser(username);
+			if (user != null)
+				user.addEventLog(Level.WARN, message);
+		} catch (Exception e) {	}
+	}
+
+	@Override
+	public void userInfoLog(String username, String message) {
+		try {
+			User user = getUser(username);
+			if (user != null)
+				user.addEventLog(Level.INFO, message);
+		} catch (Exception e) {	}
 	}
 
 	@Override
@@ -290,6 +345,40 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		ptos = (ProjectToSubject) ptos.getObject("project_id = " + project.getId() + " and subject_id =" + subject.getId());
 		ProjectToSubjectToStudy pss = new ProjectToSubjectToStudy();
 		pss.deleteObjects("proj_subj_id = " + ptos.getId() + " and study_id =" + study.getId());
+	}
+
+	@Override
+	public EpadFile createFile(String loggedInUser, String projectID,
+			String subjectUID, String studyUID, String seriesUID, File file,
+			String filename, String description) throws Exception {
+		EpadFile efile = new EpadFile();
+		efile.setName(filename);
+		efile.setDescription(description);
+		if (projectID != null & projectID.length() > 0)
+		{
+			Project project = getProject(projectID);
+			efile.setProjectId(project.getId());
+		}
+		if (subjectUID != null & subjectUID.length() > 0)
+		{
+			Subject subject = getSubject(subjectUID);
+			efile.setSubjectId(subject.getId());
+		}
+		if (studyUID != null & studyUID.length() > 0)
+		{
+			Study study = getStudy(studyUID);
+			efile.setStudyId(study.getId());
+		}
+		efile.setSeriesUid(seriesUID);
+		efile.setFilePath(EPADConfig.getEPADWebServerFilesDir() + '/' + efile.getRelativePath());
+		efile.setCreator(loggedInUser);
+		efile.setLength(file.length());
+		efile.save();
+		File parent = new File(efile.getFilePath());
+		parent.mkdirs();
+		String physicalName = "" + efile.getId() + efile.getExtension();
+		FileUtils.copyFile(file, new File(parent, physicalName));
+		return efile;
 	}
 
 	@Override
@@ -777,16 +866,6 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		} catch (Exception e) {
 		}
 		return null;
-	}
-
-	@Override
-	public void addUserLog(String username, EventLog eventLog) {
-		try {
-			User user = getUser(username);
-			if (user != null)
-				user.getEventLogs().add(eventLog);
-		} catch (Exception e) {
-		}
 	}
 
 }

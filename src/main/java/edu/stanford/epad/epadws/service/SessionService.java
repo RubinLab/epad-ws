@@ -44,6 +44,14 @@ public class SessionService {
 		}
 	}
 	
+	public static boolean hasValidSessionID(String sessionID) {
+		if (EPADConfig.UseEPADUsersProjects) {
+			return EPADSessionOperations.hasValidSessionID(sessionID);
+		} else {
+			return XNATSessionOperations.hasValidXNATSessionID(sessionID);
+		}
+	}
+	
 	public static String getJSessionIDFromRequest(HttpServletRequest httpRequest) {
 		return getJSessionIDFromRequest(httpRequest, false);
 	}

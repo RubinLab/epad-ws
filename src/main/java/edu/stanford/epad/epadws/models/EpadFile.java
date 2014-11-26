@@ -24,116 +24,114 @@ package edu.stanford.epad.epadws.models;
 //WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE
 //USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-import java.util.ArrayList;
 import java.util.Date;
-import java.util.List;
-
-import org.apache.log4j.Level;
 
 import edu.stanford.epad.epadws.models.dao.AbstractDAO;
 
-public class User extends AbstractDAO {
+public class EpadFile extends AbstractDAO {
 
 	long id;
-	String username;
-	String firstName;
-	String lastName;
-	String email;
-	String password;
-	boolean enabled;
-	Date lastLogin;
-	boolean admin;
+	Long projectId;
+	Long subjectId;
+	Long studyId;
+	String seriesUid;
+	String name;
+	String filePath;
+	long length;
+	String fileType;
+	String mimeType;
+	String description;
 	String creator;
 	Date createdTime;
 	Date updateTime;
-	transient String role;
-	transient List<EventLog> eventLogs = new ArrayList<EventLog>();
 
-	public static final class EventLog
-	{
-		public final Date date;
-		public final Level level;
-		public final String message;		
-
-		public EventLog(Level level, String message)
-		{
-			this.level = level;
-			this.message = message;
-			this.date = new Date();
-		}
-	}
-	
 	@Override
 	public long getId() {
 		return id;
 	}
 
+	public Long getProjectId() {
+		return projectId;
+	}
+
+	public void setProjectId(Long projectId) {
+		this.projectId = projectId;
+	}
+
+	public Long getSubjectId() {
+		return subjectId;
+	}
+
+	public void setSubjectId(Long subjectId) {
+		this.subjectId = subjectId;
+	}
+
+	public Long getStudyId() {
+		return studyId;
+	}
+
+	public void setStudyId(Long studyId) {
+		this.studyId = studyId;
+	}
+
+	public String getSeriesUid() {
+		return seriesUid;
+	}
+
+	public void setSeriesUid(String seriesUid) {
+		this.seriesUid = seriesUid;
+	}
+
+	public String getName() {
+		return name;
+	}
+
+	public void setName(String name) {
+		this.name = name;
+	}
+
+	public String getFilePath() {
+		return filePath;
+	}
+
+	public void setFilePath(String filePath) {
+		this.filePath = filePath;
+	}
+
+	public long getLength() {
+		return length;
+	}
+
+	public void setLength(long length) {
+		this.length = length;
+	}
+
+	public String getFileType() {
+		return fileType;
+	}
+
+	public void setFileType(String fileType) {
+		this.fileType = fileType;
+	}
+
+	public String getMimeType() {
+		return mimeType;
+	}
+
+	public void setMimeType(String mimeType) {
+		this.mimeType = mimeType;
+	}
+
+	public String getDescription() {
+		return description;
+	}
+
+	public void setDescription(String description) {
+		this.description = description;
+	}
+
 	public void setId(long id) {
 		this.id = id;
-	}
-
-	public String getUsername() {
-		return username;
-	}
-
-	public void setUsername(String username) {
-		this.username = username;
-	}
-
-	public String getFirstName() {
-		return firstName;
-	}
-
-	public void setFirstName(String firstName) {
-		this.firstName = firstName;
-	}
-
-	public String getLastName() {
-		return lastName;
-	}
-
-	public void setLastName(String lastName) {
-		this.lastName = lastName;
-	}
-
-	public String getEmail() {
-		return email;
-	}
-
-	public void setEmail(String email) {
-		this.email = email;
-	}
-
-	public String getPassword() {
-		return password;
-	}
-
-	public void setPassword(String password) {
-		this.password = password;
-	}
-
-	public boolean isEnabled() {
-		return enabled;
-	}
-
-	public void setEnabled(boolean enabled) {
-		this.enabled = enabled;
-	}
-
-	public Date getLastLogin() {
-		return lastLogin;
-	}
-
-	public void setLastLogin(Date lastLogin) {
-		this.lastLogin = lastLogin;
-	}
-
-	public boolean isAdmin() {
-		return admin;
-	}
-
-	public void setAdmin(boolean admin) {
-		this.admin = admin;
 	}
 
 	public String getCreator() {
@@ -160,46 +158,36 @@ public class User extends AbstractDAO {
 		this.updateTime = updateTime;
 	}
 
-	public String getFullName() {
-		return firstName + " " + lastName;
-	}
-	
-	public String getRole() {
-		return role;
-	}
-
-	public void setRole(String role) {
-		this.role = role;
-	}
-
-	public List<EventLog> getEventLogs() {
-		return eventLogs;
-	}
-
-	public void setEventLogs(List<EventLog> eventLogs) {
-		this.eventLogs = eventLogs;
-	}
-
-	public void addEventLog(Level level, String message)
+	public String getRelativePath()
 	{
-		EventLog el = new EventLog(level, message);
-		eventLogs.add(el);
+		return ""+ projectId + "/" + subjectId + "/" + studyId + "/" + seriesUid + "/";
+	}
+
+	public String getExtension()
+	{
+		int lastDot = name.lastIndexOf(".");
+		if (lastDot != -1)
+			return name.substring(lastDot);
+		else
+			return "";
 	}
 	
-	public final static String DBTABLE = "user";
+	public final static String DBTABLE = "epad_file";
 	public final static String[][] DBCOLUMNS = {
         {"id","long","id","Id"},
-        {"username","String","username","varchar"},
-        {"firstName","String","firstname","varchar"},
-        {"lastName","String","lastname","varchar"},
-        {"email","String","email","varchar"},
-        {"password","String","password","varchar"},
-        {"enabled","boolean","enabled","bit"},
-        {"admin","boolean","admin","bit"},
-        {"lastLogin","Date","lastLogin","timestamp"},
+        {"projectId","Long","project_id","integer"},
+        {"subjectId","Long","subject_id","integer"},
+        {"studyId","Long","study_id","integer"},
+        {"seriesUid","String","series_uid","varchar"},
+        {"name","String","name","varchar"},
+		{"filePath","String","name","varchar"},
+		{"length","long","name","integer"},
+		{"fileType","String","name","varchar"},
+		{"mimeType","String","name","varchar"},
+		{"description","String","name","varchar"},
         {"creator","String","creator","varchar"},
         {"createdTime","Date","createdtime","timestamp"},
-        {"updateTime","Date","updatetime","timestamp"},
+        {"updateTime","Date","updatetime","timestamp"},	
 	};
 
 	@Override
