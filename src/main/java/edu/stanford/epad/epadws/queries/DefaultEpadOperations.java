@@ -888,18 +888,12 @@ public class DefaultEpadOperations implements EpadOperations
 	@Override
 	public int createFile(String username, ProjectReference projectReference,
 			File uploadedFile, String description, String sessionID) throws Exception {
-		String filename = uploadedFile.getName();
-		if (filename.startsWith("temp"))
-		{
-			int dash = filename.indexOf("-");
-			filename = filename.substring(dash+1);
-		}
-		projectOperations.createFile(username, projectReference.projectID, null, null, null, uploadedFile, filename, description);
+		createFile(username, projectReference.projectID, null, null, null,
+					uploadedFile, description, sessionID);
 		return HttpServletResponse.SC_OK;
 	}
-
-	@Override
-	public int createFile(String username, SubjectReference subjectReference,
+	
+	private void createFile(String username, String projectID, String subjectID, String studyID, String seriesID,
 			File uploadedFile, String description, String sessionID) throws Exception {
 		String filename = uploadedFile.getName();
 		if (filename.startsWith("temp"))
@@ -907,51 +901,17 @@ public class DefaultEpadOperations implements EpadOperations
 			int dash = filename.indexOf("-");
 			filename = filename.substring(dash+1);
 		}
-		projectOperations.createFile(username, subjectReference.projectID, subjectReference.subjectID, null, null, uploadedFile, filename, description);
-		return HttpServletResponse.SC_OK;
-	}
-
-	@Override
-	public int createFile(String username, StudyReference studyReference,
-			File uploadedFile, String description, String sessionID) throws Exception {
-		String filename = uploadedFile.getName();
-		if (filename.startsWith("temp"))
+		if (UserProjectService.isDicomFile(uploadedFile))
 		{
-			int dash = filename.indexOf("-");
-			filename = filename.substring(dash+1);
+			createImage(username, projectID, uploadedFile, sessionID);
 		}
-		projectOperations.createFile(username, studyReference.projectID, studyReference.subjectID, studyReference.studyUID, null, uploadedFile, filename, description);
-		return HttpServletResponse.SC_OK;
-	}
-
-	@Override
-	public int createFile(String username, SeriesReference seriesReference,
-			File uploadedFile, String description, String sessionID)
-			throws Exception {
-		String filename = uploadedFile.getName();
-		if (filename.startsWith("temp"))
+		else if (uploadedFile.getName().toLowerCase().endsWith(".zip"))
 		{
-			int dash = filename.indexOf("-");
-			filename = filename.substring(dash+1);
-		}
-		projectOperations.createFile(username, seriesReference.projectID, seriesReference.subjectID, seriesReference.studyUID, seriesReference.seriesUID, uploadedFile, filename, description);
-		return HttpServletResponse.SC_OK;
-	}
-
-	@Override
-	public int createImage(String username, ImageReference imageReference,
-			File imageFile, String sessionID) throws Exception {
-		if (UserProjectService.isDicomFile(imageFile))
-		{
-			UserProjectService.createProjectEntitiesFromDICOMFile(imageFile, imageReference.projectID, sessionID, username);
-			Dcm4CheeOperations.dcmsnd(imageFile.getParentFile(), true);
-		}
-		else if (imageFile.getName().toLowerCase().endsWith(".zip"))
-		{
-			log.info("Unzipping " + imageFile.getAbsolutePath());
-			EPADFileUtils.extractFolder(imageFile.getAbsolutePath());
-			File[] imageFiles = imageFile.getParentFile().listFiles();
-			for (File file: imageFiles)
+			projectOperations.createFile(username, projectID, subjectID, studyID, seriesID, uploadedFile, filename, description);
+			log.info("Unzipping " + uploadedFile.getAbsolutePath());
+			EPADFileUtils.extractFolder(uploadedFile.getAbsolutePath());
+			File[] files = uploadedFile.getParentFile().listFiles();
+			for (File file: files)
 			{
 				if (!UserProjectService.isDicomFile(file) || file.getName().toLowerCase().endsWith(".zip"))
 				{
@@ -960,10 +920,52 @@ public class DefaultEpadOperations implements EpadOperations
 					file.delete();
 				}
 				else
-					UserProjectService.createProjectEntitiesFromDICOMFile(file, imageReference.projectID, sessionID, username);
+					UserProjectService.createProjectEntitiesFromDICOMFile(file, projectID, sessionID, username);
 			}
-			Dcm4CheeOperations.dcmsnd(imageFile.getParentFile(), true);			
+			uploadedFile.delete();
+			Dcm4CheeOperations.dcmsnd(uploadedFile.getParentFile(), true);			
 		}
+		else
+		{
+			projectOperations.createFile(username, projectID, subjectID, studyID, seriesID, uploadedFile, filename, description);
+		}
+	}
+
+	@Override
+	public int createFile(String username, SubjectReference subjectReference,
+			File uploadedFile, String description, String sessionID) throws Exception {
+		createFile(username, subjectReference.projectID, subjectReference.subjectID, null, null,
+				uploadedFile, description, sessionID);
+		return HttpServletResponse.SC_OK;
+	}
+
+	@Override
+	public int createFile(String username, StudyReference studyReference,
+			File uploadedFile, String description, String sessionID) throws Exception {
+		createFile(username, studyReference.projectID, studyReference.subjectID, studyReference.studyUID, null,
+				uploadedFile, description, sessionID);
+		return HttpServletResponse.SC_OK;
+	}
+
+	@Override
+	public int createFile(String username, SeriesReference seriesReference,
+			File uploadedFile, String description, String sessionID)
+			throws Exception {
+		createFile(username, seriesReference.projectID, seriesReference.subjectID, seriesReference.studyUID, seriesReference.seriesUID,
+						uploadedFile, description, sessionID);
+		return HttpServletResponse.SC_OK;
+	}
+
+	@Override
+	public int createImage(String username, String projectID,
+			File dicomFile, String sessionID) throws Exception {
+		if (UserProjectService.isDicomFile(dicomFile))
+		{
+			UserProjectService.createProjectEntitiesFromDICOMFile(dicomFile, projectID, sessionID, username);
+			Dcm4CheeOperations.dcmsnd(dicomFile.getParentFile(), true);
+		}
+		else
+			throw new Exception("Invalid DICOM file");
 		return HttpServletResponse.SC_OK;
 	}
 

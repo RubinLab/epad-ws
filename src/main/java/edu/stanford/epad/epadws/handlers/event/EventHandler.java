@@ -18,7 +18,7 @@ import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.epad.epadws.epaddb.EpadDatabase;
 import edu.stanford.epad.epadws.epaddb.EpadDatabaseOperations;
 import edu.stanford.epad.epadws.handlers.HandlerUtil;
-import edu.stanford.epad.epadws.xnat.XNATSessionOperations;
+import edu.stanford.epad.epadws.service.SessionService;
 
 /**
  * 
@@ -37,6 +37,8 @@ public class EventHandler extends AbstractHandler
 	private static final String MISSING_QUERY_MESSAGE = "No query in event request";
 	private static final String INVALID_SESSION_TOKEN_MESSAGE = "Session token is invalid on event route";
 
+	private static int count;
+	
 	@Override
 	public void handle(String base, Request request, HttpServletRequest httpRequest, HttpServletResponse httpResponse)
 	{
@@ -46,13 +48,18 @@ public class EventHandler extends AbstractHandler
 		httpResponse.setContentType("text/plain");
 		request.setHandled(true);
 
-		if (XNATSessionOperations.hasValidXNATSessionID(httpRequest)) {
+		if (SessionService.hasValidSessionID(httpRequest)) {
 			try {
 				String method = httpRequest.getMethod();
 				responseStream = httpResponse.getWriter();
 
 				if ("GET".equalsIgnoreCase(method)) {
-					String jsessionID = XNATSessionOperations.getJSessionIDFromRequest(httpRequest);
+					String jsessionID = SessionService.getJSessionIDFromRequest(httpRequest);
+					if (count++ >= 100)
+					{
+						log.info("Get Event request with JSESSIONID " + jsessionID);
+						count = 0;
+					}
 					if (jsessionID != null) {
 						findEventsForSessionID(responseStream, jsessionID);
 						statusCode = HttpServletResponse.SC_OK;
@@ -62,7 +69,7 @@ public class EventHandler extends AbstractHandler
 				} else if ("POST".equalsIgnoreCase(method)) {
 					String queryString = httpRequest.getQueryString();
 					if (queryString != null) {
-						String jsessionID = XNATSessionOperations.getJSessionIDFromRequest(httpRequest);
+						String jsessionID = SessionService.getJSessionIDFromRequest(httpRequest);
 						String event_status = httpRequest.getParameter("event_status");
 						String aim_uid = httpRequest.getParameter("aim_uid");
 						String aim_name = httpRequest.getParameter("aim_name");

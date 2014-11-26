@@ -1,3 +1,4 @@
+DROP TABLE if exists epad_file;
 DROP TABLE if exists project_subject_user;
 DROP TABLE if exists project_subject_study;
 DROP TABLE if exists project_subject;
@@ -123,6 +124,29 @@ CONSTRAINT FK_projectsubjectuser_projectsubject FOREIGN KEY (proj_subj_id) REFER
 KEY FK_projectsubjectuser_user (user_id),
 CONSTRAINT FK_projectsubjectuser_user FOREIGN KEY (user_id) REFERENCES user(id)) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 CREATE UNIQUE INDEX project_subject_user_ind on project_subject_user(proj_subj_id,user_id);
+
+CREATE TABLE epad_file (id integer unsigned NOT NULL AUTO_INCREMENT,
+project_id integer unsigned,
+subject_id integer unsigned,
+study_id integer unsigned,
+series_uid varchar(256),
+name varchar(128),
+filepath varchar(512),
+filetype varchar(64),
+mimetype varchar(64),
+description varchar(512),
+length integer,
+creator varchar(128),
+createdtime timestamp,
+updatetime timestamp,
+updated_by varchar(64),
+PRIMARY KEY (id),
+KEY FK_epadfile_study (study_id),
+CONSTRAINT FK_epadfile_study FOREIGN KEY (study_id) REFERENCES study(id),
+KEY FK_epadfile_subject (subject_id),
+CONSTRAINT FK_epadfile_subject FOREIGN KEY (subject_id) REFERENCES subject(id),
+KEY FK_epadfile_project (project_id),
+CONSTRAINT FK_epadfile_project FOREIGN KEY (project_id) REFERENCES project(id)) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 ALTER TABLE dbversion MODIFY COLUMN version varchar(6);
 

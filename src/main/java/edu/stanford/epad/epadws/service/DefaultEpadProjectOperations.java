@@ -354,23 +354,23 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		EpadFile efile = new EpadFile();
 		efile.setName(filename);
 		efile.setDescription(description);
-		if (projectID != null & projectID.length() > 0)
+		if (projectID != null && projectID.length() > 0)
 		{
 			Project project = getProject(projectID);
 			efile.setProjectId(project.getId());
 		}
-		if (subjectUID != null & subjectUID.length() > 0)
+		if (subjectUID != null && subjectUID.length() > 0)
 		{
 			Subject subject = getSubject(subjectUID);
 			efile.setSubjectId(subject.getId());
 		}
-		if (studyUID != null & studyUID.length() > 0)
+		if (studyUID != null && studyUID.length() > 0)
 		{
 			Study study = getStudy(studyUID);
 			efile.setStudyId(study.getId());
 		}
 		efile.setSeriesUid(seriesUID);
-		efile.setFilePath(EPADConfig.getEPADWebServerFilesDir() + '/' + efile.getRelativePath());
+		efile.setFilePath(EPADConfig.getEPADWebServerFilesDir() + efile.getRelativePath());
 		efile.setCreator(loggedInUser);
 		efile.setLength(file.length());
 		efile.save();
@@ -378,6 +378,7 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		parent.mkdirs();
 		String physicalName = "" + efile.getId() + efile.getExtension();
 		FileUtils.copyFile(file, new File(parent, physicalName));
+		log.info("Created file:" + efile.getName() + " in Project:" + efile.getProjectId());
 		return efile;
 	}
 

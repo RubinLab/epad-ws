@@ -11,7 +11,7 @@ import org.eclipse.jetty.server.handler.AbstractHandler;
 import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.epad.epadws.handlers.HandlerUtil;
 import edu.stanford.epad.epadws.processing.events.EventTracker;
-import edu.stanford.epad.epadws.xnat.XNATSessionOperations;
+import edu.stanford.epad.epadws.service.SessionService;
 
 /**
  * 
@@ -40,8 +40,8 @@ public class ProjectEventHandler extends AbstractHandler
 		try {
 			responseStream = httpResponse.getWriter();
 
-			if (XNATSessionOperations.hasValidXNATSessionID(httpRequest)) {
-				String jsessionID = XNATSessionOperations.getJSessionIDFromRequest(httpRequest);
+			if (SessionService.hasValidSessionID(httpRequest)) {
+				String jsessionID = SessionService.getJSessionIDFromRequest(httpRequest);
 				performEventHandle(responseStream, jsessionID);
 				statusCode = HttpServletResponse.SC_OK;
 			} else {

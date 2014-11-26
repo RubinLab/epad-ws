@@ -21,7 +21,7 @@ import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.epad.epadws.epaddb.EpadDatabase;
 import edu.stanford.epad.epadws.epaddb.EpadDatabaseOperations;
 import edu.stanford.epad.epadws.handlers.HandlerUtil;
-import edu.stanford.epad.epadws.xnat.XNATSessionOperations;
+import edu.stanford.epad.epadws.service.SessionService;
 
 /**
  * The coordination handler is responsible for taking a set of ordered terms and returning a unique ID for those terms.
@@ -101,7 +101,7 @@ public class CoordinationHandler extends AbstractHandler
 
 		try {
 			responseStream = httpResponse.getWriter();
-			if (XNATSessionOperations.hasValidXNATSessionID(httpRequest)) {
+			if (SessionService.hasValidSessionID(httpRequest)) {
 				String method = httpRequest.getMethod();
 
 				if ("POST".equalsIgnoreCase(method)) {

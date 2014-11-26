@@ -2,6 +2,7 @@ package edu.stanford.epad.epadws.handlers.admin;
 
 import java.io.PrintWriter;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import javax.servlet.http.HttpServletRequest;
@@ -138,12 +139,13 @@ public class XNATSyncHandler extends AbstractHandler
 								response = response + "\nCreated project " + xproject.name;
 							}
 							log.info("Getting project desc:" + xproject.ID);
-							EPADProject eproject = epadOperations.getProjectDescription(new ProjectReference(xproject.ID), username, sessionID);
-							log.info("Project users:" + eproject.loginToRole);
-							for (String login: eproject.loginToRole.keySet())
+							XNATUserList xnatUsers = XNATQueries.getUsersForProject(xproject.ID);
+							Map<String,String> userRoles = xnatUsers.getRoles();
+							log.info("Project users:" + userRoles);
+							for (String login: userRoles.keySet())
 							{
 								log.info("Getting projects for " + login);
-								String role = eproject.loginToRole.get(login);
+								String role = userRoles.get(login);
 								List<Project> projects = projectOperations.getProjectsForUser(login);
 								boolean found = false;
 								for (Project p: projects)
@@ -161,13 +163,13 @@ public class XNATSyncHandler extends AbstractHandler
 										urole = UserRole.OWNER;
 									if (role.startsWith("Member"))
 										urole = UserRole.MEMBER;
-									projectOperations.addUserToProject(username, eproject.id, login, urole);
+									projectOperations.addUserToProject(username, xproject.ID, login, urole);
 									if (role.startsWith("Owner") && project.getCreator().equals(username))
 									{
 										project.setCreator(login);
 										project.save();
 									}
-									response = response + "\nAdded user " + login + " to project " + eproject.id + " as " + urole;
+									response = response + "\nAdded user " + login + " to project " + xproject.ID + " as " + urole;
 								}
 							}
 							XNATSubjectList xsubjects = XNATQueries.getSubjectsForProject(sessionID, xproject.ID);
@@ -228,6 +230,7 @@ public class XNATSyncHandler extends AbstractHandler
 						responseStream.write(response);
 						statusCode = HttpServletResponse.SC_OK;
 					} catch (Exception e) {
+						log.warning("Error in XNAT Sync", e);
 						statusCode = HandlerUtil.internalErrorResponse(INTERNAL_ERROR_MESSAGE, e, responseStream, log);
 					} 
 				} else {

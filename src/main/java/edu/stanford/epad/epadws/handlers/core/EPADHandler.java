@@ -24,6 +24,7 @@ import org.eclipse.jetty.server.handler.AbstractHandler;
 import com.google.gson.Gson;
 
 import edu.stanford.epad.common.util.EPADConfig;
+import edu.stanford.epad.common.util.EPADFileUtils;
 import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.epad.dtos.EPADAIM;
 import edu.stanford.epad.dtos.EPADAIMList;
@@ -180,13 +181,16 @@ public class EPADHandler extends AbstractHandler
 					log.info("subject aim count:" + subject.numberOfAnnotations);
 					responseStream.append(subject.toJSON());
 					statusCode = HttpServletResponse.SC_OK;
-				} else
+				} else {
+					log.info("Subject " + subjectReference.subjectID + " not found");
 					statusCode = HttpServletResponse.SC_NOT_FOUND;
+				}
 
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.STUDY_LIST, pathInfo)) {
 				SubjectReference subjectReference = SubjectReference.extract(ProjectsRouteTemplates.STUDY_LIST, pathInfo);
 				EPADStudyList studyList = epadOperations.getStudyDescriptions(subjectReference, username, sessionID,
 						searchFilter);
+				log.info("Returning " + studyList.ResultSet.totalRecords + " studies");
 				responseStream.append(studyList.toJSON());
 				statusCode = HttpServletResponse.SC_OK;
 
@@ -196,9 +200,11 @@ public class EPADHandler extends AbstractHandler
 				if (study != null) {
 					responseStream.append(study.toJSON());
 					statusCode = HttpServletResponse.SC_OK;
-				} else
+				} else {
+					log.info("Study " + studyReference.studyUID + " not found");
 					statusCode = HttpServletResponse.SC_NOT_FOUND;
-
+				}
+				
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.SERIES_LIST, pathInfo)) {
 				boolean filterDSO = "true".equalsIgnoreCase(httpRequest.getParameter("filterDSO"));
 				StudyReference studyReference = StudyReference.extract(ProjectsRouteTemplates.SERIES_LIST, pathInfo);
@@ -213,9 +219,11 @@ public class EPADHandler extends AbstractHandler
 				if (series != null) {
 					responseStream.append(series.toJSON());
 					statusCode = HttpServletResponse.SC_OK;
-				} else
+				} else {
+					log.info("Series " + seriesReference.seriesUID + " not found");
 					statusCode = HttpServletResponse.SC_NOT_FOUND;
-
+				}
+				
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.IMAGE_LIST, pathInfo)) {
 				SeriesReference seriesReference = SeriesReference.extract(ProjectsRouteTemplates.IMAGE_LIST, pathInfo);
 				EPADImageList imageList = epadOperations.getImageDescriptions(seriesReference, sessionID, searchFilter);
@@ -228,8 +236,10 @@ public class EPADHandler extends AbstractHandler
 				if (image != null) {
 					responseStream.append(image.toJSON());
 					statusCode = HttpServletResponse.SC_OK;
-				} else
+				} else {
+					log.info("Image " + imageReference.imageUID + " not found");
 					statusCode = HttpServletResponse.SC_NOT_FOUND;
+				}
 
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.FRAME_LIST, pathInfo)) {
 				ImageReference imageReference = ImageReference.extract(ProjectsRouteTemplates.FRAME_LIST, pathInfo);
@@ -243,8 +253,10 @@ public class EPADHandler extends AbstractHandler
 				if (frame != null) {
 					responseStream.append(frame.toJSON());
 					statusCode = HttpServletResponse.SC_OK;
-				} else
+				} else {
+					log.info("Image " + frameReference.imageUID + " frame " + frameReference.frameNumber + " not found");
 					statusCode = HttpServletResponse.SC_NOT_FOUND;
+				}
 				
 			} else if (HandlerUtil.matchesTemplate(SubjectsRouteTemplates.SUBJECT, pathInfo)) {
 				SubjectReference subjectReference = SubjectReference.extract(SubjectsRouteTemplates.SUBJECT, pathInfo);
@@ -252,8 +264,10 @@ public class EPADHandler extends AbstractHandler
 				if (subject != null) {
 					responseStream.append(subject.toJSON());
 					statusCode = HttpServletResponse.SC_OK;
-				} else
+				} else {
+					log.info("Subject " + subjectReference.subjectID + " not found");
 					statusCode = HttpServletResponse.SC_NOT_FOUND;
+				}
 
 			} else if (HandlerUtil.matchesTemplate(SubjectsRouteTemplates.SUBJECT_LIST, pathInfo)) {
 				SubjectReference subjectReference = SubjectReference.extract(SubjectsRouteTemplates.SUBJECT_LIST, pathInfo);
@@ -284,8 +298,10 @@ public class EPADHandler extends AbstractHandler
 				if (image != null) {
 					responseStream.append(image.toJSON());
 					statusCode = HttpServletResponse.SC_OK;
-				} else
+				} else {
+					log.info("Image " + imageReference.imageUID + " not found");
 					statusCode = HttpServletResponse.SC_NOT_FOUND;
+				}
 				
 			} else if (HandlerUtil.matchesTemplate(StudiesRouteTemplates.FRAME_LIST, pathInfo)) {
 				ImageReference imageReference = ImageReference.extract(StudiesRouteTemplates.FRAME_LIST, pathInfo);
@@ -746,14 +762,14 @@ public class EPADHandler extends AbstractHandler
 		String pathInfo = httpRequest.getPathInfo();
 		int statusCode = HttpServletResponse.SC_OK;
 		String status = null;
-		log.info("PUT Request from client:" + pathInfo + " user:" + username + " sessionID:" + sessionID);
+	    String requestContentType = httpRequest.getContentType();
+		log.info("PUT Request from client:" + pathInfo + " user:" + username + " sessionID:" + sessionID + " contentType:" + requestContentType);
+		File uploadedFile = null;
 		try
 		{
-			File uploadedFile = null;
 			Map<String, Object> paramData = null;
-		    String requestContenttype = httpRequest.getContentType();
 			// Note: This needs to be done, before anything else otherwise upload won't work
-			if (!requestContenttype.startsWith("multipart/form-data"))
+			if (requestContentType == null || !requestContentType.startsWith("multipart/form-data"))
 			{
 				uploadedFile = this.getUploadedFile(httpRequest);
 			}
@@ -780,14 +796,20 @@ public class EPADHandler extends AbstractHandler
 					statusCode = epadOperations.createProject(username, projectReference, projectName, projectDescription, sessionID);
 				}
 				if (uploadedFile != null) {
-					statusCode = epadOperations.createFile(username, projectReference, uploadedFile, sessionID);					
+					log.info("Saving uploaded file:" + uploadedFile.getName());
+					String description = httpRequest.getParameter("description");
+					statusCode = epadOperations.createFile(username, projectReference, uploadedFile, description, sessionID);					
 				}
 					
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.SUBJECT, pathInfo)) {
 				SubjectReference subjectReference = SubjectReference.extract(ProjectsRouteTemplates.SUBJECT, pathInfo);
 				String subjectName = httpRequest.getParameter("subjectName");
 				statusCode = epadOperations.createSubject(username, subjectReference, subjectName, sessionID);
-	
+				if (uploadedFile != null) {
+					String description = httpRequest.getParameter("description");
+					statusCode = epadOperations.createFile(username, subjectReference, uploadedFile, description, sessionID);					
+				}
+
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.SUBJECT_STATUS, pathInfo)) {
 				SubjectReference subjectReference = SubjectReference.extract(ProjectsRouteTemplates.SUBJECT_STATUS, pathInfo);
 				status = epadOperations.setSubjectStatus(subjectReference, sessionID, username);
@@ -800,6 +822,10 @@ public class EPADHandler extends AbstractHandler
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.STUDY, pathInfo)) {
 				StudyReference studyReference = StudyReference.extract(ProjectsRouteTemplates.STUDY, pathInfo);
 				statusCode = epadOperations.createStudy(username, studyReference, sessionID);
+				if (uploadedFile != null) {
+					String description = httpRequest.getParameter("description");
+					statusCode = epadOperations.createFile(username, studyReference, uploadedFile, description, sessionID);					
+				}
 	
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.STUDY_AIM, pathInfo)) {
 				StudyReference studyReference = StudyReference.extract(ProjectsRouteTemplates.STUDY_AIM, pathInfo);
@@ -809,6 +835,10 @@ public class EPADHandler extends AbstractHandler
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.SERIES, pathInfo)) {
 				SeriesReference seriesReference = SeriesReference.extract(ProjectsRouteTemplates.SERIES, pathInfo);
 				statusCode = epadOperations.createSeries(seriesReference, sessionID);
+				if (uploadedFile != null) {
+					String description = httpRequest.getParameter("description");
+					statusCode = epadOperations.createFile(username, seriesReference, uploadedFile, description, sessionID);					
+				}
 	
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.SERIES_AIM, pathInfo)) {
 				SeriesReference seriesReference = SeriesReference.extract(ProjectsRouteTemplates.SERIES_AIM, pathInfo);
@@ -816,8 +846,8 @@ public class EPADHandler extends AbstractHandler
 				status = epadOperations.createSeriesAIM(username, seriesReference, aimReference.aimID, uploadedFile, sessionID);
 	
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.IMAGE, pathInfo)) {
-				ImageReference imageReference = ImageReference.extract(ProjectsRouteTemplates.IMAGE, pathInfo);
-				statusCode = epadOperations.createImage(username, imageReference, uploadedFile, sessionID);
+				statusCode = HttpServletResponse.SC_METHOD_NOT_ALLOWED;
+				httpResponse.addHeader("Allow", "GET, DELETE");
 	
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.IMAGE_AIM, pathInfo)) {
 				ImageReference imageReference = ImageReference.extract(ProjectsRouteTemplates.IMAGE_AIM, pathInfo);
@@ -872,6 +902,16 @@ public class EPADHandler extends AbstractHandler
 			log.warning("Error handling put", x);
 			status = x.getMessage();
 		}
+		finally {
+			if (uploadedFile != null)
+			{
+				if (uploadedFile.getParentFile().exists())
+				{
+					log.info("Deleting upload directory " + uploadedFile.getParentFile().getAbsolutePath());
+					EPADFileUtils.deleteDirectoryAndContents(uploadedFile.getParentFile());
+				}
+			}
+		}
 		if (status == null || status.length() == 0)
 		{
 			return statusCode;
@@ -887,9 +927,11 @@ public class EPADHandler extends AbstractHandler
 	{
 		String pathInfo = httpRequest.getPathInfo();
 		int statusCode;
-		
+		File uploadedFile = null;
+		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
+	    String requestContentType = httpRequest.getContentType();
 		try {
-			log.info("POST Request from client:" + pathInfo + " user:" + username);
+			log.info("POST Request from client:" + pathInfo + " user:" + username + " contentType:" + requestContentType);
 			if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.FRAME_LIST, pathInfo)) {
 				ImageReference imageReference = ImageReference.extract(ProjectsRouteTemplates.FRAME_LIST, pathInfo);
 				String type = httpRequest.getParameter("type");
@@ -902,30 +944,80 @@ public class EPADHandler extends AbstractHandler
 					else
 						statusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 				}
-				else if (!DSOUtil.handleDSOFramesEdit(imageReference.projectID, imageReference.subjectID, imageReference.studyUID,
-						imageReference.seriesUID, imageReference.imageUID, httpRequest, responseStream))
-				{
+				else { 
+					
+					boolean status = DSOUtil.handleDSOFramesEdit(imageReference.projectID, imageReference.subjectID, imageReference.studyUID,
+						imageReference.seriesUID, imageReference.imageUID, httpRequest, responseStream);
+					if (status)
 						statusCode = HttpServletResponse.SC_CREATED;
-				}
-				else
-				{
-					log.info("Error return from handleDSOFramesEdit");
-					statusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+					else
+						statusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 				}
 			} else {
-			    String requestContenttype = httpRequest.getContentType();
 				Map<String, Object> paramData = null;
-				if (requestContenttype.startsWith("multipart/form-data"))
+				if (requestContentType != null && requestContentType.startsWith("multipart/form-data"))
 				{
 					paramData = parsePostedData(httpRequest, responseStream);
+					for (String param: paramData.keySet())
+					{
+						if (paramData.get(param) instanceof File)
+						{
+							uploadedFile = (File) paramData.get(param);
+							break;
+						}
+					}
 				}
-				statusCode = HandlerUtil.badRequestJSONResponse(BAD_POST_MESSAGE + ":" + pathInfo, responseStream, log);
+				statusCode = HttpServletResponse.SC_BAD_REQUEST;
+				if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.PROJECT, pathInfo)) {
+					ProjectReference projectReference = ProjectReference.extract(ProjectsRouteTemplates.PROJECT, pathInfo);
+					if (uploadedFile != null) {
+						String description = httpRequest.getParameter("description");
+						if (description == null) description = (String) paramData.get("description");
+						statusCode = epadOperations.createFile(username, projectReference, uploadedFile, description, sessionID);					
+					}
+						
+				} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.SUBJECT, pathInfo)) {
+					SubjectReference subjectReference = SubjectReference.extract(ProjectsRouteTemplates.SUBJECT, pathInfo);
+					if (uploadedFile != null) {
+						String description = httpRequest.getParameter("description");
+						if (description == null) description = (String) paramData.get("description");
+						statusCode = epadOperations.createFile(username, subjectReference, uploadedFile, description, sessionID);					
+					}
+
+				} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.STUDY, pathInfo)) {
+					StudyReference studyReference = StudyReference.extract(ProjectsRouteTemplates.STUDY, pathInfo);
+					if (uploadedFile != null) {
+						String description = httpRequest.getParameter("description");
+						if (description == null) description = (String) paramData.get("description");
+						statusCode = epadOperations.createFile(username, studyReference, uploadedFile, description, sessionID);					
+					}
+		
+				} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.SERIES, pathInfo)) {
+					SeriesReference seriesReference = SeriesReference.extract(ProjectsRouteTemplates.SERIES, pathInfo);
+					if (uploadedFile != null) {
+						String description = httpRequest.getParameter("description");
+						if (description == null) description = (String) paramData.get("description");
+						statusCode = epadOperations.createFile(username, seriesReference, uploadedFile, description, sessionID);					
+					}
+				} else {
+					statusCode = HandlerUtil.badRequestJSONResponse(BAD_POST_MESSAGE + ":" + pathInfo, responseStream, log);
+				}		
 			}
 			return statusCode;
 		} catch (Exception x) {
 			log.warning("Error handling post", x);
 			responseStream.write(new EPADMessage(x.getMessage()).toJSON());
 			return HttpServletResponse.SC_INTERNAL_SERVER_ERROR;							
+		}
+		finally {
+			if (uploadedFile != null)
+			{
+				if (uploadedFile.getParentFile().exists())
+				{
+					log.info("Deleting upload directory " + uploadedFile.getParentFile().getAbsolutePath());
+					EPADFileUtils.deleteDirectoryAndContents(uploadedFile.getParentFile());
+				}
+			}
 		}
 	}
 
@@ -1026,16 +1118,21 @@ public class EPADHandler extends AbstractHandler
 	
 	private File getUploadedFile(HttpServletRequest httpRequest)
 	{
-		String annotationsUploadDirPath = EPADConfig.getEPADWebServerAnnotationsUploadDir();
-		String tempXMLFileName = "temp-" + System.currentTimeMillis() + ".xml";
-		File aimFile = new File(annotationsUploadDirPath + tempXMLFileName);
+		String uploadDirPath = EPADConfig.getEPADWebServerFileUploadDir() + "temp" + Long.toString(System.currentTimeMillis());
+		File uploadDir = new File(uploadDirPath);
+		uploadDir.mkdirs();
+		String fileName = httpRequest.getParameter("fileName");
+		String tempXMLFileName = "temp" + System.currentTimeMillis() + "-annotation.xml";
+		if (fileName != null)
+			tempXMLFileName = "temp" + System.currentTimeMillis() + "-" + fileName;
+		File uploadedFile = new File(uploadDir, tempXMLFileName);
 		try
 		{
 			// opens input stream of the request for reading data
 			InputStream inputStream = httpRequest.getInputStream();
 			
 			// opens an output stream for writing file
-			FileOutputStream outputStream = new FileOutputStream(aimFile);
+			FileOutputStream outputStream = new FileOutputStream(uploadedFile);
 			
 			byte[] buffer = new byte[4096];
 			int bytesRead = -1;
@@ -1049,12 +1146,18 @@ public class EPADHandler extends AbstractHandler
 			log.info("Data received, len:" + len);
 			outputStream.close();
 			inputStream.close();
-			log.info("Created AIMFile:" + aimFile.getAbsolutePath());
-			if (len > 0)
+			log.info("Created File:" + uploadedFile.getAbsolutePath());
+			if (len > 0 && (tempXMLFileName.endsWith(".xml") || tempXMLFileName.endsWith(".txt")))
 			{
-				log.info("PUT Data:" + readFile(aimFile));
+				log.info("PUT Data:" + readFile(uploadedFile));
 			}
-			return aimFile;
+//			if (fileType != null)
+//			{
+//				File changeFileExt = new File(uploadedFile.getParentFile(), tempXMLFileName.substring(0, tempXMLFileName.length()-3) + fileType);
+//				uploadedFile.renameTo(changeFileExt);
+//				uploadedFile = changeFileExt;
+//			}
+			return uploadedFile;
 		}
 		catch (Exception x)
 		{
@@ -1084,7 +1187,10 @@ public class EPADHandler extends AbstractHandler
 
 	private Map<String, Object> parsePostedData(HttpServletRequest httpRequest, PrintWriter responseStream) throws Exception
 	{
-		String uploadDirPath = EPADConfig.getEPADWebServerUploadDir();
+		String uploadDirPath = EPADConfig.getEPADWebServerFileUploadDir() + "temp" + Long.toString(System.currentTimeMillis());
+		File uploadDir = new File(uploadDirPath);
+		uploadDir.mkdirs();
+		
 		Map<String, Object> params = new HashMap<String, Object>();
 	    // Create a factory for disk-based file items
 	    DiskFileItemFactory factory = new DiskFileItemFactory();
