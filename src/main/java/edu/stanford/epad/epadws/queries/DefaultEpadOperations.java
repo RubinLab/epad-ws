@@ -943,7 +943,7 @@ public class DefaultEpadOperations implements EpadOperations
 			if (!"admin".equals(username) && !aim.userName.equals(username) && !aim.userName.equals("shared") && !EPADConfig.xnatUploadProjectID.equals(aim.projectID) && !XNATQueries.isOwner(sessionID, username, aim.projectID))
 			{
 				log.warning("No permissions to delete AIM:" + aimID + " for user " + username);
-				throw new Exception("No permissions to delete AIM:" + aimID + " for user " + username);
+				throw new Exception("No permissions to delete Annotation");
 			}
 			log.info("Deleting AIM, deleteDSO:" + deleteDSO + " dsoSeriesUID:" + aim.dsoSeriesUID);
 			AIMUtil.deleteAIM(aimID);
@@ -973,7 +973,7 @@ public class DefaultEpadOperations implements EpadOperations
 			if (!"admin".equals(username) && !aim.userName.equals(username) && !aim.userName.equals("shared") && !EPADConfig.xnatUploadProjectID.equals(aim.projectID) && !XNATQueries.isOwner(sessionID, username, aim.projectID))
 			{
 				log.warning("No permissions to delete AIM:" + aimID + " for user " + username);
-				throw new Exception("No permissions to delete AIM:" + aimID + " for user " + username);
+				throw new Exception("No permissions to delete Annotation");
 			}
 			AIMUtil.deleteAIM(aimID);
 			epadDatabaseOperations.deleteAIM(username, subjectReference, aimID);
@@ -1001,7 +1001,7 @@ public class DefaultEpadOperations implements EpadOperations
 			if (!"admin".equals(username) && !aim.userName.equals(username) && !aim.userName.equals("shared") && !EPADConfig.xnatUploadProjectID.equals(aim.projectID) && !XNATQueries.isOwner(sessionID, username, aim.projectID))
 			{
 				log.warning("No permissions to delete AIM:" + aimID + " for user " + username);
-				throw new Exception("No permissions to delete AIM:" + aimID + " for user " + username);
+				throw new Exception("No permissions to delete Annotation");
 			}
 			AIMUtil.deleteAIM(aimID);
 			epadDatabaseOperations.deleteAIM(username, studyReference, aimID);
@@ -1029,7 +1029,7 @@ public class DefaultEpadOperations implements EpadOperations
 			if (!"admin".equals(username) && !aim.userName.equals(username) && !aim.userName.equals("shared") && !EPADConfig.xnatUploadProjectID.equals(aim.projectID) && !XNATQueries.isOwner(sessionID, username, aim.projectID))
 			{
 				log.warning("No permissions to delete AIM:" + aimID + " for user " + username);
-				throw new Exception("No permissions to delete AIM:" + aimID + " for user " + username);
+				throw new Exception("No permissions to delete Annotation");
 			}
 			AIMUtil.deleteAIM(aimID);
 			epadDatabaseOperations.deleteAIM(username, seriesReference, aimID);
@@ -1057,7 +1057,7 @@ public class DefaultEpadOperations implements EpadOperations
 			if (!"admin".equals(username) && !aim.userName.equals(username) && !aim.userName.equals("shared") && !EPADConfig.xnatUploadProjectID.equals(aim.projectID) && !XNATQueries.isOwner(sessionID, username, aim.projectID))
 			{
 				log.warning("No permissions to delete AIM:" + aimID + " for user " + username);
-				throw new Exception("No permissions to delete AIM:" + aimID + " for user " + username);
+				throw new Exception("No permissions to delete Annotation");
 			}
 			AIMUtil.deleteAIM(aimID);
 			epadDatabaseOperations.deleteAIM(username, imageReference, aimID);
@@ -1085,7 +1085,7 @@ public class DefaultEpadOperations implements EpadOperations
 			if (!"admin".equals(username) && !aim.userName.equals(username) && !aim.userName.equals("shared") && !EPADConfig.xnatUploadProjectID.equals(aim.projectID) && !XNATQueries.isOwner(sessionID, username, aim.projectID))
 			{
 				log.warning("No permissions to delete AIM:" + aimID + " for user " + username);
-				throw new Exception("No permissions to delete AIM:" + aimID + " for user " + username);
+				throw new Exception("No permissions to delete Annotation");
 			}
 			AIMUtil.deleteAIM(aimID);
 			epadDatabaseOperations.deleteAIM(username, frameReference, aimID);
@@ -1112,7 +1112,7 @@ public class DefaultEpadOperations implements EpadOperations
 			if (!"admin".equals(username) && !aim.userName.equals(username) && !aim.userName.equals("shared") && !EPADConfig.xnatUploadProjectID.equals(aim.projectID) && !XNATQueries.isOwner(sessionID, username, aim.projectID))
 			{
 				log.warning("No permissions to delete AIM:" + aimID + " for user " + username);
-				throw new Exception("No permissions to delete AIM:" + aimID + " for user " + username);
+				throw new Exception("No permissions to delete Annotation");
 			}
 			AIMUtil.deleteAIM(aimID);
 			epadDatabaseOperations.deleteAIM(username, aimID);
