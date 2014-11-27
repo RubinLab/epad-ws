@@ -115,7 +115,7 @@ public class EventHandler extends AbstractHandler
 
 		if (eventMap.size() == 0)
 		{
-			responseStrean.println("No new events posted");
+			//responseStrean.println("No new events posted");
 			//log.info("No new events posted");
 			return;
 		}
