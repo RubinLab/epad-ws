@@ -5,7 +5,9 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -167,6 +169,19 @@ public class AIMUtil
 			}
 		}
 		return result;
+	}
+
+	private static long getTime(String timestamp)
+	{
+		try
+		{
+			Date date = new SimpleDateFormat("yyyy-dd-MM HH:mm:ss").parse(timestamp);
+			return date.getTime();
+		}
+		catch (Exception x)
+		{
+			return 0;
+		}
 	}
 
     /**
@@ -574,7 +589,7 @@ public class AIMUtil
 				String imageID = aim.getFirstImageID();
 				String seriesID = aim.getSeriesID(imageID);
 				String studyID = aim.getStudyID(seriesID);
-				log.info("Saving AIM file with ID " + imageAnnotation.getUniqueIdentifier() + " username:" + username);
+				log.info("Saving AIM file with ID " + imageAnnotation.getUniqueIdentifier() + " projectID:" + projectID + " username:" + username);
 				String result = AIMUtil.saveImageAnnotationToServer(imageAnnotation, projectID, frameNumber, sessionId);
 				log.info("Save annotation:" + result);
 				if (result.toLowerCase().contains("success") && projectID != null && username != null)
@@ -582,7 +597,8 @@ public class AIMUtil
 					FrameReference frameReference = new FrameReference(projectID, patientID, studyID, seriesID, imageID, new Integer(frameNumber));
 					epadDatabaseOperations.addAIM(username, frameReference, imageAnnotation.getUniqueIdentifier().getRoot());
 				}
-            } 
+				return false;
+           } 
 			
 		}
 		return true;
@@ -606,6 +622,7 @@ public class AIMUtil
 		} else {
 			for(String projectID: searchValueByProject.keySet())
 			{
+				log.info("ProjectID:" + projectID + " type:" + aimSearchType + " value:" + searchValueByProject.get(projectID));
 				queryAIMImageAnnotationsV4(responseStream, projectID, aimSearchType, searchValueByProject.get(projectID), user);
 			}
 		}
@@ -619,6 +636,7 @@ public class AIMUtil
 		} else {
 			for(String projectID: searchValueByProject.keySet())
 			{
+				log.info("ProjectID:" + projectID + " type:" + aimSearchType + " value:" + searchValueByProject.get(projectID));
 				queryAIMImageAnnotationsV4(responseStream, projectID, aimSearchType, searchValueByProject.get(projectID), user);
 			}
 		}
@@ -710,7 +728,8 @@ public class AIMUtil
 			ea.template = aim.getCodeMeaning();
 			ea.date = aim.getDateTime();
 			ea.comment = a.getComment();
-			ea.studyDate = a.getFirstStudyDate();
+			if (a.getFirstStudyDate() != null)
+				ea.studyDate = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(a.getFirstStudyDate());
 			ea.patientName = a.getPatientName();
 			aims.addAIM(ea);
 		}
@@ -724,7 +743,7 @@ public class AIMUtil
 			String searchValue, String user) throws ParserConfigurationException, edu.stanford.hakan.aim4api.base.AimException
 	{
 		List<ImageAnnotationCollection> aims = AIMQueries.getAIMImageAnnotationsV4(projectID, aimSearchType, searchValue, user);
-		log.info("" + aims.size() + " AIM file(s) found for user " + user);
+		log.info("" + aims.size() + " AIM4 file(s) found for user " + user);
 
 		DocumentBuilderFactory dbfac = DocumentBuilderFactory.newInstance();
 		DocumentBuilder docBuilder = dbfac.newDocumentBuilder();
@@ -755,7 +774,7 @@ public class AIMUtil
 		{
 			annotations.addAll(AIMQueries.getAIMImageAnnotationsV4(projectID, AIMSearchType.ANNOTATION_UID, projectAimIDs.get(projectID), user));
 		}
-		log.info("" + annotations.size() + " AIM file(s) found for user " + user);
+		log.info("" + annotations.size() + " AIM4 file(s) found for user " + user);
 
 		Map<String, EPADAIM> aimMAP = new HashMap<String, EPADAIM>();
 		EPADAIMResultSet rs = aims.ResultSet;
@@ -772,7 +791,8 @@ public class AIMUtil
 			ea.template = aim.getImageAnnotations().get(0).getListTypeCode().get(0).getCode();
 			ea.date = aim.getDateTime();
 			ea.comment = a.getComment();
-			ea.studyDate = a.getFirstStudyDate();
+			if (a.getFirstStudyDate() != null)
+				ea.studyDate = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(a.getFirstStudyDate());
 			ea.patientName = a.getPatientName();
 			aims.addAIM(ea);
 		}
@@ -934,9 +954,10 @@ public class AIMUtil
 		{
 			log.info("Converting AIM3:" + epadaim.aimID + " in project " + epadaim.projectID);
 			try {
-				List<ImageAnnotation> aims = AIMQueries.getAIMImageAnnotations(AIMSearchType.ANNOTATION_UID, epadaim.aimID, "admin");
+				List<ImageAnnotation> aims = AIMQueries.getAIMImageAnnotations(epadaim.projectID, AIMSearchType.ANNOTATION_UID, epadaim.aimID, "admin", 1, 50000, true);
 				if (aims.size() > 0)
 				{
+					log.info("Saving AIM4:" + epadaim.aimID + " in project " + epadaim.projectID);
 					AIMUtil.saveImageAnnotationToServer(aims.get(0).toAimV4(), epadaim.projectID, 0, adminSessionID);
 					count++;
 				}
