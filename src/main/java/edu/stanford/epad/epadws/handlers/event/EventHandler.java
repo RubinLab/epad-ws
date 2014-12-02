@@ -78,6 +78,8 @@ public class EventHandler extends AbstractHandler
 						String plugin_name = httpRequest.getParameter("plugin_name");
 
 						log.info("Got event for AIM ID " + aim_uid + " with JSESSIONID " + jsessionID);
+						if (jsessionID.indexOf(",") != -1)
+							jsessionID = jsessionID.substring(0, jsessionID.indexOf(","));
 
 						if (jsessionID != null && event_status != null && aim_uid != null && aim_uid != null && aim_name != null
 								&& patient_id != null && patient_name != null && template_id != null && template_name != null
@@ -118,6 +120,8 @@ public class EventHandler extends AbstractHandler
 	{
 		EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
 		// TODO This map should be replaced with a class describing an event.
+		if (sessionID.indexOf(",") != -1)
+			sessionID = sessionID.substring(0, sessionID.indexOf(","));
 		List<Map<String, String>> eventMap = epadDatabaseOperations.getEpadEventsForSessionID(sessionID);
 		String separator = ", ";
 
