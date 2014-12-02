@@ -1,6 +1,8 @@
 package edu.stanford.epad.epadws.handlers.event;
 
 import java.io.PrintWriter;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
@@ -123,6 +125,8 @@ public class EventHandler extends AbstractHandler
 				+ "template_id, template_name, plugin_name");
 		
 		for (Map<String, String> row : eventMap) {
+			if (getTime(row.get("created_time")) < (System.currentTimeMillis() - 5*60*1000))
+				continue;
 			StringBuilder sb = new StringBuilder();
 			sb.append(row.get("pk")).append(separator);
 			sb.append(row.get("event_status")).append(separator);
@@ -137,6 +141,19 @@ public class EventHandler extends AbstractHandler
 			sb.append("\n");
 			responseStrean.print(sb.toString());
 			log.info(sb.toString());
+		}
+	}
+	
+	private static long getTime(String timestamp)
+	{
+		try
+		{
+			Date date = new SimpleDateFormat("yyyy-dd-MM HH:mm:ss").parse(timestamp);
+			return date.getTime();
+		}
+		catch (Exception x)
+		{
+			return 0;
 		}
 	}
 }
