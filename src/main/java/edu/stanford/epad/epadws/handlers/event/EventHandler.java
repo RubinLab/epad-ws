@@ -131,8 +131,8 @@ public class EventHandler extends AbstractHandler
 				+ "template_id, template_name, plugin_name");
 		
 		for (Map<String, String> row : eventMap) {
-			if (getTime(row.get("created_time")) < (System.currentTimeMillis() - 5*60*60*1000))
-				continue;
+			//if (getTime(row.get("created_time")) < (System.currentTimeMillis() - 5*60*60*1000))
+			//	continue;
 			StringBuilder sb = new StringBuilder();
 			sb.append(row.get("pk")).append(separator);
 			sb.append(row.get("event_status")).append(separator);
