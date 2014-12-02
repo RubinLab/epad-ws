@@ -8,6 +8,8 @@ import java.util.Set;
 import edu.stanford.epad.common.dicom.DICOMFileDescription;
 import edu.stanford.epad.dtos.EPADAIM;
 import edu.stanford.epad.dtos.EPADAIMList;
+import edu.stanford.epad.dtos.EPADFile;
+import edu.stanford.epad.dtos.EPADFileList;
 import edu.stanford.epad.dtos.EPADFrame;
 import edu.stanford.epad.dtos.EPADFrameList;
 import edu.stanford.epad.dtos.EPADImage;
@@ -95,6 +97,25 @@ public interface EpadOperations
 	int createFile(String username, SeriesReference seriesReference, File uploadedFile, String description, String sessionID) throws Exception;
 
 	int createImage(String username, String projectID, File dicomFile, String sessionID) throws Exception;
+	
+	EPADFileList getFileDescriptions(ProjectReference projectReference, String username, String sessionID, EPADSearchFilter searchFilter) throws Exception;
+
+	EPADFile getFileDescription(ProjectReference projectReference, String filename, String username, String sessionID) throws Exception;
+
+	EPADFileList getFileDescriptions(SubjectReference subjectReference, String username, String sessionID,
+			EPADSearchFilter searchFilter) throws Exception;
+
+	EPADFile getFileDescription(SubjectReference subjectReference, String filename, String username, String sessionID) throws Exception;
+
+	EPADFileList getFileDescriptions(StudyReference studyReference, String username, String sessionID,
+			EPADSearchFilter searchFilter) throws Exception;
+
+	EPADFile getFileDescription(StudyReference studyReference, String filename, String username, String sessionID) throws Exception;
+
+	EPADFileList getFileDescriptions(SeriesReference seriesReference, String username, String sessionID,
+			EPADSearchFilter searchFilter) throws Exception;
+
+	EPADFile getFileDescription(SeriesReference seriesReference, String filename, String username, String sessionID) throws Exception;
 
 	String createSubjectAIM(String username, SubjectReference subjectRefernece, String aimID, File aimFile, String sessionID);
 	

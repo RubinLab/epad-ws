@@ -50,6 +50,8 @@ public interface EpadDatabaseOperations
 
 	void insertEpadEvent(String sessionID, String eventStatus, String aimUID, String aimName, String patientID,
 			String patientName, String templateID, String templateName, String pluginName);
+	
+	int deleteOldEvents();
 
 	Timestamp getSeriesProcessingDate(String seriesUID);
 

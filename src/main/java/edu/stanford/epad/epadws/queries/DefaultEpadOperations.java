@@ -30,6 +30,8 @@ import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.epad.dtos.EPADAIM;
 import edu.stanford.epad.dtos.EPADAIMList;
 import edu.stanford.epad.dtos.EPADDSOFrame;
+import edu.stanford.epad.dtos.EPADFile;
+import edu.stanford.epad.dtos.EPADFileList;
 import edu.stanford.epad.dtos.EPADFrame;
 import edu.stanford.epad.dtos.EPADFrameList;
 import edu.stanford.epad.dtos.EPADImage;
@@ -79,6 +81,7 @@ import edu.stanford.epad.epadws.handlers.core.SeriesReference;
 import edu.stanford.epad.epadws.handlers.core.StudyReference;
 import edu.stanford.epad.epadws.handlers.core.SubjectReference;
 import edu.stanford.epad.epadws.handlers.dicom.DSOUtil;
+import edu.stanford.epad.epadws.models.EpadFile;
 import edu.stanford.epad.epadws.models.Project;
 import edu.stanford.epad.epadws.models.ProjectType;
 import edu.stanford.epad.epadws.models.Study;
@@ -967,6 +970,184 @@ public class DefaultEpadOperations implements EpadOperations
 		else
 			throw new Exception("Invalid DICOM file");
 		return HttpServletResponse.SC_OK;
+	}
+
+	@Override
+	public EPADFileList getFileDescriptions(ProjectReference projectReference,
+			String username, String sessionID, EPADSearchFilter searchFilter)
+			throws Exception {
+		List<EpadFile> files = projectOperations.getProjectFiles(projectReference.projectID);
+		List<EPADFile> efiles = new ArrayList<EPADFile>();
+		for (EpadFile file: files) {
+			String subjectId = null;
+			String patientName = null;
+			String studyId = null;
+			if (file.getSubjectId() != null)
+			{
+				Subject subject = (Subject) projectOperations.getDBObject(Subject.class, file.getSubjectId());
+				subjectId = subject.getSubjectUID();
+				patientName = subject.getName();
+			}
+			if (file.getStudyId() != null)
+			{
+				Study study = (Study) projectOperations.getDBObject(Study.class, file.getStudyId());
+				studyId = study.getStudyUID();
+			}
+			EPADFile efile = new EPADFile(projectReference.projectID, subjectId, patientName, studyId, file.getSeriesUid(),
+					file.getName(), file.getLength(), new SimpleDateFormat("yyyy-dd-MM HH:mm:ss").format(file.getCreatedTime()), getEpadFilePath(file));
+			efiles.add(efile);
+		}
+		return new EPADFileList(efiles);
+	}
+
+	private String getEpadFilePath(EpadFile file)
+	{
+		String path = "files/"+ file.getProjectId() + "/" + file.getSubjectId() + "/" + file.getStudyId() + "/" + file.getSeriesUid();
+		String fileName = file.getId() + file.getExtension();
+		return path + "/" + fileName;
+	}
+
+	@Override
+	public EPADFile getFileDescription(ProjectReference projectReference, String filename,
+			String username, String sessionID) throws Exception {
+		EpadFile file = projectOperations.getEpadFile(projectReference.projectID, null, null, null, filename);
+		if (file == null) return null;
+		String subjectId = null;
+		String patientName = null;
+		String studyId = null;
+		if (file.getSubjectId() != null)
+		{
+			Subject subject = (Subject) projectOperations.getDBObject(Subject.class, file.getSubjectId());
+			subjectId = subject.getSubjectUID();
+			patientName = subject.getName();
+		}
+		if (file.getStudyId() != null)
+		{
+			Study study = (Study) projectOperations.getDBObject(Study.class, file.getStudyId());
+			studyId = study.getStudyUID();
+		}
+		EPADFile efile = new EPADFile(projectReference.projectID, subjectId, patientName, studyId, file.getSeriesUid(),
+				file.getName(), file.getLength(), new SimpleDateFormat("yyyy-dd-MM HH:mm:ss").format(file.getCreatedTime()), getEpadFilePath(file));
+		return efile;
+	}
+
+	@Override
+	public EPADFileList getFileDescriptions(SubjectReference subjectReference,
+			String username, String sessionID, EPADSearchFilter searchFilter)
+			throws Exception {
+		List<EpadFile> files = projectOperations.getSubjectFiles(subjectReference.projectID, subjectReference.subjectID);
+		List<EPADFile> efiles = new ArrayList<EPADFile>();
+		for (EpadFile file: files) {
+			String patientName = null;
+			String studyId = null;
+			if (file.getSubjectId() != null)
+			{
+				Subject subject = (Subject) projectOperations.getDBObject(Subject.class, file.getSubjectId());
+				patientName = subject.getName();
+			}
+			if (file.getStudyId() != null)
+			{
+				Study study = (Study) projectOperations.getDBObject(Study.class, file.getStudyId());
+				studyId = study.getStudyUID();
+			}
+			EPADFile efile = new EPADFile(subjectReference.projectID, subjectReference.subjectID, patientName, studyId, file.getSeriesUid(),
+					file.getName(), file.getLength(), new SimpleDateFormat("yyyy-dd-MM HH:mm:ss").format(file.getCreatedTime()), getEpadFilePath(file));
+			efiles.add(efile);
+		}
+		return new EPADFileList(efiles);
+	}
+
+	@Override
+	public EPADFile getFileDescription(SubjectReference subjectReference, String filename,
+			String username, String sessionID) throws Exception {
+		EpadFile file = projectOperations.getEpadFile(subjectReference.projectID, subjectReference.subjectID, null, null, filename);
+		if (file == null) return null;
+		String patientName = null;
+		String studyId = null;
+		if (file.getSubjectId() != null)
+		{
+			Subject subject = (Subject) projectOperations.getDBObject(Subject.class, file.getSubjectId());
+			patientName = subject.getName();
+		}
+		if (file.getStudyId() != null)
+		{
+			Study study = (Study) projectOperations.getDBObject(Study.class, file.getStudyId());
+			studyId = study.getStudyUID();
+		}
+		EPADFile efile = new EPADFile(subjectReference.projectID, subjectReference.subjectID, patientName, studyId, file.getSeriesUid(),
+				file.getName(), file.getLength(), new SimpleDateFormat("yyyy-dd-MM HH:mm:ss").format(file.getCreatedTime()), getEpadFilePath(file));
+		return efile;
+	}
+
+	@Override
+	public EPADFileList getFileDescriptions(StudyReference studyReference,
+			String username, String sessionID, EPADSearchFilter searchFilter)
+			throws Exception {
+		List<EpadFile> files = projectOperations.getStudyFiles(studyReference.projectID, studyReference.subjectID, studyReference.studyUID);
+		List<EPADFile> efiles = new ArrayList<EPADFile>();
+		for (EpadFile file: files) {
+			String patientName = null;
+			if (file.getSubjectId() != null)
+			{
+				Subject subject = (Subject) projectOperations.getDBObject(Subject.class, file.getSubjectId());
+				patientName = subject.getName();
+			}
+			EPADFile efile = new EPADFile(studyReference.projectID, studyReference.subjectID, patientName, studyReference.studyUID, file.getSeriesUid(),
+					file.getName(), file.getLength(), new SimpleDateFormat("yyyy-dd-MM HH:mm:ss").format(file.getCreatedTime()), getEpadFilePath(file));
+			efiles.add(efile);
+		}
+		return new EPADFileList(efiles);
+	}
+
+	@Override
+	public EPADFile getFileDescription(StudyReference studyReference, String filename,
+			String username, String sessionID) throws Exception {
+		EpadFile file = projectOperations.getEpadFile(studyReference.projectID, studyReference.subjectID, studyReference.studyUID, null, filename);
+		if (file == null) return null;
+		String patientName = null;
+		if (file.getSubjectId() != null)
+		{
+			Subject subject = (Subject) projectOperations.getDBObject(Subject.class, file.getSubjectId());
+			patientName = subject.getName();
+		}
+		EPADFile efile = new EPADFile(studyReference.projectID, studyReference.subjectID, patientName, studyReference.studyUID, file.getSeriesUid(),
+				file.getName(), file.getLength(), new SimpleDateFormat("yyyy-dd-MM HH:mm:ss").format(file.getCreatedTime()), getEpadFilePath(file));
+		return efile;
+	}
+
+	@Override
+	public EPADFileList getFileDescriptions(SeriesReference seriesReference,
+			String username, String sessionID, EPADSearchFilter searchFilter)
+			throws Exception {
+		List<EpadFile> files = projectOperations.getSeriesFiles(seriesReference.projectID, seriesReference.subjectID, seriesReference.studyUID, seriesReference.seriesUID);
+		List<EPADFile> efiles = new ArrayList<EPADFile>();
+		for (EpadFile file: files) {
+			String patientName = null;
+			if (file.getSubjectId() != null)
+			{
+				Subject subject = (Subject) projectOperations.getDBObject(Subject.class, file.getSubjectId());
+				patientName = subject.getName();
+			}
+			EPADFile efile = new EPADFile(seriesReference.projectID, seriesReference.subjectID, patientName, seriesReference.studyUID, file.getSeriesUid(),
+					file.getName(), file.getLength(), new SimpleDateFormat("yyyy-dd-MM HH:mm:ss").format(file.getCreatedTime()), getEpadFilePath(file));
+			efiles.add(efile);
+		}
+		return new EPADFileList(efiles);
+	}
+
+	@Override
+	public EPADFile getFileDescription(SeriesReference seriesReference, String filename,
+			String username, String sessionID) throws Exception {
+		EpadFile file = projectOperations.getEpadFile(seriesReference.projectID, seriesReference.subjectID, seriesReference.studyUID, seriesReference.seriesUID, filename);
+		String patientName = null;
+		if (file.getSubjectId() != null)
+		{
+			Subject subject = (Subject) projectOperations.getDBObject(Subject.class, file.getSubjectId());
+			patientName = subject.getName();
+		}
+		EPADFile efile = new EPADFile(seriesReference.projectID, seriesReference.subjectID, patientName, seriesReference.studyUID, file.getSeriesUid(),
+				file.getName(), file.getLength(), new SimpleDateFormat("yyyy-dd-MM HH:mm:ss").format(file.getCreatedTime()), getEpadFilePath(file));
+		return efile;
 	}
 
 	@Override

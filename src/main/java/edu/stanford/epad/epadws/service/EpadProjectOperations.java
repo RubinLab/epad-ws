@@ -37,6 +37,7 @@ import edu.stanford.epad.epadws.models.Subject;
 import edu.stanford.epad.epadws.models.User;
 import edu.stanford.epad.epadws.models.User.EventLog;
 import edu.stanford.epad.epadws.models.UserRole;
+import edu.stanford.epad.epadws.models.dao.AbstractDAO;
 
 public interface EpadProjectOperations {
 
@@ -97,6 +98,12 @@ public interface EpadProjectOperations {
 	String getUserStatusForProjectAndSubject(String loggedInUser, String projectID, String subjectUID) throws Exception;
 	Map<String, String> getUserStatusForProjectSubjects(String loggedInUser, String projectID) throws Exception;
 	Map<Long, String> getUserStatusForProjectSubjectIds(String loggedInUser, String projectID) throws Exception;
+
+	EpadFile getEpadFile(String projectID, String subjectUID, String studyUID, String seriesUID, String filename) throws Exception;	
+	List<EpadFile> getProjectFiles(String projectID) throws Exception;
+	List<EpadFile> getSubjectFiles(String projectID, String subjectUID) throws Exception;
+	List<EpadFile> getStudyFiles(String projectID, String subjectUID, String studyUID) throws Exception;
+	List<EpadFile> getSeriesFiles(String projectID, String subjectUID, String studyUID, String seriesUID) throws Exception;
 	
 	boolean isCollaborator(String username, String projectID) throws Exception;
 	boolean isMember(String username, String projectID) throws Exception;
@@ -109,5 +116,9 @@ public interface EpadProjectOperations {
 	void deleteSubject(String username, String subjectUID) throws Exception;
 	void deleteStudy(String username, String studyUID) throws Exception;
 	
+	void deleteFile(String loggedInUser, String projectID, String subjectUID, String studyUID, String seriesUID, String filename) throws Exception;	
+	
 	List<EventLog> getUserLogs(String username);
+	
+	AbstractDAO getDBObject(Class dbclass, long id) throws Exception;
 }

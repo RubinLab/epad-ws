@@ -977,6 +977,27 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 	}
 
 	@Override
+	public int deleteOldEvents() {
+		Connection c = null;
+		PreparedStatement ps = null;
+		ResultSet rs = null;
+		try {
+			c = getConnection();
+			ps = c.prepareStatement(EpadDatabaseCommands.DELETE_OLD_EVENTS);
+			java.sql.Date oneHourAgo = new java.sql.Date(System.currentTimeMillis() - 60*60*1000);
+			ps.setDate(1, oneHourAgo);
+			int rows = ps.executeUpdate();
+			return rows;
+		} catch (SQLException sqle) {
+			String debugInfo = DatabaseUtils.getDebugData(rs);
+			log.warning("Database operation failed; debugInfo=" + debugInfo, sqle);
+		} finally {
+			close(c, ps, rs);
+		}
+		return 0;
+	}
+
+	@Override
 	public void forceDICOMReprocessing()
 	{
 		Connection c = null;

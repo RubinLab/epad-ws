@@ -49,6 +49,7 @@ import edu.stanford.epad.epadws.models.Subject;
 import edu.stanford.epad.epadws.models.User;
 import edu.stanford.epad.epadws.models.User.EventLog;
 import edu.stanford.epad.epadws.models.UserRole;
+import edu.stanford.epad.epadws.models.dao.AbstractDAO;
 
 public class DefaultEpadProjectOperations implements EpadProjectOperations {
 	
@@ -369,16 +370,30 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 			Study study = getStudy(studyUID);
 			efile.setStudyId(study.getId());
 		}
-		efile.setSeriesUid(seriesUID);
-		efile.setFilePath(EPADConfig.getEPADWebServerFilesDir() + efile.getRelativePath());
-		efile.setCreator(loggedInUser);
+		boolean exists = false;
+		EpadFile oldFile = this.getEpadFile(projectID, subjectUID, studyUID, seriesUID, filename);
+		if (oldFile != null)
+		{
+			efile = oldFile;
+			exists = true;
+		}
+		else
+		{
+			efile.setSeriesUid(seriesUID);
+			efile.setFilePath(EPADConfig.getEPADWebServerFilesDir() + efile.getRelativePath());
+			efile.setCreator(loggedInUser);
+		}
 		efile.setLength(file.length());
+		efile.setDescription(description);
 		efile.save();
 		File parent = new File(efile.getFilePath());
 		parent.mkdirs();
 		String physicalName = "" + efile.getId() + efile.getExtension();
 		FileUtils.copyFile(file, new File(parent, physicalName));
-		log.info("Created file:" + efile.getName() + " in Project:" + efile.getProjectId());
+		if (exists)
+			log.info("Created file:" + efile.getName() + " in Project:" + efile.getProjectId());
+		else
+			log.info("Created file:" + efile.getName() + " in Project:" + efile.getProjectId());
 		return efile;
 	}
 
@@ -812,6 +827,108 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 	}
 
 	@Override
+	public EpadFile getEpadFile(String projectID,
+			String subjectUID, String studyUID, String seriesUID,
+			String filename) throws Exception {
+		String criteria = "";
+		if (projectID != null && projectID.length() > 0)
+		{
+			Project project = getProject(projectID);
+			criteria = criteria + "project_id = " + project.getId();
+		}
+		else
+			criteria = criteria + "project_id is null";
+		if (subjectUID != null && subjectUID.length() > 0)
+		{
+			Subject subject = getSubject(subjectUID);
+			criteria = criteria + " and subject_id = " + subject.getId();
+		}
+		else
+			criteria = criteria + " and subject_id is null";
+		if (studyUID != null && studyUID.length() > 0)
+		{
+			Study study = getStudy(studyUID);
+			criteria = criteria + " and study_id = " + study.getId();
+		}
+		else
+			criteria = criteria + " and study_id is null";
+		if (seriesUID != null && seriesUID.length() > 0)
+		{
+			criteria = criteria + " and seriesUID = '" + seriesUID + "'";
+		}
+		else
+			criteria = criteria + " and seriesUID is null";
+		
+		criteria = criteria + " and name = " + new EpadFile().toSQL(filename);
+		EpadFile file = (EpadFile) new EpadFile().getObject(criteria);
+		return file;
+	}
+
+	@Override
+	public List<EpadFile> getProjectFiles(String projectID) throws Exception {
+		Project project = getProject(projectID);
+		List objects = new EpadFile().getObjects("project_id = " + project.getId());
+		List<EpadFile> efiles = new ArrayList<EpadFile>();
+		efiles.addAll(objects);
+		return efiles;
+	}
+
+	@Override
+	public List<EpadFile> getSubjectFiles(String projectID, String subjectUID) throws Exception {
+		Project project = getProject(projectID);
+		Subject subject = getSubject(subjectUID);
+		String criteria = "subject_id = " + subject.getId();
+		if (project != null)
+			criteria = criteria + " and project_id =" + project.getId();
+		List objects = new EpadFile().getObjects(criteria);
+		List<EpadFile> efiles = new ArrayList<EpadFile>();
+		efiles.addAll(objects);
+		return efiles;
+	}
+
+	@Override
+	public List<EpadFile> getStudyFiles(String projectID, String subjectUID, String studyUID) throws Exception {
+		Project project = getProject(projectID);
+		Subject subject = getSubject(subjectUID);
+		Study study = getStudy(studyUID);
+		String criteria = "study_id = " + study.getId();
+		if (subject != null)
+			criteria = criteria + " and subject_id =" + subject.getId();
+		if (project != null)
+			criteria = criteria + " and project_id =" + project.getId();
+		List objects = new EpadFile().getObjects(criteria);
+		List<EpadFile> efiles = new ArrayList<EpadFile>();
+		efiles.addAll(objects);
+		return efiles;
+	}
+
+	@Override
+	public List<EpadFile> getSeriesFiles(String projectID, String subjectUID, String studyUID, String seriesUID) throws Exception {
+		Project project = getProject(projectID);
+		Subject subject = getSubject(subjectUID);
+		Study study = getStudy(studyUID);
+		String criteria = "seriesUID = '" + seriesUID + "'";
+		if (study != null)
+			criteria = criteria + " and study_id = " + study.getId();
+		if (subject != null)
+			criteria = criteria + " and subject_id =" + subject.getId();
+		if (project != null)
+			criteria = criteria + " and project_id =" + project.getId();
+		List objects = new EpadFile().getObjects(criteria);
+		List<EpadFile> efiles = new ArrayList<EpadFile>();
+		efiles.addAll(objects);
+		return efiles;
+	}
+
+	@Override
+	public void deleteFile(String loggedInUser, String projectID,
+			String subjectUID, String studyUID, String seriesUID,
+			String filename) throws Exception {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
 	public void deleteProject(String username, String projectID)
 			throws Exception {
 		Project project = getProject(projectID);
@@ -867,6 +984,12 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		} catch (Exception e) {
 		}
 		return null;
+	}
+
+	@Override
+	public AbstractDAO getDBObject(Class dbClass, long id) throws Exception {
+		AbstractDAO object = (AbstractDAO) dbClass.newInstance();
+		return object.getObject("id = " + id);
 	}
 
 }

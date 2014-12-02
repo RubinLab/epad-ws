@@ -28,6 +28,8 @@ import edu.stanford.epad.common.util.EPADFileUtils;
 import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.epad.dtos.EPADAIM;
 import edu.stanford.epad.dtos.EPADAIMList;
+import edu.stanford.epad.dtos.EPADFile;
+import edu.stanford.epad.dtos.EPADFileList;
 import edu.stanford.epad.dtos.EPADFrame;
 import edu.stanford.epad.dtos.EPADFrameList;
 import edu.stanford.epad.dtos.EPADImage;
@@ -745,6 +747,70 @@ public class EPADHandler extends AbstractHandler
 				responseStream.append(new Gson().toJson(sessions));
 				statusCode = HttpServletResponse.SC_OK;
 
+			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.PROJECT_FILE_LIST, pathInfo)) {
+				ProjectReference projectReference = ProjectReference.extract(ProjectsRouteTemplates.PROJECT_FILE_LIST, pathInfo);
+				EPADFileList files = epadOperations.getFileDescriptions(projectReference, username, sessionID, searchFilter);
+				responseStream.append(files.toJSON());
+				statusCode = HttpServletResponse.SC_OK;
+						
+			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.SUBJECT_FILE_LIST, pathInfo)) {
+				SubjectReference subjectReference = SubjectReference.extract(ProjectsRouteTemplates.SUBJECT_FILE_LIST, pathInfo);
+				EPADFileList files = epadOperations.getFileDescriptions(subjectReference, username, sessionID, searchFilter);
+				responseStream.append(files.toJSON());
+				statusCode = HttpServletResponse.SC_OK;
+
+			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.STUDY_FILE_LIST, pathInfo)) {
+				StudyReference studyReference = StudyReference.extract(ProjectsRouteTemplates.STUDY_FILE_LIST, pathInfo);
+				EPADFileList files = epadOperations.getFileDescriptions(studyReference, username, sessionID, searchFilter);
+				responseStream.append(files.toJSON());
+				statusCode = HttpServletResponse.SC_OK;
+	
+			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.SERIES_FILE_LIST, pathInfo)) {
+				SeriesReference seriesReference = SeriesReference.extract(ProjectsRouteTemplates.SERIES_FILE_LIST, pathInfo);
+				EPADFileList files = epadOperations.getFileDescriptions(seriesReference, username, sessionID, searchFilter);
+				responseStream.append(files.toJSON());
+				statusCode = HttpServletResponse.SC_OK;
+
+			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.PROJECT_FILE, pathInfo)) {
+				ProjectReference projectReference = ProjectReference.extract(ProjectsRouteTemplates.PROJECT_FILE, pathInfo);
+				Map<String, String> templateMap = HandlerUtil.getTemplateMap(ProjectsRouteTemplates.PROJECT_FILE, pathInfo);
+				String filename = HandlerUtil.getTemplateParameter(templateMap, "filename");
+				if (filename == null || filename.trim().length() == 0)
+					throw new Exception("Invalid filename");
+				EPADFile file = epadOperations.getFileDescription(projectReference, filename, username, sessionID);
+				responseStream.append(file.toJSON());
+				statusCode = HttpServletResponse.SC_OK;
+						
+			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.SUBJECT_FILE, pathInfo)) {
+				SubjectReference subjectReference = SubjectReference.extract(ProjectsRouteTemplates.SUBJECT_FILE, pathInfo);
+				Map<String, String> templateMap = HandlerUtil.getTemplateMap(ProjectsRouteTemplates.SUBJECT_FILE, pathInfo);
+				String filename = HandlerUtil.getTemplateParameter(templateMap, "filename");
+				if (filename == null || filename.trim().length() == 0)
+					throw new Exception("Invalid filename");
+				EPADFile file = epadOperations.getFileDescription(subjectReference, filename, username, sessionID);
+				responseStream.append(file.toJSON());
+				statusCode = HttpServletResponse.SC_OK;
+
+			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.STUDY_FILE, pathInfo)) {
+				StudyReference studyReference = StudyReference.extract(ProjectsRouteTemplates.STUDY_FILE, pathInfo);
+				Map<String, String> templateMap = HandlerUtil.getTemplateMap(ProjectsRouteTemplates.STUDY_FILE, pathInfo);
+				String filename = HandlerUtil.getTemplateParameter(templateMap, "filename");
+				if (filename == null || filename.trim().length() == 0)
+					throw new Exception("Invalid filename");
+				EPADFile file = epadOperations.getFileDescription(studyReference, filename, username, sessionID);
+				responseStream.append(file.toJSON());
+				statusCode = HttpServletResponse.SC_OK;
+	
+			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.SERIES_FILE, pathInfo)) {
+				SeriesReference seriesReference = SeriesReference.extract(ProjectsRouteTemplates.SERIES_FILE, pathInfo);
+				Map<String, String> templateMap = HandlerUtil.getTemplateMap(ProjectsRouteTemplates.SERIES_FILE, pathInfo);
+				String filename = HandlerUtil.getTemplateParameter(templateMap, "filename");
+				if (filename == null || filename.trim().length() == 0)
+					throw new Exception("Invalid filename");
+				EPADFile file = epadOperations.getFileDescription(seriesReference, filename, username, sessionID);
+				responseStream.append(file.toJSON());
+				statusCode = HttpServletResponse.SC_OK;
+
 			} else
 				statusCode = HandlerUtil.badRequestJSONResponse(BAD_GET_MESSAGE + ":" + pathInfo, responseStream, log);
 		} catch (Throwable t) {
@@ -968,31 +1034,31 @@ public class EPADHandler extends AbstractHandler
 					}
 				}
 				statusCode = HttpServletResponse.SC_BAD_REQUEST;
-				if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.PROJECT, pathInfo)) {
-					ProjectReference projectReference = ProjectReference.extract(ProjectsRouteTemplates.PROJECT, pathInfo);
+				if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.PROJECT_FILE_LIST, pathInfo)) {
+					ProjectReference projectReference = ProjectReference.extract(ProjectsRouteTemplates.PROJECT_FILE_LIST, pathInfo);
 					if (uploadedFile != null) {
 						String description = httpRequest.getParameter("description");
 						if (description == null) description = (String) paramData.get("description");
 						statusCode = epadOperations.createFile(username, projectReference, uploadedFile, description, sessionID);					
 					}
 						
-				} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.SUBJECT, pathInfo)) {
-					SubjectReference subjectReference = SubjectReference.extract(ProjectsRouteTemplates.SUBJECT, pathInfo);
+				} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.SUBJECT_FILE_LIST, pathInfo)) {
+					SubjectReference subjectReference = SubjectReference.extract(ProjectsRouteTemplates.SUBJECT_FILE_LIST, pathInfo);
 					if (uploadedFile != null) {
 						String description = httpRequest.getParameter("description");
 						if (description == null) description = (String) paramData.get("description");
 						statusCode = epadOperations.createFile(username, subjectReference, uploadedFile, description, sessionID);					
 					}
 
-				} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.STUDY, pathInfo)) {
-					StudyReference studyReference = StudyReference.extract(ProjectsRouteTemplates.STUDY, pathInfo);
+				} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.STUDY_FILE_LIST, pathInfo)) {
+					StudyReference studyReference = StudyReference.extract(ProjectsRouteTemplates.STUDY_FILE_LIST, pathInfo);
 					if (uploadedFile != null) {
 						String description = httpRequest.getParameter("description");
 						if (description == null) description = (String) paramData.get("description");
 						statusCode = epadOperations.createFile(username, studyReference, uploadedFile, description, sessionID);					
 					}
 		
-				} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.SERIES, pathInfo)) {
+				} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.SERIES_FILE_LIST, pathInfo)) {
 					SeriesReference seriesReference = SeriesReference.extract(ProjectsRouteTemplates.SERIES, pathInfo);
 					if (uploadedFile != null) {
 						String description = httpRequest.getParameter("description");
@@ -1143,10 +1209,10 @@ public class EPADHandler extends AbstractHandler
 				outputStream.write(buffer, 0, bytesRead);
 			}
 			
-			log.info("Data received, len:" + len);
+			log.debug("Data received, len:" + len);
 			outputStream.close();
 			inputStream.close();
-			log.info("Created File:" + uploadedFile.getAbsolutePath());
+			log.debug("Created File:" + uploadedFile.getAbsolutePath());
 			if (len > 0 && (tempXMLFileName.endsWith(".xml") || tempXMLFileName.endsWith(".txt")))
 			{
 				log.info("PUT Data:" + readFile(uploadedFile));

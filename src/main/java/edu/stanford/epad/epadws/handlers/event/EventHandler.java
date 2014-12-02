@@ -80,6 +80,8 @@ public class EventHandler extends AbstractHandler
 						String plugin_name = httpRequest.getParameter("plugin_name");
 
 						log.info("Got event for AIM ID " + aim_uid + " with JSESSIONID " + jsessionID);
+						if (jsessionID.indexOf(",") != -1)
+							jsessionID = jsessionID.substring(0, jsessionID.indexOf(","));
 
 						if (jsessionID != null && event_status != null && aim_uid != null && aim_uid != null && aim_name != null
 								&& patient_id != null && patient_name != null && template_id != null && template_name != null
@@ -90,9 +92,15 @@ public class EventHandler extends AbstractHandler
 							responseStream.flush();
 							statusCode = HttpServletResponse.SC_OK;
 						} else {
+							log.warning("Required parameter missing, event_status:" + event_status +
+									" aim_uid:" + aim_uid + " aim_name" + aim_name + 
+									" patient_id: " + patient_id + " patient_name:" + patient_name +
+									" template_id:" + template_id + " template_name:" + template_name +
+									" plugin_name:"+ plugin_name);
 							statusCode = HandlerUtil.badRequestResponse(BAD_PARAMETERS_MESSAGE, log);
 						}
 					} else {
+						log.warning("Event parameters are all missing");
 						statusCode = HandlerUtil.badRequestResponse(MISSING_QUERY_MESSAGE, log);
 					}
 				} else {
@@ -116,6 +124,8 @@ public class EventHandler extends AbstractHandler
 	{
 		EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
 		// TODO This map should be replaced with a class describing an event.
+		if (sessionID.indexOf(",") != -1)
+			sessionID = sessionID.substring(0, sessionID.indexOf(","));
 		List<Map<String, String>> eventMap = epadDatabaseOperations.getEpadEventsForSessionID(sessionID);
 		String separator = ", ";
 
@@ -124,6 +134,10 @@ public class EventHandler extends AbstractHandler
 
 		for (Map<String, String> row : eventMap) {
 			deletedEvents.put(row.get("aim_uid"), row);
+			if (getTime(row.get("created_time")) < (new Date().getTime() - 5*60*1000))
+			{
+				continue;
+			}
 			StringBuilder sb = new StringBuilder();
 			sb.append(row.get("pk")).append(separator);
 			sb.append(row.get("event_status")).append(separator);
@@ -147,7 +161,7 @@ public class EventHandler extends AbstractHandler
 		Collection<Map<String, String>> eventMaps = deletedEvents.values();
 		for (Map<String, String> eventMap: eventMaps)
 		{
-			if (getTime(eventMap.get("created_time")) < (System.currentTimeMillis()-10*60*60*1000))
+			if (getTime(eventMap.get("created_time")) < (new Date().getTime()- 1*60*60*1000))
 			{
 				deletedEvents.remove(eventMap.get("aim_uid"));
 			}
@@ -159,7 +173,7 @@ public class EventHandler extends AbstractHandler
 	{
 		try
 		{
-			Date date = new SimpleDateFormat("yyyy-dd-MM HH:mm:ss").parse(timestamp);
+			Date date = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").parse(timestamp);
 			return date.getTime();
 		}
 		catch (Exception x)
