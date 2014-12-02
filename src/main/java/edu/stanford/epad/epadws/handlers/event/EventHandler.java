@@ -88,9 +88,15 @@ public class EventHandler extends AbstractHandler
 							responseStream.flush();
 							statusCode = HttpServletResponse.SC_OK;
 						} else {
+							log.warning("Required parameter missing, event_status:" + event_status +
+									" aim_uid:" + aim_uid + " aim_name" + aim_name + 
+									" patient_id: " + patient_id + " patient_name:" + patient_name +
+									" template_id:" + template_id + " template_name:" + template_name +
+									" plugin_name:"+ plugin_name);
 							statusCode = HandlerUtil.badRequestResponse(BAD_PARAMETERS_MESSAGE, log);
 						}
 					} else {
+						log.warning("Event parameters are all missing");
 						statusCode = HandlerUtil.badRequestResponse(MISSING_QUERY_MESSAGE, log);
 					}
 				} else {
