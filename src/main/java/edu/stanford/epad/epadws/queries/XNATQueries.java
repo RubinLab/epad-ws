@@ -205,7 +205,7 @@ public class XNATQueries
 		return invokeXNATUsersQuery(adminSessionID, allUsersForProjectQueryURL);
 	}
 
-	public static XNATUserList getAllUsers(String projectID)
+	public static XNATUserList getAllUsers()
 	{
 		String allUsersQueryURL = XNATQueryUtil.buildAllUsersQueryURL();
 		String adminSessionID = XNATSessionOperations.getXNATAdminSessionID();

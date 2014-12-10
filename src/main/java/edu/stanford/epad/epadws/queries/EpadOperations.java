@@ -71,19 +71,19 @@ public interface EpadOperations
 
 	int createStudy(StudyReference studyReference, String sessionID);
 
-	int createSubjectAIM(String username, SubjectReference subjectRefernece, String aimID, File aimFile, String sessionID);
+	String createSubjectAIM(String username, SubjectReference subjectRefernece, String aimID, File aimFile, String sessionID);
 	
-	int createStudyAIM(String username, StudyReference studyReference, String aimID, File aimFile, String sessionID);
+	String createStudyAIM(String username, StudyReference studyReference, String aimID, File aimFile, String sessionID);
 
 	int createSeries(SeriesReference seriesReference, String sessionID);
 
-	int createProjectAIM(String username, ProjectReference projectReference, String aimID, File aimFile, String sessionID);
+	String createProjectAIM(String username, ProjectReference projectReference, String aimID, File aimFile, String sessionID);
 
-	int createSeriesAIM(String username, SeriesReference seriesReference, String aimID, File aimFile, String sessionID);
+	String createSeriesAIM(String username, SeriesReference seriesReference, String aimID, File aimFile, String sessionID);
 
-	int createImageAIM(String username, ImageReference imageReference, String aimID, File aimFile, String sessionID);
+	String createImageAIM(String username, ImageReference imageReference, String aimID, File aimFile, String sessionID);
 
-	int createFrameAIM(String username, FrameReference frameReference, String aimID, File aimFile, String sessionID);
+	String createFrameAIM(String username, FrameReference frameReference, String aimID, File aimFile, String sessionID);
 
 	String setSubjectStatus(SubjectReference subjectReference, String sessionID, String username);
 	

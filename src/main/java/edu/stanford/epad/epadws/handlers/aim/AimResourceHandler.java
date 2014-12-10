@@ -68,7 +68,7 @@ public class AimResourceHandler extends AbstractHandler
 							if (count == 0) count = 5000;
 							String format = httpRequest.getParameter("format");
 							if ("V4".equals(format))
-								AIMUtil.queryAIMImageAnnotationsV4(responseStream, aimSearchType, searchValue, user);
+								AIMUtil.queryAIMImageAnnotationsV4(responseStream, projectID, aimSearchType, searchValue, user);
 							else
 								AIMUtil.queryAIMImageAnnotations(responseStream, projectID, aimSearchType, searchValue, user, start, count);
 							statusCode = HttpServletResponse.SC_OK;
