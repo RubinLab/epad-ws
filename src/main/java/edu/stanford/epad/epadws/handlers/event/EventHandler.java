@@ -61,7 +61,8 @@ public class EventHandler extends AbstractHandler
 						count = 0;
 					}
 					if (jsessionID != null) {
-						findEventsForSessionID(responseStream, jsessionID);
+						String username = httpRequest.getParameter("username");
+						findEventsForSessionID(username, responseStream, jsessionID);
 						statusCode = HttpServletResponse.SC_OK;
 					} else {
 						statusCode = HandlerUtil.badRequestResponse(MISSING_JSESSIONID_MESSAGE, log);
@@ -120,13 +121,15 @@ public class EventHandler extends AbstractHandler
 
 	public static Map<String, Map<String, String>> deletedEvents = new HashMap<String, Map<String, String>>();
 	
-	private void findEventsForSessionID(PrintWriter responseStrean, String sessionID)
+	private void findEventsForSessionID(String username, PrintWriter responseStrean, String sessionID)
 	{
 		EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
 		// TODO This map should be replaced with a class describing an event.
 		if (sessionID.indexOf(",") != -1)
 			sessionID = sessionID.substring(0, sessionID.indexOf(","));
 		List<Map<String, String>> eventMap = epadDatabaseOperations.getEpadEventsForSessionID(sessionID);
+		List<Map<String, String>> userEvents = epadDatabaseOperations.getEpadEventsForSessionID(username);
+		eventMap.addAll(userEvents);
 		String separator = ", ";
 
 		responseStrean.println("event_number, event_status, Date, aim_uid, aim_name, patient_id, patient_name, "

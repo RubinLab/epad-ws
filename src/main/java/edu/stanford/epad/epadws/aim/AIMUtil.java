@@ -214,6 +214,11 @@ public class AIMUtil
      * @throws edu.stanford.hakan.aim4api.base.AimException
      */
     public static String saveImageAnnotationToServer(ImageAnnotationCollection aim, String projectID, int frameNumber, String jsessionID) throws AimException,
+    edu.stanford.hakan.aim4api.base.AimException {
+    	return saveImageAnnotationToServer(aim, projectID, frameNumber, jsessionID, true);
+    }
+    
+    public static String saveImageAnnotationToServer(ImageAnnotationCollection aim, String projectID, int frameNumber, String jsessionID, boolean invokePlugin) throws AimException,
 	    edu.stanford.hakan.aim4api.base.AimException {
 		String result = "";
 		
@@ -530,7 +535,7 @@ public class AIMUtil
 						}
 						String jsessionID = XNATSessionOperations.getJSessionIDFromRequest(httpRequest);
 						log.info("Saving AIM file with ID " + imageAnnotation.getUniqueIdentifier() + " username:" + username);
-						String result = AIMUtil.saveImageAnnotationToServer(imageAnnotation, jsessionID);
+						String result = AIMUtil.saveImageAnnotationToServer(imageAnnotation, projectID, 0, jsessionID);
 						if (result.toLowerCase().contains("success") && projectID != null && username != null)
 						{
 							EpadOperations epadOperations = DefaultEpadOperations.getInstance();
@@ -968,7 +973,9 @@ public class AIMUtil
 					projectAIMs.put(projectID, csv.substring(1));
 				}
 			}
-			catch (Exception x) {}
+			catch (Exception x) {
+				log.warning("Error checking AIM permission:", x);
+			}
 		}
 		long endtime = System.currentTimeMillis();
 		log.info("Time taken for checking AIM permissions:" + (endtime-starttime) + " msecs, username:" + username);
@@ -991,7 +998,7 @@ public class AIMUtil
 				if (aims.size() > 0)
 				{
 					log.info("Saving AIM4:" + epadaim.aimID + " in project " + epadaim.projectID);
-					AIMUtil.saveImageAnnotationToServer(aims.get(0).toAimV4(), epadaim.projectID, 0, adminSessionID);
+					AIMUtil.saveImageAnnotationToServer(aims.get(0).toAimV4(), epadaim.projectID, 0, adminSessionID, false);
 					count++;
 				}
 			}

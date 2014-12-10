@@ -21,7 +21,7 @@ public class EPADSessionWatcher implements Runnable
 {
 	private static final EPADLogger log = EPADLogger.getInstance();
 	
-	public static final int CHECK_INTERVAL = 1000*60*60; // Check every minute.
+	public static final int CHECK_INTERVAL = 1000*60; // Check every minute.
 
 	private final ShutdownSignal shutdownSignal = ShutdownSignal.getInstance();
 	
@@ -41,6 +41,7 @@ public class EPADSessionWatcher implements Runnable
 		Calendar prevTime = null;
 		while (!shutdownSignal.hasShutdown()) {
 			try {
+				log.info("Total Heap = " + Runtime.getRuntime().totalMemory() + ", Free Heap = " + Runtime.getRuntime().freeMemory());
 				// Timeout expired sessions
 				EPADSessionOperations.checkSessionTimeout();
 				

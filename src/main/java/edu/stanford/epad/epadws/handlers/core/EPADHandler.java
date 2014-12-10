@@ -109,7 +109,7 @@ public class EPADHandler extends AbstractHandler
 				log.info("Request from client:" + method + " user:" + username);
 				if (username != null) {
 					if ("GET".equalsIgnoreCase(method)) {
-						statusCode = handleGet(httpRequest, responseStream, username, sessionID);
+						statusCode = handleGet(httpRequest, httpResponse, responseStream, username, sessionID);
 					} else if ("DELETE".equalsIgnoreCase(method)) {
 						statusCode = handleDelete(httpRequest, responseStream, username, sessionID);
 					} else if ("PUT".equalsIgnoreCase(method)) {
@@ -135,7 +135,7 @@ public class EPADHandler extends AbstractHandler
 		httpResponse.setStatus(statusCode);
 	}
 
-	private int handleGet(HttpServletRequest httpRequest, PrintWriter responseStream, String username, String sessionID)
+	private int handleGet(HttpServletRequest httpRequest, HttpServletResponse httpResponse, PrintWriter responseStream, String username, String sessionID)
 	{
 		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
 		String pathInfo = httpRequest.getPathInfo();
@@ -778,7 +778,11 @@ public class EPADHandler extends AbstractHandler
 				if (filename == null || filename.trim().length() == 0)
 					throw new Exception("Invalid filename");
 				EPADFile file = epadOperations.getFileDescription(projectReference, filename, username, sessionID);
-				responseStream.append(file.toJSON());
+				if (returnSummary(httpRequest)){
+					responseStream.append(file.toJSON());
+				} else {
+					EPADFileUtils.downloadFile(httpRequest, httpResponse, new File(EPADConfig.getEPADWebServerResourcesDir()+file.path), file.fileName); 					
+				}					
 				statusCode = HttpServletResponse.SC_OK;
 						
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.SUBJECT_FILE, pathInfo)) {
@@ -788,7 +792,11 @@ public class EPADHandler extends AbstractHandler
 				if (filename == null || filename.trim().length() == 0)
 					throw new Exception("Invalid filename");
 				EPADFile file = epadOperations.getFileDescription(subjectReference, filename, username, sessionID);
-				responseStream.append(file.toJSON());
+				if (returnSummary(httpRequest)){
+					responseStream.append(file.toJSON());
+				} else {
+					EPADFileUtils.downloadFile(httpRequest, httpResponse, new File(EPADConfig.getEPADWebServerResourcesDir()+file.path), file.fileName); 					
+				}
 				statusCode = HttpServletResponse.SC_OK;
 
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.STUDY_FILE, pathInfo)) {
@@ -798,7 +806,11 @@ public class EPADHandler extends AbstractHandler
 				if (filename == null || filename.trim().length() == 0)
 					throw new Exception("Invalid filename");
 				EPADFile file = epadOperations.getFileDescription(studyReference, filename, username, sessionID);
-				responseStream.append(file.toJSON());
+				if (returnSummary(httpRequest)){
+					responseStream.append(file.toJSON());
+				} else {
+					EPADFileUtils.downloadFile(httpRequest, httpResponse, new File(EPADConfig.getEPADWebServerResourcesDir()+file.path), file.fileName); 					
+				}
 				statusCode = HttpServletResponse.SC_OK;
 	
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.SERIES_FILE, pathInfo)) {
@@ -808,7 +820,11 @@ public class EPADHandler extends AbstractHandler
 				if (filename == null || filename.trim().length() == 0)
 					throw new Exception("Invalid filename");
 				EPADFile file = epadOperations.getFileDescription(seriesReference, filename, username, sessionID);
-				responseStream.append(file.toJSON());
+				if (returnSummary(httpRequest)){
+					responseStream.append(file.toJSON());
+				} else {
+					EPADFileUtils.downloadFile(httpRequest, httpResponse, new File(EPADConfig.getEPADWebServerResourcesDir()+file.path), file.fileName); 					
+				}
 				statusCode = HttpServletResponse.SC_OK;
 
 			} else
@@ -1003,21 +1019,26 @@ public class EPADHandler extends AbstractHandler
 				String type = httpRequest.getParameter("type");
 				if ("new".equalsIgnoreCase(type))
 				{
-					boolean status = DSOUtil.handleCreateDSO(imageReference.projectID, imageReference.subjectID, imageReference.studyUID,
+					boolean errstatus = DSOUtil.handleCreateDSO(imageReference.projectID, imageReference.subjectID, imageReference.studyUID,
 							imageReference.seriesUID, httpRequest, responseStream);
-					if (status)
+					if (!errstatus)
 						statusCode = HttpServletResponse.SC_CREATED;
 					else
 						statusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 				}
 				else { 
 					
-					boolean status = DSOUtil.handleDSOFramesEdit(imageReference.projectID, imageReference.subjectID, imageReference.studyUID,
+					boolean errstatus = DSOUtil.handleDSOFramesEdit(imageReference.projectID, imageReference.subjectID, imageReference.studyUID,
 						imageReference.seriesUID, imageReference.imageUID, httpRequest, responseStream);
-					if (status)
+					if (!errstatus)
+					{
 						statusCode = HttpServletResponse.SC_CREATED;
+					}
 					else
+					{
+						log.warning("Error editing DSO");
 						statusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+					}
 				}
 			} else {
 				Map<String, Object> paramData = null;

@@ -1002,7 +1002,7 @@ public class DefaultEpadOperations implements EpadOperations
 
 	private String getEpadFilePath(EpadFile file)
 	{
-		String path = "files/"+ file.getProjectId() + "/" + file.getSubjectId() + "/" + file.getStudyId() + "/" + file.getSeriesUid();
+		String path = "files/"+ file.getRelativePath();
 		String fileName = file.getId() + file.getExtension();
 		return path + "/" + fileName;
 	}

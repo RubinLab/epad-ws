@@ -142,11 +142,11 @@ public class XNATSyncHandler extends AbstractHandler
 							XNATUserList xnatUsers = XNATQueries.getUsersForProject(xproject.ID);
 							Map<String,String> userRoles = xnatUsers.getRoles();
 							log.info("Project users:" + userRoles);
-							for (String login: userRoles.keySet())
+							for (String euser: userRoles.keySet())
 							{
-								log.info("Getting projects for " + login);
-								String role = userRoles.get(login);
-								List<Project> projects = projectOperations.getProjectsForUser(login);
+								log.info("Getting projects for " + euser);
+								String role = userRoles.get(euser);
+								List<Project> projects = projectOperations.getProjectsForUser(euser);
 								boolean found = false;
 								for (Project p: projects)
 								{
@@ -156,6 +156,16 @@ public class XNATSyncHandler extends AbstractHandler
 										break;
 									}
 								}
+								if (found && euser.equals("admin"))
+								{
+									List<User> epadUsers = projectOperations.getUsersForProject(xproject.ID);
+									found = false;
+									for (User u: epadUsers)
+									{
+										if (u.getUsername().equals("admin"))
+											found = true;
+									}
+								}
 								if (!found)
 								{
 									UserRole urole = UserRole.COLLABORATOR;
@@ -163,13 +173,13 @@ public class XNATSyncHandler extends AbstractHandler
 										urole = UserRole.OWNER;
 									if (role.startsWith("Member"))
 										urole = UserRole.MEMBER;
-									projectOperations.addUserToProject(username, xproject.ID, login, urole);
+									projectOperations.addUserToProject(username, xproject.ID, euser, urole);
 									if (role.startsWith("Owner") && project.getCreator().equals(username))
 									{
-										project.setCreator(login);
+										project.setCreator(euser);
 										project.save();
 									}
-									response = response + "\nAdded user " + login + " to project " + xproject.ID + " as " + urole;
+									response = response + "\nAdded user " + euser + " to project " + xproject.ID + " as " + urole;
 								}
 							}
 							XNATSubjectList xsubjects = XNATQueries.getSubjectsForProject(sessionID, xproject.ID);

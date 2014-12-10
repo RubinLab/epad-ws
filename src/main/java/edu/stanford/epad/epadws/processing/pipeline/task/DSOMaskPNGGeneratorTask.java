@@ -10,6 +10,9 @@ import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.epad.epadws.aim.AIMQueries;
 import edu.stanford.epad.epadws.aim.AIMSearchType;
 import edu.stanford.epad.epadws.aim.AIMUtil;
+import edu.stanford.epad.epadws.aim.aimapi.Aim;
+import edu.stanford.epad.epadws.epaddb.EpadDatabase;
+import edu.stanford.epad.epadws.epaddb.EpadDatabaseOperations;
 import edu.stanford.epad.epadws.handlers.dicom.DSOUtil;
 import edu.stanford.hakan.aim3api.base.ImageAnnotation;
 
@@ -50,7 +53,27 @@ public class DSOMaskPNGGeneratorTask implements GeneratorTask
 				// Must be first upload, create AIM file
 				List<ImageAnnotation> ias = AIMQueries.getAIMImageAnnotations(AIMSearchType.SERIES_UID, seriesUID, "admin", 1, 50);
 				if (ias == null || ias.size() == 0)
+				{
 					AIMUtil.generateAIMFileForDSO(dsoFile);
+				}
+				else
+				{
+					ImageAnnotation ia = ias.get(0);
+					if (ia.getCodingSchemeDesignator().equals("epad-plugin"))
+					{
+						Aim aim = new Aim(ia);
+						EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
+						epadDatabaseOperations.insertEpadEvent(
+								ia.getListUser().get(0).getLoginName(), 
+								"Image Generation Complete", 
+								ia.getUniqueIdentifier(), ia.getName(),
+								aim.getPatientID(), 
+								aim.getPatientName(), 
+								aim.getCodeMeaning(), 
+								aim.getCodeValue(),
+								"DSO Plugin");					
+					}
+				}
 			}
 		} catch (Exception e) {
 			log.warning("Error writing AIM file for DSO series " + seriesUID, e);

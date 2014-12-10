@@ -160,7 +160,7 @@ public class EpadFile extends AbstractDAO {
 
 	public String getRelativePath()
 	{
-		return ""+ projectId + "/" + subjectId + "/" + studyId + "/" + seriesUid + "/";
+		return "Project"+ projectId + "/Subject" + subjectId + "/Study" + studyId + "/Series" + seriesUid + "/";
 	}
 
 	public String getExtension()

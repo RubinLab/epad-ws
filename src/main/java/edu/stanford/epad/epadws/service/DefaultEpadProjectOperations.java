@@ -283,7 +283,7 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		if ((subjectUID == null || subjectUID.length() == 0) && study != null)
 		{
 			subject.setId(study.getSubjectId());
-			subject.retrieve();
+			subject = (Subject) subject.retrieve();
 		}
 		else	
 		{
@@ -532,7 +532,7 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 			long userId = ((ProjectToUser) ptou).getUserId();
 			User user = new User();
 			user.setId(userId);
-			user.retrieve();
+			user = (User) user.retrieve();
 			user.setRole(((ProjectToUser) ptou).getRole());
 			users.add(user);
 		}
@@ -632,7 +632,7 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 			Project project = new Project();
 			long ptosId = ((ProjectToSubjectToStudy)psss.get(0)).getProjSubjId();
 			project.setId(ptosIdMap.get(ptosId).getId());
-			project.retrieve();
+			project = (Project) project.retrieve();
 			return project;
 		}
 		return null;
