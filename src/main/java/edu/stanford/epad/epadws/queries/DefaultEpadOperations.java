@@ -1667,11 +1667,18 @@ public class DefaultEpadOperations implements EpadOperations
 
 		if (suppliedDICOMElementMap.containsKey(PixelMedUtils.WindowWidthCode)
 				&& suppliedDICOMElementMap.containsKey(PixelMedUtils.WindowCenterCode)) {
-			defaultDicomElements.add(suppliedDICOMElementMap.get(PixelMedUtils.WindowWidthCode).get(0));
-			defaultDicomElements.add(suppliedDICOMElementMap.get(PixelMedUtils.WindowCenterCode).get(0));
-		} else
+			if ("0".equals(suppliedDICOMElementMap.get(PixelMedUtils.WindowWidthCode).get(0).value))
+			{
+				defaultDicomElements.addAll(getCalculatedWindowingDICOMElements(studyUID, seriesUID, imageUID));
+			}
+			else
+			{
+				defaultDicomElements.add(suppliedDICOMElementMap.get(PixelMedUtils.WindowWidthCode).get(0));
+				defaultDicomElements.add(suppliedDICOMElementMap.get(PixelMedUtils.WindowCenterCode).get(0));
+			}
+		} else {
 			defaultDicomElements.addAll(getCalculatedWindowingDICOMElements(studyUID, seriesUID, imageUID));
-
+		}
 		return new DICOMElementList(defaultDicomElements);
 	}
 
