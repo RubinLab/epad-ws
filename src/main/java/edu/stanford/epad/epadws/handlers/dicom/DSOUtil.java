@@ -130,6 +130,7 @@ public class DSOUtil
 
 			if (DSOUtil.createDSO(imageReference, dsoTIFFMaskFiles, seriesDescription, seriesUID, instanceUID))
 			{
+				log.info("Finished generating DSO");
 				for (File file: dsoTIFFMaskFiles)
 				{
 					deleteQuietly(file);
@@ -430,6 +431,7 @@ public class DSOUtil
 					DSOEditResult dsoEditResult = DSOUtil.createEditedDSO(dsoEditRequest, editedFramesPNGMaskFiles);
 					if (dsoEditResult != null)
 					{
+						log.info("Copying edited frame pngs: " + dsoEditRequest.editedFrameNumbers.size());
 						for (int i = 0; i < dsoEditRequest.editedFrameNumbers.size(); i++)
 						{
 							Integer frameNumber = dsoEditRequest.editedFrameNumbers.get(i);
@@ -444,7 +446,7 @@ public class DSOUtil
 							List<ImageAnnotation> aims = AIMQueries.getAIMImageAnnotations(AIMSearchType.ANNOTATION_UID, dsoEditResult.aimID, "admin");
 							if (aims.size() > 0)
 							{
-								log.info(aims.get(0).toString());
+								log.info("DSO Annotation: " + dsoEditResult.aimID);
 //								String sessionID = XNATSessionOperations.getJSessionIDFromRequest(httpRequest);
 //								ImageAnnotation imageAnnotation =  aims.get(0);
 //								PluginAIMUtil.addSegmentToImageAnnotation(imageAnnotation.getSegmentationCollection().getSegmentationList().get(0).getSopClassUID(), dsoEditResult.imageUID, imageAnnotation.getSegmentationCollection().getSegmentationList().get(0).getReferencedSopInstanceUID(),
@@ -482,7 +484,12 @@ public class DSOUtil
 		} catch (FileUploadException e) {
 			log.warning("File upload exception handling DSO edits for series " + seriesUID, e);
 			uploadError = true;
+		} catch (Exception e) {
+			log.warning("Exception handling DSO edits for series " + seriesUID, e);
+			uploadError = true;
 		}
+		if (!uploadError)
+			log.info("DSO successfully edited");
 		return uploadError;
 	}
 	
@@ -529,6 +536,8 @@ public class DSOUtil
 			log.warning("File upload exception handling DSO edits for series " + seriesUID, e);
 			uploadError = true;
 		}
+		if (!uploadError)
+			log.info("DSO successfully created");
 		return uploadError;
 	}
 

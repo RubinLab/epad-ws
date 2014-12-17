@@ -45,6 +45,8 @@ import edu.stanford.epad.dtos.EPADSubject;
 import edu.stanford.epad.dtos.EPADSubjectList;
 import edu.stanford.epad.dtos.EPADUser;
 import edu.stanford.epad.dtos.EPADUserList;
+import edu.stanford.epad.dtos.RemotePAC;
+import edu.stanford.epad.dtos.RemotePACEntity;
 import edu.stanford.epad.epadws.aim.AIMSearchType;
 import edu.stanford.epad.epadws.aim.AIMUtil;
 import edu.stanford.epad.epadws.handlers.HandlerUtil;
@@ -53,6 +55,7 @@ import edu.stanford.epad.epadws.queries.DefaultEpadOperations;
 import edu.stanford.epad.epadws.queries.EpadOperations;
 import edu.stanford.epad.epadws.security.EPADSession;
 import edu.stanford.epad.epadws.security.EPADSessionOperations;
+import edu.stanford.epad.epadws.service.RemotePACsService;
 import edu.stanford.epad.epadws.service.SessionService;
 import edu.stanford.epad.epadws.service.UserProjectService;
 
@@ -826,6 +829,55 @@ public class EPADHandler extends AbstractHandler
 					EPADFileUtils.downloadFile(httpRequest, httpResponse, new File(EPADConfig.getEPADWebServerResourcesDir()+file.path), file.fileName); 					
 				}
 				statusCode = HttpServletResponse.SC_OK;
+			} else if (HandlerUtil.matchesTemplate(PACSRouteTemplates.PACS_LIST, pathInfo)) {
+				Map<String, String> templateMap = HandlerUtil.getTemplateMap(PACSRouteTemplates.PACS_LIST, pathInfo);
+				List<RemotePAC> pacs = RemotePACsService.getInstance().getRemotePACs();
+				responseStream.append(new Gson().toJson(pacs));
+				statusCode = HttpServletResponse.SC_OK;
+
+			} else if (HandlerUtil.matchesTemplate(PACSRouteTemplates.PAC, pathInfo)) {
+				Map<String, String> templateMap = HandlerUtil.getTemplateMap(PACSRouteTemplates.PACS_LIST, pathInfo);
+				String pacid = HandlerUtil.getTemplateParameter(templateMap, "pacid");
+				RemotePAC pac = RemotePACsService.getInstance().getRemotePAC(pacid);
+				if (pac != null)
+				{
+					responseStream.append(new Gson().toJson(pac));
+					statusCode = HttpServletResponse.SC_OK;
+				}
+				else
+					statusCode = HttpServletResponse.SC_NOT_FOUND;
+
+			} else if (HandlerUtil.matchesTemplate(PACSRouteTemplates.PAC_ENTITY_LIST, pathInfo)) {
+				Map<String, String> templateMap = HandlerUtil.getTemplateMap(PACSRouteTemplates.PAC_ENTITY_LIST, pathInfo);
+				String pacid = HandlerUtil.getTemplateParameter(templateMap, "pacid");
+				String patientNameFilter = httpRequest.getParameter("patientNameFilter");
+				if (patientNameFilter == null) patientNameFilter = "";
+				String patientIDFilter = httpRequest.getParameter("patientIDFilter");
+				if (patientIDFilter == null) patientIDFilter = "";
+				String studyDateFilter = httpRequest.getParameter("studyDateFilter");
+				if (studyDateFilter == null) studyDateFilter = "";
+				RemotePAC pac = RemotePACsService.getInstance().getRemotePAC(pacid);
+				if (pac != null)
+				{
+					List<RemotePACEntity> entities = RemotePACsService.getInstance().queryRemoteData(pac, patientNameFilter, patientIDFilter, studyDateFilter);
+					responseStream.append(new Gson().toJson(entities));
+					statusCode = HttpServletResponse.SC_OK;
+				}
+				else
+					statusCode = HttpServletResponse.SC_NOT_FOUND;
+
+			} else if (HandlerUtil.matchesTemplate(PACSRouteTemplates.PAC_ENTITY, pathInfo)) {
+				Map<String, String> templateMap = HandlerUtil.getTemplateMap(PACSRouteTemplates.PAC_ENTITY, pathInfo);
+				String pacID = HandlerUtil.getTemplateParameter(templateMap, "pacid");
+				String entityID = HandlerUtil.getTemplateParameter(templateMap, "entityid");
+				RemotePAC pac = RemotePACsService.getInstance().getRemotePAC(pacID);
+				if (pac != null)
+				{
+					RemotePACsService.getInstance().retrieveRemoteData(pac, entityID);
+					statusCode = HttpServletResponse.SC_OK;
+				}
+				else
+					statusCode = HttpServletResponse.SC_NOT_FOUND;
 
 			} else
 				statusCode = HandlerUtil.badRequestJSONResponse(BAD_GET_MESSAGE + ":" + pathInfo, responseStream, log);
@@ -1193,6 +1245,7 @@ public class EPADHandler extends AbstractHandler
 				String delete_username = HandlerUtil.getTemplateParameter(templateMap, "username");
 				epadOperations.removeUserFromProject(username, projectReference, delete_username, sessionID);
 				statusCode = HttpServletResponse.SC_OK;
+
 			} else {
 				statusCode = HandlerUtil.badRequestJSONResponse(BAD_DELETE_MESSAGE + ":" + pathInfo, responseStream, log);
 			}

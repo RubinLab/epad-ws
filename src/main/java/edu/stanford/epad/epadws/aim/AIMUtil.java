@@ -223,7 +223,26 @@ public class AIMUtil
 		String result = "";
 		
 		    log.info("=+=+=+=+=+=+=+=+=+=+=+=+= saveImageAnnotationToServer-1");
-		if (aim.getImageAnnotations().get(0).getListTypeCode().get(0).getCode() != null) { // For safety, write a backup file
+		if (aim.getImageAnnotations().get(0).getListTypeCode().get(0).getCode() != null) { 
+			
+			EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
+			List<Map<String, String>> eventMaps = epadDatabaseOperations.getEpadEventsForAimID(aim.getUniqueIdentifier().getRoot());
+			if (eventMaps.size() == 0)
+			{
+				eventMaps = new ArrayList<Map<String, String>>();
+				Map<String, String> eventMap = EventHandler.deletedEvents.get(aim.getUniqueIdentifier());
+				if (eventMap != null)
+					eventMaps.add(eventMap);
+			}
+			if (eventMaps.size() > 0)
+			{
+				log.info("last event:" + eventMaps.get(0));
+				if ("Started".equals(eventMaps.get(0).get("event_status")) && getTime(eventMaps.get(0).get("created_time")) > (System.currentTimeMillis()-10*60*60*1000))
+				{
+					throw new AimException("Previous version of this AIM " + aim.getUniqueIdentifier() + " is still being processed by the plugin");
+				}
+			}
+			// For safety, write a backup file - what is this strange safety feature??
 		    String tempXmlPath = baseAnnotationDir + "temp-" + aim.getUniqueIdentifier().getRoot() + ".xml";
 		    String storeXmlPath = baseAnnotationDir + aim.getUniqueIdentifier().getRoot() + ".xml";
 		    File tempFile = new File(tempXmlPath);
