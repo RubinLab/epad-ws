@@ -836,7 +836,7 @@ public class EPADHandler extends AbstractHandler
 				statusCode = HttpServletResponse.SC_OK;
 
 			} else if (HandlerUtil.matchesTemplate(PACSRouteTemplates.PAC, pathInfo)) {
-				Map<String, String> templateMap = HandlerUtil.getTemplateMap(PACSRouteTemplates.PACS_LIST, pathInfo);
+				Map<String, String> templateMap = HandlerUtil.getTemplateMap(PACSRouteTemplates.PAC, pathInfo);
 				String pacid = HandlerUtil.getTemplateParameter(templateMap, "pacid");
 				RemotePAC pac = RemotePACsService.getInstance().getRemotePAC(pacid);
 				if (pac != null)
@@ -1026,6 +1026,43 @@ public class EPADHandler extends AbstractHandler
 					epadOperations.enableUser(username, target_username);
 				else if ("false".equalsIgnoreCase(enable))
 					epadOperations.disableUser(username, target_username);
+				statusCode = HttpServletResponse.SC_OK;
+				
+			} else if (HandlerUtil.matchesTemplate(PACSRouteTemplates.PAC, pathInfo)) {
+				Map<String, String> templateMap = HandlerUtil.getTemplateMap(PACSRouteTemplates.PAC, pathInfo);
+				String pacid = HandlerUtil.getTemplateParameter(templateMap, "pacid");
+				RemotePAC pac = RemotePACsService.getInstance().getRemotePAC(pacid);
+				String aeTitle = httpRequest.getParameter("aeTitle");
+				String hostname = httpRequest.getParameter("hostname");
+				int port = getInt(httpRequest.getParameter("port"));
+				String primaryDeviceType = httpRequest.getParameter("deviceType");
+				String queryModel = httpRequest.getParameter("queryModel");
+				if (aeTitle == null && pac == null)
+					throw new Exception("Missing aeTitle parameter in PAC Put");
+				else if (aeTitle == null)
+					aeTitle = pac.aeTitle;
+				if (hostname == null && pac == null)
+					throw new Exception("Missing hostname parameter in PAC Put");
+				else if (hostname == null)
+					hostname = pac.hostname;
+				if (port == 0 && pac == null)
+					throw new Exception("Missing port parameter in PAC Put");
+				else if (port == 0)
+					port = pac.port;
+				if (primaryDeviceType == null && pac == null)
+					primaryDeviceType = "WSD";
+				else if (primaryDeviceType == null)
+					primaryDeviceType = pac.primaryDeviceType;
+				if (pac == null)
+				{
+					pac = new RemotePAC(pacid, aeTitle, hostname, port, queryModel, primaryDeviceType);
+					RemotePACsService.getInstance().addRemotePAC(pac);
+				}
+				else
+				{
+					pac = new RemotePAC(pacid, aeTitle, hostname, port, queryModel, primaryDeviceType);
+					RemotePACsService.getInstance().modifyRemotePAC(pac);
+				}
 				statusCode = HttpServletResponse.SC_OK;
 				
 			} else {
@@ -1245,7 +1282,14 @@ public class EPADHandler extends AbstractHandler
 				String delete_username = HandlerUtil.getTemplateParameter(templateMap, "username");
 				epadOperations.removeUserFromProject(username, projectReference, delete_username, sessionID);
 				statusCode = HttpServletResponse.SC_OK;
-
+				
+			} else if (HandlerUtil.matchesTemplate(PACSRouteTemplates.PAC, pathInfo)) {
+				Map<String, String> templateMap = HandlerUtil.getTemplateMap(PACSRouteTemplates.PAC, pathInfo);
+				String pacid = HandlerUtil.getTemplateParameter(templateMap, "pacid");
+				RemotePAC pac = RemotePACsService.getInstance().getRemotePAC(pacid);
+				RemotePACsService.getInstance().removeRemotePAC(pac);
+				statusCode = HttpServletResponse.SC_OK;
+				
 			} else {
 				statusCode = HandlerUtil.badRequestJSONResponse(BAD_DELETE_MESSAGE + ":" + pathInfo, responseStream, log);
 			}

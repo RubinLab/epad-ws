@@ -34,7 +34,7 @@ import edu.stanford.epad.common.pixelmed.DicomQRNonInteractive;
 import edu.stanford.epad.dtos.RemotePAC;
 import edu.stanford.epad.dtos.RemotePACEntity;
 
-public class RemotePACsService extends DicomQRNonInteractive {
+public class RemotePACsService extends RemotePACSBase {
 
 	static RemotePACsService rpsinstance;
 	
@@ -78,23 +78,27 @@ public class RemotePACsService extends DicomQRNonInteractive {
 	}
 	
 	public void addRemotePAC(RemotePAC pac) throws Exception {
-		networkApplicationInformation.add(
+		addRemotePAC(
 				pac.pacID,
 				pac.aeTitle,
 				pac.hostname,
 				pac.port,
 				pac.queryModel,
 				pac.primaryDeviceType);
-		this.storeProperties("Added by EPAD " + new Date());
 	}
 	
 	public void modifyRemotePAC(RemotePAC pac) throws Exception {
-		networkApplicationInformation.remove(pac.pacID);
+		removeRemotePAC(pac.pacID);
 		addRemotePAC(pac);
 	}
 	
-	static Map<String, Map<String, QueryTreeRecord>> queryCache = new HashMap<String, Map<String, QueryTreeRecord>>();
-	static Map<String, Long> cacheTime = new HashMap<String, Long>();
+	public void removeRemotePAC(RemotePAC pac) throws Exception {
+		removeRemotePAC(pac.pacID);
+		this.storeProperties(pac.pacID + " deleted by EPAD " + new Date());
+	}
+	
+	static Map<String, QueryTreeRecord> remoteQueryCache = new HashMap<String, QueryTreeRecord>();
+	
 	public synchronized List<RemotePACEntity> queryRemoteData(RemotePAC pac, String patientNameFilter, String patientIDFilter, String studyDateFilter) throws Exception {
 		
 		try {
@@ -152,34 +156,10 @@ public class RemotePACsService extends DicomQRNonInteractive {
 			{ AttributeTag t = TagFromName.SOPClassUID; Attribute a = new UniqueIdentifierAttribute(t); filter.put(t,a); }
 			{ AttributeTag t = TagFromName.SpecificCharacterSet; Attribute a = new CodeStringAttribute(t); filter.put(t,a); a.addValue("ISO_IR 100"); }
 			List<RemotePACEntity> remoteEntities = new ArrayList<RemotePACEntity>();
-			Map<String, QueryTreeRecord> remoteQueryCache = null;
-			String key = pac.pacID + "|" + patientNameFilter + "-" + patientIDFilter + "-" + studyDateFilter;
-			Long timeStamp = cacheTime.get(key);
-			if (timeStamp != null && (System.currentTimeMillis() - timeStamp) < 10*60*1000)
-			{
-				remoteQueryCache = queryCache.get(key);
-				if (remoteQueryCache != null)
-				{
-					for (String ekey: remoteQueryCache.keySet())
-					{
-						QueryTreeRecord node = remoteQueryCache.get(ekey);
-						String[] parts = ekey.split(":");
-						String type = "";
-
-						if (node.getInformationEntity() != null)
-							type = type + node.getInformationEntity();
-						RemotePACEntity entity = new RemotePACEntity(type, node.getValue(), parts.length-1, ekey);
-						remoteEntities.add(entity);
-					}
-					return remoteEntities;
-				}
-			}
+			String key = pac.pacID;
 			QueryTreeModel treeModel = currentRemoteQueryInformationModel.performHierarchicalQuery(filter);
 			QueryTreeRecord root = (QueryTreeRecord) treeModel.getRoot();
-			remoteQueryCache = new TreeMap<String, QueryTreeRecord>();
-			remoteEntities = traverseTree(root, 0, remoteEntities, key, remoteQueryCache);
-			queryCache.put(key, remoteQueryCache);
-			cacheTime.put(key,  System.currentTimeMillis());
+			remoteEntities = traverseTree(root, 0, remoteEntities, key);
 			log.info("Number of entities:" + remoteEntities.size());
 			return remoteEntities;
 		}
@@ -189,8 +169,13 @@ public class RemotePACsService extends DicomQRNonInteractive {
 		}
 	}
 	
+	public void clearQueryCache()
+	{
+		remoteQueryCache = new HashMap<String, QueryTreeRecord>();
+	}
+	
 	DecimalFormat decformat = new DecimalFormat("00000");
-	private List<RemotePACEntity> traverseTree(QueryTreeRecord node, int level, List<RemotePACEntity> entities, String key, Map<String, QueryTreeRecord> remoteQueryCache) {
+	private List<RemotePACEntity> traverseTree(QueryTreeRecord node, int level, List<RemotePACEntity> entities, String key) {
 		log.info("Level:" + level + " Type:" + node.getInformationEntity() + " Value:" + node.getValue() + " entities:" + entities.size());
 		String type = "";
 		if (node.getInformationEntity() != null) 
@@ -214,7 +199,7 @@ public class RemotePACsService extends DicomQRNonInteractive {
 		int n = ((QueryTreeRecord)node).getChildCount();
 		
 		for (int i = 0; i < n; i++) {
-			traverseTree((QueryTreeRecord)((QueryTreeRecord)node).getChildAt(i), level+1, entities, key + ":" + decformat.format(i), remoteQueryCache);
+			traverseTree((QueryTreeRecord)((QueryTreeRecord)node).getChildAt(i), level+1, entities, key + ":" + decformat.format(i));
 		}
 		return entities;
 	}
@@ -224,11 +209,18 @@ public class RemotePACsService extends DicomQRNonInteractive {
 		String root = uniqueKey;
 		if (root.indexOf(":") != -1)
 			root = root.substring(0, root.indexOf(":"));
-		Map<String, QueryTreeRecord> remoteQueryCache = queryCache.get(root);
-		QueryTreeRecord parent = remoteQueryCache.get(uniqueKey);
+		QueryTreeRecord entity = remoteQueryCache.get(uniqueKey);
+		// If no cached pointers, query entire PAC again (or should we give an error???)
+		if (entity == null)
+		{
+			queryRemoteData(pac, "", "", "");
+			entity = remoteQueryCache.get(uniqueKey);
+			if (entity == null)
+				throw new Exception("Remote data not found");
+		}
 		this.setCurrentRemoteQueryInformationModel(pac.pacID, false);
-		if (parent != null) {
-			setCurrentRemoteQuerySelection(parent.getUniqueKeys(), parent.getUniqueKey(), parent.getAllAttributesReturnedInIdentifier());
+		if (entity != null) {
+			setCurrentRemoteQuerySelection(entity.getUniqueKeys(), entity.getUniqueKey(), entity.getAllAttributesReturnedInIdentifier());
 			log.info("Request retrieval of "+currentRemoteQuerySelectionLevel+" "+currentRemoteQuerySelectionUniqueKey.getSingleStringValueOrEmptyString()+" from "+pac.pacID+" ("+currentRemoteQuerySelectionRetrieveAE+")");
 			performRetrieve(currentRemoteQuerySelectionUniqueKeys,currentRemoteQuerySelectionLevel,currentRemoteQuerySelectionRetrieveAE);			
 		}
