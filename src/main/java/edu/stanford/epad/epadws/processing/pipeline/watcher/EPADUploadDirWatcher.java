@@ -13,6 +13,8 @@ import edu.stanford.epad.common.util.EPADFileUtils;
 import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.epad.common.util.FileKey;
 import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeOperations;
+import edu.stanford.epad.epadws.epaddb.EpadDatabase;
+import edu.stanford.epad.epadws.epaddb.EpadDatabaseOperations;
 import edu.stanford.epad.epadws.processing.model.DicomUploadFile;
 import edu.stanford.epad.epadws.processing.pipeline.threads.ShutdownSignal;
 import edu.stanford.epad.epadws.service.DefaultEpadProjectOperations;
@@ -222,7 +224,12 @@ public class EPADUploadDirWatcher implements Runnable
 			projectOperations.userInfoLog(username, "Sending DICOM files in upload directory " + directory.getAbsolutePath() + " to DCM4CHEE");
 			Dcm4CheeOperations.dcmsnd(directory, true);
 		} catch (Exception x) {
-			projectOperations.userErrorLog(username, "Error sending files to DCM4CHEE:" + x);
+			EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
+			epadDatabaseOperations.insertEpadEvent(
+					username, 
+					"Error sending DICOM files to DCM4CHEE", 
+					"", "", "", "", "", "", "");					
+			projectOperations.userErrorLog(username, "Error sending DICOM files to DCM4CHEE:" + x);
 		}
 	}
 

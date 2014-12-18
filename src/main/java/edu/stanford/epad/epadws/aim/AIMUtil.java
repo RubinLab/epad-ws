@@ -335,12 +335,12 @@ public class AIMUtil
 	 * {@link PluginAIMUtil#generateAIMFileForDSO} is very similar.
 	 * 
 	 */
-	public static void generateAIMFileForDSO(File dsoFile) throws Exception
+	public static ImageAnnotation generateAIMFileForDSO(File dsoFile) throws Exception
 	{
-		generateAIMFileForDSO(dsoFile, "shared", null);
+		return generateAIMFileForDSO(dsoFile, "shared", null);
 	}
 	
-	public static void generateAIMFileForDSO(File dsoFile, String username, String projectID) throws Exception
+	public static ImageAnnotation generateAIMFileForDSO(File dsoFile, String username, String projectID) throws Exception
 	{
 		log.info("Creating DSO AIM for user " + username + " in project " + projectID);
 		AttributeList dsoDICOMAttributes = PixelMedUtils.readDICOMAttributeList(dsoFile);
@@ -458,13 +458,14 @@ public class AIMUtil
 						dbOperations.addDSOAIM(username, imageReference, seriesUID, imageAnnotation.getUniqueIdentifier());
 					}
 				}
+				return imageAnnotation;
 			} catch (AimException e) {
 				log.warning("Exception saving AIM file for DSO image " + imageUID + " in series " + seriesUID, e);
 			}
 		} else {
 			log.warning("DSO " + imageUID + " in series " + seriesUID + " with no corresponding DICOM image");
 		}
-
+		return null;
 		/*
 		 * ServerEventUtil.postEvent(username, "DSOReady", imageAnnotation.getUniqueIdentifier(), aimName, patientID,
 		 * patientName, "", "", "");

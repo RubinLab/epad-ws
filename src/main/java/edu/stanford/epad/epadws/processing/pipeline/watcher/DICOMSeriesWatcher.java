@@ -14,6 +14,7 @@ import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.epad.dtos.PNGFileProcessingStatus;
 import edu.stanford.epad.dtos.SeriesProcessingStatus;
+import edu.stanford.epad.epadws.aim.aimapi.Aim;
 import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeDatabase;
 import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeDatabaseOperations;
 import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeDatabaseUtils;
@@ -30,6 +31,7 @@ import edu.stanford.epad.epadws.processing.pipeline.task.SingleFrameDICOMPngGene
 import edu.stanford.epad.epadws.processing.pipeline.threads.ShutdownSignal;
 import edu.stanford.epad.epadws.queries.DefaultEpadOperations;
 import edu.stanford.epad.epadws.queries.EpadOperations;
+import edu.stanford.epad.epadws.service.UserProjectService;
 
 /**
  * Process new DICOM series appearing in the series queue. Each series is described by a
@@ -143,6 +145,20 @@ public class DICOMSeriesWatcher implements Runnable
 						String seriesUID = seriesPipelineState.getSeriesProcessingDescription().getSeriesUID();
 						dicomSeriesTracker.removeSeriesPipelineState(seriesPipelineState);
 						epadDatabaseOperations.updateOrInsertSeries(seriesUID, SeriesProcessingStatus.DONE);
+						if (UserProjectService.pendingUploads.containsKey(seriesUID))
+						{
+							String username = UserProjectService.pendingUploads.get(seriesUID);
+							if (username != null && username.indexOf(":") != -1)
+								username = username.substring(0, username.indexOf(":"));
+							if (username != null)
+							{
+								epadDatabaseOperations.insertEpadEvent(
+										username, 
+										"Image Generation Complete", 
+										"", "", "", "", "", "", "");					
+								UserProjectService.pendingUploads.remove(seriesUID);
+							}
+						}
 					}
 				}
 				Calendar now = Calendar.getInstance();

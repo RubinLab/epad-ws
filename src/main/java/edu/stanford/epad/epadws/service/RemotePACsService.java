@@ -7,7 +7,6 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.TreeMap;
 
 import com.pixelmed.dicom.AgeStringAttribute;
 import com.pixelmed.dicom.Attribute;
@@ -30,13 +29,16 @@ import com.pixelmed.network.ApplicationEntityMap;
 import com.pixelmed.query.QueryTreeModel;
 import com.pixelmed.query.QueryTreeRecord;
 
-import edu.stanford.epad.common.pixelmed.DicomQRNonInteractive;
 import edu.stanford.epad.dtos.RemotePAC;
 import edu.stanford.epad.dtos.RemotePACEntity;
 
 public class RemotePACsService extends RemotePACSBase {
 
 	static RemotePACsService rpsinstance;
+	
+	static Map<String, QueryTreeRecord> remoteQueryCache = new HashMap<String, QueryTreeRecord>();
+	
+	public static Map<String, String> pendingTransfers = new HashMap<String, String>();
 	
 	public static RemotePACsService getInstance() throws Exception {
 		if (rpsinstance == null)
@@ -96,8 +98,6 @@ public class RemotePACsService extends RemotePACSBase {
 		removeRemotePAC(pac.pacID);
 		this.storeProperties(pac.pacID + " deleted by EPAD " + new Date());
 	}
-	
-	static Map<String, QueryTreeRecord> remoteQueryCache = new HashMap<String, QueryTreeRecord>();
 	
 	public synchronized List<RemotePACEntity> queryRemoteData(RemotePAC pac, String patientNameFilter, String patientIDFilter, String studyDateFilter) throws Exception {
 		
@@ -160,7 +160,7 @@ public class RemotePACsService extends RemotePACSBase {
 			QueryTreeModel treeModel = currentRemoteQueryInformationModel.performHierarchicalQuery(filter);
 			QueryTreeRecord root = (QueryTreeRecord) treeModel.getRoot();
 			remoteEntities = traverseTree(root, 0, remoteEntities, key);
-			log.info("Number of entities:" + remoteEntities.size());
+			log.info("Number of entities returned:" + remoteEntities.size());
 			return remoteEntities;
 		}
 		catch (Exception e) {
@@ -176,7 +176,32 @@ public class RemotePACsService extends RemotePACSBase {
 	
 	DecimalFormat decformat = new DecimalFormat("00000");
 	private List<RemotePACEntity> traverseTree(QueryTreeRecord node, int level, List<RemotePACEntity> entities, String key) {
-		log.info("Level:" + level + " Type:" + node.getInformationEntity() + " Value:" + node.getValue() + " entities:" + entities.size());
+		AttributeList al = node.getAllAttributesReturnedInIdentifier();
+		Object tags = null;
+		String ID = null;
+		String IDtype = "Patient";
+		if (al != null)
+		{
+			tags = al.keySet();
+			ID = Attribute.getSingleStringValueOrNull(al,TagFromName.PatientID);
+			if (ID == null)
+			{
+				ID = Attribute.getSingleStringValueOrNull(al,TagFromName.StudyID);
+				IDtype = "Study";
+			}
+			if (ID == null)
+			{
+				ID = Attribute.getSingleStringValueOrNull(al,TagFromName.SeriesInstanceUID);
+				IDtype = "Series";
+			}
+			if (ID == null)
+			{
+				ID = Attribute.getSingleStringValueOrNull(al,TagFromName.SOPInstanceUID);
+				IDtype = "Instance";
+			}
+		}
+		log.debug("Remote Query - Level:" + level + " Type:" + node.getInformationEntity() + " Value:" + node.getValue() + " entities:" + entities.size()
+		+ " " + IDtype + ":" + ID);
 		String type = "";
 		if (node.getInformationEntity() != null) 
 		{
@@ -204,27 +229,78 @@ public class RemotePACsService extends RemotePACSBase {
 		return entities;
 	}
 	
-	public synchronized void retrieveRemoteData(RemotePAC pac, String entityID) throws Exception {
+	public synchronized void retrieveRemoteData(RemotePAC pac, String entityID, String projectID, String userName, String sessionID) throws Exception {
 		String uniqueKey = entityID;
 		String root = uniqueKey;
 		if (root.indexOf(":") != -1)
 			root = root.substring(0, root.indexOf(":"));
-		QueryTreeRecord entity = remoteQueryCache.get(uniqueKey);
+		QueryTreeRecord node = remoteQueryCache.get(uniqueKey);
 		// If no cached pointers, query entire PAC again (or should we give an error???)
-		if (entity == null)
+		if (node == null)
 		{
 			queryRemoteData(pac, "", "", "");
-			entity = remoteQueryCache.get(uniqueKey);
-			if (entity == null)
+			node = remoteQueryCache.get(uniqueKey);
+			if (node == null)
 				throw new Exception("Remote data not found");
 		}
+		String type = node.getInformationEntity().toString();
+		String studyUID = null;
+		String patientID = null;
+		String patientName = "";
+		if (!type.equalsIgnoreCase("Study"))
+		{
+			QueryTreeRecord parent = (QueryTreeRecord) node.getParent();
+			if (parent != null)
+			{
+				type = parent.getInformationEntity().toString();
+				if (!type.equalsIgnoreCase("Study"))
+				{
+					parent = (QueryTreeRecord) parent.getParent();
+					type = parent.getInformationEntity().toString();
+					if (type.equalsIgnoreCase("Study"))
+					{
+						studyUID = parent.getUniqueKey().getSingleStringValueOrNull();
+						patientID = Attribute.getSingleStringValueOrNull(parent.getAllAttributesReturnedInIdentifier(),TagFromName.PatientID);
+						patientName = Attribute.getSingleStringValueOrEmptyString(parent.getAllAttributesReturnedInIdentifier(),TagFromName.PatientName);
+					}
+				}
+				else
+				{
+					studyUID = parent.getUniqueKey().getSingleStringValueOrNull();
+					patientID = Attribute.getSingleStringValueOrNull(parent.getAllAttributesReturnedInIdentifier(),TagFromName.PatientID);
+					patientName = Attribute.getSingleStringValueOrEmptyString(parent.getAllAttributesReturnedInIdentifier(),TagFromName.PatientName);
+				}
+			}
+		}
+		else
+		{
+			studyUID = uniqueKey;
+			patientID = Attribute.getSingleStringValueOrNull(node.getAllAttributesReturnedInIdentifier(),TagFromName.PatientID);
+			patientName = Attribute.getSingleStringValueOrEmptyString(node.getAllAttributesReturnedInIdentifier(),TagFromName.PatientName);
+		}
+		if (studyUID != null && patientID != null && projectID != null && projectID.trim().length() > 0)
+		{
+			UserProjectService.addSubjectAndStudyToProject(patientID, patientName, studyUID, projectID, sessionID, userName);
+		}
+		pendingTransfers.put(uniqueKey, userName + ":" + projectID);
 		this.setCurrentRemoteQueryInformationModel(pac.pacID, false);
-		if (entity != null) {
-			setCurrentRemoteQuerySelection(entity.getUniqueKeys(), entity.getUniqueKey(), entity.getAllAttributesReturnedInIdentifier());
+		if (node != null) {
+			setCurrentRemoteQuerySelection(node.getUniqueKeys(), node.getUniqueKey(), node.getAllAttributesReturnedInIdentifier());
 			log.info("Request retrieval of "+currentRemoteQuerySelectionLevel+" "+currentRemoteQuerySelectionUniqueKey.getSingleStringValueOrEmptyString()+" from "+pac.pacID+" ("+currentRemoteQuerySelectionRetrieveAE+")");
 			performRetrieve(currentRemoteQuerySelectionUniqueKeys,currentRemoteQuerySelectionLevel,currentRemoteQuerySelectionRetrieveAE);			
 		}
 			
+	}
+	
+	public List<String> getPendingTransfers()
+	{
+		List<String> transfers = new ArrayList<String>();
+		for (String id: pendingTransfers.keySet())
+		{
+			String transfer = id + ":" + pendingTransfers.get(id);
+			transfers.add(transfer);
+		}
+		return transfers;
 	}
 	
 }

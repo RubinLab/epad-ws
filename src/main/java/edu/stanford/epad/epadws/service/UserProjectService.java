@@ -28,8 +28,10 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
@@ -56,6 +58,8 @@ import edu.stanford.hakan.aim3api.base.ImageAnnotation;
 
 public class UserProjectService {
 	private static final EPADLogger log = EPADLogger.getInstance();
+	
+	public static Map<String, String> pendingUploads = new HashMap<String, String>();
 
 	private static final EpadProjectOperations projectOperations = DefaultEpadProjectOperations.getInstance();	
 	private static final EpadDatabaseOperations databaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();	
@@ -230,23 +234,12 @@ public class UserProjectService {
 			projectOperations.userErrorLog(username, message);
 			return;
 		}
+		pendingUploads.put(seriesUID, username + ":" + projectID);
 		if (dicomPatientID != null && dicomPatientName != null && studyUID != null) {
 			databaseOperations.deleteSeriesOnly(seriesUID); // This will recreate all images
 			dicomPatientName = dicomPatientName.toUpperCase(); // DCM4CHEE stores the patient name as upper case
-			if (!EPADConfig.UseEPADUsersProjects) {
-				String xnatSubjectLabel = XNATUtil.subjectID2XNATSubjectLabel(dicomPatientID);
-				XNATCreationOperations.createXNATSubject(projectID, xnatSubjectLabel, dicomPatientName, sessionID);
-				XNATCreationOperations.createXNATDICOMStudyExperiment(projectID, xnatSubjectLabel, studyUID, sessionID);
-			} else {
-				try {
-					projectOperations.createSubject(username, dicomPatientID, dicomPatientName, null, null);
-					projectOperations.createStudy(username, studyUID, dicomPatientID);
-					log.info("Upload: Adding Study" +  studyUID + " Subject" + dicomPatientID + " to Project:" + projectID);
-					projectOperations.addStudyToProject(username, studyUID, dicomPatientID, projectID);
-				} catch (Exception e) {
-					log.warning("Error creating subject/study in EPAD:", e);
-				}
-			}
+			
+			addSubjectAndStudyToProject(dicomPatientID, dicomPatientName, studyUID, projectID, sessionID, username);
 			
 			if ("SEG".equals(modality))
 			{
@@ -262,6 +255,24 @@ public class UserProjectService {
 			log.warning("Missing patient name, ID or studyUID in DICOM file " + dicomFile.getAbsolutePath());
 	}
 
+	public static void addSubjectAndStudyToProject(String subjectID, String subjectName, String studyUID, String projectID, String sessionID, String username) {
+		if (!EPADConfig.UseEPADUsersProjects) {
+			String xnatSubjectLabel = XNATUtil.subjectID2XNATSubjectLabel(subjectID);
+			XNATCreationOperations.createXNATSubject(projectID, xnatSubjectLabel, subjectName, sessionID);
+			XNATCreationOperations.createXNATDICOMStudyExperiment(projectID, xnatSubjectLabel, studyUID, sessionID);
+		} else {
+			try {
+				projectOperations.createSubject(username, subjectID, subjectName, null, null);
+				projectOperations.createStudy(username, studyUID, subjectID);
+				log.info("Upload/Transfer: Adding Study:" +  studyUID + " Subject:" + subjectID + " to Project:" + projectID);
+				projectOperations.addStudyToProject(username, studyUID, subjectID, projectID);
+			} catch (Exception e) {
+				log.warning("Error creating subject/study in EPAD:", e);
+			}
+		}
+		
+	}
+	
 	private static Collection<File> listDICOMFiles(File dir)
 	{
 		Set<File> files = new HashSet<File>();

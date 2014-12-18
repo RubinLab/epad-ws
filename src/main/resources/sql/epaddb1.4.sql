@@ -8,6 +8,8 @@ DROP TABLE if exists project;
 DROP TABLE if exists user;
 DROP TABLE if exists subject;
 
+DROP TABLE if exists users;
+
 CREATE TABLE project (id integer unsigned NOT NULL AUTO_INCREMENT,
 name varchar(128),
 projectid varchar(128),

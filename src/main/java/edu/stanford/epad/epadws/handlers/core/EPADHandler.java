@@ -870,10 +870,11 @@ public class EPADHandler extends AbstractHandler
 				Map<String, String> templateMap = HandlerUtil.getTemplateMap(PACSRouteTemplates.PAC_ENTITY, pathInfo);
 				String pacID = HandlerUtil.getTemplateParameter(templateMap, "pacid");
 				String entityID = HandlerUtil.getTemplateParameter(templateMap, "entityid");
+				String projectID = httpRequest.getParameter("projectID");
 				RemotePAC pac = RemotePACsService.getInstance().getRemotePAC(pacID);
 				if (pac != null)
 				{
-					RemotePACsService.getInstance().retrieveRemoteData(pac, entityID);
+					RemotePACsService.getInstance().retrieveRemoteData(pac, entityID, projectID, username, sessionID);
 					statusCode = HttpServletResponse.SC_OK;
 				}
 				else
