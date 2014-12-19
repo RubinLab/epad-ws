@@ -1581,7 +1581,6 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 		if (criteria.length() > 0 && !criteria.toLowerCase().startsWith("where"))
 			criteria = "where " + criteria;
 		Statement stmt = null;
-		PreparedStatement ps = null;
 		ResultSet rs = null;
 		List datas = new ArrayList();
 		Connection dbCon = null;
@@ -1617,7 +1616,33 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 		}
 		finally
 		{
-			close(dbCon, ps, rs);
+			close(dbCon, stmt, rs);
+		}
+	}
+
+	@Override
+	public Object retrieveObjectById(Object dbObject, long id, String dbTable,
+			String[][] dbColumns) throws Exception {
+		Statement stmt = null;
+		ResultSet rs = null;
+		Connection dbCon = null;
+		try
+		{
+            dbCon = getConnection();
+            stmt = dbCon.createStatement();
+            String sql = "SELECT * FROM "  + dbTable + " where id = " + id;
+            rs = stmt.executeQuery(sql);
+            Object data = null;
+		    if (rs.next()) 
+		    {
+		    	getSQLValues(dbColumns, rs, dbObject);
+		    	return dbObject;
+		    }
+		    return null;
+		}
+		finally
+		{
+			close(dbCon, stmt, rs);
 		}
 	}
 

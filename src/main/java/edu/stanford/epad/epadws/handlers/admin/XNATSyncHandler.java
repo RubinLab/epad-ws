@@ -72,15 +72,11 @@ public class XNATSyncHandler extends AbstractHandler
 			
 			if (SessionService.hasValidSessionID(httpRequest)) {
 				String sessionID = XNATSessionOperations.getJSessionIDFromRequest(httpRequest);
-				boolean xnatsession = true;
-				if (sessionID == null) // We must be logged into EPAD Session, get a new session ID from XNAT
-				{
-					xnatsession = false;
+				// We may be logged into EPAD Session, get a new session ID from XNAT
+				if (!XNATSessionOperations.hasValidXNATSessionID(sessionID))
 					sessionID = XNATSessionOperations.getXNATAdminSessionID();
-				}
 				String username = httpRequest.getParameter("username");
-				if (username == null || !username.equals("admin"))
-					throw new Exception("Invalid username in request");
+				if (username == null) username = "admin";
 				String method = httpRequest.getMethod();
 				if ("GET".equalsIgnoreCase(method)) {
 					try {
@@ -117,7 +113,7 @@ public class XNATSyncHandler extends AbstractHandler
 							}
 	
 						}
-						log.info("Getting all projects, xnatsession:" + xnatsession);
+						log.info("Getting all projects");
 						// Why is this needed???  Looks like processing all users, somehow kills the xnat session
 						if (!XNATSessionOperations.hasValidXNATSessionID(sessionID))
 							sessionID = XNATSessionOperations.getXNATAdminSessionID();

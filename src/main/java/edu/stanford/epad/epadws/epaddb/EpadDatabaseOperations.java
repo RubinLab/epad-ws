@@ -215,6 +215,7 @@ public interface EpadDatabaseOperations
 	List getDBObjects(Class dbClass, String dbTable, String[][] dbColumns, String criteria, int startRecords, int maxRecords, boolean distinct) throws Exception;
 	List<Long> getDBIds(String dbTable, String criteria, int startRecords, int maxRecords) throws Exception;
 	int getDBCount(String dbTable, String criteria) throws Exception;	
+	Object retrieveObjectById(Object dbObject, long id, String dbTable, String[][] dbColumns) throws Exception;
 	/**
 	 * @param script
 	 * @return true on success

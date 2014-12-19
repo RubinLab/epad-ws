@@ -91,7 +91,7 @@ public class RemotePACSBase {
 			port,
 			queryModel,
 			primaryDeviceType);
-		log.info("2 localNameToApplicationEntityTitleMap:" + networkApplicationInformation.getListOfLocalNamesOfApplicationEntities());
+		log.debug("2 localNameToApplicationEntityTitleMap:" + networkApplicationInformation.getListOfLocalNamesOfApplicationEntities());
 		applicationProperties = networkApplicationProperties.getProperties(getProperties());
 		this.storeProperties(localname + " added by EPAD " + new Date());
 	}
@@ -100,8 +100,8 @@ public class RemotePACSBase {
 		networkApplicationInformation = networkApplicationProperties.getNetworkApplicationInformation();
 		networkApplicationInformation.remove(localname);
 		applicationProperties = networkApplicationProperties.getProperties(getProperties());
-		log.info("4 localNameToApplicationEntityTitleMap:" + networkApplicationInformation.getListOfLocalNamesOfApplicationEntities());
-		log.info("4 applicationEntityTitleToLocalNameMap:" + networkApplicationInformation.getListOfApplicationEntityTitlesOfApplicationEntities());
+		log.debug("4 localNameToApplicationEntityTitleMap:" + networkApplicationInformation.getListOfLocalNamesOfApplicationEntities());
+		log.debug("4 applicationEntityTitleToLocalNameMap:" + networkApplicationInformation.getListOfApplicationEntityTitlesOfApplicationEntities());
 		this.storeProperties(localname + " deleted by EPAD " + new Date());
 	}
 	
@@ -259,7 +259,7 @@ public class RemotePACSBase {
 					}
 				}
 			}
-			log.warning("DownloadOrTransmit.setCurrentRemoteQuerySelection(): Guessed missing currentRemoteQuerySelectionLevel to be "+currentRemoteQuerySelectionLevel);
+			log.warning("RemotePACs.setCurrentRemoteQuerySelection(): Guessed missing currentRemoteQuerySelectionLevel to be "+currentRemoteQuerySelectionLevel);
 		}
 	}
 
@@ -272,7 +272,7 @@ public class RemotePACSBase {
 				currentRemoteQueryInformationModel.performHierarchicalMoveFrom(identifier,retrieveAE);
 			} else {			
 			// else do nothing, since no unique key to specify what to retrieve
-				log.info("UniqueKeys for retrieval are null");
+				log.warning("UniqueKeys for retrieval are null");
 			}
 		} catch (Exception e) {
 			e.printStackTrace(System.err);

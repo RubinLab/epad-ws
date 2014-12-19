@@ -36,6 +36,8 @@ public class RemotePACsService extends RemotePACSBase {
 
 	static RemotePACsService rpsinstance;
 	
+	public static final int MAX_CACHE_ENTRIES = 25000;
+	public static final int MAX_QUERY_SIZE = 7000;
 	static Map<String, QueryTreeRecord> remoteQueryCache = new HashMap<String, QueryTreeRecord>();
 	
 	public static Map<String, String> pendingTransfers = new HashMap<String, String>();
@@ -155,6 +157,9 @@ public class RemotePACsService extends RemotePACSBase {
 			{ AttributeTag t = TagFromName.SOPInstanceUID; Attribute a = new UniqueIdentifierAttribute(t); filter.put(t,a); }
 			{ AttributeTag t = TagFromName.SOPClassUID; Attribute a = new UniqueIdentifierAttribute(t); filter.put(t,a); }
 			{ AttributeTag t = TagFromName.SpecificCharacterSet; Attribute a = new CodeStringAttribute(t); filter.put(t,a); a.addValue("ISO_IR 100"); }
+			
+			if (remoteQueryCache.keySet().size() > MAX_CACHE_ENTRIES)
+				clearQueryCache();
 			List<RemotePACEntity> remoteEntities = new ArrayList<RemotePACEntity>();
 			String key = pac.pacID;
 			QueryTreeModel treeModel = currentRemoteQueryInformationModel.performHierarchicalQuery(filter);
@@ -220,7 +225,10 @@ public class RemotePACsService extends RemotePACSBase {
 		RemotePACEntity entity = new RemotePACEntity(type, node.getValue(), level, ukey);
 		remoteQueryCache.put(ukey, node);
 		entities.add(entity);
-
+		
+		if (entities.size() >= MAX_QUERY_SIZE)
+			return entities;
+		
 		int n = ((QueryTreeRecord)node).getChildCount();
 		
 		for (int i = 0; i < n; i++) {
@@ -245,16 +253,21 @@ public class RemotePACsService extends RemotePACSBase {
 		}
 		String type = node.getInformationEntity().toString();
 		String studyUID = null;
+		String seriesUID = null;
 		String patientID = null;
 		String patientName = "";
 		if (!type.equalsIgnoreCase("Study"))
 		{
+			if (type.equalsIgnoreCase("Series"))
+				seriesUID = studyUID = node.getUniqueKey().getSingleStringValueOrNull();
 			QueryTreeRecord parent = (QueryTreeRecord) node.getParent();
 			if (parent != null)
 			{
 				type = parent.getInformationEntity().toString();
 				if (!type.equalsIgnoreCase("Study"))
 				{
+					if (type.equalsIgnoreCase("Series"))
+						seriesUID = studyUID = parent.getUniqueKey().getSingleStringValueOrNull();
 					parent = (QueryTreeRecord) parent.getParent();
 					type = parent.getInformationEntity().toString();
 					if (type.equalsIgnoreCase("Study"))
@@ -282,7 +295,8 @@ public class RemotePACsService extends RemotePACSBase {
 		{
 			UserProjectService.addSubjectAndStudyToProject(patientID, patientName, studyUID, projectID, sessionID, userName);
 		}
-		pendingTransfers.put(uniqueKey, userName + ":" + projectID);
+		if (seriesUID != null)
+			pendingTransfers.put(seriesUID, userName + ":" + projectID);
 		this.setCurrentRemoteQueryInformationModel(pac.pacID, false);
 		if (node != null) {
 			setCurrentRemoteQuerySelection(node.getUniqueKeys(), node.getUniqueKey(), node.getAllAttributesReturnedInIdentifier());
