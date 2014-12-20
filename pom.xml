@@ -47,10 +47,34 @@
       <version>${jjvector.plugin.version}</version>
     </dependency>
 
+	<dependency>
+		<groupId>edu.stanford.epad.plugins</groupId>
+		<artifactId>lesionseg</artifactId>
+		<version>${lesionseg.plugin.version}</version>
+	</dependency>
+
+	<dependency>
+		<groupId>edu.stanford.epad.plugins</groupId>
+		<artifactId>sampleplugin</artifactId>
+		<version>${sampleplugin.plugin.version}</version>
+	</dependency>
+
+	<dependency>
+		<groupId>edu.stanford.epad.plugins</groupId>
+		<artifactId>riesz</artifactId>
+		<version>${riesz.plugin.version}</version>
+	</dependency>
+
     <dependency>
       <groupId>edu.stanford.hakan.aim3api</groupId>
       <artifactId>aim3api</artifactId>
       <version>${aim3api.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>edu.stanford.hakan.aim4api</groupId>
+      <artifactId>aimapi</artifactId>
+      <version>${aimapi.version}</version>
     </dependency>
 
     <!-- This is in the parent project repository because we could not find a public Maven repository containing it. -->
@@ -196,7 +220,17 @@
       <artifactId>imagej</artifactId>
       <version>${imagej.version}</version>
     </dependency>
-
+	
+	<dependency>
+		<groupId>org.mindrot</groupId>
+		<artifactId>jbcrypt</artifactId>
+		<version>0.3m</version>
+	</dependency>
+	<dependency>
+	    <groupId>junit</groupId>
+	    <artifactId>junit</artifactId>
+	    <version>4.11</version>
+	</dependency>
   </dependencies>
 
   <build>
@@ -238,6 +272,14 @@
         <version>${jetty.version}</version>
         <configuration>
           <scanIntervalSeconds>2</scanIntervalSeconds>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <version>2.18</version>
+        <configuration>
+          <skipTests>true</skipTests>
         </configuration>
       </plugin>
 
