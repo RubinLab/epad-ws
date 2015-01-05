@@ -38,6 +38,7 @@ import org.mindrot.jbcrypt.BCrypt;
 import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.epad.epadws.models.EpadFile;
+import edu.stanford.epad.epadws.models.FileType;
 import edu.stanford.epad.epadws.models.Project;
 import edu.stanford.epad.epadws.models.ProjectToSubject;
 import edu.stanford.epad.epadws.models.ProjectToSubjectToStudy;
@@ -351,10 +352,12 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 	@Override
 	public EpadFile createFile(String loggedInUser, String projectID,
 			String subjectUID, String studyUID, String seriesUID, File file,
-			String filename, String description) throws Exception {
+			String filename, String description, FileType fileType) throws Exception {
 		EpadFile efile = new EpadFile();
 		efile.setName(filename);
 		efile.setDescription(description);
+		if (fileType != null)
+			efile.setFileType(fileType.getName());
 		if (projectID != null && projectID.length() > 0)
 		{
 			Project project = getProject(projectID);

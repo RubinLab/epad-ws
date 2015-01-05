@@ -82,6 +82,7 @@ import edu.stanford.epad.epadws.handlers.core.StudyReference;
 import edu.stanford.epad.epadws.handlers.core.SubjectReference;
 import edu.stanford.epad.epadws.handlers.dicom.DSOUtil;
 import edu.stanford.epad.epadws.models.EpadFile;
+import edu.stanford.epad.epadws.models.FileType;
 import edu.stanford.epad.epadws.models.Project;
 import edu.stanford.epad.epadws.models.ProjectType;
 import edu.stanford.epad.epadws.models.Study;
@@ -482,18 +483,19 @@ public class DefaultEpadOperations implements EpadOperations
 			List<DICOMElement> referencedSOPInstanceUIDDICOMElements = getDICOMElementsByCode(suppliedDICOMElements,
 					PixelMedUtils.ReferencedSOPInstanceUIDCode);
 			int numberOfFrames = getNumberOfFrames(imageReference.imageUID, suppliedDICOMElements);
-
+			log.info("numberOfFrames for " + imageReference.imageUID + ":" + numberOfFrames);
 			if (numberOfFrames > 0) {
 				DICOMElement firstDICOMElement = referencedSOPInstanceUIDDICOMElements.get(0);
 				String studyUID = imageReference.studyUID; // DSO will be in same study as original images
 				String referencedFirstImageUID = firstDICOMElement.value;
 				String referencedSeriesUID = dcm4CheeDatabaseOperations.getSeriesUIDForImage(referencedFirstImageUID);
-				if (referencedSeriesUID == null || referencedSeriesUID.equals(""))
+				int i = 1;
+				while (referencedSeriesUID == null || referencedSeriesUID.equals("") && i < referencedSOPInstanceUIDDICOMElements.size())
 				{
-					// TODO: maybe we should loop through it, until we find one that returns series?
-					firstDICOMElement = referencedSOPInstanceUIDDICOMElements.get(1);
+					firstDICOMElement = referencedSOPInstanceUIDDICOMElements.get(i);
 					referencedFirstImageUID = firstDICOMElement.value;
 					referencedSeriesUID = dcm4CheeDatabaseOperations.getSeriesUIDForImage(referencedFirstImageUID);
+					i++;
 				}
 				DICOMElementList referencedDICOMElements = getDICOMElements(studyUID, referencedSeriesUID,
 						referencedFirstImageUID);
@@ -522,7 +524,7 @@ public class DefaultEpadOperations implements EpadOperations
 						String lossyImage = ""; // We do not have a lossy image for the DSO frame
 						String sourceLosslessImage = getPNGPath(studyUID, referencedSeriesUID, referencedImageUID);
 						String sourceLossyImage = getWADOPath(studyUID, referencedSeriesUID, referencedImageUID);
-
+						log.info("Frame:" + frameNumber + " losslessImage:" + losslessImage);
 						if (isFirst) {
 							EPADDSOFrame frame = new EPADDSOFrame(imageReference.projectID, imageReference.subjectID,
 									imageReference.studyUID, imageReference.seriesUID, imageReference.imageUID, insertDate, imageDate,
@@ -539,6 +541,7 @@ public class DefaultEpadOperations implements EpadOperations
 							frames.add(frame);
 						}
 					}
+					log.info("Returning :" + frames.size() + " frames for DSO");
 					return new EPADFrameList(frames);
 				} else {
 					log.warning("Could not find original series for DSO image " + imageReference.imageUID + " in series "
@@ -552,6 +555,7 @@ public class DefaultEpadOperations implements EpadOperations
 			log.warning("Attempt to get frames of non multi-frame image " + imageReference.imageUID + " in series "
 					+ imageReference.seriesUID);
 		}
+		log.info("Returning : 0 frames for DSO");
 		return new EPADFrameList();
 	}
 
@@ -890,14 +894,14 @@ public class DefaultEpadOperations implements EpadOperations
 
 	@Override
 	public int createFile(String username, ProjectReference projectReference,
-			File uploadedFile, String description, String sessionID) throws Exception {
+			File uploadedFile, String description, String fileType, String sessionID) throws Exception {
 		createFile(username, projectReference.projectID, null, null, null,
-					uploadedFile, description, sessionID);
+					uploadedFile, description, fileType, sessionID);
 		return HttpServletResponse.SC_OK;
 	}
 	
 	private void createFile(String username, String projectID, String subjectID, String studyID, String seriesID,
-			File uploadedFile, String description, String sessionID) throws Exception {
+			File uploadedFile, String description, String fileType, String sessionID) throws Exception {
 		String filename = uploadedFile.getName();
 		if (filename.startsWith("temp"))
 		{
@@ -910,7 +914,12 @@ public class DefaultEpadOperations implements EpadOperations
 		}
 		else if (uploadedFile.getName().toLowerCase().endsWith(".zip"))
 		{
-			projectOperations.createFile(username, projectID, subjectID, studyID, seriesID, uploadedFile, filename, description);
+			FileType type = null;
+			if (fileType != null && fileType.equals(FileType.TEMPLATE.getName()))
+				type = FileType.TEMPLATE;
+			else if (fileType != null && fileType.equals(FileType.IMAGE.getName()))
+				type = FileType.IMAGE;
+			projectOperations.createFile(username, projectID, subjectID, studyID, seriesID, uploadedFile, filename, description, type);
 			log.info("Unzipping " + uploadedFile.getAbsolutePath());
 			EPADFileUtils.extractFolder(uploadedFile.getAbsolutePath());
 			File[] files = uploadedFile.getParentFile().listFiles();
@@ -930,32 +939,58 @@ public class DefaultEpadOperations implements EpadOperations
 		}
 		else
 		{
-			projectOperations.createFile(username, projectID, subjectID, studyID, seriesID, uploadedFile, filename, description);
+			FileType type = null;
+			if (fileType != null && fileType.equals(FileType.TEMPLATE.getName()))
+				type = FileType.TEMPLATE;
+			else if (fileType != null && fileType.equals(FileType.IMAGE.getName()))
+				type = FileType.IMAGE;
+			else if (isImage(uploadedFile))
+				type = FileType.IMAGE;
+			projectOperations.createFile(username, projectID, subjectID, studyID, seriesID, uploadedFile, filename, description, type);
 		}
 	}
 
+	private boolean isImage(File file) {
+		String name = file.getName().toLowerCase();
+		if (name.endsWith(".jpeg")
+				|| name.endsWith(".jpg")
+				|| name.endsWith(".png")
+				|| name.endsWith(".gif")
+				|| name.endsWith(".nii")
+				|| name.endsWith(".bmp")
+				|| name.endsWith(".tif")
+				|| name.endsWith(".tiff")
+				|| name.endsWith(".yuv")
+				|| name.endsWith(".psd")
+				|| name.endsWith(".xcf")
+				)
+			return true;
+		else
+			return false;
+	}
+	
 	@Override
 	public int createFile(String username, SubjectReference subjectReference,
-			File uploadedFile, String description, String sessionID) throws Exception {
+			File uploadedFile, String description, String fileType, String sessionID) throws Exception {
 		createFile(username, subjectReference.projectID, subjectReference.subjectID, null, null,
-				uploadedFile, description, sessionID);
+				uploadedFile, description, fileType, sessionID);
 		return HttpServletResponse.SC_OK;
 	}
 
 	@Override
 	public int createFile(String username, StudyReference studyReference,
-			File uploadedFile, String description, String sessionID) throws Exception {
+			File uploadedFile, String description, String fileType, String sessionID) throws Exception {
 		createFile(username, studyReference.projectID, studyReference.subjectID, studyReference.studyUID, null,
-				uploadedFile, description, sessionID);
+				uploadedFile, description, fileType, sessionID);
 		return HttpServletResponse.SC_OK;
 	}
 
 	@Override
 	public int createFile(String username, SeriesReference seriesReference,
-			File uploadedFile, String description, String sessionID)
+			File uploadedFile, String description, String fileType, String sessionID)
 			throws Exception {
 		createFile(username, seriesReference.projectID, seriesReference.subjectID, seriesReference.studyUID, seriesReference.seriesUID,
-						uploadedFile, description, sessionID);
+						uploadedFile, description, fileType, sessionID);
 		return HttpServletResponse.SC_OK;
 	}
 
@@ -994,7 +1029,7 @@ public class DefaultEpadOperations implements EpadOperations
 				studyId = study.getStudyUID();
 			}
 			EPADFile efile = new EPADFile(projectReference.projectID, subjectId, patientName, studyId, file.getSeriesUid(),
-					file.getName(), file.getLength(), new SimpleDateFormat("yyyy-dd-MM HH:mm:ss").format(file.getCreatedTime()), getEpadFilePath(file));
+					file.getName(), file.getLength(), file.getFileType(), new SimpleDateFormat("yyyy-dd-MM HH:mm:ss").format(file.getCreatedTime()), getEpadFilePath(file));
 			efiles.add(efile);
 		}
 		return new EPADFileList(efiles);
@@ -1027,7 +1062,7 @@ public class DefaultEpadOperations implements EpadOperations
 			studyId = study.getStudyUID();
 		}
 		EPADFile efile = new EPADFile(projectReference.projectID, subjectId, patientName, studyId, file.getSeriesUid(),
-				file.getName(), file.getLength(), new SimpleDateFormat("yyyy-dd-MM HH:mm:ss").format(file.getCreatedTime()), getEpadFilePath(file));
+				file.getName(), file.getLength(), file.getFileType(), new SimpleDateFormat("yyyy-dd-MM HH:mm:ss").format(file.getCreatedTime()), getEpadFilePath(file));
 		return efile;
 	}
 
@@ -1051,7 +1086,7 @@ public class DefaultEpadOperations implements EpadOperations
 				studyId = study.getStudyUID();
 			}
 			EPADFile efile = new EPADFile(subjectReference.projectID, subjectReference.subjectID, patientName, studyId, file.getSeriesUid(),
-					file.getName(), file.getLength(), new SimpleDateFormat("yyyy-dd-MM HH:mm:ss").format(file.getCreatedTime()), getEpadFilePath(file));
+					file.getName(), file.getLength(), file.getFileType(), new SimpleDateFormat("yyyy-dd-MM HH:mm:ss").format(file.getCreatedTime()), getEpadFilePath(file));
 			efiles.add(efile);
 		}
 		return new EPADFileList(efiles);
@@ -1075,7 +1110,7 @@ public class DefaultEpadOperations implements EpadOperations
 			studyId = study.getStudyUID();
 		}
 		EPADFile efile = new EPADFile(subjectReference.projectID, subjectReference.subjectID, patientName, studyId, file.getSeriesUid(),
-				file.getName(), file.getLength(), new SimpleDateFormat("yyyy-dd-MM HH:mm:ss").format(file.getCreatedTime()), getEpadFilePath(file));
+				file.getName(), file.getLength(), file.getFileType(), new SimpleDateFormat("yyyy-dd-MM HH:mm:ss").format(file.getCreatedTime()), getEpadFilePath(file));
 		return efile;
 	}
 
@@ -1093,7 +1128,7 @@ public class DefaultEpadOperations implements EpadOperations
 				patientName = subject.getName();
 			}
 			EPADFile efile = new EPADFile(studyReference.projectID, studyReference.subjectID, patientName, studyReference.studyUID, file.getSeriesUid(),
-					file.getName(), file.getLength(), new SimpleDateFormat("yyyy-dd-MM HH:mm:ss").format(file.getCreatedTime()), getEpadFilePath(file));
+					file.getName(), file.getLength(), file.getFileType(), new SimpleDateFormat("yyyy-dd-MM HH:mm:ss").format(file.getCreatedTime()), getEpadFilePath(file));
 			efiles.add(efile);
 		}
 		return new EPADFileList(efiles);
@@ -1111,7 +1146,7 @@ public class DefaultEpadOperations implements EpadOperations
 			patientName = subject.getName();
 		}
 		EPADFile efile = new EPADFile(studyReference.projectID, studyReference.subjectID, patientName, studyReference.studyUID, file.getSeriesUid(),
-				file.getName(), file.getLength(), new SimpleDateFormat("yyyy-dd-MM HH:mm:ss").format(file.getCreatedTime()), getEpadFilePath(file));
+				file.getName(), file.getLength(), file.getFileType(), new SimpleDateFormat("yyyy-dd-MM HH:mm:ss").format(file.getCreatedTime()), getEpadFilePath(file));
 		return efile;
 	}
 
@@ -1129,7 +1164,7 @@ public class DefaultEpadOperations implements EpadOperations
 				patientName = subject.getName();
 			}
 			EPADFile efile = new EPADFile(seriesReference.projectID, seriesReference.subjectID, patientName, seriesReference.studyUID, file.getSeriesUid(),
-					file.getName(), file.getLength(), new SimpleDateFormat("yyyy-dd-MM HH:mm:ss").format(file.getCreatedTime()), getEpadFilePath(file));
+					file.getName(), file.getLength(), file.getFileType(), new SimpleDateFormat("yyyy-dd-MM HH:mm:ss").format(file.getCreatedTime()), getEpadFilePath(file));
 			efiles.add(efile);
 		}
 		return new EPADFileList(efiles);
@@ -1146,7 +1181,7 @@ public class DefaultEpadOperations implements EpadOperations
 			patientName = subject.getName();
 		}
 		EPADFile efile = new EPADFile(seriesReference.projectID, seriesReference.subjectID, patientName, seriesReference.studyUID, file.getSeriesUid(),
-				file.getName(), file.getLength(), new SimpleDateFormat("yyyy-dd-MM HH:mm:ss").format(file.getCreatedTime()), getEpadFilePath(file));
+				file.getName(), file.getLength(), file.getFileType(), new SimpleDateFormat("yyyy-dd-MM HH:mm:ss").format(file.getCreatedTime()), getEpadFilePath(file));
 		return efile;
 	}
 
@@ -1302,13 +1337,18 @@ public class DefaultEpadOperations implements EpadOperations
 			String sessionID) {
 		try {
 			EPADAIM aim = epadDatabaseOperations.addAIM(username, projectReference, aimID);
+			if (!"admin".equals(username) && !aim.userName.equals(username) && !aim.userName.equals("shared") && !UserProjectService.isOwner(sessionID, username, aim.projectID))
+			{
+				log.warning("No permissions to update AIM:" + aimID + " for user " + username);
+				throw new Exception("No permissions to update AIM:" + aimID + " for user " + username);
+			}
 			if (!AIMUtil.saveAIMAnnotation(aimFile, aim.projectID, sessionID, username))
 				return "";
 			else
 				return "Error saving AIM file";
 		} catch (Exception e) {
 			log.warning("Error saving AIM file ",e);
-			return "Error saving AIM file " + e.getMessage();
+			return e.getMessage();
 		}
 	}
 
@@ -1318,13 +1358,18 @@ public class DefaultEpadOperations implements EpadOperations
 			String sessionID) {
 		try {
 			EPADAIM aim = epadDatabaseOperations.addAIM(username, subjectReference, aimID);
+			if (!"admin".equals(username) && !aim.userName.equals(username) && !aim.userName.equals("shared") && !UserProjectService.isOwner(sessionID, username, aim.projectID))
+			{
+				log.warning("No permissions to update AIM:" + aimID + " for user " + username);
+				throw new Exception("No permissions to update AIM:" + aimID + " for user " + username);
+			}
 			if (!AIMUtil.saveAIMAnnotation(aimFile, aim.projectID, sessionID, username))
 				return "";
 			else
 				return "Error saving AIM file";
 		} catch (Exception e) {
 			log.warning("Error saving AIM file ",e);
-			return "Error saving AIM file " + e.getMessage();
+			return e.getMessage();
 		}
 	}
 
@@ -1333,13 +1378,18 @@ public class DefaultEpadOperations implements EpadOperations
 	{
 		try {
 			EPADAIM aim = epadDatabaseOperations.addAIM(username, studyReference, aimID);
+			if (!"admin".equals(username) && !aim.userName.equals(username) && !aim.userName.equals("shared") && !UserProjectService.isOwner(sessionID, username, aim.projectID))
+			{
+				log.warning("No permissions to update AIM:" + aimID + " for user " + username);
+				throw new Exception("No permissions to update AIM:" + aimID + " for user " + username);
+			}
 			if (!AIMUtil.saveAIMAnnotation(aimFile, aim.projectID, sessionID, username))
 				return "";
 			else
 				return "Error saving AIM file";
 		} catch (Exception e) {
 			log.warning("Error saving AIM file ",e);
-			return "Error saving AIM file " + e.getMessage();
+			return e.getMessage();
 		}
 	}
 
@@ -1348,13 +1398,18 @@ public class DefaultEpadOperations implements EpadOperations
 	{
 		try {
 			EPADAIM aim = epadDatabaseOperations.addAIM(username, seriesReference, aimID);
+			if (!"admin".equals(username) && !aim.userName.equals(username) && !aim.userName.equals("shared") && !UserProjectService.isOwner(sessionID, username, aim.projectID))
+			{
+				log.warning("No permissions to update AIM:" + aimID + " for user " + username);
+				throw new Exception("No permissions to update AIM:" + aimID + " for user " + username);
+			}
 			if (!AIMUtil.saveAIMAnnotation(aimFile, aim.projectID, sessionID, username))
 				return "";
 			else
 				return "Error saving AIM file";
 		} catch (Exception e) {
 			log.warning("Error saving AIM file ",e);
-			return "Error saving AIM file " + e.getMessage();
+			return e.getMessage();
 		}
 	}
 
@@ -1363,13 +1418,18 @@ public class DefaultEpadOperations implements EpadOperations
 	{
 		try {
 			EPADAIM aim = epadDatabaseOperations.addAIM(username, imageReference, aimID);
+			if (!"admin".equals(username) && !aim.userName.equals(username) && !aim.userName.equals("shared") && !UserProjectService.isOwner(sessionID, username, aim.projectID))
+			{
+				log.warning("No permissions to update AIM:" + aimID + " for user " + username);
+				throw new Exception("No permissions to update AIM:" + aimID + " for user " + username);
+			}
 			if (!AIMUtil.saveAIMAnnotation(aimFile, aim.projectID, sessionID, username))
 				return "";
 			else
 				return "Error saving AIM file";
 		} catch (Exception e) {
 			log.warning("Error saving AIM file ",e);
-			return "Error saving AIM file " + e.getMessage();
+			return e.getMessage();
 		}
 	}
 
@@ -1378,13 +1438,18 @@ public class DefaultEpadOperations implements EpadOperations
 	{
 		try {
 			EPADAIM aim = epadDatabaseOperations.addAIM(username, frameReference, aimID);
+			if (!"admin".equals(username) && !aim.userName.equals(username) && !aim.userName.equals("shared") && !UserProjectService.isOwner(sessionID, username, aim.projectID))
+			{
+				log.warning("No permissions to update AIM:" + aimID + " for user " + username);
+				throw new Exception("No permissions to update AIM:" + aimID + " for user " + username);
+			}
 			if (!AIMUtil.saveAIMAnnotation(aimFile, aim.projectID, frameReference.frameNumber, sessionID, username))
 				return "";
 			else
 				return "Error saving AIM file";
 		} catch (Exception e) {
 			log.warning("Error saving AIM file ",e);
-			return "Error saving AIM file " + e.getMessage();
+			return e.getMessage();
 		}
 	}
 

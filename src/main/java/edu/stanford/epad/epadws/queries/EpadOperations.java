@@ -88,13 +88,13 @@ public interface EpadOperations
 
 	int createStudy(String username, StudyReference studyReference, String sessionID) throws Exception;
 
-	int createFile(String username, ProjectReference projectReference, File uploadedFile, String description, String sessionID) throws Exception;
+	int createFile(String username, ProjectReference projectReference, File uploadedFile, String description, String fileType, String sessionID) throws Exception;
 
-	int createFile(String username, SubjectReference subjectReference, File uploadedFile, String description, String sessionID) throws Exception;
+	int createFile(String username, SubjectReference subjectReference, File uploadedFile, String description, String fileType, String sessionID) throws Exception;
 
-	int createFile(String username, StudyReference studyReference, File uploadedFile, String description, String sessionID) throws Exception;
+	int createFile(String username, StudyReference studyReference, File uploadedFile, String description, String fileType, String sessionID) throws Exception;
 
-	int createFile(String username, SeriesReference seriesReference, File uploadedFile, String description, String sessionID) throws Exception;
+	int createFile(String username, SeriesReference seriesReference, File uploadedFile, String description, String fileType, String sessionID) throws Exception;
 
 	int createImage(String username, String projectID, File dicomFile, String sessionID) throws Exception;
 	

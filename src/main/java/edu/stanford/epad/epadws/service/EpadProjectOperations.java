@@ -30,6 +30,7 @@ import java.util.List;
 import java.util.Map;
 
 import edu.stanford.epad.epadws.models.EpadFile;
+import edu.stanford.epad.epadws.models.FileType;
 import edu.stanford.epad.epadws.models.Project;
 import edu.stanford.epad.epadws.models.ProjectType;
 import edu.stanford.epad.epadws.models.Study;
@@ -65,7 +66,7 @@ public interface EpadProjectOperations {
 	void removeSubjectFromProject(String loggedInUser, String subjectUID, String projectId) throws Exception;
 	void removeStudyFromProject(String loggedInUser, String studyUID, String projectId) throws Exception;
 
-	EpadFile createFile(String loggedInUser, String projectID, String subjectUID, String studyUID, String seriesUID, File file, String filename, String description) throws Exception;
+	EpadFile createFile(String loggedInUser, String projectID, String subjectUID, String studyUID, String seriesUID, File file, String filename, String description, FileType type) throws Exception;
 	
 	Project getProject(String projectId) throws Exception;
 	
