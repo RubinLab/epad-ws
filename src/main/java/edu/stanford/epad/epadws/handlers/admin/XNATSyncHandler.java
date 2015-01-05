@@ -80,158 +80,7 @@ public class XNATSyncHandler extends AbstractHandler
 				String method = httpRequest.getMethod();
 				if ("GET".equalsIgnoreCase(method)) {
 					try {
-						log.info("Starting sync with XNAT Database");
-						XNATUserList xusers = XNATQueries.getAllUsers();
-						for (XNATUser xuser: xusers.ResultSet.Result)
-						{
-							log.info("Processing user:" + xuser.login);
-							response = response + "\nProcessing user:" + xuser.login;
-							String password = generatePassword(xuser.login);
-							User user = projectOperations.getUser(xuser.login);
-							if (user == null)
-							{
-								user = projectOperations.createUser(username, xuser.login, xuser.firstname, xuser.lastname, xuser.email, password);
-								// TODO: mail password to user
-								log.info("Created user:" + xuser.login + " password:" + password);
-								response = response + "\nCreated user: " + user.getUsername() + " password:" + password;
-								if (user.getEmail() != null && user.getEmail().trim().length() > 0)
-									new MailUtil().send(user.getEmail(), "admin@epad.stanford.edu", "Password Reset", "Hello " + user.getFullName() 
-										+ "\nYour password on EPAD has been reset to your username.\nPlease login and change it.\nThank you.");
-							}
-							else if (user.getUsername().equals("admin"))
-							{
-								try {
-									// Update password, but ignore errors
-									user = projectOperations.updateUser(username, xuser.login, null, null, xuser.email, password, "admin");
-									log.info("Updated admin password");
-								} catch (Exception x) {}
-							}
-							if (xuser.login.equals("admin"))
-							{
-								user.setAdmin(true);
-								user.save();
-							}
-	
-						}
-						log.info("Getting all projects");
-						// Why is this needed???  Looks like processing all users, somehow kills the xnat session
-						if (!XNATSessionOperations.hasValidXNATSessionID(sessionID))
-							sessionID = XNATSessionOperations.getXNATAdminSessionID();
-						XNATProjectList xnatProjectList = XNATQueries.allProjects(sessionID);
-						for (XNATProject xproject: xnatProjectList.ResultSet.Result)
-						{						
-							log.info("Processing project:" + xproject.name);
-							response = response + "\nProcessing project:" + xproject.name;
-							Project project = projectOperations.getProject(xproject.ID);
-							if (project == null)
-							{
-								String type = XNATQueries.getProjectType(xproject.ID, sessionID);
-								log.info("Project " + xproject.name + " is " + type);
-								ProjectType pt = ProjectType.PRIVATE;
-								if (type.toLowerCase().startsWith("public"))
-									pt = ProjectType.PUBLIC;
-								project = projectOperations.createProject(username, xproject.ID, xproject.name, xproject.description, pt);
-								log.info("Created project:" + xproject.name);
-								response = response + "\nCreated project " + xproject.name;
-							}
-							log.info("Getting project desc:" + xproject.ID);
-							XNATUserList xnatUsers = XNATQueries.getUsersForProject(xproject.ID);
-							Map<String,String> userRoles = xnatUsers.getRoles();
-							log.info("Project users:" + userRoles);
-							for (String euser: userRoles.keySet())
-							{
-								log.info("Getting projects for " + euser);
-								String role = userRoles.get(euser);
-								List<Project> projects = projectOperations.getProjectsForUser(euser);
-								boolean found = false;
-								for (Project p: projects)
-								{
-									if (p.getProjectId().equals(xproject.ID))
-									{
-										found = true;
-										break;
-									}
-								}
-								if (found && euser.equals("admin"))
-								{
-									List<User> epadUsers = projectOperations.getUsersForProject(xproject.ID);
-									found = false;
-									for (User u: epadUsers)
-									{
-										if (u.getUsername().equals("admin"))
-											found = true;
-									}
-								}
-								if (!found)
-								{
-									UserRole urole = UserRole.COLLABORATOR;
-									if (role.startsWith("Owner"))
-										urole = UserRole.OWNER;
-									if (role.startsWith("Member"))
-										urole = UserRole.MEMBER;
-									projectOperations.addUserToProject(username, xproject.ID, euser, urole);
-									if (role.startsWith("Owner") && project.getCreator().equals(username))
-									{
-										project.setCreator(euser);
-										project.save();
-									}
-									response = response + "\nAdded user " + euser + " to project " + xproject.ID + " as " + urole;
-								}
-							}
-							XNATSubjectList xsubjects = XNATQueries.getSubjectsForProject(sessionID, xproject.ID);
-							List<Subject> psubjects = projectOperations.getSubjectsForProject(xproject.ID);
-							for (XNATSubject xsubject: xsubjects.ResultSet.Result)
-							{
-								log.info("Processing subject:" + xsubject.label);
-								Subject subject = projectOperations.getSubject(xsubject.label);
-								if (subject == null)
-								{
-									subject = projectOperations.createSubject(username, xsubject.label, xsubject.src, null, null);
-									response = response + "\nCreated subject " + xsubject.src;
-								}
-								XNATExperimentList experiments = XNATQueries.getDICOMExperiments(sessionID, xproject.ID, xsubject.ID);
-								for (XNATExperiment experiment: experiments.ResultSet.Result)
-								{
-									log.info("Processing study:" + experiment.label.replace('_', '.'));
-									Study study = projectOperations.getStudy(experiment.label.replace('_', '.'));
-									if (study == null)
-									{
-										study = projectOperations.createStudy(username, experiment.label.replace('_', '.'), subject.getSubjectUID());
-										response = response + "\nCreated study " + study.getStudyUID() + " for subject " + subject.getName();
-									}
-								}
-								if (!psubjects.contains(subject))
-								{
-									projectOperations.addSubjectToProject(username, subject.getSubjectUID(), project.getProjectId());
-									response = response + "\nAdded Subject " + subject.getName() + ":" + subject.getSubjectUID() + " to project " + project.getProjectId();
-								}
-								log.info("Getting XNAT studies for project:" + project.getProjectId());
-								Set<String> studyUIDs = XNATQueries.getStudyUIDsForSubject(sessionID, project.getProjectId(), xsubject.ID);
-								log.info("Getting EPAD studies for project:" + project.getProjectId());
-								List<Study> studies = projectOperations.getStudiesForProjectAndSubject(project.getProjectId(), subject.getSubjectUID());
-								for (String studyUID: studyUIDs)
-								{
-									boolean found = false;
-									for (Study s: studies)
-									{
-										if (s.getStudyUID().equals(studyUID.replace('_', '.')))
-										{
-											found = true;
-											break;
-										}
-									}
-									if (!found)
-									{
-										projectOperations.addStudyToProject(username, studyUID.replace('_', '.'), subject.getSubjectUID(), project.getProjectId());
-										response = response + "\nAdded Study " + studyUID.replace('_', '.') + " to project " + project.getProjectId();
-									}
-								}
-								log.info("Done with subject:" + xsubject.label);
-							}
-							log.info("Done with project:" + project.getProjectId());
-						}
-						log.info("Done with all projects");
-						response = response + "\nSyncing with XNAT Completed";
+						response = syncXNATtoEpad(username, sessionID);
 						log.info("Output Log:" + response);
 						responseStream.write(response);
 						statusCode = HttpServletResponse.SC_OK;
@@ -252,8 +101,167 @@ public class XNATSyncHandler extends AbstractHandler
 		}
 		httpResponse.setStatus(statusCode);
 	}
+	
+	public static String syncXNATtoEpad(String username, String sessionID) throws Exception {
+		
+		EpadProjectOperations projectOperations = DefaultEpadProjectOperations.getInstance();
+		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
+		String response = "";
+		log.info("Starting sync with XNAT Database");
+		XNATUserList xusers = XNATQueries.getAllUsers();
+		for (XNATUser xuser: xusers.ResultSet.Result)
+		{
+			log.info("Processing user:" + xuser.login);
+			response = response + "\nProcessing user:" + xuser.login;
+			String password = generatePassword(xuser.login);
+			User user = projectOperations.getUser(xuser.login);
+			if (user == null)
+			{
+				user = projectOperations.createUser(username, xuser.login, xuser.firstname, xuser.lastname, xuser.email, password);
+				// TODO: mail password to user
+				log.info("Created user:" + xuser.login + " password:" + password);
+				response = response + "\nCreated user: " + user.getUsername() + " password:" + password;
+				if (user.getEmail() != null && user.getEmail().trim().length() > 0)
+					new MailUtil().send(user.getEmail(), "admin@epad.stanford.edu", "Password Reset", "Hello " + user.getFullName() 
+						+ "\nYour password on EPAD has been reset to your username.\nPlease login and change it.\nThank you.");
+			}
+			else if (user.getUsername().equals("admin"))
+			{
+				try {
+					// Update password, but ignore errors
+					user = projectOperations.updateUser(username, xuser.login, null, null, xuser.email, password, "admin");
+					log.info("Updated admin password");
+				} catch (Exception x) {}
+			}
+			if (xuser.login.equals("admin"))
+			{
+				user.setAdmin(true);
+				user.save();
+			}
 
-	private String generatePassword(String login)
+		}
+		log.info("Getting all projects");
+		if (sessionID == null || sessionID.length() == 0 || !XNATSessionOperations.hasValidXNATSessionID(sessionID))
+			sessionID = XNATSessionOperations.getXNATAdminSessionID();
+		XNATProjectList xnatProjectList = XNATQueries.allProjects(sessionID);
+		for (XNATProject xproject: xnatProjectList.ResultSet.Result)
+		{						
+			log.info("Processing project:" + xproject.name);
+			response = response + "\nProcessing project:" + xproject.name;
+			Project project = projectOperations.getProject(xproject.ID);
+			if (project == null)
+			{
+				String type = XNATQueries.getProjectType(xproject.ID, sessionID);
+				log.info("Project " + xproject.name + " is " + type);
+				ProjectType pt = ProjectType.PRIVATE;
+				if (type.toLowerCase().startsWith("public"))
+					pt = ProjectType.PUBLIC;
+				project = projectOperations.createProject(username, xproject.ID, xproject.name, xproject.description, pt);
+				log.info("Created project:" + xproject.name);
+				response = response + "\nCreated project " + xproject.name;
+			}
+			log.info("Getting project desc:" + xproject.ID);
+			XNATUserList xnatUsers = XNATQueries.getUsersForProject(xproject.ID);
+			Map<String,String> userRoles = xnatUsers.getRoles();
+			log.info("Project users:" + userRoles);
+			for (String euser: userRoles.keySet())
+			{
+				log.info("Getting projects for " + euser);
+				String role = userRoles.get(euser);
+				List<Project> projects = projectOperations.getProjectsForUser(euser);
+				boolean found = false;
+				for (Project p: projects)
+				{
+					if (p.getProjectId().equals(xproject.ID))
+					{
+						found = true;
+						break;
+					}
+				}
+				if (found && euser.equals("admin"))
+				{
+					List<User> epadUsers = projectOperations.getUsersForProject(xproject.ID);
+					found = false;
+					for (User u: epadUsers)
+					{
+						if (u.getUsername().equals("admin"))
+							found = true;
+					}
+				}
+				if (!found)
+				{
+					UserRole urole = UserRole.COLLABORATOR;
+					if (role.startsWith("Owner"))
+						urole = UserRole.OWNER;
+					if (role.startsWith("Member"))
+						urole = UserRole.MEMBER;
+					projectOperations.addUserToProject(username, xproject.ID, euser, urole);
+					if (role.startsWith("Owner") && project.getCreator().equals(username))
+					{
+						project.setCreator(euser);
+						project.save();
+					}
+					response = response + "\nAdded user " + euser + " to project " + xproject.ID + " as " + urole;
+				}
+			}
+			XNATSubjectList xsubjects = XNATQueries.getSubjectsForProject(sessionID, xproject.ID);
+			List<Subject> psubjects = projectOperations.getSubjectsForProject(xproject.ID);
+			for (XNATSubject xsubject: xsubjects.ResultSet.Result)
+			{
+				log.info("Processing subject:" + xsubject.label);
+				Subject subject = projectOperations.getSubject(xsubject.label);
+				if (subject == null)
+				{
+					subject = projectOperations.createSubject(username, xsubject.label, xsubject.src, null, null);
+					response = response + "\nCreated subject " + xsubject.src;
+				}
+				XNATExperimentList experiments = XNATQueries.getDICOMExperiments(sessionID, xproject.ID, xsubject.ID);
+				for (XNATExperiment experiment: experiments.ResultSet.Result)
+				{
+					log.info("Processing study:" + experiment.label.replace('_', '.'));
+					Study study = projectOperations.getStudy(experiment.label.replace('_', '.'));
+					if (study == null)
+					{
+						study = projectOperations.createStudy(username, experiment.label.replace('_', '.'), subject.getSubjectUID());
+						response = response + "\nCreated study " + study.getStudyUID() + " for subject " + subject.getName();
+					}
+				}
+				if (!psubjects.contains(subject))
+				{
+					projectOperations.addSubjectToProject(username, subject.getSubjectUID(), project.getProjectId());
+					response = response + "\nAdded Subject " + subject.getName() + ":" + subject.getSubjectUID() + " to project " + project.getProjectId();
+				}
+				log.info("Getting XNAT studies for project:" + project.getProjectId());
+				Set<String> studyUIDs = XNATQueries.getStudyUIDsForSubject(sessionID, project.getProjectId(), xsubject.ID);
+				log.info("Getting EPAD studies for project:" + project.getProjectId());
+				List<Study> studies = projectOperations.getStudiesForProjectAndSubject(project.getProjectId(), subject.getSubjectUID());
+				for (String studyUID: studyUIDs)
+				{
+					boolean found = false;
+					for (Study s: studies)
+					{
+						if (s.getStudyUID().equals(studyUID.replace('_', '.')))
+						{
+							found = true;
+							break;
+						}
+					}
+					if (!found)
+					{
+						projectOperations.addStudyToProject(username, studyUID.replace('_', '.'), subject.getSubjectUID(), project.getProjectId());
+						response = response + "\nAdded Study " + studyUID.replace('_', '.') + " to project " + project.getProjectId();
+					}
+				}
+				log.info("Done with subject:" + xsubject.label);
+			}
+			log.info("Done with project:" + project.getProjectId());
+		}
+		log.info("Done with all projects");
+		response = response + "\nSyncing with XNAT Completed";
+		return response;
+	}
+
+	private static String generatePassword(String login)
 	{
 		if (login.equals(EPADConfig.xnatUploadProjectUser))
 			return EPADConfig.xnatUploadProjectPassword;

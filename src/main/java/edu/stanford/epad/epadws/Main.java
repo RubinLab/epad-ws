@@ -8,6 +8,7 @@ import java.net.BindException;
 import java.net.SocketException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.io.IOUtils;
@@ -48,6 +49,7 @@ import edu.stanford.epad.epadws.handlers.session.EPADSessionHandler;
 import edu.stanford.epad.epadws.processing.pipeline.threads.ShutdownHookThread;
 import edu.stanford.epad.epadws.processing.pipeline.threads.ShutdownSignal;
 import edu.stanford.epad.epadws.processing.pipeline.watcher.QueueAndWatcherManager;
+import edu.stanford.epad.epadws.service.UserProjectService;
 
 /**
  * Entry point for the ePAD Web Service.
@@ -150,6 +152,16 @@ public class Main
 			EpadDatabaseOperations databaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
 			//log.info("Checking annotations table");
 			databaseOperations.checkAndRefreshAnnotationsTable();
+			Set<String> projectIds = UserProjectService.getAllProjectIDs();
+			if (EPADConfig.UseEPADUsersProjects && projectIds.size() == 1) {
+				// Sync XNAT to Epad if needed
+				try {
+					XNATSyncHandler.syncXNATtoEpad("admin", "");
+				}
+				catch (Exception x) {
+					log.warning("Error syncing XNAT data", x);
+				}
+			}
 		} catch (Exception e) {
 			log.warning("Failed to start database", e);
 			System.exit(1);
