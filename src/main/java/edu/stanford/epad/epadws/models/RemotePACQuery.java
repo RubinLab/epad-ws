@@ -34,11 +34,13 @@ public class RemotePACQuery extends AbstractDAO {
 	String pacId;
 	String requestor; // Username of requestor
 	long subjectId;
-	long projectId;
+	Long projectId;
 	String modality;
 	String period; // daily or weekly
 	boolean enabled;
+	String lastStudyDate;
 	Date lastQueryTime;
+	String lastQueryStatus;
 	Date createdTime;
 	Date updateTime;
 
@@ -71,11 +73,11 @@ public class RemotePACQuery extends AbstractDAO {
 		this.subjectId = subjectId;
 	}
 
-	public long getProjectId() {
+	public Long getProjectId() {
 		return projectId;
 	}
 
-	public void setProjectId(long projectId) {
+	public void setProjectId(Long projectId) {
 		this.projectId = projectId;
 	}
 
@@ -85,6 +87,14 @@ public class RemotePACQuery extends AbstractDAO {
 
 	public void setModality(String modality) {
 		this.modality = modality;
+	}
+
+	public String getLastStudyDate() {
+		return lastStudyDate;
+	}
+
+	public void setLastStudyDate(String lastStudyDate) {
+		this.lastStudyDate = lastStudyDate;
 	}
 
 	public String getPeriod() {
@@ -111,6 +121,14 @@ public class RemotePACQuery extends AbstractDAO {
 		this.lastQueryTime = lastQueryTime;
 	}
 
+	public String getLastQueryStatus() {
+		return lastQueryStatus;
+	}
+
+	public void setLastQueryStatus(String lastQueryStatus) {
+		this.lastQueryStatus = lastQueryStatus;
+	}
+
 	public Date getCreatedTime() {
 		return createdTime;
 	}
@@ -130,26 +148,21 @@ public class RemotePACQuery extends AbstractDAO {
 	public void setId(long id) {
 		this.id = id;
 	}
-
+	
 	public final static String DBTABLE = "remote_pac_query";
 	// java fieldName,java fieldType,db columnName,db columnType (Id is integer, autoincrement)
 	public final static String[][] DBCOLUMNS = {
         {"id","long","id","Id"},
-//    	String pacId;
-//    	String requestor; // Username of requestor
-//    	String patientID;
-//    	String modality;
-//    	String studyDate;
-//    	String period; // daily or weekly
-//    	Date lastQueryTime;
         {"pacId","String","pacid","varchar"},
         {"requestor","String","requestor","varchar"},
-        {"subjectId","long","subjectid","integer"},
-        {"projectId","long","project_id","integer"},
+        {"subjectId","long","subject_id","integer"},
+        {"projectId","Long","project_id","integer"},
         {"modality","String","modality","varchar"},
         {"period","String","period","varchar"},
+        {"lastStudyDate","String","laststudydate","varchar"},
         {"enabled","boolean","enabled","bit"},
         {"lastQueryTime","Date","lastquerytime","timestamp"},
+        {"lastQueryStatus","String","lastquerystatus","varchar"},        
         {"createdTime","Date","createdtime","timestamp"},
         {"updateTime","Date","updatetime","timestamp"},	
 	};

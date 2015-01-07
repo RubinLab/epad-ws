@@ -48,6 +48,7 @@ import edu.stanford.epad.dtos.EPADUser;
 import edu.stanford.epad.dtos.EPADUserList;
 import edu.stanford.epad.dtos.RemotePAC;
 import edu.stanford.epad.dtos.RemotePACEntity;
+import edu.stanford.epad.dtos.RemotePACQueryConfig;
 import edu.stanford.epad.epadws.aim.AIMSearchType;
 import edu.stanford.epad.epadws.aim.AIMUtil;
 import edu.stanford.epad.epadws.handlers.HandlerUtil;
@@ -57,7 +58,7 @@ import edu.stanford.epad.epadws.queries.DefaultEpadOperations;
 import edu.stanford.epad.epadws.queries.EpadOperations;
 import edu.stanford.epad.epadws.security.EPADSession;
 import edu.stanford.epad.epadws.security.EPADSessionOperations;
-import edu.stanford.epad.epadws.service.RemotePACsService;
+import edu.stanford.epad.epadws.service.RemotePACService;
 import edu.stanford.epad.epadws.service.SessionService;
 import edu.stanford.epad.epadws.service.UserProjectService;
 
@@ -833,14 +834,14 @@ public class EPADHandler extends AbstractHandler
 				statusCode = HttpServletResponse.SC_OK;
 			} else if (HandlerUtil.matchesTemplate(PACSRouteTemplates.PACS_LIST, pathInfo)) {
 				Map<String, String> templateMap = HandlerUtil.getTemplateMap(PACSRouteTemplates.PACS_LIST, pathInfo);
-				List<RemotePAC> pacs = RemotePACsService.getInstance().getRemotePACs();
+				List<RemotePAC> pacs = RemotePACService.getInstance().getRemotePACs();
 				responseStream.append(new Gson().toJson(pacs));
 				statusCode = HttpServletResponse.SC_OK;
 
 			} else if (HandlerUtil.matchesTemplate(PACSRouteTemplates.PAC, pathInfo)) {
 				Map<String, String> templateMap = HandlerUtil.getTemplateMap(PACSRouteTemplates.PAC, pathInfo);
 				String pacid = HandlerUtil.getTemplateParameter(templateMap, "pacid");
-				RemotePAC pac = RemotePACsService.getInstance().getRemotePAC(pacid);
+				RemotePAC pac = RemotePACService.getInstance().getRemotePAC(pacid);
 				if (pac != null)
 				{
 					responseStream.append(new Gson().toJson(pac));
@@ -858,10 +859,10 @@ public class EPADHandler extends AbstractHandler
 				if (patientIDFilter == null) patientIDFilter = "";
 				String studyDateFilter = httpRequest.getParameter("studyDateFilter");
 				if (studyDateFilter == null) studyDateFilter = "";
-				RemotePAC pac = RemotePACsService.getInstance().getRemotePAC(pacid);
+				RemotePAC pac = RemotePACService.getInstance().getRemotePAC(pacid);
 				if (pac != null)
 				{
-					List<RemotePACEntity> entities = RemotePACsService.getInstance().queryRemoteData(pac, patientNameFilter, patientIDFilter, studyDateFilter);
+					List<RemotePACEntity> entities = RemotePACService.getInstance().queryRemoteData(pac, patientNameFilter, patientIDFilter, studyDateFilter);
 					responseStream.append(new Gson().toJson(entities));
 					statusCode = HttpServletResponse.SC_OK;
 				}
@@ -873,10 +874,10 @@ public class EPADHandler extends AbstractHandler
 				String pacID = HandlerUtil.getTemplateParameter(templateMap, "pacid");
 				String entityID = HandlerUtil.getTemplateParameter(templateMap, "entityid");
 				String projectID = httpRequest.getParameter("projectID");
-				RemotePAC pac = RemotePACsService.getInstance().getRemotePAC(pacID);
+				RemotePAC pac = RemotePACService.getInstance().getRemotePAC(pacID);
 				if (pac != null)
 				{
-					RemotePACsService.getInstance().retrieveRemoteData(pac, entityID, projectID, username, sessionID);
+					RemotePACService.getInstance().retrieveRemoteData(pac, entityID, projectID, username, sessionID);
 					statusCode = HttpServletResponse.SC_OK;
 				}
 				else
@@ -885,18 +886,24 @@ public class EPADHandler extends AbstractHandler
 			} else if (HandlerUtil.matchesTemplate(PACSRouteTemplates.PAC_SUBJECT_LIST, pathInfo)) {
 				Map<String, String> templateMap = HandlerUtil.getTemplateMap(PACSRouteTemplates.PAC_SUBJECT_LIST, pathInfo);
 				String pacid = HandlerUtil.getTemplateParameter(templateMap, "pacid");
-				List<RemotePACQuery> remoteQueries = RemotePACsService.getInstance().getRemotePACQueries(pacid);
-				responseStream.append(new Gson().toJson(remoteQueries));
+				RemotePACService rps = RemotePACService.getInstance();
+				List<RemotePACQuery> remoteQueries = rps.getRemotePACQueries(pacid);
+				List<RemotePACQueryConfig> configs = new ArrayList<RemotePACQueryConfig>();
+				for (RemotePACQuery query: remoteQueries)
+				{
+					configs.add(rps.getConfig(query));
+				}
+				responseStream.append(new Gson().toJson(configs));
 				statusCode = HttpServletResponse.SC_OK;
 
 			} else if (HandlerUtil.matchesTemplate(PACSRouteTemplates.PAC_SUBJECT, pathInfo)) {
 				Map<String, String> templateMap = HandlerUtil.getTemplateMap(PACSRouteTemplates.PAC_SUBJECT, pathInfo);
 				String pacid = HandlerUtil.getTemplateParameter(templateMap, "pacid");
 				String subject = HandlerUtil.getTemplateParameter(templateMap, "subject");
-				RemotePACQuery remoteQuery = RemotePACsService.getInstance().getRemotePACQuery(pacid, subject);
+				RemotePACQuery remoteQuery = RemotePACService.getInstance().getRemotePACQuery(pacid, subject);
 				if (remoteQuery != null)
 				{
-					responseStream.append(new Gson().toJson(remoteQuery));
+					responseStream.append(new Gson().toJson( RemotePACService.getInstance().getConfig(remoteQuery)));
 					statusCode = HttpServletResponse.SC_OK;
 				}
 				else
@@ -1058,7 +1065,7 @@ public class EPADHandler extends AbstractHandler
 			} else if (HandlerUtil.matchesTemplate(PACSRouteTemplates.PAC, pathInfo)) {
 				Map<String, String> templateMap = HandlerUtil.getTemplateMap(PACSRouteTemplates.PAC, pathInfo);
 				String pacid = HandlerUtil.getTemplateParameter(templateMap, "pacid");
-				RemotePAC pac = RemotePACsService.getInstance().getRemotePAC(pacid);
+				RemotePAC pac = RemotePACService.getInstance().getRemotePAC(pacid);
 				String aeTitle = httpRequest.getParameter("aeTitle");
 				String hostname = httpRequest.getParameter("hostname");
 				int port = getInt(httpRequest.getParameter("port"));
@@ -1083,13 +1090,33 @@ public class EPADHandler extends AbstractHandler
 				if (pac == null)
 				{
 					pac = new RemotePAC(pacid, aeTitle, hostname, port, queryModel, primaryDeviceType);
-					RemotePACsService.getInstance().addRemotePAC(pac);
+					RemotePACService.getInstance().addRemotePAC(pac);
 				}
 				else
 				{
 					pac = new RemotePAC(pacid, aeTitle, hostname, port, queryModel, primaryDeviceType);
-					RemotePACsService.getInstance().modifyRemotePAC(pac);
+					RemotePACService.getInstance().modifyRemotePAC(pac);
 				}
+				statusCode = HttpServletResponse.SC_OK;
+				
+			} else if (HandlerUtil.matchesTemplate(PACSRouteTemplates.PAC_SUBJECT, pathInfo)) {
+				Map<String, String> templateMap = HandlerUtil.getTemplateMap(PACSRouteTemplates.PAC_SUBJECT, pathInfo);
+				String pacID = HandlerUtil.getTemplateParameter(templateMap, "pacid");
+				if (pacID == null)
+					throw new Exception("Missing Pac ID parameter");
+				String subjectUID = HandlerUtil.getTemplateParameter(templateMap, "subject");
+				if (subjectUID == null)
+					throw new Exception("Missing Patient ID parameter");
+				String projectID = httpRequest.getParameter("projectID");
+				String subjectName = httpRequest.getParameter("subjectName");
+				if (subjectName == null)
+					subjectName = httpRequest.getParameter("patientName");
+				String modality = httpRequest.getParameter("modality");
+				String studyDate = httpRequest.getParameter("studyDate");
+				boolean weekly = false;
+				if ("weekly".equalsIgnoreCase(httpRequest.getParameter("period")))
+					weekly = true;
+				RemotePACService.getInstance().createRemotePACQuery(username, pacID, subjectUID, subjectName, modality, studyDate, weekly, projectID);
 				statusCode = HttpServletResponse.SC_OK;
 				
 			} else {
@@ -1210,6 +1237,22 @@ public class EPADHandler extends AbstractHandler
 						if (fileType == null) description = (String) paramData.get("fileType");
 						statusCode = epadOperations.createFile(username, seriesReference, uploadedFile, description, fileType, sessionID);					
 					}
+					
+				} else if (HandlerUtil.matchesTemplate(UsersRouteTemplates.USER, pathInfo)) {
+					Map<String, String> templateMap = HandlerUtil.getTemplateMap(UsersRouteTemplates.USER, pathInfo);
+					String target_username = HandlerUtil.getTemplateParameter(templateMap, "username");
+					String firstname = httpRequest.getParameter("firstname");
+					String lastname = httpRequest.getParameter("lastname");
+					String email = httpRequest.getParameter("email");
+					String password = httpRequest.getParameter("password");
+					String oldpassword = httpRequest.getParameter("oldpassword");
+					epadOperations.createOrModifyUser(username, target_username, firstname, lastname, email, password, oldpassword);
+					String enable = httpRequest.getParameter("enable");
+					if ("true".equalsIgnoreCase(enable))
+						epadOperations.enableUser(username, target_username);
+					else if ("false".equalsIgnoreCase(enable))
+						epadOperations.disableUser(username, target_username);
+					statusCode = HttpServletResponse.SC_OK;
 				} else {
 					statusCode = HandlerUtil.badRequestJSONResponse(BAD_POST_MESSAGE + ":" + pathInfo, responseStream, log);
 				}		
@@ -1318,11 +1361,26 @@ public class EPADHandler extends AbstractHandler
 				epadOperations.removeUserFromProject(username, projectReference, delete_username, sessionID);
 				statusCode = HttpServletResponse.SC_OK;
 				
+			} else if (HandlerUtil.matchesTemplate(UsersRouteTemplates.USER, pathInfo)) {
+				Map<String, String> templateMap = HandlerUtil.getTemplateMap(UsersRouteTemplates.USER, pathInfo);
+				String target_username = HandlerUtil.getTemplateParameter(templateMap, "username");
+				epadOperations.deleteUser(username, target_username);
+				statusCode = HttpServletResponse.SC_OK;
+				
 			} else if (HandlerUtil.matchesTemplate(PACSRouteTemplates.PAC, pathInfo)) {
 				Map<String, String> templateMap = HandlerUtil.getTemplateMap(PACSRouteTemplates.PAC, pathInfo);
 				String pacid = HandlerUtil.getTemplateParameter(templateMap, "pacid");
-				RemotePAC pac = RemotePACsService.getInstance().getRemotePAC(pacid);
-				RemotePACsService.getInstance().removeRemotePAC(pac);
+				RemotePAC pac = RemotePACService.getInstance().getRemotePAC(pacid);
+				RemotePACService.getInstance().removeRemotePAC(pac);
+				statusCode = HttpServletResponse.SC_OK;
+				
+			} else if (HandlerUtil.matchesTemplate(PACSRouteTemplates.PAC_SUBJECT, pathInfo)) {
+				Map<String, String> templateMap = HandlerUtil.getTemplateMap(PACSRouteTemplates.PAC_SUBJECT, pathInfo);
+				String pacID = HandlerUtil.getTemplateParameter(templateMap, "pacid");
+				String subjectUID = HandlerUtil.getTemplateParameter(templateMap, "subject");
+				if (subjectUID == null)
+					throw new Exception("Missing Patient ID parameter");
+				RemotePACService.getInstance().removeRemotePACQuery(pacID, subjectUID);
 				statusCode = HttpServletResponse.SC_OK;
 				
 			} else {

@@ -39,6 +39,14 @@ public class Project extends AbstractDAO {
 	Date createdTime;
 	Date updateTime;
 
+	public Project(long id)
+	{
+		this.id = id;
+	}
+	
+	public Project() {
+	}
+
 	@Override
 	public long getId() {
 		return id;

@@ -50,6 +50,7 @@ public interface EpadProjectOperations {
 	User updateUser(String loggedInUser, String username, String firstName, String lastName, String email, String password, String oldpassword) throws Exception;
 	void enableUser(String loggedInUser, String username) throws Exception;
 	void disableUser(String loggedInUser, String username) throws Exception;
+	void deleteUser(String loggedInUser, String username) throws Exception;
 	
 	void addUserToProject(String loggedInUser, String projectId, String username, UserRole role) throws Exception;
 	void removeUserFromProject(String loggedInUser, String projectId, String username) throws Exception;

@@ -141,6 +141,8 @@ public interface EpadOperations
 	
 	void disableUser(String loggedInUser, String username) throws Exception;
 	
+	void deleteUser(String loggedInUser, String username) throws Exception;
+	
 	int projectDelete(String projectID, String sessionID, String username) throws Exception;
 
 	int subjectDelete(SubjectReference subjectReference, String sessionID, String username) throws Exception;

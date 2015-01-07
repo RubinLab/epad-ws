@@ -1,4 +1,5 @@
 DROP TABLE if exists epad_file;
+DROP TABLE if exists remote_pac_query;
 DROP TABLE if exists project_subject_user;
 DROP TABLE if exists project_subject_study;
 DROP TABLE if exists project_subject;
@@ -7,7 +8,6 @@ DROP TABLE if exists study;
 DROP TABLE if exists project;
 DROP TABLE if exists user;
 DROP TABLE if exists subject;
-DROP TABLE if exists remote_pac_query;
 
 DROP TABLE if exists users;
 
@@ -158,8 +158,10 @@ subject_id integer unsigned,
 project_id integer unsigned,
 modality varchar(8),
 period varchar(8),
+laststudydate varchar(8),
 enabled tinyint(1),
 lastquerytime timestamp,
+lastquerystatus varchar(1024),
 createdtime timestamp,
 updatetime timestamp,
 updated_by varchar(64),

@@ -14,7 +14,6 @@ import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.epad.dtos.PNGFileProcessingStatus;
 import edu.stanford.epad.dtos.SeriesProcessingStatus;
-import edu.stanford.epad.epadws.aim.aimapi.Aim;
 import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeDatabase;
 import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeDatabaseOperations;
 import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeDatabaseUtils;
@@ -27,6 +26,7 @@ import edu.stanford.epad.epadws.processing.model.SeriesProcessingDescription;
 import edu.stanford.epad.epadws.processing.pipeline.task.GeneratorTask;
 import edu.stanford.epad.epadws.processing.pipeline.task.ImageCheckTask;
 import edu.stanford.epad.epadws.processing.pipeline.task.PNGGridGeneratorTask;
+import edu.stanford.epad.epadws.processing.pipeline.task.RemotePACQueryTask;
 import edu.stanford.epad.epadws.processing.pipeline.task.SingleFrameDICOMPngGeneratorTask;
 import edu.stanford.epad.epadws.processing.pipeline.threads.ShutdownSignal;
 import edu.stanford.epad.epadws.queries.DefaultEpadOperations;
@@ -170,6 +170,15 @@ public class DICOMSeriesWatcher implements Runnable
 						{	
 							ImageCheckTask ict = new ImageCheckTask();
 							new Thread(ict).start();
+						}
+					} catch (Exception x) {
+						log.warning("Exception running ImageCheck", x);
+					}
+					try {
+						if (!"true".equalsIgnoreCase(EPADConfig.getParamValue("DISABLE_REMOTEPAC_QUERY")))
+						{	
+							RemotePACQueryTask rpqt = new RemotePACQueryTask(null);
+							new Thread(rpqt).start();
 						}
 					} catch (Exception x) {
 						log.warning("Exception running ImageCheck", x);

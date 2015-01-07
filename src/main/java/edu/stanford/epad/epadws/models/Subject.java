@@ -39,6 +39,14 @@ public class Subject extends AbstractDAO {
 	Date createdTime;
 	Date updateTime;
 
+	public Subject(long id)
+	{
+		this.id = id;
+	}
+	
+	public Subject() {
+	}
+
 	@Override
 	public long getId() {
 		return id;

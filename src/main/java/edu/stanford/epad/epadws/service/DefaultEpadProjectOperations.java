@@ -168,6 +168,13 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 	}
 
 	@Override
+	public void deleteUser(String loggedInUser, String username) throws Exception {
+		User user = getUser(username);
+		user.delete();
+		userCache.remove(user.getUsername());
+	}
+
+	@Override
 	public void userErrorLog(String username, String message) {
 		try {
 			User user = getUser(username);

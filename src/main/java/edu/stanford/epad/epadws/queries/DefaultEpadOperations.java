@@ -2442,6 +2442,19 @@ public class DefaultEpadOperations implements EpadOperations
 	}
 
 	@Override
+	public void deleteUser(String loggedInUser, String username) throws Exception {
+		try
+		{
+			projectOperations.deleteUser(loggedInUser, username);
+		}
+		catch (Exception x)
+		{
+			log.warning("Error deleting user:" + username, x);
+			throw new Exception("Error deleting user, user record may be attached to other objects");
+		}
+	}
+
+	@Override
 	public EPADUserList getUserDescriptions(String username,
 			ProjectReference projectReference, String sessionID)
 			throws Exception {

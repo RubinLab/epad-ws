@@ -43,7 +43,7 @@ public class RemotePACsServiceTest  {
     @Test
     public void getRemotePACsTest() {
 		try {
-	    	List<RemotePAC> pacs = RemotePACsService.getInstance().getRemotePACs();
+	    	List<RemotePAC> pacs = RemotePACService.getInstance().getRemotePACs();
 	    	Assert.assertTrue(pacs.size() > 1);
 		} catch (Exception e) {
 			Assert.fail();

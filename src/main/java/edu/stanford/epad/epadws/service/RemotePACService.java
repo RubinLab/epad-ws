@@ -2,6 +2,7 @@ package edu.stanford.epad.epadws.service;
 
 import java.io.IOException;
 import java.text.DecimalFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -31,13 +32,14 @@ import com.pixelmed.query.QueryTreeRecord;
 
 import edu.stanford.epad.dtos.RemotePAC;
 import edu.stanford.epad.dtos.RemotePACEntity;
+import edu.stanford.epad.dtos.RemotePACQueryConfig;
 import edu.stanford.epad.epadws.models.Project;
 import edu.stanford.epad.epadws.models.RemotePACQuery;
 import edu.stanford.epad.epadws.models.Subject;
 
-public class RemotePACsService extends RemotePACSBase {
+public class RemotePACService extends RemotePACSBase {
 
-	static RemotePACsService rpsinstance;
+	static RemotePACService rpsinstance;
 	
 	public static final int MAX_CACHE_ENTRIES = 25000;
 	public static final int MAX_QUERY_SIZE = 7000;
@@ -45,15 +47,15 @@ public class RemotePACsService extends RemotePACSBase {
 	
 	public static Map<String, String> pendingTransfers = new HashMap<String, String>();
 	
-	public static RemotePACsService getInstance() throws Exception {
+	public static RemotePACService getInstance() throws Exception {
 		if (rpsinstance == null)
 		{
-			rpsinstance = new RemotePACsService();
+			rpsinstance = new RemotePACService();
 		}
 		return rpsinstance;
 	}
 	
-	private RemotePACsService() throws DicomException, IOException {
+	private RemotePACService() throws DicomException, IOException {
 		super();
 	}
 
@@ -132,7 +134,7 @@ public class RemotePACsService extends RemotePACSBase {
 		return (RemotePACQuery) objects.get(0);
 	}
 
-	public RemotePACQuery createRemotePACQuery(String username, String pacID, String subjectUID, String patientName, String modality, boolean weekly, String projectID) throws Exception {
+	public RemotePACQuery createRemotePACQuery(String username, String pacID, String subjectUID, String patientName, String modality, String studyDate, boolean weekly, String projectID) throws Exception {
 		RemotePACQuery query = null;
 		try {
 			query = getRemotePACQuery(pacID, subjectUID);
@@ -147,12 +149,19 @@ public class RemotePACsService extends RemotePACSBase {
 		{
 			subject = DefaultEpadProjectOperations.getInstance().createSubject(username, subjectUID, patientName, null, null);
 		}
+		RemotePAC pac = this.getRemotePAC(pacID);
+		if (pac == null)
+			throw new Exception("Remote PAC " + pacID + " not found");
 		query = new RemotePACQuery();
 		query.setPacId(pacID);
 		query.setSubjectId(subject.getId());
 		query.setProjectId(project.getId());
 		query.setEnabled(true);
+		
+		// TODO: Validate modality. How???
 		query.setModality(modality);
+		if (getDate(studyDate) != null)
+			query.setLastStudyDate(studyDate);
 		if (weekly)
 			query.setPeriod("Weekly");
 		else
@@ -171,7 +180,7 @@ public class RemotePACsService extends RemotePACSBase {
 	}
 
 	public void disableRemotePACQuery(String pacID, String subjectID) throws Exception {
-		List objects = new RemotePACQuery().getObjects("pacID = '" + pacID + "' and subjectid ='" + subjectID + "'");
+		List objects = new RemotePACQuery().getObjects("pacID = '" + pacID + "' and subject_id ='" + subjectID + "'");
 		if (objects.size() > 1)
 		{
 			log.warning("More than one query found for PacID:" + pacID + " and SubjectID:" + subjectID);
@@ -185,7 +194,7 @@ public class RemotePACsService extends RemotePACSBase {
 	}
 
 	public void enableRemotePACQuery(String pacID, String subjectID) throws Exception {
-		List objects = new RemotePACQuery().getObjects("pacID = '" + pacID + "' and subjectid ='" + subjectID + "'");
+		List objects = new RemotePACQuery().getObjects("pacID = '" + pacID + "' and subject_id ='" + subjectID + "'");
 		if (objects.size() > 1)
 		{
 			log.warning("More than one query found for PacID:" + pacID + " and SubjectID:" + subjectID);
@@ -196,6 +205,15 @@ public class RemotePACsService extends RemotePACSBase {
 			query.setEnabled(true);
 			query.save();
 		}
+	}
+
+	public RemotePACQueryConfig getConfig(RemotePACQuery query) throws Exception {
+		Subject subject = (Subject) new Subject(query.getSubjectId()).retrieve();
+		Project project = (Project) new Project(query.getProjectId()).retrieve();
+		return new RemotePACQueryConfig(query.getPacId(), query.getRequestor(),
+				subject.getSubjectUID(), project.getProjectId(), query.getModality(), query.getPeriod(),
+				query.isEnabled(), query.getLastStudyDate(), dateformat.format(query.getLastQueryTime()),
+				query.getLastQueryStatus());
 	}
 	
 	public synchronized List<RemotePACEntity> queryRemoteData(RemotePAC pac, String patientNameFilter, String patientIDFilter, String studyDateFilter) throws Exception {
@@ -338,7 +356,7 @@ public class RemotePACsService extends RemotePACSBase {
 		return entities;
 	}
 	
-	public synchronized void retrieveRemoteData(RemotePAC pac, String entityID, String projectID, String userName, String sessionID) throws Exception {
+	public synchronized String retrieveRemoteData(RemotePAC pac, String entityID, String projectID, String userName, String sessionID) throws Exception {
 		String uniqueKey = entityID;
 		String root = uniqueKey;
 		if (root.indexOf(":") != -1)
@@ -354,13 +372,14 @@ public class RemotePACsService extends RemotePACSBase {
 		}
 		String type = node.getInformationEntity().toString();
 		String studyUID = null;
+		String studyDate = null;
 		String seriesUID = null;
 		String patientID = null;
 		String patientName = "";
 		if (!type.equalsIgnoreCase("Study"))
 		{
 			if (type.equalsIgnoreCase("Series"))
-				seriesUID = studyUID = node.getUniqueKey().getSingleStringValueOrNull();
+				seriesUID = node.getUniqueKey().getSingleStringValueOrNull();
 			QueryTreeRecord parent = (QueryTreeRecord) node.getParent();
 			if (parent != null)
 			{
@@ -368,12 +387,13 @@ public class RemotePACsService extends RemotePACSBase {
 				if (!type.equalsIgnoreCase("Study"))
 				{
 					if (type.equalsIgnoreCase("Series"))
-						seriesUID = studyUID = parent.getUniqueKey().getSingleStringValueOrNull();
+						seriesUID = parent.getUniqueKey().getSingleStringValueOrNull();
 					parent = (QueryTreeRecord) parent.getParent();
 					type = parent.getInformationEntity().toString();
 					if (type.equalsIgnoreCase("Study"))
 					{
 						studyUID = parent.getUniqueKey().getSingleStringValueOrNull();
+						studyDate = Attribute.getSingleStringValueOrNull(parent.getAllAttributesReturnedInIdentifier(),TagFromName.StudyDate);
 						patientID = Attribute.getSingleStringValueOrNull(parent.getAllAttributesReturnedInIdentifier(),TagFromName.PatientID);
 						patientName = Attribute.getSingleStringValueOrEmptyString(parent.getAllAttributesReturnedInIdentifier(),TagFromName.PatientName);
 					}
@@ -381,6 +401,7 @@ public class RemotePACsService extends RemotePACSBase {
 				else
 				{
 					studyUID = parent.getUniqueKey().getSingleStringValueOrNull();
+					studyDate = Attribute.getSingleStringValueOrNull(parent.getAllAttributesReturnedInIdentifier(),TagFromName.StudyDate);
 					patientID = Attribute.getSingleStringValueOrNull(parent.getAllAttributesReturnedInIdentifier(),TagFromName.PatientID);
 					patientName = Attribute.getSingleStringValueOrEmptyString(parent.getAllAttributesReturnedInIdentifier(),TagFromName.PatientName);
 				}
@@ -389,6 +410,7 @@ public class RemotePACsService extends RemotePACSBase {
 		else
 		{
 			studyUID = uniqueKey;
+			studyDate = Attribute.getSingleStringValueOrNull(node.getAllAttributesReturnedInIdentifier(),TagFromName.StudyDate);
 			patientID = Attribute.getSingleStringValueOrNull(node.getAllAttributesReturnedInIdentifier(),TagFromName.PatientID);
 			patientName = Attribute.getSingleStringValueOrEmptyString(node.getAllAttributesReturnedInIdentifier(),TagFromName.PatientName);
 		}
@@ -404,7 +426,10 @@ public class RemotePACsService extends RemotePACSBase {
 			log.info("Request retrieval of "+currentRemoteQuerySelectionLevel+" "+currentRemoteQuerySelectionUniqueKey.getSingleStringValueOrEmptyString()+" from "+pac.pacID+" ("+currentRemoteQuerySelectionRetrieveAE+")");
 			performRetrieve(currentRemoteQuerySelectionUniqueKeys,currentRemoteQuerySelectionLevel,currentRemoteQuerySelectionRetrieveAE);			
 		}
-			
+		if (studyUID != null)
+			return studyUID + ":" + studyDate;
+		else
+			return seriesUID;
 	}
 	
 	public List<String> getPendingTransfers()
@@ -418,4 +443,16 @@ public class RemotePACsService extends RemotePACSBase {
 		return transfers;
 	}
 	
+	SimpleDateFormat dateformat = new SimpleDateFormat("yyyyMMdd");
+	private Date getDate(String dateStr)
+	{
+		try
+		{
+			return dateformat.parse(dateStr);
+		}
+		catch (Exception x)
+		{
+			return null;
+		}
+	}
 }
