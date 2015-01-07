@@ -6,6 +6,7 @@ import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.InputStream;
 import java.io.PrintWriter;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -51,6 +52,7 @@ import edu.stanford.epad.epadws.aim.AIMSearchType;
 import edu.stanford.epad.epadws.aim.AIMUtil;
 import edu.stanford.epad.epadws.handlers.HandlerUtil;
 import edu.stanford.epad.epadws.handlers.dicom.DSOUtil;
+import edu.stanford.epad.epadws.models.RemotePACQuery;
 import edu.stanford.epad.epadws.queries.DefaultEpadOperations;
 import edu.stanford.epad.epadws.queries.EpadOperations;
 import edu.stanford.epad.epadws.security.EPADSession;
@@ -880,6 +882,26 @@ public class EPADHandler extends AbstractHandler
 				else
 					statusCode = HttpServletResponse.SC_NOT_FOUND;
 
+			} else if (HandlerUtil.matchesTemplate(PACSRouteTemplates.PAC_SUBJECT_LIST, pathInfo)) {
+				Map<String, String> templateMap = HandlerUtil.getTemplateMap(PACSRouteTemplates.PAC_SUBJECT_LIST, pathInfo);
+				String pacid = HandlerUtil.getTemplateParameter(templateMap, "pacid");
+				List<RemotePACQuery> remoteQueries = RemotePACsService.getInstance().getRemotePACQueries(pacid);
+				responseStream.append(new Gson().toJson(remoteQueries));
+				statusCode = HttpServletResponse.SC_OK;
+
+			} else if (HandlerUtil.matchesTemplate(PACSRouteTemplates.PAC_SUBJECT, pathInfo)) {
+				Map<String, String> templateMap = HandlerUtil.getTemplateMap(PACSRouteTemplates.PAC_SUBJECT, pathInfo);
+				String pacid = HandlerUtil.getTemplateParameter(templateMap, "pacid");
+				String subject = HandlerUtil.getTemplateParameter(templateMap, "subject");
+				RemotePACQuery remoteQuery = RemotePACsService.getInstance().getRemotePACQuery(pacid, subject);
+				if (remoteQuery != null)
+				{
+					responseStream.append(new Gson().toJson(remoteQuery));
+					statusCode = HttpServletResponse.SC_OK;
+				}
+				else
+					statusCode = HttpServletResponse.SC_NOT_FOUND;
+
 			} else
 				statusCode = HandlerUtil.badRequestJSONResponse(BAD_GET_MESSAGE + ":" + pathInfo, responseStream, log);
 		} catch (Throwable t) {
@@ -1399,7 +1421,14 @@ public class EPADHandler extends AbstractHandler
 		while (fileItemIterator.hasNext()) {
 			FileItem fileItem = fileItemIterator.next();
 		    if (fileItem.isFormField()) {
-		    	params.put(fileItem.getFieldName(), fileItem.getString());
+		    	if (params.get(fileItem.getFieldName()) == null)
+		    		params.put(fileItem.getFieldName(), fileItem.getString());
+			    List values = (List) params.get(fileItem.getFieldName() + "_List");
+			    if (values == null) {
+			    	values = new ArrayList();
+			    	params.put(fileItem.getFieldName() + "_List", values);
+			    }
+			    values.add(fileItem.getString());
 		    } else {
 				fileCount++;		    	
 				log.debug("Uploading file number " + fileCount);
@@ -1414,7 +1443,14 @@ public class EPADHandler extends AbstractHandler
                 // write the file
 		        try {
 					fileItem.write(file);
-					params.put(fileItem.getFieldName(), file);
+			    	if (params.get(fileItem.getFieldName()) == null)
+			    		params.put(fileItem.getFieldName(), file);
+				    List values = (List) params.get(fileItem.getFieldName() + "_List");
+				    if (values == null) {
+				    	values = new ArrayList();
+				    	params.put(fileItem.getFieldName() + "_List", values);
+				    }
+				    values.add(file);
 				} catch (Exception e) {
 					e.printStackTrace();
 					log.warning("Error receiving file:" + e);

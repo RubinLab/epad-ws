@@ -31,6 +31,9 @@ import com.pixelmed.query.QueryTreeRecord;
 
 import edu.stanford.epad.dtos.RemotePAC;
 import edu.stanford.epad.dtos.RemotePACEntity;
+import edu.stanford.epad.epadws.models.Project;
+import edu.stanford.epad.epadws.models.RemotePACQuery;
+import edu.stanford.epad.epadws.models.Subject;
 
 public class RemotePACsService extends RemotePACSBase {
 
@@ -97,8 +100,102 @@ public class RemotePACsService extends RemotePACSBase {
 	}
 	
 	public void removeRemotePAC(RemotePAC pac) throws Exception {
+		List<RemotePACQuery> queries = getRemotePACQueries(pac.pacID);
+		if (queries.size() > 0)
+		{
+			throw new Exception("Periodic queries have been configured for PAC:" + pac.pacID + ", it can not be deleted");
+		}
 		removeRemotePAC(pac.pacID);
 		this.storeProperties(pac.pacID + " deleted by EPAD " + new Date());
+	}
+
+	public List<RemotePACQuery> getRemotePACQueries(String pacID) throws Exception {
+		List<RemotePACQuery> queries = new ArrayList<RemotePACQuery>();
+		List objects = new RemotePACQuery().getObjects("pacID = '" + pacID + "' order by pacid");
+		queries.addAll(objects);
+		return queries;
+	}
+
+	public RemotePACQuery getRemotePACQuery(String pacID, String subjectUID) throws Exception {
+		Subject subject = DefaultEpadProjectOperations.getInstance().getSubject(subjectUID);
+		if (subject == null)
+			throw new Exception("Subject:" + subjectUID + " not found");
+		List objects = new RemotePACQuery().getObjects("pacID = '" + pacID + "' and subject_id ='" + subject.getId() + "'");
+		if (objects.size() > 1)
+		{
+			log.warning("More than one query found for PacID:" + pacID + " and SubjectID:" + subjectUID);
+		}
+		else if (objects.size() == 0)
+		{
+			return null;
+		}
+		return (RemotePACQuery) objects.get(0);
+	}
+
+	public RemotePACQuery createRemotePACQuery(String username, String pacID, String subjectUID, String patientName, String modality, boolean weekly, String projectID) throws Exception {
+		RemotePACQuery query = null;
+		try {
+			query = getRemotePACQuery(pacID, subjectUID);
+			if (query != null)
+				throw new Exception("Remote PAC and Patient already configured for periodic query");
+		} catch (Exception x) {};
+		Project project = DefaultEpadProjectOperations.getInstance().getProject(projectID);
+		if (project == null)
+			throw new Exception("Project " + projectID + " not found");
+		Subject subject = DefaultEpadProjectOperations.getInstance().getSubject(subjectUID);
+		if (subject == null)
+		{
+			subject = DefaultEpadProjectOperations.getInstance().createSubject(username, subjectUID, patientName, null, null);
+		}
+		query = new RemotePACQuery();
+		query.setPacId(pacID);
+		query.setSubjectId(subject.getId());
+		query.setProjectId(project.getId());
+		query.setEnabled(true);
+		query.setModality(modality);
+		if (weekly)
+			query.setPeriod("Weekly");
+		else
+			query.setPeriod("Daily");
+		query.save();
+		return query;
+	}
+
+	public void removeRemotePACQuery(String pacID, String subjectUID) throws Exception {
+		Subject subject = DefaultEpadProjectOperations.getInstance().getSubject(subjectUID);
+		if (subject == null)
+			throw new Exception("Subject:" + subjectUID + " not found");
+		int rows = new RemotePACQuery().deleteObjects("pacID = '" + pacID + "' and subject_id ='" + subject.getId() + "'");
+		if (rows > 0)
+			log.info("Query for PacID:" + pacID +" and SubjectID:" + subjectUID + " was deleted");
+	}
+
+	public void disableRemotePACQuery(String pacID, String subjectID) throws Exception {
+		List objects = new RemotePACQuery().getObjects("pacID = '" + pacID + "' and subjectid ='" + subjectID + "'");
+		if (objects.size() > 1)
+		{
+			log.warning("More than one query found for PacID:" + pacID + " and SubjectID:" + subjectID);
+		}
+		for (Object object: objects)
+		{
+			RemotePACQuery query = (RemotePACQuery) object;
+			query.setEnabled(false);
+			query.save();
+		}
+	}
+
+	public void enableRemotePACQuery(String pacID, String subjectID) throws Exception {
+		List objects = new RemotePACQuery().getObjects("pacID = '" + pacID + "' and subjectid ='" + subjectID + "'");
+		if (objects.size() > 1)
+		{
+			log.warning("More than one query found for PacID:" + pacID + " and SubjectID:" + subjectID);
+		}
+		if (objects.size() > 0)
+		{
+			RemotePACQuery query = (RemotePACQuery) objects.get(0);
+			query.setEnabled(true);
+			query.save();
+		}
 	}
 	
 	public synchronized List<RemotePACEntity> queryRemoteData(RemotePAC pac, String patientNameFilter, String patientIDFilter, String studyDateFilter) throws Exception {
@@ -127,6 +224,10 @@ public class RemotePACsService extends RemotePACSBase {
 			{ AttributeTag t = TagFromName.StudyID; Attribute a = new ShortStringAttribute(t,specificCharacterSet); filter.put(t,a); }
 			{ AttributeTag t = TagFromName.StudyDescription; Attribute a = new LongStringAttribute(t,specificCharacterSet); filter.put(t,a); }
 			{ AttributeTag t = TagFromName.ModalitiesInStudy; Attribute a = new CodeStringAttribute(t); filter.put(t,a); }
+			// StudyDate formats:
+			//	from/to: 20071001-20080220
+			//	before: -20080220
+			//	after: 20071001-
 			{
 				AttributeTag t = TagFromName.StudyDate; Attribute a = new DateAttribute(t);
 				if (studyDateFilter != null && studyDateFilter.length() > 0) {

@@ -895,8 +895,14 @@ public class DefaultEpadOperations implements EpadOperations
 	@Override
 	public int createFile(String username, ProjectReference projectReference,
 			File uploadedFile, String description, String fileType, String sessionID) throws Exception {
-		createFile(username, projectReference.projectID, null, null, null,
+		if (fileType != null && fileType.equalsIgnoreCase("annotation")) {
+			if (!AIMUtil.saveAIMAnnotation(uploadedFile, projectReference.projectID, sessionID, username))
+				throw new Exception("Error saving AIM file");
+		}
+		else {
+			createFile(username, projectReference.projectID, null, null, null,
 					uploadedFile, description, fileType, sessionID);
+		}
 		return HttpServletResponse.SC_OK;
 	}
 	
@@ -972,16 +978,28 @@ public class DefaultEpadOperations implements EpadOperations
 	@Override
 	public int createFile(String username, SubjectReference subjectReference,
 			File uploadedFile, String description, String fileType, String sessionID) throws Exception {
-		createFile(username, subjectReference.projectID, subjectReference.subjectID, null, null,
+		if (fileType != null && fileType.equalsIgnoreCase("annotation")) {
+			if (!AIMUtil.saveAIMAnnotation(uploadedFile, subjectReference.projectID, sessionID, username))
+				throw new Exception("Error saving AIM file");
+		}
+		else {
+			createFile(username, subjectReference.projectID, subjectReference.subjectID, null, null,
 				uploadedFile, description, fileType, sessionID);
+		}
 		return HttpServletResponse.SC_OK;
 	}
 
 	@Override
 	public int createFile(String username, StudyReference studyReference,
 			File uploadedFile, String description, String fileType, String sessionID) throws Exception {
-		createFile(username, studyReference.projectID, studyReference.subjectID, studyReference.studyUID, null,
+		if (fileType != null && fileType.equalsIgnoreCase("annotation")) {
+			if (!AIMUtil.saveAIMAnnotation(uploadedFile, studyReference.projectID, sessionID, username))
+				throw new Exception("Error saving AIM file");
+		}
+		else {
+			createFile(username, studyReference.projectID, studyReference.subjectID, studyReference.studyUID, null,
 				uploadedFile, description, fileType, sessionID);
+		}
 		return HttpServletResponse.SC_OK;
 	}
 
@@ -989,8 +1007,28 @@ public class DefaultEpadOperations implements EpadOperations
 	public int createFile(String username, SeriesReference seriesReference,
 			File uploadedFile, String description, String fileType, String sessionID)
 			throws Exception {
-		createFile(username, seriesReference.projectID, seriesReference.subjectID, seriesReference.studyUID, seriesReference.seriesUID,
+		if (fileType != null && fileType.equalsIgnoreCase("annotation")) {
+			if (!AIMUtil.saveAIMAnnotation(uploadedFile, seriesReference.projectID, sessionID, username))
+				throw new Exception("Error saving AIM file");
+		}
+		else {
+			createFile(username, seriesReference.projectID, seriesReference.subjectID, seriesReference.studyUID, seriesReference.seriesUID,
 						uploadedFile, description, fileType, sessionID);
+		}
+		return HttpServletResponse.SC_OK;
+	}
+
+	@Override
+	public int createFile(String username, ImageReference imageReference,
+			File uploadedFile, String description, String fileType, String sessionID) throws Exception {
+		if (fileType != null && fileType.equalsIgnoreCase("annotation")) {
+			if (!AIMUtil.saveAIMAnnotation(uploadedFile, imageReference.projectID, sessionID, username))
+				throw new Exception("Error saving AIM file");
+		}
+		else {
+			createFile(username, imageReference.projectID, imageReference.subjectID, imageReference.studyUID, null,
+					uploadedFile, description, fileType, sessionID);
+		}
 		return HttpServletResponse.SC_OK;
 	}
 

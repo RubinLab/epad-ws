@@ -6,4 +6,6 @@ public class PACSRouteTemplates
 	public static final String PAC = PACS_LIST + "{pacid}";
 	public static final String PAC_ENTITY_LIST = PAC + "/entities/";
 	public static final String PAC_ENTITY = PAC_ENTITY_LIST + "{entityid}";
+	public static final String PAC_SUBJECT_LIST = PAC + "/subjects/";
+	public static final String PAC_SUBJECT = PAC + "/subjects/{subject}";
 }

@@ -96,6 +96,8 @@ public interface EpadOperations
 
 	int createFile(String username, SeriesReference seriesReference, File uploadedFile, String description, String fileType, String sessionID) throws Exception;
 
+	int createFile(String username, ImageReference imageReference, File uploadedFile, String description, String fileType, String sessionID) throws Exception;
+
 	int createImage(String username, String projectID, File dicomFile, String sessionID) throws Exception;
 	
 	EPADFileList getFileDescriptions(ProjectReference projectReference, String username, String sessionID, EPADSearchFilter searchFilter) throws Exception;

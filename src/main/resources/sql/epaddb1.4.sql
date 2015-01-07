@@ -7,6 +7,7 @@ DROP TABLE if exists study;
 DROP TABLE if exists project;
 DROP TABLE if exists user;
 DROP TABLE if exists subject;
+DROP TABLE if exists remote_pac_query;
 
 DROP TABLE if exists users;
 
@@ -149,6 +150,25 @@ KEY FK_epadfile_subject (subject_id),
 CONSTRAINT FK_epadfile_subject FOREIGN KEY (subject_id) REFERENCES subject(id),
 KEY FK_epadfile_project (project_id),
 CONSTRAINT FK_epadfile_project FOREIGN KEY (project_id) REFERENCES project(id)) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE remote_pac_query (id integer unsigned NOT NULL AUTO_INCREMENT,
+pacid varchar(64),
+requestor varchar(128),
+subject_id integer unsigned,
+project_id integer unsigned,
+modality varchar(8),
+period varchar(8),
+enabled tinyint(1),
+lastquerytime timestamp,
+createdtime timestamp,
+updatetime timestamp,
+updated_by varchar(64),
+PRIMARY KEY (id),
+KEY FK_query_project (project_id),
+CONSTRAINT FK_query_project FOREIGN KEY (project_id) REFERENCES project(id),
+KEY FK_query_subject (subject_id),
+CONSTRAINT FK_query_subject FOREIGN KEY (subject_id) REFERENCES subject(id)) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+CREATE UNIQUE INDEX remotepacquery_pacid_subject on remote_pac_query(pacid,subject_id);
 
 ALTER TABLE dbversion MODIFY COLUMN version varchar(6);
 
