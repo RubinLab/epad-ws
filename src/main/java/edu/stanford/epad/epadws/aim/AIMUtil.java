@@ -701,12 +701,12 @@ public class AIMUtil
 			res.setAttributeNS("http://www.w3.org/2000/xmlns/", "xmlns:xsi", "http://www.w3.org/2001/XMLSchema-instance");
 			res.setAttribute("xsi:schemaLocation",
 					"gme://caCORE.caCORE/3.2/edu.northwestern.radiology.AIM AIM_v3_rv11_XML.xsd");
-			Node n = renameNodeNS(res, "ImageAnnotation");
+			Node n = renameNodeNS(res, "ImageAnnotation","gme://caCORE.caCORE/3.2/edu.northwestern.radiology.AIM");
 			root.appendChild(n); // Adding to the root
 		}
 		long xmlbldtime = System.currentTimeMillis();
 		log.info("Time taken for convert annotations to xml:" + (xmlbldtime-starttime) + " msecs");
-		String queryResults = XmlDocumentToString(doc);
+		String queryResults = XmlDocumentToString(doc, "gme://caCORE.caCORE/3.2/edu.northwestern.radiology.AIM");
 		long xmlstrtime = System.currentTimeMillis();
 		log.info("Time taken for convert xml to string:" + (xmlstrtime-xmlbldtime) + " msecs");
 		responseStream.print(queryResults);
@@ -771,10 +771,10 @@ public class AIMUtil
 			res.setAttributeNS("http://www.w3.org/2000/xmlns/", "xmlns:xsi", "http://www.w3.org/2001/XMLSchema-instance");
 			res.setAttribute("xsi:schemaLocation",
 					"gme://caCORE.caCORE/4.4/edu.northwestern.radiology.AIM AIM_v4_rv44_XML.xsd");
-			Node n = renameNodeNS(res, "ImageAnnotationCollection");
+			Node n = renameNodeNS(res, "ImageAnnotationCollection","gme://caCORE.caCORE/4.4/edu.northwestern.radiology.AIM");
 			root.appendChild(n); // Adding to the root
 		}
-		String queryResults = XmlDocumentToString(doc);
+		String queryResults = XmlDocumentToString(doc,"gme://caCORE.caCORE/4.4/edu.northwestern.radiology.AIM");
 		responseStream.print(queryResults);
 	}
 
@@ -812,10 +812,10 @@ public class AIMUtil
 		return aims;
 	}
 	
-	private static String XmlDocumentToString(Document document)
+	private static String XmlDocumentToString(Document document, String xmlns)
 	{ // Create an XML document from a String
-		new XmlNamespaceTranslator().addTranslation(null, "gme://caCORE.caCORE/3.2/edu.northwestern.radiology.AIM")
-				.addTranslation("", "gme://caCORE.caCORE/3.2/edu.northwestern.radiology.AIM").translateNamespaces(document);
+		new XmlNamespaceTranslator().addTranslation(null, xmlns)
+				.addTranslation("", xmlns).translateNamespaces(document);
 
 		TransformerFactory transfac = TransformerFactory.newInstance();
 		Transformer trans = null;
@@ -841,9 +841,9 @@ public class AIMUtil
 	}
 
 	// Rename namespace of the nodes
-	private static Node renameNodeNS(Node node, String newName)
+	private static Node renameNodeNS(Node node, String newName, String xmlns)
 	{
-		Element newNode = node.getOwnerDocument().createElementNS("gme://caCORE.caCORE/3.2/edu.northwestern.radiology.AIM",
+		Element newNode = node.getOwnerDocument().createElementNS(xmlns,
 				newName);
 		NamedNodeMap map = node.getAttributes();
 		for (int i = 0; i < map.getLength(); i++) {
