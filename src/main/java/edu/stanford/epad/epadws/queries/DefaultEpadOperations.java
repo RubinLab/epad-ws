@@ -113,7 +113,7 @@ public class DefaultEpadOperations implements EpadOperations
 		XNATProjectList xnatProjectList = XNATQueries.allProjects(sessionID);
 
 		for (XNATProject xnatProject : xnatProjectList.ResultSet.Result) {
-			EPADProject epadProject = xnatProject2EPADProject(sessionID, username, xnatProject, searchFilter);
+			EPADProject epadProject = xnatProject2EPADProject(sessionID, username, xnatProject, searchFilter, false);
 
 			if (epadProject != null)
 			{
@@ -132,7 +132,7 @@ public class DefaultEpadOperations implements EpadOperations
 		for (XNATProject xnatProject : xnatProjectList.ResultSet.Result) {
 			if (projectReference.projectID.equals(xnatProject.ID))
 			{
-				return xnatProject2EPADProject(sessionID, username, xnatProject, new EPADSearchFilter());
+				return xnatProject2EPADProject(sessionID, username, xnatProject, new EPADSearchFilter(), true);
 			}
 		}
 		return null;
@@ -1339,7 +1339,7 @@ public class DefaultEpadOperations implements EpadOperations
 	}
 
 	private EPADProject xnatProject2EPADProject(String sessionID, String username, XNATProject xnatProject,
-			EPADSearchFilter searchFilter)
+			EPADSearchFilter searchFilter, boolean annotationCount)
 	{
 		String projectName = xnatProject.name;
 		if (!searchFilter.shouldFilterProject(projectName)) {
@@ -1355,10 +1355,13 @@ public class DefaultEpadOperations implements EpadOperations
 //			int numberOfAnnotations = AIMQueries.getNumberOfAIMAnnotationsForPatients(sessionID, username, patientIDs);
 			Set<String> studyUIDs =XNATQueries.getAllStudyUIDsForProject(projectID, sessionID);
 			int numberOfAnnotations = 0;
-			for  (String studyUID: studyUIDs)
+			if (annotationCount)
 			{
-				EPADAIMList aims = getStudyAIMDescriptions(new StudyReference(null, null, studyUID.replace('_', '.')), username, sessionID);
-				numberOfAnnotations = numberOfAnnotations + getNumberOfAccessibleAims(sessionID, projectID, aims, username);
+				for  (String studyUID: studyUIDs)
+				{
+					EPADAIMList aims = getStudyAIMDescriptions(new StudyReference(null, null, studyUID.replace('_', '.')), username, sessionID);
+					numberOfAnnotations = numberOfAnnotations + getNumberOfAccessibleAims(sessionID, projectID, aims, username);
+				}
 			}
 			if (!searchFilter.shouldFilterProject(projectName, numberOfAnnotations)) {
 				int numberOfStudies = Dcm4CheeQueries.getNumberOfStudiesForPatients(patientIDs);
