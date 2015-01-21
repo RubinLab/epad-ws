@@ -27,6 +27,7 @@ package edu.stanford.epad.epadws.models;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.log4j.Level;
 
@@ -46,9 +47,10 @@ public class User extends AbstractDAO {
 	String creator;
 	Date createdTime;
 	Date updateTime;
-	transient String role;
+	transient String role;  // Only valid within context of a project
 	transient List<EventLog> eventLogs = new ArrayList<EventLog>();
-
+	transient Map<String, String> projectToRole; // List of projects and the user's role in them
+	
 	public static final class EventLog
 	{
 		public final Date date;
@@ -170,6 +172,14 @@ public class User extends AbstractDAO {
 
 	public void setRole(String role) {
 		this.role = role;
+	}
+
+	public Map<String, String> getProjectToRole() {
+		return projectToRole;
+	}
+
+	public void setProjectToRole(Map<String, String> projectToRole) {
+		this.projectToRole = projectToRole;
 	}
 
 	public List<EventLog> getEventLogs() {

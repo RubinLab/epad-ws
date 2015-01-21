@@ -384,7 +384,8 @@ public class AIMDatabaseOperations {
     		EPADAIM aim = getAIM(annotationUID);
     		if (aim != null)
     		{
-    			log.info("AIM already exists in table, aimID:" + annotationUID + " dsoSeriesUID:" + aim.dsoSeriesUID + " newDSOSeriesUID:" + dsoSeriesUID);
+    			if (dsoSeriesUID != null || aim.dsoSeriesUID != null)
+    				log.info("AIM already exists in table, aimID:" + annotationUID + " dsoSeriesUID:" + aim.dsoSeriesUID + " newDSOSeriesUID:" + dsoSeriesUID);
     			if (dsoSeriesUID != null && dsoSeriesUID.length() > 0 && (aim.dsoSeriesUID == null || aim.dsoSeriesUID.length() == 0))
     			{
     	    	    this.statement = mySqlConnection.createStatement();

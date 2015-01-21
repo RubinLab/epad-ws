@@ -78,6 +78,36 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		userCache = new HashMap<String, User>();
 		subjectCache = new HashMap<String, Subject>();
 	}
+	
+	private User getUserFromCache(String username) throws Exception
+	{
+		User user = userCache.get(username);
+		if (user != null)
+		{
+			user = (User) user.clone();
+		}
+		return user;
+	}
+	
+	private Project getProjectFromCache(String projectID) throws Exception
+	{
+		Project project = projectCache.get(projectID);
+		if (project != null)
+		{
+			project = (Project) project.clone();
+		}
+		return project;
+	}
+	
+	private Subject getSubjectFromCache(String subjectUID) throws Exception
+	{
+		Subject subject = subjectCache.get(subjectUID);
+		if (subject != null)
+		{
+			subject = (Subject) subject.clone();
+		}
+		return subject;
+	}
 
 	@Override
 	public Project createProject(String loggedInUser, String projectId, String projectName,
@@ -206,7 +236,7 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 			String username, UserRole role) throws Exception {
 		User user = getUser(username);
 		Project project = getProject(projectId);
-		ProjectToUser ptou = (ProjectToUser) new ProjectToUser().getObject("project_id = " + project.toSQL(projectId) + " and user_id=" + user.getId());
+		ProjectToUser ptou = (ProjectToUser) new ProjectToUser().getObject("project_id = " + project.getId() + " and user_id=" + user.getId());
 		if (ptou == null)
 		{
 			ptou = new ProjectToUser();
@@ -223,7 +253,7 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 			String username) throws Exception {
 		User user = getUser(username);
 		Project project = getProject(projectId);
-		ProjectToUser ptou = (ProjectToUser) new ProjectToUser().getObject("project_id = " + project.toSQL(projectId) + " and user_id=" + user.getId());
+		ProjectToUser ptou = (ProjectToUser) new ProjectToUser().getObject("project_id = " + project.getId() + " and user_id=" + user.getId());
 		if (ptou != null)
 			ptou.delete();
 	}
@@ -276,11 +306,29 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		subject = (Subject) subject.getObject("subjectuid = " + subject.toSQL(subjectUID));
 		Project project = new Project();
 		project = (Project) project.getObject("projectId = " + project.toSQL(projectId));
-		ProjectToSubject ptos = new ProjectToSubject();
-		ptos.setProjectId(project.getId());
-		ptos.setSubjectId(subject.getId());
-		ptos.setCreator(loggedInUser);
-		ptos.save();
+		ProjectToSubject ptos = (ProjectToSubject) new ProjectToSubject().getObject("project_id =" + project.getId() + " and subject_id=" + subject.getId());
+		if (ptos == null)
+		{
+			ptos = new ProjectToSubject();
+			ptos.setProjectId(project.getId());
+			ptos.setSubjectId(subject.getId());
+			ptos.setCreator(loggedInUser);
+			ptos.save();
+		}
+		List<Study> studies = this.getStudiesForSubject(subjectUID);
+		for (Study study: studies)
+		{
+			ProjectToSubjectToStudy pss = (ProjectToSubjectToStudy) new ProjectToSubjectToStudy().getObject("proj_subj_id = " + ptos.getId() + " and study_id=" + study.getId());
+			if (pss == null)
+			{
+				pss = new ProjectToSubjectToStudy();
+				pss.setProjSubjId(ptos.getId());
+				pss.setStudyId(study.getId());
+				pss.setCreator(loggedInUser);
+				pss.save();
+			}
+			
+		}
 	}
 
 	@Override
@@ -420,10 +468,20 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 	@Override
 	public User getUser(String username) throws Exception {
 		User user = userCache.get(username);
-		if (user != null)
-			return user;
-		user = new User();
-		user = (User) user.getObject("username = " + user.toSQL(username));
+		if (user == null)
+		{
+			user = new User();
+			user = (User) user.getObject("username = " + user.toSQL(username));
+			if (user == null) return user;
+			userCache.put(user.getUsername(), user);
+		}
+		user.setProjectToRole(new HashMap<String, String>());
+		List<ProjectToUser> ptous = new ProjectToUser().getObjects("user_id = " + user.getId());
+		for (ProjectToUser ptou: ptous)
+		{
+			Project project = (Project)new Project(ptou.getProjectId()).retrieve();
+			user.getProjectToRole().put(project.getName(), ptou.getRole());
+		}
 		return user;
 	}
 
@@ -475,6 +533,16 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		List objects = new User().getObjects("1 = 1 order by username");
 		List<User> users = new ArrayList<User>();
 		users.addAll(objects);
+		for (User user: users)
+		{
+			user.setProjectToRole(new HashMap<String, String>());
+			List<ProjectToUser> ptous = new ProjectToUser().getObjects("user_id = " + user.getId());
+			for (ProjectToUser ptou: ptous)
+			{
+				Project project = (Project)new Project(ptou.getProjectId()).retrieve();
+				user.getProjectToRole().put(project.getName(), ptou.getRole());
+			}
+		}
 		return users;
 	}
 
@@ -864,10 +932,10 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 			criteria = criteria + " and study_id is null";
 		if (seriesUID != null && seriesUID.length() > 0)
 		{
-			criteria = criteria + " and seriesUID = '" + seriesUID + "'";
+			criteria = criteria + " and series_uid = '" + seriesUID + "'";
 		}
 		else
-			criteria = criteria + " and seriesUID is null";
+			criteria = criteria + " and series_uid is null";
 		
 		criteria = criteria + " and name = " + new EpadFile().toSQL(filename);
 		EpadFile file = (EpadFile) new EpadFile().getObject(criteria);
@@ -917,7 +985,7 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		Project project = getProject(projectID);
 		Subject subject = getSubject(subjectUID);
 		Study study = getStudy(studyUID);
-		String criteria = "seriesUID = '" + seriesUID + "'";
+		String criteria = "series_uid = '" + seriesUID + "'";
 		if (study != null)
 			criteria = criteria + " and study_id = " + study.getId();
 		if (subject != null)

@@ -117,6 +117,9 @@ public interface EpadOperations
 	EPADFileList getFileDescriptions(SeriesReference seriesReference, String username, String sessionID,
 			EPADSearchFilter searchFilter) throws Exception;
 
+	List<EPADFile> getEPADFiles(SeriesReference seriesReference, String username, String sessionID,
+			EPADSearchFilter searchFilter) throws Exception;
+	
 	EPADFile getFileDescription(SeriesReference seriesReference, String filename, String username, String sessionID) throws Exception;
 
 	String createSubjectAIM(String username, SubjectReference subjectRefernece, String aimID, File aimFile, String sessionID);

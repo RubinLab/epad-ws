@@ -86,7 +86,7 @@ public class RemotePACService extends RemotePACSBase {
 		return null;
 	}
 	
-	public void addRemotePAC(RemotePAC pac) throws Exception {
+	public synchronized void addRemotePAC(RemotePAC pac) throws Exception {
 		addRemotePAC(
 				pac.pacID,
 				pac.aeTitle,
@@ -96,12 +96,12 @@ public class RemotePACService extends RemotePACSBase {
 				pac.primaryDeviceType);
 	}
 	
-	public void modifyRemotePAC(RemotePAC pac) throws Exception {
+	public synchronized void modifyRemotePAC(RemotePAC pac) throws Exception {
 		removeRemotePAC(pac.pacID);
 		addRemotePAC(pac);
 	}
 	
-	public void removeRemotePAC(RemotePAC pac) throws Exception {
+	public synchronized void removeRemotePAC(RemotePAC pac) throws Exception {
 		List<RemotePACQuery> queries = getRemotePACQueries(pac.pacID);
 		if (queries.size() > 0)
 		{
@@ -153,6 +153,7 @@ public class RemotePACService extends RemotePACSBase {
 		if (pac == null)
 			throw new Exception("Remote PAC " + pacID + " not found");
 		query = new RemotePACQuery();
+		query.setRequestor(username);
 		query.setPacId(pacID);
 		query.setSubjectId(subject.getId());
 		query.setProjectId(project.getId());
@@ -219,6 +220,7 @@ public class RemotePACService extends RemotePACSBase {
 	public synchronized List<RemotePACEntity> queryRemoteData(RemotePAC pac, String patientNameFilter, String patientIDFilter, String studyDateFilter) throws Exception {
 		
 		try {
+			log.info("Remote PAC Query, pacID:" + pac.pacID + " patientName:" + patientNameFilter + " patientID:" + patientIDFilter + " studyDate:" + studyDateFilter);
 			this.setCurrentRemoteQueryInformationModel(pac.pacID, true);
 			SpecificCharacterSet specificCharacterSet = new SpecificCharacterSet((String[])null);
 			AttributeList filter = new AttributeList();

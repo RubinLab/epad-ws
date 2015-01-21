@@ -72,19 +72,31 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 			}
 			if (pngFilePath == null)
 				return pngFilePath;
-			String imagePath = imageUID.replace('.', '_');
-			if (!pngFilePath.contains(imagePath))
+			String imagePath = imageUID.replace('.', '_');  // Old style file name
+			if (!pngFilePath.contains(imageUID) && !pngFilePath.contains(imagePath))
 			{
+				log.info("Fixing pngFile:" + pngFilePath + " imageUID:" + imageUID + " imagePath:" + imagePath);
 				rs.close();
 				ps.close();
 				ps = c.prepareStatement(EpadDatabaseCommands.SELECT_EPAD_FILE_PATH_BY_IMAGE_UID);
-				ps.setString(1, "%/" + imagePath + "%");
+				ps.setString(1, "%/" + imageUID + ".png");
 				rs = ps.executeQuery();
 				if (rs.next()) {
 					pngFilePath = rs.getString(1);
 				}
 				else
-					return null;
+				{
+					rs.close();
+					ps.close();
+					ps = c.prepareStatement(EpadDatabaseCommands.SELECT_EPAD_FILE_PATH_BY_IMAGE_UID);
+					ps.setString(1, "%/" + imagePath + ".png");
+					rs = ps.executeQuery();
+					if (rs.next()) {
+						pngFilePath = rs.getString(1);
+					}
+					else
+						pngFilePath = null;
+				}
 			}
 		} catch (SQLException sqle) {
 			String debugInfo = DatabaseUtils.getDebugData(rs);

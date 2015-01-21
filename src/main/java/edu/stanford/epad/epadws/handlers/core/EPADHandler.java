@@ -6,6 +6,7 @@ import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.InputStream;
 import java.io.PrintWriter;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -48,11 +49,15 @@ import edu.stanford.epad.dtos.EPADUser;
 import edu.stanford.epad.dtos.EPADUserList;
 import edu.stanford.epad.dtos.RemotePAC;
 import edu.stanford.epad.dtos.RemotePACEntity;
+import edu.stanford.epad.dtos.RemotePACEntityList;
+import edu.stanford.epad.dtos.RemotePACList;
 import edu.stanford.epad.dtos.RemotePACQueryConfig;
+import edu.stanford.epad.dtos.RemotePACQueryConfigList;
 import edu.stanford.epad.epadws.aim.AIMSearchType;
 import edu.stanford.epad.epadws.aim.AIMUtil;
 import edu.stanford.epad.epadws.handlers.HandlerUtil;
 import edu.stanford.epad.epadws.handlers.dicom.DSOUtil;
+import edu.stanford.epad.epadws.models.FileType;
 import edu.stanford.epad.epadws.models.RemotePACQuery;
 import edu.stanford.epad.epadws.queries.DefaultEpadOperations;
 import edu.stanford.epad.epadws.queries.EpadOperations;
@@ -78,6 +83,12 @@ public class EPADHandler extends AbstractHandler
 
 	private static final EPADLogger log = EPADLogger.getInstance();
 
+	/*
+	 * Main class for handling rest calls using the epad v2 api.
+	 * 
+	 * Note: These long if/then/else statements looks terrible, they need to be replaced by something like jersey with annotations
+	 * But there seems to be some problem using jersey with embedded jetty and multiple handlers - still need to solve that
+	 */
 	@Override
 	public void handle(String s, Request request, HttpServletRequest httpRequest, HttpServletResponse httpResponse)
 	{
@@ -248,6 +259,19 @@ public class EPADHandler extends AbstractHandler
 					log.info("Image " + imageReference.imageUID + " not found");
 					statusCode = HttpServletResponse.SC_NOT_FOUND;
 				}
+			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.IMAGEFILE_LIST, pathInfo)) {
+				SeriesReference seriesReference = SeriesReference.extract(ProjectsRouteTemplates.IMAGE_LIST, pathInfo);
+				EPADImageList imageList = epadOperations.getImageDescriptions(seriesReference, sessionID, searchFilter);
+				List<EPADFile> files = epadOperations.getEPADFiles(seriesReference, username, sessionID, searchFilter);
+				for (EPADImage image: imageList.ResultSet.Result)
+				{
+					EPADFile efile = new EPADFile(seriesReference.projectID, seriesReference.subjectID, image.patientID, seriesReference.studyUID, seriesReference.seriesUID,
+							image.imageUID, 0, FileType.DICOM.getName(), new SimpleDateFormat("yyyy-dd-MM HH:mm:ss").format(image.imageDate), image.lossyImage);
+					files.add(0, efile);
+				}
+				responseStream.append(new EPADFileList(files).toJSON());
+				statusCode = HttpServletResponse.SC_OK;
+
 
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.FRAME_LIST, pathInfo)) {
 				ImageReference imageReference = ImageReference.extract(ProjectsRouteTemplates.FRAME_LIST, pathInfo);
@@ -835,7 +859,10 @@ public class EPADHandler extends AbstractHandler
 			} else if (HandlerUtil.matchesTemplate(PACSRouteTemplates.PACS_LIST, pathInfo)) {
 				Map<String, String> templateMap = HandlerUtil.getTemplateMap(PACSRouteTemplates.PACS_LIST, pathInfo);
 				List<RemotePAC> pacs = RemotePACService.getInstance().getRemotePACs();
-				responseStream.append(new Gson().toJson(pacs));
+				RemotePACList pacList = new RemotePACList();
+				for (RemotePAC pac: pacs)
+					pacList.addRemotePAC(pac);
+				responseStream.append(pacList.toJSON());
 				statusCode = HttpServletResponse.SC_OK;
 
 			} else if (HandlerUtil.matchesTemplate(PACSRouteTemplates.PAC, pathInfo)) {
@@ -863,7 +890,10 @@ public class EPADHandler extends AbstractHandler
 				if (pac != null)
 				{
 					List<RemotePACEntity> entities = RemotePACService.getInstance().queryRemoteData(pac, patientNameFilter, patientIDFilter, studyDateFilter);
-					responseStream.append(new Gson().toJson(entities));
+					RemotePACEntityList entityList = new RemotePACEntityList();
+					for (RemotePACEntity entity: entities)
+						entityList.addRemotePACEntity(entity);
+					responseStream.append(entityList.toJSON());
 					statusCode = HttpServletResponse.SC_OK;
 				}
 				else
@@ -888,12 +918,12 @@ public class EPADHandler extends AbstractHandler
 				String pacid = HandlerUtil.getTemplateParameter(templateMap, "pacid");
 				RemotePACService rps = RemotePACService.getInstance();
 				List<RemotePACQuery> remoteQueries = rps.getRemotePACQueries(pacid);
-				List<RemotePACQueryConfig> configs = new ArrayList<RemotePACQueryConfig>();
+				RemotePACQueryConfigList queryList = new RemotePACQueryConfigList();
 				for (RemotePACQuery query: remoteQueries)
 				{
-					configs.add(rps.getConfig(query));
+					queryList.addRemotePACQueryConfig(rps.getConfig(query));
 				}
-				responseStream.append(new Gson().toJson(configs));
+				responseStream.append(queryList.toJSON());
 				statusCode = HttpServletResponse.SC_OK;
 
 			} else if (HandlerUtil.matchesTemplate(PACSRouteTemplates.PAC_SUBJECT, pathInfo)) {
@@ -959,7 +989,7 @@ public class EPADHandler extends AbstractHandler
 				} else {
 					statusCode = epadOperations.createProject(username, projectReference, projectName, projectDescription, sessionID);
 				}
-				if (uploadedFile != null) {
+				if (uploadedFile != null && false) {
 					log.info("Saving uploaded file:" + uploadedFile.getName());
 					String description = httpRequest.getParameter("description");
 					String fileType = httpRequest.getParameter("fileType");
@@ -970,7 +1000,7 @@ public class EPADHandler extends AbstractHandler
 				SubjectReference subjectReference = SubjectReference.extract(ProjectsRouteTemplates.SUBJECT, pathInfo);
 				String subjectName = httpRequest.getParameter("subjectName");
 				statusCode = epadOperations.createSubject(username, subjectReference, subjectName, sessionID);
-				if (uploadedFile != null) {
+				if (uploadedFile != null && false) {
 					String description = httpRequest.getParameter("description");
 					String fileType = httpRequest.getParameter("fileType");
 					statusCode = epadOperations.createFile(username, subjectReference, uploadedFile, description, fileType, sessionID);					
@@ -988,7 +1018,7 @@ public class EPADHandler extends AbstractHandler
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.STUDY, pathInfo)) {
 				StudyReference studyReference = StudyReference.extract(ProjectsRouteTemplates.STUDY, pathInfo);
 				statusCode = epadOperations.createStudy(username, studyReference, sessionID);
-				if (uploadedFile != null) {
+				if (uploadedFile != null && false) {
 					String description = httpRequest.getParameter("description");
 					String fileType = httpRequest.getParameter("fileType");
 					statusCode = epadOperations.createFile(username, studyReference, uploadedFile, description, fileType, sessionID);					
@@ -1002,7 +1032,7 @@ public class EPADHandler extends AbstractHandler
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.SERIES, pathInfo)) {
 				SeriesReference seriesReference = SeriesReference.extract(ProjectsRouteTemplates.SERIES, pathInfo);
 				statusCode = epadOperations.createSeries(seriesReference, sessionID);
-				if (uploadedFile != null) {
+				if (uploadedFile != null && false) {
 					String description = httpRequest.getParameter("description");
 					String fileType = httpRequest.getParameter("fileType");
 					statusCode = epadOperations.createFile(username, seriesReference, uploadedFile, description, fileType, sessionID);					
@@ -1042,7 +1072,7 @@ public class EPADHandler extends AbstractHandler
 				ProjectReference projectReference = ProjectReference.extract(ProjectsRouteTemplates.USER, pathInfo);
 				Map<String, String> templateMap = HandlerUtil.getTemplateMap(ProjectsRouteTemplates.USER, pathInfo);
 				String add_username = HandlerUtil.getTemplateParameter(templateMap, "username");
-				String role = httpRequest.getParameter("username");
+				String role = httpRequest.getParameter("role");
 				epadOperations.addUserToProject(username, projectReference, add_username, role, sessionID);
 				statusCode = HttpServletResponse.SC_OK;
 	
@@ -1423,7 +1453,16 @@ public class EPADHandler extends AbstractHandler
 			log.debug("Data received, len:" + len);
 			outputStream.close();
 			inputStream.close();
-			log.debug("Created File:" + uploadedFile.getAbsolutePath());
+			if (len == 0)
+			{
+				try {
+					uploadedFile.delete();
+					uploadDir.delete();
+				} catch (Exception x) {}
+				uploadedFile = null;
+			}
+			else
+				log.debug("Created File:" + uploadedFile.getAbsolutePath());
 			if (len > 0 && (tempXMLFileName.endsWith(".xml") || tempXMLFileName.endsWith(".txt")))
 			{
 				log.info("PUT Data:" + readFile(uploadedFile));

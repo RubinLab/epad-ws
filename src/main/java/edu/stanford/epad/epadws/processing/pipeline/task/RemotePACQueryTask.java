@@ -2,6 +2,7 @@ package edu.stanford.epad.epadws.processing.pipeline.task;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 
@@ -64,7 +65,7 @@ public class RemotePACQueryTask implements Runnable
 				Subject subject = (Subject) new Subject(query.getSubjectId()).retrieve();
 				log.info("Processing Remote PAC Query, PAC:" + pac.pacID + " Subject:" + subject.getSubjectUID());
 				String studyDate = query.getLastStudyDate();
-				if (!studyDate.endsWith("-"))
+				if (studyDate != null && !studyDate.endsWith("-"))
 					studyDate = studyDate + "-";
 				List<RemotePACEntity> entities = rps.queryRemoteData(pac, null, subject.getSubjectUID(), studyDate);
 				query.setLastQueryStatus("Query Completed, number of new objects:" + entities.size());
@@ -85,12 +86,17 @@ public class RemotePACQueryTask implements Runnable
 						Date newStudyDate = null;
 						if (studyUID.indexOf(":") != -1)
 						{
-							studyDate = studyUID.substring(studyUID.indexOf(":")+1);
+							studyDate = studyUID.substring(studyUID.lastIndexOf(":")+1);
 							Date sdate = getDate(studyDate);
+							log.info("Study date:" + studyDate);
 							if (sdate != null && (newStudyDate == null || sdate.before(newStudyDate)))
 							{
 								newStudyDate = sdate;
-								query.setLastStudyDate(studyDate); // TODO: Do we need to add one to date?
+								Calendar cal = Calendar.getInstance();
+								cal.setTime(sdate);
+								cal.add(Calendar.DATE, 1);
+								query.setLastStudyDate(dateformat.format(cal.getTime()));
+								log.info("Setting new study date:" + studyDate);
 								lastStudyDateUpdated = true;
 							}
 						}
@@ -100,6 +106,7 @@ public class RemotePACQueryTask implements Runnable
 						query.setLastStudyDate(dateformat.format(new Date()));
 					}
 					query.setLastQueryStatus(status);
+					log.info(status);
 				}
 			} catch (Exception e) {
 				log.warning("Error in Remote PAC Query, PAC ID:" + query.getPacId(), e);
