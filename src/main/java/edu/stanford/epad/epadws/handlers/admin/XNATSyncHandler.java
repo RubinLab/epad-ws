@@ -1,6 +1,7 @@
 package edu.stanford.epad.epadws.handlers.admin;
 
 import java.io.PrintWriter;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -14,7 +15,6 @@ import org.eclipse.jetty.server.handler.AbstractHandler;
 import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.epad.common.util.MailUtil;
-import edu.stanford.epad.dtos.EPADProject;
 import edu.stanford.epad.dtos.internal.XNATExperiment;
 import edu.stanford.epad.dtos.internal.XNATExperimentList;
 import edu.stanford.epad.dtos.internal.XNATProject;
@@ -24,7 +24,6 @@ import edu.stanford.epad.dtos.internal.XNATSubjectList;
 import edu.stanford.epad.dtos.internal.XNATUser;
 import edu.stanford.epad.dtos.internal.XNATUserList;
 import edu.stanford.epad.epadws.handlers.HandlerUtil;
-import edu.stanford.epad.epadws.handlers.core.ProjectReference;
 import edu.stanford.epad.epadws.models.Project;
 import edu.stanford.epad.epadws.models.ProjectType;
 import edu.stanford.epad.epadws.models.Study;
@@ -117,7 +116,7 @@ public class XNATSyncHandler extends AbstractHandler
 			User user = projectOperations.getUser(xuser.login);
 			if (user == null)
 			{
-				user = projectOperations.createUser(username, xuser.login, xuser.firstname, xuser.lastname, xuser.email, password);
+				user = projectOperations.createUser(username, xuser.login, xuser.firstname, xuser.lastname, xuser.email, password, new ArrayList<String>(), new ArrayList<String>());
 				// TODO: mail password to user
 				log.info("Created user:" + xuser.login + " password:" + password);
 				response = response + "\nCreated user: " + user.getUsername() + " password:" + password;
@@ -129,7 +128,7 @@ public class XNATSyncHandler extends AbstractHandler
 			{
 				try {
 					// Update password, but ignore errors
-					user = projectOperations.updateUser(username, xuser.login, null, null, xuser.email, password, "admin");
+					user = projectOperations.updateUser(username, xuser.login, null, null, xuser.email, password, "admin", new ArrayList<String>(), new ArrayList<String>());
 					log.info("Updated admin password");
 				} catch (Exception x) {}
 			}

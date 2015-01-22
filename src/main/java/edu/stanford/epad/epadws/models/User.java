@@ -42,6 +42,7 @@ public class User extends AbstractDAO {
 	String email;
 	String password;
 	boolean enabled;
+	String permissions;
 	Date lastLogin;
 	boolean admin;
 	String creator;
@@ -50,6 +51,10 @@ public class User extends AbstractDAO {
 	transient String role;  // Only valid within context of a project
 	transient List<EventLog> eventLogs = new ArrayList<EventLog>();
 	transient Map<String, String> projectToRole; // List of projects and the user's role in them
+	public static final String CreateProjectPermission = "CreateProject";
+	public static final String CreateUserPermission = "CreateUser";
+	public static final String CreatePACPermission = "CreatePAC";
+	public static final String CreateAutoPACQueryPermission = "CreateAutoPACQuery";
 	
 	public static final class EventLog
 	{
@@ -112,6 +117,15 @@ public class User extends AbstractDAO {
 
 	public void setPassword(String password) {
 		this.password = password;
+	}
+
+	public String getPermissions() {
+		if (permissions == null) return CreateProjectPermission;
+		return permissions;
+	}
+
+	public void setPermissions(String permissions) {
+		this.permissions = permissions;
 	}
 
 	public boolean isEnabled() {
@@ -204,6 +218,7 @@ public class User extends AbstractDAO {
         {"lastName","String","lastname","varchar"},
         {"email","String","email","varchar"},
         {"password","String","password","varchar"},
+        {"permissions","String","permissions","varchar"},
         {"enabled","boolean","enabled","bit"},
         {"admin","boolean","admin","bit"},
         {"lastLogin","Date","lastLogin","timestamp"},

@@ -1161,6 +1161,14 @@ public class DefaultEpadOperations implements EpadOperations
 	public EPADFileList getFileDescriptions(StudyReference studyReference,
 			String username, String sessionID, EPADSearchFilter searchFilter)
 			throws Exception {
+		List<EPADFile> efiles = getEPADFiles(studyReference, username, sessionID, searchFilter);
+		return new EPADFileList(efiles);
+	}
+
+	@Override
+	public List<EPADFile> getEPADFiles(StudyReference studyReference,
+			String username, String sessionID, EPADSearchFilter searchFilter)
+			throws Exception {
 		List<EpadFile> files = projectOperations.getStudyFiles(studyReference.projectID, studyReference.subjectID, studyReference.studyUID);
 		List<EPADFile> efiles = new ArrayList<EPADFile>();
 		for (EpadFile file: files) {
@@ -1174,7 +1182,7 @@ public class DefaultEpadOperations implements EpadOperations
 					file.getName(), file.getLength(), file.getFileType(), new SimpleDateFormat("yyyy-dd-MM HH:mm:ss").format(file.getCreatedTime()), getEpadFilePath(file));
 			efiles.add(efile);
 		}
-		return new EPADFileList(efiles);
+		return efiles;
 	}
 
 	@Override
@@ -2383,13 +2391,17 @@ public class DefaultEpadOperations implements EpadOperations
 			XNATUserList xusers = XNATQueries.getAllUsers();
 			for (XNATUser user: xusers.ResultSet.Result) {
 				EPADUser epadUser = new EPADUser(user.displayname, user.login, 
-						user.firstname, user.lastname, user.email, false, false, "");
+						user.firstname, user.lastname, user.email, false, false, "",null);
 				userlist.addEPADUser(epadUser);
 			}
 			
 		} else {
 			List<User> users = projectOperations.getAllUsers();
 			for (User user: users) {
+				Set<String> permissions = new HashSet<String>();
+				String[] perms = user.getPermissions().split(",");
+				for (String perm: perms)
+					permissions.add(perm);
 				Set<String> projects = null;
 				Map<String, String> projectToRole = null;
 				if (user.getProjectToRole() != null)
@@ -2398,7 +2410,7 @@ public class DefaultEpadOperations implements EpadOperations
 					projectToRole = user.getProjectToRole();
 				}
 				EPADUser epadUser = new EPADUser(user.getFullName(), user.getUsername(), 
-						user.getFirstName(), user.getLastName(), user.getEmail(), user.isEnabled(), user.isAdmin(), "",projects, projectToRole, null);
+						user.getFirstName(), user.getLastName(), user.getEmail(), user.isEnabled(), user.isAdmin(), "",permissions, projects, projectToRole, null);
 				userlist.addEPADUser(epadUser);
 			}
 		}
@@ -2413,7 +2425,7 @@ public class DefaultEpadOperations implements EpadOperations
 			for (XNATUser user: xusers.ResultSet.Result) {
 				if (username.equalsIgnoreCase(user.login) || username.equalsIgnoreCase(user.email)) {
 					EPADUser epadUser = new EPADUser(user.displayname, user.login, 
-						user.firstname, user.lastname, user.email, false, false, "");
+						user.firstname, user.lastname, user.email, false, false, "", null);
 					return epadUser;
 				};
 			}
@@ -2431,6 +2443,10 @@ public class DefaultEpadOperations implements EpadOperations
 				EPADMessage emsg = new EPADMessage(log.date, log.message, log.level);
 				messages.addEPADMessage(emsg);
 			}
+			Set<String> permissions = new HashSet<String>();
+			String[] perms = user.getPermissions().split(",");
+			for (String perm: perms)
+				permissions.add(perm);
 			Set<String> projects = null;
 			Map<String, String> projectToRole = null;
 			if (user.getProjectToRole() != null)
@@ -2439,7 +2455,7 @@ public class DefaultEpadOperations implements EpadOperations
 				projectToRole = user.getProjectToRole();
 			}
 			EPADUser epadUser = new EPADUser(user.getFullName(), user.getUsername(), 
-					user.getFirstName(), user.getLastName(), user.getEmail(), user.isEnabled(), user.isAdmin(), "", projects, projectToRole, messages);
+					user.getFirstName(), user.getLastName(), user.getEmail(), user.isEnabled(), user.isAdmin(), "", permissions, projects, projectToRole, messages);
 			return epadUser;
 		}
 		return null;
@@ -2447,18 +2463,65 @@ public class DefaultEpadOperations implements EpadOperations
 
 	@Override
 	public void createOrModifyUser(String loggedInUser, String username,
-			String firstname, String lastname, String email, String password,
-			String oldpassword) throws Exception {
+			String firstname, String lastname, String email, String password,String oldpassword,
+			String[] addPermissions, String[] removePermissions) throws Exception {
 		User user = projectOperations.getUser(username);
 		if (!projectOperations.getUser(loggedInUser).isAdmin() && (user == null || !loggedInUser.equals(username)))
 			throw new Exception("User " + username + " does not have privilege to create/modify users");
+
+		List<String> addPerms = new ArrayList<String>();
+		List<String> removePerms = new ArrayList<String>();
+		if (addPermissions != null)
+		{
+			for (String perm: addPermissions)
+			{
+				perm = perm.trim();
+				if (perm.indexOf(",") != -1)
+				{
+					String[] perms = perm.split(",");
+					for (String p: perms)
+					{
+						p = p.trim();
+						if (p.length() > 0)
+							addPerms.add(p);
+					}
+				}
+				else
+				{
+					if (perm.length() > 0)
+						addPerms.add(perm);
+				}
+			}
+		}
+		if (removePermissions != null)
+		{
+			for (String perm: removePermissions)
+			{
+				perm = perm.trim();
+				if (perm.indexOf(",") != -1)
+				{
+					String[] perms = perm.split(",");
+					for (String p: perms)
+					{
+						p = p.trim();
+						if (p.length() > 0)
+							removePerms.add(p);
+					}
+				}
+				else
+				{
+					if (perm.length() > 0)
+						removePerms.add(perm);
+				}
+			}
+		}
 		if (user == null)
 		{
-			projectOperations.createUser(loggedInUser, username, firstname, lastname, email, oldpassword);
+			projectOperations.createUser(loggedInUser, username, firstname, lastname, email, oldpassword, addPerms, removePerms);
 		}
 		else
 		{
-			projectOperations.updateUser(loggedInUser, username, firstname, lastname, email, password, oldpassword);
+			projectOperations.updateUser(loggedInUser, username, firstname, lastname, email, password, oldpassword, addPerms, removePerms);
 		}
 		
 	}
@@ -2493,8 +2556,12 @@ public class DefaultEpadOperations implements EpadOperations
 		EPADUserList userlist = new EPADUserList();
 		List<User> users = projectOperations.getUsersWithRoleForProject(projectReference.projectID);
 		for (User user: users) {
+			Set<String> permissions = new HashSet<String>();
+			String[] perms = user.getPermissions().split(",");
+			for (String perm: perms)
+				permissions.add(perm);
 			EPADUser epadUser = new EPADUser(user.getFullName(), user.getUsername(), 
-					user.getFirstName(), user.getLastName(), user.getEmail(), user.isEnabled(), user.isAdmin(), user.getRole());
+					user.getFirstName(), user.getLastName(), user.getEmail(), user.isEnabled(), user.isAdmin(), user.getRole(), permissions);
 			userlist.addEPADUser(epadUser);
 		}
 		return userlist;

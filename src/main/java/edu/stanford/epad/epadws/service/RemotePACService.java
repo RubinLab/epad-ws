@@ -37,6 +37,12 @@ import edu.stanford.epad.epadws.models.Project;
 import edu.stanford.epad.epadws.models.RemotePACQuery;
 import edu.stanford.epad.epadws.models.Subject;
 
+/**
+ * Class to create Remote PAC Records and Query/Retrieve data for Remote PACs
+ * 
+ * @author Dev Gude
+ *
+ */
 public class RemotePACService extends RemotePACSBase {
 
 	static RemotePACService rpsinstance;
@@ -59,6 +65,10 @@ public class RemotePACService extends RemotePACSBase {
 		super();
 	}
 
+	/**
+	 * Get all configured remote PACs
+	 * @return
+	 */
 	public List<RemotePAC> getRemotePACs() {
 		List<RemotePAC> rps = new ArrayList<RemotePAC>();
 		ApplicationEntityMap aeMap = networkApplicationInformation.getApplicationEntityMap();
@@ -72,6 +82,11 @@ public class RemotePACService extends RemotePACSBase {
 		return rps;
 	}
 
+	/**
+	 * Get remote PAC by PAC ID
+	 * @param pacID
+	 * @return
+	 */
 	public RemotePAC getRemotePAC(String pacID) {
 		ApplicationEntityMap aeMap = networkApplicationInformation.getApplicationEntityMap();
 		for (Object aeName: aeMap.keySet()) {
@@ -86,6 +101,11 @@ public class RemotePACService extends RemotePACSBase {
 		return null;
 	}
 	
+	/**
+	 * Add a Remote PAC to configuration file
+	 * @param pac
+	 * @throws Exception
+	 */
 	public synchronized void addRemotePAC(RemotePAC pac) throws Exception {
 		addRemotePAC(
 				pac.pacID,
@@ -96,11 +116,21 @@ public class RemotePACService extends RemotePACSBase {
 				pac.primaryDeviceType);
 	}
 	
+	/**
+	 * Modify a Remote PAC in configuration file
+	 * @param pac
+	 * @throws Exception
+	 */
 	public synchronized void modifyRemotePAC(RemotePAC pac) throws Exception {
 		removeRemotePAC(pac.pacID);
 		addRemotePAC(pac);
 	}
 	
+	/**
+	 * Remove a Remote PAC from configuration file
+	 * @param pac
+	 * @throws Exception
+	 */
 	public synchronized void removeRemotePAC(RemotePAC pac) throws Exception {
 		List<RemotePACQuery> queries = getRemotePACQueries(pac.pacID);
 		if (queries.size() > 0)
@@ -111,6 +141,12 @@ public class RemotePACService extends RemotePACSBase {
 		this.storeProperties(pac.pacID + " deleted by EPAD " + new Date());
 	}
 
+	/**
+	 * Get all Remote PAC automatic daily queries
+	 * @param pacID
+	 * @return
+	 * @throws Exception
+	 */
 	public List<RemotePACQuery> getRemotePACQueries(String pacID) throws Exception {
 		List<RemotePACQuery> queries = new ArrayList<RemotePACQuery>();
 		List objects = new RemotePACQuery().getObjects("pacID = '" + pacID + "' order by pacid");
@@ -118,6 +154,13 @@ public class RemotePACService extends RemotePACSBase {
 		return queries;
 	}
 
+	/**
+	 * Get  Remote PAC automatic daily query for pac and subject
+	 * @param pacID
+	 * @param subjectUID
+	 * @return
+	 * @throws Exception
+	 */
 	public RemotePACQuery getRemotePACQuery(String pacID, String subjectUID) throws Exception {
 		Subject subject = DefaultEpadProjectOperations.getInstance().getSubject(subjectUID);
 		if (subject == null)
@@ -134,6 +177,19 @@ public class RemotePACService extends RemotePACSBase {
 		return (RemotePACQuery) objects.get(0);
 	}
 
+	/**
+	 * Create  Remote PAC automatic daily query configuration in database
+	 * @param username
+	 * @param pacID
+	 * @param subjectUID
+	 * @param patientName
+	 * @param modality
+	 * @param studyDate
+	 * @param weekly
+	 * @param projectID
+	 * @return
+	 * @throws Exception
+	 */
 	public RemotePACQuery createRemotePACQuery(String username, String pacID, String subjectUID, String patientName, String modality, String studyDate, boolean weekly, String projectID) throws Exception {
 		RemotePACQuery query = null;
 		try {
@@ -171,6 +227,12 @@ public class RemotePACService extends RemotePACSBase {
 		return query;
 	}
 
+	/**
+	 * Delete  Remote PAC automatic daily query configuration from database
+	 * @param pacID
+	 * @param subjectUID
+	 * @throws Exception
+	 */
 	public void removeRemotePACQuery(String pacID, String subjectUID) throws Exception {
 		Subject subject = DefaultEpadProjectOperations.getInstance().getSubject(subjectUID);
 		if (subject == null)
@@ -180,6 +242,12 @@ public class RemotePACService extends RemotePACSBase {
 			log.info("Query for PacID:" + pacID +" and SubjectID:" + subjectUID + " was deleted");
 	}
 
+	/**
+	 * Disable  Remote PAC automatic daily query configuration from database
+	 * @param pacID
+	 * @param subjectID
+	 * @throws Exception
+	 */
 	public void disableRemotePACQuery(String pacID, String subjectID) throws Exception {
 		List objects = new RemotePACQuery().getObjects("pacID = '" + pacID + "' and subject_id ='" + subjectID + "'");
 		if (objects.size() > 1)
@@ -194,6 +262,12 @@ public class RemotePACService extends RemotePACSBase {
 		}
 	}
 
+	/**
+	 * Enable  Remote PAC automatic daily query configuration from database
+	 * @param pacID
+	 * @param subjectID
+	 * @throws Exception
+	 */
 	public void enableRemotePACQuery(String pacID, String subjectID) throws Exception {
 		List objects = new RemotePACQuery().getObjects("pacID = '" + pacID + "' and subject_id ='" + subjectID + "'");
 		if (objects.size() > 1)
@@ -208,6 +282,12 @@ public class RemotePACService extends RemotePACSBase {
 		}
 	}
 
+	/**
+	 * Convert Remote PAC automatic database configuration to dto
+	 * @param query
+	 * @return
+	 * @throws Exception
+	 */
 	public RemotePACQueryConfig getConfig(RemotePACQuery query) throws Exception {
 		Subject subject = (Subject) new Subject(query.getSubjectId()).retrieve();
 		Project project = (Project) new Project(query.getProjectId()).retrieve();
@@ -217,6 +297,15 @@ public class RemotePACService extends RemotePACSBase {
 				query.getLastQueryStatus());
 	}
 	
+	/**
+	 * Query a Remote PAC given patient/studydate filters
+	 * @param pac
+	 * @param patientNameFilter
+	 * @param patientIDFilter
+	 * @param studyDateFilter
+	 * @return
+	 * @throws Exception
+	 */
 	public synchronized List<RemotePACEntity> queryRemoteData(RemotePAC pac, String patientNameFilter, String patientIDFilter, String studyDateFilter) throws Exception {
 		
 		try {
@@ -295,6 +384,9 @@ public class RemotePACService extends RemotePACSBase {
 		}
 	}
 	
+	/**
+	 * 
+	 */
 	public void clearQueryCache()
 	{
 		remoteQueryCache = new HashMap<String, QueryTreeRecord>();
@@ -358,6 +450,16 @@ public class RemotePACService extends RemotePACSBase {
 		return entities;
 	}
 	
+	/**
+	 * Initiate transfer of a Remote PAC images to local PAC (patient/study id is found, it is added to project)
+	 * @param pac
+	 * @param entityID - This ID is contained in the RemotePACEntity query result consists of pacid and series uid or instance uid
+	 * @param projectID
+	 * @param userName
+	 * @param sessionID
+	 * @return
+	 * @throws Exception
+	 */
 	public synchronized String retrieveRemoteData(RemotePAC pac, String entityID, String projectID, String userName, String sessionID) throws Exception {
 		String uniqueKey = entityID;
 		String root = uniqueKey;
@@ -434,6 +536,9 @@ public class RemotePACService extends RemotePACSBase {
 			return seriesUID;
 	}
 	
+	/**
+	 * @return
+	 */
 	public List<String> getPendingTransfers()
 	{
 		List<String> transfers = new ArrayList<String>();

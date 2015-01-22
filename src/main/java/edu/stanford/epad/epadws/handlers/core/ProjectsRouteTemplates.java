@@ -22,6 +22,7 @@ public class ProjectsRouteTemplates
 	public static final String STUDY_FILE_LIST = PROJECT + "/files/";
 	public static final String STUDY_FILE = PROJECT_FILE_LIST + "{filename}";
 	public static final String SERIES_LIST = STUDY + "/series/";
+	public static final String SERIESFILE_LIST = STUDY + "/seriesfiles/";
 	public static final String SERIES = SERIES_LIST + "{series}";
 	public static final String SERIES_AIM_LIST = SERIES + "/aims/";
 	public static final String SERIES_AIM = SERIES_AIM_LIST + "{aid}";

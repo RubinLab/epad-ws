@@ -26,10 +26,13 @@ package edu.stanford.epad.epadws.service;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.log4j.Level;
@@ -72,6 +75,9 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		return ourInstance;
 	}
 
+	/* (non-Javadoc)
+	 * @see edu.stanford.epad.epadws.service.EpadProjectOperations#clearCache()
+	 */
 	@Override
 	public void clearCache() {
 		projectCache = new HashMap<String, Project>();
@@ -79,6 +85,11 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		subjectCache = new HashMap<String, Subject>();
 	}
 	
+	/**
+	 * @param username
+	 * @return
+	 * @throws Exception
+	 */
 	private User getUserFromCache(String username) throws Exception
 	{
 		User user = userCache.get(username);
@@ -89,6 +100,11 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		return user;
 	}
 	
+	/**
+	 * @param projectID
+	 * @return
+	 * @throws Exception
+	 */
 	private Project getProjectFromCache(String projectID) throws Exception
 	{
 		Project project = projectCache.get(projectID);
@@ -99,6 +115,11 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		return project;
 	}
 	
+	/**
+	 * @param subjectUID
+	 * @return
+	 * @throws Exception
+	 */
 	private Subject getSubjectFromCache(String subjectUID) throws Exception
 	{
 		Subject subject = subjectCache.get(subjectUID);
@@ -109,6 +130,9 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		return subject;
 	}
 
+	/* (non-Javadoc)
+	 * @see edu.stanford.epad.epadws.service.EpadProjectOperations#createProject(java.lang.String, java.lang.String, java.lang.String, java.lang.String, edu.stanford.epad.epadws.models.ProjectType)
+	 */
 	@Override
 	public Project createProject(String loggedInUser, String projectId, String projectName,
 			String description, ProjectType type) throws Exception {
@@ -123,6 +147,9 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		return project;
 	}
 
+	/* (non-Javadoc)
+	 * @see edu.stanford.epad.epadws.service.EpadProjectOperations#updateProject(java.lang.String, java.lang.String, java.lang.String, java.lang.String, edu.stanford.epad.epadws.models.ProjectType)
+	 */
 	@Override
 	public Project updateProject(String loggedInUser, String projectId,
 			String projectName, String description, ProjectType type)
@@ -139,9 +166,12 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		return project;
 	}
 
+	/* (non-Javadoc)
+	 * @see edu.stanford.epad.epadws.service.EpadProjectOperations#createUser(java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.lang.String)
+	 */
 	@Override
 	public User createUser(String loggedInUser, String username, String firstName, String lastName, String email,
-			String password) throws Exception {
+			String password, List<String> addPermissions, List<String> removePermissions) throws Exception {
 		User user = new User();
 		user.setUsername(username);
 		user.setFirstName(firstName);
@@ -149,6 +179,15 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		user.setEmail(email);
 		String hashedPW = BCrypt.hashpw(password, BCrypt.gensalt());
 		user.setPassword(hashedPW);
+		String[] defaultPerms = EPADConfig.getParamValue("DefaultUserPermissions", User.CreateProjectPermission).split(",");
+		Set<String> perms = new HashSet<String>();
+		for (String perm: defaultPerms)
+			perms.add(perm);
+		for (String perm: addPermissions)
+			perms.add(perm);
+		for (String perm: removePermissions)
+			perms.remove(perm);
+		user.setPermissions(toStringList(perms));
 		user.setCreator(loggedInUser);
 		user.setEnabled(true);
 		user.save();
@@ -156,9 +195,22 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		return user;
 	}
 
+	private String toStringList(Collection<String> list)
+	{
+		if (list.isEmpty()) return "";
+		String strList = "";
+		for (String item: list)
+			strList = "," + item;
+		return strList.substring(1);
+	}
+	
+	/* (non-Javadoc)
+	 * @see edu.stanford.epad.epadws.service.EpadProjectOperations#updateUser(java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.lang.String)
+	 */
 	@Override
 	public User updateUser(String loggedInUserName, String username,
-			String firstName, String lastName, String email, String newpassword, String oldpassword)
+			String firstName, String lastName, String email, String newpassword, String oldpassword, 
+			List<String> addPermissions, List<String> removePermissions)
 			throws Exception {
 		User loggedInUser = getUser(loggedInUserName);
 		User user = new User();
@@ -176,11 +228,23 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 			else
 				throw new Exception("Invalid old password");
 		}
+		String[] oldPerms = user.getPermissions().split(",");
+		Set<String> perms = new HashSet<String>();
+		for (String perm: oldPerms)
+			perms.add(perm);
+		for (String perm: addPermissions)
+			perms.add(perm);
+		for (String perm: removePermissions)
+			perms.remove(perm);
+		user.setPermissions(toStringList(perms));
 		user.save();
 		userCache.put(user.getUsername(), user);
 		return user;
 	}
 
+	/* (non-Javadoc)
+	 * @see edu.stanford.epad.epadws.service.EpadProjectOperations#enableUser(java.lang.String, java.lang.String)
+	 */
 	@Override
 	public void enableUser(String loggedInUser, String username) throws Exception {
 		User user = getUser(username);
@@ -189,6 +253,9 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		userCache.put(user.getUsername(), user);
 	}
 
+	/* (non-Javadoc)
+	 * @see edu.stanford.epad.epadws.service.EpadProjectOperations#disableUser(java.lang.String, java.lang.String)
+	 */
 	@Override
 	public void disableUser(String loggedInUser, String username) throws Exception {
 		User user = getUser(username);
@@ -197,6 +264,9 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		userCache.put(user.getUsername(), user);
 	}
 
+	/* (non-Javadoc)
+	 * @see edu.stanford.epad.epadws.service.EpadProjectOperations#deleteUser(java.lang.String, java.lang.String)
+	 */
 	@Override
 	public void deleteUser(String loggedInUser, String username) throws Exception {
 		User user = getUser(username);
@@ -231,6 +301,9 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		} catch (Exception e) {	}
 	}
 
+	/* (non-Javadoc)
+	 * @see edu.stanford.epad.epadws.service.EpadProjectOperations#addUserToProject(java.lang.String, java.lang.String, java.lang.String, edu.stanford.epad.epadws.models.UserRole)
+	 */
 	@Override
 	public void addUserToProject(String loggedInUser, String projectId,
 			String username, UserRole role) throws Exception {
@@ -248,6 +321,9 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		ptou.save();
 	}
 
+	/* (non-Javadoc)
+	 * @see edu.stanford.epad.epadws.service.EpadProjectOperations#removeUserFromProject(java.lang.String, java.lang.String, java.lang.String)
+	 */
 	@Override
 	public void removeUserFromProject(String loggedInUser, String projectId,
 			String username) throws Exception {
@@ -258,6 +334,9 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 			ptou.delete();
 	}
 
+	/* (non-Javadoc)
+	 * @see edu.stanford.epad.epadws.service.EpadProjectOperations#setUserRoleForProject(java.lang.String, java.lang.String, java.lang.String, edu.stanford.epad.epadws.models.UserRole)
+	 */
 	@Override
 	public void setUserRoleForProject(String loggedInUser, String projectId,
 			String username, UserRole role) throws Exception {
@@ -268,6 +347,9 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		ptou.setRole(role.getName());
 	}
 
+	/* (non-Javadoc)
+	 * @see edu.stanford.epad.epadws.service.EpadProjectOperations#createSubject(java.lang.String, java.lang.String, java.lang.String, java.util.Date, java.lang.String)
+	 */
 	@Override
 	public Subject createSubject(String loggedInUser, String subjectUID,
 			String name, Date dob, String gender) throws Exception {
@@ -283,6 +365,9 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		return subject;
 	}
 
+	/* (non-Javadoc)
+	 * @see edu.stanford.epad.epadws.service.EpadProjectOperations#createStudy(java.lang.String, java.lang.String, java.lang.String)
+	 */
 	@Override
 	public Study createStudy(String loggedInUser, String studyUID,
 			String subjectUID) throws Exception {
@@ -299,6 +384,9 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		return study;
 	}
 
+	/* (non-Javadoc)
+	 * @see edu.stanford.epad.epadws.service.EpadProjectOperations#addSubjectToProject(java.lang.String, java.lang.String, java.lang.String)
+	 */
 	@Override
 	public void addSubjectToProject(String loggedInUser, String subjectUID,
 			String projectId) throws Exception {
@@ -331,6 +419,9 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		}
 	}
 
+	/* (non-Javadoc)
+	 * @see edu.stanford.epad.epadws.service.EpadProjectOperations#addStudyToProject(java.lang.String, java.lang.String, java.lang.String, java.lang.String)
+	 */
 	@Override
 	public void addStudyToProject(String loggedInUser, String studyUID,
 			String subjectUID, String projectId) throws Exception {
@@ -376,6 +467,9 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		}
 	}
 
+	/* (non-Javadoc)
+	 * @see edu.stanford.epad.epadws.service.EpadProjectOperations#removeSubjectFromProject(java.lang.String, java.lang.String, java.lang.String)
+	 */
 	@Override
 	public void removeSubjectFromProject(String loggedInUser,
 			String subjectUID, String projectId) throws Exception {
@@ -389,6 +483,9 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		ptos.delete();
 	}
 
+	/* (non-Javadoc)
+	 * @see edu.stanford.epad.epadws.service.EpadProjectOperations#removeStudyFromProject(java.lang.String, java.lang.String, java.lang.String)
+	 */
 	@Override
 	public void removeStudyFromProject(String loggedInUser, String studyUID,
 			String projectId) throws Exception {
@@ -404,6 +501,9 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		pss.deleteObjects("proj_subj_id = " + ptos.getId() + " and study_id =" + study.getId());
 	}
 
+	/* (non-Javadoc)
+	 * @see edu.stanford.epad.epadws.service.EpadProjectOperations#createFile(java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.io.File, java.lang.String, java.lang.String, edu.stanford.epad.epadws.models.FileType)
+	 */
 	@Override
 	public EpadFile createFile(String loggedInUser, String projectID,
 			String subjectUID, String studyUID, String seriesUID, File file,
@@ -455,6 +555,9 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		return efile;
 	}
 
+	/* (non-Javadoc)
+	 * @see edu.stanford.epad.epadws.service.EpadProjectOperations#getProject(java.lang.String)
+	 */
 	@Override
 	public Project getProject(String projectId) throws Exception {
 		Project project = projectCache.get(projectId);
@@ -465,6 +568,9 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		return project;
 	}
 
+	/* (non-Javadoc)
+	 * @see edu.stanford.epad.epadws.service.EpadProjectOperations#getUser(java.lang.String)
+	 */
 	@Override
 	public User getUser(String username) throws Exception {
 		User user = userCache.get(username);
@@ -485,6 +591,9 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		return user;
 	}
 
+	/* (non-Javadoc)
+	 * @see edu.stanford.epad.epadws.service.EpadProjectOperations#getUserByEmail(java.lang.String)
+	 */
 	@Override
 	public User getUserByEmail(String email) throws Exception {
 		User user = new User();
@@ -495,6 +604,9 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 			return null;
 	}
 
+	/* (non-Javadoc)
+	 * @see edu.stanford.epad.epadws.service.EpadProjectOperations#getSubject(java.lang.String)
+	 */
 	@Override
 	public Subject getSubject(String subjectUID) throws Exception {
 		Subject subject = subjectCache.get(subjectUID);
@@ -505,6 +617,9 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		return subject;
 	}
 
+	/* (non-Javadoc)
+	 * @see edu.stanford.epad.epadws.service.EpadProjectOperations#getStudy(java.lang.String)
+	 */
 	@Override
 	public Study getStudy(String studyUID) throws Exception {
 		Study study = new Study();
@@ -512,6 +627,9 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		return study;
 	}
 
+	/* (non-Javadoc)
+	 * @see edu.stanford.epad.epadws.service.EpadProjectOperations#getAllProjects()
+	 */
 	@Override
 	public List<Project> getAllProjects() throws Exception {
 		List objects = new Project().getObjects("1 = 1 order by projectId");
@@ -520,6 +638,9 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		return projects;
 	}
 
+	/* (non-Javadoc)
+	 * @see edu.stanford.epad.epadws.service.EpadProjectOperations#getPublicProjects()
+	 */
 	@Override
 	public List<Project> getPublicProjects() throws Exception {
 		List objects = new Project().getObjects("type = '" + ProjectType.PUBLIC + "' order by projectId");
@@ -528,6 +649,9 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		return projects;
 	}
 
+	/* (non-Javadoc)
+	 * @see edu.stanford.epad.epadws.service.EpadProjectOperations#getAllUsers()
+	 */
 	@Override
 	public List<User> getAllUsers() throws Exception {
 		List objects = new User().getObjects("1 = 1 order by username");
@@ -546,6 +670,9 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		return users;
 	}
 
+	/* (non-Javadoc)
+	 * @see edu.stanford.epad.epadws.service.EpadProjectOperations#getProjectsForUser(java.lang.String)
+	 */
 	@Override
 	public List<Project> getProjectsForUser(String username) throws Exception {
 		User user = getUser(username);
@@ -565,6 +692,9 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		return projects;
 	}
 
+	/* (non-Javadoc)
+	 * @see edu.stanford.epad.epadws.service.EpadProjectOperations#getProjectForUser(java.lang.String, java.lang.String)
+	 */
 	@Override
 	public Project getProjectForUser(String username, String projectID) throws Exception {
 		Project project = getProject(projectID);
@@ -581,6 +711,9 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 			return null;
 	}
 
+	/* (non-Javadoc)
+	 * @see edu.stanford.epad.epadws.service.EpadProjectOperations#getUsersForProject(java.lang.String)
+	 */
 	@Override
 	public List<User> getUsersForProject(String projectId) throws Exception {
 		Project project = getProject(projectId);
@@ -588,6 +721,11 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		return getUsersByProjectId(project.getId());
 	}
 
+	/**
+	 * @param id
+	 * @return
+	 * @throws Exception
+	 */
 	private List<User> getUsersByProjectId(long id)
 			throws Exception {
 		List objects = new User().getObjects("id in (select user_id from " 
@@ -599,6 +737,9 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		return users;
 	}
 	
+	/* (non-Javadoc)
+	 * @see edu.stanford.epad.epadws.service.EpadProjectOperations#getUsersWithRoleForProject(java.lang.String)
+	 */
 	@Override
 	public List<User> getUsersWithRoleForProject(String projectId)
 			throws Exception {
@@ -617,6 +758,9 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		return users;
 	}
 
+	/* (non-Javadoc)
+	 * @see edu.stanford.epad.epadws.service.EpadProjectOperations#getSubjectsForProject(java.lang.String)
+	 */
 	@Override
 	public List<Subject> getSubjectsForProject(String projectId)
 			throws Exception {
@@ -625,6 +769,11 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		return getSubjectsByProjectId(project.getId());
 	}
 
+	/**
+	 * @param id
+	 * @return
+	 * @throws Exception
+	 */
 	private List<Subject> getSubjectsByProjectId(long id)
 			throws Exception {
 		List objects = new Subject().getObjects("id in (select subject_id from " 
@@ -636,6 +785,9 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		return subjects;
 	}
 	
+	/* (non-Javadoc)
+	 * @see edu.stanford.epad.epadws.service.EpadProjectOperations#getSubjectForProject(java.lang.String, java.lang.String)
+	 */
 	@Override
 	public Subject getSubjectForProject(String projectId, String subjectUID)
 			throws Exception {
@@ -648,6 +800,9 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 			return null;
 	}
 
+	/* (non-Javadoc)
+	 * @see edu.stanford.epad.epadws.service.EpadProjectOperations#getSubjectFromName(java.lang.String)
+	 */
 	@Override
 	public Subject getSubjectFromName(String subjectName) throws Exception {
 		Subject subject = new Subject();
@@ -658,6 +813,9 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 			return null;
 	}
 
+	/* (non-Javadoc)
+	 * @see edu.stanford.epad.epadws.service.EpadProjectOperations#getSubjectFromNameForProject(java.lang.String, java.lang.String)
+	 */
 	@Override
 	public Subject getSubjectFromNameForProject(String subjectName,
 			String projectID) throws Exception {
@@ -669,6 +827,9 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		return null;
 	}
 
+	/* (non-Javadoc)
+	 * @see edu.stanford.epad.epadws.service.EpadProjectOperations#getProjectsForSubject(java.lang.String)
+	 */
 	@Override
 	public List<Project> getProjectsForSubject(String subjectUID)
 			throws Exception {
@@ -682,6 +843,9 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		return projects;
 	}
 
+	/* (non-Javadoc)
+	 * @see edu.stanford.epad.epadws.service.EpadProjectOperations#getStudiesForProjectAndSubject(java.lang.String, java.lang.String)
+	 */
 	@Override
 	public List<Study> getStudiesForProjectAndSubject(String projectId,
 			String subjectUID) throws Exception {
@@ -697,6 +861,9 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		return studies;
 	}
 
+	/* (non-Javadoc)
+	 * @see edu.stanford.epad.epadws.service.EpadProjectOperations#getFirstProjectForStudy(java.lang.String)
+	 */
 	@Override
 	public Project getFirstProjectForStudy(String studyUID) throws Exception {
 		Study study = getStudy(studyUID);
@@ -716,6 +883,9 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		return null;
 	}
 
+	/* (non-Javadoc)
+	 * @see edu.stanford.epad.epadws.service.EpadProjectOperations#isStudyInProjectAndSubject(java.lang.String, java.lang.String, java.lang.String)
+	 */
 	@Override
 	public boolean isStudyInProjectAndSubject(String projectId,
 			String subjectUID, String studyUID) throws Exception {
@@ -726,6 +896,9 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		return new ProjectToSubjectToStudy().getCount("proj_subj_id = " + ptos.getId() + " and study_id=" + study.getId()) > 0;
 	}
 
+	/* (non-Javadoc)
+	 * @see edu.stanford.epad.epadws.service.EpadProjectOperations#getAllStudiesForProject(java.lang.String)
+	 */
 	@Override
 	public List<Study> getAllStudiesForProject(String projectId) throws Exception {
 		Project project = getProject(projectId);
@@ -742,6 +915,9 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		return studies;
 	}
 
+	/* (non-Javadoc)
+	 * @see edu.stanford.epad.epadws.service.EpadProjectOperations#getStudiesForSubject(java.lang.String)
+	 */
 	@Override
 	public List<Study> getStudiesForSubject(String subjectUID) throws Exception {
 		Subject subject = getSubject(subjectUID);
@@ -751,6 +927,9 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		return studies;
 	}
 
+	/* (non-Javadoc)
+	 * @see edu.stanford.epad.epadws.service.EpadProjectOperations#setUserStatusForProjectAndSubject(java.lang.String, java.lang.String, java.lang.String, java.lang.String)
+	 */
 	@Override
 	public void setUserStatusForProjectAndSubject(String loggedInUser,
 			String projectID, String subjectUID, String status) throws Exception {
@@ -770,6 +949,9 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		psu.save();
 	}
 
+	/* (non-Javadoc)
+	 * @see edu.stanford.epad.epadws.service.EpadProjectOperations#getUserStatusForProjectAndSubject(java.lang.String, java.lang.String, java.lang.String)
+	 */
 	@Override
 	public String getUserStatusForProjectAndSubject(String loggedInUser,
 			String projectID, String subjectUID) throws Exception {
@@ -784,6 +966,9 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 			return psu.getStatus();
 	}
 
+	/* (non-Javadoc)
+	 * @see edu.stanford.epad.epadws.service.EpadProjectOperations#getUserStatusForProjectSubjects(java.lang.String, java.lang.String)
+	 */
 	@Override
 	public Map<String, String> getUserStatusForProjectSubjects(
 			String loggedInUser, String projectID) throws Exception {
@@ -815,6 +1000,9 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		return subjectStatus;
 	}
 
+	/* (non-Javadoc)
+	 * @see edu.stanford.epad.epadws.service.EpadProjectOperations#getUserStatusForProjectSubjectIds(java.lang.String, java.lang.String)
+	 */
 	@Override
 	public Map<Long, String> getUserStatusForProjectSubjectIds(
 			String loggedInUser, String projectID) throws Exception {
@@ -839,6 +1027,9 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		return subjectIdStatus;
 	}
 
+	/* (non-Javadoc)
+	 * @see edu.stanford.epad.epadws.service.EpadProjectOperations#isCollaborator(java.lang.String, java.lang.String)
+	 */
 	@Override
 	public boolean isCollaborator(String username, String projectID) throws Exception {
 		if (projectID == null || projectID.trim().length() == 0)
@@ -859,6 +1050,9 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 			return false;
 	}
 
+	/* (non-Javadoc)
+	 * @see edu.stanford.epad.epadws.service.EpadProjectOperations#isMember(java.lang.String, java.lang.String)
+	 */
 	@Override
 	public boolean isMember(String username, String projectID)
 			throws Exception {
@@ -874,6 +1068,9 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 			return false;
 	}
 
+	/* (non-Javadoc)
+	 * @see edu.stanford.epad.epadws.service.EpadProjectOperations#isOwner(java.lang.String, java.lang.String)
+	 */
 	@Override
 	public boolean isOwner(String username, String projectID)
 			throws Exception {
@@ -892,6 +1089,9 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 			return false;
 	}
 
+	/* (non-Javadoc)
+	 * @see edu.stanford.epad.epadws.service.EpadProjectOperations#getUserProjectRole(java.lang.String, java.lang.String)
+	 */
 	@Override
 	public UserRole getUserProjectRole(String username,
 			String projectID) throws Exception {
@@ -904,6 +1104,9 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		return UserRole.getRole(role);
 	}
 
+	/* (non-Javadoc)
+	 * @see edu.stanford.epad.epadws.service.EpadProjectOperations#getEpadFile(java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.lang.String)
+	 */
 	@Override
 	public EpadFile getEpadFile(String projectID,
 			String subjectUID, String studyUID, String seriesUID,
@@ -942,6 +1145,9 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		return file;
 	}
 
+	/* (non-Javadoc)
+	 * @see edu.stanford.epad.epadws.service.EpadProjectOperations#getProjectFiles(java.lang.String)
+	 */
 	@Override
 	public List<EpadFile> getProjectFiles(String projectID) throws Exception {
 		Project project = getProject(projectID);
@@ -951,6 +1157,9 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		return efiles;
 	}
 
+	/* (non-Javadoc)
+	 * @see edu.stanford.epad.epadws.service.EpadProjectOperations#getSubjectFiles(java.lang.String, java.lang.String)
+	 */
 	@Override
 	public List<EpadFile> getSubjectFiles(String projectID, String subjectUID) throws Exception {
 		Project project = getProject(projectID);
@@ -964,6 +1173,9 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		return efiles;
 	}
 
+	/* (non-Javadoc)
+	 * @see edu.stanford.epad.epadws.service.EpadProjectOperations#getStudyFiles(java.lang.String, java.lang.String, java.lang.String)
+	 */
 	@Override
 	public List<EpadFile> getStudyFiles(String projectID, String subjectUID, String studyUID) throws Exception {
 		Project project = getProject(projectID);
@@ -980,6 +1192,9 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		return efiles;
 	}
 
+	/* (non-Javadoc)
+	 * @see edu.stanford.epad.epadws.service.EpadProjectOperations#getSeriesFiles(java.lang.String, java.lang.String, java.lang.String, java.lang.String)
+	 */
 	@Override
 	public List<EpadFile> getSeriesFiles(String projectID, String subjectUID, String studyUID, String seriesUID) throws Exception {
 		Project project = getProject(projectID);
@@ -998,6 +1213,9 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		return efiles;
 	}
 
+	/* (non-Javadoc)
+	 * @see edu.stanford.epad.epadws.service.EpadProjectOperations#deleteFile(java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.lang.String)
+	 */
 	@Override
 	public void deleteFile(String loggedInUser, String projectID,
 			String subjectUID, String studyUID, String seriesUID,
@@ -1006,6 +1224,9 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		
 	}
 
+	/* (non-Javadoc)
+	 * @see edu.stanford.epad.epadws.service.EpadProjectOperations#deleteProject(java.lang.String, java.lang.String)
+	 */
 	@Override
 	public void deleteProject(String username, String projectID)
 			throws Exception {
@@ -1017,6 +1238,9 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		project.delete();
 	}
 
+	/* (non-Javadoc)
+	 * @see edu.stanford.epad.epadws.service.EpadProjectOperations#deleteSubject(java.lang.String, java.lang.String, java.lang.String)
+	 */
 	@Override
 	public void deleteSubject(String username, String subjectUID,
 			String projectID) throws Exception {
@@ -1029,6 +1253,9 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		// TODO: delete subject if not used any more
 	}
 
+	/* (non-Javadoc)
+	 * @see edu.stanford.epad.epadws.service.EpadProjectOperations#deleteStudy(java.lang.String, java.lang.String, java.lang.String, java.lang.String)
+	 */
 	@Override
 	public void deleteStudy(String username, String studyUID,
 			String subjectUID, String projectID) throws Exception {
@@ -1041,18 +1268,27 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		// TODO: delete study if not used any more
 	}
 
+	/* (non-Javadoc)
+	 * @see edu.stanford.epad.epadws.service.EpadProjectOperations#deleteSubject(java.lang.String, java.lang.String)
+	 */
 	@Override
 	public void deleteSubject(String username, String subjectUID) throws Exception {
 		Subject subject = getSubject(subjectUID);
 		subject.delete();
 	}
 
+	/* (non-Javadoc)
+	 * @see edu.stanford.epad.epadws.service.EpadProjectOperations#deleteStudy(java.lang.String, java.lang.String)
+	 */
 	@Override
 	public void deleteStudy(String username, String studyUID) throws Exception {
 		Study study = getStudy(studyUID);
 		study.delete();
 	}
 
+	/* (non-Javadoc)
+	 * @see edu.stanford.epad.epadws.service.EpadProjectOperations#getUserLogs(java.lang.String)
+	 */
 	@Override
 	public List<EventLog> getUserLogs(String username) {
 		try {
@@ -1064,6 +1300,9 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		return null;
 	}
 
+	/* (non-Javadoc)
+	 * @see edu.stanford.epad.epadws.service.EpadProjectOperations#getDBObject(java.lang.Class, long)
+	 */
 	@Override
 	public AbstractDAO getDBObject(Class dbClass, long id) throws Exception {
 		AbstractDAO object = (AbstractDAO) dbClass.newInstance();

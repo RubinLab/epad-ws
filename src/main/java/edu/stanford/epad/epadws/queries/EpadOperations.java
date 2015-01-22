@@ -111,6 +111,8 @@ public interface EpadOperations
 
 	EPADFileList getFileDescriptions(StudyReference studyReference, String username, String sessionID,
 			EPADSearchFilter searchFilter) throws Exception;
+	List<EPADFile> getEPADFiles(StudyReference studyReference, String username, String sessionID,
+			EPADSearchFilter searchFilter) throws Exception;
 
 	EPADFile getFileDescription(StudyReference studyReference, String filename, String username, String sessionID) throws Exception;
 
@@ -138,7 +140,8 @@ public interface EpadOperations
 
 	String setSubjectStatus(SubjectReference subjectReference, String sessionID, String username) throws Exception;
 	
-	void createOrModifyUser(String loggedInUser, String username, String firstname, String lastname, String email, String password, String oldpassword) throws Exception;
+	void createOrModifyUser(String loggedInUser, String username, String firstname, String lastname, String email, 
+			String password, String oldpassword, String[]addPermission, String[] removePermissions) throws Exception;
 	
 	void enableUser(String loggedInUser, String username) throws Exception;
 	

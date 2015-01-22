@@ -243,6 +243,26 @@ public class EPADHandler extends AbstractHandler
 					statusCode = HttpServletResponse.SC_NOT_FOUND;
 				}
 				
+			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.SERIESFILE_LIST, pathInfo)) {
+				StudyReference studyReference = StudyReference.extract(ProjectsRouteTemplates.SERIESFILE_LIST, pathInfo);
+				EPADSeriesList seriesList = epadOperations.getSeriesDescriptions(studyReference, username, sessionID,
+						searchFilter, true);
+				EPADFileList fileList = epadOperations.getFileDescriptions(studyReference, username, sessionID, searchFilter);
+				List objects = new ArrayList();
+				objects.add(seriesList);
+				objects.add(fileList);
+				responseStream.append(new Gson().toJson(objects));
+//				List<EPADFile> files = epadOperations.getEPADFiles(studyReference, username, sessionID, searchFilter);
+//				for (EPADSeries series: seriesList.ResultSet.Result)
+//				{
+//					EPADFile efile = new EPADFile(studyReference.projectID, studyReference.subjectID, series.patientID, studyReference.studyUID, series.seriesUID,
+//							series.seriesUID, 0, FileType.SERIES.getName(), new SimpleDateFormat("yyyy-dd-MM HH:mm:ss").format(series.seriesDate), "");
+//					files.add(0, efile);
+//				}
+//				responseStream.append(new EPADFileList(files).toJSON());
+				statusCode = HttpServletResponse.SC_OK;
+
+
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.IMAGE_LIST, pathInfo)) {
 				SeriesReference seriesReference = SeriesReference.extract(ProjectsRouteTemplates.IMAGE_LIST, pathInfo);
 				EPADImageList imageList = epadOperations.getImageDescriptions(seriesReference, sessionID, searchFilter);
@@ -259,19 +279,24 @@ public class EPADHandler extends AbstractHandler
 					log.info("Image " + imageReference.imageUID + " not found");
 					statusCode = HttpServletResponse.SC_NOT_FOUND;
 				}
+				
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.IMAGEFILE_LIST, pathInfo)) {
-				SeriesReference seriesReference = SeriesReference.extract(ProjectsRouteTemplates.IMAGE_LIST, pathInfo);
+				SeriesReference seriesReference = SeriesReference.extract(ProjectsRouteTemplates.IMAGEFILE_LIST, pathInfo);
 				EPADImageList imageList = epadOperations.getImageDescriptions(seriesReference, sessionID, searchFilter);
-				List<EPADFile> files = epadOperations.getEPADFiles(seriesReference, username, sessionID, searchFilter);
-				for (EPADImage image: imageList.ResultSet.Result)
-				{
-					EPADFile efile = new EPADFile(seriesReference.projectID, seriesReference.subjectID, image.patientID, seriesReference.studyUID, seriesReference.seriesUID,
-							image.imageUID, 0, FileType.DICOM.getName(), new SimpleDateFormat("yyyy-dd-MM HH:mm:ss").format(image.imageDate), image.lossyImage);
-					files.add(0, efile);
-				}
-				responseStream.append(new EPADFileList(files).toJSON());
+				EPADFileList fileList = epadOperations.getFileDescriptions(seriesReference, username, sessionID, searchFilter);
+				List objects = new ArrayList();
+				objects.add(imageList);
+				objects.add(fileList);
+				responseStream.append(new Gson().toJson(objects));
+//				List<EPADFile> files = epadOperations.getEPADFiles(seriesReference, username, sessionID, searchFilter);
+//				for (EPADImage image: imageList.ResultSet.Result)
+//				{
+//					EPADFile efile = new EPADFile(seriesReference.projectID, seriesReference.subjectID, image.patientID, seriesReference.studyUID, seriesReference.seriesUID,
+//							image.imageUID, 0, FileType.DICOM.getName(), new SimpleDateFormat("yyyy-dd-MM HH:mm:ss").format(image.imageDate), image.lossyImage);
+//					files.add(0, efile);
+//				}
+//				responseStream.append(new EPADFileList(files).toJSON());
 				statusCode = HttpServletResponse.SC_OK;
-
 
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.FRAME_LIST, pathInfo)) {
 				ImageReference imageReference = ImageReference.extract(ProjectsRouteTemplates.FRAME_LIST, pathInfo);
@@ -1084,7 +1109,9 @@ public class EPADHandler extends AbstractHandler
 				String email = httpRequest.getParameter("email");
 				String password = httpRequest.getParameter("password");
 				String oldpassword = httpRequest.getParameter("oldpassword");
-				epadOperations.createOrModifyUser(username, target_username, firstname, lastname, email, password, oldpassword);
+				String[] addPermissions = httpRequest.getParameterValues("addPermission");
+				String[] removePermissions = httpRequest.getParameterValues("removePermission");
+				epadOperations.createOrModifyUser(username, target_username, firstname, lastname, email, password, oldpassword, addPermissions, removePermissions);
 				String enable = httpRequest.getParameter("enable");
 				if ("true".equalsIgnoreCase(enable))
 					epadOperations.enableUser(username, target_username);
@@ -1276,7 +1303,9 @@ public class EPADHandler extends AbstractHandler
 					String email = httpRequest.getParameter("email");
 					String password = httpRequest.getParameter("password");
 					String oldpassword = httpRequest.getParameter("oldpassword");
-					epadOperations.createOrModifyUser(username, target_username, firstname, lastname, email, password, oldpassword);
+					String[] addPermissions = httpRequest.getParameterValues("addPermission");
+					String[] removePermissions = httpRequest.getParameterValues("removePermission");
+					epadOperations.createOrModifyUser(username, target_username, firstname, lastname, email, password, oldpassword, addPermissions, removePermissions);
 					String enable = httpRequest.getParameter("enable");
 					if ("true".equalsIgnoreCase(enable))
 						epadOperations.enableUser(username, target_username);

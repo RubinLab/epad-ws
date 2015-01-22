@@ -70,11 +70,13 @@ public class RemotePACQueryTask implements Runnable
 				List<RemotePACEntity> entities = rps.queryRemoteData(pac, null, subject.getSubjectUID(), studyDate);
 				query.setLastQueryStatus("Query Completed, number of new objects:" + entities.size());
 				String status = "";
-				boolean lastStudyDateUpdated = false;
+				Date newStudyDate = null;
 				for (RemotePACEntity entity: entities)
 				{
+					boolean lastStudyDateUpdated = true;
 					if (entity.entityType.equalsIgnoreCase("Study"))
 					{
+						lastStudyDateUpdated = false;
 						String projectID = null;
 						if (query.getProjectId() != null)
 						{
@@ -83,12 +85,10 @@ public class RemotePACQueryTask implements Runnable
 						}
 						String studyUID = rps.retrieveRemoteData(pac, entity.entityID, projectID, query.getRequestor(), "");
 						status = status + "\nStudy:" + studyUID + " transfer initiated from PAC " + pac.pacID;
-						Date newStudyDate = null;
 						if (studyUID.indexOf(":") != -1)
 						{
 							studyDate = studyUID.substring(studyUID.lastIndexOf(":")+1);
 							Date sdate = getDate(studyDate);
-							log.info("Study date:" + studyDate);
 							if (sdate != null && (newStudyDate == null || sdate.before(newStudyDate)))
 							{
 								newStudyDate = sdate;

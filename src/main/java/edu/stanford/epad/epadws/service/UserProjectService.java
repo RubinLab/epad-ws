@@ -56,6 +56,12 @@ import edu.stanford.epad.epadws.xnat.XNATSessionOperations;
 import edu.stanford.epad.epadws.xnat.XNATUtil;
 import edu.stanford.hakan.aim3api.base.ImageAnnotation;
 
+/**
+ * Wrapper class to call either XNAT or EPAD project/user api
+ * 
+ * @author Dev Gude
+ *
+ */
 public class UserProjectService {
 	private static final EPADLogger log = EPADLogger.getInstance();
 	
@@ -66,6 +72,14 @@ public class UserProjectService {
 	
 	private static final String XNAT_UPLOAD_PROPERTIES_FILE_NAME = "xnat_upload.properties";
 	
+	/**
+	 * Check if user is collaborator
+	 * @param sessionID
+	 * @param username
+	 * @param projectID
+	 * @return
+	 * @throws Exception
+	 */
 	public static boolean isCollaborator(String sessionID, String username, String projectID) throws Exception {
 		if (EPADConfig.UseEPADUsersProjects) {
 			return projectOperations.isCollaborator(username, projectID);
@@ -74,6 +88,14 @@ public class UserProjectService {
 		}				
 	}
 	
+	/**
+	 * Check if user is owner
+	 * @param sessionID
+	 * @param username
+	 * @param projectID
+	 * @return
+	 * @throws Exception
+	 */
 	public static boolean isOwner(String sessionID, String username, String projectID) throws Exception {
 		if (EPADConfig.UseEPADUsersProjects) {
 			return projectOperations.isOwner(username, projectID);
@@ -82,6 +104,14 @@ public class UserProjectService {
 		}				
 	}
 	
+	/**
+	 * Check if user is member
+	 * @param sessionID
+	 * @param username
+	 * @param projectID
+	 * @return
+	 * @throws Exception
+	 */
 	public static boolean isMember(String sessionID, String username, String projectID) throws Exception {
 		if (EPADConfig.UseEPADUsersProjects) {
 			return projectOperations.isMember(username, projectID);
@@ -90,6 +120,11 @@ public class UserProjectService {
 		}				
 	}
 	
+	/**
+	 * Get all project ids
+	 * @return
+	 * @throws Exception
+	 */
 	public static Set<String> getAllProjectIDs() throws Exception {
 		if (EPADConfig.UseEPADUsersProjects) {
 			List<Project> projects = projectOperations.getAllProjects();
@@ -103,6 +138,12 @@ public class UserProjectService {
 		}				
 	}
 	
+	/**
+	 * Get all study uids for project
+	 * @param projectID
+	 * @return
+	 * @throws Exception
+	 */
 	public static Set<String> getAllStudyUIDsForProject(String projectID) throws Exception {
 		if (EPADConfig.UseEPADUsersProjects) {
 			List<Study> studies = projectOperations.getAllStudiesForProject(projectID);
@@ -116,6 +157,13 @@ public class UserProjectService {
 		}				
 	}
 	
+	/**
+	 * Get all study uids for subject
+	 * @param projectID
+	 * @param patientID
+	 * @return
+	 * @throws Exception
+	 */
 	public static Set<String> getStudyUIDsForSubject(String projectID, String patientID) throws Exception {
 		if (EPADConfig.UseEPADUsersProjects) {
 			List<Study> studies = projectOperations.getStudiesForProjectAndSubject(projectID, patientID);
@@ -129,6 +177,12 @@ public class UserProjectService {
 		}				
 	}
 	
+	/**
+	 * Get first project fro study
+	 * @param studyUID
+	 * @return
+	 * @throws Exception
+	 */
 	public static String getFirstProjectForStudy(String studyUID) throws Exception {
 		if (EPADConfig.UseEPADUsersProjects) {
 			Project project = projectOperations.getFirstProjectForStudy(studyUID);
@@ -139,6 +193,12 @@ public class UserProjectService {
 		}						
 	}
 	
+	/**
+	 * Get subjectids for project
+	 * @param projectID
+	 * @return
+	 * @throws Exception
+	 */
 	public static Set<String> getSubjectIDsForProject(String projectID) throws Exception {
 		if (EPADConfig.UseEPADUsersProjects) {
 			List<Subject> subjects = projectOperations.getSubjectsForProject(projectID);
@@ -165,6 +225,10 @@ public class UserProjectService {
 	 * skipped.
 	 * 
 	 * @param dicomUploadDirectory
+	 */
+	/**
+	 * @param dicomUploadDirectory
+	 * @return
 	 */
 	public static String createProjectEntitiesFromDICOMFilesInUploadDirectory(File dicomUploadDirectory)
 	{
@@ -205,6 +269,15 @@ public class UserProjectService {
 		return null;
 	}
 	
+	/**
+	 * Create subject/study records from uploaded dicoms and add to project 
+	 * @param dicomUploadDirectory
+	 * @param projectID
+	 * @param sessionID
+	 * @param username
+	 * @return
+	 * @throws Exception
+	 */
 	public static int createProjectEntitiesFromDICOMFilesInUploadDirectory(File dicomUploadDirectory, String projectID, String sessionID, String username) throws Exception
 	{
 		int numberOfDICOMFiles = 0;
@@ -215,6 +288,14 @@ public class UserProjectService {
 		return numberOfDICOMFiles;
 	}
 	
+	/**
+	 * Create subject/study records from uploaded dicom file and add to project 
+	 * @param dicomFile
+	 * @param projectID
+	 * @param sessionID
+	 * @param username
+	 * @throws Exception
+	 */
 	public static void createProjectEntitiesFromDICOMFile(File dicomFile, String projectID, String sessionID, String username) throws Exception
 	{
 		DicomObject dicomObject = DicomReader.getDicomObject(dicomFile);
@@ -255,6 +336,15 @@ public class UserProjectService {
 			log.warning("Missing patient name, ID or studyUID in DICOM file " + dicomFile.getAbsolutePath());
 	}
 
+	/**
+	 * Add subject/study records to project 
+	 * @param subjectID
+	 * @param subjectName
+	 * @param studyUID
+	 * @param projectID
+	 * @param sessionID
+	 * @param username
+	 */
 	public static void addSubjectAndStudyToProject(String subjectID, String subjectName, String studyUID, String projectID, String sessionID, String username) {
 		if (!EPADConfig.UseEPADUsersProjects) {
 			String xnatSubjectLabel = XNATUtil.subjectID2XNATSubjectLabel(subjectID);
@@ -287,6 +377,10 @@ public class UserProjectService {
 		return files;
 	}
 
+	/**
+	 * @param file
+	 * @return
+	 */
 	public static boolean isDicomFile(File file)
 	{
 		return file.isFile()
