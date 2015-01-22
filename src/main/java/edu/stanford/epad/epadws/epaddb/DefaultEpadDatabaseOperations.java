@@ -1892,6 +1892,7 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 				else if (columns[i][1].equals("Integer"))
 				{
 					Integer value = rs.getInt(columns[i][2]);
+					if (rs.getObject(columns[i][2]) == null) value = null;
 					Method method = data.getClass().getMethod(methodName, new Class[] {Integer.class});
 					method.invoke(data, new Object[] {value});
 				}
@@ -1904,6 +1905,7 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 				else if (columns[i][1].equals("Long"))
 				{
 					Long value = rs.getLong(columns[i][2]);
+					if (rs.getObject(columns[i][2]) == null) value = null;
 					Method method = data.getClass().getMethod(methodName, new Class[] {Long.class});
 					method.invoke(data, new Object[] {value});
 				}
@@ -1916,6 +1918,7 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 				else if (columns[i][1].equals("Boolean"))
 				{
 					Boolean value = rs.getBoolean(columns[i][2]);
+					if (rs.getObject(columns[i][2]) == null) value = null;
 					Method method = data.getClass().getMethod(methodName, new Class[] {Boolean.class});
 					method.invoke(data, new Object[] {value});
 				}
@@ -1943,6 +1946,7 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 				else if (columns[i][1].equals("Double"))
 				{
 					Double value = rs.getDouble(columns[i][2]);
+					if (rs.getObject(columns[i][2]) == null) value = null;
 					Method method = data.getClass().getMethod(methodName, new Class[] {Double.class});
 					method.invoke(data, new Object[] {value});
 				}

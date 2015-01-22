@@ -173,6 +173,8 @@ public class EpadDatabase
 		                String inputLine;
 		                while ((inputLine = br.readLine()) != null)
 		                {
+		                	if (inputLine.startsWith("--")) continue;
+		                	if (inputLine.startsWith("#")) continue;
 		                	script = script + "\n" + inputLine;
 		                }
 		                br.close();
