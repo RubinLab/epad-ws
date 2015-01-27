@@ -775,6 +775,8 @@ public class AIMUtil
 			root.appendChild(n); // Adding to the root
 		}
 		String queryResults = XmlDocumentToString(doc,"gme://caCORE.caCORE/4.4/edu.northwestern.radiology.AIM");
+		
+		log.info(queryResults);
 		responseStream.print(queryResults);
 	}
 
