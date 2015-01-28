@@ -45,6 +45,8 @@ public class User extends AbstractDAO {
 	String permissions;
 	Date lastLogin;
 	boolean admin;
+	boolean passwordExpired;
+	Date passwordUpdate;
 	String creator;
 	Date createdTime;
 	Date updateTime;
@@ -52,6 +54,7 @@ public class User extends AbstractDAO {
 	transient List<EventLog> eventLogs = new ArrayList<EventLog>();
 	transient Map<String, String> projectToRole; // List of projects and the user's role in them
 	public static final String CreateProjectPermission = "CreateProject";
+	public static final String CreateWorkListPermission = "CreateWorkList";
 	public static final String CreateUserPermission = "CreateUser";
 	public static final String CreatePACPermission = "CreatePAC";
 	public static final String CreateAutoPACQueryPermission = "CreateAutoPACQuery";
@@ -152,6 +155,22 @@ public class User extends AbstractDAO {
 		this.admin = admin;
 	}
 
+	public boolean isPasswordExpired() {
+		return passwordExpired;
+	}
+
+	public void setPasswordExpired(boolean passwordExpired) {
+		this.passwordExpired = passwordExpired;
+	}
+
+	public Date getPasswordUpdate() {
+		return passwordUpdate;
+	}
+
+	public void setPasswordUpdate(Date passwordUpdate) {
+		this.passwordUpdate = passwordUpdate;
+	}
+
 	public String getCreator() {
 		return creator;
 	}
@@ -228,6 +247,8 @@ public class User extends AbstractDAO {
         {"permissions","String","permissions","varchar"},
         {"enabled","boolean","enabled","bit"},
         {"admin","boolean","admin","bit"},
+        {"passwordExpired","boolean","passwordexpired","bit"},
+        {"passwordUpdate","Date","passwordupdate","date"},
         {"lastLogin","Date","lastLogin","timestamp"},
         {"creator","String","creator","varchar"},
         {"createdTime","Date","createdtime","timestamp"},

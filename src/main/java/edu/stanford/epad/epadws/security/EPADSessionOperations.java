@@ -233,6 +233,11 @@ public class EPADSessionOperations
 				log.debug("Password:" + user.getPassword() + " Entered:" + password);
 				if (password.equals(user.getPassword()))
 				{
+					if (!user.isPasswordExpired())
+					{
+						user.setPasswordExpired(true);
+						user.save();
+					}
 					String sessionId = idGenerator.generateId(16);
 					EPADSession session = new EPADSession(sessionId, username, SESSION_LIFESPAN);
 					currentSessions.put(sessionId, session);

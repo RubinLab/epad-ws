@@ -2421,7 +2421,7 @@ public class DefaultEpadOperations implements EpadOperations
 			XNATUserList xusers = XNATQueries.getAllUsers();
 			for (XNATUser user: xusers.ResultSet.Result) {
 				EPADUser epadUser = new EPADUser(user.displayname, user.login, 
-						user.firstname, user.lastname, user.email, false, false, "",null);
+						user.firstname, user.lastname, user.email, false, false, false, "",null);
 				userlist.addEPADUser(epadUser);
 			}
 			
@@ -2440,7 +2440,7 @@ public class DefaultEpadOperations implements EpadOperations
 					projectToRole = user.getProjectToRole();
 				}
 				EPADUser epadUser = new EPADUser(user.getFullName(), user.getUsername(), 
-						user.getFirstName(), user.getLastName(), user.getEmail(), user.isEnabled(), user.isAdmin(), "",permissions, projects, projectToRole, null);
+						user.getFirstName(), user.getLastName(), user.getEmail(), user.isEnabled(), user.isAdmin(), user.isPasswordExpired(), "", permissions, projects, projectToRole, null);
 				userlist.addEPADUser(epadUser);
 			}
 		}
@@ -2455,7 +2455,7 @@ public class DefaultEpadOperations implements EpadOperations
 			for (XNATUser user: xusers.ResultSet.Result) {
 				if (username.equalsIgnoreCase(user.login) || username.equalsIgnoreCase(user.email)) {
 					EPADUser epadUser = new EPADUser(user.displayname, user.login, 
-						user.firstname, user.lastname, user.email, false, false, "", null);
+						user.firstname, user.lastname, user.email, false, false, false, "", null);
 					return epadUser;
 				};
 			}
@@ -2485,7 +2485,7 @@ public class DefaultEpadOperations implements EpadOperations
 				projectToRole = user.getProjectToRole();
 			}
 			EPADUser epadUser = new EPADUser(user.getFullName(), user.getUsername(), 
-					user.getFirstName(), user.getLastName(), user.getEmail(), user.isEnabled(), user.isAdmin(), "", permissions, projects, projectToRole, messages);
+					user.getFirstName(), user.getLastName(), user.getEmail(), user.isEnabled(), user.isAdmin(), user.isPasswordExpired(), "", permissions, projects, projectToRole, messages);
 			return epadUser;
 		}
 		return null;
@@ -2591,7 +2591,7 @@ public class DefaultEpadOperations implements EpadOperations
 			for (String perm: perms)
 				permissions.add(perm);
 			EPADUser epadUser = new EPADUser(user.getFullName(), user.getUsername(), 
-					user.getFirstName(), user.getLastName(), user.getEmail(), user.isEnabled(), user.isAdmin(), user.getRole(), permissions);
+					user.getFirstName(), user.getLastName(), user.getEmail(), user.isEnabled(), user.isAdmin(), user.isPasswordExpired(), user.getRole(), permissions);
 			userlist.addEPADUser(epadUser);
 		}
 		return userlist;
