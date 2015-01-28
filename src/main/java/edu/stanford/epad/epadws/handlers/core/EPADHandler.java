@@ -88,6 +88,7 @@ public class EPADHandler extends AbstractHandler
 	 * 
 	 * Note: These long if/then/else statements looks terrible, they need to be replaced by something like jersey with annotations
 	 * But there seems to be some problem using jersey with embedded jetty and multiple handlers - still need to solve that
+	 * 
 	 */
 	@Override
 	public void handle(String s, Request request, HttpServletRequest httpRequest, HttpServletResponse httpResponse)
@@ -911,10 +912,11 @@ public class EPADHandler extends AbstractHandler
 				if (patientIDFilter == null) patientIDFilter = "";
 				String studyDateFilter = httpRequest.getParameter("studyDateFilter");
 				if (studyDateFilter == null) studyDateFilter = "";
+				boolean instance = "true".equalsIgnoreCase(httpRequest.getParameter("instance"));
 				RemotePAC pac = RemotePACService.getInstance().getRemotePAC(pacid);
 				if (pac != null)
 				{
-					List<RemotePACEntity> entities = RemotePACService.getInstance().queryRemoteData(pac, patientNameFilter, patientIDFilter, studyDateFilter);
+					List<RemotePACEntity> entities = RemotePACService.getInstance().queryRemoteData(pac, patientNameFilter, patientIDFilter, studyDateFilter, instance);
 					RemotePACEntityList entityList = new RemotePACEntityList();
 					for (RemotePACEntity entity: entities)
 						entityList.addRemotePACEntity(entity);
@@ -1147,12 +1149,12 @@ public class EPADHandler extends AbstractHandler
 				if (pac == null)
 				{
 					pac = new RemotePAC(pacid, aeTitle, hostname, port, queryModel, primaryDeviceType);
-					RemotePACService.getInstance().addRemotePAC(pac);
+					RemotePACService.getInstance().addRemotePAC(username, pac);
 				}
 				else
 				{
 					pac = new RemotePAC(pacid, aeTitle, hostname, port, queryModel, primaryDeviceType);
-					RemotePACService.getInstance().modifyRemotePAC(pac);
+					RemotePACService.getInstance().modifyRemotePAC(username, pac);
 				}
 				statusCode = HttpServletResponse.SC_OK;
 				
@@ -1430,7 +1432,7 @@ public class EPADHandler extends AbstractHandler
 				Map<String, String> templateMap = HandlerUtil.getTemplateMap(PACSRouteTemplates.PAC, pathInfo);
 				String pacid = HandlerUtil.getTemplateParameter(templateMap, "pacid");
 				RemotePAC pac = RemotePACService.getInstance().getRemotePAC(pacid);
-				RemotePACService.getInstance().removeRemotePAC(pac);
+				RemotePACService.getInstance().removeRemotePAC(username, pac);
 				statusCode = HttpServletResponse.SC_OK;
 				
 			} else if (HandlerUtil.matchesTemplate(PACSRouteTemplates.PAC_SUBJECT, pathInfo)) {
@@ -1439,7 +1441,7 @@ public class EPADHandler extends AbstractHandler
 				String subjectUID = HandlerUtil.getTemplateParameter(templateMap, "subject");
 				if (subjectUID == null)
 					throw new Exception("Missing Patient ID parameter");
-				RemotePACService.getInstance().removeRemotePACQuery(pacID, subjectUID);
+				RemotePACService.getInstance().removeRemotePACQuery(username, pacID, subjectUID);
 				statusCode = HttpServletResponse.SC_OK;
 				
 			} else {

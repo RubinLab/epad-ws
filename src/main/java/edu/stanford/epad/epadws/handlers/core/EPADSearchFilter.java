@@ -21,6 +21,7 @@ public class EPADSearchFilter
 	private String insertDateFinishMatch = null;
 	private String studyDateStartMatch = null;
 	private String studyDateFinishMatch = null;
+	private String fileTypeMatch = null;
 
 	public boolean hasProjectNameMatch()
 	{
@@ -330,5 +331,44 @@ public class EPADSearchFilter
 
 	private enum AnnotationMatch {
 		NONE, HAS_ANNOTATIONS, HAS_NO_ANNOTATIONS
+	}
+
+	public String getFileTypeMatch() {
+		return fileTypeMatch;
+	}
+
+	public void setFileTypeMatch(String fileTypeMatch) {
+		this.fileTypeMatch = fileTypeMatch;
 	};
+
+	public boolean hasFileTypeMatch()
+	{
+		return this.fileTypeMatch != null;
+	}
+
+	public boolean fileTypeMatches(String fileType)
+	{
+		if (this.fileTypeMatch == null)
+			return true;
+		else {
+			String fileTypeRegex = "(?i).*" + fileTypeMatch + ".*";
+			if (fileType.matches(fileTypeRegex))
+				return true;
+			else
+				return false;
+		}
+	}
+
+	public boolean shouldFilterFileType(String fileType)
+	{
+		return (hasFileTypeMatch() && !fileTypeMatches(fileType));
+	}
+
+	public boolean shouldFilterFileType(String patientID, String patientName, String fileType)
+	{
+		return (hasPatientIDMatch() && !patientIDMatches(patientID))
+				|| (hasPatientNameMatch() && !patientNameMatches(patientName))
+				|| (hasFileTypeMatch() && !fileTypeMatches(fileType));
+	}
+
 }

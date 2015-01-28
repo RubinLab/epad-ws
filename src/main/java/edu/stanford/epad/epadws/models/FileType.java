@@ -4,7 +4,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 public enum FileType {
-	TEMPLATE("Template"), IMAGE("Image"), DICOM("Dicom"), SERIES("Series");
+	TEMPLATE("Template"), IMAGE("Image"), DICOM("Dicom"), SERIES("Series"), ANNOTATION("Annotation");
 
 	private String name;
 

@@ -210,6 +210,13 @@ public class User extends AbstractDAO {
 		eventLogs.add(el);
 	}
 	
+	public boolean hasPermission(String permission)
+	{
+		if (("," + getPermissions() + ",").indexOf("," + permission + ",") != -1)
+			return true;
+		else
+			return false;
+	}
 	public final static String DBTABLE = "user";
 	public final static String[][] DBCOLUMNS = {
         {"id","long","id","Id"},
