@@ -136,6 +136,9 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 	@Override
 	public Project createProject(String loggedInUser, String projectId, String projectName,
 			String description, ProjectType type) throws Exception {
+		User user = getUser(loggedInUser);
+		if (user != null && !user.isAdmin() && !user.hasPermission(User.CreateProjectPermission))
+			throw new Exception("No permission to create project");
 		Project project = new Project();
 		project.setProjectId(projectId);
 		project.setName(projectName);
@@ -172,7 +175,10 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 	@Override
 	public User createUser(String loggedInUser, String username, String firstName, String lastName, String email,
 			String password, List<String> addPermissions, List<String> removePermissions) throws Exception {
-		User user = new User();
+		User user = getUser(loggedInUser);
+		if (user != null && !user.isAdmin() && !user.hasPermission(User.CreateUserPermission))
+			throw new Exception("No permission to create project");
+		user = new User();
 		user.setUsername(username);
 		user.setFirstName(firstName);
 		user.setLastName(lastName);
@@ -219,7 +225,7 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		if (lastName != null) user.setLastName(lastName);
 		if (email != null) user.setEmail(email);
 		if (newpassword != null) {
-			if (loggedInUser.isAdmin() || (user.getPassword().length() < 60 && oldpassword.equals(user.getPassword())) 
+			if (loggedInUserName.equals("admin") || loggedInUser.isAdmin() || (user.getPassword().length() < 60 && oldpassword.equals(user.getPassword())) 
 					|| BCrypt.checkpw(oldpassword, user.getPassword()))
 			{
 				String hashedPW = BCrypt.hashpw(newpassword, BCrypt.gensalt());
@@ -676,7 +682,7 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 	@Override
 	public List<Project> getProjectsForUser(String username) throws Exception {
 		User user = getUser(username);
-		if (user.isAdmin())
+		if (username.equals("admin") || user.isAdmin())
 			return this.getAllProjects();
 		List objects = new Project().getObjects("id in (select project_id from " 
 													+ ProjectToUser.DBTABLE 
@@ -700,7 +706,7 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		Project project = getProject(projectID);
 		if (project == null) return null;
 		User user = getUser(username);
-		if (user.isAdmin() || project.getType().equals(ProjectType.PUBLIC))
+		if (username.equals("admin") || user.isAdmin() || project.getType().equals(ProjectType.PUBLIC))
 			return project;
 		List objects = new Project().getObjects("id in (select project_id from " 
 													+ ProjectToUser.DBTABLE 

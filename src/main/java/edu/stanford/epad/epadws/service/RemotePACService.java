@@ -36,6 +36,7 @@ import edu.stanford.epad.dtos.RemotePACQueryConfig;
 import edu.stanford.epad.epadws.models.Project;
 import edu.stanford.epad.epadws.models.RemotePACQuery;
 import edu.stanford.epad.epadws.models.Subject;
+import edu.stanford.epad.epadws.models.User;
 
 /**
  * Class to create Remote PAC Records and Query/Retrieve data for Remote PACs
@@ -106,7 +107,10 @@ public class RemotePACService extends RemotePACSBase {
 	 * @param pac
 	 * @throws Exception
 	 */
-	public synchronized void addRemotePAC(RemotePAC pac) throws Exception {
+	public synchronized void addRemotePAC(String loggedInUser, RemotePAC pac) throws Exception {
+		User user = DefaultEpadProjectOperations.getInstance().getUser(loggedInUser);
+		if (!user.isAdmin() && !user.hasPermission(User.CreatePACPermission))
+			throw new Exception("No permission to create PAC configuration");
 		addRemotePAC(
 				pac.pacID,
 				pac.aeTitle,
@@ -121,9 +125,12 @@ public class RemotePACService extends RemotePACSBase {
 	 * @param pac
 	 * @throws Exception
 	 */
-	public synchronized void modifyRemotePAC(RemotePAC pac) throws Exception {
+	public synchronized void modifyRemotePAC(String loggedInUser, RemotePAC pac) throws Exception {
+		User user = DefaultEpadProjectOperations.getInstance().getUser(loggedInUser);
+		if (!user.isAdmin() && !user.hasPermission(User.CreatePACPermission))
+			throw new Exception("No permission to modify PAC configuration");
 		removeRemotePAC(pac.pacID);
-		addRemotePAC(pac);
+		addRemotePAC(loggedInUser, pac);
 	}
 	
 	/**
@@ -131,7 +138,10 @@ public class RemotePACService extends RemotePACSBase {
 	 * @param pac
 	 * @throws Exception
 	 */
-	public synchronized void removeRemotePAC(RemotePAC pac) throws Exception {
+	public synchronized void removeRemotePAC(String loggedInUser, RemotePAC pac) throws Exception {
+		User user = DefaultEpadProjectOperations.getInstance().getUser(loggedInUser);
+		if (!user.isAdmin() && !user.hasPermission(User.CreatePACPermission))
+			throw new Exception("No permission to delete PAC configuration");
 		List<RemotePACQuery> queries = getRemotePACQueries(pac.pacID);
 		if (queries.size() > 0)
 		{
@@ -191,6 +201,9 @@ public class RemotePACService extends RemotePACSBase {
 	 * @throws Exception
 	 */
 	public RemotePACQuery createRemotePACQuery(String username, String pacID, String subjectUID, String patientName, String modality, String studyDate, boolean weekly, String projectID) throws Exception {
+		User user = DefaultEpadProjectOperations.getInstance().getUser(username);
+		if (!user.isAdmin() && !user.hasPermission(User.CreateAutoPACQueryPermission))
+			throw new Exception("No permission to create PAC Patient Query configuration");
 		RemotePACQuery query = null;
 		try {
 			query = getRemotePACQuery(pacID, subjectUID);
@@ -233,7 +246,10 @@ public class RemotePACService extends RemotePACSBase {
 	 * @param subjectUID
 	 * @throws Exception
 	 */
-	public void removeRemotePACQuery(String pacID, String subjectUID) throws Exception {
+	public void removeRemotePACQuery(String loggedInUser, String pacID, String subjectUID) throws Exception {
+		User user = DefaultEpadProjectOperations.getInstance().getUser(loggedInUser);
+		if (!user.isAdmin() && !user.hasPermission(User.CreateAutoPACQueryPermission))
+			throw new Exception("No permission to delete PAC Patient Query configuration");
 		Subject subject = DefaultEpadProjectOperations.getInstance().getSubject(subjectUID);
 		if (subject == null)
 			throw new Exception("Subject:" + subjectUID + " not found");
@@ -248,7 +264,7 @@ public class RemotePACService extends RemotePACSBase {
 	 * @param subjectID
 	 * @throws Exception
 	 */
-	public void disableRemotePACQuery(String pacID, String subjectID) throws Exception {
+	public void disableRemotePACQuery(String loggedInUser, String pacID, String subjectID) throws Exception {
 		List objects = new RemotePACQuery().getObjects("pacID = '" + pacID + "' and subject_id ='" + subjectID + "'");
 		if (objects.size() > 1)
 		{
@@ -268,7 +284,7 @@ public class RemotePACService extends RemotePACSBase {
 	 * @param subjectID
 	 * @throws Exception
 	 */
-	public void enableRemotePACQuery(String pacID, String subjectID) throws Exception {
+	public void enableRemotePACQuery(String loggedInUser, String pacID, String subjectID) throws Exception {
 		List objects = new RemotePACQuery().getObjects("pacID = '" + pacID + "' and subject_id ='" + subjectID + "'");
 		if (objects.size() > 1)
 		{
@@ -306,7 +322,7 @@ public class RemotePACService extends RemotePACSBase {
 	 * @return
 	 * @throws Exception
 	 */
-	public synchronized List<RemotePACEntity> queryRemoteData(RemotePAC pac, String patientNameFilter, String patientIDFilter, String studyDateFilter) throws Exception {
+	public synchronized List<RemotePACEntity> queryRemoteData(RemotePAC pac, String patientNameFilter, String patientIDFilter, String studyDateFilter, boolean includeInstances) throws Exception {
 		
 		try {
 			log.info("Remote PAC Query, pacID:" + pac.pacID + " patientName:" + patientNameFilter + " patientID:" + patientIDFilter + " studyDate:" + studyDateFilter);
@@ -374,7 +390,7 @@ public class RemotePACService extends RemotePACSBase {
 			String key = pac.pacID;
 			QueryTreeModel treeModel = currentRemoteQueryInformationModel.performHierarchicalQuery(filter);
 			QueryTreeRecord root = (QueryTreeRecord) treeModel.getRoot();
-			remoteEntities = traverseTree(root, 0, remoteEntities, key);
+			remoteEntities = traverseTree(root, 0, remoteEntities, key, includeInstances);
 			log.info("Number of entities returned:" + remoteEntities.size());
 			return remoteEntities;
 		}
@@ -393,7 +409,7 @@ public class RemotePACService extends RemotePACSBase {
 	}
 	
 	DecimalFormat decformat = new DecimalFormat("00000");
-	private List<RemotePACEntity> traverseTree(QueryTreeRecord node, int level, List<RemotePACEntity> entities, String key) {
+	private List<RemotePACEntity> traverseTree(QueryTreeRecord node, int level, List<RemotePACEntity> entities, String key, boolean includeInstances) {
 		AttributeList al = node.getAllAttributesReturnedInIdentifier();
 		Object tags = null;
 		String ID = null;
@@ -437,7 +453,8 @@ public class RemotePACService extends RemotePACSBase {
 		}
 		RemotePACEntity entity = new RemotePACEntity(type, node.getValue(), level, ukey);
 		remoteQueryCache.put(ukey, node);
-		entities.add(entity);
+		if (includeInstances || !type.equals("Instance"))
+			entities.add(entity);
 		
 		if (entities.size() >= MAX_QUERY_SIZE)
 			return entities;
@@ -445,7 +462,8 @@ public class RemotePACService extends RemotePACSBase {
 		int n = ((QueryTreeRecord)node).getChildCount();
 		
 		for (int i = 0; i < n; i++) {
-			traverseTree((QueryTreeRecord)((QueryTreeRecord)node).getChildAt(i), level+1, entities, key + ":" + decformat.format(i));
+			if (includeInstances || !type.equals("Series"))
+				traverseTree((QueryTreeRecord)((QueryTreeRecord)node).getChildAt(i), level+1, entities, key + ":" + decformat.format(i), includeInstances);
 		}
 		return entities;
 	}
@@ -469,7 +487,7 @@ public class RemotePACService extends RemotePACSBase {
 		// If no cached pointers, query entire PAC again (or should we give an error???)
 		if (node == null)
 		{
-			queryRemoteData(pac, "", "", "");
+			queryRemoteData(pac, "", "", "", false);
 			node = remoteQueryCache.get(uniqueKey);
 			if (node == null)
 				throw new Exception("Remote data not found");

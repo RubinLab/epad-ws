@@ -901,7 +901,7 @@ public class DefaultEpadOperations implements EpadOperations
 	public int createFile(String username, ProjectReference projectReference,
 			File uploadedFile, String description, String fileType, String sessionID) throws Exception {
 		if (fileType != null && fileType.equalsIgnoreCase("annotation")) {
-			if (!AIMUtil.saveAIMAnnotation(uploadedFile, projectReference.projectID, sessionID, username))
+			if (AIMUtil.saveAIMAnnotation(uploadedFile, projectReference.projectID, sessionID, username))
 				throw new Exception("Error saving AIM file");
 		}
 		else {
@@ -934,19 +934,24 @@ public class DefaultEpadOperations implements EpadOperations
 			log.info("Unzipping " + uploadedFile.getAbsolutePath());
 			EPADFileUtils.extractFolder(uploadedFile.getAbsolutePath());
 			File[] files = uploadedFile.getParentFile().listFiles();
+			boolean hasDICOMs = false;
 			for (File file: files)
 			{
 				if (!UserProjectService.isDicomFile(file) || file.getName().toLowerCase().endsWith(".zip"))
 				{
 					// TODO: move other images into EPAD and then delete from here
-					// projectOperations.addFile(username, file, imageReference.projectID, imageReference.studyUID);
+					createFile(username, projectID, subjectID, studyID, seriesID, file, description, FileType.TEMPLATE.getName(), sessionID);
 					file.delete();
 				}
 				else
+				{
 					UserProjectService.createProjectEntitiesFromDICOMFile(file, projectID, sessionID, username);
+					hasDICOMs = true;
+				}
 			}
 			uploadedFile.delete();
-			Dcm4CheeOperations.dcmsnd(uploadedFile.getParentFile(), true);			
+			if (hasDICOMs)
+				Dcm4CheeOperations.dcmsnd(uploadedFile.getParentFile(), true);			
 		}
 		else
 		{
@@ -957,6 +962,20 @@ public class DefaultEpadOperations implements EpadOperations
 				type = FileType.IMAGE;
 			else if (isImage(uploadedFile))
 				type = FileType.IMAGE;
+			if (type == null && filename.toLowerCase().endsWith(".xml"))
+			{
+				if (EPADFileUtils.isValidXml(uploadedFile, EPADConfig.templateXSDPath)) {
+					type = FileType.TEMPLATE;
+				} else if (EPADFileUtils.isValidXml(uploadedFile, EPADConfig.xsdFilePathV4) 
+						|| EPADFileUtils.isValidXmlUsingClassPathSchema(uploadedFile, "schema/" + EPADConfig.xsdFileV4)) {
+					type = FileType.ANNOTATION;
+					if (!AIMUtil.saveAIMAnnotation(uploadedFile, projectID, sessionID, username)) {
+						return;
+					}
+					else
+						log.warning("Error saving AIM file to Exist DB:" + uploadedFile.getName());					
+				}				
+			}
 			projectOperations.createFile(username, projectID, subjectID, studyID, seriesID, uploadedFile, filename, description, type);
 		}
 	}
@@ -983,8 +1002,8 @@ public class DefaultEpadOperations implements EpadOperations
 	@Override
 	public int createFile(String username, SubjectReference subjectReference,
 			File uploadedFile, String description, String fileType, String sessionID) throws Exception {
-		if (fileType != null && fileType.equalsIgnoreCase("annotation")) {
-			if (!AIMUtil.saveAIMAnnotation(uploadedFile, subjectReference.projectID, sessionID, username))
+		if (fileType != null && fileType.equalsIgnoreCase(FileType.ANNOTATION.getName())) {
+			if (AIMUtil.saveAIMAnnotation(uploadedFile, subjectReference.projectID, sessionID, username))
 				throw new Exception("Error saving AIM file");
 		}
 		else {
@@ -997,8 +1016,8 @@ public class DefaultEpadOperations implements EpadOperations
 	@Override
 	public int createFile(String username, StudyReference studyReference,
 			File uploadedFile, String description, String fileType, String sessionID) throws Exception {
-		if (fileType != null && fileType.equalsIgnoreCase("annotation")) {
-			if (!AIMUtil.saveAIMAnnotation(uploadedFile, studyReference.projectID, sessionID, username))
+		if (fileType != null && fileType.equalsIgnoreCase(FileType.ANNOTATION.getName())) {
+			if (AIMUtil.saveAIMAnnotation(uploadedFile, studyReference.projectID, sessionID, username))
 				throw new Exception("Error saving AIM file");
 		}
 		else {
@@ -1012,8 +1031,8 @@ public class DefaultEpadOperations implements EpadOperations
 	public int createFile(String username, SeriesReference seriesReference,
 			File uploadedFile, String description, String fileType, String sessionID)
 			throws Exception {
-		if (fileType != null && fileType.equalsIgnoreCase("annotation")) {
-			if (!AIMUtil.saveAIMAnnotation(uploadedFile, seriesReference.projectID, sessionID, username))
+		if (fileType != null && fileType.equalsIgnoreCase(FileType.ANNOTATION.getName())) {
+			if (AIMUtil.saveAIMAnnotation(uploadedFile, seriesReference.projectID, sessionID, username))
 				throw new Exception("Error saving AIM file");
 		}
 		else {
@@ -1026,8 +1045,8 @@ public class DefaultEpadOperations implements EpadOperations
 	@Override
 	public int createFile(String username, ImageReference imageReference,
 			File uploadedFile, String description, String fileType, String sessionID) throws Exception {
-		if (fileType != null && fileType.equalsIgnoreCase("annotation")) {
-			if (!AIMUtil.saveAIMAnnotation(uploadedFile, imageReference.projectID, sessionID, username))
+		if (fileType != null && fileType.equalsIgnoreCase(FileType.ANNOTATION.getName())) {
+			if (AIMUtil.saveAIMAnnotation(uploadedFile, imageReference.projectID, sessionID, username))
 				throw new Exception("Error saving AIM file");
 		}
 		else {
@@ -1060,20 +1079,22 @@ public class DefaultEpadOperations implements EpadOperations
 			String subjectId = null;
 			String patientName = null;
 			String studyId = null;
-			if (file.getSubjectId() != null)
+			if (file.getSubjectId() != null && file.getSubjectId() != 0)
 			{
 				Subject subject = (Subject) projectOperations.getDBObject(Subject.class, file.getSubjectId());
 				subjectId = subject.getSubjectUID();
 				patientName = subject.getName();
 			}
-			if (file.getStudyId() != null)
+			if (file.getStudyId() != null && file.getStudyId() != 0)
 			{
 				Study study = (Study) projectOperations.getDBObject(Study.class, file.getStudyId());
 				studyId = study.getStudyUID();
 			}
 			EPADFile efile = new EPADFile(projectReference.projectID, subjectId, patientName, studyId, file.getSeriesUid(),
 					file.getName(), file.getLength(), file.getFileType(), new SimpleDateFormat("yyyy-dd-MM HH:mm:ss").format(file.getCreatedTime()), getEpadFilePath(file));
-			efiles.add(efile);
+			boolean filter = searchFilter.shouldFilterFileType(file.getFileType());
+			if (!filter)
+				efiles.add(efile);
 		}
 		return new EPADFileList(efiles);
 	}
@@ -1082,7 +1103,10 @@ public class DefaultEpadOperations implements EpadOperations
 	{
 		String path = "files/"+ file.getRelativePath();
 		String fileName = file.getId() + file.getExtension();
-		return path + "/" + fileName;
+		if (path.endsWith("/"))
+			return path + fileName;
+		else
+			return path + "/" + fileName;
 	}
 
 	@Override
@@ -1093,13 +1117,13 @@ public class DefaultEpadOperations implements EpadOperations
 		String subjectId = null;
 		String patientName = null;
 		String studyId = null;
-		if (file.getSubjectId() != null)
+		if (file.getSubjectId() != null && file.getSubjectId() != 0)
 		{
 			Subject subject = (Subject) projectOperations.getDBObject(Subject.class, file.getSubjectId());
 			subjectId = subject.getSubjectUID();
 			patientName = subject.getName();
 		}
-		if (file.getStudyId() != null)
+		if (file.getStudyId() != null && file.getStudyId() != 0)
 		{
 			Study study = (Study) projectOperations.getDBObject(Study.class, file.getStudyId());
 			studyId = study.getStudyUID();
@@ -1118,19 +1142,21 @@ public class DefaultEpadOperations implements EpadOperations
 		for (EpadFile file: files) {
 			String patientName = null;
 			String studyId = null;
-			if (file.getSubjectId() != null)
+			if (file.getSubjectId() != null && file.getSubjectId() != 0)
 			{
 				Subject subject = (Subject) projectOperations.getDBObject(Subject.class, file.getSubjectId());
 				patientName = subject.getName();
 			}
-			if (file.getStudyId() != null)
+			if (file.getStudyId() != null && file.getStudyId() != 0)
 			{
 				Study study = (Study) projectOperations.getDBObject(Study.class, file.getStudyId());
 				studyId = study.getStudyUID();
 			}
 			EPADFile efile = new EPADFile(subjectReference.projectID, subjectReference.subjectID, patientName, studyId, file.getSeriesUid(),
 					file.getName(), file.getLength(), file.getFileType(), new SimpleDateFormat("yyyy-dd-MM HH:mm:ss").format(file.getCreatedTime()), getEpadFilePath(file));
-			efiles.add(efile);
+			boolean filter = searchFilter.shouldFilterFileType(file.getFileType());
+			if (!filter)
+				efiles.add(efile);
 		}
 		return new EPADFileList(efiles);
 	}
@@ -1142,12 +1168,12 @@ public class DefaultEpadOperations implements EpadOperations
 		if (file == null) return null;
 		String patientName = null;
 		String studyId = null;
-		if (file.getSubjectId() != null)
+		if (file.getSubjectId() != null && file.getSubjectId() != 0)
 		{
 			Subject subject = (Subject) projectOperations.getDBObject(Subject.class, file.getSubjectId());
 			patientName = subject.getName();
 		}
-		if (file.getStudyId() != null)
+		if (file.getStudyId() != null && file.getStudyId() != 0)
 		{
 			Study study = (Study) projectOperations.getDBObject(Study.class, file.getStudyId());
 			studyId = study.getStudyUID();
@@ -1173,14 +1199,16 @@ public class DefaultEpadOperations implements EpadOperations
 		List<EPADFile> efiles = new ArrayList<EPADFile>();
 		for (EpadFile file: files) {
 			String patientName = null;
-			if (file.getSubjectId() != null)
+			if (file.getSubjectId() != null && file.getSubjectId() != 0)
 			{
 				Subject subject = (Subject) projectOperations.getDBObject(Subject.class, file.getSubjectId());
 				patientName = subject.getName();
 			}
 			EPADFile efile = new EPADFile(studyReference.projectID, studyReference.subjectID, patientName, studyReference.studyUID, file.getSeriesUid(),
 					file.getName(), file.getLength(), file.getFileType(), new SimpleDateFormat("yyyy-dd-MM HH:mm:ss").format(file.getCreatedTime()), getEpadFilePath(file));
-			efiles.add(efile);
+			boolean filter = searchFilter.shouldFilterFileType(file.getFileType());
+			if (!filter)
+				efiles.add(efile);
 		}
 		return efiles;
 	}
@@ -1191,7 +1219,7 @@ public class DefaultEpadOperations implements EpadOperations
 		EpadFile file = projectOperations.getEpadFile(studyReference.projectID, studyReference.subjectID, studyReference.studyUID, null, filename);
 		if (file == null) return null;
 		String patientName = null;
-		if (file.getSubjectId() != null)
+		if (file.getSubjectId() != null && file.getSubjectId() != 0)
 		{
 			Subject subject = (Subject) projectOperations.getDBObject(Subject.class, file.getSubjectId());
 			patientName = subject.getName();
@@ -1218,7 +1246,7 @@ public class DefaultEpadOperations implements EpadOperations
 		for (EpadFile file: files) {
 			String subjectId = null;
 			String patientName = null;
-			if (file.getSubjectId() != null)
+			if (file.getSubjectId() != null && file.getSubjectId() != 0)
 			{
 				Subject subject = (Subject) projectOperations.getDBObject(Subject.class, file.getSubjectId());
 				subjectId = subject.getSubjectUID();
@@ -1226,7 +1254,9 @@ public class DefaultEpadOperations implements EpadOperations
 			}
 			EPADFile efile = new EPADFile(seriesReference.projectID, seriesReference.subjectID, patientName, seriesReference.studyUID, file.getSeriesUid(),
 					file.getName(), file.getLength(), file.getFileType(), new SimpleDateFormat("yyyy-dd-MM HH:mm:ss").format(file.getCreatedTime()), getEpadFilePath(file));
-			efiles.add(efile);
+			boolean filter = searchFilter.shouldFilterFileType(file.getFileType());
+			if (!filter)
+				efiles.add(efile);
 		}
 		return efiles;
 	}
@@ -1236,7 +1266,7 @@ public class DefaultEpadOperations implements EpadOperations
 			String username, String sessionID) throws Exception {
 		EpadFile file = projectOperations.getEpadFile(seriesReference.projectID, seriesReference.subjectID, seriesReference.studyUID, seriesReference.seriesUID, filename);
 		String patientName = null;
-		if (file.getSubjectId() != null)
+		if (file.getSubjectId() != null && file.getSubjectId() != 0)
 		{
 			Subject subject = (Subject) projectOperations.getDBObject(Subject.class, file.getSubjectId());
 			patientName = subject.getName();
