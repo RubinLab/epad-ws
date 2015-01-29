@@ -776,7 +776,7 @@ public class AIMUtil
 		}
 		String queryResults = XmlDocumentToString(doc,"gme://caCORE.caCORE/4.4/edu.northwestern.radiology.AIM");
 		
-		log.info(queryResults);
+		//log.info(queryResults);
 		responseStream.print(queryResults);
 	}
 
