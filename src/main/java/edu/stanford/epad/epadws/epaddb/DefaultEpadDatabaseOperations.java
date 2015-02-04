@@ -24,6 +24,7 @@ import edu.stanford.epad.dtos.PNGFileProcessingStatus;
 import edu.stanford.epad.dtos.SeriesProcessingStatus;
 import edu.stanford.epad.epadws.aim.AIMDatabaseOperations;
 import edu.stanford.epad.epadws.aim.AIMSearchType;
+import edu.stanford.epad.epadws.aim.AIMUtil;
 import edu.stanford.epad.epadws.handlers.coordination.Term;
 import edu.stanford.epad.epadws.handlers.core.FrameReference;
 import edu.stanford.epad.epadws.handlers.core.ImageReference;
@@ -169,6 +170,22 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 			} finally {
 				close(c);
 			}
+		}
+		// Check empty xml columns
+		try {
+			log.info("Checking annotations table xml data ...");
+			
+			if (!EPADConfig.useV4.equals("false"))
+			{
+				adb = new AIMDatabaseOperations(c, EPADConfig.eXistServerUrl,
+						EPADConfig.aim4Namespace, EPADConfig.eXistCollection, EPADConfig.eXistUsername, EPADConfig.eXistPassword);
+				List<EPADAIM> aims = adb.getAIMs("XML is null", 0, 0);
+				AIMUtil.updateTableXMLs(aims);
+			}
+		} catch (Exception sqle) {
+			log.warning("AIM Database operation failed:", sqle);
+		} finally {
+			close(c);
 		}
 	}
 
@@ -700,6 +717,40 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 	}
 
 	@Override
+	public EPADAIM addAIM(String userName, FrameReference reference,
+			String aimID, String aimXML) {
+		Connection c = null;
+		try {
+			c = getConnection();
+			AIMDatabaseOperations adb = new AIMDatabaseOperations(c, EPADConfig.eXistServerUrl,
+					EPADConfig.aim4Namespace, EPADConfig.eXistCollection, EPADConfig.eXistUsername, EPADConfig.eXistPassword);
+			return adb.insert(aimID, userName, reference.projectID, reference.subjectID, reference.studyUID, reference.seriesUID, reference.imageUID, 0, null, aimXML);
+		} catch (SQLException sqle) {
+			log.warning("AIM Database operation failed:", sqle);
+		} finally {
+			close(c);
+		}
+		return null;
+	}
+
+	@Override
+	public EPADAIM addDSOAIM(String userName, ImageReference reference,
+			String dsoSeriesUID, String aimID, String aimXML) {
+		Connection c = null;
+		try {
+			c = getConnection();
+			AIMDatabaseOperations adb = new AIMDatabaseOperations(c, EPADConfig.eXistServerUrl,
+					EPADConfig.aim4Namespace, EPADConfig.eXistCollection, EPADConfig.eXistUsername, EPADConfig.eXistPassword);
+			return adb.insert(aimID, userName, reference.projectID, reference.subjectID, reference.studyUID, reference.seriesUID, reference.imageUID, 0, dsoSeriesUID, aimXML);
+		} catch (SQLException sqle) {
+			log.warning("AIM Database operation failed:", sqle);
+		} finally {
+			close(c);
+		}
+		return null;
+	}
+
+	@Override
 	public EPADAIM updateAIM(String aimID, String projectID, String username) {
 		Connection c = null;
 		try {
@@ -707,6 +758,22 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 			AIMDatabaseOperations adb = new AIMDatabaseOperations(c, EPADConfig.eXistServerUrl,
 					EPADConfig.aim4Namespace, EPADConfig.eXistCollection, EPADConfig.eXistUsername, EPADConfig.eXistPassword);
 			return adb.updateAIM(aimID, projectID, username);
+		} catch (SQLException sqle) {
+			log.warning("AIM Database operation failed:", sqle);
+		} finally {
+			close(c);
+		}
+		return null;
+	}
+
+	@Override
+	public EPADAIM updateAIMXml(String aimID, String xml) {
+		Connection c = null;
+		try {
+			c = getConnection();
+			AIMDatabaseOperations adb = new AIMDatabaseOperations(c, EPADConfig.eXistServerUrl,
+					EPADConfig.aim4Namespace, EPADConfig.eXistCollection, EPADConfig.eXistUsername, EPADConfig.eXistPassword);
+			return adb.updateAIMXml(aimID, xml);
 		} catch (SQLException sqle) {
 			log.warning("AIM Database operation failed:", sqle);
 		} finally {

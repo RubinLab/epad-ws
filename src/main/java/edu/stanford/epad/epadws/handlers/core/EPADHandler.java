@@ -169,7 +169,10 @@ public class EPADHandler extends AbstractHandler
 			if (count == 0) count = 5000;
 			long starttime = System.currentTimeMillis();
 			if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.PROJECT_LIST, pathInfo)) {
-				EPADProjectList projectList = epadOperations.getProjectDescriptions(username, sessionID, searchFilter);
+				boolean annotationCount = false;
+				if ("true".equalsIgnoreCase(httpRequest.getParameter("annotationCount")))
+					annotationCount = true;
+				EPADProjectList projectList = epadOperations.getProjectDescriptions(username, sessionID, searchFilter, annotationCount);
 				responseStream.append(projectList.toJSON());
 
 				statusCode = HttpServletResponse.SC_OK;
@@ -1175,7 +1178,25 @@ public class EPADHandler extends AbstractHandler
 				boolean weekly = false;
 				if ("weekly".equalsIgnoreCase(httpRequest.getParameter("period")))
 					weekly = true;
-				RemotePACService.getInstance().createRemotePACQuery(username, pacID, subjectUID, subjectName, modality, studyDate, weekly, projectID);
+				String enable = httpRequest.getParameter("enable");
+				if (enable != null)
+				{
+					RemotePACQuery query = RemotePACService.getInstance().getRemotePACQuery(pacID, subjectUID);
+					if ("true".equalsIgnoreCase(enable) && query != null)
+					{
+						RemotePACService.getInstance().enableRemotePACQuery(username, pacID, subjectUID);
+					}
+					else if ("false".equalsIgnoreCase(enable))
+					{	
+						if (query == null)
+							throw new Exception("Remote PAC and Patient not configured for periodic query");
+						RemotePACService.getInstance().disableRemotePACQuery(username, pacID, subjectUID);
+					}
+				}
+				else
+				{
+					RemotePACService.getInstance().createRemotePACQuery(username, pacID, subjectUID, subjectName, modality, studyDate, weekly, projectID);
+				}
 				statusCode = HttpServletResponse.SC_OK;
 				
 			} else {

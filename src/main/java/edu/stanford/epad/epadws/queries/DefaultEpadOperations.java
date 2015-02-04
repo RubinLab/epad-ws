@@ -131,14 +131,15 @@ public class DefaultEpadOperations implements EpadOperations
 	 */
 
 	@Override
-	public EPADProjectList getProjectDescriptions(String username, String sessionID, EPADSearchFilter searchFilter) throws Exception
+	public EPADProjectList getProjectDescriptions(String username, String sessionID, EPADSearchFilter searchFilter, boolean annotationCount) throws Exception
 	{
+		if (searchFilter.hasAnnotationMatch()) annotationCount = true;
 		EPADProjectList epadProjectList = new EPADProjectList();
 		if (!EPADConfig.UseEPADUsersProjects) {
 			XNATProjectList xnatProjectList = XNATQueries.allProjects(sessionID);
 	
 			for (XNATProject xnatProject : xnatProjectList.ResultSet.Result) {
-				EPADProject epadProject = xnatProject2EPADProject(sessionID, username, xnatProject, searchFilter, false);
+				EPADProject epadProject = xnatProject2EPADProject(sessionID, username, xnatProject, searchFilter, annotationCount);
 	
 				if (epadProject != null)
 				{
@@ -149,7 +150,7 @@ public class DefaultEpadOperations implements EpadOperations
 		} else {
 			List<Project> projects = projectOperations.getProjectsForUser(username);
 			for (Project project : projects) {
-				EPADProject epadProject = project2EPADProject(sessionID, username, project, searchFilter);
+				EPADProject epadProject = project2EPADProject(sessionID, username, project, searchFilter, annotationCount);
 	
 				if (epadProject != null)
 				{
@@ -176,7 +177,7 @@ public class DefaultEpadOperations implements EpadOperations
 		} else {
 			Project project = projectOperations.getProjectForUser(username, projectReference.projectID);
 			if (project != null)
-				return project2EPADProject(sessionID, username, project, new EPADSearchFilter());
+				return project2EPADProject(sessionID, username, project, new EPADSearchFilter(), true);
 		}
 		return null;
 	}
@@ -454,7 +455,7 @@ public class DefaultEpadOperations implements EpadOperations
 						new DICOMElementList());
 				epadImageList.addImage(epadImage);
 			}
-			log.info("Image UID:" + epadImage.imageUID + " LossLess:" + epadImage.losslessImage);
+			//log.info("Image UID:" + epadImage.imageUID + " LossLess:" + epadImage.losslessImage);
 		}
 		log.info("Returning image list:" + imageDescriptions.size());
 		return epadImageList;
@@ -526,7 +527,7 @@ public class DefaultEpadOperations implements EpadOperations
 						String lossyImage = ""; // We do not have a lossy image for the DSO frame
 						String sourceLosslessImage = getPNGPath(studyUID, referencedSeriesUID, referencedImageUID);
 						String sourceLossyImage = getWADOPath(studyUID, referencedSeriesUID, referencedImageUID);
-						log.info("Frame:" + frameNumber + " losslessImage:" + losslessImage);
+						//log.info("Frame:" + frameNumber + " losslessImage:" + losslessImage);
 						if (isFirst) {
 							EPADDSOFrame frame = new EPADDSOFrame(imageReference.projectID, imageReference.subjectID,
 									imageReference.studyUID, imageReference.seriesUID, imageReference.imageUID, insertDate, imageDate,
@@ -1836,7 +1837,7 @@ public class DefaultEpadOperations implements EpadOperations
 		String xnatPatientID = XNATUtil.subjectID2XNATSubjectLabel(dcm4CheeStudy.patientID);
 		String subjectID = suppliedSubjectID.equals("") ? xnatPatientID : suppliedSubjectID;
 		String studyUID = dcm4CheeStudy.studyUID;
-		String insertDate = dcm4CheeStudy.dateAcquired;
+		String insertDate = dcm4CheeStudy.dateAcquired; // studyDate
 		String firstSeriesUID = dcm4CheeStudy.firstSeriesUID;
 		String firstSeriesDateAcquired = dcm4CheeStudy.firstSeriesDateAcquired;
 		String physicianName = dcm4CheeStudy.physicianName;
@@ -1852,7 +1853,7 @@ public class DefaultEpadOperations implements EpadOperations
 		StudyProcessingStatus studyProcessingStatus = getStudyProcessingStatus(studyUID);
 		//int numberOfAnnotations = (seriesUIDs.size() <= 0) ? 0 : AIMQueries.getNumberOfAIMAnnotationsForSeriesSet(seriesUIDs, username);
 		EPADAIMList aims = getStudyAIMDescriptions(new StudyReference(suppliedProjectID, null, studyUID), null, sessionID);
-		log.info("Number of study aims:" + aims.ResultSet.totalRecords);
+		log.info("Number of study aims:" + aims.ResultSet.totalRecords + " insertDate:" + insertDate + " createdTime:" + createdTime);
 		int	numberOfAnnotations = getNumberOfAccessibleAims(sessionID, suppliedProjectID, aims, username);
 		return new EPADStudy(projectID, subjectID, patientName, studyUID, insertDate, firstSeriesUID,
 				firstSeriesDateAcquired, physicianName, birthdate, sex, studyProcessingStatus, examTypes, studyDescription,
@@ -1966,7 +1967,7 @@ public class DefaultEpadOperations implements EpadOperations
 	}
 
 	private EPADProject project2EPADProject(String sessionID, String username, Project project,
-			EPADSearchFilter searchFilter) throws Exception
+			EPADSearchFilter searchFilter, boolean annotationCount) throws Exception
 	{
 		if (project == null) return null;
 		String projectName = project.getName();
@@ -1984,10 +1985,13 @@ public class DefaultEpadOperations implements EpadOperations
 			for (Study study: studies)
 				studyUIDs.add(study.getStudyUID());
 			int numberOfAnnotations = 0;
-			for  (String studyUID: studyUIDs)
+			if (annotationCount)
 			{
-				EPADAIMList aims = getStudyAIMDescriptions(new StudyReference(null, null, studyUID), username, sessionID);
-				numberOfAnnotations = numberOfAnnotations + getNumberOfAccessibleAims(sessionID, projectID, aims, username);
+				for  (String studyUID: studyUIDs)
+				{
+					EPADAIMList aims = getStudyAIMDescriptions(new StudyReference(null, null, studyUID), username, sessionID);
+					numberOfAnnotations = numberOfAnnotations + getNumberOfAccessibleAims(sessionID, projectID, aims, username);
+				}
 			}
 			if (!searchFilter.shouldFilterProject(projectName, numberOfAnnotations)) {
 				int numberOfStudies = Dcm4CheeQueries.getNumberOfStudiesForPatients(patientIDs);
@@ -2547,7 +2551,7 @@ public class DefaultEpadOperations implements EpadOperations
 		}
 		if (user == null)
 		{
-			projectOperations.createUser(loggedInUser, username, firstname, lastname, email, oldpassword, addPerms, removePerms);
+			projectOperations.createUser(loggedInUser, username, firstname, lastname, email, password, addPerms, removePerms);
 		}
 		else
 		{

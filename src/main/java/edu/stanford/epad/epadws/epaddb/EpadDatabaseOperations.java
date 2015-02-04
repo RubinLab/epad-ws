@@ -140,8 +140,14 @@ public interface EpadDatabaseOperations
 	EPADAIM addAIM(String userName, FrameReference reference, String aimID);
 
 	EPADAIM addDSOAIM(String userName, ImageReference reference, String dsoSeriesUID, String aimID);
+
+	EPADAIM addAIM(String userName, FrameReference reference, String aimID, String aimXML);
+
+	EPADAIM addDSOAIM(String userName, ImageReference reference, String dsoSeriesUID, String aimID, String aimXML);
 	
 	EPADAIM updateAIM(String aimID, String projectID, String username);
+	
+	EPADAIM updateAIMXml(String aimID, String xml);
 	
 	void deleteAIM(String userName, ProjectReference reference, String aimID);
 

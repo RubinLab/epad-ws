@@ -67,7 +67,7 @@ public interface EpadProjectOperations {
 	Project createProject(String loggedInUser, String projectId, String projectName, String description, ProjectType type) throws Exception;
 	
 	/**
-	 * Updates project fields in database
+	 * Updates project fields in database (all arguments except projectId are optional)
 	 * @param loggedInUser
 	 * @param projectId
 	 * @param projectName
@@ -80,6 +80,7 @@ public interface EpadProjectOperations {
 	
 	/**
 	 * Creates a user record in database
+	 * 
 	 * @param loggedInUser
 	 * @param username
 	 * @param firstName
@@ -94,6 +95,7 @@ public interface EpadProjectOperations {
 	
 	/**
 	 * Updates a user record in database, fields can be null except username, password and oldpassword should match 
+	 *
 	 * @param loggedInUser
 	 * @param username
 	 * @param firstName
@@ -225,6 +227,15 @@ public interface EpadProjectOperations {
 	 * @throws Exception
 	 */
 	void removeStudyFromProject(String loggedInUser, String studyUID, String projectId) throws Exception;
+	
+	/**
+	 * Check if Subject is in Project
+	 * @param loggedInUser
+	 * @param subjectUID
+	 * @param projectId
+	 * @throws Exception
+	 */
+	boolean isSubjectInProject(String loggedInUser, String subjectUID, String projectId) throws Exception;
 
 	/**
 	 * Create File Record
@@ -510,6 +521,15 @@ public interface EpadProjectOperations {
 	List<EpadFile> getSeriesFiles(String projectID, String subjectUID, String studyUID, String seriesUID) throws Exception;
 	
 	/**
+	 * Check if user is in project
+	 * @param username
+	 * @param projectID
+	 * @return
+	 * @throws Exception
+	 */
+	boolean hasAccessToProject(String username, String projectID) throws Exception;
+	
+	/**
 	 * Check if collaborator
 	 * @param username
 	 * @param projectID
@@ -581,7 +601,7 @@ public interface EpadProjectOperations {
 	void deleteSubject(String username, String subjectUID) throws Exception;
 	
 	/**
-	 * Delete study\
+	 * Delete study
 	 * @param username
 	 * @param studyUID
 	 * @throws Exception
@@ -607,6 +627,7 @@ public interface EpadProjectOperations {
 	List<EventLog> getUserLogs(String username);
 	
 	/**
+	 * Get database object by primary key
 	 * @param dbclass
 	 * @param id
 	 * @return

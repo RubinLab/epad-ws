@@ -55,6 +55,12 @@ import edu.stanford.epad.epadws.models.User.EventLog;
 import edu.stanford.epad.epadws.models.UserRole;
 import edu.stanford.epad.epadws.models.dao.AbstractDAO;
 
+/**
+ * All Epad User/Project/Subject/Study related operations
+ * 
+* @author Dev Gude
+ *
+ */
 public class DefaultEpadProjectOperations implements EpadProjectOperations {
 	
 	private static final EPADLogger log = EPADLogger.getInstance();
@@ -184,6 +190,7 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		user.setLastName(lastName);
 		user.setEmail(email);
 		String hashedPW = BCrypt.hashpw(password, BCrypt.gensalt());
+		//log.info("Password:" + password + " hash:" + hashedPW);
 		user.setPassword(hashedPW);
 		String[] defaultPerms = EPADConfig.getParamValue("DefaultUserPermissions", User.CreateProjectPermission).split(",");
 		Set<String> perms = new HashSet<String>();
@@ -229,7 +236,10 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 					|| BCrypt.checkpw(oldpassword, user.getPassword()))
 			{
 				String hashedPW = BCrypt.hashpw(newpassword, BCrypt.gensalt());
+				//log.info("Password:" + newpassword + " hash:" + hashedPW);
 				user.setPassword(hashedPW);
+				user.setPasswordExpired(false);
+				user.setPasswordUpdate(new Date());
 			}
 			else
 				throw new Exception("Invalid old password");
@@ -508,6 +518,26 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 	}
 
 	/* (non-Javadoc)
+	 * @see edu.stanford.epad.epadws.service.EpadProjectOperations#isSubjectInProject(java.lang.String, java.lang.String, java.lang.String)
+	 */
+	@Override
+	public boolean isSubjectInProject(String loggedInUser, String subjectUID,
+			String projectId) throws Exception {
+		Subject subject = getSubject(subjectUID);
+		if (subject == null)
+			throw new Exception("Subject not found, ID:" + subjectUID);
+		Project project = getProject(projectId);
+		if (project == null)
+			throw new Exception("Project not found, ID:" + subjectUID);
+		ProjectToSubject ptos = new ProjectToSubject();
+		ptos = (ProjectToSubject) ptos.getObject("project_id = " + project.getId() + " and subject_id =" + subject.getId());
+		if (ptos == null)
+			return false;
+		else
+			return true;
+	}
+
+	/* (non-Javadoc)
 	 * @see edu.stanford.epad.epadws.service.EpadProjectOperations#createFile(java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.io.File, java.lang.String, java.lang.String, edu.stanford.epad.epadws.models.FileType)
 	 */
 	@Override
@@ -706,7 +736,7 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		Project project = getProject(projectID);
 		if (project == null) return null;
 		User user = getUser(username);
-		if (username.equals("admin") || user.isAdmin() || project.getType().equals(ProjectType.PUBLIC))
+		if (username.equals("admin") || user.isAdmin() || project.getType().equals(ProjectType.PUBLIC.getName()))
 			return project;
 		List objects = new Project().getObjects("id in (select project_id from " 
 													+ ProjectToUser.DBTABLE 
@@ -1031,6 +1061,35 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 			subjectIdStatus.put(subjectId, status);
 		}
 		return subjectIdStatus;
+	}
+
+	/* (non-Javadoc)
+	 * @see edu.stanford.epad.epadws.service.EpadProjectOperations#hasAccessToProject(java.lang.String, java.lang.String)
+	 */
+	@Override
+	public boolean hasAccessToProject(String username, String projectID)
+			throws Exception {
+		Project project = getProject(projectID);
+		if (project == null)
+			throw new Exception("Project not found, ID:" + projectID);
+		User user = getUser(username);
+		if (user == null)
+			throw new Exception("User not found, username:" + username);
+		if (project.getType().equals(ProjectType.PUBLIC.getName()) ||  user.isAdmin())
+			return true;
+		if (isUserInProject(user.getId(), project.getId()))
+			return true;
+		else
+			return false;
+	}
+
+	protected boolean isUserInProject(long userId, long projectId)
+			throws Exception {
+		ProjectToUser pu = (ProjectToUser) new ProjectToUser().getObject("project_id =" + projectId + " and user_id=" + userId);
+		if (pu == null)
+			return false;
+		else
+			return true;
 	}
 
 	/* (non-Javadoc)

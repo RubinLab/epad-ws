@@ -3,12 +3,15 @@ package edu.stanford.epad.epadws.epaddb;
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.net.UnknownHostException;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.text.DecimalFormat;
 import java.util.concurrent.atomic.AtomicReference;
+
+import com.mongodb.MongoClient;
 
 import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADLogger;
@@ -20,6 +23,7 @@ public class EpadDatabase
 	private static final EpadDatabase ourInstance = new EpadDatabase();
 
 	private ConnectionPool connectionPool;
+	private MongoClient mongoClient;
 	private EpadDatabaseOperations epadDatabaseOperations;
 
 	private final AtomicReference<DatabaseState> databaseState = new AtomicReference<DatabaseState>(DatabaseState.INIT);
@@ -112,6 +116,20 @@ public class EpadDatabase
 		connectionPool.dispose();
 	}
 
+	public MongoClient getMongoConnection() throws Exception
+	{
+		if (mongoClient == null)
+		{
+			try {
+				mongoClient = new MongoClient( "localhost" );
+			} catch (Exception e) {
+				log.warning("Error connecting to MongoDB", e);
+				throw e;
+			}
+		}
+		return mongoClient;
+	}
+	
 	private boolean tablesUpToDate(String requiredVersion, boolean update)
 	{
 		boolean result = false;

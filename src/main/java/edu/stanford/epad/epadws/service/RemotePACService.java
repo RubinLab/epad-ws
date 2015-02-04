@@ -4,10 +4,13 @@ import java.io.IOException;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import com.pixelmed.dicom.AgeStringAttribute;
 import com.pixelmed.dicom.Attribute;
@@ -33,10 +36,14 @@ import com.pixelmed.query.QueryTreeRecord;
 import edu.stanford.epad.dtos.RemotePAC;
 import edu.stanford.epad.dtos.RemotePACEntity;
 import edu.stanford.epad.dtos.RemotePACQueryConfig;
+import edu.stanford.epad.dtos.internal.DCM4CHEEStudy;
+import edu.stanford.epad.dtos.internal.DCM4CHEEStudyList;
 import edu.stanford.epad.epadws.models.Project;
 import edu.stanford.epad.epadws.models.RemotePACQuery;
+import edu.stanford.epad.epadws.models.Study;
 import edu.stanford.epad.epadws.models.Subject;
 import edu.stanford.epad.epadws.models.User;
+import edu.stanford.epad.epadws.queries.Dcm4CheeQueries;
 
 /**
  * Class to create Remote PAC Records and Query/Retrieve data for Remote PACs
@@ -49,7 +56,8 @@ public class RemotePACService extends RemotePACSBase {
 	static RemotePACService rpsinstance;
 	
 	public static final int MAX_CACHE_ENTRIES = 25000;
-	public static final int MAX_QUERY_SIZE = 7000;
+	public static final int MAX_SERIES_QUERY = 500;
+	public static final int MAX_INSTANCE_QUERY = 7000;
 	static Map<String, QueryTreeRecord> remoteQueryCache = new HashMap<String, QueryTreeRecord>();
 	
 	public static Map<String, String> pendingTransfers = new HashMap<String, String>();
@@ -213,14 +221,41 @@ public class RemotePACService extends RemotePACSBase {
 		Project project = DefaultEpadProjectOperations.getInstance().getProject(projectID);
 		if (project == null)
 			throw new Exception("Project " + projectID + " not found");
+		RemotePAC pac = this.getRemotePAC(pacID);
+		if (pac == null)
+			throw new Exception("Remote PAC " + pacID + " not found");
 		Subject subject = DefaultEpadProjectOperations.getInstance().getSubject(subjectUID);
 		if (subject == null)
 		{
 			subject = DefaultEpadProjectOperations.getInstance().createSubject(username, subjectUID, patientName, null, null);
 		}
-		RemotePAC pac = this.getRemotePAC(pacID);
-		if (pac == null)
-			throw new Exception("Remote PAC " + pacID + " not found");
+		else if (studyDate ==  null || studyDate.trim().length() == 0)
+		{
+			try {
+				List<Study> studies = DefaultEpadProjectOperations.getInstance().getStudiesForSubject(subject.getSubjectUID());
+				Set<String> studyUIDs = new HashSet<String>();
+				for (Study study: studies)
+				{
+					studyUIDs.add(study.getStudyUID());
+				}
+				DCM4CHEEStudyList dcm4CheeStudyList = Dcm4CheeQueries.getStudies(studyUIDs);
+				Date date = null;
+				for (DCM4CHEEStudy dcs: dcm4CheeStudyList.ResultSet.Result)
+				{
+					if (date == null || getDate(dcs.dateAcquired).after(date))
+						date = getDate(dcs.dateAcquired);
+				}
+				if (date != null)
+				{
+					Calendar cal = Calendar.getInstance();
+					cal.setTime(date);
+					cal.add(Calendar.DATE, 1);
+					studyDate = dateformat.format(cal.getTime());
+					log.info("Subject:" + subject.getSubjectUID() + " Last Study Date from DCM4CHE:" + studyDate);	
+				}
+			} catch (Exception x) {};
+			
+		}
 		query = new RemotePACQuery();
 		query.setRequestor(username);
 		query.setPacId(pacID);
@@ -231,7 +266,9 @@ public class RemotePACService extends RemotePACSBase {
 		// TODO: Validate modality. How???
 		query.setModality(modality);
 		if (getDate(studyDate) != null)
+		{
 			query.setLastStudyDate(studyDate);
+		}
 		if (weekly)
 			query.setPeriod("Weekly");
 		else
@@ -456,7 +493,10 @@ public class RemotePACService extends RemotePACSBase {
 		if (includeInstances || !type.equals("Instance"))
 			entities.add(entity);
 		
-		if (entities.size() >= MAX_QUERY_SIZE)
+		if (!includeInstances && entities.size() >= MAX_SERIES_QUERY)
+			return entities;
+		
+		if (includeInstances && entities.size() >= MAX_INSTANCE_QUERY)
 			return entities;
 		
 		int n = ((QueryTreeRecord)node).getChildCount();

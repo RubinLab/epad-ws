@@ -4,14 +4,21 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.epad.dtos.RemotePAC;
 import edu.stanford.epad.dtos.RemotePACEntity;
+import edu.stanford.epad.dtos.internal.DCM4CHEEStudy;
+import edu.stanford.epad.dtos.internal.DCM4CHEEStudyList;
 import edu.stanford.epad.epadws.models.Project;
 import edu.stanford.epad.epadws.models.RemotePACQuery;
+import edu.stanford.epad.epadws.models.Study;
 import edu.stanford.epad.epadws.models.Subject;
+import edu.stanford.epad.epadws.queries.Dcm4CheeQueries;
+import edu.stanford.epad.epadws.service.DefaultEpadProjectOperations;
 import edu.stanford.epad.epadws.service.RemotePACService;
 
 /**
@@ -65,6 +72,32 @@ public class RemotePACQueryTask implements Runnable
 				Subject subject = (Subject) new Subject(query.getSubjectId()).retrieve();
 				log.info("Processing Remote PAC Query, PAC:" + pac.pacID + " Subject:" + subject.getSubjectUID());
 				String studyDate = query.getLastStudyDate();
+				if (studyDate == null)
+				{
+					try {
+						List<Study> studies = DefaultEpadProjectOperations.getInstance().getStudiesForSubject(subject.getSubjectUID());
+						Set<String> studyUIDs = new HashSet<String>();
+						for (Study study: studies)
+						{
+							studyUIDs.add(study.getStudyUID());
+						}
+						DCM4CHEEStudyList dcm4CheeStudyList = Dcm4CheeQueries.getStudies(studyUIDs);
+						Date date = null;
+						for (DCM4CHEEStudy dcs: dcm4CheeStudyList.ResultSet.Result)
+						{
+							if (date == null || getDate(dcs.dateAcquired).after(date))
+								date = getDate(dcs.dateAcquired);
+						}
+						if (date != null)
+						{
+							Calendar cal = Calendar.getInstance();
+							cal.setTime(date);
+							cal.add(Calendar.DATE, 1);
+							studyDate = dateformat.format(cal.getTime());
+							log.info("Subject:" + subject.getSubjectUID() + " Last Study Date from DCM4CHE:" + studyDate);	
+						}
+					} catch (Exception x) {};
+				}
 				if (studyDate != null && !studyDate.endsWith("-"))
 					studyDate = studyDate + "-";
 				List<RemotePACEntity> entities = rps.queryRemoteData(pac, null, subject.getSubjectUID(), studyDate, false);

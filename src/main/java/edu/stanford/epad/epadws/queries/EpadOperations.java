@@ -41,7 +41,7 @@ import edu.stanford.epad.epadws.security.EPADSession;
  */
 public interface EpadOperations
 {
-	EPADProjectList getProjectDescriptions(String username, String sessionID, EPADSearchFilter searchFilter) throws Exception;
+	EPADProjectList getProjectDescriptions(String username, String sessionID, EPADSearchFilter searchFilter, boolean annotationCount) throws Exception;
 
 	EPADProject getProjectDescription(ProjectReference projectReference, String username, String sessionID) throws Exception;
 
