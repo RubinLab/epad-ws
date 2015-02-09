@@ -560,7 +560,7 @@ public class DefaultEpadOperations implements EpadOperations
 		for (EPADAIM aim :aims)
 		{
 			epadDatabaseOperations.deleteAIM("", aim.aimID);
-			AIMUtil.deleteAIM(aim.aimID);
+			AIMUtil.deleteAIM(aim.aimID, aim.projectID);
 		}
 	}
 
@@ -833,7 +833,7 @@ public class DefaultEpadOperations implements EpadOperations
 		for (EPADAIM aim :aims)
 		{
 			epadDatabaseOperations.deleteAIM("", aim.aimID);
-			AIMUtil.deleteAIM(aim.aimID);
+			AIMUtil.deleteAIM(aim.aimID, aim.projectID);
 		}
 	}
 
@@ -952,7 +952,7 @@ public class DefaultEpadOperations implements EpadOperations
 				throw new Exception("No permissions to delete Annotation");
 			}
 			log.info("Deleting AIM, deleteDSO:" + deleteDSO + " dsoSeriesUID:" + aim.dsoSeriesUID);
-			AIMUtil.deleteAIM(aimID);
+			AIMUtil.deleteAIM(aimID, projectReference.projectID);
 			epadDatabaseOperations.deleteAIM(username, projectReference, aimID);
 			if (deleteDSO && aim.dsoSeriesUID != null && aim.dsoSeriesUID.length() > 0 && epadDatabaseOperations.getAIMs(aim.dsoSeriesUID).size() == 0)
 			{
@@ -981,7 +981,7 @@ public class DefaultEpadOperations implements EpadOperations
 				log.warning("No permissions to delete AIM:" + aimID + " for user " + username);
 				throw new Exception("No permissions to delete Annotation");
 			}
-			AIMUtil.deleteAIM(aimID);
+			AIMUtil.deleteAIM(aimID, subjectReference.projectID);
 			epadDatabaseOperations.deleteAIM(username, subjectReference, aimID);
 			if (deleteDSO && aim.dsoSeriesUID != null && aim.dsoSeriesUID.length() > 0 && epadDatabaseOperations.getAIMs(aim.dsoSeriesUID).size() == 0)
 			{
@@ -1009,7 +1009,7 @@ public class DefaultEpadOperations implements EpadOperations
 				log.warning("No permissions to delete AIM:" + aimID + " for user " + username);
 				throw new Exception("No permissions to delete Annotation");
 			}
-			AIMUtil.deleteAIM(aimID);
+			AIMUtil.deleteAIM(aimID, studyReference.projectID);
 			epadDatabaseOperations.deleteAIM(username, studyReference, aimID);
 			if (deleteDSO && aim.dsoSeriesUID != null && aim.dsoSeriesUID.length() > 0 && epadDatabaseOperations.getAIMs(aim.dsoSeriesUID).size() == 0)
 			{
@@ -1037,7 +1037,7 @@ public class DefaultEpadOperations implements EpadOperations
 				log.warning("No permissions to delete AIM:" + aimID + " for user " + username);
 				throw new Exception("No permissions to delete Annotation");
 			}
-			AIMUtil.deleteAIM(aimID);
+			AIMUtil.deleteAIM(aimID, seriesReference.projectID);
 			epadDatabaseOperations.deleteAIM(username, seriesReference, aimID);
 			if (deleteDSO && aim.dsoSeriesUID != null && aim.dsoSeriesUID.length() > 0 && epadDatabaseOperations.getAIMs(aim.dsoSeriesUID).size() == 0)
 			{
@@ -1065,7 +1065,7 @@ public class DefaultEpadOperations implements EpadOperations
 				log.warning("No permissions to delete AIM:" + aimID + " for user " + username);
 				throw new Exception("No permissions to delete Annotation");
 			}
-			AIMUtil.deleteAIM(aimID);
+			AIMUtil.deleteAIM(aimID, imageReference.projectID);
 			epadDatabaseOperations.deleteAIM(username, imageReference, aimID);
 			if (deleteDSO && aim.dsoSeriesUID != null && aim.dsoSeriesUID.length() > 0 && epadDatabaseOperations.getAIMs(aim.dsoSeriesUID).size() == 0)
 			{
@@ -1093,7 +1093,7 @@ public class DefaultEpadOperations implements EpadOperations
 				log.warning("No permissions to delete AIM:" + aimID + " for user " + username);
 				throw new Exception("No permissions to delete Annotation");
 			}
-			AIMUtil.deleteAIM(aimID);
+			AIMUtil.deleteAIM(aimID, frameReference.projectID);
 			epadDatabaseOperations.deleteAIM(username, frameReference, aimID);
 			if (deleteDSO && aim.dsoSeriesUID != null && aim.dsoSeriesUID.length() > 0 && epadDatabaseOperations.getAIMs(aim.dsoSeriesUID).size() == 0)
 			{
@@ -1120,7 +1120,7 @@ public class DefaultEpadOperations implements EpadOperations
 				log.warning("No permissions to delete AIM:" + aimID + " for user " + username);
 				throw new Exception("No permissions to delete Annotation");
 			}
-			AIMUtil.deleteAIM(aimID);
+			AIMUtil.deleteAIM(aimID, aim.projectID);
 			epadDatabaseOperations.deleteAIM(username, aimID);
 			if (deleteDSO && aim.dsoSeriesUID != null && aim.dsoSeriesUID.length() > 0 && epadDatabaseOperations.getAIMs(aim.dsoSeriesUID).size() == 0)
 			{
