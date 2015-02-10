@@ -390,7 +390,7 @@ public class EPADHandler extends AbstractHandler
 				log.info("Time taken for AIM database query:" + (dbtime-starttime) + " msecs");
 				if (returnSummary(httpRequest))
 				{
-					aims = AIMUtil.queryAIMImageAnnotationSummaries(aims, username, start, count, sessionID);					
+					aims = AIMUtil.queryAIMImageAnnotationSummariesV4(aims, username, sessionID);					
 					long starttime2 = System.currentTimeMillis();
 					responseStream.append(aims.toJSON());
 					long resptime = System.currentTimeMillis();
@@ -427,13 +427,14 @@ public class EPADHandler extends AbstractHandler
 				log.info("Time taken for AIM database query:" + (dbtime-starttime) + " msecs");
 				if (returnSummary(httpRequest))
 				{	
-					aims = AIMUtil.queryAIMImageAnnotationSummaries(aims, username, start, count, sessionID);					
+					aims = AIMUtil.queryAIMImageAnnotationSummariesV4(aims, username, sessionID);					
 					responseStream.append(aims.toJSON());
 				}
 				else
 				{
-					AIMUtil.queryAIMImageAnnotations(responseStream, AIMSearchType.ANNOTATION_UID,
-							AIMUtil.getUIDCsvList(sessionID, aims, username), username, start, count);					
+					//AIMUtil.queryAIMImageAnnotations(responseStream, AIMSearchType.ANNOTATION_UID,
+					//		AIMUtil.getUIDCsvList(sessionID, aims, username), username, start, count);					
+					AIMUtil.queryAIMImageAnnotationsV4(responseStream, aims, username, sessionID);					
 				}
 				statusCode = HttpServletResponse.SC_OK;
 
@@ -460,7 +461,7 @@ public class EPADHandler extends AbstractHandler
 				log.info("Time taken for AIM database query:" + (dbtime-starttime) + " msecs");
 				if (returnSummary(httpRequest))
 				{	
-					aims = AIMUtil.queryAIMImageAnnotationSummaries(aims, username, start, count, sessionID);					
+					aims = AIMUtil.queryAIMImageAnnotationSummariesV4(aims, username, sessionID);					
 					responseStream.append(aims.toJSON());
 				}
 				else
@@ -492,7 +493,7 @@ public class EPADHandler extends AbstractHandler
 				log.info("Time taken for AIM database query:" + (dbtime-starttime) + " msecs");
 				if (returnSummary(httpRequest))
 				{	
-					aims = AIMUtil.queryAIMImageAnnotationSummaries(aims, username, start, count, sessionID);					
+					aims = AIMUtil.queryAIMImageAnnotationSummariesV4(aims, username, sessionID);					
 					responseStream.append(aims.toJSON());
 				}
 				else
@@ -524,7 +525,7 @@ public class EPADHandler extends AbstractHandler
 				log.info("Time taken for AIM database query:" + (dbtime-starttime) + " msecs");
 				if (returnSummary(httpRequest))
 				{	
-					aims = AIMUtil.queryAIMImageAnnotationSummaries(aims, username, start, count, sessionID);					
+					aims = AIMUtil.queryAIMImageAnnotationSummariesV4(aims, username, sessionID);					
 					responseStream.append(aims.toJSON());
 				}
 				else
@@ -556,7 +557,7 @@ public class EPADHandler extends AbstractHandler
 				log.info("Time taken for AIM database query:" + (dbtime-starttime) + " msecs");
 				if (returnSummary(httpRequest))
 				{	
-					aims = AIMUtil.queryAIMImageAnnotationSummaries(aims, username, start, count, sessionID);					
+					aims = AIMUtil.queryAIMImageAnnotationSummariesV4(aims, username, sessionID);					
 					responseStream.append(aims.toJSON());
 				}
 				else
@@ -593,7 +594,7 @@ public class EPADHandler extends AbstractHandler
 				log.info("Time taken for AIM database query:" + (dbtime-starttime) + " msecs");
 				if (returnSummary(httpRequest))
 				{	
-					aims = AIMUtil.queryAIMImageAnnotationSummaries(aims, username, start, count, sessionID);					
+					aims = AIMUtil.queryAIMImageAnnotationSummariesV4(aims, username, sessionID);					
 					responseStream.append(aims.toJSON());
 				}
 				else
@@ -625,7 +626,7 @@ public class EPADHandler extends AbstractHandler
 				log.info("Time taken for AIM database query:" + (dbtime-starttime) + " msecs");
 				if (returnSummary(httpRequest))
 				{	
-					aims = AIMUtil.queryAIMImageAnnotationSummaries(aims, username, start, count, sessionID);					
+					aims = AIMUtil.queryAIMImageAnnotationSummariesV4(aims, username, sessionID);					
 					responseStream.append(aims.toJSON());
 				}
 				else
@@ -657,7 +658,7 @@ public class EPADHandler extends AbstractHandler
 				log.info("Time taken for AIM database query:" + (dbtime-starttime) + " msecs");
 				if (returnSummary(httpRequest))
 				{	
-					aims = AIMUtil.queryAIMImageAnnotationSummaries(aims, username, start, count, sessionID);					
+					aims = AIMUtil.queryAIMImageAnnotationSummariesV4(aims, username, sessionID);					
 					responseStream.append(aims.toJSON());
 				}
 				else
@@ -689,7 +690,7 @@ public class EPADHandler extends AbstractHandler
 				log.info("Time taken for AIM database query:" + (dbtime-starttime) + " msecs");
 				if (returnSummary(httpRequest))
 				{	
-					aims = AIMUtil.queryAIMImageAnnotationSummaries(aims, username, start, count, sessionID);					
+					aims = AIMUtil.queryAIMImageAnnotationSummariesV4(aims, username, sessionID);					
 					responseStream.append(aims.toJSON());
 				}
 				else
@@ -721,7 +722,7 @@ public class EPADHandler extends AbstractHandler
 				log.info("Time taken for AIM database query:" + (dbtime-starttime) + " msecs");
 				if (returnSummary(httpRequest))
 				{	
-					aims = AIMUtil.queryAIMImageAnnotationSummaries(aims, username, start, count, sessionID);					
+					aims = AIMUtil.queryAIMImageAnnotationSummariesV4(aims, username, sessionID);					
 					responseStream.append(aims.toJSON());
 				}
 				else
@@ -757,7 +758,7 @@ public class EPADHandler extends AbstractHandler
 				log.info("Time taken for AIM database query:" + (dbtime-starttime) + " msecs");
 				if (returnSummary(httpRequest))
 				{	
-					aims = AIMUtil.queryAIMImageAnnotationSummaries(aims, username, start, count, sessionID);					
+					aims = AIMUtil.queryAIMImageAnnotationSummariesV4(aims, username, sessionID);					
 					responseStream.append(aims.toJSON());
 				}
 				else

@@ -285,6 +285,9 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 	 */
 	@Override
 	public void deleteUser(String loggedInUser, String username) throws Exception {
+		User requestor = getUser(loggedInUser);
+		if (!requestor.isAdmin())
+			throw new Exception("No permissions to delete user");
 		User user = getUser(username);
 		user.delete();
 		userCache.remove(user.getUsername());
@@ -1285,8 +1288,18 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 	public void deleteFile(String loggedInUser, String projectID,
 			String subjectUID, String studyUID, String seriesUID,
 			String filename) throws Exception {
-		// TODO Auto-generated method stub
-		
+		EpadFile efile = getEpadFile(projectID, subjectUID, studyUID, seriesUID, filename);
+		if (efile == null)
+			throw new Exception("File not found");
+		String path = efile.getFilePath();
+		File file = new File(path);
+		try {
+			if (file.exists())
+				file.delete();
+		} catch (Exception x) {
+			log.warning("Error deleting file:" + file.getAbsolutePath(), x);
+		}
+		efile.delete();
 	}
 
 	/* (non-Javadoc)
@@ -1295,6 +1308,9 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 	@Override
 	public void deleteProject(String username, String projectID)
 			throws Exception {
+		User requestor = getUser(username);
+		if (!requestor.isAdmin() && !isOwner(username, projectID))
+			throw new Exception("No permissions to delete project");
 		Project project = getProject(projectID);
 		new ProjectToUser().deleteObjects("project_id=" + project.getId());		
 		new ProjectToSubjectToUser().deleteObjects("proj_subj_id in (select id from " + new ProjectToSubject().returnDBTABLE() + " where project_id=" + project.getId() + ")");
@@ -1309,6 +1325,9 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 	@Override
 	public void deleteSubject(String username, String subjectUID,
 			String projectID) throws Exception {
+		User requestor = getUser(username);
+		if (!requestor.isAdmin() && !isOwner(username, projectID))
+			throw new Exception("No permissions to delete subject");
 		Subject subject = getSubject(subjectUID);
 		Project project = getProject(projectID);
 		ProjectToSubject projSubj = (ProjectToSubject) new ProjectToSubject().getObject("project_id =" + project.getId() + " and subject_id=" + subject.getId());
@@ -1324,6 +1343,9 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 	@Override
 	public void deleteStudy(String username, String studyUID,
 			String subjectUID, String projectID) throws Exception {
+		User requestor = getUser(username);
+		if (!requestor.isAdmin() && !isOwner(username, projectID))
+			throw new Exception("No permissions to delete study");
 		Subject subject = getSubject(subjectUID);
 		Project project = getProject(projectID);
 		Study study = getStudy(studyUID);

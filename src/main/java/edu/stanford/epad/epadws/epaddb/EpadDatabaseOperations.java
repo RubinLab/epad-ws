@@ -107,7 +107,11 @@ public interface EpadDatabaseOperations
 	
 	List<EPADAIM> getAIMs(String projectID, AIMSearchType aimSearchType, String value, int start, int count);
 
-	List<EPADAIM> getAIMs(String dsoSeriesUID);
+	List<EPADAIM> getAIMsByDSOSeries(String dsoSeriesUID);
+
+	List<EPADAIM> getAIMsByDSOSeries(String projectID, String dsoSeriesUID);
+
+	List<EPADAIM> getAIMsByDSOSeries(String projectID, String patientID, String dsoSeriesUID);
 
 	int getNumberOfAIMs(String userName, ProjectReference reference);
 

@@ -381,7 +381,7 @@ public class DefaultEpadOperations implements EpadOperations
 			else if (epadSeries.isDSO)
 			{
 				// Check if AIM exists
-				List<EPADAIM> aims = this.epadDatabaseOperations.getAIMs(epadSeries.seriesUID);
+				List<EPADAIM> aims = this.epadDatabaseOperations.getAIMsByDSOSeries(epadSeries.seriesUID);
 				if (aims == null || aims.size() == 0)
 				{
 					Set<DICOMFileDescription> dicomFileDescriptions = dcm4CheeDatabaseOperations.getDICOMFilesForSeries(epadSeries.seriesUID);
@@ -685,7 +685,7 @@ public class DefaultEpadOperations implements EpadOperations
 		for (EPADAIM aim :aims)
 		{
 			epadDatabaseOperations.deleteAIM("", aim.aimID);
-			AIMUtil.deleteAIM(aim.aimID);
+			AIMUtil.deleteAIM(aim.aimID, aim.projectID);
 		}
 	}
 
@@ -1412,7 +1412,7 @@ public class DefaultEpadOperations implements EpadOperations
 		for (EPADAIM aim :aims)
 		{
 			epadDatabaseOperations.deleteAIM("", aim.aimID);
-			AIMUtil.deleteAIM(aim.aimID);
+			AIMUtil.deleteAIM(aim.aimID, aim.projectID);
 		}
 	}
 
@@ -1561,9 +1561,9 @@ public class DefaultEpadOperations implements EpadOperations
 				throw new Exception("No permissions to delete AIM:" + aimID + " for user " + username);
 			}
 			log.info("Deleting AIM, deleteDSO:" + deleteDSO + " dsoSeriesUID:" + aim.dsoSeriesUID);
-			AIMUtil.deleteAIM(aimID);
+			AIMUtil.deleteAIM(aimID, projectReference.projectID);
 			epadDatabaseOperations.deleteAIM(username, projectReference, aimID);
-			if (deleteDSO && aim.dsoSeriesUID != null && aim.dsoSeriesUID.length() > 0 && epadDatabaseOperations.getAIMs(aim.dsoSeriesUID).size() == 0)
+			if (deleteDSO && aim.dsoSeriesUID != null && aim.dsoSeriesUID.length() > 0 && epadDatabaseOperations.getAIMsByDSOSeries(aim.dsoSeriesUID).size() == 0)
 			{
 				log.info("Deleting Series:" + aim.dsoSeriesUID + " In project:" + aim.projectID);
 				this.deleteSeries(new SeriesReference(projectReference.projectID, aim.subjectID, aim.studyUID, aim.dsoSeriesUID), false);
@@ -1585,9 +1585,9 @@ public class DefaultEpadOperations implements EpadOperations
 				log.warning("No permissions to delete AIM:" + aimID + " for user " + username);
 				throw new Exception("No permissions to delete AIM:" + aimID + " for user " + username);
 			}
-			AIMUtil.deleteAIM(aimID);
+			AIMUtil.deleteAIM(aimID, subjectReference.projectID);
 			epadDatabaseOperations.deleteAIM(username, subjectReference, aimID);
-			if (deleteDSO && aim.dsoSeriesUID != null && aim.dsoSeriesUID.length() > 0 && epadDatabaseOperations.getAIMs(aim.dsoSeriesUID).size() == 0)
+			if (deleteDSO && aim.dsoSeriesUID != null && aim.dsoSeriesUID.length() > 0 && epadDatabaseOperations.getAIMsByDSOSeries(aim.dsoSeriesUID).size() == 0)
 			{
 				this.deleteSeries(new SeriesReference(subjectReference.projectID, aim.subjectID, aim.studyUID, aim.dsoSeriesUID), false);
 			}
@@ -1608,9 +1608,9 @@ public class DefaultEpadOperations implements EpadOperations
 				log.warning("No permissions to delete AIM:" + aimID + " for user " + username);
 				throw new Exception("No permissions to delete AIM:" + aimID + " for user " + username);
 			}
-			AIMUtil.deleteAIM(aimID);
+			AIMUtil.deleteAIM(aimID, studyReference.projectID);
 			epadDatabaseOperations.deleteAIM(username, studyReference, aimID);
-			if (deleteDSO && aim.dsoSeriesUID != null && aim.dsoSeriesUID.length() > 0 && epadDatabaseOperations.getAIMs(aim.dsoSeriesUID).size() == 0)
+			if (deleteDSO && aim.dsoSeriesUID != null && aim.dsoSeriesUID.length() > 0 && epadDatabaseOperations.getAIMsByDSOSeries(aim.dsoSeriesUID).size() == 0)
 			{
 				this.deleteSeries(new SeriesReference(studyReference.projectID, aim.subjectID, aim.studyUID, aim.dsoSeriesUID), false);
 			}
@@ -1631,9 +1631,9 @@ public class DefaultEpadOperations implements EpadOperations
 				log.warning("No permissions to delete AIM:" + aimID + " for user " + username);
 				throw new Exception("No permissions to delete AIM:" + aimID + " for user " + username);
 			}
-			AIMUtil.deleteAIM(aimID);
+			AIMUtil.deleteAIM(aimID, seriesReference.projectID);
 			epadDatabaseOperations.deleteAIM(username, seriesReference, aimID);
-			if (deleteDSO && aim.dsoSeriesUID != null && aim.dsoSeriesUID.length() > 0 && epadDatabaseOperations.getAIMs(aim.dsoSeriesUID).size() == 0)
+			if (deleteDSO && aim.dsoSeriesUID != null && aim.dsoSeriesUID.length() > 0 && epadDatabaseOperations.getAIMsByDSOSeries(aim.dsoSeriesUID).size() == 0)
 			{
 				this.deleteSeries(new SeriesReference(seriesReference.projectID, aim.subjectID, aim.studyUID, aim.dsoSeriesUID), false);
 			}
@@ -1654,9 +1654,9 @@ public class DefaultEpadOperations implements EpadOperations
 				log.warning("No permissions to delete AIM:" + aimID + " for user " + username);
 				throw new Exception("No permissions to delete AIM:" + aimID + " for user " + username);
 			}
-			AIMUtil.deleteAIM(aimID);
+			AIMUtil.deleteAIM(aimID, imageReference.projectID);
 			epadDatabaseOperations.deleteAIM(username, imageReference, aimID);
-			if (deleteDSO && aim.dsoSeriesUID != null && aim.dsoSeriesUID.length() > 0 && epadDatabaseOperations.getAIMs(aim.dsoSeriesUID).size() == 0)
+			if (deleteDSO && aim.dsoSeriesUID != null && aim.dsoSeriesUID.length() > 0 && epadDatabaseOperations.getAIMsByDSOSeries(aim.dsoSeriesUID).size() == 0)
 			{
 				this.deleteSeries(new SeriesReference(imageReference.projectID, aim.subjectID, aim.studyUID, aim.dsoSeriesUID), false);
 			}
@@ -1677,9 +1677,9 @@ public class DefaultEpadOperations implements EpadOperations
 				log.warning("No permissions to delete AIM:" + aimID + " for user " + username);
 				throw new Exception("No permissions to delete AIM:" + aimID + " for user " + username);
 			}
-			AIMUtil.deleteAIM(aimID);
+			AIMUtil.deleteAIM(aimID, frameReference.projectID);
 			epadDatabaseOperations.deleteAIM(username, frameReference, aimID);
-			if (deleteDSO && aim.dsoSeriesUID != null && aim.dsoSeriesUID.length() > 0 && epadDatabaseOperations.getAIMs(aim.dsoSeriesUID).size() == 0)
+			if (deleteDSO && aim.dsoSeriesUID != null && aim.dsoSeriesUID.length() > 0 && epadDatabaseOperations.getAIMsByDSOSeries(aim.dsoSeriesUID).size() == 0)
 			{
 				this.deleteSeries(new SeriesReference(frameReference.projectID, aim.subjectID, aim.studyUID, aim.dsoSeriesUID), false);
 			}
@@ -1699,9 +1699,9 @@ public class DefaultEpadOperations implements EpadOperations
 				log.warning("No permissions to delete AIM:" + aimID + " for user " + username);
 				throw new Exception("No permissions to delete AIM:" + aimID + " for user " + username);
 			}
-			AIMUtil.deleteAIM(aimID);
+			AIMUtil.deleteAIM(aimID, aim.projectID);
 			epadDatabaseOperations.deleteAIM(username, aimID);
-			if (deleteDSO && aim.dsoSeriesUID != null && aim.dsoSeriesUID.length() > 0 && epadDatabaseOperations.getAIMs(aim.dsoSeriesUID).size() == 0)
+			if (deleteDSO && aim.dsoSeriesUID != null && aim.dsoSeriesUID.length() > 0 && epadDatabaseOperations.getAIMsByDSOSeries(aim.dsoSeriesUID).size() == 0)
 			{
 				this.deleteSeries(new SeriesReference(aim.projectID, aim.subjectID, aim.studyUID, aim.dsoSeriesUID), false);
 			}

@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Set;
 
 import edu.stanford.epad.common.util.EPADLogger;
+import edu.stanford.epad.dtos.EPADAIM;
 import edu.stanford.epad.epadws.aim.AIMQueries;
 import edu.stanford.epad.epadws.aim.AIMSearchType;
 import edu.stanford.epad.epadws.aim.AIMUtil;
@@ -51,8 +52,9 @@ public class DSOMaskPNGGeneratorTask implements GeneratorTask
 			seriesBeingProcessed.add(seriesUID);
 			DSOUtil.writeDSOMaskPNGs(dsoFile);
 			// Must be first upload, create AIM file
+			List<EPADAIM> aims = EpadDatabase.getInstance().getEPADDatabaseOperations().getAIMsByDSOSeries(seriesUID);
 			List<ImageAnnotation> ias = AIMQueries.getAIMImageAnnotations(AIMSearchType.SERIES_UID, seriesUID, "admin", 1, 50);
-			if ((ias == null || ias.size() == 0) && generateAIM)
+			if ((ias == null || ias.size() == 0 || aims.size() == 0) && generateAIM)
 			{
 				ImageAnnotation ia = AIMUtil.generateAIMFileForDSO(dsoFile);
 				ias = new ArrayList<ImageAnnotation>();

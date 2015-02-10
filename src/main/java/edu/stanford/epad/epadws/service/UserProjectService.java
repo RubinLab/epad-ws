@@ -42,6 +42,7 @@ import org.dcm4che2.data.Tag;
 import edu.stanford.epad.common.dicom.DicomReader;
 import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADLogger;
+import edu.stanford.epad.dtos.EPADAIM;
 import edu.stanford.epad.epadws.aim.AIMQueries;
 import edu.stanford.epad.epadws.aim.AIMSearchType;
 import edu.stanford.epad.epadws.aim.AIMUtil;
@@ -325,8 +326,9 @@ public class UserProjectService {
 			if ("SEG".equals(modality))
 			{
 				try {
+					List<EPADAIM> aims = databaseOperations.getAIMsByDSOSeries(projectID, dicomPatientID, seriesUID);
 					List<ImageAnnotation> ias = AIMQueries.getAIMImageAnnotations(AIMSearchType.SERIES_UID, seriesUID, username, 1, 50);
-					if (ias.size() == 0) 
+					if (ias.size() == 0 || aims.size() == 0) 
 						AIMUtil.generateAIMFileForDSO(dicomFile, username, projectID);
 				} catch (Exception x) {
 					log.warning("Error generating DSO Annotation:", x);

@@ -17,8 +17,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import com.mongodb.DB;
+
 import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADLogger;
+import edu.stanford.epad.common.util.MongoDBOperations;
 import edu.stanford.epad.dtos.EPADAIM;
 import edu.stanford.epad.dtos.PNGFileProcessingStatus;
 import edu.stanford.epad.dtos.SeriesProcessingStatus;
@@ -32,6 +35,8 @@ import edu.stanford.epad.epadws.handlers.core.ProjectReference;
 import edu.stanford.epad.epadws.handlers.core.SeriesReference;
 import edu.stanford.epad.epadws.handlers.core.StudyReference;
 import edu.stanford.epad.epadws.handlers.core.SubjectReference;
+import edu.stanford.epad.epadws.models.Project;
+import edu.stanford.epad.epadws.service.DefaultEpadProjectOperations;
 import edu.stanford.hakan.aim4api.base.AimException;
 import edu.stanford.hakan.aim4api.base.Enumerations.AimVersion;
 
@@ -171,21 +176,43 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 				close(c);
 			}
 		}
-		// Check empty xml columns
-		try {
-			log.info("Checking annotations table xml data ...");
-			
-			if (!EPADConfig.useV4.equals("false"))
-			{
+		if (!EPADConfig.useV4.equals("false"))
+		{
+			// Check empty xml columns
+			try {
+				log.info("Checking annotations table xml data ...");
+				
 				adb = new AIMDatabaseOperations(c, EPADConfig.eXistServerUrl,
 						EPADConfig.aim4Namespace, EPADConfig.eXistCollection, EPADConfig.eXistUsername, EPADConfig.eXistPassword);
 				List<EPADAIM> aims = adb.getAIMs("XML is null", 0, 0);
 				AIMUtil.updateTableXMLs(aims);
+			} catch (Exception sqle) {
+				log.warning("AIM Database operation failed:", sqle);
+			} finally {
+				close(c);
 			}
-		} catch (Exception sqle) {
-			log.warning("AIM Database operation failed:", sqle);
-		} finally {
-			close(c);
+			// Check mongoDB
+			try {
+				log.info("Checking mongoDB ...");
+				DB mongoDB = MongoDBOperations.getMongoDB();
+				if (mongoDB !=  null) {
+					adb = new AIMDatabaseOperations(c, EPADConfig.eXistServerUrl,
+							EPADConfig.aim4Namespace, EPADConfig.eXistCollection, EPADConfig.eXistUsername, EPADConfig.eXistPassword);
+					List<Project> projects = DefaultEpadProjectOperations.getInstance().getAllProjects();
+					for (Project p: projects) {
+						count = adb.getAIMCount("admin", p.getProjectId(), null, null, null, null, 0);
+						int mongoCount = MongoDBOperations.getNumberOfDocuments("", p.getProjectId());
+						if (count != mongoCount && count != 0) {
+							List<EPADAIM> aims = adb.getAIMs(p.getProjectId(), AIMSearchType.ANNOTATION_UID, "all");
+							AIMUtil.updateMongDB(aims);
+						}
+					}
+				}
+			} catch (Exception sqle) {
+				log.warning("AIM Database operation failed:", sqle);
+			} finally {
+				close(c);
+			}
 		}
 	}
 
@@ -441,13 +468,45 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 	}
 
 	@Override
-	public List<EPADAIM> getAIMs(String dsoSeriesUID) {
+	public List<EPADAIM> getAIMsByDSOSeries(String dsoSeriesUID) {
 		Connection c = null;
 		try {
 			c = getConnection();
 			AIMDatabaseOperations adb = new AIMDatabaseOperations(c, EPADConfig.eXistServerUrl,
 					EPADConfig.aim4Namespace, EPADConfig.eXistCollection, EPADConfig.eXistUsername, EPADConfig.eXistPassword);
 			return adb.getAIMs(null, null, null, null, null, 0, dsoSeriesUID, 1, 50);
+		} catch (SQLException sqle) {
+			log.warning("AIM Database operation failed:", sqle);
+		} finally {
+			close(c);
+		}
+		return new ArrayList<EPADAIM>();
+	}
+
+	@Override
+	public List<EPADAIM> getAIMsByDSOSeries(String projectID, String dsoSeriesUID) {
+		Connection c = null;
+		try {
+			c = getConnection();
+			AIMDatabaseOperations adb = new AIMDatabaseOperations(c, EPADConfig.eXistServerUrl,
+					EPADConfig.aim4Namespace, EPADConfig.eXistCollection, EPADConfig.eXistUsername, EPADConfig.eXistPassword);
+			return adb.getAIMs(projectID, null, null, null, null, 0, dsoSeriesUID, 1, 50);
+		} catch (SQLException sqle) {
+			log.warning("AIM Database operation failed:", sqle);
+		} finally {
+			close(c);
+		}
+		return new ArrayList<EPADAIM>();
+	}
+
+	@Override
+	public List<EPADAIM> getAIMsByDSOSeries(String projectID, String patientID, String dsoSeriesUID) {
+		Connection c = null;
+		try {
+			c = getConnection();
+			AIMDatabaseOperations adb = new AIMDatabaseOperations(c, EPADConfig.eXistServerUrl,
+					EPADConfig.aim4Namespace, EPADConfig.eXistCollection, EPADConfig.eXistUsername, EPADConfig.eXistPassword);
+			return adb.getAIMs(projectID, patientID, null, null, null, 0, dsoSeriesUID, 1, 50);
 		} catch (SQLException sqle) {
 			log.warning("AIM Database operation failed:", sqle);
 		} finally {

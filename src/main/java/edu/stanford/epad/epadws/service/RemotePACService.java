@@ -215,7 +215,7 @@ public class RemotePACService extends RemotePACSBase {
 		RemotePACQuery query = null;
 		try {
 			query = getRemotePACQuery(pacID, subjectUID);
-			if (query != null)
+			if (query != null && !user.isAdmin() && !user.getUsername().equals(query.getRequestor()));
 				throw new Exception("Remote PAC and Patient already configured for periodic query");
 		} catch (Exception x) {};
 		Project project = DefaultEpadProjectOperations.getInstance().getProject(projectID);
@@ -256,7 +256,8 @@ public class RemotePACService extends RemotePACSBase {
 			} catch (Exception x) {};
 			
 		}
-		query = new RemotePACQuery();
+		if (query == null)
+			query = new RemotePACQuery();
 		query.setRequestor(username);
 		query.setPacId(pacID);
 		query.setSubjectId(subject.getId());
@@ -302,7 +303,10 @@ public class RemotePACService extends RemotePACSBase {
 	 * @throws Exception
 	 */
 	public void disableRemotePACQuery(String loggedInUser, String pacID, String subjectID) throws Exception {
-		List objects = new RemotePACQuery().getObjects("pacID = '" + pacID + "' and subject_id ='" + subjectID + "'");
+		Subject subject = DefaultEpadProjectOperations.getInstance().getSubject(subjectID);
+		if (subject == null)
+			throw new Exception("Subject not found, ID:" + subjectID);
+		List objects = new RemotePACQuery().getObjects("pacID = '" + pacID + "' and subject_id =" + subject.getId());
 		if (objects.size() > 1)
 		{
 			log.warning("More than one query found for PacID:" + pacID + " and SubjectID:" + subjectID);
@@ -313,6 +317,8 @@ public class RemotePACService extends RemotePACSBase {
 			query.setEnabled(false);
 			query.save();
 		}
+		if (objects.size() == 0)
+			throw new Exception("Remote Query Configuration not found");
 	}
 
 	/**
@@ -322,7 +328,10 @@ public class RemotePACService extends RemotePACSBase {
 	 * @throws Exception
 	 */
 	public void enableRemotePACQuery(String loggedInUser, String pacID, String subjectID) throws Exception {
-		List objects = new RemotePACQuery().getObjects("pacID = '" + pacID + "' and subject_id ='" + subjectID + "'");
+		Subject subject = DefaultEpadProjectOperations.getInstance().getSubject(subjectID);
+		if (subject == null)
+			throw new Exception("Subject not found, ID:" + subjectID);
+		List objects = new RemotePACQuery().getObjects("pacID = '" + pacID + "' and subject_id =" + subject.getId());
 		if (objects.size() > 1)
 		{
 			log.warning("More than one query found for PacID:" + pacID + " and SubjectID:" + subjectID);
@@ -333,6 +342,8 @@ public class RemotePACService extends RemotePACSBase {
 			query.setEnabled(true);
 			query.save();
 		}
+		else
+			throw new Exception("Remote Query Configuration not found");
 	}
 
 	/**
@@ -350,6 +361,7 @@ public class RemotePACService extends RemotePACSBase {
 				query.getLastQueryStatus());
 	}
 	
+	public static Map<String, AttributeList> currentPACQueries = new HashMap<String, AttributeList>();
 	/**
 	 * Query a Remote PAC given patient/studydate filters
 	 * @param pac
@@ -363,6 +375,8 @@ public class RemotePACService extends RemotePACSBase {
 		
 		try {
 			log.info("Remote PAC Query, pacID:" + pac.pacID + " patientName:" + patientNameFilter + " patientID:" + patientIDFilter + " studyDate:" + studyDateFilter);
+			if (currentPACQueries.containsKey(pac.pacID))
+				throw new Exception("Last query to this PAC still in progress");
 			this.setCurrentRemoteQueryInformationModel(pac.pacID, true);
 			SpecificCharacterSet specificCharacterSet = new SpecificCharacterSet((String[])null);
 			AttributeList filter = new AttributeList();
@@ -434,6 +448,8 @@ public class RemotePACService extends RemotePACSBase {
 		catch (Exception e) {
 			e.printStackTrace();
 			throw e;
+		} finally {
+			currentPACQueries.remove(pac.pacID);
 		}
 	}
 	
@@ -471,8 +487,7 @@ public class RemotePACService extends RemotePACSBase {
 				IDtype = "Instance";
 			}
 		}
-		log.debug("Remote Query - Level:" + level + " Type:" + node.getInformationEntity() + " Value:" + node.getValue() + " entities:" + entities.size()
-		+ " " + IDtype + ":" + ID);
+		//log.debug("Remote Query - Level:" + level + " Type:" + node.getInformationEntity() + " Value:" + node.getValue() + " entities:" + entities.size() + " " + IDtype + ":" + ID);
 		String type = "";
 		if (node.getInformationEntity() != null) 
 		{
@@ -493,6 +508,9 @@ public class RemotePACService extends RemotePACSBase {
 		if (includeInstances || !type.equals("Instance"))
 			entities.add(entity);
 		
+		int num = entities.size();
+		if (num%100 == 0)
+			log.info("Remote Query, number of records, received:" + num);
 		if (!includeInstances && entities.size() >= MAX_SERIES_QUERY)
 			return entities;
 		
