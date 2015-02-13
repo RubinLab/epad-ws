@@ -149,6 +149,7 @@ public class Main
 			EpadDatabaseOperations databaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
 			//log.info("Checking annotations table");
 			databaseOperations.checkAndRefreshAnnotationsTable();
+			log.info("Done with database/queues init");
 		} catch (Exception e) {
 			log.warning("Failed to start database", e);
 			System.exit(1);
