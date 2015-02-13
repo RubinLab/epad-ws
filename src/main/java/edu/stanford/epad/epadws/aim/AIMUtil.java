@@ -975,9 +975,13 @@ public class AIMUtil
 				if (aims.size() > 0)
 				{
 					log.info("Saving AIM4:" + epadaim.aimID + " in project " + epadaim.projectID);
-					AIMUtil.saveImageAnnotationToServer(aims.get(0).toAimV4(), epadaim.projectID, 0, adminSessionID, false);
+					String result = AIMUtil.saveImageAnnotationToServer(aims.get(0).toAimV4(), epadaim.projectID, 0, adminSessionID, false);
+					log.info("Save AIM4 results:" + result);
 					count++;
 				}
+				else
+					log.info("AIM4:" + epadaim.aimID + " in project " + epadaim.projectID + " not found");
+					
 			}
 			catch (Exception x) {
 				log.warning("Error converting aim3:" + epadaim.aimID, x);
