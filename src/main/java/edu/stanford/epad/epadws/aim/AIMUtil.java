@@ -594,7 +594,7 @@ public class AIMUtil
             if (imageAnnotation != null) {
 				EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
 				EPADAIM ea = epadDatabaseOperations.getAIM(imageAnnotation.getUniqueIdentifier().getRoot());
-				if (!ea.projectID.equals(projectID))
+				if (ea != null && !ea.projectID.equals(projectID))
 					projectID = ea.projectID; 		// TODO: Do we change AIM project if it is in unassigned? 
 				Aim4 aim = new Aim4(imageAnnotation);
 				String patientID = aim.getPatientID();

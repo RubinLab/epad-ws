@@ -849,8 +849,8 @@ public class DefaultEpadOperations implements EpadOperations
 			ProjectReference projectReference, String aimID, File aimFile,
 			String sessionID) {
 		try {
-			EPADAIM aim = epadDatabaseOperations.addAIM(username, projectReference, aimID);
-			if (!AIMUtil.saveAIMAnnotation(aimFile, aim.projectID, sessionID, username))
+			//EPADAIM aim = epadDatabaseOperations.addAIM(username, projectReference, aimID);
+			if (!AIMUtil.saveAIMAnnotation(aimFile, projectReference.projectID, sessionID, username))
 				return "";
 			else
 				return "Error saving AIM file";
