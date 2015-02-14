@@ -98,7 +98,8 @@ public class AimResourceHandler extends AbstractHandler
 						if (aimID != null) {
 							try {
 								log.info("Deleting AIM annotation " + aimID);
-								if (AIMUtil.deleteAIM(aimID))
+								String projectID = httpRequest.getParameter("projectID");
+								if (AIMUtil.deleteAIM(aimID, projectID))
 									statusCode = HttpServletResponse.SC_OK;
 								else
 									statusCode = HttpServletResponse.SC_NOT_FOUND;

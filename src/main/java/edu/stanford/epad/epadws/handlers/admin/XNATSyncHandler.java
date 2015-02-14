@@ -211,6 +211,7 @@ public class XNATSyncHandler extends AbstractHandler
 				Subject subject = projectOperations.getSubject(xsubject.label);
 				if (subject == null)
 				{
+					String subname = trimTrailing(xsubject.src);
 					subject = projectOperations.createSubject(username, xsubject.label, xsubject.src, null, null);
 					response = response + "\nCreated subject " + xsubject.src;
 				}
@@ -268,5 +269,13 @@ public class XNATSyncHandler extends AbstractHandler
 			return "guest";
 		return login;  // Keep password same as login
 //		return "" + new IdGenerator().generateId(2) + login + new IdGenerator().generateId(2);
+	}
+	
+	private static String trimTrailing(String xnatName)
+	{
+		while (xnatName.endsWith("^"))
+			xnatName = xnatName.substring(0, xnatName.length()-1);
+		String name = xnatName.trim();
+		return name;
 	}
 }

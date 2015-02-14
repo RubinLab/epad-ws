@@ -202,7 +202,8 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 					for (Project p: projects) {
 						count = adb.getAIMCount("admin", p.getProjectId(), null, null, null, null, 0);
 						int mongoCount = MongoDBOperations.getNumberOfDocuments("", p.getProjectId());
-						if (count != mongoCount && count != 0) {
+						log.debug("mysqlDB Count:" + count + " mongoDB Count:" + mongoCount);
+						if (count > mongoCount) {
 							List<EPADAIM> aims = adb.getAIMs(p.getProjectId(), AIMSearchType.ANNOTATION_UID, "all");
 							AIMUtil.updateMongDB(aims);
 						}

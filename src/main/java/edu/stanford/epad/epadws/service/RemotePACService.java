@@ -371,10 +371,10 @@ public class RemotePACService extends RemotePACSBase {
 	 * @return
 	 * @throws Exception
 	 */
-	public synchronized List<RemotePACEntity> queryRemoteData(RemotePAC pac, String patientNameFilter, String patientIDFilter, String studyDateFilter, boolean includeInstances) throws Exception {
+	public synchronized List<RemotePACEntity> queryRemoteData(RemotePAC pac, String patientNameFilter, String patientIDFilter, String studyIDFilter, String studyDateFilter, boolean patientsOnly, boolean studiesOnly) throws Exception {
 		
 		try {
-			log.info("Remote PAC Query, pacID:" + pac.pacID + " patientName:" + patientNameFilter + " patientID:" + patientIDFilter + " studyDate:" + studyDateFilter);
+			log.info("Remote PAC Query, pacID:" + pac.pacID + " patientName:" + patientNameFilter + " patientID:" + patientIDFilter + " studyDate:" + studyDateFilter + " studyIDFilter:" + studyIDFilter + " studiesOnly:" + studiesOnly);
 			if (currentPACQueries.containsKey(pac.pacID))
 				throw new Exception("Last query to this PAC still in progress");
 			this.setCurrentRemoteQueryInformationModel(pac.pacID, true);
@@ -397,7 +397,7 @@ public class RemotePACService extends RemotePACSBase {
 			{ AttributeTag t = TagFromName.PatientBirthDate; Attribute a = new DateAttribute(t); filter.put(t,a); }
 			{ AttributeTag t = TagFromName.PatientSex; Attribute a = new CodeStringAttribute(t); filter.put(t,a); }
 
-			{ AttributeTag t = TagFromName.StudyID; Attribute a = new ShortStringAttribute(t,specificCharacterSet); filter.put(t,a); }
+			{ AttributeTag t = TagFromName.StudyID; Attribute a = new ShortStringAttribute(t,specificCharacterSet); filter.put(t,a);}
 			{ AttributeTag t = TagFromName.StudyDescription; Attribute a = new LongStringAttribute(t,specificCharacterSet); filter.put(t,a); }
 			{ AttributeTag t = TagFromName.ModalitiesInStudy; Attribute a = new CodeStringAttribute(t); filter.put(t,a); }
 			// StudyDate formats:
@@ -429,7 +429,13 @@ public class RemotePACService extends RemotePACSBase {
 			{ AttributeTag t = TagFromName.WindowCenter; Attribute a = new DecimalStringAttribute(t); filter.put(t,a); }
 			{ AttributeTag t = TagFromName.WindowWidth; Attribute a = new DecimalStringAttribute(t); filter.put(t,a); }
 
-			{ AttributeTag t = TagFromName.StudyInstanceUID; Attribute a = new UniqueIdentifierAttribute(t); filter.put(t,a); }
+			{ 
+				AttributeTag t = TagFromName.StudyInstanceUID; Attribute a = new UniqueIdentifierAttribute(t); 
+				if (studyIDFilter != null && studyIDFilter.length() > 0) {
+					a.addValue(studyIDFilter);
+				}		
+				filter.put(t,a); 
+			}
 			{ AttributeTag t = TagFromName.SeriesInstanceUID; Attribute a = new UniqueIdentifierAttribute(t); filter.put(t,a); }
 			{ AttributeTag t = TagFromName.SOPInstanceUID; Attribute a = new UniqueIdentifierAttribute(t); filter.put(t,a); }
 			{ AttributeTag t = TagFromName.SOPClassUID; Attribute a = new UniqueIdentifierAttribute(t); filter.put(t,a); }
@@ -439,10 +445,23 @@ public class RemotePACService extends RemotePACSBase {
 				clearQueryCache();
 			List<RemotePACEntity> remoteEntities = new ArrayList<RemotePACEntity>();
 			String key = pac.pacID;
+			long startTime = System.currentTimeMillis();
 			QueryTreeModel treeModel = currentRemoteQueryInformationModel.performHierarchicalQuery(filter);
+			long endTime = System.currentTimeMillis();
+			log.info("Remote PAC Query took " + (endTime-startTime) + " msecs");
 			QueryTreeRecord root = (QueryTreeRecord) treeModel.getRoot();
-			remoteEntities = traverseTree(root, 0, remoteEntities, key, includeInstances);
-			log.info("Number of entities returned:" + remoteEntities.size());
+			remoteEntities = traverseTree(root, 0, remoteEntities, key, patientsOnly, studiesOnly);
+			long traverseTime = System.currentTimeMillis();
+			log.info("Remote PAC tree records took "+ (traverseTime-endTime) + " msecs. Number of entities returned:" + remoteEntities.size());
+			if (patientsOnly) 
+				remoteEntities.remove(0); // Remove AE record
+			if (studiesOnly) 
+				remoteEntities.remove(0); // Remove AE record
+			if (studyIDFilter != null && studyIDFilter.length() > 0 && !studiesOnly) 
+			{
+				remoteEntities.remove(0); // Remove AE record
+				remoteEntities.remove(0); // Remove Study Record
+			}
 			return remoteEntities;
 		}
 		catch (Exception e) {
@@ -462,32 +481,9 @@ public class RemotePACService extends RemotePACSBase {
 	}
 	
 	DecimalFormat decformat = new DecimalFormat("00000");
-	private List<RemotePACEntity> traverseTree(QueryTreeRecord node, int level, List<RemotePACEntity> entities, String key, boolean includeInstances) {
+	Set<String> patientIds = new HashSet<String>();
+	private List<RemotePACEntity> traverseTree(QueryTreeRecord node, int level, List<RemotePACEntity> entities, String key, boolean patientsOnly, boolean studiesOnly) {
 		AttributeList al = node.getAllAttributesReturnedInIdentifier();
-		Object tags = null;
-		String ID = null;
-		String IDtype = "Patient";
-		if (al != null)
-		{
-			tags = al.keySet();
-			ID = Attribute.getSingleStringValueOrNull(al,TagFromName.PatientID);
-			if (ID == null)
-			{
-				ID = Attribute.getSingleStringValueOrNull(al,TagFromName.StudyID);
-				IDtype = "Study";
-			}
-			if (ID == null)
-			{
-				ID = Attribute.getSingleStringValueOrNull(al,TagFromName.SeriesInstanceUID);
-				IDtype = "Series";
-			}
-			if (ID == null)
-			{
-				ID = Attribute.getSingleStringValueOrNull(al,TagFromName.SOPInstanceUID);
-				IDtype = "Instance";
-			}
-		}
-		//log.debug("Remote Query - Level:" + level + " Type:" + node.getInformationEntity() + " Value:" + node.getValue() + " entities:" + entities.size() + " " + IDtype + ":" + ID);
 		String type = "";
 		if (node.getInformationEntity() != null) 
 		{
@@ -504,24 +500,32 @@ public class RemotePACService extends RemotePACSBase {
 			ukey = entities.get(0).entityID + ":" + node.getUniqueKey().getDelimitedStringValuesOrEmptyString(); // Is this key better???
 		}
 		RemotePACEntity entity = new RemotePACEntity(type, node.getValue(), level, ukey);
+		entity.subjectID = Attribute.getSingleStringValueOrNull(al,TagFromName.PatientID);
+		entity.subjectName = Attribute.getSingleStringValueOrNull(al,TagFromName.PatientName);
+		if (patientsOnly && patientIds.contains(entity.subjectID))
+			return entities;
+		patientIds.add(entity.subjectID);
 		remoteQueryCache.put(ukey, node);
-		if (includeInstances || !type.equals("Instance"))
+		if (!studiesOnly || !type.equals("Series"))
 			entities.add(entity);
 		
 		int num = entities.size();
 		if (num%100 == 0)
 			log.info("Remote Query, number of records, received:" + num);
-		if (!includeInstances && entities.size() >= MAX_SERIES_QUERY)
+		if (studiesOnly && entities.size() >= MAX_SERIES_QUERY)
 			return entities;
 		
-		if (includeInstances && entities.size() >= MAX_INSTANCE_QUERY)
+		if (!studiesOnly && entities.size() >= MAX_INSTANCE_QUERY)
 			return entities;
 		
 		int n = ((QueryTreeRecord)node).getChildCount();
 		
 		for (int i = 0; i < n; i++) {
-			if (includeInstances || !type.equals("Series"))
-				traverseTree((QueryTreeRecord)((QueryTreeRecord)node).getChildAt(i), level+1, entities, key + ":" + decformat.format(i), includeInstances);
+			if ((!studiesOnly || !type.equals("Study")) && !type.equals("Series"))
+			{
+				//log.info("Remote Query, getting children:" + type);
+				traverseTree((QueryTreeRecord)((QueryTreeRecord)node).getChildAt(i), level+1, entities, key + ":" + decformat.format(i), patientsOnly, studiesOnly);
+			}
 		}
 		return entities;
 	}
@@ -545,7 +549,7 @@ public class RemotePACService extends RemotePACSBase {
 		// If no cached pointers, query entire PAC again (or should we give an error???)
 		if (node == null)
 		{
-			queryRemoteData(pac, "", "", "", false);
+			queryRemoteData(pac, "", "", "", "", false, false);
 			node = remoteQueryCache.get(uniqueKey);
 			if (node == null)
 				throw new Exception("Remote data not found");

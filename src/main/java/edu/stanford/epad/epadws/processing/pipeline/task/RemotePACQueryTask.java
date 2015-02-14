@@ -100,7 +100,7 @@ public class RemotePACQueryTask implements Runnable
 				}
 				if (studyDate != null && !studyDate.endsWith("-"))
 					studyDate = studyDate + "-";
-				List<RemotePACEntity> entities = rps.queryRemoteData(pac, null, subject.getSubjectUID(), studyDate, false);
+				List<RemotePACEntity> entities = rps.queryRemoteData(pac, null, subject.getSubjectUID(), "", studyDate, false, true);
 				query.setLastQueryStatus("Query Completed, number of new objects:" + entities.size());
 				String status = "";
 				Date newStudyDate = null;

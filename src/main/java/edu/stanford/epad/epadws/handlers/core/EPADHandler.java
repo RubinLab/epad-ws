@@ -390,16 +390,28 @@ public class EPADHandler extends AbstractHandler
 				log.info("Time taken for AIM database query:" + (dbtime-starttime) + " msecs");
 				if (returnSummary(httpRequest))
 				{
-					aims = AIMUtil.queryAIMImageAnnotationSummariesV4(aims, username, sessionID);					
+					if (AIMSearchType.JSON_QUERY.equals(aimSearchType) || AIMSearchType.AIM_QUERY.equals(aimSearchType))
+						aims = AIMUtil.queryAIMImageAnnotationSummariesV4(aims, aimSearchType, searchValue, username, sessionID);
+					else
+						aims = AIMUtil.queryAIMImageAnnotationSummariesV4(aims, username, sessionID);					
 					long starttime2 = System.currentTimeMillis();
 					responseStream.append(aims.toJSON());
 					long resptime = System.currentTimeMillis();
 					log.info("Time taken for write http response:" + (resptime-starttime2) + " msecs");
 				}
+				else if (returnJson(httpRequest))
+				{
+					if (AIMSearchType.JSON_QUERY.equals(aimSearchType) || AIMSearchType.AIM_QUERY.equals(aimSearchType))
+						AIMUtil.queryAIMImageAnnotationsV4(responseStream, aims, aimSearchType, searchValue, username, sessionID, true);					
+					else
+						AIMUtil.queryAIMImageJsonAnnotations(responseStream, aims, username, sessionID);					
+				}
 				else
 				{
-					AIMUtil.queryAIMImageAnnotations(responseStream, AIMSearchType.ANNOTATION_UID,
-							AIMUtil.getUIDCsvList(sessionID, aims, username), username, start, count);					
+					if (AIMSearchType.AIM_QUERY.equals(aimSearchType) || AIMSearchType.JSON_QUERY.equals(aimSearchType))
+						AIMUtil.queryAIMImageAnnotationsV4(responseStream, aims, aimSearchType, searchValue, username, sessionID, false);					
+					else
+						AIMUtil.queryAIMImageAnnotationsV4(responseStream, aims, username, sessionID);					
 				}
 				statusCode = HttpServletResponse.SC_OK;
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.PROJECT_AIM, pathInfo)) {
@@ -430,10 +442,12 @@ public class EPADHandler extends AbstractHandler
 					aims = AIMUtil.queryAIMImageAnnotationSummariesV4(aims, username, sessionID);					
 					responseStream.append(aims.toJSON());
 				}
+				else if (returnJson(httpRequest))
+				{
+					AIMUtil.queryAIMImageJsonAnnotations(responseStream, aims, username, sessionID);					
+				}
 				else
 				{
-					//AIMUtil.queryAIMImageAnnotations(responseStream, AIMSearchType.ANNOTATION_UID,
-					//		AIMUtil.getUIDCsvList(sessionID, aims, username), username, start, count);					
 					AIMUtil.queryAIMImageAnnotationsV4(responseStream, aims, username, sessionID);					
 				}
 				statusCode = HttpServletResponse.SC_OK;
@@ -464,10 +478,13 @@ public class EPADHandler extends AbstractHandler
 					aims = AIMUtil.queryAIMImageAnnotationSummariesV4(aims, username, sessionID);					
 					responseStream.append(aims.toJSON());
 				}
+				else if (returnJson(httpRequest))
+				{
+					AIMUtil.queryAIMImageJsonAnnotations(responseStream, aims, username, sessionID);					
+				}
 				else
 				{
-					AIMUtil.queryAIMImageAnnotations(responseStream, AIMSearchType.ANNOTATION_UID,
-							AIMUtil.getUIDCsvList(sessionID, aims, username), username, start, count);					
+					AIMUtil.queryAIMImageAnnotationsV4(responseStream, aims, username, sessionID);					
 				}
 				statusCode = HttpServletResponse.SC_OK;
 
@@ -496,10 +513,13 @@ public class EPADHandler extends AbstractHandler
 					aims = AIMUtil.queryAIMImageAnnotationSummariesV4(aims, username, sessionID);					
 					responseStream.append(aims.toJSON());
 				}
+				else if (returnJson(httpRequest))
+				{
+					AIMUtil.queryAIMImageJsonAnnotations(responseStream, aims, username, sessionID);					
+				}
 				else
 				{
-					AIMUtil.queryAIMImageAnnotations(responseStream, AIMSearchType.ANNOTATION_UID,
-							AIMUtil.getUIDCsvList(sessionID, aims, username), username, start, count);					
+					AIMUtil.queryAIMImageAnnotationsV4(responseStream, aims, username, sessionID);					
 				}
 
 				statusCode = HttpServletResponse.SC_OK;
@@ -528,10 +548,13 @@ public class EPADHandler extends AbstractHandler
 					aims = AIMUtil.queryAIMImageAnnotationSummariesV4(aims, username, sessionID);					
 					responseStream.append(aims.toJSON());
 				}
+				else if (returnJson(httpRequest))
+				{
+					AIMUtil.queryAIMImageJsonAnnotations(responseStream, aims, username, sessionID);					
+				}
 				else
 				{
-					AIMUtil.queryAIMImageAnnotations(responseStream, AIMSearchType.ANNOTATION_UID,
-							AIMUtil.getUIDCsvList(sessionID, aims, username), username, start, count);					
+					AIMUtil.queryAIMImageAnnotationsV4(responseStream, aims, username, sessionID);					
 				}
 				statusCode = HttpServletResponse.SC_OK;
 
@@ -560,10 +583,13 @@ public class EPADHandler extends AbstractHandler
 					aims = AIMUtil.queryAIMImageAnnotationSummariesV4(aims, username, sessionID);					
 					responseStream.append(aims.toJSON());
 				}
+				else if (returnJson(httpRequest))
+				{
+					AIMUtil.queryAIMImageJsonAnnotations(responseStream, aims, username, sessionID);					
+				}
 				else
 				{
-					AIMUtil.queryAIMImageAnnotations(responseStream, AIMSearchType.ANNOTATION_UID,
-							AIMUtil.getUIDCsvList(sessionID, aims, username), username, start, count);					
+					AIMUtil.queryAIMImageAnnotationsV4(responseStream, aims, username, sessionID);					
 				}
 				statusCode = HttpServletResponse.SC_OK;
 
@@ -597,10 +623,13 @@ public class EPADHandler extends AbstractHandler
 					aims = AIMUtil.queryAIMImageAnnotationSummariesV4(aims, username, sessionID);					
 					responseStream.append(aims.toJSON());
 				}
+				else if (returnJson(httpRequest))
+				{
+					AIMUtil.queryAIMImageJsonAnnotations(responseStream, aims, username, sessionID);					
+				}
 				else
 				{
-					AIMUtil.queryAIMImageAnnotations(responseStream, AIMSearchType.ANNOTATION_UID,
-							AIMUtil.getUIDCsvList(sessionID, aims, username), username, start, count);					
+					AIMUtil.queryAIMImageAnnotationsV4(responseStream, aims, username, sessionID);					
 				}
 				statusCode = HttpServletResponse.SC_OK;
 
@@ -629,10 +658,13 @@ public class EPADHandler extends AbstractHandler
 					aims = AIMUtil.queryAIMImageAnnotationSummariesV4(aims, username, sessionID);					
 					responseStream.append(aims.toJSON());
 				}
+				else if (returnJson(httpRequest))
+				{
+					AIMUtil.queryAIMImageJsonAnnotations(responseStream, aims, username, sessionID);					
+				}
 				else
 				{
-					AIMUtil.queryAIMImageAnnotations(responseStream, AIMSearchType.ANNOTATION_UID,
-							AIMUtil.getUIDCsvList(sessionID, aims, username), username, start, count);					
+					AIMUtil.queryAIMImageAnnotationsV4(responseStream, aims, username, sessionID);					
 				}
 
 				statusCode = HttpServletResponse.SC_OK;
@@ -661,10 +693,13 @@ public class EPADHandler extends AbstractHandler
 					aims = AIMUtil.queryAIMImageAnnotationSummariesV4(aims, username, sessionID);					
 					responseStream.append(aims.toJSON());
 				}
+				else if (returnJson(httpRequest))
+				{
+					AIMUtil.queryAIMImageJsonAnnotations(responseStream, aims, username, sessionID);					
+				}
 				else
 				{
-					AIMUtil.queryAIMImageAnnotations(responseStream, AIMSearchType.ANNOTATION_UID,
-							AIMUtil.getUIDCsvList(sessionID, aims, username), username, start, count);					
+					AIMUtil.queryAIMImageAnnotationsV4(responseStream, aims, username, sessionID);					
 				}
 				statusCode = HttpServletResponse.SC_OK;
 
@@ -693,10 +728,13 @@ public class EPADHandler extends AbstractHandler
 					aims = AIMUtil.queryAIMImageAnnotationSummariesV4(aims, username, sessionID);					
 					responseStream.append(aims.toJSON());
 				}
+				else if (returnJson(httpRequest))
+				{
+					AIMUtil.queryAIMImageJsonAnnotations(responseStream, aims, username, sessionID);					
+				}
 				else
 				{
-					AIMUtil.queryAIMImageAnnotations(responseStream, AIMSearchType.ANNOTATION_UID,
-							AIMUtil.getUIDCsvList(sessionID, aims, username), username, start, count);					
+					AIMUtil.queryAIMImageAnnotationsV4(responseStream, aims, username, sessionID);					
 				}
 				statusCode = HttpServletResponse.SC_OK;
 
@@ -725,10 +763,13 @@ public class EPADHandler extends AbstractHandler
 					aims = AIMUtil.queryAIMImageAnnotationSummariesV4(aims, username, sessionID);					
 					responseStream.append(aims.toJSON());
 				}
+				else if (returnJson(httpRequest))
+				{
+					AIMUtil.queryAIMImageJsonAnnotations(responseStream, aims, username, sessionID);					
+				}
 				else
 				{
-					AIMUtil.queryAIMImageAnnotations(responseStream, AIMSearchType.ANNOTATION_UID,
-							AIMUtil.getUIDCsvList(sessionID, aims, username), username, start, count);					
+					AIMUtil.queryAIMImageAnnotationsV4(responseStream, aims, username, sessionID);					
 				}
 				statusCode = HttpServletResponse.SC_OK;
 
@@ -757,22 +798,26 @@ public class EPADHandler extends AbstractHandler
 				long dbtime = System.currentTimeMillis();
 				log.info("Time taken for AIM database query:" + (dbtime-starttime) + " msecs");
 				if (returnSummary(httpRequest))
-				{	
-					aims = AIMUtil.queryAIMImageAnnotationSummariesV4(aims, username, sessionID);					
+				{
+					if (AIMSearchType.AIM_QUERY.equals(aimSearchType) || AIMSearchType.JSON_QUERY.equals(aimSearchType))
+						aims = AIMUtil.queryAIMImageAnnotationSummariesV4(aims, aimSearchType, searchValue, username, sessionID);
+					else
+						aims = AIMUtil.queryAIMImageAnnotationSummariesV4(aims, username, sessionID);					
 					responseStream.append(aims.toJSON());
+				}
+				else if (returnJson(httpRequest))
+				{
+					if (AIMSearchType.JSON_QUERY.equals(aimSearchType))
+						AIMUtil.queryAIMImageAnnotationsV4(responseStream, aims, aimSearchType, searchValue, username, sessionID, true);					
+					else
+						AIMUtil.queryAIMImageJsonAnnotations(responseStream, aims, username, sessionID);					
 				}
 				else
 				{
-					if (aimSearchType == null && username.equals("admin"))
-					{
-						AIMUtil.queryAIMImageAnnotations(responseStream, projectID, AIMSearchType.ANNOTATION_UID,
-								"all", "", start, count);
-					}
+					if (AIMSearchType.AIM_QUERY.equals(aimSearchType))
+						AIMUtil.queryAIMImageAnnotationsV4(responseStream, aims, aimSearchType, searchValue, username, sessionID, false);					
 					else
-					{
-						AIMUtil.queryAIMImageAnnotations(responseStream, AIMSearchType.ANNOTATION_UID,
-								AIMUtil.getUIDCsvList(sessionID, aims, username), username, start, count);
-					}
+						AIMUtil.queryAIMImageAnnotationsV4(responseStream, aims, username, sessionID);					
 				}
 				statusCode = HttpServletResponse.SC_OK;
 
@@ -914,13 +959,72 @@ public class EPADHandler extends AbstractHandler
 				if (patientNameFilter == null) patientNameFilter = "";
 				String patientIDFilter = httpRequest.getParameter("patientIDFilter");
 				if (patientIDFilter == null) patientIDFilter = "";
+				String studyIDFilter = httpRequest.getParameter("studyIDFilter");
+				if (studyIDFilter == null) studyIDFilter = "";
 				String studyDateFilter = httpRequest.getParameter("studyDateFilter");
 				if (studyDateFilter == null) studyDateFilter = "";
-				boolean instance = "true".equalsIgnoreCase(httpRequest.getParameter("instance"));
+				boolean studiesOnly = !"true".equalsIgnoreCase(httpRequest.getParameter("series"));
 				RemotePAC pac = RemotePACService.getInstance().getRemotePAC(pacid);
 				if (pac != null)
 				{
-					List<RemotePACEntity> entities = RemotePACService.getInstance().queryRemoteData(pac, patientNameFilter, patientIDFilter, studyDateFilter, instance);
+					List<RemotePACEntity> entities = RemotePACService.getInstance().queryRemoteData(pac, patientNameFilter, patientIDFilter, studyIDFilter, studyDateFilter, false, studiesOnly);
+					RemotePACEntityList entityList = new RemotePACEntityList();
+					for (RemotePACEntity entity: entities)
+						entityList.addRemotePACEntity(entity);
+					responseStream.append(entityList.toJSON());
+					statusCode = HttpServletResponse.SC_OK;
+				}
+				else
+					statusCode = HttpServletResponse.SC_NOT_FOUND;
+
+			} else if (HandlerUtil.matchesTemplate(PACSRouteTemplates.PAC_SUBJECT_LIST, pathInfo)) {
+				Map<String, String> templateMap = HandlerUtil.getTemplateMap(PACSRouteTemplates.PAC_SUBJECT_LIST, pathInfo);
+				String pacid = HandlerUtil.getTemplateParameter(templateMap, "pacid");
+				String patientNameFilter = httpRequest.getParameter("patientNameFilter");
+				if (patientNameFilter == null) patientNameFilter = "";
+				String patientIDFilter = httpRequest.getParameter("patientIDFilter");
+				if (patientIDFilter == null) patientIDFilter = "";
+				RemotePAC pac = RemotePACService.getInstance().getRemotePAC(pacid);
+				if (pac != null)
+				{
+					List<RemotePACEntity> entities = RemotePACService.getInstance().queryRemoteData(pac, patientNameFilter, patientIDFilter, "", "", true, true);
+					RemotePACEntityList entityList = new RemotePACEntityList();
+					for (RemotePACEntity entity: entities)
+						entityList.addRemotePACEntity(entity);
+					responseStream.append(entityList.toJSON());
+					statusCode = HttpServletResponse.SC_OK;
+				}
+				else
+					statusCode = HttpServletResponse.SC_NOT_FOUND;
+
+			} else if (HandlerUtil.matchesTemplate(PACSRouteTemplates.PAC_STUDY_LIST, pathInfo)) {
+				Map<String, String> templateMap = HandlerUtil.getTemplateMap(PACSRouteTemplates.PAC_STUDY_LIST, pathInfo);
+				String pacid = HandlerUtil.getTemplateParameter(templateMap, "pacid");
+				String subjectid = HandlerUtil.getTemplateParameter(templateMap, "subjectid");
+				String studyDateFilter = httpRequest.getParameter("studyDateFilter");
+				if (studyDateFilter == null) studyDateFilter = "";
+				RemotePAC pac = RemotePACService.getInstance().getRemotePAC(pacid);
+				if (pac != null)
+				{
+					List<RemotePACEntity> entities = RemotePACService.getInstance().queryRemoteData(pac, "", subjectid, "", studyDateFilter, false, true);
+					RemotePACEntityList entityList = new RemotePACEntityList();
+					for (RemotePACEntity entity: entities)
+						entityList.addRemotePACEntity(entity);
+					responseStream.append(entityList.toJSON());
+					statusCode = HttpServletResponse.SC_OK;
+				}
+				else
+					statusCode = HttpServletResponse.SC_NOT_FOUND;
+				
+			} else if (HandlerUtil.matchesTemplate(PACSRouteTemplates.PAC_SERIES_LIST, pathInfo)) {
+				Map<String, String> templateMap = HandlerUtil.getTemplateMap(PACSRouteTemplates.PAC_SERIES_LIST, pathInfo);
+				String pacid = HandlerUtil.getTemplateParameter(templateMap, "pacid");
+				String subjectid = HandlerUtil.getTemplateParameter(templateMap, "subjectid");
+				String studyid = HandlerUtil.getTemplateParameter(templateMap, "studyid");
+				RemotePAC pac = RemotePACService.getInstance().getRemotePAC(pacid);
+				if (pac != null)
+				{
+					List<RemotePACEntity> entities = RemotePACService.getInstance().queryRemoteData(pac, "", subjectid, studyid, "", false, false);
 					RemotePACEntityList entityList = new RemotePACEntityList();
 					for (RemotePACEntity entity: entities)
 						entityList.addRemotePACEntity(entity);
@@ -944,8 +1048,8 @@ public class EPADHandler extends AbstractHandler
 				else
 					statusCode = HttpServletResponse.SC_NOT_FOUND;
 
-			} else if (HandlerUtil.matchesTemplate(PACSRouteTemplates.PAC_SUBJECT_LIST, pathInfo)) {
-				Map<String, String> templateMap = HandlerUtil.getTemplateMap(PACSRouteTemplates.PAC_SUBJECT_LIST, pathInfo);
+			} else if (HandlerUtil.matchesTemplate(PACSRouteTemplates.PAC_QUERY_LIST, pathInfo)) {
+				Map<String, String> templateMap = HandlerUtil.getTemplateMap(PACSRouteTemplates.PAC_QUERY_LIST, pathInfo);
 				String pacid = HandlerUtil.getTemplateParameter(templateMap, "pacid");
 				RemotePACService rps = RemotePACService.getInstance();
 				List<RemotePACQuery> remoteQueries = rps.getRemotePACQueries(pacid);
@@ -957,10 +1061,10 @@ public class EPADHandler extends AbstractHandler
 				responseStream.append(queryList.toJSON());
 				statusCode = HttpServletResponse.SC_OK;
 
-			} else if (HandlerUtil.matchesTemplate(PACSRouteTemplates.PAC_SUBJECT, pathInfo)) {
-				Map<String, String> templateMap = HandlerUtil.getTemplateMap(PACSRouteTemplates.PAC_SUBJECT, pathInfo);
+			} else if (HandlerUtil.matchesTemplate(PACSRouteTemplates.PAC_QUERY, pathInfo)) {
+				Map<String, String> templateMap = HandlerUtil.getTemplateMap(PACSRouteTemplates.PAC_QUERY, pathInfo);
 				String pacid = HandlerUtil.getTemplateParameter(templateMap, "pacid");
-				String subject = HandlerUtil.getTemplateParameter(templateMap, "subject");
+				String subject = HandlerUtil.getTemplateParameter(templateMap, "subjectid");
 				RemotePACQuery remoteQuery = RemotePACService.getInstance().getRemotePACQuery(pacid, subject);
 				if (remoteQuery != null)
 				{
@@ -1162,12 +1266,12 @@ public class EPADHandler extends AbstractHandler
 				}
 				statusCode = HttpServletResponse.SC_OK;
 				
-			} else if (HandlerUtil.matchesTemplate(PACSRouteTemplates.PAC_SUBJECT, pathInfo)) {
-				Map<String, String> templateMap = HandlerUtil.getTemplateMap(PACSRouteTemplates.PAC_SUBJECT, pathInfo);
+			} else if (HandlerUtil.matchesTemplate(PACSRouteTemplates.PAC_QUERY, pathInfo)) {
+				Map<String, String> templateMap = HandlerUtil.getTemplateMap(PACSRouteTemplates.PAC_QUERY, pathInfo);
 				String pacID = HandlerUtil.getTemplateParameter(templateMap, "pacid");
 				if (pacID == null)
 					throw new Exception("Missing Pac ID parameter");
-				String subjectUID = HandlerUtil.getTemplateParameter(templateMap, "subject");
+				String subjectUID = HandlerUtil.getTemplateParameter(templateMap, "subjectid");
 				if (subjectUID == null)
 					throw new Exception("Missing Patient ID parameter");
 				String projectID = httpRequest.getParameter("projectID");
@@ -1266,6 +1370,7 @@ public class EPADHandler extends AbstractHandler
 				}
 			} else {
 				Map<String, Object> paramData = null;
+				int numberOfFiles = 0;
 				if (requestContentType != null && requestContentType.startsWith("multipart/form-data"))
 				{
 					paramData = parsePostedData(httpRequest, responseStream);
@@ -1273,50 +1378,119 @@ public class EPADHandler extends AbstractHandler
 					{
 						if (paramData.get(param) instanceof File)
 						{
-							uploadedFile = (File) paramData.get(param);
-							break;
+							if (uploadedFile == null)
+								uploadedFile = (File) paramData.get(param);
+							numberOfFiles++;
 						}
 					}
 				}
 				statusCode = HttpServletResponse.SC_BAD_REQUEST;
 				if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.PROJECT_FILE_LIST, pathInfo)) {
 					ProjectReference projectReference = ProjectReference.extract(ProjectsRouteTemplates.PROJECT_FILE_LIST, pathInfo);
-					if (uploadedFile != null) {
+					if (numberOfFiles == 1) {
 						String description = httpRequest.getParameter("description");
 						if (description == null) description = (String) paramData.get("description");
 						String fileType = httpRequest.getParameter("fileType");
 						if (fileType == null) description = (String) paramData.get("fileType");
 						statusCode = epadOperations.createFile(username, projectReference, uploadedFile, description, fileType, sessionID);					
+					} else {
+						List<String> descriptions = (List<String>) paramData.get("description_List");
+						List<String> fileTypes = (List<String>) paramData.get("fileType_List");
+						int i = 0;
+						for (String param: paramData.keySet())
+						{
+							if (paramData.get(param) instanceof File)
+							{
+								String description = httpRequest.getParameter("description");
+								if (descriptions != null && descriptions.size() > i)
+									description = descriptions.get(i);
+								String fileType = httpRequest.getParameter("fileType");
+								if (fileTypes != null && fileTypes.size() > i)
+										fileType = fileTypes.get(i);
+								statusCode = epadOperations.createFile(username, projectReference, (File)paramData.get(param), description, fileType, sessionID);
+							}
+						}
 					}
 						
 				} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.SUBJECT_FILE_LIST, pathInfo)) {
 					SubjectReference subjectReference = SubjectReference.extract(ProjectsRouteTemplates.SUBJECT_FILE_LIST, pathInfo);
-					if (uploadedFile != null) {
+					if (numberOfFiles == 1) {
 						String description = httpRequest.getParameter("description");
 						if (description == null) description = (String) paramData.get("description");
 						String fileType = httpRequest.getParameter("fileType");
 						if (fileType == null) description = (String) paramData.get("fileType");
 						statusCode = epadOperations.createFile(username, subjectReference, uploadedFile, description, fileType, sessionID);					
+					} else {
+						List<String> descriptions = (List<String>) paramData.get("description_List");
+						List<String> fileTypes = (List<String>) paramData.get("fileType_List");
+						int i = 0;
+						for (String param: paramData.keySet())
+						{
+							if (paramData.get(param) instanceof File)
+							{
+								String description = httpRequest.getParameter("description");
+								if (descriptions != null && descriptions.size() > i)
+									description = descriptions.get(i);
+								String fileType = httpRequest.getParameter("fileType");
+								if (fileTypes != null && fileTypes.size() > i)
+										fileType = fileTypes.get(i);
+								statusCode = epadOperations.createFile(username, subjectReference, (File)paramData.get(param), description, fileType, sessionID);
+							}
+						}
 					}
 
 				} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.STUDY_FILE_LIST, pathInfo)) {
 					StudyReference studyReference = StudyReference.extract(ProjectsRouteTemplates.STUDY_FILE_LIST, pathInfo);
-					if (uploadedFile != null) {
+					if (numberOfFiles == 1) {
 						String description = httpRequest.getParameter("description");
 						if (description == null) description = (String) paramData.get("description");
 						String fileType = httpRequest.getParameter("fileType");
 						if (fileType == null) description = (String) paramData.get("fileType");
 						statusCode = epadOperations.createFile(username, studyReference, uploadedFile, description, fileType, sessionID);					
+					} else {
+						List<String> descriptions = (List<String>) paramData.get("description_List");
+						List<String> fileTypes = (List<String>) paramData.get("fileType_List");
+						int i = 0;
+						for (String param: paramData.keySet())
+						{
+							if (paramData.get(param) instanceof File)
+							{
+								String description = httpRequest.getParameter("description");
+								if (descriptions != null && descriptions.size() > i)
+									description = descriptions.get(i);
+								String fileType = httpRequest.getParameter("fileType");
+								if (fileTypes != null && fileTypes.size() > i)
+										fileType = fileTypes.get(i);
+								statusCode = epadOperations.createFile(username, studyReference, (File)paramData.get(param), description, fileType, sessionID);
+							}
+						}
 					}
 		
 				} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.SERIES_FILE_LIST, pathInfo)) {
 					SeriesReference seriesReference = SeriesReference.extract(ProjectsRouteTemplates.SERIES, pathInfo);
-					if (uploadedFile != null) {
+					if (numberOfFiles == 1) {
 						String description = httpRequest.getParameter("description");
 						if (description == null) description = (String) paramData.get("description");
 						String fileType = httpRequest.getParameter("fileType");
 						if (fileType == null) description = (String) paramData.get("fileType");
 						statusCode = epadOperations.createFile(username, seriesReference, uploadedFile, description, fileType, sessionID);					
+					} else {
+						List<String> descriptions = (List<String>) paramData.get("description_List");
+						List<String> fileTypes = (List<String>) paramData.get("fileType_List");
+						int i = 0;
+						for (String param: paramData.keySet())
+						{
+							if (paramData.get(param) instanceof File)
+							{
+								String description = httpRequest.getParameter("description");
+								if (descriptions != null && descriptions.size() > i)
+									description = descriptions.get(i);
+								String fileType = httpRequest.getParameter("fileType");
+								if (fileTypes != null && fileTypes.size() > i)
+										fileType = fileTypes.get(i);
+								statusCode = epadOperations.createFile(username, seriesReference, (File)paramData.get(param), description, fileType, sessionID);
+							}
+						}
 					}
 					
 				} else if (HandlerUtil.matchesTemplate(UsersRouteTemplates.USER, pathInfo)) {
@@ -1457,10 +1631,10 @@ public class EPADHandler extends AbstractHandler
 				RemotePACService.getInstance().removeRemotePAC(username, pac);
 				statusCode = HttpServletResponse.SC_OK;
 				
-			} else if (HandlerUtil.matchesTemplate(PACSRouteTemplates.PAC_SUBJECT, pathInfo)) {
-				Map<String, String> templateMap = HandlerUtil.getTemplateMap(PACSRouteTemplates.PAC_SUBJECT, pathInfo);
+			} else if (HandlerUtil.matchesTemplate(PACSRouteTemplates.PAC_QUERY, pathInfo)) {
+				Map<String, String> templateMap = HandlerUtil.getTemplateMap(PACSRouteTemplates.PAC_QUERY, pathInfo);
 				String pacID = HandlerUtil.getTemplateParameter(templateMap, "pacid");
-				String subjectUID = HandlerUtil.getTemplateParameter(templateMap, "subject");
+				String subjectUID = HandlerUtil.getTemplateParameter(templateMap, "subjectid");
 				if (subjectUID == null)
 					throw new Exception("Missing Patient ID parameter");
 				RemotePACService.getInstance().removeRemotePACQuery(username, pacID, subjectUID);
@@ -1518,7 +1692,7 @@ public class EPADHandler extends AbstractHandler
 				log.debug("Created File:" + uploadedFile.getAbsolutePath());
 			if (len > 0 && (tempXMLFileName.endsWith(".xml") || tempXMLFileName.endsWith(".txt")))
 			{
-				log.info("PUT Data:" + readFile(uploadedFile));
+				log.debug("PUT Data:" + readFile(uploadedFile));
 			}
 //			if (fileType != null)
 //			{
@@ -1581,31 +1755,35 @@ public class EPADHandler extends AbstractHandler
 			    values.add(fileItem.getString());
 		    } else {
 				fileCount++;		    	
-				log.debug("Uploading file number " + fileCount);
-				log.debug("FieldName: " + fileItem.getFieldName());
-				log.debug("File Name: " + fileItem.getName());
-				log.debug("ContentType: " + fileItem.getContentType());
-				log.debug("Size (Bytes): " + fileItem.getSize());
 				String fieldName = fileItem.getFieldName();
 				String fileName = fileItem.getName();
-				String tempFileName = "temp" + System.currentTimeMillis() + "-" + fileName;
-				File file = new File(uploadDirPath + tempFileName);
-                // write the file
-		        try {
-					fileItem.write(file);
-			    	if (params.get(fileItem.getFieldName()) == null)
-			    		params.put(fileItem.getFieldName(), file);
-				    List values = (List) params.get(fileItem.getFieldName() + "_List");
-				    if (values == null) {
-				    	values = new ArrayList();
-				    	params.put(fileItem.getFieldName() + "_List", values);
-				    }
-				    values.add(file);
-				} catch (Exception e) {
-					e.printStackTrace();
-					log.warning("Error receiving file:" + e);
-					responseStream.print("error reading (" + fileCount + "): " + fileItem.getName());
-					continue;
+				log.debug("Uploading file number " + fileCount);
+				log.debug("FieldName: " + fieldName);
+				log.debug("File Name: " + fileName);
+				log.debug("ContentType: " + fileItem.getContentType());
+				log.debug("Size (Bytes): " + fileItem.getSize());
+				if (fileItem.getSize() != 0)
+				{
+			        try {
+						String tempFileName = "temp" + System.currentTimeMillis() + "-" + fileName;
+						File file = new File(uploadDirPath + "/" + tempFileName);
+						log.debug("FileName: " + file.getAbsolutePath());
+		                // write the file
+						fileItem.write(file);
+				    	if (params.get(fileItem.getFieldName()) == null)
+				    		params.put(fileItem.getFieldName(), file);
+					    List values = (List) params.get(fileItem.getFieldName() + "_List");
+					    if (values == null) {
+					    	values = new ArrayList();
+					    	params.put(fileItem.getFieldName() + "_List", values);
+					    }
+					    values.add(file);
+					} catch (Exception e) {
+						e.printStackTrace();
+						log.warning("Error receiving file:" + e);
+						responseStream.print("error reading (" + fileCount + "): " + fileItem.getName());
+						continue;
+					}
 				}
 		    }
 		}
@@ -1616,6 +1794,15 @@ public class EPADHandler extends AbstractHandler
 	{
 		String summary = httpRequest.getParameter("format");
 		if (summary != null && summary.trim().equalsIgnoreCase("summary"))
+			return true;
+		else
+			return false;
+	}
+
+	private boolean returnJson(HttpServletRequest httpRequest)
+	{
+		String summary = httpRequest.getParameter("format");
+		if (summary != null && summary.trim().equalsIgnoreCase("json"))
 			return true;
 		else
 			return false;

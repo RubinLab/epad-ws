@@ -524,7 +524,8 @@ public class AIMDatabaseOperations {
     public List<EPADAIM> getAIMs(String projectID, String patientID, String studyUID, String seriesUID, String imageUID, int frameID, String dsoSeriesUID, int start, int count) throws SQLException {
         String sqlSelect = "SELECT UserLoginName, ProjectUID, PatientID, StudyUID, SeriesUID, ImageUID, frameID, AnnotationUID, DSOSeriesUID, XML FROM annotations WHERE 1 = 1";
 		if (projectID != null && projectID.length() > 0)
-			sqlSelect = sqlSelect + " and (ProjectUID = '" + projectID + "' or ProjectUID = '" + EPADConfig.xnatUploadProjectID + "')";
+			sqlSelect = sqlSelect + " and (ProjectUID = '" + projectID + "')";
+		//sqlSelect = sqlSelect + " and (ProjectUID = '" + projectID + "' or ProjectUID = '" + EPADConfig.xnatUploadProjectID + "')";
 		if (patientID != null && patientID.length() > 0)
 			sqlSelect = sqlSelect + " and PatientID = '" + patientID + "'";
 		if (studyUID != null && studyUID.length() > 0)
@@ -626,7 +627,8 @@ public class AIMDatabaseOperations {
 		if (userName != null && userName.length() > 0)
 			sqlSelect = sqlSelect + " and UserLoginName = '" + userName + "'";
 		if (projectID != null && projectID.length() > 0)
-			sqlSelect = sqlSelect + " and (ProjectUID = '" + projectID + "' or ProjectUID = '" + EPADConfig.xnatUploadProjectID + "' or ProjectUID = '')";
+			sqlSelect = sqlSelect + " and ProjectUID = '" + projectID + "'";
+//		sqlSelect = sqlSelect + " and (ProjectUID = '" + projectID + "' or ProjectUID = '" + EPADConfig.xnatUploadProjectID + "' or ProjectUID = '')";
 		if (patientID != null && patientID.length() > 0)
 			sqlSelect = sqlSelect + " and PatientID = '" + patientID + "'";
 		if (studyUID != null && studyUID.length() > 0)
@@ -786,6 +788,8 @@ public class AIMDatabaseOperations {
 				}
 			}
 		} else if (aimSearchType.equals(AIMSearchType.AIM_QUERY)) {
+			return this.getAIMs(projectID, null, null, null, null, 0, start, count);
+		} else if (aimSearchType.equals(AIMSearchType.JSON_QUERY)) {
 			return this.getAIMs(projectID, null, null, null, null, 0, start, count);
 		} else {
 			log.warning("Unknown AIM search type " + aimSearchType.getName());
