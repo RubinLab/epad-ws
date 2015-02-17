@@ -20,7 +20,7 @@ import edu.stanford.epad.common.plugins.PluginHandlerMap;
 import edu.stanford.epad.common.plugins.PluginServletHandler;
 import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.epad.epadws.handlers.HandlerUtil;
-import edu.stanford.epad.epadws.xnat.XNATSessionOperations;
+import edu.stanford.epad.epadws.service.SessionService;
 
 /**
  * 
@@ -52,7 +52,7 @@ public class EPadPluginHandler extends AbstractHandler
 
 		try {
 			PrintWriter responseStream = httpResponse.getWriter();
-			if (XNATSessionOperations.hasValidXNATSessionID(httpRequest)) {
+			if (SessionService.hasValidSessionID(httpRequest)) {
 				if (pluginServletHandler != null) {
 					String method = httpRequest.getMethod();
 					if ("GET".equalsIgnoreCase(method)) {

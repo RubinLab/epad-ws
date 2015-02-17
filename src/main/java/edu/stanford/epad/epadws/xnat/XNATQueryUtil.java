@@ -9,6 +9,7 @@ public class XNATQueryUtil
 {
 	private static final String XNAT_SYSTEM_BASE = "/xnat/data/";
 	private static final String XNAT_PROJECTS_BASE = "/xnat/data/projects/";
+	private static final String XNAT_PROJECT_TYPE = "accessibility";
 	private static final String XNAT_SUBJECTS_BASE = "/xnat/data/subjects/";
 	private static final String XNAT_EXPERIMENTS_BASE = "/xnat/data/experiments/";
 	private static final String XNAT_HOST = EPADConfig.xnatServer;
@@ -26,6 +27,11 @@ public class XNATQueryUtil
 	public static String buildAllProjectsQueryURL()
 	{
 		return buildProjectBaseURL();
+	}
+
+	public static String buildProjectTypeQueryURL(String projectID)
+	{
+		return buildProjectBaseURL() + projectID + "/" + XNAT_PROJECT_TYPE;
 	}
 
 	public static String buildAllUsersForProjectQueryURL(String projectID)

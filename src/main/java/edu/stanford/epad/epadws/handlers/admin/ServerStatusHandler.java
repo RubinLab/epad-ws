@@ -23,7 +23,7 @@ import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeDatabase;
 import edu.stanford.epad.epadws.epaddb.EpadDatabase;
 import edu.stanford.epad.epadws.handlers.HandlerUtil;
 import edu.stanford.epad.epadws.processing.pipeline.PipelineFactory;
-import edu.stanford.epad.epadws.xnat.XNATSessionOperations;
+import edu.stanford.epad.epadws.service.SessionService;
 
 /**
  * <code>
@@ -58,7 +58,7 @@ public class ServerStatusHandler extends AbstractHandler
 		try {
 			responseStream = httpResponse.getWriter();
 
-			if (XNATSessionOperations.hasValidXNATSessionID(httpRequest)) {
+			if (SessionService.hasValidSessionID(httpRequest)) {
 				EPadPlugin ePadPlugin = new EPadPluginImpl();
 				long upTime = System.currentTimeMillis() - startTime;
 				long upTimeSec = upTime / 1000;

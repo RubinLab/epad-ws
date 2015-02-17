@@ -175,6 +175,10 @@ public class Dcm4CheeQueries
 						}
 					} finally {
 						IOUtils.closeQuietly(tagReader);
+						try {
+							temporaryDICOMFile.delete();
+							tempTag.delete();
+						} catch (Exception x) {};
 					}
 				} catch (InterruptedException e) {
 					Thread.currentThread().interrupt();

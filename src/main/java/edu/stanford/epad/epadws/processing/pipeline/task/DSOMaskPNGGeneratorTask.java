@@ -1,16 +1,22 @@
 package edu.stanford.epad.epadws.processing.pipeline.task;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
 import edu.stanford.epad.common.util.EPADLogger;
+import edu.stanford.epad.dtos.EPADAIM;
 import edu.stanford.epad.epadws.aim.AIMQueries;
 import edu.stanford.epad.epadws.aim.AIMSearchType;
 import edu.stanford.epad.epadws.aim.AIMUtil;
+import edu.stanford.epad.epadws.aim.aimapi.Aim;
+import edu.stanford.epad.epadws.epaddb.EpadDatabase;
+import edu.stanford.epad.epadws.epaddb.EpadDatabaseOperations;
 import edu.stanford.epad.epadws.handlers.dicom.DSOUtil;
+import edu.stanford.epad.epadws.service.UserProjectService;
 import edu.stanford.hakan.aim3api.base.ImageAnnotation;
 
 public class DSOMaskPNGGeneratorTask implements GeneratorTask
@@ -45,16 +51,56 @@ public class DSOMaskPNGGeneratorTask implements GeneratorTask
 		try {
 			seriesBeingProcessed.add(seriesUID);
 			DSOUtil.writeDSOMaskPNGs(dsoFile);
-			if (generateAIM)
+			// Must be first upload, create AIM file
+			List<EPADAIM> aims = EpadDatabase.getInstance().getEPADDatabaseOperations().getAIMsByDSOSeries(seriesUID);
+			List<ImageAnnotation> ias = AIMQueries.getAIMImageAnnotations(AIMSearchType.SERIES_UID, seriesUID, "admin", 1, 50);
+			if ((ias == null || ias.size() == 0 || aims.size() == 0) && generateAIM)
 			{
-				// Must be first upload, create AIM file
-				List<ImageAnnotation> ias = AIMQueries.getAIMImageAnnotations(AIMSearchType.SERIES_UID, seriesUID, "admin", 1, 50);
-				if (ias == null || ias.size() == 0)
-					AIMUtil.generateAIMFileForDSO(dsoFile);
+				ImageAnnotation ia = AIMUtil.generateAIMFileForDSO(dsoFile);
+				ias = new ArrayList<ImageAnnotation>();
+				ias.add(ia);
 			}
+			ImageAnnotation ia = ias.get(0);
+			if (ia.getCodingSchemeDesignator().equals("epad-plugin"))
+			{
+				Aim aim = new Aim(ia);
+				EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
+				epadDatabaseOperations.insertEpadEvent(
+						ia.getListUser().get(0).getLoginName(), 
+						"Image Generation Complete", 
+						ia.getUniqueIdentifier(), ia.getName(),
+						aim.getPatientID(), 
+						aim.getPatientName(), 
+						aim.getCodeMeaning(), 
+						aim.getCodeValue(),
+						"DSO Plugin");					
+			}
+			else if (UserProjectService.pendingUploads.containsKey(seriesUID))
+			{
+				Aim aim = new Aim(ia);
+				String username = UserProjectService.pendingUploads.get(seriesUID);
+				if (username != null && username.indexOf(":") != -1)
+					username = username.substring(0, username.indexOf(":"));
+				if (username != null)
+				{
+					EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
+					epadDatabaseOperations.insertEpadEvent(
+							ia.getListUser().get(0).getLoginName(), 
+							"Image Generation Complete", 
+							ia.getUniqueIdentifier(), ia.getName(),
+							aim.getPatientID(), 
+							aim.getPatientName(), 
+							aim.getCodeMeaning(), 
+							aim.getCodeValue(),
+							"");					
+					UserProjectService.pendingUploads.remove(seriesUID);
+				}
+			}
+					 
 		} catch (Exception e) {
 			log.warning("Error writing AIM file for DSO series " + seriesUID, e);
 		} finally {
+			log.info("DSO for series " + seriesUID + " completed");
 			seriesBeingProcessed.remove(seriesUID);
 		}
 	}

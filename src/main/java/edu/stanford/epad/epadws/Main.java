@@ -8,6 +8,7 @@ import java.net.BindException;
 import java.net.SocketException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.io.IOUtils;
@@ -36,6 +37,7 @@ import edu.stanford.epad.epadws.handlers.admin.ImageReprocessingHandler;
 import edu.stanford.epad.epadws.handlers.admin.ResourceCheckHandler;
 import edu.stanford.epad.epadws.handlers.admin.ResourceFailureLogHandler;
 import edu.stanford.epad.epadws.handlers.admin.ServerStatusHandler;
+import edu.stanford.epad.epadws.handlers.admin.XNATSyncHandler;
 import edu.stanford.epad.epadws.handlers.aim.AimResourceHandler;
 import edu.stanford.epad.epadws.handlers.coordination.CoordinationHandler;
 import edu.stanford.epad.epadws.handlers.core.EPADHandler;
@@ -43,10 +45,11 @@ import edu.stanford.epad.epadws.handlers.dicom.WadoHandler;
 import edu.stanford.epad.epadws.handlers.event.EventHandler;
 import edu.stanford.epad.epadws.handlers.event.ProjectEventHandler;
 import edu.stanford.epad.epadws.handlers.plugin.EPadPluginHandler;
-import edu.stanford.epad.epadws.handlers.xnat.XNATSessionHandler;
+import edu.stanford.epad.epadws.handlers.session.EPADSessionHandler;
 import edu.stanford.epad.epadws.processing.pipeline.threads.ShutdownHookThread;
 import edu.stanford.epad.epadws.processing.pipeline.threads.ShutdownSignal;
 import edu.stanford.epad.epadws.processing.pipeline.watcher.QueueAndWatcherManager;
+import edu.stanford.epad.epadws.service.UserProjectService;
 
 /**
  * Entry point for the ePAD Web Service.
@@ -144,12 +147,22 @@ public class Main
 
 		try {
 			QueueAndWatcherManager.getInstance().buildAndStart();
-			EpadDatabase.getInstance().startup();
+			EpadDatabase.getInstance().startup("1.4");
 			log.info("Startup of database was successful");
 			EpadDatabaseOperations databaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
 			//log.info("Checking annotations table");
 			databaseOperations.checkAndRefreshAnnotationsTable();
 			log.info("Done with database/queues init");
+			Set<String> projectIds = UserProjectService.getAllProjectIDs();
+			if (EPADConfig.UseEPADUsersProjects && projectIds.size() <= 1) {
+				// Sync XNAT to Epad if needed
+				try {
+					XNATSyncHandler.syncXNATtoEpad("admin", "");
+				}
+				catch (Exception x) {
+					log.warning("Error syncing XNAT data", x);
+				}
+			}
 		} catch (Exception e) {
 			log.warning("Failed to start database", e);
 			System.exit(1);
@@ -162,7 +175,7 @@ public class Main
 
 		loadPluginClasses();
 
-		addHandlerAtContextPath(new XNATSessionHandler(), "/epad/session", handlerList);
+		addHandlerAtContextPath(new EPADSessionHandler(), "/epad/session", handlerList);
 
 		addHandlerAtContextPath(new EPADHandler(), "/epad/v2", handlerList);
 
@@ -185,7 +198,8 @@ public class Main
 		addHandlerAtContextPath(new ServerStatusHandler(), "/epad/status", handlerList);
 		addHandlerAtContextPath(new ImageCheckHandler(), "/epad/imagecheck", handlerList);
 		addHandlerAtContextPath(new ImageReprocessingHandler(), "/epad/imagereprocess", handlerList);
-		addHandlerAtContextPath(new ConvertAIM4Handler(), "/epad/convertaim4", handlerList);		
+		addHandlerAtContextPath(new ConvertAIM4Handler(), "/epad/convertaim4", handlerList);
+		addHandlerAtContextPath(new XNATSyncHandler(), "/epad/syncxnat", handlerList);
 
 		// TODO This call will disappear when we switch to AIM4
 		addHandlerAtContextPath(new CoordinationHandler(), "/epad/coordination", handlerList);

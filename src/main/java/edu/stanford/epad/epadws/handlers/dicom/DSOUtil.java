@@ -19,8 +19,10 @@ import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import javax.imageio.ImageIO;
 import javax.servlet.http.HttpServletRequest;
@@ -130,6 +132,7 @@ public class DSOUtil
 
 			if (DSOUtil.createDSO(imageReference, dsoTIFFMaskFiles, seriesDescription, seriesUID, instanceUID))
 			{
+				log.info("Finished generating DSO");
 				for (File file: dsoTIFFMaskFiles)
 				{
 					deleteQuietly(file);
@@ -250,7 +253,7 @@ public class DSOUtil
 
 			log.info("Generating new edited DSO from original DSO " + imageReference.imageUID);
 			TIFFMasksToDSOConverter converter = new TIFFMasksToDSOConverter();
-			String[] seriesImageUids = converter.generateDSO(files2FilePaths(tiffMaskFiles), dicomFilePaths, temporaryDSOFile.getAbsolutePath(), dsoSeriesDescription, dsoSeriesUID, dsoInstanceUID);
+			String[] seriesImageUids = converter.generateDSO(files2FilePaths(tiffMaskFiles), dicomFilePaths, temporaryDSOFile.getAbsolutePath(), dsoSeriesDescription, dsoSeriesUID, dsoInstanceUID, false);
 			imageReference.seriesUID = seriesImageUids[0];
 			imageReference.imageUID = seriesImageUids[1];
 			log.info("Sending generated DSO " + temporaryDSOFile.getAbsolutePath() + " imageUID:" + imageReference.imageUID + " to dcm4chee...");
@@ -329,7 +332,7 @@ public class DSOUtil
 					+ imageUID + "/masks/";
 			File pngMaskFilesDirectory = new File(pngMaskDirectoryPath);
 			if (!pngMaskFilesDirectory.exists()) return false;
-			if (pngMaskFilesDirectory.list().length == numberOfFrames)
+			if (pngMaskFilesDirectory.list().length >= numberOfFrames)
 			{
 				return true;
 			}
@@ -358,22 +361,59 @@ public class DSOUtil
 			String studyUID = Attribute.getSingleStringValueOrEmptyString(dicomAttributes, TagFromName.StudyInstanceUID);
 			seriesUID = Attribute.getSingleStringValueOrEmptyString(dicomAttributes, TagFromName.SeriesInstanceUID);
 			String imageUID = Attribute.getSingleStringValueOrEmptyString(dicomAttributes, TagFromName.SOPInstanceUID);
+			DICOMElementList dicomElementList = Dcm4CheeQueries.getDICOMElementsFromWADO(studyUID, seriesUID, imageUID);
+			List<DICOMElement> referencedSOPInstanceUIDDICOMElements = getDICOMElementsByCode(dicomElementList,
+					PixelMedUtils.ReferencedSOPInstanceUIDCode);
+			String referencedSeriesUID = "";
+			
+			dcm4CheeDatabaseOperations.getSeriesUIDForImage(referencedSOPInstanceUIDDICOMElements.get(0).value);
+			for (int i = 0; i < referencedSOPInstanceUIDDICOMElements.size(); i++)
+			{
+				String referencedUID = dcm4CheeDatabaseOperations.getSeriesUIDForImage(referencedSOPInstanceUIDDICOMElements.get(i).value);
+				if (referencedUID == null || referencedUID.length() == 0)
+				{
+					referencedSOPInstanceUIDDICOMElements.remove(i);
+					i--;
+				}
+				else
+					referencedSeriesUID = referencedUID;
+			}
+			if (referencedSeriesUID == null || referencedSeriesUID.length() == 0)
+				throw new Exception("Referenced series for DSO " + seriesUID + " not found");
+			int frameNumber = 0;
 
 			String pngMaskDirectoryPath = baseDicomDirectory + "/studies/" + studyUID + "/series/" + seriesUID + "/images/"
 					+ imageUID + "/masks/";
 			File pngMaskFilesDirectory = new File(pngMaskDirectoryPath);
+			pngMaskFilesDirectory.mkdirs();
+			File[] oldFiles = pngMaskFilesDirectory.listFiles();
+			for (File oldFile: oldFiles)
+			{
+				try
+				{
+					//oldFile.delete();
+				} catch (Exception x) {};
+			}
 
 			log.info("Writing PNG masks for DSO " + imageUID + " in series " + seriesUID + " DSOFile:" + dsoFile.getAbsolutePath() + " number of frames:" + numberOfFrames + " ...");
-
-			pngMaskFilesDirectory.mkdirs();
-
-			for (int frameNumber = 0; frameNumber < numberOfFrames; frameNumber++) {
-				BufferedImage bufferedImage = sourceDSOImage.getBufferedImage(numberOfFrames - frameNumber - 1);
+			for (DICOMElement dicomElement : referencedSOPInstanceUIDDICOMElements) {
+				String referencedImageUID = dicomElement.value;
+				DCM4CHEEImageDescription dcm4cheeReferencedImageDescription = dcm4CheeDatabaseOperations
+						.getImageDescription(studyUID, referencedSeriesUID, referencedImageUID);
+				if (dcm4cheeReferencedImageDescription == null)
+				{
+					log.info("Did not find referenced image, seriesuid:" + referencedSeriesUID + " imageuid:" + referencedImageUID 
+						+ " for DSO seriesUID:" + seriesUID + " DSO imageUID:" + imageUID);
+					continue;
+				}
 
 				//log.info("Image dimensions - width " + bufferedImage.getWidth() + ", height " + bufferedImage.getHeight());
-
+				int refFrameNumber = dcm4cheeReferencedImageDescription.instanceNumber - 1; // Frames 0-based, instances 1
+				if (refFrameNumber < 0) continue;
+				log.info("FrameNumber:" + frameNumber + " refFrameNumber:" + refFrameNumber);
+				BufferedImage bufferedImage = sourceDSOImage.getBufferedImage(frameNumber);
 				BufferedImage bufferedImageWithTransparency = generateTransparentImage(bufferedImage);
-				String pngMaskFilePath = pngMaskDirectoryPath + frameNumber + ".png";
+				String pngMaskFilePath = pngMaskDirectoryPath + refFrameNumber + ".png";
 
 				File pngMaskFile = new File(pngMaskFilePath);
 				try {
@@ -385,6 +425,7 @@ public class DSOUtil
 					log.warning("Failure writing PNG mask file " + pngMaskFilePath + " for frame " + frameNumber + " of DSO "
 							+ imageUID + " in series " + seriesUID, e);
 				}
+				frameNumber++;
 			}
 			log.info("... finished writing PNG " + numberOfFrames + " masks for DSO image " + imageUID + " in series " + seriesUID);
 		} catch (DicomException e) {
@@ -401,6 +442,19 @@ public class DSOUtil
 				tmpDSO.delete();
 			} catch (Exception e) {};
 		}
+	}
+	
+	private static List<DICOMElement> getDICOMElementsByCode(DICOMElementList dicomElementList, String tagCode)
+	{
+		Set<DICOMElement> matchingDICOMElements = new LinkedHashSet<>(); // Maintain insertion order
+
+		for (DICOMElement dicomElement : dicomElementList.ResultSet.Result) {
+			// Do not allow duplicates.
+			if (dicomElement.tagCode.equals(tagCode) && !matchingDICOMElements.contains(dicomElement))
+				matchingDICOMElements.add(dicomElement);
+		}
+
+		return new ArrayList<>(matchingDICOMElements);
 	}
 
 	public static boolean handleDSOFramesEdit(String projectID, String subjectID, String studyUID, String seriesUID,
@@ -430,6 +484,7 @@ public class DSOUtil
 					DSOEditResult dsoEditResult = DSOUtil.createEditedDSO(dsoEditRequest, editedFramesPNGMaskFiles);
 					if (dsoEditResult != null)
 					{
+						log.info("Copying edited frame pngs: " + dsoEditRequest.editedFrameNumbers.size());
 						for (int i = 0; i < dsoEditRequest.editedFrameNumbers.size(); i++)
 						{
 							Integer frameNumber = dsoEditRequest.editedFrameNumbers.get(i);
@@ -444,7 +499,7 @@ public class DSOUtil
 							List<ImageAnnotation> aims = AIMQueries.getAIMImageAnnotations(AIMSearchType.ANNOTATION_UID, dsoEditResult.aimID, "admin");
 							if (aims.size() > 0)
 							{
-								log.info(aims.get(0).toString());
+								log.info("DSO Annotation: " + dsoEditResult.aimID);
 //								String sessionID = XNATSessionOperations.getJSessionIDFromRequest(httpRequest);
 //								ImageAnnotation imageAnnotation =  aims.get(0);
 //								PluginAIMUtil.addSegmentToImageAnnotation(imageAnnotation.getSegmentationCollection().getSegmentationList().get(0).getSopClassUID(), dsoEditResult.imageUID, imageAnnotation.getSegmentationCollection().getSegmentationList().get(0).getReferencedSopInstanceUID(),
@@ -482,7 +537,12 @@ public class DSOUtil
 		} catch (FileUploadException e) {
 			log.warning("File upload exception handling DSO edits for series " + seriesUID, e);
 			uploadError = true;
+		} catch (Exception e) {
+			log.warning("Exception handling DSO edits for series " + seriesUID, e);
+			uploadError = true;
 		}
+		if (!uploadError)
+			log.info("DSO successfully edited");
 		return uploadError;
 	}
 	
@@ -529,6 +589,8 @@ public class DSOUtil
 			log.warning("File upload exception handling DSO edits for series " + seriesUID, e);
 			uploadError = true;
 		}
+		if (!uploadError)
+			log.info("DSO successfully created");
 		return uploadError;
 	}
 

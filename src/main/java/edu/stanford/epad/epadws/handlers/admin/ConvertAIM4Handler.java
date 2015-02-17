@@ -13,20 +13,20 @@ import org.eclipse.jetty.server.handler.AbstractHandler;
 import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.epad.epadws.aim.AIMUtil;
 import edu.stanford.epad.epadws.handlers.HandlerUtil;
-import edu.stanford.epad.epadws.xnat.XNATSessionOperations;
+import edu.stanford.epad.epadws.service.SessionService;
 
 /**
- * @author dev
+ * @author martin
  */
 public class ConvertAIM4Handler extends AbstractHandler
 {
 	private static final EPADLogger log = EPADLogger.getInstance();
 
-	private static final String FORBIDDEN = "Forbidden method - only GET supported on image check route";
-	private static final String INTERNAL_ERROR_MESSAGE = "Internal server error on image check route";
-	private static final String INTERNAL_IO_ERROR_MESSAGE = "Internal server IO error on image check route";
-	private static final String INTERNAL_SQL_ERROR_MESSAGE = "Internal server SQL error on image check route";
-	private static final String INVALID_SESSION_TOKEN_MESSAGE = "Session token is invalid for image check route";
+	private static final String FORBIDDEN = "Forbidden method - only GET supported on convertAIM4 route";
+	private static final String INTERNAL_ERROR_MESSAGE = "Internal server error on convertAIM4 route";
+	private static final String INTERNAL_IO_ERROR_MESSAGE = "Internal server IO error on convertAIM4 route";
+	private static final String INTERNAL_SQL_ERROR_MESSAGE = "Internal server SQL error on convertAIM4 route";
+	private static final String INVALID_SESSION_TOKEN_MESSAGE = "Session token is invalid for convertAIM4 route";
 
 	@Override
 	public void handle(String s, Request request, HttpServletRequest httpRequest, HttpServletResponse httpResponse)
@@ -40,7 +40,7 @@ public class ConvertAIM4Handler extends AbstractHandler
 		try {
 			responseStream = httpResponse.getWriter();
 
-			if (XNATSessionOperations.hasValidXNATSessionID(httpRequest)) {				
+			if (SessionService.hasValidSessionID(httpRequest)) {				
 				String method = httpRequest.getMethod();
 				if ("GET".equalsIgnoreCase(method)) {
 					try {

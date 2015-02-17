@@ -54,6 +54,12 @@ public class XNATQueries
 		return invokeXNATProjectsQuery(sessionID, allProjectsQueryURL);
 	}
 
+	public static String getProjectType(String projectID, String sessionID)
+	{
+		String allProjectsQueryURL = XNATQueryUtil.buildProjectTypeQueryURL(projectID);
+		return invokeXNATQuery(sessionID, allProjectsQueryURL);
+	}
+
 	public static Set<String> allProjectIDs(String sessionID)
 	{
 		XNATProjectList xnatProjectList = allProjects(sessionID);
@@ -266,7 +272,7 @@ public class XNATQueries
 		return invokeXNATDICOMExperimentsQuery(adminSessionID, xnatExperimentsQueryURL);
 	}
 
-	private static XNATExperimentList getDICOMExperiments(String sessionID, String projectID, String subjectID)
+	public static XNATExperimentList getDICOMExperiments(String sessionID, String projectID, String subjectID)
 	{
 		String xnatExperimentsQueryURL = XNATQueryUtil.buildDICOMExperimentsForProjectAndSubjectQueryURL(projectID,
 				subjectID);
@@ -314,7 +320,7 @@ public class XNATQueries
 			if (xnatStatusCode == HttpServletResponse.SC_OK) {
 				return extractXNATUsersFromResponse(method);
 			} else if (xnatStatusCode == HttpServletResponse.SC_UNAUTHORIZED) {
-				log.warning("Invalid session token for XNAT projects query");
+				log.warning("Invalid session token for XNAT users query");
 				return XNATUserList.emptyUsers();
 			} else {
 				log.warning("Error performing XNAT projects query; XNAT status code = " + xnatStatusCode);
@@ -505,6 +511,26 @@ public class XNATQueries
 		} catch (Exception e) {
 			log.warning("Warning: error performing XNAT subject query " + XNATQueryUtil.buildSubjectURL(xnatSubjectID), e);
 			xnatStatusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+		} finally {
+			method.releaseConnection();
+		}
+		return null;
+	}
+
+	private static String invokeXNATQuery(String sessionID, String xnatQueryURL)
+	{
+		HttpClient client = new HttpClient();
+		GetMethod method = new GetMethod(xnatQueryURL);
+		int xnatStatusCode;
+		log.info("XNATQuery:" + xnatQueryURL);
+		method.setRequestHeader("Cookie", "JSESSIONID=" + sessionID);
+		try {
+			xnatStatusCode = client.executeMethod(method);
+			String xmlResp = method.getResponseBodyAsString(10000);
+			log.debug(xmlResp);
+			return xmlResp;
+		} catch (IOException e) {
+			log.warning("Error performing XNAT experiment query " + xnatQueryURL, e);
 		} finally {
 			method.releaseConnection();
 		}

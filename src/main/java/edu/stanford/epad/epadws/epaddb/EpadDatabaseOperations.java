@@ -25,6 +25,7 @@ import edu.stanford.epad.epadws.handlers.core.SubjectReference;
  * 
  * @author martin
  */
+
 public interface EpadDatabaseOperations
 {
 	String getPNGLocation(String studyUID, String seriesUID, String imageUID);
@@ -43,16 +44,22 @@ public interface EpadDatabaseOperations
 
 	void deleteSeries(String seriesUID);
 
+	void deleteSeriesOnly(String seriesUID);
+
 	SeriesProcessingStatus getSeriesProcessingStatus(String seriesUID);
 
 	void insertEpadEvent(String sessionID, String eventStatus, String aimUID, String aimName, String patientID,
 			String patientName, String templateID, String templateName, String pluginName);
+	
+	int deleteOldEvents();
 
 	Timestamp getSeriesProcessingDate(String seriesUID);
 
 	void updateOrInsertSeries(String seriesUID, SeriesProcessingStatus seriesProcessingStatus);
 
 	List<Map<String, String>> getEpadEventsForSessionID(String sessionID);
+
+	List<Map<String, String>> getEpadEventsForAimID(String sessionID);
 
 	void forceDICOMReprocessing();
 
@@ -100,7 +107,11 @@ public interface EpadDatabaseOperations
 	
 	List<EPADAIM> getAIMs(String projectID, AIMSearchType aimSearchType, String value, int start, int count);
 
-	List<EPADAIM> getAIMs(String dsoSeriesUID);
+	List<EPADAIM> getAIMsByDSOSeries(String dsoSeriesUID);
+
+	List<EPADAIM> getAIMsByDSOSeries(String projectID, String dsoSeriesUID);
+
+	List<EPADAIM> getAIMsByDSOSeries(String projectID, String patientID, String dsoSeriesUID);
 
 	int getNumberOfAIMs(String userName, ProjectReference reference);
 
@@ -134,7 +145,13 @@ public interface EpadDatabaseOperations
 
 	EPADAIM addDSOAIM(String userName, ImageReference reference, String dsoSeriesUID, String aimID);
 
+	EPADAIM addAIM(String userName, FrameReference reference, String aimID, String aimXML);
+
+	EPADAIM addDSOAIM(String userName, ImageReference reference, String dsoSeriesUID, String aimID, String aimXML);
+	
 	EPADAIM updateAIM(String aimID, String projectID, String username);
+	
+	EPADAIM updateAIMXml(String aimID, String xml);
 	
 	void deleteAIM(String userName, ProjectReference reference, String aimID);
 
@@ -191,4 +208,29 @@ public interface EpadDatabaseOperations
 	 */
 	Term insertCoordinationTerm(String termIDPrefix, String schemaName, String schemaVersion, String description,
 			List<Integer> termKeys) throws SQLException;
+	
+	/* 
+	 * New DB Operations methods for schema to replace XNAT
+	 * 
+	 * Structure of dbColumns array in all methods below:
+	 * fieldName,fieldType,columnName,columnType
+	 * eg:
+	 * 	{"name","String","name","varchar"},
+	 *	{"numOfErrors","int","num_of_errors","integer"},
+	 */
+	Object insertDBObject(Object dbObject, String dbTable, String[][] dbColumns) throws Exception;
+	Object updateDBObject(Object dbObject, String dbTable, String[][] dbColumns) throws Exception;
+	int deleteDBObject(String dbTable, long id) throws Exception;
+	int deleteDBObjects(String dbTable, String criteria) throws Exception;
+	List getDBObjects(Class dbClass, String dbTable, String[][] dbColumns, String criteria, int startRecords, int maxRecords, boolean distinct) throws Exception;
+	List<Long> getDBIds(String dbTable, String criteria, int startRecords, int maxRecords) throws Exception;
+	int getDBCount(String dbTable, String criteria) throws Exception;	
+	Object retrieveObjectById(Object dbObject, long id, String dbTable, String[][] dbColumns) throws Exception;
+	/**
+	 * @param script
+	 * @return true on success
+	 */
+	boolean runSQLScript(String script);
+
+
 }

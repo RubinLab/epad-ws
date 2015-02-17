@@ -26,6 +26,7 @@ public class EPADSearchFilterBuilder
 	private static final String ANNOTATION_MATCH_PARAMETER_NAME = "annotation";
 	private static final String ANNOTATION_MATCH_HAS_ANNOTATIONS_PARAMETER_VALUE = "hasAnnotations";
 	private static final String ANNOTATION_MATCH_HAS_NO_ANNOTATIONS_PARAMETER_VALUE = "hasNoAnnotations";
+	private static final String FILE_TYPE_MATCH_PARAMETER_NAME = "fileType";
 
 	private static final EPADLogger log = EPADLogger.getInstance();
 
@@ -76,6 +77,9 @@ public class EPADSearchFilterBuilder
 			log.debug("HasAnnotations" + searchFilter.hasAnnotationsAnnotationMatch());
 			log.debug("HasNoAnnotations" + searchFilter.hasNoAnnotationsAnnotationMatch());
 		}
+
+		if (httpRequest.getParameter(FILE_TYPE_MATCH_PARAMETER_NAME) != null)
+			searchFilter.setFileTypeMatch(httpRequest.getParameter(FILE_TYPE_MATCH_PARAMETER_NAME));
 
 		return searchFilter;
 	}

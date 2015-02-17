@@ -3,7 +3,6 @@ package edu.stanford.epad.epadws.handlers.admin;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.sql.SQLException;
-import java.text.DecimalFormat;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -25,7 +24,7 @@ import edu.stanford.epad.epadws.processing.pipeline.task.SingleFrameDICOMPngGene
 import edu.stanford.epad.epadws.processing.pipeline.watcher.QueueAndWatcherManager;
 import edu.stanford.epad.epadws.queries.DefaultEpadOperations;
 import edu.stanford.epad.epadws.queries.EpadOperations;
-import edu.stanford.epad.epadws.xnat.XNATSessionOperations;
+import edu.stanford.epad.epadws.service.SessionService;
 
 /**
  * @author martin
@@ -51,8 +50,10 @@ public class ImageCheckHandler extends AbstractHandler
 
 		try {
 			responseStream = httpResponse.getWriter();
+			responseStream.write("");
+			responseStream.flush();
 
-			if (XNATSessionOperations.hasValidXNATSessionID(httpRequest)) {
+			if (SessionService.hasValidSessionID(httpRequest)) {
 				String method = httpRequest.getMethod();
 				if ("GET".equalsIgnoreCase(method)) {
 					try {
@@ -98,6 +99,7 @@ public class ImageCheckHandler extends AbstractHandler
 		Set<DICOMFileDescription> allUnprocessedDICOMFileDescriptions = new HashSet<DICOMFileDescription>();
 
 		int numberOfSeriesWithMissingEPADDatabaseEntry = 0;
+		epadDatabaseOperations.deleteObsoleteEpadFileEntries();
 
 		// Verify that each image in a DICOM series in DCM4CHEE has an entry for a generated PNG file in the ePAD database,
 		// which indicates that the image's existence was detected. We then detect that the PNG file itself exists.

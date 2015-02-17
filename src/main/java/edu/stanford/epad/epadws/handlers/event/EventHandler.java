@@ -2,7 +2,9 @@ package edu.stanford.epad.epadws.handlers.event;
 
 import java.io.PrintWriter;
 import java.text.SimpleDateFormat;
+import java.util.Collection;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -16,7 +18,7 @@ import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.epad.epadws.epaddb.EpadDatabase;
 import edu.stanford.epad.epadws.epaddb.EpadDatabaseOperations;
 import edu.stanford.epad.epadws.handlers.HandlerUtil;
-import edu.stanford.epad.epadws.xnat.XNATSessionOperations;
+import edu.stanford.epad.epadws.service.SessionService;
 
 /**
  * 
@@ -46,20 +48,21 @@ public class EventHandler extends AbstractHandler
 		httpResponse.setContentType("text/plain");
 		request.setHandled(true);
 
-		if (XNATSessionOperations.hasValidXNATSessionID(httpRequest)) {
+		if (SessionService.hasValidSessionID(httpRequest)) {
 			try {
 				String method = httpRequest.getMethod();
 				responseStream = httpResponse.getWriter();
 
 				if ("GET".equalsIgnoreCase(method)) {
-					String jsessionID = XNATSessionOperations.getJSessionIDFromRequest(httpRequest);
+					String jsessionID = SessionService.getJSessionIDFromRequest(httpRequest);
 					if (count++ >= 100)
 					{
 						log.info("Get Event request with JSESSIONID " + jsessionID);
 						count = 0;
 					}
 					if (jsessionID != null) {
-						findEventsForSessionID(responseStream, jsessionID);
+						String username = httpRequest.getParameter("username");
+						findEventsForSessionID(username, responseStream, jsessionID);
 						statusCode = HttpServletResponse.SC_OK;
 					} else {
 						statusCode = HandlerUtil.badRequestResponse(MISSING_JSESSIONID_MESSAGE, log);
@@ -67,7 +70,7 @@ public class EventHandler extends AbstractHandler
 				} else if ("POST".equalsIgnoreCase(method)) {
 					String queryString = httpRequest.getQueryString();
 					if (queryString != null) {
-						String jsessionID = XNATSessionOperations.getJSessionIDFromRequest(httpRequest);
+						String jsessionID = SessionService.getJSessionIDFromRequest(httpRequest);
 						String event_status = httpRequest.getParameter("event_status");
 						String aim_uid = httpRequest.getParameter("aim_uid");
 						String aim_name = httpRequest.getParameter("aim_name");
@@ -116,13 +119,17 @@ public class EventHandler extends AbstractHandler
 		httpResponse.setStatus(statusCode);
 	}
 
-	private void findEventsForSessionID(PrintWriter responseStrean, String sessionID)
+	public static Map<String, Map<String, String>> deletedEvents = new HashMap<String, Map<String, String>>();
+	
+	private void findEventsForSessionID(String username, PrintWriter responseStrean, String sessionID)
 	{
 		EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
 		// TODO This map should be replaced with a class describing an event.
 		if (sessionID.indexOf(",") != -1)
 			sessionID = sessionID.substring(0, sessionID.indexOf(","));
 		List<Map<String, String>> eventMap = epadDatabaseOperations.getEpadEventsForSessionID(sessionID);
+		List<Map<String, String>> userEvents = epadDatabaseOperations.getEpadEventsForSessionID(username);
+		eventMap.addAll(userEvents);
 		String separator = ", ";
 
 		if (eventMap.size() == 0)
@@ -135,8 +142,11 @@ public class EventHandler extends AbstractHandler
 				+ "template_id, template_name, plugin_name");
 		
 		for (Map<String, String> row : eventMap) {
-			if (getTime(row.get("created_time")) < (System.currentTimeMillis() - 5*60*1000))
+			deletedEvents.put(row.get("aim_uid"), row);
+			if (getTime(row.get("created_time")) < (new Date().getTime() - 5*60*1000))
+			{
 				continue;
+			}
 			StringBuilder sb = new StringBuilder();
 			sb.append(row.get("pk")).append(separator);
 			sb.append(row.get("event_status")).append(separator);
@@ -151,6 +161,20 @@ public class EventHandler extends AbstractHandler
 			sb.append("\n");
 			responseStrean.print(sb.toString());
 			log.info(sb.toString());
+		}
+		if (deletedEvents.size() > 100) purgeDeletedEvents();
+	}
+	
+	private void purgeDeletedEvents()
+	{
+		Collection<Map<String, String>> eventMaps = deletedEvents.values();
+		for (Map<String, String> eventMap: eventMaps)
+		{
+			if (getTime(eventMap.get("created_time")) < (new Date().getTime()- 1*60*60*1000))
+			{
+				deletedEvents.remove(eventMap.get("aim_uid"));
+			}
+			
 		}
 	}
 	

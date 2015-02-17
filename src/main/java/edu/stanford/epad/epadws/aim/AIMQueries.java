@@ -4,10 +4,20 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
+import org.bson.BSONObject;
+
+import com.mongodb.BasicDBList;
+import com.mongodb.BasicDBObject;
+import com.mongodb.DB;
+import com.mongodb.DBCollection;
+import com.mongodb.DBCursor;
+import com.mongodb.DBObject;
+import com.mongodb.util.JSON;
+
 import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADLogger;
-import edu.stanford.epad.epadws.queries.XNATQueries;
-import edu.stanford.epad.epadws.xnat.XNATSessionOperations;
+import edu.stanford.epad.common.util.MongoDBOperations;
+import edu.stanford.epad.epadws.service.UserProjectService;
 import edu.stanford.hakan.aim3api.base.AimException;
 import edu.stanford.hakan.aim3api.base.ImageAnnotation;
 import edu.stanford.hakan.aim3api.usage.AnnotationGetter;
@@ -86,11 +96,15 @@ public class AIMQueries
 		else
 		{
 			List<ImageAnnotation> aims = new ArrayList<ImageAnnotation>();
-    		String adminSessionID = XNATSessionOperations.getXNATAdminSessionID();
-    		Set<String> projectIDs = XNATQueries.allProjectIDs(adminSessionID);
-			for (String projectID: projectIDs)
-			{
-				aims.addAll(getAIMImageAnnotations(projectID, aimSearchType, value, username, startIndex, count));
+    		Set<String> projectIDs;
+			try {
+				projectIDs = UserProjectService.getAllProjectIDs();
+				for (String projectID: projectIDs)
+				{
+					aims.addAll(getAIMImageAnnotations(projectID, aimSearchType, value, username, startIndex, count));
+				}
+			} catch (Exception e) {
+				log.warning("Error getting projects and annotations", e);;
 			}
 			return aims;
 		}
@@ -433,6 +447,70 @@ public class AIMQueries
 		long time2 = System.currentTimeMillis();
 		log.info("AIM query took " + (time2-time1) + " msecs for " + resultAims.size() + " aims in projectID:" + projectID);
 		return resultAims;
+	}
+
+	/**
+	 * Read the annotations from the AIM database by patient name, patient id, series id, annotation id, or just get all
+	 * of them on a GET. Can also delete by annotation id.
+	 * 
+	 * @param aimSearchType One of personName, patientId, seriesUID, annotationUID, deleteUID
+	 * @param value
+	 * @param user
+	 * @return List<ImageAnnotationCollection>
+	 * @throws edu.stanford.hakan.aim4api.base.AimException
+	 */
+	public static List<String> getJsonAnnotations(String projectID, AIMSearchType aimSearchType, String value, String username) throws Exception
+	{
+		//db.Test.find( { 'ImageAnnotationCollection.uniqueIdentifier.root': { $in: [ 'drr7d3pp5sr3up1hbt1v53cf4va5ga57fv8aeri6', 'iqn1vvxtdptm0wtzsc43kptl26oft5c08wxz0w1t' ] } } )
+		List<String> results = new ArrayList<String>();
+		long time1 = System.currentTimeMillis();
+		DBObject query = null;
+		if (aimSearchType == AIMSearchType.PERSON_NAME) {
+			String personName = value;
+			query = new BasicDBObject("ImageAnnotationCollection.person.name.value", personName);
+		} else if (aimSearchType == AIMSearchType.PATIENT_ID) {
+			String patientId = value;
+			query = new BasicDBObject("ImageAnnotationCollection.person.id.value", patientId);
+		} else if (aimSearchType == AIMSearchType.SERIES_UID) {
+			String seriesUID = value;
+			query = new BasicDBObject("ImageAnnotationCollection.imageAnnotations.ImageAnnotation.imageReferenceEntityCollection.ImageReferenceEntity.imageStudy.imageSeries.instanceUid.root", seriesUID);
+		} else if (aimSearchType == AIMSearchType.ANNOTATION_UID) {
+			String annotationUID = value;
+			if (value.equals("all")) {
+			} else if (value.contains(",")){
+				String[] ids = value.split(",");
+	            BasicDBList aimIds = new BasicDBList();
+	            for (String id: ids)
+	            {
+	            	aimIds.add(id);
+	            }
+	            DBObject inClause = new BasicDBObject("$in", aimIds);
+	            query = new BasicDBObject("ImageAnnotationCollection.uniqueIdentifier.root", inClause);				
+			} else {
+	            query = new BasicDBObject("ImageAnnotationCollection.uniqueIdentifier.root", value);				
+			}
+		} else if (aimSearchType.equals(AIMSearchType.JSON_QUERY)) {
+			String jsonQuery = value;
+			query = (DBObject) JSON.parse(jsonQuery);
+		} else {
+			log.warning("Unsupported AIM search type for mongoDB:" + aimSearchType.getName());
+		}
+		DB mongoDB = MongoDBOperations.getMongoDB();
+		if (mongoDB == null)
+			throw new Exception("Error connecting to MongoDB");
+		DBCollection coll = mongoDB.getCollection(projectID);
+		DBCursor cursor = null;
+		try {
+			cursor = coll.find(query);
+		    while (cursor.hasNext()) {
+	            DBObject obj = cursor.next();
+	            results.add(obj.toString());
+		    }
+		} finally {
+		    cursor.close();
+		}		long time2 = System.currentTimeMillis();
+		log.info("MongoDB query took " + (time2-time1) + " msecs for " + results.size() + " aims in projectID:" + projectID);
+		return results;
 	}
 
 	private static int getNumberOfAIMAnnotations(AIMSearchType valueType, String value, String username)

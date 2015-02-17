@@ -87,6 +87,13 @@ public class XNATSessionHandler extends AbstractHandler
 			} catch (Throwable t) {
 				statusCode = HandlerUtil.internalErrorResponse(LOGOUT_EXCEPTION_MESSAGE, t, log);
 			}
+		} else if ("GET".equalsIgnoreCase(method)) {
+			log.info("GET request, sessionId:" + XNATSessionOperations.getJSessionIDFromRequest(httpRequest));
+			try {
+				statusCode = HttpServletResponse.SC_OK;
+			} catch (Throwable t) {
+				statusCode = HandlerUtil.internalErrorResponse(LOGOUT_EXCEPTION_MESSAGE, t, log);
+			}
 		} else if ("OPTIONS".equalsIgnoreCase(method)) {
 			log.info("CORS preflight OPTIONS request to session route");
 			httpResponse.setHeader("Access-Control-Allow-Origin", origin);

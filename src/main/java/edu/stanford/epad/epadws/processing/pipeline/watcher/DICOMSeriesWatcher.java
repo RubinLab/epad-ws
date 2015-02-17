@@ -26,10 +26,12 @@ import edu.stanford.epad.epadws.processing.model.SeriesProcessingDescription;
 import edu.stanford.epad.epadws.processing.pipeline.task.GeneratorTask;
 import edu.stanford.epad.epadws.processing.pipeline.task.ImageCheckTask;
 import edu.stanford.epad.epadws.processing.pipeline.task.PNGGridGeneratorTask;
+import edu.stanford.epad.epadws.processing.pipeline.task.RemotePACQueryTask;
 import edu.stanford.epad.epadws.processing.pipeline.task.SingleFrameDICOMPngGeneratorTask;
 import edu.stanford.epad.epadws.processing.pipeline.threads.ShutdownSignal;
 import edu.stanford.epad.epadws.queries.DefaultEpadOperations;
 import edu.stanford.epad.epadws.queries.EpadOperations;
+import edu.stanford.epad.epadws.service.UserProjectService;
 
 /**
  * Process new DICOM series appearing in the series queue. Each series is described by a
@@ -143,6 +145,20 @@ public class DICOMSeriesWatcher implements Runnable
 						String seriesUID = seriesPipelineState.getSeriesProcessingDescription().getSeriesUID();
 						dicomSeriesTracker.removeSeriesPipelineState(seriesPipelineState);
 						epadDatabaseOperations.updateOrInsertSeries(seriesUID, SeriesProcessingStatus.DONE);
+						if (UserProjectService.pendingUploads.containsKey(seriesUID))
+						{
+							String username = UserProjectService.pendingUploads.get(seriesUID);
+							if (username != null && username.indexOf(":") != -1)
+								username = username.substring(0, username.indexOf(":"));
+							if (username != null)
+							{
+								epadDatabaseOperations.insertEpadEvent(
+										username, 
+										"Image Generation Complete", 
+										"", "", "", "", "", "", "");					
+								UserProjectService.pendingUploads.remove(seriesUID);
+							}
+						}
 					}
 				}
 				Calendar now = Calendar.getInstance();
@@ -154,6 +170,15 @@ public class DICOMSeriesWatcher implements Runnable
 						{	
 							ImageCheckTask ict = new ImageCheckTask();
 							new Thread(ict).start();
+						}
+					} catch (Exception x) {
+						log.warning("Exception running ImageCheck", x);
+					}
+					try {
+						if (!"true".equalsIgnoreCase(EPADConfig.getParamValue("DISABLE_REMOTEPAC_QUERY")))
+						{	
+							RemotePACQueryTask rpqt = new RemotePACQueryTask(null);
+							new Thread(rpqt).start();
 						}
 					} catch (Exception x) {
 						log.warning("Exception running ImageCheck", x);
