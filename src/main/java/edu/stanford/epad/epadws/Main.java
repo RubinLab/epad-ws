@@ -153,7 +153,7 @@ public class Main
 			//log.info("Checking annotations table");
 			databaseOperations.checkAndRefreshAnnotationsTable();
 			Set<String> projectIds = UserProjectService.getAllProjectIDs();
-			if (EPADConfig.UseEPADUsersProjects && projectIds.size() == 1) {
+			if (EPADConfig.UseEPADUsersProjects && projectIds.size() <= 1) {
 				// Sync XNAT to Epad if needed
 				try {
 					XNATSyncHandler.syncXNATtoEpad("admin", "");
@@ -199,7 +199,6 @@ public class Main
 		addHandlerAtContextPath(new ImageReprocessingHandler(), "/epad/imagereprocess", handlerList);
 		addHandlerAtContextPath(new ConvertAIM4Handler(), "/epad/convertaim4", handlerList);
 		addHandlerAtContextPath(new XNATSyncHandler(), "/epad/syncxnat", handlerList);
-		
 
 		// TODO This call will disappear when we switch to AIM4
 		addHandlerAtContextPath(new CoordinationHandler(), "/epad/coordination", handlerList);

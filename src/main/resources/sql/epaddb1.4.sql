@@ -44,7 +44,7 @@ updatetime timestamp,
 updated_by varchar(64),
 PRIMARY KEY (id)) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 CREATE UNIQUE INDEX user_username_ind on user(username);
-insert into user values(null,'admin','Epad','Admin','willrett@stanford.edu','admin',1,1,null,'admin',sysdate(),sysdate(),'admin');
+insert into user values(null,'admin','Epad','Admin','willrett@stanford.edu','admin','',1,1,1,null,null,'admin',sysdate(),sysdate(),'admin');
 commit;
 
 CREATE TABLE subject (id integer unsigned NOT NULL AUTO_INCREMENT,
@@ -180,6 +180,4 @@ ALTER TABLE dbversion MODIFY COLUMN version varchar(6);
 UPDATE dbversion SET version = '1.4';
 commit;
 
-CREATE INDEX annotations_series_ind ON annotations(seriesuid);
-CREATE INDEX annotations_project_ind ON annotations(projectuid);
 

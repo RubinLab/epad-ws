@@ -139,6 +139,7 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 			c = getConnection();
 			adb = new AIMDatabaseOperations(c, EPADConfig.eXistServerUrl,
 					EPADConfig.aim4Namespace, EPADConfig.eXistCollection, EPADConfig.eXistUsername, EPADConfig.eXistPassword);
+			adb.createAnnotationsTable();
 			adb.alterAnnotationsTable();
 			count = adb.getTotalAnnotationCount();
 		} catch (SQLException sqle) {

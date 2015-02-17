@@ -861,8 +861,13 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		if (projectID == null || projectID.trim().length() == 0)
 			return getSubjectFromName(subjectName);
 		List<Subject> subjects = this.getSubjectsForProject(projectID);
+		String xnatName = subjectName.replace('^',' ').trim();
 		for (Subject subject: subjects)
+		{
 			if (subjectName.equals(subject.getName())) return subject;
+			String xnatName2 = subject.getName().replace('^',' ').trim();
+			if (xnatName.equals(xnatName2)) return subject;
+		}
 		return null;
 	}
 

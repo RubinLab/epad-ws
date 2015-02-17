@@ -84,7 +84,7 @@ public class AIMDatabaseOperations {
         this.mySqlConnection = mySqlConnection;
     }
 
-    private void createAnnotationsTable() throws SQLException {
+    public void createAnnotationsTable() throws SQLException {
        String sqlCreateTable = "CREATE TABLE IF NOT EXISTS `" + ANNOTATIONS_TABLE + "` (\n"
                 + "  `UserLoginName` VARCHAR(255) NOT NULL,\n"
                 + "  `PatientID` VARCHAR(255) NOT NULL,\n"
@@ -95,10 +95,21 @@ public class AIMDatabaseOperations {
                 + "  `FrameID` INT,\n"
                 + "  `AnnotationUID` VARCHAR(255) NOT NULL,\n"
                 //+ "  `AnnotationName` VARCHAR(255) NOT NULL,\n"
-                + "   DSOSeriesUID VARCHAR(255),\n"
                 + "  `ProjectUID` VARCHAR(255),\n"
                 + "  PRIMARY KEY (`AnnotationUID`));";
-        this.statement.executeUpdate(sqlCreateTable);
+       boolean closeStmt = false;
+	   	try {
+	   		if (this.statement == null)
+	   		{
+	   			this.statement = mySqlConnection.createStatement();
+	   			closeStmt = true;
+	   		}
+	        this.statement.executeUpdate(sqlCreateTable);
+		} catch (SQLException x) {
+				log.warning("Error creating annotations table", x);
+		} finally {
+			if (statement != null && closeStmt) statement.close();
+		}
     }
 
     public void alterAnnotationsTable() throws SQLException {
@@ -114,6 +125,8 @@ public class AIMDatabaseOperations {
     	try {
 	    	this.statement = mySqlConnection.createStatement();
 	        this.statement.executeUpdate("ALTER TABLE " + ANNOTATIONS_TABLE + " ADD COLUMN UPDATETIME TIMESTAMP");
+	        this.statement.executeUpdate("CREATE INDEX annotations_series_ind ON annotations(seriesuid)");
+	        this.statement.executeUpdate("CREATE INDEX annotations_project_ind ON annotations(projectuid)");
     	} catch (SQLException x) {
     		if (!x.getMessage().contains("Duplicate"))
     			log.warning("Error adding column", x);
