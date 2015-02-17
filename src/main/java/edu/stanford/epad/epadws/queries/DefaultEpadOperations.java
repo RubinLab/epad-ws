@@ -915,6 +915,7 @@ public class DefaultEpadOperations implements EpadOperations
 	private void createFile(String username, String projectID, String subjectID, String studyID, String seriesID,
 			File uploadedFile, String description, String fileType, String sessionID) throws Exception {
 		String filename = uploadedFile.getName();
+		log.info("filename:" + filename);
 		if (filename.startsWith("temp"))
 		{
 			int dash = filename.indexOf("-");
@@ -963,6 +964,7 @@ public class DefaultEpadOperations implements EpadOperations
 				type = FileType.IMAGE;
 			else if (isImage(uploadedFile))
 				type = FileType.IMAGE;
+			log.info("filename:" + filename + " type:" + type);
 			if (type == null && filename.toLowerCase().endsWith(".xml"))
 			{
 				if (EPADFileUtils.isValidXml(uploadedFile, EPADConfig.templateXSDPath)) {
@@ -1428,13 +1430,13 @@ public class DefaultEpadOperations implements EpadOperations
 			ProjectReference projectReference, String aimID, File aimFile,
 			String sessionID) {
 		try {
-			EPADAIM aim = epadDatabaseOperations.addAIM(username, projectReference, aimID);
-			if (!"admin".equals(username) && !aim.userName.equals(username) && !aim.userName.equals("shared") && !UserProjectService.isOwner(sessionID, username, aim.projectID))
+			//EPADAIM aim = epadDatabaseOperations.addAIM(username, projectReference, aimID);
+			if (!"admin".equals(username) && !projectOperations.hasAccessToProject(username, projectReference.projectID))
 			{
 				log.warning("No permissions to update AIM:" + aimID + " for user " + username);
 				throw new Exception("No permissions to update AIM:" + aimID + " for user " + username);
 			}
-			if (!AIMUtil.saveAIMAnnotation(aimFile, aim.projectID, sessionID, username))
+			if (!AIMUtil.saveAIMAnnotation(aimFile, projectReference.projectID, sessionID, username))
 				return "";
 			else
 				return "Error saving AIM file";
@@ -1864,7 +1866,7 @@ public class DefaultEpadOperations implements EpadOperations
 			DCM4CHEESeries dcm4CheeSeries, String username)
 	{
 		String projectID = suppliedProjectID.equals("") ? EPADConfig.xnatUploadProjectID : suppliedProjectID;
-		String patientName = dcm4CheeSeries.patientName;
+		String patientName = trimTrailing(dcm4CheeSeries.patientName);
 		String xnatPatientID = XNATUtil.subjectID2XNATSubjectLabel(dcm4CheeSeries.patientID);
 		String subjectID = suppliedSubjectID.equals("") ? xnatPatientID : suppliedSubjectID;
 		String studyUID = dcm4CheeSeries.studyUID;
@@ -1891,6 +1893,14 @@ public class DefaultEpadOperations implements EpadOperations
 		return new EPADSeries(projectID, subjectID, patientName, studyUID, seriesUID, seriesDate, seriesDescription,
 				examType, bodyPart, accessionNumber, numberOfImages, numberOfSeriesRelatedInstances, numberOfAnnotations,
 				institution, stationName, department, seriesProcessingStatus, createdTime, firstImageUIDInSeries, dcm4CheeSeries.isDSO);
+	}
+	
+	private static String trimTrailing(String xnatName)
+	{
+		while (xnatName.endsWith("^"))
+			xnatName = xnatName.substring(0, xnatName.length()-1);
+		String name = xnatName.trim();
+		return name;
 	}
 
 	private StudyProcessingStatus getStudyProcessingStatus(String studyUID)
@@ -2017,7 +2027,8 @@ public class DefaultEpadOperations implements EpadOperations
 		int count = 0;
 		for (String projectID: projectIDs)
 		{
-			if (!suppliedProjectID.equals(projectID) && !projectID.equals(EPADConfig.xnatUploadProjectID) && !projectID.equals("")) continue;
+			//if (!suppliedProjectID.equals(projectID) && !projectID.equals(EPADConfig.xnatUploadProjectID) && !projectID.equals("")) continue;
+			if (!suppliedProjectID.equals(projectID)) continue;
 			try
 			{
 				boolean isCollaborator = UserProjectService.isCollaborator(sessionID, username, projectID);
