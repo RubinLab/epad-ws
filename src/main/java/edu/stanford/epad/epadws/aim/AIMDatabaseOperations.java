@@ -470,7 +470,8 @@ public class AIMDatabaseOperations {
     public List<EPADAIM> getAIMs(String projectID, String patientID, String studyUID, String seriesUID, String imageUID, int frameID, String dsoSeriesUID, int start, int count) throws SQLException {
         String sqlSelect = "SELECT UserLoginName, ProjectUID, PatientID, StudyUID, SeriesUID, ImageUID, frameID, AnnotationUID, DSOSeriesUID FROM annotations WHERE 1 = 1";
 		if (projectID != null && projectID.length() > 0)
-			sqlSelect = sqlSelect + " and (ProjectUID = '" + projectID + "' or ProjectUID = '" + EPADConfig.xnatUploadProjectID + "')";
+//			sqlSelect = sqlSelect + " and (ProjectUID = '" + projectID + "' or ProjectUID = '" + EPADConfig.xnatUploadProjectID + "')";
+			sqlSelect = sqlSelect + " and (ProjectUID = '" + projectID + "')";
 		if (patientID != null && patientID.length() > 0)
 			sqlSelect = sqlSelect + " and PatientID = '" + patientID + "'";
 		if (studyUID != null && studyUID.length() > 0)

@@ -10,17 +10,13 @@ import javax.servlet.http.HttpServletResponse;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 
-import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADLogger;
-import edu.stanford.epad.dtos.EPADProject;
 import edu.stanford.epad.epadws.aim.AIMUtil;
 import edu.stanford.epad.epadws.handlers.HandlerUtil;
-import edu.stanford.epad.epadws.handlers.core.ProjectReference;
-import edu.stanford.epad.epadws.queries.DefaultEpadOperations;
 import edu.stanford.epad.epadws.xnat.XNATSessionOperations;
 
 /**
- * @author martin
+ * @author dev
  */
 public class ConvertAIM4Handler extends AbstractHandler
 {
@@ -49,6 +45,7 @@ public class ConvertAIM4Handler extends AbstractHandler
 				if ("GET".equalsIgnoreCase(method)) {
 					try {
 						int results = AIMUtil.convertAllAim3();
+						log.info("Converted " + results + " Annotations to AIM4 format");
 						responseStream.write("Converted " + results + " Annotations to AIM4 format");
 						statusCode = HttpServletResponse.SC_OK;
 					} catch (IOException e) {

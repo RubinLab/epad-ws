@@ -18,7 +18,7 @@ import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.epad.dtos.EPADAIM;
 import edu.stanford.epad.dtos.EPADAIMList;
-import edu.stanford.epad.dtos.EPADError;
+import edu.stanford.epad.dtos.EPADMessage;
 import edu.stanford.epad.dtos.EPADFrame;
 import edu.stanford.epad.dtos.EPADFrameList;
 import edu.stanford.epad.dtos.EPADImage;
@@ -102,6 +102,7 @@ public class EPADHandler extends AbstractHandler
 			log.warning("Error in handle request:", e);
 			statusCode = HandlerUtil.internalErrorJSONResponse(INTERNAL_ERROR_MESSAGE, e, responseStream, log);
 		}
+		log.info("Status returned to client:" + statusCode);
 		httpResponse.setStatus(statusCode);
 	}
 
@@ -772,7 +773,7 @@ public class EPADHandler extends AbstractHandler
 		}
 		else
 		{
-			responseStream.write(new EPADError(status).toJSON());
+			responseStream.write(new EPADMessage(status).toJSON());
 			return HttpServletResponse.SC_INTERNAL_SERVER_ERROR;				
 		}
 	}
@@ -879,6 +880,8 @@ public class EPADHandler extends AbstractHandler
 		log.info("DELETE Request from client:" + pathInfo + " user:" + username + " sessionID:" + sessionID);
 		boolean deleteDSO = "true".equalsIgnoreCase(httpRequest.getParameter("deleteDSO"));
 		boolean deleteAims = "true".equalsIgnoreCase(httpRequest.getParameter("deleteAims"));
+		try
+		{
 		if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.PROJECT, pathInfo)) {
 			ProjectReference projectReference = ProjectReference.extract(ProjectsRouteTemplates.PROJECT, pathInfo);
 			statusCode = epadOperations.projectDelete(projectReference.projectID, sessionID, username);
@@ -896,7 +899,7 @@ public class EPADHandler extends AbstractHandler
 			}
 			else
 			{
-				responseStream.append(new EPADError(err).toJSON());
+					responseStream.append(new EPADMessage(err).toJSON());
 				statusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 			}
 
@@ -909,7 +912,7 @@ public class EPADHandler extends AbstractHandler
 			}
 			else
 			{
-				responseStream.append(new EPADError(err).toJSON());
+					responseStream.append(new EPADMessage(err).toJSON());
 				statusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 			}
 
@@ -948,6 +951,10 @@ public class EPADHandler extends AbstractHandler
 			statusCode = epadOperations.aimDelete(aimReference.aimID, sessionID, deleteDSO, username);
 		} else {
 			statusCode = HandlerUtil.badRequestJSONResponse(BAD_DELETE_MESSAGE, responseStream, log);
+			}
+		} catch (Exception x) {
+			responseStream.append(new EPADMessage(x.getMessage()).toJSON());
+			statusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 		}
 		return statusCode;
 	}

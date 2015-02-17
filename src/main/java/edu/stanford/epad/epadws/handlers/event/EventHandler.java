@@ -1,6 +1,8 @@
 package edu.stanford.epad.epadws.handlers.event;
 
 import java.io.PrintWriter;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
@@ -33,6 +35,8 @@ public class EventHandler extends AbstractHandler
 	private static final String MISSING_QUERY_MESSAGE = "No query in event request";
 	private static final String INVALID_SESSION_TOKEN_MESSAGE = "Session token is invalid on event route";
 
+	private static int count;
+	
 	@Override
 	public void handle(String base, Request request, HttpServletRequest httpRequest, HttpServletResponse httpResponse)
 	{
@@ -49,6 +53,11 @@ public class EventHandler extends AbstractHandler
 
 				if ("GET".equalsIgnoreCase(method)) {
 					String jsessionID = XNATSessionOperations.getJSessionIDFromRequest(httpRequest);
+					if (count++ >= 100)
+					{
+						log.info("Get Event request with JSESSIONID " + jsessionID);
+						count = 0;
+					}
 					if (jsessionID != null) {
 						findEventsForSessionID(responseStream, jsessionID);
 						statusCode = HttpServletResponse.SC_OK;
@@ -69,6 +78,8 @@ public class EventHandler extends AbstractHandler
 						String plugin_name = httpRequest.getParameter("plugin_name");
 
 						log.info("Got event for AIM ID " + aim_uid + " with JSESSIONID " + jsessionID);
+						if (jsessionID.indexOf(",") != -1)
+							jsessionID = jsessionID.substring(0, jsessionID.indexOf(","));
 
 						if (jsessionID != null && event_status != null && aim_uid != null && aim_uid != null && aim_name != null
 								&& patient_id != null && patient_name != null && template_id != null && template_name != null
@@ -79,9 +90,15 @@ public class EventHandler extends AbstractHandler
 							responseStream.flush();
 							statusCode = HttpServletResponse.SC_OK;
 						} else {
+							log.warning("Required parameter missing, event_status:" + event_status +
+									" aim_uid:" + aim_uid + " aim_name" + aim_name + 
+									" patient_id: " + patient_id + " patient_name:" + patient_name +
+									" template_id:" + template_id + " template_name:" + template_name +
+									" plugin_name:"+ plugin_name);
 							statusCode = HandlerUtil.badRequestResponse(BAD_PARAMETERS_MESSAGE, log);
 						}
 					} else {
+						log.warning("Event parameters are all missing");
 						statusCode = HandlerUtil.badRequestResponse(MISSING_QUERY_MESSAGE, log);
 					}
 				} else {
@@ -103,13 +120,23 @@ public class EventHandler extends AbstractHandler
 	{
 		EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
 		// TODO This map should be replaced with a class describing an event.
+		if (sessionID.indexOf(",") != -1)
+			sessionID = sessionID.substring(0, sessionID.indexOf(","));
 		List<Map<String, String>> eventMap = epadDatabaseOperations.getEpadEventsForSessionID(sessionID);
 		String separator = ", ";
 
+		if (eventMap.size() == 0)
+		{
+			//responseStrean.println("No new events posted");
+			//log.info("No new events posted");
+			return;
+		}
 		responseStrean.println("event_number, event_status, Date, aim_uid, aim_name, patient_id, patient_name, "
 				+ "template_id, template_name, plugin_name");
 
 		for (Map<String, String> row : eventMap) {
+			if (getTime(row.get("created_time")) < (System.currentTimeMillis() - 5*60*1000))
+				continue;
 			StringBuilder sb = new StringBuilder();
 			sb.append(row.get("pk")).append(separator);
 			sb.append(row.get("event_status")).append(separator);
@@ -124,6 +151,19 @@ public class EventHandler extends AbstractHandler
 			sb.append("\n");
 			responseStrean.print(sb.toString());
 			log.info(sb.toString());
+		}
+	}
+	
+	private static long getTime(String timestamp)
+	{
+		try
+		{
+			Date date = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").parse(timestamp);
+			return date.getTime();
+		}
+		catch (Exception x)
+		{
+			return 0;
 		}
 	}
 }

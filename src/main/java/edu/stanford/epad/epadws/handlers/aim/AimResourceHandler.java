@@ -53,6 +53,7 @@ public class AimResourceHandler extends AbstractHandler
 				if ("GET".equalsIgnoreCase(method)) {
 					String queryString = httpRequest.getQueryString();
 					queryString = URLDecoder.decode(queryString, "UTF-8");
+					log.info("GET Request from client:" + queryString + " user:" + httpRequest.getParameter("user"));
 					if (queryString != null) { // TODO httpRequest.getParameter with "patientID", "user"
 						AIMSearchType aimSearchType = AIMUtil.getAIMSearchType(httpRequest);
 						String searchValue = aimSearchType != null ? httpRequest.getParameter(aimSearchType.getName()) : null;
@@ -93,6 +94,7 @@ public class AimResourceHandler extends AbstractHandler
 				} else if ("DELETE".equalsIgnoreCase(method)) {
 					String queryString = httpRequest.getQueryString();
 					queryString = URLDecoder.decode(queryString, "UTF-8");
+					log.info("DELETE Request from client:" + queryString + " user:" + httpRequest.getParameter("user"));
 					if (queryString != null) {
 						String aimID = httpRequest.getParameter("aimID");
 						if (aimID != null) {

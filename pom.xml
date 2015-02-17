@@ -48,6 +48,24 @@
     </dependency>
 
     <dependency>
+		<groupId>edu.stanford.epad.plugins</groupId>
+		<artifactId>lesionseg</artifactId>
+		<version>${lesionseg.plugin.version}</version>
+	</dependency>
+
+	<dependency>
+		<groupId>edu.stanford.epad.plugins</groupId>
+		<artifactId>sampleplugin</artifactId>
+		<version>${sampleplugin.plugin.version}</version>
+	</dependency>
+
+	<dependency>
+		<groupId>edu.stanford.epad.plugins</groupId>
+		<artifactId>riesz</artifactId>
+		<version>${riesz.plugin.version}</version>
+	</dependency>
+
+    <dependency>
       <groupId>edu.stanford.hakan.aim3api</groupId>
       <artifactId>aim3api</artifactId>
       <version>${aim3api.version}</version>

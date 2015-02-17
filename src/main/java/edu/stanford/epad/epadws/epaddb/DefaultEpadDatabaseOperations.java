@@ -68,6 +68,34 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 			if (rs.next()) {
 				pngFilePath = rs.getString(1);
 			}
+			if (pngFilePath == null)
+				return pngFilePath;
+			String imagePath = imageUID.replace('.', '_');  // Old style file name
+			if (!pngFilePath.contains(imageUID) && !pngFilePath.contains(imagePath))
+			{
+				log.info("Fixing pngFile:" + pngFilePath + " imageUID:" + imageUID + " imagePath:" + imagePath);
+				rs.close();
+				ps.close();
+				ps = c.prepareStatement(EpadDatabaseCommands.SELECT_EPAD_FILE_PATH_BY_IMAGE_UID);
+				ps.setString(1, "%/" + imageUID + ".png");
+				rs = ps.executeQuery();
+				if (rs.next()) {
+					pngFilePath = rs.getString(1);
+				}
+				else
+				{
+					rs.close();
+					ps.close();
+					ps = c.prepareStatement(EpadDatabaseCommands.SELECT_EPAD_FILE_PATH_BY_IMAGE_UID);
+					ps.setString(1, "%/" + imagePath + ".png");
+					rs = ps.executeQuery();
+					if (rs.next()) {
+						pngFilePath = rs.getString(1);
+					}
+					else
+						pngFilePath = null;
+				}
+			}
 		} catch (SQLException sqle) {
 			String debugInfo = DatabaseUtils.getDebugData(rs);
 			log.warning("Database operation failed; debugInfo=" + debugInfo, sqle);
@@ -907,7 +935,7 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 
 			if (!rows.isEmpty()) { // Delete events up the most recent event for user
 				log.info("Event search found " + rows.size() + " event(s) for session ID " + sessionID);
-				String pk = rows.get(0).get("pk"); // We order by pk, an auto-increment field (which does not wrap)
+				String pk = rows.get(rows.size()-1).get("pk"); // We order by pk, an auto-increment field (which does not wrap)
 				ps.close();
 				ps = c.prepareStatement(EpadDatabaseCommands.DELETE_EVENTS_FOR_SESSIONID);
 				ps.setString(1, sessionID);
