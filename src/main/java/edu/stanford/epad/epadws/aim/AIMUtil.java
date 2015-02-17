@@ -1418,6 +1418,9 @@ public class AIMUtil
 					AIMUtil.saveImageAnnotationToServer(aims.get(0).toAimV4(), epadaim.projectID, 0, adminSessionID, false);
 					count++;
 				}
+				else
+					log.warning("Error converting aim3:" + epadaim.aimID + ", not found");
+				
 			}
 			catch (Exception x) {
 				log.warning("Error converting aim3:" + epadaim.aimID, x);

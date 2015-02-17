@@ -407,7 +407,7 @@ public class AIMDatabaseOperations {
     		try {
 	    	    this.statement = mySqlConnection.createStatement();
 	    	    String sql = "UPDATE " + ANNOTATIONS_TABLE + " set XML = " + AbstractDAO.toSQL(xml) + " where AnnotationUID = '" + annotationID + "'";
-	            log.info("AIMs XML Updated for:" + annotationID);
+	            log.info("Updating AIMs XML for:" + annotationID);
 	            this.statement.executeUpdate(sql);
 	            aim.xml = xml;
 	            return aim;
