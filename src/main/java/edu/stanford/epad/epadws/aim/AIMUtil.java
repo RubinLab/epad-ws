@@ -966,6 +966,7 @@ public class AIMUtil
 		{
 			// Check permissions for aims from DB table
 			Map<String, List<EPADAIM>> aimsMap = getPermittedAIMs(sessionID, aimsFromDB, user);
+			long permtime = System.currentTimeMillis();
 			for (List<EPADAIM> paims: aimsMap.values())
 			{
 				aimsDB.addAll(paims);
@@ -975,7 +976,7 @@ public class AIMUtil
 			{
 				EPADAIM ea = aimsDB.get(i);
 				try {
-					List<ImageAnnotationCollection> iacs = edu.stanford.hakan.aim4api.usage.AnnotationGetter.getImageAnnotationCollectionsFromString(ea.xml, xsdFilePathV4);
+					List<ImageAnnotationCollection> iacs = edu.stanford.hakan.aim4api.usage.AnnotationGetter.getImageAnnotationCollectionsFromString(ea.xml, "");
 					ImageAnnotationCollection aim = iacs.get(0);
 					Aim4 a = new Aim4(aim);
 					ea.name = aim.getImageAnnotations().get(0).getName().getValue();
@@ -993,6 +994,7 @@ public class AIMUtil
 				}
 			}
 		}
+		long dbtime = System.currentTimeMillis();
 		
 		List<ImageAnnotationCollection> annotations = new ArrayList<ImageAnnotationCollection>();
 		if (aimsFromExist.ResultSet.totalRecords > 0)
@@ -1013,6 +1015,7 @@ public class AIMUtil
 				}
 			}
 		}
+		long existtime = System.currentTimeMillis();
 
 		Map<String, EPADAIM> aimMAP = new HashMap<String, EPADAIM>();
 		EPADAIMResultSet rs = aims.ResultSet;
@@ -1045,7 +1048,9 @@ public class AIMUtil
 		aims.ResultSet.Result.addAll(aimsDB);
 		aims.ResultSet.totalRecords = aims.ResultSet.Result.size();
 		long endtime = System.currentTimeMillis();
-		log.info("" + aims.ResultSet.totalRecords + " annotation summaries returned to client, took:" + (endtime-starttime) + " msecs");
+		log.info("" + aims.ResultSet.totalRecords + " annotation summaries returned to client, took:" + (endtime-starttime) 
+				+ " msecs, db time:" + (dbtime-starttime) + " exist time:" + (existtime-dbtime)
+				+ " iac to summaries:" + (existtime-endtime));
 		return aims;
 	}
 	

@@ -1388,6 +1388,10 @@ public class EPADHandler extends AbstractHandler
 				statusCode = HttpServletResponse.SC_BAD_REQUEST;
 				if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.PROJECT_FILE_LIST, pathInfo)) {
 					ProjectReference projectReference = ProjectReference.extract(ProjectsRouteTemplates.PROJECT_FILE_LIST, pathInfo);
+					if (requestContentType == null || !requestContentType.startsWith("multipart/form-data"))
+						throw new Exception("Invalid Content Type, should be multipart/form-data");
+					if (numberOfFiles == 0)
+						throw new Exception("No files found in post");
 					if (numberOfFiles == 1) {
 						String description = httpRequest.getParameter("description");
 						if (description == null) description = (String) paramData.get("description");
@@ -1409,12 +1413,17 @@ public class EPADHandler extends AbstractHandler
 								if (fileTypes != null && fileTypes.size() > i)
 										fileType = fileTypes.get(i);
 								statusCode = epadOperations.createFile(username, projectReference, (File)paramData.get(param), description, fileType, sessionID);
+								i++;
 							}
 						}
 					}
 						
 				} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.SUBJECT_FILE_LIST, pathInfo)) {
 					SubjectReference subjectReference = SubjectReference.extract(ProjectsRouteTemplates.SUBJECT_FILE_LIST, pathInfo);
+					if (requestContentType == null || !requestContentType.startsWith("multipart/form-data"))
+						throw new Exception("Invalid Content Type, should be multipart/form-data");
+					if (numberOfFiles == 0)
+						throw new Exception("No files found in post");
 					if (numberOfFiles == 1) {
 						String description = httpRequest.getParameter("description");
 						if (description == null) description = (String) paramData.get("description");
@@ -1436,12 +1445,17 @@ public class EPADHandler extends AbstractHandler
 								if (fileTypes != null && fileTypes.size() > i)
 										fileType = fileTypes.get(i);
 								statusCode = epadOperations.createFile(username, subjectReference, (File)paramData.get(param), description, fileType, sessionID);
+								i++;
 							}
 						}
 					}
 
 				} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.STUDY_FILE_LIST, pathInfo)) {
 					StudyReference studyReference = StudyReference.extract(ProjectsRouteTemplates.STUDY_FILE_LIST, pathInfo);
+					if (requestContentType == null || !requestContentType.startsWith("multipart/form-data"))
+						throw new Exception("Invalid Content Type, should be multipart/form-data");
+					if (numberOfFiles == 0)
+						throw new Exception("No files found in post");
 					if (numberOfFiles == 1) {
 						String description = httpRequest.getParameter("description");
 						if (description == null) description = (String) paramData.get("description");
@@ -1463,12 +1477,17 @@ public class EPADHandler extends AbstractHandler
 								if (fileTypes != null && fileTypes.size() > i)
 										fileType = fileTypes.get(i);
 								statusCode = epadOperations.createFile(username, studyReference, (File)paramData.get(param), description, fileType, sessionID);
+								i++;
 							}
 						}
 					}
 		
 				} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.SERIES_FILE_LIST, pathInfo)) {
 					SeriesReference seriesReference = SeriesReference.extract(ProjectsRouteTemplates.SERIES, pathInfo);
+					if (requestContentType == null || !requestContentType.startsWith("multipart/form-data"))
+						throw new Exception("Invalid Content Type, should be multipart/form-data");
+					if (numberOfFiles == 0)
+						throw new Exception("No files found in post");
 					if (numberOfFiles == 1) {
 						String description = httpRequest.getParameter("description");
 						if (description == null) description = (String) paramData.get("description");
@@ -1490,6 +1509,7 @@ public class EPADHandler extends AbstractHandler
 								if (fileTypes != null && fileTypes.size() > i)
 										fileType = fileTypes.get(i);
 								statusCode = epadOperations.createFile(username, seriesReference, (File)paramData.get(param), description, fileType, sessionID);
+								i++;
 							}
 						}
 					}

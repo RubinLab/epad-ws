@@ -100,8 +100,15 @@ public class EPADSessionOperations
 	{
 		String username = extractUserNameFromAuthorizationHeader(httpRequest);
 		String password = extractPasswordFromAuthorizationHeader(httpRequest);
+		EPADSession session = null;
 		try {
-			EPADSession session = EPADSessionOperations.createNewEPADSession(username, password);
+			if (username != null && password == null && httpRequest.getParameter("adminuser") != null) {
+				session = EPADSessionOperations.createProxySession(username, httpRequest.getParameter("adminuser"), httpRequest.getParameter("adminpassword"));				
+			} else  if (username == null && httpRequest.getAuthType().equals("WebAuth") && httpRequest.getRemoteUser() != null) {
+					session = EPADSessionOperations.createPreAuthenticatedSession(httpRequest.getRemoteUser());				
+				} else {
+				session = EPADSessionOperations.createNewEPADSession(username, password);
+			}
 			EPADSessionResponse response = new EPADSessionResponse(HttpServletResponse.SC_OK, session.getSessionId(), "");
 			log.info("Session ID " + response.response + " generated for user " + username);
 			return response;
@@ -245,6 +252,57 @@ public class EPADSessionOperations
 			}
 			throw new Exception("Error creating new session, invalid password");
 		}
+	}
+	
+	private static EPADSession createProxySession(String username, String adminuser, String adminpassword) throws Exception
+	{
+		User user = projectOperations.getUser(username);
+		if (user == null)
+			throw new Exception("User " + username + " not found");
+		if (!user.isEnabled())
+			throw new Exception("User " + username + " is disabled");
+		User admin = projectOperations.getUser(adminuser);
+		if (admin == null)
+			throw new Exception("User " + admin + " not found");
+		if (!admin.isEnabled())
+			throw new Exception("User " + admin + " is disabled");
+		if (user.getPassword().length() >= 60 && BCrypt.checkpw(adminpassword, admin.getPassword()))
+		{
+			String sessionId = idGenerator.generateId(16);
+			EPADSession session = new EPADSession(sessionId, username, SESSION_LIFESPAN);
+			currentSessions.put(sessionId, session);
+			return session;
+		}
+		else
+		{
+			if (user.getPassword().length() < 60) // clear password set by admin manually on rare occasions
+			{
+				if (adminpassword.equals(admin.getPassword()))
+				{
+					if (!admin.isPasswordExpired())
+					{
+						admin.setPasswordExpired(true);
+						admin.save();
+					}
+					String sessionId = idGenerator.generateId(16);
+					EPADSession session = new EPADSession(sessionId, username, SESSION_LIFESPAN);
+					currentSessions.put(sessionId, session);
+					return session;
+				}
+			}
+			throw new Exception("Error creating new session, invalid admin password");
+		}
+	}
+	
+	private static EPADSession createPreAuthenticatedSession(String username) throws Exception
+	{
+		User user = projectOperations.getUser(username);
+		if (user == null)
+			throw new Exception("User " + username + " not found");
+		String sessionId = idGenerator.generateId(16);
+		EPADSession session = new EPADSession(sessionId, username, SESSION_LIFESPAN);
+		currentSessions.put(sessionId, session);
+		return session;
 	}
 
 	private static String extractPasswordFromAuthorizationHeader(HttpServletRequest request)
