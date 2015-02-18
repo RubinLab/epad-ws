@@ -1384,7 +1384,7 @@ public class DefaultEpadOperations implements EpadOperations
 		int count = 0;
 		for (String projectID: projectIDs)
 		{
-			if (!suppliedProjectID.equals(projectID) && !projectID.equals(EPADConfig.xnatUploadProjectID) && !projectID.equals("")) continue;
+			if (!suppliedProjectID.equals(projectID)) continue;
 			try
 			{
 				boolean isCollaborator = XNATQueries.isCollaborator(sessionID, username, projectID);
