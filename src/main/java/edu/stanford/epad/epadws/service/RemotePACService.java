@@ -1,6 +1,11 @@
 package edu.stanford.epad.epadws.service;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -11,6 +16,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import org.apache.commons.io.IOUtils;
 
 import com.pixelmed.dicom.AgeStringAttribute;
 import com.pixelmed.dicom.Attribute;
@@ -33,6 +40,8 @@ import com.pixelmed.network.ApplicationEntityMap;
 import com.pixelmed.query.QueryTreeModel;
 import com.pixelmed.query.QueryTreeRecord;
 
+import edu.stanford.epad.common.util.EPADConfig;
+import edu.stanford.epad.common.util.EPADFileUtils;
 import edu.stanford.epad.dtos.RemotePAC;
 import edu.stanford.epad.dtos.RemotePACEntity;
 import edu.stanford.epad.dtos.RemotePACQueryConfig;
@@ -74,6 +83,33 @@ public class RemotePACService extends RemotePACSBase {
 		super();
 	}
 
+	public static void checkPropertiesFile() {
+		File propertiesFile = new File(EPADConfig.getEPADRemotePACsConfigFilePath());
+		if (!propertiesFile.exists()) {
+			BufferedReader reader = null;
+			InputStream is = null;
+			StringBuilder sb = new StringBuilder();
+			try {
+				is = EPADFileUtils.class.getClassLoader().getResourceAsStream(propertiesFile.getName());
+				reader = new BufferedReader(new InputStreamReader(is, "UTF8"));
+				String line = null;
+				while ((line = reader.readLine()) != null) {
+					sb.append(line);
+					sb.append("\n");
+				}
+			} catch (Exception x) {
+				log.warning("Error creating properties file", x);
+				return;
+			} finally {
+				if (reader != null)
+					IOUtils.closeQuietly(reader);
+				else if (is != null)
+					IOUtils.closeQuietly(is);
+			}
+			EPADFileUtils.write(propertiesFile, sb.toString().replace("_HOSTNAME_", EPADConfig.xnatServer));
+		}
+	}
+	
 	/**
 	 * Get all configured remote PACs
 	 * @return
@@ -374,7 +410,7 @@ public class RemotePACService extends RemotePACSBase {
 	public synchronized List<RemotePACEntity> queryRemoteData(RemotePAC pac, String patientNameFilter, String patientIDFilter, String studyIDFilter, String studyDateFilter, boolean patientsOnly, boolean studiesOnly) throws Exception {
 		
 		try {
-			log.info("Remote PAC Query, pacID:" + pac.pacID + " patientName:" + patientNameFilter + " patientID:" + patientIDFilter + " studyDate:" + studyDateFilter + " studyIDFilter:" + studyIDFilter + " studiesOnly:" + studiesOnly);
+			log.info("Remote PAC Query, pacID:" + pac.pacID + " patientName:" + patientNameFilter + " patientID:" + patientIDFilter + " studyDate:" + studyDateFilter + " studyIDFilter:" + studyIDFilter + " patientsOnly:" + patientsOnly + " studiesOnly:" + studiesOnly);
 			if (currentPACQueries.containsKey(pac.pacID))
 				throw new Exception("Last query to this PAC still in progress");
 			this.setCurrentRemoteQueryInformationModel(pac.pacID, true);
@@ -432,6 +468,8 @@ public class RemotePACService extends RemotePACSBase {
 			{ 
 				AttributeTag t = TagFromName.StudyInstanceUID; Attribute a = new UniqueIdentifierAttribute(t); 
 				if (studyIDFilter != null && studyIDFilter.length() > 0) {
+					if (studyIDFilter.startsWith(pac.pacID + ":"))
+						studyIDFilter = studyIDFilter.substring(studyIDFilter.indexOf(":")+1);
 					a.addValue(studyIDFilter);
 				}		
 				filter.put(t,a); 
@@ -446,6 +484,7 @@ public class RemotePACService extends RemotePACSBase {
 			List<RemotePACEntity> remoteEntities = new ArrayList<RemotePACEntity>();
 			String key = pac.pacID;
 			long startTime = System.currentTimeMillis();
+			patientIds = new HashSet<String>();
 			QueryTreeModel treeModel = currentRemoteQueryInformationModel.performHierarchicalQuery(filter);
 			long endTime = System.currentTimeMillis();
 			log.info("Remote PAC Query took " + (endTime-startTime) + " msecs");
@@ -453,11 +492,11 @@ public class RemotePACService extends RemotePACSBase {
 			remoteEntities = traverseTree(root, 0, remoteEntities, key, patientsOnly, studiesOnly);
 			long traverseTime = System.currentTimeMillis();
 			log.info("Remote PAC tree records took "+ (traverseTime-endTime) + " msecs. Number of entities returned:" + remoteEntities.size());
-			if (patientsOnly) 
+			if (patientsOnly && remoteEntities.size() > 0) 
 				remoteEntities.remove(0); // Remove AE record
-			if (studiesOnly) 
+			if (studiesOnly && remoteEntities.size() > 0) 
 				remoteEntities.remove(0); // Remove AE record
-			if (studyIDFilter != null && studyIDFilter.length() > 0 && !studiesOnly) 
+			if (studyIDFilter != null && studyIDFilter.length() > 0 && !studiesOnly && remoteEntities.size() > 1) 
 			{
 				remoteEntities.remove(0); // Remove AE record
 				remoteEntities.remove(0); // Remove Study Record
@@ -502,8 +541,11 @@ public class RemotePACService extends RemotePACSBase {
 		RemotePACEntity entity = new RemotePACEntity(type, node.getValue(), level, ukey);
 		entity.subjectID = Attribute.getSingleStringValueOrNull(al,TagFromName.PatientID);
 		entity.subjectName = Attribute.getSingleStringValueOrNull(al,TagFromName.PatientName);
-		if (patientsOnly && patientIds.contains(entity.subjectID))
+		if (patientsOnly && type.equals("Study") && patientIds.contains(entity.subjectID))
+		{
+			//log.info("Duplicate subject:" + entity.subjectID);
 			return entities;
+		}
 		patientIds.add(entity.subjectID);
 		remoteQueryCache.put(ukey, node);
 		if (!studiesOnly || !type.equals("Series"))

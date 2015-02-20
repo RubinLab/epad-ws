@@ -49,6 +49,7 @@ import edu.stanford.epad.epadws.handlers.session.EPADSessionHandler;
 import edu.stanford.epad.epadws.processing.pipeline.threads.ShutdownHookThread;
 import edu.stanford.epad.epadws.processing.pipeline.threads.ShutdownSignal;
 import edu.stanford.epad.epadws.processing.pipeline.watcher.QueueAndWatcherManager;
+import edu.stanford.epad.epadws.service.RemotePACService;
 import edu.stanford.epad.epadws.service.UserProjectService;
 
 /**
@@ -163,6 +164,7 @@ public class Main
 					log.warning("Error syncing XNAT data", x);
 				}
 			}
+			RemotePACService.checkPropertiesFile();
 		} catch (Exception e) {
 			log.warning("Failed to start database", e);
 			System.exit(1);
