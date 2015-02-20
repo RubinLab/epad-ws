@@ -1589,6 +1589,8 @@ public class DefaultEpadOperations implements EpadOperations
 				log.warning("No permissions to delete AIM:" + aimID + " for user " + username);
 				throw new Exception("No permissions to delete AIM:" + aimID + " for user " + username);
 			}
+			if (AIMUtil.isPluginStillRunning(aimID))
+				throw new Exception(aimID + " is still being processed by the plugin");
 			AIMUtil.deleteAIM(aimID, subjectReference.projectID);
 			epadDatabaseOperations.deleteAIM(username, subjectReference, aimID);
 			if (deleteDSO && aim.dsoSeriesUID != null && aim.dsoSeriesUID.length() > 0 && epadDatabaseOperations.getAIMsByDSOSeries(aim.dsoSeriesUID).size() == 0)
@@ -1612,6 +1614,8 @@ public class DefaultEpadOperations implements EpadOperations
 				log.warning("No permissions to delete AIM:" + aimID + " for user " + username);
 				throw new Exception("No permissions to delete AIM:" + aimID + " for user " + username);
 			}
+			if (AIMUtil.isPluginStillRunning(aimID))
+				throw new Exception(aimID + " is still being processed by the plugin");
 			AIMUtil.deleteAIM(aimID, studyReference.projectID);
 			epadDatabaseOperations.deleteAIM(username, studyReference, aimID);
 			if (deleteDSO && aim.dsoSeriesUID != null && aim.dsoSeriesUID.length() > 0 && epadDatabaseOperations.getAIMsByDSOSeries(aim.dsoSeriesUID).size() == 0)
@@ -1635,6 +1639,8 @@ public class DefaultEpadOperations implements EpadOperations
 				log.warning("No permissions to delete AIM:" + aimID + " for user " + username);
 				throw new Exception("No permissions to delete AIM:" + aimID + " for user " + username);
 			}
+			if (AIMUtil.isPluginStillRunning(aimID))
+				throw new Exception(aimID + " is still being processed by the plugin");
 			AIMUtil.deleteAIM(aimID, seriesReference.projectID);
 			epadDatabaseOperations.deleteAIM(username, seriesReference, aimID);
 			if (deleteDSO && aim.dsoSeriesUID != null && aim.dsoSeriesUID.length() > 0 && epadDatabaseOperations.getAIMsByDSOSeries(aim.dsoSeriesUID).size() == 0)
@@ -1658,6 +1664,8 @@ public class DefaultEpadOperations implements EpadOperations
 				log.warning("No permissions to delete AIM:" + aimID + " for user " + username);
 				throw new Exception("No permissions to delete AIM:" + aimID + " for user " + username);
 			}
+			if (AIMUtil.isPluginStillRunning(aimID))
+				throw new Exception(aimID + " is still being processed by the plugin");
 			AIMUtil.deleteAIM(aimID, imageReference.projectID);
 			epadDatabaseOperations.deleteAIM(username, imageReference, aimID);
 			if (deleteDSO && aim.dsoSeriesUID != null && aim.dsoSeriesUID.length() > 0 && epadDatabaseOperations.getAIMsByDSOSeries(aim.dsoSeriesUID).size() == 0)
@@ -1681,6 +1689,8 @@ public class DefaultEpadOperations implements EpadOperations
 				log.warning("No permissions to delete AIM:" + aimID + " for user " + username);
 				throw new Exception("No permissions to delete AIM:" + aimID + " for user " + username);
 			}
+			if (AIMUtil.isPluginStillRunning(aimID))
+				throw new Exception(aimID + " is still being processed by the plugin");
 			AIMUtil.deleteAIM(aimID, frameReference.projectID);
 			epadDatabaseOperations.deleteAIM(username, frameReference, aimID);
 			if (deleteDSO && aim.dsoSeriesUID != null && aim.dsoSeriesUID.length() > 0 && epadDatabaseOperations.getAIMsByDSOSeries(aim.dsoSeriesUID).size() == 0)
@@ -1703,6 +1713,8 @@ public class DefaultEpadOperations implements EpadOperations
 				log.warning("No permissions to delete AIM:" + aimID + " for user " + username);
 				throw new Exception("No permissions to delete AIM:" + aimID + " for user " + username);
 			}
+			if (AIMUtil.isPluginStillRunning(aimID))
+				throw new Exception(aimID + " is still being processed by the plugin");
 			AIMUtil.deleteAIM(aimID, aim.projectID);
 			epadDatabaseOperations.deleteAIM(username, aimID);
 			if (deleteDSO && aim.dsoSeriesUID != null && aim.dsoSeriesUID.length() > 0 && epadDatabaseOperations.getAIMsByDSOSeries(aim.dsoSeriesUID).size() == 0)
