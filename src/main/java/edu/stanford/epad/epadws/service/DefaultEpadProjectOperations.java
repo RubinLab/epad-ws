@@ -552,6 +552,8 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		efile.setDescription(description);
 		if (fileType != null)
 			efile.setFileType(fileType.getName());
+		else
+			efile.setFileType("");
 		if (projectID != null && projectID.length() > 0)
 		{
 			Project project = getProject(projectID);

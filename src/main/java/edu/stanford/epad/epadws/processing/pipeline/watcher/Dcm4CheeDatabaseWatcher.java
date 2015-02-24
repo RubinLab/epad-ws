@@ -16,6 +16,7 @@ import edu.stanford.epad.epadws.processing.model.SeriesProcessingDescription;
 import edu.stanford.epad.epadws.processing.pipeline.threads.ShutdownSignal;
 import edu.stanford.epad.epadws.queries.DefaultEpadOperations;
 import edu.stanford.epad.epadws.queries.EpadOperations;
+import edu.stanford.epad.epadws.service.RemotePACService;
 import edu.stanford.epad.epadws.xnat.XNATSessionOperations;
 
 /**
@@ -69,6 +70,8 @@ public class Dcm4CheeDatabaseWatcher implements Runnable
 					logger.info("New DICOM series " + seriesUID + " (" + patientName + ", " + seriesDesc
 							+ ") found in DCM4CHEE with " + numInstances + " image(s)");
 				}
+				if (run%2 == 0) // every 10 secs
+					RemotePACService.getInstance().checkTransfers();
 				// Every tenth time check deleted dcm4che series
 				if (run >= 10)
 				{

@@ -71,7 +71,12 @@ public class RemotePACService extends RemotePACSBase {
 	public static final int MAX_INSTANCE_QUERY = 7000;
 	static Map<String, QueryTreeRecord> remoteQueryCache = new HashMap<String, QueryTreeRecord>();
 	
+	// SerieUID to userName:projectID
 	public static Map<String, String> pendingTransfers = new HashMap<String, String>();
+	
+	// AETitle to userName
+	public static Map<String, String> monitorTransfers = new HashMap<String, String>();
+	public static Map<String, Long> monitorStart = new HashMap<String, Long>();
 	
 	public static RemotePACService getInstance() throws Exception {
 		if (rpsinstance == null)
@@ -605,6 +610,8 @@ public class RemotePACService extends RemotePACSBase {
 		String root = uniqueKey;
 		if (root.indexOf(":") != -1)
 			root = root.substring(0, root.indexOf(":"));
+		if (!uniqueKey.startsWith(pac.pacID))
+			uniqueKey = pac.pacID + ":" + uniqueKey;
 		QueryTreeRecord node = remoteQueryCache.get(uniqueKey);
 		// If no cached pointers, query entire PAC again (or should we give an error???)
 		if (node == null)
@@ -668,8 +675,16 @@ public class RemotePACService extends RemotePACSBase {
 		if (node != null) {
 			setCurrentRemoteQuerySelection(node.getUniqueKeys(), node.getUniqueKey(), node.getAllAttributesReturnedInIdentifier());
 			log.info("Request retrieval of "+currentRemoteQuerySelectionLevel+" "+currentRemoteQuerySelectionUniqueKey.getSingleStringValueOrEmptyString()+" from "+pac.pacID+" ("+currentRemoteQuerySelectionRetrieveAE+")");
+	   		File xfrstart = new File(EPADConfig.dcm4cheeHome + "/" + pac.aeTitle + "_XfrStarted.log");
+	   		File xfrend = new File(EPADConfig.dcm4cheeHome + "/" + pac.aeTitle + "_XfrEnded.log");
+			try {
+				if (xfrstart.exists()) xfrstart.delete();
+				if (xfrend.exists()) xfrend.delete();
+			} catch (Exception x) {}
 			performRetrieve(currentRemoteQuerySelectionUniqueKeys,currentRemoteQuerySelectionLevel,currentRemoteQuerySelectionRetrieveAE);			
 		}
+		monitorTransfers.put(pac.aeTitle, userName + ":" + pac.pacID);
+		monitorStart.put(pac.aeTitle, System.currentTimeMillis());
 		if (studyUID != null)
 			return studyUID + ":" + studyDate;
 		else
@@ -688,6 +703,76 @@ public class RemotePACService extends RemotePACSBase {
 			transfers.add(transfer);
 		}
 		return transfers;
+	}
+	
+	public void checkTransfers()
+	{
+		if (monitorTransfers.isEmpty()) return;
+		EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
+		Set<String> removeAet = new HashSet<String>();
+		for (String aet: monitorTransfers.keySet()) 
+		{
+			log.info("Checking transfer from " + aet);
+       		File xfrstart = new File(EPADConfig.dcm4cheeHome + "/" + aet + "_XfrStarted.log");
+       		File xfrend = new File(EPADConfig.dcm4cheeHome + "/" + aet + "_XfrEnded.log");
+       		try
+       		{
+	       		if (xfrstart.exists())
+	       		{
+	       			String logStart = EPADFileUtils.readFileAsString(xfrstart);
+	       			// event_number,event_status,Date,aim_uid,aim_name,patient_id,patient_name,template_id,template_name,plugin_name
+	       			// insertEpadEvent(String sessionID, String eventStatus, String aimUID, String aimName, String patientID,
+	       			//		String patientName, String templateID, String templateName, String pluginName);
+	       			//final int PATIENT = 6;
+	       			//final int STATUS = 1;
+	       			//final int PLUGIN = 9;
+					epadDatabaseOperations.insertEpadEvent(
+							monitorTransfers.get(aet).substring(0, monitorTransfers.get(aet).indexOf(":")), 
+							logStart.replace('\n', ' '), 
+							aet, aet,
+							aet, 
+							aet,
+							"",
+							"",
+							"Remote PAC Transfer");
+					log.info("Added PAC Transfer Started Event for " + monitorTransfers.get(aet));
+					xfrstart.delete();
+	       		}
+	       		if (xfrend.exists())
+	       		{
+	       			monitorStart.put(aet, 0L);
+	       			String logEnd = EPADFileUtils.readFileAsString(xfrend);
+					epadDatabaseOperations.insertEpadEvent(
+							monitorTransfers.get(aet).substring(0, monitorTransfers.get(aet).indexOf(":")), 
+							logEnd.replace('\n', ' '), 
+							aet, aet,
+							aet, 
+							aet, 
+							"", 
+							"",
+							"Remote PAC Transfer");
+					log.info("Added PAC Transfer Ended Event for " + monitorTransfers.get(aet));
+					xfrend.delete();
+	       		}
+       		} catch (Exception x)
+       		{
+       			removeAet.add(aet);
+       			log.warning("Error in checking", x);
+       		}
+		}
+		for (String aet: monitorStart.keySet())
+		{
+			if ((System.currentTimeMillis() - monitorStart.get(aet)) > 3600000)
+			{
+				log.info("Removing from monitor " + aet);
+       			removeAet.add(aet);
+			}
+		}
+		for (String aet: removeAet)
+		{
+			monitorTransfers.remove(aet);
+			monitorStart.remove(aet);
+		}
 	}
 	
 	SimpleDateFormat dateformat = new SimpleDateFormat("yyyyMMdd");
