@@ -555,16 +555,22 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		if (projectID != null && projectID.length() > 0)
 		{
 			Project project = getProject(projectID);
+			if (project == null)
+				throw new Exception("Project " + projectID + " not found");
 			efile.setProjectId(project.getId());
 		}
 		if (subjectUID != null && subjectUID.length() > 0)
 		{
 			Subject subject = getSubject(subjectUID);
+			if (subject == null)
+				throw new Exception("Patient " + subjectUID + " not found");
 			efile.setSubjectId(subject.getId());
 		}
 		if (studyUID != null && studyUID.length() > 0)
 		{
 			Study study = getStudy(studyUID);
+			if (study == null)
+				throw new Exception("Study " + studyUID + " not found");
 			efile.setStudyId(study.getId());
 		}
 		boolean exists = false;

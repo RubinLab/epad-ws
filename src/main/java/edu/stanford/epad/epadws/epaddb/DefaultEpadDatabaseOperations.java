@@ -2236,7 +2236,8 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 		return value;
 	}
 
-	private boolean hasSeriesInEPadDatabase(String seriesIUID)
+	@Override
+	public boolean hasSeriesInEPadDatabase(String seriesIUID)
 	{
 		Connection c = null;
 		PreparedStatement ps = null;

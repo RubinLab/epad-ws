@@ -47,6 +47,8 @@ import edu.stanford.epad.dtos.RemotePACEntity;
 import edu.stanford.epad.dtos.RemotePACQueryConfig;
 import edu.stanford.epad.dtos.internal.DCM4CHEEStudy;
 import edu.stanford.epad.dtos.internal.DCM4CHEEStudyList;
+import edu.stanford.epad.epadws.epaddb.EpadDatabase;
+import edu.stanford.epad.epadws.epaddb.EpadDatabaseOperations;
 import edu.stanford.epad.epadws.models.Project;
 import edu.stanford.epad.epadws.models.RemotePACQuery;
 import edu.stanford.epad.epadws.models.Study;
@@ -191,6 +193,8 @@ public class RemotePACService extends RemotePACSBase {
 		{
 			throw new Exception("Periodic queries have been configured for PAC:" + pac.pacID + ", it can not be deleted");
 		}
+		if (pac.hostname.equalsIgnoreCase(EPADConfig.xnatServer))
+			throw new Exception("Local PAC can not be deleted");
 		removeRemotePAC(pac.pacID);
 		this.storeProperties(pac.pacID + " deleted by EPAD " + new Date());
 	}
@@ -487,11 +491,11 @@ public class RemotePACService extends RemotePACSBase {
 			patientIds = new HashSet<String>();
 			QueryTreeModel treeModel = currentRemoteQueryInformationModel.performHierarchicalQuery(filter);
 			long endTime = System.currentTimeMillis();
-			log.info("Remote PAC Query took " + (endTime-startTime) + " msecs");
+			//log.info("Remote PAC Query took " + (endTime-startTime) + " msecs");
 			QueryTreeRecord root = (QueryTreeRecord) treeModel.getRoot();
 			remoteEntities = traverseTree(root, 0, remoteEntities, key, patientsOnly, studiesOnly);
 			long traverseTime = System.currentTimeMillis();
-			log.info("Remote PAC tree records took "+ (traverseTime-endTime) + " msecs. Number of entities returned:" + remoteEntities.size());
+			log.info("Remote PAC tree records took "+ (traverseTime-startTime) + " msecs. Number of entities returned:" + remoteEntities.size());
 			if (patientsOnly && remoteEntities.size() > 0) 
 				remoteEntities.remove(0); // Remove AE record
 			if (studiesOnly && remoteEntities.size() > 0) 
@@ -500,6 +504,20 @@ public class RemotePACService extends RemotePACSBase {
 			{
 				remoteEntities.remove(0); // Remove AE record
 				remoteEntities.remove(0); // Remove Study Record
+			}
+			if (patientIDFilter != null && patientIDFilter.trim().length() > 0)
+			{
+				EpadProjectOperations projectOperations = DefaultEpadProjectOperations.getInstance();
+				EpadDatabaseOperations databaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
+				for (RemotePACEntity rpe: remoteEntities) {
+					if (rpe.entityType.equalsIgnoreCase("Study")) {
+						if (projectOperations.getStudy(rpe.entityID.substring(rpe.entityID.indexOf(":")+1)) != null)
+							rpe.inEpad = true;
+					} else if (rpe.entityType.equalsIgnoreCase("Series")) {
+						if (databaseOperations.hasSeriesInEPadDatabase(rpe.entityID.substring(rpe.entityID.indexOf(":")+1)))
+							rpe.inEpad = true;
+					}
+				}
 			}
 			return remoteEntities;
 		}
