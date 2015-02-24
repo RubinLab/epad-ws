@@ -124,7 +124,6 @@ public class EPADHandler extends AbstractHandler
 					else
 						username = sessionUser;
 				}
-				log.info("Request from client:" + method + " user:" + username);
 				if (username != null) {
 					if ("GET".equalsIgnoreCase(method)) {
 						statusCode = handleGet(httpRequest, httpResponse, responseStream, username, sessionID);
@@ -1531,6 +1530,18 @@ public class EPADHandler extends AbstractHandler
 					else if ("false".equalsIgnoreCase(enable))
 						epadOperations.disableUser(username, target_username);
 					statusCode = HttpServletResponse.SC_OK;
+				
+				} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.PROJECT, pathInfo)) {
+					ProjectReference projectReference = ProjectReference.extract(ProjectsRouteTemplates.PROJECT, pathInfo);
+					String projectName = httpRequest.getParameter("projectName");
+					String projectDescription = httpRequest.getParameter("projectDescription");
+					EPADProject project = epadOperations.getProjectDescription(projectReference, username, sessionID);
+					if (project != null) {
+						throw new Exception("Project " + project.id +  " already exists");
+					} else {
+						statusCode = epadOperations.createProject(username, projectReference, projectName, projectDescription, sessionID);
+					}							
+				
 				} else {
 					statusCode = HandlerUtil.badRequestJSONResponse(BAD_POST_MESSAGE + ":" + pathInfo, responseStream, log);
 				}		

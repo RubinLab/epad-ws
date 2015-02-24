@@ -168,7 +168,7 @@ public class RemotePACSBase {
 				else {
 					throw new Exception("For remote query AE <"+remoteAEForQuery+">, query model "+queryModel+" not supported");
 				}
-				log.info("Remote AE set to:" + remoteAEForQuery);
+				//log.info("Remote AE set to:" + remoteAEForQuery);
 			}
 			catch (Exception e) {		// if an AE's property has no value, or model not supported
 				e.printStackTrace(System.err);

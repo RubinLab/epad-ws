@@ -103,6 +103,7 @@ import edu.stanford.epad.epadws.xnat.XNATCreationOperations;
 import edu.stanford.epad.epadws.xnat.XNATDeletionOperations;
 import edu.stanford.epad.epadws.xnat.XNATUtil;
 import edu.stanford.hakan.aim3api.base.ImageAnnotation;
+import edu.stanford.hakan.aim4api.usage.AnnotationValidator;
 
 // TODO Too long - separate in to multiple classes
 
@@ -969,8 +970,7 @@ public class DefaultEpadOperations implements EpadOperations
 			{
 				if (EPADFileUtils.isValidXml(uploadedFile, EPADConfig.templateXSDPath)) {
 					type = FileType.TEMPLATE;
-				} else if (EPADFileUtils.isValidXml(uploadedFile, EPADConfig.xsdFilePathV4) 
-						|| EPADFileUtils.isValidXmlUsingClassPathSchema(uploadedFile, "schema/" + EPADConfig.xsdFileV4)) {
+				} else if (AnnotationValidator.ValidateXML(uploadedFile.getAbsolutePath(), EPADConfig.xsdFilePathV4)) {
 					type = FileType.ANNOTATION;
 					if (!AIMUtil.saveAIMAnnotation(uploadedFile, projectID, sessionID, username)) {
 						return;
