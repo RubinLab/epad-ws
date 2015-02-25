@@ -596,7 +596,7 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		String physicalName = "" + efile.getId() + efile.getExtension();
 		FileUtils.copyFile(file, new File(parent, physicalName));
 		if (exists)
-			log.info("Created file:" + efile.getName() + " in Project:" + efile.getProjectId());
+			log.info("Modified file:" + efile.getName() + " in Project:" + efile.getProjectId());
 		else
 			log.info("Created file:" + efile.getName() + " in Project:" + efile.getProjectId());
 		return efile;

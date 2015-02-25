@@ -963,11 +963,16 @@ public class EPADHandler extends AbstractHandler
 				if (studyIDFilter == null) studyIDFilter = "";
 				String studyDateFilter = httpRequest.getParameter("studyDateFilter");
 				if (studyDateFilter == null) studyDateFilter = "";
+				String[] tagGroup = httpRequest.getParameterValues("tagGroup");
+				String[] tagElement = httpRequest.getParameterValues("tagElement");
+				String[] tagValue = httpRequest.getParameterValues("tagValue");
 				boolean studiesOnly = !"true".equalsIgnoreCase(httpRequest.getParameter("series"));
 				RemotePAC pac = RemotePACService.getInstance().getRemotePAC(pacid);
 				if (pac != null)
 				{
-					List<RemotePACEntity> entities = RemotePACService.getInstance().queryRemoteData(pac, patientNameFilter, patientIDFilter, studyIDFilter, studyDateFilter, false, studiesOnly);
+					List<RemotePACEntity> entities = RemotePACService.getInstance().queryRemoteData(pac, patientNameFilter, patientIDFilter, 
+							studyIDFilter, studyDateFilter, 
+							tagGroup, tagElement, tagValue, false, studiesOnly);
 					RemotePACEntityList entityList = new RemotePACEntityList();
 					for (RemotePACEntity entity: entities)
 						entityList.addRemotePACEntity(entity);

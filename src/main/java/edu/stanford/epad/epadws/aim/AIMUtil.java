@@ -2,7 +2,10 @@ package edu.stanford.epad.epadws.aim;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.text.SimpleDateFormat;
@@ -30,6 +33,7 @@ import org.apache.commons.fileupload.FileItem;
 import org.apache.commons.fileupload.FileUploadException;
 import org.apache.commons.fileupload.disk.DiskFileItemFactory;
 import org.apache.commons.fileupload.servlet.ServletFileUpload;
+import org.apache.commons.io.IOUtils;
 import org.json.JSONObject;
 import org.json.XML;
 import org.w3c.dom.Document;
@@ -1405,7 +1409,6 @@ public class AIMUtil
 		return projectAIMsMap;
 	}
 	
-
 	public static int convertAllAim3() throws Exception {
 		List<EPADAIM> epadaims = EpadDatabase.getInstance().getEPADDatabaseOperations().getAIMs(new ProjectReference(null));
 		String adminSessionID = XNATSessionOperations.getXNATAdminSessionID();
@@ -1430,6 +1433,30 @@ public class AIMUtil
 			}
 		}
 		return count;
+	}
+	
+	public static void convertAim3(String aimID) throws Exception {
+		EPADAIM epadaim = EpadDatabase.getInstance().getEPADDatabaseOperations().getAIM(aimID);
+		String adminSessionID = XNATSessionOperations.getXNATAdminSessionID();
+		log.info("Converting AIM3:" + epadaim.aimID + " in project " + epadaim.projectID);
+		try {
+			List<ImageAnnotation> aims = AIMQueries.getAIMImageAnnotations(epadaim.projectID, AIMSearchType.ANNOTATION_UID, epadaim.aimID, "admin", 1, 50000, true);
+			if (aims.size() > 0)
+			{
+				log.info("Saving AIM4:" + epadaim.aimID + " in project " + epadaim.projectID);
+				AIMUtil.saveImageAnnotationToServer(aims.get(0).toAimV4(), epadaim.projectID, 0, adminSessionID, false);
+			}
+			else
+			{
+				log.warning("Error converting aim3:" + epadaim.aimID + ", not found");
+				throw new Exception("Error converting aim3:" + epadaim.aimID + ", not found");
+			}
+			
+		}
+		catch (Exception x) {
+			log.warning("Error converting aim3:" + epadaim.aimID, x);
+			throw x;
+		}
 	}
 	
 	public static void updateTableXMLs(List<EPADAIM> aims)
@@ -1541,6 +1568,44 @@ public class AIMUtil
         	log.warning("Error converting aim to json", e);
 			return null;
 		}	
+	}
+	
+	static final String[] SCHEMA_FILES = {
+		"AIMTemplate_v2rv13.xsd",
+		"AIM_v3.xsd",
+		"AimXPath.xml",
+		"AIMTemplate_v2rvStanford.xsd",
+		"AIM_v4_rv44_XML.xsd",
+		"ISO_datatypes_Narrative.xsd"		
+	};
+	
+	public static void checkSchemaFiles()
+	{
+		for (String schemaFile: SCHEMA_FILES)
+		{
+			File file = new File(EPADConfig.getEPADWebServerSchemaDir() + schemaFile);
+			if (!file.exists()) {
+				InputStream in = null;
+				OutputStream out = null;
+				try {
+					in = new AIMUtil().getClass().getClassLoader().getResourceAsStream("schema/" + schemaFile);
+		            out = new FileOutputStream(file);
+
+		            // Transfer bytes from in to out
+		            byte[] buf = new byte[1024];
+		            int len;
+		            while ((len = in.read(buf)) > 0)
+		            {
+		                    out.write(buf, 0, len);
+		            }
+				} catch (Exception x) {
+					
+				} finally {
+		            IOUtils.closeQuietly(in);
+		            IOUtils.closeQuietly(out);
+				}
+			}
+		}
 	}
 	
 	private static int getInt(String value)
