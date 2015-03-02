@@ -507,10 +507,21 @@ public class DefaultEpadOperations implements EpadOperations
 
 				if (!referencedSeriesUID.equals("")) {
 					boolean isFirst = true;
+					List<DCM4CHEEImageDescription> referencedImages = new ArrayList<DCM4CHEEImageDescription>();
+					int instanceOffset = referencedSOPInstanceUIDDICOMElements.size();
 					for (DICOMElement dicomElement : referencedSOPInstanceUIDDICOMElements) {
 						String referencedImageUID = dicomElement.value;
 						DCM4CHEEImageDescription dcm4cheeReferencedImageDescription = dcm4CheeDatabaseOperations
 								.getImageDescription(studyUID, referencedSeriesUID, referencedImageUID);
+						referencedImages.add(dcm4cheeReferencedImageDescription);
+						if (dcm4cheeReferencedImageDescription != null && dcm4cheeReferencedImageDescription.instanceNumber < instanceOffset)
+							instanceOffset = dcm4cheeReferencedImageDescription.instanceNumber;
+					}
+					int index = 0;
+					for (DICOMElement dicomElement : referencedSOPInstanceUIDDICOMElements) {
+						String referencedImageUID = dicomElement.value;
+						DCM4CHEEImageDescription dcm4cheeReferencedImageDescription = referencedImages.get(index);
+						index++;
 						if (dcm4cheeReferencedImageDescription == null)
 						{
 							// Note: These referenced images that are not found probably are extra images referenced in the DICOM. 
@@ -522,7 +533,7 @@ public class DefaultEpadOperations implements EpadOperations
 						String insertDate = dcm4cheeReferencedImageDescription.createdTime;
 						String imageDate = dcm4cheeReferencedImageDescription.contentTime;
 						String sliceLocation = dcm4cheeReferencedImageDescription.sliceLocation;
-						int frameNumber = dcm4cheeReferencedImageDescription.instanceNumber - 1; // Frames 0-based, instances 1
+						int frameNumber = dcm4cheeReferencedImageDescription.instanceNumber - instanceOffset; // Frames 0-based, instances 1 or more
 						String losslessImage = getPNGMaskPath(studyUID, imageReference.seriesUID, imageReference.imageUID,
 								frameNumber);
 						String lossyImage = ""; // We do not have a lossy image for the DSO frame

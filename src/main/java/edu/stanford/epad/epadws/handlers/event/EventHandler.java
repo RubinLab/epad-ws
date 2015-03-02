@@ -114,6 +114,7 @@ public class EventHandler extends AbstractHandler
 						log);
 			}
 		} else {
+			log.info("EventResource: Invalid session token");
 			statusCode = HandlerUtil.warningResponse(HttpServletResponse.SC_UNAUTHORIZED, INVALID_SESSION_TOKEN_MESSAGE, log);
 		}
 		httpResponse.setStatus(statusCode);

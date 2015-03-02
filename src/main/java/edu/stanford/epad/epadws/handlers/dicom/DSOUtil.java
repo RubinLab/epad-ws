@@ -396,10 +396,21 @@ public class DSOUtil
 			}
 
 			log.info("Writing PNG masks for DSO " + imageUID + " in series " + seriesUID + " DSOFile:" + dsoFile.getAbsolutePath() + " number of frames:" + numberOfFrames + " ...");
+			List<DCM4CHEEImageDescription> referencedImages = new ArrayList<DCM4CHEEImageDescription>();
+			int instanceOffset = referencedSOPInstanceUIDDICOMElements.size();
 			for (DICOMElement dicomElement : referencedSOPInstanceUIDDICOMElements) {
 				String referencedImageUID = dicomElement.value;
 				DCM4CHEEImageDescription dcm4cheeReferencedImageDescription = dcm4CheeDatabaseOperations
 						.getImageDescription(studyUID, referencedSeriesUID, referencedImageUID);
+				referencedImages.add(dcm4cheeReferencedImageDescription);
+				if (dcm4cheeReferencedImageDescription != null && dcm4cheeReferencedImageDescription.instanceNumber < instanceOffset)
+					instanceOffset = dcm4cheeReferencedImageDescription.instanceNumber;
+			}
+			int index = 0;
+			for (DICOMElement dicomElement : referencedSOPInstanceUIDDICOMElements) {
+				String referencedImageUID = dicomElement.value;
+				DCM4CHEEImageDescription dcm4cheeReferencedImageDescription = referencedImages.get(index);
+				index++;
 				if (dcm4cheeReferencedImageDescription == null)
 				{
 					log.info("Did not find referenced image, seriesuid:" + referencedSeriesUID + " imageuid:" + referencedImageUID 
@@ -408,7 +419,7 @@ public class DSOUtil
 				}
 
 				//log.info("Image dimensions - width " + bufferedImage.getWidth() + ", height " + bufferedImage.getHeight());
-				int refFrameNumber = dcm4cheeReferencedImageDescription.instanceNumber - 1; // Frames 0-based, instances 1
+				int refFrameNumber = dcm4cheeReferencedImageDescription.instanceNumber - instanceOffset; // Frames 0-based, instances 1 or more
 				if (refFrameNumber < 0) continue;
 				log.info("FrameNumber:" + frameNumber + " refFrameNumber:" + refFrameNumber);
 				BufferedImage bufferedImage = sourceDSOImage.getBufferedImage(frameNumber);
