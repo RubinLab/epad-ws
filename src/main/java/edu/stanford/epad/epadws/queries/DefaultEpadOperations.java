@@ -402,7 +402,7 @@ public class DefaultEpadOperations implements EpadOperations
 						DCM4CHEEImageDescription dcm4cheeReferencedImageDescription = dcm4CheeDatabaseOperations
 								.getImageDescription(studyUID, referencedSeriesUID, referencedImageUID);
 						referencedImages.add(dcm4cheeReferencedImageDescription);
-						if (dcm4cheeReferencedImageDescription.instanceNumber < instanceOffset)
+						if (dcm4cheeReferencedImageDescription != null && dcm4cheeReferencedImageDescription.instanceNumber < instanceOffset)
 							instanceOffset = dcm4cheeReferencedImageDescription.instanceNumber;
 					}
 					int index = 0;
