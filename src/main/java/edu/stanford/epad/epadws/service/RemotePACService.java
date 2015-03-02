@@ -421,6 +421,21 @@ public class RemotePACService extends RemotePACSBase {
 				patientsOnly, studiesOnly);
 	}	
 	
+	/**
+	 * Query a Remote PAC given patient/studydate filters of filter by DICOM TagGroup/Element/Value
+	 * @param pac
+	 * @param patientNameFilter
+	 * @param patientIDFilter
+	 * @param studyIDFilter
+	 * @param studyDateFilter
+	 * @param tagGroups, eg tagGroups = {"0x0008"}; tagElements={"0x0070"}; tagValues={"GE Medical Systems"};
+	 * @param tagElements
+	 * @param tagValues
+	 * @param patientsOnly
+	 * @param studiesOnly
+	 * @return
+	 * @throws Exception
+	 */
 	public synchronized List<RemotePACEntity> queryRemoteData(RemotePAC pac, String patientNameFilter, String patientIDFilter, String studyIDFilter, String studyDateFilter, String[] tagGroups, String[] tagElements, String[] tagValues, boolean patientsOnly, boolean studiesOnly) throws Exception {
 		
 		try {
@@ -430,6 +445,7 @@ public class RemotePACService extends RemotePACSBase {
 			this.setCurrentRemoteQueryInformationModel(pac.pacID, true);
 			SpecificCharacterSet specificCharacterSet = new SpecificCharacterSet((String[])null);
 			AttributeList filter = new AttributeList();
+			currentPACQueries.put(pac.pacID, filter);
 			{
 				AttributeTag t = TagFromName.PatientName; Attribute a = new PersonNameAttribute(t,specificCharacterSet);
 				if (patientNameFilter != null && patientNameFilter.length() > 0) {
@@ -496,7 +512,7 @@ public class RemotePACService extends RemotePACSBase {
 				for (int i = 0; i < tagGroups.length && i < tagElements.length && i < tagValues.length; i++)  {
 					try {
 						AttributeTag t = new AttributeTag(Integer.decode(tagGroups[i]),Integer.decode(tagElements[i]));
-						Attribute a = new LongStringAttribute(t);
+						Attribute a = new LongStringAttribute(t,specificCharacterSet);
 						a.addValue(tagValues[i]);
 						filter.put(t,a);
 					} catch (Exception x) {

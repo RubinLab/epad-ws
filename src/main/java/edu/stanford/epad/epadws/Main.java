@@ -29,6 +29,7 @@ import edu.stanford.epad.common.plugins.PluginHandlerMap;
 import edu.stanford.epad.common.plugins.PluginServletHandler;
 import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADLogger;
+import edu.stanford.epad.epadws.aim.AIMUtil;
 import edu.stanford.epad.epadws.epaddb.EpadDatabase;
 import edu.stanford.epad.epadws.epaddb.EpadDatabaseOperations;
 import edu.stanford.epad.epadws.handlers.admin.ConvertAIM4Handler;
@@ -165,6 +166,7 @@ public class Main
 				}
 			}
 			RemotePACService.checkPropertiesFile();
+			AIMUtil.checkSchemaFiles();
 		} catch (Exception e) {
 			log.warning("Failed to start database", e);
 			System.exit(1);
