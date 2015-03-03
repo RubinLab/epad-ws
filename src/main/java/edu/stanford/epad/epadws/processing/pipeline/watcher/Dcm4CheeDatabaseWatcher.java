@@ -70,7 +70,7 @@ public class Dcm4CheeDatabaseWatcher implements Runnable
 					logger.info("New DICOM series " + seriesUID + " (" + patientName + ", " + seriesDesc
 							+ ") found in DCM4CHEE with " + numInstances + " image(s)");
 				}
-				if (run%2 == 0) // every 10 secs
+				if (run%1 == 0) // every 5 secs
 					RemotePACService.getInstance().checkTransfers();
 				// Every tenth time check deleted dcm4che series
 				if (run >= 10)

@@ -517,6 +517,7 @@ public class DefaultEpadOperations implements EpadOperations
 						if (dcm4cheeReferencedImageDescription != null && dcm4cheeReferencedImageDescription.instanceNumber < instanceOffset)
 							instanceOffset = dcm4cheeReferencedImageDescription.instanceNumber;
 					}
+					if (instanceOffset == 0) instanceOffset = 1;
 					int index = 0;
 					for (DICOMElement dicomElement : referencedSOPInstanceUIDDICOMElements) {
 						String referencedImageUID = dicomElement.value;

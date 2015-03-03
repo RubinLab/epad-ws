@@ -384,6 +384,7 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		if (subject == null) subject = new Subject();
 		subject.setSubjectUID(subjectUID);
 		if (name != null && name.trim().length() > 0) subject.setName(name);
+		if (subject.getName() == null) subject.setName("");
 		if (dob != null) subject.setDob(dob);
 		if (gender != null && name.trim().length() > 0) subject.setGender(gender);
 		if (subject.getId() == 0) subject.setCreator(loggedInUser);
