@@ -317,8 +317,9 @@ public class UserProjectService {
 			return;
 		}
 		pendingUploads.put(seriesUID, username + ":" + projectID);
-		if (dicomPatientID != null && dicomPatientName != null && studyUID != null) {
+		if (dicomPatientID != null && studyUID != null) {
 			databaseOperations.deleteSeriesOnly(seriesUID); // This will recreate all images
+			if (dicomPatientName == null) dicomPatientName = "";
 			dicomPatientName = dicomPatientName.toUpperCase(); // DCM4CHEE stores the patient name as upper case
 			
 			addSubjectAndStudyToProject(dicomPatientID, dicomPatientName, studyUID, projectID, sessionID, username);
