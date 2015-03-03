@@ -2,7 +2,10 @@ package edu.stanford.epad.epadws.aim;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.text.SimpleDateFormat;
@@ -30,6 +33,7 @@ import org.apache.commons.fileupload.FileItem;
 import org.apache.commons.fileupload.FileUploadException;
 import org.apache.commons.fileupload.disk.DiskFileItemFactory;
 import org.apache.commons.fileupload.servlet.ServletFileUpload;
+import org.apache.commons.io.IOUtils;
 import org.json.JSONObject;
 import org.json.XML;
 import org.w3c.dom.Document;
@@ -124,23 +128,8 @@ public class AIMUtil
 		String result = "";
 
 		if (aim.getCodeValue() != null) { 
-			EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
-			List<Map<String, String>> eventMaps = epadDatabaseOperations.getEpadEventsForAimID(aim.getUniqueIdentifier());
-			if (eventMaps.size() == 0)
-			{
-				eventMaps = new ArrayList<Map<String, String>>();
-				Map<String, String> eventMap = EventHandler.deletedEvents.get(aim.getUniqueIdentifier());
-				if (eventMap != null)
-					eventMaps.add(eventMap);
-			}
-			if (eventMaps.size() > 0)
-			{
-				log.info("last event:" + eventMaps.get(0));
-				if ("Started".equals(eventMaps.get(0).get("event_status")) && getTime(eventMaps.get(0).get("created_time")) > (System.currentTimeMillis()-10*60*60*1000))
-				{
+			if (isPluginStillRunning(aim.getUniqueIdentifier()))
 					throw new AimException("Previous version of this AIM " + aim.getUniqueIdentifier() + " is still being processed by the plugin");
-				}
-			}
 			// For safety, write a backup file
 			String tempXmlPath = baseAnnotationDir + "temp-" + aim.getUniqueIdentifier() + ".xml";
 			String storeXmlPath = baseAnnotationDir + aim.getUniqueIdentifier() + ".xml";
@@ -237,23 +226,9 @@ public class AIMUtil
 		    log.info("=+=+=+=+=+=+=+=+=+=+=+=+= saveImageAnnotationToServer-1");
 		if (aim.getImageAnnotations().get(0).getListTypeCode().get(0).getCode() != null) { 
 			
-			EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
-			List<Map<String, String>> eventMaps = epadDatabaseOperations.getEpadEventsForAimID(aim.getUniqueIdentifier().getRoot());
-			if (eventMaps.size() == 0)
-			{
-				eventMaps = new ArrayList<Map<String, String>>();
-				Map<String, String> eventMap = EventHandler.deletedEvents.get(aim.getUniqueIdentifier());
-				if (eventMap != null)
-					eventMaps.add(eventMap);
-			}
-			if (eventMaps.size() > 0)
-			{
-				log.info("last event:" + eventMaps.get(0));
-				if ("Started".equals(eventMaps.get(0).get("event_status")) && getTime(eventMaps.get(0).get("created_time")) > (System.currentTimeMillis()-10*60*60*1000))
-				{
+			if (isPluginStillRunning(aim.getUniqueIdentifier().getRoot()))
 					throw new AimException("Previous version of this AIM " + aim.getUniqueIdentifier() + " is still being processed by the plugin");
-				}
-			}
+			
 			// For safety, write a backup file - what is this strange safety feature??
 		    String tempXmlPath = baseAnnotationDir + "temp-" + aim.getUniqueIdentifier().getRoot() + ".xml";
 		    String storeXmlPath = baseAnnotationDir + aim.getUniqueIdentifier().getRoot() + ".xml";
@@ -334,6 +309,32 @@ public class AIMUtil
 		}
 	}
 
+	public static boolean isPluginStillRunning(String aimID)
+	{
+		try {
+			EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
+			List<Map<String, String>> eventMaps = epadDatabaseOperations.getEpadEventsForAimID(aimID);
+			if (eventMaps.size() == 0)
+			{
+				eventMaps = new ArrayList<Map<String, String>>();
+				Map<String, String> eventMap = EventHandler.deletedEvents.get(aimID);
+				if (eventMap != null)
+					eventMaps.add(eventMap);
+			}
+			if (eventMaps.size() > 0)
+			{
+				log.info("last event:" + eventMaps.get(0));
+				if ("Started".equals(eventMaps.get(0).get("event_status")) && getTime(eventMaps.get(0).get("created_time")) > (System.currentTimeMillis()-10*60*60*1000))
+				{
+					return true;
+				}
+			}
+		}
+		catch (Exception x) {
+		}
+		return false;
+	}
+	
 	/**
 	 * Generate an AIM file for a new DICOM Segmentation Object (DSO). This generation process is used when a new DSO is
 	 * detected in dcm4chee. For the moment, we set the owner of the AIM annotation to admin.
@@ -932,6 +933,7 @@ public class AIMUtil
 			res.setAttributeNS("http://www.w3.org/2000/xmlns/", "xmlns:xsi", "http://www.w3.org/2001/XMLSchema-instance");
 			res.setAttribute("xsi:schemaLocation",
 					"gme://caCORE.caCORE/4.4/edu.northwestern.radiology.AIM AIM_v4_rv44_XML.xsd");
+			res.setAttribute("xmlns", "gme://caCORE.caCORE/4.4/edu.northwestern.radiology.AIM");
 			Node n = renameNodeNS(res, "ImageAnnotationCollection","gme://caCORE.caCORE/4.4/edu.northwestern.radiology.AIM");
 			root.appendChild(n); // Adding to the root
 		}
@@ -965,6 +967,7 @@ public class AIMUtil
 		{
 			// Check permissions for aims from DB table
 			Map<String, List<EPADAIM>> aimsMap = getPermittedAIMs(sessionID, aimsFromDB, user);
+			long permtime = System.currentTimeMillis();
 			for (List<EPADAIM> paims: aimsMap.values())
 			{
 				aimsDB.addAll(paims);
@@ -974,7 +977,7 @@ public class AIMUtil
 			{
 				EPADAIM ea = aimsDB.get(i);
 				try {
-					List<ImageAnnotationCollection> iacs = edu.stanford.hakan.aim4api.usage.AnnotationGetter.getImageAnnotationCollectionsFromString(ea.xml, xsdFilePathV4);
+					List<ImageAnnotationCollection> iacs = edu.stanford.hakan.aim4api.usage.AnnotationGetter.getImageAnnotationCollectionsFromString(ea.xml, "");
 					ImageAnnotationCollection aim = iacs.get(0);
 					Aim4 a = new Aim4(aim);
 					ea.name = aim.getImageAnnotations().get(0).getName().getValue();
@@ -992,6 +995,7 @@ public class AIMUtil
 				}
 			}
 		}
+		long dbtime = System.currentTimeMillis();
 		
 		List<ImageAnnotationCollection> annotations = new ArrayList<ImageAnnotationCollection>();
 		if (aimsFromExist.ResultSet.totalRecords > 0)
@@ -1012,6 +1016,7 @@ public class AIMUtil
 				}
 			}
 		}
+		long existtime = System.currentTimeMillis();
 
 		Map<String, EPADAIM> aimMAP = new HashMap<String, EPADAIM>();
 		EPADAIMResultSet rs = aims.ResultSet;
@@ -1044,7 +1049,9 @@ public class AIMUtil
 		aims.ResultSet.Result.addAll(aimsDB);
 		aims.ResultSet.totalRecords = aims.ResultSet.Result.size();
 		long endtime = System.currentTimeMillis();
-		log.info("" + aims.ResultSet.totalRecords + " annotation summaries returned to client, took:" + (endtime-starttime) + " msecs");
+		log.info("" + aims.ResultSet.totalRecords + " annotation summaries returned to client, took:" + (endtime-starttime) 
+				+ " msecs, db time:" + (dbtime-starttime) + " exist time:" + (existtime-dbtime)
+				+ " iac to summaries:" + (existtime-endtime));
 		return aims;
 	}
 	
@@ -1402,7 +1409,6 @@ public class AIMUtil
 		return projectAIMsMap;
 	}
 	
-
 	public static int convertAllAim3() throws Exception {
 		List<EPADAIM> epadaims = EpadDatabase.getInstance().getEPADDatabaseOperations().getAIMs(new ProjectReference(null));
 		String adminSessionID = XNATSessionOperations.getXNATAdminSessionID();
@@ -1427,6 +1433,30 @@ public class AIMUtil
 			}
 		}
 		return count;
+	}
+	
+	public static void convertAim3(String aimID) throws Exception {
+		EPADAIM epadaim = EpadDatabase.getInstance().getEPADDatabaseOperations().getAIM(aimID);
+		String adminSessionID = XNATSessionOperations.getXNATAdminSessionID();
+		log.info("Converting AIM3:" + epadaim.aimID + " in project " + epadaim.projectID);
+		try {
+			List<ImageAnnotation> aims = AIMQueries.getAIMImageAnnotations(epadaim.projectID, AIMSearchType.ANNOTATION_UID, epadaim.aimID, "admin", 1, 50000, true);
+			if (aims.size() > 0)
+			{
+				log.info("Saving AIM4:" + epadaim.aimID + " in project " + epadaim.projectID);
+				AIMUtil.saveImageAnnotationToServer(aims.get(0).toAimV4(), epadaim.projectID, 0, adminSessionID, false);
+			}
+			else
+			{
+				log.warning("Error converting aim3:" + epadaim.aimID + ", not found");
+				throw new Exception("Error converting aim3:" + epadaim.aimID + ", not found");
+			}
+			
+		}
+		catch (Exception x) {
+			log.warning("Error converting aim3:" + epadaim.aimID, x);
+			throw x;
+		}
 	}
 	
 	public static void updateTableXMLs(List<EPADAIM> aims)
@@ -1538,6 +1568,44 @@ public class AIMUtil
         	log.warning("Error converting aim to json", e);
 			return null;
 		}	
+	}
+	
+	static final String[] SCHEMA_FILES = {
+		"AIMTemplate_v2rv13.xsd",
+		"AIM_v3.xsd",
+		"AimXPath.xml",
+		"AIMTemplate_v2rvStanford.xsd",
+		"AIM_v4_rv44_XML.xsd",
+		"ISO_datatypes_Narrative.xsd"		
+	};
+	
+	public static void checkSchemaFiles()
+	{
+		for (String schemaFile: SCHEMA_FILES)
+		{
+			File file = new File(EPADConfig.getEPADWebServerSchemaDir() + schemaFile);
+			if (!file.exists()) {
+				InputStream in = null;
+				OutputStream out = null;
+				try {
+					in = new AIMUtil().getClass().getClassLoader().getResourceAsStream("schema/" + schemaFile);
+		            out = new FileOutputStream(file);
+
+		            // Transfer bytes from in to out
+		            byte[] buf = new byte[1024];
+		            int len;
+		            while ((len = in.read(buf)) > 0)
+		            {
+		                    out.write(buf, 0, len);
+		            }
+				} catch (Exception x) {
+					
+				} finally {
+		            IOUtils.closeQuietly(in);
+		            IOUtils.closeQuietly(out);
+				}
+			}
+		}
 	}
 	
 	private static int getInt(String value)

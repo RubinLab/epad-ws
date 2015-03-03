@@ -56,6 +56,8 @@ public interface EpadDatabaseOperations
 	Timestamp getSeriesProcessingDate(String seriesUID);
 
 	void updateOrInsertSeries(String seriesUID, SeriesProcessingStatus seriesProcessingStatus);
+	
+	boolean hasSeriesInEPadDatabase(String seriesIUID);
 
 	List<Map<String, String>> getEpadEventsForSessionID(String sessionID);
 

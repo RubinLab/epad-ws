@@ -114,6 +114,7 @@ public class EventHandler extends AbstractHandler
 						log);
 			}
 		} else {
+			log.info("EventResource: Invalid session token");
 			statusCode = HandlerUtil.warningResponse(HttpServletResponse.SC_UNAUTHORIZED, INVALID_SESSION_TOKEN_MESSAGE, log);
 		}
 		httpResponse.setStatus(statusCode);
@@ -132,6 +133,12 @@ public class EventHandler extends AbstractHandler
 		eventMap.addAll(userEvents);
 		String separator = ", ";
 
+		if (eventMap.size() == 0)
+		{
+			//responseStrean.println("No new events posted");
+			//log.info("No new events posted");
+			return;
+		}
 		responseStrean.println("event_number, event_status, Date, aim_uid, aim_name, patient_id, patient_name, "
 				+ "template_id, template_name, plugin_name");
 

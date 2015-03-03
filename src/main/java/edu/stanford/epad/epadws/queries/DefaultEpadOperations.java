@@ -103,6 +103,7 @@ import edu.stanford.epad.epadws.xnat.XNATCreationOperations;
 import edu.stanford.epad.epadws.xnat.XNATDeletionOperations;
 import edu.stanford.epad.epadws.xnat.XNATUtil;
 import edu.stanford.hakan.aim3api.base.ImageAnnotation;
+import edu.stanford.hakan.aim4api.usage.AnnotationValidator;
 
 // TODO Too long - separate in to multiple classes
 
@@ -506,10 +507,22 @@ public class DefaultEpadOperations implements EpadOperations
 
 				if (!referencedSeriesUID.equals("")) {
 					boolean isFirst = true;
+					List<DCM4CHEEImageDescription> referencedImages = new ArrayList<DCM4CHEEImageDescription>();
+					int instanceOffset = referencedSOPInstanceUIDDICOMElements.size();
 					for (DICOMElement dicomElement : referencedSOPInstanceUIDDICOMElements) {
 						String referencedImageUID = dicomElement.value;
 						DCM4CHEEImageDescription dcm4cheeReferencedImageDescription = dcm4CheeDatabaseOperations
 								.getImageDescription(studyUID, referencedSeriesUID, referencedImageUID);
+						referencedImages.add(dcm4cheeReferencedImageDescription);
+						if (dcm4cheeReferencedImageDescription != null && dcm4cheeReferencedImageDescription.instanceNumber < instanceOffset)
+							instanceOffset = dcm4cheeReferencedImageDescription.instanceNumber;
+					}
+					if (instanceOffset == 0) instanceOffset = 1;
+					int index = 0;
+					for (DICOMElement dicomElement : referencedSOPInstanceUIDDICOMElements) {
+						String referencedImageUID = dicomElement.value;
+						DCM4CHEEImageDescription dcm4cheeReferencedImageDescription = referencedImages.get(index);
+						index++;
 						if (dcm4cheeReferencedImageDescription == null)
 						{
 							// Note: These referenced images that are not found probably are extra images referenced in the DICOM. 
@@ -521,7 +534,7 @@ public class DefaultEpadOperations implements EpadOperations
 						String insertDate = dcm4cheeReferencedImageDescription.createdTime;
 						String imageDate = dcm4cheeReferencedImageDescription.contentTime;
 						String sliceLocation = dcm4cheeReferencedImageDescription.sliceLocation;
-						int frameNumber = dcm4cheeReferencedImageDescription.instanceNumber - 1; // Frames 0-based, instances 1
+						int frameNumber = dcm4cheeReferencedImageDescription.instanceNumber - instanceOffset; // Frames 0-based, instances 1 or more
 						String losslessImage = getPNGMaskPath(studyUID, imageReference.seriesUID, imageReference.imageUID,
 								frameNumber);
 						String lossyImage = ""; // We do not have a lossy image for the DSO frame
@@ -969,8 +982,7 @@ public class DefaultEpadOperations implements EpadOperations
 			{
 				if (EPADFileUtils.isValidXml(uploadedFile, EPADConfig.templateXSDPath)) {
 					type = FileType.TEMPLATE;
-				} else if (EPADFileUtils.isValidXml(uploadedFile, EPADConfig.xsdFilePathV4) 
-						|| EPADFileUtils.isValidXmlUsingClassPathSchema(uploadedFile, "schema/" + EPADConfig.xsdFileV4)) {
+				} else if (AnnotationValidator.ValidateXML(uploadedFile.getAbsolutePath(), EPADConfig.xsdFilePathV4)) {
 					type = FileType.ANNOTATION;
 					if (!AIMUtil.saveAIMAnnotation(uploadedFile, projectID, sessionID, username)) {
 						return;
@@ -1562,6 +1574,8 @@ public class DefaultEpadOperations implements EpadOperations
 				log.warning("No permissions to delete AIM:" + aimID + " for user " + username);
 				throw new Exception("No permissions to delete AIM:" + aimID + " for user " + username);
 			}
+			if (AIMUtil.isPluginStillRunning(aimID))
+				throw new Exception(aimID + " is still being processed by the plugin");
 			log.info("Deleting AIM, deleteDSO:" + deleteDSO + " dsoSeriesUID:" + aim.dsoSeriesUID);
 			AIMUtil.deleteAIM(aimID, projectReference.projectID);
 			epadDatabaseOperations.deleteAIM(username, projectReference, aimID);
@@ -1587,6 +1601,8 @@ public class DefaultEpadOperations implements EpadOperations
 				log.warning("No permissions to delete AIM:" + aimID + " for user " + username);
 				throw new Exception("No permissions to delete AIM:" + aimID + " for user " + username);
 			}
+			if (AIMUtil.isPluginStillRunning(aimID))
+				throw new Exception(aimID + " is still being processed by the plugin");
 			AIMUtil.deleteAIM(aimID, subjectReference.projectID);
 			epadDatabaseOperations.deleteAIM(username, subjectReference, aimID);
 			if (deleteDSO && aim.dsoSeriesUID != null && aim.dsoSeriesUID.length() > 0 && epadDatabaseOperations.getAIMsByDSOSeries(aim.dsoSeriesUID).size() == 0)
@@ -1610,6 +1626,8 @@ public class DefaultEpadOperations implements EpadOperations
 				log.warning("No permissions to delete AIM:" + aimID + " for user " + username);
 				throw new Exception("No permissions to delete AIM:" + aimID + " for user " + username);
 			}
+			if (AIMUtil.isPluginStillRunning(aimID))
+				throw new Exception(aimID + " is still being processed by the plugin");
 			AIMUtil.deleteAIM(aimID, studyReference.projectID);
 			epadDatabaseOperations.deleteAIM(username, studyReference, aimID);
 			if (deleteDSO && aim.dsoSeriesUID != null && aim.dsoSeriesUID.length() > 0 && epadDatabaseOperations.getAIMsByDSOSeries(aim.dsoSeriesUID).size() == 0)
@@ -1633,6 +1651,8 @@ public class DefaultEpadOperations implements EpadOperations
 				log.warning("No permissions to delete AIM:" + aimID + " for user " + username);
 				throw new Exception("No permissions to delete AIM:" + aimID + " for user " + username);
 			}
+			if (AIMUtil.isPluginStillRunning(aimID))
+				throw new Exception(aimID + " is still being processed by the plugin");
 			AIMUtil.deleteAIM(aimID, seriesReference.projectID);
 			epadDatabaseOperations.deleteAIM(username, seriesReference, aimID);
 			if (deleteDSO && aim.dsoSeriesUID != null && aim.dsoSeriesUID.length() > 0 && epadDatabaseOperations.getAIMsByDSOSeries(aim.dsoSeriesUID).size() == 0)
@@ -1656,6 +1676,8 @@ public class DefaultEpadOperations implements EpadOperations
 				log.warning("No permissions to delete AIM:" + aimID + " for user " + username);
 				throw new Exception("No permissions to delete AIM:" + aimID + " for user " + username);
 			}
+			if (AIMUtil.isPluginStillRunning(aimID))
+				throw new Exception(aimID + " is still being processed by the plugin");
 			AIMUtil.deleteAIM(aimID, imageReference.projectID);
 			epadDatabaseOperations.deleteAIM(username, imageReference, aimID);
 			if (deleteDSO && aim.dsoSeriesUID != null && aim.dsoSeriesUID.length() > 0 && epadDatabaseOperations.getAIMsByDSOSeries(aim.dsoSeriesUID).size() == 0)
@@ -1679,6 +1701,8 @@ public class DefaultEpadOperations implements EpadOperations
 				log.warning("No permissions to delete AIM:" + aimID + " for user " + username);
 				throw new Exception("No permissions to delete AIM:" + aimID + " for user " + username);
 			}
+			if (AIMUtil.isPluginStillRunning(aimID))
+				throw new Exception(aimID + " is still being processed by the plugin");
 			AIMUtil.deleteAIM(aimID, frameReference.projectID);
 			epadDatabaseOperations.deleteAIM(username, frameReference, aimID);
 			if (deleteDSO && aim.dsoSeriesUID != null && aim.dsoSeriesUID.length() > 0 && epadDatabaseOperations.getAIMsByDSOSeries(aim.dsoSeriesUID).size() == 0)
@@ -1701,6 +1725,8 @@ public class DefaultEpadOperations implements EpadOperations
 				log.warning("No permissions to delete AIM:" + aimID + " for user " + username);
 				throw new Exception("No permissions to delete AIM:" + aimID + " for user " + username);
 			}
+			if (AIMUtil.isPluginStillRunning(aimID))
+				throw new Exception(aimID + " is still being processed by the plugin");
 			AIMUtil.deleteAIM(aimID, aim.projectID);
 			epadDatabaseOperations.deleteAIM(username, aimID);
 			if (deleteDSO && aim.dsoSeriesUID != null && aim.dsoSeriesUID.length() > 0 && epadDatabaseOperations.getAIMsByDSOSeries(aim.dsoSeriesUID).size() == 0)

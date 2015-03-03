@@ -124,7 +124,6 @@ public class EPADHandler extends AbstractHandler
 					else
 						username = sessionUser;
 				}
-				log.info("Request from client:" + method + " user:" + username);
 				if (username != null) {
 					if ("GET".equalsIgnoreCase(method)) {
 						statusCode = handleGet(httpRequest, httpResponse, responseStream, username, sessionID);
@@ -150,6 +149,7 @@ public class EPADHandler extends AbstractHandler
 			log.warning("Error in handle request:", e);
 			statusCode = HandlerUtil.internalErrorJSONResponse(INTERNAL_ERROR_MESSAGE, e, responseStream, log);
 		}
+		log.info("Status returned to client:" + statusCode);
 		httpResponse.setStatus(statusCode);
 	}
 
@@ -963,11 +963,16 @@ public class EPADHandler extends AbstractHandler
 				if (studyIDFilter == null) studyIDFilter = "";
 				String studyDateFilter = httpRequest.getParameter("studyDateFilter");
 				if (studyDateFilter == null) studyDateFilter = "";
+				String[] tagGroup = httpRequest.getParameterValues("tagGroup");
+				String[] tagElement = httpRequest.getParameterValues("tagElement");
+				String[] tagValue = httpRequest.getParameterValues("tagValue");
 				boolean studiesOnly = !"true".equalsIgnoreCase(httpRequest.getParameter("series"));
 				RemotePAC pac = RemotePACService.getInstance().getRemotePAC(pacid);
 				if (pac != null)
 				{
-					List<RemotePACEntity> entities = RemotePACService.getInstance().queryRemoteData(pac, patientNameFilter, patientIDFilter, studyIDFilter, studyDateFilter, false, studiesOnly);
+					List<RemotePACEntity> entities = RemotePACService.getInstance().queryRemoteData(pac, patientNameFilter, patientIDFilter, 
+							studyIDFilter, studyDateFilter, 
+							tagGroup, tagElement, tagValue, false, studiesOnly);
 					RemotePACEntityList entityList = new RemotePACEntityList();
 					for (RemotePACEntity entity: entities)
 						entityList.addRemotePACEntity(entity);
@@ -1387,6 +1392,10 @@ public class EPADHandler extends AbstractHandler
 				statusCode = HttpServletResponse.SC_BAD_REQUEST;
 				if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.PROJECT_FILE_LIST, pathInfo)) {
 					ProjectReference projectReference = ProjectReference.extract(ProjectsRouteTemplates.PROJECT_FILE_LIST, pathInfo);
+					if (requestContentType == null || !requestContentType.startsWith("multipart/form-data"))
+						throw new Exception("Invalid Content Type, should be multipart/form-data");
+					if (numberOfFiles == 0)
+						throw new Exception("No files found in post");
 					if (numberOfFiles == 1) {
 						String description = httpRequest.getParameter("description");
 						if (description == null) description = (String) paramData.get("description");
@@ -1408,12 +1417,17 @@ public class EPADHandler extends AbstractHandler
 								if (fileTypes != null && fileTypes.size() > i)
 										fileType = fileTypes.get(i);
 								statusCode = epadOperations.createFile(username, projectReference, (File)paramData.get(param), description, fileType, sessionID);
+								i++;
 							}
 						}
 					}
 						
 				} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.SUBJECT_FILE_LIST, pathInfo)) {
 					SubjectReference subjectReference = SubjectReference.extract(ProjectsRouteTemplates.SUBJECT_FILE_LIST, pathInfo);
+					if (requestContentType == null || !requestContentType.startsWith("multipart/form-data"))
+						throw new Exception("Invalid Content Type, should be multipart/form-data");
+					if (numberOfFiles == 0)
+						throw new Exception("No files found in post");
 					if (numberOfFiles == 1) {
 						String description = httpRequest.getParameter("description");
 						if (description == null) description = (String) paramData.get("description");
@@ -1435,12 +1449,17 @@ public class EPADHandler extends AbstractHandler
 								if (fileTypes != null && fileTypes.size() > i)
 										fileType = fileTypes.get(i);
 								statusCode = epadOperations.createFile(username, subjectReference, (File)paramData.get(param), description, fileType, sessionID);
+								i++;
 							}
 						}
 					}
 
 				} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.STUDY_FILE_LIST, pathInfo)) {
 					StudyReference studyReference = StudyReference.extract(ProjectsRouteTemplates.STUDY_FILE_LIST, pathInfo);
+					if (requestContentType == null || !requestContentType.startsWith("multipart/form-data"))
+						throw new Exception("Invalid Content Type, should be multipart/form-data");
+					if (numberOfFiles == 0)
+						throw new Exception("No files found in post");
 					if (numberOfFiles == 1) {
 						String description = httpRequest.getParameter("description");
 						if (description == null) description = (String) paramData.get("description");
@@ -1462,12 +1481,17 @@ public class EPADHandler extends AbstractHandler
 								if (fileTypes != null && fileTypes.size() > i)
 										fileType = fileTypes.get(i);
 								statusCode = epadOperations.createFile(username, studyReference, (File)paramData.get(param), description, fileType, sessionID);
+								i++;
 							}
 						}
 					}
 		
 				} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.SERIES_FILE_LIST, pathInfo)) {
 					SeriesReference seriesReference = SeriesReference.extract(ProjectsRouteTemplates.SERIES, pathInfo);
+					if (requestContentType == null || !requestContentType.startsWith("multipart/form-data"))
+						throw new Exception("Invalid Content Type, should be multipart/form-data");
+					if (numberOfFiles == 0)
+						throw new Exception("No files found in post");
 					if (numberOfFiles == 1) {
 						String description = httpRequest.getParameter("description");
 						if (description == null) description = (String) paramData.get("description");
@@ -1489,6 +1513,7 @@ public class EPADHandler extends AbstractHandler
 								if (fileTypes != null && fileTypes.size() > i)
 										fileType = fileTypes.get(i);
 								statusCode = epadOperations.createFile(username, seriesReference, (File)paramData.get(param), description, fileType, sessionID);
+								i++;
 							}
 						}
 					}
@@ -1510,6 +1535,18 @@ public class EPADHandler extends AbstractHandler
 					else if ("false".equalsIgnoreCase(enable))
 						epadOperations.disableUser(username, target_username);
 					statusCode = HttpServletResponse.SC_OK;
+				
+				} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.PROJECT, pathInfo)) {
+					ProjectReference projectReference = ProjectReference.extract(ProjectsRouteTemplates.PROJECT, pathInfo);
+					String projectName = httpRequest.getParameter("projectName");
+					String projectDescription = httpRequest.getParameter("projectDescription");
+					EPADProject project = epadOperations.getProjectDescription(projectReference, username, sessionID);
+					if (project != null) {
+						throw new Exception("Project " + project.id +  " already exists");
+					} else {
+						statusCode = epadOperations.createProject(username, projectReference, projectName, projectDescription, sessionID);
+					}							
+				
 				} else {
 					statusCode = HandlerUtil.badRequestJSONResponse(BAD_POST_MESSAGE + ":" + pathInfo, responseStream, log);
 				}		

@@ -145,6 +145,7 @@ public class DICOMSeriesWatcher implements Runnable
 						String seriesUID = seriesPipelineState.getSeriesProcessingDescription().getSeriesUID();
 						dicomSeriesTracker.removeSeriesPipelineState(seriesPipelineState);
 						epadDatabaseOperations.updateOrInsertSeries(seriesUID, SeriesProcessingStatus.DONE);
+						log.info("Series " + seriesUID + " processing completed");
 						if (UserProjectService.pendingUploads.containsKey(seriesUID))
 						{
 							String username = UserProjectService.pendingUploads.get(seriesUID);
@@ -155,7 +156,8 @@ public class DICOMSeriesWatcher implements Runnable
 								epadDatabaseOperations.insertEpadEvent(
 										username, 
 										"Image Generation Complete", 
-										"", "", "", "", "", "", "");					
+										"", "", "", "", "", "", 
+										"New Series");					
 								UserProjectService.pendingUploads.remove(seriesUID);
 							}
 						}

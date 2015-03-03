@@ -1,6 +1,11 @@
 package edu.stanford.epad.epadws.service;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -11,6 +16,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import org.apache.commons.io.IOUtils;
 
 import com.pixelmed.dicom.AgeStringAttribute;
 import com.pixelmed.dicom.Attribute;
@@ -33,11 +40,15 @@ import com.pixelmed.network.ApplicationEntityMap;
 import com.pixelmed.query.QueryTreeModel;
 import com.pixelmed.query.QueryTreeRecord;
 
+import edu.stanford.epad.common.util.EPADConfig;
+import edu.stanford.epad.common.util.EPADFileUtils;
 import edu.stanford.epad.dtos.RemotePAC;
 import edu.stanford.epad.dtos.RemotePACEntity;
 import edu.stanford.epad.dtos.RemotePACQueryConfig;
 import edu.stanford.epad.dtos.internal.DCM4CHEEStudy;
 import edu.stanford.epad.dtos.internal.DCM4CHEEStudyList;
+import edu.stanford.epad.epadws.epaddb.EpadDatabase;
+import edu.stanford.epad.epadws.epaddb.EpadDatabaseOperations;
 import edu.stanford.epad.epadws.models.Project;
 import edu.stanford.epad.epadws.models.RemotePACQuery;
 import edu.stanford.epad.epadws.models.Study;
@@ -60,7 +71,12 @@ public class RemotePACService extends RemotePACSBase {
 	public static final int MAX_INSTANCE_QUERY = 7000;
 	static Map<String, QueryTreeRecord> remoteQueryCache = new HashMap<String, QueryTreeRecord>();
 	
+	// SerieUID to userName:projectID
 	public static Map<String, String> pendingTransfers = new HashMap<String, String>();
+	
+	// AETitle to userName
+	public static Map<String, String> monitorTransfers = new HashMap<String, String>();
+	public static Map<String, Long> monitorStart = new HashMap<String, Long>();
 	
 	public static RemotePACService getInstance() throws Exception {
 		if (rpsinstance == null)
@@ -74,6 +90,33 @@ public class RemotePACService extends RemotePACSBase {
 		super();
 	}
 
+	public static void checkPropertiesFile() {
+		File propertiesFile = new File(EPADConfig.getEPADRemotePACsConfigFilePath());
+		if (!propertiesFile.exists()) {
+			BufferedReader reader = null;
+			InputStream is = null;
+			StringBuilder sb = new StringBuilder();
+			try {
+				is = EPADFileUtils.class.getClassLoader().getResourceAsStream(propertiesFile.getName());
+				reader = new BufferedReader(new InputStreamReader(is, "UTF8"));
+				String line = null;
+				while ((line = reader.readLine()) != null) {
+					sb.append(line);
+					sb.append("\n");
+				}
+			} catch (Exception x) {
+				log.warning("Error creating properties file", x);
+				return;
+			} finally {
+				if (reader != null)
+					IOUtils.closeQuietly(reader);
+				else if (is != null)
+					IOUtils.closeQuietly(is);
+			}
+			EPADFileUtils.write(propertiesFile, sb.toString().replace("_HOSTNAME_", EPADConfig.xnatServer));
+		}
+	}
+	
 	/**
 	 * Get all configured remote PACs
 	 * @return
@@ -155,6 +198,8 @@ public class RemotePACService extends RemotePACSBase {
 		{
 			throw new Exception("Periodic queries have been configured for PAC:" + pac.pacID + ", it can not be deleted");
 		}
+		if (pac.hostname.equalsIgnoreCase(EPADConfig.xnatServer))
+			throw new Exception("Local PAC can not be deleted");
 		removeRemotePAC(pac.pacID);
 		this.storeProperties(pac.pacID + " deleted by EPAD " + new Date());
 	}
@@ -372,14 +417,35 @@ public class RemotePACService extends RemotePACSBase {
 	 * @throws Exception
 	 */
 	public synchronized List<RemotePACEntity> queryRemoteData(RemotePAC pac, String patientNameFilter, String patientIDFilter, String studyIDFilter, String studyDateFilter, boolean patientsOnly, boolean studiesOnly) throws Exception {
+		return queryRemoteData(pac, patientNameFilter, patientIDFilter, studyIDFilter, studyDateFilter, null, null, null, 
+				patientsOnly, studiesOnly);
+	}	
+	
+	/**
+	 * Query a Remote PAC given patient/studydate filters of filter by DICOM TagGroup/Element/Value
+	 * @param pac
+	 * @param patientNameFilter
+	 * @param patientIDFilter
+	 * @param studyIDFilter
+	 * @param studyDateFilter
+	 * @param tagGroups, eg tagGroups = {"0x0008"}; tagElements={"0x0070"}; tagValues={"GE Medical Systems"};
+	 * @param tagElements
+	 * @param tagValues
+	 * @param patientsOnly
+	 * @param studiesOnly
+	 * @return
+	 * @throws Exception
+	 */
+	public synchronized List<RemotePACEntity> queryRemoteData(RemotePAC pac, String patientNameFilter, String patientIDFilter, String studyIDFilter, String studyDateFilter, String[] tagGroups, String[] tagElements, String[] tagValues, boolean patientsOnly, boolean studiesOnly) throws Exception {
 		
 		try {
-			log.info("Remote PAC Query, pacID:" + pac.pacID + " patientName:" + patientNameFilter + " patientID:" + patientIDFilter + " studyDate:" + studyDateFilter + " studyIDFilter:" + studyIDFilter + " studiesOnly:" + studiesOnly);
+			log.info("Remote PAC Query, pacID:" + pac.pacID + " patientName:" + patientNameFilter + " patientID:" + patientIDFilter + " studyDate:" + studyDateFilter + " studyIDFilter:" + studyIDFilter + " patientsOnly:" + patientsOnly + " studiesOnly:" + studiesOnly);
 			if (currentPACQueries.containsKey(pac.pacID))
 				throw new Exception("Last query to this PAC still in progress");
 			this.setCurrentRemoteQueryInformationModel(pac.pacID, true);
 			SpecificCharacterSet specificCharacterSet = new SpecificCharacterSet((String[])null);
 			AttributeList filter = new AttributeList();
+			currentPACQueries.put(pac.pacID, filter);
 			{
 				AttributeTag t = TagFromName.PatientName; Attribute a = new PersonNameAttribute(t,specificCharacterSet);
 				if (patientNameFilter != null && patientNameFilter.length() > 0) {
@@ -394,12 +460,12 @@ public class RemotePACService extends RemotePACSBase {
 				}
 				filter.put(t,a);
 			}
-			{ AttributeTag t = TagFromName.PatientBirthDate; Attribute a = new DateAttribute(t); filter.put(t,a); }
-			{ AttributeTag t = TagFromName.PatientSex; Attribute a = new CodeStringAttribute(t); filter.put(t,a); }
-
-			{ AttributeTag t = TagFromName.StudyID; Attribute a = new ShortStringAttribute(t,specificCharacterSet); filter.put(t,a);}
-			{ AttributeTag t = TagFromName.StudyDescription; Attribute a = new LongStringAttribute(t,specificCharacterSet); filter.put(t,a); }
-			{ AttributeTag t = TagFromName.ModalitiesInStudy; Attribute a = new CodeStringAttribute(t); filter.put(t,a); }
+//			{ AttributeTag t = TagFromName.PatientBirthDate; Attribute a = new DateAttribute(t); filter.put(t,a); }
+//			{ AttributeTag t = TagFromName.PatientSex; Attribute a = new CodeStringAttribute(t); filter.put(t,a); }
+//
+//			{ AttributeTag t = TagFromName.StudyID; Attribute a = new ShortStringAttribute(t,specificCharacterSet); filter.put(t,a);}
+//			{ AttributeTag t = TagFromName.StudyDescription; Attribute a = new LongStringAttribute(t,specificCharacterSet); filter.put(t,a); }
+//			{ AttributeTag t = TagFromName.ModalitiesInStudy; Attribute a = new CodeStringAttribute(t); filter.put(t,a); }
 			// StudyDate formats:
 			//	from/to: 20071001-20080220
 			//	before: -20080220
@@ -411,56 +477,85 @@ public class RemotePACService extends RemotePACSBase {
 				}
 				filter.put(t,a);
 			}
-			{ AttributeTag t = TagFromName.StudyTime; Attribute a = new TimeAttribute(t); filter.put(t,a); }
-			{ AttributeTag t = TagFromName.PatientAge; Attribute a = new AgeStringAttribute(t); filter.put(t,a); }
-
-			{ AttributeTag t = TagFromName.SeriesDescription; Attribute a = new LongStringAttribute(t,specificCharacterSet); filter.put(t,a); }
-			{ AttributeTag t = TagFromName.SeriesNumber; Attribute a = new IntegerStringAttribute(t); filter.put(t,a); }
-			{ AttributeTag t = TagFromName.Manufacturer; Attribute a = new LongStringAttribute(t); filter.put(t,a); }
-			{ AttributeTag t = TagFromName.Modality; Attribute a = new CodeStringAttribute(t); filter.put(t,a); }
-			{ AttributeTag t = TagFromName.SeriesDate; Attribute a = new DateAttribute(t); filter.put(t,a); }
-			{ AttributeTag t = TagFromName.SeriesTime; Attribute a = new TimeAttribute(t); filter.put(t,a); }
-
-			{ AttributeTag t = TagFromName.InstanceNumber; Attribute a = new IntegerStringAttribute(t); filter.put(t,a); }
-			{ AttributeTag t = TagFromName.ContentDate; Attribute a = new DateAttribute(t); filter.put(t,a); }
-			{ AttributeTag t = TagFromName.ContentTime; Attribute a = new TimeAttribute(t); filter.put(t,a); }
-			{ AttributeTag t = TagFromName.ImageType; Attribute a = new CodeStringAttribute(t); filter.put(t,a); }
-			{ AttributeTag t = TagFromName.NumberOfFrames; Attribute a = new IntegerStringAttribute(t); filter.put(t,a); }
-			{ AttributeTag t = TagFromName.WindowCenter; Attribute a = new DecimalStringAttribute(t); filter.put(t,a); }
-			{ AttributeTag t = TagFromName.WindowWidth; Attribute a = new DecimalStringAttribute(t); filter.put(t,a); }
+//			{ AttributeTag t = TagFromName.StudyTime; Attribute a = new TimeAttribute(t); filter.put(t,a); }
+//			{ AttributeTag t = TagFromName.PatientAge; Attribute a = new AgeStringAttribute(t); filter.put(t,a); }
+//
+//			{ AttributeTag t = TagFromName.SeriesDescription; Attribute a = new LongStringAttribute(t,specificCharacterSet); filter.put(t,a); }
+//			{ AttributeTag t = TagFromName.SeriesNumber; Attribute a = new IntegerStringAttribute(t); filter.put(t,a); }
+//			{ AttributeTag t = TagFromName.Manufacturer; Attribute a = new LongStringAttribute(t); filter.put(t,a); }
+//			{ AttributeTag t = TagFromName.Modality; Attribute a = new CodeStringAttribute(t); filter.put(t,a); }
+//			{ AttributeTag t = TagFromName.SeriesDate; Attribute a = new DateAttribute(t); filter.put(t,a); }
+//			{ AttributeTag t = TagFromName.SeriesTime; Attribute a = new TimeAttribute(t); filter.put(t,a); }
+//
+//			{ AttributeTag t = TagFromName.InstanceNumber; Attribute a = new IntegerStringAttribute(t); filter.put(t,a); }
+//			{ AttributeTag t = TagFromName.ContentDate; Attribute a = new DateAttribute(t); filter.put(t,a); }
+//			{ AttributeTag t = TagFromName.ContentTime; Attribute a = new TimeAttribute(t); filter.put(t,a); }
+//			{ AttributeTag t = TagFromName.ImageType; Attribute a = new CodeStringAttribute(t); filter.put(t,a); }
+//			{ AttributeTag t = TagFromName.NumberOfFrames; Attribute a = new IntegerStringAttribute(t); filter.put(t,a); }
+//			{ AttributeTag t = TagFromName.WindowCenter; Attribute a = new DecimalStringAttribute(t); filter.put(t,a); }
+//			{ AttributeTag t = TagFromName.WindowWidth; Attribute a = new DecimalStringAttribute(t); filter.put(t,a); }
 
 			{ 
 				AttributeTag t = TagFromName.StudyInstanceUID; Attribute a = new UniqueIdentifierAttribute(t); 
 				if (studyIDFilter != null && studyIDFilter.length() > 0) {
+					if (studyIDFilter.startsWith(pac.pacID + ":"))
+						studyIDFilter = studyIDFilter.substring(studyIDFilter.indexOf(":")+1);
 					a.addValue(studyIDFilter);
 				}		
 				filter.put(t,a); 
 			}
-			{ AttributeTag t = TagFromName.SeriesInstanceUID; Attribute a = new UniqueIdentifierAttribute(t); filter.put(t,a); }
-			{ AttributeTag t = TagFromName.SOPInstanceUID; Attribute a = new UniqueIdentifierAttribute(t); filter.put(t,a); }
-			{ AttributeTag t = TagFromName.SOPClassUID; Attribute a = new UniqueIdentifierAttribute(t); filter.put(t,a); }
-			{ AttributeTag t = TagFromName.SpecificCharacterSet; Attribute a = new CodeStringAttribute(t); filter.put(t,a); a.addValue("ISO_IR 100"); }
+//			{ AttributeTag t = TagFromName.SeriesInstanceUID; Attribute a = new UniqueIdentifierAttribute(t); filter.put(t,a); }
+//			{ AttributeTag t = TagFromName.SOPInstanceUID; Attribute a = new UniqueIdentifierAttribute(t); filter.put(t,a); }
+//			{ AttributeTag t = TagFromName.SOPClassUID; Attribute a = new UniqueIdentifierAttribute(t); filter.put(t,a); }
+//			{ AttributeTag t = TagFromName.SpecificCharacterSet; Attribute a = new CodeStringAttribute(t); filter.put(t,a); a.addValue("ISO_IR 100"); }
+			if (tagGroups != null && tagElements != null && tagValues != null) {
+				for (int i = 0; i < tagGroups.length && i < tagElements.length && i < tagValues.length; i++)  {
+					try {
+						AttributeTag t = new AttributeTag(Integer.decode(tagGroups[i]),Integer.decode(tagElements[i]));
+						Attribute a = new LongStringAttribute(t,specificCharacterSet);
+						a.addValue(tagValues[i]);
+						filter.put(t,a);
+					} catch (Exception x) {
+						log.warning("Error decoding entered tag id" + tagGroups[i] + "," + tagElements[i], x);
+					}
+				}
+			}
 			
 			if (remoteQueryCache.keySet().size() > MAX_CACHE_ENTRIES)
 				clearQueryCache();
 			List<RemotePACEntity> remoteEntities = new ArrayList<RemotePACEntity>();
 			String key = pac.pacID;
 			long startTime = System.currentTimeMillis();
+			patientIds = new HashSet<String>();
 			QueryTreeModel treeModel = currentRemoteQueryInformationModel.performHierarchicalQuery(filter);
 			long endTime = System.currentTimeMillis();
-			log.info("Remote PAC Query took " + (endTime-startTime) + " msecs");
+			//log.info("Remote PAC Query took " + (endTime-startTime) + " msecs");
 			QueryTreeRecord root = (QueryTreeRecord) treeModel.getRoot();
 			remoteEntities = traverseTree(root, 0, remoteEntities, key, patientsOnly, studiesOnly);
 			long traverseTime = System.currentTimeMillis();
-			log.info("Remote PAC tree records took "+ (traverseTime-endTime) + " msecs. Number of entities returned:" + remoteEntities.size());
-			if (patientsOnly) 
+			log.info("Remote PAC tree records took "+ (traverseTime-startTime) + " msecs. Number of entities returned:" + remoteEntities.size());
+			if (patientsOnly && remoteEntities.size() > 0) 
 				remoteEntities.remove(0); // Remove AE record
-			if (studiesOnly) 
+			if (studiesOnly && remoteEntities.size() > 0) 
 				remoteEntities.remove(0); // Remove AE record
-			if (studyIDFilter != null && studyIDFilter.length() > 0 && !studiesOnly) 
+			if (studyIDFilter != null && studyIDFilter.length() > 0 && !studiesOnly && remoteEntities.size() > 1) 
 			{
 				remoteEntities.remove(0); // Remove AE record
 				remoteEntities.remove(0); // Remove Study Record
+			}
+			if (patientIDFilter != null && patientIDFilter.trim().length() > 0)
+			{
+				EpadProjectOperations projectOperations = DefaultEpadProjectOperations.getInstance();
+				EpadDatabaseOperations databaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
+				for (RemotePACEntity rpe: remoteEntities) {
+					if (rpe.entityType.equalsIgnoreCase("Study")) {
+						if (projectOperations.getStudy(rpe.entityID.substring(rpe.entityID.indexOf(":")+1)) != null)
+							rpe.inEpad = true;
+					} else if (rpe.entityType.equalsIgnoreCase("Series")) {
+						if (databaseOperations.hasSeriesInEPadDatabase(rpe.entityID.substring(rpe.entityID.indexOf(":")+1)))
+							rpe.inEpad = true;
+					}
+				}
 			}
 			return remoteEntities;
 		}
@@ -502,8 +597,11 @@ public class RemotePACService extends RemotePACSBase {
 		RemotePACEntity entity = new RemotePACEntity(type, node.getValue(), level, ukey);
 		entity.subjectID = Attribute.getSingleStringValueOrNull(al,TagFromName.PatientID);
 		entity.subjectName = Attribute.getSingleStringValueOrNull(al,TagFromName.PatientName);
-		if (patientsOnly && patientIds.contains(entity.subjectID))
+		if (patientsOnly && type.equals("Study") && patientIds.contains(entity.subjectID))
+		{
+			//log.info("Duplicate subject:" + entity.subjectID);
 			return entities;
+		}
 		patientIds.add(entity.subjectID);
 		remoteQueryCache.put(ukey, node);
 		if (!studiesOnly || !type.equals("Series"))
@@ -545,6 +643,8 @@ public class RemotePACService extends RemotePACSBase {
 		String root = uniqueKey;
 		if (root.indexOf(":") != -1)
 			root = root.substring(0, root.indexOf(":"));
+		if (!uniqueKey.startsWith(pac.pacID))
+			uniqueKey = pac.pacID + ":" + uniqueKey;
 		QueryTreeRecord node = remoteQueryCache.get(uniqueKey);
 		// If no cached pointers, query entire PAC again (or should we give an error???)
 		if (node == null)
@@ -608,8 +708,16 @@ public class RemotePACService extends RemotePACSBase {
 		if (node != null) {
 			setCurrentRemoteQuerySelection(node.getUniqueKeys(), node.getUniqueKey(), node.getAllAttributesReturnedInIdentifier());
 			log.info("Request retrieval of "+currentRemoteQuerySelectionLevel+" "+currentRemoteQuerySelectionUniqueKey.getSingleStringValueOrEmptyString()+" from "+pac.pacID+" ("+currentRemoteQuerySelectionRetrieveAE+")");
+	   		File xfrstart = new File(EPADConfig.dcm4cheeHome + "/" + pac.aeTitle + "_XfrStarted.log");
+	   		File xfrend = new File(EPADConfig.dcm4cheeHome + "/" + pac.aeTitle + "_XfrEnded.log");
+			try {
+				if (xfrstart.exists()) xfrstart.delete();
+				if (xfrend.exists()) xfrend.delete();
+			} catch (Exception x) {}
 			performRetrieve(currentRemoteQuerySelectionUniqueKeys,currentRemoteQuerySelectionLevel,currentRemoteQuerySelectionRetrieveAE);			
 		}
+		monitorTransfers.put(pac.aeTitle, userName + ":" + pac.pacID);
+		monitorStart.put(pac.aeTitle, System.currentTimeMillis());
 		if (studyUID != null)
 			return studyUID + ":" + studyDate;
 		else
@@ -628,6 +736,69 @@ public class RemotePACService extends RemotePACSBase {
 			transfers.add(transfer);
 		}
 		return transfers;
+	}
+	
+	public void checkTransfers()
+	{
+		if (monitorTransfers.isEmpty()) return;
+		EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
+		Set<String> removeAet = new HashSet<String>();
+		for (String aet: monitorTransfers.keySet()) 
+		{
+			log.info("Checking data transfer from " + aet);
+       		File xfrstart = new File(EPADConfig.dcm4cheeHome + "/" + aet + "_XfrStarted.log");
+       		File xfrend = new File(EPADConfig.dcm4cheeHome + "/" + aet + "_XfrEnded.log");
+       		try
+       		{
+	       		if (xfrstart.exists())
+	       		{
+	       			String logStart = EPADFileUtils.readFileAsString(xfrstart);
+					epadDatabaseOperations.insertEpadEvent(
+							monitorTransfers.get(aet).substring(0, monitorTransfers.get(aet).indexOf(":")), 
+							logStart.replace('\n', ' '), 
+							aet, aet,
+							aet, 
+							aet,
+							"",
+							"",
+							"Remote PAC Transfer");
+					log.info("Added PAC Transfer Started Event for " + monitorTransfers.get(aet));
+					xfrstart.delete();
+	       		}
+	       		if (xfrend.exists())
+	       		{
+	       			monitorStart.put(aet, 0L);
+	       			String logEnd = EPADFileUtils.readFileAsString(xfrend);
+					epadDatabaseOperations.insertEpadEvent(
+							monitorTransfers.get(aet).substring(0, monitorTransfers.get(aet).indexOf(":")), 
+							logEnd.replace('\n', ' '), 
+							aet, aet,
+							aet, 
+							aet, 
+							"", 
+							"",
+							"Remote PAC Transfer");
+					log.info("Added PAC Transfer Ended Event for " + monitorTransfers.get(aet));
+					xfrend.delete();
+	       		}
+       		} catch (Exception x)
+       		{
+       			removeAet.add(aet);
+       			log.warning("Error in checking", x);
+       		}
+		}
+		for (String aet: monitorStart.keySet())
+		{
+			if ((System.currentTimeMillis() - monitorStart.get(aet)) > 3600000)
+			{
+       			removeAet.add(aet);
+			}
+		}
+		for (String aet: removeAet)
+		{
+			monitorTransfers.remove(aet);
+			monitorStart.remove(aet);
+		}
 	}
 	
 	SimpleDateFormat dateformat = new SimpleDateFormat("yyyyMMdd");

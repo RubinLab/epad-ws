@@ -202,6 +202,7 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 					List<Project> projects = DefaultEpadProjectOperations.getInstance().getAllProjects();
 					for (Project p: projects) {
 						count = adb.getAIMCount("admin", p.getProjectId(), null, null, null, null, 0);
+						MongoDBOperations.createIndexes(p.getProjectId());
 						int mongoCount = MongoDBOperations.getNumberOfDocuments("", p.getProjectId());
 						log.debug("mysqlDB Count:" + count + " mongoDB Count:" + mongoCount);
 						if (count > mongoCount) {
@@ -210,6 +211,8 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 						}
 					}
 				}
+				else
+					log.warning("No connection to mongoDB");
 			} catch (Exception sqle) {
 				log.warning("AIM Database operation failed:", sqle);
 			} finally {
@@ -2236,7 +2239,8 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 		return value;
 	}
 
-	private boolean hasSeriesInEPadDatabase(String seriesIUID)
+	@Override
+	public boolean hasSeriesInEPadDatabase(String seriesIUID)
 	{
 		Connection c = null;
 		PreparedStatement ps = null;

@@ -183,7 +183,7 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 			String password, List<String> addPermissions, List<String> removePermissions) throws Exception {
 		User user = getUser(loggedInUser);
 		if (user != null && !user.isAdmin() && !user.hasPermission(User.CreateUserPermission))
-			throw new Exception("No permission to create project");
+			throw new Exception("No permission to create user");
 		user = new User();
 		user.setUsername(username);
 		user.setFirstName(firstName);
@@ -226,6 +226,8 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 			List<String> addPermissions, List<String> removePermissions)
 			throws Exception {
 		User loggedInUser = getUser(loggedInUserName);
+		if (loggedInUser != null && !loggedInUser.isAdmin() && !loggedInUser.hasPermission(User.CreateUserPermission) && !loggedInUser.equals(username))
+			throw new Exception("No permission to modify user");
 		User user = new User();
 		user = (User) user.getObject("username = " + user.toSQL(username));
 		if (firstName != null) user.setFirstName(firstName);
@@ -262,8 +264,11 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 	 * @see edu.stanford.epad.epadws.service.EpadProjectOperations#enableUser(java.lang.String, java.lang.String)
 	 */
 	@Override
-	public void enableUser(String loggedInUser, String username) throws Exception {
+	public void enableUser(String loggedInUserName, String username) throws Exception {
+		User loggedInUser = getUser(loggedInUserName);
 		User user = getUser(username);
+		if (loggedInUser != null && !loggedInUser.isAdmin() && !loggedInUserName.equals(user.getCreator()))
+			throw new Exception("No permission to modify user");
 		user.setEnabled(true);
 		user.save();
 		userCache.put(user.getUsername(), user);
@@ -273,8 +278,11 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 	 * @see edu.stanford.epad.epadws.service.EpadProjectOperations#disableUser(java.lang.String, java.lang.String)
 	 */
 	@Override
-	public void disableUser(String loggedInUser, String username) throws Exception {
+	public void disableUser(String loggedInUserName, String username) throws Exception {
+		User loggedInUser = getUser(loggedInUserName);
 		User user = getUser(username);
+		if (loggedInUser != null && !loggedInUser.isAdmin() && !loggedInUserName.equals(user.getCreator()))
+			throw new Exception("No permission to modify user");
 		user.setEnabled(false);
 		user.save();
 		userCache.put(user.getUsername(), user);
@@ -376,6 +384,7 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		if (subject == null) subject = new Subject();
 		subject.setSubjectUID(subjectUID);
 		if (name != null && name.trim().length() > 0) subject.setName(name);
+		if (subject.getName() == null) subject.setName("");
 		if (dob != null) subject.setDob(dob);
 		if (gender != null && name.trim().length() > 0) subject.setGender(gender);
 		if (subject.getId() == 0) subject.setCreator(loggedInUser);
@@ -552,19 +561,27 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		efile.setDescription(description);
 		if (fileType != null)
 			efile.setFileType(fileType.getName());
+		else
+			efile.setFileType("");
 		if (projectID != null && projectID.length() > 0)
 		{
 			Project project = getProject(projectID);
+			if (project == null)
+				throw new Exception("Project " + projectID + " not found");
 			efile.setProjectId(project.getId());
 		}
 		if (subjectUID != null && subjectUID.length() > 0)
 		{
 			Subject subject = getSubject(subjectUID);
+			if (subject == null)
+				throw new Exception("Patient " + subjectUID + " not found");
 			efile.setSubjectId(subject.getId());
 		}
 		if (studyUID != null && studyUID.length() > 0)
 		{
 			Study study = getStudy(studyUID);
+			if (study == null)
+				throw new Exception("Study " + studyUID + " not found");
 			efile.setStudyId(study.getId());
 		}
 		boolean exists = false;
@@ -588,7 +605,7 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		String physicalName = "" + efile.getId() + efile.getExtension();
 		FileUtils.copyFile(file, new File(parent, physicalName));
 		if (exists)
-			log.info("Created file:" + efile.getName() + " in Project:" + efile.getProjectId());
+			log.info("Modified file:" + efile.getName() + " in Project:" + efile.getProjectId());
 		else
 			log.info("Created file:" + efile.getName() + " in Project:" + efile.getProjectId());
 		return efile;
@@ -1316,6 +1333,7 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		User requestor = getUser(username);
 		if (!requestor.isAdmin() && !isOwner(username, projectID))
 			throw new Exception("No permissions to delete project");
+		log.info("Deleting project:" + projectID);
 		Project project = getProject(projectID);
 		new ProjectToUser().deleteObjects("project_id=" + project.getId());		
 		new ProjectToSubjectToUser().deleteObjects("proj_subj_id in (select id from " + new ProjectToSubject().returnDBTABLE() + " where project_id=" + project.getId() + ")");
