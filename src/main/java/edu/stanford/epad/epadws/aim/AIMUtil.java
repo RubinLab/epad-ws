@@ -78,7 +78,6 @@ import edu.stanford.epad.epadws.queries.DefaultEpadOperations;
 import edu.stanford.epad.epadws.queries.EpadOperations;
 import edu.stanford.epad.epadws.service.SessionService;
 import edu.stanford.epad.epadws.service.UserProjectService;
-import edu.stanford.epad.epadws.xnat.XNATSessionOperations;
 import edu.stanford.hakan.aim3api.base.AimException;
 import edu.stanford.hakan.aim3api.base.DICOMImageReference;
 import edu.stanford.hakan.aim3api.base.ImageAnnotation;
@@ -158,7 +157,8 @@ public class AIMUtil
 						collectionName, xsdFilePathV4, eXistUsername, eXistPassword);
 				result = edu.stanford.hakan.aim4api.usage.AnnotationBuilder.getAimXMLsaveResult();
 				try {
-					saveAimToMongo(aim4, projectID);
+					if (projectID != null && projectID.length() > 0)
+						saveAimToMongo(aim4, projectID);
 				} catch (Exception e) {
 					log.warning("Error saving aim to mongodb", e);
 				}
@@ -254,7 +254,8 @@ public class AIMUtil
 		
 		    log.info(result);
 			try {
-				saveAimToMongo(aim, projectID);
+				if (projectID != null && projectID.length() > 0)
+					saveAimToMongo(aim, projectID);
 			} catch (Exception e) {
 				log.warning("Error saving aim to mongodb", e);
 			}
@@ -276,7 +277,7 @@ public class AIMUtil
 		            }
 		        }
 		
-		        if (templateHasBeenFound) {
+		        if (templateHasBeenFound && jsessionID != null) {
 		        	// Start plugin task
 					log.info("Starting Plugin task for:" + pluginName);
 					(new Thread(new PluginStartTask(jsessionID, pluginName, aim.getUniqueIdentifier().getRoot(), frameNumber, projectID))).start();				
@@ -1411,7 +1412,6 @@ public class AIMUtil
 	
 	public static int convertAllAim3() throws Exception {
 		List<EPADAIM> epadaims = EpadDatabase.getInstance().getEPADDatabaseOperations().getAIMs(new ProjectReference(null));
-		String adminSessionID = XNATSessionOperations.getXNATAdminSessionID();
 		int count = 0;
 		for (EPADAIM epadaim: epadaims)
 		{
@@ -1421,7 +1421,7 @@ public class AIMUtil
 				if (aims.size() > 0)
 				{
 					log.info("Saving AIM4:" + epadaim.aimID + " in project " + epadaim.projectID);
-					AIMUtil.saveImageAnnotationToServer(aims.get(0).toAimV4(), epadaim.projectID, 0, adminSessionID, false);
+					AIMUtil.saveImageAnnotationToServer(aims.get(0).toAimV4(), epadaim.projectID, 0, null, false);
 					count++;
 				}
 				else
@@ -1437,14 +1437,13 @@ public class AIMUtil
 	
 	public static void convertAim3(String aimID) throws Exception {
 		EPADAIM epadaim = EpadDatabase.getInstance().getEPADDatabaseOperations().getAIM(aimID);
-		String adminSessionID = XNATSessionOperations.getXNATAdminSessionID();
 		log.info("Converting AIM3:" + epadaim.aimID + " in project " + epadaim.projectID);
 		try {
 			List<ImageAnnotation> aims = AIMQueries.getAIMImageAnnotations(epadaim.projectID, AIMSearchType.ANNOTATION_UID, epadaim.aimID, "admin", 1, 50000, true);
 			if (aims.size() > 0)
 			{
 				log.info("Saving AIM4:" + epadaim.aimID + " in project " + epadaim.projectID);
-				AIMUtil.saveImageAnnotationToServer(aims.get(0).toAimV4(), epadaim.projectID, 0, adminSessionID, false);
+				AIMUtil.saveImageAnnotationToServer(aims.get(0).toAimV4(), epadaim.projectID, 0, null, false);
 			}
 			else
 			{

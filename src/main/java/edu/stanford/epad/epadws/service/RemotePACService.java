@@ -745,7 +745,7 @@ public class RemotePACService extends RemotePACSBase {
 		Set<String> removeAet = new HashSet<String>();
 		for (String aet: monitorTransfers.keySet()) 
 		{
-			log.info("Checking data transfer from " + aet);
+			//log.info("Checking data transfer from " + aet);
        		File xfrstart = new File(EPADConfig.dcm4cheeHome + "/" + aet + "_XfrStarted.log");
        		File xfrend = new File(EPADConfig.dcm4cheeHome + "/" + aet + "_XfrEnded.log");
        		try
