@@ -1336,6 +1336,7 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		log.info("Deleting project:" + projectID);
 		Project project = getProject(projectID);
 		new ProjectToUser().deleteObjects("project_id=" + project.getId());		
+		new EpadFile().deleteObjects("project_id=" + project.getId());
 		new ProjectToSubjectToUser().deleteObjects("proj_subj_id in (select id from " + new ProjectToSubject().returnDBTABLE() + " where project_id=" + project.getId() + ")");
 		new ProjectToSubjectToStudy().deleteObjects("proj_subj_id in (select id from " + new ProjectToSubject().returnDBTABLE() + " where project_id=" + project.getId() + ")");
 		new ProjectToSubject().deleteObjects("project_id=" + project.getId());
@@ -1384,6 +1385,11 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 	@Override
 	public void deleteSubject(String username, String subjectUID) throws Exception {
 		Subject subject = getSubject(subjectUID);
+		ProjectToSubject projSubj = (ProjectToSubject) new ProjectToSubject().getObject("subject_id =" + subject.getId() + " and subject_id=" + subject.getId());
+		new ProjectToSubjectToUser().deleteObjects("proj_subj_id =" + projSubj.getId());
+		new ProjectToSubjectToStudy().deleteObjects("proj_subj_id =" + projSubj.getId());
+		projSubj.delete();
+		new EpadFile().deleteObjects("subject_id=" + subject.getId());
 		subject.delete();
 	}
 
@@ -1393,6 +1399,9 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 	@Override
 	public void deleteStudy(String username, String studyUID) throws Exception {
 		Study study = getStudy(studyUID);
+		ProjectToSubjectToStudy projSubjStudy = (ProjectToSubjectToStudy) new ProjectToSubjectToStudy().getObject("study_id=" + study.getId());
+		projSubjStudy.delete();
+		new EpadFile().deleteObjects("study_id=" + study.getId());
 		study.delete();
 	}
 
