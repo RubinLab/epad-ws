@@ -226,7 +226,7 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 			List<String> addPermissions, List<String> removePermissions)
 			throws Exception {
 		User loggedInUser = getUser(loggedInUserName);
-		if (loggedInUser != null && !loggedInUser.isAdmin() && !loggedInUser.hasPermission(User.CreateUserPermission) && !loggedInUser.equals(username))
+		if (loggedInUser != null && !loggedInUser.isAdmin() && !loggedInUser.hasPermission(User.CreateUserPermission) && !loggedInUserName.equals(username))
 			throw new Exception("No permission to modify user");
 		User user = new User();
 		user = (User) user.getObject("username = " + user.toSQL(username));
