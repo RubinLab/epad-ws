@@ -1729,7 +1729,7 @@ public class EPADHandler extends AbstractHandler
 				log.debug("Created File:" + uploadedFile.getAbsolutePath());
 			if (len > 0 && (tempXMLFileName.endsWith(".xml") || tempXMLFileName.endsWith(".txt")))
 			{
-				log.info("PUT Data:" + readFile(uploadedFile));
+				log.debug("PUT Data:" + readFile(uploadedFile));
 			}
 //			if (fileType != null)
 //			{
