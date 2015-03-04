@@ -1714,7 +1714,7 @@ public class EPADHandler extends AbstractHandler
 				outputStream.write(buffer, 0, bytesRead);
 			}
 			
-			log.debug("Data received, len:" + len);
+			log.info("Data received, len:" + len);
 			outputStream.close();
 			inputStream.close();
 			if (len == 0)
@@ -1729,7 +1729,7 @@ public class EPADHandler extends AbstractHandler
 				log.debug("Created File:" + uploadedFile.getAbsolutePath());
 			if (len > 0 && (tempXMLFileName.endsWith(".xml") || tempXMLFileName.endsWith(".txt")))
 			{
-				log.debug("PUT Data:" + readFile(uploadedFile));
+				log.info("PUT Data:" + readFile(uploadedFile));
 			}
 //			if (fileType != null)
 //			{
