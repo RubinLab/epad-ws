@@ -9,6 +9,7 @@ import java.io.PrintWriter;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -963,11 +964,16 @@ public class EPADHandler extends AbstractHandler
 				if (studyIDFilter == null) studyIDFilter = "";
 				String studyDateFilter = httpRequest.getParameter("studyDateFilter");
 				if (studyDateFilter == null) studyDateFilter = "";
+				String[] tagGroup = httpRequest.getParameterValues("tagGroup");
+				String[] tagElement = httpRequest.getParameterValues("tagElement");
+				String[] tagValue = httpRequest.getParameterValues("tagValue");
 				boolean studiesOnly = !"true".equalsIgnoreCase(httpRequest.getParameter("series"));
 				RemotePAC pac = RemotePACService.getInstance().getRemotePAC(pacid);
 				if (pac != null)
 				{
-					List<RemotePACEntity> entities = RemotePACService.getInstance().queryRemoteData(pac, patientNameFilter, patientIDFilter, studyIDFilter, studyDateFilter, false, studiesOnly);
+					List<RemotePACEntity> entities = RemotePACService.getInstance().queryRemoteData(pac, patientNameFilter, patientIDFilter, 
+							studyIDFilter, studyDateFilter, 
+							tagGroup, tagElement, tagValue, false, studiesOnly);
 					RemotePACEntityList entityList = new RemotePACEntityList();
 					for (RemotePACEntity entity: entities)
 						entityList.addRemotePACEntity(entity);
@@ -1124,6 +1130,8 @@ public class EPADHandler extends AbstractHandler
 				} else {
 					statusCode = epadOperations.createProject(username, projectReference, projectName, projectDescription, sessionID);
 				}
+				project = epadOperations.getProjectDescription(projectReference, username, sessionID);
+				responseStream.append(project.toJSON());
 				if (uploadedFile != null && false) {
 					log.info("Saving uploaded file:" + uploadedFile.getName());
 					String description = httpRequest.getParameter("description");
@@ -1134,7 +1142,14 @@ public class EPADHandler extends AbstractHandler
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.SUBJECT, pathInfo)) {
 				SubjectReference subjectReference = SubjectReference.extract(ProjectsRouteTemplates.SUBJECT, pathInfo);
 				String subjectName = httpRequest.getParameter("subjectName");
-				statusCode = epadOperations.createSubject(username, subjectReference, subjectName, sessionID);
+				String gender = httpRequest.getParameter("gender");
+				String dob = httpRequest.getParameter("dob");
+				EPADSubject subject = epadOperations.getSubjectDescription(subjectReference, username, sessionID);
+				if (subject != null) {
+					statusCode = epadOperations.updateSubject(username, subjectReference, subjectName, getDate(dob), gender, sessionID);
+				} else {
+					statusCode = epadOperations.createSubject(username, subjectReference, subjectName, getDate(dob), gender, sessionID);
+				}
 				if (uploadedFile != null && false) {
 					String description = httpRequest.getParameter("description");
 					String fileType = httpRequest.getParameter("fileType");
@@ -1166,9 +1181,9 @@ public class EPADHandler extends AbstractHandler
 	
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.SERIES, pathInfo)) {
 				SeriesReference seriesReference = SeriesReference.extract(ProjectsRouteTemplates.SERIES, pathInfo);
-				statusCode = epadOperations.createSeries(seriesReference, sessionID);
+				String description = httpRequest.getParameter("description");
+				EPADSeries series  = epadOperations.createSeries(username, seriesReference, description, sessionID);
 				if (uploadedFile != null && false) {
-					String description = httpRequest.getParameter("description");
 					String fileType = httpRequest.getParameter("fileType");
 					statusCode = epadOperations.createFile(username, seriesReference, uploadedFile, description, fileType, sessionID);					
 				}
@@ -1482,20 +1497,28 @@ public class EPADHandler extends AbstractHandler
 					}
 		
 				} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.SERIES_FILE_LIST, pathInfo)) {
-					SeriesReference seriesReference = SeriesReference.extract(ProjectsRouteTemplates.SERIES, pathInfo);
+					SeriesReference seriesReference = SeriesReference.extract(ProjectsRouteTemplates.SERIES_FILE_LIST, pathInfo);
 					if (requestContentType == null || !requestContentType.startsWith("multipart/form-data"))
 						throw new Exception("Invalid Content Type, should be multipart/form-data");
 					if (numberOfFiles == 0)
 						throw new Exception("No files found in post");
+					boolean convertToDicom = "true".equalsIgnoreCase(httpRequest.getParameter("convertToDICOM"));
+					if (!convertToDicom) convertToDicom = "true".equalsIgnoreCase((String) paramData.get("convertToDICOM"));
+					String modality = httpRequest.getParameter("modality");
+					if (modality == null) modality = (String) paramData.get("modality");
 					if (numberOfFiles == 1) {
 						String description = httpRequest.getParameter("description");
 						if (description == null) description = (String) paramData.get("description");
 						String fileType = httpRequest.getParameter("fileType");
-						if (fileType == null) description = (String) paramData.get("fileType");
-						statusCode = epadOperations.createFile(username, seriesReference, uploadedFile, description, fileType, sessionID);					
+						if (fileType == null) fileType = (String) paramData.get("fileType");
+						String instanceNumber = httpRequest.getParameter("instanceNumber");
+						if (instanceNumber == null) instanceNumber = (String) paramData.get("instanceNumber");
+						if (instanceNumber == null) instanceNumber = "1";
+						statusCode = epadOperations.createFile(username, seriesReference, uploadedFile, description, fileType, sessionID, convertToDicom, modality, instanceNumber);					
 					} else {
 						List<String> descriptions = (List<String>) paramData.get("description_List");
 						List<String> fileTypes = (List<String>) paramData.get("fileType_List");
+						List<String> instanceNumbers = (List<String>) paramData.get("instanceNumber_List");
 						int i = 0;
 						for (String param: paramData.keySet())
 						{
@@ -1507,7 +1530,10 @@ public class EPADHandler extends AbstractHandler
 								String fileType = httpRequest.getParameter("fileType");
 								if (fileTypes != null && fileTypes.size() > i)
 										fileType = fileTypes.get(i);
-								statusCode = epadOperations.createFile(username, seriesReference, (File)paramData.get(param), description, fileType, sessionID);
+								String instanceNumber = "1";
+								if (instanceNumbers != null && instanceNumbers.size() > i)
+									instanceNumber = instanceNumbers.get(i);
+								statusCode = epadOperations.createFile(username, seriesReference, (File)paramData.get(param), description, fileType, sessionID, convertToDicom, modality, instanceNumber);
 								i++;
 							}
 						}
@@ -1541,6 +1567,17 @@ public class EPADHandler extends AbstractHandler
 					} else {
 						statusCode = epadOperations.createProject(username, projectReference, projectName, projectDescription, sessionID);
 					}							
+				} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.SUBJECT, pathInfo)) {
+					SubjectReference subjectReference = SubjectReference.extract(ProjectsRouteTemplates.SUBJECT, pathInfo);
+					String subjectName = httpRequest.getParameter("subjectName");
+					String gender = httpRequest.getParameter("gender");
+					String dob = httpRequest.getParameter("dob");
+					EPADSubject subject = epadOperations.getSubjectDescription(subjectReference, username, sessionID);
+					if (subject != null) {
+						throw new Exception("Subject " + subject.subjectID +  " already exists");
+					} else {
+						statusCode = epadOperations.createSubject(username, subjectReference, subjectName, getDate(dob), gender, sessionID);
+					}
 				
 				} else {
 					statusCode = HandlerUtil.badRequestJSONResponse(BAD_POST_MESSAGE + ":" + pathInfo, responseStream, log);
@@ -1709,7 +1746,7 @@ public class EPADHandler extends AbstractHandler
 				outputStream.write(buffer, 0, bytesRead);
 			}
 			
-			log.debug("Data received, len:" + len);
+			log.info("Data received, len:" + len);
 			outputStream.close();
 			inputStream.close();
 			if (len == 0)
@@ -1846,6 +1883,19 @@ public class EPADHandler extends AbstractHandler
 			return new Integer(value.trim()).intValue();
 		} catch (Exception x) {
 			return 0;
+		}
+	}
+	
+	SimpleDateFormat dateformat = new SimpleDateFormat("yyyyMMdd");
+	private Date getDate(String dateStr)
+	{
+		try
+		{
+			return dateformat.parse(dateStr);
+		}
+		catch (Exception x)
+		{
+			return null;
 		}
 	}
 

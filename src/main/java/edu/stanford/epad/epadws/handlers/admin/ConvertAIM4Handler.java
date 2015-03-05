@@ -44,9 +44,15 @@ public class ConvertAIM4Handler extends AbstractHandler
 				String method = httpRequest.getMethod();
 				if ("GET".equalsIgnoreCase(method)) {
 					try {
-						int results = AIMUtil.convertAllAim3();
-						log.info("Converted " + results + " Annotations to AIM4 format");
-						responseStream.write("Converted " + results + " Annotations to AIM4 format");
+						String aimID = request.getParameter("aimID");
+						if (aimID == null || aimID.trim().length() == 0)
+						{
+							int results = AIMUtil.convertAllAim3();
+							log.info("Converted " + results + " Annotations to AIM4 format");
+							responseStream.write("Converted " + results + " Annotations to AIM4 format");
+						}
+						else
+							AIMUtil.convertAim3(aimID);
 						statusCode = HttpServletResponse.SC_OK;
 					} catch (IOException e) {
 						statusCode = HandlerUtil.internalErrorResponse(INTERNAL_IO_ERROR_MESSAGE, e, responseStream, log);

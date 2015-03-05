@@ -80,10 +80,10 @@ public class Dcm4CheeOperations
 			if (cmdLineOutput.toLowerCase().contains("error"))
 				throw new IllegalStateException("Failed for: " + parseError(cmdLineOutput));
 		} catch (Exception e) {
+			log.warning("DicomSendTask failed to send DICOM files: " + e.getMessage());
 			if (e instanceof IllegalStateException && throwException) {
 				throw e;
 			}
-			log.warning("DicomSendTask failed to send DICOM files: " + e.getMessage());
 			if (throwException) {
 				throw new IllegalStateException("DicomSendTask failed to send DICOM files", e);
 			}

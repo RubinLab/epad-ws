@@ -187,7 +187,10 @@ public class UserProjectService {
 	public static String getFirstProjectForStudy(String studyUID) throws Exception {
 		if (EPADConfig.UseEPADUsersProjects) {
 			Project project = projectOperations.getFirstProjectForStudy(studyUID);
-			return project.getProjectId();
+			if (project != null)
+				return project.getProjectId();
+			else
+				return EPADConfig.xnatUploadProjectID;
 		} else {
 			String adminSessionID = XNATSessionOperations.getXNATAdminSessionID();
 			return XNATQueries.getFirstProjectForStudy(adminSessionID, studyUID);	
@@ -317,8 +320,9 @@ public class UserProjectService {
 			return;
 		}
 		pendingUploads.put(seriesUID, username + ":" + projectID);
-		if (dicomPatientID != null && dicomPatientName != null && studyUID != null) {
+		if (dicomPatientID != null && studyUID != null) {
 			databaseOperations.deleteSeriesOnly(seriesUID); // This will recreate all images
+			if (dicomPatientName == null) dicomPatientName = "";
 			dicomPatientName = dicomPatientName.toUpperCase(); // DCM4CHEE stores the patient name as upper case
 			
 			addSubjectAndStudyToProject(dicomPatientID, dicomPatientName, studyUID, projectID, sessionID, username);
@@ -332,10 +336,21 @@ public class UserProjectService {
 						AIMUtil.generateAIMFileForDSO(dicomFile, username, projectID);
 				} catch (Exception x) {
 					log.warning("Error generating DSO Annotation:", x);
+					databaseOperations.insertEpadEvent(
+							username, 
+							"Error generating DSO Annotation", 
+							"", "", "", "", "", "", "Upload " + dicomFile.getName());					
+					projectOperations.userErrorLog(username, "Error generating DSO Annotation");
 				}
 			}
-		} else
-			log.warning("Missing patient name, ID or studyUID in DICOM file " + dicomFile.getAbsolutePath());
+		} else {
+			log.warning("Missing patient ID or studyUID in DICOM file " + dicomFile.getAbsolutePath());
+			databaseOperations.insertEpadEvent(
+					username, 
+					"Missing patient ID or studyUID in DICOM file", 
+					"", "", "", "", "", "", "Process Upload");					
+			projectOperations.userErrorLog(username, "Missing patient ID or studyUID in DICOM file " + dicomFile.getName());
+		}
 	}
 
 	/**

@@ -1,16 +1,3 @@
-DROP TABLE if exists epad_file;
-DROP TABLE if exists remote_pac_query;
-DROP TABLE if exists project_subject_user;
-DROP TABLE if exists project_subject_study;
-DROP TABLE if exists project_subject;
-DROP TABLE if exists project_user;
-DROP TABLE if exists study;
-DROP TABLE if exists project;
-DROP TABLE if exists user;
-DROP TABLE if exists subject;
-
-DROP TABLE if exists users;
-
 CREATE TABLE project (id integer unsigned NOT NULL AUTO_INCREMENT,
 name varchar(128),
 projectid varchar(128),

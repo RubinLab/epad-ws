@@ -2,6 +2,7 @@ package edu.stanford.epad.epadws.queries;
 
 import java.io.File;
 import java.util.Collection;
+import java.util.Date;
 import java.util.List;
 import java.util.Set;
 
@@ -84,9 +85,11 @@ public interface EpadOperations
 
 	int updateProject(String username, ProjectReference projectReference, String projectName, String projectDescription, String sessionID) throws Exception;
 
-	int createSubject(String username, SubjectReference subjectRefernece, String subjectName, String sessionID) throws Exception;
+	int createSubject(String username, SubjectReference subjectRefernece, String subjectName, Date dob, String gender, String sessionID) throws Exception;
 
 	int createStudy(String username, StudyReference studyReference, String sessionID) throws Exception;
+
+	int updateSubject(String username, SubjectReference subjectRefernece, String subjectName, Date dob, String gender, String sessionID) throws Exception;
 
 	int createFile(String username, ProjectReference projectReference, File uploadedFile, String description, String fileType, String sessionID) throws Exception;
 
@@ -95,6 +98,8 @@ public interface EpadOperations
 	int createFile(String username, StudyReference studyReference, File uploadedFile, String description, String fileType, String sessionID) throws Exception;
 
 	int createFile(String username, SeriesReference seriesReference, File uploadedFile, String description, String fileType, String sessionID) throws Exception;
+
+	int createFile(String username, SeriesReference seriesReference, File uploadedFile, String description, String fileType, String sessionID, boolean convertToDICOM, String modality, String instanceNumber) throws Exception;
 
 	int createFile(String username, ImageReference imageReference, File uploadedFile, String description, String fileType, String sessionID) throws Exception;
 
@@ -128,7 +133,7 @@ public interface EpadOperations
 	
 	String createStudyAIM(String username, StudyReference studyReference, String aimID, File aimFile, String sessionID);
 
-	int createSeries(SeriesReference seriesReference, String sessionID);
+	EPADSeries createSeries(String username, SeriesReference seriesReference, String description, String sessionID) throws Exception;
 
 	String createProjectAIM(String username, ProjectReference projectReference, String aimID, File aimFile, String sessionID);
 
@@ -156,6 +161,8 @@ public interface EpadOperations
 	String studyDelete(StudyReference studyReference, String sessionID, boolean deleteAims, String username) throws Exception;
 
 	String seriesDelete(SeriesReference seriesReference, String sessionID, boolean deleteAims, String username);
+	
+	String deleteSeries(SeriesReference seriesReference, boolean deleteAims);
 
 	int projectAIMDelete(ProjectReference projectReference, String aimID, String sessionID, boolean deleteDSO, String username) throws Exception;
 

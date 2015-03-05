@@ -2,7 +2,10 @@ package edu.stanford.epad.epadws.aim;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.text.SimpleDateFormat;
@@ -30,6 +33,7 @@ import org.apache.commons.fileupload.FileItem;
 import org.apache.commons.fileupload.FileUploadException;
 import org.apache.commons.fileupload.disk.DiskFileItemFactory;
 import org.apache.commons.fileupload.servlet.ServletFileUpload;
+import org.apache.commons.io.IOUtils;
 import org.json.JSONObject;
 import org.json.XML;
 import org.w3c.dom.Document;
@@ -74,7 +78,6 @@ import edu.stanford.epad.epadws.queries.DefaultEpadOperations;
 import edu.stanford.epad.epadws.queries.EpadOperations;
 import edu.stanford.epad.epadws.service.SessionService;
 import edu.stanford.epad.epadws.service.UserProjectService;
-import edu.stanford.epad.epadws.xnat.XNATSessionOperations;
 import edu.stanford.hakan.aim3api.base.AimException;
 import edu.stanford.hakan.aim3api.base.DICOMImageReference;
 import edu.stanford.hakan.aim3api.base.ImageAnnotation;
@@ -154,7 +157,8 @@ public class AIMUtil
 						collectionName, xsdFilePathV4, eXistUsername, eXistPassword);
 				result = edu.stanford.hakan.aim4api.usage.AnnotationBuilder.getAimXMLsaveResult();
 				try {
-					saveAimToMongo(aim4, projectID);
+					if (projectID != null && projectID.length() > 0)
+						saveAimToMongo(aim4, projectID);
 				} catch (Exception e) {
 					log.warning("Error saving aim to mongodb", e);
 				}
@@ -250,7 +254,8 @@ public class AIMUtil
 		
 		    log.info(result);
 			try {
-				saveAimToMongo(aim, projectID);
+				if (projectID != null && projectID.length() > 0)
+					saveAimToMongo(aim, projectID);
 			} catch (Exception e) {
 				log.warning("Error saving aim to mongodb", e);
 			}
@@ -272,7 +277,7 @@ public class AIMUtil
 		            }
 		        }
 		
-		        if (templateHasBeenFound) {
+		        if (templateHasBeenFound && jsessionID != null) {
 		        	// Start plugin task
 					log.info("Starting Plugin task for:" + pluginName);
 					(new Thread(new PluginStartTask(jsessionID, pluginName, aim.getUniqueIdentifier().getRoot(), frameNumber, projectID))).start();				
@@ -663,6 +668,9 @@ public class AIMUtil
 					EPADAIM ea = epadDatabaseOperations.getAIM(imageAnnotationColl.getUniqueIdentifier().getRoot());
 					if (ea != null && !ea.projectID.equals(projectID))
 						projectID = ea.projectID; 		// TODO: Do we change AIM project if it is in unassigned? 
+					String xml = edu.stanford.hakan.aim4api.usage.AnnotationBuilder.convertToString(imageAnnotationColl);
+					if (xml == null || xml.trim().length() < 100)
+						throw new Exception("Error converting ImageAnnotationCollection to String");
 					Aim4 aim = new Aim4(imageAnnotationColl);
 					String patientID = aim.getPatientID();
 					String imageID = aim.getFirstImageID();
@@ -674,8 +682,7 @@ public class AIMUtil
 					if (result.toLowerCase().contains("success") && projectID != null && username != null)
 					{
 						FrameReference frameReference = new FrameReference(projectID, patientID, studyID, seriesID, imageID, new Integer(frameNumber));
-						epadDatabaseOperations.addAIM(username, frameReference, imageAnnotationColl.getUniqueIdentifier().getRoot(),
-								edu.stanford.hakan.aim4api.usage.AnnotationBuilder.convertToString(imageAnnotationColl));
+						epadDatabaseOperations.addAIM(username, frameReference, imageAnnotationColl.getUniqueIdentifier().getRoot(), xml);
 					}
 					return false;
 	            } 
@@ -1405,10 +1412,8 @@ public class AIMUtil
 		return projectAIMsMap;
 	}
 	
-
 	public static int convertAllAim3() throws Exception {
 		List<EPADAIM> epadaims = EpadDatabase.getInstance().getEPADDatabaseOperations().getAIMs(new ProjectReference(null));
-		String adminSessionID = XNATSessionOperations.getXNATAdminSessionID();
 		int count = 0;
 		for (EPADAIM epadaim: epadaims)
 		{
@@ -1418,7 +1423,7 @@ public class AIMUtil
 				if (aims.size() > 0)
 				{
 					log.info("Saving AIM4:" + epadaim.aimID + " in project " + epadaim.projectID);
-					AIMUtil.saveImageAnnotationToServer(aims.get(0).toAimV4(), epadaim.projectID, 0, adminSessionID, false);
+					AIMUtil.saveImageAnnotationToServer(aims.get(0).toAimV4(), epadaim.projectID, 0, null, false);
 					count++;
 				}
 				else
@@ -1430,6 +1435,29 @@ public class AIMUtil
 			}
 		}
 		return count;
+	}
+	
+	public static void convertAim3(String aimID) throws Exception {
+		EPADAIM epadaim = EpadDatabase.getInstance().getEPADDatabaseOperations().getAIM(aimID);
+		log.info("Converting AIM3:" + epadaim.aimID + " in project " + epadaim.projectID);
+		try {
+			List<ImageAnnotation> aims = AIMQueries.getAIMImageAnnotations(epadaim.projectID, AIMSearchType.ANNOTATION_UID, epadaim.aimID, "admin", 1, 50000, true);
+			if (aims.size() > 0)
+			{
+				log.info("Saving AIM4:" + epadaim.aimID + " in project " + epadaim.projectID);
+				AIMUtil.saveImageAnnotationToServer(aims.get(0).toAimV4(), epadaim.projectID, 0, null, false);
+			}
+			else
+			{
+				log.warning("Error converting aim3:" + epadaim.aimID + ", not found");
+				throw new Exception("Error converting aim3:" + epadaim.aimID + ", not found");
+			}
+			
+		}
+		catch (Exception x) {
+			log.warning("Error converting aim3:" + epadaim.aimID, x);
+			throw x;
+		}
 	}
 	
 	public static void updateTableXMLs(List<EPADAIM> aims)
@@ -1541,6 +1569,44 @@ public class AIMUtil
         	log.warning("Error converting aim to json", e);
 			return null;
 		}	
+	}
+	
+	static final String[] SCHEMA_FILES = {
+		"AIMTemplate_v2rv13.xsd",
+		"AIM_v3.xsd",
+		"AimXPath.xml",
+		"AIMTemplate_v2rvStanford.xsd",
+		"AIM_v4_rv44_XML.xsd",
+		"ISO_datatypes_Narrative.xsd"		
+	};
+	
+	public static void checkSchemaFiles()
+	{
+		for (String schemaFile: SCHEMA_FILES)
+		{
+			File file = new File(EPADConfig.getEPADWebServerSchemaDir() + schemaFile);
+			if (!file.exists()) {
+				InputStream in = null;
+				OutputStream out = null;
+				try {
+					in = new AIMUtil().getClass().getClassLoader().getResourceAsStream("schema/" + schemaFile);
+		            out = new FileOutputStream(file);
+
+		            // Transfer bytes from in to out
+		            byte[] buf = new byte[1024];
+		            int len;
+		            while ((len = in.read(buf)) > 0)
+		            {
+		                    out.write(buf, 0, len);
+		            }
+				} catch (Exception x) {
+					
+				} finally {
+		            IOUtils.closeQuietly(in);
+		            IOUtils.closeQuietly(out);
+				}
+			}
+		}
 	}
 	
 	private static int getInt(String value)

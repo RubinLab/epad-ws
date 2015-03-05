@@ -56,6 +56,9 @@ public class RemotePACQueryTask implements Runnable
 		else
 		{
 			 // Get/Process All enabled PAC queries
+			Calendar cal = Calendar.getInstance();
+			int dayOfWeek = cal.get(Calendar.DAY_OF_WEEK);
+			int dayOfWeekInMonth = cal.get(Calendar.DAY_OF_WEEK_IN_MONTH);
 			List objects;
 			try {
 				objects = new RemotePACQuery().getObjects("enabled = 1");
@@ -63,7 +66,13 @@ public class RemotePACQueryTask implements Runnable
 				log.warning("Error getting query list from database", e);
 				return;
 			}
-			queries.addAll(objects);
+			for (Object object: objects)
+			{
+				RemotePACQuery query = (RemotePACQuery) object;
+				if ("weekly".equalsIgnoreCase(query.getPeriod()) && dayOfWeek != Calendar.SUNDAY) continue;
+				if ("monthly".equalsIgnoreCase(query.getPeriod()) && dayOfWeek != Calendar.SUNDAY && dayOfWeekInMonth != 1) continue;
+				queries.add(query);
+			}
 		}
 		for (RemotePACQuery query: queries)
 		{

@@ -29,6 +29,7 @@ import edu.stanford.epad.common.plugins.PluginHandlerMap;
 import edu.stanford.epad.common.plugins.PluginServletHandler;
 import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADLogger;
+import edu.stanford.epad.epadws.aim.AIMUtil;
 import edu.stanford.epad.epadws.epaddb.EpadDatabase;
 import edu.stanford.epad.epadws.epaddb.EpadDatabaseOperations;
 import edu.stanford.epad.epadws.handlers.admin.ConvertAIM4Handler;
@@ -46,9 +47,11 @@ import edu.stanford.epad.epadws.handlers.event.EventHandler;
 import edu.stanford.epad.epadws.handlers.event.ProjectEventHandler;
 import edu.stanford.epad.epadws.handlers.plugin.EPadPluginHandler;
 import edu.stanford.epad.epadws.handlers.session.EPADSessionHandler;
+import edu.stanford.epad.epadws.models.User;
 import edu.stanford.epad.epadws.processing.pipeline.threads.ShutdownHookThread;
 import edu.stanford.epad.epadws.processing.pipeline.threads.ShutdownSignal;
 import edu.stanford.epad.epadws.processing.pipeline.watcher.QueueAndWatcherManager;
+import edu.stanford.epad.epadws.service.DefaultEpadProjectOperations;
 import edu.stanford.epad.epadws.service.RemotePACService;
 import edu.stanford.epad.epadws.service.UserProjectService;
 
@@ -65,6 +68,9 @@ public class Main
 {
 	private static final EPADLogger log = EPADLogger.getInstance();
 
+	public static final String epad_version = "1.4.1";
+	public static final String db_version = "1.41";
+	
 	public static void main(String[] args)
 	{
 		ShutdownSignal shutdownSignal = ShutdownSignal.getInstance();
@@ -148,14 +154,14 @@ public class Main
 
 		try {
 			QueueAndWatcherManager.getInstance().buildAndStart();
-			EpadDatabase.getInstance().startup("1.4");
+			EpadDatabase.getInstance().startup(db_version);
 			log.info("Startup of database was successful");
 			EpadDatabaseOperations databaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
 			//log.info("Checking annotations table");
 			databaseOperations.checkAndRefreshAnnotationsTable();
 			log.info("Done with database/queues init");
-			Set<String> projectIds = UserProjectService.getAllProjectIDs();
-			if (EPADConfig.UseEPADUsersProjects && projectIds.size() <= 1) {
+			List<User> users = DefaultEpadProjectOperations.getInstance().getAllUsers();
+			if (EPADConfig.UseEPADUsersProjects && users.size() <= 1) {
 				// Sync XNAT to Epad if needed
 				try {
 					XNATSyncHandler.syncXNATtoEpad("admin", "");
@@ -165,6 +171,7 @@ public class Main
 				}
 			}
 			RemotePACService.checkPropertiesFile();
+			AIMUtil.checkSchemaFiles();
 		} catch (Exception e) {
 			log.warning("Failed to start database", e);
 			System.exit(1);

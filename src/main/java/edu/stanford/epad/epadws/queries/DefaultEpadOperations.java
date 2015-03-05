@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -18,7 +19,9 @@ import java.util.Set;
 
 import javax.servlet.http.HttpServletResponse;
 
+import com.pixelmed.dicom.ImageToDicom;
 import com.pixelmed.dicom.SOPClass;
+import com.pixelmed.dicom.UIDGenerator;
 
 import edu.stanford.epad.common.dicom.DCM4CHEEImageDescription;
 import edu.stanford.epad.common.dicom.DCM4CHEEUtil;
@@ -83,6 +86,7 @@ import edu.stanford.epad.epadws.handlers.core.SubjectReference;
 import edu.stanford.epad.epadws.handlers.dicom.DSOUtil;
 import edu.stanford.epad.epadws.models.EpadFile;
 import edu.stanford.epad.epadws.models.FileType;
+import edu.stanford.epad.epadws.models.NonDicomSeries;
 import edu.stanford.epad.epadws.models.Project;
 import edu.stanford.epad.epadws.models.ProjectType;
 import edu.stanford.epad.epadws.models.Study;
@@ -425,6 +429,18 @@ public class DefaultEpadOperations implements EpadOperations
 			}
 			
 		}
+		try {
+			List<NonDicomSeries> ndSerieses = projectOperations.getNonDicomSeriesForStudy(studyReference.studyUID);
+			for (NonDicomSeries ndSeries: ndSerieses) {
+				epadSeriesList.addEPADSeries(new EPADSeries(studyReference.projectID, studyReference.subjectID, "", studyReference.studyUID, 
+						ndSeries.getSeriesUID(), 
+						dateformat.format(ndSeries.getSeriesDate()), 
+						ndSeries.getDescription(), 
+						"", "", "", 0, 0, 0, "","","",null,"","", false));
+			}
+		} catch (Exception e) {
+			log.warning("Error getting non-dicom series", e);
+		}
 		return epadSeriesList;
 	}
 
@@ -507,10 +523,22 @@ public class DefaultEpadOperations implements EpadOperations
 
 				if (!referencedSeriesUID.equals("")) {
 					boolean isFirst = true;
+					List<DCM4CHEEImageDescription> referencedImages = new ArrayList<DCM4CHEEImageDescription>();
+					int instanceOffset = referencedSOPInstanceUIDDICOMElements.size();
 					for (DICOMElement dicomElement : referencedSOPInstanceUIDDICOMElements) {
 						String referencedImageUID = dicomElement.value;
 						DCM4CHEEImageDescription dcm4cheeReferencedImageDescription = dcm4CheeDatabaseOperations
 								.getImageDescription(studyUID, referencedSeriesUID, referencedImageUID);
+						referencedImages.add(dcm4cheeReferencedImageDescription);
+						if (dcm4cheeReferencedImageDescription != null && dcm4cheeReferencedImageDescription.instanceNumber < instanceOffset)
+							instanceOffset = dcm4cheeReferencedImageDescription.instanceNumber;
+					}
+					if (instanceOffset == 0) instanceOffset = 1;
+					int index = 0;
+					for (DICOMElement dicomElement : referencedSOPInstanceUIDDICOMElements) {
+						String referencedImageUID = dicomElement.value;
+						DCM4CHEEImageDescription dcm4cheeReferencedImageDescription = referencedImages.get(index);
+						index++;
 						if (dcm4cheeReferencedImageDescription == null)
 						{
 							// Note: These referenced images that are not found probably are extra images referenced in the DICOM. 
@@ -522,7 +550,7 @@ public class DefaultEpadOperations implements EpadOperations
 						String insertDate = dcm4cheeReferencedImageDescription.createdTime;
 						String imageDate = dcm4cheeReferencedImageDescription.contentTime;
 						String sliceLocation = dcm4cheeReferencedImageDescription.sliceLocation;
-						int frameNumber = dcm4cheeReferencedImageDescription.instanceNumber - 1; // Frames 0-based, instances 1
+						int frameNumber = dcm4cheeReferencedImageDescription.instanceNumber - instanceOffset; // Frames 0-based, instances 1 or more
 						String losslessImage = getPNGMaskPath(studyUID, imageReference.seriesUID, imageReference.imageUID,
 								frameNumber);
 						String lossyImage = ""; // We do not have a lossy image for the DSO frame
@@ -616,10 +644,21 @@ public class DefaultEpadOperations implements EpadOperations
 		}
 	}
 
+	SimpleDateFormat dateformat = new SimpleDateFormat("yyyyMMdd");
 	@Override
-	public int createSeries(SeriesReference seriesReference, String sessionID)
+	public EPADSeries createSeries(String username, SeriesReference seriesReference, String description, String sessionID) throws Exception
 	{
-		return HttpServletResponse.SC_NOT_IMPLEMENTED; // TODO
+		log.info("Creating new series:" + seriesReference.seriesUID);
+		String seriesUID = seriesReference.seriesUID;
+		if (seriesUID.equalsIgnoreCase("new"))
+		{
+			UIDGenerator u = new UIDGenerator();
+			seriesUID = u.getNewUID();
+		}
+		NonDicomSeries series = projectOperations.createNonDicomSeries(username, seriesUID, seriesReference.studyUID, description, new Date());
+		projectOperations.addStudyToProject(username, seriesReference.studyUID, seriesReference.subjectID, seriesReference.projectID);
+		return new EPADSeries(seriesReference.projectID, seriesReference.subjectID, "", seriesReference.studyUID, seriesUID,
+				dateformat.format(new Date()), description, "", "", "", 0, 0, 0, "","","",null,"","", false);
 	}
 
 	@Override
@@ -644,7 +683,7 @@ public class DefaultEpadOperations implements EpadOperations
 		return deleteSeries(seriesReference, deleteAims);
 	}
 	
-	private String deleteSeries(SeriesReference seriesReference, boolean deleteAims)
+	public String deleteSeries(SeriesReference seriesReference, boolean deleteAims)
 	{
 		String seriesPk = null;
 		List<Map<String, String>> seriesList = dcm4CheeDatabaseOperations.getAllSeriesInStudy(seriesReference.studyUID);
@@ -865,7 +904,7 @@ public class DefaultEpadOperations implements EpadOperations
 	}
 
 	@Override
-	public int createSubject(String username, SubjectReference subjectReference, String subjectName, String sessionID) throws Exception
+	public int createSubject(String username, SubjectReference subjectReference, String subjectName, Date dob, String gender, String sessionID) throws Exception
 	{
 		if (!EPADConfig.UseEPADUsersProjects) {
 			return XNATCreationOperations.createXNATSubject(subjectReference.projectID, subjectReference.subjectID,
@@ -878,6 +917,17 @@ public class DefaultEpadOperations implements EpadOperations
 				projectOperations.addSubjectToProject(username, subjectReference.subjectID, subjectReference.projectID);
 			return HttpServletResponse.SC_OK;
 		}
+	}
+
+	@Override
+	public int updateSubject(String username,
+			SubjectReference subjectReference, String subjectName, Date dob,
+			String gender, String sessionID) throws Exception {
+		Subject subject = projectOperations.getSubject(subjectReference.subjectID);
+		if (subject == null)
+			throw new Exception("Subject " + subjectReference.subjectID + " not found");
+		projectOperations.createSubject(username, subjectReference.subjectID, subjectName, dob, gender);
+		return HttpServletResponse.SC_OK;
 	}
 
 	@Override
@@ -1032,17 +1082,47 @@ public class DefaultEpadOperations implements EpadOperations
 
 	@Override
 	public int createFile(String username, SeriesReference seriesReference,
-			File uploadedFile, String description, String fileType, String sessionID)
-			throws Exception {
+			File uploadedFile, String description, String fileType, String sessionID) throws Exception {
+		return createFile(username, seriesReference, uploadedFile, description, fileType, sessionID, 
+							false, null, null);
+	}
+
+	@Override
+	public int createFile(String username, SeriesReference seriesReference,
+			File uploadedFile, String description, String fileType, String sessionID, 
+			boolean convertToDICOM, String modality, String instanceNumber) throws Exception {
 		if (fileType != null && fileType.equalsIgnoreCase(FileType.ANNOTATION.getName())) {
 			if (AIMUtil.saveAIMAnnotation(uploadedFile, seriesReference.projectID, sessionID, username))
 				throw new Exception("Error saving AIM file");
 		}
 		else {
-			createFile(username, seriesReference.projectID, seriesReference.subjectID, seriesReference.studyUID, seriesReference.seriesUID,
+			if (convertToDICOM) {
+				Subject subject = projectOperations.getSubject(seriesReference.subjectID);
+				String patientName = "";
+				if (subject != null)
+					patientName = subject.getName();
+				// TODO: use modality
+				File dicomFile = new File(replaceExtension(uploadedFile.getAbsolutePath(), "dcm"));
+				new ImageToDicom(uploadedFile.getAbsolutePath(), dicomFile.getAbsolutePath(), patientName, 
+						seriesReference.seriesUID, 
+						seriesReference.studyUID, 
+						seriesReference.seriesUID, instanceNumber);
+				uploadedFile.delete();
+				createImage(username, seriesReference.projectID, dicomFile, sessionID);
+			} else {
+				createFile(username, seriesReference.projectID, seriesReference.subjectID, seriesReference.studyUID, seriesReference.seriesUID,
 						uploadedFile, description, fileType, sessionID);
+			}
 		}
 		return HttpServletResponse.SC_OK;
+	}
+
+	private String replaceExtension(String filePath, String newExt) {
+		int dot = filePath.lastIndexOf(".");
+		if (dot != -1)
+			filePath = filePath.substring(0, dot);
+		filePath = filePath + "." + newExt;
+		return filePath;
 	}
 
 	@Override
@@ -2526,7 +2606,7 @@ public class DefaultEpadOperations implements EpadOperations
 			String[] addPermissions, String[] removePermissions) throws Exception {
 		User user = projectOperations.getUser(username);
 		if (!projectOperations.getUser(loggedInUser).isAdmin() && (user == null || !loggedInUser.equals(username)))
-			throw new Exception("User " + username + " does not have privilege to create/modify users");
+			throw new Exception("User " + loggedInUser + " does not have privilege to create/modify users");
 
 		List<String> addPerms = new ArrayList<String>();
 		List<String> removePerms = new ArrayList<String>();

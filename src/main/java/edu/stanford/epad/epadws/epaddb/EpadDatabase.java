@@ -10,9 +10,6 @@ import java.sql.Statement;
 import java.text.DecimalFormat;
 import java.util.concurrent.atomic.AtomicReference;
 
-import com.mongodb.DB;
-import com.mongodb.MongoClient;
-
 import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADLogger;
 
