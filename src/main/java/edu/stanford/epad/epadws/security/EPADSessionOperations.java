@@ -105,6 +105,7 @@ public class EPADSessionOperations
 			if (username != null && password == null && httpRequest.getParameter("adminuser") != null) {
 				session = EPADSessionOperations.createProxySession(username, httpRequest.getParameter("adminuser"), httpRequest.getParameter("adminpassword"));				
 			} else  if (username == null && httpRequest.getAuthType().equals("WebAuth") && httpRequest.getRemoteUser() != null) {
+				if (password != null && password.equals(EPADConfig.webAuthPassword))
 					session = EPADSessionOperations.createPreAuthenticatedSession(httpRequest.getRemoteUser());				
 				} else {
 				session = EPADSessionOperations.createNewEPADSession(username, password);
@@ -225,7 +226,16 @@ public class EPADSessionOperations
 			throw new Exception("User " + username + " not found");
 		if (!user.isEnabled())
 			throw new Exception("User " + username + " is disabled");
+		String webAuthPassword = EPADConfig.webAuthPassword;
 		if (user.getPassword().length() >= 60 && BCrypt.checkpw(password, user.getPassword()))
+		{
+			String sessionId = idGenerator.generateId(16);
+			EPADSession session = new EPADSession(sessionId, username, SESSION_LIFESPAN);
+			currentSessions.put(sessionId, session);
+			return session;
+		}
+		else if (webAuthPassword != null && webAuthPassword.length() > 0 
+				&& user.getPassword().length() >= 60 && BCrypt.checkpw(password, webAuthPassword))
 		{
 			String sessionId = idGenerator.generateId(16);
 			EPADSession session = new EPADSession(sessionId, username, SESSION_LIFESPAN);

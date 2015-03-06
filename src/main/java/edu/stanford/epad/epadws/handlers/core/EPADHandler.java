@@ -1285,9 +1285,7 @@ public class EPADHandler extends AbstractHandler
 					subjectName = httpRequest.getParameter("patientName");
 				String modality = httpRequest.getParameter("modality");
 				String studyDate = httpRequest.getParameter("studyDate");
-				boolean weekly = false;
-				if ("weekly".equalsIgnoreCase(httpRequest.getParameter("period")))
-					weekly = true;
+				String period = httpRequest.getParameter("period");
 				String enable = httpRequest.getParameter("enable");
 				if (enable != null)
 				{
@@ -1305,7 +1303,7 @@ public class EPADHandler extends AbstractHandler
 				}
 				else
 				{
-					RemotePACService.getInstance().createRemotePACQuery(username, pacID, subjectUID, subjectName, modality, studyDate, weekly, projectID);
+					RemotePACService.getInstance().createRemotePACQuery(username, pacID, subjectUID, subjectName, modality, studyDate, period, projectID);
 				}
 				statusCode = HttpServletResponse.SC_OK;
 				

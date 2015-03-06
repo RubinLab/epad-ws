@@ -248,12 +248,12 @@ public class RemotePACService extends RemotePACSBase {
 	 * @param patientName
 	 * @param modality
 	 * @param studyDate
-	 * @param weekly
+	 * @param period
 	 * @param projectID
 	 * @return
 	 * @throws Exception
 	 */
-	public RemotePACQuery createRemotePACQuery(String username, String pacID, String subjectUID, String patientName, String modality, String studyDate, boolean weekly, String projectID) throws Exception {
+	public RemotePACQuery createRemotePACQuery(String username, String pacID, String subjectUID, String patientName, String modality, String studyDate, String period, String projectID) throws Exception {
 		User user = DefaultEpadProjectOperations.getInstance().getUser(username);
 		if (!user.isAdmin() && !user.hasPermission(User.CreateAutoPACQueryPermission))
 			throw new Exception("No permission to create PAC Patient Query configuration");
@@ -315,10 +315,13 @@ public class RemotePACService extends RemotePACSBase {
 		{
 			query.setLastStudyDate(studyDate);
 		}
-		if (weekly)
+		if ("Weekly".equalsIgnoreCase(period))
 			query.setPeriod("Weekly");
+		else if ("Monthly".equalsIgnoreCase(period))
+			query.setPeriod("Monthly");
 		else
 			query.setPeriod("Daily");
+		log.info("Saving pac query:" + pacID + " patient:" + subject.getSubjectUID() + " Modality:" + modality + " Period:" + query.getPeriod() + " Date:" + studyDate);
 		query.save();
 		return query;
 	}
