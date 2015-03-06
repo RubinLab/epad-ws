@@ -199,7 +199,17 @@ public class RemotePACService extends RemotePACSBase {
 			throw new Exception("Periodic queries have been configured for PAC:" + pac.pacID + ", it can not be deleted");
 		}
 		if (pac.hostname.equalsIgnoreCase(EPADConfig.xnatServer))
-			throw new Exception("Local PAC can not be deleted");
+		{
+			List<RemotePAC> pacs = getRemotePACs();
+			int count = 0;
+			for (RemotePAC p: pacs)
+			{
+				if (p.hostname.equalsIgnoreCase(EPADConfig.xnatServer))
+					count++;
+			}
+			if (count <= 1)
+				throw new Exception("Local PAC can not be deleted");
+		}
 		removeRemotePAC(pac.pacID);
 		this.storeProperties(pac.pacID + " deleted by EPAD " + new Date());
 	}
