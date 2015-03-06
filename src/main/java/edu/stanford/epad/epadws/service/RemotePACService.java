@@ -279,6 +279,10 @@ public class RemotePACService extends RemotePACSBase {
 		RemotePAC pac = this.getRemotePAC(pacID);
 		if (pac == null)
 			throw new Exception("Remote PAC " + pacID + " not found");
+		if (pac.hostname.equalsIgnoreCase(EPADConfig.xnatServer) && pac.port == 11112)
+		{
+			throw new Exception("This is the local PAC, image data can not transferred from it");
+		}
 		Subject subject = DefaultEpadProjectOperations.getInstance().getSubject(subjectUID);
 		if (subject == null)
 		{
@@ -652,6 +656,10 @@ public class RemotePACService extends RemotePACSBase {
 	 * @throws Exception
 	 */
 	public synchronized String retrieveRemoteData(RemotePAC pac, String entityID, String projectID, String userName, String sessionID) throws Exception {
+		if (pac.hostname.equalsIgnoreCase(EPADConfig.xnatServer) && pac.port == 11112)
+		{
+			throw new Exception("This is the local PAC, image data can not transferred from it");
+		}
 		String uniqueKey = entityID;
 		String root = uniqueKey;
 		if (root.indexOf(":") != -1)
