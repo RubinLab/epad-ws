@@ -759,7 +759,7 @@ public class RemotePACService extends RemotePACSBase {
 		return transfers;
 	}
 	
-	public void checkTransfers()
+	public static void checkTransfers()
 	{
 		if (monitorTransfers.isEmpty()) return;
 		EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
