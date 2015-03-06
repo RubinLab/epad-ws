@@ -9,6 +9,7 @@ import java.util.Set;
 
 import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.epad.dtos.EPADAIM;
+import edu.stanford.epad.dtos.SeriesProcessingStatus;
 import edu.stanford.epad.epadws.aim.AIMQueries;
 import edu.stanford.epad.epadws.aim.AIMSearchType;
 import edu.stanford.epad.epadws.aim.AIMUtil;
@@ -16,6 +17,8 @@ import edu.stanford.epad.epadws.aim.aimapi.Aim;
 import edu.stanford.epad.epadws.epaddb.EpadDatabase;
 import edu.stanford.epad.epadws.epaddb.EpadDatabaseOperations;
 import edu.stanford.epad.epadws.handlers.dicom.DSOUtil;
+import edu.stanford.epad.epadws.processing.model.DicomSeriesProcessingStatusTracker;
+import edu.stanford.epad.epadws.processing.model.SeriesPipelineState;
 import edu.stanford.epad.epadws.service.UserProjectService;
 import edu.stanford.hakan.aim3api.base.ImageAnnotation;
 
@@ -48,9 +51,18 @@ public class DSOMaskPNGGeneratorTask implements GeneratorTask
 		}
 		log.info("Processing DSO for series  " + seriesUID + "; file=" + dsoFile.getAbsolutePath());
 
+		EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
 		try {
 			seriesBeingProcessed.add(seriesUID);
+			try {
 			DSOUtil.writeDSOMaskPNGs(dsoFile);
+			} catch (Exception x) {
+				SeriesPipelineState status = DicomSeriesProcessingStatusTracker.getInstance().getDicomSeriesProcessingStatus(seriesUID);
+				if (status != null)
+					DicomSeriesProcessingStatusTracker.getInstance().removeSeriesPipelineState(status);
+				epadDatabaseOperations.updateOrInsertSeries(seriesUID, SeriesProcessingStatus.ERROR);
+				throw x;
+			}
 			// Must be first upload, create AIM file
 			List<EPADAIM> aims = EpadDatabase.getInstance().getEPADDatabaseOperations().getAIMsByDSOSeries(seriesUID);
 			List<ImageAnnotation> ias = AIMQueries.getAIMImageAnnotations(AIMSearchType.SERIES_UID, seriesUID, "admin", 1, 50);
@@ -64,7 +76,6 @@ public class DSOMaskPNGGeneratorTask implements GeneratorTask
 			if (ia.getCodingSchemeDesignator().equals("epad-plugin"))
 			{
 				Aim aim = new Aim(ia);
-				EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
 				epadDatabaseOperations.insertEpadEvent(
 						ia.getListUser().get(0).getLoginName(), 
 						"Image Generation Complete", 
@@ -83,7 +94,6 @@ public class DSOMaskPNGGeneratorTask implements GeneratorTask
 					username = username.substring(0, username.indexOf(":"));
 				if (username != null)
 				{
-					EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
 					epadDatabaseOperations.insertEpadEvent(
 							ia.getListUser().get(0).getLoginName(), 
 							"Image Generation Complete", 

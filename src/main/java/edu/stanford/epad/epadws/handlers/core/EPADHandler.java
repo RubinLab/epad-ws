@@ -119,7 +119,7 @@ public class EPADHandler extends AbstractHandler
 					String sessionUser = EPADSessionOperations.getSessionUser(sessionID);
 					if (username != null && !username.equals(sessionUser))
 					{
-						throw new Exception("Incorrect username in request");
+						throw new Exception("Incorrect username in request:" + username + " session belongs to " + sessionUser);
 					}
 					else
 						username = sessionUser;
@@ -1285,9 +1285,7 @@ public class EPADHandler extends AbstractHandler
 					subjectName = httpRequest.getParameter("patientName");
 				String modality = httpRequest.getParameter("modality");
 				String studyDate = httpRequest.getParameter("studyDate");
-				boolean weekly = false;
-				if ("weekly".equalsIgnoreCase(httpRequest.getParameter("period")))
-					weekly = true;
+				String period = httpRequest.getParameter("period");
 				String enable = httpRequest.getParameter("enable");
 				if (enable != null)
 				{
@@ -1305,7 +1303,7 @@ public class EPADHandler extends AbstractHandler
 				}
 				else
 				{
-					RemotePACService.getInstance().createRemotePACQuery(username, pacID, subjectUID, subjectName, modality, studyDate, weekly, projectID);
+					RemotePACService.getInstance().createRemotePACQuery(username, pacID, subjectUID, subjectName, modality, studyDate, period, projectID);
 				}
 				statusCode = HttpServletResponse.SC_OK;
 				
@@ -1714,7 +1712,7 @@ public class EPADHandler extends AbstractHandler
 				outputStream.write(buffer, 0, bytesRead);
 			}
 			
-			log.debug("Data received, len:" + len);
+			log.info("Data received, len:" + len);
 			outputStream.close();
 			inputStream.close();
 			if (len == 0)

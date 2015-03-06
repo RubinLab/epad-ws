@@ -47,9 +47,11 @@ import edu.stanford.epad.epadws.handlers.event.EventHandler;
 import edu.stanford.epad.epadws.handlers.event.ProjectEventHandler;
 import edu.stanford.epad.epadws.handlers.plugin.EPadPluginHandler;
 import edu.stanford.epad.epadws.handlers.session.EPADSessionHandler;
+import edu.stanford.epad.epadws.models.User;
 import edu.stanford.epad.epadws.processing.pipeline.threads.ShutdownHookThread;
 import edu.stanford.epad.epadws.processing.pipeline.threads.ShutdownSignal;
 import edu.stanford.epad.epadws.processing.pipeline.watcher.QueueAndWatcherManager;
+import edu.stanford.epad.epadws.service.DefaultEpadProjectOperations;
 import edu.stanford.epad.epadws.service.RemotePACService;
 import edu.stanford.epad.epadws.service.UserProjectService;
 
@@ -155,8 +157,8 @@ public class Main
 			//log.info("Checking annotations table");
 			databaseOperations.checkAndRefreshAnnotationsTable();
 			log.info("Done with database/queues init");
-			Set<String> projectIds = UserProjectService.getAllProjectIDs();
-			if (EPADConfig.UseEPADUsersProjects && projectIds.size() <= 1) {
+			List<User> users = DefaultEpadProjectOperations.getInstance().getAllUsers();
+			if (EPADConfig.UseEPADUsersProjects && users.size() <= 1) {
 				// Sync XNAT to Epad if needed
 				try {
 					XNATSyncHandler.syncXNATtoEpad("admin", "");
