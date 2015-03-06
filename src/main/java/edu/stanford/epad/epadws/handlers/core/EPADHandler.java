@@ -119,7 +119,7 @@ public class EPADHandler extends AbstractHandler
 					String sessionUser = EPADSessionOperations.getSessionUser(sessionID);
 					if (username != null && !username.equals(sessionUser))
 					{
-						throw new Exception("Incorrect username in request");
+						throw new Exception("Incorrect username in request:" + username + " session belongs to " + sessionUser);
 					}
 					else
 						username = sessionUser;

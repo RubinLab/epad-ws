@@ -100,6 +100,10 @@ public class EPADSessionOperations
 	{
 		String username = extractUserNameFromAuthorizationHeader(httpRequest);
 		String password = extractPasswordFromAuthorizationHeader(httpRequest);
+		if (username == null) {
+			username = httpRequest.getParameter("username");
+			password = httpRequest.getParameter("password");
+		}
 		EPADSession session = null;
 		try {
 			if (username != null && password == null && httpRequest.getParameter("adminuser") != null) {
