@@ -236,7 +236,7 @@ public class DefaultEpadOperations implements EpadOperations
 					if (searchFilter.hasAccessionNumberMatch())
 					{
 						matchAccessionNumber = false;
-						Set<String> studyUIDsInXNAT = XNATQueries.getStudyUIDsForSubject(sessionID, projectID,
+						Set<String> studyUIDsInXNAT = UserProjectService.getStudyUIDsForSubject(projectID,
 								epadSubject.subjectID);
 						for (String studyUID: studyUIDsInXNAT)
 						{
@@ -2127,11 +2127,13 @@ public class DefaultEpadOperations implements EpadOperations
 			List<Study> studies = projectOperations.getStudiesForProjectAndSubject(projectID, patientID);
 
 			int numberOfAnnotations = 0;
+			if (!"true".equalsIgnoreCase(EPADConfig.getParamValue("SkipPatientAnnotationCount", "false"))) {
 			for  (Study study: studies)
 			{
 				// Skip this, cause it is too slow and not that important
 				EPADAIMList aims = getStudyAIMDescriptions(new StudyReference(null, null, study.getStudyUID()), username, sessionID);
 				numberOfAnnotations = numberOfAnnotations + getNumberOfAccessibleAims(sessionID, projectID, aims, username);
+			}
 			}
 			if (!searchFilter.shouldFilterSubject(patientID, patientName, numberOfAnnotations)) {
 				Set<String> examTypes = epadQueries.getExamTypesForSubject(patientID);
@@ -2616,7 +2618,7 @@ public class DefaultEpadOperations implements EpadOperations
 		catch (Exception x)
 		{
 			log.warning("Error deleting user:" + username, x);
-			throw new Exception("Error deleting user, user record may be attached to other objects");
+				throw new Exception(x.getMessage());
 		}
 	}
 
