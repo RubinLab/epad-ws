@@ -214,7 +214,7 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		if (list.isEmpty()) return "";
 		String strList = "";
 		for (String item: list)
-			strList = "," + item;
+			strList = strList + "," + item;
 		return strList.substring(1);
 	}
 	
@@ -229,8 +229,11 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		User loggedInUser = getUser(loggedInUserName);
 		if (loggedInUser != null && !loggedInUser.isAdmin() && !loggedInUser.hasPermission(User.CreateUserPermission) && !loggedInUserName.equals(username))
 			throw new Exception("No permission to modify user");
+		log.info("LoggedIn:" + loggedInUserName + " Modify user:" + username + " addPermissions:" + addPermissions + " removePermissions:" + removePermissions);
+		if (addPermissions.size() > 0 && !loggedInUser.isAdmin())
+			throw new Exception("Only admin can add permissions");
 		User user = new User();
-		user = (User) user.getObject("username = " + user.toSQL(username));
+		user = (User) user.getObject("username = " + user.toSQL(username) + "");
 		if (firstName != null) user.setFirstName(firstName);
 		if (lastName != null) user.setLastName(lastName);
 		if (email != null) user.setEmail(email);
@@ -255,6 +258,7 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 			perms.add(perm);
 		for (String perm: removePermissions)
 			perms.remove(perm);
+		log.info("Setting permissions:" + perms + ":" + toStringList(perms));
 		user.setPermissions(toStringList(perms));
 		user.save();
 		userCache.put(user.getUsername(), user);
@@ -295,9 +299,9 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 	@Override
 	public void deleteUser(String loggedInUser, String username) throws Exception {
 		User requestor = getUser(loggedInUser);
-		if (!requestor.isAdmin())
-			throw new Exception("No permissions to delete user");
 		User user = getUser(username);
+		if (!requestor.isAdmin() || !loggedInUser.equals(user.getCreator()))
+			throw new Exception("No permissions to delete user");
 		user.delete();
 		userCache.remove(user.getUsername());
 	}

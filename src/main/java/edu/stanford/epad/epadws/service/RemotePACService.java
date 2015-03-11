@@ -199,7 +199,17 @@ public class RemotePACService extends RemotePACSBase {
 			throw new Exception("Periodic queries have been configured for PAC:" + pac.pacID + ", it can not be deleted");
 		}
 		if (pac.hostname.equalsIgnoreCase(EPADConfig.xnatServer))
-			throw new Exception("Local PAC can not be deleted");
+		{
+			List<RemotePAC> pacs = getRemotePACs();
+			int count = 0;
+			for (RemotePAC p: pacs)
+			{
+				if (p.hostname.equalsIgnoreCase(EPADConfig.xnatServer))
+					count++;
+			}
+			if (count <= 1)
+				throw new Exception("Local PAC can not be deleted");
+		}
 		removeRemotePAC(pac.pacID);
 		this.storeProperties(pac.pacID + " deleted by EPAD " + new Date());
 	}
@@ -248,12 +258,12 @@ public class RemotePACService extends RemotePACSBase {
 	 * @param patientName
 	 * @param modality
 	 * @param studyDate
-	 * @param weekly
+	 * @param period
 	 * @param projectID
 	 * @return
 	 * @throws Exception
 	 */
-	public RemotePACQuery createRemotePACQuery(String username, String pacID, String subjectUID, String patientName, String modality, String studyDate, boolean weekly, String projectID) throws Exception {
+	public RemotePACQuery createRemotePACQuery(String username, String pacID, String subjectUID, String patientName, String modality, String studyDate, String period, String projectID) throws Exception {
 		User user = DefaultEpadProjectOperations.getInstance().getUser(username);
 		if (!user.isAdmin() && !user.hasPermission(User.CreateAutoPACQueryPermission))
 			throw new Exception("No permission to create PAC Patient Query configuration");
@@ -269,6 +279,10 @@ public class RemotePACService extends RemotePACSBase {
 		RemotePAC pac = this.getRemotePAC(pacID);
 		if (pac == null)
 			throw new Exception("Remote PAC " + pacID + " not found");
+		if (pac.hostname.equalsIgnoreCase(EPADConfig.xnatServer) && pac.port == 11112)
+		{
+			throw new Exception("This is the local PAC, image data can not transferred from it");
+		}
 		Subject subject = DefaultEpadProjectOperations.getInstance().getSubject(subjectUID);
 		if (subject == null)
 		{
@@ -315,10 +329,13 @@ public class RemotePACService extends RemotePACSBase {
 		{
 			query.setLastStudyDate(studyDate);
 		}
-		if (weekly)
+		if ("Weekly".equalsIgnoreCase(period))
 			query.setPeriod("Weekly");
+		else if ("Monthly".equalsIgnoreCase(period))
+			query.setPeriod("Monthly");
 		else
 			query.setPeriod("Daily");
+		log.info("Saving pac query:" + pacID + " patient:" + subject.getSubjectUID() + " Modality:" + modality + " Period:" + query.getPeriod() + " Date:" + studyDate);
 		query.save();
 		return query;
 	}
@@ -639,6 +656,10 @@ public class RemotePACService extends RemotePACSBase {
 	 * @throws Exception
 	 */
 	public synchronized String retrieveRemoteData(RemotePAC pac, String entityID, String projectID, String userName, String sessionID) throws Exception {
+		if (pac.hostname.equalsIgnoreCase(EPADConfig.xnatServer) && pac.port == 11112)
+		{
+			throw new Exception("This is the local PAC, image data can not transferred from it");
+		}
 		String uniqueKey = entityID;
 		String root = uniqueKey;
 		if (root.indexOf(":") != -1)
@@ -738,7 +759,7 @@ public class RemotePACService extends RemotePACSBase {
 		return transfers;
 	}
 	
-	public void checkTransfers()
+	public static void checkTransfers()
 	{
 		if (monitorTransfers.isEmpty()) return;
 		EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();

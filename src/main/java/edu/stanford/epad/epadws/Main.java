@@ -7,11 +7,12 @@ import java.io.IOException;
 import java.net.BindException;
 import java.net.SocketException;
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.List;
-import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.io.IOUtils;
+import org.eclipse.jetty.server.DispatcherType;
 import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.handler.ContextHandler;
@@ -53,7 +54,6 @@ import edu.stanford.epad.epadws.processing.pipeline.threads.ShutdownSignal;
 import edu.stanford.epad.epadws.processing.pipeline.watcher.QueueAndWatcherManager;
 import edu.stanford.epad.epadws.service.DefaultEpadProjectOperations;
 import edu.stanford.epad.epadws.service.RemotePACService;
-import edu.stanford.epad.epadws.service.UserProjectService;
 
 /**
  * Entry point for the ePAD Web Service.
@@ -69,7 +69,7 @@ public class Main
 	private static final EPADLogger log = EPADLogger.getInstance();
 
 	public static final String epad_version = "1.4.1";
-	public static final String db_version = "1.41";
+	public static final String db_version = "1.41"; // This should always be a valid decimal (only one dot)
 	
 	public static void main(String[] args)
 	{
@@ -247,7 +247,21 @@ public class Main
 		WebAppContext webAppContext = new WebAppContext(webAppPath, contextPath);
 		String home = System.getProperty("user.home");
 		webAppContext.setTempDirectory(new File(home + "/DicomProxy/jetty")); // TODO Read from config file
-
+		if (new File(EPADConfig.getEPADWebServerEtcDir()+"webdefault.xml").exists())
+		{
+			log.info("Adding webdefault.xml");
+			webAppContext.setDefaultsDescriptor(EPADConfig.getEPADWebServerEtcDir()+"webdefault.xml");
+		}
+		log.info("WebAuthFilter:'" + EPADConfig.getParamValue("WebAuthFilter", null) + "'");
+		if (EPADConfig.webAuthPassword != null && EPADConfig.getParamValue("WebAuthFilter", null) != null)
+		{
+			try {
+				Class filter = Class.forName(EPADConfig.getParamValue("WebAuthFilter"));
+				webAppContext.addFilter(filter, "/*", EnumSet.of(DispatcherType.REQUEST,DispatcherType.ASYNC,DispatcherType.FORWARD));
+			} catch (ClassNotFoundException e) {
+				log.warning("WebAuth Authentication Filter " + EPADConfig.getParamValue("WebAuthFilter") + " not found");
+			}
+		}
 		handlerList.add(webAppContext);
 		log.info("Added WAR " + warFileName + " at context path " + contextPath);
 	}
