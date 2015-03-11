@@ -7,11 +7,13 @@ import java.io.IOException;
 import java.net.BindException;
 import java.net.SocketException;
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.io.IOUtils;
+import org.eclipse.jetty.server.DispatcherType;
 import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.handler.ContextHandler;
@@ -245,6 +247,16 @@ public class Main
 		String home = System.getProperty("user.home");
 		webAppContext.setTempDirectory(new File(home + "/DicomProxy/jetty")); // TODO Read from config file
 
+		log.info("WebAuthFilter:'" + EPADConfig.getParamValue("WebAuthFilter", null) + "'");
+		if (EPADConfig.webAuthPassword != null && EPADConfig.getParamValue("WebAuthFilter", null) != null)
+		{
+			try {
+				Class filter = Class.forName(EPADConfig.getParamValue("WebAuthFilter"));
+				webAppContext.addFilter(filter, "/*", EnumSet.of(DispatcherType.REQUEST,DispatcherType.ASYNC,DispatcherType.FORWARD));
+			} catch (ClassNotFoundException e) {
+				log.warning("WebAuth Authentication Filter " + EPADConfig.getParamValue("WebAuthFilter") + " not found");
+			}
+		}
 		handlerList.add(webAppContext);
 		log.info("Added WAR " + warFileName + " at context path " + contextPath);
 	}

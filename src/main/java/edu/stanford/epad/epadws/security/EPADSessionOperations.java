@@ -122,6 +122,17 @@ public class EPADSessionOperations
 			return response;
 		}
 	}
+	
+	public static String authenticateWebAuthUser(String username, String password) throws Exception
+	{
+		if (password != null && password.trim().length() > 0) {
+			if (password.equals(EPADConfig.webAuthPassword)) {
+				EPADSession session = EPADSessionOperations.createPreAuthenticatedSession(username);
+				return session.getSessionId();
+			}
+		}
+		return null;
+	}
 
 	public static int invalidateSessionID(HttpServletRequest httpRequest)
 	{

@@ -155,7 +155,13 @@ public class XNATSyncHandler extends AbstractHandler
 				ProjectType pt = ProjectType.PRIVATE;
 				if (type.toLowerCase().startsWith("public"))
 					pt = ProjectType.PUBLIC;
-				project = projectOperations.createProject(username, xproject.ID, xproject.name, xproject.description, pt);
+				try
+				{
+					project = projectOperations.createProject(username, xproject.ID, xproject.name, xproject.description, pt);
+				} catch (Exception x) {
+					log.warning("Error creating project:" +  xproject.ID, x);
+					continue;
+				}
 				log.info("Created project:" + xproject.name);
 				response = response + "\nCreated project " + xproject.name;
 			}
