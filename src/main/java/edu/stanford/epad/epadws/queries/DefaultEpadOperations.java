@@ -2011,34 +2011,42 @@ public class DefaultEpadOperations implements EpadOperations
 			String projectID = project.getProjectId();
 			String description = project.getDescription();
 			Set<String> patientIDs = new HashSet<String>();
+			long starttime = System.currentTimeMillis();
 			List<Subject> subjects = projectOperations.getSubjectsForProject(projectID);
 			for (Subject subject: subjects)
 				patientIDs.add(subject.getSubjectUID());
+			long subjecttime = System.currentTimeMillis();
 			int numberOfPatients = patientIDs.size();
-//			int numberOfAnnotations = AIMQueries.getNumberOfAIMAnnotationsForPatients(sessionID, username, patientIDs);
-			Set<String> studyUIDs = new HashSet<String>();
-			List<Study> studies = projectOperations.getAllStudiesForProject(projectID);
-			for (Study study: studies)
-				studyUIDs.add(study.getStudyUID());
+			int numberOfStudies = 0;
 			int numberOfAnnotations = 0;
+			long studytime = System.currentTimeMillis();
 			if (annotationCount)
 			{
+				Set<String> studyUIDs = new HashSet<String>();
+				List<Study> studies = projectOperations.getAllStudiesForProject(projectID);
+				for (Study study: studies)
+				studyUIDs.add(study.getStudyUID());
+				studytime = System.currentTimeMillis();
+				numberOfStudies = studies.size();
 				for  (String studyUID: studyUIDs)
 				{
 					EPADAIMList aims = getStudyAIMDescriptions(new StudyReference(null, null, studyUID), username, sessionID);
 					numberOfAnnotations = numberOfAnnotations + getNumberOfAccessibleAims(sessionID, projectID, aims, username);
 				}
 			}
+			long aimtime = System.currentTimeMillis();
 			if (!searchFilter.shouldFilterProject(projectName, numberOfAnnotations)) {
-				int numberOfStudies = Dcm4CheeQueries.getNumberOfStudiesForPatients(patientIDs);
 				List<User> users = projectOperations.getUsersForProject(projectID);
 				Set<String> usernames = new HashSet<String>();
 				for (User user: users)
 					usernames.add(user.getUsername());
+				long usertime = System.currentTimeMillis();
 				Map<String,String> userRoles = new HashMap<String, String>(); // TODO
 				//Map<String,String> userRoles = xnatUsers.getRoles();
 				//if (!userRoles.keySet().contains(username))
 				//	userRoles.put(username, "Collaborator");
+
+				//log.info("Time for conv, subj:" + (subjecttime-starttime) + ", study:" + (studytime-subjecttime) + " aim:" + (aimtime-studytime) + " user:" + (usertime-aimtime) + " msecs");
 				return new EPADProject("", "", description, projectName, projectID, "", "",
 						numberOfPatients, numberOfStudies, numberOfAnnotations, patientIDs, usernames, userRoles);
 			} else
