@@ -91,7 +91,7 @@ public class WadoHandler extends AbstractHandler
 		String wadoHost = EPADConfig.dcm4CheeServer;
 		int wadoPort = EPADConfig.dcm4cheeServerWadoPort;
 		String wadoBase = EPADConfig.wadoURLExtension;
-		if (queryString.indexOf("dicom") != -1)
+		if (queryString.toLowerCase().indexOf("dicom") != -1)
 			log.info("Wado Request to download dicom:" + queryString + ", username:" + username);
 		String wadoURL = buildWADOURL(wadoHost, wadoPort, wadoBase, queryString);
 		int statusCode;
