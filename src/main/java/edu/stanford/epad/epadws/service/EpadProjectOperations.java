@@ -521,6 +521,13 @@ public interface EpadProjectOperations {
 	List<EpadFile> getSeriesFiles(String projectID, String subjectUID, String studyUID, String seriesUID) throws Exception;
 	
 	/**
+	 * @param username
+	 * @return
+	 * @throws Exception
+	 */
+	boolean isAdmin(String username) throws Exception;
+	
+	/**
 	 * Check if user is in project
 	 * @param username
 	 * @param projectID
