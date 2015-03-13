@@ -60,7 +60,7 @@ public class SubjectDataDeleteTask implements Runnable
 					if (!EPADConfig.UseEPADUsersProjects) {
 						adminSessionID = XNATSessionOperations.getXNATAdminSessionID();
 					} else {
-						adminSessionID = EPADSessionOperations.getAdminSessionID();
+						// adminSessionID = EPADSessionOperations.getAdminSessionID(); // Not needed
 					}
 					epadOperations.studyDelete(studyReference, adminSessionID, false, username);
 				}
