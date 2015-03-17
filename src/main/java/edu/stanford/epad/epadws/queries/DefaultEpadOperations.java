@@ -2484,11 +2484,18 @@ public class DefaultEpadOperations implements EpadOperations
 				for (String perm: perms)
 					permissions.add(perm);
 				Set<String> projects = null;
-				Map<String, String> projectToRole = null;
+				List<String> projectToRole = null;
 				if (user.getProjectToRole() != null)
 				{
 					projects = user.getProjectToRole().keySet();
-					projectToRole = user.getProjectToRole();
+					projectToRole = new ArrayList<String>();
+					if (projects != null)
+					{
+						for (String project: projects)
+						{
+							projectToRole.add(project + ":" + user.getProjectToRole().get(project));
+						}
+					}
 				}
 				EPADUser epadUser = new EPADUser(user.getFullName(), user.getUsername(), 
 						user.getFirstName(), user.getLastName(), user.getEmail(), user.isEnabled(), user.isAdmin(), user.isPasswordExpired(), "", permissions, projects, projectToRole, null);
@@ -2529,11 +2536,18 @@ public class DefaultEpadOperations implements EpadOperations
 			for (String perm: perms)
 				permissions.add(perm);
 			Set<String> projects = null;
-			Map<String, String> projectToRole = null;
+			List<String> projectToRole = null;
 			if (user.getProjectToRole() != null)
 			{
 				projects = user.getProjectToRole().keySet();
-				projectToRole = user.getProjectToRole();
+				projectToRole = new ArrayList<String>();
+				if (projects != null)
+				{
+					for (String project: projects)
+					{
+						projectToRole.add(project + ":" + user.getProjectToRole().get(project));
+					}
+				}
 			}
 			EPADUser epadUser = new EPADUser(user.getFullName(), user.getUsername(), 
 					user.getFirstName(), user.getLastName(), user.getEmail(), user.isEnabled(), user.isAdmin(), user.isPasswordExpired(), "", permissions, projects, projectToRole, messages);

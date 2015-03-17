@@ -213,7 +213,7 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		if (list.isEmpty()) return "";
 		String strList = "";
 		for (String item: list)
-			strList = "," + item;
+			strList = strList + "," + item;
 		return strList.substring(1);
 	}
 	
