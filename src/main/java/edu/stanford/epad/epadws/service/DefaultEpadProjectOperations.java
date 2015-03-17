@@ -403,7 +403,7 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 	 */
 	@Override
 	public Study createStudy(String loggedInUser, String studyUID,
-			String subjectUID) throws Exception {
+			String subjectUID, String description) throws Exception {
 		Subject subject = getSubject(subjectUID);
 		Study study = getStudy(studyUID);
 		if (study == null)
@@ -413,6 +413,8 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		}
 		study.setStudyUID(studyUID);
 		study.setSubjectId(subject.getId());
+		if (description != null && description.length() > 0)
+			study.setDescription(description);
 		study.save();
 		return study;
 	}
@@ -1150,6 +1152,15 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 			return true;
 	}
 
+	@Override
+	public boolean isAdmin(String username) throws Exception {
+		User user = getUser(username);
+		if (user != null)	
+			return user.isAdmin();
+		else
+			return false;
+	}
+
 	/* (non-Javadoc)
 	 * @see edu.stanford.epad.epadws.service.EpadProjectOperations#isCollaborator(java.lang.String, java.lang.String)
 	 */
@@ -1157,13 +1168,13 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 	public boolean isCollaborator(String username, String projectID) throws Exception {
 		if (projectID == null || projectID.trim().length() == 0)
 		{
-			if (username.equals("admin")) 
+			if (isAdmin(username)) 
 				return false;
 			else
 				return true;
 		}
 		UserRole role = getUserProjectRole(username, projectID);
-		if (role == null && username.equals("admin")) return false;
+		if (role == null && isAdmin(username)) return false;
 		if (role == null && projectID.equals(EPADConfig.xnatUploadProjectID)) return true;
 		if (role == null)
 			throw new Exception("User " + username  + " does not exist in project:" + projectID);
@@ -1182,9 +1193,8 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		if (projectID == null || projectID.trim().length() == 0)
 			return false;
 		UserRole role = getUserProjectRole(username, projectID);
-		if (role == null && username.equals("admin")) return true;
-		if (role == null)
-			throw new Exception("Does not exist in project:" + projectID);
+		if (role == null && isAdmin(username)) return true;
+		if (role == null) return false;
 		if (role.equals(UserRole.MEMBER))
 			return true;
 		else
@@ -1203,9 +1213,8 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		if (project.getCreator().equals(username))
 			return true;
 		UserRole role = getUserProjectRole(username, projectID);
-		if (role == null && username.equals("admin")) return true;
-		if (role == null)
-			throw new Exception("Does not exist in project:" + projectID);
+		if (role == null && isAdmin(username)) return true;
+		if (role == null) return false;
 		if (role.equals(UserRole.OWNER))
 			return true;
 		else

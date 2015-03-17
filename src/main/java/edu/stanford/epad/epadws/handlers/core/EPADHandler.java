@@ -967,13 +967,16 @@ public class EPADHandler extends AbstractHandler
 				String[] tagGroup = httpRequest.getParameterValues("tagGroup");
 				String[] tagElement = httpRequest.getParameterValues("tagElement");
 				String[] tagValue = httpRequest.getParameterValues("tagValue");
+				String[] tagType = httpRequest.getParameterValues("tagType");
 				boolean studiesOnly = !"true".equalsIgnoreCase(httpRequest.getParameter("series"));
+				if (tagGroup != null && httpRequest.getParameter("series") == null)
+					studiesOnly = false;
 				RemotePAC pac = RemotePACService.getInstance().getRemotePAC(pacid);
 				if (pac != null)
 				{
 					List<RemotePACEntity> entities = RemotePACService.getInstance().queryRemoteData(pac, patientNameFilter, patientIDFilter, 
 							studyIDFilter, studyDateFilter, 
-							tagGroup, tagElement, tagValue, false, studiesOnly);
+							tagGroup, tagElement, tagValue, tagType, false, studiesOnly);
 					RemotePACEntityList entityList = new RemotePACEntityList();
 					for (RemotePACEntity entity: entities)
 						entityList.addRemotePACEntity(entity);
@@ -1167,9 +1170,9 @@ public class EPADHandler extends AbstractHandler
 				
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.STUDY, pathInfo)) {
 				StudyReference studyReference = StudyReference.extract(ProjectsRouteTemplates.STUDY, pathInfo);
-				statusCode = epadOperations.createStudy(username, studyReference, sessionID);
+				String description = httpRequest.getParameter("description");
+				statusCode = epadOperations.createStudy(username, studyReference, description, sessionID);
 				if (uploadedFile != null && false) {
-					String description = httpRequest.getParameter("description");
 					String fileType = httpRequest.getParameter("fileType");
 					statusCode = epadOperations.createFile(username, studyReference, uploadedFile, description, fileType, sessionID);					
 				}
@@ -1209,6 +1212,19 @@ public class EPADHandler extends AbstractHandler
 				log.info("Projects AIM PUT");
 				status = epadOperations.createProjectAIM(username, projectReference, aimReference.aimID, uploadedFile, sessionID);
 	
+			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.PROJECT_AIM_LIST, pathInfo)) {
+				ProjectReference projectReference = ProjectReference.extract(ProjectsRouteTemplates.PROJECT_AIM_LIST, pathInfo);
+				AIMSearchType aimSearchType = AIMUtil.getAIMSearchType(httpRequest);
+				String searchValue = aimSearchType != null ? httpRequest.getParameter(aimSearchType.getName()) : null;
+				String templateName = httpRequest.getParameter("templateName");
+				log.info("PUT request for AIMs from user " + username + "; query type is " + aimSearchType + ", value "
+						+ searchValue + ", project " + projectReference.projectID);
+				if (aimSearchType.equals(AIMSearchType.ANNOTATION_UID)) {
+					String[] aimIDs = searchValue.split(",");
+					AIMUtil.runPlugIn(aimIDs, templateName, projectReference.projectID, sessionID);
+				}
+				statusCode = HttpServletResponse.SC_OK;
+
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.FRAME, pathInfo)) {
 				statusCode = HttpServletResponse.SC_METHOD_NOT_ALLOWED;
 				httpResponse.addHeader("Allow", "GET, DELETE");

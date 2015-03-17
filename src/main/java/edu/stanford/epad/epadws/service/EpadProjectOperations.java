@@ -190,7 +190,7 @@ public interface EpadProjectOperations {
 	 * @return
 	 * @throws Exception
 	 */
-	Study createStudy(String loggedInUser, String studyUID, String subjectUID) throws Exception;
+	Study createStudy(String loggedInUser, String studyUID, String subjectUID, String description) throws Exception;
 	
 	/**
 	 * Create Study record in database
@@ -538,6 +538,13 @@ public interface EpadProjectOperations {
 	 * @throws Exception
 	 */
 	List<EpadFile> getSeriesFiles(String projectID, String subjectUID, String studyUID, String seriesUID) throws Exception;
+	
+	/**
+	 * @param username
+	 * @return
+	 * @throws Exception
+	 */
+	boolean isAdmin(String username) throws Exception;
 	
 	/**
 	 * Check if user is in project

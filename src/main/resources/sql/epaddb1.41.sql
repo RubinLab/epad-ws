@@ -14,6 +14,8 @@ KEY FK_projectsubjectstudy_study (study_id),
 CONSTRAINT FK_series_study FOREIGN KEY (study_id) REFERENCES study(id)) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 CREATE UNIQUE INDEX project_seriesuid_ind on nondicom_series(seriesuid);
 
+ALTER TABLE study add description varchar(1000);
+
 UPDATE dbversion SET version = '1.41';
 commit;
 

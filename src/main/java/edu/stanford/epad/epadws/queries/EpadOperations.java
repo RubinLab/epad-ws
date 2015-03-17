@@ -87,7 +87,7 @@ public interface EpadOperations
 
 	int createSubject(String username, SubjectReference subjectRefernece, String subjectName, Date dob, String gender, String sessionID) throws Exception;
 
-	int createStudy(String username, StudyReference studyReference, String sessionID) throws Exception;
+	int createStudy(String username, StudyReference studyReference, String description, String sessionID) throws Exception;
 
 	int updateSubject(String username, SubjectReference subjectRefernece, String subjectName, Date dob, String gender, String sessionID) throws Exception;
 

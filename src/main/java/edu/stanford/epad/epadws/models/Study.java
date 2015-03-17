@@ -34,6 +34,7 @@ public class Study extends AbstractDAO {
 	long subjectId;
 	String studyUID;
 	Date studyDate;
+	String description;
 	String creator;
 	Date createdTime;
 	Date updateTime;
@@ -71,6 +72,14 @@ public class Study extends AbstractDAO {
 		this.studyDate = studyDate;
 	}
 
+	public String getDescription() {
+		return description;
+	}
+
+	public void setDescription(String description) {
+		this.description = description;
+	}
+
 	public String getCreator() {
 		return creator;
 	}
@@ -101,6 +110,7 @@ public class Study extends AbstractDAO {
         {"subjectId","long","subject_id","integer"},
         {"studyUID","String","studyUID","varchar"},
         {"studyDate","Date","studydate","date"},
+        {"description","String","description","varchar"},
         {"creator","String","creator","varchar"},
         {"createdTime","Date","createdtime","timestamp"},
         {"updateTime","Date","updatetime","timestamp"},	
