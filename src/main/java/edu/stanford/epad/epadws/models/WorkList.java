@@ -28,24 +28,26 @@ import java.util.Date;
 
 import edu.stanford.epad.epadws.models.dao.AbstractDAO;
 
-public class Subject extends AbstractDAO {
+public class WorkList extends AbstractDAO {
 
 	long id;
-	String subjectUID;
-	String name;
-	Date dob;
-	String gender;
+	long userId;
+	long projectId;
+	String workListID;
+	String description;
+	String status;
+	Date startDate;
+	Date completeDate;
+	Date dueDate;
 	String creator;
 	Date createdTime;
 	Date updateTime;
-	transient String status;
 
-	public Subject(long id)
-	{
+	public WorkList(long id) {
 		this.id = id;
 	}
 	
-	public Subject() {
+	public WorkList() {
 	}
 
 	@Override
@@ -53,40 +55,68 @@ public class Subject extends AbstractDAO {
 		return id;
 	}
 
-	public void setId(long id) {
-		this.id = id;
+	public long getUserId() {
+		return userId;
 	}
 
-	public String getSubjectUID() {
-		return subjectUID;
+	public void setUserId(long userId) {
+		this.userId = userId;
 	}
 
-	public void setSubjectUID(String subjectUID) {
-		this.subjectUID = subjectUID;
+	public long getProjectId() {
+		return projectId;
 	}
 
-	public String getName() {
-		return name;
+	public void setProjectId(long projectId) {
+		this.projectId = projectId;
 	}
 
-	public void setName(String name) {
-		this.name = name;
+	public String getWorkListID() {
+		return workListID;
 	}
 
-	public Date getDob() {
-		return dob;
+	public void setWorkListID(String workListID) {
+		this.workListID = workListID;
 	}
 
-	public void setDob(Date dob) {
-		this.dob = dob;
+	public Date getStartDate() {
+		return startDate;
 	}
 
-	public String getGender() {
-		return gender;
+	public void setStartDate(Date startDate) {
+		this.startDate = startDate;
 	}
 
-	public void setGender(String gender) {
-		this.gender = gender;
+	public Date getDueDate() {
+		return dueDate;
+	}
+
+	public void setDueDate(Date dueDate) {
+		this.dueDate = dueDate;
+	}
+
+	public String getDescription() {
+		return description;
+	}
+
+	public void setDescription(String description) {
+		this.description = description;
+	}
+
+	public String getStatus() {
+		return status;
+	}
+
+	public void setStatus(String status) {
+		this.status = status;
+	}
+
+	public Date getCompleteDate() {
+		return completeDate;
+	}
+
+	public void setCompleteDate(Date completeDate) {
+		this.completeDate = completeDate;
 	}
 
 	public String getCreator() {
@@ -113,21 +143,21 @@ public class Subject extends AbstractDAO {
 		this.updateTime = updateTime;
 	}
 
-	public String getStatus() {
-		return status;
+	public void setId(long id) {
+		this.id = id;
 	}
 
-	public void setStatus(String status) {
-		this.status = status;
-	}
-
-	public final static String DBTABLE = "subject";
+	public final static String DBTABLE = "worklist";
 	public final static String[][] DBCOLUMNS = {
         {"id","long","id","Id"},
-        {"subjectUID","String","subjectUID","varchar"},
-        {"name","String","name","varchar"},
-        {"gender","String","gender","varchar"},
-        {"dob","Date","dob","date"},
+        {"userId","long","user_id","integer"},
+        {"projectId","long","project_id","integer"},
+        {"workListID","String","worklistid","varchar"},
+        {"startDate","Date","startdate","date"},
+        {"dueDate","Date","duedate","date"},
+        {"completeDate","Date","completedate","date"},
+        {"description","String","description","varchar"},
+        {"status","String","status","varchar"},
         {"creator","String","creator","varchar"},
         {"createdTime","Date","createdtime","timestamp"},
         {"updateTime","Date","updatetime","timestamp"},	

@@ -51,6 +51,8 @@ import edu.stanford.epad.dtos.EPADSubject;
 import edu.stanford.epad.dtos.EPADSubjectList;
 import edu.stanford.epad.dtos.EPADUser;
 import edu.stanford.epad.dtos.EPADUserList;
+import edu.stanford.epad.dtos.EPADWorklist;
+import edu.stanford.epad.dtos.EPADWorklistList;
 import edu.stanford.epad.dtos.SeriesProcessingStatus;
 import edu.stanford.epad.dtos.StudyProcessingStatus;
 import edu.stanford.epad.dtos.internal.DCM4CHEESeries;
@@ -94,6 +96,7 @@ import edu.stanford.epad.epadws.models.Subject;
 import edu.stanford.epad.epadws.models.User;
 import edu.stanford.epad.epadws.models.User.EventLog;
 import edu.stanford.epad.epadws.models.UserRole;
+import edu.stanford.epad.epadws.models.WorkList;
 import edu.stanford.epad.epadws.processing.pipeline.task.ProjectDataDeleteTask;
 import edu.stanford.epad.epadws.processing.pipeline.task.StudyDataDeleteTask;
 import edu.stanford.epad.epadws.processing.pipeline.task.SubjectDataDeleteTask;
@@ -101,7 +104,9 @@ import edu.stanford.epad.epadws.processing.pipeline.watcher.Dcm4CheeDatabaseWatc
 import edu.stanford.epad.epadws.security.EPADSession;
 import edu.stanford.epad.epadws.security.EPADSessionOperations;
 import edu.stanford.epad.epadws.service.DefaultEpadProjectOperations;
+import edu.stanford.epad.epadws.service.DefaultWorkListOperations;
 import edu.stanford.epad.epadws.service.EpadProjectOperations;
+import edu.stanford.epad.epadws.service.EpadWorkListOperations;
 import edu.stanford.epad.epadws.service.UserProjectService;
 import edu.stanford.epad.epadws.xnat.XNATCreationOperations;
 import edu.stanford.epad.epadws.xnat.XNATDeletionOperations;
@@ -121,6 +126,7 @@ public class DefaultEpadOperations implements EpadOperations
 	private final Dcm4CheeDatabaseOperations dcm4CheeDatabaseOperations = Dcm4CheeDatabase.getInstance()
 			.getDcm4CheeDatabaseOperations();
 	private final EpadProjectOperations projectOperations = DefaultEpadProjectOperations.getInstance();
+	private final EpadWorkListOperations workListOperations = DefaultWorkListOperations.getInstance();
 
 	private DefaultEpadOperations()
 	{
@@ -1954,6 +1960,82 @@ public class DefaultEpadOperations implements EpadOperations
 		return sessions.values();
 	}
 
+	@Override
+	public EPADWorklistList getWorkLists(ProjectReference projectReference) throws Exception {
+		List<WorkList> worklists = workListOperations.getWorkListsForProject(projectReference.projectID);
+		EPADWorklistList wllist = new EPADWorklistList();
+		for (WorkList wl: worklists)
+		{
+			User user = (User) projectOperations.getDBObject(User.class, wl.getUserId());
+			Set<Subject> subjects = workListOperations.getSubjectsForWorkList(wl.getWorkListID());
+			Set<Study> studies = workListOperations.getStudiesForWorkList(wl.getWorkListID());
+			Set<String> subjectIDs = new HashSet<String>();
+			Set<String> studyUIDs = new HashSet<String>();
+			for (Subject subject: subjects)
+				subjectIDs.add(subject.getSubjectUID());
+			for (Study study: studies)
+				studyUIDs.add(study.getStudyUID());
+			
+			wllist.addEPADWorklist(new EPADWorklist(wl.getWorkListID(), user.getUsername(), projectReference.projectID,
+					wl.getDescription(), wl.getStatus(),formatDate(wl.getStartDate()),
+					formatDate(wl.getCompleteDate()), formatDate(wl.getDueDate()), subjectIDs, null, studyUIDs, null));
+		}
+		return wllist;
+	}
+
+	@Override
+	public EPADWorklist getWorkList(ProjectReference projectReference, String username) throws Exception {
+		WorkList wl = workListOperations.getWorkListForUserByProject(username, projectReference.projectID);
+		User user = (User) projectOperations.getDBObject(User.class, wl.getUserId());
+		Set<Subject> subjects = workListOperations.getSubjectsForWorkListWithStatus(wl.getWorkListID());
+		Set<Study> studies = workListOperations.getStudiesForWorkListWithStatus(wl.getWorkListID());
+		Set<String> subjectIDs = new HashSet<String>();
+		Set<String> studyUIDs = new HashSet<String>();
+		List<String> subjectStatus = new ArrayList<String>();
+		List<String> studyStatus = new ArrayList<String>();
+		for (Subject subject: subjects)
+		{
+			subjectIDs.add(subject.getSubjectUID());
+			subjectStatus.add(subject.getSubjectUID() + ":" + subject.getStatus());
+		}
+		for (Study study: studies)
+		{
+			studyUIDs.add(study.getStudyUID());
+			studyStatus.add(study.getStudyUID() + ":" + study.getStatus());
+		}
+		return new EPADWorklist(wl.getWorkListID(), user.getUsername(), projectReference.projectID,
+				wl.getDescription(), wl.getStatus(),formatDate(wl.getStartDate()),
+				formatDate(wl.getCompleteDate()), formatDate(wl.getDueDate()), subjectIDs, subjectStatus, studyUIDs, studyStatus);
+	}
+
+	@Override
+	public EPADWorklist getWorkListByID(ProjectReference projectReference, String workListID) throws Exception {
+		WorkList wl = workListOperations.getWorkList(workListID);
+		User user = (User) projectOperations.getDBObject(User.class, wl.getUserId());
+		Project project = (Project) projectOperations.getDBObject(Project.class, wl.getProjectId());
+		if (project.getProjectId().equals(projectReference.projectID))
+			throw new Exception("Incorrect project for worklist " + workListID);
+		Set<Subject> subjects = workListOperations.getSubjectsForWorkListWithStatus(wl.getWorkListID());
+		Set<Study> studies = workListOperations.getStudiesForWorkListWithStatus(wl.getWorkListID());
+		Set<String> subjectIDs = new HashSet<String>();
+		Set<String> studyUIDs = new HashSet<String>();
+		List<String> subjectStatus = new ArrayList<String>();
+		List<String> studyStatus = new ArrayList<String>();
+		for (Subject subject: subjects)
+		{
+			subjectIDs.add(subject.getSubjectUID());
+			subjectStatus.add(subject.getSubjectUID() + ":" + subject.getStatus());
+		}
+		for (Study study: studies)
+		{
+			studyUIDs.add(study.getStudyUID());
+			studyStatus.add(study.getStudyUID() + ":" + study.getStatus());
+		}
+		return new EPADWorklist(wl.getWorkListID(), user.getUsername(), projectReference.projectID,
+				wl.getDescription(), wl.getStatus(),formatDate(wl.getStartDate()),
+				formatDate(wl.getCompleteDate()), formatDate(wl.getDueDate()), subjectIDs, subjectStatus, studyUIDs, studyStatus);
+	}
+
 	private EPADStudy dcm4cheeStudy2EpadStudy(String sessionID, String suppliedProjectID, String suppliedSubjectID,
 			DCM4CHEEStudy dcm4CheeStudy, String username)
 	{
@@ -2216,6 +2298,13 @@ public class DefaultEpadOperations implements EpadOperations
 	}
 
 	static SimpleDateFormat dateFormat = new SimpleDateFormat("MM/DDD/yyyy");
+	private String formatDate(Date date)
+	{
+		if (date == null)
+			return "";
+		else
+			return dateFormat.format(date);
+	}
 	
 	private EPADSubject subject2EPADSubject(String sessionID, String username, Subject subject, String projectID,
 			EPADSearchFilter searchFilter) throws Exception

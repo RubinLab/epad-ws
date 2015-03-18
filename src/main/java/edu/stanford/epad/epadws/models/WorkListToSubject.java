@@ -28,25 +28,17 @@ import java.util.Date;
 
 import edu.stanford.epad.epadws.models.dao.AbstractDAO;
 
-public class Subject extends AbstractDAO {
+public class WorkListToSubject extends AbstractDAO {
 
 	long id;
-	String subjectUID;
-	String name;
-	Date dob;
-	String gender;
+	long workListId;
+	long subjectId;
+	String status;
+	Date startDate;
+	Date completeDate;
 	String creator;
 	Date createdTime;
 	Date updateTime;
-	transient String status;
-
-	public Subject(long id)
-	{
-		this.id = id;
-	}
-	
-	public Subject() {
-	}
 
 	@Override
 	public long getId() {
@@ -57,36 +49,44 @@ public class Subject extends AbstractDAO {
 		this.id = id;
 	}
 
-	public String getSubjectUID() {
-		return subjectUID;
+	public long getWorkListId() {
+		return workListId;
 	}
 
-	public void setSubjectUID(String subjectUID) {
-		this.subjectUID = subjectUID;
+	public void setWorkListId(long workListId) {
+		this.workListId = workListId;
 	}
 
-	public String getName() {
-		return name;
+	public long getSubjectId() {
+		return subjectId;
 	}
 
-	public void setName(String name) {
-		this.name = name;
+	public void setSubjectId(long subjectId) {
+		this.subjectId = subjectId;
 	}
 
-	public Date getDob() {
-		return dob;
+	public String getStatus() {
+		return status;
 	}
 
-	public void setDob(Date dob) {
-		this.dob = dob;
+	public void setStatus(String status) {
+		this.status = status;
 	}
 
-	public String getGender() {
-		return gender;
+	public Date getStartDate() {
+		return startDate;
 	}
 
-	public void setGender(String gender) {
-		this.gender = gender;
+	public void setStartDate(Date startDate) {
+		this.startDate = startDate;
+	}
+
+	public Date getCompleteDate() {
+		return completeDate;
+	}
+
+	public void setCompleteDate(Date completeDate) {
+		this.completeDate = completeDate;
 	}
 
 	public String getCreator() {
@@ -113,21 +113,14 @@ public class Subject extends AbstractDAO {
 		this.updateTime = updateTime;
 	}
 
-	public String getStatus() {
-		return status;
-	}
-
-	public void setStatus(String status) {
-		this.status = status;
-	}
-
-	public final static String DBTABLE = "subject";
+	public final static String DBTABLE = "worklist_subject";
 	public final static String[][] DBCOLUMNS = {
         {"id","long","id","Id"},
-        {"subjectUID","String","subjectUID","varchar"},
-        {"name","String","name","varchar"},
-        {"gender","String","gender","varchar"},
-        {"dob","Date","dob","date"},
+        {"workListId","long","worklist_id","integer"},
+        {"subjectId","long","subject_id","integer"},
+        {"startDate","Date","startdate","date"},
+        {"completeDate","Date","completedate","date"},
+        {"status","String","status","varchar"},
         {"creator","String","creator","varchar"},
         {"createdTime","Date","createdtime","timestamp"},
         {"updateTime","Date","updatetime","timestamp"},	
