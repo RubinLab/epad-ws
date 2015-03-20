@@ -434,7 +434,7 @@ public class RemotePACService extends RemotePACSBase {
 	 * @throws Exception
 	 */
 	public synchronized List<RemotePACEntity> queryRemoteData(RemotePAC pac, String patientNameFilter, String patientIDFilter, String studyIDFilter, String studyDateFilter, boolean patientsOnly, boolean studiesOnly) throws Exception {
-		return queryRemoteData(pac, patientNameFilter, patientIDFilter, studyIDFilter, studyDateFilter, null, null, null, 
+		return queryRemoteData(pac, patientNameFilter, patientIDFilter, studyIDFilter, studyDateFilter, null, null, null, null,
 				patientsOnly, studiesOnly);
 	}	
 	
@@ -453,7 +453,7 @@ public class RemotePACService extends RemotePACSBase {
 	 * @return
 	 * @throws Exception
 	 */
-	public synchronized List<RemotePACEntity> queryRemoteData(RemotePAC pac, String patientNameFilter, String patientIDFilter, String studyIDFilter, String studyDateFilter, String[] tagGroups, String[] tagElements, String[] tagValues, boolean patientsOnly, boolean studiesOnly) throws Exception {
+	public synchronized List<RemotePACEntity> queryRemoteData(RemotePAC pac, String patientNameFilter, String patientIDFilter, String studyIDFilter, String studyDateFilter, String[] tagGroups, String[] tagElements, String[] tagValues, String[] tagTypes, boolean patientsOnly, boolean studiesOnly) throws Exception {
 		
 		try {
 			log.info("Remote PAC Query, pacID:" + pac.pacID + " patientName:" + patientNameFilter + " patientID:" + patientIDFilter + " studyDate:" + studyDateFilter + " studyIDFilter:" + studyIDFilter + " patientsOnly:" + patientsOnly + " studiesOnly:" + studiesOnly);
@@ -477,12 +477,6 @@ public class RemotePACService extends RemotePACSBase {
 				}
 				filter.put(t,a);
 			}
-//			{ AttributeTag t = TagFromName.PatientBirthDate; Attribute a = new DateAttribute(t); filter.put(t,a); }
-//			{ AttributeTag t = TagFromName.PatientSex; Attribute a = new CodeStringAttribute(t); filter.put(t,a); }
-//
-//			{ AttributeTag t = TagFromName.StudyID; Attribute a = new ShortStringAttribute(t,specificCharacterSet); filter.put(t,a);}
-//			{ AttributeTag t = TagFromName.StudyDescription; Attribute a = new LongStringAttribute(t,specificCharacterSet); filter.put(t,a); }
-//			{ AttributeTag t = TagFromName.ModalitiesInStudy; Attribute a = new CodeStringAttribute(t); filter.put(t,a); }
 			// StudyDate formats:
 			//	from/to: 20071001-20080220
 			//	before: -20080220
@@ -494,24 +488,6 @@ public class RemotePACService extends RemotePACSBase {
 				}
 				filter.put(t,a);
 			}
-			{ AttributeTag t = TagFromName.StudyTime; Attribute a = new TimeAttribute(t); filter.put(t,a); }
-			{ AttributeTag t = TagFromName.PatientAge; Attribute a = new AgeStringAttribute(t); filter.put(t,a); }
-
-			{ AttributeTag t = TagFromName.SeriesDescription; Attribute a = new LongStringAttribute(t,specificCharacterSet); filter.put(t,a); }
-			{ AttributeTag t = TagFromName.SeriesNumber; Attribute a = new IntegerStringAttribute(t); filter.put(t,a); }
-			{ AttributeTag t = TagFromName.Manufacturer; Attribute a = new LongStringAttribute(t); filter.put(t,a); }
-			{ AttributeTag t = TagFromName.Modality; Attribute a = new CodeStringAttribute(t); filter.put(t,a); }
-			{ AttributeTag t = TagFromName.SeriesDate; Attribute a = new DateAttribute(t); filter.put(t,a); }
-			{ AttributeTag t = TagFromName.SeriesTime; Attribute a = new TimeAttribute(t); filter.put(t,a); }
-
-			{ AttributeTag t = TagFromName.InstanceNumber; Attribute a = new IntegerStringAttribute(t); filter.put(t,a); }
-			{ AttributeTag t = TagFromName.ContentDate; Attribute a = new DateAttribute(t); filter.put(t,a); }
-			{ AttributeTag t = TagFromName.ContentTime; Attribute a = new TimeAttribute(t); filter.put(t,a); }
-			{ AttributeTag t = TagFromName.ImageType; Attribute a = new CodeStringAttribute(t); filter.put(t,a); }
-			{ AttributeTag t = TagFromName.NumberOfFrames; Attribute a = new IntegerStringAttribute(t); filter.put(t,a); }
-			{ AttributeTag t = TagFromName.WindowCenter; Attribute a = new DecimalStringAttribute(t); filter.put(t,a); }
-			{ AttributeTag t = TagFromName.WindowWidth; Attribute a = new DecimalStringAttribute(t); filter.put(t,a); }
-
 			{ 
 				AttributeTag t = TagFromName.StudyInstanceUID; Attribute a = new UniqueIdentifierAttribute(t); 
 				if (studyIDFilter != null && studyIDFilter.length() > 0) {
@@ -521,15 +497,33 @@ public class RemotePACService extends RemotePACSBase {
 				}		
 				filter.put(t,a); 
 			}
-			{ AttributeTag t = TagFromName.SeriesInstanceUID; Attribute a = new UniqueIdentifierAttribute(t); filter.put(t,a); }
-			{ AttributeTag t = TagFromName.SOPInstanceUID; Attribute a = new UniqueIdentifierAttribute(t); filter.put(t,a); }
-			{ AttributeTag t = TagFromName.SOPClassUID; Attribute a = new UniqueIdentifierAttribute(t); filter.put(t,a); }
-			{ AttributeTag t = TagFromName.SpecificCharacterSet; Attribute a = new CodeStringAttribute(t); filter.put(t,a); a.addValue("ISO_IR 100"); }
 			if (tagGroups != null && tagElements != null && tagValues != null) {
 				for (int i = 0; i < tagGroups.length && i < tagElements.length && i < tagValues.length; i++)  {
 					try {
 						AttributeTag t = new AttributeTag(Integer.decode(tagGroups[i]),Integer.decode(tagElements[i]));
-						Attribute a = new LongStringAttribute(t,specificCharacterSet);
+						Attribute a = null;
+						if (tagTypes != null && tagTypes.length > i) {
+							log.info("Attribute:" + t.toString() + " type:" + tagTypes[i] + " value:" + tagValues[i]);
+							if (tagTypes[i].equalsIgnoreCase("LongString"))
+								a = new LongStringAttribute(t,specificCharacterSet);
+							else if (tagTypes[i].equalsIgnoreCase("ShortString"))
+								a = new ShortStringAttribute(t,specificCharacterSet);
+							else if (tagTypes[i].equalsIgnoreCase("Date"))
+								a = new DateAttribute(t);
+							else if (tagTypes[i].equalsIgnoreCase("Time"))
+								a = new TimeAttribute(t);
+							else if (tagTypes[i].equalsIgnoreCase("Integer"))
+								a = new IntegerStringAttribute(t);
+							else if (tagTypes[i].equalsIgnoreCase("Decimal"))
+								a = new DecimalStringAttribute(t);
+							else if (tagTypes[i].equalsIgnoreCase("Code"))
+								a = new CodeStringAttribute(t);
+						}
+						else
+							log.info("Attribute:" + t.toString() + " type" + tagTypes + " value:" + tagValues[i]);
+							
+						if (a == null)
+							a = new LongStringAttribute(t,specificCharacterSet);
 						a.addValue(tagValues[i]);
 						filter.put(t,a);
 					} catch (Exception x) {
@@ -537,6 +531,34 @@ public class RemotePACService extends RemotePACSBase {
 					}
 				}
 			}
+			{ AttributeTag t = TagFromName.PatientBirthDate; Attribute a = new DateAttribute(t); if (!filter.containsKey(t)) filter.put(t,a); }
+			{ AttributeTag t = TagFromName.PatientSex; Attribute a = new CodeStringAttribute(t); if (!filter.containsKey(t)) filter.put(t,a); }
+
+			{ AttributeTag t = TagFromName.StudyID; Attribute a = new ShortStringAttribute(t,specificCharacterSet); if (!filter.containsKey(t)) filter.put(t,a);}
+			{ AttributeTag t = TagFromName.StudyDescription; Attribute a = new LongStringAttribute(t,specificCharacterSet); if (!filter.containsKey(t)) filter.put(t,a); }
+			{ AttributeTag t = TagFromName.ModalitiesInStudy; Attribute a = new CodeStringAttribute(t); filter.put(t,a); }
+			{ AttributeTag t = TagFromName.StudyTime; Attribute a = new TimeAttribute(t); if (!filter.containsKey(t)) filter.put(t,a); }
+			{ AttributeTag t = TagFromName.PatientAge; Attribute a = new AgeStringAttribute(t); if (!filter.containsKey(t)) filter.put(t,a); }
+
+			{ AttributeTag t = TagFromName.SeriesDescription; Attribute a = new LongStringAttribute(t,specificCharacterSet); if (!filter.containsKey(t)) filter.put(t,a); }
+			{ AttributeTag t = TagFromName.SeriesNumber; Attribute a = new IntegerStringAttribute(t); if (!filter.containsKey(t)) filter.put(t,a); }
+			{ AttributeTag t = TagFromName.Manufacturer; Attribute a = new LongStringAttribute(t); if (!filter.containsKey(t)) filter.put(t,a); }
+			{ AttributeTag t = TagFromName.Modality; Attribute a = new CodeStringAttribute(t); if (!filter.containsKey(t)) filter.put(t,a); }
+			{ AttributeTag t = TagFromName.SeriesDate; Attribute a = new DateAttribute(t); if (!filter.containsKey(t)) filter.put(t,a); }
+			{ AttributeTag t = TagFromName.SeriesTime; Attribute a = new TimeAttribute(t); if (!filter.containsKey(t)) filter.put(t,a); }
+
+			{ AttributeTag t = TagFromName.InstanceNumber; Attribute a = new IntegerStringAttribute(t); if (!filter.containsKey(t)) filter.put(t,a); }
+			{ AttributeTag t = TagFromName.ContentDate; Attribute a = new DateAttribute(t); if (!filter.containsKey(t)) filter.put(t,a); }
+			{ AttributeTag t = TagFromName.ContentTime; Attribute a = new TimeAttribute(t); if (!filter.containsKey(t)) filter.put(t,a); }
+			{ AttributeTag t = TagFromName.ImageType; Attribute a = new CodeStringAttribute(t); if (!filter.containsKey(t)) filter.put(t,a); }
+			{ AttributeTag t = TagFromName.NumberOfFrames; Attribute a = new IntegerStringAttribute(t); if (!filter.containsKey(t)) filter.put(t,a); }
+			{ AttributeTag t = TagFromName.WindowCenter; Attribute a = new DecimalStringAttribute(t); if (!filter.containsKey(t)) filter.put(t,a); }
+			{ AttributeTag t = TagFromName.WindowWidth; Attribute a = new DecimalStringAttribute(t); if (!filter.containsKey(t)) filter.put(t,a); }
+
+			{ AttributeTag t = TagFromName.SeriesInstanceUID; Attribute a = new UniqueIdentifierAttribute(t); if (!filter.containsKey(t)) filter.put(t,a); }
+			{ AttributeTag t = TagFromName.SOPInstanceUID; Attribute a = new UniqueIdentifierAttribute(t); if (!filter.containsKey(t)) filter.put(t,a); }
+			{ AttributeTag t = TagFromName.SOPClassUID; Attribute a = new UniqueIdentifierAttribute(t); if (!filter.containsKey(t)) filter.put(t,a); }
+			{ AttributeTag t = TagFromName.SpecificCharacterSet; Attribute a = new CodeStringAttribute(t); filter.put(t,a); a.addValue("ISO_IR 100"); }
 			
 			if (remoteQueryCache.keySet().size() > MAX_CACHE_ENTRIES)
 				clearQueryCache();

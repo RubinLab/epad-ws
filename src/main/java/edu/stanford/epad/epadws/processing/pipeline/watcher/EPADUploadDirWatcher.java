@@ -228,7 +228,7 @@ public class EPADUploadDirWatcher implements Runnable
 			epadDatabaseOperations.insertEpadEvent(
 					username, 
 					"Error sending DICOM files to DCM4CHEE", 
-					"", "", "", "", "", "", "");					
+					"", "", "", "", "", "", "Process Upload");					
 			projectOperations.userErrorLog(username, "Error sending DICOM files to DCM4CHEE:" + x);
 		}
 	}

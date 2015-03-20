@@ -379,7 +379,14 @@ public class DSOUtil
 					referencedSeriesUID = referencedUID;
 			}
 			if (referencedSeriesUID == null || referencedSeriesUID.length() == 0)
+			{
+				try {
+					// Best to delete this if the source series is missing ???
+					//SeriesReference seriesReference = new SeriesReference(EPADConfig.xnatUploadProjectID, null, studyUID, seriesUID);
+					//DefaultEpadOperations.getInstance().deleteSeries(seriesReference, true);
+				} catch (Exception x) {}
 				throw new Exception("Referenced series for DSO " + seriesUID + " not found");
+			}
 			int frameNumber = 0;
 
 			String pngMaskDirectoryPath = baseDicomDirectory + "/studies/" + studyUID + "/series/" + seriesUID + "/images/"

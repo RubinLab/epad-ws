@@ -28,25 +28,16 @@ import java.util.Date;
 
 import edu.stanford.epad.epadws.models.dao.AbstractDAO;
 
-public class Subject extends AbstractDAO {
+public class NonDicomSeries extends AbstractDAO {
 
 	long id;
-	String subjectUID;
-	String name;
-	Date dob;
-	String gender;
+	long studyId;
+	String seriesUID;
+	String description;
+	Date seriesDate;
 	String creator;
 	Date createdTime;
 	Date updateTime;
-	transient String status;
-
-	public Subject(long id)
-	{
-		this.id = id;
-	}
-	
-	public Subject() {
-	}
 
 	@Override
 	public long getId() {
@@ -57,36 +48,36 @@ public class Subject extends AbstractDAO {
 		this.id = id;
 	}
 
-	public String getSubjectUID() {
-		return subjectUID;
+	public long getStudyId() {
+		return studyId;
 	}
 
-	public void setSubjectUID(String subjectUID) {
-		this.subjectUID = subjectUID;
+	public void setStudyId(long studyId) {
+		this.studyId = studyId;
 	}
 
-	public String getName() {
-		return name;
+	public String getSeriesUID() {
+		return seriesUID;
 	}
 
-	public void setName(String name) {
-		this.name = name;
+	public void setSeriesUID(String seriesUID) {
+		this.seriesUID = seriesUID;
 	}
 
-	public Date getDob() {
-		return dob;
+	public String getDescription() {
+		return description;
 	}
 
-	public void setDob(Date dob) {
-		this.dob = dob;
+	public void setDescription(String description) {
+		this.description = description;
 	}
 
-	public String getGender() {
-		return gender;
+	public Date getSeriesDate() {
+		return seriesDate;
 	}
 
-	public void setGender(String gender) {
-		this.gender = gender;
+	public void setSeriesDate(Date seriesDate) {
+		this.seriesDate = seriesDate;
 	}
 
 	public String getCreator() {
@@ -113,21 +104,13 @@ public class Subject extends AbstractDAO {
 		this.updateTime = updateTime;
 	}
 
-	public String getStatus() {
-		return status;
-	}
-
-	public void setStatus(String status) {
-		this.status = status;
-	}
-
-	public final static String DBTABLE = "subject";
+	public final static String DBTABLE = "nondicom_series";
 	public final static String[][] DBCOLUMNS = {
         {"id","long","id","Id"},
-        {"subjectUID","String","subjectUID","varchar"},
-        {"name","String","name","varchar"},
-        {"gender","String","gender","varchar"},
-        {"dob","Date","dob","date"},
+        {"studyId","long","study_id","integer"},
+        {"seriesUID","String","seriesUID","varchar"},
+        {"description","String","description","varchar"},
+        {"seriesDate","Date","seriesdate","date"},
         {"creator","String","creator","varchar"},
         {"createdTime","Date","createdtime","timestamp"},
         {"updateTime","Date","updatetime","timestamp"},	

@@ -111,7 +111,7 @@ public class EPADSessionOperations
 			} else  if (username == null && httpRequest.getAuthType().equals("WebAuth") && httpRequest.getRemoteUser() != null) {
 				if (password != null && password.equals(EPADConfig.webAuthPassword))
 					session = EPADSessionOperations.createPreAuthenticatedSession(httpRequest.getRemoteUser());				
-				} else {
+			} else {
 				session = EPADSessionOperations.createNewEPADSession(username, password);
 			}
 			EPADSessionResponse response = new EPADSessionResponse(HttpServletResponse.SC_OK, session.getSessionId(), "");

@@ -42,6 +42,7 @@ import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.epad.epadws.models.EpadFile;
 import edu.stanford.epad.epadws.models.FileType;
+import edu.stanford.epad.epadws.models.NonDicomSeries;
 import edu.stanford.epad.epadws.models.Project;
 import edu.stanford.epad.epadws.models.ProjectToSubject;
 import edu.stanford.epad.epadws.models.ProjectToSubjectToStudy;
@@ -228,8 +229,11 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		User loggedInUser = getUser(loggedInUserName);
 		if (loggedInUser != null && !loggedInUser.isAdmin() && !loggedInUser.hasPermission(User.CreateUserPermission) && !loggedInUserName.equals(username))
 			throw new Exception("No permission to modify user");
+		log.info("LoggedIn:" + loggedInUserName + " Modify user:" + username + " addPermissions:" + addPermissions + " removePermissions:" + removePermissions);
+		if (addPermissions.size() > 0 && !loggedInUser.isAdmin())
+			throw new Exception("Only admin can add permissions");
 		User user = new User();
-		user = (User) user.getObject("username = " + user.toSQL(username));
+		user = (User) user.getObject("username = " + user.toSQL(username) + "");
 		if (firstName != null) user.setFirstName(firstName);
 		if (lastName != null) user.setLastName(lastName);
 		if (email != null) user.setEmail(email);
@@ -254,6 +258,7 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 			perms.add(perm);
 		for (String perm: removePermissions)
 			perms.remove(perm);
+		log.info("Setting permissions:" + perms + ":" + toStringList(perms));
 		user.setPermissions(toStringList(perms));
 		user.save();
 		userCache.put(user.getUsername(), user);
@@ -294,9 +299,9 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 	@Override
 	public void deleteUser(String loggedInUser, String username) throws Exception {
 		User requestor = getUser(loggedInUser);
-		if (!requestor.isAdmin())
-			throw new Exception("No permissions to delete user");
 		User user = getUser(username);
+		if (!requestor.isAdmin() || !loggedInUser.equals(user.getCreator()))
+			throw new Exception("No permissions to delete user");
 		user.delete();
 		userCache.remove(user.getUsername());
 	}
@@ -398,7 +403,7 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 	 */
 	@Override
 	public Study createStudy(String loggedInUser, String studyUID,
-			String subjectUID) throws Exception {
+			String subjectUID, String description) throws Exception {
 		Subject subject = getSubject(subjectUID);
 		Study study = getStudy(studyUID);
 		if (study == null)
@@ -408,8 +413,26 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		}
 		study.setStudyUID(studyUID);
 		study.setSubjectId(subject.getId());
+		if (description != null && description.length() > 0)
+			study.setDescription(description);
 		study.save();
 		return study;
+	}
+
+	@Override
+	public NonDicomSeries createNonDicomSeries(String loggedInUser, String seriesUID,
+			String studyUID, String description, Date seriesDate)
+			throws Exception {
+		NonDicomSeries series = new NonDicomSeries();
+		Study study = getStudy(studyUID);
+		if (study == null)
+			throw new Exception("Study " + studyUID + " not found");
+		series.setSeriesUID(seriesUID);
+		series.setSeriesDate(seriesDate);
+		series.setStudyId(study.getId());
+		series.setDescription(description);
+		series.save();
+		return series;
 	}
 
 	/* (non-Javadoc)
@@ -988,6 +1011,18 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		return studies;
 	}
 
+	@Override
+	public List<NonDicomSeries> getNonDicomSeriesForStudy(String studyUID)
+			throws Exception {
+		Study study = getStudy(studyUID);
+		if (study == null)
+			throw new Exception("Study " + studyUID + " not found");
+		List objects = new NonDicomSeries().getObjects("study_id  =" + study.getId());
+		List<NonDicomSeries> serieses = new ArrayList<NonDicomSeries>();
+		serieses.addAll(objects);		
+		return serieses;
+	}
+
 	/* (non-Javadoc)
 	 * @see edu.stanford.epad.epadws.service.EpadProjectOperations#setUserStatusForProjectAndSubject(java.lang.String, java.lang.String, java.lang.String, java.lang.String)
 	 */
@@ -1342,7 +1377,7 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 			throw new Exception("No permissions to delete project");
 		log.info("Deleting project:" + projectID);
 		Project project = getProject(projectID);
-		new ProjectToUser().deleteObjects("project_id=" + project.getId());		
+		new ProjectToUser().deleteObjects("project_id=" + project.getId());
 		new EpadFile().deleteObjects("project_id=" + project.getId());
 		new ProjectToSubjectToUser().deleteObjects("proj_subj_id in (select id from " + new ProjectToSubject().returnDBTABLE() + " where project_id=" + project.getId() + ")");
 		new ProjectToSubjectToStudy().deleteObjects("proj_subj_id in (select id from " + new ProjectToSubject().returnDBTABLE() + " where project_id=" + project.getId() + ")");

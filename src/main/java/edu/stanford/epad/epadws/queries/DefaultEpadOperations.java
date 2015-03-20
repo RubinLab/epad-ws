@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -18,7 +19,9 @@ import java.util.Set;
 
 import javax.servlet.http.HttpServletResponse;
 
+import com.pixelmed.dicom.ImageToDicom;
 import com.pixelmed.dicom.SOPClass;
+import com.pixelmed.dicom.UIDGenerator;
 
 import edu.stanford.epad.common.dicom.DCM4CHEEImageDescription;
 import edu.stanford.epad.common.dicom.DCM4CHEEUtil;
@@ -48,6 +51,8 @@ import edu.stanford.epad.dtos.EPADSubject;
 import edu.stanford.epad.dtos.EPADSubjectList;
 import edu.stanford.epad.dtos.EPADUser;
 import edu.stanford.epad.dtos.EPADUserList;
+import edu.stanford.epad.dtos.EPADWorklist;
+import edu.stanford.epad.dtos.EPADWorklistList;
 import edu.stanford.epad.dtos.SeriesProcessingStatus;
 import edu.stanford.epad.dtos.StudyProcessingStatus;
 import edu.stanford.epad.dtos.internal.DCM4CHEESeries;
@@ -83,6 +88,7 @@ import edu.stanford.epad.epadws.handlers.core.SubjectReference;
 import edu.stanford.epad.epadws.handlers.dicom.DSOUtil;
 import edu.stanford.epad.epadws.models.EpadFile;
 import edu.stanford.epad.epadws.models.FileType;
+import edu.stanford.epad.epadws.models.NonDicomSeries;
 import edu.stanford.epad.epadws.models.Project;
 import edu.stanford.epad.epadws.models.ProjectType;
 import edu.stanford.epad.epadws.models.Study;
@@ -90,6 +96,7 @@ import edu.stanford.epad.epadws.models.Subject;
 import edu.stanford.epad.epadws.models.User;
 import edu.stanford.epad.epadws.models.User.EventLog;
 import edu.stanford.epad.epadws.models.UserRole;
+import edu.stanford.epad.epadws.models.WorkList;
 import edu.stanford.epad.epadws.processing.pipeline.task.ProjectDataDeleteTask;
 import edu.stanford.epad.epadws.processing.pipeline.task.StudyDataDeleteTask;
 import edu.stanford.epad.epadws.processing.pipeline.task.SubjectDataDeleteTask;
@@ -97,7 +104,9 @@ import edu.stanford.epad.epadws.processing.pipeline.watcher.Dcm4CheeDatabaseWatc
 import edu.stanford.epad.epadws.security.EPADSession;
 import edu.stanford.epad.epadws.security.EPADSessionOperations;
 import edu.stanford.epad.epadws.service.DefaultEpadProjectOperations;
+import edu.stanford.epad.epadws.service.DefaultWorkListOperations;
 import edu.stanford.epad.epadws.service.EpadProjectOperations;
+import edu.stanford.epad.epadws.service.EpadWorkListOperations;
 import edu.stanford.epad.epadws.service.UserProjectService;
 import edu.stanford.epad.epadws.xnat.XNATCreationOperations;
 import edu.stanford.epad.epadws.xnat.XNATDeletionOperations;
@@ -117,6 +126,7 @@ public class DefaultEpadOperations implements EpadOperations
 	private final Dcm4CheeDatabaseOperations dcm4CheeDatabaseOperations = Dcm4CheeDatabase.getInstance()
 			.getDcm4CheeDatabaseOperations();
 	private final EpadProjectOperations projectOperations = DefaultEpadProjectOperations.getInstance();
+	private final EpadWorkListOperations workListOperations = DefaultWorkListOperations.getInstance();
 
 	private DefaultEpadOperations()
 	{
@@ -149,7 +159,9 @@ public class DefaultEpadOperations implements EpadOperations
 				}
 			}
 		} else {
+			long starttime = System.currentTimeMillis();
 			List<Project> projects = projectOperations.getProjectsForUser(username);
+			long gettime = System.currentTimeMillis();
 			for (Project project : projects) {
 				EPADProject epadProject = project2EPADProject(sessionID, username, project, searchFilter, annotationCount);
 	
@@ -159,6 +171,8 @@ public class DefaultEpadOperations implements EpadOperations
 					epadProjectList.addEPADProject(epadProject);
 				}
 			}
+			long convtime = System.currentTimeMillis();
+			log.info("Time to get projects:" + (gettime-starttime) + " msecs, to convert:" + (convtime-gettime) + " msecs");
 		}
 		return epadProjectList;
 	}
@@ -293,27 +307,50 @@ public class DefaultEpadOperations implements EpadOperations
 			EPADSearchFilter searchFilter) throws Exception
 	{
 		EPADStudyList epadStudyList = new EPADStudyList();
-		Set<String> studyUIDsInXNAT = new HashSet<String>();
+		List<Study> studies = new ArrayList<Study>();
+		Subject subject = null;
+		Set<String> studyUIDsInEpad = new HashSet<String>();
 		if (!EPADConfig.UseEPADUsersProjects) {
-			studyUIDsInXNAT = XNATQueries.getStudyUIDsForSubject(sessionID, subjectReference.projectID,
+			studyUIDsInEpad = XNATQueries.getStudyUIDsForSubject(sessionID, subjectReference.projectID,
 					subjectReference.subjectID);
 		} else {
-			List<Study> studies = projectOperations.getStudiesForProjectAndSubject(subjectReference.projectID, 
+			subject = projectOperations.getSubject(subjectReference.subjectID);
+			studies = projectOperations.getStudiesForProjectAndSubject(subjectReference.projectID, 
 					subjectReference.subjectID);
 			for (Study study: studies)
-				studyUIDsInXNAT.add(study.getStudyUID());
+				studyUIDsInEpad.add(study.getStudyUID());
 		}
-		DCM4CHEEStudyList dcm4CheeStudyList = Dcm4CheeQueries.getStudies(studyUIDsInXNAT);
+		DCM4CHEEStudyList dcm4CheeStudyList = Dcm4CheeQueries.getStudies(studyUIDsInEpad);
 	
+
 		for (DCM4CHEEStudy dcm4CheeStudy : dcm4CheeStudyList.ResultSet.Result) {
 			EPADStudy epadStudy = dcm4cheeStudy2EpadStudy(sessionID, subjectReference.projectID, subjectReference.subjectID,
 					dcm4CheeStudy, username);
-
+			studyUIDsInEpad.remove(epadStudy.studyUID);
 			boolean filter = searchFilter.shouldFilterStudy(subjectReference.subjectID, epadStudy.studyAccessionNumber,
 					epadStudy.examTypes, epadStudy.numberOfAnnotations);
-
+			studyUIDsInEpad.add(epadStudy.studyUID);
 			if (!filter)
 				epadStudyList.addEPADStudy(epadStudy);
+		}
+		for (Study study: studies)
+		{
+			if (studyUIDsInEpad.contains(study.getStudyUID()))
+			{
+				List<NonDicomSeries> series = projectOperations.getNonDicomSeriesForStudy(study.getStudyUID());
+				String firstSeries = "";
+				if (series.size() > 0) firstSeries = series.get(0).getSeriesUID();
+				String firstSeriesDate = "";
+				if (series.size() > 0) firstSeriesDate = dateformat.format(series.get(0).getCreatedTime());
+				String desc = "";
+				DCM4CHEEStudy dcm4CheeStudy = new DCM4CHEEStudy(study.getStudyUID(), subject.getName(), subjectReference.subjectID, 
+								"", dateformat.format(study.getCreatedTime()), 
+								0, series.size(), firstSeries, firstSeriesDate,
+								"", 0, study.getStudyUID(), desc, "",
+								"", "");
+				EPADStudy epadStudy = dcm4cheeStudy2EpadStudy(sessionID, subjectReference.projectID, subjectReference.subjectID,
+						dcm4CheeStudy, username);
+			}
 		}
 		return epadStudyList;
 	}
@@ -424,6 +461,20 @@ public class DefaultEpadOperations implements EpadOperations
 				}
 			}
 			
+		}
+		try {
+			List<NonDicomSeries> ndSerieses = projectOperations.getNonDicomSeriesForStudy(studyReference.studyUID);
+			for (NonDicomSeries ndSeries: ndSerieses) {
+				EPADSeries series = new EPADSeries(studyReference.projectID, studyReference.subjectID, "", studyReference.studyUID, 
+						ndSeries.getSeriesUID(), 
+						dateformat.format(ndSeries.getSeriesDate()), 
+						ndSeries.getDescription(), 
+						"", "", "", 0, 0, 0, "","","",null,"","", false);
+				series.isNonDicomSeries = true;
+				epadSeriesList.addEPADSeries(series);
+			}
+		} catch (Exception e) {
+			log.warning("Error getting non-dicom series", e);
 		}
 		return epadSeriesList;
 	}
@@ -624,14 +675,25 @@ public class DefaultEpadOperations implements EpadOperations
 			Subject subject = projectOperations.getSubject(subjectID);
 			if (subject == null)
 				subject = projectOperations.createSubject(username, subjectID, subjectName, null, "");
-			projectOperations.createStudy(username, studyUID, subjectID);
+			projectOperations.createStudy(username, studyUID, subjectID, "");
 		}
 	}
 
+	SimpleDateFormat dateformat = new SimpleDateFormat("yyyyMMdd");
 	@Override
-	public int createSeries(SeriesReference seriesReference, String sessionID)
+	public EPADSeries createSeries(String username, SeriesReference seriesReference, String description, String sessionID) throws Exception
 	{
-		return HttpServletResponse.SC_NOT_IMPLEMENTED; // TODO
+		log.info("Creating new series:" + seriesReference.seriesUID);
+		String seriesUID = seriesReference.seriesUID;
+		if (seriesUID.equalsIgnoreCase("new"))
+		{
+			UIDGenerator u = new UIDGenerator();
+			seriesUID = u.getNewUID();
+		}
+		NonDicomSeries series = projectOperations.createNonDicomSeries(username, seriesUID, seriesReference.studyUID, description, new Date());
+		projectOperations.addStudyToProject(username, seriesReference.studyUID, seriesReference.subjectID, seriesReference.projectID);
+		return new EPADSeries(seriesReference.projectID, seriesReference.subjectID, "", seriesReference.studyUID, seriesUID,
+				dateformat.format(new Date()), description, "", "", "", 0, 0, 0, "","","",null,"","", false);
 	}
 
 	@Override
@@ -656,7 +718,7 @@ public class DefaultEpadOperations implements EpadOperations
 		return deleteSeries(seriesReference, deleteAims);
 	}
 	
-	private String deleteSeries(SeriesReference seriesReference, boolean deleteAims)
+	public String deleteSeries(SeriesReference seriesReference, boolean deleteAims)
 	{
 		String seriesPk = null;
 		List<Map<String, String>> seriesList = dcm4CheeDatabaseOperations.getAllSeriesInStudy(seriesReference.studyUID);
@@ -877,7 +939,7 @@ public class DefaultEpadOperations implements EpadOperations
 	}
 
 	@Override
-	public int createSubject(String username, SubjectReference subjectReference, String subjectName, String sessionID) throws Exception
+	public int createSubject(String username, SubjectReference subjectReference, String subjectName, Date dob, String gender, String sessionID) throws Exception
 	{
 		if (!EPADConfig.UseEPADUsersProjects) {
 			return XNATCreationOperations.createXNATSubject(subjectReference.projectID, subjectReference.subjectID,
@@ -893,7 +955,18 @@ public class DefaultEpadOperations implements EpadOperations
 	}
 
 	@Override
-	public int createStudy(String username, StudyReference studyReference, String sessionID) throws Exception
+	public int updateSubject(String username,
+			SubjectReference subjectReference, String subjectName, Date dob,
+			String gender, String sessionID) throws Exception {
+		Subject subject = projectOperations.getSubject(subjectReference.subjectID);
+		if (subject == null)
+			throw new Exception("Subject " + subjectReference.subjectID + " not found");
+		projectOperations.createSubject(username, subjectReference.subjectID, subjectName, dob, gender);
+		return HttpServletResponse.SC_OK;
+	}
+
+	@Override
+	public int createStudy(String username, StudyReference studyReference, String description, String sessionID) throws Exception
 	{
 		if (!EPADConfig.UseEPADUsersProjects) {
 			return XNATCreationOperations.createXNATDICOMStudyExperiment(studyReference.projectID, studyReference.subjectID,
@@ -901,7 +974,7 @@ public class DefaultEpadOperations implements EpadOperations
 		} else {
 			Study study = projectOperations.getStudy(studyReference.studyUID);
 			if (study == null)
-				study = projectOperations.createStudy(username, studyReference.studyUID, studyReference.subjectID);
+				study = projectOperations.createStudy(username, studyReference.studyUID, studyReference.subjectID, description);
 			if (studyReference.projectID != null && studyReference.projectID.length() != 0)
 			{
 				log.info("adding study:" + studyReference.studyUID + " to project:" + studyReference.projectID);
@@ -1044,17 +1117,47 @@ public class DefaultEpadOperations implements EpadOperations
 
 	@Override
 	public int createFile(String username, SeriesReference seriesReference,
-			File uploadedFile, String description, String fileType, String sessionID)
-			throws Exception {
+			File uploadedFile, String description, String fileType, String sessionID) throws Exception {
+		return createFile(username, seriesReference, uploadedFile, description, fileType, sessionID, 
+							false, null, null);
+	}
+
+	@Override
+	public int createFile(String username, SeriesReference seriesReference,
+			File uploadedFile, String description, String fileType, String sessionID, 
+			boolean convertToDICOM, String modality, String instanceNumber) throws Exception {
 		if (fileType != null && fileType.equalsIgnoreCase(FileType.ANNOTATION.getName())) {
 			if (AIMUtil.saveAIMAnnotation(uploadedFile, seriesReference.projectID, sessionID, username))
 				throw new Exception("Error saving AIM file");
 		}
 		else {
-			createFile(username, seriesReference.projectID, seriesReference.subjectID, seriesReference.studyUID, seriesReference.seriesUID,
+			if (convertToDICOM) {
+				Subject subject = projectOperations.getSubject(seriesReference.subjectID);
+				String patientName = "";
+				if (subject != null)
+					patientName = subject.getName();
+				// TODO: use modality
+				File dicomFile = new File(replaceExtension(uploadedFile.getAbsolutePath(), "dcm"));
+				new ImageToDicom(uploadedFile.getAbsolutePath(), dicomFile.getAbsolutePath(), patientName, 
+						seriesReference.seriesUID, 
+						seriesReference.studyUID, 
+						seriesReference.seriesUID, instanceNumber);
+				uploadedFile.delete();
+				createImage(username, seriesReference.projectID, dicomFile, sessionID);
+			} else {
+				createFile(username, seriesReference.projectID, seriesReference.subjectID, seriesReference.studyUID, seriesReference.seriesUID,
 						uploadedFile, description, fileType, sessionID);
+			}
 		}
 		return HttpServletResponse.SC_OK;
+	}
+
+	private String replaceExtension(String filePath, String newExt) {
+		int dot = filePath.lastIndexOf(".");
+		if (dot != -1)
+			filePath = filePath.substring(0, dot);
+		filePath = filePath + "." + newExt;
+		return filePath;
 	}
 
 	@Override
@@ -1857,6 +1960,82 @@ public class DefaultEpadOperations implements EpadOperations
 		return sessions.values();
 	}
 
+	@Override
+	public EPADWorklistList getWorkLists(ProjectReference projectReference) throws Exception {
+		List<WorkList> worklists = workListOperations.getWorkListsForProject(projectReference.projectID);
+		EPADWorklistList wllist = new EPADWorklistList();
+		for (WorkList wl: worklists)
+		{
+			User user = (User) projectOperations.getDBObject(User.class, wl.getUserId());
+			Set<Subject> subjects = workListOperations.getSubjectsForWorkList(wl.getWorkListID());
+			Set<Study> studies = workListOperations.getStudiesForWorkList(wl.getWorkListID());
+			Set<String> subjectIDs = new HashSet<String>();
+			Set<String> studyUIDs = new HashSet<String>();
+			for (Subject subject: subjects)
+				subjectIDs.add(subject.getSubjectUID());
+			for (Study study: studies)
+				studyUIDs.add(study.getStudyUID());
+			
+			wllist.addEPADWorklist(new EPADWorklist(wl.getWorkListID(), user.getUsername(), projectReference.projectID,
+					wl.getDescription(), wl.getStatus(),formatDate(wl.getStartDate()),
+					formatDate(wl.getCompleteDate()), formatDate(wl.getDueDate()), subjectIDs, null, studyUIDs, null));
+		}
+		return wllist;
+	}
+
+	@Override
+	public EPADWorklist getWorkList(ProjectReference projectReference, String username) throws Exception {
+		WorkList wl = workListOperations.getWorkListForUserByProject(username, projectReference.projectID);
+		User user = (User) projectOperations.getDBObject(User.class, wl.getUserId());
+		Set<Subject> subjects = workListOperations.getSubjectsForWorkListWithStatus(wl.getWorkListID());
+		Set<Study> studies = workListOperations.getStudiesForWorkListWithStatus(wl.getWorkListID());
+		Set<String> subjectIDs = new HashSet<String>();
+		Set<String> studyUIDs = new HashSet<String>();
+		List<String> subjectStatus = new ArrayList<String>();
+		List<String> studyStatus = new ArrayList<String>();
+		for (Subject subject: subjects)
+		{
+			subjectIDs.add(subject.getSubjectUID());
+			subjectStatus.add(subject.getSubjectUID() + ":" + subject.getStatus());
+		}
+		for (Study study: studies)
+		{
+			studyUIDs.add(study.getStudyUID());
+			studyStatus.add(study.getStudyUID() + ":" + study.getStatus());
+		}
+		return new EPADWorklist(wl.getWorkListID(), user.getUsername(), projectReference.projectID,
+				wl.getDescription(), wl.getStatus(),formatDate(wl.getStartDate()),
+				formatDate(wl.getCompleteDate()), formatDate(wl.getDueDate()), subjectIDs, subjectStatus, studyUIDs, studyStatus);
+	}
+
+	@Override
+	public EPADWorklist getWorkListByID(ProjectReference projectReference, String workListID) throws Exception {
+		WorkList wl = workListOperations.getWorkList(workListID);
+		User user = (User) projectOperations.getDBObject(User.class, wl.getUserId());
+		Project project = (Project) projectOperations.getDBObject(Project.class, wl.getProjectId());
+		if (project.getProjectId().equals(projectReference.projectID))
+			throw new Exception("Incorrect project for worklist " + workListID);
+		Set<Subject> subjects = workListOperations.getSubjectsForWorkListWithStatus(wl.getWorkListID());
+		Set<Study> studies = workListOperations.getStudiesForWorkListWithStatus(wl.getWorkListID());
+		Set<String> subjectIDs = new HashSet<String>();
+		Set<String> studyUIDs = new HashSet<String>();
+		List<String> subjectStatus = new ArrayList<String>();
+		List<String> studyStatus = new ArrayList<String>();
+		for (Subject subject: subjects)
+		{
+			subjectIDs.add(subject.getSubjectUID());
+			subjectStatus.add(subject.getSubjectUID() + ":" + subject.getStatus());
+		}
+		for (Study study: studies)
+		{
+			studyUIDs.add(study.getStudyUID());
+			studyStatus.add(study.getStudyUID() + ":" + study.getStatus());
+		}
+		return new EPADWorklist(wl.getWorkListID(), user.getUsername(), projectReference.projectID,
+				wl.getDescription(), wl.getStatus(),formatDate(wl.getStartDate()),
+				formatDate(wl.getCompleteDate()), formatDate(wl.getDueDate()), subjectIDs, subjectStatus, studyUIDs, studyStatus);
+	}
+
 	private EPADStudy dcm4cheeStudy2EpadStudy(String sessionID, String suppliedProjectID, String suppliedSubjectID,
 			DCM4CHEEStudy dcm4CheeStudy, String username)
 	{
@@ -2025,7 +2204,7 @@ public class DefaultEpadOperations implements EpadOperations
 				Set<String> studyUIDs = new HashSet<String>();
 				List<Study> studies = projectOperations.getAllStudiesForProject(projectID);
 				for (Study study: studies)
-				studyUIDs.add(study.getStudyUID());
+					studyUIDs.add(study.getStudyUID());
 				studytime = System.currentTimeMillis();
 				numberOfStudies = studies.size();
 				for  (String studyUID: studyUIDs)
@@ -2119,6 +2298,13 @@ public class DefaultEpadOperations implements EpadOperations
 	}
 
 	static SimpleDateFormat dateFormat = new SimpleDateFormat("MM/DDD/yyyy");
+	private String formatDate(Date date)
+	{
+		if (date == null)
+			return "";
+		else
+			return dateFormat.format(date);
+	}
 	
 	private EPADSubject subject2EPADSubject(String sessionID, String username, Subject subject, String projectID,
 			EPADSearchFilter searchFilter) throws Exception
@@ -2136,12 +2322,13 @@ public class DefaultEpadOperations implements EpadOperations
 
 			int numberOfAnnotations = 0;
 			if (!"true".equalsIgnoreCase(EPADConfig.getParamValue("SkipPatientAnnotationCount", "false"))) {
-			for  (Study study: studies)
-			{
-				// Skip this, cause it is too slow and not that important
-				EPADAIMList aims = getStudyAIMDescriptions(new StudyReference(null, null, study.getStudyUID()), username, sessionID);
-				numberOfAnnotations = numberOfAnnotations + getNumberOfAccessibleAims(sessionID, projectID, aims, username);
-			}
+				for  (Study study: studies)
+				{
+					// Skip this, cause it is too slow and not that important
+					EPADAIMList aims = getStudyAIMDescriptions(new StudyReference(null, null, study.getStudyUID()), username, sessionID);
+					numberOfAnnotations = numberOfAnnotations + getNumberOfAccessibleAims(sessionID, projectID, aims, username);
+				}
+
 			}
 			if (!searchFilter.shouldFilterSubject(patientID, patientName, numberOfAnnotations)) {
 				Set<String> examTypes = epadQueries.getExamTypesForSubject(patientID);
@@ -2640,7 +2827,7 @@ public class DefaultEpadOperations implements EpadOperations
 		catch (Exception x)
 		{
 			log.warning("Error deleting user:" + username, x);
-				throw new Exception(x.getMessage());
+			throw new Exception(x.getMessage());
 		}
 	}
 

@@ -228,7 +228,7 @@ public class XNATSyncHandler extends AbstractHandler
 					Study study = projectOperations.getStudy(experiment.label.replace('_', '.'));
 					if (study == null)
 					{
-						study = projectOperations.createStudy(username, experiment.label.replace('_', '.'), subject.getSubjectUID());
+						study = projectOperations.createStudy(username, experiment.label.replace('_', '.'), subject.getSubjectUID(),"");
 						response = response + "\nCreated study " + study.getStudyUID() + " for subject " + subject.getName();
 					}
 				}

@@ -9,10 +9,12 @@ import java.io.PrintWriter;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -47,22 +49,25 @@ import edu.stanford.epad.dtos.EPADSubject;
 import edu.stanford.epad.dtos.EPADSubjectList;
 import edu.stanford.epad.dtos.EPADUser;
 import edu.stanford.epad.dtos.EPADUserList;
+import edu.stanford.epad.dtos.EPADWorklist;
+import edu.stanford.epad.dtos.EPADWorklistList;
 import edu.stanford.epad.dtos.RemotePAC;
 import edu.stanford.epad.dtos.RemotePACEntity;
 import edu.stanford.epad.dtos.RemotePACEntityList;
 import edu.stanford.epad.dtos.RemotePACList;
-import edu.stanford.epad.dtos.RemotePACQueryConfig;
 import edu.stanford.epad.dtos.RemotePACQueryConfigList;
 import edu.stanford.epad.epadws.aim.AIMSearchType;
 import edu.stanford.epad.epadws.aim.AIMUtil;
 import edu.stanford.epad.epadws.handlers.HandlerUtil;
 import edu.stanford.epad.epadws.handlers.dicom.DSOUtil;
-import edu.stanford.epad.epadws.models.FileType;
 import edu.stanford.epad.epadws.models.RemotePACQuery;
+import edu.stanford.epad.epadws.models.WorkList;
 import edu.stanford.epad.epadws.queries.DefaultEpadOperations;
 import edu.stanford.epad.epadws.queries.EpadOperations;
 import edu.stanford.epad.epadws.security.EPADSession;
 import edu.stanford.epad.epadws.security.EPADSessionOperations;
+import edu.stanford.epad.epadws.service.DefaultWorkListOperations;
+import edu.stanford.epad.epadws.service.EpadWorkListOperations;
 import edu.stanford.epad.epadws.service.RemotePACService;
 import edu.stanford.epad.epadws.service.SessionService;
 import edu.stanford.epad.epadws.service.UserProjectService;
@@ -613,6 +618,29 @@ public class EPADHandler extends AbstractHandler
 				responseStream.append(users.toJSON());
 				statusCode = HttpServletResponse.SC_OK;
 
+			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.WORKLISTS, pathInfo)) {
+				ProjectReference projectReference = ProjectReference.extract(ProjectsRouteTemplates.WORKLISTS, pathInfo);
+				EPADWorklistList wll = epadOperations.getWorkLists(projectReference);
+				responseStream.append(wll.toJSON());
+				statusCode = HttpServletResponse.SC_OK;
+				
+			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.WORKLIST, pathInfo)) {
+				ProjectReference projectReference = ProjectReference.extract(ProjectsRouteTemplates.WORKLIST, pathInfo);
+				Map<String, String> templateMap = HandlerUtil.getTemplateMap(ProjectsRouteTemplates.USER_WORKLIST, pathInfo);
+				String workListID = HandlerUtil.getTemplateParameter(templateMap, "workListID");
+				EPADWorklist wl = epadOperations.getWorkListByID(projectReference, workListID);
+				responseStream.append(wl.toJSON());
+				statusCode = HttpServletResponse.SC_OK;
+			
+			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.USER_WORKLISTS, pathInfo)) {
+				ProjectReference projectReference = ProjectReference.extract(ProjectsRouteTemplates.USER_WORKLISTS, pathInfo);
+				Map<String, String> templateMap = HandlerUtil.getTemplateMap(ProjectsRouteTemplates.USER_WORKLISTS, pathInfo);
+				String reader = HandlerUtil.getTemplateParameter(templateMap, "username");
+				EPADWorklist wl = epadOperations.getWorkList(projectReference, reader);
+				responseStream.append(wl.toJSON());
+				statusCode = HttpServletResponse.SC_OK;
+
+
 			} else if (HandlerUtil.matchesTemplate(StudiesRouteTemplates.STUDY_AIM_LIST, pathInfo)) {
 				StudyReference studyReference = StudyReference.extract(StudiesRouteTemplates.STUDY_AIM_LIST, pathInfo);
 				EPADAIMList aims = epadOperations.getStudyAIMDescriptions(studyReference, username, sessionID);
@@ -966,13 +994,16 @@ public class EPADHandler extends AbstractHandler
 				String[] tagGroup = httpRequest.getParameterValues("tagGroup");
 				String[] tagElement = httpRequest.getParameterValues("tagElement");
 				String[] tagValue = httpRequest.getParameterValues("tagValue");
+				String[] tagType = httpRequest.getParameterValues("tagType");
 				boolean studiesOnly = !"true".equalsIgnoreCase(httpRequest.getParameter("series"));
+				if (tagGroup != null && httpRequest.getParameter("series") == null)
+					studiesOnly = false;
 				RemotePAC pac = RemotePACService.getInstance().getRemotePAC(pacid);
 				if (pac != null)
 				{
 					List<RemotePACEntity> entities = RemotePACService.getInstance().queryRemoteData(pac, patientNameFilter, patientIDFilter, 
 							studyIDFilter, studyDateFilter, 
-							tagGroup, tagElement, tagValue, false, studiesOnly);
+							tagGroup, tagElement, tagValue, tagType, false, studiesOnly);
 					RemotePACEntityList entityList = new RemotePACEntityList();
 					for (RemotePACEntity entity: entities)
 						entityList.addRemotePACEntity(entity);
@@ -1093,6 +1124,7 @@ public class EPADHandler extends AbstractHandler
 			String username, String sessionID)
 	{
 		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
+		EpadWorkListOperations worklistOperations = DefaultWorkListOperations.getInstance();
 		String pathInfo = httpRequest.getPathInfo();
 		int statusCode = HttpServletResponse.SC_OK;
 		String status = null;
@@ -1129,6 +1161,8 @@ public class EPADHandler extends AbstractHandler
 				} else {
 					statusCode = epadOperations.createProject(username, projectReference, projectName, projectDescription, sessionID);
 				}
+				project = epadOperations.getProjectDescription(projectReference, username, sessionID);
+				responseStream.append(project.toJSON());
 				if (uploadedFile != null && false) {
 					log.info("Saving uploaded file:" + uploadedFile.getName());
 					String description = httpRequest.getParameter("description");
@@ -1139,7 +1173,14 @@ public class EPADHandler extends AbstractHandler
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.SUBJECT, pathInfo)) {
 				SubjectReference subjectReference = SubjectReference.extract(ProjectsRouteTemplates.SUBJECT, pathInfo);
 				String subjectName = httpRequest.getParameter("subjectName");
-				statusCode = epadOperations.createSubject(username, subjectReference, subjectName, sessionID);
+				String gender = httpRequest.getParameter("gender");
+				String dob = httpRequest.getParameter("dob");
+				EPADSubject subject = epadOperations.getSubjectDescription(subjectReference, username, sessionID);
+				if (subject != null) {
+					statusCode = epadOperations.updateSubject(username, subjectReference, subjectName, getDate(dob), gender, sessionID);
+				} else {
+					statusCode = epadOperations.createSubject(username, subjectReference, subjectName, getDate(dob), gender, sessionID);
+				}
 				if (uploadedFile != null && false) {
 					String description = httpRequest.getParameter("description");
 					String fileType = httpRequest.getParameter("fileType");
@@ -1157,9 +1198,9 @@ public class EPADHandler extends AbstractHandler
 				
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.STUDY, pathInfo)) {
 				StudyReference studyReference = StudyReference.extract(ProjectsRouteTemplates.STUDY, pathInfo);
-				statusCode = epadOperations.createStudy(username, studyReference, sessionID);
+				String description = httpRequest.getParameter("description");
+				statusCode = epadOperations.createStudy(username, studyReference, description, sessionID);
 				if (uploadedFile != null && false) {
-					String description = httpRequest.getParameter("description");
 					String fileType = httpRequest.getParameter("fileType");
 					statusCode = epadOperations.createFile(username, studyReference, uploadedFile, description, fileType, sessionID);					
 				}
@@ -1171,9 +1212,9 @@ public class EPADHandler extends AbstractHandler
 	
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.SERIES, pathInfo)) {
 				SeriesReference seriesReference = SeriesReference.extract(ProjectsRouteTemplates.SERIES, pathInfo);
-				statusCode = epadOperations.createSeries(seriesReference, sessionID);
+				String description = httpRequest.getParameter("description");
+				EPADSeries series  = epadOperations.createSeries(username, seriesReference, description, sessionID);
 				if (uploadedFile != null && false) {
-					String description = httpRequest.getParameter("description");
 					String fileType = httpRequest.getParameter("fileType");
 					statusCode = epadOperations.createFile(username, seriesReference, uploadedFile, description, fileType, sessionID);					
 				}
@@ -1199,6 +1240,19 @@ public class EPADHandler extends AbstractHandler
 				log.info("Projects AIM PUT");
 				status = epadOperations.createProjectAIM(username, projectReference, aimReference.aimID, uploadedFile, sessionID);
 	
+			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.PROJECT_AIM_LIST, pathInfo)) {
+				ProjectReference projectReference = ProjectReference.extract(ProjectsRouteTemplates.PROJECT_AIM_LIST, pathInfo);
+				AIMSearchType aimSearchType = AIMUtil.getAIMSearchType(httpRequest);
+				String searchValue = aimSearchType != null ? httpRequest.getParameter(aimSearchType.getName()) : null;
+				String templateName = httpRequest.getParameter("templateName");
+				log.info("PUT request for AIMs from user " + username + "; query type is " + aimSearchType + ", value "
+						+ searchValue + ", project " + projectReference.projectID);
+				if (aimSearchType.equals(AIMSearchType.ANNOTATION_UID)) {
+					String[] aimIDs = searchValue.split(",");
+					AIMUtil.runPlugIn(aimIDs, templateName, projectReference.projectID, sessionID);
+				}
+				statusCode = HttpServletResponse.SC_OK;
+
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.FRAME, pathInfo)) {
 				statusCode = HttpServletResponse.SC_METHOD_NOT_ALLOWED;
 				httpResponse.addHeader("Allow", "GET, DELETE");
@@ -1214,6 +1268,44 @@ public class EPADHandler extends AbstractHandler
 				String add_username = HandlerUtil.getTemplateParameter(templateMap, "username");
 				String role = httpRequest.getParameter("role");
 				epadOperations.addUserToProject(username, projectReference, add_username, role, sessionID);
+				statusCode = HttpServletResponse.SC_OK;
+	
+			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.USER_WORKLIST, pathInfo)) {
+				ProjectReference projectReference = ProjectReference.extract(ProjectsRouteTemplates.USER_WORKLIST, pathInfo);
+				Map<String, String> templateMap = HandlerUtil.getTemplateMap(ProjectsRouteTemplates.USER_WORKLIST, pathInfo);
+				String reader = HandlerUtil.getTemplateParameter(templateMap, "username");
+				String workListID = HandlerUtil.getTemplateParameter(templateMap, "workListID");
+				String description = httpRequest.getParameter("description");
+				String dueDate = httpRequest.getParameter("dueDate");
+				worklistOperations.createWorkList(username, reader, projectReference.projectID, workListID, description, null, getDate(dueDate));
+				statusCode = HttpServletResponse.SC_OK;
+			
+			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.USER_SUBJECT, pathInfo)) {
+				ProjectReference projectReference = ProjectReference.extract(ProjectsRouteTemplates.USER_SUBJECT, pathInfo);
+				Map<String, String> templateMap = HandlerUtil.getTemplateMap(ProjectsRouteTemplates.USER_SUBJECT, pathInfo);
+				String reader = HandlerUtil.getTemplateParameter(templateMap, "username");
+				String subjectID = HandlerUtil.getTemplateParameter(templateMap, "subjectID");
+				String wlstatus = httpRequest.getParameter("status");
+				boolean started = "true".equalsIgnoreCase(httpRequest.getParameter("started"));
+				boolean completed = "true".equalsIgnoreCase(httpRequest.getParameter("completed"));
+				WorkList wl = worklistOperations.getWorkListForUserByProject(username, projectReference.projectID);
+				if (wl == null)
+					throw new Exception("Worklist not found for user " + reader + " and project " + projectReference.projectID);
+				worklistOperations.setWorkListSubjectStatus(reader, wl.getWorkListID(), subjectID, wlstatus, started, completed);
+				statusCode = HttpServletResponse.SC_OK;
+	
+			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.USER_STUDY, pathInfo)) {
+				ProjectReference projectReference = ProjectReference.extract(ProjectsRouteTemplates.USER_STUDY, pathInfo);
+				Map<String, String> templateMap = HandlerUtil.getTemplateMap(ProjectsRouteTemplates.USER_STUDY, pathInfo);
+				String reader = HandlerUtil.getTemplateParameter(templateMap, "username");
+				String studyUID = HandlerUtil.getTemplateParameter(templateMap, "studyUID");
+				String wlstatus = httpRequest.getParameter("status");
+				boolean started = "true".equalsIgnoreCase(httpRequest.getParameter("started"));
+				boolean completed = "true".equalsIgnoreCase(httpRequest.getParameter("completed"));
+				WorkList wl = worklistOperations.getWorkListForUserByProject(username, projectReference.projectID);
+				if (wl == null)
+					throw new Exception("Worklist not found for user " + reader + " and project " + projectReference.projectID);
+				worklistOperations.setWorkListStudyStatus(reader, wl.getWorkListID(), studyUID, wlstatus, started, completed);
 				statusCode = HttpServletResponse.SC_OK;
 	
 			} else if (HandlerUtil.matchesTemplate(UsersRouteTemplates.USER, pathInfo)) {
@@ -1234,6 +1326,40 @@ public class EPADHandler extends AbstractHandler
 					epadOperations.disableUser(username, target_username);
 				statusCode = HttpServletResponse.SC_OK;
 				
+			} else if (HandlerUtil.matchesTemplate(UsersRouteTemplates.USER_WORKLIST, pathInfo)) {
+				Map<String, String> templateMap = HandlerUtil.getTemplateMap(UsersRouteTemplates.USER_WORKLIST, pathInfo);
+				String reader = HandlerUtil.getTemplateParameter(templateMap, "username");
+				String workListID = HandlerUtil.getTemplateParameter(templateMap, "worklistID");
+				String wlstatus = httpRequest.getParameter("status");
+				boolean started = "true".equalsIgnoreCase(httpRequest.getParameter("started"));
+				boolean completed = "true".equalsIgnoreCase(httpRequest.getParameter("completed"));
+				worklistOperations.setWorkListStatus(reader, workListID, wlstatus, started, completed);
+				statusCode = HttpServletResponse.SC_OK;
+				
+			} else if (HandlerUtil.matchesTemplate(UsersRouteTemplates.USER_SUBJECT, pathInfo)) {
+				Map<String, String> templateMap = HandlerUtil.getTemplateMap(UsersRouteTemplates.USER_SUBJECT, pathInfo);
+				String reader = HandlerUtil.getTemplateParameter(templateMap, "username");
+				String subjectID = HandlerUtil.getTemplateParameter(templateMap, "subjectID");
+				String wlstatus = httpRequest.getParameter("status");
+				boolean started = "true".equalsIgnoreCase(httpRequest.getParameter("started"));
+				boolean completed = "true".equalsIgnoreCase(httpRequest.getParameter("completed"));
+				Set<WorkList> wls = worklistOperations.getWorkListsForUserBySubject(username, subjectID);
+				for (WorkList wl: wls)
+					worklistOperations.setWorkListSubjectStatus(reader, wl.getWorkListID(), subjectID, wlstatus, started, completed);
+				statusCode = HttpServletResponse.SC_OK;
+	
+			} else if (HandlerUtil.matchesTemplate(UsersRouteTemplates.USER_STUDY, pathInfo)) {
+				Map<String, String> templateMap = HandlerUtil.getTemplateMap(UsersRouteTemplates.USER_STUDY, pathInfo);
+				String reader = HandlerUtil.getTemplateParameter(templateMap, "username");
+				String studyUID = HandlerUtil.getTemplateParameter(templateMap, "studyUID");
+				String wlstatus = httpRequest.getParameter("status");
+				boolean started = "true".equalsIgnoreCase(httpRequest.getParameter("started"));
+				boolean completed = "true".equalsIgnoreCase(httpRequest.getParameter("completed"));
+				Set<WorkList> wls = worklistOperations.getWorkListsForUserByStudy(username, studyUID);
+				for (WorkList wl: wls)
+					worklistOperations.setWorkListSubjectStatus(reader, wl.getWorkListID(), studyUID, wlstatus, started, completed);
+				statusCode = HttpServletResponse.SC_OK;
+
 			} else if (HandlerUtil.matchesTemplate(PACSRouteTemplates.PAC, pathInfo)) {
 				Map<String, String> templateMap = HandlerUtil.getTemplateMap(PACSRouteTemplates.PAC, pathInfo);
 				String pacid = HandlerUtil.getTemplateParameter(templateMap, "pacid");
@@ -1342,6 +1468,7 @@ public class EPADHandler extends AbstractHandler
 		int statusCode;
 		File uploadedFile = null;
 		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
+		EpadWorkListOperations worklistOperations = DefaultWorkListOperations.getInstance();
 	    String requestContentType = httpRequest.getContentType();
 		try {
 			log.info("POST Request from client:" + pathInfo + " user:" + username + " contentType:" + requestContentType);
@@ -1485,20 +1612,28 @@ public class EPADHandler extends AbstractHandler
 					}
 		
 				} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.SERIES_FILE_LIST, pathInfo)) {
-					SeriesReference seriesReference = SeriesReference.extract(ProjectsRouteTemplates.SERIES, pathInfo);
+					SeriesReference seriesReference = SeriesReference.extract(ProjectsRouteTemplates.SERIES_FILE_LIST, pathInfo);
 					if (requestContentType == null || !requestContentType.startsWith("multipart/form-data"))
 						throw new Exception("Invalid Content Type, should be multipart/form-data");
 					if (numberOfFiles == 0)
 						throw new Exception("No files found in post");
+					boolean convertToDicom = "true".equalsIgnoreCase(httpRequest.getParameter("convertToDICOM"));
+					if (!convertToDicom) convertToDicom = "true".equalsIgnoreCase((String) paramData.get("convertToDICOM"));
+					String modality = httpRequest.getParameter("modality");
+					if (modality == null) modality = (String) paramData.get("modality");
 					if (numberOfFiles == 1) {
 						String description = httpRequest.getParameter("description");
 						if (description == null) description = (String) paramData.get("description");
 						String fileType = httpRequest.getParameter("fileType");
-						if (fileType == null) description = (String) paramData.get("fileType");
-						statusCode = epadOperations.createFile(username, seriesReference, uploadedFile, description, fileType, sessionID);					
+						if (fileType == null) fileType = (String) paramData.get("fileType");
+						String instanceNumber = httpRequest.getParameter("instanceNumber");
+						if (instanceNumber == null) instanceNumber = (String) paramData.get("instanceNumber");
+						if (instanceNumber == null) instanceNumber = "1";
+						statusCode = epadOperations.createFile(username, seriesReference, uploadedFile, description, fileType, sessionID, convertToDicom, modality, instanceNumber);					
 					} else {
 						List<String> descriptions = (List<String>) paramData.get("description_List");
 						List<String> fileTypes = (List<String>) paramData.get("fileType_List");
+						List<String> instanceNumbers = (List<String>) paramData.get("instanceNumber_List");
 						int i = 0;
 						for (String param: paramData.keySet())
 						{
@@ -1510,7 +1645,10 @@ public class EPADHandler extends AbstractHandler
 								String fileType = httpRequest.getParameter("fileType");
 								if (fileTypes != null && fileTypes.size() > i)
 										fileType = fileTypes.get(i);
-								statusCode = epadOperations.createFile(username, seriesReference, (File)paramData.get(param), description, fileType, sessionID);
+								String instanceNumber = "1";
+								if (instanceNumbers != null && instanceNumbers.size() > i)
+									instanceNumber = instanceNumbers.get(i);
+								statusCode = epadOperations.createFile(username, seriesReference, (File)paramData.get(param), description, fileType, sessionID, convertToDicom, modality, instanceNumber);
 								i++;
 							}
 						}
@@ -1544,6 +1682,27 @@ public class EPADHandler extends AbstractHandler
 					} else {
 						statusCode = epadOperations.createProject(username, projectReference, projectName, projectDescription, sessionID);
 					}							
+				} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.SUBJECT, pathInfo)) {
+					SubjectReference subjectReference = SubjectReference.extract(ProjectsRouteTemplates.SUBJECT, pathInfo);
+					String subjectName = httpRequest.getParameter("subjectName");
+					String gender = httpRequest.getParameter("gender");
+					String dob = httpRequest.getParameter("dob");
+					EPADSubject subject = epadOperations.getSubjectDescription(subjectReference, username, sessionID);
+					if (subject != null) {
+						throw new Exception("Subject " + subject.subjectID +  " already exists");
+					} else {
+						statusCode = epadOperations.createSubject(username, subjectReference, subjectName, getDate(dob), gender, sessionID);
+					}
+					
+				} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.USER_WORKLIST, pathInfo)) {
+					ProjectReference projectReference = ProjectReference.extract(ProjectsRouteTemplates.USER_WORKLIST, pathInfo);
+					Map<String, String> templateMap = HandlerUtil.getTemplateMap(ProjectsRouteTemplates.USER_WORKLIST, pathInfo);
+					String reader = HandlerUtil.getTemplateParameter(templateMap, "username");
+					String workListID = HandlerUtil.getTemplateParameter(templateMap, "workListID");
+					String description = httpRequest.getParameter("description");
+					String dueDate = httpRequest.getParameter("dueDate");
+					worklistOperations.createWorkList(username, reader, projectReference.projectID, workListID, description, null, getDate(dueDate));
+					statusCode = HttpServletResponse.SC_OK;
 				
 				} else {
 					statusCode = HandlerUtil.badRequestJSONResponse(BAD_POST_MESSAGE + ":" + pathInfo, responseStream, log);
@@ -1570,6 +1729,7 @@ public class EPADHandler extends AbstractHandler
 	private int handleDelete(HttpServletRequest httpRequest, PrintWriter responseStream, String username, String sessionID)
 	{
 		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
+		EpadWorkListOperations worklistOperations = DefaultWorkListOperations.getInstance();
 		String pathInfo = httpRequest.getPathInfo();
 		int statusCode;
 
@@ -1653,10 +1813,35 @@ public class EPADHandler extends AbstractHandler
 				epadOperations.removeUserFromProject(username, projectReference, delete_username, sessionID);
 				statusCode = HttpServletResponse.SC_OK;
 				
+			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.WORKLISTS, pathInfo)) {
+				ProjectReference projectReference = ProjectReference.extract(ProjectsRouteTemplates.WORKLISTS, pathInfo);
+				Map<String, String> templateMap = HandlerUtil.getTemplateMap(ProjectsRouteTemplates.WORKLISTS, pathInfo);
+				String reader = HandlerUtil.getTemplateParameter(templateMap, "username");
+				WorkList wl = worklistOperations.getWorkListForUserByProject(username, projectReference.projectID);
+				if (wl == null)
+					throw new Exception("Worklist not found for user " + reader + " and project " + projectReference.projectID);
+				worklistOperations.deleteWorkList(username, wl.getWorkListID());;		
+				statusCode = HttpServletResponse.SC_OK;
+				
+			} else if (HandlerUtil.matchesTemplate(UsersRouteTemplates.USER_WORKLIST, pathInfo)) {
+				Map<String, String> templateMap = HandlerUtil.getTemplateMap(ProjectsRouteTemplates.USER_WORKLIST, pathInfo);
+				String reader = HandlerUtil.getTemplateParameter(templateMap, "username");
+				String worklistID = HandlerUtil.getTemplateParameter(templateMap, "worklistID");
+				worklistOperations.deleteWorkList(username, worklistID);;		
+				statusCode = HttpServletResponse.SC_OK;
+				
 			} else if (HandlerUtil.matchesTemplate(UsersRouteTemplates.USER, pathInfo)) {
 				Map<String, String> templateMap = HandlerUtil.getTemplateMap(UsersRouteTemplates.USER, pathInfo);
 				String target_username = HandlerUtil.getTemplateParameter(templateMap, "username");
 				epadOperations.deleteUser(username, target_username);
+				statusCode = HttpServletResponse.SC_OK;
+				
+			} else if (HandlerUtil.matchesTemplate(UsersRouteTemplates.USER_WORKLIST, pathInfo)) {
+				ProjectReference projectReference = ProjectReference.extract(UsersRouteTemplates.USER_WORKLIST, pathInfo);
+				Map<String, String> templateMap = HandlerUtil.getTemplateMap(UsersRouteTemplates.USER_WORKLIST, pathInfo);
+				String reader = HandlerUtil.getTemplateParameter(templateMap, "username");
+				String worklistID = HandlerUtil.getTemplateParameter(templateMap, "worklistID");
+				worklistOperations.deleteWorkList(username, worklistID);;		
 				statusCode = HttpServletResponse.SC_OK;
 				
 			} else if (HandlerUtil.matchesTemplate(PACSRouteTemplates.PAC, pathInfo)) {
@@ -1849,6 +2034,19 @@ public class EPADHandler extends AbstractHandler
 			return new Integer(value.trim()).intValue();
 		} catch (Exception x) {
 			return 0;
+		}
+	}
+	
+	SimpleDateFormat dateformat = new SimpleDateFormat("yyyyMMdd");
+	private Date getDate(String dateStr)
+	{
+		try
+		{
+			return dateformat.parse(dateStr);
+		}
+		catch (Exception x)
+		{
+			return null;
 		}
 	}
 

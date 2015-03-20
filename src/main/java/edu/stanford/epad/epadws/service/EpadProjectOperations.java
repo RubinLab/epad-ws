@@ -31,6 +31,7 @@ import java.util.Map;
 
 import edu.stanford.epad.epadws.models.EpadFile;
 import edu.stanford.epad.epadws.models.FileType;
+import edu.stanford.epad.epadws.models.NonDicomSeries;
 import edu.stanford.epad.epadws.models.Project;
 import edu.stanford.epad.epadws.models.ProjectType;
 import edu.stanford.epad.epadws.models.Study;
@@ -189,7 +190,17 @@ public interface EpadProjectOperations {
 	 * @return
 	 * @throws Exception
 	 */
-	Study createStudy(String loggedInUser, String studyUID, String subjectUID) throws Exception;
+	Study createStudy(String loggedInUser, String studyUID, String subjectUID, String description) throws Exception;
+	
+	/**
+	 * Create Study record in database
+	 * @param loggedInUser
+	 * @param studyUID
+	 * @param subjectUID
+	 * @return
+	 * @throws Exception
+	 */
+	NonDicomSeries createNonDicomSeries(String loggedInUser, String seriesUID, String studyUID, String description, Date seriesDate) throws Exception;
 	
 	/**
 	 * Add Subject/Studies to Project
@@ -431,6 +442,14 @@ public interface EpadProjectOperations {
 	 * @throws Exception
 	 */
 	List<Study> getStudiesForSubject(String subjectUID) throws Exception;
+	
+	/**
+	 * Get Non-dicom series for a study
+	 * @param subjectUID
+	 * @return
+	 * @throws Exception
+	 */
+	List<NonDicomSeries> getNonDicomSeriesForStudy(String studyUID) throws Exception;
 
 	/**
 	 * Set user status for project and subject

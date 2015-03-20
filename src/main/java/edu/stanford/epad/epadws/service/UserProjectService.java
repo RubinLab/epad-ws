@@ -370,7 +370,7 @@ public class UserProjectService {
 		} else {
 			try {
 				projectOperations.createSubject(username, subjectID, subjectName, null, null);
-				projectOperations.createStudy(username, studyUID, subjectID);
+				projectOperations.createStudy(username, studyUID, subjectID, "");
 				log.info("Upload/Transfer: Adding Study:" +  studyUID + " Subject:" + subjectID + " to Project:" + projectID);
 				projectOperations.addStudyToProject(username, studyUID, subjectID, projectID);
 			} catch (Exception e) {
