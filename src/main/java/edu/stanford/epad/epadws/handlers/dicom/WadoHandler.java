@@ -48,7 +48,8 @@ public class WadoHandler extends AbstractHandler
 		else
 			httpResponse.setContentType("image/jpeg");
 		
-		request.setHandled(true);
+		if (request != null)					// In case handler is not called thru jetty
+			request.setHandled(true);
 
 		String method = httpRequest.getMethod();
 		if ("GET".equalsIgnoreCase(method)) {

@@ -26,6 +26,66 @@
      <filter-name>cross-origin</filter-name>
      <url-pattern>/*</url-pattern>
  </filter-mapping>
+	<filter>
+		<filter-name>WebAuthFilter</filter-name>
+		<filter-class>edu.stanford.epad.epadws.security.WebAuthFilter</filter-class>
+		<init-param>
+			<param-name>my-param</param-name>
+			<param-value>my-param-value</param-value>
+		</init-param>
+	</filter>
+	<filter-mapping>
+		<filter-name>WebAuthFilter</filter-name>
+		<url-pattern>/*</url-pattern>
+	</filter-mapping>
+
+	<servlet>
+		<servlet-name>rest-dispatcher</servlet-name>
+		<servlet-class>org.springframework.web.servlet.DispatcherServlet</servlet-class>
+		<load-on-startup>1</load-on-startup>
+	</servlet>
+
+	<servlet-mapping>
+		<servlet-name>rest-dispatcher</servlet-name>
+		<url-pattern>/v2/</url-pattern>
+	</servlet-mapping>
+
+	<servlet>
+		<servlet-name>events</servlet-name>
+		<servlet-class>edu.stanford.epad.epadws.servlets.EventServlet</servlet-class>
+	</servlet>
+
+	<servlet-mapping>
+		<servlet-name>events</servlet-name>
+		<url-pattern>/eventresource</url-pattern>
+	</servlet-mapping>
+	
+	<servlet>
+		<servlet-name>session</servlet-name>
+		<servlet-class>edu.stanford.epad.epadws.servlets.SessionServlet</servlet-class>
+	</servlet>
+
+	<servlet-mapping>
+		<servlet-name>session</servlet-name>
+		<url-pattern>/session</url-pattern>
+	</servlet-mapping>
+	
+	<servlet>
+		<servlet-name>plugin</servlet-name>
+		<servlet-class>edu.stanford.epad.epadws.servlets.EPadPluginServlet</servlet-class>
+	</servlet>
+
+	<servlet-mapping>
+		<servlet-name>plugin</servlet-name>
+		<url-pattern>/plugin</url-pattern>
+	</servlet-mapping>
   
+  <context-param>
+		<param-name>contextConfigLocation</param-name>
+		<param-value>/WEB-INF/rest-dispatcher-servlet.xml</param-value>
+ </context-param>
+  <listener>
+		<listener-class>edu.stanford.epad.epadws.listener.StartupListener</listener-class>
+  </listener> 
 </web-app>
 

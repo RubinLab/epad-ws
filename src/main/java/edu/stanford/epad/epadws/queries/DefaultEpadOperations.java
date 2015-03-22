@@ -236,7 +236,7 @@ public class DefaultEpadOperations implements EpadOperations
 					if (searchFilter.hasAccessionNumberMatch())
 					{
 						matchAccessionNumber = false;
-						Set<String> studyUIDsInXNAT = XNATQueries.getStudyUIDsForSubject(sessionID, projectID,
+						Set<String> studyUIDsInXNAT = UserProjectService.getStudyUIDsForSubject(projectID,
 								epadSubject.subjectID);
 						for (String studyUID: studyUIDsInXNAT)
 						{
@@ -2462,11 +2462,18 @@ public class DefaultEpadOperations implements EpadOperations
 				for (String perm: perms)
 					permissions.add(perm);
 				Set<String> projects = null;
-				Map<String, String> projectToRole = null;
+				List<String> projectToRole = null;
 				if (user.getProjectToRole() != null)
 				{
 					projects = user.getProjectToRole().keySet();
-					projectToRole = user.getProjectToRole();
+					projectToRole = new ArrayList<String>();
+					if (projects != null)
+					{
+						for (String project: projects)
+						{
+							projectToRole.add(project + ":" + user.getProjectToRole().get(project));
+						}
+					}
 				}
 				EPADUser epadUser = new EPADUser(user.getFullName(), user.getUsername(), 
 						user.getFirstName(), user.getLastName(), user.getEmail(), user.isEnabled(), user.isAdmin(), user.isPasswordExpired(), "", permissions, projects, projectToRole, null);
@@ -2507,11 +2514,18 @@ public class DefaultEpadOperations implements EpadOperations
 			for (String perm: perms)
 				permissions.add(perm);
 			Set<String> projects = null;
-			Map<String, String> projectToRole = null;
+			List<String> projectToRole = null;
 			if (user.getProjectToRole() != null)
 			{
 				projects = user.getProjectToRole().keySet();
-				projectToRole = user.getProjectToRole();
+				projectToRole = new ArrayList<String>();
+				if (projects != null)
+				{
+					for (String project: projects)
+					{
+						projectToRole.add(project + ":" + user.getProjectToRole().get(project));
+					}
+				}
 			}
 			EPADUser epadUser = new EPADUser(user.getFullName(), user.getUsername(), 
 					user.getFirstName(), user.getLastName(), user.getEmail(), user.isEnabled(), user.isAdmin(), user.isPasswordExpired(), "", permissions, projects, projectToRole, messages);
@@ -2526,7 +2540,7 @@ public class DefaultEpadOperations implements EpadOperations
 			String[] addPermissions, String[] removePermissions) throws Exception {
 		User user = projectOperations.getUser(username);
 		if (!projectOperations.getUser(loggedInUser).isAdmin() && (user == null || !loggedInUser.equals(username)))
-			throw new Exception("User " + username + " does not have privilege to create/modify users");
+			throw new Exception("User " + loggedInUser + " does not have privilege to create/modify users");
 
 		List<String> addPerms = new ArrayList<String>();
 		List<String> removePerms = new ArrayList<String>();
@@ -2604,7 +2618,7 @@ public class DefaultEpadOperations implements EpadOperations
 		catch (Exception x)
 		{
 			log.warning("Error deleting user:" + username, x);
-			throw new Exception("Error deleting user, user record may be attached to other objects");
+				throw new Exception(x.getMessage());
 		}
 	}
 

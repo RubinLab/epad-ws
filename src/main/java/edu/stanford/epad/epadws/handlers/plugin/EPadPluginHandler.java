@@ -45,7 +45,8 @@ public class EPadPluginHandler extends AbstractHandler
 
 		httpResponse.setContentType("text/plain");
 		httpResponse.setHeader("Access-Control-Allow-Origin", "*");
-		request.setHandled(true);
+		if (request != null)					// In case handler is not called thru jetty
+			request.setHandled(true);
 
 		String pluginName = request.getPathInfo();
 		PluginServletHandler pluginServletHandler = pluginHandlerMap.getPluginServletHandler(pluginName);

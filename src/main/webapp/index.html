@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<!--[if lt IE 7]> <html class="ie6 ie" lang="en" dir="ltr"> <![endif]-->
+<!--[if IE 7]>    <html class="ie7 ie" lang="en" dir="ltr"> <![endif]-->
+<!--[if IE 8]>    <html class="ie8 ie" lang="en" dir="ltr"> <![endif]-->
+<!--[if IE 9]>    <html class="ie9 ie" lang="en" dir="ltr"> <![endif]-->
+<!--[if !IE]> --> <html lang="en" dir="ltr"> <!-- <![endif]-->
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<link rel="shortcut icon" href="https://epad.stanford.edu/sites/default/files/epad-favicon.png" type="image/png" />
+<meta name="generator" content="Drupal 7 (http://drupal.org)" />
+<link rel="canonical" href="https://epad.stanford.edu/documentation/developer/rest-api" />
+<link rel="shortlink" href="https://epad.stanford.edu/node/83" />
+  <!-- Set the viewport width to device width for mobile -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>REST API | ePAD</title>
+  <style type="text/css" media="all">
+@import url("https://epad.stanford.edu/modules/system/system.base.css?ng7wq4");
+@import url("https://epad.stanford.edu/modules/system/system.menus.css?ng7wq4");
+@import url("https://epad.stanford.edu/modules/system/system.messages.css?ng7wq4");
+@import url("https://epad.stanford.edu/modules/system/system.theme.css?ng7wq4");
+</style>
+<style type="text/css" media="all">
+@import url("https://epad.stanford.edu/modules/comment/comment.css?ng7wq4");
+@import url("https://epad.stanford.edu/sites/all/modules/date/date_api/date.css?ng7wq4");
+@import url("https://epad.stanford.edu/modules/field/theme/field.css?ng7wq4");
+@import url("https://epad.stanford.edu/sites/all/modules/mollom/mollom.css?ng7wq4");
+@import url("https://epad.stanford.edu/modules/node/node.css?ng7wq4");
+@import url("https://epad.stanford.edu/modules/search/search.css?ng7wq4");
+@import url("https://epad.stanford.edu/modules/user/user.css?ng7wq4");
+@import url("https://epad.stanford.edu/sites/all/modules/views/css/views.css?ng7wq4");
+</style>
+<style type="text/css" media="all">
+@import url("https://epad.stanford.edu/sites/all/modules/ctools/css/ctools.css?ng7wq4");
+</style>
+<style type="text/css" media="all">
+@import url("https://epad.stanford.edu/sites/all/themes/open_framework/packages/bootstrap-2.3.1/css/bootstrap.min.css?ng7wq4");
+@import url("https://epad.stanford.edu/sites/all/themes/open_framework/packages/bootstrap-2.3.1/css/bootstrap-responsive.min.css?ng7wq4");
+@import url("https://epad.stanford.edu/sites/all/themes/open_framework/packages/font-awesome-3.2.1/css/font-awesome.min.css?ng7wq4");
+@import url("https://epad.stanford.edu/sites/all/themes/open_framework/css/open_framework.css?ng7wq4");
+</style>
+<style type="text/css" media="print">
+@import url("https://epad.stanford.edu/sites/all/themes/open_framework/css/open_framework_print.css?ng7wq4");
+</style>
+<style type="text/css" media="all">
+@import url("https://epad.stanford.edu/sites/default/files/css_injector/css_injector_1.css?ng7wq4");
+@import url("https://epad.stanford.edu/sites/default/files/css_injector/css_injector_3.css?ng7wq4");
+@import url("https://epad.stanford.edu/sites/default/files/css_injector/css_injector_5.css?ng7wq4");
+@import url("https://epad.stanford.edu/sites/default/files/css_injector/css_injector_9.css?ng7wq4");
+@import url("https://epad.stanford.edu/sites/default/files/css_injector/css_injector_11.css?ng7wq4");
+@import url("https://epad.stanford.edu/sites/default/files/css_injector/css_injector_13.css?ng7wq4");
+@import url("https://epad.stanford.edu/sites/default/files/css_injector/css_injector_15.css?ng7wq4");
+@import url("https://epad.stanford.edu/sites/default/files/css_injector/css_injector_19.css?ng7wq4");
+</style>
+  <script type="text/javascript" src="https://epad.stanford.edu/sites/all/themes/open_framework/js/jquery-1.9.1.min.js?v=1.9.1"></script>
+<script type="text/javascript" src="https://epad.stanford.edu/sites/all/themes/open_framework/js/jquery-migrate-1.2.1.min.js?v=1.2.1"></script>
+<script type="text/javascript" src="https://epad.stanford.edu/misc/jquery.once.js?v=1.2"></script>
+<script type="text/javascript" src="https://epad.stanford.edu/misc/drupal.js?ng7wq4"></script>
+<script type="text/javascript" src="https://epad.stanford.edu/sites/all/modules/google_analytics/googleanalytics.js?ng7wq4"></script>
+<script type="text/javascript">
+<!--//--><![CDATA[//><!--
+(function(i,s,o,g,r,a,m){i["GoogleAnalyticsObject"]=r;i[r]=i[r]||function(){(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)})(window,document,"script","//www.google-analytics.com/analytics.js","ga");ga("create", "UA-46598051-1", "auto");ga("send", "pageview");
+//--><!]]>
+</script>
+<script type="text/javascript" src="https://epad.stanford.edu/sites/all/themes/open_framework/packages/bootstrap-2.3.1/js/bootstrap.min.js?ng7wq4"></script>
+<script type="text/javascript" src="https://epad.stanford.edu/sites/all/themes/open_framework/js/open_framework.js?ng7wq4"></script>
+<script type="text/javascript" src="https://epad.stanford.edu/sites/all/themes/open_framework/js/jquery.placeholder.min.js?ng7wq4"></script>
+<script type="text/javascript" src="https://epad.stanford.edu/sites/all/themes/open_framework/js/override.js?ng7wq4"></script>
+<script type="text/javascript">
+<!--//--><![CDATA[//><!--
+jQuery.extend(Drupal.settings, {"basePath":"\/","pathPrefix":"","ajaxPageState":{"theme":"open_framework","theme_token":"kh8R5cdsNh4wNfsPK-Fgdmn71Rustt0sGc1dw9vc2rc","js":{"misc\/jquery.js":1,"sites\/all\/themes\/open_framework\/js\/jquery-migrate-1.2.1.min.js":1,"misc\/jquery.once.js":1,"misc\/drupal.js":1,"sites\/all\/modules\/google_analytics\/googleanalytics.js":1,"0":1,"sites\/all\/themes\/open_framework\/packages\/bootstrap-2.3.1\/js\/bootstrap.min.js":1,"sites\/all\/themes\/open_framework\/js\/open_framework.js":1,"sites\/all\/themes\/open_framework\/js\/jquery.placeholder.min.js":1,"sites\/all\/themes\/open_framework\/js\/override.js":1},"css":{"modules\/system\/system.base.css":1,"modules\/system\/system.menus.css":1,"modules\/system\/system.messages.css":1,"modules\/system\/system.theme.css":1,"modules\/comment\/comment.css":1,"sites\/all\/modules\/date\/date_api\/date.css":1,"modules\/field\/theme\/field.css":1,"sites\/all\/modules\/mollom\/mollom.css":1,"modules\/node\/node.css":1,"modules\/search\/search.css":1,"modules\/user\/user.css":1,"sites\/all\/modules\/views\/css\/views.css":1,"sites\/all\/modules\/ctools\/css\/ctools.css":1,"sites\/all\/themes\/open_framework\/packages\/bootstrap-2.3.1\/css\/bootstrap.min.css":1,"sites\/all\/themes\/open_framework\/packages\/bootstrap-2.3.1\/css\/bootstrap-responsive.min.css":1,"sites\/all\/themes\/open_framework\/packages\/font-awesome-3.2.1\/css\/font-awesome.min.css":1,"sites\/all\/themes\/open_framework\/css\/open_framework.css":1,"sites\/all\/themes\/open_framework\/css\/open_framework_print.css":1,"public:\/\/css_injector\/css_injector_1.css":1,"public:\/\/css_injector\/css_injector_3.css":1,"public:\/\/css_injector\/css_injector_5.css":1,"public:\/\/css_injector\/css_injector_9.css":1,"public:\/\/css_injector\/css_injector_11.css":1,"public:\/\/css_injector\/css_injector_13.css":1,"public:\/\/css_injector\/css_injector_15.css":1,"public:\/\/css_injector\/css_injector_19.css":1}},"googleanalytics":{"trackOutbound":1,"trackMailto":1,"trackDownload":1,"trackDownloadExtensions":"7z|aac|arc|arj|asf|asx|avi|bin|csv|doc|exe|flv|gif|gz|gzip|hqx|jar|jpe?g|js|mp(2|3|4|e?g)|mov(ie)?|msi|msp|pdf|phps|png|ppt|qtm?|ra(m|r)?|sea|sit|tar|tgz|torrent|txt|wav|wma|wmv|wpd|xls|xml|z|zip"}});
+//--><!]]>
+</script>
+  <!--[if IE 7]>
+  <link rel="stylesheet" href="/sites/all/themes/open_framework/packages/font-awesome-3.2.1/css/font-awesome-ie7.min.css">
+  <![endif]-->
+  <!-- IE Fix for HTML5 Tags -->
+  <!--[if lt IE 9]>
+    <script src="/sites/all/themes/open_framework/js/html5shiv.js"></script>
+  <![endif]-->
+</head>
+
+<body class="html not-front not-logged-in no-sidebars page-node page-node- page-node-83 node-type-page       "  >
+    <a href="#main" class="element-invisible element-focusable">Skip to content</a>
+<a href="#main-nav" class="element-invisible element-focusable" data-target=".nav-collapse" data-toggle="collapse">Skip to navigation</a>
+<!-- /#skipnav -->
+<!-- /#admin-shortcuts -->
+<div id="header" class="clearfix header" role="banner">
+  <div class="container">
+    <div class="row">
+      <div class="header-section span8">
+                <div id="logo" class="site-logo"> <a href="/" title="Home" rel="home"> <img src="https://epad.stanford.edu/sites/default/files/epad-logo-only.png" alt="" role="presentation" /> </a></div>
+                <!-- /#logo -->
+                <div id="name-and-slogan">
+                              <div id="site-slogan" class="site-slogan">web-based platform for quantitative imaging in the clinical workflow</div>
+                  </div>
+                        <!-- /#name-and-slogan -->
+                <!-- /#header-content -->
+      </div>
+            <!-- /#site-login -->
+    </div>
+  </div>
+</div>
+
+<!-- /#main-menu -->
+<div id="main" class="clearfix main" role="main">
+  <div class="container">
+                <div id="main-content" class="row main-content">
+            <div id="content" class="mc-content span12">
+        <div id="content-wrapper" class="content-wrapper">
+          <div id="content-head" class="row-fluid content-head">
+                                                <h1 class="title" id="page-title"> REST API </h1>
+                                                                                  </div>
+                                        <div id="content-body" class="row-fluid content-body"> <div class="region region-content clearfix">
+  <div id="block-block-81" class="clearfix block block-block">     <h2>RESTful Web Services Application Programmer Interface (API)</h2>
+      <div class="content"> <h4>Sessions</h4>
+<table border="1" cellpadding="1" cellspacing="1" style="width: 100%;"><tbody><tr><td>/session</td>
+<td style="width: 40%;">[ POST: create a session using HTTP Basic authentication ]</td>
+</tr><tr><td>/session/{id}</td>
+<td style="width: 40%;">[ DELETE: delete a session ]</td>
+</tr></tbody></table><h4>Projects</h4>
+<table border="1" cellpadding="1" cellspacing="1" style="width:100%;"><tbody><tr><td><a href="/projects-get">/projects[?annotationCount=false]</a></td>
+<td style="width: 40%;">[ GET: get all projects. if annotationCount=false is passed, the annotation count in project objects will be zero(saves time) ]</td>
+</tr><tr><td>/projects/{id}?projectName=[name]&amp;projectDescription=[description]</td>
+<td style="width: 40%;">[ PUT: update an existing project  ]</td>
+</tr><tr><td>/projects/{id}?projectName=[name]&amp;projectDescription=[description]</td>
+<td style="width: 40%;">[ POST: create a new project  ]</td>
+</tr><tr><td><a href="/project-get">/projects/{id}</a></td>
+<td style="width: 40%;">[ DELETE: remove a project  ]</td>
+</tr><td>/projects/{id}/aims/?start=[index]&amp;count=[number]&amp;format=[summary | json]</td>
+<td style="width: 40%;">[ GET: get the annotations for the project. If no format is specified, the xml annotation will be returned. ]</td>
+
+<tr><td>/projects/{id}/aims/{id}</td>
+<td style="width: 40%;">[ PUT: create a new annotation  ]</td>
+</tr></tbody></table><h4>Subjects</h4>
+<table border="1" cellpadding="1" cellspacing="1" style="width: 100%;"><tbody><tr><td><a href="/project-subjects-get">/projects/{id}/subjects/</a></td>
+<td style="width: 40%;">[ GET: get the project's subjects  ]</td>
+</tr><tr><td>/projects/{id}/subjects/{id}?subjectName=[name]</td>
+<td style="width: 40%;">[ PUT: create a subject in the  project  ]</td>
+</tr><tr><td>/projects/{id}/subjects/{id}/status/{status}</td>
+<td style="width: 40%;">[ PUT: set status of the subject for this user and project  ]</td>
+</tr><tr><td><a href="/project-subject-get">/projects/{id}/subjects/{id}</a></td>
+<td style="width: 40%;">[ GET: get a subject in the project ]</td>
+</tr><tr><td>/projects/{id}/subjects/{id}</td>
+<td style="width: 40%;">[ DELETE: remove a subject in the project ]</td>
+</tr><td>/projects/{id}/subjects/{id}/aims/?start=[index]&amp;count=[number]&amp;format=[summary | json]</td>
+<td style="width: 40%;">[ GET: get the annotations for the subject in the project. If no format is specified, the xml annotation will be returned.  ]</td>
+
+<tr><td>/projects/{id}/subjects/{id}/aims/{id}</td>
+<td style="width: 40%;">[ PUT: create an annotation ]</td>
+</tr><tr><td>/projects/{id}/subjects/{id}/aims/{id}</td>
+<td style="width: 40%;">[ GET: get the annotation ]</td>
+</tr><tr><td>/projects/{id}/subjects/{id}/aims/{id}?deleteDSO=true</td>
+<td style="width: 40%;">[ DELETE: remove the annotation ]</td>
+</tr></tbody></table><h4>Studies</h4>
+<table border="1" cellpadding="1" cellspacing="1" style="width: 100%;"><tbody><tr><td><a href="/project-subject-studies-get">/projects/{id}/subjects/{id}/studies/</a></td>
+<td style="width:40%">[ GET: get the study collection ]</td>
+</tr><tr><td>/projects/{id}/subjects/{id}/studies/{id}</td>
+<td style="width: 40%;">[  PUT:  add a study to the collection]</td>
+</tr><tr><td><a href="/project-subject-study-get">/projects/{id}/subjects/{id}/studies/{id}</a></td>
+<td style="width: 40%;">[ GET: get a study from the collection]</td>
+</tr><tr><td>/projects/{id}/subjects/{id}/studies/{id}?deleteAims=true</td>
+<td style="width: 40%;">[ DELETE : delete a study from the collection]</td>
+</tr><tr><td>/projects/{id}/subjects/{id}/studies/{id}/aims/?start=[index]&amp;count=[number]&amp;format=[summary | json]</td>
+<td style="width: 40%;">[ GET: get the  annotation collection. If no format is specified, the xml annotation will be returned. ]</td>
+</tr><tr><td>/projects/{id}/subjects/{id}/studies/{id}/aims/{id}</td>
+<td style="width: 40%;">[ PUT: create a new annotation in the collection  ]</td>
+</tr><tr><td>/projects/{id}/subjects/{id}/studies/{id}/aims/{id}</td>
+<td style="width: 40%;">[ GET: get the annotation in the collection ]</td>
+</tr><tr><td>/projects/{id}/subjects/{id}/studies/{id}/aims/{id}?deleteDSO=true</td>
+<td style="width: 40%;">[ DELETE: remove the annotation in the collection ]</td>
+</tr></tbody></table><h4>Series</h4>
+<table border="1" cellpadding="1" cellspacing="1" style="width: 100%;"><tbody><tr><td><a href="/project-subject-study-series-list-get">/projects/{id}/subjects/{id}/studies/{id}/series/?filterDSO=true</a></td>
+<td style="width: 40%;">[ GET: get the series collection ]</td>
+</tr><tr><td><a href="/project-subject-study-series-get">/projects/{id}/subjects/{id}/studies/{id}/series/{id}</a></td>
+<td style="width: 40%;">[ GET: get the series  ]</td>
+</tr><tr><td>/projects/{id}/subjects/{id}/studies/{id}/series/{id}?deleteAims=true</td>
+<td style="width: 40%;">[ DELETE: delete the series  ]</td>
+</tr><tr><td>/projects/{id}/subjects/{id}/studies/{id}/series/{id}/aims/?start=[index]&amp;count=[number]&amp;format=[summary | json]</td>
+<td style="width: 40%;">[ GET : get the annotation collection. If no format is specified, the xml annotation will be returned. ]</td>
+</tr><tr><td>/projects/{id}/subjects/{id}/studies/{id}/series/{id}/aims/{id}</td>
+<td style="width: 40%;">[ PUT: create an annotation on the series]</td>
+</tr><tr><td>/projects/{id}/subjects/{id}/studies/{id}/series/{id}/aims/{id}</td>
+<td style="width: 40%;">[ GET: get the annotation on the series. ]</td>
+</tr><tr><td>/projects/{id}/subjects/{id}/studies/{id}/series/{id}/aims/{id}?deleteDSO=true</td>
+<td style="width: 40%;">[ DELETE: remove the annotation from the series]</td>
+</tr></tbody></table><h4>Images</h4>
+<table border="1" cellpadding="1" cellspacing="1" style="width: 100%;"><tbody><tr><td><a href="/project-subject-study-series-images-get">/projects/{id}/subjects/{id}/studies/{id}/series/{id}/images/</a></td>
+<td style="width: 40%;">[ GET: get the images in the series  ]</td>
+</tr><tr><td><a href="/project-subject-study-series-image-get">/projects/{id}/subjects/{id}/studies/{id}/series/{id}/images/{id}</a></td>
+<td style="width: 40%;">[ GET: get an image in the collection  ]</td>
+</tr><tr><td>/projects/{id}/subjects/{id}/studies/{id}/series/{id}/images/{id}</td>
+<td style="width: 40%;">[ DELETE: delete an images in the collection  ]</td>
+</tr><tr><td>/projects/{id}/subjects/{id}/studies/{id}/series/{id}/images/{id}/aims/?start=[index]&amp;count=[number]</td>
+<td style="width: 40%;">[ GET: get the annotations IDs for the image  ]</td>
+</tr><tr><td>/projects/{id}/subjects/{id}/studies/{id}/series/{id}/images/{id}/aims/{id}</td>
+<td style="width: 40%;">[ PUT: create an annotation for the image  ]</td>
+</tr><tr><td>/projects/{id}/subjects/{id}/studies/{id}/series/{id}/images/{id}/aims/{id}</td>
+<td style="width: 40%;">[ GET: get the annotation ]</td>
+</tr><tr><td>/projects/{id}/subjects/{id}/studies/{id}/series/{id}/images/{id}/aims/{id}?deleteDSO=true</td>
+<td style="width: 40%;">[ DELETE: remove the annotation ]</td>
+</tr></tbody></table><h4>Frames</h4>
+<table border="1" cellpadding="1" cellspacing="1" style="width: 100%;"><tbody><tr><td><a href="/project-subject-study-series-image-frames-get">/projects/{id}/subjects/{id}/studies/{id}/series/{id}/images/{id}/frames</a></td>
+<td style="width: 40%;">[ GET: get the frame collection]</td>
+</tr><tr><td><a href="/project-subject-study-series-image-frames-get">/projects/{id}/subjects/{id}/studies/{id}/series/{id}/images/{id}/frames?type=new</a></td>
+<td style="width: 40%;">[ POST: modify the frame collection with new data]</td>
+</tr><tr><td><a href="/project-subject-study-series-image-frame-get">/projects/{id}/subjects/{id}/studies/{id}/series/{id}/images/{id}/frames/{frame_number}</a></td>
+<td style="width: 40%;">[ GET: get the frame in the collection ]</td>
+</tr><tr><td>/projects/{id}/subjects/{id}/studies/{id}/series/{id}/images/{id}/frames/{frame_number}/aims/?start=[index]&amp;count=[number]&amp;format=[summary | json]</td>
+<td style="width: 40%;">[ GET: get the annotations for the frame. If no format is specified, the xml annotation will be returned. ]</td>
+</tr><tr><td>/projects/{id}/subjects/{id}/studies/{id}/series/{id}/images/{id}/frames/{frame_number}/aims/{id}</td>
+<td style="width: 40%;">[ PUT: create an annotation for the frame  ]</td>
+</tr><tr><td>/projects/{id}/subjects/{id}/studies/{id}/series/{id}/images/{id}/frames/{id}/aims/{id}</td>
+<td style="width: 40%;">[ GET: get the annotation for the frame ]</td>
+</tr><tr><td>/projects/{id}/subjects/{id}/studies/{id}/series/{id}/images/{id}/frames/{id}/aims/{id}?deleteDSO=true</td>
+<td style="width: 40%;">[ DELETE: remove the annotation for the frame ]</td>
+</tr></tbody></table><h4>Subjects Shortcut</h4>
+<table border="1" cellpadding="1" cellspacing="1" style="width: 100%;"><tbody><tr><td>/subjects/</td>
+<td style="width: 40%;">[ GET: get the subjects collection ]</td>
+</tr><tr><td>/subjects/{id}</td>
+<td style="width: 40%;">[ GET: get the subject  ]</td>
+</tr><tr><td>/subjects/{id}/aims/?start=[index]&amp;count=[number]&amp;format=[summary]</td>
+<td style="width: 40%;">[ GET: get the annotations for the subject  ]</td>
+</tr></tbody></table><h4>Studies Shortcut</h4>
+<table border="1" cellpadding="1" cellspacing="1" style="width: 100%;"><tbody><tr><td>/studies/{id}/series</td>
+<td style="width: 40%;">[ GET: get the series collection  ]</td>
+</tr><tr><td>/studies/{id}/series/{id}/images/{id}</td>
+<td style="width: 40%;">[ GET: get the image ]</td>
+</tr><tr><td>/studies/{id}/series/{id}/images/{id}/aims?start=[index]&amp;count=[number]&amp;format=[summary]</td>
+<td style="width: 40%;">[ GET: get the annotations for the image  ]</td>
+</tr><tr><td>/studies/{id}/series/{id}/images/{id}/frames</td>
+<td style="width: 40%;">[ GET: get the frame collection ]</td>
+</tr></tbody></table><h4>Annotations Shortcut</h4>
+<table border="1" cellpadding="1" cellspacing="1" style="width: 100%;"><tbody><tr><td>/aims/?start=[index]&amp;count=[number]&amp;format=[summary]</td>
+<td style="width: 40%;">[ GET: get the annotations in the collection  ]</td>
+</tr><tr><td>/aims/{id}</td>
+<td style="width: 40%;">[ PUT:  create the annotation ]</td>
+</tr><tr><td>/aims/{id}</td>
+<td style="width: 40%;">[ GET:  get the annotation ]</td>
+</tr><tr><td>/aims/{id}?deleteDSO=true</td>
+<td style="width: 40%;">[ DELETE: remove the annotation ]</td>
+</tr></tbody></table><h4>Files</h4>
+<p><i>Not yet implemented</i></p>
+<table border="1" cellpadding="1" cellspacing="1" style="width: 100%;"><tbody><tr><td>/projects/{id}/files/</td>
+<td style="width: 40%;">[ GET: get non-DICOMfiles for this project  ]</td>
+</tr><tr><td>/projects/{id}/subject/{id}/files/</td>
+<td style="width: 40%;">[ GET: get non-DICOM files for this project and subject  ]</td>
+</tr><tr><td>/projects/{id}/subject/{id}/studies/{id}/files/</td>
+<td style="width: 40%;">[ GET: get non-DICOM files for this project, subject and study]</td>
+</tr><tr><td>/projects/{id}/subject/{id}/studies/{id}/series/{id}/files/</td>
+<td style="width: 40%;">[ GET: get non-DICOM files for this project, subject, study and series]</td>
+</tr><tr><td>/projects/{id}/files/?fileType={Template|Annotation|Image}&amp;description={description}</td>
+<td style="width: 40%;">[ POST: Upload files for this project  ]</td>
+</tr><tr><td>/projects/{id}/subject/{id}/files/</td>
+<td style="width: 40%;">[ POST: Upload files for this project and subject  ]</td>
+</tr><tr><td>/projects/{id}/subject/{id}/studies/{id}/files/</td>
+<td style="width: 40%;">[ POST: Upload files for this project, subject and study]</td>
+</tr><tr><td>/projects/{id}/subject/{id}/studies/{id}/series/{id}/files/</td>
+<td style="width: 40%;">[ POST: Upload files for this project, subject, study and series]</td>
+</tr><tr><td>/projects/{id}/files/{filename}</td>
+<td style="width: 40%;">[ DELETE: delete a non-DICOM file in this project ]</td>
+</tr><tr><td>/projects/{id}/subjects/{id}/files/{filename}</td>
+<td style="width: 40%;">[ DELETE: delete a non-DICOM file for this subject  ]</td>
+</tr><tr><td>/projects/{id}/subjects/{id}/studies/{id}/files/{filename}</td>
+<td style="width: 40%;">[ DELETE: delete a non-DICOM file for this study  ]</td>
+</tr><tr><td>/projects/{id}/subjects/{id}/studies/{id}/series/{id}/files/{filename}</td>
+<td style="width: 40%;">[ DELETE: delete a non-DICOM file for this series]</td>
+</tr></tbody></table><h4>WADO  Shortcut </h4>
+<table border="1" cellpadding="1" cellspacing="1" style="width:100%;"><tbody><tr><td>/wado/?requestType=WADO&amp;studyUID={id}&amp;seriesUID={id}&amp;objectUID={id}&amp;contentType=application%2Fdicom</td>
+<td style="width: 40%;">[ GET:  get the WADO image  ]</td>
+</tr></tbody></table><h4>Remote PACs</h4>
+<p><i>Not yet implemented</i></p>
+<table border="1" cellpadding="1" cellspacing="1" style="width: 100%;"><tbody><tr><td>/pacs/</td>
+<td style="width: 40%;">[ GET: get configured Remote PACs in the system  ]</td>
+</tr><tr><td>/pacs/{id}</td>
+<td style="width: 40%;">[ GET: get configuration for this Remote PAC  ]</td>
+</tr><tr><td>/pacs/{id}</td>
+<td style="width: 40%;">[ DELETE: delete configuration for this Remote PAC  ]</td>
+</tr><tr><td>/pacs/{id}?aeTitle=[aeTitle]&amp;hostname=[hostname]&amp;port=[port]&amp;primaryDeviceType=[deviceType]</td>
+<td style="width: 40%;">[ PUT: create/edit configuration for this Remote PAC  ]</td>
+</tr><tr><td>/pacs/{id}/entities/?patientNameFilter=[filter]&amp;patientIDFilter=[filter]&amp;studyDateFilter=[YYYYMMDD]&amp;series=true</td>
+<td style="width: 40%;">[ GET: get list of studies/series/images in this Remote PAC. Formats for date filter - on: '20071001', from/to: '20071001-20080220', before: '-20080220', after: '20071001-' . If series= true, return series records as well as studies.]</td>
+</tr><tr><td>/pacs/{id}/subjects/?patientNameFilter=[filter]&amp;patientIDFilter=[filter]</td>
+<td style="width: 40%;">[ GET: get list of subjects in this Remote PAC.]</td>
+</tr><tr><td>/pacs/{id}/subjects/{subjectid}/studies/?studyDateFilter=[YYYYMMDD]</td>
+<td style="width: 40%;">[ GET: get list of studies for this subjectid in this Remote PAC.]</td>
+</tr><tr><td>/pacs/{id}/subjects/{subjectid}/studies/{studyid}/series/</td>
+<td style="width: 40%;">[ GET: get list of series for this studyid and subjectid in this Remote PAC.]</td>
+</tr><tr><td>/pacs/{id}/entities/{id}?projectID={id}</td>
+<td style="width: 40%;">[ GET: Transfer this data (and all its children) from this Remote PAC to EPad's dcm4chee and into this project]</td>
+</tr><tr><td>/pacs/{id}/autoqueries/</td>
+<td style="width: 40%;">[ GET: List of configured automatic queries for this Remote PAC]</td>
+</tr><tr><td>/pacs/{id}/autoqueries/{subjectid}</td>
+<td style="width: 40%;">[ GET: Get configured automatic query for this Remote PAC and this subject]</td>
+</tr><tr><td>/pacs/{id}/autoqueries/{subjectid}?projectID=[projectID]&amp;studyDate=[YYYYMMDD]&amp;subjectName=[patientName]&amp;modality=[modality]</td>
+<td style="width: 40%;">[ PUT: Configure an automatic query for this Remote PAC and this subject where modality is CT, BI, US, PET etc. projectID is required, the other parameters are optional]</td>
+</tr><tr><td>/pacs/{id}/autoqueries/{subjectid}?enable=[true|false]</td>
+<td style="width: 40%;">[ PUT: Enable/Disable automatic query for this Remote PAC and this subject]</td>
+</tr><tr><td>/pacs/{id}/autoqueries/{subjectid}</td>
+<td style="width: 40%;">[ DELETE: Delete configured automatic query for this Remote PAC and this subject]</td>
+</tr></tbody></table><h4>Administration</h4>
+<table border="1" cellpadding="1" cellspacing="1" style="width: 100%;"><tbody><tr><td>/epad/status</td>
+<td style="width: 40%;">[ GET: get the status of the server ]</td>
+</tr><tr><td>/epad/imagecheck</td>
+<td style="width: &gt;[ GET: check on the status of image processing ]&lt;/td&gt;&#10;&lt;/tr&gt;&#10;&lt;tr&gt;&#10;&lt;td&gt;/epad/imagereprocess&lt;/td&gt;&#10;&lt;td style=" width:="">[ GET: force reprocessing of all ePAD images ]</td>
+</tr></tbody></table><h4>Users </h4>
+<p><i>Not yet implemented</i></p>
+<table border="1" cellpadding="1" cellspacing="1" style="width: 100%;"><tbody><tr><td>/users</td>
+<td style="width: 40%;">[ GET: get all users]</td>
+</tr><tr><td>/users/{username}?firstname=[firstname]&amp;lastname=[lastname]&amp;email=[email]&amp;password=[password]&amp;addPermission=[perm1]&amp;addPermission=[perm2]</td>
+<td style="width: 40%;">[PUT: create a new user. Permissions can CreateProject,CreateUser,CreatePAC,CreateAutoPACQuery]</td>
+</tr><tr><td>/users/{username}?firstname=[firstname]&amp;lastname=[lastname]&amp;email=[email]&amp;password=[password]&amp;oldpassword=[oldpassword]&amp;enable=[true|false]&amp;addPermission=[perm1]&amp;removePermission=[perm2]</td>
+<td style="width: 40%;">[PUT: modify existing user (all parameters are optional, old password is required only when modifying current password). Permissions can CreateProject,CreateUser,CreatePAC,CreateAutoPACQuery]</td>
+</tr><tr><td>/users/{username | email}</td>
+<td style="width: 40%;">[ GET / DELETE: get / remove a user ]</td>
+</tr><tr><td>/users/{username | email}/resources</td>
+<td style="width: 40%;">[ GET / POST: get the resource  / create a new resource ]</td>
+</tr><tr><td>/users/{username | email}/resources/{id}</td>
+<td style="width: 40%;">[ GET / DELETE: get / remove the resource  ]</td>
+</tr><tr><td>/users/{username | email}/resources/{id}/files</td>
+<td style="width: 40%;">[ GET / POST: get the files / create a new file  ]</td>
+</tr><tr><td>/users/{username | email}/resources/{id}/files/{id | filename}</td>
+<td style="width: 40%;">[ GET / DELETE: get / delete a resource file ]</td>
+</tr></tbody></table><h4>Project Users </h4>
+<p><i>Not yet implemented</i></p>
+<table border="1" cellpadding="1" cellspacing="1" style="width:100%;"><tbody><tr><td>/projects/{id}/users</td>
+<td style="width: 40%;">[ GET:  get the project's user collection  ]</td>
+</tr><tr><td>/projects/{id}/users/{username}?role=[Member|Collaborator|Owner]</td>
+<td style="width: 40%;">[ PUT: create a user in the project  ]</td>
+</tr><tr><td>/projects/{id}/users/{username}</td>
+<td style="width: 40%;">[ DELETE: remove a user in the project ]</td>
+</tr></tbody></table><h4>Miscellaneous</h4>
+<table border="1" cellpadding="1" cellspacing="1" style="width:100%;"><tbody><tr><td>/wado/?requestType=WADO&amp;studyUID={id}&amp;seriesUID={id}&amp;objectUID={id}&amp;contentType=application%2Fdicom</td>
+<td style="width: 40%;">[ GET:  Make WADO request - the query string is passed on to DCM4CHE WADO Interface (the example gets Image in dicom format) ]</td>
+</tr></tbody></table> </div>
+</div><div id="block-system-main" class="clearfix block block-system">       <div class="content"> <article id="node-83" class="node node-page node-promoted clearfix" about="/documentation/developer/rest-api" typeof="foaf:Document">      <span property="dc:title" content="REST API" class="rdf-meta element-hidden"></span>    <div class="content">
+      </div>
+    </article> </div>
+</div></div>
+ <!-- /.region -->
+  </div>
+                                                                                                  </div>
+        <!-- /#content-wrap --> 
+      </div>
+      <!-- /#content -->
+          </div>
+          </div>
+</div>
+<!-- /#main, /#main-wrapper -->
+  </body>
+
+</html>

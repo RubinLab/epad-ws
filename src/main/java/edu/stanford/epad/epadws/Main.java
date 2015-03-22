@@ -19,8 +19,15 @@ import org.eclipse.jetty.server.handler.ContextHandlerCollection;
 import org.eclipse.jetty.server.handler.DefaultHandler;
 import org.eclipse.jetty.server.handler.HandlerList;
 import org.eclipse.jetty.server.handler.ResourceHandler;
+import org.eclipse.jetty.servlet.ServletContextHandler;
+import org.eclipse.jetty.servlet.ServletHolder;
 import org.eclipse.jetty.webapp.WebAppContext;
 import org.eclipse.jetty.xml.XmlConfiguration;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.web.context.ContextLoaderListener;
+import org.springframework.web.context.WebApplicationContext;
+import org.springframework.web.context.support.AnnotationConfigWebApplicationContext;
+import org.springframework.web.servlet.DispatcherServlet;
 import org.xml.sax.SAXException;
 
 import edu.stanford.epad.common.plugins.PluginConfig;
@@ -40,7 +47,6 @@ import edu.stanford.epad.epadws.handlers.admin.ServerStatusHandler;
 import edu.stanford.epad.epadws.handlers.admin.XNATSyncHandler;
 import edu.stanford.epad.epadws.handlers.aim.AimResourceHandler;
 import edu.stanford.epad.epadws.handlers.coordination.CoordinationHandler;
-import edu.stanford.epad.epadws.handlers.core.EPADHandler;
 import edu.stanford.epad.epadws.handlers.dicom.WadoHandler;
 import edu.stanford.epad.epadws.handlers.event.EventHandler;
 import edu.stanford.epad.epadws.handlers.event.ProjectEventHandler;
@@ -137,12 +143,12 @@ public class Main
 		}
 	}
 
-	private static void initializePlugins()
+	public static void initializePlugins()
 	{
 		PluginController.getInstance();
 	}
 
-	private static void startSupportThreads()
+	public static void startSupportThreads()
 	{
 		log.info("Starting support threads....");
 
@@ -179,7 +185,14 @@ public class Main
 
 		addHandlerAtContextPath(new EPADSessionHandler(), "/epad/session", handlerList);
 
-		addHandlerAtContextPath(new EPADHandler(), "/epad/v2", handlerList);
+		//addHandlerAtContextPath(new EPADHandler(), "/epad/v2", handlerList);
+		try {
+			handlerList.add(getServletContextHandler(getContext()));
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			log.warning("Error setting up Spring Handle", e);
+			e.printStackTrace();
+		}
 
 		addWebAppAtContextPath(handlerList, "ePad.war", "/epad");
 
@@ -224,6 +237,27 @@ public class Main
 		log.info("Added " + handler.getClass().getName() + " at context " + contextPath);
 	}
 
+	private static final String CONTEXT_PATH = "/epad/v2";
+    private static final String CONFIG_LOCATION = "edu.stanford.epad.epadws.config";
+    private static final String MAPPING_URL = "/*";
+    private static final String DEFAULT_PROFILE = "dev";    
+    
+    private static ServletContextHandler getServletContextHandler(WebApplicationContext context) throws IOException {
+        ServletContextHandler contextHandler = new ServletContextHandler();
+        contextHandler.setErrorHandler(null);
+        contextHandler.setContextPath(CONTEXT_PATH);
+        contextHandler.addServlet(new ServletHolder(new DispatcherServlet(context)), MAPPING_URL);
+        contextHandler.addEventListener(new ContextLoaderListener(context));
+        contextHandler.setResourceBase(EPADConfig.getEPADWebServerResourcesDir());
+        return contextHandler;
+    }
+
+    private static WebApplicationContext getContext() {
+        AnnotationConfigWebApplicationContext context = new AnnotationConfigWebApplicationContext();
+        context.setConfigLocation(CONFIG_LOCATION);
+        context.getEnvironment().setDefaultProfiles(DEFAULT_PROFILE);
+        return context;
+    }
 	/**
 	 * Adds a WAR file from the webapps directory at a context path.
 	 * 

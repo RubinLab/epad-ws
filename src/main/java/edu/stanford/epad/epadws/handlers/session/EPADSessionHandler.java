@@ -70,7 +70,8 @@ public class EPADSessionHandler extends AbstractHandler
 		int statusCode;
 
 		httpResponse.setContentType("text/plain");
-		request.setHandled(true);
+		if (request != null)
+			request.setHandled(true);
 
 		String method = httpRequest.getMethod();
 		log.info("Request from client " + method + " s:" + s);

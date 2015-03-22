@@ -46,7 +46,8 @@ public class ImageCheckHandler extends AbstractHandler
 		int statusCode;
 
 		httpResponse.setContentType("text/plain;charset=UTF-8");
-		request.setHandled(true);
+		if (request != null)					// In case handler is not called thru jetty
+			request.setHandled(true);
 
 		try {
 			responseStream = httpResponse.getWriter();

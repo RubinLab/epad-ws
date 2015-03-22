@@ -43,7 +43,8 @@ public class AimResourceHandler extends AbstractHandler
 
 		httpResponse.setContentType("text/xml");
 		httpResponse.setHeader("Cache-Control", "no-cache");
-		request.setHandled(true);
+		if (request != null)					// In case handler is not called thru jetty
+			request.setHandled(true);
 
 		try {
 			responseStream = httpResponse.getWriter();
