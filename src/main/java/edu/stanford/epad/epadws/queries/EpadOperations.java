@@ -89,7 +89,7 @@ public interface EpadOperations
 
 	int createSubject(String username, SubjectReference subjectRefernece, String subjectName, Date dob, String gender, String sessionID) throws Exception;
 
-	int createStudy(String username, StudyReference studyReference, String description, String sessionID) throws Exception;
+	int createStudy(String username, StudyReference studyReference, String description, Date studyDate, String sessionID) throws Exception;
 
 	int updateSubject(String username, SubjectReference subjectRefernece, String subjectName, Date dob, String gender, String sessionID) throws Exception;
 
@@ -106,6 +106,8 @@ public interface EpadOperations
 	int createFile(String username, ImageReference imageReference, File uploadedFile, String description, String fileType, String sessionID) throws Exception;
 
 	int createImage(String username, String projectID, File dicomFile, String sessionID) throws Exception;
+	
+	int createSystemTemplate(String username, File templateFile, String sessionID) throws Exception;	
 	
 	EPADFileList getFileDescriptions(ProjectReference projectReference, String username, String sessionID, EPADSearchFilter searchFilter) throws Exception;
 
@@ -128,6 +130,10 @@ public interface EpadOperations
 
 	List<EPADFile> getEPADFiles(SeriesReference seriesReference, String username, String sessionID,
 			EPADSearchFilter searchFilter) throws Exception;
+
+	EPADFileList getTemplateDescriptions(String username, String sessionID) throws Exception;
+
+	EPADFileList getTemplateDescriptions(String projectID, String username, String sessionID) throws Exception;
 	
 	EPADFile getFileDescription(SeriesReference seriesReference, String filename, String username, String sessionID) throws Exception;
 
@@ -135,7 +141,7 @@ public interface EpadOperations
 	
 	String createStudyAIM(String username, StudyReference studyReference, String aimID, File aimFile, String sessionID);
 
-	EPADSeries createSeries(String username, SeriesReference seriesReference, String description, String sessionID) throws Exception;
+	EPADSeries createSeries(String username, SeriesReference seriesReference, String description, Date seriesDate, String sessionID) throws Exception;
 
 	String createProjectAIM(String username, ProjectReference projectReference, String aimID, File aimFile, String sessionID);
 

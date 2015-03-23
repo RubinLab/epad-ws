@@ -1110,6 +1110,17 @@ public class EPADHandler extends AbstractHandler
 				else
 					statusCode = HttpServletResponse.SC_NOT_FOUND;
 
+			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.TEMPLATE_LIST, pathInfo)) {
+				ProjectReference reference = ProjectReference.extract(ProjectsRouteTemplates.TEMPLATE_LIST, pathInfo);
+				EPADFileList templates = epadOperations.getTemplateDescriptions(reference.projectID, username, sessionID);
+				responseStream.append(templates.toJSON());
+				statusCode = HttpServletResponse.SC_OK;
+
+			} else if (HandlerUtil.matchesTemplate(TemplatesRouteTemplates.TEMPLATE_LIST, pathInfo)) {
+				EPADFileList templates = epadOperations.getTemplateDescriptions(username, sessionID);
+				responseStream.append(templates.toJSON());
+				statusCode = HttpServletResponse.SC_OK;
+
 			} else
 				statusCode = HandlerUtil.badRequestJSONResponse(BAD_GET_MESSAGE + ":" + pathInfo, responseStream, log);
 		} catch (Throwable t) {
@@ -1199,7 +1210,8 @@ public class EPADHandler extends AbstractHandler
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.STUDY, pathInfo)) {
 				StudyReference studyReference = StudyReference.extract(ProjectsRouteTemplates.STUDY, pathInfo);
 				String description = httpRequest.getParameter("description");
-				statusCode = epadOperations.createStudy(username, studyReference, description, sessionID);
+				String studyDate = httpRequest.getParameter("studyDate");
+				statusCode = epadOperations.createStudy(username, studyReference, description, getDate(studyDate), sessionID);
 				if (uploadedFile != null && false) {
 					String fileType = httpRequest.getParameter("fileType");
 					statusCode = epadOperations.createFile(username, studyReference, uploadedFile, description, fileType, sessionID);					
@@ -1213,7 +1225,8 @@ public class EPADHandler extends AbstractHandler
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.SERIES, pathInfo)) {
 				SeriesReference seriesReference = SeriesReference.extract(ProjectsRouteTemplates.SERIES, pathInfo);
 				String description = httpRequest.getParameter("description");
-				EPADSeries series  = epadOperations.createSeries(username, seriesReference, description, sessionID);
+				String seriesDate = httpRequest.getParameter("seriesDate");
+				EPADSeries series  = epadOperations.createSeries(username, seriesReference, description, getDate(seriesDate), sessionID);
 				if (uploadedFile != null && false) {
 					String fileType = httpRequest.getParameter("fileType");
 					statusCode = epadOperations.createFile(username, seriesReference, uploadedFile, description, fileType, sessionID);					
@@ -1651,6 +1664,21 @@ public class EPADHandler extends AbstractHandler
 								statusCode = epadOperations.createFile(username, seriesReference, (File)paramData.get(param), description, fileType, sessionID, convertToDicom, modality, instanceNumber);
 								i++;
 							}
+						}
+					}
+					
+				} else if (HandlerUtil.matchesTemplate(TemplatesRouteTemplates.TEMPLATE_LIST, pathInfo)) {
+					if (requestContentType == null || !requestContentType.startsWith("multipart/form-data"))
+						throw new Exception("Invalid Content Type, should be multipart/form-data");
+					if (numberOfFiles == 0)
+						throw new Exception("No files found in post");
+					int i = 0;
+					for (String param: paramData.keySet())
+					{
+						if (paramData.get(param) instanceof File)
+						{
+							statusCode = epadOperations.createSystemTemplate(username, (File)paramData.get(param), sessionID);
+							i++;
 						}
 					}
 					
