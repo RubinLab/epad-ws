@@ -41,6 +41,7 @@ public class SubjectDataDeleteTask implements Runnable
     		for (String projectId: projectIds)
     		{
     			if (projectId.equals(projectID)) continue;
+    			if (projectId.equals(EPADConfig.xnatUploadProjectID)) continue;
     			Set<String> allSubjectIDs = UserProjectService.getSubjectIDsForProject(projectId);
     			if (allSubjectIDs.contains(patientID.replace('.', '_')) || allSubjectIDs.contains(patientID))
     			{

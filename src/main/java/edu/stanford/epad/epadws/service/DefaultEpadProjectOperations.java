@@ -1480,7 +1480,7 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		Study study = getStudy(studyUID);
 		ProjectToSubject projSubj = (ProjectToSubject) new ProjectToSubject().getObject("project_id =" + project.getId() + " and subject_id=" + subject.getId());
 		ProjectToSubjectToStudy projSubjStudy = (ProjectToSubjectToStudy) new ProjectToSubjectToStudy().getObject("proj_subj_id =" + projSubj.getId() + " and study_id=" + study.getId());
-		projSubjStudy.delete();
+		if (projSubjStudy != null) projSubjStudy.delete();
 		// TODO: delete study if not used any more
 	}
 
