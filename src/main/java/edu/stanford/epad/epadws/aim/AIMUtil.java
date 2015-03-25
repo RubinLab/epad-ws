@@ -1034,6 +1034,7 @@ public class AIMUtil
 			try {
 				Aim4 a = new Aim4(aim);
 				EPADAIM ea = aimMAP.get(aim.getUniqueIdentifier());
+				if (ea == null)  continue;
 				if (aim.getImageAnnotations().get(0).getName() != null)
 				{
 					ea.name = aim.getImageAnnotations().get(0).getName().getValue();
