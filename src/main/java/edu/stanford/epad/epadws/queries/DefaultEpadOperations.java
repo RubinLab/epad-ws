@@ -3,6 +3,7 @@ package edu.stanford.epad.epadws.queries;
 import ij.ImagePlus;
 import ij.io.Opener;
 import ij.measure.Calibration;
+import ij.process.ImageStatistics;
 
 import java.io.File;
 import java.io.IOException;
@@ -2699,7 +2700,7 @@ public class DefaultEpadOperations implements EpadOperations
 	private List<DICOMElement> getCalculatedWindowingDICOMElements(String studyUID, String seriesUID, String imageUID)
 	{
 		List<DICOMElement> dicomElements = new ArrayList<>();
-		long windowWidth = 1;
+		long windowWidth = 400;
 		long windowCenter = 0;
 		String dicomImageFilePath = null;
 
@@ -2712,6 +2713,7 @@ public class DefaultEpadOperations implements EpadOperations
 			ImagePlus image = opener.openImage(dicomImageFilePath);
 
 			if (image != null) {
+				// This method to get Window parameters in overriden below (need to test which one is correct)
 				double min = image.getDisplayRangeMin();
 				double max = image.getDisplayRangeMax();
 				Calibration cal = image.getCalibration();
@@ -2724,8 +2726,23 @@ public class DefaultEpadOperations implements EpadOperations
 				}
 				windowCenter = Math.round(minValue + windowWidth / 2.0);
 
+				// New method to get window parameters
+				ImageStatistics is = image.getStatistics();
+				if (is != null)
+				{
+					min = is.min;
+					max = is.max;
+					long width = Math.round(max - min);
+					long center = Math.round(min + width/2.0);
+					if (width > 0)
+					{
+						windowWidth = width;
+						windowCenter = center;
+					}
+				}
 				log.info("Image " + imageUID + " in series " + seriesUID + " has a calculated window width of " + windowWidth
 						+ " and window center of " + windowCenter);
+				temporaryDicomFile.delete();
 			} else {
 				log.warning("ImageJ failed to load DICOM file for image " + imageUID + " in series " + seriesUID + " path: " + dicomImageFilePath
 						+ " to calculate windowing");
