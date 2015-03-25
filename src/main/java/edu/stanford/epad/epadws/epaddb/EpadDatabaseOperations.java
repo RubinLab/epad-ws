@@ -106,6 +106,8 @@ public interface EpadDatabaseOperations
 	List<EPADAIM> getAIMs(ImageReference imageReference);
 
 	List<EPADAIM> getAIMs(FrameReference frameReference);
+
+	List<EPADAIM> getAIMs(String projectID, String subjectID, String studyUID, String seriesUID);
 	
 	List<EPADAIM> getAIMs(String projectID, AIMSearchType aimSearchType, String value, int start, int count);
 

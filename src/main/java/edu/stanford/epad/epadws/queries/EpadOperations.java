@@ -190,6 +190,8 @@ public interface EpadOperations
 	
 	void deleteAllStudyAims(String studyUID, boolean deleteDSOs);
 
+	void deleteAllAims(String projectID, String subjectID, String studyUID, String seriesUID, boolean deleteDSOs);
+	
 	EPADAIMList getProjectAIMDescriptions(ProjectReference projectReference, String username, String sessionID);
 
 	EPADAIM getProjectAIMDescription(ProjectReference projectReference, String aimID, String username, String sessionID);

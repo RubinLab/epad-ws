@@ -774,6 +774,22 @@ public class DefaultEpadOperations implements EpadOperations
 	}
 
 	@Override
+	public void deleteAllAims(String projectID, String subjectID,
+			String studyUID, String seriesUID, boolean deleteDSOs) {
+		if (projectID == null || projectID.trim().length() == 0) return;
+		List<EPADAIM> aims = epadDatabaseOperations.getAIMs(projectID, subjectID, studyUID, seriesUID);
+		for (EPADAIM aim :aims)
+		{
+			epadDatabaseOperations.deleteAIM("", aim.aimID);
+			AIMUtil.deleteAIM(aim.aimID, aim.projectID);
+			if (deleteDSOs && aim.dsoSeriesUID != null && aim.dsoSeriesUID.length() > 0 && epadDatabaseOperations.getAIMsByDSOSeries(aim.dsoSeriesUID).size() == 0)
+			{
+				this.deleteSeries(new SeriesReference(aim.projectID, aim.subjectID, aim.studyUID, aim.dsoSeriesUID), false);
+			}
+		}
+	}
+
+	@Override
 	public Set<String> getExamTypesForSubject(String projectID, String patientID, String sessionID,
 			EPADSearchFilter searchFilter) throws Exception
 	{
@@ -1518,6 +1534,7 @@ public class DefaultEpadOperations implements EpadOperations
 			(new Thread(new ProjectDataDeleteTask(projectID))).start();
 		} else {
 			projectOperations.deleteProject(username, projectID);
+			this.deleteAllAims(projectID, null, null, null, true);
 			xnatStatusCode = HttpServletResponse.SC_OK;
 		}
 		return xnatStatusCode;
@@ -1542,6 +1559,7 @@ public class DefaultEpadOperations implements EpadOperations
 				sessionID);
 		} else {
 			projectOperations.deleteSubject(username, subjectReference.subjectID, subjectReference.projectID);
+			this.deleteAllAims(subjectReference.projectID, subjectReference.subjectID, null, null, true);
 			xnatStatusCode = HttpServletResponse.SC_OK;
 		}
 
@@ -1561,6 +1579,7 @@ public class DefaultEpadOperations implements EpadOperations
 				studyReference.studyUID, sessionID);
 		} else {
 			projectOperations.deleteStudy(username, studyReference.studyUID, studyReference.subjectID, studyReference.projectID);
+			this.deleteAllAims(studyReference.projectID, studyReference.subjectID, studyReference.studyUID, null, true);
 			xnatStatusCode = HttpServletResponse.SC_OK;
 		}
 		
