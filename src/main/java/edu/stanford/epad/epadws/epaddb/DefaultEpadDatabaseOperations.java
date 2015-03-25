@@ -1396,6 +1396,38 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 	}
 
 	@Override
+	public List<Map<String, String>> getCoordinationData(String coordinationID) throws Exception {
+		Connection c = null;
+		PreparedStatement ps = null;
+		ResultSet rs = null;
+		List<Map<String, String>> results = new ArrayList<Map<String, String>>();
+		try {
+			c = getConnection();
+			ps = c.prepareStatement(EpadDatabaseCommands.SELECT_COORDINATION_BY_ID);
+			ps.setString(1, coordinationID);
+			rs = ps.executeQuery();
+			while (rs.next()) {
+				String termID = rs.getString(2);
+				String termSchema = rs.getString(3);
+				String description = rs.getString(4);
+				Map<String, String> coordination = new HashMap<String, String>();
+				coordination.put("coordinationID", coordinationID);
+				coordination.put("termID", termID);
+				coordination.put("termSchema", termSchema);
+				coordination.put("description", description);
+				results.add(coordination);
+			}
+			return results;
+		} catch (SQLException e) {
+			String debugInfo = DatabaseUtils.getDebugData(rs);
+			log.warning("Database operation failed;debugInfo=" + debugInfo, e);
+			throw e;
+		} finally {
+			close(c, ps, rs);
+		}
+	}
+
+	@Override
 	public Set<String> getAllSeriesUIDsFromEPadDatabase()
 	{
 		Set<String> retVal = new HashSet<String>();

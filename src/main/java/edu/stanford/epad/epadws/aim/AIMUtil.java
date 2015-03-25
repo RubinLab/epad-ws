@@ -87,7 +87,9 @@ import edu.stanford.hakan.aim3api.base.SegmentationCollection;
 import edu.stanford.hakan.aim3api.base.User;
 import edu.stanford.hakan.aim3api.usage.AnnotationBuilder;
 import edu.stanford.hakan.aim3api.usage.AnnotationGetter;
+import edu.stanford.hakan.aim4api.base.CD;
 import edu.stanford.hakan.aim4api.base.ImageAnnotationCollection;
+import edu.stanford.hakan.aim4api.base.ImagingObservationCharacteristic;
 
 /**
  * 
@@ -1490,6 +1492,41 @@ public class AIMUtil
 			log.warning("Error converting aim3:" + epadaim.aimID, x);
 			throw x;
 		}
+	}
+	
+	public ImageAnnotationCollection fixAIM4Coordination(ImageAnnotationCollection iac)
+	{
+		EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
+		try
+		{
+			List<ImagingObservationCharacteristic> iocs = iac.getImageAnnotations().get(0)
+															.getImagingPhysicalEntityCollection()
+															.getImagingPhysicalEntityList().get(0)
+															.getImagingObservationCharacteristicCollection().getImagingObservationCharacteristicList();
+			for (int i = 0; i < iocs.size(); i++)
+			{
+				ImagingObservationCharacteristic ioc = iocs.get(i);
+				
+				if (ioc.getListTypeCode().get(0).getCode().contains("EPAD-prod"))
+				{
+					List<Map<String, String>> coordinations = epadDatabaseOperations.getCoordinationData(ioc.getListTypeCode().get(0).getCode());
+					iocs.remove(i);
+					for (Map<String, String> coordination: coordinations)
+					{
+						//<typeCode code="RID3829" codeSystem="scar" codeSystemName="RadLex3.10_NS"/>
+						CD typeCode = new CD();
+						typeCode.setCode(coordination.get("term_id"));
+						typeCode.setCodeSystem(coordination.get("description"));
+						typeCode.setCodeSystemName(coordination.get("schema_name"));
+						ioc.getListTypeCode().add(i++, typeCode);
+					}
+				}
+			}
+		} catch (Exception x) {
+			log.warning("Error fixing aim id = " + iac.getUniqueIdentifier().getRoot(), x);
+			return null;
+		}
+		return iac;
 	}
 	
 	public static void updateTableXMLs(List<EPADAIM> aims)

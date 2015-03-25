@@ -54,5 +54,7 @@ public interface EpadDatabaseCommands
 
 	public static final String SELECT_COORDINATION_TERM_KEY = "select term_key from epaddb.terms as t where t.term_id = ? and t.schema_name = ? and t.schema_version = ?";
 
+	public static final String SELECT_COORDINATION_BY_ID = "select coordination_id,t.term_id,t.schema_name,t.description from terms t,coordination2term c2,coordinations c where c.coordination_key=c2.coordination_key and t.term_key=c2.term_key and coordination_id like ? order by coordination_id,position";
+	
 	public static final String CLEANUP_OBSOLETE_EPAD_FILES = "delete from epad_files where instance_fk not in (select pk from pacsdb.instance)";
 }
