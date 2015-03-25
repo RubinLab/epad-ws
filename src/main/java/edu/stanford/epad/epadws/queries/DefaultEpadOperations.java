@@ -3,6 +3,7 @@ package edu.stanford.epad.epadws.queries;
 import ij.ImagePlus;
 import ij.io.Opener;
 import ij.measure.Calibration;
+import ij.process.ImageProcessor;
 import ij.process.ImageStatistics;
 
 import java.io.File;
@@ -2725,13 +2726,17 @@ public class DefaultEpadOperations implements EpadOperations
 					windowWidth = 400;
 				}
 				windowCenter = Math.round(minValue + windowWidth / 2.0);
-
+				ImageProcessor ip = image.getProcessor();
+				log.info("Image, min:" + minValue + " max:" + maxValue + " width:" + windowWidth + " center:" + windowCenter);
+				if (ip != null)
+					log.info("Processor min:" + ip.getMinThreshold() + " minh:"+ ip.getHistogramMin() + " max:" + ip.getMax() + " calmin:" + cal.getCValue(ip.getMin()) + " calmx:"+ cal.getCValue(ip.getMax()));
 				// New method to get window parameters
 				ImageStatistics is = image.getStatistics();
 				if (is != null)
 				{
 					min = is.min;
 					max = is.max;
+					log.info("Statistics, min:" + min + " max:" + max + " all:" + is);
 					long width = Math.round(max - min);
 					long center = Math.round(min + width/2.0);
 					if (width > 0)
@@ -2740,8 +2745,10 @@ public class DefaultEpadOperations implements EpadOperations
 						windowCenter = center;
 					}
 				}
+				if (cal.isSigned16Bit())
+					windowCenter = 0;
 				log.info("Image " + imageUID + " in series " + seriesUID + " has a calculated window width of " + windowWidth
-						+ " and window center of " + windowCenter);
+						+ " and window center of " + windowCenter + " signed:" + cal.isSigned16Bit());
 				temporaryDicomFile.delete();
 			} else {
 				log.warning("ImageJ failed to load DICOM file for image " + imageUID + " in series " + seriesUID + " path: " + dicomImageFilePath
