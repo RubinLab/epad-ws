@@ -216,6 +216,8 @@ public class EPADHandler extends AbstractHandler
 
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.STUDY_LIST, pathInfo)) {
 				SubjectReference subjectReference = SubjectReference.extract(ProjectsRouteTemplates.STUDY_LIST, pathInfo);
+				if (subjectReference.subjectID.equals("null"))
+					throw new Exception("Patient ID in rest call is null");
 				EPADStudyList studyList = epadOperations.getStudyDescriptions(subjectReference, username, sessionID,
 						searchFilter);
 				log.info("Returning " + studyList.ResultSet.totalRecords + " studies");
@@ -439,6 +441,8 @@ public class EPADHandler extends AbstractHandler
 
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.SUBJECT_AIM_LIST, pathInfo)) {
 				SubjectReference subjectReference = SubjectReference.extract(ProjectsRouteTemplates.SUBJECT_AIM_LIST, pathInfo);
+				if (subjectReference.subjectID.equals("null"))
+					throw new Exception("Patient ID in rest call is null");
 				EPADAIMList aims = epadOperations.getSubjectAIMDescriptions(subjectReference, username, sessionID);
 				long dbtime = System.currentTimeMillis();
 				log.info("Time taken for AIM database query:" + (dbtime-starttime) + " msecs");
@@ -783,6 +787,8 @@ public class EPADHandler extends AbstractHandler
 
 			} else if (HandlerUtil.matchesTemplate(SubjectsRouteTemplates.SUBJECT_AIM_LIST, pathInfo)) {
 				SubjectReference subjectReference = SubjectReference.extract(SubjectsRouteTemplates.SUBJECT_AIM_LIST, pathInfo);
+				if (subjectReference.subjectID.equals("null"))
+					throw new Exception("Patient ID in rest call is null");
 				EPADAIMList aims = epadOperations.getSubjectAIMDescriptions(subjectReference, username, sessionID);
 				long dbtime = System.currentTimeMillis();
 				log.info("Time taken for AIM database query:" + (dbtime-starttime) + " msecs");
@@ -888,6 +894,8 @@ public class EPADHandler extends AbstractHandler
 						
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.SUBJECT_FILE_LIST, pathInfo)) {
 				SubjectReference subjectReference = SubjectReference.extract(ProjectsRouteTemplates.SUBJECT_FILE_LIST, pathInfo);
+				if (subjectReference.subjectID.equals("null"))
+					throw new Exception("Patient ID in rest call is null");
 				EPADFileList files = epadOperations.getFileDescriptions(subjectReference, username, sessionID, searchFilter);
 				responseStream.append(files.toJSON());
 				statusCode = HttpServletResponse.SC_OK;
@@ -920,6 +928,8 @@ public class EPADHandler extends AbstractHandler
 						
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.SUBJECT_FILE, pathInfo)) {
 				SubjectReference subjectReference = SubjectReference.extract(ProjectsRouteTemplates.SUBJECT_FILE, pathInfo);
+				if (subjectReference.subjectID.equals("null"))
+					throw new Exception("Patient ID in rest call is null");
 				Map<String, String> templateMap = HandlerUtil.getTemplateMap(ProjectsRouteTemplates.SUBJECT_FILE, pathInfo);
 				String filename = HandlerUtil.getTemplateParameter(templateMap, "filename");
 				if (filename == null || filename.trim().length() == 0)
