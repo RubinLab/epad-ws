@@ -201,12 +201,13 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 							EPADConfig.aim4Namespace, EPADConfig.eXistCollection, EPADConfig.eXistUsername, EPADConfig.eXistPassword);
 					List<Project> projects = DefaultEpadProjectOperations.getInstance().getAllProjects();
 					for (Project p: projects) {
-						count = adb.getAIMCount("admin", p.getProjectId(), null, null, null, null, 0);
+						count = adb.getAIMCount(null, p.getProjectId(), null, null, null, null, 0);
 						MongoDBOperations.createIndexes(p.getProjectId());
 						int mongoCount = MongoDBOperations.getNumberOfDocuments("", p.getProjectId());
-						log.debug("mysqlDB Count:" + count + " mongoDB Count:" + mongoCount);
+						log.info("Project:" + p.getProjectId() + " mysqlDB Count:" + count + " mongoDB Count:" + mongoCount);
 						if (count > mongoCount) {
 							List<EPADAIM> aims = adb.getAIMs(p.getProjectId(), AIMSearchType.ANNOTATION_UID, "all");
+							log.info("Updating" + aims.size()+ " annotations");							
 							AIMUtil.updateMongDB(aims);
 						}
 					}
@@ -445,6 +446,23 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 			AIMDatabaseOperations adb = new AIMDatabaseOperations(c, EPADConfig.eXistServerUrl,
 					EPADConfig.aim4Namespace, EPADConfig.eXistCollection, EPADConfig.eXistUsername, EPADConfig.eXistPassword);
 			return adb.getAIMs(reference.projectID, reference.subjectID, reference.studyUID, reference.seriesUID, reference.imageUID, reference.frameNumber);
+		} catch (SQLException sqle) {
+			log.warning("AIM Database operation failed:", sqle);
+		} finally {
+			close(c);
+		}
+		return new ArrayList<EPADAIM>();
+	}
+
+	@Override
+	public List<EPADAIM> getAIMs(String projectID, String subjectID,
+			String studyUID, String seriesUID) {
+		Connection c = null;
+		try {
+			c = getConnection();
+			AIMDatabaseOperations adb = new AIMDatabaseOperations(c, EPADConfig.eXistServerUrl,
+					EPADConfig.aim4Namespace, EPADConfig.eXistCollection, EPADConfig.eXistUsername, EPADConfig.eXistPassword);
+			return adb.getAIMs(projectID, subjectID, studyUID, seriesUID, null, 0);
 		} catch (SQLException sqle) {
 			log.warning("AIM Database operation failed:", sqle);
 		} finally {
@@ -1386,6 +1404,38 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 				throw new RuntimeException("MySQL error getting auto increment key");
 			}
 			return termID;
+		} catch (SQLException e) {
+			String debugInfo = DatabaseUtils.getDebugData(rs);
+			log.warning("Database operation failed;debugInfo=" + debugInfo, e);
+			throw e;
+		} finally {
+			close(c, ps, rs);
+		}
+	}
+
+	@Override
+	public List<Map<String, String>> getCoordinationData(String coordinationID) throws Exception {
+		Connection c = null;
+		PreparedStatement ps = null;
+		ResultSet rs = null;
+		List<Map<String, String>> results = new ArrayList<Map<String, String>>();
+		try {
+			c = getConnection();
+			ps = c.prepareStatement(EpadDatabaseCommands.SELECT_COORDINATION_BY_ID);
+			ps.setString(1, coordinationID);
+			rs = ps.executeQuery();
+			while (rs.next()) {
+				String termID = rs.getString(2);
+				String termSchema = rs.getString(3);
+				String description = rs.getString(4);
+				Map<String, String> coordination = new HashMap<String, String>();
+				coordination.put("coordinationID", coordinationID);
+				coordination.put("termID", termID);
+				coordination.put("termSchema", termSchema);
+				coordination.put("description", description);
+				results.add(coordination);
+			}
+			return results;
 		} catch (SQLException e) {
 			String debugInfo = DatabaseUtils.getDebugData(rs);
 			log.warning("Database operation failed;debugInfo=" + debugInfo, e);

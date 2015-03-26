@@ -191,6 +191,7 @@ public interface EpadProjectOperations {
 	 * @throws Exception
 	 */
 	Study createStudy(String loggedInUser, String studyUID, String subjectUID, String description) throws Exception;
+	Study createStudy(String loggedInUser, String studyUID, String subjectUID, String description, Date studyDate) throws Exception;
 	
 	/**
 	 * Create Study record in database
@@ -502,6 +503,18 @@ public interface EpadProjectOperations {
 	EpadFile getEpadFile(String projectID, String subjectUID, String studyUID, String seriesUID, String filename) throws Exception;	
 	
 	/**
+	 * Get Files for project/subject/study/series by filetype 
+	 * @param projectID
+	 * @param subjectUID
+	 * @param studyUID
+	 * @param seriesUID
+	 * @param filename
+	 * @return
+	 * @throws Exception
+	 */
+	List<EpadFile> getEpadFiles(String projectID, String subjectUID, String studyUID, String seriesUID, FileType fileType) throws Exception;	
+	
+	/**
 	 * Get files for project
 	 * @param projectID
 	 * @return
@@ -554,6 +567,15 @@ public interface EpadProjectOperations {
 	 * @throws Exception
 	 */
 	boolean hasAccessToProject(String username, String projectID) throws Exception;
+	
+	/**
+	 * Check if user is in project
+	 * @param username
+	 * @param project key
+	 * @return
+	 * @throws Exception
+	 */
+	boolean hasAccessToProject(String username, long id) throws Exception;
 	
 	/**
 	 * Check if collaborator

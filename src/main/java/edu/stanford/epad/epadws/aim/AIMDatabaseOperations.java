@@ -96,6 +96,8 @@ public class AIMDatabaseOperations {
                 + "  `AnnotationUID` VARCHAR(255) NOT NULL,\n"
                 //+ "  `AnnotationName` VARCHAR(255) NOT NULL,\n"
                 + "  `ProjectUID` VARCHAR(255),\n"
+                + "  UPDATETIME TIMESTAMP,\n"
+                + "  DELETED TINYINT(1),\n"
                 + "  PRIMARY KEY (`AnnotationUID`));";
        boolean closeStmt = false;
 	   	try {
@@ -113,20 +115,25 @@ public class AIMDatabaseOperations {
     }
 
     public void alterAnnotationsTable() throws SQLException {
+    	addColumn("XML MEDIUMTEXT");
+    	addColumn("DELETED TINYINT(1)");
+    	addColumn("UPDATETIME TIMESTAMP");
     	try {
 	    	this.statement = mySqlConnection.createStatement();
-	        this.statement.executeUpdate("ALTER TABLE " + ANNOTATIONS_TABLE + " ADD COLUMN XML MEDIUMTEXT");
+	        this.statement.executeUpdate("CREATE INDEX annotations_series_ind ON annotations(seriesuid)");
+	        this.statement.executeUpdate("CREATE INDEX annotations_project_ind ON annotations(projectuid)");
     	} catch (SQLException x) {
     		if (!x.getMessage().contains("Duplicate"))
-    			log.warning("Error adding column", x);
+    			log.warning("Error adding index", x);
     	} finally {
     		if (statement != null) statement.close();
     	}
+    }
+    
+    private void addColumn(String nameAndType) throws SQLException {
     	try {
 	    	this.statement = mySqlConnection.createStatement();
-	        this.statement.executeUpdate("ALTER TABLE " + ANNOTATIONS_TABLE + " ADD COLUMN UPDATETIME TIMESTAMP");
-	        this.statement.executeUpdate("CREATE INDEX annotations_series_ind ON annotations(seriesuid)");
-	        this.statement.executeUpdate("CREATE INDEX annotations_project_ind ON annotations(projectuid)");
+	        this.statement.executeUpdate("ALTER TABLE " + ANNOTATIONS_TABLE + " ADD COLUMN " + nameAndType);
     	} catch (SQLException x) {
     		if (!x.getMessage().contains("Duplicate"))
     			log.warning("Error adding column", x);
@@ -557,7 +564,7 @@ public class AIMDatabaseOperations {
 		}
 		
 		sqlSelect = sqlSelect + " ORDER BY ProjectUID, PatientID, StudyUID, SeriesUID, ImageUID, FrameID";
-        log.info("AIMs select:" + sqlSelect);
+        log.debug("AIMs select:" + sqlSelect);
        
 		ResultSet rs = null;
         List<EPADAIM> aims = new ArrayList<EPADAIM>();
@@ -583,14 +590,14 @@ public class AIMDatabaseOperations {
 				aims.add(aim);
 				if (row > start+count) break;
 			}
-    	    log.info("AIM Records " + aims.size());
+    	    log.debug("AIM Records " + aims.size());
         }
         finally
         {
         	if (rs != null) rs.close();
         	statement.close();
         }
-        log.info("Number of AIMs found in database:" + aims.size());
+        log.debug("Number of AIMs found in database:" + aims.size());
 		return aims;
     }
     

@@ -404,6 +404,12 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 	@Override
 	public Study createStudy(String loggedInUser, String studyUID,
 			String subjectUID, String description) throws Exception {
+		return createStudy(loggedInUser, studyUID,
+				subjectUID, description, new Date());
+	}
+	@Override
+	public Study createStudy(String loggedInUser, String studyUID,
+			String subjectUID, String description, Date studyDate) throws Exception {
 		Subject subject = getSubject(subjectUID);
 		Study study = getStudy(studyUID);
 		if (study == null)
@@ -415,6 +421,8 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		study.setSubjectId(subject.getId());
 		if (description != null && description.length() > 0)
 			study.setDescription(description);
+		if (studyDate != null)
+			study.setStudyDate(studyDate);
 		study.save();
 		return study;
 	}
@@ -1143,6 +1151,23 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 			return false;
 	}
 
+	@Override
+	public boolean hasAccessToProject(String username, long id)
+			throws Exception {
+		Project project = (Project) this.getDBObject(Project.class, id);
+		if (project == null)
+			throw new Exception("Project not found, ID:" + id);
+		User user = getUser(username);
+		if (user == null)
+			throw new Exception("User not found, username:" + username);
+		if (project.getType().equals(ProjectType.PUBLIC.getName()) ||  user.isAdmin())
+			return true;
+		if (isUserInProject(user.getId(), project.getId()))
+			return true;
+		else
+			return false;
+	}
+
 	protected boolean isUserInProject(long userId, long projectId)
 			throws Exception {
 		ProjectToUser pu = (ProjectToUser) new ProjectToUser().getObject("project_id =" + projectId + " and user_id=" + userId);
@@ -1275,6 +1300,44 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		criteria = criteria + " and name = " + new EpadFile().toSQL(filename);
 		EpadFile file = (EpadFile) new EpadFile().getObject(criteria);
 		return file;
+	}
+
+	/* (non-Javadoc)
+	 * @see edu.stanford.epad.epadws.service.EpadProjectOperations#getEpadFiles(java.lang.String, java.lang.String, java.lang.String, java.lang.String, FileType)
+	 */
+	@Override
+	public List<EpadFile> getEpadFiles(String projectID,
+			String subjectUID, String studyUID, String seriesUID,
+			FileType fileType) throws Exception {
+		String criteria = "1 = 1";
+		if (projectID != null && projectID.length() > 0)
+		{
+			Project project = getProject(projectID);
+			criteria = criteria + " and project_id = " + project.getId();
+		}
+
+		if (subjectUID != null && subjectUID.length() > 0)
+		{
+			Subject subject = getSubject(subjectUID);
+			criteria = criteria + " and subject_id = " + subject.getId();
+		}
+
+		if (studyUID != null && studyUID.length() > 0)
+		{
+			Study study = getStudy(studyUID);
+			criteria = criteria + " and study_id = " + study.getId();
+		}
+
+		if (seriesUID != null && seriesUID.length() > 0)
+		{
+			criteria = criteria + " and series_uid = '" + seriesUID + "'";
+		}
+		
+		if (fileType != null)
+		{
+			criteria = criteria + " and filetype = '" + fileType.getName() + "'";
+		}
+		return new EpadFile().getObjects(criteria);
 	}
 
 	/* (non-Javadoc)
@@ -1417,7 +1480,7 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		Study study = getStudy(studyUID);
 		ProjectToSubject projSubj = (ProjectToSubject) new ProjectToSubject().getObject("project_id =" + project.getId() + " and subject_id=" + subject.getId());
 		ProjectToSubjectToStudy projSubjStudy = (ProjectToSubjectToStudy) new ProjectToSubjectToStudy().getObject("proj_subj_id =" + projSubj.getId() + " and study_id=" + study.getId());
-		projSubjStudy.delete();
+		if (projSubjStudy != null) projSubjStudy.delete();
 		// TODO: delete study if not used any more
 	}
 
