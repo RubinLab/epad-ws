@@ -456,6 +456,11 @@ public class RemotePACService extends RemotePACSBase {
 	public synchronized List<RemotePACEntity> queryRemoteData(RemotePAC pac, String patientNameFilter, String patientIDFilter, String studyIDFilter, String studyDateFilter, String[] tagGroups, String[] tagElements, String[] tagValues, String[] tagTypes, boolean patientsOnly, boolean studiesOnly) throws Exception {
 		
 		try {
+			String qlevel = null;
+			if (studiesOnly)
+				qlevel = "STUDY";
+			if (patientsOnly)
+				qlevel = "PATIENT";
 			log.info("Remote PAC Query, pacID:" + pac.pacID + " patientName:" + patientNameFilter + " patientID:" + patientIDFilter + " studyDate:" + studyDateFilter + " studyIDFilter:" + studyIDFilter + " patientsOnly:" + patientsOnly + " studiesOnly:" + studiesOnly);
 			if (currentPACQueries.containsKey(pac.pacID))
 				throw new Exception("Last query to this PAC still in progress");
@@ -469,6 +474,7 @@ public class RemotePACService extends RemotePACSBase {
 					a.addValue(patientNameFilter);
 				}
 				filter.put(t,a);
+				qlevel = "PATIENT";
 			}
 			{
 				AttributeTag t = TagFromName.PatientID; Attribute a = new ShortStringAttribute(t,specificCharacterSet);
@@ -476,6 +482,7 @@ public class RemotePACService extends RemotePACSBase {
 					a.addValue(patientIDFilter);
 				}
 				filter.put(t,a);
+				qlevel = "PATIENT";
 			}
 			// StudyDate formats:
 			//	from/to: 20071001-20080220
@@ -495,7 +502,8 @@ public class RemotePACService extends RemotePACSBase {
 						studyIDFilter = studyIDFilter.substring(studyIDFilter.indexOf(":")+1);
 					a.addValue(studyIDFilter);
 				}		
-				filter.put(t,a); 
+				filter.put(t,a);
+				qlevel = "STUDY";
 			}
 			if (tagGroups != null && tagElements != null && tagValues != null) {
 				for (int i = 0; i < tagGroups.length && i < tagElements.length && i < tagValues.length; i++)  {
@@ -526,9 +534,20 @@ public class RemotePACService extends RemotePACSBase {
 							a = new LongStringAttribute(t,specificCharacterSet);
 						a.addValue(tagValues[i]);
 						filter.put(t,a);
+						qlevel = "SERIES";
 					} catch (Exception x) {
 						log.warning("Error decoding entered tag id" + tagGroups[i] + "," + tagElements[i], x);
 					}
+				}
+			}
+
+			if (qlevel != null)
+			{ 
+				AttributeTag t = TagFromName.QueryRetrieveLevel; Attribute a = new CodeStringAttribute(t);
+				a.addValue(qlevel);
+				if (!filter.containsKey(t)) 
+				{
+					filter.put(t,a); 
 				}
 			}
 			{ AttributeTag t = TagFromName.PatientBirthDate; Attribute a = new DateAttribute(t); if (!filter.containsKey(t)) filter.put(t,a); }
@@ -538,7 +557,7 @@ public class RemotePACService extends RemotePACSBase {
 			{ AttributeTag t = TagFromName.StudyDescription; Attribute a = new LongStringAttribute(t,specificCharacterSet); if (!filter.containsKey(t)) filter.put(t,a); }
 			{ AttributeTag t = TagFromName.ModalitiesInStudy; Attribute a = new CodeStringAttribute(t); filter.put(t,a); }
 			{ AttributeTag t = TagFromName.StudyTime; Attribute a = new TimeAttribute(t); if (!filter.containsKey(t)) filter.put(t,a); }
-			{ AttributeTag t = TagFromName.PatientAge; Attribute a = new AgeStringAttribute(t); if (!filter.containsKey(t)) filter.put(t,a); }
+			//{ AttributeTag t = TagFromName.PatientAge; Attribute a = new AgeStringAttribute(t); if (!filter.containsKey(t)) filter.put(t,a); }
 
 			{ AttributeTag t = TagFromName.SeriesDescription; Attribute a = new LongStringAttribute(t,specificCharacterSet); if (!filter.containsKey(t)) filter.put(t,a); }
 			{ AttributeTag t = TagFromName.SeriesNumber; Attribute a = new IntegerStringAttribute(t); if (!filter.containsKey(t)) filter.put(t,a); }

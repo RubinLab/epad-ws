@@ -201,12 +201,13 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 							EPADConfig.aim4Namespace, EPADConfig.eXistCollection, EPADConfig.eXistUsername, EPADConfig.eXistPassword);
 					List<Project> projects = DefaultEpadProjectOperations.getInstance().getAllProjects();
 					for (Project p: projects) {
-						count = adb.getAIMCount("admin", p.getProjectId(), null, null, null, null, 0);
+						count = adb.getAIMCount(null, p.getProjectId(), null, null, null, null, 0);
 						MongoDBOperations.createIndexes(p.getProjectId());
 						int mongoCount = MongoDBOperations.getNumberOfDocuments("", p.getProjectId());
-						log.debug("mysqlDB Count:" + count + " mongoDB Count:" + mongoCount);
+						log.info("Project:" + p.getProjectId() + " mysqlDB Count:" + count + " mongoDB Count:" + mongoCount);
 						if (count > mongoCount) {
 							List<EPADAIM> aims = adb.getAIMs(p.getProjectId(), AIMSearchType.ANNOTATION_UID, "all");
+							log.info("Updating" + aims.size()+ " annotations");							
 							AIMUtil.updateMongDB(aims);
 						}
 					}

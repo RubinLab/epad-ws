@@ -12,6 +12,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -1534,6 +1535,7 @@ public class AIMUtil
 	{
 		long starttime = System.currentTimeMillis();
 		HashMap<String, String> searchValueByProject = new HashMap<String, String>();
+		Set<String> aimIDs = new HashSet<String>();
 		for (EPADAIM aim: aims)
 		{
 			String projectID = aim.projectID;
@@ -1545,6 +1547,7 @@ public class AIMUtil
 			else
 				searchValue = searchValue + "," + aim.aimID;
 			searchValueByProject.put(projectID, searchValue);
+			aimIDs.add(aim.aimID);
 		}
 		
 		EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
@@ -1555,6 +1558,7 @@ public class AIMUtil
 			boolean mongoErr = false;
 			for (ImageAnnotationCollection aim: paims)
 			{
+				aimIDs.remove(aim.getUniqueIdentifier().getRoot());
 				try {
 					EPADAIM epadAim = epadDatabaseOperations.updateAIMXml(aim.getUniqueIdentifier().getRoot(), edu.stanford.hakan.aim4api.usage.AnnotationBuilder.convertToString(aim));
 				} catch (Exception e) {
@@ -1568,8 +1572,14 @@ public class AIMUtil
 					mongoErr = true;
 				}
 			}
-		}	
-		
+		}
+		// Delete aims that are not found in Exist and have null xml
+		for (String aimID: aimIDs)
+		{
+			EPADAIM aim = epadDatabaseOperations.getAIM(aimID);
+			if (aim.xml == null || aim.xml.length() == 0)
+				epadDatabaseOperations.deleteAIM("admin", aimID);
+		}
 	}
 	
 	public static void updateMongDB(List<EPADAIM> aims)
