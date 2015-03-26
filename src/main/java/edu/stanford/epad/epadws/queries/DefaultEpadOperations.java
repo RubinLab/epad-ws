@@ -2764,7 +2764,7 @@ public class DefaultEpadOperations implements EpadOperations
 						windowCenter = center;
 					}
 				}
-				if (cal.isSigned16Bit())
+				if (cal.isSigned16Bit() && max < 5000)
 					windowCenter = 0;
 				log.info("Image " + imageUID + " in series " + seriesUID + " has a calculated window width of " + windowWidth
 						+ " and window center of " + windowCenter + " signed:" + cal.isSigned16Bit());
