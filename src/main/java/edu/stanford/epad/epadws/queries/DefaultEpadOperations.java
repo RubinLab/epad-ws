@@ -3002,7 +3002,7 @@ public class DefaultEpadOperations implements EpadOperations
 			ProjectReference projectReference, String username, String roleName, String sessionID)
 			throws Exception {
 		if (!projectOperations.isOwner(loggedInusername, projectReference.projectID))
-			throw new Exception("User " + username + " is not the owner of " + projectReference.projectID);
+			throw new Exception("User " + loggedInusername + " is not the owner of " + projectReference.projectID);
 		UserRole role = UserRole.getRole(roleName);
 		if (role == null) role = UserRole.COLLABORATOR;
 		projectOperations.addUserToProject(loggedInusername, projectReference.projectID, username, role);
@@ -3014,7 +3014,7 @@ public class DefaultEpadOperations implements EpadOperations
 			ProjectReference projectReference, String username, String sessionID)
 			throws Exception {
 		if (!projectOperations.isOwner(loggedInusername, projectReference.projectID))
-			throw new Exception("User " + username + " is not the owner of " + projectReference.projectID);
+			throw new Exception("User " + loggedInusername + " is not the owner of " + projectReference.projectID);
 		projectOperations.removeUserFromProject(loggedInusername, projectReference.projectID, username);
 	}
 

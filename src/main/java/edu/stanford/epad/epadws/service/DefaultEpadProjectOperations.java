@@ -1550,42 +1550,72 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 
 	@Override
 	public List<User> getReviewers(String username) throws Exception {
-		List<ReviewerToReviewee> ptous = new ReviewerToReviewee().getObjects("reviewee = " + DatabaseUtils.toSQL(username));
-		return null;
+		List<User> users = new ArrayList<User>();
+		List<ReviewerToReviewee> rtrs = new ReviewerToReviewee().getObjects("reviewee = " + DatabaseUtils.toSQL(username));
+		for (ReviewerToReviewee rtr: rtrs)
+		{
+			User reviewer = getUser(rtr.getReviewer());
+			users.add(reviewer);
+		}
+		return users;
 	}
 
 	@Override
 	public List<User> getReviewees(String username) throws Exception {
-		// TODO Auto-generated method stub
-		return null;
+		List<User> users = new ArrayList<User>();
+		List<ReviewerToReviewee> rtrs = new ReviewerToReviewee().getObjects("reviewer = " + DatabaseUtils.toSQL(username));
+		for (ReviewerToReviewee rtr: rtrs)
+		{
+			User reviewee = getUser(rtr.getReviewee());
+			users.add(reviewee);
+		}
+		return users;
 	}
 
 	@Override
 	public void addReviewer(String loggedInUser, String username,
 			String reviewer) throws Exception {
-		// TODO Auto-generated method stub
-		
+		List<ReviewerToReviewee> rtrs = new ReviewerToReviewee().getObjects("reviewee = " + DatabaseUtils.toSQL(username) + " and reviewer=" + DatabaseUtils.toSQL(reviewer));
+		if (rtrs.size() == 0)
+		{
+			ReviewerToReviewee rtr = new ReviewerToReviewee();
+			rtr.setReviewee(username);
+			rtr.setReviewer(reviewer);
+			rtr.save();
+		}
 	}
 
 	@Override
 	public void addReviewee(String loggedInUser, String username,
 			String reviewee) throws Exception {
-		// TODO Auto-generated method stub
-		
+		List<ReviewerToReviewee> rtrs = new ReviewerToReviewee().getObjects("reviewer = " + DatabaseUtils.toSQL(username) + " and reviewee=" + DatabaseUtils.toSQL(reviewee));
+		if (rtrs.size() == 0)
+		{
+			ReviewerToReviewee rtr = new ReviewerToReviewee();
+			rtr.setReviewee(reviewee);
+			rtr.setReviewer(username);
+			rtr.save();
+		}
 	}
 
 	@Override
 	public void removeReviewer(String loggedInUser, String username,
 			String reviewer) throws Exception {
-		// TODO Auto-generated method stub
-		
+		List<ReviewerToReviewee> rtrs = new ReviewerToReviewee().getObjects("reviewee = " + DatabaseUtils.toSQL(username) + " and reviewer=" + DatabaseUtils.toSQL(reviewer));
+		for (ReviewerToReviewee rtr: rtrs)
+		{
+			rtr.delete();
+		}
 	}
 
 	@Override
 	public void removeReviewee(String loggedInUser, String username,
 			String reviewee) throws Exception {
-		// TODO Auto-generated method stub
-		
+		List<ReviewerToReviewee> rtrs = new ReviewerToReviewee().getObjects("reviewer = " + DatabaseUtils.toSQL(username) + " and reviewee=" + DatabaseUtils.toSQL(reviewee));
+		for (ReviewerToReviewee rtr: rtrs)
+		{
+			rtr.delete();
+		}
 	}
 
 	/* (non-Javadoc)
