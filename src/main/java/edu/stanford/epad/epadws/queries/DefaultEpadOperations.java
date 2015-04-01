@@ -430,6 +430,7 @@ public class DefaultEpadOperations implements EpadOperations
 				List<EPADAIM> aims = this.epadDatabaseOperations.getAIMsByDSOSeries(epadSeries.seriesUID);
 				if (aims == null || aims.size() == 0)
 				{
+					log.info("No aim found for DSO:" + epadSeries.seriesUID);
 					Set<DICOMFileDescription> dicomFileDescriptions = dcm4CheeDatabaseOperations.getDICOMFilesForSeries(epadSeries.seriesUID);
 					if (dicomFileDescriptions.size() > 0)
 					{
@@ -1060,9 +1061,13 @@ public class DefaultEpadOperations implements EpadOperations
 		{
 			FileType type = null;
 			if (fileType != null && fileType.equals(FileType.TEMPLATE.getName()))
+			{
 				type = FileType.TEMPLATE;
+			}
 			else if (fileType != null && fileType.equals(FileType.IMAGE.getName()))
+			{
 				type = FileType.IMAGE;
+			}
 			projectOperations.createFile(username, projectID, subjectID, studyID, seriesID, uploadedFile, filename, description, type);
 			log.info("Unzipping " + uploadedFile.getAbsolutePath());
 			EPADFileUtils.extractFolder(uploadedFile.getAbsolutePath());
@@ -1090,11 +1095,19 @@ public class DefaultEpadOperations implements EpadOperations
 		{
 			FileType type = null;
 			if (fileType != null && fileType.equals(FileType.TEMPLATE.getName()))
+			{
 				type = FileType.TEMPLATE;
+				if (!EPADFileUtils.isValidXml(uploadedFile, EPADConfig.templateXSDPath))
+					throw new Exception("Invalid Template file");
+			}
 			else if (fileType != null && fileType.equals(FileType.IMAGE.getName()))
+			{
 				type = FileType.IMAGE;
+			}
 			else if (isImage(uploadedFile))
+			{
 				type = FileType.IMAGE;
+			}
 			log.info("filename:" + filename + " type:" + type);
 			if (type == null && filename.toLowerCase().endsWith(".xml"))
 			{
@@ -1467,7 +1480,8 @@ public class DefaultEpadOperations implements EpadOperations
 		for (EpadFile file: files)
 		{
 			Project project = (Project) projectOperations.getDBObject(Project.class, file.getProjectId());
-			if (userProjects.contains(project.getProjectId()) || projectOperations.hasAccessToProject(username, project.getProjectId()))
+			if (userProjects.contains(project.getProjectId()) || projectOperations.hasAccessToProject(username, project.getProjectId())
+					|| project.getProjectId().equals(EPADConfig.xnatUploadProjectID))
 			{
 				userProjects.add(project.getProjectId());
 				EPADFile epadFile = new EPADFile(project.getProjectId(), "", "", "", "", file.getName(), file.getLength(), FileType.TEMPLATE.getName(), 
@@ -2408,7 +2422,7 @@ public class DefaultEpadOperations implements EpadOperations
 			return null;
 	}
 
-	static SimpleDateFormat dateFormat = new SimpleDateFormat("MM/DDD/yyyy");
+	static SimpleDateFormat dateFormat = new SimpleDateFormat("yyyyMMdd");
 	private String formatDate(Date date)
 	{
 		if (date == null)
@@ -3002,6 +3016,56 @@ public class DefaultEpadOperations implements EpadOperations
 		if (!projectOperations.isOwner(loggedInusername, projectReference.projectID))
 			throw new Exception("User " + username + " is not the owner of " + projectReference.projectID);
 		projectOperations.removeUserFromProject(loggedInusername, projectReference.projectID, username);
+	}
+
+	@Override
+	public EPADUserList getReviewers(String loggedInusername, String username,
+			String sessionID) throws Exception {
+		EPADUserList userlist = new EPADUserList();
+		List<User> users = projectOperations.getReviewers(username);
+		for (User user: users) {
+			EPADUser epadUser = new EPADUser(user.getFullName(), user.getUsername(), 
+					user.getFirstName(), user.getLastName(), user.getEmail(), user.isEnabled(), user.isAdmin(), user.isPasswordExpired(), "", null);
+			userlist.addEPADUser(epadUser);
+		}
+		return userlist;
+	}
+
+	@Override
+	public EPADUserList getReviewees(String loggedInusername, String username,
+			String sessionID) throws Exception {
+		EPADUserList userlist = new EPADUserList();
+		List<User> users = projectOperations.getReviewees(username);
+		for (User user: users) {
+			EPADUser epadUser = new EPADUser(user.getFullName(), user.getUsername(), 
+					user.getFirstName(), user.getLastName(), user.getEmail(), user.isEnabled(), user.isAdmin(), user.isPasswordExpired(), "", null);
+			userlist.addEPADUser(epadUser);
+		}
+		return userlist;
+	}
+
+	@Override
+	public void addReviewer(String loggedInUser, String username,
+			String reviewer) throws Exception {
+		projectOperations.addReviewer(loggedInUser, username, reviewer);
+	}
+
+	@Override
+	public void addReviewee(String loggedInUser, String username,
+			String reviewee) throws Exception {
+		projectOperations.addReviewee(loggedInUser, username, reviewee);
+	}
+
+	@Override
+	public void removeReviewer(String loggedInUser, String username,
+			String reviewer) throws Exception {
+		projectOperations.removeReviewer(loggedInUser, username, reviewer);
+	}
+
+	@Override
+	public void removeReviewee(String loggedInUser, String username,
+			String reviewee) throws Exception {
+		projectOperations.removeReviewee(loggedInUser, username, reviewee);
 	}
 
 	// This is Pixelmed variant (though does not seem to be correct).

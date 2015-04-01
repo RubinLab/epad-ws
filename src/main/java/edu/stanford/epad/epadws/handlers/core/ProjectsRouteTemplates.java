@@ -46,4 +46,5 @@ public class ProjectsRouteTemplates
 	public static final String USER_SUBJECT = USER + "/subjects/{subjectID}";
 	public static final String USER_STUDY = USER + "/studies/{studyUID}";
 	public static final String TEMPLATE_LIST = PROJECT + "/templates/";
+	public static final String TEMPLATE = PROJECT + "/templates/{templatename}";
 }

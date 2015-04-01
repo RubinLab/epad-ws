@@ -40,6 +40,7 @@ import org.mindrot.jbcrypt.BCrypt;
 
 import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADLogger;
+import edu.stanford.epad.epadws.epaddb.DatabaseUtils;
 import edu.stanford.epad.epadws.models.EpadFile;
 import edu.stanford.epad.epadws.models.FileType;
 import edu.stanford.epad.epadws.models.NonDicomSeries;
@@ -49,6 +50,7 @@ import edu.stanford.epad.epadws.models.ProjectToSubjectToStudy;
 import edu.stanford.epad.epadws.models.ProjectToSubjectToUser;
 import edu.stanford.epad.epadws.models.ProjectToUser;
 import edu.stanford.epad.epadws.models.ProjectType;
+import edu.stanford.epad.epadws.models.ReviewerToReviewee;
 import edu.stanford.epad.epadws.models.Study;
 import edu.stanford.epad.epadws.models.Subject;
 import edu.stanford.epad.epadws.models.User;
@@ -233,7 +235,7 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		if (addPermissions.size() > 0 && !loggedInUser.isAdmin())
 			throw new Exception("Only admin can add permissions");
 		User user = new User();
-		user = (User) user.getObject("username = " + user.toSQL(username) + "");
+		user = (User) user.getObject("username = " + user.toSQL(username));
 		if (firstName != null) user.setFirstName(firstName);
 		if (lastName != null) user.setLastName(lastName);
 		if (email != null) user.setEmail(email);
@@ -1408,6 +1410,28 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		return efiles;
 	}
 
+	@Override
+	public void enableFile(String loggedInUser, String projectID,
+			String subjectUID, String studyUID, String seriesUID,
+			String filename) throws Exception {
+		EpadFile efile = this.getEpadFile(projectID, subjectUID, studyUID, seriesUID, filename);
+		if (efile == null)
+			throw new Exception("File " + filename + " not found");
+		efile.setEnabled(true);
+		efile.save();
+	}
+
+	@Override
+	public void disableFile(String loggedInUser, String projectID,
+			String subjectUID, String studyUID, String seriesUID,
+			String filename) throws Exception {
+		EpadFile efile = this.getEpadFile(projectID, subjectUID, studyUID, seriesUID, filename);
+		if (efile == null)
+			throw new Exception("File " + filename + " not found");
+		efile.setEnabled(false);
+		efile.save();
+	}
+
 	/* (non-Javadoc)
 	 * @see edu.stanford.epad.epadws.service.EpadProjectOperations#deleteFile(java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.lang.String)
 	 */
@@ -1522,6 +1546,46 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		} catch (Exception e) {
 		}
 		return null;
+	}
+
+	@Override
+	public List<User> getReviewers(String username) throws Exception {
+		List<ReviewerToReviewee> ptous = new ReviewerToReviewee().getObjects("reviewee = " + DatabaseUtils.toSQL(username));
+		return null;
+	}
+
+	@Override
+	public List<User> getReviewees(String username) throws Exception {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public void addReviewer(String loggedInUser, String username,
+			String reviewer) throws Exception {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void addReviewee(String loggedInUser, String username,
+			String reviewee) throws Exception {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void removeReviewer(String loggedInUser, String username,
+			String reviewer) throws Exception {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void removeReviewee(String loggedInUser, String username,
+			String reviewee) throws Exception {
+		// TODO Auto-generated method stub
+		
 	}
 
 	/* (non-Javadoc)

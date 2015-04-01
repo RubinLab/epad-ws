@@ -80,6 +80,10 @@ public interface EpadOperations
 	EPADUserList getUserDescriptions(String username, String sessionID) throws Exception;
 
 	EPADUser getUserDescription(String loggedInusername, String username, String sessionID) throws Exception;
+
+	EPADUserList getReviewers(String loggedInusername, String username, String sessionID) throws Exception;
+
+	EPADUserList getReviewees(String loggedInusername, String username, String sessionID) throws Exception;
 	
 	void createSubjectAndStudy(String username, String projectID, String subjectID, String subjectName, String studyUID, String sessionID) throws Exception;
 
@@ -161,6 +165,14 @@ public interface EpadOperations
 	void disableUser(String loggedInUser, String username) throws Exception;
 	
 	void deleteUser(String loggedInUser, String username) throws Exception;
+	
+	void addReviewer(String loggedInUser, String username, String reviewer) throws Exception;
+	
+	void addReviewee(String loggedInUser, String username, String reviewee) throws Exception;
+	
+	void removeReviewer(String loggedInUser, String username, String reviewer) throws Exception;
+	
+	void removeReviewee(String loggedInUser, String username, String reviewee) throws Exception;
 	
 	int projectDelete(String projectID, String sessionID, String username) throws Exception;
 

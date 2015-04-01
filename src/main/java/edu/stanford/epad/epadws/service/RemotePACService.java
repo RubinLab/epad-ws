@@ -2,7 +2,6 @@ package edu.stanford.epad.epadws.service;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -19,7 +18,6 @@ import java.util.Set;
 
 import org.apache.commons.io.IOUtils;
 
-import com.pixelmed.dicom.AgeStringAttribute;
 import com.pixelmed.dicom.Attribute;
 import com.pixelmed.dicom.AttributeList;
 import com.pixelmed.dicom.AttributeTag;
@@ -42,6 +40,8 @@ import com.pixelmed.query.QueryTreeRecord;
 
 import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADFileUtils;
+import edu.stanford.epad.dtos.DicomTag;
+import edu.stanford.epad.dtos.DicomTagList;
 import edu.stanford.epad.dtos.RemotePAC;
 import edu.stanford.epad.dtos.RemotePACEntity;
 import edu.stanford.epad.dtos.RemotePACQueryConfig;
@@ -115,6 +115,57 @@ public class RemotePACService extends RemotePACSBase {
 			}
 			EPADFileUtils.write(propertiesFile, sb.toString().replace("_HOSTNAME_", EPADConfig.xnatServer));
 		}
+	}
+	
+	public static DicomTagList getDicomTags()
+	{
+		File dicomTags = new File(EPADConfig.getEPADWebServerEtcDir() + "dicomtags.txt");
+		BufferedReader reader = null;
+		InputStream is = null;
+		if (!dicomTags.exists()) {
+			StringBuilder sb = new StringBuilder();
+			try {
+				is = EPADFileUtils.class.getClassLoader().getResourceAsStream(dicomTags.getName());
+				reader = new BufferedReader(new InputStreamReader(is, "UTF8"));
+				String line = null;
+				while ((line = reader.readLine()) != null) {
+					sb.append(line);
+					sb.append("\n");
+				}
+			} catch (Exception x) {
+				log.warning("Error creating tags file", x);
+				return null;
+			} finally {
+				if (reader != null)
+					IOUtils.closeQuietly(reader);
+				else if (is != null)
+					IOUtils.closeQuietly(is);
+			}
+			EPADFileUtils.write(dicomTags, sb.toString());			
+		}
+		DicomTagList dclist = new DicomTagList();
+		try {
+			is = EPADFileUtils.class.getClassLoader().getResourceAsStream(dicomTags.getName());
+			reader = new BufferedReader(new InputStreamReader(is, "UTF8"));
+			String line = null;
+			while ((line = reader.readLine()) != null) {
+				if (line.trim().startsWith("#")) continue;
+				String[] fields = line.split(",");
+				if (fields.length < 3) continue;
+				if (fields[1].trim().length() < 8) continue;
+				DicomTag tag = new DicomTag(fields[0], fields[2], "0x" + fields[1].substring(0,4), "0x" + fields[1].substring(4,8),"","");
+				dclist.addDicomTag(tag);
+			}
+		} catch (Exception x) {
+			log.warning("Error creating tags file", x);
+			return null;
+		} finally {
+			if (reader != null)
+				IOUtils.closeQuietly(reader);
+			else if (is != null)
+				IOUtils.closeQuietly(is);
+		}
+		return dclist;			
 	}
 	
 	/**

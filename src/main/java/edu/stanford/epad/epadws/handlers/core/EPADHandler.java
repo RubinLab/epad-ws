@@ -30,6 +30,7 @@ import com.google.gson.Gson;
 import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADFileUtils;
 import edu.stanford.epad.common.util.EPADLogger;
+import edu.stanford.epad.dtos.DicomTagList;
 import edu.stanford.epad.dtos.EPADAIM;
 import edu.stanford.epad.dtos.EPADAIMList;
 import edu.stanford.epad.dtos.EPADFile;
@@ -60,13 +61,16 @@ import edu.stanford.epad.epadws.aim.AIMSearchType;
 import edu.stanford.epad.epadws.aim.AIMUtil;
 import edu.stanford.epad.epadws.handlers.HandlerUtil;
 import edu.stanford.epad.epadws.handlers.dicom.DSOUtil;
+import edu.stanford.epad.epadws.models.FileType;
 import edu.stanford.epad.epadws.models.RemotePACQuery;
 import edu.stanford.epad.epadws.models.WorkList;
 import edu.stanford.epad.epadws.queries.DefaultEpadOperations;
 import edu.stanford.epad.epadws.queries.EpadOperations;
 import edu.stanford.epad.epadws.security.EPADSession;
 import edu.stanford.epad.epadws.security.EPADSessionOperations;
+import edu.stanford.epad.epadws.service.DefaultEpadProjectOperations;
 import edu.stanford.epad.epadws.service.DefaultWorkListOperations;
+import edu.stanford.epad.epadws.service.EpadProjectOperations;
 import edu.stanford.epad.epadws.service.EpadWorkListOperations;
 import edu.stanford.epad.epadws.service.RemotePACService;
 import edu.stanford.epad.epadws.service.SessionService;
@@ -238,6 +242,8 @@ public class EPADHandler extends AbstractHandler
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.SERIES_LIST, pathInfo)) {
 				boolean filterDSO = "true".equalsIgnoreCase(httpRequest.getParameter("filterDSO"));
 				StudyReference studyReference = StudyReference.extract(ProjectsRouteTemplates.SERIES_LIST, pathInfo);
+				if (studyReference.subjectID.equals("null"))
+					throw new Exception("Patient ID in rest call is null:" + pathInfo);
 				EPADSeriesList seriesList = epadOperations.getSeriesDescriptions(studyReference, username, sessionID,
 						searchFilter, filterDSO);
 				responseStream.append(seriesList.toJSON());
@@ -276,6 +282,8 @@ public class EPADHandler extends AbstractHandler
 
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.IMAGE_LIST, pathInfo)) {
 				SeriesReference seriesReference = SeriesReference.extract(ProjectsRouteTemplates.IMAGE_LIST, pathInfo);
+				if (seriesReference.subjectID.equals("null"))
+					throw new Exception("Patient ID in rest call is null:" + pathInfo);
 				EPADImageList imageList = epadOperations.getImageDescriptions(seriesReference, sessionID, searchFilter);
 				responseStream.append(imageList.toJSON());
 				statusCode = HttpServletResponse.SC_OK;
@@ -311,6 +319,8 @@ public class EPADHandler extends AbstractHandler
 
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.FRAME_LIST, pathInfo)) {
 				ImageReference imageReference = ImageReference.extract(ProjectsRouteTemplates.FRAME_LIST, pathInfo);
+				if (imageReference.subjectID.equals("null"))
+					throw new Exception("Patient ID in rest call is null:" + pathInfo);
 				EPADFrameList frameList = epadOperations.getFrameDescriptions(imageReference);
 				responseStream.append(frameList.toJSON());
 				statusCode = HttpServletResponse.SC_OK;
@@ -339,6 +349,8 @@ public class EPADHandler extends AbstractHandler
 
 			} else if (HandlerUtil.matchesTemplate(SubjectsRouteTemplates.SUBJECT_LIST, pathInfo)) {
 				SubjectReference subjectReference = SubjectReference.extract(SubjectsRouteTemplates.SUBJECT_LIST, pathInfo);
+				if (subjectReference.subjectID.equals("null"))
+					throw new Exception("Patient ID in rest call is null:" + pathInfo);
 				EPADStudyList studyList = epadOperations.getStudyDescriptions(subjectReference, username, sessionID,
 						searchFilter);
 				responseStream.append(studyList.toJSON());
@@ -356,6 +368,8 @@ public class EPADHandler extends AbstractHandler
 
 			} else if (HandlerUtil.matchesTemplate(StudiesRouteTemplates.IMAGE_LIST, pathInfo)) {
 				SeriesReference seriesReference = SeriesReference.extract(StudiesRouteTemplates.IMAGE_LIST, pathInfo);
+				if (seriesReference.subjectID.equals("null"))
+					throw new Exception("Patient ID in rest call is null:" + pathInfo);
 				EPADImageList imageList = epadOperations.getImageDescriptions(seriesReference, sessionID, searchFilter);
 				responseStream.append(imageList.toJSON());
 				statusCode = HttpServletResponse.SC_OK;
@@ -373,6 +387,8 @@ public class EPADHandler extends AbstractHandler
 				
 			} else if (HandlerUtil.matchesTemplate(StudiesRouteTemplates.FRAME_LIST, pathInfo)) {
 				ImageReference imageReference = ImageReference.extract(StudiesRouteTemplates.FRAME_LIST, pathInfo);
+				if (imageReference.subjectID.equals("null"))
+					throw new Exception("Patient ID in rest call is null:" + pathInfo);
 				EPADFrameList frameList = epadOperations.getFrameDescriptions(imageReference);
 				responseStream.append(frameList.toJSON());
 				statusCode = HttpServletResponse.SC_OK;
@@ -479,6 +495,8 @@ public class EPADHandler extends AbstractHandler
 
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.STUDY_AIM_LIST, pathInfo)) {
 				StudyReference studyReference = StudyReference.extract(ProjectsRouteTemplates.STUDY_AIM_LIST, pathInfo);
+				if (studyReference.subjectID.equals("null"))
+					throw new Exception("Patient ID in rest call is null:" + pathInfo);
 				EPADAIMList aims = epadOperations.getStudyAIMDescriptions(studyReference, username, sessionID);
 				long dbtime = System.currentTimeMillis();
 				log.info("Time taken for AIM database query:" + (dbtime-starttime) + " msecs");
@@ -514,6 +532,8 @@ public class EPADHandler extends AbstractHandler
 
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.SERIES_AIM_LIST, pathInfo)) {
 				SeriesReference seriesReference = SeriesReference.extract(ProjectsRouteTemplates.SERIES_AIM_LIST, pathInfo);
+				if (seriesReference.subjectID.equals("null"))
+					throw new Exception("Patient ID in rest call is null:" + pathInfo);
 				EPADAIMList aims = epadOperations.getSeriesAIMDescriptions(seriesReference, username, sessionID);
 				long dbtime = System.currentTimeMillis();
 				log.info("Time taken for AIM database query:" + (dbtime-starttime) + " msecs");
@@ -682,6 +702,8 @@ public class EPADHandler extends AbstractHandler
 
 			} else if (HandlerUtil.matchesTemplate(StudiesRouteTemplates.SERIES_AIM_LIST, pathInfo)) {
 				SeriesReference seriesReference = SeriesReference.extract(StudiesRouteTemplates.SERIES_AIM_LIST, pathInfo);
+				if (seriesReference.subjectID.equals("null"))
+					throw new Exception("Patient ID in rest call is null:" + pathInfo);
 				EPADAIMList aims = epadOperations.getSeriesAIMDescriptions(seriesReference, username, sessionID);
 				long dbtime = System.currentTimeMillis();
 				log.info("Time taken for AIM database query:" + (dbtime-starttime) + " msecs");
@@ -902,12 +924,16 @@ public class EPADHandler extends AbstractHandler
 
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.STUDY_FILE_LIST, pathInfo)) {
 				StudyReference studyReference = StudyReference.extract(ProjectsRouteTemplates.STUDY_FILE_LIST, pathInfo);
+				if (studyReference.subjectID.equals("null"))
+					throw new Exception("Patient ID in rest call is null:" + pathInfo);
 				EPADFileList files = epadOperations.getFileDescriptions(studyReference, username, sessionID, searchFilter);
 				responseStream.append(files.toJSON());
 				statusCode = HttpServletResponse.SC_OK;
 	
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.SERIES_FILE_LIST, pathInfo)) {
 				SeriesReference seriesReference = SeriesReference.extract(ProjectsRouteTemplates.SERIES_FILE_LIST, pathInfo);
+				if (seriesReference.subjectID.equals("null"))
+					throw new Exception("Patient ID in rest call is null:" + pathInfo);
 				EPADFileList files = epadOperations.getFileDescriptions(seriesReference, username, sessionID, searchFilter);
 				responseStream.append(files.toJSON());
 				statusCode = HttpServletResponse.SC_OK;
@@ -1119,6 +1145,11 @@ public class EPADHandler extends AbstractHandler
 				}
 				else
 					statusCode = HttpServletResponse.SC_NOT_FOUND;
+
+			} else if (HandlerUtil.matchesTemplate(PACSRouteTemplates.TAG_LIST, pathInfo)) {
+				DicomTagList tagList = RemotePACService.getDicomTags();
+				responseStream.append(tagList.toJSON());
+				statusCode = HttpServletResponse.SC_OK;
 
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.TEMPLATE_LIST, pathInfo)) {
 				ProjectReference reference = ProjectReference.extract(ProjectsRouteTemplates.TEMPLATE_LIST, pathInfo);
@@ -1456,6 +1487,36 @@ public class EPADHandler extends AbstractHandler
 				}
 				statusCode = HttpServletResponse.SC_OK;
 				
+			} else if (HandlerUtil.matchesTemplate(TemplatesRouteTemplates.TEMPLATE_LIST, pathInfo)) {
+				if (uploadedFile == null)
+					throw new Exception("No file uploaded");
+				statusCode = epadOperations.createSystemTemplate(username, uploadedFile, sessionID);
+				
+			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.TEMPLATE, pathInfo)) {
+				ProjectReference reference = ProjectReference.extract(ProjectsRouteTemplates.TEMPLATE, pathInfo);
+				Map<String, String> templateMap = HandlerUtil.getTemplateMap(ProjectsRouteTemplates.TEMPLATE, pathInfo);
+				String templatename = HandlerUtil.getTemplateParameter(templateMap, "templatename");
+				String enable = httpRequest.getParameter("enable");
+				if (enable != null)
+				{
+					EpadProjectOperations projectOperations = DefaultEpadProjectOperations.getInstance();
+					if ("true".equalsIgnoreCase(enable))
+					{
+						projectOperations.enableFile(username, reference.projectID, null, null, null, templatename);
+					}
+					else if ("false".equalsIgnoreCase(enable))
+					{	
+						projectOperations.disableFile(username, reference.projectID, null, null, null, templatename);
+					}
+				}
+				else
+				{
+					if (uploadedFile != null)
+					{
+						statusCode = epadOperations.createFile(username, reference, uploadedFile, "", FileType.TEMPLATE.getName(), sessionID);
+					}
+				}
+				statusCode = HttpServletResponse.SC_OK;
 			} else {
 				statusCode = HandlerUtil.badRequestJSONResponse(BAD_PUT_MESSAGE + ":" + pathInfo, responseStream, log);
 			}

@@ -9,4 +9,8 @@ public class UsersRouteTemplates
 	public static final String USER_WORKLIST = USER_WORKLISTS + "{worklistID}";
 	public static final String USER_SUBJECT = USER + "/subjects/" + "{subjectID}";;
 	public static final String USER_STUDY = USER + "/studies/" + "{studyUID}";;
+	public static final String USER_REVIEWERS = USER + "/reviewers/";
+	public static final String USER_REVIEWER = USER + "/reviewers/{username}";
+	public static final String USER_REVIEWEES = USER + "/reviewees/";
+	public static final String USER_REVIEWEE = USER + "/reviewees/{username}";
 }

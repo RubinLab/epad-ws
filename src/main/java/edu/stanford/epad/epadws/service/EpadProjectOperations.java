@@ -29,6 +29,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
+import edu.stanford.epad.dtos.EPADUserList;
 import edu.stanford.epad.epadws.models.EpadFile;
 import edu.stanford.epad.epadws.models.FileType;
 import edu.stanford.epad.epadws.models.NonDicomSeries;
@@ -44,6 +45,10 @@ import edu.stanford.epad.epadws.models.dao.AbstractDAO;
 /**
  * All Epad User/Project/Subject/Study related operations to replace XNAT functionality
  * 
+ * @author Dev Gude
+ *
+ */
+/**
  * @author Dev Gude
  *
  */
@@ -550,7 +555,11 @@ public interface EpadProjectOperations {
 	 * @return
 	 * @throws Exception
 	 */
-	List<EpadFile> getSeriesFiles(String projectID, String subjectUID, String studyUID, String seriesUID) throws Exception;
+	List<EpadFile> getSeriesFiles(String projectID, String subjectUID, String studyUID, String seriesUID) throws Exception;	
+	
+	void enableFile(String loggedInUser, String projectID, String subjectUID, String studyUID, String seriesUID, String filename) throws Exception;
+	
+	void disableFile(String loggedInUser, String projectID, String subjectUID, String studyUID, String seriesUID, String filename) throws Exception;
 	
 	/**
 	 * @param username
@@ -669,10 +678,64 @@ public interface EpadProjectOperations {
 	void deleteFile(String loggedInUser, String projectID, String subjectUID, String studyUID, String seriesUID, String filename) throws Exception;	
 	
 	/**
+	 * Get event logs for this user
 	 * @param username
 	 * @return
 	 */
 	List<EventLog> getUserLogs(String username);
+
+	/**
+	 * Get reviewers for this user
+	 * @param username
+	 * @return
+	 * @throws Exception
+	 */
+	List<User> getReviewers(String username) throws Exception;
+
+	/**
+	 * Get reviewees for this user
+	 * @param username
+	 * @return
+	 * @throws Exception
+	 */
+	List<User> getReviewees(String username) throws Exception;
+	
+	/**
+	 * Add reviewer to this user
+	 * @param loggedInUser
+	 * @param username
+	 * @param reviewer
+	 * @throws Exception
+	 */
+	void addReviewer(String loggedInUser, String username, String reviewer) throws Exception;
+	
+	/**
+	 * Add reviewee to this user
+	 * @param loggedInUser
+	 * @param username
+	 * @param reviewee
+	 * @throws Exception
+	 */
+	void addReviewee(String loggedInUser, String username, String reviewee) throws Exception;
+	
+	/**
+	 * Remove reviewer from this user
+	 * @param loggedInUser
+	 * @param username
+	 * @param reviewer
+	 * @throws Exception
+	 */
+	void removeReviewer(String loggedInUser, String username, String reviewer) throws Exception;
+	
+	/**
+	 * Remove reviewee from this user
+	 * @param loggedInUser
+	 * @param username
+	 * @param reviewee
+	 * @throws Exception
+	 */
+	void removeReviewee(String loggedInUser, String username, String reviewee) throws Exception;
+	
 	
 	/**
 	 * Get database object by primary key
