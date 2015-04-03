@@ -37,7 +37,7 @@ public class WebAuthFilter implements Filter {
 		HttpServletRequest httpRequest = (HttpServletRequest) request;
 		HttpServletResponse httpResponse = (HttpServletResponse) response;
 		String webAuthUser = httpRequest.getHeader(WEBAUTH_HEADER);
-	    if (webAuthUser != null)
+	    if (webAuthUser != null && webAuthUser.length() > 0)
 		{
 			String sessionID = SessionService.getJSessionIDFromRequest(httpRequest);
 			if (SessionService.hasValidSessionID(sessionID)) {
@@ -67,6 +67,14 @@ public class WebAuthFilter implements Filter {
 					log.warning("Error logging in WebAuth User", e);
 				}
 			}
+		} else {
+			String sessionID = SessionService.getJSessionIDFromRequest(httpRequest);
+			if (!SessionService.hasValidSessionID(sessionID) && httpRequest.getRequestURL().toString().indexOf("login.jsp") == -1 && !httpRequest.getRequestURL().toString().endsWith("/session")) {
+            	httpResponse.sendRedirect("/epad/login.jsp");
+            	return;
+			}
+			if (httpRequest.getRequestURL().indexOf("/v2/") != -1)				
+				log.info("Request from client:" + httpRequest.getRequestURL());
 		}
 	     
         filterChain.doFilter(request, response);

@@ -100,7 +100,7 @@ public class EPADSessionOperations
 	{
 		String username = extractUserNameFromAuthorizationHeader(httpRequest);
 		String password = extractPasswordFromAuthorizationHeader(httpRequest);
-		if (username == null) {
+		if (username == null || username.length() == 0) {
 			username = httpRequest.getParameter("username");
 			password = httpRequest.getParameter("password");
 		}
@@ -111,7 +111,8 @@ public class EPADSessionOperations
 			} else  if (username == null && httpRequest.getAuthType().equals("WebAuth") && httpRequest.getRemoteUser() != null) {
 				if (password != null && password.equals(EPADConfig.webAuthPassword))
 					session = EPADSessionOperations.createPreAuthenticatedSession(httpRequest.getRemoteUser());				
-				} else {
+			} else {
+				log.info("Username:" + username + " Password:" + password);
 				session = EPADSessionOperations.createNewEPADSession(username, password);
 			}
 			EPADSessionResponse response = new EPADSessionResponse(HttpServletResponse.SC_OK, session.getSessionId(), "");

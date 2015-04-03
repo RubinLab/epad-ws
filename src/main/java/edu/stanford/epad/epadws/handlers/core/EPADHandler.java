@@ -1105,11 +1105,11 @@ public class EPADHandler extends AbstractHandler
 			// Note: This needs to be done, before anything else otherwise upload won't work
 			if (requestContentType == null || !requestContentType.startsWith("multipart/form-data"))
 			{
-				uploadedFile = this.getUploadedFile(httpRequest);
+				uploadedFile = HandlerUtil.getUploadedFile(httpRequest);
 			}
 			else
 			{
-				paramData = parsePostedData(httpRequest, responseStream);
+				paramData = HandlerUtil.parsePostedData(httpRequest, responseStream);
 				for (String param: paramData.keySet())
 				{
 					if (paramData.get(param) instanceof File)
@@ -1378,7 +1378,7 @@ public class EPADHandler extends AbstractHandler
 				int numberOfFiles = 0;
 				if (requestContentType != null && requestContentType.startsWith("multipart/form-data"))
 				{
-					paramData = parsePostedData(httpRequest, responseStream);
+					paramData = HandlerUtil.parsePostedData(httpRequest, responseStream);
 					for (String param: paramData.keySet())
 					{
 						if (paramData.get(param) instanceof File)
@@ -1685,146 +1685,6 @@ public class EPADHandler extends AbstractHandler
 			statusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 		}
 		return statusCode;
-	}
-	
-	private File getUploadedFile(HttpServletRequest httpRequest)
-	{
-		String uploadDirPath = EPADConfig.getEPADWebServerFileUploadDir() + "temp" + Long.toString(System.currentTimeMillis());
-		File uploadDir = new File(uploadDirPath);
-		uploadDir.mkdirs();
-		String fileName = httpRequest.getParameter("fileName");
-		String tempXMLFileName = "temp" + System.currentTimeMillis() + "-annotation.xml";
-		if (fileName != null)
-			tempXMLFileName = "temp" + System.currentTimeMillis() + "-" + fileName;
-		File uploadedFile = new File(uploadDir, tempXMLFileName);
-		try
-		{
-			// opens input stream of the request for reading data
-			InputStream inputStream = httpRequest.getInputStream();
-			
-			// opens an output stream for writing file
-			FileOutputStream outputStream = new FileOutputStream(uploadedFile);
-			
-			byte[] buffer = new byte[4096];
-			int bytesRead = -1;
-			log.info("Receiving data...");
-			int len = 0;
-			while ((bytesRead = inputStream.read(buffer)) != -1) {
-				len = len + bytesRead;
-				outputStream.write(buffer, 0, bytesRead);
-			}
-			
-			log.debug("Data received, len:" + len);
-			outputStream.close();
-			inputStream.close();
-			if (len == 0)
-			{
-				try {
-					uploadedFile.delete();
-					uploadDir.delete();
-				} catch (Exception x) {}
-				uploadedFile = null;
-			}
-			else
-				log.debug("Created File:" + uploadedFile.getAbsolutePath());
-			if (len > 0 && (tempXMLFileName.endsWith(".xml") || tempXMLFileName.endsWith(".txt")))
-			{
-				log.debug("PUT Data:" + readFile(uploadedFile));
-			}
-//			if (fileType != null)
-//			{
-//				File changeFileExt = new File(uploadedFile.getParentFile(), tempXMLFileName.substring(0, tempXMLFileName.length()-3) + fileType);
-//				uploadedFile.renameTo(changeFileExt);
-//				uploadedFile = changeFileExt;
-//			}
-			return uploadedFile;
-		}
-		catch (Exception x)
-		{
-			log.warning("Error receiving Annotations file", x);
-		}
-		return null;
-	}
-	
-    private String readFile(File aimFile) throws Exception
-    {
-        BufferedReader in = new BufferedReader(new FileReader(aimFile));
-        StringBuilder sb = new StringBuilder();
-        String line;
-        try
-        {
-            while ((line = in.readLine()) != null)
-            {
-            	sb.append(line + "\n");
-            }
-        }
-        finally
-        {
-            in.close();
-        }
-        return sb.toString();
-    }
-
-	private Map<String, Object> parsePostedData(HttpServletRequest httpRequest, PrintWriter responseStream) throws Exception
-	{
-		String uploadDirPath = EPADConfig.getEPADWebServerFileUploadDir() + "temp" + Long.toString(System.currentTimeMillis());
-		File uploadDir = new File(uploadDirPath);
-		uploadDir.mkdirs();
-		
-		Map<String, Object> params = new HashMap<String, Object>();
-	    // Create a factory for disk-based file items
-	    DiskFileItemFactory factory = new DiskFileItemFactory();
-	    // Create a new file upload handler
-	    ServletFileUpload upload = new ServletFileUpload(factory);
-	    List<FileItem> items = upload.parseRequest(httpRequest);
-		Iterator<FileItem> fileItemIterator = items.iterator();
-		int fileCount = 0;
-		while (fileItemIterator.hasNext()) {
-			FileItem fileItem = fileItemIterator.next();
-		    if (fileItem.isFormField()) {
-		    	if (params.get(fileItem.getFieldName()) == null)
-		    		params.put(fileItem.getFieldName(), fileItem.getString());
-			    List values = (List) params.get(fileItem.getFieldName() + "_List");
-			    if (values == null) {
-			    	values = new ArrayList();
-			    	params.put(fileItem.getFieldName() + "_List", values);
-			    }
-			    values.add(fileItem.getString());
-		    } else {
-				fileCount++;		    	
-				String fieldName = fileItem.getFieldName();
-				String fileName = fileItem.getName();
-				log.debug("Uploading file number " + fileCount);
-				log.debug("FieldName: " + fieldName);
-				log.debug("File Name: " + fileName);
-				log.debug("ContentType: " + fileItem.getContentType());
-				log.debug("Size (Bytes): " + fileItem.getSize());
-				if (fileItem.getSize() != 0)
-				{
-			        try {
-						String tempFileName = "temp" + System.currentTimeMillis() + "-" + fileName;
-						File file = new File(uploadDirPath + "/" + tempFileName);
-						log.debug("FileName: " + file.getAbsolutePath());
-		                // write the file
-						fileItem.write(file);
-				    	if (params.get(fileItem.getFieldName()) == null)
-				    		params.put(fileItem.getFieldName(), file);
-					    List values = (List) params.get(fileItem.getFieldName() + "_List");
-					    if (values == null) {
-					    	values = new ArrayList();
-					    	params.put(fileItem.getFieldName() + "_List", values);
-					    }
-					    values.add(file);
-					} catch (Exception e) {
-						e.printStackTrace();
-						log.warning("Error receiving file:" + e);
-						responseStream.print("error reading (" + fileCount + "): " + fileItem.getName());
-						continue;
-					}
-				}
-		    }
-		}
-		return params;
 	}
 
 	private boolean returnSummary(HttpServletRequest httpRequest)
