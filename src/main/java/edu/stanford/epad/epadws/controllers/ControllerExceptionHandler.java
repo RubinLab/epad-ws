@@ -57,6 +57,14 @@ public class ControllerExceptionHandler {
     }
 
     @ExceptionHandler
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    @ResponseBody
+    EPADMessage handleException(NullPointerException ex) {
+    	EPADMessage errorMessage = new EPADMessage(ex.getMessage());
+        return errorMessage;
+    }   
+
+    @ExceptionHandler
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     @ResponseBody
     EPADMessage handleException(Exception ex) {
