@@ -2,6 +2,7 @@ package edu.stanford.epad.epadws.queries;
 
 import java.io.File;
 import java.util.Collection;
+import java.util.Date;
 import java.util.List;
 import java.util.Set;
 
@@ -24,6 +25,8 @@ import edu.stanford.epad.dtos.EPADSubject;
 import edu.stanford.epad.dtos.EPADSubjectList;
 import edu.stanford.epad.dtos.EPADUser;
 import edu.stanford.epad.dtos.EPADUserList;
+import edu.stanford.epad.dtos.EPADWorklist;
+import edu.stanford.epad.dtos.EPADWorklistList;
 import edu.stanford.epad.dtos.internal.DCM4CHEESeries;
 import edu.stanford.epad.epadws.aim.AIMSearchType;
 import edu.stanford.epad.epadws.handlers.core.EPADSearchFilter;
@@ -77,6 +80,10 @@ public interface EpadOperations
 	EPADUserList getUserDescriptions(String username, String sessionID) throws Exception;
 
 	EPADUser getUserDescription(String loggedInusername, String username, String sessionID) throws Exception;
+
+	EPADUserList getReviewers(String loggedInusername, String username, String sessionID) throws Exception;
+
+	EPADUserList getReviewees(String loggedInusername, String username, String sessionID) throws Exception;
 	
 	void createSubjectAndStudy(String username, String projectID, String subjectID, String subjectName, String studyUID, String sessionID) throws Exception;
 
@@ -84,9 +91,11 @@ public interface EpadOperations
 
 	int updateProject(String username, ProjectReference projectReference, String projectName, String projectDescription, String sessionID) throws Exception;
 
-	int createSubject(String username, SubjectReference subjectRefernece, String subjectName, String sessionID) throws Exception;
+	int createSubject(String username, SubjectReference subjectRefernece, String subjectName, Date dob, String gender, String sessionID) throws Exception;
 
-	int createStudy(String username, StudyReference studyReference, String sessionID) throws Exception;
+	int createStudy(String username, StudyReference studyReference, String description, Date studyDate, String sessionID) throws Exception;
+
+	int updateSubject(String username, SubjectReference subjectRefernece, String subjectName, Date dob, String gender, String sessionID) throws Exception;
 
 	int createFile(String username, ProjectReference projectReference, File uploadedFile, String description, String fileType, String sessionID) throws Exception;
 
@@ -96,9 +105,13 @@ public interface EpadOperations
 
 	int createFile(String username, SeriesReference seriesReference, File uploadedFile, String description, String fileType, String sessionID) throws Exception;
 
+	int createFile(String username, SeriesReference seriesReference, File uploadedFile, String description, String fileType, String sessionID, boolean convertToDICOM, String modality, String instanceNumber) throws Exception;
+
 	int createFile(String username, ImageReference imageReference, File uploadedFile, String description, String fileType, String sessionID) throws Exception;
 
 	int createImage(String username, String projectID, File dicomFile, String sessionID) throws Exception;
+	
+	int createSystemTemplate(String username, File templateFile, String sessionID) throws Exception;	
 	
 	EPADFileList getFileDescriptions(ProjectReference projectReference, String username, String sessionID, EPADSearchFilter searchFilter) throws Exception;
 
@@ -121,6 +134,10 @@ public interface EpadOperations
 
 	List<EPADFile> getEPADFiles(SeriesReference seriesReference, String username, String sessionID,
 			EPADSearchFilter searchFilter) throws Exception;
+
+	EPADFileList getTemplateDescriptions(String username, String sessionID) throws Exception;
+
+	EPADFileList getTemplateDescriptions(String projectID, String username, String sessionID) throws Exception;
 	
 	EPADFile getFileDescription(SeriesReference seriesReference, String filename, String username, String sessionID) throws Exception;
 
@@ -128,7 +145,7 @@ public interface EpadOperations
 	
 	String createStudyAIM(String username, StudyReference studyReference, String aimID, File aimFile, String sessionID);
 
-	int createSeries(SeriesReference seriesReference, String sessionID);
+	EPADSeries createSeries(String username, SeriesReference seriesReference, String description, Date seriesDate, String sessionID) throws Exception;
 
 	String createProjectAIM(String username, ProjectReference projectReference, String aimID, File aimFile, String sessionID);
 
@@ -149,6 +166,14 @@ public interface EpadOperations
 	
 	void deleteUser(String loggedInUser, String username) throws Exception;
 	
+	void addReviewer(String loggedInUser, String username, String reviewer) throws Exception;
+	
+	void addReviewee(String loggedInUser, String username, String reviewee) throws Exception;
+	
+	void removeReviewer(String loggedInUser, String username, String reviewer) throws Exception;
+	
+	void removeReviewee(String loggedInUser, String username, String reviewee) throws Exception;
+	
 	int projectDelete(String projectID, String sessionID, String username) throws Exception;
 
 	int subjectDelete(SubjectReference subjectReference, String sessionID, String username) throws Exception;
@@ -156,6 +181,8 @@ public interface EpadOperations
 	String studyDelete(StudyReference studyReference, String sessionID, boolean deleteAims, String username) throws Exception;
 
 	String seriesDelete(SeriesReference seriesReference, String sessionID, boolean deleteAims, String username);
+	
+	String deleteSeries(SeriesReference seriesReference, boolean deleteAims);
 
 	int projectAIMDelete(ProjectReference projectReference, String aimID, String sessionID, boolean deleteDSO, String username) throws Exception;
 
@@ -175,6 +202,8 @@ public interface EpadOperations
 	
 	void deleteAllStudyAims(String studyUID, boolean deleteDSOs);
 
+	void deleteAllAims(String projectID, String subjectID, String studyUID, String seriesUID, boolean deleteDSOs);
+	
 	EPADAIMList getProjectAIMDescriptions(ProjectReference projectReference, String username, String sessionID);
 
 	EPADAIM getProjectAIMDescription(ProjectReference projectReference, String aimID, String username, String sessionID);
@@ -202,6 +231,13 @@ public interface EpadOperations
 	EPADAIMList getAIMDescriptions(String projectID, AIMSearchType aimSearchType, String searchValue, String username, String sessionID, int start, int count);
 	
 	EPADAIM getAIMDescription(String aimID, String username, String sessionID);
+	
+	EPADWorklistList getWorkLists(ProjectReference projectReference) throws Exception;
+	
+	EPADWorklist getWorkList(ProjectReference projectReference, String username) throws Exception;
+	
+	EPADWorklist getWorkListByID(ProjectReference projectReference, String workListID) throws Exception;
+
 	/**
 	 * See if new series have been uploaded to DCM4CHEE that ePAD does not know about.
 	 */

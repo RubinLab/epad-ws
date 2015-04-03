@@ -40,14 +40,17 @@ import org.mindrot.jbcrypt.BCrypt;
 
 import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADLogger;
+import edu.stanford.epad.epadws.epaddb.DatabaseUtils;
 import edu.stanford.epad.epadws.models.EpadFile;
 import edu.stanford.epad.epadws.models.FileType;
+import edu.stanford.epad.epadws.models.NonDicomSeries;
 import edu.stanford.epad.epadws.models.Project;
 import edu.stanford.epad.epadws.models.ProjectToSubject;
 import edu.stanford.epad.epadws.models.ProjectToSubjectToStudy;
 import edu.stanford.epad.epadws.models.ProjectToSubjectToUser;
 import edu.stanford.epad.epadws.models.ProjectToUser;
 import edu.stanford.epad.epadws.models.ProjectType;
+import edu.stanford.epad.epadws.models.ReviewerToReviewee;
 import edu.stanford.epad.epadws.models.Study;
 import edu.stanford.epad.epadws.models.Subject;
 import edu.stanford.epad.epadws.models.User;
@@ -183,7 +186,7 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 			String password, List<String> addPermissions, List<String> removePermissions) throws Exception {
 		User user = getUser(loggedInUser);
 		if (user != null && !user.isAdmin() && !user.hasPermission(User.CreateUserPermission))
-			throw new Exception("No permission to create project");
+			throw new Exception("No permission to create user");
 		user = new User();
 		user.setUsername(username);
 		user.setFirstName(firstName);
@@ -213,7 +216,7 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		if (list.isEmpty()) return "";
 		String strList = "";
 		for (String item: list)
-			strList = "," + item;
+			strList = strList + "," + item;
 		return strList.substring(1);
 	}
 	
@@ -226,6 +229,11 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 			List<String> addPermissions, List<String> removePermissions)
 			throws Exception {
 		User loggedInUser = getUser(loggedInUserName);
+		if (loggedInUser != null && !loggedInUser.isAdmin() && !loggedInUser.hasPermission(User.CreateUserPermission) && !loggedInUserName.equals(username))
+			throw new Exception("No permission to modify user");
+		log.info("LoggedIn:" + loggedInUserName + " Modify user:" + username + " addPermissions:" + addPermissions + " removePermissions:" + removePermissions);
+		if (addPermissions.size() > 0 && !loggedInUser.isAdmin())
+			throw new Exception("Only admin can add permissions");
 		User user = new User();
 		user = (User) user.getObject("username = " + user.toSQL(username));
 		if (firstName != null) user.setFirstName(firstName);
@@ -252,6 +260,7 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 			perms.add(perm);
 		for (String perm: removePermissions)
 			perms.remove(perm);
+		log.info("Setting permissions:" + perms + ":" + toStringList(perms));
 		user.setPermissions(toStringList(perms));
 		user.save();
 		userCache.put(user.getUsername(), user);
@@ -262,8 +271,11 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 	 * @see edu.stanford.epad.epadws.service.EpadProjectOperations#enableUser(java.lang.String, java.lang.String)
 	 */
 	@Override
-	public void enableUser(String loggedInUser, String username) throws Exception {
+	public void enableUser(String loggedInUserName, String username) throws Exception {
+		User loggedInUser = getUser(loggedInUserName);
 		User user = getUser(username);
+		if (loggedInUser != null && !loggedInUser.isAdmin() && !loggedInUserName.equals(user.getCreator()))
+			throw new Exception("No permission to modify user");
 		user.setEnabled(true);
 		user.save();
 		userCache.put(user.getUsername(), user);
@@ -273,8 +285,11 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 	 * @see edu.stanford.epad.epadws.service.EpadProjectOperations#disableUser(java.lang.String, java.lang.String)
 	 */
 	@Override
-	public void disableUser(String loggedInUser, String username) throws Exception {
+	public void disableUser(String loggedInUserName, String username) throws Exception {
+		User loggedInUser = getUser(loggedInUserName);
 		User user = getUser(username);
+		if (loggedInUser != null && !loggedInUser.isAdmin() && !loggedInUserName.equals(user.getCreator()))
+			throw new Exception("No permission to modify user");
 		user.setEnabled(false);
 		user.save();
 		userCache.put(user.getUsername(), user);
@@ -286,9 +301,9 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 	@Override
 	public void deleteUser(String loggedInUser, String username) throws Exception {
 		User requestor = getUser(loggedInUser);
-		if (!requestor.isAdmin())
-			throw new Exception("No permissions to delete user");
 		User user = getUser(username);
+		if (!requestor.isAdmin() || !loggedInUser.equals(user.getCreator()))
+			throw new Exception("No permissions to delete user");
 		user.delete();
 		userCache.remove(user.getUsername());
 	}
@@ -376,6 +391,7 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		if (subject == null) subject = new Subject();
 		subject.setSubjectUID(subjectUID);
 		if (name != null && name.trim().length() > 0) subject.setName(name);
+		if (subject.getName() == null) subject.setName("");
 		if (dob != null) subject.setDob(dob);
 		if (gender != null && name.trim().length() > 0) subject.setGender(gender);
 		if (subject.getId() == 0) subject.setCreator(loggedInUser);
@@ -389,7 +405,13 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 	 */
 	@Override
 	public Study createStudy(String loggedInUser, String studyUID,
-			String subjectUID) throws Exception {
+			String subjectUID, String description) throws Exception {
+		return createStudy(loggedInUser, studyUID,
+				subjectUID, description, new Date());
+	}
+	@Override
+	public Study createStudy(String loggedInUser, String studyUID,
+			String subjectUID, String description, Date studyDate) throws Exception {
 		Subject subject = getSubject(subjectUID);
 		Study study = getStudy(studyUID);
 		if (study == null)
@@ -399,8 +421,28 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		}
 		study.setStudyUID(studyUID);
 		study.setSubjectId(subject.getId());
+		if (description != null && description.length() > 0)
+			study.setDescription(description);
+		if (studyDate != null)
+			study.setStudyDate(studyDate);
 		study.save();
 		return study;
+	}
+
+	@Override
+	public NonDicomSeries createNonDicomSeries(String loggedInUser, String seriesUID,
+			String studyUID, String description, Date seriesDate)
+			throws Exception {
+		NonDicomSeries series = new NonDicomSeries();
+		Study study = getStudy(studyUID);
+		if (study == null)
+			throw new Exception("Study " + studyUID + " not found");
+		series.setSeriesUID(seriesUID);
+		series.setSeriesDate(seriesDate);
+		series.setStudyId(study.getId());
+		series.setDescription(description);
+		series.save();
+		return series;
 	}
 
 	/* (non-Javadoc)
@@ -979,6 +1021,18 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		return studies;
 	}
 
+	@Override
+	public List<NonDicomSeries> getNonDicomSeriesForStudy(String studyUID)
+			throws Exception {
+		Study study = getStudy(studyUID);
+		if (study == null)
+			throw new Exception("Study " + studyUID + " not found");
+		List objects = new NonDicomSeries().getObjects("study_id  =" + study.getId());
+		List<NonDicomSeries> serieses = new ArrayList<NonDicomSeries>();
+		serieses.addAll(objects);		
+		return serieses;
+	}
+
 	/* (non-Javadoc)
 	 * @see edu.stanford.epad.epadws.service.EpadProjectOperations#setUserStatusForProjectAndSubject(java.lang.String, java.lang.String, java.lang.String, java.lang.String)
 	 */
@@ -1099,6 +1153,23 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 			return false;
 	}
 
+	@Override
+	public boolean hasAccessToProject(String username, long id)
+			throws Exception {
+		Project project = (Project) this.getDBObject(Project.class, id);
+		if (project == null)
+			throw new Exception("Project not found, ID:" + id);
+		User user = getUser(username);
+		if (user == null)
+			throw new Exception("User not found, username:" + username);
+		if (project.getType().equals(ProjectType.PUBLIC.getName()) ||  user.isAdmin())
+			return true;
+		if (isUserInProject(user.getId(), project.getId()))
+			return true;
+		else
+			return false;
+	}
+
 	protected boolean isUserInProject(long userId, long projectId)
 			throws Exception {
 		ProjectToUser pu = (ProjectToUser) new ProjectToUser().getObject("project_id =" + projectId + " and user_id=" + userId);
@@ -1108,6 +1179,15 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 			return true;
 	}
 
+	@Override
+	public boolean isAdmin(String username) throws Exception {
+		User user = getUser(username);
+		if (user != null)	
+			return user.isAdmin();
+		else
+			return false;
+	}
+
 	/* (non-Javadoc)
 	 * @see edu.stanford.epad.epadws.service.EpadProjectOperations#isCollaborator(java.lang.String, java.lang.String)
 	 */
@@ -1115,13 +1195,13 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 	public boolean isCollaborator(String username, String projectID) throws Exception {
 		if (projectID == null || projectID.trim().length() == 0)
 		{
-			if (username.equals("admin")) 
+			if (isAdmin(username)) 
 				return false;
 			else
 				return true;
 		}
 		UserRole role = getUserProjectRole(username, projectID);
-		if (role == null && username.equals("admin")) return false;
+		if (role == null && isAdmin(username)) return false;
 		if (role == null && projectID.equals(EPADConfig.xnatUploadProjectID)) return true;
 		if (role == null)
 			throw new Exception("User " + username  + " does not exist in project:" + projectID);
@@ -1140,9 +1220,8 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		if (projectID == null || projectID.trim().length() == 0)
 			return false;
 		UserRole role = getUserProjectRole(username, projectID);
-		if (role == null && username.equals("admin")) return true;
-		if (role == null)
-			throw new Exception("Does not exist in project:" + projectID);
+		if (role == null && isAdmin(username)) return true;
+		if (role == null) return false;
 		if (role.equals(UserRole.MEMBER))
 			return true;
 		else
@@ -1161,9 +1240,8 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		if (project.getCreator().equals(username))
 			return true;
 		UserRole role = getUserProjectRole(username, projectID);
-		if (role == null && username.equals("admin")) return true;
-		if (role == null)
-			throw new Exception("Does not exist in project:" + projectID);
+		if (role == null && isAdmin(username)) return true;
+		if (role == null) return false;
 		if (role.equals(UserRole.OWNER))
 			return true;
 		else
@@ -1224,6 +1302,44 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		criteria = criteria + " and name = " + new EpadFile().toSQL(filename);
 		EpadFile file = (EpadFile) new EpadFile().getObject(criteria);
 		return file;
+	}
+
+	/* (non-Javadoc)
+	 * @see edu.stanford.epad.epadws.service.EpadProjectOperations#getEpadFiles(java.lang.String, java.lang.String, java.lang.String, java.lang.String, FileType)
+	 */
+	@Override
+	public List<EpadFile> getEpadFiles(String projectID,
+			String subjectUID, String studyUID, String seriesUID,
+			FileType fileType) throws Exception {
+		String criteria = "1 = 1";
+		if (projectID != null && projectID.length() > 0)
+		{
+			Project project = getProject(projectID);
+			criteria = criteria + " and project_id = " + project.getId();
+		}
+
+		if (subjectUID != null && subjectUID.length() > 0)
+		{
+			Subject subject = getSubject(subjectUID);
+			criteria = criteria + " and subject_id = " + subject.getId();
+		}
+
+		if (studyUID != null && studyUID.length() > 0)
+		{
+			Study study = getStudy(studyUID);
+			criteria = criteria + " and study_id = " + study.getId();
+		}
+
+		if (seriesUID != null && seriesUID.length() > 0)
+		{
+			criteria = criteria + " and series_uid = '" + seriesUID + "'";
+		}
+		
+		if (fileType != null)
+		{
+			criteria = criteria + " and filetype = '" + fileType.getName() + "'";
+		}
+		return new EpadFile().getObjects(criteria);
 	}
 
 	/* (non-Javadoc)
@@ -1294,6 +1410,28 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		return efiles;
 	}
 
+	@Override
+	public void enableFile(String loggedInUser, String projectID,
+			String subjectUID, String studyUID, String seriesUID,
+			String filename) throws Exception {
+		EpadFile efile = this.getEpadFile(projectID, subjectUID, studyUID, seriesUID, filename);
+		if (efile == null)
+			throw new Exception("File " + filename + " not found");
+		efile.setEnabled(true);
+		efile.save();
+	}
+
+	@Override
+	public void disableFile(String loggedInUser, String projectID,
+			String subjectUID, String studyUID, String seriesUID,
+			String filename) throws Exception {
+		EpadFile efile = this.getEpadFile(projectID, subjectUID, studyUID, seriesUID, filename);
+		if (efile == null)
+			throw new Exception("File " + filename + " not found");
+		efile.setEnabled(false);
+		efile.save();
+	}
+
 	/* (non-Javadoc)
 	 * @see edu.stanford.epad.epadws.service.EpadProjectOperations#deleteFile(java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.lang.String)
 	 */
@@ -1324,8 +1462,10 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		User requestor = getUser(username);
 		if (!requestor.isAdmin() && !isOwner(username, projectID))
 			throw new Exception("No permissions to delete project");
+		log.info("Deleting project:" + projectID);
 		Project project = getProject(projectID);
-		new ProjectToUser().deleteObjects("project_id=" + project.getId());		
+		new ProjectToUser().deleteObjects("project_id=" + project.getId());
+		new EpadFile().deleteObjects("project_id=" + project.getId());
 		new ProjectToSubjectToUser().deleteObjects("proj_subj_id in (select id from " + new ProjectToSubject().returnDBTABLE() + " where project_id=" + project.getId() + ")");
 		new ProjectToSubjectToStudy().deleteObjects("proj_subj_id in (select id from " + new ProjectToSubject().returnDBTABLE() + " where project_id=" + project.getId() + ")");
 		new ProjectToSubject().deleteObjects("project_id=" + project.getId());
@@ -1364,7 +1504,7 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		Study study = getStudy(studyUID);
 		ProjectToSubject projSubj = (ProjectToSubject) new ProjectToSubject().getObject("project_id =" + project.getId() + " and subject_id=" + subject.getId());
 		ProjectToSubjectToStudy projSubjStudy = (ProjectToSubjectToStudy) new ProjectToSubjectToStudy().getObject("proj_subj_id =" + projSubj.getId() + " and study_id=" + study.getId());
-		projSubjStudy.delete();
+		if (projSubjStudy != null) projSubjStudy.delete();
 		// TODO: delete study if not used any more
 	}
 
@@ -1374,6 +1514,11 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 	@Override
 	public void deleteSubject(String username, String subjectUID) throws Exception {
 		Subject subject = getSubject(subjectUID);
+		ProjectToSubject projSubj = (ProjectToSubject) new ProjectToSubject().getObject("subject_id =" + subject.getId() + " and subject_id=" + subject.getId());
+		new ProjectToSubjectToUser().deleteObjects("proj_subj_id =" + projSubj.getId());
+		new ProjectToSubjectToStudy().deleteObjects("proj_subj_id =" + projSubj.getId());
+		projSubj.delete();
+		new EpadFile().deleteObjects("subject_id=" + subject.getId());
 		subject.delete();
 	}
 
@@ -1383,6 +1528,9 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 	@Override
 	public void deleteStudy(String username, String studyUID) throws Exception {
 		Study study = getStudy(studyUID);
+		ProjectToSubjectToStudy projSubjStudy = (ProjectToSubjectToStudy) new ProjectToSubjectToStudy().getObject("study_id=" + study.getId());
+		projSubjStudy.delete();
+		new EpadFile().deleteObjects("study_id=" + study.getId());
 		study.delete();
 	}
 
@@ -1398,6 +1546,76 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		} catch (Exception e) {
 		}
 		return null;
+	}
+
+	@Override
+	public List<User> getReviewers(String username) throws Exception {
+		List<User> users = new ArrayList<User>();
+		List<ReviewerToReviewee> rtrs = new ReviewerToReviewee().getObjects("reviewee = " + DatabaseUtils.toSQL(username));
+		for (ReviewerToReviewee rtr: rtrs)
+		{
+			User reviewer = getUser(rtr.getReviewer());
+			users.add(reviewer);
+		}
+		return users;
+	}
+
+	@Override
+	public List<User> getReviewees(String username) throws Exception {
+		List<User> users = new ArrayList<User>();
+		List<ReviewerToReviewee> rtrs = new ReviewerToReviewee().getObjects("reviewer = " + DatabaseUtils.toSQL(username));
+		for (ReviewerToReviewee rtr: rtrs)
+		{
+			User reviewee = getUser(rtr.getReviewee());
+			users.add(reviewee);
+		}
+		return users;
+	}
+
+	@Override
+	public void addReviewer(String loggedInUser, String username,
+			String reviewer) throws Exception {
+		List<ReviewerToReviewee> rtrs = new ReviewerToReviewee().getObjects("reviewee = " + DatabaseUtils.toSQL(username) + " and reviewer=" + DatabaseUtils.toSQL(reviewer));
+		if (rtrs.size() == 0)
+		{
+			ReviewerToReviewee rtr = new ReviewerToReviewee();
+			rtr.setReviewee(username);
+			rtr.setReviewer(reviewer);
+			rtr.save();
+		}
+	}
+
+	@Override
+	public void addReviewee(String loggedInUser, String username,
+			String reviewee) throws Exception {
+		List<ReviewerToReviewee> rtrs = new ReviewerToReviewee().getObjects("reviewer = " + DatabaseUtils.toSQL(username) + " and reviewee=" + DatabaseUtils.toSQL(reviewee));
+		if (rtrs.size() == 0)
+		{
+			ReviewerToReviewee rtr = new ReviewerToReviewee();
+			rtr.setReviewee(reviewee);
+			rtr.setReviewer(username);
+			rtr.save();
+		}
+	}
+
+	@Override
+	public void removeReviewer(String loggedInUser, String username,
+			String reviewer) throws Exception {
+		List<ReviewerToReviewee> rtrs = new ReviewerToReviewee().getObjects("reviewee = " + DatabaseUtils.toSQL(username) + " and reviewer=" + DatabaseUtils.toSQL(reviewer));
+		for (ReviewerToReviewee rtr: rtrs)
+		{
+			rtr.delete();
+		}
+	}
+
+	@Override
+	public void removeReviewee(String loggedInUser, String username,
+			String reviewee) throws Exception {
+		List<ReviewerToReviewee> rtrs = new ReviewerToReviewee().getObjects("reviewer = " + DatabaseUtils.toSQL(username) + " and reviewee=" + DatabaseUtils.toSQL(reviewee));
+		for (ReviewerToReviewee rtr: rtrs)
+		{
+			rtr.delete();
+		}
 	}
 
 	/* (non-Javadoc)

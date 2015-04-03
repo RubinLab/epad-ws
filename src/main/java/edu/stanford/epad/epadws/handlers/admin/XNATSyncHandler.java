@@ -156,7 +156,13 @@ public class XNATSyncHandler extends AbstractHandler
 				ProjectType pt = ProjectType.PRIVATE;
 				if (type.toLowerCase().startsWith("public"))
 					pt = ProjectType.PUBLIC;
-				project = projectOperations.createProject(username, xproject.ID, xproject.name, xproject.description, pt);
+				try
+				{
+					project = projectOperations.createProject(username, xproject.ID, xproject.name, xproject.description, pt);
+				} catch (Exception x) {
+					log.warning("Error creating project:" +  xproject.ID, x);
+					continue;
+				}
 				log.info("Created project:" + xproject.name);
 				response = response + "\nCreated project " + xproject.name;
 			}
@@ -223,7 +229,7 @@ public class XNATSyncHandler extends AbstractHandler
 					Study study = projectOperations.getStudy(experiment.label.replace('_', '.'));
 					if (study == null)
 					{
-						study = projectOperations.createStudy(username, experiment.label.replace('_', '.'), subject.getSubjectUID());
+						study = projectOperations.createStudy(username, experiment.label.replace('_', '.'), subject.getSubjectUID(),"");
 						response = response + "\nCreated study " + study.getStudyUID() + " for subject " + subject.getName();
 					}
 				}

@@ -108,7 +108,8 @@ public class EPADUploadDirWatcher implements Runnable
 			// TODO Should not create XNAT entities until the DICOM send succeeds.
 			String username = UserProjectService.createProjectEntitiesFromDICOMFilesInUploadDirectory(directory);
 			cleanUploadDirectory(directory);
-			sendFilesToDcm4Chee(username, directory);
+			if (username != null)
+				sendFilesToDcm4Chee(username, directory);
 		} catch (IOException ioe) {
 			log.warning("IOException uploading " + directory.getAbsolutePath(), ioe);
 			writeExceptionLog(directory, ioe);
@@ -228,7 +229,7 @@ public class EPADUploadDirWatcher implements Runnable
 			epadDatabaseOperations.insertEpadEvent(
 					username, 
 					"Error sending DICOM files to DCM4CHEE", 
-					"", "", "", "", "", "", "");					
+					"", "", "", "", "", "", "Process Upload");					
 			projectOperations.userErrorLog(username, "Error sending DICOM files to DCM4CHEE:" + x);
 		}
 	}

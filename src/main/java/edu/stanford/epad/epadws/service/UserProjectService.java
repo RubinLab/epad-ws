@@ -187,7 +187,10 @@ public class UserProjectService {
 	public static String getFirstProjectForStudy(String studyUID) throws Exception {
 		if (EPADConfig.UseEPADUsersProjects) {
 			Project project = projectOperations.getFirstProjectForStudy(studyUID);
-			return project.getProjectId();
+			if (project != null)
+				return project.getProjectId();
+			else
+				return EPADConfig.xnatUploadProjectID;
 		} else {
 			String adminSessionID = XNATSessionOperations.getXNATAdminSessionID();
 			return XNATQueries.getFirstProjectForStudy(adminSessionID, studyUID);	
@@ -254,9 +257,14 @@ public class UserProjectService {
 				if (xnatProjectLabel != null && xnatSessionID != null) {
 					int numberOfDICOMFiles = createProjectEntitiesFromDICOMFilesInUploadDirectory(dicomUploadDirectory, xnatProjectLabel, xnatSessionID, xnatUserName);
 					if (numberOfDICOMFiles != 0)
+					{
 						log.info("Found " + numberOfDICOMFiles + " DICOM file(s) in upload directory");
+					}
 					else
+					{
 						log.warning("No DICOM files found in upload directory!");
+						return null;
+					}
 				} else {
 					log.warning("Missing XNAT project name and/or session ID in properties file" + propertiesFilePath);
 				}
@@ -283,8 +291,8 @@ public class UserProjectService {
 	{
 		int numberOfDICOMFiles = 0;
 		for (File dicomFile : listDICOMFiles(dicomUploadDirectory)) {
-			createProjectEntitiesFromDICOMFile(dicomFile, projectID, sessionID, username);
-			numberOfDICOMFiles++;
+			if (createProjectEntitiesFromDICOMFile(dicomFile, projectID, sessionID, username))
+				numberOfDICOMFiles++;
 		}
 		return numberOfDICOMFiles;
 	}
@@ -297,7 +305,7 @@ public class UserProjectService {
 	 * @param username
 	 * @throws Exception
 	 */
-	public static void createProjectEntitiesFromDICOMFile(File dicomFile, String projectID, String sessionID, String username) throws Exception
+	public static boolean createProjectEntitiesFromDICOMFile(File dicomFile, String projectID, String sessionID, String username) throws Exception
 	{
 		DicomObject dicomObject = DicomReader.getDicomObject(dicomFile);
 		String dicomPatientName = dicomObject.getString(Tag.PatientName);
@@ -312,13 +320,18 @@ public class UserProjectService {
 		{
 			String message = "Invalid patientID:" + dicomPatientID + " file:" + dicomFile.getName() + ", Rejecting file";
 			log.warning(message);
+			databaseOperations.insertEpadEvent(
+					username, 
+					"Invalid patient ID " + dicomPatientID + " in DICOM file", 
+					"", "", "", "", "", "", "Error in Upload");					
 			dicomFile.delete();
 			projectOperations.userErrorLog(username, message);
-			return;
+			return false;
 		}
 		pendingUploads.put(seriesUID, username + ":" + projectID);
-		if (dicomPatientID != null && dicomPatientName != null && studyUID != null) {
+		if (dicomPatientID != null && studyUID != null) {
 			databaseOperations.deleteSeriesOnly(seriesUID); // This will recreate all images
+			if (dicomPatientName == null) dicomPatientName = "";
 			dicomPatientName = dicomPatientName.toUpperCase(); // DCM4CHEE stores the patient name as upper case
 			
 			addSubjectAndStudyToProject(dicomPatientID, dicomPatientName, studyUID, projectID, sessionID, username);
@@ -332,10 +345,22 @@ public class UserProjectService {
 						AIMUtil.generateAIMFileForDSO(dicomFile, username, projectID);
 				} catch (Exception x) {
 					log.warning("Error generating DSO Annotation:", x);
+					databaseOperations.insertEpadEvent(
+							username, 
+							"Error generating DSO Annotation", 
+							"", "", "", "", "", "", "Upload " + dicomFile.getName());					
+					projectOperations.userErrorLog(username, "Error generating DSO Annotation");
 				}
 			}
-		} else
-			log.warning("Missing patient name, ID or studyUID in DICOM file " + dicomFile.getAbsolutePath());
+		} else {
+			log.warning("Missing patient ID or studyUID in DICOM file " + dicomFile.getAbsolutePath());
+			databaseOperations.insertEpadEvent(
+					username, 
+					"Missing patient ID or studyUID in DICOM file", 
+					"", "", "", "", "", "", "Process Upload");					
+			projectOperations.userErrorLog(username, "Missing patient ID or studyUID in DICOM file " + dicomFile.getName());
+		}
+		return true;
 	}
 
 	/**
@@ -355,7 +380,7 @@ public class UserProjectService {
 		} else {
 			try {
 				projectOperations.createSubject(username, subjectID, subjectName, null, null);
-				projectOperations.createStudy(username, studyUID, subjectID);
+				projectOperations.createStudy(username, studyUID, subjectID, "");
 				log.info("Upload/Transfer: Adding Study:" +  studyUID + " Subject:" + subjectID + " to Project:" + projectID);
 				projectOperations.addStudyToProject(username, studyUID, subjectID, projectID);
 			} catch (Exception e) {

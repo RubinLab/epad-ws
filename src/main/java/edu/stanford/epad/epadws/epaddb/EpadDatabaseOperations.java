@@ -106,6 +106,8 @@ public interface EpadDatabaseOperations
 	List<EPADAIM> getAIMs(ImageReference imageReference);
 
 	List<EPADAIM> getAIMs(FrameReference frameReference);
+
+	List<EPADAIM> getAIMs(String projectID, String subjectID, String studyUID, String seriesUID);
 	
 	List<EPADAIM> getAIMs(String projectID, AIMSearchType aimSearchType, String value, int start, int count);
 
@@ -210,6 +212,13 @@ public interface EpadDatabaseOperations
 	 */
 	Term insertCoordinationTerm(String termIDPrefix, String schemaName, String schemaVersion, String description,
 			List<Integer> termKeys) throws SQLException;
+	
+	/**
+	 * Get all coordination data for coordinationID (eg: for "EPAD-prod-1" or "EPAD-prod-7" etc)
+	 * @param coordinationID
+	 * @return
+	 */
+	List<Map<String, String>> getCoordinationData(String coordinationID) throws Exception;
 	
 	/* 
 	 * New DB Operations methods for schema to replace XNAT

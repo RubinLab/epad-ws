@@ -29,8 +29,10 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
+import edu.stanford.epad.dtos.EPADUserList;
 import edu.stanford.epad.epadws.models.EpadFile;
 import edu.stanford.epad.epadws.models.FileType;
+import edu.stanford.epad.epadws.models.NonDicomSeries;
 import edu.stanford.epad.epadws.models.Project;
 import edu.stanford.epad.epadws.models.ProjectType;
 import edu.stanford.epad.epadws.models.Study;
@@ -189,7 +191,18 @@ public interface EpadProjectOperations {
 	 * @return
 	 * @throws Exception
 	 */
-	Study createStudy(String loggedInUser, String studyUID, String subjectUID) throws Exception;
+	Study createStudy(String loggedInUser, String studyUID, String subjectUID, String description) throws Exception;
+	Study createStudy(String loggedInUser, String studyUID, String subjectUID, String description, Date studyDate) throws Exception;
+	
+	/**
+	 * Create Study record in database
+	 * @param loggedInUser
+	 * @param studyUID
+	 * @param subjectUID
+	 * @return
+	 * @throws Exception
+	 */
+	NonDicomSeries createNonDicomSeries(String loggedInUser, String seriesUID, String studyUID, String description, Date seriesDate) throws Exception;
 	
 	/**
 	 * Add Subject/Studies to Project
@@ -431,6 +444,14 @@ public interface EpadProjectOperations {
 	 * @throws Exception
 	 */
 	List<Study> getStudiesForSubject(String subjectUID) throws Exception;
+	
+	/**
+	 * Get Non-dicom series for a study
+	 * @param subjectUID
+	 * @return
+	 * @throws Exception
+	 */
+	List<NonDicomSeries> getNonDicomSeriesForStudy(String studyUID) throws Exception;
 
 	/**
 	 * Set user status for project and subject
@@ -481,6 +502,18 @@ public interface EpadProjectOperations {
 	 * @throws Exception
 	 */
 	EpadFile getEpadFile(String projectID, String subjectUID, String studyUID, String seriesUID, String filename) throws Exception;	
+
+	/**
+	 * Get Files for project/subject/study/series by filetype 
+	 * @param projectID
+	 * @param subjectUID
+	 * @param studyUID
+	 * @param seriesUID
+	 * @param filename
+	 * @return
+	 * @throws Exception
+	 */
+	List<EpadFile> getEpadFiles(String projectID, String subjectUID, String studyUID, String seriesUID, FileType fileType) throws Exception;	
 	
 	/**
 	 * Get files for project
@@ -518,7 +551,18 @@ public interface EpadProjectOperations {
 	 * @return
 	 * @throws Exception
 	 */
-	List<EpadFile> getSeriesFiles(String projectID, String subjectUID, String studyUID, String seriesUID) throws Exception;
+	List<EpadFile> getSeriesFiles(String projectID, String subjectUID, String studyUID, String seriesUID) throws Exception;	
+	
+	void enableFile(String loggedInUser, String projectID, String subjectUID, String studyUID, String seriesUID, String filename) throws Exception;
+	
+	void disableFile(String loggedInUser, String projectID, String subjectUID, String studyUID, String seriesUID, String filename) throws Exception;
+	
+	/**
+	 * @param username
+	 * @return
+	 * @throws Exception
+	 */
+	boolean isAdmin(String username) throws Exception;
 	
 	/**
 	 * Check if user is in project
@@ -528,6 +572,15 @@ public interface EpadProjectOperations {
 	 * @throws Exception
 	 */
 	boolean hasAccessToProject(String username, String projectID) throws Exception;
+	
+	/**
+	 * Check if user is in project
+	 * @param username
+	 * @param project key
+	 * @return
+	 * @throws Exception
+	 */
+	boolean hasAccessToProject(String username, long id) throws Exception;
 	
 	/**
 	 * Check if collaborator
@@ -621,10 +674,64 @@ public interface EpadProjectOperations {
 	void deleteFile(String loggedInUser, String projectID, String subjectUID, String studyUID, String seriesUID, String filename) throws Exception;	
 	
 	/**
+	 * Get event logs for this user
 	 * @param username
 	 * @return
 	 */
 	List<EventLog> getUserLogs(String username);
+
+	/**
+	 * Get reviewers for this user
+	 * @param username
+	 * @return
+	 * @throws Exception
+	 */
+	List<User> getReviewers(String username) throws Exception;
+
+	/**
+	 * Get reviewees for this user
+	 * @param username
+	 * @return
+	 * @throws Exception
+	 */
+	List<User> getReviewees(String username) throws Exception;
+	
+	/**
+	 * Add reviewer to this user
+	 * @param loggedInUser
+	 * @param username
+	 * @param reviewer
+	 * @throws Exception
+	 */
+	void addReviewer(String loggedInUser, String username, String reviewer) throws Exception;
+	
+	/**
+	 * Add reviewee to this user
+	 * @param loggedInUser
+	 * @param username
+	 * @param reviewee
+	 * @throws Exception
+	 */
+	void addReviewee(String loggedInUser, String username, String reviewee) throws Exception;
+	
+	/**
+	 * Remove reviewer from this user
+	 * @param loggedInUser
+	 * @param username
+	 * @param reviewer
+	 * @throws Exception
+	 */
+	void removeReviewer(String loggedInUser, String username, String reviewer) throws Exception;
+	
+	/**
+	 * Remove reviewee from this user
+	 * @param loggedInUser
+	 * @param username
+	 * @param reviewee
+	 * @throws Exception
+	 */
+	void removeReviewee(String loggedInUser, String username, String reviewee) throws Exception;
+	
 	
 	/**
 	 * Get database object by primary key

@@ -54,6 +54,7 @@ public class WadoHandler extends AbstractHandler
 		String method = httpRequest.getMethod();
 		if ("GET".equalsIgnoreCase(method)) {
 			try {
+				String username = httpRequest.getParameter("username");
 				responseStream = httpResponse.getOutputStream();
 
 				// if (XNATOperations.hasValidXNATSessionID(httpRequest)) {
@@ -61,15 +62,17 @@ public class WadoHandler extends AbstractHandler
 					String queryString = httpRequest.getQueryString();
 					queryString = URLDecoder.decode(queryString, "UTF-8");
 					if (queryString != null) {
-						statusCode = performWADOQuery(queryString, responseStream);
+						statusCode = performWADOQuery(queryString, responseStream, username);
 					} else {
 						statusCode = HandlerUtil.badRequestResponse(MISSING_QUERY_MESSAGE, log);
+						log.warning("Missing Wado query");
 					}
 				} else {
 					statusCode = HandlerUtil.invalidTokenResponse(INVALID_SESSION_TOKEN_MESSAGE, log);
 				}
 			} catch (Throwable t) {
 				statusCode = HandlerUtil.internalErrorResponse(INTERNAL_EXCEPTION_MESSAGE, log);
+				log.warning("Error is Wado query", t);
 			}
 		} else {
 			httpResponse.setHeader("Access-Control-Allow-Methods", "GET");
@@ -83,12 +86,14 @@ public class WadoHandler extends AbstractHandler
 		return true;
 	}
 
-	private int performWADOQuery(String queryString, ServletOutputStream outputStream)
+	private int performWADOQuery(String queryString, ServletOutputStream outputStream, String username)
 
 	{
 		String wadoHost = EPADConfig.dcm4CheeServer;
 		int wadoPort = EPADConfig.dcm4cheeServerWadoPort;
 		String wadoBase = EPADConfig.wadoURLExtension;
+		if (queryString.toLowerCase().indexOf("dicom") != -1)
+			log.info("Wado Request to download dicom:" + queryString + ", username:" + username);
 		String wadoURL = buildWADOURL(wadoHost, wadoPort, wadoBase, queryString);
 		int statusCode;
 		try {

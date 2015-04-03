@@ -12,6 +12,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -87,7 +88,9 @@ import edu.stanford.hakan.aim3api.base.SegmentationCollection;
 import edu.stanford.hakan.aim3api.base.User;
 import edu.stanford.hakan.aim3api.usage.AnnotationBuilder;
 import edu.stanford.hakan.aim3api.usage.AnnotationGetter;
+import edu.stanford.hakan.aim4api.base.CD;
 import edu.stanford.hakan.aim4api.base.ImageAnnotationCollection;
+import edu.stanford.hakan.aim4api.base.ImagingObservationCharacteristic;
 
 /**
  * 
@@ -158,7 +161,7 @@ public class AIMUtil
 				result = edu.stanford.hakan.aim4api.usage.AnnotationBuilder.getAimXMLsaveResult();
 				try {
 					if (projectID != null && projectID.length() > 0)
-					saveAimToMongo(aim4, projectID);
+						saveAimToMongo(aim4, projectID);
 				} catch (Exception e) {
 					log.warning("Error saving aim to mongodb", e);
 				}
@@ -255,7 +258,7 @@ public class AIMUtil
 		    log.info(result);
 			try {
 				if (projectID != null && projectID.length() > 0)
-				saveAimToMongo(aim, projectID);
+					saveAimToMongo(aim, projectID);
 			} catch (Exception e) {
 				log.warning("Error saving aim to mongodb", e);
 			}
@@ -1032,6 +1035,7 @@ public class AIMUtil
 			try {
 				Aim4 a = new Aim4(aim);
 				EPADAIM ea = aimMAP.get(aim.getUniqueIdentifier());
+				if (ea == null)  continue;
 				if (aim.getImageAnnotations().get(0).getName() != null)
 				{
 					ea.name = aim.getImageAnnotations().get(0).getName().getValue();
@@ -1282,6 +1286,38 @@ public class AIMUtil
             edu.stanford.hakan.aim4api.base.AimException {
         return edu.stanford.hakan.aim4api.usage.AnnotationGetter.getImageAnnotationCollectionFromFile(file.getAbsolutePath(), xsdFilePath);
     }
+    
+	public static String runPlugIn(String[] aimIDs, String templateName, String projectID, String jsessionID) throws Exception
+	{                        
+		String result = "";
+		for (String aimID:  aimIDs)
+		{
+			if (isPluginStillRunning(aimID))
+			{
+				result = result + "\n" + "Previous version of this AIM " + aimID + " is still being processed by the plugin";
+				continue;
+			}
+			boolean templateHasBeenFound = false;
+			String handlerName = null;
+			String pluginName = null;
+
+			List<String> list = PluginConfig.getInstance().getPluginTemplateList();
+			for (int i = 0; i < list.size(); i++) {
+				String templateNameFounded = list.get(i);
+				if (templateNameFounded.equals(templateName)) {
+					handlerName = PluginConfig.getInstance().getPluginHandlerList().get(i);
+					pluginName = PluginConfig.getInstance().getPluginNameList().get(i);
+					templateHasBeenFound = true;
+				}
+			}
+
+			if (templateHasBeenFound) {
+				log.info("Starting Plugin task for:" + pluginName);
+				(new Thread(new PluginStartTask(jsessionID, pluginName, aimID, 0, projectID))).start();				
+			}
+		}
+		return result;
+	}
 
 	private static void setImageAnnotationUser(ImageAnnotation imageAnnotation, String username)
 	{
@@ -1460,10 +1496,46 @@ public class AIMUtil
 		}
 	}
 	
+	public ImageAnnotationCollection fixAIM4Coordination(ImageAnnotationCollection iac)
+	{
+		EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
+		try
+		{
+			List<ImagingObservationCharacteristic> iocs = iac.getImageAnnotations().get(0)
+															.getImagingPhysicalEntityCollection()
+															.getImagingPhysicalEntityList().get(0)
+															.getImagingObservationCharacteristicCollection().getImagingObservationCharacteristicList();
+			for (int i = 0; i < iocs.size(); i++)
+			{
+				ImagingObservationCharacteristic ioc = iocs.get(i);
+				
+				if (ioc.getListTypeCode().get(0).getCode().contains("EPAD-prod"))
+				{
+					List<Map<String, String>> coordinations = epadDatabaseOperations.getCoordinationData(ioc.getListTypeCode().get(0).getCode());
+					iocs.remove(i);
+					for (Map<String, String> coordination: coordinations)
+					{
+						//<typeCode code="RID3829" codeSystem="scar" codeSystemName="RadLex3.10_NS"/>
+						CD typeCode = new CD();
+						typeCode.setCode(coordination.get("term_id"));
+						typeCode.setCodeSystem(coordination.get("description"));
+						typeCode.setCodeSystemName(coordination.get("schema_name"));
+						ioc.getListTypeCode().add(i++, typeCode);
+					}
+				}
+			}
+		} catch (Exception x) {
+			log.warning("Error fixing aim id = " + iac.getUniqueIdentifier().getRoot(), x);
+			return null;
+		}
+		return iac;
+	}
+	
 	public static void updateTableXMLs(List<EPADAIM> aims)
 	{
 		long starttime = System.currentTimeMillis();
 		HashMap<String, String> searchValueByProject = new HashMap<String, String>();
+		Set<String> aimIDs = new HashSet<String>();
 		for (EPADAIM aim: aims)
 		{
 			String projectID = aim.projectID;
@@ -1475,6 +1547,7 @@ public class AIMUtil
 			else
 				searchValue = searchValue + "," + aim.aimID;
 			searchValueByProject.put(projectID, searchValue);
+			aimIDs.add(aim.aimID);
 		}
 		
 		EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
@@ -1486,6 +1559,7 @@ public class AIMUtil
 			boolean mongoErr = false;
 			for (ImageAnnotationCollection aim: paims)
 			{
+				aimIDs.remove(aim.getUniqueIdentifier().getRoot());
 				try {
 					EPADAIM epadAim = epadDatabaseOperations.updateAIMXml(aim.getUniqueIdentifier().getRoot(), edu.stanford.hakan.aim4api.usage.AnnotationBuilder.convertToString(aim));
 				} catch (Exception e) {
@@ -1499,8 +1573,14 @@ public class AIMUtil
 					mongoErr = true;
 				}
 			}
-		}	
-		
+		}
+		// Delete aims that are not found in Exist and have null xml
+		for (String aimID: aimIDs)
+		{
+			EPADAIM aim = epadDatabaseOperations.getAIM(aimID);
+			if (aim.xml == null || aim.xml.length() == 0)
+				epadDatabaseOperations.deleteAIM("admin", aimID);
+		}
 	}
 	
 	public static void updateMongDB(List<EPADAIM> aims)

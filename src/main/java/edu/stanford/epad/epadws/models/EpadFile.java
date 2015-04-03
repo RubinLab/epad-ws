@@ -42,6 +42,7 @@ public class EpadFile extends AbstractDAO {
 	String mimeType;
 	String description;
 	String creator;
+	boolean enabled;
 	Date createdTime;
 	Date updateTime;
 
@@ -130,6 +131,14 @@ public class EpadFile extends AbstractDAO {
 		this.description = description;
 	}
 
+	public boolean isEnabled() {
+		return enabled;
+	}
+
+	public void setEnabled(boolean enabled) {
+		this.enabled = enabled;
+	}
+
 	public void setId(long id) {
 		this.id = id;
 	}
@@ -185,6 +194,7 @@ public class EpadFile extends AbstractDAO {
 		{"fileType","String","filetype","varchar"},
 		{"mimeType","String","mimetype","varchar"},
 		{"description","String","description","varchar"},
+        {"enabled","boolean","enabled","bit"},
         {"creator","String","creator","varchar"},
         {"createdTime","Date","createdtime","timestamp"},
         {"updateTime","Date","updatetime","timestamp"},	

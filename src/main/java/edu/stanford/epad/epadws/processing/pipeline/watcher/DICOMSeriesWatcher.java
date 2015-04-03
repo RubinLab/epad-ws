@@ -118,9 +118,9 @@ public class DICOMSeriesWatcher implements Runnable
 						activeSeriesPipelineState.registerActivity();
 						if (!activeSeriesPipelineState.equals(DicomSeriesProcessingState.IN_PIPELINE)) // 
 						{
-							queueAndWatcherManager.addDICOMFileToPNGGeneratorPipeline(patientName, unprocessedDICOMFiles);
 							log.info("Run:" + count + " Submitted " + unprocessedDICOMFiles.size() + " image(s) for series " + seriesUID
 									+ " to PNG generator");
+							queueAndWatcherManager.addDICOMFileToPNGGeneratorPipeline(patientName, unprocessedDICOMFiles);
 						}
 						activeSeriesPipelineState.setSeriesProcessingState(DicomSeriesProcessingState.IN_PIPELINE);
 					} else { // All images have been submitted for PNG processing.
@@ -145,6 +145,7 @@ public class DICOMSeriesWatcher implements Runnable
 						String seriesUID = seriesPipelineState.getSeriesProcessingDescription().getSeriesUID();
 						dicomSeriesTracker.removeSeriesPipelineState(seriesPipelineState);
 						epadDatabaseOperations.updateOrInsertSeries(seriesUID, SeriesProcessingStatus.DONE);
+						log.info("Series " + seriesUID + " processing completed");
 						if (UserProjectService.pendingUploads.containsKey(seriesUID))
 						{
 							String username = UserProjectService.pendingUploads.get(seriesUID);
@@ -155,7 +156,8 @@ public class DICOMSeriesWatcher implements Runnable
 								epadDatabaseOperations.insertEpadEvent(
 										username, 
 										"Image Generation Complete", 
-										"", "", "", "", "", "", "");					
+										"", "", "", "", "", "", 
+										"New Series");					
 								UserProjectService.pendingUploads.remove(seriesUID);
 							}
 						}

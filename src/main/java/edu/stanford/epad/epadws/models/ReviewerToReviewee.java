@@ -28,25 +28,14 @@ import java.util.Date;
 
 import edu.stanford.epad.epadws.models.dao.AbstractDAO;
 
-public class Subject extends AbstractDAO {
+public class ReviewerToReviewee extends AbstractDAO {
 
 	long id;
-	String subjectUID;
-	String name;
-	Date dob;
-	String gender;
+	String reviewer; // Reviewer username
+	String reviewee; // Reviewee username
 	String creator;
 	Date createdTime;
 	Date updateTime;
-	transient String status;
-
-	public Subject(long id)
-	{
-		this.id = id;
-	}
-	
-	public Subject() {
-	}
 
 	@Override
 	public long getId() {
@@ -57,36 +46,20 @@ public class Subject extends AbstractDAO {
 		this.id = id;
 	}
 
-	public String getSubjectUID() {
-		return subjectUID;
+	public String getReviewer() {
+		return reviewer;
 	}
 
-	public void setSubjectUID(String subjectUID) {
-		this.subjectUID = subjectUID;
+	public void setReviewer(String reviewer) {
+		this.reviewer = reviewer;
 	}
 
-	public String getName() {
-		return name;
+	public String getReviewee() {
+		return reviewee;
 	}
 
-	public void setName(String name) {
-		this.name = name;
-	}
-
-	public Date getDob() {
-		return dob;
-	}
-
-	public void setDob(Date dob) {
-		this.dob = dob;
-	}
-
-	public String getGender() {
-		return gender;
-	}
-
-	public void setGender(String gender) {
-		this.gender = gender;
+	public void setReviewee(String reviewee) {
+		this.reviewee = reviewee;
 	}
 
 	public String getCreator() {
@@ -113,22 +86,12 @@ public class Subject extends AbstractDAO {
 		this.updateTime = updateTime;
 	}
 
-	public String getStatus() {
-		return status;
-	}
-
-	public void setStatus(String status) {
-		this.status = status;
-	}
-
-	public final static String DBTABLE = "subject";
+	public final static String DBTABLE = "reviewer";
 	public final static String[][] DBCOLUMNS = {
         {"id","long","id","Id"},
-        {"subjectUID","String","subjectUID","varchar"},
-        {"name","String","name","varchar"},
-        {"gender","String","gender","varchar"},
-        {"dob","Date","dob","date"},
-        {"creator","String","creator","varchar"},
+        {"reviewer","String","reviewer","varchar"},
+        {"reviewee","String","reviewee","varchar"},
+         {"creator","String","creator","varchar"},
         {"createdTime","Date","createdtime","timestamp"},
         {"updateTime","Date","updatetime","timestamp"},	
 	};

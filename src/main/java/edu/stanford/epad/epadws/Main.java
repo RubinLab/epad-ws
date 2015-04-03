@@ -7,11 +7,12 @@ import java.io.IOException;
 import java.net.BindException;
 import java.net.SocketException;
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.List;
-import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.io.IOUtils;
+import org.eclipse.jetty.server.DispatcherType;
 import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.handler.ContextHandler;
@@ -36,6 +37,7 @@ import edu.stanford.epad.common.plugins.PluginHandlerMap;
 import edu.stanford.epad.common.plugins.PluginServletHandler;
 import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADLogger;
+import edu.stanford.epad.epadws.aim.AIMUtil;
 import edu.stanford.epad.epadws.epaddb.EpadDatabase;
 import edu.stanford.epad.epadws.epaddb.EpadDatabaseOperations;
 import edu.stanford.epad.epadws.handlers.admin.ConvertAIM4Handler;
@@ -52,11 +54,12 @@ import edu.stanford.epad.epadws.handlers.event.EventHandler;
 import edu.stanford.epad.epadws.handlers.event.ProjectEventHandler;
 import edu.stanford.epad.epadws.handlers.plugin.EPadPluginHandler;
 import edu.stanford.epad.epadws.handlers.session.EPADSessionHandler;
+import edu.stanford.epad.epadws.models.User;
 import edu.stanford.epad.epadws.processing.pipeline.threads.ShutdownHookThread;
 import edu.stanford.epad.epadws.processing.pipeline.threads.ShutdownSignal;
 import edu.stanford.epad.epadws.processing.pipeline.watcher.QueueAndWatcherManager;
+import edu.stanford.epad.epadws.service.DefaultEpadProjectOperations;
 import edu.stanford.epad.epadws.service.RemotePACService;
-import edu.stanford.epad.epadws.service.UserProjectService;
 
 /**
  * Entry point for the ePAD Web Service.
@@ -71,6 +74,9 @@ public class Main
 {
 	private static final EPADLogger log = EPADLogger.getInstance();
 
+	public static final String epad_version = "1.4.1";
+	public static final String db_version = "1.41"; // This should always be a valid decimal (only one dot)
+	
 	public static void main(String[] args)
 	{
 		ShutdownSignal shutdownSignal = ShutdownSignal.getInstance();
@@ -154,14 +160,14 @@ public class Main
 
 		try {
 			QueueAndWatcherManager.getInstance().buildAndStart();
-			EpadDatabase.getInstance().startup("1.4");
+			EpadDatabase.getInstance().startup(db_version);
 			log.info("Startup of database was successful");
 			EpadDatabaseOperations databaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
 			//log.info("Checking annotations table");
 			databaseOperations.checkAndRefreshAnnotationsTable();
 			log.info("Done with database/queues init");
-			Set<String> projectIds = UserProjectService.getAllProjectIDs();
-			if (EPADConfig.UseEPADUsersProjects && projectIds.size() <= 1) {
+			List<User> users = DefaultEpadProjectOperations.getInstance().getAllUsers();
+			if (EPADConfig.UseEPADUsersProjects && users.size() <= 1) {
 				// Sync XNAT to Epad if needed
 				try {
 					XNATSyncHandler.syncXNATtoEpad("admin", "");
@@ -171,6 +177,7 @@ public class Main
 				}
 			}
 			RemotePACService.checkPropertiesFile();
+			AIMUtil.checkSchemaFiles();
 		} catch (Exception e) {
 			log.warning("Failed to start database", e);
 			System.exit(1);
@@ -274,7 +281,21 @@ public class Main
 		WebAppContext webAppContext = new WebAppContext(webAppPath, contextPath);
 		String home = System.getProperty("user.home");
 		webAppContext.setTempDirectory(new File(home + "/DicomProxy/jetty")); // TODO Read from config file
-
+		if (new File(EPADConfig.getEPADWebServerEtcDir()+"webdefault.xml").exists())
+		{
+			log.info("Adding webdefault.xml");
+			webAppContext.setDefaultsDescriptor(EPADConfig.getEPADWebServerEtcDir()+"webdefault.xml");
+		}
+		log.info("WebAuthFilter:'" + EPADConfig.getParamValue("WebAuthFilter", null) + "'");
+		if (EPADConfig.webAuthPassword != null && EPADConfig.getParamValue("WebAuthFilter", null) != null)
+		{
+			try {
+				Class filter = Class.forName(EPADConfig.getParamValue("WebAuthFilter"));
+				webAppContext.addFilter(filter, "/*", EnumSet.of(DispatcherType.REQUEST,DispatcherType.ASYNC,DispatcherType.FORWARD));
+			} catch (ClassNotFoundException e) {
+				log.warning("WebAuth Authentication Filter " + EPADConfig.getParamValue("WebAuthFilter") + " not found");
+			}
+		}
 		handlerList.add(webAppContext);
 		log.info("Added WAR " + warFileName + " at context path " + contextPath);
 	}

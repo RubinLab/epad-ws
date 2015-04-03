@@ -74,7 +74,7 @@ public class XNATSeriesWatcher implements Runnable
 							epadOperations.createSubjectAndStudy(xnatUploadProjectUser, xnatUploadProjectID, subjectID, patientName, studyUID, jsessionID);
 						} else {
 							projectOperations.createSubject(xnatUploadProjectUser, subjectID, patientName, null, null);
-							projectOperations.createStudy(xnatUploadProjectUser, studyUID, subjectID);
+							projectOperations.createStudy(xnatUploadProjectUser, studyUID, subjectID,"");
 							projectOperations.addStudyToProject(xnatUploadProjectUser, studyUID, subjectID, xnatUploadProjectID);
 						}
 					} else

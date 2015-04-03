@@ -58,9 +58,11 @@ public class SeriesPipelineState
 		long currTime = System.currentTimeMillis();
 
 		if (this.dicomSeriesProcessingState == DicomSeriesProcessingState.COMPLETE
+				|| this.dicomSeriesProcessingState == DicomSeriesProcessingState.ERROR
 				|| seriesProcessingDescription.isComplete()) {
 			String seriesUID = seriesProcessingDescription.getSeriesUID();
-			logger.info("Series " + seriesUID + " is complete with "
+			if (this.dicomSeriesProcessingState != DicomSeriesProcessingState.ERROR)
+				logger.info("Series " + seriesUID + " is complete with "
 					+ seriesProcessingDescription.getNumberOfInstances() + " instances");
 
 			return true;

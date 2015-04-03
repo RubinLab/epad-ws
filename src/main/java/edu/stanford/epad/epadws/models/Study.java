@@ -34,9 +34,11 @@ public class Study extends AbstractDAO {
 	long subjectId;
 	String studyUID;
 	Date studyDate;
+	String description;
 	String creator;
 	Date createdTime;
 	Date updateTime;
+	transient String status;
 
 	@Override
 	public long getId() {
@@ -71,6 +73,14 @@ public class Study extends AbstractDAO {
 		this.studyDate = studyDate;
 	}
 
+	public String getDescription() {
+		return description;
+	}
+
+	public void setDescription(String description) {
+		this.description = description;
+	}
+
 	public String getCreator() {
 		return creator;
 	}
@@ -95,12 +105,21 @@ public class Study extends AbstractDAO {
 		this.updateTime = updateTime;
 	}
 
+	public String getStatus() {
+		return status;
+	}
+
+	public void setStatus(String status) {
+		this.status = status;
+	}
+
 	public final static String DBTABLE = "study";
 	public final static String[][] DBCOLUMNS = {
         {"id","long","id","Id"},
         {"subjectId","long","subject_id","integer"},
         {"studyUID","String","studyUID","varchar"},
         {"studyDate","Date","studydate","date"},
+        {"description","String","description","varchar"},
         {"creator","String","creator","varchar"},
         {"createdTime","Date","createdtime","timestamp"},
         {"updateTime","Date","updatetime","timestamp"},	
