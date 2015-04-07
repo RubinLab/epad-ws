@@ -203,6 +203,16 @@ public interface EpadOperations
 	void deleteAllStudyAims(String studyUID, boolean deleteDSOs);
 
 	void deleteAllAims(String projectID, String subjectID, String studyUID, String seriesUID, boolean deleteDSOs);
+
+	void deleteFile(String username, SubjectReference subjectReference, String fileName) throws Exception;
+
+	void deleteFile(String username, ProjectReference projectReference, String fileName) throws Exception;
+
+	void deleteFile(String username, StudyReference studyReference, String fileName) throws Exception;
+
+	void deleteFile(String username, SeriesReference seriesReference, String fileName) throws Exception;
+
+	public void deleteFile(String username, String fileName) throws Exception;
 	
 	EPADAIMList getProjectAIMDescriptions(ProjectReference projectReference, String username, String sessionID);
 

@@ -78,6 +78,8 @@ public class RemotePACService extends RemotePACSBase {
 	public static Map<String, String> monitorTransfers = new HashMap<String, String>();
 	public static Map<String, Long> monitorStart = new HashMap<String, Long>();
 	
+	public static DicomTagList dicomTags = null;
+	
 	public static RemotePACService getInstance() throws Exception {
 		if (rpsinstance == null)
 		{
@@ -119,13 +121,15 @@ public class RemotePACService extends RemotePACSBase {
 	
 	public static DicomTagList getDicomTags()
 	{
-		File dicomTags = new File(EPADConfig.getEPADWebServerEtcDir() + "dicomtags.txt");
+		if (dicomTags != null)
+			return dicomTags;
+		File dicomTagFile = new File(EPADConfig.getEPADWebServerEtcDir() + "dicomtags.txt");
 		BufferedReader reader = null;
 		InputStream is = null;
-		if (!dicomTags.exists()) {
+		if (!dicomTagFile.exists()) {
 			StringBuilder sb = new StringBuilder();
 			try {
-				is = EPADFileUtils.class.getClassLoader().getResourceAsStream(dicomTags.getName());
+				is = EPADFileUtils.class.getClassLoader().getResourceAsStream(dicomTagFile.getName());
 				reader = new BufferedReader(new InputStreamReader(is, "UTF8"));
 				String line = null;
 				while ((line = reader.readLine()) != null) {
@@ -141,11 +145,11 @@ public class RemotePACService extends RemotePACSBase {
 				else if (is != null)
 					IOUtils.closeQuietly(is);
 			}
-			EPADFileUtils.write(dicomTags, sb.toString());			
+			EPADFileUtils.write(dicomTagFile, sb.toString());			
 		}
 		DicomTagList dclist = new DicomTagList();
 		try {
-			is = EPADFileUtils.class.getClassLoader().getResourceAsStream(dicomTags.getName());
+			is = EPADFileUtils.class.getClassLoader().getResourceAsStream(dicomTagFile.getName());
 			reader = new BufferedReader(new InputStreamReader(is, "UTF8"));
 			String line = null;
 			while ((line = reader.readLine()) != null) {
@@ -165,6 +169,7 @@ public class RemotePACService extends RemotePACSBase {
 			else if (is != null)
 				IOUtils.closeQuietly(is);
 		}
+		dicomTags = dclist;
 		return dclist;			
 	}
 	
@@ -682,6 +687,7 @@ public class RemotePACService extends RemotePACSBase {
 	public void clearQueryCache()
 	{
 		remoteQueryCache = new HashMap<String, QueryTreeRecord>();
+		dicomTags = null;
 	}
 	
 	DecimalFormat decformat = new DecimalFormat("00000");
@@ -807,6 +813,8 @@ public class RemotePACService extends RemotePACSBase {
 		else
 		{
 			studyUID = uniqueKey;
+			if (studyUID.indexOf(":") != -1)
+				studyUID = studyUID.substring(studyUID.indexOf(":")+1);
 			studyDate = Attribute.getSingleStringValueOrNull(node.getAllAttributesReturnedInIdentifier(),TagFromName.StudyDate);
 			patientID = Attribute.getSingleStringValueOrNull(node.getAllAttributesReturnedInIdentifier(),TagFromName.PatientID);
 			patientName = Attribute.getSingleStringValueOrEmptyString(node.getAllAttributesReturnedInIdentifier(),TagFromName.PatientName);

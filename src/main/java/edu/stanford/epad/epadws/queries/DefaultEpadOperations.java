@@ -1119,6 +1119,13 @@ public class DefaultEpadOperations implements EpadOperations
 						return;
 					}
 					else
+						log.warning("Error saving AIM file to Exist DB:" + uploadedFile.getName());									
+				} else if (AnnotationValidator.ValidateXML(uploadedFile.getAbsolutePath(), EPADConfig.xsdFilePath)) {
+					type = FileType.ANNOTATION;
+					if (!AIMUtil.saveAIMAnnotation(uploadedFile, projectID, sessionID, username)) {
+						return;
+					}
+					else
 						log.warning("Error saving AIM file to Exist DB:" + uploadedFile.getName());					
 				}				
 			}
@@ -1504,6 +1511,35 @@ public class DefaultEpadOperations implements EpadOperations
 			fileList.addFile(epadFile);
 		}
 		return fileList;
+	}
+
+	@Override
+	public void deleteFile(String username, ProjectReference projectReference,
+			String fileName) throws Exception {
+		projectOperations.deleteFile(username, projectReference.projectID, null, null, null, fileName);		
+	}
+
+	@Override
+	public void deleteFile(String username, SubjectReference subjectReference,
+			String fileName) throws Exception {
+		projectOperations.deleteFile(username, subjectReference.projectID, subjectReference.subjectID, null, null, fileName);		
+	}
+
+	@Override
+	public void deleteFile(String username, StudyReference studyReference,
+			String fileName) throws Exception {
+		projectOperations.deleteFile(username, studyReference.projectID, studyReference.subjectID, studyReference.studyUID, null, fileName);		
+	}
+
+	@Override
+	public void deleteFile(String username, SeriesReference seriesReference,
+			String fileName) throws Exception {
+		projectOperations.deleteFile(username, seriesReference.projectID, seriesReference.subjectID, seriesReference.studyUID, seriesReference.seriesUID, fileName);		
+	}
+
+	@Override
+	public void deleteFile(String username, String fileName) throws Exception {
+		projectOperations.deleteFile(username, null, null, null, null, fileName);		
 	}
 
 	@Override

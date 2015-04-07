@@ -73,10 +73,13 @@ import edu.stanford.epad.epadws.handlers.core.FrameReference;
 import edu.stanford.epad.epadws.handlers.core.ImageReference;
 import edu.stanford.epad.epadws.handlers.core.ProjectReference;
 import edu.stanford.epad.epadws.handlers.event.EventHandler;
+import edu.stanford.epad.epadws.models.Project;
 import edu.stanford.epad.epadws.processing.pipeline.task.PluginStartTask;
 import edu.stanford.epad.epadws.queries.Dcm4CheeQueries;
 import edu.stanford.epad.epadws.queries.DefaultEpadOperations;
 import edu.stanford.epad.epadws.queries.EpadOperations;
+import edu.stanford.epad.epadws.service.DefaultEpadProjectOperations;
+import edu.stanford.epad.epadws.service.EpadProjectOperations;
 import edu.stanford.epad.epadws.service.SessionService;
 import edu.stanford.epad.epadws.service.UserProjectService;
 import edu.stanford.hakan.aim3api.base.AimException;
@@ -88,9 +91,7 @@ import edu.stanford.hakan.aim3api.base.SegmentationCollection;
 import edu.stanford.hakan.aim3api.base.User;
 import edu.stanford.hakan.aim3api.usage.AnnotationBuilder;
 import edu.stanford.hakan.aim3api.usage.AnnotationGetter;
-import edu.stanford.hakan.aim4api.base.CD;
 import edu.stanford.hakan.aim4api.base.ImageAnnotationCollection;
-import edu.stanford.hakan.aim4api.base.ImagingObservationCharacteristic;
 
 /**
  * 
@@ -372,7 +373,7 @@ public class AIMUtil
 		if (dsoDate.trim().length() != 8) dsoDate = "20001017";
 		String sopClassUID = Attribute.getSingleStringValueOrEmptyString(dsoDICOMAttributes, TagFromName.SOPClassUID);
 		String studyUID = Attribute.getSingleStringValueOrEmptyString(dsoDICOMAttributes, TagFromName.StudyInstanceUID);
-		log.info("DSO:" + dsoFile.getAbsolutePath() + " PatientID:" + patientID + " studyUID:" + studyUID);
+		log.info("DSO:" + dsoFile.getAbsolutePath() + " PatientID:" + patientID + " studyUID:" + studyUID + " projectID:" + projectID);
 		String seriesUID = Attribute.getSingleStringValueOrEmptyString(dsoDICOMAttributes, TagFromName.SeriesInstanceUID);
 		String imageUID = Attribute.getSingleStringValueOrEmptyString(dsoDICOMAttributes, TagFromName.SOPInstanceUID);
 		String description = Attribute.getSingleStringValueOrEmptyString(dsoDICOMAttributes, TagFromName.SeriesDescription);
@@ -449,20 +450,21 @@ public class AIMUtil
 			person.setName(patientName);
 			person.setCagridId(0);
 			imageAnnotation.addPerson(person);
-
 			// TODO Not general. See if we can generate AIM on GUI upload of DSO with correct user.
 			setImageAnnotationUser(imageAnnotation, username);
 
 			log.info("Saving AIM file for DSO " + imageUID + " in series " + seriesUID + " with ID "
 					+ imageAnnotation.getUniqueIdentifier());
 			try {
+				boolean missingproject = false;
+				if (projectID == null || projectID.trim().length() == 0)
+				{
+					missingproject = true;
+					projectID = EPADConfig.xnatUploadProjectID;
+				}
 				String result = saveImageAnnotationToServer(imageAnnotation, projectID);
 				if (result.toLowerCase().contains("success"))
 				{
-		    		if (projectID == null || projectID.trim().length() == 0)
-		    		{
-						projectID = UserProjectService.getFirstProjectForStudy(referencedStudyUID);
-					}
 					ImageReference imageReference = new ImageReference(projectID, patientID, referencedStudyUID, referencedSeriesUID, referencedImageUID[0]);
 					EpadDatabaseOperations dbOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
 					EPADAIM aim = dbOperations.getAIM(imageAnnotation.getUniqueIdentifier());
@@ -475,6 +477,15 @@ public class AIMUtil
 					{
 						dbOperations.addDSOAIM(username, imageReference, seriesUID, imageAnnotation.getUniqueIdentifier(),
 								edu.stanford.hakan.aim4api.usage.AnnotationBuilder.convertToString(imageAnnotation.toAimV4()));
+					}
+					if (missingproject)
+					{
+						EpadProjectOperations projectOperations = DefaultEpadProjectOperations.getInstance();
+						Project proj = projectOperations.getFirstProjectForStudy(studyUID);
+						if (proj != null && !proj.getProjectId().equals(EPADConfig.xnatUploadProjectID))
+						{
+							generateAIMFileForDSO(dsoFile, "shared", proj.getProjectId());
+						}
 					}
 				}
 				return imageAnnotation;
@@ -665,9 +676,15 @@ public class AIMUtil
 		} else {
 			try {
 				log.info("Converting AIM file to Object " + aimFile.getAbsolutePath());
+				EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
 	            ImageAnnotationCollection imageAnnotationColl = AIMUtil.getImageAnnotationFromFileV4(aimFile, xsdFilePathV4);
+	            if (imageAnnotationColl == null) {
+	        		List<Map<String, String>> coordinationTerms = epadDatabaseOperations.getCoordinationData("%");
+                    ImageAnnotationCollection iac = edu.stanford.hakan.aim4api.usage.AnnotationGetter.getImageAnnotationCollectionFromFile(aimFile.getAbsolutePath());
+                    edu.stanford.hakan.aim4api.compability.aimv3.ImageAnnotation iaV3 = new  edu.stanford.hakan.aim4api.compability.aimv3.ImageAnnotation(iac);
+                    imageAnnotationColl = iaV3.toAimV4(coordinationTerms);
+	            }
 	            if (imageAnnotationColl != null) {
-					EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
 					EPADAIM ea = epadDatabaseOperations.getAIM(imageAnnotationColl.getUniqueIdentifier().getRoot());
 					if (ea != null && !ea.projectID.equals(projectID))
 						projectID = ea.projectID; 		// TODO: Do we change AIM project if it is in unassigned? 
@@ -1449,7 +1466,22 @@ public class AIMUtil
 	}
 	
 	public static int convertAllAim3() throws Exception {
-		List<EPADAIM> epadaims = EpadDatabase.getInstance().getEPADDatabaseOperations().getAIMs(new ProjectReference(null));
+		EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
+		List<EPADAIM> epadaims = epadDatabaseOperations.getAIMs(new ProjectReference(null));
+		return convertAim3(epadaims);
+	}
+	
+	public static void convertAim3(String aimID) throws Exception {
+		EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
+		EPADAIM epadaim = epadDatabaseOperations.getAIM(aimID);
+		List<EPADAIM> epadaims = new ArrayList<EPADAIM>();
+		epadaims.add(epadaim);
+		convertAim3(epadaims);
+	}
+	
+	public static int convertAim3(List<EPADAIM> epadaims) throws Exception {
+		EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
+		List<Map<String, String>> coordinationTerms = epadDatabaseOperations.getCoordinationData("%");
 		int count = 0;
 		for (EPADAIM epadaim: epadaims)
 		{
@@ -1458,8 +1490,15 @@ public class AIMUtil
 				List<ImageAnnotation> aims = AIMQueries.getAIMImageAnnotations(epadaim.projectID, AIMSearchType.ANNOTATION_UID, epadaim.aimID, "admin", 1, 50000, true);
 				if (aims.size() > 0)
 				{
-					log.info("Saving AIM4:" + epadaim.aimID + " in project " + epadaim.projectID);
-					AIMUtil.saveImageAnnotationToServer(aims.get(0).toAimV4(), epadaim.projectID, 0, null, false);
+					ImageAnnotation aim = aims.get(0);
+					String tempXmlPath = baseAnnotationDir + "temp-" + aim.getUniqueIdentifier() + ".xml";
+					File tempFile = new File(tempXmlPath);
+					AnnotationBuilder.saveToFile(aim, tempXmlPath, xsdFilePath);
+                    ImageAnnotationCollection iac = edu.stanford.hakan.aim4api.usage.AnnotationGetter.getImageAnnotationCollectionFromFile(tempXmlPath);
+                    edu.stanford.hakan.aim4api.compability.aimv3.ImageAnnotation iaV3 = new  edu.stanford.hakan.aim4api.compability.aimv3.ImageAnnotation(iac);
+                    log.info("Saving AIM4:" + epadaim.aimID + " in project " + epadaim.projectID);
+					AIMUtil.saveImageAnnotationToServer(iaV3.toAimV4(coordinationTerms), epadaim.projectID, 0, null, false);
+					tempFile.delete();
 					count++;
 				}
 				else
@@ -1471,64 +1510,6 @@ public class AIMUtil
 			}
 		}
 		return count;
-	}
-	
-	public static void convertAim3(String aimID) throws Exception {
-		EPADAIM epadaim = EpadDatabase.getInstance().getEPADDatabaseOperations().getAIM(aimID);
-		log.info("Converting AIM3:" + epadaim.aimID + " in project " + epadaim.projectID);
-		try {
-			List<ImageAnnotation> aims = AIMQueries.getAIMImageAnnotations(epadaim.projectID, AIMSearchType.ANNOTATION_UID, epadaim.aimID, "admin", 1, 50000, true);
-			if (aims.size() > 0)
-			{
-				log.info("Saving AIM4:" + epadaim.aimID + " in project " + epadaim.projectID);
-				AIMUtil.saveImageAnnotationToServer(aims.get(0).toAimV4(), epadaim.projectID, 0, null, false);
-			}
-			else
-			{
-				log.warning("Error converting aim3:" + epadaim.aimID + ", not found");
-				throw new Exception("Error converting aim3:" + epadaim.aimID + ", not found");
-			}
-			
-		}
-		catch (Exception x) {
-			log.warning("Error converting aim3:" + epadaim.aimID, x);
-			throw x;
-		}
-	}
-	
-	public ImageAnnotationCollection fixAIM4Coordination(ImageAnnotationCollection iac)
-	{
-		EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
-		try
-		{
-			List<ImagingObservationCharacteristic> iocs = iac.getImageAnnotations().get(0)
-															.getImagingPhysicalEntityCollection()
-															.getImagingPhysicalEntityList().get(0)
-															.getImagingObservationCharacteristicCollection().getImagingObservationCharacteristicList();
-			for (int i = 0; i < iocs.size(); i++)
-			{
-				ImagingObservationCharacteristic ioc = iocs.get(i);
-				
-				if (ioc.getListTypeCode().get(0).getCode().contains("EPAD-prod"))
-				{
-					List<Map<String, String>> coordinations = epadDatabaseOperations.getCoordinationData(ioc.getListTypeCode().get(0).getCode());
-					iocs.remove(i);
-					for (Map<String, String> coordination: coordinations)
-					{
-						//<typeCode code="RID3829" codeSystem="scar" codeSystemName="RadLex3.10_NS"/>
-						CD typeCode = new CD();
-						typeCode.setCode(coordination.get("term_id"));
-						typeCode.setCodeSystem(coordination.get("description"));
-						typeCode.setCodeSystemName(coordination.get("schema_name"));
-						ioc.getListTypeCode().add(i++, typeCode);
-					}
-				}
-			}
-		} catch (Exception x) {
-			log.warning("Error fixing aim id = " + iac.getUniqueIdentifier().getRoot(), x);
-			return null;
-		}
-		return iac;
 	}
 	
 	public static void updateTableXMLs(List<EPADAIM> aims)
@@ -1580,8 +1561,8 @@ public class AIMUtil
 			if (aim.xml == null || aim.xml.length() == 0)
 				epadDatabaseOperations.deleteAIM("admin", aimID);
 		}
-	}
-	
+	}	
+
 	public static void updateMongDB(List<EPADAIM> aims)
 	{
 		long starttime = System.currentTimeMillis();

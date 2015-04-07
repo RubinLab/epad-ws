@@ -664,7 +664,6 @@ public class EPADHandler extends AbstractHandler
 				responseStream.append(wl.toJSON());
 				statusCode = HttpServletResponse.SC_OK;
 
-
 			} else if (HandlerUtil.matchesTemplate(StudiesRouteTemplates.STUDY_AIM_LIST, pathInfo)) {
 				StudyReference studyReference = StudyReference.extract(StudiesRouteTemplates.STUDY_AIM_LIST, pathInfo);
 				EPADAIMList aims = epadOperations.getStudyAIMDescriptions(studyReference, username, sessionID);
@@ -908,6 +907,20 @@ public class EPADHandler extends AbstractHandler
 				responseStream.append(new Gson().toJson(sessions));
 				statusCode = HttpServletResponse.SC_OK;
 
+			} else if (HandlerUtil.matchesTemplate(UsersRouteTemplates.USER_REVIEWERS, pathInfo)) {
+				Map<String, String> templateMap = HandlerUtil.getTemplateMap(UsersRouteTemplates.USER_REVIEWERS, pathInfo);
+				String reader = HandlerUtil.getTemplateParameter(templateMap, "username");
+				EPADUserList users = epadOperations.getReviewers(username, reader, sessionID);
+				responseStream.append(users.toJSON());
+				statusCode = HttpServletResponse.SC_OK;
+
+			} else if (HandlerUtil.matchesTemplate(UsersRouteTemplates.USER_REVIEWEES, pathInfo)) {
+				Map<String, String> templateMap = HandlerUtil.getTemplateMap(UsersRouteTemplates.USER_REVIEWERS, pathInfo);
+				String reader = HandlerUtil.getTemplateParameter(templateMap, "username");
+				EPADUserList users = epadOperations.getReviewees(username, reader, sessionID);
+				responseStream.append(users.toJSON());
+				statusCode = HttpServletResponse.SC_OK;
+
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.PROJECT_FILE_LIST, pathInfo)) {
 				ProjectReference projectReference = ProjectReference.extract(ProjectsRouteTemplates.PROJECT_FILE_LIST, pathInfo);
 				EPADFileList files = epadOperations.getFileDescriptions(projectReference, username, sessionID, searchFilter);
@@ -1007,6 +1020,8 @@ public class EPADHandler extends AbstractHandler
 			} else if (HandlerUtil.matchesTemplate(PACSRouteTemplates.PAC, pathInfo)) {
 				Map<String, String> templateMap = HandlerUtil.getTemplateMap(PACSRouteTemplates.PAC, pathInfo);
 				String pacid = HandlerUtil.getTemplateParameter(templateMap, "pacid");
+				if (pacid.equalsIgnoreCase("null"))
+					throw new Exception("PAC ID in rest call is null:" + pathInfo);
 				RemotePAC pac = RemotePACService.getInstance().getRemotePAC(pacid);
 				if (pac != null)
 				{
@@ -1019,6 +1034,8 @@ public class EPADHandler extends AbstractHandler
 			} else if (HandlerUtil.matchesTemplate(PACSRouteTemplates.PAC_ENTITY_LIST, pathInfo)) {
 				Map<String, String> templateMap = HandlerUtil.getTemplateMap(PACSRouteTemplates.PAC_ENTITY_LIST, pathInfo);
 				String pacid = HandlerUtil.getTemplateParameter(templateMap, "pacid");
+				if (pacid.equalsIgnoreCase("null"))
+					throw new Exception("PAC ID in rest call is null:" + pathInfo);
 				String patientNameFilter = httpRequest.getParameter("patientNameFilter");
 				if (patientNameFilter == null) patientNameFilter = "";
 				String patientIDFilter = httpRequest.getParameter("patientIDFilter");
@@ -1052,6 +1069,8 @@ public class EPADHandler extends AbstractHandler
 			} else if (HandlerUtil.matchesTemplate(PACSRouteTemplates.PAC_SUBJECT_LIST, pathInfo)) {
 				Map<String, String> templateMap = HandlerUtil.getTemplateMap(PACSRouteTemplates.PAC_SUBJECT_LIST, pathInfo);
 				String pacid = HandlerUtil.getTemplateParameter(templateMap, "pacid");
+				if (pacid.equalsIgnoreCase("null"))
+					throw new Exception("PAC ID in rest call is null:" + pathInfo);
 				String patientNameFilter = httpRequest.getParameter("patientNameFilter");
 				if (patientNameFilter == null) patientNameFilter = "";
 				String patientIDFilter = httpRequest.getParameter("patientIDFilter");
@@ -1072,6 +1091,8 @@ public class EPADHandler extends AbstractHandler
 			} else if (HandlerUtil.matchesTemplate(PACSRouteTemplates.PAC_STUDY_LIST, pathInfo)) {
 				Map<String, String> templateMap = HandlerUtil.getTemplateMap(PACSRouteTemplates.PAC_STUDY_LIST, pathInfo);
 				String pacid = HandlerUtil.getTemplateParameter(templateMap, "pacid");
+				if (pacid.equalsIgnoreCase("null"))
+					throw new Exception("PAC ID in rest call is null:" + pathInfo);
 				String subjectid = HandlerUtil.getTemplateParameter(templateMap, "subjectid");
 				String studyDateFilter = httpRequest.getParameter("studyDateFilter");
 				if (studyDateFilter == null) studyDateFilter = "";
@@ -1091,6 +1112,8 @@ public class EPADHandler extends AbstractHandler
 			} else if (HandlerUtil.matchesTemplate(PACSRouteTemplates.PAC_SERIES_LIST, pathInfo)) {
 				Map<String, String> templateMap = HandlerUtil.getTemplateMap(PACSRouteTemplates.PAC_SERIES_LIST, pathInfo);
 				String pacid = HandlerUtil.getTemplateParameter(templateMap, "pacid");
+				if (pacid.equalsIgnoreCase("null"))
+					throw new Exception("PAC ID in rest call is null:" + pathInfo);
 				String subjectid = HandlerUtil.getTemplateParameter(templateMap, "subjectid");
 				String studyid = HandlerUtil.getTemplateParameter(templateMap, "studyid");
 				RemotePAC pac = RemotePACService.getInstance().getRemotePAC(pacid);
@@ -1109,6 +1132,8 @@ public class EPADHandler extends AbstractHandler
 			} else if (HandlerUtil.matchesTemplate(PACSRouteTemplates.PAC_ENTITY, pathInfo)) {
 				Map<String, String> templateMap = HandlerUtil.getTemplateMap(PACSRouteTemplates.PAC_ENTITY, pathInfo);
 				String pacID = HandlerUtil.getTemplateParameter(templateMap, "pacid");
+				if (pacID.equalsIgnoreCase("null"))
+					throw new Exception("PAC ID in rest call is null:" + pathInfo);
 				String entityID = HandlerUtil.getTemplateParameter(templateMap, "entityid");
 				String projectID = httpRequest.getParameter("projectID");
 				RemotePAC pac = RemotePACService.getInstance().getRemotePAC(pacID);
@@ -1123,6 +1148,8 @@ public class EPADHandler extends AbstractHandler
 			} else if (HandlerUtil.matchesTemplate(PACSRouteTemplates.PAC_QUERY_LIST, pathInfo)) {
 				Map<String, String> templateMap = HandlerUtil.getTemplateMap(PACSRouteTemplates.PAC_QUERY_LIST, pathInfo);
 				String pacid = HandlerUtil.getTemplateParameter(templateMap, "pacid");
+				if (pacid.equalsIgnoreCase("null"))
+					throw new Exception("PAC ID in rest call is null:" + pathInfo);
 				RemotePACService rps = RemotePACService.getInstance();
 				List<RemotePACQuery> remoteQueries = rps.getRemotePACQueries(pacid);
 				RemotePACQueryConfigList queryList = new RemotePACQueryConfigList();
@@ -1136,6 +1163,8 @@ public class EPADHandler extends AbstractHandler
 			} else if (HandlerUtil.matchesTemplate(PACSRouteTemplates.PAC_QUERY, pathInfo)) {
 				Map<String, String> templateMap = HandlerUtil.getTemplateMap(PACSRouteTemplates.PAC_QUERY, pathInfo);
 				String pacid = HandlerUtil.getTemplateParameter(templateMap, "pacid");
+				if (pacid.equalsIgnoreCase("null"))
+					throw new Exception("PAC ID in rest call is null:" + pathInfo);
 				String subject = HandlerUtil.getTemplateParameter(templateMap, "subjectid");
 				RemotePACQuery remoteQuery = RemotePACService.getInstance().getRemotePACQuery(pacid, subject);
 				if (remoteQuery != null)
@@ -1414,6 +1443,20 @@ public class EPADHandler extends AbstractHandler
 					worklistOperations.setWorkListSubjectStatus(reader, wl.getWorkListID(), studyUID, wlstatus, started, completed);
 				statusCode = HttpServletResponse.SC_OK;
 
+			} else if (HandlerUtil.matchesTemplate(UsersRouteTemplates.USER_REVIEWEE, pathInfo)) {
+				Map<String, String> templateMap = HandlerUtil.getTemplateMap(UsersRouteTemplates.USER_REVIEWEE, pathInfo);
+				String reviewer = HandlerUtil.getTemplateParameter(templateMap, "username");
+				String reviewee = HandlerUtil.getTemplateParameter(templateMap, "reviewee");
+				epadOperations.addReviewee(username, reviewer, reviewee);
+				statusCode = HttpServletResponse.SC_OK;
+			
+			} else if (HandlerUtil.matchesTemplate(UsersRouteTemplates.USER_REVIEWER, pathInfo)) {
+				Map<String, String> templateMap = HandlerUtil.getTemplateMap(UsersRouteTemplates.USER_REVIEWEE, pathInfo);
+				String reviewee = HandlerUtil.getTemplateParameter(templateMap, "username");
+				String reviewer = HandlerUtil.getTemplateParameter(templateMap, "reviewer");
+				epadOperations.addReviewer(username, reviewee, reviewer);
+				statusCode = HttpServletResponse.SC_OK;
+			
 			} else if (HandlerUtil.matchesTemplate(PACSRouteTemplates.PAC, pathInfo)) {
 				Map<String, String> templateMap = HandlerUtil.getTemplateMap(PACSRouteTemplates.PAC, pathInfo);
 				String pacid = HandlerUtil.getTemplateParameter(templateMap, "pacid");
@@ -1454,6 +1497,8 @@ public class EPADHandler extends AbstractHandler
 			} else if (HandlerUtil.matchesTemplate(PACSRouteTemplates.PAC_QUERY, pathInfo)) {
 				Map<String, String> templateMap = HandlerUtil.getTemplateMap(PACSRouteTemplates.PAC_QUERY, pathInfo);
 				String pacID = HandlerUtil.getTemplateParameter(templateMap, "pacid");
+				if (pacID.equalsIgnoreCase("null"))
+					throw new Exception("PAC ID in rest call is null:" + pathInfo);
 				if (pacID == null)
 					throw new Exception("Missing Pac ID parameter");
 				String subjectUID = HandlerUtil.getTemplateParameter(templateMap, "subjectid");
@@ -1943,6 +1988,20 @@ public class EPADHandler extends AbstractHandler
 				worklistOperations.deleteWorkList(username, worklistID);;		
 				statusCode = HttpServletResponse.SC_OK;
 				
+			} else if (HandlerUtil.matchesTemplate(UsersRouteTemplates.USER_REVIEWEE, pathInfo)) {
+				Map<String, String> templateMap = HandlerUtil.getTemplateMap(UsersRouteTemplates.USER_REVIEWEE, pathInfo);
+				String reviewer = HandlerUtil.getTemplateParameter(templateMap, "username");
+				String reviewee = HandlerUtil.getTemplateParameter(templateMap, "reviewee");
+				epadOperations.removeReviewee(username, reviewer, reviewee);
+				statusCode = HttpServletResponse.SC_OK;
+			
+			} else if (HandlerUtil.matchesTemplate(UsersRouteTemplates.USER_REVIEWER, pathInfo)) {
+				Map<String, String> templateMap = HandlerUtil.getTemplateMap(UsersRouteTemplates.USER_REVIEWEE, pathInfo);
+				String reviewee = HandlerUtil.getTemplateParameter(templateMap, "username");
+				String reviewer = HandlerUtil.getTemplateParameter(templateMap, "reviewer");
+				epadOperations.removeReviewee(username, reviewee, reviewer);
+				statusCode = HttpServletResponse.SC_OK;
+
 			} else if (HandlerUtil.matchesTemplate(PACSRouteTemplates.PAC, pathInfo)) {
 				Map<String, String> templateMap = HandlerUtil.getTemplateMap(PACSRouteTemplates.PAC, pathInfo);
 				String pacid = HandlerUtil.getTemplateParameter(templateMap, "pacid");
@@ -1953,12 +2012,55 @@ public class EPADHandler extends AbstractHandler
 			} else if (HandlerUtil.matchesTemplate(PACSRouteTemplates.PAC_QUERY, pathInfo)) {
 				Map<String, String> templateMap = HandlerUtil.getTemplateMap(PACSRouteTemplates.PAC_QUERY, pathInfo);
 				String pacID = HandlerUtil.getTemplateParameter(templateMap, "pacid");
+				if (pacID.equalsIgnoreCase("null"))
+					throw new Exception("PAC ID in rest call is null:" + pathInfo);
 				String subjectUID = HandlerUtil.getTemplateParameter(templateMap, "subjectid");
 				if (subjectUID == null)
 					throw new Exception("Missing Patient ID parameter");
 				RemotePACService.getInstance().removeRemotePACQuery(username, pacID, subjectUID);
 				statusCode = HttpServletResponse.SC_OK;
 				
+			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.PROJECT_FILE, pathInfo)) {
+				ProjectReference projectReference = ProjectReference.extract(ProjectsRouteTemplates.PROJECT_FILE, pathInfo);
+				Map<String, String> templateMap = HandlerUtil.getTemplateMap(ProjectsRouteTemplates.PROJECT_FILE, pathInfo);
+				String filename = HandlerUtil.getTemplateParameter(templateMap, "filename");
+				if (filename == null || filename.trim().length() == 0)
+					throw new Exception("Invalid filename");
+				epadOperations.deleteFile(username, projectReference, filename);
+				statusCode = HttpServletResponse.SC_OK;
+						
+			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.SUBJECT_FILE, pathInfo)) {
+				SubjectReference subjectReference = SubjectReference.extract(ProjectsRouteTemplates.SUBJECT_FILE, pathInfo);
+				if (subjectReference.subjectID.equals("null"))
+					throw new Exception("Patient ID in rest call is null:" + pathInfo);
+				Map<String, String> templateMap = HandlerUtil.getTemplateMap(ProjectsRouteTemplates.PROJECT_FILE, pathInfo);
+				String filename = HandlerUtil.getTemplateParameter(templateMap, "filename");
+				if (filename == null || filename.trim().length() == 0)
+					throw new Exception("Invalid filename");
+				epadOperations.deleteFile(username, subjectReference, filename);
+				statusCode = HttpServletResponse.SC_OK;
+
+			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.STUDY_FILE, pathInfo)) {
+				StudyReference studyReference = StudyReference.extract(ProjectsRouteTemplates.STUDY_FILE, pathInfo);
+				if (studyReference.subjectID.equals("null"))
+					throw new Exception("Patient ID in rest call is null:" + pathInfo);
+				Map<String, String> templateMap = HandlerUtil.getTemplateMap(ProjectsRouteTemplates.PROJECT_FILE, pathInfo);
+				String filename = HandlerUtil.getTemplateParameter(templateMap, "filename");
+				if (filename == null || filename.trim().length() == 0)
+					throw new Exception("Invalid filename");
+				epadOperations.deleteFile(username, studyReference, filename);
+				statusCode = HttpServletResponse.SC_OK;
+	
+			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.SERIES_FILE, pathInfo)) {
+				SeriesReference seriesReference = SeriesReference.extract(ProjectsRouteTemplates.SERIES_FILE, pathInfo);
+				if (seriesReference.subjectID.equals("null"))
+					throw new Exception("Patient ID in rest call is null:" + pathInfo);
+				Map<String, String> templateMap = HandlerUtil.getTemplateMap(ProjectsRouteTemplates.PROJECT_FILE, pathInfo);
+				String filename = HandlerUtil.getTemplateParameter(templateMap, "filename");
+				if (filename == null || filename.trim().length() == 0)
+					throw new Exception("Invalid filename");
+				epadOperations.deleteFile(username, seriesReference, filename);
+				statusCode = HttpServletResponse.SC_OK;
 			} else {
 				statusCode = HandlerUtil.badRequestJSONResponse(BAD_DELETE_MESSAGE + ":" + pathInfo, responseStream, log);
 			}

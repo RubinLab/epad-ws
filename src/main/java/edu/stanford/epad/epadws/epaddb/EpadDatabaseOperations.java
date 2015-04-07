@@ -135,6 +135,8 @@ public interface EpadDatabaseOperations
 
 	int getNumberOfAIMsForSeries(String projectID, String seriesID, String username);
 
+	int getNumberOfAIMs(String criteria);
+
 	EPADAIM addAIM(String userName, ProjectReference reference, String aimID);
 
 	EPADAIM addAIM(String userName, SubjectReference reference, String aimID);
