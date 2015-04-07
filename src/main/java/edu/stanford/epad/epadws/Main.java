@@ -247,6 +247,7 @@ public class Main
 		WebAppContext webAppContext = new WebAppContext(webAppPath, contextPath);
 		String home = System.getProperty("user.home");
 		webAppContext.setTempDirectory(new File(home + "/DicomProxy/jetty")); // TODO Read from config file
+		webAppContext.setInitParameter("org.eclipse.jetty.servlet.Default.dirAllowed", "false");
 		if (new File(EPADConfig.getEPADWebServerEtcDir()+"webdefault.xml").exists())
 		{
 			log.info("Adding webdefault.xml");
