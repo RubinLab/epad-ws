@@ -246,7 +246,7 @@ public class Main
 		WebAppContext webAppContext = new WebAppContext(webAppPath, contextPath);
 		String home = System.getProperty("user.home");
 		webAppContext.setTempDirectory(new File(home + "/DicomProxy/jetty")); // TODO Read from config file
-
+		webAppContext.setInitParameter("org.eclipse.jetty.servlet.Default.dirAllowed", "false");
 		log.info("WebAuthFilter:'" + EPADConfig.getParamValue("WebAuthFilter", null) + "'");
 		if (EPADConfig.webAuthPassword != null && EPADConfig.getParamValue("WebAuthFilter", null) != null)
 		{
