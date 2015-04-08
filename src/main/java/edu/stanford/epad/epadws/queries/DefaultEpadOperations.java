@@ -1696,8 +1696,8 @@ public class DefaultEpadOperations implements EpadOperations
 			ProjectReference projectReference, String aimID, File aimFile,
 			String sessionID) {
 		try {
-			//EPADAIM aim = epadDatabaseOperations.addAIM(username, projectReference, aimID);
-			if (!"admin".equals(username) && !projectOperations.hasAccessToProject(username, projectReference.projectID))
+			EPADAIM aim = epadDatabaseOperations.getAIM(aimID);
+			if (!"admin".equals(username) && !projectOperations.hasAccessToProject(username, projectReference.projectID) && (aim == null || !aim.userName.equals(username)))
 			{
 				log.warning("No permissions to update AIM:" + aimID + " for user " + username);
 				throw new Exception("No permissions to update AIM:" + aimID + " for user " + username);

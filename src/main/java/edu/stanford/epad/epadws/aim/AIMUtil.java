@@ -1291,17 +1291,20 @@ public class AIMUtil
 		return newNode;
 	}
 
-	public static ImageAnnotation getImageAnnotationFromFile(File file, String xsdFilePath) throws AimException,
-			edu.stanford.hakan.aim4api.base.AimException
-	{
-		ImageAnnotation ia = AnnotationGetter.getImageAnnotationFromFile(file.getAbsolutePath(), xsdFilePath);
-		log.info("Annotation:" + file.getAbsolutePath() + " PatientId:" + ia.getListPerson().get(0).getId());
-		return ia;
+	public static ImageAnnotation getImageAnnotationFromFile(File file, String xsdFilePath)	{
+		try {
+			return AnnotationGetter.getImageAnnotationFromFile(file.getAbsolutePath(), xsdFilePath);
+		} catch (AimException e) {
+			return null;
+		}
 	}
 
-    public static ImageAnnotationCollection getImageAnnotationFromFileV4(File file, String xsdFilePath) throws AimException,
-            edu.stanford.hakan.aim4api.base.AimException {
-        return edu.stanford.hakan.aim4api.usage.AnnotationGetter.getImageAnnotationCollectionFromFile(file.getAbsolutePath(), xsdFilePath);
+    public static ImageAnnotationCollection getImageAnnotationFromFileV4(File file, String xsdFilePath) {
+        try {
+			return edu.stanford.hakan.aim4api.usage.AnnotationGetter.getImageAnnotationCollectionFromFile(file.getAbsolutePath(), xsdFilePath);
+		} catch (Exception e) {
+			return null;
+		}
     }
     
 	public static String runPlugIn(String[] aimIDs, String templateName, String projectID, String jsessionID) throws Exception
@@ -1482,6 +1485,7 @@ public class AIMUtil
 	public static int convertAim3(List<EPADAIM> epadaims) throws Exception {
 		EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
 		List<Map<String, String>> coordinationTerms = epadDatabaseOperations.getCoordinationData("%");
+		//log.info("coordinations:" + coordinationTerms);
 		int count = 0;
 		for (EPADAIM epadaim: epadaims)
 		{
@@ -1497,7 +1501,12 @@ public class AIMUtil
                     ImageAnnotationCollection iac = edu.stanford.hakan.aim4api.usage.AnnotationGetter.getImageAnnotationCollectionFromFile(tempXmlPath);
                     edu.stanford.hakan.aim4api.compability.aimv3.ImageAnnotation iaV3 = new  edu.stanford.hakan.aim4api.compability.aimv3.ImageAnnotation(iac);
                     log.info("Saving AIM4:" + epadaim.aimID + " in project " + epadaim.projectID);
-					AIMUtil.saveImageAnnotationToServer(iaV3.toAimV4(coordinationTerms), epadaim.projectID, 0, null, false);
+                    iac = iaV3.toAimV4(coordinationTerms);
+					String result = AIMUtil.saveImageAnnotationToServer(iac, epadaim.projectID, 0, null, false);
+					if (result.toLowerCase().contains("success") && epadaim.projectID != null)
+					{
+						epadDatabaseOperations.updateAIMXml(epadaim.aimID, edu.stanford.hakan.aim4api.usage.AnnotationBuilder.convertToString(iac));
+					}
 					tempFile.delete();
 					count++;
 				}

@@ -183,7 +183,7 @@ public class DICOMSeriesWatcher implements Runnable
 							new Thread(rpqt).start();
 						}
 					} catch (Exception x) {
-						log.warning("Exception running ImageCheck", x);
+						log.warning("Exception running Remote Queries", x);
 					}
 				}
 				prevTime = now;

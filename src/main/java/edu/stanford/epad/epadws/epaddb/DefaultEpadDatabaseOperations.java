@@ -1455,6 +1455,7 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 			ps.setString(1, coordinationID);
 			rs = ps.executeQuery();
 			while (rs.next()) {
+				coordinationID = rs.getString(1);
 				String termID = rs.getString(2);
 				String termSchema = rs.getString(3);
 				String description = rs.getString(4);
