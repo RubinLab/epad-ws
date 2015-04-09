@@ -82,7 +82,7 @@ public class EPADSessionHandler extends AbstractHandler
 			String ip = httpRequest.getParameter("hostip");
 			if (ip == null)  ip = httpRequest.getRemoteAddr();
 			if (username.length() != 0) {
-				log.info("Login request from user:" + username  + " hostname: " + host +" ip:" + ip);
+				log.info("Login Request, User:" + username  + " hostname:" + host +" ip:" + ip);
 				try {
 					PrintWriter responseStream = httpResponse.getWriter();
 					EPADSessionResponse sessionResponse = SessionService.authenticateUser(httpRequest);

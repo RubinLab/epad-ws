@@ -121,7 +121,8 @@ public class EPADHandler extends AbstractHandler
 			}
 
 			String username = httpRequest.getParameter("username");
-			log.info("User:" + username  + " host:" + EPADSessionOperations.getSessionHost(sessionID) + " method:" + httpRequest.getMethod() + " request: " + httpRequest.getPathInfo() + ", parameters: "
+			log.info("User:" + username  + " host:" + EPADSessionOperations.getSessionHost(sessionID) + " method:" + httpRequest.getMethod() 
+					+ ", url: " + httpRequest.getPathInfo() + ", parameters: "
 					+ httpRequest.getQueryString() + " sessionId:" + sessionID);
 			if (SessionService.hasValidSessionID(sessionID)) {
 				if (EPADConfig.UseEPADUsersProjects) {
