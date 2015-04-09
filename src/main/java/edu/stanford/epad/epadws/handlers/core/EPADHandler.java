@@ -108,9 +108,6 @@ public class EPADHandler extends AbstractHandler
 		httpResponse.setContentType("application/json");
 		request.setHandled(true);
 
-		log.info(httpRequest.getMethod() + " request " + httpRequest.getPathInfo() + " with parameters "
-				+ httpRequest.getQueryString());
-
 		try {
 			responseStream = httpResponse.getWriter();
 			String method = httpRequest.getMethod();
@@ -122,8 +119,11 @@ public class EPADHandler extends AbstractHandler
 				sessionID = SessionService.getJSessionIDFromRequest(httpRequest, true);
 				releaseSession = true;
 			}
+
+			String username = httpRequest.getParameter("username");
+			log.info("User:" + username  + " host:" + EPADSessionOperations.getSessionHost(sessionID) + " method:" + httpRequest.getMethod() + " request: " + httpRequest.getPathInfo() + ", parameters: "
+					+ httpRequest.getQueryString() + " sessionId:" + sessionID);
 			if (SessionService.hasValidSessionID(sessionID)) {
-				String username = httpRequest.getParameter("username");
 				if (EPADConfig.UseEPADUsersProjects) {
 					String sessionUser = EPADSessionOperations.getSessionUser(sessionID);
 					if (username != null && !username.equals(sessionUser))
@@ -167,7 +167,6 @@ public class EPADHandler extends AbstractHandler
 		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
 		String pathInfo = httpRequest.getPathInfo();
 		int statusCode;
-		log.info("GET Request from client:" + pathInfo + " user:" + username + " sessionID:" + sessionID);
 		try {
 			if (sessionID == null)
 				throw new Exception("Invalid sessionID for user:" + username);
@@ -1210,7 +1209,7 @@ public class EPADHandler extends AbstractHandler
 		int statusCode = HttpServletResponse.SC_OK;
 		String status = null;
 	    String requestContentType = httpRequest.getContentType();
-		log.info("PUT Request from client:" + pathInfo + " user:" + username + " sessionID:" + sessionID + " contentType:" + requestContentType);
+		log.info("PUT Request, contentType:" + requestContentType);
 		File uploadedFile = null;
 		try
 		{
@@ -1600,7 +1599,7 @@ public class EPADHandler extends AbstractHandler
 		EpadWorkListOperations worklistOperations = DefaultWorkListOperations.getInstance();
 	    String requestContentType = httpRequest.getContentType();
 		try {
-			log.info("POST Request from client:" + pathInfo + " user:" + username + " contentType:" + requestContentType);
+			log.info("POST Request, contentType:" + requestContentType);
 			if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.FRAME_LIST, pathInfo)) {
 				ImageReference imageReference = ImageReference.extract(ProjectsRouteTemplates.FRAME_LIST, pathInfo);
 				String type = httpRequest.getParameter("type");
@@ -1877,7 +1876,6 @@ public class EPADHandler extends AbstractHandler
 		String pathInfo = httpRequest.getPathInfo();
 		int statusCode;
 
-		log.info("DELETE Request from client:" + pathInfo + " user:" + username + " sessionID:" + sessionID);
 		boolean deleteDSO = "true".equalsIgnoreCase(httpRequest.getParameter("deleteDSO"));
 		boolean deleteAims = "true".equalsIgnoreCase(httpRequest.getParameter("deleteAims"));
 		try

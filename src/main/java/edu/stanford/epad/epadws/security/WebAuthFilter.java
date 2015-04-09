@@ -50,9 +50,10 @@ public class WebAuthFilter implements Filter {
 			if (sessionID == null) {
 				try {
 					// Note: On the client, this call should be SessionResource.createSession(List<String>() with username, password)
-					log.info("Session ID for user:"+ webAuthUser + " is null, creating new session");
+					log.info("WebAuth login request from user:" + webAuthUser  + " host: " + httpRequest.getRemoteHost() +":" + httpRequest.getRemoteAddr());
 					sessionID = EPADSessionOperations.authenticateWebAuthUser(webAuthUser, EPADConfig.webAuthPassword);
-		            Cookie userName = new Cookie(LOGGEDINUSER_COOKIE, webAuthUser);
+		            EPADSessionOperations.setSessionHost(sessionID, httpRequest.getRemoteHost(), httpRequest.getRemoteAddr());
+					Cookie userName = new Cookie(LOGGEDINUSER_COOKIE, webAuthUser);
 		            userName.setMaxAge(-1);
 		            userName.setPath("/epad/");
 		            httpResponse.addCookie(userName);

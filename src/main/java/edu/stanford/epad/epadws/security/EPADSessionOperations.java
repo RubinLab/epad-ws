@@ -234,6 +234,34 @@ public class EPADSessionOperations
 		}
 	}
 	
+	public static void setSessionHost(String sessionID, String hostName, String hostAddr)
+	{
+		EPADSession session = currentSessions.get(sessionID);
+		if (session != null)
+		{
+			session.setRemoteHost(hostName);
+			session.setRemoteAddr(hostAddr);
+		}
+	}
+	
+	public static String getSessionHost(String sessionID)
+	{
+		EPADSession session = currentSessions.get(sessionID);
+		if (session != null)
+		{
+			if (session.getRemoteHost() == null)
+				return session.getRemoteAddr();
+			else if (session.getRemoteAddr() == null)
+				return session.getRemoteHost();
+			else if (session.getRemoteAddr().equals(session.getRemoteHost()))
+				return session.getRemoteHost();
+			else
+				return session.getRemoteHost() + ":" + session.getRemoteAddr();
+		}
+		else
+			return null;
+	}
+	
 	private static EPADSession createNewEPADSession(String username, String password) throws Exception
 	{
 		User user = projectOperations.getUser(username);
