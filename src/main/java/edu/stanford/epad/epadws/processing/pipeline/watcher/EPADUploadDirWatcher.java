@@ -130,6 +130,7 @@ public class EPADUploadDirWatcher implements Runnable
 		EPADFileUtils.deleteFilesInDirectoryWithExtension(dir, "properties");
 		EPADFileUtils.deleteFilesInDirectoryWithExtension(dir, "zip");
 		EPADFileUtils.deleteFilesInDirectoryWithExtension(dir, "log");
+		EPADFileUtils.deleteFilesInDirectoryWithExtension(dir, "json");
 	}
 
 	private boolean waitOnEmptyUploadDirectory(File dir) throws InterruptedException

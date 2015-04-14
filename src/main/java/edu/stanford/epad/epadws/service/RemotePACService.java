@@ -2,9 +2,11 @@ package edu.stanford.epad.epadws.service;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -16,6 +18,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import javax.servlet.http.HttpServletResponse;
+
+import org.apache.commons.httpclient.HttpClient;
+import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.io.IOUtils;
 
 import com.pixelmed.dicom.Attribute;
@@ -663,7 +669,7 @@ public class RemotePACService extends RemotePACSBase {
 				EpadDatabaseOperations databaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
 				for (RemotePACEntity rpe: remoteEntities) {
 					if (rpe.entityType.equalsIgnoreCase("Study")) {
-						if (projectOperations.getStudy(rpe.entityID.substring(rpe.entityID.indexOf(":")+1)) != null)
+						if (databaseOperations.hasStudyInDCM4CHE(rpe.entityID.substring(rpe.entityID.indexOf(":")+1)))
 							rpe.inEpad = true;
 					} else if (rpe.entityType.equalsIgnoreCase("Series")) {
 						if (databaseOperations.hasSeriesInEPadDatabase(rpe.entityID.substring(rpe.entityID.indexOf(":")+1)))
@@ -843,6 +849,73 @@ public class RemotePACService extends RemotePACSBase {
 			return studyUID + ":" + studyDate;
 		else
 			return seriesUID;
+	}
+
+	public static int downloadSeriesFromTCIA(String username, String seriesUID, String projectID)
+			throws Exception
+	{
+		String tciaURL = EPADConfig.getParamValue("TCIA_URL", "https://services.cancerimagingarchive.net/services/v3/TCIA/query/getImage");
+		tciaURL = tciaURL + "?SeriesInstanceUID=" + seriesUID;
+		tciaURL = tciaURL + "&api_key=" + EPADConfig.getParamValue("TCIA_APIKEY", "5b1c609e-e3b5-4fbd-999c-e1e71f1c49f0");
+		HttpClient client = new HttpClient();
+		GetMethod method = new GetMethod(tciaURL);
+		int statusCode = client.executeMethod(method);
+		File uploadStoreDir = new File(EPADConfig.getEPADWebServerUploadDir()
+													+ "temp" + System.currentTimeMillis());
+		uploadStoreDir.mkdirs();
+		File zipfile = new File(uploadStoreDir, "tcia.zip");
+
+		if (statusCode == HttpServletResponse.SC_OK) {
+			OutputStream outputStream = null;
+			try {
+				outputStream = new FileOutputStream(zipfile);
+				InputStream inputStream = method.getResponseBodyAsStream();
+				int read = 0;
+				byte[] bytes = new byte[4096];
+				while ((read = inputStream.read(bytes)) != -1) {
+					outputStream.write(bytes, 0, read);
+				}
+			} finally {
+				IOUtils.closeQuietly(outputStream);
+				method.releaseConnection();
+			}
+			writePropertiesFile(uploadStoreDir, projectID, "", username);
+		}
+		else {
+			log.warning("TCIA URL:" + tciaURL + " Status:" + statusCode);
+		}
+		return statusCode;
+	}
+
+	// add the properties file xnat_upload.properties.
+	private static void writePropertiesFile(File storeDir, String project,
+			String session, String user) {
+
+		String projectName = "XNATProjectName=" + project;
+		String sessionName = "XNATSessionID=" + session;
+		String userName = "XNATUserName=" + user;
+
+		try {
+			File properties = new File(storeDir, "xnat_upload.properties");
+			if (!properties.exists()) {
+				properties.createNewFile();
+			}
+			FileOutputStream fop = new FileOutputStream(properties, false);
+
+			fop.write(projectName.getBytes());
+			fop.write("\n".getBytes());
+			fop.write(sessionName.getBytes());
+			fop.write("\n".getBytes());
+			fop.write(userName.getBytes());
+			fop.write("\n".getBytes());
+
+			fop.flush();
+			fop.close();
+
+		} catch (IOException e) {
+			log.info("Error writing prroperties file");
+			e.printStackTrace();
+		}
 	}
 	
 	/**

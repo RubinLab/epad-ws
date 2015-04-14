@@ -23,6 +23,7 @@ import edu.stanford.epad.dtos.EPADStudy;
 import edu.stanford.epad.dtos.EPADStudyList;
 import edu.stanford.epad.dtos.EPADSubject;
 import edu.stanford.epad.dtos.EPADSubjectList;
+import edu.stanford.epad.dtos.EPADTemplateList;
 import edu.stanford.epad.dtos.EPADUser;
 import edu.stanford.epad.dtos.EPADUserList;
 import edu.stanford.epad.dtos.EPADWorklist;
@@ -135,9 +136,9 @@ public interface EpadOperations
 	List<EPADFile> getEPADFiles(SeriesReference seriesReference, String username, String sessionID,
 			EPADSearchFilter searchFilter) throws Exception;
 
-	EPADFileList getTemplateDescriptions(String username, String sessionID) throws Exception;
+	EPADTemplateList getTemplateDescriptions(String username, String sessionID) throws Exception;
 
-	EPADFileList getTemplateDescriptions(String projectID, String username, String sessionID) throws Exception;
+	EPADTemplateList getTemplateDescriptions(String projectID, String username, String sessionID) throws Exception;
 	
 	EPADFile getFileDescription(SeriesReference seriesReference, String filename, String username, String sessionID) throws Exception;
 

@@ -58,6 +58,8 @@ public interface EpadDatabaseOperations
 	void updateOrInsertSeries(String seriesUID, SeriesProcessingStatus seriesProcessingStatus);
 	
 	boolean hasSeriesInEPadDatabase(String seriesIUID);
+	
+	boolean hasStudyInDCM4CHE(String studyIUID);
 
 	List<Map<String, String>> getEpadEventsForSessionID(String sessionID);
 

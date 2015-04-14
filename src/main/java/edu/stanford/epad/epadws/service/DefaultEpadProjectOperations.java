@@ -589,6 +589,7 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 	public EpadFile createFile(String loggedInUser, String projectID,
 			String subjectUID, String studyUID, String seriesUID, File file,
 			String filename, String description, FileType fileType) throws Exception {
+		User requestor = getUser(loggedInUser);
 		EpadFile efile = new EpadFile();
 		efile.setName(filename);
 		efile.setDescription(description);
@@ -621,6 +622,8 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		EpadFile oldFile = this.getEpadFile(projectID, subjectUID, studyUID, seriesUID, filename);
 		if (oldFile != null)
 		{
+			if (!requestor.isAdmin() && !isOwner(loggedInUser, projectID) && !loggedInUser.equals(oldFile.getCreator()))
+				throw new Exception("No permissions to overwrite file");
 			efile = oldFile;
 			exists = true;
 		}
@@ -1417,6 +1420,9 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		EpadFile efile = this.getEpadFile(projectID, subjectUID, studyUID, seriesUID, filename);
 		if (efile == null)
 			throw new Exception("File " + filename + " not found");
+		User requestor = getUser(loggedInUser);
+		if (!requestor.isAdmin() && !isOwner(loggedInUser, projectID) && !loggedInUser.equals(efile.getCreator()))
+			throw new Exception("No permissions to disable template");
 		efile.setEnabled(true);
 		efile.save();
 	}
@@ -1428,6 +1434,9 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		EpadFile efile = this.getEpadFile(projectID, subjectUID, studyUID, seriesUID, filename);
 		if (efile == null)
 			throw new Exception("File " + filename + " not found");
+		User requestor = getUser(loggedInUser);
+		if (!requestor.isAdmin() && !isOwner(loggedInUser, projectID) && !loggedInUser.equals(efile.getCreator()))
+			throw new Exception("No permissions to disable template");
 		efile.setEnabled(false);
 		efile.save();
 	}
@@ -1442,6 +1451,9 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		EpadFile efile = getEpadFile(projectID, subjectUID, studyUID, seriesUID, filename);
 		if (efile == null)
 			throw new Exception("File not found");
+		User requestor = getUser(loggedInUser);
+		if (!requestor.isAdmin() && !isOwner(loggedInUser, projectID) && !loggedInUser.equals(efile.getCreator()))
+			throw new Exception("No permissions to delete file");
 		String path = efile.getFilePath();
 		File file = new File(path);
 		try {

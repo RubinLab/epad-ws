@@ -1444,7 +1444,7 @@ public class AIMUtil
 			try
 			{
 				boolean isCollaborator = UserProjectService.isCollaborator(sessionID, username, projectID);
-				log.info("User:" + username + " projectID:" + projectID + " isCollaborator:" + isCollaborator);
+				//log.info("User:" + username + " projectID:" + projectID + " isCollaborator:" + isCollaborator);
 				Set<EPADAIM> aims = aimlist.getAIMsForProject(projectID);
 				List<EPADAIM> projectAIMs = projectAIMsMap.get(projectID);
 				if (projectAIMs == null)

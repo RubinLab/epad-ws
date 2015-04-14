@@ -2341,6 +2341,26 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 		}
 	}
 
+	@Override
+	public boolean hasStudyInDCM4CHE(String studyIUID) {
+		Connection c = null;
+		PreparedStatement ps = null;
+		ResultSet rs = null;
+		try {
+			c = getConnection();
+			ps = c.prepareStatement(EpadDatabaseCommands.SELECT_DCM4CHE_STUDY_BY_ID);
+			ps.setString(1, studyIUID);
+			rs = ps.executeQuery();
+			return rs.next();
+		} catch (SQLException sqle) {
+			String debugInfo = DatabaseUtils.getDebugData(rs);
+			log.warning("Database operation failed; debugInfo=" + debugInfo, sqle);
+			return false;
+		} finally {
+			close(c, ps, rs);
+		}
+	}
+
 	private void recordNewSeries(SeriesProcessingStatus seriesProcessingStatus, String seriesUID)
 	{
 		Connection c = null;

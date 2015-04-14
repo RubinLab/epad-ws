@@ -1,57 +1,47 @@
 # Level, Tag, Description
-Patient,00081120,Referenced Patient Sequence
+# Patient,00081120,Referenced Patient Sequence
 Patient,00100010,Patient's Name
 Patient,00100020,Patient ID
-Patient,00100021,Issuer of Patient ID
+# Patient,00100021,Issuer of Patient ID
 Patient,00100040,Patient's Sex
 Patient,00100030,Patient's Birth Date
 Patient,00100032,Patient's Birth Time
-Patient,00101000,Other Patient IDs
+# Patient,00101000,Other Patient IDs
 Patient,00101001,Other Patient Names
-Patient,00101002,Other Patient IDs Sequence
+# Patient,00101002,Other Patient IDs Sequence
 Patient,00102160,Ethic Group
 Patient,00104000,Patient Comments
 Patient,00120010,Clinical Trial Sponsor Name
-Patient,00120020,Clinical Trial Protocol ID
+# Patient,00120020,Clinical Trial Protocol ID
 Patient,00120021,Clinical Trial Protocol Name
-Patient,00120030,Clinical Trial Site ID
+# Patient,00120030,Clinical Trial Site ID
 Patient,00120031,Clinical Trial Site Name
-Patient,00120040,Clinical Trial Subject ID
-Patient,00120042,Clinical Trial Subject Reading ID
+# Patient,00120040,Clinical Trial Subject ID
+# Patient,00120042,Clinical Trial Subject Reading ID
 Patient,0040050A,Specimen Accession Number
-Patient,00400550,Specimen Seq
-Patient,00104000,Patient Comments
-Patient,00120010,Clinical Trial Sponsor Name
-Patient,00120020,Clinical Trial Protocol ID
-Patient,00120021,Clinical Trial Protocol Name
-Patient,00120030,Clinical Trial Site ID
-Patient,00120031,Clinical Trial Site Name
-Patient,00120040,Clinical Trial Subject ID
-Patient,00120042,Clinical Trial Subject Reading ID
-Patient,0040050A,Specimen Accession Number
-Patient,00400550,Specimen Seq
+# Patient,00400550,Specimen Seq
 Study,00080020,Study Date
 Study,00080030,Study Time
 Study,00080050,Accession Number
-Study,00080051,Issuer of Accession Number Sequence
+# Study,00080051,Issuer of Accession Number Sequence
 Study,00080090,Referring Physician Name
-Study,00080096,Referring Physician Identification Seq
+# Study,00080096,Referring Physician Identification Seq
 Study,00081030,Study Description
 Study,00081032,Procedure Code Seq
 Study,00081048,Physician(s) of Record
-Study,00081049,Physician(s) of Record Identification Seq
+# Study,00081049,Physician(s) of Record Identification Seq
 Study,00081060,Name of Physician(s) Reading Study
-Study,00081062,Physician(s) Reading Study Identification Seq
+# Study,00081062,Physician(s) Reading Study Identification Seq
 Study,00081080,Admitting Diagnoses Description
-Study,00081084,Admitting Diagnoses Code Seq
-Study,00081110,Referenced Study Sequence
+# Study,00081084,Admitting Diagnoses Code Seq
+# Study,00081110,Referenced Study Sequence
 Study,00101010,Patient's Age
 Study,00101020,Patient's Size
 Study,00101030,Patient's Weight
 Study,00102180,Occupation
 Study,001021B0,Additional Patient’s History
-Study,00120050,Clinical Trial Time Point ID
-Study,00120051,Clinical Trial Time Point Description
+# Study,00120050,Clinical Trial Time Point ID
+# Study,00120051,Clinical Trial Time Point Description
 Study,0020000D,Study Instance UID
 Study,00200010,Study ID
 Series,00080021,Series Date
@@ -65,47 +55,47 @@ Series,00081010,Station Name
 Series,0008103E,Series Description
 Series,00081040,Institutional Department Name
 Series,00081050,Performing Physicians' Name
-Series,00081052,Performing Physician Identification Seq
+# Series,00081052,Performing Physician Identification Seq
 Series,00081070,Operators' Name
-Series,00081072,Operator Identification Seq
+# Series,00081072,Operator Identification Seq
 Series,00081090,Manufacturer Model Name
-Series,00081111,Referenced Performed Procedure Step Sequence
-Series,00081250,Related Series Sequence
-Series,00120060,Clinical Trial Coordinating Center Name
+# Series,00081111,Referenced Performed Procedure Step Sequence
+# Series,00081250,Related Series Sequence
+# Series,00120060,Clinical Trial Coordinating Center Name
 Series,00180015,Body Part Examined
 Series,00181000,Device Serial Number
-Series,00181010,Secondary Capture Device ID
-Series,00181016,Secondary Capture Device Manufacturer
+# Series,00181010,Secondary Capture Device ID
+# Series,00181016,Secondary Capture Device Manufacturer
 Series,00181018,Secondary Capture Device Manufacturer's Model Name
-Series,00181019,Secondary Capture Device Software Version
-Series,00181020,Software Versions
-Series,00181030,Protocol Name
+# Series,00181019,Secondary Capture Device Software Version
+# Series,00181020,Software Versions
+# Series,00181030,Protocol Name
 Series,00181050,Spatial Resolution
-Series,0018106A,Synchronization Trigger
-Series,0018106C,Synchronization Channel
-Series,00181200,Date of Last Calibration
-Series,00181201,Time of Last Calibration
-Series,00181800,Acquisition Time Synchronized
-Series,00181801,Time Source
-Series,00181802,Time Distribution Protocol
-Series,00181803,NTP Source Address
+# Series,0018106A,Synchronization Trigger
+# Series,0018106C,Synchronization Channel
+# Series,00181200,Date of Last Calibration
+# Series,00181201,Time of Last Calibration
+# Series,00181800,Acquisition Time Synchronized
+# Series,00181801,Time Source
+# Series,00181802,Time Distribution Protocol
+# Series,00181803,NTP Source Address
 Series,0020000E,Series Instance UID
 Series,00200011,Series Number
-Series,00200052,Frame of Reference UID
+# Series,00200052,Frame of Reference UID
 Series,00200060,Laterality
-Series,00200200,Synchronization Frame of Reference UID
-Series,00201040,Position Reference Indicator
-Series,00280108,Smallest Pixel Value in Series
-Series,00280109,Largest Pixel Value in Series
-Series,00400244,Performed Procedure Step Start Date
-Series,00400245,Performed Procedure Step Start Time
-Series,00400253,Performed Procedure Step ID
+# Series,00200200,Synchronization Frame of Reference UID
+# Series,00201040,Position Reference Indicator
+# Series,00280108,Smallest Pixel Value in Series
+# Series,00280109,Largest Pixel Value in Series
+# Series,00400244,Performed Procedure Step Start Date
+# Series,00400245,Performed Procedure Step Start Time
+# Series,00400253,Performed Procedure Step ID
 Series,00400254,Performed Procedure Step Description
-Series,00400260,Performed Protocol Code Sequence
-Series,00400280,Comments on the Performed Procedure Step
-Series,00400275,Request Attributes Sequence
+# Series,00400260,Performed Protocol Code Sequence
+# Series,00400280,Comments on the Performed Procedure Step
+# Series,00400275,Request Attributes Sequence
 Series,00321032,Requesting Physician
 Series,00321033,Requesting Service
-Series,00400009,Scheduled Procedure Step ID
-Series,00401001,Requested Procedure ID
-Series,00400280,Comments on the Performed Procedure Step
+# Series,00400009,Scheduled Procedure Step ID
+# Series,00401001,Requested Procedure ID
+# Series,00400280,Comments on the Performed Procedure Step

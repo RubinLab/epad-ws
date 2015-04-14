@@ -39,6 +39,7 @@ import edu.stanford.epad.epadws.handlers.admin.ImageReprocessingHandler;
 import edu.stanford.epad.epadws.handlers.admin.ResourceCheckHandler;
 import edu.stanford.epad.epadws.handlers.admin.ResourceFailureLogHandler;
 import edu.stanford.epad.epadws.handlers.admin.ServerStatusHandler;
+import edu.stanford.epad.epadws.handlers.admin.StatisticsHandler;
 import edu.stanford.epad.epadws.handlers.admin.XNATSyncHandler;
 import edu.stanford.epad.epadws.handlers.aim.AimResourceHandler;
 import edu.stanford.epad.epadws.handlers.coordination.CoordinationHandler;
@@ -209,7 +210,8 @@ public class Main
 		addHandlerAtContextPath(new ImageReprocessingHandler(), "/epad/imagereprocess", handlerList);
 		addHandlerAtContextPath(new ConvertAIM4Handler(), "/epad/convertaim4", handlerList);
 		addHandlerAtContextPath(new XNATSyncHandler(), "/epad/syncxnat", handlerList);
-
+		addHandlerAtContextPath(new StatisticsHandler(), "/epad/statistics", handlerList);
+		
 		// TODO This call will disappear when we switch to AIM4
 		addHandlerAtContextPath(new CoordinationHandler(), "/epad/coordination", handlerList);
 

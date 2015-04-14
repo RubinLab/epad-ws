@@ -22,6 +22,8 @@ import java.util.Set;
 import javax.servlet.http.HttpServletResponse;
 
 import org.apache.commons.io.FileUtils;
+import org.json.JSONObject;
+import org.json.XML;
 
 import com.pixelmed.dicom.ImageToDicom;
 import com.pixelmed.dicom.SOPClass;
@@ -53,6 +55,8 @@ import edu.stanford.epad.dtos.EPADStudy;
 import edu.stanford.epad.dtos.EPADStudyList;
 import edu.stanford.epad.dtos.EPADSubject;
 import edu.stanford.epad.dtos.EPADSubjectList;
+import edu.stanford.epad.dtos.EPADTemplate;
+import edu.stanford.epad.dtos.EPADTemplateList;
 import edu.stanford.epad.dtos.EPADUser;
 import edu.stanford.epad.dtos.EPADUserList;
 import edu.stanford.epad.dtos.EPADWorklist;
@@ -1469,30 +1473,51 @@ public class DefaultEpadOperations implements EpadOperations
 	}
 
 	@Override
-	public EPADFileList getTemplateDescriptions(String username,
+	public EPADTemplateList getTemplateDescriptions(String username,
 			String sessionID) throws Exception {
-		EPADFileList fileList = new EPADFileList();
+		EPADTemplateList fileList = new EPADTemplateList();
 		File[] templates = new File(EPADConfig.getEPADWebServerTemplatesDir()).listFiles();
 		for (File template: templates)
 		{
 			if (template.isDirectory()) continue;
 			String name = template.getName();
+			String description = "";
 			if (!name.toLowerCase().endsWith(".xml")) continue;
-			EPADFile epadFile = new EPADFile("", "", "", "", "", name, template.length(), FileType.TEMPLATE.getName(), 
-					formatDate(new Date(template.lastModified())), "templates/" + template.getName());
+			String templateName = "";
+			String templateType = "";
+			String templateCode = "";
+			String templateDescription = "";
+			try {
+				String xml = EPADFileUtils.readFileAsString(template);
+	            JSONObject root = XML.toJSONObject(xml);
+	            JSONObject container = root.getJSONObject("TemplateContainer");
+	            JSONObject templateObj = container.getJSONObject("Template");
+	            templateName = templateObj.getString("name");
+	            templateType = templateObj.getString("codeMeaning");
+	            templateCode = templateObj.getString("codeValue");
+	            templateDescription = templateObj.getString("description");
+				description = templateType + " (" + templateCode + ")";
+			} catch (Exception x) {
+				//log.warning("JSON Error", x);
+			}
+			EPADTemplate epadFile = new EPADTemplate("", "", "", "", "", name, template.length(), FileType.TEMPLATE.getName(), 
+					formatDate(new Date(template.lastModified())), "templates/" + template.getName(), true, description);
+            epadFile.templateName = templateName;
+            epadFile.templateType = templateType;
+            epadFile.templateCode = templateCode;
+            epadFile.templateDescription = templateDescription;
 			fileList.addFile(epadFile);
 		}
-		List<EpadFile> files = projectOperations.getEpadFiles(null, null, null, null, FileType.TEMPLATE);
+		List<EpadFile> efiles = projectOperations.getEpadFiles(null, null, null, null, FileType.TEMPLATE);
 		Set<String> userProjects = new HashSet<String>();
-		for (EpadFile file: files)
+		for (EpadFile efile: efiles)
 		{
-			Project project = (Project) projectOperations.getDBObject(Project.class, file.getProjectId());
+			Project project = (Project) projectOperations.getDBObject(Project.class, efile.getProjectId());
 			if (userProjects.contains(project.getProjectId()) || projectOperations.hasAccessToProject(username, project.getProjectId())
 					|| project.getProjectId().equals(EPADConfig.xnatUploadProjectID))
 			{
 				userProjects.add(project.getProjectId());
-				EPADFile epadFile = new EPADFile(project.getProjectId(), "", "", "", "", file.getName(), file.getLength(), FileType.TEMPLATE.getName(), 
-						formatDate(file.getCreatedTime()), getEpadFilePath(file));
+				EPADTemplate epadFile = convertEpadFileToTemplate(project.getProjectId(), efile, new File(EPADConfig.getEPADWebServerResourcesDir() + getEpadFilePath(efile)));
 				fileList.addFile(epadFile);
 			}
 		}
@@ -1500,19 +1525,43 @@ public class DefaultEpadOperations implements EpadOperations
 	}
 
 	@Override
-	public EPADFileList getTemplateDescriptions(String projectID,
+	public EPADTemplateList getTemplateDescriptions(String projectID,
 			String username, String sessionID) throws Exception {
-		EPADFileList fileList = new EPADFileList();
-		List<EpadFile> files = projectOperations.getEpadFiles(projectID, null, null, null, FileType.TEMPLATE);
-		for (EpadFile file: files)
+		EPADTemplateList fileList = new EPADTemplateList();
+		List<EpadFile> efiles = projectOperations.getEpadFiles(projectID, null, null, null, FileType.TEMPLATE);
+		for (EpadFile efile: efiles)
 		{
-			EPADFile epadFile = new EPADFile(projectID, "", "", "", "", file.getName(), file.getLength(), FileType.TEMPLATE.getName(), 
-					formatDate(file.getCreatedTime()), getEpadFilePath(file));
+			EPADTemplate epadFile = convertEpadFileToTemplate(projectID, efile, new File(EPADConfig.getEPADWebServerResourcesDir() + getEpadFilePath(efile)));
 			fileList.addFile(epadFile);
 		}
 		return fileList;
 	}
 
+
+	private EPADTemplate convertEpadFileToTemplate(String projectId, EpadFile efile, File templateFile)
+	{
+		String description = efile.getDescription();
+		String templateName = "";
+		String templateType = "";
+		String templateCode = "";
+		String templateDescription = "";
+		try {
+			String xml = EPADFileUtils.readFileAsString(templateFile);
+            JSONObject root = XML.toJSONObject(xml);
+            JSONObject container = root.getJSONObject("TemplateContainer");
+            JSONObject templateObj = container.getJSONObject("Template");
+            templateName = templateObj.getString("name");
+            templateType = templateObj.getString("codeMeaning");
+            templateCode = templateObj.getString("codeValue");
+            templateDescription = templateObj.getString("description");
+            if (description == null || description.length() == 0)
+            	description = templateType + " (" + templateCode + ")";
+		} catch (Exception x) {}
+		EPADTemplate template = new EPADTemplate(projectId, "", "", "", "", efile.getName(), efile.getLength(), FileType.TEMPLATE.getName(), 
+				formatDate(efile.getCreatedTime()), getEpadFilePath(efile), efile.isEnabled(), description);
+		return template;
+	}
+	
 	@Override
 	public void deleteFile(String username, ProjectReference projectReference,
 			String fileName) throws Exception {

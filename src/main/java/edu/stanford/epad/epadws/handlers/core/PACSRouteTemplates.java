@@ -4,6 +4,7 @@ public class PACSRouteTemplates
 {
 	public static final String PACS_LIST = "/pacs/";
 	public static final String PAC = PACS_LIST + "{pacid}";
+	public static final String TCIA_TRANSFER = PACS_LIST + "getFromTCIA/";
 	public static final String TAG_LIST = PACS_LIST + "dicomtags/";
 	public static final String PAC_ENTITY_LIST = PAC + "/entities/";
 	public static final String PAC_SUBJECT_LIST = PAC + "/subjects/";

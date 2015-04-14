@@ -48,6 +48,7 @@ import edu.stanford.epad.dtos.EPADStudy;
 import edu.stanford.epad.dtos.EPADStudyList;
 import edu.stanford.epad.dtos.EPADSubject;
 import edu.stanford.epad.dtos.EPADSubjectList;
+import edu.stanford.epad.dtos.EPADTemplateList;
 import edu.stanford.epad.dtos.EPADUser;
 import edu.stanford.epad.dtos.EPADUserList;
 import edu.stanford.epad.dtos.EPADWorklist;
@@ -1180,14 +1181,24 @@ public class EPADHandler extends AbstractHandler
 				responseStream.append(tagList.toJSON());
 				statusCode = HttpServletResponse.SC_OK;
 
+			} else if (HandlerUtil.matchesTemplate(PACSRouteTemplates.TCIA_TRANSFER, pathInfo)) {
+				String seriesUID = httpRequest.getParameter("seriesUID");
+				String projectID = httpRequest.getParameter("projectID");
+				if (seriesUID == null || seriesUID.trim().length() == 0)
+					throw new Exception("Missing seriesUID in TCIA data transfer request");
+				if (projectID == null || projectID.trim().length() == 0)
+					throw new Exception("Missing projectID in TCIA data transfer request");
+				RemotePACService.downloadSeriesFromTCIA(username, seriesUID, projectID);
+				statusCode = HttpServletResponse.SC_OK;
+
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.TEMPLATE_LIST, pathInfo)) {
 				ProjectReference reference = ProjectReference.extract(ProjectsRouteTemplates.TEMPLATE_LIST, pathInfo);
-				EPADFileList templates = epadOperations.getTemplateDescriptions(reference.projectID, username, sessionID);
+				EPADTemplateList templates = epadOperations.getTemplateDescriptions(reference.projectID, username, sessionID);
 				responseStream.append(templates.toJSON());
 				statusCode = HttpServletResponse.SC_OK;
 
 			} else if (HandlerUtil.matchesTemplate(TemplatesRouteTemplates.TEMPLATE_LIST, pathInfo)) {
-				EPADFileList templates = epadOperations.getTemplateDescriptions(username, sessionID);
+				EPADTemplateList templates = epadOperations.getTemplateDescriptions(username, sessionID);
 				responseStream.append(templates.toJSON());
 				statusCode = HttpServletResponse.SC_OK;
 
