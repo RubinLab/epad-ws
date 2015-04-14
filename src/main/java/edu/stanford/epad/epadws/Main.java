@@ -46,6 +46,7 @@ import edu.stanford.epad.epadws.handlers.admin.ImageReprocessingHandler;
 import edu.stanford.epad.epadws.handlers.admin.ResourceCheckHandler;
 import edu.stanford.epad.epadws.handlers.admin.ResourceFailureLogHandler;
 import edu.stanford.epad.epadws.handlers.admin.ServerStatusHandler;
+import edu.stanford.epad.epadws.handlers.admin.StatisticsHandler;
 import edu.stanford.epad.epadws.handlers.admin.XNATSyncHandler;
 import edu.stanford.epad.epadws.handlers.aim.AimResourceHandler;
 import edu.stanford.epad.epadws.handlers.coordination.CoordinationHandler;
@@ -222,7 +223,8 @@ public class Main
 		addHandlerAtContextPath(new ImageReprocessingHandler(), "/epad/imagereprocess", handlerList);
 		addHandlerAtContextPath(new ConvertAIM4Handler(), "/epad/convertaim4", handlerList);
 		addHandlerAtContextPath(new XNATSyncHandler(), "/epad/syncxnat", handlerList);
-
+		addHandlerAtContextPath(new StatisticsHandler(), "/epad/statistics", handlerList);
+		
 		// TODO This call will disappear when we switch to AIM4
 		addHandlerAtContextPath(new CoordinationHandler(), "/epad/coordination", handlerList);
 
@@ -281,16 +283,17 @@ public class Main
 		WebAppContext webAppContext = new WebAppContext(webAppPath, contextPath);
 		String home = System.getProperty("user.home");
 		webAppContext.setTempDirectory(new File(home + "/DicomProxy/jetty")); // TODO Read from config file
+		webAppContext.setInitParameter("org.eclipse.jetty.servlet.Default.dirAllowed", "false");
 		if (new File(EPADConfig.getEPADWebServerEtcDir()+"webdefault.xml").exists())
 		{
 			log.info("Adding webdefault.xml");
 			webAppContext.setDefaultsDescriptor(EPADConfig.getEPADWebServerEtcDir()+"webdefault.xml");
 		}
 		log.info("WebAuthFilter:'" + EPADConfig.getParamValue("WebAuthFilter", null) + "'");
-		if (EPADConfig.webAuthPassword != null && EPADConfig.getParamValue("WebAuthFilter", null) != null)
+		//if (EPADConfig.webAuthPassword != null && EPADConfig.getParamValue("WebAuthFilter", null) != null)
 		{
 			try {
-				Class filter = Class.forName(EPADConfig.getParamValue("WebAuthFilter"));
+				Class filter = Class.forName(EPADConfig.getParamValue("WebAuthFilter","edu.stanford.epad.epadws.security.WebAuthFilter"));
 				webAppContext.addFilter(filter, "/*", EnumSet.of(DispatcherType.REQUEST,DispatcherType.ASYNC,DispatcherType.FORWARD));
 			} catch (ClassNotFoundException e) {
 				log.warning("WebAuth Authentication Filter " + EPADConfig.getParamValue("WebAuthFilter") + " not found");

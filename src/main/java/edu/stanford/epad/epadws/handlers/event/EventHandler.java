@@ -37,7 +37,7 @@ public class EventHandler extends AbstractHandler
 	private static final String MISSING_QUERY_MESSAGE = "No query in event request";
 	private static final String INVALID_SESSION_TOKEN_MESSAGE = "Session token is invalid on event route";
 
-	private static int count;
+	private static int count = 999;
 	
 	@Override
 	public void handle(String base, Request request, HttpServletRequest httpRequest, HttpServletResponse httpResponse)
@@ -56,7 +56,7 @@ public class EventHandler extends AbstractHandler
 
 				if ("GET".equalsIgnoreCase(method)) {
 					String jsessionID = SessionService.getJSessionIDFromRequest(httpRequest);
-					if (count++ >= 100)
+					if (count++ >= 1000)
 					{
 						log.info("Get Event request with JSESSIONID " + jsessionID);
 						count = 0;

@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import edu.stanford.epad.common.util.EPADLogger;
+import edu.stanford.epad.dtos.DicomTagList;
 import edu.stanford.epad.dtos.RemotePAC;
 import edu.stanford.epad.dtos.RemotePACEntity;
 import edu.stanford.epad.dtos.RemotePACEntityList;
@@ -61,6 +62,7 @@ public class PACSController {
 									@RequestParam(value="tagGroup") String[] tagGroup,
 									@RequestParam(value="tagElement") String[] tagElement,
 									@RequestParam(value="tagValue") String[] tagValue,
+									@RequestParam(value="tagType") String[] tagType,
 									@PathVariable String pacID,
 									HttpServletRequest request, 
 							        HttpServletResponse response) throws Exception {
@@ -71,7 +73,7 @@ public class PACSController {
 		{
 			List<RemotePACEntity> entities = RemotePACService.getInstance().queryRemoteData(pac, patientNameFilter, patientIDFilter, 
 					studyIDFilter, studyDateFilter, 
-					tagGroup, tagElement, tagValue, false, studiesOnly);
+					tagGroup, tagElement, tagValue, tagType, false, studiesOnly);
 			RemotePACEntityList entityList = new RemotePACEntityList();
 			for (RemotePACEntity entity: entities)
 				entityList.addRemotePACEntity(entity);
@@ -201,6 +203,111 @@ public class PACSController {
 			if (remoteQuery != null)
 			{
 				return RemotePACService.getInstance().getConfig(remoteQuery);
+			}
+			else
+				throw new NotFoundException("Query for " + subjectID + " not found");
+		}
+		else
+			throw new NotFoundException("Remote PAC " + pacID + " not found");
+	}
+	 
+	@RequestMapping(value = "/dicomtags/", method = RequestMethod.GET)
+	public DicomTagList getDicomTags(@RequestParam(value="username") String username, 
+									HttpServletRequest request, 
+							        HttpServletResponse response) throws Exception {
+		String sessionID = SessionService.getJSessionIDFromRequest(request);
+		return RemotePACService.getDicomTags();
+	}
+	 
+	@RequestMapping(value = "/{pacID}", method = RequestMethod.PUT)
+	public void createRemotePAC(@RequestParam(value="username") String username, 
+									@PathVariable String pacID,
+									@RequestParam(value="aeTitle", required=true) String aeTitle,
+									@RequestParam(value="hostname", required=true) String hostname,
+									@RequestParam(value="port", required=true) int port,
+									@RequestParam(value="deviceType", defaultValue="WSD") String primaryDeviceType,
+									@RequestParam(value="queryModel") String queryModel,
+									HttpServletRequest request, 
+							        HttpServletResponse response) throws Exception {
+		String sessionID = SessionService.getJSessionIDFromRequest(request);
+		RemotePAC pac = RemotePACService.getInstance().getRemotePAC(pacID);
+		if (pac == null)
+		{
+			pac = new RemotePAC(pacID, aeTitle, hostname, port, queryModel, primaryDeviceType);
+			RemotePACService.getInstance().addRemotePAC(username, pac);
+		}
+		else
+		{
+			pac = new RemotePAC(pacID, aeTitle, hostname, port, queryModel, primaryDeviceType);
+			RemotePACService.getInstance().modifyRemotePAC(username, pac);
+		}
+	}	
+	 
+	@RequestMapping(value = "/{pacID}/autoqueries/{subjectID}", method = RequestMethod.PUT)
+	public void createRemotePACAutoQuery(@RequestParam(value="username") String username, 
+									@PathVariable String pacID,
+									@PathVariable String subjectID,
+									@RequestParam(value="projectID", required=true) String projectID,
+									@RequestParam(value="subjectName") String subjectName,
+									@RequestParam(value="patientName") String patientName,
+									@RequestParam(value="modality") String modality,
+									@RequestParam(value="studyDate") String studyDate,
+									@RequestParam(value="period") String period,
+									@RequestParam(value="enable") String enable,
+									HttpServletRequest request, 
+							        HttpServletResponse response) throws Exception {
+		String sessionID = SessionService.getJSessionIDFromRequest(request);
+		if (subjectName == null)
+			subjectName = patientName;
+		if (enable != null)
+		{
+			RemotePACQuery query = RemotePACService.getInstance().getRemotePACQuery(pacID, subjectID);
+			if ("true".equalsIgnoreCase(enable) && query != null)
+			{
+				RemotePACService.getInstance().enableRemotePACQuery(username, pacID, subjectID);
+			}
+			else if ("false".equalsIgnoreCase(enable))
+			{	
+				if (query == null)
+					throw new Exception("Remote PAC and Patient not configured for periodic query");
+				RemotePACService.getInstance().disableRemotePACQuery(username, pacID, subjectID);
+			}
+		}
+		else
+		{
+			RemotePACService.getInstance().createRemotePACQuery(username, pacID, subjectID, subjectName, modality, studyDate, period, projectID);
+		}
+	}	
+	 
+	@RequestMapping(value = "/{pacID}", method = RequestMethod.DELETE)
+	public void deleteRemotePAC(@RequestParam(value="username") String username, 
+									@PathVariable String pacID,
+									HttpServletRequest request, 
+							        HttpServletResponse response) throws Exception {
+		String sessionID = SessionService.getJSessionIDFromRequest(request);
+		RemotePAC pac = RemotePACService.getInstance().getRemotePAC(pacID);
+		if (pac != null)
+		{
+			RemotePACService.getInstance().removeRemotePAC(username, pac);
+		}
+		else
+			throw new NotFoundException("Remote PAC " + pacID + " not found");
+	}
+	 
+	@RequestMapping(value = "/{pacID}/autoqueries/{subjectID}", method = RequestMethod.DELETE)
+	public void deleteRemotePACQuery(@RequestParam(value="username") String username, 
+									@PathVariable String pacID,
+									@PathVariable String subjectID,
+									HttpServletRequest request, 
+							        HttpServletResponse response) throws Exception {
+		String sessionID = SessionService.getJSessionIDFromRequest(request);
+		RemotePAC pac = RemotePACService.getInstance().getRemotePAC(pacID);
+		if (pac != null)
+		{
+			RemotePACQuery remoteQuery = RemotePACService.getInstance().getRemotePACQuery(pacID, subjectID);
+			if (remoteQuery != null)
+			{
+				RemotePACService.getInstance().removeRemotePACQuery(username, pacID, subjectID);
 			}
 			else
 				throw new NotFoundException("Query for " + subjectID + " not found");

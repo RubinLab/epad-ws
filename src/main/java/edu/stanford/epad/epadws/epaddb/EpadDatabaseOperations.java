@@ -58,6 +58,8 @@ public interface EpadDatabaseOperations
 	void updateOrInsertSeries(String seriesUID, SeriesProcessingStatus seriesProcessingStatus);
 	
 	boolean hasSeriesInEPadDatabase(String seriesIUID);
+	
+	boolean hasStudyInDCM4CHE(String studyIUID);
 
 	List<Map<String, String>> getEpadEventsForSessionID(String sessionID);
 
@@ -134,6 +136,8 @@ public interface EpadDatabaseOperations
 	int getNumberOfAIMsForSeriesSet(String projectID, Set<String> seriesIDs, String username);
 
 	int getNumberOfAIMsForSeries(String projectID, String seriesID, String username);
+
+	int getNumberOfAIMs(String criteria);
 
 	EPADAIM addAIM(String userName, ProjectReference reference, String aimID);
 

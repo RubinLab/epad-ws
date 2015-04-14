@@ -35,6 +35,7 @@ import org.eclipse.jetty.server.handler.AbstractHandler;
 
 import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.epad.epadws.handlers.HandlerUtil;
+import edu.stanford.epad.epadws.security.EPADSessionOperations;
 import edu.stanford.epad.epadws.security.EPADSessionOperations.EPADSessionResponse;
 import edu.stanford.epad.epadws.service.SessionService;
 
@@ -85,13 +86,18 @@ public class EPADSessionHandler extends AbstractHandler
 				username = httpRequest.getParameter("username");
 				formpost = true;
 			}
+			String host = httpRequest.getParameter("hostname");
+			if (host == null)  host = httpRequest.getRemoteHost();
+			String ip = httpRequest.getParameter("hostip");
+			if (ip == null)  ip = httpRequest.getRemoteAddr();
 			if (username.length() != 0) {
-				log.info("Login request from user " + username);
+				log.info("Login Request, User:" + username  + " hostname:" + host +" ip:" + ip);
 				try {
 					EPADSessionResponse sessionResponse = SessionService.authenticateUser(httpRequest);
 					if (sessionResponse.statusCode == HttpServletResponse.SC_OK) {
 						String jsessionID = sessionResponse.response;
 						log.info("Successful login to EPAD; SESSIONID=" + jsessionID);
+						EPADSessionOperations.setSessionHost(jsessionID, host, ip);
 				    	if (formpost)
 				    	{
 				            Cookie userName = new Cookie(LOGGEDINUSER_COOKIE, username);

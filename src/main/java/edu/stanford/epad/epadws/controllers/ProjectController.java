@@ -939,6 +939,22 @@ public class ProjectController {
 			throw new Exception("Error creating or modifying project");
 	}
 
+	@RequestMapping(value = "/{projectID}/subjects/", method = {RequestMethod.PUT,RequestMethod.POST})
+	public void createEPADSubject(@RequestParam(value="username") String username, 
+										@PathVariable String projectID,
+										@RequestParam(value="subjectName", required=true) String subjectName,
+										@RequestParam(value="gender") String gender,
+										@RequestParam(value="dob") String dob,
+										HttpServletRequest request, 
+								        HttpServletResponse response) throws Exception {
+		String sessionID = SessionService.getJSessionIDFromRequest(request);
+		SubjectReference subjectReference = new SubjectReference(projectID, "new");
+		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
+		int	statusCode = epadOperations.createSubject(username, subjectReference, subjectName, getDate(dob), gender, sessionID);
+		if (statusCode != HttpServletResponse.SC_OK);
+			throw new Exception("Error creating or modifying project");
+	}
+
 	@RequestMapping(value = "/{projectID}/subjects/{subjectID}/status/{status}", method = RequestMethod.PUT)
 	public void setEPADSubjectStatus(@RequestParam(value="username") String username, 
 										@PathVariable String projectID,
@@ -974,6 +990,23 @@ public class ProjectController {
 			throw new Exception("Error creating a study");
 	}
 
+	@RequestMapping(value = "/{projectID}/subjects/{subjectID}/studies/", method = {RequestMethod.PUT,RequestMethod.POST})
+	public void createEPADStudy(@RequestParam(value="username") String username, 
+											@PathVariable String projectID,
+											@PathVariable String subjectID,
+											@RequestParam(value="description", required=true) String description,
+											@RequestParam(value="studyDate", required=true) String studyDate,
+											HttpServletRequest request, 
+									        HttpServletResponse response) throws Exception {
+		String sessionID = SessionService.getJSessionIDFromRequest(request);
+		StudyReference studyReference = new StudyReference(projectID, subjectID, "new");
+		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
+		int statusCode = 0;
+		statusCode = epadOperations.createStudy(username, studyReference, description, getDate(studyDate), sessionID);
+		if (statusCode != HttpServletResponse.SC_OK);
+			throw new Exception("Error creating a study");
+	}
+
 	@RequestMapping(value = "/{projectID}/subjects/{subjectID}/studies/{studyUID}/series/{seriesUID}", method = {RequestMethod.PUT,RequestMethod.POST})
 	public void createEPADSeries(@RequestParam(value="username") String username, 
 										@PathVariable String projectID,
@@ -986,6 +1019,22 @@ public class ProjectController {
 								        HttpServletResponse response) throws Exception {
 		String sessionID = SessionService.getJSessionIDFromRequest(request);
 		SeriesReference seriesReference = new SeriesReference(projectID, subjectID, studyUID, seriesUID);
+		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
+		int statusCode = 0;
+		EPADSeries series  = epadOperations.createSeries(username, seriesReference, description, getDate(seriesDate), sessionID);
+	}
+
+	@RequestMapping(value = "/{projectID}/subjects/{subjectID}/studies/{studyUID}/series/", method = {RequestMethod.PUT,RequestMethod.POST})
+	public void createEPADSeries(@RequestParam(value="username") String username, 
+										@PathVariable String projectID,
+										@PathVariable String subjectID,
+										@PathVariable String studyUID,
+										@RequestParam(value="description", required=true) String description,
+										@RequestParam(value="seriesDate", required=true) String seriesDate,
+										HttpServletRequest request, 
+								        HttpServletResponse response) throws Exception {
+		String sessionID = SessionService.getJSessionIDFromRequest(request);
+		SeriesReference seriesReference = new SeriesReference(projectID, subjectID, studyUID, "new");
 		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
 		int statusCode = 0;
 		EPADSeries series  = epadOperations.createSeries(username, seriesReference, description, getDate(seriesDate), sessionID);
@@ -1147,6 +1196,7 @@ public class ProjectController {
 		String sessionID = SessionService.getJSessionIDFromRequest(request);
 		ImageReference imageReference = new ImageReference(projectID, subjectID, studyUID, seriesUID, imageUID);
 		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
+		PrintWriter responseStream = response.getWriter();
 		boolean errstatus = DSOUtil.handleDSOFramesEdit(imageReference.projectID, imageReference.subjectID, imageReference.studyUID,
 				imageReference.seriesUID, imageReference.imageUID, request, responseStream);
 		if (errstatus);
@@ -1156,8 +1206,8 @@ public class ProjectController {
 	@RequestMapping(value = "/{projectID}/files/", method = RequestMethod.POST)
 	public void uploadProjectFiles(@RequestParam(value="username") String username, 
 										@PathVariable String projectID,
-										@RequestParam(value="description") String description,
-										@RequestParam(value="fileType") String fileType,
+										@RequestParam(value="description", required=false) String description,
+										@RequestParam(value="fileType", required=false) String fileType,
 											HttpServletRequest request, 
 									        HttpServletResponse response) throws Exception {
 		createFile(username, projectID, null, null, null, fileType, description, request, response);
@@ -1167,8 +1217,8 @@ public class ProjectController {
 	public void uploadSubjectFiles(@RequestParam(value="username") String username, 
 										@PathVariable String projectID,
 										@PathVariable String subjectID,
-										@RequestParam(value="description") String description,
-										@RequestParam(value="fileType") String fileType,
+										@RequestParam(value="description", required=false) String description,
+										@RequestParam(value="fileType", required=false) String fileType,
 											HttpServletRequest request, 
 									        HttpServletResponse response) throws Exception {
 		createFile(username, projectID, subjectID, null, null, fileType, description, request, response);
@@ -1179,8 +1229,8 @@ public class ProjectController {
 											@PathVariable String projectID,
 											@PathVariable String subjectID,
 											@PathVariable String studyUID,
-											@RequestParam(value="description") String description,
-											@RequestParam(value="fileType") String fileType,
+											@RequestParam(value="description", required=false) String description,
+											@RequestParam(value="fileType", required=false) String fileType,
 											HttpServletRequest request, 
 									        HttpServletResponse response) throws Exception {
 		createFile(username, projectID, subjectID, studyUID, null, fileType, description, request, response);
@@ -1192,8 +1242,8 @@ public class ProjectController {
 										@PathVariable String subjectID,
 										@PathVariable String studyUID,
 										@PathVariable String seriesUID,
-										@RequestParam(value="description") String description,
-										@RequestParam(value="fileType") String fileType,
+										@RequestParam(value="description", required=false) String description,
+										@RequestParam(value="fileType", required=false) String fileType,
 										HttpServletRequest request, 
 								        HttpServletResponse response) throws Exception {
 		createFile(username, projectID, subjectID, studyUID, seriesUID, fileType, description, request, response);
@@ -1270,6 +1320,47 @@ public class ProjectController {
 //				String dueDate = httpRequest.getParameter("dueDate");
 //				worklistOperations.createWorkList(username, reader, projectReference.projectID, workListID, description, null, getDate(dueDate));
 //				statusCode = HttpServletResponse.SC_OK;
+//} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.PROJECT_FILE, pathInfo)) {
+//	ProjectReference projectReference = ProjectReference.extract(ProjectsRouteTemplates.PROJECT_FILE, pathInfo);
+//	Map<String, String> templateMap = HandlerUtil.getTemplateMap(ProjectsRouteTemplates.PROJECT_FILE, pathInfo);
+//	String filename = HandlerUtil.getTemplateParameter(templateMap, "filename");
+//	if (filename == null || filename.trim().length() == 0)
+//		throw new Exception("Invalid filename");
+//	epadOperations.deleteFile(username, projectReference, filename);
+//	statusCode = HttpServletResponse.SC_OK;
+//			
+//} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.SUBJECT_FILE, pathInfo)) {
+//	SubjectReference subjectReference = SubjectReference.extract(ProjectsRouteTemplates.SUBJECT_FILE, pathInfo);
+//	if (subjectReference.subjectID.equals("null"))
+//		throw new Exception("Patient ID in rest call is null:" + pathInfo);
+//	Map<String, String> templateMap = HandlerUtil.getTemplateMap(ProjectsRouteTemplates.PROJECT_FILE, pathInfo);
+//	String filename = HandlerUtil.getTemplateParameter(templateMap, "filename");
+//	if (filename == null || filename.trim().length() == 0)
+//		throw new Exception("Invalid filename");
+//	epadOperations.deleteFile(username, subjectReference, filename);
+//	statusCode = HttpServletResponse.SC_OK;
+//
+//} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.STUDY_FILE, pathInfo)) {
+//	StudyReference studyReference = StudyReference.extract(ProjectsRouteTemplates.STUDY_FILE, pathInfo);
+//	if (studyReference.subjectID.equals("null"))
+//		throw new Exception("Patient ID in rest call is null:" + pathInfo);
+//	Map<String, String> templateMap = HandlerUtil.getTemplateMap(ProjectsRouteTemplates.PROJECT_FILE, pathInfo);
+//	String filename = HandlerUtil.getTemplateParameter(templateMap, "filename");
+//	if (filename == null || filename.trim().length() == 0)
+//		throw new Exception("Invalid filename");
+//	epadOperations.deleteFile(username, studyReference, filename);
+//	statusCode = HttpServletResponse.SC_OK;
+//
+//} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.SERIES_FILE, pathInfo)) {
+//	SeriesReference seriesReference = SeriesReference.extract(ProjectsRouteTemplates.SERIES_FILE, pathInfo);
+//	if (seriesReference.subjectID.equals("null"))
+//		throw new Exception("Patient ID in rest call is null:" + pathInfo);
+//	Map<String, String> templateMap = HandlerUtil.getTemplateMap(ProjectsRouteTemplates.PROJECT_FILE, pathInfo);
+//	String filename = HandlerUtil.getTemplateParameter(templateMap, "filename");
+//	if (filename == null || filename.trim().length() == 0)
+//		throw new Exception("Invalid filename");
+//	epadOperations.deleteFile(username, seriesReference, filename);
+//	statusCode = HttpServletResponse.SC_OK;
 			
 	
 	private int getInt(String value)

@@ -192,6 +192,20 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 			} finally {
 				close(c);
 			}
+			
+			// Fix coordination AIMs
+			try {
+				c = getConnection();
+				adb = new AIMDatabaseOperations(c, EPADConfig.eXistServerUrl,
+						EPADConfig.aim4Namespace, EPADConfig.eXistCollection, EPADConfig.eXistUsername, EPADConfig.eXistPassword);
+				List<EPADAIM> aims = adb.getAIMs("XML like '%EPAD-prod%'", 0, 0);
+				AIMUtil.convertAim3(aims);
+				
+			} catch (Exception x) {
+				log.warning("Error fixing AIM for coordination tag:", x);
+			} finally {
+				close(c);
+			}
 			// Check mongoDB
 			try {
 				log.info("Checking mongoDB ...");
@@ -671,6 +685,22 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 			AIMDatabaseOperations adb = new AIMDatabaseOperations(c, EPADConfig.eXistServerUrl,
 					EPADConfig.aim4Namespace, EPADConfig.eXistCollection, EPADConfig.eXistUsername, EPADConfig.eXistPassword);
 			return adb.getAIMCount(null, projectID, null, null, seriesID, null, 0);
+		} catch (SQLException sqle) {
+			log.warning("AIM Database operation failed:", sqle);
+		} finally {
+			close(c);
+		}
+		return 0;
+	}
+
+	@Override
+	public int getNumberOfAIMs(String criteria) {
+		Connection c = null;
+		try {
+			c = getConnection();
+			AIMDatabaseOperations adb = new AIMDatabaseOperations(c, EPADConfig.eXistServerUrl,
+					EPADConfig.aim4Namespace, EPADConfig.eXistCollection, EPADConfig.eXistUsername, EPADConfig.eXistPassword);
+			return adb.getAIMCount(criteria);
 		} catch (SQLException sqle) {
 			log.warning("AIM Database operation failed:", sqle);
 		} finally {
@@ -1425,6 +1455,7 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 			ps.setString(1, coordinationID);
 			rs = ps.executeQuery();
 			while (rs.next()) {
+				coordinationID = rs.getString(1);
 				String termID = rs.getString(2);
 				String termSchema = rs.getString(3);
 				String description = rs.getString(4);
@@ -2299,6 +2330,26 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 			c = getConnection();
 			ps = c.prepareStatement(EpadDatabaseCommands.SELECT_EPAD_SERIES_BY_ID);
 			ps.setString(1, seriesIUID);
+			rs = ps.executeQuery();
+			return rs.next();
+		} catch (SQLException sqle) {
+			String debugInfo = DatabaseUtils.getDebugData(rs);
+			log.warning("Database operation failed; debugInfo=" + debugInfo, sqle);
+			return false;
+		} finally {
+			close(c, ps, rs);
+		}
+	}
+
+	@Override
+	public boolean hasStudyInDCM4CHE(String studyIUID) {
+		Connection c = null;
+		PreparedStatement ps = null;
+		ResultSet rs = null;
+		try {
+			c = getConnection();
+			ps = c.prepareStatement(EpadDatabaseCommands.SELECT_DCM4CHE_STUDY_BY_ID);
+			ps.setString(1, studyIUID);
 			rs = ps.executeQuery();
 			return rs.next();
 		} catch (SQLException sqle) {

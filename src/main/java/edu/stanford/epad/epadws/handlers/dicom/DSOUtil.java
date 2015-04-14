@@ -50,6 +50,7 @@ import edu.stanford.epad.common.util.EPADFileUtils;
 import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.epad.dtos.DSOEditRequest;
 import edu.stanford.epad.dtos.DSOEditResult;
+import edu.stanford.epad.dtos.EPADAIM;
 import edu.stanford.epad.dtos.EPADDSOFrame;
 import edu.stanford.epad.dtos.EPADFrame;
 import edu.stanford.epad.dtos.EPADFrameList;
@@ -68,6 +69,8 @@ import edu.stanford.epad.epadws.handlers.core.ImageReference;
 import edu.stanford.epad.epadws.queries.Dcm4CheeQueries;
 import edu.stanford.epad.epadws.queries.DefaultEpadOperations;
 import edu.stanford.epad.epadws.queries.EpadOperations;
+import edu.stanford.epad.epadws.service.DefaultEpadProjectOperations;
+import edu.stanford.epad.epadws.service.EpadProjectOperations;
 import edu.stanford.hakan.aim3api.base.ImageAnnotation;
 
 /**
@@ -488,9 +491,20 @@ public class DSOUtil
 			FileItemIterator fileItemIterator = servletFileUpload.getItemIterator(httpRequest);
 
 			DSOEditRequest dsoEditRequest = extractDSOEditRequest(fileItemIterator);
-			log.info("DSOEditRequest, imageUID:" + dsoEditRequest.imageUID + " aimID:" + dsoEditRequest.aimID + " number Frames:" + dsoEditRequest.editedFrameNumbers.size());
 
 			if (dsoEditRequest != null) {
+				log.info("DSOEditRequest, imageUID:" + dsoEditRequest.imageUID + " aimID:" + dsoEditRequest.aimID + " number Frames:" + dsoEditRequest.editedFrameNumbers.size());
+				EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
+				String username = httpRequest.getParameter("username");
+				EPADAIM aim = epadDatabaseOperations.getAIM(dsoEditRequest.aimID);
+				if (aim != null && username != null) {
+					EpadProjectOperations projectOperations = DefaultEpadProjectOperations.getInstance();
+					if (!projectOperations.isAdmin(username) && !username.equals(aim.userName) 
+							&& !projectOperations.isOwner(username, projectID)) {
+						log.warning("No permissions to update AIM:" + aim.aimID + " for user " + username);
+						throw new Exception("No permissions to update AIM:" + aim.aimID + " for user " + username);
+					}
+				}
 				List<File> editedFramesPNGMaskFiles = HandlerUtil.extractFiles(fileItemIterator, "DSOEditedFrame", "PNG");
 				if (editedFramesPNGMaskFiles.isEmpty()) {
 					log.warning("No PNG masks supplied in DSO edit request for image " + imageUID + " in series " + seriesUID);

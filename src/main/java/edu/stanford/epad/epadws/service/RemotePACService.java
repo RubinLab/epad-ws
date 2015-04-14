@@ -2,9 +2,11 @@ package edu.stanford.epad.epadws.service;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -16,6 +18,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import javax.servlet.http.HttpServletResponse;
+
+import org.apache.commons.httpclient.HttpClient;
+import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.io.IOUtils;
 
 import com.pixelmed.dicom.Attribute;
@@ -78,6 +84,8 @@ public class RemotePACService extends RemotePACSBase {
 	public static Map<String, String> monitorTransfers = new HashMap<String, String>();
 	public static Map<String, Long> monitorStart = new HashMap<String, Long>();
 	
+	public static DicomTagList dicomTags = null;
+	
 	public static RemotePACService getInstance() throws Exception {
 		if (rpsinstance == null)
 		{
@@ -119,13 +127,15 @@ public class RemotePACService extends RemotePACSBase {
 	
 	public static DicomTagList getDicomTags()
 	{
-		File dicomTags = new File(EPADConfig.getEPADWebServerEtcDir() + "dicomtags.txt");
+		if (dicomTags != null)
+			return dicomTags;
+		File dicomTagFile = new File(EPADConfig.getEPADWebServerEtcDir() + "dicomtags.txt");
 		BufferedReader reader = null;
 		InputStream is = null;
-		if (!dicomTags.exists()) {
+		if (!dicomTagFile.exists()) {
 			StringBuilder sb = new StringBuilder();
 			try {
-				is = EPADFileUtils.class.getClassLoader().getResourceAsStream(dicomTags.getName());
+				is = EPADFileUtils.class.getClassLoader().getResourceAsStream(dicomTagFile.getName());
 				reader = new BufferedReader(new InputStreamReader(is, "UTF8"));
 				String line = null;
 				while ((line = reader.readLine()) != null) {
@@ -141,11 +151,11 @@ public class RemotePACService extends RemotePACSBase {
 				else if (is != null)
 					IOUtils.closeQuietly(is);
 			}
-			EPADFileUtils.write(dicomTags, sb.toString());			
+			EPADFileUtils.write(dicomTagFile, sb.toString());			
 		}
 		DicomTagList dclist = new DicomTagList();
 		try {
-			is = EPADFileUtils.class.getClassLoader().getResourceAsStream(dicomTags.getName());
+			is = EPADFileUtils.class.getClassLoader().getResourceAsStream(dicomTagFile.getName());
 			reader = new BufferedReader(new InputStreamReader(is, "UTF8"));
 			String line = null;
 			while ((line = reader.readLine()) != null) {
@@ -165,6 +175,7 @@ public class RemotePACService extends RemotePACSBase {
 			else if (is != null)
 				IOUtils.closeQuietly(is);
 		}
+		dicomTags = dclist;
 		return dclist;			
 	}
 	
@@ -658,7 +669,7 @@ public class RemotePACService extends RemotePACSBase {
 				EpadDatabaseOperations databaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
 				for (RemotePACEntity rpe: remoteEntities) {
 					if (rpe.entityType.equalsIgnoreCase("Study")) {
-						if (projectOperations.getStudy(rpe.entityID.substring(rpe.entityID.indexOf(":")+1)) != null)
+						if (databaseOperations.hasStudyInDCM4CHE(rpe.entityID.substring(rpe.entityID.indexOf(":")+1)))
 							rpe.inEpad = true;
 					} else if (rpe.entityType.equalsIgnoreCase("Series")) {
 						if (databaseOperations.hasSeriesInEPadDatabase(rpe.entityID.substring(rpe.entityID.indexOf(":")+1)))
@@ -682,6 +693,7 @@ public class RemotePACService extends RemotePACSBase {
 	public void clearQueryCache()
 	{
 		remoteQueryCache = new HashMap<String, QueryTreeRecord>();
+		dicomTags = null;
 	}
 	
 	DecimalFormat decformat = new DecimalFormat("00000");
@@ -807,6 +819,8 @@ public class RemotePACService extends RemotePACSBase {
 		else
 		{
 			studyUID = uniqueKey;
+			if (studyUID.indexOf(":") != -1)
+				studyUID = studyUID.substring(studyUID.indexOf(":")+1);
 			studyDate = Attribute.getSingleStringValueOrNull(node.getAllAttributesReturnedInIdentifier(),TagFromName.StudyDate);
 			patientID = Attribute.getSingleStringValueOrNull(node.getAllAttributesReturnedInIdentifier(),TagFromName.PatientID);
 			patientName = Attribute.getSingleStringValueOrEmptyString(node.getAllAttributesReturnedInIdentifier(),TagFromName.PatientName);
@@ -835,6 +849,73 @@ public class RemotePACService extends RemotePACSBase {
 			return studyUID + ":" + studyDate;
 		else
 			return seriesUID;
+	}
+
+	public static int downloadSeriesFromTCIA(String username, String seriesUID, String projectID)
+			throws Exception
+	{
+		String tciaURL = EPADConfig.getParamValue("TCIA_URL", "https://services.cancerimagingarchive.net/services/v3/TCIA/query/getImage");
+		tciaURL = tciaURL + "?SeriesInstanceUID=" + seriesUID;
+		tciaURL = tciaURL + "&api_key=" + EPADConfig.getParamValue("TCIA_APIKEY", "5b1c609e-e3b5-4fbd-999c-e1e71f1c49f0");
+		HttpClient client = new HttpClient();
+		GetMethod method = new GetMethod(tciaURL);
+		int statusCode = client.executeMethod(method);
+		File uploadStoreDir = new File(EPADConfig.getEPADWebServerUploadDir()
+													+ "temp" + System.currentTimeMillis());
+		uploadStoreDir.mkdirs();
+		File zipfile = new File(uploadStoreDir, "tcia.zip");
+
+		if (statusCode == HttpServletResponse.SC_OK) {
+			OutputStream outputStream = null;
+			try {
+				outputStream = new FileOutputStream(zipfile);
+				InputStream inputStream = method.getResponseBodyAsStream();
+				int read = 0;
+				byte[] bytes = new byte[4096];
+				while ((read = inputStream.read(bytes)) != -1) {
+					outputStream.write(bytes, 0, read);
+				}
+			} finally {
+				IOUtils.closeQuietly(outputStream);
+				method.releaseConnection();
+			}
+			writePropertiesFile(uploadStoreDir, projectID, "", username);
+		}
+		else {
+			log.warning("TCIA URL:" + tciaURL + " Status:" + statusCode);
+		}
+		return statusCode;
+	}
+
+	// add the properties file xnat_upload.properties.
+	private static void writePropertiesFile(File storeDir, String project,
+			String session, String user) {
+
+		String projectName = "XNATProjectName=" + project;
+		String sessionName = "XNATSessionID=" + session;
+		String userName = "XNATUserName=" + user;
+
+		try {
+			File properties = new File(storeDir, "xnat_upload.properties");
+			if (!properties.exists()) {
+				properties.createNewFile();
+			}
+			FileOutputStream fop = new FileOutputStream(properties, false);
+
+			fop.write(projectName.getBytes());
+			fop.write("\n".getBytes());
+			fop.write(sessionName.getBytes());
+			fop.write("\n".getBytes());
+			fop.write(userName.getBytes());
+			fop.write("\n".getBytes());
+
+			fop.flush();
+			fop.close();
+
+		} catch (IOException e) {
+			log.info("Error writing prroperties file");
+			e.printStackTrace();
+		}
 	}
 	
 	/**

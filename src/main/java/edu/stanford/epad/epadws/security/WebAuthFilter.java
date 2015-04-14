@@ -1,7 +1,7 @@
 package edu.stanford.epad.epadws.security;
 
 import java.io.IOException;
-import java.util.Enumeration;
+import java.io.PrintWriter;
 
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;
@@ -37,7 +37,7 @@ public class WebAuthFilter implements Filter {
 		HttpServletRequest httpRequest = (HttpServletRequest) request;
 		HttpServletResponse httpResponse = (HttpServletResponse) response;
 		String webAuthUser = httpRequest.getHeader(WEBAUTH_HEADER);
-	    if (webAuthUser != null && webAuthUser.length() > 0)
+	    if (webAuthUser != null && webAuthUser.length() > 0 && EPADConfig.webAuthPassword != null)
 		{
 			String sessionID = SessionService.getJSessionIDFromRequest(httpRequest);
 			if (SessionService.hasValidSessionID(sessionID)) {
@@ -50,9 +50,10 @@ public class WebAuthFilter implements Filter {
 			if (sessionID == null) {
 				try {
 					// Note: On the client, this call should be SessionResource.createSession(List<String>() with username, password)
-					log.info("Session ID for user:"+ webAuthUser + " is null, creating new session");
+					log.info("WebAuth login request from user:" + webAuthUser  + " host: " + httpRequest.getRemoteHost() +":" + httpRequest.getRemoteAddr());
 					sessionID = EPADSessionOperations.authenticateWebAuthUser(webAuthUser, EPADConfig.webAuthPassword);
-		            Cookie userName = new Cookie(LOGGEDINUSER_COOKIE, webAuthUser);
+		            EPADSessionOperations.setSessionHost(sessionID, httpRequest.getRemoteHost(), httpRequest.getRemoteAddr());
+					Cookie userName = new Cookie(LOGGEDINUSER_COOKIE, webAuthUser);
 		            userName.setMaxAge(-1);
 		            userName.setPath("/epad/");
 		            httpResponse.addCookie(userName);
@@ -76,7 +77,17 @@ public class WebAuthFilter implements Filter {
 			if (httpRequest.getRequestURL().indexOf("/v2/") != -1)				
 				log.info("Request from client:" + httpRequest.getRequestURL());
 		}
-	     
+	    if (httpRequest.getRequestURL().indexOf("WEB-INF") != -1) {
+	    	// How come, this weird jetty allows this?
+			PrintWriter pw = httpResponse.getWriter();
+			httpResponse.setContentType("text/html");
+			pw.append("<html> <head> <meta http-equiv='Content-Type' content='text/html;charset=ISO-8859-1'/>" 
+					+ "<title>Error 403 Forbidden</title>"
+					+ "</head> <body> <h2>HTTP ERROR: 403 Forbidden</h2>"
+					+ "</body></html>");
+			httpResponse.setStatus(HttpServletResponse.SC_FORBIDDEN);
+			return;
+	    }
         filterChain.doFilter(request, response);
 		return;
 	}

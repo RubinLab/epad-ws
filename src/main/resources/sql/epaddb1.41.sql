@@ -1,4 +1,6 @@
 DROP TABLE if exists nondicom_series;
+DROP TABLE if exists reviewer;
+DROP TABLE if exists epadstatistics;
 
 CREATE TABLE nondicom_series (id integer unsigned NOT NULL AUTO_INCREMENT,
 seriesuid varchar(128),
@@ -31,6 +33,24 @@ CONSTRAINT FK_reviewer_user FOREIGN KEY (reviewer) REFERENCES user(username),
 KEY FK_reviewee_user (reviewee),
 CONSTRAINT FK_reviewee_user FOREIGN KEY (reviewee) REFERENCES user(username)) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 CREATE UNIQUE INDEX uk_reviewer_ind on reviewer(reviewer,reviewee);
+
+CREATE TABLE epadstatistics (id integer unsigned NOT NULL AUTO_INCREMENT,
+host varchar(128),
+numOfUsers Integer,
+numOfProjects Integer,
+numOfPatients Integer,
+numOfStudies Integer,
+numOfSeries Integer,
+numOfAims Integer,
+numOfDSOs Integer,
+numOfWorkLists Integer,
+numOfPacs Integer,
+numOfAutoQueries Integer,
+creator varchar(128),
+createdtime timestamp,
+updatetime timestamp,
+updated_by varchar(64),
+PRIMARY KEY (id)) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 UPDATE dbversion SET version = '1.41';
 commit;

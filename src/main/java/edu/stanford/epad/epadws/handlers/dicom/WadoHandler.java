@@ -14,6 +14,8 @@ import org.eclipse.jetty.server.handler.AbstractHandler;
 import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.epad.epadws.handlers.HandlerUtil;
+import edu.stanford.epad.epadws.security.EPADSessionOperations;
+import edu.stanford.epad.epadws.service.SessionService;
 
 /**
  * WADO Handler
@@ -54,6 +56,7 @@ public class WadoHandler extends AbstractHandler
 		String method = httpRequest.getMethod();
 		if ("GET".equalsIgnoreCase(method)) {
 			try {
+				String sessionID = SessionService.getJSessionIDFromRequest(httpRequest);
 				String username = httpRequest.getParameter("username");
 				responseStream = httpResponse.getOutputStream();
 
@@ -62,7 +65,7 @@ public class WadoHandler extends AbstractHandler
 					String queryString = httpRequest.getQueryString();
 					queryString = URLDecoder.decode(queryString, "UTF-8");
 					if (queryString != null) {
-						statusCode = performWADOQuery(queryString, responseStream, username);
+						statusCode = performWADOQuery(queryString, responseStream, username, sessionID);
 					} else {
 						statusCode = HandlerUtil.badRequestResponse(MISSING_QUERY_MESSAGE, log);
 						log.warning("Missing Wado query");
@@ -86,14 +89,17 @@ public class WadoHandler extends AbstractHandler
 		return true;
 	}
 
-	private int performWADOQuery(String queryString, ServletOutputStream outputStream, String username)
+	private int performWADOQuery(String queryString, ServletOutputStream outputStream, String username, String sessionID)
 
 	{
 		String wadoHost = EPADConfig.dcm4CheeServer;
 		int wadoPort = EPADConfig.dcm4cheeServerWadoPort;
 		String wadoBase = EPADConfig.wadoURLExtension;
 		if (queryString.toLowerCase().indexOf("dicom") != -1)
-			log.info("Wado Request to download dicom:" + queryString + ", username:" + username);
+		{
+			log.info("User:" + username  + " host:" + EPADSessionOperations.getSessionHost(sessionID) 
+					+ "Wado Request to download dicom:" + queryString);
+		}
 		String wadoURL = buildWADOURL(wadoHost, wadoPort, wadoBase, queryString);
 		int statusCode;
 		try {

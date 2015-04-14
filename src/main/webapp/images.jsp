@@ -14,10 +14,13 @@
 			String username = EPADSessionOperations.getSessionUser(sessionID);
 			String projectID = request.getParameter("projectID");
 %>
+<h2>Project: <%=projectID%></h2>
+<div id=imagelist><div>
 <table>
 </table>
 <script>
 $( document ).ready(function() {
+	var listdata;
 	var url = "/epad/v2/projects/<%=projectID%>/subjects/";
 	$.ajax({         
 		url: url + "?username=<%=username%>",         
@@ -30,10 +33,10 @@ $( document ).ready(function() {
 			return true;},
 		success: function(response){
 			var subjects = response.ResultSet.Result;
-			document.write("<table border=1><tr bgcolor=lightgray><td>Name</td><td>ID</td><td>Studies/Series/Annotations</td></tr>");
+			listdata = "<table border=1><tr bgcolor=lightgray><td>Type</td><td>Name</td><td>ID</td><td>Studies/Series/Annotations</td></tr>\n";
 			for (i = 0; i < subjects.length; i++)
 			{
-				document.write("<tr><td><a href='images.jsp?projectID=" + subjects[i].id + "' target='rightpanel'>" + subjects[i].subjectName + "</a></td><td>" + subjects[i].subjectID + "</td><td>"  +  subjects[i].numberOfStudies + " / " + subjects[i].numberOfAnnotations + "</td></tr>\n");
+				listdata =  listdata + "<tr><td>Patient</td><td><a href='images.jsp?projectID=" + subjects[i].id + "' target='rightpanel'>" + subjects[i].subjectName + "</a></td><td>" + subjects[i].subjectID + "</td><td>"  +  subjects[i].numberOfStudies + " / " + subjects[i].numberOfAnnotations + "</td></tr>\n";
 				var url2 = url + subjects[i].subjectID + "/studies/";
 				$.ajax({         
 					url: url2 + "?username=<%=username%>",         
@@ -48,7 +51,7 @@ $( document ).ready(function() {
 						var studies = response.ResultSet.Result;
 						for (j = 0; j < studies.length; j++)
 						{
-							document.write("<tr><td>&nbsp;&nbsp;&nbsp;<a href='images.jsp?projectID=" + studies[j].studyUID + "' target='rightpanel'>" + studies[j].studyDescription + "</a></td><td>" + studies[j].studyUID + "</td><td>"  +  studies[j].numberOfSeries + " / " + studies[j].numberOfAnnotations + "</td></tr>\n");
+							listdata =  listdata + "<tr><td>Study</td><td>&nbsp;&nbsp;&nbsp;<a href='images.jsp?projectID=" + studies[j].studyUID + "' target='rightpanel'>" + studies[j].studyDescription + "</a></td><td>" + studies[j].studyUID + "</td><td>"  +  studies[j].numberOfSeries + " / " + studies[j].numberOfAnnotations + "</td></tr>\n";
 							var url3 = url2 + studies[j].studyUID + "/series/";
 							$.ajax({         
 								url: url3 + "?username=<%=username%>",         
@@ -63,7 +66,7 @@ $( document ).ready(function() {
 									var series = response.ResultSet.Result;
 									for (k = 0; k < series.length; k++)
 									{
-										document.write("<tr><td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href='images.jsp?projectID=" + series[k].seriesUID + "' target='rightpanel'>" + series[k].seriesDescription + "</a></td><td>" + series[k].seriesUID + "</td><td>na / "  +  series[k].numberOfAnnotations + "</td></tr>\n");
+										listdata =  listdata + "<tr><td>Series</td><td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href='images.jsp?projectID=" + series[k].seriesUID + "' target='rightpanel'>" + series[k].seriesDescription + "</a></td><td>" + series[k].seriesUID + "</td><td>na / "  +  series[k].numberOfAnnotations + "</td></tr>\n";
 										var url4 = url3 + series[k].seriesUID + "/aims/?format=summary";
 										$.ajax({         
 											url: url4 + "&username=<%=username%>",         
@@ -78,7 +81,7 @@ $( document ).ready(function() {
 												var aims = response.ResultSet.Result;
 												for (l = 0; l < aims.length; l++)
 												{
-													document.write("<tr><td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href='images.jsp?projectID=" + aims[l].aimID + "' target='rightpanel'>" + aims[l].name + " (" + aims[l].userName  + ")</a></td><td>" + aims[l].aimID + "</td><td>"  +  aims[l].template + "</td></tr>\n");
+													listdata =  listdata + "<tr><td>Aims</td><td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href='images.jsp?projectID=" + aims[l].aimID + "' target='rightpanel'>" + aims[l].name + " (" + aims[l].userName  + ")</a></td><td>" + aims[l].aimID + "</td><td>"  +  aims[l].template + "</td></tr>\n";
 												}
 											}
 										})
@@ -89,7 +92,8 @@ $( document ).ready(function() {
 					}
 				})
 			}
-			document.write("</table>");
+			listdata =  listdata + "</table>\n";
+			document.getElementById("imagelist").innerHTML = listdata;
 		}
 	});
 
