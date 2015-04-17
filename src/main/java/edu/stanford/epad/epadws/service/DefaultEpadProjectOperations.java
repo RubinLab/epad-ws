@@ -566,8 +566,7 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 	 * @see edu.stanford.epad.epadws.service.EpadProjectOperations#isSubjectInProject(java.lang.String, java.lang.String, java.lang.String)
 	 */
 	@Override
-	public boolean isSubjectInProject(String loggedInUser, String subjectUID,
-			String projectId) throws Exception {
+	public boolean isSubjectInProject(String subjectUID, String projectId) throws Exception {
 		Subject subject = getSubject(subjectUID);
 		if (subject == null)
 			throw new Exception("Subject not found, ID:" + subjectUID);

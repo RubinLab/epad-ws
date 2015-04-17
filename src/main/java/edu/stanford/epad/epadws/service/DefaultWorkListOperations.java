@@ -125,7 +125,7 @@ public class DefaultWorkListOperations implements EpadWorkListOperations {
 		workList = (WorkList) workList.getObject("worklistid = " + workList.toSQL(workListID));
 		Project project = new Project(workList.getProjectId());
 		project.retrieve();
-		if (!projectOperations.isSubjectInProject(loggedInUser, subjectUID, project.getProjectId()))
+		if (!projectOperations.isSubjectInProject(subjectUID, project.getProjectId()))
 			throw new Exception("Subject does not belong to Project");
 		WorkListToSubject wtos = (WorkListToSubject) new WorkListToSubject().getObject("worklist_id =" + workList.getId() + " and subject_id=" + subject.getId());
 		if (wtos == null)

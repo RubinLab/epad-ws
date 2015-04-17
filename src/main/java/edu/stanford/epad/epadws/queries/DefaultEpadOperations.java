@@ -1751,6 +1751,9 @@ public class DefaultEpadOperations implements EpadOperations
 				log.warning("No permissions to update AIM:" + aimID + " for user " + username);
 				throw new Exception("No permissions to update AIM:" + aimID + " for user " + username);
 			}
+			if (aim != null && !aim.projectID.equals(projectReference.projectID)) {
+				moveAIMtoProject(aim, projectReference.projectID, username);
+			}
 			if (!AIMUtil.saveAIMAnnotation(aimFile, projectReference.projectID, sessionID, username))
 				return "";
 			else
@@ -1761,6 +1764,23 @@ public class DefaultEpadOperations implements EpadOperations
 		}
 	}
 
+	private void moveAIMtoProject(EPADAIM aim, String projectID, String username) throws Exception {
+		if (projectID.equals(EPADConfig.xnatUploadProjectID))
+			throw new Exception("Invalid projectID for an AIM");
+		String aimID = aim.aimID;
+		if (aim.studyUID != null && aim.studyUID.length() > 0
+				&& projectOperations.isStudyInProjectAndSubject(projectID, aim.subjectID, aim.studyUID)) {
+			epadDatabaseOperations.updateAIM(aimID, projectID, username);
+		} else if (aim.subjectID != null && aim.subjectID.length() > 0
+				&& projectOperations.isSubjectInProject(projectID, aim.subjectID)) {
+			epadDatabaseOperations.updateAIM(aimID, projectID, username);					
+		} else if (aim.subjectID == null || aim.subjectID.length() == 0) {
+			epadDatabaseOperations.updateAIM(aimID, projectID, username);					
+		} else {
+			throw new Exception("Invalid projectID for this AIM");
+		}		
+	}
+	
 	@Override
 	public String createSubjectAIM(String username,
 			SubjectReference subjectReference, String aimID, File aimFile,
@@ -1771,6 +1791,9 @@ public class DefaultEpadOperations implements EpadOperations
 			{
 				log.warning("No permissions to update AIM:" + aimID + " for user " + username);
 				throw new Exception("No permissions to update AIM:" + aimID + " for user " + username);
+			}
+			if (!aim.projectID.equals(subjectReference.projectID)) {
+				moveAIMtoProject(aim, subjectReference.projectID, username);
 			}
 			if (!AIMUtil.saveAIMAnnotation(aimFile, aim.projectID, sessionID, username))
 				return "";
@@ -1792,6 +1815,9 @@ public class DefaultEpadOperations implements EpadOperations
 				log.warning("No permissions to update AIM:" + aimID + " for user " + username);
 				throw new Exception("No permissions to update AIM:" + aimID + " for user " + username);
 			}
+			if (!aim.projectID.equals(studyReference.projectID)) {
+				moveAIMtoProject(aim, studyReference.projectID, username);
+			}
 			if (!AIMUtil.saveAIMAnnotation(aimFile, aim.projectID, sessionID, username))
 				return "";
 			else
@@ -1811,6 +1837,9 @@ public class DefaultEpadOperations implements EpadOperations
 			{
 				log.warning("No permissions to update AIM:" + aimID + " for user " + username);
 				throw new Exception("No permissions to update AIM:" + aimID + " for user " + username);
+			}
+			if (!aim.projectID.equals(seriesReference.projectID)) {
+				moveAIMtoProject(aim, seriesReference.projectID, username);
 			}
 			if (!AIMUtil.saveAIMAnnotation(aimFile, aim.projectID, sessionID, username))
 				return "";
@@ -1832,6 +1861,9 @@ public class DefaultEpadOperations implements EpadOperations
 				log.warning("No permissions to update AIM:" + aimID + " for user " + username);
 				throw new Exception("No permissions to update AIM:" + aimID + " for user " + username);
 			}
+			if (!aim.projectID.equals(imageReference.projectID)) {
+				moveAIMtoProject(aim, imageReference.projectID, username);
+			}
 			if (!AIMUtil.saveAIMAnnotation(aimFile, aim.projectID, sessionID, username))
 				return "";
 			else
@@ -1851,6 +1883,9 @@ public class DefaultEpadOperations implements EpadOperations
 			{
 				log.warning("No permissions to update AIM:" + aimID + " for user " + username);
 				throw new Exception("No permissions to update AIM:" + aimID + " for user " + username);
+			}
+			if (!aim.projectID.equals(frameReference.projectID)) {
+				moveAIMtoProject(aim, frameReference.projectID, username);
 			}
 			if (!AIMUtil.saveAIMAnnotation(aimFile, aim.projectID, frameReference.frameNumber, sessionID, username))
 				return "";

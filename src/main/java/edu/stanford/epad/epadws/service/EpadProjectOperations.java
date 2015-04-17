@@ -243,12 +243,11 @@ public interface EpadProjectOperations {
 	
 	/**
 	 * Check if Subject is in Project
-	 * @param loggedInUser
 	 * @param subjectUID
 	 * @param projectId
 	 * @throws Exception
 	 */
-	boolean isSubjectInProject(String loggedInUser, String subjectUID, String projectId) throws Exception;
+	boolean isSubjectInProject(String subjectUID, String projectId) throws Exception;
 
 	/**
 	 * Create File Record
