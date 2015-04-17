@@ -41,7 +41,7 @@ public class User extends AbstractDAO {
 	String lastName;
 	String email;
 	String password;
-	boolean enabled;
+	boolean enabled = true;
 	String permissions;
 	Date lastLogin;
 	boolean admin;

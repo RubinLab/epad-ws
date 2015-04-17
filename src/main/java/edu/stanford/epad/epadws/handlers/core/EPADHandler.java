@@ -62,6 +62,7 @@ import edu.stanford.epad.epadws.aim.AIMSearchType;
 import edu.stanford.epad.epadws.aim.AIMUtil;
 import edu.stanford.epad.epadws.handlers.HandlerUtil;
 import edu.stanford.epad.epadws.handlers.dicom.DSOUtil;
+import edu.stanford.epad.epadws.models.EpadFile;
 import edu.stanford.epad.epadws.models.FileType;
 import edu.stanford.epad.epadws.models.RemotePACQuery;
 import edu.stanford.epad.epadws.models.WorkList;
@@ -1558,13 +1559,23 @@ public class EPADHandler extends AbstractHandler
 				if (enable != null)
 				{
 					EpadProjectOperations projectOperations = DefaultEpadProjectOperations.getInstance();
-					if ("true".equalsIgnoreCase(enable))
+					EpadFile efile = projectOperations.getEpadFile(reference.projectID, null, null, null, templatename);
+					if (efile != null && "true".equalsIgnoreCase(enable))
 					{
 						projectOperations.enableFile(username, reference.projectID, null, null, null, templatename);
 					}
-					else if ("false".equalsIgnoreCase(enable))
+					else if (efile != null && "false".equalsIgnoreCase(enable))
 					{	
 						projectOperations.disableFile(username, reference.projectID, null, null, null, templatename);
+					}
+					efile = projectOperations.getEpadFile(EPADConfig.xnatUploadProjectID, null, null, null, templatename);
+					if (efile != null && "true".equalsIgnoreCase(enable))
+					{
+						projectOperations.enableTemplate(username, reference.projectID, null, null, null, templatename);
+					}
+					else if (efile != null && "false".equalsIgnoreCase(enable))
+					{	
+						projectOperations.disableTemplate(username, reference.projectID, null, null, null, templatename);
 					}
 				}
 				else

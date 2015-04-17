@@ -41,6 +41,7 @@ import org.mindrot.jbcrypt.BCrypt;
 import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.epad.epadws.epaddb.DatabaseUtils;
+import edu.stanford.epad.epadws.models.DisabledTemplate;
 import edu.stanford.epad.epadws.models.EpadFile;
 import edu.stanford.epad.epadws.models.FileType;
 import edu.stanford.epad.epadws.models.NonDicomSeries;
@@ -1447,6 +1448,42 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 			throw new Exception("No permissions to disable template");
 		efile.setEnabled(false);
 		efile.save();
+	}
+
+	@Override
+	public void enableTemplate(String loggedInUser, String projectID,
+			String subjectUID, String studyUID, String seriesUID,
+			String templateName) throws Exception {
+		Project project = getProject(projectID);
+		if (project == null)
+			throw new Exception("Project not found");
+		new DisabledTemplate().deleteObjects("project_id = " + project.getId() + " and templatename=" + DisabledTemplate.toSQL(templateName));
+	}
+
+	@Override
+	public void disableTemplate(String loggedInUser, String projectID,
+			String subjectUID, String studyUID, String seriesUID,
+			String templateName) throws Exception {
+		Project project = getProject(projectID);
+		if (project == null)
+			throw new Exception("Project not found");
+		DisabledTemplate dt = new DisabledTemplate();
+		dt.setProjectId(project.getId());
+		dt.setTemplateName(templateName);
+		dt.setCreator(loggedInUser);
+		dt.save();
+	}
+
+	@Override
+	public List<String> getDisabledTemplates(String projectID) throws Exception {
+		Project project = getProject(projectID);
+		if (project == null)
+			throw new Exception("Project not found");
+		List<DisabledTemplate> dts = new DisabledTemplate().getObjects("project_id=" + project.getId());
+		List<String> templateNames = new ArrayList<String>();
+		for (DisabledTemplate dt: dts)
+			templateNames.add(dt.getTemplateName());
+		return templateNames;
 	}
 
 	/* (non-Javadoc)

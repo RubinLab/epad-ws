@@ -94,6 +94,7 @@ import edu.stanford.epad.epadws.handlers.core.SeriesReference;
 import edu.stanford.epad.epadws.handlers.core.StudyReference;
 import edu.stanford.epad.epadws.handlers.core.SubjectReference;
 import edu.stanford.epad.epadws.handlers.dicom.DSOUtil;
+import edu.stanford.epad.epadws.models.DisabledTemplate;
 import edu.stanford.epad.epadws.models.EpadFile;
 import edu.stanford.epad.epadws.models.FileType;
 import edu.stanford.epad.epadws.models.NonDicomSeries;
@@ -1477,6 +1478,7 @@ public class DefaultEpadOperations implements EpadOperations
 			String sessionID) throws Exception {
 		EPADTemplateList fileList = new EPADTemplateList();
 		File[] templates = new File(EPADConfig.getEPADWebServerTemplatesDir()).listFiles();
+		List<String> disabledTemplatesNames = projectOperations.getDisabledTemplates(EPADConfig.xnatUploadProjectID);
 		for (File template: templates)
 		{
 			if (template.isDirectory()) continue;
@@ -1500,8 +1502,12 @@ public class DefaultEpadOperations implements EpadOperations
 			} catch (Exception x) {
 				//log.warning("JSON Error", x);
 			}
+			boolean enabled = true;
+			if (disabledTemplatesNames.contains(template.getName()) || disabledTemplatesNames.contains(templateName) || disabledTemplatesNames.contains(templateCode))
+				enabled = false;
+			
 			EPADTemplate epadFile = new EPADTemplate("", "", "", "", "", name, template.length(), FileType.TEMPLATE.getName(), 
-					formatDate(new Date(template.lastModified())), "templates/" + template.getName(), true, description);
+					formatDate(new Date(template.lastModified())), "templates/" + template.getName(), enabled, description);
             epadFile.templateName = templateName;
             epadFile.templateType = templateType;
             epadFile.templateCode = templateCode;
@@ -1518,6 +1524,10 @@ public class DefaultEpadOperations implements EpadOperations
 			{
 				userProjects.add(project.getProjectId());
 				EPADTemplate epadFile = convertEpadFileToTemplate(project.getProjectId(), efile, new File(EPADConfig.getEPADWebServerResourcesDir() + getEpadFilePath(efile)));
+				boolean enabled = true;
+				if (disabledTemplatesNames.contains(epadFile.fileName) || disabledTemplatesNames.contains(epadFile.templateName) || disabledTemplatesNames.contains(epadFile.templateCode))
+					enabled = false;
+				epadFile.enabled = enabled;
 				fileList.addFile(epadFile);
 			}
 		}
@@ -1532,7 +1542,16 @@ public class DefaultEpadOperations implements EpadOperations
 		for (EpadFile efile: efiles)
 		{
 			EPADTemplate epadFile = convertEpadFileToTemplate(projectID, efile, new File(EPADConfig.getEPADWebServerResourcesDir() + getEpadFilePath(efile)));
-			fileList.addFile(epadFile);
+			if (epadFile.enabled)
+				fileList.addFile(epadFile);
+		}
+		efiles = projectOperations.getEpadFiles(EPADConfig.xnatUploadProjectID, null, null, null, FileType.TEMPLATE, false);
+		List<String> disabledTemplatesNames = projectOperations.getDisabledTemplates(projectID);
+		for (EpadFile efile: efiles)
+		{
+			EPADTemplate epadFile = convertEpadFileToTemplate(projectID, efile, new File(EPADConfig.getEPADWebServerResourcesDir() + getEpadFilePath(efile)));
+			if (!disabledTemplatesNames.contains(epadFile.fileName) && !disabledTemplatesNames.contains(epadFile.templateName) && !disabledTemplatesNames.contains(epadFile.templateCode))
+				fileList.addFile(epadFile);
 		}
 		return fileList;
 	}
