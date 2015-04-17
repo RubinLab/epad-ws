@@ -513,7 +513,7 @@ public interface EpadProjectOperations {
 	 * @return
 	 * @throws Exception
 	 */
-	List<EpadFile> getEpadFiles(String projectID, String subjectUID, String studyUID, String seriesUID, FileType fileType) throws Exception;	
+	List<EpadFile> getEpadFiles(String projectID, String subjectUID, String studyUID, String seriesUID, FileType fileType, boolean toplevelOnly) throws Exception;	
 	
 	/**
 	 * Get files for project
@@ -521,7 +521,7 @@ public interface EpadProjectOperations {
 	 * @return
 	 * @throws Exception
 	 */
-	List<EpadFile> getProjectFiles(String projectID) throws Exception;
+	List<EpadFile> getProjectFiles(String projectID, boolean toplevelOnly) throws Exception;
 	
 	/**
 	 * Get files for project/subject
@@ -530,7 +530,7 @@ public interface EpadProjectOperations {
 	 * @return
 	 * @throws Exception
 	 */
-	List<EpadFile> getSubjectFiles(String projectID, String subjectUID) throws Exception;
+	List<EpadFile> getSubjectFiles(String projectID, String subjectUID, boolean toplevelOnly) throws Exception;
 
 	/**
 	 * Get files for project/subject/study
@@ -540,7 +540,7 @@ public interface EpadProjectOperations {
 	 * @return
 	 * @throws Exception
 	 */
-	List<EpadFile> getStudyFiles(String projectID, String subjectUID, String studyUID) throws Exception;
+	List<EpadFile> getStudyFiles(String projectID, String subjectUID, String studyUID, boolean toplevelOnly) throws Exception;
 	
 	/**
 	 * Get files for project/subject/study/series

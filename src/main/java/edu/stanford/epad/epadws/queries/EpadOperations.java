@@ -114,19 +114,19 @@ public interface EpadOperations
 	
 	int createSystemTemplate(String username, File templateFile, String sessionID) throws Exception;	
 	
-	EPADFileList getFileDescriptions(ProjectReference projectReference, String username, String sessionID, EPADSearchFilter searchFilter) throws Exception;
+	EPADFileList getFileDescriptions(ProjectReference projectReference, String username, String sessionID, EPADSearchFilter searchFilter, boolean toplevelOnly) throws Exception;
 
 	EPADFile getFileDescription(ProjectReference projectReference, String filename, String username, String sessionID) throws Exception;
 
 	EPADFileList getFileDescriptions(SubjectReference subjectReference, String username, String sessionID,
-			EPADSearchFilter searchFilter) throws Exception;
+			EPADSearchFilter searchFilter, boolean toplevelOnly) throws Exception;
 
 	EPADFile getFileDescription(SubjectReference subjectReference, String filename, String username, String sessionID) throws Exception;
 
 	EPADFileList getFileDescriptions(StudyReference studyReference, String username, String sessionID,
-			EPADSearchFilter searchFilter) throws Exception;
+			EPADSearchFilter searchFilter, boolean toplevelOnly) throws Exception;
 	List<EPADFile> getEPADFiles(StudyReference studyReference, String username, String sessionID,
-			EPADSearchFilter searchFilter) throws Exception;
+			EPADSearchFilter searchFilter, boolean toplevelOnly) throws Exception;
 
 	EPADFile getFileDescription(StudyReference studyReference, String filename, String username, String sessionID) throws Exception;
 

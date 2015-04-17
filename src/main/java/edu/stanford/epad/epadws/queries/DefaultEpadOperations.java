@@ -1267,9 +1267,9 @@ public class DefaultEpadOperations implements EpadOperations
 
 	@Override
 	public EPADFileList getFileDescriptions(ProjectReference projectReference,
-			String username, String sessionID, EPADSearchFilter searchFilter)
+			String username, String sessionID, EPADSearchFilter searchFilter, boolean toplevelOnly)
 			throws Exception {
-		List<EpadFile> files = projectOperations.getProjectFiles(projectReference.projectID);
+		List<EpadFile> files = projectOperations.getProjectFiles(projectReference.projectID, toplevelOnly);
 		List<EPADFile> efiles = new ArrayList<EPADFile>();
 		for (EpadFile file: files) {
 			String subjectId = null;
@@ -1331,9 +1331,9 @@ public class DefaultEpadOperations implements EpadOperations
 
 	@Override
 	public EPADFileList getFileDescriptions(SubjectReference subjectReference,
-			String username, String sessionID, EPADSearchFilter searchFilter)
+			String username, String sessionID, EPADSearchFilter searchFilter, boolean toplevelOnly)
 			throws Exception {
-		List<EpadFile> files = projectOperations.getSubjectFiles(subjectReference.projectID, subjectReference.subjectID);
+		List<EpadFile> files = projectOperations.getSubjectFiles(subjectReference.projectID, subjectReference.subjectID, toplevelOnly);
 		List<EPADFile> efiles = new ArrayList<EPADFile>();
 		for (EpadFile file: files) {
 			String patientName = null;
@@ -1381,17 +1381,17 @@ public class DefaultEpadOperations implements EpadOperations
 
 	@Override
 	public EPADFileList getFileDescriptions(StudyReference studyReference,
-			String username, String sessionID, EPADSearchFilter searchFilter)
+			String username, String sessionID, EPADSearchFilter searchFilter, boolean toplevelOnly)
 			throws Exception {
-		List<EPADFile> efiles = getEPADFiles(studyReference, username, sessionID, searchFilter);
+		List<EPADFile> efiles = getEPADFiles(studyReference, username, sessionID, searchFilter, toplevelOnly);
 		return new EPADFileList(efiles);
 	}
 
 	@Override
 	public List<EPADFile> getEPADFiles(StudyReference studyReference,
-			String username, String sessionID, EPADSearchFilter searchFilter)
+			String username, String sessionID, EPADSearchFilter searchFilter, boolean toplevelOnly)
 			throws Exception {
-		List<EpadFile> files = projectOperations.getStudyFiles(studyReference.projectID, studyReference.subjectID, studyReference.studyUID);
+		List<EpadFile> files = projectOperations.getStudyFiles(studyReference.projectID, studyReference.subjectID, studyReference.studyUID, toplevelOnly);
 		List<EPADFile> efiles = new ArrayList<EPADFile>();
 		for (EpadFile file: files) {
 			String patientName = null;
@@ -1508,7 +1508,7 @@ public class DefaultEpadOperations implements EpadOperations
             epadFile.templateDescription = templateDescription;
 			fileList.addFile(epadFile);
 		}
-		List<EpadFile> efiles = projectOperations.getEpadFiles(null, null, null, null, FileType.TEMPLATE);
+		List<EpadFile> efiles = projectOperations.getEpadFiles(null, null, null, null, FileType.TEMPLATE, false);
 		Set<String> userProjects = new HashSet<String>();
 		for (EpadFile efile: efiles)
 		{
@@ -1528,7 +1528,7 @@ public class DefaultEpadOperations implements EpadOperations
 	public EPADTemplateList getTemplateDescriptions(String projectID,
 			String username, String sessionID) throws Exception {
 		EPADTemplateList fileList = new EPADTemplateList();
-		List<EpadFile> efiles = projectOperations.getEpadFiles(projectID, null, null, null, FileType.TEMPLATE);
+		List<EpadFile> efiles = projectOperations.getEpadFiles(projectID, null, null, null, FileType.TEMPLATE, false);
 		for (EpadFile efile: efiles)
 		{
 			EPADTemplate epadFile = convertEpadFileToTemplate(projectID, efile, new File(EPADConfig.getEPADWebServerResourcesDir() + getEpadFilePath(efile)));

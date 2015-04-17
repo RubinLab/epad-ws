@@ -1313,7 +1313,7 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 	@Override
 	public List<EpadFile> getEpadFiles(String projectID,
 			String subjectUID, String studyUID, String seriesUID,
-			FileType fileType) throws Exception {
+			FileType fileType, boolean toplevelOnly) throws Exception {
 		String criteria = "1 = 1";
 		if (projectID != null && projectID.length() > 0)
 		{
@@ -1349,9 +1349,12 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 	 * @see edu.stanford.epad.epadws.service.EpadProjectOperations#getProjectFiles(java.lang.String)
 	 */
 	@Override
-	public List<EpadFile> getProjectFiles(String projectID) throws Exception {
+	public List<EpadFile> getProjectFiles(String projectID, boolean toplevelOnly) throws Exception {
 		Project project = getProject(projectID);
-		List objects = new EpadFile().getObjects("project_id = " + project.getId());
+		String selectNull = "";
+		if (toplevelOnly)
+			selectNull = " and subject_id is null and study_id is null and series_uid is null";
+		List objects = new EpadFile().getObjects("project_id = " + project.getId() + selectNull);
 		List<EpadFile> efiles = new ArrayList<EpadFile>();
 		efiles.addAll(objects);
 		return efiles;
@@ -1361,13 +1364,16 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 	 * @see edu.stanford.epad.epadws.service.EpadProjectOperations#getSubjectFiles(java.lang.String, java.lang.String)
 	 */
 	@Override
-	public List<EpadFile> getSubjectFiles(String projectID, String subjectUID) throws Exception {
+	public List<EpadFile> getSubjectFiles(String projectID, String subjectUID, boolean toplevelOnly) throws Exception {
 		Project project = getProject(projectID);
 		Subject subject = getSubject(subjectUID);
 		String criteria = "subject_id = " + subject.getId();
 		if (project != null)
 			criteria = criteria + " and project_id =" + project.getId();
-		List objects = new EpadFile().getObjects(criteria);
+		String selectNull = "";
+		if (toplevelOnly)
+			selectNull = " and study_id is null and series_uid is null";
+		List objects = new EpadFile().getObjects(criteria + selectNull);
 		List<EpadFile> efiles = new ArrayList<EpadFile>();
 		efiles.addAll(objects);
 		return efiles;
@@ -1377,7 +1383,7 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 	 * @see edu.stanford.epad.epadws.service.EpadProjectOperations#getStudyFiles(java.lang.String, java.lang.String, java.lang.String)
 	 */
 	@Override
-	public List<EpadFile> getStudyFiles(String projectID, String subjectUID, String studyUID) throws Exception {
+	public List<EpadFile> getStudyFiles(String projectID, String subjectUID, String studyUID, boolean toplevelOnly) throws Exception {
 		Project project = getProject(projectID);
 		Subject subject = getSubject(subjectUID);
 		Study study = getStudy(studyUID);
@@ -1386,7 +1392,10 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 			criteria = criteria + " and subject_id =" + subject.getId();
 		if (project != null)
 			criteria = criteria + " and project_id =" + project.getId();
-		List objects = new EpadFile().getObjects(criteria);
+		String selectNull = "";
+		if (toplevelOnly)
+			selectNull = "  and series_uid is null";
+		List objects = new EpadFile().getObjects(criteria + selectNull);
 		List<EpadFile> efiles = new ArrayList<EpadFile>();
 		efiles.addAll(objects);
 		return efiles;
@@ -1448,6 +1457,7 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 	public void deleteFile(String loggedInUser, String projectID,
 			String subjectUID, String studyUID, String seriesUID,
 			String filename) throws Exception {
+		log.info("Deleting File, projectID:" + projectID + "  subjectUID:" + subjectUID + "  studyUID:" + studyUID + "  seriesUID:" + seriesUID + "  filename:" + filename);
 		EpadFile efile = getEpadFile(projectID, subjectUID, studyUID, seriesUID, filename);
 		if (efile == null)
 			throw new Exception("File not found");
