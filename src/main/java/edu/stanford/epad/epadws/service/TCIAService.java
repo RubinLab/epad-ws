@@ -64,14 +64,18 @@ public class TCIAService  {
 		}
 		else
 			apiKey = key;
-		JsonArray collArray = getResponseFromTCIA("getCollectionValues");
-		collections = new ArrayList<String>();
-		for (int i = 0; i < collArray.size(); i++)
-			collections.add(collArray.get(i).getAsJsonObject().get("Collection").getAsString());
-		log.info("Collections:" + collections);
 	}
 
-	public static List<String> getCollections() {
+	public List<String> getCollections() throws Exception{
+		if (collections == null) {
+			JsonArray collArray = getResponseFromTCIA("getCollectionValues");
+			collections = new ArrayList<String>();
+			for (int i = 0; i < collArray.size(); i++)
+				collections.add(collArray.get(i).getAsJsonObject().get("Collection").getAsString());
+			log.info("Collections:" + collections);
+			if (collections.size() < 2)
+				collections = null;
+		}
 		return collections;
 	}
 
