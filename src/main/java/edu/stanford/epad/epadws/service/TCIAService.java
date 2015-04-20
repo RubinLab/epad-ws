@@ -59,11 +59,11 @@ public class TCIAService  {
 		log.info("key:" + key + " len:" + key.length());
 		if (key.length() == 64)
 		{
-			log.info("decrypting:" + apiKey);
 			Encryption enc = new Encryption(EPADConfig.xnatServer);
 			apiKey = enc.decrypt(key);
-			log.info("apikey:" + apiKey);
 		}
+		else
+			apiKey = key;
 		JsonArray collArray = getResponseFromTCIA("getCollectionValues");
 		collections = new ArrayList<String>();
 		for (int i = 0; i < collArray.size(); i++)
