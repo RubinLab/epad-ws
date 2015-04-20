@@ -203,8 +203,7 @@ public class RemotePACService extends RemotePACSBase {
 					rps.add(rpac);
 				}
 			} catch (Exception e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+				log.warning("Error getting TCIA collections", e);
 			}
 		}
 		return rps;
