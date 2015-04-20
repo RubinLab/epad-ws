@@ -211,34 +211,39 @@ public class TCIAService  {
 		tciaURL = tciaURL.replace(' ', '+') + "api_key=" + apiKey;
 		log.debug("TCIA URL:" + tciaURL);
 		HttpClient client = new HttpClient();
-		GetMethod method = new GetMethod(tciaURL);
-		int statusCode = client.executeMethod(method);
-		if (statusCode == HttpServletResponse.SC_OK) {
-			InputStream is = method.getResponseBodyAsStream();
-			BufferedReader reader = new BufferedReader(new InputStreamReader(is));
-		    StringBuilder sb = new StringBuilder();
-
-		    String line = null;
-		    try {
-		        while ((line = reader.readLine()) != null) {
-		            sb.append(line + "\n");
-		        }
-		    } catch (IOException e) {
-		        e.printStackTrace();
-		    } finally {
-		        try {
-		            is.close();
-		        } catch (IOException e) {
-		            e.printStackTrace();
-		        }
-		    }
-		    String response = sb.toString();
-			//log.debug("TCIA Response:" + response);
-		    JsonParser parser = new JsonParser();
-		    return parser.parse(response).getAsJsonArray();
-		} else {
-			log.warning("TCIA URL:" + tciaURL + " Status:" + statusCode);
-			throw new Exception("Error calling TCIA, status = " + statusCode);
+		try {
+			GetMethod method = new GetMethod(tciaURL);
+			int statusCode = client.executeMethod(method);
+			if (statusCode == HttpServletResponse.SC_OK) {
+				InputStream is = method.getResponseBodyAsStream();
+				BufferedReader reader = new BufferedReader(new InputStreamReader(is));
+			    StringBuilder sb = new StringBuilder();
+	
+			    String line = null;
+			    try {
+			        while ((line = reader.readLine()) != null) {
+			            sb.append(line + "\n");
+			        }
+			    } catch (IOException e) {
+		            log.warning("Error reading response", e);;
+			    } finally {
+			        try {
+			            is.close();
+			        } catch (IOException e) {
+			        }
+			    }
+			    String response = sb.toString();
+				//log.debug("TCIA Response:" + response);
+			    JsonParser parser = new JsonParser();
+			    return parser.parse(response).getAsJsonArray();
+			} else {
+				log.warning("TCIA URL:" + tciaURL + " Status:" + statusCode);
+				throw new Exception("Error calling TCIA, status = " + statusCode);
+			}
+		}
+		catch (Exception x) {
+			log.warning("Error calling TCIA url:" + tciaURL, x);
+			throw x;
 		}
 		
 	}
