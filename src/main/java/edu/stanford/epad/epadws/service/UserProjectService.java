@@ -258,7 +258,7 @@ public class UserProjectService {
 					int numberOfDICOMFiles = createProjectEntitiesFromDICOMFilesInUploadDirectory(dicomUploadDirectory, xnatProjectLabel, xnatSessionID, xnatUserName);
 					if (numberOfDICOMFiles != 0)
 					{
-						log.info("Found " + numberOfDICOMFiles + " DICOM file(s) in upload directory");
+						log.info("Found " + numberOfDICOMFiles + " DICOM file(s) in directory uploaded by " + xnatUserName + " for project " + xnatProjectLabel);
 					}
 					else
 					{
