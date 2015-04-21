@@ -16,7 +16,7 @@ import edu.stanford.epad.epadws.controllers.exceptions.UnauthorizedException;
 @ControllerAdvice
 public class ControllerExceptionHandler {
 	
-    @ExceptionHandler
+    @ExceptionHandler(InvalidParameterException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ResponseBody
     EPADMessage handleException(InvalidParameterException ex) {
@@ -24,7 +24,7 @@ public class ControllerExceptionHandler {
         return errorMessage;
     }
     
-    @ExceptionHandler
+    @ExceptionHandler(NotFoundException.class)
     @ResponseStatus(HttpStatus.NOT_FOUND)
     @ResponseBody
     EPADMessage handleException(NotFoundException ex) {
@@ -32,7 +32,7 @@ public class ControllerExceptionHandler {
         return errorMessage;
     }
     
-    @ExceptionHandler
+    @ExceptionHandler(NotAllowedException.class)
     @ResponseStatus(HttpStatus.METHOD_NOT_ALLOWED)
     @ResponseBody
     EPADMessage handleException(NotAllowedException ex) {
@@ -40,7 +40,7 @@ public class ControllerExceptionHandler {
         return errorMessage;
     }
     
-    @ExceptionHandler
+    @ExceptionHandler(ForbiddenException.class)
     @ResponseStatus(HttpStatus.FORBIDDEN)
     @ResponseBody
     EPADMessage handleException(ForbiddenException ex) {
@@ -48,7 +48,7 @@ public class ControllerExceptionHandler {
         return errorMessage;
     }
     
-    @ExceptionHandler
+    @ExceptionHandler(UnauthorizedException.class)
     @ResponseStatus(HttpStatus.UNAUTHORIZED)
     @ResponseBody
     EPADMessage handleException(UnauthorizedException ex) {
@@ -56,7 +56,7 @@ public class ControllerExceptionHandler {
         return errorMessage;
     }
 
-    @ExceptionHandler
+    @ExceptionHandler(NullPointerException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ResponseBody
     EPADMessage handleException(NullPointerException ex) {
@@ -64,7 +64,7 @@ public class ControllerExceptionHandler {
         return errorMessage;
     }   
 
-    @ExceptionHandler
+    @ExceptionHandler(Exception.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     @ResponseBody
     EPADMessage handleException(Exception ex) {

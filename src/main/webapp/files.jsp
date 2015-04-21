@@ -31,10 +31,10 @@ $( document ).ready(function() {
 			return true;},
 		success: function(response){
 			var files = response.ResultSet.Result;
-			filedata = "<table border=1><tr bgcolor=lightgray><td>Name</td><td>Description</td><td>Type</td><td>Length</td><td>Created</td></tr>\n";
+			filedata = "<table border=1><tr bgcolor=lightgray><td></td><td>Name</td><td>Description</td><td>Type</td><td>Length</td><td>Created</td></tr>\n";
 			for (i = 0; i < files.length; i++)
 			{
-				filedata = filedata + "<tr><td><a href='download.jsp?path=" + files[i].path + "&name=" + files[i].fileName+ "'>" + files[i].fileName + "</a></td><td>" + files[i].description + "</td><td>" + files[i].fileType + "</td><td>" + files[i].fileLength + "</td><td>"  +  files[i].createdTime + "</td></tr>\n";
+				filedata = filedata + "<tr><td><img src=delete.jpg height=10px onclick='deleteFile(\"<%=projectID%>\",null,null,null,\"" + files[i].fileName +"\")'/></td><td><a href='download.jsp?path=" + files[i].path + "&name=" + files[i].fileName+ "'>" + files[i].fileName + "</a></td><td>" + files[i].description + "</td><td>" + files[i].fileType + "</td><td>" + files[i].fileLength + "</td><td>"  +  files[i].createdTime + "</td></tr>\n";
 			}
 		}
 	})
@@ -173,6 +173,37 @@ $( document ).ready(function() {
 
    });
    
+   function deleteFile(projectID, subjectID, studyUID, seriesUID, filename)
+   {
+	   url = "/epad/v2/projects/" + projectID + "/";
+	   if (subjectID != null)
+	   {
+		   url = url + subjectID + "/";
+	   }
+	   if (studyUID != null)
+	   {
+		   url = url + studyUID + "/";
+	   }
+	   if (seriesUID != null)
+	   {
+		   url = url + seriesUID + "/";
+	   }
+	   url = url + "files/" + filename
+		   alert(url);
+		$.ajax({         
+			url: url + "?username=<%=username%>",         
+			type: 'delete',         
+			async: false,         
+			cache: false,         
+			timeout: 30000,         
+			error: function(){
+				alert("Error deleting file");
+				return true;},
+			success: function(response){
+			}
+		})
+	}
+
    function getURLParamater(sParam)
    {
 		var sPageURL = window.location.search.substring(1);
