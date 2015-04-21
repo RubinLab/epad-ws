@@ -408,7 +408,7 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 	public Study createStudy(String loggedInUser, String studyUID,
 			String subjectUID, String description) throws Exception {
 		return createStudy(loggedInUser, studyUID,
-				subjectUID, description, new Date());
+				subjectUID, description, null);
 	}
 	@Override
 	public Study createStudy(String loggedInUser, String studyUID,

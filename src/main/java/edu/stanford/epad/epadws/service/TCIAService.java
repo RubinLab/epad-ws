@@ -42,6 +42,7 @@ public class TCIAService  {
 	
 	public static final String TCIA_URL = "TCIA_URL";
 	public static final String TCIA_APIKEY = "TCIA_APIKEY";
+	public static final String TCIA_PREFIX = "tcia:";
 	
 	public static String apiKey = null;	
 	public static List<String> collections = null;
@@ -101,6 +102,33 @@ public class TCIAService  {
 		return entities;
 	}
 
+	public List<RemotePACEntity> getNewStudiesForPatient(String collection, String patientID, Date sinceDate) throws Exception
+	{
+		List<RemotePACEntity> entities = new ArrayList<RemotePACEntity>();
+		JsonArray studies = this.getResponseFromTCIA("NewStudiesInPatientCollection?Collection=" + collection 
+				+ "&PatientID=" + patientID + "&Date=" + new SimpleDateFormat("yyyy-MM-dd").format(sinceDate));
+		for (int i = 0; i < studies.size(); i++)
+		{
+			JsonObject study = studies.get(i).getAsJsonObject();
+			String patientName = getJsonString(study.get("PatientName"));
+			String patientGender = getJsonString(study.get("PatientSex"));
+			String ethnicity = getJsonString(study.get("EthnicGroup"));
+			String studyUID = getJsonString(study.get("StudyInstanceUID"));
+			String description = getJsonString(study.get("StudyDescription"));
+			String studyDate = getJsonString(study.get("StudyDate"));
+			int seriesCount = study.get("SeriesCount").getAsInt();
+			if (description.length() == 0)
+				description = studyUID + " " + studyDate;
+			String patientAge = getJsonString(study.get("PatientAge"));
+			String entityID = "TCIA" + ":" + collection + ":" + patientID + ":STUDY:" + studyUID; 
+			RemotePACEntity entity = new RemotePACEntity("Study", description, 2, entityID);
+			entity.subjectID = patientID;
+			entity.subjectName = patientName;
+			entities.add(entity);
+		}
+		return entities;
+	}
+	
 	public List<RemotePACEntity> getStudiesForPatient(String collection, String patientID) throws Exception
 	{
 		List<RemotePACEntity> entities = new ArrayList<RemotePACEntity>();
@@ -162,6 +190,20 @@ public class TCIAService  {
 			return "";
 		else
 			return elem.getAsString();
+	}
+	
+	public int downloadStudyFromTCIA(String username, String collection, String patientID, String studyUID, String projectID)
+			throws Exception
+	{
+		List<RemotePACEntity> entities = getSeriesForStudy(collection, patientID, studyUID);
+		for (RemotePACEntity entity: entities)
+		{
+			String seriesUID = entity.entityID;
+			if (seriesUID.indexOf(":") != -1)
+				seriesUID = seriesUID.substring(seriesUID.lastIndexOf(":")+1);
+			downloadSeriesFromTCIA(username, seriesUID, projectID);
+		}
+		return HttpServletResponse.SC_OK;
 	}
 	
 	public static int downloadSeriesFromTCIA(String username, String seriesUID, String projectID)

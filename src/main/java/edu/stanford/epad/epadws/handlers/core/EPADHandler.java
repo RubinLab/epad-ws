@@ -1090,7 +1090,7 @@ public class EPADHandler extends AbstractHandler
 					responseStream.append(entityList.toJSON());
 					statusCode = HttpServletResponse.SC_OK;
 				}
-				else if (pacid.startsWith("tcia:"))
+				else if (pacid.startsWith(TCIAService.TCIA_PREFIX))
 				{
 					List<RemotePACEntity> entities = TCIAService.getInstance().getPatientsForCollection(pacid.substring(5));
 					RemotePACEntityList entityList = new RemotePACEntityList();
@@ -1122,7 +1122,7 @@ public class EPADHandler extends AbstractHandler
 					responseStream.append(entityList.toJSON());
 					statusCode = HttpServletResponse.SC_OK;
 				}
-				else if (pacid.startsWith("tcia:"))
+				else if (pacid.startsWith(TCIAService.TCIA_PREFIX))
 				{
 					List<RemotePACEntity> entities = TCIAService.getInstance().getStudiesForPatient(pacid.substring(5), subjectid);
 					RemotePACEntityList entityList = new RemotePACEntityList();
@@ -1151,7 +1151,7 @@ public class EPADHandler extends AbstractHandler
 					responseStream.append(entityList.toJSON());
 					statusCode = HttpServletResponse.SC_OK;
 				}
-				else if (pacid.startsWith("tcia:"))
+				else if (pacid.startsWith(TCIAService.TCIA_PREFIX))
 				{
 					if (studyid.indexOf(":") != -1)
 						studyid = studyid.substring(studyid.lastIndexOf(":")+1);
@@ -1178,7 +1178,7 @@ public class EPADHandler extends AbstractHandler
 					RemotePACService.getInstance().retrieveRemoteData(pac, entityID, projectID, username, sessionID);
 					statusCode = HttpServletResponse.SC_OK;
 				}
-				else if (pacID.startsWith("tcia:"))
+				else if (pacID.startsWith(TCIAService.TCIA_PREFIX))
 				{
 					if (entityID.indexOf("SUBJECT:") != -1 || entityID.indexOf("STUDY:") != -1)
 						throw new Exception("Patient or Study can not be downloaded. Please select a Series");

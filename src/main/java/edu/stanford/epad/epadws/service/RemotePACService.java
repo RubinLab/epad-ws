@@ -198,7 +198,7 @@ public class RemotePACService extends RemotePACSBase {
 				List<String> collections = TCIAService.getInstance().getCollections();
 				for (String collection: collections)
 				{
-					RemotePAC rpac = new RemotePAC("tcia:" + collection, collection, "services.cancerimagingarchive.net",
+					RemotePAC rpac = new RemotePAC(TCIAService.TCIA_PREFIX + collection, TCIAService.TCIA_PREFIX + collection, "services.cancerimagingarchive.net",
 							443, "", "");
 					rps.add(rpac);
 				}
@@ -237,6 +237,8 @@ public class RemotePACService extends RemotePACSBase {
 		User user = DefaultEpadProjectOperations.getInstance().getUser(loggedInUser);
 		if (!user.isAdmin() && !user.hasPermission(User.CreatePACPermission))
 			throw new Exception("No permission to create PAC configuration");
+		if (pac.pacID.startsWith("tcia"))
+			throw new Exception("Invalid PAC ID:" + pac.pacID);
 		addRemotePAC(
 				pac.pacID,
 				pac.aeTitle,
@@ -253,6 +255,8 @@ public class RemotePACService extends RemotePACSBase {
 	 */
 	public synchronized void modifyRemotePAC(String loggedInUser, RemotePAC pac) throws Exception {
 		User user = DefaultEpadProjectOperations.getInstance().getUser(loggedInUser);
+		if (pac.pacID.startsWith("tcia"))
+			throw new Exception("This PAC Configuration can not be modified:" + pac.pacID);
 		if (!user.isAdmin() && !user.hasPermission(User.CreatePACPermission))
 			throw new Exception("No permission to modify PAC configuration");
 		removeRemotePAC(pac.pacID);
@@ -352,9 +356,9 @@ public class RemotePACService extends RemotePACSBase {
 		if (project == null)
 			throw new Exception("Project " + projectID + " not found");
 		RemotePAC pac = this.getRemotePAC(pacID);
-		if (pac == null)
+		if (pac == null && !pacID.startsWith(TCIAService.TCIA_PREFIX))
 			throw new Exception("Remote PAC " + pacID + " not found");
-		if (pac.hostname.equalsIgnoreCase(EPADConfig.xnatServer) && pac.port == 11112)
+		if (pac != null && pac.hostname.equalsIgnoreCase(EPADConfig.xnatServer) && pac.port == 11112)
 		{
 			throw new Exception("This is the local PAC, image data can not transferred from it");
 		}
@@ -848,7 +852,7 @@ public class RemotePACService extends RemotePACSBase {
 		}
 		if (studyUID != null && patientID != null && projectID != null && projectID.trim().length() > 0)
 		{
-			UserProjectService.addSubjectAndStudyToProject(patientID, patientName, studyUID, projectID, sessionID, userName);
+			UserProjectService.addSubjectAndStudyToProject(patientID, patientName, studyUID, studyDate, projectID, sessionID, userName);
 		}
 		if (seriesUID != null)
 			pendingTransfers.put(seriesUID, userName + ":" + projectID);
