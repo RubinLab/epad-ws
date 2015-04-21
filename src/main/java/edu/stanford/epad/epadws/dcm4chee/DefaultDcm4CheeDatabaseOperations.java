@@ -46,6 +46,8 @@ public class DefaultDcm4CheeDatabaseOperations implements Dcm4CheeDatabaseOperat
 			c = getConnection();
 			ps = c.prepareStatement(Dcm4CheeDatabaseCommands.SELECT_SERIES_BY_ID);
 			ps.setString(1, seriesUID);
+			if (log.isDebugEnabled())
+				log.debug(ps.toString());
 
 			rs = ps.executeQuery();
 			if (rs.next()) {
@@ -72,7 +74,8 @@ public class DefaultDcm4CheeDatabaseOperations implements Dcm4CheeDatabaseOperat
 		try {
 			c = getConnection();
 			s = c.createStatement();
-			//log.info("studySearch:" + searchSql);
+			if (log.isDebugEnabled())
+				log.debug(searchSql);
 			rs = s.executeQuery(searchSql);
 
 			ResultSetMetaData metaData = rs.getMetaData();
@@ -113,6 +116,8 @@ public class DefaultDcm4CheeDatabaseOperations implements Dcm4CheeDatabaseOperat
 		try {
 			c = getConnection();
 			s = c.createStatement();
+			if (log.isDebugEnabled())
+				log.debug(searchSql);
 			rs = s.executeQuery(searchSql);
 
 			ResultSetMetaData metaData = rs.getMetaData();
@@ -155,6 +160,8 @@ public class DefaultDcm4CheeDatabaseOperations implements Dcm4CheeDatabaseOperat
 			c = getConnection();
 			ps = c.prepareStatement(Dcm4CheeDatabaseCommands.SELECT_SERIES_FOR_STUDY);
 			ps.setString(1, studyUID);
+			if (log.isDebugEnabled())
+				log.debug(ps.toString());
 			rs = ps.executeQuery();
 			ResultSetMetaData metaData = rs.getMetaData();
 			while (rs.next()) {
@@ -226,6 +233,8 @@ public class DefaultDcm4CheeDatabaseOperations implements Dcm4CheeDatabaseOperat
 			c = getConnection();
 			ps = c.prepareStatement(Dcm4CheeDatabaseCommands.SELECT_STUDY_FOR_PATIENT);
 			ps.setString(1, patientID);
+			if (log.isDebugEnabled())
+				log.debug(ps.toString());
 
 			rs = ps.executeQuery();
 			if (rs.next()) {
@@ -263,6 +272,8 @@ public class DefaultDcm4CheeDatabaseOperations implements Dcm4CheeDatabaseOperat
 			c = getConnection();
 			ps = c.prepareStatement(Dcm4CheeDatabaseCommands.SELECT_IMAGE_UID_FOR_SERIES);
 			ps.setString(1, seriesUID);
+			if (log.isDebugEnabled())
+				log.debug(ps.toString());
 
 			rs = ps.executeQuery();
 			if (rs.next()) {
@@ -299,6 +310,8 @@ public class DefaultDcm4CheeDatabaseOperations implements Dcm4CheeDatabaseOperat
 			c = getConnection();
 			ps = c.prepareStatement(Dcm4CheeDatabaseCommands.SELECT_COUNT_STUDY_FOR_PATIENT);
 			ps.setString(1, patientID);
+			if (log.isDebugEnabled())
+				log.debug(ps.toString());
 
 			rs = ps.executeQuery();
 			if (rs.next())
@@ -326,6 +339,8 @@ public class DefaultDcm4CheeDatabaseOperations implements Dcm4CheeDatabaseOperat
 			c = getConnection();
 			ps = c.prepareStatement(Dcm4CheeDatabaseCommands.SELECT_PARENT_STUDY_FOR_SERIES);
 			ps.setString(1, seriesUID);
+			if (log.isDebugEnabled())
+				log.debug(ps.toString());
 			rs = ps.executeQuery();
 			if (rs.next()) {
 				retVal = createResultMap(rs);
@@ -349,6 +364,8 @@ public class DefaultDcm4CheeDatabaseOperations implements Dcm4CheeDatabaseOperat
 			c = getConnection();
 			ps = c.prepareStatement(Dcm4CheeDatabaseCommands.SELECT_STUDY_AND_SERIES_FOR_INSTANCE);
 			ps.setString(1, imageUID);
+			if (log.isDebugEnabled())
+				log.debug(ps.toString());
 
 			rs = ps.executeQuery();
 			if (rs.next())
@@ -396,6 +413,8 @@ public class DefaultDcm4CheeDatabaseOperations implements Dcm4CheeDatabaseOperat
 			c = getConnection();
 			ps = c.prepareStatement(Dcm4CheeDatabaseCommands.SELECT_FILES_FOR_SERIES);
 			ps.setString(1, seriesUID);
+			if (log.isDebugEnabled())
+				log.debug(ps.toString());
 			rs = ps.executeQuery();
 			while (rs.next()) {
 				Map<String, String> resultMap = createResultMap(rs);
@@ -432,6 +451,8 @@ public class DefaultDcm4CheeDatabaseOperations implements Dcm4CheeDatabaseOperat
 			c = getConnection();
 			ps = c.prepareStatement(Dcm4CheeDatabaseCommands.SELECT_IMAGES_FOR_SERIES_ORDER_BY_INSTNO);
 			ps.setString(1, seriesUID);
+			if (log.isDebugEnabled())
+				log.debug(ps.toString());
 
 			rs = ps.executeQuery();
 			while (rs.next()) {
@@ -465,7 +486,8 @@ public class DefaultDcm4CheeDatabaseOperations implements Dcm4CheeDatabaseOperat
 			ps = c.prepareStatement(Dcm4CheeDatabaseCommands.SELECT_IMAGE_FOR_SERIES);
 			ps.setString(1, seriesUID);
 			ps.setString(2, imageUID);
-
+			if (log.isDebugEnabled())
+				log.debug(ps.toString());
 			rs = ps.executeQuery();
 			if (rs.next()) {
 				Map<String, String> resultMap = createResultMap(rs);

@@ -27,7 +27,9 @@ package edu.stanford.epad.epadws.service;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.util.Collection;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -258,7 +260,7 @@ public class UserProjectService {
 					int numberOfDICOMFiles = createProjectEntitiesFromDICOMFilesInUploadDirectory(dicomUploadDirectory, xnatProjectLabel, xnatSessionID, xnatUserName);
 					if (numberOfDICOMFiles != 0)
 					{
-						log.info("Found " + numberOfDICOMFiles + " DICOM file(s) in upload directory");
+						log.info("Found " + numberOfDICOMFiles + " DICOM file(s) in directory uploaded by " + xnatUserName + " for project " + xnatProjectLabel);
 					}
 					else
 					{
@@ -311,6 +313,7 @@ public class UserProjectService {
 		String dicomPatientName = dicomObject.getString(Tag.PatientName);
 		String dicomPatientID = dicomObject.getString(Tag.PatientID);
 		String studyUID = dicomObject.getString(Tag.StudyInstanceUID);
+		String studyDate = dicomObject.getString(Tag.StudyDate);
 		String seriesUID = dicomObject.getString(Tag.SeriesInstanceUID);
 		String modality = dicomObject.getString(Tag.Modality);
 		if (dicomPatientID == null || dicomPatientID.trim().length() == 0 
@@ -334,7 +337,7 @@ public class UserProjectService {
 			if (dicomPatientName == null) dicomPatientName = "";
 			dicomPatientName = dicomPatientName.toUpperCase(); // DCM4CHEE stores the patient name as upper case
 			
-			addSubjectAndStudyToProject(dicomPatientID, dicomPatientName, studyUID, projectID, sessionID, username);
+			addSubjectAndStudyToProject(dicomPatientID, dicomPatientName, studyUID, studyDate, projectID, sessionID, username);
 			
 			if ("SEG".equals(modality))
 			{
@@ -372,7 +375,7 @@ public class UserProjectService {
 	 * @param sessionID
 	 * @param username
 	 */
-	public static void addSubjectAndStudyToProject(String subjectID, String subjectName, String studyUID, String projectID, String sessionID, String username) {
+	public static void addSubjectAndStudyToProject(String subjectID, String subjectName, String studyUID, String studyDate, String projectID, String sessionID, String username) {
 		if (!EPADConfig.UseEPADUsersProjects) {
 			String xnatSubjectLabel = XNATUtil.subjectID2XNATSubjectLabel(subjectID);
 			XNATCreationOperations.createXNATSubject(projectID, xnatSubjectLabel, subjectName, sessionID);
@@ -380,7 +383,7 @@ public class UserProjectService {
 		} else {
 			try {
 				projectOperations.createSubject(username, subjectID, subjectName, null, null);
-				projectOperations.createStudy(username, studyUID, subjectID, "");
+				projectOperations.createStudy(username, studyUID, subjectID, "", getDate(studyDate));
 				log.info("Upload/Transfer: Adding Study:" +  studyUID + " Subject:" + subjectID + " to Project:" + projectID);
 				projectOperations.addStudyToProject(username, studyUID, subjectID, projectID);
 			} catch (Exception e) {
@@ -413,6 +416,19 @@ public class UserProjectService {
 		return file.isFile()
 				&& (file.getName().toLowerCase().endsWith(".dcm") || file.getName().toLowerCase().endsWith(".dso"));
 		// return file.isFile() && DicomFileUtil.hasMagicWordInHeader(file);
+	}
+	
+	static SimpleDateFormat dateformat = new SimpleDateFormat("yyyyMMdd");
+	private static Date getDate(String dateStr)
+	{
+		try
+		{
+			return dateformat.parse(dateStr);
+		}
+		catch (Exception x)
+		{
+			return null;
+		}
 	}
 	
 }

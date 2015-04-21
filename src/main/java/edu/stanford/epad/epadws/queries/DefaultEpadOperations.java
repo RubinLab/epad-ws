@@ -94,6 +94,7 @@ import edu.stanford.epad.epadws.handlers.core.SeriesReference;
 import edu.stanford.epad.epadws.handlers.core.StudyReference;
 import edu.stanford.epad.epadws.handlers.core.SubjectReference;
 import edu.stanford.epad.epadws.handlers.dicom.DSOUtil;
+import edu.stanford.epad.epadws.models.DisabledTemplate;
 import edu.stanford.epad.epadws.models.EpadFile;
 import edu.stanford.epad.epadws.models.FileType;
 import edu.stanford.epad.epadws.models.NonDicomSeries;
@@ -1478,6 +1479,7 @@ public class DefaultEpadOperations implements EpadOperations
 			String sessionID) throws Exception {
 		EPADTemplateList fileList = new EPADTemplateList();
 		File[] templates = new File(EPADConfig.getEPADWebServerTemplatesDir()).listFiles();
+		List<String> disabledTemplatesNames = projectOperations.getDisabledTemplates(EPADConfig.xnatUploadProjectID);
 		for (File template: templates)
 		{
 			if (template.isDirectory()) continue;
@@ -1501,8 +1503,12 @@ public class DefaultEpadOperations implements EpadOperations
 			} catch (Exception x) {
 				//log.warning("JSON Error", x);
 			}
+			boolean enabled = true;
+			if (disabledTemplatesNames.contains(template.getName()) || disabledTemplatesNames.contains(templateName) || disabledTemplatesNames.contains(templateCode))
+				enabled = false;
+			
 			EPADTemplate epadFile = new EPADTemplate("", "", "", "", "", name, template.length(), FileType.TEMPLATE.getName(), 
-					formatDate(new Date(template.lastModified())), "templates/" + template.getName(), true, description);
+					formatDate(new Date(template.lastModified())), "templates/" + template.getName(), enabled, description);
             epadFile.templateName = templateName;
             epadFile.templateType = templateType;
             epadFile.templateCode = templateCode;
@@ -1519,6 +1525,10 @@ public class DefaultEpadOperations implements EpadOperations
 			{
 				userProjects.add(project.getProjectId());
 				EPADTemplate epadFile = convertEpadFileToTemplate(project.getProjectId(), efile, new File(EPADConfig.getEPADWebServerResourcesDir() + getEpadFilePath(efile)));
+				boolean enabled = true;
+				if (disabledTemplatesNames.contains(epadFile.fileName) || disabledTemplatesNames.contains(epadFile.templateName) || disabledTemplatesNames.contains(epadFile.templateCode))
+					enabled = false;
+				epadFile.enabled = enabled;
 				fileList.addFile(epadFile);
 			}
 		}
@@ -1533,7 +1543,16 @@ public class DefaultEpadOperations implements EpadOperations
 		for (EpadFile efile: efiles)
 		{
 			EPADTemplate epadFile = convertEpadFileToTemplate(projectID, efile, new File(EPADConfig.getEPADWebServerResourcesDir() + getEpadFilePath(efile)));
-			fileList.addFile(epadFile);
+			if (epadFile.enabled)
+				fileList.addFile(epadFile);
+		}
+		efiles = projectOperations.getEpadFiles(EPADConfig.xnatUploadProjectID, null, null, null, FileType.TEMPLATE, false);
+		List<String> disabledTemplatesNames = projectOperations.getDisabledTemplates(projectID);
+		for (EpadFile efile: efiles)
+		{
+			EPADTemplate epadFile = convertEpadFileToTemplate(projectID, efile, new File(EPADConfig.getEPADWebServerResourcesDir() + getEpadFilePath(efile)));
+			if (!disabledTemplatesNames.contains(epadFile.fileName) && !disabledTemplatesNames.contains(epadFile.templateName) && !disabledTemplatesNames.contains(epadFile.templateCode))
+				fileList.addFile(epadFile);
 		}
 		return fileList;
 	}
@@ -1752,6 +1771,9 @@ public class DefaultEpadOperations implements EpadOperations
 				log.warning("No permissions to update AIM:" + aimID + " for user " + username);
 				throw new Exception("No permissions to update AIM:" + aimID + " for user " + username);
 			}
+			if (aim != null && !aim.projectID.equals(projectReference.projectID)) {
+				moveAIMtoProject(aim, projectReference.projectID, username);
+			}
 			if (!AIMUtil.saveAIMAnnotation(aimFile, projectReference.projectID, sessionID, username))
 				return "";
 			else
@@ -1762,6 +1784,23 @@ public class DefaultEpadOperations implements EpadOperations
 		}
 	}
 
+	private void moveAIMtoProject(EPADAIM aim, String projectID, String username) throws Exception {
+		if (projectID.equals(EPADConfig.xnatUploadProjectID))
+			throw new Exception("Invalid projectID for an AIM");
+		String aimID = aim.aimID;
+		if (aim.studyUID != null && aim.studyUID.length() > 0
+				&& projectOperations.isStudyInProjectAndSubject(projectID, aim.subjectID, aim.studyUID)) {
+			epadDatabaseOperations.updateAIM(aimID, projectID, username);
+		} else if (aim.subjectID != null && aim.subjectID.length() > 0
+				&& projectOperations.isSubjectInProject(projectID, aim.subjectID)) {
+			epadDatabaseOperations.updateAIM(aimID, projectID, username);					
+		} else if (aim.subjectID == null || aim.subjectID.length() == 0) {
+			epadDatabaseOperations.updateAIM(aimID, projectID, username);					
+		} else {
+			throw new Exception("Invalid projectID for this AIM");
+		}		
+	}
+	
 	@Override
 	public String createSubjectAIM(String username,
 			SubjectReference subjectReference, String aimID, File aimFile,
@@ -1772,6 +1811,9 @@ public class DefaultEpadOperations implements EpadOperations
 			{
 				log.warning("No permissions to update AIM:" + aimID + " for user " + username);
 				throw new Exception("No permissions to update AIM:" + aimID + " for user " + username);
+			}
+			if (!aim.projectID.equals(subjectReference.projectID)) {
+				moveAIMtoProject(aim, subjectReference.projectID, username);
 			}
 			if (!AIMUtil.saveAIMAnnotation(aimFile, aim.projectID, sessionID, username))
 				return "";
@@ -1793,6 +1835,9 @@ public class DefaultEpadOperations implements EpadOperations
 				log.warning("No permissions to update AIM:" + aimID + " for user " + username);
 				throw new Exception("No permissions to update AIM:" + aimID + " for user " + username);
 			}
+			if (!aim.projectID.equals(studyReference.projectID)) {
+				moveAIMtoProject(aim, studyReference.projectID, username);
+			}
 			if (!AIMUtil.saveAIMAnnotation(aimFile, aim.projectID, sessionID, username))
 				return "";
 			else
@@ -1812,6 +1857,9 @@ public class DefaultEpadOperations implements EpadOperations
 			{
 				log.warning("No permissions to update AIM:" + aimID + " for user " + username);
 				throw new Exception("No permissions to update AIM:" + aimID + " for user " + username);
+			}
+			if (!aim.projectID.equals(seriesReference.projectID)) {
+				moveAIMtoProject(aim, seriesReference.projectID, username);
 			}
 			if (!AIMUtil.saveAIMAnnotation(aimFile, aim.projectID, sessionID, username))
 				return "";
@@ -1833,6 +1881,9 @@ public class DefaultEpadOperations implements EpadOperations
 				log.warning("No permissions to update AIM:" + aimID + " for user " + username);
 				throw new Exception("No permissions to update AIM:" + aimID + " for user " + username);
 			}
+			if (!aim.projectID.equals(imageReference.projectID)) {
+				moveAIMtoProject(aim, imageReference.projectID, username);
+			}
 			if (!AIMUtil.saveAIMAnnotation(aimFile, aim.projectID, sessionID, username))
 				return "";
 			else
@@ -1852,6 +1903,9 @@ public class DefaultEpadOperations implements EpadOperations
 			{
 				log.warning("No permissions to update AIM:" + aimID + " for user " + username);
 				throw new Exception("No permissions to update AIM:" + aimID + " for user " + username);
+			}
+			if (!aim.projectID.equals(frameReference.projectID)) {
+				moveAIMtoProject(aim, frameReference.projectID, username);
 			}
 			if (!AIMUtil.saveAIMAnnotation(aimFile, aim.projectID, frameReference.frameNumber, sessionID, username))
 				return "";

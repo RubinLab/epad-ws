@@ -136,7 +136,7 @@ public class RemotePACSBase {
 		return getPropertyInsistently(applicationProperties,key);
 	} 
 
-	protected void setCurrentRemoteQueryInformationModel(String remoteAEForQuery, boolean infoOnly) throws Exception {
+	protected void setCurrentRemoteQueryInformationModel(String remoteAEForQuery) throws Exception {
 		currentRemoteQueryInformationModel=null;
 		String stringForTitle="";
 		if (remoteAEForQuery != null && remoteAEForQuery.length() > 0 && networkApplicationProperties != null && networkApplicationInformation != null) {
@@ -153,11 +153,7 @@ public class RemotePACSBase {
 
 				String                        queryHost = presentationAddress.getHostname();
 				int			      queryPort = presentationAddress.getPort();
-				if (!infoOnly) {
-						// Send data directly to dcm4che
-						// May need to change host ip if DCM4CHE is running on a separate machine
-						queryPort = new Integer(EPADConfig.dicomServerPort);
-				}
+				log.info("queryHost:" + queryHost + " queryPort:" + queryPort);
 				String                       queryModel = networkApplicationInformation.getApplicationEntityMap().getQueryModel(queryCalledAETitle);
 				int                     queryDebugLevel = networkApplicationProperties.getQueryDebugLevel();
 

@@ -243,12 +243,11 @@ public interface EpadProjectOperations {
 	
 	/**
 	 * Check if Subject is in Project
-	 * @param loggedInUser
 	 * @param subjectUID
 	 * @param projectId
 	 * @throws Exception
 	 */
-	boolean isSubjectInProject(String loggedInUser, String subjectUID, String projectId) throws Exception;
+	boolean isSubjectInProject(String subjectUID, String projectId) throws Exception;
 
 	/**
 	 * Create File Record
@@ -557,6 +556,12 @@ public interface EpadProjectOperations {
 	
 	void disableFile(String loggedInUser, String projectID, String subjectUID, String studyUID, String seriesUID, String filename) throws Exception;
 	
+	void enableTemplate(String loggedInUser, String projectID, String subjectUID, String studyUID, String seriesUID, String templateName) throws Exception;
+	
+	void disableTemplate(String loggedInUser, String projectID, String subjectUID, String studyUID, String seriesUID, String templateName) throws Exception;
+	
+	List<String> getDisabledTemplates(String projectID) throws Exception;	
+
 	/**
 	 * @param username
 	 * @return

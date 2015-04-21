@@ -86,6 +86,8 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 				ps.close();
 				ps = c.prepareStatement(EpadDatabaseCommands.SELECT_EPAD_FILE_PATH_BY_IMAGE_UID);
 				ps.setString(1, "%/" + imageUID + ".png");
+				if (log.isDebugEnabled())
+					log.debug(ps.toString());
 				rs = ps.executeQuery();
 				if (rs.next()) {
 					pngFilePath = rs.getString(1);
@@ -96,6 +98,8 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 					ps.close();
 					ps = c.prepareStatement(EpadDatabaseCommands.SELECT_EPAD_FILE_PATH_BY_IMAGE_UID);
 					ps.setString(1, "%/" + imagePath + ".png");
+					if (log.isDebugEnabled())
+						log.debug(ps.toString());
 					rs = ps.executeQuery();
 					if (rs.next()) {
 						pngFilePath = rs.getString(1);
@@ -1065,6 +1069,8 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 			c = getConnection();
 			ps = c.prepareStatement(EpadDatabaseCommands.SELECT_EPAD_FILES_FOR_EXACT_PATH);
 			ps.setString(1, filePath);
+			if (log.isDebugEnabled())
+				log.debug(ps.toString());
 			rs = ps.executeQuery();
 			return rs.next();
 		} catch (SQLException sqle) {
@@ -1677,7 +1683,8 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 		{
             ps = dbCon.prepareStatement(insertSQL, Statement.RETURN_GENERATED_KEYS);
             setSQLValues(columns, ps, dbObject);
-            log.debug("insert sql:" + ps.toString());
+			if (log.isDebugEnabled())
+				log.debug("insert sql:" + ps.toString());
             ps.executeUpdate();
 		    rs = ps.getGeneratedKeys();
 		    if (rs.next())
@@ -1760,7 +1767,8 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 				log.warning("Error setting DB values", e);
 				throw new IllegalArgumentException(e.getMessage());
 			}
-            log.debug("update sql:" + ps.toString());
+			if (log.isDebugEnabled())
+				log.debug("update sql:" + ps.toString());
 			ps.executeUpdate();
 			ps.close();
 		}
@@ -1786,11 +1794,13 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 		Connection dbCon = null;
 		try
 		{
-			log.debug("delete from " + dbTable + " " + criteria);
+			if (log.isDebugEnabled())
+				log.debug("delete from " + dbTable + " " + criteria);
 			dbCon = getConnection();
 			ps = dbCon.prepareStatement("delete from " + dbTable + " " + criteria);
 			int rows = ps.executeUpdate();
-			log.debug("" + rows + " rows deleted");
+			if (log.isDebugEnabled())
+				log.debug("" + rows + " rows deleted");
 			return rows;
 		}
 		finally
@@ -1826,7 +1836,8 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
             }
             else
                stmt.setMaxRows(maxRecords);
-            log.debug("Query:" + sql);
+			if (log.isDebugEnabled())
+				log.debug("Query:" + sql);
             rs = stmt.executeQuery(sql);
             Object data = null;
 		    while (rs.next()) 
@@ -1835,7 +1846,8 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 		    	getSQLValues(dbColumns, rs, data);
 		    	datas.add(data);
 		    }
-		    log.debug("Returned:" + datas.size() + " rows");
+			if (log.isDebugEnabled())
+				log.debug("Returned:" + datas.size() + " rows");
 		    return datas;
 		}
 		finally
@@ -1855,6 +1867,8 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
             dbCon = getConnection();
             stmt = dbCon.createStatement();
             String sql = "SELECT * FROM "  + dbTable + " where id = " + id;
+			if (log.isDebugEnabled())
+				log.debug("Query:" + sql);
             rs = stmt.executeQuery(sql);
             Object data = null;
 		    if (rs.next()) 
@@ -1926,12 +1940,14 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
             dbCon = getConnection();
             stmt = dbCon.createStatement();
             String sql = "SELECT count(*) FROM "  + dbTable + " " + criteria;
-            log.info("Query:" + sql);
+			if (log.isDebugEnabled())
+				log.debug("Query:" + sql);
             rs = stmt.executeQuery(sql);
 		    if (rs.next()) 
 		    {
 		    	int count = rs.getInt(1);
-                log.debug("Returned:" + count + " rows");
+				if (log.isDebugEnabled())
+					log.debug("Returned:" + count + " rows");
                 return count;
 		    }
 		    else

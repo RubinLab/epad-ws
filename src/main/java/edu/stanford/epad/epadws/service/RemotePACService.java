@@ -193,6 +193,19 @@ public class RemotePACService extends RemotePACSBase {
 					ae.getPresentationAddress().getPort(), ae.getQueryModel(), ae.getPrimaryDeviceType());
 			rps.add(rp);
 		}
+		if (EPADConfig.getParamValue("TCIA_APIKEY") != null) {
+			try {
+				List<String> collections = TCIAService.getInstance().getCollections();
+				for (String collection: collections)
+				{
+					RemotePAC rpac = new RemotePAC(TCIAService.TCIA_PREFIX + collection, TCIAService.TCIA_PREFIX + collection, "services.cancerimagingarchive.net",
+							443, "", "");
+					rps.add(rpac);
+				}
+			} catch (Exception e) {
+				log.warning("Error getting TCIA collections", e);
+			}
+		}
 		return rps;
 	}
 
@@ -224,6 +237,8 @@ public class RemotePACService extends RemotePACSBase {
 		User user = DefaultEpadProjectOperations.getInstance().getUser(loggedInUser);
 		if (!user.isAdmin() && !user.hasPermission(User.CreatePACPermission))
 			throw new Exception("No permission to create PAC configuration");
+		if (pac.pacID.startsWith("tcia"))
+			throw new Exception("Invalid PAC ID:" + pac.pacID);
 		addRemotePAC(
 				pac.pacID,
 				pac.aeTitle,
@@ -240,6 +255,8 @@ public class RemotePACService extends RemotePACSBase {
 	 */
 	public synchronized void modifyRemotePAC(String loggedInUser, RemotePAC pac) throws Exception {
 		User user = DefaultEpadProjectOperations.getInstance().getUser(loggedInUser);
+		if (pac.pacID.startsWith("tcia"))
+			throw new Exception("This PAC Configuration can not be modified:" + pac.pacID);
 		if (!user.isAdmin() && !user.hasPermission(User.CreatePACPermission))
 			throw new Exception("No permission to modify PAC configuration");
 		removeRemotePAC(pac.pacID);
@@ -339,9 +356,9 @@ public class RemotePACService extends RemotePACSBase {
 		if (project == null)
 			throw new Exception("Project " + projectID + " not found");
 		RemotePAC pac = this.getRemotePAC(pacID);
-		if (pac == null)
+		if (pac == null && !pacID.startsWith(TCIAService.TCIA_PREFIX))
 			throw new Exception("Remote PAC " + pacID + " not found");
-		if (pac.hostname.equalsIgnoreCase(EPADConfig.xnatServer) && pac.port == 11112)
+		if (pac != null && pac.hostname.equalsIgnoreCase(EPADConfig.xnatServer) && pac.port == 11112)
 		{
 			throw new Exception("This is the local PAC, image data can not transferred from it");
 		}
@@ -526,7 +543,7 @@ public class RemotePACService extends RemotePACSBase {
 			log.info("Remote PAC Query, pacID:" + pac.pacID + " patientName:" + patientNameFilter + " patientID:" + patientIDFilter + " studyDate:" + studyDateFilter + " studyIDFilter:" + studyIDFilter + " patientsOnly:" + patientsOnly + " studiesOnly:" + studiesOnly);
 			if (currentPACQueries.containsKey(pac.pacID))
 				throw new Exception("Last query to this PAC still in progress");
-			this.setCurrentRemoteQueryInformationModel(pac.pacID, true);
+			this.setCurrentRemoteQueryInformationModel(pac.pacID);
 			SpecificCharacterSet specificCharacterSet = new SpecificCharacterSet((String[])null);
 			AttributeList filter = new AttributeList();
 			currentPACQueries.put(pac.pacID, filter);
@@ -714,10 +731,14 @@ public class RemotePACService extends RemotePACSBase {
 		if (entities.size() > 0)
 		{
 			ukey = entities.get(0).entityID + ":" + node.getUniqueKey().getDelimitedStringValuesOrEmptyString(); // Is this key better???
+			if (patientsOnly)
+				ukey = entities.get(0).entityID + ":" + "SUBJECT" + ":" + node.getUniqueKey().getDelimitedStringValuesOrEmptyString(); // Is this key better???
 		}
 		RemotePACEntity entity = new RemotePACEntity(type, node.getValue(), level, ukey);
 		entity.subjectID = Attribute.getSingleStringValueOrNull(al,TagFromName.PatientID);
 		entity.subjectName = Attribute.getSingleStringValueOrNull(al,TagFromName.PatientName);
+		if (entity.subjectName == null || entity.subjectName.length() == 0)
+			entity.subjectName = entity.subjectID;
 		if (patientsOnly && type.equals("Study") && patientIds.contains(entity.subjectID))
 		{
 			//log.info("Duplicate subject:" + entity.subjectID);
@@ -764,10 +785,14 @@ public class RemotePACService extends RemotePACSBase {
 		{
 			throw new Exception("This is the local PAC, image data can not transferred from it");
 		}
+		if (entityID.contains("SUBJECT:"))
+		{
+			throw new Exception("Patients can not be transferred. Please select a Study or Series");
+		}
 		String uniqueKey = entityID;
 		String root = uniqueKey;
 		if (root.indexOf(":") != -1)
-			root = root.substring(0, root.indexOf(":"));
+			root = root.substring(0, root.lastIndexOf(":"));
 		if (!uniqueKey.startsWith(pac.pacID))
 			uniqueKey = pac.pacID + ":" + uniqueKey;
 		QueryTreeRecord node = remoteQueryCache.get(uniqueKey);
@@ -777,7 +802,7 @@ public class RemotePACService extends RemotePACSBase {
 			queryRemoteData(pac, "", "", "", "", false, false);
 			node = remoteQueryCache.get(uniqueKey);
 			if (node == null)
-				throw new Exception("Remote data not found");
+				throw new Exception("Remote data not found:" + uniqueKey);
 		}
 		String type = node.getInformationEntity().toString();
 		String studyUID = null;
@@ -827,11 +852,11 @@ public class RemotePACService extends RemotePACSBase {
 		}
 		if (studyUID != null && patientID != null && projectID != null && projectID.trim().length() > 0)
 		{
-			UserProjectService.addSubjectAndStudyToProject(patientID, patientName, studyUID, projectID, sessionID, userName);
+			UserProjectService.addSubjectAndStudyToProject(patientID, patientName, studyUID, studyDate, projectID, sessionID, userName);
 		}
 		if (seriesUID != null)
 			pendingTransfers.put(seriesUID, userName + ":" + projectID);
-		this.setCurrentRemoteQueryInformationModel(pac.pacID, false);
+		this.setCurrentRemoteQueryInformationModel(pac.pacID);
 		if (node != null) {
 			setCurrentRemoteQuerySelection(node.getUniqueKeys(), node.getUniqueKey(), node.getAllAttributesReturnedInIdentifier());
 			log.info("Request retrieval of "+currentRemoteQuerySelectionLevel+" "+currentRemoteQuerySelectionUniqueKey.getSingleStringValueOrEmptyString()+" from "+pac.pacID+" ("+currentRemoteQuerySelectionRetrieveAE+")");
@@ -849,73 +874,6 @@ public class RemotePACService extends RemotePACSBase {
 			return studyUID + ":" + studyDate;
 		else
 			return seriesUID;
-	}
-
-	public static int downloadSeriesFromTCIA(String username, String seriesUID, String projectID)
-			throws Exception
-	{
-		String tciaURL = EPADConfig.getParamValue("TCIA_URL", "https://services.cancerimagingarchive.net/services/v3/TCIA/query/getImage");
-		tciaURL = tciaURL + "?SeriesInstanceUID=" + seriesUID;
-		tciaURL = tciaURL + "&api_key=" + EPADConfig.getParamValue("TCIA_APIKEY", "5b1c609e-e3b5-4fbd-999c-e1e71f1c49f0");
-		HttpClient client = new HttpClient();
-		GetMethod method = new GetMethod(tciaURL);
-		int statusCode = client.executeMethod(method);
-		File uploadStoreDir = new File(EPADConfig.getEPADWebServerUploadDir()
-													+ "temp" + System.currentTimeMillis());
-		uploadStoreDir.mkdirs();
-		File zipfile = new File(uploadStoreDir, "tcia.zip");
-
-		if (statusCode == HttpServletResponse.SC_OK) {
-			OutputStream outputStream = null;
-			try {
-				outputStream = new FileOutputStream(zipfile);
-				InputStream inputStream = method.getResponseBodyAsStream();
-				int read = 0;
-				byte[] bytes = new byte[4096];
-				while ((read = inputStream.read(bytes)) != -1) {
-					outputStream.write(bytes, 0, read);
-				}
-			} finally {
-				IOUtils.closeQuietly(outputStream);
-				method.releaseConnection();
-			}
-			writePropertiesFile(uploadStoreDir, projectID, "", username);
-		}
-		else {
-			log.warning("TCIA URL:" + tciaURL + " Status:" + statusCode);
-		}
-		return statusCode;
-	}
-
-	// add the properties file xnat_upload.properties.
-	private static void writePropertiesFile(File storeDir, String project,
-			String session, String user) {
-
-		String projectName = "XNATProjectName=" + project;
-		String sessionName = "XNATSessionID=" + session;
-		String userName = "XNATUserName=" + user;
-
-		try {
-			File properties = new File(storeDir, "xnat_upload.properties");
-			if (!properties.exists()) {
-				properties.createNewFile();
-			}
-			FileOutputStream fop = new FileOutputStream(properties, false);
-
-			fop.write(projectName.getBytes());
-			fop.write("\n".getBytes());
-			fop.write(sessionName.getBytes());
-			fop.write("\n".getBytes());
-			fop.write(userName.getBytes());
-			fop.write("\n".getBytes());
-
-			fop.flush();
-			fop.close();
-
-		} catch (IOException e) {
-			log.info("Error writing prroperties file");
-			e.printStackTrace();
-		}
 	}
 	
 	/**

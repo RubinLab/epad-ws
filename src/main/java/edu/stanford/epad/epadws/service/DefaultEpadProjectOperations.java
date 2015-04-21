@@ -41,6 +41,7 @@ import org.mindrot.jbcrypt.BCrypt;
 import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.epad.epadws.epaddb.DatabaseUtils;
+import edu.stanford.epad.epadws.models.DisabledTemplate;
 import edu.stanford.epad.epadws.models.EpadFile;
 import edu.stanford.epad.epadws.models.FileType;
 import edu.stanford.epad.epadws.models.NonDicomSeries;
@@ -407,7 +408,7 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 	public Study createStudy(String loggedInUser, String studyUID,
 			String subjectUID, String description) throws Exception {
 		return createStudy(loggedInUser, studyUID,
-				subjectUID, description, new Date());
+				subjectUID, description, null);
 	}
 	@Override
 	public Study createStudy(String loggedInUser, String studyUID,
@@ -566,8 +567,7 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 	 * @see edu.stanford.epad.epadws.service.EpadProjectOperations#isSubjectInProject(java.lang.String, java.lang.String, java.lang.String)
 	 */
 	@Override
-	public boolean isSubjectInProject(String loggedInUser, String subjectUID,
-			String projectId) throws Exception {
+	public boolean isSubjectInProject(String subjectUID, String projectId) throws Exception {
 		Subject subject = getSubject(subjectUID);
 		if (subject == null)
 			throw new Exception("Subject not found, ID:" + subjectUID);
@@ -1449,6 +1449,42 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 			throw new Exception("No permissions to disable template");
 		efile.setEnabled(false);
 		efile.save();
+	}
+
+	@Override
+	public void enableTemplate(String loggedInUser, String projectID,
+			String subjectUID, String studyUID, String seriesUID,
+			String templateName) throws Exception {
+		Project project = getProject(projectID);
+		if (project == null)
+			throw new Exception("Project not found");
+		new DisabledTemplate().deleteObjects("project_id = " + project.getId() + " and templatename=" + DisabledTemplate.toSQL(templateName));
+	}
+
+	@Override
+	public void disableTemplate(String loggedInUser, String projectID,
+			String subjectUID, String studyUID, String seriesUID,
+			String templateName) throws Exception {
+		Project project = getProject(projectID);
+		if (project == null)
+			throw new Exception("Project not found");
+		DisabledTemplate dt = new DisabledTemplate();
+		dt.setProjectId(project.getId());
+		dt.setTemplateName(templateName);
+		dt.setCreator(loggedInUser);
+		dt.save();
+	}
+
+	@Override
+	public List<String> getDisabledTemplates(String projectID) throws Exception {
+		Project project = getProject(projectID);
+		if (project == null)
+			throw new Exception("Project not found");
+		List<DisabledTemplate> dts = new DisabledTemplate().getObjects("project_id=" + project.getId());
+		List<String> templateNames = new ArrayList<String>();
+		for (DisabledTemplate dt: dts)
+			templateNames.add(dt.getTemplateName());
+		return templateNames;
 	}
 
 	/* (non-Javadoc)
