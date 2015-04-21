@@ -51,6 +51,8 @@ import edu.stanford.epad.epadws.handlers.dicom.DSOUtil;
 import edu.stanford.epad.epadws.models.FileType;
 import edu.stanford.epad.epadws.queries.DefaultEpadOperations;
 import edu.stanford.epad.epadws.queries.EpadOperations;
+import edu.stanford.epad.epadws.service.DefaultWorkListOperations;
+import edu.stanford.epad.epadws.service.EpadWorkListOperations;
 import edu.stanford.epad.epadws.service.SessionService;
 import edu.stanford.epad.epadws.service.UserProjectService;
 
@@ -788,7 +790,7 @@ public class ProjectController {
 		EPADSearchFilter searchFilter = EPADSearchFilterBuilder.build(request);
 		ProjectReference projectReference = new ProjectReference(projectID);
 		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
-		EPADFileList files = epadOperations.getFileDescriptions(projectReference, username, sessionID, searchFilter);
+		EPADFileList files = epadOperations.getFileDescriptions(projectReference, username, sessionID, searchFilter, true);
 		return files;
 	}
 	 
@@ -802,7 +804,7 @@ public class ProjectController {
 		EPADSearchFilter searchFilter = EPADSearchFilterBuilder.build(request);
 		SubjectReference subjectReference = new SubjectReference(projectID, subjectID);
 		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
-		EPADFileList files = epadOperations.getFileDescriptions(subjectReference, username, sessionID, searchFilter);
+		EPADFileList files = epadOperations.getFileDescriptions(subjectReference, username, sessionID, searchFilter, true);
 		return files;
 	}
 	 
@@ -817,7 +819,7 @@ public class ProjectController {
 		EPADSearchFilter searchFilter = EPADSearchFilterBuilder.build(request);
 		StudyReference studyReference = new StudyReference(projectID, subjectID, studyUID);
 		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
-		EPADFileList files = epadOperations.getFileDescriptions(studyReference, username, sessionID, searchFilter);
+		EPADFileList files = epadOperations.getFileDescriptions(studyReference, username, sessionID, searchFilter, true);
 		return files;
 	}
 	 
@@ -1271,7 +1273,17 @@ public class ProjectController {
 				}
 			}
 		}
+		List<String> descriptions = (List<String>) paramData.get("description_List");
+		List<String> fileTypes = (List<String>) paramData.get("fileType_List");
 		if (numberOfFiles == 1) {
+			if (description == null) {
+				if (descriptions != null && descriptions.size() > 0)
+					description = descriptions.get(0);
+			}
+			if (fileType == null) {
+				if (fileTypes != null && fileTypes.size() > 0)
+					fileType = fileTypes.get(0);
+			}
 			if (FileType.ANNOTATION.getName().equalsIgnoreCase(fileType)) {
 				if (AIMUtil.saveAIMAnnotation(uploadedFile, projectID, sessionID, username))
 					throw new Exception("Error saving AIM file");
@@ -1282,8 +1294,6 @@ public class ProjectController {
 						uploadedFile, description, fileType, sessionID);
 			}
 		} else {
-			List<String> descriptions = (List<String>) paramData.get("description_List");
-			List<String> fileTypes = (List<String>) paramData.get("fileType_List");
 			int i = 0;
 			for (String param: paramData.keySet())
 			{
@@ -1310,58 +1320,74 @@ public class ProjectController {
 		}		
 	}
 	
-//				
-//			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.USER_WORKLIST, pathInfo)) {
-//				ProjectReference projectReference = ProjectReference.extract(ProjectsRouteTemplates.USER_WORKLIST, pathInfo);
-//				Map<String, String> templateMap = HandlerUtil.getTemplateMap(ProjectsRouteTemplates.USER_WORKLIST, pathInfo);
-//				String reader = HandlerUtil.getTemplateParameter(templateMap, "username");
-//				String workListID = HandlerUtil.getTemplateParameter(templateMap, "workListID");
-//				String description = httpRequest.getParameter("description");
-//				String dueDate = httpRequest.getParameter("dueDate");
-//				worklistOperations.createWorkList(username, reader, projectReference.projectID, workListID, description, null, getDate(dueDate));
-//				statusCode = HttpServletResponse.SC_OK;
-//} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.PROJECT_FILE, pathInfo)) {
-//	ProjectReference projectReference = ProjectReference.extract(ProjectsRouteTemplates.PROJECT_FILE, pathInfo);
-//	Map<String, String> templateMap = HandlerUtil.getTemplateMap(ProjectsRouteTemplates.PROJECT_FILE, pathInfo);
-//	String filename = HandlerUtil.getTemplateParameter(templateMap, "filename");
-//	if (filename == null || filename.trim().length() == 0)
-//		throw new Exception("Invalid filename");
-//	epadOperations.deleteFile(username, projectReference, filename);
-//	statusCode = HttpServletResponse.SC_OK;
-//			
-//} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.SUBJECT_FILE, pathInfo)) {
-//	SubjectReference subjectReference = SubjectReference.extract(ProjectsRouteTemplates.SUBJECT_FILE, pathInfo);
-//	if (subjectReference.subjectID.equals("null"))
-//		throw new Exception("Patient ID in rest call is null:" + pathInfo);
-//	Map<String, String> templateMap = HandlerUtil.getTemplateMap(ProjectsRouteTemplates.PROJECT_FILE, pathInfo);
-//	String filename = HandlerUtil.getTemplateParameter(templateMap, "filename");
-//	if (filename == null || filename.trim().length() == 0)
-//		throw new Exception("Invalid filename");
-//	epadOperations.deleteFile(username, subjectReference, filename);
-//	statusCode = HttpServletResponse.SC_OK;
-//
-//} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.STUDY_FILE, pathInfo)) {
-//	StudyReference studyReference = StudyReference.extract(ProjectsRouteTemplates.STUDY_FILE, pathInfo);
-//	if (studyReference.subjectID.equals("null"))
-//		throw new Exception("Patient ID in rest call is null:" + pathInfo);
-//	Map<String, String> templateMap = HandlerUtil.getTemplateMap(ProjectsRouteTemplates.PROJECT_FILE, pathInfo);
-//	String filename = HandlerUtil.getTemplateParameter(templateMap, "filename");
-//	if (filename == null || filename.trim().length() == 0)
-//		throw new Exception("Invalid filename");
-//	epadOperations.deleteFile(username, studyReference, filename);
-//	statusCode = HttpServletResponse.SC_OK;
-//
-//} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.SERIES_FILE, pathInfo)) {
-//	SeriesReference seriesReference = SeriesReference.extract(ProjectsRouteTemplates.SERIES_FILE, pathInfo);
-//	if (seriesReference.subjectID.equals("null"))
-//		throw new Exception("Patient ID in rest call is null:" + pathInfo);
-//	Map<String, String> templateMap = HandlerUtil.getTemplateMap(ProjectsRouteTemplates.PROJECT_FILE, pathInfo);
-//	String filename = HandlerUtil.getTemplateParameter(templateMap, "filename");
-//	if (filename == null || filename.trim().length() == 0)
-//		throw new Exception("Invalid filename");
-//	epadOperations.deleteFile(username, seriesReference, filename);
-//	statusCode = HttpServletResponse.SC_OK;
-			
+	@RequestMapping(value = "/{projectID}/users/{reader}/worklists/{workListID}", method = RequestMethod.PUT)
+	public void createUserWorkList(@RequestParam(value="username") String username, 
+										@PathVariable String projectID,
+										@PathVariable String reader,
+										@PathVariable String workListID,
+										@RequestParam(value="description", required=false) String description,
+										@RequestParam(value="dueDate", required=false) String dueDate,
+										HttpServletRequest request, 
+								        HttpServletResponse response) throws Exception {
+		String sessionID = SessionService.getJSessionIDFromRequest(request);
+		EpadWorkListOperations worklistOperations = DefaultWorkListOperations.getInstance();
+		worklistOperations.createWorkList(username, reader, projectID, workListID, description, null, getDate(dueDate));
+	}
+
+	@RequestMapping(value = "/{projectID}/files/{filename:.+}", method = RequestMethod.DELETE)
+	public void deleteProjectFile(@RequestParam(value="username") String username, 
+										@PathVariable String projectID,
+										@PathVariable String filename,
+										HttpServletRequest request, 
+								        HttpServletResponse response) throws Exception {
+		ProjectReference projectReference = new ProjectReference(projectID);
+		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
+		try {
+		epadOperations.deleteFile(username, projectReference, filename);
+		} catch (Exception x) {
+			log.warning("Error deleting " + filename, x);
+			throw x;
+		}
+	}
+
+	@RequestMapping(value = "/{projectID}/subjects/{subjectID}/files/{filename:.+}", method = RequestMethod.DELETE)
+	public void deleteSubjectFile(@RequestParam(value="username") String username, 
+										@PathVariable String projectID,
+										@PathVariable String subjectID,
+										@PathVariable String filename,
+										HttpServletRequest request, 
+								        HttpServletResponse response) throws Exception {
+		SubjectReference subjectReference = new SubjectReference(projectID, subjectID);
+		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
+		epadOperations.deleteFile(username, subjectReference, filename);
+	}
+
+	@RequestMapping(value = "/{projectID}/subjects/{subjectID}/studies/{studyUID}/files/{filename:.+}", method = RequestMethod.DELETE)
+	public void deleteStudyFile(@RequestParam(value="username") String username, 
+										@PathVariable String projectID,
+										@PathVariable String subjectID,
+										@PathVariable String studyUID,
+										@PathVariable String filename,
+										HttpServletRequest request, 
+								        HttpServletResponse response) throws Exception {
+		StudyReference studyReference = new StudyReference(projectID, subjectID, studyUID);
+		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
+		epadOperations.deleteFile(username, studyReference, filename);
+	}
+
+	@RequestMapping(value = "/{projectID}/subjects/{subjectID}/studies/{studyUID}/series/{seriesUID}/files/{filename:.+}", method = RequestMethod.DELETE)
+	public void deleteSeriesFile(@RequestParam(value="username") String username, 
+										@PathVariable String projectID,
+										@PathVariable String subjectID,
+										@PathVariable String studyUID,
+										@PathVariable String seriesUID,
+										@PathVariable String filename,
+										HttpServletRequest request, 
+								        HttpServletResponse response) throws Exception {
+		SeriesReference seriesReference = new SeriesReference(projectID, subjectID, studyUID, seriesUID);
+		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
+		epadOperations.deleteFile(username, seriesReference, filename);
+	}			
 	
 	private int getInt(String value)
 	{

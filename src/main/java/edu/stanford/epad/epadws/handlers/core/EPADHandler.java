@@ -122,6 +122,8 @@ public class EPADHandler extends AbstractHandler
 			}
 
 			String username = httpRequest.getParameter("username");
+			if (username == null && sessionID != null)
+				username = EPADSessionOperations.getSessionUser(sessionID);
 			log.info("User:" + username  + " host:" + EPADSessionOperations.getSessionHost(sessionID) + " method:" + httpRequest.getMethod() 
 					+ ", url: " + httpRequest.getPathInfo() + ", parameters: "
 					+ httpRequest.getQueryString() + " sessionId:" + sessionID);
@@ -265,7 +267,7 @@ public class EPADHandler extends AbstractHandler
 				StudyReference studyReference = StudyReference.extract(ProjectsRouteTemplates.SERIESFILE_LIST, pathInfo);
 				EPADSeriesList seriesList = epadOperations.getSeriesDescriptions(studyReference, username, sessionID,
 						searchFilter, true);
-				EPADFileList fileList = epadOperations.getFileDescriptions(studyReference, username, sessionID, searchFilter);
+				EPADFileList fileList = epadOperations.getFileDescriptions(studyReference, username, sessionID, searchFilter, true);
 				List objects = new ArrayList();
 				objects.add(seriesList);
 				objects.add(fileList);
@@ -924,7 +926,7 @@ public class EPADHandler extends AbstractHandler
 
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.PROJECT_FILE_LIST, pathInfo)) {
 				ProjectReference projectReference = ProjectReference.extract(ProjectsRouteTemplates.PROJECT_FILE_LIST, pathInfo);
-				EPADFileList files = epadOperations.getFileDescriptions(projectReference, username, sessionID, searchFilter);
+				EPADFileList files = epadOperations.getFileDescriptions(projectReference, username, sessionID, searchFilter, true);
 				responseStream.append(files.toJSON());
 				statusCode = HttpServletResponse.SC_OK;
 						
@@ -932,7 +934,7 @@ public class EPADHandler extends AbstractHandler
 				SubjectReference subjectReference = SubjectReference.extract(ProjectsRouteTemplates.SUBJECT_FILE_LIST, pathInfo);
 				if (subjectReference.subjectID.equals("null"))
 					throw new Exception("Patient ID in rest call is null:" + pathInfo);
-				EPADFileList files = epadOperations.getFileDescriptions(subjectReference, username, sessionID, searchFilter);
+				EPADFileList files = epadOperations.getFileDescriptions(subjectReference, username, sessionID, searchFilter, true);
 				responseStream.append(files.toJSON());
 				statusCode = HttpServletResponse.SC_OK;
 
@@ -940,7 +942,7 @@ public class EPADHandler extends AbstractHandler
 				StudyReference studyReference = StudyReference.extract(ProjectsRouteTemplates.STUDY_FILE_LIST, pathInfo);
 				if (studyReference.subjectID.equals("null"))
 					throw new Exception("Patient ID in rest call is null:" + pathInfo);
-				EPADFileList files = epadOperations.getFileDescriptions(studyReference, username, sessionID, searchFilter);
+				EPADFileList files = epadOperations.getFileDescriptions(studyReference, username, sessionID, searchFilter, true);
 				responseStream.append(files.toJSON());
 				statusCode = HttpServletResponse.SC_OK;
 	

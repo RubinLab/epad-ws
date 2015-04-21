@@ -75,7 +75,7 @@ public class WebAuthFilter implements Filter {
             	return;
 			}
 			if (httpRequest.getRequestURL().indexOf("/v2/") != -1)				
-				log.info("Request from client:" + httpRequest.getRequestURL());
+				log.info(httpRequest.getMethod() + " Request from client:" + httpRequest.getRequestURL());
 		}
 	    if (httpRequest.getRequestURL().indexOf("WEB-INF") != -1) {
 	    	// How come, this weird jetty allows this?

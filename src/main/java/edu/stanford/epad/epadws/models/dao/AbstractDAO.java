@@ -28,6 +28,9 @@ import java.io.Serializable;
 import java.util.Date;
 import java.util.List;
 
+import org.eclipse.jetty.util.log.Log;
+
+import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.epad.epadws.epaddb.DatabaseUtils;
 import edu.stanford.epad.epadws.epaddb.EpadDatabase;
 import edu.stanford.epad.epadws.epaddb.EpadDatabaseOperations;
@@ -38,6 +41,8 @@ public abstract class AbstractDAO implements Serializable, Cloneable {
 	abstract public long getId();
 	abstract public void setCreatedTime(Date time);
 	abstract public void setUpdateTime(Date time);
+	
+	private static final EPADLogger log = EPADLogger.getInstance();
 	
 	public final int MAX_RECORDS = 1000;
 	protected final EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
@@ -81,6 +86,7 @@ public abstract class AbstractDAO implements Serializable, Cloneable {
 
     public List getObjects(String criteria, int offset, int max) throws Exception
     {
+    	log.info("Table:" + returnDBTABLE() + " criteria:" + criteria);
         return epadDatabaseOperations.getDBObjects(this.getClass(), returnDBTABLE(), returnDBCOLUMNS(), criteria, offset, max, false);
     }
 
