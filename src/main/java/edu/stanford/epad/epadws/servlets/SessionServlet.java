@@ -16,7 +16,6 @@ public class SessionServlet extends HttpServlet {
 	@Override
 	protected void doPost(HttpServletRequest httpRequest, HttpServletResponse httpResponse)
 			throws ServletException, IOException {
-		log.info("Login request");
 		//super.doPost(httpRequest, httpResponse);
 		new EPADSessionHandler().handle("", null, httpRequest, httpResponse);
 

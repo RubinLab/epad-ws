@@ -7,10 +7,39 @@
  */
 package edu.stanford.epad.epadws;
 
+import java.io.InputStream;
+import java.util.Properties;
+
+import org.apache.commons.io.IOUtils;
+
 public class EPadWebServerVersion
 {
-	public static String getBuildDate()
+	static String version = null;
+	static String buildDate = null;
+	public EPadWebServerVersion()
 	{
-		return "July 2014"; // TODO See if we can generate as part of build process.
+		if (version == null)
+		{
+			version = "1.5.1";
+			buildDate = "";
+			InputStream is = null;
+			try {
+				is = this.getClass().getClassLoader().getResourceAsStream("version.txt");
+				Properties properties = new Properties();
+				properties.load(is);
+				version = properties.getProperty("version");
+				buildDate = properties.getProperty("build.date");
+			} catch (Exception x){
+				
+			} finally {
+				IOUtils.closeQuietly(is);
+			}
+		}
+	}
+	public String getVersion() {
+		return version;
+	}
+	public String getBuildDate() {
+		return buildDate;
 	}
 }

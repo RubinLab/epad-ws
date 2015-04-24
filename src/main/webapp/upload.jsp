@@ -18,23 +18,25 @@
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
 <HTML>
 <HEAD>
-<TITLE> Query RPAC</TITLE>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<meta charset="UTF-8">
+<TITLE>Upload Files</TITLE>
  <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
 </HEAD>
 
 <BODY>
 <div id=imagelist></div>
 <% if (subjectID == null) { %>
- <form action="v2/projects/<%=projectID%>/files/?username=<%=username%>" method="post" enctype="multipart/form-data">
+ <form name=uploadform  id=uploadform  action="v2/projects/<%=projectID%>/files/?username=<%=username%>" method="post" enctype="multipart/form-data" accept-charset=utf-8>
  Project:<%=projectID%><br>
 <% } else if (studyUID == null) { %>
- <form action="v2/projects/<%=projectID%>/subjects/<%=subjectID%>/files/?username=<%=username%>" method="post" enctype="multipart/form-data">
+ <form action="v2/projects/<%=projectID%>/subjects/<%=subjectID%>/files/?username=<%=username%>" method="post" enctype="multipart/form-data" accept-charset=utf-8>
  Project:<%=projectID%> Patient:<%=subjectID%><br>
 <% } else if (seriesUID == null) { %>
- <form action="v2/projects/<%=projectID%>/subjects/<%=subjectID%>/studies/<%=studyUID%>/files/?username=<%=username%>" method="post" enctype="multipart/form-data">
+ <form action="v2/projects/<%=projectID%>/subjects/<%=subjectID%>/studies/<%=studyUID%>/files/?username=<%=username%>" method="post" enctype="multipart/form-data" accept-charset=utf-8>
  Project:<%=projectID%> Patient:<%=subjectID%> Study:<%=studyUID%><br>
 <% } else { %>
- <form action="v2/projects/<%=projectID%>/subjects/<%=subjectID%>/studies/<%=studyUID%>/series/<%=seriesUID%>/files/?username=<%=username%>" method="post" enctype="multipart/form-data">
+ <form action="v2/projects/<%=projectID%>/subjects/<%=subjectID%>/studies/<%=studyUID%>/series/<%=seriesUID%>/files/?username=<%=username%>" method="post" enctype="multipart/form-data" accept-charset=utf-8>
   Project:<%=projectID%> Patient:<%=subjectID%> Study:<%=studyUID%> Series:<%=seriesUID%><br>
 <% } %>
   File 1: <input type=file name=file1><br>
@@ -45,10 +47,14 @@
   File 3 Description: <input type=text name=description size=30><br>
   File 4: <input type=file name=file4><br>
   File 4 Description: <input type=text name=description size=30><br>
-  <input type="submit" value="Submit">
+  <input type="button" value="Submit" onclick="uploadFiles()">
 </form>
 <script>
 var filedata;
+function uploadFiles()
+{
+	document.getElementById("uploadform").submit();
+}
 $( document ).ready(function() {
 <% if (subjectID == null) { %>
 	var url = "/epad/v2/projects/<%=projectID%>/files/";

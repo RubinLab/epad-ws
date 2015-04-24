@@ -14,7 +14,6 @@ public class ConvertAIM4Servlet extends HttpServlet {
 	@Override
 	protected void doGet(HttpServletRequest httpRequest, HttpServletResponse httpResponse)
 			throws ServletException, IOException {
-		super.doGet(httpRequest, httpResponse);
 		new ConvertAIM4Handler().handle("", null, httpRequest, httpResponse);
 	}
 

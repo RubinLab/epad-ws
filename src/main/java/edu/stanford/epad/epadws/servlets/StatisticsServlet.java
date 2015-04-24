@@ -7,14 +7,14 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import edu.stanford.epad.epadws.handlers.admin.ImageCheckHandler;
+import edu.stanford.epad.epadws.handlers.admin.StatisticsHandler;
 
-public class ImageCheckServlet extends HttpServlet {
+public class StatisticsServlet extends HttpServlet {
 
 	@Override
 	protected void doGet(HttpServletRequest httpRequest, HttpServletResponse httpResponse)
 			throws ServletException, IOException {
-		new ImageCheckHandler().handle("", null, httpRequest, httpResponse);
+		new StatisticsHandler().handle("", null, httpRequest, httpResponse);
 	}
 
 }

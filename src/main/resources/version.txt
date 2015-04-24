@@ -1,0 +1,2 @@
+version=${epadws.version}
+build.date=${timestamp}

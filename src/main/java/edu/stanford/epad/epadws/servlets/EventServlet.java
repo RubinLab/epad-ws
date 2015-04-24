@@ -14,7 +14,6 @@ public class EventServlet extends HttpServlet {
 	@Override
 	protected void doGet(HttpServletRequest httpRequest, HttpServletResponse httpResponse)
 			throws ServletException, IOException {
-		super.doGet(httpRequest, httpResponse);
 		new EventHandler().handle("", null, httpRequest, httpResponse);
 	}
 

@@ -51,12 +51,22 @@
 	</servlet-mapping>
 
 	<servlet>
-		<servlet-name>events</servlet-name>
+		<servlet-name>plugin</servlet-name>
+		<servlet-class>edu.stanford.epad.epadws.servlets.EpadPluginServlet</servlet-class>
+ 	</servlet>
+ 
+ 	<servlet-mapping>
+		<servlet-name>plugin</servlet-name>
+		<url-pattern>/plugin/*</url-pattern>
+ 	</servlet-mapping>
+
+	<servlet>
+		<servlet-name>eventresource</servlet-name>
 		<servlet-class>edu.stanford.epad.epadws.servlets.EventServlet</servlet-class>
 	</servlet>
 
 	<servlet-mapping>
-		<servlet-name>events</servlet-name>
+		<servlet-name>eventresource</servlet-name>
 		<url-pattern>/eventresource</url-pattern>
 	</servlet-mapping>
 	
@@ -69,15 +79,65 @@
 		<servlet-name>session</servlet-name>
 		<url-pattern>/session</url-pattern>
 	</servlet-mapping>
-	
+
 	<servlet>
-		<servlet-name>plugin</servlet-name>
-		<servlet-class>edu.stanford.epad.epadws.servlets.EpadPluginServlet</servlet-class>
+		<servlet-name>status</servlet-name>
+		<servlet-class>edu.stanford.epad.epadws.servlets.ServerStatusServlet</servlet-class>
 	</servlet>
 
 	<servlet-mapping>
-		<servlet-name>plugin</servlet-name>
-		<url-pattern>/plugin/*</url-pattern>
+		<servlet-name>status</servlet-name>
+		<url-pattern>/status</url-pattern>
+	</servlet-mapping>
+
+	<servlet>
+		<servlet-name>imagecheck</servlet-name>
+		<servlet-class>edu.stanford.epad.epadws.servlets.ImageCheckServlet</servlet-class>
+	</servlet>
+
+	<servlet-mapping>
+		<servlet-name>imagecheck</servlet-name>
+		<url-pattern>/imagecheck</url-pattern>
+	</servlet-mapping>
+
+	<servlet>
+		<servlet-name>imagereprocess</servlet-name>
+		<servlet-class>edu.stanford.epad.epadws.servlets.ImageReprocessingServlet</servlet-class>
+	</servlet>
+
+	<servlet-mapping>
+		<servlet-name>imagereprocess</servlet-name>
+		<url-pattern>/imagereprocess</url-pattern>
+	</servlet-mapping>
+
+	<servlet>
+		<servlet-name>convertaim4</servlet-name>
+		<servlet-class>edu.stanford.epad.epadws.servlets.ConvertAIM4Servlet</servlet-class>
+	</servlet>
+
+	<servlet-mapping>
+		<servlet-name>convertaim4</servlet-name>
+		<url-pattern>/convertaim4</url-pattern>
+	</servlet-mapping>
+
+	<servlet>
+		<servlet-name>syncxnat</servlet-name>
+		<servlet-class>edu.stanford.epad.epadws.servlets.XNATSyncServlet</servlet-class>
+	</servlet>
+
+	<servlet-mapping>
+		<servlet-name>syncxnat</servlet-name>
+		<url-pattern>/syncxnat</url-pattern>
+	</servlet-mapping>
+
+	<servlet>
+		<servlet-name>statistics</servlet-name>
+		<servlet-class>edu.stanford.epad.epadws.servlets.StatisticsServlet</servlet-class>
+	</servlet>
+
+	<servlet-mapping>
+		<servlet-name>statistics</servlet-name>
+		<url-pattern>/statistics</url-pattern>
 	</servlet-mapping>
   
   <context-param>
