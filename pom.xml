@@ -14,6 +14,13 @@
   <packaging>war</packaging>
   <name>ePAD Web Services</name>
 
+	<properties>
+	   <timestamp>${maven.build.timestamp}</timestamp>
+	   <epadws.version>1.5.1</epadws.version>
+
+	   <maven.build.timestamp.format>yyyy-MM-dd HH:mm</maven.build.timestamp.format>
+	</properties>
+
   <dependencies>
 
 		<!-- See manifest additions below for default and vendor specification and implemention entries -->
@@ -318,7 +325,24 @@
   </dependencies>
 
   <build>
+	<resources>
+	   <resource>
+		  <directory>src/main/resources</directory>
+		  <filtering>true</filtering>
+        <includes>
+          <include>**/*.txt</include>
+        </includes>
+	   </resource>
+	  <!-- The stuff below is needed -->
+     <resource>
+        <directory>src/main/resources</directory>
+        <filtering>false</filtering>
+        <excludes>
+          <exclude>**/*.txt</exclude>
+        </excludes>
+      </resource>
 
+	</resources>
     <plugins>
       <plugin>
 				<artifactId>maven-assembly-plugin</artifactId>
