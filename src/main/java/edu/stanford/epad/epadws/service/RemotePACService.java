@@ -356,7 +356,7 @@ public class RemotePACService extends RemotePACSBase {
 		if (project == null)
 			throw new Exception("Project " + projectID + " not found");
 		RemotePAC pac = this.getRemotePAC(pacID);
-		if (pac == null && !pacID.startsWith(TCIAService.TCIA_PREFIX))
+		if (pac == null && !pac.pacID.startsWith(TCIAService.TCIA_PREFIX))
 			throw new Exception("Remote PAC " + pacID + " not found");
 		if (pac != null && pac.hostname.equalsIgnoreCase(EPADConfig.xnatServer) && pac.port == 11112)
 		{
@@ -894,6 +894,7 @@ public class RemotePACService extends RemotePACSBase {
 	{
 		if (monitorTransfers.isEmpty()) return;
 		EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
+		EpadProjectOperations projectOperations = DefaultEpadProjectOperations.getInstance();
 		Set<String> removeAet = new HashSet<String>();
 		for (String aet: monitorTransfers.keySet()) 
 		{
@@ -902,9 +903,10 @@ public class RemotePACService extends RemotePACSBase {
        		File xfrend = new File(EPADConfig.dcm4cheeHome + "/" + aet + "_XfrEnded.log");
        		try
        		{
-	       		if (xfrstart.exists())
+	       		if (xfrstart.exists() && monitorTransfers.get(aet) != null)
 	       		{
 	       			String logStart = EPADFileUtils.readFileAsString(xfrstart);
+					xfrstart.delete();
 					epadDatabaseOperations.insertEpadEvent(
 							monitorTransfers.get(aet).substring(0, monitorTransfers.get(aet).indexOf(":")), 
 							logStart.replace('\n', ' '), 
@@ -915,12 +917,13 @@ public class RemotePACService extends RemotePACSBase {
 							"",
 							"Remote PAC Transfer");
 					log.info("Added PAC Transfer Started Event for " + monitorTransfers.get(aet));
-					xfrstart.delete();
+					projectOperations.userInfoLog(monitorTransfers.get(aet).substring(0, monitorTransfers.get(aet).indexOf(":")), logStart);
 	       		}
-	       		if (xfrend.exists())
+	       		if (xfrend.exists() && monitorTransfers.get(aet) != null)
 	       		{
 	       			monitorStart.put(aet, 0L);
 	       			String logEnd = EPADFileUtils.readFileAsString(xfrend);
+					xfrend.delete();
 					epadDatabaseOperations.insertEpadEvent(
 							monitorTransfers.get(aet).substring(0, monitorTransfers.get(aet).indexOf(":")), 
 							logEnd.replace('\n', ' '), 
@@ -931,7 +934,7 @@ public class RemotePACService extends RemotePACSBase {
 							"",
 							"Remote PAC Transfer");
 					log.info("Added PAC Transfer Ended Event for " + monitorTransfers.get(aet));
-					xfrend.delete();
+					projectOperations.userInfoLog(monitorTransfers.get(aet).substring(0, monitorTransfers.get(aet).indexOf(":")), logEnd);
 	       		}
        		} catch (Exception x)
        		{

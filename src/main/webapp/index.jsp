@@ -5,7 +5,7 @@
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
 <HTML>
 <HEAD>
-<TITLE> Login </TITLE>
+<TITLE> epad-webservices </TITLE>
  <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
 </HEAD>
 <%
@@ -20,7 +20,7 @@
 </frameset>
 
 <frameset rows="*">
-<frame name=rightpanel src="restapi.html">
+<frame name=rightpanel src="https://epad.stanford.edu/documentation/developer/rest-api">
 </frameset>
 
 </frameset>

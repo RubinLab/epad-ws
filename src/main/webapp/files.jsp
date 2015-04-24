@@ -189,7 +189,7 @@ $( document ).ready(function() {
 		   url = url + seriesUID + "/";
 	   }
 	   url = url + "files/" + filename
-		   alert(url);
+		   //alert(url);
 		$.ajax({         
 			url: url + "?username=<%=username%>",         
 			type: 'delete',         

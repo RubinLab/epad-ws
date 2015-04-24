@@ -31,6 +31,8 @@ import edu.stanford.epad.epadws.processing.pipeline.task.SingleFrameDICOMPngGene
 import edu.stanford.epad.epadws.processing.pipeline.threads.ShutdownSignal;
 import edu.stanford.epad.epadws.queries.DefaultEpadOperations;
 import edu.stanford.epad.epadws.queries.EpadOperations;
+import edu.stanford.epad.epadws.service.DefaultEpadProjectOperations;
+import edu.stanford.epad.epadws.service.EpadProjectOperations;
 import edu.stanford.epad.epadws.service.UserProjectService;
 
 /**
@@ -78,6 +80,7 @@ public class DICOMSeriesWatcher implements Runnable
 	{
 		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
 		EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
+		EpadProjectOperations projectOperations = DefaultEpadProjectOperations.getInstance();
 
 		queueAndWatcherManager = QueueAndWatcherManager.getInstance();
 		Calendar prevTime = null;
@@ -159,6 +162,7 @@ public class DICOMSeriesWatcher implements Runnable
 										"", "", "", "", "", "", 
 										"New Series");					
 								UserProjectService.pendingUploads.remove(seriesUID);
+								projectOperations.userInfoLog(username, "Image Generation Complete:"+ seriesUID);
 							}
 						}
 					}

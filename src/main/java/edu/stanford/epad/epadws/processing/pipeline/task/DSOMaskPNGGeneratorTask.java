@@ -19,6 +19,8 @@ import edu.stanford.epad.epadws.epaddb.EpadDatabaseOperations;
 import edu.stanford.epad.epadws.handlers.dicom.DSOUtil;
 import edu.stanford.epad.epadws.processing.model.DicomSeriesProcessingStatusTracker;
 import edu.stanford.epad.epadws.processing.model.SeriesPipelineState;
+import edu.stanford.epad.epadws.service.DefaultEpadProjectOperations;
+import edu.stanford.epad.epadws.service.EpadProjectOperations;
 import edu.stanford.epad.epadws.service.UserProjectService;
 import edu.stanford.hakan.aim3api.base.ImageAnnotation;
 
@@ -52,6 +54,7 @@ public class DSOMaskPNGGeneratorTask implements GeneratorTask
 		log.info("Processing DSO for series  " + seriesUID + "; file=" + dsoFile.getAbsolutePath());
 
 		EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
+		EpadProjectOperations projectOperations = DefaultEpadProjectOperations.getInstance();
 		try {
 			seriesBeingProcessed.add(seriesUID);
 			try {
@@ -85,6 +88,7 @@ public class DSOMaskPNGGeneratorTask implements GeneratorTask
 						aim.getCodeMeaning(), 
 						aim.getCodeValue(),
 						"DSO Plugin");					
+				projectOperations.userInfoLog(ia.getListUser().get(0).getLoginName(), "Image Generation Complete:"+aim.getPatientID() + ":" + aim.getCodeValue());
 			}
 			else if (UserProjectService.pendingUploads.containsKey(seriesUID))
 			{
@@ -104,6 +108,7 @@ public class DSOMaskPNGGeneratorTask implements GeneratorTask
 							aim.getCodeValue(),
 							"");					
 					UserProjectService.pendingUploads.remove(seriesUID);
+					projectOperations.userInfoLog(username, "Image Generation Complete:"+aim.getPatientID() + ":" + aim.getCodeValue());
 				}
 			}
 					 

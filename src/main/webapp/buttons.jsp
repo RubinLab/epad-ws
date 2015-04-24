@@ -15,10 +15,14 @@
 %>
 <br>
 <table align=center border=0 cellpadding=3 cellspacing=0 width=100%>
-<tr><td width=33% align=center><a href='javascript:files()'>Files</a></td><td width=33% align=center><a href='javascript:aims()'>Annotations</a></td><td width=33% align=center><a href='javascript:pacs()' >PACs</a></td></tr>
+<tr><td width=25% align=center><a href='javascript:files()'>Files</a></td><td width=25% align=center><a href='javascript:aims()'>Annotations</a></td><td width=25% align=center><a href='javascript:pacs()' >PACs</a></td><td width=25% align=center><a href='javascript:users()' >Users</a></td></tr>
 </table>
 <script>
 var projectID;
+var patientNameFilter = "A*";
+var pacID;
+var username;
+
 $( document ).ready(function() {
 	var url = "/epad/v2/projects/?username=<%=username%>";
 	$.ajax({         
@@ -33,6 +37,21 @@ $( document ).ready(function() {
 		success: function(response){
 			var projects = response.ResultSet.Result;
 			projectID = projects[0].id
+		}
+	});
+	var url = "/epad/v2/pacs/?username=<%=username%>";
+	$.ajax({         
+		url: url,         
+		type: 'get',         
+		async: false,         
+		cache: false,         
+		timeout: 30000,         
+		error: function(){
+			alert("Error getting pacs");
+			return true;},
+		success: function(response){
+			var pacs = response.ResultSet.Result;
+			pacID = pacs[0].pacID
 		}
 	});
 
@@ -61,10 +80,25 @@ function aims()
 }
 function pacs()
 {
-	window.parent.leftpanel.location = "pacs.jsp";
-	currentleft = "pacs";
-	//window.parent.rightpanel.location = "pacs.jsp?projectID=" + projectID;
-	//window.parent.leftpanel.leftdata = "pacs";
+	if (pacID != null)
+		window.parent.rightpanel.location = "pacsdata.jsp?pacID=" + pacID + "&patientNameFilter=" + patientNameFilter;
+	if (currentleft != "pacs")
+	{
+		window.parent.leftpanel.location = "pacs.jsp";
+		currentleft = "pacs";
+	}
+	window.parent.leftpanel.leftdata = "pacsdata";
+}
+function users()
+{
+	if (username != null)
+		window.parent.rightpanel.location = "user.jsp?username=" + username;
+	if (currentleft != "users")
+	{
+		window.parent.leftpanel.location = "users.jsp";
+		currentleft = "users";
+	}
+	window.parent.leftpanel.leftdata = "usersdata";
 }
 </script>
 </BODY>

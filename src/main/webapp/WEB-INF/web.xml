@@ -72,12 +72,12 @@
 	
 	<servlet>
 		<servlet-name>plugin</servlet-name>
-		<servlet-class>edu.stanford.epad.epadws.servlets.EPadPluginServlet</servlet-class>
+		<servlet-class>edu.stanford.epad.epadws.servlets.EpadPluginServlet</servlet-class>
 	</servlet>
 
 	<servlet-mapping>
 		<servlet-name>plugin</servlet-name>
-		<url-pattern>/plugin</url-pattern>
+		<url-pattern>/plugin/*</url-pattern>
 	</servlet-mapping>
   
   <context-param>

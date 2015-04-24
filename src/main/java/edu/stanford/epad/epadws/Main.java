@@ -321,7 +321,7 @@ public class Main
 	/**
 	 * Load all the plugins into a map.
 	 */
-	private static void loadPluginClasses()
+	public static void loadPluginClasses()
 	{
 		try {
 		PluginHandlerMap pluginHandlerMap = PluginHandlerMap.getInstance();

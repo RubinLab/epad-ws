@@ -74,7 +74,7 @@ public class WebAuthFilter implements Filter {
             	httpResponse.sendRedirect("/epad/login.jsp");
             	return;
 			}
-			if (httpRequest.getRequestURL().indexOf("/v2/") != -1)				
+			if (httpRequest.getRequestURL().indexOf("/v2/") != -1 || httpRequest.getRequestURL().indexOf("/plugin/") != -1)				
 				log.info(httpRequest.getMethod() + " Request from client:" + httpRequest.getRequestURL());
 		}
 	    if (httpRequest.getRequestURL().indexOf("WEB-INF") != -1) {

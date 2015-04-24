@@ -27,9 +27,9 @@ public class StartupListener extends ContextLoaderListener
     private static String webAppPath;
     
     public void contextInitialized(ServletContextEvent event) {
-        if (log.isDebugEnabled()) {
-            log.debug("initializing context...");
-        }
+		log.info("#####################################################");
+		log.info("############# Starting ePAD Web Service #############");
+		log.info("#####################################################");
 
         // call Spring's context ContextLoaderListener to initialize
         // all the context files specified in web.xml
@@ -46,6 +46,7 @@ public class StartupListener extends ContextLoaderListener
     	}
     	catch (Exception x) {}
 		Main.initializePlugins();
+		Main.loadPluginClasses();
 		Main.startSupportThreads();
     }
 

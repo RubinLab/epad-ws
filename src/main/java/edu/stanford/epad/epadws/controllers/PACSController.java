@@ -23,6 +23,7 @@ import edu.stanford.epad.epadws.controllers.exceptions.NotFoundException;
 import edu.stanford.epad.epadws.models.RemotePACQuery;
 import edu.stanford.epad.epadws.service.RemotePACService;
 import edu.stanford.epad.epadws.service.SessionService;
+import edu.stanford.epad.epadws.service.TCIAService;
 
 @RestController
 @RequestMapping("/pacs")
@@ -41,7 +42,7 @@ public class PACSController {
 		return pacList;
 	}
 	
-	@RequestMapping(value = "/{pacID}", method = RequestMethod.GET)
+	@RequestMapping(value = "/{pacID:.+}", method = RequestMethod.GET)
 	public RemotePAC getEPADRemotePACS(@RequestParam(value="username") String username, 
 											@PathVariable String pacID,
 											HttpServletRequest request, 
@@ -55,17 +56,18 @@ public class PACSController {
 	 
 	@RequestMapping(value = "/{pacID}/entities/", method = RequestMethod.GET)
 	public RemotePACEntityList getEPADRemotePACEntities(@RequestParam(value="username") String username, 
-									@RequestParam(value="patientNameFilter", defaultValue="") String patientNameFilter,
-									@RequestParam(value="patientIDFilter", defaultValue="") String patientIDFilter,
-									@RequestParam(value="studyIDFilter", defaultValue="") String studyIDFilter,
-									@RequestParam(value="studyDateFilter", defaultValue="") String studyDateFilter,
-									@RequestParam(value="tagGroup") String[] tagGroup,
-									@RequestParam(value="tagElement") String[] tagElement,
-									@RequestParam(value="tagValue") String[] tagValue,
-									@RequestParam(value="tagType") String[] tagType,
+									@RequestParam(value="patientNameFilter", required=false) String patientNameFilter,
+									@RequestParam(value="patientIDFilter", required=false) String patientIDFilter,
+									@RequestParam(value="studyIDFilter", required=false) String studyIDFilter,
+									@RequestParam(value="studyDateFilter", required=false) String studyDateFilter,
+									@RequestParam(value="tagGroup", required=false) String[] tagGroup,
+									@RequestParam(value="tagElement", required=false) String[] tagElement,
+									@RequestParam(value="tagValue", required=false) String[] tagValue,
+									@RequestParam(value="tagType", required=false) String[] tagType,
 									@PathVariable String pacID,
 									HttpServletRequest request, 
 							        HttpServletResponse response) throws Exception {
+		log.info("Get Remote Records, pacID:" + pacID);
 		String sessionID = SessionService.getJSessionIDFromRequest(request);
 		boolean studiesOnly = !"true".equalsIgnoreCase(request.getParameter("series"));
 		RemotePAC pac = RemotePACService.getInstance().getRemotePAC(pacID);
@@ -101,6 +103,14 @@ public class PACSController {
 				entityList.addRemotePACEntity(entity);
 			return entityList;
 		}
+		else if (pacID.startsWith(TCIAService.TCIA_PREFIX))
+		{
+			List<RemotePACEntity> entities = TCIAService.getInstance().getPatientsForCollection(pacID.substring(5));
+			RemotePACEntityList entityList = new RemotePACEntityList();
+			for (RemotePACEntity entity: entities)
+				entityList.addRemotePACEntity(entity);
+			return entityList;
+		}
 		else
 			throw new NotFoundException("Remote PAC " + pacID + " not found");
 	}
@@ -123,11 +133,19 @@ public class PACSController {
 				entityList.addRemotePACEntity(entity);
 			return entityList;
 		}
+		else if (pacID.startsWith(TCIAService.TCIA_PREFIX))
+		{
+			List<RemotePACEntity> entities = TCIAService.getInstance().getStudiesForPatient(pacID.substring(5), subjectID);
+			RemotePACEntityList entityList = new RemotePACEntityList();
+			for (RemotePACEntity entity: entities)
+				entityList.addRemotePACEntity(entity);
+			return entityList;
+		}
 		else
 			throw new NotFoundException("Remote PAC " + pacID + " not found");
 	}
 	 
-	@RequestMapping(value = "/{pacID}/subjects/{subjectID}/studies/{studyUID}", method = RequestMethod.GET)
+	@RequestMapping(value = "/{pacID}/subjects/{subjectID}/studies/{studyUID}/series/", method = RequestMethod.GET)
 	public RemotePACEntityList getEPADRemotePACSeries(@RequestParam(value="username") String username, 
 									@PathVariable String pacID,
 									@PathVariable String subjectID,
@@ -145,23 +163,42 @@ public class PACSController {
 				entityList.addRemotePACEntity(entity);
 			return entityList;
 		}
+		else if (pacID.startsWith(TCIAService.TCIA_PREFIX))
+		{
+			if (studyUID.indexOf(":") != -1)
+				studyUID = studyUID.substring(studyUID.lastIndexOf(":")+1);
+			List<RemotePACEntity> entities = TCIAService.getInstance().getSeriesForStudy(pacID.substring(5), subjectID, studyUID);
+			RemotePACEntityList entityList = new RemotePACEntityList();
+			for (RemotePACEntity entity: entities)
+				entityList.addRemotePACEntity(entity);
+			return entityList;
+		}
 		else
 			throw new NotFoundException("Remote PAC " + pacID + " not found");
 	}
 	 
-	@RequestMapping(value = "/{pacID}/entities/{entityID}", method = RequestMethod.GET)
+	@RequestMapping(value = "/{pacID}/entities/{entityID:.+}", method = RequestMethod.GET)
 	public void transferEPADRemotePACEntity(@RequestParam(value="username") String username, 
 									@RequestParam(value="projectID", required = true) String projectID,
 									@PathVariable String pacID,
 									@PathVariable String entityID,
 									HttpServletRequest request, 
 							        HttpServletResponse response) throws Exception {
+		log.info("Transfer Remote Data, pacID:" + pacID);
 		String sessionID = SessionService.getJSessionIDFromRequest(request);
 		boolean studiesOnly = !"true".equalsIgnoreCase(request.getParameter("series"));
 		RemotePAC pac = RemotePACService.getInstance().getRemotePAC(pacID);
 		if (pac != null)
 		{
 			RemotePACService.getInstance().retrieveRemoteData(pac, entityID, projectID, username, sessionID);
+		}
+		else if (pacID.startsWith(TCIAService.TCIA_PREFIX))
+		{
+			if (entityID.indexOf("SUBJECT:") != -1 || entityID.indexOf("STUDY:") != -1)
+				throw new Exception("Patient or Study can not be downloaded. Please select a Series");
+			if (entityID.indexOf(":") != -1)
+				entityID = entityID.substring(entityID.lastIndexOf(":")+1);
+			TCIAService.getInstance().downloadSeriesFromTCIA(username, entityID, projectID);
 		}
 		else
 			throw new NotFoundException("Remote PAC " + pacID + " not found");
@@ -189,7 +226,7 @@ public class PACSController {
 			throw new NotFoundException("Remote PAC " + pacID + " not found");
 	}
 	 
-	@RequestMapping(value = "/{pacID}/autoqueries/{subjectID}", method = RequestMethod.GET)
+	@RequestMapping(value = "/{pacID}/autoqueries/{subjectID:.+}", method = RequestMethod.GET)
 	public RemotePACQueryConfig getEPADRemotePACQuery(@RequestParam(value="username") String username, 
 									@PathVariable String pacID,
 									@PathVariable String subjectID,
@@ -219,7 +256,7 @@ public class PACSController {
 		return RemotePACService.getDicomTags();
 	}
 	 
-	@RequestMapping(value = "/{pacID}", method = RequestMethod.PUT)
+	@RequestMapping(value = "/{pacID:.+}", method = RequestMethod.PUT)
 	public void createRemotePAC(@RequestParam(value="username") String username, 
 									@PathVariable String pacID,
 									@RequestParam(value="aeTitle", required=true) String aeTitle,
@@ -243,7 +280,7 @@ public class PACSController {
 		}
 	}	
 	 
-	@RequestMapping(value = "/{pacID}/autoqueries/{subjectID}", method = RequestMethod.PUT)
+	@RequestMapping(value = "/{pacID}/autoqueries/{subjectID:.+}", method = RequestMethod.PUT)
 	public void createRemotePACAutoQuery(@RequestParam(value="username") String username, 
 									@PathVariable String pacID,
 									@PathVariable String subjectID,
@@ -279,7 +316,7 @@ public class PACSController {
 		}
 	}	
 	 
-	@RequestMapping(value = "/{pacID}", method = RequestMethod.DELETE)
+	@RequestMapping(value = "/{pacID:.+}", method = RequestMethod.DELETE)
 	public void deleteRemotePAC(@RequestParam(value="username") String username, 
 									@PathVariable String pacID,
 									HttpServletRequest request, 
@@ -294,7 +331,7 @@ public class PACSController {
 			throw new NotFoundException("Remote PAC " + pacID + " not found");
 	}
 	 
-	@RequestMapping(value = "/{pacID}/autoqueries/{subjectID}", method = RequestMethod.DELETE)
+	@RequestMapping(value = "/{pacID}/autoqueries/{subjectID:.+}", method = RequestMethod.DELETE)
 	public void deleteRemotePACQuery(@RequestParam(value="username") String username, 
 									@PathVariable String pacID,
 									@PathVariable String subjectID,

@@ -48,7 +48,7 @@ public class EPadPluginHandler extends AbstractHandler
 		if (request != null)					// In case handler is not called thru jetty
 			request.setHandled(true);
 
-		String pluginName = request.getPathInfo();
+		String pluginName = httpRequest.getPathInfo();
 		PluginServletHandler pluginServletHandler = pluginHandlerMap.getPluginServletHandler(pluginName);
 
 		try {

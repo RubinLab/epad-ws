@@ -6,6 +6,7 @@ import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpException;
 import org.apache.commons.httpclient.methods.GetMethod;
 
+import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADLogger;
 
 /**
@@ -37,7 +38,7 @@ public class PluginStartTask implements Runnable
 	public void run()
 	{
         HttpClient client = new HttpClient(); // TODO Get rid of localhost
-        String url = "http://localhost:8080/epad/plugin/" + pluginName + "/?aimFile=" + annotationID 
+        String url = EPADConfig.getParamValue("serverProxy", "http://localhost:8080") + "/epad/plugin/" + pluginName + "/?aimFile=" + annotationID 
         		+ "&frameNumber=" + frameNumber + "&projectID=" + projectID;
         log.info("Triggering ePAD plugin at " + url);
         GetMethod method = new GetMethod(url);

@@ -59,7 +59,7 @@ $( document ).ready(function() {
 <% } else { %>
 	var url = "/epad/v2/projects/<%=projectID%>/subjects/<%=subjectID%>/studies/<%=studyUID%>/series/<%=seriesUID%>/files/";
 <% } %>
-	alert(url);
+	//alert(url);
 	$.ajax({         
 		url: url + "?username=<%=username%>",         
 		type: 'get',         

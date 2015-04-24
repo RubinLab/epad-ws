@@ -75,7 +75,7 @@ public class ProjectController {
 		return projectList;
 	}
 	 
-	@RequestMapping(value = "/{projectID}", method = RequestMethod.GET)
+	@RequestMapping(value = "/{projectID:.+}", method = RequestMethod.GET)
 	public EPADProject getEPADProject(@RequestParam(value="username") String username, 
 											@PathVariable String projectID,
 											HttpServletRequest request, 
@@ -102,7 +102,7 @@ public class ProjectController {
 		return subjectList;
 	}
 	 
-	@RequestMapping(value = "/{projectID}/subjects/{subjectID}", method = RequestMethod.GET)
+	@RequestMapping(value = "/{projectID}/subjects/{subjectID:.+}", method = RequestMethod.GET)
 	public EPADSubject getEPADProjectSubject(@RequestParam(value="username") String username, 
 											@PathVariable String projectID,
 											@PathVariable String subjectID,
@@ -132,7 +132,7 @@ public class ProjectController {
 		return studyList;
 	}
 	 
-	@RequestMapping(value = "/{projectID}/subjects/{subjectID}/studies/{studyUID}", method = RequestMethod.GET)
+	@RequestMapping(value = "/{projectID}/subjects/{subjectID}/studies/{studyUID:.+}", method = RequestMethod.GET)
 	public EPADStudy getEPADProjectStudy(@RequestParam(value="username") String username, 
 											@PathVariable String projectID,
 											@PathVariable String subjectID,
@@ -165,7 +165,7 @@ public class ProjectController {
 		return seriesList;
 	}
 	 
-	@RequestMapping(value = "/{projectID}/subjects/{subjectID}/studies/{studyUID}/series/{seriesUID}", method = RequestMethod.GET)
+	@RequestMapping(value = "/{projectID}/subjects/{subjectID}/studies/{studyUID}/series/{seriesUID:.+}", method = RequestMethod.GET)
 	public EPADSeries getEPADProjectSeries(@RequestParam(value="username") String username, 
 											@PathVariable String projectID,
 											@PathVariable String subjectID,
@@ -199,7 +199,7 @@ public class ProjectController {
 		return imageList;
 	}
 	 
-	@RequestMapping(value = "/{projectID}/subjects/{subjectID}/studies/{studyUID}/series/{seriesUID}/images/{imageUID}", method = RequestMethod.GET)
+	@RequestMapping(value = "/{projectID}/subjects/{subjectID}/studies/{studyUID}/series/{seriesUID}/images/{imageUID:.+}", method = RequestMethod.GET)
 	public EPADImage getEPADProjectImage(@RequestParam(value="username") String username, 
 											@PathVariable String projectID,
 											@PathVariable String subjectID,
@@ -839,7 +839,7 @@ public class ProjectController {
 		return files;
 	}
 	 
-	@RequestMapping(value = "/{projectID}/files/{filename}", method = RequestMethod.GET)
+	@RequestMapping(value = "/{projectID}/files/{filename:.+}", method = RequestMethod.GET)
 	public EPADFile getEPADProjectFile(@RequestParam(value="username") String username, 
 											@PathVariable String projectID,
 											@PathVariable String filename,
@@ -852,7 +852,7 @@ public class ProjectController {
 		return file;
 	}
 	 
-	@RequestMapping(value = "/{projectID}/subjects/{subjectID}/files/{filename}", method = RequestMethod.GET)
+	@RequestMapping(value = "/{projectID}/subjects/{subjectID}/files/{filename:.+}", method = RequestMethod.GET)
 	public EPADFile getEPADSubjectFile(@RequestParam(value="username") String username, 
 											@PathVariable String projectID,
 											@PathVariable String subjectID,
@@ -866,7 +866,7 @@ public class ProjectController {
 		return files;
 	}
 	 
-	@RequestMapping(value = "/{projectID}/subjects/{subjectID}/studies/{studyUID}/files/{filename}", method = RequestMethod.GET)
+	@RequestMapping(value = "/{projectID}/subjects/{subjectID}/studies/{studyUID}/files/{filename:.+}", method = RequestMethod.GET)
 	public EPADFile getEPADStudyFile(@RequestParam(value="username") String username, 
 											@PathVariable String projectID,
 											@PathVariable String subjectID,
@@ -881,7 +881,7 @@ public class ProjectController {
 		return files;
 	}
 	 
-	@RequestMapping(value = "/{projectID}/subjects/{subjectID}/studies/{studyUID}/series/{seriesUID}/files/{filename}", method = RequestMethod.GET)
+	@RequestMapping(value = "/{projectID}/subjects/{subjectID}/studies/{studyUID}/series/{seriesUID}/files/{filename:.+}", method = RequestMethod.GET)
 	public EPADFile getEPADSeriesFile(@RequestParam(value="username") String username, 
 											@PathVariable String projectID,
 											@PathVariable String subjectID,
@@ -897,7 +897,7 @@ public class ProjectController {
 		return files;
 	}
 	 
-	@RequestMapping(value = "/{projectID}", method = {RequestMethod.PUT,RequestMethod.POST})
+	@RequestMapping(value = "/{projectID:.+}", method = {RequestMethod.PUT,RequestMethod.POST})
 	public void createEPADProject(@RequestParam(value="username") String username, 
 											@PathVariable String projectID,
 											@RequestParam(value="projectName", required=true) String projectName,
@@ -918,7 +918,7 @@ public class ProjectController {
 			throw new Exception("Error creating or modifying project");
 	}
 
-	@RequestMapping(value = "/{projectID}/subjects/{subjectID}", method = {RequestMethod.PUT,RequestMethod.POST})
+	@RequestMapping(value = "/{projectID}/subjects/{subjectID:.+}", method = {RequestMethod.PUT,RequestMethod.POST})
 	public void createEPADSubject(@RequestParam(value="username") String username, 
 										@PathVariable String projectID,
 										@PathVariable String subjectID,
@@ -957,7 +957,7 @@ public class ProjectController {
 			throw new Exception("Error creating or modifying project");
 	}
 
-	@RequestMapping(value = "/{projectID}/subjects/{subjectID}/status/{status}", method = RequestMethod.PUT)
+	@RequestMapping(value = "/{projectID}/subjects/{subjectID}/status/{status:.+}", method = RequestMethod.PUT)
 	public void setEPADSubjectStatus(@RequestParam(value="username") String username, 
 										@PathVariable String projectID,
 										@PathVariable String subjectID,
@@ -974,7 +974,7 @@ public class ProjectController {
 			throw new Exception("Error setting patient status");
 	}
 
-	@RequestMapping(value = "/{projectID}/subjects/{subjectID}/studies/{studyUID}", method = {RequestMethod.PUT,RequestMethod.POST})
+	@RequestMapping(value = "/{projectID}/subjects/{subjectID}/studies/{studyUID:.+}", method = {RequestMethod.PUT,RequestMethod.POST})
 	public void createEPADStudy(@RequestParam(value="username") String username, 
 											@PathVariable String projectID,
 											@PathVariable String subjectID,
@@ -1009,7 +1009,7 @@ public class ProjectController {
 			throw new Exception("Error creating a study");
 	}
 
-	@RequestMapping(value = "/{projectID}/subjects/{subjectID}/studies/{studyUID}/series/{seriesUID}", method = {RequestMethod.PUT,RequestMethod.POST})
+	@RequestMapping(value = "/{projectID}/subjects/{subjectID}/studies/{studyUID}/series/{seriesUID:.+}", method = {RequestMethod.PUT,RequestMethod.POST})
 	public void createEPADSeries(@RequestParam(value="username") String username, 
 										@PathVariable String projectID,
 										@PathVariable String subjectID,
@@ -1173,7 +1173,7 @@ public class ProjectController {
 		AIMUtil.runPlugIn(aimIDs, templateName, projectReference.projectID, sessionID);
 	}
 
-	@RequestMapping(value = "/{projectID}/user/{projectuser}", method = RequestMethod.PUT)
+	@RequestMapping(value = "/{projectID}/user/{projectuser:.+}", method = RequestMethod.PUT)
 	public void addUserToProject(@RequestParam(value="username") String username, 
 										@PathVariable String projectID,
 										@PathVariable String projectuser,
@@ -1320,7 +1320,7 @@ public class ProjectController {
 		}		
 	}
 	
-	@RequestMapping(value = "/{projectID}/users/{reader}/worklists/{workListID}", method = RequestMethod.PUT)
+	@RequestMapping(value = "/{projectID}/users/{reader}/worklists/{workListID:.+}", method = RequestMethod.PUT)
 	public void createUserWorkList(@RequestParam(value="username") String username, 
 										@PathVariable String projectID,
 										@PathVariable String reader,
