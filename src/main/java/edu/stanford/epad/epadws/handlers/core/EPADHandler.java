@@ -1042,8 +1042,10 @@ public class EPADHandler extends AbstractHandler
 				if (pacid.equalsIgnoreCase("null"))
 					throw new Exception("PAC ID in rest call is null:" + pathInfo);
 				String patientNameFilter = httpRequest.getParameter("patientNameFilter");
+				if (patientNameFilter == null) httpRequest.getParameter("patientName");
 				if (patientNameFilter == null) patientNameFilter = "";
 				String patientIDFilter = httpRequest.getParameter("patientIDFilter");
+				if (patientIDFilter == null) patientIDFilter = httpRequest.getParameter("patientID");
 				if (patientIDFilter == null) patientIDFilter = "";
 				String studyIDFilter = httpRequest.getParameter("studyIDFilter");
 				if (studyIDFilter == null) studyIDFilter = "";

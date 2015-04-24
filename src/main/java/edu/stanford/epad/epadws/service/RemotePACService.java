@@ -76,6 +76,7 @@ public class RemotePACService extends RemotePACSBase {
 	public static final int MAX_SERIES_QUERY = 500;
 	public static final int MAX_INSTANCE_QUERY = 7000;
 	static Map<String, QueryTreeRecord> remoteQueryCache = new HashMap<String, QueryTreeRecord>();
+	static Map<String, List<RemotePACEntity>> patientCache = new HashMap<String, List<RemotePACEntity>>();
 	
 	// SerieUID to userName:projectID
 	public static Map<String, String> pendingTransfers = new HashMap<String, String>();
@@ -541,6 +542,13 @@ public class RemotePACService extends RemotePACSBase {
 			if (patientsOnly)
 				qlevel = "PATIENT";
 			log.info("Remote PAC Query, pacID:" + pac.pacID + " patientName:" + patientNameFilter + " patientID:" + patientIDFilter + " studyDate:" + studyDateFilter + " studyIDFilter:" + studyIDFilter + " patientsOnly:" + patientsOnly + " studiesOnly:" + studiesOnly);
+			if ((patientNameFilter == null || patientNameFilter.length() == 0) 
+					&& (patientIDFilter == null || patientIDFilter.length() == 0)
+					&& patientsOnly)
+			{
+				if (patientCache.containsKey(pac.pacID))
+					return patientCache.get(pac.pacID);
+			}
 			if (currentPACQueries.containsKey(pac.pacID))
 				throw new Exception("Last query to this PAC still in progress");
 			this.setCurrentRemoteQueryInformationModel(pac.pacID);
@@ -693,6 +701,12 @@ public class RemotePACService extends RemotePACSBase {
 							rpe.inEpad = true;
 					}
 				}
+			}
+			if ((patientNameFilter == null || patientNameFilter.length() == 0) 
+					&& (patientIDFilter == null || patientIDFilter.length() == 0)
+					&& patientsOnly)
+			{
+				patientCache.put(pac.pacID, remoteEntities); 
 			}
 			return remoteEntities;
 		}
