@@ -77,7 +77,7 @@ public class EPADSessionHandler extends AbstractHandler
 			request.setHandled(true);
 
 		String method = httpRequest.getMethod();
-		log.info("Request from client " + method + " s:" + s);
+		log.info("Request from client " + method + ", s:" + s + ", origin:" + origin);
 		if ("POST".equalsIgnoreCase(method)) {
 			String username = SessionService.extractUserNameFromAuthorizationHeader(httpRequest);
 			boolean formpost = false;
@@ -119,8 +119,10 @@ public class EPADSessionHandler extends AbstractHandler
 						responseStream.append(jsessionID);
 						httpResponse.addHeader("Set-Cookie", "JSESSIONID=" + jsessionID);
 						httpResponse.addHeader("Set-Cookie", "ePADLoggedinUser=" + username);
-						httpResponse.addHeader("Access-Control-Allow-Origin", origin);
-						httpResponse.addHeader("Access-Control-Allow-Credentials", "true");
+						httpResponse.setHeader("Access-Control-Allow-Origin", origin);
+						//httpResponse.addHeader("Access-Control-Allow-Origin", "*");
+						httpResponse.setHeader("Access-Control-Allow-Credentials", "true");
+						httpResponse.setHeader("Access-Control-Allow-Methods", "POST, DELETE, OPTIONS");
 						statusCode = HttpServletResponse.SC_OK;
 				    	
 					} else if (sessionResponse.statusCode == HttpServletResponse.SC_UNAUTHORIZED) {
@@ -141,6 +143,9 @@ public class EPADSessionHandler extends AbstractHandler
 			log.info("Logout request, sessionId:" + SessionService.getJSessionIDFromRequest(httpRequest));
 			try {
 				statusCode = SessionService.invalidateSessionID(httpRequest);
+				httpResponse.setHeader("Access-Control-Allow-Origin", "*");
+				httpResponse.setHeader("Access-Control-Allow-Methods", "POST, DELETE, OPTIONS");
+				//httpResponse.addHeader("Access-Control-Allow-Origin", "*");
 				log.info("Delete session returns status code " + statusCode);
 
 			} catch (Throwable t) {
@@ -156,8 +161,11 @@ public class EPADSessionHandler extends AbstractHandler
 		} else if ("OPTIONS".equalsIgnoreCase(method)) {
 			log.info("CORS preflight OPTIONS request to session route");
 			httpResponse.setHeader("Access-Control-Allow-Origin", origin);
+			//httpResponse.setHeader("Access-Control-Allow-Origin", "*");
+			//httpResponse.addHeader("Access-Control-Allow-Origin", "*");
 			httpResponse.setHeader("Access-Control-Allow-Credentials", "true");
 			httpResponse.setHeader("Access-Control-Allow-Headers", "Authorization");
+			httpResponse.setHeader("Access-Control-Allow-Methods", "POST, DELETE, OPTIONS");
 			statusCode = HttpServletResponse.SC_OK;
 		} else {
 			httpResponse.setHeader("Access-Control-Allow-Methods", "POST, DELETE, OPTIONS");

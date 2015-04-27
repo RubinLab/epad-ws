@@ -33,6 +33,7 @@ import edu.stanford.epad.dtos.EPADStudy;
 import edu.stanford.epad.dtos.EPADStudyList;
 import edu.stanford.epad.dtos.EPADSubject;
 import edu.stanford.epad.dtos.EPADSubjectList;
+import edu.stanford.epad.dtos.EPADTemplateList;
 import edu.stanford.epad.dtos.EPADUserList;
 import edu.stanford.epad.epadws.aim.AIMSearchType;
 import edu.stanford.epad.epadws.aim.AIMUtil;
@@ -778,6 +779,18 @@ public class ProjectController {
 		ProjectReference projectReference = new ProjectReference(projectID);
 		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
 		EPADUserList users = epadOperations.getUserDescriptions(username, projectReference, sessionID);
+		return users;
+	}
+	 
+	@RequestMapping(value = "/{projectID}/templates/", method = RequestMethod.GET)
+	public EPADTemplateList getEPADProjectTemplates(@RequestParam(value="username") String username, 
+											@PathVariable String projectID,
+											HttpServletRequest request, 
+									        HttpServletResponse response) throws Exception {
+		String sessionID = SessionService.getJSessionIDFromRequest(request);
+		ProjectReference projectReference = new ProjectReference(projectID);
+		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
+		EPADTemplateList users = epadOperations.getTemplateDescriptions(projectReference.projectID, username, sessionID);
 		return users;
 	}
 	 

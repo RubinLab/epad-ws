@@ -70,8 +70,12 @@ public class WebAuthFilter implements Filter {
 			}
 		} else {
 			String sessionID = SessionService.getJSessionIDFromRequest(httpRequest);
-			if (!SessionService.hasValidSessionID(sessionID) && httpRequest.getRequestURL().toString().indexOf("login.jsp") == -1 && !httpRequest.getRequestURL().toString().endsWith("/session")) {
-            	httpResponse.sendRedirect("/epad/login.jsp");
+			if (!SessionService.hasValidSessionID(sessionID) && httpRequest.getRequestURL().toString().indexOf("login.jsp") == -1 
+					&& !httpRequest.getRequestURL().toString().contains("/session") 
+					&& !httpRequest.getRequestURL().toString().contains("/eventresource") 
+					&& !httpRequest.getRequestURL().toString().contains("/v2")) {
+            	log.info("Redirecting url:" + httpRequest.getRequestURL() + " to login.jsp");
+				httpResponse.sendRedirect("/epad/login.jsp");
             	return;
 			}
 			if (httpRequest.getRequestURL().indexOf("/v2/") != -1 || httpRequest.getRequestURL().indexOf("/plugin/") != -1)				

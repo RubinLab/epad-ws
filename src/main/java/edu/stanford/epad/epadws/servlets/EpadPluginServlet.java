@@ -14,7 +14,7 @@ public class EpadPluginServlet extends HttpServlet {
 	@Override
 	protected void doGet(HttpServletRequest httpRequest, HttpServletResponse httpResponse)
 			throws ServletException, IOException {
-		super.doGet(httpRequest, httpResponse);
+		//super.doGet(httpRequest, httpResponse);
 		new EPadPluginHandler().handle("", null, httpRequest, httpResponse);
 	}
 

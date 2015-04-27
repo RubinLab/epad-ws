@@ -16,9 +16,30 @@ public class SessionServlet extends HttpServlet {
 	@Override
 	protected void doPost(HttpServletRequest httpRequest, HttpServletResponse httpResponse)
 			throws ServletException, IOException {
-		//super.doPost(httpRequest, httpResponse);
+		log.info("POST: EPADSessionHandler");
 		new EPADSessionHandler().handle("", null, httpRequest, httpResponse);
 
+	}
+
+	@Override
+	protected void doGet(HttpServletRequest httpRequest, HttpServletResponse httpResponse)
+			throws ServletException, IOException {
+		log.info("GET: EPADSessionHandler");
+		new EPADSessionHandler().handle("", null, httpRequest, httpResponse);
+	}
+
+	@Override
+	protected void doDelete(HttpServletRequest httpRequest, HttpServletResponse httpResponse)
+			throws ServletException, IOException {
+		log.info("DELETE: EPADSessionHandler");
+		new EPADSessionHandler().handle("", null, httpRequest, httpResponse);
+	}
+
+	@Override
+	protected void doOptions(HttpServletRequest httpRequest, HttpServletResponse httpResponse)
+			throws ServletException, IOException {
+		log.info("OPTIONS: EPADSessionHandler");
+		new EPADSessionHandler().handle("", null, httpRequest, httpResponse);
 	}
 
 }

@@ -15,7 +15,7 @@
    </init-param>
    <init-param>
        <param-name>allowedMethods</param-name>
-       <param-value>*</param-value>
+       <param-value>POST,PUT,DELETE,OPTIONS</param-value>
    </init-param>
    <init-param>
        <param-name>allowedHeaders</param-name>
