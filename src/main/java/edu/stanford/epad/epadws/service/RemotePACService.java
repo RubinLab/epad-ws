@@ -551,6 +551,10 @@ public class RemotePACService extends RemotePACSBase {
 			}
 			if (currentPACQueries.containsKey(pac.pacID))
 				throw new Exception("Last query to this PAC still in progress");
+			if (patientNameFilter != null && patientNameFilter.equals("*"))
+				patientNameFilter = "";
+			if (patientIDFilter != null && patientIDFilter.equals("*"))
+				patientIDFilter = "";
 			this.setCurrentRemoteQueryInformationModel(pac.pacID);
 			SpecificCharacterSet specificCharacterSet = new SpecificCharacterSet((String[])null);
 			AttributeList filter = new AttributeList();

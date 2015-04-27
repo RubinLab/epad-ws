@@ -2248,6 +2248,30 @@ public class DefaultEpadOperations implements EpadOperations
 	}
 
 	@Override
+	public EPADWorklistList getWorkLists(ProjectReference projectReference, String username) throws Exception {
+		User user = (User) projectOperations.getUser(username);
+		List<WorkList> worklists = workListOperations.getWorkListsForProject(projectReference.projectID);
+		EPADWorklistList wllist = new EPADWorklistList();
+		for (WorkList wl: worklists)
+		{
+			if (user.getId() != wl.getUserId()) continue;
+			Set<Subject> subjects = workListOperations.getSubjectsForWorkList(wl.getWorkListID());
+			Set<Study> studies = workListOperations.getStudiesForWorkList(wl.getWorkListID());
+			Set<String> subjectIDs = new HashSet<String>();
+			Set<String> studyUIDs = new HashSet<String>();
+			for (Subject subject: subjects)
+				subjectIDs.add(subject.getSubjectUID());
+			for (Study study: studies)
+				studyUIDs.add(study.getStudyUID());
+			
+			wllist.addEPADWorklist(new EPADWorklist(wl.getWorkListID(), user.getUsername(), projectReference.projectID,
+					wl.getDescription(), wl.getStatus(),formatDate(wl.getStartDate()),
+					formatDate(wl.getCompleteDate()), formatDate(wl.getDueDate()), subjectIDs, null, studyUIDs, null));
+		}
+		return wllist;
+	}
+
+	@Override
 	public EPADWorklist getWorkList(ProjectReference projectReference, String username) throws Exception {
 		WorkList wl = workListOperations.getWorkListForUserByProject(username, projectReference.projectID);
 		User user = (User) projectOperations.getDBObject(User.class, wl.getUserId());

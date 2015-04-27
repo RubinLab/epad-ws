@@ -43,6 +43,10 @@ public class ProjectsRouteTemplates
 	public static final String WORKLIST = WORKLISTS + "{workListID}";
 	public static final String USER_WORKLISTS = USER + "/worklists/";
 	public static final String USER_WORKLIST = USER_WORKLISTS + "{workListID}";
+	public static final String USER_WORKLIST_SUBJECTS = USER_WORKLISTS + "{workListID}" + "/subjects/";
+	public static final String USER_WORKLIST_SUBJECT = USER_WORKLIST_SUBJECTS + "{subjectID}";
+	public static final String USER_WORKLIST_STUDIES = USER_WORKLISTS + "{workListID}" + "/studies/";
+	public static final String USER_WORKLIST_STUDY = USER_WORKLIST_STUDIES + "{studyUID}";
 	public static final String USER_SUBJECT = USER + "/subjects/{subjectID}";
 	public static final String USER_STUDY = USER + "/studies/{studyUID}";
 	public static final String TEMPLATE_LIST = PROJECT + "/templates/";

@@ -245,6 +245,8 @@ public interface EpadOperations
 	
 	EPADWorklistList getWorkLists(ProjectReference projectReference) throws Exception;
 	
+	EPADWorklistList getWorkLists(ProjectReference projectReference, String username) throws Exception;
+	
 	EPADWorklist getWorkList(ProjectReference projectReference, String username) throws Exception;
 	
 	EPADWorklist getWorkListByID(ProjectReference projectReference, String workListID) throws Exception;
