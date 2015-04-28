@@ -1336,6 +1336,8 @@ public class EPADHandler extends AbstractHandler
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.STUDY, pathInfo)) {
 				StudyReference studyReference = StudyReference.extract(ProjectsRouteTemplates.STUDY, pathInfo);
 				String description = httpRequest.getParameter("description");
+				if (description == null)
+					description = httpRequest.getParameter("studyDescription");
 				String studyDate = httpRequest.getParameter("studyDate");
 				statusCode = epadOperations.createStudy(username, studyReference, description, getDate(studyDate), sessionID);
 				if (uploadedFile != null && false) {
