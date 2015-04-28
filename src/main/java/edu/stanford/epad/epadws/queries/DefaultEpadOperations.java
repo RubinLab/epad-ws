@@ -1794,7 +1794,7 @@ public class DefaultEpadOperations implements EpadOperations
 				&& projectOperations.isStudyInProjectAndSubject(projectID, aim.subjectID, aim.studyUID)) {
 			epadDatabaseOperations.updateAIM(aimID, projectID, username);
 		} else if (aim.subjectID != null && aim.subjectID.length() > 0
-				&& projectOperations.isSubjectInProject(projectID, aim.subjectID)) {
+				&& projectOperations.isSubjectInProject(aim.subjectID, projectID)) {
 			epadDatabaseOperations.updateAIM(aimID, projectID, username);					
 		} else if (aim.subjectID == null || aim.subjectID.length() == 0) {
 			epadDatabaseOperations.updateAIM(aimID, projectID, username);					
