@@ -224,6 +224,9 @@ public interface EpadDatabaseOperations
 	 */
 	List<Map<String, String>> getCoordinationData(String coordinationID) throws Exception;
 	
+
+	List<String> getEpadHostNames();
+	
 	/* 
 	 * New DB Operations methods for schema to replace XNAT
 	 * 

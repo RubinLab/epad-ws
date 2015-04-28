@@ -49,6 +49,8 @@ import edu.stanford.epad.dtos.EPADStudyList;
 import edu.stanford.epad.dtos.EPADSubject;
 import edu.stanford.epad.dtos.EPADSubjectList;
 import edu.stanford.epad.dtos.EPADTemplateList;
+import edu.stanford.epad.dtos.EPADUsage;
+import edu.stanford.epad.dtos.EPADUsageList;
 import edu.stanford.epad.dtos.EPADUser;
 import edu.stanford.epad.dtos.EPADUserList;
 import edu.stanford.epad.dtos.EPADWorklist;
@@ -60,9 +62,11 @@ import edu.stanford.epad.dtos.RemotePACList;
 import edu.stanford.epad.dtos.RemotePACQueryConfigList;
 import edu.stanford.epad.epadws.aim.AIMSearchType;
 import edu.stanford.epad.epadws.aim.AIMUtil;
+import edu.stanford.epad.epadws.epaddb.EpadDatabase;
 import edu.stanford.epad.epadws.handlers.HandlerUtil;
 import edu.stanford.epad.epadws.handlers.dicom.DSOUtil;
 import edu.stanford.epad.epadws.models.EpadFile;
+import edu.stanford.epad.epadws.models.EpadStatistics;
 import edu.stanford.epad.epadws.models.FileType;
 import edu.stanford.epad.epadws.models.RemotePACQuery;
 import edu.stanford.epad.epadws.models.WorkList;
@@ -198,7 +202,7 @@ public class EPADHandler extends AbstractHandler
 					responseStream.append(project.toJSON());
 					statusCode = HttpServletResponse.SC_OK;
 				} else
-					statusCode = HttpServletResponse.SC_NOT_FOUND;
+					throw new Exception("Project " + projectReference.projectID + " not found");
 
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.SUBJECT_LIST, pathInfo)) {
 				ProjectReference projectReference = ProjectReference.extract(ProjectsRouteTemplates.SUBJECT_LIST, pathInfo);
@@ -220,7 +224,7 @@ public class EPADHandler extends AbstractHandler
 					statusCode = HttpServletResponse.SC_OK;
 				} else {
 					log.info("Subject " + subjectReference.subjectID + " not found");
-					statusCode = HttpServletResponse.SC_NOT_FOUND;
+					throw new Exception("Subject " + subjectReference.subjectID + " not found");
 				}
 
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.STUDY_LIST, pathInfo)) {
@@ -241,7 +245,7 @@ public class EPADHandler extends AbstractHandler
 					statusCode = HttpServletResponse.SC_OK;
 				} else {
 					log.info("Study " + studyReference.studyUID + " not found");
-					statusCode = HttpServletResponse.SC_NOT_FOUND;
+					throw new Exception("Study " + studyReference.studyUID + " not found");
 				}
 				
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.SERIES_LIST, pathInfo)) {
@@ -262,7 +266,7 @@ public class EPADHandler extends AbstractHandler
 					statusCode = HttpServletResponse.SC_OK;
 				} else {
 					log.info("Series " + seriesReference.seriesUID + " not found");
-					statusCode = HttpServletResponse.SC_NOT_FOUND;
+					throw new Exception("Series " + seriesReference.seriesUID + " not found");
 				}
 				
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.SERIESFILE_LIST, pathInfo)) {
@@ -301,7 +305,7 @@ public class EPADHandler extends AbstractHandler
 					statusCode = HttpServletResponse.SC_OK;
 				} else {
 					log.info("Image " + imageReference.imageUID + " not found");
-					statusCode = HttpServletResponse.SC_NOT_FOUND;
+					throw new Exception("Image " + imageReference.imageUID + " not found");
 				}
 				
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.IMAGEFILE_LIST, pathInfo)) {
@@ -338,7 +342,7 @@ public class EPADHandler extends AbstractHandler
 					statusCode = HttpServletResponse.SC_OK;
 				} else {
 					log.info("Image " + frameReference.imageUID + " frame " + frameReference.frameNumber + " not found");
-					statusCode = HttpServletResponse.SC_NOT_FOUND;
+					throw new Exception("Image " + frameReference.imageUID + " frame " + frameReference.frameNumber + " not found");
 				}
 				
 			} else if (HandlerUtil.matchesTemplate(SubjectsRouteTemplates.SUBJECT, pathInfo)) {
@@ -349,7 +353,7 @@ public class EPADHandler extends AbstractHandler
 					statusCode = HttpServletResponse.SC_OK;
 				} else {
 					log.info("Subject " + subjectReference.subjectID + " not found");
-					statusCode = HttpServletResponse.SC_NOT_FOUND;
+					throw new Exception("Subject " + subjectReference.subjectID + " not found");
 				}
 
 			} else if (HandlerUtil.matchesTemplate(SubjectsRouteTemplates.SUBJECT_LIST, pathInfo)) {
@@ -387,7 +391,7 @@ public class EPADHandler extends AbstractHandler
 					statusCode = HttpServletResponse.SC_OK;
 				} else {
 					log.info("Image " + imageReference.imageUID + " not found");
-					statusCode = HttpServletResponse.SC_NOT_FOUND;
+					throw new Exception("Image " + imageReference.imageUID + " not found");
 				}
 				
 			} else if (HandlerUtil.matchesTemplate(StudiesRouteTemplates.FRAME_LIST, pathInfo)) {
@@ -1071,7 +1075,7 @@ public class EPADHandler extends AbstractHandler
 					statusCode = HttpServletResponse.SC_OK;
 				}
 				else
-					statusCode = HttpServletResponse.SC_NOT_FOUND;
+					throw new Exception("Remote PAC " + pacid + " not found");
 
 			} else if (HandlerUtil.matchesTemplate(PACSRouteTemplates.PAC_SUBJECT_LIST, pathInfo)) {
 				Map<String, String> templateMap = HandlerUtil.getTemplateMap(PACSRouteTemplates.PAC_SUBJECT_LIST, pathInfo);
@@ -1103,7 +1107,7 @@ public class EPADHandler extends AbstractHandler
 				}
 				else
 				{
-					statusCode = HttpServletResponse.SC_NOT_FOUND;
+					throw new Exception("Remote PAC " + pacid + " not found");
 				}
 
 			} else if (HandlerUtil.matchesTemplate(PACSRouteTemplates.PAC_STUDY_LIST, pathInfo)) {
@@ -1134,7 +1138,7 @@ public class EPADHandler extends AbstractHandler
 					statusCode = HttpServletResponse.SC_OK;
 				}
 				else
-					statusCode = HttpServletResponse.SC_NOT_FOUND;
+					throw new Exception("Remote PAC " + pacid + " not found");
 				
 			} else if (HandlerUtil.matchesTemplate(PACSRouteTemplates.PAC_SERIES_LIST, pathInfo)) {
 				Map<String, String> templateMap = HandlerUtil.getTemplateMap(PACSRouteTemplates.PAC_SERIES_LIST, pathInfo);
@@ -1165,7 +1169,7 @@ public class EPADHandler extends AbstractHandler
 					statusCode = HttpServletResponse.SC_OK;
 				}
 				else
-					statusCode = HttpServletResponse.SC_NOT_FOUND;
+					throw new Exception("Remote PAC " + pacid + " not found");
 
 			} else if (HandlerUtil.matchesTemplate(PACSRouteTemplates.PAC_ENTITY, pathInfo)) {
 				Map<String, String> templateMap = HandlerUtil.getTemplateMap(PACSRouteTemplates.PAC_ENTITY, pathInfo);
@@ -1189,7 +1193,7 @@ public class EPADHandler extends AbstractHandler
 					statusCode = TCIAService.getInstance().downloadSeriesFromTCIA(username, entityID, projectID);
 				}
 				else
-					statusCode = HttpServletResponse.SC_NOT_FOUND;
+					throw new Exception("Remote PAC " + pacID + " not found");
 
 			} else if (HandlerUtil.matchesTemplate(PACSRouteTemplates.PAC_QUERY_LIST, pathInfo)) {
 				Map<String, String> templateMap = HandlerUtil.getTemplateMap(PACSRouteTemplates.PAC_QUERY_LIST, pathInfo);
@@ -1219,7 +1223,7 @@ public class EPADHandler extends AbstractHandler
 					statusCode = HttpServletResponse.SC_OK;
 				}
 				else
-					statusCode = HttpServletResponse.SC_NOT_FOUND;
+					throw new Exception("Remote PAC " + pacid + " not found");
 
 			} else if (HandlerUtil.matchesTemplate(PACSRouteTemplates.TAG_LIST, pathInfo)) {
 				DicomTagList tagList = RemotePACService.getDicomTags();
@@ -1247,12 +1251,34 @@ public class EPADHandler extends AbstractHandler
 				responseStream.append(templates.toJSON());
 				statusCode = HttpServletResponse.SC_OK;
 
+			} else if (HandlerUtil.matchesTemplate(EPADsRouteTemplates.EPAD_LIST, pathInfo)) {
+				List<String> epads = EpadDatabase.getInstance().getEPADDatabaseOperations().getEpadHostNames();
+				responseStream.append(new Gson().toJson(epads));
+				statusCode = HttpServletResponse.SC_OK;
+
+			} else if (HandlerUtil.matchesTemplate(EPADsRouteTemplates.EPAD_USAGE, pathInfo)) {
+				Map<String, String> templateMap = HandlerUtil.getTemplateMap(EPADsRouteTemplates.EPAD_USAGE, pathInfo);
+				String hostname = HandlerUtil.getTemplateParameter(templateMap, "hostname");
+				List<EpadStatistics> stats = new EpadStatistics().getObjects("host like '" + hostname + "%' order by createdtime desc");
+				EPADUsageList eul = new EPADUsageList();
+				for (EpadStatistics stat: stats)
+				{
+					eul.addUsage(new EPADUsage(stat.getHost(), stat.getNumOfUsers(), stat.getNumOfProjects(),
+					stat.getNumOfPatients(), stat.getNumOfStudies(), stat.getNumOfSeries(),
+					stat.getNumOfAims(), stat.getNumOfDSOs(), stat.getNumOfPacs(), stat.getNumOfAutoQueries(),
+					stat.getNumOfWorkLists(), dateformat.format(stat.getCreatedTime())));
+				}
+				responseStream.append(new Gson().toJson(eul));
+				statusCode = HttpServletResponse.SC_OK;
+
 			} else
 				statusCode = HandlerUtil.badRequestJSONResponse(BAD_GET_MESSAGE + ":" + pathInfo, responseStream, log);
 		} catch (Throwable t) {
 			t.printStackTrace();
 			log.warning("Error handleget:", t);
 			statusCode = HandlerUtil.internalErrorJSONResponse(INTERNAL_ERROR_MESSAGE, t, responseStream, log);
+			if (t.getMessage() != null && t.getMessage().contains("not found"))
+				statusCode = HttpServletResponse.SC_NOT_FOUND;
 		}
 		return statusCode;
 	}
