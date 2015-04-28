@@ -1577,6 +1577,8 @@ public class EPADHandler extends AbstractHandler
 					primaryDeviceType = pac.primaryDeviceType;
 				if (pac == null)
 				{
+					if (pacid.startsWith(TCIAService.TCIA_PREFIX))
+						throw new Exception("TCIA Collections can not be added or edited");
 					pac = new RemotePAC(pacid, aeTitle, hostname, port, queryModel, primaryDeviceType);
 					RemotePACService.getInstance().addRemotePAC(username, pac);
 				}
@@ -2108,7 +2110,11 @@ public class EPADHandler extends AbstractHandler
 			} else if (HandlerUtil.matchesTemplate(PACSRouteTemplates.PAC, pathInfo)) {
 				Map<String, String> templateMap = HandlerUtil.getTemplateMap(PACSRouteTemplates.PAC, pathInfo);
 				String pacid = HandlerUtil.getTemplateParameter(templateMap, "pacid");
+				if (pacid.startsWith(TCIAService.TCIA_PREFIX))
+					throw new Exception("A TCIA Collection can not be deleted");
 				RemotePAC pac = RemotePACService.getInstance().getRemotePAC(pacid);
+				if (pac == null)
+					throw new Exception("Remote PAC not found");
 				RemotePACService.getInstance().removeRemotePAC(username, pac);
 				statusCode = HttpServletResponse.SC_OK;
 				
