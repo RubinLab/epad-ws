@@ -1357,6 +1357,8 @@ public class EPADHandler extends AbstractHandler
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.SUBJECT_AIM, pathInfo)) {
 				SubjectReference subjectReference = SubjectReference.extract(ProjectsRouteTemplates.SUBJECT_AIM, pathInfo);
 				AIMReference aimReference = AIMReference.extract(ProjectsRouteTemplates.SUBJECT_AIM, pathInfo);
+				if ("true".equalsIgnoreCase(httpRequest.getParameter("disablePluginInvocation")))
+					sessionID = null; // This will prevent plugin invocation
 				status = epadOperations.createSubjectAIM(username, subjectReference, aimReference.aimID, uploadedFile, sessionID);
 				
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.STUDY, pathInfo)) {
@@ -1374,6 +1376,8 @@ public class EPADHandler extends AbstractHandler
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.STUDY_AIM, pathInfo)) {
 				StudyReference studyReference = StudyReference.extract(ProjectsRouteTemplates.STUDY_AIM, pathInfo);
 				AIMReference aimReference = AIMReference.extract(ProjectsRouteTemplates.STUDY_AIM, pathInfo);
+				if ("true".equalsIgnoreCase(httpRequest.getParameter("disablePluginInvocation")))
+					sessionID = null; // This will prevent plugin invocation
 				status = epadOperations.createStudyAIM(username, studyReference, aimReference.aimID, uploadedFile, sessionID);
 	
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.SERIES, pathInfo)) {
@@ -1389,6 +1393,8 @@ public class EPADHandler extends AbstractHandler
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.SERIES_AIM, pathInfo)) {
 				SeriesReference seriesReference = SeriesReference.extract(ProjectsRouteTemplates.SERIES_AIM, pathInfo);
 				AIMReference aimReference = AIMReference.extract(ProjectsRouteTemplates.SERIES_AIM, pathInfo);
+				if ("true".equalsIgnoreCase(httpRequest.getParameter("disablePluginInvocation")))
+					sessionID = null; // This will prevent plugin invocation
 				status = epadOperations.createSeriesAIM(username, seriesReference, aimReference.aimID, uploadedFile, sessionID);
 	
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.IMAGE, pathInfo)) {
@@ -1398,13 +1404,15 @@ public class EPADHandler extends AbstractHandler
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.IMAGE_AIM, pathInfo)) {
 				ImageReference imageReference = ImageReference.extract(ProjectsRouteTemplates.IMAGE_AIM, pathInfo);
 				AIMReference aimReference = AIMReference.extract(ProjectsRouteTemplates.IMAGE_AIM, pathInfo);
-				log.info("Images AIM PUT");
+				if ("true".equalsIgnoreCase(httpRequest.getParameter("disablePluginInvocation")))
+					sessionID = null; // This will prevent plugin invocation
 				status = epadOperations.createImageAIM(username, imageReference, aimReference.aimID, uploadedFile, sessionID);
 			
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.PROJECT_AIM, pathInfo)) {
 				ProjectReference projectReference = ProjectReference.extract(ProjectsRouteTemplates.PROJECT_AIM, pathInfo);
 				AIMReference aimReference = AIMReference.extract(ProjectsRouteTemplates.PROJECT_AIM, pathInfo);
-				log.info("Projects AIM PUT");
+				if ("true".equalsIgnoreCase(httpRequest.getParameter("disablePluginInvocation")))
+					sessionID = null; // This will prevent plugin invocation
 				status = epadOperations.createProjectAIM(username, projectReference, aimReference.aimID, uploadedFile, sessionID);
 	
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.PROJECT_AIM_LIST, pathInfo)) {
@@ -1427,6 +1435,8 @@ public class EPADHandler extends AbstractHandler
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.FRAME_AIM, pathInfo)) {
 				FrameReference frameReference = FrameReference.extract(ProjectsRouteTemplates.FRAME_AIM, pathInfo);
 				AIMReference aimReference = AIMReference.extract(ProjectsRouteTemplates.FRAME_AIM, pathInfo);
+				if ("true".equalsIgnoreCase(httpRequest.getParameter("disablePluginInvocation")))
+					sessionID = null; // This will prevent plugin invocation
 				status = epadOperations.createFrameAIM(username, frameReference, aimReference.aimID, uploadedFile, sessionID);
 	
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.USER, pathInfo)) {
