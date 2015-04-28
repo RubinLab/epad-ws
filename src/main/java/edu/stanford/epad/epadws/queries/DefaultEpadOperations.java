@@ -351,11 +351,10 @@ public class DefaultEpadOperations implements EpadOperations
 				String firstSeriesDate = "";
 				if (series.size() > 0) firstSeriesDate = dateformat.format(series.get(0).getCreatedTime());
 				String desc = "";
-			
 				DCM4CHEEStudy dcm4CheeStudy = new DCM4CHEEStudy(study.getStudyUID(), subject.getName(), subjectReference.subjectID, 
 								"", formatDate(study.getStudyDate()), 
 								0, series.size(), firstSeries, firstSeriesDate,
-								"", 0, study.getStudyUID(), desc, "",
+								"", 0, study.getStudyUID(), study.getDescription(), "",
 								"", "");
 				EPADStudy epadStudy = dcm4cheeStudy2EpadStudy(sessionID, subjectReference.projectID, subjectReference.subjectID,
 						dcm4CheeStudy, username);
@@ -993,6 +992,8 @@ public class DefaultEpadOperations implements EpadOperations
 				subject = projectOperations.createSubject(username, subjectID, subjectName, null, "");
 			if (subjectReference.projectID != null && subjectReference.projectID.length() != 0)
 				projectOperations.addSubjectToProject(username, subjectID, subjectReference.projectID);
+			if (!EPADConfig.xnatUploadProjectID.equals(subjectReference.projectID))
+				projectOperations.addSubjectToProject(username, subjectID, EPADConfig.xnatUploadProjectID);
 			return HttpServletResponse.SC_OK;
 		}
 	}
@@ -1031,6 +1032,8 @@ public class DefaultEpadOperations implements EpadOperations
 				log.info("adding study:" + studyUID + " to project:" + studyReference.projectID);
 				projectOperations.addStudyToProject(username, studyUID, studyReference.subjectID, studyReference.projectID);
 			}
+			if (!EPADConfig.xnatUploadProjectID.equals(studyReference.projectID))
+				projectOperations.addStudyToProject(username, studyUID, studyReference.subjectID, EPADConfig.xnatUploadProjectID);
 			return HttpServletResponse.SC_OK;
 		}
 	}
