@@ -990,6 +990,8 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		Subject subject = getSubject(subjectUID);
 		Study study = getStudy(studyUID);
 		ProjectToSubject ptos = (ProjectToSubject) new ProjectToSubject().getObject("project_id = " + project.getId() + " and subject_id=" + subject.getId());
+		if (ptos == null)
+			return false;
 		return new ProjectToSubjectToStudy().getCount("proj_subj_id = " + ptos.getId() + " and study_id=" + study.getId()) > 0;
 	}
 
