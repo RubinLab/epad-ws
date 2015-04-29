@@ -2355,7 +2355,7 @@ public class DefaultEpadOperations implements EpadOperations
 			Study study = (Study) projectOperations.getDBObject(Study.class, wstudy.getStudyId());
 			Subject subject = (Subject) projectOperations.getDBObject(Subject.class, study.getSubjectId());
 			EPADWorklistStudy wls = new EPADWorklistStudy(workListID, username, projectReference.projectID,
-					study.getStudyUID(), wstudy.getStatus(), formatDate(wstudy.getStartDate()),
+					subject.getSubjectUID(), study.getStudyUID(), wstudy.getStatus(), formatDate(wstudy.getStartDate()),
 					formatDate(wstudy.getCompleteDate()));
 		}
 		return wlsl;
@@ -2378,7 +2378,7 @@ public class DefaultEpadOperations implements EpadOperations
 			Study study = (Study) projectOperations.getDBObject(Study.class, wstudy.getStudyId());
 			if (study.getSubjectId() != subject.getId()) continue;
 				EPADWorklistStudy wls = new EPADWorklistStudy(workListID, username, projectReference.projectID,
-						study.getStudyUID(), wstudy.getStatus(), formatDate(wstudy.getStartDate()),
+						subject.getSubjectUID(), study.getStudyUID(), wstudy.getStatus(), formatDate(wstudy.getStartDate()),
 						formatDate(wstudy.getCompleteDate()));
 		}
 		return wlsl;
