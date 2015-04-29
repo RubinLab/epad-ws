@@ -1621,7 +1621,7 @@ public class EPADHandler extends AbstractHandler
 				String email = httpRequest.getParameter("email");
 				String password = httpRequest.getParameter("password");
 				String oldpassword = httpRequest.getParameter("oldpassword");
-				log.info("new password:" + password + " old password:" + oldpassword); 
+				//log.info("new password:" + password + " old password:" + oldpassword); 
 				String[] addPermissions = httpRequest.getParameterValues("addPermission");
 				String[] removePermissions = httpRequest.getParameterValues("removePermission");
 				epadOperations.createOrModifyUser(username, target_username, firstname, lastname, email, password, oldpassword, addPermissions, removePermissions);
@@ -2030,7 +2030,7 @@ public class EPADHandler extends AbstractHandler
 					String email = httpRequest.getParameter("email");
 					String password = httpRequest.getParameter("password");
 					String oldpassword = httpRequest.getParameter("oldpassword");
-					log.info("new password:" + password + " old password:" + oldpassword); 
+					//log.info("new password:" + password + " old password:" + oldpassword); 
 					String[] addPermissions = httpRequest.getParameterValues("addPermission");
 					String[] removePermissions = httpRequest.getParameterValues("removePermission");
 					epadOperations.createOrModifyUser(username, target_username, firstname, lastname, email, password, oldpassword, addPermissions, removePermissions);
