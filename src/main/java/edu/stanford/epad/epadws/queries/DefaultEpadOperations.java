@@ -61,6 +61,8 @@ import edu.stanford.epad.dtos.EPADUser;
 import edu.stanford.epad.dtos.EPADUserList;
 import edu.stanford.epad.dtos.EPADWorklist;
 import edu.stanford.epad.dtos.EPADWorklistList;
+import edu.stanford.epad.dtos.EPADWorklistStudy;
+import edu.stanford.epad.dtos.EPADWorklistStudyList;
 import edu.stanford.epad.dtos.SeriesProcessingStatus;
 import edu.stanford.epad.dtos.StudyProcessingStatus;
 import edu.stanford.epad.dtos.internal.DCM4CHEESeries;
@@ -94,7 +96,6 @@ import edu.stanford.epad.epadws.handlers.core.SeriesReference;
 import edu.stanford.epad.epadws.handlers.core.StudyReference;
 import edu.stanford.epad.epadws.handlers.core.SubjectReference;
 import edu.stanford.epad.epadws.handlers.dicom.DSOUtil;
-import edu.stanford.epad.epadws.models.DisabledTemplate;
 import edu.stanford.epad.epadws.models.EpadFile;
 import edu.stanford.epad.epadws.models.FileType;
 import edu.stanford.epad.epadws.models.NonDicomSeries;
@@ -106,6 +107,7 @@ import edu.stanford.epad.epadws.models.User;
 import edu.stanford.epad.epadws.models.User.EventLog;
 import edu.stanford.epad.epadws.models.UserRole;
 import edu.stanford.epad.epadws.models.WorkList;
+import edu.stanford.epad.epadws.models.WorkListToStudy;
 import edu.stanford.epad.epadws.processing.pipeline.task.ProjectDataDeleteTask;
 import edu.stanford.epad.epadws.processing.pipeline.task.StudyDataDeleteTask;
 import edu.stanford.epad.epadws.processing.pipeline.task.SubjectDataDeleteTask;
@@ -2236,8 +2238,8 @@ public class DefaultEpadOperations implements EpadOperations
 			User user = (User) projectOperations.getDBObject(User.class, wl.getUserId());
 			Set<Subject> subjects = workListOperations.getSubjectsForWorkList(wl.getWorkListID());
 			Set<Study> studies = workListOperations.getStudiesForWorkList(wl.getWorkListID());
-			Set<String> subjectIDs = new HashSet<String>();
-			Set<String> studyUIDs = new HashSet<String>();
+			List<String> subjectIDs = new ArrayList<String>();
+			List<String> studyUIDs = new ArrayList<String>();
 			for (Subject subject: subjects)
 				subjectIDs.add(subject.getSubjectUID());
 			for (Study study: studies)
@@ -2245,7 +2247,7 @@ public class DefaultEpadOperations implements EpadOperations
 			
 			wllist.addEPADWorklist(new EPADWorklist(wl.getWorkListID(), user.getUsername(), projectReference.projectID,
 					wl.getDescription(), wl.getStatus(),formatDate(wl.getStartDate()),
-					formatDate(wl.getCompleteDate()), formatDate(wl.getDueDate()), subjectIDs, null, studyUIDs, null));
+					formatDate(wl.getCompleteDate()), formatDate(wl.getDueDate()), studyUIDs, null));
 		}
 		return wllist;
 	}
@@ -2260,8 +2262,8 @@ public class DefaultEpadOperations implements EpadOperations
 			if (user.getId() != wl.getUserId()) continue;
 			Set<Subject> subjects = workListOperations.getSubjectsForWorkList(wl.getWorkListID());
 			Set<Study> studies = workListOperations.getStudiesForWorkList(wl.getWorkListID());
-			Set<String> subjectIDs = new HashSet<String>();
-			Set<String> studyUIDs = new HashSet<String>();
+			List<String> subjectIDs = new ArrayList<String>();
+			List<String> studyUIDs = new ArrayList<String>();
 			for (Subject subject: subjects)
 				subjectIDs.add(subject.getSubjectUID());
 			for (Study study: studies)
@@ -2269,7 +2271,7 @@ public class DefaultEpadOperations implements EpadOperations
 			
 			wllist.addEPADWorklist(new EPADWorklist(wl.getWorkListID(), user.getUsername(), projectReference.projectID,
 					wl.getDescription(), wl.getStatus(),formatDate(wl.getStartDate()),
-					formatDate(wl.getCompleteDate()), formatDate(wl.getDueDate()), subjectIDs, null, studyUIDs, null));
+					formatDate(wl.getCompleteDate()), formatDate(wl.getDueDate()), studyUIDs, null));
 		}
 		return wllist;
 	}
@@ -2280,8 +2282,8 @@ public class DefaultEpadOperations implements EpadOperations
 		User user = (User) projectOperations.getDBObject(User.class, wl.getUserId());
 		Set<Subject> subjects = workListOperations.getSubjectsForWorkListWithStatus(wl.getWorkListID());
 		Set<Study> studies = workListOperations.getStudiesForWorkListWithStatus(wl.getWorkListID());
-		Set<String> subjectIDs = new HashSet<String>();
-		Set<String> studyUIDs = new HashSet<String>();
+		List<String> subjectIDs = new ArrayList<String>();
+		List<String> studyUIDs = new ArrayList<String>();
 		List<String> subjectStatus = new ArrayList<String>();
 		List<String> studyStatus = new ArrayList<String>();
 		for (Subject subject: subjects)
@@ -2296,7 +2298,7 @@ public class DefaultEpadOperations implements EpadOperations
 		}
 		return new EPADWorklist(wl.getWorkListID(), user.getUsername(), projectReference.projectID,
 				wl.getDescription(), wl.getStatus(),formatDate(wl.getStartDate()),
-				formatDate(wl.getCompleteDate()), formatDate(wl.getDueDate()), subjectIDs, subjectStatus, studyUIDs, studyStatus);
+				formatDate(wl.getCompleteDate()), formatDate(wl.getDueDate()), studyUIDs, studyStatus);
 	}
 
 	@Override
@@ -2308,8 +2310,8 @@ public class DefaultEpadOperations implements EpadOperations
 			throw new Exception("Incorrect project for worklist " + workListID);
 		Set<Subject> subjects = workListOperations.getSubjectsForWorkListWithStatus(wl.getWorkListID());
 		Set<Study> studies = workListOperations.getStudiesForWorkListWithStatus(wl.getWorkListID());
-		Set<String> subjectIDs = new HashSet<String>();
-		Set<String> studyUIDs = new HashSet<String>();
+		List<String> subjectIDs = new ArrayList<String>();
+		List<String> studyUIDs = new ArrayList<String>();
 		List<String> subjectStatus = new ArrayList<String>();
 		List<String> studyStatus = new ArrayList<String>();
 		for (Subject subject: subjects)
@@ -2324,7 +2326,62 @@ public class DefaultEpadOperations implements EpadOperations
 		}
 		return new EPADWorklist(wl.getWorkListID(), user.getUsername(), projectReference.projectID,
 				wl.getDescription(), wl.getStatus(),formatDate(wl.getStartDate()),
-				formatDate(wl.getCompleteDate()), formatDate(wl.getDueDate()), subjectIDs, subjectStatus, studyUIDs, studyStatus);
+				formatDate(wl.getCompleteDate()), formatDate(wl.getDueDate()), studyUIDs, studyStatus);
+	}
+
+	@Override
+	public EPADWorklistStudyList getWorkListStudies(
+			ProjectReference projectReference, String username,
+			String workListID) throws Exception {
+		WorkList wl = workListOperations.getWorkList(workListID);
+		User user = (User) projectOperations.getDBObject(User.class, wl.getUserId());
+		Project project = (Project) projectOperations.getDBObject(Project.class, wl.getProjectId());
+		if (project.getProjectId().equals(projectReference.projectID))
+			throw new Exception("Incorrect project for worklist " + workListID);
+//		Set<Subject> subjects = workListOperations.getSubjectsForWorkListWithStatus(wl.getWorkListID());
+//		List<String> subjectIDs = new ArrayList<String>();
+//		List<String> studyUIDs = new ArrayList<String>();
+//		List<String> subjectStatus = new ArrayList<String>();
+//		List<String> studyStatus = new ArrayList<String>();
+//		for (Subject subject: subjects)
+//		{
+//			subjectIDs.add(subject.getSubjectUID());
+//			subjectStatus.add(subject.getSubjectUID() + ":" + subject.getStatus());
+//		}
+		List<WorkListToStudy> wstudies = workListOperations.getWorkListStudies(wl.getWorkListID());
+		EPADWorklistStudyList wlsl = new EPADWorklistStudyList();
+		for (WorkListToStudy wstudy: wstudies)
+		{
+			Study study = (Study) projectOperations.getDBObject(Study.class, wstudy.getStudyId());
+			Subject subject = (Subject) projectOperations.getDBObject(Subject.class, study.getSubjectId());
+			EPADWorklistStudy wls = new EPADWorklistStudy(workListID, username, projectReference.projectID,
+					study.getStudyUID(), wstudy.getStatus(), formatDate(wstudy.getStartDate()),
+					formatDate(wstudy.getCompleteDate()));
+		}
+		return wlsl;
+	}
+
+	@Override
+	public EPADWorklistStudyList getWorkListSubjectStudies(
+			ProjectReference projectReference, String username,
+			String subjectID, String workListID) throws Exception {
+		WorkList wl = workListOperations.getWorkList(workListID);
+		User user = (User) projectOperations.getDBObject(User.class, wl.getUserId());
+		Subject subject = projectOperations.getSubject(subjectID);
+		Project project = (Project) projectOperations.getDBObject(Project.class, wl.getProjectId());
+		if (project.getProjectId().equals(projectReference.projectID))
+			throw new Exception("Incorrect project for worklist " + workListID);
+		List<WorkListToStudy> wstudies = workListOperations.getWorkListStudies(wl.getWorkListID());
+		EPADWorklistStudyList wlsl = new EPADWorklistStudyList();
+		for (WorkListToStudy wstudy: wstudies)
+		{
+			Study study = (Study) projectOperations.getDBObject(Study.class, wstudy.getStudyId());
+			if (study.getSubjectId() != subject.getId()) continue;
+				EPADWorklistStudy wls = new EPADWorklistStudy(workListID, username, projectReference.projectID,
+						study.getStudyUID(), wstudy.getStatus(), formatDate(wstudy.getStartDate()),
+						formatDate(wstudy.getCompleteDate()));
+		}
+		return wlsl;
 	}
 
 	private EPADStudy dcm4cheeStudy2EpadStudy(String sessionID, String suppliedProjectID, String suppliedSubjectID,

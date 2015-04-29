@@ -32,6 +32,7 @@ import edu.stanford.epad.epadws.models.Study;
 import edu.stanford.epad.epadws.models.Subject;
 import edu.stanford.epad.epadws.models.WorkList;
 import edu.stanford.epad.epadws.models.WorkListToStudy;
+import edu.stanford.epad.epadws.models.WorkListToSubject;
 
 /**
  * All Epad User/WorkList related operations
@@ -206,6 +207,7 @@ public interface EpadWorkListOperations {
 	 * @throws Exception
 	 */
 	Set<Study> getStudiesForWorkListWithStatus(String workListID) throws Exception;
+	List<WorkListToStudy> getWorkListStudies(String workListID) throws Exception;
 
 	/**
 	 * Delete WorkList
@@ -230,6 +232,7 @@ public interface EpadWorkListOperations {
 	 * @throws Exception
 	 */
 	void setWorkListSubjectStatus(String username, String workListID, String subjectID, String status, boolean started, boolean completed) throws Exception;
+	WorkListToSubject getWorkListSubjectStatus(String workListID, String subjectID) throws Exception;
 
 	/**
 	 * Set WorkList Study status
@@ -238,4 +241,5 @@ public interface EpadWorkListOperations {
 	 * @throws Exception
 	 */
 	void setWorkListStudyStatus(String username, String workListID, String studyUID, String status, boolean started, boolean completed) throws Exception;
+	WorkListToStudy getWorkListStudyStatus(String workListID, String studyUID) throws Exception;
 }

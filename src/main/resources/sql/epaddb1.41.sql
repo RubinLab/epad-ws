@@ -1,7 +1,3 @@
-DROP TABLE if exists nondicom_series;
-DROP TABLE if exists reviewer;
-DROP TABLE if exists epadstatistics;
-
 CREATE TABLE nondicom_series (id integer unsigned NOT NULL AUTO_INCREMENT,
 seriesuid varchar(128),
 study_id integer unsigned,

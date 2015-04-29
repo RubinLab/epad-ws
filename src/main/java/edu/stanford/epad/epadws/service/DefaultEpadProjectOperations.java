@@ -1027,6 +1027,15 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 	}
 
 	@Override
+	public Subject getSubjectForStudy(String studyUID) throws Exception {
+		Study study = this.getStudy(studyUID);
+		if (study == null)
+			throw new Exception("Study not found, studyUID:" + studyUID);
+		Subject subject = (Subject) this.getDBObject(Subject.class, study.getSubjectId());
+		return subject;
+	}
+
+	@Override
 	public List<NonDicomSeries> getNonDicomSeriesForStudy(String studyUID)
 			throws Exception {
 		Study study = getStudy(studyUID);

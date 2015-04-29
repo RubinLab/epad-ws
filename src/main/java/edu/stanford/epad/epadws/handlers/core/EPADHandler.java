@@ -55,6 +55,7 @@ import edu.stanford.epad.dtos.EPADUser;
 import edu.stanford.epad.dtos.EPADUserList;
 import edu.stanford.epad.dtos.EPADWorklist;
 import edu.stanford.epad.dtos.EPADWorklistList;
+import edu.stanford.epad.dtos.EPADWorklistStudyList;
 import edu.stanford.epad.dtos.RemotePAC;
 import edu.stanford.epad.dtos.RemotePACEntity;
 import edu.stanford.epad.dtos.RemotePACEntityList;
@@ -69,7 +70,10 @@ import edu.stanford.epad.epadws.models.EpadFile;
 import edu.stanford.epad.epadws.models.EpadStatistics;
 import edu.stanford.epad.epadws.models.FileType;
 import edu.stanford.epad.epadws.models.RemotePACQuery;
+import edu.stanford.epad.epadws.models.Subject;
 import edu.stanford.epad.epadws.models.WorkList;
+import edu.stanford.epad.epadws.models.WorkListToStudy;
+import edu.stanford.epad.epadws.models.WorkListToSubject;
 import edu.stanford.epad.epadws.queries.DefaultEpadOperations;
 import edu.stanford.epad.epadws.queries.EpadOperations;
 import edu.stanford.epad.epadws.security.EPADSession;
@@ -671,6 +675,36 @@ public class EPADHandler extends AbstractHandler
 				String reader = HandlerUtil.getTemplateParameter(templateMap, "username");
 				EPADWorklistList wll = epadOperations.getWorkLists(projectReference, reader);
 				responseStream.append(wll.toJSON());
+				statusCode = HttpServletResponse.SC_OK;
+
+			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.USER_WORKLIST, pathInfo)) {
+				ProjectReference projectReference = ProjectReference.extract(ProjectsRouteTemplates.USER_WORKLIST, pathInfo);
+				Map<String, String> templateMap = HandlerUtil.getTemplateMap(ProjectsRouteTemplates.USER_WORKLIST, pathInfo);
+				String reader = HandlerUtil.getTemplateParameter(templateMap, "username");
+				String workListID = HandlerUtil.getTemplateParameter(templateMap, "workListID");
+				EPADWorklist wl = epadOperations.getWorkListByID(projectReference, workListID);
+				if (!wl.username.equals(reader))
+					throw new Exception("Username does not match WorkListID");
+				responseStream.append(wl.toJSON());
+				statusCode = HttpServletResponse.SC_OK;
+
+			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.USER_WORKLIST_SUBJECT_STUDIES, pathInfo)) {
+				ProjectReference projectReference = ProjectReference.extract(ProjectsRouteTemplates.USER_WORKLIST_SUBJECT_STUDIES, pathInfo);
+				Map<String, String> templateMap = HandlerUtil.getTemplateMap(ProjectsRouteTemplates.USER_WORKLIST_SUBJECT_STUDIES, pathInfo);
+				String subjectID = HandlerUtil.getTemplateParameter(templateMap, "subjectID");
+				String reader = HandlerUtil.getTemplateParameter(templateMap, "username");
+				String workListID = HandlerUtil.getTemplateParameter(templateMap, "workListID");
+				EPADWorklistStudyList wlsl = epadOperations.getWorkListSubjectStudies(projectReference, reader, subjectID, workListID);
+				responseStream.append(wlsl.toJSON());
+				statusCode = HttpServletResponse.SC_OK;
+
+			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.USER_WORKLIST_STUDIES, pathInfo)) {
+				ProjectReference projectReference = ProjectReference.extract(ProjectsRouteTemplates.USER_WORKLIST_STUDIES, pathInfo);
+				Map<String, String> templateMap = HandlerUtil.getTemplateMap(ProjectsRouteTemplates.USER_WORKLIST_STUDIES, pathInfo);
+				String reader = HandlerUtil.getTemplateParameter(templateMap, "username");
+				String workListID = HandlerUtil.getTemplateParameter(templateMap, "workListID");
+				EPADWorklistStudyList wlsl = epadOperations.getWorkListStudies(projectReference, reader, workListID);
+				responseStream.append(wlsl.toJSON());
 				statusCode = HttpServletResponse.SC_OK;
 
 			} else if (HandlerUtil.matchesTemplate(StudiesRouteTemplates.STUDY_AIM_LIST, pathInfo)) {
@@ -1287,6 +1321,7 @@ public class EPADHandler extends AbstractHandler
 			String username, String sessionID)
 	{
 		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
+		EpadProjectOperations projectOperations = DefaultEpadProjectOperations.getInstance();
 		EpadWorkListOperations worklistOperations = DefaultWorkListOperations.getInstance();
 		String pathInfo = httpRequest.getPathInfo();
 		int statusCode = HttpServletResponse.SC_OK;
@@ -1457,6 +1492,31 @@ public class EPADHandler extends AbstractHandler
 				worklistOperations.createWorkList(username, reader, projectReference.projectID, workListID, description, null, getDate(dueDate));
 				statusCode = HttpServletResponse.SC_OK;
 			
+			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.USER_WORKLIST, pathInfo)) {
+				ProjectReference projectReference = ProjectReference.extract(ProjectsRouteTemplates.USER_WORKLIST, pathInfo);
+				Map<String, String> templateMap = HandlerUtil.getTemplateMap(ProjectsRouteTemplates.USER_WORKLIST, pathInfo);
+				String reader = HandlerUtil.getTemplateParameter(templateMap, "username");
+				String workListID = HandlerUtil.getTemplateParameter(templateMap, "workListID");
+				String description = httpRequest.getParameter("description");
+				String dueDate = httpRequest.getParameter("dueDate");
+				WorkList worklist = worklistOperations.getWorkList(workListID);
+				if (worklist == null)
+				{
+					worklist = worklistOperations.createWorkList(username, reader, projectReference.projectID, workListID, description, null, getDate(dueDate));
+				}
+				else
+				{
+					if (description != null || dueDate != null)
+						worklistOperations.updateWorkList(username, reader, workListID, description, null, getDate(dueDate));
+				}
+				String wlstatus = httpRequest.getParameter("status");
+				boolean started = "true".equalsIgnoreCase(httpRequest.getParameter("started"));
+				boolean completed = "true".equalsIgnoreCase(httpRequest.getParameter("completed"));
+				if (wlstatus != null || started || completed)
+					worklistOperations.setWorkListStatus(reader, workListID, wlstatus, started, completed);
+				statusCode = HttpServletResponse.SC_OK;
+				
+			
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.USER_SUBJECT, pathInfo)) {
 				ProjectReference projectReference = ProjectReference.extract(ProjectsRouteTemplates.USER_SUBJECT, pathInfo);
 				Map<String, String> templateMap = HandlerUtil.getTemplateMap(ProjectsRouteTemplates.USER_SUBJECT, pathInfo);
@@ -1470,6 +1530,7 @@ public class EPADHandler extends AbstractHandler
 					throw new Exception("Worklist not found for user " + reader + " and project " + projectReference.projectID);
 				worklistOperations.setWorkListSubjectStatus(reader, wl.getWorkListID(), subjectID, wlstatus, started, completed);
 				statusCode = HttpServletResponse.SC_OK;
+			
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.USER_WORKLIST_SUBJECT, pathInfo)) {
 				ProjectReference projectReference = ProjectReference.extract(ProjectsRouteTemplates.USER_WORKLIST_SUBJECT, pathInfo);
 				Map<String, String> templateMap = HandlerUtil.getTemplateMap(ProjectsRouteTemplates.USER_WORKLIST_SUBJECT, pathInfo);
@@ -1481,6 +1542,9 @@ public class EPADHandler extends AbstractHandler
 				WorkList wl = worklistOperations.getWorkListForUserByProject(username, projectReference.projectID);
 				if (wl == null)
 					throw new Exception("Worklist not found for user " + reader + " and project " + projectReference.projectID);
+				WorkListToSubject wls = worklistOperations.getWorkListSubjectStatus(wl.getWorkListID(), subjectID);
+				if (wls == null)
+					worklistOperations.addSubjectToWorkList(username, subjectID, wl.getWorkListID());
 				worklistOperations.setWorkListSubjectStatus(reader, wl.getWorkListID(), subjectID, wlstatus, started, completed);
 				statusCode = HttpServletResponse.SC_OK;
 	
@@ -1499,6 +1563,9 @@ public class EPADHandler extends AbstractHandler
 					wl = worklistOperations.getWorkList(workListID);
 				if (wl == null)
 					throw new Exception("Worklist not found for user " + reader + " and project " + projectReference.projectID);
+				WorkListToStudy wls = worklistOperations.getWorkListStudyStatus(workListID, studyUID);
+				if (wls == null)
+					worklistOperations.addStudyToWorkList(username, studyUID, workListID);
 				worklistOperations.setWorkListStudyStatus(reader, wl.getWorkListID(), studyUID, wlstatus, started, completed);
 				statusCode = HttpServletResponse.SC_OK;
 	
@@ -1516,6 +1583,33 @@ public class EPADHandler extends AbstractHandler
 					wl = worklistOperations.getWorkList(workListID);
 				if (wl == null)
 					throw new Exception("Worklist not found for user " + reader + " and project " + projectReference.projectID);
+				WorkListToStudy wls = worklistOperations.getWorkListStudyStatus(workListID, studyUID);
+				if (wls == null)
+					worklistOperations.addStudyToWorkList(username, studyUID, workListID);
+				worklistOperations.setWorkListStudyStatus(reader, wl.getWorkListID(), studyUID, wlstatus, started, completed);
+				statusCode = HttpServletResponse.SC_OK;
+	
+			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.USER_WORKLIST_SUBJECT_STUDY, pathInfo)) {
+				ProjectReference projectReference = ProjectReference.extract(ProjectsRouteTemplates.USER_WORKLIST_STUDY, pathInfo);
+				Map<String, String> templateMap = HandlerUtil.getTemplateMap(ProjectsRouteTemplates.USER_WORKLIST_STUDY, pathInfo);
+				String reader = HandlerUtil.getTemplateParameter(templateMap, "username");
+				String studyUID = HandlerUtil.getTemplateParameter(templateMap, "studyUID");
+				String subjectID = HandlerUtil.getTemplateParameter(templateMap, "subjectID");
+				String workListID = HandlerUtil.getTemplateParameter(templateMap, "workListID");
+				String wlstatus = httpRequest.getParameter("status");
+				boolean started = "true".equalsIgnoreCase(httpRequest.getParameter("started"));
+				boolean completed = "true".equalsIgnoreCase(httpRequest.getParameter("completed"));
+				WorkList wl = worklistOperations.getWorkListForUserByProject(username, projectReference.projectID);
+				if (wl == null)
+					wl = worklistOperations.getWorkList(workListID);
+				if (wl == null)
+					throw new Exception("Worklist not found for user " + reader + " and project " + projectReference.projectID);
+				Subject subject = projectOperations.getSubjectForStudy(studyUID);
+				if (!subject.getSubjectUID().equals(subjectID))
+					throw new Exception("Invalid subject " + subjectID + " for study " + studyUID);
+				WorkListToStudy wls = worklistOperations.getWorkListStudyStatus(workListID, studyUID);
+				if (wls == null)
+					worklistOperations.addStudyToWorkList(username, studyUID, workListID);
 				worklistOperations.setWorkListStudyStatus(reader, wl.getWorkListID(), studyUID, wlstatus, started, completed);
 				statusCode = HttpServletResponse.SC_OK;
 	
@@ -1536,16 +1630,6 @@ public class EPADHandler extends AbstractHandler
 					epadOperations.enableUser(username, target_username);
 				else if ("false".equalsIgnoreCase(enable))
 					epadOperations.disableUser(username, target_username);
-				statusCode = HttpServletResponse.SC_OK;
-				
-			} else if (HandlerUtil.matchesTemplate(UsersRouteTemplates.USER_WORKLIST, pathInfo)) {
-				Map<String, String> templateMap = HandlerUtil.getTemplateMap(UsersRouteTemplates.USER_WORKLIST, pathInfo);
-				String reader = HandlerUtil.getTemplateParameter(templateMap, "username");
-				String workListID = HandlerUtil.getTemplateParameter(templateMap, "worklistID");
-				String wlstatus = httpRequest.getParameter("status");
-				boolean started = "true".equalsIgnoreCase(httpRequest.getParameter("started"));
-				boolean completed = "true".equalsIgnoreCase(httpRequest.getParameter("completed"));
-				worklistOperations.setWorkListStatus(reader, workListID, wlstatus, started, completed);
 				statusCode = HttpServletResponse.SC_OK;
 				
 			} else if (HandlerUtil.matchesTemplate(UsersRouteTemplates.USER_SUBJECT, pathInfo)) {
@@ -1675,7 +1759,6 @@ public class EPADHandler extends AbstractHandler
 				String enable = httpRequest.getParameter("enable");
 				if (enable != null)
 				{
-					EpadProjectOperations projectOperations = DefaultEpadProjectOperations.getInstance();
 					EpadFile efile = projectOperations.getEpadFile(reference.projectID, null, null, null, templatename);
 					if (efile != null && "true".equalsIgnoreCase(enable))
 					{

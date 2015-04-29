@@ -28,6 +28,7 @@ import edu.stanford.epad.dtos.EPADUser;
 import edu.stanford.epad.dtos.EPADUserList;
 import edu.stanford.epad.dtos.EPADWorklist;
 import edu.stanford.epad.dtos.EPADWorklistList;
+import edu.stanford.epad.dtos.EPADWorklistStudyList;
 import edu.stanford.epad.dtos.internal.DCM4CHEESeries;
 import edu.stanford.epad.epadws.aim.AIMSearchType;
 import edu.stanford.epad.epadws.handlers.core.EPADSearchFilter;
@@ -246,6 +247,10 @@ public interface EpadOperations
 	EPADWorklistList getWorkLists(ProjectReference projectReference) throws Exception;
 	
 	EPADWorklistList getWorkLists(ProjectReference projectReference, String username) throws Exception;
+	
+	EPADWorklistStudyList getWorkListStudies(ProjectReference projectReference, String username, String workListID) throws Exception;
+	
+	EPADWorklistStudyList getWorkListSubjectStudies(ProjectReference projectReference, String username, String subjectID, String workListID) throws Exception;
 	
 	EPADWorklist getWorkList(ProjectReference projectReference, String username) throws Exception;
 	

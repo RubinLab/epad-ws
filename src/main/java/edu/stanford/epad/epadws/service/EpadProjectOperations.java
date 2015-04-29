@@ -443,6 +443,7 @@ public interface EpadProjectOperations {
 	 * @throws Exception
 	 */
 	List<Study> getStudiesForSubject(String subjectUID) throws Exception;
+	Subject getSubjectForStudy(String studyUID) throws Exception;
 	
 	/**
 	 * Get Non-dicom series for a study
