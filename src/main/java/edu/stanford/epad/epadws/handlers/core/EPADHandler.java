@@ -694,6 +694,7 @@ public class EPADHandler extends AbstractHandler
 				String subjectID = HandlerUtil.getTemplateParameter(templateMap, "subjectID");
 				String reader = HandlerUtil.getTemplateParameter(templateMap, "username");
 				String workListID = HandlerUtil.getTemplateParameter(templateMap, "workListID");
+				log.info("Project:" + projectReference.projectID + " reader:" + reader + " workListID:" + workListID +" subjectID:" + subjectID);
 				EPADWorklistStudyList wlsl = epadOperations.getWorkListSubjectStudies(projectReference, reader, subjectID, workListID);
 				responseStream.append(wlsl.toJSON());
 				statusCode = HttpServletResponse.SC_OK;
@@ -703,6 +704,7 @@ public class EPADHandler extends AbstractHandler
 				Map<String, String> templateMap = HandlerUtil.getTemplateMap(ProjectsRouteTemplates.USER_WORKLIST_STUDIES, pathInfo);
 				String reader = HandlerUtil.getTemplateParameter(templateMap, "username");
 				String workListID = HandlerUtil.getTemplateParameter(templateMap, "workListID");
+				log.info("Project:" + projectReference.projectID + " reader:" + reader + " workListID:" + workListID);
 				EPADWorklistStudyList wlsl = epadOperations.getWorkListStudies(projectReference, reader, workListID);
 				responseStream.append(wlsl.toJSON());
 				statusCode = HttpServletResponse.SC_OK;
@@ -1536,10 +1538,14 @@ public class EPADHandler extends AbstractHandler
 				Map<String, String> templateMap = HandlerUtil.getTemplateMap(ProjectsRouteTemplates.USER_WORKLIST_SUBJECT, pathInfo);
 				String reader = HandlerUtil.getTemplateParameter(templateMap, "username");
 				String subjectID = HandlerUtil.getTemplateParameter(templateMap, "subjectID");
+				String workListID = HandlerUtil.getTemplateParameter(templateMap, "workListID");
 				String wlstatus = httpRequest.getParameter("status");
 				boolean started = "true".equalsIgnoreCase(httpRequest.getParameter("started"));
 				boolean completed = "true".equalsIgnoreCase(httpRequest.getParameter("completed"));
-				WorkList wl = worklistOperations.getWorkListForUserByProject(username, projectReference.projectID);
+				log.info("Project:" + projectReference.projectID + " reader:" + reader + " workListID:" + workListID +" subjectID:" + subjectID);
+				WorkList wl = worklistOperations.getWorkList(workListID);
+				if (wl == null)
+					wl = worklistOperations.getWorkListForUserByProject(username, projectReference.projectID);
 				if (wl == null)
 					throw new Exception("Worklist not found for user " + reader + " and project " + projectReference.projectID);
 				WorkListToSubject wls = worklistOperations.getWorkListSubjectStatus(wl.getWorkListID(), subjectID);
@@ -1558,6 +1564,7 @@ public class EPADHandler extends AbstractHandler
 				String wlstatus = httpRequest.getParameter("status");
 				boolean started = "true".equalsIgnoreCase(httpRequest.getParameter("started"));
 				boolean completed = "true".equalsIgnoreCase(httpRequest.getParameter("completed"));
+				log.info("Project:" + projectReference.projectID + " reader:" + reader + " workListID:" + workListID +" studyUID:" + studyUID);
 				WorkList wl = worklistOperations.getWorkListForUserByProject(username, projectReference.projectID);
 				if (wl == null)
 					wl = worklistOperations.getWorkList(workListID);
@@ -1575,6 +1582,7 @@ public class EPADHandler extends AbstractHandler
 				String reader = HandlerUtil.getTemplateParameter(templateMap, "username");
 				String studyUID = HandlerUtil.getTemplateParameter(templateMap, "studyUID");
 				String workListID = HandlerUtil.getTemplateParameter(templateMap, "workListID");
+				log.info("Project:" + projectReference.projectID + " reader:" + reader + " workListID:" + workListID +" studyUID:" + studyUID);
 				String wlstatus = httpRequest.getParameter("status");
 				boolean started = "true".equalsIgnoreCase(httpRequest.getParameter("started"));
 				boolean completed = "true".equalsIgnoreCase(httpRequest.getParameter("completed"));
@@ -1596,6 +1604,7 @@ public class EPADHandler extends AbstractHandler
 				String studyUID = HandlerUtil.getTemplateParameter(templateMap, "studyUID");
 				String subjectID = HandlerUtil.getTemplateParameter(templateMap, "subjectID");
 				String workListID = HandlerUtil.getTemplateParameter(templateMap, "workListID");
+				log.info("Project:" + projectReference.projectID + " reader:" + reader + " workListID:" + workListID +" subjectID:" + subjectID+" studyUID:" + studyUID);
 				String wlstatus = httpRequest.getParameter("status");
 				boolean started = "true".equalsIgnoreCase(httpRequest.getParameter("started"));
 				boolean completed = "true".equalsIgnoreCase(httpRequest.getParameter("completed"));

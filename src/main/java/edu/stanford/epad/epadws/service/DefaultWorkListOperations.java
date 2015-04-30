@@ -377,7 +377,7 @@ public class DefaultWorkListOperations implements EpadWorkListOperations {
 	public List<WorkListToStudy> getWorkListStudies(String workListID)
 			throws Exception {
 		WorkList workList = getWorkList(workListID);
-		List<WorkListToStudy> wltss = new WorkListToStudy().getObjects("worklist_id =" + workList.getId() + ")");
+		List<WorkListToStudy> wltss = new WorkListToStudy().getObjects("worklist_id =" + workList.getId());
 		return wltss;
 	}
 

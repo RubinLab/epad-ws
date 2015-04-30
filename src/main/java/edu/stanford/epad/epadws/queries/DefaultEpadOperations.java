@@ -2306,7 +2306,7 @@ public class DefaultEpadOperations implements EpadOperations
 		WorkList wl = workListOperations.getWorkList(workListID);
 		User user = (User) projectOperations.getDBObject(User.class, wl.getUserId());
 		Project project = (Project) projectOperations.getDBObject(Project.class, wl.getProjectId());
-		if (project.getProjectId().equals(projectReference.projectID))
+		if (!project.getProjectId().equals(projectReference.projectID))
 			throw new Exception("Incorrect project for worklist " + workListID);
 		Set<Subject> subjects = workListOperations.getSubjectsForWorkListWithStatus(wl.getWorkListID());
 		Set<Study> studies = workListOperations.getStudiesForWorkListWithStatus(wl.getWorkListID());
@@ -2336,7 +2336,7 @@ public class DefaultEpadOperations implements EpadOperations
 		WorkList wl = workListOperations.getWorkList(workListID);
 		User user = (User) projectOperations.getDBObject(User.class, wl.getUserId());
 		Project project = (Project) projectOperations.getDBObject(Project.class, wl.getProjectId());
-		if (project.getProjectId().equals(projectReference.projectID))
+		if (!project.getProjectId().equals(projectReference.projectID))
 			throw new Exception("Incorrect project for worklist " + workListID);
 //		Set<Subject> subjects = workListOperations.getSubjectsForWorkListWithStatus(wl.getWorkListID());
 //		List<String> subjectIDs = new ArrayList<String>();
@@ -2369,7 +2369,7 @@ public class DefaultEpadOperations implements EpadOperations
 		User user = (User) projectOperations.getDBObject(User.class, wl.getUserId());
 		Subject subject = projectOperations.getSubject(subjectID);
 		Project project = (Project) projectOperations.getDBObject(Project.class, wl.getProjectId());
-		if (project.getProjectId().equals(projectReference.projectID))
+		if (!project.getProjectId().equals(projectReference.projectID))
 			throw new Exception("Incorrect project for worklist " + workListID);
 		List<WorkListToStudy> wstudies = workListOperations.getWorkListStudies(wl.getWorkListID());
 		EPADWorklistStudyList wlsl = new EPADWorklistStudyList();
