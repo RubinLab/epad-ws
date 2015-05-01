@@ -678,7 +678,7 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		for (ProjectToUser ptou: ptous)
 		{
 			Project project = (Project)new Project(ptou.getProjectId()).retrieve();
-			user.getProjectToRole().put(project.getName(), ptou.getRole());
+			user.getProjectToRole().put(project.getProjectId(), ptou.getRole());
 		}
 		return user;
 	}
@@ -756,7 +756,7 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 			for (ProjectToUser ptou: ptous)
 			{
 				Project project = (Project)new Project(ptou.getProjectId()).retrieve();
-				user.getProjectToRole().put(project.getName(), ptou.getRole());
+				user.getProjectToRole().put(project.getProjectId(), ptou.getRole());
 			}
 		}
 		return users;
