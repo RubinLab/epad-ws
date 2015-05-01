@@ -91,8 +91,8 @@ public class EPADSearchFilter
 		if (this.patientNameMatch == null)
 			return true;
 		else {
-			String patientNameRegex = "(?i).*" + patientNameMatch + ".*";
-			if (patientName.matches(patientNameRegex))
+			String patientNameRegex = "(?i).*" + patientNameMatch.replace('^', ' ') + ".*";
+			if (patientName.replace('^', ' ').matches(patientNameRegex))
 				return true;
 			else
 				return false;
