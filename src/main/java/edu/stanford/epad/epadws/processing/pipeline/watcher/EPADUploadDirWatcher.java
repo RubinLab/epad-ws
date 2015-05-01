@@ -108,6 +108,7 @@ public class EPADUploadDirWatcher implements Runnable
 			// TODO Should not create XNAT entities until the DICOM send succeeds.
 			String username = UserProjectService.createProjectEntitiesFromDICOMFilesInUploadDirectory(directory);
 			cleanUploadDirectory(directory);
+			if (username != null)
 			sendFilesToDcm4Chee(username, directory);
 		} catch (IOException ioe) {
 			log.warning("IOException uploading " + directory.getAbsolutePath(), ioe);
@@ -129,6 +130,7 @@ public class EPADUploadDirWatcher implements Runnable
 		EPADFileUtils.deleteFilesInDirectoryWithExtension(dir, "properties");
 		EPADFileUtils.deleteFilesInDirectoryWithExtension(dir, "zip");
 		EPADFileUtils.deleteFilesInDirectoryWithExtension(dir, "log");
+		EPADFileUtils.deleteFilesInDirectoryWithExtension(dir, "json");
 	}
 
 	private boolean waitOnEmptyUploadDirectory(File dir) throws InterruptedException

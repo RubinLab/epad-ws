@@ -59,6 +59,8 @@ public interface EpadDatabaseOperations
 	
 	boolean hasSeriesInEPadDatabase(String seriesIUID);
 
+	boolean hasStudyInDCM4CHE(String studyIUID);
+
 	List<Map<String, String>> getEpadEventsForSessionID(String sessionID);
 
 	List<Map<String, String>> getEpadEventsForAimID(String sessionID);
@@ -134,6 +136,8 @@ public interface EpadDatabaseOperations
 	int getNumberOfAIMsForSeriesSet(String projectID, Set<String> seriesIDs, String username);
 
 	int getNumberOfAIMsForSeries(String projectID, String seriesID, String username);
+
+	int getNumberOfAIMs(String criteria);
 
 	EPADAIM addAIM(String userName, ProjectReference reference, String aimID);
 
@@ -219,6 +223,9 @@ public interface EpadDatabaseOperations
 	 * @return
 	 */
 	List<Map<String, String>> getCoordinationData(String coordinationID) throws Exception;
+	
+
+	List<String> getEpadHostNames();
 	
 	/* 
 	 * New DB Operations methods for schema to replace XNAT

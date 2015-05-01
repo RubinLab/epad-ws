@@ -24,6 +24,7 @@ public interface EpadDatabaseCommands
 	public static final String INSERT_INTO_EPAD_SERIES_STATUS = "INSERT INTO epaddb.series_status(series_iuid,status) VALUES (?,?)";
 	public static final String UPDATE_EPAD_SERIES_STATUS = "UPDATE epaddb.series_status SET status=? where series_iuid=?";
 	public static final String SELECT_EPAD_SERIES_BY_ID = "SELECT * from epaddb.series_status where series_iuid=?";
+	public static final String SELECT_DCM4CHE_STUDY_BY_ID = "SELECT study_iuid,study_desc,study_datetime,accession_no from pacsdb.study where study_iuid=?";
 	public static final String SELECT_STATUS_FOR_SERIES_BY_ID = "SELECT status from epaddb.series_status where series_iuid=?";
 	public static final String SELECT_STATUS_AND_CREATED_TIME_FOR_SERIES_BY_ID = "SELECT status,created_time from epaddb.series_status where series_iuid=?";
 
@@ -57,4 +58,6 @@ public interface EpadDatabaseCommands
 	public static final String SELECT_COORDINATION_BY_ID = "select coordination_id,t.term_id,t.schema_name,t.description from terms t,coordination2term c2,coordinations c where c.coordination_key=c2.coordination_key and t.term_key=c2.term_key and coordination_id like ? order by coordination_id,position";
 	
 	public static final String CLEANUP_OBSOLETE_EPAD_FILES = "delete from epad_files where instance_fk not in (select pk from pacsdb.instance)";
+
+	public static final String SELECT_DISTINCT_EPADS = "select distinct host from epaddb.epadstatistics";
 }

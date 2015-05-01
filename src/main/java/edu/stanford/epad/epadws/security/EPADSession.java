@@ -31,6 +31,8 @@ public class EPADSession {
 	String sessionId;
 	String username;
 	int lifespan; // milliseconds
+	String remoteHost;
+	String remoteAddr;
 	Date createdTime;
 	Date lastActivity;
 	boolean valid;
@@ -91,6 +93,22 @@ public class EPADSession {
 
 	public void setValid(boolean valid) {
 		this.valid = valid;
+	}
+
+	public String getRemoteHost() {
+		return remoteHost;
+	}
+
+	public void setRemoteHost(String remoteHost) {
+		this.remoteHost = remoteHost;
+	}
+
+	public String getRemoteAddr() {
+		return remoteAddr;
+	}
+
+	public void setRemoteAddr(String remoteAddr) {
+		this.remoteAddr = remoteAddr;
 	}
 	
 }

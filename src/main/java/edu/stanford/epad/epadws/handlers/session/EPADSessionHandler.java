@@ -34,6 +34,7 @@ import org.eclipse.jetty.server.handler.AbstractHandler;
 
 import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.epad.epadws.handlers.HandlerUtil;
+import edu.stanford.epad.epadws.security.EPADSessionOperations;
 import edu.stanford.epad.epadws.security.EPADSessionOperations.EPADSessionResponse;
 import edu.stanford.epad.epadws.service.SessionService;
 
@@ -76,13 +77,21 @@ public class EPADSessionHandler extends AbstractHandler
 		log.info("Request from client " + method + " s:" + s);
 		if ("POST".equalsIgnoreCase(method)) {
 			String username = SessionService.extractUserNameFromAuthorizationHeader(httpRequest);
+			String host = httpRequest.getParameter("hostname");
+			String ip = httpRequest.getParameter("hostip");
+			if (ip == null && host == null)
+			{
+				ip = httpRequest.getRemoteAddr();
+				host = httpRequest.getRemoteHost();
+			}
 			if (username.length() != 0) {
-				log.info("Login request from user " + username);
+				log.info("Login Request, User:" + username  + " hostname:" + host +" ip:" + ip);
 				try {
 					PrintWriter responseStream = httpResponse.getWriter();
 					EPADSessionResponse sessionResponse = SessionService.authenticateUser(httpRequest);
 					if (sessionResponse.statusCode == HttpServletResponse.SC_OK) {
 						String jsessionID = sessionResponse.response;
+						EPADSessionOperations.setSessionHost(jsessionID, host, ip);
 						responseStream.append(jsessionID);
 						httpResponse.addHeader("Set-Cookie", "JSESSIONID=" + jsessionID);
 						httpResponse.addHeader("Set-Cookie", "ePADLoggedinUser=" + username);

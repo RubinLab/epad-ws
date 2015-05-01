@@ -20,6 +20,7 @@ import edu.stanford.epad.epadws.models.Subject;
 import edu.stanford.epad.epadws.queries.Dcm4CheeQueries;
 import edu.stanford.epad.epadws.service.DefaultEpadProjectOperations;
 import edu.stanford.epad.epadws.service.RemotePACService;
+import edu.stanford.epad.epadws.service.TCIAService;
 
 /**
  * Query Remote PAC for new Studies and schedule transfer to local DCM4CHE PAc.
@@ -79,7 +80,7 @@ public class RemotePACQueryTask implements Runnable
 			try {
 				RemotePAC pac = rps.getRemotePAC(query.getPacId());
 				Subject subject = (Subject) new Subject(query.getSubjectId()).retrieve();
-				log.info("Processing Remote PAC Query, PAC:" + pac.pacID + " Subject:" + subject.getSubjectUID());
+				log.info("Processing Remote PAC Query, PAC:" + query.getPacId() + " Subject:" + subject.getSubjectUID());
 				String studyDate = query.getLastStudyDate();
 				if (studyDate == null)
 				{
@@ -107,9 +108,19 @@ public class RemotePACQueryTask implements Runnable
 						}
 					} catch (Exception x) {};
 				}
+				List<RemotePACEntity> entities = new ArrayList<RemotePACEntity>();
+				String collection = "";
+				if (pac != null)
+				{
 				if (studyDate != null && !studyDate.endsWith("-"))
 					studyDate = studyDate + "-";
-				List<RemotePACEntity> entities = rps.queryRemoteData(pac, null, subject.getSubjectUID(), "", studyDate, false, true);
+					entities = rps.queryRemoteData(pac, null, subject.getSubjectUID(), "", studyDate, false, true);
+				}
+				else if (query.getPacId().startsWith(TCIAService.TCIA_PREFIX))
+				{
+					collection = query.getPacId().substring(5);
+					entities = TCIAService.getInstance().getNewStudiesForPatient(collection, subject.getSubjectUID(), query.getLastQueryTime());
+				}
 				query.setLastQueryStatus("Query Completed, number of new objects:" + entities.size());
 				String status = "";
 				Date newStudyDate = null;
@@ -125,6 +136,8 @@ public class RemotePACQueryTask implements Runnable
 							Project project = (Project) new Project(query.getId()).retrieve();
 							projectID = project.getProjectId();
 						}
+						if (pac != null)
+						{
 						String studyUID = rps.retrieveRemoteData(pac, entity.entityID, projectID, query.getRequestor(), "");
 						status = status + "\nStudy:" + studyUID + " transfer initiated from PAC " + pac.pacID;
 						if (studyUID.indexOf(":") != -1)
@@ -141,6 +154,14 @@ public class RemotePACQueryTask implements Runnable
 								log.info("Setting new study date:" + studyDate);
 								lastStudyDateUpdated = true;
 							}
+							}
+						}
+						else
+						{
+							String studyUID = entity.entityID;
+							if (studyUID.indexOf(":") != -1)
+								studyUID = studyUID.substring(studyUID.lastIndexOf(":")+1);
+							TCIAService.getInstance().downloadStudyFromTCIA(query.getRequestor(), collection, subject.getSubjectUID(), studyUID, projectID);
 						}
 					}
 					if (!lastStudyDateUpdated)

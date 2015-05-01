@@ -27,7 +27,9 @@ package edu.stanford.epad.epadws.service;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.util.Collection;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -257,9 +259,14 @@ public class UserProjectService {
 				if (xnatProjectLabel != null && xnatSessionID != null) {
 					int numberOfDICOMFiles = createProjectEntitiesFromDICOMFilesInUploadDirectory(dicomUploadDirectory, xnatProjectLabel, xnatSessionID, xnatUserName);
 					if (numberOfDICOMFiles != 0)
-						log.info("Found " + numberOfDICOMFiles + " DICOM file(s) in upload directory");
+					{
+						log.info("Found " + numberOfDICOMFiles + " DICOM file(s) in directory uploaded by " + xnatUserName + " for project " + xnatProjectLabel);
+					}
 					else
+					{
 						log.warning("No DICOM files found in upload directory!");
+						return null;
+					}
 				} else {
 					log.warning("Missing XNAT project name and/or session ID in properties file" + propertiesFilePath);
 				}
@@ -286,8 +293,8 @@ public class UserProjectService {
 	{
 		int numberOfDICOMFiles = 0;
 		for (File dicomFile : listDICOMFiles(dicomUploadDirectory)) {
-			createProjectEntitiesFromDICOMFile(dicomFile, projectID, sessionID, username);
-			numberOfDICOMFiles++;
+			if (createProjectEntitiesFromDICOMFile(dicomFile, projectID, sessionID, username))
+				numberOfDICOMFiles++;
 		}
 		return numberOfDICOMFiles;
 	}
@@ -300,14 +307,16 @@ public class UserProjectService {
 	 * @param username
 	 * @throws Exception
 	 */
-	public static void createProjectEntitiesFromDICOMFile(File dicomFile, String projectID, String sessionID, String username) throws Exception
+	public static boolean createProjectEntitiesFromDICOMFile(File dicomFile, String projectID, String sessionID, String username) throws Exception
 	{
 		DicomObject dicomObject = DicomReader.getDicomObject(dicomFile);
 		String dicomPatientName = dicomObject.getString(Tag.PatientName);
 		String dicomPatientID = dicomObject.getString(Tag.PatientID);
 		String studyUID = dicomObject.getString(Tag.StudyInstanceUID);
+		String studyDate = dicomObject.getString(Tag.StudyDate);
 		String seriesUID = dicomObject.getString(Tag.SeriesInstanceUID);
 		String modality = dicomObject.getString(Tag.Modality);
+		log.debug("Uploading dicom, patientName:" + dicomPatientName + " patientID:" + dicomPatientID + " studyUID:" + studyUID + " studyDate:" + studyDate + " seriesUID:" + seriesUID);
 		if (dicomPatientID == null || dicomPatientID.trim().length() == 0 
 				|| dicomPatientID.equalsIgnoreCase("ANON") 
 				|| dicomPatientID.equalsIgnoreCase("Unknown") 
@@ -315,9 +324,13 @@ public class UserProjectService {
 		{
 			String message = "Invalid patientID:" + dicomPatientID + " file:" + dicomFile.getName() + ", Rejecting file";
 			log.warning(message);
+			databaseOperations.insertEpadEvent(
+					username, 
+					"Invalid patient ID " + dicomPatientID + " in DICOM file", 
+					"", "", "", "", "", "", "Error in Upload");					
 			dicomFile.delete();
 			projectOperations.userErrorLog(username, message);
-			return;
+			return false;
 		}
 		pendingUploads.put(seriesUID, username + ":" + projectID);
 		if (dicomPatientID != null && studyUID != null) {
@@ -325,7 +338,7 @@ public class UserProjectService {
 			if (dicomPatientName == null) dicomPatientName = "";
 			dicomPatientName = dicomPatientName.toUpperCase(); // DCM4CHEE stores the patient name as upper case
 			
-			addSubjectAndStudyToProject(dicomPatientID, dicomPatientName, studyUID, projectID, sessionID, username);
+			addSubjectAndStudyToProject(dicomPatientID, dicomPatientName, studyUID, studyDate, projectID, sessionID, username);
 			
 			if ("SEG".equals(modality))
 			{
@@ -351,6 +364,7 @@ public class UserProjectService {
 					"", "", "", "", "", "", "Process Upload");					
 			projectOperations.userErrorLog(username, "Missing patient ID or studyUID in DICOM file " + dicomFile.getName());
 		}
+		return true;
 	}
 
 	/**
@@ -362,7 +376,7 @@ public class UserProjectService {
 	 * @param sessionID
 	 * @param username
 	 */
-	public static void addSubjectAndStudyToProject(String subjectID, String subjectName, String studyUID, String projectID, String sessionID, String username) {
+	public static void addSubjectAndStudyToProject(String subjectID, String subjectName, String studyUID, String studyDate, String projectID, String sessionID, String username) {
 		if (!EPADConfig.UseEPADUsersProjects) {
 			String xnatSubjectLabel = XNATUtil.subjectID2XNATSubjectLabel(subjectID);
 			XNATCreationOperations.createXNATSubject(projectID, xnatSubjectLabel, subjectName, sessionID);
@@ -370,7 +384,7 @@ public class UserProjectService {
 		} else {
 			try {
 				projectOperations.createSubject(username, subjectID, subjectName, null, null);
-				projectOperations.createStudy(username, studyUID, subjectID, "");
+				projectOperations.createStudy(username, studyUID, subjectID, "", getDate(studyDate));
 				log.info("Upload/Transfer: Adding Study:" +  studyUID + " Subject:" + subjectID + " to Project:" + projectID);
 				projectOperations.addStudyToProject(username, studyUID, subjectID, projectID);
 			} catch (Exception e) {
@@ -403,6 +417,19 @@ public class UserProjectService {
 		return file.isFile()
 				&& (file.getName().toLowerCase().endsWith(".dcm") || file.getName().toLowerCase().endsWith(".dso"));
 		// return file.isFile() && DicomFileUtil.hasMagicWordInHeader(file);
+	}
+	
+	static SimpleDateFormat dateformat = new SimpleDateFormat("yyyyMMdd");
+	private static Date getDate(String dateStr)
+	{
+		try
+		{
+			return dateformat.parse(dateStr);
+		}
+		catch (Exception x)
+		{
+			return null;
+		}
 	}
 	
 }

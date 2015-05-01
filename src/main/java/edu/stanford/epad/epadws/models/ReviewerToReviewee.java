@@ -28,21 +28,12 @@ import java.util.Date;
 
 import edu.stanford.epad.epadws.models.dao.AbstractDAO;
 
-public class EpadFile extends AbstractDAO {
+public class ReviewerToReviewee extends AbstractDAO {
 
 	long id;
-	Long projectId;
-	Long subjectId;
-	Long studyId;
-	String seriesUid;
-	String name;
-	String filePath;
-	long length;
-	String fileType;
-	String mimeType;
-	String description;
+	String reviewer; // Reviewer username
+	String reviewee; // Reviewee username
 	String creator;
-	boolean enabled = true;
 	Date createdTime;
 	Date updateTime;
 
@@ -51,96 +42,24 @@ public class EpadFile extends AbstractDAO {
 		return id;
 	}
 
-	public Long getProjectId() {
-		return projectId;
-	}
-
-	public void setProjectId(Long projectId) {
-		this.projectId = projectId;
-	}
-
-	public Long getSubjectId() {
-		return subjectId;
-	}
-
-	public void setSubjectId(Long subjectId) {
-		this.subjectId = subjectId;
-	}
-
-	public Long getStudyId() {
-		return studyId;
-	}
-
-	public void setStudyId(Long studyId) {
-		this.studyId = studyId;
-	}
-
-	public String getSeriesUid() {
-		return seriesUid;
-	}
-
-	public void setSeriesUid(String seriesUid) {
-		this.seriesUid = seriesUid;
-	}
-
-	public String getName() {
-		return name;
-	}
-
-	public void setName(String name) {
-		this.name = name;
-	}
-
-	public String getFilePath() {
-		return filePath;
-	}
-
-	public void setFilePath(String filePath) {
-		this.filePath = filePath;
-	}
-
-	public long getLength() {
-		return length;
-	}
-
-	public void setLength(long length) {
-		this.length = length;
-	}
-
-	public String getFileType() {
-		return fileType;
-	}
-
-	public void setFileType(String fileType) {
-		this.fileType = fileType;
-	}
-
-	public String getMimeType() {
-		return mimeType;
-	}
-
-	public void setMimeType(String mimeType) {
-		this.mimeType = mimeType;
-	}
-
-	public String getDescription() {
-		return description;
-	}
-
-	public void setDescription(String description) {
-		this.description = description;
-	}
-
-	public boolean isEnabled() {
-		return enabled;
-	}
-
-	public void setEnabled(boolean enabled) {
-		this.enabled = enabled;
-	}
-
 	public void setId(long id) {
 		this.id = id;
+	}
+
+	public String getReviewer() {
+		return reviewer;
+	}
+
+	public void setReviewer(String reviewer) {
+		this.reviewer = reviewer;
+	}
+
+	public String getReviewee() {
+		return reviewee;
+	}
+
+	public void setReviewee(String reviewee) {
+		this.reviewee = reviewee;
 	}
 
 	public String getCreator() {
@@ -167,35 +86,12 @@ public class EpadFile extends AbstractDAO {
 		this.updateTime = updateTime;
 	}
 
-	public String getRelativePath()
-	{
-		return "Project"+ projectId + "/Subject" + subjectId + "/Study" + studyId + "/Series" + seriesUid + "/";
-	}
-
-	public String getExtension()
-	{
-		int lastDot = name.lastIndexOf(".");
-		if (lastDot != -1)
-			return name.substring(lastDot);
-		else
-			return "";
-	}
-	
-	public final static String DBTABLE = "epad_file";
+	public final static String DBTABLE = "reviewer";
 	public final static String[][] DBCOLUMNS = {
         {"id","long","id","Id"},
-        {"projectId","Long","project_id","integer"},
-        {"subjectId","Long","subject_id","integer"},
-        {"studyId","Long","study_id","integer"},
-        {"seriesUid","String","series_uid","varchar"},
-        {"name","String","name","varchar"},
-		{"filePath","String","filepath","varchar"},
-		{"length","long","length","integer"},
-		{"fileType","String","filetype","varchar"},
-		{"mimeType","String","mimetype","varchar"},
-		{"description","String","description","varchar"},
-        {"enabled","boolean","enabled","bit"},
-        {"creator","String","creator","varchar"},
+        {"reviewer","String","reviewer","varchar"},
+        {"reviewee","String","reviewee","varchar"},
+         {"creator","String","creator","varchar"},
         {"createdTime","Date","createdtime","timestamp"},
         {"updateTime","Date","updatetime","timestamp"},	
 	};

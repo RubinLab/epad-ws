@@ -681,6 +681,31 @@ public class AIMDatabaseOperations {
 		return 0;
     }
     
+    public int getAIMCount(String criteria) throws SQLException {
+    	if (!criteria.trim().toLowerCase().startsWith("where"))
+    		criteria = "WHERE " + criteria;
+        String sqlSelect = "SELECT count(*) FROM " + ANNOTATIONS_TABLE + " "+ criteria;
+        log.info("AIMs count select:" + sqlSelect);
+       
+		ResultSet rs = null;
+        try
+        {
+    	    this.statement = mySqlConnection.createStatement();
+        	rs = this.statement.executeQuery(sqlSelect);
+			if (rs.next()) {
+				int count = rs.getInt(1);
+	    	    log.info(sqlSelect + " result:" + count);
+				return count;
+			}
+        }
+        finally
+        {
+        	if (rs != null) rs.close();
+        	statement.close();
+        }
+		return 0;
+    }
+    
     public EPADAIM getAIM(String annotationID) throws SQLException {
         String sqlSelect = "SELECT UserLoginName, ProjectUID, PatientID, StudyUID, SeriesUID, ImageUID, frameID, DSOSeriesUID,XML FROM annotations WHERE AnnotationUID = '"
         		+ annotationID + "'";

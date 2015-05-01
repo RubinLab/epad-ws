@@ -29,6 +29,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
+import edu.stanford.epad.dtos.EPADUserList;
 import edu.stanford.epad.epadws.models.EpadFile;
 import edu.stanford.epad.epadws.models.FileType;
 import edu.stanford.epad.epadws.models.NonDicomSeries;
@@ -242,12 +243,11 @@ public interface EpadProjectOperations {
 	
 	/**
 	 * Check if Subject is in Project
-	 * @param loggedInUser
 	 * @param subjectUID
 	 * @param projectId
 	 * @throws Exception
 	 */
-	boolean isSubjectInProject(String loggedInUser, String subjectUID, String projectId) throws Exception;
+	boolean isSubjectInProject(String subjectUID, String projectId) throws Exception;
 
 	/**
 	 * Create File Record
@@ -443,6 +443,7 @@ public interface EpadProjectOperations {
 	 * @throws Exception
 	 */
 	List<Study> getStudiesForSubject(String subjectUID) throws Exception;
+	Subject getSubjectForStudy(String studyUID) throws Exception;
 	
 	/**
 	 * Get Non-dicom series for a study
@@ -501,7 +502,7 @@ public interface EpadProjectOperations {
 	 * @throws Exception
 	 */
 	EpadFile getEpadFile(String projectID, String subjectUID, String studyUID, String seriesUID, String filename) throws Exception;	
-	
+
 	/**
 	 * Get Files for project/subject/study/series by filetype 
 	 * @param projectID
@@ -512,7 +513,7 @@ public interface EpadProjectOperations {
 	 * @return
 	 * @throws Exception
 	 */
-	List<EpadFile> getEpadFiles(String projectID, String subjectUID, String studyUID, String seriesUID, FileType fileType) throws Exception;	
+	List<EpadFile> getEpadFiles(String projectID, String subjectUID, String studyUID, String seriesUID, FileType fileType, boolean toplevelOnly) throws Exception;	
 	
 	/**
 	 * Get files for project
@@ -520,7 +521,7 @@ public interface EpadProjectOperations {
 	 * @return
 	 * @throws Exception
 	 */
-	List<EpadFile> getProjectFiles(String projectID) throws Exception;
+	List<EpadFile> getProjectFiles(String projectID, boolean toplevelOnly) throws Exception;
 	
 	/**
 	 * Get files for project/subject
@@ -529,7 +530,7 @@ public interface EpadProjectOperations {
 	 * @return
 	 * @throws Exception
 	 */
-	List<EpadFile> getSubjectFiles(String projectID, String subjectUID) throws Exception;
+	List<EpadFile> getSubjectFiles(String projectID, String subjectUID, boolean toplevelOnly) throws Exception;
 
 	/**
 	 * Get files for project/subject/study
@@ -539,7 +540,7 @@ public interface EpadProjectOperations {
 	 * @return
 	 * @throws Exception
 	 */
-	List<EpadFile> getStudyFiles(String projectID, String subjectUID, String studyUID) throws Exception;
+	List<EpadFile> getStudyFiles(String projectID, String subjectUID, String studyUID, boolean toplevelOnly) throws Exception;
 	
 	/**
 	 * Get files for project/subject/study/series
@@ -550,8 +551,18 @@ public interface EpadProjectOperations {
 	 * @return
 	 * @throws Exception
 	 */
-	List<EpadFile> getSeriesFiles(String projectID, String subjectUID, String studyUID, String seriesUID) throws Exception;
+	List<EpadFile> getSeriesFiles(String projectID, String subjectUID, String studyUID, String seriesUID) throws Exception;	
 	
+	void enableFile(String loggedInUser, String projectID, String subjectUID, String studyUID, String seriesUID, String filename) throws Exception;
+	
+	void disableFile(String loggedInUser, String projectID, String subjectUID, String studyUID, String seriesUID, String filename) throws Exception;
+	
+	void enableTemplate(String loggedInUser, String projectID, String subjectUID, String studyUID, String seriesUID, String templateName) throws Exception;
+	
+	void disableTemplate(String loggedInUser, String projectID, String subjectUID, String studyUID, String seriesUID, String templateName) throws Exception;
+	
+	List<String> getDisabledTemplates(String projectID) throws Exception;	
+
 	/**
 	 * @param username
 	 * @return
@@ -669,10 +680,64 @@ public interface EpadProjectOperations {
 	void deleteFile(String loggedInUser, String projectID, String subjectUID, String studyUID, String seriesUID, String filename) throws Exception;	
 	
 	/**
+	 * Get event logs for this user
 	 * @param username
 	 * @return
 	 */
 	List<EventLog> getUserLogs(String username);
+
+	/**
+	 * Get reviewers for this user
+	 * @param username
+	 * @return
+	 * @throws Exception
+	 */
+	List<User> getReviewers(String username) throws Exception;
+
+	/**
+	 * Get reviewees for this user
+	 * @param username
+	 * @return
+	 * @throws Exception
+	 */
+	List<User> getReviewees(String username) throws Exception;
+	
+	/**
+	 * Add reviewer to this user
+	 * @param loggedInUser
+	 * @param username
+	 * @param reviewer
+	 * @throws Exception
+	 */
+	void addReviewer(String loggedInUser, String username, String reviewer) throws Exception;
+	
+	/**
+	 * Add reviewee to this user
+	 * @param loggedInUser
+	 * @param username
+	 * @param reviewee
+	 * @throws Exception
+	 */
+	void addReviewee(String loggedInUser, String username, String reviewee) throws Exception;
+	
+	/**
+	 * Remove reviewer from this user
+	 * @param loggedInUser
+	 * @param username
+	 * @param reviewer
+	 * @throws Exception
+	 */
+	void removeReviewer(String loggedInUser, String username, String reviewer) throws Exception;
+	
+	/**
+	 * Remove reviewee from this user
+	 * @param loggedInUser
+	 * @param username
+	 * @param reviewee
+	 * @throws Exception
+	 */
+	void removeReviewee(String loggedInUser, String username, String reviewee) throws Exception;
+	
 	
 	/**
 	 * Get database object by primary key

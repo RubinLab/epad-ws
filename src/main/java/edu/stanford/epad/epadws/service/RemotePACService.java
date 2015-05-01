@@ -2,10 +2,11 @@ package edu.stanford.epad.epadws.service;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -17,9 +18,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import javax.servlet.http.HttpServletResponse;
+
+import org.apache.commons.httpclient.HttpClient;
+import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.io.IOUtils;
 
-import com.pixelmed.dicom.AgeStringAttribute;
 import com.pixelmed.dicom.Attribute;
 import com.pixelmed.dicom.AttributeList;
 import com.pixelmed.dicom.AttributeTag;
@@ -42,6 +46,8 @@ import com.pixelmed.query.QueryTreeRecord;
 
 import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADFileUtils;
+import edu.stanford.epad.dtos.DicomTag;
+import edu.stanford.epad.dtos.DicomTagList;
 import edu.stanford.epad.dtos.RemotePAC;
 import edu.stanford.epad.dtos.RemotePACEntity;
 import edu.stanford.epad.dtos.RemotePACQueryConfig;
@@ -70,6 +76,7 @@ public class RemotePACService extends RemotePACSBase {
 	public static final int MAX_SERIES_QUERY = 500;
 	public static final int MAX_INSTANCE_QUERY = 7000;
 	static Map<String, QueryTreeRecord> remoteQueryCache = new HashMap<String, QueryTreeRecord>();
+	static Map<String, List<RemotePACEntity>> patientCache = new HashMap<String, List<RemotePACEntity>>();
 	
 	// SerieUID to userName:projectID
 	public static Map<String, String> pendingTransfers = new HashMap<String, String>();
@@ -77,6 +84,8 @@ public class RemotePACService extends RemotePACSBase {
 	// AETitle to userName
 	public static Map<String, String> monitorTransfers = new HashMap<String, String>();
 	public static Map<String, Long> monitorStart = new HashMap<String, Long>();
+	
+	public static DicomTagList dicomTags = null;
 	
 	public static RemotePACService getInstance() throws Exception {
 		if (rpsinstance == null)
@@ -117,6 +126,60 @@ public class RemotePACService extends RemotePACSBase {
 		}
 	}
 	
+	public static DicomTagList getDicomTags()
+	{
+		if (dicomTags != null)
+			return dicomTags;
+		File dicomTagFile = new File(EPADConfig.getEPADWebServerEtcDir() + "dicomtags.txt");
+		BufferedReader reader = null;
+		InputStream is = null;
+		if (!dicomTagFile.exists()) {
+			StringBuilder sb = new StringBuilder();
+			try {
+				is = EPADFileUtils.class.getClassLoader().getResourceAsStream(dicomTagFile.getName());
+				reader = new BufferedReader(new InputStreamReader(is, "UTF8"));
+				String line = null;
+				while ((line = reader.readLine()) != null) {
+					sb.append(line);
+					sb.append("\n");
+				}
+			} catch (Exception x) {
+				log.warning("Error creating tags file", x);
+				return null;
+			} finally {
+				if (reader != null)
+					IOUtils.closeQuietly(reader);
+				else if (is != null)
+					IOUtils.closeQuietly(is);
+			}
+			EPADFileUtils.write(dicomTagFile, sb.toString());			
+		}
+		DicomTagList dclist = new DicomTagList();
+		try {
+			is = EPADFileUtils.class.getClassLoader().getResourceAsStream(dicomTagFile.getName());
+			reader = new BufferedReader(new InputStreamReader(is, "UTF8"));
+			String line = null;
+			while ((line = reader.readLine()) != null) {
+				if (line.trim().startsWith("#")) continue;
+				String[] fields = line.split(",");
+				if (fields.length < 3) continue;
+				if (fields[1].trim().length() < 8) continue;
+				DicomTag tag = new DicomTag(fields[0], fields[2], "0x" + fields[1].substring(0,4), "0x" + fields[1].substring(4,8),"","");
+				dclist.addDicomTag(tag);
+			}
+		} catch (Exception x) {
+			log.warning("Error creating tags file", x);
+			return null;
+		} finally {
+			if (reader != null)
+				IOUtils.closeQuietly(reader);
+			else if (is != null)
+				IOUtils.closeQuietly(is);
+		}
+		dicomTags = dclist;
+		return dclist;			
+	}
+	
 	/**
 	 * Get all configured remote PACs
 	 * @return
@@ -130,6 +193,19 @@ public class RemotePACService extends RemotePACSBase {
 			RemotePAC rp = new RemotePAC(localName, ae.getDicomAETitle(), ae.getPresentationAddress().getHostname(),
 					ae.getPresentationAddress().getPort(), ae.getQueryModel(), ae.getPrimaryDeviceType());
 			rps.add(rp);
+		}
+		if (EPADConfig.getParamValue("TCIA_APIKEY") != null) {
+			try {
+				List<String> collections = TCIAService.getInstance().getCollections();
+				for (String collection: collections)
+				{
+					RemotePAC rpac = new RemotePAC(TCIAService.TCIA_PREFIX + collection, TCIAService.TCIA_PREFIX + collection, "services.cancerimagingarchive.net",
+							443, "", "");
+					rps.add(rpac);
+				}
+			} catch (Exception e) {
+				log.warning("Error getting TCIA collections", e);
+			}
 		}
 		return rps;
 	}
@@ -162,6 +238,8 @@ public class RemotePACService extends RemotePACSBase {
 		User user = DefaultEpadProjectOperations.getInstance().getUser(loggedInUser);
 		if (!user.isAdmin() && !user.hasPermission(User.CreatePACPermission))
 			throw new Exception("No permission to create PAC configuration");
+		if (pac.pacID.startsWith("tcia"))
+			throw new Exception("Invalid PAC ID:" + pac.pacID);
 		addRemotePAC(
 				pac.pacID,
 				pac.aeTitle,
@@ -178,6 +256,8 @@ public class RemotePACService extends RemotePACSBase {
 	 */
 	public synchronized void modifyRemotePAC(String loggedInUser, RemotePAC pac) throws Exception {
 		User user = DefaultEpadProjectOperations.getInstance().getUser(loggedInUser);
+		if (pac.pacID.startsWith("tcia"))
+			throw new Exception("This PAC Configuration can not be modified:" + pac.pacID);
 		if (!user.isAdmin() && !user.hasPermission(User.CreatePACPermission))
 			throw new Exception("No permission to modify PAC configuration");
 		removeRemotePAC(pac.pacID);
@@ -277,9 +357,9 @@ public class RemotePACService extends RemotePACSBase {
 		if (project == null)
 			throw new Exception("Project " + projectID + " not found");
 		RemotePAC pac = this.getRemotePAC(pacID);
-		if (pac == null)
+		if (pac == null && !pacID.startsWith(TCIAService.TCIA_PREFIX))
 			throw new Exception("Remote PAC " + pacID + " not found");
-		if (pac.hostname.equalsIgnoreCase(EPADConfig.xnatServer) && pac.port == 11112)
+		if (pac != null && pac.hostname.equalsIgnoreCase(EPADConfig.xnatServer) && pac.port == 11112)
 		{
 			throw new Exception("This is the local PAC, image data can not transferred from it");
 		}
@@ -462,9 +542,20 @@ public class RemotePACService extends RemotePACSBase {
 			if (patientsOnly)
 				qlevel = "PATIENT";
 			log.info("Remote PAC Query, pacID:" + pac.pacID + " patientName:" + patientNameFilter + " patientID:" + patientIDFilter + " studyDate:" + studyDateFilter + " studyIDFilter:" + studyIDFilter + " patientsOnly:" + patientsOnly + " studiesOnly:" + studiesOnly);
+			if ((patientNameFilter == null || patientNameFilter.length() == 0) 
+					&& (patientIDFilter == null || patientIDFilter.length() == 0)
+					&& patientsOnly)
+			{
+				if (patientCache.containsKey(pac.pacID))
+					return patientCache.get(pac.pacID);
+			}
 			if (currentPACQueries.containsKey(pac.pacID))
 				throw new Exception("Last query to this PAC still in progress");
-			this.setCurrentRemoteQueryInformationModel(pac.pacID, true);
+			if (patientNameFilter != null && patientNameFilter.equals("*"))
+				patientNameFilter = "";
+			if (patientIDFilter != null && patientIDFilter.equals("*"))
+				patientIDFilter = "";
+			this.setCurrentRemoteQueryInformationModel(pac.pacID);
 			SpecificCharacterSet specificCharacterSet = new SpecificCharacterSet((String[])null);
 			AttributeList filter = new AttributeList();
 			currentPACQueries.put(pac.pacID, filter);
@@ -502,7 +593,7 @@ public class RemotePACService extends RemotePACSBase {
 						studyIDFilter = studyIDFilter.substring(studyIDFilter.indexOf(":")+1);
 					a.addValue(studyIDFilter);
 				}		
-				filter.put(t,a); 
+				filter.put(t,a);
 				qlevel = "STUDY";
 			}
 			if (tagGroups != null && tagElements != null && tagValues != null) {
@@ -607,13 +698,19 @@ public class RemotePACService extends RemotePACSBase {
 				EpadDatabaseOperations databaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
 				for (RemotePACEntity rpe: remoteEntities) {
 					if (rpe.entityType.equalsIgnoreCase("Study")) {
-						if (projectOperations.getStudy(rpe.entityID.substring(rpe.entityID.indexOf(":")+1)) != null)
+						if (databaseOperations.hasStudyInDCM4CHE(rpe.entityID.substring(rpe.entityID.indexOf(":")+1)))
 							rpe.inEpad = true;
 					} else if (rpe.entityType.equalsIgnoreCase("Series")) {
 						if (databaseOperations.hasSeriesInEPadDatabase(rpe.entityID.substring(rpe.entityID.indexOf(":")+1)))
 							rpe.inEpad = true;
 					}
 				}
+			}
+			if ((patientNameFilter == null || patientNameFilter.length() == 0) 
+					&& (patientIDFilter == null || patientIDFilter.length() == 0)
+					&& patientsOnly)
+			{
+				patientCache.put(pac.pacID, remoteEntities); 
 			}
 			return remoteEntities;
 		}
@@ -631,6 +728,7 @@ public class RemotePACService extends RemotePACSBase {
 	public void clearQueryCache()
 	{
 		remoteQueryCache = new HashMap<String, QueryTreeRecord>();
+		dicomTags = null;
 	}
 	
 	DecimalFormat decformat = new DecimalFormat("00000");
@@ -651,10 +749,14 @@ public class RemotePACService extends RemotePACSBase {
 		if (entities.size() > 0)
 		{
 			ukey = entities.get(0).entityID + ":" + node.getUniqueKey().getDelimitedStringValuesOrEmptyString(); // Is this key better???
+			if (patientsOnly)
+				ukey = entities.get(0).entityID + ":" + "SUBJECT" + ":" + node.getUniqueKey().getDelimitedStringValuesOrEmptyString(); // Is this key better???
 		}
 		RemotePACEntity entity = new RemotePACEntity(type, node.getValue(), level, ukey);
 		entity.subjectID = Attribute.getSingleStringValueOrNull(al,TagFromName.PatientID);
 		entity.subjectName = Attribute.getSingleStringValueOrNull(al,TagFromName.PatientName);
+		if (entity.subjectName == null || entity.subjectName.length() == 0)
+			entity.subjectName = entity.subjectID;
 		if (patientsOnly && type.equals("Study") && patientIds.contains(entity.subjectID))
 		{
 			//log.info("Duplicate subject:" + entity.subjectID);
@@ -701,10 +803,14 @@ public class RemotePACService extends RemotePACSBase {
 		{
 			throw new Exception("This is the local PAC, image data can not transferred from it");
 		}
+		if (entityID.contains("SUBJECT:"))
+		{
+			throw new Exception("Patients can not be transferred. Please select a Study or Series");
+		}
 		String uniqueKey = entityID;
 		String root = uniqueKey;
 		if (root.indexOf(":") != -1)
-			root = root.substring(0, root.indexOf(":"));
+			root = root.substring(0, root.lastIndexOf(":"));
 		if (!uniqueKey.startsWith(pac.pacID))
 			uniqueKey = pac.pacID + ":" + uniqueKey;
 		QueryTreeRecord node = remoteQueryCache.get(uniqueKey);
@@ -714,7 +820,7 @@ public class RemotePACService extends RemotePACSBase {
 			queryRemoteData(pac, "", "", "", "", false, false);
 			node = remoteQueryCache.get(uniqueKey);
 			if (node == null)
-				throw new Exception("Remote data not found");
+				throw new Exception("Remote data not found:" + uniqueKey);
 		}
 		String type = node.getInformationEntity().toString();
 		String studyUID = null;
@@ -756,17 +862,19 @@ public class RemotePACService extends RemotePACSBase {
 		else
 		{
 			studyUID = uniqueKey;
+			if (studyUID.indexOf(":") != -1)
+				studyUID = studyUID.substring(studyUID.indexOf(":")+1);
 			studyDate = Attribute.getSingleStringValueOrNull(node.getAllAttributesReturnedInIdentifier(),TagFromName.StudyDate);
 			patientID = Attribute.getSingleStringValueOrNull(node.getAllAttributesReturnedInIdentifier(),TagFromName.PatientID);
 			patientName = Attribute.getSingleStringValueOrEmptyString(node.getAllAttributesReturnedInIdentifier(),TagFromName.PatientName);
 		}
 		if (studyUID != null && patientID != null && projectID != null && projectID.trim().length() > 0)
 		{
-			UserProjectService.addSubjectAndStudyToProject(patientID, patientName, studyUID, projectID, sessionID, userName);
+			UserProjectService.addSubjectAndStudyToProject(patientID, patientName, studyUID, studyDate, projectID, sessionID, userName);
 		}
 		if (seriesUID != null)
 			pendingTransfers.put(seriesUID, userName + ":" + projectID);
-		this.setCurrentRemoteQueryInformationModel(pac.pacID, false);
+		this.setCurrentRemoteQueryInformationModel(pac.pacID);
 		if (node != null) {
 			setCurrentRemoteQuerySelection(node.getUniqueKeys(), node.getUniqueKey(), node.getAllAttributesReturnedInIdentifier());
 			log.info("Request retrieval of "+currentRemoteQuerySelectionLevel+" "+currentRemoteQuerySelectionUniqueKey.getSingleStringValueOrEmptyString()+" from "+pac.pacID+" ("+currentRemoteQuerySelectionRetrieveAE+")");
