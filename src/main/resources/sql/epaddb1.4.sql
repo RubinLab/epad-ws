@@ -1,3 +1,6 @@
+
+DROP TABLE if exists users;
+
 CREATE TABLE project (id integer unsigned NOT NULL AUTO_INCREMENT,
 name varchar(128),
 projectid varchar(128),
