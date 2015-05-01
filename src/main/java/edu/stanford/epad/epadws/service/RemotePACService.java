@@ -513,8 +513,8 @@ public class RemotePACService extends RemotePACSBase {
 	 * @return
 	 * @throws Exception
 	 */
-	public synchronized List<RemotePACEntity> queryRemoteData(RemotePAC pac, String patientNameFilter, String patientIDFilter, String studyIDFilter, String studyDateFilter, boolean patientsOnly, boolean studiesOnly) throws Exception {
-		return queryRemoteData(pac, patientNameFilter, patientIDFilter, studyIDFilter, studyDateFilter, null, null, null, null,
+	public synchronized List<RemotePACEntity> queryRemoteData(RemotePAC pac, String patientNameFilter, String patientIDFilter, String studyIDFilter, String studyDateFilter, String modality, boolean patientsOnly, boolean studiesOnly) throws Exception {
+		return queryRemoteData(pac, patientNameFilter, patientIDFilter, studyIDFilter, studyDateFilter, modality, null, null, null, null,
 				patientsOnly, studiesOnly);
 	}	
 	
@@ -533,7 +533,7 @@ public class RemotePACService extends RemotePACSBase {
 	 * @return
 	 * @throws Exception
 	 */
-	public synchronized List<RemotePACEntity> queryRemoteData(RemotePAC pac, String patientNameFilter, String patientIDFilter, String studyIDFilter, String studyDateFilter, String[] tagGroups, String[] tagElements, String[] tagValues, String[] tagTypes, boolean patientsOnly, boolean studiesOnly) throws Exception {
+	public synchronized List<RemotePACEntity> queryRemoteData(RemotePAC pac, String patientNameFilter, String patientIDFilter, String studyIDFilter, String studyDateFilter, String modality, String[] tagGroups, String[] tagElements, String[] tagValues, String[] tagTypes, boolean patientsOnly, boolean studiesOnly) throws Exception {
 		
 		try {
 			String qlevel = null;
@@ -596,6 +596,13 @@ public class RemotePACService extends RemotePACSBase {
 				filter.put(t,a);
 				qlevel = "STUDY";
 			}
+			{ 
+				AttributeTag t = TagFromName.ModalitiesInStudy; Attribute a = new CodeStringAttribute(t); 
+				if (modality != null && modality.length() > 0) {
+					a.addValue(modality);
+				}		
+				filter.put(t,a); 
+			}
 			if (tagGroups != null && tagElements != null && tagValues != null) {
 				for (int i = 0; i < tagGroups.length && i < tagElements.length && i < tagValues.length; i++)  {
 					try {
@@ -646,7 +653,6 @@ public class RemotePACService extends RemotePACSBase {
 
 			{ AttributeTag t = TagFromName.StudyID; Attribute a = new ShortStringAttribute(t,specificCharacterSet); if (!filter.containsKey(t)) filter.put(t,a);}
 			{ AttributeTag t = TagFromName.StudyDescription; Attribute a = new LongStringAttribute(t,specificCharacterSet); if (!filter.containsKey(t)) filter.put(t,a); }
-			{ AttributeTag t = TagFromName.ModalitiesInStudy; Attribute a = new CodeStringAttribute(t); filter.put(t,a); }
 			{ AttributeTag t = TagFromName.StudyTime; Attribute a = new TimeAttribute(t); if (!filter.containsKey(t)) filter.put(t,a); }
 			//{ AttributeTag t = TagFromName.PatientAge; Attribute a = new AgeStringAttribute(t); if (!filter.containsKey(t)) filter.put(t,a); }
 
@@ -685,7 +691,7 @@ public class RemotePACService extends RemotePACSBase {
 			log.info("Remote PAC tree records took "+ (traverseTime-startTime) + " msecs. Number of entities returned:" + remoteEntities.size());
 			if (patientsOnly && remoteEntities.size() > 0) 
 				remoteEntities.remove(0); // Remove AE record
-			if (studiesOnly && remoteEntities.size() > 0) 
+			else if (studiesOnly && remoteEntities.size() > 0) 
 				remoteEntities.remove(0); // Remove AE record
 			if (studyIDFilter != null && studyIDFilter.length() > 0 && !studiesOnly && remoteEntities.size() > 1) 
 			{
@@ -817,7 +823,7 @@ public class RemotePACService extends RemotePACSBase {
 		// If no cached pointers, query entire PAC again (or should we give an error???)
 		if (node == null)
 		{
-			queryRemoteData(pac, "", "", "", "", false, false);
+			queryRemoteData(pac, "", "", "", "", "", false, false);
 			node = remoteQueryCache.get(uniqueKey);
 			if (node == null)
 				throw new Exception("Remote data not found:" + uniqueKey);

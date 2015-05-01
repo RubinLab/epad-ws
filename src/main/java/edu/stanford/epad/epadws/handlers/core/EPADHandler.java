@@ -1095,6 +1095,7 @@ public class EPADHandler extends AbstractHandler
 				String[] tagElement = httpRequest.getParameterValues("tagElement");
 				String[] tagValue = httpRequest.getParameterValues("tagValue");
 				String[] tagType = httpRequest.getParameterValues("tagType");
+				String modality = httpRequest.getParameter("modality");
 				boolean studiesOnly = !"true".equalsIgnoreCase(httpRequest.getParameter("series"));
 				if (tagGroup != null && httpRequest.getParameter("series") == null)
 					studiesOnly = false;
@@ -1102,7 +1103,7 @@ public class EPADHandler extends AbstractHandler
 				if (pac != null)
 				{
 					List<RemotePACEntity> entities = RemotePACService.getInstance().queryRemoteData(pac, patientNameFilter, patientIDFilter, 
-							studyIDFilter, studyDateFilter, 
+							studyIDFilter, studyDateFilter, modality,
 							tagGroup, tagElement, tagValue, tagType, false, studiesOnly);
 					RemotePACEntityList entityList = new RemotePACEntityList();
 					for (RemotePACEntity entity: entities)
@@ -1120,14 +1121,21 @@ public class EPADHandler extends AbstractHandler
 					throw new Exception("PAC ID in rest call is null:" + pathInfo);
 				String patientNameFilter = httpRequest.getParameter("patientNameFilter");
 				if (patientNameFilter == null) patientNameFilter = httpRequest.getParameter("patientName");
-				if (patientNameFilter == null) patientNameFilter = "";
+				if (patientNameFilter == null) 
+					patientNameFilter = "";
+				else
+					patientNameFilter = patientNameFilter + "*";
 				String patientIDFilter = httpRequest.getParameter("patientIDFilter");
 				if (patientIDFilter == null) patientIDFilter = httpRequest.getParameter("patientID");
-				if (patientIDFilter == null) patientIDFilter = "";
+				if (patientIDFilter == null) 
+					patientIDFilter = "";
+				else
+					patientIDFilter = patientIDFilter + "*";
+				String modality = httpRequest.getParameter("modality");
 				RemotePAC pac = RemotePACService.getInstance().getRemotePAC(pacid);
 				if (pac != null)
 				{
-					List<RemotePACEntity> entities = RemotePACService.getInstance().queryRemoteData(pac, patientNameFilter, patientIDFilter, "", "", true, true);
+					List<RemotePACEntity> entities = RemotePACService.getInstance().queryRemoteData(pac, patientNameFilter, patientIDFilter, "", "", modality, true, true);
 					RemotePACEntityList entityList = new RemotePACEntityList();
 					for (RemotePACEntity entity: entities)
 						entityList.addRemotePACEntity(entity);
@@ -1156,10 +1164,11 @@ public class EPADHandler extends AbstractHandler
 				String subjectid = HandlerUtil.getTemplateParameter(templateMap, "subjectid");
 				String studyDateFilter = httpRequest.getParameter("studyDateFilter");
 				if (studyDateFilter == null) studyDateFilter = "";
+				String modality = httpRequest.getParameter("modality");
 				RemotePAC pac = RemotePACService.getInstance().getRemotePAC(pacid);
 				if (pac != null)
 				{
-					List<RemotePACEntity> entities = RemotePACService.getInstance().queryRemoteData(pac, "", subjectid, "", studyDateFilter, false, true);
+					List<RemotePACEntity> entities = RemotePACService.getInstance().queryRemoteData(pac, "", subjectid, "", studyDateFilter, modality, false, true);
 					RemotePACEntityList entityList = new RemotePACEntityList();
 					for (RemotePACEntity entity: entities)
 						entityList.addRemotePACEntity(entity);
@@ -1185,10 +1194,11 @@ public class EPADHandler extends AbstractHandler
 					throw new Exception("PAC ID in rest call is null:" + pathInfo);
 				String subjectid = HandlerUtil.getTemplateParameter(templateMap, "subjectid");
 				String studyid = HandlerUtil.getTemplateParameter(templateMap, "studyid");
+				String modality = httpRequest.getParameter("modality");
 				RemotePAC pac = RemotePACService.getInstance().getRemotePAC(pacid);
 				if (pac != null)
 				{
-					List<RemotePACEntity> entities = RemotePACService.getInstance().queryRemoteData(pac, "", subjectid, studyid, "", false, false);
+					List<RemotePACEntity> entities = RemotePACService.getInstance().queryRemoteData(pac, "", subjectid, studyid, "", modality, false, false);
 					RemotePACEntityList entityList = new RemotePACEntityList();
 					for (RemotePACEntity entity: entities)
 						entityList.addRemotePACEntity(entity);

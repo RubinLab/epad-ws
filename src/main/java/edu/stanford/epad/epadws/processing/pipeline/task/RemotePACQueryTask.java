@@ -114,7 +114,8 @@ public class RemotePACQueryTask implements Runnable
 				{
 					if (studyDate != null && !studyDate.endsWith("-"))
 						studyDate = studyDate + "-";
-					entities = rps.queryRemoteData(pac, null, subject.getSubjectUID(), "", studyDate, false, true);
+					String modality = query.getModality();
+					entities = rps.queryRemoteData(pac, null, subject.getSubjectUID(), "", studyDate, modality, false, true);
 				}
 				else if (query.getPacId().startsWith(TCIAService.TCIA_PREFIX))
 				{
