@@ -1491,16 +1491,6 @@ public class EPADHandler extends AbstractHandler
 				String workListID = HandlerUtil.getTemplateParameter(templateMap, "workListID");
 				String description = httpRequest.getParameter("description");
 				String dueDate = httpRequest.getParameter("dueDate");
-				worklistOperations.createWorkList(username, reader, projectReference.projectID, workListID, description, null, getDate(dueDate));
-				statusCode = HttpServletResponse.SC_OK;
-			
-			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.USER_WORKLIST, pathInfo)) {
-				ProjectReference projectReference = ProjectReference.extract(ProjectsRouteTemplates.USER_WORKLIST, pathInfo);
-				Map<String, String> templateMap = HandlerUtil.getTemplateMap(ProjectsRouteTemplates.USER_WORKLIST, pathInfo);
-				String reader = HandlerUtil.getTemplateParameter(templateMap, "username");
-				String workListID = HandlerUtil.getTemplateParameter(templateMap, "workListID");
-				String description = httpRequest.getParameter("description");
-				String dueDate = httpRequest.getParameter("dueDate");
 				WorkList worklist = worklistOperations.getWorkList(workListID);
 				if (worklist == null)
 				{
@@ -1630,7 +1620,7 @@ public class EPADHandler extends AbstractHandler
 				String email = httpRequest.getParameter("email");
 				String password = httpRequest.getParameter("password");
 				String oldpassword = httpRequest.getParameter("oldpassword");
-				//log.info("new password:" + password + " old password:" + oldpassword); 
+				log.info("new password:" + password + " old password:" + oldpassword); 
 				String[] addPermissions = httpRequest.getParameterValues("addPermission");
 				String[] removePermissions = httpRequest.getParameterValues("removePermission");
 				epadOperations.createOrModifyUser(username, target_username, firstname, lastname, email, password, oldpassword, addPermissions, removePermissions);
@@ -2039,7 +2029,7 @@ public class EPADHandler extends AbstractHandler
 					String email = httpRequest.getParameter("email");
 					String password = httpRequest.getParameter("password");
 					String oldpassword = httpRequest.getParameter("oldpassword");
-					//log.info("new password:" + password + " old password:" + oldpassword); 
+					log.info("new password:" + password + " old password:" + oldpassword); 
 					String[] addPermissions = httpRequest.getParameterValues("addPermission");
 					String[] removePermissions = httpRequest.getParameterValues("removePermission");
 					epadOperations.createOrModifyUser(username, target_username, firstname, lastname, email, password, oldpassword, addPermissions, removePermissions);
