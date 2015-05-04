@@ -147,7 +147,7 @@ public class DefaultWorkListOperations implements EpadWorkListOperations {
 		Study study = projectOperations.getStudy(studyUID);
 		WorkList workList = new WorkList();
 		workList = (WorkList) workList.getObject("worklistid = " + workList.toSQL(workListID));
-		WorkListToStudy wtos = (WorkListToStudy) new WorkListToSubject().getObject("worklist_id =" + workList.getId() + " and Study_id=" + study.getId());
+		WorkListToStudy wtos = (WorkListToStudy) new WorkListToStudy().getObject("worklist_id =" + workList.getId() + " and study_id=" + study.getId());
 		if (wtos == null)
 		{
 			wtos = new WorkListToStudy();

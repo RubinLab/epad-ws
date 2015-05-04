@@ -3,6 +3,7 @@ package edu.stanford.epad.epadws.processing.pipeline.task;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.util.Calendar;
+import java.util.Random;
 
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.methods.PutMethod;
@@ -76,6 +77,8 @@ public class EpadStatisticsTask implements Runnable
 			{
 				if (daily || now.get(Calendar.DAY_OF_WEEK) == Calendar.SUNDAY)
 				{
+					long delay = new Random().nextInt(1800 + 1);
+					Thread.sleep(1000*delay); // So that all don't do this at the same time
 					String epadUrl = EPADConfig.getParamValue("EpadStatisticsURL", "https://epad-public.stanford.edu/epad/statistics/");
 					epadUrl = epadUrl + "?numOfUsers=" + users;
 					epadUrl = epadUrl + "&numOfProjects=" + users;
