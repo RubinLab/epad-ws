@@ -541,7 +541,7 @@ public class RemotePACService extends RemotePACSBase {
 				qlevel = "STUDY";
 			if (patientsOnly)
 				qlevel = "PATIENT";
-			log.info("Remote PAC Query, pacID:" + pac.pacID + " patientName:" + patientNameFilter + " patientID:" + patientIDFilter + " studyDate:" + studyDateFilter + " studyIDFilter:" + studyIDFilter + " patientsOnly:" + patientsOnly + " studiesOnly:" + studiesOnly);
+			log.info("Remote PAC Query, pacID:" + pac.pacID + " patientName:" + patientNameFilter + " patientID:" + patientIDFilter + " studyDate:" + studyDateFilter + " studyIDFilter:" + studyIDFilter + " patientsOnly:" + patientsOnly + " studiesOnly:" + studiesOnly + " tagValues:" + tagValues);
 			if ((patientNameFilter == null || patientNameFilter.length() == 0) 
 					&& (patientIDFilter == null || patientIDFilter.length() == 0)
 					&& (tagGroups == null || tagGroups.length == 0)
@@ -627,7 +627,7 @@ public class RemotePACService extends RemotePACSBase {
 								a = new CodeStringAttribute(t);
 						}
 						else
-							log.info("Attribute:" + t.toString() + " type" + tagTypes + " value:" + tagValues[i]);
+							log.info("Attribute:" + t.toString() + " type:" + tagTypes + " value:" + tagValues[i]);
 							
 						if (a == null)
 							a = new LongStringAttribute(t,specificCharacterSet);
