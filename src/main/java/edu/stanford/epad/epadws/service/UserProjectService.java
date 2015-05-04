@@ -316,6 +316,7 @@ public class UserProjectService {
 		String studyDate = dicomObject.getString(Tag.StudyDate);
 		String seriesUID = dicomObject.getString(Tag.SeriesInstanceUID);
 		String modality = dicomObject.getString(Tag.Modality);
+		log.debug("Uploading dicom, patientName:" + dicomPatientName + " patientID:" + dicomPatientID + " studyUID:" + studyUID + " studyDate:" + studyDate + " seriesUID:" + seriesUID);
 		if (dicomPatientID == null || dicomPatientID.trim().length() == 0 
 				|| dicomPatientID.equalsIgnoreCase("ANON") 
 				|| dicomPatientID.equalsIgnoreCase("Unknown") 

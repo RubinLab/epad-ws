@@ -2334,6 +2334,8 @@ public class DefaultEpadOperations implements EpadOperations
 			ProjectReference projectReference, String username,
 			String workListID) throws Exception {
 		WorkList wl = workListOperations.getWorkList(workListID);
+		if (wl == null)
+			throw new Exception("Worklist " + workListID + " not found");
 		User user = (User) projectOperations.getDBObject(User.class, wl.getUserId());
 		Project project = (Project) projectOperations.getDBObject(Project.class, wl.getProjectId());
 		if (!project.getProjectId().equals(projectReference.projectID))
@@ -2357,6 +2359,7 @@ public class DefaultEpadOperations implements EpadOperations
 			EPADWorklistStudy wls = new EPADWorklistStudy(workListID, username, projectReference.projectID,
 					subject.getSubjectUID(), study.getStudyUID(), wstudy.getStatus(), formatDate(wstudy.getStartDate()),
 					formatDate(wstudy.getCompleteDate()));
+			wlsl.addEPADWorklistStudy(wls);
 		}
 		return wlsl;
 	}
@@ -2366,6 +2369,8 @@ public class DefaultEpadOperations implements EpadOperations
 			ProjectReference projectReference, String username,
 			String subjectID, String workListID) throws Exception {
 		WorkList wl = workListOperations.getWorkList(workListID);
+		if (wl == null)
+			throw new Exception("Worklist " + workListID + " not found");
 		User user = (User) projectOperations.getDBObject(User.class, wl.getUserId());
 		Subject subject = projectOperations.getSubject(subjectID);
 		Project project = (Project) projectOperations.getDBObject(Project.class, wl.getProjectId());
@@ -2380,6 +2385,7 @@ public class DefaultEpadOperations implements EpadOperations
 				EPADWorklistStudy wls = new EPADWorklistStudy(workListID, username, projectReference.projectID,
 						subject.getSubjectUID(), study.getStudyUID(), wstudy.getStatus(), formatDate(wstudy.getStartDate()),
 						formatDate(wstudy.getCompleteDate()));
+			wlsl.addEPADWorklistStudy(wls);
 		}
 		return wlsl;
 	}

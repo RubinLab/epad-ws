@@ -1132,10 +1132,14 @@ public class EPADHandler extends AbstractHandler
 				else
 					patientIDFilter = patientIDFilter + "*";
 				String modality = httpRequest.getParameter("modality");
+				String[] tagGroup = httpRequest.getParameterValues("tagGroup");
+				String[] tagElement = httpRequest.getParameterValues("tagElement");
+				String[] tagValue = httpRequest.getParameterValues("tagValue");
+				String[] tagType = httpRequest.getParameterValues("tagType");
 				RemotePAC pac = RemotePACService.getInstance().getRemotePAC(pacid);
 				if (pac != null)
 				{
-					List<RemotePACEntity> entities = RemotePACService.getInstance().queryRemoteData(pac, patientNameFilter, patientIDFilter, "", "", modality, true, true);
+					List<RemotePACEntity> entities = RemotePACService.getInstance().queryRemoteData(pac, patientNameFilter, patientIDFilter, "", "", modality, tagGroup, tagElement, tagValue, tagType, true, true);
 					RemotePACEntityList entityList = new RemotePACEntityList();
 					for (RemotePACEntity entity: entities)
 						entityList.addRemotePACEntity(entity);
