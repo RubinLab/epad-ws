@@ -544,6 +544,7 @@ public class RemotePACService extends RemotePACSBase {
 			log.info("Remote PAC Query, pacID:" + pac.pacID + " patientName:" + patientNameFilter + " patientID:" + patientIDFilter + " studyDate:" + studyDateFilter + " studyIDFilter:" + studyIDFilter + " patientsOnly:" + patientsOnly + " studiesOnly:" + studiesOnly);
 			if ((patientNameFilter == null || patientNameFilter.length() == 0) 
 					&& (patientIDFilter == null || patientIDFilter.length() == 0)
+					&& (tagGroups == null || tagGroups.length == 0)
 					&& patientsOnly)
 			{
 				if (patientCache.containsKey(pac.pacID))
@@ -562,7 +563,7 @@ public class RemotePACService extends RemotePACSBase {
 			{
 				AttributeTag t = TagFromName.PatientName; Attribute a = new PersonNameAttribute(t,specificCharacterSet);
 				if (patientNameFilter != null && patientNameFilter.length() > 0) {
-					a.addValue(patientNameFilter);
+					a.addValue(patientNameFilter.toUpperCase());
 				}
 				filter.put(t,a);
 				qlevel = "PATIENT";
@@ -599,7 +600,7 @@ public class RemotePACService extends RemotePACSBase {
 			{ 
 				AttributeTag t = TagFromName.ModalitiesInStudy; Attribute a = new CodeStringAttribute(t); 
 				if (modality != null && modality.length() > 0) {
-					a.addValue(modality);
+					a.addValue(modality.toUpperCase());
 				}		
 				filter.put(t,a); 
 			}
@@ -630,7 +631,7 @@ public class RemotePACService extends RemotePACSBase {
 							
 						if (a == null)
 							a = new LongStringAttribute(t,specificCharacterSet);
-						a.addValue(tagValues[i]);
+						a.addValue(tagValues[i].toUpperCase());
 						filter.put(t,a);
 						qlevel = "SERIES";
 					} catch (Exception x) {
