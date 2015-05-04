@@ -719,6 +719,7 @@ public class RemotePACService extends RemotePACSBase {
 			{
 				patientCache.put(pac.pacID, remoteEntities); 
 			}
+			log.info("Returning " + remoteEntities.size() + " records");
 			return remoteEntities;
 		}
 		catch (Exception e) {
