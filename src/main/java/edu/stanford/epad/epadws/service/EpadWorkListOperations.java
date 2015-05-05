@@ -151,6 +151,7 @@ public interface EpadWorkListOperations {
 	 * @throws Exception
 	 */
 	WorkList getWorkListForUserByProject(String username, String projectID) throws Exception;
+	List<WorkList> getWorkListsForUserByProject(String username, String projectID) throws Exception;
 	
 	/**
 	 * Get Subjects for a WorkList
@@ -223,7 +224,7 @@ public interface EpadWorkListOperations {
 	 * @param workListID
 	 * @throws Exception
 	 */
-	void setWorkListStatus(String username, String workListID, String status, boolean started, boolean completed) throws Exception;
+	void setWorkListStatus(String username, String workListID, String status, Boolean started, Boolean completed) throws Exception;
 
 	/**
 	 * Set WorkList Subject status
@@ -231,7 +232,7 @@ public interface EpadWorkListOperations {
 	 * @param workListID
 	 * @throws Exception
 	 */
-	void setWorkListSubjectStatus(String username, String workListID, String subjectID, String status, boolean started, boolean completed) throws Exception;
+	void setWorkListSubjectStatus(String username, String workListID, String subjectID, String status, Boolean started, Boolean completed) throws Exception;
 	WorkListToSubject getWorkListSubjectStatus(String workListID, String subjectID) throws Exception;
 
 	/**
@@ -240,6 +241,6 @@ public interface EpadWorkListOperations {
 	 * @param workListID
 	 * @throws Exception
 	 */
-	void setWorkListStudyStatus(String username, String workListID, String studyUID, String status, boolean started, boolean completed) throws Exception;
+	void setWorkListStudyStatus(String username, String workListID, String studyUID, String status, Boolean started, Boolean completed) throws Exception;
 	WorkListToStudy getWorkListStudyStatus(String workListID, String studyUID) throws Exception;
 }

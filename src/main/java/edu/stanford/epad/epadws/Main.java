@@ -69,8 +69,8 @@ public class Main
 {
 	private static final EPADLogger log = EPADLogger.getInstance();
 
-	public static final String epad_version = "1.4.1";
-	public static final String db_version = "1.41"; // This should always be a valid decimal (only one dot)
+	public static final String epad_version = "1.5";
+	public static final String db_version = "1.5"; // This should always be a valid decimal (only one dot)
 	
 	public static void main(String[] args)
 	{

@@ -66,8 +66,13 @@ public class DefaultWorkListOperations implements EpadWorkListOperations {
 		if (user == null)
 			throw new Exception("User not found for username:" + username);
 		if (!projectOperations.isUserInProject(user.getId(), project.getId()));
-		
-		WorkList workList = this.getWorkListForUserByProject(username, projectID);
+		WorkList workList = null;
+		if (workListID != null && workListID.trim().length() > 0)
+		{
+			workList = this.getWorkList(workListID);
+		}
+		else
+			workList = this.getWorkListForUserByProject(username, projectID);
 		if (workList == null) workList = new WorkList();
 		if (workListID != null && workListID.trim().length() > 0)
 			workList.setWorkListID(workListID);
@@ -240,6 +245,17 @@ public class DefaultWorkListOperations implements EpadWorkListOperations {
 		return (WorkList) new WorkList().getObject("user_id =" + user.getId() + " and project_id=" + project.getId() + " order by worklistid");
 	}
 
+	@Override
+	public List<WorkList> getWorkListsForUserByProject(String username, String projectID) throws Exception {
+		User user = projectOperations.getUser(username);
+		if (user == null)
+			throw new Exception("User not found for username:" + username);
+		Project project = projectOperations.getProject(projectID);
+		if (project == null)
+			throw new Exception("Project not found, ID:" + projectID);
+		return new WorkList().getObjects("user_id =" + user.getId() + " and project_id=" + project.getId() + " order by worklistid");
+	}
+
 	/* (non-Javadoc)
 	 * @see edu.stanford.epad.epadws.service.EpadWorkListOperations#getSubjectsForWorkList(java.lang.String)
 	 */
@@ -377,6 +393,7 @@ public class DefaultWorkListOperations implements EpadWorkListOperations {
 	public List<WorkListToStudy> getWorkListStudies(String workListID)
 			throws Exception {
 		WorkList workList = getWorkList(workListID);
+		log.info("Getting studies for workListID:" + workListID);
 		List<WorkListToStudy> wltss = new WorkListToStudy().getObjects("worklist_id =" + workList.getId());
 		return wltss;
 	}
@@ -404,7 +421,7 @@ public class DefaultWorkListOperations implements EpadWorkListOperations {
 
 	@Override
 	public void setWorkListStatus(String username, String workListID,
-			String status, boolean started, boolean completed) throws Exception {
+			String status, Boolean started, Boolean completed) throws Exception {
 		WorkList worklist = this.getWorkList(workListID);
 		if (worklist == null)
 			throw new Exception("Worklist not found, ID =" + workListID);
@@ -415,16 +432,20 @@ public class DefaultWorkListOperations implements EpadWorkListOperations {
 			throw new Exception("No permission to set worklist status");		
 		if (status != null && status.trim().length() > 0)
 			worklist.setStatus(status);
-		if (started && worklist.getStartDate() == null)
+		if (started != null && started && worklist.getStartDate() == null)
 			worklist.setStartDate(new Date());
-		if (completed && worklist.getCompleteDate() == null)
+		if (started != null && !started)
+			worklist.setStartDate(null);
+		if (completed != null && completed && worklist.getCompleteDate() == null)
 			worklist.setCompleteDate(new Date());
+		if (completed != null && !completed)
+			worklist.setCompleteDate(null);
 		worklist.save();
 	}
 
 	@Override
 	public void setWorkListSubjectStatus(String username, String workListID,
-			String subjectID, String status, boolean started, boolean completed)
+			String subjectID, String status, Boolean started, Boolean completed)
 			throws Exception {
 		WorkList worklist = this.getWorkList(workListID);
 		if (worklist == null)
@@ -439,10 +460,14 @@ public class DefaultWorkListOperations implements EpadWorkListOperations {
 		if (wls == null)  return;
 		if (status != null && status.trim().length() > 0)
 			wls.setStatus(status);
-		if (started && wls.getStartDate() == null)
+		if (started != null && started && wls.getStartDate() == null)
 			wls.setStartDate(new Date());
-		if (completed && wls.getCompleteDate() == null)
+		if (started != null && !started)
+			wls.setStartDate(null);
+		if (completed != null && completed && wls.getCompleteDate() == null)
 			wls.setCompleteDate(new Date());
+		if (completed != null && !completed)
+			wls.setCompleteDate(null);
 		wls.save();
 	}
 
@@ -460,7 +485,7 @@ public class DefaultWorkListOperations implements EpadWorkListOperations {
 
 	@Override
 	public void setWorkListStudyStatus(String username, String workListID,
-			String studyUID, String status, boolean started, boolean completed)
+			String studyUID, String status, Boolean started, Boolean completed)
 			throws Exception {
 		WorkList worklist = this.getWorkList(workListID);
 		if (worklist == null)
@@ -477,10 +502,14 @@ public class DefaultWorkListOperations implements EpadWorkListOperations {
 		}
 		if (status != null && status.trim().length() > 0)
 			wls.setStatus(status);
-		if (started && wls.getStartDate() == null)
+		if (started != null && started && wls.getStartDate() == null)
 			wls.setStartDate(new Date());
-		if (completed && wls.getCompleteDate() == null)
+		if (started != null && !started)
+			wls.setStartDate(null);
+		if (completed != null && completed && wls.getCompleteDate() == null)
 			wls.setCompleteDate(new Date());
+		if (completed != null && !completed)
+			wls.setCompleteDate(null);
 		wls.save();
 	
 	}

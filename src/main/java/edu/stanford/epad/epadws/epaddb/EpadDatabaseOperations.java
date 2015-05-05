@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.Set;
 
 import edu.stanford.epad.dtos.EPADAIM;
+import edu.stanford.epad.dtos.EPADDataList;
 import edu.stanford.epad.dtos.PNGFileProcessingStatus;
 import edu.stanford.epad.dtos.SeriesProcessingStatus;
 import edu.stanford.epad.epadws.aim.AIMSearchType;
@@ -225,7 +226,7 @@ public interface EpadDatabaseOperations
 	List<Map<String, String>> getCoordinationData(String coordinationID) throws Exception;
 	
 
-	List<String> getEpadHostNames();
+	EPADDataList getEpadHostNames();
 	
 	/* 
 	 * New DB Operations methods for schema to replace XNAT

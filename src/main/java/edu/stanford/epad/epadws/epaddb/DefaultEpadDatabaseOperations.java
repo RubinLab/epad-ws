@@ -23,6 +23,8 @@ import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.epad.common.util.MongoDBOperations;
 import edu.stanford.epad.dtos.EPADAIM;
+import edu.stanford.epad.dtos.EPADData;
+import edu.stanford.epad.dtos.EPADDataList;
 import edu.stanford.epad.dtos.PNGFileProcessingStatus;
 import edu.stanford.epad.dtos.SeriesProcessingStatus;
 import edu.stanford.epad.epadws.aim.AIMDatabaseOperations;
@@ -1663,8 +1665,8 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 	}
 
 	@Override
-	public List<String> getEpadHostNames() {
-		List<String> retVal = new ArrayList<String>();
+	public EPADDataList getEpadHostNames() {
+		EPADDataList retVal = new EPADDataList();
 
 		Connection c = null;
 		PreparedStatement ps = null;
@@ -1674,7 +1676,10 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 			ps = c.prepareStatement(EpadDatabaseCommands.SELECT_DISTINCT_EPADS);
 			rs = ps.executeQuery();
 			while (rs.next()) {
-				retVal.add(rs.getString(1));
+				String hostname = rs.getString(1);
+				if (hostname.indexOf(":") != -1)
+					hostname = hostname.substring(0, hostname.indexOf(":")).trim();
+				retVal.addData(new EPADData(hostname, hostname, rs.getString(1), null));
 			}
 		} catch (SQLException sqle) {
 			String debugInfo = DatabaseUtils.getDebugData(rs);
