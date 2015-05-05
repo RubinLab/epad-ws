@@ -113,13 +113,14 @@ public class QueueAndWatcherManager
 			String seriesUID = dicomFileDescription.seriesUID;
 			String imageUID = dicomFileDescription.imageUID;
 			String dicomFilePath = getDICOMFilePath(dicomFileDescription);
+			String modality = dicomFileDescription.modality;
 			File inputDICOMFile = new File(dicomFilePath);
 
 			// If the file does not exist locally (because it is stored on another file system), download it.
 			if (!inputDICOMFile.exists()) {
 				inputDICOMFile = downloadRemoteDICOM(dicomFileDescription);
 			}
-
+			log.info("Dicom file, modality:" +  dicomFileDescription.modality);
 			if (PixelMedUtils.isDicomSegmentationObject(dicomFilePath)) {
 				if (sameSeries)
 				{
@@ -144,9 +145,9 @@ public class QueueAndWatcherManager
 				// Generate mask PNGs, also AIMFile if this is the first time (only one image)
 				generateMaskPNGsForDicomSegmentationObject(dicomFileDescription, inputDICOMFile, dicomFilesCopy.size() == 1);
 				if (sameSeries) break;
-			} else if (PixelMedUtils.isMultiframedDicom(dicomFilePath)) {
+			} else if (PixelMedUtils.isMultiframedDicom(dicomFilePath) && (modality == null || !modality.startsWith("RT"))) {
 				generatePNGsForMultiFrameDicom(dicomFileDescription, inputDICOMFile);
-			} else { // Assume it is non multi-frame DICOM
+			} else if (!modality.startsWith("RT")) { // Assume it is non multi-frame DICOM
 				generatePNGFileForSingleFrameDICOMImage(patientName, dicomFileDescription, inputDICOMFile);
 			}
 		}

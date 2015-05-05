@@ -162,14 +162,14 @@ public class EPADPostHandler
 					if (requestContentType == null || !requestContentType.startsWith("multipart/form-data"))
 						throw new Exception("Invalid Content Type, should be multipart/form-data");
 					if (numberOfFiles == 0)
-						throw new Exception("No files found in post");
+						log.warning("No files found in post");
 					if (numberOfFiles == 1) {
 						String description = httpRequest.getParameter("description");
 						if (description == null) description = (String) paramData.get("description");
 						String fileType = httpRequest.getParameter("fileType");
 						if (fileType == null) description = (String) paramData.get("fileType");
 						statusCode = epadOperations.createFile(username, projectReference, uploadedFile, description, fileType, sessionID);					
-					} else {
+					} else if (numberOfFiles > 1) {
 						List<String> descriptions = (List<String>) paramData.get("description_List");
 						List<String> fileTypes = (List<String>) paramData.get("fileType_List");
 						int i = 0;
@@ -194,14 +194,14 @@ public class EPADPostHandler
 					if (requestContentType == null || !requestContentType.startsWith("multipart/form-data"))
 						throw new Exception("Invalid Content Type, should be multipart/form-data");
 					if (numberOfFiles == 0)
-						throw new Exception("No files found in post");
+						log.warning("No files found in post");
 					if (numberOfFiles == 1) {
 						String description = httpRequest.getParameter("description");
 						if (description == null) description = (String) paramData.get("description");
 						String fileType = httpRequest.getParameter("fileType");
 						if (fileType == null) description = (String) paramData.get("fileType");
 						statusCode = epadOperations.createFile(username, subjectReference, uploadedFile, description, fileType, sessionID);					
-					} else {
+					} else if (numberOfFiles > 1) {
 						List<String> descriptions = (List<String>) paramData.get("description_List");
 						List<String> fileTypes = (List<String>) paramData.get("fileType_List");
 						int i = 0;
@@ -226,14 +226,14 @@ public class EPADPostHandler
 					if (requestContentType == null || !requestContentType.startsWith("multipart/form-data"))
 						throw new Exception("Invalid Content Type, should be multipart/form-data");
 					if (numberOfFiles == 0)
-						throw new Exception("No files found in post");
+						log.warning("No files found in post");
 					if (numberOfFiles == 1) {
 						String description = httpRequest.getParameter("description");
 						if (description == null) description = (String) paramData.get("description");
 						String fileType = httpRequest.getParameter("fileType");
 						if (fileType == null) description = (String) paramData.get("fileType");
 						statusCode = epadOperations.createFile(username, studyReference, uploadedFile, description, fileType, sessionID);					
-					} else {
+					} else if (numberOfFiles > 1) {
 						List<String> descriptions = (List<String>) paramData.get("description_List");
 						List<String> fileTypes = (List<String>) paramData.get("fileType_List");
 						int i = 0;
@@ -258,7 +258,7 @@ public class EPADPostHandler
 					if (requestContentType == null || !requestContentType.startsWith("multipart/form-data"))
 						throw new Exception("Invalid Content Type, should be multipart/form-data");
 					if (numberOfFiles == 0)
-						throw new Exception("No files found in post");
+						log.warning("No files found in post");
 					boolean convertToDicom = "true".equalsIgnoreCase(httpRequest.getParameter("convertToDICOM"));
 					if (!convertToDicom) convertToDicom = "true".equalsIgnoreCase((String) paramData.get("convertToDICOM"));
 					String modality = httpRequest.getParameter("modality");
@@ -272,7 +272,7 @@ public class EPADPostHandler
 						if (instanceNumber == null) instanceNumber = (String) paramData.get("instanceNumber");
 						if (instanceNumber == null) instanceNumber = "1";
 						statusCode = epadOperations.createFile(username, seriesReference, uploadedFile, description, fileType, sessionID, convertToDicom, modality, instanceNumber);					
-					} else {
+					} else if (numberOfFiles > 1) {
 						List<String> descriptions = (List<String>) paramData.get("description_List");
 						List<String> fileTypes = (List<String>) paramData.get("fileType_List");
 						List<String> instanceNumbers = (List<String>) paramData.get("instanceNumber_List");
