@@ -56,21 +56,25 @@ public class WadoHandler extends AbstractHandler
 		if ("GET".equalsIgnoreCase(method)) {
 			try {
 				String sessionID = SessionService.getJSessionIDFromRequest(httpRequest);
-				String username = httpRequest.getParameter("username");
-				responseStream = httpResponse.getOutputStream();
-
-				// if (XNATOperations.hasValidXNATSessionID(httpRequest)) {
-				if (dummy()) { // TODO Re-enable authentication
-					String queryString = httpRequest.getQueryString();
-					queryString = URLDecoder.decode(queryString, "UTF-8");
-					if (queryString != null) {
-						statusCode = performWADOQuery(queryString, responseStream, username, sessionID);
+				if (sessionID == null || sessionID.length() == 0) {
+					statusCode = HandlerUtil.invalidTokenJSONResponse(INVALID_SESSION_TOKEN_MESSAGE, httpResponse.getWriter(), log);
+				} else {	
+					String username = httpRequest.getParameter("username");
+					responseStream = httpResponse.getOutputStream();
+	
+					// if (XNATOperations.hasValidXNATSessionID(httpRequest)) {
+					if (dummy()) { // TODO Re-enable authentication
+						String queryString = httpRequest.getQueryString();
+						queryString = URLDecoder.decode(queryString, "UTF-8");
+						if (queryString != null) {
+							statusCode = performWADOQuery(queryString, responseStream, username, sessionID);
+						} else {
+							statusCode = HandlerUtil.badRequestResponse(MISSING_QUERY_MESSAGE, log);
+							log.warning("Missing Wado query");
+						}
 					} else {
-						statusCode = HandlerUtil.badRequestResponse(MISSING_QUERY_MESSAGE, log);
-						log.warning("Missing Wado query");
+						statusCode = HandlerUtil.invalidTokenResponse(INVALID_SESSION_TOKEN_MESSAGE, log);
 					}
-				} else {
-					statusCode = HandlerUtil.invalidTokenResponse(INVALID_SESSION_TOKEN_MESSAGE, log);
 				}
 			} catch (Throwable t) {
 				statusCode = HandlerUtil.internalErrorResponse(INTERNAL_EXCEPTION_MESSAGE, log);

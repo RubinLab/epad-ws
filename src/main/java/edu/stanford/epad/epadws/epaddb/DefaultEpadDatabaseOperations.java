@@ -1633,6 +1633,8 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 			c = getConnection();
 			ps = c.prepareStatement(EpadDatabaseCommands.SELECT_EPAD_IMAGE_UIDS_FOR_SERIES);
 			ps.setString(1, seriesUID);
+			if (log.isDebugEnabled())
+				log.debug(ps.toString());
 
 			rs = ps.executeQuery();
 			while (rs.next()) {
