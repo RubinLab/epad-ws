@@ -11,11 +11,13 @@ public class MultiFramePNGGeneratorTask implements GeneratorTask
 
 	private final String seriesUID;
 	private final File multiFrameDICOMFile;
-
-	public MultiFramePNGGeneratorTask(String seriesUID, File multiFrameDICOMFile)
+	private String tagFilePath;
+	
+	public MultiFramePNGGeneratorTask(String seriesUID, File multiFrameDICOMFile, String tagFilePath)
 	{
 		this.seriesUID = seriesUID;
 		this.multiFrameDICOMFile = multiFrameDICOMFile;
+		this.tagFilePath = tagFilePath;
 	}
 
 	@Override
@@ -40,7 +42,7 @@ public class MultiFramePNGGeneratorTask implements GeneratorTask
 	@Override
 	public String getTagFilePath()
 	{
-		return ""; // TODO
+		return tagFilePath;
 	}
 
 	@Override

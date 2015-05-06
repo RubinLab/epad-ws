@@ -1,5 +1,9 @@
 package edu.stanford.epad.epadws.handlers.dicom;
 
+import ij.ImagePlus;
+import ij.ImageStack;
+import ij.io.Opener;
+
 import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.Image;
@@ -278,9 +282,17 @@ public class DSOUtil
 	{
 		try {
 			EpadDatabaseOperations databaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
-			DicomSegmentationObject dso = new DicomSegmentationObject();
-			SourceImage sourceDSOImage = dso.convert(dsoFile.getAbsolutePath());
-			int numberOfFrames = sourceDSOImage.getNumberOfBufferedImages();
+//			DicomSegmentationObject dso = new DicomSegmentationObject();
+//			SourceImage sourceDSOImage = dso.convert(dsoFile.getAbsolutePath());
+			int numberOfFrames = 1;
+//			DicomSegmentationObject dso = new DicomSegmentationObject();
+//			SourceImage sourceDSOImage = new SourceImage(dsoFile.getAbsolutePath());
+//			numberOfFrames = sourceDSOImage.getNumberOfBufferedImages();
+			Opener opener = new Opener();
+			ImagePlus image = opener.openImage(dsoFile.getAbsolutePath());
+			numberOfFrames  = image.getNFrames();
+			int numberOfSlices  = image.getNSlices();
+			log.info("Multiframe dicom, frames:" + numberOfFrames + " slices:" + numberOfSlices + " stack size:" + image.getImageStackSize());
 			AttributeList dicomAttributes = PixelMedUtils.readAttributeListFromDicomFile(dsoFile.getAbsolutePath());
 			String studyUID = Attribute.getSingleStringValueOrEmptyString(dicomAttributes, TagFromName.StudyInstanceUID);
 			String seriesUID = Attribute.getSingleStringValueOrEmptyString(dicomAttributes, TagFromName.SeriesInstanceUID);
@@ -293,9 +305,11 @@ public class DSOUtil
 			log.info("Writing PNGs for DSO " + imageUID + " in series " + seriesUID);
 
 			pngFilesDirectory.mkdirs();
+			ImageStack stack = image.getImageStack();
 
-			for (int frameNumber = 0; frameNumber < numberOfFrames; frameNumber++) {
-				BufferedImage bufferedImage = sourceDSOImage.getBufferedImage(numberOfFrames - frameNumber - 1);
+			for (int frameNumber = 0; frameNumber < numberOfSlices; frameNumber++) {
+//				BufferedImage bufferedImage = sourceDSOImage.getBufferedImage(numberOfFrames - frameNumber - 1);
+				BufferedImage bufferedImage = stack.getProcessor(frameNumber+1).getBufferedImage();
 				String pngFilePath = pngDirectoryPath + frameNumber + ".png";
 				File pngFile = new File(pngFilePath);
 				try {

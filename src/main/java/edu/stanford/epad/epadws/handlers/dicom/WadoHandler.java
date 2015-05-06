@@ -101,7 +101,7 @@ public class WadoHandler extends AbstractHandler
 		if (queryString.toLowerCase().indexOf("dicom") != -1)
 		{
 			log.info("User:" + username  + " host:" + EPADSessionOperations.getSessionHost(sessionID) 
-					+ "Wado Request to download dicom:" + queryString);
+					+ " Wado Request to download dicom:" + queryString);
 		}
 		String wadoURL = buildWADOURL(wadoHost, wadoPort, wadoBase, queryString);
 		int statusCode;

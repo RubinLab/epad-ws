@@ -436,6 +436,8 @@ public class DefaultDcm4CheeDatabaseOperations implements Dcm4CheeDatabaseOperat
 		} finally {
 			close(c, ps, rs);
 		}
+		if (log.isDebugEnabled())
+			log.debug("Found " + dicomFileDescriptions.size() + " rows");
 		return dicomFileDescriptions;
 	}
 

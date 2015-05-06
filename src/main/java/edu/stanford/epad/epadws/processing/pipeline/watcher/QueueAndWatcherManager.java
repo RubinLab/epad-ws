@@ -121,6 +121,7 @@ public class QueueAndWatcherManager
 				inputDICOMFile = downloadRemoteDICOM(dicomFileDescription);
 			}
 			log.info("Dicom file, modality:" +  dicomFileDescription.modality);
+			if ("RTSTRUCT".equals(modality) || "RTPLAN".equals(modality) || "PR".equals(modality)) return; // images to generate
 			if (PixelMedUtils.isDicomSegmentationObject(dicomFilePath)) {
 				if (sameSeries)
 				{
@@ -145,9 +146,9 @@ public class QueueAndWatcherManager
 				// Generate mask PNGs, also AIMFile if this is the first time (only one image)
 				generateMaskPNGsForDicomSegmentationObject(dicomFileDescription, inputDICOMFile, dicomFilesCopy.size() == 1);
 				if (sameSeries) break;
-			} else if (PixelMedUtils.isMultiframedDicom(dicomFilePath) && (modality == null || !modality.startsWith("RT"))) {
+			} else if (PixelMedUtils.isMultiframedDicom(dicomFilePath)) {
 				generatePNGsForMultiFrameDicom(dicomFileDescription, inputDICOMFile);
-			} else if (!modality.startsWith("RT")) { // Assume it is non multi-frame DICOM
+			} else { // Assume it is non multi-frame DICOM
 				generatePNGFileForSingleFrameDICOMImage(patientName, dicomFileDescription, inputDICOMFile);
 			}
 		}
@@ -201,8 +202,9 @@ public class QueueAndWatcherManager
 	{
 		log.info("Multi-frame DICOM object found for series " + dicomFileDescription.seriesUID);
 
+		String tagFilePath = createOutputPNGFilePathForSingleFrameDICOMImage(dicomFileDescription).replace(".png", ".tag");
 		MultiFramePNGGeneratorTask dsoPNGGeneratorTask = new MultiFramePNGGeneratorTask(dicomFileDescription.seriesUID,
-				multiFrameDicomFile);
+				multiFrameDicomFile, tagFilePath);
 
 		pngGeneratorTaskQueue.offer(dsoPNGGeneratorTask);
 	}
