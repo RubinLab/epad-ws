@@ -1692,6 +1692,33 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 		return retVal;
 	}
 
+	@Override
+	public int getNumberOfSeries() {
+		int retVal = 0;
+		Connection c = null;
+		Statement s = null;
+		ResultSet rs = null;
+		try {
+			c = getConnection();
+			s = c.createStatement();
+			rs = s.executeQuery("Select count(*) from epaddb.series_status");
+			if (rs.next()) {
+				retVal = rs.getInt(1);
+			}
+			rs.close();
+			rs = s.executeQuery("Select count(*) from epaddb.nondicom_series");
+			if (rs.next()) {
+				retVal = retVal + rs.getInt(1);
+			}
+		} catch (SQLException sqle) {
+			String debugInfo = DatabaseUtils.getDebugData(rs);
+			log.warning("Database operation failed; debugInfo=" + debugInfo, sqle);
+		} finally {
+			close(c, s, rs);
+		}
+		return retVal;
+	}
+
 	/*
 	 * (non-Javadoc)
 	 * @see edu.stanford.epad.epadws.epaddb.EpadDatabaseOperations#insertDBObject(edu.stanford.epad.epadws.models.dao.AbstractDAO, java.lang.String, java.lang.String[][])

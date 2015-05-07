@@ -73,8 +73,8 @@ public class StatisticsHandler extends AbstractHandler
 						int aims = getInt(httpRequest.getParameter("numOfAims"));
 						int dsos = getInt(httpRequest.getParameter("numOfDSOs"));
 						int wls = getInt(httpRequest.getParameter("numOfWorkLists"));
-						String remoteHost = request.getRemoteHost();
-						es.setHost(host + " : " + remoteHost);
+						String remoteIP = request.getRemoteAddr();
+						es.setHost(host + " : " + remoteIP);
 						es.setNumOfUsers(users);
 						es.setNumOfProjects(projects);
 						es.setNumOfPatients(patients);

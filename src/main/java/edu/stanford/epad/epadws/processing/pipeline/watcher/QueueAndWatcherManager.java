@@ -121,7 +121,7 @@ public class QueueAndWatcherManager
 				inputDICOMFile = downloadRemoteDICOM(dicomFileDescription);
 			}
 			log.info("Dicom file, modality:" +  dicomFileDescription.modality);
-			if ("RTSTRUCT".equals(modality) || "RTPLAN".equals(modality) || "PR".equals(modality)) return; // images to generate
+			if ("RTSTRUCT".equals(modality) || "RTPLAN".equals(modality) || "PR".equals(modality) || "SR".equals(modality)) return; // images to generate
 			if (PixelMedUtils.isDicomSegmentationObject(dicomFilePath)) {
 				if (sameSeries)
 				{

@@ -905,7 +905,7 @@ public class DefaultEpadOperations implements EpadOperations
 			// Make a list of image UIDs that have no entry in ePAD files_table.
 			for (DICOMFileDescription dicomFileDescription : dicomFileDescriptions) {
 				String modality = dicomFileDescription.modality;
-				if ("RTSTRUCT".equals(modality) || "RTPLAN".equals(modality) || "PR".equals(modality)) continue; // no images to generate
+				if ("RTSTRUCT".equals(modality) || "RTPLAN".equals(modality) || "PR".equals(modality) || "SR".equals(modality)) continue; // no images to generate
 				if (!imageUIDs.contains(dicomFileDescription.imageUID))
 				{
 					log.info("ImageUID without png:" + dicomFileDescription.imageUID);

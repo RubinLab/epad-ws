@@ -74,7 +74,7 @@ public class EPADSessionHandler extends AbstractHandler
 		request.setHandled(true);
 
 		String method = httpRequest.getMethod();
-		log.info("Request from client " + method + " s:" + s);
+		log.info("Session request from client " + method + " s:" + s);
 		if ("POST".equalsIgnoreCase(method)) {
 			String username = SessionService.extractUserNameFromAuthorizationHeader(httpRequest);
 			String host = httpRequest.getParameter("hostname");

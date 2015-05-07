@@ -227,6 +227,8 @@ public interface EpadDatabaseOperations
 	
 
 	EPADDataList getEpadHostNames();
+
+	int getNumberOfSeries();
 	
 	/* 
 	 * New DB Operations methods for schema to replace XNAT
