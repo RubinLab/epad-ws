@@ -247,5 +247,6 @@ public interface EpadDatabaseOperations
 	 */
 	boolean runSQLScript(String script);
 
+	String getDBVersion();
 
 }

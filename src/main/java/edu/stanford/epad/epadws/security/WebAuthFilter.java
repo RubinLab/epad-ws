@@ -15,6 +15,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADLogger;
+import edu.stanford.epad.epadws.Main;
 import edu.stanford.epad.epadws.service.SessionService;
 
 public class WebAuthFilter implements Filter {
@@ -73,7 +74,7 @@ public class WebAuthFilter implements Filter {
 			if (!SessionService.hasValidSessionID(sessionID) && httpRequest.getRequestURL().toString().indexOf("login.jsp") == -1 
 					&& !httpRequest.getRequestURL().toString().contains("/session") 
 					&& !httpRequest.getRequestURL().toString().contains("/eventresource") 
-					&& !httpRequest.getRequestURL().toString().contains("/v2")) {
+					&& !httpRequest.getRequestURL().toString().contains("/v2") && !Main.embeddedJetty) {
             	log.info("Redirecting url:" + httpRequest.getRequestURL() + " to login.jsp");
 				httpResponse.sendRedirect("/epad/login.jsp");
             	return;

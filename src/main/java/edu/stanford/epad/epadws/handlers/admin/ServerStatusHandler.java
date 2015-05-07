@@ -39,11 +39,11 @@ public class ServerStatusHandler extends AbstractHandler
 	private static final String INVALID_SESSION_TOKEN_MESSAGE = "Session token is invalid on status route";
 	private static final String INTERNAL_EXCEPTION_MESSAGE = "Internal error getting server status";
 
-	private final long startTime;
+	private static Long startTime = null;
 
 	public ServerStatusHandler()
 	{
-		startTime = System.currentTimeMillis();
+		if (startTime == null) startTime = System.currentTimeMillis();
 	}
 
 	@Override
@@ -70,13 +70,13 @@ public class ServerStatusHandler extends AbstractHandler
 				responseStream.println();
 				responseStream.println("ePAD server uptime: " + upTimeSec + " second(s)");
 				responseStream.println();
-				responseStream.println("Version: " + new EPadWebServerVersion().getVersion() + " " + new EPadWebServerVersion().getBuildDate());
+				responseStream.println("Version: " + new EPadWebServerVersion().getVersion() + " Build Date: " + new EPadWebServerVersion().getBuildDate() + " Build Host: " + new EPadWebServerVersion().getBuildHost());
 				responseStream.println();
 				responseStream.println("Plugin Version - interface:      " + EPadPlugin.PLUGIN_INTERFACE_VERSION);
 				responseStream.println("Plugin Version - implementation: " + ePadPlugin.getPluginImplVersion());
 				EpadDatabase epadDatabase = EpadDatabase.getInstance();
 				responseStream.println();
-				responseStream.println("ePAD database startup time: " + epadDatabase.getStartupTime() + " ms");
+				responseStream.println("ePAD database startup time: " + epadDatabase.getStartupTime() + " ms, database version: " + epadDatabase.getEPADDatabaseOperations().getDBVersion());
 				Dcm4CheeDatabase dcm4CheeDatabase = Dcm4CheeDatabase.getInstance();
 				responseStream.println();
 				responseStream.println("DCM4CHEE database startup time: " + dcm4CheeDatabase.getStartupTime() + " ms");

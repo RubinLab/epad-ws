@@ -24,7 +24,6 @@ import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
 import org.eclipse.jetty.webapp.WebAppContext;
 import org.eclipse.jetty.xml.XmlConfiguration;
-import org.springframework.core.io.ClassPathResource;
 import org.springframework.web.context.ContextLoaderListener;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.context.support.AnnotationConfigWebApplicationContext;
@@ -50,6 +49,7 @@ import edu.stanford.epad.epadws.handlers.admin.StatisticsHandler;
 import edu.stanford.epad.epadws.handlers.admin.XNATSyncHandler;
 import edu.stanford.epad.epadws.handlers.aim.AimResourceHandler;
 import edu.stanford.epad.epadws.handlers.coordination.CoordinationHandler;
+import edu.stanford.epad.epadws.handlers.core.EPADHandler;
 import edu.stanford.epad.epadws.handlers.dicom.WadoHandler;
 import edu.stanford.epad.epadws.handlers.event.EventHandler;
 import edu.stanford.epad.epadws.handlers.event.ProjectEventHandler;
@@ -74,9 +74,7 @@ import edu.stanford.epad.epadws.service.RemotePACService;
 public class Main
 {
 	private static final EPADLogger log = EPADLogger.getInstance();
-
-	public static final String epad_version = "1.4.1";
-	public static final String db_version = "1.41"; // This should always be a valid decimal (only one dot)
+	public static boolean embeddedJetty;
 	
 	public static void main(String[] args)
 	{
@@ -88,6 +86,7 @@ public class Main
 			log.info("############# Starting ePAD Web Service #############");
 			log.info("#####################################################");
 
+			embeddedJetty = true;
 			int epadPort = EPADConfig.epadPort;
 			initializePlugins();
 			startSupportThreads();
@@ -161,6 +160,14 @@ public class Main
 
 		try {
 			QueueAndWatcherManager.getInstance().buildAndStart();
+			String version = new EPadWebServerVersion().getVersion();
+			String db_version = version;
+			if (db_version.indexOf(".") != db_version.lastIndexOf("."))
+			{
+				// remove second period;
+				db_version = db_version.substring(0, db_version.lastIndexOf(".")) + db_version.substring(db_version.lastIndexOf(".")+1);
+			}
+			log.info("EpadWS version:" + version + " Database version:" + db_version);
 			EpadDatabase.getInstance().startup(db_version);
 			log.info("Startup of database was successful");
 			EpadDatabaseOperations databaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
@@ -193,14 +200,15 @@ public class Main
 
 		addHandlerAtContextPath(new EPADSessionHandler(), "/epad/session", handlerList);
 
-		//addHandlerAtContextPath(new EPADHandler(), "/epad/v2", handlerList);
-		try {
-			handlerList.add(getServletContextHandler(getContext()));
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			log.warning("Error setting up Spring Handle", e);
-			e.printStackTrace();
-		}
+		addHandlerAtContextPath(new EPADHandler(), "/epad/v2", handlerList);
+
+//		try {
+//			handlerList.add(getServletContextHandler(getContext()));
+//		} catch (IOException e) {
+//			// TODO Auto-generated catch block
+//			log.warning("Error setting up Spring Handle", e);
+//			e.printStackTrace();
+//		}
 
 		addWebAppAtContextPath(handlerList, "ePad.war", "/epad");
 

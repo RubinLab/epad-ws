@@ -13,6 +13,7 @@ import org.springframework.web.context.ContextLoaderListener;
 import org.springframework.web.context.support.WebApplicationContextUtils;
 
 import edu.stanford.epad.epadws.Main;
+import edu.stanford.epad.epadws.handlers.admin.ServerStatusHandler;
 
 /**
  * <p>StartupListener class used to initialize stuff at Startup (including Spring Context).
@@ -27,6 +28,8 @@ public class StartupListener extends ContextLoaderListener
     private static String webAppPath;
     
     public void contextInitialized(ServletContextEvent event) {
+    	if (Main.embeddedJetty)
+    		return;
 		log.info("#####################################################");
 		log.info("############# Starting ePAD Web Service #############");
 		log.info("#####################################################");
@@ -48,6 +51,7 @@ public class StartupListener extends ContextLoaderListener
 		Main.initializePlugins();
 		Main.loadPluginClasses();
 		Main.startSupportThreads();
+		new ServerStatusHandler();
     }
 
 	public static ApplicationContext getAppContext() {

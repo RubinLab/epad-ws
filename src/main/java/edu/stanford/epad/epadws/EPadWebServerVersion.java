@@ -16,6 +16,7 @@ public class EPadWebServerVersion
 {
 	static String version = null;
 	static String buildDate = null;
+	static String buildHost = null;
 	public EPadWebServerVersion()
 	{
 		if (version == null)
@@ -27,8 +28,13 @@ public class EPadWebServerVersion
 				is = this.getClass().getClassLoader().getResourceAsStream("version.txt");
 				Properties properties = new Properties();
 				properties.load(is);
-				version = properties.getProperty("version");
+				version = properties.getProperty("build.version");
 				buildDate = properties.getProperty("build.date");
+				buildHost = properties.getProperty("build.host");
+				if (buildHost.startsWith("$") && buildHost.contains("}"))
+					buildHost = buildHost.substring(buildHost.indexOf("}")+1);
+				if (buildHost.contains("${"))
+					buildHost = buildHost.substring(0, buildHost.indexOf("${"));
 			} catch (Exception x){
 				
 			} finally {
@@ -41,5 +47,8 @@ public class EPadWebServerVersion
 	}
 	public String getBuildDate() {
 		return buildDate;
+	}
+	public String getBuildHost() {
+		return buildHost;
 	}
 }

@@ -23,7 +23,7 @@ $( document ).ready(function() {
 	var listdata;
 	var url = "/epad/v2/users/<%=username%>";
 	$.ajax({         
-		url: url + "?username=<%=username%>",         
+		url: url + "?username=<%=loggedInUser%>",         
 		type: 'get',         
 		async: false,         
 		cache: false,         

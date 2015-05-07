@@ -2377,6 +2377,28 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 		}
 	}
 
+	@Override
+	public String getDBVersion() {
+		Connection c = null;
+		ResultSet rs = null;
+		PreparedStatement ps = null;
+		try {
+			c = getConnection();
+			ps = c.prepareStatement("SELECT version FROM epaddb.dbversion");
+			rs = ps.executeQuery();
+			if (rs.next()) {
+				return rs.getString("version");
+			}
+		} catch (SQLException sqle) {
+			String debugInfo = DatabaseUtils.getDebugData(rs);
+			log.warning("Database operation failed; debugInfo=" + debugInfo, sqle);
+			return null;
+		} finally {
+			close(c, ps, rs);
+		}
+		return null;
+	}
+
 	private void recordNewSeries(SeriesProcessingStatus seriesProcessingStatus, String seriesUID)
 	{
 		Connection c = null;
