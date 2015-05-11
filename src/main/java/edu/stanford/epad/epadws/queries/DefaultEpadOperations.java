@@ -383,7 +383,7 @@ public class DefaultEpadOperations implements EpadOperations
 					studyReference.subjectID, studyReference.studyUID);
 		}
 			
-		if (found) {
+		if (!found) {
 			log.warning("Count not find XNAT study " + studyReference.studyUID + " for subject " + studyReference.subjectID
 					+ " in project " + studyReference.projectID);
 			return null;
