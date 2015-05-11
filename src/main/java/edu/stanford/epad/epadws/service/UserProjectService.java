@@ -449,7 +449,7 @@ public class UserProjectService {
 	{
 		return file.isFile()
 				&& (file.getName().toLowerCase().endsWith(".dcm") || file.getName().toLowerCase().endsWith(".dso") || file.getName().toLowerCase().endsWith(".pres"))
-				&& file.getName().indexOf('.') == file.getName().lastIndexOf('.');
+				&& !file.getName().startsWith(".");
 		// return file.isFile() && DicomFileUtil.hasMagicWordInHeader(file);
 	}
 	
