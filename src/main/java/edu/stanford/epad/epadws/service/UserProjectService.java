@@ -272,7 +272,36 @@ public class UserProjectService {
 				}
 				return xnatUserName;
 			} catch (Exception e) {
-				log.warning("Error processing upload in directory " + propertiesFilePath, e);
+				log.warning("Error processing upload in directory " + dicomUploadDirectory.getAbsolutePath(), e);
+			} finally {
+				IOUtils.closeQuietly(propertiesFileStream);
+			}
+		}
+		return null;
+	}
+	
+	public static String getUserNameFromPropertiesFile(File dicomUploadDirectory) {
+		String propertiesFilePath = dicomUploadDirectory.getAbsolutePath() + File.separator
+				+ XNAT_UPLOAD_PROPERTIES_FILE_NAME;
+		File xnatUploadPropertiesFile = new File(propertiesFilePath);
+		try {
+			Thread.sleep(2000); // Give it a couple of seconds for the property file to appear
+		} catch (InterruptedException e1) {}
+		if (!xnatUploadPropertiesFile.exists()) {
+			log.warning("Could not find XNAT upload properties file " + propertiesFilePath);
+		}
+		else {
+			Properties xnatUploadProperties = new Properties();
+			FileInputStream propertiesFileStream = null;
+			try {
+				propertiesFileStream = new FileInputStream(xnatUploadPropertiesFile);
+				xnatUploadProperties.load(propertiesFileStream);
+				String xnatProjectLabel = xnatUploadProperties.getProperty("XNATProjectName");
+				String xnatSessionID = xnatUploadProperties.getProperty("XNATSessionID");
+				String xnatUserName = xnatUploadProperties.getProperty("XNATUserName");
+				return xnatUserName;
+			} catch (Exception e) {
+				log.warning("Error processing upload in directory " + dicomUploadDirectory.getAbsolutePath(), e);
 			} finally {
 				IOUtils.closeQuietly(propertiesFileStream);
 			}
@@ -293,8 +322,12 @@ public class UserProjectService {
 	{
 		int numberOfDICOMFiles = 0;
 		for (File dicomFile : listDICOMFiles(dicomUploadDirectory)) {
-			if (createProjectEntitiesFromDICOMFile(dicomFile, projectID, sessionID, username))
-				numberOfDICOMFiles++;
+			try {
+				if (createProjectEntitiesFromDICOMFile(dicomFile, projectID, sessionID, username))
+					numberOfDICOMFiles++;
+			} catch (Exception x) {
+				log.warning("Error processing dicom:" + dicomFile.getName(), x);
+			}
 		}
 		return numberOfDICOMFiles;
 	}
@@ -415,7 +448,8 @@ public class UserProjectService {
 	public static boolean isDicomFile(File file)
 	{
 		return file.isFile()
-				&& (file.getName().toLowerCase().endsWith(".dcm") || file.getName().toLowerCase().endsWith(".dso"));
+				&& (file.getName().toLowerCase().endsWith(".dcm") || file.getName().toLowerCase().endsWith(".dso") || file.getName().toLowerCase().endsWith(".pres"))
+				&& file.getName().indexOf('.') == file.getName().lastIndexOf('.');
 		// return file.isFile() && DicomFileUtil.hasMagicWordInHeader(file);
 	}
 	

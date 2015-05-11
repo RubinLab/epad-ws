@@ -44,7 +44,7 @@ public class EpadStatisticsTask implements Runnable
 			int projects = new Project().getCount("");
 			int patients = new Subject().getCount("");
 			int studies = new Study().getCount("");
-			int series = new User().getCount("");
+			int series = epadDatabaseOperations.getNumberOfSeries();
 			int npacs = RemotePACService.getInstance().getRemotePACs().size();
 			int aims = epadDatabaseOperations.getNumberOfAIMs("1 = 1");
 			int dsos = epadDatabaseOperations.getNumberOfAIMs("DSOSeriesUID is not null or DSOSeriesUID != ''");
