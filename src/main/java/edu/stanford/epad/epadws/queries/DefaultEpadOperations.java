@@ -405,7 +405,7 @@ public class DefaultEpadOperations implements EpadOperations
 		DCM4CHEESeries dcm4cheeSeries = Dcm4CheeQueries.getSeries(seriesReference.seriesUID);
 
 		if (dcm4cheeSeries != null)
-			return dcm4cheeSeries2EpadSeries(sessionID, seriesReference.projectID, seriesReference.subjectID, dcm4cheeSeries, username);
+			return dcm4cheeSeries2EpadSeries(sessionID, seriesReference.projectID, dcm4cheeSeries.patientID, dcm4cheeSeries, username);
 		else {
 			log.warning("Could not find series description for series " + seriesReference.seriesUID);
 			return null;
@@ -3095,9 +3095,18 @@ public class DefaultEpadOperations implements EpadOperations
 						}
 					}
 				}
-				EPADUser epadUser = new EPADUser(user.getFullName(), user.getUsername(), 
-						user.getFirstName(), user.getLastName(), user.getEmail(), user.isEnabled(), user.isAdmin(), user.isPasswordExpired(), "", permissions, projects, projectToRole, null);
-				userlist.addEPADUser(epadUser);
+				if (projectOperations.isAdmin(username) || username.equals(user.getCreator()))
+				{
+					EPADUser epadUser = new EPADUser(user.getFullName(), user.getUsername(), 
+							user.getFirstName(), user.getLastName(), user.getEmail(), user.isEnabled(), user.isAdmin(), user.isPasswordExpired(), "", permissions, projects, projectToRole, null);
+					userlist.addEPADUser(epadUser);
+				}
+				else
+				{
+					EPADUser epadUser = new EPADUser(user.getFullName(), user.getUsername(), 
+							user.getFirstName(), user.getLastName(), "******", user.isEnabled(), user.isAdmin(), user.isPasswordExpired(), "", permissions, projects, projectToRole, null);
+					userlist.addEPADUser(epadUser);
+				}
 			}
 		}
 		return userlist;

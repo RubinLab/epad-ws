@@ -128,9 +128,9 @@ public class EPADGetHandler
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.SUBJECT, pathInfo)) {
 				SubjectReference subjectReference = SubjectReference.extract(ProjectsRouteTemplates.SUBJECT, pathInfo);
 				if (returnFile(httpRequest)) {
-					DownloadUtil.downloadSubject(false, httpResponse, subjectReference, username, sessionID, searchFilter, studyUIDs, seriesUIDs);
+					DownloadUtil.downloadSubject(false, httpResponse, subjectReference, username, sessionID, searchFilter, studyUIDs);
 				} else if (returnStream(httpRequest)) {
-					DownloadUtil.downloadSubject(true, httpResponse, subjectReference, username, sessionID, searchFilter, studyUIDs, seriesUIDs);
+					DownloadUtil.downloadSubject(true, httpResponse, subjectReference, username, sessionID, searchFilter, studyUIDs);
 				} else {
 					EPADSubject subject = epadOperations.getSubjectDescription(subjectReference, username, sessionID);
 					if (subject != null) {
@@ -282,9 +282,9 @@ public class EPADGetHandler
 			} else if (HandlerUtil.matchesTemplate(SubjectsRouteTemplates.SUBJECT, pathInfo)) {
 				SubjectReference subjectReference = SubjectReference.extract(SubjectsRouteTemplates.SUBJECT, pathInfo);
 				if (returnFile(httpRequest)) {
-					DownloadUtil.downloadSubject(false, httpResponse, subjectReference, username, sessionID, searchFilter, studyUIDs, seriesUIDs);
+					DownloadUtil.downloadSubject(false, httpResponse, subjectReference, username, sessionID, searchFilter, studyUIDs);
 				} else if (returnStream(httpRequest)) {
-					DownloadUtil.downloadSubject(true, httpResponse, subjectReference, username, sessionID, searchFilter, studyUIDs, seriesUIDs);
+					DownloadUtil.downloadSubject(true, httpResponse, subjectReference, username, sessionID, searchFilter, studyUIDs);
 				} else {
 					EPADSubject subject = epadOperations.getSubjectDescription(subjectReference, username, sessionID);
 					if (subject != null) {

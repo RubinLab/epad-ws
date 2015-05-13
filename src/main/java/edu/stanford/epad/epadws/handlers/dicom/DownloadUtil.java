@@ -63,24 +63,17 @@ public class DownloadUtil {
 	 * @param sessionID
 	 * @param searchFilter
 	 * @param studyUIDs - download only these selected studies
-	 * @param seriesUIDs - download only these selected series
 	 * @throws Exception
 	 */
 	public static void downloadSubject(boolean stream, HttpServletResponse httpResponse, SubjectReference subjectReference, String username, String sessionID, 
-									EPADSearchFilter searchFilter, String studyUIDs, String seriesUIDs) throws Exception
+									EPADSearchFilter searchFilter, String studyUIDs) throws Exception
 	{
 		log.info("Downloading subject:" + subjectReference.subjectID + " stream:" + stream);
 		Set<String> studies = new HashSet<String>();
-		Set<String> seriesSet = new HashSet<String>();
 		if (studyUIDs != null) {
 			String[] ids = studyUIDs.split(",");
 			for (String id: ids)
 				studies.add(id.trim());
-		}
-		if (seriesUIDs != null) {
-			String[] ids = seriesUIDs.split(",");
-			for (String id: ids)
-				seriesSet.add(id.trim());
 		}
 		String downloadDirPath = EPADConfig.getEPADWebServerResourcesDir() + "download/" + "temp" + Long.toString(System.currentTimeMillis());
 		File downloadDir = new File(downloadDirPath);
@@ -97,7 +90,6 @@ public class DownloadUtil {
 			EPADSeriesList seriesList = epadOperations.getSeriesDescriptions(studyReference, username, sessionID, searchFilter, false);
 			for (EPADSeries series: seriesList.ResultSet.Result)
 			{
-				if (!seriesSet.isEmpty() && !seriesSet.contains(series.seriesUID)) continue;
 				File seriesDir = new File(studyDir, "Series-" + series.seriesUID);
 				seriesDir.mkdirs();
 				SeriesReference seriesReference = new SeriesReference(studyReference.projectID, studyReference.subjectID, studyReference.studyUID, series.seriesUID);
@@ -126,7 +118,7 @@ public class DownloadUtil {
 				}
 			}
 		}
-		String zipName = "Subject-" + subjectReference.subjectID + ".zip";
+		String zipName = "Patient-" + subjectReference.subjectID + ".zip";
 		if (stream)
 		{
 			httpResponse.setContentType("application/zip");
@@ -157,7 +149,7 @@ public class DownloadUtil {
 		{
 			File newZip = new File(EPADConfig.getEPADWebServerResourcesDir() + "download/", zipName);
 			zipFile.renameTo(newZip);
-			EPADFile epadFile = new EPADFile("", "", "", "", "", zipName, zipFile.length(), "Subject", 
+			EPADFile epadFile = new EPADFile("", "", "", "", "", zipName, zipFile.length(), "Patient", 
 					formatDate(new Date()), "download/" + zipFile.getName(), true, subjectReference.subjectID);
 			PrintWriter responseStream = httpResponse.getWriter();
 			responseStream.append(epadFile.toJSON());
@@ -167,13 +159,15 @@ public class DownloadUtil {
 	}
 
 	/**
-	 * @param stream
+	 * Method to download Study dicoms
+	 * 
+	 * @param stream - true if file should stream, otherwise placed on disk to be picked (should be deleted after use)
 	 * @param httpResponse
 	 * @param studyReference
 	 * @param username
 	 * @param sessionID
 	 * @param searchFilter
-	 * @param seriesUIDs
+	 * @param seriesUIDs - download only these selected series
 	 * @throws Exception
 	 */
 	public static void downloadStudy(boolean stream, HttpServletResponse httpResponse, StudyReference studyReference, String username, String sessionID, EPADSearchFilter searchFilter, String seriesUIDs) throws Exception
@@ -222,7 +216,7 @@ public class DownloadUtil {
 				}
 			}
 		}
-		String zipName = "Subject-" + studyReference.subjectID + "-Study-" + studyReference.studyUID + ".zip";
+		String zipName = "Patient-" + studyReference.subjectID + "-Study-" + studyReference.studyUID + ".zip";
 		if (stream)
 		{
 			httpResponse.setContentType("application/zip");
@@ -263,7 +257,103 @@ public class DownloadUtil {
 	}
 
 	/**
-	 * @param stream
+	 * Method to download dicoms from a list of series
+	 * 
+	 * @param stream - true if file should stream, otherwise placed on disk to be picked (should be deleted after use)
+	 * @param httpResponse
+	 * @param studyReference
+	 * @param username
+	 * @param sessionID
+	 * @param searchFilter
+	 * @param seriesUIDs
+	 * @throws Exception
+	 */
+	public static void downloadSeries(boolean stream, HttpServletResponse httpResponse, String seriesUIDs, String username, String sessionID) throws Exception
+	{
+		log.info("Downloading seriesUIDs:" + seriesUIDs + " stream:" + stream);
+		String downloadDirPath = EPADConfig.getEPADWebServerResourcesDir() + "download/" + "temp" + Long.toString(System.currentTimeMillis());
+		File downloadDir = new File(downloadDirPath);
+		downloadDir.mkdirs();
+		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
+		List<String> fileNames = new ArrayList<String>();
+		String[] seriesIDs = seriesUIDs.split(",");
+		for (String seriesUID: seriesIDs)
+		{
+			if (seriesUID.trim().length() == 0) continue;
+			File seriesDir = new File(downloadDir, "Series-"+ seriesUID);
+			seriesDir.mkdirs();
+			SeriesReference seriesReference = new SeriesReference(null, null, null, seriesUID);
+			EPADSeries series = epadOperations.getSeriesDescription(seriesReference, username, sessionID);
+			seriesReference = new SeriesReference(null, seriesReference.subjectID, seriesReference.studyUID, seriesUID);
+			EPADImageList imageList = epadOperations.getImageDescriptions(seriesReference, sessionID, null);
+			int i = 0;
+			for (EPADImage image: imageList.ResultSet.Result)
+			{
+				String name = image.imageUID + ".dcm";
+				File imageFile = new File(seriesDir, name);
+				fileNames.add("Series-" + series.seriesUID + "/" + name);
+				FileOutputStream fos = null;
+				try 
+				{
+					fos = new FileOutputStream(imageFile);
+					String queryString = "requestType=WADO&studyUID=" + seriesReference.studyUID 
+							+ "&seriesUID=" + seriesReference.seriesUID + "&objectUID=" + image.imageUID + "&contentType=application/dicom";
+					performWADOQuery(queryString, fos, username, sessionID);
+				}
+				catch (Exception x)
+				{
+					log.warning("Error downloading image using wado");
+				}
+				finally 
+				{
+					if (fos != null) fos.close();
+				}
+			}
+		}
+		String zipName = "SeriesDicoms.zip";
+		if (stream)
+		{
+			httpResponse.setContentType("application/zip");
+			httpResponse.setHeader("Content-Disposition", "attachment;filename=\"" + zipName + "\"");
+		}
+		
+		File zipFile = null;
+		OutputStream out = null;
+		try
+		{
+			if (stream)
+			{
+				out = httpResponse.getOutputStream();
+			}
+			else
+			{
+				zipFile = new File(downloadDir, zipName);
+				out = new FileOutputStream(zipFile);
+			}
+		}
+		catch (Exception e)
+		{
+			log.warning("Error getting output stream", e);
+			throw e;
+		}
+		ZipAndStreamFiles(out, fileNames, downloadDirPath + "/");
+		if (!stream)
+		{
+			File newZip = new File(EPADConfig.getEPADWebServerResourcesDir() + "download/", zipName);
+			zipFile.renameTo(newZip);
+			EPADFile epadFile = new EPADFile("", "", "", "", "", zipName, zipFile.length(), "Study", 
+					formatDate(new Date()), "download/" + zipFile.getName(), true, seriesUIDs);
+			PrintWriter responseStream = httpResponse.getWriter();
+			responseStream.append(epadFile.toJSON());
+		}
+		EPADFileUtils.deleteDirectoryAndContents(downloadDir);
+		
+	}
+
+	/**
+	 * Method to download Series dicoms
+	 * 
+	 * @param stream - true if file should stream, otherwise placed on disk to be picked (should be deleted after use)
 	 * @param httpResponse
 	 * @param seriesReference
 	 * @param username
@@ -301,7 +391,7 @@ public class DownloadUtil {
 				if (fos != null) fos.close();
 			}
 		}
-		String zipName = "Subject-" + seriesReference.subjectID + "-Study-" + seriesReference.studyUID + "-Serie-" + seriesReference.seriesUID + ".zip";
+		String zipName = "Patient-" + seriesReference.subjectID + "-Study-" + seriesReference.studyUID + "-Serie-" + seriesReference.seriesUID + ".zip";
 		if (stream)
 		{
 			httpResponse.setContentType("application/zip");
@@ -341,7 +431,9 @@ public class DownloadUtil {
 	}
 	
 	/**
-	 * @param stream
+	 * Method to download a dicom
+	 * 
+	 * @param stream - true if file should stream, otherwise placed on disk to be picked (should be deleted after use)
 	 * @param httpResponse
 	 * @param imageReference
 	 * @param username
