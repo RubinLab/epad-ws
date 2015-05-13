@@ -838,6 +838,7 @@ public class AIMUtil
 			EPADAIM ea = aimMAP.get(aim.getUniqueIdentifier());
 			ea.name = aim.getName();
 			ea.template = aim.getCodeMeaning();
+			ea.templateType = aim.getCodeValue();
 			ea.date = aim.getDateTime();
 			ea.comment = a.getComment();
 			if (a.getFirstStudyDate() != null)
@@ -1005,6 +1006,7 @@ public class AIMUtil
 					Aim4 a = new Aim4(aim);
 					ea.name = aim.getImageAnnotations().get(0).getName().getValue();
 					ea.template = aim.getImageAnnotations().get(0).getListTypeCode().get(0).getCodeSystem();// .getCode();
+					ea.templateType = aim.getImageAnnotations().get(0).getListTypeCode().get(0).getCode();
 					ea.date = aim.getDateTime();
 					ea.comment = a.getComment();
 					if (a.getFirstStudyDate() != null)
@@ -1058,7 +1060,10 @@ public class AIMUtil
 					ea.name = aim.getImageAnnotations().get(0).getName().getValue();
 				}
 				if (aim.getImageAnnotations().get(0).getListTypeCode() != null && aim.getImageAnnotations().get(0).getListTypeCode().size() > 0)
+				{
 					ea.template = aim.getImageAnnotations().get(0).getListTypeCode().get(0).getCode();
+					ea.templateType = aim.getImageAnnotations().get(0).getListTypeCode().get(0).getCodeSystem();
+				}
 				ea.date = aim.getDateTime();
 				ea.comment = a.getComment();
 				if (a.getFirstStudyDate() != null)
@@ -1104,6 +1109,7 @@ public class AIMUtil
 						Aim4 a = new Aim4(iac);
 						ea.name = iac.getImageAnnotations().get(0).getName().getValue();
 						ea.template = iac.getImageAnnotations().get(0).getListTypeCode().get(0).getCodeSystem();// .getCode();
+						ea.templateType = iac.getImageAnnotations().get(0).getListTypeCode().get(0).getCode();
 						ea.date = iac.getDateTime();
 						ea.comment = a.getComment();
 						if (a.getFirstStudyDate() != null)

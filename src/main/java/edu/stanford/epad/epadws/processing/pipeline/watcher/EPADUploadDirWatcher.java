@@ -99,10 +99,11 @@ public class EPADUploadDirWatcher implements Runnable
 
 	private void processUploadDirectory(File directory) throws InterruptedException
 	{
+		File zipFile = null;
 		try {
 			boolean hasZipFile = waitOnEmptyUploadDirectory(directory);
 			if (hasZipFile) {
-				File zipFile = waitForZipUploadToComplete(directory);
+				zipFile = waitForZipUploadToComplete(directory);
 				unzipFiles(zipFile);
 			}
 			// TODO Should not create XNAT entities until the DICOM send succeeds.
@@ -110,14 +111,19 @@ public class EPADUploadDirWatcher implements Runnable
 			cleanUploadDirectory(directory);
 			if (username != null)
 				sendFilesToDcm4Chee(username, directory);
-		} catch (IOException ioe) {
-			log.warning("IOException uploading " + directory.getAbsolutePath(), ioe);
-			writeExceptionLog(directory, ioe);
-		} catch (IllegalStateException e) {
-			log.warning("IllegalStateException uploading " + directory.getAbsolutePath(), e);
-			writeExceptionLog(directory, e);
 		} catch (Exception e) {
 			log.warning("Exception uploading " + directory.getAbsolutePath(), e);
+			String userName = UserProjectService.getUserNameFromPropertiesFile(directory);
+			if (userName != null) {
+				String zipName = "";
+				if (zipFile != null) zipName = zipFile.getName();
+				EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
+				epadDatabaseOperations.insertEpadEvent(
+						userName, 
+						"Error processing zip file:" + zipName, 
+						"", "", "", "", "", "", "Process Upload");					
+				projectOperations.userErrorLog(userName, "Error processing zip file:" + zipName);
+			}
 			writeExceptionLog(directory, e);
 		} finally {
 			log.info("Upload of directory " + directory.getAbsolutePath() + " finished");
@@ -209,7 +215,7 @@ public class EPADUploadDirWatcher implements Runnable
 			if ((System.currentTimeMillis() - zipFileStartWaitTime) > MAX_WAIT_TIME) {
 				throw new IllegalStateException("ZIP file upload time exceeded");
 			}
-			Thread.sleep(1000);
+			Thread.sleep(2000);
 		}
 	}
 

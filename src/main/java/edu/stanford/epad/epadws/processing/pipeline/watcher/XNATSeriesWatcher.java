@@ -118,7 +118,7 @@ public class XNATSeriesWatcher implements Runnable
 			throw new IllegalArgumentException("Missing series UID in series description");
 		if (seriesProcessingDescription.getSubjectID().length() == 0)
 			throw new IllegalArgumentException("Missing patient ID in series description");
-		if (seriesProcessingDescription.getPatientName().length() == 0)
-			throw new IllegalArgumentException("Missing patient name in series description");
+		//if (seriesProcessingDescription.getPatientName().length() == 0)
+		//	throw new IllegalArgumentException("Missing patient name in series description");
 	}
 }

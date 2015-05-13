@@ -157,7 +157,7 @@ public class DICOMSeriesWatcher implements Runnable
 										username, 
 										"Image Generation Complete", 
 										"", "", "", "", "", "", 
-										"New Series");					
+										"Series:" + seriesUID);					
 								UserProjectService.pendingUploads.remove(seriesUID);
 							}
 						}

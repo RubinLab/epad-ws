@@ -7,6 +7,7 @@ import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -15,7 +16,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -250,7 +250,7 @@ public class HandlerUtil
 		return uriTemplate.match(path, map);
 	}
 
-	public static int streamGetResponse(String url, ServletOutputStream outputStream, EPADLogger log) throws IOException,
+	public static int streamGetResponse(String url, OutputStream outputStream, EPADLogger log) throws IOException,
 			HttpException
 	{
 		HttpClient client = new HttpClient();

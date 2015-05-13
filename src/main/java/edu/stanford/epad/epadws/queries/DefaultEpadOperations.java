@@ -383,7 +383,7 @@ public class DefaultEpadOperations implements EpadOperations
 					studyReference.subjectID, studyReference.studyUID);
 		}
 			
-		if (found) {
+		if (!found) {
 			log.warning("Count not find XNAT study " + studyReference.studyUID + " for subject " + studyReference.subjectID
 					+ " in project " + studyReference.projectID);
 			return null;
@@ -500,6 +500,20 @@ public class DefaultEpadOperations implements EpadOperations
 	{
 		List<DCM4CHEEImageDescription> imageDescriptions = dcm4CheeDatabaseOperations.getImageDescriptions(
 				seriesReference.studyUID, seriesReference.seriesUID);
+		int numImages = imageDescriptions.size();
+		DICOMElementList suppliedDICOMElementsFirst = getDICOMElements(imageDescriptions.get(0).studyUID,
+				imageDescriptions.get(0).seriesUID, imageDescriptions.get(0).imageUID);
+		String pixelSpacing1 = getDICOMElement(suppliedDICOMElementsFirst, PixelMedUtils.PixelSpacingCode);
+		DICOMElementList suppliedDICOMElementsLast = getDICOMElements(imageDescriptions.get(numImages-1).studyUID,
+				imageDescriptions.get(numImages-1).seriesUID, imageDescriptions.get(numImages-1).imageUID);
+		String pixelSpacing2 = getDICOMElement(suppliedDICOMElementsLast, PixelMedUtils.PixelSpacingCode);
+		boolean getMetaDataForAllImages = false;
+		log.debug("pixelSpacing1:" + pixelSpacing1 + " pixelSpacing2:" + pixelSpacing2);
+		if (!pixelSpacing1.equals(pixelSpacing2))
+		{
+			log.info("Series: " +  seriesReference.seriesUID + " returning metadata for all images");
+			getMetaDataForAllImages = true;
+		}
 		EPADImageList epadImageList = new EPADImageList();
 		int i = 0;
 		boolean isFirst = true;
@@ -507,19 +521,26 @@ public class DefaultEpadOperations implements EpadOperations
 			i++;
 			EPADImage epadImage = null;
 			if (isFirst) {
-				DICOMElementList suppliedDICOMElements = getDICOMElements(dcm4cheeImageDescription.studyUID,
-						dcm4cheeImageDescription.seriesUID, dcm4cheeImageDescription.imageUID);
+				DICOMElementList suppliedDICOMElements = suppliedDICOMElementsFirst;				
 				DICOMElementList defaultDICOMElements = getDefaultDICOMElements(dcm4cheeImageDescription.studyUID,
 						dcm4cheeImageDescription.seriesUID, dcm4cheeImageDescription.imageUID, suppliedDICOMElements);
 				
-				epadImage = createEPADImage(seriesReference, dcm4cheeImageDescription, suppliedDICOMElements,
-						defaultDICOMElements);
+				epadImage = createEPADImage(seriesReference, dcm4cheeImageDescription, suppliedDICOMElements, defaultDICOMElements);
 				log.info("Returning DICOM metadata, supplied Elements:" + suppliedDICOMElements.getNumberOfElements() + " default Elements:" + defaultDICOMElements.getNumberOfElements());
 				epadImageList.addImage(epadImage);
 				isFirst = false;
-			} else { // We do not add DICOM headers to remaining image descriptions because it would be too expensive
-				epadImage = createEPADImage(seriesReference, dcm4cheeImageDescription, new DICOMElementList(),
-						new DICOMElementList());
+			} else { 
+				DICOMElementList suppliedDICOMElements = new DICOMElementList();				
+				DICOMElementList defaultDICOMElements = new DICOMElementList();
+				// We do not always add DICOM headers to remaining image descriptions because it would be too expensive
+				if (getMetaDataForAllImages) {
+					suppliedDICOMElements = getDICOMElements(dcm4cheeImageDescription.studyUID,
+							dcm4cheeImageDescription.seriesUID, dcm4cheeImageDescription.imageUID);				
+					defaultDICOMElements = getDefaultDICOMElements(dcm4cheeImageDescription.studyUID,
+							dcm4cheeImageDescription.seriesUID, dcm4cheeImageDescription.imageUID, suppliedDICOMElements);
+					log.info("Getting metadata for image " + i);
+				}
+				epadImage = createEPADImage(seriesReference, dcm4cheeImageDescription, suppliedDICOMElements, defaultDICOMElements);
 				epadImageList.addImage(epadImage);
 			}
 			//log.info("Image UID:" + epadImage.imageUID + " LossLess:" + epadImage.losslessImage);
@@ -2800,6 +2821,16 @@ public class DefaultEpadOperations implements EpadOperations
 				suppliedDICOMElements);
 	}
 
+	private String getDICOMElement(DICOMElementList dicomElements, String tagName)
+	{
+		List<DICOMElement> defaultDicomElements = new ArrayList<>();
+		Map<String, List<DICOMElement>> dicomElementMap = generateDICOMElementMap(dicomElements);
+		if (dicomElementMap.containsKey(tagName))
+			return dicomElementMap.get(tagName).get(0).value;
+		else
+			return null;
+	}
+	
 	private DICOMElementList getDefaultDICOMElements(String studyUID, String seriesUID, String imageUID,
 			DICOMElementList suppliedDicomElements)
 	{

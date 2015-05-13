@@ -52,6 +52,7 @@ import edu.stanford.epad.epadws.aim.AIMSearchType;
 import edu.stanford.epad.epadws.aim.AIMUtil;
 import edu.stanford.epad.epadws.epaddb.EpadDatabase;
 import edu.stanford.epad.epadws.handlers.HandlerUtil;
+import edu.stanford.epad.epadws.handlers.dicom.DownloadUtil;
 import edu.stanford.epad.epadws.models.EpadStatistics;
 import edu.stanford.epad.epadws.models.RemotePACQuery;
 import edu.stanford.epad.epadws.queries.DefaultEpadOperations;
@@ -93,6 +94,8 @@ public class EPADGetHandler
 			int count = getInt(httpRequest.getParameter("count"));
 			if (count == 0) count = 5000;
 			long starttime = System.currentTimeMillis();
+			String studyUIDs = httpRequest.getParameter("studyUIDs");
+			String seriesUIDs = httpRequest.getParameter("seriesUIDs");
 			if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.PROJECT_LIST, pathInfo)) {
 				boolean annotationCount = false;
 				if ("true".equalsIgnoreCase(httpRequest.getParameter("annotationCount")))
@@ -124,15 +127,21 @@ public class EPADGetHandler
 
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.SUBJECT, pathInfo)) {
 				SubjectReference subjectReference = SubjectReference.extract(ProjectsRouteTemplates.SUBJECT, pathInfo);
-				EPADSubject subject = epadOperations.getSubjectDescription(subjectReference, username, sessionID);
-				if (subject != null) {
-					log.info("subject aim count:" + subject.numberOfAnnotations);
-					responseStream.append(subject.toJSON());
-					statusCode = HttpServletResponse.SC_OK;
+				if (returnFile(httpRequest)) {
+					DownloadUtil.downloadSubject(false, httpResponse, subjectReference, username, sessionID, searchFilter, studyUIDs, seriesUIDs);
+				} else if (returnStream(httpRequest)) {
+					DownloadUtil.downloadSubject(true, httpResponse, subjectReference, username, sessionID, searchFilter, studyUIDs, seriesUIDs);
 				} else {
-					log.info("Subject " + subjectReference.subjectID + " not found");
-					throw new Exception("Subject " + subjectReference.subjectID + " not found");
+					EPADSubject subject = epadOperations.getSubjectDescription(subjectReference, username, sessionID);
+					if (subject != null) {
+						log.info("subject aim count:" + subject.numberOfAnnotations);
+						responseStream.append(subject.toJSON());
+					} else {
+						log.info("Subject " + subjectReference.subjectID + " not found");
+						throw new Exception("Subject " + subjectReference.subjectID + " not found");
+					}
 				}
+				statusCode = HttpServletResponse.SC_OK;
 
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.STUDY_LIST, pathInfo)) {
 				SubjectReference subjectReference = SubjectReference.extract(ProjectsRouteTemplates.STUDY_LIST, pathInfo);
@@ -146,14 +155,20 @@ public class EPADGetHandler
 
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.STUDY, pathInfo)) {
 				StudyReference studyReference = StudyReference.extract(ProjectsRouteTemplates.STUDY, pathInfo);
-				EPADStudy study = epadOperations.getStudyDescription(studyReference, username, sessionID);
-				if (study != null) {
-					responseStream.append(study.toJSON());
-					statusCode = HttpServletResponse.SC_OK;
+				if (returnFile(httpRequest)) {
+					DownloadUtil.downloadStudy(false, httpResponse, studyReference, username, sessionID, searchFilter, seriesUIDs);
+				} else if (returnStream(httpRequest)) {
+					DownloadUtil.downloadStudy(true, httpResponse, studyReference, username, sessionID, searchFilter, seriesUIDs);
 				} else {
-					log.info("Study " + studyReference.studyUID + " not found");
-					throw new Exception("Study " + studyReference.studyUID + " not found");
+					EPADStudy study = epadOperations.getStudyDescription(studyReference, username, sessionID);
+					if (study != null) {
+						responseStream.append(study.toJSON());
+					} else {
+						log.info("Study " + studyReference.studyUID + " not found");
+						throw new Exception("Study " + studyReference.studyUID + " not found");
+					}
 				}
+				statusCode = HttpServletResponse.SC_OK;
 				
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.SERIES_LIST, pathInfo)) {
 				boolean filterDSO = "true".equalsIgnoreCase(httpRequest.getParameter("filterDSO"));
@@ -167,14 +182,20 @@ public class EPADGetHandler
 
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.SERIES, pathInfo)) {
 				SeriesReference seriesReference = SeriesReference.extract(ProjectsRouteTemplates.SERIES, pathInfo);
-				EPADSeries series = epadOperations.getSeriesDescription(seriesReference, username, sessionID);
-				if (series != null) {
-					responseStream.append(series.toJSON());
-					statusCode = HttpServletResponse.SC_OK;
+				if (returnFile(httpRequest)) {
+					DownloadUtil.downloadSeries(false, httpResponse, seriesReference, username, sessionID);
+				} else if (returnStream(httpRequest)) {
+					DownloadUtil.downloadSeries(true, httpResponse, seriesReference, username, sessionID);
 				} else {
-					log.info("Series " + seriesReference.seriesUID + " not found");
-					throw new Exception("Series " + seriesReference.seriesUID + " not found");
+					EPADSeries series = epadOperations.getSeriesDescription(seriesReference, username, sessionID);
+					if (series != null) {
+						responseStream.append(series.toJSON());
+					} else {
+						log.info("Series " + seriesReference.seriesUID + " not found");
+						throw new Exception("Series " + seriesReference.seriesUID + " not found");
+					}
 				}
+				statusCode = HttpServletResponse.SC_OK;
 				
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.SERIESFILE_LIST, pathInfo)) {
 				StudyReference studyReference = StudyReference.extract(ProjectsRouteTemplates.SERIESFILE_LIST, pathInfo);
@@ -206,14 +227,20 @@ public class EPADGetHandler
 
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.IMAGE, pathInfo)) {
 				ImageReference imageReference = ImageReference.extract(ProjectsRouteTemplates.IMAGE, pathInfo);
-				EPADImage image = epadOperations.getImageDescription(imageReference, sessionID);
-				if (image != null) {
-					responseStream.append(image.toJSON());
-					statusCode = HttpServletResponse.SC_OK;
+				if (returnFile(httpRequest)) {
+					DownloadUtil.downloadImage(false, httpResponse, imageReference, username, sessionID);
+				} if (returnStream(httpRequest)) {
+					DownloadUtil.downloadImage(true, httpResponse, imageReference, username, sessionID);
 				} else {
-					log.info("Image " + imageReference.imageUID + " not found");
-					throw new Exception("Image " + imageReference.imageUID + " not found");
+					EPADImage image = epadOperations.getImageDescription(imageReference, sessionID);
+					if (image != null) {
+						responseStream.append(image.toJSON());
+					} else {
+						log.info("Image " + imageReference.imageUID + " not found");
+						throw new Exception("Image " + imageReference.imageUID + " not found");
+					}
 				}
+				statusCode = HttpServletResponse.SC_OK;
 				
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.IMAGEFILE_LIST, pathInfo)) {
 				SeriesReference seriesReference = SeriesReference.extract(ProjectsRouteTemplates.IMAGEFILE_LIST, pathInfo);
@@ -254,14 +281,20 @@ public class EPADGetHandler
 				
 			} else if (HandlerUtil.matchesTemplate(SubjectsRouteTemplates.SUBJECT, pathInfo)) {
 				SubjectReference subjectReference = SubjectReference.extract(SubjectsRouteTemplates.SUBJECT, pathInfo);
-				EPADSubject subject = epadOperations.getSubjectDescription(subjectReference, username, sessionID);
-				if (subject != null) {
-					responseStream.append(subject.toJSON());
-					statusCode = HttpServletResponse.SC_OK;
+				if (returnFile(httpRequest)) {
+					DownloadUtil.downloadSubject(false, httpResponse, subjectReference, username, sessionID, searchFilter, studyUIDs, seriesUIDs);
+				} else if (returnStream(httpRequest)) {
+					DownloadUtil.downloadSubject(true, httpResponse, subjectReference, username, sessionID, searchFilter, studyUIDs, seriesUIDs);
 				} else {
-					log.info("Subject " + subjectReference.subjectID + " not found");
-					throw new Exception("Subject " + subjectReference.subjectID + " not found");
+					EPADSubject subject = epadOperations.getSubjectDescription(subjectReference, username, sessionID);
+					if (subject != null) {
+						responseStream.append(subject.toJSON());
+					} else {
+						log.info("Subject " + subjectReference.subjectID + " not found");
+						throw new Exception("Subject " + subjectReference.subjectID + " not found");
+					}
 				}
+				statusCode = HttpServletResponse.SC_OK;
 
 			} else if (HandlerUtil.matchesTemplate(SubjectsRouteTemplates.SUBJECT_LIST, pathInfo)) {
 				SubjectReference subjectReference = SubjectReference.extract(SubjectsRouteTemplates.SUBJECT_LIST, pathInfo);
@@ -276,10 +309,33 @@ public class EPADGetHandler
 				/**
 				 * Studies routes. These short cuts are used when the invoker does not have a project or subject ID.
 				 */
+			} else if (HandlerUtil.matchesTemplate(StudiesRouteTemplates.STUDY, pathInfo)) {
+				StudyReference studyReference = StudyReference.extract(StudiesRouteTemplates.STUDY, pathInfo);
+				if (returnFile(httpRequest)) {
+					DownloadUtil.downloadStudy(false, httpResponse, studyReference, username, sessionID, searchFilter, seriesUIDs);
+				} else if (returnStream(httpRequest)) {
+					DownloadUtil.downloadStudy(true, httpResponse, studyReference, username, sessionID, searchFilter, seriesUIDs);
+				} else {
+					EPADStudy study = epadOperations.getStudyDescription(studyReference, username, sessionID);
+					if (study != null) {
+						responseStream.append(study.toJSON());
+					} else {
+						log.info("Study " + studyReference.studyUID + " not found");
+						throw new Exception("Study " + studyReference.studyUID + " not found");
+					}
+				}
+				statusCode = HttpServletResponse.SC_OK;
+
 			} else if (HandlerUtil.matchesTemplate(StudiesRouteTemplates.SERIES, pathInfo)) {
 				SeriesReference seriesReference = SeriesReference.extract(StudiesRouteTemplates.SERIES, pathInfo);
-				EPADSeries series = epadOperations.getSeriesDescription(seriesReference, username, sessionID);
-				responseStream.append(series.toJSON());
+				if (returnFile(httpRequest)) {
+					DownloadUtil.downloadSeries(false, httpResponse, seriesReference, username, sessionID);
+				} else if (returnStream(httpRequest)) {
+					DownloadUtil.downloadSeries(true, httpResponse, seriesReference, username, sessionID);
+				} else {
+					EPADSeries series = epadOperations.getSeriesDescription(seriesReference, username, sessionID);
+					responseStream.append(series.toJSON());
+				}
 				statusCode = HttpServletResponse.SC_OK;
 
 			} else if (HandlerUtil.matchesTemplate(StudiesRouteTemplates.IMAGE_LIST, pathInfo)) {
@@ -292,15 +348,20 @@ public class EPADGetHandler
 
 			} else if (HandlerUtil.matchesTemplate(StudiesRouteTemplates.IMAGE, pathInfo)) {
 				ImageReference imageReference = ImageReference.extract(StudiesRouteTemplates.IMAGE, pathInfo);
-				EPADImage image = epadOperations.getImageDescription(imageReference, sessionID);
-				if (image != null) {
-					responseStream.append(image.toJSON());
-					statusCode = HttpServletResponse.SC_OK;
+				if (returnFile(httpRequest)) {
+					DownloadUtil.downloadImage(false, httpResponse, imageReference, username, sessionID);
+				} if (returnStream(httpRequest)) {
+					DownloadUtil.downloadImage(true, httpResponse, imageReference, username, sessionID);
 				} else {
-					log.info("Image " + imageReference.imageUID + " not found");
-					throw new Exception("Image " + imageReference.imageUID + " not found");
+					EPADImage image = epadOperations.getImageDescription(imageReference, sessionID);
+					if (image != null) {
+						responseStream.append(image.toJSON());
+					} else {
+						log.info("Image " + imageReference.imageUID + " not found");
+						throw new Exception("Image " + imageReference.imageUID + " not found");
+					}
 				}
-				
+				statusCode = HttpServletResponse.SC_OK;
 			} else if (HandlerUtil.matchesTemplate(StudiesRouteTemplates.FRAME_LIST, pathInfo)) {
 				ImageReference imageReference = ImageReference.extract(StudiesRouteTemplates.FRAME_LIST, pathInfo);
 				if (imageReference.subjectID.equals("null"))
@@ -1253,6 +1314,24 @@ public class EPADGetHandler
 	{
 		String summary = httpRequest.getParameter("format");
 		if (summary != null && summary.trim().equalsIgnoreCase("summary"))
+			return true;
+		else
+			return false;
+	}
+
+	private static boolean returnFile(HttpServletRequest httpRequest)
+	{
+		String format = httpRequest.getParameter("format");
+		if (format != null && format.trim().equalsIgnoreCase("file"))
+			return true;
+		else
+			return false;
+	}
+
+	private static boolean returnStream(HttpServletRequest httpRequest)
+	{
+		String format = httpRequest.getParameter("format");
+		if (format != null && format.trim().equalsIgnoreCase("stream"))
 			return true;
 		else
 			return false;

@@ -57,8 +57,9 @@ public class WadoHandler extends AbstractHandler
 			try {
 				String sessionID = SessionService.getJSessionIDFromRequest(httpRequest);
 				if (sessionID == null || sessionID.length() == 0) {
-					statusCode = HandlerUtil.invalidTokenJSONResponse(INVALID_SESSION_TOKEN_MESSAGE, httpResponse.getWriter(), log);
-				} else {	
+					log.warning("JSESSIONID is Missing in client request");
+					//statusCode = HandlerUtil.invalidTokenJSONResponse(INVALID_SESSION_TOKEN_MESSAGE, httpResponse.getWriter(), log);
+				}
 					String username = httpRequest.getParameter("username");
 					responseStream = httpResponse.getOutputStream();
 	
@@ -75,7 +76,7 @@ public class WadoHandler extends AbstractHandler
 					} else {
 						statusCode = HandlerUtil.invalidTokenResponse(INVALID_SESSION_TOKEN_MESSAGE, log);
 					}
-				}
+				//}
 			} catch (Throwable t) {
 				statusCode = HandlerUtil.internalErrorResponse(INTERNAL_EXCEPTION_MESSAGE, log);
 				log.warning("Error is Wado query", t);
