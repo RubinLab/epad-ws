@@ -1,3 +1,26 @@
+//Copyright (c) 2015 The Board of Trustees of the Leland Stanford Junior University
+//All rights reserved.
+//
+//Redistribution and use in source and binary forms, with or without modification, are permitted provided that
+//the following conditions are met:
+//
+//Redistributions of source code must retain the above copyright notice, this list of conditions and the following
+//disclaimer.
+//
+//Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the
+//following disclaimer in the documentation and/or other materials provided with the distribution.
+//
+//Neither the name of The Board of Trustees of the Leland Stanford Junior University nor the names of its
+//contributors (Daniel Rubin, et al) may be used to endorse or promote products derived from this software without
+//specific prior written permission.
+//
+//THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES,
+//INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+//DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+//SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+//SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+//WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE
+//USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package edu.stanford.epad.epadws.queries;
 
 import ij.ImagePlus;
@@ -373,12 +396,13 @@ public class DefaultEpadOperations implements EpadOperations
 	public EPADStudy getStudyDescription(StudyReference studyReference, String username, String sessionID) throws Exception
 	{
 		boolean found = true;
+		String patientID = studyReference.subjectID;
 		if (!EPADConfig.UseEPADUsersProjects) {
 			XNATExperiment xnatExperiment = XNATQueries.getDICOMExperiment(sessionID, studyReference.projectID,
 					studyReference.subjectID, studyReference.studyUID);
 			if (xnatExperiment != null)
 				found = true;
-		} else {
+		} else if (studyReference.projectID != null && patientID != null){
 			found = projectOperations.isStudyInProjectAndSubject(studyReference.projectID,
 					studyReference.subjectID, studyReference.studyUID);
 		}
@@ -390,7 +414,10 @@ public class DefaultEpadOperations implements EpadOperations
 		} else {
 			DCM4CHEEStudy dcm4CheeStudy = Dcm4CheeQueries.getStudy(studyReference.studyUID);
 			if (dcm4CheeStudy != null)
-				return dcm4cheeStudy2EpadStudy(sessionID, studyReference.projectID, studyReference.subjectID, dcm4CheeStudy, username);
+			{
+				if (patientID == null) patientID = dcm4CheeStudy.patientID;
+				return dcm4cheeStudy2EpadStudy(sessionID, studyReference.projectID, patientID, dcm4CheeStudy, username);
+			}
 			else {
 				log.warning("Count not find dcm4chee study " + studyReference.studyUID + " for subject "
 						+ studyReference.subjectID + " in project " + studyReference.projectID);
@@ -402,10 +429,14 @@ public class DefaultEpadOperations implements EpadOperations
 	@Override
 	public EPADSeries getSeriesDescription(SeriesReference seriesReference, String username, String sessionID)
 	{
+		String patientID = seriesReference.subjectID;
 		DCM4CHEESeries dcm4cheeSeries = Dcm4CheeQueries.getSeries(seriesReference.seriesUID);
 
 		if (dcm4cheeSeries != null)
-			return dcm4cheeSeries2EpadSeries(sessionID, seriesReference.projectID, dcm4cheeSeries.patientID, dcm4cheeSeries, username);
+		{
+			if (patientID == null) patientID = dcm4cheeSeries.patientID;
+			return dcm4cheeSeries2EpadSeries(sessionID, seriesReference.projectID, patientID, dcm4cheeSeries, username);
+		}
 		else {
 			log.warning("Could not find series description for series " + seriesReference.seriesUID);
 			return null;
@@ -514,6 +545,7 @@ public class DefaultEpadOperations implements EpadOperations
 			log.info("Series: " +  seriesReference.seriesUID + " returning metadata for all images");
 			getMetaDataForAllImages = true;
 		}
+		DICOMElementList defaultDICOMElements = null;
 		EPADImageList epadImageList = new EPADImageList();
 		int i = 0;
 		boolean isFirst = true;
@@ -522,7 +554,7 @@ public class DefaultEpadOperations implements EpadOperations
 			EPADImage epadImage = null;
 			if (isFirst) {
 				DICOMElementList suppliedDICOMElements = suppliedDICOMElementsFirst;				
-				DICOMElementList defaultDICOMElements = getDefaultDICOMElements(dcm4cheeImageDescription.studyUID,
+				defaultDICOMElements = getDefaultDICOMElements(dcm4cheeImageDescription.studyUID,
 						dcm4cheeImageDescription.seriesUID, dcm4cheeImageDescription.imageUID, suppliedDICOMElements);
 				
 				epadImage = createEPADImage(seriesReference, dcm4cheeImageDescription, suppliedDICOMElements, defaultDICOMElements);
@@ -530,8 +562,7 @@ public class DefaultEpadOperations implements EpadOperations
 				epadImageList.addImage(epadImage);
 				isFirst = false;
 			} else { 
-				DICOMElementList suppliedDICOMElements = new DICOMElementList();				
-				DICOMElementList defaultDICOMElements = new DICOMElementList();
+				DICOMElementList suppliedDICOMElements = suppliedDICOMElementsFirst;				
 				// We do not always add DICOM headers to remaining image descriptions because it would be too expensive
 				if (getMetaDataForAllImages) {
 					suppliedDICOMElements = getDICOMElements(dcm4cheeImageDescription.studyUID,
@@ -2417,7 +2448,7 @@ public class DefaultEpadOperations implements EpadOperations
 	private EPADStudy dcm4cheeStudy2EpadStudy(String sessionID, String suppliedProjectID, String suppliedSubjectID,
 			DCM4CHEEStudy dcm4CheeStudy, String username)
 	{
-		String projectID = suppliedProjectID.equals("") ? EPADConfig.xnatUploadProjectID : suppliedProjectID;
+		String projectID = suppliedProjectID == null || suppliedProjectID.equals("") ? EPADConfig.xnatUploadProjectID : suppliedProjectID;
 		String patientName = dcm4CheeStudy.patientName;
 		String xnatPatientID = XNATUtil.subjectID2XNATSubjectLabel(dcm4CheeStudy.patientID);
 		String subjectID = suppliedSubjectID.equals("") ? xnatPatientID : suppliedSubjectID;
@@ -2448,7 +2479,7 @@ public class DefaultEpadOperations implements EpadOperations
 	private EPADSeries dcm4cheeSeries2EpadSeries(String sessionID, String suppliedProjectID, String suppliedSubjectID,
 			DCM4CHEESeries dcm4CheeSeries, String username)
 	{
-		String projectID = suppliedProjectID.equals("") ? EPADConfig.xnatUploadProjectID : suppliedProjectID;
+		String projectID = suppliedProjectID == null || suppliedProjectID.equals("") ? EPADConfig.xnatUploadProjectID : suppliedProjectID;
 		String patientName = trimTrailing(dcm4CheeSeries.patientName);
 		String xnatPatientID = XNATUtil.subjectID2XNATSubjectLabel(dcm4CheeSeries.patientID);
 		String subjectID = suppliedSubjectID.equals("") ? xnatPatientID : suppliedSubjectID;
@@ -2619,7 +2650,7 @@ public class DefaultEpadOperations implements EpadOperations
 		for (String projectID: projectIDs)
 		{
 			//if (!suppliedProjectID.equals(projectID) && !projectID.equals(EPADConfig.xnatUploadProjectID) && !projectID.equals("")) continue;
-			if (!suppliedProjectID.equals(projectID)) continue;
+			if (suppliedProjectID == null || !suppliedProjectID.equals(projectID)) continue;
 			try
 			{
 				boolean isCollaborator = UserProjectService.isCollaborator(sessionID, username, projectID);

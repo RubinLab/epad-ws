@@ -1,3 +1,26 @@
+//Copyright (c) 2015 The Board of Trustees of the Leland Stanford Junior University
+//All rights reserved.
+//
+//Redistribution and use in source and binary forms, with or without modification, are permitted provided that
+//the following conditions are met:
+//
+//Redistributions of source code must retain the above copyright notice, this list of conditions and the following
+//disclaimer.
+//
+//Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the
+//following disclaimer in the documentation and/or other materials provided with the distribution.
+//
+//Neither the name of The Board of Trustees of the Leland Stanford Junior University nor the names of its
+//contributors (Daniel Rubin, et al) may be used to endorse or promote products derived from this software without
+//specific prior written permission.
+//
+//THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES,
+//INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+//DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+//SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+//SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+//WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE
+//USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package edu.stanford.epad.epadws.handlers.dicom;
 
 import java.io.BufferedInputStream;
@@ -159,6 +182,114 @@ public class DownloadUtil {
 	}
 
 	/**
+	 * Method to download list of Study dicoms
+	 * 
+	 * @param stream - true if file should stream, otherwise placed on disk to be picked (should be deleted after use)
+	 * @param httpResponse
+	 * @param subjectReference
+	 * @param username
+	 * @param sessionID
+	 * @param searchFilter
+	 * @param studyUIDs - download only these selected studies
+	 * @throws Exception
+	 */
+	public static void downloadStudies(boolean stream, HttpServletResponse httpResponse, String studyUIDs, String username, String sessionID) throws Exception
+	{
+		log.info("Downloading studies:" + studyUIDs + " stream:" + stream);
+		Set<String> studies = new HashSet<String>();
+		if (studyUIDs != null) {
+			String[] ids = studyUIDs.split(",");
+			for (String id: ids)
+				studies.add(id.trim());
+		}
+		String downloadDirPath = EPADConfig.getEPADWebServerResourcesDir() + "download/" + "temp" + Long.toString(System.currentTimeMillis());
+		File downloadDir = new File(downloadDirPath);
+		downloadDir.mkdirs();
+		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
+		List<String> fileNames = new ArrayList<String>();
+		for (String studyUID: studies)
+		{
+			if (studyUID.length() == 0) continue;
+			File studyDir = new File(downloadDir, "Study-" + studyUID);
+			studyDir.mkdirs();
+			
+			StudyReference studyReference = new StudyReference(null, null, studyUID);
+			EPADStudy study = epadOperations.getStudyDescription(studyReference, username, sessionID);
+			studyReference = new StudyReference(null, study.patientID, studyUID);
+			EPADSeriesList seriesList = epadOperations.getSeriesDescriptions(studyReference, username, sessionID, new EPADSearchFilter(), false);
+			for (EPADSeries series: seriesList.ResultSet.Result)
+			{
+				File seriesDir = new File(studyDir, "Series-" + series.seriesUID);
+				seriesDir.mkdirs();
+				SeriesReference seriesReference = new SeriesReference(studyReference.projectID, studyReference.subjectID, studyReference.studyUID, series.seriesUID);
+				EPADImageList imageList = epadOperations.getImageDescriptions(seriesReference, sessionID, null);
+				for (EPADImage image: imageList.ResultSet.Result)
+				{
+					String name = image.imageUID + ".dcm";
+					File imageFile = new File(seriesDir, name);
+					fileNames.add("Study-" + studyReference.studyUID + "/Series-" + series.seriesUID + "/" + name);
+					FileOutputStream fos = null;
+					try 
+					{
+						fos = new FileOutputStream(imageFile);
+						String queryString = "requestType=WADO&studyUID=" + seriesReference.studyUID 
+								+ "&seriesUID=" + seriesReference.seriesUID + "&objectUID=" + image.imageUID + "&contentType=application/dicom";
+						performWADOQuery(queryString, fos, username, sessionID);
+					}
+					catch (Exception x)
+					{
+						log.warning("Error downloading image using wado");
+					}
+					finally 
+					{
+						if (fos != null) fos.close();
+					}
+				}
+			}
+		}
+		String ids = studyUIDs.replace(",","-");
+		if (ids.length() > 128) ids = ids.substring(0, 128);
+		String zipName = "Studies-" + ids + ".zip";
+		if (stream)
+		{
+			httpResponse.setContentType("application/zip");
+			httpResponse.setHeader("Content-Disposition", "attachment;filename=\"" + zipName + "\"");
+		}
+		
+		File zipFile = null;
+		OutputStream out = null;
+		try
+		{
+			if (stream)
+			{
+				out = httpResponse.getOutputStream();
+			}
+			else
+			{
+				zipFile = new File(downloadDir, zipName);
+				out = new FileOutputStream(zipFile);
+			}
+		}
+		catch (Exception e)
+		{
+			log.warning("Error getting output stream", e);
+			throw e;
+		}
+		ZipAndStreamFiles(out, fileNames, downloadDirPath + "/");
+		if (!stream)
+		{
+			File newZip = new File(EPADConfig.getEPADWebServerResourcesDir() + "download/", zipName);
+			zipFile.renameTo(newZip);
+			EPADFile epadFile = new EPADFile("", "", "", "", "", zipName, zipFile.length(), "Studies", 
+					formatDate(new Date()), "download/" + zipFile.getName(), true, studyUIDs);
+			PrintWriter responseStream = httpResponse.getWriter();
+			responseStream.append(epadFile.toJSON());
+		}
+		EPADFileUtils.deleteDirectoryAndContents(downloadDir);
+		
+	}
+
+	/**
 	 * Method to download Study dicoms
 	 * 
 	 * @param stream - true if file should stream, otherwise placed on disk to be picked (should be deleted after use)
@@ -310,7 +441,9 @@ public class DownloadUtil {
 				}
 			}
 		}
-		String zipName = "SeriesDicoms.zip";
+		String ids = seriesUIDs.replace(",","-");
+		if (ids.length() > 128) ids = ids.substring(0, 128);
+		String zipName = "Series-" + ids + ".zip";
 		if (stream)
 		{
 			httpResponse.setContentType("application/zip");
@@ -341,7 +474,7 @@ public class DownloadUtil {
 		{
 			File newZip = new File(EPADConfig.getEPADWebServerResourcesDir() + "download/", zipName);
 			zipFile.renameTo(newZip);
-			EPADFile epadFile = new EPADFile("", "", "", "", "", zipName, zipFile.length(), "Study", 
+			EPADFile epadFile = new EPADFile("", "", "", "", "", zipName, zipFile.length(), "Series", 
 					formatDate(new Date()), "download/" + zipFile.getName(), true, seriesUIDs);
 			PrintWriter responseStream = httpResponse.getWriter();
 			responseStream.append(epadFile.toJSON());
