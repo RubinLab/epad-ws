@@ -560,7 +560,7 @@ public class EPADGetHandler
 					throw new Exception("Patient ID in rest call is null:" + pathInfo);
 				EPADAIMList aims = epadOperations.getSeriesAIMDescriptions(seriesReference, username, sessionID);
 				long dbtime = System.currentTimeMillis();
-				log.info("Time taken for AIM database query:" + (dbtime-starttime) + " msecs");
+				log.info("Time taken for AIM database query:" + (dbtime-starttime) + " msecs for count:" + aims.ResultSet.totalRecords);
 				if (returnSummary(httpRequest))
 				{	
 					aims = AIMUtil.queryAIMImageAnnotationSummariesV4(aims, username, sessionID);					

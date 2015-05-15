@@ -1456,7 +1456,7 @@ public class AIMUtil
 			}
 		}
 		long endtime = System.currentTimeMillis();
-		log.info("Time taken for checking AIM permissions:" + (endtime-starttime) + " msecs, username:" + username);
+		log.info("Time taken for checking AIM permissions:" + (endtime-starttime) + " msecs, in:" + aimlist.ResultSet.totalRecords + " ok:" + projectAIMs.values().size() + " username:" + username);
 		
 		if (projectAIMs.keySet().isEmpty())
 			projectAIMs.put(defProjectID, "");
@@ -1492,7 +1492,7 @@ public class AIMUtil
 			}
 		}
 		long endtime = System.currentTimeMillis();
-		log.info("Time taken for checking AIM permissions:" + (endtime-starttime) + " msecs, username:" + username);
+		log.info("Time taken for checking AIM permissions:" + (endtime-starttime) + " msecs, in:" + aimlist.ResultSet.totalRecords + " out:" + projectAIMsMap.values().size() + " username:" + username);
 		
 		return projectAIMsMap;
 	}

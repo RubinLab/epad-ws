@@ -342,13 +342,13 @@ public class EPADPostHandler
 					String email = httpRequest.getParameter("email");
 					String password = httpRequest.getParameter("password");
 					String oldpassword = httpRequest.getParameter("oldpassword");
+					String enable = httpRequest.getParameter("enable");
 					//log.info(" email:" + email +" firstname:" + firstname + " lastname:" + lastname + " new password:" + password + " old password:" + oldpassword); 
 					String[] addPermissions = httpRequest.getParameterValues("addPermission");
 					String[] removePermissions = httpRequest.getParameterValues("removePermission");
-					if (firstname == null && lastname == null && email == null && addPermissions == null && removePermissions == null && password == null && oldpassword == null)
+					if (enable == null && firstname == null && lastname == null && email == null && addPermissions == null && removePermissions == null && password == null && oldpassword == null)
 						throw new Exception("BAD Request - all parameters are null");
 					epadOperations.createOrModifyUser(username, target_username, firstname, lastname, email, password, oldpassword, addPermissions, removePermissions);
-					String enable = httpRequest.getParameter("enable");
 					if ("true".equalsIgnoreCase(enable))
 						epadOperations.enableUser(username, target_username);
 					else if ("false".equalsIgnoreCase(enable))

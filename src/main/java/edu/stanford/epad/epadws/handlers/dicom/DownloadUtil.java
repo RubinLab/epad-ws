@@ -215,6 +215,8 @@ public class DownloadUtil {
 			
 			StudyReference studyReference = new StudyReference(null, null, studyUID);
 			EPADStudy study = epadOperations.getStudyDescription(studyReference, username, sessionID);
+			if (study == null)
+				throw new Exception("Study not found:" + studyReference.studyUID);
 			studyReference = new StudyReference(null, study.patientID, studyUID);
 			EPADSeriesList seriesList = epadOperations.getSeriesDescriptions(studyReference, username, sessionID, new EPADSearchFilter(), false);
 			for (EPADSeries series: seriesList.ResultSet.Result)
@@ -415,7 +417,7 @@ public class DownloadUtil {
 			seriesDir.mkdirs();
 			SeriesReference seriesReference = new SeriesReference(null, null, null, seriesUID);
 			EPADSeries series = epadOperations.getSeriesDescription(seriesReference, username, sessionID);
-			seriesReference = new SeriesReference(null, seriesReference.subjectID, seriesReference.studyUID, seriesUID);
+			seriesReference = new SeriesReference(null, series.patientID, series.studyUID, seriesUID);
 			EPADImageList imageList = epadOperations.getImageDescriptions(seriesReference, sessionID, null);
 			int i = 0;
 			for (EPADImage image: imageList.ResultSet.Result)
