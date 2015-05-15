@@ -546,7 +546,7 @@ public class DefaultEpadOperations implements EpadOperations
 		DCM4CHEEImageDescription dcm4cheeImageDescription = dcm4CheeDatabaseOperations.getImageDescription(imageReference);
 		List<EPADFrame> frames = new ArrayList<>();
 
-		if (isDSO(dcm4cheeImageDescription)) {
+		if (dcm4cheeImageDescription != null && isDSO(dcm4cheeImageDescription)) {
 			log.info("Getting referenced series for DSO, subjectID:" + imageReference.subjectID 
 					+ " seriesID:" +imageReference.seriesUID + " imageUID:" + imageReference.imageUID);
 			DICOMElementList suppliedDICOMElements = getDICOMElements(imageReference);
