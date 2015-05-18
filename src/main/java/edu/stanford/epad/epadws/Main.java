@@ -202,6 +202,8 @@ public class Main
 
 		addHandlerAtContextPath(new EPADHandler(), "/epad/v2", handlerList);
 
+//      My Attempt to replace above EPADHandler with Spring Controllers
+//		- Does not work with embedded jetty, controller methods don't map correctly, controllers work fine under tomcat
 //		try {
 //			handlerList.add(getServletContextHandler(getContext()));
 //		} catch (IOException e) {
@@ -210,7 +212,10 @@ public class Main
 //			e.printStackTrace();
 //		}
 
-		addWebAppAtContextPath(handlerList, "ePad.war", "/epad");
+		String webAppPath = EPADConfig.getEPADWebServerWebappsDir() + "ePad.war";
+		if (!new File(webAppPath).exists())
+			webAppPath = EPADConfig.getEPADWebServerWebappsDir() + "epad-1.1.war";
+		addWebAppAtContextPath(handlerList, webAppPath, "/epad");
 
 		addHandlerAtContextPath(new ResourceCheckHandler(), "/epad/resources", handlerList);
 		addFileServerAtContextPath(EPADConfig.getEPADWebServerResourcesDir(), handlerList, "/epad/resources");
@@ -255,17 +260,21 @@ public class Main
 	}
 
 	private static final String CONTEXT_PATH = "/epad/v2";
-    private static final String CONFIG_LOCATION = "edu.stanford.epad.epadws.config";
+    private static final String CONFIG_LOCATION = "edu.stanford.epad.epadws.config.SpringConfig";
     private static final String MAPPING_URL = "/*";
     private static final String DEFAULT_PROFILE = "dev";    
     
+    /**
+     * Function for setting up Spring Context with embedded Jetty
+     * 
+     */
     private static ServletContextHandler getServletContextHandler(WebApplicationContext context) throws IOException {
         ServletContextHandler contextHandler = new ServletContextHandler();
         contextHandler.setErrorHandler(null);
         contextHandler.setContextPath(CONTEXT_PATH);
         contextHandler.addServlet(new ServletHolder(new DispatcherServlet(context)), MAPPING_URL);
         contextHandler.addEventListener(new ContextLoaderListener(context));
-        contextHandler.setResourceBase(EPADConfig.getEPADWebServerResourcesDir());
+        //contextHandler.setResourceBase(EPADConfig.getEPADWebServerResourcesDir());
         return contextHandler;
     }
 
@@ -279,12 +288,11 @@ public class Main
 	 * Adds a WAR file from the webapps directory at a context path.
 	 * 
 	 * @param handlerList List of handlers
-	 * @param warFileName String war file name, with or without extension (e.g., ePad.war)
+	 * @param webAppPath String war file name, with or without extension (e.g., ePad.war)
 	 * @param contextPath The context to add the war file (e.g., /epad)
 	 */
-	private static void addWebAppAtContextPath(List<Handler> handlerList, String warFileName, String contextPath)
+	private static void addWebAppAtContextPath(List<Handler> handlerList, String webAppPath, String contextPath)
 	{
-		String webAppPath = EPADConfig.getEPADWebServerWebappsDir() + warFileName;
 		if (!contextPath.startsWith("/")) {
 			contextPath = "/" + contextPath;
 		}
@@ -308,7 +316,7 @@ public class Main
 			}
 		}
 		handlerList.add(webAppContext);
-		log.info("Added WAR " + warFileName + " at context path " + contextPath);
+		log.info("Added WAR " + webAppPath + " at context path " + contextPath);
 	}
 
 	private static void addFileServerAtContextPath(String baseDirectory, List<Handler> handlerList, String contextPath)

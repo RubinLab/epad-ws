@@ -102,11 +102,13 @@ public class EPADSessionHandler extends AbstractHandler
 				    	{
 				            Cookie userName = new Cookie(LOGGEDINUSER_COOKIE, username);
 				            userName.setMaxAge(8*3600);
+				            //userName.setPath("/epad/; Secure; HttpOnly");
 				            userName.setPath("/epad/");
 				            httpResponse.addCookie(userName);
-							log.info("Setting cookie =" + jsessionID);
+							//log.info("Setting HttpOnly, Secure cookie =" + jsessionID);
 				            Cookie sessionCookie = new Cookie(JSESSIONID_COOKIE, jsessionID);
 				            sessionCookie.setMaxAge(8*3600);
+				            //sessionCookie.setPath("/epad/; Secure; HttpOnly");
 				            sessionCookie.setPath("/epad/");
 				            httpResponse.addCookie(sessionCookie);
 				    		httpResponse.sendRedirect("index.jsp");
@@ -117,6 +119,7 @@ public class EPADSessionHandler extends AbstractHandler
 						httpResponse.setContentType("text/plain");
 						PrintWriter responseStream = httpResponse.getWriter();
 						responseStream.append(jsessionID);
+						log.info("Setting HttpOnly, Secure cookie =" + jsessionID);
 						httpResponse.addHeader("Set-Cookie", "JSESSIONID=" + jsessionID);
 						httpResponse.addHeader("Set-Cookie", "ePADLoggedinUser=" + username);
 						httpResponse.setHeader("Access-Control-Allow-Origin", origin);

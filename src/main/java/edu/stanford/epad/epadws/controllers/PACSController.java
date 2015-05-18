@@ -31,7 +31,7 @@ public class PACSController {
 	private static final EPADLogger log = EPADLogger.getInstance();
  
 	@RequestMapping(value = "/", method = RequestMethod.GET)
-	public RemotePACList getEPADRemotePACS(@RequestParam(value="username") String username, 
+	public RemotePACList getEPADRemotePACSList(@RequestParam(value="username") String username, 
 											HttpServletRequest request, 
 									        HttpServletResponse response) throws Exception {
 		String sessionID = SessionService.getJSessionIDFromRequest(request);

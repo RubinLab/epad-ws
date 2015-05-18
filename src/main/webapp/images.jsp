@@ -66,7 +66,7 @@ $( document ).ready(function() {
 									var series = response.ResultSet.Result;
 									for (k = 0; k < series.length; k++)
 									{
-										listdata =  listdata + "<tr><td>Series</td><td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href='images.jsp?projectID=" + series[k].seriesUID + "' target='rightpanel'>" + series[k].seriesDescription + "</a></td><td>" + series[k].seriesUID + "</td><td>na / "  +  series[k].numberOfAnnotations + "</td></tr>\n";
+										listdata =  listdata + "<tr><td>Series</td><td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href='images.jsp?projectID=" + series[k].seriesUID + "' target='rightpanel'>" + series[k].seriesDescription + "</a></td><td>" + series[k].seriesUID + "</td><td>" + series[k].numberOfImages + " / "  +  series[k].numberOfAnnotations + "</td></tr>\n";
 										var url4 = url3 + series[k].seriesUID + "/aims/?format=summary";
 										$.ajax({         
 											url: url4 + "&username=<%=username%>",         

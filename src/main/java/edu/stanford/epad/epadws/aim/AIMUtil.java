@@ -329,7 +329,7 @@ public class AIMUtil
 			if (eventMaps.size() > 0)
 			{
 				log.info("last event:" + eventMaps.get(0));
-				if ("Started".equals(eventMaps.get(0).get("event_status")) && getTime(eventMaps.get(0).get("created_time")) > (System.currentTimeMillis()-10*60*60*1000))
+				if ("Started".equals(eventMaps.get(0).get("event_status")) && getTime(eventMaps.get(0).get("created_time")) > (System.currentTimeMillis()- 60*60*1000))
 				{
 					return true;
 				}

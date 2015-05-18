@@ -28,6 +28,7 @@ public class StartupListener extends ContextLoaderListener
     private static String webAppPath;
     
     public void contextInitialized(ServletContextEvent event) {
+    	// Skip, if we are using embedded Jetty
     	if (Main.embeddedJetty)
     		return;
 		log.info("#####################################################");
@@ -51,7 +52,7 @@ public class StartupListener extends ContextLoaderListener
 		Main.initializePlugins();
 		Main.loadPluginClasses();
 		Main.startSupportThreads();
-		new ServerStatusHandler();
+		new ServerStatusHandler(); // Sets startup time
     }
 
 	public static ApplicationContext getAppContext() {
