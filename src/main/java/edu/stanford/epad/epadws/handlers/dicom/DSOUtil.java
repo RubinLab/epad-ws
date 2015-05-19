@@ -118,7 +118,7 @@ public class DSOUtil
 	/**
 	 * Take an existing DSO and generate a new one (with new UIDs) with substituted masked frames.
 	 */
-	public static DSOEditResult createEditedDSO(DSOEditRequest dsoEditRequest, List<File> editFramesPNGMaskFiles)
+	private static DSOEditResult createEditedDSO(DSOEditRequest dsoEditRequest, List<File> editFramesPNGMaskFiles)
 	{
 		try {
 			ImageReference imageReference = new ImageReference(dsoEditRequest);
@@ -181,7 +181,7 @@ public class DSOUtil
 	/**
 	 * Generate a new DSO from scratch given series and masked frames.
 	 */
-	public static DSOEditResult createNewDSO(DSOEditRequest dsoEditRequest, List<File> editFramesPNGMaskFiles)
+	private static DSOEditResult createNewDSO(DSOEditRequest dsoEditRequest, List<File> editFramesPNGMaskFiles)
 	{
 		try {
 			List<DCM4CHEEImageDescription> imageDescriptions = dcm4CheeDatabaseOperations.getImageDescriptions(
@@ -677,8 +677,15 @@ public class DSOUtil
 		try {
 			isr = new InputStreamReader(headerJSONStream, "UTF-8");
 			br = new BufferedReader(isr);
-
-			dsoEditRequest = gson.fromJson(br, DSOEditRequest.class);
+			StringBuilder sb = new StringBuilder();
+			String line = null;
+			while ((line = br.readLine()) != null) {
+				sb.append(line);
+				sb.append("\n");
+			}
+			String json = sb.toString();
+			log.info("DSOEditRequest:" + json);
+			dsoEditRequest = gson.fromJson(json, DSOEditRequest.class);
 		} finally {
 			IOUtils.closeQuietly(br);
 			IOUtils.closeQuietly(isr);

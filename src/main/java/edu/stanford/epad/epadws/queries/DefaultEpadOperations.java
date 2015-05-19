@@ -1536,6 +1536,37 @@ public class DefaultEpadOperations implements EpadOperations
 	@Override
 	public EPADTemplateList getTemplateDescriptions(String username,
 			String sessionID) throws Exception {
+		EPADTemplateList fileList = getSystemTemplateDescriptions(username, sessionID);
+		List<EpadFile> efiles = projectOperations.getEpadFiles(null, null, null, null, FileType.TEMPLATE, false);
+		Set<String> userProjects = new HashSet<String>();
+		Map<String, List<String>> disabledTemplates = new HashMap<String, List<String>>();
+		for (EpadFile efile: efiles)
+		{
+			Project project = (Project) projectOperations.getDBObject(Project.class, efile.getProjectId());
+			List<String> disabledTemplatesNames = disabledTemplates.get(project.getProjectId());
+			if (disabledTemplatesNames == null)
+			{
+				disabledTemplatesNames = projectOperations.getDisabledTemplates(project.getProjectId());
+				disabledTemplates.put(project.getProjectId(), disabledTemplatesNames);
+			}
+			if (userProjects.contains(project.getProjectId()) || projectOperations.hasAccessToProject(username, project.getProjectId())
+					|| project.getProjectId().equals(EPADConfig.xnatUploadProjectID))
+			{
+				userProjects.add(project.getProjectId());
+				EPADTemplate epadFile = convertEpadFileToTemplate(project.getProjectId(), efile, new File(EPADConfig.getEPADWebServerResourcesDir() + getEpadFilePath(efile)));
+				boolean enabled = true;
+				if (disabledTemplatesNames.contains(epadFile.fileName) || disabledTemplatesNames.contains(epadFile.templateName) || disabledTemplatesNames.contains(epadFile.templateCode))
+					enabled = false;
+				epadFile.enabled = enabled;
+				fileList.addTemplate(epadFile);
+			}
+		}
+		return fileList;
+	}
+
+	@Override
+	public EPADTemplateList getSystemTemplateDescriptions(String username,
+			String sessionID) throws Exception {
 		EPADTemplateList fileList = new EPADTemplateList();
 		File[] templates = new File(EPADConfig.getEPADWebServerTemplatesDir()).listFiles();
 		List<String> disabledTemplatesNames = projectOperations.getDisabledTemplates(EPADConfig.xnatUploadProjectID);
@@ -1572,24 +1603,7 @@ public class DefaultEpadOperations implements EpadOperations
             epadFile.templateType = templateType;
             epadFile.templateCode = templateCode;
             epadFile.templateDescription = templateDescription;
-			fileList.addFile(epadFile);
-		}
-		List<EpadFile> efiles = projectOperations.getEpadFiles(null, null, null, null, FileType.TEMPLATE, false);
-		Set<String> userProjects = new HashSet<String>();
-		for (EpadFile efile: efiles)
-		{
-			Project project = (Project) projectOperations.getDBObject(Project.class, efile.getProjectId());
-			if (userProjects.contains(project.getProjectId()) || projectOperations.hasAccessToProject(username, project.getProjectId())
-					|| project.getProjectId().equals(EPADConfig.xnatUploadProjectID))
-			{
-				userProjects.add(project.getProjectId());
-				EPADTemplate epadFile = convertEpadFileToTemplate(project.getProjectId(), efile, new File(EPADConfig.getEPADWebServerResourcesDir() + getEpadFilePath(efile)));
-				boolean enabled = true;
-				if (disabledTemplatesNames.contains(epadFile.fileName) || disabledTemplatesNames.contains(epadFile.templateName) || disabledTemplatesNames.contains(epadFile.templateCode))
-					enabled = false;
-				epadFile.enabled = enabled;
-				fileList.addFile(epadFile);
-			}
+			fileList.addTemplate(epadFile);
 		}
 		return fileList;
 	}
@@ -1603,16 +1617,16 @@ public class DefaultEpadOperations implements EpadOperations
 		{
 			EPADTemplate epadFile = convertEpadFileToTemplate(projectID, efile, new File(EPADConfig.getEPADWebServerResourcesDir() + getEpadFilePath(efile)));
 			if (epadFile.enabled)
-				fileList.addFile(epadFile);
+				fileList.addTemplate(epadFile);
 		}
-		efiles = projectOperations.getEpadFiles(EPADConfig.xnatUploadProjectID, null, null, null, FileType.TEMPLATE, false);
-		List<String> disabledTemplatesNames = projectOperations.getDisabledTemplates(projectID);
-		for (EpadFile efile: efiles)
-		{
-			EPADTemplate epadFile = convertEpadFileToTemplate(projectID, efile, new File(EPADConfig.getEPADWebServerResourcesDir() + getEpadFilePath(efile)));
-			if (!disabledTemplatesNames.contains(epadFile.fileName) && !disabledTemplatesNames.contains(epadFile.templateName) && !disabledTemplatesNames.contains(epadFile.templateCode))
-				fileList.addFile(epadFile);
-		}
+//		efiles = projectOperations.getEpadFiles(EPADConfig.xnatUploadProjectID, null, null, null, FileType.TEMPLATE, false);
+//		List<String> disabledTemplatesNames = projectOperations.getDisabledTemplates(projectID);
+//		for (EpadFile efile: efiles)
+//		{
+//			EPADTemplate epadFile = convertEpadFileToTemplate(projectID, efile, new File(EPADConfig.getEPADWebServerResourcesDir() + getEpadFilePath(efile)));
+//			if (!disabledTemplatesNames.contains(epadFile.fileName) && !disabledTemplatesNames.contains(epadFile.templateName) && !disabledTemplatesNames.contains(epadFile.templateCode))
+//				fileList.addFile(epadFile);
+//		}
 		return fileList;
 	}
 
@@ -3126,7 +3140,7 @@ public class DefaultEpadOperations implements EpadOperations
 						}
 					}
 				}
-				if (projectOperations.isAdmin(username) || username.equals(user.getCreator()))
+				if (projectOperations.isAdmin(username) || username.equals(user.getUsername()) || username.equals(user.getCreator()))
 				{
 					EPADUser epadUser = new EPADUser(user.getFullName(), user.getUsername(), 
 							user.getFirstName(), user.getLastName(), user.getEmail(), user.isEnabled(), user.isAdmin(), user.isPasswordExpired(), "", permissions, projects, projectToRole, null);
@@ -3187,19 +3201,29 @@ public class DefaultEpadOperations implements EpadOperations
 					}
 				}
 			}
-			EPADUser epadUser = new EPADUser(user.getFullName(), user.getUsername(), 
-					user.getFirstName(), user.getLastName(), user.getEmail(), user.isEnabled(), user.isAdmin(), user.isPasswordExpired(), "", permissions, projects, projectToRole, messages);
+			EPADUser epadUser = null;
+			if (projectOperations.isAdmin(loggedInusername) || loggedInusername.equals(user.getUsername()) || loggedInusername.equals(user.getCreator()))
+			{
+				epadUser = new EPADUser(user.getFullName(), user.getUsername(), 
+						user.getFirstName(), user.getLastName(), user.getEmail(), user.isEnabled(), user.isAdmin(), user.isPasswordExpired(), "", permissions, projects, projectToRole, messages);
+			}
+			else
+			{
+				epadUser = new EPADUser(user.getFullName(), user.getUsername(), 
+					user.getFirstName(), user.getLastName(), "******", user.isEnabled(), user.isAdmin(), user.isPasswordExpired(), "", permissions, projects, projectToRole, messages);
+			}
 			return epadUser;
 		}
 		return null;
 	}
 
 	@Override
-	public void createOrModifyUser(String loggedInUser, String username,
+	public void createOrModifyUser(String loggedInUserName, String username,
 			String firstname, String lastname, String email, String password,String oldpassword,
 			String[] addPermissions, String[] removePermissions) throws Exception {
 		User user = projectOperations.getUser(username);
-		if (!projectOperations.getUser(loggedInUser).isAdmin() && (user == null || !loggedInUser.equals(username)))
+		User loggedInUser = projectOperations.getUser(loggedInUserName);
+		if (!loggedInUser.isAdmin() && (user == null || !loggedInUser.equals(username)) && !loggedInUser.hasPermission(User.CreateUserPermission))
 			throw new Exception("User " + loggedInUser + " does not have privilege to create/modify users");
 
 		List<String> addPerms = new ArrayList<String>();
@@ -3250,11 +3274,11 @@ public class DefaultEpadOperations implements EpadOperations
 		}
 		if (user == null)
 		{
-			projectOperations.createUser(loggedInUser, username, firstname, lastname, email, password, addPerms, removePerms);
+			projectOperations.createUser(loggedInUserName, username, firstname, lastname, email, password, addPerms, removePerms);
 		}
 		else
 		{
-			projectOperations.updateUser(loggedInUser, username, firstname, lastname, email, password, oldpassword, addPerms, removePerms);
+			projectOperations.updateUser(loggedInUserName, username, firstname, lastname, email, password, oldpassword, addPerms, removePerms);
 		}
 		
 	}
@@ -3293,9 +3317,18 @@ public class DefaultEpadOperations implements EpadOperations
 			String[] perms = user.getPermissions().split(",");
 			for (String perm: perms)
 				permissions.add(perm);
-			EPADUser epadUser = new EPADUser(user.getFullName(), user.getUsername(), 
-					user.getFirstName(), user.getLastName(), user.getEmail(), user.isEnabled(), user.isAdmin(), user.isPasswordExpired(), user.getRole(), permissions);
-			userlist.addEPADUser(epadUser);
+			if (projectOperations.isAdmin(username) || username.equals(user.getUsername()) || username.equals(user.getCreator()))
+			{
+				EPADUser epadUser = new EPADUser(user.getFullName(), user.getUsername(), 
+						user.getFirstName(), user.getLastName(), user.getEmail(), user.isEnabled(), user.isAdmin(), user.isPasswordExpired(), user.getRole(), permissions);
+				userlist.addEPADUser(epadUser);
+			}
+			else
+			{
+				EPADUser epadUser = new EPADUser(user.getFullName(), user.getUsername(), 
+						user.getFirstName(), user.getLastName(), "******", user.isEnabled(), user.isAdmin(), user.isPasswordExpired(), user.getRole(), permissions);
+				userlist.addEPADUser(epadUser);
+			}
 		}
 		return userlist;
 	}

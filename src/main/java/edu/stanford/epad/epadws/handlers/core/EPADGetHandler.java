@@ -58,6 +58,7 @@ import edu.stanford.epad.dtos.EPADStudy;
 import edu.stanford.epad.dtos.EPADStudyList;
 import edu.stanford.epad.dtos.EPADSubject;
 import edu.stanford.epad.dtos.EPADSubjectList;
+import edu.stanford.epad.dtos.EPADTemplate;
 import edu.stanford.epad.dtos.EPADTemplateList;
 import edu.stanford.epad.dtos.EPADUsage;
 import edu.stanford.epad.dtos.EPADUsageList;
@@ -1317,6 +1318,12 @@ public class EPADGetHandler
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.TEMPLATE_LIST, pathInfo)) {
 				ProjectReference reference = ProjectReference.extract(ProjectsRouteTemplates.TEMPLATE_LIST, pathInfo);
 				EPADTemplateList templates = epadOperations.getTemplateDescriptions(reference.projectID, username, sessionID);
+				if ("true".equals(httpRequest.getParameter("includeSystemTemplates"))) {
+					EPADTemplateList systemplates = epadOperations.getTemplateDescriptions(username, sessionID);
+					for (EPADTemplate template: systemplates.ResultSet.Result) {
+						templates.addTemplate(template);
+					}
+				}
 				responseStream.append(templates.toJSON());
 				statusCode = HttpServletResponse.SC_OK;
 

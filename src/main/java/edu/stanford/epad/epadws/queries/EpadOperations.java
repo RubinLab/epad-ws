@@ -162,6 +162,8 @@ public interface EpadOperations
 
 	EPADTemplateList getTemplateDescriptions(String username, String sessionID) throws Exception;
 
+	EPADTemplateList getSystemTemplateDescriptions(String username, String sessionID) throws Exception;
+
 	EPADTemplateList getTemplateDescriptions(String projectID, String username, String sessionID) throws Exception;
 	
 	EPADFile getFileDescription(SeriesReference seriesReference, String filename, String username, String sessionID) throws Exception;
