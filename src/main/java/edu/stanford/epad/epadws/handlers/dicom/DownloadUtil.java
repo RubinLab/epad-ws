@@ -27,6 +27,7 @@ import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintWriter;
@@ -47,6 +48,8 @@ import org.apache.commons.httpclient.HttpException;
 import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADFileUtils;
 import edu.stanford.epad.common.util.EPADLogger;
+import edu.stanford.epad.dtos.EPADAIM;
+import edu.stanford.epad.dtos.EPADAIMList;
 import edu.stanford.epad.dtos.EPADFile;
 import edu.stanford.epad.dtos.EPADImage;
 import edu.stanford.epad.dtos.EPADImageList;
@@ -89,7 +92,7 @@ public class DownloadUtil {
 	 * @throws Exception
 	 */
 	public static void downloadSubject(boolean stream, HttpServletResponse httpResponse, SubjectReference subjectReference, String username, String sessionID, 
-									EPADSearchFilter searchFilter, String studyUIDs) throws Exception
+									EPADSearchFilter searchFilter, String studyUIDs, boolean includeAIMs) throws Exception
 	{
 		log.info("Downloading subject:" + subjectReference.subjectID + " stream:" + stream);
 		Set<String> studies = new HashSet<String>();
@@ -193,7 +196,7 @@ public class DownloadUtil {
 	 * @param studyUIDs - download only these selected studies
 	 * @throws Exception
 	 */
-	public static void downloadStudies(boolean stream, HttpServletResponse httpResponse, String studyUIDs, String username, String sessionID) throws Exception
+	public static void downloadStudies(boolean stream, HttpServletResponse httpResponse, String studyUIDs, String username, String sessionID, boolean includeAIMs) throws Exception
 	{
 		log.info("Downloading studies:" + studyUIDs + " stream:" + stream);
 		Set<String> studies = new HashSet<String>();
@@ -245,6 +248,30 @@ public class DownloadUtil {
 					finally 
 					{
 						if (fos != null) fos.close();
+					}
+				}
+				if (includeAIMs)
+				{
+					EPADAIMList aimList = epadOperations.getSeriesAIMDescriptions(seriesReference, username, sessionID);
+					for (EPADAIM aim: aimList.ResultSet.Result)
+					{
+						String name = "Aim_" + aim.aimID + ".xml";
+						File aimFile = new File(seriesDir, name);
+						fileNames.add("Study-" + studyReference.studyUID + "/Series-" + series.seriesUID + "/" + name);
+						FileWriter fw = null;
+						try 
+						{
+							fw = new FileWriter(aimFile);
+							fw.write(aim.xml);
+						}
+						catch (Exception x)
+						{
+							log.warning("Error writing aim file");
+						}
+						finally 
+						{
+							if (fw != null) fw.close();
+						}
 					}
 				}
 			}
@@ -303,7 +330,7 @@ public class DownloadUtil {
 	 * @param seriesUIDs - download only these selected series
 	 * @throws Exception
 	 */
-	public static void downloadStudy(boolean stream, HttpServletResponse httpResponse, StudyReference studyReference, String username, String sessionID, EPADSearchFilter searchFilter, String seriesUIDs) throws Exception
+	public static void downloadStudy(boolean stream, HttpServletResponse httpResponse, StudyReference studyReference, String username, String sessionID, EPADSearchFilter searchFilter, String seriesUIDs, boolean includeAIMs) throws Exception
 	{
 		log.info("Downloading study:" + studyReference.studyUID + " stream:" + stream);
 		Set<String> seriesSet = new HashSet<String>();
@@ -346,6 +373,30 @@ public class DownloadUtil {
 				finally 
 				{
 					if (fos != null) fos.close();
+				}
+			}
+			if (includeAIMs)
+			{
+				EPADAIMList aimList = epadOperations.getSeriesAIMDescriptions(seriesReference, username, sessionID);
+				for (EPADAIM aim: aimList.ResultSet.Result)
+				{
+					String name = "Aim_" + aim.aimID + ".xml";
+					File aimFile = new File(seriesDir, name);
+					fileNames.add("Series-" + series.seriesUID + "/" + name);
+					FileWriter fw = null;
+					try 
+					{
+						fw = new FileWriter(aimFile);
+						fw.write(aim.xml);
+					}
+					catch (Exception x)
+					{
+						log.warning("Error writing aim file");
+					}
+					finally 
+					{
+						if (fw != null) fw.close();
+					}
 				}
 			}
 		}
@@ -401,7 +452,7 @@ public class DownloadUtil {
 	 * @param seriesUIDs
 	 * @throws Exception
 	 */
-	public static void downloadSeries(boolean stream, HttpServletResponse httpResponse, String seriesUIDs, String username, String sessionID) throws Exception
+	public static void downloadSeries(boolean stream, HttpServletResponse httpResponse, String seriesUIDs, String username, String sessionID, boolean includeAIMs) throws Exception
 	{
 		log.info("Downloading seriesUIDs:" + seriesUIDs + " stream:" + stream);
 		String downloadDirPath = EPADConfig.getEPADWebServerResourcesDir() + "download/" + "temp" + Long.toString(System.currentTimeMillis());
@@ -440,6 +491,30 @@ public class DownloadUtil {
 				finally 
 				{
 					if (fos != null) fos.close();
+				}
+			}
+			if (includeAIMs)
+			{
+				EPADAIMList aimList = epadOperations.getSeriesAIMDescriptions(seriesReference, username, sessionID);
+				for (EPADAIM aim: aimList.ResultSet.Result)
+				{
+					String name = "Aim_" + aim.aimID + ".xml";
+					File aimFile = new File(seriesDir, name);
+					fileNames.add("Series-" + series.seriesUID + "/" + name);
+					FileWriter fw = null;
+					try 
+					{
+						fw = new FileWriter(aimFile);
+						fw.write(aim.xml);
+					}
+					catch (Exception x)
+					{
+						log.warning("Error writing aim file");
+					}
+					finally 
+					{
+						if (fw != null) fw.close();
+					}
 				}
 			}
 		}
@@ -495,7 +570,7 @@ public class DownloadUtil {
 	 * @param sessionID
 	 * @throws Exception
 	 */
-	public static void downloadSeries(boolean stream, HttpServletResponse httpResponse, SeriesReference seriesReference, String username, String sessionID) throws Exception
+	public static void downloadSeries(boolean stream, HttpServletResponse httpResponse, SeriesReference seriesReference, String username, String sessionID, boolean includeAIMs) throws Exception
 	{
 		log.info("Downloading series:" + seriesReference.seriesUID + " stream:" + stream);
 		String downloadDirPath = EPADConfig.getEPADWebServerResourcesDir() + "download/" + "temp" + Long.toString(System.currentTimeMillis());
@@ -524,6 +599,30 @@ public class DownloadUtil {
 			finally 
 			{
 				if (fos != null) fos.close();
+			}
+		}
+		if (includeAIMs)
+		{
+			EPADAIMList aimList = epadOperations.getSeriesAIMDescriptions(seriesReference, username, sessionID);
+			for (EPADAIM aim: aimList.ResultSet.Result)
+			{
+				String name = "Aim_" + aim.aimID + ".xml";
+				File aimFile = new File(downloadDir, name);
+				fileNames.add(name);
+				FileWriter fw = null;
+				try 
+				{
+					fw = new FileWriter(aimFile);
+					fw.write(aim.xml);
+				}
+				catch (Exception x)
+				{
+					log.warning("Error writing aim file");
+				}
+				finally 
+				{
+					if (fw != null) fw.close();
+				}
 			}
 		}
 		String zipName = "Patient-" + seriesReference.subjectID + "-Study-" + seriesReference.studyUID + "-Serie-" + seriesReference.seriesUID + ".zip";

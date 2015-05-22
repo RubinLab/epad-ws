@@ -151,10 +151,11 @@ public class EPADGetHandler
 
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.SUBJECT, pathInfo)) {
 				SubjectReference subjectReference = SubjectReference.extract(ProjectsRouteTemplates.SUBJECT, pathInfo);
+				boolean includeAims = "true".equalsIgnoreCase(httpRequest.getParameter("includeAims"));
 				if (returnFile(httpRequest)) {
-					DownloadUtil.downloadSubject(false, httpResponse, subjectReference, username, sessionID, searchFilter, studyUIDs);
+					DownloadUtil.downloadSubject(false, httpResponse, subjectReference, username, sessionID, searchFilter, studyUIDs, includeAims);
 				} else if (returnStream(httpRequest)) {
-					DownloadUtil.downloadSubject(true, httpResponse, subjectReference, username, sessionID, searchFilter, studyUIDs);
+					DownloadUtil.downloadSubject(true, httpResponse, subjectReference, username, sessionID, searchFilter, studyUIDs, includeAims);
 				} else {
 					EPADSubject subject = epadOperations.getSubjectDescription(subjectReference, username, sessionID);
 					if (subject != null) {
@@ -179,16 +180,17 @@ public class EPADGetHandler
 
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.STUDY, pathInfo)) {
 				StudyReference studyReference = StudyReference.extract(ProjectsRouteTemplates.STUDY, pathInfo);
+				boolean includeAims = "true".equalsIgnoreCase(httpRequest.getParameter("includeAims"));
 				if (returnFile(httpRequest)) {
 					if (studyReference.studyUID.contains(","))
-						DownloadUtil.downloadStudies(false, httpResponse, studyReference.studyUID, username, sessionID);
+						DownloadUtil.downloadStudies(false, httpResponse, studyReference.studyUID, username, sessionID, includeAims);
 					else
-						DownloadUtil.downloadStudy(false, httpResponse, studyReference, username, sessionID, searchFilter, seriesUIDs);
+						DownloadUtil.downloadStudy(false, httpResponse, studyReference, username, sessionID, searchFilter, seriesUIDs, includeAims);
 				} else if (returnStream(httpRequest)) {
 					if (studyReference.studyUID.contains(","))
-						DownloadUtil.downloadStudies(true, httpResponse, studyReference.studyUID, username, sessionID);
+						DownloadUtil.downloadStudies(true, httpResponse, studyReference.studyUID, username, sessionID, includeAims);
 					else
-						DownloadUtil.downloadStudy(true, httpResponse, studyReference, username, sessionID, searchFilter, seriesUIDs);
+						DownloadUtil.downloadStudy(true, httpResponse, studyReference, username, sessionID, searchFilter, seriesUIDs, includeAims);
 				} else {
 					EPADStudy study = epadOperations.getStudyDescription(studyReference, username, sessionID);
 					if (study != null) {
@@ -212,16 +214,17 @@ public class EPADGetHandler
 
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.SERIES, pathInfo)) {
 				SeriesReference seriesReference = SeriesReference.extract(ProjectsRouteTemplates.SERIES, pathInfo);
+				boolean includeAims = "true".equalsIgnoreCase(httpRequest.getParameter("includeAims"));
 				if (returnFile(httpRequest)) {
 					if (seriesReference.seriesUID.contains(","))
-						DownloadUtil.downloadSeries(false, httpResponse, seriesReference.seriesUID, username, sessionID);
+						DownloadUtil.downloadSeries(false, httpResponse, seriesReference.seriesUID, username, sessionID, includeAims);
 					else
-						DownloadUtil.downloadSeries(false, httpResponse, seriesReference, username, sessionID);
+						DownloadUtil.downloadSeries(false, httpResponse, seriesReference, username, sessionID, includeAims);
 				} else if (returnStream(httpRequest)) {
 					if (seriesReference.seriesUID.contains(","))
-						DownloadUtil.downloadSeries(true, httpResponse, seriesReference.seriesUID, username, sessionID);
+						DownloadUtil.downloadSeries(true, httpResponse, seriesReference.seriesUID, username, sessionID, includeAims);
 					else
-						DownloadUtil.downloadSeries(true, httpResponse, seriesReference, username, sessionID);
+						DownloadUtil.downloadSeries(true, httpResponse, seriesReference, username, sessionID, includeAims);
 				} else {
 					EPADSeries series = epadOperations.getSeriesDescription(seriesReference, username, sessionID);
 					if (series != null) {
@@ -317,10 +320,11 @@ public class EPADGetHandler
 				
 			} else if (HandlerUtil.matchesTemplate(SubjectsRouteTemplates.SUBJECT, pathInfo)) {
 				SubjectReference subjectReference = SubjectReference.extract(SubjectsRouteTemplates.SUBJECT, pathInfo);
+				boolean includeAims = "true".equalsIgnoreCase(httpRequest.getParameter("includeAims"));
 				if (returnFile(httpRequest)) {
-					DownloadUtil.downloadSubject(false, httpResponse, subjectReference, username, sessionID, searchFilter, studyUIDs);
+					DownloadUtil.downloadSubject(false, httpResponse, subjectReference, username, sessionID, searchFilter, studyUIDs, includeAims);
 				} else if (returnStream(httpRequest)) {
-					DownloadUtil.downloadSubject(true, httpResponse, subjectReference, username, sessionID, searchFilter, studyUIDs);
+					DownloadUtil.downloadSubject(true, httpResponse, subjectReference, username, sessionID, searchFilter, studyUIDs, includeAims);
 				} else {
 					EPADSubject subject = epadOperations.getSubjectDescription(subjectReference, username, sessionID);
 					if (subject != null) {
@@ -347,16 +351,17 @@ public class EPADGetHandler
 				 */
 			} else if (HandlerUtil.matchesTemplate(StudiesRouteTemplates.STUDY, pathInfo)) {
 				StudyReference studyReference = StudyReference.extract(StudiesRouteTemplates.STUDY, pathInfo);
+				boolean includeAims = "true".equalsIgnoreCase(httpRequest.getParameter("includeAims"));
 				if (returnFile(httpRequest)) {
 					if (studyReference.studyUID.contains(","))
-						DownloadUtil.downloadStudies(false, httpResponse, studyReference.studyUID, username, sessionID);
+						DownloadUtil.downloadStudies(false, httpResponse, studyReference.studyUID, username, sessionID, includeAims);
 					else
-						DownloadUtil.downloadStudy(false, httpResponse, studyReference, username, sessionID, searchFilter, seriesUIDs);
+						DownloadUtil.downloadStudy(false, httpResponse, studyReference, username, sessionID, searchFilter, seriesUIDs, includeAims);
 				} else if (returnStream(httpRequest)) {
 					if (studyReference.studyUID.contains(","))
-						DownloadUtil.downloadStudies(true, httpResponse, studyReference.studyUID, username, sessionID);
+						DownloadUtil.downloadStudies(true, httpResponse, studyReference.studyUID, username, sessionID, includeAims);
 					else
-						DownloadUtil.downloadStudy(true, httpResponse, studyReference, username, sessionID, searchFilter, seriesUIDs);
+						DownloadUtil.downloadStudy(true, httpResponse, studyReference, username, sessionID, searchFilter, seriesUIDs, includeAims);
 				} else {
 					EPADStudy study = epadOperations.getStudyDescription(studyReference, username, sessionID);
 					if (study != null) {
@@ -370,16 +375,17 @@ public class EPADGetHandler
 
 			} else if (HandlerUtil.matchesTemplate(StudiesRouteTemplates.SERIES, pathInfo)) {
 				SeriesReference seriesReference = SeriesReference.extract(StudiesRouteTemplates.SERIES, pathInfo);
+				boolean includeAims = "true".equalsIgnoreCase(httpRequest.getParameter("includeAims"));
 				if (returnFile(httpRequest)) {
 					if (seriesReference.seriesUID.contains(","))
-						DownloadUtil.downloadSeries(false, httpResponse, seriesReference.seriesUID, username, sessionID);
+						DownloadUtil.downloadSeries(false, httpResponse, seriesReference.seriesUID, username, sessionID, includeAims);
 					else
-						DownloadUtil.downloadSeries(false, httpResponse, seriesReference, username, sessionID);
+						DownloadUtil.downloadSeries(false, httpResponse, seriesReference, username, sessionID, includeAims);
 				} else if (returnStream(httpRequest)) {
 					if (seriesReference.seriesUID.contains(","))
-						DownloadUtil.downloadSeries(true, httpResponse, seriesReference.seriesUID, username, sessionID);
+						DownloadUtil.downloadSeries(true, httpResponse, seriesReference.seriesUID, username, sessionID, includeAims);
 					else
-						DownloadUtil.downloadSeries(true, httpResponse, seriesReference, username, sessionID);
+						DownloadUtil.downloadSeries(true, httpResponse, seriesReference, username, sessionID, includeAims);
 				} else {
 					EPADSeries series = epadOperations.getSeriesDescription(seriesReference, username, sessionID);
 					responseStream.append(series.toJSON());

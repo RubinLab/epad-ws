@@ -303,7 +303,7 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 	public void deleteUser(String loggedInUser, String username) throws Exception {
 		User requestor = getUser(loggedInUser);
 		User user = getUser(username);
-		if (!requestor.isAdmin() || !loggedInUser.equals(user.getCreator()))
+		if (!requestor.isAdmin() && !loggedInUser.equals(user.getCreator()))
 			throw new Exception("No permissions to delete user");
 		user.delete();
 		userCache.remove(user.getUsername());
