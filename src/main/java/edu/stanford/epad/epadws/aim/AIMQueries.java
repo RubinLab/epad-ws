@@ -27,8 +27,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
-import org.bson.BSONObject;
-
 import com.mongodb.BasicDBList;
 import com.mongodb.BasicDBObject;
 import com.mongodb.DB;
@@ -40,10 +38,12 @@ import com.mongodb.util.JSON;
 import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.epad.common.util.MongoDBOperations;
+import edu.stanford.epad.dtos.EPADAIM;
 import edu.stanford.epad.epadws.service.UserProjectService;
 import edu.stanford.hakan.aim3api.base.AimException;
 import edu.stanford.hakan.aim3api.base.ImageAnnotation;
 import edu.stanford.hakan.aim3api.usage.AnnotationGetter;
+import edu.stanford.hakan.aim4api.audittrail.AuditTrailManager;
 import edu.stanford.hakan.aim4api.base.ImageAnnotationCollection;
 
 public class AIMQueries
@@ -59,6 +59,7 @@ public class AIMQueries
 	private static final String useV4 = EPADConfig.useV4;
 	private static final String aim4Namespace = EPADConfig.aim4Namespace;
 	private static final String eXistCollectionV4 = EPADConfig.eXistCollectionV4;
+	private static final String xsdFilePath4 = EPADConfig.xsdFilePathV4;
 
 	public static int getNumberOfAIMAnnotationsForPatients(String sessionID, String username, Set<String> patientIDs)
 	{ // Only count annotations for subjects in this project
@@ -598,4 +599,28 @@ public class AIMQueries
 		log.info("Number of annotations " + count);
 		return count;
 	}
+
+	public static List<ImageAnnotationCollection> getAllVersionSummaries(EPADAIM aim) throws Exception
+	{
+	    String collection4Name = eXistCollectionV4 + "/" + aim.projectID;
+	    ImageAnnotationCollection iac = edu.stanford.hakan.aim4api.usage.AnnotationGetter
+				.getImageAnnotationCollectionByUniqueIdentifier(eXistServerUrl, aim4Namespace, collection4Name,
+						eXistUsername, eXistPassword, aim.aimID);
+		
+		AuditTrailManager atm = new AuditTrailManager(eXistServerUrl, aim4Namespace, collection4Name, eXistUsername, eXistPassword, xsdFilePath4);
+		return atm.getListAllVersions(iac);
+	}
+
+	public static List<ImageAnnotationCollection> getPreviousVersionSummaries(EPADAIM aim) throws Exception
+	{
+	    String collection4Name = eXistCollectionV4 + "/" + aim.projectID;
+	    ImageAnnotationCollection iac = edu.stanford.hakan.aim4api.usage.AnnotationGetter
+				.getImageAnnotationCollectionByUniqueIdentifier(eXistServerUrl, aim4Namespace, collection4Name,
+						eXistUsername, eXistPassword, aim.aimID);
+		
+		AuditTrailManager atm = new AuditTrailManager(eXistServerUrl, aim4Namespace, collection4Name, eXistUsername, eXistPassword, xsdFilePath4);
+		return atm.getPreviousVersions(iac);
+	}
+	
+	
 }

@@ -255,6 +255,8 @@ public interface EpadOperations
 
 	EPADAIMList getSeriesAIMDescriptions(SeriesReference seriesReference, String username, String sessionID);
 
+	EPADAIMList getSeriesAIMDescriptions(SeriesReference seriesReference, String username, String sessionID, boolean includeStudyAims);
+
 	EPADAIM getSeriesAIMDescription(SeriesReference seriesReference, String aimID, String username, String sessionID);
 
 	EPADAIMList getImageAIMDescriptions(ImageReference imageReference, String username, String sessionID);

@@ -957,7 +957,7 @@ public class DefaultEpadOperations implements EpadOperations
 			// Make a list of image UIDs that have no entry in ePAD files_table.
 			for (DICOMFileDescription dicomFileDescription : dicomFileDescriptions) {
 				String modality = dicomFileDescription.modality;
-				if ("RTSTRUCT".equals(modality) || "RTPLAN".equals(modality) || "PR".equals(modality) || "SR".equals(modality)) continue; // no images to generate
+				if ("RTPLAN".equals(modality) || "PR".equals(modality) || "SR".equals(modality)) continue; // no images to generate
 				if (!imageUIDs.contains(dicomFileDescription.imageUID))
 				{
 					log.info("ImageUID without png:" + dicomFileDescription.imageUID);
@@ -2258,6 +2258,20 @@ public class DefaultEpadOperations implements EpadOperations
 			}
 		}
 		return new EPADAIMList(aims);
+	}
+
+	@Override
+	public EPADAIMList getSeriesAIMDescriptions(
+			SeriesReference seriesReference, String username, String sessionID,
+			boolean includeStudyAims) {
+		EPADAIMList aims = this.getSeriesAIMDescriptions(seriesReference, username, sessionID);
+		StudyReference studyReference = new StudyReference(seriesReference.projectID, seriesReference.subjectID, seriesReference.studyUID);
+		EPADAIMList studyaims = this.getStudyAIMDescriptions(studyReference, username, sessionID);
+		for (EPADAIM aim: aims.ResultSet.Result)
+		{
+			studyaims.addAIM(aim);
+		}
+		return studyaims;
 	}
 
 	@Override

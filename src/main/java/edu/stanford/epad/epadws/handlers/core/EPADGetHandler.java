@@ -565,7 +565,11 @@ public class EPADGetHandler
 				SeriesReference seriesReference = SeriesReference.extract(ProjectsRouteTemplates.SERIES_AIM_LIST, pathInfo);
 				if (seriesReference.subjectID.equals("null"))
 					throw new Exception("Patient ID in rest call is null:" + pathInfo);
-				EPADAIMList aims = epadOperations.getSeriesAIMDescriptions(seriesReference, username, sessionID);
+				EPADAIMList aims = null;
+				if ("true".equalsIgnoreCase(httpRequest.getParameter("includeStudyAims")))
+					aims = epadOperations.getSeriesAIMDescriptions(seriesReference, username, sessionID, true);
+				else
+					aims = epadOperations.getSeriesAIMDescriptions(seriesReference, username, sessionID);
 				long dbtime = System.currentTimeMillis();
 				log.info("Time taken for AIM database query:" + (dbtime-starttime) + " msecs for count:" + aims.ResultSet.totalRecords);
 				if (returnSummary(httpRequest))
@@ -951,16 +955,35 @@ public class EPADGetHandler
 				statusCode = HttpServletResponse.SC_OK;
 
 			} else if (HandlerUtil.matchesTemplate(AimsRouteTemplates.AIM, pathInfo)) {
+				String version = httpRequest.getParameter("version");
 				AIMReference aimReference = AIMReference.extract(AimsRouteTemplates.AIM, pathInfo);
 				EPADAIM aim = epadOperations.getAIMDescription(aimReference.aimID, username, sessionID);
 				if (returnSummary(httpRequest))
 				{	
-					responseStream.append(aim.toJSON());
+					if ("all".equalsIgnoreCase(version))
+					{
+						EPADAIMList aims = AIMUtil.getAllVersionSummaries(aim);
+					}
+					else if ("previous".equalsIgnoreCase(version))
+					{
+						EPADAIMList aims = AIMUtil.getPreviousVersionSummaries(aim);
+					}
+					else
+						responseStream.append(aim.toJSON());
 				}
 				else
 				{
-					AIMUtil.queryAIMImageAnnotations(responseStream, null, AIMSearchType.ANNOTATION_UID,
-							aim.aimID, username);					
+					if ("all".equalsIgnoreCase(version))
+					{
+						AIMUtil.returnAllVersions(responseStream, aim);
+					}
+					else if ("previous".equalsIgnoreCase(version))
+					{
+						AIMUtil.returnPreviousVersions(responseStream, aim);
+					}
+					else
+						AIMUtil.queryAIMImageAnnotations(responseStream, null, AIMSearchType.ANNOTATION_UID,
+								aim.aimID, username);					
 				}
 				statusCode = HttpServletResponse.SC_OK;
 

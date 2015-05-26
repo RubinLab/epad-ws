@@ -114,6 +114,7 @@ import edu.stanford.hakan.aim3api.base.SegmentationCollection;
 import edu.stanford.hakan.aim3api.base.User;
 import edu.stanford.hakan.aim3api.usage.AnnotationBuilder;
 import edu.stanford.hakan.aim3api.usage.AnnotationGetter;
+import edu.stanford.hakan.aim4api.audittrail.AuditTrailManager;
 import edu.stanford.hakan.aim4api.base.ImageAnnotationCollection;
 
 /**
@@ -1273,6 +1274,90 @@ public class AIMUtil
 		aimsDBXml.append("</imageAnnotations>\n");
 		log.info("Time taken create xml:" + (xmltime-starttime) + " msecs for " + (annotations.size()+ aimsDB.size()) +" annotations");
 		return aimsDBXml.toString();
+	}
+
+	public static EPADAIMList getAllVersionSummaries(EPADAIM aim) throws Exception
+	{
+		List<ImageAnnotationCollection> iacs = AIMQueries.getAllVersionSummaries(aim);
+		EPADAIMList aims = new EPADAIMList();
+		for (int i = 0; i < iacs.size(); i++)
+		{
+			ImageAnnotationCollection iac = iacs.get(i);
+			try
+			{
+				Aim4 a = new Aim4(iac);
+				EPADAIM ea = new EPADAIM(iac.getUniqueIdentifier().getRoot(), a.getLoggedInUser().getLoginName(), 
+						aim.projectID, aim.subjectID, aim.studyUID, aim.seriesUID, aim.imageUID, aim.instanceOrFrameNumber);
+				ea.name = iac.getImageAnnotations().get(0).getName().getValue();
+				ea.template = iac.getImageAnnotations().get(0).getListTypeCode().get(0).getCodeSystem();// .getCode();
+				ea.templateType = iac.getImageAnnotations().get(0).getListTypeCode().get(0).getCode();
+				ea.date = iac.getDateTime();
+				ea.comment = a.getComment();
+				if (a.getFirstStudyDate() != null)
+					ea.studyDate = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(a.getFirstStudyDate());
+				ea.patientName = a.getPatientName();
+				ea.xml = null;
+				aims.addAIM(ea);
+			} catch (Exception x) {
+				log.warning("Error parsing ImageAnnotationCollection:" + iac, x);
+			}
+		}
+		return aims;
+	}
+
+	public static EPADAIMList getPreviousVersionSummaries(EPADAIM aim) throws Exception
+	{
+		List<ImageAnnotationCollection> iacs = AIMQueries.getPreviousVersionSummaries(aim);
+		EPADAIMList aims = new EPADAIMList();
+		for (int i = 0; i < iacs.size(); i++)
+		{
+			ImageAnnotationCollection iac = iacs.get(i);
+			try
+			{
+				Aim4 a = new Aim4(iac);
+				EPADAIM ea = new EPADAIM(iac.getUniqueIdentifier().getRoot(), a.getLoggedInUser().getLoginName(), 
+						aim.projectID, aim.subjectID, aim.studyUID, aim.seriesUID, aim.imageUID, aim.instanceOrFrameNumber);
+				ea.name = iac.getImageAnnotations().get(0).getName().getValue();
+				ea.template = iac.getImageAnnotations().get(0).getListTypeCode().get(0).getCodeSystem();// .getCode();
+				ea.templateType = iac.getImageAnnotations().get(0).getListTypeCode().get(0).getCode();
+				ea.date = iac.getDateTime();
+				ea.comment = a.getComment();
+				if (a.getFirstStudyDate() != null)
+					ea.studyDate = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(a.getFirstStudyDate());
+				ea.patientName = a.getPatientName();
+				ea.xml = null;
+				aims.addAIM(ea);
+			} catch (Exception x) {
+				log.warning("Error parsing ImageAnnotationCollection:" + iac, x);
+			}
+		}
+		return aims;
+	}
+
+	public static void returnAllVersions(PrintWriter responseStream, EPADAIM aim) throws Exception
+	{
+		List<ImageAnnotationCollection> iacs = AIMQueries.getAllVersionSummaries(aim);
+		StringBuilder annotationsXML = new StringBuilder("<imageAnnotations>\n");
+
+		for (ImageAnnotationCollection iac : iacs) {
+			annotationsXML.append(edu.stanford.hakan.aim4api.usage.AnnotationBuilder.convertToString(iac));
+		}
+		annotationsXML.append("</imageAnnotations>\n");
+		responseStream.print(annotationsXML);
+		return;
+	}
+
+	public static void returnPreviousVersions(PrintWriter responseStream, EPADAIM aim) throws Exception
+	{
+		List<ImageAnnotationCollection> iacs = AIMQueries.getPreviousVersionSummaries(aim);
+		StringBuilder annotationsXML = new StringBuilder("<imageAnnotations>\n");
+
+		for (ImageAnnotationCollection iac : iacs) {
+			annotationsXML.append(edu.stanford.hakan.aim4api.usage.AnnotationBuilder.convertToString(iac));
+		}
+		annotationsXML.append("</imageAnnotations>\n");
+		responseStream.print(annotationsXML);
+		return;
 	}
 
 	private static String XmlDocumentToString(Document document, String xmlns)
