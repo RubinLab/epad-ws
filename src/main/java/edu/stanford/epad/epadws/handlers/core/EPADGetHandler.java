@@ -1348,7 +1348,7 @@ public class EPADGetHandler
 				ProjectReference reference = ProjectReference.extract(ProjectsRouteTemplates.TEMPLATE_LIST, pathInfo);
 				EPADTemplateList templates = epadOperations.getTemplateDescriptions(reference.projectID, username, sessionID);
 				if ("true".equals(httpRequest.getParameter("includeSystemTemplates"))) {
-					EPADTemplateList systemplates = epadOperations.getTemplateDescriptions(username, sessionID);
+					EPADTemplateList systemplates = epadOperations.getSystemTemplateDescriptions(username, sessionID);
 					for (EPADTemplate template: systemplates.ResultSet.Result) {
 						templates.addTemplate(template);
 					}
