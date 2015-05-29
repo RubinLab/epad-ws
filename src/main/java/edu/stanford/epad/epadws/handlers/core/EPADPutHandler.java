@@ -71,7 +71,7 @@ import edu.stanford.epad.dtos.EPADStudy;
 import edu.stanford.epad.dtos.EPADStudyList;
 import edu.stanford.epad.dtos.EPADSubject;
 import edu.stanford.epad.dtos.EPADSubjectList;
-import edu.stanford.epad.dtos.EPADTemplateList;
+import edu.stanford.epad.dtos.EPADTemplateContainerList;
 import edu.stanford.epad.dtos.EPADUsage;
 import edu.stanford.epad.dtos.EPADUsageList;
 import edu.stanford.epad.dtos.EPADUser;
@@ -632,6 +632,83 @@ public class EPADPutHandler
 						statusCode = epadOperations.createFile(username, reference, uploadedFile, "", FileType.TEMPLATE.getName(), sessionID);
 					}
 				}
+				statusCode = HttpServletResponse.SC_OK;
+			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.PROJECT_FILE, pathInfo)) {
+				ProjectReference projectReference = ProjectReference.extract(ProjectsRouteTemplates.PROJECT_FILE, pathInfo);
+				Map<String, String> templateMap = HandlerUtil.getTemplateMap(ProjectsRouteTemplates.PROJECT_FILE, pathInfo);
+				String filename = HandlerUtil.getTemplateParameter(templateMap, "filename");
+				if (filename == null || filename.trim().length() == 0)
+					throw new Exception("Invalid filename");
+				String description = httpRequest.getParameter("description");
+				String fileType = httpRequest.getParameter("fileType");
+				String mimeType = httpRequest.getParameter("mimeType");
+				String name = httpRequest.getParameter("name");
+				EpadFile file = projectOperations.getEpadFile(projectReference.projectID, null, null, null, filename);
+				if (file != null)
+				{
+					projectOperations.updateEpadFile(file.getId(), name, description, fileType, mimeType);
+				}
+				else
+					throw new Exception("File not found");
+				statusCode = HttpServletResponse.SC_OK;
+						
+			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.SUBJECT_FILE, pathInfo)) {
+				SubjectReference subjectReference = SubjectReference.extract(ProjectsRouteTemplates.SUBJECT_FILE, pathInfo);
+				if (subjectReference.subjectID.equals("null"))
+					throw new Exception("Patient ID in rest call is null:" + pathInfo);
+				Map<String, String> templateMap = HandlerUtil.getTemplateMap(ProjectsRouteTemplates.SUBJECT_FILE, pathInfo);
+				String filename = HandlerUtil.getTemplateParameter(templateMap, "filename");
+				if (filename == null || filename.trim().length() == 0)
+					throw new Exception("Invalid filename");
+				String description = httpRequest.getParameter("description");
+				String fileType = httpRequest.getParameter("fileType");
+				String mimeType = httpRequest.getParameter("mimeType");
+				String name = httpRequest.getParameter("name");
+				EpadFile file = projectOperations.getEpadFile(subjectReference.projectID, subjectReference.subjectID, null, null, filename);
+				if (file != null)
+				{
+					projectOperations.updateEpadFile(file.getId(), name, description, fileType, mimeType);
+				}
+				else
+					throw new Exception("File not found");
+				statusCode = HttpServletResponse.SC_OK;
+
+			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.STUDY_FILE, pathInfo)) {
+				StudyReference studyReference = StudyReference.extract(ProjectsRouteTemplates.STUDY_FILE, pathInfo);
+				Map<String, String> templateMap = HandlerUtil.getTemplateMap(ProjectsRouteTemplates.STUDY_FILE, pathInfo);
+				String filename = HandlerUtil.getTemplateParameter(templateMap, "filename");
+				if (filename == null || filename.trim().length() == 0)
+					throw new Exception("Invalid filename");
+				String description = httpRequest.getParameter("description");
+				String fileType = httpRequest.getParameter("fileType");
+				String mimeType = httpRequest.getParameter("mimeType");
+				String name = httpRequest.getParameter("name");
+				EpadFile file = projectOperations.getEpadFile(studyReference.projectID, studyReference.subjectID, studyReference.studyUID, null, filename);
+				if (file != null)
+				{
+					projectOperations.updateEpadFile(file.getId(), name, description, fileType, mimeType);
+				}
+				else
+					throw new Exception("File not found");
+				statusCode = HttpServletResponse.SC_OK;
+	
+			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.SERIES_FILE, pathInfo)) {
+				SeriesReference seriesReference = SeriesReference.extract(ProjectsRouteTemplates.SERIES_FILE, pathInfo);
+				Map<String, String> templateMap = HandlerUtil.getTemplateMap(ProjectsRouteTemplates.SERIES_FILE, pathInfo);
+				String filename = HandlerUtil.getTemplateParameter(templateMap, "filename");
+				if (filename == null || filename.trim().length() == 0)
+					throw new Exception("Invalid filename");
+				String description = httpRequest.getParameter("description");
+				String fileType = httpRequest.getParameter("fileType");
+				String mimeType = httpRequest.getParameter("mimeType");
+				String name = httpRequest.getParameter("name");
+				EpadFile file = projectOperations.getEpadFile(seriesReference.projectID, seriesReference.subjectID, seriesReference.studyUID, seriesReference.seriesUID, filename);
+				if (file != null)
+				{
+					projectOperations.updateEpadFile(file.getId(), name, description, fileType, mimeType);
+				}
+				else
+					throw new Exception("File not found");
 				statusCode = HttpServletResponse.SC_OK;
 			} else {
 				statusCode = HandlerUtil.badRequestJSONResponse(BAD_PUT_MESSAGE + ":" + pathInfo, responseStream, log);

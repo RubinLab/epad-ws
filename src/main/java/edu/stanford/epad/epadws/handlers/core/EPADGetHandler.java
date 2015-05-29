@@ -58,8 +58,8 @@ import edu.stanford.epad.dtos.EPADStudy;
 import edu.stanford.epad.dtos.EPADStudyList;
 import edu.stanford.epad.dtos.EPADSubject;
 import edu.stanford.epad.dtos.EPADSubjectList;
-import edu.stanford.epad.dtos.EPADTemplate;
-import edu.stanford.epad.dtos.EPADTemplateList;
+import edu.stanford.epad.dtos.EPADTemplateContainer;
+import edu.stanford.epad.dtos.EPADTemplateContainerList;
 import edu.stanford.epad.dtos.EPADUsage;
 import edu.stanford.epad.dtos.EPADUsageList;
 import edu.stanford.epad.dtos.EPADUser;
@@ -1346,10 +1346,10 @@ public class EPADGetHandler
 
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.TEMPLATE_LIST, pathInfo)) {
 				ProjectReference reference = ProjectReference.extract(ProjectsRouteTemplates.TEMPLATE_LIST, pathInfo);
-				EPADTemplateList templates = epadOperations.getTemplateDescriptions(reference.projectID, username, sessionID);
+				EPADTemplateContainerList templates = epadOperations.getTemplateDescriptions(reference.projectID, username, sessionID);
 				if ("true".equals(httpRequest.getParameter("includeSystemTemplates"))) {
-					EPADTemplateList systemplates = epadOperations.getSystemTemplateDescriptions(username, sessionID);
-					for (EPADTemplate template: systemplates.ResultSet.Result) {
+					EPADTemplateContainerList systemplates = epadOperations.getSystemTemplateDescriptions(username, sessionID);
+					for (EPADTemplateContainer template: systemplates.ResultSet.Result) {
 						templates.addTemplate(template);
 					}
 				}
@@ -1357,7 +1357,7 @@ public class EPADGetHandler
 				statusCode = HttpServletResponse.SC_OK;
 
 			} else if (HandlerUtil.matchesTemplate(TemplatesRouteTemplates.TEMPLATE_LIST, pathInfo)) {
-				EPADTemplateList templates = epadOperations.getTemplateDescriptions(username, sessionID);
+				EPADTemplateContainerList templates = epadOperations.getTemplateDescriptions(username, sessionID);
 				responseStream.append(templates.toJSON());
 				statusCode = HttpServletResponse.SC_OK;
 

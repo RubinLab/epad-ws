@@ -1486,6 +1486,24 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 	}
 
 	@Override
+	public EpadFile updateEpadFile(long fileID, String filename,
+			String description, String fileType, String mimeType) throws Exception {
+		EpadFile efile = new EpadFile();
+		efile.setId(fileID);
+		efile = (EpadFile) efile.retrieve();
+		if (filename != null && filename.trim().length() > 0)
+			efile.setName(filename);
+		if (description != null && description.trim().length() > 0)
+			efile.setDescription(description);
+		if (fileType != null && fileType.trim().length() > 0)
+			efile.setFileType(fileType);
+		if (mimeType != null && mimeType.trim().length() > 0)
+			efile.setFileType(mimeType);
+		efile.save();
+		return efile;
+	}
+
+	@Override
 	public List<String> getDisabledTemplates(String projectID) throws Exception {
 		Project project = getProject(projectID);
 		if (project == null)

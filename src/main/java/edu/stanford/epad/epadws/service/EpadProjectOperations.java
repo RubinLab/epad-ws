@@ -561,6 +561,8 @@ public interface EpadProjectOperations {
 	
 	void disableTemplate(String loggedInUser, String projectID, String subjectUID, String studyUID, String seriesUID, String templateName) throws Exception;
 	
+	EpadFile updateEpadFile(long fileID, String filename, String description, String fileType, String mimeType) throws Exception;	
+	
 	List<String> getDisabledTemplates(String projectID) throws Exception;	
 
 	/**

@@ -606,9 +606,11 @@ public class AIMQueries
 	    ImageAnnotationCollection iac = edu.stanford.hakan.aim4api.usage.AnnotationGetter
 				.getImageAnnotationCollectionByUniqueIdentifier(eXistServerUrl, aim4Namespace, collection4Name,
 						eXistUsername, eXistPassword, aim.aimID);
-		
+		log.info("Getting all versions for aim id:" + aim.aimID);
 		AuditTrailManager atm = new AuditTrailManager(eXistServerUrl, aim4Namespace, collection4Name, eXistUsername, eXistPassword, xsdFilePath4);
-		return atm.getListAllVersions(iac);
+		List<ImageAnnotationCollection> iacs = atm.getListAllVersions(iac);
+		log.info("Aim Api returned " + iacs.size() + " annotations");
+		return iacs;
 	}
 
 	public static List<ImageAnnotationCollection> getPreviousVersionSummaries(EPADAIM aim) throws Exception
