@@ -48,7 +48,7 @@ import edu.stanford.epad.dtos.EPADStudy;
 import edu.stanford.epad.dtos.EPADStudyList;
 import edu.stanford.epad.dtos.EPADSubject;
 import edu.stanford.epad.dtos.EPADSubjectList;
-import edu.stanford.epad.dtos.EPADTemplateList;
+import edu.stanford.epad.dtos.EPADTemplateContainerList;
 import edu.stanford.epad.dtos.EPADUsage;
 import edu.stanford.epad.dtos.EPADUsageList;
 import edu.stanford.epad.dtos.EPADUser;
@@ -142,7 +142,8 @@ public class EPADHandler extends AbstractHandler
 					String sessionUser = EPADSessionOperations.getSessionUser(sessionID);
 					if (username != null && !username.equals(sessionUser))
 					{
-						throw new Exception("Incorrect username in request:" + username + " session belongs to " + sessionUser);
+						HandlerUtil.internalErrorResponse("Incorrect username in request:" + username + " session belongs to " + sessionUser, log);
+						//throw new Exception("Incorrect username in request:" + username + " session belongs to " + sessionUser);
 					}
 					else
 						username = sessionUser;
@@ -1294,12 +1295,12 @@ public class EPADHandler extends AbstractHandler
 
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.TEMPLATE_LIST, pathInfo)) {
 				ProjectReference reference = ProjectReference.extract(ProjectsRouteTemplates.TEMPLATE_LIST, pathInfo);
-				EPADTemplateList templates = epadOperations.getTemplateDescriptions(reference.projectID, username, sessionID);
+				EPADTemplateContainerList templates = epadOperations.getTemplateDescriptions(reference.projectID, username, sessionID);
 				responseStream.append(templates.toJSON());
 				statusCode = HttpServletResponse.SC_OK;
 
 			} else if (HandlerUtil.matchesTemplate(TemplatesRouteTemplates.TEMPLATE_LIST, pathInfo)) {
-				EPADTemplateList templates = epadOperations.getTemplateDescriptions(username, sessionID);
+				EPADTemplateContainerList templates = epadOperations.getTemplateDescriptions(username, sessionID);
 				responseStream.append(templates.toJSON());
 				statusCode = HttpServletResponse.SC_OK;
 
