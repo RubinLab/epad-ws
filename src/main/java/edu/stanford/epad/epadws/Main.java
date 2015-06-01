@@ -1,3 +1,26 @@
+//Copyright (c) 2015 The Board of Trustees of the Leland Stanford Junior University
+//All rights reserved.
+//
+//Redistribution and use in source and binary forms, with or without modification, are permitted provided that
+//the following conditions are met:
+//
+//Redistributions of source code must retain the above copyright notice, this list of conditions and the following
+//disclaimer.
+//
+//Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the
+//following disclaimer in the documentation and/or other materials provided with the distribution.
+//
+//Neither the name of The Board of Trustees of the Leland Stanford Junior University nor the names of its
+//contributors (Daniel Rubin, et al) may be used to endorse or promote products derived from this software without
+//specific prior written permission.
+//
+//THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES,
+//INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+//DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+//SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+//SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+//WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE
+//USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package edu.stanford.epad.epadws;
 
 import java.io.File;
@@ -69,8 +92,8 @@ public class Main
 {
 	private static final EPADLogger log = EPADLogger.getInstance();
 
-	public static final String epad_version = "1.4.1";
-	public static final String db_version = "1.41"; // This should always be a valid decimal (only one dot)
+	public static final String epad_version = "1.5";
+	public static final String db_version = "1.5"; // This should always be a valid decimal (only one dot)
 	
 	public static void main(String[] args)
 	{
@@ -189,7 +212,10 @@ public class Main
 
 		addHandlerAtContextPath(new EPADHandler(), "/epad/v2", handlerList);
 
-		addWebAppAtContextPath(handlerList, "ePad.war", "/epad");
+		String webAppPath = EPADConfig.getEPADWebServerWebappsDir() + "ePad.war";
+		if (!new File(webAppPath).exists())
+			webAppPath = EPADConfig.getEPADWebServerWebappsDir() + "epad-1.1.war";
+		addWebAppAtContextPath(handlerList, webAppPath, "/epad");
 
 		addHandlerAtContextPath(new ResourceCheckHandler(), "/epad/resources", handlerList);
 		addFileServerAtContextPath(EPADConfig.getEPADWebServerResourcesDir(), handlerList, "/epad/resources");
@@ -237,12 +263,11 @@ public class Main
 	 * Adds a WAR file from the webapps directory at a context path.
 	 * 
 	 * @param handlerList List of handlers
-	 * @param warFileName String war file name, with or without extension (e.g., ePad.war)
+	 * @param webAppPath String war file name, with or without extension (e.g., ePad.war)
 	 * @param contextPath The context to add the war file (e.g., /epad)
 	 */
-	private static void addWebAppAtContextPath(List<Handler> handlerList, String warFileName, String contextPath)
+	private static void addWebAppAtContextPath(List<Handler> handlerList, String webAppPath, String contextPath)
 	{
-		String webAppPath = EPADConfig.getEPADWebServerWebappsDir() + warFileName;
 		if (!contextPath.startsWith("/")) {
 			contextPath = "/" + contextPath;
 		}
@@ -265,8 +290,9 @@ public class Main
 				log.warning("WebAuth Authentication Filter " + EPADConfig.getParamValue("WebAuthFilter") + " not found");
 			}
 		}
+		
 		handlerList.add(webAppContext);
-		log.info("Added WAR " + warFileName + " at context path " + contextPath);
+		log.info("Added WAR " + webAppPath + " at context path " + contextPath);
 	}
 
 	private static void addFileServerAtContextPath(String baseDirectory, List<Handler> handlerList, String contextPath)

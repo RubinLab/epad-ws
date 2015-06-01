@@ -303,7 +303,7 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 	public void deleteUser(String loggedInUser, String username) throws Exception {
 		User requestor = getUser(loggedInUser);
 		User user = getUser(username);
-		if (!requestor.isAdmin() || !loggedInUser.equals(user.getCreator()))
+		if (!requestor.isAdmin() && !loggedInUser.equals(user.getCreator()))
 			throw new Exception("No permissions to delete user");
 		user.delete();
 		userCache.remove(user.getUsername());
@@ -1483,6 +1483,24 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		dt.setTemplateName(templateName);
 		dt.setCreator(loggedInUser);
 		dt.save();
+	}
+
+	@Override
+	public EpadFile updateEpadFile(long fileID, String filename,
+			String description, String fileType, String mimeType) throws Exception {
+		EpadFile efile = new EpadFile();
+		efile.setId(fileID);
+		efile = (EpadFile) efile.retrieve();
+		if (filename != null && filename.trim().length() > 0)
+			efile.setName(filename);
+		if (description != null && description.trim().length() > 0)
+			efile.setDescription(description);
+		if (fileType != null && fileType.trim().length() > 0)
+			efile.setFileType(fileType);
+		if (mimeType != null && mimeType.trim().length() > 0)
+			efile.setFileType(mimeType);
+		efile.save();
+		return efile;
 	}
 
 	@Override

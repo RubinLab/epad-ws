@@ -1,3 +1,26 @@
+//Copyright (c) 2015 The Board of Trustees of the Leland Stanford Junior University
+//All rights reserved.
+//
+//Redistribution and use in source and binary forms, with or without modification, are permitted provided that
+//the following conditions are met:
+//
+//Redistributions of source code must retain the above copyright notice, this list of conditions and the following
+//disclaimer.
+//
+//Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the
+//following disclaimer in the documentation and/or other materials provided with the distribution.
+//
+//Neither the name of The Board of Trustees of the Leland Stanford Junior University nor the names of its
+//contributors (Daniel Rubin, et al) may be used to endorse or promote products derived from this software without
+//specific prior written permission.
+//
+//THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES,
+//INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+//DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+//SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+//SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+//WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE
+//USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package edu.stanford.epad.epadws.handlers.dicom;
 
 import java.io.IOException;
@@ -56,22 +79,27 @@ public class WadoHandler extends AbstractHandler
 		if ("GET".equalsIgnoreCase(method)) {
 			try {
 				String sessionID = SessionService.getJSessionIDFromRequest(httpRequest);
-				String username = httpRequest.getParameter("username");
-				responseStream = httpResponse.getOutputStream();
-
-				// if (XNATOperations.hasValidXNATSessionID(httpRequest)) {
-				if (dummy()) { // TODO Re-enable authentication
-					String queryString = httpRequest.getQueryString();
-					queryString = URLDecoder.decode(queryString, "UTF-8");
-					if (queryString != null) {
-						statusCode = performWADOQuery(queryString, responseStream, username, sessionID);
-					} else {
-						statusCode = HandlerUtil.badRequestResponse(MISSING_QUERY_MESSAGE, log);
-						log.warning("Missing Wado query");
-					}
-				} else {
-					statusCode = HandlerUtil.invalidTokenResponse(INVALID_SESSION_TOKEN_MESSAGE, log);
+				if (sessionID == null || sessionID.length() == 0) {
+					log.warning("JSESSIONID is Missing in client request");
+					//statusCode = HandlerUtil.invalidTokenJSONResponse(INVALID_SESSION_TOKEN_MESSAGE, httpResponse.getWriter(), log);
 				}
+					String username = httpRequest.getParameter("username");
+					responseStream = httpResponse.getOutputStream();
+	
+					// if (XNATOperations.hasValidXNATSessionID(httpRequest)) {
+					if (dummy()) { // TODO Re-enable authentication
+						String queryString = httpRequest.getQueryString();
+						queryString = URLDecoder.decode(queryString, "UTF-8");
+						if (queryString != null) {
+							statusCode = performWADOQuery(queryString, responseStream, username, sessionID);
+						} else {
+							statusCode = HandlerUtil.badRequestResponse(MISSING_QUERY_MESSAGE, log);
+							log.warning("Missing Wado query");
+						}
+					} else {
+						statusCode = HandlerUtil.invalidTokenResponse(INVALID_SESSION_TOKEN_MESSAGE, log);
+					}
+				//}
 			} catch (Throwable t) {
 				statusCode = HandlerUtil.internalErrorResponse(INTERNAL_EXCEPTION_MESSAGE, log);
 				log.warning("Error is Wado query", t);
@@ -97,7 +125,7 @@ public class WadoHandler extends AbstractHandler
 		if (queryString.toLowerCase().indexOf("dicom") != -1)
 		{
 			log.info("User:" + username  + " host:" + EPADSessionOperations.getSessionHost(sessionID) 
-					+ "Wado Request to download dicom:" + queryString);
+					+ " Wado Request to download dicom:" + queryString);
 		}
 		String wadoURL = buildWADOURL(wadoHost, wadoPort, wadoBase, queryString);
 		int statusCode;

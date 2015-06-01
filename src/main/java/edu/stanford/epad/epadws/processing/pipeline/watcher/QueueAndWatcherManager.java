@@ -1,3 +1,26 @@
+//Copyright (c) 2015 The Board of Trustees of the Leland Stanford Junior University
+//All rights reserved.
+//
+//Redistribution and use in source and binary forms, with or without modification, are permitted provided that
+//the following conditions are met:
+//
+//Redistributions of source code must retain the above copyright notice, this list of conditions and the following
+//disclaimer.
+//
+//Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the
+//following disclaimer in the documentation and/or other materials provided with the distribution.
+//
+//Neither the name of The Board of Trustees of the Leland Stanford Junior University nor the names of its
+//contributors (Daniel Rubin, et al) may be used to endorse or promote products derived from this software without
+//specific prior written permission.
+//
+//THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES,
+//INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+//DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+//SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+//SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+//WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE
+//USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package edu.stanford.epad.epadws.processing.pipeline.watcher;
 
 import java.io.File;
@@ -24,6 +47,7 @@ import edu.stanford.epad.epadws.processing.pipeline.process.PngGeneratorProcess;
 import edu.stanford.epad.epadws.processing.pipeline.task.DSOMaskPNGGeneratorTask;
 import edu.stanford.epad.epadws.processing.pipeline.task.GeneratorTask;
 import edu.stanford.epad.epadws.processing.pipeline.task.MultiFramePNGGeneratorTask;
+import edu.stanford.epad.epadws.processing.pipeline.task.RTDICOMProcessingTask;
 import edu.stanford.epad.epadws.processing.pipeline.task.SingleFrameDICOMPngGeneratorTask;
 
 public class QueueAndWatcherManager
@@ -113,13 +137,19 @@ public class QueueAndWatcherManager
 			String seriesUID = dicomFileDescription.seriesUID;
 			String imageUID = dicomFileDescription.imageUID;
 			String dicomFilePath = getDICOMFilePath(dicomFileDescription);
+			String modality = dicomFileDescription.modality;
 			File inputDICOMFile = new File(dicomFilePath);
 
 			// If the file does not exist locally (because it is stored on another file system), download it.
 			if (!inputDICOMFile.exists()) {
 				inputDICOMFile = downloadRemoteDICOM(dicomFileDescription);
 			}
-
+			log.info("Dicom file, modality:" +  dicomFileDescription.modality);
+			if ("RTSTRUCT".equals(modality))
+			{
+				extractRTDicomInfo(dicomFileDescription, inputDICOMFile);
+			}
+			if ("RTSTRUCT".equals(modality) || "RTPLAN".equals(modality) || "PR".equals(modality) || "SR".equals(modality)) return; // images to generate
 			if (PixelMedUtils.isDicomSegmentationObject(dicomFilePath)) {
 				if (sameSeries)
 				{
@@ -200,8 +230,9 @@ public class QueueAndWatcherManager
 	{
 		log.info("Multi-frame DICOM object found for series " + dicomFileDescription.seriesUID);
 
+		String tagFilePath = createOutputPNGFilePathForSingleFrameDICOMImage(dicomFileDescription).replace(".png", ".tag");
 		MultiFramePNGGeneratorTask dsoPNGGeneratorTask = new MultiFramePNGGeneratorTask(dicomFileDescription.seriesUID,
-				multiFrameDicomFile);
+				multiFrameDicomFile, tagFilePath);
 
 		pngGeneratorTaskQueue.offer(dsoPNGGeneratorTask);
 	}
@@ -216,6 +247,18 @@ public class QueueAndWatcherManager
 		SingleFrameDICOMPngGeneratorTask pngGeneratorTask = new SingleFrameDICOMPngGeneratorTask(patientName,
 				dicomFileDescription, dicomFile, outputPNGFile);
 		pngGeneratorTaskQueue.offer(pngGeneratorTask);
+	}
+
+	private void extractRTDicomInfo(DICOMFileDescription dicomFileDescription, File dicomFile)
+	{
+		log.info("DICOM RT found for series " + dicomFileDescription.seriesUID + " dicomFile:" + dicomFile.getAbsolutePath());
+		String rtFilePath = createOutputPNGFilePathForSingleFrameDICOMImage(dicomFileDescription).replace(".png", ".rt");
+		EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
+		insertEpadFile(epadDatabaseOperations, rtFilePath, 0, dicomFileDescription.imageUID);
+		RTDICOMProcessingTask rtTask = new RTDICOMProcessingTask(dicomFileDescription.seriesUID, dicomFileDescription.imageUID,
+				dicomFile, rtFilePath);
+
+		pngGeneratorTaskQueue.offer(rtTask);
 	}
 
 	private void insertEpadFile(EpadDatabaseOperations epadDatabaseOperations, String outputPNGFilePath, long fileSize,

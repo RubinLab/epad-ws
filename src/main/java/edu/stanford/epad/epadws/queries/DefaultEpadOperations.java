@@ -1,3 +1,26 @@
+//Copyright (c) 2015 The Board of Trustees of the Leland Stanford Junior University
+//All rights reserved.
+//
+//Redistribution and use in source and binary forms, with or without modification, are permitted provided that
+//the following conditions are met:
+//
+//Redistributions of source code must retain the above copyright notice, this list of conditions and the following
+//disclaimer.
+//
+//Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the
+//following disclaimer in the documentation and/or other materials provided with the distribution.
+//
+//Neither the name of The Board of Trustees of the Leland Stanford Junior University nor the names of its
+//contributors (Daniel Rubin, et al) may be used to endorse or promote products derived from this software without
+//specific prior written permission.
+//
+//THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES,
+//INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+//DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+//SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+//SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+//WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE
+//USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package edu.stanford.epad.epadws.queries;
 
 import ij.ImagePlus;
@@ -22,6 +45,7 @@ import java.util.Set;
 import javax.servlet.http.HttpServletResponse;
 
 import org.apache.commons.io.FileUtils;
+import org.json.JSONArray;
 import org.json.JSONObject;
 import org.json.XML;
 
@@ -55,6 +79,7 @@ import edu.stanford.epad.dtos.EPADStudy;
 import edu.stanford.epad.dtos.EPADStudyList;
 import edu.stanford.epad.dtos.EPADSubject;
 import edu.stanford.epad.dtos.EPADSubjectList;
+import edu.stanford.epad.dtos.EPADTemplate;
 import edu.stanford.epad.dtos.EPADTemplateContainer;
 import edu.stanford.epad.dtos.EPADTemplateContainerList;
 import edu.stanford.epad.dtos.EPADUser;
@@ -373,12 +398,13 @@ public class DefaultEpadOperations implements EpadOperations
 	public EPADStudy getStudyDescription(StudyReference studyReference, String username, String sessionID) throws Exception
 	{
 		boolean found = true;
+		String patientID = studyReference.subjectID;
 		if (!EPADConfig.UseEPADUsersProjects) {
 			XNATExperiment xnatExperiment = XNATQueries.getDICOMExperiment(sessionID, studyReference.projectID,
 					studyReference.subjectID, studyReference.studyUID);
 			if (xnatExperiment != null)
 				found = true;
-		} else {
+		} else if (studyReference.projectID != null && patientID != null){
 			found = projectOperations.isStudyInProjectAndSubject(studyReference.projectID,
 					studyReference.subjectID, studyReference.studyUID);
 		}
@@ -390,7 +416,10 @@ public class DefaultEpadOperations implements EpadOperations
 		} else {
 			DCM4CHEEStudy dcm4CheeStudy = Dcm4CheeQueries.getStudy(studyReference.studyUID);
 			if (dcm4CheeStudy != null)
-				return dcm4cheeStudy2EpadStudy(sessionID, studyReference.projectID, studyReference.subjectID, dcm4CheeStudy, username);
+			{
+				if (patientID == null) patientID = dcm4CheeStudy.patientID;
+				return dcm4cheeStudy2EpadStudy(sessionID, studyReference.projectID, patientID, dcm4CheeStudy, username);
+			}
 			else {
 				log.warning("Count not find dcm4chee study " + studyReference.studyUID + " for subject "
 						+ studyReference.subjectID + " in project " + studyReference.projectID);
@@ -402,10 +431,14 @@ public class DefaultEpadOperations implements EpadOperations
 	@Override
 	public EPADSeries getSeriesDescription(SeriesReference seriesReference, String username, String sessionID)
 	{
+		String patientID = seriesReference.subjectID;
 		DCM4CHEESeries dcm4cheeSeries = Dcm4CheeQueries.getSeries(seriesReference.seriesUID);
 
 		if (dcm4cheeSeries != null)
-			return dcm4cheeSeries2EpadSeries(sessionID, seriesReference.projectID, seriesReference.subjectID, dcm4cheeSeries, username);
+		{
+			if (patientID == null) patientID = dcm4cheeSeries.patientID;
+			return dcm4cheeSeries2EpadSeries(sessionID, seriesReference.projectID, patientID, dcm4cheeSeries, username);
+		}
 		else {
 			log.warning("Could not find series description for series " + seriesReference.seriesUID);
 			return null;
@@ -500,6 +533,21 @@ public class DefaultEpadOperations implements EpadOperations
 	{
 		List<DCM4CHEEImageDescription> imageDescriptions = dcm4CheeDatabaseOperations.getImageDescriptions(
 				seriesReference.studyUID, seriesReference.seriesUID);
+		int numImages = imageDescriptions.size();
+		DICOMElementList suppliedDICOMElementsFirst = getDICOMElements(imageDescriptions.get(0).studyUID,
+				imageDescriptions.get(0).seriesUID, imageDescriptions.get(0).imageUID);
+		String pixelSpacing1 = getDICOMElement(suppliedDICOMElementsFirst, PixelMedUtils.PixelSpacingCode);
+		DICOMElementList suppliedDICOMElementsLast = getDICOMElements(imageDescriptions.get(numImages-1).studyUID,
+				imageDescriptions.get(numImages-1).seriesUID, imageDescriptions.get(numImages-1).imageUID);
+		String pixelSpacing2 = getDICOMElement(suppliedDICOMElementsLast, PixelMedUtils.PixelSpacingCode);
+		boolean getMetaDataForAllImages = false;
+		log.debug("pixelSpacing1:" + pixelSpacing1 + " pixelSpacing2:" + pixelSpacing2);
+		if (!pixelSpacing1.equals(pixelSpacing2))
+		{
+			log.info("Series: " +  seriesReference.seriesUID + " returning metadata for all images");
+			getMetaDataForAllImages = true;
+		}
+		DICOMElementList defaultDICOMElements = null;
 		EPADImageList epadImageList = new EPADImageList();
 		int i = 0;
 		boolean isFirst = true;
@@ -507,19 +555,25 @@ public class DefaultEpadOperations implements EpadOperations
 			i++;
 			EPADImage epadImage = null;
 			if (isFirst) {
-				DICOMElementList suppliedDICOMElements = getDICOMElements(dcm4cheeImageDescription.studyUID,
-						dcm4cheeImageDescription.seriesUID, dcm4cheeImageDescription.imageUID);
-				DICOMElementList defaultDICOMElements = getDefaultDICOMElements(dcm4cheeImageDescription.studyUID,
+				DICOMElementList suppliedDICOMElements = suppliedDICOMElementsFirst;				
+				defaultDICOMElements = getDefaultDICOMElements(dcm4cheeImageDescription.studyUID,
 						dcm4cheeImageDescription.seriesUID, dcm4cheeImageDescription.imageUID, suppliedDICOMElements);
 				
-				epadImage = createEPADImage(seriesReference, dcm4cheeImageDescription, suppliedDICOMElements,
-						defaultDICOMElements);
+				epadImage = createEPADImage(seriesReference, dcm4cheeImageDescription, suppliedDICOMElements, defaultDICOMElements);
 				log.info("Returning DICOM metadata, supplied Elements:" + suppliedDICOMElements.getNumberOfElements() + " default Elements:" + defaultDICOMElements.getNumberOfElements());
 				epadImageList.addImage(epadImage);
 				isFirst = false;
-			} else { // We do not add DICOM headers to remaining image descriptions because it would be too expensive
-				epadImage = createEPADImage(seriesReference, dcm4cheeImageDescription, new DICOMElementList(),
-						new DICOMElementList());
+			} else { 
+				DICOMElementList suppliedDICOMElements = suppliedDICOMElementsFirst;				
+				// We do not always add DICOM headers to remaining image descriptions because it would be too expensive
+				if (getMetaDataForAllImages) {
+					suppliedDICOMElements = getDICOMElements(dcm4cheeImageDescription.studyUID,
+							dcm4cheeImageDescription.seriesUID, dcm4cheeImageDescription.imageUID);				
+					defaultDICOMElements = getDefaultDICOMElements(dcm4cheeImageDescription.studyUID,
+							dcm4cheeImageDescription.seriesUID, dcm4cheeImageDescription.imageUID, suppliedDICOMElements);
+					log.info("Getting metadata for image " + i);
+				}
+				epadImage = createEPADImage(seriesReference, dcm4cheeImageDescription, suppliedDICOMElements, defaultDICOMElements);
 				epadImageList.addImage(epadImage);
 			}
 			//log.info("Image UID:" + epadImage.imageUID + " LossLess:" + epadImage.losslessImage);
@@ -904,8 +958,11 @@ public class DefaultEpadOperations implements EpadOperations
 
 			// Make a list of image UIDs that have no entry in ePAD files_table.
 			for (DICOMFileDescription dicomFileDescription : dicomFileDescriptions) {
+				String modality = dicomFileDescription.modality;
+				if ("RTPLAN".equals(modality) || "PR".equals(modality) || "SR".equals(modality)) continue; // no images to generate
 				if (!imageUIDs.contains(dicomFileDescription.imageUID))
 				{
+					log.info("ImageUID without png:" + dicomFileDescription.imageUID);
 					dicomFilesWithoutPNGs.add(dicomFileDescription);
 				}
 				else if ("SEG".equalsIgnoreCase(dicomFileDescription.modality))
@@ -1293,7 +1350,8 @@ public class DefaultEpadOperations implements EpadOperations
 				studyId = study.getStudyUID();
 			}
 			EPADFile efile = new EPADFile(projectReference.projectID, subjectId, patientName, studyId, file.getSeriesUid(),
-					file.getName(), file.getLength(), file.getFileType(), new SimpleDateFormat("yyyy-dd-MM HH:mm:ss").format(file.getCreatedTime()), getEpadFilePath(file));
+					file.getName(), file.getLength(), file.getFileType(), new SimpleDateFormat("yyyy-dd-MM HH:mm:ss").format(file.getCreatedTime()), 
+					getEpadFilePath(file), file.isEnabled(), file.getDescription());
 			boolean filter = searchFilter.shouldFilterFileType(file.getFileType());
 			if (!filter)
 				efiles.add(efile);
@@ -1331,7 +1389,8 @@ public class DefaultEpadOperations implements EpadOperations
 			studyId = study.getStudyUID();
 		}
 		EPADFile efile = new EPADFile(projectReference.projectID, subjectId, patientName, studyId, file.getSeriesUid(),
-				file.getName(), file.getLength(), file.getFileType(), new SimpleDateFormat("yyyy-dd-MM HH:mm:ss").format(file.getCreatedTime()), getEpadFilePath(file));
+				file.getName(), file.getLength(), file.getFileType(), new SimpleDateFormat("yyyy-dd-MM HH:mm:ss").format(file.getCreatedTime()), 
+				getEpadFilePath(file), file.isEnabled(), file.getDescription());
 		return efile;
 	}
 
@@ -1355,7 +1414,8 @@ public class DefaultEpadOperations implements EpadOperations
 				studyId = study.getStudyUID();
 			}
 			EPADFile efile = new EPADFile(subjectReference.projectID, subjectReference.subjectID, patientName, studyId, file.getSeriesUid(),
-					file.getName(), file.getLength(), file.getFileType(), new SimpleDateFormat("yyyy-dd-MM HH:mm:ss").format(file.getCreatedTime()), getEpadFilePath(file));
+					file.getName(), file.getLength(), file.getFileType(), new SimpleDateFormat("yyyy-dd-MM HH:mm:ss").format(file.getCreatedTime()), 
+					getEpadFilePath(file), file.isEnabled(), file.getDescription());
 			boolean filter = searchFilter.shouldFilterFileType(file.getFileType());
 			if (!filter)
 				efiles.add(efile);
@@ -1381,7 +1441,8 @@ public class DefaultEpadOperations implements EpadOperations
 			studyId = study.getStudyUID();
 		}
 		EPADFile efile = new EPADFile(subjectReference.projectID, subjectReference.subjectID, patientName, studyId, file.getSeriesUid(),
-				file.getName(), file.getLength(), file.getFileType(), new SimpleDateFormat("yyyy-dd-MM HH:mm:ss").format(file.getCreatedTime()), getEpadFilePath(file));
+				file.getName(), file.getLength(), file.getFileType(), new SimpleDateFormat("yyyy-dd-MM HH:mm:ss").format(file.getCreatedTime()), 
+				getEpadFilePath(file), file.isEnabled(), file.getDescription());
 		return efile;
 	}
 
@@ -1407,7 +1468,8 @@ public class DefaultEpadOperations implements EpadOperations
 				patientName = subject.getName();
 			}
 			EPADFile efile = new EPADFile(studyReference.projectID, studyReference.subjectID, patientName, studyReference.studyUID, file.getSeriesUid(),
-					file.getName(), file.getLength(), file.getFileType(), new SimpleDateFormat("yyyy-dd-MM HH:mm:ss").format(file.getCreatedTime()), getEpadFilePath(file));
+					file.getName(), file.getLength(), file.getFileType(), new SimpleDateFormat("yyyy-dd-MM HH:mm:ss").format(file.getCreatedTime()), 
+					getEpadFilePath(file), file.isEnabled(), file.getDescription());
 			boolean filter = searchFilter.shouldFilterFileType(file.getFileType());
 			if (!filter)
 				efiles.add(efile);
@@ -1427,7 +1489,8 @@ public class DefaultEpadOperations implements EpadOperations
 			patientName = subject.getName();
 		}
 		EPADFile efile = new EPADFile(studyReference.projectID, studyReference.subjectID, patientName, studyReference.studyUID, file.getSeriesUid(),
-				file.getName(), file.getLength(), file.getFileType(), new SimpleDateFormat("yyyy-dd-MM HH:mm:ss").format(file.getCreatedTime()), getEpadFilePath(file));
+				file.getName(), file.getLength(), file.getFileType(), new SimpleDateFormat("yyyy-dd-MM HH:mm:ss").format(file.getCreatedTime()), 
+				getEpadFilePath(file), file.isEnabled(), file.getDescription());
 		return efile;
 	}
 
@@ -1455,7 +1518,8 @@ public class DefaultEpadOperations implements EpadOperations
 				patientName = subject.getName();
 			}
 			EPADFile efile = new EPADFile(seriesReference.projectID, seriesReference.subjectID, patientName, seriesReference.studyUID, file.getSeriesUid(),
-					file.getName(), file.getLength(), file.getFileType(), new SimpleDateFormat("yyyy-dd-MM HH:mm:ss").format(file.getCreatedTime()), getEpadFilePath(file));
+					file.getName(), file.getLength(), file.getFileType(), new SimpleDateFormat("yyyy-dd-MM HH:mm:ss").format(file.getCreatedTime()), 
+					getEpadFilePath(file), file.isEnabled(), file.getDescription());
 			boolean filter = searchFilter.shouldFilterFileType(file.getFileType());
 			if (!filter)
 				efiles.add(efile);
@@ -1474,12 +1538,45 @@ public class DefaultEpadOperations implements EpadOperations
 			patientName = subject.getName();
 		}
 		EPADFile efile = new EPADFile(seriesReference.projectID, seriesReference.subjectID, patientName, seriesReference.studyUID, file.getSeriesUid(),
-				file.getName(), file.getLength(), file.getFileType(), new SimpleDateFormat("yyyy-dd-MM HH:mm:ss").format(file.getCreatedTime()), getEpadFilePath(file));
+				file.getName(), file.getLength(), file.getFileType(), new SimpleDateFormat("yyyy-dd-MM HH:mm:ss").format(file.getCreatedTime()), 
+				getEpadFilePath(file), file.isEnabled(), file.getDescription());
 		return efile;
 	}
 
 	@Override
 	public EPADTemplateContainerList getTemplateDescriptions(String username,
+			String sessionID) throws Exception {
+		EPADTemplateContainerList fileList = getSystemTemplateDescriptions(username, sessionID);
+		List<EpadFile> efiles = projectOperations.getEpadFiles(null, null, null, null, FileType.TEMPLATE, false);
+		Set<String> userProjects = new HashSet<String>();
+		Map<String, List<String>> disabledTemplates = new HashMap<String, List<String>>();
+		for (EpadFile efile: efiles)
+		{
+			Project project = (Project) projectOperations.getDBObject(Project.class, efile.getProjectId());
+			List<String> disabledTemplatesNames = disabledTemplates.get(project.getProjectId());
+			if (disabledTemplatesNames == null)
+			{
+				disabledTemplatesNames = projectOperations.getDisabledTemplates(project.getProjectId());
+				disabledTemplates.put(project.getProjectId(), disabledTemplatesNames);
+			}
+			if (userProjects.contains(project.getProjectId()) || projectOperations.hasAccessToProject(username, project.getProjectId())
+					|| project.getProjectId().equals(EPADConfig.xnatUploadProjectID))
+			{
+				userProjects.add(project.getProjectId());
+				File tfile = new File(EPADConfig.getEPADWebServerResourcesDir() + getEpadFilePath(efile));
+				EPADTemplateContainer template = convertEpadFileToTemplate(project.getProjectId(), efile, tfile);
+				boolean enabled = efile.isEnabled();
+				if (disabledTemplatesNames.contains(template.fileName) || disabledTemplatesNames.contains(template.templateName) || disabledTemplatesNames.contains(template.templateCode))
+					enabled = false;
+				template.enabled = enabled;
+				fileList.addTemplate(template);
+			}
+		}
+		return fileList;
+	}
+
+	@Override
+	public EPADTemplateContainerList getSystemTemplateDescriptions(String username,
 			String sessionID) throws Exception {
 		EPADTemplateContainerList fileList = new EPADTemplateContainerList();
 		File[] templates = new File(EPADConfig.getEPADWebServerTemplatesDir()).listFiles();
@@ -1490,51 +1587,57 @@ public class DefaultEpadOperations implements EpadOperations
 			String name = template.getName();
 			String description = "";
 			if (!name.toLowerCase().endsWith(".xml")) continue;
+			String templateUID = "";
 			String templateName = "";
 			String templateType = "";
 			String templateCode = "";
 			String templateDescription = "";
+			String modality = "";
+			List<EPADTemplate> epadTmpls = new ArrayList<EPADTemplate>();
 			try {
 				String xml = EPADFileUtils.readFileAsString(template);
 	            JSONObject root = XML.toJSONObject(xml);
 	            JSONObject container = root.getJSONObject("TemplateContainer");
-	            JSONObject templateObj = container.getJSONObject("Template");
-	            templateName = templateObj.getString("name");
-	            templateType = templateObj.getString("codeMeaning");
-	            templateCode = templateObj.getString("codeValue");
-	            templateDescription = templateObj.getString("description");
+	            JSONArray templateObjs = new JSONArray();
+	            try {
+	            	JSONObject templateObj = container.getJSONObject("Template");
+	            	templateObjs.put(templateObj);
+	            }
+	            catch (Exception x) {
+	            	templateObjs = container.getJSONArray("Template");
+	            }
+	            for (int i = 0; i < templateObjs.length(); i++)
+	            {
+	            	JSONObject templateObj = templateObjs.getJSONObject(i);
+	            	templateUID = templateObj.getString("uid");
+		            templateName = templateObj.getString("name");
+		            templateType = templateObj.getString("codeMeaning");
+		            templateCode = templateObj.getString("codeValue");
+		            try {
+			            templateDescription = templateObj.getString("description");
+			            modality = templateObj.getString("modality");
+		            } catch (Exception x) {}
+		            EPADTemplate epadTmpl = new EPADTemplate(templateUID, templateName, templateType, templateCode,
+		            										templateDescription, modality);
+		            epadTmpls.add(epadTmpl);
+	            }
 				description = templateType + " (" + templateCode + ")";
 			} catch (Exception x) {
-				//log.warning("JSON Error", x);
+				log.warning("JSON Error", x);
 			}
 			boolean enabled = true;
 			if (disabledTemplatesNames.contains(template.getName()) || disabledTemplatesNames.contains(templateName) || disabledTemplatesNames.contains(templateCode))
 				enabled = false;
 			
-			EPADTemplateContainer epadFile = new EPADTemplateContainer("", "", "", "", "", name, template.length(), FileType.TEMPLATE.getName(), 
+			EPADTemplateContainer epadContainer = new EPADTemplateContainer("", "", "", "", "", name, template.length(), FileType.TEMPLATE.getName(), 
 					formatDate(new Date(template.lastModified())), "templates/" + template.getName(), enabled, description);
-            epadFile.templateName = templateName;
-            epadFile.templateType = templateType;
-            epadFile.templateCode = templateCode;
-            epadFile.templateDescription = templateDescription;
-			fileList.addTemplate(epadFile);
-		}
-		List<EpadFile> efiles = projectOperations.getEpadFiles(null, null, null, null, FileType.TEMPLATE, false);
-		Set<String> userProjects = new HashSet<String>();
-		for (EpadFile efile: efiles)
-		{
-			Project project = (Project) projectOperations.getDBObject(Project.class, efile.getProjectId());
-			if (userProjects.contains(project.getProjectId()) || projectOperations.hasAccessToProject(username, project.getProjectId())
-					|| project.getProjectId().equals(EPADConfig.xnatUploadProjectID))
-			{
-				userProjects.add(project.getProjectId());
-				EPADTemplateContainer epadFile = convertEpadFileToTemplate(project.getProjectId(), efile, new File(EPADConfig.getEPADWebServerResourcesDir() + getEpadFilePath(efile)));
-				boolean enabled = true;
-				if (disabledTemplatesNames.contains(epadFile.fileName) || disabledTemplatesNames.contains(epadFile.templateName) || disabledTemplatesNames.contains(epadFile.templateCode))
-					enabled = false;
-				epadFile.enabled = enabled;
-				fileList.addTemplate(epadFile);
-			}
+			epadContainer.templateName = templateName;
+			epadContainer.templateType = templateType;
+			epadContainer.templateCode = templateCode;
+			epadContainer.templateDescription = templateDescription;
+			epadContainer.modality = modality;
+			epadContainer.templates = epadTmpls;
+			fileList.addTemplate(epadContainer);
 		}
 		return fileList;
 	}
@@ -1546,17 +1649,17 @@ public class DefaultEpadOperations implements EpadOperations
 		List<EpadFile> efiles = projectOperations.getEpadFiles(projectID, null, null, null, FileType.TEMPLATE, false);
 		for (EpadFile efile: efiles)
 		{
-			EPADTemplateContainer epadFile = convertEpadFileToTemplate(projectID, efile, new File(EPADConfig.getEPADWebServerResourcesDir() + getEpadFilePath(efile)));
-			if (epadFile.enabled)
-				fileList.addTemplate(epadFile);
+			EPADTemplateContainer template = convertEpadFileToTemplate(projectID, efile, new File(EPADConfig.getEPADWebServerResourcesDir() + getEpadFilePath(efile)));
+			if (template.enabled)
+				fileList.addTemplate(template);
 		}
 		efiles = projectOperations.getEpadFiles(EPADConfig.xnatUploadProjectID, null, null, null, FileType.TEMPLATE, false);
 		List<String> disabledTemplatesNames = projectOperations.getDisabledTemplates(projectID);
 		for (EpadFile efile: efiles)
 		{
-			EPADTemplateContainer epadFile = convertEpadFileToTemplate(projectID, efile, new File(EPADConfig.getEPADWebServerResourcesDir() + getEpadFilePath(efile)));
-			if (!disabledTemplatesNames.contains(epadFile.fileName) && !disabledTemplatesNames.contains(epadFile.templateName) && !disabledTemplatesNames.contains(epadFile.templateCode))
-				fileList.addTemplate(epadFile);
+			EPADTemplateContainer template = convertEpadFileToTemplate(projectID, efile, new File(EPADConfig.getEPADWebServerResourcesDir() + getEpadFilePath(efile)));
+			if (template.enabled && !disabledTemplatesNames.contains(template.fileName) && !disabledTemplatesNames.contains(template.templateName) && !disabledTemplatesNames.contains(template.templateCode))
+				fileList.addTemplate(template);
 		}
 		return fileList;
 	}
@@ -1569,20 +1672,46 @@ public class DefaultEpadOperations implements EpadOperations
 		String templateType = "";
 		String templateCode = "";
 		String templateDescription = "";
+		String modality = "";
+		List<EPADTemplate> epadTmpls = new ArrayList<EPADTemplate>();
 		try {
 			String xml = EPADFileUtils.readFileAsString(templateFile);
             JSONObject root = XML.toJSONObject(xml);
             JSONObject container = root.getJSONObject("TemplateContainer");
-            JSONObject templateObj = container.getJSONObject("Template");
-            templateName = templateObj.getString("name");
-            templateType = templateObj.getString("codeMeaning");
-            templateCode = templateObj.getString("codeValue");
-            templateDescription = templateObj.getString("description");
+            JSONArray templateObjs = new JSONArray();
+            try {
+            	JSONObject templateObj = container.getJSONObject("Template");
+            	templateObjs.put(templateObj);
+            }
+            catch (Exception x) {
+            	templateObjs = container.getJSONArray("Template");
+            }
+            for (int i = 0; i < templateObjs.length(); i++)
+            {
+            	JSONObject templateObj = templateObjs.getJSONObject(i);
+            	String templateUID = templateObj.getString("uid");
+	            templateName = templateObj.getString("name");
+	            templateType = templateObj.getString("codeMeaning");
+	            templateCode = templateObj.getString("codeValue");
+	            try {
+		            templateDescription = templateObj.getString("description");
+		            modality = templateObj.getString("modality");
+	            } catch (Exception x) {}
+	            EPADTemplate epadTmpl = new EPADTemplate(templateUID, templateName, templateType, templateCode,
+	            										templateDescription, modality);
+	            epadTmpls.add(epadTmpl);
+            }
             if (description == null || description.length() == 0)
             	description = templateType + " (" + templateCode + ")";
 		} catch (Exception x) {}
 		EPADTemplateContainer template = new EPADTemplateContainer(projectId, "", "", "", "", efile.getName(), efile.getLength(), FileType.TEMPLATE.getName(), 
 				formatDate(efile.getCreatedTime()), getEpadFilePath(efile), efile.isEnabled(), description);
+		template.templateName = templateName;
+		template.templateType = templateType;
+		template.templateCode = templateCode;
+		template.templateDescription = templateDescription;
+		template.modality = modality;
+		template.templates = epadTmpls;
 		return template;
 	}
 	
@@ -2192,6 +2321,20 @@ public class DefaultEpadOperations implements EpadOperations
 	}
 
 	@Override
+	public EPADAIMList getSeriesAIMDescriptions(
+			SeriesReference seriesReference, String username, String sessionID,
+			boolean includeStudyAims) {
+		EPADAIMList aims = this.getSeriesAIMDescriptions(seriesReference, username, sessionID);
+		StudyReference studyReference = new StudyReference(seriesReference.projectID, seriesReference.subjectID, seriesReference.studyUID);
+		EPADAIMList studyaims = this.getStudyAIMDescriptions(studyReference, username, sessionID);
+		for (EPADAIM aim: aims.ResultSet.Result)
+		{
+			studyaims.addAIM(aim);
+		}
+		return studyaims;
+	}
+
+	@Override
 	public EPADAIMList getImageAIMDescriptions(ImageReference imageReference, String username, String sessionID)
 	{
 		List<EPADAIM> aims = epadDatabaseOperations.getAIMs(imageReference);
@@ -2393,7 +2536,7 @@ public class DefaultEpadOperations implements EpadOperations
 	private EPADStudy dcm4cheeStudy2EpadStudy(String sessionID, String suppliedProjectID, String suppliedSubjectID,
 			DCM4CHEEStudy dcm4CheeStudy, String username)
 	{
-		String projectID = suppliedProjectID.equals("") ? EPADConfig.xnatUploadProjectID : suppliedProjectID;
+		String projectID = suppliedProjectID == null || suppliedProjectID.equals("") ? EPADConfig.xnatUploadProjectID : suppliedProjectID;
 		String patientName = dcm4CheeStudy.patientName;
 		String xnatPatientID = XNATUtil.subjectID2XNATSubjectLabel(dcm4CheeStudy.patientID);
 		String subjectID = suppliedSubjectID.equals("") ? xnatPatientID : suppliedSubjectID;
@@ -2424,7 +2567,7 @@ public class DefaultEpadOperations implements EpadOperations
 	private EPADSeries dcm4cheeSeries2EpadSeries(String sessionID, String suppliedProjectID, String suppliedSubjectID,
 			DCM4CHEESeries dcm4CheeSeries, String username)
 	{
-		String projectID = suppliedProjectID.equals("") ? EPADConfig.xnatUploadProjectID : suppliedProjectID;
+		String projectID = suppliedProjectID == null || suppliedProjectID.equals("") ? EPADConfig.xnatUploadProjectID : suppliedProjectID;
 		String patientName = trimTrailing(dcm4CheeSeries.patientName);
 		String xnatPatientID = XNATUtil.subjectID2XNATSubjectLabel(dcm4CheeSeries.patientID);
 		String subjectID = suppliedSubjectID.equals("") ? xnatPatientID : suppliedSubjectID;
@@ -2595,7 +2738,7 @@ public class DefaultEpadOperations implements EpadOperations
 		for (String projectID: projectIDs)
 		{
 			//if (!suppliedProjectID.equals(projectID) && !projectID.equals(EPADConfig.xnatUploadProjectID) && !projectID.equals("")) continue;
-			if (!suppliedProjectID.equals(projectID)) continue;
+			if (suppliedProjectID == null || !suppliedProjectID.equals(projectID)) continue;
 			try
 			{
 				boolean isCollaborator = UserProjectService.isCollaborator(sessionID, username, projectID);
@@ -2797,6 +2940,16 @@ public class DefaultEpadOperations implements EpadOperations
 				suppliedDICOMElements);
 	}
 
+	private String getDICOMElement(DICOMElementList dicomElements, String tagName)
+	{
+		List<DICOMElement> defaultDicomElements = new ArrayList<>();
+		Map<String, List<DICOMElement>> dicomElementMap = generateDICOMElementMap(dicomElements);
+		if (dicomElementMap.containsKey(tagName))
+			return dicomElementMap.get(tagName).get(0).value;
+		else
+			return null;
+	}
+	
 	private DICOMElementList getDefaultDICOMElements(String studyUID, String seriesUID, String imageUID,
 			DICOMElementList suppliedDicomElements)
 	{
@@ -3061,9 +3214,18 @@ public class DefaultEpadOperations implements EpadOperations
 						}
 					}
 				}
-				EPADUser epadUser = new EPADUser(user.getFullName(), user.getUsername(), 
-						user.getFirstName(), user.getLastName(), user.getEmail(), user.isEnabled(), user.isAdmin(), user.isPasswordExpired(), "", permissions, projects, projectToRole, null);
-				userlist.addEPADUser(epadUser);
+				if (projectOperations.isAdmin(username) || username.equals(user.getUsername()) || username.equals(user.getCreator()))
+				{
+					EPADUser epadUser = new EPADUser(user.getFullName(), user.getUsername(), 
+							user.getFirstName(), user.getLastName(), user.getEmail(), user.isEnabled(), user.isAdmin(), user.isPasswordExpired(), "", permissions, projects, projectToRole, null);
+					userlist.addEPADUser(epadUser);
+				}
+				else
+				{
+					EPADUser epadUser = new EPADUser(user.getFullName(), user.getUsername(), 
+							user.getFirstName(), user.getLastName(), "******", user.isEnabled(), user.isAdmin(), user.isPasswordExpired(), "", permissions, projects, projectToRole, null);
+					userlist.addEPADUser(epadUser);
+				}
 			}
 		}
 		return userlist;
@@ -3113,19 +3275,29 @@ public class DefaultEpadOperations implements EpadOperations
 					}
 				}
 			}
-			EPADUser epadUser = new EPADUser(user.getFullName(), user.getUsername(), 
-					user.getFirstName(), user.getLastName(), user.getEmail(), user.isEnabled(), user.isAdmin(), user.isPasswordExpired(), "", permissions, projects, projectToRole, messages);
+			EPADUser epadUser = null;
+			if (projectOperations.isAdmin(loggedInusername) || loggedInusername.equals(user.getUsername()) || loggedInusername.equals(user.getCreator()))
+			{
+				epadUser = new EPADUser(user.getFullName(), user.getUsername(), 
+						user.getFirstName(), user.getLastName(), user.getEmail(), user.isEnabled(), user.isAdmin(), user.isPasswordExpired(), "", permissions, projects, projectToRole, messages);
+			}
+			else
+			{
+				epadUser = new EPADUser(user.getFullName(), user.getUsername(), 
+					user.getFirstName(), user.getLastName(), "******", user.isEnabled(), user.isAdmin(), user.isPasswordExpired(), "", permissions, projects, projectToRole, messages);
+			}
 			return epadUser;
 		}
 		return null;
 	}
 
 	@Override
-	public void createOrModifyUser(String loggedInUser, String username,
+	public void createOrModifyUser(String loggedInUserName, String username,
 			String firstname, String lastname, String email, String password,String oldpassword,
 			String[] addPermissions, String[] removePermissions) throws Exception {
 		User user = projectOperations.getUser(username);
-		if (!projectOperations.getUser(loggedInUser).isAdmin() && (user == null || !loggedInUser.equals(username)))
+		User loggedInUser = projectOperations.getUser(loggedInUserName);
+		if (!loggedInUser.isAdmin() && (user == null || !loggedInUser.equals(username)) && !loggedInUser.hasPermission(User.CreateUserPermission))
 			throw new Exception("User " + loggedInUser + " does not have privilege to create/modify users");
 
 		List<String> addPerms = new ArrayList<String>();
@@ -3176,11 +3348,11 @@ public class DefaultEpadOperations implements EpadOperations
 		}
 		if (user == null)
 		{
-			projectOperations.createUser(loggedInUser, username, firstname, lastname, email, password, addPerms, removePerms);
+			projectOperations.createUser(loggedInUserName, username, firstname, lastname, email, password, addPerms, removePerms);
 		}
 		else
 		{
-			projectOperations.updateUser(loggedInUser, username, firstname, lastname, email, password, oldpassword, addPerms, removePerms);
+			projectOperations.updateUser(loggedInUserName, username, firstname, lastname, email, password, oldpassword, addPerms, removePerms);
 		}
 		
 	}
@@ -3219,9 +3391,18 @@ public class DefaultEpadOperations implements EpadOperations
 			String[] perms = user.getPermissions().split(",");
 			for (String perm: perms)
 				permissions.add(perm);
-			EPADUser epadUser = new EPADUser(user.getFullName(), user.getUsername(), 
-					user.getFirstName(), user.getLastName(), user.getEmail(), user.isEnabled(), user.isAdmin(), user.isPasswordExpired(), user.getRole(), permissions);
-			userlist.addEPADUser(epadUser);
+			if (projectOperations.isAdmin(username) || username.equals(user.getUsername()) || username.equals(user.getCreator()))
+			{
+				EPADUser epadUser = new EPADUser(user.getFullName(), user.getUsername(), 
+						user.getFirstName(), user.getLastName(), user.getEmail(), user.isEnabled(), user.isAdmin(), user.isPasswordExpired(), user.getRole(), permissions);
+				userlist.addEPADUser(epadUser);
+			}
+			else
+			{
+				EPADUser epadUser = new EPADUser(user.getFullName(), user.getUsername(), 
+						user.getFirstName(), user.getLastName(), "******", user.isEnabled(), user.isAdmin(), user.isPasswordExpired(), user.getRole(), permissions);
+				userlist.addEPADUser(epadUser);
+			}
 		}
 		return userlist;
 	}

@@ -1,3 +1,26 @@
+//Copyright (c) 2015 The Board of Trustees of the Leland Stanford Junior University
+//All rights reserved.
+//
+//Redistribution and use in source and binary forms, with or without modification, are permitted provided that
+//the following conditions are met:
+//
+//Redistributions of source code must retain the above copyright notice, this list of conditions and the following
+//disclaimer.
+//
+//Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the
+//following disclaimer in the documentation and/or other materials provided with the distribution.
+//
+//Neither the name of The Board of Trustees of the Leland Stanford Junior University nor the names of its
+//contributors (Daniel Rubin, et al) may be used to endorse or promote products derived from this software without
+//specific prior written permission.
+//
+//THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES,
+//INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+//DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+//SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+//SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+//WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE
+//USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package edu.stanford.epad.epadws.aim;
 
 import java.io.File;
@@ -838,6 +861,7 @@ public class AIMUtil
 			EPADAIM ea = aimMAP.get(aim.getUniqueIdentifier());
 			ea.name = aim.getName();
 			ea.template = aim.getCodeMeaning();
+			ea.templateType = aim.getCodeValue();
 			ea.date = aim.getDateTime();
 			ea.comment = a.getComment();
 			if (a.getFirstStudyDate() != null)
@@ -1005,6 +1029,7 @@ public class AIMUtil
 					Aim4 a = new Aim4(aim);
 					ea.name = aim.getImageAnnotations().get(0).getName().getValue();
 					ea.template = aim.getImageAnnotations().get(0).getListTypeCode().get(0).getCodeSystem();// .getCode();
+					ea.templateType = aim.getImageAnnotations().get(0).getListTypeCode().get(0).getCode();
 					ea.date = aim.getDateTime();
 					ea.comment = a.getComment();
 					if (a.getFirstStudyDate() != null)
@@ -1058,7 +1083,10 @@ public class AIMUtil
 					ea.name = aim.getImageAnnotations().get(0).getName().getValue();
 				}
 				if (aim.getImageAnnotations().get(0).getListTypeCode() != null && aim.getImageAnnotations().get(0).getListTypeCode().size() > 0)
+				{
 					ea.template = aim.getImageAnnotations().get(0).getListTypeCode().get(0).getCode();
+					ea.templateType = aim.getImageAnnotations().get(0).getListTypeCode().get(0).getCodeSystem();
+				}
 				ea.date = aim.getDateTime();
 				ea.comment = a.getComment();
 				if (a.getFirstStudyDate() != null)
@@ -1104,6 +1132,7 @@ public class AIMUtil
 						Aim4 a = new Aim4(iac);
 						ea.name = iac.getImageAnnotations().get(0).getName().getValue();
 						ea.template = iac.getImageAnnotations().get(0).getListTypeCode().get(0).getCodeSystem();// .getCode();
+						ea.templateType = iac.getImageAnnotations().get(0).getListTypeCode().get(0).getCode();
 						ea.date = iac.getDateTime();
 						ea.comment = a.getComment();
 						if (a.getFirstStudyDate() != null)
@@ -1244,6 +1273,90 @@ public class AIMUtil
 		aimsDBXml.append("</imageAnnotations>\n");
 		log.info("Time taken create xml:" + (xmltime-starttime) + " msecs for " + (annotations.size()+ aimsDB.size()) +" annotations");
 		return aimsDBXml.toString();
+	}
+
+	public static EPADAIMList getAllVersionSummaries(EPADAIM aim) throws Exception
+	{
+		List<ImageAnnotationCollection> iacs = AIMQueries.getAllVersionSummaries(aim);
+		EPADAIMList aims = new EPADAIMList();
+		for (int i = 0; i < iacs.size(); i++)
+		{
+			ImageAnnotationCollection iac = iacs.get(i);
+			try
+			{
+				Aim4 a = new Aim4(iac);
+				EPADAIM ea = new EPADAIM(iac.getUniqueIdentifier().getRoot(), a.getLoggedInUser().getLoginName(), 
+						aim.projectID, aim.subjectID, aim.studyUID, aim.seriesUID, aim.imageUID, aim.instanceOrFrameNumber);
+				ea.name = iac.getImageAnnotations().get(0).getName().getValue();
+				ea.template = iac.getImageAnnotations().get(0).getListTypeCode().get(0).getCodeSystem();// .getCode();
+				ea.templateType = iac.getImageAnnotations().get(0).getListTypeCode().get(0).getCode();
+				ea.date = iac.getDateTime();
+				ea.comment = a.getComment();
+				if (a.getFirstStudyDate() != null)
+					ea.studyDate = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(a.getFirstStudyDate());
+				ea.patientName = a.getPatientName();
+				ea.xml = null;
+				aims.addAIM(ea);
+			} catch (Exception x) {
+				log.warning("Error parsing ImageAnnotationCollection:" + iac, x);
+			}
+		}
+		return aims;
+	}
+
+	public static EPADAIMList getPreviousVersionSummaries(EPADAIM aim) throws Exception
+	{
+		List<ImageAnnotationCollection> iacs = AIMQueries.getPreviousVersionSummaries(aim);
+		EPADAIMList aims = new EPADAIMList();
+		for (int i = 0; i < iacs.size(); i++)
+		{
+			ImageAnnotationCollection iac = iacs.get(i);
+			try
+			{
+				Aim4 a = new Aim4(iac);
+				EPADAIM ea = new EPADAIM(iac.getUniqueIdentifier().getRoot(), a.getLoggedInUser().getLoginName(), 
+						aim.projectID, aim.subjectID, aim.studyUID, aim.seriesUID, aim.imageUID, aim.instanceOrFrameNumber);
+				ea.name = iac.getImageAnnotations().get(0).getName().getValue();
+				ea.template = iac.getImageAnnotations().get(0).getListTypeCode().get(0).getCodeSystem();// .getCode();
+				ea.templateType = iac.getImageAnnotations().get(0).getListTypeCode().get(0).getCode();
+				ea.date = iac.getDateTime();
+				ea.comment = a.getComment();
+				if (a.getFirstStudyDate() != null)
+					ea.studyDate = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(a.getFirstStudyDate());
+				ea.patientName = a.getPatientName();
+				ea.xml = null;
+				aims.addAIM(ea);
+			} catch (Exception x) {
+				log.warning("Error parsing ImageAnnotationCollection:" + iac, x);
+			}
+		}
+		return aims;
+	}
+
+	public static void returnAllVersions(PrintWriter responseStream, EPADAIM aim) throws Exception
+	{
+		List<ImageAnnotationCollection> iacs = AIMQueries.getAllVersionSummaries(aim);
+		StringBuilder annotationsXML = new StringBuilder("<imageAnnotations>\n");
+
+		for (ImageAnnotationCollection iac : iacs) {
+			annotationsXML.append(edu.stanford.hakan.aim4api.usage.AnnotationBuilder.convertToString(iac));
+		}
+		annotationsXML.append("</imageAnnotations>\n");
+		responseStream.print(annotationsXML);
+		return;
+	}
+
+	public static void returnPreviousVersions(PrintWriter responseStream, EPADAIM aim) throws Exception
+	{
+		List<ImageAnnotationCollection> iacs = AIMQueries.getPreviousVersionSummaries(aim);
+		StringBuilder annotationsXML = new StringBuilder("<imageAnnotations>\n");
+
+		for (ImageAnnotationCollection iac : iacs) {
+			annotationsXML.append(edu.stanford.hakan.aim4api.usage.AnnotationBuilder.convertToString(iac));
+		}
+		annotationsXML.append("</imageAnnotations>\n");
+		responseStream.print(annotationsXML);
+		return;
 	}
 
 	private static String XmlDocumentToString(Document document, String xmlns)
@@ -1427,7 +1540,7 @@ public class AIMUtil
 			}
 		}
 		long endtime = System.currentTimeMillis();
-		log.info("Time taken for checking AIM permissions:" + (endtime-starttime) + " msecs, username:" + username);
+		log.info("Time taken for checking AIM permissions:" + (endtime-starttime) + " msecs, in:" + aimlist.ResultSet.totalRecords + " ok:" + projectAIMs.values().size() + " username:" + username);
 		
 		if (projectAIMs.keySet().isEmpty())
 			projectAIMs.put(defProjectID, "");
@@ -1463,7 +1576,7 @@ public class AIMUtil
 			}
 		}
 		long endtime = System.currentTimeMillis();
-		log.info("Time taken for checking AIM permissions:" + (endtime-starttime) + " msecs, username:" + username);
+		log.info("Time taken for checking AIM permissions:" + (endtime-starttime) + " msecs, in:" + aimlist.ResultSet.totalRecords + " out:" + projectAIMsMap.values().size() + " username:" + username);
 		
 		return projectAIMsMap;
 	}

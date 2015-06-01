@@ -1,23 +1,53 @@
+//Copyright (c) 2015 The Board of Trustees of the Leland Stanford Junior University
+//All rights reserved.
+//
+//Redistribution and use in source and binary forms, with or without modification, are permitted provided that
+//the following conditions are met:
+//
+//Redistributions of source code must retain the above copyright notice, this list of conditions and the following
+//disclaimer.
+//
+//Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the
+//following disclaimer in the documentation and/or other materials provided with the distribution.
+//
+//Neither the name of The Board of Trustees of the Leland Stanford Junior University nor the names of its
+//contributors (Daniel Rubin, et al) may be used to endorse or promote products derived from this software without
+//specific prior written permission.
+//
+//THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES,
+//INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+//DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+//SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+//SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+//WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE
+//USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package edu.stanford.epad.epadws.handlers;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import javax.servlet.ServletOutputStream;
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.apache.commons.fileupload.FileItem;
 import org.apache.commons.fileupload.FileItemIterator;
 import org.apache.commons.fileupload.FileItemStream;
 import org.apache.commons.fileupload.FileUploadException;
+import org.apache.commons.fileupload.disk.DiskFileItemFactory;
+import org.apache.commons.fileupload.servlet.ServletFileUpload;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpException;
 import org.apache.commons.httpclient.methods.GetMethod;
@@ -26,6 +56,7 @@ import org.apache.log4j.Level;
 
 import com.sun.jersey.api.uri.UriTemplate;
 
+import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.epad.dtos.EPADMessage;
 
@@ -37,6 +68,8 @@ import edu.stanford.epad.dtos.EPADMessage;
  */
 public class HandlerUtil
 {
+	private static final EPADLogger log = EPADLogger.getInstance();
+
 	public static int infoResponse(int responseCode, String message, PrintWriter responseStream, EPADLogger log)
 	{
 		log.info(message);
@@ -240,7 +273,7 @@ public class HandlerUtil
 		return uriTemplate.match(path, map);
 	}
 
-	public static int streamGetResponse(String url, ServletOutputStream outputStream, EPADLogger log) throws IOException,
+	public static int streamGetResponse(String url, OutputStream outputStream, EPADLogger log) throws IOException,
 			HttpException
 	{
 		HttpClient client = new HttpClient();
@@ -289,6 +322,146 @@ public class HandlerUtil
 			}
 		}
 		return files;
+	}
+	
+	public static File getUploadedFile(HttpServletRequest httpRequest)
+	{
+		String uploadDirPath = EPADConfig.getEPADWebServerFileUploadDir() + "temp" + Long.toString(System.currentTimeMillis());
+		File uploadDir = new File(uploadDirPath);
+		uploadDir.mkdirs();
+		String fileName = httpRequest.getParameter("fileName");
+		String tempXMLFileName = "temp" + System.currentTimeMillis() + "-annotation.xml";
+		if (fileName != null)
+			tempXMLFileName = "temp" + System.currentTimeMillis() + "-" + fileName;
+		File uploadedFile = new File(uploadDir, tempXMLFileName);
+		try
+		{
+			// opens input stream of the request for reading data
+			InputStream inputStream = httpRequest.getInputStream();
+			
+			// opens an output stream for writing file
+			FileOutputStream outputStream = new FileOutputStream(uploadedFile);
+			
+			byte[] buffer = new byte[4096];
+			int bytesRead = -1;
+			log.info("Receiving data...");
+			int len = 0;
+			while ((bytesRead = inputStream.read(buffer)) != -1) {
+				len = len + bytesRead;
+				outputStream.write(buffer, 0, bytesRead);
+			}
+			
+			log.debug("Data received, len:" + len);
+			outputStream.close();
+			inputStream.close();
+			if (len == 0)
+			{
+				try {
+					uploadedFile.delete();
+					uploadDir.delete();
+				} catch (Exception x) {}
+				uploadedFile = null;
+			}
+			else
+				log.debug("Created File:" + uploadedFile.getAbsolutePath());
+			if (len > 0 && (tempXMLFileName.endsWith(".xml") || tempXMLFileName.endsWith(".txt")))
+			{
+				log.debug("PUT Data:" + readFile(uploadedFile));
+			}
+//			if (fileType != null)
+//			{
+//				File changeFileExt = new File(uploadedFile.getParentFile(), tempXMLFileName.substring(0, tempXMLFileName.length()-3) + fileType);
+//				uploadedFile.renameTo(changeFileExt);
+//				uploadedFile = changeFileExt;
+//			}
+			return uploadedFile;
+		}
+		catch (Exception x)
+		{
+			log.warning("Error receiving Annotations file", x);
+		}
+		return null;
+	}
+	
+    private static String readFile(File aimFile) throws Exception
+    {
+        BufferedReader in = new BufferedReader(new FileReader(aimFile));
+        StringBuilder sb = new StringBuilder();
+        String line;
+        try
+        {
+            while ((line = in.readLine()) != null)
+            {
+            	sb.append(line + "\n");
+            }
+        }
+        finally
+        {
+            in.close();
+        }
+        return sb.toString();
+    }
+
+	public static Map<String, Object> parsePostedData(HttpServletRequest httpRequest, PrintWriter responseStream) throws Exception
+	{
+		String uploadDirPath = EPADConfig.getEPADWebServerFileUploadDir() + "temp" + Long.toString(System.currentTimeMillis());
+		File uploadDir = new File(uploadDirPath);
+		uploadDir.mkdirs();
+		
+		Map<String, Object> params = new HashMap<String, Object>();
+	    // Create a factory for disk-based file items
+	    DiskFileItemFactory factory = new DiskFileItemFactory();
+	    // Create a new file upload handler
+	    ServletFileUpload upload = new ServletFileUpload(factory);
+	    List<FileItem> items = upload.parseRequest(httpRequest);
+		Iterator<FileItem> fileItemIterator = items.iterator();
+		int fileCount = 0;
+		while (fileItemIterator.hasNext()) {
+			FileItem fileItem = fileItemIterator.next();
+		    if (fileItem.isFormField()) {
+		    	if (params.get(fileItem.getFieldName()) == null)
+		    		params.put(fileItem.getFieldName(), fileItem.getString());
+			    List values = (List) params.get(fileItem.getFieldName() + "_List");
+			    if (values == null) {
+			    	values = new ArrayList();
+			    	params.put(fileItem.getFieldName() + "_List", values);
+			    }
+			    values.add(fileItem.getString());
+		    } else {
+				fileCount++;		    	
+				String fieldName = fileItem.getFieldName();
+				String fileName = fileItem.getName();
+				log.debug("Uploading file number " + fileCount);
+				log.debug("FieldName: " + fieldName);
+				log.debug("File Name: " + fileName);
+				log.debug("ContentType: " + fileItem.getContentType());
+				log.debug("Size (Bytes): " + fileItem.getSize());
+				if (fileItem.getSize() != 0)
+				{
+			        try {
+						String tempFileName = "temp" + System.currentTimeMillis() + "-" + fileName;
+						File file = new File(uploadDirPath + "/" + tempFileName);
+						log.debug("FileName: " + file.getAbsolutePath());
+		                // write the file
+						fileItem.write(file);
+				    	if (params.get(fileItem.getFieldName()) == null)
+				    		params.put(fileItem.getFieldName(), file);
+					    List values = (List) params.get(fileItem.getFieldName() + "_List");
+					    if (values == null) {
+					    	values = new ArrayList();
+					    	params.put(fileItem.getFieldName() + "_List", values);
+					    }
+					    values.add(file);
+					} catch (Exception e) {
+						e.printStackTrace();
+						log.warning("Error receiving file:" + e);
+						responseStream.print("error reading (" + fileCount + "): " + fileItem.getName());
+						continue;
+					}
+				}
+		    }
+		}
+		return params;
 	}
 
 }
