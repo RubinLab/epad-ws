@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<metadata>
+  <groupId>edu.stanford.epad.epadws</groupId>
+  <artifactId>dicomrt</artifactId>
+  <versioning>
+    <release>R2013b</release>
+    <versions>
+      <version>R2013b</version>
+    </versions>
+    <lastUpdated>20150521210813</lastUpdated>
+  </versioning>
+</metadata>

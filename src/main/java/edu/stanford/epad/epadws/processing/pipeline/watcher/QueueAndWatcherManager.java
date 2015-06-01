@@ -47,6 +47,7 @@ import edu.stanford.epad.epadws.processing.pipeline.process.PngGeneratorProcess;
 import edu.stanford.epad.epadws.processing.pipeline.task.DSOMaskPNGGeneratorTask;
 import edu.stanford.epad.epadws.processing.pipeline.task.GeneratorTask;
 import edu.stanford.epad.epadws.processing.pipeline.task.MultiFramePNGGeneratorTask;
+import edu.stanford.epad.epadws.processing.pipeline.task.RTDICOMProcessingTask;
 import edu.stanford.epad.epadws.processing.pipeline.task.SingleFrameDICOMPngGeneratorTask;
 
 public class QueueAndWatcherManager
@@ -144,6 +145,10 @@ public class QueueAndWatcherManager
 				inputDICOMFile = downloadRemoteDICOM(dicomFileDescription);
 			}
 			log.info("Dicom file, modality:" +  dicomFileDescription.modality);
+			if ("RTSTRUCT".equals(modality))
+			{
+				extractRTDicomInfo(dicomFileDescription, inputDICOMFile);
+			}
 			if ("RTSTRUCT".equals(modality) || "RTPLAN".equals(modality) || "PR".equals(modality) || "SR".equals(modality)) return; // images to generate
 			if (PixelMedUtils.isDicomSegmentationObject(dicomFilePath)) {
 				if (sameSeries)
@@ -242,6 +247,18 @@ public class QueueAndWatcherManager
 		SingleFrameDICOMPngGeneratorTask pngGeneratorTask = new SingleFrameDICOMPngGeneratorTask(patientName,
 				dicomFileDescription, dicomFile, outputPNGFile);
 		pngGeneratorTaskQueue.offer(pngGeneratorTask);
+	}
+
+	private void extractRTDicomInfo(DICOMFileDescription dicomFileDescription, File dicomFile)
+	{
+		log.info("DICOM RT found for series " + dicomFileDescription.seriesUID + " dicomFile:" + dicomFile.getAbsolutePath());
+		String rtFilePath = createOutputPNGFilePathForSingleFrameDICOMImage(dicomFileDescription).replace(".png", ".rt");
+		EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
+		insertEpadFile(epadDatabaseOperations, rtFilePath, 0, dicomFileDescription.imageUID);
+		RTDICOMProcessingTask rtTask = new RTDICOMProcessingTask(dicomFileDescription.seriesUID, dicomFileDescription.imageUID,
+				dicomFile, rtFilePath);
+
+		pngGeneratorTaskQueue.offer(rtTask);
 	}
 
 	private void insertEpadFile(EpadDatabaseOperations epadDatabaseOperations, String outputPNGFilePath, long fileSize,

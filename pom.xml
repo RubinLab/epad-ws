@@ -82,6 +82,12 @@
 		<artifactId>riesz</artifactId>
 		<version>${riesz.plugin.version}</version>
 	</dependency>
+   
+   <dependency>
+     <groupId>edu.stanford.epad.epadws</groupId>
+     <artifactId>dicomrt</artifactId> 	
+     <version>${matlab.release.number.jjvector}</version>
+   </dependency>
 
     <dependency>
       <groupId>edu.stanford.hakan.aim3api</groupId>
