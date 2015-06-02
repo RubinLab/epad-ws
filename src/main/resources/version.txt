@@ -1,0 +1,3 @@
+build.version=${epadws.version}
+build.date=${timestamp}
+build.host=${hostname}

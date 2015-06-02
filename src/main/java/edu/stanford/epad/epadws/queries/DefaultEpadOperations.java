@@ -1111,7 +1111,8 @@ public class DefaultEpadOperations implements EpadOperations
 		return HttpServletResponse.SC_OK;
 	}
 	
-	private void createFile(String username, String projectID, String subjectID, String studyID, String seriesID,
+	@Override
+	public void createFile(String username, String projectID, String subjectID, String studyID, String seriesID,
 			File uploadedFile, String description, String fileType, String sessionID) throws Exception {
 		String filename = uploadedFile.getName();
 		log.info("filename:" + filename);

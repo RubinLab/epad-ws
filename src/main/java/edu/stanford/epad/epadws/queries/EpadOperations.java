@@ -134,6 +134,9 @@ public interface EpadOperations
 
 	int createFile(String username, ImageReference imageReference, File uploadedFile, String description, String fileType, String sessionID) throws Exception;
 
+	void createFile(String username, String projectID, String subjectID, String studyID, String seriesID,
+			File uploadedFile, String description, String fileType, String sessionID) throws Exception;
+	
 	int createImage(String username, String projectID, File dicomFile, String sessionID) throws Exception;
 	
 	int createSystemTemplate(String username, File templateFile, String sessionID) throws Exception;	

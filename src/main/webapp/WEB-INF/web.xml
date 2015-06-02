@@ -15,7 +15,7 @@
    </init-param>
    <init-param>
        <param-name>allowedMethods</param-name>
-       <param-value>*</param-value>
+       <param-value>POST,PUT,DELETE,OPTIONS</param-value>
    </init-param>
    <init-param>
        <param-name>allowedHeaders</param-name>
@@ -26,6 +26,126 @@
      <filter-name>cross-origin</filter-name>
      <url-pattern>/*</url-pattern>
  </filter-mapping>
+	<filter>
+		<filter-name>WebAuthFilter</filter-name>
+		<filter-class>edu.stanford.epad.epadws.security.WebAuthFilter</filter-class>
+		<init-param>
+			<param-name>my-param</param-name>
+			<param-value>my-param-value</param-value>
+		</init-param>
+	</filter>
+	<filter-mapping>
+		<filter-name>WebAuthFilter</filter-name>
+		<url-pattern>/*</url-pattern>
+	</filter-mapping>
   
+	<servlet>
+		<servlet-name>rest-dispatcher</servlet-name>
+		<servlet-class>org.springframework.web.servlet.DispatcherServlet</servlet-class>
+		<load-on-startup>1</load-on-startup>
+	</servlet>
+
+	<servlet-mapping>
+		<servlet-name>rest-dispatcher</servlet-name>
+		<url-pattern>/v2/*</url-pattern>
+	</servlet-mapping>
+
+	<servlet>
+		<servlet-name>plugin</servlet-name>
+		<servlet-class>edu.stanford.epad.epadws.servlets.EpadPluginServlet</servlet-class>
+ 	</servlet>
+ 
+ 	<servlet-mapping>
+		<servlet-name>plugin</servlet-name>
+		<url-pattern>/plugin/*</url-pattern>
+ 	</servlet-mapping>
+
+	<servlet>
+		<servlet-name>eventresource</servlet-name>
+		<servlet-class>edu.stanford.epad.epadws.servlets.EventServlet</servlet-class>
+	</servlet>
+
+	<servlet-mapping>
+		<servlet-name>eventresource</servlet-name>
+		<url-pattern>/eventresource</url-pattern>
+	</servlet-mapping>
+	
+	<servlet>
+		<servlet-name>session</servlet-name>
+		<servlet-class>edu.stanford.epad.epadws.servlets.SessionServlet</servlet-class>
+	</servlet>
+
+	<servlet-mapping>
+		<servlet-name>session</servlet-name>
+		<url-pattern>/session</url-pattern>
+	</servlet-mapping>
+
+	<servlet>
+		<servlet-name>status</servlet-name>
+		<servlet-class>edu.stanford.epad.epadws.servlets.ServerStatusServlet</servlet-class>
+	</servlet>
+
+	<servlet-mapping>
+		<servlet-name>status</servlet-name>
+		<url-pattern>/status</url-pattern>
+	</servlet-mapping>
+
+	<servlet>
+		<servlet-name>imagecheck</servlet-name>
+		<servlet-class>edu.stanford.epad.epadws.servlets.ImageCheckServlet</servlet-class>
+	</servlet>
+
+	<servlet-mapping>
+		<servlet-name>imagecheck</servlet-name>
+		<url-pattern>/imagecheck</url-pattern>
+	</servlet-mapping>
+
+	<servlet>
+		<servlet-name>imagereprocess</servlet-name>
+		<servlet-class>edu.stanford.epad.epadws.servlets.ImageReprocessingServlet</servlet-class>
+	</servlet>
+
+	<servlet-mapping>
+		<servlet-name>imagereprocess</servlet-name>
+		<url-pattern>/imagereprocess</url-pattern>
+	</servlet-mapping>
+
+	<servlet>
+		<servlet-name>convertaim4</servlet-name>
+		<servlet-class>edu.stanford.epad.epadws.servlets.ConvertAIM4Servlet</servlet-class>
+	</servlet>
+
+	<servlet-mapping>
+		<servlet-name>convertaim4</servlet-name>
+		<url-pattern>/convertaim4</url-pattern>
+	</servlet-mapping>
+
+	<servlet>
+		<servlet-name>syncxnat</servlet-name>
+		<servlet-class>edu.stanford.epad.epadws.servlets.XNATSyncServlet</servlet-class>
+	</servlet>
+
+	<servlet-mapping>
+		<servlet-name>syncxnat</servlet-name>
+		<url-pattern>/syncxnat</url-pattern>
+	</servlet-mapping>
+
+	<servlet>
+		<servlet-name>statistics</servlet-name>
+		<servlet-class>edu.stanford.epad.epadws.servlets.StatisticsServlet</servlet-class>
+	</servlet>
+
+	<servlet-mapping>
+		<servlet-name>statistics</servlet-name>
+		<url-pattern>/statistics</url-pattern>
+	</servlet-mapping>
+  
+  <context-param>
+		<param-name>contextConfigLocation</param-name>
+		<param-value>/WEB-INF/rest-dispatcher-servlet.xml</param-value>
+ </context-param>
+  <listener>
+		<listener-class>edu.stanford.epad.epadws.listener.StartupListener</listener-class>
+  </listener> 
 </web-app>
 

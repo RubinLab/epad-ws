@@ -100,4 +100,9 @@ public class SessionService {
 		}		
 		
 	}
+	
+	public static String getUsernameForSession(String sessionID)
+	{
+		return EPADSessionOperations.getSessionUser(sessionID);
+	}
 }

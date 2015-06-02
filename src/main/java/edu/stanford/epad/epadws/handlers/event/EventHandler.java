@@ -69,7 +69,8 @@ public class EventHandler extends AbstractHandler
 		int statusCode;
 
 		httpResponse.setContentType("text/plain");
-		request.setHandled(true);
+		if (request != null)					// In case handler is not called thru jetty
+			request.setHandled(true);
 
 		if (SessionService.hasValidSessionID(httpRequest)) {
 			try {

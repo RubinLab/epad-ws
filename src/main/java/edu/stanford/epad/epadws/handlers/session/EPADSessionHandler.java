@@ -26,6 +26,7 @@ package edu.stanford.epad.epadws.handlers.session;
 
 import java.io.PrintWriter;
 
+import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -63,6 +64,8 @@ public class EPADSessionHandler extends AbstractHandler
 	private static final String LOGOUT_EXCEPTION_MESSAGE = "Warning: internal logout error";
 	private static final String UNEXPECTED_XNAT_RESPONSE_MESSAGE = "Warning: unexpected response code from XNAT";
 	private static final String UNAUTHORIZED_USER_XNAT_RESPONSE_MESSAGE = "Invalid username or password";
+	private static final String JSESSIONID_COOKIE = "JSESSIONID";
+	private static final String LOGGEDINUSER_COOKIE = "ePADLoggedinUser";
 
 	@Override
 	public void handle(String s, Request request, HttpServletRequest httpRequest, HttpServletResponse httpResponse)
@@ -70,38 +73,66 @@ public class EPADSessionHandler extends AbstractHandler
 		String origin = httpRequest.getHeader("Origin");
 		int statusCode;
 
-		httpResponse.setContentType("text/plain");
-		request.setHandled(true);
+		if (request != null)
+			request.setHandled(true);
 
 		String method = httpRequest.getMethod();
-		log.info("Session request from client " + method + " s:" + s);
+		log.info("Request from client " + method + ", s:" + s + ", origin:" + origin);
 		if ("POST".equalsIgnoreCase(method)) {
 			String username = SessionService.extractUserNameFromAuthorizationHeader(httpRequest);
-			String host = httpRequest.getParameter("hostname");
-			String ip = httpRequest.getParameter("hostip");
-			if (ip == null && host == null)
+			boolean formpost = false;
+			if (username == null || username.length() == 0)
 			{
-				ip = httpRequest.getRemoteAddr();
-				host = httpRequest.getRemoteHost();
+				username = httpRequest.getParameter("username");
+				formpost = true;
 			}
+			String host = httpRequest.getParameter("hostname");
+			if (host == null)  host = httpRequest.getRemoteHost();
+			String ip = httpRequest.getParameter("hostip");
+			if (ip == null)  ip = httpRequest.getRemoteAddr();
 			if (username.length() != 0) {
 				log.info("Login Request, User:" + username  + " hostname:" + host +" ip:" + ip);
 				try {
-					PrintWriter responseStream = httpResponse.getWriter();
 					EPADSessionResponse sessionResponse = SessionService.authenticateUser(httpRequest);
 					if (sessionResponse.statusCode == HttpServletResponse.SC_OK) {
 						String jsessionID = sessionResponse.response;
+						log.info("Successful login to EPAD; SESSIONID=" + jsessionID);
 						EPADSessionOperations.setSessionHost(jsessionID, host, ip);
+				    	if (formpost)
+				    	{
+				            Cookie userName = new Cookie(LOGGEDINUSER_COOKIE, username);
+				            userName.setMaxAge(8*3600);
+				            //userName.setPath("/epad/; Secure; HttpOnly");
+				            userName.setPath(httpRequest.getContextPath() + "/");
+				            httpResponse.addCookie(userName);
+							//log.info("Setting HttpOnly, Secure cookie =" + jsessionID);
+				            Cookie sessionCookie = new Cookie(JSESSIONID_COOKIE, jsessionID);
+				            sessionCookie.setMaxAge(8*3600);
+				            //sessionCookie.setPath("/epad/; Secure; HttpOnly");
+				            sessionCookie.setPath(httpRequest.getContextPath() + "/");
+				            httpResponse.addCookie(sessionCookie);
+				    		httpResponse.sendRedirect("index.jsp");
+				    		return;
+				    	}
+
+						log.info("Setting cookie =" + jsessionID);
+						httpResponse.setContentType("text/plain");
+						PrintWriter responseStream = httpResponse.getWriter();
 						responseStream.append(jsessionID);
+						log.info("Setting HttpOnly, Secure cookie =" + jsessionID);
 						httpResponse.addHeader("Set-Cookie", "JSESSIONID=" + jsessionID);
 						httpResponse.addHeader("Set-Cookie", "ePADLoggedinUser=" + username);
-						httpResponse.addHeader("Access-Control-Allow-Origin", origin);
-						httpResponse.addHeader("Access-Control-Allow-Credentials", "true");
-						log.info("Successful login to EPAD; JSESSIONID=" + jsessionID);
+						httpResponse.setHeader("Access-Control-Allow-Origin", origin);
+						//httpResponse.addHeader("Access-Control-Allow-Origin", "*");
+						httpResponse.setHeader("Access-Control-Allow-Credentials", "true");
+						httpResponse.setHeader("Access-Control-Allow-Methods", "POST, DELETE, OPTIONS");
 						statusCode = HttpServletResponse.SC_OK;
+				    	
 					} else if (sessionResponse.statusCode == HttpServletResponse.SC_UNAUTHORIZED) {
+						PrintWriter responseStream = httpResponse.getWriter();
 						statusCode = HandlerUtil.invalidTokenResponse(UNAUTHORIZED_USER_XNAT_RESPONSE_MESSAGE, responseStream, log);
 					} else {
+						PrintWriter responseStream = httpResponse.getWriter();
 						statusCode = HandlerUtil.warningResponse(sessionResponse.statusCode, UNEXPECTED_XNAT_RESPONSE_MESSAGE
 								+ ";statusCode = " + sessionResponse.statusCode, responseStream, log);
 					}
@@ -115,6 +146,9 @@ public class EPADSessionHandler extends AbstractHandler
 			log.info("Logout request, sessionId:" + SessionService.getJSessionIDFromRequest(httpRequest));
 			try {
 				statusCode = SessionService.invalidateSessionID(httpRequest);
+				httpResponse.setHeader("Access-Control-Allow-Origin", "*");
+				httpResponse.setHeader("Access-Control-Allow-Methods", "POST, DELETE, OPTIONS");
+				//httpResponse.addHeader("Access-Control-Allow-Origin", "*");
 				log.info("Delete session returns status code " + statusCode);
 
 			} catch (Throwable t) {
@@ -130,8 +164,11 @@ public class EPADSessionHandler extends AbstractHandler
 		} else if ("OPTIONS".equalsIgnoreCase(method)) {
 			log.info("CORS preflight OPTIONS request to session route");
 			httpResponse.setHeader("Access-Control-Allow-Origin", origin);
+			//httpResponse.setHeader("Access-Control-Allow-Origin", "*");
+			//httpResponse.addHeader("Access-Control-Allow-Origin", "*");
 			httpResponse.setHeader("Access-Control-Allow-Credentials", "true");
 			httpResponse.setHeader("Access-Control-Allow-Headers", "Authorization");
+			httpResponse.setHeader("Access-Control-Allow-Methods", "POST, DELETE, OPTIONS");
 			statusCode = HttpServletResponse.SC_OK;
 		} else {
 			httpResponse.setHeader("Access-Control-Allow-Methods", "POST, DELETE, OPTIONS");
