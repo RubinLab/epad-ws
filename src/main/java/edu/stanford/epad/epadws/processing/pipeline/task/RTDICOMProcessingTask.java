@@ -156,7 +156,7 @@ public class RTDICOMProcessingTask implements GeneratorTask
 				            list = sitem.getAttributeList();
 			    			String referencedImageUID = list.get(TagFromName.ReferencedSOPInstanceUID).getSingleStringValueOrEmptyString();
 			    			//String referencedSeriesUID = dcm4CheeDatabaseOperations.getSeriesUIDForImage(referencedImageUIDs[i]);
-				            log.info("Downloading ReferencedSOPInstanceUID:" + referencedImageUID);
+				            //log.info("Downloading ReferencedSOPInstanceUID:" + referencedImageUID);
 				            File dicomFile = new File(inputDir, referencedImageUID + ".dcm");
 				            DCM4CHEEUtil.downloadDICOMFileFromWADO(studyUID, seriesUID, referencedImageUID, dicomFile);
 				            dicomFilePaths.add(dicomFile.getAbsolutePath());
@@ -199,10 +199,10 @@ public class RTDICOMProcessingTask implements GeneratorTask
 							{
 								int x1 = x + l;
 								int y1 = y;
-								if (x1 >= 512)
+								if (x1 >= dims[0])
 								{
 									y1 = y1+1;
-									x1 = x1 - 512;
+									x1 = x1 - dims[0];
 								}
 								//log.info("x1:" + x1 + " y1:" + y1);
 								if (segdata[x1][y1 + frame*dims[1]] != 0)
