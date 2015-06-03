@@ -24,14 +24,20 @@
 package edu.stanford.epad.epadws.processing.pipeline.task;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 import DicomRT.ConvertDicoms;
 
+import com.jmatio.io.MatFileReader;
+import com.jmatio.types.MLDouble;
+import com.jmatio.types.MLStructure;
+import com.jmatio.types.MLUInt8;
 import com.mathworks.toolbox.javabuilder.MWCharArray;
 import com.mathworks.toolbox.javabuilder.MWException;
 import com.pixelmed.dicom.Attribute;
@@ -42,15 +48,21 @@ import com.pixelmed.dicom.TagFromName;
 
 import edu.stanford.epad.common.dicom.DCM4CHEEUtil;
 import edu.stanford.epad.common.pixelmed.PixelMedUtils;
+import edu.stanford.epad.common.pixelmed.TIFFMasksToDSOConverter;
 import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADFileUtils;
 import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.epad.dtos.PNGFileProcessingStatus;
+import edu.stanford.epad.epadws.aim.AIMUtil;
 import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeDatabase;
 import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeDatabaseOperations;
 import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeDatabaseUtils;
 import edu.stanford.epad.epadws.epaddb.EpadDatabase;
 import edu.stanford.epad.epadws.epaddb.EpadDatabaseOperations;
+import edu.stanford.epad.epadws.models.Project;
+import edu.stanford.epad.epadws.models.Study;
+import edu.stanford.epad.epadws.service.DefaultEpadProjectOperations;
+import edu.stanford.epad.epadws.service.EpadProjectOperations;
 
 public class RTDICOMProcessingTask implements GeneratorTask
 {
@@ -104,6 +116,8 @@ public class RTDICOMProcessingTask implements GeneratorTask
 			outputDir.mkdirs();
 			AttributeList dicomAttributes = PixelMedUtils.readDICOMAttributeList(dicomFile);
 			String studyUID = Attribute.getSingleStringValueOrEmptyString(dicomAttributes, TagFromName.StudyInstanceUID);
+			String patientID = Attribute.getSingleStringValueOrEmptyString(dicomAttributes, TagFromName.PatientID);
+			String description = Attribute.getSingleStringValueOrEmptyString(dicomAttributes, TagFromName.SeriesDescription);
 			// TODO: This call to get Referenced Image does not work ???
 			String[] referencedImageUIDs = Attribute.getStringValues(dicomAttributes, TagFromName.ReferencedSOPInstanceUID);
 			SequenceAttribute referencedFrameSequence =(SequenceAttribute)dicomAttributes.get(TagFromName.ReferencedFrameOfReferenceSequence);
@@ -127,6 +141,7 @@ public class RTDICOMProcessingTask implements GeneratorTask
 			        }
 			    }
 			}
+			List<String> dicomFilePaths = new ArrayList<String>();
 			Dcm4CheeDatabaseOperations dcm4CheeDatabaseOperations = Dcm4CheeDatabase.getInstance().getDcm4CheeDatabaseOperations();
 			if (referencedSeriesSequence != null) {
 			    Iterator sitems = referencedSeriesSequence.iterator();
@@ -142,7 +157,9 @@ public class RTDICOMProcessingTask implements GeneratorTask
 			    			String referencedImageUID = list.get(TagFromName.ReferencedSOPInstanceUID).getSingleStringValueOrEmptyString();
 			    			//String referencedSeriesUID = dcm4CheeDatabaseOperations.getSeriesUIDForImage(referencedImageUIDs[i]);
 				            log.info("Downloading ReferencedSOPInstanceUID:" + referencedImageUID);
-				            DCM4CHEEUtil.downloadDICOMFileFromWADO(studyUID, seriesUID, referencedImageUID, new File(inputDir, referencedImageUID + ".dcm"));
+				            File dicomFile = new File(inputDir, referencedImageUID + ".dcm");
+				            DCM4CHEEUtil.downloadDICOMFileFromWADO(studyUID, seriesUID, referencedImageUID, dicomFile);
+				            dicomFilePaths.add(dicomFile.getAbsolutePath());
 				        }
 			       }
 			    }
@@ -152,12 +169,85 @@ public class RTDICOMProcessingTask implements GeneratorTask
 			log.info("Invoking MATLAB-generated code..., inputPath:" + inputDirPath);
 			convertDicoms.scanDir(inFolderPath, outFolderPath);
 			log.info("Returned from MATLAB..., outFolderPath:" + outputDirPath);
+			try {
+				MatFileReader reader = new MatFileReader(outFolderPath + "/" + patientID + ".mat");
+				MLStructure contours = (MLStructure) reader.getMLArray("contours");
+				MLUInt8 seg = (MLUInt8) contours.getField("Segmentation"); // [512x512x98  uint8 array]
+				int[] dims = seg.getDimensions();
+				byte[][] segdata = seg.getArray();
+				MLDouble points = (MLDouble) contours.getField("Points"); // [19956x3  double array]
+				MLDouble vps = (MLDouble) contours.getField("VoxPoints"); // [19956x3  double array]
+				File matfile = new File(outFolderPath + "/" + patientID + ".mat");
+				matfile.renameTo(new File(outFilePath));
+				log.info("Types, Segmentation:" + seg + " segdata:" + segdata.length + "x" + segdata[0].length + " Points:" + points + " VoxPoints:" + vps);
+				for (int i = 0; i < dims.length; i++)
+					log.info("seg dimensions " + i + ":" + dims[i]);
+				if (seg != null) {
+					// Convert 1 byte/pixel to 1 bit/pixel
+					int numbytes = dims[0]*dims[1]/8;
+					byte[] pixel_data = new byte[numbytes*dims[2]];
+					for (int frame = 0; frame < dims[2]; frame++) {
+						int offset = frame*numbytes;
+						log.info("frame:" + frame + " offset:" + offset);
+						for (int k = 0; k < numbytes; k++)
+						{
+							int index = k*8;
+							int y = index/dims[1];
+							int x = index%dims[1];
+							pixel_data[offset + k] = 0;
+							for (int l = 0; l < 8; l++)
+							{
+								int x1 = x + l;
+								int y1 = y;
+								if (x1 >= 512)
+								{
+									y1 = y1+1;
+									x1 = x1 - 512;
+								}
+								//log.info("x1:" + x1 + " y1:" + y1);
+								if (segdata[x1][y1 + frame*dims[1]] != 0)
+								{
+									int setBit =  pixel_data[offset + k] + (1 << l);
+									pixel_data[offset + k] =(byte) setBit;
+								}
+							}
+//								if (pixel_data[k] != 0)
+//									log.info("maskfile" + i + ": " + k + " pixel:" + pixel_data[k]);
+						}
+					}
+					File dsoFile = new File(outFolderPath + "/" + seriesUID + ".dso");
+					String dsoDescr = description + " DSO";
+					log.info("Generating new DSO for RTSTRUCT series " + seriesUID);
+					TIFFMasksToDSOConverter converter = new TIFFMasksToDSOConverter();
+					String[] seriesImageUids = converter.generateDSO(pixel_data, dicomFilePaths, dsoFile.getAbsolutePath(), dsoDescr, null, null, false);
+					String dsoSeriesUID = seriesImageUids[0];
+					String dsoImageUID = seriesImageUids[1];
+					log.info("Sending generated DSO " + dsoFile.getAbsolutePath() + " imageUID:" + dsoImageUID + " to dcm4chee...");
+					DCM4CHEEUtil.dcmsnd(dsoFile.getAbsolutePath(), false);
+					EpadProjectOperations projectOperations = DefaultEpadProjectOperations.getInstance();
+					List<Project> projects = projectOperations.getProjectsForSubject(patientID);
+					for (Project project: projects) {
+						if (project.getProjectId().equals(EPADConfig.xnatUploadProjectID)) continue;
+						if (projectOperations.isStudyInProjectAndSubject(project.getProjectId(), patientID, studyUID))
+						{
+							String projectID = project.getProjectId();
+							Study study = projectOperations.getStudy(studyUID);
+							String owner = study.getCreator();
+							if (!projectOperations.hasAccessToProject(owner, project.getId()))
+								owner = project.getCreator();
+							AIMUtil.generateAIMFileForDSO(dsoFile, owner, projectID);
+						}
+					}
+				}
+			} catch (Exception x) {
+				log.warning("Error reading results", x);
+			}
 			log.info("Creating entry in epad_files:" + outFilePath + " imageUID:" + imageUID);
 			Map<String, String>  epadFilesRow = Dcm4CheeDatabaseUtils.createEPadFilesRowData(outFilePath, 0, imageUID);
 			//log.info("PNG of size " + getFileSize(epadFilesRow) + " generated for instance " + instanceNumber + " in series "
 			//		+ seriesUID + ", study " + studyUID + " for patient " + patientName);
 			log.info("Created entry in epad_files:" + epadFilesRow);
-
+			
 			EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
 			epadDatabaseOperations.updateEpadFileRow(epadFilesRow.get("file_path"), PNGFileProcessingStatus.DONE, 0, "");
 		} catch (Exception e) {
