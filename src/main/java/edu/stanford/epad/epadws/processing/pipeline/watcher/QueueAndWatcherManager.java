@@ -252,7 +252,7 @@ public class QueueAndWatcherManager
 	private void extractRTDicomInfo(DICOMFileDescription dicomFileDescription, File dicomFile)
 	{
 		log.info("DICOM RT found for series " + dicomFileDescription.seriesUID + " dicomFile:" + dicomFile.getAbsolutePath());
-		String rtFilePath = createOutputPNGFilePathForSingleFrameDICOMImage(dicomFileDescription).replace(".png", ".rt");
+		String rtFilePath = createOutputPNGFilePathForSingleFrameDICOMImage(dicomFileDescription).replace(".png", ".mat");
 		EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
 		insertEpadFile(epadDatabaseOperations, rtFilePath, 0, dicomFileDescription.imageUID);
 		RTDICOMProcessingTask rtTask = new RTDICOMProcessingTask(dicomFileDescription.seriesUID, dicomFileDescription.imageUID,

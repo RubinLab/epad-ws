@@ -711,9 +711,6 @@ public class AIMUtil
 					EPADAIM ea = epadDatabaseOperations.getAIM(imageAnnotationColl.getUniqueIdentifier().getRoot());
 					if (ea != null && !ea.projectID.equals(projectID))
 						projectID = ea.projectID; 		// TODO: Do we change AIM project if it is in unassigned? 
-					String xml = edu.stanford.hakan.aim4api.usage.AnnotationBuilder.convertToString(imageAnnotationColl);
-					if (xml == null || xml.trim().length() < 100)
-						throw new Exception("Error converting ImageAnnotationCollection to String");
 					Aim4 aim = new Aim4(imageAnnotationColl);
 					String patientID = aim.getPatientID();
 					String imageID = aim.getFirstImageID();
@@ -721,6 +718,9 @@ public class AIMUtil
 					String studyID = aim.getStudyID(seriesID);
 					log.info("Saving AIM file with ID " + imageAnnotationColl.getUniqueIdentifier() + " projectID:" + projectID + " username:" + username);
 					String result = AIMUtil.saveImageAnnotationToServer(imageAnnotationColl, projectID, frameNumber, sessionId);
+					String xml = edu.stanford.hakan.aim4api.usage.AnnotationBuilder.convertToString(imageAnnotationColl);
+					if (xml == null || xml.trim().length() < 100)
+						throw new Exception("Error converting ImageAnnotationCollection to String");
 					log.info("Save annotation:" + result);
 					if (result.toLowerCase().contains("success") && projectID != null && username != null)
 					{
