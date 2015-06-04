@@ -82,6 +82,7 @@ import edu.stanford.epad.dtos.EPADDSOFrame;
 import edu.stanford.epad.dtos.EPADFrame;
 import edu.stanford.epad.dtos.EPADFrameList;
 import edu.stanford.epad.dtos.PNGFileProcessingStatus;
+import edu.stanford.epad.dtos.SeriesProcessingStatus;
 import edu.stanford.epad.dtos.internal.DICOMElement;
 import edu.stanford.epad.dtos.internal.DICOMElementList;
 import edu.stanford.epad.epadws.aim.AIMQueries;
@@ -372,12 +373,36 @@ public class DSOUtil
 					+ imageUID + "/masks/";
 			File pngMaskFilesDirectory = new File(pngMaskDirectoryPath);
 			if (!pngMaskFilesDirectory.exists()) return false;
-			if (pngMaskFilesDirectory.list().length >= numberOfFrames)
+			int numMaskFiles = pngMaskFilesDirectory.list().length;
+			if (numMaskFiles >= numberOfFrames)
 			{
 				return true;
 			}
 			else
 			{
+				if (numMaskFiles > 40)
+				{
+					// One more check - find number of referenced images
+					DICOMElementList dicomElementList = Dcm4CheeQueries.getDICOMElementsFromWADO(studyUID, seriesUID, imageUID);
+					List<DICOMElement> referencedSOPInstanceUIDDICOMElements = getDICOMElementsByCode(dicomElementList,
+							PixelMedUtils.ReferencedSOPInstanceUIDCode);
+					for (int i = 0; i < referencedSOPInstanceUIDDICOMElements.size(); i++)
+					{
+						String referencedUID = dcm4CheeDatabaseOperations.getSeriesUIDForImage(referencedSOPInstanceUIDDICOMElements.get(i).value);
+						if (referencedUID == null || referencedUID.length() == 0)
+						{
+							referencedSOPInstanceUIDDICOMElements.remove(i);
+							i--;
+						}
+					}
+					log.info("DSO Series:" + seriesUID +  " numberOfReferencedImages:" +  referencedSOPInstanceUIDDICOMElements.size());
+					if (pngMaskFilesDirectory.list().length >= referencedSOPInstanceUIDDICOMElements.size())
+					{
+						// Some referenced series are missing, but pngs are ok
+						databaseOperations.updateOrInsertSeries(seriesUID, SeriesProcessingStatus.ERROR);
+						return true;
+					}
+				}
 				log.info("DSO Series:" + seriesUID + " numberOfFrames:" + numberOfFrames + " mask files:" + pngMaskFilesDirectory.list().length + " dir:" + pngMaskDirectoryPath);
 				return false;
 			}
@@ -455,6 +480,7 @@ public class DSOUtil
 			}
 			if (instanceOffset == 0) instanceOffset = 1;
 			int index = 0;
+			log.info("Number of referenced Instances:" + referencedSOPInstanceUIDDICOMElements.size());
 			for (DICOMElement dicomElement : referencedSOPInstanceUIDDICOMElements) {
 				String referencedImageUID = dicomElement.value;
 				DCM4CHEEImageDescription dcm4cheeReferencedImageDescription = referencedImages.get(index);

@@ -167,12 +167,16 @@ public class RTDICOMProcessingTask implements GeneratorTask
 			MWCharArray inFolderPath = new MWCharArray(inputDirPath);
 			MWCharArray outFolderPath = new MWCharArray(outputDirPath);
 			log.info("Invoking MATLAB-generated code..., inputPath:" + inputDirPath);
+			long starttime = System.currentTimeMillis();
 			convertDicoms.scanDir(inFolderPath, outFolderPath);
-			log.info("Returned from MATLAB..., outFolderPath:" + outputDirPath);
+			long endtime = System.currentTimeMillis();
+			log.info("Returned from MATLAB..., outFolderPath:" + outputDirPath + " tooks " + (endtime-starttime)/1000 + " secs");
 			try {
 				MatFileReader reader = new MatFileReader(outFolderPath + "/" + patientID + ".mat");
 				MLStructure contours = (MLStructure) reader.getMLArray("contours");
 				MLUInt8 seg = (MLUInt8) contours.getField("Segmentation"); // [512x512x98  uint8 array]
+				if (seg == null)
+					throw new Exception("No Segmentation found in MATLAN output file");
 				int[] dims = seg.getDimensions();
 				byte[][] segdata = seg.getArray();
 				MLDouble points = (MLDouble) contours.getField("Points"); // [19956x3  double array]
@@ -186,23 +190,24 @@ public class RTDICOMProcessingTask implements GeneratorTask
 					// Convert 1 byte/pixel to 1 bit/pixel
 					int numbytes = dims[0]*dims[1]/8;
 					byte[] pixel_data = new byte[numbytes*dims[2]];
-					for (int frame = 0; frame < dims[2]; frame++) {
-						int offset = frame*numbytes;
+					for (int frame = 0; frame < dims[2]-1; frame++) { // Skip last frame because matlab is off by 1 slice
+						//int offset = frame*numbytes;
+						int offset = (frame+1)*numbytes; // one slice off
 						log.info("frame:" + frame + " offset:" + offset);
 						for (int k = 0; k < numbytes; k++)
 						{
 							int index = k*8;
-							int y = index/dims[1];
-							int x = index%dims[1];
+							int x = index/dims[1];
+							int y = index%dims[1];
 							pixel_data[offset + k] = 0;
 							for (int l = 0; l < 8; l++)
 							{
-								int x1 = x + l;
-								int y1 = y;
-								if (x1 >= dims[0])
+								int y1 = y + l;
+								int x1 = x;
+								if (y1 >= dims[0])
 								{
-									y1 = y1+1;
-									x1 = x1 - dims[0];
+									x1 = x1+1;
+									y1 = y1 - dims[0];
 								}
 								//log.info("x1:" + x1 + " y1:" + y1);
 								if (segdata[x1][y1 + frame*dims[1]] != 0)
@@ -243,13 +248,12 @@ public class RTDICOMProcessingTask implements GeneratorTask
 				log.warning("Error reading results", x);
 			}
 			log.info("Creating entry in epad_files:" + outFilePath + " imageUID:" + imageUID);
-			Map<String, String>  epadFilesRow = Dcm4CheeDatabaseUtils.createEPadFilesRowData(outFilePath, 0, imageUID);
-			//log.info("PNG of size " + getFileSize(epadFilesRow) + " generated for instance " + instanceNumber + " in series "
-			//		+ seriesUID + ", study " + studyUID + " for patient " + patientName);
-			log.info("Created entry in epad_files:" + epadFilesRow);
-			
+			Map<String, String>  epadFilesRow = Dcm4CheeDatabaseUtils.createEPadFilesRowData(outFilePath, 0, imageUID);			
 			EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
 			epadDatabaseOperations.updateEpadFileRow(epadFilesRow.get("file_path"), PNGFileProcessingStatus.DONE, 0, "");
+			
+			EPADFileUtils.deleteDirectoryAndContents(inputDir);
+			EPADFileUtils.deleteDirectoryAndContents(outputDir);
 		} catch (Exception e) {
 			log.warning("Error processing DICOM RT file for series " + seriesUID, e);
 		} finally {

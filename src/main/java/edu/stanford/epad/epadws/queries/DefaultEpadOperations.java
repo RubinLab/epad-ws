@@ -2243,6 +2243,16 @@ public class DefaultEpadOperations implements EpadOperations
 				i--;
 				continue;
 			}
+			EPADAIM aim = aims.get(i);
+			if (aim.dsoSeriesUID != null && aim.dsoSeriesUID.length() > 0) {
+				Map<String, String> seriesMap = dcm4CheeDatabaseOperations.getSeriesData(aim.dsoSeriesUID);
+				if (seriesMap.keySet().isEmpty())
+				{
+					aims.remove(i--);
+				}
+			}
+			SeriesProcessingStatus status = epadDatabaseOperations.getSeriesProcessingStatus(aim.dsoSeriesUID);
+			aim.dsoStatus = status.name();
 		}
 		return new EPADAIMList(aims);
 	}
@@ -2316,6 +2326,8 @@ public class DefaultEpadOperations implements EpadOperations
 					aims.remove(i--);
 				}
 			}
+			SeriesProcessingStatus status = epadDatabaseOperations.getSeriesProcessingStatus(aim.dsoSeriesUID);
+			aim.dsoStatus = status.name();
 		}
 		return new EPADAIMList(aims);
 	}
