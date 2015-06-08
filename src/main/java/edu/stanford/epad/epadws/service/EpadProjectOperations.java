@@ -66,7 +66,7 @@ public interface EpadProjectOperations {
 	 * @return
 	 * @throws Exception
 	 */
-	Project createProject(String loggedInUser, String projectId, String projectName, String description, ProjectType type) throws Exception;
+	Project createProject(String loggedInUser, String projectId, String projectName, String description, String defaultTemplate, ProjectType type) throws Exception;
 	
 	/**
 	 * Updates project fields in database (all arguments except projectId are optional)
@@ -78,7 +78,7 @@ public interface EpadProjectOperations {
 	 * @return
 	 * @throws Exception
 	 */
-	Project updateProject(String loggedInUser, String projectId, String projectName, String description, ProjectType type) throws Exception;
+	Project updateProject(String loggedInUser, String projectId, String projectName, String description, String defaultTemplate, ProjectType type) throws Exception;
 	
 	/**
 	 * Creates a user record in database

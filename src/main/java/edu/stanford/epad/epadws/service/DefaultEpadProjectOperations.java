@@ -145,7 +145,7 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 	 */
 	@Override
 	public Project createProject(String loggedInUser, String projectId, String projectName,
-			String description, ProjectType type) throws Exception {
+			String description, String defaultTemplate, ProjectType type) throws Exception {
 		User user = getUser(loggedInUser);
 		if (user != null && !user.isAdmin() && !user.hasPermission(User.CreateProjectPermission))
 			throw new Exception("No permission to create project");
@@ -153,6 +153,7 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		project.setProjectId(projectId);
 		project.setName(projectName);
 		project.setDescription(description);
+		project.setDefaultTemplate(defaultTemplate);
 		project.setType(type.getName());
 		project.setCreator(loggedInUser);
 		project.save();
@@ -165,7 +166,7 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 	 */
 	@Override
 	public Project updateProject(String loggedInUser, String projectId,
-			String projectName, String description, ProjectType type)
+			String projectName, String description, String defaultTemplate, ProjectType type)
 			throws Exception {
 		Project project = getProject(projectId);
 		if (projectName != null)
@@ -174,6 +175,8 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 			project.setDescription(description);
 		if (type != null)
 			project.setType(type.getName());
+		if (defaultTemplate != null)
+			project.setDefaultTemplate(defaultTemplate);
 		project.save();
 		projectCache.put(project.getProjectId(), project);
 		return project;

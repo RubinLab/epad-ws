@@ -39,6 +39,7 @@ import java.awt.image.RGBImageFilter;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -690,6 +691,37 @@ public class DSOUtil
 		return uploadError;
 	}
 
+	public String getDSOComparison(File standardDSO, File testDSO) throws Exception
+	{
+		String command = EPADConfig.getEPADWebServerDICOMBinDir() + "run-eval-seg.sh " + standardDSO.getAbsolutePath() + " " + testDSO.getAbsolutePath();
+		InputStream is = null;
+		InputStreamReader isr = null;
+		BufferedReader br = null;
+		try {
+			ProcessBuilder processBuilder = new ProcessBuilder(command);
+			processBuilder.directory(new File(EPADConfig.getEPADWebServerDICOMBinDir()));
+			processBuilder.redirectErrorStream(true);
+			Process process = processBuilder.start();
+			is = process.getInputStream();
+			isr = new InputStreamReader(is);
+			br = new BufferedReader(isr);
+	
+			String line;
+			StringBuilder sb = new StringBuilder();
+			while ((line = br.readLine()) != null) {
+				sb.append(line).append("\n");
+				log.debug("./eval_seg output: " + line);
+			}
+
+			int exitValue = process.waitFor();
+			log.info("Evaluate Segmentation exit value is: " + exitValue);
+			return sb.toString();
+		} catch (Exception e) {
+			log.warning("Error evaluating dsos", e);
+			throw e;
+		}
+	}
+	
 	private static DSOEditRequest extractDSOEditRequest(FileItemIterator fileItemIterator) throws FileUploadException,
 			IOException, UnsupportedEncodingException
 	{

@@ -78,6 +78,7 @@ import edu.stanford.epad.common.pixelmed.PixelMedUtils;
 import edu.stanford.epad.common.plugins.PluginAIMUtil;
 import edu.stanford.epad.common.plugins.PluginConfig;
 import edu.stanford.epad.common.util.EPADConfig;
+import edu.stanford.epad.common.util.EPADFileUtils;
 import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.epad.common.util.MongoDBOperations;
 import edu.stanford.epad.common.util.XmlNamespaceTranslator;
@@ -1449,6 +1450,16 @@ public class AIMUtil
 		return result;
 	}
 
+	public static String readPlugInData(EPADAIM aim, String templateName, String jsessionID) throws Exception
+	{
+		String fileName = EPADConfig.getEPADWebServerResourcesDir() + "plugins/" + aim.aimID + "_" + templateName + ".json";
+		File dataFile = new File(fileName);
+		if (!dataFile.exists())
+			throw new Exception("Plugin data file does not exist:" + fileName);
+		String data = EPADFileUtils.readFileAsString(dataFile);
+		return data;
+	}
+	
 	private static void setImageAnnotationUser(ImageAnnotation imageAnnotation, String username)
 	{
 		List<User> userList = new ArrayList<User>();

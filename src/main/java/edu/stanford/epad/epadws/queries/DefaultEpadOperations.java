@@ -201,7 +201,7 @@ public class DefaultEpadOperations implements EpadOperations
 			long gettime = System.currentTimeMillis();
 			for (Project project : projects) {
 				EPADProject epadProject = project2EPADProject(sessionID, username, project, searchFilter, annotationCount);
-	
+				
 				if (epadProject != null)
 				{
 					//log.info("project " + epadProject.id + " aim count:" + epadProject.numberOfAnnotations);
@@ -998,14 +998,14 @@ public class DefaultEpadOperations implements EpadOperations
 	}
 
 	@Override
-	public int createProject(String username, ProjectReference projectReference, String projectName, String projectDescription,
+	public int createProject(String username, ProjectReference projectReference, String projectName, String projectDescription, String defaultTemplate,
 			String sessionID) throws Exception
 	{
 		if (!EPADConfig.UseEPADUsersProjects) {
 			return XNATCreationOperations.createXNATProject(projectReference.projectID, projectName, projectDescription,
 				sessionID);
 		} else {
-			projectOperations.createProject(username, projectReference.projectID, projectName, projectDescription, ProjectType.PRIVATE);
+			projectOperations.createProject(username, projectReference.projectID, projectName, projectDescription, defaultTemplate, ProjectType.PRIVATE);
 			return HttpServletResponse.SC_OK;
 		}
 	}
@@ -1013,14 +1013,14 @@ public class DefaultEpadOperations implements EpadOperations
 	@Override
 	public int updateProject(String username,
 			ProjectReference projectReference, String projectName,
-			String projectDescription, String sessionID) throws Exception {
+			String projectDescription, String defaultTemplate, String sessionID) throws Exception {
 		if (!EPADConfig.UseEPADUsersProjects) {
 			// TODO: update in XNAT
 			return XNATCreationOperations.createXNATProject(projectReference.projectID, projectName, projectDescription,
 				sessionID);
 		} else {
 			if (projectOperations.isOwner(username, projectReference.projectID))
-				projectOperations.updateProject(username, projectReference.projectID, projectName, projectDescription, null);
+				projectOperations.updateProject(username, projectReference.projectID, projectName, projectDescription, defaultTemplate, null);
 			else
 				throw new Exception("No privilege to modify project:" + projectReference.projectID);
 			return HttpServletResponse.SC_OK;
@@ -2252,7 +2252,8 @@ public class DefaultEpadOperations implements EpadOperations
 				}
 			}
 			SeriesProcessingStatus status = epadDatabaseOperations.getSeriesProcessingStatus(aim.dsoSeriesUID);
-			aim.dsoStatus = status.name();
+			if (status != null)
+				aim.dsoStatus = status.name();
 		}
 		return new EPADAIMList(aims);
 	}
@@ -2327,7 +2328,8 @@ public class DefaultEpadOperations implements EpadOperations
 				}
 			}
 			SeriesProcessingStatus status = epadDatabaseOperations.getSeriesProcessingStatus(aim.dsoSeriesUID);
-			aim.dsoStatus = status.name();
+			if (status != null)
+				aim.dsoStatus = status.name();
 		}
 		return new EPADAIMList(aims);
 	}
@@ -2735,8 +2737,10 @@ public class DefaultEpadOperations implements EpadOperations
 				//	userRoles.put(username, "Collaborator");
 
 				//log.info("Time for conv, subj:" + (subjecttime-starttime) + ", study:" + (studytime-subjecttime) + " aim:" + (aimtime-studytime) + " user:" + (usertime-aimtime) + " msecs");
-				return new EPADProject("", "", description, projectName, projectID, "", "",
+				EPADProject ep = new EPADProject("", "", description, projectName, projectID, "", "",
 						numberOfPatients, numberOfStudies, numberOfAnnotations, patientIDs, usernames, userRoles);
+				ep.defaultTemplate = project.getDefaultTemplate();
+				return ep;
 			} else
 				return null;
 		} else
@@ -2909,7 +2913,7 @@ public class DefaultEpadOperations implements EpadOperations
 			//if (!isDSO)
 		}
 		String lossyImage = getWADOPath(studyUID, seriesUID, imageUID);
-
+		//log.debug("losslessimage:" + losslessImage);
 		return new EPADImage(projectID, subjectID, studyUID, seriesUID, imageUID, classUID, insertDate, imageDate,
 				sliceLocation, instanceNumber, losslessImage, lossyImage, dicomElements, defaultDICOMElements, numberOfFrames,
 				isDSO);

@@ -131,7 +131,8 @@ public class ImageCheckHandler extends AbstractHandler
 					.getUnprocessedDICOMFilesInSeries(seriesUID);
 			final int numberOfUnprocessedImages = unprocessedDICOMFileDescriptionsInSeries.size();
 			if (numberOfUnprocessedImages != 0) {
-				if (unprocessedDICOMFileDescriptionsInSeries.iterator().next().modality.equals("SEG"))
+				String modality = unprocessedDICOMFileDescriptionsInSeries.iterator().next().modality;
+				if (modality != null && modality.equals("SEG"))
 				{
 					response = response + "Missing mask images for DSO series " + seriesUID + "\n";
 					log.info("Missing mask images for DSO series" + seriesUID);
