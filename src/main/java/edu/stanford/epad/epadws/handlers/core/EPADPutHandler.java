@@ -163,11 +163,12 @@ public class EPADPutHandler
 				ProjectReference projectReference = ProjectReference.extract(ProjectsRouteTemplates.PROJECT, pathInfo);
 				String projectName = httpRequest.getParameter("projectName");
 				String projectDescription = httpRequest.getParameter("projectDescription");
+				String defaultTemplate = httpRequest.getParameter("defaultTemplate");
 				EPADProject project = epadOperations.getProjectDescription(projectReference, username, sessionID);
 				if (project != null) {
-					statusCode = epadOperations.updateProject(username, projectReference, projectName, projectDescription, sessionID);
+					statusCode = epadOperations.updateProject(username, projectReference, projectName, projectDescription, defaultTemplate, sessionID);
 				} else {
-					statusCode = epadOperations.createProject(username, projectReference, projectName, projectDescription, sessionID);
+					statusCode = epadOperations.createProject(username, projectReference, projectName, projectDescription, defaultTemplate, sessionID);
 				}
 				project = epadOperations.getProjectDescription(projectReference, username, sessionID);
 				responseStream.append(project.toJSON());
