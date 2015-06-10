@@ -180,7 +180,7 @@ public class XNATSyncHandler extends AbstractHandler
 					pt = ProjectType.PUBLIC;
 				try
 				{
-					project = projectOperations.createProject(username, xproject.ID, xproject.name, xproject.description, pt);
+					project = projectOperations.createProject(username, xproject.ID, xproject.name, xproject.description, null, pt);
 				} catch (Exception x) {
 					log.warning("Error creating project:" +  xproject.ID, x);
 					continue;
