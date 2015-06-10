@@ -242,16 +242,15 @@ public class AIMUtil
      * @throws AimException
      * @throws edu.stanford.hakan.aim4api.base.AimException
      */
-    public static String saveImageAnnotationToServer(ImageAnnotationCollection aim, String projectID, int frameNumber, String jsessionID) throws AimException,
+    public static ImageAnnotationCollection saveImageAnnotationToServer(ImageAnnotationCollection aim, String projectID, int frameNumber, String jsessionID) throws AimException,
     edu.stanford.hakan.aim4api.base.AimException {
     	return saveImageAnnotationToServer(aim, projectID, frameNumber, jsessionID, true);
     }
     
-    public static String saveImageAnnotationToServer(ImageAnnotationCollection aim, String projectID, int frameNumber, String jsessionID, boolean invokePlugin) throws AimException,
+    public static ImageAnnotationCollection saveImageAnnotationToServer(ImageAnnotationCollection aim, String projectID, int frameNumber, String jsessionID, boolean invokePlugin) throws AimException,
 	    edu.stanford.hakan.aim4api.base.AimException {
-		String result = "";
+		//String result = "";
 		
-		    log.info("=+=+=+=+=+=+=+=+=+=+=+=+= saveImageAnnotationToServer-1");
 		if (aim.getImageAnnotations().get(0).getListTypeCode().get(0).getCode() != null) { 
 			
 			if (isPluginStillRunning(aim.getUniqueIdentifier().getRoot()))
@@ -265,9 +264,8 @@ public class AIMUtil
 		    
 		    edu.stanford.hakan.aim4api.usage.AnnotationBuilder.saveToFile(aim, tempXmlPath, xsdFilePathV4);
 		    log.info("Saving AIM file with ID " + aim.getUniqueIdentifier());
-		    result = AnnotationBuilder.getAimXMLsaveResult();
 		
-		    log.info(result);
+		    log.info(AnnotationBuilder.getAimXMLsaveResult());
 		    if (storeFile.exists()) {
 		        storeFile.delete();
 		    }
@@ -276,11 +274,11 @@ public class AIMUtil
 		    String collectionName = eXistCollectionV4;
 		    if (projectID != null && projectID.length() > 0)
 		    	collectionName = collectionName + "/" + projectID;
-		    edu.stanford.hakan.aim4api.usage.AnnotationBuilder.saveToServer(aim, eXistServerUrl, aim4Namespace,
+		    aim = edu.stanford.hakan.aim4api.usage.AnnotationBuilder.saveToServer(aim, eXistServerUrl, aim4Namespace,
 		    		collectionName, xsdFilePathV4, eXistUsername, eXistPassword);
-		    result = edu.stanford.hakan.aim4api.usage.AnnotationBuilder.getAimXMLsaveResult();
 		
-		    log.info(result);
+		
+		    log.info(edu.stanford.hakan.aim4api.usage.AnnotationBuilder.getAimXMLsaveResult());
 			try {
 				if (projectID != null && projectID.length() > 0)
 					saveAimToMongo(aim, projectID);
@@ -312,7 +310,7 @@ public class AIMUtil
 		        }
 		    }
 		}
-		return result;
+		return aim;
 	}	
 	
 	public static boolean deleteAIM(String aimID, String projectID)
@@ -629,14 +627,11 @@ public class AIMUtil
 				}
 				else
 				{
-		            log.info("=+=+=+=+=+=+=+=+=+=+=+=+= uploadAIMAnnotations-2");
-		            log.info("=+=+=+=+=+=+=+=+=+=+=+=+= xsdFilePathV4 : " + xsdFilePathV4);
 		            ImageAnnotationCollection imageAnnotation = AIMUtil.getImageAnnotationFromFileV4(aimFile, xsdFilePathV4);
-		            log.info("=+=+=+=+=+=+=+=+=+=+=+=+= uploadAIMAnnotations-3");
+		        
 		            if (imageAnnotation != null) {
 		                String jsessionID = SessionService.getJSessionIDFromRequest(httpRequest);
 
-		            log.info("=+=+=+=+=+=+=+=+=+=+=+=+= uploadAIMAnnotations-4");
 		                AIMUtil.saveImageAnnotationToServer(imageAnnotation, projectID, getInt(frameNo), jsessionID);
 		                responseStream.println("-- Add to AIM server: " + imageAnnotation.getUniqueIdentifier().getRoot() + "<br>");
 		            } else {
@@ -715,12 +710,12 @@ public class AIMUtil
 					String seriesID = aim.getSeriesID(imageID);
 					String studyID = aim.getStudyID(seriesID);
 					log.info("Saving AIM file with ID " + imageAnnotationColl.getUniqueIdentifier() + " projectID:" + projectID + " username:" + username);
-					String result = AIMUtil.saveImageAnnotationToServer(imageAnnotationColl, projectID, frameNumber, sessionId);
+					imageAnnotationColl = AIMUtil.saveImageAnnotationToServer(imageAnnotationColl, projectID, frameNumber, sessionId);
 					String xml = edu.stanford.hakan.aim4api.usage.AnnotationBuilder.convertToString(imageAnnotationColl);
 					if (xml == null || xml.trim().length() < 100)
 						throw new Exception("Error converting ImageAnnotationCollection to String");
-					log.info("Save annotation:" + result);
-					if (result.toLowerCase().contains("success") && projectID != null && username != null)
+					log.info("Save annotation:" + imageAnnotationColl);
+					if (imageAnnotationColl != null && projectID != null && username != null)
 					{
 						FrameReference frameReference = new FrameReference(projectID, patientID, studyID, seriesID, imageID, new Integer(frameNumber));
 						epadDatabaseOperations.addAIM(username, frameReference, imageAnnotationColl.getUniqueIdentifier().getRoot(), xml);
@@ -1623,8 +1618,8 @@ public class AIMUtil
                     edu.stanford.hakan.aim4api.compability.aimv3.ImageAnnotation iaV3 = new  edu.stanford.hakan.aim4api.compability.aimv3.ImageAnnotation(iac);
                     log.info("Saving AIM4:" + epadaim.aimID + " in project " + epadaim.projectID);
                     iac = iaV3.toAimV4(coordinationTerms);
-					String result = AIMUtil.saveImageAnnotationToServer(iac, epadaim.projectID, 0, null, false);
-					if (result.toLowerCase().contains("success") && epadaim.projectID != null)
+					iac = AIMUtil.saveImageAnnotationToServer(iac, epadaim.projectID, 0, null, false);
+					if (iac != null && epadaim.projectID != null)
 					{
 						epadDatabaseOperations.updateAIMXml(epadaim.aimID, edu.stanford.hakan.aim4api.usage.AnnotationBuilder.convertToString(iac));
 					}

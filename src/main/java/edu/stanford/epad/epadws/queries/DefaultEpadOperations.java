@@ -379,7 +379,7 @@ public class DefaultEpadOperations implements EpadOperations
 				if (series.size() > 0) firstSeriesDate = dateformat.format(series.get(0).getCreatedTime());
 				String desc = "";
 				DCM4CHEEStudy dcm4CheeStudy = new DCM4CHEEStudy(study.getStudyUID(), subject.getName(), subjectReference.subjectID, 
-								"", formatDate(study.getStudyDate()), 
+								"", formatDateTime(study.getStudyDate()), 
 								0, series.size(), firstSeries, firstSeriesDate,
 								"", 0, study.getStudyUID(), study.getDescription(), "",
 								"", "");
@@ -2819,6 +2819,15 @@ public class DefaultEpadOperations implements EpadOperations
 			return "";
 		else
 			return dateFormat.format(date);
+	}
+
+	static SimpleDateFormat dateTimeFormat = new SimpleDateFormat("yyyyMMdd HH:mm:ss");
+	private String formatDateTime(Date date)
+	{
+		if (date == null)
+			return "";
+		else
+			return dateTimeFormat.format(date);
 	}
 	
 	private EPADSubject subject2EPADSubject(String sessionID, String username, Subject subject, String projectID,
