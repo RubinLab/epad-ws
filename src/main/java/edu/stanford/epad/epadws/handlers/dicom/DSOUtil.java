@@ -39,7 +39,6 @@ import java.awt.image.RGBImageFilter;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileOutputStream;
-import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -70,6 +69,7 @@ import com.pixelmed.display.SourceImage;
 
 import edu.stanford.epad.common.dicom.DCM4CHEEImageDescription;
 import edu.stanford.epad.common.dicom.DCM4CHEEUtil;
+import edu.stanford.epad.common.dicom.DicomFileUtil;
 import edu.stanford.epad.common.dicom.DicomSegmentationObject;
 import edu.stanford.epad.common.pixelmed.PixelMedUtils;
 import edu.stanford.epad.common.pixelmed.TIFFMasksToDSOConverter;
@@ -95,6 +95,9 @@ import edu.stanford.epad.epadws.epaddb.EpadDatabase;
 import edu.stanford.epad.epadws.epaddb.EpadDatabaseOperations;
 import edu.stanford.epad.epadws.handlers.HandlerUtil;
 import edu.stanford.epad.epadws.handlers.core.ImageReference;
+import edu.stanford.epad.epadws.models.EpadFile;
+import edu.stanford.epad.epadws.models.FileType;
+import edu.stanford.epad.epadws.models.NonDicomSeries;
 import edu.stanford.epad.epadws.queries.Dcm4CheeQueries;
 import edu.stanford.epad.epadws.queries.DefaultEpadOperations;
 import edu.stanford.epad.epadws.queries.EpadOperations;
@@ -691,15 +694,19 @@ public class DSOUtil
 		return uploadError;
 	}
 
-	public String getDSOComparison(File standardDSO, File testDSO) throws Exception
+	public static String getNiftiDSOComparison(File standardDSO, File testDSO) throws Exception
 	{
-		String command = EPADConfig.getEPADWebServerDICOMBinDir() + "run-eval-seg.sh " + standardDSO.getAbsolutePath() + " " + testDSO.getAbsolutePath();
+		String command = EPADConfig.getEPADWebServerBaseDir() + "bin/EvaluateSegmentation " + standardDSO.getAbsolutePath() + " " + testDSO.getAbsolutePath() 
+				+ " -use DICE,JACRD,AUC,KAPPA,RNDIND,ADJRIND,ICCORR,VOLSMTY,MUTINF,MAHLNBS,VARINFO,GCOERR,PROBDST,SNSVTY,SPCFTY,PRCISON,ACURCY,FALLOUT,HDRFDST@0.96@,FMEASR@0.5@ -xml "
+				+ EPADConfig.getEPADWebServerBaseDir() + "bin/result.xml";
+		log.info(command);
+		String[] args = command.split(" ");
 		InputStream is = null;
 		InputStreamReader isr = null;
 		BufferedReader br = null;
 		try {
-			ProcessBuilder processBuilder = new ProcessBuilder(command);
-			processBuilder.directory(new File(EPADConfig.getEPADWebServerDICOMBinDir()));
+			ProcessBuilder processBuilder = new ProcessBuilder(args);
+			processBuilder.directory(new File(EPADConfig.getEPADWebServerBaseDir() + "bin/"));
 			processBuilder.redirectErrorStream(true);
 			Process process = processBuilder.start();
 			is = process.getInputStream();
@@ -719,6 +726,53 @@ public class DSOUtil
 		} catch (Exception e) {
 			log.warning("Error evaluating dsos", e);
 			throw e;
+		}
+	}
+	
+	public static String getDSOImagesComparison(String studyUID, String seriesUID1, String seriesUID2) throws Exception
+	{
+		File inputDir = null;
+		try {			
+			EpadProjectOperations projectOperations = DefaultEpadProjectOperations.getInstance();
+			//NonDicomSeries series1 = projectOperations.getNonDicomSeries(seriesUID1);
+			//NonDicomSeries series2 = projectOperations.getNonDicomSeries(seriesUID2);
+			List<EpadFile> files1 = projectOperations.getEpadFiles(null, null, studyUID, seriesUID1, FileType.IMAGE, true);
+			List<EpadFile> files2 = projectOperations.getEpadFiles(null, null, studyUID, seriesUID2, FileType.IMAGE, true);
+			String inputDirPath = EPADConfig.getEPADWebServerResourcesDir() + "download/" + "temp" + Long.toString(System.currentTimeMillis()) + "/";
+			inputDir = new File(inputDirPath);
+			inputDir.mkdirs();
+			File[] niftis = null;
+			if (files1.size() != 1 && files2.size() != 1)
+			{	
+				List<DCM4CHEEImageDescription> imageDescriptions1 = dcm4CheeDatabaseOperations.getImageDescriptions(
+						studyUID, seriesUID1);
+				if (imageDescriptions1.size() > 1)
+					throw new Exception("Invalid DSO " + seriesUID1 + " has multiple images");
+				if (imageDescriptions1.size() == 0)
+					throw new Exception("DSO " + seriesUID1 + " not found");
+				List<DCM4CHEEImageDescription> imageDescriptions2 = dcm4CheeDatabaseOperations.getImageDescriptions(
+						studyUID, seriesUID2);
+				if (imageDescriptions2.size() > 1)
+					throw new Exception("Invalid DSO " + seriesUID2 + " has multiple images");
+				File dicom1 = new File(inputDir, imageDescriptions1.get(0).imageUID + ".dcm");
+				DCM4CHEEUtil.downloadDICOMFileFromWADO(studyUID, seriesUID1, imageDescriptions1.get(0).imageUID, dicom1);
+				File dicom2 = new File(inputDir, imageDescriptions2.get(0).imageUID + ".dcm");
+				DCM4CHEEUtil.downloadDICOMFileFromWADO(studyUID, seriesUID2, imageDescriptions2.get(0).imageUID, dicom2);
+				niftis = DicomFileUtil.convertDicomsToNifti(inputDir);
+				if (niftis.length != 2)
+					throw new Exception("Error converting dicoms to nifi");
+			}
+			else
+			{
+				niftis = new File[2];
+				niftis[0] = new File(files1.get(0).getFilePath());
+				niftis[1] = new File(files2.get(0).getFilePath());
+			}
+			String result = getNiftiDSOComparison(niftis[0], niftis[1]); // TODO: need to check which is which
+			return result;
+		} finally {
+			if (inputDir != null)
+				EPADFileUtils.deleteDirectoryAndContents(inputDir);
 		}
 	}
 	

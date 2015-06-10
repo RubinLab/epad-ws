@@ -170,7 +170,7 @@ public class RTDICOMProcessingTask implements GeneratorTask
 			long starttime = System.currentTimeMillis();
 			convertDicoms.scanDir(inFolderPath, outFolderPath);
 			long endtime = System.currentTimeMillis();
-			log.info("Returned from MATLAB..., outFolderPath:" + outputDirPath + " tooks " + (endtime-starttime)/1000 + " secs");
+			log.info("Returned from MATLAB..., outFolderPath:" + outputDirPath + " took " + (endtime-starttime)/1000 + " secs");
 			try {
 				MatFileReader reader = new MatFileReader(outFolderPath + "/" + patientID + ".mat");
 				MLStructure contours = (MLStructure) reader.getMLArray("contours");

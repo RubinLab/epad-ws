@@ -40,6 +40,7 @@ import org.mindrot.jbcrypt.BCrypt;
 
 import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADLogger;
+import edu.stanford.epad.dtos.internal.DCM4CHEESeries;
 import edu.stanford.epad.epadws.epaddb.DatabaseUtils;
 import edu.stanford.epad.epadws.models.DisabledTemplate;
 import edu.stanford.epad.epadws.models.EpadFile;
@@ -58,6 +59,7 @@ import edu.stanford.epad.epadws.models.User;
 import edu.stanford.epad.epadws.models.User.EventLog;
 import edu.stanford.epad.epadws.models.UserRole;
 import edu.stanford.epad.epadws.models.dao.AbstractDAO;
+import edu.stanford.epad.epadws.queries.Dcm4CheeQueries;
 
 /**
  * All Epad User/Project/Subject/Study related operations
@@ -437,10 +439,19 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 	public NonDicomSeries createNonDicomSeries(String loggedInUser, String seriesUID,
 			String studyUID, String description, Date seriesDate)
 			throws Exception {
-		NonDicomSeries series = new NonDicomSeries();
 		Study study = getStudy(studyUID);
 		if (study == null)
 			throw new Exception("Study " + studyUID + " not found");
+		NonDicomSeries series = getNonDicomSeries(seriesUID);
+		if (series != null && series.getStudyId() != study.getId())
+			throw new Exception("Series " + seriesUID + " already exists for another study");
+		if (series == null)
+		{
+			DCM4CHEESeries dcm4cheeSeries = Dcm4CheeQueries.getSeries(seriesUID);
+			if (dcm4cheeSeries != null)
+				throw new Exception("Series already exists in DCM4CHEE");
+			series = new NonDicomSeries();
+		}
 		series.setSeriesUID(seriesUID);
 		series.setSeriesDate(seriesDate);
 		series.setStudyId(study.getId());
@@ -1048,6 +1059,13 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		List<NonDicomSeries> serieses = new ArrayList<NonDicomSeries>();
 		serieses.addAll(objects);		
 		return serieses;
+	}
+
+	@Override
+	public NonDicomSeries getNonDicomSeries(String seriesUID) throws Exception {
+		NonDicomSeries series = new NonDicomSeries();
+		series = (NonDicomSeries) series.getObject("seriesUID = " + series.toSQL(seriesUID));
+		return series;
 	}
 
 	/* (non-Javadoc)

@@ -27,6 +27,7 @@ import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.ConcurrentModificationException;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -184,6 +185,7 @@ public class EPADUploadDirWatcher implements Runnable
 						oldNumberOfFiles = newNumberOfFiles;
 						oldSize = newSize;
 					} else {
+						log.info("Files uploaded:" + Arrays.toString(filePaths));
 						for (String currPath : filePaths) {
 							currPath = currPath.toLowerCase();
 							if (currPath.endsWith(".zip")) {

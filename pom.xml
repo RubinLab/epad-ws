@@ -88,6 +88,12 @@
      <artifactId>dicomrt</artifactId> 	
      <version>${matlab.release.number.jjvector}</version>
    </dependency>
+   
+   <dependency>
+     <groupId>com.matlab</groupId>
+     <artifactId>javabuilder</artifactId>
+     <version>${matlab.release.number.jjvector}</version> 
+   </dependency>
 
     <dependency>
       <groupId>edu.stanford.hakan.aim3api</groupId>

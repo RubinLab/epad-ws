@@ -452,6 +452,14 @@ public interface EpadProjectOperations {
 	 * @throws Exception
 	 */
 	List<NonDicomSeries> getNonDicomSeriesForStudy(String studyUID) throws Exception;
+	
+	/**
+	 * Get Non-dicom series
+	 * @param seriesUID
+	 * @return
+	 * @throws Exception
+	 */
+	NonDicomSeries getNonDicomSeries(String seriesUID) throws Exception;
 
 	/**
 	 * Set user status for project and subject
