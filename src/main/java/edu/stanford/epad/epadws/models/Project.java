@@ -35,6 +35,7 @@ public class Project extends AbstractDAO {
 	String projectId;
 	String type; // Private, Public
 	String description;
+	String defaultTemplate;
 	String creator;
 	Date createdTime;
 	Date updateTime;
@@ -84,6 +85,14 @@ public class Project extends AbstractDAO {
 		this.description = description;
 	}
 
+	public String getDefaultTemplate() {
+		return defaultTemplate;
+	}
+
+	public void setDefaultTemplate(String defaultTemplate) {
+		this.defaultTemplate = defaultTemplate;
+	}
+
 	public String getCreator() {
 		return creator;
 	}
@@ -119,6 +128,7 @@ public class Project extends AbstractDAO {
         {"projectId","String","projectid","varchar"},
         {"type","String","type","varchar"},
         {"description","String","description","varchar"},
+        {"defaultTemplate","String","defaulttemplate","varchar"},
         {"creator","String","creator","varchar"},
         {"createdTime","Date","createdtime","timestamp"},
         {"updateTime","Date","updatetime","timestamp"},	

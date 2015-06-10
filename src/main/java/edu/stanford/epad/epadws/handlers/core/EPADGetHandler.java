@@ -479,6 +479,14 @@ public class EPADGetHandler
 				{	
 					responseStream.append(aim.toJSON());
 				}
+				else if ("data".equals(httpRequest.getParameter("format")))
+				{
+					String templateName = httpRequest.getParameter("templateName");
+					if (templateName == null || templateName.trim().length() == 0)
+						throw new Exception("Invalid template name");
+					String json = AIMUtil.readPlugInData(aim, templateName, sessionID);
+					responseStream.append(json);
+				}
 				else
 				{
 					AIMUtil.queryAIMImageAnnotations(responseStream, projectReference.projectID, AIMSearchType.ANNOTATION_UID,
@@ -554,6 +562,14 @@ public class EPADGetHandler
 				{	
 					responseStream.append(aim.toJSON());
 				}
+				else if ("data".equals(httpRequest.getParameter("format")))
+				{
+					String templateName = httpRequest.getParameter("templateName");
+					if (templateName == null || templateName.trim().length() == 0)
+						throw new Exception("Invalid template name");
+					String json = AIMUtil.readPlugInData(aim, templateName, sessionID);
+					responseStream.append(json);
+				}
 				else
 				{
 					AIMUtil.queryAIMImageAnnotations(responseStream, studyReference.projectID, AIMSearchType.ANNOTATION_UID,
@@ -596,6 +612,14 @@ public class EPADGetHandler
 				{	
 					responseStream.append(aim.toJSON());
 				}
+				else if ("data".equals(httpRequest.getParameter("format")))
+				{
+					String templateName = httpRequest.getParameter("templateName");
+					if (templateName == null || templateName.trim().length() == 0)
+						throw new Exception("Invalid template name");
+					String json = AIMUtil.readPlugInData(aim, templateName, sessionID);
+					responseStream.append(json);
+				}
 				else
 				{
 					AIMUtil.queryAIMImageAnnotations(responseStream, seriesReference.projectID, AIMSearchType.ANNOTATION_UID,
@@ -629,6 +653,14 @@ public class EPADGetHandler
 				if (returnSummary(httpRequest))
 				{	
 					responseStream.append(aim.toJSON());
+				}
+				else if ("data".equals(httpRequest.getParameter("format")))
+				{
+					String templateName = httpRequest.getParameter("templateName");
+					if (templateName == null || templateName.trim().length() == 0)
+						throw new Exception("Invalid template name");
+					String json = AIMUtil.readPlugInData(aim, templateName, sessionID);
+					responseStream.append(json);
 				}
 				else
 				{
@@ -664,6 +696,14 @@ public class EPADGetHandler
 				if (returnSummary(httpRequest))
 				{	
 					responseStream.append(aim.toJSON());
+				}
+				else if ("data".equals(httpRequest.getParameter("format")))
+				{
+					String templateName = httpRequest.getParameter("templateName");
+					if (templateName == null || templateName.trim().length() == 0)
+						throw new Exception("Invalid template name");
+					String json = AIMUtil.readPlugInData(aim, templateName, sessionID);
+					responseStream.append(json);
 				}
 				else
 				{
@@ -970,6 +1010,14 @@ public class EPADGetHandler
 					}
 					else
 						responseStream.append(aim.toJSON());
+				}
+				else if ("data".equals(httpRequest.getParameter("format")))
+				{
+					String templateName = httpRequest.getParameter("templateName");
+					if (templateName == null || templateName.trim().length() == 0)
+						throw new Exception("Invalid template name");
+					String json = AIMUtil.readPlugInData(aim, templateName, sessionID);
+					responseStream.append(json);
 				}
 				else
 				{

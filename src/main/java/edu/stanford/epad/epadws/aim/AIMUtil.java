@@ -78,6 +78,7 @@ import edu.stanford.epad.common.pixelmed.PixelMedUtils;
 import edu.stanford.epad.common.plugins.PluginAIMUtil;
 import edu.stanford.epad.common.plugins.PluginConfig;
 import edu.stanford.epad.common.util.EPADConfig;
+import edu.stanford.epad.common.util.EPADFileUtils;
 import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.epad.common.util.MongoDBOperations;
 import edu.stanford.epad.common.util.XmlNamespaceTranslator;
@@ -400,43 +401,40 @@ public class AIMUtil
 		String description = Attribute.getSingleStringValueOrEmptyString(dsoDICOMAttributes, TagFromName.SeriesDescription);
 		// TODO: This call to get Referenced Image does not work ???
 		String[] referencedImageUID = Attribute.getStringValues(dsoDICOMAttributes, TagFromName.ReferencedSOPInstanceUID);
+		Dcm4CheeDatabaseOperations dcm4CheeDatabaseOperations = Dcm4CheeDatabase.getInstance()
+				.getDcm4CheeDatabaseOperations();
 		SequenceAttribute referencedSeriesSequence =(SequenceAttribute)dsoDICOMAttributes.get(TagFromName.ReferencedSeriesSequence);
+		String referencedSeriesUID = "";
 		if (referencedSeriesSequence != null) {
 		    Iterator sitems = referencedSeriesSequence.iterator();
 		    if (sitems.hasNext()) {
 		        SequenceItem sitem = (SequenceItem)sitems.next();
 		        if (sitem != null) {
 		            AttributeList list = sitem.getAttributeList();
-		            list = SequenceAttribute.getAttributeListFromWithinSequenceWithSingleItem(list,
-							TagFromName.ReferencedInstanceSequence);
-		            if (list.get(TagFromName.ReferencedSOPInstanceUID) != null)
-		            {
-		            	
-		    			referencedImageUID = new String[1];
-		    			referencedImageUID[0] = list.get(TagFromName.ReferencedSOPInstanceUID).getSingleStringValueOrEmptyString();
-			            log.info("ReferencedSOPInstanceUID:" + referencedImageUID[0]);
-		            }
+		            SequenceAttribute referencedInstanceSeq = (SequenceAttribute) list.get(TagFromName.ReferencedInstanceSequence);
+				    Iterator sitems2 = referencedInstanceSeq.iterator();
+				    while (sitems2.hasNext())
+				    {
+					    sitem = (SequenceItem)sitems2.next();
+			            list = sitem.getAttributeList();
+			            if (list.get(TagFromName.ReferencedSOPInstanceUID) != null)
+			            {		            	
+			    			referencedImageUID = new String[1];
+			    			referencedImageUID[0] = list.get(TagFromName.ReferencedSOPInstanceUID).getSingleStringValueOrEmptyString();
+							referencedSeriesUID = dcm4CheeDatabaseOperations.getSeriesUIDForImage(referencedImageUID[0]);
+							if (referencedSeriesUID != null && referencedSeriesUID.length() > 0)
+							{
+								log.info("ReferencedSOPInstanceUID:" + referencedImageUID[0]);
+								break;
+							}
+							else
+								log.info("DSO Referenced Image not found:" + referencedImageUID);
+			            }
+				    }
  		        }
 		    }
 		}
-		Dcm4CheeDatabaseOperations dcm4CheeDatabaseOperations = Dcm4CheeDatabase.getInstance()
-				.getDcm4CheeDatabaseOperations();
-		if (referencedImageUID == null || referencedImageUID.length == 0)
-		{
-			referencedImageUID = new String[1];
-			DICOMElementList dicomElementList = Dcm4CheeQueries.getDICOMElementsFromWADO(studyUID, seriesUID, imageUID);
-			for (DICOMElement dicomElement : dicomElementList.ResultSet.Result) {
-				if (dicomElement.tagCode.equals(PixelMedUtils.ReferencedSOPInstanceUIDCode))
-				{
-					referencedImageUID[0] = dicomElement.value;
-				}
-			}
-			if (referencedImageUID[0] == null)
-				throw new Exception("DSO Referenced Image UID not found: " + seriesUID);
-		}
-		String referencedSeriesUID = dcm4CheeDatabaseOperations.getSeriesUIDForImage(referencedImageUID[0]);
-
-		if (referencedSeriesUID.length() != 0) { // Found corresponding series in dcm4chee
+		if (referencedSeriesUID != null && referencedSeriesUID.length() != 0) { // Found corresponding series in dcm4chee
 			String referencedStudyUID = studyUID; // Will be same study as DSO
 			patientName = trimTrailing(patientName);
 			log.info("Generating AIM file for DSO series " + seriesUID + " for patient " + patientName);
@@ -1447,6 +1445,16 @@ public class AIMUtil
 		return result;
 	}
 
+	public static String readPlugInData(EPADAIM aim, String templateName, String jsessionID) throws Exception
+	{
+		String fileName = EPADConfig.getEPADWebServerResourcesDir() + "plugins/" + aim.aimID + "_" + templateName + ".json";
+		File dataFile = new File(fileName);
+		if (!dataFile.exists())
+			throw new Exception("Plugin data file does not exist:" + fileName);
+		String data = EPADFileUtils.readFileAsString(dataFile);
+		return data;
+	}
+	
 	private static void setImageAnnotationUser(ImageAnnotation imageAnnotation, String username)
 	{
 		List<User> userList = new ArrayList<User>();

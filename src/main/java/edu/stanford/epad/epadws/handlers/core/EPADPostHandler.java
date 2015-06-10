@@ -141,6 +141,7 @@ public class EPADPostHandler
 								String fileType = httpRequest.getParameter("fileType");
 								if (fileTypes != null && fileTypes.size() > i)
 										fileType = fileTypes.get(i);
+								log.info("Creating file " + i++ + " type:" + fileType);
 								statusCode = epadOperations.createFile(username, projectReference, (File)paramData.get(param), description, fileType, sessionID);
 								i++;
 							}
