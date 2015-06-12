@@ -621,7 +621,7 @@ public class AIMQueries
 						eXistUsername, eXistPassword, aim.aimID);
 		
 		AuditTrailManager atm = new AuditTrailManager(eXistServerUrl, aim4Namespace, collection4Name, eXistUsername, eXistPassword, xsdFilePath4);
-		return atm.getPreviousVersions(iac);
+		return atm.getUndoList(iac);
 	}
 	
 	
