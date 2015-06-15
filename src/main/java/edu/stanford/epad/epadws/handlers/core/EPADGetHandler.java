@@ -1003,10 +1003,17 @@ public class EPADGetHandler
 					if ("all".equalsIgnoreCase(version))
 					{
 						EPADAIMList aims = AIMUtil.getAllVersionSummaries(aim);
+						responseStream.append(aims.toJSON());
 					}
 					else if ("previous".equalsIgnoreCase(version))
 					{
 						EPADAIMList aims = AIMUtil.getPreviousVersionSummaries(aim);
+						responseStream.append(aims.toJSON());
+					}
+					else if ("next".equalsIgnoreCase(version))
+					{
+						EPADAIMList aims = AIMUtil.getNextVersionSummaries(aim);
+						responseStream.append(aims.toJSON());
 					}
 					else
 						responseStream.append(aim.toJSON());

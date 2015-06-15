@@ -711,6 +711,23 @@ public class EPADPutHandler
 				else
 					throw new Exception("File not found");
 				statusCode = HttpServletResponse.SC_OK;
+
+			} else if (HandlerUtil.matchesTemplate(AimsRouteTemplates.AIM, pathInfo)) {
+				String action = httpRequest.getParameter("action");
+				if (action == null || action.trim().length() == 0)
+					throw new Exception("Invalid action specified, should be Undo or Redo");
+				AIMReference aimReference = AIMReference.extract(AimsRouteTemplates.AIM, pathInfo);
+				EPADAIM aim = epadOperations.getAIMDescription(aimReference.aimID, username, sessionID);
+				if (aim == null)
+					throw new Exception("Annotation not found, aimID:" + aimReference.aimID);
+				if (action.equalsIgnoreCase("undo"))
+					AIMUtil.undoLastAIM(aim);
+				else if (action.equalsIgnoreCase("redo"))
+					AIMUtil.redoLastAIM(aim);
+				else
+					throw new Exception("Invalid action " + action + " specified, should be Undo or Redo");
+					
+			
 			} else {
 				statusCode = HandlerUtil.badRequestJSONResponse(BAD_PUT_MESSAGE + ":" + pathInfo, responseStream, log);
 			}
