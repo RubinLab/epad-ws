@@ -172,7 +172,7 @@ public interface EpadOperations
 	
 	String createStudyAIM(String username, StudyReference studyReference, String aimID, File aimFile, String sessionID);
 
-	EPADSeries createSeries(String username, SeriesReference seriesReference, String description, Date seriesDate, String sessionID) throws Exception;
+	EPADSeries createSeries(String username, SeriesReference seriesReference, String description, Date seriesDate, String modality, String referencedSeries, String sessionID) throws Exception;
 
 	String createProjectAIM(String username, ProjectReference projectReference, String aimID, File aimFile, String sessionID);
 

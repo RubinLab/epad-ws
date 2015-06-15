@@ -437,7 +437,7 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 
 	@Override
 	public NonDicomSeries createNonDicomSeries(String loggedInUser, String seriesUID,
-			String studyUID, String description, Date seriesDate)
+			String studyUID, String description, Date seriesDate, String modality, String referencedSeries)
 			throws Exception {
 		Study study = getStudy(studyUID);
 		if (study == null)
@@ -456,6 +456,8 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		series.setSeriesDate(seriesDate);
 		series.setStudyId(study.getId());
 		series.setDescription(description);
+		series.setModality(modality);
+		series.setReferencedSeries(referencedSeries);
 		series.save();
 		return series;
 	}

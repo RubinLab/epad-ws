@@ -440,6 +440,20 @@ public class DefaultEpadOperations implements EpadOperations
 			return dcm4cheeSeries2EpadSeries(sessionID, seriesReference.projectID, patientID, dcm4cheeSeries, username);
 		}
 		else {
+			try {
+				NonDicomSeries ndSeries = projectOperations.getNonDicomSeries(seriesReference.seriesUID);
+				if (ndSeries != null) {
+					EPADSeries series = new EPADSeries(seriesReference.projectID, seriesReference.subjectID, "", seriesReference.studyUID, 
+								ndSeries.getSeriesUID(), 
+								dateformat.format(ndSeries.getSeriesDate()), 
+								ndSeries.getDescription(), 
+								"", "", "", 0, 0, 0, "","","",null,"","", "SEG".equalsIgnoreCase(ndSeries.getModality()));
+					series.isNonDicomSeries = true;
+					return series;
+				}
+			} catch (Exception e) {
+				log.warning("Error getting non-dicom series", e);
+			}
 			log.warning("Could not find series description for series " + seriesReference.seriesUID);
 			return null;
 		}
@@ -517,7 +531,7 @@ public class DefaultEpadOperations implements EpadOperations
 						ndSeries.getSeriesUID(), 
 						dateformat.format(ndSeries.getSeriesDate()), 
 						ndSeries.getDescription(), 
-						"", "", "", 0, 0, 0, "","","",null,"","", false);
+						"", "", "", 0, 0, 0, "","","",null,"","", "SEG".equalsIgnoreCase(ndSeries.getModality()));
 				series.isNonDicomSeries = true;
 				epadSeriesList.addEPADSeries(series);
 			}
@@ -542,7 +556,7 @@ public class DefaultEpadOperations implements EpadOperations
 		String pixelSpacing2 = getDICOMElement(suppliedDICOMElementsLast, PixelMedUtils.PixelSpacingCode);
 		boolean getMetaDataForAllImages = false;
 		log.debug("pixelSpacing1:" + pixelSpacing1 + " pixelSpacing2:" + pixelSpacing2);
-		if (!pixelSpacing1.equals(pixelSpacing2))
+		if (pixelSpacing1 != null && !pixelSpacing1.equals(pixelSpacing2))
 		{
 			log.info("Series: " +  seriesReference.seriesUID + " returning metadata for all images");
 			getMetaDataForAllImages = true;
@@ -657,6 +671,9 @@ public class DefaultEpadOperations implements EpadOperations
 						int frameNumber = dcm4cheeReferencedImageDescription.instanceNumber - instanceOffset; // Frames 0-based, instances 1 or more
 						String losslessImage = getPNGMaskPath(studyUID, imageReference.seriesUID, imageReference.imageUID,
 								frameNumber);
+						String contourImage = "";
+						contourImage = getPNGContourPath(studyUID, imageReference.seriesUID, imageReference.imageUID,
+								frameNumber);
 						String lossyImage = ""; // We do not have a lossy image for the DSO frame
 						String sourceLosslessImage = getPNGPath(studyUID, referencedSeriesUID, referencedImageUID);
 						String sourceLossyImage = getWADOPath(studyUID, referencedSeriesUID, referencedImageUID);
@@ -687,6 +704,15 @@ public class DefaultEpadOperations implements EpadOperations
 				log.warning("Could not find frames for DSO image " + imageReference.imageUID + " in series "
 						+ imageReference.seriesUID);
 			}
+		} else if (dcm4cheeImageDescription == null) {
+			try {
+				EpadFile file = projectOperations.getEpadFile(null, imageReference.subjectID, imageReference.studyUID, imageReference.seriesUID, imageReference.imageUID);
+				//String referencedSeries = 
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			
 		} else {
 			log.warning("Attempt to get frames of non multi-frame image " + imageReference.imageUID + " in series "
 					+ imageReference.seriesUID);
@@ -750,20 +776,22 @@ public class DefaultEpadOperations implements EpadOperations
 
 	SimpleDateFormat dateformat = new SimpleDateFormat("yyyyMMdd");
 	@Override
-	public EPADSeries createSeries(String username, SeriesReference seriesReference, String description, Date seriesDate, String sessionID) throws Exception
+	public EPADSeries createSeries(String username, SeriesReference seriesReference, String description, Date seriesDate, String modality, String referencedSeries, String sessionID) throws Exception
 	{
-		log.info("Creating new series:" + seriesReference.seriesUID);
+		log.info("Creating new series:" + seriesReference.seriesUID + " description:" + description + " modality:" + modality);
 		String seriesUID = seriesReference.seriesUID;
 		if (seriesUID.equalsIgnoreCase("new"))
 		{
 			UIDGenerator u = new UIDGenerator();
 			seriesUID = u.getNewUID();
+			if ("SEG".equals(modality) && (referencedSeries == null || referencedSeries.trim().length() == 0))
+				throw new Exception("Segmentation series should specify a referenced Series UID");
 		}
 		if (seriesDate == null) seriesDate = new Date();
-		NonDicomSeries series = projectOperations.createNonDicomSeries(username, seriesUID, seriesReference.studyUID, description, seriesDate);
+		NonDicomSeries series = projectOperations.createNonDicomSeries(username, seriesUID, seriesReference.studyUID, description, seriesDate, modality, referencedSeries);
 		projectOperations.addStudyToProject(username, seriesReference.studyUID, seriesReference.subjectID, seriesReference.projectID);
 		return new EPADSeries(seriesReference.projectID, seriesReference.subjectID, "", seriesReference.studyUID, seriesUID,
-				dateformat.format(new Date()), description, "", "", "", 0, 0, 0, "","","",null,"","", false);
+				dateformat.format(seriesDate), description, "", "", "", 0, 0, 0, "","","",null,"","", "seg".equalsIgnoreCase(modality));
 	}
 
 	@Override
@@ -1199,6 +1227,18 @@ public class DefaultEpadOperations implements EpadOperations
 				}				
 			}
 			projectOperations.createFile(username, projectID, subjectID, studyID, seriesID, uploadedFile, filename, description, type);
+			if (type != null && type.equals(FileType.IMAGE) && seriesID != null) {
+				try {
+					AIMUtil.generateAIMForNiftiDSO(username, projectID, subjectID, studyID, seriesID, EPADFileUtils.removeExtension(filename), uploadedFile);
+				} catch (Exception x) {
+					log.warning("Error generating Annotation for Nifti DSO", x);
+				}
+				try {
+					DSOUtil.writePNGMasksForNiftiDSO(subjectID, studyID, seriesID, EPADFileUtils.removeExtension(filename), uploadedFile);
+				} catch (Exception x) {
+					log.warning("Error generating PNG masks for Nifti DSO", x);
+				}
+			}
 		}
 	}
 
@@ -1215,6 +1255,7 @@ public class DefaultEpadOperations implements EpadOperations
 				|| name.endsWith(".yuv")
 				|| name.endsWith(".psd")
 				|| name.endsWith(".xcf")
+				|| name.endsWith(".mhd")
 				)
 			return true;
 		else
@@ -1614,7 +1655,11 @@ public class DefaultEpadOperations implements EpadOperations
 	            	templateUID = templateObj.getString("uid");
 		            templateName = templateObj.getString("name");
 		            templateType = templateObj.getString("codeMeaning");
-		            templateCode = templateObj.getString("codeValue");
+		            try {
+		            	templateCode = templateObj.getString("codeValue");
+		            } catch (Exception x) {
+						log.warning("Error getting code value for template " + template.getAbsolutePath());
+					}
 		            try {
 			            templateDescription = templateObj.getString("description");
 			            modality = templateObj.getString("modality");
@@ -2882,6 +2927,11 @@ public class DefaultEpadOperations implements EpadOperations
 	private String getPNGMaskPath(String studyUID, String seriesUID, String imageUID, int frameNumber)
 	{
 		return "studies/" + studyUID + "/series/" + seriesUID + "/images/" + imageUID + "/masks/" + frameNumber + ".png";
+	}
+
+	private String getPNGContourPath(String studyUID, String seriesUID, String imageUID, int frameNumber)
+	{
+		return "studies/" + studyUID + "/series/" + seriesUID + "/images/" + imageUID + "/contours/" + frameNumber + ".png";
 	}
 
 	private String getWADOPath(String studyUID, String seriesUID, String imageUID)

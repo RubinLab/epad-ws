@@ -202,7 +202,7 @@ public interface EpadProjectOperations {
 	 * @return
 	 * @throws Exception
 	 */
-	NonDicomSeries createNonDicomSeries(String loggedInUser, String seriesUID, String studyUID, String description, Date seriesDate) throws Exception;
+	NonDicomSeries createNonDicomSeries(String loggedInUser, String seriesUID, String studyUID, String description, Date seriesDate, String modality, String referencedSeries) throws Exception;
 	
 	/**
 	 * Add Subject/Studies to Project

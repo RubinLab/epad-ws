@@ -709,6 +709,7 @@ public class AIMDatabaseOperations {
     public EPADAIM getAIM(String annotationID) throws SQLException {
         String sqlSelect = "SELECT UserLoginName, ProjectUID, PatientID, StudyUID, SeriesUID, ImageUID, frameID, DSOSeriesUID,XML FROM annotations WHERE AnnotationUID = '"
         		+ annotationID + "'";
+    	log.debug(sqlSelect);
 		ResultSet rs = null;
         try
         {
@@ -748,7 +749,7 @@ public class AIMDatabaseOperations {
         	delim = ",";
         }
     	sqlSelect = sqlSelect + ")";
-    	log.info(sqlSelect);
+    	log.debug(sqlSelect);
 		ResultSet rs = null;
 		List<EPADAIM> aims = new ArrayList<EPADAIM>();
         try

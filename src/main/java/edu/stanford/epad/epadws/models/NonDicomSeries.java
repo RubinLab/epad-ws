@@ -35,6 +35,8 @@ public class NonDicomSeries extends AbstractDAO {
 	String seriesUID;
 	String description;
 	Date seriesDate;
+	String modality;
+	String referencedSeries; // If modality is "SEG" 
 	String creator;
 	Date createdTime;
 	Date updateTime;
@@ -80,6 +82,22 @@ public class NonDicomSeries extends AbstractDAO {
 		this.seriesDate = seriesDate;
 	}
 
+	public String getModality() {
+		return modality;
+	}
+
+	public void setModality(String modality) {
+		this.modality = modality;
+	}
+
+	public String getReferencedSeries() {
+		return referencedSeries;
+	}
+
+	public void setReferencedSeries(String referencedSeries) {
+		this.referencedSeries = referencedSeries;
+	}
+
 	public String getCreator() {
 		return creator;
 	}
@@ -111,6 +129,8 @@ public class NonDicomSeries extends AbstractDAO {
         {"seriesUID","String","seriesUID","varchar"},
         {"description","String","description","varchar"},
         {"seriesDate","Date","seriesdate","date"},
+        {"modality","String","modality","varchar"},
+        {"referencedSeries","String","referencedseries","varchar"},
         {"creator","String","creator","varchar"},
         {"createdTime","Date","createdtime","timestamp"},
         {"updateTime","Date","updatetime","timestamp"},	
