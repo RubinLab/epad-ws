@@ -542,7 +542,7 @@ public class DefaultEpadOperations implements EpadOperations
 		String pixelSpacing2 = getDICOMElement(suppliedDICOMElementsLast, PixelMedUtils.PixelSpacingCode);
 		boolean getMetaDataForAllImages = false;
 		log.debug("pixelSpacing1:" + pixelSpacing1 + " pixelSpacing2:" + pixelSpacing2);
-		if (!pixelSpacing1.equals(pixelSpacing2))
+		if (pixelSpacing1 != null && !pixelSpacing1.equals(pixelSpacing2))
 		{
 			log.info("Series: " +  seriesReference.seriesUID + " returning metadata for all images");
 			getMetaDataForAllImages = true;
