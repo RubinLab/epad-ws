@@ -1614,7 +1614,11 @@ public class DefaultEpadOperations implements EpadOperations
 	            	templateUID = templateObj.getString("uid");
 		            templateName = templateObj.getString("name");
 		            templateType = templateObj.getString("codeMeaning");
-		            templateCode = templateObj.getString("codeValue");
+		            try {
+						templateCode = templateObj.getString("codeValue");
+		            } catch (Exception x) {
+						log.warning("Error getting code value for " + template.getAbsolutePath());
+					}
 		            try {
 			            templateDescription = templateObj.getString("description");
 			            modality = templateObj.getString("modality");
