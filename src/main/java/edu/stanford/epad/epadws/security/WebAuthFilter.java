@@ -79,10 +79,12 @@ public class WebAuthFilter implements Filter {
 					Cookie userName = new Cookie(LOGGEDINUSER_COOKIE, webAuthUser);
 		            userName.setMaxAge(-1);
 		            userName.setPath("/epad/");
+		            userName.setSecure(true);
 		            httpResponse.addCookie(userName);
 		            Cookie sessionCookie = new Cookie(JSESSIONID_COOKIE, sessionID);
 		            sessionCookie.setMaxAge(-1);
 		            sessionCookie.setPath("/epad/");
+		            sessionCookie.setSecure(true);
 		            httpResponse.addCookie(sessionCookie);
 		            if (httpRequest.getRequestURL().toString().indexOf("Web_pad") == -1)
 		            	httpResponse.sendRedirect("Web_pad.html");
