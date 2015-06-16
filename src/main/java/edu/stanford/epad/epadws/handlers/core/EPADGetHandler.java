@@ -76,6 +76,7 @@ import edu.stanford.epad.epadws.aim.AIMSearchType;
 import edu.stanford.epad.epadws.aim.AIMUtil;
 import edu.stanford.epad.epadws.epaddb.EpadDatabase;
 import edu.stanford.epad.epadws.handlers.HandlerUtil;
+import edu.stanford.epad.epadws.handlers.dicom.DSOUtil;
 import edu.stanford.epad.epadws.handlers.dicom.DownloadUtil;
 import edu.stanford.epad.epadws.models.EpadStatistics;
 import edu.stanford.epad.epadws.models.RemotePACQuery;
@@ -1160,6 +1161,22 @@ public class EPADGetHandler
 					EPADFileUtils.downloadFile(httpRequest, httpResponse, new File(EPADConfig.getEPADWebServerResourcesDir()+file.path), file.fileName); 					
 				}
 				statusCode = HttpServletResponse.SC_OK;
+			
+			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.SERIES_FILE_COMPARE, pathInfo)) {
+				SeriesReference seriesReference = SeriesReference.extract(ProjectsRouteTemplates.SERIES_FILE_COMPARE, pathInfo);
+				Map<String, String> templateMap = HandlerUtil.getTemplateMap(ProjectsRouteTemplates.SERIES_FILE_COMPARE, pathInfo);
+				String filename = HandlerUtil.getTemplateParameter(templateMap, "filename");
+				if (filename == null || filename.trim().length() == 0)
+					throw new Exception("Invalid filename");
+				String filename2 = HandlerUtil.getTemplateParameter(templateMap, "filename2");
+				if (filename2 == null || filename2.trim().length() == 0)
+					throw new Exception("Missing second filename");
+				EPADFile file1 = epadOperations.getFileDescription(seriesReference, filename, username, sessionID);
+				EPADFile file2 = epadOperations.getFileDescription(seriesReference, filename2, username, sessionID);
+				String results = DSOUtil.getNiftiDSOComparison(new File(EPADConfig.getEPADWebServerResourcesDir() + file1.path), new File(EPADConfig.getEPADWebServerResourcesDir() + file2.path));
+				responseStream.append(results);
+				statusCode = HttpServletResponse.SC_OK;
+			
 			} else if (HandlerUtil.matchesTemplate(PACSRouteTemplates.PACS_LIST, pathInfo)) {
 				Map<String, String> templateMap = HandlerUtil.getTemplateMap(PACSRouteTemplates.PACS_LIST, pathInfo);
 				List<RemotePAC> pacs = RemotePACService.getInstance().getRemotePACs();

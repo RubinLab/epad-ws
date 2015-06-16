@@ -521,7 +521,7 @@ public class AIMUtil
 		 * patientName, "", "", "");
 		 */
 	}
-	
+
 	
 	public static ImageAnnotation generateAIMForNiftiDSO(String username, String projectID, String subjectID, String studyUID, String seriesUID, String imageUID, File niftiFile) throws Exception
 	{
@@ -531,7 +531,7 @@ public class AIMUtil
 		EpadProjectOperations projectOperations = DefaultEpadProjectOperations.getInstance();
 		Dcm4CheeDatabaseOperations dcm4CheeDatabaseOperations = Dcm4CheeDatabase.getInstance().getDcm4CheeDatabaseOperations();
 		NonDicomSeries ndSeries = projectOperations.getNonDicomSeries(seriesUID);
-		String referencedSeriesUID = null;
+		String referencedSeriesUID = ndSeries.getReferencedSeries();
 		Date seriesDate = ndSeries.getSeriesDate();
 		if (seriesDate == null) seriesDate = new Date();
 		String dsoDate = new SimpleDateFormat("yyyyMMdd").format(seriesDate);
@@ -1460,11 +1460,11 @@ public class AIMUtil
 		responseStream.print(annotationsXML);
 		return;
 	}
-
+	
 	public static void undoLastAIM(EPADAIM aim) throws Exception {
 		List<ImageAnnotationCollection> iacs = AIMQueries.getPreviousVersions(aim);
 		if (iacs.size() == 0)
-			throw new Exception("Previous version does not exist");
+			throw new Exception("Undo List is empty");
 		ImageAnnotationCollection iac = AIMQueries.makeCurrent(aim, iacs.get(0));
 		EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
 		epadDatabaseOperations.updateAIMXml(aim.aimID, edu.stanford.hakan.aim4api.usage.AnnotationBuilder.convertToString(iac));
@@ -1473,7 +1473,7 @@ public class AIMUtil
 	public static void redoLastAIM(EPADAIM aim) throws Exception {
 		List<ImageAnnotationCollection> iacs = AIMQueries.getNextVersions(aim);
 		if (iacs.size() == 0)
-			throw new Exception("Next version does not exist");
+			throw new Exception("Redo List is empty");
 		ImageAnnotationCollection iac = AIMQueries.makeCurrent(aim, iacs.get(0));
 		EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
 		epadDatabaseOperations.updateAIMXml(aim.aimID, edu.stanford.hakan.aim4api.usage.AnnotationBuilder.convertToString(iac));

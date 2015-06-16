@@ -602,8 +602,8 @@ public class AIMQueries
 
 	public static List<ImageAnnotationCollection> getAllVersions(EPADAIM aim) throws Exception
 	{
-	    String collection4Name = eXistCollectionV4 + "/" + aim.projectID;
-	    ImageAnnotationCollection iac = edu.stanford.hakan.aim4api.usage.AnnotationGetter
+		String collection4Name = eXistCollectionV4 + "/" + aim.projectID;
+		ImageAnnotationCollection iac = edu.stanford.hakan.aim4api.usage.AnnotationGetter
 				.getImageAnnotationCollectionByUniqueIdentifier(eXistServerUrl, aim4Namespace, collection4Name,
 						eXistUsername, eXistPassword, aim.aimID);
 		log.info("Getting all versions for aim id:" + aim.aimID);
@@ -615,8 +615,8 @@ public class AIMQueries
 
 	public static List<ImageAnnotationCollection> getPreviousVersions(EPADAIM aim) throws Exception
 	{
-	    String collection4Name = eXistCollectionV4 + "/" + aim.projectID;
-	    ImageAnnotationCollection iac = edu.stanford.hakan.aim4api.usage.AnnotationGetter
+		String collection4Name = eXistCollectionV4 + "/" + aim.projectID;
+		ImageAnnotationCollection iac = edu.stanford.hakan.aim4api.usage.AnnotationGetter
 				.getImageAnnotationCollectionByUniqueIdentifier(eXistServerUrl, aim4Namespace, collection4Name,
 						eXistUsername, eXistPassword, aim.aimID);
 		

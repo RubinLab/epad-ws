@@ -163,6 +163,8 @@ public class EPADPutHandler
 				ProjectReference projectReference = ProjectReference.extract(ProjectsRouteTemplates.PROJECT, pathInfo);
 				String projectName = httpRequest.getParameter("projectName");
 				String projectDescription = httpRequest.getParameter("projectDescription");
+				if (projectDescription == null)
+					projectDescription = httpRequest.getParameter("description");
 				String defaultTemplate = httpRequest.getParameter("defaultTemplate");
 				EPADProject project = epadOperations.getProjectDescription(projectReference, username, sessionID);
 				if (project != null) {
@@ -229,8 +231,12 @@ public class EPADPutHandler
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.SERIES, pathInfo)) {
 				SeriesReference seriesReference = SeriesReference.extract(ProjectsRouteTemplates.SERIES, pathInfo);
 				String description = httpRequest.getParameter("description");
+				String modality = httpRequest.getParameter("modality");
 				String seriesDate = httpRequest.getParameter("seriesDate");
-				EPADSeries series  = epadOperations.createSeries(username, seriesReference, description, getDate(seriesDate), sessionID);
+				String referencedSeries = httpRequest.getParameter("referencedSeries");
+				if (referencedSeries == null)
+					referencedSeries = httpRequest.getParameter("referencedSeriesUID");
+				EPADSeries series  = epadOperations.createSeries(username, seriesReference, description, getDate(seriesDate), modality, referencedSeries, sessionID);
 				if (uploadedFile != null && false) {
 					String fileType = httpRequest.getParameter("fileType");
 					statusCode = epadOperations.createFile(username, seriesReference, uploadedFile, description, fileType, sessionID);					
