@@ -1464,7 +1464,7 @@ public class AIMUtil
 	public static void undoLastAIM(EPADAIM aim) throws Exception {
 		List<ImageAnnotationCollection> iacs = AIMQueries.getPreviousVersions(aim);
 		if (iacs.size() == 0)
-			throw new Exception("Previous version does not exist");
+			throw new Exception("Undo List is empty");
 		ImageAnnotationCollection iac = AIMQueries.makeCurrent(aim, iacs.get(0));
 		EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
 		epadDatabaseOperations.updateAIMXml(aim.aimID, edu.stanford.hakan.aim4api.usage.AnnotationBuilder.convertToString(iac));
@@ -1473,7 +1473,7 @@ public class AIMUtil
 	public static void redoLastAIM(EPADAIM aim) throws Exception {
 		List<ImageAnnotationCollection> iacs = AIMQueries.getNextVersions(aim);
 		if (iacs.size() == 0)
-			throw new Exception("Next version does not exist");
+			throw new Exception("Redo List is empty");
 		ImageAnnotationCollection iac = AIMQueries.makeCurrent(aim, iacs.get(0));
 		EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
 		epadDatabaseOperations.updateAIMXml(aim.aimID, edu.stanford.hakan.aim4api.usage.AnnotationBuilder.convertToString(iac));

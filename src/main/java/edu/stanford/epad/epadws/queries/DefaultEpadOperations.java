@@ -133,6 +133,7 @@ import edu.stanford.epad.epadws.models.User.EventLog;
 import edu.stanford.epad.epadws.models.UserRole;
 import edu.stanford.epad.epadws.models.WorkList;
 import edu.stanford.epad.epadws.models.WorkListToStudy;
+import edu.stanford.epad.epadws.processing.pipeline.task.DSOEvaluationTask;
 import edu.stanford.epad.epadws.processing.pipeline.task.ProjectDataDeleteTask;
 import edu.stanford.epad.epadws.processing.pipeline.task.StudyDataDeleteTask;
 import edu.stanford.epad.epadws.processing.pipeline.task.SubjectDataDeleteTask;
@@ -1228,16 +1229,22 @@ public class DefaultEpadOperations implements EpadOperations
 			}
 			projectOperations.createFile(username, projectID, subjectID, studyID, seriesID, uploadedFile, filename, description, type);
 			if (type != null && type.equals(FileType.IMAGE) && seriesID != null) {
-				try {
-					AIMUtil.generateAIMForNiftiDSO(username, projectID, subjectID, studyID, seriesID, EPADFileUtils.removeExtension(filename), uploadedFile);
-				} catch (Exception x) {
-					log.warning("Error generating Annotation for Nifti DSO", x);
+				NonDicomSeries ndSeries = projectOperations.getNonDicomSeries(seriesID);
+				if (ndSeries != null && ndSeries.getReferencedSeries() != null && ndSeries.getReferencedSeries().length() > 0) {
+					try {
+						AIMUtil.generateAIMForNiftiDSO(username, projectID, subjectID, studyID, seriesID, EPADFileUtils.removeExtension(filename), uploadedFile);
+					} catch (Exception x) {
+						log.warning("Error generating Annotation for Nifti DSO", x);
+					}
+					try {
+						DSOUtil.writePNGMasksForNiftiDSO(subjectID, studyID, seriesID, EPADFileUtils.removeExtension(filename), uploadedFile);
+					} catch (Exception x) {
+						log.warning("Error generating PNG masks for Nifti DSO", x);
+					}
 				}
-				try {
-					DSOUtil.writePNGMasksForNiftiDSO(subjectID, studyID, seriesID, EPADFileUtils.removeExtension(filename), uploadedFile);
-				} catch (Exception x) {
-					log.warning("Error generating PNG masks for Nifti DSO", x);
-				}
+			}
+			if (type != null && type.equals(FileType.IMAGE) && filename.endsWith(".nii") && !filename.equalsIgnoreCase(EPADConfig.getParamValue("GroundTruthDSOName", "GroundTruth.nii"))) {
+				(new Thread(new DSOEvaluationTask(username, projectID, subjectID, studyID, seriesID, filename))).start();
 			}
 		}
 	}

@@ -181,6 +181,11 @@ public class EpadFile extends AbstractDAO {
 			return "";
 	}
 	
+	public String getPhysicalName()
+	{
+		return "" + getId() + getExtension();
+	}
+	
 	public final static String DBTABLE = "epad_file";
 	public final static String[][] DBCOLUMNS = {
         {"id","long","id","Id"},
