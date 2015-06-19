@@ -989,7 +989,7 @@ public class DefaultEpadOperations implements EpadOperations
 
 	@Override
 	public Set<String> getDeletedDcm4CheeSeries() {
-		Set<String> allReadyDcm4CheeSeriesUIDs = dcm4CheeDatabaseOperations.getAllReadyDcm4CheeSeriesUIDs();
+		Set<String> allReadyDcm4CheeSeriesUIDs = dcm4CheeDatabaseOperations.getAllDcm4CheeSeriesUIDs();
 		Set<String> allEPADSeriesUIDs = epadDatabaseOperations.getAllSeriesUIDsFromEPadDatabase();
 		//log.info("Series in dcm4chee:" + allReadyDcm4CheeSeriesUIDs.size()+ " Series in epad:" + allEPADSeriesUIDs.size());
 		allEPADSeriesUIDs.removeAll(allReadyDcm4CheeSeriesUIDs);
@@ -1293,6 +1293,30 @@ public class DefaultEpadOperations implements EpadOperations
 			return true;
 		else
 			return false;
+	}
+	
+	private String getTemplateType(File templateFile)
+	{
+		try {
+			String xml = EPADFileUtils.readFileAsString(templateFile);
+            JSONObject root = XML.toJSONObject(xml);
+            JSONObject container = root.getJSONObject("TemplateContainer");
+            JSONArray templateObjs = new JSONArray();
+            try {
+            	JSONObject templateObj = container.getJSONObject("Template");
+            	templateObjs.put(templateObj);
+            }
+            catch (Exception x) {
+            	templateObjs = container.getJSONArray("Template");
+            }
+            for (int i = 0; i < templateObjs.length(); i++)
+            {
+            	JSONObject templateObj = templateObjs.getJSONObject(i);
+	            return templateObj.getString("codeMeaning");
+           }
+		} catch (Exception x) {
+		}
+		return "";		
 	}
 	
 	@Override
@@ -1710,8 +1734,8 @@ public class DefaultEpadOperations implements EpadOperations
 			if (description == null || description.trim().length() == 0)
 			{
 				description = "image"; // Image template type
-				if (templateCode.startsWith("SEG"))
-					description = "segmentation"; // Image template type
+//				if (templateCode.startsWith("SEG"))
+//					description = "segmentation"; // Image template type
 			}
 			EPADTemplateContainer epadContainer = new EPADTemplateContainer("", "", "", "", "", name, template.length(), FileType.TEMPLATE.getName(), 
 					formatDate(new Date(template.lastModified())), "templates/" + template.getName(), enabled, description);
@@ -1789,9 +1813,8 @@ public class DefaultEpadOperations implements EpadOperations
 		if (description == null || description.trim().length() == 0)
 		{
 			description = "image"; // Image template type
-			if (templateCode.startsWith("SEG"))
-				description = "segmentation"; // Image template type
-				
+//			if (templateCode.startsWith("SEG"))
+//				description = "segmentation"; // Image template type				
 		}
 		EPADTemplateContainer template = new EPADTemplateContainer(projectId, "", "", "", "", efile.getName(), efile.getLength(), FileType.TEMPLATE.getName(), 
 				formatDate(efile.getCreatedTime()), getEpadFilePath(efile), efile.isEnabled(), description);
