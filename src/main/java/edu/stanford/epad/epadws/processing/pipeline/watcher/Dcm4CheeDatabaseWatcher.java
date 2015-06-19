@@ -107,7 +107,7 @@ public class Dcm4CheeDatabaseWatcher implements Runnable
 						try
 						{
 							logger.info("Series + " + seriesUID + " no longer in DCM4CHE, deleting from epad database");
-							epadDatabaseOperations.deleteSeries(seriesUID);
+							 epadDatabaseOperations.deleteSeries(seriesUID);
 							// TODO: Delete generated PNGs also???
 						} catch (Exception x) {
 							logger.warning("Error deleting series from database");

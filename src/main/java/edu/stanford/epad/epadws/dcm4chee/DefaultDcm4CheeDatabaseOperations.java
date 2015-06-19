@@ -256,6 +256,29 @@ public class DefaultDcm4CheeDatabaseOperations implements Dcm4CheeDatabaseOperat
 	}
 
 	@Override
+	public Set<String> getAllDcm4CheeSeriesUIDs() {
+		Set<String> retVal = new HashSet<String>();
+		Connection c = null;
+		PreparedStatement ps = null;
+		ResultSet rs = null;
+
+		try {
+			c = getConnection();
+			ps = c.prepareStatement(Dcm4CheeDatabaseCommands.SELECT_SERIES);
+			rs = ps.executeQuery();
+			while (rs.next()) {
+				retVal.add(rs.getString("series_iuid"));
+			}
+		} catch (SQLException sqle) {
+			String debugInfo = DatabaseUtils.getDebugData(rs);
+			log.warning("Database operation failed; debugInfo=" + debugInfo, sqle);
+		} finally {
+			close(c, ps, rs);
+		}
+		return retVal;
+	}
+
+	@Override
 	public Set<String> getStudyUIDsForPatient(String patientID)
 	{
 		Set<String> retVal = new HashSet<String>();
