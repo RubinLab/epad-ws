@@ -36,7 +36,6 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
-import org.apache.commons.codec.binary.StringUtils;
 import org.apache.commons.io.IOUtils;
 import org.dcm4che2.data.DicomObject;
 import org.dcm4che2.data.Tag;
@@ -363,12 +362,12 @@ public class UserProjectService {
 			message = "Invalid non-unique patient ID " + dicomPatientID + " in DICOM file";
 			if (dicomPatientID.contains(" ") || dicomPatientID.contains("%"))
 			{
-				message = "A space or other invalid character in patient ID " + dicomPatientID + " in DICOM file";
+				message = "A space or other invalid character in patient ID " + dicomPatientID;
 			}
 			databaseOperations.insertEpadEvent(
 					username, 
 					message, 
-					"", "", "", "", "", "", "Error in Upload");					
+					seriesUID, "", dicomPatientID, dicomPatientName, studyUID, projectID, "Error in Upload");					
 			dicomFile.delete();
 			projectOperations.userErrorLog(username, message);
 			return false;
@@ -393,7 +392,7 @@ public class UserProjectService {
 					databaseOperations.insertEpadEvent(
 							username, 
 							"Error generating DSO Annotation", 
-							"", "", "", "", "", "", "Upload " + dicomFile.getName());					
+							seriesUID, "", dicomPatientID, dicomPatientName, studyUID, projectID, "Upload " + dicomFile.getName());					
 					projectOperations.userErrorLog(username, "Error generating DSO Annotation");
 				}
 			}
@@ -402,7 +401,7 @@ public class UserProjectService {
 			databaseOperations.insertEpadEvent(
 					username, 
 					"Missing patient ID or studyUID in DICOM file", 
-					"", "", "", "", "", "", "Process Upload");					
+					seriesUID, "", dicomPatientID, dicomPatientName, studyUID, projectID, "Process Upload");					
 			projectOperations.userErrorLog(username, "Missing patient ID or studyUID in DICOM file " + dicomFile.getName());
 		}
 		return true;
