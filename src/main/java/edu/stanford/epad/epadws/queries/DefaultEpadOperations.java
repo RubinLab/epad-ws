@@ -1220,7 +1220,7 @@ public class DefaultEpadOperations implements EpadOperations
 				if (!EPADFileUtils.isValidXml(uploadedFile, EPADConfig.templateXSDPath))
 				{
 					String error = EPADFileUtils.validateXml(uploadedFile, EPADConfig.templateXSDPath);
-					if (description == null || !(description.equalsIgnoreCase("segmentation") && error.contains("content of element 'Template' is not complete")))
+					if (!(error.contains("content of element 'Template' is not complete") && getTemplateType(uploadedFile).startsWith("SEG")))
 						throw new Exception("Invalid Template file: " + error);
 				}
 			}
