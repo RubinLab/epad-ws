@@ -617,9 +617,6 @@ public class DefaultEpadOperations implements EpadOperations
 		}
 		log.info("Returning image list:" + imageDescriptions.size());
 		return epadImageList;
-		} finally {
-			seriesInProcess.remove(seriesReference.seriesUID);
-		}
 	}
 
 	@Override
