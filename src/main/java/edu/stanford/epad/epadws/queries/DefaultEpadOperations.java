@@ -572,7 +572,7 @@ public class DefaultEpadOperations implements EpadOperations
 					seriesReference.subjectID, 
 					seriesReference.studyUID, 
 					seriesReference.projectID,
-					"Getting Variable Metadata 1");					
+					"Getting Variable Metadata Slice 0");					
 			seriesInProcess.add(seriesReference.seriesUID);
 		}
 		DICOMElementList defaultDICOMElements = null;
@@ -598,13 +598,13 @@ public class DefaultEpadOperations implements EpadOperations
 					if (i%50 == 0) {
 						epadDatabaseOperations.insertEpadEvent(
 								EPADSessionOperations.getSessionUser(sessionID), 
-								"This Image will take a long time to load. Please do not retry", 
+								"This Image still being loaded. Please do not retry", 
 								seriesReference.seriesUID, imageDescriptions.get(0).imageUID,
 								seriesReference.subjectID, 
 								seriesReference.subjectID, 
 								seriesReference.studyUID, 
 								seriesReference.projectID,
-								"Getting Variable Metadata " + i);					
+								"Getting Variable Metadata Slice " + i);					
 					}
 					suppliedDICOMElements = getDICOMElements(dcm4cheeImageDescription.studyUID,
 							dcm4cheeImageDescription.seriesUID, dcm4cheeImageDescription.imageUID);				
