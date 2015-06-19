@@ -595,7 +595,7 @@ public class DefaultEpadOperations implements EpadOperations
 				DICOMElementList suppliedDICOMElements = suppliedDICOMElementsFirst;				
 				// We do not always add DICOM headers to remaining image descriptions because it would be too expensive
 				if (getMetaDataForAllImages) {
-					if (i%50 == 0) {
+					if (i%100 == 0) {
 						epadDatabaseOperations.insertEpadEvent(
 								EPADSessionOperations.getSessionUser(sessionID), 
 								"This Image still being loaded. Please do not retry", 
@@ -606,8 +606,10 @@ public class DefaultEpadOperations implements EpadOperations
 								seriesReference.projectID,
 								"Getting Variable Metadata Slice " + i);					
 					}
-					suppliedDICOMElements = getDICOMElements(dcm4cheeImageDescription.studyUID,
-							dcm4cheeImageDescription.seriesUID, dcm4cheeImageDescription.imageUID);				
+					suppliedDICOMElements = replaceSliceSpecificElements(dcm4cheeImageDescription.studyUID,
+							dcm4cheeImageDescription.seriesUID, dcm4cheeImageDescription.imageUID,suppliedDICOMElements);	
+					//suppliedDICOMElements = getDICOMElements(dcm4cheeImageDescription.studyUID,
+					//		dcm4cheeImageDescription.seriesUID, dcm4cheeImageDescription.imageUID);				
 					defaultDICOMElements = getDefaultDICOMElements(dcm4cheeImageDescription.studyUID,
 							dcm4cheeImageDescription.seriesUID, dcm4cheeImageDescription.imageUID, suppliedDICOMElements);
 					log.info("Getting metadata for image " + i);
@@ -3141,7 +3143,7 @@ public class DefaultEpadOperations implements EpadOperations
 		if (suppliedDICOMElementMap.containsKey(PixelMedUtils.SliceThicknessCode))
 			defaultDicomElements.add(suppliedDICOMElementMap.get(PixelMedUtils.SliceThicknessCode).get(0));
 		else
-			defaultDicomElements.add(new DICOMElement(PixelMedUtils.SliceLocationCode, PixelMedUtils.SliceThicknessTagName,
+			defaultDicomElements.add(new DICOMElement(PixelMedUtils.SliceThicknessCode, PixelMedUtils.SliceThicknessTagName,
 					"0"));
 
 		if (suppliedDICOMElementMap.containsKey(PixelMedUtils.SliceLocationCode))
@@ -3257,6 +3259,112 @@ public class DefaultEpadOperations implements EpadOperations
 		return new DICOMElementList(defaultDicomElements);
 	}
 
+	private DICOMElementList replaceSliceSpecificElements(String studyUID, String seriesUID, String imageUID,
+			DICOMElementList suppliedDicomElements)
+	{
+		List<DICOMElement> defaultDicomElements = new ArrayList<>();
+		File tagFile = new File(EPADConfig.getEPADWebServerDicomTagDir() + getPNGPath(studyUID, seriesUID, imageUID).replace(".png",".tag"));
+		if (!tagFile.exists()) {
+			log.info("No tag file found:" + tagFile.getAbsolutePath());
+			return suppliedDicomElements;
+		}
+		try {
+			String contents = EPADFileUtils.readFileAsString(tagFile);
+			String[] tags = contents.split("\n");
+			Map<String, String> tagMap = new HashMap<String, String>();
+			for (String tag: tags) {
+				int paren1 = tag.indexOf("(");
+				if (paren1 == -1) continue;
+				int paren2 = tag.indexOf(")");
+				if (paren2 == -1) continue;
+				int square1 = tag.indexOf("[");
+				if (square1 == -1) continue;
+				int square2 = tag.indexOf("]");
+				if (square2 == -1) continue;
+				String tagCode = tag.substring(paren1, paren2+1);
+				String tagValue = tag.substring(square1+1, square2);
+				log.debug("tagCode:" + tagCode + " tagValue:" + tagValue);
+				tagMap.put(tagCode, tagValue);
+			}
+			for (int i = 0; i < suppliedDicomElements.ResultSet.totalRecords; i++) {
+				DICOMElement dicomElement = suppliedDicomElements.ResultSet.Result.get(i);
+				if (dicomElement.tagCode.equals(PixelMedUtils.SliceThicknessCode) && tagMap.containsKey(PixelMedUtils.SliceThicknessCode))
+				{
+					defaultDicomElements.add(new DICOMElement(PixelMedUtils.SliceThicknessCode, PixelMedUtils.SliceThicknessTagName,
+						tagMap.get(PixelMedUtils.SliceThicknessCode)));
+				}
+				else if (dicomElement.tagCode.equals(PixelMedUtils.SliceLocationCode) && tagMap.containsKey(PixelMedUtils.SliceLocationCode))
+				{
+					defaultDicomElements.add(new DICOMElement(PixelMedUtils.SliceLocationCode, PixelMedUtils.SliceLocationTagName,
+						tagMap.get(PixelMedUtils.SliceLocationCode)));
+				}
+				else if (dicomElement.tagCode.equals(PixelMedUtils.PixelSpacingCode) && tagMap.containsKey(PixelMedUtils.PixelSpacingCode))
+				{
+					defaultDicomElements.add(new DICOMElement(PixelMedUtils.PixelSpacingCode, PixelMedUtils.PixelSpacingTagName,
+						tagMap.get(PixelMedUtils.SliceLocationCode)));
+				}
+				else if (dicomElement.tagCode.equals(PixelMedUtils.RescaleInterceptCode) && tagMap.containsKey(PixelMedUtils.RescaleInterceptCode))
+				{
+					defaultDicomElements.add(new DICOMElement(PixelMedUtils.RescaleInterceptCode, PixelMedUtils.RescaleInterceptTagName,
+						tagMap.get(PixelMedUtils.RescaleInterceptCode)));
+				}
+				else if (dicomElement.tagCode.equals(PixelMedUtils.RescaleSlopeCode) && tagMap.containsKey(PixelMedUtils.RescaleSlopeCode))
+				{
+					defaultDicomElements.add(new DICOMElement(PixelMedUtils.RescaleSlopeCode, PixelMedUtils.RescaleSlopeTagName,
+						tagMap.get(PixelMedUtils.RescaleSlopeCode)));
+				}
+				else if (dicomElement.tagCode.equals(PixelMedUtils.RescaleSlopeCode) && tagMap.containsKey(PixelMedUtils.RescaleSlopeCode))
+				{
+					defaultDicomElements.add(new DICOMElement(PixelMedUtils.RescaleSlopeCode, PixelMedUtils.RescaleSlopeTagName,
+						tagMap.get(PixelMedUtils.RescaleSlopeCode)));
+				}
+				else if (dicomElement.tagCode.equals(PixelMedUtils.RowsCode) && tagMap.containsKey(PixelMedUtils.RowsCode))
+				{
+					defaultDicomElements.add(new DICOMElement(PixelMedUtils.RowsCode, PixelMedUtils.RowsTagName,
+						tagMap.get(PixelMedUtils.RowsCode)));
+				}
+				else if (dicomElement.tagCode.equals(PixelMedUtils.ColumnsCode) && tagMap.containsKey(PixelMedUtils.ColumnsCode))
+				{
+					defaultDicomElements.add(new DICOMElement(PixelMedUtils.ColumnsCode, PixelMedUtils.ColumnsTagName,
+						tagMap.get(PixelMedUtils.ColumnsCode)));
+				}
+				else if (dicomElement.tagCode.equals(PixelMedUtils.BitsStoredCode) && tagMap.containsKey(PixelMedUtils.BitsStoredCode))
+				{
+					defaultDicomElements.add(new DICOMElement(PixelMedUtils.BitsStoredCode, PixelMedUtils.BitsStoredTagName,
+						tagMap.get(PixelMedUtils.BitsStoredCode)));
+				}
+				else if (dicomElement.tagCode.equals(PixelMedUtils.PixelRepresentationCode) && tagMap.containsKey(PixelMedUtils.PixelRepresentationCode))
+				{
+					defaultDicomElements.add(new DICOMElement(PixelMedUtils.PixelRepresentationCode, PixelMedUtils.PixelRepresentationTagName,
+						tagMap.get(PixelMedUtils.PixelRepresentationCode)));
+				}
+				else if (dicomElement.tagCode.equals(PixelMedUtils.NumberOfFramesCode) && tagMap.containsKey(PixelMedUtils.NumberOfFramesCode))
+				{
+					defaultDicomElements.add(new DICOMElement(PixelMedUtils.NumberOfFramesCode, PixelMedUtils.NumberOfFramesTagName,
+						tagMap.get(PixelMedUtils.NumberOfFramesCode)));
+				}
+				else if (dicomElement.tagCode.equals(PixelMedUtils.WindowWidthCode) && tagMap.containsKey(PixelMedUtils.WindowWidthCode))
+				{
+					defaultDicomElements.add(new DICOMElement(PixelMedUtils.WindowWidthCode, PixelMedUtils.WindowWidthTagName,
+						tagMap.get(PixelMedUtils.WindowWidthCode)));
+				}
+				else if (dicomElement.tagCode.equals(PixelMedUtils.WindowCenterCode) && tagMap.containsKey(PixelMedUtils.WindowCenterCode))
+				{
+					defaultDicomElements.add(new DICOMElement(PixelMedUtils.WindowCenterCode, PixelMedUtils.WindowCenterTagName,
+						tagMap.get(PixelMedUtils.WindowCenterCode)));
+				}
+				else
+					defaultDicomElements.add(dicomElement);
+					
+			}
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return new DICOMElementList(defaultDicomElements);
+	}
+	
+	
 	private Map<String, List<DICOMElement>> generateDICOMElementMap(DICOMElementList dicomElementList)
 	{
 		Map<String, List<DICOMElement>> result = new HashMap<>();
