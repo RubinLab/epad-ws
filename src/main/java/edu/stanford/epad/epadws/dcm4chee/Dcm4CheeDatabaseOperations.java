@@ -79,6 +79,11 @@ public interface Dcm4CheeDatabaseOperations
 	Set<String> getAllReadyDcm4CheeSeriesUIDs();
 
 	/**
+	 * Get all dcm4chee studies/series.
+	 */
+	Set<String> getAllDcm4CheeSeriesUIDs();
+
+	/**
 	 * typeValue one of: patientName, patientId, studyDate, accessionNum, examType
 	 * 
 	 * @see DCM4CHEEStudySearchType
