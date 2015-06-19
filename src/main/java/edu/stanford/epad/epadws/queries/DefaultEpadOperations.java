@@ -210,7 +210,7 @@ public class DefaultEpadOperations implements EpadOperations
 				}
 			}
 			long convtime = System.currentTimeMillis();
-			log.info("Time to get projects:" + (gettime-starttime) + " msecs, to convert:" + (convtime-gettime) + " msecs");
+			log.info("Time to get " + epadProjectList.ResultSet.totalRecords + " projects:" + (gettime-starttime) + " msecs, to convert:" + (convtime-gettime) + " msecs");
 		}
 		return epadProjectList;
 	}
