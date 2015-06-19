@@ -119,11 +119,12 @@ public class Dcm4CheeDatabaseWatcher implements Runnable
 					run++;
 				}
 				
-				int inProcess = SingleFrameDICOMPngGeneratorTask.imagesBeingProcessed.size() + DSOMaskPNGGeneratorTask.seriesBeingProcessed.size();
-				if (inProcess > 0)
+				int singleInProcess = SingleFrameDICOMPngGeneratorTask.imagesBeingProcessed.size();
+				int dsoInProcess = DSOMaskPNGGeneratorTask.seriesBeingProcessed.size();
+				if ((singleInProcess+dsoInProcess) > 0)
 				{
-					// Let the processing finish for heaven's sake
-					Thread.sleep(60000*inProcess);
+					// Let the current processing finish for heaven's sake
+					Thread.sleep(60000*dsoInProcess + 2000*singleInProcess);
 				}
 				
 				Thread.sleep(SleepTimeInMilliseconds);
