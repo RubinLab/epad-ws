@@ -550,6 +550,8 @@ public class DefaultEpadOperations implements EpadOperations
 		List<DCM4CHEEImageDescription> imageDescriptions = dcm4CheeDatabaseOperations.getImageDescriptions(
 				seriesReference.studyUID, seriesReference.seriesUID);
 		int numImages = imageDescriptions.size();
+		if (numImages == 0)
+			throw new RuntimeException("This series has no images");
 		DICOMElementList suppliedDICOMElementsFirst = getDICOMElements(imageDescriptions.get(0).studyUID,
 				imageDescriptions.get(0).seriesUID, imageDescriptions.get(0).imageUID);
 		String pixelSpacing1 = getDICOMElement(suppliedDICOMElementsFirst, PixelMedUtils.PixelSpacingCode);
