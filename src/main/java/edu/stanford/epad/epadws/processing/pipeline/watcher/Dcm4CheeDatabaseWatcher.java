@@ -36,6 +36,8 @@ import edu.stanford.epad.epadws.epaddb.EpadDatabase;
 import edu.stanford.epad.epadws.epaddb.EpadDatabaseOperations;
 import edu.stanford.epad.epadws.handlers.core.SeriesReference;
 import edu.stanford.epad.epadws.processing.model.SeriesProcessingDescription;
+import edu.stanford.epad.epadws.processing.pipeline.task.DSOMaskPNGGeneratorTask;
+import edu.stanford.epad.epadws.processing.pipeline.task.SingleFrameDICOMPngGeneratorTask;
 import edu.stanford.epad.epadws.processing.pipeline.threads.ShutdownSignal;
 import edu.stanford.epad.epadws.queries.DefaultEpadOperations;
 import edu.stanford.epad.epadws.queries.EpadOperations;
@@ -115,6 +117,13 @@ public class Dcm4CheeDatabaseWatcher implements Runnable
 				else
 				{
 					run++;
+				}
+				
+				int inProcess = SingleFrameDICOMPngGeneratorTask.imagesBeingProcessed.size() + DSOMaskPNGGeneratorTask.seriesBeingProcessed.size();
+				if (inProcess > 0)
+				{
+					// Let the processing finish for heaven's sake
+					Thread.sleep(60000*inProcess);
 				}
 				
 				Thread.sleep(SleepTimeInMilliseconds);

@@ -542,6 +542,7 @@ public class DefaultEpadOperations implements EpadOperations
 		return epadSeriesList;
 	}
 
+	Set<String> seriesInProcess = new HashSet<String>();
 	@Override
 	public EPADImageList getImageDescriptions(SeriesReference seriesReference, String sessionID,
 			EPADSearchFilter searchFilter)
@@ -561,6 +562,16 @@ public class DefaultEpadOperations implements EpadOperations
 		{
 			log.info("Series: " +  seriesReference.seriesUID + " returning metadata for all images");
 			getMetaDataForAllImages = true;
+			epadDatabaseOperations.insertEpadEvent(
+					EPADSessionOperations.getSessionUser(sessionID), 
+					"This Image will take a long time to load. Please do not retry", 
+					seriesReference.seriesUID, imageDescriptions.get(0).imageUID,
+					seriesReference.subjectID, 
+					seriesReference.subjectID, 
+					seriesReference.studyUID, 
+					seriesReference.projectID,
+					"Getting Variable Metadata 1");					
+			seriesInProcess.add(seriesReference.seriesUID);
 		}
 		DICOMElementList defaultDICOMElements = null;
 		EPADImageList epadImageList = new EPADImageList();
@@ -582,6 +593,17 @@ public class DefaultEpadOperations implements EpadOperations
 				DICOMElementList suppliedDICOMElements = suppliedDICOMElementsFirst;				
 				// We do not always add DICOM headers to remaining image descriptions because it would be too expensive
 				if (getMetaDataForAllImages) {
+					if (i%50 == 0) {
+						epadDatabaseOperations.insertEpadEvent(
+								EPADSessionOperations.getSessionUser(sessionID), 
+								"This Image will take a long time to load. Please do not retry", 
+								seriesReference.seriesUID, imageDescriptions.get(0).imageUID,
+								seriesReference.subjectID, 
+								seriesReference.subjectID, 
+								seriesReference.studyUID, 
+								seriesReference.projectID,
+								"Getting Variable Metadata " + i);					
+					}
 					suppliedDICOMElements = getDICOMElements(dcm4cheeImageDescription.studyUID,
 							dcm4cheeImageDescription.seriesUID, dcm4cheeImageDescription.imageUID);				
 					defaultDICOMElements = getDefaultDICOMElements(dcm4cheeImageDescription.studyUID,
@@ -595,6 +617,9 @@ public class DefaultEpadOperations implements EpadOperations
 		}
 		log.info("Returning image list:" + imageDescriptions.size());
 		return epadImageList;
+		} finally {
+			seriesInProcess.remove(seriesReference.seriesUID);
+		}
 	}
 
 	@Override
