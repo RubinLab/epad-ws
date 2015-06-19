@@ -1219,7 +1219,9 @@ public class DefaultEpadOperations implements EpadOperations
 				type = FileType.TEMPLATE;
 				if (!EPADFileUtils.isValidXml(uploadedFile, EPADConfig.templateXSDPath))
 				{
-					throw new Exception("Invalid Template file: " + EPADFileUtils.validateXml(uploadedFile, EPADConfig.templateXSDPath));
+					String error = EPADFileUtils.validateXml(uploadedFile, EPADConfig.templateXSDPath);
+					if (description == null || !(description.equalsIgnoreCase("segmentation") && error.contains("content of element 'Template' is not complete")))
+						throw new Exception("Invalid Template file: " + error);
 				}
 			}
 			else if (fileType != null && fileType.equals(FileType.IMAGE.getName()))
