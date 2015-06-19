@@ -354,13 +354,20 @@ public class UserProjectService {
 		if (dicomPatientID == null || dicomPatientID.trim().length() == 0 
 				|| dicomPatientID.equalsIgnoreCase("ANON") 
 				|| dicomPatientID.equalsIgnoreCase("Unknown") 
+				|| dicomPatientID.contains(" ") 
+				|| dicomPatientID.contains("%") 
 				|| dicomPatientID.equalsIgnoreCase("Anonymous"))
 		{
 			String message = "Invalid patientID:" + dicomPatientID + " file:" + dicomFile.getName() + ", Rejecting file";
 			log.warning(message);
+			message = "Invalid non-unique patient ID " + dicomPatientID + " in DICOM file";
+			if (dicomPatientID.contains(" ") || dicomPatientID.contains("%"))
+			{
+				message = "A space or other invalid character in patient ID " + dicomPatientID + " in DICOM file";
+			}
 			databaseOperations.insertEpadEvent(
 					username, 
-					"Invalid patient ID " + dicomPatientID + " in DICOM file", 
+					message, 
 					"", "", "", "", "", "", "Error in Upload");					
 			dicomFile.delete();
 			projectOperations.userErrorLog(username, message);
