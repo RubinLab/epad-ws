@@ -1699,7 +1699,6 @@ public class DefaultEpadOperations implements EpadOperations
 		            										templateDescription, modality);
 		            epadTmpls.add(epadTmpl);
 	            }
-				description = templateType + " (" + templateCode + ")";
 			} catch (Exception x) {
 				log.warning("JSON Error", x);
 			}
