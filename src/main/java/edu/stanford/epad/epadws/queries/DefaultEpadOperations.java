@@ -1706,7 +1706,12 @@ public class DefaultEpadOperations implements EpadOperations
 			boolean enabled = true;
 			if (disabledTemplatesNames.contains(template.getName()) || disabledTemplatesNames.contains(templateName) || disabledTemplatesNames.contains(templateCode))
 				enabled = false;
-			
+			if (description == null || description.trim().length() == 0)
+			{
+				description = "image"; // Image template type
+				if (templateCode.startsWith("SEG"))
+					description = "segmentation"; // Image template type
+			}
 			EPADTemplateContainer epadContainer = new EPADTemplateContainer("", "", "", "", "", name, template.length(), FileType.TEMPLATE.getName(), 
 					formatDate(new Date(template.lastModified())), "templates/" + template.getName(), enabled, description);
 			epadContainer.templateName = templateName;
@@ -1779,9 +1784,14 @@ public class DefaultEpadOperations implements EpadOperations
 	            										templateDescription, modality);
 	            epadTmpls.add(epadTmpl);
             }
-            if (description == null || description.length() == 0)
-            	description = templateType + " (" + templateCode + ")";
 		} catch (Exception x) {}
+		if (description == null || description.trim().length() == 0)
+		{
+			description = "image"; // Image template type
+			if (templateCode.startsWith("SEG"))
+				description = "segmentation"; // Image template type
+				
+		}
 		EPADTemplateContainer template = new EPADTemplateContainer(projectId, "", "", "", "", efile.getName(), efile.getLength(), FileType.TEMPLATE.getName(), 
 				formatDate(efile.getCreatedTime()), getEpadFilePath(efile), efile.isEnabled(), description);
 		template.templateName = templateName;
@@ -1796,7 +1806,25 @@ public class DefaultEpadOperations implements EpadOperations
 	@Override
 	public void deleteFile(String username, ProjectReference projectReference,
 			String fileName) throws Exception {
-		projectOperations.deleteFile(username, projectReference.projectID, null, null, null, fileName);		
+		User user = projectOperations.getUser(username);
+		Project project = projectOperations.getProject(projectReference.projectID);
+		EpadFile file = projectOperations.getEpadFile(projectReference.projectID, null, null, null, fileName);
+		if (file == null && !user.isAdmin())
+			throw new Exception("No permissions to delete system template");
+		if (file != null && !username.equals(file.getCreator()) && !projectOperations.isOwner(username, projectReference.projectID))
+			throw new Exception("No permissions to delete this template");
+		if (file != null)
+		{
+			projectOperations.deleteFile(username, projectReference.projectID, null, null, null, fileName);
+		}
+		else
+		{
+			File template = new File(EPADConfig.getEPADWebServerTemplatesDir(), fileName);
+			if (template.exists())
+				template.delete();
+			else
+				throw new Exception("Template file not found");
+		}
 	}
 
 	@Override
