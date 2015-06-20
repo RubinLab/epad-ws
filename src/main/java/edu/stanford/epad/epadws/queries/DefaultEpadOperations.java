@@ -566,13 +566,13 @@ public class DefaultEpadOperations implements EpadOperations
 			getMetaDataForAllImages = true;
 			epadDatabaseOperations.insertEpadEvent(
 					EPADSessionOperations.getSessionUser(sessionID), 
-					"This Image will take a long time to load. Please do not retry", 
+					"This Image may take some time to load. Please do not retry", 
 					seriesReference.seriesUID, imageDescriptions.get(0).imageUID,
 					seriesReference.subjectID, 
 					seriesReference.subjectID, 
 					seriesReference.studyUID, 
 					seriesReference.projectID,
-					"Getting Variable Metadata Slice 0");					
+					"Getting Variable Metadata Slices " + imageDescriptions.size());					
 			seriesInProcess.add(seriesReference.seriesUID);
 		}
 		DICOMElementList defaultDICOMElements = null;
@@ -595,7 +595,7 @@ public class DefaultEpadOperations implements EpadOperations
 				DICOMElementList suppliedDICOMElements = suppliedDICOMElementsFirst;				
 				// We do not always add DICOM headers to remaining image descriptions because it would be too expensive
 				if (getMetaDataForAllImages) {
-					if (i%100 == 0) {
+					if (i%300 == 0) {
 						epadDatabaseOperations.insertEpadEvent(
 								EPADSessionOperations.getSessionUser(sessionID), 
 								"This Image still being loaded. Please do not retry", 
