@@ -26,12 +26,14 @@ package edu.stanford.epad.epadws.handlers.session;
 
 import java.io.PrintWriter;
 
+import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 
+import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.epad.epadws.handlers.HandlerUtil;
 import edu.stanford.epad.epadws.security.EPADSessionOperations;
@@ -63,6 +65,8 @@ public class EPADSessionHandler extends AbstractHandler
 	private static final String LOGOUT_EXCEPTION_MESSAGE = "Warning: internal logout error";
 	private static final String UNEXPECTED_XNAT_RESPONSE_MESSAGE = "Warning: unexpected response code from XNAT";
 	private static final String UNAUTHORIZED_USER_XNAT_RESPONSE_MESSAGE = "Invalid username or password";
+	private static final String JSESSIONID_COOKIE = "JSESSIONID";
+	private static final String LOGGEDINUSER_COOKIE = "ePADLoggedinUser";
 
 	@Override
 	public void handle(String s, Request request, HttpServletRequest httpRequest, HttpServletResponse httpResponse)
@@ -77,6 +81,12 @@ public class EPADSessionHandler extends AbstractHandler
 		log.info("Session request from client " + method + " s:" + s);
 		if ("POST".equalsIgnoreCase(method)) {
 			String username = SessionService.extractUserNameFromAuthorizationHeader(httpRequest);
+			boolean formpost = false;
+			if (username == null || username.length() == 0)
+			{
+				username = httpRequest.getParameter("username");
+				formpost = true;
+			}
 			String host = httpRequest.getParameter("hostname");
 			String ip = httpRequest.getParameter("hostip");
 			if (ip == null && host == null)
@@ -87,11 +97,31 @@ public class EPADSessionHandler extends AbstractHandler
 			if (username.length() != 0) {
 				log.info("Login Request, User:" + username  + " hostname:" + host +" ip:" + ip);
 				try {
-					PrintWriter responseStream = httpResponse.getWriter();
 					EPADSessionResponse sessionResponse = SessionService.authenticateUser(httpRequest);
 					if (sessionResponse.statusCode == HttpServletResponse.SC_OK) {
 						String jsessionID = sessionResponse.response;
+						log.info("Successful login to EPAD; SESSIONID=" + jsessionID);
 						EPADSessionOperations.setSessionHost(jsessionID, host, ip);
+				    	if (formpost)
+				    	{
+				            Cookie userName = new Cookie(LOGGEDINUSER_COOKIE, username);
+				            userName.setMaxAge(8*3600);
+				            //userName.setPath("/epad/; Secure; HttpOnly");
+				            userName.setPath(httpRequest.getContextPath() + "/");
+				            httpResponse.addCookie(userName);
+							//log.info("Setting HttpOnly, Secure cookie =" + jsessionID);
+				            Cookie sessionCookie = new Cookie(JSESSIONID_COOKIE, jsessionID);
+				            sessionCookie.setMaxAge(8*3600);
+				            //sessionCookie.setPath("/epad/; Secure; HttpOnly");
+				            sessionCookie.setPath(httpRequest.getContextPath() + "/");
+				            httpResponse.addCookie(sessionCookie);
+				    		httpResponse.sendRedirect(EPADConfig.getParamValue("HomePage", "Web_pad.html"));
+				    		return;
+				    	}
+
+						log.info("Setting cookie =" + jsessionID);
+						httpResponse.setContentType("text/plain");
+						PrintWriter responseStream = httpResponse.getWriter();
 						responseStream.append(jsessionID);
 						//httpResponse.addHeader("Set-Cookie", "JSESSIONID=" + jsessionID);
 						//httpResponse.addHeader("Set-Cookie", "ePADLoggedinUser=" + username);
@@ -100,8 +130,10 @@ public class EPADSessionHandler extends AbstractHandler
 						log.info("Successful login to EPAD; JSESSIONID=" + jsessionID);
 						statusCode = HttpServletResponse.SC_OK;
 					} else if (sessionResponse.statusCode == HttpServletResponse.SC_UNAUTHORIZED) {
+						PrintWriter responseStream = httpResponse.getWriter();
 						statusCode = HandlerUtil.invalidTokenResponse(UNAUTHORIZED_USER_XNAT_RESPONSE_MESSAGE, responseStream, log);
 					} else {
+						PrintWriter responseStream = httpResponse.getWriter();
 						statusCode = HandlerUtil.warningResponse(sessionResponse.statusCode, UNEXPECTED_XNAT_RESPONSE_MESSAGE
 								+ ";statusCode = " + sessionResponse.statusCode, responseStream, log);
 					}
