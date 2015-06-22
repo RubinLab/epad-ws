@@ -293,11 +293,11 @@ public class DSOUtil
 			imageReference.imageUID = seriesImageUids[1];
 			log.info("Sending generated DSO " + temporaryDSOFile.getAbsolutePath() + " imageUID:" + imageReference.imageUID + " to dcm4chee...");
 			DCM4CHEEUtil.dcmsnd(temporaryDSOFile.getAbsolutePath(), false);
-			if (dsoSeriesUID != null)
+			if (false && dsoSeriesUID != null && log.isDebugEnabled())
 			{
 				// No longer needed since we are updating masks already
-				//EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
-				//epadDatabaseOperations.deleteSeries(dsoSeriesUID);
+				EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
+				epadDatabaseOperations.deleteSeries(dsoSeriesUID);
 			}
 			return true;
 		} catch (Exception e) {
@@ -583,7 +583,12 @@ public class DSOUtil
 		boolean uploadError = false;
 
 		log.info("Received DSO edit request for series " + seriesUID);
-
+		String confirm = dcm4CheeDatabaseOperations.getSeriesUIDForImage(imageUID);
+		if (!confirm.equals(seriesUID))
+		{
+			log.warning("Invalid ImageUID for series");
+			return true;
+		}
 		try {
 			ServletFileUpload servletFileUpload = new ServletFileUpload();
 			FileItemIterator fileItemIterator = servletFileUpload.getItemIterator(httpRequest);
@@ -603,7 +608,7 @@ public class DSOUtil
 						throw new Exception("No permissions to update AIM:" + aim.aimID + " for user " + username);
 					}
 				}
-				List<File> editedFramesPNGMaskFiles = HandlerUtil.extractFiles(fileItemIterator, "DSOEditedFrame", "PNG");
+				List<File> editedFramesPNGMaskFiles = HandlerUtil.extractFiles(fileItemIterator, "DSOEditedFrame", ".PNG");
 				if (editedFramesPNGMaskFiles.isEmpty()) {
 					log.warning("No PNG masks supplied in DSO edit request for image " + imageUID + " in series " + seriesUID);
 					uploadError = true;

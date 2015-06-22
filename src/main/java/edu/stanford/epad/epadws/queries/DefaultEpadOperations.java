@@ -145,6 +145,7 @@ import edu.stanford.epad.epadws.service.DefaultEpadProjectOperations;
 import edu.stanford.epad.epadws.service.DefaultWorkListOperations;
 import edu.stanford.epad.epadws.service.EpadProjectOperations;
 import edu.stanford.epad.epadws.service.EpadWorkListOperations;
+import edu.stanford.epad.epadws.service.SessionService;
 import edu.stanford.epad.epadws.service.UserProjectService;
 import edu.stanford.epad.epadws.xnat.XNATCreationOperations;
 import edu.stanford.epad.epadws.xnat.XNATDeletionOperations;
@@ -210,7 +211,7 @@ public class DefaultEpadOperations implements EpadOperations
 				}
 			}
 			long convtime = System.currentTimeMillis();
-			log.info("Time to get projects:" + (gettime-starttime) + " msecs, to convert:" + (convtime-gettime) + " msecs");
+			log.info("Time to get " + epadProjectList.ResultSet.totalRecords + " projects:" + (gettime-starttime) + " msecs, to convert:" + (convtime-gettime) + " msecs");
 		}
 		return epadProjectList;
 	}
@@ -542,13 +543,20 @@ public class DefaultEpadOperations implements EpadOperations
 		return epadSeriesList;
 	}
 
+	Set<String> seriesInProcess = new HashSet<String>();
 	@Override
 	public EPADImageList getImageDescriptions(SeriesReference seriesReference, String sessionID,
 			EPADSearchFilter searchFilter)
 	{
+		try {
+		if (seriesInProcess.contains(seriesReference.seriesUID)) {
+			
+		}
 		List<DCM4CHEEImageDescription> imageDescriptions = dcm4CheeDatabaseOperations.getImageDescriptions(
 				seriesReference.studyUID, seriesReference.seriesUID);
 		int numImages = imageDescriptions.size();
+		if (numImages == 0)
+			throw new RuntimeException("This series has no images");
 		DICOMElementList suppliedDICOMElementsFirst = getDICOMElements(imageDescriptions.get(0).studyUID,
 				imageDescriptions.get(0).seriesUID, imageDescriptions.get(0).imageUID);
 		String pixelSpacing1 = getDICOMElement(suppliedDICOMElementsFirst, PixelMedUtils.PixelSpacingCode);
@@ -561,6 +569,16 @@ public class DefaultEpadOperations implements EpadOperations
 		{
 			log.info("Series: " +  seriesReference.seriesUID + " returning metadata for all images");
 			getMetaDataForAllImages = true;
+			epadDatabaseOperations.insertEpadEvent(
+					EPADSessionOperations.getSessionUser(sessionID), 
+					"This Image may take some time to load. Please do not retry", 
+					seriesReference.seriesUID, imageDescriptions.get(0).imageUID,
+					seriesReference.subjectID, 
+					seriesReference.subjectID, 
+					seriesReference.studyUID, 
+					seriesReference.projectID,
+					"Getting Variable Metadata Slices " + imageDescriptions.size());					
+			seriesInProcess.add(seriesReference.seriesUID);
 		}
 		DICOMElementList defaultDICOMElements = null;
 		EPADImageList epadImageList = new EPADImageList();
@@ -582,8 +600,21 @@ public class DefaultEpadOperations implements EpadOperations
 				DICOMElementList suppliedDICOMElements = suppliedDICOMElementsFirst;				
 				// We do not always add DICOM headers to remaining image descriptions because it would be too expensive
 				if (getMetaDataForAllImages) {
-					suppliedDICOMElements = getDICOMElements(dcm4cheeImageDescription.studyUID,
-							dcm4cheeImageDescription.seriesUID, dcm4cheeImageDescription.imageUID);				
+					if (i%300 == 0) {
+						epadDatabaseOperations.insertEpadEvent(
+								EPADSessionOperations.getSessionUser(sessionID), 
+								"This Image still being loaded. Please do not retry", 
+								seriesReference.seriesUID, imageDescriptions.get(0).imageUID,
+								seriesReference.subjectID, 
+								seriesReference.subjectID, 
+								seriesReference.studyUID, 
+								seriesReference.projectID,
+								"Getting Variable Metadata Slice " + i);					
+					}
+					suppliedDICOMElements = replaceSliceSpecificElements(dcm4cheeImageDescription.studyUID,
+							dcm4cheeImageDescription.seriesUID, dcm4cheeImageDescription.imageUID,suppliedDICOMElements);	
+					//suppliedDICOMElements = getDICOMElements(dcm4cheeImageDescription.studyUID,
+					//		dcm4cheeImageDescription.seriesUID, dcm4cheeImageDescription.imageUID);				
 					defaultDICOMElements = getDefaultDICOMElements(dcm4cheeImageDescription.studyUID,
 							dcm4cheeImageDescription.seriesUID, dcm4cheeImageDescription.imageUID, suppliedDICOMElements);
 					log.info("Getting metadata for image " + i);
@@ -595,6 +626,9 @@ public class DefaultEpadOperations implements EpadOperations
 		}
 		log.info("Returning image list:" + imageDescriptions.size());
 		return epadImageList;
+		} finally {
+			seriesInProcess.remove(seriesReference.seriesUID);
+		}
 	}
 
 	@Override
@@ -965,7 +999,7 @@ public class DefaultEpadOperations implements EpadOperations
 
 	@Override
 	public Set<String> getDeletedDcm4CheeSeries() {
-		Set<String> allReadyDcm4CheeSeriesUIDs = dcm4CheeDatabaseOperations.getAllReadyDcm4CheeSeriesUIDs();
+		Set<String> allReadyDcm4CheeSeriesUIDs = dcm4CheeDatabaseOperations.getAllDcm4CheeSeriesUIDs();
 		Set<String> allEPADSeriesUIDs = epadDatabaseOperations.getAllSeriesUIDsFromEPadDatabase();
 		//log.info("Series in dcm4chee:" + allReadyDcm4CheeSeriesUIDs.size()+ " Series in epad:" + allEPADSeriesUIDs.size());
 		allEPADSeriesUIDs.removeAll(allReadyDcm4CheeSeriesUIDs);
@@ -1195,7 +1229,9 @@ public class DefaultEpadOperations implements EpadOperations
 				type = FileType.TEMPLATE;
 				if (!EPADFileUtils.isValidXml(uploadedFile, EPADConfig.templateXSDPath))
 				{
-					throw new Exception("Invalid Template file: " + EPADFileUtils.validateXml(uploadedFile, EPADConfig.templateXSDPath));
+					String error = EPADFileUtils.validateXml(uploadedFile, EPADConfig.templateXSDPath);
+					if (!(error.contains("content of element 'Template' is not complete") && getTemplateType(uploadedFile).startsWith("SEG")))
+						throw new Exception("Invalid Template file: " + error);
 				}
 			}
 			else if (fileType != null && fileType.equals(FileType.IMAGE.getName()))
@@ -1267,6 +1303,30 @@ public class DefaultEpadOperations implements EpadOperations
 			return true;
 		else
 			return false;
+	}
+	
+	private String getTemplateType(File templateFile)
+	{
+		try {
+			String xml = EPADFileUtils.readFileAsString(templateFile);
+            JSONObject root = XML.toJSONObject(xml);
+            JSONObject container = root.getJSONObject("TemplateContainer");
+            JSONArray templateObjs = new JSONArray();
+            try {
+            	JSONObject templateObj = container.getJSONObject("Template");
+            	templateObjs.put(templateObj);
+            }
+            catch (Exception x) {
+            	templateObjs = container.getJSONArray("Template");
+            }
+            for (int i = 0; i < templateObjs.length(); i++)
+            {
+            	JSONObject templateObj = templateObjs.getJSONObject(i);
+	            return templateObj.getString("codeMeaning");
+           }
+		} catch (Exception x) {
+		}
+		return "";		
 	}
 	
 	@Override
@@ -1675,14 +1735,18 @@ public class DefaultEpadOperations implements EpadOperations
 		            										templateDescription, modality);
 		            epadTmpls.add(epadTmpl);
 	            }
-				description = templateType + " (" + templateCode + ")";
 			} catch (Exception x) {
 				log.warning("JSON Error", x);
 			}
 			boolean enabled = true;
 			if (disabledTemplatesNames.contains(template.getName()) || disabledTemplatesNames.contains(templateName) || disabledTemplatesNames.contains(templateCode))
 				enabled = false;
-			
+			if (description == null || description.trim().length() == 0)
+			{
+				description = "image"; // Image template type
+//				if (templateCode.startsWith("SEG"))
+//					description = "segmentation"; // Image template type
+			}
 			EPADTemplateContainer epadContainer = new EPADTemplateContainer("", "", "", "", "", name, template.length(), FileType.TEMPLATE.getName(), 
 					formatDate(new Date(template.lastModified())), "templates/" + template.getName(), enabled, description);
 			epadContainer.templateName = templateName;
@@ -1755,9 +1819,13 @@ public class DefaultEpadOperations implements EpadOperations
 	            										templateDescription, modality);
 	            epadTmpls.add(epadTmpl);
             }
-            if (description == null || description.length() == 0)
-            	description = templateType + " (" + templateCode + ")";
 		} catch (Exception x) {}
+		if (description == null || description.trim().length() == 0)
+		{
+			description = "image"; // Image template type
+//			if (templateCode.startsWith("SEG"))
+//				description = "segmentation"; // Image template type				
+		}
 		EPADTemplateContainer template = new EPADTemplateContainer(projectId, "", "", "", "", efile.getName(), efile.getLength(), FileType.TEMPLATE.getName(), 
 				formatDate(efile.getCreatedTime()), getEpadFilePath(efile), efile.isEnabled(), description);
 		template.templateName = templateName;
@@ -1772,7 +1840,25 @@ public class DefaultEpadOperations implements EpadOperations
 	@Override
 	public void deleteFile(String username, ProjectReference projectReference,
 			String fileName) throws Exception {
-		projectOperations.deleteFile(username, projectReference.projectID, null, null, null, fileName);		
+		User user = projectOperations.getUser(username);
+		Project project = projectOperations.getProject(projectReference.projectID);
+		EpadFile file = projectOperations.getEpadFile(projectReference.projectID, null, null, null, fileName);
+		if (file == null && !user.isAdmin())
+			throw new Exception("No permissions to delete system template");
+		if (file != null && !username.equals(file.getCreator()) && !projectOperations.isOwner(username, projectReference.projectID))
+			throw new Exception("No permissions to delete this template");
+		if (file != null)
+		{
+			projectOperations.deleteFile(username, projectReference.projectID, null, null, null, fileName);		
+		}
+		else
+		{
+			File template = new File(EPADConfig.getEPADWebServerTemplatesDir(), fileName);
+			if (template.exists())
+				template.delete();
+			else
+				throw new Exception("Template file not found");
+		}
 	}
 
 	@Override
@@ -3065,7 +3151,7 @@ public class DefaultEpadOperations implements EpadOperations
 		if (suppliedDICOMElementMap.containsKey(PixelMedUtils.SliceThicknessCode))
 			defaultDicomElements.add(suppliedDICOMElementMap.get(PixelMedUtils.SliceThicknessCode).get(0));
 		else
-			defaultDicomElements.add(new DICOMElement(PixelMedUtils.SliceLocationCode, PixelMedUtils.SliceThicknessTagName,
+			defaultDicomElements.add(new DICOMElement(PixelMedUtils.SliceThicknessCode, PixelMedUtils.SliceThicknessTagName,
 					"0"));
 
 		if (suppliedDICOMElementMap.containsKey(PixelMedUtils.SliceLocationCode))
@@ -3181,6 +3267,112 @@ public class DefaultEpadOperations implements EpadOperations
 		return new DICOMElementList(defaultDicomElements);
 	}
 
+	private DICOMElementList replaceSliceSpecificElements(String studyUID, String seriesUID, String imageUID,
+			DICOMElementList suppliedDicomElements)
+	{
+		List<DICOMElement> defaultDicomElements = new ArrayList<>();
+		File tagFile = new File(EPADConfig.getEPADWebServerDicomTagDir() + getPNGPath(studyUID, seriesUID, imageUID).replace(".png",".tag"));
+		if (!tagFile.exists()) {
+			log.info("No tag file found:" + tagFile.getAbsolutePath());
+			return suppliedDicomElements;
+		}
+		try {
+			String contents = EPADFileUtils.readFileAsString(tagFile);
+			String[] tags = contents.split("\n");
+			Map<String, String> tagMap = new HashMap<String, String>();
+			for (String tag: tags) {
+				int paren1 = tag.indexOf("(");
+				if (paren1 == -1) continue;
+				int paren2 = tag.indexOf(")");
+				if (paren2 == -1) continue;
+				int square1 = tag.indexOf("[");
+				if (square1 == -1) continue;
+				int square2 = tag.indexOf("]");
+				if (square2 == -1) continue;
+				String tagCode = tag.substring(paren1, paren2+1);
+				String tagValue = tag.substring(square1+1, square2);
+				log.debug("tagCode:" + tagCode + " tagValue:" + tagValue);
+				tagMap.put(tagCode, tagValue);
+			}
+			for (int i = 0; i < suppliedDicomElements.ResultSet.totalRecords; i++) {
+				DICOMElement dicomElement = suppliedDicomElements.ResultSet.Result.get(i);
+				if (dicomElement.tagCode.equals(PixelMedUtils.SliceThicknessCode) && tagMap.containsKey(PixelMedUtils.SliceThicknessCode))
+				{
+					defaultDicomElements.add(new DICOMElement(PixelMedUtils.SliceThicknessCode, PixelMedUtils.SliceThicknessTagName,
+						tagMap.get(PixelMedUtils.SliceThicknessCode)));
+				}
+				else if (dicomElement.tagCode.equals(PixelMedUtils.SliceLocationCode) && tagMap.containsKey(PixelMedUtils.SliceLocationCode))
+				{
+					defaultDicomElements.add(new DICOMElement(PixelMedUtils.SliceLocationCode, PixelMedUtils.SliceLocationTagName,
+						tagMap.get(PixelMedUtils.SliceLocationCode)));
+				}
+				else if (dicomElement.tagCode.equals(PixelMedUtils.PixelSpacingCode) && tagMap.containsKey(PixelMedUtils.PixelSpacingCode))
+				{
+					defaultDicomElements.add(new DICOMElement(PixelMedUtils.PixelSpacingCode, PixelMedUtils.PixelSpacingTagName,
+						tagMap.get(PixelMedUtils.SliceLocationCode)));
+				}
+				else if (dicomElement.tagCode.equals(PixelMedUtils.RescaleInterceptCode) && tagMap.containsKey(PixelMedUtils.RescaleInterceptCode))
+				{
+					defaultDicomElements.add(new DICOMElement(PixelMedUtils.RescaleInterceptCode, PixelMedUtils.RescaleInterceptTagName,
+						tagMap.get(PixelMedUtils.RescaleInterceptCode)));
+				}
+				else if (dicomElement.tagCode.equals(PixelMedUtils.RescaleSlopeCode) && tagMap.containsKey(PixelMedUtils.RescaleSlopeCode))
+				{
+					defaultDicomElements.add(new DICOMElement(PixelMedUtils.RescaleSlopeCode, PixelMedUtils.RescaleSlopeTagName,
+						tagMap.get(PixelMedUtils.RescaleSlopeCode)));
+				}
+				else if (dicomElement.tagCode.equals(PixelMedUtils.RescaleSlopeCode) && tagMap.containsKey(PixelMedUtils.RescaleSlopeCode))
+				{
+					defaultDicomElements.add(new DICOMElement(PixelMedUtils.RescaleSlopeCode, PixelMedUtils.RescaleSlopeTagName,
+						tagMap.get(PixelMedUtils.RescaleSlopeCode)));
+				}
+				else if (dicomElement.tagCode.equals(PixelMedUtils.RowsCode) && tagMap.containsKey(PixelMedUtils.RowsCode))
+				{
+					defaultDicomElements.add(new DICOMElement(PixelMedUtils.RowsCode, PixelMedUtils.RowsTagName,
+						tagMap.get(PixelMedUtils.RowsCode)));
+				}
+				else if (dicomElement.tagCode.equals(PixelMedUtils.ColumnsCode) && tagMap.containsKey(PixelMedUtils.ColumnsCode))
+				{
+					defaultDicomElements.add(new DICOMElement(PixelMedUtils.ColumnsCode, PixelMedUtils.ColumnsTagName,
+						tagMap.get(PixelMedUtils.ColumnsCode)));
+				}
+				else if (dicomElement.tagCode.equals(PixelMedUtils.BitsStoredCode) && tagMap.containsKey(PixelMedUtils.BitsStoredCode))
+				{
+					defaultDicomElements.add(new DICOMElement(PixelMedUtils.BitsStoredCode, PixelMedUtils.BitsStoredTagName,
+						tagMap.get(PixelMedUtils.BitsStoredCode)));
+				}
+				else if (dicomElement.tagCode.equals(PixelMedUtils.PixelRepresentationCode) && tagMap.containsKey(PixelMedUtils.PixelRepresentationCode))
+				{
+					defaultDicomElements.add(new DICOMElement(PixelMedUtils.PixelRepresentationCode, PixelMedUtils.PixelRepresentationTagName,
+						tagMap.get(PixelMedUtils.PixelRepresentationCode)));
+				}
+				else if (dicomElement.tagCode.equals(PixelMedUtils.NumberOfFramesCode) && tagMap.containsKey(PixelMedUtils.NumberOfFramesCode))
+				{
+					defaultDicomElements.add(new DICOMElement(PixelMedUtils.NumberOfFramesCode, PixelMedUtils.NumberOfFramesTagName,
+						tagMap.get(PixelMedUtils.NumberOfFramesCode)));
+				}
+				else if (dicomElement.tagCode.equals(PixelMedUtils.WindowWidthCode) && tagMap.containsKey(PixelMedUtils.WindowWidthCode))
+				{
+					defaultDicomElements.add(new DICOMElement(PixelMedUtils.WindowWidthCode, PixelMedUtils.WindowWidthTagName,
+						tagMap.get(PixelMedUtils.WindowWidthCode)));
+				}
+				else if (dicomElement.tagCode.equals(PixelMedUtils.WindowCenterCode) && tagMap.containsKey(PixelMedUtils.WindowCenterCode))
+				{
+					defaultDicomElements.add(new DICOMElement(PixelMedUtils.WindowCenterCode, PixelMedUtils.WindowCenterTagName,
+						tagMap.get(PixelMedUtils.WindowCenterCode)));
+				}
+				else
+					defaultDicomElements.add(dicomElement);
+					
+			}
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return new DICOMElementList(defaultDicomElements);
+	}
+	
+	
 	private Map<String, List<DICOMElement>> generateDICOMElementMap(DICOMElementList dicomElementList)
 	{
 		Map<String, List<DICOMElement>> result = new HashMap<>();
