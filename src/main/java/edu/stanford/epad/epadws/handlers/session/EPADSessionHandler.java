@@ -93,8 +93,8 @@ public class EPADSessionHandler extends AbstractHandler
 						String jsessionID = sessionResponse.response;
 						EPADSessionOperations.setSessionHost(jsessionID, host, ip);
 						responseStream.append(jsessionID);
-						httpResponse.addHeader("Set-Cookie", "JSESSIONID=" + jsessionID);
-						httpResponse.addHeader("Set-Cookie", "ePADLoggedinUser=" + username);
+						//httpResponse.addHeader("Set-Cookie", "JSESSIONID=" + jsessionID);
+						//httpResponse.addHeader("Set-Cookie", "ePADLoggedinUser=" + username);
 						httpResponse.addHeader("Access-Control-Allow-Origin", origin);
 						httpResponse.addHeader("Access-Control-Allow-Credentials", "true");
 						log.info("Successful login to EPAD; JSESSIONID=" + jsessionID);
