@@ -69,7 +69,7 @@ $( document ).ready(function() {
 						//filedata = "<table border=1><tr bgcolor=lightgray><td>Name</td><td>Type</td><td>Length</td><td>Created</td></tr>\n";
 						for (f = 0; f < files.length; f++)
 						{
-							filedata = filedata + "<tr><td>File</td><td><a href='" + files.path + "'>" + files[f].fileName + "</a></td><td>" + files[f].description + "</td><td>" + files[f].fileType + "</td><td>" + files[f].fileLength + "</td><td>"  +  files[f].createdTime + "</td></tr>\n";
+							filedata = filedata + "<tr><td>File (<img src=delete.jpg height=10px onclick='deleteFile(\"<%=projectID%>\",\""+subjects[i].subjectID+"\",null,null,\"" + files[f].fileName +"\")'/>)</td><td><a href='resources/" + files[f].path + "'>" + files[f].fileName + "</a></td><td>" + files[f].description + "</td><td>" + files[f].fileType + "</td><td>" + files[f].fileLength + "</td><td>"  +  files[f].createdTime + "</td></tr>\n";
 						}
 					}
 				})
@@ -103,7 +103,7 @@ $( document ).ready(function() {
 									//filedata = "<table border=1><tr bgcolor=lightgray><td>Name</td><td>Type</td><td>Length</td><td>Created</td></tr>\n";
 									for (f = 0; f < files.length; f++)
 									{
-										filedata = filedata + "<tr><td>File</td><td><a href='" + files.path + "'>" + files[f].fileName + "</a></td><td>" + files[f].description + "</td><td>" + files[f].fileType + "</td><td>" + files[f].fileLength + "</td><td>"  +  files[f].createdTime + "</td></tr>\n";
+										filedata = filedata + "<tr><td>File<img src=delete.jpg height=10px onclick='deleteFile(\"<%=projectID%>\",\""+subjects[i].subjectID+"\",\""+ studies[j].studyUID+ "\",null,\"" + files[f].fileName +"\")'/></td><td><a href='resources/" + files[f].path + "'>" + files[f].fileName + "</a></td><td>" + files[f].description + "</td><td>" + files[f].fileType + "</td><td>" + files[f].fileLength + "</td><td>"  +  files[f].createdTime + "</td></tr>\n";
 									}
 								}
 							})
@@ -137,7 +137,7 @@ $( document ).ready(function() {
 												//filedata = "<table border=1><tr bgcolor=lightgray><td>Name</td><td>Type</td><td>Length</td><td>Created</td></tr>\n";
 												for (f = 0; f < files.length; f++)
 												{
-													filedata = filedata + "<tr><td>File</td><td><a href='" + files.path + "'>" + files[f].fileName + "</a></td><td>" + files[f].description + "</td><td>" + files[f].fileType + "</td><td>" + files[f].fileLength + "</td><td>"  +  files[f].createdTime + "</td></tr>\n";
+													filedata = filedata + "<tr><td>File(<img src=delete.jpg height=10px onclick='deleteFile(\"<%=projectID%>\",\""+subjects[i].subjectID+"\",\""+ studies[j].studyUID+ "\",\""+series[k].seriesUID+"\",\"" + files[f].fileName +"\")'/>)</td><td><a href='resources/" + files[f].path + "'>" + files[f].fileName + "</a></td><td>" + files[f].description + "</td><td>" + files[f].fileType + "</td><td>" + files[f].fileLength + "</td><td>"  +  files[f].createdTime + "</td></tr>\n";
 												}
 											}
 										})
@@ -178,15 +178,15 @@ $( document ).ready(function() {
 	   url = "<%=request.getContextPath()%>/v2/projects/" + projectID + "/";
 	   if (subjectID != null)
 	   {
-		   url = url + subjectID + "/";
+		   url = url + "subjects/" + subjectID + "/";
 	   }
 	   if (studyUID != null)
 	   {
-		   url = url + studyUID + "/";
+		   url = url + "studies/" + studyUID + "/";
 	   }
 	   if (seriesUID != null)
 	   {
-		   url = url + seriesUID + "/";
+		   url = url + "series/" + seriesUID + "/";
 	   }
 	   url = url + "files/" + filename
 		   //alert(url);

@@ -38,7 +38,7 @@ public class EPadWebServerVersion
 	{
 		if (version == null)
 		{
-			version = "1.5.1";
+			version = "1.6";
 			buildDate = "";
 			InputStream is = null;
 			try {

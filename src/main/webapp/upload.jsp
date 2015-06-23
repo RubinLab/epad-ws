@@ -27,16 +27,16 @@
 <BODY bgcolor=white>
 <div id=imagelist></div>
 <% if (subjectID == null) { %>
- <form name=uploadform  id=uploadform  action="v2/projects/<%=projectID%>/files/?username=<%=username%>" method="post" enctype="multipart/form-data" accept-charset=utf-8>
+ <form name="uploadform" id="uploadform"  action="<%=request.getContextPath()%>/v2/projects/<%=projectID%>/files/?username=<%=username%>" method="post" enctype="multipart/form-data" accept-charset=utf-8>
  Project:<%=projectID%><br>
 <% } else if (studyUID == null) { %>
- <form action="v2/projects/<%=projectID%>/subjects/<%=subjectID%>/files/?username=<%=username%>" method="post" enctype="multipart/form-data" accept-charset=utf-8>
+ <form name="uploadform" id="uploadform"  action="<%=request.getContextPath()%>/v2/projects/<%=projectID%>/subjects/<%=subjectID%>/files/?username=<%=username%>" method="post" enctype="multipart/form-data" accept-charset=utf-8>
  Project:<%=projectID%> Patient:<%=subjectID%><br>
 <% } else if (seriesUID == null) { %>
- <form action="v2/projects/<%=projectID%>/subjects/<%=subjectID%>/studies/<%=studyUID%>/files/?username=<%=username%>" method="post" enctype="multipart/form-data" accept-charset=utf-8>
+ <form name="uploadform" id="uploadform"  action="<%=request.getContextPath()%>/v2/projects/<%=projectID%>/subjects/<%=subjectID%>/studies/<%=studyUID%>/files/?username=<%=username%>" method="post" enctype="multipart/form-data" accept-charset=utf-8>
  Project:<%=projectID%> Patient:<%=subjectID%> Study:<%=studyUID%><br>
 <% } else { %>
- <form action="v2/projects/<%=projectID%>/subjects/<%=subjectID%>/studies/<%=studyUID%>/series/<%=seriesUID%>/files/?username=<%=username%>" method="post" enctype="multipart/form-data" accept-charset=utf-8>
+ <form name="uploadform" id="uploadform"  action="<%=request.getContextPath()%>/v2/projects/<%=projectID%>/subjects/<%=subjectID%>/studies/<%=studyUID%>/series/<%=seriesUID%>/files/?username=<%=username%>" method="post" enctype="multipart/form-data" accept-charset=utf-8>
   Project:<%=projectID%> Patient:<%=subjectID%> Study:<%=studyUID%> Series:<%=seriesUID%><br>
 <% } %>
   File 1: <input type=file name=file1><br>
@@ -53,6 +53,7 @@
 var filedata;
 function uploadFiles()
 {
+	alert("uploading");
 	document.getElementById("uploadform").submit();
 }
 $( document ).ready(function() {
