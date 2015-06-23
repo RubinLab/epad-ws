@@ -223,7 +223,7 @@ public class EPADDeleteHandler
 				SubjectReference subjectReference = SubjectReference.extract(ProjectsRouteTemplates.SUBJECT_FILE, pathInfo);
 				if (subjectReference.subjectID.equals("null"))
 					throw new Exception("Patient ID in rest call is null:" + pathInfo);
-				Map<String, String> templateMap = HandlerUtil.getTemplateMap(ProjectsRouteTemplates.PROJECT_FILE, pathInfo);
+				Map<String, String> templateMap = HandlerUtil.getTemplateMap(ProjectsRouteTemplates.SUBJECT_FILE, pathInfo);
 				String filename = HandlerUtil.getTemplateParameter(templateMap, "filename");
 				if (filename == null || filename.trim().length() == 0)
 					throw new Exception("Invalid filename");
@@ -234,7 +234,7 @@ public class EPADDeleteHandler
 				StudyReference studyReference = StudyReference.extract(ProjectsRouteTemplates.STUDY_FILE, pathInfo);
 				if (studyReference.subjectID.equals("null"))
 					throw new Exception("Patient ID in rest call is null:" + pathInfo);
-				Map<String, String> templateMap = HandlerUtil.getTemplateMap(ProjectsRouteTemplates.PROJECT_FILE, pathInfo);
+				Map<String, String> templateMap = HandlerUtil.getTemplateMap(ProjectsRouteTemplates.STUDY_FILE, pathInfo);
 				String filename = HandlerUtil.getTemplateParameter(templateMap, "filename");
 				if (filename == null || filename.trim().length() == 0)
 					throw new Exception("Invalid filename");
@@ -245,7 +245,7 @@ public class EPADDeleteHandler
 				SeriesReference seriesReference = SeriesReference.extract(ProjectsRouteTemplates.SERIES_FILE, pathInfo);
 				if (seriesReference.subjectID.equals("null"))
 					throw new Exception("Patient ID in rest call is null:" + pathInfo);
-				Map<String, String> templateMap = HandlerUtil.getTemplateMap(ProjectsRouteTemplates.PROJECT_FILE, pathInfo);
+				Map<String, String> templateMap = HandlerUtil.getTemplateMap(ProjectsRouteTemplates.SERIES_FILE, pathInfo);
 				String filename = HandlerUtil.getTemplateParameter(templateMap, "filename");
 				if (filename == null || filename.trim().length() == 0)
 					throw new Exception("Invalid filename");
@@ -255,6 +255,7 @@ public class EPADDeleteHandler
 				statusCode = HandlerUtil.badRequestJSONResponse(BAD_DELETE_MESSAGE + ":" + pathInfo, responseStream, log);
 			}
 		} catch (Exception x) {
+			log.warning("Error handleget:", x);
 			responseStream.append(new EPADMessage(x.getMessage()).toJSON());
 			statusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 		}

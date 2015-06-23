@@ -29,7 +29,10 @@ import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.sql.Timestamp;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -111,8 +114,11 @@ public class DefaultDcm4CheeDatabaseOperations implements Dcm4CheeDatabaseOperat
 			if (rs.next()) {
 				for (String currKey : colNameKeys) {
 					String value = rs.getString(currKey);
-					if (isStudyDateColumn(currKey)) {
-						value = DatabaseUtils.formatMySqlStudyDateToYYYYMMDDFormat(value);
+					if (currKey.toLowerCase().contains("study_datetime") || currKey.toLowerCase().contains("pps_start")) {
+						Timestamp ts = rs.getTimestamp(currKey);
+						if (ts != null)
+							value = new SimpleDateFormat("yyyyMMdd HH:mm:ss").format(new Date(ts.getTime()));
+						//value = DatabaseUtils.formatMySqlStudyDateToYYYYMMDDFormat(value);
 					}
 					retVal.put(currKey, value);
 				}
@@ -193,6 +199,11 @@ public class DefaultDcm4CheeDatabaseOperations implements Dcm4CheeDatabaseOperat
 				for (int i = 1; i < nCols + 1; i++) {
 					String colName = metaData.getColumnName(i);
 					String value = rs.getString(i);
+					if (colName.toLowerCase().contains("study_datetime") || colName.toLowerCase().contains("pps_start")) {
+						Timestamp ts = rs.getTimestamp(i);
+						if (ts != null)
+							value = new SimpleDateFormat("yyyyMMdd HH:mm:ss").format(new Date(ts.getTime()));
+					}
 					rowMap.put(colName, value);
 				}
 				retVal.add(rowMap);
@@ -231,6 +242,29 @@ public class DefaultDcm4CheeDatabaseOperations implements Dcm4CheeDatabaseOperat
 			c = getConnection();
 			ps = c.prepareStatement(Dcm4CheeDatabaseCommands.SELECT_SERIES_BY_STATUS);
 			ps.setInt(1, 0); // A status of zero signals that DCM4CHEE processing has completed and the series is ready
+			rs = ps.executeQuery();
+			while (rs.next()) {
+				retVal.add(rs.getString("series_iuid"));
+			}
+		} catch (SQLException sqle) {
+			String debugInfo = DatabaseUtils.getDebugData(rs);
+			log.warning("Database operation failed; debugInfo=" + debugInfo, sqle);
+		} finally {
+			close(c, ps, rs);
+		}
+		return retVal;
+	}
+
+	@Override
+	public Set<String> getAllDcm4CheeSeriesUIDs() {
+		Set<String> retVal = new HashSet<String>();
+		Connection c = null;
+		PreparedStatement ps = null;
+		ResultSet rs = null;
+
+		try {
+			c = getConnection();
+			ps = c.prepareStatement(Dcm4CheeDatabaseCommands.SELECT_SERIES);
 			rs = ps.executeQuery();
 			while (rs.next()) {
 				retVal.add(rs.getString("series_iuid"));
@@ -587,6 +621,11 @@ public class DefaultDcm4CheeDatabaseOperations implements Dcm4CheeDatabaseOperat
 		for (int i = 1; i <= columnCount; i++) {
 			String columnName = metaData.getColumnName(i);
 			String columnData = resultSet.getString(i);
+			if (columnName.toLowerCase().contains("study_datetime") || columnName.toLowerCase().contains("pps_start")) {
+				Timestamp ts = resultSet.getTimestamp(i);
+				if (ts != null)
+					columnData = new SimpleDateFormat("yyyyMMdd HH:mm:ss").format(new Date(ts.getTime()));
+			}
 			retVal.put(columnName, columnData);
 		}
 		return retVal;

@@ -51,6 +51,7 @@ public class ProjectsRouteTemplates
 	public static final String SERIES_AIM = SERIES_AIM_LIST + "{aid}";
 	public static final String SERIES_FILE_LIST = SERIES + "/files/";
 	public static final String SERIES_FILE = SERIES_FILE_LIST + "{filename}";
+	public static final String SERIES_FILE_COMPARE = SERIES_FILE_LIST + "{filename}" + "/file2/" + "{filename2}";
 	public static final String IMAGE_LIST = SERIES + "/images/";
 	public static final String IMAGEFILE_LIST = SERIES + "/imagefiles/";
 	public static final String IMAGE = IMAGE_LIST + "{image}";

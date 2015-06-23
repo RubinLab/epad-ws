@@ -141,6 +141,7 @@ public class EPADPostHandler
 								String fileType = httpRequest.getParameter("fileType");
 								if (fileTypes != null && fileTypes.size() > i)
 										fileType = fileTypes.get(i);
+								log.info("Creating file " + i++ + " type:" + fileType);
 								statusCode = epadOperations.createFile(username, projectReference, (File)paramData.get(param), description, fileType, sessionID);
 								i++;
 							}
@@ -294,11 +295,12 @@ public class EPADPostHandler
 					ProjectReference projectReference = ProjectReference.extract(ProjectsRouteTemplates.PROJECT, pathInfo);
 					String projectName = httpRequest.getParameter("projectName");
 					String projectDescription = httpRequest.getParameter("projectDescription");
+					String defaultTemplate = httpRequest.getParameter("defaultTemplate");
 					EPADProject project = epadOperations.getProjectDescription(projectReference, username, sessionID);
 					if (project != null) {
 						throw new Exception("Project " + project.id +  " already exists");
 					} else {
-						statusCode = epadOperations.createProject(username, projectReference, projectName, projectDescription, sessionID);
+						statusCode = epadOperations.createProject(username, projectReference, projectName, projectDescription, defaultTemplate, sessionID);
 					}							
 				} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.SUBJECT, pathInfo)) {
 					SubjectReference subjectReference = SubjectReference.extract(ProjectsRouteTemplates.SUBJECT, pathInfo);

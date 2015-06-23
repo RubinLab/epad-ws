@@ -96,6 +96,12 @@
      <artifactId>dicomrt</artifactId> 	
      <version>${matlab.release.number.jjvector}</version>
    </dependency>
+   
+   <dependency>
+     <groupId>com.matlab</groupId>
+     <artifactId>javabuilder</artifactId>
+     <version>${matlab.release.number.jjvector}</version> 
+   </dependency>
 
     <dependency>
       <groupId>edu.stanford.hakan.aim3api</groupId>
@@ -288,6 +294,12 @@
 		<artifactId>mongo-java-driver</artifactId>
 		<version>2.13.0</version>
 	</dependency>
+
+	<dependency>
+	    <groupId>net.sourceforge.jmatio</groupId>
+	    <artifactId>jmatio</artifactId>
+	    <version>1.0</version>
+	</dependency>	
 	
 	<!-- to be used when we use fancy json 
 	<dependency>

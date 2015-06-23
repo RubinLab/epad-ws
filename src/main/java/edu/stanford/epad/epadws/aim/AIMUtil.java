@@ -70,22 +70,23 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.pixelmed.dicom.Attribute;
 import com.pixelmed.dicom.AttributeList;
+import com.pixelmed.dicom.SOPClass;
 import com.pixelmed.dicom.SequenceAttribute;
 import com.pixelmed.dicom.SequenceItem;
 import com.pixelmed.dicom.TagFromName;
 
+import edu.stanford.epad.common.dicom.DCM4CHEEImageDescription;
 import edu.stanford.epad.common.pixelmed.PixelMedUtils;
 import edu.stanford.epad.common.plugins.PluginAIMUtil;
 import edu.stanford.epad.common.plugins.PluginConfig;
 import edu.stanford.epad.common.util.EPADConfig;
+import edu.stanford.epad.common.util.EPADFileUtils;
 import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.epad.common.util.MongoDBOperations;
 import edu.stanford.epad.common.util.XmlNamespaceTranslator;
 import edu.stanford.epad.dtos.EPADAIM;
 import edu.stanford.epad.dtos.EPADAIMList;
 import edu.stanford.epad.dtos.EPADAIMList.EPADAIMResultSet;
-import edu.stanford.epad.dtos.internal.DICOMElement;
-import edu.stanford.epad.dtos.internal.DICOMElementList;
 import edu.stanford.epad.epadws.aim.aimapi.Aim;
 import edu.stanford.epad.epadws.aim.aimapi.Aim4;
 import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeDatabase;
@@ -96,9 +97,10 @@ import edu.stanford.epad.epadws.handlers.core.FrameReference;
 import edu.stanford.epad.epadws.handlers.core.ImageReference;
 import edu.stanford.epad.epadws.handlers.core.ProjectReference;
 import edu.stanford.epad.epadws.handlers.event.EventHandler;
+import edu.stanford.epad.epadws.models.NonDicomSeries;
 import edu.stanford.epad.epadws.models.Project;
+import edu.stanford.epad.epadws.models.Subject;
 import edu.stanford.epad.epadws.processing.pipeline.task.PluginStartTask;
-import edu.stanford.epad.epadws.queries.Dcm4CheeQueries;
 import edu.stanford.epad.epadws.queries.DefaultEpadOperations;
 import edu.stanford.epad.epadws.queries.EpadOperations;
 import edu.stanford.epad.epadws.service.DefaultEpadProjectOperations;
@@ -241,16 +243,15 @@ public class AIMUtil
      * @throws AimException
      * @throws edu.stanford.hakan.aim4api.base.AimException
      */
-    public static String saveImageAnnotationToServer(ImageAnnotationCollection aim, String projectID, int frameNumber, String jsessionID) throws AimException,
+    public static ImageAnnotationCollection saveImageAnnotationToServer(ImageAnnotationCollection aim, String projectID, int frameNumber, String jsessionID) throws AimException,
     edu.stanford.hakan.aim4api.base.AimException {
     	return saveImageAnnotationToServer(aim, projectID, frameNumber, jsessionID, true);
     }
     
-    public static String saveImageAnnotationToServer(ImageAnnotationCollection aim, String projectID, int frameNumber, String jsessionID, boolean invokePlugin) throws AimException,
+    public static ImageAnnotationCollection saveImageAnnotationToServer(ImageAnnotationCollection aim, String projectID, int frameNumber, String jsessionID, boolean invokePlugin) throws AimException,
 	    edu.stanford.hakan.aim4api.base.AimException {
-		String result = "";
+		//String result = "";
 		
-		    log.info("=+=+=+=+=+=+=+=+=+=+=+=+= saveImageAnnotationToServer-1");
 		if (aim.getImageAnnotations().get(0).getListTypeCode().get(0).getCode() != null) { 
 			
 			if (isPluginStillRunning(aim.getUniqueIdentifier().getRoot()))
@@ -264,9 +265,8 @@ public class AIMUtil
 		    
 		    edu.stanford.hakan.aim4api.usage.AnnotationBuilder.saveToFile(aim, tempXmlPath, xsdFilePathV4);
 		    log.info("Saving AIM file with ID " + aim.getUniqueIdentifier());
-		    result = AnnotationBuilder.getAimXMLsaveResult();
 		
-		    log.info(result);
+		    log.info(AnnotationBuilder.getAimXMLsaveResult());
 		    if (storeFile.exists()) {
 		        storeFile.delete();
 		    }
@@ -275,11 +275,11 @@ public class AIMUtil
 		    String collectionName = eXistCollectionV4;
 		    if (projectID != null && projectID.length() > 0)
 		    	collectionName = collectionName + "/" + projectID;
-		    edu.stanford.hakan.aim4api.usage.AnnotationBuilder.saveToServer(aim, eXistServerUrl, aim4Namespace,
+		    aim = edu.stanford.hakan.aim4api.usage.AnnotationBuilder.saveToServer(aim, eXistServerUrl, aim4Namespace,
 		    		collectionName, xsdFilePathV4, eXistUsername, eXistPassword);
-		    result = edu.stanford.hakan.aim4api.usage.AnnotationBuilder.getAimXMLsaveResult();
+		  
 		
-		    log.info(result);
+		    log.info(edu.stanford.hakan.aim4api.usage.AnnotationBuilder.getAimXMLsaveResult());
 			try {
 				if (projectID != null && projectID.length() > 0)
 					saveAimToMongo(aim, projectID);
@@ -311,7 +311,7 @@ public class AIMUtil
 		        }
 		    }
 		}
-		return result;
+		return aim;
 	}	
 	
 	public static boolean deleteAIM(String aimID, String projectID)
@@ -402,43 +402,40 @@ public class AIMUtil
 		String description = Attribute.getSingleStringValueOrEmptyString(dsoDICOMAttributes, TagFromName.SeriesDescription);
 		// TODO: This call to get Referenced Image does not work ???
 		String[] referencedImageUID = Attribute.getStringValues(dsoDICOMAttributes, TagFromName.ReferencedSOPInstanceUID);
+		Dcm4CheeDatabaseOperations dcm4CheeDatabaseOperations = Dcm4CheeDatabase.getInstance()
+				.getDcm4CheeDatabaseOperations();
 		SequenceAttribute referencedSeriesSequence =(SequenceAttribute)dsoDICOMAttributes.get(TagFromName.ReferencedSeriesSequence);
+		String referencedSeriesUID = "";
 		if (referencedSeriesSequence != null) {
 		    Iterator sitems = referencedSeriesSequence.iterator();
 		    if (sitems.hasNext()) {
 		        SequenceItem sitem = (SequenceItem)sitems.next();
 		        if (sitem != null) {
 		            AttributeList list = sitem.getAttributeList();
-		            list = SequenceAttribute.getAttributeListFromWithinSequenceWithSingleItem(list,
-							TagFromName.ReferencedInstanceSequence);
-		            if (list.get(TagFromName.ReferencedSOPInstanceUID) != null)
-		            {
-		            	
-		    			referencedImageUID = new String[1];
-		    			referencedImageUID[0] = list.get(TagFromName.ReferencedSOPInstanceUID).getSingleStringValueOrEmptyString();
-			            log.info("ReferencedSOPInstanceUID:" + referencedImageUID[0]);
-		            }
+		            SequenceAttribute referencedInstanceSeq = (SequenceAttribute) list.get(TagFromName.ReferencedInstanceSequence);
+				    Iterator sitems2 = referencedInstanceSeq.iterator();
+				    while (sitems2.hasNext())
+				    {
+					    sitem = (SequenceItem)sitems2.next();
+			            list = sitem.getAttributeList();
+			            if (list.get(TagFromName.ReferencedSOPInstanceUID) != null)
+			            {		            	
+			    			referencedImageUID = new String[1];
+			    			referencedImageUID[0] = list.get(TagFromName.ReferencedSOPInstanceUID).getSingleStringValueOrEmptyString();
+							referencedSeriesUID = dcm4CheeDatabaseOperations.getSeriesUIDForImage(referencedImageUID[0]);
+							if (referencedSeriesUID != null && referencedSeriesUID.length() > 0)
+							{
+								log.info("ReferencedSOPInstanceUID:" + referencedImageUID[0]);
+								break;
+							}
+							else
+								log.info("DSO Referenced Image not found:" + referencedImageUID);
+			            }
+				    }
  		        }
 		    }
 		}
-		Dcm4CheeDatabaseOperations dcm4CheeDatabaseOperations = Dcm4CheeDatabase.getInstance()
-				.getDcm4CheeDatabaseOperations();
-		if (referencedImageUID == null || referencedImageUID.length == 0)
-		{
-			referencedImageUID = new String[1];
-			DICOMElementList dicomElementList = Dcm4CheeQueries.getDICOMElementsFromWADO(studyUID, seriesUID, imageUID);
-			for (DICOMElement dicomElement : dicomElementList.ResultSet.Result) {
-				if (dicomElement.tagCode.equals(PixelMedUtils.ReferencedSOPInstanceUIDCode))
-				{
-					referencedImageUID[0] = dicomElement.value;
-				}
-			}
-			if (referencedImageUID[0] == null)
-				throw new Exception("DSO Referenced Image UID not found: " + seriesUID);
-		}
-		String referencedSeriesUID = dcm4CheeDatabaseOperations.getSeriesUIDForImage(referencedImageUID[0]);
-
-		if (referencedSeriesUID.length() != 0) { // Found corresponding series in dcm4chee
+		if (referencedSeriesUID != null && referencedSeriesUID.length() != 0) { // Found corresponding series in dcm4chee
 			String referencedStudyUID = studyUID; // Will be same study as DSO
 			patientName = trimTrailing(patientName);
 			log.info("Generating AIM file for DSO series " + seriesUID + " for patient " + patientName);
@@ -485,8 +482,8 @@ public class AIMUtil
 					missingproject = true;
 					projectID = EPADConfig.xnatUploadProjectID;
 				}
-				String result = saveImageAnnotationToServer(imageAnnotation, projectID);
-				if (result.toLowerCase().contains("success"))
+				ImageAnnotationCollection aim4 = saveImageAnnotationToServer(imageAnnotation, projectID);
+				if (aim4 != null)
 				{
 					ImageReference imageReference = new ImageReference(projectID, patientID, referencedStudyUID, referencedSeriesUID, referencedImageUID[0]);
 					EpadDatabaseOperations dbOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
@@ -499,7 +496,7 @@ public class AIMUtil
 					else
 					{
 						dbOperations.addDSOAIM(username, imageReference, seriesUID, imageAnnotation.getUniqueIdentifier(),
-								edu.stanford.hakan.aim4api.usage.AnnotationBuilder.convertToString(imageAnnotation.toAimV4()));
+								edu.stanford.hakan.aim4api.usage.AnnotationBuilder.convertToString(aim4));
 					}
 					if (missingproject)
 					{
@@ -524,7 +521,86 @@ public class AIMUtil
 		 * patientName, "", "", "");
 		 */
 	}
+
 	
+	public static ImageAnnotation generateAIMForNiftiDSO(String username, String projectID, String subjectID, String studyUID, String seriesUID, String imageUID, File niftiFile) throws Exception
+	{
+		log.info("Creating DSO AIM for user " + username + " in project " + projectID);
+		
+		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
+		EpadProjectOperations projectOperations = DefaultEpadProjectOperations.getInstance();
+		Dcm4CheeDatabaseOperations dcm4CheeDatabaseOperations = Dcm4CheeDatabase.getInstance().getDcm4CheeDatabaseOperations();
+		NonDicomSeries ndSeries = projectOperations.getNonDicomSeries(seriesUID);
+		String referencedSeriesUID = ndSeries.getReferencedSeries();
+		Date seriesDate = ndSeries.getSeriesDate();
+		if (seriesDate == null) seriesDate = new Date();
+		String dsoDate = new SimpleDateFormat("yyyyMMdd").format(seriesDate);
+		Subject subject = projectOperations.getSubject(subjectID);
+		String referencedStudyUID = studyUID; // Will be same study as DSO
+		String patientName = subject.getName();
+		log.info("Generating AIM file for Nifti DSO: " + imageUID + " for patient " + patientName);
+		log.info("DSO Study UID=" + studyUID);
+		log.info("DSO Series UID=" + seriesUID);
+		log.info("DSO Image UID=" + imageUID);
+		log.info("Referenced Series Instance UID=" + referencedSeriesUID);
+		List<DCM4CHEEImageDescription> imageDescriptions = dcm4CheeDatabaseOperations.getImageDescriptions(studyUID, referencedSeriesUID);
+		String name = imageUID;
+		if (name == null || name.trim().length() == 0) name = "segmentation";
+		ImageAnnotation imageAnnotation = new ImageAnnotation(0, "", dsoDate.substring(0,4) + "-" + dsoDate.substring(4,6) + "-" + dsoDate.substring(6,8) + "T00:00:00", name, "SEG",
+				"SEG Only", "", "", "");
+
+		SegmentationCollection sc = new SegmentationCollection();
+		sc.AddSegmentation(new Segmentation(0, imageUID, SOPClass.SegmentationStorage, imageDescriptions.get(0).imageUID, 1));
+		imageAnnotation.setSegmentationCollection(sc);
+
+		DICOMImageReference originalDICOMImageReference = PluginAIMUtil.createDICOMImageReference(referencedStudyUID,
+				referencedSeriesUID, imageDescriptions.get(0).imageUID);
+		imageAnnotation.addImageReference(originalDICOMImageReference);
+		DICOMImageReference dsoDICOMImageReference = PluginAIMUtil.createDICOMImageReference(studyUID, seriesUID, imageUID);
+		imageAnnotation.addImageReference(dsoDICOMImageReference);
+
+		Person person = new Person();
+		if (subject.getGender() != null)
+			person.setSex(subject.getGender().trim());
+		Date dob = subject.getDob();
+		String patientBirthDay = "";
+		if (dob != null) patientBirthDay = new SimpleDateFormat("yyyyMMdd").format(dob);
+		if (patientBirthDay.trim().length() == 8)
+			person.setBirthDate(patientBirthDay.substring(0,4) + "-" + patientBirthDay.substring(4,6) + "-" + patientBirthDay.substring(6,8) + "T00:00:00"); // TODO
+		person.setId(subjectID);
+		person.setName(patientName);
+		person.setCagridId(0);
+		imageAnnotation.addPerson(person);
+		// TODO Not general. See if we can generate AIM on GUI upload of DSO with correct user.
+		setImageAnnotationUser(imageAnnotation, username);
+
+		log.info("Saving AIM file for DSO " + imageUID + " in series " + seriesUID + " with ID "
+				+ imageAnnotation.getUniqueIdentifier());
+		try {
+			ImageAnnotationCollection iac  = saveImageAnnotationToServer(imageAnnotation, projectID);
+			if (iac != null)
+			{
+				ImageReference imageReference = new ImageReference(projectID, subjectID, referencedStudyUID, referencedSeriesUID, imageDescriptions.get(0).imageUID);
+				EpadDatabaseOperations dbOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
+				EPADAIM aim = dbOperations.getAIM(imageAnnotation.getUniqueIdentifier());
+				if (aim != null)
+				{
+					if (!username.equals("shared"))
+						dbOperations.updateAIM(aim.aimID, projectID, username);
+				}
+				else
+				{
+					dbOperations.addDSOAIM(username, imageReference, seriesUID, imageAnnotation.getUniqueIdentifier(),
+							edu.stanford.hakan.aim4api.usage.AnnotationBuilder.convertToString(iac));
+				}
+			}
+			return imageAnnotation;
+		} catch (AimException e) {
+			log.warning("Exception saving AIM file for DSO image " + imageUID + " in series " + seriesUID, e);
+		}
+		return null;
+	}
+
 	private static String trimTrailing(String xnatName)
 	{
 		while (xnatName.endsWith("^"))
@@ -631,14 +707,11 @@ public class AIMUtil
 				}
 				else
 				{
-		            log.info("=+=+=+=+=+=+=+=+=+=+=+=+= uploadAIMAnnotations-2");
-		            log.info("=+=+=+=+=+=+=+=+=+=+=+=+= xsdFilePathV4 : " + xsdFilePathV4);
 		            ImageAnnotationCollection imageAnnotation = AIMUtil.getImageAnnotationFromFileV4(aimFile, xsdFilePathV4);
-		            log.info("=+=+=+=+=+=+=+=+=+=+=+=+= uploadAIMAnnotations-3");
+		        
 		            if (imageAnnotation != null) {
 		                String jsessionID = SessionService.getJSessionIDFromRequest(httpRequest);
 
-		            log.info("=+=+=+=+=+=+=+=+=+=+=+=+= uploadAIMAnnotations-4");
 		                AIMUtil.saveImageAnnotationToServer(imageAnnotation, projectID, getInt(frameNo), jsessionID);
 		                responseStream.println("-- Add to AIM server: " + imageAnnotation.getUniqueIdentifier().getRoot() + "<br>");
 		            } else {
@@ -711,18 +784,18 @@ public class AIMUtil
 					EPADAIM ea = epadDatabaseOperations.getAIM(imageAnnotationColl.getUniqueIdentifier().getRoot());
 					if (ea != null && !ea.projectID.equals(projectID))
 						projectID = ea.projectID; 		// TODO: Do we change AIM project if it is in unassigned? 
-					String xml = edu.stanford.hakan.aim4api.usage.AnnotationBuilder.convertToString(imageAnnotationColl);
-					if (xml == null || xml.trim().length() < 100)
-						throw new Exception("Error converting ImageAnnotationCollection to String");
 					Aim4 aim = new Aim4(imageAnnotationColl);
 					String patientID = aim.getPatientID();
 					String imageID = aim.getFirstImageID();
 					String seriesID = aim.getSeriesID(imageID);
 					String studyID = aim.getStudyID(seriesID);
 					log.info("Saving AIM file with ID " + imageAnnotationColl.getUniqueIdentifier() + " projectID:" + projectID + " username:" + username);
-					String result = AIMUtil.saveImageAnnotationToServer(imageAnnotationColl, projectID, frameNumber, sessionId);
-					log.info("Save annotation:" + result);
-					if (result.toLowerCase().contains("success") && projectID != null && username != null)
+					imageAnnotationColl = AIMUtil.saveImageAnnotationToServer(imageAnnotationColl, projectID, frameNumber, sessionId);
+					String xml = edu.stanford.hakan.aim4api.usage.AnnotationBuilder.convertToString(imageAnnotationColl);
+					if (xml == null || xml.trim().length() < 100)
+						throw new Exception("Error converting ImageAnnotationCollection to String");
+					log.info("Save annotation:" + imageAnnotationColl);
+					if (imageAnnotationColl != null && projectID != null && username != null)
 					{
 						FrameReference frameReference = new FrameReference(projectID, patientID, studyID, seriesID, imageID, new Integer(frameNumber));
 						epadDatabaseOperations.addAIM(username, frameReference, imageAnnotationColl.getUniqueIdentifier().getRoot(), xml);
@@ -1277,7 +1350,7 @@ public class AIMUtil
 
 	public static EPADAIMList getAllVersionSummaries(EPADAIM aim) throws Exception
 	{
-		List<ImageAnnotationCollection> iacs = AIMQueries.getAllVersionSummaries(aim);
+		List<ImageAnnotationCollection> iacs = AIMQueries.getAllVersions(aim);
 		EPADAIMList aims = new EPADAIMList();
 		for (int i = 0; i < iacs.size(); i++)
 		{
@@ -1306,7 +1379,36 @@ public class AIMUtil
 
 	public static EPADAIMList getPreviousVersionSummaries(EPADAIM aim) throws Exception
 	{
-		List<ImageAnnotationCollection> iacs = AIMQueries.getPreviousVersionSummaries(aim);
+		List<ImageAnnotationCollection> iacs = AIMQueries.getPreviousVersions(aim);
+		EPADAIMList aims = new EPADAIMList();
+		for (int i = 0; i < iacs.size(); i++)
+		{
+			ImageAnnotationCollection iac = iacs.get(i);
+			try
+			{
+				Aim4 a = new Aim4(iac);
+				EPADAIM ea = new EPADAIM(iac.getUniqueIdentifier().getRoot(), a.getLoggedInUser().getLoginName(), 
+						aim.projectID, aim.subjectID, aim.studyUID, aim.seriesUID, aim.imageUID, aim.instanceOrFrameNumber);
+				ea.name = iac.getImageAnnotations().get(0).getName().getValue();
+				ea.template = iac.getImageAnnotations().get(0).getListTypeCode().get(0).getCodeSystem();// .getCode();
+				ea.templateType = iac.getImageAnnotations().get(0).getListTypeCode().get(0).getCode();
+				ea.date = iac.getDateTime();
+				ea.comment = a.getComment();
+				if (a.getFirstStudyDate() != null)
+					ea.studyDate = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(a.getFirstStudyDate());
+				ea.patientName = a.getPatientName();
+				ea.xml = null;
+				aims.addAIM(ea);
+			} catch (Exception x) {
+				log.warning("Error parsing ImageAnnotationCollection:" + iac, x);
+			}
+		}
+		return aims;
+	}
+
+	public static EPADAIMList getNextVersionSummaries(EPADAIM aim) throws Exception
+	{
+		List<ImageAnnotationCollection> iacs = AIMQueries.getNextVersions(aim);
 		EPADAIMList aims = new EPADAIMList();
 		for (int i = 0; i < iacs.size(); i++)
 		{
@@ -1335,7 +1437,7 @@ public class AIMUtil
 
 	public static void returnAllVersions(PrintWriter responseStream, EPADAIM aim) throws Exception
 	{
-		List<ImageAnnotationCollection> iacs = AIMQueries.getAllVersionSummaries(aim);
+		List<ImageAnnotationCollection> iacs = AIMQueries.getAllVersions(aim);
 		StringBuilder annotationsXML = new StringBuilder("<imageAnnotations>\n");
 
 		for (ImageAnnotationCollection iac : iacs) {
@@ -1348,7 +1450,7 @@ public class AIMUtil
 
 	public static void returnPreviousVersions(PrintWriter responseStream, EPADAIM aim) throws Exception
 	{
-		List<ImageAnnotationCollection> iacs = AIMQueries.getPreviousVersionSummaries(aim);
+		List<ImageAnnotationCollection> iacs = AIMQueries.getPreviousVersions(aim);
 		StringBuilder annotationsXML = new StringBuilder("<imageAnnotations>\n");
 
 		for (ImageAnnotationCollection iac : iacs) {
@@ -1357,6 +1459,24 @@ public class AIMUtil
 		annotationsXML.append("</imageAnnotations>\n");
 		responseStream.print(annotationsXML);
 		return;
+	}
+	
+	public static void undoLastAIM(EPADAIM aim) throws Exception {
+		List<ImageAnnotationCollection> iacs = AIMQueries.getPreviousVersions(aim);
+		if (iacs.size() == 0)
+			throw new Exception("Undo List is empty");
+		ImageAnnotationCollection iac = AIMQueries.makeCurrent(aim, iacs.get(0));
+		EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
+		epadDatabaseOperations.updateAIMXml(aim.aimID, edu.stanford.hakan.aim4api.usage.AnnotationBuilder.convertToString(iac));
+	}
+	
+	public static void redoLastAIM(EPADAIM aim) throws Exception {
+		List<ImageAnnotationCollection> iacs = AIMQueries.getNextVersions(aim);
+		if (iacs.size() == 0)
+			throw new Exception("Redo List is empty");
+		ImageAnnotationCollection iac = AIMQueries.makeCurrent(aim, iacs.get(0));
+		EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
+		epadDatabaseOperations.updateAIMXml(aim.aimID, edu.stanford.hakan.aim4api.usage.AnnotationBuilder.convertToString(iac));
 	}
 
 	private static String XmlDocumentToString(Document document, String xmlns)
@@ -1452,6 +1572,16 @@ public class AIMUtil
 		return result;
 	}
 
+	public static String readPlugInData(EPADAIM aim, String templateName, String jsessionID) throws Exception
+	{
+		String fileName = EPADConfig.getEPADWebServerResourcesDir() + "plugins/" + aim.aimID + "_" + templateName + ".json";
+		File dataFile = new File(fileName);
+		if (!dataFile.exists())
+			throw new Exception("Plugin data file does not exist:" + fileName);
+		String data = EPADFileUtils.readFileAsString(dataFile);
+		return data;
+	}
+	
 	private static void setImageAnnotationUser(ImageAnnotation imageAnnotation, String username)
 	{
 		List<User> userList = new ArrayList<User>();
@@ -1463,9 +1593,10 @@ public class AIMUtil
 		imageAnnotation.setListUser(userList);
 	}
 	
-	private static String saveImageAnnotationToServer(ImageAnnotation aim, String projectID) throws AimException,
+	private static ImageAnnotationCollection saveImageAnnotationToServer(ImageAnnotation aim, String projectID) throws AimException,
 	edu.stanford.hakan.aim4api.base.AimException
 	{
+	    ImageAnnotationCollection aim4 = null;
 		String result = "";
 
 		if (aim.getCodeValue() != null) { // First, write a backup file
@@ -1495,10 +1626,9 @@ public class AIMUtil
 			    String collectionName = eXistCollectionV4;
 			    if (projectID != null && projectID.length() > 0)
 			    	collectionName = collectionName + "/" + projectID;
-			    ImageAnnotationCollection aim4 = aim.toAimV4();
-				edu.stanford.hakan.aim4api.usage.AnnotationBuilder.saveToServer(aim4, eXistServerUrl, aim4Namespace,
+			    aim4 = aim.toAimV4();
+			    aim4 = edu.stanford.hakan.aim4api.usage.AnnotationBuilder.saveToServer(aim4, eXistServerUrl, aim4Namespace,
 						collectionName, xsdFilePathV4, eXistUsername, eXistPassword);
-				result = edu.stanford.hakan.aim4api.usage.AnnotationBuilder.getAimXMLsaveResult();
 				try {
 					saveAimToMongo(aim4, projectID);
 				} catch (Exception e) {
@@ -1507,7 +1637,7 @@ public class AIMUtil
 			}
 			log.info("Save AIM to Exist:" + result);
 		}
-		return result;
+		return aim4;
 	}
 	
 	public static Map<String, String> getUIDCsvList(String sessionID, EPADAIMList aimlist, String username)
@@ -1615,8 +1745,8 @@ public class AIMUtil
                     edu.stanford.hakan.aim4api.compability.aimv3.ImageAnnotation iaV3 = new  edu.stanford.hakan.aim4api.compability.aimv3.ImageAnnotation(iac);
                     log.info("Saving AIM4:" + epadaim.aimID + " in project " + epadaim.projectID);
                     iac = iaV3.toAimV4(coordinationTerms);
-					String result = AIMUtil.saveImageAnnotationToServer(iac, epadaim.projectID, 0, null, false);
-					if (result.toLowerCase().contains("success") && epadaim.projectID != null)
+					iac = AIMUtil.saveImageAnnotationToServer(iac, epadaim.projectID, 0, null, false);
+					if (iac != null && epadaim.projectID != null)
 					{
 						epadDatabaseOperations.updateAIMXml(epadaim.aimID, edu.stanford.hakan.aim4api.usage.AnnotationBuilder.convertToString(iac));
 					}

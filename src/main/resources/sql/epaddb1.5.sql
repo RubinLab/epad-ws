@@ -56,6 +56,10 @@ KEY FK_workliststudy_worklist (worklist_id),
 CONSTRAINT FK_workliststudy_worklist FOREIGN KEY (worklist_id) REFERENCES project(id)) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 CREATE UNIQUE INDEX worklist_study_ind on worklist_study(worklist_id,study_id);
 
+ALTER TABLE project ADD COLUMN defaulttemplate varchar(128);
+ALTER TABLE nondicom_series ADD COLUMN modality varchar(32);
+ALTER TABLE nondicom_series ADD COLUMN referencedseries varchar(128);
+
 UPDATE dbversion SET version = '1.5';
 commit;
 

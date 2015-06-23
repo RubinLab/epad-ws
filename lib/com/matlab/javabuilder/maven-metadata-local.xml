@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<metadata>
+  <groupId>com.matlab</groupId>
+  <artifactId>javabuilder</artifactId>
+  <versioning>
+    <release>R2013b</release>
+    <versions>
+      <version>R2013b</version>
+    </versions>
+  </versioning>
+</metadata>

@@ -219,6 +219,11 @@ public class QueueAndWatcherManager
 	private void generateMaskPNGsForDicomSegmentationObject(DICOMFileDescription dicomFileDescription, File dsoFile , boolean generateAIM)
 	{
 		log.info("DICOM segmentation object found for series " + dicomFileDescription.seriesUID + " dso:" + dsoFile.getAbsolutePath());
+		if (DSOMaskPNGGeneratorTask.seriesBeingProcessed.contains(dicomFileDescription.seriesUID))
+		{
+			log.info("QWMgr: DSO series " + dicomFileDescription.seriesUID + " already being processed");
+			return;
+		}
 		String tagFilePath = createOutputPNGFilePathForSingleFrameDICOMImage(dicomFileDescription).replace(".png", ".tag");
 		DSOMaskPNGGeneratorTask dsoMaskPNGGeneratorTask = new DSOMaskPNGGeneratorTask(dicomFileDescription.seriesUID,
 				dsoFile, generateAIM, tagFilePath);
@@ -240,6 +245,11 @@ public class QueueAndWatcherManager
 	private void generatePNGFileForSingleFrameDICOMImage(String patientName, DICOMFileDescription dicomFileDescription,
 			File dicomFile)
 	{
+		if (SingleFrameDICOMPngGeneratorTask.imagesBeingProcessed.contains(dicomFileDescription.imageUID))
+		{
+			log.info("QWMgr: Image " + dicomFileDescription.imageUID + " already being processed");
+			return;
+		}
 		String outputPNGFilePath = createOutputPNGFilePathForSingleFrameDICOMImage(dicomFileDescription);
 		File outputPNGFile = new File(outputPNGFilePath);
 		EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
@@ -252,7 +262,7 @@ public class QueueAndWatcherManager
 	private void extractRTDicomInfo(DICOMFileDescription dicomFileDescription, File dicomFile)
 	{
 		log.info("DICOM RT found for series " + dicomFileDescription.seriesUID + " dicomFile:" + dicomFile.getAbsolutePath());
-		String rtFilePath = createOutputPNGFilePathForSingleFrameDICOMImage(dicomFileDescription).replace(".png", ".rt");
+		String rtFilePath = createOutputPNGFilePathForSingleFrameDICOMImage(dicomFileDescription).replace(".png", ".mat");
 		EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
 		insertEpadFile(epadDatabaseOperations, rtFilePath, 0, dicomFileDescription.imageUID);
 		RTDICOMProcessingTask rtTask = new RTDICOMProcessingTask(dicomFileDescription.seriesUID, dicomFileDescription.imageUID,

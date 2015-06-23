@@ -600,10 +600,10 @@ public class AIMQueries
 		return count;
 	}
 
-	public static List<ImageAnnotationCollection> getAllVersionSummaries(EPADAIM aim) throws Exception
+	public static List<ImageAnnotationCollection> getAllVersions(EPADAIM aim) throws Exception
 	{
-	    String collection4Name = eXistCollectionV4 + "/" + aim.projectID;
-	    ImageAnnotationCollection iac = edu.stanford.hakan.aim4api.usage.AnnotationGetter
+		String collection4Name = eXistCollectionV4 + "/" + aim.projectID;
+		ImageAnnotationCollection iac = edu.stanford.hakan.aim4api.usage.AnnotationGetter
 				.getImageAnnotationCollectionByUniqueIdentifier(eXistServerUrl, aim4Namespace, collection4Name,
 						eXistUsername, eXistPassword, aim.aimID);
 		log.info("Getting all versions for aim id:" + aim.aimID);
@@ -613,16 +613,34 @@ public class AIMQueries
 		return iacs;
 	}
 
-	public static List<ImageAnnotationCollection> getPreviousVersionSummaries(EPADAIM aim) throws Exception
+	public static List<ImageAnnotationCollection> getPreviousVersions(EPADAIM aim) throws Exception
 	{
-	    String collection4Name = eXistCollectionV4 + "/" + aim.projectID;
-	    ImageAnnotationCollection iac = edu.stanford.hakan.aim4api.usage.AnnotationGetter
+		String collection4Name = eXistCollectionV4 + "/" + aim.projectID;
+		ImageAnnotationCollection iac = edu.stanford.hakan.aim4api.usage.AnnotationGetter
 				.getImageAnnotationCollectionByUniqueIdentifier(eXistServerUrl, aim4Namespace, collection4Name,
 						eXistUsername, eXistPassword, aim.aimID);
 		
 		AuditTrailManager atm = new AuditTrailManager(eXistServerUrl, aim4Namespace, collection4Name, eXistUsername, eXistPassword, xsdFilePath4);
-		return atm.getPreviousVersions(iac);
+		return atm.getUndoList(iac);
 	}
 	
+	public static List<ImageAnnotationCollection> getNextVersions(EPADAIM aim) throws Exception
+	{
+		String collection4Name = eXistCollectionV4 + "/" + aim.projectID;
+		ImageAnnotationCollection iac = edu.stanford.hakan.aim4api.usage.AnnotationGetter
+				.getImageAnnotationCollectionByUniqueIdentifier(eXistServerUrl, aim4Namespace, collection4Name,
+						eXistUsername, eXistPassword, aim.aimID);
+		
+		AuditTrailManager atm = new AuditTrailManager(eXistServerUrl, aim4Namespace, collection4Name, eXistUsername, eXistPassword, xsdFilePath4);
+		return atm.getRedoList(iac);
+	}
+	
+
+	public static ImageAnnotationCollection makeCurrent(EPADAIM aim, ImageAnnotationCollection iac) throws Exception
+	{
+		String collection4Name = eXistCollectionV4 + "/" + aim.projectID;		
+		AuditTrailManager atm = new AuditTrailManager(eXistServerUrl, aim4Namespace, collection4Name, eXistUsername, eXistPassword, xsdFilePath4);
+		return atm.makeCurrent(iac);
+	}
 	
 }

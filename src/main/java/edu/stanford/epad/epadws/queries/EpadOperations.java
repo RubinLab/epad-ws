@@ -112,9 +112,9 @@ public interface EpadOperations
 	
 	void createSubjectAndStudy(String username, String projectID, String subjectID, String subjectName, String studyUID, String sessionID) throws Exception;
 
-	int createProject(String username, ProjectReference projectReference, String projectName, String projectDescription, String sessionID) throws Exception;
+	int createProject(String username, ProjectReference projectReference, String projectName, String projectDescription, String defaultTemplate, String sessionID) throws Exception;
 
-	int updateProject(String username, ProjectReference projectReference, String projectName, String projectDescription, String sessionID) throws Exception;
+	int updateProject(String username, ProjectReference projectReference, String projectName, String projectDescription, String defaultTemplate, String sessionID) throws Exception;
 
 	int createSubject(String username, SubjectReference subjectRefernece, String subjectName, Date dob, String gender, String sessionID) throws Exception;
 
@@ -175,7 +175,7 @@ public interface EpadOperations
 	
 	String createStudyAIM(String username, StudyReference studyReference, String aimID, File aimFile, String sessionID);
 
-	EPADSeries createSeries(String username, SeriesReference seriesReference, String description, Date seriesDate, String sessionID) throws Exception;
+	EPADSeries createSeries(String username, SeriesReference seriesReference, String description, Date seriesDate, String modality, String referencedSeries, String sessionID) throws Exception;
 
 	String createProjectAIM(String username, ProjectReference projectReference, String aimID, File aimFile, String sessionID);
 

@@ -133,6 +133,7 @@ import edu.stanford.epad.epadws.models.User.EventLog;
 import edu.stanford.epad.epadws.models.UserRole;
 import edu.stanford.epad.epadws.models.WorkList;
 import edu.stanford.epad.epadws.models.WorkListToStudy;
+import edu.stanford.epad.epadws.processing.pipeline.task.DSOEvaluationTask;
 import edu.stanford.epad.epadws.processing.pipeline.task.ProjectDataDeleteTask;
 import edu.stanford.epad.epadws.processing.pipeline.task.StudyDataDeleteTask;
 import edu.stanford.epad.epadws.processing.pipeline.task.SubjectDataDeleteTask;
@@ -201,7 +202,7 @@ public class DefaultEpadOperations implements EpadOperations
 			long gettime = System.currentTimeMillis();
 			for (Project project : projects) {
 				EPADProject epadProject = project2EPADProject(sessionID, username, project, searchFilter, annotationCount);
-	
+				
 				if (epadProject != null)
 				{
 					//log.info("project " + epadProject.id + " aim count:" + epadProject.numberOfAnnotations);
@@ -209,7 +210,7 @@ public class DefaultEpadOperations implements EpadOperations
 				}
 			}
 			long convtime = System.currentTimeMillis();
-			log.info("Time to get projects:" + (gettime-starttime) + " msecs, to convert:" + (convtime-gettime) + " msecs");
+			log.info("Time to get " + epadProjectList.ResultSet.totalRecords + " projects:" + (gettime-starttime) + " msecs, to convert:" + (convtime-gettime) + " msecs");
 		}
 		return epadProjectList;
 	}
@@ -379,7 +380,7 @@ public class DefaultEpadOperations implements EpadOperations
 				if (series.size() > 0) firstSeriesDate = dateformat.format(series.get(0).getCreatedTime());
 				String desc = "";
 				DCM4CHEEStudy dcm4CheeStudy = new DCM4CHEEStudy(study.getStudyUID(), subject.getName(), subjectReference.subjectID, 
-								"", formatDate(study.getStudyDate()), 
+								"", formatDateTime(study.getStudyDate()), 
 								0, series.size(), firstSeries, firstSeriesDate,
 								"", 0, study.getStudyUID(), study.getDescription(), "",
 								"", "");
@@ -440,6 +441,20 @@ public class DefaultEpadOperations implements EpadOperations
 			return dcm4cheeSeries2EpadSeries(sessionID, seriesReference.projectID, patientID, dcm4cheeSeries, username);
 		}
 		else {
+			try {
+				NonDicomSeries ndSeries = projectOperations.getNonDicomSeries(seriesReference.seriesUID);
+				if (ndSeries != null) {
+					EPADSeries series = new EPADSeries(seriesReference.projectID, seriesReference.subjectID, "", seriesReference.studyUID, 
+								ndSeries.getSeriesUID(), 
+								dateformat.format(ndSeries.getSeriesDate()), 
+								ndSeries.getDescription(), 
+								"", "", "", 0, 0, 0, "","","",null,"","", "SEG".equalsIgnoreCase(ndSeries.getModality()));
+					series.isNonDicomSeries = true;
+					return series;
+				}
+			} catch (Exception e) {
+				log.warning("Error getting non-dicom series", e);
+			}
 			log.warning("Could not find series description for series " + seriesReference.seriesUID);
 			return null;
 		}
@@ -517,7 +532,7 @@ public class DefaultEpadOperations implements EpadOperations
 						ndSeries.getSeriesUID(), 
 						dateformat.format(ndSeries.getSeriesDate()), 
 						ndSeries.getDescription(), 
-						"", "", "", 0, 0, 0, "","","",null,"","", false);
+						"", "", "", 0, 0, 0, "","","",null,"","", "SEG".equalsIgnoreCase(ndSeries.getModality()));
 				series.isNonDicomSeries = true;
 				epadSeriesList.addEPADSeries(series);
 			}
@@ -527,6 +542,7 @@ public class DefaultEpadOperations implements EpadOperations
 		return epadSeriesList;
 	}
 
+	Set<String> seriesInProcess = new HashSet<String>();
 	@Override
 	public EPADImageList getImageDescriptions(SeriesReference seriesReference, String sessionID,
 			EPADSearchFilter searchFilter)
@@ -534,6 +550,8 @@ public class DefaultEpadOperations implements EpadOperations
 		List<DCM4CHEEImageDescription> imageDescriptions = dcm4CheeDatabaseOperations.getImageDescriptions(
 				seriesReference.studyUID, seriesReference.seriesUID);
 		int numImages = imageDescriptions.size();
+		if (numImages == 0)
+			throw new RuntimeException("This series has no images");
 		DICOMElementList suppliedDICOMElementsFirst = getDICOMElements(imageDescriptions.get(0).studyUID,
 				imageDescriptions.get(0).seriesUID, imageDescriptions.get(0).imageUID);
 		String pixelSpacing1 = getDICOMElement(suppliedDICOMElementsFirst, PixelMedUtils.PixelSpacingCode);
@@ -542,10 +560,20 @@ public class DefaultEpadOperations implements EpadOperations
 		String pixelSpacing2 = getDICOMElement(suppliedDICOMElementsLast, PixelMedUtils.PixelSpacingCode);
 		boolean getMetaDataForAllImages = false;
 		log.debug("pixelSpacing1:" + pixelSpacing1 + " pixelSpacing2:" + pixelSpacing2);
-		if (!pixelSpacing1.equals(pixelSpacing2))
+		if (pixelSpacing1 != null && !pixelSpacing1.equals(pixelSpacing2))
 		{
 			log.info("Series: " +  seriesReference.seriesUID + " returning metadata for all images");
 			getMetaDataForAllImages = true;
+			epadDatabaseOperations.insertEpadEvent(
+					EPADSessionOperations.getSessionUser(sessionID), 
+					"This Image may take some time to load. Please do not retry", 
+					seriesReference.seriesUID, imageDescriptions.get(0).imageUID,
+					seriesReference.subjectID, 
+					seriesReference.subjectID, 
+					seriesReference.studyUID, 
+					seriesReference.projectID,
+					"Getting Variable Metadata Slices " + imageDescriptions.size());					
+			seriesInProcess.add(seriesReference.seriesUID);
 		}
 		DICOMElementList defaultDICOMElements = null;
 		EPADImageList epadImageList = new EPADImageList();
@@ -567,8 +595,21 @@ public class DefaultEpadOperations implements EpadOperations
 				DICOMElementList suppliedDICOMElements = suppliedDICOMElementsFirst;				
 				// We do not always add DICOM headers to remaining image descriptions because it would be too expensive
 				if (getMetaDataForAllImages) {
-					suppliedDICOMElements = getDICOMElements(dcm4cheeImageDescription.studyUID,
-							dcm4cheeImageDescription.seriesUID, dcm4cheeImageDescription.imageUID);				
+					if (i%300 == 0) {
+						epadDatabaseOperations.insertEpadEvent(
+								EPADSessionOperations.getSessionUser(sessionID), 
+								"This Image still being loaded. Please do not retry", 
+								seriesReference.seriesUID, imageDescriptions.get(0).imageUID,
+								seriesReference.subjectID, 
+								seriesReference.subjectID, 
+								seriesReference.studyUID, 
+								seriesReference.projectID,
+								"Getting Variable Metadata Slice " + i);					
+					}
+					suppliedDICOMElements = replaceSliceSpecificElements(dcm4cheeImageDescription.studyUID,
+							dcm4cheeImageDescription.seriesUID, dcm4cheeImageDescription.imageUID,suppliedDICOMElements);	
+					//suppliedDICOMElements = getDICOMElements(dcm4cheeImageDescription.studyUID,
+					//		dcm4cheeImageDescription.seriesUID, dcm4cheeImageDescription.imageUID);				
 					defaultDICOMElements = getDefaultDICOMElements(dcm4cheeImageDescription.studyUID,
 							dcm4cheeImageDescription.seriesUID, dcm4cheeImageDescription.imageUID, suppliedDICOMElements);
 					log.info("Getting metadata for image " + i);
@@ -657,6 +698,9 @@ public class DefaultEpadOperations implements EpadOperations
 						int frameNumber = dcm4cheeReferencedImageDescription.instanceNumber - instanceOffset; // Frames 0-based, instances 1 or more
 						String losslessImage = getPNGMaskPath(studyUID, imageReference.seriesUID, imageReference.imageUID,
 								frameNumber);
+						String contourImage = "";
+						contourImage = getPNGContourPath(studyUID, imageReference.seriesUID, imageReference.imageUID,
+								frameNumber);
 						String lossyImage = ""; // We do not have a lossy image for the DSO frame
 						String sourceLosslessImage = getPNGPath(studyUID, referencedSeriesUID, referencedImageUID);
 						String sourceLossyImage = getWADOPath(studyUID, referencedSeriesUID, referencedImageUID);
@@ -687,6 +731,15 @@ public class DefaultEpadOperations implements EpadOperations
 				log.warning("Could not find frames for DSO image " + imageReference.imageUID + " in series "
 						+ imageReference.seriesUID);
 			}
+		} else if (dcm4cheeImageDescription == null) {
+			try {
+				EpadFile file = projectOperations.getEpadFile(null, imageReference.subjectID, imageReference.studyUID, imageReference.seriesUID, imageReference.imageUID);
+				//String referencedSeries = 
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			
 		} else {
 			log.warning("Attempt to get frames of non multi-frame image " + imageReference.imageUID + " in series "
 					+ imageReference.seriesUID);
@@ -750,20 +803,22 @@ public class DefaultEpadOperations implements EpadOperations
 
 	SimpleDateFormat dateformat = new SimpleDateFormat("yyyyMMdd");
 	@Override
-	public EPADSeries createSeries(String username, SeriesReference seriesReference, String description, Date seriesDate, String sessionID) throws Exception
+	public EPADSeries createSeries(String username, SeriesReference seriesReference, String description, Date seriesDate, String modality, String referencedSeries, String sessionID) throws Exception
 	{
-		log.info("Creating new series:" + seriesReference.seriesUID);
+		log.info("Creating new series:" + seriesReference.seriesUID + " description:" + description + " modality:" + modality);
 		String seriesUID = seriesReference.seriesUID;
 		if (seriesUID.equalsIgnoreCase("new"))
 		{
 			UIDGenerator u = new UIDGenerator();
 			seriesUID = u.getNewUID();
+			if ("SEG".equals(modality) && (referencedSeries == null || referencedSeries.trim().length() == 0))
+				throw new Exception("Segmentation series should specify a referenced Series UID");
 		}
 		if (seriesDate == null) seriesDate = new Date();
-		NonDicomSeries series = projectOperations.createNonDicomSeries(username, seriesUID, seriesReference.studyUID, description, seriesDate);
+		NonDicomSeries series = projectOperations.createNonDicomSeries(username, seriesUID, seriesReference.studyUID, description, seriesDate, modality, referencedSeries);
 		projectOperations.addStudyToProject(username, seriesReference.studyUID, seriesReference.subjectID, seriesReference.projectID);
 		return new EPADSeries(seriesReference.projectID, seriesReference.subjectID, "", seriesReference.studyUID, seriesUID,
-				dateformat.format(new Date()), description, "", "", "", 0, 0, 0, "","","",null,"","", false);
+				dateformat.format(seriesDate), description, "", "", "", 0, 0, 0, "","","",null,"","", "seg".equalsIgnoreCase(modality));
 	}
 
 	@Override
@@ -936,7 +991,7 @@ public class DefaultEpadOperations implements EpadOperations
 
 	@Override
 	public Set<String> getDeletedDcm4CheeSeries() {
-		Set<String> allReadyDcm4CheeSeriesUIDs = dcm4CheeDatabaseOperations.getAllReadyDcm4CheeSeriesUIDs();
+		Set<String> allReadyDcm4CheeSeriesUIDs = dcm4CheeDatabaseOperations.getAllDcm4CheeSeriesUIDs();
 		Set<String> allEPADSeriesUIDs = epadDatabaseOperations.getAllSeriesUIDsFromEPadDatabase();
 		//log.info("Series in dcm4chee:" + allReadyDcm4CheeSeriesUIDs.size()+ " Series in epad:" + allEPADSeriesUIDs.size());
 		allEPADSeriesUIDs.removeAll(allReadyDcm4CheeSeriesUIDs);
@@ -998,14 +1053,14 @@ public class DefaultEpadOperations implements EpadOperations
 	}
 
 	@Override
-	public int createProject(String username, ProjectReference projectReference, String projectName, String projectDescription,
+	public int createProject(String username, ProjectReference projectReference, String projectName, String projectDescription, String defaultTemplate,
 			String sessionID) throws Exception
 	{
 		if (!EPADConfig.UseEPADUsersProjects) {
 			return XNATCreationOperations.createXNATProject(projectReference.projectID, projectName, projectDescription,
 				sessionID);
 		} else {
-			projectOperations.createProject(username, projectReference.projectID, projectName, projectDescription, ProjectType.PRIVATE);
+			projectOperations.createProject(username, projectReference.projectID, projectName, projectDescription, defaultTemplate, ProjectType.PRIVATE);
 			return HttpServletResponse.SC_OK;
 		}
 	}
@@ -1013,14 +1068,14 @@ public class DefaultEpadOperations implements EpadOperations
 	@Override
 	public int updateProject(String username,
 			ProjectReference projectReference, String projectName,
-			String projectDescription, String sessionID) throws Exception {
+			String projectDescription, String defaultTemplate, String sessionID) throws Exception {
 		if (!EPADConfig.UseEPADUsersProjects) {
 			// TODO: update in XNAT
 			return XNATCreationOperations.createXNATProject(projectReference.projectID, projectName, projectDescription,
 				sessionID);
 		} else {
 			if (projectOperations.isOwner(username, projectReference.projectID))
-				projectOperations.updateProject(username, projectReference.projectID, projectName, projectDescription, null);
+				projectOperations.updateProject(username, projectReference.projectID, projectName, projectDescription, defaultTemplate, null);
 			else
 				throw new Exception("No privilege to modify project:" + projectReference.projectID);
 			return HttpServletResponse.SC_OK;
@@ -1166,7 +1221,11 @@ public class DefaultEpadOperations implements EpadOperations
 			{
 				type = FileType.TEMPLATE;
 				if (!EPADFileUtils.isValidXml(uploadedFile, EPADConfig.templateXSDPath))
-					throw new Exception("Invalid Template file");
+				{
+					String error = EPADFileUtils.validateXml(uploadedFile, EPADConfig.templateXSDPath);
+					if (!(error.contains("content of element 'Template' is not complete") && getTemplateType(uploadedFile).startsWith("SEG")))
+						throw new Exception("Invalid Template file: " + error);
+				}
 			}
 			else if (fileType != null && fileType.equals(FileType.IMAGE.getName()))
 			{
@@ -1198,6 +1257,24 @@ public class DefaultEpadOperations implements EpadOperations
 				}				
 			}
 			projectOperations.createFile(username, projectID, subjectID, studyID, seriesID, uploadedFile, filename, description, type);
+			if (type != null && type.equals(FileType.IMAGE) && seriesID != null) {
+				NonDicomSeries ndSeries = projectOperations.getNonDicomSeries(seriesID);
+				if (ndSeries != null && ndSeries.getReferencedSeries() != null && ndSeries.getReferencedSeries().length() > 0) {
+					try {
+						AIMUtil.generateAIMForNiftiDSO(username, projectID, subjectID, studyID, seriesID, EPADFileUtils.removeExtension(filename), uploadedFile);
+					} catch (Exception x) {
+						log.warning("Error generating Annotation for Nifti DSO", x);
+					}
+					try {
+						DSOUtil.writePNGMasksForNiftiDSO(subjectID, studyID, seriesID, EPADFileUtils.removeExtension(filename), uploadedFile);
+					} catch (Exception x) {
+						log.warning("Error generating PNG masks for Nifti DSO", x);
+					}
+				}
+			}
+			if (type != null && type.equals(FileType.IMAGE) && filename.endsWith(".nii") && !filename.equalsIgnoreCase(EPADConfig.getParamValue("GroundTruthDSOName", "GroundTruth.nii"))) {
+				(new Thread(new DSOEvaluationTask(username, projectID, subjectID, studyID, seriesID, filename))).start();
+			}
 		}
 	}
 
@@ -1214,10 +1291,35 @@ public class DefaultEpadOperations implements EpadOperations
 				|| name.endsWith(".yuv")
 				|| name.endsWith(".psd")
 				|| name.endsWith(".xcf")
+				|| name.endsWith(".mhd")
 				)
 			return true;
 		else
 			return false;
+	}
+	
+	private String getTemplateType(File templateFile)
+	{
+		try {
+			String xml = EPADFileUtils.readFileAsString(templateFile);
+            JSONObject root = XML.toJSONObject(xml);
+            JSONObject container = root.getJSONObject("TemplateContainer");
+            JSONArray templateObjs = new JSONArray();
+            try {
+            	JSONObject templateObj = container.getJSONObject("Template");
+            	templateObjs.put(templateObj);
+            }
+            catch (Exception x) {
+            	templateObjs = container.getJSONArray("Template");
+            }
+            for (int i = 0; i < templateObjs.length(); i++)
+            {
+            	JSONObject templateObj = templateObjs.getJSONObject(i);
+	            return templateObj.getString("codeMeaning");
+           }
+		} catch (Exception x) {
+		}
+		return "";		
 	}
 	
 	@Override
@@ -1613,7 +1715,11 @@ public class DefaultEpadOperations implements EpadOperations
 	            	templateUID = templateObj.getString("uid");
 		            templateName = templateObj.getString("name");
 		            templateType = templateObj.getString("codeMeaning");
-		            templateCode = templateObj.getString("codeValue");
+		            try {
+		            	templateCode = templateObj.getString("codeValue");
+		            } catch (Exception x) {
+						log.warning("Error getting code value for template " + template.getAbsolutePath());
+					}
 		            try {
 			            templateDescription = templateObj.getString("description");
 			            modality = templateObj.getString("modality");
@@ -1622,14 +1728,18 @@ public class DefaultEpadOperations implements EpadOperations
 		            										templateDescription, modality);
 		            epadTmpls.add(epadTmpl);
 	            }
-				description = templateType + " (" + templateCode + ")";
 			} catch (Exception x) {
 				log.warning("JSON Error", x);
 			}
 			boolean enabled = true;
 			if (disabledTemplatesNames.contains(template.getName()) || disabledTemplatesNames.contains(templateName) || disabledTemplatesNames.contains(templateCode))
 				enabled = false;
-			
+			if (description == null || description.trim().length() == 0)
+			{
+				description = "image"; // Image template type
+//				if (templateCode.startsWith("SEG"))
+//					description = "segmentation"; // Image template type
+			}
 			EPADTemplateContainer epadContainer = new EPADTemplateContainer("", "", "", "", "", name, template.length(), FileType.TEMPLATE.getName(), 
 					formatDate(new Date(template.lastModified())), "templates/" + template.getName(), enabled, description);
 			epadContainer.templateName = templateName;
@@ -1702,9 +1812,13 @@ public class DefaultEpadOperations implements EpadOperations
 	            										templateDescription, modality);
 	            epadTmpls.add(epadTmpl);
             }
-            if (description == null || description.length() == 0)
-            	description = templateType + " (" + templateCode + ")";
 		} catch (Exception x) {}
+		if (description == null || description.trim().length() == 0)
+		{
+			description = "image"; // Image template type
+//			if (templateCode.startsWith("SEG"))
+//				description = "segmentation"; // Image template type				
+		}
 		EPADTemplateContainer template = new EPADTemplateContainer(projectId, "", "", "", "", efile.getName(), efile.getLength(), FileType.TEMPLATE.getName(), 
 				formatDate(efile.getCreatedTime()), getEpadFilePath(efile), efile.isEnabled(), description);
 		template.templateName = templateName;
@@ -1719,7 +1833,25 @@ public class DefaultEpadOperations implements EpadOperations
 	@Override
 	public void deleteFile(String username, ProjectReference projectReference,
 			String fileName) throws Exception {
-		projectOperations.deleteFile(username, projectReference.projectID, null, null, null, fileName);		
+		User user = projectOperations.getUser(username);
+		Project project = projectOperations.getProject(projectReference.projectID);
+		EpadFile file = projectOperations.getEpadFile(projectReference.projectID, null, null, null, fileName);
+		if (file == null && !user.isAdmin())
+			throw new Exception("No permissions to delete system template");
+		if (file != null && !username.equals(file.getCreator()) && !projectOperations.isOwner(username, projectReference.projectID))
+			throw new Exception("No permissions to delete this template");
+		if (file != null)
+		{
+			projectOperations.deleteFile(username, projectReference.projectID, null, null, null, fileName);
+		}
+		else
+		{
+			File template = new File(EPADConfig.getEPADWebServerTemplatesDir(), fileName);
+			if (template.exists())
+				template.delete();
+			else
+				throw new Exception("Template file not found");
+		}
 	}
 
 	@Override
@@ -2244,6 +2376,17 @@ public class DefaultEpadOperations implements EpadOperations
 				i--;
 				continue;
 			}
+			EPADAIM aim = aims.get(i);
+			if (aim.dsoSeriesUID != null && aim.dsoSeriesUID.length() > 0) {
+				Map<String, String> seriesMap = dcm4CheeDatabaseOperations.getSeriesData(aim.dsoSeriesUID);
+				if (seriesMap.keySet().isEmpty())
+				{
+					aims.remove(i--);
+				}
+			}
+			SeriesProcessingStatus status = epadDatabaseOperations.getSeriesProcessingStatus(aim.dsoSeriesUID);
+			if (status != null)
+				aim.dsoStatus = status.name();
 		}
 		return new EPADAIMList(aims);
 	}
@@ -2317,6 +2460,9 @@ public class DefaultEpadOperations implements EpadOperations
 					aims.remove(i--);
 				}
 			}
+			SeriesProcessingStatus status = epadDatabaseOperations.getSeriesProcessingStatus(aim.dsoSeriesUID);
+			if (status != null)
+				aim.dsoStatus = status.name();
 		}
 		return new EPADAIMList(aims);
 	}
@@ -2724,8 +2870,10 @@ public class DefaultEpadOperations implements EpadOperations
 				//	userRoles.put(username, "Collaborator");
 
 				//log.info("Time for conv, subj:" + (subjecttime-starttime) + ", study:" + (studytime-subjecttime) + " aim:" + (aimtime-studytime) + " user:" + (usertime-aimtime) + " msecs");
-				return new EPADProject("", "", description, projectName, projectID, "", "",
+				EPADProject ep = new EPADProject("", "", description, projectName, projectID, "", "",
 						numberOfPatients, numberOfStudies, numberOfAnnotations, patientIDs, usernames, userRoles);
+				ep.defaultTemplate = project.getDefaultTemplate();
+				return ep;
 			} else
 				return null;
 		} else
@@ -2803,6 +2951,15 @@ public class DefaultEpadOperations implements EpadOperations
 		else
 			return dateFormat.format(date);
 	}
+
+	static SimpleDateFormat dateTimeFormat = new SimpleDateFormat("yyyyMMdd HH:mm:ss");
+	private String formatDateTime(Date date)
+	{
+		if (date == null)
+			return "";
+		else
+			return dateTimeFormat.format(date);
+	}
 	
 	private EPADSubject subject2EPADSubject(String sessionID, String username, Subject subject, String projectID,
 			EPADSearchFilter searchFilter) throws Exception
@@ -2858,6 +3015,11 @@ public class DefaultEpadOperations implements EpadOperations
 		return "studies/" + studyUID + "/series/" + seriesUID + "/images/" + imageUID + "/masks/" + frameNumber + ".png";
 	}
 
+	private String getPNGContourPath(String studyUID, String seriesUID, String imageUID, int frameNumber)
+	{
+		return "studies/" + studyUID + "/series/" + seriesUID + "/images/" + imageUID + "/contours/" + frameNumber + ".png";
+	}
+
 	private String getWADOPath(String studyUID, String seriesUID, String imageUID)
 	{
 		return "?requestType=WADO&studyUID=" + studyUID + "&seriesUID=" + seriesUID + "&objectUID=" + imageUID;
@@ -2898,7 +3060,7 @@ public class DefaultEpadOperations implements EpadOperations
 			//if (!isDSO)
 		}
 		String lossyImage = getWADOPath(studyUID, seriesUID, imageUID);
-
+		//log.debug("losslessimage:" + losslessImage);
 		return new EPADImage(projectID, subjectID, studyUID, seriesUID, imageUID, classUID, insertDate, imageDate,
 				sliceLocation, instanceNumber, losslessImage, lossyImage, dicomElements, defaultDICOMElements, numberOfFrames,
 				isDSO);
@@ -2982,7 +3144,7 @@ public class DefaultEpadOperations implements EpadOperations
 		if (suppliedDICOMElementMap.containsKey(PixelMedUtils.SliceThicknessCode))
 			defaultDicomElements.add(suppliedDICOMElementMap.get(PixelMedUtils.SliceThicknessCode).get(0));
 		else
-			defaultDicomElements.add(new DICOMElement(PixelMedUtils.SliceLocationCode, PixelMedUtils.SliceThicknessTagName,
+			defaultDicomElements.add(new DICOMElement(PixelMedUtils.SliceThicknessCode, PixelMedUtils.SliceThicknessTagName,
 					"0"));
 
 		if (suppliedDICOMElementMap.containsKey(PixelMedUtils.SliceLocationCode))
@@ -3098,6 +3260,112 @@ public class DefaultEpadOperations implements EpadOperations
 		return new DICOMElementList(defaultDicomElements);
 	}
 
+	private DICOMElementList replaceSliceSpecificElements(String studyUID, String seriesUID, String imageUID,
+			DICOMElementList suppliedDicomElements)
+	{
+		List<DICOMElement> defaultDicomElements = new ArrayList<>();
+		File tagFile = new File(EPADConfig.getEPADWebServerDicomTagDir() + getPNGPath(studyUID, seriesUID, imageUID).replace(".png",".tag"));
+		if (!tagFile.exists()) {
+			log.info("No tag file found:" + tagFile.getAbsolutePath());
+			return suppliedDicomElements;
+		}
+		try {
+			String contents = EPADFileUtils.readFileAsString(tagFile);
+			String[] tags = contents.split("\n");
+			Map<String, String> tagMap = new HashMap<String, String>();
+			for (String tag: tags) {
+				int paren1 = tag.indexOf("(");
+				if (paren1 == -1) continue;
+				int paren2 = tag.indexOf(")");
+				if (paren2 == -1) continue;
+				int square1 = tag.indexOf("[");
+				if (square1 == -1) continue;
+				int square2 = tag.indexOf("]");
+				if (square2 == -1) continue;
+				String tagCode = tag.substring(paren1, paren2+1);
+				String tagValue = tag.substring(square1+1, square2);
+				log.debug("tagCode:" + tagCode + " tagValue:" + tagValue);
+				tagMap.put(tagCode, tagValue);
+			}
+			for (int i = 0; i < suppliedDicomElements.ResultSet.totalRecords; i++) {
+				DICOMElement dicomElement = suppliedDicomElements.ResultSet.Result.get(i);
+				if (dicomElement.tagCode.equals(PixelMedUtils.SliceThicknessCode) && tagMap.containsKey(PixelMedUtils.SliceThicknessCode))
+				{
+					defaultDicomElements.add(new DICOMElement(PixelMedUtils.SliceThicknessCode, PixelMedUtils.SliceThicknessTagName,
+						tagMap.get(PixelMedUtils.SliceThicknessCode)));
+				}
+				else if (dicomElement.tagCode.equals(PixelMedUtils.SliceLocationCode) && tagMap.containsKey(PixelMedUtils.SliceLocationCode))
+				{
+					defaultDicomElements.add(new DICOMElement(PixelMedUtils.SliceLocationCode, PixelMedUtils.SliceLocationTagName,
+						tagMap.get(PixelMedUtils.SliceLocationCode)));
+				}
+				else if (dicomElement.tagCode.equals(PixelMedUtils.PixelSpacingCode) && tagMap.containsKey(PixelMedUtils.PixelSpacingCode))
+				{
+					defaultDicomElements.add(new DICOMElement(PixelMedUtils.PixelSpacingCode, PixelMedUtils.PixelSpacingTagName,
+						tagMap.get(PixelMedUtils.SliceLocationCode)));
+				}
+				else if (dicomElement.tagCode.equals(PixelMedUtils.RescaleInterceptCode) && tagMap.containsKey(PixelMedUtils.RescaleInterceptCode))
+				{
+					defaultDicomElements.add(new DICOMElement(PixelMedUtils.RescaleInterceptCode, PixelMedUtils.RescaleInterceptTagName,
+						tagMap.get(PixelMedUtils.RescaleInterceptCode)));
+				}
+				else if (dicomElement.tagCode.equals(PixelMedUtils.RescaleSlopeCode) && tagMap.containsKey(PixelMedUtils.RescaleSlopeCode))
+				{
+					defaultDicomElements.add(new DICOMElement(PixelMedUtils.RescaleSlopeCode, PixelMedUtils.RescaleSlopeTagName,
+						tagMap.get(PixelMedUtils.RescaleSlopeCode)));
+				}
+				else if (dicomElement.tagCode.equals(PixelMedUtils.RescaleSlopeCode) && tagMap.containsKey(PixelMedUtils.RescaleSlopeCode))
+				{
+					defaultDicomElements.add(new DICOMElement(PixelMedUtils.RescaleSlopeCode, PixelMedUtils.RescaleSlopeTagName,
+						tagMap.get(PixelMedUtils.RescaleSlopeCode)));
+				}
+				else if (dicomElement.tagCode.equals(PixelMedUtils.RowsCode) && tagMap.containsKey(PixelMedUtils.RowsCode))
+				{
+					defaultDicomElements.add(new DICOMElement(PixelMedUtils.RowsCode, PixelMedUtils.RowsTagName,
+						tagMap.get(PixelMedUtils.RowsCode)));
+				}
+				else if (dicomElement.tagCode.equals(PixelMedUtils.ColumnsCode) && tagMap.containsKey(PixelMedUtils.ColumnsCode))
+				{
+					defaultDicomElements.add(new DICOMElement(PixelMedUtils.ColumnsCode, PixelMedUtils.ColumnsTagName,
+						tagMap.get(PixelMedUtils.ColumnsCode)));
+				}
+				else if (dicomElement.tagCode.equals(PixelMedUtils.BitsStoredCode) && tagMap.containsKey(PixelMedUtils.BitsStoredCode))
+				{
+					defaultDicomElements.add(new DICOMElement(PixelMedUtils.BitsStoredCode, PixelMedUtils.BitsStoredTagName,
+						tagMap.get(PixelMedUtils.BitsStoredCode)));
+				}
+				else if (dicomElement.tagCode.equals(PixelMedUtils.PixelRepresentationCode) && tagMap.containsKey(PixelMedUtils.PixelRepresentationCode))
+				{
+					defaultDicomElements.add(new DICOMElement(PixelMedUtils.PixelRepresentationCode, PixelMedUtils.PixelRepresentationTagName,
+						tagMap.get(PixelMedUtils.PixelRepresentationCode)));
+				}
+				else if (dicomElement.tagCode.equals(PixelMedUtils.NumberOfFramesCode) && tagMap.containsKey(PixelMedUtils.NumberOfFramesCode))
+				{
+					defaultDicomElements.add(new DICOMElement(PixelMedUtils.NumberOfFramesCode, PixelMedUtils.NumberOfFramesTagName,
+						tagMap.get(PixelMedUtils.NumberOfFramesCode)));
+				}
+				else if (dicomElement.tagCode.equals(PixelMedUtils.WindowWidthCode) && tagMap.containsKey(PixelMedUtils.WindowWidthCode))
+				{
+					defaultDicomElements.add(new DICOMElement(PixelMedUtils.WindowWidthCode, PixelMedUtils.WindowWidthTagName,
+						tagMap.get(PixelMedUtils.WindowWidthCode)));
+				}
+				else if (dicomElement.tagCode.equals(PixelMedUtils.WindowCenterCode) && tagMap.containsKey(PixelMedUtils.WindowCenterCode))
+				{
+					defaultDicomElements.add(new DICOMElement(PixelMedUtils.WindowCenterCode, PixelMedUtils.WindowCenterTagName,
+						tagMap.get(PixelMedUtils.WindowCenterCode)));
+				}
+				else
+					defaultDicomElements.add(dicomElement);
+					
+			}
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return new DICOMElementList(defaultDicomElements);
+	}
+	
+	
 	private Map<String, List<DICOMElement>> generateDICOMElementMap(DICOMElementList dicomElementList)
 	{
 		Map<String, List<DICOMElement>> result = new HashMap<>();

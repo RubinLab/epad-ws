@@ -63,7 +63,7 @@ public class EpadProjectOperationsTest {
     public void createDeleteProjectTest() {
     	Project project;
 		try {
-			project = DefaultEpadProjectOperations.getInstance().createProject("admin", "Test" + System.currentTimeMillis(), "Test" + System.currentTimeMillis(), "Test", ProjectType.PRIVATE);
+			project = DefaultEpadProjectOperations.getInstance().createProject("admin", "Test" + System.currentTimeMillis(), "Test" + System.currentTimeMillis(), "Test", "TestTemplate", ProjectType.PRIVATE);
 	    	Assert.assertNotNull(project);
 	    	DefaultEpadProjectOperations.getInstance().deleteProject("admin", project.getProjectId());
 	    	project = DefaultEpadProjectOperations.getInstance().getProject(project.getProjectId());

@@ -228,6 +228,8 @@ public class Dcm4CheeQueries
 		int seriesCount = getIntegerFromRow(dcm4CheeStudyData, "number_series");
 		String firstSeriesUID = getStringValueFromRow(dcm4CheeStudyData, "series_iuid");
 		String firstSeriesDateAcquired = getStringValueFromRow(dcm4CheeStudyData, "pps_start");
+		if (firstSeriesDateAcquired == null || firstSeriesDateAcquired.length() == 0)
+			firstSeriesDateAcquired = getStringValueFromRow(dcm4CheeStudyData, "study_datetime");
 		String studyAccessionNumber = getStringValueFromRow(dcm4CheeStudyData, "accession_no");
 		int imagesCount = getIntegerFromRow(dcm4CheeStudyData, "sum_images");
 		String stuidID = getStringValueFromRow(dcm4CheeStudyData, "study_id");
@@ -248,7 +250,9 @@ public class Dcm4CheeQueries
 		String seriesUID = getStringValueFromRow(dcm4CheeSeriesData, "series_iuid");
 		String patientID = getStringValueFromRow(dcm4CheeSeriesData, "pat_id");
 		String patientName = getStringValueFromRow(dcm4CheeSeriesData, "pat_name");
-		String seriesDate = reformatSeriesDate(getStringValueFromRow(dcm4CheeSeriesData, "study_datetime"));
+		String seriesDate = getStringValueFromRow(dcm4CheeSeriesData, "pps_start");
+		if (seriesDate == null || seriesDate.length() == 0)
+			seriesDate = getStringValueFromRow(dcm4CheeSeriesData, "study_datetime");
 		String examType = getStringValueFromRow(dcm4CheeSeriesData, "modality");
 		String thumbnailURL = getStringValueFromRow(dcm4CheeSeriesData, "thumbnail_url");
 		String seriesDescription = getStringValueFromRow(dcm4CheeSeriesData, "series_desc");

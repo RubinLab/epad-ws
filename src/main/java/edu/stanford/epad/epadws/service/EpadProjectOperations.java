@@ -66,7 +66,7 @@ public interface EpadProjectOperations {
 	 * @return
 	 * @throws Exception
 	 */
-	Project createProject(String loggedInUser, String projectId, String projectName, String description, ProjectType type) throws Exception;
+	Project createProject(String loggedInUser, String projectId, String projectName, String description, String defaultTemplate, ProjectType type) throws Exception;
 	
 	/**
 	 * Updates project fields in database (all arguments except projectId are optional)
@@ -78,7 +78,7 @@ public interface EpadProjectOperations {
 	 * @return
 	 * @throws Exception
 	 */
-	Project updateProject(String loggedInUser, String projectId, String projectName, String description, ProjectType type) throws Exception;
+	Project updateProject(String loggedInUser, String projectId, String projectName, String description, String defaultTemplate, ProjectType type) throws Exception;
 	
 	/**
 	 * Creates a user record in database
@@ -202,7 +202,7 @@ public interface EpadProjectOperations {
 	 * @return
 	 * @throws Exception
 	 */
-	NonDicomSeries createNonDicomSeries(String loggedInUser, String seriesUID, String studyUID, String description, Date seriesDate) throws Exception;
+	NonDicomSeries createNonDicomSeries(String loggedInUser, String seriesUID, String studyUID, String description, Date seriesDate, String modality, String referencedSeries) throws Exception;
 	
 	/**
 	 * Add Subject/Studies to Project
@@ -452,6 +452,14 @@ public interface EpadProjectOperations {
 	 * @throws Exception
 	 */
 	List<NonDicomSeries> getNonDicomSeriesForStudy(String studyUID) throws Exception;
+	
+	/**
+	 * Get Non-dicom series
+	 * @param seriesUID
+	 * @return
+	 * @throws Exception
+	 */
+	NonDicomSeries getNonDicomSeries(String seriesUID) throws Exception;
 
 	/**
 	 * Set user status for project and subject

@@ -36,6 +36,8 @@ import edu.stanford.epad.epadws.epaddb.EpadDatabase;
 import edu.stanford.epad.epadws.epaddb.EpadDatabaseOperations;
 import edu.stanford.epad.epadws.handlers.core.SeriesReference;
 import edu.stanford.epad.epadws.processing.model.SeriesProcessingDescription;
+import edu.stanford.epad.epadws.processing.pipeline.task.DSOMaskPNGGeneratorTask;
+import edu.stanford.epad.epadws.processing.pipeline.task.SingleFrameDICOMPngGeneratorTask;
 import edu.stanford.epad.epadws.processing.pipeline.threads.ShutdownSignal;
 import edu.stanford.epad.epadws.queries.DefaultEpadOperations;
 import edu.stanford.epad.epadws.queries.EpadOperations;
@@ -105,7 +107,7 @@ public class Dcm4CheeDatabaseWatcher implements Runnable
 						try
 						{
 							logger.info("Series + " + seriesUID + " no longer in DCM4CHE, deleting from epad database");
-							epadDatabaseOperations.deleteSeries(seriesUID);
+							 epadDatabaseOperations.deleteSeries(seriesUID);
 							// TODO: Delete generated PNGs also???
 						} catch (Exception x) {
 							logger.warning("Error deleting series from database");
@@ -115,6 +117,14 @@ public class Dcm4CheeDatabaseWatcher implements Runnable
 				else
 				{
 					run++;
+				}
+				
+				int singleInProcess = SingleFrameDICOMPngGeneratorTask.imagesBeingProcessed.size();
+				int dsoInProcess = DSOMaskPNGGeneratorTask.seriesBeingProcessed.size();
+				if ((singleInProcess+dsoInProcess) > 0)
+				{
+					// Let the current processing finish for heaven's sake
+					Thread.sleep(60000*dsoInProcess + 2000*singleInProcess);
 				}
 				
 				Thread.sleep(SleepTimeInMilliseconds);

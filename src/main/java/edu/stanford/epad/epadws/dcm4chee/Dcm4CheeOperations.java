@@ -136,9 +136,9 @@ public class Dcm4CheeOperations
 		boolean success = false;
 
 		try {
-			log.info("Deleting series " + seriesUID);
+			log.info("Deleting series " + seriesUID + " seriesPK:" + seriesPk);
 
-			String[] command = { "./dcmdeleteSeries", seriesPk };
+			String[] command = { "./dcmdeleteSeries", seriesPk, EPADConfig.xnatUploadProjectPassword };
 			ProcessBuilder processBuilder = new ProcessBuilder(command);
 			String myScriptsDirectory = EPADConfig.getEPADWebServerMyScriptsDir();
 			processBuilder.directory(new File(myScriptsDirectory));
@@ -161,7 +161,7 @@ public class Dcm4CheeOperations
 					log.info("Deleted DICOM series " + seriesUID + " pk:" + seriesPk);
 					success = true;
 				} else {
-					log.warning("Failed to delete DICOM series " + seriesUID + "; exitValue=" + exitValue + "\n" + sb.toString());
+					log.warning("Failed to delete DICOM series " + seriesUID + " pk=" + seriesPk + "; exitValue=" + exitValue + "\n" + sb.toString());
 				}
 			} catch (Exception e) {
 				log.warning("Failed to delete DICOM series " + seriesUID, e);

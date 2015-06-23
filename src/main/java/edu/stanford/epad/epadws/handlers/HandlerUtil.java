@@ -430,6 +430,8 @@ public class HandlerUtil
 		    } else {
 				fileCount++;		    	
 				String fieldName = fileItem.getFieldName();
+				if (fieldName.trim().length() == 0)
+					fieldName = "File" + fileCount;
 				String fileName = fileItem.getName();
 				log.debug("Uploading file number " + fileCount);
 				log.debug("FieldName: " + fieldName);
@@ -446,6 +448,8 @@ public class HandlerUtil
 						fileItem.write(file);
 				    	if (params.get(fileItem.getFieldName()) == null)
 				    		params.put(fileItem.getFieldName(), file);
+				    	else
+				    		params.put(fileItem.getFieldName()+fileCount, file);
 					    List values = (List) params.get(fileItem.getFieldName() + "_List");
 					    if (values == null) {
 					    	values = new ArrayList();

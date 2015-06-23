@@ -33,6 +33,7 @@ import javax.servlet.http.HttpServletResponse;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 
+import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.epad.epadws.handlers.HandlerUtil;
 import edu.stanford.epad.epadws.security.EPADSessionOperations;
@@ -87,9 +88,12 @@ public class EPADSessionHandler extends AbstractHandler
 				formpost = true;
 			}
 			String host = httpRequest.getParameter("hostname");
-			if (host == null)  host = httpRequest.getRemoteHost();
 			String ip = httpRequest.getParameter("hostip");
-			if (ip == null)  ip = httpRequest.getRemoteAddr();
+			if (ip == null && host == null)
+			{
+				username = httpRequest.getParameter("username");
+				formpost = true;
+			}
 			if (username.length() != 0) {
 				log.info("Login Request, User:" + username  + " hostname:" + host +" ip:" + ip);
 				try {
@@ -111,21 +115,16 @@ public class EPADSessionHandler extends AbstractHandler
 				            //sessionCookie.setPath("/epad/; Secure; HttpOnly");
 				            sessionCookie.setPath(httpRequest.getContextPath() + "/");
 				            httpResponse.addCookie(sessionCookie);
-				    		httpResponse.sendRedirect("index.jsp");
+				    		httpResponse.sendRedirect(EPADConfig.getParamValue("HomePage", "Web_pad.html"));
 				    		return;
 				    	}
 
-						log.info("Setting cookie =" + jsessionID);
 						httpResponse.setContentType("text/plain");
 						PrintWriter responseStream = httpResponse.getWriter();
 						responseStream.append(jsessionID);
-						log.info("Setting HttpOnly, Secure cookie =" + jsessionID);
-						httpResponse.addHeader("Set-Cookie", "JSESSIONID=" + jsessionID);
-						httpResponse.addHeader("Set-Cookie", "ePADLoggedinUser=" + username);
-						httpResponse.setHeader("Access-Control-Allow-Origin", origin);
-						//httpResponse.addHeader("Access-Control-Allow-Origin", "*");
-						httpResponse.setHeader("Access-Control-Allow-Credentials", "true");
-						httpResponse.setHeader("Access-Control-Allow-Methods", "POST, DELETE, OPTIONS");
+						httpResponse.addHeader("Access-Control-Allow-Origin", origin);
+						httpResponse.addHeader("Access-Control-Allow-Credentials", "true");
+						log.info("Successful login to EPAD; JSESSIONID=" + jsessionID);
 						statusCode = HttpServletResponse.SC_OK;
 				    	
 					} else if (sessionResponse.statusCode == HttpServletResponse.SC_UNAUTHORIZED) {
@@ -175,6 +174,7 @@ public class EPADSessionHandler extends AbstractHandler
 			statusCode = HandlerUtil.warningResponse(HttpServletResponse.SC_METHOD_NOT_ALLOWED, INVALID_METHOD_MESSAGE
 					+ "; got " + method, log);
 		}
+		log.info("Status returned to client:" + statusCode);
 		httpResponse.setStatus(statusCode);
 	}
 }
