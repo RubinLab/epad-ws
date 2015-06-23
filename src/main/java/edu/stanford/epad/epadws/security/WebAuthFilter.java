@@ -99,7 +99,7 @@ public class WebAuthFilter implements Filter {
 					&& !httpRequest.getRequestURL().toString().contains("/eventresource") 
 					&& !httpRequest.getHeader("User-Agent").contains("HttpClient") 
 					&& !httpRequest.getHeader("user-agent").contains("HttpClient") 
-					&& !httpRequest.getRequestURL().toString().contains("/v2") && !Main.embeddedJetty) {
+					&& !httpRequest.getRequestURL().toString().contains("/v2") && Main.separateWebServicesApp) {
             	log.info("Redirecting url:" + httpRequest.getRequestURL() + " to login.jsp");
 				httpResponse.sendRedirect(httpRequest.getContextPath() + "/login.jsp");
             	return;

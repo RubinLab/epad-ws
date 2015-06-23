@@ -915,6 +915,7 @@ public class ProjectController {
 											@PathVariable String projectID,
 											@RequestParam(value="projectName", required=true) String projectName,
 											@RequestParam(value="projectDescription", required=true) String projectDescription,
+											@RequestParam(value="defaultTemplate", required=false) String defaultTemplate,
 											HttpServletRequest request, 
 									        HttpServletResponse response) throws Exception {
 		String sessionID = SessionService.getJSessionIDFromRequest(request);
@@ -923,9 +924,9 @@ public class ProjectController {
 		int statusCode = 0;
 		EPADProject project = epadOperations.getProjectDescription(projectReference, username, sessionID);
 		if (project != null) {
-			statusCode = epadOperations.updateProject(username, projectReference, projectName, projectDescription, sessionID);
+			statusCode = epadOperations.updateProject(username, projectReference, projectName, projectDescription, defaultTemplate, sessionID);
 		} else {
-			statusCode = epadOperations.createProject(username, projectReference, projectName, projectDescription, sessionID);
+			statusCode = epadOperations.createProject(username, projectReference, projectName, projectDescription, defaultTemplate, sessionID);
 		}
 		if (statusCode != HttpServletResponse.SC_OK);
 			throw new Exception("Error creating or modifying project");
@@ -1030,13 +1031,15 @@ public class ProjectController {
 										@PathVariable String seriesUID,
 										@RequestParam(value="description", required=true) String description,
 										@RequestParam(value="seriesDate", required=true) String seriesDate,
+										@RequestParam(value="modality", required=false) String modality,
+										@RequestParam(value="referencedSeries", required=false) String referencedSeries,
 										HttpServletRequest request, 
 								        HttpServletResponse response) throws Exception {
 		String sessionID = SessionService.getJSessionIDFromRequest(request);
 		SeriesReference seriesReference = new SeriesReference(projectID, subjectID, studyUID, seriesUID);
 		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
 		int statusCode = 0;
-		EPADSeries series  = epadOperations.createSeries(username, seriesReference, description, getDate(seriesDate), sessionID);
+		EPADSeries series  = epadOperations.createSeries(username, seriesReference, description, getDate(seriesDate), modality, referencedSeries, sessionID);
 	}
 
 	@RequestMapping(value = "/{projectID}/subjects/{subjectID}/studies/{studyUID}/series/", method = {RequestMethod.PUT,RequestMethod.POST})
@@ -1046,13 +1049,15 @@ public class ProjectController {
 										@PathVariable String studyUID,
 										@RequestParam(value="description", required=true) String description,
 										@RequestParam(value="seriesDate", required=true) String seriesDate,
+										@RequestParam(value="modality", required=false) String modality,
+										@RequestParam(value="referencedSeries", required=false) String referencedSeries,
 										HttpServletRequest request, 
 								        HttpServletResponse response) throws Exception {
 		String sessionID = SessionService.getJSessionIDFromRequest(request);
 		SeriesReference seriesReference = new SeriesReference(projectID, subjectID, studyUID, "new");
 		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
 		int statusCode = 0;
-		EPADSeries series  = epadOperations.createSeries(username, seriesReference, description, getDate(seriesDate), sessionID);
+		EPADSeries series  = epadOperations.createSeries(username, seriesReference, description, getDate(seriesDate), modality, referencedSeries, sessionID);
 	}
 
 	@RequestMapping(value = "/{projectID}/aims/{aimID}", method = RequestMethod.PUT)

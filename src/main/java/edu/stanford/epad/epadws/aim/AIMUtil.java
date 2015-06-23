@@ -1478,6 +1478,75 @@ public class AIMUtil
 		EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
 		epadDatabaseOperations.updateAIMXml(aim.aimID, edu.stanford.hakan.aim4api.usage.AnnotationBuilder.convertToString(iac));
 	}
+	
+	public static EPADAIMList queryDeletedAIMImageAnnotationSummaries(AIMSearchType searchType, String searchValue, String user) throws Exception
+	{
+		long starttime = System.currentTimeMillis();
+		EPADAIMList returnAims = new EPADAIMList();
+		List<ImageAnnotationCollection> iacs = AIMQueries.getDeletedAIMImageAnnotations(searchType, searchValue, user);			
+		// Get other params
+		for (int i = 0; i < iacs.size(); i++)
+		{
+			ImageAnnotationCollection iac = iacs.get(i);
+			try
+			{
+				Aim4 a = new Aim4(iac);
+				EPADAIM ea = new EPADAIM(iac.getUniqueIdentifier().getRoot(), a.getLoggedInUser().getLoginName(), "", a.getPatientID(), a.getFirstStudyID(), a.getFirstSeriesID(), a.getFirstImageID(), 0);
+				ea.name = iac.getImageAnnotations().get(0).getName().getValue();
+				ea.template = iac.getImageAnnotations().get(0).getListTypeCode().get(0).getCodeSystem();// .getCode();
+				ea.templateType = iac.getImageAnnotations().get(0).getListTypeCode().get(0).getCode();
+				ea.date = iac.getDateTime();
+				ea.comment = a.getComment();
+				if (a.getFirstStudyDate() != null)
+					ea.studyDate = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(a.getFirstStudyDate());
+				ea.patientName = a.getPatientName();
+				ea.xml = null;
+				returnAims.addAIM(ea);
+			} catch (Exception x) {
+				log.warning("Error parsing ImageAnnotationCollection:" + iac, x);
+			}
+		}
+		
+		long endtime = System.currentTimeMillis();
+		log.info("" + returnAims.ResultSet.totalRecords + " annotation summaries returned to client, took:" + (endtime-starttime) + " msecs");
+		return returnAims;
+	}
+
+	public static void queryDeletedAIMImageAnnotations(PrintWriter responseStream, AIMSearchType searchType, String searchValue, String user, String sessionID) throws Exception
+	{
+		long starttime = System.currentTimeMillis();
+		String annotationsXML = queryDeletedAIMImageAnnotations(searchType, searchValue, user);
+		responseStream.print(annotationsXML);
+		long resptime = System.currentTimeMillis();
+		log.info("Time to write resp:" + (resptime-starttime) + " msecs");
+	}
+
+	public static void queryDeletedAIMImageJsonAnnotation(PrintWriter responseStream, AIMSearchType searchType, String searchValue, String user, String sessionID) throws Exception
+	{
+		long starttime = System.currentTimeMillis();
+		String annotationsXML = queryDeletedAIMImageAnnotations(searchType, searchValue, user);
+		String jsonString =  XML.toJSONObject(annotationsXML).toString(0);;
+        if (jsonString == null)
+        	throw new Exception("Error converting to json");
+		responseStream.print(jsonString);
+		long resptime = System.currentTimeMillis();
+		log.info("Time to write resp:" + (resptime-starttime) + " msecs");
+	}
+	
+	public static String queryDeletedAIMImageAnnotations(AIMSearchType searchType, String searchValue, String user) throws Exception
+	{
+		long starttime = System.currentTimeMillis();
+		StringBuilder aimsDBXml = new StringBuilder("<imageAnnotations>\n");
+		List<ImageAnnotationCollection> iacs = AIMQueries.getDeletedAIMImageAnnotations(searchType, searchValue, user);			
+
+		for (ImageAnnotationCollection aim : iacs) {
+			aimsDBXml.append(edu.stanford.hakan.aim4api.usage.AnnotationBuilder.convertToString(aim));
+		}
+		long xmltime = System.currentTimeMillis();
+		aimsDBXml.append("</imageAnnotations>\n");
+		log.info("Time taken create xml:" + (xmltime-starttime) + " msecs for " + iacs.size() +" annotations");
+		return aimsDBXml.toString();
+	}
 
 	private static String XmlDocumentToString(Document document, String xmlns)
 	{ // Create an XML document from a String

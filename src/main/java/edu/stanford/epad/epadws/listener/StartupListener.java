@@ -28,8 +28,8 @@ public class StartupListener extends ContextLoaderListener
     private static String webAppPath;
     
     public void contextInitialized(ServletContextEvent event) {
-    	// Skip, if we are using embedded Jetty
-    	if (Main.embeddedJetty)
+    	// Skip, if we are using same APP
+    	if (!Main.separateWebServicesApp)
     		return;
 		log.info("#####################################################");
 		log.info("############# Starting ePAD Web Service #############");

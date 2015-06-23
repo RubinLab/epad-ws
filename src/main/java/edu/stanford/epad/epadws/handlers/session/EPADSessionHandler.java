@@ -76,9 +76,10 @@ public class EPADSessionHandler extends AbstractHandler
 
 		if (request != null)
 			request.setHandled(true);
+		httpResponse.setContentType("text/plain");
 
 		String method = httpRequest.getMethod();
-		log.info("Request from client " + method + ", s:" + s + ", origin:" + origin);
+		log.info("Session request from client " + method + ", s:" + s + ", origin:" + origin);
 		if ("POST".equalsIgnoreCase(method)) {
 			String username = SessionService.extractUserNameFromAuthorizationHeader(httpRequest);
 			boolean formpost = false;
@@ -91,8 +92,8 @@ public class EPADSessionHandler extends AbstractHandler
 			String ip = httpRequest.getParameter("hostip");
 			if (ip == null && host == null)
 			{
-				username = httpRequest.getParameter("username");
-				formpost = true;
+				ip = httpRequest.getRemoteAddr();
+				host = httpRequest.getRemoteHost();
 			}
 			if (username.length() != 0) {
 				log.info("Login Request, User:" + username  + " hostname:" + host +" ip:" + ip);

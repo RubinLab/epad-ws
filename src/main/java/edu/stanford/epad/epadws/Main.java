@@ -97,7 +97,9 @@ import edu.stanford.epad.epadws.service.RemotePACService;
 public class Main
 {
 	private static final EPADLogger log = EPADLogger.getInstance();
-	public static boolean embeddedJetty;
+	
+	public static boolean separateWebServicesApp = false;
+
 	
 	public static void main(String[] args)
 	{
@@ -109,10 +111,12 @@ public class Main
 			log.info("############# Starting ePAD Web Service #############");
 			log.info("#####################################################");
 
-			embeddedJetty = true;
 			int epadPort = EPADConfig.epadPort;
-			initializePlugins();
-			startSupportThreads();
+			separateWebServicesApp = "true".equalsIgnoreCase(EPADConfig.getParamValue("SeparateWebServicesApp"));
+			if (!separateWebServicesApp) {
+				initializePlugins();
+				startSupportThreads();
+			}
 			server = new Server(epadPort);
 			configureJettyServer(server);
 			addHandlers(server);
@@ -137,8 +141,10 @@ public class Main
 
 			shutdownSignal.shutdownNow();
 			stopServer(server);
-			EpadDatabase.getInstance().shutdown();
-			QueueAndWatcherManager.getInstance().shutdown();
+			if (!separateWebServicesApp) {
+				EpadDatabase.getInstance().shutdown();
+				QueueAndWatcherManager.getInstance().shutdown();
+			}
 			try { // Wait just long enough for some messages to be printed out.
 				TimeUnit.MILLISECONDS.sleep(2000);
 			} catch (InterruptedException e) {
@@ -219,11 +225,14 @@ public class Main
 	{
 		List<Handler> handlerList = new ArrayList<Handler>();
 
-		loadPluginClasses();
+		if (!separateWebServicesApp) {
 
-		addHandlerAtContextPath(new EPADSessionHandler(), "/epad/session", handlerList);
-
-		addHandlerAtContextPath(new EPADHandler(), "/epad/v2", handlerList);
+			loadPluginClasses();
+	
+			addHandlerAtContextPath(new EPADSessionHandler(), "/epad/session", handlerList);
+	
+			addHandlerAtContextPath(new EPADHandler(), "/epad/v2", handlerList);
+		}
 
 //      My Attempt to replace above EPADHandler with Spring Controllers
 //		- Does not work with embedded jetty, controller methods don't map correctly, controller mapping works fine under tomcat
@@ -244,26 +253,28 @@ public class Main
 		addHandlerAtContextPath(new ResourceCheckHandler(), "/epad/resources", handlerList);
 		addFileServerAtContextPath(EPADConfig.getEPADWebServerResourcesDir(), handlerList, "/epad/resources");
 
-		addHandlerAtContextPath(new WadoHandler(), "/epad/wado", handlerList);
-
-		addHandlerAtContextPath(new AimResourceHandler(), "/epad/aimresource", handlerList);
-
-		if (!"true".equalsIgnoreCase(EPADConfig.getParamValue("DISABLE_PLUGINS")))
-		{	
-			addHandlerAtContextPath(new EPadPluginHandler(), "/epad/plugin", handlerList);
+		if (!separateWebServicesApp) {
+			addHandlerAtContextPath(new WadoHandler(), "/epad/wado", handlerList);
+	
+			addHandlerAtContextPath(new AimResourceHandler(), "/epad/aimresource", handlerList);
+	
+			if (!"true".equalsIgnoreCase(EPADConfig.getParamValue("DISABLE_PLUGINS")))
+			{	
+				addHandlerAtContextPath(new EPadPluginHandler(), "/epad/plugin", handlerList);
+			}
+			addHandlerAtContextPath(new EventHandler(), "/epad/eventresource", handlerList);
+			addHandlerAtContextPath(new ProjectEventHandler(), "/epad/events", handlerList);
+	
+			addHandlerAtContextPath(new ServerStatusHandler(), "/epad/status", handlerList);
+			addHandlerAtContextPath(new ImageCheckHandler(), "/epad/imagecheck", handlerList);
+			addHandlerAtContextPath(new ImageReprocessingHandler(), "/epad/imagereprocess", handlerList);
+			addHandlerAtContextPath(new ConvertAIM4Handler(), "/epad/convertaim4", handlerList);
+			addHandlerAtContextPath(new XNATSyncHandler(), "/epad/syncxnat", handlerList);
+			addHandlerAtContextPath(new StatisticsHandler(), "/epad/statistics", handlerList);
+			
+			// TODO This call will disappear when we switch to AIM4
+			addHandlerAtContextPath(new CoordinationHandler(), "/epad/coordination", handlerList);
 		}
-		addHandlerAtContextPath(new EventHandler(), "/epad/eventresource", handlerList);
-		addHandlerAtContextPath(new ProjectEventHandler(), "/epad/events", handlerList);
-
-		addHandlerAtContextPath(new ServerStatusHandler(), "/epad/status", handlerList);
-		addHandlerAtContextPath(new ImageCheckHandler(), "/epad/imagecheck", handlerList);
-		addHandlerAtContextPath(new ImageReprocessingHandler(), "/epad/imagereprocess", handlerList);
-		addHandlerAtContextPath(new ConvertAIM4Handler(), "/epad/convertaim4", handlerList);
-		addHandlerAtContextPath(new XNATSyncHandler(), "/epad/syncxnat", handlerList);
-		addHandlerAtContextPath(new StatisticsHandler(), "/epad/statistics", handlerList);
-		
-		// TODO This call will disappear when we switch to AIM4
-		addHandlerAtContextPath(new CoordinationHandler(), "/epad/coordination", handlerList);
 
 		ContextHandlerCollection contexts = new ContextHandlerCollection();
 		contexts.setHandlers(handlerList.toArray(new Handler[handlerList.size()]));

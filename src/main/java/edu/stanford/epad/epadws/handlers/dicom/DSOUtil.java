@@ -697,7 +697,7 @@ public class DSOUtil
 			log.info("DSOEditRequest, imageUID:" + dsoEditRequest.imageUID + " aimID:" + dsoEditRequest.aimID + " number Frames:" + dsoEditRequest.editedFrameNumbers.size());
 
 			if (dsoEditRequest != null) {
-				List<File> framesPNGMaskFiles = HandlerUtil.extractFiles(fileItemIterator, "DSOFrame", "PNG");
+				List<File> framesPNGMaskFiles = HandlerUtil.extractFiles(fileItemIterator, "DSOFrame", ".PNG");
 				if (framesPNGMaskFiles.isEmpty()) {
 					log.warning("No PNG masks supplied in DSO create request for series " + seriesUID);
 					uploadError = true;
