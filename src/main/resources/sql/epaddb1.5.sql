@@ -1,6 +1,3 @@
-DROP TABLE if exists worklist_study;
-DROP TABLE if exists worklist_subject;
-DROP TABLE if exists worklist;
 
 CREATE TABLE worklist (id integer unsigned NOT NULL AUTO_INCREMENT,
 worklistid varchar(128),
