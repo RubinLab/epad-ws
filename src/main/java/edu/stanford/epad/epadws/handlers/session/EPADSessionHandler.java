@@ -119,7 +119,6 @@ public class EPADSessionHandler extends AbstractHandler
 				    		return;
 				    	}
 
-						log.info("Setting cookie =" + jsessionID);
 						httpResponse.setContentType("text/plain");
 						PrintWriter responseStream = httpResponse.getWriter();
 						responseStream.append(jsessionID);
@@ -170,6 +169,7 @@ public class EPADSessionHandler extends AbstractHandler
 			statusCode = HandlerUtil.warningResponse(HttpServletResponse.SC_METHOD_NOT_ALLOWED, INVALID_METHOD_MESSAGE
 					+ "; got " + method, log);
 		}
+		log.info("Status returned to client:" + statusCode);
 		httpResponse.setStatus(statusCode);
 	}
 }
