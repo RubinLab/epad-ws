@@ -39,6 +39,7 @@ import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.epad.common.util.MongoDBOperations;
 import edu.stanford.epad.dtos.EPADAIM;
+import edu.stanford.epad.epadws.service.DefaultEpadProjectOperations;
 import edu.stanford.epad.epadws.service.UserProjectService;
 import edu.stanford.hakan.aim3api.base.AimException;
 import edu.stanford.hakan.aim3api.base.ImageAnnotation;
@@ -506,9 +507,20 @@ public class AIMQueries
 			} else if (aimSearchType == AIMSearchType.ANNOTATION_UID) {
 				String annotationUID = value;
 				if (value.equals("all")) {
-					resultAims = edu.stanford.hakan.aim4api.usage.AnnotationGetter
-							.getDeletedImageAnnotationCollectionALL(eXistServerUrl, aim4Namespace, collection4Name,
-									eXistUsername, eXistPassword);
+					if (DefaultEpadProjectOperations.getInstance().isAdmin(username))
+					{	
+						log.debug("Getting all deleted AIMS");
+						resultAims = edu.stanford.hakan.aim4api.usage.AnnotationGetter
+								.getDeletedImageAnnotationCollectionALL(eXistServerUrl, aim4Namespace, collection4Name,
+										eXistUsername, eXistPassword);
+					}
+					else
+					{
+						log.debug("Getting deleted AIMS for " + username);
+						resultAims = edu.stanford.hakan.aim4api.usage.AnnotationGetter
+						.getDeletedImageAnnotationCollectionByUserNameEqual(eXistServerUrl, aim4Namespace, collection4Name,
+								eXistUsername, eXistPassword, username);
+					}
 				} else {
 					ImageAnnotationCollection aim = edu.stanford.hakan.aim4api.usage.AnnotationGetter
 							.getDeletedImageAnnotationCollectionByUniqueIdentifier(eXistServerUrl, aim4Namespace, collection4Name,
