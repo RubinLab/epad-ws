@@ -33,6 +33,7 @@ import edu.stanford.epad.dtos.EPADStudy;
 import edu.stanford.epad.dtos.EPADStudyList;
 import edu.stanford.epad.dtos.EPADSubject;
 import edu.stanford.epad.dtos.EPADSubjectList;
+import edu.stanford.epad.dtos.EPADTemplateContainer;
 import edu.stanford.epad.dtos.EPADTemplateContainerList;
 import edu.stanford.epad.dtos.EPADUserList;
 import edu.stanford.epad.epadws.aim.AIMSearchType;
@@ -49,6 +50,7 @@ import edu.stanford.epad.epadws.handlers.core.SeriesReference;
 import edu.stanford.epad.epadws.handlers.core.StudyReference;
 import edu.stanford.epad.epadws.handlers.core.SubjectReference;
 import edu.stanford.epad.epadws.handlers.dicom.DSOUtil;
+import edu.stanford.epad.epadws.handlers.dicom.DownloadUtil;
 import edu.stanford.epad.epadws.models.FileType;
 import edu.stanford.epad.epadws.queries.DefaultEpadOperations;
 import edu.stanford.epad.epadws.queries.EpadOperations;
@@ -77,11 +79,12 @@ public class ProjectController {
 	}
 	 
 	@RequestMapping(value = "/{projectID:.+}", method = RequestMethod.GET)
-	public EPADProject getEPADProject(@RequestParam(value="username") String username, 
+	public EPADProject getEPADProject( 
 											@PathVariable String projectID,
 											HttpServletRequest request, 
 									        HttpServletResponse response) throws Exception {
 		String sessionID = SessionService.getJSessionIDFromRequest(request);
+		String username = SessionService.getUsernameForSession(sessionID);
 		ProjectReference projectReference = new ProjectReference(projectID);
 		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
 		EPADProject project = epadOperations.getProjectDescription(projectReference, username, sessionID);
@@ -91,11 +94,12 @@ public class ProjectController {
 	}
 	 
 	@RequestMapping(value = "/{projectID}/subjects/", method = RequestMethod.GET)
-	public EPADSubjectList getEPADProjectSubjects(@RequestParam(value="username") String username, 
+	public EPADSubjectList getEPADProjectSubjects( 
 											@PathVariable String projectID,
 											HttpServletRequest request, 
 									        HttpServletResponse response) throws Exception {
 		String sessionID = SessionService.getJSessionIDFromRequest(request);
+		String username = SessionService.getUsernameForSession(sessionID);
 		EPADSearchFilter searchFilter = EPADSearchFilterBuilder.build(request);
 		ProjectReference projectReference = new ProjectReference(projectID);
 		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
@@ -104,12 +108,13 @@ public class ProjectController {
 	}
 	 
 	@RequestMapping(value = "/{projectID}/subjects/{subjectID:.+}", method = RequestMethod.GET)
-	public EPADSubject getEPADProjectSubject(@RequestParam(value="username") String username, 
+	public EPADSubject getEPADProjectSubject( 
 											@PathVariable String projectID,
 											@PathVariable String subjectID,
 											HttpServletRequest request, 
 									        HttpServletResponse response) throws Exception {
 		String sessionID = SessionService.getJSessionIDFromRequest(request);
+		String username = SessionService.getUsernameForSession(sessionID);
 		SubjectReference subjectReference = new SubjectReference(projectID, subjectID);
 		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
 		EPADSubject subject = epadOperations.getSubjectDescription(subjectReference, username, sessionID);
@@ -119,12 +124,13 @@ public class ProjectController {
 	}
 	 
 	@RequestMapping(value = "/{projectID}/subjects/{subjectID}/studies/", method = RequestMethod.GET)
-	public EPADStudyList getEPADProjectStudies(@RequestParam(value="username") String username, 
+	public EPADStudyList getEPADProjectStudies( 
 											@PathVariable String projectID,
 											@PathVariable String subjectID,
 											HttpServletRequest request, 
 									        HttpServletResponse response) throws Exception {
 		String sessionID = SessionService.getJSessionIDFromRequest(request);
+		String username = SessionService.getUsernameForSession(sessionID);
 		EPADSearchFilter searchFilter = EPADSearchFilterBuilder.build(request);
 		SubjectReference subjectReference = new SubjectReference(projectID, subjectID);
 		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
@@ -134,23 +140,42 @@ public class ProjectController {
 	}
 	 
 	@RequestMapping(value = "/{projectID}/subjects/{subjectID}/studies/{studyUID:.+}", method = RequestMethod.GET)
-	public EPADStudy getEPADProjectStudy(@RequestParam(value="username") String username, 
+	public void getEPADProjectStudy( 
 											@PathVariable String projectID,
 											@PathVariable String subjectID,
 											@PathVariable String studyUID,
+											@RequestParam(value="format", required = false) String format, 
+											@RequestParam(value="includeAims", required = false) boolean includeAims, 
+											@RequestParam(value="seriesUIDs", required = false) String seriesUIDs, 
 											HttpServletRequest request, 
 									        HttpServletResponse response) throws Exception {
 		String sessionID = SessionService.getJSessionIDFromRequest(request);
+		String username = SessionService.getUsernameForSession(sessionID);
 		StudyReference studyReference = new StudyReference(projectID, subjectID, studyUID);
 		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
-		EPADStudy study = epadOperations.getStudyDescription(studyReference, username, sessionID);
-		if (study == null)
-			throw new NotFoundException("Study " + studyUID + " not found in project " + projectID + " for subject:" + subjectID);
-		return study;
+		EPADSearchFilter searchFilter = EPADSearchFilterBuilder.build(request);
+		if ("file".equals(format)) {
+			if (studyReference.studyUID.contains(","))
+				DownloadUtil.downloadStudies(false, response, studyReference.studyUID, username, sessionID, includeAims);
+			else
+				DownloadUtil.downloadStudy(false, response, studyReference, username, sessionID, searchFilter, seriesUIDs, includeAims);
+		} else if ("stream".equals(format)) {
+			if (studyReference.studyUID.contains(","))
+				DownloadUtil.downloadStudies(true, response, studyReference.studyUID, username, sessionID, includeAims);
+			else
+				DownloadUtil.downloadStudy(true, response, studyReference, username, sessionID, searchFilter, seriesUIDs, includeAims);
+		} else {
+			PrintWriter responseStream = response.getWriter();
+			response.setContentType("application/json");
+			EPADStudy study = epadOperations.getStudyDescription(studyReference, username, sessionID);
+			if (study == null)
+				throw new NotFoundException("Study " + studyUID + " not found in project " + projectID + " for subject:" + subjectID);
+			responseStream.append(study.toJSON());
+		}
 	}
 	 
 	@RequestMapping(value = "/{projectID}/subjects/{subjectID}/studies/{studyUID}/series/", method = RequestMethod.GET)
-	public EPADSeriesList getEPADProjectSerieses(@RequestParam(value="username") String username,
+	public EPADSeriesList getEPADProjectSerieses(
 												@RequestParam(value="filterDSO", defaultValue="false") boolean filterDSO,
 											@PathVariable String projectID,
 											@PathVariable String subjectID,
@@ -158,6 +183,7 @@ public class ProjectController {
 											HttpServletRequest request, 
 									        HttpServletResponse response) throws Exception {
 		String sessionID = SessionService.getJSessionIDFromRequest(request);
+		String username = SessionService.getUsernameForSession(sessionID);
 		EPADSearchFilter searchFilter = EPADSearchFilterBuilder.build(request);
 		StudyReference studyReference = new StudyReference(projectID, subjectID, studyUID);
 		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
@@ -167,25 +193,42 @@ public class ProjectController {
 	}
 	 
 	@RequestMapping(value = "/{projectID}/subjects/{subjectID}/studies/{studyUID}/series/{seriesUID:.+}", method = RequestMethod.GET)
-	public EPADSeries getEPADProjectSeries(@RequestParam(value="username") String username, 
+	public void getEPADProjectSeries( 
 											@PathVariable String projectID,
 											@PathVariable String subjectID,
 											@PathVariable String studyUID,
 											@PathVariable String seriesUID,
+											@RequestParam(value="format", required = false) boolean format, 
+											@RequestParam(value="includeAims", required = false) boolean includeAims, 
 											HttpServletRequest request, 
 									        HttpServletResponse response) throws Exception {
 		String sessionID = SessionService.getJSessionIDFromRequest(request);
+		String username = SessionService.getUsernameForSession(sessionID);
 		SeriesReference seriesReference = new SeriesReference(projectID, subjectID, studyUID, seriesUID);
-		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
-		EPADSeries series = epadOperations.getSeriesDescription(seriesReference, username, sessionID);
-		if (series == null)
-			throw new NotFoundException("Series " + seriesUID + " not found in project " + projectID + " for subject:" + subjectID + " and study:" + studyUID);
-		return series;
+		if ("file".equals(format)) {
+			if (seriesReference.seriesUID.contains(","))
+				DownloadUtil.downloadSeries(false, response, seriesReference.seriesUID, username, sessionID, includeAims);
+			else
+				DownloadUtil.downloadSeries(false, response, seriesReference, username, sessionID, includeAims);
+		} else if ("stream".equals(format)) {
+			if (seriesReference.seriesUID.contains(","))
+				DownloadUtil.downloadSeries(true, response, seriesReference.seriesUID, username, sessionID, includeAims);
+			else
+				DownloadUtil.downloadSeries(true, response, seriesReference, username, sessionID, includeAims);
+		} else {
+			PrintWriter responseStream = response.getWriter();
+			response.setContentType("application/json");
+			EpadOperations epadOperations = DefaultEpadOperations.getInstance();
+			EPADSeries series = epadOperations.getSeriesDescription(seriesReference, username, sessionID);
+			if (series == null)
+				throw new NotFoundException("Series " + seriesUID + " not found in project " + projectID + " for subject:" + subjectID + " and study:" + studyUID);
+			responseStream.append(series.toJSON());
+		}
 	}
 	 
 	@RequestMapping(value = "/{projectID}/subjects/{subjectID}/studies/{studyUID}/series/{seriesUID}/images/", method = RequestMethod.GET)
-	public EPADImageList getEPADProjectImages(@RequestParam(value="username") String username,
-												@RequestParam(value="filterDSO", defaultValue="false") boolean filterDSO,
+	public EPADImageList getEPADProjectImages(
+											@RequestParam(value="filterDSO", defaultValue="false") boolean filterDSO,
 											@PathVariable String projectID,
 											@PathVariable String subjectID,
 											@PathVariable String studyUID,
@@ -201,26 +244,37 @@ public class ProjectController {
 	}
 	 
 	@RequestMapping(value = "/{projectID}/subjects/{subjectID}/studies/{studyUID}/series/{seriesUID}/images/{imageUID:.+}", method = RequestMethod.GET)
-	public EPADImage getEPADProjectImage(@RequestParam(value="username") String username, 
+	public void getEPADProjectImage( 
 											@PathVariable String projectID,
 											@PathVariable String subjectID,
 											@PathVariable String studyUID,
 											@PathVariable String seriesUID,
 											@PathVariable String imageUID,
+											@RequestParam(value="format", required = false) boolean format, 
+											@RequestParam(value="includeAims", required = false) boolean includeAims, 
 											HttpServletRequest request, 
 									        HttpServletResponse response) throws Exception {
 		String sessionID = SessionService.getJSessionIDFromRequest(request);
+		String username = SessionService.getUsernameForSession(sessionID);
 		ImageReference imageReference = new ImageReference(projectID, subjectID, studyUID, seriesUID, imageUID);
-		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
-		EPADImage image = epadOperations.getImageDescription(imageReference, sessionID);
-		if (image == null)
-			throw new NotFoundException("Image " + imageUID + " for Series " + seriesUID + " not found in project " + projectID + " for subject:" + subjectID + " and study:" + studyUID);
-		return image;
+		if ("file".equals(format)) {
+			DownloadUtil.downloadImage(false, response, imageReference, username, sessionID);
+		} if ("stream".equals(format)) {
+			DownloadUtil.downloadImage(true, response, imageReference, username, sessionID);
+		} else {
+			PrintWriter responseStream = response.getWriter();
+			response.setContentType("application/json");
+			EpadOperations epadOperations = DefaultEpadOperations.getInstance();
+			EPADImage image = epadOperations.getImageDescription(imageReference, sessionID);
+			if (image == null)
+				throw new NotFoundException("Image " + imageUID + " for Series " + seriesUID + " not found in project " + projectID + " for subject:" + subjectID + " and study:" + studyUID);
+			responseStream.append(image.toJSON());
+		}
 	}
 	 
 	@RequestMapping(value = "/{projectID}/subjects/{subjectID}/studies/{studyUID}/series/{seriesUID}/images/{imageUID}/frames/", method = RequestMethod.GET)
-	public EPADFrameList getEPADProjectFrames(@RequestParam(value="username") String username,
-												@RequestParam(value="filterDSO",defaultValue="false") boolean filterDSO,
+	public EPADFrameList getEPADProjectFrames(
+											@RequestParam(value="filterDSO",defaultValue="false") boolean filterDSO,
 											@PathVariable String projectID,
 											@PathVariable String subjectID,
 											@PathVariable String studyUID,
@@ -237,7 +291,7 @@ public class ProjectController {
 	}
 	 
 	@RequestMapping(value = "/{projectID}/subjects/{subjectID}/studies/{studyUID}/series/{seriesUID}/images/{imageUID}/frames/{frameNo}", method = RequestMethod.GET)
-	public EPADFrame getEPADProjectFrame(@RequestParam(value="username") String username, 
+	public EPADFrame getEPADProjectFrame( 
 											@PathVariable String projectID,
 											@PathVariable String subjectID,
 											@PathVariable String studyUID,
@@ -256,7 +310,7 @@ public class ProjectController {
 	}
 
 	@RequestMapping(value = "/{projectID}/aims/", method = RequestMethod.GET)
-	public void getEPADProjectAims(@RequestParam(value="username") String username, 
+	public void getEPADProjectAims( 
 									@RequestParam(value="start", defaultValue="0") int start,
 									@RequestParam(value="count", defaultValue="5000") int count,
 									@RequestParam(value="format", defaultValue="xml") String format,
@@ -264,6 +318,7 @@ public class ProjectController {
 											HttpServletRequest request, 
 									        HttpServletResponse response) throws Exception {
 		String sessionID = SessionService.getJSessionIDFromRequest(request);
+		String username = SessionService.getUsernameForSession(sessionID);
 
 		long starttime = System.currentTimeMillis();
 		AIMSearchType aimSearchType = AIMUtil.getAIMSearchType(request);
@@ -309,13 +364,14 @@ public class ProjectController {
 	}
 
 	@RequestMapping(value = "/{projectID}/aims/{aimID}", method = RequestMethod.GET)
-	public void getEPADProjectAim(@RequestParam(value="username") String username, 
+	public void getEPADProjectAim( 
 									@RequestParam(value="format", defaultValue="xml") String format,
 									@PathVariable String projectID,
 									@PathVariable String aimID,
 											HttpServletRequest request, 
 									        HttpServletResponse response) throws Exception {
 		String sessionID = SessionService.getJSessionIDFromRequest(request);
+		String username = SessionService.getUsernameForSession(sessionID);
 
 		long starttime = System.currentTimeMillis();
 		ProjectReference projectReference = new ProjectReference(projectID);
@@ -350,7 +406,7 @@ public class ProjectController {
 	}
 
 	@RequestMapping(value = "/{projectID}/subjects/{subjectID}/aims/", method = RequestMethod.GET)
-	public void getEPADSubjectAims(@RequestParam(value="username") String username, 
+	public void getEPADSubjectAims( 
 									@RequestParam(value="start", defaultValue="0") int start,
 									@RequestParam(value="count", defaultValue="5000") int count,
 									@RequestParam(value="format", defaultValue="xml") String format,
@@ -359,6 +415,7 @@ public class ProjectController {
 											HttpServletRequest request, 
 									        HttpServletResponse response) throws Exception {
 		String sessionID = SessionService.getJSessionIDFromRequest(request);
+		String username = SessionService.getUsernameForSession(sessionID);
 
 		long starttime = System.currentTimeMillis();
 		SubjectReference subjectReference = new SubjectReference(projectID, subjectID);
@@ -388,7 +445,7 @@ public class ProjectController {
 	}
 
 	@RequestMapping(value = "/{projectID}/subjects/{subjectID}/aims/{aimID}", method = RequestMethod.GET)
-	public void getEPADSubjectAim(@RequestParam(value="username") String username, 
+	public void getEPADSubjectAim( 
 									@RequestParam(value="format", defaultValue="xml") String format,
 									@PathVariable String projectID,
 									@PathVariable String subjectID,
@@ -396,6 +453,7 @@ public class ProjectController {
 											HttpServletRequest request, 
 									        HttpServletResponse response) throws Exception {
 		String sessionID = SessionService.getJSessionIDFromRequest(request);
+		String username = SessionService.getUsernameForSession(sessionID);
 
 		long starttime = System.currentTimeMillis();
 		SubjectReference subjectReference = new SubjectReference(projectID, subjectID);
@@ -430,7 +488,7 @@ public class ProjectController {
 	}
 
 	@RequestMapping(value = "/{projectID}/subjects/{subjectID}/studies/{studyUID}/aims/", method = RequestMethod.GET)
-	public void getEPADStudyAims(@RequestParam(value="username") String username, 
+	public void getEPADStudyAims( 
 									@RequestParam(value="start", defaultValue="0") int start,
 									@RequestParam(value="count", defaultValue="5000") int count,
 									@RequestParam(value="format", defaultValue="xml") String format,
@@ -440,6 +498,7 @@ public class ProjectController {
 											HttpServletRequest request, 
 									        HttpServletResponse response) throws Exception {
 		String sessionID = SessionService.getJSessionIDFromRequest(request);
+		String username = SessionService.getUsernameForSession(sessionID);
 
 		long starttime = System.currentTimeMillis();
 		StudyReference studyReference = new StudyReference(projectID, subjectID, studyUID);
@@ -469,7 +528,7 @@ public class ProjectController {
 	}
 
 	@RequestMapping(value = "/{projectID}/subjects/{subjectID}/studies/{studyUID}/aims/{aimID}", method = RequestMethod.GET)
-	public void getEPADStudyAim(@RequestParam(value="username") String username, 
+	public void getEPADStudyAim( 
 									@RequestParam(value="format", defaultValue="xml") String format,
 									@PathVariable String projectID,
 									@PathVariable String subjectID,
@@ -478,6 +537,7 @@ public class ProjectController {
 											HttpServletRequest request, 
 									        HttpServletResponse response) throws Exception {
 		String sessionID = SessionService.getJSessionIDFromRequest(request);
+		String username = SessionService.getUsernameForSession(sessionID);
 
 		long starttime = System.currentTimeMillis();
 		StudyReference studyReference = new StudyReference(projectID, subjectID, studyUID);
@@ -512,7 +572,7 @@ public class ProjectController {
 	}
 
 	@RequestMapping(value = "/{projectID}/subjects/{subjectID}/studies/{studyUID}/series/{seriesUID}/aims/", method = RequestMethod.GET)
-	public void getEPADSeriesAims(@RequestParam(value="username") String username, 
+	public void getEPADSeriesAims( 
 									@RequestParam(value="start", defaultValue="0") int start,
 									@RequestParam(value="count", defaultValue="5000") int count,
 									@RequestParam(value="format", defaultValue="xml") String format,
@@ -523,6 +583,7 @@ public class ProjectController {
 											HttpServletRequest request, 
 									        HttpServletResponse response) throws Exception {
 		String sessionID = SessionService.getJSessionIDFromRequest(request);
+		String username = SessionService.getUsernameForSession(sessionID);
 
 		long starttime = System.currentTimeMillis();
 		SeriesReference seriesReference = new SeriesReference(projectID, subjectID, studyUID, seriesUID);
@@ -552,7 +613,7 @@ public class ProjectController {
 	}
 
 	@RequestMapping(value = "/{projectID}/subjects/{subjectID}/studies/{studyUID}/series/{seriesUID}/aims/{aimID}", method = RequestMethod.GET)
-	public void getEPADSeriesAim(@RequestParam(value="username") String username, 
+	public void getEPADSeriesAim( 
 									@RequestParam(value="format", defaultValue="xml") String format,
 									@PathVariable String projectID,
 									@PathVariable String subjectID,
@@ -562,6 +623,7 @@ public class ProjectController {
 											HttpServletRequest request, 
 									        HttpServletResponse response) throws Exception {
 		String sessionID = SessionService.getJSessionIDFromRequest(request);
+		String username = SessionService.getUsernameForSession(sessionID);
 
 		long starttime = System.currentTimeMillis();
 		SeriesReference seriesReference = new SeriesReference(projectID, subjectID, studyUID, seriesUID);
@@ -596,7 +658,7 @@ public class ProjectController {
 	}
 
 	@RequestMapping(value = "/{projectID}/subjects/{subjectID}/studies/{studyUID}/series/{seriesUID}/images/{imageUID}/aims/", method = RequestMethod.GET)
-	public void getEPADImageAims(@RequestParam(value="username") String username, 
+	public void getEPADImageAims( 
 									@RequestParam(value="start", defaultValue="0") int start,
 									@RequestParam(value="count", defaultValue="5000") int count,
 									@RequestParam(value="format", defaultValue="xml") String format,
@@ -608,6 +670,7 @@ public class ProjectController {
 											HttpServletRequest request, 
 									        HttpServletResponse response) throws Exception {
 		String sessionID = SessionService.getJSessionIDFromRequest(request);
+		String username = SessionService.getUsernameForSession(sessionID);
 
 		long starttime = System.currentTimeMillis();
 		ImageReference imageReference = new ImageReference(projectID, subjectID, studyUID, seriesUID, imageUID);
@@ -637,7 +700,7 @@ public class ProjectController {
 	}
 
 	@RequestMapping(value = "/{projectID}/subjects/{subjectID}/studies/{studyUID}/series/{seriesUID}/images/{imageUID}/aims/{aimID}", method = RequestMethod.GET)
-	public void getEPADImageAim(@RequestParam(value="username") String username, 
+	public void getEPADImageAim( 
 									@RequestParam(value="format", defaultValue="xml") String format,
 									@PathVariable String projectID,
 									@PathVariable String subjectID,
@@ -648,6 +711,7 @@ public class ProjectController {
 											HttpServletRequest request, 
 									        HttpServletResponse response) throws Exception {
 		String sessionID = SessionService.getJSessionIDFromRequest(request);
+		String username = SessionService.getUsernameForSession(sessionID);
 
 		long starttime = System.currentTimeMillis();
 		ImageReference imageReference = new ImageReference(projectID, subjectID, studyUID, seriesUID, imageUID);
@@ -683,7 +747,7 @@ public class ProjectController {
 
 
 	@RequestMapping(value = "/{projectID}/subjects/{subjectID}/studies/{studyUID}/series/{seriesUID}/images/{imageUID}/frames/{frameNo}/aims/", method = RequestMethod.GET)
-	public void getEPADFrameAims(@RequestParam(value="username") String username, 
+	public void getEPADFrameAims( 
 									@RequestParam(value="start", defaultValue="0") int start,
 									@RequestParam(value="count", defaultValue="5000") int count,
 									@RequestParam(value="format", defaultValue="xml") String format,
@@ -696,6 +760,7 @@ public class ProjectController {
 											HttpServletRequest request, 
 									        HttpServletResponse response) throws Exception {
 		String sessionID = SessionService.getJSessionIDFromRequest(request);
+		String username = SessionService.getUsernameForSession(sessionID);
 
 		long starttime = System.currentTimeMillis();
 		FrameReference frameReference = new FrameReference(projectID, subjectID, studyUID, seriesUID, imageUID, frameNo);
@@ -725,7 +790,7 @@ public class ProjectController {
 	}
 
 	@RequestMapping(value = "/{projectID}/subjects/{subjectID}/studies/{studyUID}/series/{seriesUID}/images/{imageUID}/frames/{frameNo}/aims/{aimID}", method = RequestMethod.GET)
-	public void getEPADFrameAim(@RequestParam(value="username") String username, 
+	public void getEPADFrameAim( 
 									@RequestParam(value="format", defaultValue="xml") String format,
 									@PathVariable String projectID,
 									@PathVariable String subjectID,
@@ -737,6 +802,7 @@ public class ProjectController {
 											HttpServletRequest request, 
 									        HttpServletResponse response) throws Exception {
 		String sessionID = SessionService.getJSessionIDFromRequest(request);
+		String username = SessionService.getUsernameForSession(sessionID);
 
 		long starttime = System.currentTimeMillis();
 		FrameReference frameReference = new FrameReference(projectID, subjectID, studyUID, seriesUID, imageUID, frameNo);
@@ -764,6 +830,14 @@ public class ProjectController {
 		{
 			AIMUtil.queryAIMImageJsonAnnotations(responseStream, aims, username, sessionID);					
 		}
+		else if ("data".equals(request.getParameter("format")))
+		{
+			String templateName = request.getParameter("templateName");
+			if (templateName == null || templateName.trim().length() == 0)
+				throw new Exception("Invalid template name");
+			String json = AIMUtil.readPlugInData(aim, templateName, sessionID);
+			responseStream.append(json);
+		}
 		else
 		{
 			AIMUtil.queryAIMImageAnnotationsV4(responseStream, aims, username, sessionID);					
@@ -771,11 +845,12 @@ public class ProjectController {
 	}	
 	 
 	@RequestMapping(value = "/{projectID}/users/", method = RequestMethod.GET)
-	public EPADUserList getEPADProjectUsers(@RequestParam(value="username") String username, 
+	public EPADUserList getEPADProjectUsers( 
 											@PathVariable String projectID,
 											HttpServletRequest request, 
 									        HttpServletResponse response) throws Exception {
 		String sessionID = SessionService.getJSessionIDFromRequest(request);
+		String username = SessionService.getUsernameForSession(sessionID);
 		ProjectReference projectReference = new ProjectReference(projectID);
 		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
 		EPADUserList users = epadOperations.getUserDescriptions(username, projectReference, sessionID);
@@ -783,23 +858,32 @@ public class ProjectController {
 	}
 	 
 	@RequestMapping(value = "/{projectID}/templates/", method = RequestMethod.GET)
-	public EPADTemplateContainerList getEPADProjectTemplates(@RequestParam(value="username") String username, 
+	public EPADTemplateContainerList getEPADProjectTemplates( 
 											@PathVariable String projectID,
+											@RequestParam(value="includeSystemTemplates", required = false) boolean includeSystemTemplates, 
 											HttpServletRequest request, 
 									        HttpServletResponse response) throws Exception {
 		String sessionID = SessionService.getJSessionIDFromRequest(request);
+		String username = SessionService.getUsernameForSession(sessionID);
 		ProjectReference projectReference = new ProjectReference(projectID);
 		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
-		EPADTemplateContainerList users = epadOperations.getTemplateDescriptions(projectReference.projectID, username, sessionID);
-		return users;
+		EPADTemplateContainerList templates = epadOperations.getTemplateDescriptions(projectReference.projectID, username, sessionID);
+		if (includeSystemTemplates) {
+			EPADTemplateContainerList systemplates = epadOperations.getSystemTemplateDescriptions(username, sessionID);
+			for (EPADTemplateContainer template: systemplates.ResultSet.Result) {
+				templates.addTemplate(template);
+			}
+		}
+		return templates;
 	}
 	 
 	@RequestMapping(value = "/{projectID}/files/", method = RequestMethod.GET)
-	public EPADFileList getEPADProjectFiles(@RequestParam(value="username") String username, 
+	public EPADFileList getEPADProjectFiles( 
 											@PathVariable String projectID,
 											HttpServletRequest request, 
 									        HttpServletResponse response) throws Exception {
 		String sessionID = SessionService.getJSessionIDFromRequest(request);
+		String username = SessionService.getUsernameForSession(sessionID);
 		EPADSearchFilter searchFilter = EPADSearchFilterBuilder.build(request);
 		ProjectReference projectReference = new ProjectReference(projectID);
 		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
@@ -808,12 +892,13 @@ public class ProjectController {
 	}
 	 
 	@RequestMapping(value = "/{projectID}/subjects/{subjectID}/files/", method = RequestMethod.GET)
-	public EPADFileList getEPADSubjectFiles(@RequestParam(value="username") String username, 
+	public EPADFileList getEPADSubjectFiles( 
 											@PathVariable String projectID,
 											@PathVariable String subjectID,
 											HttpServletRequest request, 
 									        HttpServletResponse response) throws Exception {
 		String sessionID = SessionService.getJSessionIDFromRequest(request);
+		String username = SessionService.getUsernameForSession(sessionID);
 		EPADSearchFilter searchFilter = EPADSearchFilterBuilder.build(request);
 		SubjectReference subjectReference = new SubjectReference(projectID, subjectID);
 		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
@@ -822,13 +907,14 @@ public class ProjectController {
 	}
 	 
 	@RequestMapping(value = "/{projectID}/subjects/{subjectID}/studies/{studyUID}/files/", method = RequestMethod.GET)
-	public EPADFileList getEPADStudyFiles(@RequestParam(value="username") String username, 
+	public EPADFileList getEPADStudyFiles( 
 											@PathVariable String projectID,
 											@PathVariable String subjectID,
 											@PathVariable String studyUID,
 											HttpServletRequest request, 
 									        HttpServletResponse response) throws Exception {
 		String sessionID = SessionService.getJSessionIDFromRequest(request);
+		String username = SessionService.getUsernameForSession(sessionID);
 		EPADSearchFilter searchFilter = EPADSearchFilterBuilder.build(request);
 		StudyReference studyReference = new StudyReference(projectID, subjectID, studyUID);
 		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
@@ -837,7 +923,7 @@ public class ProjectController {
 	}
 	 
 	@RequestMapping(value = "/{projectID}/subjects/{subjectID}/studies/{studyUID}/series/{seriesUID}/files/", method = RequestMethod.GET)
-	public EPADFileList getEPADSeriesFiles(@RequestParam(value="username") String username, 
+	public EPADFileList getEPADSeriesFiles( 
 											@PathVariable String projectID,
 											@PathVariable String subjectID,
 											@PathVariable String studyUID,
@@ -845,6 +931,7 @@ public class ProjectController {
 											HttpServletRequest request, 
 									        HttpServletResponse response) throws Exception {
 		String sessionID = SessionService.getJSessionIDFromRequest(request);
+		String username = SessionService.getUsernameForSession(sessionID);
 		EPADSearchFilter searchFilter = EPADSearchFilterBuilder.build(request);
 		SeriesReference seriesReference = new SeriesReference(projectID, subjectID, studyUID, seriesUID);
 		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
@@ -853,12 +940,13 @@ public class ProjectController {
 	}
 	 
 	@RequestMapping(value = "/{projectID}/files/{filename:.+}", method = RequestMethod.GET)
-	public EPADFile getEPADProjectFile(@RequestParam(value="username") String username, 
+	public EPADFile getEPADProjectFile( 
 											@PathVariable String projectID,
 											@PathVariable String filename,
 											HttpServletRequest request, 
 									        HttpServletResponse response) throws Exception {
 		String sessionID = SessionService.getJSessionIDFromRequest(request);
+		String username = SessionService.getUsernameForSession(sessionID);
 		ProjectReference projectReference = new ProjectReference(projectID);
 		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
 		EPADFile file = epadOperations.getFileDescription(projectReference, filename, username, sessionID);
@@ -866,13 +954,14 @@ public class ProjectController {
 	}
 	 
 	@RequestMapping(value = "/{projectID}/subjects/{subjectID}/files/{filename:.+}", method = RequestMethod.GET)
-	public EPADFile getEPADSubjectFile(@RequestParam(value="username") String username, 
+	public EPADFile getEPADSubjectFile( 
 											@PathVariable String projectID,
 											@PathVariable String subjectID,
 											@PathVariable String filename,
 											HttpServletRequest request, 
 									        HttpServletResponse response) throws Exception {
 		String sessionID = SessionService.getJSessionIDFromRequest(request);
+		String username = SessionService.getUsernameForSession(sessionID);
 		SubjectReference subjectReference = new SubjectReference(projectID, subjectID);
 		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
 		EPADFile files = epadOperations.getFileDescription(subjectReference, filename, username, sessionID);
@@ -880,7 +969,7 @@ public class ProjectController {
 	}
 	 
 	@RequestMapping(value = "/{projectID}/subjects/{subjectID}/studies/{studyUID}/files/{filename:.+}", method = RequestMethod.GET)
-	public EPADFile getEPADStudyFile(@RequestParam(value="username") String username, 
+	public EPADFile getEPADStudyFile( 
 											@PathVariable String projectID,
 											@PathVariable String subjectID,
 											@PathVariable String studyUID,
@@ -888,6 +977,7 @@ public class ProjectController {
 											HttpServletRequest request, 
 									        HttpServletResponse response) throws Exception {
 		String sessionID = SessionService.getJSessionIDFromRequest(request);
+		String username = SessionService.getUsernameForSession(sessionID);
 		StudyReference studyReference = new StudyReference(projectID, subjectID, studyUID);
 		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
 		EPADFile files = epadOperations.getFileDescription(studyReference, filename, username, sessionID);
@@ -895,7 +985,7 @@ public class ProjectController {
 	}
 	 
 	@RequestMapping(value = "/{projectID}/subjects/{subjectID}/studies/{studyUID}/series/{seriesUID}/files/{filename:.+}", method = RequestMethod.GET)
-	public EPADFile getEPADSeriesFile(@RequestParam(value="username") String username, 
+	public EPADFile getEPADSeriesFile( 
 											@PathVariable String projectID,
 											@PathVariable String subjectID,
 											@PathVariable String studyUID,
@@ -904,6 +994,7 @@ public class ProjectController {
 											HttpServletRequest request, 
 									        HttpServletResponse response) throws Exception {
 		String sessionID = SessionService.getJSessionIDFromRequest(request);
+		String username = SessionService.getUsernameForSession(sessionID);
 		SeriesReference seriesReference = new SeriesReference(projectID, subjectID, studyUID, seriesUID);
 		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
 		EPADFile files = epadOperations.getFileDescription(seriesReference, filename, username, sessionID);
@@ -911,7 +1002,7 @@ public class ProjectController {
 	}
 	 
 	@RequestMapping(value = "/{projectID:.+}", method = {RequestMethod.PUT,RequestMethod.POST})
-	public void createEPADProject(@RequestParam(value="username") String username, 
+	public void createEPADProject( 
 											@PathVariable String projectID,
 											@RequestParam(value="projectName", required=true) String projectName,
 											@RequestParam(value="projectDescription", required=true) String projectDescription,
@@ -919,6 +1010,7 @@ public class ProjectController {
 											HttpServletRequest request, 
 									        HttpServletResponse response) throws Exception {
 		String sessionID = SessionService.getJSessionIDFromRequest(request);
+		String username = SessionService.getUsernameForSession(sessionID);
 		ProjectReference projectReference = new ProjectReference(projectID);
 		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
 		int statusCode = 0;
@@ -933,7 +1025,7 @@ public class ProjectController {
 	}
 
 	@RequestMapping(value = "/{projectID}/subjects/{subjectID:.+}", method = {RequestMethod.PUT,RequestMethod.POST})
-	public void createEPADSubject(@RequestParam(value="username") String username, 
+	public void createEPADSubject( 
 										@PathVariable String projectID,
 										@PathVariable String subjectID,
 										@RequestParam(value="subjectName", required=true) String subjectName,
@@ -942,6 +1034,7 @@ public class ProjectController {
 										HttpServletRequest request, 
 								        HttpServletResponse response) throws Exception {
 		String sessionID = SessionService.getJSessionIDFromRequest(request);
+		String username = SessionService.getUsernameForSession(sessionID);
 		SubjectReference subjectReference = new SubjectReference(projectID, subjectID);
 		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
 		EPADSubject subject = epadOperations.getSubjectDescription(subjectReference, username, sessionID);
@@ -956,7 +1049,7 @@ public class ProjectController {
 	}
 
 	@RequestMapping(value = "/{projectID}/subjects/", method = {RequestMethod.PUT,RequestMethod.POST})
-	public void createEPADSubject(@RequestParam(value="username") String username, 
+	public void createEPADSubject( 
 										@PathVariable String projectID,
 										@RequestParam(value="subjectName", required=true) String subjectName,
 										@RequestParam(value="gender") String gender,
@@ -964,6 +1057,7 @@ public class ProjectController {
 										HttpServletRequest request, 
 								        HttpServletResponse response) throws Exception {
 		String sessionID = SessionService.getJSessionIDFromRequest(request);
+		String username = SessionService.getUsernameForSession(sessionID);
 		SubjectReference subjectReference = new SubjectReference(projectID, "new");
 		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
 		int	statusCode = epadOperations.createSubject(username, subjectReference, subjectName, getDate(dob), gender, sessionID);
@@ -972,13 +1066,14 @@ public class ProjectController {
 	}
 
 	@RequestMapping(value = "/{projectID}/subjects/{subjectID}/status/{status:.+}", method = RequestMethod.PUT)
-	public void setEPADSubjectStatus(@RequestParam(value="username") String username, 
+	public void setEPADSubjectStatus( 
 										@PathVariable String projectID,
 										@PathVariable String subjectID,
 										@PathVariable String status,
 										HttpServletRequest request, 
 								        HttpServletResponse response) throws Exception {
 		String sessionID = SessionService.getJSessionIDFromRequest(request);
+		String username = SessionService.getUsernameForSession(sessionID);
 		SubjectReference subjectReference = new SubjectReference(projectID, subjectID);
 		subjectReference.status = status;
 		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
@@ -989,7 +1084,7 @@ public class ProjectController {
 	}
 
 	@RequestMapping(value = "/{projectID}/subjects/{subjectID}/studies/{studyUID:.+}", method = {RequestMethod.PUT,RequestMethod.POST})
-	public void createEPADStudy(@RequestParam(value="username") String username, 
+	public void createEPADStudy( 
 											@PathVariable String projectID,
 											@PathVariable String subjectID,
 											@PathVariable String studyUID,
@@ -998,6 +1093,7 @@ public class ProjectController {
 											HttpServletRequest request, 
 									        HttpServletResponse response) throws Exception {
 		String sessionID = SessionService.getJSessionIDFromRequest(request);
+		String username = SessionService.getUsernameForSession(sessionID);
 		StudyReference studyReference = new StudyReference(projectID, subjectID, studyUID);
 		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
 		int statusCode = 0;
@@ -1007,7 +1103,7 @@ public class ProjectController {
 	}
 
 	@RequestMapping(value = "/{projectID}/subjects/{subjectID}/studies/", method = {RequestMethod.PUT,RequestMethod.POST})
-	public void createEPADStudy(@RequestParam(value="username") String username, 
+	public void createEPADStudy( 
 											@PathVariable String projectID,
 											@PathVariable String subjectID,
 											@RequestParam(value="description", required=true) String description,
@@ -1015,6 +1111,7 @@ public class ProjectController {
 											HttpServletRequest request, 
 									        HttpServletResponse response) throws Exception {
 		String sessionID = SessionService.getJSessionIDFromRequest(request);
+		String username = SessionService.getUsernameForSession(sessionID);
 		StudyReference studyReference = new StudyReference(projectID, subjectID, "new");
 		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
 		int statusCode = 0;
@@ -1024,7 +1121,7 @@ public class ProjectController {
 	}
 
 	@RequestMapping(value = "/{projectID}/subjects/{subjectID}/studies/{studyUID}/series/{seriesUID:.+}", method = {RequestMethod.PUT,RequestMethod.POST})
-	public void createEPADSeries(@RequestParam(value="username") String username, 
+	public void createEPADSeries( 
 										@PathVariable String projectID,
 										@PathVariable String subjectID,
 										@PathVariable String studyUID,
@@ -1036,6 +1133,7 @@ public class ProjectController {
 										HttpServletRequest request, 
 								        HttpServletResponse response) throws Exception {
 		String sessionID = SessionService.getJSessionIDFromRequest(request);
+		String username = SessionService.getUsernameForSession(sessionID);
 		SeriesReference seriesReference = new SeriesReference(projectID, subjectID, studyUID, seriesUID);
 		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
 		int statusCode = 0;
@@ -1043,7 +1141,7 @@ public class ProjectController {
 	}
 
 	@RequestMapping(value = "/{projectID}/subjects/{subjectID}/studies/{studyUID}/series/", method = {RequestMethod.PUT,RequestMethod.POST})
-	public void createEPADSeries(@RequestParam(value="username") String username, 
+	public void createEPADSeries( 
 										@PathVariable String projectID,
 										@PathVariable String subjectID,
 										@PathVariable String studyUID,
@@ -1054,6 +1152,7 @@ public class ProjectController {
 										HttpServletRequest request, 
 								        HttpServletResponse response) throws Exception {
 		String sessionID = SessionService.getJSessionIDFromRequest(request);
+		String username = SessionService.getUsernameForSession(sessionID);
 		SeriesReference seriesReference = new SeriesReference(projectID, subjectID, studyUID, "new");
 		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
 		int statusCode = 0;
@@ -1061,12 +1160,13 @@ public class ProjectController {
 	}
 
 	@RequestMapping(value = "/{projectID}/aims/{aimID}", method = RequestMethod.PUT)
-	public void createEPADProjectAIM(@RequestParam(value="username") String username, 
+	public void createEPADProjectAIM( 
 											@PathVariable String projectID,
 											@PathVariable String aimID,
 											HttpServletRequest request, 
 									        HttpServletResponse response) throws Exception {
 		String sessionID = SessionService.getJSessionIDFromRequest(request);
+		String username = SessionService.getUsernameForSession(sessionID);
 		ProjectReference projectReference = new ProjectReference(projectID);
 		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
 		AIMReference aimReference = new AIMReference(aimID);
@@ -1078,13 +1178,14 @@ public class ProjectController {
 	}
 
 	@RequestMapping(value = "/{projectID}/subjects/{subjectID}/aims/{aimID}", method = RequestMethod.PUT)
-	public void createEPADSubjectAIM(@RequestParam(value="username") String username, 
+	public void createEPADSubjectAIM( 
 										@PathVariable String projectID,
 										@PathVariable String subjectID,
 										@PathVariable String aimID,
 										HttpServletRequest request, 
 								        HttpServletResponse response) throws Exception {
 		String sessionID = SessionService.getJSessionIDFromRequest(request);
+		String username = SessionService.getUsernameForSession(sessionID);
 		SubjectReference subjectReference = new SubjectReference(projectID, subjectID);
 		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
 		AIMReference aimReference = new AIMReference(aimID);
@@ -1096,7 +1197,7 @@ public class ProjectController {
 	}
 	
 	@RequestMapping(value = "/{projectID}/subjects/{subjectID}/studies/{studyUID}/aims/{aimID}", method = RequestMethod.PUT)
-	public void createEPADStudyAIM(@RequestParam(value="username") String username, 
+	public void createEPADStudyAIM( 
 											@PathVariable String projectID,
 											@PathVariable String subjectID,
 											@PathVariable String studyUID,
@@ -1104,6 +1205,7 @@ public class ProjectController {
 											HttpServletRequest request, 
 									        HttpServletResponse response) throws Exception {
 		String sessionID = SessionService.getJSessionIDFromRequest(request);
+		String username = SessionService.getUsernameForSession(sessionID);
 		StudyReference studyReference = new StudyReference(projectID, subjectID, studyUID);
 		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
 		log.info("Study AIM PUT");
@@ -1115,7 +1217,7 @@ public class ProjectController {
 	}
 
 	@RequestMapping(value = "/{projectID}/subjects/{subjectID}/studies/{studyUID}/series/{seriesUID}/aims/{aimID}", method = RequestMethod.PUT)
-	public void createEPADSeriesAIM(@RequestParam(value="username") String username, 
+	public void createEPADSeriesAIM( 
 										@PathVariable String projectID,
 										@PathVariable String subjectID,
 										@PathVariable String studyUID,
@@ -1124,6 +1226,7 @@ public class ProjectController {
 										HttpServletRequest request, 
 								        HttpServletResponse response) throws Exception {
 		String sessionID = SessionService.getJSessionIDFromRequest(request);
+		String username = SessionService.getUsernameForSession(sessionID);
 		SeriesReference seriesReference = new SeriesReference(projectID, subjectID, studyUID, seriesUID);
 		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
 		log.info("Series AIM PUT");
@@ -1135,7 +1238,7 @@ public class ProjectController {
 	}	
 
 	@RequestMapping(value = "/{projectID}/subjects/{subjectID}/studies/{studyUID}/series/{seriesUID}/images/{imageUID}/aims/{aimID}", method = RequestMethod.PUT)
-	public void createEPADImageAIM(@RequestParam(value="username") String username, 
+	public void createEPADImageAIM( 
 										@PathVariable String projectID,
 										@PathVariable String subjectID,
 										@PathVariable String studyUID,
@@ -1145,6 +1248,7 @@ public class ProjectController {
 										HttpServletRequest request, 
 								        HttpServletResponse response) throws Exception {
 		String sessionID = SessionService.getJSessionIDFromRequest(request);
+		String username = SessionService.getUsernameForSession(sessionID);
 		ImageReference imageReference = new ImageReference(projectID, subjectID, studyUID, seriesUID, imageUID);
 		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
 		log.info("Image AIM PUT");
@@ -1156,7 +1260,7 @@ public class ProjectController {
 	}	
 
 	@RequestMapping(value = "/{projectID}/subjects/{subjectID}/studies/{studyUID}/series/{seriesUID}/images/{imageUID}/frames/{frameNo}/aims/{aimID}", method = RequestMethod.PUT)
-	public void createEPADImageAIM(@RequestParam(value="username") String username, 
+	public void createEPADImageAIM( 
 										@PathVariable String projectID,
 										@PathVariable String subjectID,
 										@PathVariable String studyUID,
@@ -1167,6 +1271,7 @@ public class ProjectController {
 										HttpServletRequest request, 
 								        HttpServletResponse response) throws Exception {
 		String sessionID = SessionService.getJSessionIDFromRequest(request);
+		String username = SessionService.getUsernameForSession(sessionID);
 		FrameReference frameReference = new FrameReference(projectID, subjectID, studyUID, seriesUID, imageUID, frameNo);
 		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
 		log.info("Frame AIM PUT");
@@ -1178,7 +1283,7 @@ public class ProjectController {
 	}	
 
 	@RequestMapping(value = "/{projectID}/aims/", method = RequestMethod.PUT)
-	public void runEPADProjectAIMPlugin(@RequestParam(value="username") String username, 
+	public void runEPADProjectAIMPlugin( 
 											@PathVariable String projectID,
 											@RequestParam(value="annotationUID", required=true) String annotationUID,
 											@RequestParam(value="templateName", required=true) String templateName,
@@ -1192,60 +1297,77 @@ public class ProjectController {
 	}
 
 	@RequestMapping(value = "/{projectID}/user/{projectuser:.+}", method = RequestMethod.PUT)
-	public void addUserToProject(@RequestParam(value="username") String username, 
+	public void addUserToProject( 
 										@PathVariable String projectID,
 										@PathVariable String projectuser,
 										@RequestParam(value="role", required=true) String role,
 											HttpServletRequest request, 
 									        HttpServletResponse response) throws Exception {
 		String sessionID = SessionService.getJSessionIDFromRequest(request);
+		String username = SessionService.getUsernameForSession(sessionID);
 		ProjectReference projectReference = new ProjectReference(projectID);
 		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
 		epadOperations.addUserToProject(username, projectReference, projectuser, role, sessionID);
 	}	
 
 	@RequestMapping(value = "/{projectID}/subjects/{subjectID}/studies/{studyUID}/series/{seriesUID}/images/{imageUID}/frames/", method = RequestMethod.POST)
-	public void editDSO(@RequestParam(value="username") String username, 
+	public void editDSO( 
 										@PathVariable String projectID,
 										@PathVariable String subjectID,
 										@PathVariable String studyUID,
 										@PathVariable String seriesUID,
 										@PathVariable String imageUID,
+										@RequestParam(value="type", required=false) String type,
 										HttpServletRequest request, 
 								        HttpServletResponse response) throws Exception {
 		String sessionID = SessionService.getJSessionIDFromRequest(request);
+		String username = SessionService.getUsernameForSession(sessionID);
 		ImageReference imageReference = new ImageReference(projectID, subjectID, studyUID, seriesUID, imageUID);
 		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
 		PrintWriter responseStream = response.getWriter();
-		boolean errstatus = DSOUtil.handleDSOFramesEdit(imageReference.projectID, imageReference.subjectID, imageReference.studyUID,
-				imageReference.seriesUID, imageReference.imageUID, request, responseStream);
-		if (errstatus);
-			throw new Exception("Error editing DSO");
+		if (!"new".equals(type))
+		{
+			boolean errstatus = DSOUtil.handleDSOFramesEdit(imageReference.projectID, imageReference.subjectID, imageReference.studyUID,
+					imageReference.seriesUID, imageReference.imageUID, request, responseStream);
+			if (errstatus)
+				throw new Exception("Error editing DSO");
+		}
+		else
+		{
+			boolean errstatus = DSOUtil.handleCreateDSO(imageReference.projectID, imageReference.subjectID, imageReference.studyUID,
+					imageReference.seriesUID, request, responseStream, username);
+			if (errstatus)
+				throw new Exception("Error creating DSO");
+		}
 	}	
 
 	@RequestMapping(value = "/{projectID}/files/", method = RequestMethod.POST)
-	public void uploadProjectFiles(@RequestParam(value="username") String username, 
+	public void uploadProjectFiles( 
 										@PathVariable String projectID,
 										@RequestParam(value="description", required=false) String description,
 										@RequestParam(value="fileType", required=false) String fileType,
 											HttpServletRequest request, 
 									        HttpServletResponse response) throws Exception {
+		String sessionID = SessionService.getJSessionIDFromRequest(request);
+		String username = SessionService.getUsernameForSession(sessionID);
 		createFile(username, projectID, null, null, null, fileType, description, request, response);
 	}	
 
 	@RequestMapping(value = "/{projectID}/subjects/{subjectID}/files/", method = RequestMethod.POST)
-	public void uploadSubjectFiles(@RequestParam(value="username") String username, 
+	public void uploadSubjectFiles( 
 										@PathVariable String projectID,
 										@PathVariable String subjectID,
 										@RequestParam(value="description", required=false) String description,
 										@RequestParam(value="fileType", required=false) String fileType,
 											HttpServletRequest request, 
 									        HttpServletResponse response) throws Exception {
+		String sessionID = SessionService.getJSessionIDFromRequest(request);
+		String username = SessionService.getUsernameForSession(sessionID);
 		createFile(username, projectID, subjectID, null, null, fileType, description, request, response);
 	}	
 
 	@RequestMapping(value = "/{projectID}/subjects/{subjectID}/studies/{studyUID}/files/", method = RequestMethod.POST)
-	public void uploadStudyFiles(@RequestParam(value="username") String username, 
+	public void uploadStudyFiles( 
 											@PathVariable String projectID,
 											@PathVariable String subjectID,
 											@PathVariable String studyUID,
@@ -1253,11 +1375,13 @@ public class ProjectController {
 											@RequestParam(value="fileType", required=false) String fileType,
 											HttpServletRequest request, 
 									        HttpServletResponse response) throws Exception {
+		String sessionID = SessionService.getJSessionIDFromRequest(request);
+		String username = SessionService.getUsernameForSession(sessionID);
 		createFile(username, projectID, subjectID, studyUID, null, fileType, description, request, response);
 	}
 
 	@RequestMapping(value = "/{projectID}/subjects/{subjectID}/studies/{studyUID}/series/{seriesUID}/files/", method = RequestMethod.POST)
-	public void uploadSeriesFiles(@RequestParam(value="username") String username, 
+	public void uploadSeriesFiles( 
 										@PathVariable String projectID,
 										@PathVariable String subjectID,
 										@PathVariable String studyUID,
@@ -1266,6 +1390,8 @@ public class ProjectController {
 										@RequestParam(value="fileType", required=false) String fileType,
 										HttpServletRequest request, 
 								        HttpServletResponse response) throws Exception {
+		String sessionID = SessionService.getJSessionIDFromRequest(request);
+		String username = SessionService.getUsernameForSession(sessionID);
 		createFile(username, projectID, subjectID, studyUID, seriesUID, fileType, description, request, response);
 	}
 	
@@ -1339,7 +1465,7 @@ public class ProjectController {
 	}
 	
 	@RequestMapping(value = "/{projectID}/users/{reader}/worklists/{workListID:.+}", method = RequestMethod.PUT)
-	public void createUserWorkList(@RequestParam(value="username") String username, 
+	public void createUserWorkList( 
 										@PathVariable String projectID,
 										@PathVariable String reader,
 										@PathVariable String workListID,
@@ -1348,16 +1474,19 @@ public class ProjectController {
 										HttpServletRequest request, 
 								        HttpServletResponse response) throws Exception {
 		String sessionID = SessionService.getJSessionIDFromRequest(request);
+		String username = SessionService.getUsernameForSession(sessionID);
 		EpadWorkListOperations worklistOperations = DefaultWorkListOperations.getInstance();
 		worklistOperations.createWorkList(username, reader, projectID, workListID, description, null, getDate(dueDate));
 	}
 
 	@RequestMapping(value = "/{projectID}/files/{filename:.+}", method = RequestMethod.DELETE)
-	public void deleteProjectFile(@RequestParam(value="username") String username, 
+	public void deleteProjectFile( 
 										@PathVariable String projectID,
 										@PathVariable String filename,
 										HttpServletRequest request, 
 								        HttpServletResponse response) throws Exception {
+		String sessionID = SessionService.getJSessionIDFromRequest(request);
+		String username = SessionService.getUsernameForSession(sessionID);
 		ProjectReference projectReference = new ProjectReference(projectID);
 		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
 		try {
@@ -1369,32 +1498,36 @@ public class ProjectController {
 	}
 
 	@RequestMapping(value = "/{projectID}/subjects/{subjectID}/files/{filename:.+}", method = RequestMethod.DELETE)
-	public void deleteSubjectFile(@RequestParam(value="username") String username, 
+	public void deleteSubjectFile( 
 										@PathVariable String projectID,
 										@PathVariable String subjectID,
 										@PathVariable String filename,
 										HttpServletRequest request, 
 								        HttpServletResponse response) throws Exception {
+		String sessionID = SessionService.getJSessionIDFromRequest(request);
+		String username = SessionService.getUsernameForSession(sessionID);
 		SubjectReference subjectReference = new SubjectReference(projectID, subjectID);
 		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
 		epadOperations.deleteFile(username, subjectReference, filename);
 	}
 
 	@RequestMapping(value = "/{projectID}/subjects/{subjectID}/studies/{studyUID}/files/{filename:.+}", method = RequestMethod.DELETE)
-	public void deleteStudyFile(@RequestParam(value="username") String username, 
+	public void deleteStudyFile( 
 										@PathVariable String projectID,
 										@PathVariable String subjectID,
 										@PathVariable String studyUID,
 										@PathVariable String filename,
 										HttpServletRequest request, 
 								        HttpServletResponse response) throws Exception {
+		String sessionID = SessionService.getJSessionIDFromRequest(request);
+		String username = SessionService.getUsernameForSession(sessionID);
 		StudyReference studyReference = new StudyReference(projectID, subjectID, studyUID);
 		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
 		epadOperations.deleteFile(username, studyReference, filename);
 	}
 
 	@RequestMapping(value = "/{projectID}/subjects/{subjectID}/studies/{studyUID}/series/{seriesUID}/files/{filename:.+}", method = RequestMethod.DELETE)
-	public void deleteSeriesFile(@RequestParam(value="username") String username, 
+	public void deleteSeriesFile( 
 										@PathVariable String projectID,
 										@PathVariable String subjectID,
 										@PathVariable String studyUID,
@@ -1402,6 +1535,8 @@ public class ProjectController {
 										@PathVariable String filename,
 										HttpServletRequest request, 
 								        HttpServletResponse response) throws Exception {
+		String sessionID = SessionService.getJSessionIDFromRequest(request);
+		String username = SessionService.getUsernameForSession(sessionID);
 		SeriesReference seriesReference = new SeriesReference(projectID, subjectID, studyUID, seriesUID);
 		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
 		epadOperations.deleteFile(username, seriesReference, filename);

@@ -249,12 +249,12 @@ public class UserProjectService {
 			Properties xnatUploadProperties = new Properties();
 			FileInputStream propertiesFileStream = null;
 			try {
-				log.info("Found XNAT upload properties file " + propertiesFilePath);
 				propertiesFileStream = new FileInputStream(xnatUploadPropertiesFile);
 				xnatUploadProperties.load(propertiesFileStream);
 				String xnatProjectLabel = xnatUploadProperties.getProperty("XNATProjectName");
 				String xnatSessionID = xnatUploadProperties.getProperty("XNATSessionID");
 				String xnatUserName = xnatUploadProperties.getProperty("XNATUserName");
+				log.info("Found XNAT upload properties file " + propertiesFilePath + " project:" + xnatProjectLabel + " user:" + xnatUserName);
 				if (xnatProjectLabel != null && xnatSessionID != null) {
 					xnatUploadPropertiesFile.delete();
 					int numberOfDICOMFiles = createProjectEntitiesFromDICOMFilesInUploadDirectory(dicomUploadDirectory, xnatProjectLabel, xnatSessionID, xnatUserName);

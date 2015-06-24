@@ -38,6 +38,7 @@ import java.awt.image.ImageProducer;
 import java.awt.image.RGBImageFilter;
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -64,6 +65,7 @@ import com.google.gson.Gson;
 import com.pixelmed.dicom.Attribute;
 import com.pixelmed.dicom.AttributeList;
 import com.pixelmed.dicom.DicomException;
+import com.pixelmed.dicom.DicomInputStream;
 import com.pixelmed.dicom.TagFromName;
 import com.pixelmed.display.SourceImage;
 
@@ -89,6 +91,7 @@ import edu.stanford.epad.dtos.internal.DICOMElement;
 import edu.stanford.epad.dtos.internal.DICOMElementList;
 import edu.stanford.epad.epadws.aim.AIMQueries;
 import edu.stanford.epad.epadws.aim.AIMSearchType;
+import edu.stanford.epad.epadws.aim.AIMUtil;
 import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeDatabase;
 import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeDatabaseOperations;
 import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeDatabaseUtils;
@@ -186,17 +189,31 @@ public class DSOUtil
 	/**
 	 * Generate a new DSO from scratch given series and masked frames.
 	 */
-	private static DSOEditResult createNewDSO(DSOEditRequest dsoEditRequest, List<File> editFramesPNGMaskFiles)
+	private static DSOEditResult createNewDSO(DSOEditRequest dsoEditRequest, List<File> editFramesPNGMaskFiles, String projectID, String username)
 	{
 		try {
 			List<DCM4CHEEImageDescription> imageDescriptions = dcm4CheeDatabaseOperations.getImageDescriptions(
 					dsoEditRequest.studyUID, dsoEditRequest.seriesUID);
 			List<String> dicomFilePaths = new ArrayList<String>();
+			int width = 0;
+			int height = 0;
 			for (DCM4CHEEImageDescription imageDescription : imageDescriptions) {
 				try {
 					File temporaryDICOMFile = File.createTempFile(imageDescription.imageUID, ".dcm");
-					log.info("Downloading source DICOM file for image " + imageDescription.imageUID);
+					//log.info("Downloading source DICOM file for image " + imageDescription.imageUID);
 					DCM4CHEEUtil.downloadDICOMFileFromWADO(dsoEditRequest.studyUID, dsoEditRequest.seriesUID, imageDescription.imageUID, temporaryDICOMFile);
+					if (width == 0) {
+						DicomInputStream dicomInputStream = null;
+						try {
+							dicomInputStream = new DicomInputStream(new FileInputStream(temporaryDICOMFile));
+							AttributeList localDICOMAttributes = new AttributeList();
+							localDICOMAttributes.read(dicomInputStream);
+							width = (short)Attribute.getSingleIntegerValueOrDefault(localDICOMAttributes, TagFromName.Columns, 1);
+							height = (short)Attribute.getSingleIntegerValueOrDefault(localDICOMAttributes, TagFromName.Rows, 1);
+						} finally {
+							IOUtils.closeQuietly(dicomInputStream);
+						}
+					}
 					dicomFilePaths.add(temporaryDICOMFile.getAbsolutePath());
 				} catch (IOException e) {
 					log.warning("Error downloading DICOM file for referenced image " + imageDescription.imageUID + " for series "
@@ -214,16 +231,16 @@ public class DSOUtil
 			File temporaryDSOFile = File.createTempFile(dsoEditRequest.seriesUID, ".dso");
 			log.info("Found " + dicomFilePaths.size() + " source DICOM file(s) for series " + dsoEditRequest.seriesUID);
 			List<File> dsoTIFFMaskFiles = new ArrayList<>();
-			for (int i = 0; i < dicomFilePaths.size(); i++)
+			for (int i = dicomFilePaths.size()-1; i > -1 ; i--)
 			{
-				if (!dsoEditRequest.editedFrameNumbers.contains(new Integer(i)))
+				//if (!dsoEditRequest.editedFrameNumbers.contains(new Integer(i+1)))
 				{
 					String fileName = dicomFilePaths.get(i);
-					fileName = fileName.substring(fileName.lastIndexOf("/")+1) + ".tif";
-					dsoTIFFMaskFiles.add(copyEmptyTiffFile(tiffMaskFiles.get(0), fileName));
+					fileName = "EmptyMask_" + i + "_";
+					dsoTIFFMaskFiles.add(copyEmptyTiffFile(fileName, width, height));
 				}
-				else
-					dsoTIFFMaskFiles.add(null);
+				//else
+				//	dsoTIFFMaskFiles.add(null);
 			}
 			int frameMaskFilesIndex = 0;
 			for (Integer frameNumber : dsoEditRequest.editedFrameNumbers) {
@@ -238,15 +255,19 @@ public class DSOUtil
 					return null;
 				}
 			}
-
 			log.info("Generating new DSO for series " + dsoEditRequest.seriesUID);
 			TIFFMasksToDSOConverter converter = new TIFFMasksToDSOConverter();
-			String[] seriesImageUids = converter.generateDSO(files2FilePaths(tiffMaskFiles), dicomFilePaths, temporaryDSOFile.getAbsolutePath(), null, null, null);
+			String[] seriesImageUids = converter.generateDSO(files2FilePaths(dsoTIFFMaskFiles), dicomFilePaths, temporaryDSOFile.getAbsolutePath(), null, null, null, false);
 			String dsoSeriesUID = seriesImageUids[0];
 			String dsoImageUID = seriesImageUids[1];
 			log.info("Sending generated DSO " + temporaryDSOFile.getAbsolutePath() + " imageUID:" + dsoImageUID + " to dcm4chee...");
 			DCM4CHEEUtil.dcmsnd(temporaryDSOFile.getAbsolutePath(), false);
-			return new DSOEditResult(dsoEditRequest.projectID, dsoEditRequest.patientID, dsoEditRequest.studyUID, dsoSeriesUID, dsoImageUID, "");
+			ImageAnnotation aim = AIMUtil.generateAIMFileForDSO(temporaryDSOFile, username, projectID);
+			for (File mask: dsoTIFFMaskFiles)
+			{
+				mask.delete();
+			}
+			return new DSOEditResult(dsoEditRequest.projectID, dsoEditRequest.patientID, dsoEditRequest.studyUID, dsoSeriesUID, dsoImageUID, aim.getUniqueIdentifier());
 
 		} catch (Exception e) {
 			log.warning("Error generating DSO image for series " + dsoEditRequest.seriesUID, e);
@@ -254,15 +275,19 @@ public class DSOUtil
 		}
 	}
 
-	private static File copyEmptyTiffFile(File tifFile, String newFileName)
+	private static File copyEmptyTiffFile(String newFileName, int width, int height)
 	{
-		File newFile =  null;
+		File newFile = null;
 		try {
-			long len = tifFile.length();
-			newFile = File.createTempFile(newFileName, ".tif");
-            OutputStream out = new FileOutputStream(newFile);
-            byte[] buf = new byte[(int)len];
-            out.write(buf, 0, (int)len);
+			newFile = File.createTempFile(newFileName,".tif");
+			//log.info("Creating empty tiff:" + newFile.getAbsolutePath() + " width:" + width + " height:" + height);
+			BufferedImage bufferedImage = new BufferedImage(width, height, BufferedImage.TYPE_4BYTE_ABGR);
+			for (int x = 0; x < width; x++) {
+				for (int y = 0; y < height; y++) {
+						bufferedImage.setRGB(x, y, Color.black.getRGB());
+				}
+			}
+			ImageIO.write(bufferedImage, "tif", newFile);
 		} catch (IOException e) {
 			log.warning("Error creating empty TIFF  file" + newFile.getAbsolutePath());
 		}
@@ -684,7 +709,7 @@ public class DSOUtil
 	}
 	
 	public static boolean handleCreateDSO(String projectID, String subjectID, String studyUID, String seriesUID,
-			HttpServletRequest httpRequest, PrintWriter responseStream)
+			HttpServletRequest httpRequest, PrintWriter responseStream, String username)
 	{ // See http://www.tutorialspoint.com/servlets/servlets-file-uploading.htm
 		boolean uploadError = false;
 
@@ -698,12 +723,13 @@ public class DSOUtil
 
 			if (dsoEditRequest != null) {
 				List<File> framesPNGMaskFiles = HandlerUtil.extractFiles(fileItemIterator, "DSOFrame", ".PNG");
+				dsoEditRequest.seriesUID = seriesUID;
 				if (framesPNGMaskFiles.isEmpty()) {
 					log.warning("No PNG masks supplied in DSO create request for series " + seriesUID);
 					uploadError = true;
 				} else {
 					log.info("Extracted " + framesPNGMaskFiles.size() + " file mask(s) for DSO create for series " + seriesUID);
-					DSOEditResult dsoEditResult = DSOUtil.createNewDSO(dsoEditRequest, framesPNGMaskFiles);
+					DSOEditResult dsoEditResult = DSOUtil.createNewDSO(dsoEditRequest, framesPNGMaskFiles, projectID, username);
 					if (dsoEditResult != null)
 					{					
 						responseStream.append(dsoEditResult.toJSON());
@@ -727,7 +753,7 @@ public class DSOUtil
 			uploadError = true;
 		}
 		if (!uploadError)
-			log.info("DSO successfully created");
+			log.info("DSO successfully created ...");
 		return uploadError;
 	}
 
@@ -905,12 +931,13 @@ public class DSOUtil
 		List<File> tiffFiles = new ArrayList<>();
 
 		for (File pngFile : pngFiles) {
+			log.debug("PNG FIle:" + pngFile.getAbsolutePath());
 			try {
 				BufferedImage bufferedImage = ImageIO.read(pngFile);
 				File tiffFile = File.createTempFile(pngFile.getName(), ".tif");
 				ImageIO.write(bufferedImage, "tif", tiffFile);
 				tiffFiles.add(tiffFile);
-			} catch (IOException e) {
+			} catch (Exception e) {
 				log.warning("Error creating TIFF  file from PNG " + pngFile.getAbsolutePath());
 			}
 		}

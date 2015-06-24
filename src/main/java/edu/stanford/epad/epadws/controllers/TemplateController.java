@@ -25,20 +25,22 @@ public class TemplateController {
 	private static final EPADLogger log = EPADLogger.getInstance();
  
 	@RequestMapping(value = "/", method = RequestMethod.GET)
-	public EPADTemplateContainerList getTemplates(@RequestParam(value="username") String username, 
+	public EPADTemplateContainerList getTemplates( 
 											HttpServletRequest request, 
 									        HttpServletResponse response) throws Exception {
 		String sessionID = SessionService.getJSessionIDFromRequest(request);
+		String username = SessionService.getUsernameForSession(sessionID);
 		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
 		EPADTemplateContainerList templates = epadOperations.getTemplateDescriptions(username, sessionID);
 		return templates;
 	}
  
 	@RequestMapping(value = "/", method = RequestMethod.POST)
-	public void createSystemTemplates(@RequestParam(value="username") String username, 
+	public void createSystemTemplates( 
 											HttpServletRequest request, 
 									        HttpServletResponse response) throws Exception {
 		String sessionID = SessionService.getJSessionIDFromRequest(request);
+		String username = SessionService.getUsernameForSession(sessionID);
 		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
 	    String requestContentType = request.getContentType();
 		Map<String, Object> paramData = null;
@@ -76,10 +78,11 @@ public class TemplateController {
 	}
 	 
 	@RequestMapping(value = "/", method = RequestMethod.PUT)
-	public void createSystemTemplate(@RequestParam(value="username") String username, 
+	public void createSystemTemplate( 
 											HttpServletRequest request, 
 									        HttpServletResponse response) throws Exception {
 		String sessionID = SessionService.getJSessionIDFromRequest(request);
+		String username = SessionService.getUsernameForSession(sessionID);
 		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
 		File uploadedFile = HandlerUtil.getUploadedFile(request);
 		epadOperations.createSystemTemplate(username, uploadedFile, sessionID);

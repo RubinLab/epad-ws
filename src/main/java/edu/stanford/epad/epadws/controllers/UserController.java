@@ -40,21 +40,23 @@ public class UserController {
 	private static final EPADLogger log = EPADLogger.getInstance();
  
 	@RequestMapping(value = "/", method = RequestMethod.GET)
-	public EPADUserList getEPADUsers(@RequestParam(value="username") String username, 
+	public EPADUserList getEPADUsers( 
 											HttpServletRequest request, 
 									        HttpServletResponse response) throws Exception {
 		String sessionID = SessionService.getJSessionIDFromRequest(request);
+		String username = SessionService.getUsernameForSession(sessionID);
 		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
 		EPADUserList userlist = epadOperations.getUserDescriptions(username, sessionID);
 		return userlist;
 	}
  
 	@RequestMapping(value = "/{user}", method = RequestMethod.GET)
-	public EPADUser getEPADUser(@RequestParam(value="username") String username, 
+	public EPADUser getEPADUser( 
 											@PathVariable String user,
 											HttpServletRequest request, 
 									        HttpServletResponse response) throws Exception {
 		String sessionID = SessionService.getJSessionIDFromRequest(request);
+		String username = SessionService.getUsernameForSession(sessionID);
 		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
 		EPADUser euser = epadOperations.getUserDescription(username, user, sessionID);
 		if (euser == null)
@@ -63,11 +65,12 @@ public class UserController {
 	}
 	 
 	@RequestMapping(value = "/{user}/sessions/", method = RequestMethod.GET)
-	public Collection<EPADSession> getEPADUserSessions(@RequestParam(value="username") String username, 
+	public Collection<EPADSession> getEPADUserSessions( 
 											@PathVariable String user,
 											HttpServletRequest request, 
 									        HttpServletResponse response) throws Exception {
 		String sessionID = SessionService.getJSessionIDFromRequest(request);
+		String username = SessionService.getUsernameForSession(sessionID);
 		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
 		EPADUser euser = epadOperations.getUserDescription(username, user, sessionID);
 		if (euser == null)
@@ -77,27 +80,29 @@ public class UserController {
 	}
 	 
 	@RequestMapping(value = "/{user}/reviewers/", method = RequestMethod.GET)
-	public EPADUserList getUserReviewers(@RequestParam(value="username") String username, 
+	public EPADUserList getUserReviewers( 
 											@PathVariable String user,
 											HttpServletRequest request, 
 									        HttpServletResponse response) throws Exception {
 		String sessionID = SessionService.getJSessionIDFromRequest(request);
+		String username = SessionService.getUsernameForSession(sessionID);
 		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
 		return epadOperations.getReviewers(username, user, sessionID);
 	}
 	 
 	@RequestMapping(value = "/{user}/reviewees/", method = RequestMethod.GET)
-	public EPADUserList getUserReviewees(@RequestParam(value="username") String username, 
+	public EPADUserList getUserReviewees( 
 											@PathVariable String user,
 											HttpServletRequest request, 
 									        HttpServletResponse response) throws Exception {
 		String sessionID = SessionService.getJSessionIDFromRequest(request);
+		String username = SessionService.getUsernameForSession(sessionID);
 		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
 		return epadOperations.getReviewees(username, user, sessionID);
 	}
 	 
 	@RequestMapping(value = "/{user}/{username}", method = RequestMethod.PUT)
-	public void createUSer(@RequestParam(value="username") String loggedInUser, 
+	public void createUSer( 
 											@PathVariable String username,
 											@RequestParam(value="firstname") String firstname,
 											@RequestParam(value="lastname") String lastname,
@@ -110,6 +115,7 @@ public class UserController {
 											HttpServletRequest request, 
 									        HttpServletResponse response) throws Exception {
 		String sessionID = SessionService.getJSessionIDFromRequest(request);
+		String loggedInUser = SessionService.getUsernameForSession(sessionID);
 		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
 		epadOperations.createOrModifyUser(loggedInUser, username, firstname, lastname, email, password, oldpassword, addPermissions, removePermissions);
 		if ("true".equalsIgnoreCase(enable))

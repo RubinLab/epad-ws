@@ -1354,11 +1354,19 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 			Project project = getProject(projectID);
 			criteria = criteria + " and project_id = " + project.getId();
 		}
+		else if (toplevelOnly)
+		{
+			criteria = criteria + " and project_id is null";
+		}
 
 		if (subjectUID != null && subjectUID.length() > 0)
 		{
 			Subject subject = getSubject(subjectUID);
 			criteria = criteria + " and subject_id = " + subject.getId();
+		}
+		else if (toplevelOnly)
+		{
+			criteria = criteria + " and subject_id is null";
 		}
 
 		if (studyUID != null && studyUID.length() > 0)
@@ -1366,10 +1374,18 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 			Study study = getStudy(studyUID);
 			criteria = criteria + " and study_id = " + study.getId();
 		}
+		else if (toplevelOnly)
+		{
+			criteria = criteria + " and study_id is null";
+		}
 
 		if (seriesUID != null && seriesUID.length() > 0)
 		{
 			criteria = criteria + " and series_uid = '" + seriesUID + "'";
+		}
+		else if (toplevelOnly)
+		{
+			criteria = criteria + " and series_uid is null";
 		}
 		
 		if (fileType != null)

@@ -31,10 +31,11 @@ public class PACSController {
 	private static final EPADLogger log = EPADLogger.getInstance();
  
 	@RequestMapping(value = "/", method = RequestMethod.GET)
-	public RemotePACList getEPADRemotePACSList(@RequestParam(value="username") String username, 
+	public RemotePACList getEPADRemotePACSList( 
 											HttpServletRequest request, 
 									        HttpServletResponse response) throws Exception {
 		String sessionID = SessionService.getJSessionIDFromRequest(request);
+		String username = SessionService.getUsernameForSession(sessionID);
 		List<RemotePAC> pacs = RemotePACService.getInstance().getRemotePACs();
 		RemotePACList pacList = new RemotePACList();
 		for (RemotePAC pac: pacs)
@@ -43,7 +44,7 @@ public class PACSController {
 	}
 	
 	@RequestMapping(value = "/{pacID:.+}", method = RequestMethod.GET)
-	public RemotePAC getEPADRemotePACS(@RequestParam(value="username") String username, 
+	public RemotePAC getEPADRemotePACS( 
 											@PathVariable String pacID,
 											HttpServletRequest request, 
 									        HttpServletResponse response) throws Exception {
@@ -55,7 +56,7 @@ public class PACSController {
 	}
 	 
 	@RequestMapping(value = "/{pacID}/entities/", method = RequestMethod.GET)
-	public RemotePACEntityList getEPADRemotePACEntities(@RequestParam(value="username") String username, 
+	public RemotePACEntityList getEPADRemotePACEntities( 
 									@RequestParam(value="patientNameFilter", required=false) String patientNameFilter,
 									@RequestParam(value="patientIDFilter", required=false) String patientIDFilter,
 									@RequestParam(value="studyIDFilter", required=false) String studyIDFilter,
@@ -87,7 +88,7 @@ public class PACSController {
 	}
 	 
 	@RequestMapping(value = "/{pacID}/subjects/", method = RequestMethod.GET)
-	public RemotePACEntityList getEPADRemotePACSubjects(@RequestParam(value="username") String username, 
+	public RemotePACEntityList getEPADRemotePACSubjects( 
 									@RequestParam(value="patientNameFilter", defaultValue="") String patientNameFilter,
 									@RequestParam(value="patientIDFilter", defaultValue="") String patientIDFilter,
 									@PathVariable String pacID,
@@ -122,7 +123,7 @@ public class PACSController {
 	}
 	 
 	@RequestMapping(value = "/{pacID}/subjects/{subjectID}/studies/", method = RequestMethod.GET)
-	public RemotePACEntityList getEPADRemotePACStudies(@RequestParam(value="username") String username, 
+	public RemotePACEntityList getEPADRemotePACStudies( 
 									@RequestParam(value="studyDateFilter", defaultValue="") String studyDateFilter,
 									@RequestParam(value="modality", required=false) String modality,
 									@PathVariable String pacID,
@@ -153,7 +154,7 @@ public class PACSController {
 	}
 	 
 	@RequestMapping(value = "/{pacID}/subjects/{subjectID}/studies/{studyUID}/series/", method = RequestMethod.GET)
-	public RemotePACEntityList getEPADRemotePACSeries(@RequestParam(value="username") String username, 
+	public RemotePACEntityList getEPADRemotePACSeries( 
 									@PathVariable String pacID,
 									@PathVariable String subjectID,
 									@PathVariable String studyUID,
@@ -186,7 +187,7 @@ public class PACSController {
 	}
 	 
 	@RequestMapping(value = "/{pacID}/entities/{entityID:.+}", method = RequestMethod.GET)
-	public void transferEPADRemotePACEntity(@RequestParam(value="username") String username, 
+	public void transferEPADRemotePACEntity( 
 									@RequestParam(value="projectID", required = true) String projectID,
 									@PathVariable String pacID,
 									@PathVariable String entityID,
@@ -194,6 +195,7 @@ public class PACSController {
 							        HttpServletResponse response) throws Exception {
 		log.info("Transfer Remote Data, pacID:" + pacID);
 		String sessionID = SessionService.getJSessionIDFromRequest(request);
+		String username = SessionService.getUsernameForSession(sessionID);
 		boolean studiesOnly = !"true".equalsIgnoreCase(request.getParameter("series"));
 		RemotePAC pac = RemotePACService.getInstance().getRemotePAC(pacID);
 		if (pac != null)
@@ -213,7 +215,7 @@ public class PACSController {
 	}
 	 
 	@RequestMapping(value = "/{pacID}/autoqueries/", method = RequestMethod.GET)
-	public RemotePACQueryConfigList getEPADRemotePACQueries(@RequestParam(value="username") String username, 
+	public RemotePACQueryConfigList getEPADRemotePACQueries( 
 									@PathVariable String pacID,
 									HttpServletRequest request, 
 							        HttpServletResponse response) throws Exception {
@@ -235,7 +237,7 @@ public class PACSController {
 	}
 	 
 	@RequestMapping(value = "/{pacID}/autoqueries/{subjectID:.+}", method = RequestMethod.GET)
-	public RemotePACQueryConfig getEPADRemotePACQuery(@RequestParam(value="username") String username, 
+	public RemotePACQueryConfig getEPADRemotePACQuery( 
 									@PathVariable String pacID,
 									@PathVariable String subjectID,
 									HttpServletRequest request, 
@@ -257,7 +259,7 @@ public class PACSController {
 	}
 	 
 	@RequestMapping(value = "/dicomtags/", method = RequestMethod.GET)
-	public DicomTagList getDicomTags(@RequestParam(value="username") String username, 
+	public DicomTagList getDicomTags( 
 									HttpServletRequest request, 
 							        HttpServletResponse response) throws Exception {
 		String sessionID = SessionService.getJSessionIDFromRequest(request);
@@ -265,7 +267,7 @@ public class PACSController {
 	}
 	 
 	@RequestMapping(value = "/{pacID:.+}", method = RequestMethod.PUT)
-	public void createRemotePAC(@RequestParam(value="username") String username, 
+	public void createRemotePAC( 
 									@PathVariable String pacID,
 									@RequestParam(value="aeTitle", required=true) String aeTitle,
 									@RequestParam(value="hostname", required=true) String hostname,
@@ -275,6 +277,7 @@ public class PACSController {
 									HttpServletRequest request, 
 							        HttpServletResponse response) throws Exception {
 		String sessionID = SessionService.getJSessionIDFromRequest(request);
+		String username = SessionService.getUsernameForSession(sessionID);
 		RemotePAC pac = RemotePACService.getInstance().getRemotePAC(pacID);
 		if (pac == null)
 		{
@@ -289,7 +292,7 @@ public class PACSController {
 	}	
 	 
 	@RequestMapping(value = "/{pacID}/autoqueries/{subjectID:.+}", method = RequestMethod.PUT)
-	public void createRemotePACAutoQuery(@RequestParam(value="username") String username, 
+	public void createRemotePACAutoQuery( 
 									@PathVariable String pacID,
 									@PathVariable String subjectID,
 									@RequestParam(value="projectID", required=true) String projectID,
@@ -302,6 +305,7 @@ public class PACSController {
 									HttpServletRequest request, 
 							        HttpServletResponse response) throws Exception {
 		String sessionID = SessionService.getJSessionIDFromRequest(request);
+		String username = SessionService.getUsernameForSession(sessionID);
 		if (subjectName == null)
 			subjectName = patientName;
 		if (enable != null)
@@ -325,11 +329,12 @@ public class PACSController {
 	}	
 	 
 	@RequestMapping(value = "/{pacID:.+}", method = RequestMethod.DELETE)
-	public void deleteRemotePAC(@RequestParam(value="username") String username, 
+	public void deleteRemotePAC( 
 									@PathVariable String pacID,
 									HttpServletRequest request, 
 							        HttpServletResponse response) throws Exception {
 		String sessionID = SessionService.getJSessionIDFromRequest(request);
+		String username = SessionService.getUsernameForSession(sessionID);
 		RemotePAC pac = RemotePACService.getInstance().getRemotePAC(pacID);
 		if (pac != null)
 		{
@@ -340,12 +345,13 @@ public class PACSController {
 	}
 	 
 	@RequestMapping(value = "/{pacID}/autoqueries/{subjectID:.+}", method = RequestMethod.DELETE)
-	public void deleteRemotePACQuery(@RequestParam(value="username") String username, 
+	public void deleteRemotePACQuery( 
 									@PathVariable String pacID,
 									@PathVariable String subjectID,
 									HttpServletRequest request, 
 							        HttpServletResponse response) throws Exception {
 		String sessionID = SessionService.getJSessionIDFromRequest(request);
+		String username = SessionService.getUsernameForSession(sessionID);
 		RemotePAC pac = RemotePACService.getInstance().getRemotePAC(pacID);
 		if (pac != null)
 		{

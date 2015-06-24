@@ -98,7 +98,7 @@ public class Main
 {
 	private static final EPADLogger log = EPADLogger.getInstance();
 	
-	public static boolean separateWebServicesApp = false;
+	public static boolean separateWebServicesApp = true;
 
 	
 	public static void main(String[] args)
@@ -107,15 +107,19 @@ public class Main
 		Server server = null;
 
 		try {
-			log.info("#####################################################");
-			log.info("############# Starting ePAD Web Service #############");
-			log.info("#####################################################");
 
 			int epadPort = EPADConfig.epadPort;
 			separateWebServicesApp = "true".equalsIgnoreCase(EPADConfig.getParamValue("SeparateWebServicesApp"));
 			if (!separateWebServicesApp) {
+				log.info("#####################################################");
+				log.info("############# Starting ePAD Web Service #############");
+				log.info("#####################################################");
 				initializePlugins();
 				startSupportThreads();
+			} else {
+				log.info("#####################################################");
+				log.info("############# Starting ePAD GWT FrontEnd ############");
+				log.info("#####################################################");
 			}
 			server = new Server(epadPort);
 			configureJettyServer(server);
@@ -136,7 +140,7 @@ public class Main
 			log.severe("Fatal Error. Shutting down ePAD Web Service", err);
 		} finally {
 			log.info("#####################################################");
-			log.info("############# Shutting down ePAD Web Service ########");
+			log.info("############# Shutting down ePAD  ###################");
 			log.info("#####################################################");
 
 			shutdownSignal.shutdownNow();

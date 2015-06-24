@@ -78,7 +78,7 @@ public class EPADPostHandler
 				if ("new".equalsIgnoreCase(type))
 				{
 					boolean errstatus = DSOUtil.handleCreateDSO(imageReference.projectID, imageReference.subjectID, imageReference.studyUID,
-							imageReference.seriesUID, httpRequest, responseStream);
+							imageReference.seriesUID, httpRequest, responseStream, username);
 					if (!errstatus)
 						statusCode = HttpServletResponse.SC_CREATED;
 					else
