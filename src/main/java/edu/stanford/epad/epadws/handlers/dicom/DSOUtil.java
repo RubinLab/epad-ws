@@ -231,16 +231,19 @@ public class DSOUtil
 			File temporaryDSOFile = File.createTempFile(dsoEditRequest.seriesUID, ".dso");
 			log.info("Found " + dicomFilePaths.size() + " source DICOM file(s) for series " + dsoEditRequest.seriesUID);
 			List<File> dsoTIFFMaskFiles = new ArrayList<>();
-			for (int i = dicomFilePaths.size()-1; i > -1 ; i--)
+			for (int i = 0; i < dicomFilePaths.size(); i++)
 			{
-				//if (!dsoEditRequest.editedFrameNumbers.contains(new Integer(i+1)))
-				{
-					String fileName = dicomFilePaths.get(i);
-					fileName = "EmptyMask_" + i + "_";
-					dsoTIFFMaskFiles.add(copyEmptyTiffFile(fileName, width, height));
-				}
-				//else
-				//	dsoTIFFMaskFiles.add(null);
+					String fileName = "EmptyMask_" + i + "_";
+					if (i == 0)
+					{
+						dsoTIFFMaskFiles.add(copyEmptyTiffFile(tiffMaskFiles.get(0), fileName, width, height));
+					}
+					else
+					{
+						File tifFile = File.createTempFile(fileName,".tif");
+						EPADFileUtils.copyFile(dsoTIFFMaskFiles.get(0), tifFile);
+						dsoTIFFMaskFiles.add(tifFile);
+					}
 			}
 			int frameMaskFilesIndex = 0;
 			for (Integer frameNumber : dsoEditRequest.editedFrameNumbers) {
@@ -275,13 +278,22 @@ public class DSOUtil
 		}
 	}
 
-	private static File copyEmptyTiffFile(String newFileName, int width, int height)
+	private static File copyEmptyTiffFile(File original, String newFileName, int width, int height)
 	{
 		File newFile = null;
 		try {
+			long len = original.length();
+			long rgbLen = width*height*4;
+			long greyLen = width*height;
+			long bwLen = width*height/8;
+			int imagetype = BufferedImage.TYPE_BYTE_BINARY;
+			if (len > greyLen)
+				imagetype = BufferedImage.TYPE_BYTE_GRAY;
+			if (len > rgbLen)
+				imagetype = BufferedImage.TYPE_4BYTE_ABGR;
 			newFile = File.createTempFile(newFileName,".tif");
 			//log.info("Creating empty tiff:" + newFile.getAbsolutePath() + " width:" + width + " height:" + height);
-			BufferedImage bufferedImage = new BufferedImage(width, height, BufferedImage.TYPE_4BYTE_ABGR);
+			BufferedImage bufferedImage = new BufferedImage(width, height, imagetype);
 			for (int x = 0; x < width; x++) {
 				for (int y = 0; y < height; y++) {
 						bufferedImage.setRGB(x, y, Color.black.getRGB());
@@ -619,7 +631,24 @@ public class DSOUtil
 			ServletFileUpload servletFileUpload = new ServletFileUpload();
 			FileItemIterator fileItemIterator = servletFileUpload.getItemIterator(httpRequest);
 
-			DSOEditRequest dsoEditRequest = extractDSOEditRequest(fileItemIterator);
+			DSOEditRequest dsoEditRequest = null;
+			String editedFrameNumbers = httpRequest.getParameter("editedFrameNumbers");
+			if (editedFrameNumbers == null || editedFrameNumbers.length() == 0)
+			{
+				dsoEditRequest = extractDSOEditRequest(fileItemIterator);
+			}
+			else
+			{
+				log.info("Uploaded mask frame numbers:" + editedFrameNumbers);
+				String[] frameNumbers = editedFrameNumbers.split(",");
+				List<Integer> numbers = new ArrayList<Integer>();
+				for (String frameNumber: frameNumbers)
+				{
+					if (frameNumber.trim().length() == 0) continue;
+					numbers.add(new Integer(frameNumber.trim()));
+				}
+				dsoEditRequest = new DSOEditRequest(projectID, subjectID, studyUID, seriesUID, imageUID, httpRequest.getParameter("aimID"),numbers);
+			}
 
 			if (dsoEditRequest != null) {
 				log.info("DSOEditRequest, imageUID:" + dsoEditRequest.imageUID + " aimID:" + dsoEditRequest.aimID + " number Frames:" + dsoEditRequest.editedFrameNumbers.size());
@@ -714,20 +743,36 @@ public class DSOUtil
 		boolean uploadError = false;
 
 		log.info("Received DSO edit request for series " + seriesUID);
-
 		try {
 			ServletFileUpload servletFileUpload = new ServletFileUpload();
 			FileItemIterator fileItemIterator = servletFileUpload.getItemIterator(httpRequest);
-			DSOEditRequest dsoEditRequest = extractDSOEditRequest(fileItemIterator);
-			log.info("DSOEditRequest, imageUID:" + dsoEditRequest.imageUID + " aimID:" + dsoEditRequest.aimID + " number Frames:" + dsoEditRequest.editedFrameNumbers.size());
+			DSOEditRequest dsoEditRequest = null;
+			String editedFrameNumbers = httpRequest.getParameter("editedFrameNumbers");
+			if (editedFrameNumbers == null || editedFrameNumbers.length() == 0)
+			{
+				dsoEditRequest = extractDSOEditRequest(fileItemIterator);
+			}
+			else
+			{
+				log.info("Uploaded mask frame numbers:" + editedFrameNumbers);
+				String[] frameNumbers = editedFrameNumbers.split(",");
+				List<Integer> numbers = new ArrayList<Integer>();
+				for (String frameNumber: frameNumbers)
+				{
+					if (frameNumber.trim().length() == 0) continue;
+					numbers.add(new Integer(frameNumber.trim()));
+				}
+				dsoEditRequest = new DSOEditRequest(projectID, subjectID, studyUID, seriesUID, "", "",numbers);
+			}
+			log.info("DSOEditRequest, seriesUID:" + dsoEditRequest.seriesUID + " imageUID:" + dsoEditRequest.imageUID + " aimID:" + dsoEditRequest.aimID + " number Frames:" + dsoEditRequest.editedFrameNumbers.size());
 
 			if (dsoEditRequest != null) {
 				List<File> framesPNGMaskFiles = HandlerUtil.extractFiles(fileItemIterator, "DSOFrame", ".PNG");
-				dsoEditRequest.seriesUID = seriesUID;
 				if (framesPNGMaskFiles.isEmpty()) {
 					log.warning("No PNG masks supplied in DSO create request for series " + seriesUID);
 					uploadError = true;
 				} else {
+					framesPNGMaskFiles = framesPNGMaskFiles.subList(0, dsoEditRequest.editedFrameNumbers.size());
 					log.info("Extracted " + framesPNGMaskFiles.size() + " file mask(s) for DSO create for series " + seriesUID);
 					DSOEditResult dsoEditResult = DSOUtil.createNewDSO(dsoEditRequest, framesPNGMaskFiles, projectID, username);
 					if (dsoEditResult != null)
@@ -938,7 +983,7 @@ public class DSOUtil
 				ImageIO.write(bufferedImage, "tif", tiffFile);
 				tiffFiles.add(tiffFile);
 			} catch (Exception e) {
-				log.warning("Error creating TIFF  file from PNG " + pngFile.getAbsolutePath());
+				log.warning("Error creating TIFF  file from PNG " + pngFile.getAbsolutePath(), e);
 			}
 		}
 		return tiffFiles;
