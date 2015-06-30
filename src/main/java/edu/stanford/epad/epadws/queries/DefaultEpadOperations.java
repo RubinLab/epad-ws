@@ -2207,6 +2207,28 @@ public class DefaultEpadOperations implements EpadOperations
 				log.info("Deleting Series:" + aim.dsoSeriesUID + " In project:" + aim.projectID);
 				this.deleteSeries(new SeriesReference(projectReference.projectID, aim.subjectID, aim.studyUID, aim.dsoSeriesUID), false);
 			}
+			if (deleteDSO && aim.dsoSeriesUID != null && aim.dsoSeriesUID.length() > 0)
+			{
+				List<EPADAIM> otheraims = epadDatabaseOperations.getAIMsByDSOSeries(aim.dsoSeriesUID);
+				if (otheraims.size() == 0)
+				{
+					String error =  this.deleteSeries(new SeriesReference(projectReference.projectID, aim.subjectID, aim.studyUID, aim.dsoSeriesUID), false);
+					if (error != null && error.length() > 0)
+						log.warning("Error deleting DSO, seriesUID:" + aim.dsoSeriesUID);
+						epadDatabaseOperations.insertEpadEvent(
+							username, 
+							"Error deleting DSO Series", 
+							aim.dsoSeriesUID, "", aim.subjectID, aim.subjectID, aim.studyUID, projectReference.projectID, error);					
+				}
+				else
+				{
+					log.info("DSO not deleted, seriesUID:" + aim.dsoSeriesUID);
+					epadDatabaseOperations.insertEpadEvent(
+						username, 
+						"DSO Series not deleted", 
+						aim.dsoSeriesUID, "", aim.subjectID, aim.subjectID, aim.studyUID, projectReference.projectID, "DSO referenced by another AIM in " + otheraims.get(0).projectID);					
+				}
+			}
 			return HttpServletResponse.SC_OK;
 		} catch (Exception e) {
 			log.warning("Error deleting AIM file ",e);
@@ -2280,21 +2302,24 @@ public class DefaultEpadOperations implements EpadOperations
 			epadDatabaseOperations.deleteAIM(username, seriesReference, aimID);
 			if (deleteDSO && aim.dsoSeriesUID != null && aim.dsoSeriesUID.length() > 0)
 			{
-				if (epadDatabaseOperations.getAIMsByDSOSeries(aim.dsoSeriesUID).size() == 0)
+				List<EPADAIM> otheraims = epadDatabaseOperations.getAIMsByDSOSeries(aim.dsoSeriesUID);
+				if (otheraims.size() == 0)
 				{
 					String error = this.deleteSeries(new SeriesReference(seriesReference.projectID, aim.subjectID, aim.studyUID, aim.dsoSeriesUID), false);
 					if (error != null && error.length() > 0)
+						log.warning("Error deleting DSO, seriesUID:" + aim.dsoSeriesUID);
 						epadDatabaseOperations.insertEpadEvent(
 							username, 
-							"Error deletingg DSO Series", 
+							"Error deleting DSO Series", 
 							aim.dsoSeriesUID, "", aim.subjectID, aim.subjectID, aim.studyUID, seriesReference.projectID, error);					
 				}
 				else
 				{
+					log.info("DSO not deleted, seriesUID:" + aim.dsoSeriesUID);
 					epadDatabaseOperations.insertEpadEvent(
 						username, 
 						"DSO Series not deleted", 
-						aim.dsoSeriesUID, "", aim.subjectID, aim.subjectID, aim.studyUID, seriesReference.projectID, "DSO referenced by another AIM");					
+						aim.dsoSeriesUID, "", aim.subjectID, aim.subjectID, aim.studyUID, seriesReference.projectID, "DSO referenced by another AIM in " + otheraims.get(0).projectID);					
 				}
 			}
 			return HttpServletResponse.SC_OK;
