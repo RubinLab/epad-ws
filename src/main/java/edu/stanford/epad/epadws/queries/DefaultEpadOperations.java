@@ -837,10 +837,12 @@ public class DefaultEpadOperations implements EpadOperations
    					return "Series " + seriesReference.seriesUID + " in use by other projects:" + projectId + ", so series will not be deleted from DCM4CHEE";
     			}
     		}
+    		return deleteSeries(seriesReference, deleteAims);
 		} catch (Exception e) {
-			log.warning("Error deleting Series " + seriesReference.seriesUID + " for patient " + seriesReference.subjectID + " in project " + seriesReference.projectID, e);
+			String msg = "Error deleting Series " + seriesReference.seriesUID + " for patient " + seriesReference.subjectID + " in project " + seriesReference.projectID;
+			log.warning(msg, e);
+			return msg;
 		}
-		return deleteSeries(seriesReference, deleteAims);
 	}
 	
 	public String deleteSeries(SeriesReference seriesReference, boolean deleteAims)
