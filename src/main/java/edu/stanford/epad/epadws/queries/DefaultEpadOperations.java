@@ -2278,9 +2278,24 @@ public class DefaultEpadOperations implements EpadOperations
 				throw new Exception(aimID + " is still being processed by the plugin");
 			AIMUtil.deleteAIM(aimID, seriesReference.projectID);
 			epadDatabaseOperations.deleteAIM(username, seriesReference, aimID);
-			if (deleteDSO && aim.dsoSeriesUID != null && aim.dsoSeriesUID.length() > 0 && epadDatabaseOperations.getAIMsByDSOSeries(aim.dsoSeriesUID).size() == 0)
+			if (deleteDSO && aim.dsoSeriesUID != null && aim.dsoSeriesUID.length() > 0)
 			{
-				this.deleteSeries(new SeriesReference(seriesReference.projectID, aim.subjectID, aim.studyUID, aim.dsoSeriesUID), false);
+				if (epadDatabaseOperations.getAIMsByDSOSeries(aim.dsoSeriesUID).size() == 0)
+				{
+					String error = this.deleteSeries(new SeriesReference(seriesReference.projectID, aim.subjectID, aim.studyUID, aim.dsoSeriesUID), false);
+					if (error != null && error.length() > 0)
+						epadDatabaseOperations.insertEpadEvent(
+							username, 
+							"Error deletingg DSO Series", 
+							aim.dsoSeriesUID, "", aim.subjectID, aim.subjectID, aim.studyUID, seriesReference.projectID, error);					
+				}
+				else
+				{
+					epadDatabaseOperations.insertEpadEvent(
+						username, 
+						"DSO Series not deleted", 
+						aim.dsoSeriesUID, "", aim.subjectID, aim.subjectID, aim.studyUID, seriesReference.projectID, "DSO referenced by another AIM");					
+				}
 			}
 			return HttpServletResponse.SC_OK;
 		} catch (Exception e) {

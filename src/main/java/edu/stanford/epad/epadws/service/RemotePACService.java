@@ -217,7 +217,7 @@ public class RemotePACService extends RemotePACSBase {
 					ae.getPresentationAddress().getPort(), ae.getQueryModel(), ae.getPrimaryDeviceType());
 			rps.add(rp);
 		}
-		if (EPADConfig.getParamValue("TCIA_APIKEY") != null) {
+		if (EPADConfig.getParamValue("TCIA_APIKEY") != null && EPADConfig.getParamValue("TCIA_APIKEY").length() > 0) {
 			try {
 				List<String> collections = TCIAService.getInstance().getCollections();
 				for (String collection: collections)

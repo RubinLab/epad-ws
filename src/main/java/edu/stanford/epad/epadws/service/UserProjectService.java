@@ -241,7 +241,7 @@ public class UserProjectService {
 				+ XNAT_UPLOAD_PROPERTIES_FILE_NAME;
 		File xnatUploadPropertiesFile = new File(propertiesFilePath);
 		try {
-			Thread.sleep(2000); // Give it a couple of seconds for the property file to appear
+			Thread.sleep(5000); // Give it a couple of seconds for the property file to appear
 		} catch (InterruptedException e1) {}
 		if (!xnatUploadPropertiesFile.exists())
 			log.warning("Could not find XNAT upload properties file " + propertiesFilePath);
@@ -249,12 +249,12 @@ public class UserProjectService {
 			Properties xnatUploadProperties = new Properties();
 			FileInputStream propertiesFileStream = null;
 			try {
-				log.info("Found XNAT upload properties file " + propertiesFilePath);
 				propertiesFileStream = new FileInputStream(xnatUploadPropertiesFile);
 				xnatUploadProperties.load(propertiesFileStream);
 				String xnatProjectLabel = xnatUploadProperties.getProperty("XNATProjectName");
 				String xnatSessionID = xnatUploadProperties.getProperty("XNATSessionID");
 				String xnatUserName = xnatUploadProperties.getProperty("XNATUserName");
+				log.info("Found XNAT upload properties file " + propertiesFilePath + " project:" + xnatProjectLabel + " user:" + xnatUserName);
 				if (xnatProjectLabel != null && xnatSessionID != null) {
 					xnatUploadPropertiesFile.delete();
 					int numberOfDICOMFiles = createProjectEntitiesFromDICOMFilesInUploadDirectory(dicomUploadDirectory, xnatProjectLabel, xnatSessionID, xnatUserName);
@@ -387,6 +387,18 @@ public class UserProjectService {
 					List<ImageAnnotation> ias = AIMQueries.getAIMImageAnnotations(AIMSearchType.SERIES_UID, seriesUID, username, 1, 50);
 					if (ias.size() == 0 || aims.size() == 0) 
 						AIMUtil.generateAIMFileForDSO(dicomFile, username, projectID);
+					String imageUID = dicomObject.getString(Tag.SOPInstanceUID);
+					String pngMaskDirectoryPath = EPADConfig.getEPADWebServerPNGDir() + "/studies/" + studyUID + "/series/" + seriesUID + "/images/"
+							+ imageUID + "/masks/";
+					File pngDirectory = new File(pngMaskDirectoryPath);
+					if (pngDirectory.exists())
+					{
+						File[] files = pngDirectory.listFiles();
+						for (File file: files)
+						{
+							file.delete();
+						}
+					}
 				} catch (Exception x) {
 					log.warning("Error generating DSO Annotation:", x);
 					databaseOperations.insertEpadEvent(
