@@ -345,7 +345,7 @@ public class Main
 			webAppContext.setDefaultsDescriptor(EPADConfig.getEPADWebServerEtcDir()+"webdefault.xml");
 		}
 		log.info("WebAuthFilter:'" + EPADConfig.getParamValue("WebAuthFilter", null) + "'");
-		//if (EPADConfig.webAuthPassword != null && EPADConfig.getParamValue("WebAuthFilter", null) != null)
+		if (EPADConfig.webAuthPassword != null && EPADConfig.getParamValue("WebAuthFilter", null) != null)
 		{
 			try {
 				Class filter = Class.forName(EPADConfig.getParamValue("WebAuthFilter","edu.stanford.epad.epadws.security.WebAuthFilter"));
