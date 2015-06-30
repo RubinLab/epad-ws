@@ -94,13 +94,19 @@ public class DefaultWorkListOperations implements EpadWorkListOperations {
 		{
 			workList = this.getWorkList(workListID);
 		}
-		else
-			workList = this.getWorkListForUserByProject(username, projectID);
 		if (workList == null) workList = new WorkList();
 		if (workListID != null && workListID.trim().length() > 0)
 			workList.setWorkListID(workListID);
 		if (workList.getWorkListID() == null)
-			workList.setWorkListID(projectID + "_" + username);
+		{
+			int i = 0;
+			workListID = projectID + "_" + username + "_" + i;
+			while (getWorkList(workListID) != null) {
+				i++;
+				workListID = projectID + "_" + username + "_" + i;
+			}
+			workList.setWorkListID(workListID);
+		}
 		if (description != null && description.trim().length() > 0)
 			workList.setDescription(description);
 		if (startDate != null)

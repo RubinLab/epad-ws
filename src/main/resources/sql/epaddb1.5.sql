@@ -1,6 +1,3 @@
-DROP TABLE if exists worklist_study;
-DROP TABLE if exists worklist_subject;
-DROP TABLE if exists worklist;
 
 CREATE TABLE worklist (id integer unsigned NOT NULL AUTO_INCREMENT,
 worklistid varchar(128),
@@ -20,7 +17,7 @@ KEY FK_worklist_user (user_id),
 CONSTRAINT FK_worklist_user FOREIGN KEY (user_id) REFERENCES user(id),
 KEY FK_worklist_project (project_id),
 CONSTRAINT FK_worklist_project FOREIGN KEY (project_id) REFERENCES project(id)) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-CREATE UNIQUE INDEX worklist_ind on worklist(project_id,user_id);
+CREATE UNIQUE INDEX worklist_ind on worklist(worklistid);
 
 CREATE TABLE worklist_subject (id integer unsigned NOT NULL AUTO_INCREMENT,
 worklist_id integer unsigned,

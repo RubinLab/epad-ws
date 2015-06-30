@@ -241,7 +241,7 @@ public class UserProjectService {
 				+ XNAT_UPLOAD_PROPERTIES_FILE_NAME;
 		File xnatUploadPropertiesFile = new File(propertiesFilePath);
 		try {
-			Thread.sleep(2000); // Give it a couple of seconds for the property file to appear
+			Thread.sleep(5000); // Give it a couple of seconds for the property file to appear
 		} catch (InterruptedException e1) {}
 		if (!xnatUploadPropertiesFile.exists())
 			log.warning("Could not find XNAT upload properties file " + propertiesFilePath);
@@ -327,7 +327,10 @@ public class UserProjectService {
 					numberOfDICOMFiles++;
 			} catch (Exception x) {
 				log.warning("Error processing dicom:" + dicomFile.getName(), x);
-			}
+				databaseOperations.insertEpadEvent(
+						username, 
+						"Error processing dicom:" + dicomFile.getName(), 
+						dicomFile.getName(), "", dicomFile.getName(), dicomFile.getName(), dicomFile.getName(), projectID, "Error:" + x.getMessage());				}
 		}
 		return numberOfDICOMFiles;
 	}
@@ -349,7 +352,7 @@ public class UserProjectService {
 		String studyDate = dicomObject.getString(Tag.StudyDate);
 		String seriesUID = dicomObject.getString(Tag.SeriesInstanceUID);
 		String modality = dicomObject.getString(Tag.Modality);
-		log.debug("Uploading dicom, patientName:" + dicomPatientName + " patientID:" + dicomPatientID + " studyUID:" + studyUID + " studyDate:" + studyDate + " seriesUID:" + seriesUID);
+		log.debug("Uploading dicom, patientName:" + dicomPatientName + " patientID:" + dicomPatientID + " studyUID:" + studyUID + " studyDate:" + studyDate + " seriesUID:" + seriesUID + " modality:" + modality);
 		if (dicomPatientID == null || dicomPatientID.trim().length() == 0 
 				|| dicomPatientID.equalsIgnoreCase("ANON") 
 				|| dicomPatientID.equalsIgnoreCase("Unknown") 
@@ -387,6 +390,18 @@ public class UserProjectService {
 					List<ImageAnnotation> ias = AIMQueries.getAIMImageAnnotations(AIMSearchType.SERIES_UID, seriesUID, username, 1, 50);
 					if (ias.size() == 0 || aims.size() == 0) 
 						AIMUtil.generateAIMFileForDSO(dicomFile, username, projectID);
+					String imageUID = dicomObject.getString(Tag.SOPInstanceUID);
+					String pngMaskDirectoryPath = EPADConfig.getEPADWebServerPNGDir() + "/studies/" + studyUID + "/series/" + seriesUID + "/images/"
+							+ imageUID + "/masks/";
+					File pngDirectory = new File(pngMaskDirectoryPath);
+					if (pngDirectory.exists())
+					{
+						File[] files = pngDirectory.listFiles();
+						for (File file: files)
+						{
+							file.delete();
+						}
+					}
 				} catch (Exception x) {
 					log.warning("Error generating DSO Annotation:", x);
 					databaseOperations.insertEpadEvent(

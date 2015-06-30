@@ -96,7 +96,7 @@ public class EPADSessionHandler extends AbstractHandler
 				host = httpRequest.getRemoteHost();
 			}
 			if (username.length() != 0) {
-				log.info("Login Request, User:" + username  + " hostname:" + host +" ip:" + ip);
+				log.info("Login Request, User:" + username  + " hostname:" + host +" ip:" + ip + " origin:" + origin);
 				try {
 					EPADSessionResponse sessionResponse = SessionService.authenticateUser(httpRequest);
 					if (sessionResponse.statusCode == HttpServletResponse.SC_OK) {
@@ -123,7 +123,17 @@ public class EPADSessionHandler extends AbstractHandler
 						httpResponse.setContentType("text/plain");
 						PrintWriter responseStream = httpResponse.getWriter();
 						responseStream.append(jsessionID);
-						httpResponse.addHeader("Access-Control-Allow-Origin", origin);
+						if ("true".equalsIgnoreCase(EPADConfig.getParamValue("SeparateWebServicesApp")))
+						{
+							log.info("Setting JSESSIONID Cookie");
+//				            Cookie sessionCookie = new Cookie(JSESSIONID_COOKIE, jsessionID);
+//				            sessionCookie.setMaxAge(8*3600);
+//				            sessionCookie.setPath(httpRequest.getContextPath() + "/");
+//				            httpResponse.addCookie(sessionCookie);
+//							httpResponse.addHeader("Set-Cookie", "JSESSIONID=" + jsessionID);
+						}
+						httpResponse.setHeader("Access-Control-Allow-Origin", "*");
+						//httpResponse.addHeader("Access-Control-Allow-Origin", origin);
 						httpResponse.addHeader("Access-Control-Allow-Credentials", "true");
 						log.info("Successful login to EPAD; JSESSIONID=" + jsessionID);
 						statusCode = HttpServletResponse.SC_OK;
@@ -143,14 +153,22 @@ public class EPADSessionHandler extends AbstractHandler
 				statusCode = HandlerUtil.warningResponse(HttpServletResponse.SC_BAD_REQUEST, MISSING_USER, log);
 			}
 		} else if ("DELETE".equalsIgnoreCase(method)) {
-			log.info("Logout request, sessionId:" + SessionService.getJSessionIDFromRequest(httpRequest));
+			log.info("Logout request, sessionId:" + SessionService.getJSessionIDFromRequest(httpRequest)  + " origin:" + origin);
 			try {
+				String jsessionID = SessionService.getJSessionIDFromRequest(httpRequest);
 				statusCode = SessionService.invalidateSessionID(httpRequest);
 				httpResponse.setHeader("Access-Control-Allow-Origin", "*");
 				httpResponse.setHeader("Access-Control-Allow-Methods", "POST, DELETE, OPTIONS");
 				//httpResponse.addHeader("Access-Control-Allow-Origin", "*");
+				if ("true".equalsIgnoreCase(EPADConfig.getParamValue("SeparateWebServicesApp")))
+				{
+		            Cookie sessionCookie = new Cookie(JSESSIONID_COOKIE, "");
+		            sessionCookie.setMaxAge(0);
+		            sessionCookie.setPath(httpRequest.getContextPath() + "/");
+		            httpResponse.addCookie(sessionCookie);
+				}
 				log.info("Delete session returns status code " + statusCode);
-
+				statusCode = HttpServletResponse.SC_OK;
 			} catch (Throwable t) {
 				statusCode = HandlerUtil.internalErrorResponse(LOGOUT_EXCEPTION_MESSAGE, t, log);
 			}
@@ -162,15 +180,17 @@ public class EPADSessionHandler extends AbstractHandler
 				statusCode = HandlerUtil.internalErrorResponse(LOGOUT_EXCEPTION_MESSAGE, t, log);
 			}
 		} else if ("OPTIONS".equalsIgnoreCase(method)) {
-			log.info("CORS preflight OPTIONS request to session route");
-			httpResponse.setHeader("Access-Control-Allow-Origin", origin);
-			//httpResponse.setHeader("Access-Control-Allow-Origin", "*");
+			log.info("CORS preflight OPTIONS request to session route" + " origin:" + origin);
+			//httpResponse.setHeader("Access-Control-Allow-Origin", origin);
+			httpResponse.setHeader("Access-Control-Allow-Origin", "*");
 			//httpResponse.addHeader("Access-Control-Allow-Origin", "*");
 			httpResponse.setHeader("Access-Control-Allow-Credentials", "true");
 			httpResponse.setHeader("Access-Control-Allow-Headers", "Authorization");
 			httpResponse.setHeader("Access-Control-Allow-Methods", "POST, DELETE, OPTIONS");
 			statusCode = HttpServletResponse.SC_OK;
 		} else {
+			log.info("Request, Method:" + method  + " origin:" + origin);
+			httpResponse.setHeader("Access-Control-Allow-Origin", "*");
 			httpResponse.setHeader("Access-Control-Allow-Methods", "POST, DELETE, OPTIONS");
 			statusCode = HandlerUtil.warningResponse(HttpServletResponse.SC_METHOD_NOT_ALLOWED, INVALID_METHOD_MESSAGE
 					+ "; got " + method, log);

@@ -52,7 +52,13 @@
 <TITLE>Create DSO</TITLE>
  <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
 </HEAD>
-
+<style>
+img {
+  filter: gray; /* IE6-9 */
+  filter: grayscale(1); /* Firefox 35+ */
+  -webkit-filter: grayscale(1); /* Google Chrome, Safari 6+ & Opera 15+ */
+}
+</style>
 <BODY bgcolor=white>
  Project: <%=projectID%><br>
  Patient: <%=subjectID%><br>
@@ -106,6 +112,6 @@ function prev()
    document.getElementById("imagediv").src = images[index];
 }
 </script>
-<div id=imagediv><img src="http://<%=request.getServerName()%>:8080/epad/resources/dicom/<%=imagePaths.get(0)%>" width="<%=width%>" height="<%=height%>" onclick="next()"/></div>
+<div id=imagediv ><img src="http://<%=request.getServerName()%>:8080/epad/resources/dicom/<%=imagePaths.get(0)%>" width="<%=width%>" height="<%=height%>" style="opacity:0.9;" onclick="next()"/></div>
 </BODY>
 </HTML>

@@ -143,13 +143,23 @@ public class EPADDeleteHandler
 				epadOperations.removeUserFromProject(username, projectReference, delete_username, sessionID);
 				statusCode = HttpServletResponse.SC_OK;
 				
-			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.WORKLISTS, pathInfo)) {
-				ProjectReference projectReference = ProjectReference.extract(ProjectsRouteTemplates.WORKLISTS, pathInfo);
-				Map<String, String> templateMap = HandlerUtil.getTemplateMap(ProjectsRouteTemplates.WORKLISTS, pathInfo);
-				String reader = HandlerUtil.getTemplateParameter(templateMap, "username");
-				WorkList wl = worklistOperations.getWorkListForUserByProject(username, projectReference.projectID);
+			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.WORKLIST, pathInfo)) {
+				ProjectReference projectReference = ProjectReference.extract(ProjectsRouteTemplates.WORKLIST, pathInfo);
+				Map<String, String> templateMap = HandlerUtil.getTemplateMap(ProjectsRouteTemplates.WORKLIST, pathInfo);
+				String workListID = HandlerUtil.getTemplateParameter(templateMap, "workListID");
+				WorkList wl = worklistOperations.getWorkList(workListID);
 				if (wl == null)
-					throw new Exception("Worklist not found for user " + reader + " and project " + projectReference.projectID);
+					throw new Exception("Worklist not found for id " + workListID + " and project " + projectReference.projectID);
+				worklistOperations.deleteWorkList(username, wl.getWorkListID());;		
+				statusCode = HttpServletResponse.SC_OK;
+				
+			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.USER_WORKLIST, pathInfo)) {
+				ProjectReference projectReference = ProjectReference.extract(ProjectsRouteTemplates.USER_WORKLIST, pathInfo);
+				Map<String, String> templateMap = HandlerUtil.getTemplateMap(ProjectsRouteTemplates.USER_WORKLIST, pathInfo);
+				String workListID = HandlerUtil.getTemplateParameter(templateMap, "workListID");
+				WorkList wl = worklistOperations.getWorkList(workListID);
+				if (wl == null)
+					throw new Exception("Worklist not found for id " + workListID + " and project " + projectReference.projectID);
 				worklistOperations.deleteWorkList(username, wl.getWorkListID());;		
 				statusCode = HttpServletResponse.SC_OK;
 				

@@ -52,7 +52,6 @@ import edu.stanford.epad.epadws.handlers.core.SubjectReference;
 import edu.stanford.epad.epadws.handlers.dicom.DSOUtil;
 import edu.stanford.epad.epadws.handlers.dicom.DownloadUtil;
 import edu.stanford.epad.epadws.models.FileType;
-import edu.stanford.epad.epadws.models.WorkList;
 import edu.stanford.epad.epadws.queries.DefaultEpadOperations;
 import edu.stanford.epad.epadws.queries.EpadOperations;
 import edu.stanford.epad.epadws.service.DefaultWorkListOperations;
@@ -61,89 +60,13 @@ import edu.stanford.epad.epadws.service.SessionService;
 import edu.stanford.epad.epadws.service.UserProjectService;
 
 @RestController
-@RequestMapping("/projects")
-public class ProjectController {
+@RequestMapping("/studies")
+public class StudyController {
 	private static final EPADLogger log = EPADLogger.getInstance();
  
-	@RequestMapping(value = "/", method = RequestMethod.GET)
-	public EPADProjectList getEPADProjects(@RequestParam(value="annotationCount", required = false) boolean annotationCount,
-											HttpServletRequest request, 
-									        HttpServletResponse response) throws Exception {
-		String sessionID = SessionService.getJSessionIDFromRequest(request);
-		String username = SessionService.getUsernameForSession(sessionID);
-		EPADSearchFilter searchFilter = EPADSearchFilterBuilder.build(request);
-		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
-		log.info("Getting project descriptions");
-		EPADProjectList projectList = epadOperations.getProjectDescriptions(username, sessionID, searchFilter, annotationCount); 
-		log.info("Number of projects:" + projectList.ResultSet.totalRecords);
-		return projectList;
-	}
 	 
-	@RequestMapping(value = "/{projectID:.+}", method = RequestMethod.GET)
-	public EPADProject getEPADProject( 
-											@PathVariable String projectID,
-											HttpServletRequest request, 
-									        HttpServletResponse response) throws Exception {
-		String sessionID = SessionService.getJSessionIDFromRequest(request);
-		String username = SessionService.getUsernameForSession(sessionID);
-		ProjectReference projectReference = new ProjectReference(projectID);
-		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
-		EPADProject project = epadOperations.getProjectDescription(projectReference, username, sessionID);
-		if (project == null)
-			throw new NotFoundException("Project " + projectID + " not found");
-		return project;
-	}
-	 
-	@RequestMapping(value = "/{projectID}/subjects/", method = RequestMethod.GET)
-	public EPADSubjectList getEPADProjectSubjects( 
-											@PathVariable String projectID,
-											HttpServletRequest request, 
-									        HttpServletResponse response) throws Exception {
-		String sessionID = SessionService.getJSessionIDFromRequest(request);
-		String username = SessionService.getUsernameForSession(sessionID);
-		EPADSearchFilter searchFilter = EPADSearchFilterBuilder.build(request);
-		ProjectReference projectReference = new ProjectReference(projectID);
-		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
-		EPADSubjectList subjectList = epadOperations.getSubjectDescriptions(projectID, username, sessionID, searchFilter);
-		return subjectList;
-	}
-	 
-	@RequestMapping(value = "/{projectID}/subjects/{subjectID:.+}", method = RequestMethod.GET)
-	public EPADSubject getEPADProjectSubject( 
-											@PathVariable String projectID,
-											@PathVariable String subjectID,
-											HttpServletRequest request, 
-									        HttpServletResponse response) throws Exception {
-		String sessionID = SessionService.getJSessionIDFromRequest(request);
-		String username = SessionService.getUsernameForSession(sessionID);
-		SubjectReference subjectReference = new SubjectReference(projectID, subjectID);
-		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
-		EPADSubject subject = epadOperations.getSubjectDescription(subjectReference, username, sessionID);
-		if (subject == null)
-			throw new NotFoundException("Subject " + subjectID + " not found in project " + projectID);
-		return subject;
-	}
-	 
-	@RequestMapping(value = "/{projectID}/subjects/{subjectID}/studies/", method = RequestMethod.GET)
-	public EPADStudyList getEPADProjectStudies( 
-											@PathVariable String projectID,
-											@PathVariable String subjectID,
-											HttpServletRequest request, 
-									        HttpServletResponse response) throws Exception {
-		String sessionID = SessionService.getJSessionIDFromRequest(request);
-		String username = SessionService.getUsernameForSession(sessionID);
-		EPADSearchFilter searchFilter = EPADSearchFilterBuilder.build(request);
-		SubjectReference subjectReference = new SubjectReference(projectID, subjectID);
-		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
-		EPADStudyList studyList = epadOperations.getStudyDescriptions(subjectReference, username, sessionID,
-		searchFilter);
-		return studyList;
-	}
-	 
-	@RequestMapping(value = "/{projectID}/subjects/{subjectID}/studies/{studyUID:.+}", method = RequestMethod.GET)
-	public void getEPADProjectStudy( 
-											@PathVariable String projectID,
-											@PathVariable String subjectID,
+	@RequestMapping(value = "/{studyUID:.+}", method = RequestMethod.GET)
+	public void getEPADStudy( 
 											@PathVariable String studyUID,
 											@RequestParam(value="format", required = false) String format, 
 											@RequestParam(value="includeAims", required = false) boolean includeAims, 
@@ -152,7 +75,7 @@ public class ProjectController {
 									        HttpServletResponse response) throws Exception {
 		String sessionID = SessionService.getJSessionIDFromRequest(request);
 		String username = SessionService.getUsernameForSession(sessionID);
-		StudyReference studyReference = new StudyReference(projectID, subjectID, studyUID);
+		StudyReference studyReference = new StudyReference(null, null, studyUID);
 		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
 		EPADSearchFilter searchFilter = EPADSearchFilterBuilder.build(request);
 		if ("file".equals(format)) {
@@ -170,33 +93,29 @@ public class ProjectController {
 			response.setContentType("application/json");
 			EPADStudy study = epadOperations.getStudyDescription(studyReference, username, sessionID);
 			if (study == null)
-				throw new NotFoundException("Study " + studyUID + " not found in project " + projectID + " for subject:" + subjectID);
+				throw new NotFoundException("Study " + studyUID + " not found");
 			responseStream.append(study.toJSON());
 		}
 	}
 	 
-	@RequestMapping(value = "/{projectID}/subjects/{subjectID}/studies/{studyUID}/series/", method = RequestMethod.GET)
-	public EPADSeriesList getEPADProjectSerieses(
+	@RequestMapping(value = "/{studyUID}/series/", method = RequestMethod.GET)
+	public EPADSeriesList getEPADStudySerieses(
 												@RequestParam(value="filterDSO", defaultValue="false") boolean filterDSO,
-											@PathVariable String projectID,
-											@PathVariable String subjectID,
 											@PathVariable String studyUID,
 											HttpServletRequest request, 
 									        HttpServletResponse response) throws Exception {
 		String sessionID = SessionService.getJSessionIDFromRequest(request);
 		String username = SessionService.getUsernameForSession(sessionID);
 		EPADSearchFilter searchFilter = EPADSearchFilterBuilder.build(request);
-		StudyReference studyReference = new StudyReference(projectID, subjectID, studyUID);
+		StudyReference studyReference = new StudyReference(null, null, studyUID);
 		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
 		EPADSeriesList seriesList = epadOperations.getSeriesDescriptions(studyReference, username, sessionID,
 		searchFilter, filterDSO);
 		return seriesList;
 	}
 	 
-	@RequestMapping(value = "/{projectID}/subjects/{subjectID}/studies/{studyUID}/series/{seriesUID:.+}", method = RequestMethod.GET)
-	public void getEPADProjectSeries( 
-											@PathVariable String projectID,
-											@PathVariable String subjectID,
+	@RequestMapping(value = "/{studyUID}/series/{seriesUID:.+}", method = RequestMethod.GET)
+	public void getEPADStudySeries( 
 											@PathVariable String studyUID,
 											@PathVariable String seriesUID,
 											@RequestParam(value="format", required = false) boolean format, 
@@ -205,7 +124,7 @@ public class ProjectController {
 									        HttpServletResponse response) throws Exception {
 		String sessionID = SessionService.getJSessionIDFromRequest(request);
 		String username = SessionService.getUsernameForSession(sessionID);
-		SeriesReference seriesReference = new SeriesReference(projectID, subjectID, studyUID, seriesUID);
+		SeriesReference seriesReference = new SeriesReference(null, null, studyUID, seriesUID);
 		if ("file".equals(format)) {
 			if (seriesReference.seriesUID.contains(","))
 				DownloadUtil.downloadSeries(false, response, seriesReference.seriesUID, username, sessionID, includeAims);
@@ -222,7 +141,7 @@ public class ProjectController {
 			EpadOperations epadOperations = DefaultEpadOperations.getInstance();
 			EPADSeries series = epadOperations.getSeriesDescription(seriesReference, username, sessionID);
 			if (series == null)
-				throw new NotFoundException("Series " + seriesUID + " not found in project " + projectID + " for subject:" + subjectID + " and study:" + studyUID);
+				throw new NotFoundException("Series " + seriesUID + " not found in study:" + studyUID);
 			responseStream.append(series.toJSON());
 		}
 	}
@@ -1478,51 +1397,6 @@ public class ProjectController {
 		String username = SessionService.getUsernameForSession(sessionID);
 		EpadWorkListOperations worklistOperations = DefaultWorkListOperations.getInstance();
 		worklistOperations.createWorkList(username, reader, projectID, workListID, description, null, getDate(dueDate));
-	}
-	
-	@RequestMapping(value = "/{projectID}/users/{reader}/worklists/", method = {RequestMethod.POST,RequestMethod.PUT})
-	public void createUserWorkList( 
-										@PathVariable String projectID,
-										@PathVariable String reader,
-										@RequestParam(value="description", required=false) String description,
-										@RequestParam(value="dueDate", required=false) String dueDate,
-										HttpServletRequest request, 
-								        HttpServletResponse response) throws Exception {
-		String sessionID = SessionService.getJSessionIDFromRequest(request);
-		String username = SessionService.getUsernameForSession(sessionID);
-		EpadWorkListOperations worklistOperations = DefaultWorkListOperations.getInstance();
-		worklistOperations.createWorkList(username, reader, projectID, null, description, null, getDate(dueDate));
-	}
-	
-	@RequestMapping(value = "/{projectID}/users/{reader}/worklists/{workListID:.+}", method = {RequestMethod.DELETE})
-	public void deleteUserWorkList( 
-										@PathVariable String projectID,
-										@PathVariable String reader,
-										@PathVariable String workListID,
-										HttpServletRequest request, 
-								        HttpServletResponse response) throws Exception {
-		String sessionID = SessionService.getJSessionIDFromRequest(request);
-		String username = SessionService.getUsernameForSession(sessionID);
-		EpadWorkListOperations worklistOperations = DefaultWorkListOperations.getInstance();
-		WorkList wl = worklistOperations.getWorkList(workListID);
-		if (wl == null)
-			throw new NotFoundException("Worklist not found for id " + workListID + " and project " + projectID);
-		worklistOperations.deleteWorkList(username, wl.getWorkListID());;		
-	}
-	
-	@RequestMapping(value = "/{projectID}/worklists/{workListID:.+}", method = {RequestMethod.DELETE})
-	public void deleteUserWorkList( 
-										@PathVariable String projectID,
-										@PathVariable String workListID,
-										HttpServletRequest request, 
-								        HttpServletResponse response) throws Exception {
-		String sessionID = SessionService.getJSessionIDFromRequest(request);
-		String username = SessionService.getUsernameForSession(sessionID);
-		EpadWorkListOperations worklistOperations = DefaultWorkListOperations.getInstance();
-		WorkList wl = worklistOperations.getWorkList(workListID);
-		if (wl == null)
-			throw new NotFoundException("Worklist not found for id " + workListID + " and project " + projectID);
-		worklistOperations.deleteWorkList(username, wl.getWorkListID());;		
 	}
 
 	@RequestMapping(value = "/{projectID}/files/{filename:.+}", method = RequestMethod.DELETE)

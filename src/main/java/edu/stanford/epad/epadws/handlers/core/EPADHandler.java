@@ -42,10 +42,10 @@ import edu.stanford.epad.epadws.service.SessionService;
  */
 public class EPADHandler extends AbstractHandler
 {
-	private static final String INTERNAL_ERROR_MESSAGE = "Internal error";
-	private static final String INVALID_SESSION_TOKEN_MESSAGE = "Session token is invalid";
-	private static final String FORBIDDEN_MESSAGE = "Forbidden method - only GET, DELETE, PUT, and POST allowed!";
-	private static final String NO_USERNAME_MESSAGE = "Must have username parameter for requests!";
+	public static final String INTERNAL_ERROR_MESSAGE = "Internal error";
+	public static final String INVALID_SESSION_TOKEN_MESSAGE = "Session token is invalid";
+	public static final String FORBIDDEN_MESSAGE = "Forbidden method - only GET, DELETE, PUT, and POST allowed!";
+	public static final String NO_USERNAME_MESSAGE = "Must have username parameter for requests!";
 
 	private static final EPADLogger log = EPADLogger.getInstance();
 

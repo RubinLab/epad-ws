@@ -299,6 +299,15 @@ public class EPADPutHandler
 				epadOperations.addUserToProject(username, projectReference, add_username, role, sessionID);
 				statusCode = HttpServletResponse.SC_OK;
 	
+			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.USER_WORKLISTS, pathInfo)) {
+				ProjectReference projectReference = ProjectReference.extract(ProjectsRouteTemplates.USER_WORKLISTS, pathInfo);
+				Map<String, String> templateMap = HandlerUtil.getTemplateMap(ProjectsRouteTemplates.USER_WORKLISTS, pathInfo);
+				String reader = HandlerUtil.getTemplateParameter(templateMap, "username");
+				String description = httpRequest.getParameter("description");
+				String dueDate = httpRequest.getParameter("dueDate");
+				worklistOperations.createWorkList(username, reader, projectReference.projectID, null, description, null, getDate(dueDate));
+				statusCode = HttpServletResponse.SC_OK;
+
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.USER_WORKLIST, pathInfo)) {
 				ProjectReference projectReference = ProjectReference.extract(ProjectsRouteTemplates.USER_WORKLIST, pathInfo);
 				Map<String, String> templateMap = HandlerUtil.getTemplateMap(ProjectsRouteTemplates.USER_WORKLIST, pathInfo);

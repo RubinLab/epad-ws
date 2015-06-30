@@ -38,7 +38,9 @@ import javax.servlet.http.HttpServletResponse;
 
 import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADLogger;
+import edu.stanford.epad.dtos.EPADMessage;
 import edu.stanford.epad.epadws.Main;
+import edu.stanford.epad.epadws.handlers.core.EPADHandler;
 import edu.stanford.epad.epadws.service.SessionService;
 
 public class WebAuthFilter implements Filter {
@@ -94,7 +96,8 @@ public class WebAuthFilter implements Filter {
 			}
 		} else {
 			String sessionID = SessionService.getJSessionIDFromRequest(httpRequest);
-			if (!SessionService.hasValidSessionID(sessionID) && httpRequest.getRequestURL().toString().indexOf("login.jsp") == -1 
+			boolean isValid = SessionService.hasValidSessionID(sessionID);
+			if (!isValid && httpRequest.getRequestURL().toString().indexOf("login.jsp") == -1 
 					&& !httpRequest.getRequestURL().toString().contains("/session") 
 					&& !httpRequest.getRequestURL().toString().contains("/eventresource") 
 					&& !httpRequest.getHeader("User-Agent").contains("HttpClient") 
@@ -106,6 +109,13 @@ public class WebAuthFilter implements Filter {
 			}
 			if (httpRequest.getRequestURL().indexOf("/v2/") != -1 || httpRequest.getRequestURL().indexOf("/plugin/") != -1)				
 				log.info(httpRequest.getMethod() + " Request from client:" + httpRequest.getRequestURL());
+			if (!isValid && !httpRequest.getRequestURL().toString().contains("WADO") && !httpRequest.getRequestURL().toString().contains("/session"))
+			{
+				PrintWriter responseStream = httpResponse.getWriter();
+				responseStream.append(new EPADMessage(EPADHandler.INVALID_SESSION_TOKEN_MESSAGE).toJSON());
+				httpResponse.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+				return;				
+			}
 		}
 	    if (httpRequest.getRequestURL().indexOf("WEB-INF") != -1) {
 	    	// How come, this weird jetty allows this?

@@ -27,6 +27,7 @@ import java.util.Set;
 
 import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADLogger;
+import edu.stanford.epad.epadws.epaddb.EpadDatabase;
 import edu.stanford.epad.epadws.queries.DefaultEpadOperations;
 import edu.stanford.epad.epadws.queries.EpadOperations;
 import edu.stanford.epad.epadws.queries.XNATQueries;
@@ -45,6 +46,7 @@ public class StudyDataDeleteTask implements Runnable
 {
 	private static EPADLogger log = EPADLogger.getInstance();
 
+	private final String username;
 	private final String projectID;
 	private final String patientID;
 	private final String studyUID;
@@ -52,8 +54,9 @@ public class StudyDataDeleteTask implements Runnable
 	
 	private static final EpadProjectOperations projectOperations = DefaultEpadProjectOperations.getInstance();	
 	
-	public StudyDataDeleteTask(String projectID, String patientID, String studyUID, boolean deleteAims)
+	public StudyDataDeleteTask(String username, String projectID, String patientID, String studyUID, boolean deleteAims)
 	{
+		this.username = username;
 		this.projectID = projectID;
 		this.patientID = patientID;
 		this.studyUID = studyUID;
@@ -99,7 +102,15 @@ public class StudyDataDeleteTask implements Runnable
 				epadOperations.deleteStudyFromEPadAndDcm4CheeDatabases(studyUID, deleteAims);
 			}
 			else
-				 log.info("Study " + studyUID + " in use by other projects or subjects so will not be deleted from DCM4CHEE");
+			{
+				String msg = "Study " + studyUID + " in use by other projects or subjects so will not be deleted from DCM4CHEE";
+				log.info(msg);
+				EpadDatabase.getInstance().getEPADDatabaseOperations().insertEpadEvent(
+						username, 
+						"Study Not Deleted", 
+						studyUID, "", patientID, patientID, studyUID, projectID, msg);					
+
+			}
 		} catch (Exception e) {
 			log.warning("Error deleting study " + studyUID + " for patient " + patientID + " in project " + projectID, e);
 		}

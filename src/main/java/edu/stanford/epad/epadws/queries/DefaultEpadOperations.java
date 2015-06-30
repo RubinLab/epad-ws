@@ -837,10 +837,12 @@ public class DefaultEpadOperations implements EpadOperations
    					return "Series " + seriesReference.seriesUID + " in use by other projects:" + projectId + ", so series will not be deleted from DCM4CHEE";
     			}
     		}
+    		return deleteSeries(seriesReference, deleteAims);
 		} catch (Exception e) {
-			log.warning("Error deleting Series " + seriesReference.seriesUID + " for patient " + seriesReference.subjectID + " in project " + seriesReference.projectID, e);
+			String msg = "Error deleting Series " + seriesReference.seriesUID + " for patient " + seriesReference.subjectID + " in project " + seriesReference.projectID;
+			log.warning(msg, e);
+			return msg;
 		}
-		return deleteSeries(seriesReference, deleteAims);
 	}
 	
 	public String deleteSeries(SeriesReference seriesReference, boolean deleteAims)
@@ -1835,22 +1837,38 @@ public class DefaultEpadOperations implements EpadOperations
 			String fileName) throws Exception {
 		User user = projectOperations.getUser(username);
 		Project project = projectOperations.getProject(projectReference.projectID);
-		EpadFile file = projectOperations.getEpadFile(projectReference.projectID, null, null, null, fileName);
-		if (file == null && !user.isAdmin())
-			throw new Exception("No permissions to delete system template");
-		if (file != null && !username.equals(file.getCreator()) && !projectOperations.isOwner(username, projectReference.projectID))
-			throw new Exception("No permissions to delete this template");
-		if (file != null)
+		if (user.isAdmin() && fileName.equals("*"))
 		{
-			projectOperations.deleteFile(username, projectReference.projectID, null, null, null, fileName);
+			List<EpadFile> files = projectOperations.getEpadFiles(projectReference.projectID, null, null, null, null, true);
+			for (EpadFile file:files)
+			{
+				try {
+					projectOperations.deleteFile(username, projectReference.projectID, null, null, null, file.getName());
+				} catch (Exception x) {
+					
+				}
+			}
+				
 		}
 		else
 		{
-			File template = new File(EPADConfig.getEPADWebServerTemplatesDir(), fileName);
-			if (template.exists())
-				template.delete();
+			EpadFile file = projectOperations.getEpadFile(projectReference.projectID, null, null, null, fileName);
+			if (file == null && !user.isAdmin())
+				throw new Exception("No permissions to delete system template");
+			if (file != null && !username.equals(file.getCreator()) && !projectOperations.isOwner(username, projectReference.projectID))
+				throw new Exception("No permissions to delete this template");
+			if (file != null)
+			{
+				projectOperations.deleteFile(username, projectReference.projectID, null, null, null, fileName);
+			}
 			else
-				throw new Exception("Template file not found");
+			{
+				File template = new File(EPADConfig.getEPADWebServerTemplatesDir(), fileName);
+				if (template.exists())
+					template.delete();
+				else
+					throw new Exception("Template file not found");
+			}
 		}
 	}
 
@@ -1973,7 +1991,7 @@ public class DefaultEpadOperations implements EpadOperations
 		{
 			log.info("Scheduling deletion task for study " + studyReference.studyUID + " for patient "
 					+ studyReference.subjectID + " in project " + studyReference.projectID + " from user " + username);
-			(new Thread(new StudyDataDeleteTask(studyReference.projectID, studyReference.subjectID, studyReference.studyUID, deleteAims)))
+			(new Thread(new StudyDataDeleteTask(username, studyReference.projectID, studyReference.subjectID, studyReference.studyUID, deleteAims)))
 					.start();
 			return "";
 		}
@@ -2208,6 +2226,28 @@ public class DefaultEpadOperations implements EpadOperations
 				log.info("Deleting Series:" + aim.dsoSeriesUID + " In project:" + aim.projectID);
 				this.deleteSeries(new SeriesReference(projectReference.projectID, aim.subjectID, aim.studyUID, aim.dsoSeriesUID), false);
 			}
+			if (deleteDSO && aim.dsoSeriesUID != null && aim.dsoSeriesUID.length() > 0)
+			{
+				List<EPADAIM> otheraims = epadDatabaseOperations.getAIMsByDSOSeries(aim.dsoSeriesUID);
+				if (otheraims.size() == 0)
+				{
+					String error =  this.deleteSeries(new SeriesReference(projectReference.projectID, aim.subjectID, aim.studyUID, aim.dsoSeriesUID), false);
+					if (error != null && error.length() > 0)
+						log.warning("Error deleting DSO, seriesUID:" + aim.dsoSeriesUID);
+						epadDatabaseOperations.insertEpadEvent(
+							username, 
+							"Error deleting DSO Series", 
+							aim.dsoSeriesUID, "", aim.subjectID, aim.subjectID, aim.studyUID, projectReference.projectID, error);					
+				}
+				else
+				{
+					log.info("DSO not deleted, seriesUID:" + aim.dsoSeriesUID);
+					epadDatabaseOperations.insertEpadEvent(
+						username, 
+						"DSO Series not deleted", 
+						aim.dsoSeriesUID, "", aim.subjectID, aim.subjectID, aim.studyUID, projectReference.projectID, "DSO referenced by another AIM in " + otheraims.get(0).projectID);					
+				}
+			}
 			return HttpServletResponse.SC_OK;
 		} catch (Exception e) {
 			log.warning("Error deleting AIM file ",e);
@@ -2279,9 +2319,27 @@ public class DefaultEpadOperations implements EpadOperations
 				throw new Exception(aimID + " is still being processed by the plugin");
 			AIMUtil.deleteAIM(aimID, seriesReference.projectID);
 			epadDatabaseOperations.deleteAIM(username, seriesReference, aimID);
-			if (deleteDSO && aim.dsoSeriesUID != null && aim.dsoSeriesUID.length() > 0 && epadDatabaseOperations.getAIMsByDSOSeries(aim.dsoSeriesUID).size() == 0)
+			if (deleteDSO && aim.dsoSeriesUID != null && aim.dsoSeriesUID.length() > 0)
 			{
-				this.deleteSeries(new SeriesReference(seriesReference.projectID, aim.subjectID, aim.studyUID, aim.dsoSeriesUID), false);
+				List<EPADAIM> otheraims = epadDatabaseOperations.getAIMsByDSOSeries(aim.dsoSeriesUID);
+				if (otheraims.size() == 0)
+				{
+					String error = this.deleteSeries(new SeriesReference(seriesReference.projectID, aim.subjectID, aim.studyUID, aim.dsoSeriesUID), false);
+					if (error != null && error.length() > 0)
+						log.warning("Error deleting DSO, seriesUID:" + aim.dsoSeriesUID);
+						epadDatabaseOperations.insertEpadEvent(
+							username, 
+							"Error deleting DSO Series", 
+							aim.dsoSeriesUID, "", aim.subjectID, aim.subjectID, aim.studyUID, seriesReference.projectID, error);					
+				}
+				else
+				{
+					log.info("DSO not deleted, seriesUID:" + aim.dsoSeriesUID);
+					epadDatabaseOperations.insertEpadEvent(
+						username, 
+						"DSO Series not deleted", 
+						aim.dsoSeriesUID, "", aim.subjectID, aim.subjectID, aim.studyUID, seriesReference.projectID, "DSO referenced by another AIM in " + otheraims.get(0).projectID);					
+				}
 			}
 			return HttpServletResponse.SC_OK;
 		} catch (Exception e) {
