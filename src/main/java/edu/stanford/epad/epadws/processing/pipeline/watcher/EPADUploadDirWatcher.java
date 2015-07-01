@@ -81,7 +81,7 @@ public class EPADUploadDirWatcher implements Runnable
 							processUploadDirectory(newUploadDirectory);
 						}
 					}
-				} catch (ConcurrentModificationException e) {
+				} catch (Exception e) {
 					log.warning("EPADUploadDirWatcher thread error ", e);
 				}
 				if (shutdownSignal.hasShutdown())
