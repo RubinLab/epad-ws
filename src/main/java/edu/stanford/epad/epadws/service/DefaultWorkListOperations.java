@@ -316,7 +316,7 @@ public class DefaultWorkListOperations implements EpadWorkListOperations {
 	public Set<Subject> getSubjectsForWorkListWithStatus(String workListID)
 			throws Exception {
 		WorkList workList = getWorkList(workListID);
-		List<WorkListToSubject> wltss = new WorkListToSubject().getObjects("worklist_id =" + workList.getId() + ")");
+		List<WorkListToSubject> wltss = new WorkListToSubject().getObjects("worklist_id =" + workList.getId());
 		Set<Subject> subjects = new HashSet<Subject>();
 		for (WorkListToSubject wlts: wltss)
 		{
@@ -406,7 +406,7 @@ public class DefaultWorkListOperations implements EpadWorkListOperations {
 	public Set<Study> getStudiesForWorkListWithStatus(String workListID)
 			throws Exception {
 		WorkList workList = getWorkList(workListID);
-		List<WorkListToStudy> wltss = new WorkListToStudy().getObjects("worklist_id =" + workList.getId() + ")");
+		List<WorkListToStudy> wltss = new WorkListToStudy().getObjects("worklist_id =" + workList.getId());
 		Set<Study> studies = new HashSet<Study>();
 		for (WorkListToStudy wlts: wltss)
 		{

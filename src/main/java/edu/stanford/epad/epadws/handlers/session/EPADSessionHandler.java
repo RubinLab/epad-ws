@@ -108,13 +108,13 @@ public class EPADSessionHandler extends AbstractHandler
 				            Cookie userName = new Cookie(LOGGEDINUSER_COOKIE, username);
 				            userName.setMaxAge(8*3600);
 				            //userName.setPath("/epad/; Secure; HttpOnly");
-				            userName.setPath(httpRequest.getContextPath() + "/");
+				            userName.setPath(httpRequest.getContextPath());
 				            httpResponse.addCookie(userName);
 							//log.info("Setting HttpOnly, Secure cookie =" + jsessionID);
 				            Cookie sessionCookie = new Cookie(JSESSIONID_COOKIE, jsessionID);
 				            sessionCookie.setMaxAge(8*3600);
 				            //sessionCookie.setPath("/epad/; Secure; HttpOnly");
-				            sessionCookie.setPath(httpRequest.getContextPath() + "/");
+				            sessionCookie.setPath(httpRequest.getContextPath());
 				            httpResponse.addCookie(sessionCookie);
 				    		httpResponse.sendRedirect(EPADConfig.getParamValue("HomePage", "Web_pad.html"));
 				    		return;
@@ -125,10 +125,10 @@ public class EPADSessionHandler extends AbstractHandler
 						responseStream.append(jsessionID);
 						if ("true".equalsIgnoreCase(EPADConfig.getParamValue("SeparateWebServicesApp")))
 						{
-							log.info("Setting JSESSIONID Cookie");
+//							log.info("Setting JSESSIONID Cookie");
 //				            Cookie sessionCookie = new Cookie(JSESSIONID_COOKIE, jsessionID);
 //				            sessionCookie.setMaxAge(8*3600);
-//				            sessionCookie.setPath(httpRequest.getContextPath() + "/");
+//				            sessionCookie.setPath(httpRequest.getContextPath());
 //				            httpResponse.addCookie(sessionCookie);
 //							httpResponse.addHeader("Set-Cookie", "JSESSIONID=" + jsessionID);
 						}

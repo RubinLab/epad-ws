@@ -81,7 +81,7 @@ public class EPADUploadDirWatcher implements Runnable
 							processUploadDirectory(newUploadDirectory);
 						}
 					}
-				} catch (ConcurrentModificationException e) {
+				} catch (Exception e) {
 					log.warning("EPADUploadDirWatcher thread error ", e);
 				}
 				if (shutdownSignal.hasShutdown())
@@ -139,13 +139,13 @@ public class EPADUploadDirWatcher implements Runnable
 			log.warning("Exception uploading " + directory.getAbsolutePath(), e);
 			String userName = UserProjectService.getUserNameFromPropertiesFile(directory);
 			if (userName != null) {
-				String zipName = "";
+				String zipName = "DicomFile";
 				if (zipFile != null) zipName = zipFile.getName();
 				EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
 				epadDatabaseOperations.insertEpadEvent(
 						userName, 
-						"Error processing zip file:" + zipName, 
-						"", "", "", "", "", "", "Process Upload");					
+						"Error processing uploaded file:" + zipName, 
+						zipName, "", zipName, zipName, zipName, zipName, "Upload Error:" + e.getMessage());
 				projectOperations.userErrorLog(userName, "Error processing zip file:" + zipName);
 			}
 			writeExceptionLog(directory, e);
@@ -261,7 +261,7 @@ public class EPADUploadDirWatcher implements Runnable
 			epadDatabaseOperations.insertEpadEvent(
 					username, 
 					"Error sending DICOM files to DCM4CHEE", 
-					"", "", "", "", "", "", "Process Upload");					
+					"Dicoms", "Dicoms", "Dicoms", "Dicoms", "Dicoms", "Dicoms", "Error Processing Upload");					
 			projectOperations.userErrorLog(username, "Error sending DICOM files to DCM4CHEE:" + x);
 		}
 	}

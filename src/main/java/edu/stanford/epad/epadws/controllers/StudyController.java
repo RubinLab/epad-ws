@@ -146,27 +146,23 @@ public class StudyController {
 		}
 	}
 	 
-	@RequestMapping(value = "/{projectID}/subjects/{subjectID}/studies/{studyUID}/series/{seriesUID}/images/", method = RequestMethod.GET)
+	@RequestMapping(value = "/{studyUID}/series/{seriesUID}/images/", method = RequestMethod.GET)
 	public EPADImageList getEPADProjectImages(
 											@RequestParam(value="filterDSO", defaultValue="false") boolean filterDSO,
-											@PathVariable String projectID,
-											@PathVariable String subjectID,
 											@PathVariable String studyUID,
 											@PathVariable String seriesUID,
 											HttpServletRequest request, 
 									        HttpServletResponse response) throws Exception {
 		String sessionID = SessionService.getJSessionIDFromRequest(request);
 		EPADSearchFilter searchFilter = EPADSearchFilterBuilder.build(request);
-		SeriesReference seriesReference = new SeriesReference(projectID, subjectID, studyUID, seriesUID);
+		SeriesReference seriesReference = new SeriesReference(null, null, studyUID, seriesUID);
 		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
 		EPADImageList imageList = epadOperations.getImageDescriptions(seriesReference, sessionID, searchFilter);
 		return imageList;
 	}
 	 
-	@RequestMapping(value = "/{projectID}/subjects/{subjectID}/studies/{studyUID}/series/{seriesUID}/images/{imageUID:.+}", method = RequestMethod.GET)
+	@RequestMapping(value = "/{studyUID}/series/{seriesUID}/images/{imageUID:.+}", method = RequestMethod.GET)
 	public void getEPADProjectImage( 
-											@PathVariable String projectID,
-											@PathVariable String subjectID,
 											@PathVariable String studyUID,
 											@PathVariable String seriesUID,
 											@PathVariable String imageUID,
@@ -176,7 +172,7 @@ public class StudyController {
 									        HttpServletResponse response) throws Exception {
 		String sessionID = SessionService.getJSessionIDFromRequest(request);
 		String username = SessionService.getUsernameForSession(sessionID);
-		ImageReference imageReference = new ImageReference(projectID, subjectID, studyUID, seriesUID, imageUID);
+		ImageReference imageReference = new ImageReference(null, null, studyUID, seriesUID, imageUID);
 		if ("file".equals(format)) {
 			DownloadUtil.downloadImage(false, response, imageReference, username, sessionID);
 		} if ("stream".equals(format)) {
@@ -187,16 +183,14 @@ public class StudyController {
 			EpadOperations epadOperations = DefaultEpadOperations.getInstance();
 			EPADImage image = epadOperations.getImageDescription(imageReference, sessionID);
 			if (image == null)
-				throw new NotFoundException("Image " + imageUID + " for Series " + seriesUID + " not found in project " + projectID + " for subject:" + subjectID + " and study:" + studyUID);
+				throw new NotFoundException("Image " + imageUID + " for Series " + seriesUID + " not found in study:" + studyUID);
 			responseStream.append(image.toJSON());
 		}
 	}
 	 
-	@RequestMapping(value = "/{projectID}/subjects/{subjectID}/studies/{studyUID}/series/{seriesUID}/images/{imageUID}/frames/", method = RequestMethod.GET)
+	@RequestMapping(value = "/{studyUID}/series/{seriesUID}/images/{imageUID}/frames/", method = RequestMethod.GET)
 	public EPADFrameList getEPADProjectFrames(
 											@RequestParam(value="filterDSO",defaultValue="false") boolean filterDSO,
-											@PathVariable String projectID,
-											@PathVariable String subjectID,
 											@PathVariable String studyUID,
 											@PathVariable String seriesUID,
 											@PathVariable String imageUID,
@@ -204,16 +198,14 @@ public class StudyController {
 									        HttpServletResponse response) throws Exception {
 		String sessionID = SessionService.getJSessionIDFromRequest(request);
 		EPADSearchFilter searchFilter = EPADSearchFilterBuilder.build(request);
-		ImageReference imageReference = new ImageReference(projectID, subjectID, studyUID, seriesUID, imageUID);
+		ImageReference imageReference = new ImageReference(null, null, studyUID, seriesUID, imageUID);
 		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
 		EPADFrameList frameList = epadOperations.getFrameDescriptions(imageReference);
 		return frameList;
 	}
 	 
-	@RequestMapping(value = "/{projectID}/subjects/{subjectID}/studies/{studyUID}/series/{seriesUID}/images/{imageUID}/frames/{frameNo}", method = RequestMethod.GET)
+	@RequestMapping(value = "/{studyUID}/series/{seriesUID}/images/{imageUID}/frames/{frameNo}", method = RequestMethod.GET)
 	public EPADFrame getEPADProjectFrame( 
-											@PathVariable String projectID,
-											@PathVariable String subjectID,
 											@PathVariable String studyUID,
 											@PathVariable String seriesUID,
 											@PathVariable String imageUID,
@@ -221,199 +213,17 @@ public class StudyController {
 											HttpServletRequest request, 
 									        HttpServletResponse response) throws Exception {
 		String sessionID = SessionService.getJSessionIDFromRequest(request);
-		FrameReference frameReference = new FrameReference(projectID, subjectID, studyUID, seriesUID, imageUID, frameNo);
+		FrameReference frameReference = new FrameReference(null, null, studyUID, seriesUID, imageUID, frameNo);
 		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
 		EPADFrame frame = epadOperations.getFrameDescription(frameReference, sessionID);
 		if (frame == null)
-			throw new NotFoundException("Frame " + frame + " for Image " + imageUID + " for Series " + seriesUID + " not found in project " + projectID + " for subject:" + subjectID + " and study:" + studyUID);
+			throw new NotFoundException("Frame " + frame + " for Image " + imageUID + " for Series " + seriesUID + " not found in study:" + studyUID);
 		return frame;
 	}
 
-	@RequestMapping(value = "/{projectID}/aims/", method = RequestMethod.GET)
-	public void getEPADProjectAims( 
-									@RequestParam(value="start", defaultValue="0") int start,
-									@RequestParam(value="count", defaultValue="5000") int count,
-									@RequestParam(value="format", defaultValue="xml") String format,
-										@PathVariable String projectID,
-											HttpServletRequest request, 
-									        HttpServletResponse response) throws Exception {
-		String sessionID = SessionService.getJSessionIDFromRequest(request);
-		String username = SessionService.getUsernameForSession(sessionID);
-
-		long starttime = System.currentTimeMillis();
-		AIMSearchType aimSearchType = AIMUtil.getAIMSearchType(request);
-		String searchValue = aimSearchType != null ? request.getParameter(aimSearchType.getName()) : null;
-		log.info("GET request for AIMs from user " + username + "; query type is " + aimSearchType + ", value "
-				+ searchValue + ", project " + projectID);
-		ProjectReference projectReference = new ProjectReference(projectID);
-		EPADAIMList aims = null;
-		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
-		if (aimSearchType != null)
-			aims = epadOperations.getAIMDescriptions(projectID, aimSearchType, searchValue, username, sessionID, start, count);
-		else
-			aims = epadOperations.getProjectAIMDescriptions(projectReference, username, sessionID);
-		long dbtime = System.currentTimeMillis();
-		log.info("Time taken for AIM database query:" + (dbtime-starttime) + " msecs");
-		PrintWriter responseStream = response.getWriter();
-		response.setContentType("application/json");
-		if ("summary".equalsIgnoreCase(format))
-		{
-			if (AIMSearchType.JSON_QUERY.equals(aimSearchType) || AIMSearchType.AIM_QUERY.equals(aimSearchType))
-				aims = AIMUtil.queryAIMImageAnnotationSummariesV4(aims, aimSearchType, searchValue, username, sessionID);
-			else
-				aims = AIMUtil.queryAIMImageAnnotationSummariesV4(aims, username, sessionID);					
-			long starttime2 = System.currentTimeMillis();
-			responseStream.append(aims.toJSON());
-			long resptime = System.currentTimeMillis();
-			log.info("Time taken for write http response:" + (resptime-starttime2) + " msecs");
-		}
-		else if ("json".equalsIgnoreCase(format))
-		{
-			if (AIMSearchType.JSON_QUERY.equals(aimSearchType) || AIMSearchType.AIM_QUERY.equals(aimSearchType))
-				AIMUtil.queryAIMImageAnnotationsV4(responseStream, aims, aimSearchType, searchValue, username, sessionID, true);					
-			else
-				AIMUtil.queryAIMImageJsonAnnotations(responseStream, aims, username, sessionID);					
-		}
-		else
-		{
-			if (AIMSearchType.AIM_QUERY.equals(aimSearchType) || AIMSearchType.JSON_QUERY.equals(aimSearchType))
-				AIMUtil.queryAIMImageAnnotationsV4(responseStream, aims, aimSearchType, searchValue, username, sessionID, false);					
-			else
-				AIMUtil.queryAIMImageAnnotationsV4(responseStream, aims, username, sessionID);					
-		}
-	}
-
-	@RequestMapping(value = "/{projectID}/aims/{aimID}", method = RequestMethod.GET)
-	public void getEPADProjectAim( 
-									@RequestParam(value="format", defaultValue="xml") String format,
-									@PathVariable String projectID,
-									@PathVariable String aimID,
-											HttpServletRequest request, 
-									        HttpServletResponse response) throws Exception {
-		String sessionID = SessionService.getJSessionIDFromRequest(request);
-		String username = SessionService.getUsernameForSession(sessionID);
-
-		long starttime = System.currentTimeMillis();
-		ProjectReference projectReference = new ProjectReference(projectID);
-		AIMReference aimReference = new AIMReference(aimID);
-		EPADAIMList aims = new EPADAIMList();
-		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
-		EPADAIM aim = epadOperations.getProjectAIMDescription(projectReference, aimReference.aimID, username, sessionID);
-		if (aim == null)
-			throw new NotFoundException("Aim " + aimID + " not found in project " + projectID);
-		if (!UserProjectService.isCollaborator(sessionID, username, aim.projectID))
-			username = null;
-		long dbtime = System.currentTimeMillis();
-		log.info("Time taken for AIM database query:" + (dbtime-starttime) + " msecs");
-		PrintWriter responseStream = response.getWriter();
-		response.setContentType("application/json");
-		if ("summary".equalsIgnoreCase(format))
-		{
-			aims = AIMUtil.queryAIMImageAnnotationSummariesV4(aims, username, sessionID);					
-			long starttime2 = System.currentTimeMillis();
-			responseStream.append(aims.toJSON());
-			long resptime = System.currentTimeMillis();
-			log.info("Time taken for write http response:" + (resptime-starttime2) + " msecs");
-		}
-		else if ("json".equalsIgnoreCase(format))
-		{
-			AIMUtil.queryAIMImageJsonAnnotations(responseStream, aims, username, sessionID);					
-		}
-		else
-		{
-			AIMUtil.queryAIMImageAnnotationsV4(responseStream, aims, username, sessionID);					
-		}
-	}
-
-	@RequestMapping(value = "/{projectID}/subjects/{subjectID}/aims/", method = RequestMethod.GET)
-	public void getEPADSubjectAims( 
-									@RequestParam(value="start", defaultValue="0") int start,
-									@RequestParam(value="count", defaultValue="5000") int count,
-									@RequestParam(value="format", defaultValue="xml") String format,
-									@PathVariable String projectID,
-									@PathVariable String subjectID,
-											HttpServletRequest request, 
-									        HttpServletResponse response) throws Exception {
-		String sessionID = SessionService.getJSessionIDFromRequest(request);
-		String username = SessionService.getUsernameForSession(sessionID);
-
-		long starttime = System.currentTimeMillis();
-		SubjectReference subjectReference = new SubjectReference(projectID, subjectID);
-		EPADAIMList aims = null;
-		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
-		aims = epadOperations.getSubjectAIMDescriptions(subjectReference, username, sessionID);
-		long dbtime = System.currentTimeMillis();
-		log.info("Time taken for AIM database query:" + (dbtime-starttime) + " msecs");
-		PrintWriter responseStream = response.getWriter();
-		response.setContentType("application/json");
-		if ("summary".equalsIgnoreCase(format))
-		{
-			aims = AIMUtil.queryAIMImageAnnotationSummariesV4(aims, username, sessionID);					
-			long starttime2 = System.currentTimeMillis();
-			responseStream.append(aims.toJSON());
-			long resptime = System.currentTimeMillis();
-			log.info("Time taken for write http response:" + (resptime-starttime2) + " msecs");
-		}
-		else if ("json".equalsIgnoreCase(format))
-		{
-			AIMUtil.queryAIMImageJsonAnnotations(responseStream, aims, username, sessionID);					
-		}
-		else
-		{
-			AIMUtil.queryAIMImageAnnotationsV4(responseStream, aims, username, sessionID);					
-		}
-	}
-
-	@RequestMapping(value = "/{projectID}/subjects/{subjectID}/aims/{aimID}", method = RequestMethod.GET)
-	public void getEPADSubjectAim( 
-									@RequestParam(value="format", defaultValue="xml") String format,
-									@PathVariable String projectID,
-									@PathVariable String subjectID,
-									@PathVariable String aimID,
-											HttpServletRequest request, 
-									        HttpServletResponse response) throws Exception {
-		String sessionID = SessionService.getJSessionIDFromRequest(request);
-		String username = SessionService.getUsernameForSession(sessionID);
-
-		long starttime = System.currentTimeMillis();
-		SubjectReference subjectReference = new SubjectReference(projectID, subjectID);
-		AIMReference aimReference = new AIMReference(aimID);
-		EPADAIMList aims = new EPADAIMList();
-		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
-		EPADAIM aim = epadOperations.getSubjectAIMDescription(subjectReference, aimReference.aimID, username, sessionID);
-		if (aim == null)
-			throw new NotFoundException("Aim " + aimID + " not found in project " + projectID);
-		if (!UserProjectService.isCollaborator(sessionID, username, aim.projectID))
-			username = null;
-		long dbtime = System.currentTimeMillis();
-		log.info("Time taken for AIM database query:" + (dbtime-starttime) + " msecs");
-		PrintWriter responseStream = response.getWriter();
-		response.setContentType("application/json");
-		if ("summary".equalsIgnoreCase(format))
-		{
-			aims = AIMUtil.queryAIMImageAnnotationSummariesV4(aims, username, sessionID);					
-			long starttime2 = System.currentTimeMillis();
-			responseStream.append(aims.toJSON());
-			long resptime = System.currentTimeMillis();
-			log.info("Time taken for write http response:" + (resptime-starttime2) + " msecs");
-		}
-		else if ("json".equalsIgnoreCase(format))
-		{
-			AIMUtil.queryAIMImageJsonAnnotations(responseStream, aims, username, sessionID);					
-		}
-		else
-		{
-			AIMUtil.queryAIMImageAnnotationsV4(responseStream, aims, username, sessionID);					
-		}
-	}
-
-	@RequestMapping(value = "/{projectID}/subjects/{subjectID}/studies/{studyUID}/aims/", method = RequestMethod.GET)
+	@RequestMapping(value = "/{studyUID}/aims/", method = RequestMethod.GET)
 	public void getEPADStudyAims( 
-									@RequestParam(value="start", defaultValue="0") int start,
-									@RequestParam(value="count", defaultValue="5000") int count,
 									@RequestParam(value="format", defaultValue="xml") String format,
-									@PathVariable String projectID,
-									@PathVariable String subjectID,
 									@PathVariable String studyUID,
 											HttpServletRequest request, 
 									        HttpServletResponse response) throws Exception {
@@ -421,7 +231,7 @@ public class StudyController {
 		String username = SessionService.getUsernameForSession(sessionID);
 
 		long starttime = System.currentTimeMillis();
-		StudyReference studyReference = new StudyReference(projectID, subjectID, studyUID);
+		StudyReference studyReference = new StudyReference(null, null, studyUID);
 		EPADAIMList aims = null;
 		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
 		aims = epadOperations.getStudyAIMDescriptions(studyReference, username, sessionID);
@@ -447,11 +257,9 @@ public class StudyController {
 		}
 	}
 
-	@RequestMapping(value = "/{projectID}/subjects/{subjectID}/studies/{studyUID}/aims/{aimID}", method = RequestMethod.GET)
+	@RequestMapping(value = "{studyUID}/aims/{aimID}", method = RequestMethod.GET)
 	public void getEPADStudyAim( 
 									@RequestParam(value="format", defaultValue="xml") String format,
-									@PathVariable String projectID,
-									@PathVariable String subjectID,
 									@PathVariable String studyUID,
 									@PathVariable String aimID,
 											HttpServletRequest request, 
@@ -460,13 +268,13 @@ public class StudyController {
 		String username = SessionService.getUsernameForSession(sessionID);
 
 		long starttime = System.currentTimeMillis();
-		StudyReference studyReference = new StudyReference(projectID, subjectID, studyUID);
+		StudyReference studyReference = new StudyReference(null, null, studyUID);
 		AIMReference aimReference = new AIMReference(aimID);
 		EPADAIMList aims = new EPADAIMList();
 		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
 		EPADAIM aim = epadOperations.getStudyAIMDescription(studyReference, aimReference.aimID, username, sessionID);
 		if (aim == null)
-			throw new NotFoundException("Aim " + aimID + " not found in project " + projectID);
+			throw new NotFoundException("Aim " + aimID + " not found");
 		if (!UserProjectService.isCollaborator(sessionID, username, aim.projectID))
 			username = null;
 		long dbtime = System.currentTimeMillis();
@@ -491,13 +299,9 @@ public class StudyController {
 		}
 	}
 
-	@RequestMapping(value = "/{projectID}/subjects/{subjectID}/studies/{studyUID}/series/{seriesUID}/aims/", method = RequestMethod.GET)
+	@RequestMapping(value = "/{studyUID}/series/{seriesUID}/aims/", method = RequestMethod.GET)
 	public void getEPADSeriesAims( 
-									@RequestParam(value="start", defaultValue="0") int start,
-									@RequestParam(value="count", defaultValue="5000") int count,
 									@RequestParam(value="format", defaultValue="xml") String format,
-									@PathVariable String projectID,
-									@PathVariable String subjectID,
 									@PathVariable String studyUID,
 									@PathVariable String seriesUID,
 											HttpServletRequest request, 
@@ -506,7 +310,7 @@ public class StudyController {
 		String username = SessionService.getUsernameForSession(sessionID);
 
 		long starttime = System.currentTimeMillis();
-		SeriesReference seriesReference = new SeriesReference(projectID, subjectID, studyUID, seriesUID);
+		SeriesReference seriesReference = new SeriesReference(null, null, studyUID, seriesUID);
 		EPADAIMList aims = null;
 		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
 		aims = epadOperations.getSeriesAIMDescriptions(seriesReference, username, sessionID);
@@ -532,11 +336,9 @@ public class StudyController {
 		}
 	}
 
-	@RequestMapping(value = "/{projectID}/subjects/{subjectID}/studies/{studyUID}/series/{seriesUID}/aims/{aimID}", method = RequestMethod.GET)
+	@RequestMapping(value = "/{studyUID}/series/{seriesUID}/aims/{aimID}", method = RequestMethod.GET)
 	public void getEPADSeriesAim( 
 									@RequestParam(value="format", defaultValue="xml") String format,
-									@PathVariable String projectID,
-									@PathVariable String subjectID,
 									@PathVariable String studyUID,
 									@PathVariable String seriesUID,
 									@PathVariable String aimID,
@@ -546,13 +348,13 @@ public class StudyController {
 		String username = SessionService.getUsernameForSession(sessionID);
 
 		long starttime = System.currentTimeMillis();
-		SeriesReference seriesReference = new SeriesReference(projectID, subjectID, studyUID, seriesUID);
+		SeriesReference seriesReference = new SeriesReference(null, null, studyUID, seriesUID);
 		AIMReference aimReference = new AIMReference(aimID);
 		EPADAIMList aims = new EPADAIMList();
 		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
 		EPADAIM aim = epadOperations.getSeriesAIMDescription(seriesReference, aimReference.aimID, username, sessionID);
 		if (aim == null)
-			throw new NotFoundException("Aim " + aimID + " not found in project " + projectID);
+			throw new NotFoundException("Aim " + aimID + " not found");
 		if (!UserProjectService.isCollaborator(sessionID, username, aim.projectID))
 			username = null;
 		long dbtime = System.currentTimeMillis();
@@ -577,13 +379,9 @@ public class StudyController {
 		}
 	}
 
-	@RequestMapping(value = "/{projectID}/subjects/{subjectID}/studies/{studyUID}/series/{seriesUID}/images/{imageUID}/aims/", method = RequestMethod.GET)
+	@RequestMapping(value = "/{studyUID}/series/{seriesUID}/images/{imageUID}/aims/", method = RequestMethod.GET)
 	public void getEPADImageAims( 
-									@RequestParam(value="start", defaultValue="0") int start,
-									@RequestParam(value="count", defaultValue="5000") int count,
 									@RequestParam(value="format", defaultValue="xml") String format,
-									@PathVariable String projectID,
-									@PathVariable String subjectID,
 									@PathVariable String studyUID,
 									@PathVariable String seriesUID,
 									@PathVariable String imageUID,
@@ -593,7 +391,7 @@ public class StudyController {
 		String username = SessionService.getUsernameForSession(sessionID);
 
 		long starttime = System.currentTimeMillis();
-		ImageReference imageReference = new ImageReference(projectID, subjectID, studyUID, seriesUID, imageUID);
+		ImageReference imageReference = new ImageReference(null, null, studyUID, seriesUID, imageUID);
 		EPADAIMList aims = null;
 		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
 		aims = epadOperations.getImageAIMDescriptions(imageReference, username, sessionID);
@@ -619,11 +417,9 @@ public class StudyController {
 		}
 	}
 
-	@RequestMapping(value = "/{projectID}/subjects/{subjectID}/studies/{studyUID}/series/{seriesUID}/images/{imageUID}/aims/{aimID}", method = RequestMethod.GET)
+	@RequestMapping(value = "/{studyUID}/series/{seriesUID}/images/{imageUID}/aims/{aimID}", method = RequestMethod.GET)
 	public void getEPADImageAim( 
 									@RequestParam(value="format", defaultValue="xml") String format,
-									@PathVariable String projectID,
-									@PathVariable String subjectID,
 									@PathVariable String studyUID,
 									@PathVariable String seriesUID,
 									@PathVariable String imageUID,
@@ -634,13 +430,13 @@ public class StudyController {
 		String username = SessionService.getUsernameForSession(sessionID);
 
 		long starttime = System.currentTimeMillis();
-		ImageReference imageReference = new ImageReference(projectID, subjectID, studyUID, seriesUID, imageUID);
+		ImageReference imageReference = new ImageReference(null, null, studyUID, seriesUID, imageUID);
 		AIMReference aimReference = new AIMReference(aimID);
 		EPADAIMList aims = new EPADAIMList();
 		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
 		EPADAIM aim = epadOperations.getImageAIMDescription(imageReference, aimReference.aimID, username, sessionID);
 		if (aim == null)
-			throw new NotFoundException("Aim " + aimID + " not found in project " + projectID);
+			throw new NotFoundException("Aim " + aimID + " not found");
 		if (!UserProjectService.isCollaborator(sessionID, username, aim.projectID))
 			username = null;
 		long dbtime = System.currentTimeMillis();
@@ -666,13 +462,9 @@ public class StudyController {
 	}	
 
 
-	@RequestMapping(value = "/{projectID}/subjects/{subjectID}/studies/{studyUID}/series/{seriesUID}/images/{imageUID}/frames/{frameNo}/aims/", method = RequestMethod.GET)
+	@RequestMapping(value = "/{studyUID}/series/{seriesUID}/images/{imageUID}/frames/{frameNo}/aims/", method = RequestMethod.GET)
 	public void getEPADFrameAims( 
-									@RequestParam(value="start", defaultValue="0") int start,
-									@RequestParam(value="count", defaultValue="5000") int count,
 									@RequestParam(value="format", defaultValue="xml") String format,
-									@PathVariable String projectID,
-									@PathVariable String subjectID,
 									@PathVariable String studyUID,
 									@PathVariable String seriesUID,
 									@PathVariable String imageUID,
@@ -683,7 +475,7 @@ public class StudyController {
 		String username = SessionService.getUsernameForSession(sessionID);
 
 		long starttime = System.currentTimeMillis();
-		FrameReference frameReference = new FrameReference(projectID, subjectID, studyUID, seriesUID, imageUID, frameNo);
+		FrameReference frameReference = new FrameReference(null, null, studyUID, seriesUID, imageUID, frameNo);
 		EPADAIMList aims = null;
 		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
 		aims = epadOperations.getFrameAIMDescriptions(frameReference, username, sessionID);
@@ -709,11 +501,9 @@ public class StudyController {
 		}
 	}
 
-	@RequestMapping(value = "/{projectID}/subjects/{subjectID}/studies/{studyUID}/series/{seriesUID}/images/{imageUID}/frames/{frameNo}/aims/{aimID}", method = RequestMethod.GET)
+	@RequestMapping(value = "/{studyUID}/series/{seriesUID}/images/{imageUID}/frames/{frameNo}/aims/{aimID}", method = RequestMethod.GET)
 	public void getEPADFrameAim( 
 									@RequestParam(value="format", defaultValue="xml") String format,
-									@PathVariable String projectID,
-									@PathVariable String subjectID,
 									@PathVariable String studyUID,
 									@PathVariable String seriesUID,
 									@PathVariable String imageUID,
@@ -725,13 +515,13 @@ public class StudyController {
 		String username = SessionService.getUsernameForSession(sessionID);
 
 		long starttime = System.currentTimeMillis();
-		FrameReference frameReference = new FrameReference(projectID, subjectID, studyUID, seriesUID, imageUID, frameNo);
+		FrameReference frameReference = new FrameReference(null, null, studyUID, seriesUID, imageUID, frameNo);
 		AIMReference aimReference = new AIMReference(aimID);
 		EPADAIMList aims = new EPADAIMList();
 		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
 		EPADAIM aim = epadOperations.getFrameAIMDescription(frameReference, aimReference.aimID, username, sessionID);
 		if (aim == null)
-			throw new NotFoundException("Aim " + aimID + " not found in project " + projectID);
+			throw new NotFoundException("Aim " + aimID + " not found");
 		if (!UserProjectService.isCollaborator(sessionID, username, aim.projectID))
 			username = null;
 		long dbtime = System.currentTimeMillis();
@@ -763,704 +553,6 @@ public class StudyController {
 			AIMUtil.queryAIMImageAnnotationsV4(responseStream, aims, username, sessionID);					
 		}
 	}	
-	 
-	@RequestMapping(value = "/{projectID}/users/", method = RequestMethod.GET)
-	public EPADUserList getEPADProjectUsers( 
-											@PathVariable String projectID,
-											HttpServletRequest request, 
-									        HttpServletResponse response) throws Exception {
-		String sessionID = SessionService.getJSessionIDFromRequest(request);
-		String username = SessionService.getUsernameForSession(sessionID);
-		ProjectReference projectReference = new ProjectReference(projectID);
-		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
-		EPADUserList users = epadOperations.getUserDescriptions(username, projectReference, sessionID);
-		return users;
-	}
-	 
-	@RequestMapping(value = "/{projectID}/templates/", method = RequestMethod.GET)
-	public EPADTemplateContainerList getEPADProjectTemplates( 
-											@PathVariable String projectID,
-											@RequestParam(value="includeSystemTemplates", required = false) boolean includeSystemTemplates, 
-											HttpServletRequest request, 
-									        HttpServletResponse response) throws Exception {
-		String sessionID = SessionService.getJSessionIDFromRequest(request);
-		String username = SessionService.getUsernameForSession(sessionID);
-		ProjectReference projectReference = new ProjectReference(projectID);
-		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
-		EPADTemplateContainerList templates = epadOperations.getTemplateDescriptions(projectReference.projectID, username, sessionID);
-		if (includeSystemTemplates) {
-			EPADTemplateContainerList systemplates = epadOperations.getSystemTemplateDescriptions(username, sessionID);
-			for (EPADTemplateContainer template: systemplates.ResultSet.Result) {
-				templates.addTemplate(template);
-			}
-		}
-		return templates;
-	}
-	 
-	@RequestMapping(value = "/{projectID}/files/", method = RequestMethod.GET)
-	public EPADFileList getEPADProjectFiles( 
-											@PathVariable String projectID,
-											HttpServletRequest request, 
-									        HttpServletResponse response) throws Exception {
-		String sessionID = SessionService.getJSessionIDFromRequest(request);
-		String username = SessionService.getUsernameForSession(sessionID);
-		EPADSearchFilter searchFilter = EPADSearchFilterBuilder.build(request);
-		ProjectReference projectReference = new ProjectReference(projectID);
-		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
-		EPADFileList files = epadOperations.getFileDescriptions(projectReference, username, sessionID, searchFilter, true);
-		return files;
-	}
-	 
-	@RequestMapping(value = "/{projectID}/subjects/{subjectID}/files/", method = RequestMethod.GET)
-	public EPADFileList getEPADSubjectFiles( 
-											@PathVariable String projectID,
-											@PathVariable String subjectID,
-											HttpServletRequest request, 
-									        HttpServletResponse response) throws Exception {
-		String sessionID = SessionService.getJSessionIDFromRequest(request);
-		String username = SessionService.getUsernameForSession(sessionID);
-		EPADSearchFilter searchFilter = EPADSearchFilterBuilder.build(request);
-		SubjectReference subjectReference = new SubjectReference(projectID, subjectID);
-		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
-		EPADFileList files = epadOperations.getFileDescriptions(subjectReference, username, sessionID, searchFilter, true);
-		return files;
-	}
-	 
-	@RequestMapping(value = "/{projectID}/subjects/{subjectID}/studies/{studyUID}/files/", method = RequestMethod.GET)
-	public EPADFileList getEPADStudyFiles( 
-											@PathVariable String projectID,
-											@PathVariable String subjectID,
-											@PathVariable String studyUID,
-											HttpServletRequest request, 
-									        HttpServletResponse response) throws Exception {
-		String sessionID = SessionService.getJSessionIDFromRequest(request);
-		String username = SessionService.getUsernameForSession(sessionID);
-		EPADSearchFilter searchFilter = EPADSearchFilterBuilder.build(request);
-		StudyReference studyReference = new StudyReference(projectID, subjectID, studyUID);
-		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
-		EPADFileList files = epadOperations.getFileDescriptions(studyReference, username, sessionID, searchFilter, true);
-		return files;
-	}
-	 
-	@RequestMapping(value = "/{projectID}/subjects/{subjectID}/studies/{studyUID}/series/{seriesUID}/files/", method = RequestMethod.GET)
-	public EPADFileList getEPADSeriesFiles( 
-											@PathVariable String projectID,
-											@PathVariable String subjectID,
-											@PathVariable String studyUID,
-											@PathVariable String seriesUID,
-											HttpServletRequest request, 
-									        HttpServletResponse response) throws Exception {
-		String sessionID = SessionService.getJSessionIDFromRequest(request);
-		String username = SessionService.getUsernameForSession(sessionID);
-		EPADSearchFilter searchFilter = EPADSearchFilterBuilder.build(request);
-		SeriesReference seriesReference = new SeriesReference(projectID, subjectID, studyUID, seriesUID);
-		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
-		EPADFileList files = epadOperations.getFileDescriptions(seriesReference, username, sessionID, searchFilter);
-		return files;
-	}
-	 
-	@RequestMapping(value = "/{projectID}/files/{filename:.+}", method = RequestMethod.GET)
-	public EPADFile getEPADProjectFile( 
-											@PathVariable String projectID,
-											@PathVariable String filename,
-											HttpServletRequest request, 
-									        HttpServletResponse response) throws Exception {
-		String sessionID = SessionService.getJSessionIDFromRequest(request);
-		String username = SessionService.getUsernameForSession(sessionID);
-		ProjectReference projectReference = new ProjectReference(projectID);
-		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
-		EPADFile file = epadOperations.getFileDescription(projectReference, filename, username, sessionID);
-		return file;
-	}
-	 
-	@RequestMapping(value = "/{projectID}/subjects/{subjectID}/files/{filename:.+}", method = RequestMethod.GET)
-	public EPADFile getEPADSubjectFile( 
-											@PathVariable String projectID,
-											@PathVariable String subjectID,
-											@PathVariable String filename,
-											HttpServletRequest request, 
-									        HttpServletResponse response) throws Exception {
-		String sessionID = SessionService.getJSessionIDFromRequest(request);
-		String username = SessionService.getUsernameForSession(sessionID);
-		SubjectReference subjectReference = new SubjectReference(projectID, subjectID);
-		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
-		EPADFile files = epadOperations.getFileDescription(subjectReference, filename, username, sessionID);
-		return files;
-	}
-	 
-	@RequestMapping(value = "/{projectID}/subjects/{subjectID}/studies/{studyUID}/files/{filename:.+}", method = RequestMethod.GET)
-	public EPADFile getEPADStudyFile( 
-											@PathVariable String projectID,
-											@PathVariable String subjectID,
-											@PathVariable String studyUID,
-											@PathVariable String filename,
-											HttpServletRequest request, 
-									        HttpServletResponse response) throws Exception {
-		String sessionID = SessionService.getJSessionIDFromRequest(request);
-		String username = SessionService.getUsernameForSession(sessionID);
-		StudyReference studyReference = new StudyReference(projectID, subjectID, studyUID);
-		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
-		EPADFile files = epadOperations.getFileDescription(studyReference, filename, username, sessionID);
-		return files;
-	}
-	 
-	@RequestMapping(value = "/{projectID}/subjects/{subjectID}/studies/{studyUID}/series/{seriesUID}/files/{filename:.+}", method = RequestMethod.GET)
-	public EPADFile getEPADSeriesFile( 
-											@PathVariable String projectID,
-											@PathVariable String subjectID,
-											@PathVariable String studyUID,
-											@PathVariable String seriesUID,
-											@PathVariable String filename,
-											HttpServletRequest request, 
-									        HttpServletResponse response) throws Exception {
-		String sessionID = SessionService.getJSessionIDFromRequest(request);
-		String username = SessionService.getUsernameForSession(sessionID);
-		SeriesReference seriesReference = new SeriesReference(projectID, subjectID, studyUID, seriesUID);
-		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
-		EPADFile files = epadOperations.getFileDescription(seriesReference, filename, username, sessionID);
-		return files;
-	}
-	 
-	@RequestMapping(value = "/{projectID:.+}", method = {RequestMethod.PUT,RequestMethod.POST})
-	public void createEPADProject( 
-											@PathVariable String projectID,
-											@RequestParam(value="projectName", required=true) String projectName,
-											@RequestParam(value="projectDescription", required=true) String projectDescription,
-											@RequestParam(value="defaultTemplate", required=false) String defaultTemplate,
-											HttpServletRequest request, 
-									        HttpServletResponse response) throws Exception {
-		String sessionID = SessionService.getJSessionIDFromRequest(request);
-		String username = SessionService.getUsernameForSession(sessionID);
-		ProjectReference projectReference = new ProjectReference(projectID);
-		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
-		int statusCode = 0;
-		EPADProject project = epadOperations.getProjectDescription(projectReference, username, sessionID);
-		if (project != null) {
-			statusCode = epadOperations.updateProject(username, projectReference, projectName, projectDescription, defaultTemplate, sessionID);
-		} else {
-			statusCode = epadOperations.createProject(username, projectReference, projectName, projectDescription, defaultTemplate, sessionID);
-		}
-		if (statusCode != HttpServletResponse.SC_OK);
-			throw new Exception("Error creating or modifying project");
-	}
-
-	@RequestMapping(value = "/{projectID}/subjects/{subjectID:.+}", method = {RequestMethod.PUT,RequestMethod.POST})
-	public void createEPADSubject( 
-										@PathVariable String projectID,
-										@PathVariable String subjectID,
-										@RequestParam(value="subjectName", required=true) String subjectName,
-										@RequestParam(value="gender") String gender,
-										@RequestParam(value="dob") String dob,
-										HttpServletRequest request, 
-								        HttpServletResponse response) throws Exception {
-		String sessionID = SessionService.getJSessionIDFromRequest(request);
-		String username = SessionService.getUsernameForSession(sessionID);
-		SubjectReference subjectReference = new SubjectReference(projectID, subjectID);
-		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
-		EPADSubject subject = epadOperations.getSubjectDescription(subjectReference, username, sessionID);
-		int statusCode = 0;
-		if (subject != null) {
-			statusCode = epadOperations.updateSubject(username, subjectReference, subjectName, getDate(dob), gender, sessionID);
-		} else {
-			statusCode = epadOperations.createSubject(username, subjectReference, subjectName, getDate(dob), gender, sessionID);
-		}
-		if (statusCode != HttpServletResponse.SC_OK);
-			throw new Exception("Error creating or modifying project");
-	}
-
-	@RequestMapping(value = "/{projectID}/subjects/", method = {RequestMethod.PUT,RequestMethod.POST})
-	public void createEPADSubject( 
-										@PathVariable String projectID,
-										@RequestParam(value="subjectName", required=true) String subjectName,
-										@RequestParam(value="gender") String gender,
-										@RequestParam(value="dob") String dob,
-										HttpServletRequest request, 
-								        HttpServletResponse response) throws Exception {
-		String sessionID = SessionService.getJSessionIDFromRequest(request);
-		String username = SessionService.getUsernameForSession(sessionID);
-		SubjectReference subjectReference = new SubjectReference(projectID, "new");
-		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
-		int	statusCode = epadOperations.createSubject(username, subjectReference, subjectName, getDate(dob), gender, sessionID);
-		if (statusCode != HttpServletResponse.SC_OK);
-			throw new Exception("Error creating or modifying project");
-	}
-
-	@RequestMapping(value = "/{projectID}/subjects/{subjectID}/status/{status:.+}", method = RequestMethod.PUT)
-	public void setEPADSubjectStatus( 
-										@PathVariable String projectID,
-										@PathVariable String subjectID,
-										@PathVariable String status,
-										HttpServletRequest request, 
-								        HttpServletResponse response) throws Exception {
-		String sessionID = SessionService.getJSessionIDFromRequest(request);
-		String username = SessionService.getUsernameForSession(sessionID);
-		SubjectReference subjectReference = new SubjectReference(projectID, subjectID);
-		subjectReference.status = status;
-		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
-		EPADSubject subject = epadOperations.getSubjectDescription(subjectReference, username, sessionID);
-		String errstatus = epadOperations.setSubjectStatus(subjectReference, sessionID, username);
-		if (status != "");
-			throw new Exception("Error setting patient status");
-	}
-
-	@RequestMapping(value = "/{projectID}/subjects/{subjectID}/studies/{studyUID:.+}", method = {RequestMethod.PUT,RequestMethod.POST})
-	public void createEPADStudy( 
-											@PathVariable String projectID,
-											@PathVariable String subjectID,
-											@PathVariable String studyUID,
-											@RequestParam(value="description", required=true) String description,
-											@RequestParam(value="studyDate", required=true) String studyDate,
-											HttpServletRequest request, 
-									        HttpServletResponse response) throws Exception {
-		String sessionID = SessionService.getJSessionIDFromRequest(request);
-		String username = SessionService.getUsernameForSession(sessionID);
-		StudyReference studyReference = new StudyReference(projectID, subjectID, studyUID);
-		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
-		int statusCode = 0;
-		statusCode = epadOperations.createStudy(username, studyReference, description, getDate(studyDate), sessionID);
-		if (statusCode != HttpServletResponse.SC_OK);
-			throw new Exception("Error creating a study");
-	}
-
-	@RequestMapping(value = "/{projectID}/subjects/{subjectID}/studies/", method = {RequestMethod.PUT,RequestMethod.POST})
-	public void createEPADStudy( 
-											@PathVariable String projectID,
-											@PathVariable String subjectID,
-											@RequestParam(value="description", required=true) String description,
-											@RequestParam(value="studyDate", required=true) String studyDate,
-											HttpServletRequest request, 
-									        HttpServletResponse response) throws Exception {
-		String sessionID = SessionService.getJSessionIDFromRequest(request);
-		String username = SessionService.getUsernameForSession(sessionID);
-		StudyReference studyReference = new StudyReference(projectID, subjectID, "new");
-		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
-		int statusCode = 0;
-		statusCode = epadOperations.createStudy(username, studyReference, description, getDate(studyDate), sessionID);
-		if (statusCode != HttpServletResponse.SC_OK);
-			throw new Exception("Error creating a study");
-	}
-
-	@RequestMapping(value = "/{projectID}/subjects/{subjectID}/studies/{studyUID}/series/{seriesUID:.+}", method = {RequestMethod.PUT,RequestMethod.POST})
-	public void createEPADSeries( 
-										@PathVariable String projectID,
-										@PathVariable String subjectID,
-										@PathVariable String studyUID,
-										@PathVariable String seriesUID,
-										@RequestParam(value="description", required=true) String description,
-										@RequestParam(value="seriesDate", required=true) String seriesDate,
-										@RequestParam(value="modality", required=false) String modality,
-										@RequestParam(value="referencedSeries", required=false) String referencedSeries,
-										HttpServletRequest request, 
-								        HttpServletResponse response) throws Exception {
-		String sessionID = SessionService.getJSessionIDFromRequest(request);
-		String username = SessionService.getUsernameForSession(sessionID);
-		SeriesReference seriesReference = new SeriesReference(projectID, subjectID, studyUID, seriesUID);
-		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
-		int statusCode = 0;
-		EPADSeries series  = epadOperations.createSeries(username, seriesReference, description, getDate(seriesDate), modality, referencedSeries, sessionID);
-	}
-
-	@RequestMapping(value = "/{projectID}/subjects/{subjectID}/studies/{studyUID}/series/", method = {RequestMethod.PUT,RequestMethod.POST})
-	public void createEPADSeries( 
-										@PathVariable String projectID,
-										@PathVariable String subjectID,
-										@PathVariable String studyUID,
-										@RequestParam(value="description", required=true) String description,
-										@RequestParam(value="seriesDate", required=true) String seriesDate,
-										@RequestParam(value="modality", required=false) String modality,
-										@RequestParam(value="referencedSeries", required=false) String referencedSeries,
-										HttpServletRequest request, 
-								        HttpServletResponse response) throws Exception {
-		String sessionID = SessionService.getJSessionIDFromRequest(request);
-		String username = SessionService.getUsernameForSession(sessionID);
-		SeriesReference seriesReference = new SeriesReference(projectID, subjectID, studyUID, "new");
-		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
-		int statusCode = 0;
-		EPADSeries series  = epadOperations.createSeries(username, seriesReference, description, getDate(seriesDate), modality, referencedSeries, sessionID);
-	}
-
-	@RequestMapping(value = "/{projectID}/aims/{aimID}", method = RequestMethod.PUT)
-	public void createEPADProjectAIM( 
-											@PathVariable String projectID,
-											@PathVariable String aimID,
-											HttpServletRequest request, 
-									        HttpServletResponse response) throws Exception {
-		String sessionID = SessionService.getJSessionIDFromRequest(request);
-		String username = SessionService.getUsernameForSession(sessionID);
-		ProjectReference projectReference = new ProjectReference(projectID);
-		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
-		AIMReference aimReference = new AIMReference(aimID);
-		log.info("Projects AIM PUT");
-		File uploadedFile = HandlerUtil.getUploadedFile(request);
-		String status = epadOperations.createProjectAIM(username, projectReference, aimReference.aimID, uploadedFile, sessionID);
-		if (status != "");
-			throw new Exception("Error creating Project AIM:" + status);
-	}
-
-	@RequestMapping(value = "/{projectID}/subjects/{subjectID}/aims/{aimID}", method = RequestMethod.PUT)
-	public void createEPADSubjectAIM( 
-										@PathVariable String projectID,
-										@PathVariable String subjectID,
-										@PathVariable String aimID,
-										HttpServletRequest request, 
-								        HttpServletResponse response) throws Exception {
-		String sessionID = SessionService.getJSessionIDFromRequest(request);
-		String username = SessionService.getUsernameForSession(sessionID);
-		SubjectReference subjectReference = new SubjectReference(projectID, subjectID);
-		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
-		AIMReference aimReference = new AIMReference(aimID);
-		log.info("Subject AIM PUT");
-		File uploadedFile = HandlerUtil.getUploadedFile(request);
-		String status = epadOperations.createSubjectAIM(username, subjectReference, aimReference.aimID, uploadedFile, sessionID);
-		if (status != "");
-			throw new Exception("Error creating Subject AIM:" + status);
-	}
-	
-	@RequestMapping(value = "/{projectID}/subjects/{subjectID}/studies/{studyUID}/aims/{aimID}", method = RequestMethod.PUT)
-	public void createEPADStudyAIM( 
-											@PathVariable String projectID,
-											@PathVariable String subjectID,
-											@PathVariable String studyUID,
-											@PathVariable String aimID,
-											HttpServletRequest request, 
-									        HttpServletResponse response) throws Exception {
-		String sessionID = SessionService.getJSessionIDFromRequest(request);
-		String username = SessionService.getUsernameForSession(sessionID);
-		StudyReference studyReference = new StudyReference(projectID, subjectID, studyUID);
-		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
-		log.info("Study AIM PUT");
-		AIMReference aimReference = new AIMReference(aimID);
-		File uploadedFile = HandlerUtil.getUploadedFile(request);
-		String status = epadOperations.createStudyAIM(username, studyReference, aimReference.aimID, uploadedFile, sessionID);
-		if (status != "");
-			throw new Exception("Error creating Study AIM:" + status);
-	}
-
-	@RequestMapping(value = "/{projectID}/subjects/{subjectID}/studies/{studyUID}/series/{seriesUID}/aims/{aimID}", method = RequestMethod.PUT)
-	public void createEPADSeriesAIM( 
-										@PathVariable String projectID,
-										@PathVariable String subjectID,
-										@PathVariable String studyUID,
-										@PathVariable String seriesUID,
-										@PathVariable String aimID,
-										HttpServletRequest request, 
-								        HttpServletResponse response) throws Exception {
-		String sessionID = SessionService.getJSessionIDFromRequest(request);
-		String username = SessionService.getUsernameForSession(sessionID);
-		SeriesReference seriesReference = new SeriesReference(projectID, subjectID, studyUID, seriesUID);
-		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
-		log.info("Series AIM PUT");
-		AIMReference aimReference = new AIMReference(aimID);
-		File uploadedFile = HandlerUtil.getUploadedFile(request);
-		String status = epadOperations.createSeriesAIM(username, seriesReference, aimReference.aimID, uploadedFile, sessionID);
-		if (status != "");
-			throw new Exception("Error creating Series AIM:" + status);
-	}	
-
-	@RequestMapping(value = "/{projectID}/subjects/{subjectID}/studies/{studyUID}/series/{seriesUID}/images/{imageUID}/aims/{aimID}", method = RequestMethod.PUT)
-	public void createEPADImageAIM( 
-										@PathVariable String projectID,
-										@PathVariable String subjectID,
-										@PathVariable String studyUID,
-										@PathVariable String seriesUID,
-										@PathVariable String imageUID,
-										@PathVariable String aimID,
-										HttpServletRequest request, 
-								        HttpServletResponse response) throws Exception {
-		String sessionID = SessionService.getJSessionIDFromRequest(request);
-		String username = SessionService.getUsernameForSession(sessionID);
-		ImageReference imageReference = new ImageReference(projectID, subjectID, studyUID, seriesUID, imageUID);
-		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
-		log.info("Image AIM PUT");
-		AIMReference aimReference = new AIMReference(aimID);
-		File uploadedFile = HandlerUtil.getUploadedFile(request);
-		String status = epadOperations.createImageAIM(username, imageReference, aimReference.aimID, uploadedFile, sessionID);
-		if (status != "");
-			throw new Exception("Error creating Image AIM:" + status);
-	}	
-
-	@RequestMapping(value = "/{projectID}/subjects/{subjectID}/studies/{studyUID}/series/{seriesUID}/images/{imageUID}/frames/{frameNo}/aims/{aimID}", method = RequestMethod.PUT)
-	public void createEPADImageAIM( 
-										@PathVariable String projectID,
-										@PathVariable String subjectID,
-										@PathVariable String studyUID,
-										@PathVariable String seriesUID,
-										@PathVariable String imageUID,
-										@PathVariable int frameNo,
-										@PathVariable String aimID,
-										HttpServletRequest request, 
-								        HttpServletResponse response) throws Exception {
-		String sessionID = SessionService.getJSessionIDFromRequest(request);
-		String username = SessionService.getUsernameForSession(sessionID);
-		FrameReference frameReference = new FrameReference(projectID, subjectID, studyUID, seriesUID, imageUID, frameNo);
-		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
-		log.info("Frame AIM PUT");
-		AIMReference aimReference = new AIMReference(aimID);
-		File uploadedFile = HandlerUtil.getUploadedFile(request);
-		String status = epadOperations.createFrameAIM(username, frameReference, aimReference.aimID, uploadedFile, sessionID);
-		if (status != "");
-			throw new Exception("Error creating Frame AIM:" + status);
-	}	
-
-	@RequestMapping(value = "/{projectID}/aims/", method = RequestMethod.PUT)
-	public void runEPADProjectAIMPlugin( 
-											@PathVariable String projectID,
-											@RequestParam(value="annotationUID", required=true) String annotationUID,
-											@RequestParam(value="templateName", required=true) String templateName,
-											HttpServletRequest request, 
-									        HttpServletResponse response) throws Exception {
-		String sessionID = SessionService.getJSessionIDFromRequest(request);
-		ProjectReference projectReference = new ProjectReference(projectID);
-		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
-		String[] aimIDs = annotationUID.split(",");
-		AIMUtil.runPlugIn(aimIDs, templateName, projectReference.projectID, sessionID);
-	}
-
-	@RequestMapping(value = "/{projectID}/user/{projectuser:.+}", method = RequestMethod.PUT)
-	public void addUserToProject( 
-										@PathVariable String projectID,
-										@PathVariable String projectuser,
-										@RequestParam(value="role", required=true) String role,
-											HttpServletRequest request, 
-									        HttpServletResponse response) throws Exception {
-		String sessionID = SessionService.getJSessionIDFromRequest(request);
-		String username = SessionService.getUsernameForSession(sessionID);
-		ProjectReference projectReference = new ProjectReference(projectID);
-		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
-		epadOperations.addUserToProject(username, projectReference, projectuser, role, sessionID);
-	}	
-
-	@RequestMapping(value = "/{projectID}/subjects/{subjectID}/studies/{studyUID}/series/{seriesUID}/images/{imageUID}/frames/", method = RequestMethod.POST)
-	public void editDSO( 
-										@PathVariable String projectID,
-										@PathVariable String subjectID,
-										@PathVariable String studyUID,
-										@PathVariable String seriesUID,
-										@PathVariable String imageUID,
-										@RequestParam(value="type", required=false) String type,
-										HttpServletRequest request, 
-								        HttpServletResponse response) throws Exception {
-		String sessionID = SessionService.getJSessionIDFromRequest(request);
-		String username = SessionService.getUsernameForSession(sessionID);
-		ImageReference imageReference = new ImageReference(projectID, subjectID, studyUID, seriesUID, imageUID);
-		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
-		PrintWriter responseStream = response.getWriter();
-		if (!"new".equals(type))
-		{
-			boolean errstatus = DSOUtil.handleDSOFramesEdit(imageReference.projectID, imageReference.subjectID, imageReference.studyUID,
-					imageReference.seriesUID, imageReference.imageUID, request, responseStream);
-			if (errstatus)
-				throw new Exception("Error editing DSO");
-		}
-		else
-		{
-			boolean errstatus = DSOUtil.handleCreateDSO(imageReference.projectID, imageReference.subjectID, imageReference.studyUID,
-					imageReference.seriesUID, request, responseStream, username);
-			if (errstatus)
-				throw new Exception("Error creating DSO");
-		}
-	}	
-
-	@RequestMapping(value = "/{projectID}/files/", method = RequestMethod.POST)
-	public void uploadProjectFiles( 
-										@PathVariable String projectID,
-										@RequestParam(value="description", required=false) String description,
-										@RequestParam(value="fileType", required=false) String fileType,
-											HttpServletRequest request, 
-									        HttpServletResponse response) throws Exception {
-		String sessionID = SessionService.getJSessionIDFromRequest(request);
-		String username = SessionService.getUsernameForSession(sessionID);
-		createFile(username, projectID, null, null, null, fileType, description, request, response);
-	}	
-
-	@RequestMapping(value = "/{projectID}/subjects/{subjectID}/files/", method = RequestMethod.POST)
-	public void uploadSubjectFiles( 
-										@PathVariable String projectID,
-										@PathVariable String subjectID,
-										@RequestParam(value="description", required=false) String description,
-										@RequestParam(value="fileType", required=false) String fileType,
-											HttpServletRequest request, 
-									        HttpServletResponse response) throws Exception {
-		String sessionID = SessionService.getJSessionIDFromRequest(request);
-		String username = SessionService.getUsernameForSession(sessionID);
-		createFile(username, projectID, subjectID, null, null, fileType, description, request, response);
-	}	
-
-	@RequestMapping(value = "/{projectID}/subjects/{subjectID}/studies/{studyUID}/files/", method = RequestMethod.POST)
-	public void uploadStudyFiles( 
-											@PathVariable String projectID,
-											@PathVariable String subjectID,
-											@PathVariable String studyUID,
-											@RequestParam(value="description", required=false) String description,
-											@RequestParam(value="fileType", required=false) String fileType,
-											HttpServletRequest request, 
-									        HttpServletResponse response) throws Exception {
-		String sessionID = SessionService.getJSessionIDFromRequest(request);
-		String username = SessionService.getUsernameForSession(sessionID);
-		createFile(username, projectID, subjectID, studyUID, null, fileType, description, request, response);
-	}
-
-	@RequestMapping(value = "/{projectID}/subjects/{subjectID}/studies/{studyUID}/series/{seriesUID}/files/", method = RequestMethod.POST)
-	public void uploadSeriesFiles( 
-										@PathVariable String projectID,
-										@PathVariable String subjectID,
-										@PathVariable String studyUID,
-										@PathVariable String seriesUID,
-										@RequestParam(value="description", required=false) String description,
-										@RequestParam(value="fileType", required=false) String fileType,
-										HttpServletRequest request, 
-								        HttpServletResponse response) throws Exception {
-		String sessionID = SessionService.getJSessionIDFromRequest(request);
-		String username = SessionService.getUsernameForSession(sessionID);
-		createFile(username, projectID, subjectID, studyUID, seriesUID, fileType, description, request, response);
-	}
-	
-	private void createFile(String username, String projectID, String subjectID, String studyUID, String seriesUID,
-			String fileType, String description, HttpServletRequest request, HttpServletResponse response) throws Exception
-	{
-		String sessionID = SessionService.getJSessionIDFromRequest(request);
-	    String requestContentType = request.getContentType();
-		Map<String, Object> paramData = null;
-		int numberOfFiles = 0;
-		File uploadedFile = null;
-		if (requestContentType != null && requestContentType.startsWith("multipart/form-data"))
-		{
-			PrintWriter responseStream = response.getWriter();
-			paramData = HandlerUtil.parsePostedData(request, responseStream);
-			for (String param: paramData.keySet())
-			{
-				if (paramData.get(param) instanceof File)
-				{
-					if (uploadedFile == null)
-						uploadedFile = (File) paramData.get(param);
-					numberOfFiles++;
-				}
-			}
-		}
-		List<String> descriptions = (List<String>) paramData.get("description_List");
-		List<String> fileTypes = (List<String>) paramData.get("fileType_List");
-		if (numberOfFiles == 1) {
-			if (description == null) {
-				if (descriptions != null && descriptions.size() > 0)
-					description = descriptions.get(0);
-			}
-			if (fileType == null) {
-				if (fileTypes != null && fileTypes.size() > 0)
-					fileType = fileTypes.get(0);
-			}
-			if (FileType.ANNOTATION.getName().equalsIgnoreCase(fileType)) {
-				if (AIMUtil.saveAIMAnnotation(uploadedFile, projectID, sessionID, username))
-					throw new Exception("Error saving AIM file");
-			}
-			else {
-				EpadOperations epadOperations = DefaultEpadOperations.getInstance();
-				epadOperations.createFile(username, projectID, subjectID, studyUID, seriesUID,
-						uploadedFile, description, fileType, sessionID);
-			}
-		} else {
-			int i = 0;
-			for (String param: paramData.keySet())
-			{
-				if (paramData.get(param) instanceof File)
-				{
-					description = request.getParameter("description");
-					if (descriptions != null && descriptions.size() > i)
-						description = descriptions.get(i);
-					fileType = request.getParameter("fileType");
-					if (fileTypes != null && fileTypes.size() > i)
-							fileType = fileTypes.get(i);
-					if (FileType.ANNOTATION.getName().equalsIgnoreCase(fileType)) {
-						if (AIMUtil.saveAIMAnnotation(uploadedFile, projectID, sessionID, username))
-							throw new Exception("Error saving AIM file");
-					}
-					else {
-						EpadOperations epadOperations = DefaultEpadOperations.getInstance();
-						epadOperations.createFile(username, projectID, subjectID, studyUID, seriesUID,
-								uploadedFile, description, fileType, sessionID);
-					}
-					i++;
-				}
-			}
-		}		
-	}
-	
-	@RequestMapping(value = "/{projectID}/users/{reader}/worklists/{workListID:.+}", method = RequestMethod.PUT)
-	public void createUserWorkList( 
-										@PathVariable String projectID,
-										@PathVariable String reader,
-										@PathVariable String workListID,
-										@RequestParam(value="description", required=false) String description,
-										@RequestParam(value="dueDate", required=false) String dueDate,
-										HttpServletRequest request, 
-								        HttpServletResponse response) throws Exception {
-		String sessionID = SessionService.getJSessionIDFromRequest(request);
-		String username = SessionService.getUsernameForSession(sessionID);
-		EpadWorkListOperations worklistOperations = DefaultWorkListOperations.getInstance();
-		worklistOperations.createWorkList(username, reader, projectID, workListID, description, null, getDate(dueDate));
-	}
-
-	@RequestMapping(value = "/{projectID}/files/{filename:.+}", method = RequestMethod.DELETE)
-	public void deleteProjectFile( 
-										@PathVariable String projectID,
-										@PathVariable String filename,
-										HttpServletRequest request, 
-								        HttpServletResponse response) throws Exception {
-		String sessionID = SessionService.getJSessionIDFromRequest(request);
-		String username = SessionService.getUsernameForSession(sessionID);
-		ProjectReference projectReference = new ProjectReference(projectID);
-		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
-		try {
-		epadOperations.deleteFile(username, projectReference, filename);
-		} catch (Exception x) {
-			log.warning("Error deleting " + filename, x);
-			throw x;
-		}
-	}
-
-	@RequestMapping(value = "/{projectID}/subjects/{subjectID}/files/{filename:.+}", method = RequestMethod.DELETE)
-	public void deleteSubjectFile( 
-										@PathVariable String projectID,
-										@PathVariable String subjectID,
-										@PathVariable String filename,
-										HttpServletRequest request, 
-								        HttpServletResponse response) throws Exception {
-		String sessionID = SessionService.getJSessionIDFromRequest(request);
-		String username = SessionService.getUsernameForSession(sessionID);
-		SubjectReference subjectReference = new SubjectReference(projectID, subjectID);
-		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
-		epadOperations.deleteFile(username, subjectReference, filename);
-	}
-
-	@RequestMapping(value = "/{projectID}/subjects/{subjectID}/studies/{studyUID}/files/{filename:.+}", method = RequestMethod.DELETE)
-	public void deleteStudyFile( 
-										@PathVariable String projectID,
-										@PathVariable String subjectID,
-										@PathVariable String studyUID,
-										@PathVariable String filename,
-										HttpServletRequest request, 
-								        HttpServletResponse response) throws Exception {
-		String sessionID = SessionService.getJSessionIDFromRequest(request);
-		String username = SessionService.getUsernameForSession(sessionID);
-		StudyReference studyReference = new StudyReference(projectID, subjectID, studyUID);
-		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
-		epadOperations.deleteFile(username, studyReference, filename);
-	}
-
-	@RequestMapping(value = "/{projectID}/subjects/{subjectID}/studies/{studyUID}/series/{seriesUID}/files/{filename:.+}", method = RequestMethod.DELETE)
-	public void deleteSeriesFile( 
-										@PathVariable String projectID,
-										@PathVariable String subjectID,
-										@PathVariable String studyUID,
-										@PathVariable String seriesUID,
-										@PathVariable String filename,
-										HttpServletRequest request, 
-								        HttpServletResponse response) throws Exception {
-		String sessionID = SessionService.getJSessionIDFromRequest(request);
-		String username = SessionService.getUsernameForSession(sessionID);
-		SeriesReference seriesReference = new SeriesReference(projectID, subjectID, studyUID, seriesUID);
-		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
-		epadOperations.deleteFile(username, seriesReference, filename);
-	}			
 	
 	private int getInt(String value)
 	{

@@ -79,6 +79,16 @@
 		<servlet-name>session</servlet-name>
 		<url-pattern>/session/*</url-pattern>
 	</servlet-mapping>
+	
+	<servlet>
+		<servlet-name>wado</servlet-name>
+		<servlet-class>edu.stanford.epad.epadws.servlets.WadoServlet</servlet-class>
+	</servlet>
+
+	<servlet-mapping>
+		<servlet-name>wado</servlet-name>
+		<url-pattern>/wado/*</url-pattern>
+	</servlet-mapping>
 
 	<servlet>
 		<servlet-name>status</servlet-name>

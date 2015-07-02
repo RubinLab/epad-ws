@@ -64,15 +64,15 @@ public class EPADSessionWatcher implements Runnable
 		EpadProjectOperations projectOperations = DefaultEpadProjectOperations.getInstance();
 		EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
 		Calendar prevTime = null;
-		int count = 0;
+		long count = 0;
 		while (!shutdownSignal.hasShutdown()) {
 			try {
 				long freeHeap = Runtime.getRuntime().freeMemory();
 				long totalHeap = Runtime.getRuntime().totalMemory();
-				if (freeHeap < totalHeap/4)
+				count++;
+				if (freeHeap < totalHeap/8 && count%5 == 0)
 					log.info("Total Heap = " + totalHeap + ", Free Heap = " + freeHeap);
 
-				count++;
 				// Timeout expired sessions
 				EPADSessionOperations.checkSessionTimeout();
 				

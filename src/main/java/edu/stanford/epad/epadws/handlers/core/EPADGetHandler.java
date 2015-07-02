@@ -419,8 +419,6 @@ public class EPADGetHandler
 				statusCode = HttpServletResponse.SC_OK;
 			} else if (HandlerUtil.matchesTemplate(StudiesRouteTemplates.FRAME_LIST, pathInfo)) {
 				ImageReference imageReference = ImageReference.extract(StudiesRouteTemplates.FRAME_LIST, pathInfo);
-				if (imageReference.subjectID.equals("null"))
-					throw new Exception("Patient ID in rest call is null:" + pathInfo);
 				EPADFrameList frameList = epadOperations.getFrameDescriptions(imageReference);
 				responseStream.append(frameList.toJSON());
 				statusCode = HttpServletResponse.SC_OK;
