@@ -296,7 +296,7 @@ public class EPADPostHandler
 					String projectName = httpRequest.getParameter("projectName");
 					String projectDescription = httpRequest.getParameter("projectDescription");
 					String defaultTemplate = httpRequest.getParameter("defaultTemplate");
-					EPADProject project = epadOperations.getProjectDescription(projectReference, username, sessionID);
+					EPADProject project = epadOperations.getProjectDescription(projectReference, username, sessionID, false);
 					if (project != null) {
 						throw new Exception("Project " + project.id +  " already exists");
 					} else {

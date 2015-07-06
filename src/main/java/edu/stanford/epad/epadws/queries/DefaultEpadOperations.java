@@ -216,7 +216,7 @@ public class DefaultEpadOperations implements EpadOperations
 	}
 
 	@Override
-	public EPADProject getProjectDescription(ProjectReference projectReference, String username, String sessionID) throws Exception
+	public EPADProject getProjectDescription(ProjectReference projectReference, String username, String sessionID, boolean annotationCount) throws Exception
 	{
 		if (!EPADConfig.UseEPADUsersProjects) {
 			XNATProjectList xnatProjectList = XNATQueries.allProjects(sessionID);
@@ -230,14 +230,14 @@ public class DefaultEpadOperations implements EpadOperations
 		} else {
 			Project project = projectOperations.getProjectForUser(username, projectReference.projectID);
 			if (project != null)
-				return project2EPADProject(sessionID, username, project, new EPADSearchFilter(), true);
+				return project2EPADProject(sessionID, username, project, new EPADSearchFilter(), annotationCount);
 		}
 		return null;
 	}
 
 	@Override
 	public EPADSubjectList getSubjectDescriptions(String projectID, String username, String sessionID,
-			EPADSearchFilter searchFilter) throws Exception
+			EPADSearchFilter searchFilter, int start, int count) throws Exception
 	{
 		EPADSubjectList epadSubjectList = new EPADSubjectList();
 		if (!EPADConfig.UseEPADUsersProjects) {
@@ -281,9 +281,6 @@ public class DefaultEpadOperations implements EpadOperations
 				EPADSubject epadSubject = subject2EPADSubject(sessionID, username, subject, projectID, searchFilter);
 				if (epadSubject != null)
 				{
-					//String status = XNATQueries.getXNATSubjectFieldValue(sessionID, xnatSubject.ID, "status_" + username);
-					//log.info("User:" + username + " Subject:" + epadSubject.subjectName + " SubjectID" + epadSubject.subjectID + " status:" + status);
-					//epadSubject.setUserProjectStatus(status);
 					boolean matchAccessionNumber = true;
 					if (searchFilter.hasAccessionNumberMatch())
 					{
@@ -3031,10 +3028,10 @@ public class DefaultEpadOperations implements EpadOperations
 			String uri = "";
 			String insertUser = subject.getCreator();
 			String insertDate = dateFormat.format(subject.getCreatedTime());
-			List<Study> studies = projectOperations.getStudiesForProjectAndSubject(projectID, patientID);
 
 			int numberOfAnnotations = 0;
-			if (!"true".equalsIgnoreCase(EPADConfig.getParamValue("SkipPatientAnnotationCount", "false"))) {
+			if (!EPADConfig.xnatUploadProjectID.equals(projectID) && !"true".equalsIgnoreCase(EPADConfig.getParamValue("SkipPatientAnnotationCount", "false"))) {
+				List<Study> studies = projectOperations.getStudiesForProjectAndSubject(projectID, patientID);
 				for  (Study study: studies)
 				{
 					// Skip this, cause it is too slow and not that important

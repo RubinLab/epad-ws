@@ -109,7 +109,9 @@ public class WebAuthFilter implements Filter {
 			}
 			if (httpRequest.getRequestURL().indexOf("/v2/") != -1 || httpRequest.getRequestURL().indexOf("/plugin/") != -1)				
 				log.info(httpRequest.getMethod() + " Request from client:" + httpRequest.getRequestURL());
-			if (!isValid && !httpRequest.getRequestURL().toString().contains("WADO") && !httpRequest.getRequestURL().toString().contains("/session"))
+			if (!isValid && !httpRequest.getRequestURL().toString().contains("WADO") 
+					&& !httpRequest.getRequestURL().toString().contains("/session") 
+					&& !httpRequest.getRequestURL().toString().contains("login.jsp"))
 			{
 				PrintWriter responseStream = httpResponse.getWriter();
 				responseStream.append(new EPADMessage(EPADHandler.INVALID_SESSION_TOKEN_MESSAGE).toJSON());

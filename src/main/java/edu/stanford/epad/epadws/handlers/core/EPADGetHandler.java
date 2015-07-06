@@ -130,8 +130,13 @@ public class EPADGetHandler
 
 				statusCode = HttpServletResponse.SC_OK;
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.PROJECT, pathInfo)) {
+				boolean annotationCount = true;
+				if ("false".equalsIgnoreCase(httpRequest.getParameter("annotationCount")))
+					annotationCount = false;
 				ProjectReference projectReference = ProjectReference.extract(ProjectsRouteTemplates.PROJECT, pathInfo);
-				EPADProject project = epadOperations.getProjectDescription(projectReference, username, sessionID);
+				if (projectReference.projectID.equals(EPADConfig.xnatUploadProjectID))
+					annotationCount = false;
+				EPADProject project = epadOperations.getProjectDescription(projectReference, username, sessionID, annotationCount);
 				if (project != null) {
 					log.info("Project aim count:" + project.numberOfAnnotations);
 					responseStream.append(project.toJSON());
@@ -142,7 +147,7 @@ public class EPADGetHandler
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.SUBJECT_LIST, pathInfo)) {
 				ProjectReference projectReference = ProjectReference.extract(ProjectsRouteTemplates.SUBJECT_LIST, pathInfo);
 				EPADSubjectList subjectList = epadOperations.getSubjectDescriptions(projectReference.projectID, username,
-						sessionID, searchFilter);
+						sessionID, searchFilter, start, count);
 				long endtime = System.currentTimeMillis();
 				log.info("Returning " + subjectList.ResultSet.totalRecords + " subjects to client, took " + (endtime-starttime) + " msecs");
 				responseStream.append(subjectList.toJSON());

@@ -166,13 +166,13 @@ public class EPADPutHandler
 				if (projectDescription == null)
 					projectDescription = httpRequest.getParameter("description");
 				String defaultTemplate = httpRequest.getParameter("defaultTemplate");
-				EPADProject project = epadOperations.getProjectDescription(projectReference, username, sessionID);
+				EPADProject project = epadOperations.getProjectDescription(projectReference, username, sessionID, false);
 				if (project != null) {
 					statusCode = epadOperations.updateProject(username, projectReference, projectName, projectDescription, defaultTemplate, sessionID);
 				} else {
 					statusCode = epadOperations.createProject(username, projectReference, projectName, projectDescription, defaultTemplate, sessionID);
 				}
-				project = epadOperations.getProjectDescription(projectReference, username, sessionID);
+				project = epadOperations.getProjectDescription(projectReference, username, sessionID, false);
 				responseStream.append(project.toJSON());
 				if (uploadedFile != null && false) {
 					log.info("Saving uploaded file:" + uploadedFile.getName());

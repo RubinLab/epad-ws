@@ -71,10 +71,10 @@ public interface EpadOperations
 {
 	EPADProjectList getProjectDescriptions(String username, String sessionID, EPADSearchFilter searchFilter, boolean annotationCount) throws Exception;
 
-	EPADProject getProjectDescription(ProjectReference projectReference, String username, String sessionID) throws Exception;
+	EPADProject getProjectDescription(ProjectReference projectReference, String username, String sessionID, boolean annotationCount) throws Exception;
 
 	EPADSubjectList getSubjectDescriptions(String projectID, String username, String sessionID,
-			EPADSearchFilter searchFilter) throws Exception;
+			EPADSearchFilter searchFilter, int start, int count) throws Exception;
 
 	EPADSubject getSubjectDescription(SubjectReference subjectReference, String username, String sessionID) throws Exception;
 

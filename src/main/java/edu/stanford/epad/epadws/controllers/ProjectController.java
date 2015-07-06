@@ -66,7 +66,8 @@ public class ProjectController {
 	private static final EPADLogger log = EPADLogger.getInstance();
  
 	@RequestMapping(value = "/", method = RequestMethod.GET)
-	public EPADProjectList getEPADProjects(@RequestParam(value="annotationCount", required = false) boolean annotationCount,
+	public EPADProjectList getEPADProjects(
+											@RequestParam(value="annotationCount", required = false, defaultValue = "false") boolean annotationCount,
 											HttpServletRequest request, 
 									        HttpServletResponse response) throws Exception {
 		String sessionID = SessionService.getJSessionIDFromRequest(request);
@@ -81,14 +82,15 @@ public class ProjectController {
 	 
 	@RequestMapping(value = "/{projectID:.+}", method = RequestMethod.GET)
 	public EPADProject getEPADProject( 
-											@PathVariable String projectID,
-											HttpServletRequest request, 
-									        HttpServletResponse response) throws Exception {
+										@RequestParam(value="annotationCount", required = false, defaultValue = "true") boolean annotationCount,
+										@PathVariable String projectID,
+										HttpServletRequest request, 
+								        HttpServletResponse response) throws Exception {
 		String sessionID = SessionService.getJSessionIDFromRequest(request);
 		String username = SessionService.getUsernameForSession(sessionID);
 		ProjectReference projectReference = new ProjectReference(projectID);
 		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
-		EPADProject project = epadOperations.getProjectDescription(projectReference, username, sessionID);
+		EPADProject project = epadOperations.getProjectDescription(projectReference, username, sessionID, annotationCount);
 		if (project == null)
 			throw new NotFoundException("Project " + projectID + " not found");
 		return project;
@@ -97,6 +99,8 @@ public class ProjectController {
 	@RequestMapping(value = "/{projectID}/subjects/", method = RequestMethod.GET)
 	public EPADSubjectList getEPADProjectSubjects( 
 											@PathVariable String projectID,
+											@RequestParam(value="start", defaultValue = "0") int start,
+											@RequestParam(value="count", defaultValue = "0") int count,
 											HttpServletRequest request, 
 									        HttpServletResponse response) throws Exception {
 		String sessionID = SessionService.getJSessionIDFromRequest(request);
@@ -104,7 +108,7 @@ public class ProjectController {
 		EPADSearchFilter searchFilter = EPADSearchFilterBuilder.build(request);
 		ProjectReference projectReference = new ProjectReference(projectID);
 		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
-		EPADSubjectList subjectList = epadOperations.getSubjectDescriptions(projectID, username, sessionID, searchFilter);
+		EPADSubjectList subjectList = epadOperations.getSubjectDescriptions(projectID, username, sessionID, searchFilter, start, count);
 		return subjectList;
 	}
 	 
@@ -1015,7 +1019,7 @@ public class ProjectController {
 		ProjectReference projectReference = new ProjectReference(projectID);
 		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
 		int statusCode = 0;
-		EPADProject project = epadOperations.getProjectDescription(projectReference, username, sessionID);
+		EPADProject project = epadOperations.getProjectDescription(projectReference, username, sessionID, false);
 		if (project != null) {
 			statusCode = epadOperations.updateProject(username, projectReference, projectName, projectDescription, defaultTemplate, sessionID);
 		} else {
