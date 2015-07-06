@@ -98,7 +98,7 @@ public interface EpadOperations
 
 	EPADUserList getUserDescriptions(String username, ProjectReference projectReference, String sessionID) throws Exception;
 
-	void addUserToProject(String loggedInusername, ProjectReference projectReference, String username, String role, String sessionID) throws Exception;
+	void addUserToProject(String loggedInusername, ProjectReference projectReference, String username, String role, String defaultTemplate, String sessionID) throws Exception;
 
 	void removeUserFromProject(String loggedInusername, ProjectReference projectReference, String username, String sessionID) throws Exception;
 

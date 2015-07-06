@@ -296,7 +296,8 @@ public class EPADPutHandler
 				Map<String, String> templateMap = HandlerUtil.getTemplateMap(ProjectsRouteTemplates.USER, pathInfo);
 				String add_username = HandlerUtil.getTemplateParameter(templateMap, "username");
 				String role = httpRequest.getParameter("role");
-				epadOperations.addUserToProject(username, projectReference, add_username, role, sessionID);
+				String defaultTemplate = httpRequest.getParameter("defaultTemplate");
+				epadOperations.addUserToProject(username, projectReference, add_username, role, defaultTemplate, sessionID);
 				statusCode = HttpServletResponse.SC_OK;
 	
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.USER_WORKLISTS, pathInfo)) {

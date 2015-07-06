@@ -104,6 +104,7 @@ public class EPADSearchFilterBuilder
 		if (httpRequest.getParameter(FILE_TYPE_MATCH_PARAMETER_NAME) != null)
 			searchFilter.setFileTypeMatch(httpRequest.getParameter(FILE_TYPE_MATCH_PARAMETER_NAME));
 
+		log.debug("patientName:" + searchFilter.getPatientNameMatch() + " patientID:" + searchFilter.getPatientIDMatch() + " modality:" + searchFilter.getModalityMatch() + " accession:" + searchFilter.getAccessionNumberMatch());
 		return searchFilter;
 	}
 }

@@ -346,7 +346,7 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 	 */
 	@Override
 	public void addUserToProject(String loggedInUser, String projectId,
-			String username, UserRole role) throws Exception {
+			String username, UserRole role, String defaultTemplate) throws Exception {
 		User user = getUser(username);
 		Project project = getProject(projectId);
 		ProjectToUser ptou = (ProjectToUser) new ProjectToUser().getObject("project_id = " + project.getId() + " and user_id=" + user.getId());
@@ -357,7 +357,12 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		}
 		ptou.setProjectId(project.getId());
 		ptou.setUserId(user.getId());
-		ptou.setRole(role.getName());
+		if (role != null)
+			ptou.setRole(role.getName());
+		if (ptou.getRole() == null || ptou.getRole().length() == 0)
+			ptou.setRole(UserRole.COLLABORATOR.getName());
+		if (defaultTemplate != null && defaultTemplate.length() > 0)
+			ptou.setDefaultTemplate(defaultTemplate);
 		ptou.save();
 	}
 

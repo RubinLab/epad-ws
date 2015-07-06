@@ -34,6 +34,7 @@ public class ProjectToUser extends AbstractDAO {
 	long projectId;
 	long userId;
 	String role; 	// owner,member,collaborator
+	String defaultTemplate;
 	String creator;
 	Date createdTime;
 	Date updateTime;
@@ -71,6 +72,14 @@ public class ProjectToUser extends AbstractDAO {
 		this.role = role;
 	}
 
+	public String getDefaultTemplate() {
+		return defaultTemplate;
+	}
+
+	public void setDefaultTemplate(String defaultTemplate) {
+		this.defaultTemplate = defaultTemplate;
+	}
+
 	public String getCreator() {
 		return creator;
 	}
@@ -100,6 +109,7 @@ public class ProjectToUser extends AbstractDAO {
         {"id","long","id","Id"},
         {"projectId","long","project_id","integer"},
         {"userId","long","user_Id","integer"},
+        {"defaultTemplate","String","defaulttemplate","varchar"},
         {"role","String","role","varchar"},
         {"creator","String","creator","varchar"},
         {"createdTime","Date","createdtime","timestamp"},

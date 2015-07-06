@@ -143,7 +143,7 @@ public interface EpadProjectOperations {
 	 * @param role - Owner, Member, Collaborator
 	 * @throws Exception
 	 */
-	void addUserToProject(String loggedInUser, String projectId, String username, UserRole role) throws Exception;
+	void addUserToProject(String loggedInUser, String projectId, String username, UserRole role, String defaultTemplate) throws Exception;
 	
 	/**
 	 * Remove user from project

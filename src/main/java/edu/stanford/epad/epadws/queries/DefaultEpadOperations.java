@@ -3733,13 +3733,12 @@ public class DefaultEpadOperations implements EpadOperations
 
 	@Override
 	public void addUserToProject(String loggedInusername,
-			ProjectReference projectReference, String username, String roleName, String sessionID)
+			ProjectReference projectReference, String username, String roleName, String defaultTemplate, String sessionID)
 			throws Exception {
 		if (!projectOperations.isOwner(loggedInusername, projectReference.projectID))
 			throw new Exception("User " + loggedInusername + " is not the owner of " + projectReference.projectID);
 		UserRole role = UserRole.getRole(roleName);
-		if (role == null) role = UserRole.COLLABORATOR;
-		projectOperations.addUserToProject(loggedInusername, projectReference.projectID, username, role);
+		projectOperations.addUserToProject(loggedInusername, projectReference.projectID, username, role, defaultTemplate);
 		
 	}
 
