@@ -18,4 +18,16 @@ public class EpadPluginServlet extends HttpServlet {
 		new EPadPluginHandler().handle("", null, httpRequest, httpResponse);
 	}
 
+	@Override
+	public void destroy() {
+		super.destroy();
+		new EPadPluginHandler().destroy();
+	}
+
+	@Override
+	public void init() throws ServletException {
+		super.init();
+		new EPadPluginHandler().doStart();
+	}
+
 }

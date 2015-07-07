@@ -220,20 +220,14 @@ public class PACSController {
 									HttpServletRequest request, 
 							        HttpServletResponse response) throws Exception {
 		String sessionID = SessionService.getJSessionIDFromRequest(request);
-		RemotePAC pac = RemotePACService.getInstance().getRemotePAC(pacID);
-		if (pac != null)
+		RemotePACService rps = RemotePACService.getInstance();
+		List<RemotePACQuery> remoteQueries = rps.getRemotePACQueries(pacID);
+		RemotePACQueryConfigList queryList = new RemotePACQueryConfigList();
+		for (RemotePACQuery query: remoteQueries)
 		{
-			RemotePACService rps = RemotePACService.getInstance();
-			List<RemotePACQuery> remoteQueries = rps.getRemotePACQueries(pacID);
-			RemotePACQueryConfigList queryList = new RemotePACQueryConfigList();
-			for (RemotePACQuery query: remoteQueries)
-			{
-				queryList.addRemotePACQueryConfig(rps.getConfig(query));
-			}
-			return queryList;
+			queryList.addRemotePACQueryConfig(rps.getConfig(query));
 		}
-		else
-			throw new NotFoundException("Remote PAC " + pacID + " not found");
+		return queryList;
 	}
 	 
 	@RequestMapping(value = "/{pacID}/autoqueries/{subjectID:.+}", method = RequestMethod.GET)
@@ -243,19 +237,13 @@ public class PACSController {
 									HttpServletRequest request, 
 							        HttpServletResponse response) throws Exception {
 		String sessionID = SessionService.getJSessionIDFromRequest(request);
-		RemotePAC pac = RemotePACService.getInstance().getRemotePAC(pacID);
-		if (pac != null)
+		RemotePACQuery remoteQuery = RemotePACService.getInstance().getRemotePACQuery(pacID, subjectID);
+		if (remoteQuery != null)
 		{
-			RemotePACQuery remoteQuery = RemotePACService.getInstance().getRemotePACQuery(pacID, subjectID);
-			if (remoteQuery != null)
-			{
-				return RemotePACService.getInstance().getConfig(remoteQuery);
-			}
-			else
-				throw new NotFoundException("Query for " + subjectID + " not found");
+			return RemotePACService.getInstance().getConfig(remoteQuery);
 		}
 		else
-			throw new NotFoundException("Remote PAC " + pacID + " not found");
+			throw new NotFoundException("Query for " + subjectID + " not found");
 	}
 	 
 	@RequestMapping(value = "/dicomtags/", method = RequestMethod.GET)

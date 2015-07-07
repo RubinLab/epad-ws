@@ -101,8 +101,8 @@ public class UserController {
 		return epadOperations.getReviewees(username, user, sessionID);
 	}
 	 
-	@RequestMapping(value = "/{user}/{username}", method = RequestMethod.PUT)
-	public void createUSer( 
+	@RequestMapping(value = "/{user}/{username}", method = {RequestMethod.PUT,RequestMethod.POST})
+	public void createUser( 
 											@PathVariable String username,
 											@RequestParam(value="firstname") String firstname,
 											@RequestParam(value="lastname") String lastname,
@@ -123,6 +123,19 @@ public class UserController {
 		else if ("false".equalsIgnoreCase(enable))
 			epadOperations.disableUser(loggedInUser, username);
 	}
+	
+	 
+	@RequestMapping(value = "/{user}/{username}", method = RequestMethod.DELETE)
+	public void deleteUser( 
+			@PathVariable String username,
+			HttpServletRequest request, 
+	        HttpServletResponse response) throws Exception {
+		String sessionID = SessionService.getJSessionIDFromRequest(request);
+		String loggedInUser = SessionService.getUsernameForSession(sessionID);
+		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
+		epadOperations.deleteUser(loggedInUser, username);
+	}
+	
 	
 //	
 //} else if (HandlerUtil.matchesTemplate(UsersRouteTemplates.USER_WORKLIST, pathInfo)) {

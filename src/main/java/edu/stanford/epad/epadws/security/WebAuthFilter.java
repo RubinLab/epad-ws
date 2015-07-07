@@ -96,6 +96,7 @@ public class WebAuthFilter implements Filter {
 			}
 		} else {
 			String sessionID = SessionService.getJSessionIDFromRequest(httpRequest);
+			String method = httpRequest.getMethod();
 			boolean isValid = SessionService.hasValidSessionID(sessionID);
 			if (!isValid && httpRequest.getRequestURL().toString().indexOf("login.jsp") == -1 
 					&& !httpRequest.getRequestURL().toString().contains("/session") 
@@ -113,10 +114,20 @@ public class WebAuthFilter implements Filter {
 					&& !httpRequest.getRequestURL().toString().contains("/session") 
 					&& !httpRequest.getRequestURL().toString().contains("login.jsp"))
 			{
-				PrintWriter responseStream = httpResponse.getWriter();
-				responseStream.append(new EPADMessage(EPADHandler.INVALID_SESSION_TOKEN_MESSAGE).toJSON());
-				httpResponse.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-				return;				
+				if ("OPTIONS".equalsIgnoreCase(method)) {			
+					String origin = httpRequest.getHeader("Origin");
+					httpResponse.setHeader("Access-Control-Allow-Origin", origin);
+					httpResponse.setHeader("Access-Control-Allow-Credentials", "true");
+					httpResponse.setHeader("Access-Control-Allow-Headers", "Authorization");
+					httpResponse.setHeader("Access-Control-Allow-Methods", "POST, DELETE, PUT, GET, OPTIONS");
+					httpResponse.setStatus(HttpServletResponse.SC_OK);
+					return;
+				} else {
+					PrintWriter responseStream = httpResponse.getWriter();
+					responseStream.append(new EPADMessage(EPADHandler.INVALID_SESSION_TOKEN_MESSAGE).toJSON());
+					httpResponse.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+					return;
+				}
 			}
 		}
 	    if (httpRequest.getRequestURL().indexOf("WEB-INF") != -1) {

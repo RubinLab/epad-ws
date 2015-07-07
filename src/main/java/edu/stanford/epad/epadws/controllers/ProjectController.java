@@ -25,6 +25,7 @@ import edu.stanford.epad.dtos.EPADFrame;
 import edu.stanford.epad.dtos.EPADFrameList;
 import edu.stanford.epad.dtos.EPADImage;
 import edu.stanford.epad.dtos.EPADImageList;
+import edu.stanford.epad.dtos.EPADMessage;
 import edu.stanford.epad.dtos.EPADProject;
 import edu.stanford.epad.dtos.EPADProjectList;
 import edu.stanford.epad.dtos.EPADSeries;
@@ -41,11 +42,13 @@ import edu.stanford.epad.epadws.aim.AIMUtil;
 import edu.stanford.epad.epadws.controllers.exceptions.NotFoundException;
 import edu.stanford.epad.epadws.handlers.HandlerUtil;
 import edu.stanford.epad.epadws.handlers.core.AIMReference;
+import edu.stanford.epad.epadws.handlers.core.AimsRouteTemplates;
 import edu.stanford.epad.epadws.handlers.core.EPADSearchFilter;
 import edu.stanford.epad.epadws.handlers.core.EPADSearchFilterBuilder;
 import edu.stanford.epad.epadws.handlers.core.FrameReference;
 import edu.stanford.epad.epadws.handlers.core.ImageReference;
 import edu.stanford.epad.epadws.handlers.core.ProjectReference;
+import edu.stanford.epad.epadws.handlers.core.ProjectsRouteTemplates;
 import edu.stanford.epad.epadws.handlers.core.SeriesReference;
 import edu.stanford.epad.epadws.handlers.core.StudyReference;
 import edu.stanford.epad.epadws.handlers.core.SubjectReference;
@@ -1084,7 +1087,7 @@ public class ProjectController {
 		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
 		EPADSubject subject = epadOperations.getSubjectDescription(subjectReference, username, sessionID);
 		String errstatus = epadOperations.setSubjectStatus(subjectReference, sessionID, username);
-		if (status != "");
+		if (!"".equals(status));
 			throw new Exception("Error setting patient status");
 	}
 
@@ -1178,7 +1181,7 @@ public class ProjectController {
 		log.info("Projects AIM PUT");
 		File uploadedFile = HandlerUtil.getUploadedFile(request);
 		String status = epadOperations.createProjectAIM(username, projectReference, aimReference.aimID, uploadedFile, sessionID);
-		if (status != "");
+		if (!"".equals(status));
 			throw new Exception("Error creating Project AIM:" + status);
 	}
 
@@ -1197,7 +1200,7 @@ public class ProjectController {
 		log.info("Subject AIM PUT");
 		File uploadedFile = HandlerUtil.getUploadedFile(request);
 		String status = epadOperations.createSubjectAIM(username, subjectReference, aimReference.aimID, uploadedFile, sessionID);
-		if (status != "");
+		if (!"".equals(status));
 			throw new Exception("Error creating Subject AIM:" + status);
 	}
 	
@@ -1217,7 +1220,7 @@ public class ProjectController {
 		AIMReference aimReference = new AIMReference(aimID);
 		File uploadedFile = HandlerUtil.getUploadedFile(request);
 		String status = epadOperations.createStudyAIM(username, studyReference, aimReference.aimID, uploadedFile, sessionID);
-		if (status != "");
+		if (!"".equals(status));
 			throw new Exception("Error creating Study AIM:" + status);
 	}
 
@@ -1238,7 +1241,7 @@ public class ProjectController {
 		AIMReference aimReference = new AIMReference(aimID);
 		File uploadedFile = HandlerUtil.getUploadedFile(request);
 		String status = epadOperations.createSeriesAIM(username, seriesReference, aimReference.aimID, uploadedFile, sessionID);
-		if (status != "");
+		if (!"".equals(status));
 			throw new Exception("Error creating Series AIM:" + status);
 	}	
 
@@ -1260,8 +1263,10 @@ public class ProjectController {
 		AIMReference aimReference = new AIMReference(aimID);
 		File uploadedFile = HandlerUtil.getUploadedFile(request);
 		String status = epadOperations.createImageAIM(username, imageReference, aimReference.aimID, uploadedFile, sessionID);
-		if (status != "");
+		if (!"".equals(status));
+		{
 			throw new Exception("Error creating Image AIM:" + status);
+		}
 	}	
 
 	@RequestMapping(value = "/{projectID}/subjects/{subjectID}/studies/{studyUID}/series/{seriesUID}/images/{imageUID}/frames/{frameNo}/aims/{aimID}", method = RequestMethod.PUT)
@@ -1283,7 +1288,7 @@ public class ProjectController {
 		AIMReference aimReference = new AIMReference(aimID);
 		File uploadedFile = HandlerUtil.getUploadedFile(request);
 		String status = epadOperations.createFrameAIM(username, frameReference, aimReference.aimID, uploadedFile, sessionID);
-		if (status != "");
+		if (!"".equals(status));
 			throw new Exception("Error creating Frame AIM:" + status);
 	}	
 
@@ -1305,14 +1310,15 @@ public class ProjectController {
 	public void addUserToProject( 
 										@PathVariable String projectID,
 										@PathVariable String projectuser,
-										@RequestParam(value="role", required=true) String role,
+										@RequestParam(value="role", required=false) String role,
+										@RequestParam(value="defaultTemplate", required=false) String defaultTemplate,
 											HttpServletRequest request, 
 									        HttpServletResponse response) throws Exception {
 		String sessionID = SessionService.getJSessionIDFromRequest(request);
 		String username = SessionService.getUsernameForSession(sessionID);
 		ProjectReference projectReference = new ProjectReference(projectID);
 		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
-		epadOperations.addUserToProject(username, projectReference, projectuser, role, sessionID);
+		epadOperations.addUserToProject(username, projectReference, projectuser, role, defaultTemplate, sessionID);
 	}	
 
 	@RequestMapping(value = "/{projectID}/subjects/{subjectID}/studies/{studyUID}/series/{seriesUID}/images/{imageUID}/frames/", method = RequestMethod.POST)
@@ -1497,6 +1503,177 @@ public class ProjectController {
 		EpadWorkListOperations worklistOperations = DefaultWorkListOperations.getInstance();
 		worklistOperations.createWorkList(username, reader, projectID, null, description, null, getDate(dueDate));
 	}
+	
+	@RequestMapping(value = "/{projectID:.+}", method = RequestMethod.DELETE)
+	public void deleteEPADProject( 
+										@PathVariable String projectID,
+										HttpServletRequest request, 
+								        HttpServletResponse response) throws Exception {
+		String sessionID = SessionService.getJSessionIDFromRequest(request);
+		String username = SessionService.getUsernameForSession(sessionID);
+		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
+		epadOperations.projectDelete(projectID, sessionID, username);
+	}
+	
+	@RequestMapping(value = "/{projectID}/subjects/{subjectID:.+}", method = RequestMethod.DELETE)
+	public void deleteEPADSubject( 
+										@PathVariable String projectID,
+										@PathVariable String subjectID,
+										HttpServletRequest request, 
+								        HttpServletResponse response) throws Exception {
+		SubjectReference subjectReference = new SubjectReference(projectID, subjectID);
+		String sessionID = SessionService.getJSessionIDFromRequest(request);
+		String username = SessionService.getUsernameForSession(sessionID);
+		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
+		epadOperations.subjectDelete(subjectReference, sessionID, username);
+	}
+	
+	@RequestMapping(value = "/{projectID}/subjects/{subjectID}/studies/{studyUID:.+}", method = RequestMethod.DELETE)
+	public void deleteEPADStudy( 
+											@PathVariable String projectID,
+											@PathVariable String subjectID,
+											@PathVariable String studyUID,
+											@RequestParam(value="deleteAims", defaultValue="true") boolean deleteAims,
+											HttpServletRequest request, 
+									        HttpServletResponse response) throws Exception {
+		StudyReference studyReference = new StudyReference(projectID, subjectID, studyUID);
+		String sessionID = SessionService.getJSessionIDFromRequest(request);
+		String username = SessionService.getUsernameForSession(sessionID);
+		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
+		epadOperations.studyDelete(studyReference, sessionID, deleteAims, username);
+	}
+
+	@RequestMapping(value = "/{projectID}/subjects/{subjectID}/studies/{studyUID}/series/{seriesUID:.+}", method = RequestMethod.DELETE)
+	public void deleteEPADSeries( 
+											@PathVariable String projectID,
+											@PathVariable String subjectID,
+											@PathVariable String studyUID,
+											@PathVariable String seriesUID,
+											@RequestParam(value="deleteAims", defaultValue="true") boolean deleteAims,
+											HttpServletRequest request, 
+									        HttpServletResponse response) throws Exception {
+		SeriesReference seriesReference = new SeriesReference(projectID, subjectID, studyUID, seriesUID);
+		String sessionID = SessionService.getJSessionIDFromRequest(request);
+		String username = SessionService.getUsernameForSession(sessionID);
+		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
+		epadOperations.seriesDelete(seriesReference, sessionID, deleteAims, username);
+	}
+
+
+	@RequestMapping(value = "/{projectID}/aims/{aimID}", method = RequestMethod.DELETE)
+	public void deleteProjectAim( 
+									@PathVariable String projectID,
+									@PathVariable String aimID,
+									@RequestParam(value="deleteDSO", defaultValue="true") boolean deleteDSO,
+											HttpServletRequest request, 
+									        HttpServletResponse response) throws Exception {
+		ProjectReference projectReference = new ProjectReference(projectID);
+		String sessionID = SessionService.getJSessionIDFromRequest(request);
+		String username = SessionService.getUsernameForSession(sessionID);
+		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
+		epadOperations.projectAIMDelete(projectReference, aimID, sessionID, deleteDSO, username);
+	}
+	
+	@RequestMapping(value = "/{projectID}/subjects/{subjectID}/aims/{aimID}", method = RequestMethod.DELETE)
+	public void deleteEPADSubjectAim( 
+										@PathVariable String projectID,
+										@PathVariable String subjectID,
+										@PathVariable String aimID,
+										@RequestParam(value="deleteDSO", defaultValue="true") boolean deleteDSO,
+										HttpServletRequest request, 
+								        HttpServletResponse response) throws Exception {
+		SubjectReference subjectReference = new SubjectReference(projectID, subjectID);
+		String sessionID = SessionService.getJSessionIDFromRequest(request);
+		String username = SessionService.getUsernameForSession(sessionID);
+		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
+		epadOperations.subjectAIMDelete(subjectReference, aimID, sessionID, deleteDSO, username);
+	}	
+	
+	@RequestMapping(value = "/{projectID}/subjects/{subjectID}/studies/{studyUID}/aims/{aimID}", method = RequestMethod.DELETE)
+	public void deleteEPADStudyAim( 
+											@PathVariable String projectID,
+											@PathVariable String subjectID,
+											@PathVariable String studyUID,
+											@PathVariable String aimID,
+											@RequestParam(value="deleteDSO", defaultValue="true") boolean deleteDSO,
+											HttpServletRequest request, 
+									        HttpServletResponse response) throws Exception {
+		StudyReference studyReference = new StudyReference(projectID, subjectID, studyUID);
+		String sessionID = SessionService.getJSessionIDFromRequest(request);
+		String username = SessionService.getUsernameForSession(sessionID);
+		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
+		epadOperations.studyAIMDelete(studyReference, aimID, sessionID, deleteDSO, username);
+	}
+	
+	@RequestMapping(value = "/{projectID}/subjects/{subjectID}/studies/{studyUID}/series/{seriesUID}/aims/{aimID}", method = RequestMethod.DELETE)
+	public void deleteEPADSeriesAim( 
+											@PathVariable String projectID,
+											@PathVariable String subjectID,
+											@PathVariable String studyUID,
+											@PathVariable String seriesUID,
+											@PathVariable String aimID,
+											@RequestParam(value="deleteDSO", defaultValue="true") boolean deleteDSO,
+											HttpServletRequest request, 
+									        HttpServletResponse response) throws Exception {
+		SeriesReference seriesReference = new SeriesReference(projectID, subjectID, studyUID, seriesUID);
+		String sessionID = SessionService.getJSessionIDFromRequest(request);
+		String username = SessionService.getUsernameForSession(sessionID);
+		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
+		epadOperations.seriesAIMDelete(seriesReference, aimID, sessionID, deleteDSO, username);
+	}
+	
+	
+	@RequestMapping(value = "/{projectID}/subjects/{subjectID}/studies/{studyUID}/series/{seriesUID}/images/{imageUID}/aims/{aimID}", method = RequestMethod.DELETE)
+	public void deleteEPADImageAim( 
+											@PathVariable String projectID,
+											@PathVariable String subjectID,
+											@PathVariable String studyUID,
+											@PathVariable String seriesUID,
+											@PathVariable String imageUID,
+											@PathVariable String aimID,
+											@RequestParam(value="deleteDSO", defaultValue="true") boolean deleteDSO,
+											HttpServletRequest request, 
+									        HttpServletResponse response) throws Exception {
+		ImageReference imageReference = new ImageReference(projectID, subjectID, studyUID, seriesUID, imageUID);
+		String sessionID = SessionService.getJSessionIDFromRequest(request);
+		String username = SessionService.getUsernameForSession(sessionID);
+		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
+		epadOperations.imageAIMDelete(imageReference, aimID, sessionID, deleteDSO, username);
+	}
+		
+	@RequestMapping(value = "/{projectID}/subjects/{subjectID}/studies/{studyUID}/series/{seriesUID}/images/{imageUID}/frames/{frameno}/aims/{aimID}", method = RequestMethod.DELETE)
+	public void deleteEPADSeriesAim( 
+											@PathVariable String projectID,
+											@PathVariable String subjectID,
+											@PathVariable String studyUID,
+											@PathVariable String seriesUID,
+											@PathVariable String aimID,
+											@PathVariable String imageUID,
+											@PathVariable int frameno,
+											@RequestParam(value="deleteDSO", defaultValue="true") boolean deleteDSO,
+											HttpServletRequest request, 
+									        HttpServletResponse response) throws Exception {
+		FrameReference frameReference = new FrameReference(projectID, subjectID, studyUID, seriesUID, imageUID, frameno);
+		String sessionID = SessionService.getJSessionIDFromRequest(request);
+		String username = SessionService.getUsernameForSession(sessionID);
+		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
+		epadOperations.frameAIMDelete(frameReference, aimID, sessionID, deleteDSO, username);
+	}
+		
+	
+	@RequestMapping(value = "/{projectID}/users/{username:.+}", method = RequestMethod.DELETE)
+	public void removeUserFromProject( 
+											@PathVariable String projectID,
+											@PathVariable String username,
+											HttpServletRequest request, 
+									        HttpServletResponse response) throws Exception {
+		ProjectReference projectReference = new ProjectReference(projectID);
+		String sessionID = SessionService.getJSessionIDFromRequest(request);
+		String loggedname = SessionService.getUsernameForSession(sessionID);
+		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
+		epadOperations.removeUserFromProject(loggedname, projectReference, username, sessionID);
+	}
+		
 	
 	@RequestMapping(value = "/{projectID}/users/{reader}/worklists/{workListID:.+}", method = {RequestMethod.DELETE})
 	public void deleteUserWorkList( 

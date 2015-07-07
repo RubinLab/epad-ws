@@ -19,6 +19,7 @@ import edu.stanford.epad.epadws.aim.AIMSearchType;
 import edu.stanford.epad.epadws.aim.AIMUtil;
 import edu.stanford.epad.epadws.handlers.HandlerUtil;
 import edu.stanford.epad.epadws.handlers.core.AIMReference;
+import edu.stanford.epad.epadws.handlers.core.AimsRouteTemplates;
 import edu.stanford.epad.epadws.queries.DefaultEpadOperations;
 import edu.stanford.epad.epadws.queries.EpadOperations;
 import edu.stanford.epad.epadws.service.SessionService;
@@ -103,7 +104,7 @@ public class AimController {
 	}
  
 	@RequestMapping(value = "/{aimID}", method = RequestMethod.GET)
-	public void getAims( 
+	public void getAim( 
 						@RequestParam(value="version", required = false) String version, 
 						@RequestParam(value="format", defaultValue="xml") String format,
 						@RequestParam(value="projectID", required = false) String projectID, 
@@ -159,5 +160,16 @@ public class AimController {
 						aim.aimID, username);					
 		}
 	}
-
+	
+	@RequestMapping(value = "/{aimID}", method = RequestMethod.DELETE)
+	public void deleteAim( 
+			@PathVariable String aimID,
+			@RequestParam(value="deleteDSO", defaultValue="true") boolean deleteDSO,
+			HttpServletRequest request, 
+	        HttpServletResponse response) throws Exception {
+		String sessionID = SessionService.getJSessionIDFromRequest(request);
+		String username = SessionService.getUsernameForSession(sessionID);
+		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
+		epadOperations.aimDelete(aimID, sessionID, deleteDSO, username);
+	}
 }
