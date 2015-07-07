@@ -60,6 +60,7 @@ public class EPADPostHandler
 	 * Note: These long if/then/else statements looks terrible, they need to be replaced by something like jersey with annotations
 	 * But there seems to be some problem using jersey with embedded jetty and multiple handlers - still need to solve that
 	 * 
+	 * Note: This class will soon become obsolete and be replaced by Spring Controllers
 	 */
 
 	protected static int handlePost(HttpServletRequest httpRequest, PrintWriter responseStream, String username, String sessionID)

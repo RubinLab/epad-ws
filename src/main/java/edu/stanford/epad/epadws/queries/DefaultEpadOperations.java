@@ -3622,7 +3622,7 @@ public class DefaultEpadOperations implements EpadOperations
 		User user = projectOperations.getUser(username);
 		User loggedInUser = projectOperations.getUser(loggedInUserName);
 		if (!loggedInUser.isAdmin() && (user == null || !loggedInUser.equals(username)) && !loggedInUser.hasPermission(User.CreateUserPermission))
-			throw new Exception("User " + loggedInUser + " does not have privilege to create/modify users");
+			throw new Exception("User " + loggedInUserName + " does not have privilege to create/modify users");
 
 		List<String> addPerms = new ArrayList<String>();
 		List<String> removePerms = new ArrayList<String>();

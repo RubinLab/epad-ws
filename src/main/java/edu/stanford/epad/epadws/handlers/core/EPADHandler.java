@@ -54,6 +54,8 @@ public class EPADHandler extends AbstractHandler
 	 * 
 	 * Note: These long if/then/else statements looks terrible, they need to be replaced by something like jersey with annotations
 	 * But there seems to be some problem using jersey with embedded jetty and multiple handlers - still need to solve that
+	 *
+	 * Note: This class (including the other handlers called) will soon become obsolete and be replaced by Spring Controllers
 	 * 
 	 */
 	@Override
