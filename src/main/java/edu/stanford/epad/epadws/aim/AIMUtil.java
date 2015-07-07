@@ -1097,7 +1097,7 @@ public class AIMUtil
 			{
 				EPADAIM ea = aimsDB.get(i);
 				try {
-					List<ImageAnnotationCollection> iacs = edu.stanford.hakan.aim4api.usage.AnnotationGetter.getImageAnnotationCollectionsFromString(ea.xml, null);
+					List<ImageAnnotationCollection> iacs = edu.stanford.hakan.aim4api.usage.AnnotationGetter.getImageAnnotationCollectionsFromString(ea.xml, "");
 					ImageAnnotationCollection aim = iacs.get(0);
 					Aim4 a = new Aim4(aim);
 					ea.name = aim.getImageAnnotations().get(0).getName().getValue();
