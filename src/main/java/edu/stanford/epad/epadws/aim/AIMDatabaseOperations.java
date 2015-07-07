@@ -564,7 +564,7 @@ public class AIMDatabaseOperations {
 		}
 		
 		sqlSelect = sqlSelect + " ORDER BY ProjectUID, PatientID, StudyUID, SeriesUID, ImageUID, FrameID";
-        log.debug("AIMs select:" + sqlSelect);
+        log.info("AIMs select:" + sqlSelect);
        
 		ResultSet rs = null;
         List<EPADAIM> aims = new ArrayList<EPADAIM>();
@@ -590,7 +590,7 @@ public class AIMDatabaseOperations {
 				aims.add(aim);
 				if (row > start+count) break;
 			}
-    	    log.debug("AIM Records " + aims.size());
+    	    log.info("AIM Records " + aims.size());
         }
         finally
         {
