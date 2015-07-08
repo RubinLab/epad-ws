@@ -277,8 +277,13 @@ public class DefaultEpadOperations implements EpadOperations
 			}
 		} else {
 			List<Subject> subjects = projectOperations.getSubjectsForProject(projectID);
+			boolean annotationCount = true;
+			if (EPADConfig.xnatUploadProjectID.equals(projectID))
+				annotationCount = false;
+			if (subjects.size() > 100 && !searchFilter.hasAnnotationMatch())
+				annotationCount = false;
 			for (Subject subject : subjects) {
-				EPADSubject epadSubject = subject2EPADSubject(sessionID, username, subject, projectID, searchFilter);
+				EPADSubject epadSubject = subject2EPADSubject(sessionID, username, subject, projectID, searchFilter, annotationCount);
 				if (epadSubject != null)
 				{
 					boolean matchAccessionNumber = true;
@@ -327,7 +332,7 @@ public class DefaultEpadOperations implements EpadOperations
 		} else {
 			Subject subject = projectOperations.getSubjectForProject(subjectReference.projectID, subjectReference.subjectID);
 			if (subject != null) {
-				EPADSubject esubject = subject2EPADSubject(sessionID, username, subject, subjectReference.projectID, new EPADSearchFilter());
+				EPADSubject esubject = subject2EPADSubject(sessionID, username, subject, subjectReference.projectID, new EPADSearchFilter(), true);
 				String status = projectOperations.getUserStatusForProjectAndSubject(username, subjectReference.projectID, subjectReference.subjectID);
 				esubject.setUserProjectStatus(status);
 				return esubject;
@@ -503,16 +508,13 @@ public class DefaultEpadOperations implements EpadOperations
 							{
 								AIMUtil.generateAIMFileForDSO(dsoDICOMFile, "shared", studyReference.projectID);
 							}
-							else
-							{
-								log.info("Adding entries to annotations table");
-								for (ImageAnnotation ia: ias)
-								{
-									Aim aim = new Aim(ia);
-									ImageReference reference = new ImageReference(epadSeries.projectID, epadSeries.patientID, epadSeries.studyUID, aim.getFirstSeriesID(), aim.getFirstImageID());
-									this.epadDatabaseOperations.addDSOAIM(username, reference, epadSeries.seriesUID, ia.getUniqueIdentifier());
-								}
-							}
+//							else
+//							{
+//								log.info("Adding entries to annotations table");
+//								Aim aim = new Aim(ias.get(0));
+//								ImageReference reference = new ImageReference(epadSeries.projectID, epadSeries.patientID, epadSeries.studyUID, aim.getFirstSeriesID(), aim.getFirstImageID());
+//								this.epadDatabaseOperations.addDSOAIM(username, reference, epadSeries.seriesUID, ias.get(0).getUniqueIdentifier());
+//							}
 						} catch (Exception e) {
 							// TODO Auto-generated catch block
 							e.printStackTrace();
@@ -3017,7 +3019,7 @@ public class DefaultEpadOperations implements EpadOperations
 	}
 	
 	private EPADSubject subject2EPADSubject(String sessionID, String username, Subject subject, String projectID,
-			EPADSearchFilter searchFilter) throws Exception
+			EPADSearchFilter searchFilter, boolean annotationCount) throws Exception
 	{
 		EpadOperations epadQueries = DefaultEpadOperations.getInstance();
 
@@ -3030,7 +3032,7 @@ public class DefaultEpadOperations implements EpadOperations
 			String insertDate = dateFormat.format(subject.getCreatedTime());
 
 			int numberOfAnnotations = 0;
-			if (!EPADConfig.xnatUploadProjectID.equals(projectID) && !"true".equalsIgnoreCase(EPADConfig.getParamValue("SkipPatientAnnotationCount", "false"))) {
+			if (annotationCount && !"true".equalsIgnoreCase(EPADConfig.getParamValue("SkipPatientAnnotationCount", "false"))) {
 				List<Study> studies = projectOperations.getStudiesForProjectAndSubject(projectID, patientID);
 				for  (Study study: studies)
 				{

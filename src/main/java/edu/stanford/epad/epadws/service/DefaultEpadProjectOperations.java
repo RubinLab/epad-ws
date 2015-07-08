@@ -47,6 +47,7 @@ import edu.stanford.epad.epadws.models.EpadFile;
 import edu.stanford.epad.epadws.models.FileType;
 import edu.stanford.epad.epadws.models.NonDicomSeries;
 import edu.stanford.epad.epadws.models.Project;
+import edu.stanford.epad.epadws.models.ProjectToFile;
 import edu.stanford.epad.epadws.models.ProjectToSubject;
 import edu.stanford.epad.epadws.models.ProjectToSubjectToStudy;
 import edu.stanford.epad.epadws.models.ProjectToSubjectToUser;
@@ -1581,6 +1582,7 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		} catch (Exception x) {
 			log.warning("Error deleting file:" + file.getAbsolutePath(), x);
 		}
+		new ProjectToFile().deleteObjects("file_id =" + efile.getId());
 		efile.delete();
 	}
 
@@ -1679,6 +1681,9 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		return null;
 	}
 
+	/* (non-Javadoc)
+	 * @see edu.stanford.epad.epadws.service.EpadProjectOperations#getReviewers(java.lang.String)
+	 */
 	@Override
 	public List<User> getReviewers(String username) throws Exception {
 		List<User> users = new ArrayList<User>();
@@ -1691,6 +1696,9 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		return users;
 	}
 
+	/* (non-Javadoc)
+	 * @see edu.stanford.epad.epadws.service.EpadProjectOperations#getReviewees(java.lang.String)
+	 */
 	@Override
 	public List<User> getReviewees(String username) throws Exception {
 		List<User> users = new ArrayList<User>();
@@ -1703,6 +1711,9 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		return users;
 	}
 
+	/* (non-Javadoc)
+	 * @see edu.stanford.epad.epadws.service.EpadProjectOperations#addReviewer(java.lang.String, java.lang.String, java.lang.String)
+	 */
 	@Override
 	public void addReviewer(String loggedInUser, String username,
 			String reviewer) throws Exception {
@@ -1716,6 +1727,9 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		}
 	}
 
+	/* (non-Javadoc)
+	 * @see edu.stanford.epad.epadws.service.EpadProjectOperations#addReviewee(java.lang.String, java.lang.String, java.lang.String)
+	 */
 	@Override
 	public void addReviewee(String loggedInUser, String username,
 			String reviewee) throws Exception {
@@ -1729,6 +1743,9 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		}
 	}
 
+	/* (non-Javadoc)
+	 * @see edu.stanford.epad.epadws.service.EpadProjectOperations#removeReviewer(java.lang.String, java.lang.String, java.lang.String)
+	 */
 	@Override
 	public void removeReviewer(String loggedInUser, String username,
 			String reviewer) throws Exception {
@@ -1739,6 +1756,9 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		}
 	}
 
+	/* (non-Javadoc)
+	 * @see edu.stanford.epad.epadws.service.EpadProjectOperations#removeReviewee(java.lang.String, java.lang.String, java.lang.String)
+	 */
 	@Override
 	public void removeReviewee(String loggedInUser, String username,
 			String reviewee) throws Exception {
@@ -1749,6 +1769,34 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		}
 	}
 
+	/* (non-Javadoc)
+	 * @see edu.stanford.epad.epadws.service.EpadProjectOperations#linkFileToProject(edu.stanford.epad.epadws.models.Project, edu.stanford.epad.epadws.models.EpadFile)
+	 */
+	@Override
+	public void linkFileToProject(Project project, EpadFile file) throws Exception {
+		ProjectToFile ptof = (ProjectToFile) new ProjectToFile().getObject("project_id =" + project.getId() + " and file_id =" + file.getId());
+		if (ptof == null) {
+			ptof = new ProjectToFile();
+			ptof.setProjectId(project.getId());
+			ptof.setFileId(file.getId());
+			ptof.save();
+		}		
+	}
+
+	/* (non-Javadoc)
+	 * @see edu.stanford.epad.epadws.service.EpadProjectOperations#unlinkFileFromProject(edu.stanford.epad.epadws.models.Project, edu.stanford.epad.epadws.models.EpadFile)
+	 */
+	@Override
+	public void unlinkFileFromProject(Project project, EpadFile file) throws Exception {
+		ProjectToFile ptof = (ProjectToFile) new ProjectToFile().getObject("project_id =" + project.getId() + " and file_id =" + file.getId());
+		if (ptof != null) {
+			ptof.delete();
+		}		
+	}
+
+	/* (non-Javadoc)
+	 * @see edu.stanford.epad.epadws.service.EpadProjectOperations#getDBObject(java.lang.Class, long)
+	 */
 	/* (non-Javadoc)
 	 * @see edu.stanford.epad.epadws.service.EpadProjectOperations#getDBObject(java.lang.Class, long)
 	 */

@@ -140,7 +140,7 @@ public class AIMQueries
 	}
 	public static List<ImageAnnotation> getAIMImageAnnotations(String projectID, AIMSearchType aimSearchType, String value, String username, int startIndex, int count, boolean use3Only)
 	{
-		log.info("Getting AIM annotations, aimSearchType:" + aimSearchType + " value:" + value + " start:" + startIndex + " count:" + count);
+		log.info("Getting AIM annotations, aimSearchType:" + aimSearchType + " value:" + value + " start:" + startIndex + " count:" + count + " projectID:" + projectID);
 		List<ImageAnnotation> resultAims = new ArrayList<ImageAnnotation>();
 		List<ImageAnnotation> aims = null;
 		ImageAnnotation aim = null;

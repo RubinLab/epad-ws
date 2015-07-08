@@ -561,18 +561,79 @@ public interface EpadProjectOperations {
 	 */
 	List<EpadFile> getSeriesFiles(String projectID, String subjectUID, String studyUID, String seriesUID) throws Exception;	
 	
+	/**
+	 * @param loggedInUser
+	 * @param projectID
+	 * @param subjectUID
+	 * @param studyUID
+	 * @param seriesUID
+	 * @param filename
+	 * @throws Exception
+	 */
 	void enableFile(String loggedInUser, String projectID, String subjectUID, String studyUID, String seriesUID, String filename) throws Exception;
 	
+	/**
+	 * @param loggedInUser
+	 * @param projectID
+	 * @param subjectUID
+	 * @param studyUID
+	 * @param seriesUID
+	 * @param filename
+	 * @throws Exception
+	 */
 	void disableFile(String loggedInUser, String projectID, String subjectUID, String studyUID, String seriesUID, String filename) throws Exception;
 	
+	/**
+	 * @param loggedInUser
+	 * @param projectID
+	 * @param subjectUID
+	 * @param studyUID
+	 * @param seriesUID
+	 * @param templateName
+	 * @throws Exception
+	 */
 	void enableTemplate(String loggedInUser, String projectID, String subjectUID, String studyUID, String seriesUID, String templateName) throws Exception;
 	
+	/**
+	 * @param loggedInUser
+	 * @param projectID
+	 * @param subjectUID
+	 * @param studyUID
+	 * @param seriesUID
+	 * @param templateName
+	 * @throws Exception
+	 */
 	void disableTemplate(String loggedInUser, String projectID, String subjectUID, String studyUID, String seriesUID, String templateName) throws Exception;
 	
+	/**
+	 * @param fileID
+	 * @param filename
+	 * @param description
+	 * @param fileType
+	 * @param mimeType
+	 * @return
+	 * @throws Exception
+	 */
 	EpadFile updateEpadFile(long fileID, String filename, String description, String fileType, String mimeType) throws Exception;	
 	
+	/**
+	 * @param projectID
+	 * @return
+	 * @throws Exception
+	 */
 	List<String> getDisabledTemplates(String projectID) throws Exception;	
 
+	/**
+	 * @param project
+	 * @param file
+	 */
+	void linkFileToProject(Project project, EpadFile file) throws Exception;
+	
+	/**
+	 * @param project
+	 * @param file
+	 */
+	void unlinkFileFromProject(Project project, EpadFile file) throws Exception;
 	/**
 	 * @param username
 	 * @return
