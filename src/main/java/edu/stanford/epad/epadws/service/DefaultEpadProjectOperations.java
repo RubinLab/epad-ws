@@ -1603,6 +1603,7 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		new ProjectToSubjectToStudy().deleteObjects("proj_subj_id in (select id from " + new ProjectToSubject().returnDBTABLE() + " where project_id=" + project.getId() + ")");
 		new ProjectToSubject().deleteObjects("project_id=" + project.getId());
 		project.delete();
+		projectCache.remove(project.getProjectId());
 	}
 
 	/* (non-Javadoc)
@@ -1620,7 +1621,13 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		new ProjectToSubjectToUser().deleteObjects("proj_subj_id =" + projSubj.getId());
 		new ProjectToSubjectToStudy().deleteObjects("proj_subj_id =" + projSubj.getId());
 		projSubj.delete();
+		List projSubjs = new ProjectToSubject().getObjects("subject_id=" + subject.getId());
 		// TODO: delete subject if not used any more
+		if (projSubjs.size() == 0)
+		{
+			subject.delete();
+			subjectCache.remove(subjectUID);
+		}
 	}
 
 	/* (non-Javadoc)
@@ -1773,12 +1780,16 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 	 * @see edu.stanford.epad.epadws.service.EpadProjectOperations#linkFileToProject(edu.stanford.epad.epadws.models.Project, edu.stanford.epad.epadws.models.EpadFile)
 	 */
 	@Override
-	public void linkFileToProject(Project project, EpadFile file) throws Exception {
+	public void linkFileToProject(String loggedInUser, Project project, EpadFile file) throws Exception {
+		User user = getUser(loggedInUser);
+		if (user != null && !user.isAdmin() && !isOwner(loggedInUser, project.getProjectId()))
+			throw new Exception("No permission to add template to project");
 		ProjectToFile ptof = (ProjectToFile) new ProjectToFile().getObject("project_id =" + project.getId() + " and file_id =" + file.getId());
 		if (ptof == null) {
 			ptof = new ProjectToFile();
 			ptof.setProjectId(project.getId());
 			ptof.setFileId(file.getId());
+			ptof.setCreator(loggedInUser);
 			ptof.save();
 		}		
 	}
@@ -1787,7 +1798,10 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 	 * @see edu.stanford.epad.epadws.service.EpadProjectOperations#unlinkFileFromProject(edu.stanford.epad.epadws.models.Project, edu.stanford.epad.epadws.models.EpadFile)
 	 */
 	@Override
-	public void unlinkFileFromProject(Project project, EpadFile file) throws Exception {
+	public void unlinkFileFromProject(String loggedInUser, Project project, EpadFile file) throws Exception {
+		User user = getUser(loggedInUser);
+		if (user != null && !user.isAdmin() && !isOwner(loggedInUser, project.getProjectId()))
+			throw new Exception("No permission to remove template from project");
 		ProjectToFile ptof = (ProjectToFile) new ProjectToFile().getObject("project_id =" + project.getId() + " and file_id =" + file.getId());
 		if (ptof != null) {
 			ptof.delete();
@@ -1795,8 +1809,18 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 	}
 
 	/* (non-Javadoc)
-	 * @see edu.stanford.epad.epadws.service.EpadProjectOperations#getDBObject(java.lang.Class, long)
+	 * @see edu.stanford.epad.epadws.service.EpadProjectOperations#getLinkedFiles(edu.stanford.epad.epadws.models.Project)
 	 */
+	@Override
+	public List<EpadFile> getLinkedFiles(Project project) throws Exception {
+		List objects = new EpadFile().getObjects("id in (select file_id from " 
+				+ ProjectToFile.DBTABLE 
+				+ " where project_id =" + project.getId() + ")");
+		List<EpadFile> files = new ArrayList<EpadFile>();
+		files.addAll(objects);
+		return files;
+	}
+
 	/* (non-Javadoc)
 	 * @see edu.stanford.epad.epadws.service.EpadProjectOperations#getDBObject(java.lang.Class, long)
 	 */

@@ -48,6 +48,10 @@ import edu.stanford.epad.epadws.models.dao.AbstractDAO;
  * @author Dev Gude
  *
  */
+/**
+ * @author Dev Gude
+ *
+ */
 public interface EpadProjectOperations {
 
 	/**
@@ -627,13 +631,21 @@ public interface EpadProjectOperations {
 	 * @param project
 	 * @param file
 	 */
-	void linkFileToProject(Project project, EpadFile file) throws Exception;
+	void linkFileToProject(String loggedInUser, Project project, EpadFile file) throws Exception;
 	
 	/**
 	 * @param project
 	 * @param file
 	 */
-	void unlinkFileFromProject(Project project, EpadFile file) throws Exception;
+	void unlinkFileFromProject(String loggedInUser, Project project, EpadFile file) throws Exception;
+	
+	/**
+	 * @param project
+	 * @return
+	 * @throws Exception
+	 */
+	List<EpadFile> getLinkedFiles(Project project) throws Exception;
+	
 	/**
 	 * @param username
 	 * @return

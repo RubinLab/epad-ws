@@ -1028,7 +1028,8 @@ public class ProjectController {
 		} else {
 			statusCode = epadOperations.createProject(username, projectReference, projectName, projectDescription, defaultTemplate, sessionID);
 		}
-		if (statusCode != HttpServletResponse.SC_OK);
+		log.warning("Create/Modify project, status:" + statusCode);
+		if (statusCode != HttpServletResponse.SC_OK)
 			throw new Exception("Error creating or modifying project");
 	}
 
@@ -1052,7 +1053,7 @@ public class ProjectController {
 		} else {
 			statusCode = epadOperations.createSubject(username, subjectReference, subjectName, getDate(dob), gender, sessionID);
 		}
-		if (statusCode != HttpServletResponse.SC_OK);
+		if (statusCode != HttpServletResponse.SC_OK)
 			throw new Exception("Error creating or modifying project");
 	}
 
@@ -1069,7 +1070,7 @@ public class ProjectController {
 		SubjectReference subjectReference = new SubjectReference(projectID, "new");
 		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
 		int	statusCode = epadOperations.createSubject(username, subjectReference, subjectName, getDate(dob), gender, sessionID);
-		if (statusCode != HttpServletResponse.SC_OK);
+		if (statusCode != HttpServletResponse.SC_OK)
 			throw new Exception("Error creating or modifying project");
 	}
 
@@ -1087,7 +1088,7 @@ public class ProjectController {
 		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
 		EPADSubject subject = epadOperations.getSubjectDescription(subjectReference, username, sessionID);
 		String errstatus = epadOperations.setSubjectStatus(subjectReference, sessionID, username);
-		if (!"".equals(status));
+		if (!"".equals(status))
 			throw new Exception("Error setting patient status");
 	}
 
@@ -1106,7 +1107,8 @@ public class ProjectController {
 		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
 		int statusCode = 0;
 		statusCode = epadOperations.createStudy(username, studyReference, description, getDate(studyDate), sessionID);
-		if (statusCode != HttpServletResponse.SC_OK);
+		log.warning("Create/Modify Study, status:" + statusCode);
+		if (statusCode != HttpServletResponse.SC_OK)
 			throw new Exception("Error creating a study");
 	}
 
@@ -1124,7 +1126,8 @@ public class ProjectController {
 		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
 		int statusCode = 0;
 		statusCode = epadOperations.createStudy(username, studyReference, description, getDate(studyDate), sessionID);
-		if (statusCode != HttpServletResponse.SC_OK);
+		log.warning("Create/Modify Study, status:" + statusCode);
+		if (statusCode != HttpServletResponse.SC_OK)
 			throw new Exception("Error creating a study");
 	}
 
@@ -1181,7 +1184,7 @@ public class ProjectController {
 		log.info("Projects AIM PUT");
 		File uploadedFile = HandlerUtil.getUploadedFile(request);
 		String status = epadOperations.createProjectAIM(username, projectReference, aimReference.aimID, uploadedFile, sessionID);
-		if (!"".equals(status));
+		if (!"".equals(status))
 			throw new Exception("Error creating Project AIM:" + status);
 	}
 
@@ -1200,7 +1203,7 @@ public class ProjectController {
 		log.info("Subject AIM PUT");
 		File uploadedFile = HandlerUtil.getUploadedFile(request);
 		String status = epadOperations.createSubjectAIM(username, subjectReference, aimReference.aimID, uploadedFile, sessionID);
-		if (!"".equals(status));
+		if (!"".equals(status))
 			throw new Exception("Error creating Subject AIM:" + status);
 	}
 	
@@ -1220,7 +1223,7 @@ public class ProjectController {
 		AIMReference aimReference = new AIMReference(aimID);
 		File uploadedFile = HandlerUtil.getUploadedFile(request);
 		String status = epadOperations.createStudyAIM(username, studyReference, aimReference.aimID, uploadedFile, sessionID);
-		if (!"".equals(status));
+		if (!"".equals(status))
 			throw new Exception("Error creating Study AIM:" + status);
 	}
 
@@ -1241,7 +1244,7 @@ public class ProjectController {
 		AIMReference aimReference = new AIMReference(aimID);
 		File uploadedFile = HandlerUtil.getUploadedFile(request);
 		String status = epadOperations.createSeriesAIM(username, seriesReference, aimReference.aimID, uploadedFile, sessionID);
-		if (!"".equals(status));
+		if (!"".equals(status))
 			throw new Exception("Error creating Series AIM:" + status);
 	}	
 
@@ -1263,7 +1266,7 @@ public class ProjectController {
 		AIMReference aimReference = new AIMReference(aimID);
 		File uploadedFile = HandlerUtil.getUploadedFile(request);
 		String status = epadOperations.createImageAIM(username, imageReference, aimReference.aimID, uploadedFile, sessionID);
-		if (!"".equals(status));
+		if (!"".equals(status))
 		{
 			throw new Exception("Error creating Image AIM:" + status);
 		}
@@ -1288,7 +1291,7 @@ public class ProjectController {
 		AIMReference aimReference = new AIMReference(aimID);
 		File uploadedFile = HandlerUtil.getUploadedFile(request);
 		String status = epadOperations.createFrameAIM(username, frameReference, aimReference.aimID, uploadedFile, sessionID);
-		if (!"".equals(status));
+		if (!"".equals(status))
 			throw new Exception("Error creating Frame AIM:" + status);
 	}	
 
@@ -1306,7 +1309,7 @@ public class ProjectController {
 		AIMUtil.runPlugIn(aimIDs, templateName, projectReference.projectID, sessionID);
 	}
 
-	@RequestMapping(value = "/{projectID}/user/{projectuser:.+}", method = RequestMethod.PUT)
+	@RequestMapping(value = "/{projectID}/users/{projectuser:.+}", method = RequestMethod.PUT)
 	public void addUserToProject( 
 										@PathVariable String projectID,
 										@PathVariable String projectuser,
