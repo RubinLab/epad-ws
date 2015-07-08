@@ -3014,10 +3014,10 @@ public class DefaultEpadOperations implements EpadOperations
 			String uri = "";
 			String insertUser = subject.getCreator();
 			String insertDate = dateFormat.format(subject.getCreatedTime());
-			List<Study> studies = projectOperations.getStudiesForProjectAndSubject(projectID, patientID);
 
 			int numberOfAnnotations = 0;
-			if (!"true".equalsIgnoreCase(EPADConfig.getParamValue("SkipPatientAnnotationCount", "false"))) {
+			if (!EPADConfig.xnatUploadProjectID.equals(projectID) && !"true".equalsIgnoreCase(EPADConfig.getParamValue("SkipPatientAnnotationCount", "false"))) {
+				List<Study> studies = projectOperations.getStudiesForProjectAndSubject(projectID, patientID);
 				for  (Study study: studies)
 				{
 					// Skip this, cause it is too slow and not that important
