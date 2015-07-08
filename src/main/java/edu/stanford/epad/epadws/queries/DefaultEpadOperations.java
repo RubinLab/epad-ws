@@ -506,16 +506,13 @@ public class DefaultEpadOperations implements EpadOperations
 							{
 								AIMUtil.generateAIMFileForDSO(dsoDICOMFile, "shared", studyReference.projectID);
 							}
-							else
-							{
-								log.info("Adding entries to annotations table");
-								for (ImageAnnotation ia: ias)
-								{
-									Aim aim = new Aim(ia);
-									ImageReference reference = new ImageReference(epadSeries.projectID, epadSeries.patientID, epadSeries.studyUID, aim.getFirstSeriesID(), aim.getFirstImageID());
-									this.epadDatabaseOperations.addDSOAIM(username, reference, epadSeries.seriesUID, ia.getUniqueIdentifier());
-								}
-							}
+//							else
+//							{
+//								log.info("Adding entries to annotations table");
+//								Aim aim = new Aim(ias.get(0));
+//								ImageReference reference = new ImageReference(epadSeries.projectID, epadSeries.patientID, epadSeries.studyUID, aim.getFirstSeriesID(), aim.getFirstImageID());
+//								this.epadDatabaseOperations.addDSOAIM(username, reference, epadSeries.seriesUID, ias.get(0).getUniqueIdentifier());
+//							}
 						} catch (Exception e) {
 							// TODO Auto-generated catch block
 							e.printStackTrace();
