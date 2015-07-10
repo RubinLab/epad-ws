@@ -13,8 +13,8 @@
 		response.addCookie(sessionCookie);
 		sessionCookie = new Cookie("JSESSIONID", "");
 		sessionCookie.setMaxAge(0);
-		sessionCookie.setPath(httpRequest.getContextPath());
-		httpResponse.addCookie(sessionCookie);
+		sessionCookie.setPath(request.getContextPath());
+		response.addCookie(sessionCookie);
 %>
 <table align=center border=1 cellpadding=3 cellspacing=0>
 <form name=loginform method=post action="<%=request.getContextPath()%>/session">

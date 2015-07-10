@@ -43,7 +43,7 @@ $( document ).ready(function() {
 			var html = "<table border=1 cellpadding=2><tr bgcolor=lightgray><td>ID</td><td>AETitle</td><td>Host</td><td>Port</td></tr>";
 			for (i = 0; i < pacs.length; i++)
 			{
-				var line = "<tr><td><span onclick=\"javascript:showImages('" + pacs[i].pacID + "')\"><u>" + pacs[i].pacID + "</u></span></td><td>" + pacs[i].aeTitle + "</td><td>"  +  pacs[i].hostname + "</td><td>" + pacs[i].port + "</td></tr>\n";
+				var line = "<tr><td nowrap><span onclick=\"javascript:showImages('" + pacs[i].pacID + "')\"><u>" + pacs[i].pacID + "</u></span></td><td>" + pacs[i].aeTitle + "</td><td>"  +  pacs[i].hostname + "</td><td>" + pacs[i].port + "</td></tr>\n";
 				html = html + line;
 			}
 			html = html + "</table>\n";
