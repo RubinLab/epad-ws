@@ -100,8 +100,6 @@ public class ServerStatusHandler extends AbstractHandler
 				responseStream.println();
 				responseStream.println("DCM4CHEE database startup time: " + dcm4CheeDatabase.getStartupTime() + " ms");
 				responseStream.println();
-				responseStream.println("Pipeline activity level: " + getPipelineActivityLevel());
-				responseStream.println();
 				responseStream.println("Config Server: " + EPADConfig.xnatServer);
 				responseStream.println("Config serverProxy: " + EPADConfig.getParamValue("serverProxy"));
 				responseStream.println("Config webserviceBase: " + EPADConfig.getParamValue("webserviceBase"));

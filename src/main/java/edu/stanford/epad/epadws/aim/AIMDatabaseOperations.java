@@ -97,6 +97,7 @@ public class AIMDatabaseOperations {
                 //+ "  `AnnotationName` VARCHAR(255) NOT NULL,\n"
                 + "  `ProjectUID` VARCHAR(255),\n"
                 + "  UPDATETIME TIMESTAMP,\n"
+                + "  DSOFRAMENO INTEGER,\n"
                 + "  DELETED TINYINT(1),\n"
                 + "  PRIMARY KEY (`AnnotationUID`));";
        boolean closeStmt = false;
@@ -118,6 +119,7 @@ public class AIMDatabaseOperations {
     	addColumn("XML MEDIUMTEXT");
     	addColumn("DELETED TINYINT(1)");
     	addColumn("UPDATETIME TIMESTAMP");
+    	addColumn("DSOFRAMENO INTEGER");
     	try {
 	    	this.statement = mySqlConnection.createStatement();
 	        this.statement.executeUpdate("CREATE INDEX annotations_series_ind ON annotations(seriesuid)");
@@ -426,7 +428,28 @@ public class AIMDatabaseOperations {
     	}
     	return null;
     }
-   
+
+    public EPADAIM updateAIMDSOFrameNo(String annotationID, int frameNo) throws SQLException
+    {
+    	EPADAIM aim = this.getAIM(annotationID);
+    	if (aim != null)
+    	{
+    		try {
+	    	    this.statement = mySqlConnection.createStatement();
+	    	    String sql = "UPDATE " + ANNOTATIONS_TABLE + " set DSOFRAMENO = " + frameNo + " where AnnotationUID = '" + annotationID + "'";
+	            log.info("Updating AIMs DSOFRAMENO for:" + annotationID + " to " + frameNo);
+	            this.statement.executeUpdate(sql);
+	            aim.dsoFrameNo = frameNo;
+	            return aim;
+       	} finally {
+        		if (statement != null)
+        			statement.close();
+        		statement = null;
+        	}
+    	}
+    	return null;
+    }
+  
     public EPADAIM insert(String annotationUID, String userName, String projectID, String patientID, String studyUID, String seriesUID, String imageUID, int frameID) throws SQLException {
         return insert(annotationUID, userName, projectID, patientID, studyUID, seriesUID, imageUID, frameID, null);
     }
@@ -542,7 +565,7 @@ public class AIMDatabaseOperations {
     }
     
     public List<EPADAIM> getAIMs(String projectID, String patientID, String studyUID, String seriesUID, String imageUID, int frameID, String dsoSeriesUID, int start, int count) throws SQLException {
-        String sqlSelect = "SELECT UserLoginName, ProjectUID, PatientID, StudyUID, SeriesUID, ImageUID, frameID, AnnotationUID, DSOSeriesUID, XML FROM annotations WHERE 1 = 1";
+        String sqlSelect = "SELECT UserLoginName, ProjectUID, PatientID, StudyUID, SeriesUID, ImageUID, frameID, AnnotationUID, DSOSeriesUID, DSOFRAMENO, XML FROM annotations WHERE 1 = 1";
 		if (projectID != null && projectID.length() > 0)
 			sqlSelect = sqlSelect + " and (ProjectUID = '" + projectID + "')";
 		//sqlSelect = sqlSelect + " and (ProjectUID = '" + projectID + "' or ProjectUID = '" + EPADConfig.xnatUploadProjectID + "')";
@@ -584,9 +607,12 @@ public class AIMDatabaseOperations {
 				int FrameID = rs.getInt(7);
 				String AnnotationID = rs.getString(8);
 				String DSOSeriesUID = rs.getString(9);
-				String xml = rs.getString(10);
+				Integer dsoFrameNo = rs.getInt(10);
+				String xml = rs.getString(11);
 				EPADAIM aim = new EPADAIM(AnnotationID, UserName, ProjectID, PatientID, StudyUID, SeriesUID, ImageUID, FrameID, DSOSeriesUID);
 				aim.xml = xml;
+				if (dsoFrameNo != null)
+					aim.dsoFrameNo = dsoFrameNo;
 				aims.add(aim);
 				if (row > start+count) break;
 			}
@@ -604,7 +630,7 @@ public class AIMDatabaseOperations {
     public List<EPADAIM> getAIMs(String criteria, int start, int count) throws SQLException {
     	if (!criteria.trim().toLowerCase().startsWith("where"))
     		criteria = "WHERE " + criteria;
-        String sqlSelect = "SELECT UserLoginName, ProjectUID, PatientID, StudyUID, SeriesUID, ImageUID, frameID, AnnotationUID, DSOSeriesUID, XML FROM annotations " + criteria;
+        String sqlSelect = "SELECT UserLoginName, ProjectUID, PatientID, StudyUID, SeriesUID, ImageUID, frameID, AnnotationUID, DSOSeriesUID, DSOFRAMENO, XML FROM annotations " + criteria;
         log.info("AIMs select:" + sqlSelect);
        
 		ResultSet rs = null;
@@ -625,9 +651,12 @@ public class AIMDatabaseOperations {
 				int FrameID = rs.getInt(7);
 				String AnnotationID = rs.getString(8);
 				String DSOSeriesUID = rs.getString(9);
-				String xml = rs.getString(10);
-				EPADAIM aim = new EPADAIM(AnnotationID, UserName, ProjectID, PatientID, StudyUID, SeriesUID, ImageUID, FrameID, DSOSeriesUID);
+				Integer dsoFrameNo = rs.getInt(10);
+				String xml = rs.getString(11);
+					EPADAIM aim = new EPADAIM(AnnotationID, UserName, ProjectID, PatientID, StudyUID, SeriesUID, ImageUID, FrameID, DSOSeriesUID);
 				aim.xml = xml;
+				if (dsoFrameNo != null)
+					aim.dsoFrameNo = dsoFrameNo;
 				aims.add(aim);
 				if (count > 0 && row > start+count) break;
 			}
@@ -844,69 +873,6 @@ public class AIMDatabaseOperations {
 		log.info("AIM table query took " + (time2-time1) + " msecs");
 		return aims;
 	}
-
-    /*
-     * Following functions are unsafe because they do not close the statement or resultset, please do not use them
-     */
-    public ResultSet getAnnotationCountByPatientID() throws SQLException {
-	    this.statement = mySqlConnection.createStatement();
-        String sqlSelect = "SELECT PatientID, COUNT(AnnotationUID) FROM annotations GROUP BY PatientID";
-        return this.statement.executeQuery(sqlSelect);
-    }
-
-    public ResultSet getAnnotationCountByPatientIDStudyUID() throws SQLException {
-	    this.statement = mySqlConnection.createStatement();
-        String sqlSelect = "SELECT PatientID, StudyUID, COUNT(AnnotationUID) FROM annotations GROUP BY PatientID, StudyUID";
-        return this.statement.executeQuery(sqlSelect);
-    }
-
-    public ResultSet getAnnotationCountByPatientIDStudyUIDSeriesUID() throws SQLException {
-	    this.statement = mySqlConnection.createStatement();
-        String sqlSelect = "SELECT PatientID, StudyUID, SeriesUID, COUNT(AnnotationUID) FROM annotations GROUP BY PatientID, StudyUID, SeriesUID";
-        return this.statement.executeQuery(sqlSelect);
-    }
-
-    public ResultSet getAnnotationCountByPatientIDStudyUIDSeriesUIDImageUID() throws SQLException {
-	    this.statement = mySqlConnection.createStatement();
-        String sqlSelect = "SELECT PatientID, StudyUID, SeriesUID, ImageUID, COUNT(AnnotationUID) FROM annotations GROUP BY PatientID, StudyUID, SeriesUID, ImageUID";
-        return this.statement.executeQuery(sqlSelect);
-    }
-
-    public ResultSet getAnnotationCountByPatientIDStudyUIDSeriesUIDImageUIDFrameID() throws SQLException {
-	    this.statement = mySqlConnection.createStatement();
-        String sqlSelect = "SELECT PatientID, StudyUID, SeriesUID, ImageUID, FrameID, COUNT(AnnotationUID) FROM annotations GROUP BY PatientID, StudyUID, SeriesUID, ImageUID, FrameID";
-        return this.statement.executeQuery(sqlSelect);
-    }
-
-    public ResultSet getAnnotationCountByPatientID(String patientID) throws SQLException {
-	    this.statement = mySqlConnection.createStatement();
-        String sqlSelect = "SELECT PatientID, COUNT(AnnotationUID) FROM annotations WHERE(PatientID = '" + patientID + "') GROUP BY PatientID";
-        return this.statement.executeQuery(sqlSelect);
-    }
-
-    public ResultSet getAnnotationCountByPatientIDStudyUID(String patientID, String StudyUID) throws SQLException {
-	    this.statement = mySqlConnection.createStatement();
-        String sqlSelect = "SELECT PatientID, StudyUID, COUNT(AnnotationUID) FROM annotations WHERE(PatientID = '" + patientID + "' AND StudyUID = '" + StudyUID + "') GROUP BY PatientID, StudyUID";
-        return this.statement.executeQuery(sqlSelect);
-    }
-
-    public ResultSet getAnnotationCountByPatientIDStudyUID(String patientID, String studyUID, String seriesUID) throws SQLException {
-	    this.statement = mySqlConnection.createStatement();
-        String sqlSelect = "SELECT PatientID, StudyUID, SeriesUID, COUNT(AnnotationUID) FROM annotations WHERE(PatientID = '" + patientID + "' AND StudyUID = '" + studyUID + "' AND SeriesUID = '" + seriesUID + "') GROUP BY PatientID, StudyUID, SeriesUID";
-        return this.statement.executeQuery(sqlSelect);
-    }
-
-    public ResultSet getAnnotationCountByPatientIDStudyUIDSeriesUIDImageUID(String patientID, String studyUID, String seriesUID, String imageUID) throws SQLException {
-	    this.statement = mySqlConnection.createStatement();
-        String sqlSelect = "SELECT PatientID, StudyUID, SeriesUID, ImageUID, COUNT(AnnotationUID) FROM annotations WHERE(PatientID = '" + patientID + "' AND StudyUID = '" + studyUID + "' AND SeriesUID = '" + seriesUID + "' AND ImageUID = '" + imageUID + "') GROUP BY PatientID, StudyUID, SeriesUID, ImageUID";
-        return this.statement.executeQuery(sqlSelect);
-    }
-
-    public ResultSet getAnnotationCountByPatientIDStudyUIDSeriesUIDImageUIDFrameID(String patientID, String studyUID, String seriesUID, String imageUID, String frameID) throws SQLException {
-	    this.statement = mySqlConnection.createStatement();
-        String sqlSelect = "SELECT PatientID, StudyUID, SeriesUID, ImageUID, frameID, COUNT(AnnotationUID) FROM annotations WHERE(PatientID = '" + patientID + "' AND StudyUID = '" + studyUID + "' AND SeriesUID = '" + seriesUID + "' AND ImageUID = '" + imageUID + "' AND FrameID = '" + frameID + "') GROUP BY PatientID, StudyUID, SeriesUID, ImageUID, FrameID";
-        return this.statement.executeQuery(sqlSelect);
-    }
     
     // This returns the most likely projectId
     static Set<String> projectIds = null;

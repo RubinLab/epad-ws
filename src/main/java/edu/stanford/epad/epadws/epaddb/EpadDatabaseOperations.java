@@ -185,6 +185,8 @@ public interface EpadDatabaseOperations
 	
 	EPADAIM updateAIMXml(String aimID, String xml);
 	
+	EPADAIM updateAIMDSOFrameNo(String aimID, int frameNo);
+	
 	void deleteAIM(String userName, ProjectReference reference, String aimID);
 
 	void deleteAIM(String userName, SubjectReference reference, String aimID);

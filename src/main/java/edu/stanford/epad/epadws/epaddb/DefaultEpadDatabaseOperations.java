@@ -924,6 +924,22 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 	}
 
 	@Override
+	public EPADAIM updateAIMDSOFrameNo(String aimID, int frameNo) {
+		Connection c = null;
+		try {
+			c = getConnection();
+			AIMDatabaseOperations adb = new AIMDatabaseOperations(c, EPADConfig.eXistServerUrl,
+					EPADConfig.aim4Namespace, EPADConfig.eXistCollection, EPADConfig.eXistUsername, EPADConfig.eXistPassword);
+			return adb.updateAIMDSOFrameNo(aimID, frameNo);
+		} catch (SQLException sqle) {
+			log.warning("AIM Database operation failed:", sqle);
+		} finally {
+			close(c);
+		}
+		return null;
+	}
+
+	@Override
 	public void deleteAIM(String userName, ProjectReference reference, String aimID)
 	{
 		Connection c = null;

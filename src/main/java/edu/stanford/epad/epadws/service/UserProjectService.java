@@ -47,6 +47,7 @@ import edu.stanford.epad.dtos.EPADAIM;
 import edu.stanford.epad.epadws.aim.AIMQueries;
 import edu.stanford.epad.epadws.aim.AIMSearchType;
 import edu.stanford.epad.epadws.aim.AIMUtil;
+import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeDatabase;
 import edu.stanford.epad.epadws.epaddb.EpadDatabase;
 import edu.stanford.epad.epadws.epaddb.EpadDatabaseOperations;
 import edu.stanford.epad.epadws.models.Project;
@@ -386,10 +387,26 @@ public class UserProjectService {
 			if ("SEG".equals(modality))
 			{
 				try {
-					List<EPADAIM> aims = databaseOperations.getAIMsByDSOSeries(projectID, dicomPatientID, seriesUID);
+					//List<EPADAIM> aims = databaseOperations.getAIMsByDSOSeries(projectID, dicomPatientID, seriesUID);
+					List<EPADAIM> aims = databaseOperations.getAIMsByDSOSeries(null, dicomPatientID, seriesUID);
 					List<ImageAnnotation> ias = AIMQueries.getAIMImageAnnotations(AIMSearchType.SERIES_UID, seriesUID, username, 1, 50);
-					if (ias.size() == 0 || aims.size() == 0) 
+					boolean generateAim = false;
+					if (aims.size() == 1 && aims.get(0).projectID.equals(EPADConfig.xnatUploadProjectID) && !projectID.equals(EPADConfig.xnatUploadProjectID))
+						generateAim = true;
+					if (generateAim || ias.size() == 0 || aims.size() == 0) 
 						AIMUtil.generateAIMFileForDSO(dicomFile, username, projectID);
+					Set<String> imageUIDs = Dcm4CheeDatabase.getInstance().getDcm4CheeDatabaseOperations().getImageUIDsForSeries(seriesUID);
+					if (!imageUIDs.isEmpty()) {
+						String message = "DSO for  patientID:" + dicomPatientID + " Series:" + seriesUID + " file:" + dicomFile.getName() + " already exists. Please delete DSO before reuploading";
+						log.warning(message);
+						databaseOperations.insertEpadEvent(
+								username, 
+								message, 
+								seriesUID, "", dicomPatientID, dicomPatientName, studyUID, projectID, "Error in Upload");					
+						dicomFile.delete();
+						projectOperations.userErrorLog(username, message);
+						return false;
+					}
 					String imageUID = dicomObject.getString(Tag.SOPInstanceUID);
 					String pngMaskDirectoryPath = EPADConfig.getEPADWebServerPNGDir() + "/studies/" + studyUID + "/series/" + seriesUID + "/images/"
 							+ imageUID + "/masks/";

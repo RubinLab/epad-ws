@@ -455,6 +455,11 @@ public class DSOUtil
 
 	public static void writeDSOMaskPNGs(File dsoFile) throws Exception
 	{
+		writeDSOMaskPNGs(dsoFile, null);
+	}
+	
+	public static void writeDSOMaskPNGs(File dsoFile, String username) throws Exception
+	{
 		String seriesUID = "";
 		File tmpDSO = File.createTempFile("DSO_" + dsoFile.getName(), ".dcm");
 		try {
@@ -496,6 +501,7 @@ public class DSOUtil
 				throw new Exception("Referenced series for DSO " + seriesUID + " not found");
 			}
 			int frameNumber = 0;
+			int nonblankFrame = 0;
 
 			String pngMaskDirectoryPath = baseDicomDirectory + "/studies/" + studyUID + "/series/" + seriesUID + "/images/"
 					+ imageUID + "/masks/";
@@ -548,12 +554,14 @@ public class DSOUtil
 				log.info("FrameNumber:" + frameNumber + " refFrameNumber:" + refFrameNumber + " instance number:" + dcm4cheeReferencedImageDescription.instanceNumber);
 				BufferedImage bufferedImage = sourceDSOImage.getBufferedImage(frameNumber);
 				BufferedImage bufferedImageWithTransparency = generateTransparentImage(bufferedImage);
+				if (nonBlank.get())
+					nonblankFrame = refFrameNumber;
 				String pngMaskFilePath = pngMaskDirectoryPath + refFrameNumber + ".png";
 
 				File pngMaskFile = new File(pngMaskFilePath);
 				try {
 					insertEpadFile(databaseOperations, pngMaskFilePath, pngMaskFile.length(), imageUID);
-					log.info("Writing PNG mask file frame " + frameNumber + " of " + numberOfFrames + " for DSO " + imageUID + " in series " + seriesUID + " file:" + pngMaskFilePath);
+					log.info("Writing PNG mask file frame " + frameNumber + " of " + numberOfFrames + " for DSO " + imageUID + " in series " + seriesUID + " file:" + pngMaskFilePath + " nonBlank:" + nonBlank.get());
 					ImageIO.write(bufferedImageWithTransparency, "png", pngMaskFile);
 					databaseOperations.updateEpadFileRow(pngMaskFilePath, PNGFileProcessingStatus.DONE, 0, "");
 					Thread.sleep(50); // So that other things can continue in the system
@@ -575,7 +583,13 @@ public class DSOUtil
 				}
 				frameNumber++;
 			}
-			log.info("... finished writing PNG " + numberOfFrames + " masks for DSO image " + imageUID + " in series " + seriesUID);
+			EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
+			List<EPADAIM> aims = epadDatabaseOperations.getAIMsByDSOSeries(seriesUID);
+			for (EPADAIM aim: aims)
+			{
+				epadDatabaseOperations.updateAIMDSOFrameNo(aim.aimID, nonblankFrame+1);
+			}
+			log.info("... finished writing PNG " + numberOfFrames + " masks for DSO image " + imageUID + " in series " + seriesUID + " nonBlankFrame:" + nonblankFrame);
 		} catch (DicomException e) {
 			log.warning("DICOM exception writing DSO PNG masks, series:" + seriesUID, e);
 			throw new Exception("DICOM exception writing DSO PNG masks, series:" + seriesUID, e);
@@ -991,7 +1005,8 @@ public class DSOUtil
 
 	private static BufferedImage generateTransparentImage(BufferedImage source)
 	{
-		Image image = makeColorOpaque(source, Color.WHITE);
+		//Image image = makeColorOpaque(source, Color.WHITE);
+		Image image = makeAnyColorWhite(source);
 		BufferedImage transparent = imageToBufferedImage(image);
 		Image image2 = makeColorTransparent(transparent, Color.BLACK);
 		BufferedImage transparent2 = imageToBufferedImage(image2);
@@ -1006,6 +1021,28 @@ public class DSOUtil
 		g2.drawImage(image, 0, 0, null);
 		g2.dispose();
 		return bufferedImage;
+	}
+
+	private static ThreadLocal<Boolean> nonBlank = new ThreadLocal<Boolean>();
+	private static Image makeAnyColorWhite(BufferedImage im)
+	{
+		nonBlank.set(false);
+		ImageFilter filter = new RGBImageFilter() {
+
+			@Override
+			public final int filterRGB(int x, int y, int rgb)
+			{
+				if ((rgb & 0x00FFFFFF) != 0) {
+					nonBlank.set(true);
+					return 0xFFFFFFFF;
+				} else {
+					return rgb;
+				}
+			}
+		};
+
+		ImageProducer ip = new FilteredImageSource(im.getSource(), filter);
+		return Toolkit.getDefaultToolkit().createImage(ip);
 	}
 
 	private static Image makeColorOpaque(BufferedImage im, final Color color)
