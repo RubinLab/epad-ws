@@ -34,7 +34,7 @@ $( document ).ready(function() {
 			filedata = "<table border=1><tr bgcolor=lightgray><td><img src=delete.jpg height=10px onclick='deleteFile(\"<%=projectID%>\",null,null,null,\"*\")'/></td><td>Name</td><td>Description</td><td>Type</td><td>Length</td><td>Created</td></tr>\n";
 			for (i = 0; i < files.length; i++)
 			{
-				filedata = filedata + "<tr><td><img src=delete.jpg height=10px onclick='deleteFile(\"<%=projectID%>\",null,null,null,\"" + files[i].fileName +"\")'/></td><td><a href='download.jsp?path=" + files[i].path + "&name=" + files[i].fileName+ "'>" + files[i].fileName + "</a></td><td>" + files[i].description + "</td><td>" + files[i].fileType + "</td><td>" + files[i].fileLength + "</td><td>"  +  files[i].createdTime + "</td></tr>\n";
+				filedata = filedata + "<tr><td><img src=delete.jpg height=10px onclick='deleteFile(\"<%=projectID%>\",null,null,null,\"" + files[i].fileName +"\")'/></td><td><a href='download.jsp?path=" + files[i].path + "&name=" + files[i].fileName+ "'>" + files[i].fileName + "</a></td><td>" + files[i].description + "</td><td>" + files[i].fileType + "</td><td>" + files[i].fileLength + "</td><td nowrap>"  +  files[i].createdTime + "</td></tr>\n";
 			}
 		}
 	})
@@ -53,7 +53,7 @@ $( document ).ready(function() {
 			filedata = filedata + "<table border=1><tr bgcolor=lightgray><td>Type</td><td>Name</td><td>ID</td><td>Studies/Series/Annotations</td><td>Size</td><td>Date</td></tr>";
 			for (i = 0; i < subjects.length; i++)
 			{
-				filedata = filedata + "<tr><td>Patient (<a href=upload.jsp?projectID=<%=projectID%>&subjectID=" + subjects[i].subjectID + ">Upload</a>)</td><td><a href='images.jsp?projectID=" + subjects[i].id + "' target='rightpanel'>" + subjects[i].subjectName + "</a></td><td>" + subjects[i].subjectID + "</td><td>"  +  subjects[i].numberOfStudies + " / " + subjects[i].numberOfAnnotations + "</td></tr>\n";
+				filedata = filedata + "<tr><td nowrap>Patient (<a href=upload.jsp?projectID=<%=projectID%>&subjectID=" + subjects[i].subjectID + ">Upload</a>)</td><td><a href='images.jsp?projectID=" + subjects[i].id + "' target='rightpanel'>" + subjects[i].subjectName + "</a></td><td>" + subjects[i].subjectID + "</td><td>"  +  subjects[i].numberOfStudies + " / " + subjects[i].numberOfAnnotations + "</td></tr>\n";
 				var urlf = url + subjects[i].subjectID + "/files/";
 				$.ajax({         
 					url: urlf + "?username=<%=username%>",         
@@ -69,7 +69,7 @@ $( document ).ready(function() {
 						//filedata = "<table border=1><tr bgcolor=lightgray><td>Name</td><td>Type</td><td>Length</td><td>Created</td></tr>\n";
 						for (f = 0; f < files.length; f++)
 						{
-							filedata = filedata + "<tr><td>File (<img src=delete.jpg height=10px onclick='deleteFile(\"<%=projectID%>\",\""+subjects[i].subjectID+"\",null,null,\"" + files[f].fileName +"\")'/>)</td><td><a href='resources/" + files[f].path + "'>" + files[f].fileName + "</a></td><td>" + files[f].description + "</td><td>" + files[f].fileType + "</td><td>" + files[f].fileLength + "</td><td>"  +  files[f].createdTime + "</td></tr>\n";
+							filedata = filedata + "<tr><td>File (<img src=delete.jpg height=10px onclick='deleteFile(\"<%=projectID%>\",\""+subjects[i].subjectID+"\",null,null,\"" + files[f].fileName +"\")'/>)</td><td><a href='resources/" + files[f].path + "'>" + files[f].fileName + "</a></td><td>" + files[f].description + "</td><td>" + files[f].fileType + "</td><td>" + files[f].fileLength + "</td><td nowrap>"  +  files[f].createdTime + "</td></tr>\n";
 						}
 					}
 				})
@@ -87,7 +87,7 @@ $( document ).ready(function() {
 						var studies = response.ResultSet.Result;
 						for (j = 0; j < studies.length; j++)
 						{
-							filedata = filedata + "<tr><td>Study(<a href=upload.jsp?projectID=<%=projectID%>&subjectID=" + subjects[i].subjectID + "&studyUID=" + studies[j].studyUID + ">Upload</a>)</td><td>&nbsp;&nbsp;&nbsp;<a href='images.jsp?projectID=" + studies[j].studyUID + "' target='rightpanel'>" + studies[j].studyDescription + "</a></td><td>" + studies[j].studyUID + "</td><td>"  +  studies[j].numberOfSeries + " / " + studies[j].numberOfAnnotations + "</td></tr>\n";
+							filedata = filedata + "<tr><td nowrap>Study(<a href=upload.jsp?projectID=<%=projectID%>&subjectID=" + subjects[i].subjectID + "&studyUID=" + studies[j].studyUID + ">Upload</a>)</td><td>&nbsp;&nbsp;&nbsp;<a href='images.jsp?projectID=" + studies[j].studyUID + "' target='rightpanel'>" + studies[j].studyDescription + "</a></td><td>" + studies[j].studyUID + "</td><td>"  +  studies[j].numberOfSeries + " / " + studies[j].numberOfAnnotations + "</td></tr>\n";
 							var urlf = url2 + studies[j].studyUID + "/files/";
 							$.ajax({         
 								url: urlf + "?username=<%=username%>",         
@@ -103,7 +103,7 @@ $( document ).ready(function() {
 									//filedata = "<table border=1><tr bgcolor=lightgray><td>Name</td><td>Type</td><td>Length</td><td>Created</td></tr>\n";
 									for (f = 0; f < files.length; f++)
 									{
-										filedata = filedata + "<tr><td>File<img src=delete.jpg height=10px onclick='deleteFile(\"<%=projectID%>\",\""+subjects[i].subjectID+"\",\""+ studies[j].studyUID+ "\",null,\"" + files[f].fileName +"\")'/></td><td><a href='resources/" + files[f].path + "'>" + files[f].fileName + "</a></td><td>" + files[f].description + "</td><td>" + files[f].fileType + "</td><td>" + files[f].fileLength + "</td><td>"  +  files[f].createdTime + "</td></tr>\n";
+										filedata = filedata + "<tr><td>File<img src=delete.jpg height=10px onclick='deleteFile(\"<%=projectID%>\",\""+subjects[i].subjectID+"\",\""+ studies[j].studyUID+ "\",null,\"" + files[f].fileName +"\")'/></td><td><a href='resources/" + files[f].path + "'>" + files[f].fileName + "</a></td><td>" + files[f].description + "</td><td>" + files[f].fileType + "</td><td>" + files[f].fileLength + "</td><td nowrap>"  +  files[f].createdTime + "</td></tr>\n";
 									}
 								}
 							})
@@ -121,7 +121,7 @@ $( document ).ready(function() {
 									var series = response.ResultSet.Result;
 									for (k = 0; k < series.length; k++)
 									{
-										filedata = filedata + "<tr><td>Series(<a href=upload.jsp?projectID=<%=projectID%>&subjectID=" + subjects[i].subjectID + "&studyUID=" + studies[j].studyUID + "&seriesUID=" + series[k].seriesUID + ">Upload</a>)</td><td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href='images.jsp?projectID=" + series[k].seriesUID + "' target='rightpanel'>" + series[k].seriesDescription + "</a></td><td>" + series[k].seriesUID + "</td><td>na / "  +  series[k].numberOfAnnotations + "</td></tr>\n";
+										filedata = filedata + "<tr><td nowrap>Series(<a href=upload.jsp?projectID=<%=projectID%>&subjectID=" + subjects[i].subjectID + "&studyUID=" + studies[j].studyUID + "&seriesUID=" + series[k].seriesUID + ">Upload</a>)</td><td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href='images.jsp?projectID=" + series[k].seriesUID + "' target='rightpanel'>" + series[k].seriesDescription + "</a></td><td>" + series[k].seriesUID + "</td><td>na / "  +  series[k].numberOfAnnotations + "</td></tr>\n";
 										var urlf = url3 + series[k].seriesUID + "/files/";
 										$.ajax({         
 											url: urlf + "?username=<%=username%>",         
@@ -137,7 +137,7 @@ $( document ).ready(function() {
 												//filedata = "<table border=1><tr bgcolor=lightgray><td>Name</td><td>Type</td><td>Length</td><td>Created</td></tr>\n";
 												for (f = 0; f < files.length; f++)
 												{
-													filedata = filedata + "<tr><td>File(<img src=delete.jpg height=10px onclick='deleteFile(\"<%=projectID%>\",\""+subjects[i].subjectID+"\",\""+ studies[j].studyUID+ "\",\""+series[k].seriesUID+"\",\"" + files[f].fileName +"\")'/>)</td><td><a href='resources/" + files[f].path + "'>" + files[f].fileName + "</a></td><td>" + files[f].description + "</td><td>" + files[f].fileType + "</td><td>" + files[f].fileLength + "</td><td>"  +  files[f].createdTime + "</td></tr>\n";
+													filedata = filedata + "<tr><td>File(<img src=delete.jpg height=10px onclick='deleteFile(\"<%=projectID%>\",\""+subjects[i].subjectID+"\",\""+ studies[j].studyUID+ "\",\""+series[k].seriesUID+"\",\"" + files[f].fileName +"\")'/>)</td><td><a href='resources/" + files[f].path + "'>" + files[f].fileName + "</a></td><td>" + files[f].description + "</td><td>" + files[f].fileType + "</td><td>" + files[f].fileLength + "</td><td nowrap>"  +  files[f].createdTime + "</td></tr>\n";
 												}
 											}
 										})

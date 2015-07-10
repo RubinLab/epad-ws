@@ -6,6 +6,16 @@
 <TITLE> Login </TITLE>
 </HEAD>
 <BODY>
+<%
+		Cookie sessionCookie = new Cookie("JSESSIONID", "");
+		sessionCookie.setMaxAge(0);
+		sessionCookie.setPath(request.getContextPath() + "/");
+		response.addCookie(sessionCookie);
+		sessionCookie = new Cookie("JSESSIONID", "");
+		sessionCookie.setMaxAge(0);
+		sessionCookie.setPath(httpRequest.getContextPath());
+		httpResponse.addCookie(sessionCookie);
+%>
 <table align=center border=1 cellpadding=3 cellspacing=0>
 <form name=loginform method=post action="<%=request.getContextPath()%>/session">
 <tr><td width=50% align=right>Username:</td><td width=50% align=left><input name=username type=text></td></tr>

@@ -66,7 +66,7 @@ $( document ).ready(function() {
 									var series = response.ResultSet.Result;
 									for (k = 0; k < series.length; k++)
 									{
-										listdata =  listdata + "<tr><td>Series(<a href=createDSO.jsp?projectID=<%=projectID%>&subjectID=" + subjects[i].subjectID + "&studyUID=" + studies[j].studyUID + "&seriesUID=" + series[k].seriesUID + ">Create DSO</a>)</td><td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href=series.jsp?projectID=<%=projectID%>&subjectID=" + subjects[i].subjectID + "&studyUID=" + studies[j].studyUID + "&seriesUID=" + series[k].seriesUID + ">" + series[k].seriesDescription + "</a></td><td>" + series[k].seriesUID + "</td><td>" + series[k].numberOfImages + " / "  +  series[k].numberOfAnnotations + "</td></tr>\n";
+										listdata =  listdata + "<tr><td nowrap>Series(<a href=createDSO.jsp?projectID=<%=projectID%>&subjectID=" + subjects[i].subjectID + "&studyUID=" + studies[j].studyUID + "&seriesUID=" + series[k].seriesUID + ">Create DSO</a>)</td><td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href=series.jsp?projectID=<%=projectID%>&subjectID=" + subjects[i].subjectID + "&studyUID=" + studies[j].studyUID + "&seriesUID=" + series[k].seriesUID + ">" + series[k].seriesDescription + "</a></td><td>" + series[k].seriesUID + "</td><td>" + series[k].numberOfImages + " / "  +  series[k].numberOfAnnotations + "</td></tr>\n";
 										var url4 = url3 + series[k].seriesUID + "/aims/?format=summary";
 										$.ajax({         
 											url: url4 + "&username=<%=username%>",         
