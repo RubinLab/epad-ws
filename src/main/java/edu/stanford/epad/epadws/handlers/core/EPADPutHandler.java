@@ -588,9 +588,17 @@ public class EPADPutHandler
 					efile = projectOperations.getEpadFile(EPADConfig.xnatUploadProjectID, null, null, null, templatename);
 					if (efile != null && "true".equalsIgnoreCase(enable))
 					{
-						projectOperations.enableTemplate(username, reference.projectID, null, null, null, templatename);
+						projectOperations.enableFile(username, EPADConfig.xnatUploadProjectID, null, null, null, templatename);
 					}
 					else if (efile != null && "false".equalsIgnoreCase(enable))
+					{	
+						projectOperations.disableFile(username, EPADConfig.xnatUploadProjectID, null, null, null, templatename);
+					}
+					if (efile == null && "true".equalsIgnoreCase(enable))
+					{
+						projectOperations.enableTemplate(username, reference.projectID, null, null, null, templatename);
+					}
+					else if (efile == null && "false".equalsIgnoreCase(enable))
 					{	
 						projectOperations.disableTemplate(username, reference.projectID, null, null, null, templatename);
 					}

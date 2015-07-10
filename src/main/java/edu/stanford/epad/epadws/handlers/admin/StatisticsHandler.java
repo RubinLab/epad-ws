@@ -25,10 +25,7 @@ package edu.stanford.epad.epadws.handlers.admin;
 
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.net.InetAddress;
 import java.sql.SQLException;
-import java.util.HashSet;
-import java.util.Set;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -36,26 +33,9 @@ import javax.servlet.http.HttpServletResponse;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 
-import edu.stanford.epad.common.dicom.DICOMFileDescription;
-import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADLogger;
-import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeDatabase;
-import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeDatabaseOperations;
-import edu.stanford.epad.epadws.epaddb.EpadDatabase;
-import edu.stanford.epad.epadws.epaddb.EpadDatabaseOperations;
 import edu.stanford.epad.epadws.handlers.HandlerUtil;
 import edu.stanford.epad.epadws.models.EpadStatistics;
-import edu.stanford.epad.epadws.models.Project;
-import edu.stanford.epad.epadws.models.Study;
-import edu.stanford.epad.epadws.models.Subject;
-import edu.stanford.epad.epadws.models.User;
-import edu.stanford.epad.epadws.models.WorkList;
-import edu.stanford.epad.epadws.processing.pipeline.task.DSOMaskPNGGeneratorTask;
-import edu.stanford.epad.epadws.processing.pipeline.task.SingleFrameDICOMPngGeneratorTask;
-import edu.stanford.epad.epadws.processing.pipeline.watcher.QueueAndWatcherManager;
-import edu.stanford.epad.epadws.queries.DefaultEpadOperations;
-import edu.stanford.epad.epadws.queries.EpadOperations;
-import edu.stanford.epad.epadws.service.SessionService;
 
 /**
  * @author dev
@@ -97,7 +77,8 @@ public class StatisticsHandler extends AbstractHandler
 						int dsos = getInt(httpRequest.getParameter("numOfDSOs"));
 						int wls = getInt(httpRequest.getParameter("numOfWorkLists"));
 						String remoteIP = request.getRemoteAddr();
-						es.setHost(host + " : " + remoteIP);
+						if (!remoteIP.startsWith("127.") && !remoteIP.startsWith("0:"))
+							es.setHost(host + " : " + remoteIP);
 						es.setNumOfUsers(users);
 						es.setNumOfProjects(projects);
 						es.setNumOfPatients(patients);

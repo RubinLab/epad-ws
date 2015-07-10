@@ -550,7 +550,7 @@ public class DefaultEpadOperations implements EpadOperations
 				seriesReference.studyUID, seriesReference.seriesUID);
 		int numImages = imageDescriptions.size();
 		if (numImages == 0)
-			throw new RuntimeException("This series has no images");
+			throw new RuntimeException("This series " + seriesReference.seriesUID + " has no images");
 		DICOMElementList suppliedDICOMElementsFirst = getDICOMElements(imageDescriptions.get(0).studyUID,
 				imageDescriptions.get(0).seriesUID, imageDescriptions.get(0).imageUID);
 		String pixelSpacing1 = getDICOMElement(suppliedDICOMElementsFirst, PixelMedUtils.PixelSpacingCode);

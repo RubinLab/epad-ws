@@ -25,7 +25,10 @@ package edu.stanford.epad.epadws.processing.pipeline.task;
 
 import java.io.IOException;
 import java.net.InetAddress;
+import java.net.NetworkInterface;
+import java.net.SocketException;
 import java.util.Calendar;
+import java.util.Enumeration;
 import java.util.Random;
 
 import org.apache.commons.httpclient.HttpClient;
@@ -79,6 +82,8 @@ public class EpadStatisticsTask implements Runnable
 			String host = EPADConfig.xnatServer;
 			if (host.equalsIgnoreCase("localhost") || host.equalsIgnoreCase("127.0.0.1") || host.equalsIgnoreCase("epad-vm"))
 				host = InetAddress.getLocalHost().getHostName();
+			if (host.equalsIgnoreCase("localhost") || host.equalsIgnoreCase("127.0.0.1") || host.equalsIgnoreCase("epad-vm"))
+				host = getIPAddress();
 			es.setHost(host);
 			es.setNumOfUsers(users);
 			es.setNumOfProjects(projects);
@@ -130,5 +135,34 @@ public class EpadStatisticsTask implements Runnable
 		} catch (Exception e) {
 			log.warning("Error is saving/sending statistics", e);
 		}
+	}
+	
+	public static String getIPAddress()
+	{
+		String ip = "";
+		String ipi = "";
+		Enumeration e;
+		try {
+			e = NetworkInterface.getNetworkInterfaces();
+			while(e.hasMoreElements())
+			{
+			    NetworkInterface n = (NetworkInterface) e.nextElement();
+			    Enumeration ee = n.getInetAddresses();
+			    while (ee.hasMoreElements())
+			    {
+			        InetAddress i = (InetAddress) ee.nextElement();
+			        ipi = i.getHostAddress();
+			        if (!ipi.startsWith("127") && !ipi.startsWith("192") && !ipi.startsWith("172") 
+			        		&& !ipi.startsWith("10.") && !ipi.startsWith("0:"))
+			        	ip = ipi;
+			    }
+			}
+		} catch (SocketException e1) {
+			e1.printStackTrace();
+		}
+		if (ip.length() == 0)
+			return ipi;
+		else
+			return ip;
 	}
 }

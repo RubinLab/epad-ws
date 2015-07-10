@@ -166,6 +166,10 @@ public class EPADSessionHandler extends AbstractHandler
 		            sessionCookie.setMaxAge(0);
 		            sessionCookie.setPath(httpRequest.getContextPath() + "/");
 		            httpResponse.addCookie(sessionCookie);
+		            sessionCookie = new Cookie(JSESSIONID_COOKIE, "");
+		            sessionCookie.setMaxAge(0);
+		            sessionCookie.setPath(httpRequest.getContextPath());
+		            httpResponse.addCookie(sessionCookie);
 				}
 				log.info("Delete session returns status code " + statusCode);
 				statusCode = HttpServletResponse.SC_OK;

@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.epad.dtos.EPADAIM;
 import edu.stanford.epad.dtos.EPADAIMList;
@@ -54,11 +55,15 @@ import edu.stanford.epad.epadws.handlers.core.StudyReference;
 import edu.stanford.epad.epadws.handlers.core.SubjectReference;
 import edu.stanford.epad.epadws.handlers.dicom.DSOUtil;
 import edu.stanford.epad.epadws.handlers.dicom.DownloadUtil;
+import edu.stanford.epad.epadws.models.EpadFile;
 import edu.stanford.epad.epadws.models.FileType;
+import edu.stanford.epad.epadws.models.Project;
 import edu.stanford.epad.epadws.models.WorkList;
 import edu.stanford.epad.epadws.queries.DefaultEpadOperations;
 import edu.stanford.epad.epadws.queries.EpadOperations;
+import edu.stanford.epad.epadws.service.DefaultEpadProjectOperations;
 import edu.stanford.epad.epadws.service.DefaultWorkListOperations;
+import edu.stanford.epad.epadws.service.EpadProjectOperations;
 import edu.stanford.epad.epadws.service.EpadWorkListOperations;
 import edu.stanford.epad.epadws.service.SessionService;
 import edu.stanford.epad.epadws.service.UserProjectService;
@@ -883,6 +888,73 @@ public class ProjectController {
 			}
 		}
 		return templates;
+	}
+	 
+	@RequestMapping(value = "/{projectID}/templates/{templatename:.+}", method = {RequestMethod.PUT,RequestMethod.POST})
+	public void updateProjectTemplate( 
+			@PathVariable String projectID,
+			@PathVariable String templatename,
+			@RequestParam(value="enable", required = false) String enable, 
+			@RequestParam(value="addToProject", required = false) String addToProject, 
+			@RequestParam(value="removeFromProject", required = false) String removeFromProject, 
+			HttpServletRequest request, 
+	        HttpServletResponse response) throws Exception {
+		String sessionID = SessionService.getJSessionIDFromRequest(request);
+		String username = SessionService.getUsernameForSession(sessionID);
+		ProjectReference projectReference = new ProjectReference(projectID);
+		EpadProjectOperations projectOperations = DefaultEpadProjectOperations.getInstance();
+		if (enable != null)
+		{
+			EpadFile efile = projectOperations.getEpadFile(projectReference.projectID, null, null, null, templatename);
+			if (efile != null && "true".equalsIgnoreCase(enable))
+			{
+				projectOperations.enableFile(username, projectReference.projectID, null, null, null, templatename);
+			}
+			else if (efile != null && "false".equalsIgnoreCase(enable))
+			{	
+				projectOperations.disableFile(username, projectReference.projectID, null, null, null, templatename);
+			}
+			efile = projectOperations.getEpadFile(EPADConfig.xnatUploadProjectID, null, null, null, templatename);
+			if (efile != null && "true".equalsIgnoreCase(enable))
+			{
+				projectOperations.enableTemplate(username, projectReference.projectID, null, null, null, templatename);
+			}
+			else if (efile != null && "false".equalsIgnoreCase(enable))
+			{	
+				projectOperations.disableTemplate(username, projectReference.projectID, null, null, null, templatename);
+			}
+		}
+		else if (addToProject != null)
+		{
+			Project project = projectOperations.getProject(addToProject);
+			if (project == null)
+				throw new Exception("Project " + addToProject + " not found");
+			EpadFile efile = projectOperations.getEpadFile(projectReference.projectID, null, null, null, templatename);
+			if (efile != null)
+			{
+				projectOperations.linkFileToProject(username, project, efile);
+			}
+		}
+		else if (removeFromProject != null)
+		{
+			Project project = projectOperations.getProject(removeFromProject);
+			if (project == null)
+				throw new Exception("Project " + removeFromProject + " not found");
+			EpadFile efile = projectOperations.getEpadFile(projectReference.projectID, null, null, null, templatename);
+			if (efile != null)
+			{
+				projectOperations.unlinkFileFromProject(username, project, efile);
+			}
+		}
+		else
+		{
+			File uploadedFile = HandlerUtil.getUploadedFile(request);
+			if (uploadedFile != null)
+			{
+				EpadOperations epadOperations = DefaultEpadOperations.getInstance();
+				epadOperations.createFile(username, projectReference, uploadedFile, "", FileType.TEMPLATE.getName(), sessionID);
+			}
+		}
 	}
 	 
 	@RequestMapping(value = "/{projectID}/files/", method = RequestMethod.GET)

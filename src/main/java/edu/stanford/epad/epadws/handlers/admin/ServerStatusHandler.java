@@ -24,6 +24,7 @@
 package edu.stanford.epad.epadws.handlers.admin;
 
 import java.io.PrintWriter;
+import java.net.InetAddress;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -33,12 +34,14 @@ import org.eclipse.jetty.server.handler.AbstractHandler;
 
 import edu.stanford.epad.common.plugins.EPadPlugin;
 import edu.stanford.epad.common.plugins.impl.EPadPluginImpl;
+import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.epad.epadws.EPadWebServerVersion;
 import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeDatabase;
 import edu.stanford.epad.epadws.epaddb.EpadDatabase;
 import edu.stanford.epad.epadws.handlers.HandlerUtil;
 import edu.stanford.epad.epadws.processing.pipeline.PipelineFactory;
+import edu.stanford.epad.epadws.processing.pipeline.task.EpadStatisticsTask;
 import edu.stanford.epad.epadws.service.SessionService;
 
 /**
@@ -98,6 +101,13 @@ public class ServerStatusHandler extends AbstractHandler
 				responseStream.println("DCM4CHEE database startup time: " + dcm4CheeDatabase.getStartupTime() + " ms");
 				responseStream.println();
 				responseStream.println("Pipeline activity level: " + getPipelineActivityLevel());
+				responseStream.println();
+				responseStream.println("Config Server: " + EPADConfig.xnatServer);
+				responseStream.println("Config serverProxy: " + EPADConfig.getParamValue("serverProxy"));
+				responseStream.println("Config webserviceBase: " + EPADConfig.getParamValue("webserviceBase"));
+				responseStream.println("Hostname: " + InetAddress.getLocalHost().getHostName());
+				responseStream.println("IP Address: " + EpadStatisticsTask.getIPAddress());
+				responseStream.println();
 
 				statusCode = HttpServletResponse.SC_OK;
 			} else {
