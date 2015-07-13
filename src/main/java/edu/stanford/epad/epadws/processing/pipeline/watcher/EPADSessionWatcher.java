@@ -98,5 +98,6 @@ public class EPADSessionWatcher implements Runnable
 				log.severe("Exception in EPAD Session Timer thread", e);
 			}
 		}
+		log.info("Warning: EPADSessionWatcher shutting down.");
 	}
 }

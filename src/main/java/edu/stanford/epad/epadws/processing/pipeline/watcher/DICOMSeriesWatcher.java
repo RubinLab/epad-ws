@@ -214,6 +214,7 @@ public class DICOMSeriesWatcher implements Runnable
 				log.severe("Exception in DICOM series watcher thread", e);
 			}
 		}
+		log.info("Warning: DICOMSeriesWatcher shutting down.");
 	}
 
 	@SuppressWarnings("unused")

@@ -58,10 +58,12 @@ public class PipelineStatusWatcher implements Runnable
 			ShutdownSignal shutdownSignal = ShutdownSignal.getInstance();
 			while (true) {
 				if (shutdownSignal.hasShutdown()) {
+					log.info("Warning: PipelineStatusWatcher shutdown signal received.");
 					return;
 				}
 				countDicomFileInUploadDir();
 				if (shutdownSignal.hasShutdown()) {
+					log.info("Warning: PipelineStatusWatcher shutdown signal received.");
 					return;
 				}
 				long checkInterval = getCheckInterval();
@@ -72,6 +74,7 @@ public class PipelineStatusWatcher implements Runnable
 		} finally {
 			log.info("Done PipelineStatusWatcher runnable.");
 		}
+		log.info("Warning: PipelineStatusWatcher shutting down.");
 	}
 
 	/**

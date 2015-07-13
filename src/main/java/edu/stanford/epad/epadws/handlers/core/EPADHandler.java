@@ -83,7 +83,7 @@ public class EPADHandler extends AbstractHandler
 			String username = httpRequest.getParameter("username");
 			if (username == null && sessionID != null)
 				username = EPADSessionOperations.getSessionUser(sessionID);
-			log.info("User:" + username  + " host:" + EPADSessionOperations.getSessionHost(sessionID) + " method:" + httpRequest.getMethod() 
+			log.info("ID:" + Thread.currentThread().getId() + " User:" + username  + " host:" + EPADSessionOperations.getSessionHost(sessionID) + " method:" + httpRequest.getMethod() 
 					+ ", url: " + httpRequest.getPathInfo() + ", parameters: "
 					+ httpRequest.getQueryString() + " sessionId:" + sessionID);
 			if (SessionService.hasValidSessionID(sessionID)) {
@@ -124,7 +124,7 @@ public class EPADHandler extends AbstractHandler
 			log.warning("Error in handle request:", e);
 			statusCode = HandlerUtil.internalErrorJSONResponse(INTERNAL_ERROR_MESSAGE, e, responseStream, log);
 		}
-		log.info("Status returned to client:" + statusCode);
+		log.info("ID:" + Thread.currentThread().getId() + " Status returned to client:" + statusCode);
 		httpResponse.setStatus(statusCode);
 	}
 }

@@ -108,6 +108,7 @@ public class XNATSeriesWatcher implements Runnable
 				log.severe("Exception in XNAT/EPAD series watcher thread", e);
 			}
 		}
+		log.info("Warning: XNAT(EPAD)SeriesWatcher shutting down.");
 	}
 
 	/**

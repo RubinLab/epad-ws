@@ -79,6 +79,11 @@ public class EPADSearchFilter
 		return this.annotationMatch != null && this.annotationMatch != AnnotationMatch.NONE;
 	}
 
+	public boolean hasSomeMatchCriteria()
+	{
+		return hasProjectNameMatch() | hasPatientNameMatch() | hasPatientIDMatch() | hasAccessionNumberMatch() | hasModalityMatch() | hasAnnotationMatch();
+	}
+	
 	public String getProjectNameMatch()
 	{
 		return this.projectNameMatch;

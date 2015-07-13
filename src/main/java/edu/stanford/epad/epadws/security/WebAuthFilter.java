@@ -63,6 +63,7 @@ public class WebAuthFilter implements Filter {
 		HttpServletRequest httpRequest = (HttpServletRequest) request;
 		HttpServletResponse httpResponse = (HttpServletResponse) response;
 		String webAuthUser = httpRequest.getHeader(WEBAUTH_HEADER);
+		boolean logstatus = false;
 	    if (webAuthUser != null && webAuthUser.length() > 0 && EPADConfig.webAuthPassword != null)
 		{
 			String sessionID = SessionService.getJSessionIDFromRequest(httpRequest);
@@ -109,7 +110,12 @@ public class WebAuthFilter implements Filter {
             	return;
 			}
 			if (httpRequest.getRequestURL().indexOf("/v2/") != -1 || httpRequest.getRequestURL().indexOf("/plugin/") != -1)				
-				log.info(httpRequest.getMethod() + " Request from client:" + httpRequest.getRequestURL());
+			{
+				log.info("ID:" + Thread.currentThread().getId() + " host:" + EPADSessionOperations.getSessionHost(sessionID) + " method:" + httpRequest.getMethod() 
+						+ ", url: " + httpRequest.getPathInfo() + ", parameters: "
+						+ httpRequest.getQueryString() + " sessionId:" + sessionID);
+				logstatus = true;
+			}
 			if (!isValid && !httpRequest.getRequestURL().toString().contains("WADO") 
 					&& !httpRequest.getRequestURL().toString().contains("/session") 
 					&& !httpRequest.getRequestURL().toString().contains("login.jsp"))
@@ -126,6 +132,7 @@ public class WebAuthFilter implements Filter {
 					PrintWriter responseStream = httpResponse.getWriter();
 					responseStream.append(new EPADMessage(EPADHandler.INVALID_SESSION_TOKEN_MESSAGE).toJSON());
 					httpResponse.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+		    		log.info("ID:" + Thread.currentThread().getId() + " Status returned to client:" + HttpServletResponse.SC_UNAUTHORIZED);
 					return;
 				}
 			}
@@ -142,6 +149,9 @@ public class WebAuthFilter implements Filter {
 			return;
 	    }
         filterChain.doFilter(request, response);
+        if (logstatus) {
+    		log.info("ID:" + Thread.currentThread().getId() + " Status returned to client");
+        }
 		return;
 	}
 

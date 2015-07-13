@@ -31,11 +31,15 @@ import java.util.Calendar;
 import java.util.Enumeration;
 import java.util.Random;
 
+import javax.servlet.http.HttpServletResponse;
+
 import org.apache.commons.httpclient.HttpClient;
+import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.httpclient.methods.PutMethod;
 
 import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADLogger;
+import edu.stanford.epad.epadws.EPadWebServerVersion;
 import edu.stanford.epad.epadws.epaddb.EpadDatabase;
 import edu.stanford.epad.epadws.epaddb.EpadDatabaseOperations;
 import edu.stanford.epad.epadws.models.EpadStatistics;
@@ -58,7 +62,6 @@ public class EpadStatisticsTask implements Runnable
 {
 	private static EPADLogger log = EPADLogger.getInstance();
 	private final EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
-	private static Calendar prevTime = null;
 
 	@Override
 	public void run()
@@ -131,9 +134,31 @@ public class EpadStatisticsTask implements Runnable
 					}
 				}
 			}
-			prevTime = now;
+			
 		} catch (Exception e) {
 			log.warning("Error is saving/sending statistics", e);
+		}
+		String latestversion = "";
+		try {
+			String epadUrl = EPADConfig.getParamValue("EpadStatusURL", "https://epad-public.stanford.edu/epad/status/");
+			HttpClient client = new HttpClient();
+			GetMethod getMethod = new GetMethod(epadUrl);
+			int status = client.executeMethod(getMethod);
+			if (status == HttpServletResponse.SC_OK) {
+				String response = getMethod.getResponseBodyAsString();
+				int versInd = response.indexOf("Version:");
+				if (versInd != -1) {
+					String version = response.substring(versInd + "Version:".length());
+					if (version.indexOf("\n") != -1)
+						version  = version.substring(0, version.indexOf("\n"));
+					if (version.indexOf(" ") != -1)
+						version  = version.substring(0, version.indexOf(" "));
+					log.info("Current ePAD version:" + version + " Our Version:" + new EPadWebServerVersion().getVersion());
+				}
+			}
+			
+		} catch (Exception x) {
+			
 		}
 	}
 	

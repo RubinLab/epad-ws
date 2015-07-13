@@ -277,6 +277,10 @@ public class DefaultEpadOperations implements EpadOperations
 			}
 		} else {
 			List<Subject> subjects = projectOperations.getSubjectsForProject(projectID);
+			if (count > 0 && !searchFilter.hasSomeMatchCriteria() && subjects.size() > (start+count))
+			{
+				subjects = subjects.subList(start, start+count);
+			}
 			boolean annotationCount = true;
 			if (EPADConfig.xnatUploadProjectID.equals(projectID))
 				annotationCount = false;
@@ -312,6 +316,10 @@ public class DefaultEpadOperations implements EpadOperations
 				}
 			}
 		}
+//		if (count > 0 && searchFilter.hasSomeMatchCriteria() && epadSubjectList.ResultSet.Result.size() > (start+count))
+//		{
+//			epadSubjectList.ResultSet.Result = epadSubjectList.ResultSet.Result.subList(start, start+count);
+//		}
 		return epadSubjectList;
 	}
 

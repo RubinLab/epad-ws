@@ -136,7 +136,6 @@ public class PipelineFactory
 	{
 		pipelineStatusWatchExec.shutdown();
 		statusCheckService.shutdown();
-		uploadDirWatchExec.shutdown();
 	}
 
 	public void printPipelineStats()
