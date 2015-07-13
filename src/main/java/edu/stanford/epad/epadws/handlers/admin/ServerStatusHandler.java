@@ -96,7 +96,6 @@ public class ServerStatusHandler extends AbstractHandler
 				responseStream.println("DCM4CHEE database startup time: " + dcm4CheeDatabase.getStartupTime() + " ms");
 				responseStream.println();
 				responseStream.println();
-				responseStream.println("Pipeline activity level: " + getPipelineActivityLevel());
 
 				statusCode = HttpServletResponse.SC_OK;
 			} else {

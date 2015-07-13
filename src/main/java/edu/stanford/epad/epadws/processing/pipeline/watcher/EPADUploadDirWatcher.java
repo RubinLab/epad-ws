@@ -72,7 +72,10 @@ public class EPADUploadDirWatcher implements Runnable
 			log.info("Starting the ePAD upload directory watcher; directory =" + EPADConfig.getEPADWebServerUploadDir());
 			while (true) {
 				if (shutdownSignal.hasShutdown())
+				{
+					log.info("Warning: EPADUploadDirWatcher shutdown signal received.");
 					return;
+				}
 
 				try {
 					List<File> newUploadDirectories = findNewUploadDirectory(rootUploadDirectory);
@@ -85,7 +88,10 @@ public class EPADUploadDirWatcher implements Runnable
 					log.warning("EPADUploadDirWatcher thread error ", e);
 				}
 				if (shutdownSignal.hasShutdown())
+				{
+					log.info("Warning: EPADUploadDirWatcher shutdown signal received.");
 					return;
+				}
 				TimeUnit.MILLISECONDS.sleep(CHECK_INTERVAL);
 			}
 		} catch (Exception e) {
@@ -93,6 +99,7 @@ public class EPADUploadDirWatcher implements Runnable
 		} finally {
 			log.info("Warning: EPADUploadDirWatcher thread done.");
 		}
+		log.info("Warning: EPADUploadDirWatcher shutting down.");
 	}
 
 	private List<File> findNewUploadDirectory(File dir)
