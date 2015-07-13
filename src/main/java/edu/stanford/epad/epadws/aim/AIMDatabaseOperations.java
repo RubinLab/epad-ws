@@ -590,7 +590,7 @@ public class AIMDatabaseOperations {
 				aims.add(aim);
 				if (row > start+count) break;
 			}
-    	    log.info("AIM Records " + aims.size());
+    	    log.debug("AIM Records " + aims.size());
         }
         finally
         {

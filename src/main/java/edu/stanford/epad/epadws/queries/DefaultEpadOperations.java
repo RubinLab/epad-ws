@@ -277,8 +277,13 @@ public class DefaultEpadOperations implements EpadOperations
 			}
 		} else {
 			List<Subject> subjects = projectOperations.getSubjectsForProject(projectID);
+			boolean annotationCount = true;
+			if (EPADConfig.xnatUploadProjectID.equals(projectID))
+				annotationCount = false;
+			if (subjects.size() > 300 && !searchFilter.hasAnnotationMatch())
+				annotationCount = false;
 			for (Subject subject : subjects) {
-				EPADSubject epadSubject = subject2EPADSubject(sessionID, username, subject, projectID, searchFilter);
+				EPADSubject epadSubject = subject2EPADSubject(sessionID, username, subject, projectID, searchFilter, annotationCount);
 				if (epadSubject != null)
 				{
 					//String status = XNATQueries.getXNATSubjectFieldValue(sessionID, xnatSubject.ID, "status_" + username);
@@ -330,7 +335,7 @@ public class DefaultEpadOperations implements EpadOperations
 		} else {
 			Subject subject = projectOperations.getSubjectForProject(subjectReference.projectID, subjectReference.subjectID);
 			if (subject != null) {
-				EPADSubject esubject = subject2EPADSubject(sessionID, username, subject, subjectReference.projectID, new EPADSearchFilter());
+				EPADSubject esubject = subject2EPADSubject(sessionID, username, subject, subjectReference.projectID, new EPADSearchFilter(), true);
 				String status = projectOperations.getUserStatusForProjectAndSubject(username, subjectReference.projectID, subjectReference.subjectID);
 				esubject.setUserProjectStatus(status);
 				return esubject;
@@ -610,8 +615,10 @@ public class DefaultEpadOperations implements EpadOperations
 					defaultDICOMElements = getDefaultDICOMElements(dcm4cheeImageDescription.studyUID,
 							dcm4cheeImageDescription.seriesUID, dcm4cheeImageDescription.imageUID, suppliedDICOMElements);
 					log.info("Getting metadata for image " + i);
+					epadImage = createEPADImage(seriesReference, dcm4cheeImageDescription, suppliedDICOMElements, defaultDICOMElements);
 				}
-				epadImage = createEPADImage(seriesReference, dcm4cheeImageDescription, suppliedDICOMElements, defaultDICOMElements);
+				else
+					epadImage = createEPADImage(seriesReference, dcm4cheeImageDescription, new DICOMElementList(), new DICOMElementList());
 				epadImageList.addImage(epadImage);
 			}
 			//log.info("Image UID:" + epadImage.imageUID + " LossLess:" + epadImage.losslessImage);
@@ -3000,7 +3007,7 @@ public class DefaultEpadOperations implements EpadOperations
 	}
 	
 	private EPADSubject subject2EPADSubject(String sessionID, String username, Subject subject, String projectID,
-			EPADSearchFilter searchFilter) throws Exception
+			EPADSearchFilter searchFilter, boolean annotationCount) throws Exception
 	{
 		EpadOperations epadQueries = DefaultEpadOperations.getInstance();
 
@@ -3013,7 +3020,7 @@ public class DefaultEpadOperations implements EpadOperations
 			String insertDate = dateFormat.format(subject.getCreatedTime());
 
 			int numberOfAnnotations = 0;
-			if (!EPADConfig.xnatUploadProjectID.equals(projectID) && !"true".equalsIgnoreCase(EPADConfig.getParamValue("SkipPatientAnnotationCount", "false"))) {
+			if (annotationCount && !"true".equalsIgnoreCase(EPADConfig.getParamValue("SkipPatientAnnotationCount", "false"))) {
 				List<Study> studies = projectOperations.getStudiesForProjectAndSubject(projectID, patientID);
 				for  (Study study: studies)
 				{

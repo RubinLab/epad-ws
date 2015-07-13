@@ -39,7 +39,7 @@ public abstract class AbstractDAO implements Serializable, Cloneable {
 	abstract public void setCreatedTime(Date time);
 	abstract public void setUpdateTime(Date time);
 	
-	public final int MAX_RECORDS = 1000;
+	public final int MAX_RECORDS = 5000;
 	protected final EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
 	
 	public void insert() throws Exception
