@@ -570,6 +570,7 @@ public class DSOUtil
 							+ imageUID + " in series " + seriesUID, e);
 				}
 				
+				// Contours are currently never set to true, so never used
 				if ("true".equalsIgnoreCase(EPADConfig.getParamValue("GenerateDSOContours")))
 				{
 					String pngContourFilePath = pngContourDirectoryPath + refFrameNumber + ".png";
@@ -587,7 +588,7 @@ public class DSOUtil
 			List<EPADAIM> aims = epadDatabaseOperations.getAIMsByDSOSeries(seriesUID);
 			for (EPADAIM aim: aims)
 			{
-				epadDatabaseOperations.updateAIMDSOFrameNo(aim.aimID, nonblankFrame+1);
+				epadDatabaseOperations.updateAIMDSOFrameNo(aim.aimID, nonblankFrame);
 			}
 			log.info("... finished writing PNG " + numberOfFrames + " masks for DSO image " + imageUID + " in series " + seriesUID + " nonBlankFrame:" + nonblankFrame);
 		} catch (DicomException e) {
@@ -686,6 +687,10 @@ public class DSOUtil
 							+ " in  series " + seriesUID);
 					if (editedFramesPNGMaskFiles.size() != dsoEditRequest.editedFrameNumbers.size())
 						throw new IOException("Number of files and frames number do not match");
+					if (aim != null && aim.dsoFrameNo == 0) {
+						aim.dsoFrameNo = dsoEditRequest.editedFrameNumbers.get(0);
+						epadDatabaseOperations.updateAIMDSOFrameNo(aim.aimID, aim.dsoFrameNo);
+					}
 					DSOEditResult dsoEditResult = DSOUtil.createEditedDSO(dsoEditRequest, editedFramesPNGMaskFiles);
 					if (dsoEditResult != null)
 					{

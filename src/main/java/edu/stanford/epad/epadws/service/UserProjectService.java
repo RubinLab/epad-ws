@@ -396,7 +396,7 @@ public class UserProjectService {
 					if (generateAim || ias.size() == 0 || aims.size() == 0) 
 						AIMUtil.generateAIMFileForDSO(dicomFile, username, projectID);
 					Set<String> imageUIDs = Dcm4CheeDatabase.getInstance().getDcm4CheeDatabaseOperations().getImageUIDsForSeries(seriesUID);
-					if (!imageUIDs.isEmpty()) {
+					if (false && !imageUIDs.isEmpty()) {
 						String message = "DSO for  patientID:" + dicomPatientID + " Series:" + seriesUID + " file:" + dicomFile.getName() + " already exists. Please delete DSO before reuploading";
 						log.warning(message);
 						databaseOperations.insertEpadEvent(

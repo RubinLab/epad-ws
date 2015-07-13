@@ -42,7 +42,7 @@ public abstract class AbstractDAO implements Serializable, Cloneable {
 	
 	private static final EPADLogger log = EPADLogger.getInstance();
 	
-	public final int MAX_RECORDS = 3000;
+	public final int MAX_RECORDS = 5000;
 	protected final EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
 	
 	public void insert() throws Exception

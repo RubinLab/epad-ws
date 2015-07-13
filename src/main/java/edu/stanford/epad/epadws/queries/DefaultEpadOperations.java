@@ -280,7 +280,7 @@ public class DefaultEpadOperations implements EpadOperations
 			boolean annotationCount = true;
 			if (EPADConfig.xnatUploadProjectID.equals(projectID))
 				annotationCount = false;
-			if (subjects.size() > 100 && !searchFilter.hasAnnotationMatch())
+			if (subjects.size() > 300 && !searchFilter.hasAnnotationMatch())
 				annotationCount = false;
 			for (Subject subject : subjects) {
 				EPADSubject epadSubject = subject2EPADSubject(sessionID, username, subject, projectID, searchFilter, annotationCount);
@@ -612,8 +612,10 @@ public class DefaultEpadOperations implements EpadOperations
 					defaultDICOMElements = getDefaultDICOMElements(dcm4cheeImageDescription.studyUID,
 							dcm4cheeImageDescription.seriesUID, dcm4cheeImageDescription.imageUID, suppliedDICOMElements);
 					log.info("Getting metadata for image " + i);
+					epadImage = createEPADImage(seriesReference, dcm4cheeImageDescription, suppliedDICOMElements, defaultDICOMElements);
 				}
-				epadImage = createEPADImage(seriesReference, dcm4cheeImageDescription, suppliedDICOMElements, defaultDICOMElements);
+				else
+					epadImage = createEPADImage(seriesReference, dcm4cheeImageDescription, new DICOMElementList(), new DICOMElementList());
 				epadImageList.addImage(epadImage);
 			}
 			//log.info("Image UID:" + epadImage.imageUID + " LossLess:" + epadImage.losslessImage);
