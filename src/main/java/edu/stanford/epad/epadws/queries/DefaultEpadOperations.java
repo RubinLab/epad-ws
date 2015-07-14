@@ -2910,7 +2910,7 @@ public class DefaultEpadOperations implements EpadOperations
 			int numberOfStudies = 0;
 			int numberOfAnnotations = 0;
 			long studytime = System.currentTimeMillis();
-			if (annotationCount)
+			if (annotationCount && subjects.size() < 300)
 			{
 				Set<String> studyUIDs = new HashSet<String>();
 				List<Study> studies = projectOperations.getAllStudiesForProject(projectID);
