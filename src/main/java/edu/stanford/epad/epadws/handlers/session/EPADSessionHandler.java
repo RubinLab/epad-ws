@@ -125,11 +125,11 @@ public class EPADSessionHandler extends AbstractHandler
 						responseStream.append(jsessionID);
 						if ("true".equalsIgnoreCase(EPADConfig.getParamValue("SeparateWebServicesApp")))
 						{
-//							log.info("Setting JSESSIONID Cookie");
-//				            Cookie sessionCookie = new Cookie(JSESSIONID_COOKIE, jsessionID);
-//				            sessionCookie.setMaxAge(8*3600);
-//				            sessionCookie.setPath(httpRequest.getContextPath());
-//				            httpResponse.addCookie(sessionCookie);
+							log.info("Setting JSESSIONID Cookie");
+				            Cookie sessionCookie = new Cookie(JSESSIONID_COOKIE, jsessionID);
+				            sessionCookie.setMaxAge(8*3600);
+				            sessionCookie.setPath(httpRequest.getContextPath());
+				            httpResponse.addCookie(sessionCookie);
 //							httpResponse.addHeader("Set-Cookie", "JSESSIONID=" + jsessionID);
 						}
 						httpResponse.setHeader("Access-Control-Allow-Origin", "*");

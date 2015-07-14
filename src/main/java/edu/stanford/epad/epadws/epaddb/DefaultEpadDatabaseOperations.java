@@ -582,6 +582,22 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 	}
 
 	@Override
+	public List<EPADAIM> getAIMsByQuery(String sqlQuery) {
+		Connection c = null;
+		try {
+			c = getConnection();
+			AIMDatabaseOperations adb = new AIMDatabaseOperations(c, EPADConfig.eXistServerUrl,
+					EPADConfig.aim4Namespace, EPADConfig.eXistCollection, EPADConfig.eXistUsername, EPADConfig.eXistPassword);
+			return adb.getAIMs(sqlQuery, 0, 0);
+		} catch (SQLException sqle) {
+			log.warning("AIM Database operation failed:", sqle);
+		} finally {
+			close(c);
+		}
+		return new ArrayList<EPADAIM>();
+	}
+
+	@Override
 	public int getNumberOfAIMs(String userName, ProjectReference reference)
 	{
 		Connection c = null;

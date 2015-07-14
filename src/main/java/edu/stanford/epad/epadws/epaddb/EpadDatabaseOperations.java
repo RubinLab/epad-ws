@@ -143,6 +143,8 @@ public interface EpadDatabaseOperations
 
 	List<EPADAIM> getAIMsByDSOSeries(String projectID, String patientID, String dsoSeriesUID);
 
+	List<EPADAIM> getAIMsByQuery(String sqlQuery);
+
 	int getNumberOfAIMs(String userName, ProjectReference reference);
 
 	int getNumberOfAIMs(String userName, SubjectReference reference);
