@@ -429,7 +429,7 @@ public class AIMUtil
 								break;
 							}
 							else
-								log.info("DSO Referenced Image not found:" + referencedImageUID);
+								log.info("DSO Referenced Image not found:" + referencedImageUID[0]);
 			            }
 				    }
  		        }

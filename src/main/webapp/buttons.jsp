@@ -16,6 +16,7 @@
 <br>
 <table align=center border=0 cellpadding=3 cellspacing=0 width=100%>
 <tr><td width=25% align=center><a href='javascript:files()'>Files</a></td><td width=25% align=center><a href='javascript:aims()'>Annotations</a></td><td width=25% align=center><a href='javascript:pacs()' >PACs</a></td><td width=25% align=center><a href='javascript:users()' >Users</a></td></tr>
+<tr><td width=100% align=center colspan=4><a href='javascript:logout()'>Logout</a></td></tr>
 </table>
 <script>
 var projectID;
@@ -99,6 +100,24 @@ function users()
 		currentleft = "users";
 	}
 	window.parent.leftpanel.leftdata = "usersdata";
+}
+function logout()
+{
+	var url = "<%=request.getContextPath()%>/session";
+	$.ajax({         
+		url: url,         
+		type: 'delete',         
+		async: false,         
+		cache: false,         
+		timeout: 30000,         
+		error: function(){
+			alert("Error logging out");
+			window.top.location = "login.jsp";
+			return true;},
+		success: function(response){
+			window.top.location = "login.jsp";
+		}
+	});
 }
 </script>
 </BODY>

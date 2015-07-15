@@ -1152,7 +1152,7 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 	}
 
 	@Override
-	public List<Map<String, String>> getEpadEventsForSessionID(String sessionID)
+	public List<Map<String, String>> getEpadEventsForSessionID(String sessionID, boolean delete)
 	{
 		List<Map<String, String>> rows = new ArrayList<Map<String, String>>();
 
@@ -1177,7 +1177,7 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 				rows.add(rowMap);
 			}
 
-			if (!rows.isEmpty()) { // Delete events up the most recent event for user
+			if (!rows.isEmpty() && delete) { // Delete events up the most recent event for user
 				log.info("Event search found " + rows.size() + " event(s) for session ID " + sessionID);
 				String pk = rows.get(rows.size()-1).get("pk"); // We order by pk, an auto-increment field (which does not wrap)
 				ps.close();

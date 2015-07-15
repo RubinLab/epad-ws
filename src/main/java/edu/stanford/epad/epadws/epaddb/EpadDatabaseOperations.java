@@ -85,7 +85,7 @@ public interface EpadDatabaseOperations
 	
 	boolean hasStudyInDCM4CHE(String studyIUID);
 
-	List<Map<String, String>> getEpadEventsForSessionID(String sessionID);
+	List<Map<String, String>> getEpadEventsForSessionID(String sessionID, boolean delete);
 
 	List<Map<String, String>> getEpadEventsForAimID(String sessionID);
 

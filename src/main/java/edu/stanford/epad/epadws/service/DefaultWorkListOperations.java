@@ -84,7 +84,7 @@ public class DefaultWorkListOperations implements EpadWorkListOperations {
 		Project project = projectOperations.getProject(projectID);
 		if (project == null)
 			throw new Exception("Project not found, ID:" + projectID);
-		if (loggedIn != null && !loggedIn.isAdmin() && !projectOperations.isOwner(loggedInUser, projectID) && !projectID.equals(EPADConfig.xnatUploadProjectID) && !loggedIn.hasPermission(User.CreateWorkListPermission))
+		if (loggedIn != null && !loggedIn.isAdmin() && !loggedInUser.equals(username) && !projectOperations.isOwner(loggedInUser, projectID) && !projectID.equals(EPADConfig.xnatUploadProjectID) && !loggedIn.hasPermission(User.CreateWorkListPermission))
 			throw new Exception("No permission to create worklist");
 		User user = projectOperations.getUser(username);
 		if (user == null)

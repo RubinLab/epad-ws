@@ -29,6 +29,8 @@ import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.util.Calendar;
 import java.util.Enumeration;
+import java.util.List;
+import java.util.Map;
 import java.util.Random;
 
 import javax.servlet.http.HttpServletResponse;
@@ -49,6 +51,7 @@ import edu.stanford.epad.epadws.models.Study;
 import edu.stanford.epad.epadws.models.Subject;
 import edu.stanford.epad.epadws.models.User;
 import edu.stanford.epad.epadws.models.WorkList;
+import edu.stanford.epad.epadws.security.EPADSessionOperations;
 import edu.stanford.epad.epadws.service.RemotePACService;
 
 /**
@@ -62,7 +65,8 @@ public class EpadStatisticsTask implements Runnable
 {
 	private static EPADLogger log = EPADLogger.getInstance();
 	private final EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
-
+	private static String lastVersion = "";
+	
 	@Override
 	public void run()
 	{
@@ -154,11 +158,40 @@ public class EpadStatisticsTask implements Runnable
 					if (version.indexOf(" ") != -1)
 						version  = version.substring(0, version.indexOf(" "));
 					log.info("Current ePAD version:" + version + " Our Version:" + new EPadWebServerVersion().getVersion());
+					if (!version.equals(lastVersion) && version.equals(new EPadWebServerVersion().getVersion()))
+					{
+						String msg = "There is a new version of ePAD available, please go to ftp://epad-distribution.stanford.edu/ to download";
+						log.info(msg);
+						List<User> admins = new User().getObjects("admin = 1 and enabled = 1");
+						for (User admin: admins)
+						{
+							List<Map<String, String>> userEvents = epadDatabaseOperations.getEpadEventsForSessionID(admin.getUsername(), false);
+							boolean skip = false;
+							for (Map<String, String> event: userEvents)
+							{
+								if (event.get("aim_name").equals("Upgrade"))
+								{
+									skip = true;
+									break;
+								}
+							}
+							if (skip) continue;
+							epadDatabaseOperations.insertEpadEvent(
+									admin.getUsername(), 
+									msg, 
+									"System", "Upgrade",
+									"System", 
+									"System", 
+									"System", 
+									"System",
+									"Please update ePAD");												
+						}
+					}
 				}
 			}
 			
 		} catch (Exception x) {
-			
+			log.warning("Error is getting epad version", x);
 		}
 	}
 	

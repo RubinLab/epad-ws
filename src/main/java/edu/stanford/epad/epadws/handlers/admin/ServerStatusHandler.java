@@ -77,10 +77,9 @@ public class ServerStatusHandler extends AbstractHandler
 
 		try {
 			responseStream = httpResponse.getWriter();
-
-			if (SessionService.hasValidSessionID(httpRequest)) {
+			boolean validSession = SessionService.hasValidSessionID(httpRequest);
+			if (validSession) {
 				
-				EPadPlugin ePadPlugin = new EPadPluginImpl();
 				long upTime = System.currentTimeMillis() - startTime;
 				long upTimeSec = upTime / 1000;
 
@@ -89,7 +88,10 @@ public class ServerStatusHandler extends AbstractHandler
 				responseStream.println();
 				responseStream.println("ePAD server uptime: " + upTimeSec + " second(s)");
 				responseStream.println();
-				responseStream.println("Version: " + new EPadWebServerVersion().getVersion() + " Build Date: " + new EPadWebServerVersion().getBuildDate() + " Build Host: " + new EPadWebServerVersion().getBuildHost());
+			}
+			responseStream.println("Version: " + new EPadWebServerVersion().getVersion() + " Build Date: " + new EPadWebServerVersion().getBuildDate() + " Build Host: " + new EPadWebServerVersion().getBuildHost());
+			if (validSession) {
+				EPadPlugin ePadPlugin = new EPadPluginImpl();
 				responseStream.println();
 				responseStream.println("Plugin Version - interface:      " + EPadPlugin.PLUGIN_INTERFACE_VERSION);
 				responseStream.println("Plugin Version - implementation: " + ePadPlugin.getPluginImplVersion());
@@ -107,11 +109,8 @@ public class ServerStatusHandler extends AbstractHandler
 				responseStream.println("IP Address: " + EpadStatisticsTask.getIPAddress());
 				responseStream.println();
 
-				statusCode = HttpServletResponse.SC_OK;
-			} else {
-				log.warning(INVALID_SESSION_TOKEN_MESSAGE);
-				statusCode = HandlerUtil.invalidTokenResponse(INVALID_SESSION_TOKEN_MESSAGE, responseStream, log);
-			}
+			} 
+			statusCode = HttpServletResponse.SC_OK;
 		} catch (Throwable t) {
 			log.warning(INTERNAL_EXCEPTION_MESSAGE, t);
 			statusCode = HandlerUtil.internalErrorResponse(INTERNAL_EXCEPTION_MESSAGE, responseStream, log);
