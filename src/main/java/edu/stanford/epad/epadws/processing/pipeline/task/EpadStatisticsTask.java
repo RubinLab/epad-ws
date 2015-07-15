@@ -25,14 +25,23 @@ package edu.stanford.epad.epadws.processing.pipeline.task;
 
 import java.io.IOException;
 import java.net.InetAddress;
+import java.net.NetworkInterface;
+import java.net.SocketException;
 import java.util.Calendar;
+import java.util.Enumeration;
+import java.util.List;
+import java.util.Map;
 import java.util.Random;
 
+import javax.servlet.http.HttpServletResponse;
+
 import org.apache.commons.httpclient.HttpClient;
+import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.httpclient.methods.PutMethod;
 
 import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADLogger;
+import edu.stanford.epad.epadws.EPadWebServerVersion;
 import edu.stanford.epad.epadws.epaddb.EpadDatabase;
 import edu.stanford.epad.epadws.epaddb.EpadDatabaseOperations;
 import edu.stanford.epad.epadws.models.EpadStatistics;
@@ -42,6 +51,7 @@ import edu.stanford.epad.epadws.models.Study;
 import edu.stanford.epad.epadws.models.Subject;
 import edu.stanford.epad.epadws.models.User;
 import edu.stanford.epad.epadws.models.WorkList;
+import edu.stanford.epad.epadws.security.EPADSessionOperations;
 import edu.stanford.epad.epadws.service.RemotePACService;
 
 /**
@@ -55,8 +65,8 @@ public class EpadStatisticsTask implements Runnable
 {
 	private static EPADLogger log = EPADLogger.getInstance();
 	private final EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
-	private static Calendar prevTime = null;
-
+	private static String lastVersion = "";
+	
 	@Override
 	public void run()
 	{
@@ -79,6 +89,8 @@ public class EpadStatisticsTask implements Runnable
 			String host = EPADConfig.xnatServer;
 			if (host.equalsIgnoreCase("localhost") || host.equalsIgnoreCase("127.0.0.1") || host.equalsIgnoreCase("epad-vm"))
 				host = InetAddress.getLocalHost().getHostName();
+			if (host.equalsIgnoreCase("localhost") || host.equalsIgnoreCase("127.0.0.1") || host.equalsIgnoreCase("epad-vm"))
+				host = getIPAddress();
 			es.setHost(host);
 			es.setNumOfUsers(users);
 			es.setNumOfProjects(projects);
@@ -126,9 +138,89 @@ public class EpadStatisticsTask implements Runnable
 					}
 				}
 			}
-			prevTime = now;
+			
 		} catch (Exception e) {
 			log.warning("Error is saving/sending statistics", e);
 		}
+		String latestversion = "";
+		try {
+			String epadUrl = EPADConfig.getParamValue("EpadStatusURL", "https://epad-public.stanford.edu/epad/status/");
+			HttpClient client = new HttpClient();
+			GetMethod getMethod = new GetMethod(epadUrl);
+			int status = client.executeMethod(getMethod);
+			if (status == HttpServletResponse.SC_OK) {
+				String response = getMethod.getResponseBodyAsString();
+				int versInd = response.indexOf("Version:");
+				if (versInd != -1) {
+					String version = response.substring(versInd + "Version:".length());
+					if (version.indexOf("\n") != -1)
+						version  = version.substring(0, version.indexOf("\n"));
+					if (version.indexOf(" ") != -1)
+						version  = version.substring(0, version.indexOf(" "));
+					log.info("Current ePAD version:" + version + " Our Version:" + new EPadWebServerVersion().getVersion());
+					if (!version.equals(lastVersion) && version.equals(new EPadWebServerVersion().getVersion()))
+					{
+						String msg = "There is a new version of ePAD available, please go to ftp://epad-distribution.stanford.edu/ to download";
+						log.info(msg);
+						List<User> admins = new User().getObjects("admin = 1 and enabled = 1");
+						for (User admin: admins)
+						{
+							List<Map<String, String>> userEvents = epadDatabaseOperations.getEpadEventsForSessionID(admin.getUsername(), false);
+							boolean skip = false;
+							for (Map<String, String> event: userEvents)
+							{
+								if (event.get("aim_name").equals("Upgrade"))
+								{
+									skip = true;
+									break;
+								}
+							}
+							if (skip) continue;
+							epadDatabaseOperations.insertEpadEvent(
+									admin.getUsername(), 
+									msg, 
+									"System", "Upgrade",
+									"System", 
+									"System", 
+									"System", 
+									"System",
+									"Please update ePAD");												
+						}
+					}
+				}
+			}
+			
+		} catch (Exception x) {
+			log.warning("Error is getting epad version", x);
+		}
+	}
+	
+	public static String getIPAddress()
+	{
+		String ip = "";
+		String ipi = "";
+		Enumeration e;
+		try {
+			e = NetworkInterface.getNetworkInterfaces();
+			while(e.hasMoreElements())
+			{
+			    NetworkInterface n = (NetworkInterface) e.nextElement();
+			    Enumeration ee = n.getInetAddresses();
+			    while (ee.hasMoreElements())
+			    {
+			        InetAddress i = (InetAddress) ee.nextElement();
+			        ipi = i.getHostAddress();
+			        if (!ipi.startsWith("127") && !ipi.startsWith("192") && !ipi.startsWith("172") 
+			        		&& !ipi.startsWith("10.") && !ipi.startsWith("0:"))
+			        	ip = ipi;
+			    }
+			}
+		} catch (SocketException e1) {
+			e1.printStackTrace();
+		}
+		if (ip.length() == 0)
+			return ipi;
+		else
+			return ip;
 	}
 }

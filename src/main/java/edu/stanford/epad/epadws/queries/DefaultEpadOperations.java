@@ -216,7 +216,7 @@ public class DefaultEpadOperations implements EpadOperations
 	}
 
 	@Override
-	public EPADProject getProjectDescription(ProjectReference projectReference, String username, String sessionID) throws Exception
+	public EPADProject getProjectDescription(ProjectReference projectReference, String username, String sessionID, boolean annotationCount) throws Exception
 	{
 		if (!EPADConfig.UseEPADUsersProjects) {
 			XNATProjectList xnatProjectList = XNATQueries.allProjects(sessionID);
@@ -230,14 +230,14 @@ public class DefaultEpadOperations implements EpadOperations
 		} else {
 			Project project = projectOperations.getProjectForUser(username, projectReference.projectID);
 			if (project != null)
-				return project2EPADProject(sessionID, username, project, new EPADSearchFilter(), true);
+				return project2EPADProject(sessionID, username, project, new EPADSearchFilter(), annotationCount);
 		}
 		return null;
 	}
 
 	@Override
 	public EPADSubjectList getSubjectDescriptions(String projectID, String username, String sessionID,
-			EPADSearchFilter searchFilter) throws Exception
+			EPADSearchFilter searchFilter, int start, int count) throws Exception
 	{
 		EPADSubjectList epadSubjectList = new EPADSubjectList();
 		if (!EPADConfig.UseEPADUsersProjects) {
@@ -277,6 +277,10 @@ public class DefaultEpadOperations implements EpadOperations
 			}
 		} else {
 			List<Subject> subjects = projectOperations.getSubjectsForProject(projectID);
+			if (count > 0 && !searchFilter.hasSomeMatchCriteria() && subjects.size() > (start+count))
+			{
+				subjects = subjects.subList(start, start+count);
+			}
 			boolean annotationCount = true;
 			if (EPADConfig.xnatUploadProjectID.equals(projectID))
 				annotationCount = false;
@@ -286,9 +290,6 @@ public class DefaultEpadOperations implements EpadOperations
 				EPADSubject epadSubject = subject2EPADSubject(sessionID, username, subject, projectID, searchFilter, annotationCount);
 				if (epadSubject != null)
 				{
-					//String status = XNATQueries.getXNATSubjectFieldValue(sessionID, xnatSubject.ID, "status_" + username);
-					//log.info("User:" + username + " Subject:" + epadSubject.subjectName + " SubjectID" + epadSubject.subjectID + " status:" + status);
-					//epadSubject.setUserProjectStatus(status);
 					boolean matchAccessionNumber = true;
 					if (searchFilter.hasAccessionNumberMatch())
 					{
@@ -315,6 +316,10 @@ public class DefaultEpadOperations implements EpadOperations
 				}
 			}
 		}
+//		if (count > 0 && searchFilter.hasSomeMatchCriteria() && epadSubjectList.ResultSet.Result.size() > (start+count))
+//		{
+//			epadSubjectList.ResultSet.Result = epadSubjectList.ResultSet.Result.subList(start, start+count);
+//		}
 		return epadSubjectList;
 	}
 
@@ -553,7 +558,7 @@ public class DefaultEpadOperations implements EpadOperations
 				seriesReference.studyUID, seriesReference.seriesUID);
 		int numImages = imageDescriptions.size();
 		if (numImages == 0)
-			throw new RuntimeException("This series has no images");
+			throw new RuntimeException("This series " + seriesReference.seriesUID + " has no images");
 		DICOMElementList suppliedDICOMElementsFirst = getDICOMElements(imageDescriptions.get(0).studyUID,
 				imageDescriptions.get(0).seriesUID, imageDescriptions.get(0).imageUID);
 		String pixelSpacing1 = getDICOMElement(suppliedDICOMElementsFirst, PixelMedUtils.PixelSpacingCode);
@@ -1172,7 +1177,8 @@ public class DefaultEpadOperations implements EpadOperations
 		return HttpServletResponse.SC_OK;
 	}
 	
-	private void createFile(String username, String projectID, String subjectID, String studyID, String seriesID,
+	@Override
+	public void createFile(String username, String projectID, String subjectID, String studyID, String seriesID,
 			File uploadedFile, String description, String fileType, String sessionID) throws Exception {
 		String filename = uploadedFile.getName();
 		log.info("filename:" + filename);
@@ -1840,22 +1846,38 @@ public class DefaultEpadOperations implements EpadOperations
 			String fileName) throws Exception {
 		User user = projectOperations.getUser(username);
 		Project project = projectOperations.getProject(projectReference.projectID);
-		EpadFile file = projectOperations.getEpadFile(projectReference.projectID, null, null, null, fileName);
-		if (file == null && !user.isAdmin())
-			throw new Exception("No permissions to delete system template");
-		if (file != null && !username.equals(file.getCreator()) && !projectOperations.isOwner(username, projectReference.projectID))
-			throw new Exception("No permissions to delete this template");
-		if (file != null)
+		if (user.isAdmin() && fileName.equals("*"))
 		{
-			projectOperations.deleteFile(username, projectReference.projectID, null, null, null, fileName);
+			List<EpadFile> files = projectOperations.getEpadFiles(projectReference.projectID, null, null, null, null, true);
+			for (EpadFile file:files)
+			{
+				try {
+					projectOperations.deleteFile(username, projectReference.projectID, null, null, null, file.getName());
+				} catch (Exception x) {
+					
+				}
+			}
+				
 		}
 		else
 		{
-			File template = new File(EPADConfig.getEPADWebServerTemplatesDir(), fileName);
-			if (template.exists())
-				template.delete();
+			EpadFile file = projectOperations.getEpadFile(projectReference.projectID, null, null, null, fileName);
+			if (file == null && !user.isAdmin())
+				throw new Exception("No permissions to delete system template");
+			if (file != null && !username.equals(file.getCreator()) && !projectOperations.isOwner(username, projectReference.projectID))
+				throw new Exception("No permissions to delete this template");
+			if (file != null)
+			{
+				projectOperations.deleteFile(username, projectReference.projectID, null, null, null, fileName);
+			}
 			else
-				throw new Exception("Template file not found");
+			{
+				File template = new File(EPADConfig.getEPADWebServerTemplatesDir(), fileName);
+				if (template.exists())
+					template.delete();
+				else
+					throw new Exception("Template file not found");
+			}
 		}
 	}
 
@@ -1978,7 +2000,7 @@ public class DefaultEpadOperations implements EpadOperations
 		{
 			log.info("Scheduling deletion task for study " + studyReference.studyUID + " for patient "
 					+ studyReference.subjectID + " in project " + studyReference.projectID + " from user " + username);
-			(new Thread(new StudyDataDeleteTask(studyReference.projectID, studyReference.subjectID, studyReference.studyUID, deleteAims)))
+			(new Thread(new StudyDataDeleteTask(username, studyReference.projectID, studyReference.subjectID, studyReference.studyUID, deleteAims)))
 					.start();
 			return "";
 		}
@@ -3612,7 +3634,7 @@ public class DefaultEpadOperations implements EpadOperations
 		User user = projectOperations.getUser(username);
 		User loggedInUser = projectOperations.getUser(loggedInUserName);
 		if (!loggedInUser.isAdmin() && (user == null || !loggedInUser.equals(username)) && !loggedInUser.hasPermission(User.CreateUserPermission))
-			throw new Exception("User " + loggedInUser + " does not have privilege to create/modify users");
+			throw new Exception("User " + loggedInUserName + " does not have privilege to create/modify users");
 
 		List<String> addPerms = new ArrayList<String>();
 		List<String> removePerms = new ArrayList<String>();
@@ -3723,13 +3745,12 @@ public class DefaultEpadOperations implements EpadOperations
 
 	@Override
 	public void addUserToProject(String loggedInusername,
-			ProjectReference projectReference, String username, String roleName, String sessionID)
+			ProjectReference projectReference, String username, String roleName, String defaultTemplate, String sessionID)
 			throws Exception {
 		if (!projectOperations.isOwner(loggedInusername, projectReference.projectID))
 			throw new Exception("User " + loggedInusername + " is not the owner of " + projectReference.projectID);
 		UserRole role = UserRole.getRole(roleName);
-		if (role == null) role = UserRole.COLLABORATOR;
-		projectOperations.addUserToProject(loggedInusername, projectReference.projectID, username, role);
+		projectOperations.addUserToProject(loggedInusername, projectReference.projectID, username, role, defaultTemplate);
 		
 	}
 

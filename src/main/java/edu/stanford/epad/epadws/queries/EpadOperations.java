@@ -71,10 +71,10 @@ public interface EpadOperations
 {
 	EPADProjectList getProjectDescriptions(String username, String sessionID, EPADSearchFilter searchFilter, boolean annotationCount) throws Exception;
 
-	EPADProject getProjectDescription(ProjectReference projectReference, String username, String sessionID) throws Exception;
+	EPADProject getProjectDescription(ProjectReference projectReference, String username, String sessionID, boolean annotationCount) throws Exception;
 
 	EPADSubjectList getSubjectDescriptions(String projectID, String username, String sessionID,
-			EPADSearchFilter searchFilter) throws Exception;
+			EPADSearchFilter searchFilter, int start, int count) throws Exception;
 
 	EPADSubject getSubjectDescription(SubjectReference subjectReference, String username, String sessionID) throws Exception;
 
@@ -98,7 +98,7 @@ public interface EpadOperations
 
 	EPADUserList getUserDescriptions(String username, ProjectReference projectReference, String sessionID) throws Exception;
 
-	void addUserToProject(String loggedInusername, ProjectReference projectReference, String username, String role, String sessionID) throws Exception;
+	void addUserToProject(String loggedInusername, ProjectReference projectReference, String username, String role, String defaultTemplate, String sessionID) throws Exception;
 
 	void removeUserFromProject(String loggedInusername, ProjectReference projectReference, String username, String sessionID) throws Exception;
 
@@ -134,6 +134,9 @@ public interface EpadOperations
 
 	int createFile(String username, ImageReference imageReference, File uploadedFile, String description, String fileType, String sessionID) throws Exception;
 
+	void createFile(String username, String projectID, String subjectID, String studyID, String seriesID,
+			File uploadedFile, String description, String fileType, String sessionID) throws Exception;
+	
 	int createImage(String username, String projectID, File dicomFile, String sessionID) throws Exception;
 	
 	int createSystemTemplate(String username, File templateFile, String sessionID) throws Exception;	

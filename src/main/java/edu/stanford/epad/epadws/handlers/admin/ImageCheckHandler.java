@@ -27,6 +27,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.sql.SQLException;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import javax.servlet.http.HttpServletRequest;
@@ -37,11 +38,14 @@ import org.eclipse.jetty.server.handler.AbstractHandler;
 
 import edu.stanford.epad.common.dicom.DICOMFileDescription;
 import edu.stanford.epad.common.util.EPADLogger;
+import edu.stanford.epad.dtos.EPADAIM;
+import edu.stanford.epad.dtos.EPADSeries;
 import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeDatabase;
 import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeDatabaseOperations;
 import edu.stanford.epad.epadws.epaddb.EpadDatabase;
 import edu.stanford.epad.epadws.epaddb.EpadDatabaseOperations;
 import edu.stanford.epad.epadws.handlers.HandlerUtil;
+import edu.stanford.epad.epadws.handlers.core.SeriesReference;
 import edu.stanford.epad.epadws.processing.pipeline.task.DSOMaskPNGGeneratorTask;
 import edu.stanford.epad.epadws.processing.pipeline.task.SingleFrameDICOMPngGeneratorTask;
 import edu.stanford.epad.epadws.processing.pipeline.watcher.QueueAndWatcherManager;
@@ -69,7 +73,8 @@ public class ImageCheckHandler extends AbstractHandler
 		int statusCode;
 
 		httpResponse.setContentType("text/plain;charset=UTF-8");
-		request.setHandled(true);
+		if (request != null)
+			request.setHandled(true);
 
 		try {
 			responseStream = httpResponse.getWriter();
@@ -90,6 +95,11 @@ public class ImageCheckHandler extends AbstractHandler
 						}
 						String response = verifyImageGeneration(fix);
 						responseStream.write(response);
+						if (fix)
+						{
+							response = generateDSOMasks(true);
+							responseStream.write(response);
+						}
 						statusCode = HttpServletResponse.SC_OK;
 					} catch (IOException e) {
 						statusCode = HandlerUtil.internalErrorResponse(INTERNAL_IO_ERROR_MESSAGE, e, responseStream, log);
@@ -189,13 +199,31 @@ public class ImageCheckHandler extends AbstractHandler
 	private void fixSeriesImages(PrintWriter responseStream, String seriesUID, String imageUID) throws SQLException, IOException
 	{
 		log.info("Starting fixSeriesImages, seriesUID=" + seriesUID + " imageUID=" + imageUID);
-		EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
-		Dcm4CheeDatabaseOperations dcm4CheeDatabaseOperations = Dcm4CheeDatabase.getInstance()
-				.getDcm4CheeDatabaseOperations();
 		EpadOperations epadQueries = DefaultEpadOperations.getInstance();
 		Set<DICOMFileDescription> dicomFilesDescriptions = epadQueries.getDICOMFilesInSeries(seriesUID, imageUID);
 		QueueAndWatcherManager.getInstance().addDICOMFileToPNGGeneratorPipeline("REPROCESS", dicomFilesDescriptions);
 		log.info("Series " +  seriesUID + " added to PNG Pipeline");
 		responseStream.write("Series " +  seriesUID + " added to PNG Pipeline\n");
+	}
+	
+	public static String generateDSOMasks(boolean forEmptyFrameNos) throws Exception
+	{
+		String response = "";
+		EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
+		EpadOperations epadQueries = DefaultEpadOperations.getInstance();
+		String query = "DSOSeriesUID is not null AND DSOSeriesUID != ''";
+		if (forEmptyFrameNos) query = query + " AND DSOFrameNo is null";
+		List<EPADAIM> aims = epadDatabaseOperations.getAIMsByQuery(query);
+		for (EPADAIM aim: aims)
+		{
+			SeriesReference seriesReference = new SeriesReference(null, null, null, aim.dsoSeriesUID);
+			EPADSeries series = epadQueries.getSeriesDescription(seriesReference, "admin", "");
+			if (series == null) continue;
+			Set<DICOMFileDescription> dicomFilesDescriptions = epadQueries.getDICOMFilesInSeries(series.seriesUID, series.firstImageUIDInSeries);
+			QueueAndWatcherManager.getInstance().addDICOMFileToPNGGeneratorPipeline("REPROCESS", dicomFilesDescriptions);
+			log.info("DSO Series " +  aim.dsoSeriesUID + " added to PNG Pipeline");
+			response = response + "DSO Series " +  aim.dsoSeriesUID + " added to PNG Pipeline\n";
+		}
+		return response;
 	}
 }

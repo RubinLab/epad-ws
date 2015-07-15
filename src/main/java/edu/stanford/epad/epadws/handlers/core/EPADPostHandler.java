@@ -60,6 +60,7 @@ public class EPADPostHandler
 	 * Note: These long if/then/else statements looks terrible, they need to be replaced by something like jersey with annotations
 	 * But there seems to be some problem using jersey with embedded jetty and multiple handlers - still need to solve that
 	 * 
+	 * Note: This class will soon become obsolete and be replaced by Spring Controllers
 	 */
 
 	protected static int handlePost(HttpServletRequest httpRequest, PrintWriter responseStream, String username, String sessionID)
@@ -78,7 +79,7 @@ public class EPADPostHandler
 				if ("new".equalsIgnoreCase(type))
 				{
 					boolean errstatus = DSOUtil.handleCreateDSO(imageReference.projectID, imageReference.subjectID, imageReference.studyUID,
-							imageReference.seriesUID, httpRequest, responseStream);
+							imageReference.seriesUID, httpRequest, responseStream, username);
 					if (!errstatus)
 						statusCode = HttpServletResponse.SC_CREATED;
 					else
@@ -296,7 +297,7 @@ public class EPADPostHandler
 					String projectName = httpRequest.getParameter("projectName");
 					String projectDescription = httpRequest.getParameter("projectDescription");
 					String defaultTemplate = httpRequest.getParameter("defaultTemplate");
-					EPADProject project = epadOperations.getProjectDescription(projectReference, username, sessionID);
+					EPADProject project = epadOperations.getProjectDescription(projectReference, username, sessionID, false);
 					if (project != null) {
 						throw new Exception("Project " + project.id +  " already exists");
 					} else {
@@ -314,6 +315,15 @@ public class EPADPostHandler
 						statusCode = epadOperations.createSubject(username, subjectReference, subjectName, getDate(dob), gender, sessionID);
 					}
 					
+				} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.USER_WORKLISTS, pathInfo)) {
+					ProjectReference projectReference = ProjectReference.extract(ProjectsRouteTemplates.USER_WORKLISTS, pathInfo);
+					Map<String, String> templateMap = HandlerUtil.getTemplateMap(ProjectsRouteTemplates.USER_WORKLISTS, pathInfo);
+					String reader = HandlerUtil.getTemplateParameter(templateMap, "username");
+					String description = httpRequest.getParameter("description");
+					String dueDate = httpRequest.getParameter("dueDate");
+					worklistOperations.createWorkList(username, reader, projectReference.projectID, null, description, null, getDate(dueDate));
+					statusCode = HttpServletResponse.SC_OK;
+				
 				} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.USER_WORKLIST, pathInfo)) {
 					ProjectReference projectReference = ProjectReference.extract(ProjectsRouteTemplates.USER_WORKLIST, pathInfo);
 					Map<String, String> templateMap = HandlerUtil.getTemplateMap(ProjectsRouteTemplates.USER_WORKLIST, pathInfo);

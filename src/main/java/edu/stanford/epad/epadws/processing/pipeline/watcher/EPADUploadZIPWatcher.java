@@ -88,6 +88,7 @@ public class EPADUploadZIPWatcher implements Runnable
 			ShutdownSignal shutdownSignal = ShutdownSignal.getInstance();
 			while (true) {
 				if (shutdownSignal.hasShutdown()) {
+					log.info("Warning: EPADUploadZIPWatcher shutdown signal received.");
 					return;
 				}
 				File rootDir = new File(UPLOAD_ROOT_DIR);
@@ -100,6 +101,7 @@ public class EPADUploadZIPWatcher implements Runnable
 				}
 
 				if (shutdownSignal.hasShutdown()) {
+					log.info("Warning: EPADUploadZIPWatcher shutdown signal received.");
 					return;
 				}
 				TimeUnit.MILLISECONDS.sleep(CHECK_INTERVAL);
@@ -109,6 +111,7 @@ public class EPADUploadZIPWatcher implements Runnable
 		} finally {
 			log.info("Done. UploadDirWatcher thread.");
 		}
+		log.info("Warning: EPADUploadZIPWatcher shutting down.");
 	}
 
 	/**

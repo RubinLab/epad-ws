@@ -85,7 +85,7 @@ public interface EpadDatabaseOperations
 	
 	boolean hasStudyInDCM4CHE(String studyIUID);
 
-	List<Map<String, String>> getEpadEventsForSessionID(String sessionID);
+	List<Map<String, String>> getEpadEventsForSessionID(String sessionID, boolean delete);
 
 	List<Map<String, String>> getEpadEventsForAimID(String sessionID);
 
@@ -143,6 +143,8 @@ public interface EpadDatabaseOperations
 
 	List<EPADAIM> getAIMsByDSOSeries(String projectID, String patientID, String dsoSeriesUID);
 
+	List<EPADAIM> getAIMsByQuery(String sqlQuery);
+
 	int getNumberOfAIMs(String userName, ProjectReference reference);
 
 	int getNumberOfAIMs(String userName, SubjectReference reference);
@@ -184,6 +186,8 @@ public interface EpadDatabaseOperations
 	EPADAIM updateAIM(String aimID, String projectID, String username);
 	
 	EPADAIM updateAIMXml(String aimID, String xml);
+	
+	EPADAIM updateAIMDSOFrameNo(String aimID, int frameNo);
 	
 	void deleteAIM(String userName, ProjectReference reference, String aimID);
 
@@ -276,5 +280,6 @@ public interface EpadDatabaseOperations
 	 */
 	boolean runSQLScript(String script);
 
+	String getDBVersion();
 
 }

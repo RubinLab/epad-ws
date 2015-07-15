@@ -43,8 +43,14 @@ import org.eclipse.jetty.server.handler.ContextHandlerCollection;
 import org.eclipse.jetty.server.handler.DefaultHandler;
 import org.eclipse.jetty.server.handler.HandlerList;
 import org.eclipse.jetty.server.handler.ResourceHandler;
+import org.eclipse.jetty.servlet.ServletContextHandler;
+import org.eclipse.jetty.servlet.ServletHolder;
 import org.eclipse.jetty.webapp.WebAppContext;
 import org.eclipse.jetty.xml.XmlConfiguration;
+import org.springframework.web.context.ContextLoaderListener;
+import org.springframework.web.context.WebApplicationContext;
+import org.springframework.web.context.support.AnnotationConfigWebApplicationContext;
+import org.springframework.web.servlet.DispatcherServlet;
 import org.xml.sax.SAXException;
 
 import edu.stanford.epad.common.plugins.PluginConfig;
@@ -91,9 +97,9 @@ import edu.stanford.epad.epadws.service.RemotePACService;
 public class Main
 {
 	private static final EPADLogger log = EPADLogger.getInstance();
+	
+	public static boolean separateWebServicesApp = true;
 
-	public static final String epad_version = "1.5";
-	public static final String db_version = "1.5"; // This should always be a valid decimal (only one dot)
 	
 	public static void main(String[] args)
 	{
@@ -101,13 +107,20 @@ public class Main
 		Server server = null;
 
 		try {
-			log.info("#####################################################");
-			log.info("############# Starting ePAD Web Service #############");
-			log.info("#####################################################");
 
 			int epadPort = EPADConfig.epadPort;
-			initializePlugins();
-			startSupportThreads();
+			separateWebServicesApp = "true".equalsIgnoreCase(EPADConfig.getParamValue("SeparateWebServicesApp"));
+			if (!separateWebServicesApp) {
+				log.info("#####################################################");
+				log.info("############# Starting ePAD Web Service #############");
+				log.info("#####################################################");
+				initializePlugins();
+				startSupportThreads();
+			} else {
+				log.info("#####################################################");
+				log.info("############# Starting ePAD GWT FrontEnd ############");
+				log.info("#####################################################");
+			}
 			server = new Server(epadPort);
 			configureJettyServer(server);
 			addHandlers(server);
@@ -127,13 +140,15 @@ public class Main
 			log.severe("Fatal Error. Shutting down ePAD Web Service", err);
 		} finally {
 			log.info("#####################################################");
-			log.info("############# Shutting down ePAD Web Service ########");
+			log.info("############# Shutting down ePAD  ###################");
 			log.info("#####################################################");
 
 			shutdownSignal.shutdownNow();
 			stopServer(server);
-			EpadDatabase.getInstance().shutdown();
-			QueueAndWatcherManager.getInstance().shutdown();
+			if (!separateWebServicesApp) {
+				EpadDatabase.getInstance().shutdown();
+				QueueAndWatcherManager.getInstance().shutdown();
+			}
 			try { // Wait just long enough for some messages to be printed out.
 				TimeUnit.MILLISECONDS.sleep(2000);
 			} catch (InterruptedException e) {
@@ -167,17 +182,25 @@ public class Main
 		}
 	}
 
-	private static void initializePlugins()
+	public static void initializePlugins()
 	{
 		PluginController.getInstance();
 	}
 
-	private static void startSupportThreads()
+	public static void startSupportThreads()
 	{
 		log.info("Starting support threads....");
 
 		try {
 			QueueAndWatcherManager.getInstance().buildAndStart();
+			String version = new EPadWebServerVersion().getVersion();
+			String db_version = version;
+			if (db_version.indexOf(".") != db_version.lastIndexOf("."))
+			{
+				// remove second period;
+				db_version = db_version.substring(0, db_version.lastIndexOf(".")) + db_version.substring(db_version.lastIndexOf(".")+1);
+			}
+			log.info("EpadWS version:" + version + " Database version:" + db_version);
 			EpadDatabase.getInstance().startup(db_version);
 			log.info("Startup of database was successful");
 			EpadDatabaseOperations databaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
@@ -206,11 +229,25 @@ public class Main
 	{
 		List<Handler> handlerList = new ArrayList<Handler>();
 
-		loadPluginClasses();
+		if (!separateWebServicesApp) {
 
-		addHandlerAtContextPath(new EPADSessionHandler(), "/epad/session", handlerList);
+			loadPluginClasses();
+	
+			addHandlerAtContextPath(new EPADSessionHandler(), "/epad/session", handlerList);
+	
+			addHandlerAtContextPath(new EPADHandler(), "/epad/v2", handlerList);
+		}
 
-		addHandlerAtContextPath(new EPADHandler(), "/epad/v2", handlerList);
+//      My Attempt to replace above EPADHandler with Spring Controllers
+//		- Does not work with embedded jetty, controller methods don't map correctly, controller mapping works fine under tomcat
+//		- If someone can make it work, that would be great (comment out add EPADHandler above)
+//		try {
+//			handlerList.add(getServletContextHandler(getContext()));
+//		} catch (IOException e) {
+//			// TODO Auto-generated catch block
+//			log.warning("Error setting up Spring Handle", e);
+//			e.printStackTrace();
+//		}
 
 		String webAppPath = EPADConfig.getEPADWebServerWebappsDir() + "ePad.war";
 		if (!new File(webAppPath).exists())
@@ -220,26 +257,28 @@ public class Main
 		addHandlerAtContextPath(new ResourceCheckHandler(), "/epad/resources", handlerList);
 		addFileServerAtContextPath(EPADConfig.getEPADWebServerResourcesDir(), handlerList, "/epad/resources");
 
-		addHandlerAtContextPath(new WadoHandler(), "/epad/wado", handlerList);
-
-		addHandlerAtContextPath(new AimResourceHandler(), "/epad/aimresource", handlerList);
-
-		if (!"true".equalsIgnoreCase(EPADConfig.getParamValue("DISABLE_PLUGINS")))
-		{	
-			addHandlerAtContextPath(new EPadPluginHandler(), "/epad/plugin", handlerList);
+		if (!separateWebServicesApp) {
+			addHandlerAtContextPath(new WadoHandler(), "/epad/wado", handlerList);
+	
+			addHandlerAtContextPath(new AimResourceHandler(), "/epad/aimresource", handlerList);
+	
+			if (!"true".equalsIgnoreCase(EPADConfig.getParamValue("DISABLE_PLUGINS")))
+			{	
+				addHandlerAtContextPath(new EPadPluginHandler(), "/epad/plugin", handlerList);
+			}
+			addHandlerAtContextPath(new EventHandler(), "/epad/eventresource", handlerList);
+			addHandlerAtContextPath(new ProjectEventHandler(), "/epad/events", handlerList);
+	
+			addHandlerAtContextPath(new ServerStatusHandler(), "/epad/status", handlerList);
+			addHandlerAtContextPath(new ImageCheckHandler(), "/epad/imagecheck", handlerList);
+			addHandlerAtContextPath(new ImageReprocessingHandler(), "/epad/imagereprocess", handlerList);
+			addHandlerAtContextPath(new ConvertAIM4Handler(), "/epad/convertaim4", handlerList);
+			addHandlerAtContextPath(new XNATSyncHandler(), "/epad/syncxnat", handlerList);
+			addHandlerAtContextPath(new StatisticsHandler(), "/epad/statistics", handlerList);
+			
+			// TODO This call will disappear when we switch to AIM4
+			addHandlerAtContextPath(new CoordinationHandler(), "/epad/coordination", handlerList);
 		}
-		addHandlerAtContextPath(new EventHandler(), "/epad/eventresource", handlerList);
-		addHandlerAtContextPath(new ProjectEventHandler(), "/epad/events", handlerList);
-
-		addHandlerAtContextPath(new ServerStatusHandler(), "/epad/status", handlerList);
-		addHandlerAtContextPath(new ImageCheckHandler(), "/epad/imagecheck", handlerList);
-		addHandlerAtContextPath(new ImageReprocessingHandler(), "/epad/imagereprocess", handlerList);
-		addHandlerAtContextPath(new ConvertAIM4Handler(), "/epad/convertaim4", handlerList);
-		addHandlerAtContextPath(new XNATSyncHandler(), "/epad/syncxnat", handlerList);
-		addHandlerAtContextPath(new StatisticsHandler(), "/epad/statistics", handlerList);
-		
-		// TODO This call will disappear when we switch to AIM4
-		addHandlerAtContextPath(new CoordinationHandler(), "/epad/coordination", handlerList);
 
 		ContextHandlerCollection contexts = new ContextHandlerCollection();
 		contexts.setHandlers(handlerList.toArray(new Handler[handlerList.size()]));
@@ -259,6 +298,31 @@ public class Main
 		log.info("Added " + handler.getClass().getName() + " at context " + contextPath);
 	}
 
+	private static final String CONTEXT_PATH = "/epad/v2";
+    private static final String CONFIG_LOCATION = "edu.stanford.epad.epadws.config.SpringConfig";
+    private static final String MAPPING_URL = "/*";
+    private static final String DEFAULT_PROFILE = "dev";    
+    
+    /**
+     * Function for setting up Spring Context with embedded Jetty
+     * 
+     */
+    private static ServletContextHandler getServletContextHandler(WebApplicationContext context) throws IOException {
+        ServletContextHandler contextHandler = new ServletContextHandler();
+        contextHandler.setErrorHandler(null);
+        contextHandler.setContextPath(CONTEXT_PATH);
+        contextHandler.addServlet(new ServletHolder(new DispatcherServlet(context)), MAPPING_URL);
+        contextHandler.addEventListener(new ContextLoaderListener(context));
+        //contextHandler.setResourceBase(EPADConfig.getEPADWebServerResourcesDir());
+        return contextHandler;
+    }
+
+    private static WebApplicationContext getContext() {
+        AnnotationConfigWebApplicationContext context = new AnnotationConfigWebApplicationContext();
+        context.setConfigLocation(CONFIG_LOCATION);
+        context.getEnvironment().setDefaultProfiles(DEFAULT_PROFILE);
+        return context;
+    }
 	/**
 	 * Adds a WAR file from the webapps directory at a context path.
 	 * 
@@ -281,7 +345,7 @@ public class Main
 			webAppContext.setDefaultsDescriptor(EPADConfig.getEPADWebServerEtcDir()+"webdefault.xml");
 		}
 		log.info("WebAuthFilter:'" + EPADConfig.getParamValue("WebAuthFilter", null) + "'");
-		//if (EPADConfig.webAuthPassword != null && EPADConfig.getParamValue("WebAuthFilter", null) != null)
+		if (EPADConfig.webAuthPassword != null && EPADConfig.getParamValue("WebAuthFilter", null) != null)
 		{
 			try {
 				Class filter = Class.forName(EPADConfig.getParamValue("WebAuthFilter","edu.stanford.epad.epadws.security.WebAuthFilter"));
@@ -290,7 +354,6 @@ public class Main
 				log.warning("WebAuth Authentication Filter " + EPADConfig.getParamValue("WebAuthFilter") + " not found");
 			}
 		}
-		
 		handlerList.add(webAppContext);
 		log.info("Added WAR " + webAppPath + " at context path " + contextPath);
 	}
@@ -313,7 +376,7 @@ public class Main
 	/**
 	 * Load all the plugins into a map.
 	 */
-	private static void loadPluginClasses()
+	public static void loadPluginClasses()
 	{
 		try {
 		PluginHandlerMap pluginHandlerMap = PluginHandlerMap.getInstance();

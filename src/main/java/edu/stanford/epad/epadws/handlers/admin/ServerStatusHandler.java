@@ -24,6 +24,7 @@
 package edu.stanford.epad.epadws.handlers.admin;
 
 import java.io.PrintWriter;
+import java.net.InetAddress;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -33,12 +34,14 @@ import org.eclipse.jetty.server.handler.AbstractHandler;
 
 import edu.stanford.epad.common.plugins.EPadPlugin;
 import edu.stanford.epad.common.plugins.impl.EPadPluginImpl;
+import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.epad.epadws.EPadWebServerVersion;
 import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeDatabase;
 import edu.stanford.epad.epadws.epaddb.EpadDatabase;
 import edu.stanford.epad.epadws.handlers.HandlerUtil;
 import edu.stanford.epad.epadws.processing.pipeline.PipelineFactory;
+import edu.stanford.epad.epadws.processing.pipeline.task.EpadStatisticsTask;
 import edu.stanford.epad.epadws.service.SessionService;
 
 /**
@@ -55,11 +58,11 @@ public class ServerStatusHandler extends AbstractHandler
 	private static final String INVALID_SESSION_TOKEN_MESSAGE = "Session token is invalid on status route";
 	private static final String INTERNAL_EXCEPTION_MESSAGE = "Internal error getting server status";
 
-	private final long startTime;
+	private static Long startTime = null;
 
 	public ServerStatusHandler()
 	{
-		startTime = System.currentTimeMillis();
+		if (startTime == null) startTime = System.currentTimeMillis();
 	}
 
 	@Override
@@ -69,13 +72,14 @@ public class ServerStatusHandler extends AbstractHandler
 		int statusCode;
 
 		httpResponse.setContentType("text/plain");
-		request.setHandled(true);
+		if (request != null)					// In case handler is not called thru jetty
+			request.setHandled(true);
 
 		try {
 			responseStream = httpResponse.getWriter();
-
-			if (SessionService.hasValidSessionID(httpRequest)) {
-				EPadPlugin ePadPlugin = new EPadPluginImpl();
+			boolean validSession = SessionService.hasValidSessionID(httpRequest);
+			if (validSession) {
+				
 				long upTime = System.currentTimeMillis() - startTime;
 				long upTimeSec = upTime / 1000;
 
@@ -84,24 +88,31 @@ public class ServerStatusHandler extends AbstractHandler
 				responseStream.println();
 				responseStream.println("ePAD server uptime: " + upTimeSec + " second(s)");
 				responseStream.println();
-				responseStream.println("Version: " + EPadWebServerVersion.getBuildDate());
+			}
+			responseStream.println("Version: " + new EPadWebServerVersion().getVersion() + " Build Date: " + new EPadWebServerVersion().getBuildDate() + " Build Host: " + new EPadWebServerVersion().getBuildHost());
+			if (validSession) {
+				EPadPlugin ePadPlugin = new EPadPluginImpl();
 				responseStream.println();
 				responseStream.println("Plugin Version - interface:      " + EPadPlugin.PLUGIN_INTERFACE_VERSION);
 				responseStream.println("Plugin Version - implementation: " + ePadPlugin.getPluginImplVersion());
 				EpadDatabase epadDatabase = EpadDatabase.getInstance();
 				responseStream.println();
-				responseStream.println("ePAD database startup time: " + epadDatabase.getStartupTime() + " ms");
+				responseStream.println("ePAD database startup time: " + epadDatabase.getStartupTime() + " ms, database version: " + epadDatabase.getEPADDatabaseOperations().getDBVersion());
 				Dcm4CheeDatabase dcm4CheeDatabase = Dcm4CheeDatabase.getInstance();
 				responseStream.println();
 				responseStream.println("DCM4CHEE database startup time: " + dcm4CheeDatabase.getStartupTime() + " ms");
 				responseStream.println();
+				responseStream.println("Config Server: " + EPADConfig.xnatServer);
+				responseStream.println("Config serverProxy: " + EPADConfig.getParamValue("serverProxy"));
+				responseStream.println("Config webserviceBase: " + EPADConfig.getParamValue("webserviceBase"));
+				responseStream.println("Hostname: " + InetAddress.getLocalHost().getHostName());
+				responseStream.println("IP Address: " + EpadStatisticsTask.getIPAddress());
 				responseStream.println();
 
-				statusCode = HttpServletResponse.SC_OK;
-			} else {
-				statusCode = HandlerUtil.invalidTokenResponse(INVALID_SESSION_TOKEN_MESSAGE, responseStream, log);
-			}
+			} 
+			statusCode = HttpServletResponse.SC_OK;
 		} catch (Throwable t) {
+			log.warning(INTERNAL_EXCEPTION_MESSAGE, t);
 			statusCode = HandlerUtil.internalErrorResponse(INTERNAL_EXCEPTION_MESSAGE, responseStream, log);
 		}
 		httpResponse.setStatus(statusCode);

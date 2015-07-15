@@ -28,7 +28,6 @@ import java.io.FilenameFilter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.ConcurrentModificationException;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -70,6 +69,7 @@ public class EPADUploadDirWatcher implements Runnable
 			ShutdownSignal shutdownSignal = ShutdownSignal.getInstance();
 			File rootUploadDirectory = new File(EPADConfig.getEPADWebServerUploadDir());
 			log.info("Starting the ePAD upload directory watcher; directory =" + EPADConfig.getEPADWebServerUploadDir());
+			long count = 0;
 			while (true) {
 				if (shutdownSignal.hasShutdown())
 				{
@@ -78,6 +78,9 @@ public class EPADUploadDirWatcher implements Runnable
 				}
 
 				try {
+					if (count%720 == 0)
+						log.info("EPADUploadDirWatcher: Checking new uploads, count:" + count);
+					count++;
 					List<File> newUploadDirectories = findNewUploadDirectory(rootUploadDirectory);
 					if (newUploadDirectories != null) {
 						for (File newUploadDirectory : newUploadDirectories) {

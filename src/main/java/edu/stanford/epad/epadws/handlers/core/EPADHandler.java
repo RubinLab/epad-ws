@@ -42,10 +42,10 @@ import edu.stanford.epad.epadws.service.SessionService;
  */
 public class EPADHandler extends AbstractHandler
 {
-	private static final String INTERNAL_ERROR_MESSAGE = "Internal error";
-	private static final String INVALID_SESSION_TOKEN_MESSAGE = "Session token is invalid";
-	private static final String FORBIDDEN_MESSAGE = "Forbidden method - only GET, DELETE, PUT, and POST allowed!";
-	private static final String NO_USERNAME_MESSAGE = "Must have username parameter for requests!";
+	public static final String INTERNAL_ERROR_MESSAGE = "Internal error";
+	public static final String INVALID_SESSION_TOKEN_MESSAGE = "Session token is invalid";
+	public static final String FORBIDDEN_MESSAGE = "Forbidden method - only GET, DELETE, PUT, and POST allowed!";
+	public static final String NO_USERNAME_MESSAGE = "Must have username parameter for requests!";
 
 	private static final EPADLogger log = EPADLogger.getInstance();
 
@@ -54,6 +54,8 @@ public class EPADHandler extends AbstractHandler
 	 * 
 	 * Note: These long if/then/else statements looks terrible, they need to be replaced by something like jersey with annotations
 	 * But there seems to be some problem using jersey with embedded jetty and multiple handlers - still need to solve that
+	 *
+	 * Note: This class (including the other handlers called) will soon become obsolete and be replaced by Spring Controllers
 	 * 
 	 */
 	@Override
@@ -81,7 +83,7 @@ public class EPADHandler extends AbstractHandler
 			String username = httpRequest.getParameter("username");
 			if (username == null && sessionID != null)
 				username = EPADSessionOperations.getSessionUser(sessionID);
-			log.info("User:" + username  + " host:" + EPADSessionOperations.getSessionHost(sessionID) + " method:" + httpRequest.getMethod() 
+			log.info("ID:" + Thread.currentThread().getId() + " User:" + username  + " host:" + EPADSessionOperations.getSessionHost(sessionID) + " method:" + httpRequest.getMethod() 
 					+ ", url: " + httpRequest.getPathInfo() + ", parameters: "
 					+ httpRequest.getQueryString() + " sessionId:" + sessionID);
 			if (SessionService.hasValidSessionID(sessionID)) {
@@ -122,7 +124,7 @@ public class EPADHandler extends AbstractHandler
 			log.warning("Error in handle request:", e);
 			statusCode = HandlerUtil.internalErrorJSONResponse(INTERNAL_ERROR_MESSAGE, e, responseStream, log);
 		}
-		log.info("Status returned to client:" + statusCode);
+		log.info("ID:" + Thread.currentThread().getId() + " Status returned to client:" + statusCode);
 		httpResponse.setStatus(statusCode);
 	}
 }

@@ -56,6 +56,7 @@ public class EPADDeleteHandler
 	 * Note: These long if/then/else statements looks terrible, they need to be replaced by something like jersey with annotations
 	 * But there seems to be some problem using jersey with embedded jetty and multiple handlers - still need to solve that
 	 * 
+	 * Note: This class will soon become obsolete and be replaced by Spring Controllers
 	 */
 	protected static int handleDelete(HttpServletRequest httpRequest, PrintWriter responseStream, String username, String sessionID)
 	{
@@ -143,13 +144,23 @@ public class EPADDeleteHandler
 				epadOperations.removeUserFromProject(username, projectReference, delete_username, sessionID);
 				statusCode = HttpServletResponse.SC_OK;
 				
-			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.WORKLISTS, pathInfo)) {
-				ProjectReference projectReference = ProjectReference.extract(ProjectsRouteTemplates.WORKLISTS, pathInfo);
-				Map<String, String> templateMap = HandlerUtil.getTemplateMap(ProjectsRouteTemplates.WORKLISTS, pathInfo);
-				String reader = HandlerUtil.getTemplateParameter(templateMap, "username");
-				WorkList wl = worklistOperations.getWorkListForUserByProject(username, projectReference.projectID);
+			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.WORKLIST, pathInfo)) {
+				ProjectReference projectReference = ProjectReference.extract(ProjectsRouteTemplates.WORKLIST, pathInfo);
+				Map<String, String> templateMap = HandlerUtil.getTemplateMap(ProjectsRouteTemplates.WORKLIST, pathInfo);
+				String workListID = HandlerUtil.getTemplateParameter(templateMap, "workListID");
+				WorkList wl = worklistOperations.getWorkList(workListID);
 				if (wl == null)
-					throw new Exception("Worklist not found for user " + reader + " and project " + projectReference.projectID);
+					throw new Exception("Worklist not found for id " + workListID + " and project " + projectReference.projectID);
+				worklistOperations.deleteWorkList(username, wl.getWorkListID());;		
+				statusCode = HttpServletResponse.SC_OK;
+				
+			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.USER_WORKLIST, pathInfo)) {
+				ProjectReference projectReference = ProjectReference.extract(ProjectsRouteTemplates.USER_WORKLIST, pathInfo);
+				Map<String, String> templateMap = HandlerUtil.getTemplateMap(ProjectsRouteTemplates.USER_WORKLIST, pathInfo);
+				String workListID = HandlerUtil.getTemplateParameter(templateMap, "workListID");
+				WorkList wl = worklistOperations.getWorkList(workListID);
+				if (wl == null)
+					throw new Exception("Worklist not found for id " + workListID + " and project " + projectReference.projectID);
 				worklistOperations.deleteWorkList(username, wl.getWorkListID());;		
 				statusCode = HttpServletResponse.SC_OK;
 				

@@ -48,6 +48,10 @@ import edu.stanford.epad.epadws.models.dao.AbstractDAO;
  * @author Dev Gude
  *
  */
+/**
+ * @author Dev Gude
+ *
+ */
 public interface EpadProjectOperations {
 
 	/**
@@ -143,7 +147,7 @@ public interface EpadProjectOperations {
 	 * @param role - Owner, Member, Collaborator
 	 * @throws Exception
 	 */
-	void addUserToProject(String loggedInUser, String projectId, String username, UserRole role) throws Exception;
+	void addUserToProject(String loggedInUser, String projectId, String username, UserRole role, String defaultTemplate) throws Exception;
 	
 	/**
 	 * Remove user from project
@@ -561,18 +565,87 @@ public interface EpadProjectOperations {
 	 */
 	List<EpadFile> getSeriesFiles(String projectID, String subjectUID, String studyUID, String seriesUID) throws Exception;	
 	
+	/**
+	 * @param loggedInUser
+	 * @param projectID
+	 * @param subjectUID
+	 * @param studyUID
+	 * @param seriesUID
+	 * @param filename
+	 * @throws Exception
+	 */
 	void enableFile(String loggedInUser, String projectID, String subjectUID, String studyUID, String seriesUID, String filename) throws Exception;
 	
+	/**
+	 * @param loggedInUser
+	 * @param projectID
+	 * @param subjectUID
+	 * @param studyUID
+	 * @param seriesUID
+	 * @param filename
+	 * @throws Exception
+	 */
 	void disableFile(String loggedInUser, String projectID, String subjectUID, String studyUID, String seriesUID, String filename) throws Exception;
 	
+	/**
+	 * @param loggedInUser
+	 * @param projectID
+	 * @param subjectUID
+	 * @param studyUID
+	 * @param seriesUID
+	 * @param templateName
+	 * @throws Exception
+	 */
 	void enableTemplate(String loggedInUser, String projectID, String subjectUID, String studyUID, String seriesUID, String templateName) throws Exception;
 	
+	/**
+	 * @param loggedInUser
+	 * @param projectID
+	 * @param subjectUID
+	 * @param studyUID
+	 * @param seriesUID
+	 * @param templateName
+	 * @throws Exception
+	 */
 	void disableTemplate(String loggedInUser, String projectID, String subjectUID, String studyUID, String seriesUID, String templateName) throws Exception;
 	
+	/**
+	 * @param fileID
+	 * @param filename
+	 * @param description
+	 * @param fileType
+	 * @param mimeType
+	 * @return
+	 * @throws Exception
+	 */
 	EpadFile updateEpadFile(long fileID, String filename, String description, String fileType, String mimeType) throws Exception;	
 	
+	/**
+	 * @param projectID
+	 * @return
+	 * @throws Exception
+	 */
 	List<String> getDisabledTemplates(String projectID) throws Exception;	
 
+	/**
+	 * @param project
+	 * @param file
+	 */
+	void linkFileToProject(String loggedInUser, Project project, EpadFile file) throws Exception;
+	
+	/**
+	 * @param project
+	 * @param file
+	 */
+	void unlinkFileFromProject(String loggedInUser, Project project, EpadFile file) throws Exception;
+	
+	/**
+	 * @param project
+	 * @return
+	 * @throws Exception
+	 */
+	List<EpadFile> getLinkedFiles(Project project) throws Exception;
+	
 	/**
 	 * @param username
 	 * @return

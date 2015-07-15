@@ -69,7 +69,8 @@ public class EventHandler extends AbstractHandler
 		int statusCode;
 
 		httpResponse.setContentType("text/plain");
-		request.setHandled(true);
+		if (request != null)					// In case handler is not called thru jetty
+			request.setHandled(true);
 
 		if (SessionService.hasValidSessionID(httpRequest)) {
 			try {
@@ -151,8 +152,8 @@ public class EventHandler extends AbstractHandler
 		// TODO This map should be replaced with a class describing an event.
 		if (sessionID.indexOf(",") != -1)
 			sessionID = sessionID.substring(0, sessionID.indexOf(","));
-		List<Map<String, String>> eventMap = epadDatabaseOperations.getEpadEventsForSessionID(sessionID);
-		List<Map<String, String>> userEvents = epadDatabaseOperations.getEpadEventsForSessionID(username);
+		List<Map<String, String>> eventMap = epadDatabaseOperations.getEpadEventsForSessionID(sessionID, true);
+		List<Map<String, String>> userEvents = epadDatabaseOperations.getEpadEventsForSessionID(username, true);
 		eventMap.addAll(userEvents);
 		String separator = ", ";
 
@@ -167,7 +168,7 @@ public class EventHandler extends AbstractHandler
 		
 		for (Map<String, String> row : eventMap) {
 			deletedEvents.put(row.get("aim_uid"), row);
-			if (getTime(row.get("created_time")) < (new Date().getTime() - 5*60*1000))
+			if (getTime(row.get("created_time")) < (new Date().getTime() - 5*60*1000) && !"System".equals(row.get("aim_uid")))
 			{
 				continue;
 			}

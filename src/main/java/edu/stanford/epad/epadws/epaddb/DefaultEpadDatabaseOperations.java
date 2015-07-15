@@ -582,6 +582,22 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 	}
 
 	@Override
+	public List<EPADAIM> getAIMsByQuery(String sqlQuery) {
+		Connection c = null;
+		try {
+			c = getConnection();
+			AIMDatabaseOperations adb = new AIMDatabaseOperations(c, EPADConfig.eXistServerUrl,
+					EPADConfig.aim4Namespace, EPADConfig.eXistCollection, EPADConfig.eXistUsername, EPADConfig.eXistPassword);
+			return adb.getAIMs(sqlQuery, 0, 0);
+		} catch (SQLException sqle) {
+			log.warning("AIM Database operation failed:", sqle);
+		} finally {
+			close(c);
+		}
+		return new ArrayList<EPADAIM>();
+	}
+
+	@Override
 	public int getNumberOfAIMs(String userName, ProjectReference reference)
 	{
 		Connection c = null;
@@ -924,6 +940,22 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 	}
 
 	@Override
+	public EPADAIM updateAIMDSOFrameNo(String aimID, int frameNo) {
+		Connection c = null;
+		try {
+			c = getConnection();
+			AIMDatabaseOperations adb = new AIMDatabaseOperations(c, EPADConfig.eXistServerUrl,
+					EPADConfig.aim4Namespace, EPADConfig.eXistCollection, EPADConfig.eXistUsername, EPADConfig.eXistPassword);
+			return adb.updateAIMDSOFrameNo(aimID, frameNo);
+		} catch (SQLException sqle) {
+			log.warning("AIM Database operation failed:", sqle);
+		} finally {
+			close(c);
+		}
+		return null;
+	}
+
+	@Override
 	public void deleteAIM(String userName, ProjectReference reference, String aimID)
 	{
 		Connection c = null;
@@ -1120,7 +1152,7 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 	}
 
 	@Override
-	public List<Map<String, String>> getEpadEventsForSessionID(String sessionID)
+	public List<Map<String, String>> getEpadEventsForSessionID(String sessionID, boolean delete)
 	{
 		List<Map<String, String>> rows = new ArrayList<Map<String, String>>();
 
@@ -1145,7 +1177,7 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 				rows.add(rowMap);
 			}
 
-			if (!rows.isEmpty()) { // Delete events up the most recent event for user
+			if (!rows.isEmpty() && delete) { // Delete events up the most recent event for user
 				log.info("Event search found " + rows.size() + " event(s) for session ID " + sessionID);
 				String pk = rows.get(rows.size()-1).get("pk"); // We order by pk, an auto-increment field (which does not wrap)
 				ps.close();
@@ -2455,6 +2487,28 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 		} finally {
 			close(c, ps, rs);
 		}
+	}
+
+	@Override
+	public String getDBVersion() {
+		Connection c = null;
+		ResultSet rs = null;
+		PreparedStatement ps = null;
+		try {
+			c = getConnection();
+			ps = c.prepareStatement("SELECT version FROM epaddb.dbversion");
+			rs = ps.executeQuery();
+			if (rs.next()) {
+				return rs.getString("version");
+			}
+		} catch (SQLException sqle) {
+			String debugInfo = DatabaseUtils.getDebugData(rs);
+			log.warning("Database operation failed; debugInfo=" + debugInfo, sqle);
+			return null;
+		} finally {
+			close(c, ps, rs);
+		}
+		return null;
 	}
 
 	private void recordNewSeries(SeriesProcessingStatus seriesProcessingStatus, String seriesUID)

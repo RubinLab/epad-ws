@@ -100,7 +100,7 @@ public class EPADSessionOperations
 	{
 		String username = extractUserNameFromAuthorizationHeader(httpRequest);
 		String password = extractPasswordFromAuthorizationHeader(httpRequest);
-		if (username == null) {
+		if (username == null || username.length() == 0) {
 			username = httpRequest.getParameter("username");
 			password = httpRequest.getParameter("password");
 		}
@@ -197,7 +197,10 @@ public class EPADSessionOperations
 		{
 			int comma = jSessionID.indexOf(",");
 			if (comma != -1)
+			{
+				log.warning("Multiple cookies:" + jSessionID);
 				jSessionID = jSessionID.substring(0, comma);
+			}
 		}
 		return jSessionID;
 	}

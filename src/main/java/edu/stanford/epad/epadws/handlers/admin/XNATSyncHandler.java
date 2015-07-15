@@ -223,7 +223,7 @@ public class XNATSyncHandler extends AbstractHandler
 						urole = UserRole.OWNER;
 					if (role.startsWith("Member"))
 						urole = UserRole.MEMBER;
-					projectOperations.addUserToProject(username, xproject.ID, euser, urole);
+					projectOperations.addUserToProject(username, xproject.ID, euser, urole, "");
 					if (role.startsWith("Owner") && project.getCreator().equals(username))
 					{
 						project.setCreator(euser);

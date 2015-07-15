@@ -31,6 +31,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.epad.epadws.models.Project;
 import edu.stanford.epad.epadws.models.ProjectToSubject;
@@ -83,7 +84,7 @@ public class DefaultWorkListOperations implements EpadWorkListOperations {
 		Project project = projectOperations.getProject(projectID);
 		if (project == null)
 			throw new Exception("Project not found, ID:" + projectID);
-		if (loggedIn != null && !loggedIn.isAdmin() && !projectOperations.isOwner(loggedInUser, projectID) && !loggedIn.hasPermission(User.CreateWorkListPermission))
+		if (loggedIn != null && !loggedIn.isAdmin() && !loggedInUser.equals(username) && !projectOperations.isOwner(loggedInUser, projectID) && !projectID.equals(EPADConfig.xnatUploadProjectID) && !loggedIn.hasPermission(User.CreateWorkListPermission))
 			throw new Exception("No permission to create worklist");
 		User user = projectOperations.getUser(username);
 		if (user == null)
@@ -94,13 +95,19 @@ public class DefaultWorkListOperations implements EpadWorkListOperations {
 		{
 			workList = this.getWorkList(workListID);
 		}
-		else
-			workList = this.getWorkListForUserByProject(username, projectID);
 		if (workList == null) workList = new WorkList();
 		if (workListID != null && workListID.trim().length() > 0)
 			workList.setWorkListID(workListID);
 		if (workList.getWorkListID() == null)
-			workList.setWorkListID(projectID + "_" + username);
+		{
+			int i = 0;
+			workListID = projectID + "_" + username + "_" + i;
+			while (getWorkList(workListID) != null) {
+				i++;
+				workListID = projectID + "_" + username + "_" + i;
+			}
+			workList.setWorkListID(workListID);
+		}
 		if (description != null && description.trim().length() > 0)
 			workList.setDescription(description);
 		if (startDate != null)
@@ -310,7 +317,7 @@ public class DefaultWorkListOperations implements EpadWorkListOperations {
 	public Set<Subject> getSubjectsForWorkListWithStatus(String workListID)
 			throws Exception {
 		WorkList workList = getWorkList(workListID);
-		List<WorkListToSubject> wltss = new WorkListToSubject().getObjects("worklist_id =" + workList.getId() + ")");
+		List<WorkListToSubject> wltss = new WorkListToSubject().getObjects("worklist_id =" + workList.getId());
 		Set<Subject> subjects = new HashSet<Subject>();
 		for (WorkListToSubject wlts: wltss)
 		{
@@ -400,7 +407,7 @@ public class DefaultWorkListOperations implements EpadWorkListOperations {
 	public Set<Study> getStudiesForWorkListWithStatus(String workListID)
 			throws Exception {
 		WorkList workList = getWorkList(workListID);
-		List<WorkListToStudy> wltss = new WorkListToStudy().getObjects("worklist_id =" + workList.getId() + ")");
+		List<WorkListToStudy> wltss = new WorkListToStudy().getObjects("worklist_id =" + workList.getId());
 		Set<Study> studies = new HashSet<Study>();
 		for (WorkListToStudy wlts: wltss)
 		{

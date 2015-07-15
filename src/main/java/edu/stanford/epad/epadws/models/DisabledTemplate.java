@@ -91,7 +91,6 @@ public class DisabledTemplate extends AbstractDAO {
         {"id","long","id","Id"},
         {"projectId","long","project_id","integer"},
         {"templateName","String","templatename","varchar"},
-        {"role","String","role","varchar"},
         {"creator","String","creator","varchar"},
         {"createdTime","Date","createdtime","timestamp"},
         {"updateTime","Date","updatetime","timestamp"},	

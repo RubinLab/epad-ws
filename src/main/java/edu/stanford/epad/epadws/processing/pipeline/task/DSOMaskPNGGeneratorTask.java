@@ -95,9 +95,9 @@ public class DSOMaskPNGGeneratorTask implements GeneratorTask
 				ias = new ArrayList<ImageAnnotation>();
 				ias.add(ia);
 			}
-			ImageAnnotation ia = ias.get(0);
-			if (ia.getCodingSchemeDesignator().equals("epad-plugin"))
+			if (ias.size() != 0 && ias.get(0).getCodingSchemeDesignator().equals("epad-plugin"))
 			{
+				ImageAnnotation ia = ias.get(0);
 				Aim aim = new Aim(ia);
 				epadDatabaseOperations.insertEpadEvent(
 						ia.getListUser().get(0).getLoginName(), 
@@ -109,8 +109,9 @@ public class DSOMaskPNGGeneratorTask implements GeneratorTask
 						aim.getCodeValue(),
 						"DSO Plugin");					
 			}
-			else if (UserProjectService.pendingUploads.containsKey(seriesUID))
+			else if (ias.size() != 0 && UserProjectService.pendingUploads.containsKey(seriesUID))
 			{
+				ImageAnnotation ia = ias.get(0);
 				Aim aim = new Aim(ia);
 				String username = UserProjectService.pendingUploads.get(seriesUID);
 				if (username != null && username.indexOf(":") != -1)

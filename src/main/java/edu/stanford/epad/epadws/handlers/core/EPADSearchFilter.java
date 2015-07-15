@@ -25,6 +25,8 @@ package edu.stanford.epad.epadws.handlers.core;
 
 import java.util.Set;
 
+import edu.stanford.epad.common.util.EPADLogger;
+
 /**
  * 
  * 
@@ -34,6 +36,7 @@ import java.util.Set;
  */
 public class EPADSearchFilter
 {
+	private static final EPADLogger log = EPADLogger.getInstance();
 	private String projectNameMatch = null;
 	private String patientNameMatch = null;
 	private String patientIDMatch = null;
@@ -76,6 +79,11 @@ public class EPADSearchFilter
 		return this.annotationMatch != null && this.annotationMatch != AnnotationMatch.NONE;
 	}
 
+	public boolean hasSomeMatchCriteria()
+	{
+		return hasProjectNameMatch() | hasPatientNameMatch() | hasPatientIDMatch() | hasAccessionNumberMatch() | hasModalityMatch() | hasAnnotationMatch();
+	}
+	
 	public String getProjectNameMatch()
 	{
 		return this.projectNameMatch;
@@ -91,6 +99,7 @@ public class EPADSearchFilter
 		if (this.projectNameMatch == null)
 			return true;
 		else {
+			projectNameMatch = removeAsterisk(projectNameMatch);
 			String projectNameRegex = "(?i).*" + projectNameMatch + ".*";
 			if (projectName.matches(projectNameRegex))
 				return true;
@@ -114,6 +123,7 @@ public class EPADSearchFilter
 		if (this.patientNameMatch == null)
 			return true;
 		else {
+			patientNameMatch = removeAsterisk(patientNameMatch);
 			String patientNameRegex = "(?i).*" + patientNameMatch.replace('^', ' ') + ".*";
 			if (patientName.replace('^', ' ').matches(patientNameRegex))
 				return true;
@@ -137,6 +147,7 @@ public class EPADSearchFilter
 		if (this.patientIDMatch == null)
 			return true;
 		else {
+			patientIDMatch = removeAsterisk(patientIDMatch);
 			String patientIDRegex = "(?i).*" + patientIDMatch + ".*";
 			if (patientID.matches(patientIDRegex))
 				return true;
@@ -160,6 +171,7 @@ public class EPADSearchFilter
 		if (this.accessionNumberMatch == null)
 			return true;
 		else {
+			accessionNumberMatch = removeAsterisk(accessionNumberMatch);
 			String accessionNumberRegex = "(?i).*" + accessionNumberMatch + ".*";
 			if (accessionNumber.matches(accessionNumberRegex))
 				return true;
@@ -191,6 +203,7 @@ public class EPADSearchFilter
 		if (this.modalityMatch == null)
 			return true;
 		else {
+			modalityMatch = removeAsterisk(modalityMatch);
 			String modalityRegex = "(?i).*" + modalityMatch + ".*";
 			if (modality.matches(modalityRegex))
 				return true;
@@ -392,6 +405,20 @@ public class EPADSearchFilter
 		return (hasPatientIDMatch() && !patientIDMatches(patientID))
 				|| (hasPatientNameMatch() && !patientNameMatches(patientName))
 				|| (hasFileTypeMatch() && !fileTypeMatches(fileType));
+	}
+	
+	private String removeAsterisk(String match)
+	{
+		match = match.replace('%', '*');
+		while (match.startsWith("*"))
+		{
+			match = match.substring(1);
+		}
+		while (match.endsWith("*"))
+		{
+			match = match.substring(0, match.length()-1);
+		}
+		return match;
 	}
 
 }

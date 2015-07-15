@@ -103,6 +103,7 @@ public class EPADGetHandler
 	 * Note: These long if/then/else statements looks terrible, they need to be replaced by something like jersey with annotations
 	 * But there seems to be some problem using jersey with embedded jetty and multiple handlers - still need to solve that
 	 * 
+	 * Note: This class will soon become obsolete and be replaced by Spring Controllers
 	 */
 
 	protected static int handleGet(HttpServletRequest httpRequest, HttpServletResponse httpResponse, PrintWriter responseStream, String username, String sessionID)
@@ -130,8 +131,13 @@ public class EPADGetHandler
 
 				statusCode = HttpServletResponse.SC_OK;
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.PROJECT, pathInfo)) {
+				boolean annotationCount = true;
+				if ("false".equalsIgnoreCase(httpRequest.getParameter("annotationCount")))
+					annotationCount = false;
 				ProjectReference projectReference = ProjectReference.extract(ProjectsRouteTemplates.PROJECT, pathInfo);
-				EPADProject project = epadOperations.getProjectDescription(projectReference, username, sessionID);
+				if (projectReference.projectID.equals(EPADConfig.xnatUploadProjectID))
+					annotationCount = false;
+				EPADProject project = epadOperations.getProjectDescription(projectReference, username, sessionID, annotationCount);
 				if (project != null) {
 					log.info("Project aim count:" + project.numberOfAnnotations);
 					responseStream.append(project.toJSON());
@@ -142,7 +148,7 @@ public class EPADGetHandler
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.SUBJECT_LIST, pathInfo)) {
 				ProjectReference projectReference = ProjectReference.extract(ProjectsRouteTemplates.SUBJECT_LIST, pathInfo);
 				EPADSubjectList subjectList = epadOperations.getSubjectDescriptions(projectReference.projectID, username,
-						sessionID, searchFilter);
+						sessionID, searchFilter, start, count);
 				long endtime = System.currentTimeMillis();
 				log.info("Returning " + subjectList.ResultSet.totalRecords + " subjects to client, took " + (endtime-starttime) + " msecs");
 				responseStream.append(subjectList.toJSON());
@@ -419,8 +425,6 @@ public class EPADGetHandler
 				statusCode = HttpServletResponse.SC_OK;
 			} else if (HandlerUtil.matchesTemplate(StudiesRouteTemplates.FRAME_LIST, pathInfo)) {
 				ImageReference imageReference = ImageReference.extract(StudiesRouteTemplates.FRAME_LIST, pathInfo);
-				if (imageReference.subjectID.equals("null"))
-					throw new Exception("Patient ID in rest call is null:" + pathInfo);
 				EPADFrameList frameList = epadOperations.getFrameDescriptions(imageReference);
 				responseStream.append(frameList.toJSON());
 				statusCode = HttpServletResponse.SC_OK;
@@ -966,32 +970,63 @@ public class EPADGetHandler
 				AIMSearchType aimSearchType = AIMUtil.getAIMSearchType(httpRequest);
 				String searchValue = aimSearchType != null ? httpRequest.getParameter(aimSearchType.getName()) : null;
 				String projectID = httpRequest.getParameter("projectID");
+				boolean deletedAims = "true".equalsIgnoreCase(httpRequest.getParameter("deletedAIMs"));
 				log.info("GET request for AIMs from user " + username + "; query type is " + aimSearchType + ", value "
-						+ searchValue + ", project " + projectID);
-				EPADAIMList aims = epadOperations.getAIMDescriptions(projectID, aimSearchType, searchValue, username, sessionID, start, count);
+						+ searchValue + ", project " + projectID + " deletedAIMs:" + deletedAims);
+				EPADAIMList aims = null;
+				if (!deletedAims)
+					aims = epadOperations.getAIMDescriptions(projectID, aimSearchType, searchValue, username, sessionID, start, count);
+				
 				long dbtime = System.currentTimeMillis();
 				log.info("Time taken for AIM database query:" + (dbtime-starttime) + " msecs");
 				if (returnSummary(httpRequest))
 				{
 					if (AIMSearchType.AIM_QUERY.equals(aimSearchType) || AIMSearchType.JSON_QUERY.equals(aimSearchType))
-						aims = AIMUtil.queryAIMImageAnnotationSummariesV4(aims, aimSearchType, searchValue, username, sessionID);
+					{
+						if (!deletedAims)
+							aims = AIMUtil.queryAIMImageAnnotationSummariesV4(aims, aimSearchType, searchValue, username, sessionID);
+						else
+							aims = AIMUtil.queryDeletedAIMImageAnnotationSummaries(aimSearchType, searchValue, username);
+					}
 					else
-						aims = AIMUtil.queryAIMImageAnnotationSummariesV4(aims, username, sessionID);					
+					{
+						if (!deletedAims)
+							aims = AIMUtil.queryAIMImageAnnotationSummariesV4(aims, username, sessionID);					
+						else
+							aims = AIMUtil.queryDeletedAIMImageAnnotationSummaries(aimSearchType, searchValue, username);
+					}
 					responseStream.append(aims.toJSON());
 				}
 				else if (returnJson(httpRequest))
 				{
 					if (AIMSearchType.JSON_QUERY.equals(aimSearchType))
+					{
 						AIMUtil.queryAIMImageAnnotationsV4(responseStream, aims, aimSearchType, searchValue, username, sessionID, true);					
+					}
 					else
-						AIMUtil.queryAIMImageJsonAnnotations(responseStream, aims, username, sessionID);					
+					{
+						if (!deletedAims)
+							AIMUtil.queryAIMImageJsonAnnotations(responseStream, aims, username, sessionID);					
+						else
+							AIMUtil.queryDeletedAIMImageJsonAnnotation(responseStream, aimSearchType, searchValue, username, sessionID);
+					}
 				}
 				else
 				{
 					if (AIMSearchType.AIM_QUERY.equals(aimSearchType))
-						AIMUtil.queryAIMImageAnnotationsV4(responseStream, aims, aimSearchType, searchValue, username, sessionID, false);					
+					{
+						if (!deletedAims)
+							AIMUtil.queryAIMImageAnnotationsV4(responseStream, aims, aimSearchType, searchValue, username, sessionID, false);					
+						else
+							AIMUtil.queryDeletedAIMImageAnnotations(responseStream, aimSearchType, searchValue, username, sessionID);
+					}
 					else
-						AIMUtil.queryAIMImageAnnotationsV4(responseStream, aims, username, sessionID);					
+					{
+						if (!deletedAims)
+							AIMUtil.queryAIMImageAnnotationsV4(responseStream, aims, username, sessionID);					
+						else
+							AIMUtil.queryDeletedAIMImageAnnotations(responseStream, aimSearchType, searchValue, username, sessionID);
+					}
 				}
 				statusCode = HttpServletResponse.SC_OK;
 

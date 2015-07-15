@@ -39,6 +39,7 @@ import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.epad.common.util.MongoDBOperations;
 import edu.stanford.epad.dtos.EPADAIM;
+import edu.stanford.epad.epadws.service.DefaultEpadProjectOperations;
 import edu.stanford.epad.epadws.service.UserProjectService;
 import edu.stanford.hakan.aim3api.base.AimException;
 import edu.stanford.hakan.aim3api.base.ImageAnnotation;
@@ -139,7 +140,7 @@ public class AIMQueries
 	}
 	public static List<ImageAnnotation> getAIMImageAnnotations(String projectID, AIMSearchType aimSearchType, String value, String username, int startIndex, int count, boolean use3Only)
 	{
-		log.info("Getting AIM annotations, aimSearchType:" + aimSearchType + " value:" + value + " start:" + startIndex + " count:" + count);
+		log.info("Getting AIM annotations, aimSearchType:" + aimSearchType + " value:" + value + " start:" + startIndex + " count:" + count + " projectID:" + projectID);
 		List<ImageAnnotation> resultAims = new ArrayList<ImageAnnotation>();
 		List<ImageAnnotation> aims = null;
 		ImageAnnotation aim = null;
@@ -470,6 +471,72 @@ public class AIMQueries
 		}
 		long time2 = System.currentTimeMillis();
 		log.info("AIM query took " + (time2-time1) + " msecs for " + resultAims.size() + " aims in projectID:" + projectID);
+		return resultAims;
+	}
+
+	/**
+	 * Read the Deleted annotations from the AIM database by patient name, patient id, annotation id, or just get all
+	 * of them on a GET.
+	 * 
+	 * @param aimSearchType One of personName, patientId, annotationUID
+	 * @param value
+	 * @param user
+	 * @return List<ImageAnnotationCollection>
+	 * @throws edu.stanford.hakan.aim4api.base.AimException
+	 */
+	public static List<ImageAnnotationCollection> getDeletedAIMImageAnnotations(AIMSearchType aimSearchType, String value, String username) throws Exception
+	{
+		List<ImageAnnotationCollection> resultAims = new ArrayList<ImageAnnotationCollection>();
+		long time1 = System.currentTimeMillis();
+	    String collection4Name = eXistCollectionV4;
+	    if (aimSearchType == null) {
+	    	aimSearchType = AIMSearchType.ANNOTATION_UID;
+	    	value = "all";
+	    }
+		try {
+			if (aimSearchType == AIMSearchType.PERSON_NAME) {
+				String personName = value;
+				resultAims = edu.stanford.hakan.aim4api.usage.AnnotationGetter
+						.getDeletedImageAnnotationCollectionByPersonNameEqual(eXistServerUrl, aim4Namespace, collection4Name,
+								eXistUsername, eXistPassword, personName);
+			} else if (aimSearchType == AIMSearchType.PATIENT_ID) {
+				String patientId = value;
+				resultAims = edu.stanford.hakan.aim4api.usage.AnnotationGetter
+						.getDeletedImageAnnotationCollectionByPersonIdEqual(eXistServerUrl, aim4Namespace, collection4Name,
+								eXistUsername, eXistPassword, patientId);
+			} else if (aimSearchType == AIMSearchType.ANNOTATION_UID) {
+				String annotationUID = value;
+				if (value.equals("all")) {
+					if (DefaultEpadProjectOperations.getInstance().isAdmin(username))
+					{	
+						log.debug("Getting all deleted AIMS");
+						resultAims = edu.stanford.hakan.aim4api.usage.AnnotationGetter
+								.getDeletedImageAnnotationCollectionALL(eXistServerUrl, aim4Namespace, collection4Name,
+										eXistUsername, eXistPassword);
+					}
+					else
+					{
+						log.debug("Getting deleted AIMS for " + username);
+						resultAims = edu.stanford.hakan.aim4api.usage.AnnotationGetter
+						.getDeletedImageAnnotationCollectionByUserNameEqual(eXistServerUrl, aim4Namespace, collection4Name,
+								eXistUsername, eXistPassword, username);
+					}
+				} else {
+					ImageAnnotationCollection aim = edu.stanford.hakan.aim4api.usage.AnnotationGetter
+							.getDeletedImageAnnotationCollectionByUniqueIdentifier(eXistServerUrl, aim4Namespace, collection4Name,
+									eXistUsername, eXistPassword, annotationUID);
+					if (aim != null) resultAims.add(aim);
+				}
+			} else {
+				log.warning("Unknown AIM search type " + aimSearchType.getName());
+				throw new Exception("Unknown AIM search type " + aimSearchType.getName());
+			}
+		} catch (Exception e) {
+			log.warning("Exception in AnnotationGetter ", e);
+			throw e;
+		}
+		long time2 = System.currentTimeMillis();
+		log.info("AIM query took " + (time2-time1) + " msecs for " + resultAims.size() + " deleted aims");
 		return resultAims;
 	}
 
