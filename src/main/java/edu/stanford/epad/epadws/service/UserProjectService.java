@@ -244,6 +244,7 @@ public class UserProjectService {
 		try {
 			Thread.sleep(5000); // Give it a couple of seconds for the property file to appear
 		} catch (InterruptedException e1) {}
+		String xnatUserName = null;
 		if (!xnatUploadPropertiesFile.exists())
 			log.warning("Could not find XNAT upload properties file " + propertiesFilePath);
 		else {
@@ -254,9 +255,9 @@ public class UserProjectService {
 				xnatUploadProperties.load(propertiesFileStream);
 				String xnatProjectLabel = xnatUploadProperties.getProperty("XNATProjectName");
 				String xnatSessionID = xnatUploadProperties.getProperty("XNATSessionID");
-				String xnatUserName = xnatUploadProperties.getProperty("XNATUserName");
+				xnatUserName = xnatUploadProperties.getProperty("XNATUserName");
 				log.info("Found XNAT upload properties file " + propertiesFilePath + " project:" + xnatProjectLabel + " user:" + xnatUserName);
-				if (xnatProjectLabel != null && xnatSessionID != null) {
+				if (xnatProjectLabel != null) {
 					xnatUploadPropertiesFile.delete();
 					int numberOfDICOMFiles = createProjectEntitiesFromDICOMFilesInUploadDirectory(dicomUploadDirectory, xnatProjectLabel, xnatSessionID, xnatUserName);
 					if (numberOfDICOMFiles != 0)
@@ -278,7 +279,7 @@ public class UserProjectService {
 				IOUtils.closeQuietly(propertiesFileStream);
 			}
 		}
-		return null;
+		return xnatUserName;
 	}
 	
 	public static String getUserNameFromPropertiesFile(File dicomUploadDirectory) {
