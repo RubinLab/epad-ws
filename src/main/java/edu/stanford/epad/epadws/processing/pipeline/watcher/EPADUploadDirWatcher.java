@@ -142,6 +142,7 @@ public class EPADUploadDirWatcher implements Runnable
 			}
 			// TODO Should not create XNAT entities until the DICOM send succeeds.
 			String username = UserProjectService.createProjectEntitiesFromDICOMFilesInUploadDirectory(directory);
+			log.info("Cleaning upload directory");
 			cleanUploadDirectory(directory);
 			if (username != null)
 				sendFilesToDcm4Chee(username, directory);
