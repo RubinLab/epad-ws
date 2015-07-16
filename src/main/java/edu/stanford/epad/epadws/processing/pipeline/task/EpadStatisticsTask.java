@@ -142,7 +142,6 @@ public class EpadStatisticsTask implements Runnable
 		} catch (Exception e) {
 			log.warning("Error is saving/sending statistics", e);
 		}
-		String latestversion = "";
 		try {
 			String epadUrl = EPADConfig.getParamValue("EpadStatusURL", "https://epad-public.stanford.edu/epad/status/");
 			HttpClient client = new HttpClient();
@@ -161,7 +160,7 @@ public class EpadStatisticsTask implements Runnable
 					if (!version.equals(new EPadWebServerVersion().getVersion()))
 					{
 						lastVersion = version;
-						String msg = "There is a new version of ePAD available, please go to ftp://epad-distribution.stanford.edu/ to download";
+						String msg = "A new version of ePAD: " + version + " is available, please go to ftp://epad-distribution.stanford.edu/ to download";
 						log.info(msg);
 						List<User> admins = new User().getObjects("admin = 1 and enabled = 1");
 						for (User admin: admins)
