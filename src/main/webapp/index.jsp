@@ -10,7 +10,7 @@
 </HEAD>
 <%
 			String sessionID = SessionService.getJSessionIDFromRequest(request);
-			if (sessionID == null || !SessionService.hasValidSessionID(sessionID)
+			if (sessionID == null || !SessionService.hasValidSessionID(sessionID))
 			{
 				response.sendRedirect("login.jsp");
 				return;

@@ -142,9 +142,8 @@ public class EpadStatisticsTask implements Runnable
 		} catch (Exception e) {
 			log.warning("Error is saving/sending statistics", e);
 		}
-		String latestversion = "";
 		try {
-			String epadUrl = EPADConfig.getParamValue("EpadStatusURL", "https://epad-public.stanford.edu/epad/status/");
+			String epadUrl = EPADConfig.getParamValue("EpadStatusURL", "http://epad-build.stanford.edu:8080/epad/status/");
 			HttpClient client = new HttpClient();
 			GetMethod getMethod = new GetMethod(epadUrl);
 			int status = client.executeMethod(getMethod);
@@ -152,15 +151,16 @@ public class EpadStatisticsTask implements Runnable
 				String response = getMethod.getResponseBodyAsString();
 				int versInd = response.indexOf("Version:");
 				if (versInd != -1) {
-					String version = response.substring(versInd + "Version:".length());
+					String version = response.substring(versInd + "Version:".length()+1);
 					if (version.indexOf("\n") != -1)
 						version  = version.substring(0, version.indexOf("\n"));
 					if (version.indexOf(" ") != -1)
 						version  = version.substring(0, version.indexOf(" "));
 					log.info("Current ePAD version:" + version + " Our Version:" + new EPadWebServerVersion().getVersion());
-					if (!version.equals(lastVersion) && version.equals(new EPadWebServerVersion().getVersion()))
+					if (!version.equals(new EPadWebServerVersion().getVersion()))
 					{
-						String msg = "There is a new version of ePAD available, please go to ftp://epad-distribution.stanford.edu/ to download";
+						lastVersion = version;
+						String msg = "A new version of ePAD: " + version + " is available, please go to ftp://epad-distribution.stanford.edu/ to download";
 						log.info(msg);
 						List<User> admins = new User().getObjects("admin = 1 and enabled = 1");
 						for (User admin: admins)
@@ -181,15 +181,17 @@ public class EpadStatisticsTask implements Runnable
 									msg, 
 									"System", "Upgrade",
 									"System", 
-									"System", 
-									"System", 
-									"System",
+									"Upgrade", 
+									"Upgrade", 
+									"Upgrade",
 									"Please update ePAD");												
 						}
 					}
 				}
 			}
-			
+			else
+				log.warning("Error is getting epad version");
+				
 		} catch (Exception x) {
 			log.warning("Error is getting epad version", x);
 		}
