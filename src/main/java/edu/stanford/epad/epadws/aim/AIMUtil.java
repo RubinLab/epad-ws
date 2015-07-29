@@ -1603,7 +1603,14 @@ public class AIMUtil
 
     public static ImageAnnotationCollection getImageAnnotationFromFileV4(File file, String xsdFilePath) {
         try {
-			return edu.stanford.hakan.aim4api.usage.AnnotationGetter.getImageAnnotationCollectionFromFile(file.getAbsolutePath(), xsdFilePath);
+	        String version = AnnotationValidator.getAimVersion(file.getAbsolutePath());
+	        if ("".equals(version)) {
+	            throw new AimException("This is not a AIM Annotation File.");
+	        }
+	        if (version.contains("4"))
+				return edu.stanford.hakan.aim4api.usage.AnnotationGetter.getImageAnnotationCollectionFromFile(file.getAbsolutePath(), xsdFilePath);
+	        else
+	        	return edu.stanford.hakan.aim4api.usage.AnnotationGetter.getImageAnnotationCollectionFromFile(file.getAbsolutePath());
 		} catch (Exception e) {
 			return null;
 		}
