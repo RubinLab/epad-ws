@@ -569,6 +569,22 @@ public class EPADPutHandler
 					throw new Exception("No file uploaded");
 				statusCode = epadOperations.createSystemTemplate(username, uploadedFile, sessionID);
 				
+			} else if (HandlerUtil.matchesTemplate(TemplatesRouteTemplates.TEMPLATE, pathInfo)) {
+				Map<String, String> templateMap = HandlerUtil.getTemplateMap(TemplatesRouteTemplates.TEMPLATE, pathInfo);
+				String templatename = HandlerUtil.getTemplateParameter(templateMap, "name");
+				String enable = httpRequest.getParameter("enable");
+				if (enable != null)
+				{
+					if ("true".equalsIgnoreCase(enable))
+					{
+						projectOperations.enableTemplate(username, EPADConfig.xnatUploadProjectID, null, null, null, templatename);
+					}
+					else if ("false".equalsIgnoreCase(enable))
+					{	
+						projectOperations.disableTemplate(username, EPADConfig.xnatUploadProjectID, null, null, null, templatename);
+					}
+				}
+				
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.TEMPLATE, pathInfo)) {
 				ProjectReference reference = ProjectReference.extract(ProjectsRouteTemplates.TEMPLATE, pathInfo);
 				Map<String, String> templateMap = HandlerUtil.getTemplateMap(ProjectsRouteTemplates.TEMPLATE, pathInfo);
