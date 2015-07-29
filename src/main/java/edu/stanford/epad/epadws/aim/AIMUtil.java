@@ -1360,7 +1360,7 @@ public class AIMUtil
 			try
 			{
 				Aim4 a = new Aim4(iac);
-				EPADAIM ea = new EPADAIM(iac.getUniqueIdentifier().getRoot(), a.getLoggedInUser().getLoginName(), 
+				EPADAIM ea = new EPADAIM(iac.getUniqueIdentifier().getRoot(), aim.userName, 
 						aim.projectID, aim.subjectID, aim.studyUID, aim.seriesUID, aim.imageUID, aim.instanceOrFrameNumber);
 				ea.name = iac.getImageAnnotations().get(0).getName().getValue();
 				ea.template = iac.getImageAnnotations().get(0).getListTypeCode().get(0).getCodeSystem();// .getCode();
@@ -1371,6 +1371,7 @@ public class AIMUtil
 					ea.studyDate = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(a.getFirstStudyDate());
 				ea.patientName = a.getPatientName();
 				ea.xml = null;
+				ea.user = a.getLoggedInUser().getLoginName();
 				aims.addAIM(ea);
 			} catch (Exception x) {
 				log.warning("Error parsing ImageAnnotationCollection:" + iac, x);
@@ -1389,7 +1390,7 @@ public class AIMUtil
 			try
 			{
 				Aim4 a = new Aim4(iac);
-				EPADAIM ea = new EPADAIM(iac.getUniqueIdentifier().getRoot(), a.getLoggedInUser().getLoginName(), 
+				EPADAIM ea = new EPADAIM(iac.getUniqueIdentifier().getRoot(), aim.userName, 
 						aim.projectID, aim.subjectID, aim.studyUID, aim.seriesUID, aim.imageUID, aim.instanceOrFrameNumber);
 				ea.name = iac.getImageAnnotations().get(0).getName().getValue();
 				ea.template = iac.getImageAnnotations().get(0).getListTypeCode().get(0).getCodeSystem();// .getCode();
@@ -1400,6 +1401,7 @@ public class AIMUtil
 					ea.studyDate = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(a.getFirstStudyDate());
 				ea.patientName = a.getPatientName();
 				ea.xml = null;
+				ea.user = a.getLoggedInUser().getLoginName();
 				aims.addAIM(ea);
 			} catch (Exception x) {
 				log.warning("Error parsing ImageAnnotationCollection:" + iac, x);
@@ -1418,7 +1420,7 @@ public class AIMUtil
 			try
 			{
 				Aim4 a = new Aim4(iac);
-				EPADAIM ea = new EPADAIM(iac.getUniqueIdentifier().getRoot(), a.getLoggedInUser().getLoginName(), 
+				EPADAIM ea = new EPADAIM(iac.getUniqueIdentifier().getRoot(), aim.userName, 
 						aim.projectID, aim.subjectID, aim.studyUID, aim.seriesUID, aim.imageUID, aim.instanceOrFrameNumber);
 				ea.name = iac.getImageAnnotations().get(0).getName().getValue();
 				ea.template = iac.getImageAnnotations().get(0).getListTypeCode().get(0).getCodeSystem();// .getCode();
@@ -1429,6 +1431,7 @@ public class AIMUtil
 					ea.studyDate = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(a.getFirstStudyDate());
 				ea.patientName = a.getPatientName();
 				ea.xml = null;
+				ea.user = a.getLoggedInUser().getLoginName();
 				aims.addAIM(ea);
 			} catch (Exception x) {
 				log.warning("Error parsing ImageAnnotationCollection:" + iac, x);
