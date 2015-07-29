@@ -117,6 +117,8 @@ import edu.stanford.hakan.aim3api.base.User;
 import edu.stanford.hakan.aim3api.usage.AnnotationBuilder;
 import edu.stanford.hakan.aim3api.usage.AnnotationGetter;
 import edu.stanford.hakan.aim4api.base.ImageAnnotationCollection;
+import edu.stanford.hakan.aim4api.base.SegmentationEntityCollection;
+import edu.stanford.hakan.aim4api.usage.AnnotationValidator;
 
 /**
  * 
