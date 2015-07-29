@@ -868,11 +868,24 @@ public class DefaultEpadOperations implements EpadOperations
 		}
 		if (seriesPk == null)
 		{
-			log.warning("Series not found in DCM4CHE database");
+			log.warning("Series not found in DCM4CHE database, uid:" + seriesReference.seriesUID);
+			NonDicomSeries nds;
+			try {
+				nds = projectOperations.getNonDicomSeries(seriesReference.seriesUID);
+				if (nds != null)
+				{
+					projectOperations.deleteNonDicomSeries(seriesReference.seriesUID);
+				}
+			} catch (Exception e) {
+				throw new RuntimeException("Error deleting series:" + e.getMessage());
+			}
 			epadDatabaseOperations.deleteSeries(seriesReference.seriesUID);
 			if (deleteAims)
 				deleteAllSeriesAims(seriesReference.seriesUID, false);
-			return "Series not found in DCM4CHE database";
+			if (nds != null)
+				return "";
+			else
+				return "Series not found in DCM4CHE database";
 		}
 		if (Dcm4CheeOperations.deleteSeries(seriesReference.seriesUID, seriesPk))
 		{

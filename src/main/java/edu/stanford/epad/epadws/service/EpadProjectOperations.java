@@ -751,6 +751,14 @@ public interface EpadProjectOperations {
 	void deleteStudy(String username, String studyUID) throws Exception;
 	
 	/**
+	 * Delete Non-dicom series
+	 * @param seriesUID
+	 * @return
+	 * @throws Exception
+	 */
+	void deleteNonDicomSeries(String seriesUID) throws Exception;
+	
+	/**
 	 * Delete file
 	 * @param loggedInUser
 	 * @param projectID

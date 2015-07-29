@@ -1677,6 +1677,13 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		study.delete();
 	}
 
+	@Override
+	public void deleteNonDicomSeries(String seriesUID) throws Exception {
+		NonDicomSeries nds = (NonDicomSeries) new NonDicomSeries().getObject("seriesUID = " + NonDicomSeries.toSQL(seriesUID));
+		if (nds != null)
+			nds.delete();
+	}
+
 	/* (non-Javadoc)
 	 * @see edu.stanford.epad.epadws.service.EpadProjectOperations#getUserLogs(java.lang.String)
 	 */
