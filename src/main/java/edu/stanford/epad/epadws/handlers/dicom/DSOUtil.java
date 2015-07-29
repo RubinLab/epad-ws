@@ -536,6 +536,8 @@ public class DSOUtil
 			}
 			if (instanceOffset == 0) instanceOffset = 1;
 			int index = 0;
+			boolean onefound = false;
+			int instanceCount = 0;
 			log.info("Number of valid referenced Instances:" + referencedSOPInstanceUIDDICOMElements.size() + " instance offset:" + instanceOffset);
 			for (DICOMElement dicomElement : referencedSOPInstanceUIDDICOMElements) {
 				String referencedImageUID = dicomElement.value;
@@ -549,7 +551,18 @@ public class DSOUtil
 				}
 
 				//log.info("Image dimensions - width " + bufferedImage.getWidth() + ", height " + bufferedImage.getHeight());
-				int refFrameNumber = dcm4cheeReferencedImageDescription.instanceNumber - instanceOffset; // Frames 0-based, instances 1 or more
+				int instanceNumber = dcm4cheeReferencedImageDescription.instanceNumber;
+				if (instanceNumber == 1 && onefound) // These are dicoms where all instance numbers are one !
+				{
+					instanceCount++;
+					instanceNumber = instanceCount;
+				}
+				if (instanceNumber == 1 && !onefound)
+				{
+					onefound = true;
+					instanceCount = 1;
+				}
+				int refFrameNumber = instanceNumber - instanceOffset; // Frames 0-based, instances 1 or more
 				if (refFrameNumber < 0) continue;
 				log.info("FrameNumber:" + frameNumber + " refFrameNumber:" + refFrameNumber + " instance number:" + dcm4cheeReferencedImageDescription.instanceNumber);
 				BufferedImage bufferedImage = sourceDSOImage.getBufferedImage(frameNumber);
