@@ -243,6 +243,8 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 			throw new Exception("Only admin can add permissions");
 		User user = new User();
 		user = (User) user.getObject("username = " + user.toSQL(username));
+		if (loggedInUser != null && !loggedInUser.isAdmin() && !loggedInUserName.equals(username) && !loggedInUserName.equals(user.getCreator()))
+			throw new Exception("No permission to modify user");
 		if (firstName != null) user.setFirstName(firstName);
 		if (lastName != null) user.setLastName(lastName);
 		if (email != null) user.setEmail(email);
