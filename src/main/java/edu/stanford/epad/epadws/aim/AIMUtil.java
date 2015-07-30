@@ -116,6 +116,7 @@ import edu.stanford.hakan.aim3api.base.SegmentationCollection;
 import edu.stanford.hakan.aim3api.base.User;
 import edu.stanford.hakan.aim3api.usage.AnnotationBuilder;
 import edu.stanford.hakan.aim3api.usage.AnnotationGetter;
+import edu.stanford.hakan.aim4api.base.DicomSegmentationEntity;
 import edu.stanford.hakan.aim4api.base.ImageAnnotationCollection;
 import edu.stanford.hakan.aim4api.base.SegmentationEntityCollection;
 import edu.stanford.hakan.aim4api.usage.AnnotationValidator;
@@ -289,7 +290,7 @@ public class AIMUtil
 				log.warning("Error saving aim to mongodb", e);
 			}
 		
-		    if (aim.getImageAnnotations().get(0).getListTypeCode().get(0).getCodeSystemName().equals("epad-plugin")) { // Which template has been used to fill the AIM file
+		    if (aim.getImageAnnotations().get(0).getListTypeCode().get(0).getCodeSystemName() != null && aim.getImageAnnotations().get(0).getListTypeCode().get(0).getCodeSystemName().equals("epad-plugin")) { // Which template has been used to fill the AIM file
 		        String templateName = aim.getImageAnnotations().get(0).getListTypeCode().get(0).getCode(); // ex: jjv-5
 		        log.info("Found an AIM plugin template with name " + templateName + " and AIM ID " + aim.getUniqueIdentifier());
 		        boolean templateHasBeenFound = false;
@@ -783,6 +784,9 @@ public class AIMUtil
                     imageAnnotationColl = iaV3.toAimV4(coordinationTerms);
 	            }
 	            if (imageAnnotationColl != null) {
+					SegmentationEntityCollection sec = imageAnnotationColl.getImageAnnotations().get(0).getSegmentationEntityCollection();
+					if (sec != null && sec.getSegmentationEntityList().size() == 0)
+						throw new Exception("Invalid AIM, contains empty segmentation data");
 					EPADAIM ea = epadDatabaseOperations.getAIM(imageAnnotationColl.getUniqueIdentifier().getRoot());
 					if (ea != null && !ea.projectID.equals(projectID))
 						projectID = ea.projectID; 		// TODO: Do we change AIM project if it is in unassigned? 
@@ -800,7 +804,37 @@ public class AIMUtil
 					if (imageAnnotationColl != null && projectID != null && username != null)
 					{
 						FrameReference frameReference = new FrameReference(projectID, patientID, studyID, seriesID, imageID, new Integer(frameNumber));
-						epadDatabaseOperations.addAIM(username, frameReference, imageAnnotationColl.getUniqueIdentifier().getRoot(), xml);
+						EPADAIM eaim = epadDatabaseOperations.addAIM(username, frameReference, imageAnnotationColl.getUniqueIdentifier().getRoot(), xml);
+						try {
+							if (sec != null && sec.getSegmentationEntityList().size() > 0)
+							{
+								if (sec.getSegmentationEntityList().get(0).getXsiType().equals("DicomSegmentationEntity"))
+								{
+									DicomSegmentationEntity dse = (DicomSegmentationEntity) sec.getSegmentationEntityList().get(0);
+									log.info("DSO RSUID:" + dse.getReferencedSopInstanceUid().getRoot() + " SUID:" + dse.getSopInstanceUid().getRoot());
+								}
+//								int ind = xml.lastIndexOf("<imageSeries>");
+//								String dsoSeriesUID = xml.substring(ind);
+//								ind = dsoSeriesUID.indexOf("<instanceUid root=");
+//								if (ind != -1)
+//								{
+//									dsoSeriesUID = dsoSeriesUID.substring(ind + "<instanceUid root=".length()+1);
+//									ind = dsoSeriesUID.indexOf("\"");
+//									if (ind != -1)
+//									{
+//										dsoSeriesUID = dsoSeriesUID.substring(0, ind);
+//										if (dsoSeriesUID.length() > 0)
+//										{
+//											log.info("Updating dsoSeriesUID in aim database:" + dsoSeriesUID + " aimID:" + eaim.aimID);
+//											ImageReference imageReference = new ImageReference(projectID, patientID, studyID, seriesID, imageID);
+//											epadDatabaseOperations.addDSOAIM(username, imageReference, dsoSeriesUID, eaim.aimID);
+//										}
+//									}
+//								}
+							}
+						} catch (Exception x) {
+							log.warning("Error checking segmentation", x);
+						}
 					}
 					return false;
 	            } 

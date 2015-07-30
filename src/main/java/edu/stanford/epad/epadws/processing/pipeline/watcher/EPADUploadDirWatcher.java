@@ -162,7 +162,9 @@ public class EPADUploadDirWatcher implements Runnable
 			writeExceptionLog(directory, e);
 		} finally {
 			log.info("Upload of directory " + directory.getAbsolutePath() + " finished");
-			deleteUploadDirectory(directory);
+			try {
+				deleteUploadDirectory(directory);
+			} catch (Exception x) {}
 		}
 	}
 

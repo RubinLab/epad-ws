@@ -836,6 +836,7 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 	@Override
 	public List<User> getUsersForProject(String projectId) throws Exception {
 		Project project = getProject(projectId);
+		if (project == null) return new ArrayList<User>();
 		
 		return getUsersByProjectId(project.getId());
 	}
@@ -863,6 +864,7 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 	public List<User> getUsersWithRoleForProject(String projectId)
 			throws Exception {
 		Project project = getProject(projectId);
+		if (project == null) return new ArrayList<User>();
 		List ptous = new ProjectToUser().getObjects("project_id = " + project.getId());
 		List<User> users = new ArrayList<User>();
 		for (Object ptou: ptous)
@@ -884,6 +886,7 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 	public List<Subject> getSubjectsForProject(String projectId)
 			throws Exception {
 		Project project = getProject(projectId);
+		if (project == null) return new ArrayList<Subject>();
 		
 		return getSubjectsByProjectId(project.getId());
 	}
