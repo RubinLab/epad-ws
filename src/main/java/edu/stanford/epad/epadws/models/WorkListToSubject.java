@@ -34,7 +34,7 @@ public class WorkListToSubject extends AbstractDAO {
 	long workListId;
 	long subjectId;
 	long projectId;
-	int sortOrder;
+	long sortOrder;
 	String status;
 	Date startDate;
 	Date completeDate;
@@ -75,11 +75,11 @@ public class WorkListToSubject extends AbstractDAO {
 		this.projectId = projectId;
 	}
 
-	public int getSortOrder() {
+	public long getSortOrder() {
 		return sortOrder;
 	}
 
-	public void setSortOrder(int sortOrder) {
+	public void setSortOrder(long sortOrder) {
 		this.sortOrder = sortOrder;
 	}
 
@@ -137,7 +137,7 @@ public class WorkListToSubject extends AbstractDAO {
         {"workListId","long","worklist_id","integer"},
         {"subjectId","long","subject_id","integer"},
         {"projectId","long","project_id","integer"},
-        {"sortOrder","int","sortorder","integer"},
+        {"sortOrder","long","sortorder","integer"},
         {"startDate","Date","startdate","date"},
         {"completeDate","Date","completedate","date"},
         {"status","String","status","varchar"},

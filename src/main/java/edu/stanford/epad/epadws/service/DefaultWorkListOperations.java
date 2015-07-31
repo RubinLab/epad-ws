@@ -164,6 +164,8 @@ public class DefaultWorkListOperations implements EpadWorkListOperations {
 			wtos.setProjectId(project.getId());
 			wtos.setCreator(loggedInUser);
 			wtos.save();
+			wtos.setSortOrder(wtos.getId());
+			wtos.save();
 		}
 	}
 
@@ -188,6 +190,8 @@ public class DefaultWorkListOperations implements EpadWorkListOperations {
 			wtos.setStudyId(study.getId());
 			wtos.setProjectId(project.getId());
 			wtos.setCreator(loggedInUser);
+			wtos.save();
+			wtos.setSortOrder(wtos.getId());
 			wtos.save();
 		}
 		return wtos;
