@@ -816,8 +816,6 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		Project project = getProject(projectID);
 		if (project == null) return null;
 		User user = getUser(username);
-		if (username.equals("admin") || user.isAdmin() || project.getType().equals(ProjectType.PUBLIC.getName()))
-			return project;
 		List<ProjectToUser> p2us = new ProjectToUser().getObjects("user_id =" + user.getId() + " and project_id=" + project.getId());
 		if (p2us.size() > 0)
 		{
@@ -826,6 +824,8 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 				project.setDefaultTemplate(p2u.getDefaultTemplate());
 			return project;
 		}
+		else if (username.equals("admin") || user.isAdmin() || project.getType().equals(ProjectType.PUBLIC.getName()))
+			return project;
 		else
 			return null;
 	}

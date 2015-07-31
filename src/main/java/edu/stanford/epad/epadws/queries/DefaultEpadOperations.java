@@ -1680,6 +1680,12 @@ public class DefaultEpadOperations implements EpadOperations
 		for (EpadFile efile: efiles)
 		{
 			Project project = (Project) projectOperations.getDBObject(Project.class, efile.getProjectId());
+			String defTemplate = null;
+			Project userProj = projectOperations.getProjectForUser(username, project.getProjectId());
+			if (userProj != null)
+			{
+				defTemplate = userProj.getDefaultTemplate();
+			}
 			List<String> disabledTemplatesNames = disabledTemplates.get(project.getProjectId());
 			if (disabledTemplatesNames == null)
 			{
@@ -1692,6 +1698,16 @@ public class DefaultEpadOperations implements EpadOperations
 				userProjects.add(project.getProjectId());
 				File tfile = new File(EPADConfig.getEPADWebServerResourcesDir() + getEpadFilePath(efile));
 				EPADTemplateContainer template = convertEpadFileToTemplate(project.getProjectId(), efile, tfile);
+				List<EPADTemplate> templates = template.templates;
+				for (EPADTemplate t: templates)
+				{
+					if (t.getTemplateCode().equals(defTemplate))
+					{
+						t.defaultTemplate = true;
+					}
+					else
+						t.defaultTemplate = false;
+				}
 				boolean enabled = efile.isEnabled();
 				if (disabledTemplatesNames.contains(template.fileName) || disabledTemplatesNames.contains(template.templateName) || disabledTemplatesNames.contains(template.templateCode))
 					enabled = false;
