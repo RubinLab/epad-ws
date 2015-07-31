@@ -30,8 +30,12 @@ public class UsersRouteTemplates
 	public static final String USER_SESSIONS = USER + "/sessions/";
 	public static final String USER_WORKLISTS = USER + "/worklists/";
 	public static final String USER_WORKLIST = USER_WORKLISTS + "{worklistID}";
-	public static final String USER_SUBJECT = USER + "/subjects/" + "{subjectID}";;
-	public static final String USER_STUDY = USER + "/studies/" + "{studyUID}";;
+	public static final String USER_WORKLIST_SUBJECTS = USER_WORKLIST + "/subjects/";
+	public static final String USER_WORKLIST_STUDIES = USER_WORKLIST + "/studies/";
+	public static final String USER_PROJECT_SUBJECT = USER_WORKLIST + "/projects/" + "{projectID}" + "/subjects/" + "{subjectID}";
+	public static final String USER_PROJECT_STUDY = USER_WORKLIST + "/projects/" + "{projectID}" + "/studies/" + "{studyUID}";
+	public static final String USER_SUBJECT = USER_WORKLIST + "/subjects/" + "{subjectID}";
+	public static final String USER_STUDY = USER_WORKLIST + "/studies/" + "{studyUID}";
 	public static final String USER_REVIEWERS = USER + "/reviewers/";
 	public static final String USER_REVIEWER = USER + "/reviewers/{username}";
 	public static final String USER_REVIEWEES = USER + "/reviewees/";

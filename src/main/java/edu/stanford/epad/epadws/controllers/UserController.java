@@ -1,6 +1,8 @@
 package edu.stanford.epad.epadws.controllers;
 
+import java.text.SimpleDateFormat;
 import java.util.Collection;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
@@ -31,6 +33,8 @@ import edu.stanford.epad.epadws.models.RemotePACQuery;
 import edu.stanford.epad.epadws.queries.DefaultEpadOperations;
 import edu.stanford.epad.epadws.queries.EpadOperations;
 import edu.stanford.epad.epadws.security.EPADSession;
+import edu.stanford.epad.epadws.service.DefaultWorkListOperations;
+import edu.stanford.epad.epadws.service.EpadWorkListOperations;
 import edu.stanford.epad.epadws.service.RemotePACService;
 import edu.stanford.epad.epadws.service.SessionService;
 
@@ -134,6 +138,48 @@ public class UserController {
 		String loggedInUser = SessionService.getUsernameForSession(sessionID);
 		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
 		epadOperations.deleteUser(loggedInUser, username);
+	}
+	
+	@RequestMapping(value = "/{reader}/worklists/{workListID:.+}", method = RequestMethod.PUT)
+	public void createUserWorkList( 
+										@PathVariable String projectID,
+										@PathVariable String reader,
+										@PathVariable String workListID,
+										@RequestParam(value="description", required=false) String description,
+										@RequestParam(value="dueDate", required=false) String dueDate,
+										HttpServletRequest request, 
+								        HttpServletResponse response) throws Exception {
+		String sessionID = SessionService.getJSessionIDFromRequest(request);
+		String username = SessionService.getUsernameForSession(sessionID);
+		EpadWorkListOperations worklistOperations = DefaultWorkListOperations.getInstance();
+		worklistOperations.createWorkList(username, reader, workListID, description, null, getDate(dueDate));
+	}
+	
+	@RequestMapping(value = "/{reader}/worklists/", method = {RequestMethod.POST,RequestMethod.PUT})
+	public void createUserWorkList( 
+										@PathVariable String projectID,
+										@PathVariable String reader,
+										@RequestParam(value="description", required=false) String description,
+										@RequestParam(value="dueDate", required=false) String dueDate,
+										HttpServletRequest request, 
+								        HttpServletResponse response) throws Exception {
+		String sessionID = SessionService.getJSessionIDFromRequest(request);
+		String username = SessionService.getUsernameForSession(sessionID);
+		EpadWorkListOperations worklistOperations = DefaultWorkListOperations.getInstance();
+		worklistOperations.createWorkList(username, reader, null, description, null, getDate(dueDate));
+	}
+	
+	SimpleDateFormat dateformat = new SimpleDateFormat("yyyyMMdd");
+	private Date getDate(String dateStr)
+	{
+		try
+		{
+			return dateformat.parse(dateStr);
+		}
+		catch (Exception x)
+		{
+			return null;
+		}
 	}
 	
 	

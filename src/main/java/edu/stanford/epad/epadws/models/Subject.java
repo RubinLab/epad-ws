@@ -39,6 +39,7 @@ public class Subject extends AbstractDAO {
 	Date createdTime;
 	Date updateTime;
 	transient String status;
+	transient String projectID;
 
 	public Subject(long id)
 	{
@@ -119,6 +120,14 @@ public class Subject extends AbstractDAO {
 
 	public void setStatus(String status) {
 		this.status = status;
+	}
+
+	public String getProjectID() {
+		return projectID;
+	}
+
+	public void setProjectID(String projectID) {
+		this.projectID = projectID;
 	}
 
 	public final static String DBTABLE = "subject";

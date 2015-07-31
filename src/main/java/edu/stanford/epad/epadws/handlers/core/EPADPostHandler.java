@@ -315,23 +315,23 @@ public class EPADPostHandler
 						statusCode = epadOperations.createSubject(username, subjectReference, subjectName, getDate(dob), gender, sessionID);
 					}
 					
-				} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.USER_WORKLISTS, pathInfo)) {
-					ProjectReference projectReference = ProjectReference.extract(ProjectsRouteTemplates.USER_WORKLISTS, pathInfo);
-					Map<String, String> templateMap = HandlerUtil.getTemplateMap(ProjectsRouteTemplates.USER_WORKLISTS, pathInfo);
+				} else if (HandlerUtil.matchesTemplate(UsersRouteTemplates.USER_WORKLISTS, pathInfo)) {
+					Map<String, String> templateMap = HandlerUtil.getTemplateMap(UsersRouteTemplates.USER_WORKLISTS, pathInfo);
 					String reader = HandlerUtil.getTemplateParameter(templateMap, "username");
+					String projectID = HandlerUtil.getTemplateParameter(templateMap, "projectID");
 					String description = httpRequest.getParameter("description");
 					String dueDate = httpRequest.getParameter("dueDate");
-					worklistOperations.createWorkList(username, reader, projectReference.projectID, null, description, null, getDate(dueDate));
+					worklistOperations.createWorkList(username, reader, null, description, null, getDate(dueDate));
 					statusCode = HttpServletResponse.SC_OK;
 				
-				} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.USER_WORKLIST, pathInfo)) {
-					ProjectReference projectReference = ProjectReference.extract(ProjectsRouteTemplates.USER_WORKLIST, pathInfo);
-					Map<String, String> templateMap = HandlerUtil.getTemplateMap(ProjectsRouteTemplates.USER_WORKLIST, pathInfo);
+				} else if (HandlerUtil.matchesTemplate(UsersRouteTemplates.USER_WORKLIST, pathInfo)) {
+					Map<String, String> templateMap = HandlerUtil.getTemplateMap(UsersRouteTemplates.USER_WORKLIST, pathInfo);
 					String reader = HandlerUtil.getTemplateParameter(templateMap, "username");
+					String projectID = HandlerUtil.getTemplateParameter(templateMap, "projectID");
 					String workListID = HandlerUtil.getTemplateParameter(templateMap, "workListID");
 					String description = httpRequest.getParameter("description");
 					String dueDate = httpRequest.getParameter("dueDate");
-					worklistOperations.createWorkList(username, reader, projectReference.projectID, workListID, description, null, getDate(dueDate));
+					worklistOperations.createWorkList(username, reader, workListID, description, null, getDate(dueDate));
 					statusCode = HttpServletResponse.SC_OK;
 				
 				} else {

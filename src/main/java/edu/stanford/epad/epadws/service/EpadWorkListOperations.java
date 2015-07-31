@@ -26,10 +26,10 @@ package edu.stanford.epad.epadws.service;
 
 import java.util.Date;
 import java.util.List;
-import java.util.Set;
 
 import edu.stanford.epad.epadws.models.Study;
 import edu.stanford.epad.epadws.models.Subject;
+import edu.stanford.epad.epadws.models.User;
 import edu.stanford.epad.epadws.models.WorkList;
 import edu.stanford.epad.epadws.models.WorkListToStudy;
 import edu.stanford.epad.epadws.models.WorkListToSubject;
@@ -60,7 +60,7 @@ public interface EpadWorkListOperations {
 	 * @return
 	 * @throws Exception
 	 */
-	WorkList createWorkList(String loggedInUser, String username, String projectID, String workListID, String description, Date startDate, Date dueDate) throws Exception;
+	WorkList createWorkList(String loggedInUser, String username, String workListID, String description, Date startDate, Date dueDate) throws Exception;
 	
 	/**
 	 * Updates worklist fields in database (all arguments except workListID are optional) 
@@ -83,7 +83,7 @@ public interface EpadWorkListOperations {
 	 * @param workListID
 	 * @throws Exception
 	 */
-	void addSubjectToWorkList(String loggedInUser, String subjectUID, String workListID) throws Exception;
+	void addSubjectToWorkList(String loggedInUser, String projectID, String subjectUID, String workListID) throws Exception;
 	
 	/**
 	 * Add Study to WorkList
@@ -92,7 +92,7 @@ public interface EpadWorkListOperations {
 	 * @param projectId
 	 * @throws Exception
 	 */
-	WorkListToStudy addStudyToWorkList(String loggedInUser, String studyUID, String workListID) throws Exception;
+	WorkListToStudy addStudyToWorkList(String loggedInUser, String projectID, String studyUID, String workListID) throws Exception;
 	
 	/**
 	 * Remove Subject from WorkList
@@ -121,6 +121,14 @@ public interface EpadWorkListOperations {
 	WorkList getWorkList(String workListID) throws Exception;
 	
 	/**
+	 * Get User for Worklist
+	 * @param workListID
+	 * @return
+	 * @throws Exception
+	 */
+	User getUserForWorkList(String workListID) throws Exception;
+	
+	/**
 	 * Get All WorkList records
 	 * @return
 	 * @throws Exception
@@ -134,14 +142,6 @@ public interface EpadWorkListOperations {
 	 * @throws Exception
 	 */
 	List<WorkList> getWorkListsForUser(String username) throws Exception;
-	
-	/**
-	 * Get WorkLists for a project
-	 * @param username
-	 * @return
-	 * @throws Exception
-	 */
-	List<WorkList> getWorkListsForProject(String projectID) throws Exception;
 	
 	/**
 	 * Get WorkList for a user and project
@@ -159,15 +159,7 @@ public interface EpadWorkListOperations {
 	 * @return
 	 * @throws Exception
 	 */
-	Set<Subject> getSubjectsForWorkList(String workListID) throws Exception;
-	
-	/**
-	 * Get Subjects for a WorkList
-	 * @param workListID
-	 * @return
-	 * @throws Exception
-	 */
-	Set<Subject> getSubjectsForWorkListWithStatus(String workListID) throws Exception;
+	List<Subject> getSubjectsForWorkList(String workListID) throws Exception;
 	
 	/**
 	 * Get WorkLists for a subject
@@ -175,7 +167,7 @@ public interface EpadWorkListOperations {
 	 * @return
 	 * @throws Exception
 	 */
-	Set<WorkList> getWorkListsForSubject(String subjectUID) throws Exception;
+	List<WorkList> getWorkListsForSubject(String subjectUID) throws Exception;
 	
 	/**
 	 * Get WorkLists for a subject
@@ -183,7 +175,7 @@ public interface EpadWorkListOperations {
 	 * @return
 	 * @throws Exception
 	 */
-	Set<WorkList> getWorkListsForUserBySubject(String username, String subjectUID) throws Exception;
+	List<WorkList> getWorkListsForUserBySubject(String username, String subjectUID) throws Exception;
 	
 	/**
 	 * Get WorkLists for a study
@@ -191,7 +183,7 @@ public interface EpadWorkListOperations {
 	 * @return
 	 * @throws Exception
 	 */
-	Set<WorkList> getWorkListsForUserByStudy(String username, String studyUID) throws Exception;
+	List<WorkList> getWorkListsForUserByStudy(String username, String studyUID) throws Exception;
 	
 	/**
 	 * Get Studies for WorkList
@@ -199,7 +191,7 @@ public interface EpadWorkListOperations {
 	 * @return
 	 * @throws Exception
 	 */
-	Set<Study> getStudiesForWorkList(String workListID) throws Exception;
+	List<Study> getStudiesForWorkList(String workListID) throws Exception;
 	
 	/**
 	 * Get Studies for WorkList
@@ -207,8 +199,15 @@ public interface EpadWorkListOperations {
 	 * @return
 	 * @throws Exception
 	 */
-	Set<Study> getStudiesForWorkListWithStatus(String workListID) throws Exception;
 	List<WorkListToStudy> getWorkListStudies(String workListID) throws Exception;
+	
+	/**
+	 * Get Subjects for WorkList
+	 * @param workListID
+	 * @return
+	 * @throws Exception
+	 */
+	List<WorkListToSubject> getWorkListSubjects(String workListID) throws Exception;
 
 	/**
 	 * Delete WorkList

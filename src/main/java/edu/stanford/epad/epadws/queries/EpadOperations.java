@@ -52,6 +52,7 @@ import edu.stanford.epad.dtos.EPADUserList;
 import edu.stanford.epad.dtos.EPADWorklist;
 import edu.stanford.epad.dtos.EPADWorklistList;
 import edu.stanford.epad.dtos.EPADWorklistStudyList;
+import edu.stanford.epad.dtos.EPADWorklistSubjectList;
 import edu.stanford.epad.dtos.internal.DCM4CHEESeries;
 import edu.stanford.epad.epadws.aim.AIMSearchType;
 import edu.stanford.epad.epadws.handlers.core.EPADSearchFilter;
@@ -274,17 +275,17 @@ public interface EpadOperations
 	
 	EPADAIM getAIMDescription(String aimID, String username, String sessionID);
 	
-	EPADWorklistList getWorkLists(ProjectReference projectReference) throws Exception;
+	EPADWorklistList getWorkListsForUser(String username) throws Exception;
 	
-	EPADWorklistList getWorkLists(ProjectReference projectReference, String username) throws Exception;
+	EPADWorklistStudyList getWorkListStudies(String username, String workListID) throws Exception;
 	
-	EPADWorklistStudyList getWorkListStudies(ProjectReference projectReference, String username, String workListID) throws Exception;
+	EPADWorklistSubjectList getWorkListSubjects(String username, String workListID) throws Exception;
 	
-	EPADWorklistStudyList getWorkListSubjectStudies(ProjectReference projectReference, String username, String subjectID, String workListID) throws Exception;
+	//EPADWorklistStudyList getWorkListSubjectStudies(ProjectReference projectReference, String username, String subjectID, String workListID) throws Exception;
 	
-	EPADWorklist getWorkList(ProjectReference projectReference, String username) throws Exception;
+	//EPADWorklist getWorkList(ProjectReference projectReference, String username) throws Exception;
 	
-	EPADWorklist getWorkListByID(ProjectReference projectReference, String workListID) throws Exception;
+	EPADWorklist getWorkListByID(String username, String workListID) throws Exception;
 
 	/**
 	 * See if new series have been uploaded to DCM4CHEE that ePAD does not know about.

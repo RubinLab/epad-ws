@@ -1550,35 +1550,6 @@ public class ProjectController {
 		}		
 	}
 	
-	@RequestMapping(value = "/{projectID}/users/{reader}/worklists/{workListID:.+}", method = RequestMethod.PUT)
-	public void createUserWorkList( 
-										@PathVariable String projectID,
-										@PathVariable String reader,
-										@PathVariable String workListID,
-										@RequestParam(value="description", required=false) String description,
-										@RequestParam(value="dueDate", required=false) String dueDate,
-										HttpServletRequest request, 
-								        HttpServletResponse response) throws Exception {
-		String sessionID = SessionService.getJSessionIDFromRequest(request);
-		String username = SessionService.getUsernameForSession(sessionID);
-		EpadWorkListOperations worklistOperations = DefaultWorkListOperations.getInstance();
-		worklistOperations.createWorkList(username, reader, projectID, workListID, description, null, getDate(dueDate));
-	}
-	
-	@RequestMapping(value = "/{projectID}/users/{reader}/worklists/", method = {RequestMethod.POST,RequestMethod.PUT})
-	public void createUserWorkList( 
-										@PathVariable String projectID,
-										@PathVariable String reader,
-										@RequestParam(value="description", required=false) String description,
-										@RequestParam(value="dueDate", required=false) String dueDate,
-										HttpServletRequest request, 
-								        HttpServletResponse response) throws Exception {
-		String sessionID = SessionService.getJSessionIDFromRequest(request);
-		String username = SessionService.getUsernameForSession(sessionID);
-		EpadWorkListOperations worklistOperations = DefaultWorkListOperations.getInstance();
-		worklistOperations.createWorkList(username, reader, projectID, null, description, null, getDate(dueDate));
-	}
-	
 	@RequestMapping(value = "/{projectID:.+}", method = RequestMethod.DELETE)
 	public void deleteEPADProject( 
 										@PathVariable String projectID,
