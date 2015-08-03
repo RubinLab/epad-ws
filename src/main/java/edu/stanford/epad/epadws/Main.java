@@ -73,6 +73,7 @@ import edu.stanford.epad.epadws.handlers.admin.XNATSyncHandler;
 import edu.stanford.epad.epadws.handlers.aim.AimResourceHandler;
 import edu.stanford.epad.epadws.handlers.coordination.CoordinationHandler;
 import edu.stanford.epad.epadws.handlers.core.EPADHandler;
+import edu.stanford.epad.epadws.handlers.dicom.ResourcesFileHandler;
 import edu.stanford.epad.epadws.handlers.dicom.WadoHandler;
 import edu.stanford.epad.epadws.handlers.event.EventHandler;
 import edu.stanford.epad.epadws.handlers.event.ProjectEventHandler;
@@ -275,6 +276,7 @@ public class Main
 			addHandlerAtContextPath(new ConvertAIM4Handler(), "/epad/convertaim4", handlerList);
 			addHandlerAtContextPath(new XNATSyncHandler(), "/epad/syncxnat", handlerList);
 			addHandlerAtContextPath(new StatisticsHandler(), "/epad/statistics", handlerList);
+			addHandlerAtContextPath(new ResourcesFileHandler(), "/epad/resourcesFile", handlerList);
 			
 			// TODO This call will disappear when we switch to AIM4
 			addHandlerAtContextPath(new CoordinationHandler(), "/epad/coordination", handlerList);
