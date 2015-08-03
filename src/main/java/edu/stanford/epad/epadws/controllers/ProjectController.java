@@ -271,9 +271,9 @@ public class ProjectController {
 		String username = SessionService.getUsernameForSession(sessionID);
 		ImageReference imageReference = new ImageReference(projectID, subjectID, studyUID, seriesUID, imageUID);
 		if ("file".equals(format)) {
-			DownloadUtil.downloadImage(false, response, imageReference, username, sessionID);
-		} if ("stream".equals(format)) {
-			DownloadUtil.downloadImage(true, response, imageReference, username, sessionID);
+			DownloadUtil.downloadImage(false, response, imageReference, username, sessionID, true);
+		} else if ("stream".equals(format)) {
+			DownloadUtil.downloadImage(true, response, imageReference, username, sessionID, true);
 		} else {
 			PrintWriter responseStream = response.getWriter();
 			response.setContentType("application/json");
