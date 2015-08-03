@@ -119,7 +119,10 @@ public class DownloadUtil {
 				File seriesDir = new File(studyDir, "Series-" + series.seriesUID);
 				seriesDir.mkdirs();
 				SeriesReference seriesReference = new SeriesReference(studyReference.projectID, studyReference.subjectID, studyReference.studyUID, series.seriesUID);
-				EPADImageList imageList = epadOperations.getImageDescriptions(seriesReference, sessionID, null);
+				EPADImageList imageList = new EPADImageList();
+				try {
+					imageList = epadOperations.getImageDescriptions(seriesReference, sessionID, null);
+				} catch (Exception x) {}
 				for (EPADImage image: imageList.ResultSet.Result)
 				{
 					String name = image.imageUID + ".dcm";
@@ -227,7 +230,10 @@ public class DownloadUtil {
 				File seriesDir = new File(studyDir, "Series-" + series.seriesUID);
 				seriesDir.mkdirs();
 				SeriesReference seriesReference = new SeriesReference(studyReference.projectID, studyReference.subjectID, studyReference.studyUID, series.seriesUID);
-				EPADImageList imageList = epadOperations.getImageDescriptions(seriesReference, sessionID, null);
+				EPADImageList imageList = new EPADImageList();
+				try {
+					imageList = epadOperations.getImageDescriptions(seriesReference, sessionID, null);
+				} catch (Exception x) {}
 				for (EPADImage image: imageList.ResultSet.Result)
 				{
 					String name = image.imageUID + ".dcm";
@@ -351,7 +357,10 @@ public class DownloadUtil {
 			File seriesDir = new File(downloadDir, "Series-"+ series.seriesUID);
 			seriesDir.mkdirs();
 			SeriesReference seriesReference = new SeriesReference(studyReference.projectID, studyReference.subjectID, studyReference.studyUID, series.seriesUID);
-			EPADImageList imageList = epadOperations.getImageDescriptions(seriesReference, sessionID, null);
+			EPADImageList imageList = new EPADImageList();
+			try {
+				imageList = epadOperations.getImageDescriptions(seriesReference, sessionID, null);
+			} catch (Exception x) {}
 			int i = 0;
 			for (EPADImage image: imageList.ResultSet.Result)
 			{
@@ -469,7 +478,10 @@ public class DownloadUtil {
 			SeriesReference seriesReference = new SeriesReference(null, null, null, seriesUID);
 			EPADSeries series = epadOperations.getSeriesDescription(seriesReference, username, sessionID);
 			seriesReference = new SeriesReference(null, series.patientID, series.studyUID, seriesUID);
-			EPADImageList imageList = epadOperations.getImageDescriptions(seriesReference, sessionID, null);
+			EPADImageList imageList = new EPADImageList();
+			try {
+				imageList = epadOperations.getImageDescriptions(seriesReference, sessionID, null);
+			} catch (Exception x) {}
 			int i = 0;
 			for (EPADImage image: imageList.ResultSet.Result)
 			{
@@ -577,7 +589,10 @@ public class DownloadUtil {
 		File downloadDir = new File(downloadDirPath);
 		downloadDir.mkdirs();
 		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
-		EPADImageList imageList = epadOperations.getImageDescriptions(seriesReference, sessionID, null);
+		EPADImageList imageList = new EPADImageList();
+		try {
+			imageList = epadOperations.getImageDescriptions(seriesReference, sessionID, null);
+		} catch (Exception x) {}
 		List<String> fileNames = new ArrayList<String>();
 		for (EPADImage image: imageList.ResultSet.Result)
 		{
