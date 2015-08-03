@@ -275,9 +275,13 @@ public class EPADGetHandler
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.IMAGE, pathInfo)) {
 				ImageReference imageReference = ImageReference.extract(ProjectsRouteTemplates.IMAGE, pathInfo);
 				if (returnFile(httpRequest)) {
-					DownloadUtil.downloadImage(false, httpResponse, imageReference, username, sessionID);
-				} if (returnStream(httpRequest)) {
-					DownloadUtil.downloadImage(true, httpResponse, imageReference, username, sessionID);
+					DownloadUtil.downloadImage(false, httpResponse, imageReference, username, sessionID, true);
+				} else if (returnStream(httpRequest)) {
+					DownloadUtil.downloadImage(true, httpResponse, imageReference, username, sessionID, true);
+				} else if (returnPNG(httpRequest)) {
+					DownloadUtil.downloadPNG(httpResponse, imageReference, username, sessionID);
+				} else if (returnJPEG(httpRequest)) {
+					DownloadUtil.downloadImage(true, httpResponse, imageReference, username, sessionID, false);
 				} else {
 					EPADImage image = epadOperations.getImageDescription(imageReference, sessionID);
 					if (image != null) {
@@ -411,9 +415,9 @@ public class EPADGetHandler
 			} else if (HandlerUtil.matchesTemplate(StudiesRouteTemplates.IMAGE, pathInfo)) {
 				ImageReference imageReference = ImageReference.extract(StudiesRouteTemplates.IMAGE, pathInfo);
 				if (returnFile(httpRequest)) {
-					DownloadUtil.downloadImage(false, httpResponse, imageReference, username, sessionID);
+					DownloadUtil.downloadImage(false, httpResponse, imageReference, username, sessionID, true);
 				} if (returnStream(httpRequest)) {
-					DownloadUtil.downloadImage(true, httpResponse, imageReference, username, sessionID);
+					DownloadUtil.downloadImage(true, httpResponse, imageReference, username, sessionID, true);
 				} else {
 					EPADImage image = epadOperations.getImageDescription(imageReference, sessionID);
 					if (image != null) {
@@ -1499,6 +1503,24 @@ public class EPADGetHandler
 	{
 		String format = httpRequest.getParameter("format");
 		if (format != null && format.trim().equalsIgnoreCase("stream"))
+			return true;
+		else
+			return false;
+	}
+
+	private static boolean returnPNG(HttpServletRequest httpRequest)
+	{
+		String format = httpRequest.getParameter("format");
+		if (format != null && format.trim().equalsIgnoreCase("png"))
+			return true;
+		else
+			return false;
+	}
+
+	private static boolean returnJPEG(HttpServletRequest httpRequest)
+	{
+		String format = httpRequest.getParameter("format");
+		if (format != null && format.trim().equalsIgnoreCase("jpeg"))
 			return true;
 		else
 			return false;

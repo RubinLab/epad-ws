@@ -57,6 +57,7 @@ import edu.stanford.epad.dtos.EPADSeries;
 import edu.stanford.epad.dtos.EPADSeriesList;
 import edu.stanford.epad.dtos.EPADStudy;
 import edu.stanford.epad.dtos.EPADStudyList;
+import edu.stanford.epad.epadws.epaddb.EpadDatabase;
 import edu.stanford.epad.epadws.handlers.HandlerUtil;
 import edu.stanford.epad.epadws.handlers.core.EPADSearchFilter;
 import edu.stanford.epad.epadws.handlers.core.ImageReference;
@@ -689,10 +690,12 @@ public class DownloadUtil {
 	 * @param sessionID
 	 * @throws Exception
 	 */
-	public static void downloadImage(boolean stream, HttpServletResponse httpResponse, ImageReference imageReference, String username, String sessionID) throws Exception
+	public static void downloadImage(boolean stream, HttpServletResponse httpResponse, ImageReference imageReference, String username, String sessionID, boolean dicom) throws Exception
 	{
 		String queryString = "requestType=WADO&studyUID=" + imageReference.studyUID 
-				+ "&seriesUID=" + imageReference.seriesUID + "&objectUID=" + imageReference.imageUID + "&contentType=application/dicom";
+				+ "&seriesUID=" + imageReference.seriesUID + "&objectUID=" + imageReference.imageUID;
+		if (dicom)
+			queryString = queryString + "&contentType=application/dicom";
 		if (stream)
 		{
 			httpResponse.setContentType("application/octet-stream");
@@ -725,6 +728,25 @@ public class DownloadUtil {
 			PrintWriter responseStream = httpResponse.getWriter();
 			responseStream.append(epadFile.toJSON());
 		}
+	}
+	
+	/**
+	 * Method to download a png
+	 * 
+	 * @param httpResponse
+	 * @param imageReference
+	 * @param username
+	 * @param sessionID
+	 * @throws Exception
+	 */
+	public static void downloadPNG(HttpServletResponse httpResponse, ImageReference imageReference, String username, String sessionID) throws Exception
+	{
+		String pngPath = EpadDatabase.getInstance().getEPADDatabaseOperations().getPNGLocation(imageReference.studyUID, imageReference.seriesUID, imageReference.imageUID);
+		File file = new File(EPADConfig.getEPADWebServerResourcesDir() +  pngPath);
+		if (!file.exists()) {
+			throw new Exception("Image " + file.getAbsolutePath() + " does not exist");
+		}
+	    EPADFileUtils.downloadFile(null, httpResponse, file, imageReference.imageUID + ".png");
 	}
 
 	public static int performWADOQuery(String queryString, OutputStream outputStream, String username, String sessionID)
