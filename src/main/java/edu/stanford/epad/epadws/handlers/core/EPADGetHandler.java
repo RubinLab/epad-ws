@@ -67,6 +67,7 @@ import edu.stanford.epad.dtos.EPADUserList;
 import edu.stanford.epad.dtos.EPADWorklist;
 import edu.stanford.epad.dtos.EPADWorklistList;
 import edu.stanford.epad.dtos.EPADWorklistStudyList;
+import edu.stanford.epad.dtos.EPADWorklistSubjectList;
 import edu.stanford.epad.dtos.RemotePAC;
 import edu.stanford.epad.dtos.RemotePACEntity;
 import edu.stanford.epad.dtos.RemotePACEntityList;
@@ -274,9 +275,13 @@ public class EPADGetHandler
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.IMAGE, pathInfo)) {
 				ImageReference imageReference = ImageReference.extract(ProjectsRouteTemplates.IMAGE, pathInfo);
 				if (returnFile(httpRequest)) {
-					DownloadUtil.downloadImage(false, httpResponse, imageReference, username, sessionID);
-				} if (returnStream(httpRequest)) {
-					DownloadUtil.downloadImage(true, httpResponse, imageReference, username, sessionID);
+					DownloadUtil.downloadImage(false, httpResponse, imageReference, username, sessionID, true);
+				} else if (returnStream(httpRequest)) {
+					DownloadUtil.downloadImage(true, httpResponse, imageReference, username, sessionID, true);
+				} else if (returnPNG(httpRequest)) {
+					DownloadUtil.downloadPNG(httpResponse, imageReference, username, sessionID);
+				} else if (returnJPEG(httpRequest)) {
+					DownloadUtil.downloadImage(true, httpResponse, imageReference, username, sessionID, false);
 				} else {
 					EPADImage image = epadOperations.getImageDescription(imageReference, sessionID);
 					if (image != null) {
@@ -410,9 +415,13 @@ public class EPADGetHandler
 			} else if (HandlerUtil.matchesTemplate(StudiesRouteTemplates.IMAGE, pathInfo)) {
 				ImageReference imageReference = ImageReference.extract(StudiesRouteTemplates.IMAGE, pathInfo);
 				if (returnFile(httpRequest)) {
-					DownloadUtil.downloadImage(false, httpResponse, imageReference, username, sessionID);
-				} if (returnStream(httpRequest)) {
-					DownloadUtil.downloadImage(true, httpResponse, imageReference, username, sessionID);
+					DownloadUtil.downloadImage(false, httpResponse, imageReference, username, sessionID, true);
+				} else if (returnStream(httpRequest)) {
+					DownloadUtil.downloadImage(true, httpResponse, imageReference, username, sessionID, true);
+				} else if (returnPNG(httpRequest)) {
+					DownloadUtil.downloadPNG(httpResponse, imageReference, username, sessionID);
+				} else if (returnJPEG(httpRequest)) {
+					DownloadUtil.downloadImage(true, httpResponse, imageReference, username, sessionID, false);
 				} else {
 					EPADImage image = epadOperations.getImageDescription(imageReference, sessionID);
 					if (image != null) {
@@ -720,60 +729,6 @@ public class EPADGetHandler
 				ProjectReference projectReference = ProjectReference.extract(ProjectsRouteTemplates.USER_LIST, pathInfo);
 				EPADUserList users = epadOperations.getUserDescriptions(username, projectReference, sessionID);
 				responseStream.append(users.toJSON());
-				statusCode = HttpServletResponse.SC_OK;
-
-			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.WORKLISTS, pathInfo)) {
-				ProjectReference projectReference = ProjectReference.extract(ProjectsRouteTemplates.WORKLISTS, pathInfo);
-				EPADWorklistList wll = epadOperations.getWorkLists(projectReference);
-				responseStream.append(wll.toJSON());
-				statusCode = HttpServletResponse.SC_OK;
-				
-			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.WORKLIST, pathInfo)) {
-				ProjectReference projectReference = ProjectReference.extract(ProjectsRouteTemplates.WORKLIST, pathInfo);
-				Map<String, String> templateMap = HandlerUtil.getTemplateMap(ProjectsRouteTemplates.USER_WORKLIST, pathInfo);
-				String workListID = HandlerUtil.getTemplateParameter(templateMap, "workListID");
-				EPADWorklist wl = epadOperations.getWorkListByID(projectReference, workListID);
-				responseStream.append(wl.toJSON());
-				statusCode = HttpServletResponse.SC_OK;
-			
-			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.USER_WORKLISTS, pathInfo)) {
-				ProjectReference projectReference = ProjectReference.extract(ProjectsRouteTemplates.USER_WORKLISTS, pathInfo);
-				Map<String, String> templateMap = HandlerUtil.getTemplateMap(ProjectsRouteTemplates.USER_WORKLISTS, pathInfo);
-				String reader = HandlerUtil.getTemplateParameter(templateMap, "username");
-				EPADWorklistList wll = epadOperations.getWorkLists(projectReference, reader);
-				responseStream.append(wll.toJSON());
-				statusCode = HttpServletResponse.SC_OK;
-
-			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.USER_WORKLIST, pathInfo)) {
-				ProjectReference projectReference = ProjectReference.extract(ProjectsRouteTemplates.USER_WORKLIST, pathInfo);
-				Map<String, String> templateMap = HandlerUtil.getTemplateMap(ProjectsRouteTemplates.USER_WORKLIST, pathInfo);
-				String reader = HandlerUtil.getTemplateParameter(templateMap, "username");
-				String workListID = HandlerUtil.getTemplateParameter(templateMap, "workListID");
-				EPADWorklist wl = epadOperations.getWorkListByID(projectReference, workListID);
-				if (!wl.username.equals(reader))
-					throw new Exception("Username does not match WorkListID");
-				responseStream.append(wl.toJSON());
-				statusCode = HttpServletResponse.SC_OK;
-
-			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.USER_WORKLIST_SUBJECT_STUDIES, pathInfo)) {
-				ProjectReference projectReference = ProjectReference.extract(ProjectsRouteTemplates.USER_WORKLIST_SUBJECT_STUDIES, pathInfo);
-				Map<String, String> templateMap = HandlerUtil.getTemplateMap(ProjectsRouteTemplates.USER_WORKLIST_SUBJECT_STUDIES, pathInfo);
-				String subjectID = HandlerUtil.getTemplateParameter(templateMap, "subjectID");
-				String reader = HandlerUtil.getTemplateParameter(templateMap, "username");
-				String workListID = HandlerUtil.getTemplateParameter(templateMap, "workListID");
-				log.info("Project:" + projectReference.projectID + " reader:" + reader + " workListID:" + workListID +" subjectID:" + subjectID);
-				EPADWorklistStudyList wlsl = epadOperations.getWorkListSubjectStudies(projectReference, reader, subjectID, workListID);
-				responseStream.append(wlsl.toJSON());
-				statusCode = HttpServletResponse.SC_OK;
-
-			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.USER_WORKLIST_STUDIES, pathInfo)) {
-				ProjectReference projectReference = ProjectReference.extract(ProjectsRouteTemplates.USER_WORKLIST_STUDIES, pathInfo);
-				Map<String, String> templateMap = HandlerUtil.getTemplateMap(ProjectsRouteTemplates.USER_WORKLIST_STUDIES, pathInfo);
-				String reader = HandlerUtil.getTemplateParameter(templateMap, "username");
-				String workListID = HandlerUtil.getTemplateParameter(templateMap, "workListID");
-				log.info("Project:" + projectReference.projectID + " reader:" + reader + " workListID:" + workListID);
-				EPADWorklistStudyList wlsl = epadOperations.getWorkListStudies(projectReference, reader, workListID);
-				responseStream.append(wlsl.toJSON());
 				statusCode = HttpServletResponse.SC_OK;
 
 //			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.USER_WORKLIST_SUBJECTS, pathInfo)) {
@@ -1093,6 +1048,36 @@ public class EPADGetHandler
 			} else if (HandlerUtil.matchesTemplate(UsersRouteTemplates.USER_SESSIONS, pathInfo)) {
 				Collection<EPADSession> sessions = epadOperations.getCurrentSessions(username);
 				responseStream.append(new Gson().toJson(sessions));
+				statusCode = HttpServletResponse.SC_OK;
+			
+			} else if (HandlerUtil.matchesTemplate(UsersRouteTemplates.USER_WORKLISTS, pathInfo)) {
+				EPADWorklistList wll = epadOperations.getWorkListsForUser(username);
+				responseStream.append(wll.toJSON());
+				statusCode = HttpServletResponse.SC_OK;
+				
+			} else if (HandlerUtil.matchesTemplate(UsersRouteTemplates.USER_WORKLIST, pathInfo)) {
+				Map<String, String> templateMap = HandlerUtil.getTemplateMap(UsersRouteTemplates.USER_WORKLIST, pathInfo);
+				String workListID = HandlerUtil.getTemplateParameter(templateMap, "workListID");
+				EPADWorklist wl = epadOperations.getWorkListByID(username, workListID);
+				responseStream.append(wl.toJSON());
+				statusCode = HttpServletResponse.SC_OK;
+			
+			} else if (HandlerUtil.matchesTemplate(UsersRouteTemplates.USER_WORKLIST_SUBJECTS, pathInfo)) {
+				Map<String, String> templateMap = HandlerUtil.getTemplateMap(UsersRouteTemplates.USER_WORKLIST_SUBJECTS, pathInfo);
+				String reader = HandlerUtil.getTemplateParameter(templateMap, "username");
+				String workListID = HandlerUtil.getTemplateParameter(templateMap, "workListID");
+				log.info(" reader:" + reader + " workListID:" + workListID);
+				EPADWorklistSubjectList wlsl = epadOperations.getWorkListSubjects(reader, workListID);
+				responseStream.append(wlsl.toJSON());
+				statusCode = HttpServletResponse.SC_OK;
+
+			} else if (HandlerUtil.matchesTemplate(UsersRouteTemplates.USER_WORKLIST_STUDIES, pathInfo)) {
+				Map<String, String> templateMap = HandlerUtil.getTemplateMap(UsersRouteTemplates.USER_WORKLIST_STUDIES, pathInfo);
+				String reader = HandlerUtil.getTemplateParameter(templateMap, "username");
+				String workListID = HandlerUtil.getTemplateParameter(templateMap, "workListID");
+				log.info(" reader:" + reader + " workListID:" + workListID);
+				EPADWorklistStudyList wlsl = epadOperations.getWorkListStudies(reader, workListID);
+				responseStream.append(wlsl.toJSON());
 				statusCode = HttpServletResponse.SC_OK;
 
 			} else if (HandlerUtil.matchesTemplate(UsersRouteTemplates.USER_REVIEWERS, pathInfo)) {
@@ -1522,6 +1507,24 @@ public class EPADGetHandler
 	{
 		String format = httpRequest.getParameter("format");
 		if (format != null && format.trim().equalsIgnoreCase("stream"))
+			return true;
+		else
+			return false;
+	}
+
+	private static boolean returnPNG(HttpServletRequest httpRequest)
+	{
+		String format = httpRequest.getParameter("format");
+		if (format != null && format.trim().equalsIgnoreCase("png"))
+			return true;
+		else
+			return false;
+	}
+
+	private static boolean returnJPEG(HttpServletRequest httpRequest)
+	{
+		String format = httpRequest.getParameter("format");
+		if (format != null && format.trim().equalsIgnoreCase("jpeg"))
 			return true;
 		else
 			return false;

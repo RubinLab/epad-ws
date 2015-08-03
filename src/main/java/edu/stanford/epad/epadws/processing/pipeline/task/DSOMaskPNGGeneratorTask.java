@@ -95,7 +95,7 @@ public class DSOMaskPNGGeneratorTask implements GeneratorTask
 				ias = new ArrayList<ImageAnnotation>();
 				ias.add(ia);
 			}
-			if (ias.size() != 0 && ias.get(0).getCodingSchemeDesignator().equals("epad-plugin"))
+			if (ias.size() != 0 && ias.get(0).getCodingSchemeDesignator() != null && ias.get(0).getCodingSchemeDesignator().equals("epad-plugin"))
 			{
 				ImageAnnotation ia = ias.get(0);
 				Aim aim = new Aim(ia);

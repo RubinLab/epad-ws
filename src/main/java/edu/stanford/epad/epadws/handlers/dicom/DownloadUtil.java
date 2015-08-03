@@ -57,6 +57,7 @@ import edu.stanford.epad.dtos.EPADSeries;
 import edu.stanford.epad.dtos.EPADSeriesList;
 import edu.stanford.epad.dtos.EPADStudy;
 import edu.stanford.epad.dtos.EPADStudyList;
+import edu.stanford.epad.epadws.epaddb.EpadDatabase;
 import edu.stanford.epad.epadws.handlers.HandlerUtil;
 import edu.stanford.epad.epadws.handlers.core.EPADSearchFilter;
 import edu.stanford.epad.epadws.handlers.core.ImageReference;
@@ -119,7 +120,10 @@ public class DownloadUtil {
 				File seriesDir = new File(studyDir, "Series-" + series.seriesUID);
 				seriesDir.mkdirs();
 				SeriesReference seriesReference = new SeriesReference(studyReference.projectID, studyReference.subjectID, studyReference.studyUID, series.seriesUID);
-				EPADImageList imageList = epadOperations.getImageDescriptions(seriesReference, sessionID, null);
+				EPADImageList imageList = new EPADImageList();
+				try {
+					imageList = epadOperations.getImageDescriptions(seriesReference, sessionID, null);
+				} catch (Exception x) {}
 				for (EPADImage image: imageList.ResultSet.Result)
 				{
 					String name = image.imageUID + ".dcm";
@@ -227,7 +231,10 @@ public class DownloadUtil {
 				File seriesDir = new File(studyDir, "Series-" + series.seriesUID);
 				seriesDir.mkdirs();
 				SeriesReference seriesReference = new SeriesReference(studyReference.projectID, studyReference.subjectID, studyReference.studyUID, series.seriesUID);
-				EPADImageList imageList = epadOperations.getImageDescriptions(seriesReference, sessionID, null);
+				EPADImageList imageList = new EPADImageList();
+				try {
+					imageList = epadOperations.getImageDescriptions(seriesReference, sessionID, null);
+				} catch (Exception x) {}
 				for (EPADImage image: imageList.ResultSet.Result)
 				{
 					String name = image.imageUID + ".dcm";
@@ -345,16 +352,21 @@ public class DownloadUtil {
 		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
 		List<String> fileNames = new ArrayList<String>();
 		EPADSeriesList seriesList = epadOperations.getSeriesDescriptions(studyReference, username, sessionID, searchFilter, false);
+		int imageCount = 0;
 		for (EPADSeries series: seriesList.ResultSet.Result)
 		{
 			if (!seriesSet.isEmpty() && !seriesSet.contains(series.seriesUID)) continue;
 			File seriesDir = new File(downloadDir, "Series-"+ series.seriesUID);
 			seriesDir.mkdirs();
 			SeriesReference seriesReference = new SeriesReference(studyReference.projectID, studyReference.subjectID, studyReference.studyUID, series.seriesUID);
-			EPADImageList imageList = epadOperations.getImageDescriptions(seriesReference, sessionID, null);
+			EPADImageList imageList = new EPADImageList();
+			try {
+				imageList = epadOperations.getImageDescriptions(seriesReference, sessionID, null);
+			} catch (Exception x) {}
 			int i = 0;
 			for (EPADImage image: imageList.ResultSet.Result)
 			{
+				imageCount++;
 				String name = image.imageUID + ".dcm";
 				File imageFile = new File(seriesDir, name);
 				fileNames.add("Series-" + series.seriesUID + "/" + name);
@@ -469,7 +481,10 @@ public class DownloadUtil {
 			SeriesReference seriesReference = new SeriesReference(null, null, null, seriesUID);
 			EPADSeries series = epadOperations.getSeriesDescription(seriesReference, username, sessionID);
 			seriesReference = new SeriesReference(null, series.patientID, series.studyUID, seriesUID);
-			EPADImageList imageList = epadOperations.getImageDescriptions(seriesReference, sessionID, null);
+			EPADImageList imageList = new EPADImageList();
+			try {
+				imageList = epadOperations.getImageDescriptions(seriesReference, sessionID, null);
+			} catch (Exception x) {}
 			int i = 0;
 			for (EPADImage image: imageList.ResultSet.Result)
 			{
@@ -577,7 +592,10 @@ public class DownloadUtil {
 		File downloadDir = new File(downloadDirPath);
 		downloadDir.mkdirs();
 		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
-		EPADImageList imageList = epadOperations.getImageDescriptions(seriesReference, sessionID, null);
+		EPADImageList imageList = new EPADImageList();
+		try {
+			imageList = epadOperations.getImageDescriptions(seriesReference, sessionID, null);
+		} catch (Exception x) {}
 		List<String> fileNames = new ArrayList<String>();
 		for (EPADImage image: imageList.ResultSet.Result)
 		{
@@ -663,6 +681,52 @@ public class DownloadUtil {
 		}
 		EPADFileUtils.deleteDirectoryAndContents(downloadDir);
 	}
+
+	/**
+	 * Method to download file in resources folder
+	 * 
+	 * @param httpResponse
+	 * @param seriesReference
+	 * @param username
+	 * @param sessionID
+	 * @throws Exception
+	 */
+	public static void downloadResource(String relativePath, HttpServletResponse httpResponse, String username, String sessionID) throws Exception
+	{
+		String resourcesPath = EPADConfig.getEPADWebServerResourcesDir();
+		File file = new File(resourcesPath + "/" + relativePath);
+		if (!file.exists())
+			throw new Exception("Requested resource " + relativePath + " does not exist");
+			
+		if (file.isDirectory())
+			throw new Exception("Requested resource " + relativePath + " is a folder");
+				
+		httpResponse.setContentType("application/zip");
+		httpResponse.setHeader("Content-Disposition", "attachment;filename=\"" + file.getName() + "\"");
+		
+		OutputStream out = null;
+		BufferedInputStream fr = null;
+		try
+		{
+			out = httpResponse.getOutputStream();
+			fr = new BufferedInputStream(new FileInputStream(file));
+
+			byte buffer[] = new byte[0xffff];
+			int b;
+			while ((b = fr.read(buffer)) != -1)
+				out.write(buffer, 0, b);
+		}
+		catch (Exception e)
+		{
+			log.warning("Error streaming file", e);
+			throw e;
+		}
+		finally
+		{
+			if (fr != null)
+				fr.close();
+		}
+	}
 	
 	/**
 	 * Method to download a dicom
@@ -674,10 +738,12 @@ public class DownloadUtil {
 	 * @param sessionID
 	 * @throws Exception
 	 */
-	public static void downloadImage(boolean stream, HttpServletResponse httpResponse, ImageReference imageReference, String username, String sessionID) throws Exception
+	public static void downloadImage(boolean stream, HttpServletResponse httpResponse, ImageReference imageReference, String username, String sessionID, boolean dicom) throws Exception
 	{
 		String queryString = "requestType=WADO&studyUID=" + imageReference.studyUID 
-				+ "&seriesUID=" + imageReference.seriesUID + "&objectUID=" + imageReference.imageUID + "&contentType=application/dicom";
+				+ "&seriesUID=" + imageReference.seriesUID + "&objectUID=" + imageReference.imageUID;
+		if (dicom)
+			queryString = queryString + "&contentType=application/dicom";
 		if (stream)
 		{
 			httpResponse.setContentType("application/octet-stream");
@@ -710,6 +776,25 @@ public class DownloadUtil {
 			PrintWriter responseStream = httpResponse.getWriter();
 			responseStream.append(epadFile.toJSON());
 		}
+	}
+	
+	/**
+	 * Method to download a png
+	 * 
+	 * @param httpResponse
+	 * @param imageReference
+	 * @param username
+	 * @param sessionID
+	 * @throws Exception
+	 */
+	public static void downloadPNG(HttpServletResponse httpResponse, ImageReference imageReference, String username, String sessionID) throws Exception
+	{
+		String pngPath = EpadDatabase.getInstance().getEPADDatabaseOperations().getPNGLocation(imageReference.studyUID, imageReference.seriesUID, imageReference.imageUID);
+		File file = new File(EPADConfig.getEPADWebServerResourcesDir() +  pngPath);
+		if (!file.exists()) {
+			throw new Exception("Image " + file.getAbsolutePath() + " does not exist");
+		}
+	    EPADFileUtils.downloadFile(null, httpResponse, file, imageReference.imageUID + ".png");
 	}
 
 	public static int performWADOQuery(String queryString, OutputStream outputStream, String username, String sessionID)

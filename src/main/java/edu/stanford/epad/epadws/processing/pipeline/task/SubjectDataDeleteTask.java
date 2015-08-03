@@ -31,6 +31,8 @@ import edu.stanford.epad.epadws.handlers.core.StudyReference;
 import edu.stanford.epad.epadws.queries.DefaultEpadOperations;
 import edu.stanford.epad.epadws.queries.EpadOperations;
 import edu.stanford.epad.epadws.security.EPADSessionOperations;
+import edu.stanford.epad.epadws.service.DefaultEpadProjectOperations;
+import edu.stanford.epad.epadws.service.EpadProjectOperations;
 import edu.stanford.epad.epadws.service.UserProjectService;
 import edu.stanford.epad.epadws.xnat.XNATSessionOperations;
 
@@ -88,6 +90,8 @@ public class SubjectDataDeleteTask implements Runnable
 					}
 					epadOperations.studyDelete(studyReference, adminSessionID, false, username);
 				}
+				EpadProjectOperations projectOperations = DefaultEpadProjectOperations.getInstance();
+				projectOperations.deleteSubject(username, patientID);
     		}
 		} catch (Exception e) {
 			log.warning("Error deleting patient " + patientID + " in project " + projectID, e);

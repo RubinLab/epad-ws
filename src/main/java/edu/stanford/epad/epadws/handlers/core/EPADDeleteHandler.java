@@ -33,6 +33,7 @@ import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.epad.dtos.EPADMessage;
 import edu.stanford.epad.dtos.RemotePAC;
 import edu.stanford.epad.epadws.handlers.HandlerUtil;
+import edu.stanford.epad.epadws.models.User;
 import edu.stanford.epad.epadws.models.WorkList;
 import edu.stanford.epad.epadws.queries.DefaultEpadOperations;
 import edu.stanford.epad.epadws.queries.EpadOperations;
@@ -143,46 +144,24 @@ public class EPADDeleteHandler
 				String delete_username = HandlerUtil.getTemplateParameter(templateMap, "username");
 				epadOperations.removeUserFromProject(username, projectReference, delete_username, sessionID);
 				statusCode = HttpServletResponse.SC_OK;
-				
-			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.WORKLIST, pathInfo)) {
-				ProjectReference projectReference = ProjectReference.extract(ProjectsRouteTemplates.WORKLIST, pathInfo);
-				Map<String, String> templateMap = HandlerUtil.getTemplateMap(ProjectsRouteTemplates.WORKLIST, pathInfo);
-				String workListID = HandlerUtil.getTemplateParameter(templateMap, "workListID");
-				WorkList wl = worklistOperations.getWorkList(workListID);
-				if (wl == null)
-					throw new Exception("Worklist not found for id " + workListID + " and project " + projectReference.projectID);
-				worklistOperations.deleteWorkList(username, wl.getWorkListID());;		
-				statusCode = HttpServletResponse.SC_OK;
-				
-			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.USER_WORKLIST, pathInfo)) {
-				ProjectReference projectReference = ProjectReference.extract(ProjectsRouteTemplates.USER_WORKLIST, pathInfo);
-				Map<String, String> templateMap = HandlerUtil.getTemplateMap(ProjectsRouteTemplates.USER_WORKLIST, pathInfo);
-				String workListID = HandlerUtil.getTemplateParameter(templateMap, "workListID");
-				WorkList wl = worklistOperations.getWorkList(workListID);
-				if (wl == null)
-					throw new Exception("Worklist not found for id " + workListID + " and project " + projectReference.projectID);
-				worklistOperations.deleteWorkList(username, wl.getWorkListID());;		
-				statusCode = HttpServletResponse.SC_OK;
-				
+								
 			} else if (HandlerUtil.matchesTemplate(UsersRouteTemplates.USER_WORKLIST, pathInfo)) {
-				Map<String, String> templateMap = HandlerUtil.getTemplateMap(ProjectsRouteTemplates.USER_WORKLIST, pathInfo);
+				Map<String, String> templateMap = HandlerUtil.getTemplateMap(UsersRouteTemplates.USER_WORKLIST, pathInfo);
+				String workListID = HandlerUtil.getTemplateParameter(templateMap, "workListID");
 				String reader = HandlerUtil.getTemplateParameter(templateMap, "username");
-				String worklistID = HandlerUtil.getTemplateParameter(templateMap, "worklistID");
-				worklistOperations.deleteWorkList(username, worklistID);;		
+				WorkList wl = worklistOperations.getWorkList(workListID);
+				if (wl == null)
+					throw new Exception("Worklist not found for id " + workListID);
+				User user = worklistOperations.getUserForWorkList(workListID);
+				if (!user.getUsername().equals(reader))
+					throw new Exception("User " +  reader + " does not match user for worklist "+ workListID);
+				worklistOperations.deleteWorkList(username, wl.getWorkListID());;		
 				statusCode = HttpServletResponse.SC_OK;
 				
 			} else if (HandlerUtil.matchesTemplate(UsersRouteTemplates.USER, pathInfo)) {
 				Map<String, String> templateMap = HandlerUtil.getTemplateMap(UsersRouteTemplates.USER, pathInfo);
 				String target_username = HandlerUtil.getTemplateParameter(templateMap, "username");
 				epadOperations.deleteUser(username, target_username);
-				statusCode = HttpServletResponse.SC_OK;
-				
-			} else if (HandlerUtil.matchesTemplate(UsersRouteTemplates.USER_WORKLIST, pathInfo)) {
-				ProjectReference projectReference = ProjectReference.extract(UsersRouteTemplates.USER_WORKLIST, pathInfo);
-				Map<String, String> templateMap = HandlerUtil.getTemplateMap(UsersRouteTemplates.USER_WORKLIST, pathInfo);
-				String reader = HandlerUtil.getTemplateParameter(templateMap, "username");
-				String worklistID = HandlerUtil.getTemplateParameter(templateMap, "worklistID");
-				worklistOperations.deleteWorkList(username, worklistID);;		
 				statusCode = HttpServletResponse.SC_OK;
 				
 			} else if (HandlerUtil.matchesTemplate(UsersRouteTemplates.USER_REVIEWEE, pathInfo)) {

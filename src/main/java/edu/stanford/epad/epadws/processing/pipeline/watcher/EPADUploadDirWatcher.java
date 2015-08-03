@@ -162,7 +162,9 @@ public class EPADUploadDirWatcher implements Runnable
 			writeExceptionLog(directory, e);
 		} finally {
 			log.info("Upload of directory " + directory.getAbsolutePath() + " finished");
-			deleteUploadDirectory(directory);
+			try {
+				deleteUploadDirectory(directory);
+			} catch (Exception x) {}
 		}
 	}
 
@@ -229,7 +231,7 @@ public class EPADUploadDirWatcher implements Runnable
 				}
 			});
 
-			if (zipFiles == null) {
+			if (zipFiles == null || zipFiles.length == 0) {
 				throw new IllegalStateException("No ZIP file in upload directory " + dir.getAbsolutePath());
 			} else if (zipFiles.length > 1) {
 				int numZipFiles = zipFiles.length;

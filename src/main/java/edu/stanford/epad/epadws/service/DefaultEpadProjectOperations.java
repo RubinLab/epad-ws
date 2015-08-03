@@ -243,6 +243,8 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 			throw new Exception("Only admin can add permissions");
 		User user = new User();
 		user = (User) user.getObject("username = " + user.toSQL(username));
+		if (loggedInUser != null && !loggedInUser.isAdmin() && !loggedInUserName.equals(username) && !loggedInUserName.equals(user.getCreator()))
+			throw new Exception("No permission to modify user");
 		if (firstName != null) user.setFirstName(firstName);
 		if (lastName != null) user.setLastName(lastName);
 		if (email != null) user.setEmail(email);
@@ -814,8 +816,6 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		Project project = getProject(projectID);
 		if (project == null) return null;
 		User user = getUser(username);
-		if (username.equals("admin") || user.isAdmin() || project.getType().equals(ProjectType.PUBLIC.getName()))
-			return project;
 		List<ProjectToUser> p2us = new ProjectToUser().getObjects("user_id =" + user.getId() + " and project_id=" + project.getId());
 		if (p2us.size() > 0)
 		{
@@ -824,6 +824,8 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 				project.setDefaultTemplate(p2u.getDefaultTemplate());
 			return project;
 		}
+		else if (username.equals("admin") || user.isAdmin() || project.getType().equals(ProjectType.PUBLIC.getName()))
+			return project;
 		else
 			return null;
 	}
@@ -834,6 +836,7 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 	@Override
 	public List<User> getUsersForProject(String projectId) throws Exception {
 		Project project = getProject(projectId);
+		if (project == null) return new ArrayList<User>();
 		
 		return getUsersByProjectId(project.getId());
 	}
@@ -861,6 +864,7 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 	public List<User> getUsersWithRoleForProject(String projectId)
 			throws Exception {
 		Project project = getProject(projectId);
+		if (project == null) return new ArrayList<User>();
 		List ptous = new ProjectToUser().getObjects("project_id = " + project.getId());
 		List<User> users = new ArrayList<User>();
 		for (Object ptou: ptous)
@@ -882,6 +886,7 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 	public List<Subject> getSubjectsForProject(String projectId)
 			throws Exception {
 		Project project = getProject(projectId);
+		if (project == null) return new ArrayList<Subject>();
 		
 		return getSubjectsByProjectId(project.getId());
 	}
@@ -1656,11 +1661,15 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 	 */
 	@Override
 	public void deleteSubject(String username, String subjectUID) throws Exception {
+		log.info("Deleting subject:" + subjectUID);
 		Subject subject = getSubject(subjectUID);
-		ProjectToSubject projSubj = (ProjectToSubject) new ProjectToSubject().getObject("subject_id =" + subject.getId() + " and subject_id=" + subject.getId());
-		new ProjectToSubjectToUser().deleteObjects("proj_subj_id =" + projSubj.getId());
-		new ProjectToSubjectToStudy().deleteObjects("proj_subj_id =" + projSubj.getId());
-		projSubj.delete();
+		List<ProjectToSubject> objects = new ProjectToSubject().getObjects("subject_id=" + subject.getId());
+		for (ProjectToSubject ptos: objects)
+		{
+			new ProjectToSubjectToUser().deleteObjects("proj_subj_id =" + ptos.getId());
+			new ProjectToSubjectToStudy().deleteObjects("proj_subj_id =" + ptos.getId());
+			ptos.delete();
+		}
 		new EpadFile().deleteObjects("subject_id=" + subject.getId());
 		subject.delete();
 	}
@@ -1675,6 +1684,13 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		projSubjStudy.delete();
 		new EpadFile().deleteObjects("study_id=" + study.getId());
 		study.delete();
+	}
+
+	@Override
+	public void deleteNonDicomSeries(String seriesUID) throws Exception {
+		NonDicomSeries nds = (NonDicomSeries) new NonDicomSeries().getObject("seriesUID = " + NonDicomSeries.toSQL(seriesUID));
+		if (nds != null)
+			nds.delete();
 	}
 
 	/* (non-Javadoc)

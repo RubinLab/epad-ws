@@ -32,7 +32,6 @@ public class WorkList extends AbstractDAO {
 
 	long id;
 	long userId;
-	long projectId;
 	String workListID;
 	String description;
 	String status;
@@ -61,14 +60,6 @@ public class WorkList extends AbstractDAO {
 
 	public void setUserId(long userId) {
 		this.userId = userId;
-	}
-
-	public long getProjectId() {
-		return projectId;
-	}
-
-	public void setProjectId(long projectId) {
-		this.projectId = projectId;
 	}
 
 	public String getWorkListID() {
@@ -151,7 +142,6 @@ public class WorkList extends AbstractDAO {
 	public final static String[][] DBCOLUMNS = {
         {"id","long","id","Id"},
         {"userId","long","user_id","integer"},
-        {"projectId","long","project_id","integer"},
         {"workListID","String","worklistid","varchar"},
         {"startDate","Date","startdate","date"},
         {"dueDate","Date","duedate","date"},

@@ -116,7 +116,10 @@ import edu.stanford.hakan.aim3api.base.SegmentationCollection;
 import edu.stanford.hakan.aim3api.base.User;
 import edu.stanford.hakan.aim3api.usage.AnnotationBuilder;
 import edu.stanford.hakan.aim3api.usage.AnnotationGetter;
+import edu.stanford.hakan.aim4api.base.DicomSegmentationEntity;
 import edu.stanford.hakan.aim4api.base.ImageAnnotationCollection;
+import edu.stanford.hakan.aim4api.base.SegmentationEntityCollection;
+import edu.stanford.hakan.aim4api.usage.AnnotationValidator;
 
 /**
  * 
@@ -157,7 +160,7 @@ public class AIMUtil
 
 		if (aim.getCodeValue() != null) { 
 			if (isPluginStillRunning(aim.getUniqueIdentifier()))
-				throw new AimException("Previous version of this AIM " + aim.getUniqueIdentifier() + " is still being processed by the plugin");
+				throw new edu.stanford.hakan.aim4api.base.AimException("Previous version of this AIM " + aim.getUniqueIdentifier() + " is still being processed by the plugin");
 			// For safety, write a backup file
 			String tempXmlPath = baseAnnotationDir + "temp-" + aim.getUniqueIdentifier() + ".xml";
 			String storeXmlPath = baseAnnotationDir + aim.getUniqueIdentifier() + ".xml";
@@ -255,7 +258,7 @@ public class AIMUtil
 		if (aim.getImageAnnotations().get(0).getListTypeCode().get(0).getCode() != null) { 
 			
 			if (isPluginStillRunning(aim.getUniqueIdentifier().getRoot()))
-				throw new AimException("Previous version of this AIM " + aim.getUniqueIdentifier() + " is still being processed by the plugin");
+				throw new edu.stanford.hakan.aim4api.base.AimException("Previous version of this AIM " + aim.getUniqueIdentifier().getRoot() + " is still being processed by the plugin");
 			
 			// For safety, write a backup file - what is this strange safety feature??
 		    String tempXmlPath = baseAnnotationDir + "temp-" + aim.getUniqueIdentifier().getRoot() + ".xml";
@@ -287,7 +290,7 @@ public class AIMUtil
 				log.warning("Error saving aim to mongodb", e);
 			}
 		
-		    if (aim.getImageAnnotations().get(0).getListTypeCode().get(0).getCodeSystemName().equals("epad-plugin")) { // Which template has been used to fill the AIM file
+		    if (aim.getImageAnnotations().get(0).getListTypeCode().get(0).getCodeSystemName() != null && aim.getImageAnnotations().get(0).getListTypeCode().get(0).getCodeSystemName().equals("epad-plugin")) { // Which template has been used to fill the AIM file
 		        String templateName = aim.getImageAnnotations().get(0).getListTypeCode().get(0).getCode(); // ex: jjv-5
 		        log.info("Found an AIM plugin template with name " + templateName + " and AIM ID " + aim.getUniqueIdentifier());
 		        boolean templateHasBeenFound = false;
@@ -773,7 +776,7 @@ public class AIMUtil
 			try {
 				log.info("Converting AIM file to Object " + aimFile.getAbsolutePath());
 				EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
-	            ImageAnnotationCollection imageAnnotationColl = AIMUtil.getImageAnnotationFromFileV4(aimFile, xsdFilePathV4);
+		        ImageAnnotationCollection imageAnnotationColl = AIMUtil.getImageAnnotationFromFileV4(aimFile, xsdFilePathV4);
 	            if (imageAnnotationColl == null) {
 	        		List<Map<String, String>> coordinationTerms = epadDatabaseOperations.getCoordinationData("%");
                     ImageAnnotationCollection iac = edu.stanford.hakan.aim4api.usage.AnnotationGetter.getImageAnnotationCollectionFromFile(aimFile.getAbsolutePath());
@@ -781,6 +784,12 @@ public class AIMUtil
                     imageAnnotationColl = iaV3.toAimV4(coordinationTerms);
 	            }
 	            if (imageAnnotationColl != null) {
+					SegmentationEntityCollection sec = imageAnnotationColl.getImageAnnotations().get(0).getSegmentationEntityCollection();
+					if (sec != null && sec.getSegmentationEntityList().size() == 0 && imageAnnotationColl.getImageAnnotations().get(0).getListTypeCode().get(0).getCode().equals("SEG"))
+					{
+						epadDatabaseOperations.deleteAIM(username, imageAnnotationColl.getUniqueIdentifier().getRoot());
+						throw new Exception("Invalid AIM, contains empty segmentation data");
+					}
 					EPADAIM ea = epadDatabaseOperations.getAIM(imageAnnotationColl.getUniqueIdentifier().getRoot());
 					if (ea != null && !ea.projectID.equals(projectID))
 						projectID = ea.projectID; 		// TODO: Do we change AIM project if it is in unassigned? 
@@ -798,7 +807,37 @@ public class AIMUtil
 					if (imageAnnotationColl != null && projectID != null && username != null)
 					{
 						FrameReference frameReference = new FrameReference(projectID, patientID, studyID, seriesID, imageID, new Integer(frameNumber));
-						epadDatabaseOperations.addAIM(username, frameReference, imageAnnotationColl.getUniqueIdentifier().getRoot(), xml);
+						EPADAIM eaim = epadDatabaseOperations.addAIM(username, frameReference, imageAnnotationColl.getUniqueIdentifier().getRoot(), xml);
+						try {
+							if (sec != null && sec.getSegmentationEntityList().size() > 0)
+							{
+								if (sec.getSegmentationEntityList().get(0).getXsiType().equals("DicomSegmentationEntity"))
+								{
+									DicomSegmentationEntity dse = (DicomSegmentationEntity) sec.getSegmentationEntityList().get(0);
+									log.info("DSO RSUID:" + dse.getReferencedSopInstanceUid().getRoot() + " SUID:" + dse.getSopInstanceUid().getRoot());
+								}
+//								int ind = xml.lastIndexOf("<imageSeries>");
+//								String dsoSeriesUID = xml.substring(ind);
+//								ind = dsoSeriesUID.indexOf("<instanceUid root=");
+//								if (ind != -1)
+//								{
+//									dsoSeriesUID = dsoSeriesUID.substring(ind + "<instanceUid root=".length()+1);
+//									ind = dsoSeriesUID.indexOf("\"");
+//									if (ind != -1)
+//									{
+//										dsoSeriesUID = dsoSeriesUID.substring(0, ind);
+//										if (dsoSeriesUID.length() > 0)
+//										{
+//											log.info("Updating dsoSeriesUID in aim database:" + dsoSeriesUID + " aimID:" + eaim.aimID);
+//											ImageReference imageReference = new ImageReference(projectID, patientID, studyID, seriesID, imageID);
+//											epadDatabaseOperations.addDSOAIM(username, imageReference, dsoSeriesUID, eaim.aimID);
+//										}
+//									}
+//								}
+							}
+						} catch (Exception x) {
+							log.warning("Error checking segmentation", x);
+						}
 					}
 					return false;
 	            } 
@@ -1358,7 +1397,7 @@ public class AIMUtil
 			try
 			{
 				Aim4 a = new Aim4(iac);
-				EPADAIM ea = new EPADAIM(iac.getUniqueIdentifier().getRoot(), a.getLoggedInUser().getLoginName(), 
+				EPADAIM ea = new EPADAIM(iac.getUniqueIdentifier().getRoot(), aim.userName, 
 						aim.projectID, aim.subjectID, aim.studyUID, aim.seriesUID, aim.imageUID, aim.instanceOrFrameNumber);
 				ea.name = iac.getImageAnnotations().get(0).getName().getValue();
 				ea.template = iac.getImageAnnotations().get(0).getListTypeCode().get(0).getCodeSystem();// .getCode();
@@ -1369,6 +1408,7 @@ public class AIMUtil
 					ea.studyDate = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(a.getFirstStudyDate());
 				ea.patientName = a.getPatientName();
 				ea.xml = null;
+				ea.user = a.getLoggedInUser().getLoginName();
 				aims.addAIM(ea);
 			} catch (Exception x) {
 				log.warning("Error parsing ImageAnnotationCollection:" + iac, x);
@@ -1387,7 +1427,7 @@ public class AIMUtil
 			try
 			{
 				Aim4 a = new Aim4(iac);
-				EPADAIM ea = new EPADAIM(iac.getUniqueIdentifier().getRoot(), a.getLoggedInUser().getLoginName(), 
+				EPADAIM ea = new EPADAIM(iac.getUniqueIdentifier().getRoot(), aim.userName, 
 						aim.projectID, aim.subjectID, aim.studyUID, aim.seriesUID, aim.imageUID, aim.instanceOrFrameNumber);
 				ea.name = iac.getImageAnnotations().get(0).getName().getValue();
 				ea.template = iac.getImageAnnotations().get(0).getListTypeCode().get(0).getCodeSystem();// .getCode();
@@ -1398,6 +1438,7 @@ public class AIMUtil
 					ea.studyDate = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(a.getFirstStudyDate());
 				ea.patientName = a.getPatientName();
 				ea.xml = null;
+				ea.user = a.getLoggedInUser().getLoginName();
 				aims.addAIM(ea);
 			} catch (Exception x) {
 				log.warning("Error parsing ImageAnnotationCollection:" + iac, x);
@@ -1416,7 +1457,7 @@ public class AIMUtil
 			try
 			{
 				Aim4 a = new Aim4(iac);
-				EPADAIM ea = new EPADAIM(iac.getUniqueIdentifier().getRoot(), a.getLoggedInUser().getLoginName(), 
+				EPADAIM ea = new EPADAIM(iac.getUniqueIdentifier().getRoot(), aim.userName, 
 						aim.projectID, aim.subjectID, aim.studyUID, aim.seriesUID, aim.imageUID, aim.instanceOrFrameNumber);
 				ea.name = iac.getImageAnnotations().get(0).getName().getValue();
 				ea.template = iac.getImageAnnotations().get(0).getListTypeCode().get(0).getCodeSystem();// .getCode();
@@ -1427,6 +1468,7 @@ public class AIMUtil
 					ea.studyDate = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(a.getFirstStudyDate());
 				ea.patientName = a.getPatientName();
 				ea.xml = null;
+				ea.user = a.getLoggedInUser().getLoginName();
 				aims.addAIM(ea);
 			} catch (Exception x) {
 				log.warning("Error parsing ImageAnnotationCollection:" + iac, x);
@@ -1603,8 +1645,15 @@ public class AIMUtil
 
     public static ImageAnnotationCollection getImageAnnotationFromFileV4(File file, String xsdFilePath) {
         try {
-			return edu.stanford.hakan.aim4api.usage.AnnotationGetter.getImageAnnotationCollectionFromFile(file.getAbsolutePath(), xsdFilePath);
-		} catch (Exception e) {
+	        String version = AnnotationValidator.getAimVersion(file.getAbsolutePath());
+	        if ("".equals(version)) {
+	            throw new AimException("This is not a AIM Annotation File.");
+	        }
+	        if (version.contains("4"))
+	        	return edu.stanford.hakan.aim4api.usage.AnnotationGetter.getImageAnnotationCollectionFromFile(file.getAbsolutePath(), xsdFilePath);
+	        else
+	        	return edu.stanford.hakan.aim4api.usage.AnnotationGetter.getImageAnnotationCollectionFromFile(file.getAbsolutePath());
+        } catch (Exception e) {
 			return null;
 		}
     }

@@ -39,6 +39,7 @@ public class Study extends AbstractDAO {
 	Date createdTime;
 	Date updateTime;
 	transient String status;
+	transient String projectID;
 
 	@Override
 	public long getId() {
@@ -111,6 +112,14 @@ public class Study extends AbstractDAO {
 
 	public void setStatus(String status) {
 		this.status = status;
+	}
+
+	public String getProjectID() {
+		return projectID;
+	}
+
+	public void setProjectID(String projectID) {
+		this.projectID = projectID;
 	}
 
 	public final static String DBTABLE = "study";
