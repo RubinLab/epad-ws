@@ -1661,11 +1661,15 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 	 */
 	@Override
 	public void deleteSubject(String username, String subjectUID) throws Exception {
+		log.info("Deleting subject:" + subjectUID);
 		Subject subject = getSubject(subjectUID);
-		ProjectToSubject projSubj = (ProjectToSubject) new ProjectToSubject().getObject("subject_id =" + subject.getId() + " and subject_id=" + subject.getId());
-		new ProjectToSubjectToUser().deleteObjects("proj_subj_id =" + projSubj.getId());
-		new ProjectToSubjectToStudy().deleteObjects("proj_subj_id =" + projSubj.getId());
-		projSubj.delete();
+		List<ProjectToSubject> objects = new ProjectToSubject().getObjects("subject_id=" + subject.getId());
+		for (ProjectToSubject ptos: objects)
+		{
+			new ProjectToSubjectToUser().deleteObjects("proj_subj_id =" + ptos.getId());
+			new ProjectToSubjectToStudy().deleteObjects("proj_subj_id =" + ptos.getId());
+			ptos.delete();
+		}
 		new EpadFile().deleteObjects("subject_id=" + subject.getId());
 		subject.delete();
 	}
