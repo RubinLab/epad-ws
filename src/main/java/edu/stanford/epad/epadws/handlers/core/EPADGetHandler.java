@@ -416,8 +416,12 @@ public class EPADGetHandler
 				ImageReference imageReference = ImageReference.extract(StudiesRouteTemplates.IMAGE, pathInfo);
 				if (returnFile(httpRequest)) {
 					DownloadUtil.downloadImage(false, httpResponse, imageReference, username, sessionID, true);
-				} if (returnStream(httpRequest)) {
+				} else if (returnStream(httpRequest)) {
 					DownloadUtil.downloadImage(true, httpResponse, imageReference, username, sessionID, true);
+				} else if (returnPNG(httpRequest)) {
+					DownloadUtil.downloadPNG(httpResponse, imageReference, username, sessionID);
+				} else if (returnJPEG(httpRequest)) {
+					DownloadUtil.downloadImage(true, httpResponse, imageReference, username, sessionID, false);
 				} else {
 					EPADImage image = epadOperations.getImageDescription(imageReference, sessionID);
 					if (image != null) {

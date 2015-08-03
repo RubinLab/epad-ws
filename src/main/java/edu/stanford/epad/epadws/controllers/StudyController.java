@@ -118,19 +118,19 @@ public class StudyController {
 	public void getEPADStudySeries( 
 											@PathVariable String studyUID,
 											@PathVariable String seriesUID,
-											@RequestParam(value="format", required = false) boolean format, 
+											@RequestParam(value="format", required = false) String format, 
 											@RequestParam(value="includeAims", required = false) boolean includeAims, 
 											HttpServletRequest request, 
 									        HttpServletResponse response) throws Exception {
 		String sessionID = SessionService.getJSessionIDFromRequest(request);
 		String username = SessionService.getUsernameForSession(sessionID);
 		SeriesReference seriesReference = new SeriesReference(null, null, studyUID, seriesUID);
-		if ("file".equals(format)) {
+		if ("file".equalsIgnoreCase(format)) {
 			if (seriesReference.seriesUID.contains(","))
 				DownloadUtil.downloadSeries(false, response, seriesReference.seriesUID, username, sessionID, includeAims);
 			else
 				DownloadUtil.downloadSeries(false, response, seriesReference, username, sessionID, includeAims);
-		} else if ("stream".equals(format)) {
+		} else if ("stream".equalsIgnoreCase(format)) {
 			if (seriesReference.seriesUID.contains(","))
 				DownloadUtil.downloadSeries(true, response, seriesReference.seriesUID, username, sessionID, includeAims);
 			else
@@ -166,17 +166,21 @@ public class StudyController {
 											@PathVariable String studyUID,
 											@PathVariable String seriesUID,
 											@PathVariable String imageUID,
-											@RequestParam(value="format", required = false) boolean format, 
+											@RequestParam(value="format", required = false) String format, 
 											@RequestParam(value="includeAims", required = false) boolean includeAims, 
 											HttpServletRequest request, 
 									        HttpServletResponse response) throws Exception {
 		String sessionID = SessionService.getJSessionIDFromRequest(request);
 		String username = SessionService.getUsernameForSession(sessionID);
 		ImageReference imageReference = new ImageReference(null, null, studyUID, seriesUID, imageUID);
-		if ("file".equals(format)) {
-			DownloadUtil.downloadImage(false, response, imageReference, username, sessionID);
-		} if ("stream".equals(format)) {
-			DownloadUtil.downloadImage(true, response, imageReference, username, sessionID);
+		if ("file".equalsIgnoreCase(format)) {
+			DownloadUtil.downloadImage(false, response, imageReference, username, sessionID, true);
+		} else if ("stream".equalsIgnoreCase(format)) {
+			DownloadUtil.downloadImage(true, response, imageReference, username, sessionID, true);
+		} else if ("png".equalsIgnoreCase(format)) {
+			DownloadUtil.downloadPNG(response, imageReference, username, sessionID);
+		} else if ("jpeg".equalsIgnoreCase(format)) {
+			DownloadUtil.downloadImage(true, response, imageReference, username, sessionID, false);
 		} else {
 			PrintWriter responseStream = response.getWriter();
 			response.setContentType("application/json");

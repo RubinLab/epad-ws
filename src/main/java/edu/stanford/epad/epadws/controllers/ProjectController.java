@@ -211,7 +211,7 @@ public class ProjectController {
 											@PathVariable String subjectID,
 											@PathVariable String studyUID,
 											@PathVariable String seriesUID,
-											@RequestParam(value="format", required = false) boolean format, 
+											@RequestParam(value="format", required = false) String format, 
 											@RequestParam(value="includeAims", required = false) boolean includeAims, 
 											HttpServletRequest request, 
 									        HttpServletResponse response) throws Exception {
@@ -263,17 +263,21 @@ public class ProjectController {
 											@PathVariable String studyUID,
 											@PathVariable String seriesUID,
 											@PathVariable String imageUID,
-											@RequestParam(value="format", required = false) boolean format, 
+											@RequestParam(value="format", required = false) String format, 
 											@RequestParam(value="includeAims", required = false) boolean includeAims, 
 											HttpServletRequest request, 
 									        HttpServletResponse response) throws Exception {
 		String sessionID = SessionService.getJSessionIDFromRequest(request);
 		String username = SessionService.getUsernameForSession(sessionID);
 		ImageReference imageReference = new ImageReference(projectID, subjectID, studyUID, seriesUID, imageUID);
-		if ("file".equals(format)) {
+		if ("file".equalsIgnoreCase(format)) {
 			DownloadUtil.downloadImage(false, response, imageReference, username, sessionID, true);
-		} else if ("stream".equals(format)) {
+		} else if ("stream".equalsIgnoreCase(format)) {
 			DownloadUtil.downloadImage(true, response, imageReference, username, sessionID, true);
+		} else if ("png".equalsIgnoreCase(format)) {
+			DownloadUtil.downloadPNG(response, imageReference, username, sessionID);
+		} else if ("jpeg".equalsIgnoreCase(format)) {
+			DownloadUtil.downloadImage(true, response, imageReference, username, sessionID, false);
 		} else {
 			PrintWriter responseStream = response.getWriter();
 			response.setContentType("application/json");
