@@ -160,7 +160,7 @@ public class AIMUtil
 
 		if (aim.getCodeValue() != null) { 
 			if (isPluginStillRunning(aim.getUniqueIdentifier()))
-				throw new AimException("Previous version of this AIM " + aim.getUniqueIdentifier() + " is still being processed by the plugin");
+				throw new edu.stanford.hakan.aim4api.base.AimException("Previous version of this AIM " + aim.getUniqueIdentifier() + " is still being processed by the plugin");
 			// For safety, write a backup file
 			String tempXmlPath = baseAnnotationDir + "temp-" + aim.getUniqueIdentifier() + ".xml";
 			String storeXmlPath = baseAnnotationDir + aim.getUniqueIdentifier() + ".xml";
@@ -258,7 +258,7 @@ public class AIMUtil
 		if (aim.getImageAnnotations().get(0).getListTypeCode().get(0).getCode() != null) { 
 			
 			if (isPluginStillRunning(aim.getUniqueIdentifier().getRoot()))
-				throw new AimException("Previous version of this AIM " + aim.getUniqueIdentifier() + " is still being processed by the plugin");
+				throw new edu.stanford.hakan.aim4api.base.AimException("Previous version of this AIM " + aim.getUniqueIdentifier().getRoot() + " is still being processed by the plugin");
 			
 			// For safety, write a backup file - what is this strange safety feature??
 		    String tempXmlPath = baseAnnotationDir + "temp-" + aim.getUniqueIdentifier().getRoot() + ".xml";
