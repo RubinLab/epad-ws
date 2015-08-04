@@ -1626,9 +1626,12 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		Subject subject = getSubject(subjectUID);
 		Project project = getProject(projectID);
 		ProjectToSubject projSubj = (ProjectToSubject) new ProjectToSubject().getObject("project_id =" + project.getId() + " and subject_id=" + subject.getId());
-		new ProjectToSubjectToUser().deleteObjects("proj_subj_id =" + projSubj.getId());
-		new ProjectToSubjectToStudy().deleteObjects("proj_subj_id =" + projSubj.getId());
-		projSubj.delete();
+		if (projSubj != null)
+		{
+			new ProjectToSubjectToUser().deleteObjects("proj_subj_id =" + projSubj.getId());
+			new ProjectToSubjectToStudy().deleteObjects("proj_subj_id =" + projSubj.getId());
+			projSubj.delete();
+		}
 		List projSubjs = new ProjectToSubject().getObjects("subject_id=" + subject.getId());
 		// TODO: delete subject if not used any more
 		if (projSubjs.size() == 0)
@@ -1653,7 +1656,9 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		ProjectToSubject projSubj = (ProjectToSubject) new ProjectToSubject().getObject("project_id =" + project.getId() + " and subject_id=" + subject.getId());
 		ProjectToSubjectToStudy projSubjStudy = (ProjectToSubjectToStudy) new ProjectToSubjectToStudy().getObject("proj_subj_id =" + projSubj.getId() + " and study_id=" + study.getId());
 		if (projSubjStudy != null) projSubjStudy.delete();
-		// TODO: delete study if not used any more
+		List<ProjectToSubjectToStudy> projSubjStudys = new ProjectToSubjectToStudy().getObjects("study_id=" + study.getId());
+		if (projSubjStudys.size() == 0)
+			study.delete();
 	}
 
 	/* (non-Javadoc)
