@@ -44,6 +44,7 @@ import edu.stanford.epad.dtos.internal.DCM4CHEESeries;
 import edu.stanford.epad.epadws.epaddb.DatabaseUtils;
 import edu.stanford.epad.epadws.models.DisabledTemplate;
 import edu.stanford.epad.epadws.models.EpadFile;
+import edu.stanford.epad.epadws.models.EventLog;
 import edu.stanford.epad.epadws.models.FileType;
 import edu.stanford.epad.epadws.models.NonDicomSeries;
 import edu.stanford.epad.epadws.models.Project;
@@ -57,7 +58,7 @@ import edu.stanford.epad.epadws.models.ReviewerToReviewee;
 import edu.stanford.epad.epadws.models.Study;
 import edu.stanford.epad.epadws.models.Subject;
 import edu.stanford.epad.epadws.models.User;
-import edu.stanford.epad.epadws.models.User.EventLog;
+import edu.stanford.epad.epadws.models.User.MessageLog;
 import edu.stanford.epad.epadws.models.UserRole;
 import edu.stanford.epad.epadws.models.dao.AbstractDAO;
 import edu.stanford.epad.epadws.queries.Dcm4CheeQueries;
@@ -322,7 +323,7 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		try {
 			User user = getUser(username);
 			if (user != null)
-				user.addEventLog(Level.ERROR, message);
+				user.addMessageLog(Level.ERROR, message);
 		} catch (Exception e) {	}
 	}
 
@@ -331,7 +332,7 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		try {
 			User user = getUser(username);
 			if (user != null)
-				user.addEventLog(Level.WARN, message);
+				user.addMessageLog(Level.WARN, message);
 		} catch (Exception e) {	}
 	}
 
@@ -340,8 +341,29 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		try {
 			User user = getUser(username);
 			if (user != null)
-				user.addEventLog(Level.INFO, message);
+				user.addMessageLog(Level.INFO, message);
 		} catch (Exception e) {	}
+	}
+
+	@Override
+	public void createEventLog(String username, String projectID,
+			String subjectID, String studyUID, String seriesUID,
+			String imageUID, String aimID, String function, String params) {
+		EventLog elog = new EventLog();
+		elog.setUsername(username);
+		elog.setProjectID(projectID);
+		elog.setSubjectUID(subjectID);
+		elog.setStudyUID(studyUID);
+		elog.setSeriesUID(seriesUID);
+		elog.setImageUID(imageUID);
+		elog.setAimID(aimID);
+		elog.setFunction(function);
+		elog.setParams(params);
+		try {
+			elog.save();
+		} catch (Exception e) {
+			log.warning("Error saving event log", e);
+		}
 	}
 
 	/* (non-Javadoc)
@@ -1704,11 +1726,11 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 	 * @see edu.stanford.epad.epadws.service.EpadProjectOperations#getUserLogs(java.lang.String)
 	 */
 	@Override
-	public List<EventLog> getUserLogs(String username) {
+	public List<MessageLog> getUserLogs(String username) {
 		try {
 			User user = getUser(username);
 			if (user != null)
-				return user.getEventLogs();
+				return user.getMessageLogs();
 		} catch (Exception e) {
 		}
 		return null;

@@ -79,5 +79,23 @@ KEY FK_workliststudy_project (project_id),
 CONSTRAINT FK_workliststudy_project FOREIGN KEY (project_id) REFERENCES project(id)) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 CREATE UNIQUE INDEX worklist_study_ind on worklist_study(worklist_id,study_id);
 
+DROP TABLE if exists eventlog;
+CREATE TABLE eventlog (id integer unsigned NOT NULL AUTO_INCREMENT,
+projectID varchar(128),
+subjectuid varchar(128),
+studyUID varchar(128),
+seriesUID varchar(128),
+imageUID varchar(128),
+aimID varchar(128),
+username varchar(128),
+function varchar(128),
+params varchar(128),
+creator varchar(128),
+createdtime timestamp,
+updatetime timestamp,
+updated_by varchar(64),
+PRIMARY KEY (id)) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+CREATE INDEX eventlog_ind1 on eventlog(username);
+
 UPDATE dbversion SET version = '1.6';
 commit;
