@@ -2032,7 +2032,7 @@ public class DefaultEpadOperations implements EpadOperations
 			log.info("Scheduling deletion task for study " + studyReference.studyUID + " for patient "
 					+ studyReference.subjectID + " in project " + studyReference.projectID + " from user " + username);
 			(new Thread(new StudyDataDeleteTask(username, studyReference.projectID, studyReference.subjectID, studyReference.studyUID, deleteAims)))
-					.start();
+					.run();
 			return "";
 		}
 		else
