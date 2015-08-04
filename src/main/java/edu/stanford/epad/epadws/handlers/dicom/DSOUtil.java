@@ -248,7 +248,7 @@ public class DSOUtil
 			int frameMaskFilesIndex = 0;
 			for (Integer frameNumber : dsoEditRequest.editedFrameNumbers) {
 				if (frameNumber >= 0 && frameNumber < dicomFilePaths.size()) {
-					log.info("Editing frame: " + frameNumber + " in new DSO");
+					log.info("Creating frame: " + frameNumber + " in new DSO");
 					// For some reason the original DSO Masks are in reverse order
 					int editMaskFileIndex = dicomFilePaths.size() - frameNumber -1;
 					dsoTIFFMaskFiles.set(editMaskFileIndex, tiffMaskFiles.get(frameMaskFilesIndex++));
@@ -781,7 +781,7 @@ public class DSOUtil
 	{ // See http://www.tutorialspoint.com/servlets/servlets-file-uploading.htm
 		boolean uploadError = false;
 
-		log.info("Received DSO edit request for series " + seriesUID);
+		log.info("Received DSO create request for series " + seriesUID);
 		try {
 			ServletFileUpload servletFileUpload = new ServletFileUpload();
 			FileItemIterator fileItemIterator = servletFileUpload.getItemIterator(httpRequest);
@@ -803,7 +803,7 @@ public class DSOUtil
 				}
 				dsoEditRequest = new DSOEditRequest(projectID, subjectID, studyUID, seriesUID, "", "",numbers);
 			}
-			log.info("DSOEditRequest, seriesUID:" + dsoEditRequest.seriesUID + " imageUID:" + dsoEditRequest.imageUID + " aimID:" + dsoEditRequest.aimID + " number Frames:" + dsoEditRequest.editedFrameNumbers.size());
+			log.info("DSOCreateRequest, seriesUID:" + dsoEditRequest.seriesUID + " imageUID:" + dsoEditRequest.imageUID + " aimID:" + dsoEditRequest.aimID + " number Frames:" + dsoEditRequest.editedFrameNumbers.size());
 
 			if (dsoEditRequest != null) {
 				List<File> framesPNGMaskFiles = HandlerUtil.extractFiles(fileItemIterator, "DSOFrame", ".PNG");
