@@ -1632,8 +1632,15 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		new ProjectToSubjectToUser().deleteObjects("proj_subj_id in (select id from " + new ProjectToSubject().returnDBTABLE() + " where project_id=" + project.getId() + ")");
 		new ProjectToSubjectToStudy().deleteObjects("proj_subj_id in (select id from " + new ProjectToSubject().returnDBTABLE() + " where project_id=" + project.getId() + ")");
 		new ProjectToSubject().deleteObjects("project_id=" + project.getId());
-		project.delete();
-		projectCache.remove(project.getProjectId());
+		try {
+			project.delete();
+			projectCache.remove(project.getProjectId());
+		} catch (Exception x) {
+			if (x.getMessage() != null && x.getMessage().contains("constraint")) {
+				throw new Exception("Error deleting project, a PAC Query may be referring to this project");
+			} else
+				throw x;
+		}
 	}
 
 	/* (non-Javadoc)
