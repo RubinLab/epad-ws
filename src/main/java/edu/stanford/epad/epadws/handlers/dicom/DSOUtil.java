@@ -259,15 +259,15 @@ public class DSOUtil
 				}
 			}
 			// For some reason the frames need to be in reverse order
-			List<File> reverseMaskFiles = new ArrayList<File>();
-			for (int i = dsoTIFFMaskFiles.size(); i > 0 ; i--)
-			{
-				reverseMaskFiles.add(dsoTIFFMaskFiles.get(i-1));
-			}
+//			List<File> reverseMaskFiles = new ArrayList<File>();
+//			for (int i = dsoTIFFMaskFiles.size(); i > 0 ; i--)
+//			{
+//				reverseMaskFiles.add(dsoTIFFMaskFiles.get(i-1));
+//			}
 			
 			log.info("Generating new DSO for series " + dsoEditRequest.seriesUID);
 			TIFFMasksToDSOConverter converter = new TIFFMasksToDSOConverter();
-			String[] seriesImageUids = converter.generateDSO(files2FilePaths(reverseMaskFiles), dicomFilePaths, temporaryDSOFile.getAbsolutePath(), null, null, null, false);
+			String[] seriesImageUids = converter.generateDSO(files2FilePaths(dsoTIFFMaskFiles), dicomFilePaths, temporaryDSOFile.getAbsolutePath(), null, null, null, false);
 			String dsoSeriesUID = seriesImageUids[0];
 			String dsoImageUID = seriesImageUids[1];
 			log.info("Sending generated DSO " + temporaryDSOFile.getAbsolutePath() + " imageUID:" + dsoImageUID + " to dcm4chee...");
