@@ -1274,6 +1274,7 @@ public class DefaultEpadOperations implements EpadOperations
 					if (!(error.contains("content of element 'Template' is not complete") && getTemplateType(uploadedFile).startsWith("SEG")))
 						throw new Exception("Invalid Template file: " + error);
 				}
+				projectOperations.createEventLog(username, projectID, subjectID, studyID, seriesID, null, null, "UPLOAD TEMPLATE", uploadedFile.getName() + ":" + description);
 			}
 			else if (fileType != null && fileType.equals(FileType.IMAGE.getName()))
 			{
@@ -1373,7 +1374,7 @@ public class DefaultEpadOperations implements EpadOperations
 	@Override
 	public int createFile(String username, SubjectReference subjectReference,
 			File uploadedFile, String description, String fileType, String sessionID) throws Exception {
-		projectOperations.createEventLog(username, subjectReference.projectID, subjectReference.subjectID, null, null, null, null, "CREATE FILE", description +":" + fileType);
+		projectOperations.createEventLog(username, subjectReference.projectID, subjectReference.subjectID, null, null, null, null, "CREATE FILE", uploadedFile.getName() + ":" + description +":" + fileType);
 		if (fileType != null && fileType.equalsIgnoreCase(FileType.ANNOTATION.getName())) {
 			if (AIMUtil.saveAIMAnnotation(uploadedFile, subjectReference.projectID, sessionID, username))
 				throw new Exception("Error saving AIM file");
@@ -2133,7 +2134,7 @@ public class DefaultEpadOperations implements EpadOperations
 				log.warning("No permissions to update AIM:" + aimID + " for user " + username);
 				throw new Exception("No permissions to update AIM:" + aimID + " for user " + username);
 			}
-			projectOperations.createEventLog(username, projectReference.projectID, null, null, null, null, aimID, "UPLOAD AIM", aimFile.getName());
+			projectOperations.createEventLog(username, projectReference.projectID, null, null, null, null, aimID, "CREATE AIM", aimFile.getName());
 			if (aim != null && !aim.projectID.equals(projectReference.projectID)) {
 				moveAIMtoProject(aim, projectReference.projectID, username);
 			}
@@ -2169,7 +2170,7 @@ public class DefaultEpadOperations implements EpadOperations
 			SubjectReference subjectReference, String aimID, File aimFile,
 			String sessionID) {
 		try {
-			projectOperations.createEventLog(username, subjectReference.projectID, subjectReference.subjectID, null, null, null, aimID, "UPLOAD AIM", aimFile.getName());
+			projectOperations.createEventLog(username, subjectReference.projectID, subjectReference.subjectID, null, null, null, aimID, "CREATE AIM", aimFile.getName());
 			EPADAIM aim = epadDatabaseOperations.addAIM(username, subjectReference, aimID);
 			if (!"admin".equals(username) && !aim.userName.equals(username) && !aim.userName.equals("shared") && !UserProjectService.isOwner(sessionID, username, aim.projectID))
 			{
@@ -2193,7 +2194,7 @@ public class DefaultEpadOperations implements EpadOperations
 	public String createStudyAIM(String username, StudyReference studyReference, String aimID, File aimFile, String sessionID)
 	{
 		try {
-			projectOperations.createEventLog(username, studyReference.projectID, studyReference.subjectID, studyReference.studyUID, null, null, aimID, "UPLOAD AIM", aimFile.getName());
+			projectOperations.createEventLog(username, studyReference.projectID, studyReference.subjectID, studyReference.studyUID, null, null, aimID, "CREATE AIM", aimFile.getName());
 			EPADAIM aim = epadDatabaseOperations.addAIM(username, studyReference, aimID);
 			if (!"admin".equals(username) && !aim.userName.equals(username) && !aim.userName.equals("shared") && !UserProjectService.isOwner(sessionID, username, aim.projectID))
 			{
@@ -2217,7 +2218,7 @@ public class DefaultEpadOperations implements EpadOperations
 	public String createSeriesAIM(String username, SeriesReference seriesReference, String aimID, File aimFile, String sessionID)
 	{
 		try {
-			projectOperations.createEventLog(username, seriesReference.projectID, seriesReference.subjectID, seriesReference.studyUID, seriesReference.seriesUID, null, aimID, "UPLOAD AIM", aimFile.getName());
+			projectOperations.createEventLog(username, seriesReference.projectID, seriesReference.subjectID, seriesReference.studyUID, seriesReference.seriesUID, null, aimID, "CREATE AIM", aimFile.getName());
 			EPADAIM aim = epadDatabaseOperations.addAIM(username, seriesReference, aimID);
 			if (!"admin".equals(username) && !aim.userName.equals(username) && !aim.userName.equals("shared") && !UserProjectService.isOwner(sessionID, username, aim.projectID))
 			{
@@ -2241,7 +2242,7 @@ public class DefaultEpadOperations implements EpadOperations
 	public String createImageAIM(String username, ImageReference imageReference, String aimID, File aimFile, String sessionID)
 	{
 		try {
-			projectOperations.createEventLog(username, imageReference.projectID, imageReference.subjectID, imageReference.studyUID, imageReference.seriesUID, imageReference.imageUID, aimID, "UPLOAD AIM", aimFile.getName());
+			projectOperations.createEventLog(username, imageReference.projectID, imageReference.subjectID, imageReference.studyUID, imageReference.seriesUID, imageReference.imageUID, aimID, "CREATE AIM", aimFile.getName());
 			EPADAIM aim = epadDatabaseOperations.addAIM(username, imageReference, aimID);
 			if (!"admin".equals(username) && !aim.userName.equals(username) && !aim.userName.equals("shared") && !UserProjectService.isOwner(sessionID, username, aim.projectID))
 			{
@@ -2265,7 +2266,7 @@ public class DefaultEpadOperations implements EpadOperations
 	public String createFrameAIM(String username, FrameReference frameReference, String aimID, File aimFile, String sessionID)
 	{
 		try {
-			projectOperations.createEventLog(username, frameReference.projectID, frameReference.subjectID, frameReference.studyUID, frameReference.seriesUID, frameReference.imageUID, aimID, "UPLOAD AIM", aimFile.getName() + ":" + frameReference.frameNumber);
+			projectOperations.createEventLog(username, frameReference.projectID, frameReference.subjectID, frameReference.studyUID, frameReference.seriesUID, frameReference.imageUID, aimID, "CREATE AIM", aimFile.getName() + ":" + frameReference.frameNumber);
 			EPADAIM aim = epadDatabaseOperations.addAIM(username, frameReference, aimID);
 			if (!"admin".equals(username) && !aim.userName.equals(username) && !aim.userName.equals("shared") && !UserProjectService.isOwner(sessionID, username, aim.projectID))
 			{

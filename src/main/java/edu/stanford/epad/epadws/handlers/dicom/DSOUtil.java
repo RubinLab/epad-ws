@@ -189,7 +189,7 @@ public class DSOUtil
 	/**
 	 * Generate a new DSO from scratch given series and masked frames.
 	 */
-	private static DSOEditResult createNewDSO(DSOEditRequest dsoEditRequest, List<File> editFramesPNGMaskFiles, String projectID, String username)
+	private static DSOEditResult createNewDSO(String dsoName, DSOEditRequest dsoEditRequest, List<File> editFramesPNGMaskFiles, String projectID, String username)
 	{
 		try {
 			List<DCM4CHEEImageDescription> imageDescriptions = dcm4CheeDatabaseOperations.getImageDescriptions(
@@ -267,7 +267,7 @@ public class DSOUtil
 			
 			log.info("Generating new DSO for series " + dsoEditRequest.seriesUID);
 			TIFFMasksToDSOConverter converter = new TIFFMasksToDSOConverter();
-			String[] seriesImageUids = converter.generateDSO(files2FilePaths(dsoTIFFMaskFiles), dicomFilePaths, temporaryDSOFile.getAbsolutePath(), null, null, null, false);
+			String[] seriesImageUids = converter.generateDSO(files2FilePaths(dsoTIFFMaskFiles), dicomFilePaths, temporaryDSOFile.getAbsolutePath(), dsoName, null, null, false);
 			String dsoSeriesUID = seriesImageUids[0];
 			String dsoImageUID = seriesImageUids[1];
 			log.info("Sending generated DSO " + temporaryDSOFile.getAbsolutePath() + " imageUID:" + dsoImageUID + " to dcm4chee...");
@@ -813,7 +813,8 @@ public class DSOUtil
 				} else {
 					framesPNGMaskFiles = framesPNGMaskFiles.subList(0, dsoEditRequest.editedFrameNumbers.size());
 					log.info("Extracted " + framesPNGMaskFiles.size() + " file mask(s) for DSO create for series " + seriesUID);
-					DSOEditResult dsoEditResult = DSOUtil.createNewDSO(dsoEditRequest, framesPNGMaskFiles, projectID, username);
+					String name = httpRequest.getParameter("name");
+					DSOEditResult dsoEditResult = DSOUtil.createNewDSO(name, dsoEditRequest, framesPNGMaskFiles, projectID, username);
 					if (dsoEditResult != null)
 					{					
 						responseStream.append(dsoEditResult.toJSON());
