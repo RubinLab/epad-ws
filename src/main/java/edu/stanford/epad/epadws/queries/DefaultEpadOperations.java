@@ -2318,12 +2318,13 @@ public class DefaultEpadOperations implements EpadOperations
 				if (otheraims.size() == 0)
 				{
 					String error =  this.deleteSeries(new SeriesReference(projectReference.projectID, aim.subjectID, aim.studyUID, aim.dsoSeriesUID), false);
-					if (error != null && error.length() > 0)
+					if (error != null && error.length() > 0) {
 						log.warning("Error deleting DSO, seriesUID:" + aim.dsoSeriesUID);
 						epadDatabaseOperations.insertEpadEvent(
 							username, 
 							"Error deleting DSO Series", 
 							aim.dsoSeriesUID, "", aim.subjectID, aim.subjectID, aim.studyUID, projectReference.projectID, error);					
+					}
 				}
 				else
 				{
