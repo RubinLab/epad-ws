@@ -691,6 +691,8 @@ public class DefaultEpadOperations implements EpadOperations
 					}
 					if (instanceOffset == 0) instanceOffset = 1;
 					int index = 0;
+					boolean instanceOneFound = false;
+					int instanceCount = 0;
 					for (DICOMElement dicomElement : referencedSOPInstanceUIDDICOMElements) {
 						String referencedImageUID = dicomElement.value;
 						DCM4CHEEImageDescription dcm4cheeReferencedImageDescription = referencedImages.get(index);
@@ -706,7 +708,19 @@ public class DefaultEpadOperations implements EpadOperations
 						String insertDate = dcm4cheeReferencedImageDescription.createdTime;
 						String imageDate = dcm4cheeReferencedImageDescription.contentTime;
 						String sliceLocation = dcm4cheeReferencedImageDescription.sliceLocation;
-						int frameNumber = dcm4cheeReferencedImageDescription.instanceNumber - instanceOffset; // Frames 0-based, instances 1 or more
+						int instanceNumber = dcm4cheeReferencedImageDescription.instanceNumber;
+						// In case all instanceNumbers are 1
+						if (instanceNumber == 1 && !instanceOneFound)
+						{
+							instanceOneFound = true;
+							instanceCount = 1;
+						}
+						else if (instanceNumber == 1 && instanceOneFound)
+						{
+							instanceCount++;
+							instanceNumber = instanceCount;
+						}
+						int frameNumber = instanceNumber - instanceOffset; // Frames 0-based, instances 1 or more
 						String losslessImage = getPNGMaskPath(studyUID, imageReference.seriesUID, imageReference.imageUID,
 								frameNumber);
 						String contourImage = "";
@@ -887,10 +901,9 @@ public class DefaultEpadOperations implements EpadOperations
 			epadDatabaseOperations.deleteSeries(seriesReference.seriesUID);
 			if (deleteAims)
 				deleteAllSeriesAims(seriesReference.seriesUID, false);
-			if (nds != null)
+			if (nds == null)
+				log.warning("Series not found in DCM4CHE database, uid:" + seriesReference.seriesUID);
 				return "";
-			else
-				return "Series not found in DCM4CHE database";
 		}
 		if (Dcm4CheeOperations.deleteSeries(seriesReference.seriesUID, seriesPk))
 		{

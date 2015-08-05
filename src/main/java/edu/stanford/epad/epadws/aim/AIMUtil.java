@@ -785,10 +785,15 @@ public class AIMUtil
 	            }
 	            if (imageAnnotationColl != null) {
 					SegmentationEntityCollection sec = imageAnnotationColl.getImageAnnotations().get(0).getSegmentationEntityCollection();
-					if (sec != null && sec.getSegmentationEntityList().size() == 0 && imageAnnotationColl.getImageAnnotations().get(0).getListTypeCode().get(0).getCode().equals("SEG"))
+					if (sec != null  && imageAnnotationColl.getImageAnnotations().get(0).getListTypeCode().get(0).getCode().equals("SEG"))
 					{
-						epadDatabaseOperations.deleteAIM(username, imageAnnotationColl.getUniqueIdentifier().getRoot());
-						throw new Exception("Invalid AIM, contains empty segmentation data");
+						if (sec.getSegmentationEntityList().size() == 0)			
+						{
+							epadDatabaseOperations.deleteAIM(username, imageAnnotationColl.getUniqueIdentifier().getRoot());
+							throw new Exception("Invalid AIM, contains empty segmentation data");
+						}
+						else
+							return false;
 					}
 					EPADAIM ea = epadDatabaseOperations.getAIM(imageAnnotationColl.getUniqueIdentifier().getRoot());
 					if (ea != null && !ea.projectID.equals(projectID))
