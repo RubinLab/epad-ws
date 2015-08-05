@@ -30,6 +30,7 @@
  Patient: <%=subjectID%><br>
  Study: <%=studyUID%><br>
  Series: <%=seriesUID%><br>
+ DSO Name: <input type=text id=dsoName name=dsoName size=20><br>
  Mask Frame Numbers: <input type=text id="framenumbers" name="framenumbers" size="40"> (comma separated, 0 - max frames-1) 
  <form name="uploadform" id="uploadform"  action="<%=request.getContextPath()%>/v2/projects/<%=projectID%>/subjects/<%=subjectID%>/studies/<%=studyUID%>/series/<%=seriesUID%>/images/new/frames/?username=<%=username%>&type=new" method="post" enctype="multipart/form-data" accept-charset=utf-8>
   <!-- JSON File:  input type=file name=file0 --><br>
@@ -60,7 +61,12 @@ var filedata;
 function uploadFiles()
 {
 	var form = document.getElementById("uploadform");
-	form.action = form.action + "&editedFrameNumbers=" + document.getElementById("framenumbers").value;
+	var nameparm = "";
+	if (document.getElementById("dsoName").value != "")
+	{
+		nameparm = "&name=" + document.getElementById("dsoName").value
+	}
+	form.action = form.action + "&editedFrameNumbers=" + document.getElementById("framenumbers").value + nameparm;
 	form.submit();
 }
 $( document ).ready(function() {
