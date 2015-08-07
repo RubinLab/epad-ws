@@ -2304,7 +2304,7 @@ public class DefaultEpadOperations implements EpadOperations
 			}
 			if (AIMUtil.isPluginStillRunning(aimID))
 				throw new Exception(aimID + " is still being processed by the plugin");
-			log.info("Deleting AIM, deleteDSO:" + deleteDSO + " dsoSeriesUID:" + aim.dsoSeriesUID);
+			log.info("Deleting AIM, deleteDSO:" + deleteDSO + " dsoSeriesUID:" + aim.dsoSeriesUID + " aimID:" + aimID);
 			AIMUtil.deleteAIM(aimID, projectReference.projectID);
 			epadDatabaseOperations.deleteAIM(username, projectReference, aimID);
 			if (deleteDSO && aim.dsoSeriesUID != null && aim.dsoSeriesUID.length() > 0 && epadDatabaseOperations.getAIMsByDSOSeries(aim.dsoSeriesUID).size() == 0)

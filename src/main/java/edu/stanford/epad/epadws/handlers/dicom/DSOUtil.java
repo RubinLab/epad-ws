@@ -270,12 +270,27 @@ public class DSOUtil
 			String[] seriesImageUids = converter.generateDSO(files2FilePaths(dsoTIFFMaskFiles), dicomFilePaths, temporaryDSOFile.getAbsolutePath(), dsoName, null, null, false);
 			String dsoSeriesUID = seriesImageUids[0];
 			String dsoImageUID = seriesImageUids[1];
-			log.info("Sending generated DSO " + temporaryDSOFile.getAbsolutePath() + " imageUID:" + dsoImageUID + " to dcm4chee...");
+			log.info("Sending generated DSO " + temporaryDSOFile.getAbsolutePath() + " dsoImageUID:" + dsoImageUID + " dsoSeriesUID:" + dsoSeriesUID + " to dcm4chee...");
 			DCM4CHEEUtil.dcmsnd(temporaryDSOFile.getAbsolutePath(), false);
 			ImageAnnotation aim = AIMUtil.generateAIMFileForDSO(temporaryDSOFile, username, projectID);
+			log.info("DSO AimID:" + aim.getUniqueIdentifier());
 			for (File mask: dsoTIFFMaskFiles)
 			{
 				mask.delete();
+			}
+			EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
+			EPADAIM ea = epadDatabaseOperations.getAIM(aim.getUniqueIdentifier());
+			for (int i = 0; i < dsoEditRequest.editedFrameNumbers.size(); i++)
+			{
+				Integer frameNumber = dsoEditRequest.editedFrameNumbers.get(i);
+				String pngMaskDirectoryPath = baseDicomDirectory + "/studies/" + ea.studyUID + "/series/" + dsoSeriesUID + "/images/"
+						+ dsoImageUID + "/masks/";
+				File pngFilesDirectory = new File(pngMaskDirectoryPath);
+				pngFilesDirectory.mkdirs();				
+				String pngMaskFilePath = pngMaskDirectoryPath + frameNumber + ".png";
+				EPADFileUtils.copyFile(editFramesPNGMaskFiles.get(i), new File(pngMaskFilePath));
+				editFramesPNGMaskFiles.get(i).delete();
+				log.info("File copied:" + pngMaskFilePath);
 			}
 			return new DSOEditResult(dsoEditRequest.projectID, dsoEditRequest.patientID, dsoEditRequest.studyUID, dsoSeriesUID, dsoImageUID, aim.getUniqueIdentifier());
 

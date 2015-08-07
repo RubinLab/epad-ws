@@ -370,6 +370,7 @@ public interface EpadProjectOperations {
 	 * @throws Exception
 	 */
 	List<Subject> getSubjectsForProject(String projectId) throws Exception;
+	List<Subject> getSubjectsForProject(String projectId, String sortBy) throws Exception;
 	
 	/**
 	 * Get Subject for project

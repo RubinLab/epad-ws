@@ -907,10 +907,19 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 	@Override
 	public List<Subject> getSubjectsForProject(String projectId)
 			throws Exception {
+		return getSubjectsForProject(projectId, null);
+	}
+
+	/* (non-Javadoc)
+	 * @see edu.stanford.epad.epadws.service.EpadProjectOperations#getSubjectsForProject(java.lang.String)
+	 */
+	@Override
+	public List<Subject> getSubjectsForProject(String projectId, String sortBy)
+			throws Exception {
 		Project project = getProject(projectId);
 		if (project == null) return new ArrayList<Subject>();
 		
-		return getSubjectsByProjectId(project.getId());
+		return getSubjectsByProjectId(project.getId(), sortBy);
 	}
 
 	/**
@@ -918,11 +927,16 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 	 * @return
 	 * @throws Exception
 	 */
-	private List<Subject> getSubjectsByProjectId(long id)
+	private List<Subject> getSubjectsByProjectId(long id, String sortBy)
 			throws Exception {
+		if (sortBy == null || sortBy.trim().length() == 0)
+			sortBy = "name";
+		else if (sortBy.equalsIgnoreCase("SubjectId"))
+			sortBy = "subjectUID";
+			
 		List objects = new Subject().getObjects("id in (select subject_id from " 
 													+ ProjectToSubject.DBTABLE 
-													+ " where project_id =" + id + ")");
+													+ " where project_id =" + id + ") order by " + sortBy);
 		List<Subject> subjects = new ArrayList<Subject>();
 		subjects.addAll(objects);
 		
@@ -965,7 +979,7 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 			String projectID) throws Exception {
 		if (projectID == null || projectID.trim().length() == 0)
 			return getSubjectFromName(subjectName);
-		List<Subject> subjects = this.getSubjectsForProject(projectID);
+		List<Subject> subjects = this.getSubjectsForProject(projectID, null);
 		String xnatName = subjectName.replace('^',' ').trim();
 		for (Subject subject: subjects)
 		{
@@ -1153,7 +1167,7 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 			String loggedInUser, String projectID) throws Exception {
 		Project project = getProject(projectID);
 		User user = getUser(loggedInUser);
-		List<Subject> subjects = getSubjectsByProjectId(project.getId());
+		List<Subject> subjects = getSubjectsByProjectId(project.getId(), null);
 		Map<Long, String> subjectIdToUID = new HashMap<Long, String>();
 		for (Subject subject: subjects)
 		{
