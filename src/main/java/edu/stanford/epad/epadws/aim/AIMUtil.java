@@ -328,6 +328,8 @@ public class AIMUtil
 			    String collectionName = eXistCollectionV4;
 			    if (projectID != null && projectID.length() > 0)
 			    	collectionName = collectionName + "/" + projectID;
+			    List<ImageAnnotationCollection> aims = AIMQueries.getAIMImageAnnotationsV4(projectID, AIMSearchType.ANNOTATION_UID, aimID, "admin");
+				log.info("Number of aims found in exist with aimID = " + aimID + " : " + aims.size());
 				edu.stanford.hakan.aim4api.database.exist.ExistManager.removeImageAnnotationCollectionFromServer(
 						eXistServerUrl, aim4Namespace, collectionName, eXistUsername, eXistPassword, aimID);
 				MongoDBOperations.deleteAnotationInMongo(aimID, projectID);
