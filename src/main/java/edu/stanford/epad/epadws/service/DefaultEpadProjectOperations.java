@@ -814,18 +814,25 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 	@Override
 	public List<Project> getProjectsForUser(String username) throws Exception {
 		User user = getUser(username);
-		if (username.equals("admin") || user.isAdmin())
-			return this.getAllProjects();
-		List objects = new Project().getObjects("id in (select project_id from " 
-													+ ProjectToUser.DBTABLE 
-													+ " where user_id =" + user.getId() + ") order by projectId");
-		List<Project> projects = new ArrayList<Project>();
-		projects.addAll(objects);
-		List<Project> publicProjs = getPublicProjects();
-		for (Project project: publicProjs)
+		List<Project> projects = this.getAllProjects();
+		for (int i = 0; i < projects.size(); i++)
 		{
-			if (!projects.contains(project))
-				projects.add(project);
+			Project project = projects.get(i);
+			List<ProjectToUser> p2us = new ProjectToUser().getObjects("user_id =" + user.getId() + " and project_id=" + project.getId());
+			if (p2us.size() > 0)
+			{
+				ProjectToUser p2u = p2us.get(0);
+				if (p2u.getDefaultTemplate() != null && p2u.getDefaultTemplate().length() > 0)
+					project.setDefaultTemplate(p2u.getDefaultTemplate());
+			}
+			else if (username.equals("admin") || user.isAdmin() || project.getType().equals(ProjectType.PUBLIC.getName()))
+			{
+			}
+			else
+			{
+				projects.remove(i);
+				i--;
+			}
 		}
 		return projects;
 	}
