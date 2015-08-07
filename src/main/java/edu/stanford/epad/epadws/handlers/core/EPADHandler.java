@@ -123,6 +123,7 @@ public class EPADHandler extends AbstractHandler
 			e.printStackTrace();
 			log.warning("Error in handle request:", e);
 			statusCode = HandlerUtil.internalErrorJSONResponse(INTERNAL_ERROR_MESSAGE, e, responseStream, log);
+			log.info("ID:" + Thread.currentThread().getId() + " Error message to client:" + e.getMessage());
 		}
 		log.info("ID:" + Thread.currentThread().getId() + " Status returned to client:" + statusCode);
 		httpResponse.setStatus(statusCode);
