@@ -63,6 +63,8 @@ import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.epad.dtos.EPADAIM;
 import edu.stanford.epad.dtos.EPADAIMList;
 import edu.stanford.epad.dtos.EPADDSOFrame;
+import edu.stanford.epad.dtos.EPADEventLog;
+import edu.stanford.epad.dtos.EPADEventLogList;
 import edu.stanford.epad.dtos.EPADFile;
 import edu.stanford.epad.dtos.EPADFileList;
 import edu.stanford.epad.dtos.EPADFrame;
@@ -123,6 +125,7 @@ import edu.stanford.epad.epadws.handlers.core.StudyReference;
 import edu.stanford.epad.epadws.handlers.core.SubjectReference;
 import edu.stanford.epad.epadws.handlers.dicom.DSOUtil;
 import edu.stanford.epad.epadws.models.EpadFile;
+import edu.stanford.epad.epadws.models.EventLog;
 import edu.stanford.epad.epadws.models.FileType;
 import edu.stanford.epad.epadws.models.NonDicomSeries;
 import edu.stanford.epad.epadws.models.Project;
@@ -2671,7 +2674,28 @@ public class DefaultEpadOperations implements EpadOperations
 	}
 
 	@Override
-	public EPADWorklistList getWorkListsForUser(String username) throws Exception {
+	public EPADEventLogList getEventLogs(String loggedInUserName, String username, int start, int count) throws Exception {
+		User loggedInUser = projectOperations.getUser(loggedInUserName);
+		if (!loggedInUser.isAdmin() && !loggedInUserName.equals(username))
+			throw new Exception("No permissions for requested data");
+		EPADEventLogList elist = new EPADEventLogList();
+		List<EventLog> elogs = projectOperations.getUseEventLogs(username);
+		if (count > 0 && elogs.size() > (start+count))
+		{
+			elogs = elogs.subList(start, start+count);
+		}
+		for(EventLog elog: elogs)
+		{
+			elist.addEPADEventLog(new EPADEventLog(this.formatDateTime(elog.getCreatedTime()), 
+							elog.getUsername(), elog.getProjectID(),
+							elog.getSubjectUID(), elog.getStudyUID(), elog.getSeriesUID(),
+							elog.getImageUID(), elog.getAimID(), elog.getFunction(), elog.getParams()));
+		}
+		return elist;
+	}
+
+	@Override
+	public EPADWorklistList getWorkListsForUser(String loggedInUserName, String username) throws Exception {
 		User user = (User) projectOperations.getUser(username);
 		List<WorkList> worklists = workListOperations.getWorkListsForUser(username);
 		EPADWorklistList wllist = new EPADWorklistList();
@@ -2704,7 +2728,7 @@ public class DefaultEpadOperations implements EpadOperations
 	}
 
 	@Override
-	public EPADWorklistStudyList getWorkListStudies(String username,
+	public EPADWorklistStudyList getWorkListStudies(String loggedInUserName, String username,
 			String workListID) throws Exception {
 		WorkList wl = workListOperations.getWorkList(workListID);
 		if (wl == null)
@@ -2736,7 +2760,7 @@ public class DefaultEpadOperations implements EpadOperations
 	}
 
 	@Override
-	public EPADWorklistSubjectList getWorkListSubjects(String username, String workListID) throws Exception {
+	public EPADWorklistSubjectList getWorkListSubjects(String loggedInUserName, String username, String workListID) throws Exception {
 		WorkList wl = workListOperations.getWorkList(workListID);
 		if (wl == null)
 			throw new Exception("Worklist " + workListID + " not found");
@@ -2756,7 +2780,7 @@ public class DefaultEpadOperations implements EpadOperations
 	}
 
 	@Override
-	public EPADWorklist getWorkListByID(String username, String workListID) throws Exception {
+	public EPADWorklist getWorkListByID(String loggedInUserName, String username, String workListID) throws Exception {
 		WorkList wl = workListOperations.getWorkList(workListID);
 		User user = (User) projectOperations.getDBObject(User.class, wl.getUserId());
 		if (username != null && !username.equals(user.getUsername()))

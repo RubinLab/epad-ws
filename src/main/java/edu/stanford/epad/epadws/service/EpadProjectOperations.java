@@ -30,6 +30,7 @@ import java.util.List;
 import java.util.Map;
 
 import edu.stanford.epad.epadws.models.EpadFile;
+import edu.stanford.epad.epadws.models.EventLog;
 import edu.stanford.epad.epadws.models.FileType;
 import edu.stanford.epad.epadws.models.NonDicomSeries;
 import edu.stanford.epad.epadws.models.Project;
@@ -772,11 +773,18 @@ public interface EpadProjectOperations {
 	void deleteFile(String loggedInUser, String projectID, String subjectUID, String studyUID, String seriesUID, String filename) throws Exception;	
 	
 	/**
+	 * Get error messages for this user
+	 * @param username
+	 * @return
+	 */
+	List<MessageLog> getUserMessages(String username);
+	
+	/**
 	 * Get event logs for this user
 	 * @param username
 	 * @return
 	 */
-	List<MessageLog> getUserLogs(String username);
+	List<EventLog> getUseEventLogs(String username) throws Exception;
 
 	/**
 	 * Get reviewers for this user

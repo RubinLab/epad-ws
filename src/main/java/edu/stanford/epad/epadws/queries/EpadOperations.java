@@ -32,6 +32,7 @@ import java.util.Set;
 import edu.stanford.epad.common.dicom.DICOMFileDescription;
 import edu.stanford.epad.dtos.EPADAIM;
 import edu.stanford.epad.dtos.EPADAIMList;
+import edu.stanford.epad.dtos.EPADEventLogList;
 import edu.stanford.epad.dtos.EPADFile;
 import edu.stanford.epad.dtos.EPADFileList;
 import edu.stanford.epad.dtos.EPADFrame;
@@ -1109,7 +1110,7 @@ public interface EpadOperations
 	 * @return
 	 * @throws Exception
 	 */
-	EPADWorklistList getWorkListsForUser(String username) throws Exception;
+	EPADWorklistList getWorkListsForUser(String loggedInUser, String username) throws Exception;
 	
 	/**
 	 * Get studies for worklist
@@ -1118,7 +1119,7 @@ public interface EpadOperations
 	 * @return
 	 * @throws Exception
 	 */
-	EPADWorklistStudyList getWorkListStudies(String username, String workListID) throws Exception;
+	EPADWorklistStudyList getWorkListStudies(String loggedInUser, String username, String workListID) throws Exception;
 	
 	/**
 	 * Get subjects for worklist
@@ -1127,7 +1128,7 @@ public interface EpadOperations
 	 * @return
 	 * @throws Exception
 	 */
-	EPADWorklistSubjectList getWorkListSubjects(String username, String workListID) throws Exception;
+	EPADWorklistSubjectList getWorkListSubjects(String loggedInUser, String username, String workListID) throws Exception;
 	
 	//EPADWorklistStudyList getWorkListSubjectStudies(ProjectReference projectReference, String username, String subjectID, String workListID) throws Exception;
 	
@@ -1140,7 +1141,7 @@ public interface EpadOperations
 	 * @return
 	 * @throws Exception
 	 */
-	EPADWorklist getWorkListByID(String username, String workListID) throws Exception;
+	EPADWorklist getWorkListByID(String loggedInUser, String username, String workListID) throws Exception;
 
 	/**
 	 * See if new series have been uploaded to DCM4CHEE that ePAD does not know about.
@@ -1217,4 +1218,11 @@ public interface EpadOperations
 	 * @throws Exception
 	 */
 	Collection<EPADSession> getCurrentSessions(String username) throws Exception;
+	
+	/**
+	 * @param username
+	 * @return
+	 * @throws Exception
+	 */
+	EPADEventLogList getEventLogs(String loggedInUser, String username, int start, int count) throws Exception;
 }

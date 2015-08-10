@@ -1754,7 +1754,7 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 	 * @see edu.stanford.epad.epadws.service.EpadProjectOperations#getUserLogs(java.lang.String)
 	 */
 	@Override
-	public List<MessageLog> getUserLogs(String username) {
+	public List<MessageLog> getUserMessages(String username) {
 		try {
 			User user = getUser(username);
 			if (user != null)
@@ -1762,6 +1762,12 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		} catch (Exception e) {
 		}
 		return null;
+	}
+
+	@Override
+	public List<EventLog> getUseEventLogs(String username) throws Exception {
+		List<EventLog> events = new EventLog().getObjects("username ='" + username + "' order by createdtime desc");
+		return events;
 	}
 
 	/* (non-Javadoc)
