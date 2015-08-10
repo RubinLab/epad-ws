@@ -3785,7 +3785,10 @@ public class DefaultEpadOperations implements EpadOperations
 	public void addUserToProject(String loggedInusername,
 			ProjectReference projectReference, String username, String roleName, String defaultTemplate, String sessionID)
 			throws Exception {
-		if (!projectOperations.isOwner(loggedInusername, projectReference.projectID))
+		User user = projectOperations.getUser(username);
+		if (!projectOperations.isOwner(loggedInusername, projectReference.projectID) && !user.isAdmin() && !projectOperations.hasAccessToProject(username, projectReference.projectID))
+			throw new Exception("User " + loggedInusername + " is not the owner of " + projectReference.projectID);
+		if (roleName != null && !projectOperations.isOwner(loggedInusername, projectReference.projectID) && !user.isAdmin())
 			throw new Exception("User " + loggedInusername + " is not the owner of " + projectReference.projectID);
 		UserRole role = UserRole.getRole(roleName);
 		projectOperations.addUserToProject(loggedInusername, projectReference.projectID, username, role, defaultTemplate);
@@ -3796,7 +3799,8 @@ public class DefaultEpadOperations implements EpadOperations
 	public void removeUserFromProject(String loggedInusername,
 			ProjectReference projectReference, String username, String sessionID)
 			throws Exception {
-		if (!projectOperations.isOwner(loggedInusername, projectReference.projectID))
+		User user = projectOperations.getUser(username);
+		if (!projectOperations.isOwner(loggedInusername, projectReference.projectID) && !user.isAdmin())
 			throw new Exception("User " + loggedInusername + " is not the owner of " + projectReference.projectID);
 		projectOperations.removeUserFromProject(loggedInusername, projectReference.projectID, username);
 	}

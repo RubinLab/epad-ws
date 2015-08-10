@@ -812,6 +812,7 @@ public class AIMUtil
 						{
 							String message = "Invalid SeriesUID in AIM xml, AimID:" + ea.aimID + " Incorrect seriesUID in AIM:" + seriesID + " Should be:" + ea.seriesUID;
 							log.warning(message);
+							epadDatabaseOperations.deleteAIM("admin", ea.aimID);
 //							throw new Exception(message);
 							return false;
 						}
