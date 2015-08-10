@@ -161,7 +161,7 @@ public class AIMUtil
 
 		if (aim.getCodeValue() != null) { 
 			if (isPluginStillRunning(aim.getUniqueIdentifier()))
-				throw new edu.stanford.hakan.aim4api.base.AimException("Previous version of this AIM " + aim.getUniqueIdentifier() + " is still being processed by the plugin");
+				throw new edu.stanford.hakan.aim4api.base.AimException("AIM " + aim.getUniqueIdentifier() + " is still being processed by the plugin");
 			// For safety, write a backup file
 			String tempXmlPath = baseAnnotationDir + "temp-" + aim.getUniqueIdentifier() + ".xml";
 			String storeXmlPath = baseAnnotationDir + aim.getUniqueIdentifier() + ".xml";
