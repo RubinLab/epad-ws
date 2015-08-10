@@ -860,6 +860,7 @@ public class AIMUtil
             } catch (Exception e) {
 				e.printStackTrace();
 				log.warning("Error saving annotation", e);
+				throw new edu.stanford.hakan.aim4api.base.AimException(e.getMessage());
             }
 			
 		}
