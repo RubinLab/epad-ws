@@ -42,7 +42,9 @@ import edu.stanford.epad.epadws.handlers.HandlerUtil;
 import edu.stanford.epad.epadws.handlers.dicom.DSOUtil;
 import edu.stanford.epad.epadws.queries.DefaultEpadOperations;
 import edu.stanford.epad.epadws.queries.EpadOperations;
+import edu.stanford.epad.epadws.service.DefaultEpadProjectOperations;
 import edu.stanford.epad.epadws.service.DefaultWorkListOperations;
+import edu.stanford.epad.epadws.service.EpadProjectOperations;
 import edu.stanford.epad.epadws.service.EpadWorkListOperations;
 
 /**
@@ -70,6 +72,7 @@ public class EPADPostHandler
 		File uploadedFile = null;
 		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
 		EpadWorkListOperations worklistOperations = DefaultWorkListOperations.getInstance();
+		EpadProjectOperations projectOperations = DefaultEpadProjectOperations.getInstance();
 	    String requestContentType = httpRequest.getContentType();
 		try {
 			log.info("POST Request, contentType:" + requestContentType);
@@ -280,11 +283,14 @@ public class EPADPostHandler
 					String password = httpRequest.getParameter("password");
 					String oldpassword = httpRequest.getParameter("oldpassword");
 					String enable = httpRequest.getParameter("enable");
+					String type = httpRequest.getParameter("type");
 					//log.info(" email:" + email +" firstname:" + firstname + " lastname:" + lastname + " new password:" + password + " old password:" + oldpassword); 
 					String[] addPermissions = httpRequest.getParameterValues("addPermission");
 					String[] removePermissions = httpRequest.getParameterValues("removePermission");
 					if (enable == null && firstname == null && lastname == null && email == null && addPermissions == null && removePermissions == null && password == null && oldpassword == null)
 						throw new Exception("BAD Request - all parameters are null");
+					if ("new".equals(type) && projectOperations.getUser(target_username) != null)
+						throw new Exception("User " +  username + " already exists");
 					epadOperations.createOrModifyUser(username, target_username, firstname, lastname, email, password, oldpassword, addPermissions, removePermissions);
 					if ("true".equalsIgnoreCase(enable))
 						epadOperations.enableUser(username, target_username);
