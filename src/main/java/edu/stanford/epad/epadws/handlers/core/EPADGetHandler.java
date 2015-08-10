@@ -1481,6 +1481,7 @@ public class EPADGetHandler
 			statusCode = HandlerUtil.internalErrorJSONResponse(INTERNAL_ERROR_MESSAGE, t, responseStream, log);
 			if (t.getMessage() != null && t.getMessage().contains("not found"))
 				statusCode = HttpServletResponse.SC_NOT_FOUND;
+			log.info("ID:" + Thread.currentThread().getId() + " Error message to client:" + t.getMessage());
 		}
 		return statusCode;
 	}

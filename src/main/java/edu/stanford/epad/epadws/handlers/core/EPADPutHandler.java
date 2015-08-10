@@ -702,6 +702,7 @@ public class EPADPutHandler
 		else
 		{
 			responseStream.write(new EPADMessage(status).toJSON());
+			log.info("ID:" + Thread.currentThread().getId() + " Error message to client:" + status);
 			return HttpServletResponse.SC_INTERNAL_SERVER_ERROR;				
 		}
 	}

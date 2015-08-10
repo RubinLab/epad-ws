@@ -342,6 +342,7 @@ public class EPADPostHandler
 		} catch (Exception x) {
 			log.warning("Error handling post", x);
 			responseStream.write(new EPADMessage(x.getMessage()).toJSON());
+			log.info("ID:" + Thread.currentThread().getId() + " Error message to client:" + x.getMessage());
 			return HttpServletResponse.SC_INTERNAL_SERVER_ERROR;							
 		}
 		finally {
