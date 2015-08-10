@@ -148,8 +148,9 @@ public class EPADGetHandler
 
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.SUBJECT_LIST, pathInfo)) {
 				ProjectReference projectReference = ProjectReference.extract(ProjectsRouteTemplates.SUBJECT_LIST, pathInfo);
+				String sortField = httpRequest.getParameter("sortField");
 				EPADSubjectList subjectList = epadOperations.getSubjectDescriptions(projectReference.projectID, username,
-						sessionID, searchFilter, start, count);
+						sessionID, searchFilter, start, count, sortField);
 				long endtime = System.currentTimeMillis();
 				log.info("Returning " + subjectList.ResultSet.totalRecords + " subjects to client, took " + (endtime-starttime) + " msecs");
 				responseStream.append(subjectList.toJSON());
@@ -1481,6 +1482,7 @@ public class EPADGetHandler
 			statusCode = HandlerUtil.internalErrorJSONResponse(INTERNAL_ERROR_MESSAGE, t, responseStream, log);
 			if (t.getMessage() != null && t.getMessage().contains("not found"))
 				statusCode = HttpServletResponse.SC_NOT_FOUND;
+			log.info("ID:" + Thread.currentThread().getId() + " Error message to client:" + t.getMessage());
 		}
 		return statusCode;
 	}

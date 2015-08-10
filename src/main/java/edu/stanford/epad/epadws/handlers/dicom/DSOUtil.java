@@ -189,7 +189,7 @@ public class DSOUtil
 	/**
 	 * Generate a new DSO from scratch given series and masked frames.
 	 */
-	private static DSOEditResult createNewDSO(DSOEditRequest dsoEditRequest, List<File> editFramesPNGMaskFiles, String projectID, String username)
+	private static DSOEditResult createNewDSO(String dsoName, DSOEditRequest dsoEditRequest, List<File> editFramesPNGMaskFiles, String projectID, String username)
 	{
 		try {
 			List<DCM4CHEEImageDescription> imageDescriptions = dcm4CheeDatabaseOperations.getImageDescriptions(
@@ -248,7 +248,7 @@ public class DSOUtil
 			int frameMaskFilesIndex = 0;
 			for (Integer frameNumber : dsoEditRequest.editedFrameNumbers) {
 				if (frameNumber >= 0 && frameNumber < dicomFilePaths.size()) {
-					log.info("Editing frame: " + frameNumber + " in new DSO");
+					log.info("Creating frame: " + frameNumber + " in new DSO");
 					// For some reason the original DSO Masks are in reverse order
 					int editMaskFileIndex = dicomFilePaths.size() - frameNumber -1;
 					dsoTIFFMaskFiles.set(editMaskFileIndex, tiffMaskFiles.get(frameMaskFilesIndex++));
@@ -267,15 +267,30 @@ public class DSOUtil
 			
 			log.info("Generating new DSO for series " + dsoEditRequest.seriesUID);
 			TIFFMasksToDSOConverter converter = new TIFFMasksToDSOConverter();
-			String[] seriesImageUids = converter.generateDSO(files2FilePaths(dsoTIFFMaskFiles), dicomFilePaths, temporaryDSOFile.getAbsolutePath(), null, null, null, false);
+			String[] seriesImageUids = converter.generateDSO(files2FilePaths(dsoTIFFMaskFiles), dicomFilePaths, temporaryDSOFile.getAbsolutePath(), dsoName, null, null, false);
 			String dsoSeriesUID = seriesImageUids[0];
 			String dsoImageUID = seriesImageUids[1];
-			log.info("Sending generated DSO " + temporaryDSOFile.getAbsolutePath() + " imageUID:" + dsoImageUID + " to dcm4chee...");
+			log.info("Sending generated DSO " + temporaryDSOFile.getAbsolutePath() + " dsoImageUID:" + dsoImageUID + " dsoSeriesUID:" + dsoSeriesUID + " to dcm4chee...");
 			DCM4CHEEUtil.dcmsnd(temporaryDSOFile.getAbsolutePath(), false);
 			ImageAnnotation aim = AIMUtil.generateAIMFileForDSO(temporaryDSOFile, username, projectID);
+			log.info("DSO AimID:" + aim.getUniqueIdentifier());
 			for (File mask: dsoTIFFMaskFiles)
 			{
 				mask.delete();
+			}
+			EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
+			EPADAIM ea = epadDatabaseOperations.getAIM(aim.getUniqueIdentifier());
+			for (int i = 0; i < dsoEditRequest.editedFrameNumbers.size(); i++)
+			{
+				Integer frameNumber = dsoEditRequest.editedFrameNumbers.get(i);
+				String pngMaskDirectoryPath = baseDicomDirectory + "/studies/" + ea.studyUID + "/series/" + dsoSeriesUID + "/images/"
+						+ dsoImageUID + "/masks/";
+				File pngFilesDirectory = new File(pngMaskDirectoryPath);
+				pngFilesDirectory.mkdirs();				
+				String pngMaskFilePath = pngMaskDirectoryPath + frameNumber + ".png";
+				EPADFileUtils.copyFile(editFramesPNGMaskFiles.get(i), new File(pngMaskFilePath));
+				editFramesPNGMaskFiles.get(i).delete();
+				log.info("File copied:" + pngMaskFilePath);
 			}
 			return new DSOEditResult(dsoEditRequest.projectID, dsoEditRequest.patientID, dsoEditRequest.studyUID, dsoSeriesUID, dsoImageUID, aim.getUniqueIdentifier());
 
@@ -781,7 +796,7 @@ public class DSOUtil
 	{ // See http://www.tutorialspoint.com/servlets/servlets-file-uploading.htm
 		boolean uploadError = false;
 
-		log.info("Received DSO edit request for series " + seriesUID);
+		log.info("Received DSO create request for series " + seriesUID);
 		try {
 			ServletFileUpload servletFileUpload = new ServletFileUpload();
 			FileItemIterator fileItemIterator = servletFileUpload.getItemIterator(httpRequest);
@@ -803,7 +818,7 @@ public class DSOUtil
 				}
 				dsoEditRequest = new DSOEditRequest(projectID, subjectID, studyUID, seriesUID, "", "",numbers);
 			}
-			log.info("DSOEditRequest, seriesUID:" + dsoEditRequest.seriesUID + " imageUID:" + dsoEditRequest.imageUID + " aimID:" + dsoEditRequest.aimID + " number Frames:" + dsoEditRequest.editedFrameNumbers.size());
+			log.info("DSOCreateRequest, seriesUID:" + dsoEditRequest.seriesUID + " imageUID:" + dsoEditRequest.imageUID + " aimID:" + dsoEditRequest.aimID + " number Frames:" + dsoEditRequest.editedFrameNumbers.size());
 
 			if (dsoEditRequest != null) {
 				List<File> framesPNGMaskFiles = HandlerUtil.extractFiles(fileItemIterator, "DSOFrame", ".PNG");
@@ -813,7 +828,8 @@ public class DSOUtil
 				} else {
 					framesPNGMaskFiles = framesPNGMaskFiles.subList(0, dsoEditRequest.editedFrameNumbers.size());
 					log.info("Extracted " + framesPNGMaskFiles.size() + " file mask(s) for DSO create for series " + seriesUID);
-					DSOEditResult dsoEditResult = DSOUtil.createNewDSO(dsoEditRequest, framesPNGMaskFiles, projectID, username);
+					String name = httpRequest.getParameter("name");
+					DSOEditResult dsoEditResult = DSOUtil.createNewDSO(name, dsoEditRequest, framesPNGMaskFiles, projectID, username);
 					if (dsoEditResult != null)
 					{					
 						responseStream.append(dsoEditResult.toJSON());

@@ -87,6 +87,8 @@ import edu.stanford.epad.epadws.service.DefaultEpadProjectOperations;
 import edu.stanford.epad.epadws.service.RemotePACService;
 
 /**
+ * Note: When the ePAD webservices and ePAD client is split into two separate webapps, this class becomes obsolete and is not used
+ * 
  * Entry point for the ePAD Web Service.
  * <p>
  * Start an embedded Jetty server and all the threads required for this application. The application listens on the port

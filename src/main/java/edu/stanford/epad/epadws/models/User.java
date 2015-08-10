@@ -51,7 +51,7 @@ public class User extends AbstractDAO {
 	Date createdTime;
 	Date updateTime;
 	transient String role;  // Only valid within context of a project
-	transient List<EventLog> eventLogs = new ArrayList<EventLog>();
+	transient List<MessageLog> messageLogs = new ArrayList<MessageLog>();
 	transient Map<String, String> projectToRole; // List of projects and the user's role in them
 	public static final String CreateProjectPermission = "CreateProject";
 	public static final String CreateWorkListPermission = "CreateWorkList";
@@ -59,13 +59,13 @@ public class User extends AbstractDAO {
 	public static final String CreatePACPermission = "CreatePAC";
 	public static final String CreateAutoPACQueryPermission = "CreateAutoPACQuery";
 	
-	public static final class EventLog
+	public static final class MessageLog
 	{
 		public final Date date;
 		public final Level level;
 		public final String message;		
 
-		public EventLog(Level level, String message)
+		public MessageLog(Level level, String message)
 		{
 			this.level = level;
 			this.message = message;
@@ -215,18 +215,18 @@ public class User extends AbstractDAO {
 		this.projectToRole = projectToRole;
 	}
 
-	public List<EventLog> getEventLogs() {
-		return eventLogs;
+	public List<MessageLog> getMessageLogs() {
+		return messageLogs;
 	}
 
 	public void setEventLogs(List<EventLog> eventLogs) {
-		this.eventLogs = eventLogs;
+		this.messageLogs = messageLogs;
 	}
 
-	public void addEventLog(Level level, String message)
+	public void addMessageLog(Level level, String message)
 	{
-		EventLog el = new EventLog(level, message);
-		eventLogs.add(el);
+		MessageLog el = new MessageLog(level, message);
+		messageLogs.add(el);
 	}
 	
 	public boolean hasPermission(String permission)

@@ -44,6 +44,7 @@ import edu.stanford.epad.dtos.internal.DCM4CHEESeries;
 import edu.stanford.epad.epadws.epaddb.DatabaseUtils;
 import edu.stanford.epad.epadws.models.DisabledTemplate;
 import edu.stanford.epad.epadws.models.EpadFile;
+import edu.stanford.epad.epadws.models.EventLog;
 import edu.stanford.epad.epadws.models.FileType;
 import edu.stanford.epad.epadws.models.NonDicomSeries;
 import edu.stanford.epad.epadws.models.Project;
@@ -57,7 +58,7 @@ import edu.stanford.epad.epadws.models.ReviewerToReviewee;
 import edu.stanford.epad.epadws.models.Study;
 import edu.stanford.epad.epadws.models.Subject;
 import edu.stanford.epad.epadws.models.User;
-import edu.stanford.epad.epadws.models.User.EventLog;
+import edu.stanford.epad.epadws.models.User.MessageLog;
 import edu.stanford.epad.epadws.models.UserRole;
 import edu.stanford.epad.epadws.models.dao.AbstractDAO;
 import edu.stanford.epad.epadws.queries.Dcm4CheeQueries;
@@ -322,7 +323,7 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		try {
 			User user = getUser(username);
 			if (user != null)
-				user.addEventLog(Level.ERROR, message);
+				user.addMessageLog(Level.ERROR, message);
 		} catch (Exception e) {	}
 	}
 
@@ -331,7 +332,7 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		try {
 			User user = getUser(username);
 			if (user != null)
-				user.addEventLog(Level.WARN, message);
+				user.addMessageLog(Level.WARN, message);
 		} catch (Exception e) {	}
 	}
 
@@ -340,8 +341,29 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		try {
 			User user = getUser(username);
 			if (user != null)
-				user.addEventLog(Level.INFO, message);
+				user.addMessageLog(Level.INFO, message);
 		} catch (Exception e) {	}
+	}
+
+	@Override
+	public void createEventLog(String username, String projectID,
+			String subjectID, String studyUID, String seriesUID,
+			String imageUID, String aimID, String function, String params) {
+		EventLog elog = new EventLog();
+		elog.setUsername(username);
+		elog.setProjectID(projectID);
+		elog.setSubjectUID(subjectID);
+		elog.setStudyUID(studyUID);
+		elog.setSeriesUID(seriesUID);
+		elog.setImageUID(imageUID);
+		elog.setAimID(aimID);
+		elog.setFunction(function);
+		elog.setParams(params);
+		try {
+			elog.save();
+		} catch (Exception e) {
+			log.warning("Error saving event log", e);
+		}
 	}
 
 	/* (non-Javadoc)
@@ -792,18 +814,25 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 	@Override
 	public List<Project> getProjectsForUser(String username) throws Exception {
 		User user = getUser(username);
-		if (username.equals("admin") || user.isAdmin())
-			return this.getAllProjects();
-		List objects = new Project().getObjects("id in (select project_id from " 
-													+ ProjectToUser.DBTABLE 
-													+ " where user_id =" + user.getId() + ") order by projectId");
-		List<Project> projects = new ArrayList<Project>();
-		projects.addAll(objects);
-		List<Project> publicProjs = getPublicProjects();
-		for (Project project: publicProjs)
+		List<Project> projects = this.getAllProjects();
+		for (int i = 0; i < projects.size(); i++)
 		{
-			if (!projects.contains(project))
-				projects.add(project);
+			Project project = projects.get(i);
+			List<ProjectToUser> p2us = new ProjectToUser().getObjects("user_id =" + user.getId() + " and project_id=" + project.getId());
+			if (p2us.size() > 0)
+			{
+				ProjectToUser p2u = p2us.get(0);
+				if (p2u.getDefaultTemplate() != null && p2u.getDefaultTemplate().length() > 0)
+					project.setDefaultTemplate(p2u.getDefaultTemplate());
+			}
+			else if (username.equals("admin") || user.isAdmin() || project.getType().equals(ProjectType.PUBLIC.getName()))
+			{
+			}
+			else
+			{
+				projects.remove(i);
+				i--;
+			}
 		}
 		return projects;
 	}
@@ -885,10 +914,19 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 	@Override
 	public List<Subject> getSubjectsForProject(String projectId)
 			throws Exception {
+		return getSubjectsForProject(projectId, null);
+	}
+
+	/* (non-Javadoc)
+	 * @see edu.stanford.epad.epadws.service.EpadProjectOperations#getSubjectsForProject(java.lang.String)
+	 */
+	@Override
+	public List<Subject> getSubjectsForProject(String projectId, String sortBy)
+			throws Exception {
 		Project project = getProject(projectId);
 		if (project == null) return new ArrayList<Subject>();
 		
-		return getSubjectsByProjectId(project.getId());
+		return getSubjectsByProjectId(project.getId(), sortBy);
 	}
 
 	/**
@@ -896,11 +934,16 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 	 * @return
 	 * @throws Exception
 	 */
-	private List<Subject> getSubjectsByProjectId(long id)
+	private List<Subject> getSubjectsByProjectId(long id, String sortBy)
 			throws Exception {
+		if (sortBy == null || sortBy.trim().length() == 0)
+			sortBy = "name";
+		else if (sortBy.equalsIgnoreCase("SubjectId"))
+			sortBy = "subjectUID";
+			
 		List objects = new Subject().getObjects("id in (select subject_id from " 
 													+ ProjectToSubject.DBTABLE 
-													+ " where project_id =" + id + ")");
+													+ " where project_id =" + id + ") order by " + sortBy);
 		List<Subject> subjects = new ArrayList<Subject>();
 		subjects.addAll(objects);
 		
@@ -943,7 +986,7 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 			String projectID) throws Exception {
 		if (projectID == null || projectID.trim().length() == 0)
 			return getSubjectFromName(subjectName);
-		List<Subject> subjects = this.getSubjectsForProject(projectID);
+		List<Subject> subjects = this.getSubjectsForProject(projectID, null);
 		String xnatName = subjectName.replace('^',' ').trim();
 		for (Subject subject: subjects)
 		{
@@ -1131,7 +1174,7 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 			String loggedInUser, String projectID) throws Exception {
 		Project project = getProject(projectID);
 		User user = getUser(loggedInUser);
-		List<Subject> subjects = getSubjectsByProjectId(project.getId());
+		List<Subject> subjects = getSubjectsByProjectId(project.getId(), null);
 		Map<Long, String> subjectIdToUID = new HashMap<Long, String>();
 		for (Subject subject: subjects)
 		{
@@ -1610,8 +1653,15 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		new ProjectToSubjectToUser().deleteObjects("proj_subj_id in (select id from " + new ProjectToSubject().returnDBTABLE() + " where project_id=" + project.getId() + ")");
 		new ProjectToSubjectToStudy().deleteObjects("proj_subj_id in (select id from " + new ProjectToSubject().returnDBTABLE() + " where project_id=" + project.getId() + ")");
 		new ProjectToSubject().deleteObjects("project_id=" + project.getId());
-		project.delete();
-		projectCache.remove(project.getProjectId());
+		try {
+			project.delete();
+			projectCache.remove(project.getProjectId());
+		} catch (Exception x) {
+			if (x.getMessage() != null && x.getMessage().contains("constraint")) {
+				throw new Exception("Error deleting project, a PAC Query may be referring to this project");
+			} else
+				throw x;
+		}
 	}
 
 	/* (non-Javadoc)
@@ -1626,9 +1676,12 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		Subject subject = getSubject(subjectUID);
 		Project project = getProject(projectID);
 		ProjectToSubject projSubj = (ProjectToSubject) new ProjectToSubject().getObject("project_id =" + project.getId() + " and subject_id=" + subject.getId());
-		new ProjectToSubjectToUser().deleteObjects("proj_subj_id =" + projSubj.getId());
-		new ProjectToSubjectToStudy().deleteObjects("proj_subj_id =" + projSubj.getId());
-		projSubj.delete();
+		if (projSubj != null)
+		{
+			new ProjectToSubjectToUser().deleteObjects("proj_subj_id =" + projSubj.getId());
+			new ProjectToSubjectToStudy().deleteObjects("proj_subj_id =" + projSubj.getId());
+			projSubj.delete();
+		}
 		List projSubjs = new ProjectToSubject().getObjects("subject_id=" + subject.getId());
 		// TODO: delete subject if not used any more
 		if (projSubjs.size() == 0)
@@ -1651,9 +1704,13 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		Project project = getProject(projectID);
 		Study study = getStudy(studyUID);
 		ProjectToSubject projSubj = (ProjectToSubject) new ProjectToSubject().getObject("project_id =" + project.getId() + " and subject_id=" + subject.getId());
-		ProjectToSubjectToStudy projSubjStudy = (ProjectToSubjectToStudy) new ProjectToSubjectToStudy().getObject("proj_subj_id =" + projSubj.getId() + " and study_id=" + study.getId());
-		if (projSubjStudy != null) projSubjStudy.delete();
-		// TODO: delete study if not used any more
+		if (projSubj != null) {
+			ProjectToSubjectToStudy projSubjStudy = (ProjectToSubjectToStudy) new ProjectToSubjectToStudy().getObject("proj_subj_id =" + projSubj.getId() + " and study_id=" + study.getId());
+			if (projSubjStudy != null) projSubjStudy.delete();
+		}
+		List<ProjectToSubjectToStudy> projSubjStudys = new ProjectToSubjectToStudy().getObjects("study_id=" + study.getId());
+		if (projSubjStudys.size() == 0)
+			study.delete();
 	}
 
 	/* (non-Javadoc)
@@ -1697,11 +1754,11 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 	 * @see edu.stanford.epad.epadws.service.EpadProjectOperations#getUserLogs(java.lang.String)
 	 */
 	@Override
-	public List<EventLog> getUserLogs(String username) {
+	public List<MessageLog> getUserLogs(String username) {
 		try {
 			User user = getUser(username);
 			if (user != null)
-				return user.getEventLogs();
+				return user.getMessageLogs();
 		} catch (Exception e) {
 		}
 		return null;

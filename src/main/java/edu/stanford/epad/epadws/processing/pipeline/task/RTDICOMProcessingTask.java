@@ -190,9 +190,11 @@ public class RTDICOMProcessingTask implements GeneratorTask
 					// Convert 1 byte/pixel to 1 bit/pixel
 					int numbytes = dims[0]*dims[1]/8;
 					byte[] pixel_data = new byte[numbytes*dims[2]];
+					int totframes = dims[2];
 					for (int frame = 0; frame < dims[2]-1; frame++) { // Skip last frame because matlab is off by 1 slice
 						//int offset = frame*numbytes;
-						int offset = (frame+1)*numbytes; // one slice off
+//						int offset = (frame+1)*numbytes; // one slice off
+						int offset = (totframes-frame-1)*numbytes; // one slice off
 						log.info("frame:" + frame + " offset:" + offset);
 						for (int k = 0; k < numbytes; k++)
 						{

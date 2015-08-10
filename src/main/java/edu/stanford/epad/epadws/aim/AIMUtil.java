@@ -96,6 +96,7 @@ import edu.stanford.epad.epadws.epaddb.EpadDatabaseOperations;
 import edu.stanford.epad.epadws.handlers.core.FrameReference;
 import edu.stanford.epad.epadws.handlers.core.ImageReference;
 import edu.stanford.epad.epadws.handlers.core.ProjectReference;
+import edu.stanford.epad.epadws.handlers.core.SeriesReference;
 import edu.stanford.epad.epadws.handlers.event.EventHandler;
 import edu.stanford.epad.epadws.models.NonDicomSeries;
 import edu.stanford.epad.epadws.models.Project;
@@ -160,7 +161,7 @@ public class AIMUtil
 
 		if (aim.getCodeValue() != null) { 
 			if (isPluginStillRunning(aim.getUniqueIdentifier()))
-				throw new edu.stanford.hakan.aim4api.base.AimException("Previous version of this AIM " + aim.getUniqueIdentifier() + " is still being processed by the plugin");
+				throw new edu.stanford.hakan.aim4api.base.AimException("AIM " + aim.getUniqueIdentifier() + " is still being processed by the plugin");
 			// For safety, write a backup file
 			String tempXmlPath = baseAnnotationDir + "temp-" + aim.getUniqueIdentifier() + ".xml";
 			String storeXmlPath = baseAnnotationDir + aim.getUniqueIdentifier() + ".xml";
@@ -328,7 +329,9 @@ public class AIMUtil
 			    String collectionName = eXistCollectionV4;
 			    if (projectID != null && projectID.length() > 0)
 			    	collectionName = collectionName + "/" + projectID;
-				edu.stanford.hakan.aim4api.database.exist.ExistManager.removeImageAnnotationCollectionFromServer(
+			    List<ImageAnnotationCollection> aims = AIMQueries.getAIMImageAnnotationsV4(projectID, AIMSearchType.ANNOTATION_UID, aimID, "admin");
+				log.info("Number of aims found in exist with aimID = " + aimID + " : " + aims.size());
+			    edu.stanford.hakan.aim4api.database.exist.ExistManager.removeImageAnnotationCollectionFromServer(
 						eXistServerUrl, aim4Namespace, collectionName, eXistUsername, eXistPassword, aimID);
 				MongoDBOperations.deleteAnotationInMongo(aimID, projectID);
 			}
@@ -785,20 +788,38 @@ public class AIMUtil
 	            }
 	            if (imageAnnotationColl != null) {
 					SegmentationEntityCollection sec = imageAnnotationColl.getImageAnnotations().get(0).getSegmentationEntityCollection();
-					if (sec != null && sec.getSegmentationEntityList().size() == 0 && imageAnnotationColl.getImageAnnotations().get(0).getListTypeCode().get(0).getCode().equals("SEG"))
+					if (sec != null  && imageAnnotationColl.getImageAnnotations().get(0).getListTypeCode().get(0).getCode().equals("SEG"))
 					{
-						epadDatabaseOperations.deleteAIM(username, imageAnnotationColl.getUniqueIdentifier().getRoot());
-						throw new Exception("Invalid AIM, contains empty segmentation data");
+						if (sec.getSegmentationEntityList().size() == 0)			
+						{
+							epadDatabaseOperations.deleteAIM(username, imageAnnotationColl.getUniqueIdentifier().getRoot());
+							throw new Exception("Invalid AIM, contains empty segmentation data");
+						}
 					}
 					EPADAIM ea = epadDatabaseOperations.getAIM(imageAnnotationColl.getUniqueIdentifier().getRoot());
-					if (ea != null && !ea.projectID.equals(projectID))
-						projectID = ea.projectID; 		// TODO: Do we change AIM project if it is in unassigned? 
 					Aim4 aim = new Aim4(imageAnnotationColl);
 					String patientID = aim.getPatientID();
 					String imageID = aim.getFirstImageID();
-					String seriesID = aim.getSeriesID(imageID);
+					String seriesID = aim.getFirstSeriesID();
+					if (imageID != null && imageID.length() > 0)
+						seriesID = aim.getSeriesID(imageID);
 					String studyID = aim.getStudyID(seriesID);
-					log.info("Saving AIM file with ID " + imageAnnotationColl.getUniqueIdentifier() + " projectID:" + projectID + " username:" + username);
+					if (ea != null && !ea.projectID.equals(projectID))
+					{
+						projectID = ea.projectID; 		// TODO: Do we change AIM project if it is in unassigned? 
+					}
+					if (ea != null)
+					{
+						if (!ea.seriesUID.equals(seriesID))
+						{
+							String message = "Invalid SeriesUID in AIM xml, AimID:" + ea.aimID + " Incorrect seriesUID in AIM:" + seriesID + " Should be:" + ea.seriesUID;
+							log.warning(message);
+							epadDatabaseOperations.deleteAIM("admin", ea.aimID);
+//							throw new Exception(message);
+							return false;
+						}
+					}
+					log.info("Saving AIM file with ID " + imageAnnotationColl.getUniqueIdentifier() + " projectID:" + projectID + " seriesUID:" + seriesID + " username:" + username);
 					imageAnnotationColl = AIMUtil.saveImageAnnotationToServer(imageAnnotationColl, projectID, frameNumber, sessionId);
 					String xml = edu.stanford.hakan.aim4api.usage.AnnotationBuilder.convertToString(imageAnnotationColl);
 					if (xml == null || xml.trim().length() < 100)
@@ -815,25 +836,22 @@ public class AIMUtil
 								{
 									DicomSegmentationEntity dse = (DicomSegmentationEntity) sec.getSegmentationEntityList().get(0);
 									log.info("DSO RSUID:" + dse.getReferencedSopInstanceUid().getRoot() + " SUID:" + dse.getSopInstanceUid().getRoot());
+									SeriesReference seriesReference = new SeriesReference(projectID, null, null, ea.seriesUID);
+									List<EPADAIM> aims = epadDatabaseOperations.getAIMs(seriesReference);
+									if (eaim != null && eaim.dsoSeriesUID == null && aims.size() > 1) {
+										for (EPADAIM e: aims)
+										{
+											if (!e.aimID.equals(eaim.aimID) && e.dsoSeriesUID != null && e.dsoSeriesUID.equals(dse.getSopInstanceUid().getRoot()))
+											{
+												ImageReference imageReference = new ImageReference(projectID, e.subjectID, e.studyUID, e.seriesUID, e.imageUID);												
+												epadDatabaseOperations.deleteAIM("admin", e.aimID);
+												log.info("Updating dsoSeriesUID in aim database:" + dse.getSopInstanceUid().getRoot() + " aimID:" + eaim.aimID);
+												epadDatabaseOperations.addDSOAIM(username, imageReference, dse.getSopInstanceUid().getRoot(), eaim.aimID);												
+												break;
+											}
+										}
+									}								
 								}
-//								int ind = xml.lastIndexOf("<imageSeries>");
-//								String dsoSeriesUID = xml.substring(ind);
-//								ind = dsoSeriesUID.indexOf("<instanceUid root=");
-//								if (ind != -1)
-//								{
-//									dsoSeriesUID = dsoSeriesUID.substring(ind + "<instanceUid root=".length()+1);
-//									ind = dsoSeriesUID.indexOf("\"");
-//									if (ind != -1)
-//									{
-//										dsoSeriesUID = dsoSeriesUID.substring(0, ind);
-//										if (dsoSeriesUID.length() > 0)
-//										{
-//											log.info("Updating dsoSeriesUID in aim database:" + dsoSeriesUID + " aimID:" + eaim.aimID);
-//											ImageReference imageReference = new ImageReference(projectID, patientID, studyID, seriesID, imageID);
-//											epadDatabaseOperations.addDSOAIM(username, imageReference, dsoSeriesUID, eaim.aimID);
-//										}
-//									}
-//								}
 							}
 						} catch (Exception x) {
 							log.warning("Error checking segmentation", x);
@@ -844,6 +862,7 @@ public class AIMUtil
             } catch (Exception e) {
 				e.printStackTrace();
 				log.warning("Error saving annotation", e);
+				throw new edu.stanford.hakan.aim4api.base.AimException(e.getMessage());
             }
 			
 		}

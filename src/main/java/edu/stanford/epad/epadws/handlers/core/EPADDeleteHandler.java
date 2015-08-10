@@ -248,6 +248,7 @@ public class EPADDeleteHandler
 			log.warning("Error handleget:", x);
 			responseStream.append(new EPADMessage(x.getMessage()).toJSON());
 			statusCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+			log.info("ID:" + Thread.currentThread().getId() + " Error message to client:" + x.getMessage());
 		}
 		return statusCode;
 	}

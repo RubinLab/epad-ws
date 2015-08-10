@@ -31,6 +31,8 @@ import org.apache.commons.httpclient.methods.GetMethod;
 
 import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADLogger;
+import edu.stanford.epad.epadws.security.EPADSessionOperations;
+import edu.stanford.epad.epadws.service.DefaultEpadProjectOperations;
 
 /**
  * Start Plugin and pass it aim id / frame num.
@@ -60,6 +62,8 @@ public class PluginStartTask implements Runnable
 	@Override
 	public void run()
 	{
+		String username = EPADSessionOperations.getSessionUser(jsessionID);
+		DefaultEpadProjectOperations.getInstance().createEventLog(username, projectID, null, null, null, null, annotationID, "Start PlugIn", pluginName);
         HttpClient client = new HttpClient(); // TODO Get rid of localhost
         String url = EPADConfig.getParamValue("serverProxy", "http://localhost:8080") 
         		+ EPADConfig.getParamValue("webserviceBase", "/epad") + "/plugin/" + pluginName + "/?aimFile=" + annotationID 

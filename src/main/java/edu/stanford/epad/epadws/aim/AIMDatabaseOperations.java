@@ -120,6 +120,7 @@ public class AIMDatabaseOperations {
     	addColumn("DELETED TINYINT(1)");
     	addColumn("UPDATETIME TIMESTAMP");
     	addColumn("DSOFRAMENO INTEGER");
+    	addColumn("TEMPLATECODE VARCHAR(64)");
     	try {
 	    	this.statement = mySqlConnection.createStatement();
 	        this.statement.executeUpdate("CREATE INDEX annotations_series_ind ON annotations(seriesuid)");
@@ -440,6 +441,26 @@ public class AIMDatabaseOperations {
 	            log.info("Updating AIMs DSOFRAMENO for:" + annotationID + " to " + frameNo);
 	            this.statement.executeUpdate(sql);
 	            aim.dsoFrameNo = frameNo;
+	            return aim;
+       	} finally {
+        		if (statement != null)
+        			statement.close();
+        		statement = null;
+        	}
+    	}
+    	return null;
+    }
+
+    public EPADAIM updateAIMTemplateCode(String annotationID, String templateCode) throws SQLException
+    {
+    	EPADAIM aim = this.getAIM(annotationID);
+    	if (aim != null)
+    	{
+    		try {
+	    	    this.statement = mySqlConnection.createStatement();
+	    	    String sql = "UPDATE " + ANNOTATIONS_TABLE + " set TEMPLATECODE = '" + templateCode + "' where AnnotationUID = '" + annotationID + "'";
+	            log.info("Updating AIMs TEMPLATECODE for:" + annotationID + " to " + templateCode);
+	            this.statement.executeUpdate(sql);
 	            return aim;
        	} finally {
         		if (statement != null)

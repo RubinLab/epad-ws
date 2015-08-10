@@ -29,7 +29,6 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
-import edu.stanford.epad.dtos.EPADUserList;
 import edu.stanford.epad.epadws.models.EpadFile;
 import edu.stanford.epad.epadws.models.FileType;
 import edu.stanford.epad.epadws.models.NonDicomSeries;
@@ -38,7 +37,7 @@ import edu.stanford.epad.epadws.models.ProjectType;
 import edu.stanford.epad.epadws.models.Study;
 import edu.stanford.epad.epadws.models.Subject;
 import edu.stanford.epad.epadws.models.User;
-import edu.stanford.epad.epadws.models.User.EventLog;
+import edu.stanford.epad.epadws.models.User.MessageLog;
 import edu.stanford.epad.epadws.models.UserRole;
 import edu.stanford.epad.epadws.models.dao.AbstractDAO;
 
@@ -174,6 +173,7 @@ public interface EpadProjectOperations {
 	void userErrorLog(String username, String message);
 	void userWarningLog(String username, String message);
 	void userInfoLog(String username, String message);
+	void createEventLog(String username, String projectID, String subjectID, String studyUID, String seriesUID, String imageUID, String aimID, String function, String params);
 	
 	/**
 	 * Create Subject record in database
@@ -370,6 +370,7 @@ public interface EpadProjectOperations {
 	 * @throws Exception
 	 */
 	List<Subject> getSubjectsForProject(String projectId) throws Exception;
+	List<Subject> getSubjectsForProject(String projectId, String sortBy) throws Exception;
 	
 	/**
 	 * Get Subject for project
@@ -775,7 +776,7 @@ public interface EpadProjectOperations {
 	 * @param username
 	 * @return
 	 */
-	List<EventLog> getUserLogs(String username);
+	List<MessageLog> getUserLogs(String username);
 
 	/**
 	 * Get reviewers for this user

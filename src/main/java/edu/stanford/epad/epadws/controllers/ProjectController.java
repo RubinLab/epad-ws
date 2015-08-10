@@ -109,6 +109,7 @@ public class ProjectController {
 											@PathVariable String projectID,
 											@RequestParam(value="start", defaultValue = "0") int start,
 											@RequestParam(value="count", defaultValue = "0") int count,
+											@RequestParam(value="sortField", defaultValue = "name") String sortField,
 											HttpServletRequest request, 
 									        HttpServletResponse response) throws Exception {
 		String sessionID = SessionService.getJSessionIDFromRequest(request);
@@ -116,7 +117,7 @@ public class ProjectController {
 		EPADSearchFilter searchFilter = EPADSearchFilterBuilder.build(request);
 		ProjectReference projectReference = new ProjectReference(projectID);
 		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
-		EPADSubjectList subjectList = epadOperations.getSubjectDescriptions(projectID, username, sessionID, searchFilter, start, count);
+		EPADSubjectList subjectList = epadOperations.getSubjectDescriptions(projectID, username, sessionID, searchFilter, start, count, sortField);
 		return subjectList;
 	}
 	 
