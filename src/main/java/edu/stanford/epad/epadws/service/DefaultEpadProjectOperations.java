@@ -1675,6 +1675,7 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 			throw new Exception("No permissions to delete subject");
 		Subject subject = getSubject(subjectUID);
 		Project project = getProject(projectID);
+		if (subject == null) return;
 		ProjectToSubject projSubj = (ProjectToSubject) new ProjectToSubject().getObject("project_id =" + project.getId() + " and subject_id=" + subject.getId());
 		if (projSubj != null)
 		{
