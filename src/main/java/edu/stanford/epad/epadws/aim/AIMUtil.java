@@ -812,6 +812,8 @@ public class AIMUtil
 						{
 							String message = "Invalid SeriesUID in AIM xml, AimID:" + ea.aimID + " Incorrect seriesUID in AIM:" + seriesID + " Should be:" + ea.seriesUID;
 							log.warning(message);
+							String xml = edu.stanford.hakan.aim4api.usage.AnnotationBuilder.convertToString(imageAnnotationColl);
+							log.info("DSO aim:" + xml);
 							epadDatabaseOperations.deleteAIM("admin", ea.aimID);
 //							throw new Exception(message);
 							return false;

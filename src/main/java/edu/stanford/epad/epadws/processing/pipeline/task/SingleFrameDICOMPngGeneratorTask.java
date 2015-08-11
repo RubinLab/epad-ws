@@ -106,9 +106,15 @@ public class SingleFrameDICOMPngGeneratorTask implements GeneratorTask
 			outputPNGFile = new File(pngFilePath);
 
 			EPADFileUtils.createDirsAndFile(outputPNGFile);
-			outputPNGStream = new FileOutputStream(outputPNGFile);
-			ImageIO.write(instance.getPackedImage(), "png", outputPNGStream);
-			outputPNGStream.close();
+			try {
+				outputPNGStream = new FileOutputStream(outputPNGFile);
+				ImageIO.write(instance.getPackedImage(), "png", outputPNGStream);
+				outputPNGStream.close();
+			} catch (Exception x) {
+				// Try second method using pixelmed library
+				outputPNGFile.delete();
+				instance.dcmconvpng3(0, outputPNGFile);
+			}
 			epadFilesRow = Dcm4CheeDatabaseUtils.createEPadFilesRowData(outputPNGFile.getAbsolutePath(),
 					outputPNGFile.length(), imageUID);
 			log.info("PNG of size " + getFileSize(epadFilesRow) + " generated for instance " + instanceNumber + " in series "
