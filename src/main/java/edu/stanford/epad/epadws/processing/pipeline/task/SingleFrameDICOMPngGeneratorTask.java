@@ -112,6 +112,8 @@ public class SingleFrameDICOMPngGeneratorTask implements GeneratorTask
 				outputPNGStream.close();
 			} catch (Exception x) {
 				// Try second method using pixelmed library
+				log.warning("dcm4che failed to create PNG for instance " + instanceNumber + " in series " + seriesUID + " for patient "
+						+ patientName + ", trying pixelmed", x);
 				outputPNGFile.delete();
 				instance.dcmconvpng3(0, outputPNGFile);
 			}
