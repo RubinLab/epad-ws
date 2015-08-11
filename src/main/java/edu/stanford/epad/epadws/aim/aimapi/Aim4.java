@@ -250,6 +250,24 @@ public class Aim4 extends ImageAnnotation implements Serializable, Aimapi {
 		}
 		return result;
 	}
+	
+	public List<String> getSeriesIDs() {
+		List<String> results = new ArrayList<String>();
+
+		try {
+			List<ImageReference> imageList = getImageReferenceCollection()
+					.getImageReferenceList();
+			for (ImageReference imageReference: imageList) {
+				DICOMImageReference dicomImageReference = (DICOMImageReference) imageReference;
+				ImageStudy imageStudy = dicomImageReference.getImageStudy();
+				ImageSeries imageSeries = imageStudy.getImageSeries();
+				results.add(imageSeries.getInstanceUID());
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return results;
+	}
 
 	
 	public String getSeriesID(String imageID) {

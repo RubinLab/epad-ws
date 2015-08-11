@@ -800,8 +800,11 @@ public class AIMUtil
 					Aim4 aim = new Aim4(imageAnnotationColl);
 					String patientID = aim.getPatientID();
 					String imageID = aim.getFirstImageID();
-					String seriesID = aim.getSeriesID(imageID);
+					String seriesID = aim.getFirstSeriesID();
+					if (imageID != null && imageID.length() > 0)
+						seriesID = aim.getSeriesID(imageID);
 					String studyID = aim.getStudyID(seriesID);
+					List<String> seriesIds = aim.getSeriesIDs();
 					if (ea != null && !ea.projectID.equals(projectID))
 					{
 						projectID = ea.projectID; 		// TODO: Do we change AIM project if it is in unassigned? 
@@ -816,6 +819,8 @@ public class AIMUtil
 							log.info("DSO aim:" + xml);
 							epadDatabaseOperations.deleteAIM("admin", ea.aimID);
 //							throw new Exception(message);
+							imageID = ea.imageUID;
+							seriesID = ea.seriesUID;
 							return false;
 						}
 					}
@@ -838,15 +843,16 @@ public class AIMUtil
 									log.info("DSO RSUID:" + dse.getReferencedSopInstanceUid().getRoot() + " SUID:" + dse.getSopInstanceUid().getRoot());
 									SeriesReference seriesReference = new SeriesReference(projectID, null, null, ea.seriesUID);
 									List<EPADAIM> aims = epadDatabaseOperations.getAIMs(seriesReference);
-									if (eaim != null && eaim.dsoSeriesUID == null && aims.size() > 1) {
+									if (eaim != null && eaim.dsoSeriesUID == null && aims.size() > 1 && seriesIds.size() > 1) {
 										for (EPADAIM e: aims)
 										{
-											if (!e.aimID.equals(eaim.aimID) && e.dsoSeriesUID != null && e.dsoSeriesUID.equals(dse.getSopInstanceUid().getRoot()))
+											log.info("Checking, aimID:" + e.aimID + " dsoSeries:" + e.dsoSeriesUID + " this:" + seriesIds.get(1));
+											if (!e.aimID.equals(eaim.aimID) && e.dsoSeriesUID != null && e.dsoSeriesUID.equals(seriesIds.get(1)))
 											{
 												ImageReference imageReference = new ImageReference(projectID, e.subjectID, e.studyUID, e.seriesUID, e.imageUID);												
 												epadDatabaseOperations.deleteAIM("admin", e.aimID);
-												log.info("Updating dsoSeriesUID in aim database:" + dse.getSopInstanceUid().getRoot() + " aimID:" + eaim.aimID);
-												epadDatabaseOperations.addDSOAIM(username, imageReference, dse.getSopInstanceUid().getRoot(), eaim.aimID);												
+												log.info("Updating dsoSeriesUID in aim database:" + e.dsoSeriesUID + " aimID:" + eaim.aimID);
+												epadDatabaseOperations.addDSOAIM(username, imageReference, e.dsoSeriesUID, eaim.aimID);												
 												break;
 											}
 										}
