@@ -1707,8 +1707,11 @@ public class DefaultEpadOperations implements EpadOperations
 	@Override
 	public EPADTemplateContainerList getTemplateDescriptions(String username,
 			String sessionID) throws Exception {
-		EPADTemplateContainerList fileList = getSystemTemplateDescriptions(username, sessionID);
+		EPADTemplateContainerList oldList = getSystemTemplateDescriptions(username, sessionID);
+		EPADTemplateContainerList fileList = new EPADTemplateContainerList();
 		List<EpadFile> efiles = projectOperations.getEpadFiles(null, null, null, null, FileType.TEMPLATE, false);
+		if (efiles.size() == 0)
+			fileList = oldList;
 		Set<String> userProjects = new HashSet<String>();
 		Map<String, List<String>> disabledTemplates = new HashMap<String, List<String>>();
 		for (EpadFile efile: efiles)
