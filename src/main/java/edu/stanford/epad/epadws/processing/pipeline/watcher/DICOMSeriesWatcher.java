@@ -169,9 +169,9 @@ public class DICOMSeriesWatcher implements Runnable
 						dicomSeriesTracker.removeSeriesPipelineState(seriesPipelineState);
 						epadDatabaseOperations.updateOrInsertSeries(seriesUID, SeriesProcessingStatus.DONE);
 						log.info("Series " + seriesUID + " processing completed");
-						if (UserProjectService.pendingUploads.containsKey(seriesUID))
+						if (UserProjectService.pendingPNGs.containsKey(seriesUID))
 						{
-							String username = UserProjectService.pendingUploads.get(seriesUID);
+							String username = UserProjectService.pendingPNGs.get(seriesUID);
 							if (username != null && username.indexOf(":") != -1)
 								username = username.substring(0, username.indexOf(":"));
 							if (username != null)
@@ -181,7 +181,7 @@ public class DICOMSeriesWatcher implements Runnable
 										"Image Generation Complete", 
 										"", "", "", "", "", "", 
 										"Series:" + seriesUID);					
-								UserProjectService.pendingUploads.remove(seriesUID);
+								UserProjectService.pendingPNGs.remove(seriesUID);
 							}
 						}
 					}

@@ -43,6 +43,7 @@ import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.epad.dtos.DicomTagList;
 import edu.stanford.epad.dtos.EPADAIM;
 import edu.stanford.epad.dtos.EPADAIMList;
+import edu.stanford.epad.dtos.EPADData;
 import edu.stanford.epad.dtos.EPADDataList;
 import edu.stanford.epad.dtos.EPADEventLogList;
 import edu.stanford.epad.dtos.EPADFile;
@@ -74,6 +75,7 @@ import edu.stanford.epad.dtos.RemotePACEntity;
 import edu.stanford.epad.dtos.RemotePACEntityList;
 import edu.stanford.epad.dtos.RemotePACList;
 import edu.stanford.epad.dtos.RemotePACQueryConfigList;
+import edu.stanford.epad.epadws.EPadWebServerVersion;
 import edu.stanford.epad.epadws.aim.AIMSearchType;
 import edu.stanford.epad.epadws.aim.AIMUtil;
 import edu.stanford.epad.epadws.epaddb.EpadDatabase;
@@ -82,6 +84,7 @@ import edu.stanford.epad.epadws.handlers.dicom.DSOUtil;
 import edu.stanford.epad.epadws.handlers.dicom.DownloadUtil;
 import edu.stanford.epad.epadws.models.EpadStatistics;
 import edu.stanford.epad.epadws.models.RemotePACQuery;
+import edu.stanford.epad.epadws.processing.pipeline.task.EpadStatisticsTask;
 import edu.stanford.epad.epadws.queries.DefaultEpadOperations;
 import edu.stanford.epad.epadws.queries.EpadOperations;
 import edu.stanford.epad.epadws.security.EPADSession;
@@ -1453,7 +1456,7 @@ public class EPADGetHandler
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.TEMPLATE_LIST, pathInfo)) {
 				ProjectReference reference = ProjectReference.extract(ProjectsRouteTemplates.TEMPLATE_LIST, pathInfo);
 				EPADTemplateContainerList templates = epadOperations.getTemplateDescriptions(reference.projectID, username, sessionID);
-				if ("true".equals(httpRequest.getParameter("includeSystemTemplates"))) {
+				if (templates.ResultSet.totalRecords == 0 && "true".equals(httpRequest.getParameter("includeSystemTemplates"))) {
 					EPADTemplateContainerList systemplates = epadOperations.getSystemTemplateDescriptions(username, sessionID);
 					for (EPADTemplateContainer template: systemplates.ResultSet.Result) {
 						templates.addTemplate(template);
@@ -1470,6 +1473,17 @@ public class EPADGetHandler
 			} else if (HandlerUtil.matchesTemplate(EPADsRouteTemplates.EPAD_LIST, pathInfo)) {
 				EPADDataList epads = EpadDatabase.getInstance().getEPADDatabaseOperations().getEpadHostNames();
 				responseStream.append(epads.toJSON());
+				statusCode = HttpServletResponse.SC_OK;
+
+			} else if (HandlerUtil.matchesTemplate(EPADsRouteTemplates.EPAD_VERSION, pathInfo)) {
+				EPADData data = new EPADData(EPADConfig.xnatServer, "Current Version", new EPadWebServerVersion().getVersion(),"Latest version");
+				if (EpadStatisticsTask.newEPADVersionAvailable)
+				{
+					data = new EPADData(EPADConfig.xnatServer, "Current Version", new EPadWebServerVersion().getVersion(),
+							"New version " + EpadStatisticsTask.newEPADVersion + " is available");
+					data.alert = true;
+				}
+				responseStream.append(data.toJSON());
 				statusCode = HttpServletResponse.SC_OK;
 
 			} else if (HandlerUtil.matchesTemplate(EPADsRouteTemplates.EPAD_USAGE, pathInfo)) {

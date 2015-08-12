@@ -68,6 +68,7 @@ import edu.stanford.hakan.aim3api.base.ImageAnnotation;
 public class UserProjectService {
 	private static final EPADLogger log = EPADLogger.getInstance();
 	
+	public static Map<String, String> pendingPNGs = new HashMap<String, String>();
 	public static Map<String, String> pendingUploads = new HashMap<String, String>();
 
 	private static final EpadProjectOperations projectOperations = DefaultEpadProjectOperations.getInstance();	
@@ -378,7 +379,8 @@ public class UserProjectService {
 			projectOperations.userErrorLog(username, message);
 			return false;
 		}
-		pendingUploads.put(seriesUID, username + ":" + projectID);
+		pendingUploads.put(studyUID, username + ":" + projectID);
+		pendingPNGs.put(seriesUID, username + ":" + projectID);
 		if (dicomPatientID != null && studyUID != null) {
 			databaseOperations.deleteSeriesOnly(seriesUID); // This will recreate all images
 			if (dicomPatientName == null) dicomPatientName = "";

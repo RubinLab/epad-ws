@@ -25,6 +25,7 @@ package edu.stanford.epad.epadws.handlers.admin;
 
 import java.io.PrintWriter;
 import java.net.InetAddress;
+import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -42,6 +43,8 @@ import edu.stanford.epad.epadws.epaddb.EpadDatabase;
 import edu.stanford.epad.epadws.handlers.HandlerUtil;
 import edu.stanford.epad.epadws.processing.pipeline.PipelineFactory;
 import edu.stanford.epad.epadws.processing.pipeline.task.EpadStatisticsTask;
+import edu.stanford.epad.epadws.security.EPADSession;
+import edu.stanford.epad.epadws.security.EPADSessionOperations;
 import edu.stanford.epad.epadws.service.SessionService;
 
 /**
@@ -107,6 +110,17 @@ public class ServerStatusHandler extends AbstractHandler
 				responseStream.println("Config webserviceBase: " + EPADConfig.getParamValue("webserviceBase"));
 				responseStream.println("Hostname: " + InetAddress.getLocalHost().getHostName());
 				responseStream.println("IP Address: " + EpadStatisticsTask.getIPAddress());
+				responseStream.println();
+				String sessionID = SessionService.getJSessionIDFromRequest(httpRequest);
+				String username = EPADSessionOperations.getSessionUser(sessionID);
+				if ("admin".equals(username)) {
+					responseStream.println("Current Sessions: ");
+					Map<String, EPADSession> sessions = EPADSessionOperations.getCurrentSessions();
+					for (String id: sessions.keySet()) {
+						EPADSession session = sessions.get(id);
+						responseStream.println("  User: " + session.getUsername() + ":" + session.getCreatedTime());
+					}
+				}
 				responseStream.println();
 
 			} 

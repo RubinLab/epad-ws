@@ -65,7 +65,9 @@ public class EpadStatisticsTask implements Runnable
 {
 	private static EPADLogger log = EPADLogger.getInstance();
 	private final EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
-	private static String lastVersion = "";
+	
+	public static String newEPADVersion = "";	
+	public static boolean newEPADVersionAvailable = false;
 	
 	@Override
 	public void run()
@@ -142,10 +144,12 @@ public class EpadStatisticsTask implements Runnable
 		} catch (Exception e) {
 			log.warning("Error is saving/sending statistics", e);
 		}
+		GetMethod getMethod = null;
 		try {
+			log.info("Getting Epad Version");
 			String epadUrl = EPADConfig.getParamValue("EpadStatusURL", "http://epad-build.stanford.edu:8080/epad/status/");
 			HttpClient client = new HttpClient();
-			GetMethod getMethod = new GetMethod(epadUrl);
+			getMethod = new GetMethod(epadUrl);
 			int status = client.executeMethod(getMethod);
 			if (status == HttpServletResponse.SC_OK) {
 				String response = getMethod.getResponseBodyAsString();
@@ -159,7 +163,8 @@ public class EpadStatisticsTask implements Runnable
 					log.info("Current ePAD version:" + version + " Our Version:" + new EPadWebServerVersion().getVersion());
 					if (!version.equals(new EPadWebServerVersion().getVersion()))
 					{
-						lastVersion = version;
+						newEPADVersion = version;
+						newEPADVersionAvailable = true;
 						String msg = "A new version of ePAD: " + version + " is available, please go to ftp://epad-distribution.stanford.edu/ to download";
 						log.info(msg);
 						List<User> admins = new User().getObjects("admin = 1 and enabled = 1");
@@ -194,6 +199,8 @@ public class EpadStatisticsTask implements Runnable
 				
 		} catch (Exception x) {
 			log.warning("Error is getting epad version", x);
+		} finally {
+			getMethod.releaseConnection();
 		}
 	}
 	

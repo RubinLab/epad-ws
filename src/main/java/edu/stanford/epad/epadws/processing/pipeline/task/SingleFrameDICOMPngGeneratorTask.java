@@ -47,6 +47,7 @@ import edu.stanford.epad.dtos.SeriesProcessingStatus;
 import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeDatabaseUtils;
 import edu.stanford.epad.epadws.epaddb.EpadDatabase;
 import edu.stanford.epad.epadws.epaddb.EpadDatabaseOperations;
+import edu.stanford.epad.epadws.service.UserProjectService;
 
 public class SingleFrameDICOMPngGeneratorTask implements GeneratorTask
 {
@@ -101,14 +102,37 @@ public class SingleFrameDICOMPngGeneratorTask implements GeneratorTask
 
 		try {
 			imagesBeingProcessed.add(imageUID);
+			if (UserProjectService.pendingUploads.containsKey(studyUID))
+			{
+				String username = UserProjectService.pendingUploads.get(studyUID);
+				if (username != null && username.indexOf(":") != -1)
+					username = username.substring(0, username.indexOf(":"));
+				if (username != null)
+				{
+					epadDatabaseOperations.insertEpadEvent(
+							username, 
+							"Study Upload Complete", 
+							"", "", "", "", "", "", 
+							"Study:" + studyUID);					
+					UserProjectService.pendingUploads.remove(studyUID);
+				}
+			}
 			DicomReader instance = new DicomReader(inputDICOMFile);
 			String pngFilePath = outputPNGFile.getAbsolutePath();
 			outputPNGFile = new File(pngFilePath);
 
 			EPADFileUtils.createDirsAndFile(outputPNGFile);
-			outputPNGStream = new FileOutputStream(outputPNGFile);
-			ImageIO.write(instance.getPackedImage(), "png", outputPNGStream);
-			outputPNGStream.close();
+			try {
+				outputPNGStream = new FileOutputStream(outputPNGFile);
+				ImageIO.write(instance.getPackedImage(), "png", outputPNGStream);
+				outputPNGStream.close();
+			} catch (Exception x) {
+				// Try second method using pixelmed library
+				log.warning("dcm4che failed to create PNG for instance " + instanceNumber + " in series " + seriesUID + " for patient "
+						+ patientName + ", trying pixelmed", x);
+				outputPNGFile.delete();
+				instance.dcmconvpng3(0, outputPNGFile);
+			}
 			epadFilesRow = Dcm4CheeDatabaseUtils.createEPadFilesRowData(outputPNGFile.getAbsolutePath(),
 					outputPNGFile.length(), imageUID);
 			log.info("PNG of size " + getFileSize(epadFilesRow) + " generated for instance " + instanceNumber + " in series "

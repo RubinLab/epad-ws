@@ -45,6 +45,7 @@ import java.util.Set;
 import javax.servlet.http.HttpServletResponse;
 
 import org.apache.commons.io.FileUtils;
+import org.dcm4che2.data.DicomElement;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.json.XML;
@@ -1708,8 +1709,11 @@ public class DefaultEpadOperations implements EpadOperations
 	@Override
 	public EPADTemplateContainerList getTemplateDescriptions(String username,
 			String sessionID) throws Exception {
-		EPADTemplateContainerList fileList = getSystemTemplateDescriptions(username, sessionID);
+		EPADTemplateContainerList oldList = getSystemTemplateDescriptions(username, sessionID);
+		EPADTemplateContainerList fileList = new EPADTemplateContainerList();
 		List<EpadFile> efiles = projectOperations.getEpadFiles(null, null, null, null, FileType.TEMPLATE, false);
+		if (efiles.size() == 0)
+			fileList = oldList;
 		Set<String> userProjects = new HashSet<String>();
 		Map<String, List<String>> disabledTemplates = new HashMap<String, List<String>>();
 		for (EpadFile efile: efiles)
@@ -2037,6 +2041,7 @@ public class DefaultEpadOperations implements EpadOperations
 		try {
 			Thread.sleep(1000);
 		} catch (InterruptedException e) {}
+		xnatStatusCode = HttpServletResponse.SC_OK;
 		
 		if (!EPADConfig.UseEPADUsersProjects) {
 			xnatStatusCode = XNATDeletionOperations.deleteXNATSubject(subjectReference.projectID, subjectReference.subjectID,
@@ -2046,7 +2051,6 @@ public class DefaultEpadOperations implements EpadOperations
 			this.deleteAllAims(subjectReference.projectID, subjectReference.subjectID, null, null, true);
 			xnatStatusCode = HttpServletResponse.SC_OK;
 		}
-
 		return xnatStatusCode;
 	}
 
@@ -3245,6 +3249,7 @@ public class DefaultEpadOperations implements EpadOperations
 	private DICOMElementList getDefaultDICOMElements(String studyUID, String seriesUID, String imageUID,
 			DICOMElementList suppliedDicomElements)
 	{
+		boolean ultrasound = false;
 		List<DICOMElement> defaultDicomElements = new ArrayList<>();
 		Map<String, List<DICOMElement>> suppliedDICOMElementMap = generateDICOMElementMap(suppliedDicomElements);
 
@@ -3254,7 +3259,11 @@ public class DefaultEpadOperations implements EpadOperations
 			defaultDicomElements.add(new DICOMElement(PixelMedUtils.PatientNameCode, PixelMedUtils.PatientNameTagName, ""));
 
 		if (suppliedDICOMElementMap.containsKey(PixelMedUtils.ModalityCode))
+		{
+			if (suppliedDICOMElementMap.get(PixelMedUtils.ModalityCode).get(0).value.equals("US"))
+				ultrasound = true;
 			defaultDicomElements.add(suppliedDICOMElementMap.get(PixelMedUtils.ModalityCode).get(0));
+		}
 		else
 			defaultDicomElements.add(new DICOMElement(PixelMedUtils.ModalityCode, PixelMedUtils.ModalityTagName, ""));
 
@@ -3376,7 +3385,7 @@ public class DefaultEpadOperations implements EpadOperations
 				&& suppliedDICOMElementMap.containsKey(PixelMedUtils.WindowCenterCode)) {
 			if ("0".equals(suppliedDICOMElementMap.get(PixelMedUtils.WindowWidthCode).get(0).value))
 			{
-				defaultDicomElements.addAll(getCalculatedWindowingDICOMElements(studyUID, seriesUID, imageUID));
+				defaultDicomElements.addAll(getCalculatedWindowingDICOMElements(studyUID, seriesUID, imageUID, ultrasound));
 			}
 			else
 			{
@@ -3384,7 +3393,7 @@ public class DefaultEpadOperations implements EpadOperations
 				defaultDicomElements.add(suppliedDICOMElementMap.get(PixelMedUtils.WindowCenterCode).get(0));
 			}
 		} else {
-			defaultDicomElements.addAll(getCalculatedWindowingDICOMElements(studyUID, seriesUID, imageUID));
+			defaultDicomElements.addAll(getCalculatedWindowingDICOMElements(studyUID, seriesUID, imageUID, ultrasound));
 		}
 		return new DICOMElementList(defaultDicomElements);
 	}
@@ -3511,7 +3520,7 @@ public class DefaultEpadOperations implements EpadOperations
 		return result;
 	}
 
-	private List<DICOMElement> getCalculatedWindowingDICOMElements(String studyUID, String seriesUID, String imageUID)
+	private List<DICOMElement> getCalculatedWindowingDICOMElements(String studyUID, String seriesUID, String imageUID, boolean ultrasound)
 	{
 		List<DICOMElement> dicomElements = new ArrayList<>();
 		long windowWidth = 400;
@@ -3560,6 +3569,11 @@ public class DefaultEpadOperations implements EpadOperations
 				}
 				if (cal.isSigned16Bit() && max < 5000) // Signed values can be negative/positive
 					windowCenter = 0;
+				if (ultrasound) { 	//temporary test
+					windowCenter = 16384;
+					windowWidth = 32768;
+				}
+					
 				log.info("Image " + imageUID + " in series " + seriesUID + " has a calculated window width of " + windowWidth
 						+ " and window center of " + windowCenter + " signed:" + cal.isSigned16Bit());
 				temporaryDicomFile.delete();

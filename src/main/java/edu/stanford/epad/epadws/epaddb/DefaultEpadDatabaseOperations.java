@@ -1600,6 +1600,12 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 			int rows = ps.executeUpdate();
 			ps.close();
 			log.info("" + rows + " deleted from ePAD files table");
+			ps = c.prepareStatement(EpadDatabaseCommands.DELETE_FROM_EPAD_FILES);
+			ps.setString(1, "%" + seriesUID + "%");
+			log.info("delete sql:" + ps.toString());
+			rows = ps.executeUpdate();
+			ps.close();
+			log.info("" + rows + " deleted from ePAD files table");
 
 			log.info("Deleting series " + seriesUID + " from ePAD status table");
 			ps = c.prepareStatement(EpadDatabaseCommands.DELETE_SERIES_FROM_SERIES_STATUS);

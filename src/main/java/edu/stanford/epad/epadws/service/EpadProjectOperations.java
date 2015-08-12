@@ -48,10 +48,6 @@ import edu.stanford.epad.epadws.models.dao.AbstractDAO;
  * @author Dev Gude
  *
  */
-/**
- * @author Dev Gude
- *
- */
 public interface EpadProjectOperations {
 
 	/**
