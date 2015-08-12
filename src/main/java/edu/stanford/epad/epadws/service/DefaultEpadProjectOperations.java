@@ -1676,6 +1676,11 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		Subject subject = getSubject(subjectUID);
 		Project project = getProject(projectID);
 		if (subject == null) return;
+		if (projectID.equals(EPADConfig.xnatUploadProjectID)) {
+			List<ProjectToSubject> projSubjs = new ProjectToSubject().getObjects("project_id !=" + project.getId() + " and subject_id=" + subject.getId());
+			if (projSubjs.size() > 0)
+				throw new Exception("Patient exists in other projects");
+		}
 		ProjectToSubject projSubj = (ProjectToSubject) new ProjectToSubject().getObject("project_id =" + project.getId() + " and subject_id=" + subject.getId());
 		if (projSubj != null)
 		{
