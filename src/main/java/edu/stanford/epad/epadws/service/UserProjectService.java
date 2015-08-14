@@ -470,7 +470,13 @@ public class UserProjectService {
 	
 	private static Collection<File> listDICOMFiles(File dir)
 	{
+		log.info("Checking upload directory:" + dir.getAbsolutePath());
 		Set<File> files = new HashSet<File>();
+		if (!dir.isDirectory())
+		{
+			log.info("Not a directory:" + dir.getAbsolutePath());
+			return files;
+		}
 		if (dir.listFiles() != null) {
 			for (File entry : dir.listFiles()) {
 				if (isDicomFile(entry))
@@ -485,8 +491,17 @@ public class UserProjectService {
 						files.add(newFile);
 					} catch (Exception x) {log.warning("Error renaming", x);}
 				}
-				else
+				else if (entry.isDirectory()) 
+				{
 					files.addAll(listDICOMFiles(entry));
+				}
+				else if (!entry.getName().endsWith(".zip"))
+				{
+					try {
+						log.warning("Deleting non-dicom file:" + entry.getName());
+						entry.delete();
+					} catch (Exception x) {log.warning("Error deleting", x);}
+				}
 			}
 		}
 		else if (!dir.getName().endsWith(".zip")){

@@ -97,7 +97,7 @@ public class EPADUploadDirWatcher implements Runnable
 				}
 				TimeUnit.MILLISECONDS.sleep(CHECK_INTERVAL);
 			}
-		} catch (Exception e) {
+		} catch (Throwable e) {
 			log.severe("Warning: EPADUploadDirWatcher thread error", e);
 		} finally {
 			log.info("Warning: EPADUploadDirWatcher thread done.");
