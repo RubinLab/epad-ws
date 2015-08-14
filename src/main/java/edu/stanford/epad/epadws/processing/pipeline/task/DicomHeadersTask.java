@@ -55,6 +55,7 @@ public class DicomHeadersTask implements Runnable
 	@Override
 	public void run()
 	{
+		Thread.currentThread().setPriority(Thread.MIN_PRIORITY); // Let interactive thread run sooner
 		FileWriter tagFileWriter = null;
 		InputStream is = null;
 		InputStreamReader isr = null;

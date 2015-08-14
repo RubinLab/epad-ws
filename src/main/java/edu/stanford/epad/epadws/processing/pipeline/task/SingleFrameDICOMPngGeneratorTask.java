@@ -83,6 +83,7 @@ public class SingleFrameDICOMPngGeneratorTask implements GeneratorTask
 	@Override
 	public void run()
 	{
+		Thread.currentThread().setPriority(Thread.MIN_PRIORITY); // Let interactive thread run sooner
 		if (imagesBeingProcessed.contains(imageUID))
 		{
 			log.info("Image " + imageUID + " already being processed");

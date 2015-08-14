@@ -67,6 +67,7 @@ public class EPADUploadDirWatcher implements Runnable
 	public void run()
 	{
 		try {
+			Thread.currentThread().setPriority(Thread.MIN_PRIORITY);
 			ShutdownSignal shutdownSignal = ShutdownSignal.getInstance();
 			File rootUploadDirectory = new File(EPADConfig.getEPADWebServerUploadDir());
 			log.info("Starting the ePAD upload directory watcher; directory =" + EPADConfig.getEPADWebServerUploadDir());
@@ -201,7 +202,7 @@ public class EPADUploadDirWatcher implements Runnable
 						oldNumberOfFiles = newNumberOfFiles;
 						oldSize = newSize;
 					} else {
-						log.info("Files uploaded:" + Arrays.toString(filePaths));
+						log.info("Files uploaded(should be at least two files): " + Arrays.toString(filePaths));
 						for (String currPath : filePaths) {
 							currPath = currPath.toLowerCase();
 							if (currPath.endsWith(".zip")) {
