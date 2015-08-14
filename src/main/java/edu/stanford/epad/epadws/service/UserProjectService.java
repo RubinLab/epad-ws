@@ -239,6 +239,7 @@ public class UserProjectService {
 	 */
 	public static String createProjectEntitiesFromDICOMFilesInUploadDirectory(File dicomUploadDirectory)
 	{
+		int numberOfDICOMFiles = 0;
 		String propertiesFilePath = dicomUploadDirectory.getAbsolutePath() + File.separator
 				+ XNAT_UPLOAD_PROPERTIES_FILE_NAME;
 		File xnatUploadPropertiesFile = new File(propertiesFilePath);
@@ -261,7 +262,7 @@ public class UserProjectService {
 				if (xnatProjectLabel != null) {
 					projectOperations.createEventLog(xnatUserName, xnatProjectLabel, null, null, null, null, null, "UPLOAD DICOMS", "" + dicomUploadDirectory.list().length);
 					xnatUploadPropertiesFile.delete();
-					int numberOfDICOMFiles = createProjectEntitiesFromDICOMFilesInUploadDirectory(dicomUploadDirectory, xnatProjectLabel, xnatSessionID, xnatUserName);
+					numberOfDICOMFiles = createProjectEntitiesFromDICOMFilesInUploadDirectory(dicomUploadDirectory, xnatProjectLabel, xnatSessionID, xnatUserName);
 					if (numberOfDICOMFiles != 0)
 					{
 						log.info("Found " + numberOfDICOMFiles + " DICOM file(s) in directory uploaded by " + xnatUserName + " for project " + xnatProjectLabel);
@@ -274,14 +275,14 @@ public class UserProjectService {
 				} else {
 					log.warning("Missing XNAT project name and/or session ID in properties file" + propertiesFilePath);
 				}
-				return xnatUserName;
+				return xnatUserName + ":" + numberOfDICOMFiles;
 			} catch (Exception e) {
 				log.warning("Error processing upload in directory " + dicomUploadDirectory.getAbsolutePath(), e);
 			} finally {
 				IOUtils.closeQuietly(propertiesFileStream);
 			}
 		}
-		return xnatUserName;
+		return xnatUserName + ":" + numberOfDICOMFiles;
 	}
 	
 	public static String getUserNameFromPropertiesFile(File dicomUploadDirectory) {
@@ -325,17 +326,22 @@ public class UserProjectService {
 	public static int createProjectEntitiesFromDICOMFilesInUploadDirectory(File dicomUploadDirectory, String projectID, String sessionID, String username) throws Exception
 	{
 		int numberOfDICOMFiles = 0;
-		for (File dicomFile : listDICOMFiles(dicomUploadDirectory)) {
+		Collection<File> files = listDICOMFiles(dicomUploadDirectory);
+		log.info("Number of files found:" + files.size());
+		long i = 0;
+		for (File dicomFile : files) {
 			try {
+				log.info("File " + i++ + " : " +dicomFile.getName());
 				if (createProjectEntitiesFromDICOMFile(dicomFile, projectID, sessionID, username))
 					numberOfDICOMFiles++;
-			} catch (Exception x) {
+			} catch (Throwable x) {
 				log.warning("Error processing dicom:" + dicomFile.getName(), x);
 				databaseOperations.insertEpadEvent(
 						username, 
 						"Error processing dicom:" + dicomFile.getName(), 
 						dicomFile.getName(), "", dicomFile.getName(), dicomFile.getName(), dicomFile.getName(), projectID, "Error:" + x.getMessage());				}
 		}
+		log.info("Number of dicom files in upload:" + numberOfDICOMFiles);
 		return numberOfDICOMFiles;
 	}
 	
@@ -379,10 +385,12 @@ public class UserProjectService {
 			projectOperations.userErrorLog(username, message);
 			return false;
 		}
-		pendingUploads.put(studyUID, username + ":" + projectID);
-		pendingPNGs.put(seriesUID, username + ":" + projectID);
+		if (pendingUploads.size() < 300)
+			pendingUploads.put(studyUID, username + ":" + projectID);
+		if (pendingPNGs.size() < 300)
+			pendingPNGs.put(seriesUID, username + ":" + projectID);
 		if (dicomPatientID != null && studyUID != null) {
-			databaseOperations.deleteSeriesOnly(seriesUID); // This will recreate all images
+			//databaseOperations.deleteSeriesOnly(seriesUID); // This will recreate all images
 			if (dicomPatientName == null) dicomPatientName = "";
 			dicomPatientName = dicomPatientName.toUpperCase(); // DCM4CHEE stores the patient name as upper case
 			
@@ -417,11 +425,11 @@ public class UserProjectService {
 					File pngDirectory = new File(pngMaskDirectoryPath);
 					if (pngDirectory.exists())
 					{
-						File[] files = pngDirectory.listFiles();
-						for (File file: files)
-						{
-							file.delete();
-						}
+//						File[] files = pngDirectory.listFiles();
+//						for (File file: files)
+//						{
+//							//file.delete();
+//						}
 					}
 				} catch (Exception x) {
 					log.warning("Error generating DSO Annotation:", x);
@@ -472,7 +480,13 @@ public class UserProjectService {
 	
 	private static Collection<File> listDICOMFiles(File dir)
 	{
+		log.info("Checking upload directory:" + dir.getAbsolutePath());
 		Set<File> files = new HashSet<File>();
+		if (!dir.isDirectory())
+		{
+			log.info("Not a directory:" + dir.getAbsolutePath());
+			return files;
+		}
 		if (dir.listFiles() != null) {
 			for (File entry : dir.listFiles()) {
 				if (isDicomFile(entry))
@@ -487,8 +501,17 @@ public class UserProjectService {
 						files.add(newFile);
 					} catch (Exception x) {log.warning("Error renaming", x);}
 				}
-				else
+				else if (entry.isDirectory()) 
+				{
 					files.addAll(listDICOMFiles(entry));
+				}
+				else if (!entry.getName().endsWith(".zip"))
+				{
+					try {
+						log.warning("Deleting non-dicom file:" + entry.getName());
+						entry.delete();
+					} catch (Exception x) {log.warning("Error deleting", x);}
+				}
 			}
 		}
 		else if (!dir.getName().endsWith(".zip")){

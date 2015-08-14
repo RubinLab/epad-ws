@@ -432,7 +432,7 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		if (gender != null && name.trim().length() > 0) subject.setGender(gender);
 		if (subject.getId() == 0) subject.setCreator(loggedInUser);
 		subject.save();
-		subjectCache.put(subject.getSubjectUID(), subject);
+		//subjectCache.put(subject.getSubjectUID(), subject);
 		return subject;
 	}
 
