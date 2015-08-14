@@ -29,6 +29,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import edu.stanford.epad.common.util.EPADConfig;
@@ -276,6 +277,16 @@ public class EPADUploadDirWatcher implements Runnable
 					"Error sending DICOM files to DCM4CHEE", 
 					"Dicoms", "Dicoms", "Dicoms", "Dicoms", "Dicoms", "Dicoms", "Error Processing Upload");					
 			projectOperations.userErrorLog(username, "Error sending DICOM files to DCM4CHEE:" + x);
+		}
+		try {
+			EpadDatabaseOperations databaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();	
+			Set<String> seriesUIDs = UserProjectService.pendingUploads.keySet();
+			for (String seriesUID: seriesUIDs) {
+				databaseOperations.deleteSeriesOnly(seriesUID); // Delete uploaded series status
+			}
+			
+		} catch (Exception x) {
+			
 		}
 	}
 

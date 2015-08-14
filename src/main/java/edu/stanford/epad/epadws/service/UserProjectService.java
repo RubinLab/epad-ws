@@ -324,17 +324,22 @@ public class UserProjectService {
 	public static int createProjectEntitiesFromDICOMFilesInUploadDirectory(File dicomUploadDirectory, String projectID, String sessionID, String username) throws Exception
 	{
 		int numberOfDICOMFiles = 0;
-		for (File dicomFile : listDICOMFiles(dicomUploadDirectory)) {
+		Collection<File> files = listDICOMFiles(dicomUploadDirectory);
+		log.info("Number of files found:" + files.size());
+		long i = 0;
+		for (File dicomFile : files) {
 			try {
+				log.info("File " + i++ + " : " +dicomFile.getName());
 				if (createProjectEntitiesFromDICOMFile(dicomFile, projectID, sessionID, username))
 					numberOfDICOMFiles++;
-			} catch (Exception x) {
+			} catch (Throwable x) {
 				log.warning("Error processing dicom:" + dicomFile.getName(), x);
 				databaseOperations.insertEpadEvent(
 						username, 
 						"Error processing dicom:" + dicomFile.getName(), 
 						dicomFile.getName(), "", dicomFile.getName(), dicomFile.getName(), dicomFile.getName(), projectID, "Error:" + x.getMessage());				}
 		}
+		log.info("Number of dicom files in upload:" + numberOfDICOMFiles);
 		return numberOfDICOMFiles;
 	}
 	
@@ -378,9 +383,10 @@ public class UserProjectService {
 			projectOperations.userErrorLog(username, message);
 			return false;
 		}
-		pendingUploads.put(seriesUID, username + ":" + projectID);
+		if (pendingUploads.size() < 300)
+			pendingUploads.put(seriesUID, username + ":" + projectID);
 		if (dicomPatientID != null && studyUID != null) {
-			databaseOperations.deleteSeriesOnly(seriesUID); // This will recreate all images
+			//databaseOperations.deleteSeriesOnly(seriesUID); // This will recreate all images
 			if (dicomPatientName == null) dicomPatientName = "";
 			dicomPatientName = dicomPatientName.toUpperCase(); // DCM4CHEE stores the patient name as upper case
 			
@@ -415,11 +421,11 @@ public class UserProjectService {
 					File pngDirectory = new File(pngMaskDirectoryPath);
 					if (pngDirectory.exists())
 					{
-						File[] files = pngDirectory.listFiles();
-						for (File file: files)
-						{
-							file.delete();
-						}
+//						File[] files = pngDirectory.listFiles();
+//						for (File file: files)
+//						{
+//							//file.delete();
+//						}
 					}
 				} catch (Exception x) {
 					log.warning("Error generating DSO Annotation:", x);
