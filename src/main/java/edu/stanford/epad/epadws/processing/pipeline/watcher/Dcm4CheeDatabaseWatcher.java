@@ -69,6 +69,7 @@ public class Dcm4CheeDatabaseWatcher implements Runnable
 	@Override
 	public void run()
 	{
+		Thread.currentThread().setPriority(Thread.MIN_PRIORITY); // Let interactive thread run sooner
 		ShutdownSignal signal = ShutdownSignal.getInstance();
 		EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
 		Dcm4CheeDatabaseOperations dcm4CheeDatabaseOperations = Dcm4CheeDatabase.getInstance()

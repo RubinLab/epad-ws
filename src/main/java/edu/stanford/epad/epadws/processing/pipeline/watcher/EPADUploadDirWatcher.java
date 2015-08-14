@@ -67,6 +67,7 @@ public class EPADUploadDirWatcher implements Runnable
 	public void run()
 	{
 		try {
+			Thread.currentThread().setPriority(Thread.MIN_PRIORITY);
 			ShutdownSignal shutdownSignal = ShutdownSignal.getInstance();
 			File rootUploadDirectory = new File(EPADConfig.getEPADWebServerUploadDir());
 			log.info("Starting the ePAD upload directory watcher; directory =" + EPADConfig.getEPADWebServerUploadDir());

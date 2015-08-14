@@ -67,6 +67,7 @@ public class DSOMaskPNGGeneratorTask implements GeneratorTask
 	@Override
 	public void run()
 	{
+		Thread.currentThread().setPriority(Thread.MIN_PRIORITY); // Let interactive thread run sooner
 		if (seriesBeingProcessed.contains(seriesUID))
 		{
 			log.info("DSO series  " + seriesUID + " already being processed");
