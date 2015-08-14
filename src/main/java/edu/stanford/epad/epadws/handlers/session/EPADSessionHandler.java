@@ -108,13 +108,13 @@ public class EPADSessionHandler extends AbstractHandler
 				            Cookie userName = new Cookie(LOGGEDINUSER_COOKIE, username);
 				            userName.setMaxAge(8*3600);
 				            //userName.setPath("/epad/; Secure; HttpOnly");
-				            userName.setPath(httpRequest.getContextPath());
+				            userName.setPath("/epad/");
 				            httpResponse.addCookie(userName);
 							//log.info("Setting HttpOnly, Secure cookie =" + jsessionID);
 				            Cookie sessionCookie = new Cookie(JSESSIONID_COOKIE, jsessionID);
 				            sessionCookie.setMaxAge(8*3600);
 				            //sessionCookie.setPath("/epad/; Secure; HttpOnly");
-				            sessionCookie.setPath(httpRequest.getContextPath());
+				            sessionCookie.setPath("/epad/");
 				            httpResponse.addCookie(sessionCookie);
 				    		httpResponse.sendRedirect(EPADConfig.getParamValue("HomePage", "/epad/Web_pad.html"));
 				    		return;
