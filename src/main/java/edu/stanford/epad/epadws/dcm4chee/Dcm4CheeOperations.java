@@ -46,13 +46,13 @@ public class Dcm4CheeOperations
 {
 	private static EPADLogger log = EPADLogger.getInstance();
 
-	public static void dcmsnd(File inputDirFile, boolean throwException) throws Exception
+	public static boolean dcmsnd(File inputDirFile, boolean throwException) throws Exception
 	{
 		InputStream is = null;
 		InputStreamReader isr = null;
 		BufferedReader br = null;
 		FileWriter tagFileWriter = null;
-
+		boolean success = false;
 		try {
 			String aeTitle = EPADConfig.aeTitle;
 			String dicomServerIP = EPADConfig.dicomServerIP;
@@ -95,6 +95,7 @@ public class Dcm4CheeOperations
 			try {
 				int exitValue = process.waitFor();
 				log.info("DICOM send exit value is: " + exitValue);
+				if (exitValue == 0) success = true;
 			} catch (InterruptedException e) {
 				log.warning("Didn't send DICOM files in: " + inputDirFile.getAbsolutePath(), e);
 			}
@@ -102,6 +103,7 @@ public class Dcm4CheeOperations
 
 			if (cmdLineOutput.toLowerCase().contains("error"))
 				throw new IllegalStateException("Failed for: " + parseError(cmdLineOutput));
+			return success;
 		} catch (Exception e) {
 			log.warning("DicomSendTask failed to send DICOM files: " + e.getMessage());
 			if (e instanceof IllegalStateException && throwException) {
@@ -110,11 +112,13 @@ public class Dcm4CheeOperations
 			if (throwException) {
 				throw new IllegalStateException("DicomSendTask failed to send DICOM files", e);
 			}
+			return success;
 		} catch (OutOfMemoryError oome) {
 			log.warning("DicomSendTask out of memory: ", oome);
 			if (throwException) {
 				throw new IllegalStateException("DicomSendTask out of memory: ", oome);
 			}
+			return success;
 		} finally {
 			IOUtils.closeQuietly(tagFileWriter);
 			IOUtils.closeQuietly(br);

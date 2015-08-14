@@ -238,6 +238,7 @@ public class UserProjectService {
 	 */
 	public static String createProjectEntitiesFromDICOMFilesInUploadDirectory(File dicomUploadDirectory)
 	{
+		int numberOfDICOMFiles = 0;
 		String propertiesFilePath = dicomUploadDirectory.getAbsolutePath() + File.separator
 				+ XNAT_UPLOAD_PROPERTIES_FILE_NAME;
 		File xnatUploadPropertiesFile = new File(propertiesFilePath);
@@ -260,7 +261,7 @@ public class UserProjectService {
 				if (xnatProjectLabel != null) {
 					projectOperations.createEventLog(xnatUserName, xnatProjectLabel, null, null, null, null, null, "UPLOAD DICOMS", "" + dicomUploadDirectory.list().length);
 					xnatUploadPropertiesFile.delete();
-					int numberOfDICOMFiles = createProjectEntitiesFromDICOMFilesInUploadDirectory(dicomUploadDirectory, xnatProjectLabel, xnatSessionID, xnatUserName);
+					numberOfDICOMFiles = createProjectEntitiesFromDICOMFilesInUploadDirectory(dicomUploadDirectory, xnatProjectLabel, xnatSessionID, xnatUserName);
 					if (numberOfDICOMFiles != 0)
 					{
 						log.info("Found " + numberOfDICOMFiles + " DICOM file(s) in directory uploaded by " + xnatUserName + " for project " + xnatProjectLabel);
@@ -273,14 +274,14 @@ public class UserProjectService {
 				} else {
 					log.warning("Missing XNAT project name and/or session ID in properties file" + propertiesFilePath);
 				}
-				return xnatUserName;
+				return xnatUserName + ":" + numberOfDICOMFiles;
 			} catch (Exception e) {
 				log.warning("Error processing upload in directory " + dicomUploadDirectory.getAbsolutePath(), e);
 			} finally {
 				IOUtils.closeQuietly(propertiesFileStream);
 			}
 		}
-		return xnatUserName;
+		return xnatUserName + ":" + numberOfDICOMFiles;
 	}
 	
 	public static String getUserNameFromPropertiesFile(File dicomUploadDirectory) {

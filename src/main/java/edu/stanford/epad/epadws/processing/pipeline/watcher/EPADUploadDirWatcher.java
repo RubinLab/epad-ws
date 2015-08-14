@@ -146,7 +146,9 @@ public class EPADUploadDirWatcher implements Runnable
 			log.info("Cleaning upload directory");
 			cleanUploadDirectory(directory);
 			if (username != null)
+			{
 				sendFilesToDcm4Chee(username, directory);
+			}
 		} catch (Exception e) {
 			log.warning("Exception uploading " + directory.getAbsolutePath(), e);
 			String userName = UserProjectService.getUserNameFromPropertiesFile(directory);
@@ -267,10 +269,51 @@ public class EPADUploadDirWatcher implements Runnable
 	private void sendFilesToDcm4Chee(String username, File directory) throws Exception
 	{
 		try {
-			log.info("Sending DICOM files in upload directory " + directory.getAbsolutePath() + " to DCM4CHEE");
+			int count = 0;
+			log.debug("Username:" + username);
+			if (username.indexOf(":") != -1)
+			{
+				count = getInt(username.substring(username.lastIndexOf(":")+1));
+			}
 			projectOperations.userInfoLog(username, "Sending DICOM files in upload directory " + directory.getAbsolutePath() + " to DCM4CHEE");
-			Dcm4CheeOperations.dcmsnd(directory, true);
+			if (count < 5000) {
+				log.info("Sending DICOM files in upload directory " + directory.getAbsolutePath() + " to DCM4CHEE, number of files:" + count);
+				Dcm4CheeOperations.dcmsnd(directory, true);
+			} else {
+				log.info("More than 5000 files to upload, trying to split dcmsend");
+				File[] dirs = new File[1];
+				dirs[0] = directory;
+				File root = dirs[0];
+				while (dirs.length == 1)
+				{
+					root = dirs[0];
+					dirs = dirs[0].listFiles();
+				}
+				String extraDir = "extra" + System.currentTimeMillis();
+				File extra = new File(root, extraDir);
+				extra.mkdirs();
+				boolean movedToExtra = false;
+				for (File dir: dirs)
+				{
+					if (dir.isDirectory()) {
+						log.info("Sending DICOM files in upload directory " + dir.getAbsolutePath() + " to DCM4CHEE");
+						boolean ok = Dcm4CheeOperations.dcmsnd(dir, false);
+						if (!ok)
+							log.warning("Error in upload: sending " + dir.getAbsolutePath() + " to dcm4che");
+					} else {
+						dir.renameTo(new File(extra, dir.getName()));
+						movedToExtra = true;
+					}
+				}
+				if (movedToExtra) {
+					log.info("Sending DICOM files in upload directory " + extra.getAbsolutePath() + " to DCM4CHEE");
+					boolean ok = Dcm4CheeOperations.dcmsnd(extra, false);
+					if (!ok)
+						log.warning("Error in upload: sending " + extra.getAbsolutePath() + " to dcm4che");
+				}
+			}
 		} catch (Exception x) {
+			log.warning("Error in upload: sending " + directory.getAbsolutePath() + " to dcm4che");
 			EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
 			epadDatabaseOperations.insertEpadEvent(
 					username, 
@@ -287,6 +330,15 @@ public class EPADUploadDirWatcher implements Runnable
 			
 		} catch (Exception x) {
 			
+		}
+	}
+	
+	private static int getInt(String value)
+	{
+		try {
+			return new Integer(value.trim()).intValue();
+		} catch (Exception x) {
+			return 0;
 		}
 	}
 
