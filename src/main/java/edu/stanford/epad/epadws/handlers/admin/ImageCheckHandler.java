@@ -93,11 +93,14 @@ public class ImageCheckHandler extends AbstractHandler
 						{
 							fixSeriesImages(responseStream, seriesUID, imageUID);
 						}
-						String response = verifyImageGeneration(fix);
-						responseStream.write(response);
+						else 
+						{
+							String response = verifyImageGeneration(fix);
+							responseStream.write(response);
+						}
 						if (fix)
 						{
-							response = generateDSOMasks(true);
+							String response = generateDSOMasks(true);
 							responseStream.write(response);
 						}
 						statusCode = HttpServletResponse.SC_OK;
@@ -145,7 +148,7 @@ public class ImageCheckHandler extends AbstractHandler
 				if (modality != null && modality.equals("SEG"))
 				{
 					response = response + "Missing mask images for DSO series " + seriesUID + "\n";
-					log.info("Missing mask images for DSO series" + seriesUID);
+					log.info("Missing mask images for DSO series " + seriesUID);
 				}
 				else
 				{
