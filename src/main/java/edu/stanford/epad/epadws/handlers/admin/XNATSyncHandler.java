@@ -144,8 +144,12 @@ public class XNATSyncHandler extends AbstractHandler
 				log.info("Created user:" + xuser.login + " password:" + password);
 				response = response + "\nCreated user: " + user.getUsername() + " password:" + password;
 				if (user.getEmail() != null && user.getEmail().trim().length() > 0)
-					new MailUtil().send(user.getEmail(), "noreply@" + EPADConfig.xnatServer, "Password Reset", "Hello " + user.getFullName() 
-						+ "\nYour password on EPAD has been reset to your username.\nPlease login and change it.\nThank you.");
+				{
+					try {
+						new MailUtil().send(user.getEmail(), "noreply@" + EPADConfig.xnatServer, "Password Reset", "Hello " + user.getFullName() 
+							+ "\nYour password on EPAD has been reset to your username.\nPlease login and change it.\nThank you.");
+					} catch (Exception x) {}
+				}
 			}
 			else if (user.getUsername().equals("admin"))
 			{
