@@ -38,9 +38,11 @@ public class EventLog extends AbstractDAO {
 	String imageUID;
 	String aimID;
 	String username;
+	String filename;
 	String function;
 	String params;
 	String creator;
+	boolean error;
 	Date createdTime;
 	Date updateTime;
 
@@ -109,6 +111,14 @@ public class EventLog extends AbstractDAO {
 		this.aimID = aimID;
 	}
 
+	public String getFilename() {
+		return filename;
+	}
+
+	public void setFilename(String filename) {
+		this.filename = filename;
+	}
+
 	public String getUsername() {
 		return username;
 	}
@@ -131,6 +141,14 @@ public class EventLog extends AbstractDAO {
 
 	public void setParams(String params) {
 		this.params = params;
+	}
+
+	public boolean isError() {
+		return error;
+	}
+
+	public void setError(boolean error) {
+		this.error = error;
 	}
 
 	public String getCreator() {
@@ -166,9 +184,11 @@ public class EventLog extends AbstractDAO {
         {"seriesUID","String","seriesUID","varchar"},
         {"imageUID","String","imageUID","varchar"},
         {"aimID","String","aimID","varchar"},
+        {"filename","String","filename","varchar"},
         {"username","String","username","varchar"},
         {"function","String","function","varchar"},
         {"params","String","params","varchar"},
+        {"error","boolean","error","bit"},
         {"creator","String","creator","varchar"},
         {"createdTime","Date","createdtime","timestamp"},
         {"updateTime","Date","updatetime","timestamp"},	

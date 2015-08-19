@@ -853,8 +853,11 @@ public class DefaultEpadOperations implements EpadOperations
 	}
 
 	@Override
-	public String seriesDelete(SeriesReference seriesReference, String sessionID, boolean deleteAims, String username)
+	public String seriesDelete(SeriesReference seriesReference, String sessionID, boolean deleteAims, String username) throws Exception
 	{
+		User user = projectOperations.getUser(username);
+		if (!user.isAdmin() && !projectOperations.isOwner(username, seriesReference.projectID))
+			throw new Exception("No permissions to delete series:" + seriesReference.seriesUID + " in project " + seriesReference.projectID);
 		try {
 			projectOperations.createEventLog(username, seriesReference.projectID, seriesReference.subjectID, seriesReference.studyUID, seriesReference.seriesUID, null, null, "DELETE SERIES", "deleteAims:" + deleteAims);
 			Set<String>projectIds = UserProjectService.getAllProjectIDs();
@@ -862,6 +865,7 @@ public class DefaultEpadOperations implements EpadOperations
     		{
     			if (projectId.equals(seriesReference.projectID)) continue;
        			if (projectId.equals(EPADConfig.xnatUploadProjectID)) continue;
+    			if (projectOperations.isOwner(username, projectId)) continue;
     			Set<String> allStudyUIDs = UserProjectService.getAllStudyUIDsForProject(projectId);
     			if (allStudyUIDs.contains(seriesReference.studyUID.replace('.', '_')) || allStudyUIDs.contains(seriesReference.studyUID))
     			{
@@ -871,7 +875,7 @@ public class DefaultEpadOperations implements EpadOperations
     		}
     		return deleteSeries(seriesReference, deleteAims);
 		} catch (Exception e) {
-			String msg = "Error deleting Series " + seriesReference.seriesUID + " for patient " + seriesReference.subjectID + " in project " + seriesReference.projectID;
+			String msg = "Error deleting Series " + seriesReference.seriesUID + " for patient " + seriesReference.subjectID + " in project " + seriesReference.projectID + ", " + e.getMessage();
 			log.warning(msg, e);
 			return msg;
 		}
@@ -1063,7 +1067,7 @@ public class DefaultEpadOperations implements EpadOperations
 				if ("RTPLAN".equals(modality) || "PR".equals(modality) || "SR".equals(modality)) continue; // no images to generate
 				if (!imageUIDs.contains(dicomFileDescription.imageUID))
 				{
-					log.info("ImageUID without png:" + dicomFileDescription.imageUID);
+					log.info("ImageUID without png: " + dicomFileDescription.imageUID);
 					dicomFilesWithoutPNGs.add(dicomFileDescription);
 				}
 				else if ("SEG".equalsIgnoreCase(dicomFileDescription.modality))
@@ -1278,7 +1282,7 @@ public class DefaultEpadOperations implements EpadOperations
 					if (!(error.contains("content of element 'Template' is not complete") && getTemplateType(uploadedFile).startsWith("SEG")))
 						throw new Exception("Invalid Template file: " + error);
 				}
-				projectOperations.createEventLog(username, projectID, subjectID, studyID, seriesID, null, null, "UPLOAD TEMPLATE", uploadedFile.getName() + ":" + description);
+				projectOperations.createEventLog(username, projectID, subjectID, studyID, seriesID, null, null, "UPLOAD TEMPLATE", uploadedFile.getName(), description, false);
 			}
 			else if (fileType != null && fileType.equals(FileType.IMAGE.getName()))
 			{
@@ -1378,7 +1382,7 @@ public class DefaultEpadOperations implements EpadOperations
 	@Override
 	public int createFile(String username, SubjectReference subjectReference,
 			File uploadedFile, String description, String fileType, String sessionID) throws Exception {
-		projectOperations.createEventLog(username, subjectReference.projectID, subjectReference.subjectID, null, null, null, null, "CREATE FILE", uploadedFile.getName() + ":" + description +":" + fileType);
+		projectOperations.createEventLog(username, subjectReference.projectID, subjectReference.subjectID, null, null, null, null, "CREATE FILE", uploadedFile.getName(), description +":" + fileType, false);
 		if (fileType != null && fileType.equalsIgnoreCase(FileType.ANNOTATION.getName())) {
 			if (AIMUtil.saveAIMAnnotation(uploadedFile, subjectReference.projectID, sessionID, username))
 				throw new Exception("Error saving AIM file");
@@ -1393,7 +1397,7 @@ public class DefaultEpadOperations implements EpadOperations
 	@Override
 	public int createFile(String username, StudyReference studyReference,
 			File uploadedFile, String description, String fileType, String sessionID) throws Exception {
-		projectOperations.createEventLog(username, studyReference.projectID, studyReference.subjectID, studyReference.studyUID, null, null, null, "CREATE FILE", description +":" + fileType);
+		projectOperations.createEventLog(username, studyReference.projectID, studyReference.subjectID, studyReference.studyUID, null, null, null, "CREATE FILE", uploadedFile.getName(), description +":" + fileType, false);
 		if (fileType != null && fileType.equalsIgnoreCase(FileType.ANNOTATION.getName())) {
 			if (AIMUtil.saveAIMAnnotation(uploadedFile, studyReference.projectID, sessionID, username))
 				throw new Exception("Error saving AIM file");
@@ -1408,7 +1412,7 @@ public class DefaultEpadOperations implements EpadOperations
 	@Override
 	public int createFile(String username, SeriesReference seriesReference,
 			File uploadedFile, String description, String fileType, String sessionID) throws Exception {
-		projectOperations.createEventLog(username, seriesReference.projectID, seriesReference.subjectID, seriesReference.studyUID, seriesReference.seriesUID, null, null, "CREATE FILE", description +":" + fileType);
+		projectOperations.createEventLog(username, seriesReference.projectID, seriesReference.subjectID, seriesReference.studyUID, seriesReference.seriesUID, null, null, "CREATE FILE", uploadedFile.getName(), description +":" + fileType, false);
 		return createFile(username, seriesReference, uploadedFile, description, fileType, sessionID, 
 							false, null, null);
 	}
@@ -1417,7 +1421,7 @@ public class DefaultEpadOperations implements EpadOperations
 	public int createFile(String username, SeriesReference seriesReference,
 			File uploadedFile, String description, String fileType, String sessionID, 
 			boolean convertToDICOM, String modality, String instanceNumber) throws Exception {
-		projectOperations.createEventLog(username, seriesReference.projectID, seriesReference.subjectID, seriesReference.studyUID, seriesReference.seriesUID, null, null, "CREATE FILE", description +":" + fileType + ":" + modality);
+		projectOperations.createEventLog(username, seriesReference.projectID, seriesReference.subjectID, seriesReference.studyUID, seriesReference.seriesUID, null, null, "CREATE FILE", uploadedFile.getName(), description +":" + fileType + ":" + modality, false);
 		if (fileType != null && fileType.equalsIgnoreCase(FileType.ANNOTATION.getName())) {
 			if (AIMUtil.saveAIMAnnotation(uploadedFile, seriesReference.projectID, sessionID, username))
 				throw new Exception("Error saving AIM file");
@@ -1455,7 +1459,7 @@ public class DefaultEpadOperations implements EpadOperations
 	@Override
 	public int createFile(String username, ImageReference imageReference,
 			File uploadedFile, String description, String fileType, String sessionID) throws Exception {
-		projectOperations.createEventLog(username, imageReference.projectID, imageReference.subjectID, imageReference.studyUID, imageReference.seriesUID, imageReference.imageUID, null, "CREATE FILE", description +":" + fileType);
+		projectOperations.createEventLog(username, imageReference.projectID, imageReference.subjectID, imageReference.studyUID, imageReference.seriesUID, imageReference.imageUID, null, "CREATE FILE", uploadedFile.getName(), description +":" + fileType, false);
 		if (fileType != null && fileType.equalsIgnoreCase(FileType.ANNOTATION.getName())) {
 			if (AIMUtil.saveAIMAnnotation(uploadedFile, imageReference.projectID, sessionID, username))
 				throw new Exception("Error saving AIM file");
@@ -1470,7 +1474,7 @@ public class DefaultEpadOperations implements EpadOperations
 	@Override
 	public int createImage(String username, String projectID,
 			File dicomFile, String sessionID) throws Exception {
-		projectOperations.createEventLog(username, projectID, null, null, null, null, null, "UPLOAD DICOM", dicomFile.getName());
+		projectOperations.createEventLog(username, projectID, null, null, null, null, null, "UPLOAD DICOM", dicomFile.getName(), dicomFile.getName(), false);
 		if (UserProjectService.isDicomFile(dicomFile))
 		{
 			UserProjectService.createProjectEntitiesFromDICOMFile(dicomFile, projectID, sessionID, username);
@@ -2031,6 +2035,9 @@ public class DefaultEpadOperations implements EpadOperations
 	public int subjectDelete(SubjectReference subjectReference, String sessionID, String username) throws Exception
 	{
 		int xnatStatusCode;
+		User user = projectOperations.getUser(username);
+		if (!user.isAdmin() && !projectOperations.isOwner(username, subjectReference.projectID))
+			throw new Exception("No permissions to delete Patient: " + subjectReference.subjectID + " in project " + subjectReference.projectID);
 
 		projectOperations.createEventLog(username, subjectReference.projectID, subjectReference.subjectID, null, null, null, null, "DELETE SUBJECT", null);
 		log.info("Scheduling deletion task for patient " + subjectReference.subjectID + " in project "
@@ -2041,7 +2048,6 @@ public class DefaultEpadOperations implements EpadOperations
 		try {
 			Thread.sleep(1000);
 		} catch (InterruptedException e) {}
-		xnatStatusCode = HttpServletResponse.SC_OK;
 		
 		if (!EPADConfig.UseEPADUsersProjects) {
 			xnatStatusCode = XNATDeletionOperations.deleteXNATSubject(subjectReference.projectID, subjectReference.subjectID,
@@ -2051,6 +2057,7 @@ public class DefaultEpadOperations implements EpadOperations
 			this.deleteAllAims(subjectReference.projectID, subjectReference.subjectID, null, null, true);
 			xnatStatusCode = HttpServletResponse.SC_OK;
 		}
+
 		return xnatStatusCode;
 	}
 
@@ -2058,6 +2065,9 @@ public class DefaultEpadOperations implements EpadOperations
 	public String studyDelete(StudyReference studyReference, String sessionID, boolean deleteAims, String username) throws Exception
 	{
 		int xnatStatusCode;
+		User user = projectOperations.getUser(username);
+		if (!user.isAdmin() && !projectOperations.isOwner(username, studyReference.projectID))
+			throw new Exception("No permissions to delete Study: " + studyReference.studyUID + " in project " + studyReference.projectID);
 
 		projectOperations.createEventLog(username, studyReference.projectID, studyReference.subjectID, studyReference.studyUID, null, null, null, "DELETE STUDY", null);
 		log.info("Deleting in XNAT: study " + studyReference.studyUID + " for patient "

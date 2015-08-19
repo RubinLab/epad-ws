@@ -348,7 +348,16 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 	@Override
 	public void createEventLog(String username, String projectID,
 			String subjectID, String studyUID, String seriesUID,
-			String imageUID, String aimID, String function, String params) {
+			String imageUID, String aimID, String function,
+			String params) {
+		createEventLog(username, projectID, subjectID, studyUID, seriesUID, imageUID, aimID, null, function, params, false);
+	}
+
+	@Override
+	public void createEventLog(String username, String projectID,
+			String subjectID, String studyUID, String seriesUID,
+			String imageUID, String aimID, String filename, String function,
+			String params, boolean error) {
 		EventLog elog = new EventLog();
 		elog.setUsername(username);
 		elog.setProjectID(projectID);
@@ -357,8 +366,10 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		elog.setSeriesUID(seriesUID);
 		elog.setImageUID(imageUID);
 		elog.setAimID(aimID);
+		elog.setFilename(filename);
 		elog.setFunction(function);
 		elog.setParams(params);
+		elog.setError(error);
 		try {
 			elog.save();
 		} catch (Exception e) {

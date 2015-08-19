@@ -804,7 +804,7 @@ public interface EpadOperations
 	 * @param username
 	 * @return
 	 */
-	String seriesDelete(SeriesReference seriesReference, String sessionID, boolean deleteAims, String username);
+	String seriesDelete(SeriesReference seriesReference, String sessionID, boolean deleteAims, String username) throws Exception;
 	
 	/**
 	 * Delete series

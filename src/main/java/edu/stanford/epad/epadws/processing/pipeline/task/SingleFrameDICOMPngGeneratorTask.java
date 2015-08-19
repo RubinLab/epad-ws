@@ -112,8 +112,8 @@ public class SingleFrameDICOMPngGeneratorTask implements GeneratorTask
 				{
 					epadDatabaseOperations.insertEpadEvent(
 							username, 
-							"Study Upload Complete", 
-							"", "", "", "", "", "", 
+							"Study Processing Complete", 
+							studyUID, studyUID, patientName, patientName, studyUID, studyUID, 
 							"Study:" + studyUID);					
 					UserProjectService.pendingUploads.remove(studyUID);
 				}

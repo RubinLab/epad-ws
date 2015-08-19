@@ -84,10 +84,12 @@ import edu.stanford.epad.epadws.handlers.dicom.DSOUtil;
 import edu.stanford.epad.epadws.handlers.dicom.DownloadUtil;
 import edu.stanford.epad.epadws.models.EpadStatistics;
 import edu.stanford.epad.epadws.models.RemotePACQuery;
+import edu.stanford.epad.epadws.models.User;
 import edu.stanford.epad.epadws.processing.pipeline.task.EpadStatisticsTask;
 import edu.stanford.epad.epadws.queries.DefaultEpadOperations;
 import edu.stanford.epad.epadws.queries.EpadOperations;
 import edu.stanford.epad.epadws.security.EPADSession;
+import edu.stanford.epad.epadws.service.DefaultEpadProjectOperations;
 import edu.stanford.epad.epadws.service.RemotePACService;
 import edu.stanford.epad.epadws.service.TCIAService;
 import edu.stanford.epad.epadws.service.UserProjectService;
@@ -1476,12 +1478,21 @@ public class EPADGetHandler
 				statusCode = HttpServletResponse.SC_OK;
 
 			} else if (HandlerUtil.matchesTemplate(EPADsRouteTemplates.EPAD_VERSION, pathInfo)) {
-				EPADData data = new EPADData(EPADConfig.xnatServer, "Current Version", new EPadWebServerVersion().getVersion(),"Latest version");
+				EPADData data = new EPADData(EPADConfig.xnatServer, "Current Version", new EPadWebServerVersion().getVersion(),"Current version is the latest");
 				if (EpadStatisticsTask.newEPADVersionAvailable)
 				{
 					data = new EPADData(EPADConfig.xnatServer, "Current Version", new EPadWebServerVersion().getVersion(),
 							"New version " + EpadStatisticsTask.newEPADVersion + " is available");
 					data.alert = true;
+					boolean download = "true".equalsIgnoreCase(httpRequest.getParameter("downloadLatestEPAD"));
+					if (download)
+					{
+						User user = DefaultEpadProjectOperations.getInstance().getUser(username);
+						if (!user.isAdmin())
+							throw new Exception("No permissions to download ePAD software");
+						new EPadWebServerVersion().downloadEpadLatestVersion();
+						data.status = EpadStatisticsTask.newEPADVersion + " has been downloaded, please restart the server";
+					}
 				}
 				responseStream.append(data.toJSON());
 				statusCode = HttpServletResponse.SC_OK;

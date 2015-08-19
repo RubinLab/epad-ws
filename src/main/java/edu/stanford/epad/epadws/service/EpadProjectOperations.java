@@ -171,6 +171,7 @@ public interface EpadProjectOperations {
 	void userWarningLog(String username, String message);
 	void userInfoLog(String username, String message);
 	void createEventLog(String username, String projectID, String subjectID, String studyUID, String seriesUID, String imageUID, String aimID, String function, String params);
+	void createEventLog(String username, String projectID, String subjectID, String studyUID, String seriesUID, String imageUID, String aimID, String filename, String function, String params, boolean error);
 	
 	/**
 	 * Create Subject record in database

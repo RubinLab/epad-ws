@@ -809,9 +809,17 @@ public class AIMUtil
 					{
 						projectID = ea.projectID; 		// TODO: Do we change AIM project if it is in unassigned? 
 					}
+					String dsoSeriesUID = "";
+					if (seriesIds.size() > 1)
+					{
+						dsoSeriesUID = seriesIds.get(1);
+						
+						log.info("Source SeriesUID:" + seriesID + " dsoSeriesUID:" +  dsoSeriesUID);
+					}
 					if (ea != null)
 					{
-						if (!ea.seriesUID.equals(seriesID))
+						log.debug("ea.seriesUID:" + ea.seriesUID + " seriesID:" +  seriesID);
+						if (!ea.seriesUID.equals(seriesID) && (seriesIds.size() == 1 || !ea.seriesUID.equals(seriesIds.get(1))))
 						{
 							String message = "Invalid SeriesUID in AIM xml, AimID:" + ea.aimID + " Incorrect seriesUID in AIM:" + seriesID + " Should be:" + ea.seriesUID;
 							log.warning(message);
@@ -822,6 +830,12 @@ public class AIMUtil
 							imageID = ea.imageUID;
 							seriesID = ea.seriesUID;
 							return false;
+						}
+						if (seriesIds.size() > 1 && ea.seriesUID.equals(seriesIds.get(1)))
+						{
+							seriesID = seriesIds.get(1);
+							dsoSeriesUID = seriesIds.get(0);
+							log.info("Source SeriesUID:" + seriesID + " dsoSeriesUID:" +  dsoSeriesUID);
 						}
 					}
 					log.info("Saving AIM file with ID " + imageAnnotationColl.getUniqueIdentifier() + " projectID:" + projectID + " seriesUID:" + seriesID + " username:" + username);
@@ -846,8 +860,8 @@ public class AIMUtil
 									if (eaim != null && eaim.dsoSeriesUID == null && aims.size() > 1 && seriesIds.size() > 1) {
 										for (EPADAIM e: aims)
 										{
-											log.info("Checking, aimID:" + e.aimID + " dsoSeries:" + e.dsoSeriesUID + " this:" + seriesIds.get(1));
-											if (!e.aimID.equals(eaim.aimID) && e.dsoSeriesUID != null && e.dsoSeriesUID.equals(seriesIds.get(1)))
+											log.info("Checking, aimID:" + e.aimID + " dsoSeries:" + e.dsoSeriesUID + " this:" + dsoSeriesUID);
+											if (!e.aimID.equals(eaim.aimID) && e.dsoSeriesUID != null && e.dsoSeriesUID.equals(dsoSeriesUID))
 											{
 												ImageReference imageReference = new ImageReference(projectID, e.subjectID, e.studyUID, e.seriesUID, e.imageUID);												
 												epadDatabaseOperations.deleteAIM("admin", e.aimID);

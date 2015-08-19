@@ -27,6 +27,7 @@ package edu.stanford.epad.epadws.service;
 import java.io.File;
 import java.io.FileInputStream;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
@@ -43,6 +44,7 @@ import org.dcm4che2.data.Tag;
 import edu.stanford.epad.common.dicom.DicomReader;
 import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADLogger;
+import edu.stanford.epad.common.util.MailUtil;
 import edu.stanford.epad.dtos.EPADAIM;
 import edu.stanford.epad.epadws.aim.AIMQueries;
 import edu.stanford.epad.epadws.aim.AIMSearchType;
@@ -53,7 +55,9 @@ import edu.stanford.epad.epadws.epaddb.EpadDatabaseOperations;
 import edu.stanford.epad.epadws.models.Project;
 import edu.stanford.epad.epadws.models.Study;
 import edu.stanford.epad.epadws.models.Subject;
+import edu.stanford.epad.epadws.models.User;
 import edu.stanford.epad.epadws.queries.XNATQueries;
+import edu.stanford.epad.epadws.security.IdGenerator;
 import edu.stanford.epad.epadws.xnat.XNATCreationOperations;
 import edu.stanford.epad.epadws.xnat.XNATSessionOperations;
 import edu.stanford.epad.epadws.xnat.XNATUtil;
@@ -522,6 +526,32 @@ public class UserProjectService {
 		}
 		
 		return files;
+	}
+	
+	public static void sendNewPassword(String loggedInUsername, String username) throws Exception
+	{
+		log.info("New password requested for " + username);
+		User loggedInUser =  projectOperations.getUser(loggedInUsername);
+		User user = projectOperations.getUser(username);
+		if (!loggedInUsername.equals(username) && !loggedInUser.isAdmin() && !loggedInUsername.equals(user.getCreator()))
+			throw new Exception("No permissions to reset " + username + "'s password");
+		String newPwd = username;
+		if (newPwd.length() > 4) newPwd = newPwd.substring(0, 4);
+		newPwd = newPwd + new IdGenerator().generateId(6);
+		user.setPassword(newPwd);
+		projectOperations.updateUser(loggedInUsername, username,
+				null, null, null, newPwd, null, 
+				new ArrayList<String>(), new ArrayList<String>());
+		boolean tls = "true".equalsIgnoreCase(EPADConfig.getParamValue("SMTPtls", "true"));
+		MailUtil mu = new MailUtil(	EPADConfig.getParamValue("SMTPHost", "smtp.gmail.com"), 
+									EPADConfig.getParamValue("SMTPPort", "587"), 
+									EPADConfig.getParamValue("MailUser", "epadstanford@gmail.com"), 
+									EPADConfig.getParamValue("MailPassword"), 
+									true);
+		mu.send(user.getEmail(), 
+				EPADConfig.xnatServer + "_noreply@stanford.edu", 
+				"New password for ePAD@" + EPADConfig.xnatServer, 
+				"Hello " + user.getFirstName() + " " + user.getLastName() + ",\n\nYour new ePAD password is " + newPwd + "\n\nPlease login and reset your password.\n\nRegards\n\nePAD Team");
 	}
 
 	/**

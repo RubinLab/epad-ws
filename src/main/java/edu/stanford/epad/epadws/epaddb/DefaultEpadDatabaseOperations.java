@@ -1719,7 +1719,8 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 			c = getConnection();
 			s = c.createStatement();
 			log.info("delete sql:" + EpadDatabaseCommands.CLEANUP_OBSOLETE_EPAD_FILES);
-			s.executeUpdate(EpadDatabaseCommands.CLEANUP_OBSOLETE_EPAD_FILES);
+			int rows = s.executeUpdate(EpadDatabaseCommands.CLEANUP_OBSOLETE_EPAD_FILES);
+			log.info("Number of rows deleted:" + rows);
 		} catch (SQLException sqle) {
 			log.warning("Database operation failed", sqle);
 		} finally {

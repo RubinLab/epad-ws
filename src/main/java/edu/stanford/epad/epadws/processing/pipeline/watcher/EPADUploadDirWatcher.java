@@ -67,7 +67,7 @@ public class EPADUploadDirWatcher implements Runnable
 	public void run()
 	{
 		try {
-			Thread.currentThread().setPriority(Thread.MIN_PRIORITY);
+			Thread.currentThread().setPriority(Thread.MIN_PRIORITY); // Let interactive thread run sooner
 			ShutdownSignal shutdownSignal = ShutdownSignal.getInstance();
 			File rootUploadDirectory = new File(EPADConfig.getEPADWebServerUploadDir());
 			log.info("Starting the ePAD upload directory watcher; directory =" + EPADConfig.getEPADWebServerUploadDir());
@@ -157,6 +157,7 @@ public class EPADUploadDirWatcher implements Runnable
 				String zipName = "DicomFile";
 				if (zipFile != null) zipName = zipFile.getName();
 				EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
+				projectOperations.createEventLog(userName, null, null, null, null, null, null, zipName, "Error processing uploaded file",  e.getMessage(), true);
 				epadDatabaseOperations.insertEpadEvent(
 						userName, 
 						"Error processing uploaded file:" + zipName, 
@@ -275,6 +276,7 @@ public class EPADUploadDirWatcher implements Runnable
 			if (username.indexOf(":") != -1)
 			{
 				count = getInt(username.substring(username.lastIndexOf(":")+1));
+				username = username.substring(0, username.lastIndexOf(":"));
 			}
 			projectOperations.userInfoLog(username, "Sending DICOM files in upload directory " + directory.getAbsolutePath() + " to DCM4CHEE");
 			if (count < 5000) {
@@ -282,6 +284,7 @@ public class EPADUploadDirWatcher implements Runnable
 				Dcm4CheeOperations.dcmsnd(directory, true);
 			} else {
 				log.info("More than 5000 files to upload, trying to split dcmsend");
+				int errcnt = 0;
 				File[] dirs = new File[1];
 				dirs[0] = directory;
 				File root = dirs[0];
@@ -300,7 +303,11 @@ public class EPADUploadDirWatcher implements Runnable
 						log.info("Sending DICOM files in upload directory " + dir.getAbsolutePath() + " to DCM4CHEE");
 						boolean ok = Dcm4CheeOperations.dcmsnd(dir, false);
 						if (!ok)
+						{
+							errcnt = errcnt + dir.list().length;
+							projectOperations.createEventLog(username, null, null, null, null, null, null, dir.getName(), "Error sending to dcm4che",  null, true);
 							log.warning("Error in upload: sending " + dir.getAbsolutePath() + " to dcm4che");
+						}
 					} else {
 						dir.renameTo(new File(extra, dir.getName()));
 						movedToExtra = true;
@@ -310,7 +317,20 @@ public class EPADUploadDirWatcher implements Runnable
 					log.info("Sending DICOM files in upload directory " + extra.getAbsolutePath() + " to DCM4CHEE");
 					boolean ok = Dcm4CheeOperations.dcmsnd(extra, false);
 					if (!ok)
+					{
+						errcnt = errcnt + extra.list().length;
 						log.warning("Error in upload: sending " + extra.getAbsolutePath() + " to dcm4che");
+						projectOperations.createEventLog(username, null, null, null, null, null, null, extra.getName(), "Error sending to dcm4che",  null, true);
+					}
+				}
+				if (errcnt > 0) {
+					log.warning("Errors in " + errcnt + " dicoms while sending " + directory.getAbsolutePath() + " to dcm4che");
+					EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
+					epadDatabaseOperations.insertEpadEvent(
+							username, 
+							"Errors in sending " + errcnt + " DICOM files to DCM4CHEE", 
+							"Dicoms", "Dicoms", "Dicoms", "Dicoms", "Dicoms", "Dicoms", "Error Processing Upload");					
+					projectOperations.userErrorLog(username, "Error sending " + errcnt + " DICOM files to DCM4CHEE");
 				}
 			}
 		} catch (Exception x) {
