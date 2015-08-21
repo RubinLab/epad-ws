@@ -549,7 +549,7 @@ public class UserProjectService {
 									EPADConfig.getParamValue("MailPassword"), 
 									true);
 		// No password, try sendMail
-		if (EPADConfig.getParamValue("MailPassword") == null) {
+		if (EPADConfig.getParamValue("MailPassword") == null || EPADConfig.getParamValue("MailPassword").trim().length() == 0) {
 			mu = new MailUtil();
 		}
 		mu.send(user.getEmail(), 
