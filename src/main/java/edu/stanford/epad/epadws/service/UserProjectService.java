@@ -542,19 +542,23 @@ public class UserProjectService {
 		if (newPwd.length() > 4) newPwd = newPwd.substring(0, 4);
 		newPwd = newPwd + new IdGenerator().generateId(6);
 		user.setPassword(newPwd);
-		projectOperations.updateUser(loggedInUsername, username,
-				null, null, null, newPwd, null, 
-				new ArrayList<String>(), new ArrayList<String>());
 		boolean tls = "true".equalsIgnoreCase(EPADConfig.getParamValue("SMTPtls", "true"));
 		MailUtil mu = new MailUtil(	EPADConfig.getParamValue("SMTPHost", "smtp.gmail.com"), 
 									EPADConfig.getParamValue("SMTPPort", "587"), 
 									EPADConfig.getParamValue("MailUser", "epadstanford@gmail.com"), 
 									EPADConfig.getParamValue("MailPassword"), 
 									true);
+		// No password, try sendMail
+		if (EPADConfig.getParamValue("MailPassword") == null) {
+			mu = new MailUtil();
+		}
 		mu.send(user.getEmail(), 
 				EPADConfig.xnatServer + "_noreply@stanford.edu", 
 				"New password for ePAD@" + EPADConfig.xnatServer, 
 				"Hello " + user.getFirstName() + " " + user.getLastName() + ",\n\nYour new ePAD password is " + newPwd + "\n\nPlease login and reset your password.\n\nRegards\n\nePAD Team");
+		projectOperations.updateUser(loggedInUsername, username,
+				null, null, null, newPwd, null, 
+				new ArrayList<String>(), new ArrayList<String>());
 	}
 
 	/**
