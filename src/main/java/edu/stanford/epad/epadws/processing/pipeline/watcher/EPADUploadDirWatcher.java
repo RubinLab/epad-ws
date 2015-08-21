@@ -139,16 +139,36 @@ public class EPADUploadDirWatcher implements Runnable
 		try {
 			boolean hasZipFile = waitOnEmptyUploadDirectory(directory);
 			if (hasZipFile) {
-				zipFile = waitForZipUploadToComplete(directory);
-				unzipFiles(zipFile);
+				for (;;)
+				{
+					zipFile = waitForZipUploadToComplete(directory);
+					if (zipFile == null) break;
+					unzipFiles(zipFile);
+					File zipDirectory = new File(directory, zipFile.getName().substring(0, zipFile.getName().length()-4));
+					File xnatprops = new File(directory, UserProjectService.XNAT_UPLOAD_PROPERTIES_FILE_NAME);
+					if (xnatprops.exists())
+						EPADFileUtils.copyFile(xnatprops, new File(zipDirectory, UserProjectService.XNAT_UPLOAD_PROPERTIES_FILE_NAME));
+					String username = UserProjectService.createProjectEntitiesFromDICOMFilesInUploadDirectory(zipDirectory);
+					if (username != null)
+					{
+						sendFilesToDcm4Chee(username, zipDirectory);
+					}
+					log.info("Cleaning upload zip directory:" + zipDirectory.getName());
+					cleanUploadDirectory(zipDirectory);
+					zipFile.delete();
+				}
 			}
-			// TODO Should not create XNAT entities until the DICOM send succeeds.
-			String username = UserProjectService.createProjectEntitiesFromDICOMFilesInUploadDirectory(directory);
-			log.info("Cleaning upload directory");
-			cleanUploadDirectory(directory);
-			if (username != null)
+			String[] files = directory.list();
+			if (files.length > 0)
 			{
-				sendFilesToDcm4Chee(username, directory);
+				// TODO Should not create XNAT entities until the DICOM send succeeds.
+				String username = UserProjectService.createProjectEntitiesFromDICOMFilesInUploadDirectory(directory);
+				log.info("Cleaning upload directory");
+				cleanUploadDirectory(directory);
+				if (username != null)
+				{
+					sendFilesToDcm4Chee(username, directory);
+				}
 			}
 		} catch (Exception e) {
 			log.warning("Exception uploading " + directory.getAbsolutePath(), e);
@@ -179,6 +199,9 @@ public class EPADUploadDirWatcher implements Runnable
 		EPADFileUtils.deleteFilesInDirectoryWithExtension(dir, "zip");
 		EPADFileUtils.deleteFilesInDirectoryWithExtension(dir, "log");
 		EPADFileUtils.deleteFilesInDirectoryWithExtension(dir, "json");
+		EPADFileUtils.deleteFilesInDirectoryWithExtension(dir, "jpeg");
+		EPADFileUtils.deleteFilesInDirectoryWithExtension(dir, "jpg");
+		EPADFileUtils.deleteFilesInDirectoryWithExtension(dir, "png");
 	}
 
 	private boolean waitOnEmptyUploadDirectory(File dir) throws InterruptedException
@@ -237,11 +260,12 @@ public class EPADUploadDirWatcher implements Runnable
 			});
 
 			if (zipFiles == null || zipFiles.length == 0) {
-				throw new IllegalStateException("No ZIP file in upload directory " + dir.getAbsolutePath());
-			} else if (zipFiles.length > 1) {
-				int numZipFiles = zipFiles.length;
-				throw new IllegalStateException("Too many ZIP files (" + numZipFiles + ") in upload directory:"
-						+ dir.getAbsolutePath());
+				return null;
+//				throw new IllegalStateException("No ZIP file in upload directory " + dir.getAbsolutePath());
+//			} else if (zipFiles.length > 1) {
+//				int numZipFiles = zipFiles.length;
+//				throw new IllegalStateException("Too many ZIP files (" + numZipFiles + ") in upload directory:"
+//						+ dir.getAbsolutePath());
 			}
 			FileKey zipFileKey = new FileKey(zipFiles[0]);
 			DicomUploadFile zipFile = new DicomUploadFile(zipFileKey.getFile());

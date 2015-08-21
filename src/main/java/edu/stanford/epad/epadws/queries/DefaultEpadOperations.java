@@ -683,17 +683,24 @@ public class DefaultEpadOperations implements EpadOperations
 
 				if (!referencedSeriesUID.equals("")) {
 					boolean isFirst = true;
+					List<DCM4CHEEImageDescription> imageDescriptions = dcm4CheeDatabaseOperations.getImageDescriptions(
+							studyUID, referencedSeriesUID);
+					int instanceOffset = imageDescriptions.size();
+					Map<String, DCM4CHEEImageDescription> descMap = new HashMap<String, DCM4CHEEImageDescription>();
+					for (DCM4CHEEImageDescription imageDescription : imageDescriptions) {
+						descMap.put(imageDescription.imageUID, imageDescription);
+						if (imageDescription.instanceNumber < instanceOffset)
+							instanceOffset = imageDescription.instanceNumber;
+					}
 					List<DCM4CHEEImageDescription> referencedImages = new ArrayList<DCM4CHEEImageDescription>();
-					int instanceOffset = referencedSOPInstanceUIDDICOMElements.size();
 					for (DICOMElement dicomElement : referencedSOPInstanceUIDDICOMElements) {
 						String referencedImageUID = dicomElement.value;
-						DCM4CHEEImageDescription dcm4cheeReferencedImageDescription = dcm4CheeDatabaseOperations
-								.getImageDescription(studyUID, referencedSeriesUID, referencedImageUID);
+						DCM4CHEEImageDescription dcm4cheeReferencedImageDescription = descMap.get(referencedImageUID);
 						referencedImages.add(dcm4cheeReferencedImageDescription);
-						if (dcm4cheeReferencedImageDescription != null && dcm4cheeReferencedImageDescription.instanceNumber < instanceOffset)
-							instanceOffset = dcm4cheeReferencedImageDescription.instanceNumber;
 					}
 					if (instanceOffset == 0) instanceOffset = 1;
+					if (referencedSOPInstanceUIDDICOMElements.size() < imageDescriptions.size())
+						instanceOffset = 1;
 					int index = 0;
 					boolean instanceOneFound = false;
 					int instanceCount = 0;
@@ -1225,6 +1232,8 @@ public class DefaultEpadOperations implements EpadOperations
 	@Override
 	public void createFile(String username, String projectID, String subjectID, String studyID, String seriesID,
 			File uploadedFile, String description, String fileType, String sessionID) throws Exception {
+		if (!projectOperations.hasAccessToProject(username, projectID))
+			throw new Exception("No permissions to upload to project " + projectID);
 		String filename = uploadedFile.getName();
 		log.info("filename:" + filename);
 		if (filename.startsWith("temp"))

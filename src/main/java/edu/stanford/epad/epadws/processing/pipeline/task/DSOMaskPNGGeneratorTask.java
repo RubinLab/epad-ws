@@ -49,6 +49,7 @@ public class DSOMaskPNGGeneratorTask implements GeneratorTask
 {
 	private static final EPADLogger log = EPADLogger.getInstance();
 
+	private final String studyUID;
 	private final String seriesUID;
 	private final File dsoFile;
 	private final boolean generateAIM;
@@ -56,8 +57,9 @@ public class DSOMaskPNGGeneratorTask implements GeneratorTask
 
 	static public Set seriesBeingProcessed = Collections.synchronizedSet(new HashSet());
 	
-	public DSOMaskPNGGeneratorTask(String seriesUID, File dsoFile, boolean generateAIM, String tagFilePath)
+	public DSOMaskPNGGeneratorTask(String studyUID, String seriesUID, File dsoFile, boolean generateAIM, String tagFilePath)
 	{
+		this.studyUID = studyUID;
 		this.seriesUID = seriesUID;
 		this.dsoFile = dsoFile;
 		this.generateAIM = generateAIM;
@@ -74,8 +76,23 @@ public class DSOMaskPNGGeneratorTask implements GeneratorTask
 			return;
 		}
 		log.info("Processing DSO for series  " + seriesUID + "; file=" + dsoFile.getAbsolutePath());
-
 		EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
+		if (UserProjectService.pendingUploads.containsKey(studyUID))
+		{
+			String username = UserProjectService.pendingUploads.get(studyUID);
+			if (username != null && username.indexOf(":") != -1)
+				username = username.substring(0, username.indexOf(":"));
+			if (username != null)
+			{
+				epadDatabaseOperations.insertEpadEvent(
+						username, 
+						"Study Processing Complete", 
+						studyUID, studyUID, "", "", studyUID, studyUID, 
+						"Study:" + studyUID);					
+				UserProjectService.pendingUploads.remove(studyUID);
+			}
+		}
+
 		try {
 			seriesBeingProcessed.add(seriesUID);
 			try {
@@ -110,11 +127,11 @@ public class DSOMaskPNGGeneratorTask implements GeneratorTask
 						aim.getCodeValue(),
 						"DSO Plugin");					
 			}
-			else if (ias.size() != 0 && UserProjectService.pendingUploads.containsKey(seriesUID))
+			else if (ias.size() != 0 && UserProjectService.pendingPNGs.containsKey(seriesUID))
 			{
 				ImageAnnotation ia = ias.get(0);
 				Aim aim = new Aim(ia);
-				String username = UserProjectService.pendingUploads.get(seriesUID);
+				String username = UserProjectService.pendingPNGs.get(seriesUID);
 				if (username != null && username.indexOf(":") != -1)
 					username = username.substring(0, username.indexOf(":"));
 				if (username != null)
@@ -128,7 +145,7 @@ public class DSOMaskPNGGeneratorTask implements GeneratorTask
 							aim.getCodeMeaning(), 
 							aim.getCodeValue(),
 							"");					
-					UserProjectService.pendingUploads.remove(seriesUID);
+					UserProjectService.pendingPNGs.remove(seriesUID);
 				}
 			}
 					 

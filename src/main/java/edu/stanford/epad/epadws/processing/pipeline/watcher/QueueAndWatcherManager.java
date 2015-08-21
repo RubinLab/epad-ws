@@ -225,7 +225,8 @@ public class QueueAndWatcherManager
 			return;
 		}
 		String tagFilePath = createOutputPNGFilePathForSingleFrameDICOMImage(dicomFileDescription).replace(".png", ".tag");
-		DSOMaskPNGGeneratorTask dsoMaskPNGGeneratorTask = new DSOMaskPNGGeneratorTask(dicomFileDescription.seriesUID,
+		DSOMaskPNGGeneratorTask dsoMaskPNGGeneratorTask = new DSOMaskPNGGeneratorTask(dicomFileDescription.studyUID,
+				dicomFileDescription.seriesUID,
 				dsoFile, generateAIM, tagFilePath);
 
 		pngGeneratorTaskQueue.offer(dsoMaskPNGGeneratorTask);

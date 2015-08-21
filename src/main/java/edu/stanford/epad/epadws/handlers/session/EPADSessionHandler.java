@@ -65,6 +65,7 @@ public class EPADSessionHandler extends AbstractHandler
 	private static final String LOGOUT_EXCEPTION_MESSAGE = "Warning: internal logout error";
 	private static final String UNEXPECTED_XNAT_RESPONSE_MESSAGE = "Warning: unexpected response code from XNAT";
 	private static final String UNAUTHORIZED_USER_XNAT_RESPONSE_MESSAGE = "Invalid username or password";
+	private static final String DISABLED_USER = "User has been disabled";
 	private static final String JSESSIONID_COOKIE = "JSESSIONID";
 	private static final String LOGGEDINUSER_COOKIE = "ePADLoggedinUser";
 
@@ -140,7 +141,10 @@ public class EPADSessionHandler extends AbstractHandler
 				    	
 					} else if (sessionResponse.statusCode == HttpServletResponse.SC_UNAUTHORIZED) {
 						PrintWriter responseStream = httpResponse.getWriter();
-						statusCode = HandlerUtil.invalidTokenResponse(UNAUTHORIZED_USER_XNAT_RESPONSE_MESSAGE, responseStream, log);
+						if (sessionResponse.message != null && sessionResponse.message.contains("disabled"))
+							statusCode = HandlerUtil.invalidTokenResponse(DISABLED_USER, responseStream, log);
+						else
+							statusCode = HandlerUtil.invalidTokenResponse(UNAUTHORIZED_USER_XNAT_RESPONSE_MESSAGE, responseStream, log);
 					} else {
 						PrintWriter responseStream = httpResponse.getWriter();
 						statusCode = HandlerUtil.warningResponse(sessionResponse.statusCode, UNEXPECTED_XNAT_RESPONSE_MESSAGE

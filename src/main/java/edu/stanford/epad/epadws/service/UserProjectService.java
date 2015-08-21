@@ -78,7 +78,7 @@ public class UserProjectService {
 	private static final EpadProjectOperations projectOperations = DefaultEpadProjectOperations.getInstance();	
 	private static final EpadDatabaseOperations databaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();	
 	
-	private static final String XNAT_UPLOAD_PROPERTIES_FILE_NAME = "xnat_upload.properties";
+	public static final String XNAT_UPLOAD_PROPERTIES_FILE_NAME = "xnat_upload.properties";
 	
 	/**
 	 * Check if user is collaborator
@@ -403,14 +403,17 @@ public class UserProjectService {
 			if ("SEG".equals(modality))
 			{
 				try {
-					//List<EPADAIM> aims = databaseOperations.getAIMsByDSOSeries(projectID, dicomPatientID, seriesUID);
-					List<EPADAIM> aims = databaseOperations.getAIMsByDSOSeries(null, dicomPatientID, seriesUID);
+					List<EPADAIM> aims = databaseOperations.getAIMsByDSOSeries(projectID, dicomPatientID, seriesUID);
 					List<ImageAnnotation> ias = AIMQueries.getAIMImageAnnotations(AIMSearchType.SERIES_UID, seriesUID, username, 1, 50);
-					boolean generateAim = false;
-					if (aims.size() == 1 && aims.get(0).projectID.equals(EPADConfig.xnatUploadProjectID) && !projectID.equals(EPADConfig.xnatUploadProjectID))
-						generateAim = true;
-					if (generateAim || ias.size() == 0 || aims.size() == 0) 
+					if (ias.size() == 0 || aims.size() == 0) 
 						AIMUtil.generateAIMFileForDSO(dicomFile, username, projectID);
+//					List<EPADAIM> aims = databaseOperations.getAIMsByDSOSeries(null, dicomPatientID, seriesUID);
+//					List<ImageAnnotation> ias = AIMQueries.getAIMImageAnnotations(AIMSearchType.SERIES_UID, seriesUID, username, 1, 50);
+//					boolean generateAim = false;
+//					if (aims.size() == 1 && aims.get(0).projectID.equals(EPADConfig.xnatUploadProjectID) && !projectID.equals(EPADConfig.xnatUploadProjectID))
+//						generateAim = true;
+//					if (generateAim || ias.size() == 0 || aims.size() == 0) 
+//						AIMUtil.generateAIMFileForDSO(dicomFile, username, projectID);
 					Set<String> imageUIDs = Dcm4CheeDatabase.getInstance().getDcm4CheeDatabaseOperations().getImageUIDsForSeries(seriesUID);
 					if (false && !imageUIDs.isEmpty()) {
 						String message = "DSO for  patientID:" + dicomPatientID + " Series:" + seriesUID + " file:" + dicomFile.getName() + " already exists. Please delete DSO before reuploading";
