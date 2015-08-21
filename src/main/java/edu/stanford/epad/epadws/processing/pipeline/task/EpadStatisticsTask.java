@@ -148,7 +148,7 @@ public class EpadStatisticsTask implements Runnable
 		GetMethod getMethod = null;
 		try {
 			log.info("Getting Epad Version");
-			String epadUrl = EPADConfig.getParamValue("EpadStatusURL", "http://epad-build.stanford.edu:8080/epad/status/");
+			String epadUrl = EPADConfig.getParamValue("EpadStatusURL", "http://epad-public.stanford.edu:8080/epad/status/");
 			HttpClient client = new HttpClient();
 			getMethod = new GetMethod(epadUrl);
 			int status = client.executeMethod(getMethod);

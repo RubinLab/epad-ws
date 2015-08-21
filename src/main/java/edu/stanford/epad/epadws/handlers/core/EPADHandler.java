@@ -86,8 +86,8 @@ public class EPADHandler extends AbstractHandler
 			log.info("ID:" + Thread.currentThread().getId() + " User:" + username  + " host:" + EPADSessionOperations.getSessionHost(sessionID) + " method:" + httpRequest.getMethod() 
 					+ ", url: " + httpRequest.getPathInfo() + ", parameters: "
 					+ httpRequest.getQueryString() + " sessionId:" + sessionID);
-			if (SessionService.hasValidSessionID(sessionID)) {
-				if (EPADConfig.UseEPADUsersProjects) {
+			if (SessionService.hasValidSessionID(sessionID) || httpRequest.getPathInfo().contains("sendnewpassword")) {
+				if (EPADConfig.UseEPADUsersProjects && sessionID != null) {
 					String sessionUser = EPADSessionOperations.getSessionUser(sessionID);
 					if (username != null && !username.equals(sessionUser))
 					{
