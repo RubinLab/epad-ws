@@ -94,7 +94,7 @@ public class ResourcesFileHandler extends AbstractHandler
 							}
 							String name = request.getParameter("name");
 							if (name == null) name = file.getName();
-						    EPADFileUtils.downloadFile(request, httpResponse, file, name);
+						    EPADFileUtils.sendFile(request, httpResponse, file, name, false);
 						} else {
 							statusCode = HandlerUtil.badRequestResponse(MISSING_QUERY_MESSAGE, log);
 							log.warning("Missing Wado query");
