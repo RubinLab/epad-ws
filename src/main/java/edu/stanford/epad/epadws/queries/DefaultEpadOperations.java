@@ -2307,6 +2307,11 @@ public class DefaultEpadOperations implements EpadOperations
 				log.warning("No permissions to delete AIM:" + aimID + " for user " + username);
 				throw new Exception("No permissions to delete AIM:" + aimID + " for user " + username);
 			}
+			if (!aim.projectID.equals(projectReference.projectID))
+			{
+				epadDatabaseOperations.removeProjectFromAIM(projectReference.projectID, aimID);
+				return HttpServletResponse.SC_OK;
+			}
 			if (AIMUtil.isPluginStillRunning(aimID))
 				throw new Exception(aimID + " is still being processed by the plugin");
 			log.info("Deleting AIM, deleteDSO:" + deleteDSO + " dsoSeriesUID:" + aim.dsoSeriesUID + " aimID:" + aimID);

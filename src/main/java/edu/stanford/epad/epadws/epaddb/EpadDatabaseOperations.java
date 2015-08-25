@@ -147,6 +147,8 @@ public interface EpadDatabaseOperations
 
 	void addProjectToAIM(String projectID, String aimID);
 
+	void removeProjectFromAIM(String projectID, String aimID);
+	
 	List<EPADAIM> getSharedAIMs(String projectID, String patientID, String seriesUID);
 
 	int getNumberOfAIMs(String userName, ProjectReference reference);

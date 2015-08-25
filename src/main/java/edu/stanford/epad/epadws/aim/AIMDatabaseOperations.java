@@ -477,6 +477,34 @@ public class AIMDatabaseOperations {
     	}
 
 	}
+	   
+		public void removeProjectFromAIM(String projectID, String annotationID) throws SQLException {
+	  		ResultSet rs = null;
+			try {
+	    	    this.statement = mySqlConnection.createStatement();
+	      	    String sql = "SELECT SHAREDPROJECTS FROM " + ANNOTATIONS_TABLE + " where AnnotationUID = '" + annotationID + "'";
+	        	rs = this.statement.executeQuery(sql);
+				String sharedProjects = null;
+				if (rs.next()) {
+					sharedProjects = rs.getString(1);
+					if (sharedProjects == null || sharedProjects.length() == 0) sharedProjects = ",";
+					if (sharedProjects.indexOf("," + projectID + ",") == -1)
+						return;	
+				}
+				else {
+					throw new SQLException("Annotation not found, aimID:" + annotationID);
+				}
+				rs.close();
+				sharedProjects = sharedProjects.replace("," + projectID + ",", ",");
+	      	    sql = "UPDATE " + ANNOTATIONS_TABLE + " set SHAREDPROJECTS = '" + sharedProjects + "' where AnnotationUID = '" + annotationID + "'";
+	            this.statement.executeUpdate(sql);
+			} finally {
+	    		if (statement != null)
+	    			statement.close();
+	    		statement = null;
+	    	}
+
+		}
 
 	public List<EPADAIM> getSharedAIMs(String projectID, String patientID, String seriesUID) throws SQLException 
 	{
