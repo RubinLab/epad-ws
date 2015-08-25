@@ -2328,6 +2328,11 @@ public class DefaultEpadOperations implements EpadOperations
 				log.warning("No permissions to delete AIM:" + aimID + " for user " + username);
 				throw new Exception("No permissions to delete AIM:" + aimID + " for user " + username);
 			}
+			if (!aim.projectID.equals(projectReference.projectID))
+			{
+				epadDatabaseOperations.removeProjectFromAIM(projectReference.projectID, aimID);
+				return HttpServletResponse.SC_OK;
+			}
 			if (AIMUtil.isPluginStillRunning(aimID))
 				throw new Exception(aimID + " is still being processed by the plugin");
 			log.info("Deleting AIM, deleteDSO:" + deleteDSO + " dsoSeriesUID:" + aim.dsoSeriesUID + " aimID:" + aimID);
@@ -2341,7 +2346,7 @@ public class DefaultEpadOperations implements EpadOperations
 			if (deleteDSO && aim.dsoSeriesUID != null && aim.dsoSeriesUID.length() > 0)
 			{
 				List<EPADAIM> otheraims = epadDatabaseOperations.getAIMsByDSOSeries(aim.dsoSeriesUID);
-				if (otheraims.size() == 0)
+				if (otheraims.size() == 0 || (otheraims.size() == 1 && otheraims.get(0).projectID.equals(EPADConfig.xnatUploadProjectID)))
 				{
 					String error =  this.deleteSeries(new SeriesReference(projectReference.projectID, aim.subjectID, aim.studyUID, aim.dsoSeriesUID), false);
 					if (error != null && error.length() > 0) {
@@ -2572,7 +2577,11 @@ public class DefaultEpadOperations implements EpadOperations
 	public EPADAIMList getSubjectAIMDescriptions(SubjectReference subjectReference, String username, String sessionID)
 	{
 		List<EPADAIM> aims = epadDatabaseOperations.getAIMs(subjectReference);
-
+		List<EPADAIM> sharedAims = epadDatabaseOperations.getSharedAIMs(subjectReference.projectID, subjectReference.subjectID, null);
+		for (EPADAIM aim: sharedAims)
+		{
+			aims.add(aim);
+		}
 		return new EPADAIMList(aims);
 	}
 
@@ -2627,6 +2636,11 @@ public class DefaultEpadOperations implements EpadOperations
 	public EPADAIMList getSeriesAIMDescriptions(SeriesReference seriesReference, String username, String sessionID)
 	{
 		List<EPADAIM> aims = epadDatabaseOperations.getAIMs(seriesReference);
+		List<EPADAIM> sharedAims = epadDatabaseOperations.getSharedAIMs(seriesReference.projectID, seriesReference.subjectID, seriesReference.seriesUID);
+		for (EPADAIM aim: sharedAims)
+		{
+			aims.add(aim);
+		}
 		for (int i = 0; i < aims.size(); i++)
 		{
 			EPADAIM aim = aims.get(i);
@@ -2888,6 +2902,8 @@ public class DefaultEpadOperations implements EpadOperations
 		//int numberOfAnnotations = AIMQueries.getNumberOfAIMAnnotationsForSeries(seriesUID, username);
 		EPADAIMList aims = getSeriesAIMDescriptions(new SeriesReference(null, null, null, seriesUID), username, sessionID);
 		int numberOfAnnotations = getNumberOfAccessibleAims(sessionID, suppliedProjectID, aims, username);
+		List<EPADAIM> sharedAims = epadDatabaseOperations.getSharedAIMs(projectID, null, seriesUID);
+		numberOfAnnotations = numberOfAnnotations + sharedAims.size();
 		SeriesProcessingStatus seriesProcessingStatus = epadDatabaseOperations.getSeriesProcessingStatus(seriesUID);
 		String createdTime = dcm4CheeSeries.createdTime != null ? dcm4CheeSeries.createdTime.toString() : "";
 
@@ -3008,6 +3024,8 @@ public class DefaultEpadOperations implements EpadOperations
 					EPADAIMList aims = getStudyAIMDescriptions(new StudyReference(null, null, studyUID), username, sessionID);
 					numberOfAnnotations = numberOfAnnotations + getNumberOfAccessibleAims(sessionID, projectID, aims, username);
 				}
+				List<EPADAIM> sharedAims = epadDatabaseOperations.getSharedAIMs(projectID, null, null);
+				numberOfAnnotations = numberOfAnnotations + sharedAims.size();
 			}
 			long aimtime = System.currentTimeMillis();
 			if (!searchFilter.shouldFilterProject(projectName, numberOfAnnotations)) {
@@ -3135,7 +3153,8 @@ public class DefaultEpadOperations implements EpadOperations
 					EPADAIMList aims = getStudyAIMDescriptions(new StudyReference(null, null, study.getStudyUID()), username, sessionID);
 					numberOfAnnotations = numberOfAnnotations + getNumberOfAccessibleAims(sessionID, projectID, aims, username);
 				}
-
+				List<EPADAIM> sharedAims = epadDatabaseOperations.getSharedAIMs(projectID, patientID, null);
+				numberOfAnnotations = numberOfAnnotations + sharedAims.size();
 			}
 			if (!searchFilter.shouldFilterSubject(patientID, patientName, numberOfAnnotations)) {
 				Set<String> examTypes = epadQueries.getExamTypesForSubject(patientID);
