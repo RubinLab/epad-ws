@@ -98,7 +98,6 @@ public class AIMDatabaseOperations {
                 + "  `ProjectUID` VARCHAR(255),\n"
                 + "  UPDATETIME TIMESTAMP,\n"
                 + "  DSOFRAMENO INTEGER,\n"
-                + "  DELETED TINYINT(1),\n"
                 + "  PRIMARY KEY (`AnnotationUID`));";
        boolean closeStmt = false;
 	   	try {
@@ -117,9 +116,10 @@ public class AIMDatabaseOperations {
 
     public void alterAnnotationsTable() throws SQLException {
     	addColumn("XML MEDIUMTEXT");
-    	addColumn("DELETED TINYINT(1)");
     	addColumn("UPDATETIME TIMESTAMP");
     	addColumn("DSOFRAMENO INTEGER");
+    	addColumn("TEMPLATECODE VARCHAR(64)");
+    	addColumn("SHAREDPROJECTS VARCHAR(2000)");
     	try {
 	    	this.statement = mySqlConnection.createStatement();
 	        this.statement.executeUpdate("CREATE INDEX annotations_series_ind ON annotations(seriesuid)");
@@ -440,6 +440,64 @@ public class AIMDatabaseOperations {
 	            log.info("Updating AIMs DSOFRAMENO for:" + annotationID + " to " + frameNo);
 	            this.statement.executeUpdate(sql);
 	            aim.dsoFrameNo = frameNo;
+	            return aim;
+       	} finally {
+        		if (statement != null)
+        			statement.close();
+        		statement = null;
+        	}
+    	}
+    	return null;
+    }
+    
+	public void addProjectToAIM(String projectID, String annotationID) throws SQLException {
+  		ResultSet rs = null;
+		try {
+    	    this.statement = mySqlConnection.createStatement();
+      	    String sql = "SELECT SHAREDPROJECTS FROM " + ANNOTATIONS_TABLE + " where AnnotationUID = '" + annotationID + "'";
+        	rs = this.statement.executeQuery(sql);
+			String sharedProjects = null;
+			if (rs.next()) {
+				sharedProjects = rs.getString(1);
+				if (sharedProjects == null || sharedProjects.length() == 0) sharedProjects = ",";
+				if (sharedProjects.indexOf("," + projectID + ",") != -1)
+					return;	
+			}
+			else {
+				throw new SQLException("Annotation not found, aimID:" + annotationID);
+			}
+			rs.close();
+			sharedProjects = sharedProjects + projectID + ",";
+      	    sql = "UPDATE " + ANNOTATIONS_TABLE + " set SHAREDPROJECTS = '" + sharedProjects + "' where AnnotationUID = '" + annotationID + "'";
+            this.statement.executeUpdate(sql);
+		} finally {
+    		if (statement != null)
+    			statement.close();
+    		statement = null;
+    	}
+
+	}
+
+	public List<EPADAIM> getSharedAIMs(String projectID, String patientID, String seriesUID) throws SQLException 
+	{
+		String sql = "SHAREDPROJECTS like '%," + projectID + ",%'";
+		if (patientID != null && patientID.length() > 0)
+			sql = sql + " and patientID = '" + patientID + "'";
+		if (seriesUID != null && seriesUID.length() > 0)
+			sql = sql + " and seriesUID = '" + seriesUID + "'";
+		return this.getAIMs(sql, 0, 5000);
+	}
+	
+    public EPADAIM updateAIMTemplateCode(String annotationID, String templateCode) throws SQLException
+    {
+    	EPADAIM aim = this.getAIM(annotationID);
+    	if (aim != null)
+    	{
+    		try {
+	    	    this.statement = mySqlConnection.createStatement();
+	    	    String sql = "UPDATE " + ANNOTATIONS_TABLE + " set TEMPLATECODE = '" + templateCode + "' where AnnotationUID = '" + annotationID + "'";
+	            log.info("Updating AIMs TEMPLATECODE for:" + annotationID + " to " + templateCode);
+	            this.statement.executeUpdate(sql);
 	            return aim;
        	} finally {
         		if (statement != null)
