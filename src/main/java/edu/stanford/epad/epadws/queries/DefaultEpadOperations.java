@@ -45,7 +45,6 @@ import java.util.Set;
 import javax.servlet.http.HttpServletResponse;
 
 import org.apache.commons.io.FileUtils;
-import org.dcm4che2.data.DicomElement;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.json.XML;
@@ -74,6 +73,7 @@ import edu.stanford.epad.dtos.EPADImage;
 import edu.stanford.epad.dtos.EPADImageList;
 import edu.stanford.epad.dtos.EPADMessage;
 import edu.stanford.epad.dtos.EPADMessageList;
+import edu.stanford.epad.dtos.EPADObjectList;
 import edu.stanford.epad.dtos.EPADProject;
 import edu.stanford.epad.dtos.EPADProjectList;
 import edu.stanford.epad.dtos.EPADSeries;
@@ -95,6 +95,7 @@ import edu.stanford.epad.dtos.EPADWorklistSubject;
 import edu.stanford.epad.dtos.EPADWorklistSubjectList;
 import edu.stanford.epad.dtos.SeriesProcessingStatus;
 import edu.stanford.epad.dtos.StudyProcessingStatus;
+import edu.stanford.epad.dtos.TaskStatus;
 import edu.stanford.epad.dtos.internal.DCM4CHEESeries;
 import edu.stanford.epad.dtos.internal.DCM4CHEESeriesList;
 import edu.stanford.epad.dtos.internal.DCM4CHEEStudy;
@@ -1285,6 +1286,8 @@ public class DefaultEpadOperations implements EpadOperations
 			if (fileType != null && fileType.equals(FileType.TEMPLATE.getName()))
 			{
 				type = FileType.TEMPLATE;
+				if (isImage(uploadedFile) || uploadedFile.getName().toLowerCase().endsWith(".zip"))
+					throw new Exception("Why are you uploading this weird file as a template?");
 				if (!EPADFileUtils.isValidXml(uploadedFile, EPADConfig.templateXSDPath))
 				{
 					String error = EPADFileUtils.validateXml(uploadedFile, EPADConfig.templateXSDPath);
@@ -2729,6 +2732,21 @@ public class DefaultEpadOperations implements EpadOperations
 							elog.getImageUID(), elog.getAimID(), elog.getFunction(), elog.getParams()));
 		}
 		return elist;
+	}
+
+	@Override
+	public EPADObjectList getTaskStatuses(String loggedInUserName, String username)
+			throws Exception {
+		User loggedInUser = projectOperations.getUser(loggedInUserName);
+		if (!loggedInUser.isAdmin() && !loggedInUserName.equals(username))
+			throw new Exception("No permissions for requested data");
+		EPADObjectList list = new EPADObjectList();
+		Collection<TaskStatus> tasks = projectOperations.getUser(username).getCurrentTasks().values();
+		for(TaskStatus task: tasks)
+		{
+			list.addObject(task);
+		}
+		return list;
 	}
 
 	@Override

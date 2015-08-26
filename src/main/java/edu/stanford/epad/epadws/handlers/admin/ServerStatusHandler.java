@@ -25,7 +25,9 @@ package edu.stanford.epad.epadws.handlers.admin;
 
 import java.io.PrintWriter;
 import java.net.InetAddress;
+import java.util.Collection;
 import java.util.Map;
+import java.util.Set;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -34,17 +36,21 @@ import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 
 import edu.stanford.epad.common.plugins.EPadPlugin;
+import edu.stanford.epad.common.plugins.PluginHandlerMap;
 import edu.stanford.epad.common.plugins.impl.EPadPluginImpl;
 import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADLogger;
+import edu.stanford.epad.dtos.TaskStatus;
 import edu.stanford.epad.epadws.EPadWebServerVersion;
 import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeDatabase;
 import edu.stanford.epad.epadws.epaddb.EpadDatabase;
 import edu.stanford.epad.epadws.handlers.HandlerUtil;
+import edu.stanford.epad.epadws.models.User;
 import edu.stanford.epad.epadws.processing.pipeline.PipelineFactory;
 import edu.stanford.epad.epadws.processing.pipeline.task.EpadStatisticsTask;
 import edu.stanford.epad.epadws.security.EPADSession;
 import edu.stanford.epad.epadws.security.EPADSessionOperations;
+import edu.stanford.epad.epadws.service.DefaultEpadProjectOperations;
 import edu.stanford.epad.epadws.service.SessionService;
 
 /**
@@ -74,7 +80,7 @@ public class ServerStatusHandler extends AbstractHandler
 		PrintWriter responseStream = null;
 		int statusCode;
 
-		httpResponse.setContentType("text/plain");
+		httpResponse.setContentType("text/html");
 		if (request != null)					// In case handler is not called thru jetty
 			request.setHandled(true);
 
@@ -84,45 +90,63 @@ public class ServerStatusHandler extends AbstractHandler
 			if (validSession) {
 				
 				long upTime = System.currentTimeMillis() - startTime;
-				long upTimeSec = upTime / 1000;
-
-				responseStream.println();
-				responseStream.println("--------------  ePAD Server Status  --------------");
-				responseStream.println();
-				responseStream.println("ePAD server uptime: " + upTimeSec + " second(s)");
-				responseStream.println();
+				long upTimeHr = upTime / (1000*60*60);
+				long remain = upTime % (1000*60*60);
+				long upTimeMin = remain / (1000*60);
+				long upTimeSec = remain % (1000*60);
+				upTimeSec = upTimeSec / 1000;
+				responseStream.println("<body  topmargin='10px' leftmargin='10px' width='900px'>");
+				responseStream.println("<h3><center>ePAD Server Status</center></h3>");
+				responseStream.println("<hr>");
+				responseStream.println("ePAD server uptime: " + upTimeHr + " hrs " + upTimeMin + " mins " + upTimeSec + " secs<br>");
+				responseStream.println("<br>");
 			}
-			responseStream.println("Version: " + new EPadWebServerVersion().getVersion() + " Build Date: " + new EPadWebServerVersion().getBuildDate() + " Build Host: " + new EPadWebServerVersion().getBuildHost());
+			responseStream.println("Version: " + new EPadWebServerVersion().getVersion() + " Build Date: " + new EPadWebServerVersion().getBuildDate() + " Build Host: " + new EPadWebServerVersion().getBuildHost() + "<br>");
 			if (validSession) {
 				EPadPlugin ePadPlugin = new EPadPluginImpl();
-				responseStream.println();
-				responseStream.println("Plugin Version - interface:      " + EPadPlugin.PLUGIN_INTERFACE_VERSION);
-				responseStream.println("Plugin Version - implementation: " + ePadPlugin.getPluginImplVersion());
+				Set<String> plugins = PluginHandlerMap.getInstance().getAllPluginNames();
+				responseStream.println("<br>");
+				responseStream.println("Loaded Plugins:<br>");
+				for (String plugin: plugins)
+					responseStream.println("&nbsp;&nbsp;&nbsp;<b>" + plugin + "</b><br>");
+					
+				//responseStream.println("Plugin Version - interface:      " + EPadPlugin.PLUGIN_INTERFACE_VERSION + "<br>");
+				//responseStream.println("Plugin Version - implementation: " + ePadPlugin.getPluginImplVersion() + "<br>");
 				EpadDatabase epadDatabase = EpadDatabase.getInstance();
-				responseStream.println();
-				responseStream.println("ePAD database startup time: " + epadDatabase.getStartupTime() + " ms, database version: " + epadDatabase.getEPADDatabaseOperations().getDBVersion());
+				responseStream.println("<br>");
+				responseStream.println("ePAD database startup time: " + epadDatabase.getStartupTime() + " ms, database version: " + epadDatabase.getEPADDatabaseOperations().getDBVersion() + "<br>");
 				Dcm4CheeDatabase dcm4CheeDatabase = Dcm4CheeDatabase.getInstance();
-				responseStream.println();
-				responseStream.println("DCM4CHEE database startup time: " + dcm4CheeDatabase.getStartupTime() + " ms");
-				responseStream.println();
-				responseStream.println("Config Server: " + EPADConfig.xnatServer);
-				responseStream.println("Config serverProxy: " + EPADConfig.getParamValue("serverProxy"));
-				responseStream.println("Config webserviceBase: " + EPADConfig.getParamValue("webserviceBase"));
-				responseStream.println("Hostname: " + InetAddress.getLocalHost().getHostName());
-				responseStream.println("IP Address: " + EpadStatisticsTask.getIPAddress());
-				responseStream.println();
+				responseStream.println("<br>");
+				responseStream.println("DCM4CHEE database startup time: " + dcm4CheeDatabase.getStartupTime() + " ms" + "<br>");
+				responseStream.println("<br>");
+				responseStream.println("Config Server: " + EPADConfig.xnatServer + "<br>");
+				responseStream.println("Config serverProxy: " + EPADConfig.getParamValue("serverProxy") + "<br>");
+				responseStream.println("Config webserviceBase: " + EPADConfig.getParamValue("webserviceBase") + "<br>");
+				responseStream.println("Hostname: " + InetAddress.getLocalHost().getHostName() + "<br>");
+				responseStream.println("IP Address: " + EpadStatisticsTask.getIPAddress() + "<br>");
+				responseStream.println("<br>");
 				String sessionID = SessionService.getJSessionIDFromRequest(httpRequest);
 				String username = EPADSessionOperations.getSessionUser(sessionID);
 				if ("admin".equals(username)) {
-					responseStream.println("Current Sessions: ");
+					responseStream.println("Current Sessions: " + "<br>");
 					Map<String, EPADSession> sessions = EPADSessionOperations.getCurrentSessions();
 					for (String id: sessions.keySet()) {
 						EPADSession session = sessions.get(id);
-						responseStream.println("  User: " + session.getUsername() + ":" + session.getCreatedTime());
+						responseStream.println("  User: " + session.getUsername() + " Started:" + session.getCreatedTime() + "<br>");
 					}
+					Collection<User> users = DefaultEpadProjectOperations.getUserCache();
+					responseStream.println("<br><table border=1 cellpadding=2><tr style='font-weight: bold;'><td align=center>User</td><td align=center>Task</td><td align=center>Target</td><td align=center>Status</td><td align=center>Start</td><td align=center>Complete</td></tr>");
+					for (User user: users)
+					{
+						Collection<TaskStatus> tss = user.getCurrentTasks().values();
+						for (TaskStatus ts: tss)
+						{
+							responseStream.println("<tr><td>" + user.getUsername() + "</td><td>" + ts.type + "</td><td>" + ts.target + "</td><td>" + ts.status + "</td><td>" + ts.starttime + "</td><td>" + ts.completetime + "</td></tr>");
+						}
+					}
+					responseStream.println("</table>");
 				}
-				responseStream.println();
-
+				responseStream.println("</body>");
 			} 
 			statusCode = HttpServletResponse.SC_OK;
 		} catch (Throwable t) {

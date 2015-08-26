@@ -29,6 +29,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -44,9 +45,12 @@ import edu.stanford.epad.common.util.EPADFileUtils;
 import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.epad.dtos.PNGFileProcessingStatus;
 import edu.stanford.epad.dtos.SeriesProcessingStatus;
+import edu.stanford.epad.dtos.TaskStatus;
 import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeDatabaseUtils;
 import edu.stanford.epad.epadws.epaddb.EpadDatabase;
 import edu.stanford.epad.epadws.epaddb.EpadDatabaseOperations;
+import edu.stanford.epad.epadws.service.DefaultEpadProjectOperations;
+import edu.stanford.epad.epadws.service.EpadProjectOperations;
 import edu.stanford.epad.epadws.service.UserProjectService;
 
 public class SingleFrameDICOMPngGeneratorTask implements GeneratorTask
@@ -96,6 +100,7 @@ public class SingleFrameDICOMPngGeneratorTask implements GeneratorTask
 	private void generatePNGs()
 	{
 		EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
+		EpadProjectOperations projectOperations = DefaultEpadProjectOperations.getInstance();
 		File inputDICOMFile = dicomFile;
 		File outputPNGFile = pngFile;
 		Map<String, String> epadFilesRow = new HashMap<String, String>();
@@ -103,9 +108,10 @@ public class SingleFrameDICOMPngGeneratorTask implements GeneratorTask
 
 		try {
 			imagesBeingProcessed.add(imageUID);
+			String username = null;
 			if (UserProjectService.pendingUploads.containsKey(studyUID))
 			{
-				String username = UserProjectService.pendingUploads.get(studyUID);
+				username = UserProjectService.pendingUploads.get(studyUID);
 				if (username != null && username.indexOf(":") != -1)
 					username = username.substring(0, username.indexOf(":"));
 				if (username != null)
@@ -118,6 +124,7 @@ public class SingleFrameDICOMPngGeneratorTask implements GeneratorTask
 					UserProjectService.pendingUploads.remove(studyUID);
 				}
 			}
+			projectOperations.updateUserTaskStatus(username, TaskStatus.TASK_DICOM_PNG_GEN, seriesUID, "Generating PNGs, instance:" + instanceNumber, null, null);
 			DicomReader instance = new DicomReader(inputDICOMFile);
 			String pngFilePath = outputPNGFile.getAbsolutePath();
 			outputPNGFile = new File(pngFilePath);
@@ -141,6 +148,7 @@ public class SingleFrameDICOMPngGeneratorTask implements GeneratorTask
 
 			epadDatabaseOperations.updateEpadFileRow(epadFilesRow.get("file_path"), PNGFileProcessingStatus.DONE,
 					getFileSize(epadFilesRow), "");
+			projectOperations.updateUserTaskStatus(username, TaskStatus.TASK_DCM4CHE_SEND, seriesUID, "Completed PNGs", null, new Date());
 		} catch (FileNotFoundException e) {
 			log.warning("Failed to create PNG for instance " + instanceNumber + " in series " + seriesUID + " for patient "
 					+ patientName, e);

@@ -23,10 +23,12 @@
 //USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package edu.stanford.epad.epadws.processing.pipeline.task;
 
+import java.util.Date;
 import java.util.Set;
 
 import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADLogger;
+import edu.stanford.epad.dtos.TaskStatus;
 import edu.stanford.epad.epadws.handlers.core.StudyReference;
 import edu.stanford.epad.epadws.queries.DefaultEpadOperations;
 import edu.stanford.epad.epadws.queries.EpadOperations;
@@ -77,6 +79,8 @@ public class SubjectDataDeleteTask implements Runnable
     		}
     		if (deleteCompletely)
     		{
+    			EpadProjectOperations projectOperations = DefaultEpadProjectOperations.getInstance();
+    			projectOperations.updateUserTaskStatus(username, TaskStatus.TASK_DELETE_PATIENT, patientID, "Delete Patient Started", new Date(), null);
 				Set<String> subjectStudyUIDs = UserProjectService.getStudyUIDsForSubject(projectID, patientID);
 				EpadOperations epadOperations = DefaultEpadOperations.getInstance();
 				for (String studyUID: subjectStudyUIDs)
@@ -88,10 +92,11 @@ public class SubjectDataDeleteTask implements Runnable
 					} else {
 						// adminSessionID = EPADSessionOperations.getAdminSessionID(); // Not needed
 					}
+		   			projectOperations.updateUserTaskStatus(username, TaskStatus.TASK_DELETE_PATIENT, patientID, "Delete Patient, deleting Study:" + studyUID, null, null);
 					epadOperations.studyDelete(studyReference, adminSessionID, false, username);
 				}
-				EpadProjectOperations projectOperations = DefaultEpadProjectOperations.getInstance();
 				projectOperations.deleteSubject(username, patientID);
+	   			projectOperations.updateUserTaskStatus(username, TaskStatus.TASK_DELETE_PATIENT, patientID, "Delete Patient Completed", null, new Date());
     		}
 		} catch (Exception e) {
 			log.warning("Error deleting patient " + patientID + " in project " + projectID, e);

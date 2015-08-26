@@ -46,6 +46,7 @@ import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.epad.common.util.MailUtil;
 import edu.stanford.epad.dtos.EPADAIM;
+import edu.stanford.epad.dtos.TaskStatus;
 import edu.stanford.epad.epadws.aim.AIMQueries;
 import edu.stanford.epad.epadws.aim.AIMSearchType;
 import edu.stanford.epad.epadws.aim.AIMUtil;
@@ -336,6 +337,7 @@ public class UserProjectService {
 		for (File dicomFile : files) {
 			try {
 				log.info("File " + i++ + " : " +dicomFile.getName());
+				projectOperations.updateUserTaskStatus(username, TaskStatus.TASK_ADD_TO_PROJECT, dicomUploadDirectory.getName(), "Files processed: " + i, null, null);
 				if (createProjectEntitiesFromDICOMFile(dicomFile, projectID, sessionID, username))
 					numberOfDICOMFiles++;
 			} catch (Throwable x) {
@@ -345,6 +347,7 @@ public class UserProjectService {
 						"Error processing dicom:" + dicomFile.getName(), 
 						dicomFile.getName(), "", dicomFile.getName(), dicomFile.getName(), dicomFile.getName(), projectID, "Error:" + x.getMessage());				}
 		}
+		projectOperations.updateUserTaskStatus(username, TaskStatus.TASK_ADD_TO_PROJECT, dicomUploadDirectory.getName(), "Files processed: " + numberOfDICOMFiles, null, new Date());
 		log.info("Number of dicom files in upload:" + numberOfDICOMFiles);
 		return numberOfDICOMFiles;
 	}

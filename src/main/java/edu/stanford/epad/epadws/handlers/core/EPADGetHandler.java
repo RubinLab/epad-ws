@@ -52,6 +52,7 @@ import edu.stanford.epad.dtos.EPADFrame;
 import edu.stanford.epad.dtos.EPADFrameList;
 import edu.stanford.epad.dtos.EPADImage;
 import edu.stanford.epad.dtos.EPADImageList;
+import edu.stanford.epad.dtos.EPADObjectList;
 import edu.stanford.epad.dtos.EPADProject;
 import edu.stanford.epad.dtos.EPADProjectList;
 import edu.stanford.epad.dtos.EPADSeries;
@@ -1064,6 +1065,13 @@ public class EPADGetHandler
 				String user = HandlerUtil.getTemplateParameter(templateMap, "username");
 				EPADEventLogList logs = epadOperations.getEventLogs(username, user, start, count);
 				responseStream.append(new Gson().toJson(logs));
+				statusCode = HttpServletResponse.SC_OK;
+			
+			} else if (HandlerUtil.matchesTemplate(UsersRouteTemplates.USER_TASKSTATUS, pathInfo)) {
+				Map<String, String> templateMap = HandlerUtil.getTemplateMap(UsersRouteTemplates.USER_TASKSTATUS, pathInfo);
+				String user = HandlerUtil.getTemplateParameter(templateMap, "username");
+				EPADObjectList tasks = epadOperations.getTaskStatuses(username, user);
+				responseStream.append(new Gson().toJson(tasks));
 				statusCode = HttpServletResponse.SC_OK;
 			
 			} else if (HandlerUtil.matchesTemplate(UsersRouteTemplates.USER_WORKLISTS, pathInfo)) {

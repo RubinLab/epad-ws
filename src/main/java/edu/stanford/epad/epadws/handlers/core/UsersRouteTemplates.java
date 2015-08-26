@@ -29,6 +29,7 @@ public class UsersRouteTemplates
 	public static final String USER = USER_LIST + "{username}";
 	public static final String USER_SESSIONS = USER + "/sessions/";
 	public static final String USER_EVENTLOGS = USER + "/eventlogs/";
+	public static final String USER_TASKSTATUS = USER + "/taskstatus/";
 	public static final String USER_SENDNEWPASSWORD = USER + "/sendnewpassword/";
 	public static final String USER_WORKLISTS = USER + "/worklists/";
 	public static final String USER_WORKLIST = USER_WORKLISTS + "{worklistID}";

@@ -26,6 +26,7 @@ package edu.stanford.epad.epadws.processing.pipeline.watcher;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -37,6 +38,7 @@ import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.epad.dtos.PNGFileProcessingStatus;
 import edu.stanford.epad.dtos.SeriesProcessingStatus;
+import edu.stanford.epad.dtos.TaskStatus;
 import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeDatabase;
 import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeDatabaseOperations;
 import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeDatabaseUtils;
@@ -54,6 +56,8 @@ import edu.stanford.epad.epadws.processing.pipeline.task.SingleFrameDICOMPngGene
 import edu.stanford.epad.epadws.processing.pipeline.threads.ShutdownSignal;
 import edu.stanford.epad.epadws.queries.DefaultEpadOperations;
 import edu.stanford.epad.epadws.queries.EpadOperations;
+import edu.stanford.epad.epadws.service.DefaultEpadProjectOperations;
+import edu.stanford.epad.epadws.service.EpadProjectOperations;
 import edu.stanford.epad.epadws.service.UserProjectService;
 
 /**
@@ -102,6 +106,7 @@ public class DICOMSeriesWatcher implements Runnable
 		Thread.currentThread().setPriority(Thread.MIN_PRIORITY); // Let interactive thread run sooner
 		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
 		EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
+		EpadProjectOperations projectOperations = DefaultEpadProjectOperations.getInstance();
 
 		queueAndWatcherManager = QueueAndWatcherManager.getInstance();
 		Calendar prevTime = null;
@@ -145,6 +150,11 @@ public class DICOMSeriesWatcher implements Runnable
 						{
 							log.info("Run:" + count + " Submitted " + unprocessedDICOMFiles.size() + " image(s) for series " + seriesUID
 									+ " to PNG generator");
+							String username = UserProjectService.pendingUploads.get(studyUID);
+							if (username != null && username.indexOf(":") != -1)
+								username = username.substring(0, username.indexOf(":"));
+							if (username != null)
+								projectOperations.updateUserTaskStatus(username, TaskStatus.TASK_DICOM_PNG_GEN, seriesUID, "Generating PNGs", new Date(), null);
 							queueAndWatcherManager.addDICOMFileToPNGGeneratorPipeline(patientName, unprocessedDICOMFiles);
 						}
 						activeSeriesPipelineState.setSeriesProcessingState(DicomSeriesProcessingState.IN_PIPELINE);
@@ -196,6 +206,7 @@ public class DICOMSeriesWatcher implements Runnable
 								username = username.substring(0, username.indexOf(":"));
 							if (username != null)
 							{
+								projectOperations.updateUserTaskStatus(username, TaskStatus.TASK_DICOM_PNG_GEN, seriesUID, "Generating PNGs Completed", null, new Date());
 								epadDatabaseOperations.insertEpadEvent(
 										username, 
 										"Image Generation Complete", 

@@ -25,6 +25,7 @@ package edu.stanford.epad.epadws.service;
 //USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import java.io.File;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
@@ -40,6 +41,7 @@ import org.mindrot.jbcrypt.BCrypt;
 
 import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADLogger;
+import edu.stanford.epad.dtos.TaskStatus;
 import edu.stanford.epad.dtos.internal.DCM4CHEESeries;
 import edu.stanford.epad.epadws.epaddb.DatabaseUtils;
 import edu.stanford.epad.epadws.models.DisabledTemplate;
@@ -99,6 +101,9 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		subjectCache = new HashMap<String, Subject>();
 	}
 	
+	public static Collection<User> getUserCache() {
+		return userCache.values();
+	}
 	/**
 	 * @param username
 	 * @return
@@ -343,6 +348,34 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 			if (user != null)
 				user.addMessageLog(Level.INFO, message);
 		} catch (Exception e) {	}
+	}
+
+	static SimpleDateFormat dateformat = new SimpleDateFormat("yyyyMMdd HH:mm:ss");
+	@Override
+	public void updateUserTaskStatus(String username, String type,
+			String target, String status, Date startTime, Date completeTime) {
+		if (username == null || username.length() == 0) return;
+		User user = null;
+		try {
+			user = getUser(username);
+		} catch (Exception e) {
+		}
+		if (user != null) {
+			TaskStatus tstat = user.getTaskStatus(type, target);
+			if (tstat == null) tstat = new TaskStatus();
+			tstat.username = username;
+			tstat.status = status;
+			if (startTime != null)
+				tstat.starttime = dateformat.format(startTime);
+			if (completeTime != null)
+				tstat.completetime = dateformat.format(completeTime);
+			tstat.type = type;
+			tstat.target = target;
+			tstat.statustime = dateformat.format(new Date());
+			if (tstat.starttime == null)
+				tstat.starttime = tstat.statustime;
+			user.addTaskStatus(tstat);
+		}
 	}
 
 	@Override

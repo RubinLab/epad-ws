@@ -28,9 +28,11 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 
 import org.apache.log4j.Level;
 
+import edu.stanford.epad.dtos.TaskStatus;
 import edu.stanford.epad.epadws.models.dao.AbstractDAO;
 
 public class User extends AbstractDAO {
@@ -50,9 +52,12 @@ public class User extends AbstractDAO {
 	String creator;
 	Date createdTime;
 	Date updateTime;
+	
 	transient String role;  // Only valid within context of a project
 	transient List<MessageLog> messageLogs = new ArrayList<MessageLog>();
 	transient Map<String, String> projectToRole; // List of projects and the user's role in them
+	transient Map<String, TaskStatus> currentTasks = new TreeMap<String, TaskStatus>();
+	
 	public static final String CreateProjectPermission = "CreateProject";
 	public static final String CreateWorkListPermission = "CreateWorkList";
 	public static final String CreateUserPermission = "CreateUser";
@@ -219,7 +224,7 @@ public class User extends AbstractDAO {
 		return messageLogs;
 	}
 
-	public void setEventLogs(List<EventLog> eventLogs) {
+	public void setMessageLogs(List<MessageLog> messageLogs) {
 		this.messageLogs = messageLogs;
 	}
 
@@ -229,6 +234,24 @@ public class User extends AbstractDAO {
 		messageLogs.add(el);
 	}
 	
+	public Map<String, TaskStatus> getCurrentTasks() {
+		return currentTasks;
+	}
+
+	public void setCurrentTasks(Map<String, TaskStatus> currentTasks) {
+		this.currentTasks = currentTasks;
+	}
+
+	public void addTaskStatus(TaskStatus taskStatus)
+	{
+		currentTasks.put(taskStatus.type + "_" + taskStatus.target, taskStatus);
+	}
+
+	public TaskStatus getTaskStatus(String type, String target)
+	{
+		return currentTasks.get(type + "_" + target);
+	}
+
 	public boolean hasPermission(String permission)
 	{
 		if (("," + getPermissions() + ",").indexOf("," + permission + ",") != -1)
