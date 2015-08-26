@@ -266,7 +266,7 @@ public class QueueAndWatcherManager
 		String rtFilePath = createOutputPNGFilePathForSingleFrameDICOMImage(dicomFileDescription).replace(".png", ".mat");
 		EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
 		insertEpadFile(epadDatabaseOperations, rtFilePath, 0, dicomFileDescription.imageUID);
-		RTDICOMProcessingTask rtTask = new RTDICOMProcessingTask(dicomFileDescription.seriesUID, dicomFileDescription.imageUID,
+		RTDICOMProcessingTask rtTask = new RTDICOMProcessingTask(dicomFileDescription.studyUID, dicomFileDescription.seriesUID, dicomFileDescription.imageUID,
 				dicomFile, rtFilePath);
 
 		pngGeneratorTaskQueue.offer(rtTask);

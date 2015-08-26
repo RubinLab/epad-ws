@@ -1973,7 +1973,8 @@ public class AIMUtil
 		{
 			EPADAIM aim = epadDatabaseOperations.getAIM(aimID);
 			if (aim.xml == null || aim.xml.length() == 0)
-				epadDatabaseOperations.deleteAIM("admin", aimID);
+				log.warning("Annotation " + aimID + " not found in ExistDB");
+			//	epadDatabaseOperations.deleteAIM("admin", aimID);
 		}
 	}	
 
