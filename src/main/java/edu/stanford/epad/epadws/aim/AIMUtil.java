@@ -1731,10 +1731,15 @@ public class AIMUtil
 
 	public static String readPlugInData(EPADAIM aim, String templateName, String jsessionID) throws Exception
 	{
-		String fileName = EPADConfig.getEPADWebServerResourcesDir() + "plugins/" + aim.aimID + "_" + templateName + ".json";
+		String fileName = EPADConfig.getEPADWebServerAnnotationsDir() + "plugins/" + aim.aimID + "_" + templateName + ".json";
 		File dataFile = new File(fileName);
 		if (!dataFile.exists())
-			throw new Exception("Plugin data file does not exist:" + fileName);
+		{
+			fileName = EPADConfig.getEPADWebServerResourcesDir() + "plugins/" + aim.aimID + "_" + templateName + ".json";
+			dataFile = new File(fileName);
+			if (!dataFile.exists())
+				throw new Exception("Plugin data file does not exist:" + fileName);
+		}
 		String data = EPADFileUtils.readFileAsString(dataFile);
 		return data;
 	}
@@ -1968,7 +1973,8 @@ public class AIMUtil
 		{
 			EPADAIM aim = epadDatabaseOperations.getAIM(aimID);
 			if (aim.xml == null || aim.xml.length() == 0)
-				epadDatabaseOperations.deleteAIM("admin", aimID);
+				log.warning("Annotation " + aimID + " not found in ExistDB");
+			//	epadDatabaseOperations.deleteAIM("admin", aimID);
 		}
 	}	
 
