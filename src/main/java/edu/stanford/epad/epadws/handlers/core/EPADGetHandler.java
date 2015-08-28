@@ -50,6 +50,7 @@ import edu.stanford.epad.dtos.EPADFrame;
 import edu.stanford.epad.dtos.EPADFrameList;
 import edu.stanford.epad.dtos.EPADImage;
 import edu.stanford.epad.dtos.EPADImageList;
+import edu.stanford.epad.dtos.EPADPluginParameterList;
 import edu.stanford.epad.dtos.EPADProject;
 import edu.stanford.epad.dtos.EPADProjectList;
 import edu.stanford.epad.dtos.EPADSeries;
@@ -84,6 +85,7 @@ import edu.stanford.epad.epadws.models.RemotePACQuery;
 import edu.stanford.epad.epadws.queries.DefaultEpadOperations;
 import edu.stanford.epad.epadws.queries.EpadOperations;
 import edu.stanford.epad.epadws.security.EPADSession;
+import edu.stanford.epad.epadws.service.PluginOperations;
 import edu.stanford.epad.epadws.service.RemotePACService;
 import edu.stanford.epad.epadws.service.TCIAService;
 import edu.stanford.epad.epadws.service.UserProjectService;
@@ -110,6 +112,7 @@ public class EPADGetHandler
 	protected static int handleGet(HttpServletRequest httpRequest, HttpServletResponse httpResponse, PrintWriter responseStream, String username, String sessionID)
 	{
 		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
+		PluginOperations pluginOperations= PluginOperations.getInstance();
 		String pathInfo = httpRequest.getPathInfo();
 		int statusCode;
 		try {
@@ -1448,6 +1451,14 @@ public class EPADGetHandler
 				responseStream.append(templates.toJSON());
 				statusCode = HttpServletResponse.SC_OK;
 
+			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.PARAMETER_LIST, pathInfo)) { //ML
+				TemplateReference reference = TemplateReference.extract(ProjectsRouteTemplates.PARAMETER_LIST, pathInfo);
+				
+				EPADPluginParameterList parameters = pluginOperations.getParameterForTemplateForProject(reference.projectID, reference.templateCode);
+				
+				responseStream.append(parameters.toJSON());
+				statusCode = HttpServletResponse.SC_OK;
+				
 			} else if (HandlerUtil.matchesTemplate(TemplatesRouteTemplates.TEMPLATE_LIST, pathInfo)) {
 				EPADTemplateContainerList templates = epadOperations.getTemplateDescriptions(username, sessionID);
 				responseStream.append(templates.toJSON());
