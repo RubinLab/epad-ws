@@ -337,6 +337,17 @@ public class UserProjectService {
 		for (File dicomFile : files) {
 			try {
 				log.info("File " + i++ + " : " +dicomFile.getName());
+				if (dicomFile.getName().endsWith(".xml"))
+				{
+					try {
+						if (AIMUtil.saveAIMAnnotation(dicomFile, projectID, sessionID, username))
+							log.warning("Error processing aim file:" + dicomFile.getName());
+						dicomFile.delete();
+						continue;
+					} catch (Exception x) {
+						
+					}
+				}
 				projectOperations.updateUserTaskStatus(username, TaskStatus.TASK_ADD_TO_PROJECT, dicomUploadDirectory.getName(), "Files processed: " + i, null, null);
 				if (createProjectEntitiesFromDICOMFile(dicomFile, projectID, sessionID, username))
 					numberOfDICOMFiles++;

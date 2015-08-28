@@ -239,13 +239,16 @@ public class EPADUploadDirWatcher implements Runnable
 
 	private void cleanUploadDirectory(File dir)
 	{ // TODO Should be deleteFilesInDirectoryWithoutExtension("dcm");
-		EPADFileUtils.deleteFilesInDirectoryWithExtension(dir, "properties");
-		EPADFileUtils.deleteFilesInDirectoryWithExtension(dir, "zip");
-		EPADFileUtils.deleteFilesInDirectoryWithExtension(dir, "log");
-		EPADFileUtils.deleteFilesInDirectoryWithExtension(dir, "json");
-		EPADFileUtils.deleteFilesInDirectoryWithExtension(dir, "jpeg");
-		EPADFileUtils.deleteFilesInDirectoryWithExtension(dir, "jpg");
-		EPADFileUtils.deleteFilesInDirectoryWithExtension(dir, "png");
+		if (dir.exists())
+		{
+			EPADFileUtils.deleteFilesInDirectoryWithExtension(dir, "properties");
+			EPADFileUtils.deleteFilesInDirectoryWithExtension(dir, "zip");
+			EPADFileUtils.deleteFilesInDirectoryWithExtension(dir, "log");
+			EPADFileUtils.deleteFilesInDirectoryWithExtension(dir, "json");
+			EPADFileUtils.deleteFilesInDirectoryWithExtension(dir, "jpeg");
+			EPADFileUtils.deleteFilesInDirectoryWithExtension(dir, "jpg");
+			EPADFileUtils.deleteFilesInDirectoryWithExtension(dir, "png");
+		}
 	}
 
 	private boolean waitOnEmptyUploadDirectory(File dir) throws InterruptedException
@@ -440,8 +443,11 @@ public class EPADUploadDirWatcher implements Runnable
 
 	private void deleteUploadDirectory(File dir)
 	{
-		log.info("Deleting upload directory " + dir.getAbsolutePath());
-		EPADFileUtils.deleteDirectoryAndContents(dir);
+		if (dir.exists())
+		{
+			log.info("Deleting upload directory " + dir.getAbsolutePath());
+			EPADFileUtils.deleteDirectoryAndContents(dir);
+		}
 	}
 
 	private void writeExceptionLog(File dir, Exception e)

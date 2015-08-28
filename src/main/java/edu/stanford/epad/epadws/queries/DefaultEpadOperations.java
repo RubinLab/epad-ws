@@ -1853,18 +1853,25 @@ public class DefaultEpadOperations implements EpadOperations
 			String username, String sessionID) throws Exception {
 		EPADTemplateContainerList fileList = new EPADTemplateContainerList();
 		List<EpadFile> efiles = projectOperations.getEpadFiles(projectID, null, null, null, FileType.TEMPLATE, false);
+		Set<String> templateCodes = new HashSet<String>();
 		for (EpadFile efile: efiles)
 		{
 			EPADTemplateContainer template = convertEpadFileToTemplate(projectID, efile, new File(EPADConfig.getEPADWebServerResourcesDir() + getEpadFilePath(efile)));
 			if (template.enabled)
+			{
 				fileList.addTemplate(template);
+				templateCodes.add(template.templateCode);
+			}
 		}
 		efiles = projectOperations.getEpadFiles(EPADConfig.xnatUploadProjectID, null, null, null, FileType.TEMPLATE, false);
 		List<String> disabledTemplatesNames = projectOperations.getDisabledTemplates(projectID);
 		for (EpadFile efile: efiles)
 		{
 			EPADTemplateContainer template = convertEpadFileToTemplate(projectID, efile, new File(EPADConfig.getEPADWebServerResourcesDir() + getEpadFilePath(efile)));
-			if (template.enabled && !disabledTemplatesNames.contains(template.fileName) && !disabledTemplatesNames.contains(template.templateName) && !disabledTemplatesNames.contains(template.templateCode))
+			if (template.enabled && !disabledTemplatesNames.contains(template.fileName) 
+					&& !disabledTemplatesNames.contains(template.templateName) 
+					&& !disabledTemplatesNames.contains(template.templateCode) 
+					&& !templateCodes.contains(template.templateCode))
 				fileList.addTemplate(template);
 		}
 		return fileList;
