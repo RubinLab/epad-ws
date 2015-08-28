@@ -66,7 +66,7 @@ public class PluginOperations {
 			throws Exception {
 
 			
-		List<ProjectToPluginParameter> objects = new ProjectToPluginParameter().getObjects(" project_id =" + id + " and templateCode ='" +templateCode + "' ");
+		List<ProjectToPluginParameter> objects = new ProjectToPluginParameter().getObjects(" project_id =" + id + " and template_code ='" +templateCode + "' ");
 		
 		EPADPluginParameterList parameters = new EPADPluginParameterList();
 		for (ProjectToPluginParameter object : objects) {
