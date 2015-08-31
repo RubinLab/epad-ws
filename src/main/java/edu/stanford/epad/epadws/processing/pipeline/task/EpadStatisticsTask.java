@@ -115,7 +115,8 @@ public class EpadStatisticsTask implements Runnable
 				if (daily || now.get(Calendar.DAY_OF_WEEK) == Calendar.SUNDAY)
 				{
 					long delay = new Random().nextInt(1800 + 1);
-					Thread.sleep(1000*delay); // So that all don't do this at the same time
+					if (EPADConfig.xnatServer.indexOf("stanford") == -1)
+						Thread.sleep(1000*delay); // So that all don't do this at the same time
 					String epadUrl = EPADConfig.getParamValue("EpadStatisticsURL", "https://epad-public.stanford.edu/epad/statistics/");
 					epadUrl = epadUrl + "?numOfUsers=" + users;
 					epadUrl = epadUrl + "&numOfProjects=" + users;

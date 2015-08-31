@@ -62,6 +62,7 @@ import edu.stanford.epad.epadws.service.EpadProjectOperations;
 import edu.stanford.epad.epadws.service.EpadWorkListOperations;
 import edu.stanford.epad.epadws.service.RemotePACService;
 import edu.stanford.epad.epadws.service.TCIAService;
+import edu.stanford.epad.epadws.service.UserProjectService;
 
 /**
  * @author martin
@@ -677,6 +678,10 @@ public class EPADPutHandler
 					throw new Exception("Invalid action " + action + " specified, should be Undo or Redo");
 					
 			
+			} else if (HandlerUtil.matchesTemplate(UsersRouteTemplates.USER_SENDNEWPASSWORD, pathInfo)) {
+				Map<String, String> templateMap = HandlerUtil.getTemplateMap(UsersRouteTemplates.USER_SENDNEWPASSWORD, pathInfo);
+				String account = HandlerUtil.getTemplateParameter(templateMap, "username");					
+				UserProjectService.sendNewPassword(username, account);
 			} else {
 				statusCode = HandlerUtil.badRequestJSONResponse(BAD_PUT_MESSAGE + ":" + pathInfo, responseStream, log);
 			}

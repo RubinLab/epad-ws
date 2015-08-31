@@ -38,9 +38,12 @@ import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 
 import edu.stanford.epad.common.util.EPADLogger;
+import edu.stanford.epad.dtos.TaskStatus;
 import edu.stanford.epad.epadws.epaddb.EpadDatabase;
 import edu.stanford.epad.epadws.epaddb.EpadDatabaseOperations;
 import edu.stanford.epad.epadws.handlers.HandlerUtil;
+import edu.stanford.epad.epadws.service.DefaultEpadProjectOperations;
+import edu.stanford.epad.epadws.service.EpadProjectOperations;
 import edu.stanford.epad.epadws.service.SessionService;
 
 /**
@@ -116,6 +119,12 @@ public class EventHandler extends AbstractHandler
 									patient_name, template_id, template_name, plugin_name);
 							responseStream.flush();
 							statusCode = HttpServletResponse.SC_OK;
+							EpadProjectOperations projectOperations = DefaultEpadProjectOperations.getInstance();
+							String username = SessionService.getUsernameForSession(jsessionID);
+							Date endDate = null;
+							if ("complete".equalsIgnoreCase(event_status) || "failed".equalsIgnoreCase(event_status))
+								endDate = new Date();
+							projectOperations.updateUserTaskStatus(username, TaskStatus.TASK_PLUGIN, plugin_name + ":" + aim_uid, event_status, null, endDate);
 						} else {
 							log.warning("Required parameter missing, event_status:" + event_status +
 									" aim_uid:" + aim_uid + " aim_name" + aim_name + 

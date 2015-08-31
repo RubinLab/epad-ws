@@ -237,8 +237,8 @@ public class AIMDatabaseOperations {
 	        String studyID = "";
 	        String seriesID = "";
 	        
-	        if (statement != null)
-	        	this.statement.executeUpdate("DELETE FROM annotations");
+	        //if (statement != null)
+	        //	this.statement.executeUpdate("DELETE FROM annotations");
 	
 	        NodeList listChilds = node.getChildNodes();
 	        for (int i = 0; i < listChilds.getLength(); i++) {

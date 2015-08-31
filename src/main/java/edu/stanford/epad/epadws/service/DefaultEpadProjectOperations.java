@@ -25,6 +25,7 @@ package edu.stanford.epad.epadws.service;
 //USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import java.io.File;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
@@ -40,6 +41,7 @@ import org.mindrot.jbcrypt.BCrypt;
 
 import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADLogger;
+import edu.stanford.epad.dtos.TaskStatus;
 import edu.stanford.epad.dtos.internal.DCM4CHEESeries;
 import edu.stanford.epad.epadws.epaddb.DatabaseUtils;
 import edu.stanford.epad.epadws.models.DisabledTemplate;
@@ -99,6 +101,9 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		subjectCache = new HashMap<String, Subject>();
 	}
 	
+	public static Collection<User> getUserCache() {
+		return userCache.values();
+	}
 	/**
 	 * @param username
 	 * @return
@@ -345,10 +350,47 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		} catch (Exception e) {	}
 	}
 
+	static SimpleDateFormat dateformat = new SimpleDateFormat("yyyyMMdd HH:mm:ss");
+	@Override
+	public void updateUserTaskStatus(String username, String type,
+			String target, String status, Date startTime, Date completeTime) {
+		if (username == null || username.length() == 0) return;
+		User user = null;
+		try {
+			user = getUser(username);
+		} catch (Exception e) {
+		}
+		if (user != null) {
+			TaskStatus tstat = user.getTaskStatus(type, target);
+			if (tstat == null) tstat = new TaskStatus();
+			tstat.username = username;
+			tstat.status = status;
+			if (startTime != null)
+				tstat.starttime = dateformat.format(startTime);
+			if (completeTime != null)
+				tstat.completetime = dateformat.format(completeTime);
+			tstat.type = type;
+			tstat.target = target;
+			tstat.statustime = dateformat.format(new Date());
+			if (tstat.starttime == null)
+				tstat.starttime = tstat.statustime;
+			user.addTaskStatus(tstat);
+		}
+	}
+
 	@Override
 	public void createEventLog(String username, String projectID,
 			String subjectID, String studyUID, String seriesUID,
-			String imageUID, String aimID, String function, String params) {
+			String imageUID, String aimID, String function,
+			String params) {
+		createEventLog(username, projectID, subjectID, studyUID, seriesUID, imageUID, aimID, null, function, params, false);
+	}
+
+	@Override
+	public void createEventLog(String username, String projectID,
+			String subjectID, String studyUID, String seriesUID,
+			String imageUID, String aimID, String filename, String function,
+			String params, boolean error) {
 		EventLog elog = new EventLog();
 		elog.setUsername(username);
 		elog.setProjectID(projectID);
@@ -357,8 +399,10 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		elog.setSeriesUID(seriesUID);
 		elog.setImageUID(imageUID);
 		elog.setAimID(aimID);
+		elog.setFilename(filename);
 		elog.setFunction(function);
 		elog.setParams(params);
+		elog.setError(error);
 		try {
 			elog.save();
 		} catch (Exception e) {
@@ -927,6 +971,41 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		if (project == null) return new ArrayList<Subject>();
 		
 		return getSubjectsByProjectId(project.getId(), sortBy);
+	}
+
+	@Override
+	public List<Subject> getUnassignSubjects() throws Exception {
+		Project project = this.getProject(EPADConfig.xnatUploadProjectID);
+		List psAll = new ProjectToSubject().getObjects("project_id = " + project.getId());
+		Set<Long> allIds = new HashSet<Long>();
+		for (Object obj: psAll)
+		{
+			long id = ((AbstractDAO) obj).getId();
+			allIds.add(id);
+		}
+		List psAsssigned = new ProjectToSubject().getObjects("project_id != " + project.getId());
+		Set<Long> assignedIds = new HashSet<Long>();
+		for (Object obj: psAsssigned)
+		{
+			long id = ((AbstractDAO) obj).getId();
+			assignedIds.add(id);
+		}
+		for (Long assignedId: assignedIds)
+		{
+			allIds.remove(assignedId);
+		}
+		String inclause = "";
+		String delim = "(";
+		for (Long id: allIds)
+		{
+			inclause = inclause + delim + id;
+		}
+		
+		List objects = new Subject().getObjects("id  in " + inclause + ") sort by name");
+		List<Subject> subjects = new ArrayList<Subject>();
+		subjects.addAll(objects);
+		
+		return subjects;
 	}
 
 	/**
@@ -1760,7 +1839,7 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 	 * @see edu.stanford.epad.epadws.service.EpadProjectOperations#getUserLogs(java.lang.String)
 	 */
 	@Override
-	public List<MessageLog> getUserLogs(String username) {
+	public List<MessageLog> getUserMessages(String username) {
 		try {
 			User user = getUser(username);
 			if (user != null)
@@ -1768,6 +1847,12 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		} catch (Exception e) {
 		}
 		return null;
+	}
+
+	@Override
+	public List<EventLog> getUseEventLogs(String username) throws Exception {
+		List<EventLog> events = new EventLog().getObjects("username ='" + username + "' order by createdtime desc");
+		return events;
 	}
 
 	/* (non-Javadoc)

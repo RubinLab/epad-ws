@@ -352,6 +352,7 @@ public class DownloadUtil {
 		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
 		List<String> fileNames = new ArrayList<String>();
 		EPADSeriesList seriesList = epadOperations.getSeriesDescriptions(studyReference, username, sessionID, searchFilter, false);
+		int imageCount = 0;
 		for (EPADSeries series: seriesList.ResultSet.Result)
 		{
 			if (!seriesSet.isEmpty() && !seriesSet.contains(series.seriesUID)) continue;
@@ -365,6 +366,7 @@ public class DownloadUtil {
 			int i = 0;
 			for (EPADImage image: imageList.ResultSet.Result)
 			{
+				imageCount++;
 				String name = image.imageUID + ".dcm";
 				File imageFile = new File(seriesDir, name);
 				fileNames.add("Series-" + series.seriesUID + "/" + name);
@@ -678,6 +680,52 @@ public class DownloadUtil {
 			responseStream.append(epadFile.toJSON());
 		}
 		EPADFileUtils.deleteDirectoryAndContents(downloadDir);
+	}
+
+	/**
+	 * Method to download file in resources folder
+	 * 
+	 * @param httpResponse
+	 * @param seriesReference
+	 * @param username
+	 * @param sessionID
+	 * @throws Exception
+	 */
+	public static void downloadResource(String relativePath, HttpServletResponse httpResponse, String username, String sessionID) throws Exception
+	{
+		String resourcesPath = EPADConfig.getEPADWebServerResourcesDir();
+		File file = new File(resourcesPath + "/" + relativePath);
+		if (!file.exists())
+			throw new Exception("Requested resource " + relativePath + " does not exist");
+			
+		if (file.isDirectory())
+			throw new Exception("Requested resource " + relativePath + " is a folder");
+				
+		httpResponse.setContentType("application/zip");
+		httpResponse.setHeader("Content-Disposition", "attachment;filename=\"" + file.getName() + "\"");
+		
+		OutputStream out = null;
+		BufferedInputStream fr = null;
+		try
+		{
+			out = httpResponse.getOutputStream();
+			fr = new BufferedInputStream(new FileInputStream(file));
+
+			byte buffer[] = new byte[0xffff];
+			int b;
+			while ((b = fr.read(buffer)) != -1)
+				out.write(buffer, 0, b);
+		}
+		catch (Exception e)
+		{
+			log.warning("Error streaming file", e);
+			throw e;
+		}
+		finally
+		{
+			if (fr != null)
+				fr.close();
+		}
 	}
 	
 	/**

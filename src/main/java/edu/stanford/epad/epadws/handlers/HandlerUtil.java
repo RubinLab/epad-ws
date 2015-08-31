@@ -87,7 +87,11 @@ public class HandlerUtil
 	{
 		log.info(message);
 		if (responseStream != null)
-			responseStream.append(new EPADMessage(message, Level.INFO).toJSON());
+		{
+			message = new EPADMessage(message, Level.INFO).toJSON();
+			log.info("Message to client:" + message);
+			responseStream.append(message);
+		}
 		return responseCode;
 	}
 
@@ -98,13 +102,15 @@ public class HandlerUtil
 
 	public static int warningResponse(int responseCode, String message, PrintWriter responseStream, EPADLogger log)
 	{
-		log.warning(message);
 		if (responseStream != null)
 		{
 			if (!message.startsWith("{"))
 				message = new EPADMessage(message).toJSON();
+			log.warning("Message to client:" + message);
 			responseStream.append(message);
 		}
+		else
+			log.warning(message);
 		return responseCode;
 	}
 
@@ -116,9 +122,14 @@ public class HandlerUtil
 
 	public static int warningJSONResponse(int responseCode, String message, PrintWriter responseStream, EPADLogger log)
 	{
-		log.warning(message);
 		if (responseStream != null)
-			responseStream.append(new EPADMessage(message).toJSON());
+		{
+			message = new EPADMessage(message).toJSON();
+			log.warning("Message to client:" + message);
+			responseStream.append(message);
+		}
+		else
+		log.warning(message);
 		return responseCode;
 	}
 
@@ -126,9 +137,13 @@ public class HandlerUtil
 			EPADLogger log)
 	{
 		String finalMessage = message + (t == null ? "" : ((t.getMessage() == null) ? "" : ": " + t.getMessage()));
-		log.warning(finalMessage);
 		if (responseStream != null)
-			responseStream.append(new EPADMessage(finalMessage).toJSON());
+		{
+			finalMessage = new EPADMessage(finalMessage).toJSON();
+			responseStream.append(finalMessage);
+		}
+		else
+		log.warning(finalMessage);
 		return responseCode;
 	}
 

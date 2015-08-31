@@ -27,6 +27,7 @@ package edu.stanford.epad.epadws.service;
 import java.io.File;
 import java.io.FileInputStream;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
@@ -43,7 +44,9 @@ import org.dcm4che2.data.Tag;
 import edu.stanford.epad.common.dicom.DicomReader;
 import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADLogger;
+import edu.stanford.epad.common.util.MailUtil;
 import edu.stanford.epad.dtos.EPADAIM;
+import edu.stanford.epad.dtos.TaskStatus;
 import edu.stanford.epad.epadws.aim.AIMQueries;
 import edu.stanford.epad.epadws.aim.AIMSearchType;
 import edu.stanford.epad.epadws.aim.AIMUtil;
@@ -53,7 +56,10 @@ import edu.stanford.epad.epadws.epaddb.EpadDatabaseOperations;
 import edu.stanford.epad.epadws.models.Project;
 import edu.stanford.epad.epadws.models.Study;
 import edu.stanford.epad.epadws.models.Subject;
+import edu.stanford.epad.epadws.models.User;
+import edu.stanford.epad.epadws.queries.DefaultEpadOperations;
 import edu.stanford.epad.epadws.queries.XNATQueries;
+import edu.stanford.epad.epadws.security.IdGenerator;
 import edu.stanford.epad.epadws.xnat.XNATCreationOperations;
 import edu.stanford.epad.epadws.xnat.XNATSessionOperations;
 import edu.stanford.epad.epadws.xnat.XNATUtil;
@@ -68,12 +74,13 @@ import edu.stanford.hakan.aim3api.base.ImageAnnotation;
 public class UserProjectService {
 	private static final EPADLogger log = EPADLogger.getInstance();
 	
+	public static Map<String, String> pendingPNGs = new HashMap<String, String>();
 	public static Map<String, String> pendingUploads = new HashMap<String, String>();
 
 	private static final EpadProjectOperations projectOperations = DefaultEpadProjectOperations.getInstance();	
 	private static final EpadDatabaseOperations databaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();	
 	
-	private static final String XNAT_UPLOAD_PROPERTIES_FILE_NAME = "xnat_upload.properties";
+	public static final String XNAT_UPLOAD_PROPERTIES_FILE_NAME = "xnat_upload.properties";
 	
 	/**
 	 * Check if user is collaborator
@@ -257,11 +264,18 @@ public class UserProjectService {
 				String xnatProjectLabel = xnatUploadProperties.getProperty("XNATProjectName");
 				String xnatSessionID = xnatUploadProperties.getProperty("XNATSessionID");
 				xnatUserName = xnatUploadProperties.getProperty("XNATUserName");
+				String patientID = xnatUploadProperties.getProperty("SubjectName");
+				if (patientID == null) patientID = xnatUploadProperties.getProperty("SubjectID");
+				String studyUID = xnatUploadProperties.getProperty("StudyName");
+				if (studyUID == null) studyUID = xnatUploadProperties.getProperty("StudyUID");
+				String seriesUID = xnatUploadProperties.getProperty("SeriesName");
+				if (seriesUID == null) seriesUID = xnatUploadProperties.getProperty("SeriesUID");
 				log.info("Found XNAT upload properties file " + propertiesFilePath + " project:" + xnatProjectLabel + " user:" + xnatUserName);
+				log.info("XNAT Properties, projectID:"  + xnatProjectLabel + " username:" + xnatUserName + " patient:" + patientID + " study:" + studyUID + " series:" + seriesUID);
 				if (xnatProjectLabel != null) {
 					projectOperations.createEventLog(xnatUserName, xnatProjectLabel, null, null, null, null, null, "UPLOAD DICOMS", "" + dicomUploadDirectory.list().length);
 					xnatUploadPropertiesFile.delete();
-					numberOfDICOMFiles = createProjectEntitiesFromDICOMFilesInUploadDirectory(dicomUploadDirectory, xnatProjectLabel, xnatSessionID, xnatUserName);
+					numberOfDICOMFiles = createProjectEntitiesFromDICOMFilesInUploadDirectory(dicomUploadDirectory, xnatProjectLabel, xnatSessionID, xnatUserName, patientID, studyUID, seriesUID);
 					if (numberOfDICOMFiles != 0)
 					{
 						log.info("Found " + numberOfDICOMFiles + " DICOM file(s) in directory uploaded by " + xnatUserName + " for project " + xnatProjectLabel);
@@ -303,6 +317,7 @@ public class UserProjectService {
 				String xnatProjectLabel = xnatUploadProperties.getProperty("XNATProjectName");
 				String xnatSessionID = xnatUploadProperties.getProperty("XNATSessionID");
 				String xnatUserName = xnatUploadProperties.getProperty("XNATUserName");
+				log.info("Properties:" + xnatUploadProperties);
 				return xnatUserName;
 			} catch (Exception e) {
 				log.warning("Error processing upload in directory " + dicomUploadDirectory.getAbsolutePath(), e);
@@ -322,7 +337,7 @@ public class UserProjectService {
 	 * @return
 	 * @throws Exception
 	 */
-	public static int createProjectEntitiesFromDICOMFilesInUploadDirectory(File dicomUploadDirectory, String projectID, String sessionID, String username) throws Exception
+	public static int createProjectEntitiesFromDICOMFilesInUploadDirectory(File dicomUploadDirectory, String projectID, String sessionID, String username, String subjectID, String studyUID, String seriesUID) throws Exception
 	{
 		int numberOfDICOMFiles = 0;
 		Collection<File> files = listDICOMFiles(dicomUploadDirectory);
@@ -331,6 +346,28 @@ public class UserProjectService {
 		for (File dicomFile : files) {
 			try {
 				log.info("File " + i++ + " : " +dicomFile.getName());
+				if (dicomFile.getName().endsWith(".xml"))
+				{
+					try {
+						if (AIMUtil.saveAIMAnnotation(dicomFile, projectID, sessionID, username))
+							log.warning("Error processing aim file:" + dicomFile.getName());
+					} catch (Exception x) {
+						log.warning("Error uploading file:" + dicomFile.getName() + ":" + x.getMessage());
+					}
+					dicomFile.delete();
+					continue;
+				}
+				else if (DefaultEpadOperations.isImage(dicomFile) && seriesUID != null)
+				{
+					try {
+						DefaultEpadOperations.getInstance().createFile(username, projectID, subjectID, studyUID, seriesUID, dicomFile, null, null, sessionID);
+					} catch (Exception x) {
+						log.warning("Error uploading file:" + dicomFile.getName() + ":" + x.getMessage());
+					}
+					dicomFile.delete();
+					continue;
+				}
+				projectOperations.updateUserTaskStatus(username, TaskStatus.TASK_ADD_TO_PROJECT, dicomUploadDirectory.getName(), "Files processed: " + i, null, null);
 				if (createProjectEntitiesFromDICOMFile(dicomFile, projectID, sessionID, username))
 					numberOfDICOMFiles++;
 			} catch (Throwable x) {
@@ -340,6 +377,7 @@ public class UserProjectService {
 						"Error processing dicom:" + dicomFile.getName(), 
 						dicomFile.getName(), "", dicomFile.getName(), dicomFile.getName(), dicomFile.getName(), projectID, "Error:" + x.getMessage());				}
 		}
+		projectOperations.updateUserTaskStatus(username, TaskStatus.TASK_ADD_TO_PROJECT, dicomUploadDirectory.getName(), "Files processed: " + numberOfDICOMFiles, null, new Date());
 		log.info("Number of dicom files in upload:" + numberOfDICOMFiles);
 		return numberOfDICOMFiles;
 	}
@@ -365,16 +403,15 @@ public class UserProjectService {
 		if (dicomPatientID == null || dicomPatientID.trim().length() == 0 
 				|| dicomPatientID.equalsIgnoreCase("ANON") 
 				|| dicomPatientID.equalsIgnoreCase("Unknown") 
-				|| dicomPatientID.contains(" ") 
 				|| dicomPatientID.contains("%") 
 				|| dicomPatientID.equalsIgnoreCase("Anonymous"))
 		{
 			String message = "Invalid patientID:" + dicomPatientID + " file:" + dicomFile.getName() + ", Rejecting file";
 			log.warning(message);
 			message = "Invalid non-unique patient ID " + dicomPatientID + " in DICOM file";
-			if (dicomPatientID.contains(" ") || dicomPatientID.contains("%"))
+			if (dicomPatientID.contains("%"))
 			{
-				message = "A space or other invalid character in patient ID " + dicomPatientID;
+				message = "An invalid character in patient ID " + dicomPatientID;
 			}
 			databaseOperations.insertEpadEvent(
 					username, 
@@ -385,7 +422,9 @@ public class UserProjectService {
 			return false;
 		}
 		if (pendingUploads.size() < 300)
-			pendingUploads.put(seriesUID, username + ":" + projectID);
+			pendingUploads.put(studyUID, username + ":" + projectID);
+		if (pendingPNGs.size() < 300)
+			pendingPNGs.put(seriesUID, username + ":" + projectID);
 		if (dicomPatientID != null && studyUID != null) {
 			//databaseOperations.deleteSeriesOnly(seriesUID); // This will recreate all images
 			if (dicomPatientName == null) dicomPatientName = "";
@@ -538,6 +577,36 @@ public class UserProjectService {
 		}
 		
 		return files;
+	}
+	
+	public static void sendNewPassword(String loggedInUsername, String username) throws Exception
+	{
+		log.info("New password requested for " + username);
+		User loggedInUser =  projectOperations.getUser(loggedInUsername);
+		User user = projectOperations.getUser(username);
+		if (!loggedInUsername.equals(username) && !loggedInUser.isAdmin() && !loggedInUsername.equals(user.getCreator()))
+			throw new Exception("No permissions to reset " + username + "'s password");
+		String newPwd = username;
+		if (newPwd.length() > 4) newPwd = newPwd.substring(0, 4);
+		newPwd = newPwd + new IdGenerator().generateId(6);
+		user.setPassword(newPwd);
+		boolean tls = "true".equalsIgnoreCase(EPADConfig.getParamValue("SMTPtls", "true"));
+		MailUtil mu = new MailUtil(	EPADConfig.getParamValue("SMTPHost", "smtp.gmail.com"), 
+									EPADConfig.getParamValue("SMTPPort", "587"), 
+									EPADConfig.getParamValue("MailUser", "epadstanford@gmail.com"), 
+									EPADConfig.getParamValue("MailPassword"), 
+									true);
+		// No password, try sendMail
+		if (EPADConfig.getParamValue("MailPassword") == null || EPADConfig.getParamValue("MailPassword").trim().length() == 0) {
+			mu = new MailUtil();
+		}
+		mu.send(user.getEmail(), 
+				EPADConfig.xnatServer + "_noreply@stanford.edu", 
+				"New password for ePAD@" + EPADConfig.xnatServer, 
+				"Hello " + user.getFirstName() + " " + user.getLastName() + ",\n\nYour new ePAD password is " + newPwd + "\n\nPlease login and reset your password.\n\nRegards\n\nePAD Team");
+		projectOperations.updateUser("admin", username,
+				null, null, null, newPwd, null, 
+				new ArrayList<String>(), new ArrayList<String>());
 	}
 
 	/**

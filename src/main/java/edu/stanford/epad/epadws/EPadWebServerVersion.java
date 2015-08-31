@@ -24,13 +24,22 @@
 
 package edu.stanford.epad.epadws;
 
+import java.io.File;
 import java.io.InputStream;
 import java.util.Properties;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.net.ftp.FTP;
+import org.eclipse.jetty.util.log.Log;
+
+import edu.stanford.epad.common.util.EPADConfig;
+import edu.stanford.epad.common.util.EPADLogger;
+import edu.stanford.epad.common.util.FTPUtil;
 
 public class EPadWebServerVersion
 {
+	private static final EPADLogger log = EPADLogger.getInstance();
+
 	static String version = null;
 	static String buildDate = null;
 	static String buildHost = null;
@@ -59,6 +68,7 @@ public class EPadWebServerVersion
 			}
 		}
 	}
+	
 	public String getVersion() {
 		return version;
 	}
@@ -67,5 +77,39 @@ public class EPadWebServerVersion
 	}
 	public String getBuildHost() {
 		return buildHost;
+	}
+	
+	public void downloadEpadLatestVersion() throws Exception {
+		String jarname = EPADConfig.getParamValue("EPADJarName", "epad-ws-1.1-jar-with-dependencies.jar");
+		String warname = EPADConfig.getParamValue("EPADWarName", "ePad.war");
+		String base = EPADConfig.getEPADWebServerBaseDir();
+		File war = new File(base + "webapps", warname);
+		File jar = new File(base + "lib", jarname);
+		
+		log.info("Renaming ePAD war...");
+		war.renameTo(new File(base + "webapps", warname + "_" + version));
+		log.info("Renaming ePAD jar...");
+		jar.renameTo(new File(base + "lib", jarname + "_" + version));
+		FTPUtil ftp = new FTPUtil("epad-distribution.stanford.edu", null, null);
+		try {
+			log.info("Downloading ePAD war...");
+			ftp.getFile(warname, war);
+		}
+		catch (Exception x) {
+			new File(base + "webapps", warname + "_" + version).renameTo(war);
+			new File(base + "lib", jarname + "_" + version).renameTo(jar);
+			throw x;
+		}
+		try {
+			log.info("Downloading ePAD jar...");
+			ftp.getFile(jarname, jar);
+		}
+		catch (Exception x) {
+			war.delete();
+			new File(base + "webapps", warname + "_" + version).renameTo(war);
+			new File(base + "lib", jarname + "_" + version).renameTo(jar);
+			log.warning("Error downloading ePAD software", x);
+			throw new Exception("Error downloading ePAD software:" + x.getMessage());
+		}
 	}
 }

@@ -26,6 +26,7 @@ package edu.stanford.epad.epadws.processing.pipeline.task;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -53,6 +54,7 @@ import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADFileUtils;
 import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.epad.dtos.PNGFileProcessingStatus;
+import edu.stanford.epad.dtos.TaskStatus;
 import edu.stanford.epad.epadws.aim.AIMUtil;
 import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeDatabase;
 import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeDatabaseOperations;
@@ -63,12 +65,14 @@ import edu.stanford.epad.epadws.models.Project;
 import edu.stanford.epad.epadws.models.Study;
 import edu.stanford.epad.epadws.service.DefaultEpadProjectOperations;
 import edu.stanford.epad.epadws.service.EpadProjectOperations;
+import edu.stanford.epad.epadws.service.UserProjectService;
 
 public class RTDICOMProcessingTask implements GeneratorTask
 {
 	private ConvertDicoms convertDicoms = null; // MATLAB-generated Java class containing function
 	private static final EPADLogger log = EPADLogger.getInstance();
 
+	private final String studyUID;
 	private final String seriesUID;
 	private final String imageUID;
 	private final File dicomFile;
@@ -76,8 +80,9 @@ public class RTDICOMProcessingTask implements GeneratorTask
 
 	static public Set seriesBeingProcessed = Collections.synchronizedSet(new HashSet());
 	
-	public RTDICOMProcessingTask(String seriesUID, String imageUID, File dicomFile, String outFilePath)
+	public RTDICOMProcessingTask(String studyUID, String seriesUID, String imageUID, File dicomFile, String outFilePath)
 	{
+		this.studyUID = studyUID;
 		this.seriesUID = seriesUID;
 		this.imageUID = imageUID;
 		this.dicomFile = dicomFile;
@@ -94,8 +99,23 @@ public class RTDICOMProcessingTask implements GeneratorTask
 		}
 		log.info("Processing DicomRT for series  " + seriesUID + "; file=" + dicomFile.getAbsolutePath());
 
+		String username = null;
+		EpadProjectOperations projectOperations = DefaultEpadProjectOperations.getInstance();
 		try {
 			seriesBeingProcessed.add(seriesUID);
+			if (UserProjectService.pendingUploads.containsKey(studyUID))
+			{
+				username = UserProjectService.pendingUploads.get(studyUID);
+				if (username != null && username.indexOf(":") != -1)
+					username = username.substring(0, username.indexOf(":"));
+			}
+			if (username == null  && UserProjectService.pendingPNGs.containsKey(seriesUID))
+			{
+				username = UserProjectService.pendingPNGs.get(seriesUID);
+				if (username != null && username.indexOf(":") != -1)
+					username = username.substring(0, username.indexOf(":"));
+			}
+			projectOperations.updateUserTaskStatus(username, TaskStatus.TASK_RT_PROCESS, seriesUID, "RT Dicom Processing Started", new Date(), null);
 			String inputDirPath = EPADConfig.getEPADWebServerResourcesDir() + "download/" + "temp" + Long.toString(System.currentTimeMillis()) + "/";
 			File inputDir = new File(inputDirPath);
 			inputDir.mkdirs();
@@ -141,6 +161,7 @@ public class RTDICOMProcessingTask implements GeneratorTask
 			        }
 			    }
 			}
+			int j = 1;
 			List<String> dicomFilePaths = new ArrayList<String>();
 			Dcm4CheeDatabaseOperations dcm4CheeDatabaseOperations = Dcm4CheeDatabase.getInstance().getDcm4CheeDatabaseOperations();
 			if (referencedSeriesSequence != null) {
@@ -158,18 +179,22 @@ public class RTDICOMProcessingTask implements GeneratorTask
 			    			//String referencedSeriesUID = dcm4CheeDatabaseOperations.getSeriesUIDForImage(referencedImageUIDs[i]);
 				            //log.info("Downloading ReferencedSOPInstanceUID:" + referencedImageUID);
 				            File dicomFile = new File(inputDir, referencedImageUID + ".dcm");
+							projectOperations.updateUserTaskStatus(username, TaskStatus.TASK_RT_PROCESS, seriesUID, "Downloading referenced image: " + j++, null, null);
 				            DCM4CHEEUtil.downloadDICOMFileFromWADO(studyUID, seriesUID, referencedImageUID, dicomFile);
 				            dicomFilePaths.add(dicomFile.getAbsolutePath());
 				        }
 			       }
 			    }
 			}
+			projectOperations.updateUserTaskStatus(username, TaskStatus.TASK_RT_MATLAB, seriesUID, "Download Completed", null, null);
 			MWCharArray inFolderPath = new MWCharArray(inputDirPath);
 			MWCharArray outFolderPath = new MWCharArray(outputDirPath);
 			log.info("Invoking MATLAB-generated code..., inputPath:" + inputDirPath);
+			projectOperations.updateUserTaskStatus(username, TaskStatus.TASK_RT_MATLAB, seriesUID, "MATLAB Processing Started", new Date(), null);
 			long starttime = System.currentTimeMillis();
 			convertDicoms.scanDir(inFolderPath, outFolderPath);
 			long endtime = System.currentTimeMillis();
+			projectOperations.updateUserTaskStatus(username, TaskStatus.TASK_RT_PROCESS, seriesUID, "MATLAB Processing Completed", null, new Date());
 			log.info("Returned from MATLAB..., outFolderPath:" + outputDirPath + " took " + (endtime-starttime)/1000 + " secs");
 			try {
 				MatFileReader reader = new MatFileReader(outFolderPath + "/" + patientID + ".mat");
@@ -224,6 +249,7 @@ public class RTDICOMProcessingTask implements GeneratorTask
 					}
 					File dsoFile = new File(outFolderPath + "/" + seriesUID + ".dso");
 					String dsoDescr = description + " DSO";
+					projectOperations.updateUserTaskStatus(username, TaskStatus.TASK_RT_PROCESS, seriesUID, "Generating DSO", null, null);
 					log.info("Generating new DSO for RTSTRUCT series " + seriesUID);
 					TIFFMasksToDSOConverter converter = new TIFFMasksToDSOConverter();
 					String[] seriesImageUids = converter.generateDSO(pixel_data, dicomFilePaths, dsoFile.getAbsolutePath(), dsoDescr, null, null, false);
@@ -231,7 +257,6 @@ public class RTDICOMProcessingTask implements GeneratorTask
 					String dsoImageUID = seriesImageUids[1];
 					log.info("Sending generated DSO " + dsoFile.getAbsolutePath() + " imageUID:" + dsoImageUID + " to dcm4chee...");
 					DCM4CHEEUtil.dcmsnd(dsoFile.getAbsolutePath(), false);
-					EpadProjectOperations projectOperations = DefaultEpadProjectOperations.getInstance();
 					List<Project> projects = projectOperations.getProjectsForSubject(patientID);
 					for (Project project: projects) {
 						if (project.getProjectId().equals(EPADConfig.xnatUploadProjectID)) continue;
@@ -245,6 +270,7 @@ public class RTDICOMProcessingTask implements GeneratorTask
 							AIMUtil.generateAIMFileForDSO(dsoFile, owner, projectID);
 						}
 					}
+					projectOperations.updateUserTaskStatus(username, TaskStatus.TASK_RT_PROCESS, seriesUID, "Completed DSO Generation", null, null);
 				}
 			} catch (Exception x) {
 				log.warning("Error reading results", x);
@@ -256,8 +282,10 @@ public class RTDICOMProcessingTask implements GeneratorTask
 			
 			EPADFileUtils.deleteDirectoryAndContents(inputDir);
 			EPADFileUtils.deleteDirectoryAndContents(outputDir);
+			projectOperations.updateUserTaskStatus(username, TaskStatus.TASK_RT_PROCESS, seriesUID, "Completed Processing", null, new Date());
 		} catch (Exception e) {
 			log.warning("Error processing DICOM RT file for series " + seriesUID, e);
+			projectOperations.updateUserTaskStatus(username, TaskStatus.TASK_RT_PROCESS, seriesUID, "Failed Processing: " + e.getMessage(), null, new Date());
 		} finally {
 			log.info("DICOM RT for series " + seriesUID + " completed");
 			seriesBeingProcessed.remove(seriesUID);

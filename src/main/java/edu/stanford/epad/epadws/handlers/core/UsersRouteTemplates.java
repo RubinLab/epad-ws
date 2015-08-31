@@ -28,6 +28,9 @@ public class UsersRouteTemplates
 	public static final String USER_LIST = "/users/";
 	public static final String USER = USER_LIST + "{username}";
 	public static final String USER_SESSIONS = USER + "/sessions/";
+	public static final String USER_EVENTLOGS = USER + "/eventlogs/";
+	public static final String USER_TASKSTATUS = USER + "/taskstatus/";
+	public static final String USER_SENDNEWPASSWORD = USER + "/sendnewpassword/";
 	public static final String USER_WORKLISTS = USER + "/worklists/";
 	public static final String USER_WORKLIST = USER_WORKLISTS + "{worklistID}";
 	public static final String USER_WORKLIST_SUBJECTS = USER_WORKLIST + "/subjects/";
@@ -37,7 +40,8 @@ public class UsersRouteTemplates
 	public static final String USER_SUBJECT = USER_WORKLIST + "/subjects/" + "{subjectID}";
 	public static final String USER_STUDY = USER_WORKLIST + "/studies/" + "{studyUID}";
 	public static final String USER_REVIEWERS = USER + "/reviewers/";
-	public static final String USER_REVIEWER = USER + "/reviewers/{username}";
+	public static final String USER_REVIEWER = USER + "/reviewers/{reviewer}";
 	public static final String USER_REVIEWEES = USER + "/reviewees/";
-	public static final String USER_REVIEWEE = USER + "/reviewees/{username}";
+	public static final String USER_REVIEWEE = USER + "/reviewees/{reviewee}";
+	public static final String USER_REVIEWEE_AIMS = USER + "/reviewees/{reviewee}/aims/";
 }

@@ -43,13 +43,16 @@ import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.epad.dtos.DicomTagList;
 import edu.stanford.epad.dtos.EPADAIM;
 import edu.stanford.epad.dtos.EPADAIMList;
+import edu.stanford.epad.dtos.EPADData;
 import edu.stanford.epad.dtos.EPADDataList;
+import edu.stanford.epad.dtos.EPADEventLogList;
 import edu.stanford.epad.dtos.EPADFile;
 import edu.stanford.epad.dtos.EPADFileList;
 import edu.stanford.epad.dtos.EPADFrame;
 import edu.stanford.epad.dtos.EPADFrameList;
 import edu.stanford.epad.dtos.EPADImage;
 import edu.stanford.epad.dtos.EPADImageList;
+import edu.stanford.epad.dtos.EPADObjectList;
 import edu.stanford.epad.dtos.EPADProject;
 import edu.stanford.epad.dtos.EPADProjectList;
 import edu.stanford.epad.dtos.EPADSeries;
@@ -73,6 +76,8 @@ import edu.stanford.epad.dtos.RemotePACEntity;
 import edu.stanford.epad.dtos.RemotePACEntityList;
 import edu.stanford.epad.dtos.RemotePACList;
 import edu.stanford.epad.dtos.RemotePACQueryConfigList;
+import edu.stanford.epad.epadws.EPadWebServerVersion;
+import edu.stanford.epad.epadws.aim.AIMQueries;
 import edu.stanford.epad.epadws.aim.AIMSearchType;
 import edu.stanford.epad.epadws.aim.AIMUtil;
 import edu.stanford.epad.epadws.epaddb.EpadDatabase;
@@ -81,9 +86,12 @@ import edu.stanford.epad.epadws.handlers.dicom.DSOUtil;
 import edu.stanford.epad.epadws.handlers.dicom.DownloadUtil;
 import edu.stanford.epad.epadws.models.EpadStatistics;
 import edu.stanford.epad.epadws.models.RemotePACQuery;
+import edu.stanford.epad.epadws.models.User;
+import edu.stanford.epad.epadws.processing.pipeline.task.EpadStatisticsTask;
 import edu.stanford.epad.epadws.queries.DefaultEpadOperations;
 import edu.stanford.epad.epadws.queries.EpadOperations;
 import edu.stanford.epad.epadws.security.EPADSession;
+import edu.stanford.epad.epadws.service.DefaultEpadProjectOperations;
 import edu.stanford.epad.epadws.service.RemotePACService;
 import edu.stanford.epad.epadws.service.TCIAService;
 import edu.stanford.epad.epadws.service.UserProjectService;
@@ -148,8 +156,14 @@ public class EPADGetHandler
 
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.SUBJECT_LIST, pathInfo)) {
 				ProjectReference projectReference = ProjectReference.extract(ProjectsRouteTemplates.SUBJECT_LIST, pathInfo);
-				EPADSubjectList subjectList = epadOperations.getSubjectDescriptions(projectReference.projectID, username,
-						sessionID, searchFilter, start, count);
+				String sortField = httpRequest.getParameter("sortField");
+				boolean unassignedOnly = "true".equalsIgnoreCase(httpRequest.getParameter("unassignedOnly"));
+				EPADSubjectList subjectList = null;
+				if (projectReference.projectID.equals(EPADConfig.xnatUploadProjectID) && unassignedOnly)
+					subjectList = epadOperations.getUnassignedSubjectDescriptions(username, sessionID, searchFilter);
+				else
+					subjectList = epadOperations.getSubjectDescriptions(projectReference.projectID, username,
+						sessionID, searchFilter, start, count, sortField);
 				long endtime = System.currentTimeMillis();
 				log.info("Returning " + subjectList.ResultSet.totalRecords + " subjects to client, took " + (endtime-starttime) + " msecs");
 				responseStream.append(subjectList.toJSON());
@@ -1046,19 +1060,38 @@ public class EPADGetHandler
 				statusCode = HttpServletResponse.SC_OK;
 
 			} else if (HandlerUtil.matchesTemplate(UsersRouteTemplates.USER_SESSIONS, pathInfo)) {
-				Collection<EPADSession> sessions = epadOperations.getCurrentSessions(username);
+				Map<String, String> templateMap = HandlerUtil.getTemplateMap(UsersRouteTemplates.USER, pathInfo);
+				String user = HandlerUtil.getTemplateParameter(templateMap, "username");
+				Collection<EPADSession> sessions = epadOperations.getCurrentSessions(user);
 				responseStream.append(new Gson().toJson(sessions));
 				statusCode = HttpServletResponse.SC_OK;
 			
+			} else if (HandlerUtil.matchesTemplate(UsersRouteTemplates.USER_EVENTLOGS, pathInfo)) {
+				Map<String, String> templateMap = HandlerUtil.getTemplateMap(UsersRouteTemplates.USER_EVENTLOGS, pathInfo);
+				String user = HandlerUtil.getTemplateParameter(templateMap, "username");
+				EPADEventLogList logs = epadOperations.getEventLogs(username, user, start, count);
+				responseStream.append(new Gson().toJson(logs));
+				statusCode = HttpServletResponse.SC_OK;
+			
+			} else if (HandlerUtil.matchesTemplate(UsersRouteTemplates.USER_TASKSTATUS, pathInfo)) {
+				Map<String, String> templateMap = HandlerUtil.getTemplateMap(UsersRouteTemplates.USER_TASKSTATUS, pathInfo);
+				String user = HandlerUtil.getTemplateParameter(templateMap, "username");
+				EPADObjectList tasks = epadOperations.getTaskStatuses(username, user);
+				responseStream.append(new Gson().toJson(tasks));
+				statusCode = HttpServletResponse.SC_OK;
+			
 			} else if (HandlerUtil.matchesTemplate(UsersRouteTemplates.USER_WORKLISTS, pathInfo)) {
-				EPADWorklistList wll = epadOperations.getWorkListsForUser(username);
+				Map<String, String> templateMap = HandlerUtil.getTemplateMap(UsersRouteTemplates.USER_WORKLISTS, pathInfo);
+				String user = HandlerUtil.getTemplateParameter(templateMap, "username");
+				EPADWorklistList wll = epadOperations.getWorkListsForUser(username, user);
 				responseStream.append(wll.toJSON());
 				statusCode = HttpServletResponse.SC_OK;
 				
 			} else if (HandlerUtil.matchesTemplate(UsersRouteTemplates.USER_WORKLIST, pathInfo)) {
 				Map<String, String> templateMap = HandlerUtil.getTemplateMap(UsersRouteTemplates.USER_WORKLIST, pathInfo);
+				String user = HandlerUtil.getTemplateParameter(templateMap, "username");
 				String workListID = HandlerUtil.getTemplateParameter(templateMap, "workListID");
-				EPADWorklist wl = epadOperations.getWorkListByID(username, workListID);
+				EPADWorklist wl = epadOperations.getWorkListByID(username, user, workListID);
 				responseStream.append(wl.toJSON());
 				statusCode = HttpServletResponse.SC_OK;
 			
@@ -1067,7 +1100,7 @@ public class EPADGetHandler
 				String reader = HandlerUtil.getTemplateParameter(templateMap, "username");
 				String workListID = HandlerUtil.getTemplateParameter(templateMap, "workListID");
 				log.info(" reader:" + reader + " workListID:" + workListID);
-				EPADWorklistSubjectList wlsl = epadOperations.getWorkListSubjects(reader, workListID);
+				EPADWorklistSubjectList wlsl = epadOperations.getWorkListSubjects(username, reader, workListID);
 				responseStream.append(wlsl.toJSON());
 				statusCode = HttpServletResponse.SC_OK;
 
@@ -1076,7 +1109,7 @@ public class EPADGetHandler
 				String reader = HandlerUtil.getTemplateParameter(templateMap, "username");
 				String workListID = HandlerUtil.getTemplateParameter(templateMap, "workListID");
 				log.info(" reader:" + reader + " workListID:" + workListID);
-				EPADWorklistStudyList wlsl = epadOperations.getWorkListStudies(reader, workListID);
+				EPADWorklistStudyList wlsl = epadOperations.getWorkListStudies(username, reader, workListID);
 				responseStream.append(wlsl.toJSON());
 				statusCode = HttpServletResponse.SC_OK;
 
@@ -1088,10 +1121,60 @@ public class EPADGetHandler
 				statusCode = HttpServletResponse.SC_OK;
 
 			} else if (HandlerUtil.matchesTemplate(UsersRouteTemplates.USER_REVIEWEES, pathInfo)) {
-				Map<String, String> templateMap = HandlerUtil.getTemplateMap(UsersRouteTemplates.USER_REVIEWERS, pathInfo);
-				String reader = HandlerUtil.getTemplateParameter(templateMap, "username");
-				EPADUserList users = epadOperations.getReviewees(username, reader, sessionID);
+				Map<String, String> templateMap = HandlerUtil.getTemplateMap(UsersRouteTemplates.USER_REVIEWEES, pathInfo);
+				String reviewer = HandlerUtil.getTemplateParameter(templateMap, "username");
+				EPADUserList users = epadOperations.getReviewees(username, reviewer, sessionID);
 				responseStream.append(users.toJSON());
+				statusCode = HttpServletResponse.SC_OK;
+
+			} else if (HandlerUtil.matchesTemplate(UsersRouteTemplates.USER_REVIEWEE, pathInfo)) {
+				Map<String, String> templateMap = HandlerUtil.getTemplateMap(UsersRouteTemplates.USER_REVIEWEE, pathInfo);
+				String reviewer = HandlerUtil.getTemplateParameter(templateMap, "username");
+				String reviewee = HandlerUtil.getTemplateParameter(templateMap, "reviewee");
+				EPADUserList users = epadOperations.getReviewees(username, reviewer, sessionID);
+				boolean found = false;
+				for (EPADUser user: users.ResultSet.Result)
+				{
+					if (user.username.equals(reviewee))
+					{
+						responseStream.append(user.toJSON());
+						found = true;
+					}
+				}
+				if (!found)
+					throw new Exception("User " + reviewee + " is not in the list for this user");
+				statusCode = HttpServletResponse.SC_OK;
+			} else if (HandlerUtil.matchesTemplate(UsersRouteTemplates.USER_REVIEWEE_AIMS, pathInfo)) {
+				Map<String, String> templateMap = HandlerUtil.getTemplateMap(UsersRouteTemplates.USER_REVIEWEE_AIMS, pathInfo);
+				String reviewer = HandlerUtil.getTemplateParameter(templateMap, "username");
+				String reviewee = HandlerUtil.getTemplateParameter(templateMap, "reviewee");
+				EPADUserList users = epadOperations.getReviewees(username, reviewer, sessionID);
+				boolean found = false;
+				for (EPADUser user: users.ResultSet.Result)
+				{
+					if (user.username.equals(reviewee))
+					{
+						found = true;
+					}
+				}
+				if (!found)
+					throw new Exception("User " + reviewee + " is not in the list for this user");
+				EPADAIMList aims = epadOperations.getAIMDescriptionsForUser(reviewee, sessionID);
+				long dbtime = System.currentTimeMillis();
+				log.info("Time taken for AIM database query:" + (dbtime-starttime) + " msecs");
+				if (returnSummary(httpRequest))
+				{	
+					aims = AIMUtil.queryAIMImageAnnotationSummariesV4(aims, "admin", sessionID);	// He needs to see all				
+					responseStream.append(aims.toJSON());
+				}
+				else if (returnJson(httpRequest))
+				{
+					AIMUtil.queryAIMImageJsonAnnotations(responseStream, aims, "admin", sessionID);					
+				}
+				else
+				{
+					AIMUtil.queryAIMImageAnnotationsV4(responseStream, aims, "admin", sessionID);					
+				}
 				statusCode = HttpServletResponse.SC_OK;
 
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.PROJECT_FILE_LIST, pathInfo)) {
@@ -1456,6 +1539,26 @@ public class EPADGetHandler
 			} else if (HandlerUtil.matchesTemplate(EPADsRouteTemplates.EPAD_LIST, pathInfo)) {
 				EPADDataList epads = EpadDatabase.getInstance().getEPADDatabaseOperations().getEpadHostNames();
 				responseStream.append(epads.toJSON());
+				statusCode = HttpServletResponse.SC_OK;
+
+			} else if (HandlerUtil.matchesTemplate(EPADsRouteTemplates.EPAD_VERSION, pathInfo)) {
+				EPADData data = new EPADData(EPADConfig.xnatServer, "Current Version", new EPadWebServerVersion().getVersion(),"Current version is the latest");
+				if (EpadStatisticsTask.newEPADVersionAvailable)
+				{
+					data = new EPADData(EPADConfig.xnatServer, "Current Version", new EPadWebServerVersion().getVersion(),
+							"New version " + EpadStatisticsTask.newEPADVersion + " is available");
+					data.alert = true;
+					boolean download = "true".equalsIgnoreCase(httpRequest.getParameter("downloadLatestEPAD"));
+					if (download)
+					{
+						User user = DefaultEpadProjectOperations.getInstance().getUser(username);
+						if (!user.isAdmin())
+							throw new Exception("No permissions to download ePAD software");
+						new EPadWebServerVersion().downloadEpadLatestVersion();
+						data.status = EpadStatisticsTask.newEPADVersion + " has been downloaded, please restart the server";
+					}
+				}
+				responseStream.append(data.toJSON());
 				statusCode = HttpServletResponse.SC_OK;
 
 			} else if (HandlerUtil.matchesTemplate(EPADsRouteTemplates.EPAD_USAGE, pathInfo)) {

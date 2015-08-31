@@ -290,7 +290,7 @@ public class EPADPostHandler
 					if (enable == null && firstname == null && lastname == null && email == null && addPermissions == null && removePermissions == null && password == null && oldpassword == null)
 						throw new Exception("BAD Request - all parameters are null");
 					if ("new".equals(type) && projectOperations.getUser(target_username) != null)
-						throw new Exception("User " +  username + " already exists");
+						throw new Exception("User " +  target_username + " already exists");
 					epadOperations.createOrModifyUser(username, target_username, firstname, lastname, email, password, oldpassword, addPermissions, removePermissions);
 					if ("true".equalsIgnoreCase(enable))
 						epadOperations.enableUser(username, target_username);

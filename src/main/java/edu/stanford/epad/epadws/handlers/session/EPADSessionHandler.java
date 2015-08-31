@@ -65,6 +65,7 @@ public class EPADSessionHandler extends AbstractHandler
 	private static final String LOGOUT_EXCEPTION_MESSAGE = "Warning: internal logout error";
 	private static final String UNEXPECTED_XNAT_RESPONSE_MESSAGE = "Warning: unexpected response code from XNAT";
 	private static final String UNAUTHORIZED_USER_XNAT_RESPONSE_MESSAGE = "Invalid username or password";
+	private static final String DISABLED_USER = "User has been disabled";
 	private static final String JSESSIONID_COOKIE = "JSESSIONID";
 	private static final String LOGGEDINUSER_COOKIE = "ePADLoggedinUser";
 
@@ -108,13 +109,13 @@ public class EPADSessionHandler extends AbstractHandler
 				            Cookie userName = new Cookie(LOGGEDINUSER_COOKIE, username);
 				            userName.setMaxAge(8*3600);
 				            //userName.setPath("/epad/; Secure; HttpOnly");
-				            userName.setPath("/epad/");
+				            userName.setPath(httpRequest.getContextPath().replace("session/", "").replace("session", ""));
 				            httpResponse.addCookie(userName);
 							//log.info("Setting HttpOnly, Secure cookie =" + jsessionID);
 				            Cookie sessionCookie = new Cookie(JSESSIONID_COOKIE, jsessionID);
 				            sessionCookie.setMaxAge(8*3600);
 				            //sessionCookie.setPath("/epad/; Secure; HttpOnly");
-				            sessionCookie.setPath("/epad/");
+				            sessionCookie.setPath(httpRequest.getContextPath().replace("session/", "").replace("session", ""));
 				            httpResponse.addCookie(sessionCookie);
 				    		httpResponse.sendRedirect(EPADConfig.getParamValue("HomePage", "/epad/Web_pad.html"));
 				    		return;
@@ -140,6 +141,9 @@ public class EPADSessionHandler extends AbstractHandler
 				    	
 					} else if (sessionResponse.statusCode == HttpServletResponse.SC_UNAUTHORIZED) {
 						PrintWriter responseStream = httpResponse.getWriter();
+						if (sessionResponse.message != null && sessionResponse.message.contains("disabled"))
+							statusCode = HandlerUtil.invalidTokenResponse(DISABLED_USER, responseStream, log);
+						else
 						statusCode = HandlerUtil.invalidTokenResponse(UNAUTHORIZED_USER_XNAT_RESPONSE_MESSAGE, responseStream, log);
 					} else {
 						PrintWriter responseStream = httpResponse.getWriter();

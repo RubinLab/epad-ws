@@ -24,11 +24,14 @@
 package edu.stanford.epad.epadws.processing.pipeline.watcher;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
+import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
@@ -36,6 +39,7 @@ import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADFileUtils;
 import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.epad.common.util.FileKey;
+import edu.stanford.epad.dtos.TaskStatus;
 import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeOperations;
 import edu.stanford.epad.epadws.epaddb.EpadDatabase;
 import edu.stanford.epad.epadws.epaddb.EpadDatabaseOperations;
@@ -67,7 +71,7 @@ public class EPADUploadDirWatcher implements Runnable
 	public void run()
 	{
 		try {
-			Thread.currentThread().setPriority(Thread.MIN_PRIORITY);
+			Thread.currentThread().setPriority(Thread.MIN_PRIORITY); // Let interactive thread run sooner
 			ShutdownSignal shutdownSignal = ShutdownSignal.getInstance();
 			File rootUploadDirectory = new File(EPADConfig.getEPADWebServerUploadDir());
 			log.info("Starting the ePAD upload directory watcher; directory =" + EPADConfig.getEPADWebServerUploadDir());
@@ -133,37 +137,98 @@ public class EPADUploadDirWatcher implements Runnable
 		return false;
 	}
 
+	private String getUserNameFromProperties(File xnatprops)
+	{
+		String username = null;
+		if (xnatprops.exists())
+		{
+			FileInputStream propertiesFileStream = null;
+			try {
+				Properties xnatUploadProperties = new Properties();
+				propertiesFileStream = new FileInputStream(xnatprops);
+				xnatUploadProperties.load(propertiesFileStream);
+				String xnatProjectLabel = xnatUploadProperties.getProperty("XNATProjectName");
+				String xnatSessionID = xnatUploadProperties.getProperty("XNATSessionID");
+				username = xnatUploadProperties.getProperty("XNATUserName");
+			} catch (Exception x) {
+				
+			} finally {
+				if (propertiesFileStream != null)
+					try {
+						propertiesFileStream.close();
+					} catch (IOException e) {
+					}
+			}
+		}
+		return username;
+	}
 	private void processUploadDirectory(File directory) throws InterruptedException
 	{
 		File zipFile = null;
+		String username = null;
 		try {
+			File xnatprops = new File(directory, UserProjectService.XNAT_UPLOAD_PROPERTIES_FILE_NAME);
+			username = getUserNameFromProperties(xnatprops);
+			projectOperations.updateUserTaskStatus(username, TaskStatus.TASK_UPLOAD, directory.getName(), "Started upload", new Date(), null);
 			boolean hasZipFile = waitOnEmptyUploadDirectory(directory);
+			if (username == null)
+				username = getUserNameFromProperties(xnatprops);
 			if (hasZipFile) {
-				zipFile = waitForZipUploadToComplete(directory);
+				for (;;)
+				{
+					zipFile = waitForZipUploadToComplete(directory, username);
+					if (zipFile == null) break;
+					projectOperations.updateUserTaskStatus(username, TaskStatus.TASK_UNZIP, zipFile.getName(), "Started unzip", new Date(), null);
 				unzipFiles(zipFile);
+					projectOperations.updateUserTaskStatus(username, TaskStatus.TASK_UNZIP, zipFile.getName(), "Completed unzip", null, new Date());
+					File zipDirectory = new File(directory, zipFile.getName().substring(0, zipFile.getName().length()-4));
+					if (xnatprops.exists())
+						EPADFileUtils.copyFile(xnatprops, new File(zipDirectory, UserProjectService.XNAT_UPLOAD_PROPERTIES_FILE_NAME));
+					projectOperations.updateUserTaskStatus(username, TaskStatus.TASK_ADD_TO_PROJECT, zipDirectory.getName(), "Started processing", new Date(), null);
+					String userName = UserProjectService.createProjectEntitiesFromDICOMFilesInUploadDirectory(zipDirectory);
+					projectOperations.updateUserTaskStatus(username, TaskStatus.TASK_ADD_TO_PROJECT, zipDirectory.getName(), "Completed processing", null, new Date());
+					cleanUploadDirectory(zipDirectory);
+					if (userName != null)
+					{
+						sendFilesToDcm4Chee(userName, zipDirectory);
+					}
+					deleteUploadDirectory(zipDirectory);
+					zipFile.delete();
+				}
 			}
-			// TODO Should not create XNAT entities until the DICOM send succeeds.
-			String username = UserProjectService.createProjectEntitiesFromDICOMFilesInUploadDirectory(directory);
+			String[] files = directory.list();
+			if (files.length > 1 || (files.length == 1 && !files[0].contains("properties")))
+			{
+				projectOperations.updateUserTaskStatus(username, TaskStatus.TASK_ADD_TO_PROJECT, directory.getName(), "Started processing", new Date(), null);
+				String userName = UserProjectService.createProjectEntitiesFromDICOMFilesInUploadDirectory(directory);
+				projectOperations.updateUserTaskStatus(username, TaskStatus.TASK_ADD_TO_PROJECT, directory.getName(), "Completed processing", null, new Date());
 			log.info("Cleaning upload directory");
 			cleanUploadDirectory(directory);
 			if (username != null)
 			{
-				sendFilesToDcm4Chee(username, directory);
+					sendFilesToDcm4Chee(userName, directory);
+				}
 			}
+			projectOperations.updateUserTaskStatus(username, TaskStatus.TASK_UPLOAD, directory.getName(), "Completed upload", null, new Date());
 		} catch (Exception e) {
 			log.warning("Exception uploading " + directory.getAbsolutePath(), e);
-			String userName = UserProjectService.getUserNameFromPropertiesFile(directory);
-			if (userName != null) {
+			if (username == null)
+				username = UserProjectService.getUserNameFromPropertiesFile(directory);
+			if (username != null) {
+				if (username.indexOf(":") != -1)
+					username = username.substring(0, username.indexOf(":"));
 				String zipName = "DicomFile";
 				if (zipFile != null) zipName = zipFile.getName();
 				EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
+				projectOperations.createEventLog(username, null, null, null, null, null, null, zipName, "Error processing uploaded file",  e.getMessage(), true);
 				epadDatabaseOperations.insertEpadEvent(
-						userName, 
+						username, 
 						"Error processing uploaded file:" + zipName, 
 						zipName, "", zipName, zipName, zipName, zipName, "Upload Error:" + e.getMessage());
-				projectOperations.userErrorLog(userName, "Error processing zip file:" + zipName);
+				projectOperations.userErrorLog(username, "Error processing zip file:" + zipName);
 			}
 			writeExceptionLog(directory, e);
+			projectOperations.updateUserTaskStatus(username, TaskStatus.TASK_UPLOAD, directory.getName(), "Failed upload:" + e.getMessage(), null, new Date());
 		} finally {
 			log.info("Upload of directory " + directory.getAbsolutePath() + " finished");
 			try {
@@ -174,10 +239,16 @@ public class EPADUploadDirWatcher implements Runnable
 
 	private void cleanUploadDirectory(File dir)
 	{ // TODO Should be deleteFilesInDirectoryWithoutExtension("dcm");
+		if (dir.exists())
+		{
 		EPADFileUtils.deleteFilesInDirectoryWithExtension(dir, "properties");
 		EPADFileUtils.deleteFilesInDirectoryWithExtension(dir, "zip");
 		EPADFileUtils.deleteFilesInDirectoryWithExtension(dir, "log");
 		EPADFileUtils.deleteFilesInDirectoryWithExtension(dir, "json");
+			EPADFileUtils.deleteFilesInDirectoryWithExtension(dir, "jpeg");
+			EPADFileUtils.deleteFilesInDirectoryWithExtension(dir, "jpg");
+			EPADFileUtils.deleteFilesInDirectoryWithExtension(dir, "png");
+		}
 	}
 
 	private boolean waitOnEmptyUploadDirectory(File dir) throws InterruptedException
@@ -219,7 +290,7 @@ public class EPADUploadDirWatcher implements Runnable
 		}
 	}
 
-	private File waitForZipUploadToComplete(File dir) throws InterruptedException
+	private File waitForZipUploadToComplete(File dir, String username) throws InterruptedException
 	{
 		log.info("Waiting for completion of unzip in upload directory " + dir.getAbsolutePath());
 		long zipFileStartWaitTime = System.currentTimeMillis();
@@ -236,11 +307,12 @@ public class EPADUploadDirWatcher implements Runnable
 			});
 
 			if (zipFiles == null || zipFiles.length == 0) {
-				throw new IllegalStateException("No ZIP file in upload directory " + dir.getAbsolutePath());
-			} else if (zipFiles.length > 1) {
-				int numZipFiles = zipFiles.length;
-				throw new IllegalStateException("Too many ZIP files (" + numZipFiles + ") in upload directory:"
-						+ dir.getAbsolutePath());
+				return null;
+//				throw new IllegalStateException("No ZIP file in upload directory " + dir.getAbsolutePath());
+//			} else if (zipFiles.length > 1) {
+//				int numZipFiles = zipFiles.length;
+//				throw new IllegalStateException("Too many ZIP files (" + numZipFiles + ") in upload directory:"
+//						+ dir.getAbsolutePath());
 			}
 			FileKey zipFileKey = new FileKey(zipFiles[0]);
 			DicomUploadFile zipFile = new DicomUploadFile(zipFileKey.getFile());
@@ -275,13 +347,17 @@ public class EPADUploadDirWatcher implements Runnable
 			if (username.indexOf(":") != -1)
 			{
 				count = getInt(username.substring(username.lastIndexOf(":")+1));
+				username = username.substring(0, username.lastIndexOf(":"));
 			}
 			projectOperations.userInfoLog(username, "Sending DICOM files in upload directory " + directory.getAbsolutePath() + " to DCM4CHEE");
 			if (count < 5000) {
 				log.info("Sending DICOM files in upload directory " + directory.getAbsolutePath() + " to DCM4CHEE, number of files:" + count);
+				projectOperations.updateUserTaskStatus(username, TaskStatus.TASK_DCM4CHE_SEND, directory.getName(), "Started push", new Date(), null);
 				Dcm4CheeOperations.dcmsnd(directory, true);
+				projectOperations.updateUserTaskStatus(username, TaskStatus.TASK_DCM4CHE_SEND, directory.getName(), "Completed push", null, new Date());
 			} else {
 				log.info("More than 5000 files to upload, trying to split dcmsend");
+				int errcnt = 0;
 				File[] dirs = new File[1];
 				dirs[0] = directory;
 				File root = dirs[0];
@@ -298,9 +374,18 @@ public class EPADUploadDirWatcher implements Runnable
 				{
 					if (dir.isDirectory()) {
 						log.info("Sending DICOM files in upload directory " + dir.getAbsolutePath() + " to DCM4CHEE");
+						projectOperations.updateUserTaskStatus(username, TaskStatus.TASK_DCM4CHE_SEND, dir.getName(), "Started push", new Date(), null);
 						boolean ok = Dcm4CheeOperations.dcmsnd(dir, false);
 						if (!ok)
+						{
+							errcnt = errcnt + dir.list().length;
+							projectOperations.createEventLog(username, null, null, null, null, null, null, dir.getName(), "Error sending to dcm4che",  null, true);
 							log.warning("Error in upload: sending " + dir.getAbsolutePath() + " to dcm4che");
+							projectOperations.updateUserTaskStatus(username, TaskStatus.TASK_DCM4CHE_SEND, dir.getName(), "Failed push", null, new Date());
+						}
+						else
+							projectOperations.updateUserTaskStatus(username, TaskStatus.TASK_DCM4CHE_SEND, dir.getName(), "Completed push", null, new Date());
+							
 					} else {
 						dir.renameTo(new File(extra, dir.getName()));
 						movedToExtra = true;
@@ -310,7 +395,20 @@ public class EPADUploadDirWatcher implements Runnable
 					log.info("Sending DICOM files in upload directory " + extra.getAbsolutePath() + " to DCM4CHEE");
 					boolean ok = Dcm4CheeOperations.dcmsnd(extra, false);
 					if (!ok)
+					{
+						errcnt = errcnt + extra.list().length;
 						log.warning("Error in upload: sending " + extra.getAbsolutePath() + " to dcm4che");
+						projectOperations.createEventLog(username, null, null, null, null, null, null, extra.getName(), "Error sending to dcm4che",  null, true);
+					}
+				}
+				if (errcnt > 0) {
+					log.warning("Errors in " + errcnt + " dicoms while sending " + directory.getAbsolutePath() + " to dcm4che");
+					EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
+					epadDatabaseOperations.insertEpadEvent(
+							username, 
+							"Errors in sending " + errcnt + " DICOM files to DCM4CHEE", 
+							"Dicoms", "Dicoms", "Dicoms", "Dicoms", "Dicoms", "Dicoms", "Error Processing Upload");					
+					projectOperations.userErrorLog(username, "Error sending " + errcnt + " DICOM files to DCM4CHEE");
 				}
 			}
 		} catch (Exception x) {
@@ -324,7 +422,7 @@ public class EPADUploadDirWatcher implements Runnable
 		}
 		try {
 			EpadDatabaseOperations databaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();	
-			Set<String> seriesUIDs = UserProjectService.pendingUploads.keySet();
+			Set<String> seriesUIDs = UserProjectService.pendingPNGs.keySet();
 			for (String seriesUID: seriesUIDs) {
 				databaseOperations.deleteSeriesOnly(seriesUID); // Delete uploaded series status
 			}
@@ -345,8 +443,11 @@ public class EPADUploadDirWatcher implements Runnable
 
 	private void deleteUploadDirectory(File dir)
 	{
+		if (dir.exists())
+		{
 		log.info("Deleting upload directory " + dir.getAbsolutePath());
 		EPADFileUtils.deleteDirectoryAndContents(dir);
+		}
 	}
 
 	private void writeExceptionLog(File dir, Exception e)

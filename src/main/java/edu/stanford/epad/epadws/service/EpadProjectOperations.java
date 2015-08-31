@@ -30,6 +30,7 @@ import java.util.List;
 import java.util.Map;
 
 import edu.stanford.epad.epadws.models.EpadFile;
+import edu.stanford.epad.epadws.models.EventLog;
 import edu.stanford.epad.epadws.models.FileType;
 import edu.stanford.epad.epadws.models.NonDicomSeries;
 import edu.stanford.epad.epadws.models.Project;
@@ -44,10 +45,6 @@ import edu.stanford.epad.epadws.models.dao.AbstractDAO;
 /**
  * All Epad User/Project/Subject/Study related operations to replace XNAT functionality
  * 
- * @author Dev Gude
- *
- */
-/**
  * @author Dev Gude
  *
  */
@@ -173,7 +170,10 @@ public interface EpadProjectOperations {
 	void userErrorLog(String username, String message);
 	void userWarningLog(String username, String message);
 	void userInfoLog(String username, String message);
+	void updateUserTaskStatus(String username, String type, String target, String status, Date startTime, Date completeTime);
+	
 	void createEventLog(String username, String projectID, String subjectID, String studyUID, String seriesUID, String imageUID, String aimID, String function, String params);
+	void createEventLog(String username, String projectID, String subjectID, String studyUID, String seriesUID, String imageUID, String aimID, String filename, String function, String params, boolean error);
 	
 	/**
 	 * Create Subject record in database
@@ -371,7 +371,7 @@ public interface EpadProjectOperations {
 	 */
 	List<Subject> getSubjectsForProject(String projectId) throws Exception;
 	List<Subject> getSubjectsForProject(String projectId, String sortBy) throws Exception;
-	
+	List<Subject> getUnassignSubjects() throws Exception;
 	/**
 	 * Get Subject for project
 	 * @param projectId
@@ -772,11 +772,18 @@ public interface EpadProjectOperations {
 	void deleteFile(String loggedInUser, String projectID, String subjectUID, String studyUID, String seriesUID, String filename) throws Exception;	
 	
 	/**
+	 * Get error messages for this user
+	 * @param username
+	 * @return
+	 */
+	List<MessageLog> getUserMessages(String username);
+	
+	/**
 	 * Get event logs for this user
 	 * @param username
 	 * @return
 	 */
-	List<MessageLog> getUserLogs(String username);
+	List<EventLog> getUseEventLogs(String username) throws Exception;
 
 	/**
 	 * Get reviewers for this user
