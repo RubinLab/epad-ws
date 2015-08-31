@@ -683,10 +683,6 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		EpadFile efile = new EpadFile();
 		efile.setName(filename);
 		efile.setDescription(description);
-		if (fileType != null)
-			efile.setFileType(fileType.getName());
-		else
-			efile.setFileType("");
 		if (projectID != null && projectID.length() > 0)
 		{
 			Project project = getProject(projectID);
@@ -723,8 +719,13 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 			efile.setFilePath(EPADConfig.getEPADWebServerFilesDir() + efile.getRelativePath());
 			efile.setCreator(loggedInUser);
 		}
+		if (fileType != null)
+			efile.setFileType(fileType.getName());
+		else
+			efile.setFileType("");
 		efile.setLength(file.length());
-		efile.setDescription(description);
+		if (description != null)
+			efile.setDescription(description);
 		efile.save();
 		File parent = new File(efile.getFilePath());
 		parent.mkdirs();
