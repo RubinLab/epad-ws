@@ -40,7 +40,8 @@ public class UsersRouteTemplates
 	public static final String USER_SUBJECT = USER_WORKLIST + "/subjects/" + "{subjectID}";
 	public static final String USER_STUDY = USER_WORKLIST + "/studies/" + "{studyUID}";
 	public static final String USER_REVIEWERS = USER + "/reviewers/";
-	public static final String USER_REVIEWER = USER + "/reviewers/{username}";
+	public static final String USER_REVIEWER = USER + "/reviewers/{reviewer}";
 	public static final String USER_REVIEWEES = USER + "/reviewees/";
-	public static final String USER_REVIEWEE = USER + "/reviewees/{username}";
+	public static final String USER_REVIEWEE = USER + "/reviewees/{reviewee}";
+	public static final String USER_REVIEWEE_AIMS = USER + "/reviewees/{reviewee}/aims/";
 }

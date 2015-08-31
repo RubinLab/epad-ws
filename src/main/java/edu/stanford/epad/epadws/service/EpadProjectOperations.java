@@ -371,7 +371,7 @@ public interface EpadProjectOperations {
 	 */
 	List<Subject> getSubjectsForProject(String projectId) throws Exception;
 	List<Subject> getSubjectsForProject(String projectId, String sortBy) throws Exception;
-	
+	List<Subject> getUnassignSubjects() throws Exception;
 	/**
 	 * Get Subject for project
 	 * @param projectId

@@ -110,6 +110,20 @@ public interface EpadOperations
 			EPADSearchFilter searchFilter, int start, int count, String sortField) throws Exception;
 
 	/**
+	 * Get Unassigned subject descriptions
+	 * @param projectID
+	 * @param username
+	 * @param sessionID
+	 * @param searchFilter
+	 * @param start
+	 * @param count
+	 * @param sortField
+	 * @return
+	 * @throws Exception
+	 */
+	EPADSubjectList getUnassignedSubjectDescriptions(String username, String sessionID, EPADSearchFilter searchFilter) throws Exception;
+
+	/**
 	 * Get subject description
 	 * @param subjectReference
 	 * @param username
@@ -1095,6 +1109,14 @@ public interface EpadOperations
 	 * @return
 	 */
 	EPADAIMList getAIMDescriptions(String projectID, AIMSearchType aimSearchType, String searchValue, String username, String sessionID, int start, int count);
+	
+	/**
+	 * Get aim by user
+	 * @param username
+	 * @param sessionID
+	 * @return
+	 */
+	EPADAIMList getAIMDescriptionsForUser(String username, String sessionID);
 	
 	/**
 	 * Get aim by aimID

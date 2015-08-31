@@ -174,7 +174,7 @@ public class EPADUploadDirWatcher implements Runnable
 			if (username == null)
 				username = getUserNameFromProperties(xnatprops);
 			if (hasZipFile) {
-				for (int i = 0; i < 1; i++)
+				for (;;)
 				{
 					zipFile = waitForZipUploadToComplete(directory, username);
 					if (zipFile == null) break;

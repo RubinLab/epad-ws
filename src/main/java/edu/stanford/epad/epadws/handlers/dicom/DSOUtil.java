@@ -86,6 +86,7 @@ import edu.stanford.epad.dtos.EPADFrame;
 import edu.stanford.epad.dtos.EPADFrameList;
 import edu.stanford.epad.dtos.PNGFileProcessingStatus;
 import edu.stanford.epad.dtos.SeriesProcessingStatus;
+import edu.stanford.epad.dtos.TaskStatus;
 import edu.stanford.epad.dtos.internal.DICOMElement;
 import edu.stanford.epad.dtos.internal.DICOMElementList;
 import edu.stanford.epad.epadws.aim.AIMQueries;
@@ -311,7 +312,10 @@ public class DSOUtil
 			
 			log.info("Generating new DSO for series " + dsoEditRequest.seriesUID);
 			TIFFMasksToDSOConverter converter = new TIFFMasksToDSOConverter();
-			String[] seriesImageUids = converter.generateDSO(files2FilePaths(dsoTIFFMaskFiles), dicomFilePaths, temporaryDSOFile.getAbsolutePath(), dsoName, null, null, false);
+			boolean removeEmptyMasks = false;
+			if (EPADConfig.xnatServer.contains("dev6"))
+				removeEmptyMasks = true;
+			String[] seriesImageUids = converter.generateDSO(files2FilePaths(dsoTIFFMaskFiles), dicomFilePaths, temporaryDSOFile.getAbsolutePath(), dsoName, null, null, removeEmptyMasks);
 			String dsoSeriesUID = seriesImageUids[0];
 			String dsoImageUID = seriesImageUids[1];
 			log.info("Sending generated DSO " + temporaryDSOFile.getAbsolutePath() + " dsoImageUID:" + dsoImageUID + " dsoSeriesUID:" + dsoSeriesUID + " to dcm4chee...");
@@ -340,7 +344,10 @@ public class DSOUtil
 
 		} catch (Exception e) {
 			log.warning("Error generating DSO image for series " + dsoEditRequest.seriesUID, e);
-			return null;
+			if (e.getMessage() != null)
+				throw new RuntimeException(e.getMessage());
+			else
+				return null;
 		}
 	}
 
@@ -534,6 +541,7 @@ public class DSOUtil
 		try {
 			EPADFileUtils.copyFile(dsoFile, tmpDSO);
 			EpadDatabaseOperations databaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
+			EpadProjectOperations projectOperations = DefaultEpadProjectOperations.getInstance();
 			DicomSegmentationObject dso = new DicomSegmentationObject();
 			SourceImage sourceDSOImage = dso.convert(tmpDSO.getAbsolutePath());
 			int numberOfFrames = sourceDSOImage.getNumberOfBufferedImages();
@@ -588,7 +596,8 @@ public class DSOUtil
 			{
 				try
 				{
-					//oldFile.delete();
+					if (oldFile.getName().contains("png"))
+						oldFile.delete();
 				} catch (Exception x) {};
 			}
 
@@ -642,6 +651,7 @@ public class DSOUtil
 				int refFrameNumber = instanceNumber - instanceOffset; // Frames 0-based, instances 1 or more
 				if (refFrameNumber < 0) continue;
 				log.info("FrameNumber:" + frameNumber + " refFrameNumber:" + refFrameNumber + " instance number:" + dcm4cheeReferencedImageDescription.instanceNumber);
+				projectOperations.updateUserTaskStatus(username, TaskStatus.TASK_DSO_PNG_GEN, seriesUID, "Generating PNGs, frame:" + frameNumber, null, null);
 				BufferedImage bufferedImage = sourceDSOImage.getBufferedImage(frameNumber);
 				BufferedImage bufferedImageWithTransparency = generateTransparentImage(bufferedImage);
 				if (nonBlank.get())
@@ -891,7 +901,7 @@ public class DSOUtil
 					}
 					else
 					{
-						log.info("Null return from createEditDSO");
+						log.info("Null return from createNewDSO");
 						uploadError = true;
 					}
 				}

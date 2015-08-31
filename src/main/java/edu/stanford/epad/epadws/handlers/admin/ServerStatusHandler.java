@@ -127,7 +127,8 @@ public class ServerStatusHandler extends AbstractHandler
 				responseStream.println("<br>");
 				String sessionID = SessionService.getJSessionIDFromRequest(httpRequest);
 				String username = EPADSessionOperations.getSessionUser(sessionID);
-				if ("admin".equals(username)) {
+				User user = DefaultEpadProjectOperations.getInstance().getUser(username);
+				if (user.isAdmin()) {
 					responseStream.println("Current Sessions: " + "<br>");
 					Map<String, EPADSession> sessions = EPADSessionOperations.getCurrentSessions();
 					for (String id: sessions.keySet()) {
@@ -136,18 +137,26 @@ public class ServerStatusHandler extends AbstractHandler
 					}
 					Collection<User> users = DefaultEpadProjectOperations.getUserCache();
 					responseStream.println("<br><table border=1 cellpadding=2><tr style='font-weight: bold;'><td align=center>User</td><td align=center>Task</td><td align=center>Target</td><td align=center>Status</td><td align=center>Start</td><td align=center>Complete</td></tr>");
-					for (User user: users)
+					for (User u: users)
 					{
-						Collection<TaskStatus> tss = user.getCurrentTasks().values();
+						Collection<TaskStatus> tss = u.getCurrentTasks().values();
 						for (TaskStatus ts: tss)
 						{
-							responseStream.println("<tr><td>" + user.getUsername() + "</td><td>" + ts.type + "</td><td>" + ts.target + "</td><td>" + ts.status + "</td><td>" + ts.starttime + "</td><td>" + ts.completetime + "</td></tr>");
+							responseStream.println("<tr><td>" + u.getUsername() + "</td><td>" + ts.type + "</td><td>" + ts.target + "</td><td>" + ts.status + "</td><td>" + ts.starttime + "</td><td>" + ts.completetime + "</td></tr>");
 						}
+					}
+					responseStream.println("</table>");
+				}  else {
+					responseStream.println("<br><table border=1 cellpadding=2><tr style='font-weight: bold;'><td align=center>User</td><td align=center>Task</td><td align=center>Target</td><td align=center>Status</td><td align=center>Start</td><td align=center>Complete</td></tr>");
+					Collection<TaskStatus> tss = user.getCurrentTasks().values();
+					for (TaskStatus ts: tss)
+					{
+						responseStream.println("<tr><td>" + user.getUsername() + "</td><td>" + ts.type + "</td><td>" + ts.target + "</td><td>" + ts.status + "</td><td>" + ts.starttime + "</td><td>" + ts.completetime + "</td></tr>");
 					}
 					responseStream.println("</table>");
 				}
 				responseStream.println("</body>");
-			} 
+			}
 			statusCode = HttpServletResponse.SC_OK;
 		} catch (Throwable t) {
 			log.warning(INTERNAL_EXCEPTION_MESSAGE, t);

@@ -683,10 +683,6 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		EpadFile efile = new EpadFile();
 		efile.setName(filename);
 		efile.setDescription(description);
-		if (fileType != null)
-			efile.setFileType(fileType.getName());
-		else
-			efile.setFileType("");
 		if (projectID != null && projectID.length() > 0)
 		{
 			Project project = getProject(projectID);
@@ -723,8 +719,13 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 			efile.setFilePath(EPADConfig.getEPADWebServerFilesDir() + efile.getRelativePath());
 			efile.setCreator(loggedInUser);
 		}
+		if (fileType != null)
+			efile.setFileType(fileType.getName());
+		else
+			efile.setFileType("");
 		efile.setLength(file.length());
-		efile.setDescription(description);
+		if (description != null)
+			efile.setDescription(description);
 		efile.save();
 		File parent = new File(efile.getFilePath());
 		parent.mkdirs();
@@ -971,6 +972,41 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		if (project == null) return new ArrayList<Subject>();
 		
 		return getSubjectsByProjectId(project.getId(), sortBy);
+	}
+
+	@Override
+	public List<Subject> getUnassignSubjects() throws Exception {
+		Project project = this.getProject(EPADConfig.xnatUploadProjectID);
+		List psAll = new ProjectToSubject().getObjects("project_id = " + project.getId());
+		Set<Long> allIds = new HashSet<Long>();
+		for (Object obj: psAll)
+		{
+			long id = ((AbstractDAO) obj).getId();
+			allIds.add(id);
+		}
+		List psAsssigned = new ProjectToSubject().getObjects("project_id != " + project.getId());
+		Set<Long> assignedIds = new HashSet<Long>();
+		for (Object obj: psAsssigned)
+		{
+			long id = ((AbstractDAO) obj).getId();
+			assignedIds.add(id);
+		}
+		for (Long assignedId: assignedIds)
+		{
+			allIds.remove(assignedId);
+		}
+		String inclause = "";
+		String delim = "(";
+		for (Long id: allIds)
+		{
+			inclause = inclause + delim + id;
+		}
+		
+		List objects = new Subject().getObjects("id  in " + inclause + ") sort by name");
+		List<Subject> subjects = new ArrayList<Subject>();
+		subjects.addAll(objects);
+		
+		return subjects;
 	}
 
 	/**

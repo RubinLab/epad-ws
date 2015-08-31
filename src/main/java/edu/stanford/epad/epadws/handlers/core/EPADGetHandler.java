@@ -77,6 +77,7 @@ import edu.stanford.epad.dtos.RemotePACEntityList;
 import edu.stanford.epad.dtos.RemotePACList;
 import edu.stanford.epad.dtos.RemotePACQueryConfigList;
 import edu.stanford.epad.epadws.EPadWebServerVersion;
+import edu.stanford.epad.epadws.aim.AIMQueries;
 import edu.stanford.epad.epadws.aim.AIMSearchType;
 import edu.stanford.epad.epadws.aim.AIMUtil;
 import edu.stanford.epad.epadws.epaddb.EpadDatabase;
@@ -156,7 +157,12 @@ public class EPADGetHandler
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.SUBJECT_LIST, pathInfo)) {
 				ProjectReference projectReference = ProjectReference.extract(ProjectsRouteTemplates.SUBJECT_LIST, pathInfo);
 				String sortField = httpRequest.getParameter("sortField");
-				EPADSubjectList subjectList = epadOperations.getSubjectDescriptions(projectReference.projectID, username,
+				boolean unassignedOnly = "true".equalsIgnoreCase(httpRequest.getParameter("unassignedOnly"));
+				EPADSubjectList subjectList = null;
+				if (projectReference.projectID.equals(EPADConfig.xnatUploadProjectID) && unassignedOnly)
+					subjectList = epadOperations.getUnassignedSubjectDescriptions(username, sessionID, searchFilter);
+				else
+					subjectList = epadOperations.getSubjectDescriptions(projectReference.projectID, username,
 						sessionID, searchFilter, start, count, sortField);
 				long endtime = System.currentTimeMillis();
 				log.info("Returning " + subjectList.ResultSet.totalRecords + " subjects to client, took " + (endtime-starttime) + " msecs");
@@ -1115,10 +1121,60 @@ public class EPADGetHandler
 				statusCode = HttpServletResponse.SC_OK;
 
 			} else if (HandlerUtil.matchesTemplate(UsersRouteTemplates.USER_REVIEWEES, pathInfo)) {
-				Map<String, String> templateMap = HandlerUtil.getTemplateMap(UsersRouteTemplates.USER_REVIEWERS, pathInfo);
-				String reader = HandlerUtil.getTemplateParameter(templateMap, "username");
-				EPADUserList users = epadOperations.getReviewees(username, reader, sessionID);
+				Map<String, String> templateMap = HandlerUtil.getTemplateMap(UsersRouteTemplates.USER_REVIEWEES, pathInfo);
+				String reviewer = HandlerUtil.getTemplateParameter(templateMap, "username");
+				EPADUserList users = epadOperations.getReviewees(username, reviewer, sessionID);
 				responseStream.append(users.toJSON());
+				statusCode = HttpServletResponse.SC_OK;
+			
+			} else if (HandlerUtil.matchesTemplate(UsersRouteTemplates.USER_REVIEWEE, pathInfo)) {
+				Map<String, String> templateMap = HandlerUtil.getTemplateMap(UsersRouteTemplates.USER_REVIEWEE, pathInfo);
+				String reviewer = HandlerUtil.getTemplateParameter(templateMap, "username");
+				String reviewee = HandlerUtil.getTemplateParameter(templateMap, "reviewee");
+				EPADUserList users = epadOperations.getReviewees(username, reviewer, sessionID);
+				boolean found = false;
+				for (EPADUser user: users.ResultSet.Result)
+				{
+					if (user.username.equals(reviewee))
+					{
+						responseStream.append(user.toJSON());
+						found = true;
+					}
+				}
+				if (!found)
+					throw new Exception("User " + reviewee + " is not in the list for this user");
+				statusCode = HttpServletResponse.SC_OK;
+			} else if (HandlerUtil.matchesTemplate(UsersRouteTemplates.USER_REVIEWEE_AIMS, pathInfo)) {
+				Map<String, String> templateMap = HandlerUtil.getTemplateMap(UsersRouteTemplates.USER_REVIEWEE_AIMS, pathInfo);
+				String reviewer = HandlerUtil.getTemplateParameter(templateMap, "username");
+				String reviewee = HandlerUtil.getTemplateParameter(templateMap, "reviewee");
+				EPADUserList users = epadOperations.getReviewees(username, reviewer, sessionID);
+				boolean found = false;
+				for (EPADUser user: users.ResultSet.Result)
+				{
+					if (user.username.equals(reviewee))
+					{
+						found = true;
+					}
+				}
+				if (!found)
+					throw new Exception("User " + reviewee + " is not in the list for this user");
+				EPADAIMList aims = epadOperations.getAIMDescriptionsForUser(reviewee, sessionID);
+				long dbtime = System.currentTimeMillis();
+				log.info("Time taken for AIM database query:" + (dbtime-starttime) + " msecs");
+				if (returnSummary(httpRequest))
+				{	
+					aims = AIMUtil.queryAIMImageAnnotationSummariesV4(aims, "admin", sessionID);	// He needs to see all				
+					responseStream.append(aims.toJSON());
+				}
+				else if (returnJson(httpRequest))
+				{
+					AIMUtil.queryAIMImageJsonAnnotations(responseStream, aims, "admin", sessionID);					
+				}
+				else
+				{
+					AIMUtil.queryAIMImageAnnotationsV4(responseStream, aims, "admin", sessionID);					
+				}
 				statusCode = HttpServletResponse.SC_OK;
 
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.PROJECT_FILE_LIST, pathInfo)) {

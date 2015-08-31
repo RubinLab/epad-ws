@@ -57,6 +57,7 @@ import edu.stanford.epad.epadws.models.Project;
 import edu.stanford.epad.epadws.models.Study;
 import edu.stanford.epad.epadws.models.Subject;
 import edu.stanford.epad.epadws.models.User;
+import edu.stanford.epad.epadws.queries.DefaultEpadOperations;
 import edu.stanford.epad.epadws.queries.XNATQueries;
 import edu.stanford.epad.epadws.security.IdGenerator;
 import edu.stanford.epad.epadws.xnat.XNATCreationOperations;
@@ -263,11 +264,18 @@ public class UserProjectService {
 				String xnatProjectLabel = xnatUploadProperties.getProperty("XNATProjectName");
 				String xnatSessionID = xnatUploadProperties.getProperty("XNATSessionID");
 				xnatUserName = xnatUploadProperties.getProperty("XNATUserName");
+				String patientID = xnatUploadProperties.getProperty("SubjectName");
+				if (patientID == null) patientID = xnatUploadProperties.getProperty("SubjectID");
+				String studyUID = xnatUploadProperties.getProperty("StudyName");
+				if (studyUID == null) studyUID = xnatUploadProperties.getProperty("StudyUID");
+				String seriesUID = xnatUploadProperties.getProperty("SeriesName");
+				if (seriesUID == null) seriesUID = xnatUploadProperties.getProperty("SeriesUID");
 				log.info("Found XNAT upload properties file " + propertiesFilePath + " project:" + xnatProjectLabel + " user:" + xnatUserName);
+				log.info("XNAT Properties, projectID:"  + xnatProjectLabel + " username:" + xnatUserName + " patient:" + patientID + " study:" + studyUID + " series:" + seriesUID);
 				if (xnatProjectLabel != null) {
 					projectOperations.createEventLog(xnatUserName, xnatProjectLabel, null, null, null, null, null, "UPLOAD DICOMS", "" + dicomUploadDirectory.list().length);
 					xnatUploadPropertiesFile.delete();
-					numberOfDICOMFiles = createProjectEntitiesFromDICOMFilesInUploadDirectory(dicomUploadDirectory, xnatProjectLabel, xnatSessionID, xnatUserName);
+					numberOfDICOMFiles = createProjectEntitiesFromDICOMFilesInUploadDirectory(dicomUploadDirectory, xnatProjectLabel, xnatSessionID, xnatUserName, patientID, studyUID, seriesUID);
 					if (numberOfDICOMFiles != 0)
 					{
 						log.info("Found " + numberOfDICOMFiles + " DICOM file(s) in directory uploaded by " + xnatUserName + " for project " + xnatProjectLabel);
@@ -309,6 +317,7 @@ public class UserProjectService {
 				String xnatProjectLabel = xnatUploadProperties.getProperty("XNATProjectName");
 				String xnatSessionID = xnatUploadProperties.getProperty("XNATSessionID");
 				String xnatUserName = xnatUploadProperties.getProperty("XNATUserName");
+				log.info("Properties:" + xnatUploadProperties);
 				return xnatUserName;
 			} catch (Exception e) {
 				log.warning("Error processing upload in directory " + dicomUploadDirectory.getAbsolutePath(), e);
@@ -328,7 +337,7 @@ public class UserProjectService {
 	 * @return
 	 * @throws Exception
 	 */
-	public static int createProjectEntitiesFromDICOMFilesInUploadDirectory(File dicomUploadDirectory, String projectID, String sessionID, String username) throws Exception
+	public static int createProjectEntitiesFromDICOMFilesInUploadDirectory(File dicomUploadDirectory, String projectID, String sessionID, String username, String subjectID, String studyUID, String seriesUID) throws Exception
 	{
 		int numberOfDICOMFiles = 0;
 		Collection<File> files = listDICOMFiles(dicomUploadDirectory);
@@ -342,11 +351,21 @@ public class UserProjectService {
 					try {
 						if (AIMUtil.saveAIMAnnotation(dicomFile, projectID, sessionID, username))
 							log.warning("Error processing aim file:" + dicomFile.getName());
-						dicomFile.delete();
-						continue;
 					} catch (Exception x) {
-						
+						log.warning("Error uploading file:" + dicomFile.getName() + ":" + x.getMessage());
 					}
+					dicomFile.delete();
+					continue;
+				}
+				else if (DefaultEpadOperations.isImage(dicomFile) && seriesUID != null)
+				{
+					try {
+						DefaultEpadOperations.getInstance().createFile(username, projectID, subjectID, studyUID, seriesUID, dicomFile, null, null, sessionID);
+					} catch (Exception x) {
+						log.warning("Error uploading file:" + dicomFile.getName() + ":" + x.getMessage());
+					}
+					dicomFile.delete();
+					continue;
 				}
 				projectOperations.updateUserTaskStatus(username, TaskStatus.TASK_ADD_TO_PROJECT, dicomUploadDirectory.getName(), "Files processed: " + i, null, null);
 				if (createProjectEntitiesFromDICOMFile(dicomFile, projectID, sessionID, username))

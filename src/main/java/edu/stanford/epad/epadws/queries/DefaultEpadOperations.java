@@ -290,7 +290,9 @@ public class DefaultEpadOperations implements EpadOperations
 			}
 			boolean annotationCount = true;
 			if (EPADConfig.xnatUploadProjectID.equals(projectID))
+			{
 				annotationCount = false;
+			}
 			if (subjects.size() > 300 && !searchFilter.hasAnnotationMatch())
 				annotationCount = false;
 			for (Subject subject : subjects) {
@@ -327,6 +329,19 @@ public class DefaultEpadOperations implements EpadOperations
 //		{
 //			epadSubjectList.ResultSet.Result = epadSubjectList.ResultSet.Result.subList(start, start+count);
 //		}
+		return epadSubjectList;
+	}
+
+	@Override
+	public EPADSubjectList getUnassignedSubjectDescriptions(String username,
+			String sessionID, EPADSearchFilter searchFilter) throws Exception {
+		EPADSubjectList epadSubjectList = new EPADSubjectList();
+		List<Subject> subjects = projectOperations.getUnassignSubjects();
+		for (Subject subject : subjects) {
+			EPADSubject epadSubject = subject2EPADSubject(sessionID, username, subject, EPADConfig.xnatUploadProjectID, searchFilter, false);
+			epadSubjectList.addEPADSubject(epadSubject);
+		}
+
 		return epadSubjectList;
 	}
 
@@ -1347,7 +1362,7 @@ public class DefaultEpadOperations implements EpadOperations
 		}
 	}
 
-	private boolean isImage(File file) {
+	public static boolean isImage(File file) {
 		String name = file.getName().toLowerCase();
 		if (name.endsWith(".jpeg")
 				|| name.endsWith(".jpg")
@@ -2706,6 +2721,14 @@ public class DefaultEpadOperations implements EpadOperations
 	}
 
 	@Override
+	public EPADAIMList getAIMDescriptionsForUser(String username,
+			String sessionID) {
+		List<EPADAIM> aims = epadDatabaseOperations.getAIMsByQuery("UserLoginName = '" + username + "' order by PatientID asc, UpdateTime desc");
+
+		return new EPADAIMList(aims);
+	}
+
+	@Override
 	public EPADAIM getAIMDescription(String aimID, String username,
 			String sessionID) {
 		return epadDatabaseOperations.getAIM(aimID);
@@ -3632,7 +3655,8 @@ public class DefaultEpadOperations implements EpadOperations
 				}
 				if (cal.isSigned16Bit() && max < 5000) // Signed values can be negative/positive
 					windowCenter = 0;
-				if (ultrasound) { 	//temporary test
+				log.info("Calculated, windowWidth:" + windowWidth + " windowCenter:" + windowCenter);
+				if (ultrasound && windowWidth != 255 && windowCenter !=128) { 	//temporary test
 					windowCenter = 16384;
 					windowWidth = 32768;
 				}
