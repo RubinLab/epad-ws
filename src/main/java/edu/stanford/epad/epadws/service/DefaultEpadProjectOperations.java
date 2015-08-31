@@ -1000,9 +1000,10 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		for (Long id: allIds)
 		{
 			inclause = inclause + delim + id;
+			delim = ",";
 		}
 		
-		List objects = new Subject().getObjects("id  in " + inclause + ") sort by name");
+		List objects = new Subject().getObjects("id  in " + inclause + ") order by name");
 		List<Subject> subjects = new ArrayList<Subject>();
 		subjects.addAll(objects);
 		
