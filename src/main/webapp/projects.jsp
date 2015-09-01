@@ -1,6 +1,7 @@
 <%@ page language="java"%>
 <%@ page import="edu.stanford.epad.epadws.service.*"%>
 <%@ page import="edu.stanford.epad.epadws.security.*"%>
+<%@ page import="edu.stanford.epad.common.util.*"%>
 <%@ page session="false" %>
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
 <HTML>
@@ -49,6 +50,11 @@ $( document ).ready(function() {
 			{
 				var line = "<tr><td><span onclick=\"window.parent.rightpanel.location = leftdata +'.jsp?projectID=" + projects[i].id +"';window.parent.buttons.projectID ='" + projects[i].id + "';\"><u>" + projects[i].name + "</u></span></td><td>" + projects[i].id + "</td><td>"  +  projects[i].description + "</td><td>" + projects[i].numberOfSubjects + "</td></tr>\n";
 				html = html + line;
+				if (projects[i].id == '<%=EPADConfig.xnatUploadProjectID%>')
+				{
+					var line = "<tr><td><span onclick=\"window.parent.rightpanel.location = leftdata +'.jsp?projectID=" + projects[i].id +"&unassignedOnly=true';window.parent.buttons.projectID ='" + projects[i].id + "';\"><u>Really Unassigned</u></span></td><td>" + projects[i].id + "</td><td>"  +  projects[i].description + "</td><td>...</td></tr>\n";
+					html = html + line;
+				}
 			}
 			html = html + "</table>\n";
 			document.getElementById("projdiv").innerHTML = html;

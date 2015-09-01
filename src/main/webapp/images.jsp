@@ -13,6 +13,9 @@
 			String sessionID = SessionService.getJSessionIDFromRequest(request);
 			String username = EPADSessionOperations.getSessionUser(sessionID);
 			String projectID = request.getParameter("projectID");
+			String unassignedOnly = "";
+			if (request.getParameter("unassignedOnly") != null)
+				unassignedOnly = "&unassignedOnly=" + request.getParameter("unassignedOnly");
 %>
 <h2>Project: <%=projectID%></h2>
 <div id=imagelist><div>
@@ -23,7 +26,7 @@ $( document ).ready(function() {
 	var listdata;
 	var url = "<%=request.getContextPath()%>/v2/projects/<%=projectID%>/subjects/";
 	$.ajax({         
-		url: url + "?username=<%=username%>",         
+		url: url + "?username=<%=username%><%=unassignedOnly%>",         
 		type: 'get',         
 		async: false,         
 		cache: false,         
@@ -85,7 +88,7 @@ $( document ).ready(function() {
 												var aims = response.ResultSet.Result;
 												for (l = 0; l < aims.length; l++)
 												{
-													listdata =  listdata + "<tr><td>Aims</td><td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href='images.jsp?projectID=" + aims[l].aimID + "' target='rightpanel'>" + aims[l].name + " (" + aims[l].userName  + ")</a></td><td>" + aims[l].aimID + "</td><td>"  +  aims[l].template + "/" + aims[l].templateType + "</td></tr>\n";
+													listdata =  listdata + "<tr><td>Aims</td><td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href='images.jsp?projectID=" + aims[l].aimID + "' target='rightpanel'>" + aims[l].name + " (" + aims[l].userName  + ")</a></td><td>" + aims[l].aimID + "." + aims[l].dsoSeriesUID + "</td><td>"  +  aims[l].template + "/" + aims[l].templateType + "</td></tr>\n";
 												}
 											}
 										})

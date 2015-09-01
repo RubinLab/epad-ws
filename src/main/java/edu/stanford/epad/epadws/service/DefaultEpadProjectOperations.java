@@ -1104,6 +1104,8 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		Subject subject = getSubject(subjectUID);
 		ProjectToSubject ptos = (ProjectToSubject) new ProjectToSubject().getObject("project_id = " + project.getId() + " and subject_id=" + subject.getId());
 		List<Study> studies = new ArrayList<Study>();
+		if (ptos == null)
+			return studies;
 		List objects = new Study().getObjects("id in (select study_id from " 
 				+ ProjectToSubjectToStudy.DBTABLE 
 				+ " where proj_subj_id =" + ptos.getId() + ")");

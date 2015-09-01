@@ -15,8 +15,8 @@
 %>
 <br>
 <table align=center border=0 cellpadding=3 cellspacing=0 width=100%>
-<tr><td width=25% align=center><a href='javascript:files()'>Files</a></td><td width=25% align=center><a href='javascript:aims()'>Annotations</a></td><td width=25% align=center><a href='javascript:pacs()' >PACs</a></td><td width=25% align=center><a href='javascript:users()' >Users</a></td></tr>
-<tr><td width=100% align=center colspan=4><a href='javascript:logout()'>Logout</a></td></tr>
+<tr><td width=25% align=center><a href='javascript:aims()'>Images/Aims</a></td><td width=25% align=center><a href='javascript:files()'>Files</a></td><td width=25% align=center><a href='javascript:pacs()' >PACs</a></td><td width=25% align=center><a href='javascript:users()' >Users</a></td></tr>
+<tr><td width=100% align=center colspan=2><a href='javascript:epad()'>Back To ePAD</a></td><td width=100% align=center colspan=2><a href='javascript:logout()'>Logout</a></td></tr>
 </table>
 <script>
 var projectID;
@@ -118,6 +118,10 @@ function logout()
 			window.top.location = "login.jsp";
 		}
 	});
+}
+function epad()
+{
+	window.parent.location = "<%=request.getContextPath()%>/Web_pad.html";
 }
 </script>
 </BODY>

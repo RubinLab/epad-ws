@@ -25,7 +25,7 @@
 </frameset>
 
 <frameset rows="*">
-<frame name=rightpanel src="https://epad.stanford.edu/documentation/developer/rest-api">
+<frame name=rightpanel src="<%=request.getContextPath()%>/status">
 </frameset>
    
 </frameset>
