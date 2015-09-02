@@ -1719,6 +1719,19 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		new ProjectToFile().deleteObjects("file_id =" + efile.getId());
 		efile.delete();
 	}
+	
+	private void deleteFile(EpadFile efile) throws Exception {
+		String path = efile.getFilePath();
+		File file = new File(path);
+		try {
+			if (file.exists())
+				file.delete();
+		} catch (Exception x) {
+			log.warning("Error deleting file:" + file.getAbsolutePath(), x);
+		}
+		new ProjectToFile().deleteObjects("file_id =" + efile.getId());
+		efile.delete();
+	}
 
 	/* (non-Javadoc)
 	 * @see edu.stanford.epad.epadws.service.EpadProjectOperations#deleteProject(java.lang.String, java.lang.String)
@@ -1834,6 +1847,11 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 
 	@Override
 	public void deleteNonDicomSeries(String seriesUID) throws Exception {
+		List<EpadFile> files = this.getEpadFiles(null, null, null, seriesUID, null, false);
+		for (EpadFile file: files)
+		{
+			this.deleteFile(file);
+		}
 		NonDicomSeries nds = (NonDicomSeries) new NonDicomSeries().getObject("seriesUID = " + NonDicomSeries.toSQL(seriesUID));
 		if (nds != null)
 			nds.delete();

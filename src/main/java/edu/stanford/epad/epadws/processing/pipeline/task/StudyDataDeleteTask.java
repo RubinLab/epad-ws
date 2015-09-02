@@ -23,14 +23,15 @@
 //USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package edu.stanford.epad.epadws.processing.pipeline.task;
 
+import java.util.List;
 import java.util.Set;
 
 import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.epad.epadws.epaddb.EpadDatabase;
+import edu.stanford.epad.epadws.models.NonDicomSeries;
 import edu.stanford.epad.epadws.queries.DefaultEpadOperations;
 import edu.stanford.epad.epadws.queries.EpadOperations;
-import edu.stanford.epad.epadws.queries.XNATQueries;
 import edu.stanford.epad.epadws.service.DefaultEpadProjectOperations;
 import edu.stanford.epad.epadws.service.EpadProjectOperations;
 import edu.stanford.epad.epadws.service.UserProjectService;
@@ -95,6 +96,11 @@ public class StudyDataDeleteTask implements Runnable
 						XNATDeletionOperations.deleteXNATDICOMStudy(projectID, patientID,
 								studyUID, adminSessionID);
 					} else {
+						List<NonDicomSeries> ndSerieses = projectOperations.getNonDicomSeriesForStudy(studyUID);
+						for (NonDicomSeries series: ndSerieses)
+						{
+							projectOperations.deleteNonDicomSeries(series.getSeriesUID());
+						}
 						projectOperations.deleteStudy("admin", studyUID, patientID, projectID);
 						projectOperations.deleteStudy("admin", studyUID);
 					}
