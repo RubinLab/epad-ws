@@ -23,32 +23,9 @@
 //USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package edu.stanford.epad.epadws.handlers.core;
 
-import java.util.Map;
-
-import edu.stanford.epad.epadws.handlers.HandlerUtil;
-
-public class PluginReference
+public class PluginRouteTemplates
 {
-	public final String pluginID;
+	public static final String PLUGIN_LIST = "/plugins/";
+	public static final String PLUGIN = PLUGIN_LIST + "{pluginid}";
 
-	public PluginReference(String pluginID)
-	{
-		this.pluginID = pluginID;
-	}
-
-	public static PluginReference extract(String template, String pathInfo)
-	{
-		Map<String, String> templateMap = HandlerUtil.getTemplateMap(template, pathInfo);
-		String pluginID = HandlerUtil.getTemplateParameter(templateMap, "pluginid");
-
-		validatePluginID(pluginID);
-
-		return new PluginReference(pluginID);
-	}
-
-	public static void validatePluginID(String pluginID)
-	{
-		if (pluginID == null)
-			throw new RuntimeException("Invalid plugin ID found in request");
-	}
 }

@@ -27,28 +27,37 @@ import java.util.Map;
 
 import edu.stanford.epad.epadws.handlers.HandlerUtil;
 
-public class PluginReference
+public class ProjectPluginReference
 {
-	public final String pluginID;
+	public final String projectId;
+	public final String pluginId;
 
-	public PluginReference(String pluginID)
+	public ProjectPluginReference(String projectId, String pluginId)
 	{
-		this.pluginID = pluginID;
+		this.projectId = projectId;
+		this.pluginId = pluginId;
 	}
 
-	public static PluginReference extract(String template, String pathInfo)
+	public static ProjectPluginReference extract(String template, String pathInfo)
 	{
 		Map<String, String> templateMap = HandlerUtil.getTemplateMap(template, pathInfo);
-		String pluginID = HandlerUtil.getTemplateParameter(templateMap, "pluginid");
+		String projectId = null;
+		try
+		{
+			projectId = HandlerUtil.getTemplateParameter(templateMap, "project");
+		}
+		catch (Exception x) {}
+		String pluginId = HandlerUtil.getTemplateParameter(templateMap, "pluginid");
 
-		validatePluginID(pluginID);
+		validateSubjectID(pluginId);
 
-		return new PluginReference(pluginID);
+		ProjectPluginReference sr = new ProjectPluginReference(projectId, pluginId);
+		return sr;
 	}
 
-	public static void validatePluginID(String pluginID)
+	protected static void validateSubjectID(String pluginId)
 	{
-		if (pluginID == null)
-			throw new RuntimeException("Invalid plugin ID found in request");
+		if (pluginId == null)
+			throw new RuntimeException("Invalid plugin id found in request");
 	}
 }
