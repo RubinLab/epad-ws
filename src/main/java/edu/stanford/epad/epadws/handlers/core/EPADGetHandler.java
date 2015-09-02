@@ -53,6 +53,8 @@ import edu.stanford.epad.dtos.EPADFrameList;
 import edu.stanford.epad.dtos.EPADImage;
 import edu.stanford.epad.dtos.EPADImageList;
 import edu.stanford.epad.dtos.EPADObjectList;
+import edu.stanford.epad.dtos.EPADPlugin;
+import edu.stanford.epad.dtos.EPADPluginList;
 import edu.stanford.epad.dtos.EPADPluginParameterList;
 import edu.stanford.epad.dtos.EPADProject;
 import edu.stanford.epad.dtos.EPADProjectList;
@@ -1522,8 +1524,25 @@ public class EPADGetHandler
 				TCIAService.downloadSeriesFromTCIA(username, seriesUID, projectID);
 				statusCode = HttpServletResponse.SC_OK;
 
+			} else if (HandlerUtil.matchesTemplate(PluginRouteTemplates.PLUGIN_LIST, pathInfo)) { //ML
+				
+				EPADPluginList plugins = pluginOperations.getPluginDescriptions(username, sessionID);
+				responseStream.append(plugins.toJSON());
+				statusCode = HttpServletResponse.SC_OK;
+
+			} else if (HandlerUtil.matchesTemplate(PluginRouteTemplates.PLUGIN, pathInfo)) { //ML
+								
+				PluginReference pluginReference = PluginReference.extract(PluginRouteTemplates.PLUGIN, pathInfo);
+				EPADPlugin plugin = pluginOperations.getPluginDescription(pluginReference,username, sessionID);
+				if (plugin != null) {
+					responseStream.append(plugin.toJSON());
+					statusCode = HttpServletResponse.SC_OK;
+				} else
+					throw new Exception("Plugin " + pluginReference.pluginID + " not found");
+
+
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.PARAMETER_LIST, pathInfo)) { //ML
-				PluginReference reference = PluginReference.extract(ProjectsRouteTemplates.PARAMETER_LIST, pathInfo);
+				ProjectPluginReference reference = ProjectPluginReference.extract(ProjectsRouteTemplates.PARAMETER_LIST, pathInfo);
 								
 				EPADPluginParameterList parameters = pluginOperations.getParameterForPluginOfProject(reference.projectId, reference.pluginId);
 				responseStream.append(parameters.toJSON());
