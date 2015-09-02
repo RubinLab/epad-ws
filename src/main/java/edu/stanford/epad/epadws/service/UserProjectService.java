@@ -243,7 +243,7 @@ public class UserProjectService {
 	 * @param dicomUploadDirectory
 	 * @return
 	 */
-	public static String createProjectEntitiesFromDICOMFilesInUploadDirectory(File dicomUploadDirectory)
+	public static String createProjectEntitiesFromDICOMFilesInUploadDirectory(File dicomUploadDirectory, boolean zip)
 	{
 		int numberOfDICOMFiles = 0;
 		String propertiesFilePath = dicomUploadDirectory.getAbsolutePath() + File.separator

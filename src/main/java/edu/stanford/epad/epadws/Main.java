@@ -58,6 +58,7 @@ import edu.stanford.epad.common.plugins.PluginController;
 import edu.stanford.epad.common.plugins.PluginHandlerMap;
 import edu.stanford.epad.common.plugins.PluginServletHandler;
 import edu.stanford.epad.common.util.EPADConfig;
+import edu.stanford.epad.common.util.EPADFileUtils;
 import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.epad.epadws.aim.AIMUtil;
 import edu.stanford.epad.epadws.epaddb.EpadDatabase;
@@ -130,6 +131,7 @@ public class Main
 			Runtime.getRuntime().addShutdownHook(new ShutdownHookThread());
 			log.info("Starting Jetty on port " + epadPort);
 			server.start();
+			setupTestFiles();
 			server.join();
 		} catch (BindException be) {
 			log.severe("Bind exception", be);
@@ -375,6 +377,32 @@ public class Main
 		addHandlerAtContextPath(handlers, contextPath, handlerList);
 
 		log.info("Added file server for " + baseDirectory + " directory.");
+	}
+
+
+	private static void setupTestFiles()
+	{
+		String deployPath = EPADConfig.getEPADWebServerBaseDir() + "jetty/webapp/test/";
+		File testFilesDir = new File(EPADConfig.getEPADWebServerBaseDir() + "lib/test/");
+		try
+		{
+			if (testFilesDir.exists() && testFilesDir.isDirectory())
+			{
+				File deployDir = new File(deployPath);
+				if (!deployDir.exists())
+					deployDir.mkdirs();
+				File[] testFiles = testFilesDir.listFiles();
+				for (File f: testFiles)
+				{
+					if (f.isDirectory()) continue;
+					File outFile = new File(deployDir, f.getName());
+					EPADFileUtils.copyFile(f, outFile);
+				}
+			}
+		} 
+		catch (Exception x) {
+			
+		}
 	}
 
 	/**

@@ -257,11 +257,13 @@ public class RTDICOMProcessingTask implements GeneratorTask
 							}
 						}
 						File dsoFile = new File(outFolderPath + "/" + seriesUID + ".dso");
-						String dsoDescr = description + roi.replace('\'',' ').trim();
+						if (roi == null) roi = "";
+						String dsoDescr = roi.replace('\'',' ').trim();
+						if (dsoDescr.length() < 8) dsoDescr = description + "_" + dsoDescr;
 						projectOperations.updateUserTaskStatus(username, TaskStatus.TASK_RT_PROCESS, seriesUID, "Generating DSO", null, null);
 						log.info("Generating new DSO for RTSTRUCT series " + seriesUID);
 						TIFFMasksToDSOConverter converter = new TIFFMasksToDSOConverter();
-						String[] seriesImageUids = converter.generateDSO(pixel_data, dicomFilePaths, dsoFile.getAbsolutePath(), dsoDescr, null, null, false);
+						String[] seriesImageUids = converter.generateDSO(pixel_data, dicomFilePaths, dsoFile.getAbsolutePath(), dsoDescr, null, null);
 						String dsoSeriesUID = seriesImageUids[0];
 						String dsoImageUID = seriesImageUids[1];
 						log.info("Sending generated DSO " + dsoFile.getAbsolutePath() + " imageUID:" + dsoImageUID + " to dcm4chee...");

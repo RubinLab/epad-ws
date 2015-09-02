@@ -185,7 +185,7 @@ public class EPADUploadDirWatcher implements Runnable
 					if (xnatprops.exists())
 						EPADFileUtils.copyFile(xnatprops, new File(zipDirectory, UserProjectService.XNAT_UPLOAD_PROPERTIES_FILE_NAME));
 					projectOperations.updateUserTaskStatus(username, TaskStatus.TASK_ADD_TO_PROJECT, zipDirectory.getName(), "Started processing", new Date(), null);
-					String userName = UserProjectService.createProjectEntitiesFromDICOMFilesInUploadDirectory(zipDirectory);
+					String userName = UserProjectService.createProjectEntitiesFromDICOMFilesInUploadDirectory(zipDirectory, true);
 					projectOperations.updateUserTaskStatus(username, TaskStatus.TASK_ADD_TO_PROJECT, zipDirectory.getName(), "Completed processing", null, new Date());
 					cleanUploadDirectory(zipDirectory);
 					if (userName != null)
@@ -200,7 +200,7 @@ public class EPADUploadDirWatcher implements Runnable
 			if (files.length > 1 || (files.length == 1 && !files[0].contains("properties")))
 			{
 				projectOperations.updateUserTaskStatus(username, TaskStatus.TASK_ADD_TO_PROJECT, directory.getName(), "Started processing", new Date(), null);
-				String userName = UserProjectService.createProjectEntitiesFromDICOMFilesInUploadDirectory(directory);
+				String userName = UserProjectService.createProjectEntitiesFromDICOMFilesInUploadDirectory(directory, false);
 				projectOperations.updateUserTaskStatus(username, TaskStatus.TASK_ADD_TO_PROJECT, directory.getName(), "Completed processing", null, new Date());
 			log.info("Cleaning upload directory");
 			cleanUploadDirectory(directory);
