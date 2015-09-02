@@ -259,7 +259,7 @@ public class RTDICOMProcessingTask implements GeneratorTask
 						File dsoFile = new File(outFolderPath + "/" + seriesUID + ".dso");
 						if (roi == null) roi = "";
 						String dsoDescr = roi.replace('\'',' ').trim();
-						if (dsoDescr.length() < 8) dsoDescr = description + "_" + dsoDescr;
+						if (dsoDescr.length() < 4) dsoDescr = description + "_" + dsoDescr;
 						projectOperations.updateUserTaskStatus(username, TaskStatus.TASK_RT_PROCESS, seriesUID, "Generating DSO", null, null);
 						log.info("Generating new DSO for RTSTRUCT series " + seriesUID);
 						TIFFMasksToDSOConverter converter = new TIFFMasksToDSOConverter();

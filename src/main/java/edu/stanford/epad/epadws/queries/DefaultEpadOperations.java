@@ -1197,6 +1197,7 @@ public class DefaultEpadOperations implements EpadOperations
 			throw new Exception("Subject " + subjectReference.subjectID + " not found");
 		projectOperations.createEventLog(username, subjectReference.projectID, subjectReference.subjectID, null, null, null, null, "UPDATE SUBJECT", subjectName +":" + dob + ":" + gender);
 		projectOperations.createSubject(username, subjectReference.subjectID, subjectName, dob, gender);
+		projectOperations.addSubjectToProject(username, subjectReference.subjectID, subjectReference.projectID);
 		return HttpServletResponse.SC_OK;
 	}
 
