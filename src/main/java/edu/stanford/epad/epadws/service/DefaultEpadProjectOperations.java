@@ -981,19 +981,24 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		Set<Long> allIds = new HashSet<Long>();
 		for (Object obj: psAll)
 		{
-			long id = ((AbstractDAO) obj).getId();
+			long id = ((ProjectToSubject) obj).getSubjectId();
 			allIds.add(id);
 		}
 		List psAsssigned = new ProjectToSubject().getObjects("project_id != " + project.getId());
-		Set<Long> assignedIds = new HashSet<Long>();
 		for (Object obj: psAsssigned)
 		{
-			long id = ((AbstractDAO) obj).getId();
-			assignedIds.add(id);
+			long id = ((ProjectToSubject) obj).getSubjectId();
+			if (!allIds.contains(id))
+			{
+				Subject subject = (Subject) new Subject().getObject("id = " + id);
+				log.info("Adding " + subject.getSubjectUID() + " to " + EPADConfig.xnatUploadProjectID);
+				this.addSubjectToProject("admin", subject.getSubjectUID(), EPADConfig.xnatUploadProjectID);
+			}
 		}
-		for (Long assignedId: assignedIds)
+		for (Object obj: psAsssigned)
 		{
-			allIds.remove(assignedId);
+			long id = ((ProjectToSubject) obj).getSubjectId();
+			allIds.remove(id);
 		}
 		String inclause = "";
 		String delim = "(";
