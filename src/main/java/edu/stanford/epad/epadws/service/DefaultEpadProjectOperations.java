@@ -1788,6 +1788,11 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		// TODO: delete subject if not used any more
 		if (projSubjs.size() == 0)
 		{
+			List<Study> studies = new Study().getObjects("subject_id = " + subject.getId());
+			for (Study study: studies)
+			{
+				study.delete();
+			}
 			subject.delete();
 			subjectCache.remove(subjectUID);
 		}
@@ -1828,6 +1833,11 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 			new ProjectToSubjectToUser().deleteObjects("proj_subj_id =" + ptos.getId());
 			new ProjectToSubjectToStudy().deleteObjects("proj_subj_id =" + ptos.getId());
 			ptos.delete();
+		}
+		List<Study> studies = new Study().getObjects("subject_id = " + subject.getId());
+		for (Study study: studies)
+		{
+			study.delete();
 		}
 		new EpadFile().deleteObjects("subject_id=" + subject.getId());
 		subject.delete();

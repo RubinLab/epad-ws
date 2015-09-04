@@ -2078,7 +2078,7 @@ public class DefaultEpadOperations implements EpadOperations
 		log.info("Scheduling deletion task for patient " + subjectReference.subjectID + " in project "
 				+ subjectReference.projectID + " from user " + username);
 
-		(new Thread(new SubjectDataDeleteTask(subjectReference.projectID, subjectReference.subjectID, username))).start();
+		(new Thread(new SubjectDataDeleteTask(subjectReference.projectID, subjectReference.subjectID, username))).run();
 
 		try {
 			Thread.sleep(1000);
