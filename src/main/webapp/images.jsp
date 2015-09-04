@@ -176,11 +176,21 @@ $( document ).ready(function() {
 			async: false,         
 			cache: false,         
 			timeout: 30000,         
-			error: function(){
-				alert("Error deleting patient");
+			error: function(jqXHR, textStatus, errorThrown) {
+				if (jqXHR.status != 200)
+				{
+					alert("Error deleting patient:" + jqXHR.status);
+				}
+				else
+				{
+					var row = document.getElementById("Patient" + lineno);
+					row.style.textDecoration = "line-through";
+				}
+				//alert(textStatus);
+				//alert(errorThrown);
 				return true;},
 			success: function(response){
-					var row = document.getElementById("Patient" + line);
+					var row = document.getElementById("Patient" + lineno);
 					row.style.textDecoration = "line-through";
 			}
 		})
