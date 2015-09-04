@@ -39,7 +39,7 @@ $( document ).ready(function() {
 			listdata = "<table border=1><tr bgcolor=lightgray><td>Type</td><td>Name</td><td>ID</td><td>Studies/Series/Annotations</td></tr>\n";
 			for (i = 0; i < subjects.length; i++)
 			{
-				listdata =  listdata + "<tr><td>Patient</td><td><a href='images.jsp?projectID=" + subjects[i].id + "' target='rightpanel'>" + subjects[i].subjectName + "</a></td><td>" + subjects[i].subjectID + "</td><td>"  +  subjects[i].numberOfStudies + " / " + subjects[i].numberOfAnnotations + "</td></tr>\n";
+				listdata =  listdata + "<tr><td>Patient(<a href='addToProject.jsp?subjectID=" +  subjects[i].subjectID + "' target='rightpanel'>Add To Project</a>)</td><td><a href='images.jsp?projectID=" + subjects[i].id + "' target='rightpanel'>" + subjects[i].subjectName + "</a></td><td>" + subjects[i].subjectID + "</td><td>"  +  subjects[i].numberOfStudies + " / " + subjects[i].numberOfAnnotations + "</td></tr>\n";
 				var url2 = url + subjects[i].subjectID + "/studies/";
 				$.ajax({         
 					url: url2 + "?username=<%=username%>",         
