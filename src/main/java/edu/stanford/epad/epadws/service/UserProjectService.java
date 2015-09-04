@@ -357,16 +357,16 @@ public class UserProjectService {
 					dicomFile.delete();
 					continue;
 				}
-				else if (DefaultEpadOperations.isImage(dicomFile) && seriesUID != null)
-				{
-					try {
-						DefaultEpadOperations.getInstance().createFile(username, projectID, subjectID, studyUID, seriesUID, dicomFile, null, null, sessionID);
-					} catch (Exception x) {
-						log.warning("Error uploading file:" + dicomFile.getName() + ":" + x.getMessage());
-					}
-					dicomFile.delete();
-					continue;
-				}
+//				else if (DefaultEpadOperations.isImage(dicomFile) && seriesUID != null)
+//				{
+//					try {
+//						DefaultEpadOperations.getInstance().createFile(username, projectID, subjectID, studyUID, seriesUID, dicomFile, null, null, sessionID);
+//					} catch (Exception x) {
+//						log.warning("Error uploading file:" + dicomFile.getName() + ":" + x.getMessage());
+//					}
+//					dicomFile.delete();
+//					continue;
+//				}
 				projectOperations.updateUserTaskStatus(username, TaskStatus.TASK_ADD_TO_PROJECT, dicomUploadDirectory.getName(), "Files processed: " + i, null, null);
 				if (createProjectEntitiesFromDICOMFile(dicomFile, projectID, sessionID, username))
 					numberOfDICOMFiles++;
