@@ -36,6 +36,7 @@ import java.util.Set;
 import DicomRT.ConvertDicoms;
 
 import com.jmatio.io.MatFileReader;
+import com.jmatio.types.MLChar;
 import com.jmatio.types.MLDouble;
 import com.jmatio.types.MLStructure;
 import com.jmatio.types.MLUInt8;
@@ -186,7 +187,7 @@ public class RTDICOMProcessingTask implements GeneratorTask
 			       }
 			    }
 			}
-			projectOperations.updateUserTaskStatus(username, TaskStatus.TASK_RT_MATLAB, seriesUID, "Download Completed", null, null);
+			projectOperations.updateUserTaskStatus(username, TaskStatus.TASK_RT_PROCESS, seriesUID, "Download Completed", null, null);
 			MWCharArray inFolderPath = new MWCharArray(inputDirPath);
 			MWCharArray outFolderPath = new MWCharArray(outputDirPath);
 			log.info("Invoking MATLAB-generated code..., inputPath:" + inputDirPath);
@@ -194,83 +195,94 @@ public class RTDICOMProcessingTask implements GeneratorTask
 			long starttime = System.currentTimeMillis();
 			convertDicoms.scanDir(inFolderPath, outFolderPath);
 			long endtime = System.currentTimeMillis();
-			projectOperations.updateUserTaskStatus(username, TaskStatus.TASK_RT_PROCESS, seriesUID, "MATLAB Processing Completed", null, new Date());
+			projectOperations.updateUserTaskStatus(username, TaskStatus.TASK_RT_MATLAB, seriesUID, "MATLAB Processing Completed", null, new Date());
 			log.info("Returned from MATLAB..., outFolderPath:" + outputDirPath + " took " + (endtime-starttime)/1000 + " secs");
 			try {
 				MatFileReader reader = new MatFileReader(outFolderPath + "/" + patientID + ".mat");
+				int numOfRoi = reader.getMLArray("contours").getSize();
+				log.info("Number of ROIs:" + numOfRoi);
 				MLStructure contours = (MLStructure) reader.getMLArray("contours");
-				MLUInt8 seg = (MLUInt8) contours.getField("Segmentation"); // [512x512x98  uint8 array]
-				if (seg == null)
-					throw new Exception("No Segmentation found in MATLAN output file");
-				int[] dims = seg.getDimensions();
-				byte[][] segdata = seg.getArray();
-				MLDouble points = (MLDouble) contours.getField("Points"); // [19956x3  double array]
-				MLDouble vps = (MLDouble) contours.getField("VoxPoints"); // [19956x3  double array]
-				File matfile = new File(outFolderPath + "/" + patientID + ".mat");
-				matfile.renameTo(new File(outFilePath));
-				log.info("Types, Segmentation:" + seg + " segdata:" + segdata.length + "x" + segdata[0].length + " Points:" + points + " VoxPoints:" + vps);
-				for (int i = 0; i < dims.length; i++)
-					log.info("seg dimensions " + i + ":" + dims[i]);
-				if (seg != null) {
-					// Convert 1 byte/pixel to 1 bit/pixel
-					int numbytes = dims[0]*dims[1]/8;
-					byte[] pixel_data = new byte[numbytes*dims[2]];
-					int totframes = dims[2];
-					for (int frame = 0; frame < dims[2]-1; frame++) { // Skip last frame because matlab is off by 1 slice
-						//int offset = frame*numbytes;
-//						int offset = (frame+1)*numbytes; // one slice off
-						int offset = (totframes-frame-1)*numbytes; // one slice off
-						log.info("frame:" + frame + " offset:" + offset);
-						for (int k = 0; k < numbytes; k++)
-						{
-							int index = k*8;
-							int x = index/dims[1];
-							int y = index%dims[1];
-							pixel_data[offset + k] = 0;
-							for (int l = 0; l < 8; l++)
+				log.info("Field:" + contours.getFieldNames() + " ROIs:" + contours.getField("ROIName"));
+				for (int r = 0; r < numOfRoi; r++)
+				{
+					MLUInt8 seg = (MLUInt8) contours.getField("Segmentation", r); // [512x512x98  uint8 array]
+					MLChar roiName = (MLChar) contours.getField("ROIName", r);
+					String roi = roiName.getString(0);
+					log.info("ROI:" + roi);
+					if (seg == null) continue;
+					//	throw new Exception("No Segmentation found in MATLAN output file");
+					int[] dims = seg.getDimensions();
+					byte[][] segdata = seg.getArray();
+					MLDouble points = (MLDouble) contours.getField("Points"); // [19956x3  double array]
+					MLDouble vps = (MLDouble) contours.getField("VoxPoints"); // [19956x3  double array]
+					File matfile = new File(outFolderPath + "/" + patientID + ".mat");
+					matfile.renameTo(new File(outFilePath));
+					log.info("Types, Segmentation:" + seg + " segdata:" + segdata.length + "x" + segdata[0].length + " Points:" + points + " VoxPoints:" + vps);
+					for (int i = 0; i < dims.length; i++)
+						log.info("seg dimensions " + i + ":" + dims[i]);
+					if (seg != null) {
+						// Convert 1 byte/pixel to 1 bit/pixel
+						int numbytes = dims[0]*dims[1]/8;
+						byte[] pixel_data = new byte[numbytes*dims[2]];
+						int totframes = dims[2];
+						for (int frame = 0; frame < dims[2]-1; frame++) { // Skip last frame because matlab is off by 1 slice
+							//int offset = frame*numbytes;
+	//						int offset = (frame+1)*numbytes; // one slice off
+							int offset = (totframes-frame-1)*numbytes; // one slice off
+							log.info("frame:" + frame + " offset:" + offset);
+							for (int k = 0; k < numbytes; k++)
 							{
-								int y1 = y + l;
-								int x1 = x;
-								if (y1 >= dims[0])
+								int index = k*8;
+								int x = index/dims[1];
+								int y = index%dims[1];
+								pixel_data[offset + k] = 0;
+								for (int l = 0; l < 8; l++)
 								{
-									x1 = x1+1;
-									y1 = y1 - dims[0];
+									int y1 = y + l;
+									int x1 = x;
+									if (y1 >= dims[0])
+									{
+										x1 = x1+1;
+										y1 = y1 - dims[0];
+									}
+									//log.info("x1:" + x1 + " y1:" + y1);
+									if (segdata[x1][y1 + frame*dims[1]] != 0)
+									{
+										int setBit =  pixel_data[offset + k] + (1 << l);
+										pixel_data[offset + k] =(byte) setBit;
+									}
 								}
-								//log.info("x1:" + x1 + " y1:" + y1);
-								if (segdata[x1][y1 + frame*dims[1]] != 0)
-								{
-									int setBit =  pixel_data[offset + k] + (1 << l);
-									pixel_data[offset + k] =(byte) setBit;
-								}
+	//								if (pixel_data[k] != 0)
+	//									log.info("maskfile" + i + ": " + k + " pixel:" + pixel_data[k]);
 							}
-//								if (pixel_data[k] != 0)
-//									log.info("maskfile" + i + ": " + k + " pixel:" + pixel_data[k]);
 						}
-					}
-					File dsoFile = new File(outFolderPath + "/" + seriesUID + ".dso");
-					String dsoDescr = description + " DSO";
-					projectOperations.updateUserTaskStatus(username, TaskStatus.TASK_RT_PROCESS, seriesUID, "Generating DSO", null, null);
-					log.info("Generating new DSO for RTSTRUCT series " + seriesUID);
-					TIFFMasksToDSOConverter converter = new TIFFMasksToDSOConverter();
-					String[] seriesImageUids = converter.generateDSO(pixel_data, dicomFilePaths, dsoFile.getAbsolutePath(), dsoDescr, null, null, false);
-					String dsoSeriesUID = seriesImageUids[0];
-					String dsoImageUID = seriesImageUids[1];
-					log.info("Sending generated DSO " + dsoFile.getAbsolutePath() + " imageUID:" + dsoImageUID + " to dcm4chee...");
-					DCM4CHEEUtil.dcmsnd(dsoFile.getAbsolutePath(), false);
-					List<Project> projects = projectOperations.getProjectsForSubject(patientID);
-					for (Project project: projects) {
-						if (project.getProjectId().equals(EPADConfig.xnatUploadProjectID)) continue;
-						if (projectOperations.isStudyInProjectAndSubject(project.getProjectId(), patientID, studyUID))
-						{
-							String projectID = project.getProjectId();
-							Study study = projectOperations.getStudy(studyUID);
-							String owner = study.getCreator();
-							if (!projectOperations.hasAccessToProject(owner, project.getId()))
-								owner = project.getCreator();
-							AIMUtil.generateAIMFileForDSO(dsoFile, owner, projectID);
+						File dsoFile = new File(outFolderPath + "/" + seriesUID + ".dso");
+						if (roi == null) roi = "";
+						String dsoDescr = roi.replace('\'',' ').trim();
+						if (dsoDescr.length() < 4) dsoDescr = description + "_" + dsoDescr;
+						projectOperations.updateUserTaskStatus(username, TaskStatus.TASK_RT_PROCESS, seriesUID, "Generating DSO", null, null);
+						log.info("Generating new DSO for RTSTRUCT series " + seriesUID);
+						TIFFMasksToDSOConverter converter = new TIFFMasksToDSOConverter();
+						String[] seriesImageUids = converter.generateDSO(pixel_data, dicomFilePaths, dsoFile.getAbsolutePath(), dsoDescr, null, null);
+						String dsoSeriesUID = seriesImageUids[0];
+						String dsoImageUID = seriesImageUids[1];
+						log.info("Sending generated DSO " + dsoFile.getAbsolutePath() + " imageUID:" + dsoImageUID + " to dcm4chee...");
+						DCM4CHEEUtil.dcmsnd(dsoFile.getAbsolutePath(), false);
+						List<Project> projects = projectOperations.getProjectsForSubject(patientID);
+						for (Project project: projects) {
+							if (project.getProjectId().equals(EPADConfig.xnatUploadProjectID)) continue;
+							if (projectOperations.isStudyInProjectAndSubject(project.getProjectId(), patientID, studyUID))
+							{
+								String projectID = project.getProjectId();
+								Study study = projectOperations.getStudy(studyUID);
+								String owner = study.getCreator();
+								if (!projectOperations.hasAccessToProject(owner, project.getId()))
+									owner = project.getCreator();
+								AIMUtil.generateAIMFileForDSO(dsoFile, owner, projectID);
+							}
 						}
+						projectOperations.updateUserTaskStatus(username, TaskStatus.TASK_RT_PROCESS, seriesUID, "Completed DSO Generation " + r, null, null);
 					}
-					projectOperations.updateUserTaskStatus(username, TaskStatus.TASK_RT_PROCESS, seriesUID, "Completed DSO Generation", null, null);
 				}
 			} catch (Exception x) {
 				log.warning("Error reading results", x);

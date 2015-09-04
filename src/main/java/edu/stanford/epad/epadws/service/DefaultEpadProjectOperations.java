@@ -1000,9 +1000,10 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		for (Long id: allIds)
 		{
 			inclause = inclause + delim + id;
+			delim = ",";
 		}
 		
-		List objects = new Subject().getObjects("id  in " + inclause + ") sort by name");
+		List objects = new Subject().getObjects("id  in " + inclause + ") order by name");
 		List<Subject> subjects = new ArrayList<Subject>();
 		subjects.addAll(objects);
 		
@@ -1103,6 +1104,8 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		Subject subject = getSubject(subjectUID);
 		ProjectToSubject ptos = (ProjectToSubject) new ProjectToSubject().getObject("project_id = " + project.getId() + " and subject_id=" + subject.getId());
 		List<Study> studies = new ArrayList<Study>();
+		if (ptos == null)
+			return studies;
 		List objects = new Study().getObjects("id in (select study_id from " 
 				+ ProjectToSubjectToStudy.DBTABLE 
 				+ " where proj_subj_id =" + ptos.getId() + ")");
@@ -1717,6 +1720,19 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		efile.delete();
 	}
 
+	private void deleteFile(EpadFile efile) throws Exception {
+		String path = efile.getFilePath();
+		File file = new File(path);
+		try {
+			if (file.exists())
+				file.delete();
+		} catch (Exception x) {
+			log.warning("Error deleting file:" + file.getAbsolutePath(), x);
+		}
+		new ProjectToFile().deleteObjects("file_id =" + efile.getId());
+		efile.delete();
+	}
+
 	/* (non-Javadoc)
 	 * @see edu.stanford.epad.epadws.service.EpadProjectOperations#deleteProject(java.lang.String, java.lang.String)
 	 */
@@ -1831,6 +1847,11 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 
 	@Override
 	public void deleteNonDicomSeries(String seriesUID) throws Exception {
+		List<EpadFile> files = this.getEpadFiles(null, null, null, seriesUID, null, false);
+		for (EpadFile file: files)
+		{
+			this.deleteFile(file);
+		}
 		NonDicomSeries nds = (NonDicomSeries) new NonDicomSeries().getObject("seriesUID = " + NonDicomSeries.toSQL(seriesUID));
 		if (nds != null)
 			nds.delete();

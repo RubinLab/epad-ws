@@ -313,7 +313,7 @@ public class DSOUtil
 			log.info("Generating new DSO for series " + dsoEditRequest.seriesUID);
 			TIFFMasksToDSOConverter converter = new TIFFMasksToDSOConverter();
 			boolean removeEmptyMasks = false;
-			if (EPADConfig.xnatServer.contains("dev6"))
+			if ("true".equals(EPADConfig.getParamValue("OptimizedDSOs", "true")))
 				removeEmptyMasks = true;
 			String[] seriesImageUids = converter.generateDSO(files2FilePaths(dsoTIFFMaskFiles), dicomFilePaths, temporaryDSOFile.getAbsolutePath(), dsoName, null, null, removeEmptyMasks);
 			String dsoSeriesUID = seriesImageUids[0];
@@ -399,7 +399,7 @@ public class DSOUtil
 			log.info("Generating new edited DSO from original DSO " + imageReference.imageUID);
 			TIFFMasksToDSOConverter converter = new TIFFMasksToDSOConverter();
 			boolean removeEmptyMasks = false;
-			if (EPADConfig.xnatServer.contains("dev6"))
+			if ("true".equals(EPADConfig.getParamValue("OptimizedDSOs", "true")))
 				removeEmptyMasks = true;
 			String[] seriesImageUids = converter.generateDSO(files2FilePaths(tiffMaskFiles), dicomFilePaths, temporaryDSOFile.getAbsolutePath(), dsoSeriesDescription, dsoSeriesUID, dsoInstanceUID, removeEmptyMasks);
 			imageReference.seriesUID = seriesImageUids[0];
@@ -497,28 +497,25 @@ public class DSOUtil
 			}
 			else
 			{
-				if (numMaskFiles > 40)
+				// One more check - find number of referenced images
+				DICOMElementList dicomElementList = Dcm4CheeQueries.getDICOMElementsFromWADO(studyUID, seriesUID, imageUID);
+				List<DICOMElement> referencedSOPInstanceUIDDICOMElements = getDICOMElementsByCode(dicomElementList,
+						PixelMedUtils.ReferencedSOPInstanceUIDCode);
+				for (int i = 0; i < referencedSOPInstanceUIDDICOMElements.size(); i++)
 				{
-					// One more check - find number of referenced images
-					DICOMElementList dicomElementList = Dcm4CheeQueries.getDICOMElementsFromWADO(studyUID, seriesUID, imageUID);
-					List<DICOMElement> referencedSOPInstanceUIDDICOMElements = getDICOMElementsByCode(dicomElementList,
-							PixelMedUtils.ReferencedSOPInstanceUIDCode);
-					for (int i = 0; i < referencedSOPInstanceUIDDICOMElements.size(); i++)
+					String referencedUID = dcm4CheeDatabaseOperations.getSeriesUIDForImage(referencedSOPInstanceUIDDICOMElements.get(i).value);
+					if (referencedUID == null || referencedUID.length() == 0)
 					{
-						String referencedUID = dcm4CheeDatabaseOperations.getSeriesUIDForImage(referencedSOPInstanceUIDDICOMElements.get(i).value);
-						if (referencedUID == null || referencedUID.length() == 0)
-						{
-							referencedSOPInstanceUIDDICOMElements.remove(i);
-							i--;
-						}
+						referencedSOPInstanceUIDDICOMElements.remove(i);
+						i--;
 					}
-					log.info("DSO Series:" + seriesUID +  " numberOfReferencedImages:" +  referencedSOPInstanceUIDDICOMElements.size());
-					if (pngMaskFilesDirectory.list().length >= referencedSOPInstanceUIDDICOMElements.size())
-					{
-						// Some referenced series are missing, but pngs are ok
-						databaseOperations.updateOrInsertSeries(seriesUID, SeriesProcessingStatus.ERROR);
-						return true;
-					}
+				}
+				log.info("DSO Series:" + seriesUID +  " numberOfReferencedImages:" +  referencedSOPInstanceUIDDICOMElements.size());
+				if (pngMaskFilesDirectory.list().length >= referencedSOPInstanceUIDDICOMElements.size())
+				{
+					// Some referenced series are missing, but pngs are ok
+					databaseOperations.updateOrInsertSeries(seriesUID, SeriesProcessingStatus.ERROR);
+					return true;
 				}
 				log.info("DSO Series:" + seriesUID + " numberOfFrames:" + numberOfFrames + " mask files:" + pngMaskFilesDirectory.list().length + " dir:" + pngMaskDirectoryPath);
 				return false;
@@ -1073,9 +1070,11 @@ public class DSOUtil
 		for (EPADFrame frame : frameList.ResultSet.Result) {
 			String maskFilePath = baseDicomDirectory + frame.losslessImage;
 			File maskFile = new File(maskFilePath);
+			if (!maskFile.exists())
+				continue;
 			//log.info("Creating TIFF mask file " + maskFilePath + " for frame " + frame.frameNumber + " for DSO "
 			//		+ imageReference.imageUID);
-			log.debug("Existing DSO, frameNo:" + frame.frameNumber + " maskFile:" + maskFile.getName());
+			log.debug("Existing DSO masks, frameNo:" + frame.frameNumber + " maskFile:" + maskFile.getName());
 			try {
 				BufferedImage bufferedImage = ImageIO.read(maskFile);
 				File tiffFile = File.createTempFile(imageReference.imageUID + "_frame_" + frame.frameNumber + "_", ".tif");

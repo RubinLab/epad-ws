@@ -160,10 +160,15 @@ public class EPADGetHandler
 				boolean unassignedOnly = "true".equalsIgnoreCase(httpRequest.getParameter("unassignedOnly"));
 				EPADSubjectList subjectList = null;
 				if (projectReference.projectID.equals(EPADConfig.xnatUploadProjectID) && unassignedOnly)
+				{
+					log.info("Getting unassigned subjects");
 					subjectList = epadOperations.getUnassignedSubjectDescriptions(username, sessionID, searchFilter);
+				}
 				else
+				{
 					subjectList = epadOperations.getSubjectDescriptions(projectReference.projectID, username,
 						sessionID, searchFilter, start, count, sortField);
+				}
 				long endtime = System.currentTimeMillis();
 				log.info("Returning " + subjectList.ResultSet.totalRecords + " subjects to client, took " + (endtime-starttime) + " msecs");
 				responseStream.append(subjectList.toJSON());
