@@ -417,9 +417,9 @@ public class HandlerUtil
         return sb.toString();
     }
 
-	public static Map<String, Object> parsePostedData(HttpServletRequest httpRequest, PrintWriter responseStream) throws Exception
+	public static Map<String, Object> parsePostedData(String uploadBaseDir, HttpServletRequest httpRequest, PrintWriter responseStream) throws Exception
 	{
-		String uploadDirPath = EPADConfig.getEPADWebServerFileUploadDir() + "temp" + Long.toString(System.currentTimeMillis());
+		String uploadDirPath = uploadBaseDir + "temp" + Long.toString(System.currentTimeMillis());
 		File uploadDir = new File(uploadDirPath);
 		uploadDir.mkdirs();
 		

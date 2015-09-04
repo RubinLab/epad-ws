@@ -33,6 +33,7 @@ import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADFileUtils;
 import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.epad.dtos.EPADMessage;
@@ -107,7 +108,7 @@ public class EPADPostHandler
 				int numberOfFiles = 0;
 				if (requestContentType != null && requestContentType.startsWith("multipart/form-data"))
 				{
-					paramData = HandlerUtil.parsePostedData(httpRequest, responseStream);
+					paramData = HandlerUtil.parsePostedData(EPADConfig.getEPADWebServerFileUploadDir(), httpRequest, responseStream);
 					for (String param: paramData.keySet())
 					{
 						if (paramData.get(param) instanceof File)

@@ -104,7 +104,7 @@ public class EPADPutHandler
 			}
 			else
 			{
-				paramData = HandlerUtil.parsePostedData(httpRequest, responseStream);
+				paramData = HandlerUtil.parsePostedData(EPADConfig.getEPADWebServerFileUploadDir(), httpRequest, responseStream);
 				for (String param: paramData.keySet())
 				{
 					if (paramData.get(param) instanceof File)
