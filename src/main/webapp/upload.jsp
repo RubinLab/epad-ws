@@ -61,7 +61,6 @@
 var filedata;
 function uploadFiles()
 {
-	alert("uploading");
 	document.getElementById("uploadform").submit();
 }
 $( document ).ready(function() {
