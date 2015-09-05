@@ -589,14 +589,14 @@ public class DSOUtil
 				pngContourFilesDirectory.mkdirs();
 			}
 			File[] oldFiles = pngMaskFilesDirectory.listFiles();
-			for (File oldFile: oldFiles)
-			{
-				try
-				{
-					if (oldFile.getName().contains("png"))
-						oldFile.delete();
-				} catch (Exception x) {};
-			}
+//			for (File oldFile: oldFiles)
+//			{
+//				try
+//				{
+//					if (oldFile.getName().contains("png"))
+//						oldFile.delete();
+//				} catch (Exception x) {};
+//			}
 
 			log.info("Writing PNG masks for DSO " + imageUID + " in series " + seriesUID + " DSOFile:" + dsoFile.getAbsolutePath() + " number of frames:" + numberOfFrames + " ...");
 			List<DCM4CHEEImageDescription> referencedImages = new ArrayList<DCM4CHEEImageDescription>();
