@@ -27,9 +27,6 @@ import edu.stanford.epad.epadws.models.ProjectType;
 import edu.stanford.epad.epadws.models.Study;
 import edu.stanford.epad.epadws.models.Subject;
 import edu.stanford.epad.epadws.models.User;
-import edu.stanford.epad.epadws.models.WorkList;
-import edu.stanford.epad.epadws.models.WorkListToStudy;
-import edu.stanford.epad.epadws.models.WorkListToSubject;
 import edu.stanford.epad.epadws.queries.Dcm4CheeQueries;
 import edu.stanford.epad.epadws.queries.DefaultEpadOperations;
 import edu.stanford.epad.epadws.queries.EpadOperations;
@@ -110,6 +107,7 @@ public class PluginOperations {
 	
 	public EPADPlugin getPluginDescription(String pluginId,String username, String sessionID) throws Exception {
 		Plugin plugin=getPlugin(pluginId);
+
 		if (plugin==null) return null;
 		EPADPlugin epadPlugin = plugin2EPADPlugin(plugin);
 		return epadPlugin;
@@ -201,6 +199,7 @@ public class PluginOperations {
 			else
 				plugin.setEnabled(false);
 		}
+
 		//plugin.setStatus(status);
 		
 		plugin.setCreator(loggedInUser);

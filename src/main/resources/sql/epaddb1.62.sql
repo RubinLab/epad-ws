@@ -30,5 +30,6 @@ KEY FK_projectpluginparameter_project (project_id),
 CONSTRAINT FK_projectpluginparameter_project FOREIGN KEY (project_id) REFERENCES project(id)) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 
+
 UPDATE dbversion SET version = '1.62';
 commit;

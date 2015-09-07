@@ -1533,7 +1533,9 @@ public class EPADGetHandler
 			} else if (HandlerUtil.matchesTemplate(PluginRouteTemplates.PLUGIN, pathInfo)) { //ML
 								
 				PluginReference pluginReference = PluginReference.extract(PluginRouteTemplates.PLUGIN, pathInfo);
+
 				EPADPlugin plugin = pluginOperations.getPluginDescription(pluginReference.pluginID,username, sessionID);
+
 				if (plugin != null) {
 					responseStream.append(plugin.toJSON());
 					statusCode = HttpServletResponse.SC_OK;
