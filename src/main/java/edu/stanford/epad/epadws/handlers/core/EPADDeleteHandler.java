@@ -31,6 +31,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.epad.dtos.EPADMessage;
+import edu.stanford.epad.dtos.EPADPlugin;
 import edu.stanford.epad.dtos.RemotePAC;
 import edu.stanford.epad.epadws.handlers.HandlerUtil;
 import edu.stanford.epad.epadws.models.User;
@@ -39,6 +40,7 @@ import edu.stanford.epad.epadws.queries.DefaultEpadOperations;
 import edu.stanford.epad.epadws.queries.EpadOperations;
 import edu.stanford.epad.epadws.service.DefaultWorkListOperations;
 import edu.stanford.epad.epadws.service.EpadWorkListOperations;
+import edu.stanford.epad.epadws.service.PluginOperations;
 import edu.stanford.epad.epadws.service.RemotePACService;
 import edu.stanford.epad.epadws.service.TCIAService;
 
@@ -61,6 +63,7 @@ public class EPADDeleteHandler
 	 */
 	protected static int handleDelete(HttpServletRequest httpRequest, PrintWriter responseStream, String username, String sessionID)
 	{
+		PluginOperations pluginOperations= PluginOperations.getInstance();
 		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
 		EpadWorkListOperations worklistOperations = DefaultWorkListOperations.getInstance();
 		String pathInfo = httpRequest.getPathInfo();
@@ -241,6 +244,15 @@ public class EPADDeleteHandler
 					throw new Exception("Invalid filename");
 				epadOperations.deleteFile(username, seriesReference, filename);
 				statusCode = HttpServletResponse.SC_OK;
+			
+			} else if (HandlerUtil.matchesTemplate(PluginRouteTemplates.PLUGIN, pathInfo)) {
+				PluginReference pluginReference = PluginReference.extract(PluginRouteTemplates.PLUGIN, pathInfo);
+				EPADPlugin plugin = pluginOperations.getPluginDescription(pluginReference.pluginID,username, sessionID);
+				if (plugin == null) 
+					throw new Exception("Plugin not found for id " + pluginReference.pluginID);
+				pluginOperations.deletePlugin(username, pluginReference.pluginID);	
+				statusCode = HttpServletResponse.SC_OK;
+			
 			} else {
 				statusCode = HandlerUtil.badRequestJSONResponse(BAD_DELETE_MESSAGE + ":" + pathInfo, responseStream, log);
 			}

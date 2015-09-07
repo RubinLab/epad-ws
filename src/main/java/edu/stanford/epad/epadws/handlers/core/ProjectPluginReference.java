@@ -42,11 +42,7 @@ public class ProjectPluginReference
 	{
 		Map<String, String> templateMap = HandlerUtil.getTemplateMap(template, pathInfo);
 		String projectId = null;
-		try
-		{
-			projectId = HandlerUtil.getTemplateParameter(templateMap, "project");
-		}
-		catch (Exception x) {}
+		projectId = HandlerUtil.getTemplateParameter(templateMap, "project");
 		String pluginId = HandlerUtil.getTemplateParameter(templateMap, "pluginid");
 
 		validateSubjectID(pluginId);

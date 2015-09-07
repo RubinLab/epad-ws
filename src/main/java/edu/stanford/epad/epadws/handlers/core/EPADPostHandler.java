@@ -343,19 +343,33 @@ public class EPADPostHandler
 					worklistOperations.createWorkList(username, reader, workListID, description, null, getDate(dueDate));
 					statusCode = HttpServletResponse.SC_OK;
 				
+				} else if (HandlerUtil.matchesTemplate(PluginRouteTemplates.PLUGIN_LIST, pathInfo)) { //ML
+					String pluginId = httpRequest.getParameter("pluginId");
+					String name = httpRequest.getParameter("name");
+					String description = httpRequest.getParameter("description");
+					String javaclass = httpRequest.getParameter("class");
+					String enabled = httpRequest.getParameter("enabled");
+					EPADPlugin plugin = pluginOperations.getPluginDescription(pluginId, username, sessionID);
+					if (plugin != null) {
+						throw new Exception("Plugin " + plugin.getPluginId() +  " already exists");
+					} else {
+						pluginOperations.createPlugin(username, pluginId, name, description, javaclass, enabled, sessionID);
+						return HttpServletResponse.SC_OK;
+					}	
+					
 				} else if (HandlerUtil.matchesTemplate(PluginRouteTemplates.PLUGIN, pathInfo)) { //ML
 					PluginReference pluginReference = PluginReference.extract(PluginRouteTemplates.PLUGIN, pathInfo);
 					String name = httpRequest.getParameter("name");
 					String description = httpRequest.getParameter("description");
 					String javaclass = httpRequest.getParameter("class");
 					String enabled = httpRequest.getParameter("enabled");
-					EPADPlugin plugin = pluginOperations.getPluginDescription(pluginReference, username, sessionID);
+					EPADPlugin plugin = pluginOperations.getPluginDescription(pluginReference.pluginID, username, sessionID);
 					if (plugin != null) {
 						throw new Exception("Plugin " + plugin.getPluginId() +  " already exists");
 					} else {
 						pluginOperations.createPlugin(username, pluginReference.pluginID, name, description, javaclass, enabled, sessionID);
 						return HttpServletResponse.SC_OK;
-					}			
+					}	
 				} else {
 					statusCode = HandlerUtil.badRequestJSONResponse(BAD_POST_MESSAGE + ":" + pathInfo, responseStream, log);
 				}		

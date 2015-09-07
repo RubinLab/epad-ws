@@ -27,6 +27,7 @@ import java.io.File;
 import java.io.PrintWriter;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.Enumeration;
 import java.util.Map;
 import java.util.Set;
 
@@ -38,6 +39,8 @@ import edu.stanford.epad.common.util.EPADFileUtils;
 import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.epad.dtos.EPADAIM;
 import edu.stanford.epad.dtos.EPADMessage;
+import edu.stanford.epad.dtos.EPADPlugin;
+import edu.stanford.epad.dtos.EPADPluginParameterList;
 import edu.stanford.epad.dtos.EPADProject;
 import edu.stanford.epad.dtos.EPADSeries;
 import edu.stanford.epad.dtos.EPADSubject;
@@ -60,6 +63,7 @@ import edu.stanford.epad.epadws.service.DefaultEpadProjectOperations;
 import edu.stanford.epad.epadws.service.DefaultWorkListOperations;
 import edu.stanford.epad.epadws.service.EpadProjectOperations;
 import edu.stanford.epad.epadws.service.EpadWorkListOperations;
+import edu.stanford.epad.epadws.service.PluginOperations;
 import edu.stanford.epad.epadws.service.RemotePACService;
 import edu.stanford.epad.epadws.service.TCIAService;
 import edu.stanford.epad.epadws.service.UserProjectService;
@@ -85,6 +89,7 @@ public class EPADPutHandler
 	protected static int handlePut(HttpServletRequest httpRequest, HttpServletResponse httpResponse, PrintWriter responseStream,
 			String username, String sessionID)
 	{
+		PluginOperations pluginOperations=PluginOperations.getInstance();
 		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
 		EpadProjectOperations projectOperations = DefaultEpadProjectOperations.getInstance();
 		EpadWorkListOperations worklistOperations = DefaultWorkListOperations.getInstance();
@@ -682,6 +687,49 @@ public class EPADPutHandler
 				Map<String, String> templateMap = HandlerUtil.getTemplateMap(UsersRouteTemplates.USER_SENDNEWPASSWORD, pathInfo);
 				String account = HandlerUtil.getTemplateParameter(templateMap, "username");					
 				UserProjectService.sendNewPassword(username, account);
+			
+			} else if (HandlerUtil.matchesTemplate(PluginRouteTemplates.PLUGIN, pathInfo)) { //ML
+				PluginReference pluginReference = PluginReference.extract(PluginRouteTemplates.PLUGIN, pathInfo);
+				String name = httpRequest.getParameter("name");
+				String description = httpRequest.getParameter("description");
+				String javaclass = httpRequest.getParameter("class");
+				String enabled = httpRequest.getParameter("enabled");
+				EPADPlugin plugin = pluginOperations.getPluginDescription(pluginReference.pluginID, username, sessionID);
+				if (plugin != null) {
+					pluginOperations.updatePlugin(username, pluginReference.pluginID, name, description, javaclass, enabled, sessionID);
+					return HttpServletResponse.SC_OK;
+				} else {
+					pluginOperations.createPlugin(username, pluginReference.pluginID, name, description, javaclass, enabled, sessionID);
+					return HttpServletResponse.SC_OK;
+				}	
+				
+			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.PARAMETER_LIST, pathInfo)) { //ML
+				ProjectPluginReference reference = ProjectPluginReference.extract(ProjectsRouteTemplates.PARAMETER_LIST, pathInfo);
+							
+				String[] paramNames = httpRequest.getParameterValues("param");
+				String[] paramValues = httpRequest.getParameterValues("val");
+				for (int i = 0; i < paramNames.length; i++) {
+					pluginOperations.addParameter(username,reference.projectId,reference.pluginId,paramNames[i],paramValues[i]);
+				}
+//				Enumeration<String> parameterNames = httpRequest.getParameterNames();
+//				while (parameterNames.hasMoreElements()) {
+//					String paramName = parameterNames.nextElement();
+//					String[] paramValues = httpRequest.getParameterValues(paramName);
+//					for (int i = 0; i < paramValues.length; i++) {
+//						String paramValue = paramValues[i];
+//					}
+//				}
+//				Map<String, Object> formData = HandlerUtil.parsePostedData(httpRequest, responseStream);
+//				for (String param: formData.keySet())
+//				{
+//					Map<String,String> params=(Map<String, String>) formData.get(param);
+//					for (String paramName:params.keySet()){
+//						pluginOperations.addParameter(username,reference.projectId,reference.pluginId,paramName,params.get(paramName));
+//					}
+//				}
+					
+				return HttpServletResponse.SC_OK;
+
 			} else {
 				statusCode = HandlerUtil.badRequestJSONResponse(BAD_PUT_MESSAGE + ":" + pathInfo, responseStream, log);
 			}
