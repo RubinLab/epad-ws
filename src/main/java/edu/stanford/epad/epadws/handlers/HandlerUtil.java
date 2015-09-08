@@ -417,11 +417,11 @@ public class HandlerUtil
         return sb.toString();
     }
 
-	public static Map<String, Object> parsePostedData(String uploadBaseDir, HttpServletRequest httpRequest, PrintWriter responseStream) throws Exception
+	public static Map<String, Object> parsePostedData(String uploadDirPath, HttpServletRequest httpRequest, PrintWriter responseStream) throws Exception
 	{
-		String uploadDirPath = uploadBaseDir + "temp" + Long.toString(System.currentTimeMillis());
 		File uploadDir = new File(uploadDirPath);
-		uploadDir.mkdirs();
+		if (!uploadDir.exists())
+			uploadDir.mkdirs();
 		
 		Map<String, Object> params = new HashMap<String, Object>();
 	    // Create a factory for disk-based file items

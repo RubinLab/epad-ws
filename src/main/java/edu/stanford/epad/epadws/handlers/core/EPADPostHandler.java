@@ -108,7 +108,8 @@ public class EPADPostHandler
 				int numberOfFiles = 0;
 				if (requestContentType != null && requestContentType.startsWith("multipart/form-data"))
 				{
-					paramData = HandlerUtil.parsePostedData(EPADConfig.getEPADWebServerFileUploadDir(), httpRequest, responseStream);
+					String uploadDir = EPADConfig.getEPADWebServerFileUploadDir() + "temp" + Long.toString(System.currentTimeMillis());
+					paramData = HandlerUtil.parsePostedData(uploadDir, httpRequest, responseStream);
 					for (String param: paramData.keySet())
 					{
 						if (paramData.get(param) instanceof File)

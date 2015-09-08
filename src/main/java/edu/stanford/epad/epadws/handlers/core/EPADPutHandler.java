@@ -104,7 +104,8 @@ public class EPADPutHandler
 			}
 			else
 			{
-				paramData = HandlerUtil.parsePostedData(EPADConfig.getEPADWebServerFileUploadDir(), httpRequest, responseStream);
+				String uploadDir = EPADConfig.getEPADWebServerFileUploadDir() + "temp" + Long.toString(System.currentTimeMillis());
+				paramData = HandlerUtil.parsePostedData(uploadDir, httpRequest, responseStream);
 				for (String param: paramData.keySet())
 				{
 					if (paramData.get(param) instanceof File)
@@ -191,7 +192,13 @@ public class EPADPutHandler
 				String referencedSeries = httpRequest.getParameter("referencedSeries");
 				if (referencedSeries == null)
 					referencedSeries = httpRequest.getParameter("referencedSeriesUID");
-				EPADSeries series  = epadOperations.createSeries(username, seriesReference, description, getDate(seriesDate), modality, referencedSeries, sessionID);
+				String defaultTags = httpRequest.getParameter("defaultTags");
+				if (defaultTags != null) {
+					epadOperations.updateSeriesTags(username, seriesReference, defaultTags, sessionID);
+				} else {
+					// Create non-dicom series
+					EPADSeries series  = epadOperations.createSeries(username, seriesReference, description, getDate(seriesDate), modality, referencedSeries, sessionID);
+				}
 				if (uploadedFile != null && false) {
 					String fileType = httpRequest.getParameter("fileType");
 					statusCode = epadOperations.createFile(username, seriesReference, uploadedFile, description, fileType, sessionID);					

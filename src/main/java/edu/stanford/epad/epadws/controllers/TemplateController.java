@@ -12,6 +12,8 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import edu.stanford.epad.common.util.EPADConfig;
+import edu.stanford.epad.common.util.EPADFileUtils;
 import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.epad.dtos.EPADTemplateContainerList;
 import edu.stanford.epad.epadws.handlers.HandlerUtil;
@@ -46,32 +48,45 @@ public class TemplateController {
 		Map<String, Object> paramData = null;
 		int numberOfFiles = 0;
 		File uploadedFile = null;
-		if (requestContentType != null && requestContentType.startsWith("multipart/form-data"))
-		{
-			PrintWriter responseStream = response.getWriter();
-			paramData = HandlerUtil.parsePostedData(request, responseStream);
+		try {
+			if (requestContentType != null && requestContentType.startsWith("multipart/form-data"))
+			{
+				PrintWriter responseStream = response.getWriter();
+				String uploadDir = EPADConfig.getEPADWebServerFileUploadDir() + "temp" + Long.toString(System.currentTimeMillis());
+				paramData = HandlerUtil.parsePostedData(uploadDir, request, responseStream);
+				for (String param: paramData.keySet())
+				{
+					if (paramData.get(param) instanceof File)
+					{
+						if (uploadedFile == null)
+							uploadedFile = (File) paramData.get(param);
+						numberOfFiles++;
+					}
+				}
+			}
+			if (requestContentType == null || !requestContentType.startsWith("multipart/form-data"))
+				throw new Exception("Invalid Content Type, should be multipart/form-data");
+			if (numberOfFiles == 0)
+				throw new Exception("No files found in post");
+			
+			int i = 0;
 			for (String param: paramData.keySet())
 			{
 				if (paramData.get(param) instanceof File)
 				{
-					if (uploadedFile == null)
-						uploadedFile = (File) paramData.get(param);
-					numberOfFiles++;
+					epadOperations.createSystemTemplate(username, (File)paramData.get(param), sessionID);
+					i++;
 				}
 			}
 		}
-		if (requestContentType == null || !requestContentType.startsWith("multipart/form-data"))
-			throw new Exception("Invalid Content Type, should be multipart/form-data");
-		if (numberOfFiles == 0)
-			throw new Exception("No files found in post");
-		
-		int i = 0;
-		for (String param: paramData.keySet())
-		{
-			if (paramData.get(param) instanceof File)
+		finally {
+			if (uploadedFile != null)
 			{
-				epadOperations.createSystemTemplate(username, (File)paramData.get(param), sessionID);
-				i++;
+				if (uploadedFile.getParentFile().exists())
+				{
+					log.info("Deleting upload directory " + uploadedFile.getParentFile().getAbsolutePath());
+					EPADFileUtils.deleteDirectoryAndContents(uploadedFile.getParentFile());
+				}
 			}
 		}
 		return;

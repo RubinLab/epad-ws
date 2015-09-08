@@ -33,17 +33,17 @@ import java.util.List;
 import java.util.logging.Logger;
 
 import edu.stanford.epad.epadws.aim.Aimapi;
-import edu.stanford.hakan.aim3api.base.AnatomicEntity;
-import edu.stanford.hakan.aim3api.base.DICOMImageReference;
-import edu.stanford.hakan.aim3api.base.Equipment;
-import edu.stanford.hakan.aim3api.base.Image;
-import edu.stanford.hakan.aim3api.base.ImageAnnotation;
-import edu.stanford.hakan.aim3api.base.ImageReference;
-import edu.stanford.hakan.aim3api.base.ImageSeries;
-import edu.stanford.hakan.aim3api.base.ImageStudy;
-import edu.stanford.hakan.aim3api.base.Person;
-import edu.stanford.hakan.aim3api.base.Segmentation;
-import edu.stanford.hakan.aim3api.base.User;
+import edu.stanford.hakan.aim4api.compability.aimv3.AnatomicEntity;
+import edu.stanford.hakan.aim4api.compability.aimv3.DICOMImageReference;
+import edu.stanford.hakan.aim4api.compability.aimv3.Equipment;
+import edu.stanford.hakan.aim4api.compability.aimv3.Image;
+import edu.stanford.hakan.aim4api.compability.aimv3.ImageAnnotation;
+import edu.stanford.hakan.aim4api.compability.aimv3.ImageReference;
+import edu.stanford.hakan.aim4api.compability.aimv3.ImageSeries;
+import edu.stanford.hakan.aim4api.compability.aimv3.ImageStudy;
+import edu.stanford.hakan.aim4api.compability.aimv3.Person;
+import edu.stanford.hakan.aim4api.compability.aimv3.Segmentation;
+import edu.stanford.hakan.aim4api.compability.aimv3.User;
 
 /**
  * 

@@ -106,7 +106,7 @@ import edu.stanford.epad.epadws.queries.DefaultEpadOperations;
 import edu.stanford.epad.epadws.queries.EpadOperations;
 import edu.stanford.epad.epadws.service.DefaultEpadProjectOperations;
 import edu.stanford.epad.epadws.service.EpadProjectOperations;
-import edu.stanford.hakan.aim3api.base.ImageAnnotation;
+import edu.stanford.hakan.aim4api.compability.aimv3.ImageAnnotation;
 
 /**
  * Code for handling DICOM Segmentation Objects
@@ -589,14 +589,14 @@ public class DSOUtil
 				pngContourFilesDirectory.mkdirs();
 			}
 			File[] oldFiles = pngMaskFilesDirectory.listFiles();
-			for (File oldFile: oldFiles)
-			{
-				try
-				{
-					if (oldFile.getName().contains("png"))
-						oldFile.delete();
-				} catch (Exception x) {};
-			}
+//			for (File oldFile: oldFiles)
+//			{
+//				try
+//				{
+//					if (oldFile.getName().contains("png"))
+//						oldFile.delete();
+//				} catch (Exception x) {};
+//			}
 
 			log.info("Writing PNG masks for DSO " + imageUID + " in series " + seriesUID + " DSOFile:" + dsoFile.getAbsolutePath() + " number of frames:" + numberOfFrames + " ...");
 			List<DCM4CHEEImageDescription> referencedImages = new ArrayList<DCM4CHEEImageDescription>();

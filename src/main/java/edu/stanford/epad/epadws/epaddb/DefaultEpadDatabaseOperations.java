@@ -223,18 +223,18 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 			}
 			
 			// Fix coordination AIMs
-			try {
-				c = getConnection();
-				adb = new AIMDatabaseOperations(c, EPADConfig.eXistServerUrl,
-						EPADConfig.aim4Namespace, EPADConfig.eXistCollection, EPADConfig.eXistUsername, EPADConfig.eXistPassword);
-				List<EPADAIM> aims = adb.getAIMs("XML like '%EPAD-prod%'", 0, 0);
-				AIMUtil.convertAim3(aims);
-				
-			} catch (Exception x) {
-				log.warning("Error fixing AIM for coordination tag:", x);
-			} finally {
-				close(c);
-			}
+//			try {
+//				c = getConnection();
+//				adb = new AIMDatabaseOperations(c, EPADConfig.eXistServerUrl,
+//						EPADConfig.aim4Namespace, EPADConfig.eXistCollection, EPADConfig.eXistUsername, EPADConfig.eXistPassword);
+//				List<EPADAIM> aims = adb.getAIMs("XML like '%EPAD-prod%'", 0, 0);
+//				AIMUtil.convertAim3(aims);
+//				
+//			} catch (Exception x) {
+//				log.warning("Error fixing AIM for coordination tag:", x);
+//			} finally {
+//				close(c);
+//			}
 			// Check mongoDB
 			try {
 				log.info("Checking mongoDB ...");
@@ -921,13 +921,13 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 
 	@Override
 	public EPADAIM addAIM(String userName, FrameReference reference,
-			String aimID, String aimXML) {
+			String aimID, String aimXML, String aimName) {
 		Connection c = null;
 		try {
 			c = getConnection();
 			AIMDatabaseOperations adb = new AIMDatabaseOperations(c, EPADConfig.eXistServerUrl,
 					EPADConfig.aim4Namespace, EPADConfig.eXistCollection, EPADConfig.eXistUsername, EPADConfig.eXistPassword);
-			return adb.insert(aimID, userName, reference.projectID, reference.subjectID, reference.studyUID, reference.seriesUID, reference.imageUID, 0, null, aimXML);
+			return adb.insert(aimID, userName, reference.projectID, reference.subjectID, reference.studyUID, reference.seriesUID, reference.imageUID, 0, null, aimXML, null);
 		} catch (SQLException sqle) {
 			log.warning("AIM Database operation failed:", sqle);
 		} finally {
@@ -938,13 +938,13 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 
 	@Override
 	public EPADAIM addDSOAIM(String userName, ImageReference reference,
-			String dsoSeriesUID, String aimID, String aimXML) {
+			String dsoSeriesUID, String aimID, String aimXML, String name) {
 		Connection c = null;
 		try {
 			c = getConnection();
 			AIMDatabaseOperations adb = new AIMDatabaseOperations(c, EPADConfig.eXistServerUrl,
 					EPADConfig.aim4Namespace, EPADConfig.eXistCollection, EPADConfig.eXistUsername, EPADConfig.eXistPassword);
-			return adb.insert(aimID, userName, reference.projectID, reference.subjectID, reference.studyUID, reference.seriesUID, reference.imageUID, 0, dsoSeriesUID, aimXML);
+			return adb.insert(aimID, userName, reference.projectID, reference.subjectID, reference.studyUID, reference.seriesUID, reference.imageUID, 0, dsoSeriesUID, aimXML, name);
 		} catch (SQLException sqle) {
 			log.warning("AIM Database operation failed:", sqle);
 		} finally {
@@ -977,6 +977,22 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 			AIMDatabaseOperations adb = new AIMDatabaseOperations(c, EPADConfig.eXistServerUrl,
 					EPADConfig.aim4Namespace, EPADConfig.eXistCollection, EPADConfig.eXistUsername, EPADConfig.eXistPassword);
 			return adb.updateAIMXml(aimID, xml);
+		} catch (SQLException sqle) {
+			log.warning("AIM Database operation failed:", sqle);
+		} finally {
+			close(c);
+		}
+		return null;
+	}
+
+	@Override
+	public EPADAIM updateAIMName(String aimID, String name) {
+		Connection c = null;
+		try {
+			c = getConnection();
+			AIMDatabaseOperations adb = new AIMDatabaseOperations(c, EPADConfig.eXistServerUrl,
+					EPADConfig.aim4Namespace, EPADConfig.eXistCollection, EPADConfig.eXistUsername, EPADConfig.eXistPassword);
+			return adb.updateAIMName(aimID, name);
 		} catch (SQLException sqle) {
 			log.warning("AIM Database operation failed:", sqle);
 		} finally {
@@ -1416,6 +1432,25 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 			recordNewSeries(seriesProcessingStatus, seriesUID);
 		} else {
 			updateSeriesProcessingStatus(seriesProcessingStatus, seriesUID);
+		}
+	}
+
+	@Override
+	public void updateSeriesDefaultTags(String seriesUID, String defaultTags) throws Exception {
+		Connection c = null;
+		PreparedStatement ps = null;
+		ResultSet rs = null;
+		try {
+			c = getConnection();
+			ps = c.prepareStatement(EpadDatabaseCommands.UPDATE_EPAD_SERIES_TAGS);
+			ps.setString(1, defaultTags);
+			ps.setString(2, seriesUID);
+			ps.execute();
+		} catch (SQLException sqle) {
+			String debugInfo = DatabaseUtils.getDebugData(rs);
+			log.warning("Database operation failed; debugInfo=" + debugInfo, sqle);
+		} finally {
+			close(c, ps, rs);
 		}
 	}
 
@@ -2520,6 +2555,30 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 		} finally {
 			close(c, ps, rs);
 		}
+	}
+
+	@Override
+	public String getSeriesDefaultTags(String seriesUID) {
+		Connection c = null;
+		PreparedStatement ps = null;
+		ResultSet rs = null;
+		try {
+			c = getConnection();
+			ps = c.prepareStatement(EpadDatabaseCommands.GET_EPAD_SERIES_TAGS);
+			ps.setString(1, seriesUID);
+			rs = ps.executeQuery();
+			if (rs.next())
+			{
+				String tags = rs.getString(1);
+				return tags;
+			}
+		} catch (SQLException sqle) {
+			String debugInfo = DatabaseUtils.getDebugData(rs);
+			log.warning("Database operation failed; debugInfo=" + debugInfo, sqle);
+		} finally {
+			close(c, ps, rs);
+		}
+		return null;
 	}
 
 	@Override

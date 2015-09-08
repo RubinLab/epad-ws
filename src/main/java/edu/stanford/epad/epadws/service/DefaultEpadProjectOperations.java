@@ -981,19 +981,24 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		Set<Long> allIds = new HashSet<Long>();
 		for (Object obj: psAll)
 		{
-			long id = ((AbstractDAO) obj).getId();
+			long id = ((ProjectToSubject) obj).getSubjectId();
 			allIds.add(id);
 		}
 		List psAsssigned = new ProjectToSubject().getObjects("project_id != " + project.getId());
-		Set<Long> assignedIds = new HashSet<Long>();
 		for (Object obj: psAsssigned)
 		{
-			long id = ((AbstractDAO) obj).getId();
-			assignedIds.add(id);
+			long id = ((ProjectToSubject) obj).getSubjectId();
+			if (!allIds.contains(id))
+			{
+				Subject subject = (Subject) new Subject().getObject("id = " + id);
+				log.info("Adding " + subject.getSubjectUID() + " to " + EPADConfig.xnatUploadProjectID);
+				this.addSubjectToProject("admin", subject.getSubjectUID(), EPADConfig.xnatUploadProjectID);
+			}
 		}
-		for (Long assignedId: assignedIds)
+		for (Object obj: psAsssigned)
 		{
-			allIds.remove(assignedId);
+			long id = ((ProjectToSubject) obj).getSubjectId();
+			allIds.remove(id);
 		}
 		String inclause = "";
 		String delim = "(";
@@ -1003,7 +1008,7 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 			delim = ",";
 		}
 		
-		List objects = new Subject().getObjects("id  in " + inclause + ") order by name");
+		List objects = new Subject().getObjects("id in " + inclause + ") order by name");
 		List<Subject> subjects = new ArrayList<Subject>();
 		subjects.addAll(objects);
 		
@@ -1788,6 +1793,11 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		// TODO: delete subject if not used any more
 		if (projSubjs.size() == 0)
 		{
+			List<Study> studies = new Study().getObjects("subject_id = " + subject.getId());
+			for (Study study: studies)
+			{
+				study.delete();
+			}
 			subject.delete();
 			subjectCache.remove(subjectUID);
 		}
@@ -1828,6 +1838,11 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 			new ProjectToSubjectToUser().deleteObjects("proj_subj_id =" + ptos.getId());
 			new ProjectToSubjectToStudy().deleteObjects("proj_subj_id =" + ptos.getId());
 			ptos.delete();
+		}
+		List<Study> studies = new Study().getObjects("subject_id = " + subject.getId());
+		for (Study study: studies)
+		{
+			study.delete();
 		}
 		new EpadFile().deleteObjects("subject_id=" + subject.getId());
 		subject.delete();
