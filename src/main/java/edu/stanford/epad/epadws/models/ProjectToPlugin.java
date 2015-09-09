@@ -5,22 +5,18 @@ import java.util.Date;
 import edu.stanford.epad.epadws.models.dao.AbstractDAO;
 
 /**
- * Plugin 
+ * Project to PlugIn relation
  * 
  * @author Emel Alkim
  *
  */
 
-public class Plugin extends AbstractDAO {
+public class ProjectToPlugin extends AbstractDAO {
 
 	long id;
-	String pluginId;
-	String name;
-	String description;
-	String javaclass;
-	Boolean enabled;
-	String status;
-	String modality;
+	long projectId;
+	long pluginId;
+	boolean enabled;
 	String creator;
 	Date createdTime;
 	Date updateTime;
@@ -35,37 +31,21 @@ public class Plugin extends AbstractDAO {
 		this.id = id;
 	}
 
+	public long getProjectId() {
+		return projectId;
+	}
 
-	public String getPluginId() {
+	public void setProjectId(long projectId) {
+		this.projectId = projectId;
+	}
+
+	
+	public long getPluginId() {
 		return pluginId;
 	}
 
-	public void setPluginId(String pluginId) {
+	public void setPluginId(long pluginId) {
 		this.pluginId = pluginId;
-	}
-
-	public String getName() {
-		return name;
-	}
-
-	public void setName(String name) {
-		this.name = name;
-	}
-
-	public String getDescription() {
-		return description;
-	}
-
-	public void setDescription(String description) {
-		this.description = description;
-	}
-
-	public String getJavaclass() {
-		return javaclass;
-	}
-
-	public void setJavaclass(String javaclass) {
-		this.javaclass = javaclass;
 	}
 
 	public Boolean getEnabled() {
@@ -74,22 +54,6 @@ public class Plugin extends AbstractDAO {
 
 	public void setEnabled(Boolean enabled) {
 		this.enabled = enabled;
-	}
-
-	public String getStatus() {
-		return status;
-	}
-
-	public void setStatus(String status) {
-		this.status = status;
-	}
-
-	public String getModality() {
-		return modality;
-	}
-
-	public void setModality(String modality) {
-		this.modality = modality;
 	}
 
 	public String getCreator() {
@@ -116,16 +80,12 @@ public class Plugin extends AbstractDAO {
 		this.updateTime = updateTime;
 	}
 
-	public final static String DBTABLE = "plugin";
+	public final static String DBTABLE = "project_plugin";
 	public final static String[][] DBCOLUMNS = {
         {"id","long","id","Id"},
-        {"pluginId","String","plugin_id","varchar"},
-        {"name","String","name","varchar"},
-        {"description","String","description","varchar"},
-        {"javaclass","String","javaclass","varchar"},
+        {"projectId","long","project_id","integer"},  
+        {"pluginId","long","plugin_id","integer"},
         {"enabled","Boolean","enabled","tinyint(1)"},
-        {"status","String","status","varchar"},
-        {"modality","String","modality","varchar"},
         {"creator","String","creator","varchar"},
         {"createdTime","Date","createdtime","timestamp"},
         {"updateTime","Date","updatetime","timestamp"},	

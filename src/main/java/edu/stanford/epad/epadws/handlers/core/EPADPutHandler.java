@@ -40,6 +40,7 @@ import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.epad.dtos.EPADAIM;
 import edu.stanford.epad.dtos.EPADMessage;
 import edu.stanford.epad.dtos.EPADPlugin;
+import edu.stanford.epad.dtos.EPADPluginList;
 import edu.stanford.epad.dtos.EPADPluginParameterList;
 import edu.stanford.epad.dtos.EPADProject;
 import edu.stanford.epad.dtos.EPADSeries;
@@ -694,23 +695,28 @@ public class EPADPutHandler
 				String description = httpRequest.getParameter("description");
 				String javaclass = httpRequest.getParameter("class");
 				String enabled = httpRequest.getParameter("enabled");
+				String modality = httpRequest.getParameter("modality");
 				EPADPlugin plugin = pluginOperations.getPluginDescription(pluginReference.pluginID, username, sessionID);
 				if (plugin != null) {
-					pluginOperations.updatePlugin(username, pluginReference.pluginID, name, description, javaclass, enabled, sessionID);
+					pluginOperations.updatePlugin(username, pluginReference.pluginID, name, description, javaclass, enabled, modality, sessionID);
 					return HttpServletResponse.SC_OK;
 				} else {
-					pluginOperations.createPlugin(username, pluginReference.pluginID, name, description, javaclass, enabled, sessionID);
+					pluginOperations.createPlugin(username, pluginReference.pluginID, name, description, javaclass, enabled, modality, sessionID);
 					return HttpServletResponse.SC_OK;
 				}	
+			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.PLUGIN, pathInfo)) { //ML
+				ProjectPluginReference reference = ProjectPluginReference.extract(ProjectsRouteTemplates.PLUGIN, pathInfo);
+				String enabled = httpRequest.getParameter("enable");
+				pluginOperations.setProjectPluginEnable(username,reference.projectId,reference.pluginId,enabled,sessionID);
+				return HttpServletResponse.SC_OK;
 				
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.PARAMETER_LIST, pathInfo)) { //ML
 				ProjectPluginReference reference = ProjectPluginReference.extract(ProjectsRouteTemplates.PARAMETER_LIST, pathInfo);
 							
 				String[] paramNames = httpRequest.getParameterValues("param");
 				String[] paramValues = httpRequest.getParameterValues("val");
-				for (int i = 0; i < paramNames.length; i++) {
-					pluginOperations.addParameter(username,reference.projectId,reference.pluginId,paramNames[i],paramValues[i]);
-				}
+				pluginOperations.addParameters(username,reference.projectId,reference.pluginId,paramNames,paramValues);
+				
 //				Enumeration<String> parameterNames = httpRequest.getParameterNames();
 //				while (parameterNames.hasMoreElements()) {
 //					String paramName = parameterNames.nextElement();

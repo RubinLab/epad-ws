@@ -1543,6 +1543,22 @@ public class EPADGetHandler
 					throw new Exception("Plugin " + pluginReference.pluginID + " not found");
 
 
+			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.PLUGIN_LIST, pathInfo)) { //ML
+				ProjectReference reference = ProjectReference.extract(ProjectsRouteTemplates.PLUGIN_LIST, pathInfo);
+				EPADPluginList plugins = pluginOperations.getPluginDescriptionsForProject(reference.projectID, username, sessionID);
+//				if (returnSummary(httpRequest)) {
+//					for (EPADPlugin plugin:plugins) {
+//						
+//					}
+//						
+//				}
+//					
+//				else
+//					plugins = pluginOperations.getPluginDescriptionsForProject(reference.projectID, false, username, sessionID);
+
+				responseStream.append(plugins.toJSON());
+				statusCode = HttpServletResponse.SC_OK;
+
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.PARAMETER_LIST, pathInfo)) { //ML
 				ProjectPluginReference reference = ProjectPluginReference.extract(ProjectsRouteTemplates.PARAMETER_LIST, pathInfo);
 								
