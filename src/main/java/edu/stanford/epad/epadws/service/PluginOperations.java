@@ -1,5 +1,9 @@
 package edu.stanford.epad.epadws.service;
 
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.ResultSet;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -173,6 +177,19 @@ public class PluginOperations {
 			plugins.add(plugin);
 		}
 		return plugins;
+	}
+	
+	public boolean getPlugins(List<String> pluginHandlerList,List<String> pluginTemplateList,List<String> pluginNameList) throws Exception
+	{
+		List<Plugin> plugins = getPlugins();
+		for (Plugin plugin : plugins) {
+			pluginHandlerList.add(plugin.getJavaclass());
+			pluginTemplateList.add(plugin.getPluginId());
+			pluginNameList.add(plugin.getName());
+		}
+		if (pluginHandlerList.isEmpty())
+			return false;
+		return true;
 	}
 	
 	public EPADPluginList getPluginSummaries(String username, String sessionID) throws Exception {

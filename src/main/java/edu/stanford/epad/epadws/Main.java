@@ -53,9 +53,9 @@ import org.springframework.web.context.support.AnnotationConfigWebApplicationCon
 import org.springframework.web.servlet.DispatcherServlet;
 import org.xml.sax.SAXException;
 
-import edu.stanford.epad.common.plugins.PluginConfig;
+import edu.stanford.epad.epadws.plugins.PluginConfig;
 import edu.stanford.epad.common.plugins.PluginController;
-import edu.stanford.epad.common.plugins.PluginHandlerMap;
+import edu.stanford.epad.epadws.plugins.PluginHandlerMap;
 import edu.stanford.epad.common.plugins.PluginServletHandler;
 import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADFileUtils;

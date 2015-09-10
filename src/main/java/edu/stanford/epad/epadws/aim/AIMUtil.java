@@ -78,7 +78,7 @@ import com.pixelmed.dicom.TagFromName;
 import edu.stanford.epad.common.dicom.DCM4CHEEImageDescription;
 import edu.stanford.epad.common.pixelmed.PixelMedUtils;
 import edu.stanford.epad.common.plugins.PluginAIMUtil;
-import edu.stanford.epad.common.plugins.PluginConfig;
+import edu.stanford.epad.epadws.plugins.PluginConfig;
 import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADFileUtils;
 import edu.stanford.epad.common.util.EPADLogger;
