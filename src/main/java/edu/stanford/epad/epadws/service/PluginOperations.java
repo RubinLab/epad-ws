@@ -74,12 +74,12 @@ public class PluginOperations {
 			throws Exception {
 
 			
-		List<ProjectToPluginParameter> objects = new ProjectToPluginParameter().getObjects(" project_id =" + id + " and plugin_id =" +pluginId + " ");
+		List<ProjectToPluginParameter> objects = new ProjectToPluginParameter().getObjects(" project_id =" + id + " and plugin_id =" + pluginId + " ");
 		
 		EPADPluginParameterList parameters = new EPADPluginParameterList();
 		if (objects.isEmpty()) { // no default parameters for project, collect global defaults
 			Project unassigned=projectOperations.getProject(EPADConfig.xnatUploadProjectID);
-			objects = new ProjectToPluginParameter().getObjects(" project_id =" + unassigned + " and plugin_id =" +pluginId + " ");
+			objects = new ProjectToPluginParameter().getObjects(" project_id =" + unassigned.getId() + " and plugin_id =" +pluginId + " ");
 		}
 		for (ProjectToPluginParameter object : objects) {
 			parameters.addEPADPluginParameter(parameter2EPADPluginParameter(object));
@@ -133,11 +133,24 @@ public class PluginOperations {
 		return projectPlugin;
 	}
 	
+	public EPADPluginList getPluginSummariesForProject(String projectId, String username, String sessionID) throws Exception {
+		List<Plugin> plugins = getPluginsForProject(projectId);
+		EPADPluginList epadPluginList = new EPADPluginList();
+		for (Plugin plugin : plugins) {
+			EPADPlugin epadPlugin = plugin2EPADPlugin(plugin,true);
+			
+			if (epadPlugin != null)
+			{
+				epadPluginList.addEPADPlugin(epadPlugin);
+			}
+		}
+		return epadPluginList;
+	}
 	public EPADPluginList getPluginDescriptionsForProject(String projectId, String username, String sessionID) throws Exception {
 		List<Plugin> plugins = getPluginsForProject(projectId);
 		EPADPluginList epadPluginList = new EPADPluginList();
 		for (Plugin plugin : plugins) {
-			EPADPlugin epadPlugin = plugin2EPADPlugin(plugin);
+			EPADPlugin epadPlugin = plugin2EPADPlugin(plugin,false);
 			
 			if (epadPlugin != null)
 			{
@@ -162,11 +175,11 @@ public class PluginOperations {
 		return plugins;
 	}
 	
-	public EPADPluginList getPluginDescriptions(String username, String sessionID) throws Exception {
+	public EPADPluginList getPluginSummaries(String username, String sessionID) throws Exception {
 		List<Plugin> plugins = getPlugins();
 		EPADPluginList epadPluginList = new EPADPluginList();
 		for (Plugin plugin : plugins) {
-			EPADPlugin epadPlugin = plugin2EPADPlugin(plugin);
+			EPADPlugin epadPlugin = plugin2EPADPlugin(plugin,true);
 			
 			if (epadPlugin != null)
 			{
@@ -176,17 +189,33 @@ public class PluginOperations {
 		return epadPluginList;
 	}
 	
-	public EPADPlugin getPluginDescription(String pluginId,String username, String sessionID) throws Exception {
+	public EPADPluginList getPluginDescriptions(String username, String sessionID) throws Exception {
+		List<Plugin> plugins = getPlugins();
+		EPADPluginList epadPluginList = new EPADPluginList();
+		for (Plugin plugin : plugins) {
+			EPADPlugin epadPlugin = plugin2EPADPlugin(plugin,false);
+			
+			if (epadPlugin != null)
+			{
+				epadPluginList.addEPADPlugin(epadPlugin);
+			}
+		}
+		return epadPluginList;
+	}
+	
+	public EPADPlugin getPluginDescription(String pluginId, String username, String sessionID) throws Exception {
 		Plugin plugin=getPlugin(pluginId);
 
 		if (plugin==null) return null;
-		EPADPlugin epadPlugin = plugin2EPADPlugin(plugin);
+		EPADPlugin epadPlugin = plugin2EPADPlugin(plugin,false);
 		return epadPlugin;
 	}
 	
-	private EPADPlugin plugin2EPADPlugin(Plugin plugin) throws Exception
+	private EPADPlugin plugin2EPADPlugin(Plugin plugin,Boolean returnSummary) throws Exception
 	{
-		
+		if (returnSummary)
+			return new EPADPlugin(plugin.getPluginId(),plugin.getName(),plugin.getDescription(),null,null,null,null);
+
 		return new EPADPlugin(plugin.getPluginId(),plugin.getName(),plugin.getDescription(),plugin.getJavaclass(),plugin.getEnabled(),plugin.getStatus(),plugin.getModality());
 	}
 	
@@ -309,12 +338,18 @@ public class PluginOperations {
 		if (!projectId.equals(EPADConfig.xnatUploadProjectID)) {
 			EPADPluginParameterList globalParams=getParameterForPluginOfProject(EPADConfig.xnatUploadProjectID, pluginId);
 			Map<String,String> params=new HashMap<String,String>();
+			for (int i=0; i<paramNames.length;i++){
+				params.put(paramNames[i], paramValues[i]);
+			}
 			
-			for (EPADPluginParameter param:globalParams.ResultSet.Result) {  //should not use result directly
+			for (EPADPluginParameter param : globalParams.getResult()) {  
 				if (params.containsKey(param.getName())) {
-					addParameter(loggedInUser, projectId, pluginId, param.getName(), params.get(param.getName()));
+					setParameter(loggedInUser, projectId, pluginId, param.getName(), params.get(param.getName()));
+					log.info("existing param name:" + param.getName() + " value " + params.get(param.getName()));
 				} else {
-					addParameter(loggedInUser, projectId, pluginId, param.getName(), param.getDefaultValue());
+					setParameter(loggedInUser, projectId, pluginId, param.getName(), param.getDefaultValue());
+					log.info("not existing param name:" + param.getName() + " value " + param.getDefaultValue());
+					
 				}
 					
 			}
@@ -322,11 +357,11 @@ public class PluginOperations {
 		}
 		else {
 			for (int i=0; i<paramNames.length;i++){
-				addParameter(loggedInUser, projectId, pluginId, paramNames[i], paramValues[i]);
+				setParameter(loggedInUser, projectId, pluginId, paramNames[i], paramValues[i]);
 			}
 		}
 	}
-	public void addParameter(String loggedInUser,String projectId, String pluginId, String paramName, String defaultValue) throws Exception {
+	public void setParameter(String loggedInUser,String projectId, String pluginId, String paramName, String defaultValue) throws Exception {
 		User user=null;
 		try {
 			user = projectOperations.getUser(loggedInUser);
@@ -336,13 +371,17 @@ public class PluginOperations {
 		if (user != null && !user.isAdmin() )
 			throw new Exception("No permission to add plugin parameter");
 		
-		ProjectToPluginParameter param=getParameter(loggedInUser, projectId, pluginId, paramName); //get the parameter to update
-		if (param==null) new ProjectToPluginParameter(); //create new if not db tuple with the param name
 		Project project = projectOperations.getProject(projectId);
-		param.setProjectId(project.getId());
-		Plugin plugin = getPlugin(pluginId);
-		param.setPluginId(plugin.getId());
-		param.setName(paramName);
+		if (project == null )
+			throw new Exception("No project with id " + projectId);
+		ProjectToPluginParameter param=getParameter(loggedInUser, projectId, pluginId, paramName); //get the parameter to update
+		if (param==null) {
+			param= new ProjectToPluginParameter(); //create new if not db tuple with the param name
+			param.setProjectId(project.getId());
+			Plugin plugin = getPlugin(pluginId);
+			param.setPluginId(plugin.getId());
+			param.setName(paramName);
+		}
 		param.setDefaultValue(defaultValue);
 		param.setCreator(loggedInUser);
 		param.save();
@@ -355,7 +394,7 @@ public class PluginOperations {
 		Plugin plugin=getPlugin(pluginId);
 		if (plugin == null) return null;
 		ProjectToPluginParameter param = new ProjectToPluginParameter();
-		param = (ProjectToPluginParameter) param.getObject("project_id='" + project.getProjectId() + "' and plugin_id = '" + plugin.getId()+ "'  and name = '" + paramName + "'");
+		param = (ProjectToPluginParameter) param.getObject("project_id=" + project.getId() + " and plugin_id = " + plugin.getId()+ "  and name = '" + paramName + "'");
 		return param;
 	}
 

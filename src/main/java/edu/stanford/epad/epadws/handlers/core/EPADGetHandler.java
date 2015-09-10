@@ -1526,7 +1526,12 @@ public class EPADGetHandler
 
 			} else if (HandlerUtil.matchesTemplate(PluginRouteTemplates.PLUGIN_LIST, pathInfo)) { //ML
 				
-				EPADPluginList plugins = pluginOperations.getPluginDescriptions(username, sessionID);
+				EPADPluginList plugins = null;
+				if (returnSummary(httpRequest)) 
+					plugins = pluginOperations.getPluginSummaries(username, sessionID);
+				else
+					plugins = pluginOperations.getPluginDescriptions(username, sessionID);
+				
 				responseStream.append(plugins.toJSON());
 				statusCode = HttpServletResponse.SC_OK;
 
@@ -1535,7 +1540,7 @@ public class EPADGetHandler
 				PluginReference pluginReference = PluginReference.extract(PluginRouteTemplates.PLUGIN, pathInfo);
 
 				EPADPlugin plugin = pluginOperations.getPluginDescription(pluginReference.pluginID,username, sessionID);
-
+				
 				if (plugin != null) {
 					responseStream.append(plugin.toJSON());
 					statusCode = HttpServletResponse.SC_OK;
@@ -1545,16 +1550,12 @@ public class EPADGetHandler
 
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.PLUGIN_LIST, pathInfo)) { //ML
 				ProjectReference reference = ProjectReference.extract(ProjectsRouteTemplates.PLUGIN_LIST, pathInfo);
-				EPADPluginList plugins = pluginOperations.getPluginDescriptionsForProject(reference.projectID, username, sessionID);
-//				if (returnSummary(httpRequest)) {
-//					for (EPADPlugin plugin:plugins) {
-//						
-//					}
-//						
-//				}
-//					
-//				else
-//					plugins = pluginOperations.getPluginDescriptionsForProject(reference.projectID, false, username, sessionID);
+				EPADPluginList plugins = null;
+				if (returnSummary(httpRequest)) 
+					plugins = pluginOperations.getPluginSummariesForProject(reference.projectID, username, sessionID);
+					
+				else
+					plugins = pluginOperations.getPluginDescriptionsForProject(reference.projectID, username, sessionID);
 
 				responseStream.append(plugins.toJSON());
 				statusCode = HttpServletResponse.SC_OK;

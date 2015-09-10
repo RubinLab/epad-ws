@@ -694,7 +694,7 @@ public class EPADPutHandler
 				String name = httpRequest.getParameter("name");
 				String description = httpRequest.getParameter("description");
 				String javaclass = httpRequest.getParameter("class");
-				String enabled = httpRequest.getParameter("enabled");
+				String enabled = httpRequest.getParameter("enable");
 				String modality = httpRequest.getParameter("modality");
 				EPADPlugin plugin = pluginOperations.getPluginDescription(pluginReference.pluginID, username, sessionID);
 				if (plugin != null) {
@@ -716,23 +716,6 @@ public class EPADPutHandler
 				String[] paramNames = httpRequest.getParameterValues("param");
 				String[] paramValues = httpRequest.getParameterValues("val");
 				pluginOperations.addParameters(username,reference.projectId,reference.pluginId,paramNames,paramValues);
-				
-//				Enumeration<String> parameterNames = httpRequest.getParameterNames();
-//				while (parameterNames.hasMoreElements()) {
-//					String paramName = parameterNames.nextElement();
-//					String[] paramValues = httpRequest.getParameterValues(paramName);
-//					for (int i = 0; i < paramValues.length; i++) {
-//						String paramValue = paramValues[i];
-//					}
-//				}
-//				Map<String, Object> formData = HandlerUtil.parsePostedData(httpRequest, responseStream);
-//				for (String param: formData.keySet())
-//				{
-//					Map<String,String> params=(Map<String, String>) formData.get(param);
-//					for (String paramName:params.keySet()){
-//						pluginOperations.addParameter(username,reference.projectId,reference.pluginId,paramName,params.get(paramName));
-//					}
-//				}
 					
 				return HttpServletResponse.SC_OK;
 
