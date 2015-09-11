@@ -53,9 +53,9 @@ import org.springframework.web.context.support.AnnotationConfigWebApplicationCon
 import org.springframework.web.servlet.DispatcherServlet;
 import org.xml.sax.SAXException;
 
-import edu.stanford.epad.common.plugins.PluginConfig;
+import edu.stanford.epad.epadws.plugins.PluginConfig;
 import edu.stanford.epad.common.plugins.PluginController;
-import edu.stanford.epad.common.plugins.PluginHandlerMap;
+import edu.stanford.epad.epadws.plugins.PluginHandlerMap;
 import edu.stanford.epad.common.plugins.PluginServletHandler;
 import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADFileUtils;
@@ -411,20 +411,20 @@ public class Main
 	public static void loadPluginClasses()
 	{
 		try {
-		PluginHandlerMap pluginHandlerMap = PluginHandlerMap.getInstance();
-		PluginConfig pluginConfig = PluginConfig.getInstance();
-		List<String> pluginHandlerList = pluginConfig.getPluginHandlerList();
-
-		for (String pluginClassName : pluginHandlerList) {
-			log.info("Loading plugin class: " + pluginClassName);
-			PluginServletHandler psh = pluginHandlerMap.loadFromClassName(pluginClassName);
-			if (psh != null) {
-				String pluginName = psh.getName();
-				pluginHandlerMap.setPluginServletHandler(pluginName, psh);
-			} else {
-				log.warning("Could not find plugin class: " + pluginClassName);
+			PluginHandlerMap pluginHandlerMap = PluginHandlerMap.getInstance();
+			PluginConfig pluginConfig = PluginConfig.getInstance();
+			List<String> pluginHandlerList = pluginConfig.getPluginHandlerList();
+	
+			for (String pluginClassName : pluginHandlerList) {
+				log.info("Loading plugin class: " + pluginClassName);
+				PluginServletHandler psh = pluginHandlerMap.loadFromClassName(pluginClassName);
+				if (psh != null) {
+					String pluginName = psh.getName();
+					pluginHandlerMap.setPluginServletHandler(pluginName, psh);
+				} else {
+					log.warning("Could not find plugin class: " + pluginClassName);
+				}
 			}
-		}
 		}
 		catch (Exception x) {
 			log.warning("Error loading plugin", x);

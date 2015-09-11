@@ -27,6 +27,7 @@ import java.io.File;
 import java.io.PrintWriter;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.Enumeration;
 import java.util.Map;
 import java.util.Set;
 
@@ -38,6 +39,9 @@ import edu.stanford.epad.common.util.EPADFileUtils;
 import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.epad.dtos.EPADAIM;
 import edu.stanford.epad.dtos.EPADMessage;
+import edu.stanford.epad.dtos.EPADPlugin;
+import edu.stanford.epad.dtos.EPADPluginList;
+import edu.stanford.epad.dtos.EPADPluginParameterList;
 import edu.stanford.epad.dtos.EPADProject;
 import edu.stanford.epad.dtos.EPADSeries;
 import edu.stanford.epad.dtos.EPADSubject;
@@ -60,6 +64,7 @@ import edu.stanford.epad.epadws.service.DefaultEpadProjectOperations;
 import edu.stanford.epad.epadws.service.DefaultWorkListOperations;
 import edu.stanford.epad.epadws.service.EpadProjectOperations;
 import edu.stanford.epad.epadws.service.EpadWorkListOperations;
+import edu.stanford.epad.epadws.service.PluginOperations;
 import edu.stanford.epad.epadws.service.RemotePACService;
 import edu.stanford.epad.epadws.service.TCIAService;
 import edu.stanford.epad.epadws.service.UserProjectService;
@@ -85,6 +90,7 @@ public class EPADPutHandler
 	protected static int handlePut(HttpServletRequest httpRequest, HttpServletResponse httpResponse, PrintWriter responseStream,
 			String username, String sessionID)
 	{
+		PluginOperations pluginOperations=PluginOperations.getInstance();
 		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
 		EpadProjectOperations projectOperations = DefaultEpadProjectOperations.getInstance();
 		EpadWorkListOperations worklistOperations = DefaultWorkListOperations.getInstance();
@@ -273,7 +279,7 @@ public class EPADPutHandler
 			} else if (HandlerUtil.matchesTemplate(UsersRouteTemplates.USER_WORKLIST, pathInfo)) {
 				Map<String, String> templateMap = HandlerUtil.getTemplateMap(UsersRouteTemplates.USER_WORKLIST, pathInfo);
 				String reader = HandlerUtil.getTemplateParameter(templateMap, "username");
-				String workListID = HandlerUtil.getTemplateParameter(templateMap, "workListID");
+				String workListID = HandlerUtil.getTemplateParameter(templateMap, "worklistID");
 				String description = httpRequest.getParameter("description");
 				String dueDate = httpRequest.getParameter("dueDate");
 				WorkList worklist = worklistOperations.getWorkList(workListID);
@@ -302,9 +308,9 @@ public class EPADPutHandler
 				
 			
 			} else if (HandlerUtil.matchesTemplate(UsersRouteTemplates.USER_SUBJECT, pathInfo)) {
-				Map<String, String> templateMap = HandlerUtil.getTemplateMap(UsersRouteTemplates.USER_PROJECT_SUBJECT, pathInfo);
+				Map<String, String> templateMap = HandlerUtil.getTemplateMap(UsersRouteTemplates.USER_SUBJECT, pathInfo);
 				String reader = HandlerUtil.getTemplateParameter(templateMap, "username");
-				String workListID = HandlerUtil.getTemplateParameter(templateMap, "workListID");
+				String workListID = HandlerUtil.getTemplateParameter(templateMap, "worklistID");
 				String projectID = HandlerUtil.getTemplateParameter(templateMap, "projectID");
 				String subjectID = HandlerUtil.getTemplateParameter(templateMap, "subjectID");
 				String wlstatus = httpRequest.getParameter("status");
@@ -320,10 +326,10 @@ public class EPADPutHandler
 				statusCode = HttpServletResponse.SC_OK;
 	
 			} else if (HandlerUtil.matchesTemplate(UsersRouteTemplates.USER_STUDY, pathInfo)) {
-				Map<String, String> templateMap = HandlerUtil.getTemplateMap(UsersRouteTemplates.USER_PROJECT_STUDY, pathInfo);
+				Map<String, String> templateMap = HandlerUtil.getTemplateMap(UsersRouteTemplates.USER_STUDY, pathInfo);
 				String reader = HandlerUtil.getTemplateParameter(templateMap, "username");
 				String studyUID = HandlerUtil.getTemplateParameter(templateMap, "studyUID");
-				String workListID = HandlerUtil.getTemplateParameter(templateMap, "workListID");
+				String workListID = HandlerUtil.getTemplateParameter(templateMap, "worklistID");
 				String projectID = HandlerUtil.getTemplateParameter(templateMap, "projectID");
 				String wlstatus = httpRequest.getParameter("status");
 				Boolean started = "true".equalsIgnoreCase(httpRequest.getParameter("started"));
@@ -349,7 +355,7 @@ public class EPADPutHandler
 			} else if (HandlerUtil.matchesTemplate(UsersRouteTemplates.USER_PROJECT_SUBJECT, pathInfo)) {
 				Map<String, String> templateMap = HandlerUtil.getTemplateMap(UsersRouteTemplates.USER_PROJECT_SUBJECT, pathInfo);
 				String reader = HandlerUtil.getTemplateParameter(templateMap, "username");
-				String workListID = HandlerUtil.getTemplateParameter(templateMap, "workListID");
+				String workListID = HandlerUtil.getTemplateParameter(templateMap, "worklistID");
 				String projectID = HandlerUtil.getTemplateParameter(templateMap, "projectID");
 				String subjectID = HandlerUtil.getTemplateParameter(templateMap, "subjectID");
 				String wlstatus = httpRequest.getParameter("status");
@@ -371,7 +377,7 @@ public class EPADPutHandler
 				Map<String, String> templateMap = HandlerUtil.getTemplateMap(UsersRouteTemplates.USER_PROJECT_STUDY, pathInfo);
 				String reader = HandlerUtil.getTemplateParameter(templateMap, "username");
 				String studyUID = HandlerUtil.getTemplateParameter(templateMap, "studyUID");
-				String workListID = HandlerUtil.getTemplateParameter(templateMap, "workListID");
+				String workListID = HandlerUtil.getTemplateParameter(templateMap, "worklistID");
 				String projectID = HandlerUtil.getTemplateParameter(templateMap, "projectID");
 				String wlstatus = httpRequest.getParameter("status");
 				Boolean started = "true".equalsIgnoreCase(httpRequest.getParameter("started"));
@@ -689,6 +695,37 @@ public class EPADPutHandler
 				Map<String, String> templateMap = HandlerUtil.getTemplateMap(UsersRouteTemplates.USER_SENDNEWPASSWORD, pathInfo);
 				String account = HandlerUtil.getTemplateParameter(templateMap, "username");					
 				UserProjectService.sendNewPassword(username, account);
+			
+			} else if (HandlerUtil.matchesTemplate(PluginRouteTemplates.PLUGIN, pathInfo)) { //ML
+				PluginReference pluginReference = PluginReference.extract(PluginRouteTemplates.PLUGIN, pathInfo);
+				String name = httpRequest.getParameter("name");
+				String description = httpRequest.getParameter("description");
+				String javaclass = httpRequest.getParameter("class");
+				String enabled = httpRequest.getParameter("enable");
+				String modality = httpRequest.getParameter("modality");
+				EPADPlugin plugin = pluginOperations.getPluginDescription(pluginReference.pluginID, username, sessionID);
+				if (plugin != null) {
+					pluginOperations.updatePlugin(username, pluginReference.pluginID, name, description, javaclass, enabled, modality, sessionID);
+					return HttpServletResponse.SC_OK;
+				} else {
+					pluginOperations.createPlugin(username, pluginReference.pluginID, name, description, javaclass, enabled, modality, sessionID);
+					return HttpServletResponse.SC_OK;
+				}	
+			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.PLUGIN, pathInfo)) { //ML
+				ProjectPluginReference reference = ProjectPluginReference.extract(ProjectsRouteTemplates.PLUGIN, pathInfo);
+				String enabled = httpRequest.getParameter("enable");
+				pluginOperations.setProjectPluginEnable(username,reference.projectId,reference.pluginId,enabled,sessionID);
+				return HttpServletResponse.SC_OK;
+				
+			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.PARAMETER_LIST, pathInfo)) { //ML
+				ProjectPluginReference reference = ProjectPluginReference.extract(ProjectsRouteTemplates.PARAMETER_LIST, pathInfo);
+							
+				String[] paramNames = httpRequest.getParameterValues("param");
+				String[] paramValues = httpRequest.getParameterValues("val");
+				pluginOperations.addParameters(username,reference.projectId,reference.pluginId,paramNames,paramValues);
+					
+				return HttpServletResponse.SC_OK;
+
 			} else {
 				statusCode = HandlerUtil.badRequestJSONResponse(BAD_PUT_MESSAGE + ":" + pathInfo, responseStream, log);
 			}

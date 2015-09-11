@@ -55,6 +55,9 @@
 		} 
 		catch (Exception x)
 		{
+%>
+			<script>alert("<%=x.getMessage()%>");</script>
+<%
 			log.warning("Error saving uploaded files", x);
 			x.printStackTrace();
 		}
@@ -101,11 +104,31 @@
 <span id=flist></span>
 <script>
 var filedata;
+var selDiv = "";
+		
+document.addEventListener("DOMContentLoaded", init, false);
+	
+function init() {
+	document.querySelector('#uploadlist').addEventListener('change', handleFileSelect, false);
+	selDiv = document.querySelector("#flist");
+}
+		
+function handleFileSelect(e) {
+	
+	if(!e.target.files) return;
+	
+	selDiv.innerHTML = "";
+	
+	var files = e.target.files;
+	for(var i=0; i<files.length; i++) {
+		var f = files[i];
+		
+		selDiv.innerHTML += f.name + "<br/>";
+	}
+}
+		
 function uploadFiles()
 {
-	var files = document.getElementById("uploadlist").value;
-	document.getElementById("flist").innerHTML = files;
-
 	document.getElementById("uploadform").submit();
 }
 function status()
