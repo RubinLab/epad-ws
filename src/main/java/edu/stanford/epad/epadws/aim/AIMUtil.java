@@ -1766,6 +1766,43 @@ public class AIMUtil
 			//	epadDatabaseOperations.deleteAIM("admin", aimID);
 		}
 	}	
+	
+	public static void updateTableNameColumn(List<EPADAIM> aims)
+	{
+		long starttime = System.currentTimeMillis();
+		HashMap<String, String> searchValueByProject = new HashMap<String, String>();
+		Set<String> aimIDs = new HashSet<String>();
+		for (EPADAIM aim: aims)
+		{
+			String projectID = aim.projectID;
+			if (projectID == null || projectID.trim().length() == 0) continue;
+				
+			String searchValue = searchValueByProject.get(projectID);
+			if (searchValue == null)
+				searchValue = aim.aimID;
+			else
+				searchValue = searchValue + "," + aim.aimID;
+			searchValueByProject.put(projectID, searchValue);
+			aimIDs.add(aim.aimID);
+		}
+		
+		EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
+		for(String projectID: searchValueByProject.keySet())
+		{
+			List<ImageAnnotationCollection> paims = AIMQueries.getAIMImageAnnotationsV4(projectID, AIMSearchType.ANNOTATION_UID, searchValueByProject.get(projectID), "admin");
+			log.info("" + paims.size() + " AIM4 file(s) found for project:" + projectID);
+			boolean mongoErr = false;
+			for (ImageAnnotationCollection aim: paims)
+			{
+				aimIDs.remove(aim.getUniqueIdentifier().getRoot());
+				try {
+					EPADAIM epadAim = epadDatabaseOperations.updateAIMName(aim.getUniqueIdentifier().getRoot(), aim.getImageAnnotation().getName().getValue());
+				} catch (Exception e) {
+					log.warning("Error updating AIM Table Name", e);
+				}
+			}
+		}
+	}	
 
 	public static void updateMongDB(List<EPADAIM> aims)
 	{

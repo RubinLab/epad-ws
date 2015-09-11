@@ -1230,6 +1230,8 @@ public class DefaultEpadOperations implements EpadOperations
 						log.warning("Error saving AIM file to Exist DB:" + uploadedFile.getName());					
 				}				
 			}
+			if (!type.equals(FileType.TEMPLATE))
+				projectOperations.createEventLog(username, projectID, subjectID, studyID, seriesID, null, null, "UPLOAD FILE", uploadedFile.getName(), description, false);
 			projectOperations.createFile(username, projectID, subjectID, studyID, seriesID, uploadedFile, filename, description, type);
 			if (type != null && type.equals(FileType.IMAGE) && seriesID != null) {
 				NonDicomSeries ndSeries = projectOperations.getNonDicomSeries(seriesID);
@@ -2547,6 +2549,20 @@ public class DefaultEpadOperations implements EpadOperations
 	@Override
 	public EPADAIMList getAIMDescriptions(String projectID, AIMSearchType aimSearchType, String searchValue, String username, String sessionID, int start, int count) {
 		List<EPADAIM> aims = epadDatabaseOperations.getAIMs(projectID, aimSearchType, searchValue, start, count);
+		for (int i = 0; i < aims.size(); i++)
+		{
+			EPADAIM aim = aims.get(i);
+			if (aim.dsoSeriesUID != null && aim.dsoSeriesUID.length() > 0) {
+				Map<String, String> seriesMap = dcm4CheeDatabaseOperations.getSeriesData(aim.dsoSeriesUID);
+				if (seriesMap.keySet().isEmpty())
+				{
+					aims.remove(i--);
+				}
+			}
+			SeriesProcessingStatus status = epadDatabaseOperations.getSeriesProcessingStatus(aim.dsoSeriesUID);
+			if (status != null)
+				aim.dsoStatus = status.name();
+		}
 
 		return new EPADAIMList(aims);
 	}
@@ -2587,10 +2603,26 @@ public class DefaultEpadOperations implements EpadOperations
 		}
 		for(EventLog elog: elogs)
 		{
-			elist.addEPADEventLog(new EPADEventLog(this.formatDateTime(elog.getCreatedTime()), 
-							elog.getUsername(), elog.getProjectID(),
-							elog.getSubjectUID(), elog.getStudyUID(), elog.getSeriesUID(),
-							elog.getImageUID(), elog.getAimID(), elog.getFunction(), elog.getParams()));
+			EPADEventLog log = new EPADEventLog(this.formatDateTime(elog.getCreatedTime()), 
+					elog.getUsername(), elog.getProjectID(),
+					elog.getSubjectUID(), elog.getStudyUID(), elog.getSeriesUID(),
+					elog.getImageUID(), elog.getAimID(), elog.getFunction(), elog.getParams());
+			if (elog.getProjectID() != null && elog.getProjectID().length() > 0)
+			{
+				Project project = projectOperations.getProject(elog.getProjectID());
+				if (project != null) log.projectName = project.getName();
+			}
+			if (elog.getSubjectUID() != null && elog.getSubjectUID().length() > 0)
+			{
+				Subject subject = projectOperations.getSubject(elog.getSubjectUID());
+				if (subject != null) log.subjectName = subject.getName();
+			}
+			if (elog.getAimID() != null && elog.getAimID().length() > 0)
+			{
+				EPADAIM aim = epadDatabaseOperations.getAIM(elog.getAimID());
+				if (aim != null) log.aimName = aim.name;
+			}
+			elist.addEPADEventLog(log);
 		}
 		return elist;
 	}

@@ -269,7 +269,7 @@ public class EPADUploadDirWatcher implements Runnable
 					long newSize = dir.getTotalSpace();
 					int newNumberOfFiles = filePaths.length;
 
-					if (oldNumberOfFiles != newNumberOfFiles || oldSize != newSize) {
+					if (oldNumberOfFiles != newNumberOfFiles || oldSize != newSize || newNumberOfFiles == 1) {
 						oldNumberOfFiles = newNumberOfFiles;
 						oldSize = newSize;
 					} else {

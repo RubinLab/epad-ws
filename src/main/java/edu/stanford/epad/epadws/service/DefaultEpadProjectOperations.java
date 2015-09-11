@@ -1928,6 +1928,8 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 	@Override
 	public void addReviewer(String loggedInUser, String username,
 			String reviewer) throws Exception {
+		if (username.equals(reviewer))
+			throw new Exception("Reviewer and reviewee " + username + " are the same");
 		List<ReviewerToReviewee> rtrs = new ReviewerToReviewee().getObjects("reviewee = " + DatabaseUtils.toSQL(username) + " and reviewer=" + DatabaseUtils.toSQL(reviewer));
 		if (rtrs.size() == 0)
 		{
@@ -1944,6 +1946,8 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 	@Override
 	public void addReviewee(String loggedInUser, String username,
 			String reviewee) throws Exception {
+		if (username.equals(reviewee))
+			throw new Exception("Reviewer and reviewee " + username + " are the same");
 		List<ReviewerToReviewee> rtrs = new ReviewerToReviewee().getObjects("reviewer = " + DatabaseUtils.toSQL(username) + " and reviewee=" + DatabaseUtils.toSQL(reviewee));
 		if (rtrs.size() == 0)
 		{

@@ -206,23 +206,34 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 				close(c);
 			}
 		}
-		if (!EPADConfig.useV4.equals("false"))
-		{
-			// Check empty xml columns
-			try {
-				log.info("Checking annotations table xml data ...");
-				
-				adb = new AIMDatabaseOperations(c, EPADConfig.eXistServerUrl,
-						EPADConfig.aim4Namespace, EPADConfig.eXistCollection, EPADConfig.eXistUsername, EPADConfig.eXistPassword);
-				List<EPADAIM> aims = adb.getAIMs("XML is null", 0, 0);
-				AIMUtil.updateTableXMLs(aims);
-			} catch (Exception sqle) {
-				log.warning("AIM Database operation failed:", sqle);
-			} finally {
-				close(c);
-			}
+		// Check empty xml columns
+		try {
+			log.info("Checking annotations table xml data ...");
 			
-			// Fix coordination AIMs
+			adb = new AIMDatabaseOperations(c, EPADConfig.eXistServerUrl,
+					EPADConfig.aim4Namespace, EPADConfig.eXistCollection, EPADConfig.eXistUsername, EPADConfig.eXistPassword);
+			List<EPADAIM> aims = adb.getAIMs("XML is null", 0, 0);
+			AIMUtil.updateTableXMLs(aims);
+		} catch (Exception sqle) {
+			log.warning("AIM Database operation failed:", sqle);
+		} finally {
+			close(c);
+		}
+		// Check empty name columns
+		try {
+			log.info("Checking annotations table name column ...");
+			
+			adb = new AIMDatabaseOperations(c, EPADConfig.eXistServerUrl,
+					EPADConfig.aim4Namespace, EPADConfig.eXistCollection, EPADConfig.eXistUsername, EPADConfig.eXistPassword);
+			List<EPADAIM> aims = adb.getAIMs("NAME is null", 0, 0);
+			AIMUtil.updateTableNameColumn(aims);
+		} catch (Exception sqle) {
+			log.warning("AIM Database operation failed:", sqle);
+		} finally {
+			close(c);
+		}
+		
+		// Fix coordination AIMs
 //			try {
 //				c = getConnection();
 //				adb = new AIMDatabaseOperations(c, EPADConfig.eXistServerUrl,
@@ -235,34 +246,34 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 //			} finally {
 //				close(c);
 //			}
-			// Check mongoDB
-			try {
-				log.info("Checking mongoDB ...");
-				DB mongoDB = MongoDBOperations.getMongoDB();
-				if (mongoDB !=  null) {
-					adb = new AIMDatabaseOperations(c, EPADConfig.eXistServerUrl,
-							EPADConfig.aim4Namespace, EPADConfig.eXistCollection, EPADConfig.eXistUsername, EPADConfig.eXistPassword);
-					List<Project> projects = DefaultEpadProjectOperations.getInstance().getAllProjects();
-					for (Project p: projects) {
-						count = adb.getAIMCount(null, p.getProjectId(), null, null, null, null, 0);
-						MongoDBOperations.createIndexes(p.getProjectId());
-						int mongoCount = MongoDBOperations.getNumberOfDocuments("", p.getProjectId());
-						log.info("Project:" + p.getProjectId() + " mysqlDB Count:" + count + " mongoDB Count:" + mongoCount);
-						if (count > mongoCount) {
-							List<EPADAIM> aims = adb.getAIMs(p.getProjectId(), AIMSearchType.ANNOTATION_UID, "all");
-							log.info("Updating" + aims.size()+ " annotations");							
-							AIMUtil.updateMongDB(aims);
-						}
+		// Check mongoDB
+		try {
+			log.info("Checking mongoDB ...");
+			DB mongoDB = MongoDBOperations.getMongoDB();
+			if (mongoDB !=  null) {
+				adb = new AIMDatabaseOperations(c, EPADConfig.eXistServerUrl,
+						EPADConfig.aim4Namespace, EPADConfig.eXistCollection, EPADConfig.eXistUsername, EPADConfig.eXistPassword);
+				List<Project> projects = DefaultEpadProjectOperations.getInstance().getAllProjects();
+				for (Project p: projects) {
+					count = adb.getAIMCount(null, p.getProjectId(), null, null, null, null, 0);
+					MongoDBOperations.createIndexes(p.getProjectId());
+					int mongoCount = MongoDBOperations.getNumberOfDocuments("", p.getProjectId());
+					log.info("Project:" + p.getProjectId() + " mysqlDB Count:" + count + " mongoDB Count:" + mongoCount);
+					if (count > mongoCount) {
+						List<EPADAIM> aims = adb.getAIMs(p.getProjectId(), AIMSearchType.ANNOTATION_UID, "all");
+						log.info("Updating" + aims.size()+ " annotations");							
+						AIMUtil.updateMongDB(aims);
 					}
 				}
-				else
-					log.warning("No connection to mongoDB");
-			} catch (Exception sqle) {
-				log.warning("AIM Database operation failed:", sqle);
-			} finally {
-				close(c);
 			}
+			else
+				log.warning("No connection to mongoDB");
+		} catch (Exception sqle) {
+			log.warning("AIM Database operation failed:", sqle);
+		} finally {
+			close(c);
 		}
+	
 	}
 
 	@Override
