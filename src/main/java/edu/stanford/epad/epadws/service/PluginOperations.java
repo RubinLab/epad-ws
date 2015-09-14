@@ -139,9 +139,10 @@ public class PluginOperations {
 	
 	public EPADPluginList getPluginSummariesForProject(String projectId, String username, String sessionID) throws Exception {
 		List<Plugin> plugins = getPluginsForProject(projectId);
+		Project project=projectOperations.getProject(projectId);
 		EPADPluginList epadPluginList = new EPADPluginList();
 		for (Plugin plugin : plugins) {
-			EPADPlugin epadPlugin = plugin2EPADPlugin(plugin,true);
+			EPADPlugin epadPlugin = plugin2EPADPluginProject(plugin,project,true);
 			
 			if (epadPlugin != null)
 			{
@@ -152,9 +153,10 @@ public class PluginOperations {
 	}
 	public EPADPluginList getPluginDescriptionsForProject(String projectId, String username, String sessionID) throws Exception {
 		List<Plugin> plugins = getPluginsForProject(projectId);
+		Project project=projectOperations.getProject(projectId);
 		EPADPluginList epadPluginList = new EPADPluginList();
 		for (Plugin plugin : plugins) {
-			EPADPlugin epadPlugin = plugin2EPADPlugin(plugin,false);
+			EPADPlugin epadPlugin = plugin2EPADPluginProject(plugin,project,false);
 			
 			if (epadPlugin != null)
 			{
@@ -194,28 +196,34 @@ public class PluginOperations {
 	
 	public EPADPluginList getPluginSummaries(String username, String sessionID) throws Exception {
 		List<Plugin> plugins = getPlugins();
+		List<Project> projects= projectOperations.getAllProjects();
 		EPADPluginList epadPluginList = new EPADPluginList();
+		for (Project project : projects) {
 		for (Plugin plugin : plugins) {
-			EPADPlugin epadPlugin = plugin2EPADPlugin(plugin,true);
+				EPADPlugin epadPlugin = plugin2EPADPluginProject(plugin,project,true);
 			
 			if (epadPlugin != null)
 			{
 				epadPluginList.addEPADPlugin(epadPlugin);
 			}
 		}
+		}
 		return epadPluginList;
 	}
 	
 	public EPADPluginList getPluginDescriptions(String username, String sessionID) throws Exception {
 		List<Plugin> plugins = getPlugins();
+		List<Project> projects= projectOperations.getAllProjects();
 		EPADPluginList epadPluginList = new EPADPluginList();
+		for (Project project : projects) {
 		for (Plugin plugin : plugins) {
-			EPADPlugin epadPlugin = plugin2EPADPlugin(plugin,false);
+				EPADPlugin epadPlugin = plugin2EPADPluginProject(plugin,project,false);
 			
 			if (epadPlugin != null)
 			{
 				epadPluginList.addEPADPlugin(epadPlugin);
 			}
+		}
 		}
 		return epadPluginList;
 	}
@@ -224,16 +232,32 @@ public class PluginOperations {
 		Plugin plugin=getPlugin(pluginId);
 
 		if (plugin==null) return null;
-		EPADPlugin epadPlugin = plugin2EPADPlugin(plugin,false);
+		EPADPlugin epadPlugin = plugin2EPADPluginProject(plugin,null,false);
 		return epadPlugin;
 	}
 	
-	private EPADPlugin plugin2EPADPlugin(Plugin plugin,Boolean returnSummary) throws Exception
+//	private EPADPlugin plugin2EPADPlugin(Plugin plugin,Boolean returnSummary) throws Exception
+//	{
+//		if (returnSummary)
+//			return new EPADPlugin(plugin.getPluginId(),plugin.getName(),plugin.getDescription(),null,null,null,null,null,null,null);
+//
+//		return new EPADPlugin(plugin.getPluginId(),plugin.getName(),plugin.getDescription(),plugin.getJavaclass(),plugin.getEnabled(),plugin.getStatus(),plugin.getModality(),null,null,null);
+//	}
+	private EPADPlugin plugin2EPADPluginProject(Plugin plugin,Project project,Boolean returnSummary) throws Exception
 	{
-		if (returnSummary)
-			return new EPADPlugin(plugin.getPluginId(),plugin.getName(),plugin.getDescription(),null,null,null,null);
+		EPADPluginParameterList parameters=getParametersByProjectIdAndPlugin(project.getId(), plugin.getId());
+		if (returnSummary){
+			if (project!=null)
+				return new EPADPlugin(plugin.getPluginId(),plugin.getName(),plugin.getDescription(),null,null,null,null,project.getProjectId(),project.getName(),parameters);
+			else
+				return new EPADPlugin(plugin.getPluginId(),plugin.getName(),plugin.getDescription(),null,null,null,null,null,null,parameters);
+
 		
-		return new EPADPlugin(plugin.getPluginId(),plugin.getName(),plugin.getDescription(),plugin.getJavaclass(),plugin.getEnabled(),plugin.getStatus(),plugin.getModality());
+		}
+		if (project!=null)	
+			return new EPADPlugin(plugin.getPluginId(),plugin.getName(),plugin.getDescription(),plugin.getJavaclass(),plugin.getEnabled(),plugin.getStatus(),plugin.getModality(),project.getProjectId(),project.getName(),parameters);
+		else
+			return new EPADPlugin(plugin.getPluginId(),plugin.getName(),plugin.getDescription(),plugin.getJavaclass(),plugin.getEnabled(),plugin.getStatus(),plugin.getModality(),null,null,parameters);
 	}
 	
 	public List<Plugin> getPlugins() throws Exception {

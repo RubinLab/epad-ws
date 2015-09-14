@@ -289,6 +289,7 @@ public class EPADPostHandler
 					String oldpassword = httpRequest.getParameter("oldpassword");
 					String enable = httpRequest.getParameter("enable");
 					String type = httpRequest.getParameter("type");
+					String colorpreference = httpRequest.getParameter("colorpreference");
 					//log.info(" email:" + email +" firstname:" + firstname + " lastname:" + lastname + " new password:" + password + " old password:" + oldpassword); 
 					String[] addPermissions = httpRequest.getParameterValues("addPermission");
 					String[] removePermissions = httpRequest.getParameterValues("removePermission");
@@ -296,7 +297,7 @@ public class EPADPostHandler
 						throw new Exception("BAD Request - all parameters are null");
 					if ("new".equals(type) && projectOperations.getUser(target_username) != null)
 						throw new Exception("User " +  target_username + " already exists");
-					epadOperations.createOrModifyUser(username, target_username, firstname, lastname, email, password, oldpassword, addPermissions, removePermissions);
+					epadOperations.createOrModifyUser(username, target_username, firstname, lastname, email, password, oldpassword, colorpreference, addPermissions, removePermissions);
 					if ("true".equalsIgnoreCase(enable))
 						epadOperations.enableUser(username, target_username);
 					else if ("false".equalsIgnoreCase(enable))
@@ -339,7 +340,7 @@ public class EPADPostHandler
 					Map<String, String> templateMap = HandlerUtil.getTemplateMap(UsersRouteTemplates.USER_WORKLIST, pathInfo);
 					String reader = HandlerUtil.getTemplateParameter(templateMap, "username");
 					String projectID = HandlerUtil.getTemplateParameter(templateMap, "projectID");
-					String workListID = HandlerUtil.getTemplateParameter(templateMap, "workListID");
+					String workListID = HandlerUtil.getTemplateParameter(templateMap, "worklistID");
 					String description = httpRequest.getParameter("description");
 					String dueDate = httpRequest.getParameter("dueDate");
 					worklistOperations.createWorkList(username, reader, workListID, description, null, getDate(dueDate));

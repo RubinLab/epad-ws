@@ -196,7 +196,7 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 	 */
 	@Override
 	public User createUser(String loggedInUser, String username, String firstName, String lastName, String email,
-			String password, List<String> addPermissions, List<String> removePermissions) throws Exception {
+			String password, String colorpreference, List<String> addPermissions, List<String> removePermissions) throws Exception {
 		User user = getUser(loggedInUser);
 		if (user != null && !user.isAdmin() && !user.hasPermission(User.CreateUserPermission))
 			throw new Exception("No permission to create user");
@@ -238,7 +238,7 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 	 */
 	@Override
 	public User updateUser(String loggedInUserName, String username,
-			String firstName, String lastName, String email, String newpassword, String oldpassword, 
+			String firstName, String lastName, String email, String newpassword, String oldpassword, String colorpreference, 
 			List<String> addPermissions, List<String> removePermissions)
 			throws Exception {
 		User loggedInUser = getUser(loggedInUserName);
@@ -319,8 +319,15 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		User user = getUser(username);
 		if (!requestor.isAdmin() && !loggedInUser.equals(user.getCreator()))
 			throw new Exception("No permissions to delete user");
-		user.delete();
-		userCache.remove(user.getUsername());
+		try {
+			user.delete();
+			userCache.remove(user.getUsername());
+		} catch (Exception x) {
+			if (x.getMessage() != null && x.getMessage().contains("constraint")) {
+				throw new Exception("Error deleting user, this user is still a member of projects");
+			} else
+				throw x;
+		}
 	}
 
 	@Override
@@ -558,16 +565,7 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		List<Study> studies = this.getStudiesForSubject(subjectUID);
 		for (Study study: studies)
 		{
-			ProjectToSubjectToStudy pss = (ProjectToSubjectToStudy) new ProjectToSubjectToStudy().getObject("proj_subj_id = " + ptos.getId() + " and study_id=" + study.getId());
-			if (pss == null)
-			{
-				pss = new ProjectToSubjectToStudy();
-				pss.setProjSubjId(ptos.getId());
-				pss.setStudyId(study.getId());
-				pss.setCreator(loggedInUser);
-				pss.save();
-			}
-			
+			addStudyToProject(loggedInUser, study.getStudyUID(), subjectUID, projectId);
 		}
 	}
 
@@ -575,7 +573,7 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 	 * @see edu.stanford.epad.epadws.service.EpadProjectOperations#addStudyToProject(java.lang.String, java.lang.String, java.lang.String, java.lang.String)
 	 */
 	@Override
-	public void addStudyToProject(String loggedInUser, String studyUID,
+	public synchronized void addStudyToProject(String loggedInUser, String studyUID,
 			String subjectUID, String projectId) throws Exception {
 		Study study = getStudy(studyUID);
 		Subject subject = new Subject();
@@ -2036,6 +2034,74 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 	public AbstractDAO getDBObject(Class dbClass, long id) throws Exception {
 		AbstractDAO object = (AbstractDAO) dbClass.newInstance();
 		return object.getObject("id = " + id);
+	}
+
+	/* (non-Javadoc)
+	 * @see edu.stanford.epad.epadws.service.EpadProjectOperations#sort(java.util.List, java.lang.String, boolean)
+	 */
+	@Override
+	public List sort(List<AbstractDAO> objects, String field, boolean ascending) {
+		if (objects.size() == 0) return new ArrayList();
+		log.debug("Sort database objects:" + objects.get(0).returnDBTABLE());
+		for (int i = 0; i < objects.size(); i++)
+		{
+			AbstractDAO obj1 = objects.get(i);
+			for (int j = i+1; j < objects.size(); j++)
+			{
+				AbstractDAO obj2 = objects.get(j);
+				Object value1 = obj1._fieldValue(field);
+				Object value2 = obj2._fieldValue(field);
+				if (!ascending)
+				{
+					Object value = value1;
+					value1 = value2;
+					value2 = value;
+				}
+				boolean swich = false;
+				if (value2 == null && value1 != null) 
+				{
+					continue;
+				}
+				else if (value1 == null && value2 != null)
+				{
+					swich = true;
+				}
+				else
+				{
+					if (value1 instanceof String && ((String) value1).compareToIgnoreCase((String) value2) > 0)
+					{
+						swich = true;
+					}
+					else if (value1 instanceof Date && ((Date) value1).compareTo((Date) value2) > 0)
+					{
+						swich = true;
+					}
+					else if (value1 instanceof Integer && ((Integer) value1).compareTo((Integer) value2) > 0)
+					{
+						swich = true;
+					}
+					else if (value1 instanceof Long && ((Long) value1).compareTo((Long) value2) > 0)
+					{
+						swich = true;
+					}
+					else if (value1 instanceof Double && ((Double) value1).compareTo((Double) value2) > 0)
+					{
+						swich = true;
+					}
+					else if (value1 instanceof Boolean && ((Boolean) value1).compareTo((Boolean) value2) > 0)
+					{
+						swich = true;
+					}
+				}
+				if (swich)
+				{
+					objects.set(i, obj2);
+					objects.set(j, obj1);
+					obj1 = obj2;
+				}
+			}
+		}
+		return objects;
 	}
 
 }

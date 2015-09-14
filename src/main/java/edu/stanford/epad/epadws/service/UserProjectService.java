@@ -562,7 +562,7 @@ public class UserProjectService {
 				"New password for ePAD@" + EPADConfig.xnatServer, 
 				"Hello " + user.getFirstName() + " " + user.getLastName() + ",\n\nYour new ePAD password is " + newPwd + "\n\nPlease login and reset your password.\n\nRegards\n\nePAD Team");
 		projectOperations.updateUser("admin", username,
-				null, null, null, newPwd, null, 
+				null, null, null, newPwd, null, null, 
 				new ArrayList<String>(), new ArrayList<String>());
 	}
 

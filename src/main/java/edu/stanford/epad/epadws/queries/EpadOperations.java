@@ -732,7 +732,7 @@ public interface EpadOperations
 	 * @throws Exception
 	 */
 	void createOrModifyUser(String loggedInUser, String username, String firstname, String lastname, String email, 
-			String password, String oldpassword, String[]addPermission, String[] removePermissions) throws Exception;
+			String password, String oldpassword, String colorpreference, String[]addPermission, String[] removePermissions) throws Exception;
 	
 	/**
 	 * enable user

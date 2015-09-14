@@ -164,7 +164,7 @@ public class EPADGetHandler
 				String sortField = httpRequest.getParameter("sortField");
 				boolean unassignedOnly = "true".equalsIgnoreCase(httpRequest.getParameter("unassignedOnly"));
 				EPADSubjectList subjectList = null;
-				if (projectReference.projectID.equalsIgnoreCase("nonassigned") || (projectReference.projectID.equals(EPADConfig.xnatUploadProjectID) && unassignedOnly))
+				if (projectReference.projectID.equalsIgnoreCase(EPADConfig.getParamValue("UnassignedProjectID", "nonassigned")) || (projectReference.projectID.equals(EPADConfig.xnatUploadProjectID) && unassignedOnly))
 					subjectList = epadOperations.getUnassignedSubjectDescriptions(username, sessionID, searchFilter);
 				else
 					subjectList = epadOperations.getSubjectDescriptions(projectReference.projectID, username,

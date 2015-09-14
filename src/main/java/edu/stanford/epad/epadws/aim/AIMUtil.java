@@ -107,19 +107,17 @@ import edu.stanford.epad.epadws.service.DefaultEpadProjectOperations;
 import edu.stanford.epad.epadws.service.EpadProjectOperations;
 import edu.stanford.epad.epadws.service.SessionService;
 import edu.stanford.epad.epadws.service.UserProjectService;
-import edu.stanford.hakan.aim3api.base.AimException;
-import edu.stanford.hakan.aim4api.usage.AnnotationBuilder;
-import edu.stanford.hakan.aim4api.usage.AnnotationGetter;
+import edu.stanford.hakan.aim4api.base.AimException;
 import edu.stanford.hakan.aim4api.base.DicomSegmentationEntity;
 import edu.stanford.hakan.aim4api.base.ImageAnnotationCollection;
 import edu.stanford.hakan.aim4api.base.SegmentationEntityCollection;
-import edu.stanford.hakan.aim4api.compability.aimv3.Annotation;
 import edu.stanford.hakan.aim4api.compability.aimv3.DICOMImageReference;
 import edu.stanford.hakan.aim4api.compability.aimv3.ImageAnnotation;
 import edu.stanford.hakan.aim4api.compability.aimv3.Person;
 import edu.stanford.hakan.aim4api.compability.aimv3.Segmentation;
 import edu.stanford.hakan.aim4api.compability.aimv3.SegmentationCollection;
 import edu.stanford.hakan.aim4api.compability.aimv3.User;
+import edu.stanford.hakan.aim4api.usage.AnnotationBuilder;
 import edu.stanford.hakan.aim4api.usage.AnnotationValidator;
 
 /**

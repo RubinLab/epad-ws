@@ -192,7 +192,10 @@ public class DefaultEpadOperations implements EpadOperations
 		if (searchFilter.hasAnnotationMatch()) annotationCount = true;
 		EPADProjectList epadProjectList = new EPADProjectList();
 		long starttime = System.currentTimeMillis();
-		List<Project> projects = projectOperations.getProjectsForUser(username);
+		List<Project> projects = new ArrayList<Project>();
+		List projectList =	projectOperations.getProjectsForUser(username);
+		projectList = projectOperations.sort(projectList, "name", true);
+		projects.addAll(projectList);
 		long gettime = System.currentTimeMillis();
 		for (Project project : projects) {
 			EPADProject epadProject = project2EPADProject(sessionID, username, project, searchFilter, annotationCount);
@@ -747,6 +750,8 @@ public class DefaultEpadOperations implements EpadOperations
 	public void createSubjectAndStudy(String username, String projectID, String subjectID, String subjectName, String studyUID,
 			String sessionID) throws Exception
 	{
+		if (projectID.equals(EPADConfig.getParamValue("UnassignedProjectID", "nonassigned")))
+			throw new Exception("Patient can not be added to project:" + projectID);
 		projectOperations.createEventLog(username, projectID, subjectID, studyUID, null, null, null, "CREATE SUBJECT", subjectName);
 		Subject subject = projectOperations.getSubject(subjectID);
 		if (subject == null)
@@ -1041,6 +1046,7 @@ public class DefaultEpadOperations implements EpadOperations
 	{
 		projectOperations.createEventLog(username, projectReference.projectID, null, null, null, null, null, "CREATE PROJECT", projectName +":" + projectDescription);
 		projectOperations.createProject(username, projectReference.projectID, projectName, projectDescription, defaultTemplate, ProjectType.PRIVATE);
+		projectOperations.addUserToProject(username, projectReference.projectID, username, UserRole.OWNER, defaultTemplate);
 		return HttpServletResponse.SC_OK;
 	}
 
@@ -1059,6 +1065,8 @@ public class DefaultEpadOperations implements EpadOperations
 	@Override
 	public int createSubject(String username, SubjectReference subjectReference, String subjectName, Date dob, String gender, String sessionID) throws Exception
 	{
+		if (subjectReference.projectID != null && subjectReference.projectID.equals(EPADConfig.getParamValue("UnassignedProjectID", "nonassigned")))
+			throw new Exception("Patient can not be added to project:" + subjectReference.projectID);
 		projectOperations.createEventLog(username, subjectReference.projectID, subjectReference.subjectID, null, null, null, null, "CREATE SUBJECT", subjectName +":" + dob + ":" + gender);
 		String subjectID = subjectReference.subjectID;
 		if (subjectID.equalsIgnoreCase("new"))
@@ -1098,6 +1106,8 @@ public class DefaultEpadOperations implements EpadOperations
 	@Override
 	public int createStudy(String username, StudyReference studyReference, String description, Date studyDate, String sessionID) throws Exception
 	{
+		if (studyReference.projectID != null && studyReference.projectID.equals(EPADConfig.getParamValue("UnassignedProjectID", "nonassigned")))
+			throw new Exception("Study can not be added to project:" + studyReference.projectID);
 		projectOperations.createEventLog(username, studyReference.projectID, studyReference.subjectID, studyReference.studyUID, null, null, null, "CREATE STUDY", description +":" + studyDate);
 		String studyUID = studyReference.studyUID;
 		if (studyUID.equalsIgnoreCase("new"))
@@ -2919,6 +2929,9 @@ public class DefaultEpadOperations implements EpadOperations
 				patientIDs.add(subject.getSubjectUID());
 			long subjecttime = System.currentTimeMillis();
 			int numberOfPatients = patientIDs.size();
+			if (project.getProjectId().equals(EPADConfig.getParamValue("UnassignedProjectID", "nonassigned"))) {
+				numberOfPatients = projectOperations.getUnassignSubjects().size();
+			}
 			int numberOfStudies = 0;
 			int numberOfAnnotations = 0;
 			long studytime = System.currentTimeMillis();
@@ -3598,12 +3611,14 @@ public class DefaultEpadOperations implements EpadOperations
 			{
 				EPADUser epadUser = new EPADUser(user.getFullName(), user.getUsername(), 
 						user.getFirstName(), user.getLastName(), user.getEmail(), user.isEnabled(), user.isAdmin(), user.isPasswordExpired(), "", permissions, projects, projectToRole, null);
+				epadUser.colorpreference = user.getColorpreference();
 				userlist.addEPADUser(epadUser);
 			}
 			else
 			{
 				EPADUser epadUser = new EPADUser(user.getFullName(), user.getUsername(), 
 						user.getFirstName(), user.getLastName(), "******", user.isEnabled(), user.isAdmin(), user.isPasswordExpired(), "", permissions, projects, projectToRole, null);
+				epadUser.colorpreference = user.getColorpreference();
 				userlist.addEPADUser(epadUser);
 			}
 		}
@@ -3648,11 +3663,13 @@ public class DefaultEpadOperations implements EpadOperations
 		{
 			epadUser = new EPADUser(user.getFullName(), user.getUsername(), 
 					user.getFirstName(), user.getLastName(), user.getEmail(), user.isEnabled(), user.isAdmin(), user.isPasswordExpired(), "", permissions, projects, projectToRole, messages);
+			epadUser.colorpreference = user.getColorpreference();
 		}
 		else
 		{
 			epadUser = new EPADUser(user.getFullName(), user.getUsername(), 
 				user.getFirstName(), user.getLastName(), "******", user.isEnabled(), user.isAdmin(), user.isPasswordExpired(), "", permissions, projects, projectToRole, messages);
+			epadUser.colorpreference = user.getColorpreference();
 		}
 		return epadUser;
 
@@ -3660,7 +3677,7 @@ public class DefaultEpadOperations implements EpadOperations
 
 	@Override
 	public void createOrModifyUser(String loggedInUserName, String username,
-			String firstname, String lastname, String email, String password,String oldpassword,
+			String firstname, String lastname, String email, String password,String oldpassword, String colorpreference,
 			String[] addPermissions, String[] removePermissions) throws Exception {
 		User user = projectOperations.getUser(username);
 		User loggedInUser = projectOperations.getUser(loggedInUserName);
@@ -3715,11 +3732,11 @@ public class DefaultEpadOperations implements EpadOperations
 		}
 		if (user == null)
 		{
-			projectOperations.createUser(loggedInUserName, username, firstname, lastname, email, password, addPerms, removePerms);
+			projectOperations.createUser(loggedInUserName, username, firstname, lastname, email, password, colorpreference, addPerms, removePerms);
 		}
 		else
 		{
-			projectOperations.updateUser(loggedInUserName, username, firstname, lastname, email, password, oldpassword, addPerms, removePerms);
+			projectOperations.updateUser(loggedInUserName, username, firstname, lastname, email, password, oldpassword, colorpreference, addPerms, removePerms);
 		}
 		
 	}

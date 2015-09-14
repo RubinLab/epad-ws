@@ -153,8 +153,8 @@ public class DICOMSeriesWatcher implements Runnable
 							String username = UserProjectService.pendingUploads.get(studyUID);
 							if (username != null && username.indexOf(":") != -1)
 								username = username.substring(0, username.indexOf(":"));
-							if (username != null)
-								projectOperations.updateUserTaskStatus(username, TaskStatus.TASK_DICOM_PNG_GEN, seriesUID, "Generating PNGs", new Date(), null);
+							//if (username != null)
+							//	projectOperations.updateUserTaskStatus(username, TaskStatus.TASK_DICOM_PNG_GEN, seriesUID, "Generating PNGs", new Date(), null);
 							queueAndWatcherManager.addDICOMFileToPNGGeneratorPipeline(patientName, unprocessedDICOMFiles);
 						}
 						activeSeriesPipelineState.setSeriesProcessingState(DicomSeriesProcessingState.IN_PIPELINE);

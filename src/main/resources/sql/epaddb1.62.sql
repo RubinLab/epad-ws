@@ -1,4 +1,5 @@
 ALTER TABLE series_status ADD COLUMN default_tags varchar(256);
+ALTER TABLE user ADD COLUMN colorpreference varchar(128);
 
 DROP TABLE if exists reviewer;
 CREATE TABLE reviewer (id integer unsigned NOT NULL AUTO_INCREMENT,
