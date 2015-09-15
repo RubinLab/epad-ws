@@ -98,6 +98,8 @@ public class AIMDatabaseOperations {
                 + "  `ProjectUID` VARCHAR(255),\n"
                 + "  UPDATETIME TIMESTAMP,\n"
                 + "  DSOFRAMENO INTEGER,\n"
+                + "  NAME VARCHAR(128),\n"
+                + "  SHAREDPROJECTS VARCHAR(2000),\n"
                 + "  PRIMARY KEY (`AnnotationUID`));";
        boolean closeStmt = false;
 	   	try {
@@ -120,6 +122,7 @@ public class AIMDatabaseOperations {
     	addColumn("DSOFRAMENO INTEGER");
     	addColumn("TEMPLATECODE VARCHAR(64)");
     	addColumn("SHAREDPROJECTS VARCHAR(2000)");
+    	addColumn("NAME VARCHAR(128)");
     	try {
 	    	this.statement = mySqlConnection.createStatement();
 	        this.statement.executeUpdate("CREATE INDEX annotations_series_ind ON annotations(seriesuid)");
@@ -449,6 +452,27 @@ public class AIMDatabaseOperations {
     	}
     	return null;
     }
+
+    public EPADAIM updateAIMName(String annotationID, String name) throws SQLException
+    {
+    	EPADAIM aim = this.getAIM(annotationID);
+    	if (aim != null)
+    	{
+    		try {
+	    	    this.statement = mySqlConnection.createStatement();
+	    	    String sql = "UPDATE " + ANNOTATIONS_TABLE + " set name = " + AbstractDAO.toSQL(name) + " where AnnotationUID = '" + annotationID + "'";
+	            log.info("Updating AIMs name for:" + annotationID);
+	            this.statement.executeUpdate(sql);
+	            aim.name = name;
+	            return aim;
+       	} finally {
+        		if (statement != null)
+        			statement.close();
+        		statement = null;
+        	}
+    	}
+    	return null;
+    }
     
 	public void addProjectToAIM(String projectID, String annotationID) throws SQLException {
   		ResultSet rs = null;
@@ -541,10 +565,10 @@ public class AIMDatabaseOperations {
     }
     
     public EPADAIM insert(String annotationUID, String userName, String projectID, String patientID, String studyUID, String seriesUID, String imageUID, int frameID, String dsoSeriesUID) throws SQLException {
-        return insert(annotationUID, userName, projectID, patientID, studyUID, seriesUID, imageUID, frameID, dsoSeriesUID, null);
+        return insert(annotationUID, userName, projectID, patientID, studyUID, seriesUID, imageUID, frameID, dsoSeriesUID, null, null);
     }
     
-    public EPADAIM insert(String annotationUID, String userName, String projectID, String patientID, String studyUID, String seriesUID, String imageUID, int frameID, String dsoSeriesUID, String aimXML) throws SQLException {
+    public EPADAIM insert(String annotationUID, String userName, String projectID, String patientID, String studyUID, String seriesUID, String imageUID, int frameID, String dsoSeriesUID, String aimXML, String aimName) throws SQLException {
     	try {
     		EPADAIM aim = getAIM(annotationUID);
     		if (aim != null)
@@ -562,6 +586,13 @@ public class AIMDatabaseOperations {
     			{
     	    	    this.statement = mySqlConnection.createStatement();
     	    	    String sql = "UPDATE " + ANNOTATIONS_TABLE + " set XML = " + AbstractDAO.toSQL(aimXML) + " where AnnotationUID = '" + annotationUID + "'";
+    	            //log.info("AIMs update:" + sql);
+    	            this.statement.executeUpdate(sql);   				
+     			}
+    			if (aimName != null)
+    			{
+    	    	    this.statement = mySqlConnection.createStatement();
+    	    	    String sql = "UPDATE " + ANNOTATIONS_TABLE + " set NAME = " + AbstractDAO.toSQL(aimName) + " where AnnotationUID = '" + annotationUID + "'";
     	            //log.info("AIMs update:" + sql);
     	            this.statement.executeUpdate(sql);   				
      			}
@@ -614,6 +645,11 @@ public class AIMDatabaseOperations {
                 sql = sql + ",XML";
        			values = values + "," + AbstractDAO.toSQL(aimXML);
     		}
+       		if (aimName != null)
+    		{
+                sql = sql + ",NAME";
+       			values = values + "," + AbstractDAO.toSQL(aimName);
+    		}
             sql = sql + ") VALUES (" + values + ")";
             log.info("AIMs insert:" + sql);
     	    this.statement = mySqlConnection.createStatement();
@@ -651,7 +687,7 @@ public class AIMDatabaseOperations {
     }
     
     public List<EPADAIM> getAIMs(String projectID, String patientID, String studyUID, String seriesUID, String imageUID, int frameID, String dsoSeriesUID, int start, int count) throws SQLException {
-        String sqlSelect = "SELECT UserLoginName, ProjectUID, PatientID, StudyUID, SeriesUID, ImageUID, frameID, AnnotationUID, DSOSeriesUID, DSOFRAMENO, XML FROM annotations WHERE 1 = 1";
+        String sqlSelect = "SELECT UserLoginName, ProjectUID, PatientID, StudyUID, SeriesUID, ImageUID, frameID, AnnotationUID, DSOSeriesUID, DSOFRAMENO, XML, NAME FROM annotations WHERE 1 = 1";
 		if (projectID != null && projectID.length() > 0)
 			sqlSelect = sqlSelect + " and (ProjectUID = '" + projectID + "')";
 		//sqlSelect = sqlSelect + " and (ProjectUID = '" + projectID + "' or ProjectUID = '" + EPADConfig.xnatUploadProjectID + "')";
@@ -695,8 +731,10 @@ public class AIMDatabaseOperations {
 				String DSOSeriesUID = rs.getString(9);
 				Integer dsoFrameNo = rs.getInt(10);
 				String xml = rs.getString(11);
+				String name = rs.getString(12);
 				EPADAIM aim = new EPADAIM(AnnotationID, UserName, ProjectID, PatientID, StudyUID, SeriesUID, ImageUID, FrameID, DSOSeriesUID);
 				aim.xml = xml;
+				aim.name = name;
 				if (dsoFrameNo != null)
 					aim.dsoFrameNo = dsoFrameNo;
 				aims.add(aim);
@@ -716,7 +754,7 @@ public class AIMDatabaseOperations {
     public List<EPADAIM> getAIMs(String criteria, int start, int count) throws SQLException {
     	if (!criteria.trim().toLowerCase().startsWith("where"))
     		criteria = "WHERE " + criteria;
-        String sqlSelect = "SELECT UserLoginName, ProjectUID, PatientID, StudyUID, SeriesUID, ImageUID, frameID, AnnotationUID, DSOSeriesUID, DSOFRAMENO, XML FROM annotations " + criteria;
+        String sqlSelect = "SELECT UserLoginName, ProjectUID, PatientID, StudyUID, SeriesUID, ImageUID, frameID, AnnotationUID, DSOSeriesUID, DSOFRAMENO, XML, NAME FROM annotations " + criteria;
         log.info("AIMs select:" + sqlSelect);
        
 		ResultSet rs = null;
@@ -739,8 +777,10 @@ public class AIMDatabaseOperations {
 				String DSOSeriesUID = rs.getString(9);
 				Integer dsoFrameNo = rs.getInt(10);
 				String xml = rs.getString(11);
-					EPADAIM aim = new EPADAIM(AnnotationID, UserName, ProjectID, PatientID, StudyUID, SeriesUID, ImageUID, FrameID, DSOSeriesUID);
+				String name = rs.getString(12);
+				EPADAIM aim = new EPADAIM(AnnotationID, UserName, ProjectID, PatientID, StudyUID, SeriesUID, ImageUID, FrameID, DSOSeriesUID);
 				aim.xml = xml;
+				aim.name = name;
 				if (dsoFrameNo != null)
 					aim.dsoFrameNo = dsoFrameNo;
 				aims.add(aim);
@@ -822,7 +862,7 @@ public class AIMDatabaseOperations {
     }
     
     public EPADAIM getAIM(String annotationID) throws SQLException {
-        String sqlSelect = "SELECT UserLoginName, ProjectUID, PatientID, StudyUID, SeriesUID, ImageUID, frameID, DSOSeriesUID,XML FROM annotations WHERE AnnotationUID = '"
+        String sqlSelect = "SELECT UserLoginName, ProjectUID, PatientID, StudyUID, SeriesUID, ImageUID, frameID, DSOSeriesUID,XML,NAME FROM annotations WHERE AnnotationUID = '"
         		+ annotationID + "'";
     	log.debug(sqlSelect);
 		ResultSet rs = null;
@@ -840,8 +880,10 @@ public class AIMDatabaseOperations {
 				int FrameID = rs.getInt(7);
 				String DSOSeriesUID = rs.getString(8);
 				String xml = rs.getString(9);
+				String name = rs.getString(10);
 				EPADAIM aim = new EPADAIM(annotationID, UserName, ProjectID, PatientID, StudyUID, SeriesUID, ImageUID, FrameID, DSOSeriesUID);
 				aim.xml = xml;
+				aim.name = name;
 				return aim;
 			}
         }
@@ -855,7 +897,7 @@ public class AIMDatabaseOperations {
     }
     
     public List<EPADAIM> getAIMs(String annotationIDs) throws SQLException {
-        String sqlSelect = "SELECT UserLoginName, ProjectUID, PatientID, StudyUID, SeriesUID, ImageUID, frameID, AnnotationUID, DSOSeriesUID, XML FROM annotations WHERE AnnotationUID in ";
+        String sqlSelect = "SELECT UserLoginName, ProjectUID, PatientID, StudyUID, SeriesUID, ImageUID, frameID, AnnotationUID, DSOSeriesUID, XML, NAME FROM annotations WHERE AnnotationUID in ";
         String[] ids = annotationIDs.split(",");
         String delim = "(";
         for (String id: ids)
@@ -882,8 +924,10 @@ public class AIMDatabaseOperations {
 				String AnnotationID = rs.getString(8);
 				String DSOSeriesUID = rs.getString(9);
 				String xml = rs.getString(10);
+				String name = rs.getString(11);
 				EPADAIM aim = new EPADAIM(AnnotationID, UserName, ProjectID, PatientID, StudyUID, SeriesUID, ImageUID, FrameID, DSOSeriesUID);
 				aim.xml = xml;
+				aim.name = name;
 				aims.add(aim);
 			}
         }

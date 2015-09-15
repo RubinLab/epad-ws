@@ -43,7 +43,7 @@ import edu.stanford.epad.epadws.handlers.dicom.DSOUtil;
 import edu.stanford.epad.epadws.processing.model.DicomSeriesProcessingStatusTracker;
 import edu.stanford.epad.epadws.processing.model.SeriesPipelineState;
 import edu.stanford.epad.epadws.service.UserProjectService;
-import edu.stanford.hakan.aim3api.base.ImageAnnotation;
+import edu.stanford.hakan.aim4api.compability.aimv3.ImageAnnotation;
 
 public class DSOMaskPNGGeneratorTask implements GeneratorTask
 {

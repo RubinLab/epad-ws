@@ -6,6 +6,9 @@
 <%@ page import="edu.stanford.epad.epadws.service.*"%>
 <%@ page import="edu.stanford.epad.epadws.security.*"%>
 <%@ page session="false" %><%
+
+	EPADLogger log = EPADLogger.getInstance();
+
 	String sessionID = SessionService.getJSessionIDFromRequest(request);
 	String username = EPADSessionOperations.getSessionUser(sessionID);
 	String projectID = request.getParameter("projectID");
@@ -45,11 +48,22 @@
 		{
 			if (fw != null) fw.close();
 		}
-		
-		Map<String, Object> paramData = HandlerUtil.parsePostedData(uploadDirPath, request, responseStream);
-		subjectID = (String) paramData.get("subjectID");
-		studyUID = (String) paramData.get("studyUID");
-		seriesUID = (String) paramData.get("seriesUID");
+
+		try
+		{
+			Map<String, Object> paramData = HandlerUtil.parsePostedData(uploadDirPath, request, responseStream);
+			subjectID = (String) paramData.get("subjectID");
+			studyUID = (String) paramData.get("studyUID");
+			seriesUID = (String) paramData.get("seriesUID");
+		} 
+		catch (Exception x)
+		{
+%>
+			<script>alert("<%=x.getMessage()%>");</script>
+<%
+			log.warning("Error saving uploaded files", x);
+			x.printStackTrace();
+		}
 	}
 	else
 	{
@@ -84,14 +98,43 @@
   Project: <input type=text readonly name="projectID" value="<%=projectID%>"> Patient: <input type=text readonly name="subjectID" value="<%=subjectID%>"> Study: <input type=text readonly name="studyUID" value="<%=studyUID%>"> Series: <input type=text readonly name="seriesUID" value="<%=seriesUID%>"><br>
 <% } %>
  <br>
+<<<<<<< HEAD
  <b>Zip Files:</b> <input type=file name=file multiple="multiple"><br>
+=======
+ <b>Zip Files:</b> <input id=uploadlist type=file name=file multiple="multiple" accept=".zip,.dcm,.dso"><br>
+>>>>>>> origin/1.6.2
   <br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input type="button" value="Submit" onclick="uploadFiles()">
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
   <input type="button" value="Status" onclick="status()">
 </form>
+
+<span id=flist></span>
 <script>
 var filedata;
+var selDiv = "";
+		
+document.addEventListener("DOMContentLoaded", init, false);
+	
+function init() {
+	document.querySelector('#uploadlist').addEventListener('change', handleFileSelect, false);
+	selDiv = document.querySelector("#flist");
+}
+		
+function handleFileSelect(e) {
+	
+	if(!e.target.files) return;
+	
+	selDiv.innerHTML = "";
+	
+	var files = e.target.files;
+	for(var i=0; i<files.length; i++) {
+		var f = files[i];
+		
+		selDiv.innerHTML += f.name + "<br/>";
+	}
+}
+		
 function uploadFiles()
 {
 	document.getElementById("uploadform").submit();

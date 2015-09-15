@@ -26,7 +26,7 @@ package edu.stanford.epad.epadws.aim.aimapi;
 
 import java.io.Serializable;
 
-import edu.stanford.hakan.aim3api.base.User;
+import edu.stanford.hakan.aim4api.compability.aimv3.User;
 
 /**
  * 

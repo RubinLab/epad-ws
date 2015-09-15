@@ -45,6 +45,7 @@ public class User extends AbstractDAO {
 	String password;
 	boolean enabled = true;
 	String permissions;
+	String colorpreference;
 	Date lastLogin;
 	boolean admin;
 	boolean passwordExpired;
@@ -212,6 +213,14 @@ public class User extends AbstractDAO {
 		this.role = role;
 	}
 
+	public String getColorpreference() {
+		return colorpreference;
+	}
+
+	public void setColorpreference(String colorpreference) {
+		this.colorpreference = colorpreference;
+	}
+
 	public Map<String, String> getProjectToRole() {
 		return projectToRole;
 	}
@@ -272,6 +281,7 @@ public class User extends AbstractDAO {
         {"admin","boolean","admin","bit"},
         {"passwordExpired","boolean","passwordexpired","bit"},
         {"passwordUpdate","Date","passwordupdate","date"},
+        {"colorpreference","String","colorpreference","varchar"},
         {"lastLogin","Date","lastLogin","timestamp"},
         {"creator","String","creator","varchar"},
         {"createdTime","Date","createdtime","timestamp"},

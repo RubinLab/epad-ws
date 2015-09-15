@@ -80,6 +80,10 @@ public interface EpadDatabaseOperations
 	Timestamp getSeriesProcessingDate(String seriesUID);
 
 	void updateOrInsertSeries(String seriesUID, SeriesProcessingStatus seriesProcessingStatus);
+
+	void updateSeriesDefaultTags(String seriesUID, String defaultTags) throws Exception;
+
+	String getSeriesDefaultTags(String seriesUID);
 	
 	boolean hasSeriesInEPadDatabase(String seriesIUID);
 	
@@ -185,13 +189,15 @@ public interface EpadDatabaseOperations
 
 	EPADAIM addDSOAIM(String userName, ImageReference reference, String dsoSeriesUID, String aimID);
 
-	EPADAIM addAIM(String userName, FrameReference reference, String aimID, String aimXML);
+	EPADAIM addAIM(String userName, FrameReference reference, String aimID, String aimXML, String aimName);
 
-	EPADAIM addDSOAIM(String userName, ImageReference reference, String dsoSeriesUID, String aimID, String aimXML);
+	EPADAIM addDSOAIM(String userName, ImageReference reference, String dsoSeriesUID, String aimID, String aimXML, String name);
 	
 	EPADAIM updateAIM(String aimID, String projectID, String username);
 	
 	EPADAIM updateAIMXml(String aimID, String xml);
+	
+	EPADAIM updateAIMName(String aimID, String name);
 	
 	EPADAIM updateAIMDSOFrameNo(String aimID, int frameNo);
 	

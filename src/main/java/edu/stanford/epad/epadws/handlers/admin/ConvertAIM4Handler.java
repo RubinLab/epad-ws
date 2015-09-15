@@ -65,22 +65,21 @@ public class ConvertAIM4Handler extends AbstractHandler
 
 			if (SessionService.hasValidSessionID(httpRequest)) {				
 				String method = httpRequest.getMethod();
-				if ("GET".equalsIgnoreCase(method)) {
+				// This function no longer supported
+				if (false && "GET".equalsIgnoreCase(method)) { 
 					try {
 						String aimID = request.getParameter("aimID");
 						if (aimID == null || aimID.trim().length() == 0)
 						{
-							int results = AIMUtil.convertAllAim3();
-							log.info("Converted " + results + " Annotations to AIM4 format");
-							responseStream.write("Converted " + results + " Annotations to AIM4 format");
+//							int results = AIMUtil.convertAllAim3();
+//							log.info("Converted " + results + " Annotations to AIM4 format");
+//							responseStream.write("Converted " + results + " Annotations to AIM4 format");
 						}
-						else
-							AIMUtil.convertAim3(aimID);
+//						else
+//							AIMUtil.convertAim3(aimID);
 						statusCode = HttpServletResponse.SC_OK;
-					} catch (IOException e) {
+					} catch (Exception e) {
 						statusCode = HandlerUtil.internalErrorResponse(INTERNAL_IO_ERROR_MESSAGE, e, responseStream, log);
-					} catch (SQLException e) {
-						statusCode = HandlerUtil.internalErrorResponse(INTERNAL_SQL_ERROR_MESSAGE, e, responseStream, log);
 					}
 				} else {
 					statusCode = HandlerUtil.warningResponse(HttpServletResponse.SC_FORBIDDEN, FORBIDDEN, responseStream, log);

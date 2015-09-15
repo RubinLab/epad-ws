@@ -788,6 +788,8 @@ public class RemotePACService extends RemotePACSBase {
 		entity.subjectName = Attribute.getSingleStringValueOrNull(al,TagFromName.PatientName);
 		if (entity.subjectName == null || entity.subjectName.length() == 0)
 			entity.subjectName = entity.subjectID;
+		entity.studyDate = Attribute.getSingleStringValueOrNull(al,TagFromName.StudyDate);
+		entity.studyDescription = Attribute.getSingleStringValueOrNull(al,TagFromName.StudyDescription);
 		if (patientsOnly && type.equals("Study") && patientIds.contains(entity.subjectID))
 		{
 			//log.info("Duplicate subject:" + entity.subjectID);

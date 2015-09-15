@@ -110,7 +110,8 @@ public class EPADPutHandler
 			}
 			else
 			{
-				paramData = HandlerUtil.parsePostedData(httpRequest, responseStream);
+				String uploadDir = EPADConfig.getEPADWebServerFileUploadDir() + "temp" + Long.toString(System.currentTimeMillis());
+				paramData = HandlerUtil.parsePostedData(uploadDir, httpRequest, responseStream);
 				for (String param: paramData.keySet())
 				{
 					if (paramData.get(param) instanceof File)
@@ -197,7 +198,13 @@ public class EPADPutHandler
 				String referencedSeries = httpRequest.getParameter("referencedSeries");
 				if (referencedSeries == null)
 					referencedSeries = httpRequest.getParameter("referencedSeriesUID");
-				EPADSeries series  = epadOperations.createSeries(username, seriesReference, description, getDate(seriesDate), modality, referencedSeries, sessionID);
+				String defaultTags = httpRequest.getParameter("defaultTags");
+				if (defaultTags != null) {
+					epadOperations.updateSeriesTags(username, seriesReference, defaultTags, sessionID);
+				} else {
+					// Create non-dicom series
+					EPADSeries series  = epadOperations.createSeries(username, seriesReference, description, getDate(seriesDate), modality, referencedSeries, sessionID);
+				}
 				if (uploadedFile != null && false) {
 					String fileType = httpRequest.getParameter("fileType");
 					statusCode = epadOperations.createFile(username, seriesReference, uploadedFile, description, fileType, sessionID);					
@@ -272,7 +279,7 @@ public class EPADPutHandler
 			} else if (HandlerUtil.matchesTemplate(UsersRouteTemplates.USER_WORKLIST, pathInfo)) {
 				Map<String, String> templateMap = HandlerUtil.getTemplateMap(UsersRouteTemplates.USER_WORKLIST, pathInfo);
 				String reader = HandlerUtil.getTemplateParameter(templateMap, "username");
-				String workListID = HandlerUtil.getTemplateParameter(templateMap, "workListID");
+				String workListID = HandlerUtil.getTemplateParameter(templateMap, "worklistID");
 				String description = httpRequest.getParameter("description");
 				String dueDate = httpRequest.getParameter("dueDate");
 				WorkList worklist = worklistOperations.getWorkList(workListID);
@@ -301,9 +308,9 @@ public class EPADPutHandler
 				
 			
 			} else if (HandlerUtil.matchesTemplate(UsersRouteTemplates.USER_SUBJECT, pathInfo)) {
-				Map<String, String> templateMap = HandlerUtil.getTemplateMap(UsersRouteTemplates.USER_PROJECT_SUBJECT, pathInfo);
+				Map<String, String> templateMap = HandlerUtil.getTemplateMap(UsersRouteTemplates.USER_SUBJECT, pathInfo);
 				String reader = HandlerUtil.getTemplateParameter(templateMap, "username");
-				String workListID = HandlerUtil.getTemplateParameter(templateMap, "workListID");
+				String workListID = HandlerUtil.getTemplateParameter(templateMap, "worklistID");
 				String projectID = HandlerUtil.getTemplateParameter(templateMap, "projectID");
 				String subjectID = HandlerUtil.getTemplateParameter(templateMap, "subjectID");
 				String wlstatus = httpRequest.getParameter("status");
@@ -319,10 +326,10 @@ public class EPADPutHandler
 				statusCode = HttpServletResponse.SC_OK;
 	
 			} else if (HandlerUtil.matchesTemplate(UsersRouteTemplates.USER_STUDY, pathInfo)) {
-				Map<String, String> templateMap = HandlerUtil.getTemplateMap(UsersRouteTemplates.USER_PROJECT_STUDY, pathInfo);
+				Map<String, String> templateMap = HandlerUtil.getTemplateMap(UsersRouteTemplates.USER_STUDY, pathInfo);
 				String reader = HandlerUtil.getTemplateParameter(templateMap, "username");
 				String studyUID = HandlerUtil.getTemplateParameter(templateMap, "studyUID");
-				String workListID = HandlerUtil.getTemplateParameter(templateMap, "workListID");
+				String workListID = HandlerUtil.getTemplateParameter(templateMap, "worklistID");
 				String projectID = HandlerUtil.getTemplateParameter(templateMap, "projectID");
 				String wlstatus = httpRequest.getParameter("status");
 				Boolean started = "true".equalsIgnoreCase(httpRequest.getParameter("started"));
@@ -348,7 +355,7 @@ public class EPADPutHandler
 			} else if (HandlerUtil.matchesTemplate(UsersRouteTemplates.USER_PROJECT_SUBJECT, pathInfo)) {
 				Map<String, String> templateMap = HandlerUtil.getTemplateMap(UsersRouteTemplates.USER_PROJECT_SUBJECT, pathInfo);
 				String reader = HandlerUtil.getTemplateParameter(templateMap, "username");
-				String workListID = HandlerUtil.getTemplateParameter(templateMap, "workListID");
+				String workListID = HandlerUtil.getTemplateParameter(templateMap, "worklistID");
 				String projectID = HandlerUtil.getTemplateParameter(templateMap, "projectID");
 				String subjectID = HandlerUtil.getTemplateParameter(templateMap, "subjectID");
 				String wlstatus = httpRequest.getParameter("status");
@@ -370,7 +377,7 @@ public class EPADPutHandler
 				Map<String, String> templateMap = HandlerUtil.getTemplateMap(UsersRouteTemplates.USER_PROJECT_STUDY, pathInfo);
 				String reader = HandlerUtil.getTemplateParameter(templateMap, "username");
 				String studyUID = HandlerUtil.getTemplateParameter(templateMap, "studyUID");
-				String workListID = HandlerUtil.getTemplateParameter(templateMap, "workListID");
+				String workListID = HandlerUtil.getTemplateParameter(templateMap, "worklistID");
 				String projectID = HandlerUtil.getTemplateParameter(templateMap, "projectID");
 				String wlstatus = httpRequest.getParameter("status");
 				Boolean started = "true".equalsIgnoreCase(httpRequest.getParameter("started"));
@@ -401,13 +408,14 @@ public class EPADPutHandler
 				String email = httpRequest.getParameter("email");
 				String password = httpRequest.getParameter("password");
 				String oldpassword = httpRequest.getParameter("oldpassword");
+				String colorpreference = httpRequest.getParameter("colorpreference");
 				//log.info(" firstname:" + firstname + " lastname:" + lastname + " new password:" + password + " old password:" + oldpassword); 
 				String[] addPermissions = httpRequest.getParameterValues("addPermission");
 				String[] removePermissions = httpRequest.getParameterValues("removePermission");
 				String enable = httpRequest.getParameter("enable");
 				if (enable == null && firstname == null && lastname == null && email == null && addPermissions == null && removePermissions == null && password == null && oldpassword == null)
 					throw new Exception("BAD Request - all parameters are null");
-				epadOperations.createOrModifyUser(username, target_username, firstname, lastname, email, password, oldpassword, addPermissions, removePermissions);
+				epadOperations.createOrModifyUser(username, target_username, firstname, lastname, email, password, oldpassword, colorpreference, addPermissions, removePermissions);
 				if ("true".equalsIgnoreCase(enable))
 					epadOperations.enableUser(username, target_username);
 				else if ("false".equalsIgnoreCase(enable))

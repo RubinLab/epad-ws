@@ -80,7 +80,6 @@ import edu.stanford.epad.dtos.RemotePACEntityList;
 import edu.stanford.epad.dtos.RemotePACList;
 import edu.stanford.epad.dtos.RemotePACQueryConfigList;
 import edu.stanford.epad.epadws.EPadWebServerVersion;
-import edu.stanford.epad.epadws.aim.AIMQueries;
 import edu.stanford.epad.epadws.aim.AIMSearchType;
 import edu.stanford.epad.epadws.aim.AIMUtil;
 import edu.stanford.epad.epadws.epaddb.EpadDatabase;
@@ -91,6 +90,7 @@ import edu.stanford.epad.epadws.models.EpadStatistics;
 import edu.stanford.epad.epadws.models.RemotePACQuery;
 import edu.stanford.epad.epadws.models.User;
 import edu.stanford.epad.epadws.processing.pipeline.task.EpadStatisticsTask;
+import edu.stanford.epad.epadws.processing.pipeline.task.TCIADownloadTask;
 import edu.stanford.epad.epadws.queries.DefaultEpadOperations;
 import edu.stanford.epad.epadws.queries.EpadOperations;
 import edu.stanford.epad.epadws.security.EPADSession;
@@ -164,7 +164,7 @@ public class EPADGetHandler
 				String sortField = httpRequest.getParameter("sortField");
 				boolean unassignedOnly = "true".equalsIgnoreCase(httpRequest.getParameter("unassignedOnly"));
 				EPADSubjectList subjectList = null;
-				if (projectReference.projectID.equals(EPADConfig.xnatUploadProjectID) && unassignedOnly)
+				if (projectReference.projectID.equalsIgnoreCase(EPADConfig.getParamValue("UnassignedProjectID", "nonassigned")) || (projectReference.projectID.equals(EPADConfig.xnatUploadProjectID) && unassignedOnly))
 					subjectList = epadOperations.getUnassignedSubjectDescriptions(username, sessionID, searchFilter);
 				else
 					subjectList = epadOperations.getSubjectDescriptions(projectReference.projectID, username,
@@ -1095,7 +1095,7 @@ public class EPADGetHandler
 			} else if (HandlerUtil.matchesTemplate(UsersRouteTemplates.USER_WORKLIST, pathInfo)) {
 				Map<String, String> templateMap = HandlerUtil.getTemplateMap(UsersRouteTemplates.USER_WORKLIST, pathInfo);
 				String user = HandlerUtil.getTemplateParameter(templateMap, "username");
-				String workListID = HandlerUtil.getTemplateParameter(templateMap, "workListID");
+				String workListID = HandlerUtil.getTemplateParameter(templateMap, "worklistID");
 				EPADWorklist wl = epadOperations.getWorkListByID(username, user, workListID);
 				responseStream.append(wl.toJSON());
 				statusCode = HttpServletResponse.SC_OK;
@@ -1103,7 +1103,7 @@ public class EPADGetHandler
 			} else if (HandlerUtil.matchesTemplate(UsersRouteTemplates.USER_WORKLIST_SUBJECTS, pathInfo)) {
 				Map<String, String> templateMap = HandlerUtil.getTemplateMap(UsersRouteTemplates.USER_WORKLIST_SUBJECTS, pathInfo);
 				String reader = HandlerUtil.getTemplateParameter(templateMap, "username");
-				String workListID = HandlerUtil.getTemplateParameter(templateMap, "workListID");
+				String workListID = HandlerUtil.getTemplateParameter(templateMap, "worklistID");
 				log.info(" reader:" + reader + " workListID:" + workListID);
 				EPADWorklistSubjectList wlsl = epadOperations.getWorkListSubjects(username, reader, workListID);
 				responseStream.append(wlsl.toJSON());
@@ -1112,7 +1112,7 @@ public class EPADGetHandler
 			} else if (HandlerUtil.matchesTemplate(UsersRouteTemplates.USER_WORKLIST_STUDIES, pathInfo)) {
 				Map<String, String> templateMap = HandlerUtil.getTemplateMap(UsersRouteTemplates.USER_WORKLIST_STUDIES, pathInfo);
 				String reader = HandlerUtil.getTemplateParameter(templateMap, "username");
-				String workListID = HandlerUtil.getTemplateParameter(templateMap, "workListID");
+				String workListID = HandlerUtil.getTemplateParameter(templateMap, "worklistID");
 				log.info(" reader:" + reader + " workListID:" + workListID);
 				EPADWorklistStudyList wlsl = epadOperations.getWorkListStudies(username, reader, workListID);
 				responseStream.append(wlsl.toJSON());
@@ -1470,11 +1470,22 @@ public class EPADGetHandler
 				}
 				else if (pacID.startsWith(TCIAService.TCIA_PREFIX))
 				{
-					if (entityID.indexOf("SUBJECT:") != -1 || entityID.indexOf("STUDY:") != -1)
-						throw new Exception("Patient or Study can not be downloaded. Please select a Series");
-					if (entityID.indexOf(":") != -1)
-						entityID = entityID.substring(entityID.lastIndexOf(":")+1);
-					statusCode = TCIAService.getInstance().downloadSeriesFromTCIA(username, entityID, projectID);
+					String id = entityID;
+					if (id.indexOf(":") != -1)
+						id = entityID.substring(entityID.lastIndexOf(":")+1);
+					if (entityID.indexOf("SUBJECT:") != -1)
+					{
+						(new Thread(new TCIADownloadTask(projectID, pacID.substring(TCIAService.TCIA_PREFIX.length()), id, null, username))).start();
+						statusCode = HttpServletResponse.SC_OK;
+					}
+					else if (entityID.indexOf("STUDY:") != -1)
+					{
+						String[] ids = entityID.split(":");
+						(new Thread(new TCIADownloadTask(projectID, pacID.substring(TCIAService.TCIA_PREFIX.length()), ids[ids.length-3], id, username))).start();
+						statusCode = HttpServletResponse.SC_OK;
+					}
+					else
+						statusCode = TCIAService.downloadSeriesFromTCIA(username, id, projectID);
 				}
 				else
 					throw new Exception("Remote PAC " + pacID + " not found");

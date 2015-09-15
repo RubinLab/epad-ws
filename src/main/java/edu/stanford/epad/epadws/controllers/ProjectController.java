@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import edu.stanford.epad.common.util.EPADConfig;
+import edu.stanford.epad.common.util.EPADFileUtils;
 import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.epad.dtos.EPADAIM;
 import edu.stanford.epad.dtos.EPADAIMList;
@@ -1494,65 +1495,80 @@ public class ProjectController {
 		Map<String, Object> paramData = null;
 		int numberOfFiles = 0;
 		File uploadedFile = null;
-		if (requestContentType != null && requestContentType.startsWith("multipart/form-data"))
+		String uploadDir = null;
+		try
 		{
-			PrintWriter responseStream = response.getWriter();
-			paramData = HandlerUtil.parsePostedData(request, responseStream);
-			for (String param: paramData.keySet())
+			if (requestContentType != null && requestContentType.startsWith("multipart/form-data"))
 			{
-				if (paramData.get(param) instanceof File)
+				PrintWriter responseStream = response.getWriter();
+				uploadDir = EPADConfig.getEPADWebServerFileUploadDir() + "temp" + Long.toString(System.currentTimeMillis());
+				paramData = HandlerUtil.parsePostedData(uploadDir, request, responseStream);
+				for (String param: paramData.keySet())
 				{
-					if (uploadedFile == null)
-						uploadedFile = (File) paramData.get(param);
-					numberOfFiles++;
+					if (paramData.get(param) instanceof File)
+					{
+						if (uploadedFile == null)
+							uploadedFile = (File) paramData.get(param);
+						numberOfFiles++;
+					}
+				}
+			}
+			List<String> descriptions = (List<String>) paramData.get("description_List");
+			List<String> fileTypes = (List<String>) paramData.get("fileType_List");
+			if (numberOfFiles == 1) {
+				if (description == null) {
+					if (descriptions != null && descriptions.size() > 0)
+						description = descriptions.get(0);
+				}
+				if (fileType == null) {
+					if (fileTypes != null && fileTypes.size() > 0)
+						fileType = fileTypes.get(0);
+				}
+				if (FileType.ANNOTATION.getName().equalsIgnoreCase(fileType)) {
+					if (AIMUtil.saveAIMAnnotation(uploadedFile, projectID, sessionID, username))
+						throw new Exception("Error saving AIM file");
+				}
+				else {
+					EpadOperations epadOperations = DefaultEpadOperations.getInstance();
+					epadOperations.createFile(username, projectID, subjectID, studyUID, seriesUID,
+							uploadedFile, description, fileType, sessionID);
+				}
+			} else {
+				int i = 0;
+				for (String param: paramData.keySet())
+				{
+					if (paramData.get(param) instanceof File)
+					{
+						description = request.getParameter("description");
+						if (descriptions != null && descriptions.size() > i)
+							description = descriptions.get(i);
+						fileType = request.getParameter("fileType");
+						if (fileTypes != null && fileTypes.size() > i)
+								fileType = fileTypes.get(i);
+						if (FileType.ANNOTATION.getName().equalsIgnoreCase(fileType)) {
+							if (AIMUtil.saveAIMAnnotation(uploadedFile, projectID, sessionID, username))
+								throw new Exception("Error saving AIM file");
+						}
+						else {
+							EpadOperations epadOperations = DefaultEpadOperations.getInstance();
+							epadOperations.createFile(username, projectID, subjectID, studyUID, seriesUID,
+									uploadedFile, description, fileType, sessionID);
+						}
+						i++;
+					}
+				}
+			}		
+		}
+		finally {
+			if (uploadedFile != null)
+			{
+				if (uploadedFile.getParentFile().exists())
+				{
+					log.info("Deleting upload directory " + uploadedFile.getParentFile().getAbsolutePath());
+					EPADFileUtils.deleteDirectoryAndContents(uploadedFile.getParentFile());
 				}
 			}
 		}
-		List<String> descriptions = (List<String>) paramData.get("description_List");
-		List<String> fileTypes = (List<String>) paramData.get("fileType_List");
-		if (numberOfFiles == 1) {
-			if (description == null) {
-				if (descriptions != null && descriptions.size() > 0)
-					description = descriptions.get(0);
-			}
-			if (fileType == null) {
-				if (fileTypes != null && fileTypes.size() > 0)
-					fileType = fileTypes.get(0);
-			}
-			if (FileType.ANNOTATION.getName().equalsIgnoreCase(fileType)) {
-				if (AIMUtil.saveAIMAnnotation(uploadedFile, projectID, sessionID, username))
-					throw new Exception("Error saving AIM file");
-			}
-			else {
-				EpadOperations epadOperations = DefaultEpadOperations.getInstance();
-				epadOperations.createFile(username, projectID, subjectID, studyUID, seriesUID,
-						uploadedFile, description, fileType, sessionID);
-			}
-		} else {
-			int i = 0;
-			for (String param: paramData.keySet())
-			{
-				if (paramData.get(param) instanceof File)
-				{
-					description = request.getParameter("description");
-					if (descriptions != null && descriptions.size() > i)
-						description = descriptions.get(i);
-					fileType = request.getParameter("fileType");
-					if (fileTypes != null && fileTypes.size() > i)
-							fileType = fileTypes.get(i);
-					if (FileType.ANNOTATION.getName().equalsIgnoreCase(fileType)) {
-						if (AIMUtil.saveAIMAnnotation(uploadedFile, projectID, sessionID, username))
-							throw new Exception("Error saving AIM file");
-					}
-					else {
-						EpadOperations epadOperations = DefaultEpadOperations.getInstance();
-						epadOperations.createFile(username, projectID, subjectID, studyUID, seriesUID,
-								uploadedFile, description, fileType, sessionID);
-					}
-					i++;
-				}
-			}
-		}		
 	}
 	
 	@RequestMapping(value = "/{projectID:.+}", method = RequestMethod.DELETE)

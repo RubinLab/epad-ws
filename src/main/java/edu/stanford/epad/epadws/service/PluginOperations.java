@@ -199,6 +199,7 @@ public class PluginOperations {
 		List<Project> projects= projectOperations.getAllProjects();
 		EPADPluginList epadPluginList = new EPADPluginList();
 		for (Project project : projects) {
+
 			for (Plugin plugin : plugins) {
 				EPADPlugin epadPlugin = plugin2EPADPluginProject(plugin,project,true);
 				
@@ -208,6 +209,7 @@ public class PluginOperations {
 				}
 			}
 		}
+
 		return epadPluginList;
 	}
 	
@@ -216,6 +218,7 @@ public class PluginOperations {
 		List<Project> projects= projectOperations.getAllProjects();
 		EPADPluginList epadPluginList = new EPADPluginList();
 		for (Project project : projects) {
+
 			for (Plugin plugin : plugins) {
 				EPADPlugin epadPlugin = plugin2EPADPluginProject(plugin,project,false);
 				
@@ -225,6 +228,7 @@ public class PluginOperations {
 				}
 			}
 		}
+
 		return epadPluginList;
 	}
 	
@@ -343,7 +347,7 @@ public class PluginOperations {
 			else
 				plugin.setEnabled(false);
 		}
-		
+
 		//plugin.setStatus(status);
 		
 		if (modality!=null && modality!="") 
@@ -418,10 +422,12 @@ public class PluginOperations {
 		ProjectToPluginParameter param=getParameter(loggedInUser, projectId, pluginId, paramName); //get the parameter to update
 		if (param==null) {
 			param= new ProjectToPluginParameter(); //create new if not db tuple with the param name
+
 			param.setProjectId(project.getId());
 			Plugin plugin = getPlugin(pluginId);
 			param.setPluginId(plugin.getId());
 			param.setName(paramName);
+
 		}
 		param.setDefaultValue(defaultValue);
 		param.setCreator(loggedInUser);
