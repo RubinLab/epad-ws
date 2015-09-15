@@ -453,6 +453,27 @@ public class AIMDatabaseOperations {
     	return null;
     }
 
+    public EPADAIM updateAIMDSOSeriesUID(String annotationID, String dsoSeriesUID) throws SQLException
+    {
+    	EPADAIM aim = this.getAIM(annotationID);
+    	if (aim != null)
+    	{
+    		try {
+	    	    this.statement = mySqlConnection.createStatement();
+	    	    String sql = "UPDATE " + ANNOTATIONS_TABLE + " set DSOSeriesUID = '" + dsoSeriesUID + "' where AnnotationUID = '" + annotationID + "'";
+	            log.info("Updating AIMs DSOSeriesUID for:" + annotationID + " to " + dsoSeriesUID);
+	            this.statement.executeUpdate(sql);
+	            aim.dsoSeriesUID = dsoSeriesUID;
+	            return aim;
+       	} finally {
+        		if (statement != null)
+        			statement.close();
+        		statement = null;
+        	}
+    	}
+    	return null;
+    }
+
     public EPADAIM updateAIMName(String annotationID, String name) throws SQLException
     {
     	EPADAIM aim = this.getAIM(annotationID);
