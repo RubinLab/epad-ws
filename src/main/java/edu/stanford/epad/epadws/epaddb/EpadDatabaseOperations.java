@@ -195,6 +195,8 @@ public interface EpadDatabaseOperations
 	
 	EPADAIM updateAIM(String aimID, String projectID, String username);
 	
+	EPADAIM updateAIMDSOSeries(String aimID, String seriesUID, String username);
+	
 	EPADAIM updateAIMXml(String aimID, String xml);
 	
 	EPADAIM updateAIMName(String aimID, String name);

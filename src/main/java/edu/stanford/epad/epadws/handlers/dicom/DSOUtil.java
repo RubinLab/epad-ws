@@ -220,6 +220,10 @@ public class DSOUtil
 				{
 					deleteQuietly(file);
 				}
+				for (String dicom: dicomFilePaths)
+				{
+					deleteQuietly(new File(dicom));
+				}
 				return new DSOEditResult(imageReference.projectID, imageReference.subjectID, imageReference.studyUID,			
 						imageReference.seriesUID, imageReference.imageUID, dsoEditRequest.aimID);
 			}
@@ -320,14 +324,28 @@ public class DSOUtil
 			String dsoImageUID = seriesImageUids[1];
 			log.info("Sending generated DSO " + temporaryDSOFile.getAbsolutePath() + " dsoImageUID:" + dsoImageUID + " dsoSeriesUID:" + dsoSeriesUID + " to dcm4chee...");
 			DCM4CHEEUtil.dcmsnd(temporaryDSOFile.getAbsolutePath(), false);
-			ImageAnnotation aim = AIMUtil.generateAIMFileForDSO(temporaryDSOFile, username, projectID);
-			log.info("DSO AimID:" + aim.getUniqueIdentifier());
+			EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
+			EPADAIM ea = null;
+			if (dsoEditRequest.aimID != null && dsoEditRequest.aimID.trim().length() > 0)
+			{
+				ea = epadDatabaseOperations.getAIM(dsoEditRequest.aimID);
+				if (ea != null)
+					epadDatabaseOperations.updateAIMDSOSeries(ea.aimID, dsoSeriesUID, username);
+			}
+			if (ea == null)
+			{
+				ImageAnnotation aim = AIMUtil.generateAIMFileForDSO(temporaryDSOFile, username, projectID);
+				log.info("DSO AimID:" + aim.getUniqueIdentifier());
+				ea = epadDatabaseOperations.getAIM(aim.getUniqueIdentifier());
+			}
 			for (File mask: dsoTIFFMaskFiles)
 			{
 				mask.delete();
 			}
-			EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
-			EPADAIM ea = epadDatabaseOperations.getAIM(aim.getUniqueIdentifier());
+			for (String dicom: dicomFilePaths)
+			{
+				deleteQuietly(new File(dicom));
+			}
 			for (int i = 0; i < dsoEditRequest.editedFrameNumbers.size(); i++)
 			{
 				Integer frameNumber = dsoEditRequest.editedFrameNumbers.get(i);
@@ -340,7 +358,7 @@ public class DSOUtil
 				editFramesPNGMaskFiles.get(i).delete();
 				log.info("File copied:" + pngMaskFilePath);
 			}
-			return new DSOEditResult(dsoEditRequest.projectID, dsoEditRequest.patientID, dsoEditRequest.studyUID, dsoSeriesUID, dsoImageUID, aim.getUniqueIdentifier());
+			return new DSOEditResult(dsoEditRequest.projectID, dsoEditRequest.patientID, dsoEditRequest.studyUID, dsoSeriesUID, dsoImageUID, ea.aimID);
 
 		} catch (Exception e) {
 			log.warning("Error generating DSO image for series " + dsoEditRequest.seriesUID, e);

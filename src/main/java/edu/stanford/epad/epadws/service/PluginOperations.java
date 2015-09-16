@@ -210,6 +210,7 @@ public class PluginOperations {
 			}
 		}
 
+
 		return epadPluginList;
 	}
 	
@@ -251,10 +252,12 @@ public class PluginOperations {
 		EPADPluginParameterList parameters=getParametersByProjectIdAndPlugin(project.getId(), plugin.getId());
 			
 		if (returnSummary){
+
 			return new EPADPlugin(plugin.getPluginId(),plugin.getName(),plugin.getDescription(),null,null,null,null,project.getProjectId(),project.getName(),parameters.getResult());
 				
 		}
 		return new EPADPlugin(plugin.getPluginId(),plugin.getName(),plugin.getDescription(),plugin.getJavaclass(),plugin.getEnabled(),plugin.getStatus(),plugin.getModality(),project.getProjectId(),project.getName(),parameters.getResult());
+
 	}
 	
 	public List<Plugin> getPlugins() throws Exception {
@@ -420,6 +423,7 @@ public class PluginOperations {
 			Plugin plugin = getPlugin(pluginId);
 			param.setPluginId(plugin.getId());
 			param.setName(paramName);
+
 
 		}
 		param.setDefaultValue(defaultValue);
