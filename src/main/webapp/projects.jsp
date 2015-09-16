@@ -48,13 +48,8 @@ $( document ).ready(function() {
 			var html = "<table border=1 cellpadding=2><tr bgcolor=lightgray><td>Name</td><td>ID</td><td>&nbsp;</td><td>Subjects</td></tr>";
 			for (i = 0; i < projects.length; i++)
 			{
-				var line = "<tr><td><span onclick=\"window.parent.rightpanel.location = leftdata +'.jsp?projectID=" + projects[i].id +"';window.parent.buttons.projectID ='" + projects[i].id + "';\"><u>" + projects[i].name + "</u></span></td><td>" + projects[i].id + "</td><td><span onclick=\"window.parent.rightpanel.location = 'upload_dicoms.jsp?projectID=" + projects[i].id +"'\"><u>Upload</u></span></td><td>" + projects[i].numberOfSubjects + "</td></tr>\n";
+				var line = "<tr><td><span onclick=\"window.parent.rightpanel.location = leftdata +'.jsp?projectID=" + projects[i].id +"';window.parent.buttons.projectID ='" + projects[i].id + "';\"><u>" + projects[i].name + "</u></span></td><td>" + projects[i].id + "</td><td><span onclick=\"window.parent.rightpanel.location = 'upload_dicoms.jsp?projectID=" + projects[i].id +"'\"><u>Upload<img src='upload-icon.jpg' height='20px'></u></span></td><td>" + projects[i].numberOfSubjects + "</td></tr>\n";
 				html = html + line;
-				if (projects[i].id == '<%=EPADConfig.xnatUploadProjectID%>')
-				{
-					var line = "<tr><td><span onclick=\"window.parent.rightpanel.location = leftdata +'.jsp?projectID=" + projects[i].id +"&unassignedOnly=true';window.parent.buttons.projectID ='" + projects[i].id + "';\"><u>Really Unassigned</u></span></td><td>" + projects[i].id + "</td><td>"  +  projects[i].description + "</td><td>...</td></tr>\n";
-					html = html + line;
-				}
 			}
 			html = html + "</table>\n";
 			document.getElementById("projdiv").innerHTML = html;

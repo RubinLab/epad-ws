@@ -310,26 +310,35 @@ public class UserProjectService {
 		for (File dicomFile : files) {
 			try {
 				log.info("File " + i++ + " : " +dicomFile.getName());
-				if (dicomFile.getName().endsWith(".xml"))
-				{
-					try {
-						if (AIMUtil.saveAIMAnnotation(dicomFile, projectID, sessionID, username))
-							log.warning("Error processing aim file:" + dicomFile.getName());
-					} catch (Exception x) {
-						log.warning("Error uploading file:" + dicomFile.getName() + ":" + x.getMessage());
+				if (!isDicomFile(dicomFile)) {
+					if (dicomFile.getName().endsWith(".xml"))
+					{
+						try {
+							if (AIMUtil.saveAIMAnnotation(dicomFile, projectID, sessionID, username))
+								log.warning("Error processing aim file:" + dicomFile.getName());
+						} catch (Exception x) {
+							log.warning("Error uploading file:" + dicomFile.getName() + ":" + x.getMessage());
+						}
+						dicomFile.delete();
+						continue;
 					}
-					dicomFile.delete();
-					continue;
-				}
-				else if ((allFiles || dicomFile.getName().endsWith(".nii")) && seriesUID != null)
-				{
-					try {
-						DefaultEpadOperations.getInstance().createFile(username, projectID, subjectID, studyUID, seriesUID, dicomFile, null, null, sessionID);
-					} catch (Exception x) {
-						log.warning("Error uploading file:" + dicomFile.getName() + ":" + x.getMessage());
+					else if ((allFiles || dicomFile.getName().endsWith(".nii")))
+					{
+						try {
+							DefaultEpadOperations.getInstance().createFile(username, projectID, subjectID, studyUID, seriesUID, dicomFile, null, null, sessionID);
+						} catch (Exception x) {
+							log.warning("Error uploading file:" + dicomFile.getName() + ":" + x.getMessage());
+						}
+						dicomFile.delete();
+						continue;
 					}
-					dicomFile.delete();
-					continue;
+					else
+					{
+						try {
+							log.warning("Deleting non-dicom file:" + dicomFile.getName());
+							dicomFile.delete();
+						} catch (Exception x) {log.warning("Error deleting", x);}						
+					}
 				}
 				projectOperations.updateUserTaskStatus(username, TaskStatus.TASK_ADD_TO_PROJECT, dicomUploadDirectory.getName(), "Files processed: " + i, null, null);
 				if (createProjectEntitiesFromDICOMFile(dicomFile, projectID, sessionID, username))
@@ -517,12 +526,13 @@ public class UserProjectService {
 				{
 					files.addAll(listDICOMFiles(entry));
 				}
-				else if (!entry.getName().endsWith(".zip"))
+				else
 				{
-					try {
-						log.warning("Deleting non-dicom file:" + entry.getName());
-						entry.delete();
-					} catch (Exception x) {log.warning("Error deleting", x);}
+					files.add(entry);
+//					try {
+//						log.warning("Deleting non-dicom file:" + entry.getName());
+//						entry.delete();
+//					} catch (Exception x) {log.warning("Error deleting", x);}
 				}
 			}
 		}
