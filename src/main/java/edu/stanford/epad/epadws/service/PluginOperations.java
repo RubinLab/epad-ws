@@ -199,6 +199,7 @@ public class PluginOperations {
 		List<Project> projects= projectOperations.getAllProjects();
 		EPADPluginList epadPluginList = new EPADPluginList();
 		for (Project project : projects) {
+
 		for (Plugin plugin : plugins) {
 				EPADPlugin epadPlugin = plugin2EPADPluginProject(plugin,project,true);
 			
@@ -208,6 +209,7 @@ public class PluginOperations {
 			}
 		}
 		}
+
 		return epadPluginList;
 	}
 	
@@ -216,6 +218,7 @@ public class PluginOperations {
 		List<Project> projects= projectOperations.getAllProjects();
 		EPADPluginList epadPluginList = new EPADPluginList();
 		for (Project project : projects) {
+
 		for (Plugin plugin : plugins) {
 				EPADPlugin epadPlugin = plugin2EPADPluginProject(plugin,project,false);
 			
@@ -225,6 +228,7 @@ public class PluginOperations {
 			}
 		}
 		}
+
 		return epadPluginList;
 	}
 	
@@ -248,16 +252,16 @@ public class PluginOperations {
 		EPADPluginParameterList parameters=getParametersByProjectIdAndPlugin(project.getId(), plugin.getId());
 		if (returnSummary){
 			if (project!=null)
-				return new EPADPlugin(plugin.getPluginId(),plugin.getName(),plugin.getDescription(),null,null,null,null,project.getProjectId(),project.getName(),parameters);
+				return new EPADPlugin(plugin.getPluginId(),plugin.getName(),plugin.getDescription(),null,null,null,null,project.getProjectId(),project.getName(),parameters.getResult());
 			else
-				return new EPADPlugin(plugin.getPluginId(),plugin.getName(),plugin.getDescription(),null,null,null,null,null,null,parameters);
+				return new EPADPlugin(plugin.getPluginId(),plugin.getName(),plugin.getDescription(),null,null,null,null,null,null,parameters.getResult());
 
 		
 		}
 		if (project!=null)	
-			return new EPADPlugin(plugin.getPluginId(),plugin.getName(),plugin.getDescription(),plugin.getJavaclass(),plugin.getEnabled(),plugin.getStatus(),plugin.getModality(),project.getProjectId(),project.getName(),parameters);
+			return new EPADPlugin(plugin.getPluginId(),plugin.getName(),plugin.getDescription(),plugin.getJavaclass(),plugin.getEnabled(),plugin.getStatus(),plugin.getModality(),project.getProjectId(),project.getName(),parameters.getResult());
 		else
-			return new EPADPlugin(plugin.getPluginId(),plugin.getName(),plugin.getDescription(),plugin.getJavaclass(),plugin.getEnabled(),plugin.getStatus(),plugin.getModality(),null,null,parameters);
+			return new EPADPlugin(plugin.getPluginId(),plugin.getName(),plugin.getDescription(),plugin.getJavaclass(),plugin.getEnabled(),plugin.getStatus(),plugin.getModality(),null,null,parameters.getResult());
 	}
 	
 	public List<Plugin> getPlugins() throws Exception {
@@ -418,10 +422,12 @@ public class PluginOperations {
 		ProjectToPluginParameter param=getParameter(loggedInUser, projectId, pluginId, paramName); //get the parameter to update
 		if (param==null) {
 			param= new ProjectToPluginParameter(); //create new if not db tuple with the param name
+
 		param.setProjectId(project.getId());
 		Plugin plugin = getPlugin(pluginId);
 		param.setPluginId(plugin.getId());
 		param.setName(paramName);
+
 		}
 		param.setDefaultValue(defaultValue);
 		param.setCreator(loggedInUser);
