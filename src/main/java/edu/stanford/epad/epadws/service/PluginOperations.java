@@ -236,32 +236,25 @@ public class PluginOperations {
 		Plugin plugin=getPlugin(pluginId);
 
 		if (plugin==null) return null;
-		EPADPlugin epadPlugin = plugin2EPADPluginProject(plugin,null,false);
+		Project globalProject=projectOperations.getProject(EPADConfig.xnatUploadProjectID);
+		EPADPlugin epadPlugin = plugin2EPADPluginProject(plugin,globalProject,false);
 		return epadPlugin;
 	}
 	
-//	private EPADPlugin plugin2EPADPlugin(Plugin plugin,Boolean returnSummary) throws Exception
-//	{
-//		if (returnSummary)
-//			return new EPADPlugin(plugin.getPluginId(),plugin.getName(),plugin.getDescription(),null,null,null,null,null,null,null);
-//
-//		return new EPADPlugin(plugin.getPluginId(),plugin.getName(),plugin.getDescription(),plugin.getJavaclass(),plugin.getEnabled(),plugin.getStatus(),plugin.getModality(),null,null,null);
-//	}
 	private EPADPlugin plugin2EPADPluginProject(Plugin plugin,Project project,Boolean returnSummary) throws Exception
 	{
+		if (project==null){
+			project=projectOperations.getProject(EPADConfig.xnatUploadProjectID);
+			if (project==null)
+				throw new Exception("Global project cannot be retrieved");
+		}
 		EPADPluginParameterList parameters=getParametersByProjectIdAndPlugin(project.getId(), plugin.getId());
+			
 		if (returnSummary){
-			if (project!=null)
-				return new EPADPlugin(plugin.getPluginId(),plugin.getName(),plugin.getDescription(),null,null,null,null,project.getProjectId(),project.getName(),parameters.getResult());
-			else
-				return new EPADPlugin(plugin.getPluginId(),plugin.getName(),plugin.getDescription(),null,null,null,null,null,null,parameters.getResult());
-
+			return new EPADPlugin(plugin.getPluginId(),plugin.getName(),plugin.getDescription(),null,null,null,null,project.getProjectId(),project.getName(),parameters.getResult());
 				
 		}
-		if (project!=null)	
-			return new EPADPlugin(plugin.getPluginId(),plugin.getName(),plugin.getDescription(),plugin.getJavaclass(),plugin.getEnabled(),plugin.getStatus(),plugin.getModality(),project.getProjectId(),project.getName(),parameters.getResult());
-		else
-			return new EPADPlugin(plugin.getPluginId(),plugin.getName(),plugin.getDescription(),plugin.getJavaclass(),plugin.getEnabled(),plugin.getStatus(),plugin.getModality(),null,null,parameters.getResult());
+		return new EPADPlugin(plugin.getPluginId(),plugin.getName(),plugin.getDescription(),plugin.getJavaclass(),plugin.getEnabled(),plugin.getStatus(),plugin.getModality(),project.getProjectId(),project.getName(),parameters.getResult());
 	}
 	
 	public List<Plugin> getPlugins() throws Exception {
