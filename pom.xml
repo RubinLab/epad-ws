@@ -16,7 +16,7 @@
 
 	<properties>
 	   <timestamp>${maven.build.timestamp}</timestamp>
-	   <epadws.version>1.6.1</epadws.version>
+	   <epadws.version>1.6.2</epadws.version>
 
 	   <maven.build.timestamp.format>yyyy-MM-dd HH:mm</maven.build.timestamp.format>
 		<hostname>${env.HOSTNAME}${env.COMPUTERNAME}</hostname>
@@ -103,11 +103,11 @@
      <version>${matlab.release.number.jjvector}</version> 
    </dependency>
 
-    <dependency>
+    <!--  >dependency>
       <groupId>edu.stanford.hakan.aim3api</groupId>
       <artifactId>aim3api</artifactId>
       <version>${aim3api.version}</version>
-    </dependency>
+    </dependency -->
 
     <dependency>
       <groupId>edu.stanford.hakan.aim4api</groupId>

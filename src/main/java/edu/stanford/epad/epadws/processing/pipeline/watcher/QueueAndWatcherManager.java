@@ -191,10 +191,12 @@ public class QueueAndWatcherManager
 			File downloadedDICOMFile = File.createTempFile(imageUID, ".tmp");
 			DCM4CHEEUtil.downloadDICOMFileFromWADO(dicomFileDescription, downloadedDICOMFile);
 			return downloadedDICOMFile;
-		} catch (IOException e) {
+		} catch (Exception e) {
 			log.warning("Exception when downloading DICOM file with series UID " + seriesUID + " and image UID "
 					+ dicomFileDescription.imageUID, e);
 		}
+		log.warning("Error downloading DICOM file with series UID " + seriesUID + " and image UID "
+				+ dicomFileDescription.imageUID);
 		return null;
 	}
 	

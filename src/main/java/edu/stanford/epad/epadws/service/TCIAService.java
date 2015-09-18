@@ -50,6 +50,7 @@ import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.epad.common.util.Encryption;
 import edu.stanford.epad.dtos.RemotePACEntity;
+import edu.stanford.epad.dtos.TaskStatus;
 
 /**
  * Class to query TCIA data. See https://wiki.cancerimagingarchive.net/display/Public/Wiki
@@ -173,6 +174,8 @@ public class TCIAService  {
 			RemotePACEntity entity = new RemotePACEntity("Study", description, 2, entityID);
 			entity.subjectID = patientID;
 			entity.subjectName = patientName;
+			entity.studyDate = studyDate;
+			entity.studyDescription = description;
 			entities.add(entity);
 		}
 		return entities;
@@ -215,9 +218,28 @@ public class TCIAService  {
 			return elem.getAsString();
 	}
 	
+	public int downloadPatientFromTCIA(String username, String collection, String patientID, String projectID)
+			throws Exception
+	{
+		EpadProjectOperations projectOperations = DefaultEpadProjectOperations.getInstance();
+		projectOperations.updateUserTaskStatus(username, TaskStatus.TASK_TCIA_DOWNLOAD, patientID, "Started download", new Date(), null);
+		List<RemotePACEntity> entities = getStudiesForPatient(collection, patientID);
+		for (RemotePACEntity entity: entities)
+		{
+			String studyUID = entity.entityID;
+			if (studyUID.indexOf(":") != -1)
+				studyUID = studyUID.substring(studyUID.lastIndexOf(":")+1);
+			downloadStudyFromTCIA(username, collection, patientID, studyUID, projectID);
+		}
+		projectOperations.updateUserTaskStatus(username, TaskStatus.TASK_TCIA_DOWNLOAD, patientID, "Completed download", null, new Date());
+		return HttpServletResponse.SC_OK;
+	}
+	
 	public int downloadStudyFromTCIA(String username, String collection, String patientID, String studyUID, String projectID)
 			throws Exception
 	{
+		EpadProjectOperations projectOperations = DefaultEpadProjectOperations.getInstance();
+		projectOperations.updateUserTaskStatus(username, TaskStatus.TASK_TCIA_DOWNLOAD, "Patient:" + patientID + ", Study:" + studyUID, "Started download", null, null);
 		List<RemotePACEntity> entities = getSeriesForStudy(collection, patientID, studyUID);
 		for (RemotePACEntity entity: entities)
 		{
@@ -226,6 +248,7 @@ public class TCIAService  {
 				seriesUID = seriesUID.substring(seriesUID.lastIndexOf(":")+1);
 			downloadSeriesFromTCIA(username, seriesUID, projectID);
 		}
+		projectOperations.updateUserTaskStatus(username, TaskStatus.TASK_TCIA_DOWNLOAD, "Patient:" + patientID + ", Study:" + studyUID, "Completed download", null, new Date());
 		return HttpServletResponse.SC_OK;
 	}
 	
@@ -235,6 +258,7 @@ public class TCIAService  {
 		String tciaURL = EPADConfig.getParamValue(TCIA_URL, "https://services.cancerimagingarchive.net/services/v3/TCIA/query/getImage");
 		tciaURL = tciaURL + "?SeriesInstanceUID=" + seriesUID;
 		tciaURL = tciaURL + "&api_key=" + apiKey;
+		log.debug("TCIA Download URL:" + tciaURL);
 		HttpClient client = new HttpClient();
 		GetMethod method = new GetMethod(tciaURL);
 		int statusCode = client.executeMethod(method);
@@ -242,7 +266,7 @@ public class TCIAService  {
 													+ "temp" + System.currentTimeMillis());
 		uploadStoreDir.mkdirs();
 		File zipfile = new File(uploadStoreDir, "tcia.zip");
-
+		long total = 0;
 		if (statusCode == HttpServletResponse.SC_OK) {
 			OutputStream outputStream = null;
 			try {
@@ -252,11 +276,13 @@ public class TCIAService  {
 				byte[] bytes = new byte[4096];
 				while ((read = inputStream.read(bytes)) != -1) {
 					outputStream.write(bytes, 0, read);
+					total = total + read;
 				}
 			} finally {
 				IOUtils.closeQuietly(outputStream);
 				method.releaseConnection();
 			}
+			log.debug("TCIA download:" + total + " bytes");
 			writePropertiesFile(uploadStoreDir, projectID, "", username);
 		}
 		else {
@@ -298,6 +324,7 @@ public class TCIAService  {
 			        }
 			    }
 			    String response = sb.toString();
+				log.debug("TCIA response:" + response.length());
 				//log.debug("TCIA Response:" + response);
 			    JsonParser parser = new JsonParser();
 			    return parser.parse(response).getAsJsonArray();
@@ -338,7 +365,7 @@ public class TCIAService  {
 			fop.close();
 
 		} catch (IOException e) {
-			log.info("Error writing prroperties file");
+			log.info("Error writing properties file");
 			e.printStackTrace();
 		}
 	}

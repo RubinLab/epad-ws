@@ -49,6 +49,9 @@ public class StartupListener extends ContextLoaderListener
     		System.out.println("Context initialized , webAppUrl=" + webAppURL + " webappPath=" + webAppPath);
     	}
     	catch (Exception x) {}
+    	Main.checkPropertiesFile();
+    	Main.checkResourcesFolders();
+    	Main.checkPluginsFile();
 		Main.initializePlugins();
 		Main.loadPluginClasses();
 		Main.startSupportThreads();

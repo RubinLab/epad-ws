@@ -64,6 +64,7 @@ public class EPADUploadDirWatcher implements Runnable
 	private static final int CHECK_INTERVAL = 5000; // Check every 5 seconds
 	private static final String FOUND_DIR_FILE = "dir.found";
 	private static final long MAX_WAIT_TIME = 3600000; // 1 hour (was 20 minutes before)
+	private static final long MIN_WAIT_TIME = 1200000; // 20 minutes before
 	private static final EPADLogger log = EPADLogger.getInstance();
 	private final EpadProjectOperations projectOperations = DefaultEpadProjectOperations.getInstance();
 
@@ -166,6 +167,7 @@ public class EPADUploadDirWatcher implements Runnable
 	{
 		File zipFile = null;
 		String username = null;
+		boolean processed = false;
 		try {
 			File xnatprops = new File(directory, UserProjectService.XNAT_UPLOAD_PROPERTIES_FILE_NAME);
 			username = getUserNameFromProperties(xnatprops);
@@ -179,7 +181,7 @@ public class EPADUploadDirWatcher implements Runnable
 					zipFile = waitForZipUploadToComplete(directory, username);
 					if (zipFile == null) break;
 					projectOperations.updateUserTaskStatus(username, TaskStatus.TASK_UNZIP, zipFile.getName(), "Started unzip", new Date(), null);
-				unzipFiles(zipFile);
+					unzipFiles(zipFile);
 					projectOperations.updateUserTaskStatus(username, TaskStatus.TASK_UNZIP, zipFile.getName(), "Completed unzip", null, new Date());
 					File zipDirectory = new File(directory, zipFile.getName().substring(0, zipFile.getName().length()-4));
 					if (xnatprops.exists())
@@ -195,6 +197,7 @@ public class EPADUploadDirWatcher implements Runnable
 					deleteUploadDirectory(zipDirectory);
 					zipFile.delete();
 				}
+				processed = true;
 			}
 			String[] files = directory.list();
 			if (files.length > 1 || (files.length == 1 && !files[0].contains("properties")))
@@ -202,14 +205,19 @@ public class EPADUploadDirWatcher implements Runnable
 				projectOperations.updateUserTaskStatus(username, TaskStatus.TASK_ADD_TO_PROJECT, directory.getName(), "Started processing", new Date(), null);
 				String userName = UserProjectService.createProjectEntitiesFromDICOMFilesInUploadDirectory(directory, false);
 				projectOperations.updateUserTaskStatus(username, TaskStatus.TASK_ADD_TO_PROJECT, directory.getName(), "Completed processing", null, new Date());
-			log.info("Cleaning upload directory");
-			cleanUploadDirectory(directory);
-			if (username != null)
-			{
+				log.info("Cleaning upload directory");
+				cleanUploadDirectory(directory);
+				files = directory.list();
+				if (userName != null && files.length > 0)
+				{
 					sendFilesToDcm4Chee(userName, directory);
 				}
+				processed = true;
 			}
-			projectOperations.updateUserTaskStatus(username, TaskStatus.TASK_UPLOAD, directory.getName(), "Completed upload", null, new Date());
+			if (processed)
+				projectOperations.updateUserTaskStatus(username, TaskStatus.TASK_UPLOAD, directory.getName(), "Completed upload", null, new Date());
+			else
+				projectOperations.updateUserTaskStatus(username, TaskStatus.TASK_UPLOAD, directory.getName(), "Completed upload - No files found", null, new Date());
 		} catch (Exception e) {
 			log.warning("Exception uploading " + directory.getAbsolutePath(), e);
 			if (username == null)
@@ -241,10 +249,10 @@ public class EPADUploadDirWatcher implements Runnable
 	{ // TODO Should be deleteFilesInDirectoryWithoutExtension("dcm");
 		if (dir.exists())
 		{
-		EPADFileUtils.deleteFilesInDirectoryWithExtension(dir, "properties");
-		EPADFileUtils.deleteFilesInDirectoryWithExtension(dir, "zip");
-		EPADFileUtils.deleteFilesInDirectoryWithExtension(dir, "log");
-		EPADFileUtils.deleteFilesInDirectoryWithExtension(dir, "json");
+			EPADFileUtils.deleteFilesInDirectoryWithExtension(dir, "properties");
+			EPADFileUtils.deleteFilesInDirectoryWithExtension(dir, "zip");
+			EPADFileUtils.deleteFilesInDirectoryWithExtension(dir, "log");
+			EPADFileUtils.deleteFilesInDirectoryWithExtension(dir, "json");
 			EPADFileUtils.deleteFilesInDirectoryWithExtension(dir, "jpeg");
 			EPADFileUtils.deleteFilesInDirectoryWithExtension(dir, "jpg");
 			EPADFileUtils.deleteFilesInDirectoryWithExtension(dir, "png");
@@ -269,7 +277,8 @@ public class EPADUploadDirWatcher implements Runnable
 					long newSize = dir.getTotalSpace();
 					int newNumberOfFiles = filePaths.length;
 
-					if (oldNumberOfFiles != newNumberOfFiles || oldSize != newSize) {
+					if (oldNumberOfFiles != newNumberOfFiles || oldSize != newSize 
+							|| (newNumberOfFiles == 1  && (System.currentTimeMillis() - emptyDirStartWaitTime) < MIN_WAIT_TIME)) {
 						oldNumberOfFiles = newNumberOfFiles;
 						oldSize = newSize;
 					} else {
@@ -412,6 +421,7 @@ public class EPADUploadDirWatcher implements Runnable
 				}
 			}
 		} catch (Exception x) {
+			projectOperations.updateUserTaskStatus(username, TaskStatus.TASK_DCM4CHE_SEND, directory.getName(), "Error sending:" + x.getMessage(), null, new Date());
 			log.warning("Error in upload: sending " + directory.getAbsolutePath() + " to dcm4che");
 			EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
 			epadDatabaseOperations.insertEpadEvent(

@@ -58,6 +58,7 @@ import edu.stanford.epad.dtos.EPADSeriesList;
 import edu.stanford.epad.dtos.EPADStudy;
 import edu.stanford.epad.dtos.EPADStudyList;
 import edu.stanford.epad.epadws.epaddb.EpadDatabase;
+import edu.stanford.epad.epadws.epaddb.EpadDatabaseOperations;
 import edu.stanford.epad.epadws.handlers.HandlerUtil;
 import edu.stanford.epad.epadws.handlers.core.EPADSearchFilter;
 import edu.stanford.epad.epadws.handlers.core.ImageReference;
@@ -213,6 +214,7 @@ public class DownloadUtil {
 		File downloadDir = new File(downloadDirPath);
 		downloadDir.mkdirs();
 		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
+		EpadDatabaseOperations databaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
 		List<String> fileNames = new ArrayList<String>();
 		for (String studyUID: studies)
 		{
@@ -228,6 +230,18 @@ public class DownloadUtil {
 			EPADSeriesList seriesList = epadOperations.getSeriesDescriptions(studyReference, username, sessionID, new EPADSearchFilter(), false);
 			for (EPADSeries series: seriesList.ResultSet.Result)
 			{
+				if (series.isDSO) {
+					try {
+						List<EPADAIM> aims = databaseOperations.getAIMsByDSOSeries(series.seriesUID);
+						boolean skip = true;
+						for (EPADAIM aim: aims) {
+							if (aim.userName.equals(username))
+								skip = false;
+						}
+						if (skip)
+							continue;
+					} catch (Exception x) {};
+				}
 				File seriesDir = new File(studyDir, "Series-" + series.seriesUID);
 				seriesDir.mkdirs();
 				SeriesReference seriesReference = new SeriesReference(studyReference.projectID, studyReference.subjectID, studyReference.studyUID, series.seriesUID);

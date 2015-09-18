@@ -1,0 +1,8 @@
+#!/bin/sh
+### ====================================================================== ###
+##                                                                          ##
+##  dcm4che2/dcmdelete  Launch Script                                          ##
+##                                                                          ##
+### ====================================================================== ###
+
+/home/pacs/dcm4chee-2.17.1-mysql/bin/twiddle.sh -uadmin -padmin invoke dcm4chee.archive:service=ContentEditService moveStudyToTrash $1;

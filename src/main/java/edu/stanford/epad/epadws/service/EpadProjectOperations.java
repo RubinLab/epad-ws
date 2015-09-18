@@ -93,7 +93,7 @@ public interface EpadProjectOperations {
 	 * @throws Exception
 	 */
 	User createUser(String loggedInUser, String username, String firstName, String lastName, 
-			String email, String password, List<String> addPermissions, List<String> removePermissions) throws Exception;
+			String email, String password, String colorpreference, List<String> addPermissions, List<String> removePermissions) throws Exception;
 	
 	/**
 	 * Updates a user record in database, fields can be null except username, password and oldpassword should match 
@@ -109,7 +109,7 @@ public interface EpadProjectOperations {
 	 * @throws Exception
 	 */
 	User updateUser(String loggedInUser, String username, String firstName, String lastName, String email, 
-			String password, String oldpassword, List<String> addPermissions, List<String> removePermissions) throws Exception;
+			String password, String oldpassword, String colorpreference, List<String> addPermissions, List<String> removePermissions) throws Exception;
 	
 	/**
 	 * Set enabled flag in user record
@@ -835,8 +835,7 @@ public interface EpadProjectOperations {
 	 * @param reviewee
 	 * @throws Exception
 	 */
-	void removeReviewee(String loggedInUser, String username, String reviewee) throws Exception;
-	
+	void removeReviewee(String loggedInUser, String username, String reviewee) throws Exception;	
 	
 	/**
 	 * Get database object by primary key
@@ -846,4 +845,14 @@ public interface EpadProjectOperations {
 	 * @throws Exception
 	 */
 	AbstractDAO getDBObject(Class dbclass, long id) throws Exception;
+	
+	/**
+	 * Sort db object list
+	 * @param objects
+	 * @param field
+	 * @param ascending
+	 * @return sorted list
+	 * @throws Exception
+	 */
+	List sort(List<AbstractDAO> objects, String field, boolean ascending);
 }

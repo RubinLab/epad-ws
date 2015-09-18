@@ -36,7 +36,7 @@ import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 
 import edu.stanford.epad.common.plugins.EPadPlugin;
-import edu.stanford.epad.common.plugins.PluginHandlerMap;
+import edu.stanford.epad.epadws.plugins.PluginHandlerMap;
 import edu.stanford.epad.common.plugins.impl.EPadPluginImpl;
 import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADLogger;
@@ -143,8 +143,11 @@ public class ServerStatusHandler extends AbstractHandler
 						for (TaskStatus ts: tss)
 						{
 							responseStream.println("<tr><td>" + u.getUsername() + "</td><td>" + ts.type + "</td><td>" + ts.target + "</td><td>" + ts.status + "</td><td>" + ts.starttime + "</td><td>" + ts.completetime + "</td></tr>");
+						}
+						if (tss.size() == 0) {
+							responseStream.println("<tr><td colspan=100% align=center>No background processes running</td></tr>");
+						}
 					}
-				}
 					responseStream.println("</table>");
 				}  else {
 					responseStream.println("<br><table border=1 cellpadding=2><tr style='font-weight: bold;'><td align=center>User</td><td align=center>Task</td><td align=center>Target</td><td align=center>Status</td><td align=center>Start</td><td align=center>Complete</td></tr>");
@@ -156,13 +159,13 @@ public class ServerStatusHandler extends AbstractHandler
 					responseStream.println("</table>");
 				}
 				responseStream.println("</body>");
-			} 
-			statusCode = HttpServletResponse.SC_OK;
-		} catch (Throwable t) {
-			log.warning(INTERNAL_EXCEPTION_MESSAGE, t);
-			statusCode = HandlerUtil.internalErrorResponse(INTERNAL_EXCEPTION_MESSAGE, responseStream, log);
-		}
-		httpResponse.setStatus(statusCode);
+				} 
+				statusCode = HttpServletResponse.SC_OK;
+			} catch (Throwable t) {
+				log.warning(INTERNAL_EXCEPTION_MESSAGE, t);
+				statusCode = HandlerUtil.internalErrorResponse(INTERNAL_EXCEPTION_MESSAGE, responseStream, log);
+			}
+			httpResponse.setStatus(statusCode);
 	}
 
 	private String getPipelineActivityLevel()

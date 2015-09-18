@@ -35,6 +35,8 @@ import edu.stanford.epad.epadws.processing.pipeline.threads.ShutdownSignal;
 import edu.stanford.epad.epadws.security.EPADSessionOperations;
 import edu.stanford.epad.epadws.service.DefaultEpadProjectOperations;
 import edu.stanford.epad.epadws.service.EpadProjectOperations;
+import edu.stanford.epad.epadws.service.RemotePACService;
+import edu.stanford.epad.epadws.service.UserProjectService;
 
 /**
  * Times out EPAD sessions
@@ -80,7 +82,8 @@ public class EPADSessionWatcher implements Runnable
 				Calendar now = Calendar.getInstance();
 				if (now.get(Calendar.HOUR_OF_DAY) == 0 && prevTime != null && prevTime.get(Calendar.HOUR_OF_DAY) != 0)
 				{
-					projectOperations.clearCache();
+					if (UserProjectService.pendingPNGs.isEmpty() && RemotePACService.pendingTransfers.isEmpty())
+						projectOperations.clearCache();
 					epadDatabaseOperations.deleteOldEvents();
 					try {
 						if (!"true".equalsIgnoreCase(EPADConfig.getParamValue("DISABLE_STATISTICS")))

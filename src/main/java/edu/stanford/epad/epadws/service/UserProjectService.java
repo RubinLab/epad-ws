@@ -43,6 +43,7 @@ import org.dcm4che2.data.Tag;
 
 import edu.stanford.epad.common.dicom.DicomReader;
 import edu.stanford.epad.common.util.EPADConfig;
+import edu.stanford.epad.common.util.EPADFileUtils;
 import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.epad.common.util.MailUtil;
 import edu.stanford.epad.dtos.EPADAIM;
@@ -63,10 +64,10 @@ import edu.stanford.epad.epadws.security.IdGenerator;
 import edu.stanford.epad.epadws.xnat.XNATCreationOperations;
 import edu.stanford.epad.epadws.xnat.XNATSessionOperations;
 import edu.stanford.epad.epadws.xnat.XNATUtil;
-import edu.stanford.hakan.aim3api.base.ImageAnnotation;
+import edu.stanford.hakan.aim4api.compability.aimv3.ImageAnnotation;
 
 /**
- * Wrapper class to call either XNAT or EPAD project/user api
+ * Originally a Wrapper class to call either XNAT or EPAD project/user api (not only calls EPAD api)
  * 
  * @author Dev Gude
  *
@@ -91,11 +92,7 @@ public class UserProjectService {
 	 * @throws Exception
 	 */
 	public static boolean isCollaborator(String sessionID, String username, String projectID) throws Exception {
-		if (EPADConfig.UseEPADUsersProjects) {
-			return projectOperations.isCollaborator(username, projectID);
-		} else {
-			return XNATQueries.isCollaborator(sessionID, username, projectID);
-		}				
+		return projectOperations.isCollaborator(username, projectID);
 	}
 	
 	/**
@@ -107,11 +104,7 @@ public class UserProjectService {
 	 * @throws Exception
 	 */
 	public static boolean isOwner(String sessionID, String username, String projectID) throws Exception {
-		if (EPADConfig.UseEPADUsersProjects) {
-			return projectOperations.isOwner(username, projectID);
-		} else {
-			return XNATQueries.isOwner(sessionID, username, projectID);
-		}				
+		return projectOperations.isOwner(username, projectID);
 	}
 	
 	/**
@@ -123,11 +116,7 @@ public class UserProjectService {
 	 * @throws Exception
 	 */
 	public static boolean isMember(String sessionID, String username, String projectID) throws Exception {
-		if (EPADConfig.UseEPADUsersProjects) {
-			return projectOperations.isMember(username, projectID);
-		} else {
-			return XNATQueries.isMember(sessionID, username, projectID);
-		}				
+		return projectOperations.isMember(username, projectID);
 	}
 	
 	/**
@@ -136,16 +125,11 @@ public class UserProjectService {
 	 * @throws Exception
 	 */
 	public static Set<String> getAllProjectIDs() throws Exception {
-		if (EPADConfig.UseEPADUsersProjects) {
-			List<Project> projects = projectOperations.getAllProjects();
-			Set<String> projectIDs = new HashSet<String>();
-			for (Project project: projects)
-				projectIDs.add(project.getProjectId());
-			return projectIDs;
-		} else {
-			String adminSessionID = XNATSessionOperations.getXNATAdminSessionID();
-			return XNATQueries.allProjectIDs(adminSessionID);
-		}				
+		List<Project> projects = projectOperations.getAllProjects();
+		Set<String> projectIDs = new HashSet<String>();
+		for (Project project: projects)
+			projectIDs.add(project.getProjectId());
+		return projectIDs;
 	}
 	
 	/**
@@ -155,16 +139,11 @@ public class UserProjectService {
 	 * @throws Exception
 	 */
 	public static Set<String> getAllStudyUIDsForProject(String projectID) throws Exception {
-		if (EPADConfig.UseEPADUsersProjects) {
-			List<Study> studies = projectOperations.getAllStudiesForProject(projectID);
-			Set<String> studyIDs = new HashSet<String>();
-			for (Study study: studies)
-				studyIDs.add(study.getStudyUID());
-			return studyIDs;
-		} else {
-			String adminSessionID = XNATSessionOperations.getXNATAdminSessionID();
-			return XNATQueries.getAllStudyUIDsForProject(projectID, adminSessionID);
-		}				
+		List<Study> studies = projectOperations.getAllStudiesForProject(projectID);
+		Set<String> studyIDs = new HashSet<String>();
+		for (Study study: studies)
+			studyIDs.add(study.getStudyUID());
+		return studyIDs;
 	}
 	
 	/**
@@ -175,16 +154,11 @@ public class UserProjectService {
 	 * @throws Exception
 	 */
 	public static Set<String> getStudyUIDsForSubject(String projectID, String patientID) throws Exception {
-		if (EPADConfig.UseEPADUsersProjects) {
-			List<Study> studies = projectOperations.getStudiesForProjectAndSubject(projectID, patientID);
-			Set<String> studyIDs = new HashSet<String>();
-			for (Study study: studies)
-				studyIDs.add(study.getStudyUID());
-			return studyIDs;
-		} else {
-			String adminSessionID = XNATSessionOperations.getXNATAdminSessionID();
-			return XNATQueries.getStudyUIDsForSubject(adminSessionID, projectID, patientID);
-		}				
+		List<Study> studies = projectOperations.getStudiesForProjectAndSubject(projectID, patientID);
+		Set<String> studyIDs = new HashSet<String>();
+		for (Study study: studies)
+			studyIDs.add(study.getStudyUID());
+		return studyIDs;
 	}
 	
 	/**
@@ -194,16 +168,11 @@ public class UserProjectService {
 	 * @throws Exception
 	 */
 	public static String getFirstProjectForStudy(String studyUID) throws Exception {
-		if (EPADConfig.UseEPADUsersProjects) {
-			Project project = projectOperations.getFirstProjectForStudy(studyUID);
-			if (project != null)
-				return project.getProjectId();
-			else
-				return EPADConfig.xnatUploadProjectID;
-		} else {
-			String adminSessionID = XNATSessionOperations.getXNATAdminSessionID();
-			return XNATQueries.getFirstProjectForStudy(adminSessionID, studyUID);	
-		}						
+		Project project = projectOperations.getFirstProjectForStudy(studyUID);
+		if (project != null)
+			return project.getProjectId();
+		else
+			return EPADConfig.xnatUploadProjectID;
 	}
 	
 	/**
@@ -213,16 +182,11 @@ public class UserProjectService {
 	 * @throws Exception
 	 */
 	public static Set<String> getSubjectIDsForProject(String projectID) throws Exception {
-		if (EPADConfig.UseEPADUsersProjects) {
-			List<Subject> subjects = projectOperations.getSubjectsForProject(projectID);
-			Set<String> studyIDs = new HashSet<String>();
-			for (Subject subject: subjects)
-				studyIDs.add(subject.getSubjectUID());
-			return studyIDs;
-		} else {
-			String adminSessionID = XNATSessionOperations.getXNATAdminSessionID();
-			return XNATQueries.getSubjectIDsForProject(adminSessionID, projectID);
-		}						
+		List<Subject> subjects = projectOperations.getSubjectsForProject(projectID);
+		Set<String> studyIDs = new HashSet<String>();
+		for (Subject subject: subjects)
+			studyIDs.add(subject.getSubjectUID());
+		return studyIDs;
 	}
 
 	/**
@@ -275,7 +239,7 @@ public class UserProjectService {
 				if (xnatProjectLabel != null) {
 					projectOperations.createEventLog(xnatUserName, xnatProjectLabel, null, null, null, null, null, "UPLOAD DICOMS", "" + dicomUploadDirectory.list().length);
 					xnatUploadPropertiesFile.delete();
-					numberOfDICOMFiles = createProjectEntitiesFromDICOMFilesInUploadDirectory(dicomUploadDirectory, xnatProjectLabel, xnatSessionID, xnatUserName, patientID, studyUID, seriesUID);
+					numberOfDICOMFiles = createProjectEntitiesFromDICOMFilesInUploadDirectory(dicomUploadDirectory, xnatProjectLabel, xnatSessionID, xnatUserName, patientID, studyUID, seriesUID, !zip);
 					if (numberOfDICOMFiles != 0)
 					{
 						log.info("Found " + numberOfDICOMFiles + " DICOM file(s) in directory uploaded by " + xnatUserName + " for project " + xnatProjectLabel);
@@ -337,7 +301,7 @@ public class UserProjectService {
 	 * @return
 	 * @throws Exception
 	 */
-	public static int createProjectEntitiesFromDICOMFilesInUploadDirectory(File dicomUploadDirectory, String projectID, String sessionID, String username, String subjectID, String studyUID, String seriesUID) throws Exception
+	private static int createProjectEntitiesFromDICOMFilesInUploadDirectory(File dicomUploadDirectory, String projectID, String sessionID, String username, String subjectID, String studyUID, String seriesUID, boolean allFiles) throws Exception
 	{
 		int numberOfDICOMFiles = 0;
 		Collection<File> files = listDICOMFiles(dicomUploadDirectory);
@@ -346,27 +310,37 @@ public class UserProjectService {
 		for (File dicomFile : files) {
 			try {
 				log.info("File " + i++ + " : " +dicomFile.getName());
-				if (dicomFile.getName().endsWith(".xml"))
-				{
-					try {
-						if (AIMUtil.saveAIMAnnotation(dicomFile, projectID, sessionID, username))
-							log.warning("Error processing aim file:" + dicomFile.getName());
-					} catch (Exception x) {
-						log.warning("Error uploading file:" + dicomFile.getName() + ":" + x.getMessage());
+				if (!isDicomFile(dicomFile)) {
+					if (dicomFile.getName().endsWith(".xml"))
+					{
+						try {
+							if (AIMUtil.saveAIMAnnotation(dicomFile, projectID, sessionID, username))
+								log.warning("Error processing aim file:" + dicomFile.getName());
+						} catch (Exception x) {
+							log.warning("Error uploading file:" + dicomFile.getName() + ":" + x.getMessage());
+						}
+						dicomFile.delete();
+						continue;
 					}
-					dicomFile.delete();
-					continue;
+					else if ((allFiles || dicomFile.getName().endsWith(".nii")))
+					{
+						try {
+							DefaultEpadOperations.getInstance().createFile(username, projectID, subjectID, studyUID, seriesUID, dicomFile, null, null, sessionID);
+						} catch (Exception x) {
+							log.warning("Error uploading file:" + dicomFile.getName() + ":" + x.getMessage());
+						}
+						dicomFile.delete();
+						continue;
+					}
+					else
+					{
+						try {
+							log.warning("Deleting non-dicom file:" + dicomFile.getName());
+							dicomFile.delete();
+						} catch (Exception x) {log.warning("Error deleting", x);}						
+						continue;
+					}
 				}
-//				else if (DefaultEpadOperations.isImage(dicomFile) && seriesUID != null)
-//				{
-//					try {
-//						DefaultEpadOperations.getInstance().createFile(username, projectID, subjectID, studyUID, seriesUID, dicomFile, null, null, sessionID);
-//					} catch (Exception x) {
-//						log.warning("Error uploading file:" + dicomFile.getName() + ":" + x.getMessage());
-//					}
-//					dicomFile.delete();
-//					continue;
-//				}
 				projectOperations.updateUserTaskStatus(username, TaskStatus.TASK_ADD_TO_PROJECT, dicomUploadDirectory.getName(), "Files processed: " + i, null, null);
 				if (createProjectEntitiesFromDICOMFile(dicomFile, projectID, sessionID, username))
 					numberOfDICOMFiles++;
@@ -516,21 +490,14 @@ public class UserProjectService {
 	 * @param username
 	 */
 	public static void addSubjectAndStudyToProject(String subjectID, String subjectName, String studyUID, String studyDate, String projectID, String sessionID, String username) {
-		if (!EPADConfig.UseEPADUsersProjects) {
-			String xnatSubjectLabel = XNATUtil.subjectID2XNATSubjectLabel(subjectID);
-			XNATCreationOperations.createXNATSubject(projectID, xnatSubjectLabel, subjectName, sessionID);
-			XNATCreationOperations.createXNATDICOMStudyExperiment(projectID, xnatSubjectLabel, studyUID, sessionID);
-		} else {
-			try {
-				projectOperations.createSubject(username, subjectID, subjectName, null, null);
-				projectOperations.createStudy(username, studyUID, subjectID, "", getDate(studyDate));
-				log.info("Upload/Transfer: Adding Study:" +  studyUID + " Subject:" + subjectID + " to Project:" + projectID);
-				projectOperations.addStudyToProject(username, studyUID, subjectID, projectID);
-			} catch (Exception e) {
-				log.warning("Error creating subject/study in EPAD:", e);
-			}
+		try {
+			projectOperations.createSubject(username, subjectID, subjectName, null, null);
+			projectOperations.createStudy(username, studyUID, subjectID, "", getDate(studyDate));
+			log.info("Upload/Transfer: Adding Study:" +  studyUID + " Subject:" + subjectID + " to Project:" + projectID);
+			projectOperations.addStudyToProject(username, studyUID, subjectID, projectID);
+		} catch (Exception e) {
+			log.warning("Error creating subject/study in EPAD:", e);
 		}
-		
 	}
 	
 	private static Collection<File> listDICOMFiles(File dir)
@@ -560,12 +527,13 @@ public class UserProjectService {
 				{
 					files.addAll(listDICOMFiles(entry));
 				}
-				else if (!entry.getName().endsWith(".zip"))
+				else
 				{
-					try {
-						log.warning("Deleting non-dicom file:" + entry.getName());
-						entry.delete();
-					} catch (Exception x) {log.warning("Error deleting", x);}
+					files.add(entry);
+//					try {
+//						log.warning("Deleting non-dicom file:" + entry.getName());
+//						entry.delete();
+//					} catch (Exception x) {log.warning("Error deleting", x);}
 				}
 			}
 		}
@@ -605,7 +573,7 @@ public class UserProjectService {
 				"New password for ePAD@" + EPADConfig.xnatServer, 
 				"Hello " + user.getFirstName() + " " + user.getLastName() + ",\n\nYour new ePAD password is " + newPwd + "\n\nPlease login and reset your password.\n\nRegards\n\nePAD Team");
 		projectOperations.updateUser("admin", username,
-				null, null, null, newPwd, null, 
+				null, null, null, newPwd, null, null, 
 				new ArrayList<String>(), new ArrayList<String>());
 	}
 

@@ -1,0 +1,10 @@
+##
+## This file contains on line per plugin=templateName=HandlerName. Enter the class that implements PluginServetHandler
+## including the full package name. An example is below:
+##
+edu.stanford.epad.plugins.jjvector.JJFeatureVectorHandler=jjv-5=jjvector
+edu.stanford.epad.plugins.lesionseg.LesionSegPluginHandler=lseg-1=lesionseg
+edu.stanford.epad.plugins.tedseg.TedSegmentationHandler=ts-1=tedseg
+edu.stanford.epad.plugins.sampleplugin.SamplePluginHandler=smp-1=sampleplugin
+edu.stanford.epad.plugins.riesz.RieszPluginHandler=rsz-1=riesz
+## end-of-file ##

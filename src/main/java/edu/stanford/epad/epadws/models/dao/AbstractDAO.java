@@ -25,6 +25,7 @@ package edu.stanford.epad.epadws.models.dao;
 //USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import java.io.Serializable;
+import java.lang.reflect.Method;
 import java.util.Date;
 import java.util.List;
 
@@ -128,6 +129,28 @@ public abstract class AbstractDAO implements Serializable, Cloneable {
 		throws CloneNotSupportedException 
 	{ 
 		return super.clone(); 
+	}
+	
+	public Object _fieldValue(String field)
+	{
+		if (field == null || field.trim().length() == 0)
+			return field;
+		try
+		{
+			String methodName = "get" + field.substring(0,1).toUpperCase() + field.substring(1);
+			Method method = null;
+			try {
+				method = this.getClass().getMethod(methodName, (Class[])null);
+			} catch (Exception x) {
+				method = this.getClass().getMethod("is" + methodName.substring(3), (Class[])null);
+			}
+			return method.invoke(this, (Object[])null);
+		}
+		catch (Exception x)
+		{
+			log.warning("Error accessing field:" + field);
+		}
+		return field;
 	}
 	
 	@Override

@@ -33,9 +33,11 @@ import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADFileUtils;
 import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.epad.dtos.EPADMessage;
+import edu.stanford.epad.dtos.EPADPlugin;
 import edu.stanford.epad.dtos.EPADProject;
 import edu.stanford.epad.dtos.EPADSubject;
 import edu.stanford.epad.epadws.handlers.HandlerUtil;
@@ -46,6 +48,7 @@ import edu.stanford.epad.epadws.service.DefaultEpadProjectOperations;
 import edu.stanford.epad.epadws.service.DefaultWorkListOperations;
 import edu.stanford.epad.epadws.service.EpadProjectOperations;
 import edu.stanford.epad.epadws.service.EpadWorkListOperations;
+import edu.stanford.epad.epadws.service.PluginOperations;
 
 /**
  * @author martin
@@ -70,6 +73,7 @@ public class EPADPostHandler
 		String pathInfo = httpRequest.getPathInfo();
 		int statusCode;
 		File uploadedFile = null;
+		PluginOperations pluginOperations=PluginOperations.getInstance();
 		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
 		EpadWorkListOperations worklistOperations = DefaultWorkListOperations.getInstance();
 		EpadProjectOperations projectOperations = DefaultEpadProjectOperations.getInstance();
@@ -107,7 +111,8 @@ public class EPADPostHandler
 				int numberOfFiles = 0;
 				if (requestContentType != null && requestContentType.startsWith("multipart/form-data"))
 				{
-					paramData = HandlerUtil.parsePostedData(httpRequest, responseStream);
+					String uploadDir = EPADConfig.getEPADWebServerFileUploadDir() + "temp" + Long.toString(System.currentTimeMillis());
+					paramData = HandlerUtil.parsePostedData(uploadDir, httpRequest, responseStream);
 					for (String param: paramData.keySet())
 					{
 						if (paramData.get(param) instanceof File)
@@ -284,6 +289,7 @@ public class EPADPostHandler
 					String oldpassword = httpRequest.getParameter("oldpassword");
 					String enable = httpRequest.getParameter("enable");
 					String type = httpRequest.getParameter("type");
+					String colorpreference = httpRequest.getParameter("colorpreference");
 					//log.info(" email:" + email +" firstname:" + firstname + " lastname:" + lastname + " new password:" + password + " old password:" + oldpassword); 
 					String[] addPermissions = httpRequest.getParameterValues("addPermission");
 					String[] removePermissions = httpRequest.getParameterValues("removePermission");
@@ -291,7 +297,7 @@ public class EPADPostHandler
 						throw new Exception("BAD Request - all parameters are null");
 					if ("new".equals(type) && projectOperations.getUser(target_username) != null)
 						throw new Exception("User " +  target_username + " already exists");
-					epadOperations.createOrModifyUser(username, target_username, firstname, lastname, email, password, oldpassword, addPermissions, removePermissions);
+					epadOperations.createOrModifyUser(username, target_username, firstname, lastname, email, password, oldpassword, colorpreference, addPermissions, removePermissions);
 					if ("true".equalsIgnoreCase(enable))
 						epadOperations.enableUser(username, target_username);
 					else if ("false".equalsIgnoreCase(enable))
@@ -334,12 +340,44 @@ public class EPADPostHandler
 					Map<String, String> templateMap = HandlerUtil.getTemplateMap(UsersRouteTemplates.USER_WORKLIST, pathInfo);
 					String reader = HandlerUtil.getTemplateParameter(templateMap, "username");
 					String projectID = HandlerUtil.getTemplateParameter(templateMap, "projectID");
-					String workListID = HandlerUtil.getTemplateParameter(templateMap, "workListID");
+					String workListID = HandlerUtil.getTemplateParameter(templateMap, "worklistID");
 					String description = httpRequest.getParameter("description");
 					String dueDate = httpRequest.getParameter("dueDate");
 					worklistOperations.createWorkList(username, reader, workListID, description, null, getDate(dueDate));
 					statusCode = HttpServletResponse.SC_OK;
 				
+				} else if (HandlerUtil.matchesTemplate(PluginRouteTemplates.PLUGIN_LIST, pathInfo)) { //ML
+					String pluginId = httpRequest.getParameter("pluginId");
+					String name = httpRequest.getParameter("name");
+					String description = httpRequest.getParameter("description");
+					String javaclass = httpRequest.getParameter("class");
+					String enabled = httpRequest.getParameter("enabled");
+					String modality = httpRequest.getParameter("modality");
+					EPADPlugin plugin = pluginOperations.getPluginDescription(pluginId, username, sessionID);
+					if (plugin != null) {
+						throw new Exception("Plugin " + plugin.getPluginId() +  " already exists");
+					} else {
+						pluginOperations.createPlugin(username, pluginId, name, description, javaclass, enabled, modality, sessionID);
+						return HttpServletResponse.SC_OK;
+					}	
+					
+				} else if (HandlerUtil.matchesTemplate(PluginRouteTemplates.PLUGIN, pathInfo)) { //ML
+					PluginReference pluginReference = PluginReference.extract(PluginRouteTemplates.PLUGIN, pathInfo);
+					String name = httpRequest.getParameter("name");
+					String description = httpRequest.getParameter("description");
+					String javaclass = httpRequest.getParameter("class");
+					String enabled = httpRequest.getParameter("enabled");
+					String modality = httpRequest.getParameter("modality");
+
+					EPADPlugin plugin = pluginOperations.getPluginDescription(pluginReference.pluginID, username, sessionID);
+
+					if (plugin != null) {
+						throw new Exception("Plugin " + plugin.getPluginId() +  " already exists");
+					} else {
+						pluginOperations.createPlugin(username, pluginReference.pluginID, name, description, javaclass, enabled, modality, sessionID);
+						return HttpServletResponse.SC_OK;
+					}	
+
 				} else {
 					statusCode = HandlerUtil.badRequestJSONResponse(BAD_POST_MESSAGE + ":" + pathInfo, responseStream, log);
 				}		

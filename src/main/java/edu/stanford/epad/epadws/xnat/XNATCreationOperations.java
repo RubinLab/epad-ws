@@ -28,7 +28,6 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Properties;
 import java.util.Set;
 
@@ -41,15 +40,8 @@ import org.apache.commons.io.IOUtils;
 
 import edu.stanford.epad.common.dicom.DicomReader;
 import edu.stanford.epad.common.util.EPADLogger;
-import edu.stanford.epad.epadws.aim.AIMQueries;
-import edu.stanford.epad.epadws.aim.AIMSearchType;
 import edu.stanford.epad.epadws.aim.AIMUtil;
-import edu.stanford.epad.epadws.epaddb.EpadDatabase;
-import edu.stanford.epad.epadws.epaddb.EpadDatabaseOperations;
 import edu.stanford.epad.epadws.processing.events.EventTracker;
-import edu.stanford.epad.epadws.service.DefaultEpadProjectOperations;
-import edu.stanford.epad.epadws.service.EpadProjectOperations;
-import edu.stanford.hakan.aim3api.base.ImageAnnotation;
 
 /**
  * Methods for creating XNAT entities, such as projects, subjects, and experiments.

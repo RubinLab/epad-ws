@@ -1,5 +1,7 @@
 package edu.stanford.epad.epadws.aim.aimapi;
 
+import edu.stanford.hakan.aim4api.compability.aimv3.Person;
+
 //Copyright (c) 2013 The Board of Trustees of the Leland Stanford Junior University
 //All rights reserved.
 //
@@ -24,7 +26,6 @@ package edu.stanford.epad.epadws.aim.aimapi;
 //WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE 
 //USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-import edu.stanford.hakan.aim3api.base.Person;
 
 @SuppressWarnings("serial")
 public class Patient extends Person {
@@ -42,10 +43,6 @@ public class Patient extends Person {
 	}
 
 	public Patient(Person person) {
-		this(person.getName(), person.getId(), person.getSex(), person
-				.getBirthDate());
-	}
-	public Patient(edu.stanford.hakan.aim4api.compability.aimv3.Person person) {
 		this(person.getName(), person.getId(), person.getSex(), person
 				.getBirthDate());
 	}

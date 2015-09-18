@@ -139,7 +139,7 @@ public class XNATSyncHandler extends AbstractHandler
 			User user = projectOperations.getUser(xuser.login);
 			if (user == null)
 			{
-				user = projectOperations.createUser(username, xuser.login, xuser.firstname, xuser.lastname, xuser.email, password, new ArrayList<String>(), new ArrayList<String>());
+				user = projectOperations.createUser(username, xuser.login, xuser.firstname, xuser.lastname, xuser.email, password, null, new ArrayList<String>(), new ArrayList<String>());
 				// TODO: mail password to user
 				log.info("Created user:" + xuser.login + " password:" + password);
 				response = response + "\nCreated user: " + user.getUsername() + " password:" + password;
@@ -155,7 +155,7 @@ public class XNATSyncHandler extends AbstractHandler
 			{
 				try {
 					// Update password, but ignore errors
-					user = projectOperations.updateUser(username, xuser.login, null, null, xuser.email, password, "admin", new ArrayList<String>(), new ArrayList<String>());
+					user = projectOperations.updateUser(username, xuser.login, null, null, xuser.email, password, "admin", null, new ArrayList<String>(), new ArrayList<String>());
 					log.info("Updated admin password");
 				} catch (Exception x) {}
 			}

@@ -1,0 +1,1 @@
+These are scripts and jar files needed to call dcm4chee functions, they are kept here since the jars may not be directly accessible in a docker environment

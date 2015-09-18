@@ -113,6 +113,7 @@ public class UserController {
 											@RequestParam(value="email") String email,
 											@RequestParam(value="password") String password,
 											@RequestParam(value="oldpassword") String oldpassword,
+											@RequestParam(value="colorpreference") String colorpreference,
 											@RequestParam(value="addPermissions") String[] addPermissions,
 											@RequestParam(value="removePermissions") String[] removePermissions,
 											@RequestParam(value="enable") String enable,
@@ -121,7 +122,7 @@ public class UserController {
 		String sessionID = SessionService.getJSessionIDFromRequest(request);
 		String loggedInUser = SessionService.getUsernameForSession(sessionID);
 		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
-		epadOperations.createOrModifyUser(loggedInUser, username, firstname, lastname, email, password, oldpassword, addPermissions, removePermissions);
+		epadOperations.createOrModifyUser(loggedInUser, username, firstname, lastname, email, password, oldpassword, colorpreference, addPermissions, removePermissions);
 		if ("true".equalsIgnoreCase(enable))
 			epadOperations.enableUser(loggedInUser, username);
 		else if ("false".equalsIgnoreCase(enable))
