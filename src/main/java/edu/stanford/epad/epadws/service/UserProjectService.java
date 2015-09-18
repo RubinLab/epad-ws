@@ -338,6 +338,7 @@ public class UserProjectService {
 							log.warning("Deleting non-dicom file:" + dicomFile.getName());
 							dicomFile.delete();
 						} catch (Exception x) {log.warning("Error deleting", x);}						
+						continue;
 					}
 				}
 				projectOperations.updateUserTaskStatus(username, TaskStatus.TASK_ADD_TO_PROJECT, dicomUploadDirectory.getName(), "Files processed: " + i, null, null);

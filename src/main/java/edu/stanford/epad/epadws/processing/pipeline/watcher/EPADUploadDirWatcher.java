@@ -421,6 +421,7 @@ public class EPADUploadDirWatcher implements Runnable
 				}
 			}
 		} catch (Exception x) {
+			projectOperations.updateUserTaskStatus(username, TaskStatus.TASK_DCM4CHE_SEND, directory.getName(), "Error sending:" + x.getMessage(), null, new Date());
 			log.warning("Error in upload: sending " + directory.getAbsolutePath() + " to dcm4che");
 			EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
 			epadDatabaseOperations.insertEpadEvent(

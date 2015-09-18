@@ -705,7 +705,7 @@ public class AIMUtil
 				String xml = edu.stanford.hakan.aim4api.usage.AnnotationBuilder.convertToString(imageAnnotationColl);
 				if (xml == null || xml.trim().length() < 100)
 					throw new Exception("Error converting ImageAnnotationCollection to String");
-				log.info("Save annotation:" + imageAnnotationColl);
+				log.info("Save annotation:" + imageAnnotationColl.getUniqueIdentifier().getRoot());
 				if (imageAnnotationColl != null && projectID != null && username != null)
 				{
 					FrameReference frameReference = new FrameReference(projectID, patientID, studyID, seriesID, imageID, new Integer(frameNumber));
