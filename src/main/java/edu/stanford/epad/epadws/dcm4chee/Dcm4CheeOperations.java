@@ -25,10 +25,12 @@ package edu.stanford.epad.epadws.dcm4chee;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
 
 import org.apache.commons.io.IOUtils;
 
@@ -45,6 +47,93 @@ import edu.stanford.epad.common.util.EPADLogger;
 public class Dcm4CheeOperations
 {
 	private static EPADLogger log = EPADLogger.getInstance();
+	
+	static final String[] scriptFiles = {
+		"dcmsnd",
+		"dcmdeleteSeries",
+		"dcmdeleteStudy",
+		"twiddle.sh",
+	};
+	
+	static final String[] libFiles = {
+		"dcm4che-tool-dcmsnd-2.0.24.jar",
+		"dcm4che-core-2.0.24.jar",
+		"dcm4che-net-2.0.24.jar",
+		"slf4j-log4j12-1.6.1.jar",
+		"slf4j-api-1.6.1.jar",
+		"log4j-1.2.16.jar",
+		"commons-cli-1.2.jar",
+		"twiddle.jar",
+		"jbossall-client.jar",
+		"getopt.jar",
+		"jboss-jmx.jar",
+	};
+	
+	public static void checkScriptFiles()
+	{
+		try
+		{
+			File scriptDir = new File(EPADConfig.getEPADWebServerDICOMScriptsDir() + "bin/");
+			if (!scriptDir.exists())
+				scriptDir.mkdirs();
+			for (String scriptFile: scriptFiles)
+			{
+				File file = new File(scriptDir, scriptFile);
+				if (!file.exists()) {
+					InputStream in = null;
+					OutputStream out = null;
+					try {
+						in = new Dcm4CheeOperations().getClass().getClassLoader().getResourceAsStream("scripts/" + scriptFile);
+			            out = new FileOutputStream(file);
+	
+			            // Transfer bytes from in to out
+			            byte[] buf = new byte[1024];
+			            int len;
+			            while ((len = in.read(buf)) > 0)
+			            {
+			                    out.write(buf, 0, len);
+			            }
+					} catch (Exception x) {
+						
+					} finally {
+			            IOUtils.closeQuietly(in);
+			            IOUtils.closeQuietly(out);
+			            file.setExecutable(true);
+					}
+				}
+			}
+			File libDir = new File(EPADConfig.getEPADWebServerDICOMScriptsDir() + "lib/");
+			if (!libDir.exists())
+				libDir.mkdirs();
+			for (String libFile: libFiles)
+			{
+				File file = new File(libDir, libFile);
+				if (!file.exists()) {
+					InputStream in = null;
+					OutputStream out = null;
+					try {
+						in = new Dcm4CheeOperations().getClass().getClassLoader().getResourceAsStream("scripts/" + libFile);
+			            out = new FileOutputStream(file);
+	
+			            // Transfer bytes from in to out
+			            byte[] buf = new byte[1024];
+			            int len;
+			            while ((len = in.read(buf)) > 0)
+			            {
+			                    out.write(buf, 0, len);
+			            }
+					} catch (Exception x) {
+						
+					} finally {
+			            IOUtils.closeQuietly(in);
+			            IOUtils.closeQuietly(out);
+					}
+				}
+			}
+		} catch (Exception x) {
+			x.printStackTrace();
+		}
+	}
 
 	public static boolean dcmsnd(File inputDirFile, boolean throwException) throws Exception
 	{
@@ -77,7 +166,13 @@ public class Dcm4CheeOperations
 
 			String[] command = { "./dcmsnd", dicomServerTitleAndPort, dirPath };
 			ProcessBuilder processBuilder = new ProcessBuilder(command);
-			String dicomScriptsDir = EPADConfig.getEPADWebServerDICOMBinDir();
+			String dicomScriptsDir = EPADConfig.getEPADWebServerDICOMScriptsDir() + "bin/";
+			File script = new File(dicomScriptsDir, "dcmsnd");
+			if (!script.exists())
+				dicomScriptsDir = EPADConfig.getEPADWebServerDICOMBinDir();
+			script = new File(dicomScriptsDir, "dcmsnd");
+			// Java 6 - Runtime.getRuntime().exec("chmod u+x "+script.getAbsolutePath());
+			script.setExecutable(true);
 			processBuilder.directory(new File(dicomScriptsDir));
 			processBuilder.redirectErrorStream(true);
 			Process process = processBuilder.start();
@@ -144,8 +239,14 @@ public class Dcm4CheeOperations
 
 			String[] command = { "./dcmdeleteSeries", seriesPk, EPADConfig.xnatUploadProjectPassword };
 			ProcessBuilder processBuilder = new ProcessBuilder(command);
-			String myScriptsDirectory = EPADConfig.getEPADWebServerMyScriptsDir();
-			processBuilder.directory(new File(myScriptsDirectory));
+			String dicomScriptsDir = EPADConfig.getEPADWebServerDICOMScriptsDir() + "bin/";
+			File script = new File(dicomScriptsDir, "dcmdeleteSeries");
+			if (!script.exists())
+				dicomScriptsDir = EPADConfig.getEPADWebServerMyScriptsDir();
+			script = new File(dicomScriptsDir, "dcmdeleteSeries");
+			// Java 6 - Runtime.getRuntime().exec("chmod u+x "+script.getAbsolutePath());
+			script.setExecutable(true);
+			processBuilder.directory(new File(dicomScriptsDir));
 			processBuilder.redirectErrorStream(true);
 			Process process = processBuilder.start();
 			process.getOutputStream();
@@ -198,8 +299,14 @@ public class Dcm4CheeOperations
 			String[] command = { "./dcmdeleteStudy", studyUID };
 
 			ProcessBuilder pb = new ProcessBuilder(command);
-			String myScriptsBinDirectory = EPADConfig.getEPADWebServerMyScriptsDir();
-			pb.directory(new File(myScriptsBinDirectory));
+			String dicomScriptsDir = EPADConfig.getEPADWebServerDICOMScriptsDir() + "bin/";
+			File script = new File(dicomScriptsDir, "dcmdeleteStudy");
+			if (!script.exists())
+				dicomScriptsDir = EPADConfig.getEPADWebServerMyScriptsDir();
+			script = new File(dicomScriptsDir, "dcmdeleteStudy");
+			// Java 6 - Runtime.getRuntime().exec("chmod u+x "+script.getAbsolutePath());
+			script.setExecutable(true);
+			pb.directory(new File(dicomScriptsDir));
 
 			Process process = pb.start();
 			process.getOutputStream();

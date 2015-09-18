@@ -23,10 +23,13 @@
 //USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package edu.stanford.epad.epadws;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.net.BindException;
 import java.net.SocketException;
 import java.util.ArrayList;
@@ -61,6 +64,7 @@ import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADFileUtils;
 import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.epad.epadws.aim.AIMUtil;
+import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeOperations;
 import edu.stanford.epad.epadws.epaddb.EpadDatabase;
 import edu.stanford.epad.epadws.epaddb.EpadDatabaseOperations;
 import edu.stanford.epad.epadws.handlers.admin.ConvertAIM4Handler;
@@ -111,8 +115,11 @@ public class Main
 		Server server = null;
 
 		try {
-
-			int epadPort = EPADConfig.epadPort;
+			checkPropertiesFile();
+			checkResourcesFolders();
+			checkPluginsFile();
+			int	epadPort = EPADConfig.epadPort;
+			Dcm4CheeOperations.checkScriptFiles();
 			separateWebServicesApp = "true".equalsIgnoreCase(EPADConfig.getParamValue("SeparateWebServicesApp"));
 			if (!separateWebServicesApp) {
 				log.info("#####################################################");
@@ -163,6 +170,89 @@ public class Main
 		log.info("#####################################################");
 		log.info("################## Exit ePAD Web Service ###########");
 		log.info("#####################################################");
+	}
+
+	public static void checkPropertiesFile() {
+		String hostname = System.getenv("DOCKER_HOST");
+		if (hostname == null || hostname.length() == 0)
+			hostname = System.getenv("HOSTNAME");
+		if (hostname == null || hostname.length() == 0)
+			hostname = "localhost";
+		File propertiesFile = new File(System.getProperty("user.home") + "/DicomProxy/etc/", EPADConfig.configFileName);
+		if (!propertiesFile.exists()) {
+			BufferedReader reader = null;
+			InputStream is = null;
+			StringBuilder sb = new StringBuilder();
+			try {
+				is = EPADFileUtils.class.getClassLoader().getResourceAsStream(propertiesFile.getName());
+				reader = new BufferedReader(new InputStreamReader(is, "UTF8"));
+				String line = null;
+				while ((line = reader.readLine()) != null) {
+					sb.append(line);
+					sb.append("\n");
+				}
+			} catch (Exception x) {
+				log.warning("Error creating properties file", x);
+				return;
+			} finally {
+				if (reader != null)
+					IOUtils.closeQuietly(reader);
+				else if (is != null)
+					IOUtils.closeQuietly(is);
+			}
+			EPADFileUtils.write(propertiesFile, sb.toString().replace("_HOSTNAME_", hostname));
+		}
+	}
+	
+	
+	public static void checkPluginsFile() {
+		File pluginsFile = new File(EPADConfig.getEPADWebServerConfigFilePath());
+		if (!pluginsFile.exists()) {
+			BufferedReader reader = null;
+			InputStream is = null;
+			StringBuilder sb = new StringBuilder();
+			try {
+				is = EPADFileUtils.class.getClassLoader().getResourceAsStream(pluginsFile.getName());
+				reader = new BufferedReader(new InputStreamReader(is, "UTF8"));
+				String line = null;
+				while ((line = reader.readLine()) != null) {
+					sb.append(line);
+					sb.append("\n");
+				}
+			} catch (Exception x) {
+				log.warning("Error creating properties file", x);
+				return;
+			} finally {
+				if (reader != null)
+					IOUtils.closeQuietly(reader);
+				else if (is != null)
+					IOUtils.closeQuietly(is);
+			}
+			EPADFileUtils.write(pluginsFile, sb.toString());
+		}
+	}
+
+	public static void checkResourcesFolders() {
+		File folder = new File(EPADConfig.getEPADWebServerBaseDir() + "bin/");
+		if (!folder.exists()) folder.mkdirs();
+		folder = new File(EPADConfig.getEPADWebServerBaseDir() + "tmp/");
+		if (!folder.exists()) folder.mkdirs();
+		folder = new File(EPADConfig.getEPADWebServerResourcesDir());
+		if (!folder.exists()) folder.mkdirs();
+		folder = new File(EPADConfig.getEPADWebServerEtcDir());
+		if (!folder.exists()) folder.mkdirs();
+		folder = new File(EPADConfig.getEPADWebServerDICOMScriptsDir());
+		if (!folder.exists()) folder.mkdirs();
+		folder = new File(EPADConfig.getEPADWebServerUploadDir());
+		if (!folder.exists()) folder.mkdirs();
+		folder = new File(EPADConfig.getEPADWebServerFileUploadDir());
+		if (!folder.exists()) folder.mkdirs();
+		folder = new File(EPADConfig.getEPADWebServerAnnotationsDir());
+		if (!folder.exists()) folder.mkdirs();
+		folder = new File(EPADConfig.getEPADWebServerAnnotationsUploadDir());
+		if (!folder.exists()) folder.mkdirs();
+		folder = new File(EPADConfig.getEPADWebServerSchemaDir());
+		if (!folder.exists()) folder.mkdirs();
 	}
 
 	private static void configureJettyServer(Server server)
@@ -256,7 +346,16 @@ public class Main
 
 		String webAppPath = EPADConfig.getEPADWebServerWebappsDir() + "ePad.war";
 		if (!new File(webAppPath).exists())
+		{
 			webAppPath = EPADConfig.getEPADWebServerWebappsDir() + "epad-1.1.war";
+		}
+		if (!new File(webAppPath).exists())
+		{
+			// For docker
+			webAppPath = System.getProperty("user.home") + "/epad/webapps/" + "ePad.war";
+			if (!new File(webAppPath).exists())
+				throw new RuntimeException("ePad.war not found");
+		}
 		addWebAppAtContextPath(handlerList, webAppPath, "/epad");
 
 		addHandlerAtContextPath(new ResourceCheckHandler(), "/epad/resources", handlerList);

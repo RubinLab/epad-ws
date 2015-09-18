@@ -228,7 +228,8 @@ public class CoordinationHandler extends AbstractHandler
 
 	private String getTermIDPrefix()
 	{
-		String serverPrefix = EPADConfig.coordinationTermPrefix;
+		String serverPrefix = null;
+		//String serverPrefix = EPADConfig.coordinationTermPrefix;
 
 		if (serverPrefix == null)
 			serverPrefix = SERVER_DEFAULT_PREFIX;

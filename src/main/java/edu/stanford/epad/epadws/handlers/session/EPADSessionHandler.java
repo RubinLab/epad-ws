@@ -124,12 +124,17 @@ public class EPADSessionHandler extends AbstractHandler
 						httpResponse.setContentType("text/plain");
 						PrintWriter responseStream = httpResponse.getWriter();
 						responseStream.append(jsessionID);
-						if ("true".equalsIgnoreCase(EPADConfig.getParamValue("SeparateWebServicesApp")))
+						if ("true".equalsIgnoreCase(EPADConfig.getParamValue("SeparateWebServicesApp")) 
+								|| "true".equals(httpRequest.getParameter("setCookies")))
 						{
+				            Cookie userName = new Cookie(LOGGEDINUSER_COOKIE, username);
+				            userName.setMaxAge(8*3600);
+				            userName.setPath(httpRequest.getContextPath().replace("session/", "").replace("session", ""));
+				            httpResponse.addCookie(userName);
 							log.info("Setting JSESSIONID Cookie");
 				            Cookie sessionCookie = new Cookie(JSESSIONID_COOKIE, jsessionID);
 				            sessionCookie.setMaxAge(8*3600);
-				            sessionCookie.setPath(httpRequest.getContextPath());
+				            sessionCookie.setPath(httpRequest.getContextPath().replace("session/", "").replace("session", ""));
 				            httpResponse.addCookie(sessionCookie);
 //							httpResponse.addHeader("Set-Cookie", "JSESSIONID=" + jsessionID);
 						}
