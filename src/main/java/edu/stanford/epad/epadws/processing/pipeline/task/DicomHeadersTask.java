@@ -65,7 +65,13 @@ public class DicomHeadersTask implements Runnable
 		try {
 			String[] command = { "./dcm2txt", "-w", "250", "-l", "250", dicomInputFile.getAbsolutePath() };
 			ProcessBuilder processBuilder = new ProcessBuilder(command);
-			String dicomBinDir = EPADConfig.getEPADWebServerDICOMBinDir();
+			String dicomBinDir = EPADConfig.getEPADWebServerDICOMScriptsDir() + "bin/";
+			File script = new File(dicomBinDir, "dcm2txt");
+			if (!script.exists())
+				dicomBinDir = EPADConfig.getEPADWebServerDICOMBinDir();
+			script = new File(dicomBinDir, "dcm2txt");
+			// Java 6 - Runtime.getRuntime().exec("chmod u+x "+script.getAbsolutePath());
+			script.setExecutable(true);
 
 			processBuilder.directory(new File(dicomBinDir));
 			process = processBuilder.start();

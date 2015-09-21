@@ -53,10 +53,12 @@ public class Dcm4CheeOperations
 		"dcmdeleteSeries",
 		"dcmdeleteStudy",
 		"twiddle.sh",
+		"dcm2txt",
 	};
 	
 	static final String[] libFiles = {
 		"dcm4che-tool-dcmsnd-2.0.24.jar",
+		"dcm4che-tool-dcm2txt-2.0.24.jar",
 		"dcm4che-core-2.0.24.jar",
 		"dcm4che-net-2.0.24.jar",
 		"slf4j-log4j12-1.6.1.jar",

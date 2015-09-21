@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TemplateContainer uid="2.25.1210608360076.368016275498.58943005335" name="ROI Only Template" authors="The AIM team" version="1" creationDate="2012-06-10" description="This template is used to collect ROI only from readers." xsi:schemaLocation="gme://caCORE.caCORE/3.2/edu.northwestern.radiology.AIMTemplate AIMTemplate_v2rv13.xsd" xmlns="gme://caCORE.caCORE/3.2/edu.northwestern.radiology.AIMTemplate" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+   <Template uid="2.25.158009446295858919844005670982612161979" name="ROIOnly" authors="amsnyder" version="1.1" creationDate="2011-11-16" description="Template used for collecting only ROIs" codeMeaning="ROI Only" codeValue="ROI" codingSchemeDesignator="RECIST" codingSchemeVersion="1.0">
+      <Component label="Geomtric shape" itemNumber="0" authors="Daniel Rubin" explanatoryText="plugin geometric shape correction" minCardinality="1" maxCardinality="1" shouldDisplay="true" groupLabel="" id="2.25.1210608360247.368016275669.58943005348">
+         <GeometricShape>AnyShape</GeometricShape>
+      </Component>
+   </Template>
+</TemplateContainer>

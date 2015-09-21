@@ -1767,40 +1767,20 @@ public class AIMUtil
 	
 	public static void updateTableNameColumn(List<EPADAIM> aims)
 	{
-		long starttime = System.currentTimeMillis();
-		HashMap<String, String> searchValueByProject = new HashMap<String, String>();
-		Set<String> aimIDs = new HashSet<String>();
+		EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
 		for (EPADAIM aim: aims)
 		{
-			String projectID = aim.projectID;
-			if (projectID == null || projectID.trim().length() == 0) continue;
-				
-			String searchValue = searchValueByProject.get(projectID);
-			if (searchValue == null)
-				searchValue = aim.aimID;
-			else
-				searchValue = searchValue + "," + aim.aimID;
-			searchValueByProject.put(projectID, searchValue);
-			aimIDs.add(aim.aimID);
-		}
-		
-		EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
-		for(String projectID: searchValueByProject.keySet())
-		{
-			List<ImageAnnotationCollection> paims = AIMQueries.getAIMImageAnnotationsV4(projectID, AIMSearchType.ANNOTATION_UID, searchValueByProject.get(projectID), "admin");
-			log.info("" + paims.size() + " AIM4 file(s) found for project:" + projectID);
-			boolean mongoErr = false;
-			for (ImageAnnotationCollection aim: paims)
-			{
-				aimIDs.remove(aim.getUniqueIdentifier().getRoot());
-				try {
-					EPADAIM epadAim = epadDatabaseOperations.updateAIMName(aim.getUniqueIdentifier().getRoot(), aim.getImageAnnotation().getName().getValue());
-				} catch (Exception e) {
-					log.warning("Error updating AIM Table Name", e);
-				}
+			if (aim.xml == null || aim.xml.trim().length() == 0) continue;
+			try {
+				List<ImageAnnotationCollection> iacs = edu.stanford.hakan.aim4api.usage.AnnotationGetter.getImageAnnotationCollectionsFromString(aim.xml, null);
+				if (iacs.size() == 0) continue;
+				ImageAnnotationCollection iac = iacs.get(0);
+				EPADAIM epadAim = epadDatabaseOperations.updateAIMName(iac.getUniqueIdentifier().getRoot(), iac.getImageAnnotation().getName().getValue());
+			} catch (Exception e) {
+				log.warning("Error updating AIM Table Name", e);
 			}
 		}
-	}	
+	}
 
 	public static void updateMongDB(List<EPADAIM> aims)
 	{
@@ -1890,6 +1870,56 @@ public class AIMUtil
 				OutputStream out = null;
 				try {
 					in = new AIMUtil().getClass().getClassLoader().getResourceAsStream("schema/" + schemaFile);
+		            out = new FileOutputStream(file);
+
+		            // Transfer bytes from in to out
+		            byte[] buf = new byte[1024];
+		            int len;
+		            while ((len = in.read(buf)) > 0)
+		            {
+		                    out.write(buf, 0, len);
+		            }
+				} catch (Exception x) {
+					
+				} finally {
+		            IOUtils.closeQuietly(in);
+		            IOUtils.closeQuietly(out);
+				}
+			}
+		}
+	}
+	
+	static final String[] TEMPLATE_FILES = {
+		"ATS_Template.xml",
+		"Closed_Shape_Only.xml",
+		"Line_Only.xml",
+		"LungMin.xml",
+		"LungNoduleTemplate.xml",
+		"MB_template.xml",
+		"plugin-lesionseg.xml",
+		"plugin-riesz.xml",
+		"plugin-sampleplugin.xml",
+		"plugin-tedseg.xml",
+		"plugin_jjvec.xml",
+		"RECIST.xml",
+		"ROI-Only_Template.xml",
+		"SEG-Only_Template.xml",
+		"Shape_Only.xml",		
+	};
+	
+	public static void checkTemplateFiles()
+	{
+		File dir = new File(EPADConfig.getEPADWebServerTemplatesDir());
+		if (!dir.exists())
+			dir.mkdirs();
+		for (String templateFile: TEMPLATE_FILES)
+		{
+			File file = new File(EPADConfig.getEPADWebServerTemplatesDir() + templateFile);
+			if (!file.exists()) {
+				InputStream in = null;
+				OutputStream out = null;
+				try {
+					in = new AIMUtil().getClass().getClassLoader().getResourceAsStream("templates/" + templateFile);
 		            out = new FileOutputStream(file);
 
 		            // Transfer bytes from in to out

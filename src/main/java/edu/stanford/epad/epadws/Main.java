@@ -314,6 +314,7 @@ public class Main
 				}
 			}
 			AIMUtil.checkSchemaFiles();
+			AIMUtil.checkTemplateFiles();
 		} catch (Exception e) {
 			log.warning("Failed to start database", e);
 			System.exit(1);
