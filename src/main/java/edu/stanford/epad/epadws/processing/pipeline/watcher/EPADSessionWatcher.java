@@ -80,9 +80,9 @@ public class EPADSessionWatcher implements Runnable
 				
 				// Clear cache once a day
 				Calendar now = Calendar.getInstance();
-				if (now.get(Calendar.HOUR_OF_DAY) == 0 && prevTime != null && prevTime.get(Calendar.HOUR_OF_DAY) != 0)
+				if (prevTime == null || (now.get(Calendar.HOUR_OF_DAY) == 0 && prevTime != null && prevTime.get(Calendar.HOUR_OF_DAY) != 0))
 				{
-					if (UserProjectService.pendingPNGs.isEmpty() && RemotePACService.pendingTransfers.isEmpty())
+					if (projectOperations.getCacheSize() > 1000 && UserProjectService.pendingPNGs.isEmpty() && RemotePACService.pendingTransfers.isEmpty())
 						projectOperations.clearCache();
 					epadDatabaseOperations.deleteOldEvents();
 					try {

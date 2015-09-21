@@ -54,6 +54,7 @@ public interface EpadProjectOperations {
 	 * 
 	 */
 	void clearCache();
+	int getCacheSize();
 	
 	/**
 	 * Creates a project record in database
