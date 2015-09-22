@@ -213,6 +213,7 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		String hashedPW = BCrypt.hashpw(password, BCrypt.gensalt());
 		//log.info("Password:" + password + " hash:" + hashedPW);
 		user.setPassword(hashedPW);
+		user.setColorpreference(colorpreference);
 		String[] defaultPerms = EPADConfig.getParamValue("DefaultUserPermissions", User.CreateProjectPermission).split(",");
 		Set<String> perms = new HashSet<String>();
 		for (String perm: defaultPerms)
@@ -272,6 +273,8 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 			else
 				throw new Exception("Invalid old password");
 		}
+		if (colorpreference != null)
+			user.setColorpreference(colorpreference);
 		String[] oldPerms = user.getPermissions().split(",");
 		Set<String> perms = new HashSet<String>();
 		for (String perm: oldPerms)
