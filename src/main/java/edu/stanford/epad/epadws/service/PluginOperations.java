@@ -1,40 +1,21 @@
 package edu.stanford.epad.epadws.service;
 
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.ResultSet;
-import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADLogger;
-import edu.stanford.epad.dtos.EPADAIMList;
 import edu.stanford.epad.dtos.EPADPlugin;
 import edu.stanford.epad.dtos.EPADPluginList;
 import edu.stanford.epad.dtos.EPADPluginParameter;
 import edu.stanford.epad.dtos.EPADPluginParameterList;
-import edu.stanford.epad.dtos.EPADProject;
-import edu.stanford.epad.dtos.EPADProjectList;
-import edu.stanford.epad.dtos.EPADSubject;
-import edu.stanford.epad.epadws.handlers.core.EPADSearchFilter;
-import edu.stanford.epad.epadws.handlers.core.PluginReference;
-import edu.stanford.epad.epadws.handlers.core.StudyReference;
 import edu.stanford.epad.epadws.models.Plugin;
 import edu.stanford.epad.epadws.models.Project;
 import edu.stanford.epad.epadws.models.ProjectToPlugin;
 import edu.stanford.epad.epadws.models.ProjectToPluginParameter;
-import edu.stanford.epad.epadws.models.ProjectToSubject;
-import edu.stanford.epad.epadws.models.ProjectType;
-import edu.stanford.epad.epadws.models.Study;
-import edu.stanford.epad.epadws.models.Subject;
 import edu.stanford.epad.epadws.models.User;
-import edu.stanford.epad.epadws.queries.Dcm4CheeQueries;
-import edu.stanford.epad.epadws.queries.DefaultEpadOperations;
-import edu.stanford.epad.epadws.queries.EpadOperations;
 
 /**
  * All PlugIn related operations
@@ -376,7 +357,7 @@ public class PluginOperations {
 		plugin.delete();
 	}
 
-	public void addParameters(String loggedInUser,String projectId, String pluginId, String[] paramNames, String[] paramValues) throws Exception {
+	public boolean addParameters(String loggedInUser,String projectId, String pluginId, String[] paramNames, String[] paramValues) throws Exception {
 		//if the project is not unassigned, get the global parameter list
 		//change default values for the defined parameters
 		//keep global defaults for undefined ones
@@ -390,6 +371,7 @@ public class PluginOperations {
 			for (EPADPluginParameter param : globalParams.getResult()) {  
 				if (params.containsKey(param.getName())) {
 					setParameter(loggedInUser, projectId, pluginId, param.getName(), params.get(param.getName()));
+					params.put(param.getName(),"");
 					log.info("existing param name:" + param.getName() + " value " + params.get(param.getName()));
 				} else {
 					setParameter(loggedInUser, projectId, pluginId, param.getName(), param.getDefaultValue());
@@ -398,6 +380,16 @@ public class PluginOperations {
 				}
 					
 			}
+			//params'ta olup global'de olmayan icin hata
+			for (String paramName:params.keySet()) {
+				if (params.get(paramName)!="")  {
+					setParameter(loggedInUser, projectId, pluginId, paramName, params.get(paramName));
+					params.put(paramName,"");
+					log.info("existing param name:" + paramName + " value " + params.get(paramName));
+				}
+					
+			}
+			
 			
 		}
 		else {
@@ -405,6 +397,7 @@ public class PluginOperations {
 				setParameter(loggedInUser, projectId, pluginId, paramNames[i], paramValues[i]);
 			}
 		}
+		return true;
 	}
 	public void setParameter(String loggedInUser,String projectId, String pluginId, String paramName, String defaultValue) throws Exception {
 		User user=null;
