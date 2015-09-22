@@ -723,8 +723,9 @@ public class EPADPutHandler
 							
 				String[] paramNames = httpRequest.getParameterValues("param");
 				String[] paramValues = httpRequest.getParameterValues("val");
-				pluginOperations.addParameters(username,reference.projectId,reference.pluginId,paramNames,paramValues);
-					
+				boolean isSuccess=pluginOperations.addParameters(username,reference.projectId,reference.pluginId,paramNames,paramValues);
+				if (!isSuccess)
+					throw new Exception();
 				return HttpServletResponse.SC_OK;
 
 			} else {
