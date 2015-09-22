@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TemplateContainer uid="2.25.5193259402551450531352562958658288953" name="PluginTemplates" authors="amsnyder" version="1.0" creationDate="2012-09-12" description="All plugin templates can be part of this group" xsi:schemaLocation="gme://caCORE.caCORE/3.2/edu.northwestern.radiology.AIMTemplate AIMTemplate_v2rv13.xsd" xmlns="gme://caCORE.caCORE/3.2/edu.northwestern.radiology.AIMTemplate" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+   <Template uid="2.25.258597517650928293815232867485061902211" name="lesionseg" authors="lamping" version="1.1" creationDate="2014-10-03" description="Template used to start Lesion Segmentation plugin." codingSchemeVersion="1.0" codingSchemeDesignator="LSEG" codeMeaning="epad-plugin" codeValue="lseg-1">
+  <Component label="Geomtric shape" itemNumber="0" authors="Daniel Rubin" explanatoryText="plugin geometric shape correction" minCardinality="1" maxCardinality="1" shouldDisplay="true" groupLabel="" id="2.25.7139485201281.2147918892020.145090474711">
+         <GeometricShape>AnyShape</GeometricShape>
+      </Component>
+   </Template>
+</TemplateContainer>

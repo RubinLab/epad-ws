@@ -222,7 +222,7 @@ public class DefaultEpadOperations implements EpadOperations
 
 	@Override
 	public EPADSubjectList getSubjectDescriptions(String projectID, String username, String sessionID,
-			EPADSearchFilter searchFilter, int start, int count, String sortField) throws Exception
+			EPADSearchFilter searchFilter, int start, int count, String sortField, boolean annotationCount) throws Exception
 	{
 		EPADSubjectList epadSubjectList = new EPADSubjectList();
 		List<Subject> subjects = projectOperations.getSubjectsForProject(projectID);
@@ -230,7 +230,6 @@ public class DefaultEpadOperations implements EpadOperations
 		{
 			subjects = subjects.subList(start, start+count);
 		}
-		boolean annotationCount = true;
 		if (EPADConfig.xnatUploadProjectID.equals(projectID))
 		{
 			annotationCount = false;

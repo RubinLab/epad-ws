@@ -118,6 +118,7 @@ public class Main
 			checkPropertiesFile();
 			checkResourcesFolders();
 			checkPluginsFile();
+			RemotePACService.checkPropertiesFile();
 			int	epadPort = EPADConfig.epadPort;
 			Dcm4CheeOperations.checkScriptFiles();
 			separateWebServicesApp = "true".equalsIgnoreCase(EPADConfig.getParamValue("SeparateWebServicesApp"));
@@ -192,7 +193,7 @@ public class Main
 					sb.append("\n");
 				}
 			} catch (Exception x) {
-				log.warning("Error creating properties file", x);
+				log.warning("Error creating epad properties file", x);
 				return;
 			} finally {
 				if (reader != null)
@@ -206,7 +207,7 @@ public class Main
 	
 	
 	public static void checkPluginsFile() {
-		File pluginsFile = new File(EPADConfig.getEPADWebServerConfigFilePath());
+		File pluginsFile = new File(EPADConfig.getEPADWebServerPluginConfigFilePath());
 		if (!pluginsFile.exists()) {
 			BufferedReader reader = null;
 			InputStream is = null;
@@ -220,7 +221,7 @@ public class Main
 					sb.append("\n");
 				}
 			} catch (Exception x) {
-				log.warning("Error creating properties file", x);
+				log.warning("Error creating plugin config file", x);
 				return;
 			} finally {
 				if (reader != null)
@@ -312,8 +313,8 @@ public class Main
 					log.warning("Error syncing XNAT data", x);
 				}
 			}
-			RemotePACService.checkPropertiesFile();
 			AIMUtil.checkSchemaFiles();
+			AIMUtil.checkTemplateFiles();
 		} catch (Exception e) {
 			log.warning("Failed to start database", e);
 			System.exit(1);

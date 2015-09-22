@@ -101,6 +101,11 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		subjectCache = new HashMap<String, Subject>();
 	}
 	
+	@Override
+	public int getCacheSize() {
+		return projectCache.keySet().size() +  userCache.keySet().size() +  subjectCache.keySet().size();
+	}
+
 	public static Collection<User> getUserCache() {
 		return userCache.values();
 	}
