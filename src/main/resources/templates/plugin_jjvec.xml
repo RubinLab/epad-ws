@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TemplateContainer uid="2.25.95647767070087509044226707222742307314" name="PluginTemplates" authors="amsnyder" version="1.0" creationDate="2012-09-12" description="All plugin templates can be part of this group" xsi:schemaLocation="gme://caCORE.caCORE/3.2/edu.northwestern.radiology.AIMTemplate AIMTemplate_v2rv13.xsd" xmlns="gme://caCORE.caCORE/3.2/edu.northwestern.radiology.AIMTemplate" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+   <Template uid="2.25.258597517650928293815232867485061902171" name="jjvector_valid" authors="amsnyder" version="1.0" creationDate="2012-09-12" description="Template used to start the jjvector plugin." codingSchemeVersion="1.0" codeMeaning="epad-plugin" codeValue="jjv-5" codingSchemeDesignator="JJV">
+      <Component label="Organ Type" itemNumber="0" authors="amsnyder" explanatoryText="Choose the type of organ included in the annotation." minCardinality="1" maxCardinality="1" shouldDisplay="true" groupLabel="" id="2.25.5618464440514.1680376201451.172294938674">
+         <AnatomicEntity annotatorConfidence="false"/>
+         <AllowedTerm codeValue="jjv-1" codeMeaning="Lung CT" codingSchemeDesignator="JJV" codingSchemeVersion="1.0"/>
+         <AllowedTerm codeValue="jjv-2" codeMeaning="Liver CT" codingSchemeDesignator="JJV" codingSchemeVersion="1.0"/>
+         <AllowedTerm codeValue="jjv-3" codeMeaning="Breast MRI" codingSchemeDesignator="JJV" codingSchemeVersion="1.0"/>
+         <AllowedTerm codeValue="jjv-4" codeMeaning="Bone X-ray" codingSchemeDesignator="JJV" codingSchemeVersion="1.0"/>
+      </Component>
+      <Component label="plugin-jjvector" itemNumber="0" authors="amsnyder" explanatoryText="This name is intended to launch the plugin/jjvector" minCardinality="0" maxCardinality="0" shouldDisplay="false" groupLabel="" id="2.25.5618464441245.1680376202182.172294938712">
+         <Calculation>
+            <CalculationType codeValue="jjv-5" codeMeaning="plugin-jjvector" codingSchemeDesignator="JJV" codingSchemeVersion="1.0"/>
+         </Calculation>
+      </Component>
+   </Template>
+</TemplateContainer>

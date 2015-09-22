@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TemplateContainer uid="2.25.337556874681139113330101024002998942599" name="Any Closed Shape Container" authors="The AIM team" version="1" creationDate="2014-10-10" description="This template is used to collect ROI Line only from readers." xsi:schemaLocation="http://epad-public.stanford.edu/epad/DicomProxy/resources/schema/AIMTemplate_v2rvStanford.xsd" xmlns="gme://caCORE.caCORE/3.2/edu.northwestern.radiology.AIMTemplate" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+   <Template uid="2.25.158009446295858919844005670982612161979.3" name="Any Closed Shape TemplateAny " authors="Daniel Rubin" version="1.1" creationDate="2014-10-24" description="Template used for collecting only ROIs" codingSchemeVersion="1.0" codingSchemeDesignator="RECIST" codeMeaning="Any_Closed_Shape" codeValue="AnyClosedShape">
+      <Component label="Closed shape" itemNumber="0" authors="Daniel Rubin" explanatoryText="Draw a shape" minCardinality="1" maxCardinality="1" shouldDisplay="true" groupLabel="" id="2.25.7139485201281.2147918892020.145090474711">
+         <GeometricShape>AnyShape</GeometricShape>
+      </Component>
+   </Template>
+</TemplateContainer>

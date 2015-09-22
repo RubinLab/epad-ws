@@ -2053,9 +2053,9 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
                 stmt = dbCon.createStatement();
             else
                 stmt = dbCon.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
-            String sql = "SELECT * FROM "  + dbTable + " " + criteria;
+            String sql = "SELECT * FROM "  + dbTable + " a " + criteria;
             if (distinct)
-            	sql = "SELECT DISTINCT * FROM "  + dbTable + " " + criteria;
+            	sql = "SELECT DISTINCT * FROM "  + dbTable + " a " + criteria;
             if (maxRecords <= 0)
             	maxRecords = 5000;
             if (startRecord > 0)

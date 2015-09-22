@@ -14,6 +14,7 @@ import org.springframework.web.context.support.WebApplicationContextUtils;
 
 import edu.stanford.epad.epadws.Main;
 import edu.stanford.epad.epadws.handlers.admin.ServerStatusHandler;
+import edu.stanford.epad.epadws.service.RemotePACService;
 
 /**
  * <p>StartupListener class used to initialize stuff at Startup (including Spring Context).
@@ -52,6 +53,7 @@ public class StartupListener extends ContextLoaderListener
     	Main.checkPropertiesFile();
     	Main.checkResourcesFolders();
     	Main.checkPluginsFile();
+		RemotePACService.checkPropertiesFile();
 		Main.initializePlugins();
 		Main.loadPluginClasses();
 		Main.startSupportThreads();

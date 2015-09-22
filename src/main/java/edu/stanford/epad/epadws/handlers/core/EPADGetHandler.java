@@ -163,12 +163,35 @@ public class EPADGetHandler
 				ProjectReference projectReference = ProjectReference.extract(ProjectsRouteTemplates.SUBJECT_LIST, pathInfo);
 				String sortField = httpRequest.getParameter("sortField");
 				boolean unassignedOnly = "true".equalsIgnoreCase(httpRequest.getParameter("unassignedOnly"));
+				boolean annotationCount = true;
+				if ("false".equalsIgnoreCase(httpRequest.getParameter("annotationCount")))
+					annotationCount = false;
+				boolean annotationCountOnly = false;
+				if ("true".equalsIgnoreCase(httpRequest.getParameter("annotationCountOnly")))
+				{
+					annotationCountOnly = true;
+					annotationCount = true;
+				}
 				EPADSubjectList subjectList = null;
 				if (projectReference.projectID.equalsIgnoreCase(EPADConfig.getParamValue("UnassignedProjectID", "nonassigned")) || (projectReference.projectID.equals(EPADConfig.xnatUploadProjectID) && unassignedOnly))
 					subjectList = epadOperations.getUnassignedSubjectDescriptions(username, sessionID, searchFilter);
 				else
 					subjectList = epadOperations.getSubjectDescriptions(projectReference.projectID, username,
-						sessionID, searchFilter, start, count, sortField);
+						sessionID, searchFilter, start, count, sortField, annotationCount);
+				if (annotationCountOnly) // What a stupid request!
+				{
+					for (EPADSubject subject: subjectList.ResultSet.Result)
+					{
+						subject.examTypes = null;
+						subject.insertDate = null;
+						subject.insertUser = null;
+						subject.subjectName = null;
+						subject.projectID = null;
+						subject.uri = null;
+						subject.xnatID = null;
+						subject.numberOfStudies = null;
+					}
+				}
 				long endtime = System.currentTimeMillis();
 				log.info("Returning " + subjectList.ResultSet.totalRecords + " subjects to client, took " + (endtime-starttime) + " msecs");
 				responseStream.append(subjectList.toJSON());
@@ -1623,7 +1646,10 @@ public class EPADGetHandler
 			} else if (HandlerUtil.matchesTemplate(EPADsRouteTemplates.EPAD_USAGE, pathInfo)) {
 				Map<String, String> templateMap = HandlerUtil.getTemplateMap(EPADsRouteTemplates.EPAD_USAGE, pathInfo);
 				String hostname = HandlerUtil.getTemplateParameter(templateMap, "hostname");
-				List<EpadStatistics> stats = new EpadStatistics().getObjects("host like '" + hostname + "%' order by createdtime desc");
+				String sql = "host like '" + hostname.replace('*', '%') + "%' order by createdtime desc";
+				boolean all = "true".equalsIgnoreCase(httpRequest.getParameter("all"));
+				if (!all) sql = "host like '" + hostname.replace('*', '%') + "%' and createdtime =(select max(createdtime) from epadstatistics b where b.host = a.host)";
+				List<EpadStatistics> stats = new EpadStatistics().getObjects(sql);
 				EPADUsageList eul = new EPADUsageList();
 				for (EpadStatistics stat: stats)
 				{
