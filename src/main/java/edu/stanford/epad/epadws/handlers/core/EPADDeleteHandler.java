@@ -150,7 +150,7 @@ public class EPADDeleteHandler
 				
 			} else if (HandlerUtil.matchesTemplate(UsersRouteTemplates.USER_WORKLIST, pathInfo)) {
 				Map<String, String> templateMap = HandlerUtil.getTemplateMap(UsersRouteTemplates.USER_WORKLIST, pathInfo);
-				String workListID = HandlerUtil.getTemplateParameter(templateMap, "workListID");
+				String workListID = HandlerUtil.getTemplateParameter(templateMap, "worklistID");
 				String reader = HandlerUtil.getTemplateParameter(templateMap, "username");
 				WorkList wl = worklistOperations.getWorkList(workListID);
 				if (wl == null)
