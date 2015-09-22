@@ -189,7 +189,7 @@ public class EPADGetHandler
 						subject.projectID = null;
 						subject.uri = null;
 						subject.xnatID = null;
-						subject.numberOfStudies = 0;
+						subject.numberOfStudies = null;
 					}
 				}
 				long endtime = System.currentTimeMillis();
