@@ -191,6 +191,7 @@ public class PluginOperations {
 		}
 		}
 
+
 		return epadPluginList;
 	}
 	
@@ -217,32 +218,27 @@ public class PluginOperations {
 		Plugin plugin=getPlugin(pluginId);
 
 		if (plugin==null) return null;
-		EPADPlugin epadPlugin = plugin2EPADPluginProject(plugin,null,false);
+		Project globalProject=projectOperations.getProject(EPADConfig.xnatUploadProjectID);
+		EPADPlugin epadPlugin = plugin2EPADPluginProject(plugin,globalProject,false);
 		return epadPlugin;
 	}
 	
-//	private EPADPlugin plugin2EPADPlugin(Plugin plugin,Boolean returnSummary) throws Exception
-//	{
-//		if (returnSummary)
-//			return new EPADPlugin(plugin.getPluginId(),plugin.getName(),plugin.getDescription(),null,null,null,null,null,null,null);
-//
-//		return new EPADPlugin(plugin.getPluginId(),plugin.getName(),plugin.getDescription(),plugin.getJavaclass(),plugin.getEnabled(),plugin.getStatus(),plugin.getModality(),null,null,null);
-//	}
 	private EPADPlugin plugin2EPADPluginProject(Plugin plugin,Project project,Boolean returnSummary) throws Exception
 	{
+		if (project==null){
+			project=projectOperations.getProject(EPADConfig.xnatUploadProjectID);
+			if (project==null)
+				throw new Exception("Global project cannot be retrieved");
+		}
 		EPADPluginParameterList parameters=getParametersByProjectIdAndPlugin(project.getId(), plugin.getId());
+			
 		if (returnSummary){
-			if (project!=null)
-				return new EPADPlugin(plugin.getPluginId(),plugin.getName(),plugin.getDescription(),null,null,null,null,project.getProjectId(),project.getName(),parameters.getResult());
-			else
-				return new EPADPlugin(plugin.getPluginId(),plugin.getName(),plugin.getDescription(),null,null,null,null,null,null,parameters.getResult());
 
+				return new EPADPlugin(plugin.getPluginId(),plugin.getName(),plugin.getDescription(),null,null,null,null,project.getProjectId(),project.getName(),parameters.getResult());
 		
 		}
-		if (project!=null)	
 			return new EPADPlugin(plugin.getPluginId(),plugin.getName(),plugin.getDescription(),plugin.getJavaclass(),plugin.getEnabled(),plugin.getStatus(),plugin.getModality(),project.getProjectId(),project.getName(),parameters.getResult());
-		else
-			return new EPADPlugin(plugin.getPluginId(),plugin.getName(),plugin.getDescription(),plugin.getJavaclass(),plugin.getEnabled(),plugin.getStatus(),plugin.getModality(),null,null,parameters.getResult());
+
 	}
 	
 	public List<Plugin> getPlugins() throws Exception {
@@ -357,7 +353,7 @@ public class PluginOperations {
 		plugin.delete();
 	}
 
-	public boolean addParameters(String loggedInUser,String projectId, String pluginId, String[] paramNames, String[] paramValues) throws Exception {
+	public void addParameters(String loggedInUser,String projectId, String pluginId, String[] paramNames, String[] paramValues) throws Exception {
 		//if the project is not unassigned, get the global parameter list
 		//change default values for the defined parameters
 		//keep global defaults for undefined ones
@@ -371,7 +367,6 @@ public class PluginOperations {
 			for (EPADPluginParameter param : globalParams.getResult()) {  
 				if (params.containsKey(param.getName())) {
 					setParameter(loggedInUser, projectId, pluginId, param.getName(), params.get(param.getName()));
-					params.put(param.getName(),"");
 					log.info("existing param name:" + param.getName() + " value " + params.get(param.getName()));
 				} else {
 					setParameter(loggedInUser, projectId, pluginId, param.getName(), param.getDefaultValue());
@@ -380,16 +375,6 @@ public class PluginOperations {
 				}
 					
 			}
-			//params'ta olup global'de olmayan icin hata
-			for (String paramName:params.keySet()) {
-				if (params.get(paramName)!="")  {
-					setParameter(loggedInUser, projectId, pluginId, paramName, params.get(paramName));
-					params.put(paramName,"");
-					log.info("existing param name:" + paramName + " value " + params.get(paramName));
-				}
-					
-			}
-			
 			
 		}
 		else {
@@ -397,7 +382,6 @@ public class PluginOperations {
 				setParameter(loggedInUser, projectId, pluginId, paramNames[i], paramValues[i]);
 			}
 		}
-		return true;
 	}
 	public void setParameter(String loggedInUser,String projectId, String pluginId, String paramName, String defaultValue) throws Exception {
 		User user=null;
@@ -420,6 +404,7 @@ public class PluginOperations {
 		Plugin plugin = getPlugin(pluginId);
 		param.setPluginId(plugin.getId());
 		param.setName(paramName);
+
 
 		}
 		param.setDefaultValue(defaultValue);
