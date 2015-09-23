@@ -181,14 +181,14 @@ public class PluginOperations {
 		EPADPluginList epadPluginList = new EPADPluginList();
 		for (Project project : projects) {
 
-		for (Plugin plugin : plugins) {
+			for (Plugin plugin : plugins) {
 				EPADPlugin epadPlugin = plugin2EPADPluginProject(plugin,project,true);
-			
-			if (epadPlugin != null)
-			{
-				epadPluginList.addEPADPlugin(epadPlugin);
+				
+				if (epadPlugin != null)
+				{
+					epadPluginList.addEPADPlugin(epadPlugin);
+				}
 			}
-		}
 		}
 
 
@@ -201,14 +201,14 @@ public class PluginOperations {
 		EPADPluginList epadPluginList = new EPADPluginList();
 		for (Project project : projects) {
 
-		for (Plugin plugin : plugins) {
+			for (Plugin plugin : plugins) {
 				EPADPlugin epadPlugin = plugin2EPADPluginProject(plugin,project,false);
-			
-			if (epadPlugin != null)
-			{
-				epadPluginList.addEPADPlugin(epadPlugin);
+				
+				if (epadPlugin != null)
+				{
+					epadPluginList.addEPADPlugin(epadPlugin);
+				}
 			}
-		}
 		}
 
 		return epadPluginList;
@@ -234,10 +234,10 @@ public class PluginOperations {
 			
 		if (returnSummary){
 
-				return new EPADPlugin(plugin.getPluginId(),plugin.getName(),plugin.getDescription(),null,null,null,null,project.getProjectId(),project.getName(),parameters.getResult());
-		
+			return new EPADPlugin(plugin.getPluginId(),plugin.getName(),plugin.getDescription(),null,null,null,null,project.getProjectId(),project.getName(),parameters.getResult());
+				
 		}
-			return new EPADPlugin(plugin.getPluginId(),plugin.getName(),plugin.getDescription(),plugin.getJavaclass(),plugin.getEnabled(),plugin.getStatus(),plugin.getModality(),project.getProjectId(),project.getName(),parameters.getResult());
+		return new EPADPlugin(plugin.getPluginId(),plugin.getName(),plugin.getDescription(),plugin.getJavaclass(),plugin.getEnabled(),plugin.getStatus(),plugin.getModality(),project.getProjectId(),project.getName(),parameters.getResult());
 
 	}
 	
@@ -353,7 +353,7 @@ public class PluginOperations {
 		plugin.delete();
 	}
 
-	public void addParameters(String loggedInUser,String projectId, String pluginId, String[] paramNames, String[] paramValues) throws Exception {
+	public boolean addParameters(String loggedInUser,String projectId, String pluginId, String[] paramNames, String[] paramValues) throws Exception {
 		//if the project is not unassigned, get the global parameter list
 		//change default values for the defined parameters
 		//keep global defaults for undefined ones
@@ -367,6 +367,7 @@ public class PluginOperations {
 			for (EPADPluginParameter param : globalParams.getResult()) {  
 				if (params.containsKey(param.getName())) {
 					setParameter(loggedInUser, projectId, pluginId, param.getName(), params.get(param.getName()));
+					params.put(param.getName(),"");
 					log.info("existing param name:" + param.getName() + " value " + params.get(param.getName()));
 				} else {
 					setParameter(loggedInUser, projectId, pluginId, param.getName(), param.getDefaultValue());
@@ -375,6 +376,16 @@ public class PluginOperations {
 				}
 					
 			}
+			//params'ta olup global'de olmayan icin hata
+			for (String paramName:params.keySet()) {
+				if (params.get(paramName)!="")  {
+					setParameter(loggedInUser, projectId, pluginId, paramName, params.get(paramName));
+					params.put(paramName,"");
+					log.info("existing param name:" + paramName + " value " + params.get(paramName));
+				}
+					
+			}
+			
 			
 		}
 		else {
@@ -382,6 +393,7 @@ public class PluginOperations {
 				setParameter(loggedInUser, projectId, pluginId, paramNames[i], paramValues[i]);
 			}
 		}
+		return true;
 	}
 	public void setParameter(String loggedInUser,String projectId, String pluginId, String paramName, String defaultValue) throws Exception {
 		User user=null;
@@ -400,10 +412,10 @@ public class PluginOperations {
 		if (param==null) {
 			param= new ProjectToPluginParameter(); //create new if not db tuple with the param name
 
-		param.setProjectId(project.getId());
-		Plugin plugin = getPlugin(pluginId);
-		param.setPluginId(plugin.getId());
-		param.setName(paramName);
+			param.setProjectId(project.getId());
+			Plugin plugin = getPlugin(pluginId);
+			param.setPluginId(plugin.getId());
+			param.setName(paramName);
 
 
 		}
