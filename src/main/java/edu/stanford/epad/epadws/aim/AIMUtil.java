@@ -621,25 +621,25 @@ public class AIMUtil
 
 	/**
 	 * @param aimFile
+	 * @param projectID
 	 * @param sessionId
 	 * @param username
+	 * @param uploaded
 	 * @return true if error in AIM save
 	 * @throws AimException
 	 * @throws edu.stanford.hakan.aim4api.base.AimException
 	 */
-	public static boolean saveAIMAnnotation(File aimFile, String projectID, String sessionId, String username) throws AimException,
-	edu.stanford.hakan.aim4api.base.AimException
+	public static boolean saveAIMAnnotation(File aimFile, String projectID, String sessionId, String username) throws AimException
 	{
-		return saveAIMAnnotation(aimFile, projectID, 0, sessionId, username);
+		return saveAIMAnnotation(aimFile, projectID, 0, sessionId, username, false);
 	}
 	
-	public static boolean saveAIMAnnotation(File aimFile, String projectID, int frameNumber, String sessionId, String username) throws AimException,
-	edu.stanford.hakan.aim4api.base.AimException
+	public static boolean saveAIMAnnotation(File aimFile, String projectID, int frameNumber, String sessionId, String username, boolean uploaded) throws AimException
 	{
 		if (aimFile == null)
 			return true;
 		try {
-			log.info("Converting AIM file to Object " + aimFile.getAbsolutePath());
+			log.info("Converting AIM file to ImageAnnotationCollection Object " + aimFile.getAbsolutePath());
 			EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
             ImageAnnotationCollection imageAnnotationColl = AIMUtil.getImageAnnotationFromFileV4(aimFile, xsdFilePathV4);
             if (imageAnnotationColl == null) {
@@ -652,6 +652,8 @@ public class AIMUtil
 				SegmentationEntityCollection sec = imageAnnotationColl.getImageAnnotations().get(0).getSegmentationEntityCollection();
 				if (sec != null  && imageAnnotationColl.getImageAnnotations().get(0).getListTypeCode().get(0).getCode().equals("SEG"))
 				{
+					if (uploaded)
+						throw new Exception("SEGOnly annotations should not be uploaded");
 					if (sec.getSegmentationEntityList().size() == 0)			
 					{
 						epadDatabaseOperations.deleteAIM(username, imageAnnotationColl.getUniqueIdentifier().getRoot());
@@ -1778,6 +1780,28 @@ public class AIMUtil
 				EPADAIM epadAim = epadDatabaseOperations.updateAIMName(iac.getUniqueIdentifier().getRoot(), iac.getImageAnnotation().getName().getValue());
 			} catch (Exception e) {
 				log.warning("Error updating AIM Table Name", e);
+			}
+		}
+	}
+	
+	public static void updateExistDBFromMysql()
+	{
+		EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
+		List<EPADAIM> aims = epadDatabaseOperations.getAIMsByQuery("%");
+		for (EPADAIM aim: aims)
+		{
+			if (aim.xml == null || aim.xml.trim().length() == 0) continue;
+			try {
+				List<ImageAnnotationCollection> iacs = edu.stanford.hakan.aim4api.usage.AnnotationGetter.getImageAnnotationCollectionsFromString(aim.xml, null);
+				if (iacs.size() == 0) continue;
+				ImageAnnotationCollection iac = iacs.get(0);
+			    String collectionName = eXistCollectionV4;
+			    if (aim.projectID != null && aim.projectID.length() > 0)
+			    	collectionName = collectionName + "/" + aim.projectID;
+			    edu.stanford.hakan.aim4api.usage.AnnotationBuilder.saveToServer(iac, eXistServerUrl, aim4Namespace,
+			    		collectionName, xsdFilePathV4, eXistUsername, eXistPassword);				
+			} catch (Exception e) {
+				log.warning("Error updating Exist Database", e);
 			}
 		}
 	}

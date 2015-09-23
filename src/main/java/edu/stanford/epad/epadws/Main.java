@@ -56,9 +56,7 @@ import org.springframework.web.context.support.AnnotationConfigWebApplicationCon
 import org.springframework.web.servlet.DispatcherServlet;
 import org.xml.sax.SAXException;
 
-import edu.stanford.epad.epadws.plugins.PluginConfig;
 import edu.stanford.epad.common.plugins.PluginController;
-import edu.stanford.epad.epadws.plugins.PluginHandlerMap;
 import edu.stanford.epad.common.plugins.PluginServletHandler;
 import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADFileUtils;
@@ -84,11 +82,15 @@ import edu.stanford.epad.epadws.handlers.event.EventHandler;
 import edu.stanford.epad.epadws.handlers.event.ProjectEventHandler;
 import edu.stanford.epad.epadws.handlers.plugin.EPadPluginHandler;
 import edu.stanford.epad.epadws.handlers.session.EPADSessionHandler;
+import edu.stanford.epad.epadws.models.Plugin;
 import edu.stanford.epad.epadws.models.User;
+import edu.stanford.epad.epadws.plugins.PluginConfig;
+import edu.stanford.epad.epadws.plugins.PluginHandlerMap;
 import edu.stanford.epad.epadws.processing.pipeline.threads.ShutdownHookThread;
 import edu.stanford.epad.epadws.processing.pipeline.threads.ShutdownSignal;
 import edu.stanford.epad.epadws.processing.pipeline.watcher.QueueAndWatcherManager;
 import edu.stanford.epad.epadws.service.DefaultEpadProjectOperations;
+import edu.stanford.epad.epadws.service.PluginOperations;
 import edu.stanford.epad.epadws.service.RemotePACService;
 
 /**
@@ -514,15 +516,32 @@ public class Main
 			PluginHandlerMap pluginHandlerMap = PluginHandlerMap.getInstance();
 			PluginConfig pluginConfig = PluginConfig.getInstance();
 			List<String> pluginHandlerList = pluginConfig.getPluginHandlerList();
-	
+			PluginOperations pluginOps = PluginOperations.getInstance();
+			List<Plugin> plugins = new ArrayList<Plugin>();
+			try {
+				plugins = pluginOps.getPlugins();
+			} catch (Exception x) {};
+			
 			for (String pluginClassName : pluginHandlerList) {
 				log.info("Loading plugin class: " + pluginClassName);
-				PluginServletHandler psh = pluginHandlerMap.loadFromClassName(pluginClassName);
-				if (psh != null) {
-					String pluginName = psh.getName();
-					pluginHandlerMap.setPluginServletHandler(pluginName, psh);
-				} else {
-					log.warning("Could not find plugin class: " + pluginClassName);
+				try
+				{
+					PluginServletHandler psh = pluginHandlerMap.loadFromClassName(pluginClassName);
+					if (psh != null) {
+						String pluginName = psh.getName();
+						pluginHandlerMap.setPluginServletHandler(pluginName, psh);
+					} else {
+						log.warning("Could not find plugin class: " + pluginClassName);
+					}
+				} catch (Exception x) {
+					for (Plugin plugin: plugins) {
+						if (plugin.getJavaclass().equals(pluginClassName)) {
+							plugin.setStatus("Error loading class:" + x.getMessage());
+							try {
+								plugin.save();
+							} catch (Exception x2) {}
+						}
+					}
 				}
 			}
 		}

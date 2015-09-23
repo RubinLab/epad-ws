@@ -257,6 +257,12 @@ public class PluginOperations {
 		plugin = (Plugin) plugin.getObject("plugin_id = '" + pluginId+ "'");
 		return plugin;
 	}
+	
+	public Plugin getPluginByName(String pluginName) throws Exception {
+		Plugin plugin = new Plugin();
+		plugin = (Plugin) plugin.getObject("name = '" + pluginName+ "'");
+		return plugin;
+	}
 
 	public Plugin createPlugin(String loggedInUser, String pluginId, String name, String description,
 			String javaclass, String enabled, String modality, String sessionID) throws Exception {

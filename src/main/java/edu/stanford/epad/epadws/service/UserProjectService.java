@@ -314,7 +314,7 @@ public class UserProjectService {
 					if (dicomFile.getName().endsWith(".xml"))
 					{
 						try {
-							if (AIMUtil.saveAIMAnnotation(dicomFile, projectID, sessionID, username))
+							if (AIMUtil.saveAIMAnnotation(dicomFile, projectID, 0, sessionID, username, true))
 								log.warning("Error processing aim file:" + dicomFile.getName());
 						} catch (Exception x) {
 							log.warning("Error uploading file:" + dicomFile.getName() + ":" + x.getMessage());

@@ -2173,7 +2173,7 @@ public class DefaultEpadOperations implements EpadOperations
 			if (!aim.projectID.equals(frameReference.projectID)) {
 				moveAIMtoProject(aim, frameReference.projectID, username);
 			}
-			if (!AIMUtil.saveAIMAnnotation(aimFile, aim.projectID, frameReference.frameNumber, sessionID, username))
+			if (!AIMUtil.saveAIMAnnotation(aimFile, aim.projectID, frameReference.frameNumber, sessionID, username, false))
 				return "";
 			else
 				return "Error saving AIM file";

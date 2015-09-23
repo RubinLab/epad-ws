@@ -33,9 +33,11 @@ import org.apache.commons.httpclient.methods.GetMethod;
 import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.epad.dtos.TaskStatus;
+import edu.stanford.epad.epadws.models.Plugin;
 import edu.stanford.epad.epadws.security.EPADSessionOperations;
 import edu.stanford.epad.epadws.service.DefaultEpadProjectOperations;
 import edu.stanford.epad.epadws.service.EpadProjectOperations;
+import edu.stanford.epad.epadws.service.PluginOperations;
 
 /**
  * Start Plugin and pass it aim id / frame num.
@@ -79,11 +81,16 @@ public class PluginStartTask implements Runnable
         try {
             int statusCode = client.executeMethod(method);
             log.info("Status code returned from plugin " + statusCode);
-        } catch (HttpException e) {
-            log.warning("HTTP error calling plugin ", e);
-        } catch (IOException e) {
-            log.warning("IO exception calling plugin ", e);
-        } finally {
+        } catch (Exception e) {
+            log.warning("Error calling plugin " + pluginName, e);
+    		try {
+        		PluginOperations pluginOperations = PluginOperations.getInstance();
+				Plugin plugin = pluginOperations.getPluginByName(pluginName);
+				plugin.setStatus("Error calling plugin :" + e.getMessage());
+				plugin.save();
+			} catch (Exception e1) { }
+    		
+      } finally {
             method.releaseConnection();
         }
 
