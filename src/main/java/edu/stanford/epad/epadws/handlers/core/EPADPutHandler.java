@@ -413,7 +413,7 @@ public class EPADPutHandler
 				String[] addPermissions = httpRequest.getParameterValues("addPermission");
 				String[] removePermissions = httpRequest.getParameterValues("removePermission");
 				String enable = httpRequest.getParameter("enable");
-				if (enable == null && firstname == null && lastname == null && email == null && addPermissions == null && removePermissions == null && password == null && oldpassword == null)
+				if (colorpreference == null && enable == null && firstname == null && lastname == null && email == null && addPermissions == null && removePermissions == null && password == null && oldpassword == null)
 					throw new Exception("BAD Request - all parameters are null");
 				epadOperations.createOrModifyUser(username, target_username, firstname, lastname, email, password, oldpassword, colorpreference, addPermissions, removePermissions);
 				if ("true".equalsIgnoreCase(enable))

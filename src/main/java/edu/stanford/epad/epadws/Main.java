@@ -66,6 +66,7 @@ import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeOperations;
 import edu.stanford.epad.epadws.epaddb.EpadDatabase;
 import edu.stanford.epad.epadws.epaddb.EpadDatabaseOperations;
 import edu.stanford.epad.epadws.handlers.admin.ConvertAIM4Handler;
+import edu.stanford.epad.epadws.handlers.admin.CopyAimsToExistHandler;
 import edu.stanford.epad.epadws.handlers.admin.ImageCheckHandler;
 import edu.stanford.epad.epadws.handlers.admin.ImageReprocessingHandler;
 import edu.stanford.epad.epadws.handlers.admin.ResourceCheckHandler;
@@ -380,6 +381,7 @@ public class Main
 			addHandlerAtContextPath(new ImageCheckHandler(), "/epad/imagecheck", handlerList);
 			addHandlerAtContextPath(new ImageReprocessingHandler(), "/epad/imagereprocess", handlerList);
 			addHandlerAtContextPath(new ConvertAIM4Handler(), "/epad/convertaim4", handlerList);
+			addHandlerAtContextPath(new CopyAimsToExistHandler(), "/epad/copyToExist", handlerList);
 			addHandlerAtContextPath(new XNATSyncHandler(), "/epad/syncxnat", handlerList);
 			addHandlerAtContextPath(new StatisticsHandler(), "/epad/statistics", handlerList);
 			addHandlerAtContextPath(new ResourcesFileHandler(), "/epad/resourcesFile", handlerList);

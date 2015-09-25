@@ -2066,6 +2066,10 @@ public class DefaultEpadOperations implements EpadOperations
 	public String createSubjectAIM(String username,
 			SubjectReference subjectReference, String aimID, File aimFile,
 			String sessionID) {
+		if (subjectReference.projectID.equals(EPADConfig.getParamValue("UnassignedProjectID", "nonassigned")) ||
+				subjectReference.projectID.equals(EPADConfig.xnatUploadProjectID)
+				)
+			return "AIM can not be added to project:" + subjectReference.projectID;
 		try {
 			projectOperations.createEventLog(username, subjectReference.projectID, subjectReference.subjectID, null, null, null, aimID, "CREATE AIM", aimFile.getName());
 			EPADAIM aim = epadDatabaseOperations.addAIM(username, subjectReference, aimID);
@@ -2090,6 +2094,10 @@ public class DefaultEpadOperations implements EpadOperations
 	@Override
 	public String createStudyAIM(String username, StudyReference studyReference, String aimID, File aimFile, String sessionID)
 	{
+		if (studyReference.projectID.equals(EPADConfig.getParamValue("UnassignedProjectID", "nonassigned")) ||
+				studyReference.projectID.equals(EPADConfig.xnatUploadProjectID)
+				)
+			return "AIM can not be added to project:" + studyReference.projectID;
 		try {
 			projectOperations.createEventLog(username, studyReference.projectID, studyReference.subjectID, studyReference.studyUID, null, null, aimID, "CREATE AIM", aimFile.getName());
 			EPADAIM aim = epadDatabaseOperations.addAIM(username, studyReference, aimID);
@@ -2114,6 +2122,10 @@ public class DefaultEpadOperations implements EpadOperations
 	@Override
 	public String createSeriesAIM(String username, SeriesReference seriesReference, String aimID, File aimFile, String sessionID)
 	{
+		if (seriesReference.projectID.equals(EPADConfig.getParamValue("UnassignedProjectID", "nonassigned")) ||
+				seriesReference.projectID.equals(EPADConfig.xnatUploadProjectID)
+				)
+			return "AIM can not be added to project:" + seriesReference.projectID;
 		try {
 			projectOperations.createEventLog(username, seriesReference.projectID, seriesReference.subjectID, seriesReference.studyUID, seriesReference.seriesUID, null, aimID, "CREATE AIM", aimFile.getName());
 			EPADAIM aim = epadDatabaseOperations.addAIM(username, seriesReference, aimID);
@@ -2138,6 +2150,10 @@ public class DefaultEpadOperations implements EpadOperations
 	@Override
 	public String createImageAIM(String username, ImageReference imageReference, String aimID, File aimFile, String sessionID)
 	{
+		if (imageReference.projectID.equals(EPADConfig.getParamValue("UnassignedProjectID", "nonassigned")) ||
+				imageReference.projectID.equals(EPADConfig.xnatUploadProjectID)
+				)
+			return "AIM can not be added to project:" + imageReference.projectID;
 		try {
 			projectOperations.createEventLog(username, imageReference.projectID, imageReference.subjectID, imageReference.studyUID, imageReference.seriesUID, imageReference.imageUID, aimID, "CREATE AIM", aimFile.getName());
 			EPADAIM aim = epadDatabaseOperations.addAIM(username, imageReference, aimID);
@@ -2162,6 +2178,10 @@ public class DefaultEpadOperations implements EpadOperations
 	@Override
 	public String createFrameAIM(String username, FrameReference frameReference, String aimID, File aimFile, String sessionID)
 	{
+		if (frameReference.projectID.equals(EPADConfig.getParamValue("UnassignedProjectID", "nonassigned")) ||
+				frameReference.projectID.equals(EPADConfig.xnatUploadProjectID)
+				)
+			return "AIM can not be added to project:" + frameReference.projectID;
 		try {
 			projectOperations.createEventLog(username, frameReference.projectID, frameReference.subjectID, frameReference.studyUID, frameReference.seriesUID, frameReference.imageUID, aimID, "CREATE AIM", aimFile.getName() + ":" + frameReference.frameNumber);
 			EPADAIM aim = epadDatabaseOperations.addAIM(username, frameReference, aimID);
@@ -2733,7 +2753,7 @@ public class DefaultEpadOperations implements EpadOperations
 			Subject subject = (Subject) projectOperations.getDBObject(Subject.class, wsubject.getSubjectId());
 			Project project = (Project) projectOperations.getDBObject(Project.class, wsubject.getProjectId());
 			EPADWorklistSubject wls = new EPADWorklistSubject(workListID, username, project.getProjectId(),
-						subject.getSubjectUID(), wsubject.getStatus(), formatDate(wsubject.getStartDate()),
+						subject.getSubjectUID(), subject.getName(), wsubject.getStatus(), formatDate(wsubject.getStartDate()),
 						formatDate(wsubject.getCompleteDate()));
 			wlsl.addEPADWorklistSubject(wls);
 		}

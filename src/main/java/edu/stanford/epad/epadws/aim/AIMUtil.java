@@ -650,6 +650,8 @@ public class AIMUtil
             }
             if (imageAnnotationColl != null) {
 				SegmentationEntityCollection sec = imageAnnotationColl.getImageAnnotations().get(0).getSegmentationEntityCollection();
+				if (sec != null)
+					log.debug("Aim: " + imageAnnotationColl.getUniqueIdentifier().getRoot() + " SEC size:" + sec.getSegmentationEntityList().size());
 				if (sec != null  && imageAnnotationColl.getImageAnnotations().get(0).getListTypeCode().get(0).getCode().equals("SEG"))
 				{
 					if (uploaded)
@@ -1784,10 +1786,14 @@ public class AIMUtil
 		}
 	}
 	
-	public static void updateExistDBFromMysql()
+	public static int updateExistDBFromMysql(String aimID)
 	{
 		EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
-		List<EPADAIM> aims = epadDatabaseOperations.getAIMsByQuery("%");
+		String criteria = "1 = 1";
+		if (aimID != null && aimID.trim().length() > 0)
+			criteria = "annotationUID like '" + aimID + "'";
+		List<EPADAIM> aims = epadDatabaseOperations.getAIMsByQuery(criteria);
+		int count = 0;
 		for (EPADAIM aim: aims)
 		{
 			if (aim.xml == null || aim.xml.trim().length() == 0) continue;
@@ -1799,11 +1805,13 @@ public class AIMUtil
 			    if (aim.projectID != null && aim.projectID.length() > 0)
 			    	collectionName = collectionName + "/" + aim.projectID;
 			    edu.stanford.hakan.aim4api.usage.AnnotationBuilder.saveToServer(iac, eXistServerUrl, aim4Namespace,
-			    		collectionName, xsdFilePathV4, eXistUsername, eXistPassword);				
+			    		collectionName, xsdFilePathV4, eXistUsername, eXistPassword);
+			    count++;
 			} catch (Exception e) {
 				log.warning("Error updating Exist Database", e);
 			}
 		}
+		return count;
 	}
 
 	public static void updateMongDB(List<EPADAIM> aims)

@@ -458,6 +458,8 @@ public class DefaultWorkListOperations implements EpadWorkListOperations {
 		if (loggedIn != null && !loggedIn.isAdmin() && !username.equals(worklist.getCreator()) && loggedIn.getId() != worklist.getUserId())
 			throw new Exception("No permission to set worklist status");
 		Subject subject = projectOperations.getSubject(subjectID);
+		if (subject == null)
+			throw new Exception("Subject not found " + subjectID);
 		WorkListToSubject wls = (WorkListToSubject) new WorkListToSubject().getObject("worklist_id=" + worklist.getId() + " and subject_id=" + subject.getId());
 		if (wls == null)  return;
 		if (status != null && status.trim().length() > 0)
@@ -480,6 +482,8 @@ public class DefaultWorkListOperations implements EpadWorkListOperations {
 		if (worklist == null)
 			throw new Exception("Worklist not found, ID =" + workListID);
 		Subject subject = projectOperations.getSubject(subjectID);
+		if (subject == null)
+			throw new Exception("Subject not found " + subjectID);
 		WorkListToSubject wls = (WorkListToSubject) new WorkListToSubject().getObject("worklist_id=" + worklist.getId() + " and subject_id=" + subject.getId());
 		return wls;
 	}
@@ -495,6 +499,8 @@ public class DefaultWorkListOperations implements EpadWorkListOperations {
 		if (loggedIn != null && !loggedIn.isAdmin() && !username.equals(worklist.getCreator()) && loggedIn.getId() != worklist.getUserId())
 			throw new Exception("No permission to set worklist status");
 		Study study = projectOperations.getStudy(studyUID);
+		if (study == null)
+			throw new Exception("Study not found " + studyUID);
 		WorkListToStudy wls = (WorkListToStudy) new WorkListToStudy().getObject("worklist_id=" + worklist.getId() + " and study_id=" + study.getId());
 		if (wls == null) {
 			wls = this.addStudyToWorkList(null, EPADConfig.xnatUploadProjectID, studyUID, workListID);

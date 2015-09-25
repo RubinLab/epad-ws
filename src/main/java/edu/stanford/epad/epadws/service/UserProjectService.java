@@ -551,7 +551,11 @@ public class UserProjectService {
 	{
 		log.info("New password requested for " + username);
 		User loggedInUser =  projectOperations.getUser(loggedInUsername);
+		if (loggedInUser == null)
+			throw new Exception("User not found " + loggedInUsername);
 		User user = projectOperations.getUser(username);
+		if (user == null)
+			throw new Exception("User not found " + username);
 		if (!loggedInUsername.equals(username) && !loggedInUser.isAdmin() && !loggedInUsername.equals(user.getCreator()))
 			throw new Exception("No permissions to reset " + username + "'s password");
 		String newPwd = username;

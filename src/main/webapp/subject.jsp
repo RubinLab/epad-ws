@@ -13,34 +13,35 @@
 			String sessionID = SessionService.getJSessionIDFromRequest(request);
 			String username = EPADSessionOperations.getSessionUser(sessionID);
 			String projectID = request.getParameter("projectID");
-			String unassignedOnly = "";
-			if (request.getParameter("unassignedOnly") != null)
-				unassignedOnly = "&unassignedOnly=" + request.getParameter("unassignedOnly");
+			String subjectID = request.getParameter("subjectID");
 %>
 <h2>Project: <%=projectID%></h2>
+<h3>Subject: <%=subjectID%></h3>
 <div id=imagelist><div>
 <table>
 </table>
 <script>
 $( document ).ready(function() {
 	var listdata;
-	var url = "<%=request.getContextPath()%>/v2/projects/<%=projectID%>/subjects/";
+	var url = "<%=request.getContextPath()%>/v2/projects/<%=projectID%>/subjects/<%=subjectID%>";
 	$.ajax({         
-		url: url + "?username=<%=username%><%=unassignedOnly%>",         
+		url: url + "?username=<%=username%>",         
 		type: 'get',         
 		async: false,         
 		cache: false,         
 		timeout: 30000,         
 		error: function(){
-			alert("Error getting subjects");
+			alert("Error getting subject");
 			return true;},
 		success: function(response){
-			var subjects = response.ResultSet.Result;
+			var subject = response;
+			var subjects = new Array(1);
+			subjects[0] = subject;
 			listdata = "<table border=1><tr bgcolor=lightgray><td>Type</td><td>Name</td><td>ID</td><td>Studies/Series<br>Images/Annotations</td></tr>\n";
 			for (i = 0; i < subjects.length; i++)
 			{
 				listdata =  listdata + "<tr id='Patient" + i + "' ><td>Patient(<a href='addToProject.jsp?subjectID=" +  subjects[i].subjectID + "' target='rightpanel'>Add To Project</a>)</td><td><a href='images.jsp?projectID=" + subjects[i].id + "' target='rightpanel'>" + subjects[i].subjectName + "</a>" + "&nbsp;&nbsp;<a href='javascript:deletePatient(\"" +  subjects[i].subjectID + "\",\"" + i + "\")'><img src=delete.jpg height=12px></a></td><td>" + subjects[i].subjectID + "</td><td>"  +  subjects[i].numberOfStudies + " / " + subjects[i].numberOfAnnotations + "</td></tr>\n";
-				var url2 = url + subjects[i].subjectID + "/studies/";
+				var url2 = url + "/studies/";
 				$.ajax({         
 					url: url2 + "?username=<%=username%>",         
 					type: 'get',         
@@ -73,7 +74,7 @@ $( document ).ready(function() {
 										{
 											series[k].seriesDescription = 'n/a';
 										}
-										var createDSO = "(<a href=createDSO.jsp?projectID=<%=projectID%>&subjectID=" + subjects[i].subjectID + "&studyUID=" + studies[j].studyUID + "&seriesUID=" + series[k].seriesUID + ">Create DSO</a>)";
+										var createDSO = "(<a href=createDSO.jsp?projectID=<%=projectID%>&subjectID=<%=subjectID%>&studyUID=" + studies[j].studyUID + "&seriesUID=" + series[k].seriesUID + ">Create DSO</a>)";
 										if (series[k].isDSO)
 										{
 											createDSO = "";

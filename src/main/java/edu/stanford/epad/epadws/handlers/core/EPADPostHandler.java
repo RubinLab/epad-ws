@@ -293,7 +293,7 @@ public class EPADPostHandler
 					//log.info(" email:" + email +" firstname:" + firstname + " lastname:" + lastname + " new password:" + password + " old password:" + oldpassword); 
 					String[] addPermissions = httpRequest.getParameterValues("addPermission");
 					String[] removePermissions = httpRequest.getParameterValues("removePermission");
-					if (enable == null && firstname == null && lastname == null && email == null && addPermissions == null && removePermissions == null && password == null && oldpassword == null)
+					if (colorpreference == null && enable == null && firstname == null && lastname == null && email == null && addPermissions == null && removePermissions == null && password == null && oldpassword == null)
 						throw new Exception("BAD Request - all parameters are null");
 					if ("new".equals(type) && projectOperations.getUser(target_username) != null)
 						throw new Exception("User " +  target_username + " already exists");

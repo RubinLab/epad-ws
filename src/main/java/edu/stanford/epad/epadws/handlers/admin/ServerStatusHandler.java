@@ -156,7 +156,7 @@ public class ServerStatusHandler extends AbstractHandler
 							responseStream.println("<tr><td>" + u.getUsername() + "</td><td>" + ts.type + "</td><td>" + ts.target + "</td><td>" + ts.status + "</td><td>" + ts.starttime + "</td><td>" + ts.completetime + "</td></tr>");
 						}
 						if (tss.size() == 0) {
-							responseStream.println("<tr><td colspan=100% align=center>No background processes running</td></tr>");
+							responseStream.println("<tr><td colspan=100% align=center>No background processes running for " + u.getUsername() + "</td></tr>");
 						}
 					}
 					responseStream.println("</table>");
@@ -167,6 +167,8 @@ public class ServerStatusHandler extends AbstractHandler
 					{
 						responseStream.println("<tr><td>" + user.getUsername() + "</td><td>" + ts.type + "</td><td>" + ts.target + "</td><td>" + ts.status + "</td><td>" + ts.starttime + "</td><td>" + ts.completetime + "</td></tr>");
 					}
+					if (tss.size() == 0)
+						responseStream.println("<tr><td colspan=100% align=center>No background processes running</td></tr>");
 					responseStream.println("</table>");
 				}
 				responseStream.println("</body>");
