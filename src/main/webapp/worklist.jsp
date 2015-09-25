@@ -26,9 +26,10 @@
 <br><b>Complete:</b><%=wl.getCompleteDate()%>
 <br><b>Status:</b><%=wl.getStatus()%>
 <br><br>
-<b>Subjects:</b>
+<b>Subjects:</b>(<a href="addSubjectToWorkList.jsp?wlusername=<%=username%>&workListID=<%=workListID%>">Add New</a>)
+
 <div id=subjectdata></div>
-<br><b>Studies:</b>
+<br><b>Studies:</b>(<a href="addStudyToWorkList.jsp?wlusername<%=username%>&workListID=<%=workListID%>">Add New</a>)
 <div id=studydata></div>
 <table>
 </table>
