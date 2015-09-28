@@ -461,7 +461,7 @@ public class DSOUtil
 					+ imageUID + "/frames/";
 			File pngFilesDirectory = new File(pngDirectoryPath);
 
-			log.info("Writing PNGs for DSO " + imageUID + " in series " + seriesUID);
+			log.info("Writing PNGs for MultiFrame DICOM " + imageUID + " in series " + seriesUID);
 
 			pngFilesDirectory.mkdirs();
 			ImageStack stack = image.getImageStack();

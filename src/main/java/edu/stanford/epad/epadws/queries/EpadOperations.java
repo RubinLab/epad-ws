@@ -108,6 +108,8 @@ public interface EpadOperations
 	 */
 	EPADSubjectList getSubjectDescriptions(String projectID, String username, String sessionID,
 			EPADSearchFilter searchFilter, int start, int count, String sortField, boolean annotationCount) throws Exception;
+	
+	EPADSubjectList getWorklistSubjectDescriptions(String projectID, String username, String worklistID, EPADSearchFilter searchFilter, String sessionID, String sortField) throws Exception;
 
 	/**
 	 * Get Unassigned subject descriptions

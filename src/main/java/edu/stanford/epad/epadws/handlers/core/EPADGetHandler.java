@@ -95,6 +95,8 @@ import edu.stanford.epad.epadws.queries.DefaultEpadOperations;
 import edu.stanford.epad.epadws.queries.EpadOperations;
 import edu.stanford.epad.epadws.security.EPADSession;
 import edu.stanford.epad.epadws.service.DefaultEpadProjectOperations;
+import edu.stanford.epad.epadws.service.DefaultWorkListOperations;
+import edu.stanford.epad.epadws.service.EpadWorkListOperations;
 import edu.stanford.epad.epadws.service.PluginOperations;
 import edu.stanford.epad.epadws.service.RemotePACService;
 import edu.stanford.epad.epadws.service.TCIAService;
@@ -172,12 +174,21 @@ public class EPADGetHandler
 					annotationCountOnly = true;
 					annotationCount = true;
 				}
+				String worklist = httpRequest.getParameter("worklist");
 				EPADSubjectList subjectList = null;
-				if (projectReference.projectID.equalsIgnoreCase(EPADConfig.getParamValue("UnassignedProjectID", "nonassigned")) || (projectReference.projectID.equals(EPADConfig.xnatUploadProjectID) && unassignedOnly))
+				if (worklist != null && worklist.trim().length() > 0)
+				{
+					epadOperations.getWorklistSubjectDescriptions(projectReference.projectID, username, worklist, searchFilter, sessionID, sortField);
+				}
+				else if (projectReference.projectID.equalsIgnoreCase(EPADConfig.getParamValue("UnassignedProjectID", "nonassigned")) || (projectReference.projectID.equals(EPADConfig.xnatUploadProjectID) && unassignedOnly))
+				{
 					subjectList = epadOperations.getUnassignedSubjectDescriptions(username, sessionID, searchFilter);
+				}
 				else
+				{
 					subjectList = epadOperations.getSubjectDescriptions(projectReference.projectID, username,
 						sessionID, searchFilter, start, count, sortField, annotationCount);
+				}
 				if (annotationCountOnly) // What a stupid request!
 				{
 					for (EPADSubject subject: subjectList.ResultSet.Result)

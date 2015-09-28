@@ -240,6 +240,8 @@ public class EPADPutHandler
 				AIMSearchType aimSearchType = AIMUtil.getAIMSearchType(httpRequest);
 				String searchValue = aimSearchType != null ? httpRequest.getParameter(aimSearchType.getName()) : null;
 				String templateName = httpRequest.getParameter("templateName");
+				if (templateName == null)
+					templateName = httpRequest.getParameter("pluginID");
 				log.info("PUT request for AIMs from user " + username + "; query type is " + aimSearchType + ", value "
 						+ searchValue + ", project " + projectReference.projectID);
 				if (aimSearchType.equals(AIMSearchType.ANNOTATION_UID)) {
@@ -695,6 +697,8 @@ public class EPADPutHandler
 			} else if (HandlerUtil.matchesTemplate(UsersRouteTemplates.USER_SENDNEWPASSWORD, pathInfo)) {
 				Map<String, String> templateMap = HandlerUtil.getTemplateMap(UsersRouteTemplates.USER_SENDNEWPASSWORD, pathInfo);
 				String account = HandlerUtil.getTemplateParameter(templateMap, "username");					
+				if (username == null || username.length() == 0)
+					username = account;
 				UserProjectService.sendNewPassword(username, account);
 			
 			} else if (HandlerUtil.matchesTemplate(PluginRouteTemplates.PLUGIN, pathInfo)) { //ML

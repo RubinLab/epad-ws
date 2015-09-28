@@ -59,6 +59,8 @@ public interface EpadDatabaseOperations
 	String getPNGLocation(FrameReference frameReference);
 
 	String getJPGLocation(FrameReference frameReference);
+	
+	List<String> getAllPNGLocations(String imageUID);
 
 	Set<String> getAllSeriesUIDsFromEPadDatabase();
 
