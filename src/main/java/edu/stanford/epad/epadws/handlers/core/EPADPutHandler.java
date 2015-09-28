@@ -240,6 +240,8 @@ public class EPADPutHandler
 				AIMSearchType aimSearchType = AIMUtil.getAIMSearchType(httpRequest);
 				String searchValue = aimSearchType != null ? httpRequest.getParameter(aimSearchType.getName()) : null;
 				String templateName = httpRequest.getParameter("templateName");
+				if (templateName == null)
+					templateName = httpRequest.getParameter("pluginID");
 				log.info("PUT request for AIMs from user " + username + "; query type is " + aimSearchType + ", value "
 						+ searchValue + ", project " + projectReference.projectID);
 				if (aimSearchType.equals(AIMSearchType.ANNOTATION_UID)) {
@@ -413,7 +415,7 @@ public class EPADPutHandler
 				String[] addPermissions = httpRequest.getParameterValues("addPermission");
 				String[] removePermissions = httpRequest.getParameterValues("removePermission");
 				String enable = httpRequest.getParameter("enable");
-				if (enable == null && firstname == null && lastname == null && email == null && addPermissions == null && removePermissions == null && password == null && oldpassword == null)
+				if (colorpreference == null && enable == null && firstname == null && lastname == null && email == null && addPermissions == null && removePermissions == null && password == null && oldpassword == null)
 					throw new Exception("BAD Request - all parameters are null");
 				epadOperations.createOrModifyUser(username, target_username, firstname, lastname, email, password, oldpassword, colorpreference, addPermissions, removePermissions);
 				if ("true".equalsIgnoreCase(enable))
@@ -695,6 +697,8 @@ public class EPADPutHandler
 			} else if (HandlerUtil.matchesTemplate(UsersRouteTemplates.USER_SENDNEWPASSWORD, pathInfo)) {
 				Map<String, String> templateMap = HandlerUtil.getTemplateMap(UsersRouteTemplates.USER_SENDNEWPASSWORD, pathInfo);
 				String account = HandlerUtil.getTemplateParameter(templateMap, "username");					
+				if (username == null || username.length() == 0)
+					username = account;
 				UserProjectService.sendNewPassword(username, account);
 			
 			} else if (HandlerUtil.matchesTemplate(PluginRouteTemplates.PLUGIN, pathInfo)) { //ML

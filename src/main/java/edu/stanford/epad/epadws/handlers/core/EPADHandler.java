@@ -87,7 +87,7 @@ public class EPADHandler extends AbstractHandler
 					+ ", url: " + httpRequest.getPathInfo() + ", parameters: "
 					+ httpRequest.getQueryString() + " sessionId:" + sessionID);
 			if (SessionService.hasValidSessionID(sessionID) || httpRequest.getPathInfo().contains("sendnewpassword")) {
-				if (EPADConfig.UseEPADUsersProjects && sessionID != null) {
+				if (EPADConfig.UseEPADUsersProjects && sessionID != null && !httpRequest.getPathInfo().contains("sendnewpassword")) {
 					String sessionUser = EPADSessionOperations.getSessionUser(sessionID);
 					if (username != null && !username.equals(sessionUser))
 					{
@@ -99,20 +99,17 @@ public class EPADHandler extends AbstractHandler
 					else
 						username = sessionUser;
 				}
-				if (username != null) {
-					if ("GET".equalsIgnoreCase(method)) {
-						statusCode = EPADGetHandler.handleGet(httpRequest, httpResponse, responseStream, username, sessionID);
-					} else if ("DELETE".equalsIgnoreCase(method)) {
-						statusCode = EPADDeleteHandler.handleDelete(httpRequest, responseStream, username, sessionID);
-					} else if ("PUT".equalsIgnoreCase(method)) {
-						statusCode = EPADPutHandler.handlePut(httpRequest, httpResponse, responseStream, username, sessionID);
-					} else if ("POST".equalsIgnoreCase(method)) {
-						statusCode = EPADPostHandler.handlePost(httpRequest, responseStream, username, sessionID);
-					} else {
-						statusCode = HandlerUtil.badRequestJSONResponse(FORBIDDEN_MESSAGE, responseStream, log);
-					}
-				} else
-					statusCode = HandlerUtil.badRequestJSONResponse(NO_USERNAME_MESSAGE, responseStream, log);
+				if ("GET".equalsIgnoreCase(method)) {
+					statusCode = EPADGetHandler.handleGet(httpRequest, httpResponse, responseStream, username, sessionID);
+				} else if ("DELETE".equalsIgnoreCase(method)) {
+					statusCode = EPADDeleteHandler.handleDelete(httpRequest, responseStream, username, sessionID);
+				} else if ("PUT".equalsIgnoreCase(method)) {
+					statusCode = EPADPutHandler.handlePut(httpRequest, httpResponse, responseStream, username, sessionID);
+				} else if ("POST".equalsIgnoreCase(method)) {
+					statusCode = EPADPostHandler.handlePost(httpRequest, responseStream, username, sessionID);
+				} else {
+					statusCode = HandlerUtil.badRequestJSONResponse(FORBIDDEN_MESSAGE, responseStream, log);
+				}
 			} else {
 				statusCode = HandlerUtil.invalidTokenJSONResponse(INVALID_SESSION_TOKEN_MESSAGE, responseStream, log);
 			}
