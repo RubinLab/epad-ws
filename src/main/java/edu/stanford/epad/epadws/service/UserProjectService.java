@@ -317,7 +317,7 @@ public class UserProjectService {
 							if (AIMUtil.saveAIMAnnotation(dicomFile, projectID, 0, sessionID, username, true))
 								log.warning("Error processing aim file:" + dicomFile.getName());
 						} catch (Exception x) {
-							log.warning("Error uploading file:" + dicomFile.getName() + ":" + x.getMessage());
+							log.warning("Error uploading aim file:" + dicomFile.getName() + ":" + x.getMessage());
 						}
 						dicomFile.delete();
 						continue;
@@ -327,7 +327,7 @@ public class UserProjectService {
 						try {
 							DefaultEpadOperations.getInstance().createFile(username, projectID, subjectID, studyUID, seriesUID, dicomFile, null, null, sessionID);
 						} catch (Exception x) {
-							log.warning("Error uploading file:" + dicomFile.getName() + ":" + x.getMessage());
+							log.warning("Error uploading file:" + dicomFile.getName() + ":" + x.getMessage(), x);
 						}
 						dicomFile.delete();
 						continue;

@@ -699,7 +699,7 @@ public class AIMUtil
 					}
 					if (seriesIds.size() > 1 && ea.seriesUID.equals(seriesIds.get(1)))
 					{
-						seriesID = seriesIds.get(1);
+						seriesID = seriesIds.get(1); // How weird, the actual series is second
 						dsoSeriesUID = seriesIds.get(0);
 						log.info("Source SeriesUID:" + seriesID + " dsoSeriesUID:" +  dsoSeriesUID);
 					}

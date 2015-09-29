@@ -580,6 +580,7 @@ public class DefaultEpadOperations implements EpadOperations
 				
 				epadImage = createEPADImage(seriesReference, dcm4cheeImageDescription, suppliedDICOMElements, defaultDICOMElements);
 				log.info("Returning DICOM metadata, supplied Elements:" + suppliedDICOMElements.getNumberOfElements() + " default Elements:" + defaultDICOMElements.getNumberOfElements());
+				epadImage.multiFrameImage = dcm4cheeImageDescription.multiFrameImage;
 				epadImageList.addImage(epadImage);
 				isFirst = false;
 			} else { 
@@ -620,10 +621,14 @@ public class DefaultEpadOperations implements EpadOperations
 	public EPADImage getImageDescription(ImageReference imageReference, String sessionID)
 	{
 		DCM4CHEEImageDescription dcm4cheeImageDescription = dcm4CheeDatabaseOperations.getImageDescription(imageReference);
+		List<String> pngs = epadDatabaseOperations.getAllPNGLocations(imageReference.imageUID);
+		if (pngs.size() > 1)
+			dcm4cheeImageDescription.multiFrameImage = true;
 		DICOMElementList suppliedDICOMElements = getDICOMElements(imageReference);
 		DICOMElementList defaultDICOMElements = getDefaultDICOMElements(imageReference, suppliedDICOMElements);
 
 		EPADImage eImage = createEPADImage(imageReference, dcm4cheeImageDescription, suppliedDICOMElements, defaultDICOMElements);
+		eImage.multiFrameImage = dcm4cheeImageDescription.multiFrameImage;
 		log.info("Returning DICOM metadata, supplied Elements:" + suppliedDICOMElements.getNumberOfElements() + " default Elements:" + defaultDICOMElements.getNumberOfElements());
 		return eImage;
 	}
@@ -760,10 +765,12 @@ public class DefaultEpadOperations implements EpadOperations
 				// Sort by frame number
 				for (int i = 0; i < pngs.size(); i++)
 				{
-					int framei = getInt(pngs.get(i).substring(0, pngs.get(i).indexOf(".")));
 					for (int j = i; j < pngs.size(); j++)
 					{
-						int framej = getInt(pngs.get(j).substring(0, pngs.get(i).indexOf(".")));
+						String pngNamei = pngs.get(i).substring(pngs.get(i).lastIndexOf("/")+1);
+						int framei = getInt(pngNamei.substring(0, pngNamei.indexOf(".")));
+						String pngNamej = pngs.get(j).substring(pngs.get(j).lastIndexOf("/")+1);
+						int framej = getInt(pngNamej.substring(0, pngNamej.indexOf(".")));
 						if (framei > framej)
 						{
 							String temp = pngs.get(i);
@@ -771,6 +778,7 @@ public class DefaultEpadOperations implements EpadOperations
 							pngs.set(j, temp);
 						}
 					}
+					//log.debug("png " + i + ":" + pngs.get(i).substring(pngs.get(i).lastIndexOf("/")+1));
 				}
 				DICOMElementList suppliedDICOMElements = getDICOMElements(imageReference);
 				DICOMElementList defaultDICOMElements = getDefaultDICOMElements(imageReference, suppliedDICOMElements);
@@ -1334,7 +1342,7 @@ public class DefaultEpadOperations implements EpadOperations
 						log.warning("Error saving AIM file to Exist DB:" + uploadedFile.getName());					
 				}				
 			}
-			if (!type.equals(FileType.TEMPLATE))
+			if (type == null || !type.equals(FileType.TEMPLATE))
 				projectOperations.createEventLog(username, projectID, subjectID, studyID, seriesID, null, null, "UPLOAD FILE", uploadedFile.getName(), description, false);
 			projectOperations.createFile(username, projectID, subjectID, studyID, seriesID, uploadedFile, filename, description, type);
 			if (type != null && type.equals(FileType.IMAGE) && seriesID != null) {

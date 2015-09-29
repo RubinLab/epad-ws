@@ -49,6 +49,8 @@ public class EpadDatabase
 
 	private long startupTime = -1;
 
+	public static String dbversion;
+	
 	public static EpadDatabase getInstance()
 	{
 		return ourInstance;
@@ -158,6 +160,7 @@ public class EpadDatabase
 				result = true;
 				version = rs.getString("version");
 				sb.append("Database version is: ").append(version).append(" ");
+				dbversion = version;
 			}
 		} catch (SQLException sqle) {
 			log.warning("SQL error when checking for database version", sqle);

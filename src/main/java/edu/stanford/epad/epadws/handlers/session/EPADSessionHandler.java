@@ -117,7 +117,7 @@ public class EPADSessionHandler extends AbstractHandler
 				            //sessionCookie.setPath("/epad/; Secure; HttpOnly");
 				            sessionCookie.setPath(httpRequest.getContextPath().replace("session/", "").replace("session", ""));
 				            httpResponse.addCookie(sessionCookie);
-				    		httpResponse.sendRedirect(EPADConfig.getParamValue("HomePage", "/epad/Web_pad.html"));
+				    		httpResponse.sendRedirect(httpRequest.getContextPath().replace("session/", "").replace("session", "") + "/" + EPADConfig.getParamValue("HomePage", "Web_pad.html"));
 				    		return;
 				    	}
 

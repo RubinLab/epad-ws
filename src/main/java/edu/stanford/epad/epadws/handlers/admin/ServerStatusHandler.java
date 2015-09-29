@@ -23,21 +23,21 @@
 //USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package edu.stanford.epad.epadws.handlers.admin;
 
+import java.io.File;
 import java.io.PrintWriter;
 import java.net.InetAddress;
+import java.text.DecimalFormat;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.apache.commons.io.FileSystemUtils;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 
-import edu.stanford.epad.common.plugins.EPadPlugin;
-import edu.stanford.epad.common.plugins.impl.EPadPluginImpl;
 import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.epad.dtos.TaskStatus;
@@ -46,7 +46,6 @@ import edu.stanford.epad.epadws.epaddb.EpadDatabase;
 import edu.stanford.epad.epadws.handlers.HandlerUtil;
 import edu.stanford.epad.epadws.models.Plugin;
 import edu.stanford.epad.epadws.models.User;
-import edu.stanford.epad.epadws.plugins.PluginHandlerMap;
 import edu.stanford.epad.epadws.processing.pipeline.PipelineFactory;
 import edu.stanford.epad.epadws.processing.pipeline.task.EpadStatisticsTask;
 import edu.stanford.epad.epadws.security.EPADSession;
@@ -139,6 +138,12 @@ public class ServerStatusHandler extends AbstractHandler
 				String username = EPADSessionOperations.getSessionUser(sessionID);
 				User user = DefaultEpadProjectOperations.getInstance().getUser(username);
 				if (user.isAdmin()) {
+					try {
+						DecimalFormat df = new DecimalFormat("###,###,###");
+						responseStream.println("<b>dcm4chee Free Space: </b>" + df.format(FileSystemUtils.freeSpaceKb(EPADConfig.dcm4cheeDirRoot)/1024) + " Mb<br>");
+						responseStream.println("<b>ePad Free Space: </b>" + df.format(FileSystemUtils.freeSpaceKb(EPADConfig.getEPADWebServerBaseDir())/1024) + " Mb<br>");
+						responseStream.println("<b>Tmp Free Space: </b>" + df.format(FileSystemUtils.freeSpaceKb(System.getProperty("java.io.tmpdir"))/1024) + " Mb<br><br>");
+					} catch (Exception x) {}
 					responseStream.println("<b>Current Sessions: </b>" + "<br>");
 					Map<String, EPADSession> sessions = EPADSessionOperations.getCurrentSessions();
 					for (String id: sessions.keySet()) {
