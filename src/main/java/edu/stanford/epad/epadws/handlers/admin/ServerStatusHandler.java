@@ -34,6 +34,7 @@ import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.apache.commons.io.FileSystemUtils;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 
@@ -139,9 +140,9 @@ public class ServerStatusHandler extends AbstractHandler
 				if (user.isAdmin()) {
 					try {
 						DecimalFormat df = new DecimalFormat("###,###,###");
-						responseStream.println("<b>DCM4CHE Free Space: </b>" + df.format(new File(EPADConfig.dcm4cheeDirRoot).getFreeSpace()/1048576) + " Mb<br>");
-						responseStream.println("<b>ePad Free Space: </b>" + df.format(new File(EPADConfig.getEPADWebServerBaseDir()).getFreeSpace()/1048576) + " Mb<br>");
-						responseStream.println("<b>Tmp Free Space: </b>" + df.format(new File(System.getProperty("java.io.tmpdir")).getFreeSpace()/1048576) + " Mb<br><br>");
+						responseStream.println("<b>dcm4chee Free Space: </b>" + df.format(FileSystemUtils.freeSpaceKb(EPADConfig.dcm4cheeDirRoot)/1024) + " Mb<br>");
+						responseStream.println("<b>ePad Free Space: </b>" + df.format(FileSystemUtils.freeSpaceKb(EPADConfig.getEPADWebServerBaseDir())/1024) + " Mb<br>");
+						responseStream.println("<b>Tmp Free Space: </b>" + df.format(FileSystemUtils.freeSpaceKb(System.getProperty("java.io.tmpdir"))/1024) + " Mb<br><br>");
 					} catch (Exception x) {}
 					responseStream.println("<b>Current Sessions: </b>" + "<br>");
 					Map<String, EPADSession> sessions = EPADSessionOperations.getCurrentSessions();
