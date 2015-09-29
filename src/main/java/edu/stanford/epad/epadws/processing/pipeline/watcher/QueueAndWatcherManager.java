@@ -240,6 +240,7 @@ public class QueueAndWatcherManager
 
 		String tagFilePath = createOutputPNGFilePathForSingleFrameDICOMImage(dicomFileDescription).replace(".png", ".tag");
 		MultiFramePNGGeneratorTask dsoPNGGeneratorTask = new MultiFramePNGGeneratorTask(dicomFileDescription.seriesUID,
+				dicomFileDescription.imageUID,
 				multiFrameDicomFile, tagFilePath);
 
 		pngGeneratorTaskQueue.offer(dsoPNGGeneratorTask);

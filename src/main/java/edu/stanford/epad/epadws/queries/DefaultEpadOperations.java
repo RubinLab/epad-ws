@@ -2023,8 +2023,9 @@ public class DefaultEpadOperations implements EpadOperations
 	@Override
 	public int subjectDelete(SubjectReference subjectReference, String sessionID, String username) throws Exception
 	{
-		if (subjectReference.projectID != null && subjectReference.projectID.equals(EPADConfig.getParamValue("UnassignedProjectID", "nonassigned")))
-			throw new Exception("Study can not be delete from project:" + subjectReference.projectID);
+		List<Study> studies = projectOperations.getStudiesForSubject(subjectReference.subjectID);
+		if (studies.size() > 0 && subjectReference.projectID != null && subjectReference.projectID.equals(EPADConfig.getParamValue("UnassignedProjectID", "nonassigned")))
+			throw new Exception("Patient can not be delete from project:" + subjectReference.projectID);
 		int xnatStatusCode;
 		User user = projectOperations.getUser(username);
 		if (!user.isAdmin() && !projectOperations.isOwner(username, subjectReference.projectID))

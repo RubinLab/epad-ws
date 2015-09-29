@@ -1013,7 +1013,8 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 			inclause = inclause + delim + id;
 			delim = ",";
 		}
-		
+		if (inclause.length() == 0)
+			return new ArrayList<Subject>();
 		List objects = new Subject().getObjects("id in " + inclause + ") order by name");
 		List<Subject> subjects = new ArrayList<Subject>();
 		subjects.addAll(objects);

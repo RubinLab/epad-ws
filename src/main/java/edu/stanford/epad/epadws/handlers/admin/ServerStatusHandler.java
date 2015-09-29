@@ -104,8 +104,10 @@ public class ServerStatusHandler extends AbstractHandler
 				responseStream.println("<b>ePAD server uptime:</b> " + upTimeHr + " hrs " + upTimeMin + " mins " + upTimeSec + " secs<br>");
 				responseStream.println("<br>");
 			}
-			responseStream.println("<b>Version:</b> " + new EPadWebServerVersion().getVersion() + " <b>Build Date:</b> " + new EPadWebServerVersion().getBuildDate() + " <b>Build Host:</b> " + new EPadWebServerVersion().getBuildHost() + "<br>");
+			if (!validSession)
+				responseStream.println("Version: " + new EPadWebServerVersion().getVersion() + " Build Date: " + new EPadWebServerVersion().getBuildDate() + " Build Host: " + new EPadWebServerVersion().getBuildHost() + "<br>");
 			if (validSession) {
+				responseStream.println("<b>Version:</b> " + new EPadWebServerVersion().getVersion() + " <b>Build Date:</b> " + new EPadWebServerVersion().getBuildDate() + " <b>Build Host:</b> " + new EPadWebServerVersion().getBuildHost() + "<br>");
 				List<Plugin> plugins = PluginOperations.getInstance().getPlugins();
 				responseStream.println("<br>");
 				responseStream.println("<b>Loaded Plugins:</b>");
@@ -142,7 +144,7 @@ public class ServerStatusHandler extends AbstractHandler
 						DecimalFormat df = new DecimalFormat("###,###,###");
 						responseStream.println("<b>dcm4chee Free Space: </b>" + df.format(FileSystemUtils.freeSpaceKb(EPADConfig.dcm4cheeDirRoot)/1024) + " Mb<br>");
 						responseStream.println("<b>ePad Free Space: </b>" + df.format(FileSystemUtils.freeSpaceKb(EPADConfig.getEPADWebServerBaseDir())/1024) + " Mb<br>");
-						responseStream.println("<b>Tmp Free Space: </b>" + df.format(FileSystemUtils.freeSpaceKb(System.getProperty("java.io.tmpdir"))/1024) + " Mb<br><br>");
+						responseStream.println("<b>Tmp Free Space: </b>" + df.format(FileSystemUtils.freeSpaceKb(System.getProperty("java.io.tmpdir"))/1024) + " Mb (Max Upload)<br><br>");
 					} catch (Exception x) {}
 					responseStream.println("<b>Current Sessions: </b>" + "<br>");
 					Map<String, EPADSession> sessions = EPADSessionOperations.getCurrentSessions();

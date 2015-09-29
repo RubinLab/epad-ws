@@ -26,6 +26,8 @@ package edu.stanford.epad.epadws.processing.pipeline.task;
 import java.io.File;
 
 import edu.stanford.epad.common.util.EPADLogger;
+import edu.stanford.epad.dtos.PNGFileProcessingStatus;
+import edu.stanford.epad.dtos.SeriesProcessingStatus;
 import edu.stanford.epad.epadws.handlers.dicom.DSOUtil;
 
 public class MultiFramePNGGeneratorTask implements GeneratorTask
@@ -33,12 +35,14 @@ public class MultiFramePNGGeneratorTask implements GeneratorTask
 	private static final EPADLogger log = EPADLogger.getInstance();
 
 	private final String seriesUID;
+	private final String imageUID;
 	private final File multiFrameDICOMFile;
 	private String tagFilePath;
 	
-	public MultiFramePNGGeneratorTask(String seriesUID, File multiFrameDICOMFile, String tagFilePath)
+	public MultiFramePNGGeneratorTask(String seriesUID, String imageUID, File multiFrameDICOMFile, String tagFilePath)
 	{
 		this.seriesUID = seriesUID;
+		this.imageUID = imageUID;
 		this.multiFrameDICOMFile = multiFrameDICOMFile;
 		this.tagFilePath = tagFilePath;
 	}
@@ -50,9 +54,9 @@ public class MultiFramePNGGeneratorTask implements GeneratorTask
 				+ multiFrameDICOMFile.getAbsolutePath());
 
 		try {
-			DSOUtil.writeMultiFramePNGs(multiFrameDICOMFile);
+			DSOUtil.writeMultiFramePNGs(seriesUID, imageUID, multiFrameDICOMFile);
 		} catch (Exception e) {
-			log.warning("Error writing AIM file for multi-frame series " + seriesUID, e);
+			log.warning("Error writing PNGs for multi-frame seriesUID: " + seriesUID + " imageUID: " + imageUID, e);
 		}
 	}
 

@@ -437,10 +437,11 @@ public class DSOUtil
 		}
 	}
 
-	public static void writeMultiFramePNGs(File dsoFile) throws Exception
+	public static void writeMultiFramePNGs(String seriesUID, String imageUID, File dicomFile) throws Exception
 	{
+		String pngFilePath = "";
+		EpadDatabaseOperations databaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
 		try {
-			EpadDatabaseOperations databaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
 //			DicomSegmentationObject dso = new DicomSegmentationObject();
 //			SourceImage sourceDSOImage = dso.convert(dsoFile.getAbsolutePath());
 			int numberOfFrames = 1;
@@ -448,14 +449,14 @@ public class DSOUtil
 //			SourceImage sourceDSOImage = new SourceImage(dsoFile.getAbsolutePath());
 //			numberOfFrames = sourceDSOImage.getNumberOfBufferedImages();
 			Opener opener = new Opener();
-			ImagePlus image = opener.openImage(dsoFile.getAbsolutePath());
+			ImagePlus image = opener.openImage(dicomFile.getAbsolutePath());
 			numberOfFrames  = image.getNFrames();
 			int numberOfSlices  = image.getNSlices();
 			log.info("Multiframe dicom, frames:" + numberOfFrames + " slices:" + numberOfSlices + " stack size:" + image.getImageStackSize());
-			AttributeList dicomAttributes = PixelMedUtils.readAttributeListFromDicomFile(dsoFile.getAbsolutePath());
+			AttributeList dicomAttributes = PixelMedUtils.readAttributeListFromDicomFile(dicomFile.getAbsolutePath());
 			String studyUID = Attribute.getSingleStringValueOrEmptyString(dicomAttributes, TagFromName.StudyInstanceUID);
-			String seriesUID = Attribute.getSingleStringValueOrEmptyString(dicomAttributes, TagFromName.SeriesInstanceUID);
-			String imageUID = Attribute.getSingleStringValueOrEmptyString(dicomAttributes, TagFromName.SOPInstanceUID);
+			seriesUID = Attribute.getSingleStringValueOrEmptyString(dicomAttributes, TagFromName.SeriesInstanceUID);
+			imageUID = Attribute.getSingleStringValueOrEmptyString(dicomAttributes, TagFromName.SOPInstanceUID);
 
 			String pngDirectoryPath = baseDicomDirectory + "/studies/" + studyUID + "/series/" + seriesUID + "/images/"
 					+ imageUID + "/frames/";
@@ -469,7 +470,7 @@ public class DSOUtil
 			for (int frameNumber = 0; frameNumber < numberOfSlices; frameNumber++) {
 //				BufferedImage bufferedImage = sourceDSOImage.getBufferedImage(numberOfFrames - frameNumber - 1);
 				BufferedImage bufferedImage = stack.getProcessor(frameNumber+1).getBufferedImage();
-				String pngFilePath = pngDirectoryPath + frameNumber + ".png";
+				pngFilePath = pngDirectoryPath + frameNumber + ".png";
 				File pngFile = new File(pngFilePath);
 				try {
 					insertEpadFile(databaseOperations, pngFilePath, 0, imageUID);
@@ -482,13 +483,14 @@ public class DSOUtil
 				}
 			}
 			log.info("Finished writing PNGs for multi-frame DICOM " + imageUID + " in series " + seriesUID);
-		} catch (DicomException e) {
-			log.warning("DICOM exception writing multi-frame PNGs", e);
-			throw new Exception("DICOM exception writing multi-frame PNGs", e);
-		} catch (IOException e) {
-			log.warning("IO exception writing multi-frame PNGs", e);
-			throw new Exception("IO exception writing multi-frame PNGs", e);
-		}
+		} catch (Exception e) {
+			log.warning("Exception writing multi-frame PNGs", e);
+			insertEpadFile(databaseOperations, pngFilePath, 0, imageUID);
+			databaseOperations.updateEpadFileRow(pngFilePath, PNGFileProcessingStatus.ERROR, 0,
+					e.getMessage());
+			databaseOperations.updateOrInsertSeries(seriesUID, SeriesProcessingStatus.ERROR);
+			throw e;
+		} 
 	}
 	
 	public static boolean checkDSOMaskPNGs(File dsoFile)
