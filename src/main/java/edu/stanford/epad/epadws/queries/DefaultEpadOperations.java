@@ -1239,7 +1239,7 @@ public class DefaultEpadOperations implements EpadOperations
 						log.warning("Error saving AIM file to Exist DB:" + uploadedFile.getName());					
 				}				
 			}
-			if (!type.equals(FileType.TEMPLATE))
+			if (type == null || !type.equals(FileType.TEMPLATE))
 				projectOperations.createEventLog(username, projectID, subjectID, studyID, seriesID, null, null, "UPLOAD FILE", uploadedFile.getName(), description, false);
 			projectOperations.createFile(username, projectID, subjectID, studyID, seriesID, uploadedFile, filename, description, type);
 			if (type != null && type.equals(FileType.IMAGE) && seriesID != null) {
