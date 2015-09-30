@@ -89,9 +89,13 @@ public class EpadStatisticsTask implements Runnable
 				wls = new WorkList().getCount("");
 			} catch (Exception x) {}
 			String host = EPADConfig.xnatServer;
-			if (host.equalsIgnoreCase("localhost") || host.equalsIgnoreCase("127.0.0.1") || host.equalsIgnoreCase("epad-vm"))
+			if (host == null || host.equalsIgnoreCase("localhost") || host.equalsIgnoreCase("127.0.0.1") || host.equalsIgnoreCase("epad-vm"))
+				host = System.getenv("DOCKER_HOST");;
+				if (host == null || host.equalsIgnoreCase("localhost") || host.equalsIgnoreCase("127.0.0.1") || host.equalsIgnoreCase("epad-vm"))
+					host = System.getenv("HOSTNAME");;
+			if (host == null || host.equalsIgnoreCase("localhost") || host.equalsIgnoreCase("127.0.0.1") || host.equalsIgnoreCase("epad-vm"))
 				host = InetAddress.getLocalHost().getHostName();
-			if (host.equalsIgnoreCase("localhost") || host.equalsIgnoreCase("127.0.0.1") || host.equalsIgnoreCase("epad-vm"))
+			if (host == null || host.equalsIgnoreCase("localhost") || host.equalsIgnoreCase("127.0.0.1") || host.equalsIgnoreCase("epad-vm"))
 				host = getIPAddress();
 			es.setHost(host);
 			es.setNumOfUsers(users);

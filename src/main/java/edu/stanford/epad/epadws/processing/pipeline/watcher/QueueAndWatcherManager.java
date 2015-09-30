@@ -239,7 +239,8 @@ public class QueueAndWatcherManager
 		log.info("Multi-frame DICOM object found for series " + dicomFileDescription.seriesUID);
 
 		String tagFilePath = createOutputPNGFilePathForSingleFrameDICOMImage(dicomFileDescription).replace(".png", ".tag");
-		MultiFramePNGGeneratorTask dsoPNGGeneratorTask = new MultiFramePNGGeneratorTask(dicomFileDescription.seriesUID,
+		MultiFramePNGGeneratorTask dsoPNGGeneratorTask = new MultiFramePNGGeneratorTask(dicomFileDescription.studyUID, 
+				dicomFileDescription.seriesUID,
 				dicomFileDescription.imageUID,
 				multiFrameDicomFile, tagFilePath);
 

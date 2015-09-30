@@ -35,11 +35,14 @@ import org.eclipse.jetty.util.log.Log;
 import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.epad.common.util.FTPUtil;
+import edu.stanford.epad.epadws.epaddb.EpadDatabase;
 
 public class EPadWebServerVersion
 {
 	private static final EPADLogger log = EPADLogger.getInstance();
 
+	public static boolean restartRequired = false;
+	
 	static String version = null;
 	static String buildDate = null;
 	static String buildHost = null;
@@ -79,7 +82,7 @@ public class EPadWebServerVersion
 		return buildHost;
 	}
 	
-	public void downloadEpadLatestVersion() throws Exception {
+	public void downloadEpadLatestVersion(String username) throws Exception {
 		String jarname = EPADConfig.getParamValue("EPADJarName", "epad-ws-1.1-jar-with-dependencies.jar");
 		String warname = EPADConfig.getParamValue("EPADWarName", "ePad.war");
 		String base = EPADConfig.getEPADWebServerBaseDir();
@@ -111,5 +114,15 @@ public class EPadWebServerVersion
 			log.warning("Error downloading ePAD software", x);
 			throw new Exception("Error downloading ePAD software:" + x.getMessage());
 		}
+		restartRequired = true;
+		EpadDatabase.getInstance().getEPADDatabaseOperations().insertEpadEvent(
+				username, 
+				"Software updated, Please restart ePAD", 
+				"System", "Restart",
+				"System", 
+				"Restart", 
+				"Restart", 
+				"Restart",
+				"Please restart ePAD");												
 	}
 }

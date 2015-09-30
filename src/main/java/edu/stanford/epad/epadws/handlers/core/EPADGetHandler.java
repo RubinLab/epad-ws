@@ -1647,7 +1647,7 @@ public class EPADGetHandler
 						User user = DefaultEpadProjectOperations.getInstance().getUser(username);
 						if (!user.isAdmin())
 							throw new Exception("No permissions to download ePAD software");
-						new EPadWebServerVersion().downloadEpadLatestVersion();
+						new EPadWebServerVersion().downloadEpadLatestVersion(username);
 						data.status = EpadStatisticsTask.newEPADVersion + " has been downloaded, please restart the server";
 					}
 				}

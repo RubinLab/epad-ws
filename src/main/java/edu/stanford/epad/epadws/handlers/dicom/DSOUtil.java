@@ -66,6 +66,7 @@ import com.pixelmed.dicom.AttributeList;
 import com.pixelmed.dicom.DicomException;
 import com.pixelmed.dicom.DicomInputStream;
 import com.pixelmed.dicom.TagFromName;
+import com.pixelmed.display.ConsumerFormatImageMaker;
 import com.pixelmed.display.SourceImage;
 
 import edu.stanford.epad.common.dicom.DCM4CHEEImageDescription;
@@ -437,49 +438,61 @@ public class DSOUtil
 		}
 	}
 
-	public static void writeMultiFramePNGs(String seriesUID, String imageUID, File dicomFile) throws Exception
+	public static void writeMultiFramePNGs(String studyUID, String seriesUID, String imageUID, File dicomFile) throws Exception
 	{
 		String pngFilePath = "";
 		EpadDatabaseOperations databaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
 		try {
-//			DicomSegmentationObject dso = new DicomSegmentationObject();
-//			SourceImage sourceDSOImage = dso.convert(dsoFile.getAbsolutePath());
 			int numberOfFrames = 1;
-//			DicomSegmentationObject dso = new DicomSegmentationObject();
-//			SourceImage sourceDSOImage = new SourceImage(dsoFile.getAbsolutePath());
-//			numberOfFrames = sourceDSOImage.getNumberOfBufferedImages();
-			Opener opener = new Opener();
-			ImagePlus image = opener.openImage(dicomFile.getAbsolutePath());
-			numberOfFrames  = image.getNFrames();
-			int numberOfSlices  = image.getNSlices();
-			log.info("Multiframe dicom, frames:" + numberOfFrames + " slices:" + numberOfSlices + " stack size:" + image.getImageStackSize());
-			AttributeList dicomAttributes = PixelMedUtils.readAttributeListFromDicomFile(dicomFile.getAbsolutePath());
-			String studyUID = Attribute.getSingleStringValueOrEmptyString(dicomAttributes, TagFromName.StudyInstanceUID);
-			seriesUID = Attribute.getSingleStringValueOrEmptyString(dicomAttributes, TagFromName.SeriesInstanceUID);
-			imageUID = Attribute.getSingleStringValueOrEmptyString(dicomAttributes, TagFromName.SOPInstanceUID);
-
+			
 			String pngDirectoryPath = baseDicomDirectory + "/studies/" + studyUID + "/series/" + seriesUID + "/images/"
 					+ imageUID + "/frames/";
 			File pngFilesDirectory = new File(pngDirectoryPath);
+			pngFilePath = pngDirectoryPath + "0.png";
 
 			log.info("Writing PNGs for MultiFrame DICOM " + imageUID + " in series " + seriesUID);
 
 			pngFilesDirectory.mkdirs();
-			ImageStack stack = image.getImageStack();
-
-			for (int frameNumber = 0; frameNumber < numberOfSlices; frameNumber++) {
-//				BufferedImage bufferedImage = sourceDSOImage.getBufferedImage(numberOfFrames - frameNumber - 1);
-				BufferedImage bufferedImage = stack.getProcessor(frameNumber+1).getBufferedImage();
-				pngFilePath = pngDirectoryPath + frameNumber + ".png";
-				File pngFile = new File(pngFilePath);
-				try {
-					insertEpadFile(databaseOperations, pngFilePath, 0, imageUID);
-					log.info("Writing PNG frame " + frameNumber + " in multi-frame image " + imageUID + " in series " + seriesUID);
-					ImageIO.write(bufferedImage, "png", pngFile);
-					databaseOperations.updateEpadFileRow(pngFilePath, PNGFileProcessingStatus.DONE, pngFile.length(), "");
-				} catch (IOException e) {
-					log.warning("Failure writing PNG file " + pngFilePath + " for frame " + frameNumber
-							+ " in multi-frame image " + imageUID + " in series " + seriesUID, e);
+			Opener opener = new Opener();
+			ImagePlus image = opener.openImage(dicomFile.getAbsolutePath());
+			if (image != null) {
+				numberOfFrames  = image.getNFrames();
+				int numberOfSlices  = image.getNSlices();
+				log.info("Multiframe dicom, frames:" + numberOfFrames + " slices:" + numberOfSlices + " stack size:" + image.getImageStackSize());
+				ImageStack stack = image.getImageStack();
+	
+				for (int frameNumber = 0; frameNumber < numberOfSlices; frameNumber++) {
+					BufferedImage bufferedImage = stack.getProcessor(frameNumber+1).getBufferedImage();
+					pngFilePath = pngDirectoryPath + frameNumber + ".png";
+					File pngFile = new File(pngFilePath);
+					try {
+						insertEpadFile(databaseOperations, pngFilePath, 0, imageUID);
+						log.info("Writing PNG frame " + frameNumber + " in multi-frame image " + imageUID + " in series " + seriesUID);
+						ImageIO.write(bufferedImage, "png", pngFile);
+						databaseOperations.updateEpadFileRow(pngFilePath, PNGFileProcessingStatus.DONE, pngFile.length(), "");
+					} catch (IOException e) {
+						log.warning("Failure writing PNG file " + pngFilePath + " for frame " + frameNumber
+								+ " in multi-frame image " + imageUID + " in series " + seriesUID, e);
+					}
+				}
+			} else {
+				log.info("Using pixelmed:" + pngFilePath + " Dir:" + pngFilesDirectory.getAbsolutePath());
+				ConsumerFormatImageMaker.convertFileToEightBitImage(dicomFile.getAbsolutePath(), pngFilePath, "png", 0);
+				File[] pngs = pngFilesDirectory.listFiles();
+				for (File png: pngs)
+				{
+					if (!png.getName().endsWith(".png"))
+					{
+						deleteQuietly(png);
+					}
+					else
+					{
+						String name = png.getName().replace("0_","");
+						File newFile = new File(pngDirectoryPath, name);
+						png.renameTo(newFile);
+						insertEpadFile(databaseOperations, newFile.getAbsolutePath(), 0, imageUID);
+						databaseOperations.updateEpadFileRow(newFile.getAbsolutePath(), PNGFileProcessingStatus.DONE,png.length(), "");
+					}
 				}
 			}
 			log.info("Finished writing PNGs for multi-frame DICOM " + imageUID + " in series " + seriesUID);

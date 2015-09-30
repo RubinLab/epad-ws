@@ -34,13 +34,15 @@ public class MultiFramePNGGeneratorTask implements GeneratorTask
 {
 	private static final EPADLogger log = EPADLogger.getInstance();
 
+	private final String studyUID;
 	private final String seriesUID;
 	private final String imageUID;
 	private final File multiFrameDICOMFile;
 	private String tagFilePath;
 	
-	public MultiFramePNGGeneratorTask(String seriesUID, String imageUID, File multiFrameDICOMFile, String tagFilePath)
+	public MultiFramePNGGeneratorTask(String studyUID, String seriesUID, String imageUID, File multiFrameDICOMFile, String tagFilePath)
 	{
+		this.studyUID = studyUID;
 		this.seriesUID = seriesUID;
 		this.imageUID = imageUID;
 		this.multiFrameDICOMFile = multiFrameDICOMFile;
@@ -54,7 +56,7 @@ public class MultiFramePNGGeneratorTask implements GeneratorTask
 				+ multiFrameDICOMFile.getAbsolutePath());
 
 		try {
-			DSOUtil.writeMultiFramePNGs(seriesUID, imageUID, multiFrameDICOMFile);
+			DSOUtil.writeMultiFramePNGs(studyUID, seriesUID, imageUID, multiFrameDICOMFile);
 		} catch (Exception e) {
 			log.warning("Error writing PNGs for multi-frame seriesUID: " + seriesUID + " imageUID: " + imageUID, e);
 		}
