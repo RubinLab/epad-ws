@@ -26,10 +26,11 @@ package edu.stanford.epad.epadws.service;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
+
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADLogger;
@@ -77,7 +78,7 @@ public class DefaultWorkListOperations implements EpadWorkListOperations {
 	 * @see edu.stanford.epad.epadws.service.EpadWorkListOperations#createWorkList(java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.util.Date, java.util.Date)
 	 */
 	@Override
-	public WorkList createWorkList(String loggedInUser, String username, String workListID, String description, Date startDate, Date dueDate)
+	public WorkList createWorkList(String loggedInUser, String username, String workListID, String name, String description, Date startDate, Date dueDate)
 			throws Exception {
 		User loggedIn = projectOperations.getUser(loggedInUser);
 		if (loggedIn != null && !loggedIn.isAdmin() && !loggedInUser.equals(username) && !loggedIn.hasPermission(User.CreateWorkListPermission))
@@ -105,6 +106,7 @@ public class DefaultWorkListOperations implements EpadWorkListOperations {
 		}
 		if (description != null && description.trim().length() > 0)
 			workList.setDescription(description);
+		workList.setName(name);
 		if (startDate != null)
 			workList.setStartDate(startDate);
 		if (dueDate != null)
@@ -122,9 +124,11 @@ public class DefaultWorkListOperations implements EpadWorkListOperations {
 	 */
 	@Override
 	public WorkList updateWorkList(String loggedInUser, String username,
-			String workListID, String description, Date startDate, Date dueDate)
+			String workListID, String name, String description, Date startDate, Date dueDate)
 			throws Exception {
 		WorkList workList = getWorkList(workListID);
+		if (name != null)
+			workList.setName(name);
 		if (description != null)
 			workList.setDescription(description);
 		if (username != null)
@@ -154,7 +158,7 @@ public class DefaultWorkListOperations implements EpadWorkListOperations {
 		workList = (WorkList) workList.getObject("worklistid = " + workList.toSQL(workListID));
 		Project project = projectOperations.getProject(projectID);
 		if (!projectOperations.isSubjectInProject(subjectUID, project.getProjectId()))
-			throw new Exception("Subject does not belong to Project");
+			throw new Exception("Subject " + subjectUID + " does not belong to Project " + projectID);
 		WorkListToSubject wtos = (WorkListToSubject) new WorkListToSubject().getObject("worklist_id =" + workList.getId() + " and subject_id=" + subject.getId());
 		if (wtos == null)
 		{
@@ -168,7 +172,7 @@ public class DefaultWorkListOperations implements EpadWorkListOperations {
 			wtos.save();
 		}
 	}
-
+	
 	/* (non-Javadoc)
 	 * @see edu.stanford.epad.epadws.service.EpadWorkListOperations#addStudyToWorkList(java.lang.String, java.lang.String, java.lang.String)
 	 */
@@ -181,7 +185,7 @@ public class DefaultWorkListOperations implements EpadWorkListOperations {
 		Project project = projectOperations.getProject(projectID);
 		Subject subject = (Subject) projectOperations.getDBObject(Subject.class, study.getSubjectId());
 		if (!projectOperations.isSubjectInProject(subject.getSubjectUID(), project.getProjectId()))
-			throw new Exception("Study does not belong to Project");
+			throw new Exception("Study " + studyUID + " does not belong to Project " + projectID);
 		WorkListToStudy wtos = (WorkListToStudy) new WorkListToStudy().getObject("worklist_id =" + workList.getId() + " and study_id=" + study.getId());
 		if (wtos == null)
 		{
@@ -195,6 +199,19 @@ public class DefaultWorkListOperations implements EpadWorkListOperations {
 			wtos.save();
 		}
 		return wtos;
+	}
+
+	//{"Subjects":["7","LIDC-IDRI-0314","AAA 20120823","91659230232099800175185744868500866896","282712935615235796400856228568961224210","99999999","DJR-VA-6770","212845382164361112207915959222509827626"]} 
+	@Override
+	public void addSubjectsToWorkList(String loggedInUser, String projectID,
+			JSONObject json, String workListID) throws Exception {
+		log.debug("JSONObject:" + json);
+		JSONArray subjectIDs = (JSONArray) json.get("Subjects");
+		for (int i = 0; i < subjectIDs.length(); i++)
+		{
+			String subjectID = subjectIDs.getString(i);
+			addSubjectToWorkList(loggedInUser, projectID, subjectID, workListID);
+		}		
 	}
 
 	/* (non-Javadoc)

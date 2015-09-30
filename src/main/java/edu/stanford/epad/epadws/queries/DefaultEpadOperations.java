@@ -2792,23 +2792,23 @@ public class DefaultEpadOperations implements EpadOperations
 			List<String> studyUIDs = new ArrayList<String>();
 			List<String> statuses = new ArrayList<String>();
 			List<String> projectIDs = new ArrayList<String>();
-		for (Subject subject: subjects)
-		{
-			subjectIDs.add(subject.getSubjectUID());
-				projectIDs.add(subject.getProjectID());
-				statuses.add(subject.getStatus());
-		}
-		for (Study study: studies)
-		{
-			studyUIDs.add(study.getStudyUID());
-				projectIDs.add(study.getProjectID());
-				statuses.add(study.getStatus());
-		}
-			
-			wllist.addEPADWorklist(new EPADWorklist(wl.getWorkListID(), user.getUsername(),
-				wl.getDescription(), wl.getStatus(),formatDate(wl.getStartDate()),
+			for (Subject subject: subjects)
+			{
+				subjectIDs.add(subject.getSubjectUID());
+					projectIDs.add(subject.getProjectID());
+					statuses.add(subject.getStatus());
+			}
+			for (Study study: studies)
+			{
+				studyUIDs.add(study.getStudyUID());
+					projectIDs.add(study.getProjectID());
+					statuses.add(study.getStatus());
+			}
+				
+			wllist.addEPADWorklist(new EPADWorklist(wl.getWorkListID(), user.getUsername(), wl.getName(),
+					wl.getDescription(), wl.getStatus(),formatDate(wl.getStartDate()),
 					formatDate(wl.getCompleteDate()), formatDate(wl.getDueDate()), projectIDs, studyUIDs, statuses));
-	}
+		}
 		return wllist;
 	}
 
@@ -2839,6 +2839,7 @@ public class DefaultEpadOperations implements EpadOperations
 			EPADWorklistStudy wls = new EPADWorklistStudy(workListID, username, project.getProjectId(),
 					subject.getSubjectUID(), study.getStudyUID(), wstudy.getStatus(), formatDate(wstudy.getStartDate()),
 					formatDate(wstudy.getCompleteDate()));
+			wls.workListName = wl.getName();
 			wlsl.addEPADWorklistStudy(wls);
 		}
 		return wlsl;
@@ -2859,6 +2860,7 @@ public class DefaultEpadOperations implements EpadOperations
 			EPADWorklistSubject wls = new EPADWorklistSubject(workListID, username, project.getProjectId(),
 						subject.getSubjectUID(), subject.getName(), wsubject.getStatus(), formatDate(wsubject.getStartDate()),
 						formatDate(wsubject.getCompleteDate()));
+			wls.workListName = wl.getName();
 			wlsl.addEPADWorklistSubject(wls);
 		}
 		return wlsl;
@@ -2889,7 +2891,7 @@ public class DefaultEpadOperations implements EpadOperations
 			statuses.add(study.getStatus());
 		}
 		
-		return new EPADWorklist(wl.getWorkListID(), user.getUsername(),
+		return new EPADWorklist(wl.getWorkListID(), user.getUsername(), wl.getName(),
 				wl.getDescription(), wl.getStatus(),formatDate(wl.getStartDate()),
 				formatDate(wl.getCompleteDate()), formatDate(wl.getDueDate()), projectIDs, studyUIDs, statuses);
 	}

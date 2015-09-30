@@ -53,6 +53,7 @@ import edu.stanford.epad.epadws.controllers.exceptions.NotFoundException;
 import edu.stanford.epad.epadws.handlers.HandlerUtil;
 import edu.stanford.epad.epadws.handlers.core.UsersRouteTemplates;
 import edu.stanford.epad.epadws.models.RemotePACQuery;
+import edu.stanford.epad.epadws.models.WorkList;
 import edu.stanford.epad.epadws.queries.DefaultEpadOperations;
 import edu.stanford.epad.epadws.queries.EpadOperations;
 import edu.stanford.epad.epadws.security.EPADSession;
@@ -169,14 +170,32 @@ public class UserController {
 										@PathVariable String projectID,
 										@PathVariable String reader,
 										@PathVariable String workListID,
+										@RequestParam(value="name", required=false) String name,
 										@RequestParam(value="description", required=false) String description,
 										@RequestParam(value="dueDate", required=false) String dueDate,
+										@RequestParam(value="status", required=false) String wlstatus,
+										@RequestParam(value="started", required=false) Boolean started,
+										@RequestParam(value="completed", required=false) Boolean completed,
 										HttpServletRequest request, 
 								        HttpServletResponse response) throws Exception {
 		String sessionID = SessionService.getJSessionIDFromRequest(request);
 		String username = SessionService.getUsernameForSession(sessionID);
 		EpadWorkListOperations worklistOperations = DefaultWorkListOperations.getInstance();
-		worklistOperations.createWorkList(username, reader, workListID, description, null, getDate(dueDate));
+		WorkList worklist = worklistOperations.getWorkList(workListID);
+		if (worklist == null)
+		{
+			worklist = worklistOperations.createWorkList(username, reader, workListID, name, description, null, getDate(dueDate));
+		}
+		else
+		{
+			if (description != null || dueDate != null)
+				worklistOperations.updateWorkList(username, reader, workListID, name, description, null, getDate(dueDate));
+		}
+		if (wlstatus != null || started != null || completed != null)
+		{
+			log.info("WorklistID:" + workListID + " status:" + wlstatus + " started:" + started + " completed:" + completed);
+			worklistOperations.setWorkListStatus(reader, workListID, wlstatus, started, completed);
+		}
 	}
 	
 	@RequestMapping(value = "/{reader}/worklists/", method = {RequestMethod.POST,RequestMethod.PUT})
@@ -184,13 +203,14 @@ public class UserController {
 										@PathVariable String projectID,
 										@PathVariable String reader,
 										@RequestParam(value="description", required=false) String description,
+										@RequestParam(value="name", required=false) String name,
 										@RequestParam(value="dueDate", required=false) String dueDate,
 										HttpServletRequest request, 
 								        HttpServletResponse response) throws Exception {
 		String sessionID = SessionService.getJSessionIDFromRequest(request);
 		String username = SessionService.getUsernameForSession(sessionID);
 		EpadWorkListOperations worklistOperations = DefaultWorkListOperations.getInstance();
-		worklistOperations.createWorkList(username, reader, null, description, null, getDate(dueDate));
+		worklistOperations.createWorkList(username, reader, null, name, description, null, getDate(dueDate));
 	}
 	
 	SimpleDateFormat dateformat = new SimpleDateFormat("yyyyMMdd");

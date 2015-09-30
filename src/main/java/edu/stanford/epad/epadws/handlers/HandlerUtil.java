@@ -53,6 +53,8 @@ import org.apache.commons.httpclient.HttpException;
 import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Level;
+import org.json.HTTP;
+import org.json.JSONObject;
 
 import com.sun.jersey.api.uri.UriTemplate;
 
@@ -417,6 +419,27 @@ public class HandlerUtil
         return sb.toString();
     }
 
+    public static JSONObject getPostedJson(HttpServletRequest httpRequest) throws Exception
+    {
+    	StringBuffer jb = new StringBuffer();
+		String line = null;
+		try {
+		    BufferedReader reader = httpRequest.getReader();
+		    while ((line = reader.readLine()) != null)
+		      jb.append(line);
+		} catch (Exception e) {
+			log.warning("Error receiving data:" + e);
+			throw e;
+		}
+		log.debug("Posted Json:" + jb);
+		try {
+    	    return new JSONObject(jb.toString());
+		} catch (Exception e) {
+			log.warning("Error parsing JSON request string:" + jb);
+		}    	
+		return null;
+    }
+    
 	public static Map<String, Object> parsePostedData(String uploadDirPath, HttpServletRequest httpRequest, PrintWriter responseStream) throws Exception
 	{
 		File uploadDir = new File(uploadDirPath);

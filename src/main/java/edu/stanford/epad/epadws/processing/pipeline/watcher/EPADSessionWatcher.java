@@ -26,8 +26,11 @@ package edu.stanford.epad.epadws.processing.pipeline.watcher;
 import java.util.Calendar;
 import java.util.concurrent.TimeUnit;
 
+import org.apache.commons.io.FileSystemUtils;
+
 import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADLogger;
+import edu.stanford.epad.epadws.EPadWebServerVersion;
 import edu.stanford.epad.epadws.epaddb.EpadDatabase;
 import edu.stanford.epad.epadws.epaddb.EpadDatabaseOperations;
 import edu.stanford.epad.epadws.processing.pipeline.task.EpadStatisticsTask;
@@ -80,6 +83,37 @@ public class EPADSessionWatcher implements Runnable
 				
 				// Clear cache once a day
 				Calendar now = Calendar.getInstance();
+				if (prevTime == null || (prevTime.get(Calendar.HOUR_OF_DAY) != now.get(Calendar.HOUR_OF_DAY)))
+				{					
+					try {
+						long dcm4cheeMb = FileSystemUtils.freeSpaceKb(EPADConfig.dcm4cheeDirRoot)/1024;
+						long epadMb = FileSystemUtils.freeSpaceKb(EPADConfig.getEPADWebServerBaseDir())/1024;
+						long tmpMb = FileSystemUtils.freeSpaceKb(System.getProperty("java.io.tmpdir"))/1024;
+						if ( dcm4cheeMb < 100 || epadMb < 100 || tmpMb < 100)
+						{
+							projectOperations.createEventLog("system", null, null, null, null, null, null, null, "Disk Space", "Server running out of disk space",  true);
+							epadDatabaseOperations.insertEpadEvent(
+									"admin", 
+									"Server running out of disk space", 
+									"Disk Space", "", "Disk Space", "Disk Space", "Disk Space", "Disk Space", "Server running out of disk space");
+						}
+						if (EPadWebServerVersion.restartRequired)
+						{
+							epadDatabaseOperations.insertEpadEvent(
+									"admin", 
+									"Software updated, Please restart ePAD", 
+									"System", "Restart",
+									"System", 
+									"Restart", 
+									"Restart", 
+									"Restart",
+									"Please restart ePAD");
+						}
+					} catch (Exception x) {
+						log.warning("Exception checking disk space", x);
+					}
+				}
+
 				if (prevTime == null || (now.get(Calendar.HOUR_OF_DAY) == 0 && prevTime != null && prevTime.get(Calendar.HOUR_OF_DAY) != 0))
 				{
 					if (projectOperations.getCacheSize() > 1000 && UserProjectService.pendingPNGs.isEmpty() && RemotePACService.pendingTransfers.isEmpty())

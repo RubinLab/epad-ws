@@ -27,6 +27,8 @@ package edu.stanford.epad.epadws.service;
 import java.util.Date;
 import java.util.List;
 
+import org.json.JSONObject;
+
 import edu.stanford.epad.epadws.models.Study;
 import edu.stanford.epad.epadws.models.Subject;
 import edu.stanford.epad.epadws.models.User;
@@ -54,13 +56,14 @@ public interface EpadWorkListOperations {
 	 * @param username - user for whom the worklist is created
 	 * @param projectID
 	 * @param workListID
+	 * @param name
 	 * @param description
 	 * @param startDate
 	 * @param dueDate
 	 * @return
 	 * @throws Exception
 	 */
-	WorkList createWorkList(String loggedInUser, String username, String workListID, String description, Date startDate, Date dueDate) throws Exception;
+	WorkList createWorkList(String loggedInUser, String username, String workListID, String name, String description, Date startDate, Date dueDate) throws Exception;
 	
 	/**
 	 * Updates worklist fields in database (all arguments except workListID are optional) 
@@ -68,13 +71,14 @@ public interface EpadWorkListOperations {
 	 * @param loggedInUser
 	 * @param username - user to whom the worklist is being changed or null
 	 * @param workListID
+	 * @param name
 	 * @param description
 	 * @param startDate
 	 * @param dueDate
 	 * @return
 	 * @throws Exception
 	 */
-	WorkList updateWorkList(String loggedInUser, String username, String workListID, String description, Date startDate, Date dueDate) throws Exception;
+	WorkList updateWorkList(String loggedInUser, String username, String workListID, String name, String description, Date startDate, Date dueDate) throws Exception;
 	
 	/**
 	 * Add Subject to WorkList
@@ -84,7 +88,7 @@ public interface EpadWorkListOperations {
 	 * @throws Exception
 	 */
 	void addSubjectToWorkList(String loggedInUser, String projectID, String subjectUID, String workListID) throws Exception;
-	
+	void addSubjectsToWorkList(String loggedInUser, String projectID, JSONObject json, String workListID) throws Exception;
 	/**
 	 * Add Study to WorkList
 	 * @param loggedInUser

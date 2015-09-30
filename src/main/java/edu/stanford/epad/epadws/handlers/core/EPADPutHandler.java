@@ -273,26 +273,28 @@ public class EPADPutHandler
 			} else if (HandlerUtil.matchesTemplate(UsersRouteTemplates.USER_WORKLISTS, pathInfo)) {
 				Map<String, String> templateMap = HandlerUtil.getTemplateMap(UsersRouteTemplates.USER_WORKLISTS, pathInfo);
 				String reader = HandlerUtil.getTemplateParameter(templateMap, "username");
+				String name = httpRequest.getParameter("name");
 				String description = httpRequest.getParameter("description");
 				String dueDate = httpRequest.getParameter("dueDate");
-				worklistOperations.createWorkList(username, reader, null, description, null, getDate(dueDate));
+				worklistOperations.createWorkList(username, reader, null, name, description, null, getDate(dueDate));
 				statusCode = HttpServletResponse.SC_OK;
 
 			} else if (HandlerUtil.matchesTemplate(UsersRouteTemplates.USER_WORKLIST, pathInfo)) {
 				Map<String, String> templateMap = HandlerUtil.getTemplateMap(UsersRouteTemplates.USER_WORKLIST, pathInfo);
 				String reader = HandlerUtil.getTemplateParameter(templateMap, "username");
 				String workListID = HandlerUtil.getTemplateParameter(templateMap, "worklistID");
+				String name = httpRequest.getParameter("name");
 				String description = httpRequest.getParameter("description");
 				String dueDate = httpRequest.getParameter("dueDate");
 				WorkList worklist = worklistOperations.getWorkList(workListID);
 				if (worklist == null)
 				{
-					worklist = worklistOperations.createWorkList(username, reader, workListID, description, null, getDate(dueDate));
+					worklist = worklistOperations.createWorkList(username, reader, workListID, name, description, null, getDate(dueDate));
 				}
 				else
 				{
 					if (description != null || dueDate != null)
-						worklistOperations.updateWorkList(username, reader, workListID, description, null, getDate(dueDate));
+						worklistOperations.updateWorkList(username, reader, workListID, name, description, null, getDate(dueDate));
 				}
 				String wlstatus = httpRequest.getParameter("status");
 				Boolean started = "true".equalsIgnoreCase(httpRequest.getParameter("started"));

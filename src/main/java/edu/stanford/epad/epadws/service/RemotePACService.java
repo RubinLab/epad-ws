@@ -370,6 +370,8 @@ public class RemotePACService extends RemotePACSBase {
 		User user = DefaultEpadProjectOperations.getInstance().getUser(username);
 		if (!user.isAdmin() && !user.hasPermission(User.CreateAutoPACQueryPermission))
 			throw new Exception("No permission to create PAC Patient Query configuration");
+		if (projectID.equals(EPADConfig.getParamValue("UnassignedProjectID", "nonassigned")))
+			throw new Exception("Query can not be added to project:" + projectID);
 		RemotePACQuery query = null;
 		try {
 			query = getRemotePACQuery(pacID, subjectUID);
@@ -520,10 +522,16 @@ public class RemotePACService extends RemotePACSBase {
 	public RemotePACQueryConfig getConfig(RemotePACQuery query) throws Exception {
 		Subject subject = (Subject) new Subject(query.getSubjectId()).retrieve();
 		Project project = (Project) new Project(query.getProjectId()).retrieve();
-		return new RemotePACQueryConfig(query.getPacId(), query.getRequestor(),
+		RemotePAC pac = this.getRemotePAC(query.getPacId());
+		RemotePACQueryConfig rqc = new RemotePACQueryConfig(query.getPacId(), query.getRequestor(),
 				subject.getSubjectUID(), project.getProjectId(), query.getModality(), query.getPeriod(),
 				query.isEnabled(), query.getLastStudyDate(), dateformat.format(query.getLastQueryTime()),
 				query.getLastQueryStatus());
+		rqc.projectName = project.getName();
+		rqc.subjectName = subject.getName();
+		if (pac != null)
+			rqc.hostname = pac.hostname;
+		return rqc;
 	}
 	
 	public static Map<String, AttributeList> currentPACQueries = new HashMap<String, AttributeList>();

@@ -33,6 +33,7 @@ public class WorkList extends AbstractDAO {
 	long id;
 	long userId;
 	String workListID;
+	String name;
 	String description;
 	String status;
 	Date startDate;
@@ -68,6 +69,14 @@ public class WorkList extends AbstractDAO {
 
 	public void setWorkListID(String workListID) {
 		this.workListID = workListID;
+	}
+
+	public String getName() {
+		return name;
+	}
+
+	public void setName(String name) {
+		this.name = name;
 	}
 
 	public Date getStartDate() {
@@ -143,6 +152,7 @@ public class WorkList extends AbstractDAO {
         {"id","long","id","Id"},
         {"userId","long","user_id","integer"},
         {"workListID","String","worklistid","varchar"},
+        {"name","String","name","varchar"},
         {"startDate","Date","startdate","date"},
         {"dueDate","Date","duedate","date"},
         {"completeDate","Date","completedate","date"},

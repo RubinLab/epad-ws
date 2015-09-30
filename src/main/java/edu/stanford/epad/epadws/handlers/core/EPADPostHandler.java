@@ -332,8 +332,9 @@ public class EPADPostHandler
 					String reader = HandlerUtil.getTemplateParameter(templateMap, "username");
 					String projectID = HandlerUtil.getTemplateParameter(templateMap, "projectID");
 					String description = httpRequest.getParameter("description");
+					String name = httpRequest.getParameter("name");
 					String dueDate = httpRequest.getParameter("dueDate");
-					worklistOperations.createWorkList(username, reader, null, description, null, getDate(dueDate));
+					worklistOperations.createWorkList(username, reader, null, name, description, null, getDate(dueDate));
 					statusCode = HttpServletResponse.SC_OK;
 				
 				} else if (HandlerUtil.matchesTemplate(UsersRouteTemplates.USER_WORKLIST, pathInfo)) {
@@ -341,11 +342,19 @@ public class EPADPostHandler
 					String reader = HandlerUtil.getTemplateParameter(templateMap, "username");
 					String projectID = HandlerUtil.getTemplateParameter(templateMap, "projectID");
 					String workListID = HandlerUtil.getTemplateParameter(templateMap, "worklistID");
+					String name = httpRequest.getParameter("name");
 					String description = httpRequest.getParameter("description");
 					String dueDate = httpRequest.getParameter("dueDate");
-					worklistOperations.createWorkList(username, reader, workListID, description, null, getDate(dueDate));
+					worklistOperations.createWorkList(username, reader, workListID, name, description, null, getDate(dueDate));
 					statusCode = HttpServletResponse.SC_OK;
-				
+				} else if (HandlerUtil.matchesTemplate(UsersRouteTemplates.USER_PROJECT_SUBJECTS, pathInfo)) {
+					Map<String, String> templateMap = HandlerUtil.getTemplateMap(UsersRouteTemplates.USER_PROJECT_SUBJECTS, pathInfo);
+					String reader = HandlerUtil.getTemplateParameter(templateMap, "username");
+					String projectID = HandlerUtil.getTemplateParameter(templateMap, "projectID");
+					String workListID = HandlerUtil.getTemplateParameter(templateMap, "worklistID");
+					worklistOperations.addSubjectsToWorkList(username, projectID, HandlerUtil.getPostedJson(httpRequest), workListID);
+					statusCode = HttpServletResponse.SC_OK;
+									
 				} else if (HandlerUtil.matchesTemplate(PluginRouteTemplates.PLUGIN_LIST, pathInfo)) { //ML
 					String pluginId = httpRequest.getParameter("pluginId");
 					String name = httpRequest.getParameter("name");

@@ -36,6 +36,7 @@ import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.epad.common.util.FTPUtil;
 import edu.stanford.epad.epadws.epaddb.EpadDatabase;
+import edu.stanford.epad.epadws.service.DefaultEpadProjectOperations;
 
 public class EPadWebServerVersion
 {
@@ -115,6 +116,7 @@ public class EPadWebServerVersion
 			throw new Exception("Error downloading ePAD software:" + x.getMessage());
 		}
 		restartRequired = true;
+		DefaultEpadProjectOperations.getInstance().createEventLog(username, null, null, null, null, null, null, null, "Software Updated", "EPAD System Software has been updated",  true);
 		EpadDatabase.getInstance().getEPADDatabaseOperations().insertEpadEvent(
 				username, 
 				"Software updated, Please restart ePAD", 
