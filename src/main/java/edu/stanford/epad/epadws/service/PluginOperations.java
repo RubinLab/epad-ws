@@ -149,6 +149,8 @@ public class PluginOperations {
 	
 	public List<Plugin> getPluginsForProject(String projectId) throws Exception {
 		Project project=projectOperations.getProject(projectId);
+		if (project==null)
+			throw new Exception("Project with id="+projectId+ " not found!");
 		List objects = new ProjectToPlugin().getObjects(" project_id = " + project.getId() + " and enabled=1 ");
 		List<ProjectToPlugin> projectPlugins = new ArrayList<ProjectToPlugin>();
 		
@@ -231,13 +233,13 @@ public class PluginOperations {
 				throw new Exception("Global project cannot be retrieved");
 		}
 		EPADPluginParameterList parameters=getParametersByProjectIdAndPlugin(project.getId(), plugin.getId());
-			
+		
 		if (returnSummary){
 
-			return new EPADPlugin(plugin.getPluginId(),plugin.getName(),plugin.getDescription(),null,null,null,null,project.getProjectId(),project.getName(),parameters.getResult());
+			return new EPADPlugin(plugin.getPluginId(),plugin.getName(),plugin.getDescription(),null,null,null,null,project.getProjectId(),project.getName(),parameters.getResult(),plugin.getDeveloper(),plugin.getDocumentation(),String.valueOf(plugin.getRate()));
 				
 		}
-		return new EPADPlugin(plugin.getPluginId(),plugin.getName(),plugin.getDescription(),plugin.getJavaclass(),plugin.getEnabled(),plugin.getStatus(),plugin.getModality(),project.getProjectId(),project.getName(),parameters.getResult());
+		return new EPADPlugin(plugin.getPluginId(),plugin.getName(),plugin.getDescription(),plugin.getJavaclass(),plugin.getEnabled(),plugin.getStatus(),plugin.getModality(),project.getProjectId(),project.getName(),parameters.getResult(),plugin.getDeveloper(),plugin.getDocumentation(),String.valueOf(plugin.getRate()));
 
 	}
 	
@@ -255,7 +257,7 @@ public class PluginOperations {
 	}
 
 	public Plugin createPlugin(String loggedInUser, String pluginId, String name, String description,
-			String javaclass, String enabled, String modality, String sessionID) throws Exception {
+			String javaclass, String enabled, String modality,  String developer, String documentation, String rate, String sessionID) throws Exception {
 		User user=null;
 		try {
 			user = projectOperations.getUser(loggedInUser);
@@ -287,6 +289,13 @@ public class PluginOperations {
 		if (modality!=null && modality!="") 
 			plugin.setModality(modality);
 
+		if (developer!=null && developer!="") 
+			plugin.setDeveloper(developer);
+		if (documentation!=null && documentation!="") 
+			plugin.setDocumentation(documentation);
+		if (rate!=null && rate!="") {
+			plugin.rate(Integer.parseInt(rate));
+		}
 		plugin.setCreator(loggedInUser);
 		try {
 			plugin.save();
@@ -296,9 +305,10 @@ public class PluginOperations {
 		return plugin;
 			
 	}
-
+	
+	
 	public Plugin updatePlugin(String loggedInUser, String pluginId, String name, String description,
-			String javaclass, String enabled, String modality, String sessionID) throws Exception {
+			String javaclass, String enabled, String modality, String developer, String documentation, String rate,String sessionID) throws Exception {
 		
 		User user=null;
 		try {
@@ -329,7 +339,13 @@ public class PluginOperations {
 		
 		if (modality!=null && modality!="") 
 			plugin.setModality(modality);
-
+		if (developer!=null && developer!="") 
+			plugin.setDeveloper(developer);
+		if (documentation!=null && documentation!="") 
+			plugin.setDocumentation(documentation);
+		if (rate!=null && rate!="") {
+			plugin.rate(Integer.parseInt(rate));
+		}
 		plugin.setCreator(loggedInUser);
 		try {
 			plugin.save();
