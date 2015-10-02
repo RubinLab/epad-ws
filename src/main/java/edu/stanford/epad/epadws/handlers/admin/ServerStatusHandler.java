@@ -97,7 +97,9 @@ public class ServerStatusHandler extends AbstractHandler
 				long upTimeSec = remain % (1000*60);
 				upTimeSec = upTimeSec / 1000;
 				responseStream.println("<body  topmargin='10px' leftmargin='10px' width='900px'>");
-				responseStream.println("<a href=\"javascript:window.parent.location='" + httpRequest.getContextPath().replace("status/", "").replace("status", "") + "Web_pad.html'\"><b>Back to ePAD</b></a>");
+				String path = httpRequest.getContextPath().replace("status/", "").replace("status", "");
+				if (!path.endsWith("/")) path = path + "/";
+				responseStream.println("<a href=\"javascript:window.parent.location='" + path + "Web_pad.html'\"><b>Back to ePAD</b></a>");
 				responseStream.println("<hr>");
 				responseStream.println("<h3><center>ePAD Server Status</center></h3>");
 				responseStream.println("<hr>");
@@ -144,13 +146,18 @@ public class ServerStatusHandler extends AbstractHandler
 						DecimalFormat df = new DecimalFormat("###,###,###");
 						responseStream.println("<b>dcm4chee Free Space: </b>" + df.format(FileSystemUtils.freeSpaceKb(EPADConfig.dcm4cheeDirRoot)/1024) + " Mb<br>");
 						responseStream.println("<b>ePad Free Space: </b>" + df.format(FileSystemUtils.freeSpaceKb(EPADConfig.getEPADWebServerBaseDir())/1024) + " Mb<br>");
-						responseStream.println("<b>Tmp Free Space: </b>" + df.format(FileSystemUtils.freeSpaceKb(System.getProperty("java.io.tmpdir"))/1024) + " Mb (Max Upload)<br><br>");
+						responseStream.println("<b>Tmp Free Space: </b>" + df.format(FileSystemUtils.freeSpaceKb(System.getProperty("java.io.tmpdir"))/1024) + " Mb (Max Upload)<br>");
+						if (new File("/var/lib/mysql").exists())
+							responseStream.println("<b>Mysql DB Free Space: </b>" + df.format(FileSystemUtils.freeSpaceKb("/var/lib/mysql")/1024) + " Mb<br><br>");
 					} catch (Exception x) {}
 					responseStream.println("<b>Current Sessions: </b>" + "<br>");
 					Map<String, EPADSession> sessions = EPADSessionOperations.getCurrentSessions();
 					for (String id: sessions.keySet()) {
+						String you = "";
+						if (id.equals(sessionID))
+							you = "*";
 						EPADSession session = sessions.get(id);
-						responseStream.println("&nbsp;&nbsp;&nbsp;<b>User:</b> " + session.getUsername() + " <b>Started:</b> " + session.getCreatedTime() + "<br>");
+						responseStream.println("&nbsp;&nbsp;&nbsp;<b>User:</b> " + session.getUsername() + you + " <b>Started:</b> " + session.getCreatedTime() + " <b>From:</b>" + session.getRemoteAddr() + "<br>");
 					}
 					Collection<User> users = DefaultEpadProjectOperations.getUserCache();
 					responseStream.println("<br><b>Background Tasks: </b>");

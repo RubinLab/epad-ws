@@ -710,12 +710,15 @@ public class EPADPutHandler
 				String javaclass = httpRequest.getParameter("class");
 				String enabled = httpRequest.getParameter("enable");
 				String modality = httpRequest.getParameter("modality");
+				String developer = httpRequest.getParameter("developer");
+				String documentation = httpRequest.getParameter("documentation");
+				String rate = httpRequest.getParameter("rate");
 				EPADPlugin plugin = pluginOperations.getPluginDescription(pluginReference.pluginID, username, sessionID);
 				if (plugin != null) {
-					pluginOperations.updatePlugin(username, pluginReference.pluginID, name, description, javaclass, enabled, modality, sessionID);
+					pluginOperations.updatePlugin(username, pluginReference.pluginID, name, description, javaclass, enabled, modality, developer,documentation,rate,sessionID);
 					return HttpServletResponse.SC_OK;
 				} else {
-					pluginOperations.createPlugin(username, pluginReference.pluginID, name, description, javaclass, enabled, modality, sessionID);
+					pluginOperations.createPlugin(username, pluginReference.pluginID, name, description, javaclass, enabled, modality, developer,documentation,rate, sessionID);
 					return HttpServletResponse.SC_OK;
 				}	
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.PLUGIN, pathInfo)) { //ML

@@ -66,7 +66,7 @@ public class PluginConfig
 						pluginHandlerList.add(linePart[0]);
 						pluginTemplateList.add(linePart[1]);
 						pluginNameList.add(linePart[2]);
-						pluginOperations.createPlugin("admin", linePart[1], linePart[2], "", linePart[0], "true", "", "");
+						pluginOperations.createPlugin("admin", linePart[1], linePart[2], "", linePart[0], "true", "", "","","","");
 						pluginOperations.setProjectPluginEnable("admin", EPADConfig.xnatUploadProjectID, linePart[1], "true", "");
 					}
 				}

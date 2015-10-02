@@ -148,7 +148,7 @@ public class SingleFrameDICOMPngGeneratorTask implements GeneratorTask
 
 			epadDatabaseOperations.updateEpadFileRow(epadFilesRow.get("file_path"), PNGFileProcessingStatus.DONE,
 					getFileSize(epadFilesRow), "");
-			projectOperations.updateUserTaskStatus(username, TaskStatus.TASK_DCM4CHE_SEND, seriesUID, "Completed PNGs", null, new Date());
+			projectOperations.updateUserTaskStatus(username, TaskStatus.TASK_DICOM_PNG_GEN, seriesUID, "Completed PNGs", null, new Date());
 		} catch (FileNotFoundException e) {
 			log.warning("Failed to create PNG for instance " + instanceNumber + " in series " + seriesUID + " for patient "
 					+ patientName, e);

@@ -362,11 +362,14 @@ public class EPADPostHandler
 					String javaclass = httpRequest.getParameter("class");
 					String enabled = httpRequest.getParameter("enabled");
 					String modality = httpRequest.getParameter("modality");
+					String developer = httpRequest.getParameter("developer");
+					String documentation = httpRequest.getParameter("documentation");
+					String rate = httpRequest.getParameter("rate");
 					EPADPlugin plugin = pluginOperations.getPluginDescription(pluginId, username, sessionID);
 					if (plugin != null) {
 						throw new Exception("Plugin " + plugin.getPluginId() +  " already exists");
 					} else {
-						pluginOperations.createPlugin(username, pluginId, name, description, javaclass, enabled, modality, sessionID);
+						pluginOperations.createPlugin(username, pluginId, name, description, javaclass, enabled, modality,developer,documentation,rate, sessionID);
 						return HttpServletResponse.SC_OK;
 					}	
 					
@@ -377,13 +380,16 @@ public class EPADPostHandler
 					String javaclass = httpRequest.getParameter("class");
 					String enabled = httpRequest.getParameter("enabled");
 					String modality = httpRequest.getParameter("modality");
+					String developer = httpRequest.getParameter("developer");
+					String documentation = httpRequest.getParameter("documentation");
+					String rate = httpRequest.getParameter("rate");
 
 					EPADPlugin plugin = pluginOperations.getPluginDescription(pluginReference.pluginID, username, sessionID);
 
 					if (plugin != null) {
 						throw new Exception("Plugin " + plugin.getPluginId() +  " already exists");
 					} else {
-						pluginOperations.createPlugin(username, pluginReference.pluginID, name, description, javaclass, enabled, modality, sessionID);
+						pluginOperations.createPlugin(username, pluginReference.pluginID, name, description, javaclass, enabled, modality,developer,documentation,rate, sessionID);
 						return HttpServletResponse.SC_OK;
 					}	
 

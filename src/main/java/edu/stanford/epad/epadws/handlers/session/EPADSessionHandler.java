@@ -102,7 +102,7 @@ public class EPADSessionHandler extends AbstractHandler
 					EPADSessionResponse sessionResponse = SessionService.authenticateUser(httpRequest);
 					if (sessionResponse.statusCode == HttpServletResponse.SC_OK) {
 						String jsessionID = sessionResponse.response;
-						log.info("Successful login to EPAD; SESSIONID=" + jsessionID);
+						log.info("Successful login to EPAD; SESSIONID=" + jsessionID + " host:" + host + " ip:" + ip + " host from request:" + httpRequest.getRemoteHost() + "-" + httpRequest.getRemoteAddr());
 						EPADSessionOperations.setSessionHost(jsessionID, host, ip);
 				    	if (formpost)
 				    	{
