@@ -148,9 +148,9 @@ public class ServerStatusHandler extends AbstractHandler
 						responseStream.println("<b>ePad Free Space: </b>" + df.format(FileSystemUtils.freeSpaceKb(EPADConfig.getEPADWebServerBaseDir())/1024) + " Mb<br>");
 						responseStream.println("<b>Tmp Free Space: </b>" + df.format(FileSystemUtils.freeSpaceKb(System.getProperty("java.io.tmpdir"))/1024) + " Mb (Max Upload)<br>");
 						if (new File("/var/lib/mysql").exists())
-							responseStream.println("<b>Mysql DB Free Space: </b>" + df.format(FileSystemUtils.freeSpaceKb("/var/lib/mysql")/1024) + " Mb<br><br>");
+							responseStream.println("<b>Mysql DB Free Space: </b>" + df.format(FileSystemUtils.freeSpaceKb("/var/lib/mysql")/1024) + " Mb<br>");
 					} catch (Exception x) {}
-					responseStream.println("<b>Current Sessions: </b>" + "<br>");
+					responseStream.println("<br><b>Current Sessions: </b>" + "<br>");
 					Map<String, EPADSession> sessions = EPADSessionOperations.getCurrentSessions();
 					for (String id: sessions.keySet()) {
 						String you = "";

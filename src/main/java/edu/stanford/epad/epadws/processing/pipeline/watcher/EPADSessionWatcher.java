@@ -23,6 +23,7 @@
 //USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package edu.stanford.epad.epadws.processing.pipeline.watcher;
 
+import java.io.File;
 import java.util.Calendar;
 import java.util.concurrent.TimeUnit;
 
@@ -89,7 +90,10 @@ public class EPADSessionWatcher implements Runnable
 						long dcm4cheeMb = FileSystemUtils.freeSpaceKb(EPADConfig.dcm4cheeDirRoot)/1024;
 						long epadMb = FileSystemUtils.freeSpaceKb(EPADConfig.getEPADWebServerBaseDir())/1024;
 						long tmpMb = FileSystemUtils.freeSpaceKb(System.getProperty("java.io.tmpdir"))/1024;
-						if ( dcm4cheeMb < 100 || epadMb < 100 || tmpMb < 100)
+						long mysqlMb = 300;
+						if (new File("/var/lib/mysql").exists())
+							mysqlMb = FileSystemUtils.freeSpaceKb("/var/lib/mysql")/1024;
+						if ( dcm4cheeMb < 200 || epadMb < 200 || tmpMb < 200 || mysqlMb < 200)
 						{
 							projectOperations.createEventLog("system", null, null, null, null, null, null, null, "Disk Space", "Server running out of disk space",  true);
 							epadDatabaseOperations.insertEpadEvent(

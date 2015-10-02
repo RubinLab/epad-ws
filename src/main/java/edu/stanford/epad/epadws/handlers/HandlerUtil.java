@@ -30,6 +30,7 @@ import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.util.ArrayList;
@@ -53,7 +54,6 @@ import org.apache.commons.httpclient.HttpException;
 import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Level;
-import org.json.HTTP;
 import org.json.JSONObject;
 
 import com.sun.jersey.api.uri.UriTemplate;
@@ -424,7 +424,7 @@ public class HandlerUtil
     	StringBuffer jb = new StringBuffer();
 		String line = null;
 		try {
-		    BufferedReader reader = httpRequest.getReader();
+		    BufferedReader reader = new BufferedReader(new InputStreamReader( httpRequest.getInputStream()));
 		    while ((line = reader.readLine()) != null)
 		      jb.append(line);
 		} catch (Exception e) {
