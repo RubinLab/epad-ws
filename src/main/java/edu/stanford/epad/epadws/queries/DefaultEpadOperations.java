@@ -33,6 +33,7 @@ import java.io.File;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
@@ -85,6 +86,8 @@ import edu.stanford.epad.dtos.EPADSubjectList;
 import edu.stanford.epad.dtos.EPADTemplate;
 import edu.stanford.epad.dtos.EPADTemplateContainer;
 import edu.stanford.epad.dtos.EPADTemplateContainerList;
+import edu.stanford.epad.dtos.EPADUsage;
+import edu.stanford.epad.dtos.EPADUsageList;
 import edu.stanford.epad.dtos.EPADUser;
 import edu.stanford.epad.dtos.EPADUserList;
 import edu.stanford.epad.dtos.EPADWorklist;
@@ -127,6 +130,7 @@ import edu.stanford.epad.epadws.handlers.core.StudyReference;
 import edu.stanford.epad.epadws.handlers.core.SubjectReference;
 import edu.stanford.epad.epadws.handlers.dicom.DSOUtil;
 import edu.stanford.epad.epadws.models.EpadFile;
+import edu.stanford.epad.epadws.models.EpadStatistics;
 import edu.stanford.epad.epadws.models.EventLog;
 import edu.stanford.epad.epadws.models.FileType;
 import edu.stanford.epad.epadws.models.NonDicomSeries;
@@ -2728,6 +2732,75 @@ public class DefaultEpadOperations implements EpadOperations
 	}
 
 	@Override
+	public EPADUsageList getUsage(String username, String hostname, boolean byMonth, boolean byYear, boolean all) throws Exception {
+		String sql = "host like '" + hostname.replace('*', '%') + "%' order by createdtime desc";
+		if (!all && !byMonth && !byYear) sql = "host like '" + hostname.replace('*', '%') + "%' and createdtime =(select max(createdtime) from epadstatistics b where b.host = a.host)";
+		List<EpadStatistics> stats = new EpadStatistics().getObjects(sql);
+		EpadStatistics total = new EpadStatistics();
+		EPADUsageList eul = new EPADUsageList();
+		int prevDay = -1 ;
+		for (EpadStatistics stat: stats)
+		{
+			if (byMonth) {
+				Date date = stat.getCreatedTime();
+				if (!isLastDayOfMonth(date))
+					continue;
+			}
+			if (byYear) {
+				Date date = stat.getCreatedTime();
+				if (!isLastDayOfYear(date))
+					continue;
+			}
+			eul.addUsage(new EPADUsage(stat.getHost(), stat.getNumOfUsers(), stat.getNumOfProjects(),
+			stat.getNumOfPatients(), stat.getNumOfStudies(), stat.getNumOfSeries(),
+			stat.getNumOfAims(), stat.getNumOfDSOs(), stat.getNumOfPacs(), stat.getNumOfAutoQueries(),
+			stat.getNumOfWorkLists(), dateformat.format(stat.getCreatedTime())));
+			if (prevDay == getDayOfYear(stat.getCreatedTime()))
+			{
+				total.addStatistics(stat);
+			}
+			else if (prevDay != -1 && (!all || byMonth || byYear))
+			{
+				eul.addUsage(new EPADUsage("Total", total.getNumOfUsers(), total.getNumOfProjects(),
+						total.getNumOfPatients(), total.getNumOfStudies(), total.getNumOfSeries(),
+						stat.getNumOfAims(), total.getNumOfDSOs(), total.getNumOfPacs(), total.getNumOfAutoQueries(),
+						stat.getNumOfWorkLists(), dateformat.format(stat.getCreatedTime())));
+				total = new EpadStatistics();
+			}
+			prevDay = getDayOfYear(stat.getCreatedTime());
+		}
+		return eul;
+	}
+	
+	boolean isLastDayOfMonth(Date date) {
+		Calendar cal = Calendar.getInstance();
+		cal.setTime(date);
+		int month = cal.get(Calendar.MONTH);
+		cal.add(Calendar.DATE, 1);
+		if (cal.get(Calendar.MONTH) != month)
+			return true;
+		else
+			return false;
+	}
+	
+	boolean isLastDayOfYear(Date date) {
+		Calendar cal = Calendar.getInstance();
+		cal.setTime(date);
+		int year = cal.get(Calendar.YEAR);
+		cal.add(Calendar.DATE, 1);
+		if (cal.get(Calendar.YEAR) != year)
+			return true;
+		else
+			return false;
+	}
+	
+	int getDayOfYear(Date date) {
+		Calendar cal = Calendar.getInstance();
+		cal.setTime(date);
+		return cal.get(Calendar.DAY_OF_YEAR);
+	}
+
+	@Override
 	public EPADEventLogList getEventLogs(String loggedInUserName, String username, int start, int count) throws Exception {
 		User loggedInUser = projectOperations.getUser(loggedInUserName);
 		if (!loggedInUser.isAdmin() && !loggedInUserName.equals(username))
@@ -3917,12 +3990,14 @@ public class DefaultEpadOperations implements EpadOperations
 			{
 				EPADUser epadUser = new EPADUser(user.getFullName(), user.getUsername(), 
 						user.getFirstName(), user.getLastName(), user.getEmail(), user.isEnabled(), user.isAdmin(), user.isPasswordExpired(), user.getRole(), permissions);
+				epadUser.colorpreference = user.getColorpreference();
 				userlist.addEPADUser(epadUser);
 			}
 			else
 			{
 				EPADUser epadUser = new EPADUser(user.getFullName(), user.getUsername(), 
 						user.getFirstName(), user.getLastName(), "******", user.isEnabled(), user.isAdmin(), user.isPasswordExpired(), user.getRole(), permissions);
+				epadUser.colorpreference = user.getColorpreference();
 				userlist.addEPADUser(epadUser);
 			}
 		}
@@ -3961,6 +4036,7 @@ public class DefaultEpadOperations implements EpadOperations
 		for (User user: users) {
 			EPADUser epadUser = new EPADUser(user.getFullName(), user.getUsername(), 
 					user.getFirstName(), user.getLastName(), user.getEmail(), user.isEnabled(), user.isAdmin(), user.isPasswordExpired(), "", null);
+			epadUser.colorpreference = user.getColorpreference();
 			userlist.addEPADUser(epadUser);
 		}
 		return userlist;
@@ -3974,6 +4050,7 @@ public class DefaultEpadOperations implements EpadOperations
 		for (User user: users) {
 			EPADUser epadUser = new EPADUser(user.getFullName(), user.getUsername(), 
 					user.getFirstName(), user.getLastName(), user.getEmail(), user.isEnabled(), user.isAdmin(), user.isPasswordExpired(), "", null);
+			epadUser.colorpreference = user.getColorpreference();
 			userlist.addEPADUser(epadUser);
 		}
 		return userlist;

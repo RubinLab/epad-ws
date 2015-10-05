@@ -173,6 +173,19 @@ public class EpadStatistics extends AbstractDAO {
 		this.updateTime = updateTime;
 	}
 
+	public void addStatistics(EpadStatistics other) {
+		numOfUsers = numOfUsers + other.getNumOfUsers();
+		numOfProjects = numOfProjects + other.getNumOfProjects();
+		numOfPatients = numOfPatients + other.getNumOfPatients();
+		numOfStudies = numOfStudies + other.getNumOfStudies();
+		numOfSeries = numOfSeries + other.getNumOfSeries();
+		numOfAims = numOfAims + other.getNumOfAims();
+		numOfDSOs = numOfDSOs + other.getNumOfDSOs();
+		numOfPacs = numOfPacs + other.getNumOfPacs();
+		numOfAutoQueries = numOfAutoQueries + other.getNumOfAutoQueries();
+		numOfWorkLists = numOfWorkLists + other.getNumOfWorkLists();
+	}
+	
 	public final static String DBTABLE = "epadstatistics";
 	public final static String[][] DBCOLUMNS = {
         {"id","long","id","Id"},

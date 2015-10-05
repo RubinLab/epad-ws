@@ -1657,18 +1657,10 @@ public class EPADGetHandler
 			} else if (HandlerUtil.matchesTemplate(EPADsRouteTemplates.EPAD_USAGE, pathInfo)) {
 				Map<String, String> templateMap = HandlerUtil.getTemplateMap(EPADsRouteTemplates.EPAD_USAGE, pathInfo);
 				String hostname = HandlerUtil.getTemplateParameter(templateMap, "hostname");
-				String sql = "host like '" + hostname.replace('*', '%') + "%' order by createdtime desc";
 				boolean all = "true".equalsIgnoreCase(httpRequest.getParameter("all"));
-				if (!all) sql = "host like '" + hostname.replace('*', '%') + "%' and createdtime =(select max(createdtime) from epadstatistics b where b.host = a.host)";
-				List<EpadStatistics> stats = new EpadStatistics().getObjects(sql);
-				EPADUsageList eul = new EPADUsageList();
-				for (EpadStatistics stat: stats)
-				{
-					eul.addUsage(new EPADUsage(stat.getHost(), stat.getNumOfUsers(), stat.getNumOfProjects(),
-					stat.getNumOfPatients(), stat.getNumOfStudies(), stat.getNumOfSeries(),
-					stat.getNumOfAims(), stat.getNumOfDSOs(), stat.getNumOfPacs(), stat.getNumOfAutoQueries(),
-					stat.getNumOfWorkLists(), dateformat.format(stat.getCreatedTime())));
-				}
+				boolean byMonth = "true".equalsIgnoreCase(httpRequest.getParameter("byMonth"));
+				boolean byYear = "true".equalsIgnoreCase(httpRequest.getParameter("byYear"));
+				EPADUsageList eul = epadOperations.getUsage(username, hostname, byMonth, byYear, all);
 				responseStream.append(eul.toJSON());
 				statusCode = HttpServletResponse.SC_OK;
 
