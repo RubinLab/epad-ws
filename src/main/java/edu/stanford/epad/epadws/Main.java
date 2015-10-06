@@ -177,13 +177,31 @@ public class Main
 	}
 
 	public static void checkPropertiesFile() {
-		String hostname = System.getenv("DOCKER_HOST");
+		String macdockerhost = System.getenv("MACDOCKER_HOST");
+		String dockerhost = macdockerhost;
+		if (dockerhost == null)
+			dockerhost = System.getenv("DOCKER_HOST");
+		if (dockerhost != null && dockerhost.startsWith("tcp://"))
+			dockerhost = dockerhost.substring(6);
+		if (dockerhost != null && dockerhost.contains(":"))
+			dockerhost = dockerhost.substring(0, dockerhost.indexOf(":"));
+		String hostname = dockerhost;
 		if (hostname == null || hostname.length() == 0)
 			hostname = System.getenv("HOSTNAME");
 		if (hostname == null || hostname.length() == 0)
 			hostname = "localhost";
 		File propertiesFile = new File(System.getProperty("user.home") + "/DicomProxy/etc/", EPADConfig.configFileName);
+		File clientProperties = null;
 		if (!propertiesFile.exists()) {
+			File macproperties = new File(System.getProperty("user.home") + "/mac/etc/", EPADConfig.configFileName);
+			if (macproperties.exists() || (macdockerhost != null && macdockerhost.length() > 0))
+			{
+				clientProperties = propertiesFile;
+				propertiesFile = macproperties;
+			}
+		}
+		if (!propertiesFile.exists()) {
+			propertiesFile.getParentFile().mkdirs();
 			BufferedReader reader = null;
 			InputStream is = null;
 			StringBuilder sb = new StringBuilder();
@@ -204,7 +222,11 @@ public class Main
 				else if (is != null)
 					IOUtils.closeQuietly(is);
 			}
-			EPADFileUtils.write(propertiesFile, sb.toString().replace("_HOSTNAME_", hostname));
+			String propsStr = sb.toString().replace("_HOSTNAME_", hostname);
+			EPADFileUtils.write(propertiesFile, propsStr);
+		}
+		if (clientProperties != null) {
+			EPADFileUtils.copyFile(propertiesFile, clientProperties);
 		}
 	}
 	
@@ -212,6 +234,7 @@ public class Main
 	public static void checkPluginsFile() {
 		File pluginsFile = new File(EPADConfig.getEPADWebServerPluginConfigFilePath());
 		if (!pluginsFile.exists()) {
+			pluginsFile.getParentFile().mkdirs();
 			BufferedReader reader = null;
 			InputStream is = null;
 			StringBuilder sb = new StringBuilder();
@@ -347,16 +370,18 @@ public class Main
 //			log.warning("Error setting up Spring Handle", e);
 //			e.printStackTrace();
 //		}
-
-		String webAppPath = EPADConfig.getEPADWebServerWebappsDir() + "ePad.war";
+		String webAppPath = System.getProperty("user.home") + "/mac/webapps/" + "ePad.war";  // This is specially for docker on macs
 		if (!new File(webAppPath).exists())
 		{
-			webAppPath = EPADConfig.getEPADWebServerWebappsDir() + "epad-1.1.war";
+			webAppPath = EPADConfig.getEPADWebServerWebappsDir() + "ePad.war"; // This is the usual, normal path
 		}
 		if (!new File(webAppPath).exists())
 		{
-			// For docker
-			webAppPath = System.getProperty("user.home") + "/epad/webapps/" + "ePad.war";
+			webAppPath = EPADConfig.getEPADWebServerWebappsDir() + "epad-1.1.war"; // This is for development/testing
+		}
+		if (!new File(webAppPath).exists())
+		{
+			webAppPath = System.getProperty("user.home") + "/epad/webapps/" + "ePad.war"; // Fallback for docker
 			if (!new File(webAppPath).exists())
 				throw new RuntimeException("ePad.war not found");
 		}
@@ -487,7 +512,28 @@ public class Main
 	private static void setupTestFiles()
 	{
 		String deployPath = EPADConfig.getEPADWebServerBaseDir() + "jetty/webapp/test/";
-		File testFilesDir = new File(EPADConfig.getEPADWebServerBaseDir() + "lib/test/");
+		File testFilesDir = new File(EPADConfig.getEPADWebServerBaseDir() + "webapps/test/");
+		try
+		{
+			if (testFilesDir.exists() && testFilesDir.isDirectory())
+			{
+				File deployDir = new File(deployPath);
+				if (!deployDir.exists())
+					deployDir.mkdirs();
+				File[] testFiles = testFilesDir.listFiles();
+				for (File f: testFiles)
+				{
+					if (f.isDirectory()) continue;
+					File outFile = new File(deployDir, f.getName());
+					EPADFileUtils.copyFile(f, outFile);
+				}
+			}
+		} 
+		catch (Exception x) {
+			
+		}
+		File pluginsDir = new File(EPADConfig.getEPADWebServerBaseDir() + "webapps/plugins/");
+		deployPath = EPADConfig.getEPADWebServerBaseDir() + "jetty/webapp/plugins/";
 		try
 		{
 			if (testFilesDir.exists() && testFilesDir.isDirectory())

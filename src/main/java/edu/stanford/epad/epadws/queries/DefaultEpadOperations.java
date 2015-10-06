@@ -2733,41 +2733,49 @@ public class DefaultEpadOperations implements EpadOperations
 
 	@Override
 	public EPADUsageList getUsage(String username, String hostname, boolean byMonth, boolean byYear, boolean all) throws Exception {
-		String sql = "host like '" + hostname.replace('*', '%') + "%' order by createdtime desc";
+		String sql = "host like '" + hostname.replace('*', '%') + "%' order by host, createdtime desc";
 		if (!all && !byMonth && !byYear) sql = "host like '" + hostname.replace('*', '%') + "%' and createdtime =(select max(createdtime) from epadstatistics b where b.host = a.host)";
 		List<EpadStatistics> stats = new EpadStatistics().getObjects(sql);
 		EpadStatistics total = new EpadStatistics();
 		EPADUsageList eul = new EPADUsageList();
 		int prevDay = -1 ;
+		Date lastDate = null;
+		Set<String> counted = new HashSet<String>();
 		for (EpadStatistics stat: stats)
 		{
 			if (byMonth) {
 				Date date = stat.getCreatedTime();
-				if (!isLastDayOfMonth(date))
+				if (!isLastDayOfMonth(date) || counted.contains(stat.getHost()+"_" + getDayOfYear(stat.getCreatedTime())))
 					continue;
-			}
+			}	
 			if (byYear) {
 				Date date = stat.getCreatedTime();
-				if (!isLastDayOfYear(date))
+				if (!isLastDayOfYear(date) || counted.contains(stat.getHost()+"_" + getDayOfYear(stat.getCreatedTime())))
 					continue;
 			}
-			eul.addUsage(new EPADUsage(stat.getHost(), stat.getNumOfUsers(), stat.getNumOfProjects(),
-			stat.getNumOfPatients(), stat.getNumOfStudies(), stat.getNumOfSeries(),
-			stat.getNumOfAims(), stat.getNumOfDSOs(), stat.getNumOfPacs(), stat.getNumOfAutoQueries(),
-			stat.getNumOfWorkLists(), dateformat.format(stat.getCreatedTime())));
-			if (prevDay == getDayOfYear(stat.getCreatedTime()))
-			{
-				total.addStatistics(stat);
-			}
-			else if (prevDay != -1 && (!all || byMonth || byYear))
+			counted.add(stat.getHost()+"_" + getDayOfYear(stat.getCreatedTime()));
+			if (prevDay != -1 && prevDay != getDayOfYear(stat.getCreatedTime()) && (byMonth || byYear) && hostname.equals("*"))
 			{
 				eul.addUsage(new EPADUsage("Total", total.getNumOfUsers(), total.getNumOfProjects(),
 						total.getNumOfPatients(), total.getNumOfStudies(), total.getNumOfSeries(),
-						stat.getNumOfAims(), total.getNumOfDSOs(), total.getNumOfPacs(), total.getNumOfAutoQueries(),
-						stat.getNumOfWorkLists(), dateformat.format(stat.getCreatedTime())));
+						total.getNumOfAims(), total.getNumOfDSOs(), total.getNumOfPacs(), total.getNumOfAutoQueries(),
+						total.getNumOfWorkLists(), dateformat.format(stat.getCreatedTime())));
 				total = new EpadStatistics();
 			}
+			eul.addUsage(new EPADUsage(stat.getHost(), stat.getNumOfUsers(), stat.getNumOfProjects(),
+					stat.getNumOfPatients(), stat.getNumOfStudies(), stat.getNumOfSeries(),
+					stat.getNumOfAims(), stat.getNumOfDSOs(), stat.getNumOfPacs(), stat.getNumOfAutoQueries(),
+					stat.getNumOfWorkLists(), dateformat.format(stat.getCreatedTime())));
+			total.addStatistics(stat);
 			prevDay = getDayOfYear(stat.getCreatedTime());
+			lastDate = stat.getCreatedTime();
+		}
+		if ((!all || byMonth || byYear) && hostname.contains("*"))
+		{
+			eul.addUsage(new EPADUsage("Total", total.getNumOfUsers(), total.getNumOfProjects(),
+					total.getNumOfPatients(), total.getNumOfStudies(), total.getNumOfSeries(),
+					total.getNumOfAims(), total.getNumOfDSOs(), total.getNumOfPacs(), total.getNumOfAutoQueries(),
+					total.getNumOfWorkLists(), dateformat.format(lastDate)));
 		}
 		return eul;
 	}
@@ -2913,6 +2921,7 @@ public class DefaultEpadOperations implements EpadOperations
 					subject.getSubjectUID(), study.getStudyUID(), wstudy.getStatus(), formatDate(wstudy.getStartDate()),
 					formatDate(wstudy.getCompleteDate()));
 			wls.workListName = wl.getName();
+			wls.sortOrder = wstudy.getSortOrder();
 			wlsl.addEPADWorklistStudy(wls);
 		}
 		return wlsl;
@@ -2934,6 +2943,7 @@ public class DefaultEpadOperations implements EpadOperations
 						subject.getSubjectUID(), subject.getName(), wsubject.getStatus(), formatDate(wsubject.getStartDate()),
 						formatDate(wsubject.getCompleteDate()));
 			wls.workListName = wl.getName();
+			wls.sortOrder = wsubject.getSortOrder();
 			wlsl.addEPADWorklistSubject(wls);
 		}
 		return wlsl;

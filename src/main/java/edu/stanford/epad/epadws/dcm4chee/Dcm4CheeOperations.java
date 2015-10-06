@@ -103,6 +103,7 @@ public class Dcm4CheeOperations
 			            file.setExecutable(true);
 					}
 				}
+				file.setExecutable(true);
 			}
 			File libDir = new File(EPADConfig.getEPADWebServerDICOMScriptsDir() + "lib/");
 			if (!libDir.exists())
@@ -173,6 +174,8 @@ public class Dcm4CheeOperations
 			if (!script.exists())
 				dicomScriptsDir = EPADConfig.getEPADWebServerDICOMBinDir();
 			script = new File(dicomScriptsDir, "dcmsnd");
+			if (!script.exists())
+				throw new Exception("No script found:" + script.getAbsolutePath());
 			// Java 6 - Runtime.getRuntime().exec("chmod u+x "+script.getAbsolutePath());
 			script.setExecutable(true);
 			processBuilder.directory(new File(dicomScriptsDir));
@@ -202,7 +205,7 @@ public class Dcm4CheeOperations
 				throw new IllegalStateException("Failed for: " + parseError(cmdLineOutput));
 			return success;
 		} catch (Exception e) {
-			log.warning("DicomSendTask failed to send DICOM files: " + e.getMessage());
+			log.warning("DicomSendTask failed to send DICOM files", e);
 			if (e instanceof IllegalStateException && throwException) {
 				throw e;
 			}

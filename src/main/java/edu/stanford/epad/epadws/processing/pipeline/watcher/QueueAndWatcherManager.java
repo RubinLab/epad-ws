@@ -143,6 +143,7 @@ public class QueueAndWatcherManager
 			// If the file does not exist locally (because it is stored on another file system), download it.
 			if (!inputDICOMFile.exists()) {
 				inputDICOMFile = downloadRemoteDICOM(dicomFileDescription);
+				dicomFilePath = inputDICOMFile.getAbsolutePath();
 			}
 			log.info("Dicom file, modality:" +  dicomFileDescription.modality);
 			if ("RTSTRUCT".equals(modality))
@@ -169,6 +170,7 @@ public class QueueAndWatcherManager
 					inputDICOMFile = new File(dicomFilePath);
 					if (!inputDICOMFile.exists()) {
 						inputDICOMFile = downloadRemoteDICOM(dicomFileDescription);
+						dicomFilePath = inputDICOMFile.getAbsolutePath();
 					}
 				}
 				// Generate mask PNGs, also AIMFile if this is the first time (only one image)

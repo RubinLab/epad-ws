@@ -34,6 +34,7 @@ import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.epad.epadws.EPadWebServerVersion;
 import edu.stanford.epad.epadws.epaddb.EpadDatabase;
 import edu.stanford.epad.epadws.epaddb.EpadDatabaseOperations;
+import edu.stanford.epad.epadws.processing.pipeline.task.CleanupTempTask;
 import edu.stanford.epad.epadws.processing.pipeline.task.EpadStatisticsTask;
 import edu.stanford.epad.epadws.processing.pipeline.threads.ShutdownSignal;
 import edu.stanford.epad.epadws.security.EPADSessionOperations;
@@ -82,8 +83,8 @@ public class EPADSessionWatcher implements Runnable
 				// Timeout expired sessions
 				EPADSessionOperations.checkSessionTimeout();
 				
-				// Clear cache once a day
 				Calendar now = Calendar.getInstance();
+				// Once an hour
 				if (prevTime == null || (prevTime.get(Calendar.HOUR_OF_DAY) != now.get(Calendar.HOUR_OF_DAY)))
 				{					
 					try {
@@ -118,6 +119,7 @@ public class EPADSessionWatcher implements Runnable
 					}
 				}
 
+				// Once a day
 				if (prevTime == null || (now.get(Calendar.HOUR_OF_DAY) == 0 && prevTime != null && prevTime.get(Calendar.HOUR_OF_DAY) != 0))
 				{
 					if (projectOperations.getCacheSize() > 1000 && UserProjectService.pendingPNGs.isEmpty() && RemotePACService.pendingTransfers.isEmpty())
@@ -131,6 +133,12 @@ public class EPADSessionWatcher implements Runnable
 						}
 					} catch (Exception x) {
 						log.warning("Exception running statistics", x);
+					}
+					try {
+						CleanupTempTask ctt = new CleanupTempTask();
+						new Thread(ctt).start();
+					} catch (Exception x) {
+						log.warning("Exception running cleanup", x);
 					}
 				}
 				prevTime = now;

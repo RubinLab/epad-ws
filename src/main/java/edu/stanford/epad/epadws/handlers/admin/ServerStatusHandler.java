@@ -28,6 +28,7 @@ import java.io.PrintWriter;
 import java.net.InetAddress;
 import java.text.DecimalFormat;
 import java.util.Collection;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
@@ -103,6 +104,7 @@ public class ServerStatusHandler extends AbstractHandler
 				responseStream.println("<hr>");
 				responseStream.println("<h3><center>ePAD Server Status</center></h3>");
 				responseStream.println("<hr>");
+				responseStream.println("<b>ePAD server started:</b> " + new Date(startTime) + "<br>");
 				responseStream.println("<b>ePAD server uptime:</b> " + upTimeHr + " hrs " + upTimeMin + " mins " + upTimeSec + " secs<br>");
 				responseStream.println("<br>");
 			}

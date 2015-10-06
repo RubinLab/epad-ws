@@ -159,18 +159,26 @@ public class DefaultWorkListOperations implements EpadWorkListOperations {
 		Project project = projectOperations.getProject(projectID);
 		if (!projectOperations.isSubjectInProject(subjectUID, project.getProjectId()))
 			throw new Exception("Subject " + subjectUID + " does not belong to Project " + projectID);
-		WorkListToSubject wtos = (WorkListToSubject) new WorkListToSubject().getObject("worklist_id =" + workList.getId() + " and subject_id=" + subject.getId());
-		if (wtos == null)
+		List<WorkListToSubject> wtoss = new WorkListToSubject().getObjects("worklist_id =" + workList.getId() + " order by sortorder");
+		long max = 0;
+		if (wtoss.size() > 0)
+			max = wtoss.get(wtoss.size()-1).getSortOrder();
+		WorkListToSubject wtos = (WorkListToSubject) new WorkListToSubject().getObject("worklist_id =" + workList.getId() + " and subject_id=" + subject.getId() + " and project_id=" + project.getId());
+		if (wtos != null)
 		{
-			wtos = new WorkListToSubject();
-			wtos.setWorkListId(workList.getId());
-			wtos.setSubjectId(subject.getId());
-			wtos.setProjectId(project.getId());
-			wtos.setCreator(loggedInUser);
-			wtos.save();
-			wtos.setSortOrder(wtos.getId());
-			wtos.save();
+			wtos.delete();
+			wtos.setId(0);
 		}
+		else
+			wtos = new WorkListToSubject();
+		wtos.setWorkListId(workList.getId());
+		wtos.setSubjectId(subject.getId());
+		wtos.setProjectId(project.getId());
+		wtos.setCreator(loggedInUser);
+		wtos.save();
+		wtos.setSortOrder(++max);
+		wtos.save();
+
 	}
 	
 	/* (non-Javadoc)
@@ -186,18 +194,25 @@ public class DefaultWorkListOperations implements EpadWorkListOperations {
 		Subject subject = (Subject) projectOperations.getDBObject(Subject.class, study.getSubjectId());
 		if (!projectOperations.isSubjectInProject(subject.getSubjectUID(), project.getProjectId()))
 			throw new Exception("Study " + studyUID + " does not belong to Project " + projectID);
-		WorkListToStudy wtos = (WorkListToStudy) new WorkListToStudy().getObject("worklist_id =" + workList.getId() + " and study_id=" + study.getId());
-		if (wtos == null)
+		List<WorkListToStudy> wtoss = new WorkListToStudy().getObjects("worklist_id =" + workList.getId() + " order by sortorder");
+		long max = 0;
+		if (wtoss.size() > 0)
+			max = wtoss.get(wtoss.size()-1).getSortOrder();
+		WorkListToStudy wtos = (WorkListToStudy) new WorkListToStudy().getObject("worklist_id =" + workList.getId() + " and study_id=" + study.getId() + " and project_id=" + project.getId());
+		if (wtos != null)
 		{
-			wtos = new WorkListToStudy();
-			wtos.setWorkListId(workList.getId());
-			wtos.setStudyId(study.getId());
-			wtos.setProjectId(project.getId());
-			wtos.setCreator(loggedInUser);
-			wtos.save();
-			wtos.setSortOrder(wtos.getId());
-			wtos.save();
+			wtos.delete();
+			wtos.setId(0);
 		}
+		else
+			wtos = new WorkListToStudy();
+		wtos.setWorkListId(workList.getId());
+		wtos.setStudyId(study.getId());
+		wtos.setProjectId(project.getId());
+		wtos.setCreator(loggedInUser);
+		wtos.save();
+		wtos.setSortOrder(++max);
+		wtos.save();
 		return wtos;
 	}
 
@@ -409,7 +424,7 @@ public class DefaultWorkListOperations implements EpadWorkListOperations {
 			throws Exception {
 		WorkList workList = getWorkList(workListID);
 		log.info("Getting studies for workListID:" + workListID);
-		List<WorkListToStudy> wltss = new WorkListToStudy().getObjects("worklist_id =" + workList.getId());
+		List<WorkListToStudy> wltss = new WorkListToStudy().getObjects("worklist_id =" + workList.getId() + " order by sortorder");
 		return wltss;
 	}
 
@@ -417,8 +432,8 @@ public class DefaultWorkListOperations implements EpadWorkListOperations {
 	public List<WorkListToSubject> getWorkListSubjects(String workListID)
 			throws Exception {
 		WorkList workList = getWorkList(workListID);
-		log.info("Getting studies for workListID:" + workListID);
-		List<WorkListToSubject> wltss = new WorkListToSubject().getObjects("worklist_id =" + workList.getId());
+		log.info("Getting subjects for workListID:" + workListID);
+		List<WorkListToSubject> wltss = new WorkListToSubject().getObjects("worklist_id =" + workList.getId() + " order by sortorder");
 		return wltss;
 	}
 

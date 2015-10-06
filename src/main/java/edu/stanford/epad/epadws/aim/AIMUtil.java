@@ -302,6 +302,11 @@ public class AIMUtil
 	
 	public static ImageAnnotation generateAIMFileForDSO(File dsoFile, String username, String projectID) throws Exception
 	{
+		return generateAIMFileForDSO(dsoFile, "shared", null, null);
+	}
+	
+	public static ImageAnnotation generateAIMFileForDSO(File dsoFile, String username, String projectID, String aimName) throws Exception
+	{
 		log.info("Creating DSO AIM for user " + username + " in project " + projectID + " file:" + dsoFile.getAbsolutePath());
 		AttributeList dsoDICOMAttributes = PixelMedUtils.readDICOMAttributeList(dsoFile);
 		String patientID = Attribute.getSingleStringValueOrEmptyString(dsoDICOMAttributes, TagFromName.PatientID);
@@ -364,7 +369,8 @@ public class AIMUtil
 			log.info("Referenced SOP Instance UID=" + referencedImageUID[0]);
 			log.info("Referenced Series Instance UID=" + referencedSeriesUID);
 
-			String name = description;
+			String name = aimName;
+			if (name == null || name.trim().length() == 0) name = description;
 			if (name == null || name.trim().length() == 0) name = "segmentation";
 			ImageAnnotation imageAnnotation = new ImageAnnotation(0, "", dsoDate.substring(0,4) + "-" + dsoDate.substring(4,6) + "-" + dsoDate.substring(6,8) + "T00:00:00", name, "SEG",
 					"SEG Only", "", "", "");
