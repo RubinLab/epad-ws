@@ -967,6 +967,8 @@ public class EPADGetHandler
 				AIMSearchType aimSearchType = AIMUtil.getAIMSearchType(httpRequest);
 				String searchValue = aimSearchType != null ? httpRequest.getParameter(aimSearchType.getName()) : null;
 				String projectID = httpRequest.getParameter("projectID");
+				String database = httpRequest.getParameter("database");
+				String user = httpRequest.getParameter("user");
 				boolean deletedAims = "true".equalsIgnoreCase(httpRequest.getParameter("deletedAIMs"));
 				log.info("GET request for AIMs from user " + username + "; query type is " + aimSearchType + ", value "
 						+ searchValue + ", project " + projectID + " deletedAIMs:" + deletedAims);
@@ -976,6 +978,19 @@ public class EPADGetHandler
 				
 				long dbtime = System.currentTimeMillis();
 				log.info("Time taken for AIM database query:" + (dbtime-starttime) + " msecs");
+				if (database!=null && database.equalsIgnoreCase("AIME")){ //ml
+					if (user!=null)
+						username=user;
+					if (returnSummary(httpRequest))
+					{
+						aims = AIMUtil.queryAIMImageAnnotationSummariesV4AIME(aimSearchType, searchValue, username, sessionID);
+						responseStream.append(aims.toJSON());
+					}else if (returnJson(httpRequest))
+					{
+						AIMUtil.queryAIMImageAnnotationsV4AIME(responseStream, aimSearchType, searchValue, username, sessionID, true);					
+					}
+				}
+				else
 				if (returnSummary(httpRequest))
 				{
 					if (AIMSearchType.AIM_QUERY.equals(aimSearchType) || AIMSearchType.JSON_QUERY.equals(aimSearchType))

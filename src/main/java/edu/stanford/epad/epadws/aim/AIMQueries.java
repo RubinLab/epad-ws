@@ -59,7 +59,10 @@ public class AIMQueries
 	private static final String aim4Namespace = EPADConfig.aim4Namespace;
 	private static final String eXistCollectionV4 = EPADConfig.eXistCollectionV4;
 	private static final String xsdFilePath4 = EPADConfig.xsdFilePathV4;
-
+	//ml
+	private static final String aimeServerUrl = EPADConfig.aimeServerUrl;
+	private static final String aimeApiKey = EPADConfig.aimeApiKey;
+	
 	public static int getNumberOfAIMAnnotationsForPatients(String sessionID, String username, Set<String> patientIDs)
 	{ // Only count annotations for subjects in this project
 		int totalAIMAnnotations = 0;
@@ -94,6 +97,106 @@ public class AIMQueries
 	{
 		return getNumberOfAIMAnnotations(AIMSearchType.ANNOTATION_UID, annotationUID, username);
 	}
+	/**************AIME Methods Start*********************/
+	public static List<ImageAnnotationCollection> getAIMImageAnnotationsV4AIME(AIMSearchType aimSearchType, String value, String username)
+	{
+		List<ImageAnnotationCollection> resultAims = new ArrayList<ImageAnnotationCollection>();
+		List<ImageAnnotationCollection> aims = null;
+		ImageAnnotationCollection aim = null;
+		long time1 = System.currentTimeMillis();
+	    
+		if (username != null && username.equals("")) { 
+			try {
+				log.info("Getting all AIM annotations");
+					aims = edu.stanford.hakan.aim4api.usage.AIMEAnnotationGetter
+							.getAllImageAnnotationCollections(aimeServerUrl, aimeApiKey);
+					if (aims == null)
+						aims = new ArrayList<ImageAnnotationCollection>();
+			} catch (edu.stanford.hakan.aim4api.base.AimException e) {
+				log.warning("Exception in AIMEAnnotationGetter.getAllImageAnnotationCollections", e);
+			}
+			if (aims != null)
+				resultAims.addAll(aims);
+		} else if (aimSearchType == AIMSearchType.PERSON_NAME) {
+			String personName = value;
+			try {
+					aims = edu.stanford.hakan.aim4api.usage.AIMEAnnotationGetter
+							.getImageAnnotationCollectionByPersonNameEqual(aimeServerUrl, aimeApiKey, personName);
+					if (aims == null)
+						aims = new ArrayList<ImageAnnotationCollection>();
+			} catch (edu.stanford.hakan.aim4api.base.AimException e) {
+				log.warning("Exception in AIMEAnnotationGetter.getImageAnnotationsFromServerByPersonNameEqual " + personName, e);
+			}
+			if (aims != null)
+				resultAims.addAll(aims);
+		} else if (aimSearchType == AIMSearchType.PATIENT_ID) {
+			String patientId = value;
+			try {
+					aims = edu.stanford.hakan.aim4api.usage.AIMEAnnotationGetter
+							.getImageAnnotationCollectionByUserNameAndPersonIdEqual(aimeServerUrl,aimeApiKey, username, patientId);
+					if (aims == null)
+						aims = new ArrayList<ImageAnnotationCollection>();
+			} catch (edu.stanford.hakan.aim4api.base.AimException e) {
+				log.warning("Exception in AIMEAnnotationGetter.getImageAnnotationsFromServerByPersonIdEqual " + patientId, e);
+			}
+			if (aims != null)
+				resultAims.addAll(aims);
+		} else if (aimSearchType == AIMSearchType.SERIES_UID) {
+			
+			log.warning("getImageAnnotationsFromServerByImageSeriesInstanceUIDEqual is not supported in AIME database");
+					
+		} else if (aimSearchType == AIMSearchType.ANNOTATION_UID) {
+			String annotationUID = value;
+			if (value.equals("all")) {
+
+				try {
+						aims = edu.stanford.hakan.aim4api.usage.AIMEAnnotationGetter
+								.getImageAnnotationCollectionByUserLoginNameContains(aimeServerUrl,aimeApiKey, username);
+						if (aims == null)
+							aims = new ArrayList<ImageAnnotationCollection>();
+
+				} catch (edu.stanford.hakan.aim4api.base.AimException e) {
+					log.warning("Exception in AnnotationGetter.getImageAnnotationsFromServerWithAimQuery ", e);
+				}
+				if (aims != null)
+					resultAims.addAll(aims);
+			} else if (value.contains(",")){
+				try {
+						String aimQuery = "";
+						aims = edu.stanford.hakan.aim4api.usage.AIMEAnnotationGetter
+								.getImageAnnotationCollectionByUniqueIdentifierList(aimeServerUrl,aimeApiKey, value.split(","));
+						log.info("Returning " + aims.size() + " v4 annotations");
+						if (aims != null)
+							resultAims.addAll(aims);
+
+				} catch (edu.stanford.hakan.aim4api.base.AimException e) {
+					log.warning("Exception in AIMEAnnotationGetter.getImageAnnotationCollectionByUniqueIdentifierList ", e);
+				}
+			} else {
+				try {
+						aim = edu.stanford.hakan.aim4api.usage.AIMEAnnotationGetter
+								.getImageAnnotationCollectionByUniqueIdentifier(aimeServerUrl,aimeApiKey, annotationUID);
+
+				} catch (edu.stanford.hakan.aim4api.base.AimException e) {
+					log.warning("Exception in AIMEAnnotationGetter.getImageAnnotationFromServerByUniqueIdentifier " + annotationUID,
+							e);
+				}
+				if (aim != null)
+					resultAims.add(aim);
+			}
+		} else if (aimSearchType.equals(AIMSearchType.AIM_QUERY)) {
+			log.warning("aimquery is not supported in AIME database");
+			
+		} else {
+			log.warning("Unknown AIM search type " + aimSearchType.getName());
+		}
+		long time2 = System.currentTimeMillis();
+		log.info("AIM query took " + (time2-time1) + " msecs for " + resultAims.size() + " aims ");
+		return resultAims;
+	}
+	
+	
+	/**************AIME Methods End*********************/
 
 	/**
 	 * Read the annotations from the AIM database by patient name, patient id, series id, annotation id, or just get all

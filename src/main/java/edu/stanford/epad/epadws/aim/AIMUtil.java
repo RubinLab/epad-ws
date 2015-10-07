@@ -1947,5 +1947,131 @@ public class AIMUtil
 			return 0;
 		}
 	}
+	
+	
+	/****************************AIME Methods**********************************/
+	public static void queryAIMImageAnnotationsV4AIME(PrintWriter responseStream, AIMSearchType aimSearchType,
+			String searchValue, String user, String sessionID, boolean jsonFormat) throws Exception
+	{
+		List<ImageAnnotationCollection> iacs = AIMQueries.getAIMImageAnnotationsV4AIME(aimSearchType, searchValue, user);
+	
+		if (!aimSearchType.equals(AIMSearchType.JSON_QUERY)) {
+			if (iacs.size() == 0) return;
+			if (!jsonFormat) {
+				returnImageAnnotationsXMLV4(responseStream, iacs);
+				return;
+			} else {
+				StringBuilder xml = new StringBuilder("<imageAnnotations>\n");
+				
+				for (ImageAnnotationCollection iac: iacs)	{
+					xml.append(iac.getXMLString());
+				}
+				xml.append("</imageAnnotations>\n");
+				responseStream.print(convertToJson(xml.toString()));
+			}
+		} else {
+			log.info("JSON_QUERY not supported by AIME");
+		}
+	}
+
+	public static void queryAIMImageAnnotationsV4AIME(PrintWriter responseStream, AIMSearchType aimSearchType,
+			String searchValue, String user) throws ParserConfigurationException, edu.stanford.hakan.aim4api.base.AimException
+	{
+		List<ImageAnnotationCollection> aims = AIMQueries.getAIMImageAnnotationsV4AIME( aimSearchType, searchValue, user);
+		log.info("" + aims.size() + " AIM4 file(s) found for user " + user);
+		if (aims.size() == 0) return;
+		returnImageAnnotationsXMLV4(responseStream, aims);
+	}
+
+	
+	public static EPADAIMList queryAIMImageAnnotationSummariesV4AIME(String user, String sessionID) throws Exception
+	{
+
+		return queryAIMImageAnnotationSummariesV4AIME(AIMSearchType.ANNOTATION_UID, "all",user,sessionID);
+	}
+	
+	public static EPADAIMList queryAIMImageAnnotationSummariesV4AIME(AIMSearchType searchType, String searchValue, String user, String sessionID) throws Exception
+	{
+		long starttime = System.currentTimeMillis();
+		List<ImageAnnotationCollection> iacs = AIMQueries.getAIMImageAnnotationsV4AIME(searchType, searchValue,user);
+		
+		EPADAIMList aims = new EPADAIMList();
+		for (ImageAnnotationCollection aim : iacs) {
+			try {
+				Aim4 a = new Aim4(aim);
+				EPADAIM ea =null;
+				try
+				{
+					ea = new EPADAIM(aim.getUniqueIdentifier().getRoot(), a.getLoggedInUser().getLoginName(), "", a.getPatientID(), a.getFirstStudyID(), a.getFirstSeriesID(), a.getFirstImageID(), 0);
+					
+				} catch (Exception x) {
+					log.warning("Error parsing ImageAnnotationCollection:" + aim, x);
+				}
+				if (ea == null)  continue;
+				if (aim.getImageAnnotations().get(0).getName() != null)
+				{
+					ea.name = aim.getImageAnnotations().get(0).getName().getValue();
+				}
+				if (aim.getImageAnnotations().get(0).getListTypeCode() != null && aim.getImageAnnotations().get(0).getListTypeCode().size() > 0)
+				{
+					ea.template = aim.getImageAnnotations().get(0).getListTypeCode().get(0).getCode();
+					ea.templateType = aim.getImageAnnotations().get(0).getListTypeCode().get(0).getCodeSystem();
+				}
+				ea.date = aim.getDateTime();
+				ea.comment = a.getComment();
+				if (a.getFirstStudyDate() != null)
+					ea.studyDate = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(a.getFirstStudyDate());
+				ea.patientName = a.getPatientName();
+				aims.addAIM(ea);
+			} catch (Exception x) {
+				log.warning("Error parsing annotation:" + aim, x);
+				x.printStackTrace();
+			}
+		}
+		aims.ResultSet.totalRecords = aims.ResultSet.Result.size();
+		long endtime = System.currentTimeMillis();
+		log.info("" + aims.ResultSet.totalRecords + " annotation summaries returned to client, took:" + (endtime-starttime));
+		return aims;
+	}
+
+	public static void queryAIMImageAnnotationsV4AIME(PrintWriter responseStream, String user, String sessionID) throws ParserConfigurationException, edu.stanford.hakan.aim4api.base.AimException
+	{
+		long starttime = System.currentTimeMillis();
+		String annotationsXML = queryAIMImageAnnotationsV4AIME(user, sessionID);
+		responseStream.print(annotationsXML);
+		long resptime = System.currentTimeMillis();
+		log.info("Time to write resp:" + (resptime-starttime) + " msecs");
+	}
+
+	public static void queryAIMImageJsonAnnotationsAIME(PrintWriter responseStream, String user, String sessionID) throws Exception
+	{
+		long starttime = System.currentTimeMillis();
+		String annotationsXML = queryAIMImageAnnotationsV4AIME(user, sessionID);
+		String jsonString =  XML.toJSONObject(annotationsXML).toString(0);;
+        if (jsonString == null)
+        	throw new Exception("Error converting to json");
+		responseStream.print(jsonString);
+		long resptime = System.currentTimeMillis();
+		log.info("Time to write resp:" + (resptime-starttime) + " msecs");
+	}
+
+	public static String queryAIMImageAnnotationsV4AIME(String user, String sessionID) throws ParserConfigurationException, edu.stanford.hakan.aim4api.base.AimException
+	{
+		long starttime = System.currentTimeMillis();
+		List<ImageAnnotationCollection> iacs = AIMQueries.getAIMImageAnnotationsV4AIME(AIMSearchType.ANNOTATION_UID, "all",user);
+		StringBuilder aimsDBXml = new StringBuilder("<imageAnnotations>\n");
+		
+		for (ImageAnnotationCollection aim : iacs) {
+			aimsDBXml.append(edu.stanford.hakan.aim4api.usage.AnnotationBuilder.convertToString(aim));
+		}
+		long xmltime = System.currentTimeMillis();
+		aimsDBXml.append("</imageAnnotations>\n");
+		log.info("Time taken create xml:" + (xmltime-starttime) + " msecs for " + (iacs.size()) +" annotations");
+		return aimsDBXml.toString();
+	
+	}
+
+	/****************************AIME Methods**********************************/
+	
 
 }
