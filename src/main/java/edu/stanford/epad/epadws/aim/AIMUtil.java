@@ -1953,20 +1953,27 @@ public class AIMUtil
 	public static void queryAIMImageAnnotationsV4AIME(PrintWriter responseStream, AIMSearchType aimSearchType,
 			String searchValue, String user, String sessionID, boolean jsonFormat) throws Exception
 	{
-		List<ImageAnnotationCollection> iacs = AIMQueries.getAIMImageAnnotationsV4AIME(aimSearchType, searchValue, user);
-	
-		if (!aimSearchType.equals(AIMSearchType.JSON_QUERY)) {
+		List<ImageAnnotationCollection> iacs = null;
+		if (aimSearchType!=null){
+			iacs=AIMQueries.getAIMImageAnnotationsV4AIME(aimSearchType, searchValue, user);
+			log.warning("get with searchtype "+ aimSearchType.getName() + " " +searchValue);
+		}
+		else{
+			iacs=AIMQueries.getAIMImageAnnotationsV4AIME(AIMSearchType.ANNOTATION_UID, "all", user);
+			log.warning("get all annotations");
+		}
+		if (aimSearchType!=AIMSearchType.JSON_QUERY) {
 			if (iacs.size() == 0) return;
+			StringBuilder xml = new StringBuilder("<imageAnnotations>\n");
+			
+			for (ImageAnnotationCollection iac: iacs)	{
+				xml.append(iac.getXMLString());
+			}
+			xml.append("</imageAnnotations>\n");
 			if (!jsonFormat) {
-				returnImageAnnotationsXMLV4(responseStream, iacs);
-				return;
-			} else {
-				StringBuilder xml = new StringBuilder("<imageAnnotations>\n");
+				responseStream.print(xml.toString());
 				
-				for (ImageAnnotationCollection iac: iacs)	{
-					xml.append(iac.getXMLString());
-				}
-				xml.append("</imageAnnotations>\n");
+			} else {
 				responseStream.print(convertToJson(xml.toString()));
 			}
 		} else {
@@ -1992,6 +1999,9 @@ public class AIMUtil
 	
 	public static EPADAIMList queryAIMImageAnnotationSummariesV4AIME(AIMSearchType searchType, String searchValue, String user, String sessionID) throws Exception
 	{
+		if (searchType!=null){
+			return queryAIMImageAnnotationSummariesV4AIME(user,sessionID);
+		}
 		long starttime = System.currentTimeMillis();
 		List<ImageAnnotationCollection> iacs = AIMQueries.getAIMImageAnnotationsV4AIME(searchType, searchValue,user);
 		
