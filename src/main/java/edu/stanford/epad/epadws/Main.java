@@ -27,9 +27,11 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.net.BindException;
 import java.net.SocketException;
 import java.util.ArrayList;
@@ -258,6 +260,13 @@ public class Main
 			EPADFileUtils.write(pluginsFile, sb.toString());
 		}
 	}
+	
+	static final String[] epadScripts = {
+		"epad_docker.sh",
+		"stop_dockerepad.sh",
+		"start_dockerepad.sh",
+		"uninstall_dockerepad.sh",
+	};
 
 	public static void checkResourcesFolders() {
 		File folder = new File(EPADConfig.getEPADWebServerBaseDir() + "bin/");
@@ -280,6 +289,42 @@ public class Main
 		if (!folder.exists()) folder.mkdirs();
 		folder = new File(EPADConfig.getEPADWebServerSchemaDir());
 		if (!folder.exists()) folder.mkdirs();
+		
+		try
+		{
+			// Copy start/stop scripts over (mainly for docker)
+			File binDir = new File(System.getProperty("user.home") + "/mac/bin/");
+			if (!binDir.exists())
+				binDir = new File(EPADConfig.getEPADWebServerBaseDir() + "bin/");
+			for (String scriptFile: epadScripts)
+			{
+				File file = new File(binDir, scriptFile);
+				if (!file.exists()) {
+					InputStream in = null;
+					OutputStream out = null;
+					try {
+						in = new Dcm4CheeOperations().getClass().getClassLoader().getResourceAsStream("scripts/docker/" + scriptFile);
+			            out = new FileOutputStream(file);
+	
+			            // Transfer bytes from in to out
+			            byte[] buf = new byte[1024];
+			            int len;
+			            while ((len = in.read(buf)) > 0)
+			            {
+			                    out.write(buf, 0, len);
+			            }
+					} catch (Exception x) {
+						
+					} finally {
+			            IOUtils.closeQuietly(in);
+			            IOUtils.closeQuietly(out);
+					}
+				}
+				if (file.exists())
+					file.setExecutable(true);
+			}
+		} catch (Exception x) {}
+
 	}
 
 	private static void configureJettyServer(Server server)
@@ -536,13 +581,13 @@ public class Main
 		deployPath = EPADConfig.getEPADWebServerBaseDir() + "jetty/webapp/plugins/";
 		try
 		{
-			if (testFilesDir.exists() && testFilesDir.isDirectory())
+			if (pluginsDir.exists() && pluginsDir.isDirectory())
 			{
 				File deployDir = new File(deployPath);
 				if (!deployDir.exists())
 					deployDir.mkdirs();
-				File[] testFiles = testFilesDir.listFiles();
-				for (File f: testFiles)
+				File[] pluginFiles = pluginsDir.listFiles();
+				for (File f: pluginFiles)
 				{
 					if (f.isDirectory()) continue;
 					File outFile = new File(deployDir, f.getName());

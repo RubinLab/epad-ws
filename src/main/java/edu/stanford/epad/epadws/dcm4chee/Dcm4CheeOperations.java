@@ -100,10 +100,10 @@ public class Dcm4CheeOperations
 					} finally {
 			            IOUtils.closeQuietly(in);
 			            IOUtils.closeQuietly(out);
-			            file.setExecutable(true);
 					}
 				}
-				file.setExecutable(true);
+				if (file.exists())
+					file.setExecutable(true);
 			}
 			File libDir = new File(EPADConfig.getEPADWebServerDICOMScriptsDir() + "lib/");
 			if (!libDir.exists())

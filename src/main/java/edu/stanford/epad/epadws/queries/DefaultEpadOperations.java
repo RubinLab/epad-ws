@@ -1212,7 +1212,20 @@ public class DefaultEpadOperations implements EpadOperations
 				}
 				else if ("SEG".equalsIgnoreCase(dicomFileDescription.modality))
 				{
-					if (!DSOUtil.checkDSOMaskPNGs(new File(EPADConfig.dcm4cheeDirRoot + "/" + dicomFileDescription.filePath)))
+					File dsoFile = new File(EPADConfig.dcm4cheeDirRoot + "/" + dicomFileDescription.filePath);
+					if (!dsoFile.exists())
+					{
+						try {
+							log.info("Downloading remote DICOM file with image " + dicomFileDescription.imageUID + " for series UID " + seriesUID);
+							dsoFile = File.createTempFile(dicomFileDescription.imageUID, ".tmp");
+							DCM4CHEEUtil.downloadDICOMFileFromWADO(dicomFileDescription, dsoFile);
+						} catch (Exception e) {
+							log.warning("Exception when downloading DICOM file with series UID " + seriesUID + " and image UID "
+									+ dicomFileDescription.imageUID, e);
+						}
+						
+					}
+					if (!DSOUtil.checkDSOMaskPNGs(dsoFile))
 						dicomFilesWithoutPNGs.add(dicomFileDescription);						
 				}
 			}
