@@ -293,7 +293,7 @@ public class EPADPutHandler
 				}
 				else
 				{
-					if (description != null || dueDate != null)
+					if (description != null || dueDate != null || name != null)
 						worklistOperations.updateWorkList(username, reader, workListID, name, description, null, getDate(dueDate));
 				}
 				String wlstatus = httpRequest.getParameter("status");
@@ -326,7 +326,7 @@ public class EPADPutHandler
 				User user = worklistOperations.getUserForWorkList(workListID);
 				if (!user.getUsername().equals(reader))
 					throw new Exception("User " +  reader + " does not match user for worklist "+ workListID);
-				worklistOperations.setWorkListSubjectStatus(reader, wl.getWorkListID(), subjectID, wlstatus, started, completed);
+				worklistOperations.setWorkListSubjectStatus(reader, wl.getWorkListID(), projectID, subjectID, wlstatus, started, completed);
 				statusCode = HttpServletResponse.SC_OK;
 	
 			} else if (HandlerUtil.matchesTemplate(UsersRouteTemplates.USER_STUDY, pathInfo)) {
@@ -371,10 +371,10 @@ public class EPADPutHandler
 				User user = worklistOperations.getUserForWorkList(workListID);
 				if (!user.getUsername().equals(reader))
 					throw new Exception("User " +  reader + " does not match user for worklist "+ workListID);
-				WorkListToSubject wls = worklistOperations.getWorkListSubjectStatus(workListID, subjectID);
+				WorkListToSubject wls = worklistOperations.getWorkListSubjectStatus(workListID, projectID, subjectID);
 				if (wls == null)
 					worklistOperations.addSubjectToWorkList(username, projectID, subjectID, workListID);
-				worklistOperations.setWorkListSubjectStatus(reader, wl.getWorkListID(), subjectID, wlstatus, started, completed);
+				worklistOperations.setWorkListSubjectStatus(reader, wl.getWorkListID(), projectID, subjectID, wlstatus, started, completed);
 				statusCode = HttpServletResponse.SC_OK;
 	
 			} else if (HandlerUtil.matchesTemplate(UsersRouteTemplates.USER_PROJECT_STUDY, pathInfo)) {

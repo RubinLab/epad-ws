@@ -302,7 +302,7 @@ public class AIMUtil
 	
 	public static ImageAnnotation generateAIMFileForDSO(File dsoFile, String username, String projectID) throws Exception
 	{
-		return generateAIMFileForDSO(dsoFile, "shared", null, null);
+		return generateAIMFileForDSO(dsoFile, username, projectID, null);
 	}
 	
 	public static ImageAnnotation generateAIMFileForDSO(File dsoFile, String username, String projectID, String aimName) throws Exception

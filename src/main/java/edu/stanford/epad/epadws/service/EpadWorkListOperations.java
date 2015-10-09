@@ -89,6 +89,7 @@ public interface EpadWorkListOperations {
 	 */
 	void addSubjectToWorkList(String loggedInUser, String projectID, String subjectUID, String workListID) throws Exception;
 	void addSubjectsToWorkList(String loggedInUser, String projectID, JSONObject json, String workListID) throws Exception;
+	void removeSubjectFromWorkList(String loggedInUser, String projectID, String subjectUID, String workListID) throws Exception;
 	/**
 	 * Add Study to WorkList
 	 * @param loggedInUser
@@ -235,8 +236,8 @@ public interface EpadWorkListOperations {
 	 * @param workListID
 	 * @throws Exception
 	 */
-	void setWorkListSubjectStatus(String username, String workListID, String subjectID, String status, Boolean started, Boolean completed) throws Exception;
-	WorkListToSubject getWorkListSubjectStatus(String workListID, String subjectID) throws Exception;
+	void setWorkListSubjectStatus(String username, String workListID, String projectID, String subjectID, String status, Boolean started, Boolean completed) throws Exception;
+	WorkListToSubject getWorkListSubjectStatus(String workListID, String projectID, String subjectID) throws Exception;
 
 	/**
 	 * Set WorkList Study status

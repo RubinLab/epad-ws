@@ -52,6 +52,7 @@ import org.json.XML;
 
 import com.pixelmed.dicom.ImageToDicom;
 import com.pixelmed.dicom.SOPClass;
+import com.pixelmed.dicom.TagFromName;
 import com.pixelmed.dicom.UIDGenerator;
 
 import edu.stanford.epad.common.dicom.DCM4CHEEImageDescription;
@@ -650,8 +651,10 @@ public class DefaultEpadOperations implements EpadOperations
 			List<DICOMElement> referencedSOPInstanceUIDDICOMElements = getDICOMElementsByCode(suppliedDICOMElements,
 					PixelMedUtils.ReferencedSOPInstanceUIDCode);
 			int numberOfFrames = getNumberOfFrames(imageReference.imageUID, suppliedDICOMElements);
-			log.info("numberOfFrames for " + imageReference.imageUID + ":" + numberOfFrames);
-			if (numberOfFrames > 0) {
+			int numberOfSegments = getNumberOfSegments(suppliedDICOMElements);
+			log.info("numberOfFrames for " + imageReference.imageUID + ":" + numberOfFrames + " numberOfSegments:" + numberOfSegments);
+			
+			if (numberOfFrames > 0 && numberOfSegments < 2) {
 				DICOMElement firstDICOMElement = referencedSOPInstanceUIDDICOMElements.get(0);
 				String studyUID = imageReference.studyUID; // DSO will be in same study as original images
 				String referencedFirstImageUID = firstDICOMElement.value;
@@ -664,11 +667,11 @@ public class DefaultEpadOperations implements EpadOperations
 					referencedSeriesUID = dcm4CheeDatabaseOperations.getSeriesUIDForImage(referencedFirstImageUID);
 					i++;
 				}
-				DICOMElementList referencedDICOMElements = getDICOMElements(studyUID, referencedSeriesUID,
-						referencedFirstImageUID);
-				DICOMElementList defaultDICOMElements = getDefaultDICOMElements(imageReference, referencedDICOMElements);
 
 				if (!referencedSeriesUID.equals("")) {
+					DICOMElementList referencedDICOMElements = getDICOMElements(studyUID, referencedSeriesUID,
+							referencedFirstImageUID);
+					DICOMElementList defaultDICOMElements = getDefaultDICOMElements(imageReference, referencedDICOMElements);
 					boolean isFirst = true;
 					List<DCM4CHEEImageDescription> imageDescriptions = dcm4CheeDatabaseOperations.getImageDescriptions(
 							studyUID, referencedSeriesUID);
@@ -750,6 +753,83 @@ public class DefaultEpadOperations implements EpadOperations
 					log.warning("Could not find original series for DSO image " + imageReference.imageUID + " in series "
 							+ imageReference.seriesUID);
 				}
+			} else if (numberOfFrames > 0 && numberOfSegments > 0) {
+				log.debug("Multi-segment DSO frames, numberOfSegment:" + numberOfSegments);
+				referencedSOPInstanceUIDDICOMElements = getDICOMElementsByCodeWithParent(suppliedDICOMElements,
+																PixelMedUtils.ReferencedSOPInstanceUIDCode,
+																"Source Image Sequence");
+				List<DICOMElement> segmentNumberDICOMElements = getDICOMElementsByCodeWithParent(suppliedDICOMElements,
+																	PixelMedUtils.ReferencedSegmentNumberCode,
+																	"Segment Identification Sequence");
+				log.debug("Number frames:" + numberOfFrames + " referencedUIDs:" + referencedSOPInstanceUIDDICOMElements.size() + " segmenNumbers:" + segmentNumberDICOMElements.size());
+				String studyUID = imageReference.studyUID; // DSO will be in same study as original images
+				String referencedFirstImageUID = referencedSOPInstanceUIDDICOMElements.get(0).value;
+				String referencedSeriesUID = dcm4CheeDatabaseOperations.getSeriesUIDForImage(referencedFirstImageUID);
+				if (!referencedSeriesUID.equals("")) {
+					DICOMElementList referencedDICOMElements = getDICOMElements(studyUID, referencedSeriesUID,
+							referencedFirstImageUID);
+					DICOMElementList defaultDICOMElements = getDefaultDICOMElements(imageReference, referencedDICOMElements);
+					boolean isFirst = true;
+					List<DCM4CHEEImageDescription> imageDescriptions = dcm4CheeDatabaseOperations.getImageDescriptions(
+							studyUID, referencedSeriesUID);
+					Map<String, DCM4CHEEImageDescription> descMap = new HashMap<String, DCM4CHEEImageDescription>();
+					for (DCM4CHEEImageDescription imageDescription : imageDescriptions) {
+						descMap.put(imageDescription.imageUID, imageDescription);
+					}
+					List<DCM4CHEEImageDescription> referencedImages = new ArrayList<DCM4CHEEImageDescription>();
+					for (DICOMElement dicomElement : referencedSOPInstanceUIDDICOMElements) {
+						String referencedImageUID = dicomElement.value;
+						DCM4CHEEImageDescription dcm4cheeReferencedImageDescription = descMap.get(referencedImageUID);
+						referencedImages.add(dcm4cheeReferencedImageDescription);
+					}
+					int index = 0;
+					for (DICOMElement dicomElement : referencedSOPInstanceUIDDICOMElements) {
+						String referencedImageUID = dicomElement.value;
+						DCM4CHEEImageDescription dcm4cheeReferencedImageDescription = descMap.get(referencedImageUID);
+						if (dcm4cheeReferencedImageDescription == null)
+						{
+							// Note: These referenced images that are not found probably are extra images referenced in the DICOM. 
+							//		 There seems to be no way to tell them apart using this PixelMed api - need to use something else
+							log.info("Did not find referenced image, seriesuid:" + referencedSeriesUID + " imageuid:" + referencedImageUID 
+								+ " for DSO seriesUID:" + imageReference.seriesUID + " DSO imageUID:" + imageReference.imageUID);
+							continue;
+						}
+						String insertDate = dcm4cheeReferencedImageDescription.createdTime;
+						String imageDate = dcm4cheeReferencedImageDescription.contentTime;
+						String sliceLocation = dcm4cheeReferencedImageDescription.sliceLocation;
+						int instanceNumber = dcm4cheeReferencedImageDescription.instanceNumber;
+						int frameNumber = instanceNumber - 1; // Frames 0-based, instances 1 or more
+						String losslessImage = getPNGMaskPath(studyUID, imageReference.seriesUID, imageReference.imageUID,
+								frameNumber, segmentNumberDICOMElements.get(index).value);
+						String contourImage = "";
+						contourImage = getPNGContourPath(studyUID, imageReference.seriesUID, imageReference.imageUID,
+								frameNumber);
+						String lossyImage = ""; // We do not have a lossy image for the DSO frame
+						String sourceLosslessImage = getPNGPath(studyUID, referencedSeriesUID, referencedImageUID);
+						String sourceLossyImage = getWADOPath(studyUID, referencedSeriesUID, referencedImageUID);
+						//log.info("Frame:" + frameNumber + " losslessImage:" + losslessImage);
+						if (isFirst) {
+							EPADDSOFrame frame = new EPADDSOFrame(imageReference.projectID, imageReference.subjectID,
+									imageReference.studyUID, imageReference.seriesUID, imageReference.imageUID, insertDate, imageDate,
+									sliceLocation, frameNumber, losslessImage, lossyImage, suppliedDICOMElements, defaultDICOMElements,
+									referencedSeriesUID, referencedImageUID, sourceLosslessImage, sourceLossyImage);
+							frame.segmentNumber = getInt(segmentNumberDICOMElements.get(index).value);
+							frames.add(frame);
+							isFirst = false;
+						} else { // We do not add DICOM headers to remaining frame descriptions because it would be too expensive
+							EPADDSOFrame frame = new EPADDSOFrame(imageReference.projectID, imageReference.subjectID,
+									imageReference.studyUID, imageReference.seriesUID, imageReference.imageUID, insertDate, imageDate,
+									sliceLocation, frameNumber, losslessImage, lossyImage, new DICOMElementList(),
+									new DICOMElementList(), referencedSeriesUID, referencedImageUID, sourceLosslessImage,
+									sourceLossyImage);
+							frame.segmentNumber = getInt(segmentNumberDICOMElements.get(index).value);
+							frames.add(frame);
+						}
+						index++;
+					}
+				}
+				log.info("Returning :" + frames.size() + " frames for multisegment DSO");
+				return new EPADFrameList(frames);
 			} else {
 				log.warning("Could not find frames for DSO image " + imageReference.imageUID + " in series "
 						+ imageReference.seriesUID);
@@ -757,12 +837,13 @@ public class DefaultEpadOperations implements EpadOperations
 		} else if (dcm4cheeImageDescription == null) {
 			try {
 				EpadFile file = projectOperations.getEpadFile(null, imageReference.subjectID, imageReference.studyUID, imageReference.seriesUID, imageReference.imageUID);
+				// TODO: Return frames for NIFTI??
 			} catch (Exception e) {
 				log.warning("Error getting file for non-dicom image " + imageReference.imageUID + " in series "
 						+ imageReference.seriesUID, e);
 			}
 			
-		} else {
+		} else { // Multiframe DICOMS (non-DSO)
 			List<String> pngs = epadDatabaseOperations.getAllPNGLocations(imageReference.imageUID);
 			if (pngs.size() > 1)
 			{
@@ -789,17 +870,19 @@ public class DefaultEpadOperations implements EpadOperations
 				String insertDate = dcm4cheeImageDescription.createdTime;
 				String imageDate = dcm4cheeImageDescription.contentTime;
 				String sliceLocation = dcm4cheeImageDescription.sliceLocation;
+				String lossyImage = getWADOPath(imageReference.studyUID, imageReference.seriesUID, imageReference.imageUID);
+
 				for (int i = 0; i < pngs.size(); i++)
 				{
 					if (i == 0) {
 						EPADFrame frame = new EPADFrame(imageReference.projectID, imageReference.subjectID,
 								imageReference.studyUID, imageReference.seriesUID, imageReference.imageUID, insertDate, imageDate,
-								sliceLocation, i, pngs.get(i), "", suppliedDICOMElements, defaultDICOMElements);
+								sliceLocation, i, pngs.get(i), lossyImage, suppliedDICOMElements, defaultDICOMElements);
 						frames.add(frame);
 					} else { // We do not add DICOM headers to remaining frame descriptions because it would be too expensive
 						EPADFrame frame = new EPADFrame(imageReference.projectID, imageReference.subjectID,
 								imageReference.studyUID, imageReference.seriesUID, imageReference.imageUID, insertDate, imageDate,
-								sliceLocation, i, pngs.get(i), "", new DICOMElementList(),
+								sliceLocation, i, pngs.get(i), lossyImage, new DICOMElementList(),
 								new DICOMElementList());
 						frames.add(frame);
 					}
@@ -830,13 +913,26 @@ public class DefaultEpadOperations implements EpadOperations
 
 		for (DICOMElement dicomElement : dicomElementList.ResultSet.Result) {
 			// Do not allow duplicates.
-			if (dicomElement.tagCode.equals(tagCode) && !matchingDICOMElements.contains(dicomElement))
+			if (dicomElement.tagCode.equalsIgnoreCase(tagCode) && !matchingDICOMElements.contains(dicomElement))
 				matchingDICOMElements.add(dicomElement);
 		}
 
 		return new ArrayList<>(matchingDICOMElements);
 	}
 
+	private List<DICOMElement> getDICOMElementsByCodeWithParent(DICOMElementList dicomElementList, String tagCode, String parentSequenceName)
+	{
+		log.debug("Searching for, tagCode:" + tagCode + " parent:" + parentSequenceName);
+		List<DICOMElement> matchingDICOMElements = new ArrayList<DICOMElement>();
+
+		for (DICOMElement dicomElement : dicomElementList.ResultSet.Result) {
+			if (dicomElement.tagCode.equalsIgnoreCase(tagCode) && dicomElement.parentSequenceName.equals(parentSequenceName))
+				matchingDICOMElements.add(dicomElement);
+		}
+
+		return matchingDICOMElements;
+	}
+	
 	private boolean isDSO(DCM4CHEEImageDescription dcm4cheeImageDescription)
 	{
 		return dcm4cheeImageDescription.classUID.equals(SOPClass.SegmentationStorage);
@@ -3322,6 +3418,11 @@ public class DefaultEpadOperations implements EpadOperations
 		return "studies/" + studyUID + "/series/" + seriesUID + "/images/" + imageUID + "/masks/" + frameNumber + ".png";
 	}
 
+	private String getPNGMaskPath(String studyUID, String seriesUID, String imageUID, int frameNumber, String segmentNumber)
+	{
+		return "studies/" + studyUID + "/series/" + seriesUID + "/images/" + imageUID + "/masks/" + frameNumber + "_" + segmentNumber + ".png";
+	}
+
 	private String getPNGContourPath(String studyUID, String seriesUID, String imageUID, int frameNumber)
 	{
 		return "studies/" + studyUID + "/series/" + seriesUID + "/images/" + imageUID + "/contours/" + frameNumber + ".png";
@@ -3387,6 +3488,17 @@ public class DefaultEpadOperations implements EpadOperations
 		}
 		//log.warning("Could not find number of frames value  in DICOM headers for image " + imageUID);
 		return 0;
+	}
+
+	private int getNumberOfSegments(DICOMElementList dicomElements)
+	{
+		int segments = 0;
+		for (DICOMElement dicomElement : dicomElements.ResultSet.Result) {
+			if (dicomElement.tagCode.equalsIgnoreCase(PixelMedUtils.SegmentNumberCode)) {
+				segments++;
+			}
+		}
+		return segments;
 	}
 
 	private DICOMElementList getDICOMElements(ImageReference imageReference)
