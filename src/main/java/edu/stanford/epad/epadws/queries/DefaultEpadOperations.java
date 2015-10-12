@@ -814,6 +814,7 @@ public class DefaultEpadOperations implements EpadOperations
 									sliceLocation, frameNumber, losslessImage, lossyImage, suppliedDICOMElements, defaultDICOMElements,
 									referencedSeriesUID, referencedImageUID, sourceLosslessImage, sourceLossyImage);
 							frame.segmentNumber = getInt(segmentNumberDICOMElements.get(index).value);
+							frame.multiSegment = true;
 							frames.add(frame);
 							isFirst = false;
 						} else { // We do not add DICOM headers to remaining frame descriptions because it would be too expensive
@@ -823,6 +824,7 @@ public class DefaultEpadOperations implements EpadOperations
 									new DICOMElementList(), referencedSeriesUID, referencedImageUID, sourceLosslessImage,
 									sourceLossyImage);
 							frame.segmentNumber = getInt(segmentNumberDICOMElements.get(index).value);
+							frame.multiSegment = true;
 							frames.add(frame);
 						}
 						index++;
@@ -3051,8 +3053,11 @@ public class DefaultEpadOperations implements EpadOperations
 			EPADWorklistSubject wls = new EPADWorklistSubject(workListID, username, project.getProjectId(),
 						subject.getSubjectUID(), subject.getName(), wsubject.getStatus(), formatDate(wsubject.getStartDate()),
 						formatDate(wsubject.getCompleteDate()));
+			SubjectReference reference = new SubjectReference(null, subject.getSubjectUID());
+			int count = epadDatabaseOperations.getNumberOfAIMs(username, reference);
 			wls.workListName = wl.getName();
 			wls.sortOrder = wsubject.getSortOrder();
+			wls.numberOfAnnotations = count;
 			wlsl.addEPADWorklistSubject(wls);
 		}
 		return wlsl;

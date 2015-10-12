@@ -1530,7 +1530,11 @@ public class EPADGetHandler
 				if (pacid.equalsIgnoreCase("null"))
 					throw new Exception("PAC ID in rest call is null:" + pathInfo);
 				RemotePACService rps = RemotePACService.getInstance();
-				List<RemotePACQuery> remoteQueries = rps.getRemotePACQueries(pacid);
+				List<RemotePACQuery> remoteQueries = null;
+				if (pacid.equals("*"))
+					remoteQueries =	rps.getAllQueries();
+				else
+					remoteQueries =	rps.getRemotePACQueries(pacid);
 				RemotePACQueryConfigList queryList = new RemotePACQueryConfigList();
 				for (RemotePACQuery query: remoteQueries)
 				{

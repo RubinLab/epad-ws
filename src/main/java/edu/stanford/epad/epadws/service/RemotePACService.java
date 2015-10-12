@@ -330,6 +330,13 @@ public class RemotePACService extends RemotePACSBase {
 		return queries;
 	}
 
+	public List<RemotePACQuery> getAllQueries() throws Exception {
+		List<RemotePACQuery> queries = new ArrayList<RemotePACQuery>();
+		List objects = new RemotePACQuery().getObjects("1 = 1 order by pacid");
+		queries.addAll(objects);
+		return queries;
+	}
+	
 	/**
 	 * Get  Remote PAC automatic daily query for pac and subject
 	 * @param pacID

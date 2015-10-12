@@ -311,8 +311,8 @@ public class EPADPutHandler
 				statusCode = HttpServletResponse.SC_OK;
 				
 			
-			} else if (HandlerUtil.matchesTemplate(UsersRouteTemplates.USER_SUBJECT, pathInfo)) {
-				Map<String, String> templateMap = HandlerUtil.getTemplateMap(UsersRouteTemplates.USER_SUBJECT, pathInfo);
+			} else if (HandlerUtil.matchesTemplate(UsersRouteTemplates.USER_PROJECT_SUBJECT, pathInfo)) {
+				Map<String, String> templateMap = HandlerUtil.getTemplateMap(UsersRouteTemplates.USER_PROJECT_SUBJECT, pathInfo);
 				String reader = HandlerUtil.getTemplateParameter(templateMap, "username");
 				String workListID = HandlerUtil.getTemplateParameter(templateMap, "worklistID");
 				String projectID = HandlerUtil.getTemplateParameter(templateMap, "projectID");
@@ -326,10 +326,14 @@ public class EPADPutHandler
 				User user = worklistOperations.getUserForWorkList(workListID);
 				if (!user.getUsername().equals(reader))
 					throw new Exception("User " +  reader + " does not match user for worklist "+ workListID);
-				worklistOperations.setWorkListSubjectStatus(reader, wl.getWorkListID(), projectID, subjectID, wlstatus, started, completed);
+				log.debug("Worklist parameters, wlstatus:" + wlstatus + " started:" + started + " completed:" + completed);
+				if (wlstatus == null && !started && !completed)
+					worklistOperations.addSubjectToWorkList(username, projectID, subjectID, workListID); // Just change sort order
+				else
+					worklistOperations.setWorkListSubjectStatus(reader, wl.getWorkListID(), projectID, subjectID, wlstatus, started, completed);
 				statusCode = HttpServletResponse.SC_OK;
 	
-			} else if (HandlerUtil.matchesTemplate(UsersRouteTemplates.USER_STUDY, pathInfo)) {
+			} else if (HandlerUtil.matchesTemplate(UsersRouteTemplates.USER_PROJECT_STUDY, pathInfo)) {
 				Map<String, String> templateMap = HandlerUtil.getTemplateMap(UsersRouteTemplates.USER_STUDY, pathInfo);
 				String reader = HandlerUtil.getTemplateParameter(templateMap, "username");
 				String studyUID = HandlerUtil.getTemplateParameter(templateMap, "studyUID");
@@ -354,6 +358,9 @@ public class EPADPutHandler
 					log.info("WorklistID:" + workListID + " status:" + wlstatus + " started:" + started + " completed:" + completed);
 					worklistOperations.setWorkListStudyStatus(reader, wl.getWorkListID(), studyUID, wlstatus, started, completed);
 				}
+				else
+					worklistOperations.addStudyToWorkList(username, projectID, studyUID, workListID);
+					
 				statusCode = HttpServletResponse.SC_OK;
 	
 			} else if (HandlerUtil.matchesTemplate(UsersRouteTemplates.USER_PROJECT_SUBJECT, pathInfo)) {
