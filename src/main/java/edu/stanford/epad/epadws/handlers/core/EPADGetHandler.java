@@ -999,6 +999,8 @@ public class EPADGetHandler
 					}else if (returnJson(httpRequest))
 					{
 						AIMUtil.queryAIMImageAnnotationsV4AIME(responseStream, aimSearchType, searchValue, username, sessionID, true);					
+					}else {
+						AIMUtil.queryAIMImageAnnotationsV4AIME(responseStream, aimSearchType, searchValue, username, sessionID, false);					
 					}
 				}
 				else

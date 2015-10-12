@@ -184,7 +184,7 @@ public class AIMQueries
 				if (aim != null)
 					resultAims.add(aim);
 			}
-		} else if (aimSearchType.equals(AIMSearchType.AIM_QUERY)) {
+		} else if (aimSearchType == AIMSearchType.AIM_QUERY) {
 			log.warning("aimquery is not supported in AIME database");
 			
 		} else {
