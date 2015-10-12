@@ -145,7 +145,32 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 
 		return pngFilePath;
 	}
+	
+	@Override
+	public List<String> getAllPNGLocations(String imageUID) {
+		Connection c = null;
+		PreparedStatement ps = null;
+		ResultSet rs = null;
+		List<String> pngFilePaths = new ArrayList<String>();
 
+		try {
+			c = getConnection();
+			ps = c.prepareStatement(EpadDatabaseCommands.SELECT_EPAD_FILE_PATH_FOR_IMAGE);
+			ps.setString(1, imageUID);
+			rs = ps.executeQuery();
+			while (rs.next()) {
+				String pngFilePath = rs.getString(1);
+				pngFilePaths.add(pngFilePath);
+			}
+		} catch (SQLException sqle) {
+			String debugInfo = DatabaseUtils.getDebugData(rs);
+			log.warning("Database operation failed; debugInfo=" + debugInfo, sqle);
+		} finally {
+			close(c, ps, rs);
+		}
+		return pngFilePaths;
+	}
+	
 	@Override
 	public String getPNGLocation(FrameReference frameReference)
 	{
@@ -679,7 +704,7 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 			c = getConnection();
 			AIMDatabaseOperations adb = new AIMDatabaseOperations(c, EPADConfig.eXistServerUrl,
 					EPADConfig.aim4Namespace, EPADConfig.eXistCollection, EPADConfig.eXistUsername, EPADConfig.eXistPassword);
-			return adb.getAIMCount(null, reference.projectID, reference.subjectID, null, null, null, 0);
+			return adb.getAIMCount(userName, reference.projectID, reference.subjectID, null, null, null, 0);
 		} catch (SQLException sqle) {
 			log.warning("AIM Database operation failed:", sqle);
 		} finally {

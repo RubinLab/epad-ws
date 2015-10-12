@@ -98,7 +98,7 @@ public class EPADHandler extends AbstractHandler
 					}
 					else
 						username = sessionUser;
-				}
+				} 
 				if ("GET".equalsIgnoreCase(method)) {
 					statusCode = EPADGetHandler.handleGet(httpRequest, httpResponse, responseStream, username, sessionID);
 				} else if ("DELETE".equalsIgnoreCase(method)) {

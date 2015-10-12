@@ -63,9 +63,13 @@ import org.apache.commons.io.IOUtils;
 import com.google.gson.Gson;
 import com.pixelmed.dicom.Attribute;
 import com.pixelmed.dicom.AttributeList;
+import com.pixelmed.dicom.AttributeTag;
 import com.pixelmed.dicom.DicomException;
 import com.pixelmed.dicom.DicomInputStream;
+import com.pixelmed.dicom.SequenceAttribute;
 import com.pixelmed.dicom.TagFromName;
+import com.pixelmed.dicom.UnsignedShortAttribute;
+import com.pixelmed.display.ConsumerFormatImageMaker;
 import com.pixelmed.display.SourceImage;
 
 import edu.stanford.epad.common.dicom.DCM4CHEEImageDescription;
@@ -162,6 +166,9 @@ public class DSOUtil
 			ImageReference imageReference = new ImageReference(dsoEditRequest);
 			log.info("DSO to be edited, UID:" + imageReference.seriesUID);
 			DICOMElementList dicomElements = Dcm4CheeQueries.getDICOMElementsFromWADO(imageReference.studyUID, imageReference.seriesUID, imageReference.imageUID);
+			int numberOfSegments = getNumberOfSegments(dicomElements);
+			if (numberOfSegments > 1)
+				throw new Exception("Editing of Multi-Segment DSOs not supported, number of segments:" + numberOfSegments);
 			String seriesDescription = null;
 			String seriesUID = null;
 			String instanceUID = null;
@@ -233,6 +240,17 @@ public class DSOUtil
 			log.warning("Error generating DSO image " + dsoEditRequest.imageUID + " in series " + dsoEditRequest.seriesUID, e);
 			return null;
 		}
+	}
+
+	private static int getNumberOfSegments(DICOMElementList dicomElements)
+	{
+		int segments = 0;
+		for (DICOMElement dicomElement : dicomElements.ResultSet.Result) {
+			if (dicomElement.tagName.equalsIgnoreCase("Segment Number")) {
+				segments++;
+			}
+		}
+		return segments;
 	}
 
 	/**
@@ -437,58 +455,72 @@ public class DSOUtil
 		}
 	}
 
-	public static void writeMultiFramePNGs(File dsoFile) throws Exception
+	public static void writeMultiFramePNGs(String studyUID, String seriesUID, String imageUID, File dicomFile) throws Exception
 	{
+		String pngFilePath = "";
+		EpadDatabaseOperations databaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
 		try {
-			EpadDatabaseOperations databaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
-//			DicomSegmentationObject dso = new DicomSegmentationObject();
-//			SourceImage sourceDSOImage = dso.convert(dsoFile.getAbsolutePath());
 			int numberOfFrames = 1;
-//			DicomSegmentationObject dso = new DicomSegmentationObject();
-//			SourceImage sourceDSOImage = new SourceImage(dsoFile.getAbsolutePath());
-//			numberOfFrames = sourceDSOImage.getNumberOfBufferedImages();
-			Opener opener = new Opener();
-			ImagePlus image = opener.openImage(dsoFile.getAbsolutePath());
-			numberOfFrames  = image.getNFrames();
-			int numberOfSlices  = image.getNSlices();
-			log.info("Multiframe dicom, frames:" + numberOfFrames + " slices:" + numberOfSlices + " stack size:" + image.getImageStackSize());
-			AttributeList dicomAttributes = PixelMedUtils.readAttributeListFromDicomFile(dsoFile.getAbsolutePath());
-			String studyUID = Attribute.getSingleStringValueOrEmptyString(dicomAttributes, TagFromName.StudyInstanceUID);
-			String seriesUID = Attribute.getSingleStringValueOrEmptyString(dicomAttributes, TagFromName.SeriesInstanceUID);
-			String imageUID = Attribute.getSingleStringValueOrEmptyString(dicomAttributes, TagFromName.SOPInstanceUID);
-
+			
 			String pngDirectoryPath = baseDicomDirectory + "/studies/" + studyUID + "/series/" + seriesUID + "/images/"
 					+ imageUID + "/frames/";
 			File pngFilesDirectory = new File(pngDirectoryPath);
+			pngFilePath = pngDirectoryPath + "0.png";
 
-			log.info("Writing PNGs for DSO " + imageUID + " in series " + seriesUID);
+			log.info("Writing PNGs for MultiFrame DICOM " + imageUID + " in series " + seriesUID);
 
 			pngFilesDirectory.mkdirs();
-			ImageStack stack = image.getImageStack();
-
-			for (int frameNumber = 0; frameNumber < numberOfSlices; frameNumber++) {
-//				BufferedImage bufferedImage = sourceDSOImage.getBufferedImage(numberOfFrames - frameNumber - 1);
-				BufferedImage bufferedImage = stack.getProcessor(frameNumber+1).getBufferedImage();
-				String pngFilePath = pngDirectoryPath + frameNumber + ".png";
-				File pngFile = new File(pngFilePath);
-				try {
-					insertEpadFile(databaseOperations, pngFilePath, 0, imageUID);
-					log.info("Writing PNG frame " + frameNumber + " in multi-frame image " + imageUID + " in series " + seriesUID);
-					ImageIO.write(bufferedImage, "png", pngFile);
-					databaseOperations.updateEpadFileRow(pngFilePath, PNGFileProcessingStatus.DONE, pngFile.length(), "");
-				} catch (IOException e) {
-					log.warning("Failure writing PNG file " + pngFilePath + " for frame " + frameNumber
-							+ " in multi-frame image " + imageUID + " in series " + seriesUID, e);
+			Opener opener = new Opener();
+			ImagePlus image = opener.openImage(dicomFile.getAbsolutePath());
+			if (image != null) {
+				numberOfFrames  = image.getNFrames();
+				int numberOfSlices  = image.getNSlices();
+				log.info("Multiframe dicom, frames:" + numberOfFrames + " slices:" + numberOfSlices + " stack size:" + image.getImageStackSize());
+				ImageStack stack = image.getImageStack();
+	
+				for (int frameNumber = 0; frameNumber < numberOfSlices; frameNumber++) {
+					BufferedImage bufferedImage = stack.getProcessor(frameNumber+1).getBufferedImage();
+					pngFilePath = pngDirectoryPath + frameNumber + ".png";
+					File pngFile = new File(pngFilePath);
+					try {
+						insertEpadFile(databaseOperations, pngFilePath, 0, imageUID);
+						log.info("Writing PNG frame " + frameNumber + " in multi-frame image " + imageUID + " in series " + seriesUID);
+						ImageIO.write(bufferedImage, "png", pngFile);
+						databaseOperations.updateEpadFileRow(pngFilePath, PNGFileProcessingStatus.DONE, pngFile.length(), "");
+					} catch (IOException e) {
+						log.warning("Failure writing PNG file " + pngFilePath + " for frame " + frameNumber
+								+ " in multi-frame image " + imageUID + " in series " + seriesUID, e);
+					}
+				}
+			} else {
+				log.info("Using pixelmed:" + pngFilePath + " Dir:" + pngFilesDirectory.getAbsolutePath());
+				ConsumerFormatImageMaker.convertFileToEightBitImage(dicomFile.getAbsolutePath(), pngFilePath, "png", 0);
+				File[] pngs = pngFilesDirectory.listFiles();
+				for (File png: pngs)
+				{
+					if (!png.getName().endsWith(".png"))
+					{
+						deleteQuietly(png);
+					}
+					else
+					{
+						String name = png.getName().replace("0_","");
+						File newFile = new File(pngDirectoryPath, name);
+						png.renameTo(newFile);
+						insertEpadFile(databaseOperations, newFile.getAbsolutePath(), 0, imageUID);
+						databaseOperations.updateEpadFileRow(newFile.getAbsolutePath(), PNGFileProcessingStatus.DONE,png.length(), "");
+					}
 				}
 			}
 			log.info("Finished writing PNGs for multi-frame DICOM " + imageUID + " in series " + seriesUID);
-		} catch (DicomException e) {
-			log.warning("DICOM exception writing multi-frame PNGs", e);
-			throw new Exception("DICOM exception writing multi-frame PNGs", e);
-		} catch (IOException e) {
-			log.warning("IO exception writing multi-frame PNGs", e);
-			throw new Exception("IO exception writing multi-frame PNGs", e);
-		}
+		} catch (Exception e) {
+			log.warning("Exception writing multi-frame PNGs", e);
+			insertEpadFile(databaseOperations, pngFilePath, 0, imageUID);
+			databaseOperations.updateEpadFileRow(pngFilePath, PNGFileProcessingStatus.ERROR, 0,
+					e.getMessage());
+			databaseOperations.updateOrInsertSeries(seriesUID, SeriesProcessingStatus.ERROR);
+			throw e;
+		} 
 	}
 	
 	public static boolean checkDSOMaskPNGs(File dsoFile)
@@ -564,37 +596,6 @@ public class DSOUtil
 			String studyUID = Attribute.getSingleStringValueOrEmptyString(dicomAttributes, TagFromName.StudyInstanceUID);
 			seriesUID = Attribute.getSingleStringValueOrEmptyString(dicomAttributes, TagFromName.SeriesInstanceUID);
 			String imageUID = Attribute.getSingleStringValueOrEmptyString(dicomAttributes, TagFromName.SOPInstanceUID);
-			DICOMElementList dicomElementList = Dcm4CheeQueries.getDICOMElementsFromWADO(studyUID, seriesUID, imageUID);
-			List<DICOMElement> referencedSOPInstanceUIDDICOMElements = getDICOMElementsByCode(dicomElementList,
-					PixelMedUtils.ReferencedSOPInstanceUIDCode);
-			String referencedSeriesUID = "";
-			log.info("Writing PNG masks for DSO " + imageUID + " number of referenced instances:" + referencedSOPInstanceUIDDICOMElements.size());
-			
-			//dcm4CheeDatabaseOperations.getSeriesUIDForImage(referencedSOPInstanceUIDDICOMElements.get(0).value);
-			for (int i = 0; i < referencedSOPInstanceUIDDICOMElements.size(); i++)
-			{
-				String referencedUID = dcm4CheeDatabaseOperations.getSeriesUIDForImage(referencedSOPInstanceUIDDICOMElements.get(i).value);
-				if (referencedUID == null || referencedUID.length() == 0)
-				{
-					referencedSOPInstanceUIDDICOMElements.remove(i);
-					i--;
-				}
-				else
-					referencedSeriesUID = referencedUID;
-			}
-			log.info("Writing PNG masks for DSO " + imageUID + " number of valid referenced instances:" + referencedSOPInstanceUIDDICOMElements.size());
-			if (referencedSeriesUID == null || referencedSeriesUID.length() == 0)
-			{
-				try {
-					// Best to delete this if the source series is missing ???
-					//SeriesReference seriesReference = new SeriesReference(EPADConfig.xnatUploadProjectID, null, studyUID, seriesUID);
-					//DefaultEpadOperations.getInstance().deleteSeries(seriesReference, true);
-				} catch (Exception x) {}
-				throw new Exception("Referenced series for DSO " + seriesUID + " not found");
-			}
-			int frameNumber = 0;
-			int nonblankFrame = 0;
-
 			String pngMaskDirectoryPath = baseDicomDirectory + "/studies/" + studyUID + "/series/" + seriesUID + "/images/"
 					+ imageUID + "/masks/";
 			String pngContourDirectoryPath = baseDicomDirectory + "/studies/" + studyUID + "/series/" + seriesUID + "/images/"
@@ -606,99 +607,190 @@ public class DSOUtil
 				File pngContourFilesDirectory = new File(pngContourDirectoryPath);
 				pngContourFilesDirectory.mkdirs();
 			}
-			File[] oldFiles = pngMaskFilesDirectory.listFiles();
-//			for (File oldFile: oldFiles)
-//			{
-//				try
-//				{
-//					if (oldFile.getName().contains("png"))
-//						oldFile.delete();
-//				} catch (Exception x) {};
-//			}
 
-			log.info("Writing PNG masks for DSO " + imageUID + " in series " + seriesUID + " DSOFile:" + dsoFile.getAbsolutePath() + " number of frames:" + numberOfFrames + " ...");
-			List<DCM4CHEEImageDescription> referencedImages = new ArrayList<DCM4CHEEImageDescription>();
-			List<DCM4CHEEImageDescription> imageDescriptions = dcm4CheeDatabaseOperations.getImageDescriptions(
-					studyUID, referencedSeriesUID);
-			int instanceOffset = imageDescriptions.size();
-			Map<String, DCM4CHEEImageDescription> descMap = new HashMap<String, DCM4CHEEImageDescription>();
-			for (DCM4CHEEImageDescription imageDescription : imageDescriptions) {
-				descMap.put(imageDescription.imageUID, imageDescription);
-				if (imageDescription.instanceNumber < instanceOffset)
-					instanceOffset = imageDescription.instanceNumber;
-			}
-			if (referencedSOPInstanceUIDDICOMElements.size() < imageDescriptions.size())
-				instanceOffset = 1;
-			if (instanceOffset == 0) instanceOffset = 1;
-			
-			for (DICOMElement dicomElement : referencedSOPInstanceUIDDICOMElements) {
-				String referencedImageUID = dicomElement.value;
-				DCM4CHEEImageDescription dcm4cheeReferencedImageDescription = descMap.get(referencedImageUID);
-				referencedImages.add(dcm4cheeReferencedImageDescription);
-			}
-			int index = 0;
-			boolean onefound = false;
-			int instanceCount = 0;
-			log.info("Number of valid referenced Instances:" + referencedSOPInstanceUIDDICOMElements.size() + " instance offset:" + instanceOffset);
-			for (DICOMElement dicomElement : referencedSOPInstanceUIDDICOMElements) {
-				String referencedImageUID = dicomElement.value;
-				DCM4CHEEImageDescription dcm4cheeReferencedImageDescription = referencedImages.get(index);
-				index++;
-				if (dcm4cheeReferencedImageDescription == null)
-				{
-					log.info("Did not find referenced image, seriesuid:" + referencedSeriesUID + " imageuid:" + referencedImageUID 
-						+ " for DSO seriesUID:" + seriesUID + " DSO imageUID:" + imageUID);
-					continue;
-				}
+			DICOMElementList dicomElementList = Dcm4CheeQueries.getDICOMElementsFromWADO(studyUID, seriesUID, imageUID);
+			AttributeList dsoDICOMAttributes = PixelMedUtils.readDICOMAttributeList(tmpDSO);
+			//SequenceAttribute segmentSequence = (SequenceAttribute) dsoDICOMAttributes.get(TagFromName.SegmentSequence);
+			//AttributeTag t = TagFromName.SegmentNumber;
+			//Attribute a = new UnsignedShortAttribute(t);
 
-				//log.info("Image dimensions - width " + bufferedImage.getWidth() + ", height " + bufferedImage.getHeight());
-				int instanceNumber = dcm4cheeReferencedImageDescription.instanceNumber;
-				if (instanceNumber == 1 && onefound) // These are dicoms where all instance numbers are one !
-				{
-					instanceCount++;
-					instanceNumber = instanceCount;
-				}
-				if (instanceNumber == 1 && !onefound)
-				{
-					onefound = true;
-					instanceCount = 1;
-				}
-				int refFrameNumber = instanceNumber - instanceOffset; // Frames 0-based, instances 1 or more
-				if (refFrameNumber < 0) continue;
-				log.info("FrameNumber:" + frameNumber + " refFrameNumber:" + refFrameNumber + " instance number:" + dcm4cheeReferencedImageDescription.instanceNumber);
-				projectOperations.updateUserTaskStatus(username, TaskStatus.TASK_DSO_PNG_GEN, seriesUID, "Generating PNGs, frame:" + frameNumber, null, null);
-				BufferedImage bufferedImage = sourceDSOImage.getBufferedImage(frameNumber);
-				BufferedImage bufferedImageWithTransparency = generateTransparentImage(bufferedImage);
-				if (nonBlank.get())
-					nonblankFrame = refFrameNumber;
-				String pngMaskFilePath = pngMaskDirectoryPath + refFrameNumber + ".png";
-
-				File pngMaskFile = new File(pngMaskFilePath);
-				try {
-					insertEpadFile(databaseOperations, pngMaskFilePath, pngMaskFile.length(), imageUID);
-					log.info("Writing PNG mask file frame " + frameNumber + " of " + numberOfFrames + " for DSO " + imageUID + " in series " + seriesUID + " file:" + pngMaskFilePath + " nonBlank:" + nonBlank.get());
-					ImageIO.write(bufferedImageWithTransparency, "png", pngMaskFile);
-					databaseOperations.updateEpadFileRow(pngMaskFilePath, PNGFileProcessingStatus.DONE, 0, "");
-					Thread.sleep(50); // So that other things can continue in the system
-				} catch (IOException e) {
-					log.warning("Failure writing PNG mask file " + pngMaskFilePath + " for frame " + frameNumber + " of DSO "
-							+ imageUID + " in series " + seriesUID, e);
-				}
+			int nonblankFrame = 0;
+			List<DICOMElement> referencedSOPInstanceUIDDICOMElements = getDICOMElementsByCode(dicomElementList,
+					PixelMedUtils.ReferencedSOPInstanceUIDCode);
+			String[] segNums = SequenceAttribute.getArrayOfSingleStringValueOrEmptyStringOfNamedAttributeWithinSequenceItems(dsoDICOMAttributes, TagFromName.SegmentSequence, TagFromName.SegmentNumber);
+			if (segNums == null || segNums.length <= 1)
+			{
+				String referencedSeriesUID = "";
+				log.info("Writing PNG masks for DSO " + imageUID + " number of referenced instances:" + referencedSOPInstanceUIDDICOMElements.size());
 				
-				// Contours are currently never set to true, so never used
-				if ("true".equalsIgnoreCase(EPADConfig.getParamValue("GenerateDSOContours")))
+				//dcm4CheeDatabaseOperations.getSeriesUIDForImage(referencedSOPInstanceUIDDICOMElements.get(0).value);
+				for (int i = 0; i < referencedSOPInstanceUIDDICOMElements.size(); i++)
 				{
-					String pngContourFilePath = pngContourDirectoryPath + refFrameNumber + ".png";
+					String referencedUID = dcm4CheeDatabaseOperations.getSeriesUIDForImage(referencedSOPInstanceUIDDICOMElements.get(i).value);
+					if (referencedUID == null || referencedUID.length() == 0)
+					{
+						referencedSOPInstanceUIDDICOMElements.remove(i);
+						i--;
+					}
+					else
+						referencedSeriesUID = referencedUID;
+				}
+				log.info("Writing PNG masks for DSO " + imageUID + " number of valid referenced instances:" + referencedSOPInstanceUIDDICOMElements.size());
+				if (referencedSeriesUID == null || referencedSeriesUID.length() == 0)
+				{
 					try {
-						RunSystemCommand rsc = new RunSystemCommand("convert " + pngMaskFilePath + " -negate -edge 1 -negate " + pngContourFilePath);
-						rsc.run();
-					} catch (Exception e) {
-						log.warning("Failure writing PNG contour file " + pngContourFilePath + " for frame " + frameNumber + " of DSO "
+						// Best to delete this if the source series is missing ???
+						//SeriesReference seriesReference = new SeriesReference(EPADConfig.xnatUploadProjectID, null, studyUID, seriesUID);
+						//DefaultEpadOperations.getInstance().deleteSeries(seriesReference, true);
+					} catch (Exception x) {}
+					throw new Exception("Referenced series for DSO " + seriesUID + " not found");
+				}
+				int frameNumber = 0;
+	
+				File[] oldFiles = pngMaskFilesDirectory.listFiles();
+	//			for (File oldFile: oldFiles)
+	//			{
+	//				try
+	//				{
+	//					if (oldFile.getName().contains("png"))
+	//						oldFile.delete();
+	//				} catch (Exception x) {};
+	//			}
+	
+				log.info("Writing PNG masks for DSO " + imageUID + " in series " + seriesUID + " DSOFile:" + dsoFile.getAbsolutePath() + " number of frames:" + numberOfFrames + " ...");
+				List<DCM4CHEEImageDescription> referencedImages = new ArrayList<DCM4CHEEImageDescription>();
+				List<DCM4CHEEImageDescription> imageDescriptions = dcm4CheeDatabaseOperations.getImageDescriptions(
+						studyUID, referencedSeriesUID);
+				int instanceOffset = imageDescriptions.size();
+				Map<String, DCM4CHEEImageDescription> descMap = new HashMap<String, DCM4CHEEImageDescription>();
+				for (DCM4CHEEImageDescription imageDescription : imageDescriptions) {
+					descMap.put(imageDescription.imageUID, imageDescription);
+					if (imageDescription.instanceNumber < instanceOffset)
+						instanceOffset = imageDescription.instanceNumber;
+				}
+				if (referencedSOPInstanceUIDDICOMElements.size() < imageDescriptions.size())
+					instanceOffset = 1;
+				if (instanceOffset == 0) instanceOffset = 1;
+				
+				for (DICOMElement dicomElement : referencedSOPInstanceUIDDICOMElements) {
+					String referencedImageUID = dicomElement.value;
+					DCM4CHEEImageDescription dcm4cheeReferencedImageDescription = descMap.get(referencedImageUID);
+					referencedImages.add(dcm4cheeReferencedImageDescription);
+				}
+				int index = 0;
+				boolean onefound = false;
+				int instanceCount = 0;
+				log.info("Number of valid referenced Instances:" + referencedSOPInstanceUIDDICOMElements.size() + " instance offset:" + instanceOffset);
+				for (DICOMElement dicomElement : referencedSOPInstanceUIDDICOMElements) {
+					String referencedImageUID = dicomElement.value;
+					DCM4CHEEImageDescription dcm4cheeReferencedImageDescription = referencedImages.get(index);
+					index++;
+					if (dcm4cheeReferencedImageDescription == null)
+					{
+						log.info("Did not find referenced image, seriesuid:" + referencedSeriesUID + " imageuid:" + referencedImageUID 
+							+ " for DSO seriesUID:" + seriesUID + " DSO imageUID:" + imageUID);
+						continue;
+					}
+	
+					//log.info("Image dimensions - width " + bufferedImage.getWidth() + ", height " + bufferedImage.getHeight());
+					int instanceNumber = dcm4cheeReferencedImageDescription.instanceNumber;
+					if (instanceNumber == 1 && onefound) // These are dicoms where all instance numbers are one !
+					{
+						instanceCount++;
+						instanceNumber = instanceCount;
+					}
+					if (instanceNumber == 1 && !onefound)
+					{
+						onefound = true;
+						instanceCount = 1;
+					}
+					int refFrameNumber = instanceNumber - instanceOffset; // Frames 0-based, instances 1 or more
+					if (refFrameNumber < 0) continue;
+					log.info("FrameNumber:" + frameNumber + " refFrameNumber:" + refFrameNumber + " instance number:" + dcm4cheeReferencedImageDescription.instanceNumber);
+					projectOperations.updateUserTaskStatus(username, TaskStatus.TASK_DSO_PNG_GEN, seriesUID, "Generating PNGs, frame:" + frameNumber, null, null);
+					BufferedImage bufferedImage = sourceDSOImage.getBufferedImage(frameNumber);
+					BufferedImage bufferedImageWithTransparency = generateTransparentImage(bufferedImage);
+					if (nonBlank.get())
+						nonblankFrame = refFrameNumber;
+					String pngMaskFilePath = pngMaskDirectoryPath + refFrameNumber + ".png";
+	
+					File pngMaskFile = new File(pngMaskFilePath);
+					try {
+						insertEpadFile(databaseOperations, pngMaskFilePath, pngMaskFile.length(), imageUID);
+						log.info("Writing PNG mask file frame " + frameNumber + " of " + numberOfFrames + " for DSO " + imageUID + " in series " + seriesUID + " file:" + pngMaskFilePath + " nonBlank:" + nonBlank.get());
+						ImageIO.write(bufferedImageWithTransparency, "png", pngMaskFile);
+						databaseOperations.updateEpadFileRow(pngMaskFilePath, PNGFileProcessingStatus.DONE, 0, "");
+					} catch (IOException e) {
+						log.warning("Failure writing PNG mask file " + pngMaskFilePath + " for frame " + frameNumber + " of DSO "
+								+ imageUID + " in series " + seriesUID, e);
+					}
+					
+					// Contours are currently never set to true, so never used
+					if ("true".equalsIgnoreCase(EPADConfig.getParamValue("GenerateDSOContours")))
+					{
+						String pngContourFilePath = pngContourDirectoryPath + refFrameNumber + ".png";
+						try {
+							RunSystemCommand rsc = new RunSystemCommand("convert " + pngMaskFilePath + " -negate -edge 1 -negate " + pngContourFilePath);
+							rsc.run();
+						} catch (Exception e) {
+							log.warning("Failure writing PNG contour file " + pngContourFilePath + " for frame " + frameNumber + " of DSO "
+									+ imageUID + " in series " + seriesUID, e);
+						}
+					}
+					frameNumber++;
+				}
+			}
+			else {
+				log.info("Oh my God, this is a stupid multi-segment DSO:" + seriesUID + " number of segments:" +segNums.length);
+				SequenceAttribute perFrameSeq = (SequenceAttribute) dsoDICOMAttributes.get(TagFromName.PerFrameFunctionalGroupsSequence);
+				int numFrames = perFrameSeq.getNumberOfItems();
+				String[] referencedSOPInstanceUIDs = new String[numFrames];
+				String[] segmentNumbers = new String[numFrames];
+				for (int i = 0; i < numFrames; i++)
+				{
+					AttributeList segAttrs = SequenceAttribute.getAttributeListFromSelectedItemWithinSequence(perFrameSeq, i);
+					SequenceAttribute derImageSeq = (SequenceAttribute) segAttrs.get(TagFromName.DerivationImageSequence);
+					AttributeList derImageAttrs = SequenceAttribute.getAttributeListFromSelectedItemWithinSequence(derImageSeq, 0);
+					String[] refUDIDs = SequenceAttribute.getArrayOfSingleStringValueOrEmptyStringOfNamedAttributeWithinSequenceItems(derImageAttrs, TagFromName.SourceImageSequence, TagFromName.ReferencedSOPInstanceUID);
+					String[] segNos = SequenceAttribute.getArrayOfSingleStringValueOrEmptyStringOfNamedAttributeWithinSequenceItems(segAttrs, TagFromName.SegmentIdentificationSequence, TagFromName.ReferencedSegmentNumber);
+					referencedSOPInstanceUIDs[i] = refUDIDs[0];
+					segmentNumbers[i] = segNos[0];
+				}
+				String referencedSeriesUID = dcm4CheeDatabaseOperations.getSeriesUIDForImage(referencedSOPInstanceUIDs[0]);
+				if (referencedSeriesUID == null || referencedSeriesUID.length() == 0)
+					throw new Exception("Referenced series for DSO " + seriesUID + " not found");
+				List<DCM4CHEEImageDescription> imageDescriptions = dcm4CheeDatabaseOperations.getImageDescriptions(
+						studyUID, referencedSeriesUID);
+				Map<String, DCM4CHEEImageDescription> descMap = new HashMap<String, DCM4CHEEImageDescription>();
+				for (DCM4CHEEImageDescription imageDescription : imageDescriptions) {
+					descMap.put(imageDescription.imageUID, imageDescription);
+				}
+				numberOfFrames = referencedSOPInstanceUIDs.length;
+				for (int i = 0; i < referencedSOPInstanceUIDs.length; i++)
+				{
+					DCM4CHEEImageDescription dcm4cheeReferencedImageDescription = descMap.get(referencedSOPInstanceUIDs[i]);
+					int instanceNumber = dcm4cheeReferencedImageDescription.instanceNumber;
+					int frameNumber = instanceNumber - 1;
+					BufferedImage bufferedImage = sourceDSOImage.getBufferedImage(i);
+					BufferedImage bufferedImageWithTransparency = generateTransparentImage(bufferedImage);
+					if (nonBlank.get())
+						nonblankFrame = frameNumber;
+					String pngMaskFilePath = pngMaskDirectoryPath + frameNumber  + "_"  + segmentNumbers[i] + ".png";
+					
+					File pngMaskFile = new File(pngMaskFilePath);
+					try {
+						insertEpadFile(databaseOperations, pngMaskFilePath, pngMaskFile.length(), imageUID);
+						log.info("Writing PNG mask file frame " + frameNumber + " of " + numberOfFrames + " for DSO " + imageUID + " in series " + seriesUID + " file:" + pngMaskFilePath + " nonBlank:" + nonBlank.get());
+						ImageIO.write(bufferedImageWithTransparency, "png", pngMaskFile);
+						databaseOperations.updateEpadFileRow(pngMaskFilePath, PNGFileProcessingStatus.DONE, 0, "");
+					} catch (IOException e) {
+						log.warning("Failure writing PNG mask file " + pngMaskFilePath + " for frame " + frameNumber + " of DSO "
 								+ imageUID + " in series " + seriesUID, e);
 					}
 				}
-				frameNumber++;
+			
 			}
+	
 			EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
 			List<EPADAIM> aims = epadDatabaseOperations.getAIMsByDSOSeries(seriesUID);
 			for (EPADAIM aim: aims)
@@ -754,7 +846,7 @@ public class DSOUtil
 		String confirm = dcm4CheeDatabaseOperations.getSeriesUIDForImage(imageUID);
 		if (!confirm.equals(seriesUID))
 		{
-			log.warning("Invalid ImageUID for series");
+			log.warning("Invalid ImageUID for series:" + seriesUID);
 			return true;
 		}
 		try {

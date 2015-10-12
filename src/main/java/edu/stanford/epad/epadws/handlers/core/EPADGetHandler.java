@@ -95,6 +95,8 @@ import edu.stanford.epad.epadws.queries.DefaultEpadOperations;
 import edu.stanford.epad.epadws.queries.EpadOperations;
 import edu.stanford.epad.epadws.security.EPADSession;
 import edu.stanford.epad.epadws.service.DefaultEpadProjectOperations;
+import edu.stanford.epad.epadws.service.DefaultWorkListOperations;
+import edu.stanford.epad.epadws.service.EpadWorkListOperations;
 import edu.stanford.epad.epadws.service.PluginOperations;
 import edu.stanford.epad.epadws.service.RemotePACService;
 import edu.stanford.epad.epadws.service.TCIAService;
@@ -172,12 +174,21 @@ public class EPADGetHandler
 					annotationCountOnly = true;
 					annotationCount = true;
 				}
+				String worklist = httpRequest.getParameter("worklist");
 				EPADSubjectList subjectList = null;
-				if (projectReference.projectID.equalsIgnoreCase(EPADConfig.getParamValue("UnassignedProjectID", "nonassigned")) || (projectReference.projectID.equals(EPADConfig.xnatUploadProjectID) && unassignedOnly))
+				if (worklist != null && worklist.trim().length() > 0)
+				{
+					epadOperations.getWorklistSubjectDescriptions(projectReference.projectID, username, worklist, searchFilter, sessionID, sortField);
+				}
+				else if (projectReference.projectID.equalsIgnoreCase(EPADConfig.getParamValue("UnassignedProjectID", "nonassigned")) || (projectReference.projectID.equals(EPADConfig.xnatUploadProjectID) && unassignedOnly))
+				{
 					subjectList = epadOperations.getUnassignedSubjectDescriptions(username, sessionID, searchFilter);
+				}
 				else
+				{
 					subjectList = epadOperations.getSubjectDescriptions(projectReference.projectID, username,
 						sessionID, searchFilter, start, count, sortField, annotationCount);
+				}
 				if (annotationCountOnly) // What a stupid request!
 				{
 					for (EPADSubject subject: subjectList.ResultSet.Result)
@@ -967,6 +978,8 @@ public class EPADGetHandler
 				AIMSearchType aimSearchType = AIMUtil.getAIMSearchType(httpRequest);
 				String searchValue = aimSearchType != null ? httpRequest.getParameter(aimSearchType.getName()) : null;
 				String projectID = httpRequest.getParameter("projectID");
+				String database = httpRequest.getParameter("database");
+				String user = httpRequest.getParameter("user");
 				boolean deletedAims = "true".equalsIgnoreCase(httpRequest.getParameter("deletedAIMs"));
 				log.info("GET request for AIMs from user " + username + "; query type is " + aimSearchType + ", value "
 						+ searchValue + ", project " + projectID + " deletedAIMs:" + deletedAims);
@@ -976,6 +989,21 @@ public class EPADGetHandler
 				
 				long dbtime = System.currentTimeMillis();
 				log.info("Time taken for AIM database query:" + (dbtime-starttime) + " msecs");
+				if (database!=null && database.equalsIgnoreCase("AIME")){ //ml
+					if (user!=null)
+						username=user;
+					if (returnSummary(httpRequest))
+					{
+						aims = AIMUtil.queryAIMImageAnnotationSummariesV4AIME(aimSearchType, searchValue, username, sessionID);
+						responseStream.append(aims.toJSON());
+					}else if (returnJson(httpRequest))
+					{
+						AIMUtil.queryAIMImageAnnotationsV4AIME(responseStream, aimSearchType, searchValue, username, sessionID, true);					
+					}else {
+						AIMUtil.queryAIMImageAnnotationsV4AIME(responseStream, aimSearchType, searchValue, username, sessionID, false);					
+					}
+				}
+				else
 				if (returnSummary(httpRequest))
 				{
 					if (AIMSearchType.AIM_QUERY.equals(aimSearchType) || AIMSearchType.JSON_QUERY.equals(aimSearchType))
@@ -1519,7 +1547,11 @@ public class EPADGetHandler
 				if (pacid.equalsIgnoreCase("null"))
 					throw new Exception("PAC ID in rest call is null:" + pathInfo);
 				RemotePACService rps = RemotePACService.getInstance();
-				List<RemotePACQuery> remoteQueries = rps.getRemotePACQueries(pacid);
+				List<RemotePACQuery> remoteQueries = null;
+				if (pacid.equals("*"))
+					remoteQueries =	rps.getAllQueries();
+				else
+					remoteQueries =	rps.getRemotePACQueries(pacid);
 				RemotePACQueryConfigList queryList = new RemotePACQueryConfigList();
 				for (RemotePACQuery query: remoteQueries)
 				{
@@ -1636,7 +1668,7 @@ public class EPADGetHandler
 						User user = DefaultEpadProjectOperations.getInstance().getUser(username);
 						if (!user.isAdmin())
 							throw new Exception("No permissions to download ePAD software");
-						new EPadWebServerVersion().downloadEpadLatestVersion();
+						new EPadWebServerVersion().downloadEpadLatestVersion(username);
 						data.status = EpadStatisticsTask.newEPADVersion + " has been downloaded, please restart the server";
 					}
 				}
@@ -1646,18 +1678,10 @@ public class EPADGetHandler
 			} else if (HandlerUtil.matchesTemplate(EPADsRouteTemplates.EPAD_USAGE, pathInfo)) {
 				Map<String, String> templateMap = HandlerUtil.getTemplateMap(EPADsRouteTemplates.EPAD_USAGE, pathInfo);
 				String hostname = HandlerUtil.getTemplateParameter(templateMap, "hostname");
-				String sql = "host like '" + hostname.replace('*', '%') + "%' order by createdtime desc";
 				boolean all = "true".equalsIgnoreCase(httpRequest.getParameter("all"));
-				if (!all) sql = "host like '" + hostname.replace('*', '%') + "%' and createdtime =(select max(createdtime) from epadstatistics b where b.host = a.host)";
-				List<EpadStatistics> stats = new EpadStatistics().getObjects(sql);
-				EPADUsageList eul = new EPADUsageList();
-				for (EpadStatistics stat: stats)
-				{
-					eul.addUsage(new EPADUsage(stat.getHost(), stat.getNumOfUsers(), stat.getNumOfProjects(),
-					stat.getNumOfPatients(), stat.getNumOfStudies(), stat.getNumOfSeries(),
-					stat.getNumOfAims(), stat.getNumOfDSOs(), stat.getNumOfPacs(), stat.getNumOfAutoQueries(),
-					stat.getNumOfWorkLists(), dateformat.format(stat.getCreatedTime())));
-				}
+				boolean byMonth = "true".equalsIgnoreCase(httpRequest.getParameter("byMonth"));
+				boolean byYear = "true".equalsIgnoreCase(httpRequest.getParameter("byYear"));
+				EPADUsageList eul = epadOperations.getUsage(username, hostname, byMonth, byYear, all);
 				responseStream.append(eul.toJSON());
 				statusCode = HttpServletResponse.SC_OK;
 

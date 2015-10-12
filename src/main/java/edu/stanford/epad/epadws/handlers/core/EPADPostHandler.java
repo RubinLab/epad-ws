@@ -293,7 +293,7 @@ public class EPADPostHandler
 					//log.info(" email:" + email +" firstname:" + firstname + " lastname:" + lastname + " new password:" + password + " old password:" + oldpassword); 
 					String[] addPermissions = httpRequest.getParameterValues("addPermission");
 					String[] removePermissions = httpRequest.getParameterValues("removePermission");
-					if (enable == null && firstname == null && lastname == null && email == null && addPermissions == null && removePermissions == null && password == null && oldpassword == null)
+					if (colorpreference == null && enable == null && firstname == null && lastname == null && email == null && addPermissions == null && removePermissions == null && password == null && oldpassword == null)
 						throw new Exception("BAD Request - all parameters are null");
 					if ("new".equals(type) && projectOperations.getUser(target_username) != null)
 						throw new Exception("User " +  target_username + " already exists");
@@ -332,8 +332,9 @@ public class EPADPostHandler
 					String reader = HandlerUtil.getTemplateParameter(templateMap, "username");
 					String projectID = HandlerUtil.getTemplateParameter(templateMap, "projectID");
 					String description = httpRequest.getParameter("description");
+					String name = httpRequest.getParameter("name");
 					String dueDate = httpRequest.getParameter("dueDate");
-					worklistOperations.createWorkList(username, reader, null, description, null, getDate(dueDate));
+					worklistOperations.createWorkList(username, reader, null, name, description, null, getDate(dueDate));
 					statusCode = HttpServletResponse.SC_OK;
 				
 				} else if (HandlerUtil.matchesTemplate(UsersRouteTemplates.USER_WORKLIST, pathInfo)) {
@@ -341,11 +342,19 @@ public class EPADPostHandler
 					String reader = HandlerUtil.getTemplateParameter(templateMap, "username");
 					String projectID = HandlerUtil.getTemplateParameter(templateMap, "projectID");
 					String workListID = HandlerUtil.getTemplateParameter(templateMap, "worklistID");
+					String name = httpRequest.getParameter("name");
 					String description = httpRequest.getParameter("description");
 					String dueDate = httpRequest.getParameter("dueDate");
-					worklistOperations.createWorkList(username, reader, workListID, description, null, getDate(dueDate));
+					worklistOperations.createWorkList(username, reader, workListID, name, description, null, getDate(dueDate));
 					statusCode = HttpServletResponse.SC_OK;
-				
+				} else if (HandlerUtil.matchesTemplate(UsersRouteTemplates.USER_PROJECT_SUBJECTS, pathInfo)) {
+					Map<String, String> templateMap = HandlerUtil.getTemplateMap(UsersRouteTemplates.USER_PROJECT_SUBJECTS, pathInfo);
+					String reader = HandlerUtil.getTemplateParameter(templateMap, "username");
+					String projectID = HandlerUtil.getTemplateParameter(templateMap, "projectID");
+					String workListID = HandlerUtil.getTemplateParameter(templateMap, "worklistID");
+					worklistOperations.addSubjectsToWorkList(username, projectID, HandlerUtil.getPostedJson(httpRequest), workListID);
+					statusCode = HttpServletResponse.SC_OK;
+									
 				} else if (HandlerUtil.matchesTemplate(PluginRouteTemplates.PLUGIN_LIST, pathInfo)) { //ML
 					String pluginId = httpRequest.getParameter("pluginId");
 					String name = httpRequest.getParameter("name");
@@ -353,11 +362,14 @@ public class EPADPostHandler
 					String javaclass = httpRequest.getParameter("class");
 					String enabled = httpRequest.getParameter("enabled");
 					String modality = httpRequest.getParameter("modality");
+					String developer = httpRequest.getParameter("developer");
+					String documentation = httpRequest.getParameter("documentation");
+					String rate = httpRequest.getParameter("rate");
 					EPADPlugin plugin = pluginOperations.getPluginDescription(pluginId, username, sessionID);
 					if (plugin != null) {
 						throw new Exception("Plugin " + plugin.getPluginId() +  " already exists");
 					} else {
-						pluginOperations.createPlugin(username, pluginId, name, description, javaclass, enabled, modality, sessionID);
+						pluginOperations.createPlugin(username, pluginId, name, description, javaclass, enabled, modality,developer,documentation,rate, sessionID);
 						return HttpServletResponse.SC_OK;
 					}	
 					
@@ -368,13 +380,16 @@ public class EPADPostHandler
 					String javaclass = httpRequest.getParameter("class");
 					String enabled = httpRequest.getParameter("enabled");
 					String modality = httpRequest.getParameter("modality");
+					String developer = httpRequest.getParameter("developer");
+					String documentation = httpRequest.getParameter("documentation");
+					String rate = httpRequest.getParameter("rate");
 
 					EPADPlugin plugin = pluginOperations.getPluginDescription(pluginReference.pluginID, username, sessionID);
 
 					if (plugin != null) {
 						throw new Exception("Plugin " + plugin.getPluginId() +  " already exists");
 					} else {
-						pluginOperations.createPlugin(username, pluginReference.pluginID, name, description, javaclass, enabled, modality, sessionID);
+						pluginOperations.createPlugin(username, pluginReference.pluginID, name, description, javaclass, enabled, modality,developer,documentation,rate, sessionID);
 						return HttpServletResponse.SC_OK;
 					}	
 

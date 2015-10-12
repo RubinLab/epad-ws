@@ -143,6 +143,7 @@ public class QueueAndWatcherManager
 			// If the file does not exist locally (because it is stored on another file system), download it.
 			if (!inputDICOMFile.exists()) {
 				inputDICOMFile = downloadRemoteDICOM(dicomFileDescription);
+				dicomFilePath = inputDICOMFile.getAbsolutePath();
 			}
 			log.info("Dicom file, modality:" +  dicomFileDescription.modality);
 			if ("RTSTRUCT".equals(modality))
@@ -169,6 +170,7 @@ public class QueueAndWatcherManager
 					inputDICOMFile = new File(dicomFilePath);
 					if (!inputDICOMFile.exists()) {
 						inputDICOMFile = downloadRemoteDICOM(dicomFileDescription);
+						dicomFilePath = inputDICOMFile.getAbsolutePath();
 					}
 				}
 				// Generate mask PNGs, also AIMFile if this is the first time (only one image)
@@ -239,7 +241,9 @@ public class QueueAndWatcherManager
 		log.info("Multi-frame DICOM object found for series " + dicomFileDescription.seriesUID);
 
 		String tagFilePath = createOutputPNGFilePathForSingleFrameDICOMImage(dicomFileDescription).replace(".png", ".tag");
-		MultiFramePNGGeneratorTask dsoPNGGeneratorTask = new MultiFramePNGGeneratorTask(dicomFileDescription.seriesUID,
+		MultiFramePNGGeneratorTask dsoPNGGeneratorTask = new MultiFramePNGGeneratorTask(dicomFileDescription.studyUID, 
+				dicomFileDescription.seriesUID,
+				dicomFileDescription.imageUID,
 				multiFrameDicomFile, tagFilePath);
 
 		pngGeneratorTaskQueue.offer(dsoPNGGeneratorTask);

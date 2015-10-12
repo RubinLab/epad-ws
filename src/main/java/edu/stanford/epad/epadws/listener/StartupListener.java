@@ -55,8 +55,8 @@ public class StartupListener extends ContextLoaderListener
     	Main.checkPluginsFile();
 		RemotePACService.checkPropertiesFile();
 		Main.initializePlugins();
-		Main.loadPluginClasses();
 		Main.startSupportThreads();
+		Main.loadPluginClasses();
 		new ServerStatusHandler(); // Sets startup time
     }
 

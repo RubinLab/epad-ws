@@ -184,13 +184,20 @@ public class Dcm4CheeQueries
 						FileReader tagFileReader = new FileReader(tempTag.getAbsolutePath());
 						tagReader = new BufferedReader(tagFileReader);
 						boolean skipThumbnail = false;
+						String currentSequence = "";
 						while ((dicomElementString = tagReader.readLine()) != null) {
 							if (dicomElementString.contains("(0009,1110)"))  // hard code for now TODO:???
 								skipThumbnail = true;
 							if (dicomElementString.contains("(FFFE,E0DD)"))
 								skipThumbnail = false;
+							int sequence = dicomElementString.indexOf("SQ #-1");
+							if (sequence != -1)
+								currentSequence = dicomElementString.substring(sequence + 7);
+							if (dicomElementString.contains("Sequence Delimitation Item"))
+								currentSequence = "";
 							DICOMElement dicomElement = decodeDICOMElementString(dicomElementString);
 							if (!skipThumbnail && dicomElement != null) {
+								dicomElement.parentSequenceName = currentSequence;
 								dicomElementList.addDICOMElement(dicomElement);
 							} else {
 								// log.warning("Warning: could not decode DICOM element " + dicomElementString + "; skipping");

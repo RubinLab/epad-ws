@@ -21,6 +21,11 @@ public class Plugin extends AbstractDAO {
 	Boolean enabled;
 	String status;
 	String modality;
+	String developer;
+	String documentation;
+	int rateTotal;
+	int rateCount;
+	double rate;
 	String creator;
 	Date createdTime;
 	Date updateTime;
@@ -92,6 +97,50 @@ public class Plugin extends AbstractDAO {
 		this.modality = modality;
 	}
 
+	public String getDeveloper() {
+		return developer;
+	}
+
+	public void setDeveloper(String developer) {
+		this.developer = developer;
+	}
+
+	public String getDocumentation() {
+		return documentation;
+	}
+
+	public void setDocumentation(String documentation) {
+		this.documentation = documentation;
+	}
+
+	public int getRateTotal() {
+		return rateTotal;
+	}
+
+	public void setRateTotal(int rateTotal) {
+		this.rateTotal = rateTotal;
+	}
+
+	public int getRateCount() {
+		return rateCount;
+	}
+
+	public void setRateCount(int rateCount) {
+		this.rateCount = rateCount;
+	}
+
+	public void rate(int rate) {
+		if (rate >= 0 && rate <= 5) {
+			rateTotal+=rate;
+			rateCount++;
+		}
+	}
+	public double getRate() {
+		if (rateTotal==0)
+			return 0;
+		return (double)rateTotal/(double)rateCount;
+	}
+
 	public String getCreator() {
 		return creator;
 	}
@@ -126,6 +175,10 @@ public class Plugin extends AbstractDAO {
         {"enabled","Boolean","enabled","tinyint(1)"},
         {"status","String","status","varchar"},
         {"modality","String","modality","varchar"},
+        {"developer","String","developer","varchar"},
+        {"documentation","String","documentation","varchar"},
+        {"rateTotal","int","rateTotal","int"},
+        {"rateCount","int","rateCount","int"},
         {"creator","String","creator","varchar"},
         {"createdTime","Date","createdtime","timestamp"},
         {"updateTime","Date","updatetime","timestamp"},	

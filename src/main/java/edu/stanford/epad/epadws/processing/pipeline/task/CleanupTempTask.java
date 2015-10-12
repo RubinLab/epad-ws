@@ -24,65 +24,52 @@
 package edu.stanford.epad.epadws.processing.pipeline.task;
 
 import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.util.Date;
+import java.util.concurrent.TimeUnit;
 
 import edu.stanford.epad.common.util.EPADLogger;
-import edu.stanford.epad.dtos.PNGFileProcessingStatus;
-import edu.stanford.epad.dtos.SeriesProcessingStatus;
-import edu.stanford.epad.epadws.handlers.dicom.DSOUtil;
 
-public class MultiFramePNGGeneratorTask implements GeneratorTask
+/**
+ * Clean up temp directory
+ * 
+ * @author dev
+ * 
+ */
+public class CleanupTempTask implements Runnable
 {
-	private static final EPADLogger log = EPADLogger.getInstance();
-
-	private final String studyUID;
-	private final String seriesUID;
-	private final String imageUID;
-	private final File multiFrameDICOMFile;
-	private String tagFilePath;
-	
-	public MultiFramePNGGeneratorTask(String studyUID, String seriesUID, String imageUID, File multiFrameDICOMFile, String tagFilePath)
-	{
-		this.studyUID = studyUID;
-		this.seriesUID = seriesUID;
-		this.imageUID = imageUID;
-		this.multiFrameDICOMFile = multiFrameDICOMFile;
-		this.tagFilePath = tagFilePath;
-	}
+	private static EPADLogger log = EPADLogger.getInstance();
 
 	@Override
 	public void run()
 	{
-		log.info("Processing multi-frame DICOM for series  " + seriesUID + "; file="
-				+ multiFrameDICOMFile.getAbsolutePath());
-
-		try {
-			DSOUtil.writeMultiFramePNGs(studyUID, seriesUID, imageUID, multiFrameDICOMFile);
-		} catch (Exception e) {
-			log.warning("Error writing PNGs for multi-frame seriesUID: " + seriesUID + " imageUID: " + imageUID, e);
+		File tmp = new File(System.getProperty("java.io.tmpdir"));
+		File[] files = tmp.listFiles();
+		for (File file: files)
+		{
+			if (file.getName().endsWith(".tmp"))
+			{
+		        try
+		        {
+		        	BasicFileAttributes attributes = Files.readAttributes(file.toPath(), BasicFileAttributes.class);
+			        long updateTime = attributes.lastAccessTime().toMillis();
+			        if (updateTime < (System.currentTimeMillis() + 1000*60*60*4))
+			        	deleteQuietly(file);			        		
+		        }
+		        catch (Exception exception)
+		        {
+		        }				
+			}
 		}
 	}
-
-	@Override
-	public File getDICOMFile()
+	
+	private static void deleteQuietly(File file)
 	{
-		return multiFrameDICOMFile;
-	}
-
-	@Override
-	public String getTagFilePath()
-	{
-		return tagFilePath;
-	}
-
-	@Override
-	public String getTaskType()
-	{
-		return "DSOPNGGeneration";
-	}
-
-	@Override
-	public String getSeriesUID()
-	{
-		return this.seriesUID;
+		try {
+			//log.info("Deleting temp file:" + file.getAbsolutePath());
+			file.delete();
+		}
+		catch (Exception x) {}
 	}
 }

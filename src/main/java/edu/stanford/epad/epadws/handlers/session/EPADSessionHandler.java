@@ -102,7 +102,7 @@ public class EPADSessionHandler extends AbstractHandler
 					EPADSessionResponse sessionResponse = SessionService.authenticateUser(httpRequest);
 					if (sessionResponse.statusCode == HttpServletResponse.SC_OK) {
 						String jsessionID = sessionResponse.response;
-						log.info("Successful login to EPAD; SESSIONID=" + jsessionID);
+						log.info("Successful login to EPAD; SESSIONID=" + jsessionID + " host:" + host + " ip:" + ip + " host from request:" + httpRequest.getRemoteHost() + "-" + httpRequest.getRemoteAddr());
 						EPADSessionOperations.setSessionHost(jsessionID, host, ip);
 				    	if (formpost)
 				    	{
@@ -115,9 +115,13 @@ public class EPADSessionHandler extends AbstractHandler
 				            Cookie sessionCookie = new Cookie(JSESSIONID_COOKIE, jsessionID);
 				            sessionCookie.setMaxAge(8*3600);
 				            //sessionCookie.setPath("/epad/; Secure; HttpOnly");
-				            sessionCookie.setPath(httpRequest.getContextPath().replace("session/", "").replace("session", ""));
+				            String contextPath = httpRequest.getContextPath().replace("session/", "").replace("session", "");
+				            sessionCookie.setPath(contextPath);
 				            httpResponse.addCookie(sessionCookie);
-				    		httpResponse.sendRedirect(EPADConfig.getParamValue("HomePage", "/epad/Web_pad.html"));
+				            String home = contextPath;
+				            if (!home.endsWith("/")) home = home + "/";
+				            home =  home  + EPADConfig.getParamValue("HomePage", "Web_pad.html");
+				    		httpResponse.sendRedirect(home);
 				    		return;
 				    	}
 

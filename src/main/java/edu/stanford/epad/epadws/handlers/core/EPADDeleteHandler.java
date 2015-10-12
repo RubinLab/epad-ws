@@ -36,6 +36,8 @@ import edu.stanford.epad.dtos.RemotePAC;
 import edu.stanford.epad.epadws.handlers.HandlerUtil;
 import edu.stanford.epad.epadws.models.User;
 import edu.stanford.epad.epadws.models.WorkList;
+import edu.stanford.epad.epadws.models.WorkListToStudy;
+import edu.stanford.epad.epadws.models.WorkListToSubject;
 import edu.stanford.epad.epadws.queries.DefaultEpadOperations;
 import edu.stanford.epad.epadws.queries.EpadOperations;
 import edu.stanford.epad.epadws.service.DefaultWorkListOperations;
@@ -69,8 +71,8 @@ public class EPADDeleteHandler
 		String pathInfo = httpRequest.getPathInfo();
 		int statusCode;
 
-		boolean deleteDSO = "true".equalsIgnoreCase(httpRequest.getParameter("deleteDSO"));
-		boolean deleteAims = "true".equalsIgnoreCase(httpRequest.getParameter("deleteAims"));
+		boolean deleteDSO = !"false".equalsIgnoreCase(httpRequest.getParameter("deleteDSO")); 
+		boolean deleteAims = !"false".equalsIgnoreCase(httpRequest.getParameter("deleteAims"));
 		try
 		{
 			if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.PROJECT, pathInfo)) {
@@ -161,6 +163,44 @@ public class EPADDeleteHandler
 				worklistOperations.deleteWorkList(username, wl.getWorkListID());;		
 				statusCode = HttpServletResponse.SC_OK;
 				
+			} else if (HandlerUtil.matchesTemplate(UsersRouteTemplates.USER_SUBJECT, pathInfo)) {
+				Map<String, String> templateMap = HandlerUtil.getTemplateMap(UsersRouteTemplates.USER_SUBJECT, pathInfo);
+				String reader = HandlerUtil.getTemplateParameter(templateMap, "username");
+				String workListID = HandlerUtil.getTemplateParameter(templateMap, "worklistID");
+				String subjectID = HandlerUtil.getTemplateParameter(templateMap, "subjectID");
+				WorkList wl = worklistOperations.getWorkList(workListID);
+				if (wl == null)
+					throw new Exception("Worklist not found for user " + reader);
+				User user = worklistOperations.getUserForWorkList(workListID);
+				if (!user.getUsername().equals(reader))
+					throw new Exception("User " +  reader + " does not match user for worklist "+ workListID);
+				worklistOperations.removeSubjectFromWorkList(username, subjectID, workListID);
+				statusCode = HttpServletResponse.SC_OK;
+	
+			} else if (HandlerUtil.matchesTemplate(UsersRouteTemplates.USER_PROJECT_SUBJECT, pathInfo)) {
+				Map<String, String> templateMap = HandlerUtil.getTemplateMap(UsersRouteTemplates.USER_PROJECT_SUBJECT, pathInfo);
+				String reader = HandlerUtil.getTemplateParameter(templateMap, "username");
+				String workListID = HandlerUtil.getTemplateParameter(templateMap, "worklistID");
+				String projectID = HandlerUtil.getTemplateParameter(templateMap, "projectID");
+				String subjectID = HandlerUtil.getTemplateParameter(templateMap, "subjectID");
+				WorkList wl = worklistOperations.getWorkList(workListID);
+				if (wl == null)
+					throw new Exception("Worklist not found for user " + reader);
+				User user = worklistOperations.getUserForWorkList(workListID);
+				if (!user.getUsername().equals(reader))
+					throw new Exception("User " +  reader + " does not match user for worklist "+ workListID);
+				worklistOperations.removeSubjectFromWorkList(username, projectID, subjectID, workListID);
+				statusCode = HttpServletResponse.SC_OK;
+	
+			} else if (HandlerUtil.matchesTemplate(UsersRouteTemplates.USER_PROJECT_STUDY, pathInfo)) {
+				Map<String, String> templateMap = HandlerUtil.getTemplateMap(UsersRouteTemplates.USER_PROJECT_STUDY, pathInfo);
+				String reader = HandlerUtil.getTemplateParameter(templateMap, "username");
+				String studyUID = HandlerUtil.getTemplateParameter(templateMap, "studyUID");
+				String workListID = HandlerUtil.getTemplateParameter(templateMap, "worklistID");
+				String projectID = HandlerUtil.getTemplateParameter(templateMap, "projectID");
+				worklistOperations.removeStudyFromWorkList(username, studyUID, workListID);
+				statusCode = HttpServletResponse.SC_OK;
+	
 			} else if (HandlerUtil.matchesTemplate(UsersRouteTemplates.USER, pathInfo)) {
 				Map<String, String> templateMap = HandlerUtil.getTemplateMap(UsersRouteTemplates.USER, pathInfo);
 				String target_username = HandlerUtil.getTemplateParameter(templateMap, "username");

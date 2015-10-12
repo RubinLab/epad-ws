@@ -314,10 +314,10 @@ public class UserProjectService {
 					if (dicomFile.getName().endsWith(".xml"))
 					{
 						try {
-							if (AIMUtil.saveAIMAnnotation(dicomFile, projectID, sessionID, username))
+							if (AIMUtil.saveAIMAnnotation(dicomFile, projectID, 0, sessionID, username, true))
 								log.warning("Error processing aim file:" + dicomFile.getName());
 						} catch (Exception x) {
-							log.warning("Error uploading file:" + dicomFile.getName() + ":" + x.getMessage());
+							log.warning("Error uploading aim file:" + dicomFile.getName() + ":" + x.getMessage());
 						}
 						dicomFile.delete();
 						continue;
@@ -327,7 +327,7 @@ public class UserProjectService {
 						try {
 							DefaultEpadOperations.getInstance().createFile(username, projectID, subjectID, studyUID, seriesUID, dicomFile, null, null, sessionID);
 						} catch (Exception x) {
-							log.warning("Error uploading file:" + dicomFile.getName() + ":" + x.getMessage());
+							log.warning("Error uploading file:" + dicomFile.getName() + ":" + x.getMessage(), x);
 						}
 						dicomFile.delete();
 						continue;
@@ -373,7 +373,7 @@ public class UserProjectService {
 		String studyDate = dicomObject.getString(Tag.StudyDate);
 		String seriesUID = dicomObject.getString(Tag.SeriesInstanceUID);
 		String modality = dicomObject.getString(Tag.Modality);
-		log.debug("Uploading dicom, patientName:" + dicomPatientName + " patientID:" + dicomPatientID + " studyUID:" + studyUID + " studyDate:" + studyDate + " seriesUID:" + seriesUID + " modality:" + modality);
+		log.debug("Uploading dicom, username:" + username + " projectID:" + projectID + " patientName:" + dicomPatientName + " patientID:" + dicomPatientID + " studyUID:" + studyUID + " studyDate:" + studyDate + " seriesUID:" + seriesUID + " modality:" + modality);
 		if (dicomPatientID == null || dicomPatientID.trim().length() == 0 
 				|| dicomPatientID.equalsIgnoreCase("ANON") 
 				|| dicomPatientID.equalsIgnoreCase("Unknown") 
@@ -551,6 +551,8 @@ public class UserProjectService {
 	{
 		log.info("New password requested for " + username);
 		User loggedInUser =  projectOperations.getUser(loggedInUsername);
+		if (loggedInUser == null)
+			throw new Exception("User not found " + loggedInUsername);
 		User user = projectOperations.getUser(username);
 		if (user == null)
 			throw new Exception("User not found " + username);

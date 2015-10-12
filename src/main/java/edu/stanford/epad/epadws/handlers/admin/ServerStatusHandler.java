@@ -27,7 +27,9 @@ import java.io.File;
 import java.io.PrintWriter;
 import java.net.InetAddress;
 import java.text.DecimalFormat;
+import java.text.SimpleDateFormat;
 import java.util.Collection;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
@@ -97,10 +99,13 @@ public class ServerStatusHandler extends AbstractHandler
 				long upTimeSec = remain % (1000*60);
 				upTimeSec = upTimeSec / 1000;
 				responseStream.println("<body  topmargin='10px' leftmargin='10px' width='900px'>");
-				responseStream.println("<a href=\"javascript:window.parent.location='" + httpRequest.getContextPath().replace("status/", "").replace("status", "") + "Web_pad.html'\"><b>Back to ePAD</b></a>");
+				String path = httpRequest.getContextPath().replace("status/", "").replace("status", "");
+				if (!path.endsWith("/")) path = path + "/";
+				responseStream.println("<a href=\"javascript:window.parent.location='" + path + "Web_pad.html'\"><b>Back to ePAD</b></a>");
 				responseStream.println("<hr>");
 				responseStream.println("<h3><center>ePAD Server Status</center></h3>");
 				responseStream.println("<hr>");
+				responseStream.println("<b>ePAD server started:</b> " + new Date(startTime) + "<br>");
 				responseStream.println("<b>ePAD server uptime:</b> " + upTimeHr + " hrs " + upTimeMin + " mins " + upTimeSec + " secs<br>");
 				responseStream.println("<br>");
 			}
@@ -116,8 +121,8 @@ public class ServerStatusHandler extends AbstractHandler
 						"<td align=center>Javaclass</td><td align=center>Enabled</td><td align=center>Status</td><td align=center>Modality</td></tr>");
 				for (Plugin plugin: plugins)
 				{
-					responseStream.println("<tr><td>" + plugin.getPluginId() + "</td><td>" + plugin.getName() + "</td><td>" + plugin.getDescription() + "</td>");
-					responseStream.println("<td>" + plugin.getJavaclass() + "</td><td>" + plugin.getEnabled() + "</td><td>" + plugin.getStatus() + "</td><td>" + plugin.getModality() + "</td></tr>");
+					responseStream.println("<tr><td>" + plugin.getPluginId() + "</td><td>" + plugin.getName() + "</td><td>" + checkNull(plugin.getDescription(), "&nbsp;") + "</td>");
+					responseStream.println("<td>" + plugin.getJavaclass() + "</td><td>" + plugin.getEnabled() + "</td><td>" + checkNull(plugin.getStatus(), "&nbsp;") + "</td><td>" + checkNull(plugin.getModality(), "&nbsp;") + "</td></tr>");
 				}
 				responseStream.println("</table>");
 					
@@ -144,35 +149,41 @@ public class ServerStatusHandler extends AbstractHandler
 						DecimalFormat df = new DecimalFormat("###,###,###");
 						responseStream.println("<b>dcm4chee Free Space: </b>" + df.format(FileSystemUtils.freeSpaceKb(EPADConfig.dcm4cheeDirRoot)/1024) + " Mb<br>");
 						responseStream.println("<b>ePad Free Space: </b>" + df.format(FileSystemUtils.freeSpaceKb(EPADConfig.getEPADWebServerBaseDir())/1024) + " Mb<br>");
-						responseStream.println("<b>Tmp Free Space: </b>" + df.format(FileSystemUtils.freeSpaceKb(System.getProperty("java.io.tmpdir"))/1024) + " Mb<br><br>");
+						responseStream.println("<b>Tmp Free Space: </b>" + df.format(FileSystemUtils.freeSpaceKb(System.getProperty("java.io.tmpdir"))/1024) + " Mb (Max Upload)<br>");
+						if (new File("/var/lib/mysql").exists())
+							responseStream.println("<b>Mysql DB Free Space: </b>" + df.format(FileSystemUtils.freeSpaceKb("/var/lib/mysql")/1024) + " Mb<br>");
 					} catch (Exception x) {}
-					responseStream.println("<b>Current Sessions: </b>" + "<br>");
+					responseStream.println("<br><b>Current Sessions: </b>" + "<br>");
 					Map<String, EPADSession> sessions = EPADSessionOperations.getCurrentSessions();
 					for (String id: sessions.keySet()) {
+						String you = "";
+						if (id.equals(sessionID))
+							you = "*";
 						EPADSession session = sessions.get(id);
-						responseStream.println("&nbsp;&nbsp;&nbsp;<b>User:</b> " + session.getUsername() + " <b>Started:</b> " + session.getCreatedTime() + "<br>");
+						responseStream.println("&nbsp;&nbsp;&nbsp;<b>User:</b> " + session.getUsername() + you + " <b>Started:</b> " + session.getCreatedTime() + " <b>From:</b>" + session.getRemoteAddr() + "<br>");
 					}
 					Collection<User> users = DefaultEpadProjectOperations.getUserCache();
 					responseStream.println("<br><b>Background Tasks: </b>");
-					responseStream.println("<br><table border=1 cellpadding=2><tr style='font-weight: bold;'><td align=center>User</td><td align=center>Task</td><td align=center>Target</td><td align=center>Status</td><td align=center>Start</td><td align=center>Complete</td></tr>");
+					responseStream.println("<br><table border=1 cellpadding=2><tr style='font-weight: bold;'><td align=center>User</td><td align=center>Task</td><td align=center>Target</td><td align=center>Status</td><td align=center>Start</td><td align=center>Complete</td><td align=center>Elapsed</td></tr>");
+					boolean empty = true;
 					for (User u: users)
 					{
 						Collection<TaskStatus> tss = u.getCurrentTasks().values();
 						for (TaskStatus ts: tss)
 						{
-							responseStream.println("<tr><td>" + u.getUsername() + "</td><td>" + ts.type + "</td><td>" + ts.target + "</td><td>" + ts.status + "</td><td>" + ts.starttime + "</td><td>" + ts.completetime + "</td></tr>");
-						}
-						if (tss.size() == 0) {
-							responseStream.println("<tr><td colspan=100% align=center>No background processes running for " + u.getUsername() + "</td></tr>");
+							responseStream.println("<tr><td>" + u.getUsername() + "</td><td>" + ts.type + "</td><td>" + ts.target + "</td><td>" + ts.status + "</td><td>" + ts.starttime + "</td><td>" + ts.completetime + "</td><td>" + getDiff(getDate(ts.starttime), getDate(ts.completetime)) + "</td></tr>");
+							empty = false;
 						}
 					}
+					if (empty)
+						responseStream.println("<tr><td colspan=100% align=center>No background processes running</td></tr>");
 					responseStream.println("</table>");
 				}  else {
-					responseStream.println("<br><table border=1 cellpadding=2><tr style='font-weight: bold;'><td align=center>User</td><td align=center>Task</td><td align=center>Target</td><td align=center>Status</td><td align=center>Start</td><td align=center>Complete</td></tr>");
+					responseStream.println("<br><table border=1 cellpadding=2><tr style='font-weight: bold;'><td align=center>User</td><td align=center>Task</td><td align=center>Target</td><td align=center>Status</td><td align=center>Start</td><td align=center>Complete</td><td align=center>Elapsed</td></tr>");
 					Collection<TaskStatus> tss = user.getCurrentTasks().values();
 					for (TaskStatus ts: tss)
 					{
-						responseStream.println("<tr><td>" + user.getUsername() + "</td><td>" + ts.type + "</td><td>" + ts.target + "</td><td>" + ts.status + "</td><td>" + ts.starttime + "</td><td>" + ts.completetime + "</td></tr>");
+						responseStream.println("<tr><td>" + user.getUsername() + "</td><td>" + ts.type + "</td><td>" + ts.target + "</td><td>" + ts.status + "</td><td>" + ts.starttime + "</td><td>" + ts.completetime + "</td><td>" + getDiff(getDate(ts.starttime), getDate(ts.completetime)) + "</td></tr>");
 					}
 					if (tss.size() == 0)
 						responseStream.println("<tr><td colspan=100% align=center>No background processes running</td></tr>");
@@ -186,6 +197,36 @@ public class ServerStatusHandler extends AbstractHandler
 				statusCode = HandlerUtil.internalErrorResponse(INTERNAL_EXCEPTION_MESSAGE, responseStream, log);
 			}
 			httpResponse.setStatus(statusCode);
+	}
+	
+	public static String checkNull(String value, String defaultValue)
+	{
+		if (value == null)
+			return defaultValue;
+		else
+			return value;
+	}
+	
+	static SimpleDateFormat dateformat = new SimpleDateFormat("yyyyMMdd HH:mm:ss");
+	public static Date getDate(String dateStr)
+	{
+		if (dateStr == null || dateStr.length() == 0)
+			return null;
+		try
+		{
+			return dateformat.parse(dateStr);
+		}
+		catch (Exception x) {}
+		return null;
+	}
+	public static String getDiff(Date start, Date end)
+	{
+		if (start == null)
+			return null;
+		if (end == null) end = new Date();
+		long ms = end.getTime() - start.getTime();
+		String diff = ms/(1000*60) + " mins " + ms%(1000*60)/1000  + " secs";
+		return diff;
 	}
 
 	private String getPipelineActivityLevel()

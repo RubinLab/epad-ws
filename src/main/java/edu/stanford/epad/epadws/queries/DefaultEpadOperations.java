@@ -33,6 +33,7 @@ import java.io.File;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
@@ -51,6 +52,7 @@ import org.json.XML;
 
 import com.pixelmed.dicom.ImageToDicom;
 import com.pixelmed.dicom.SOPClass;
+import com.pixelmed.dicom.TagFromName;
 import com.pixelmed.dicom.UIDGenerator;
 
 import edu.stanford.epad.common.dicom.DCM4CHEEImageDescription;
@@ -85,6 +87,8 @@ import edu.stanford.epad.dtos.EPADSubjectList;
 import edu.stanford.epad.dtos.EPADTemplate;
 import edu.stanford.epad.dtos.EPADTemplateContainer;
 import edu.stanford.epad.dtos.EPADTemplateContainerList;
+import edu.stanford.epad.dtos.EPADUsage;
+import edu.stanford.epad.dtos.EPADUsageList;
 import edu.stanford.epad.dtos.EPADUser;
 import edu.stanford.epad.dtos.EPADUserList;
 import edu.stanford.epad.dtos.EPADWorklist;
@@ -127,6 +131,7 @@ import edu.stanford.epad.epadws.handlers.core.StudyReference;
 import edu.stanford.epad.epadws.handlers.core.SubjectReference;
 import edu.stanford.epad.epadws.handlers.dicom.DSOUtil;
 import edu.stanford.epad.epadws.models.EpadFile;
+import edu.stanford.epad.epadws.models.EpadStatistics;
 import edu.stanford.epad.epadws.models.EventLog;
 import edu.stanford.epad.epadws.models.FileType;
 import edu.stanford.epad.epadws.models.NonDicomSeries;
@@ -269,6 +274,45 @@ public class DefaultEpadOperations implements EpadOperations
 //		{
 //			epadSubjectList.ResultSet.Result = epadSubjectList.ResultSet.Result.subList(start, start+count);
 //		}
+		return epadSubjectList;
+	}	
+
+	@Override
+	public EPADSubjectList getWorklistSubjectDescriptions(String projectID,
+			String username, String workListID, EPADSearchFilter searchFilter, String sessionID, String sortField)
+			throws Exception {
+		EPADSubjectList epadSubjectList = new EPADSubjectList();
+		List<Subject> subjects = workListOperations.getSubjectsForWorkList(workListID);
+		for (Subject subject : subjects) {
+			if (!subject.getProjectID().equals(projectID)) continue;
+			EPADSubject epadSubject = subject2EPADSubject(sessionID, username, subject, projectID, searchFilter, true);
+			if (epadSubject != null)
+			{
+				boolean matchAccessionNumber = true;
+				if (searchFilter.hasAccessionNumberMatch())
+				{
+					matchAccessionNumber = false;
+					Set<String> studyUIDsInXNAT = UserProjectService.getStudyUIDsForSubject(projectID,
+							epadSubject.subjectID);
+					for (String studyUID: studyUIDsInXNAT)
+					{
+						SubjectReference subjectReference = new SubjectReference(projectID, epadSubject.subjectID);
+						EPADStudyList studyList = getStudyDescriptions(subjectReference, username, sessionID,
+								searchFilter);
+						if (studyList.ResultSet.totalRecords > 0)
+						{
+							matchAccessionNumber = true;
+							break;
+						}
+					}					
+				}
+				if (matchAccessionNumber)
+				{
+					//log.info("subject " + epadSubject.subjectID + " aim count:" + epadSubject.numberOfAnnotations);
+					epadSubjectList.addEPADSubject(epadSubject);
+				}
+			}
+		}
 		return epadSubjectList;
 	}
 
@@ -498,6 +542,12 @@ public class DefaultEpadOperations implements EpadOperations
 		int numImages = imageDescriptions.size();
 		if (numImages == 0)
 			throw new RuntimeException("This series " + seriesReference.seriesUID + " has no images");
+		if (numImages == 1)
+		{
+			List<String> pngs = epadDatabaseOperations.getAllPNGLocations(imageDescriptions.get(0).imageUID);
+			if (pngs.size() > 1)
+				imageDescriptions.get(0).multiFrameImage = true;
+		}
 		DICOMElementList suppliedDICOMElementsFirst = getDICOMElements(imageDescriptions.get(0).studyUID,
 				imageDescriptions.get(0).seriesUID, imageDescriptions.get(0).imageUID);
 		String pixelSpacing1 = getDICOMElement(suppliedDICOMElementsFirst, PixelMedUtils.PixelSpacingCode);
@@ -531,10 +581,11 @@ public class DefaultEpadOperations implements EpadOperations
 			if (isFirst) {
 				DICOMElementList suppliedDICOMElements = suppliedDICOMElementsFirst;				
 				defaultDICOMElements = getDefaultDICOMElements(dcm4cheeImageDescription.studyUID,
-						dcm4cheeImageDescription.seriesUID, dcm4cheeImageDescription.imageUID, suppliedDICOMElements, dcm4cheeImageDescription.instanceNumber);
+						dcm4cheeImageDescription.seriesUID, dcm4cheeImageDescription.imageUID, suppliedDICOMElements, dcm4cheeImageDescription.instanceNumber, dcm4cheeImageDescription.multiFrameImage);
 				
 				epadImage = createEPADImage(seriesReference, dcm4cheeImageDescription, suppliedDICOMElements, defaultDICOMElements);
 				log.info("Returning DICOM metadata, supplied Elements:" + suppliedDICOMElements.getNumberOfElements() + " default Elements:" + defaultDICOMElements.getNumberOfElements());
+				epadImage.multiFrameImage = dcm4cheeImageDescription.multiFrameImage;
 				epadImageList.addImage(epadImage);
 				isFirst = false;
 			} else { 
@@ -575,10 +626,14 @@ public class DefaultEpadOperations implements EpadOperations
 	public EPADImage getImageDescription(ImageReference imageReference, String sessionID)
 	{
 		DCM4CHEEImageDescription dcm4cheeImageDescription = dcm4CheeDatabaseOperations.getImageDescription(imageReference);
+		List<String> pngs = epadDatabaseOperations.getAllPNGLocations(imageReference.imageUID);
+		if (pngs.size() > 1)
+			dcm4cheeImageDescription.multiFrameImage = true;
 		DICOMElementList suppliedDICOMElements = getDICOMElements(imageReference);
 		DICOMElementList defaultDICOMElements = getDefaultDICOMElements(imageReference, suppliedDICOMElements);
 
 		EPADImage eImage = createEPADImage(imageReference, dcm4cheeImageDescription, suppliedDICOMElements, defaultDICOMElements);
+		eImage.multiFrameImage = dcm4cheeImageDescription.multiFrameImage;
 		log.info("Returning DICOM metadata, supplied Elements:" + suppliedDICOMElements.getNumberOfElements() + " default Elements:" + defaultDICOMElements.getNumberOfElements());
 		return eImage;
 	}
@@ -596,8 +651,10 @@ public class DefaultEpadOperations implements EpadOperations
 			List<DICOMElement> referencedSOPInstanceUIDDICOMElements = getDICOMElementsByCode(suppliedDICOMElements,
 					PixelMedUtils.ReferencedSOPInstanceUIDCode);
 			int numberOfFrames = getNumberOfFrames(imageReference.imageUID, suppliedDICOMElements);
-			log.info("numberOfFrames for " + imageReference.imageUID + ":" + numberOfFrames);
-			if (numberOfFrames > 0) {
+			int numberOfSegments = getNumberOfSegments(suppliedDICOMElements);
+			log.info("numberOfFrames for " + imageReference.imageUID + ":" + numberOfFrames + " numberOfSegments:" + numberOfSegments);
+			
+			if (numberOfFrames > 0 && numberOfSegments < 2) {
 				DICOMElement firstDICOMElement = referencedSOPInstanceUIDDICOMElements.get(0);
 				String studyUID = imageReference.studyUID; // DSO will be in same study as original images
 				String referencedFirstImageUID = firstDICOMElement.value;
@@ -610,11 +667,11 @@ public class DefaultEpadOperations implements EpadOperations
 					referencedSeriesUID = dcm4CheeDatabaseOperations.getSeriesUIDForImage(referencedFirstImageUID);
 					i++;
 				}
-				DICOMElementList referencedDICOMElements = getDICOMElements(studyUID, referencedSeriesUID,
-						referencedFirstImageUID);
-				DICOMElementList defaultDICOMElements = getDefaultDICOMElements(imageReference, referencedDICOMElements);
 
 				if (!referencedSeriesUID.equals("")) {
+					DICOMElementList referencedDICOMElements = getDICOMElements(studyUID, referencedSeriesUID,
+							referencedFirstImageUID);
+					DICOMElementList defaultDICOMElements = getDefaultDICOMElements(imageReference, referencedDICOMElements);
 					boolean isFirst = true;
 					List<DCM4CHEEImageDescription> imageDescriptions = dcm4CheeDatabaseOperations.getImageDescriptions(
 							studyUID, referencedSeriesUID);
@@ -696,6 +753,85 @@ public class DefaultEpadOperations implements EpadOperations
 					log.warning("Could not find original series for DSO image " + imageReference.imageUID + " in series "
 							+ imageReference.seriesUID);
 				}
+			} else if (numberOfFrames > 0 && numberOfSegments > 0) {
+				log.debug("Multi-segment DSO frames, numberOfSegment:" + numberOfSegments);
+				referencedSOPInstanceUIDDICOMElements = getDICOMElementsByCodeWithParent(suppliedDICOMElements,
+																PixelMedUtils.ReferencedSOPInstanceUIDCode,
+																"Source Image Sequence");
+				List<DICOMElement> segmentNumberDICOMElements = getDICOMElementsByCodeWithParent(suppliedDICOMElements,
+																	PixelMedUtils.ReferencedSegmentNumberCode,
+																	"Segment Identification Sequence");
+				log.debug("Number frames:" + numberOfFrames + " referencedUIDs:" + referencedSOPInstanceUIDDICOMElements.size() + " segmenNumbers:" + segmentNumberDICOMElements.size());
+				String studyUID = imageReference.studyUID; // DSO will be in same study as original images
+				String referencedFirstImageUID = referencedSOPInstanceUIDDICOMElements.get(0).value;
+				String referencedSeriesUID = dcm4CheeDatabaseOperations.getSeriesUIDForImage(referencedFirstImageUID);
+				if (!referencedSeriesUID.equals("")) {
+					DICOMElementList referencedDICOMElements = getDICOMElements(studyUID, referencedSeriesUID,
+							referencedFirstImageUID);
+					DICOMElementList defaultDICOMElements = getDefaultDICOMElements(imageReference, referencedDICOMElements);
+					boolean isFirst = true;
+					List<DCM4CHEEImageDescription> imageDescriptions = dcm4CheeDatabaseOperations.getImageDescriptions(
+							studyUID, referencedSeriesUID);
+					Map<String, DCM4CHEEImageDescription> descMap = new HashMap<String, DCM4CHEEImageDescription>();
+					for (DCM4CHEEImageDescription imageDescription : imageDescriptions) {
+						descMap.put(imageDescription.imageUID, imageDescription);
+					}
+					List<DCM4CHEEImageDescription> referencedImages = new ArrayList<DCM4CHEEImageDescription>();
+					for (DICOMElement dicomElement : referencedSOPInstanceUIDDICOMElements) {
+						String referencedImageUID = dicomElement.value;
+						DCM4CHEEImageDescription dcm4cheeReferencedImageDescription = descMap.get(referencedImageUID);
+						referencedImages.add(dcm4cheeReferencedImageDescription);
+					}
+					int index = 0;
+					for (DICOMElement dicomElement : referencedSOPInstanceUIDDICOMElements) {
+						String referencedImageUID = dicomElement.value;
+						DCM4CHEEImageDescription dcm4cheeReferencedImageDescription = descMap.get(referencedImageUID);
+						if (dcm4cheeReferencedImageDescription == null)
+						{
+							// Note: These referenced images that are not found probably are extra images referenced in the DICOM. 
+							//		 There seems to be no way to tell them apart using this PixelMed api - need to use something else
+							log.info("Did not find referenced image, seriesuid:" + referencedSeriesUID + " imageuid:" + referencedImageUID 
+								+ " for DSO seriesUID:" + imageReference.seriesUID + " DSO imageUID:" + imageReference.imageUID);
+							continue;
+						}
+						String insertDate = dcm4cheeReferencedImageDescription.createdTime;
+						String imageDate = dcm4cheeReferencedImageDescription.contentTime;
+						String sliceLocation = dcm4cheeReferencedImageDescription.sliceLocation;
+						int instanceNumber = dcm4cheeReferencedImageDescription.instanceNumber;
+						int frameNumber = instanceNumber - 1; // Frames 0-based, instances 1 or more
+						String losslessImage = getPNGMaskPath(studyUID, imageReference.seriesUID, imageReference.imageUID,
+								frameNumber, segmentNumberDICOMElements.get(index).value);
+						String contourImage = "";
+						contourImage = getPNGContourPath(studyUID, imageReference.seriesUID, imageReference.imageUID,
+								frameNumber);
+						String lossyImage = ""; // We do not have a lossy image for the DSO frame
+						String sourceLosslessImage = getPNGPath(studyUID, referencedSeriesUID, referencedImageUID);
+						String sourceLossyImage = getWADOPath(studyUID, referencedSeriesUID, referencedImageUID);
+						//log.info("Frame:" + frameNumber + " losslessImage:" + losslessImage);
+						if (isFirst) {
+							EPADDSOFrame frame = new EPADDSOFrame(imageReference.projectID, imageReference.subjectID,
+									imageReference.studyUID, imageReference.seriesUID, imageReference.imageUID, insertDate, imageDate,
+									sliceLocation, frameNumber, losslessImage, lossyImage, suppliedDICOMElements, defaultDICOMElements,
+									referencedSeriesUID, referencedImageUID, sourceLosslessImage, sourceLossyImage);
+							frame.segmentNumber = getInt(segmentNumberDICOMElements.get(index).value);
+							frame.multiSegment = true;
+							frames.add(frame);
+							isFirst = false;
+						} else { // We do not add DICOM headers to remaining frame descriptions because it would be too expensive
+							EPADDSOFrame frame = new EPADDSOFrame(imageReference.projectID, imageReference.subjectID,
+									imageReference.studyUID, imageReference.seriesUID, imageReference.imageUID, insertDate, imageDate,
+									sliceLocation, frameNumber, losslessImage, lossyImage, new DICOMElementList(),
+									new DICOMElementList(), referencedSeriesUID, referencedImageUID, sourceLosslessImage,
+									sourceLossyImage);
+							frame.segmentNumber = getInt(segmentNumberDICOMElements.get(index).value);
+							frame.multiSegment = true;
+							frames.add(frame);
+						}
+						index++;
+					}
+				}
+				log.info("Returning :" + frames.size() + " frames for multisegment DSO");
+				return new EPADFrameList(frames);
 			} else {
 				log.warning("Could not find frames for DSO image " + imageReference.imageUID + " in series "
 						+ imageReference.seriesUID);
@@ -703,18 +839,74 @@ public class DefaultEpadOperations implements EpadOperations
 		} else if (dcm4cheeImageDescription == null) {
 			try {
 				EpadFile file = projectOperations.getEpadFile(null, imageReference.subjectID, imageReference.studyUID, imageReference.seriesUID, imageReference.imageUID);
-				//String referencedSeries = 
+				// TODO: Return frames for NIFTI??
 			} catch (Exception e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+				log.warning("Error getting file for non-dicom image " + imageReference.imageUID + " in series "
+						+ imageReference.seriesUID, e);
 			}
 			
-		} else {
-			log.warning("Attempt to get frames of non multi-frame image " + imageReference.imageUID + " in series "
+		} else { // Multiframe DICOMS (non-DSO)
+			List<String> pngs = epadDatabaseOperations.getAllPNGLocations(imageReference.imageUID);
+			if (pngs.size() > 1)
+			{
+				// Sort by frame number
+				for (int i = 0; i < pngs.size(); i++)
+				{
+					for (int j = i; j < pngs.size(); j++)
+					{
+						String pngNamei = pngs.get(i).substring(pngs.get(i).lastIndexOf("/")+1);
+						int framei = getInt(pngNamei.substring(0, pngNamei.indexOf(".")));
+						String pngNamej = pngs.get(j).substring(pngs.get(j).lastIndexOf("/")+1);
+						int framej = getInt(pngNamej.substring(0, pngNamej.indexOf(".")));
+						if (framei > framej)
+						{
+							String temp = pngs.get(i);
+							pngs.set(i, pngs.get(j));
+							pngs.set(j, temp);
+						}
+					}
+					//log.debug("png " + i + ":" + pngs.get(i).substring(pngs.get(i).lastIndexOf("/")+1));
+				}
+				DICOMElementList suppliedDICOMElements = getDICOMElements(imageReference);
+				DICOMElementList defaultDICOMElements = getDefaultDICOMElements(imageReference, suppliedDICOMElements);
+				String insertDate = dcm4cheeImageDescription.createdTime;
+				String imageDate = dcm4cheeImageDescription.contentTime;
+				String sliceLocation = dcm4cheeImageDescription.sliceLocation;
+				String lossyImage = getWADOPath(imageReference.studyUID, imageReference.seriesUID, imageReference.imageUID);
+
+				for (int i = 0; i < pngs.size(); i++)
+				{
+					if (i == 0) {
+						EPADFrame frame = new EPADFrame(imageReference.projectID, imageReference.subjectID,
+								imageReference.studyUID, imageReference.seriesUID, imageReference.imageUID, insertDate, imageDate,
+								sliceLocation, i, pngs.get(i), lossyImage, suppliedDICOMElements, defaultDICOMElements);
+						frames.add(frame);
+					} else { // We do not add DICOM headers to remaining frame descriptions because it would be too expensive
+						EPADFrame frame = new EPADFrame(imageReference.projectID, imageReference.subjectID,
+								imageReference.studyUID, imageReference.seriesUID, imageReference.imageUID, insertDate, imageDate,
+								sliceLocation, i, pngs.get(i), lossyImage, new DICOMElementList(),
+								new DICOMElementList());
+						frames.add(frame);
+					}
+				}
+				log.info("Returning :" + frames.size() + " frames for multiframe image");
+				return new EPADFrameList(frames);
+			}
+			else
+				log.warning("Attempt to get frames of non multi-frame image " + imageReference.imageUID + " in series "
 					+ imageReference.seriesUID);
 		}
 		log.info("Returning : 0 frames for DSO");
 		return new EPADFrameList();
+	}
+	
+	private int getInt(String value)
+	{
+		try {
+			return new Integer(value.trim()).intValue();
+		} catch (Exception x) {
+			return 0;
+		}
 	}
 
 	private List<DICOMElement> getDICOMElementsByCode(DICOMElementList dicomElementList, String tagCode)
@@ -723,13 +915,26 @@ public class DefaultEpadOperations implements EpadOperations
 
 		for (DICOMElement dicomElement : dicomElementList.ResultSet.Result) {
 			// Do not allow duplicates.
-			if (dicomElement.tagCode.equals(tagCode) && !matchingDICOMElements.contains(dicomElement))
+			if (dicomElement.tagCode.equalsIgnoreCase(tagCode) && !matchingDICOMElements.contains(dicomElement))
 				matchingDICOMElements.add(dicomElement);
 		}
 
 		return new ArrayList<>(matchingDICOMElements);
 	}
 
+	private List<DICOMElement> getDICOMElementsByCodeWithParent(DICOMElementList dicomElementList, String tagCode, String parentSequenceName)
+	{
+		log.debug("Searching for, tagCode:" + tagCode + " parent:" + parentSequenceName);
+		List<DICOMElement> matchingDICOMElements = new ArrayList<DICOMElement>();
+
+		for (DICOMElement dicomElement : dicomElementList.ResultSet.Result) {
+			if (dicomElement.tagCode.equalsIgnoreCase(tagCode) && dicomElement.parentSequenceName.equals(parentSequenceName))
+				matchingDICOMElements.add(dicomElement);
+		}
+
+		return matchingDICOMElements;
+	}
+	
 	private boolean isDSO(DCM4CHEEImageDescription dcm4cheeImageDescription)
 	{
 		return dcm4cheeImageDescription.classUID.equals(SOPClass.SegmentationStorage);
@@ -1009,7 +1214,20 @@ public class DefaultEpadOperations implements EpadOperations
 				}
 				else if ("SEG".equalsIgnoreCase(dicomFileDescription.modality))
 				{
-					if (!DSOUtil.checkDSOMaskPNGs(new File(EPADConfig.dcm4cheeDirRoot + "/" + dicomFileDescription.filePath)))
+					File dsoFile = new File(EPADConfig.dcm4cheeDirRoot + "/" + dicomFileDescription.filePath);
+					if (!dsoFile.exists())
+					{
+						try {
+							log.info("Downloading remote DICOM file with image " + dicomFileDescription.imageUID + " for series UID " + seriesUID);
+							dsoFile = File.createTempFile(dicomFileDescription.imageUID, ".tmp");
+							DCM4CHEEUtil.downloadDICOMFileFromWADO(dicomFileDescription, dsoFile);
+						} catch (Exception e) {
+							log.warning("Exception when downloading DICOM file with series UID " + seriesUID + " and image UID "
+									+ dicomFileDescription.imageUID, e);
+						}
+						
+					}
+					if (!DSOUtil.checkDSOMaskPNGs(dsoFile))
 						dicomFilesWithoutPNGs.add(dicomFileDescription);						
 				}
 			}
@@ -1920,8 +2138,9 @@ public class DefaultEpadOperations implements EpadOperations
 	@Override
 	public int subjectDelete(SubjectReference subjectReference, String sessionID, String username) throws Exception
 	{
-		if (subjectReference.projectID != null && subjectReference.projectID.equals(EPADConfig.getParamValue("UnassignedProjectID", "nonassigned")))
-			throw new Exception("Study can not be delete from project:" + subjectReference.projectID);
+		List<Study> studies = projectOperations.getStudiesForSubject(subjectReference.subjectID);
+		if (studies.size() > 0 && subjectReference.projectID != null && subjectReference.projectID.equals(EPADConfig.getParamValue("UnassignedProjectID", "nonassigned")))
+			throw new Exception("Patient can not be delete from project:" + subjectReference.projectID);
 		int xnatStatusCode;
 		User user = projectOperations.getUser(username);
 		if (!user.isAdmin() && !projectOperations.isOwner(username, subjectReference.projectID))
@@ -2193,7 +2412,7 @@ public class DefaultEpadOperations implements EpadOperations
 			if (!aim.projectID.equals(frameReference.projectID)) {
 				moveAIMtoProject(aim, frameReference.projectID, username);
 			}
-			if (!AIMUtil.saveAIMAnnotation(aimFile, aim.projectID, frameReference.frameNumber, sessionID, username))
+			if (!AIMUtil.saveAIMAnnotation(aimFile, aim.projectID, frameReference.frameNumber, sessionID, username, false))
 				return "";
 			else
 				return "Error saving AIM file";
@@ -2624,6 +2843,83 @@ public class DefaultEpadOperations implements EpadOperations
 	}
 
 	@Override
+	public EPADUsageList getUsage(String username, String hostname, boolean byMonth, boolean byYear, boolean all) throws Exception {
+		String sql = "host like '" + hostname.replace('*', '%') + "%' order by host, createdtime desc";
+		if (!all && !byMonth && !byYear) sql = "host like '" + hostname.replace('*', '%') + "%' and createdtime =(select max(createdtime) from epadstatistics b where b.host = a.host)";
+		List<EpadStatistics> stats = new EpadStatistics().getObjects(sql);
+		EpadStatistics total = new EpadStatistics();
+		EPADUsageList eul = new EPADUsageList();
+		int prevDay = -1 ;
+		Date lastDate = null;
+		Set<String> counted = new HashSet<String>();
+		for (EpadStatistics stat: stats)
+		{
+			if (byMonth) {
+				Date date = stat.getCreatedTime();
+				if (!isLastDayOfMonth(date) || counted.contains(stat.getHost()+"_" + getDayOfYear(stat.getCreatedTime())))
+					continue;
+			}	
+			if (byYear) {
+				Date date = stat.getCreatedTime();
+				if (!isLastDayOfYear(date) || counted.contains(stat.getHost()+"_" + getDayOfYear(stat.getCreatedTime())))
+					continue;
+			}
+			counted.add(stat.getHost()+"_" + getDayOfYear(stat.getCreatedTime()));
+			if (prevDay != -1 && prevDay != getDayOfYear(stat.getCreatedTime()) && (byMonth || byYear) && hostname.equals("*"))
+			{
+				eul.addUsage(new EPADUsage("Total", total.getNumOfUsers(), total.getNumOfProjects(),
+						total.getNumOfPatients(), total.getNumOfStudies(), total.getNumOfSeries(),
+						total.getNumOfAims(), total.getNumOfDSOs(), total.getNumOfPacs(), total.getNumOfAutoQueries(),
+						total.getNumOfWorkLists(), dateformat.format(stat.getCreatedTime())));
+				total = new EpadStatistics();
+			}
+			eul.addUsage(new EPADUsage(stat.getHost(), stat.getNumOfUsers(), stat.getNumOfProjects(),
+					stat.getNumOfPatients(), stat.getNumOfStudies(), stat.getNumOfSeries(),
+					stat.getNumOfAims(), stat.getNumOfDSOs(), stat.getNumOfPacs(), stat.getNumOfAutoQueries(),
+					stat.getNumOfWorkLists(), dateformat.format(stat.getCreatedTime())));
+			total.addStatistics(stat);
+			prevDay = getDayOfYear(stat.getCreatedTime());
+			lastDate = stat.getCreatedTime();
+		}
+		if ((!all || byMonth || byYear) && hostname.contains("*"))
+		{
+			eul.addUsage(new EPADUsage("Total", total.getNumOfUsers(), total.getNumOfProjects(),
+					total.getNumOfPatients(), total.getNumOfStudies(), total.getNumOfSeries(),
+					total.getNumOfAims(), total.getNumOfDSOs(), total.getNumOfPacs(), total.getNumOfAutoQueries(),
+					total.getNumOfWorkLists(), dateformat.format(lastDate)));
+		}
+		return eul;
+	}
+	
+	boolean isLastDayOfMonth(Date date) {
+		Calendar cal = Calendar.getInstance();
+		cal.setTime(date);
+		int month = cal.get(Calendar.MONTH);
+		cal.add(Calendar.DATE, 1);
+		if (cal.get(Calendar.MONTH) != month)
+			return true;
+		else
+			return false;
+	}
+	
+	boolean isLastDayOfYear(Date date) {
+		Calendar cal = Calendar.getInstance();
+		cal.setTime(date);
+		int year = cal.get(Calendar.YEAR);
+		cal.add(Calendar.DATE, 1);
+		if (cal.get(Calendar.YEAR) != year)
+			return true;
+		else
+			return false;
+	}
+	
+	int getDayOfYear(Date date) {
+		Calendar cal = Calendar.getInstance();
+		cal.setTime(date);
+		return cal.get(Calendar.DAY_OF_YEAR);
+	}
+
+	@Override
 	public EPADEventLogList getEventLogs(String loggedInUserName, String username, int start, int count) throws Exception {
 		User loggedInUser = projectOperations.getUser(loggedInUserName);
 		if (!loggedInUser.isAdmin() && !loggedInUserName.equals(username))
@@ -2688,23 +2984,23 @@ public class DefaultEpadOperations implements EpadOperations
 			List<String> studyUIDs = new ArrayList<String>();
 			List<String> statuses = new ArrayList<String>();
 			List<String> projectIDs = new ArrayList<String>();
-		for (Subject subject: subjects)
-		{
-			subjectIDs.add(subject.getSubjectUID());
-				projectIDs.add(subject.getProjectID());
-				statuses.add(subject.getStatus());
-		}
-		for (Study study: studies)
-		{
-			studyUIDs.add(study.getStudyUID());
-				projectIDs.add(study.getProjectID());
-				statuses.add(study.getStatus());
-		}
-			
-			wllist.addEPADWorklist(new EPADWorklist(wl.getWorkListID(), user.getUsername(),
-				wl.getDescription(), wl.getStatus(),formatDate(wl.getStartDate()),
+			for (Subject subject: subjects)
+			{
+				subjectIDs.add(subject.getSubjectUID());
+					projectIDs.add(subject.getProjectID());
+					statuses.add(subject.getStatus());
+			}
+			for (Study study: studies)
+			{
+				studyUIDs.add(study.getStudyUID());
+					projectIDs.add(study.getProjectID());
+					statuses.add(study.getStatus());
+			}
+				
+			wllist.addEPADWorklist(new EPADWorklist(wl.getWorkListID(), user.getUsername(), wl.getName(),
+					wl.getDescription(), wl.getStatus(),formatDate(wl.getStartDate()),
 					formatDate(wl.getCompleteDate()), formatDate(wl.getDueDate()), projectIDs, studyUIDs, statuses));
-	}
+		}
 		return wllist;
 	}
 
@@ -2735,6 +3031,8 @@ public class DefaultEpadOperations implements EpadOperations
 			EPADWorklistStudy wls = new EPADWorklistStudy(workListID, username, project.getProjectId(),
 					subject.getSubjectUID(), study.getStudyUID(), wstudy.getStatus(), formatDate(wstudy.getStartDate()),
 					formatDate(wstudy.getCompleteDate()));
+			wls.workListName = wl.getName();
+			wls.sortOrder = wstudy.getSortOrder();
 			wlsl.addEPADWorklistStudy(wls);
 		}
 		return wlsl;
@@ -2753,8 +3051,13 @@ public class DefaultEpadOperations implements EpadOperations
 			Subject subject = (Subject) projectOperations.getDBObject(Subject.class, wsubject.getSubjectId());
 			Project project = (Project) projectOperations.getDBObject(Project.class, wsubject.getProjectId());
 			EPADWorklistSubject wls = new EPADWorklistSubject(workListID, username, project.getProjectId(),
-						subject.getSubjectUID(), wsubject.getStatus(), formatDate(wsubject.getStartDate()),
+						subject.getSubjectUID(), subject.getName(), wsubject.getStatus(), formatDate(wsubject.getStartDate()),
 						formatDate(wsubject.getCompleteDate()));
+			SubjectReference reference = new SubjectReference(null, subject.getSubjectUID());
+			int count = epadDatabaseOperations.getNumberOfAIMs(username, reference);
+			wls.workListName = wl.getName();
+			wls.sortOrder = wsubject.getSortOrder();
+			wls.numberOfAnnotations = count;
 			wlsl.addEPADWorklistSubject(wls);
 		}
 		return wlsl;
@@ -2785,7 +3088,7 @@ public class DefaultEpadOperations implements EpadOperations
 			statuses.add(study.getStatus());
 		}
 		
-		return new EPADWorklist(wl.getWorkListID(), user.getUsername(),
+		return new EPADWorklist(wl.getWorkListID(), user.getUsername(), wl.getName(),
 				wl.getDescription(), wl.getStatus(),formatDate(wl.getStartDate()),
 				formatDate(wl.getCompleteDate()), formatDate(wl.getDueDate()), projectIDs, studyUIDs, statuses);
 	}
@@ -3133,6 +3436,11 @@ public class DefaultEpadOperations implements EpadOperations
 		return "studies/" + studyUID + "/series/" + seriesUID + "/images/" + imageUID + "/masks/" + frameNumber + ".png";
 	}
 
+	private String getPNGMaskPath(String studyUID, String seriesUID, String imageUID, int frameNumber, String segmentNumber)
+	{
+		return "studies/" + studyUID + "/series/" + seriesUID + "/images/" + imageUID + "/masks/" + frameNumber + "_" + segmentNumber + ".png";
+	}
+
 	private String getPNGContourPath(String studyUID, String seriesUID, String imageUID, int frameNumber)
 	{
 		return "studies/" + studyUID + "/series/" + seriesUID + "/images/" + imageUID + "/contours/" + frameNumber + ".png";
@@ -3200,6 +3508,17 @@ public class DefaultEpadOperations implements EpadOperations
 		return 0;
 	}
 
+	private int getNumberOfSegments(DICOMElementList dicomElements)
+	{
+		int segments = 0;
+		for (DICOMElement dicomElement : dicomElements.ResultSet.Result) {
+			if (dicomElement.tagCode.equalsIgnoreCase(PixelMedUtils.SegmentNumberCode)) {
+				segments++;
+			}
+		}
+		return segments;
+	}
+
 	private DICOMElementList getDICOMElements(ImageReference imageReference)
 	{
 		return getDICOMElements(imageReference.studyUID, imageReference.seriesUID, imageReference.imageUID);
@@ -3234,6 +3553,12 @@ public class DefaultEpadOperations implements EpadOperations
 	private DICOMElementList getDefaultDICOMElements(String studyUID, String seriesUID, String imageUID,
 			DICOMElementList suppliedDicomElements, int instanceNo)
 	{
+		return getDefaultDICOMElements(studyUID, seriesUID, imageUID, suppliedDicomElements, instanceNo, false);
+	}
+	
+	private DICOMElementList getDefaultDICOMElements(String studyUID, String seriesUID, String imageUID,
+			DICOMElementList suppliedDicomElements, int instanceNo, boolean useMax)
+	{
 		String override = epadDatabaseOperations.getSeriesDefaultTags(seriesUID);
 		if (override == null) override = "";
 		String[] tags = override.split(";");
@@ -3251,7 +3576,6 @@ public class DefaultEpadOperations implements EpadOperations
 			if (insNo == null || insNo.trim().equals(String.valueOf(instanceNo)))
 				overriddenTags.put(tagValue[0].trim(), tagValue[1].trim());
 		}
-		boolean ultrasound = false;
 		List<DICOMElement> defaultDicomElements = new ArrayList<>();
 		Map<String, List<DICOMElement>> suppliedDICOMElementMap = generateDICOMElementMap(suppliedDicomElements);
 
@@ -3263,7 +3587,7 @@ public class DefaultEpadOperations implements EpadOperations
 		if (suppliedDICOMElementMap.containsKey(PixelMedUtils.ModalityCode))
 		{
 			if (suppliedDICOMElementMap.get(PixelMedUtils.ModalityCode).get(0).value.equals("US"))
-				ultrasound = true;
+				useMax = true;
 			defaultDicomElements.add(suppliedDICOMElementMap.get(PixelMedUtils.ModalityCode).get(0));
 		}
 		else
@@ -3392,7 +3716,7 @@ public class DefaultEpadOperations implements EpadOperations
 				if (overriddenTags.containsKey(PixelMedUtils.WindowCenterTagName))
 					defaultDicomElements.add(new DICOMElement(PixelMedUtils.WindowCenterCode, PixelMedUtils.WindowCenterTagName, overriddenTags.get(PixelMedUtils.WindowCenterTagName)));
 				else
-					defaultDicomElements.addAll(getCalculatedWindowingDICOMElements(studyUID, seriesUID, imageUID, ultrasound));
+					defaultDicomElements.addAll(getCalculatedWindowingDICOMElements(studyUID, seriesUID, imageUID, useMax));
 			}
 			else
 			{
@@ -3405,7 +3729,7 @@ public class DefaultEpadOperations implements EpadOperations
 			if (overriddenTags.containsKey(PixelMedUtils.WindowCenterTagName))
 				defaultDicomElements.add(new DICOMElement(PixelMedUtils.WindowCenterCode, PixelMedUtils.WindowCenterTagName, overriddenTags.get(PixelMedUtils.WindowCenterTagName)));
 			else
-				defaultDicomElements.addAll(getCalculatedWindowingDICOMElements(studyUID, seriesUID, imageUID, ultrasound));
+				defaultDicomElements.addAll(getCalculatedWindowingDICOMElements(studyUID, seriesUID, imageUID, useMax));
 		}
 		return new DICOMElementList(defaultDicomElements);
 	}
@@ -3532,7 +3856,7 @@ public class DefaultEpadOperations implements EpadOperations
 		return result;
 	}
 
-	private List<DICOMElement> getCalculatedWindowingDICOMElements(String studyUID, String seriesUID, String imageUID, boolean ultrasound)
+	private List<DICOMElement> getCalculatedWindowingDICOMElements(String studyUID, String seriesUID, String imageUID, boolean useMax)
 	{
 		List<DICOMElement> dicomElements = new ArrayList<>();
 		long windowWidth = 400;
@@ -3582,7 +3906,7 @@ public class DefaultEpadOperations implements EpadOperations
 				if (cal.isSigned16Bit() && max < 5000) // Signed values can be negative/positive
 					windowCenter = 0;
 				log.info("Calculated, windowWidth:" + windowWidth + " windowCenter:" + windowCenter);
-				if (ultrasound && windowWidth != 255 && windowCenter !=128) { 	//temporary test
+				if (useMax && windowWidth != 255 && windowCenter !=128) { 	//temporary test
 					windowCenter = 16384;
 					windowWidth = 32768;
 				}
@@ -3593,8 +3917,12 @@ public class DefaultEpadOperations implements EpadOperations
 			} else {
 				log.warning("ImageJ failed to load DICOM file for image " + imageUID + " in series " + seriesUID + " path: " + dicomImageFilePath
 						+ " to calculate windowing");
+				if (useMax) {
+					windowCenter = 16384;
+					windowWidth = 32768;
+				}
 			}
-		} catch (IOException e) {
+		} catch (Exception e) {
 			log.warning("Error getting DICOM file from dcm4chee for image " + imageUID + " in series " + seriesUID, e);
 		}
 
@@ -3802,12 +4130,14 @@ public class DefaultEpadOperations implements EpadOperations
 			{
 				EPADUser epadUser = new EPADUser(user.getFullName(), user.getUsername(), 
 						user.getFirstName(), user.getLastName(), user.getEmail(), user.isEnabled(), user.isAdmin(), user.isPasswordExpired(), user.getRole(), permissions);
+				epadUser.colorpreference = user.getColorpreference();
 				userlist.addEPADUser(epadUser);
 			}
 			else
 			{
 				EPADUser epadUser = new EPADUser(user.getFullName(), user.getUsername(), 
 						user.getFirstName(), user.getLastName(), "******", user.isEnabled(), user.isAdmin(), user.isPasswordExpired(), user.getRole(), permissions);
+				epadUser.colorpreference = user.getColorpreference();
 				userlist.addEPADUser(epadUser);
 			}
 		}
@@ -3846,6 +4176,7 @@ public class DefaultEpadOperations implements EpadOperations
 		for (User user: users) {
 			EPADUser epadUser = new EPADUser(user.getFullName(), user.getUsername(), 
 					user.getFirstName(), user.getLastName(), user.getEmail(), user.isEnabled(), user.isAdmin(), user.isPasswordExpired(), "", null);
+			epadUser.colorpreference = user.getColorpreference();
 			userlist.addEPADUser(epadUser);
 		}
 		return userlist;
@@ -3859,6 +4190,7 @@ public class DefaultEpadOperations implements EpadOperations
 		for (User user: users) {
 			EPADUser epadUser = new EPADUser(user.getFullName(), user.getUsername(), 
 					user.getFirstName(), user.getLastName(), user.getEmail(), user.isEnabled(), user.isAdmin(), user.isPasswordExpired(), "", null);
+			epadUser.colorpreference = user.getColorpreference();
 			userlist.addEPADUser(epadUser);
 		}
 		return userlist;

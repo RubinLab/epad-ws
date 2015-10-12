@@ -16,7 +16,7 @@
 		sessionCookie.setPath(request.getContextPath());
 		response.addCookie(sessionCookie);
 %>
-<h2><center>These are test pages for ePAD Webservices that can be used to exercise them and demonstrate how to call them</center></h2>
+<h2><center>ePad Web Services</center></h2>
 <p>
 <table align=center border=1 cellpadding=3 cellspacing=0>
 <form name=loginform method=post action="<%=request.getContextPath()%>/session/">

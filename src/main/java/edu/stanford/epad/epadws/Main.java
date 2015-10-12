@@ -27,9 +27,11 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.net.BindException;
 import java.net.SocketException;
 import java.util.ArrayList;
@@ -56,9 +58,7 @@ import org.springframework.web.context.support.AnnotationConfigWebApplicationCon
 import org.springframework.web.servlet.DispatcherServlet;
 import org.xml.sax.SAXException;
 
-import edu.stanford.epad.epadws.plugins.PluginConfig;
 import edu.stanford.epad.common.plugins.PluginController;
-import edu.stanford.epad.epadws.plugins.PluginHandlerMap;
 import edu.stanford.epad.common.plugins.PluginServletHandler;
 import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADFileUtils;
@@ -68,6 +68,7 @@ import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeOperations;
 import edu.stanford.epad.epadws.epaddb.EpadDatabase;
 import edu.stanford.epad.epadws.epaddb.EpadDatabaseOperations;
 import edu.stanford.epad.epadws.handlers.admin.ConvertAIM4Handler;
+import edu.stanford.epad.epadws.handlers.admin.CopyAimsToExistHandler;
 import edu.stanford.epad.epadws.handlers.admin.ImageCheckHandler;
 import edu.stanford.epad.epadws.handlers.admin.ImageReprocessingHandler;
 import edu.stanford.epad.epadws.handlers.admin.ResourceCheckHandler;
@@ -84,11 +85,15 @@ import edu.stanford.epad.epadws.handlers.event.EventHandler;
 import edu.stanford.epad.epadws.handlers.event.ProjectEventHandler;
 import edu.stanford.epad.epadws.handlers.plugin.EPadPluginHandler;
 import edu.stanford.epad.epadws.handlers.session.EPADSessionHandler;
+import edu.stanford.epad.epadws.models.Plugin;
 import edu.stanford.epad.epadws.models.User;
+import edu.stanford.epad.epadws.plugins.PluginConfig;
+import edu.stanford.epad.epadws.plugins.PluginHandlerMap;
 import edu.stanford.epad.epadws.processing.pipeline.threads.ShutdownHookThread;
 import edu.stanford.epad.epadws.processing.pipeline.threads.ShutdownSignal;
 import edu.stanford.epad.epadws.processing.pipeline.watcher.QueueAndWatcherManager;
 import edu.stanford.epad.epadws.service.DefaultEpadProjectOperations;
+import edu.stanford.epad.epadws.service.PluginOperations;
 import edu.stanford.epad.epadws.service.RemotePACService;
 
 /**
@@ -174,13 +179,31 @@ public class Main
 	}
 
 	public static void checkPropertiesFile() {
-		String hostname = System.getenv("DOCKER_HOST");
+		String macdockerhost = System.getenv("MACDOCKER_HOST");
+		String dockerhost = macdockerhost;
+		if (dockerhost == null)
+			dockerhost = System.getenv("DOCKER_HOST");
+		if (dockerhost != null && dockerhost.startsWith("tcp://"))
+			dockerhost = dockerhost.substring(6);
+		if (dockerhost != null && dockerhost.contains(":"))
+			dockerhost = dockerhost.substring(0, dockerhost.indexOf(":"));
+		String hostname = dockerhost;
 		if (hostname == null || hostname.length() == 0)
 			hostname = System.getenv("HOSTNAME");
 		if (hostname == null || hostname.length() == 0)
 			hostname = "localhost";
 		File propertiesFile = new File(System.getProperty("user.home") + "/DicomProxy/etc/", EPADConfig.configFileName);
+		File clientProperties = null;
 		if (!propertiesFile.exists()) {
+			File macproperties = new File(System.getProperty("user.home") + "/mac/etc/", EPADConfig.configFileName);
+			if (macproperties.exists() || (macdockerhost != null && macdockerhost.length() > 0))
+			{
+				clientProperties = propertiesFile;
+				propertiesFile = macproperties;
+			}
+		}
+		if (!propertiesFile.exists()) {
+			propertiesFile.getParentFile().mkdirs();
 			BufferedReader reader = null;
 			InputStream is = null;
 			StringBuilder sb = new StringBuilder();
@@ -201,7 +224,11 @@ public class Main
 				else if (is != null)
 					IOUtils.closeQuietly(is);
 			}
-			EPADFileUtils.write(propertiesFile, sb.toString().replace("_HOSTNAME_", hostname));
+			String propsStr = sb.toString().replace("_HOSTNAME_", hostname);
+			EPADFileUtils.write(propertiesFile, propsStr);
+		}
+		if (clientProperties != null) {
+			EPADFileUtils.copyFile(propertiesFile, clientProperties);
 		}
 	}
 	
@@ -209,6 +236,7 @@ public class Main
 	public static void checkPluginsFile() {
 		File pluginsFile = new File(EPADConfig.getEPADWebServerPluginConfigFilePath());
 		if (!pluginsFile.exists()) {
+			pluginsFile.getParentFile().mkdirs();
 			BufferedReader reader = null;
 			InputStream is = null;
 			StringBuilder sb = new StringBuilder();
@@ -232,6 +260,13 @@ public class Main
 			EPADFileUtils.write(pluginsFile, sb.toString());
 		}
 	}
+	
+	static final String[] epadScripts = {
+		"epad_docker.sh",
+		"stop_dockerepad.sh",
+		"start_dockerepad.sh",
+		"uninstall_dockerepad.sh",
+	};
 
 	public static void checkResourcesFolders() {
 		File folder = new File(EPADConfig.getEPADWebServerBaseDir() + "bin/");
@@ -254,6 +289,42 @@ public class Main
 		if (!folder.exists()) folder.mkdirs();
 		folder = new File(EPADConfig.getEPADWebServerSchemaDir());
 		if (!folder.exists()) folder.mkdirs();
+		
+		try
+		{
+			// Copy start/stop scripts over (mainly for docker)
+			File binDir = new File(System.getProperty("user.home") + "/mac/bin/");
+			if (!binDir.exists())
+				binDir = new File(EPADConfig.getEPADWebServerBaseDir() + "bin/");
+			for (String scriptFile: epadScripts)
+			{
+				File file = new File(binDir, scriptFile);
+				if (!file.exists()) {
+					InputStream in = null;
+					OutputStream out = null;
+					try {
+						in = new Dcm4CheeOperations().getClass().getClassLoader().getResourceAsStream("scripts/docker/" + scriptFile);
+			            out = new FileOutputStream(file);
+	
+			            // Transfer bytes from in to out
+			            byte[] buf = new byte[1024];
+			            int len;
+			            while ((len = in.read(buf)) > 0)
+			            {
+			                    out.write(buf, 0, len);
+			            }
+					} catch (Exception x) {
+						
+					} finally {
+			            IOUtils.closeQuietly(in);
+			            IOUtils.closeQuietly(out);
+					}
+				}
+				if (file.exists())
+					file.setExecutable(true);
+			}
+		} catch (Exception x) {}
+
 	}
 
 	private static void configureJettyServer(Server server)
@@ -344,16 +415,18 @@ public class Main
 //			log.warning("Error setting up Spring Handle", e);
 //			e.printStackTrace();
 //		}
-
-		String webAppPath = EPADConfig.getEPADWebServerWebappsDir() + "ePad.war";
+		String webAppPath = System.getProperty("user.home") + "/mac/webapps/" + "ePad.war";  // This is specially for docker on macs
 		if (!new File(webAppPath).exists())
 		{
-			webAppPath = EPADConfig.getEPADWebServerWebappsDir() + "epad-1.1.war";
+			webAppPath = EPADConfig.getEPADWebServerWebappsDir() + "ePad.war"; // This is the usual, normal path
 		}
 		if (!new File(webAppPath).exists())
 		{
-			// For docker
-			webAppPath = System.getProperty("user.home") + "/epad/webapps/" + "ePad.war";
+			webAppPath = EPADConfig.getEPADWebServerWebappsDir() + "epad-1.1.war"; // This is for development/testing
+		}
+		if (!new File(webAppPath).exists())
+		{
+			webAppPath = System.getProperty("user.home") + "/epad/webapps/" + "ePad.war"; // Fallback for docker
 			if (!new File(webAppPath).exists())
 				throw new RuntimeException("ePad.war not found");
 		}
@@ -378,6 +451,7 @@ public class Main
 			addHandlerAtContextPath(new ImageCheckHandler(), "/epad/imagecheck", handlerList);
 			addHandlerAtContextPath(new ImageReprocessingHandler(), "/epad/imagereprocess", handlerList);
 			addHandlerAtContextPath(new ConvertAIM4Handler(), "/epad/convertaim4", handlerList);
+			addHandlerAtContextPath(new CopyAimsToExistHandler(), "/epad/copyToExist", handlerList);
 			addHandlerAtContextPath(new XNATSyncHandler(), "/epad/syncxnat", handlerList);
 			addHandlerAtContextPath(new StatisticsHandler(), "/epad/statistics", handlerList);
 			addHandlerAtContextPath(new ResourcesFileHandler(), "/epad/resourcesFile", handlerList);
@@ -483,7 +557,7 @@ public class Main
 	private static void setupTestFiles()
 	{
 		String deployPath = EPADConfig.getEPADWebServerBaseDir() + "jetty/webapp/test/";
-		File testFilesDir = new File(EPADConfig.getEPADWebServerBaseDir() + "lib/test/");
+		File testFilesDir = new File(EPADConfig.getEPADWebServerBaseDir() + "webapps/test/");
 		try
 		{
 			if (testFilesDir.exists() && testFilesDir.isDirectory())
@@ -493,6 +567,27 @@ public class Main
 					deployDir.mkdirs();
 				File[] testFiles = testFilesDir.listFiles();
 				for (File f: testFiles)
+				{
+					if (f.isDirectory()) continue;
+					File outFile = new File(deployDir, f.getName());
+					EPADFileUtils.copyFile(f, outFile);
+				}
+			}
+		} 
+		catch (Exception x) {
+			
+		}
+		File pluginsDir = new File(EPADConfig.getEPADWebServerBaseDir() + "webapps/plugins/");
+		deployPath = EPADConfig.getEPADWebServerBaseDir() + "jetty/webapp/plugins/";
+		try
+		{
+			if (pluginsDir.exists() && pluginsDir.isDirectory())
+			{
+				File deployDir = new File(deployPath);
+				if (!deployDir.exists())
+					deployDir.mkdirs();
+				File[] pluginFiles = pluginsDir.listFiles();
+				for (File f: pluginFiles)
 				{
 					if (f.isDirectory()) continue;
 					File outFile = new File(deployDir, f.getName());
@@ -514,15 +609,32 @@ public class Main
 			PluginHandlerMap pluginHandlerMap = PluginHandlerMap.getInstance();
 			PluginConfig pluginConfig = PluginConfig.getInstance();
 			List<String> pluginHandlerList = pluginConfig.getPluginHandlerList();
-	
+			PluginOperations pluginOps = PluginOperations.getInstance();
+			List<Plugin> plugins = new ArrayList<Plugin>();
+			try {
+				plugins = pluginOps.getPlugins();
+			} catch (Exception x) {};
+			
 			for (String pluginClassName : pluginHandlerList) {
 				log.info("Loading plugin class: " + pluginClassName);
-				PluginServletHandler psh = pluginHandlerMap.loadFromClassName(pluginClassName);
-				if (psh != null) {
-					String pluginName = psh.getName();
-					pluginHandlerMap.setPluginServletHandler(pluginName, psh);
-				} else {
-					log.warning("Could not find plugin class: " + pluginClassName);
+				try
+				{
+					PluginServletHandler psh = pluginHandlerMap.loadFromClassName(pluginClassName);
+					if (psh != null) {
+						String pluginName = psh.getName();
+						pluginHandlerMap.setPluginServletHandler(pluginName, psh);
+					} else {
+						log.warning("Could not find plugin class: " + pluginClassName);
+					}
+				} catch (Exception x) {
+					for (Plugin plugin: plugins) {
+						if (plugin.getJavaclass().equals(pluginClassName)) {
+							plugin.setStatus("Error loading class:" + x.getMessage());
+							try {
+								plugin.save();
+							} catch (Exception x2) {}
+						}
+					}
 				}
 			}
 		}

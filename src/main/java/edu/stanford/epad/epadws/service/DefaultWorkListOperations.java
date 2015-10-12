@@ -26,10 +26,11 @@ package edu.stanford.epad.epadws.service;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
+
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADLogger;
@@ -77,7 +78,7 @@ public class DefaultWorkListOperations implements EpadWorkListOperations {
 	 * @see edu.stanford.epad.epadws.service.EpadWorkListOperations#createWorkList(java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.util.Date, java.util.Date)
 	 */
 	@Override
-	public WorkList createWorkList(String loggedInUser, String username, String workListID, String description, Date startDate, Date dueDate)
+	public WorkList createWorkList(String loggedInUser, String username, String workListID, String name, String description, Date startDate, Date dueDate)
 			throws Exception {
 		User loggedIn = projectOperations.getUser(loggedInUser);
 		if (loggedIn != null && !loggedIn.isAdmin() && !loggedInUser.equals(username) && !loggedIn.hasPermission(User.CreateWorkListPermission))
@@ -105,6 +106,7 @@ public class DefaultWorkListOperations implements EpadWorkListOperations {
 		}
 		if (description != null && description.trim().length() > 0)
 			workList.setDescription(description);
+		workList.setName(name);
 		if (startDate != null)
 			workList.setStartDate(startDate);
 		if (dueDate != null)
@@ -122,9 +124,11 @@ public class DefaultWorkListOperations implements EpadWorkListOperations {
 	 */
 	@Override
 	public WorkList updateWorkList(String loggedInUser, String username,
-			String workListID, String description, Date startDate, Date dueDate)
+			String workListID, String name, String description, Date startDate, Date dueDate)
 			throws Exception {
 		WorkList workList = getWorkList(workListID);
+		if (name != null)
+			workList.setName(name);
 		if (description != null)
 			workList.setDescription(description);
 		if (username != null)
@@ -147,26 +151,50 @@ public class DefaultWorkListOperations implements EpadWorkListOperations {
 	 * @see edu.stanford.epad.epadws.service.EpadWorkListOperations#addSubjectToWorkList(java.lang.String, java.lang.String, java.lang.String)
 	 */
 	@Override
-	public void addSubjectToWorkList(String loggedInUser, String projectID, String subjectUID,
+	public synchronized void addSubjectToWorkList(String loggedInUser, String projectID, String subjectUID,
 			String workListID) throws Exception {
+		log.debug("Adding subject " + subjectUID + " to " + workListID + " for " + projectID);
 		Subject subject = projectOperations.getSubject(subjectUID);
 		WorkList workList = new WorkList();
 		workList = (WorkList) workList.getObject("worklistid = " + workList.toSQL(workListID));
 		Project project = projectOperations.getProject(projectID);
 		if (!projectOperations.isSubjectInProject(subjectUID, project.getProjectId()))
-			throw new Exception("Subject does not belong to Project");
-		WorkListToSubject wtos = (WorkListToSubject) new WorkListToSubject().getObject("worklist_id =" + workList.getId() + " and subject_id=" + subject.getId());
-		if (wtos == null)
+			throw new Exception("Subject " + subjectUID + " does not belong to Project " + projectID);
+		List<WorkListToSubject> wtoss = new WorkListToSubject().getObjects("worklist_id =" + workList.getId() + " order by sortorder");
+		long max = 0;
+		if (wtoss.size() > 0)
+			max = wtoss.get(wtoss.size()-1).getSortOrder();
+		WorkListToSubject wtos = (WorkListToSubject) new WorkListToSubject().getObject("worklist_id =" + workList.getId() + " and subject_id=" + subject.getId() + " and project_id=" + project.getId());
+		if (wtos != null)
 		{
-			wtos = new WorkListToSubject();
-			wtos.setWorkListId(workList.getId());
-			wtos.setSubjectId(subject.getId());
-			wtos.setProjectId(project.getId());
-			wtos.setCreator(loggedInUser);
-			wtos.save();
-			wtos.setSortOrder(wtos.getId());
-			wtos.save();
+			wtos.delete();
+			wtos.setId(0);
 		}
+		else
+			wtos = new WorkListToSubject();
+		wtos.setWorkListId(workList.getId());
+		wtos.setSubjectId(subject.getId());
+		wtos.setProjectId(project.getId());
+		wtos.setCreator(loggedInUser);
+		wtos.save();
+		wtos.setSortOrder(++max);
+		wtos.save();
+
+	}
+	
+	@Override
+	public void removeSubjectFromWorkList(String loggedInUser,
+			String projectID, String subjectUID, String workListID)
+			throws Exception {
+		Subject subject = projectOperations.getSubject(subjectUID);
+		WorkList workList = new WorkList();
+		workList = (WorkList) workList.getObject("worklistid = " + workList.toSQL(workListID));
+		Project project = projectOperations.getProject(projectID);
+		if (!projectOperations.isSubjectInProject(subjectUID, project.getProjectId()))
+			throw new Exception("Subject " + subjectUID + " does not belong to Project " + projectID);
+		WorkListToSubject wtos = (WorkListToSubject) new WorkListToSubject().getObject("worklist_id =" + workList.getId() + " and subject_id=" + subject.getId() + " and project_id=" + project.getId());
+		if (wtos != null)
+			wtos.delete();
 	}
 
 	/* (non-Javadoc)
@@ -181,20 +209,40 @@ public class DefaultWorkListOperations implements EpadWorkListOperations {
 		Project project = projectOperations.getProject(projectID);
 		Subject subject = (Subject) projectOperations.getDBObject(Subject.class, study.getSubjectId());
 		if (!projectOperations.isSubjectInProject(subject.getSubjectUID(), project.getProjectId()))
-			throw new Exception("Study does not belong to Project");
-		WorkListToStudy wtos = (WorkListToStudy) new WorkListToStudy().getObject("worklist_id =" + workList.getId() + " and study_id=" + study.getId());
-		if (wtos == null)
+			throw new Exception("Study " + studyUID + " does not belong to Project " + projectID);
+		List<WorkListToStudy> wtoss = new WorkListToStudy().getObjects("worklist_id =" + workList.getId() + " order by sortorder");
+		long max = 0;
+		if (wtoss.size() > 0)
+			max = wtoss.get(wtoss.size()-1).getSortOrder();
+		WorkListToStudy wtos = (WorkListToStudy) new WorkListToStudy().getObject("worklist_id =" + workList.getId() + " and study_id=" + study.getId() + " and project_id=" + project.getId());
+		if (wtos != null)
 		{
-			wtos = new WorkListToStudy();
-			wtos.setWorkListId(workList.getId());
-			wtos.setStudyId(study.getId());
-			wtos.setProjectId(project.getId());
-			wtos.setCreator(loggedInUser);
-			wtos.save();
-			wtos.setSortOrder(wtos.getId());
-			wtos.save();
+			wtos.delete();
+			wtos.setId(0);
 		}
+		else
+			wtos = new WorkListToStudy();
+		wtos.setWorkListId(workList.getId());
+		wtos.setStudyId(study.getId());
+		wtos.setProjectId(project.getId());
+		wtos.setCreator(loggedInUser);
+		wtos.save();
+		wtos.setSortOrder(++max);
+		wtos.save();
 		return wtos;
+	}
+
+	//{"Subjects":["7","LIDC-IDRI-0314","AAA 20120823","91659230232099800175185744868500866896","282712935615235796400856228568961224210","99999999","DJR-VA-6770","212845382164361112207915959222509827626"]} 
+	@Override
+	public void addSubjectsToWorkList(String loggedInUser, String projectID,
+			JSONObject json, String workListID) throws Exception {
+		log.debug("JSONObject:" + json);
+		JSONArray subjectIDs = (JSONArray) json.get("Subjects");
+		for (int i = 0; i < subjectIDs.length(); i++)
+		{
+			String subjectID = subjectIDs.getString(i);
+			addSubjectToWorkList(loggedInUser, projectID, subjectID, workListID);
+		}		
 	}
 
 	/* (non-Javadoc)
@@ -392,7 +440,7 @@ public class DefaultWorkListOperations implements EpadWorkListOperations {
 			throws Exception {
 		WorkList workList = getWorkList(workListID);
 		log.info("Getting studies for workListID:" + workListID);
-		List<WorkListToStudy> wltss = new WorkListToStudy().getObjects("worklist_id =" + workList.getId());
+		List<WorkListToStudy> wltss = new WorkListToStudy().getObjects("worklist_id =" + workList.getId() + " order by sortorder");
 		return wltss;
 	}
 
@@ -400,8 +448,8 @@ public class DefaultWorkListOperations implements EpadWorkListOperations {
 	public List<WorkListToSubject> getWorkListSubjects(String workListID)
 			throws Exception {
 		WorkList workList = getWorkList(workListID);
-		log.info("Getting studies for workListID:" + workListID);
-		List<WorkListToSubject> wltss = new WorkListToSubject().getObjects("worklist_id =" + workList.getId());
+		log.info("Getting subjects for workListID:" + workListID);
+		List<WorkListToSubject> wltss = new WorkListToSubject().getObjects("worklist_id =" + workList.getId() + " order by sortorder");
 		return wltss;
 	}
 
@@ -448,7 +496,7 @@ public class DefaultWorkListOperations implements EpadWorkListOperations {
 	}
 
 	@Override
-	public void setWorkListSubjectStatus(String username, String workListID,
+	public void setWorkListSubjectStatus(String username, String workListID, String projectID,
 			String subjectID, String status, Boolean started, Boolean completed)
 			throws Exception {
 		WorkList worklist = this.getWorkList(workListID);
@@ -458,7 +506,12 @@ public class DefaultWorkListOperations implements EpadWorkListOperations {
 		if (loggedIn != null && !loggedIn.isAdmin() && !username.equals(worklist.getCreator()) && loggedIn.getId() != worklist.getUserId())
 			throw new Exception("No permission to set worklist status");
 		Subject subject = projectOperations.getSubject(subjectID);
-		WorkListToSubject wls = (WorkListToSubject) new WorkListToSubject().getObject("worklist_id=" + worklist.getId() + " and subject_id=" + subject.getId());
+		if (subject == null)
+			throw new Exception("Subject not found " + subjectID);
+		Project project = projectOperations.getProject(projectID);
+		if (project == null)
+			throw new Exception("Project not found " + projectID);
+		WorkListToSubject wls = (WorkListToSubject) new WorkListToSubject().getObject("worklist_id=" + worklist.getId() + " and subject_id=" + subject.getId() + " and project_id=" + project.getId());
 		if (wls == null)  return;
 		if (status != null && status.trim().length() > 0)
 			wls.setStatus(status);
@@ -474,13 +527,18 @@ public class DefaultWorkListOperations implements EpadWorkListOperations {
 	}
 
 	@Override
-	public WorkListToSubject getWorkListSubjectStatus(String workListID,
+	public WorkListToSubject getWorkListSubjectStatus(String workListID, String projectID,
 			String subjectID) throws Exception {
 		WorkList worklist = this.getWorkList(workListID);
 		if (worklist == null)
 			throw new Exception("Worklist not found, ID =" + workListID);
 		Subject subject = projectOperations.getSubject(subjectID);
-		WorkListToSubject wls = (WorkListToSubject) new WorkListToSubject().getObject("worklist_id=" + worklist.getId() + " and subject_id=" + subject.getId());
+		if (subject == null)
+			throw new Exception("Subject not found " + subjectID);
+		Project project = projectOperations.getProject(projectID);
+		if (project == null)
+			throw new Exception("Project not found " + projectID);
+		WorkListToSubject wls = (WorkListToSubject) new WorkListToSubject().getObject("worklist_id=" + worklist.getId() + " and subject_id=" + subject.getId() + " and project_id=" + project.getId());
 		return wls;
 	}
 
@@ -495,6 +553,8 @@ public class DefaultWorkListOperations implements EpadWorkListOperations {
 		if (loggedIn != null && !loggedIn.isAdmin() && !username.equals(worklist.getCreator()) && loggedIn.getId() != worklist.getUserId())
 			throw new Exception("No permission to set worklist status");
 		Study study = projectOperations.getStudy(studyUID);
+		if (study == null)
+			throw new Exception("Study not found " + studyUID);
 		WorkListToStudy wls = (WorkListToStudy) new WorkListToStudy().getObject("worklist_id=" + worklist.getId() + " and study_id=" + study.getId());
 		if (wls == null) {
 			wls = this.addStudyToWorkList(null, EPADConfig.xnatUploadProjectID, studyUID, workListID);

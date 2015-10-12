@@ -23,13 +23,18 @@
 //USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package edu.stanford.epad.epadws.processing.pipeline.watcher;
 
+import java.io.File;
 import java.util.Calendar;
 import java.util.concurrent.TimeUnit;
 
+import org.apache.commons.io.FileSystemUtils;
+
 import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADLogger;
+import edu.stanford.epad.epadws.EPadWebServerVersion;
 import edu.stanford.epad.epadws.epaddb.EpadDatabase;
 import edu.stanford.epad.epadws.epaddb.EpadDatabaseOperations;
+import edu.stanford.epad.epadws.processing.pipeline.task.CleanupTempTask;
 import edu.stanford.epad.epadws.processing.pipeline.task.EpadStatisticsTask;
 import edu.stanford.epad.epadws.processing.pipeline.threads.ShutdownSignal;
 import edu.stanford.epad.epadws.security.EPADSessionOperations;
@@ -78,8 +83,43 @@ public class EPADSessionWatcher implements Runnable
 				// Timeout expired sessions
 				EPADSessionOperations.checkSessionTimeout();
 				
-				// Clear cache once a day
 				Calendar now = Calendar.getInstance();
+				// Once an hour
+				if (prevTime == null || (prevTime.get(Calendar.HOUR_OF_DAY) != now.get(Calendar.HOUR_OF_DAY)))
+				{					
+					try {
+						long dcm4cheeMb = FileSystemUtils.freeSpaceKb(EPADConfig.dcm4cheeDirRoot)/1024;
+						long epadMb = FileSystemUtils.freeSpaceKb(EPADConfig.getEPADWebServerBaseDir())/1024;
+						long tmpMb = FileSystemUtils.freeSpaceKb(System.getProperty("java.io.tmpdir"))/1024;
+						long mysqlMb = 300;
+						if (new File("/var/lib/mysql").exists())
+							mysqlMb = FileSystemUtils.freeSpaceKb("/var/lib/mysql")/1024;
+						if ( dcm4cheeMb < 200 || epadMb < 200 || tmpMb < 200 || mysqlMb < 200)
+						{
+							projectOperations.createEventLog("system", null, null, null, null, null, null, null, "Disk Space", "Server running out of disk space",  true);
+							epadDatabaseOperations.insertEpadEvent(
+									"admin", 
+									"Server running out of disk space", 
+									"Disk Space", "", "Disk Space", "Disk Space", "Disk Space", "Disk Space", "Server running out of disk space");
+						}
+						if (EPadWebServerVersion.restartRequired)
+						{
+							epadDatabaseOperations.insertEpadEvent(
+									"admin", 
+									"Software updated, Please restart ePAD", 
+									"System", "Restart",
+									"System", 
+									"Restart", 
+									"Restart", 
+									"Restart",
+									"Please restart ePAD");
+						}
+					} catch (Exception x) {
+						log.warning("Exception checking disk space", x);
+					}
+				}
+
+				// Once a day
 				if (prevTime == null || (now.get(Calendar.HOUR_OF_DAY) == 0 && prevTime != null && prevTime.get(Calendar.HOUR_OF_DAY) != 0))
 				{
 					if (projectOperations.getCacheSize() > 1000 && UserProjectService.pendingPNGs.isEmpty() && RemotePACService.pendingTransfers.isEmpty())
@@ -93,6 +133,12 @@ public class EPADSessionWatcher implements Runnable
 						}
 					} catch (Exception x) {
 						log.warning("Exception running statistics", x);
+					}
+					try {
+						CleanupTempTask ctt = new CleanupTempTask();
+						new Thread(ctt).start();
+					} catch (Exception x) {
+						log.warning("Exception running cleanup", x);
 					}
 				}
 				prevTime = now;

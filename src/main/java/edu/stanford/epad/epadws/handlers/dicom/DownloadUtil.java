@@ -669,30 +669,30 @@ public class DownloadUtil {
 		}
 		else
 		{
-		EPADImageList imageList = new EPADImageList();
-		try {
-			imageList = epadOperations.getImageDescriptions(seriesReference, sessionID, null);
-		} catch (Exception x) {}
-		for (EPADImage image: imageList.ResultSet.Result)
-		{
-			String name = image.imageUID + ".dcm";
-			File imageFile = new File(downloadDir, name);
-			fileNames.add(name);
-			FileOutputStream fos = null;
-			try 
+			EPADImageList imageList = new EPADImageList();
+			try {
+				imageList = epadOperations.getImageDescriptions(seriesReference, sessionID, null);
+			} catch (Exception x) {}
+			for (EPADImage image: imageList.ResultSet.Result)
 			{
-				fos = new FileOutputStream(imageFile);
-				String queryString = "requestType=WADO&studyUID=" + seriesReference.studyUID 
-						+ "&seriesUID=" + seriesReference.seriesUID + "&objectUID=" + image.imageUID + "&contentType=application/dicom";
-				performWADOQuery(queryString, fos, username, sessionID);
-			}
-			catch (Exception x)
-			{
-				log.warning("Error downloading image using wado");
-			}
-			finally 
-			{
-				if (fos != null) fos.close();
+				String name = image.imageUID + ".dcm";
+				File imageFile = new File(downloadDir, name);
+				fileNames.add(name);
+				FileOutputStream fos = null;
+				try 
+				{
+					fos = new FileOutputStream(imageFile);
+					String queryString = "requestType=WADO&studyUID=" + seriesReference.studyUID 
+							+ "&seriesUID=" + seriesReference.seriesUID + "&objectUID=" + image.imageUID + "&contentType=application/dicom";
+					performWADOQuery(queryString, fos, username, sessionID);
+				}
+				catch (Exception x)
+				{
+					log.warning("Error downloading image using wado");
+				}
+				finally 
+				{
+					if (fos != null) fos.close();
 				}
 			}
 		}

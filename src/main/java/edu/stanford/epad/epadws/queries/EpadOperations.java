@@ -49,6 +49,7 @@ import edu.stanford.epad.dtos.EPADStudyList;
 import edu.stanford.epad.dtos.EPADSubject;
 import edu.stanford.epad.dtos.EPADSubjectList;
 import edu.stanford.epad.dtos.EPADTemplateContainerList;
+import edu.stanford.epad.dtos.EPADUsageList;
 import edu.stanford.epad.dtos.EPADUser;
 import edu.stanford.epad.dtos.EPADUserList;
 import edu.stanford.epad.dtos.EPADWorklist;
@@ -108,6 +109,8 @@ public interface EpadOperations
 	 */
 	EPADSubjectList getSubjectDescriptions(String projectID, String username, String sessionID,
 			EPADSearchFilter searchFilter, int start, int count, String sortField, boolean annotationCount) throws Exception;
+	
+	EPADSubjectList getWorklistSubjectDescriptions(String projectID, String username, String worklistID, EPADSearchFilter searchFilter, String sessionID, String sortField) throws Exception;
 
 	/**
 	 * Get Unassigned subject descriptions
@@ -1244,6 +1247,13 @@ public interface EpadOperations
 	 */
 	Set<String> getSeriesUIDsForSubject(String projectID, String subjectID, String sessionID,
 			EPADSearchFilter searchFilter);
+	
+	/**
+	 * @param username
+	 * @return
+	 * @throws Exception
+	 */
+	EPADUsageList getUsage(String username, String hostname, boolean byMonth, boolean byYear, boolean all) throws Exception;
 	
 	/**
 	 * @param username

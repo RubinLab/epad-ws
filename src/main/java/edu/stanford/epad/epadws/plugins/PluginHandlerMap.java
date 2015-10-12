@@ -86,7 +86,7 @@ public class PluginHandlerMap
 	 * @param className String ex. edu.stanford.epad.plugins.first.FirstHandler
 	 * @return PluginServletHandler class if it exists and is right type, null if not.
 	 */
-	public PluginServletHandler loadFromClassName(String className)
+	public PluginServletHandler loadFromClassName(String className) throws Exception
 	{
 		try {
 			Class pluginClass = Class.forName(className);
@@ -113,10 +113,11 @@ public class PluginHandlerMap
 			}
 		} catch (Exception e) {
 			logger.warning(e.getMessage(), e);
+			throw e;
 		} catch (Error err) {
 			logger.severe(err.getMessage(), err);
+			throw new Exception(err.getMessage());
 		}
-		return null;
 	}
 
 	public void classLoaderForName()

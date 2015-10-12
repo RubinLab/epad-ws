@@ -14,7 +14,7 @@
 			String sessionID = SessionService.getJSessionIDFromRequest(request);
 			String username = EPADSessionOperations.getSessionUser(sessionID);
 %>
-<h2>Projects</h2>
+<h2>Projects (<a href=project.jsp?projectID=new target=rightpanel>New</a>)</h2>
 <div id=projdiv><div>
 <script>
 var leftdata = "images";

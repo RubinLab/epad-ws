@@ -270,6 +270,7 @@ public class RTDICOMProcessingTask implements GeneratorTask
 						DCM4CHEEUtil.dcmsnd(dsoFile.getAbsolutePath(), false);
 						List<Project> projects = projectOperations.getProjectsForSubject(patientID);
 						for (Project project: projects) {
+							log.debug("RT Dicom projectID:" + project.getProjectId());
 							if (project.getProjectId().equals(EPADConfig.xnatUploadProjectID)) continue;
 							if (projectOperations.isStudyInProjectAndSubject(project.getProjectId(), patientID, studyUID))
 							{
@@ -278,8 +279,11 @@ public class RTDICOMProcessingTask implements GeneratorTask
 								String owner = study.getCreator();
 								if (!projectOperations.hasAccessToProject(owner, project.getId()))
 									owner = project.getCreator();
-								AIMUtil.generateAIMFileForDSO(dsoFile, owner, projectID);
+								AIMUtil.generateAIMFileForDSO(dsoFile, owner, projectID, dsoDescr);
 							}
+							else
+								log.debug("RT Dicom study not is project:" + studyUID);
+								
 						}
 						projectOperations.updateUserTaskStatus(username, TaskStatus.TASK_RT_PROCESS, seriesUID, "Completed DSO Generation " + r, null, null);
 					}

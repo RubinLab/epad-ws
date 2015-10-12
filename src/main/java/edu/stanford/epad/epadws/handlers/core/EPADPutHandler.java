@@ -273,26 +273,28 @@ public class EPADPutHandler
 			} else if (HandlerUtil.matchesTemplate(UsersRouteTemplates.USER_WORKLISTS, pathInfo)) {
 				Map<String, String> templateMap = HandlerUtil.getTemplateMap(UsersRouteTemplates.USER_WORKLISTS, pathInfo);
 				String reader = HandlerUtil.getTemplateParameter(templateMap, "username");
+				String name = httpRequest.getParameter("name");
 				String description = httpRequest.getParameter("description");
 				String dueDate = httpRequest.getParameter("dueDate");
-				worklistOperations.createWorkList(username, reader, null, description, null, getDate(dueDate));
+				worklistOperations.createWorkList(username, reader, null, name, description, null, getDate(dueDate));
 				statusCode = HttpServletResponse.SC_OK;
 
 			} else if (HandlerUtil.matchesTemplate(UsersRouteTemplates.USER_WORKLIST, pathInfo)) {
 				Map<String, String> templateMap = HandlerUtil.getTemplateMap(UsersRouteTemplates.USER_WORKLIST, pathInfo);
 				String reader = HandlerUtil.getTemplateParameter(templateMap, "username");
 				String workListID = HandlerUtil.getTemplateParameter(templateMap, "worklistID");
+				String name = httpRequest.getParameter("name");
 				String description = httpRequest.getParameter("description");
 				String dueDate = httpRequest.getParameter("dueDate");
 				WorkList worklist = worklistOperations.getWorkList(workListID);
 				if (worklist == null)
 				{
-					worklist = worklistOperations.createWorkList(username, reader, workListID, description, null, getDate(dueDate));
+					worklist = worklistOperations.createWorkList(username, reader, workListID, name, description, null, getDate(dueDate));
 				}
 				else
 				{
-					if (description != null || dueDate != null)
-						worklistOperations.updateWorkList(username, reader, workListID, description, null, getDate(dueDate));
+					if (description != null || dueDate != null || name != null)
+						worklistOperations.updateWorkList(username, reader, workListID, name, description, null, getDate(dueDate));
 				}
 				String wlstatus = httpRequest.getParameter("status");
 				Boolean started = "true".equalsIgnoreCase(httpRequest.getParameter("started"));
@@ -309,8 +311,8 @@ public class EPADPutHandler
 				statusCode = HttpServletResponse.SC_OK;
 				
 			
-			} else if (HandlerUtil.matchesTemplate(UsersRouteTemplates.USER_SUBJECT, pathInfo)) {
-				Map<String, String> templateMap = HandlerUtil.getTemplateMap(UsersRouteTemplates.USER_SUBJECT, pathInfo);
+			} else if (HandlerUtil.matchesTemplate(UsersRouteTemplates.USER_PROJECT_SUBJECT, pathInfo)) {
+				Map<String, String> templateMap = HandlerUtil.getTemplateMap(UsersRouteTemplates.USER_PROJECT_SUBJECT, pathInfo);
 				String reader = HandlerUtil.getTemplateParameter(templateMap, "username");
 				String workListID = HandlerUtil.getTemplateParameter(templateMap, "worklistID");
 				String projectID = HandlerUtil.getTemplateParameter(templateMap, "projectID");
@@ -324,10 +326,14 @@ public class EPADPutHandler
 				User user = worklistOperations.getUserForWorkList(workListID);
 				if (!user.getUsername().equals(reader))
 					throw new Exception("User " +  reader + " does not match user for worklist "+ workListID);
-				worklistOperations.setWorkListSubjectStatus(reader, wl.getWorkListID(), subjectID, wlstatus, started, completed);
+				log.debug("Worklist parameters, wlstatus:" + wlstatus + " started:" + started + " completed:" + completed);
+				if (wlstatus == null && !started && !completed)
+					worklistOperations.addSubjectToWorkList(username, projectID, subjectID, workListID); // Just change sort order
+				else
+					worklistOperations.setWorkListSubjectStatus(reader, wl.getWorkListID(), projectID, subjectID, wlstatus, started, completed);
 				statusCode = HttpServletResponse.SC_OK;
 	
-			} else if (HandlerUtil.matchesTemplate(UsersRouteTemplates.USER_STUDY, pathInfo)) {
+			} else if (HandlerUtil.matchesTemplate(UsersRouteTemplates.USER_PROJECT_STUDY, pathInfo)) {
 				Map<String, String> templateMap = HandlerUtil.getTemplateMap(UsersRouteTemplates.USER_STUDY, pathInfo);
 				String reader = HandlerUtil.getTemplateParameter(templateMap, "username");
 				String studyUID = HandlerUtil.getTemplateParameter(templateMap, "studyUID");
@@ -352,6 +358,9 @@ public class EPADPutHandler
 					log.info("WorklistID:" + workListID + " status:" + wlstatus + " started:" + started + " completed:" + completed);
 					worklistOperations.setWorkListStudyStatus(reader, wl.getWorkListID(), studyUID, wlstatus, started, completed);
 				}
+				else
+					worklistOperations.addStudyToWorkList(username, projectID, studyUID, workListID);
+					
 				statusCode = HttpServletResponse.SC_OK;
 	
 			} else if (HandlerUtil.matchesTemplate(UsersRouteTemplates.USER_PROJECT_SUBJECT, pathInfo)) {
@@ -369,10 +378,10 @@ public class EPADPutHandler
 				User user = worklistOperations.getUserForWorkList(workListID);
 				if (!user.getUsername().equals(reader))
 					throw new Exception("User " +  reader + " does not match user for worklist "+ workListID);
-				WorkListToSubject wls = worklistOperations.getWorkListSubjectStatus(workListID, subjectID);
+				WorkListToSubject wls = worklistOperations.getWorkListSubjectStatus(workListID, projectID, subjectID);
 				if (wls == null)
 					worklistOperations.addSubjectToWorkList(username, projectID, subjectID, workListID);
-				worklistOperations.setWorkListSubjectStatus(reader, wl.getWorkListID(), subjectID, wlstatus, started, completed);
+				worklistOperations.setWorkListSubjectStatus(reader, wl.getWorkListID(), projectID, subjectID, wlstatus, started, completed);
 				statusCode = HttpServletResponse.SC_OK;
 	
 			} else if (HandlerUtil.matchesTemplate(UsersRouteTemplates.USER_PROJECT_STUDY, pathInfo)) {
@@ -708,12 +717,15 @@ public class EPADPutHandler
 				String javaclass = httpRequest.getParameter("class");
 				String enabled = httpRequest.getParameter("enable");
 				String modality = httpRequest.getParameter("modality");
+				String developer = httpRequest.getParameter("developer");
+				String documentation = httpRequest.getParameter("documentation");
+				String rate = httpRequest.getParameter("rate");
 				EPADPlugin plugin = pluginOperations.getPluginDescription(pluginReference.pluginID, username, sessionID);
 				if (plugin != null) {
-					pluginOperations.updatePlugin(username, pluginReference.pluginID, name, description, javaclass, enabled, modality, sessionID);
+					pluginOperations.updatePlugin(username, pluginReference.pluginID, name, description, javaclass, enabled, modality, developer,documentation,rate,sessionID);
 					return HttpServletResponse.SC_OK;
 				} else {
-					pluginOperations.createPlugin(username, pluginReference.pluginID, name, description, javaclass, enabled, modality, sessionID);
+					pluginOperations.createPlugin(username, pluginReference.pluginID, name, description, javaclass, enabled, modality, developer,documentation,rate, sessionID);
 					return HttpServletResponse.SC_OK;
 				}	
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.PLUGIN, pathInfo)) { //ML

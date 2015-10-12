@@ -137,7 +137,7 @@ public class WorkListToStudy extends AbstractDAO {
         {"workListId","long","worklist_id","integer"},
         {"studyId","long","study_id","integer"},
         {"projectId","long","project_id","integer"},
-        {"sortOrder","int","sortorder","integer"},
+        {"sortOrder","long","sortorder","integer"},
         {"startDate","Date","startdate","date"},
         {"completeDate","Date","completedate","date"},
         {"status","String","status","varchar"},
