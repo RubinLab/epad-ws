@@ -909,7 +909,7 @@ public class DefaultEpadOperations implements EpadOperations
 		}
 	}
 
-	private List<DICOMElement> getDICOMElementsByCode(DICOMElementList dicomElementList, String tagCode)
+	public static List<DICOMElement> getDICOMElementsByCode(DICOMElementList dicomElementList, String tagCode)
 	{
 		Set<DICOMElement> matchingDICOMElements = new LinkedHashSet<>(); // Maintain insertion order
 
@@ -922,7 +922,7 @@ public class DefaultEpadOperations implements EpadOperations
 		return new ArrayList<>(matchingDICOMElements);
 	}
 
-	private List<DICOMElement> getDICOMElementsByCodeWithParent(DICOMElementList dicomElementList, String tagCode, String parentSequenceName)
+	public static List<DICOMElement> getDICOMElementsByCodeWithParent(DICOMElementList dicomElementList, String tagCode, String parentSequenceName)
 	{
 		log.debug("Searching for, tagCode:" + tagCode + " parent:" + parentSequenceName);
 		List<DICOMElement> matchingDICOMElements = new ArrayList<DICOMElement>();
@@ -1058,6 +1058,9 @@ public class DefaultEpadOperations implements EpadOperations
 		if (Dcm4CheeOperations.deleteSeries(seriesReference.seriesUID, seriesPk))
 		{
 			epadDatabaseOperations.deleteSeries(seriesReference.seriesUID);
+			String pngPath = EPADConfig.getEPADWebServerPNGDir() + "studies/" + seriesReference.studyUID + "/series/" + seriesReference.seriesUID + "/images/";
+			log.debug("Deleting all files in:" + pngPath);
+			EPADFileUtils.deleteDirectoryAndContents(new File(pngPath));
 			if (deleteAims)
 				deleteAllSeriesAims(seriesReference.seriesUID, false);
 			return "";

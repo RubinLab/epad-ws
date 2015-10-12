@@ -205,6 +205,10 @@ public interface EpadDatabaseOperations
 	
 	EPADAIM updateAIMDSOFrameNo(String aimID, int frameNo);
 	
+	EPADAIM updateAIMColor(String aimID, String color);
+	
+	EPADAIM updateAIMTemplateCode(String aimID, String templateCode);
+	
 	void deleteAIM(String userName, ProjectReference reference, String aimID);
 
 	void deleteAIM(String userName, SubjectReference reference, String aimID);

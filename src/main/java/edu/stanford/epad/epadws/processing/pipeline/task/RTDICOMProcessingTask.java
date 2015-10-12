@@ -56,6 +56,8 @@ import edu.stanford.epad.common.util.EPADFileUtils;
 import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.epad.dtos.PNGFileProcessingStatus;
 import edu.stanford.epad.dtos.TaskStatus;
+import edu.stanford.epad.dtos.internal.DICOMElement;
+import edu.stanford.epad.dtos.internal.DICOMElementList;
 import edu.stanford.epad.epadws.aim.AIMUtil;
 import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeDatabase;
 import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeDatabaseOperations;
@@ -64,9 +66,12 @@ import edu.stanford.epad.epadws.epaddb.EpadDatabase;
 import edu.stanford.epad.epadws.epaddb.EpadDatabaseOperations;
 import edu.stanford.epad.epadws.models.Project;
 import edu.stanford.epad.epadws.models.Study;
+import edu.stanford.epad.epadws.queries.Dcm4CheeQueries;
+import edu.stanford.epad.epadws.queries.DefaultEpadOperations;
 import edu.stanford.epad.epadws.service.DefaultEpadProjectOperations;
 import edu.stanford.epad.epadws.service.EpadProjectOperations;
 import edu.stanford.epad.epadws.service.UserProjectService;
+import edu.stanford.hakan.aim4api.compability.aimv3.ImageAnnotation;
 
 public class RTDICOMProcessingTask implements GeneratorTask
 {
@@ -102,6 +107,7 @@ public class RTDICOMProcessingTask implements GeneratorTask
 
 		String username = null;
 		EpadProjectOperations projectOperations = DefaultEpadProjectOperations.getInstance();
+		EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
 		try {
 			seriesBeingProcessed.add(seriesUID);
 			if (UserProjectService.pendingUploads.containsKey(studyUID))
@@ -117,6 +123,7 @@ public class RTDICOMProcessingTask implements GeneratorTask
 					username = username.substring(0, username.indexOf(":"));
 			}
 			projectOperations.updateUserTaskStatus(username, TaskStatus.TASK_RT_PROCESS, seriesUID, "RT Dicom Processing Started", new Date(), null);
+			DICOMElementList dicomElementList = Dcm4CheeQueries.getDICOMElementsFromWADO(studyUID, seriesUID, imageUID);
 			String inputDirPath = EPADConfig.getEPADWebServerResourcesDir() + "download/" + "temp" + Long.toString(System.currentTimeMillis()) + "/";
 			File inputDir = new File(inputDirPath);
 			inputDir.mkdirs();
@@ -197,6 +204,9 @@ public class RTDICOMProcessingTask implements GeneratorTask
 			long endtime = System.currentTimeMillis();
 			projectOperations.updateUserTaskStatus(username, TaskStatus.TASK_RT_MATLAB, seriesUID, "MATLAB Processing Completed", null, new Date());
 			log.info("Returned from MATLAB..., outFolderPath:" + outputDirPath + " took " + (endtime-starttime)/1000 + " secs");
+			List<DICOMElement> delems = DefaultEpadOperations.getDICOMElementsByCode(dicomElementList, PixelMedUtils.ROIDisplayColor);
+			if (delems == null) delems = new ArrayList<DICOMElement>();
+			log.debug("Number of color tags:" + delems.size());
 			try {
 				MatFileReader reader = new MatFileReader(outFolderPath + "/" + patientID + ".mat");
 				int numOfRoi = reader.getMLArray("contours").getSize();
@@ -269,6 +279,9 @@ public class RTDICOMProcessingTask implements GeneratorTask
 						log.info("Sending generated DSO " + dsoFile.getAbsolutePath() + " imageUID:" + dsoImageUID + " to dcm4chee...");
 						DCM4CHEEUtil.dcmsnd(dsoFile.getAbsolutePath(), false);
 						List<Project> projects = projectOperations.getProjectsForSubject(patientID);
+						String color = "";
+						if (r < delems.size())
+							color = delems.get(r).value;
 						for (Project project: projects) {
 							log.debug("RT Dicom projectID:" + project.getProjectId());
 							if (project.getProjectId().equals(EPADConfig.xnatUploadProjectID)) continue;
@@ -279,7 +292,8 @@ public class RTDICOMProcessingTask implements GeneratorTask
 								String owner = study.getCreator();
 								if (!projectOperations.hasAccessToProject(owner, project.getId()))
 									owner = project.getCreator();
-								AIMUtil.generateAIMFileForDSO(dsoFile, owner, projectID, dsoDescr);
+								ImageAnnotation ia = AIMUtil.generateAIMFileForDSO(dsoFile, owner, projectID, dsoDescr);
+								epadDatabaseOperations.updateAIMColor(ia.getUniqueIdentifier(), color);
 							}
 							else
 								log.debug("RT Dicom study not is project:" + studyUID);
@@ -293,7 +307,6 @@ public class RTDICOMProcessingTask implements GeneratorTask
 			}
 			log.info("Creating entry in epad_files:" + outFilePath + " imageUID:" + imageUID);
 			Map<String, String>  epadFilesRow = Dcm4CheeDatabaseUtils.createEPadFilesRowData(outFilePath, 0, imageUID);			
-			EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
 			epadDatabaseOperations.updateEpadFileRow(epadFilesRow.get("file_path"), PNGFileProcessingStatus.DONE, 0, "");
 			
 			EPADFileUtils.deleteDirectoryAndContents(inputDir);
@@ -321,7 +334,7 @@ public class RTDICOMProcessingTask implements GeneratorTask
 	@Override
 	public String getTagFilePath()
 	{
-		return outFilePath;
+		return outFilePath.replaceAll("\\.mat", ".tag");
 	}
 
 	@Override
