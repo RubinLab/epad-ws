@@ -8,5 +8,5 @@ ALTER TABLE worklist_study DROP INDEX worklist_study_ind;
 CREATE UNIQUE INDEX worklist_subject_ind on worklist_subject(worklist_id,subject_id, project_id);
 CREATE UNIQUE INDEX worklist_study_ind on worklist_study(worklist_id,study_id, project_id);
 
-UPDATE dbversion SET version = '1.62';
+UPDATE dbversion SET version = '1.7';
 commit;

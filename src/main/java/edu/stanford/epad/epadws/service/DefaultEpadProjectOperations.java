@@ -62,6 +62,8 @@ import edu.stanford.epad.epadws.models.Subject;
 import edu.stanford.epad.epadws.models.User;
 import edu.stanford.epad.epadws.models.User.MessageLog;
 import edu.stanford.epad.epadws.models.UserRole;
+import edu.stanford.epad.epadws.models.WorkListToStudy;
+import edu.stanford.epad.epadws.models.WorkListToSubject;
 import edu.stanford.epad.epadws.models.dao.AbstractDAO;
 import edu.stanford.epad.epadws.queries.Dcm4CheeQueries;
 
@@ -1803,8 +1805,10 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 			List<Study> studies = new Study().getObjects("subject_id = " + subject.getId());
 			for (Study study: studies)
 			{
+				new WorkListToStudy().deleteObjects("study_id =" + study.getId());			
 				study.delete();
 			}
+			new WorkListToSubject().deleteObjects("subject_id =" + subject.getId());			
 			subject.delete();
 			subjectCache.remove(subjectUID);
 		}
@@ -1829,7 +1833,10 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		}
 		List<ProjectToSubjectToStudy> projSubjStudys = new ProjectToSubjectToStudy().getObjects("study_id=" + study.getId());
 		if (projSubjStudys.size() == 0)
+		{
+			new WorkListToStudy().deleteObjects("study_id =" + study.getId());			
 			study.delete();
+		}
 	}
 
 	/* (non-Javadoc)
@@ -1849,9 +1856,11 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		List<Study> studies = new Study().getObjects("subject_id = " + subject.getId());
 		for (Study study: studies)
 		{
+			new WorkListToStudy().deleteObjects("study_id =" + study.getId());			
 			study.delete();
 		}
 		new EpadFile().deleteObjects("subject_id=" + subject.getId());
+		new WorkListToSubject().deleteObjects("subject_id =" + subject.getId());			
 		subject.delete();
 	}
 

@@ -48,6 +48,7 @@ import edu.stanford.epad.dtos.EPADSubject;
 import edu.stanford.epad.dtos.RemotePAC;
 import edu.stanford.epad.epadws.aim.AIMSearchType;
 import edu.stanford.epad.epadws.aim.AIMUtil;
+import edu.stanford.epad.epadws.epaddb.EpadDatabase;
 import edu.stanford.epad.epadws.handlers.HandlerUtil;
 import edu.stanford.epad.epadws.models.EpadFile;
 import edu.stanford.epad.epadws.models.FileType;
@@ -689,8 +690,9 @@ public class EPADPutHandler
 
 			} else if (HandlerUtil.matchesTemplate(AimsRouteTemplates.AIM, pathInfo)) {
 				String action = httpRequest.getParameter("action");
-				if (action == null || action.trim().length() == 0)
-					throw new Exception("Invalid action specified, should be Undo or Redo");
+				String color = httpRequest.getParameter("color");
+				if (action == null && color == null)
+					throw new Exception("Invalid action specified, should be Undo or Redo or Color");
 				AIMReference aimReference = AIMReference.extract(AimsRouteTemplates.AIM, pathInfo);
 				EPADAIM aim = epadOperations.getAIMDescription(aimReference.aimID, username, sessionID);
 				if (aim == null)
@@ -699,6 +701,8 @@ public class EPADPutHandler
 					AIMUtil.undoLastAIM(aim);
 				else if (action.equalsIgnoreCase("redo"))
 					AIMUtil.redoLastAIM(aim);
+				else if (color != null && color.length() > 0)
+					EpadDatabase.getInstance().getEPADDatabaseOperations().updateAIMColor(aim.aimID, color);
 				else
 					throw new Exception("Invalid action " + action + " specified, should be Undo or Redo");
 					
