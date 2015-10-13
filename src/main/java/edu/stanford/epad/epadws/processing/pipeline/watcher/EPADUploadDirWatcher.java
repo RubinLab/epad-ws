@@ -183,12 +183,20 @@ public class EPADUploadDirWatcher implements Runnable
 					projectOperations.updateUserTaskStatus(username, TaskStatus.TASK_UNZIP, zipFile.getName(), "Started unzip", new Date(), null);
 					unzipFiles(zipFile);
 					projectOperations.updateUserTaskStatus(username, TaskStatus.TASK_UNZIP, zipFile.getName(), "Completed unzip", null, new Date());
-					File zipDirectory = new File(directory, zipFile.getName().substring(0, zipFile.getName().length()-4));
+					int removeLen = 4;
+					if (zipFile.getName().toLowerCase().endsWith(".tar.gz"))
+						removeLen = 7;
+					else if (zipFile.getName().toLowerCase().endsWith(".gz"))
+						removeLen = 0;
+					File zipDirectory = new File(directory, zipFile.getName().substring(0, zipFile.getName().length()-removeLen));
 					if (xnatprops.exists())
 						EPADFileUtils.copyFile(xnatprops, new File(zipDirectory, UserProjectService.XNAT_UPLOAD_PROPERTIES_FILE_NAME));
 					projectOperations.updateUserTaskStatus(username, TaskStatus.TASK_ADD_TO_PROJECT, zipDirectory.getName(), "Started processing", new Date(), null);
 					String userName = UserProjectService.createProjectEntitiesFromDICOMFilesInUploadDirectory(zipDirectory, true);
-					projectOperations.updateUserTaskStatus(username, TaskStatus.TASK_ADD_TO_PROJECT, zipDirectory.getName(), "Completed processing", null, new Date());
+					String fileCount = "";
+					if (userName.contains(":"))
+						fileCount = userName.substring(userName.indexOf(":") +1) + " files";
+					projectOperations.updateUserTaskStatus(username, TaskStatus.TASK_ADD_TO_PROJECT, zipDirectory.getName(), "Completed processing " + fileCount, null, new Date());
 					cleanUploadDirectory(zipDirectory);
 					if (userName != null)
 					{
@@ -204,7 +212,10 @@ public class EPADUploadDirWatcher implements Runnable
 			{
 				projectOperations.updateUserTaskStatus(username, TaskStatus.TASK_ADD_TO_PROJECT, directory.getName(), "Started processing", new Date(), null);
 				String userName = UserProjectService.createProjectEntitiesFromDICOMFilesInUploadDirectory(directory, false);
-				projectOperations.updateUserTaskStatus(username, TaskStatus.TASK_ADD_TO_PROJECT, directory.getName(), "Completed processing", null, new Date());
+				String fileCount = "";
+				if (userName.contains(":"))
+					fileCount = userName.substring(userName.indexOf(":") +1) + " files";
+				projectOperations.updateUserTaskStatus(username, TaskStatus.TASK_ADD_TO_PROJECT, directory.getName(), "Completed processing " + fileCount, null, new Date());
 				log.info("Cleaning upload directory");
 				cleanUploadDirectory(directory);
 				files = directory.list();
@@ -285,7 +296,7 @@ public class EPADUploadDirWatcher implements Runnable
 						log.info("Files uploaded(should be at least two files): " + Arrays.toString(filePaths));
 						for (String currPath : filePaths) {
 							currPath = currPath.toLowerCase();
-							if (currPath.endsWith(".zip")) {
+							if (currPath.endsWith(".zip") || currPath.endsWith(".gz") || currPath.endsWith(".tar")) {
 								hasZipFile = true;
 							}
 						}
@@ -311,7 +322,7 @@ public class EPADUploadDirWatcher implements Runnable
 				@Override
 				public boolean accept(File dir, String name)
 				{
-					return name.toLowerCase().endsWith(".zip");
+					return name.toLowerCase().endsWith(".zip") || name.toLowerCase().endsWith(".gz") || name.toLowerCase().endsWith(".tar");
 				}
 			});
 
@@ -345,7 +356,49 @@ public class EPADUploadDirWatcher implements Runnable
 	private void unzipFiles(File zipFile) throws IOException
 	{
 		log.info("Unzipping " + zipFile.getAbsolutePath());
-		EPADFileUtils.extractFolder(zipFile.getAbsolutePath());
+		if (zipFile.getName().toLowerCase().endsWith(".zip"))
+		{
+			EPADFileUtils.extractFolder(zipFile.getAbsolutePath());
+		}
+		else if (zipFile.getName().toLowerCase().endsWith(".gz"))
+		{
+			try
+			{
+				EPADFileUtils.unGzip(zipFile, zipFile.getParentFile());
+				String ungzName = zipFile.getName().substring(0, zipFile.getName().length()-3);
+				zipFile.delete();
+				File ungz = new File(zipFile.getParentFile(), ungzName);
+				if (ungz.exists() && ungz.getName().toLowerCase().endsWith(".tar"))
+				{
+					File directory = new File(zipFile.getParentFile(), zipFile.getName().substring(0, zipFile.getName().lastIndexOf(".")));
+					directory.mkdirs();
+					EPADFileUtils.unTar(ungz, directory);
+					String[] files = directory.list();
+					log.debug("Untarred " + files.length + " files");
+					ungz.delete();
+				}				
+			}
+			catch (Exception x)
+			{
+				log.warning("Error ungzipping/untaring " + zipFile.getAbsolutePath());
+			}
+		}
+		else if (zipFile.getName().toLowerCase().endsWith(".tar"))
+		{
+			try
+			{
+				File directory = new File(zipFile.getParentFile(), zipFile.getName().substring(0, zipFile.getName().lastIndexOf(".")));
+				directory.mkdirs();
+				EPADFileUtils.unTar(zipFile, directory);
+				String[] files = directory.list();
+				log.debug("Untarred " + files.length + " files");
+				zipFile.delete();				
+			}
+			catch (Exception x)
+			{
+				log.warning("Error untaring " + zipFile.getAbsolutePath());
+			}
+		}
 	}
 
 	private void sendFilesToDcm4Chee(String username, File directory) throws Exception
@@ -455,8 +508,8 @@ public class EPADUploadDirWatcher implements Runnable
 	{
 		if (dir.exists())
 		{
-		log.info("Deleting upload directory " + dir.getAbsolutePath());
-		EPADFileUtils.deleteDirectoryAndContents(dir);
+			log.info("Deleting upload directory " + dir.getAbsolutePath());
+			EPADFileUtils.deleteDirectoryAndContents(dir);
 		}
 	}
 

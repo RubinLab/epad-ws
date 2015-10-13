@@ -33,7 +33,9 @@ import java.io.OutputStream;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
 import javax.servlet.http.HttpServletResponse;
 
@@ -67,9 +69,11 @@ public class TCIAService  {
 	public static final String TCIA_URL = "TCIA_URL";
 	public static final String TCIA_APIKEY = "TCIA_APIKEY";
 	public static final String TCIA_PREFIX = "tcia:";
+	public static final String TCIA_SHAREDLISTS = "TCIA_SHAREDLISTS";
 	
 	public static String apiKey = null;	
 	public static List<String> collections = null;
+	public static Set<String> sharedLists = new LinkedHashSet<String>();
 	
 	public static TCIAService getInstance() throws Exception {
 		if (tciainstance == null)
@@ -89,6 +93,14 @@ public class TCIAService  {
 		}
 		else
 			apiKey = key;
+		
+		String sharedListsConfig = EPADConfig.getParamValue(TCIA_SHAREDLISTS);
+		if (sharedLists != null && sharedListsConfig.trim().length() > 0)
+		{
+			String[] lists = sharedListsConfig.split(",");
+			for (String list: lists)
+				sharedLists.add(list);
+		}
 	}
 
 	public List<String> getCollections() throws Exception{
@@ -104,9 +116,24 @@ public class TCIAService  {
 		return collections;
 	}
 
+	public Set<String> getSharedLists()
+	{
+		return sharedLists;
+	}
+	
 	public List<RemotePACEntity> getPatientsForCollection(String collection) throws Exception
 	{
 		List<RemotePACEntity> entities = new ArrayList<RemotePACEntity>();
+		if (sharedLists.contains(collection))
+		{
+			String entityID = "TCIA" + ":" + collection + ":SUBJECT:UNKNOWN"; 
+			RemotePACEntity entity = new RemotePACEntity("Patient", "UNKNOWN PATIENT", 1,entityID);
+			entity.subjectID = "UNKNOWN PATIENT";
+			entity.subjectName = "UNKNOWN PATIENT";
+			entities.add(entity);
+			return entities;
+		}
+		
 		JsonArray patients = this.getResponseFromTCIA("getPatient?Collection=" + collection);
 		for (int i = 0; i < patients.size(); i++)
 		{
@@ -123,11 +150,14 @@ public class TCIAService  {
 			entity.subjectName = patientName;
 			entities.add(entity);
 		}
+
 		return entities;
 	}
 
 	public List<RemotePACEntity> getNewStudiesForPatient(String collection, String patientID, Date sinceDate) throws Exception
 	{
+		if (sharedLists.contains(collection))
+			return new ArrayList<RemotePACEntity>();
 		List<RemotePACEntity> entities = new ArrayList<RemotePACEntity>();
 		JsonArray studies = this.getResponseFromTCIA("NewStudiesInPatientCollection?Collection=" + collection 
 				+ "&PatientID=" + patientID + "&Date=" + new SimpleDateFormat("yyyy-MM-dd").format(sinceDate));
@@ -156,6 +186,18 @@ public class TCIAService  {
 	public List<RemotePACEntity> getStudiesForPatient(String collection, String patientID) throws Exception
 	{
 		List<RemotePACEntity> entities = new ArrayList<RemotePACEntity>();
+		if (sharedLists.contains(collection))
+		{
+			String entityID = "TCIA" + ":" + collection + ":SUBJECT:UNKNOWN:STUDY:UNKNOWN"; 
+			RemotePACEntity entity = new RemotePACEntity("Study", "UNKNOWN STUDY", 2,entityID);
+			entity.subjectID = "UNKNOWN";
+			entity.subjectName = "UNKNOWN";
+			entity.studyDate = "";
+			entity.studyDescription = "";
+			entities.add(entity);
+			return entities;
+		}
+
 		JsonArray studies = this.getResponseFromTCIA("getPatientStudy?Collection=" + collection + "&PatientID=" + patientID);
 		for (int i = 0; i < studies.size(); i++)
 		{
@@ -183,6 +225,8 @@ public class TCIAService  {
 
 	public List<RemotePACEntity> getSeriesForStudy(String collection, String patientID, String studyUID) throws Exception
 	{
+		if (sharedLists.contains(collection))
+			return getSeriesForSharedLists(collection);
 		List<RemotePACEntity> entities = new ArrayList<RemotePACEntity>();
 		JsonArray seriess = this.getResponseFromTCIA("getSeries?Collection=" + collection 
 									+ "&PatientID=" + patientID + "&StudyInstanceUID=" + studyUID);
@@ -209,6 +253,25 @@ public class TCIAService  {
 		}
 		return entities;
 	}
+
+	public List<RemotePACEntity> getSeriesForSharedLists(String collection) throws Exception
+	{
+		String query = "ContentsByName?name=" + collection;
+		List<RemotePACEntity> entities = new ArrayList<RemotePACEntity>();
+		JsonArray seriess = this.getResponseFromTCIA(query, true);
+		for (int i = 0; i < seriess.size(); i++)
+		{
+			JsonObject series = seriess.get(i).getAsJsonObject();
+			String seriesUID = getJsonString(series.get("SERIES_INSTANCE_UID"));
+			
+			String entityID = "TCIA" + ":" + collection + ":::SERIES:" + seriesUID; 
+			RemotePACEntity entity = new RemotePACEntity("Series", seriesUID, 3, entityID);
+			entities.add(entity);
+			entity.subjectID = seriesUID;
+			entity.subjectName = seriesUID;
+		}
+		return entities;
+	}
 	
 	private String getJsonString(JsonElement elem)
 	{
@@ -221,6 +284,8 @@ public class TCIAService  {
 	public int downloadPatientFromTCIA(String username, String collection, String patientID, String projectID)
 			throws Exception
 	{
+		if (sharedLists.contains(collection))
+			return downloadSeriesFromTCIA(username, patientID, projectID); // Shared Lists only have SeriesUID
 		EpadProjectOperations projectOperations = DefaultEpadProjectOperations.getInstance();
 		projectOperations.updateUserTaskStatus(username, TaskStatus.TASK_TCIA_DOWNLOAD, patientID, "Started download", new Date(), null);
 		List<RemotePACEntity> entities = getStudiesForPatient(collection, patientID);
@@ -238,6 +303,8 @@ public class TCIAService  {
 	public int downloadStudyFromTCIA(String username, String collection, String patientID, String studyUID, String projectID)
 			throws Exception
 	{
+		if (sharedLists.contains(collection))
+			return downloadSeriesFromTCIA(username, patientID, projectID);
 		EpadProjectOperations projectOperations = DefaultEpadProjectOperations.getInstance();
 		projectOperations.updateUserTaskStatus(username, TaskStatus.TASK_TCIA_DOWNLOAD, "Patient:" + patientID + ", Study:" + studyUID, "Started download", null, null);
 		List<RemotePACEntity> entities = getSeriesForStudy(collection, patientID, studyUID);
@@ -293,7 +360,14 @@ public class TCIAService  {
 
 	private JsonArray getResponseFromTCIA(String query) throws Exception
 	{
+		return getResponseFromTCIA(query, false);
+	}
+
+	private JsonArray getResponseFromTCIA(String query, boolean sharedList) throws Exception
+	{
 		String tciaURL = EPADConfig.getParamValue(TCIA_URL, "https://services.cancerimagingarchive.net/services/v3/TCIA/query/");
+		if (sharedList)
+			tciaURL = "https://services.cancerimagingarchive.net/services/v3/SharedList/query/";
 		tciaURL = tciaURL + query;
 		if (tciaURL.indexOf('?') == -1) 
 			tciaURL = tciaURL  + "?";

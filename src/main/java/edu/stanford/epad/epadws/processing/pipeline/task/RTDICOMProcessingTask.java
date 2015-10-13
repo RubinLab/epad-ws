@@ -283,7 +283,12 @@ public class RTDICOMProcessingTask implements GeneratorTask
 						List<Project> projects = projectOperations.getProjectsForSubject(patientID);
 						String color = "";
 						if (r < delems.size())
+						{
 							color = delems.get(r).value;
+							String[] colors = color.replace('\\',',').split(",");
+							if (colors.length == 3)	
+								color = formatColor(getInt(colors[0]), getInt(colors[1]), getInt(colors[2]));
+						}
 						for (Project project: projects) {
 							log.debug("RT Dicom projectID:" + project.getProjectId());
 							if (project.getProjectId().equals(EPADConfig.xnatUploadProjectID)) continue;
@@ -295,7 +300,7 @@ public class RTDICOMProcessingTask implements GeneratorTask
 								if (!projectOperations.hasAccessToProject(owner, project.getId()))
 									owner = project.getCreator();
 								ImageAnnotation ia = AIMUtil.generateAIMFileForDSO(dsoFile, owner, projectID, dsoDescr);
-								epadDatabaseOperations.updateAIMColor(ia.getUniqueIdentifier(), color.replace('\\', ','));
+								epadDatabaseOperations.updateAIMColor(ia.getUniqueIdentifier(), color);
 							}
 							else
 								log.debug("RT Dicom study not is project:" + studyUID);
@@ -329,15 +334,32 @@ public class RTDICOMProcessingTask implements GeneratorTask
 
 	public static List<DICOMElement> getDICOMElementsByCode(DICOMElementList dicomElementList, String tagCode)
 	{
-		Set<DICOMElement> matchingDICOMElements = new LinkedHashSet<>(); // Maintain insertion order
+		List<DICOMElement> matchingDICOMElements = new ArrayList<DICOMElement>();
 
 		for (DICOMElement dicomElement : dicomElementList.ResultSet.Result) {
-			matchingDICOMElements.add(dicomElement);
+			if (dicomElement.tagCode.equalsIgnoreCase(tagCode))
+				matchingDICOMElements.add(dicomElement);
 		}
 
-		return new ArrayList<>(matchingDICOMElements);
+		return matchingDICOMElements;
 	}
-
+	
+	public static String formatColor(int rint, int gint, int bint) {
+        String r = (rint < 16) ? "0" + Integer.toHexString(rint) : Integer.toHexString(rint);
+        String g = (gint < 16) ? "0" + Integer.toHexString(gint) : Integer.toHexString(gint);
+        String b = (bint < 16) ? "0" + Integer.toHexString(bint) : Integer.toHexString(bint);
+        return "#" + r + g + b;
+    }
+	
+	public static int getInt(String value)
+	{
+		try {
+			return new Integer(value.trim()).intValue();
+		} catch (Exception x) {
+			return 0;
+		}
+	}
+	
 	@Override
 	public File getDICOMFile()
 	{
