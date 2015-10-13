@@ -38,7 +38,7 @@ public class PluginConfig
 				migrate2DB();
 			}
 		} catch (Exception e) {
-			log.info("Failed to read plugin list from database");
+			log.info("Failed to read plugin list from database "+e.getMessage());
 		}
 	}
 	

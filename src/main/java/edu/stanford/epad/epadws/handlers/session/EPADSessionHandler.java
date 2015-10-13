@@ -38,6 +38,8 @@ import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.epad.epadws.handlers.HandlerUtil;
 import edu.stanford.epad.epadws.security.EPADSessionOperations;
 import edu.stanford.epad.epadws.security.EPADSessionOperations.EPADSessionResponse;
+import edu.stanford.epad.epadws.service.DefaultEpadProjectOperations;
+import edu.stanford.epad.epadws.service.EpadProjectOperations;
 import edu.stanford.epad.epadws.service.SessionService;
 
 /**
@@ -58,6 +60,7 @@ import edu.stanford.epad.epadws.service.SessionService;
 public class EPADSessionHandler extends AbstractHandler
 {
 	private static final EPADLogger log = EPADLogger.getInstance();
+	private final EpadProjectOperations projectOperations = DefaultEpadProjectOperations.getInstance();
 
 	private static final String MISSING_USER = "Missing user name";
 	private static final String INVALID_METHOD_MESSAGE = "Only POST and DELETE methods valid for this route";
@@ -101,6 +104,7 @@ public class EPADSessionHandler extends AbstractHandler
 				try {
 					EPADSessionResponse sessionResponse = SessionService.authenticateUser(httpRequest);
 					if (sessionResponse.statusCode == HttpServletResponse.SC_OK) {
+						projectOperations.createEventLog(username, null, null, null, null, null, null, null, "User Logged In",  ip + " " + host, false);
 						String jsessionID = sessionResponse.response;
 						log.info("Successful login to EPAD; SESSIONID=" + jsessionID + " host:" + host + " ip:" + ip + " host from request:" + httpRequest.getRemoteHost() + "-" + httpRequest.getRemoteAddr());
 						EPADSessionOperations.setSessionHost(jsessionID, host, ip);
@@ -149,6 +153,7 @@ public class EPADSessionHandler extends AbstractHandler
 						statusCode = HttpServletResponse.SC_OK;
 				    	
 					} else if (sessionResponse.statusCode == HttpServletResponse.SC_UNAUTHORIZED) {
+						projectOperations.createEventLog(username, null, null, null, null, null, null, null, "User Logged Failed",  ip + " " + host, true);
 						PrintWriter responseStream = httpResponse.getWriter();
 						if (sessionResponse.message != null && sessionResponse.message.contains("disabled"))
 							statusCode = HandlerUtil.invalidTokenResponse(DISABLED_USER, responseStream, log);
@@ -183,6 +188,12 @@ public class EPADSessionHandler extends AbstractHandler
 		            sessionCookie.setMaxAge(0);
 		            sessionCookie.setPath(httpRequest.getContextPath());
 		            httpResponse.addCookie(sessionCookie);
+				}
+				if (jsessionID != null)
+				{
+					String username = EPADSessionOperations.getSessionUser(jsessionID);
+					if (username != null)
+						projectOperations.createEventLog(username, null, null, null, null, null, null, null, "User Logged Out", null, false);
 				}
 				log.info("Delete session returns status code " + statusCode);
 				statusCode = HttpServletResponse.SC_OK;

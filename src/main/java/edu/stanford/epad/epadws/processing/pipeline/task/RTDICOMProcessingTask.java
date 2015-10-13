@@ -329,13 +329,14 @@ public class RTDICOMProcessingTask implements GeneratorTask
 
 	public static List<DICOMElement> getDICOMElementsByCode(DICOMElementList dicomElementList, String tagCode)
 	{
-		Set<DICOMElement> matchingDICOMElements = new LinkedHashSet<>(); // Maintain insertion order
+		List<DICOMElement> matchingDICOMElements = new ArrayList<DICOMElement>();
 
 		for (DICOMElement dicomElement : dicomElementList.ResultSet.Result) {
+			if (dicomElement.tagCode.equalsIgnoreCase(tagCode))
 			matchingDICOMElements.add(dicomElement);
 		}
 
-		return new ArrayList<>(matchingDICOMElements);
+		return matchingDICOMElements;
 	}
 
 	@Override

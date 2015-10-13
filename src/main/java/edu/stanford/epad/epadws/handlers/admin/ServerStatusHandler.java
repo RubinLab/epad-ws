@@ -177,7 +177,7 @@ public class ServerStatusHandler extends AbstractHandler
 						Collections.sort(tss, new TSComparator());
 						for (TaskStatus ts: tss)
 						{
-							responseStream.println("<tr><td>" + u.getUsername() + "</td><td>" + ts.type + "</td><td>" + ts.target + "</td><td>" + ts.status + "</td><td>" + ts.starttime + "</td><td>" + checkNull(ts.completetime, "Not Done") + "</td><td>" + getDiff(getDate(ts.starttime), getDate(ts.completetime)) + "</td></tr>");
+							responseStream.println("<tr><td>" + u.getUsername() + "</td><td>" + ts.type + "</td><td>" + ts.target + "</td><td>" + ts.status + "</td><td>" + ts.starttime + "</td><td>" + checkNull(ts.completetime, "In Process") + "</td><td>" + getDiff(getDate(ts.starttime), getDate(ts.completetime)) + "</td></tr>");
 							empty = false;
 						}
 					}
@@ -192,7 +192,7 @@ public class ServerStatusHandler extends AbstractHandler
 					Collections.sort(tss, new TSComparator());
 					for (TaskStatus ts: tss)
 					{
-						responseStream.println("<tr><td>" + user.getUsername() + "</td><td>" + ts.type + "</td><td>" + ts.target + "</td><td>" + ts.status + "</td><td>" + ts.starttime + "</td><td>" + checkNull(ts.completetime, "Not Done") + "</td><td>" + getDiff(getDate(ts.starttime), getDate(ts.completetime)) + "</td></tr>");
+						responseStream.println("<tr><td>" + user.getUsername() + "</td><td>" + ts.type + "</td><td>" + ts.target + "</td><td>" + ts.status + "</td><td>" + ts.starttime + "</td><td>" + checkNull(ts.completetime, "In Process") + "</td><td>" + getDiff(getDate(ts.starttime), getDate(ts.completetime)) + "</td></tr>");
 					}
 					if (tss.size() == 0)
 						responseStream.println("<tr><td colspan=100% align=center>No background processes running</td></tr>");
@@ -220,7 +220,7 @@ public class ServerStatusHandler extends AbstractHandler
 	public static Date getDate(String dateStr)
 	{
 		if (dateStr == null || dateStr.length() == 0)
-			return null;
+			return new Date();
 		try
 		{
 			return dateformat.parse(dateStr);
@@ -241,7 +241,14 @@ public class ServerStatusHandler extends AbstractHandler
 	
 	public class TSComparator implements Comparator<TaskStatus> {
 		public int compare(TaskStatus o1, TaskStatus o2) {
+			try
+			{
+//				if (o2.completetime != null)
+//					return getDate(o2.completetime).compareTo(getDate(o1.completetime));
+//				else
 			return getDate(o2.starttime).compareTo(getDate(o1.starttime));
+			} catch (Exception x) {}
+			return 0;
 		}
 	}
 
