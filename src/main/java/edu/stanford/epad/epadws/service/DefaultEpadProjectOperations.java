@@ -1903,8 +1903,8 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 	}
 
 	@Override
-	public List<EventLog> getUseEventLogs(String username) throws Exception {
-		List<EventLog> events = new EventLog().getObjects("username ='" + username + "' order by createdtime desc");
+	public List<EventLog> getUseEventLogs(String username, int start, int count) throws Exception {
+		List<EventLog> events = new EventLog().getObjects("username like '" + username + "' order by createdtime desc", start, count);
 		return events;
 	}
 

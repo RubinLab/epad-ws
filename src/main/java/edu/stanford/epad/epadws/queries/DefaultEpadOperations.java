@@ -1461,7 +1461,7 @@ public class DefaultEpadOperations implements EpadOperations
 				}				
 			}
 			if (type == null || !type.equals(FileType.TEMPLATE))
-				projectOperations.createEventLog(username, projectID, subjectID, studyID, seriesID, null, null, "UPLOAD FILE", uploadedFile.getName(), description, false);
+				projectOperations.createEventLog(username, projectID, subjectID, studyID, seriesID, null, null, uploadedFile.getName(), "UPLOAD FILE", description, false);
 			projectOperations.createFile(username, projectID, subjectID, studyID, seriesID, uploadedFile, filename, description, type);
 			if (type != null && type.equals(FileType.IMAGE) && seriesID != null) {
 				NonDicomSeries ndSeries = projectOperations.getNonDicomSeries(seriesID);
@@ -2928,13 +2928,11 @@ public class DefaultEpadOperations implements EpadOperations
 		if (!loggedInUser.isAdmin() && !loggedInUserName.equals(username))
 			throw new Exception("No permissions for requested data");
 		EPADEventLogList elist = new EPADEventLogList();
-		List<EventLog> elogs = projectOperations.getUseEventLogs(username);
-		if (start == 1)
-			start = start--;
-		if (count > 0 && elogs.size() > (start+count))
-		{
-			elogs = elogs.subList(start, start+count);
-		}
+		List<EventLog> elogs = projectOperations.getUseEventLogs(username, start, count);
+//		if (count > 0 && elogs.size() > (start+count))
+//		{
+//			elogs = elogs.subList(start, start+count);
+//		}
 		for(EventLog elog: elogs)
 		{
 			EPADEventLog log = new EPADEventLog(this.formatDateTime(elog.getCreatedTime()), 
