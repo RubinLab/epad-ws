@@ -188,6 +188,7 @@ public class ServerStatusHandler extends AbstractHandler
 					responseStream.println("</table>");
 					recentLogs = DefaultEpadProjectOperations.getInstance().getUseEventLogs("%", 0, 25);
 				}  else {
+					responseStream.println("<br><b>Background Tasks: </b>");
 					responseStream.println("<br><table border=1 cellpadding=2><tr style='font-weight: bold;'><td align=center>User</td><td align=center>Task</td><td align=center>Target</td><td align=center>Status</td><td align=center>Start</td><td align=center>Complete</td><td align=center>Elapsed</td></tr>");
 					Collection<TaskStatus> tssCol = user.getCurrentTasks().values();
 					List<TaskStatus> tss = new ArrayList<TaskStatus>();
@@ -202,10 +203,11 @@ public class ServerStatusHandler extends AbstractHandler
 					responseStream.println("</table>");
 					recentLogs = DefaultEpadProjectOperations.getInstance().getUseEventLogs(username, 0, 25);
 				}
+				responseStream.println("<br><b>Event Logs: </b>");
 				responseStream.println("<br><table border=1 cellpadding=2><tr style='font-weight: bold;'><td align=center>Time</td><td align=center>User</td><td align=center>Action</td><td align=center>Project</td></tr>");
 				for (EventLog elog: recentLogs)
 				{
-					responseStream.println("<tr><td>" + dateformat.format(elog.getCreatedTime()) + "</td><td>" + elog.getUsername() + "</td><td>" + elog.getFunction() + "</td><td>" + elog.getProjectID() + "</td></tr>");
+					responseStream.println("<tr><td>" + dateformat.format(elog.getCreatedTime()) + "</td><td>" + elog.getUsername() + "</td><td>" + elog.getFunction() + "</td><td>" + checkNull(elog.getProjectID(), "&nbsp;") + "</td></tr>");
 				}
 				responseStream.println("</table>");
 				
