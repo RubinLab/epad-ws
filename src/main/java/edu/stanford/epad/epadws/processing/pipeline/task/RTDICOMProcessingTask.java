@@ -29,6 +29,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -67,7 +68,6 @@ import edu.stanford.epad.epadws.epaddb.EpadDatabaseOperations;
 import edu.stanford.epad.epadws.models.Project;
 import edu.stanford.epad.epadws.models.Study;
 import edu.stanford.epad.epadws.queries.Dcm4CheeQueries;
-import edu.stanford.epad.epadws.queries.DefaultEpadOperations;
 import edu.stanford.epad.epadws.service.DefaultEpadProjectOperations;
 import edu.stanford.epad.epadws.service.EpadProjectOperations;
 import edu.stanford.epad.epadws.service.UserProjectService;
@@ -98,6 +98,7 @@ public class RTDICOMProcessingTask implements GeneratorTask
 	@Override
 	public void run()
 	{
+		Thread.currentThread().setPriority(Thread.MIN_PRIORITY); // Let interactive thread run sooner
 		if (seriesBeingProcessed.contains(seriesUID))
 		{
 			log.info("RT series  " + seriesUID + " already being processed");
@@ -204,9 +205,10 @@ public class RTDICOMProcessingTask implements GeneratorTask
 			long endtime = System.currentTimeMillis();
 			projectOperations.updateUserTaskStatus(username, TaskStatus.TASK_RT_MATLAB, seriesUID, "MATLAB Processing Completed", null, new Date());
 			log.info("Returned from MATLAB..., outFolderPath:" + outputDirPath + " took " + (endtime-starttime)/1000 + " secs");
-			List<DICOMElement> delems = DefaultEpadOperations.getDICOMElementsByCode(dicomElementList, PixelMedUtils.ROIDisplayColor);
+			List<DICOMElement> delems = getDICOMElementsByCode(dicomElementList, PixelMedUtils.ROIDisplayColor);
 			if (delems == null) delems = new ArrayList<DICOMElement>();
-			log.debug("Number of color tags:" + delems.size());
+			if (delems.size() > 0)
+				log.debug("Number of color tags:" + delems.size() + " first:" + delems.get(0).value);
 			try {
 				MatFileReader reader = new MatFileReader(outFolderPath + "/" + patientID + ".mat");
 				int numOfRoi = reader.getMLArray("contours").getSize();
@@ -293,7 +295,7 @@ public class RTDICOMProcessingTask implements GeneratorTask
 								if (!projectOperations.hasAccessToProject(owner, project.getId()))
 									owner = project.getCreator();
 								ImageAnnotation ia = AIMUtil.generateAIMFileForDSO(dsoFile, owner, projectID, dsoDescr);
-								epadDatabaseOperations.updateAIMColor(ia.getUniqueIdentifier(), color);
+								epadDatabaseOperations.updateAIMColor(ia.getUniqueIdentifier(), color.replace('\\', ','));
 							}
 							else
 								log.debug("RT Dicom study not is project:" + studyUID);
@@ -323,6 +325,17 @@ public class RTDICOMProcessingTask implements GeneratorTask
 				convertDicoms = null;
 			}
 		}
+	}
+
+	public static List<DICOMElement> getDICOMElementsByCode(DICOMElementList dicomElementList, String tagCode)
+	{
+		Set<DICOMElement> matchingDICOMElements = new LinkedHashSet<>(); // Maintain insertion order
+
+		for (DICOMElement dicomElement : dicomElementList.ResultSet.Result) {
+			matchingDICOMElements.add(dicomElement);
+		}
+
+		return new ArrayList<>(matchingDICOMElements);
 	}
 
 	@Override

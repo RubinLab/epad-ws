@@ -194,7 +194,6 @@ public class PluginOperations {
 		}
 
 
-
 		return epadPluginList;
 	}
 	
@@ -439,7 +438,6 @@ public class PluginOperations {
 			Plugin plugin = getPlugin(pluginId);
 			param.setPluginId(plugin.getId());
 			param.setName(paramName);
-
 
 
 		}

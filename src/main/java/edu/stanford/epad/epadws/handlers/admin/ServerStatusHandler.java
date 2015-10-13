@@ -28,7 +28,10 @@ import java.io.PrintWriter;
 import java.net.InetAddress;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -168,7 +171,10 @@ public class ServerStatusHandler extends AbstractHandler
 					boolean empty = true;
 					for (User u: users)
 					{
-						Collection<TaskStatus> tss = u.getCurrentTasks().values();
+						Collection<TaskStatus> tssCol = u.getCurrentTasks().values();
+						List<TaskStatus> tss = new ArrayList<TaskStatus>();
+						tss.addAll(tssCol);
+						Collections.sort(tss, new TSComparator());
 						for (TaskStatus ts: tss)
 						{
 							responseStream.println("<tr><td>" + u.getUsername() + "</td><td>" + ts.type + "</td><td>" + ts.target + "</td><td>" + ts.status + "</td><td>" + ts.starttime + "</td><td>" + ts.completetime + "</td><td>" + getDiff(getDate(ts.starttime), getDate(ts.completetime)) + "</td></tr>");
@@ -180,7 +186,10 @@ public class ServerStatusHandler extends AbstractHandler
 					responseStream.println("</table>");
 				}  else {
 					responseStream.println("<br><table border=1 cellpadding=2><tr style='font-weight: bold;'><td align=center>User</td><td align=center>Task</td><td align=center>Target</td><td align=center>Status</td><td align=center>Start</td><td align=center>Complete</td><td align=center>Elapsed</td></tr>");
-					Collection<TaskStatus> tss = user.getCurrentTasks().values();
+					Collection<TaskStatus> tssCol = user.getCurrentTasks().values();
+					List<TaskStatus> tss = new ArrayList<TaskStatus>();
+					tss.addAll(tssCol);
+					Collections.sort(tss, new TSComparator());
 					for (TaskStatus ts: tss)
 					{
 						responseStream.println("<tr><td>" + user.getUsername() + "</td><td>" + ts.type + "</td><td>" + ts.target + "</td><td>" + ts.status + "</td><td>" + ts.starttime + "</td><td>" + ts.completetime + "</td><td>" + getDiff(getDate(ts.starttime), getDate(ts.completetime)) + "</td></tr>");
@@ -219,6 +228,7 @@ public class ServerStatusHandler extends AbstractHandler
 		catch (Exception x) {}
 		return null;
 	}
+	
 	public static String getDiff(Date start, Date end)
 	{
 		if (start == null)
@@ -227,6 +237,12 @@ public class ServerStatusHandler extends AbstractHandler
 		long ms = end.getTime() - start.getTime();
 		String diff = ms/(1000*60) + " mins " + ms%(1000*60)/1000  + " secs";
 		return diff;
+	}
+	
+	public class TSComparator implements Comparator<TaskStatus> {
+		public int compare(TaskStatus o1, TaskStatus o2) {
+			return getDate(o2.starttime).compareTo(getDate(o1.starttime));
+		}
 	}
 
 	private String getPipelineActivityLevel()
