@@ -2929,6 +2929,8 @@ public class DefaultEpadOperations implements EpadOperations
 			throw new Exception("No permissions for requested data");
 		EPADEventLogList elist = new EPADEventLogList();
 		List<EventLog> elogs = projectOperations.getUseEventLogs(username);
+		if (start == 1)
+			start = start--;
 		if (count > 0 && elogs.size() > (start+count))
 		{
 			elogs = elogs.subList(start, start+count);
