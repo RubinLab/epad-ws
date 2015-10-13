@@ -174,6 +174,9 @@ public class EPADSessionHandler extends AbstractHandler
 			log.info("Logout request, sessionId:" + SessionService.getJSessionIDFromRequest(httpRequest)  + " origin:" + origin);
 			try {
 				String jsessionID = SessionService.getJSessionIDFromRequest(httpRequest);
+				String username = null;
+				if (jsessionID != null)
+					username = EPADSessionOperations.getSessionUser(jsessionID);
 				statusCode = SessionService.invalidateSessionID(httpRequest);
 				httpResponse.setHeader("Access-Control-Allow-Origin", "*");
 				httpResponse.setHeader("Access-Control-Allow-Methods", "POST, DELETE, OPTIONS");
@@ -189,12 +192,8 @@ public class EPADSessionHandler extends AbstractHandler
 		            sessionCookie.setPath(httpRequest.getContextPath());
 		            httpResponse.addCookie(sessionCookie);
 				}
-				if (jsessionID != null)
-				{
-					String username = EPADSessionOperations.getSessionUser(jsessionID);
 					if (username != null)
 						projectOperations.createEventLog(username, null, null, null, null, null, null, null, "User Logged Out", null, false);
-				}
 				log.info("Delete session returns status code " + statusCode);
 				statusCode = HttpServletResponse.SC_OK;
 			} catch (Throwable t) {
