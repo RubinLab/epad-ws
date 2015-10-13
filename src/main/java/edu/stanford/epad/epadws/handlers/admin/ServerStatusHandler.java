@@ -243,9 +243,9 @@ public class ServerStatusHandler extends AbstractHandler
 		public int compare(TaskStatus o1, TaskStatus o2) {
 			try
 			{
-				if (o2.completetime != null)
-					return getDate(o2.completetime).compareTo(getDate(o1.completetime));
-				else
+//				if (o2.completetime != null)
+//					return getDate(o2.completetime).compareTo(getDate(o1.completetime));
+//				else
 			return getDate(o2.starttime).compareTo(getDate(o1.starttime));
 			} catch (Exception x) {}
 			return 0;
