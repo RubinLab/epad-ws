@@ -1461,7 +1461,7 @@ public class DefaultEpadOperations implements EpadOperations
 				}				
 			}
 			if (type == null || !type.equals(FileType.TEMPLATE))
-				projectOperations.createEventLog(username, projectID, subjectID, studyID, seriesID, null, null, "UPLOAD FILE", uploadedFile.getName(), description, false);
+				projectOperations.createEventLog(username, projectID, subjectID, studyID, seriesID, null, null, uploadedFile.getName(), "UPLOAD FILE", description, false);
 			projectOperations.createFile(username, projectID, subjectID, studyID, seriesID, uploadedFile, filename, description, type);
 			if (type != null && type.equals(FileType.IMAGE) && seriesID != null) {
 				NonDicomSeries ndSeries = projectOperations.getNonDicomSeries(seriesID);

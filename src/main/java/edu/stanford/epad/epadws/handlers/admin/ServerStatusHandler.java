@@ -49,6 +49,7 @@ import edu.stanford.epad.dtos.TaskStatus;
 import edu.stanford.epad.epadws.EPadWebServerVersion;
 import edu.stanford.epad.epadws.epaddb.EpadDatabase;
 import edu.stanford.epad.epadws.handlers.HandlerUtil;
+import edu.stanford.epad.epadws.models.EventLog;
 import edu.stanford.epad.epadws.models.Plugin;
 import edu.stanford.epad.epadws.models.User;
 import edu.stanford.epad.epadws.processing.pipeline.PipelineFactory;
@@ -147,6 +148,7 @@ public class ServerStatusHandler extends AbstractHandler
 				String sessionID = SessionService.getJSessionIDFromRequest(httpRequest);
 				String username = EPADSessionOperations.getSessionUser(sessionID);
 				User user = DefaultEpadProjectOperations.getInstance().getUser(username);
+				List<EventLog> recentLogs = new ArrayList<EventLog>();
 				if (user.isAdmin()) {
 					try {
 						DecimalFormat df = new DecimalFormat("###,###,###");
@@ -184,6 +186,7 @@ public class ServerStatusHandler extends AbstractHandler
 					if (empty)
 						responseStream.println("<tr><td colspan=100% align=center>No background processes running</td></tr>");
 					responseStream.println("</table>");
+					recentLogs = DefaultEpadProjectOperations.getInstance().getUseEventLogs("%", 0, 25);
 				}  else {
 					responseStream.println("<br><table border=1 cellpadding=2><tr style='font-weight: bold;'><td align=center>User</td><td align=center>Task</td><td align=center>Target</td><td align=center>Status</td><td align=center>Start</td><td align=center>Complete</td><td align=center>Elapsed</td></tr>");
 					Collection<TaskStatus> tssCol = user.getCurrentTasks().values();
@@ -197,7 +200,15 @@ public class ServerStatusHandler extends AbstractHandler
 					if (tss.size() == 0)
 						responseStream.println("<tr><td colspan=100% align=center>No background processes running</td></tr>");
 					responseStream.println("</table>");
+					recentLogs = DefaultEpadProjectOperations.getInstance().getUseEventLogs(username, 0, 25);
 				}
+				responseStream.println("<br><table border=1 cellpadding=2><tr style='font-weight: bold;'><td align=center>Time</td><td align=center>User</td><td align=center>Action</td><td align=center>Project</td></tr>");
+				for (EventLog elog: recentLogs)
+				{
+					responseStream.println("<tr><td>" + dateformat.format(elog.getCreatedTime()) + "</td><td>" + elog.getUsername() + "</td><td>" + elog.getFunction() + "</td><td>" + elog.getProjectID() + "</td></tr>");
+				}
+				responseStream.println("</table>");
+				
 				responseStream.println("</body>");
 				} 
 				statusCode = HttpServletResponse.SC_OK;
