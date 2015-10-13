@@ -784,7 +784,7 @@ public interface EpadProjectOperations {
 	 * @param username
 	 * @return
 	 */
-	List<EventLog> getUseEventLogs(String username) throws Exception;
+	List<EventLog> getUseEventLogs(String username, int start, int count) throws Exception;
 
 	/**
 	 * Get reviewers for this user

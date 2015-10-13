@@ -2117,7 +2117,7 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
             	maxRecords = 5000;
             if (startRecord > 0)
             {
-                sql = sql + " LIMIT " + (startRecord+1) + "," + maxRecords;
+                sql = sql + " LIMIT " + (startRecord-1) + "," + maxRecords;
             }
             else
                stmt.setMaxRows(maxRecords);

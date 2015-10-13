@@ -2928,13 +2928,11 @@ public class DefaultEpadOperations implements EpadOperations
 		if (!loggedInUser.isAdmin() && !loggedInUserName.equals(username))
 			throw new Exception("No permissions for requested data");
 		EPADEventLogList elist = new EPADEventLogList();
-		List<EventLog> elogs = projectOperations.getUseEventLogs(username);
-		if (start == 1)
-			start = start--;
-		if (count > 0 && elogs.size() > (start+count))
-		{
-			elogs = elogs.subList(start, start+count);
-		}
+		List<EventLog> elogs = projectOperations.getUseEventLogs(username, start, count);
+//		if (count > 0 && elogs.size() > (start+count))
+//		{
+//			elogs = elogs.subList(start, start+count);
+//		}
 		for(EventLog elog: elogs)
 		{
 			EPADEventLog log = new EPADEventLog(this.formatDateTime(elog.getCreatedTime()), 
