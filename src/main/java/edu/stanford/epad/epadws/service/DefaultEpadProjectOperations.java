@@ -621,6 +621,7 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 			ptos.setSubjectId(subject.getId());
 			ptos.setCreator(loggedInUser);
 			ptos.save();
+			this.createEventLog(loggedInUser, projectId, subjectUID, null, null, null, null, null, "Added Patient to Project", null, false);
 		}
 		ProjectToSubjectToStudy pss = (ProjectToSubjectToStudy) new ProjectToSubjectToStudy().getObject("proj_subj_id = " + ptos.getId() + " and study_id=" + study.getId());
 		if (pss == null)

@@ -204,10 +204,10 @@ public class ServerStatusHandler extends AbstractHandler
 					recentLogs = DefaultEpadProjectOperations.getInstance().getUseEventLogs(username, 0, 25);
 				}
 				responseStream.println("<br><b>Event Logs: </b>");
-				responseStream.println("<br><table border=1 cellpadding=2><tr style='font-weight: bold;'><td align=center>Time</td><td align=center>User</td><td align=center>Action</td><td align=center>Project</td><td align=center>Target</td></tr>");
+				responseStream.println("<br><table border=1 cellpadding=2><tr style='font-weight: bold;'><td align=center>Time</td><td align=center>User</td><td align=center>Action</td><td align=center>Project</td><td align=center >Target</td></tr>");
 				for (EventLog elog: recentLogs)
 				{
-					responseStream.println("<tr><td>" + dateformat.format(elog.getCreatedTime()) + "</td><td>" + elog.getUsername() + "</td><td>" + elog.getFunction() + "</td><td>" + checkNull(elog.getProjectID(), "N/A") + "</td><td>" + checkNull(elog.getTarget(), "N/A") + "</td></tr>");
+					responseStream.println("<tr><td nowrap>" + dateformat.format(elog.getCreatedTime()) + "</td><td>" + elog.getUsername() + "</td><td nowrap>" + elog.getFunction() + "</td><td nowrap>" + checkNull(elog.getProjectID(), "N/A") + "</td><td><div style='width:100%; max-height:50px; overflow:auto'>" + checkNull(elog.getTarget(), "N/A") + "</div></td></tr>");
 				}
 				responseStream.println("</table>");
 				
