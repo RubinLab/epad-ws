@@ -341,7 +341,7 @@ public class UserProjectService {
 						continue;
 					}
 				}
-				projectOperations.updateUserTaskStatus(username, TaskStatus.TASK_ADD_TO_PROJECT, dicomUploadDirectory.getName(), "Files processed: " + i, null, null);
+				projectOperations.updateUserTaskStatus(username, TaskStatus.TASK_ADD_TO_PROJECT, projectID, dicomUploadDirectory.getName(), "Files processed: " + i, null, null);
 				if (createProjectEntitiesFromDICOMFile(dicomFile, projectID, sessionID, username))
 					numberOfDICOMFiles++;
 			} catch (Throwable x) {
