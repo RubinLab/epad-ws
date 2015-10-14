@@ -185,6 +185,7 @@ public class EpadStatisticsTask implements Runnable
 								}
 							}
 							if (skip) continue;
+							if (EPADConfig.xnatServer.indexOf("stanford") == -1)
 							epadDatabaseOperations.insertEpadEvent(
 									admin.getUsername(), 
 									msg, 
