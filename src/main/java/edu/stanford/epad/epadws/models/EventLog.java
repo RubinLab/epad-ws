@@ -180,15 +180,15 @@ public class EventLog extends AbstractDAO {
 		if (subjectUID != null)
 			t = t + subjectUID;
 		if (studyUID != null)
-			t = t + ":" + studyUID;
+			t = t + ": " + studyUID;
 		if (seriesUID != null)
-			t = t + ":" + seriesUID;
+			t = t + ": " + seriesUID;
 		if (aimID != null)
-			t = t + ":" + aimID;
+			t = t + ": " + aimID;
 		if (filename != null)
-			t = t + ":" + filename;
+			t = t + ": " + filename;
 		if (t.startsWith(":"))
-			t = t.substring(1);
+			t = t.substring(2);
 		return t;
 	}
 	
