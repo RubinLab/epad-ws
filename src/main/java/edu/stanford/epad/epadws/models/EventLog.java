@@ -175,6 +175,23 @@ public class EventLog extends AbstractDAO {
 		this.updateTime = updateTime;
 	}
 
+	public String getTarget() {
+		String t = "";
+		if (subjectUID != null)
+			t = t + subjectUID;
+		if (studyUID != null)
+			t = t + ": " + studyUID;
+		if (seriesUID != null)
+			t = t + ": " + seriesUID;
+		if (aimID != null)
+			t = t + ": " + aimID;
+		if (filename != null)
+			t = t + ": " + filename;
+		if (t.startsWith(":"))
+			t = t.substring(2);
+		return t;
+	}
+	
 	public final static String DBTABLE = "eventlog";
 	public final static String[][] DBCOLUMNS = {
         {"id","long","id","Id"},

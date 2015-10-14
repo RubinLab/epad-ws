@@ -185,15 +185,16 @@ public class EpadStatisticsTask implements Runnable
 								}
 							}
 							if (skip) continue;
-							epadDatabaseOperations.insertEpadEvent(
-									admin.getUsername(), 
-									msg, 
-									"System", "Upgrade",
-									"System", 
-									"Upgrade", 
-									"Upgrade", 
-									"Upgrade",
-									"Please update ePAD");												
+							if (EPADConfig.xnatServer.indexOf("stanford") == -1)
+								epadDatabaseOperations.insertEpadEvent(
+										admin.getUsername(), 
+										msg, 
+										"System", "Upgrade",
+										"System", 
+										"Upgrade", 
+										"Upgrade", 
+										"Upgrade",
+										"Please update ePAD");												
 						}
 					}
 				}

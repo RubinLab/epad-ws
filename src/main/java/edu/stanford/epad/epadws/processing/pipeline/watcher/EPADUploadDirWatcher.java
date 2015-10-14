@@ -296,7 +296,7 @@ public class EPADUploadDirWatcher implements Runnable
 						log.info("Files uploaded(should be at least two files): " + Arrays.toString(filePaths));
 						for (String currPath : filePaths) {
 							currPath = currPath.toLowerCase();
-							if (currPath.endsWith(".zip") || currPath.endsWith(".gz") || currPath.endsWith(".tar")) {
+							if (currPath.endsWith(".zip") || currPath.endsWith(".gz") || currPath.endsWith(".tar") || currPath.endsWith(".tgz")) {
 								hasZipFile = true;
 							}
 						}
@@ -322,7 +322,7 @@ public class EPADUploadDirWatcher implements Runnable
 				@Override
 				public boolean accept(File dir, String name)
 				{
-					return name.toLowerCase().endsWith(".zip") || name.toLowerCase().endsWith(".gz") || name.toLowerCase().endsWith(".tar");
+					return name.toLowerCase().endsWith(".zip") || name.toLowerCase().endsWith(".gz") || name.toLowerCase().endsWith(".tar") || name.toLowerCase().endsWith(".tgz");
 				}
 			});
 
@@ -360,7 +360,7 @@ public class EPADUploadDirWatcher implements Runnable
 		{
 			EPADFileUtils.extractFolder(zipFile.getAbsolutePath());
 		}
-		else if (zipFile.getName().toLowerCase().endsWith(".gz"))
+		else if (zipFile.getName().toLowerCase().endsWith(".gz") || zipFile.getName().toLowerCase().endsWith(".tgz"))
 		{
 			try
 			{
@@ -368,10 +368,22 @@ public class EPADUploadDirWatcher implements Runnable
 				String ungzName = zipFile.getName().substring(0, zipFile.getName().length()-3);
 				zipFile.delete();
 				File ungz = new File(zipFile.getParentFile(), ungzName);
+				if (ungz.exists() && !ungz.getName().contains("."))
+				{
+					ungz.renameTo(new File(zipFile.getParentFile(), ungzName + ".tar"));
+					ungz = new File(zipFile.getParentFile(), ungzName + ".tar");
+				}
+				else if (ungz.exists() && ungz.getName().endsWith("."))
+				{
+					ungz.renameTo(new File(zipFile.getParentFile(), ungzName + "tar"));
+					ungz = new File(zipFile.getParentFile(), ungzName + "tar");
+				}
+				log.debug("Lookin for tar:" + ungz.getAbsolutePath());
 				if (ungz.exists() && ungz.getName().toLowerCase().endsWith(".tar"))
 				{
-					File directory = new File(zipFile.getParentFile(), zipFile.getName().substring(0, zipFile.getName().lastIndexOf(".")));
+					File directory = new File(zipFile.getParentFile(), ungz.getName().substring(0, ungz.getName().lastIndexOf(".")));
 					directory.mkdirs();
+					log.debug("Untar directory:" +  directory.getAbsolutePath());
 					EPADFileUtils.unTar(ungz, directory);
 					String[] files = directory.list();
 					log.debug("Untarred " + files.length + " files");

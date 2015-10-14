@@ -491,7 +491,11 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		if (subject.getName() == null) subject.setName("");
 		if (dob != null) subject.setDob(dob);
 		if (gender != null && name.trim().length() > 0) subject.setGender(gender);
-		if (subject.getId() == 0) subject.setCreator(loggedInUser);
+		if (subject.getId() == 0)
+		{
+			subject.setCreator(loggedInUser);
+			this.createEventLog(loggedInUser, null, subjectUID, null, null, null, null, null, "Created Patient", null, false);
+		}
 		subject.save();
 		//subjectCache.put(subject.getSubjectUID(), subject);
 		return subject;
@@ -515,6 +519,7 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		{
 			study = new Study();
 			study.setCreator(loggedInUser);
+			this.createEventLog(loggedInUser, null, subjectUID, studyUID, null, null, null, null, "Created Study", null, false);
 		}
 		study.setStudyUID(studyUID);
 		study.setSubjectId(subject.getId());
@@ -542,6 +547,7 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 			if (dcm4cheeSeries != null)
 				throw new Exception("Series already exists in DCM4CHEE");
 			series = new NonDicomSeries();
+			this.createEventLog(loggedInUser, null, null, studyUID, seriesUID, null, null, null, "Created Study", null, false);
 		}
 		series.setSeriesUID(seriesUID);
 		series.setSeriesDate(seriesDate);
@@ -615,6 +621,7 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 			ptos.setSubjectId(subject.getId());
 			ptos.setCreator(loggedInUser);
 			ptos.save();
+			this.createEventLog(loggedInUser, projectId, subjectUID, null, null, null, null, null, "Added Patient to Project", null, false);
 		}
 		ProjectToSubjectToStudy pss = (ProjectToSubjectToStudy) new ProjectToSubjectToStudy().getObject("proj_subj_id = " + ptos.getId() + " and study_id=" + study.getId());
 		if (pss == null)

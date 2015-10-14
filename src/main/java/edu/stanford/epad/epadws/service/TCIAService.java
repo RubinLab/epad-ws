@@ -95,7 +95,7 @@ public class TCIAService  {
 			apiKey = key;
 		
 		String sharedListsConfig = EPADConfig.getParamValue(TCIA_SHAREDLISTS);
-		if (sharedLists != null && sharedListsConfig.trim().length() > 0)
+		if (sharedListsConfig != null && sharedListsConfig.trim().length() > 0)
 		{
 			String[] lists = sharedListsConfig.split(",");
 			for (String list: lists)
