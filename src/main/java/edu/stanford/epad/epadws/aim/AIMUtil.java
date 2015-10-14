@@ -325,6 +325,8 @@ public class AIMUtil
 		String description = Attribute.getSingleStringValueOrEmptyString(dsoDICOMAttributes, TagFromName.SeriesDescription);
 		// TODO: This call to get Referenced Image does not work ???
 		String[] referencedImageUID = Attribute.getStringValues(dsoDICOMAttributes, TagFromName.ReferencedSOPInstanceUID);
+		String[] segNums = SequenceAttribute.getArrayOfSingleStringValueOrEmptyStringOfNamedAttributeWithinSequenceItems(dsoDICOMAttributes, TagFromName.SegmentSequence, TagFromName.SegmentNumber);
+		if (segNums == null) segNums = new String[1];
 		Dcm4CheeDatabaseOperations dcm4CheeDatabaseOperations = Dcm4CheeDatabase.getInstance()
 				.getDcm4CheeDatabaseOperations();
 		SequenceAttribute referencedSeriesSequence =(SequenceAttribute)dsoDICOMAttributes.get(TagFromName.ReferencedSeriesSequence);
@@ -419,8 +421,12 @@ public class AIMUtil
 					}
 					else
 					{
-						dbOperations.addDSOAIM(username, imageReference, seriesUID, imageAnnotation.getUniqueIdentifier(),
+						aim = dbOperations.addDSOAIM(username, imageReference, seriesUID, imageAnnotation.getUniqueIdentifier(),
 								edu.stanford.hakan.aim4api.usage.AnnotationBuilder.convertToString(aim4), name);
+						if ((aim.color == null || aim.color.trim().length() == 0) && segNums.length > 1)
+						{
+							dbOperations.updateAIMColor(aim.aimID, ","); // Indicate multiple colors needed
+						}
 					}
 					if (missingproject)
 					{

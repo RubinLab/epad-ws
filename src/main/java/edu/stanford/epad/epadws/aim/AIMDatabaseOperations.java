@@ -730,6 +730,35 @@ public class AIMDatabaseOperations {
         return getAIMs(projectID, patientID, studyUID, seriesUID, imageUID, frameID, null, start, count);
     }
     
+	public static final String[] defaultColors = {
+		"#00ffff",
+		"#000fff",
+		"#0000ff",
+		"#80ffff",
+		"#c4ffff",
+		"#ff0000",
+		"#ff8080",
+		"#ff00ff",
+		"#00ff78",
+		"#00ff78",
+		"#ff00ff",
+		"#bbffbb",
+		"#ff8080",
+		"#ffff00",
+		"#ff00ff",
+		"#ff00ff",
+		"#ff0000",
+		"#ff8000",
+		"#00ff00",
+		"#ffc060",
+		"#4040ff",
+		"#00ff00",
+		"#a4a4ff",
+		"#dca078",
+		"#4040ff",
+		"#ff00ff",		
+	};
+	
     public List<EPADAIM> getAIMs(String projectID, String patientID, String studyUID, String seriesUID, String imageUID, int frameID, String dsoSeriesUID, int start, int count) throws SQLException {
         String sqlSelect = "SELECT UserLoginName, ProjectUID, PatientID, StudyUID, SeriesUID, ImageUID, frameID, AnnotationUID, DSOSeriesUID, DSOFRAMENO, XML, NAME, AIMCOLOR FROM annotations WHERE 1 = 1";
 		if (projectID != null && projectID.length() > 0)
@@ -784,6 +813,14 @@ public class AIMDatabaseOperations {
 				if (dsoFrameNo != null)
 					aim.dsoFrameNo = dsoFrameNo;
 				aims.add(aim);
+				if (aim.color == null || aim.color.trim().length() == 0)
+				{
+					aim.color = defaultColors[(row-1)%defaultColors.length];
+				}
+				else if (aim.color.equals(","))
+				{
+					aim.color = defaultColors[(row-1)%defaultColors.length] + "," + defaultColors[(row+5)%defaultColors.length];
+				}
 				if (row > start+count) break;
 			}
     	    log.debug("AIM Records " + aims.size());
@@ -829,6 +866,14 @@ public class AIMDatabaseOperations {
 				aim.xml = xml;
 				aim.name = name;
 				aim.color = color;
+				if (aim.color == null || aim.color.trim().length() == 0)
+				{
+					aim.color = defaultColors[(row-1)%defaultColors.length];
+				}
+				else if (aim.color.equals(","))
+				{
+					aim.color = defaultColors[(row-1)%defaultColors.length] + "," + defaultColors[(row+5)%defaultColors.length];
+				}
 				if (dsoFrameNo != null)
 					aim.dsoFrameNo = dsoFrameNo;
 				aims.add(aim);
