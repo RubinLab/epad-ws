@@ -172,6 +172,7 @@ public interface EpadProjectOperations {
 	void userWarningLog(String username, String message);
 	void userInfoLog(String username, String message);
 	void updateUserTaskStatus(String username, String type, String target, String status, Date startTime, Date completeTime);
+	void updateUserTaskStatus(String username, String type, String projectID, String target, String status, Date startTime, Date completeTime);
 	
 	void createEventLog(String username, String projectID, String subjectID, String studyUID, String seriesUID, String imageUID, String aimID, String function, String params);
 	void createEventLog(String username, String projectID, String subjectID, String studyUID, String seriesUID, String imageUID, String aimID, String filename, String function, String params, boolean error);

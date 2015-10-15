@@ -370,7 +370,7 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 	static SimpleDateFormat dateformat = new SimpleDateFormat("yyyyMMdd HH:mm:ss");
 	@Override
 	public void updateUserTaskStatus(String username, String type,
-			String target, String status, Date startTime, Date completeTime) {
+			String projectID, String target, String status, Date startTime, Date completeTime) {
 		if (username == null || username.length() == 0) return;
 		User user = null;
 		try {
@@ -379,7 +379,10 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		}
 		if (user != null) {
 			TaskStatus tstat = user.getTaskStatus(type, target);
-			if (tstat == null) tstat = new TaskStatus();
+			if (tstat == null)
+				tstat = new TaskStatus();
+			if (tstat.projectID == null)
+				tstat.projectID = projectID;
 			tstat.username = username;
 			tstat.status = status;
 			if (startTime != null)
@@ -393,6 +396,14 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 				tstat.starttime = tstat.statustime;
 			user.addTaskStatus(tstat);
 		}
+	}
+
+	@Override
+	public void updateUserTaskStatus(String username, String type,
+			String target, String status, Date startTime,
+			Date completeTime) {
+		updateUserTaskStatus(username, type,
+				null, target, status, startTime, completeTime);
 	}
 
 	@Override
@@ -1513,6 +1524,7 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		if (projectID != null && projectID.length() > 0)
 		{
 			Project project = getProject(projectID);
+			if (project == null) return new ArrayList<EpadFile>();
 			criteria = criteria + " and project_id = " + project.getId();
 		}
 		else if (toplevelOnly)
