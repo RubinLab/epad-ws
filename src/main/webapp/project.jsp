@@ -11,42 +11,92 @@
 <BODY bgcolor=white>
 <%
 			String sessionID = SessionService.getJSessionIDFromRequest(request);
-			String username = EPADSessionOperations.getSessionUser(sessionID);
+			String loggedInUser = EPADSessionOperations.getSessionUser(sessionID);
+			String projectID = request.getParameter("projectID");
 %>
+<h2>ProjectID: <%=projectID%></h2>
+<table border=1 cellpadding=2>
+<tr><td>Project ID:</td><td><input name=projectID id=projectID value="" size=30></td></tr>
+<tr><td>Name:</td><td><input name=projectName id=projectName value="" size=30></td></tr>
+<tr><td>Description:</td><td><input name=projectDescription id=projectDescription value="" size=30></td></tr>
+<tr><td>Public:</td><td><input name=public id=public value="" size=30></td></tr>
+<tr><td>Creator:</td><td><input readonly name=creator id=creator value="" size=30></td></tr>
+<tr><td align=center colspan=2><input type=button value=Save onclick="saveProject()"></td></tr>
+<div id=userdata></div>
 <table>
+<div id=logdata></div>
 </table>
 <script>
 $( document ).ready(function() {
-	var url = "<%=request.getContextPath()%>/v2/projects/?username=<%=username%>";
-	var patientIDFilter = getURLParamater("patientIDFilter");
-	//alert(patientIDFilter)
-	if (patientIDFilter != null && patientIDFilter != "")
-	{
-		url = url + "&patientIDFilter=" + patientIDFilter;
-	}
-	//alert(url);
+	var listdata;
+	var url = "<%=request.getContextPath()%>/v2/projects/<%=projectID%>";
+<% if (projectID != null && projectID.length() > 0 && !"new".equals(projectID)) { %>
 	$.ajax({         
-		url: url,         
+		url: url + "?username=<%=loggedInUser%>",         
 		type: 'get',         
 		async: false,         
 		cache: false,         
 		timeout: 30000,         
 		error: function(){
-			alert("Error getting projects");
+			alert("Error getting project:<%=projectID%>");
 			return true;},
 		success: function(response){
-			var projects = response.ResultSet.Result;
-			document.write("<table border=1><tr bgcolor=lightgray><td>Name</td><td>ID</td><td>Description</td><td>Subjects</td><td>Studies</td></tr>");
-			for (i = 0; i < projects.length; i++)
+			var project = response;
+			document.getElementById("projectID").value = project.id;
+			document.getElementById("projectName").value = project.name;
+			document.getElementById("projectDescription").value = project.description;
+			document.getElementById("projectID").value = project.projectID;
+			document.getElementById("creator").value = project.creator;
+			document.getElementById("public").value = project.public;
+			var projects = user.projects;
+			var roles = user.projectToRole;
+			for (i = 0; i < roles.length ; i++)
 			{
-				document.write("<tr><td><a href='images.jsp?projectID=" + projects[i].id + "' target='rightpanel'>" + projects[i].name + "</a></td><td>" + projects[i].id + "</td><td>"  +  projects[i].description + "</td><td>" + projects[i].numberOfSubjects + "</td><td>" + projects[i].numberOfStudies + "</tr>\n");
+				var html = html + "<table border=1 cellpadding=2><tr bgcolor=lightgray><td>Project</td><td>Role</td><td>Remove</td></tr>";
+				for (i = 0; i < roles.length; i++)
+			{
+					project = roles[i];
+					role = roles[i];
+					if (project.indexOf(":") != -1)
+					{
+						project = project.substring(0, project.indexOf(":"));
+						role = role.substring(role.indexOf(":")+1);
+					}
+					var line = "<tr><td>" + project + "</td><td>" + role + "</td><td><img height=20px src=delete.jpg onclick=\"remove('" + project + "')\"></td></tr>\n";
+					html = html + line;
 			}
-			document.write("</table>");
+				html = html + "</table>\n";
+		}
+			html = html + "</td></tr>\n";
+			html = html + "</table>\n";
+			document.getElementById("userdata").innerHTML = html;
 		}
 	});
+<% } %>
 
+	});
+
+   function saveProject()
+   {
+		var projectID =	document.getElementById("projectID").value;
+		var projectName =	document.getElementById("projectName").value;
+		var projectDescription =	document.getElementById("projectDescription").value;
+	   	var url = "<%=request.getContextPath()%>/v2/projects/" + escape(projectID) + "?projectName=" + escape(projectName) + "&projectDescription=" + escape(projectDescription);
+		$.ajax({         
+			url: url + "&username=<%=loggedInUser%>",         
+			type: 'put',         
+			async: false,         
+			cache: false,         
+			timeout: 30000,         
+			error: function(){
+				alert("Error saving project");
+				return true;},
+			success: function(response){
+				alert("Project saved");
+			}
    });
    
+   }
    function getURLParamater(sParam)
    {
 		var sPageURL = window.location.search.substring(1);

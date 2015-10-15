@@ -118,7 +118,7 @@ $( document ).ready(function() {
 		}
 	});
 
-	url = "<%=request.getContextPath()%>/v2/users/<%=username%>/eventlogs/?start=0&count=5";
+	url = "<%=request.getContextPath()%>/v2/users/<%=username%>/eventlogs/?start=0&count=10";
 	$.ajax({         
 		url: url + "&username=<%=loggedInUser%>",         
 		type: 'get',         
