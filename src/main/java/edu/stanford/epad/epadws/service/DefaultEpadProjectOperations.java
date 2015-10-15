@@ -1524,6 +1524,7 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		if (projectID != null && projectID.length() > 0)
 		{
 			Project project = getProject(projectID);
+			if (project == null) return new ArrayList<EpadFile>();
 			criteria = criteria + " and project_id = " + project.getId();
 		}
 		else if (toplevelOnly)
