@@ -1353,6 +1353,8 @@ public class DefaultEpadOperations implements EpadOperations
 	@Override
 	public int createFile(String username, ProjectReference projectReference,
 			File uploadedFile, String description, String fileType, String sessionID) throws Exception {
+		if (projectReference.projectID != null && projectReference.projectID.equals(EPADConfig.getParamValue("UnassignedProjectID", "nonassigned")))
+			throw new Exception("Files can not be uploaded to this project:" + projectReference.projectID);
 		projectOperations.createEventLog(username, projectReference.projectID, null, null, null, null, null, "CREATE FILE", description +":" + fileType);
 		if (fileType != null && fileType.equalsIgnoreCase("annotation")) {
 			if (AIMUtil.saveAIMAnnotation(uploadedFile, projectReference.projectID, sessionID, username))

@@ -226,6 +226,8 @@ public class UserProjectService {
 				propertiesFileStream = new FileInputStream(xnatUploadPropertiesFile);
 				xnatUploadProperties.load(propertiesFileStream);
 				String xnatProjectLabel = xnatUploadProperties.getProperty("XNATProjectName");
+				if (xnatProjectLabel != null && xnatProjectLabel.equals(EPADConfig.getParamValue("UnassignedProjectID", "nonassigned")))
+					throw new Exception("Files can not be uploaded to this project:" + xnatProjectLabel);
 				String xnatSessionID = xnatUploadProperties.getProperty("XNATSessionID");
 				xnatUserName = xnatUploadProperties.getProperty("XNATUserName");
 				String patientID = xnatUploadProperties.getProperty("SubjectName");
