@@ -232,6 +232,10 @@ public class PluginOperations {
 			if (project==null)
 				throw new Exception("Global project cannot be retrieved");
 		}
+		ProjectToPlugin projectPlugin = getProjectToPlugin(project.getProjectId(),plugin.getPluginId());
+		log.warning("PROJECT + PLUGIN "+ project.getProjectId() + " " + plugin.getPluginId() + " p2p " + projectPlugin);
+		if (projectPlugin==null || !projectPlugin.getEnabled()) //project not enabled
+			return null;
 		EPADPluginParameterList parameters=getParametersByProjectIdAndPlugin(project.getId(), plugin.getId());
 		
 		if (returnSummary){
