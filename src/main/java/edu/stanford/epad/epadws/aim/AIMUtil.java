@@ -655,10 +655,16 @@ public class AIMUtil
 			EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
             ImageAnnotationCollection imageAnnotationColl = AIMUtil.getImageAnnotationFromFileV4(aimFile, xsdFilePathV4);
             if (imageAnnotationColl == null) {
-        		List<Map<String, String>> coordinationTerms = epadDatabaseOperations.getCoordinationData("%");
+            	List<Map<String, String>> coordinationTerms = new ArrayList<Map<String, String>>();
+        		try
+        		{
+	            	coordinationTerms = epadDatabaseOperations.getCoordinationData("%");
+        		} catch (Exception x) {};
                 ImageAnnotationCollection iac = edu.stanford.hakan.aim4api.usage.AnnotationGetter.getImageAnnotationCollectionFromFile(aimFile.getAbsolutePath());
                 edu.stanford.hakan.aim4api.compability.aimv3.ImageAnnotation iaV3 = new  edu.stanford.hakan.aim4api.compability.aimv3.ImageAnnotation(iac);
                 imageAnnotationColl = iaV3.toAimV4(coordinationTerms);
+                if (imageAnnotationColl == null)
+                	log.warning("Unable to save aim:" + EPADFileUtils.readFileAsString(aimFile));
             }
             if (imageAnnotationColl != null) {
 				SegmentationEntityCollection sec = imageAnnotationColl.getImageAnnotations().get(0).getSegmentationEntityCollection();
@@ -758,8 +764,11 @@ public class AIMUtil
 				return false;
             } 
         } catch (Exception e) {
-			e.printStackTrace();
-			log.warning("Error saving annotation", e);
+        	try {
+        		log.warning("Error saving annotation:" + EPADFileUtils.readFileAsString(aimFile), e);
+        	} catch (Exception x) {
+				log.warning("Error saving annotation", e);
+        	}
 			throw new edu.stanford.hakan.aim4api.base.AimException(e.getMessage());
         }
 			
