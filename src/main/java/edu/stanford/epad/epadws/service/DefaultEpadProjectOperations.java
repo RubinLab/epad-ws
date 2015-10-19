@@ -25,6 +25,7 @@ package edu.stanford.epad.epadws.service;
 //USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import java.io.File;
+import java.net.InetAddress;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -36,16 +37,19 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.commons.io.FileUtils;
-import org.apache.log4j.Level;
 import org.mindrot.jbcrypt.BCrypt;
 
 import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.epad.dtos.TaskStatus;
 import edu.stanford.epad.dtos.internal.DCM4CHEESeries;
+import edu.stanford.epad.epadws.aim.AIMDatabaseOperations;
 import edu.stanford.epad.epadws.epaddb.DatabaseUtils;
+import edu.stanford.epad.epadws.epaddb.EpadDatabase;
+import edu.stanford.epad.epadws.epaddb.EpadDatabaseOperations;
 import edu.stanford.epad.epadws.models.DisabledTemplate;
 import edu.stanford.epad.epadws.models.EpadFile;
+import edu.stanford.epad.epadws.models.EpadStatistics;
 import edu.stanford.epad.epadws.models.EventLog;
 import edu.stanford.epad.epadws.models.FileType;
 import edu.stanford.epad.epadws.models.NonDicomSeries;
@@ -56,12 +60,13 @@ import edu.stanford.epad.epadws.models.ProjectToSubjectToStudy;
 import edu.stanford.epad.epadws.models.ProjectToSubjectToUser;
 import edu.stanford.epad.epadws.models.ProjectToUser;
 import edu.stanford.epad.epadws.models.ProjectType;
+import edu.stanford.epad.epadws.models.RemotePACQuery;
 import edu.stanford.epad.epadws.models.ReviewerToReviewee;
 import edu.stanford.epad.epadws.models.Study;
 import edu.stanford.epad.epadws.models.Subject;
 import edu.stanford.epad.epadws.models.User;
-import edu.stanford.epad.epadws.models.User.MessageLog;
 import edu.stanford.epad.epadws.models.UserRole;
+import edu.stanford.epad.epadws.models.WorkList;
 import edu.stanford.epad.epadws.models.WorkListToStudy;
 import edu.stanford.epad.epadws.models.WorkListToSubject;
 import edu.stanford.epad.epadws.models.dao.AbstractDAO;
@@ -340,33 +345,6 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		}
 	}
 
-	@Override
-	public void userErrorLog(String username, String message) {
-		try {
-			User user = getUser(username);
-			if (user != null)
-				user.addMessageLog(Level.ERROR, message);
-		} catch (Exception e) {	}
-	}
-
-	@Override
-	public void userWarningLog(String username, String message) {
-		try {
-			User user = getUser(username);
-			if (user != null)
-				user.addMessageLog(Level.WARN, message);
-		} catch (Exception e) {	}
-	}
-
-	@Override
-	public void userInfoLog(String username, String message) {
-		try {
-			User user = getUser(username);
-			if (user != null)
-				user.addMessageLog(Level.INFO, message);
-		} catch (Exception e) {	}
-	}
-
 	static SimpleDateFormat dateformat = new SimpleDateFormat("yyyyMMdd HH:mm:ss");
 	@Override
 	public void updateUserTaskStatus(String username, String type,
@@ -404,6 +382,53 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 			Date completeTime) {
 		updateUserTaskStatus(username, type,
 				null, target, status, startTime, completeTime);
+	}
+
+	@Override
+	public EpadStatistics getUserStatistics(String loggedInUser,
+			String username, boolean exceptionOnErr) throws Exception {
+		User user = getUser(username);
+		if (!loggedInUser.equals(username) && !loggedInUser.equals(user.getCreator()) && !isAdmin(loggedInUser))
+		{
+			if (exceptionOnErr)
+				throw new Exception("No permission to get user " + username + " statistics");
+			else
+				return null;
+		}
+		try
+		{
+			EpadStatistics es = new EpadStatistics();
+			int projects = this.getProjectsForUser(username).size();
+			int users = new User().getCount("Creator == '" + username + "'")+1;
+			int patients = new Subject().getCount("Creator == '" + username + "'");
+			int studies = new Study().getCount("Creator == '" + username + "'");
+			int files = new EpadFile().getCount("Creator == '" + username + "'");
+			EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
+			int aims = epadDatabaseOperations.getNumberOfAIMs(AIMDatabaseOperations.aimcol_username + " = '" + username + "'");
+			int dsos = epadDatabaseOperations.getNumberOfAIMs("DSOSeriesUID is not null or DSOSeriesUID != '' and " + AIMDatabaseOperations.aimcol_username + " = '" + username + "'");
+			int pacQueries = new RemotePACQuery().getCount("");
+			int wls = new WorkList().getCount("user_id =" + user.getId());
+			String host = EPADConfig.xnatServer;
+			es.setHost(host);
+			es.setNumOfUsers(users);
+			es.setNumOfProjects(projects);
+			es.setNumOfPatients(patients);
+			es.setNumOfStudies(studies);
+			es.setNumOfAims(aims);
+			es.setNumOfDSOs(dsos);
+			es.setNumOfWorkLists(wls);
+			es.setNumOfAutoQueries(pacQueries);
+			es.setNumOfFiles(files);
+			es.setCreator("admin");
+			return es;
+		}
+		catch (Exception x)
+		{
+			if (exceptionOnErr)
+				throw x;
+			else
+				return null;
+		}
 	}
 
 	@Override
@@ -1905,20 +1930,6 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		NonDicomSeries nds = (NonDicomSeries) new NonDicomSeries().getObject("seriesUID = " + NonDicomSeries.toSQL(seriesUID));
 		if (nds != null)
 			nds.delete();
-	}
-
-	/* (non-Javadoc)
-	 * @see edu.stanford.epad.epadws.service.EpadProjectOperations#getUserLogs(java.lang.String)
-	 */
-	@Override
-	public List<MessageLog> getUserMessages(String username) {
-		try {
-			User user = getUser(username);
-			if (user != null)
-				return user.getMessageLogs();
-		} catch (Exception e) {
-		}
-		return null;
 	}
 
 	@Override

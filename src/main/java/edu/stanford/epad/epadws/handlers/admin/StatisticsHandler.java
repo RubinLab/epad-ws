@@ -76,6 +76,7 @@ public class StatisticsHandler extends AbstractHandler
 						int aims = getInt(httpRequest.getParameter("numOfAims"));
 						int dsos = getInt(httpRequest.getParameter("numOfDSOs"));
 						int wls = getInt(httpRequest.getParameter("numOfWorkLists"));
+						int files = getInt(httpRequest.getParameter("numOfFiles"));
 						String remoteIP = request.getRemoteAddr();
 						if (!remoteIP.startsWith("127.") && !remoteIP.startsWith("0:"))
 							es.setHost(host + " : " + remoteIP);
@@ -87,6 +88,7 @@ public class StatisticsHandler extends AbstractHandler
 						es.setNumOfAims(aims);
 						es.setNumOfDSOs(dsos);
 						es.setNumOfWorkLists(wls);
+						es.setNumOfFiles(files);
 						es.setCreator("admin");
 						es.save();
 					}

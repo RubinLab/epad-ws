@@ -97,7 +97,7 @@ public class ResourcesFileHandler extends AbstractHandler
 						    EPADFileUtils.sendFile(request, httpResponse, file, name, false);
 						} else {
 							statusCode = HandlerUtil.badRequestResponse(MISSING_QUERY_MESSAGE, log);
-							log.warning("Missing Wado query");
+							log.warning("Missing Resource Path");
 						}
 					} else {
 						statusCode = HandlerUtil.invalidTokenResponse(INVALID_SESSION_TOKEN_MESSAGE, log);

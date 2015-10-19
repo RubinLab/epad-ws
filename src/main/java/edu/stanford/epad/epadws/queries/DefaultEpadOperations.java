@@ -30,7 +30,6 @@ import ij.process.ImageProcessor;
 import ij.process.ImageStatistics;
 
 import java.io.File;
-import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -52,7 +51,6 @@ import org.json.XML;
 
 import com.pixelmed.dicom.ImageToDicom;
 import com.pixelmed.dicom.SOPClass;
-import com.pixelmed.dicom.TagFromName;
 import com.pixelmed.dicom.UIDGenerator;
 
 import edu.stanford.epad.common.dicom.DCM4CHEEImageDescription;
@@ -73,8 +71,6 @@ import edu.stanford.epad.dtos.EPADFrame;
 import edu.stanford.epad.dtos.EPADFrameList;
 import edu.stanford.epad.dtos.EPADImage;
 import edu.stanford.epad.dtos.EPADImageList;
-import edu.stanford.epad.dtos.EPADMessage;
-import edu.stanford.epad.dtos.EPADMessageList;
 import edu.stanford.epad.dtos.EPADObjectList;
 import edu.stanford.epad.dtos.EPADProject;
 import edu.stanford.epad.dtos.EPADProjectList;
@@ -106,12 +102,8 @@ import edu.stanford.epad.dtos.internal.DCM4CHEEStudy;
 import edu.stanford.epad.dtos.internal.DCM4CHEEStudyList;
 import edu.stanford.epad.dtos.internal.DICOMElement;
 import edu.stanford.epad.dtos.internal.DICOMElementList;
-import edu.stanford.epad.dtos.internal.XNATExperiment;
 import edu.stanford.epad.dtos.internal.XNATProject;
-import edu.stanford.epad.dtos.internal.XNATProjectList;
 import edu.stanford.epad.dtos.internal.XNATSubject;
-import edu.stanford.epad.dtos.internal.XNATSubjectList;
-import edu.stanford.epad.dtos.internal.XNATUser;
 import edu.stanford.epad.dtos.internal.XNATUserList;
 import edu.stanford.epad.epadws.aim.AIMQueries;
 import edu.stanford.epad.epadws.aim.AIMSearchType;
@@ -140,13 +132,11 @@ import edu.stanford.epad.epadws.models.ProjectType;
 import edu.stanford.epad.epadws.models.Study;
 import edu.stanford.epad.epadws.models.Subject;
 import edu.stanford.epad.epadws.models.User;
-import edu.stanford.epad.epadws.models.User.MessageLog;
 import edu.stanford.epad.epadws.models.UserRole;
 import edu.stanford.epad.epadws.models.WorkList;
 import edu.stanford.epad.epadws.models.WorkListToStudy;
 import edu.stanford.epad.epadws.models.WorkListToSubject;
 import edu.stanford.epad.epadws.processing.pipeline.task.DSOEvaluationTask;
-import edu.stanford.epad.epadws.processing.pipeline.task.ProjectDataDeleteTask;
 import edu.stanford.epad.epadws.processing.pipeline.task.StudyDataDeleteTask;
 import edu.stanford.epad.epadws.processing.pipeline.task.SubjectDataDeleteTask;
 import edu.stanford.epad.epadws.processing.pipeline.watcher.Dcm4CheeDatabaseWatcher;
@@ -158,7 +148,6 @@ import edu.stanford.epad.epadws.service.DefaultWorkListOperations;
 import edu.stanford.epad.epadws.service.EpadProjectOperations;
 import edu.stanford.epad.epadws.service.EpadWorkListOperations;
 import edu.stanford.epad.epadws.service.UserProjectService;
-import edu.stanford.epad.epadws.xnat.XNATCreationOperations;
 import edu.stanford.epad.epadws.xnat.XNATDeletionOperations;
 import edu.stanford.epad.epadws.xnat.XNATUtil;
 import edu.stanford.hakan.aim4api.compability.aimv3.ImageAnnotation;
@@ -323,7 +312,8 @@ public class DefaultEpadOperations implements EpadOperations
 		List<Subject> subjects = projectOperations.getUnassignSubjects();
 		for (Subject subject : subjects) {
 			EPADSubject epadSubject = subject2EPADSubject(sessionID, username, subject, EPADConfig.xnatUploadProjectID, searchFilter, false);
-			epadSubjectList.addEPADSubject(epadSubject);
+			if (epadSubject != null)
+				epadSubjectList.addEPADSubject(epadSubject);
 		}
 
 		return epadSubjectList;
@@ -3946,7 +3936,7 @@ public class DefaultEpadOperations implements EpadOperations
 	}
 
 	@Override
-	public EPADUserList getUserDescriptions(String username, String sessionID)
+	public EPADUserList getUserDescriptions(String username, String sessionID, boolean returnUsage)
 			throws Exception {
 		EPADUserList userlist = new EPADUserList();
 		List<User> users = projectOperations.getAllUsers();
@@ -3972,15 +3962,33 @@ public class DefaultEpadOperations implements EpadOperations
 			if (projectOperations.isAdmin(username) || username.equals(user.getUsername()) || username.equals(user.getCreator()))
 			{
 				EPADUser epadUser = new EPADUser(user.getFullName(), user.getUsername(), 
-						user.getFirstName(), user.getLastName(), user.getEmail(), user.isEnabled(), user.isAdmin(), user.isPasswordExpired(), "", permissions, projects, projectToRole, null);
+						user.getFirstName(), user.getLastName(), user.getEmail(), user.isEnabled(), user.isAdmin(), user.isPasswordExpired(), "", permissions, projects, projectToRole);
 				epadUser.colorpreference = user.getColorpreference();
+				if (returnUsage)
+				{
+					EpadStatistics userStats = projectOperations.getUserStatistics(username, user.getUsername(), false);
+					if (userStats != null)
+						epadUser.usage = new EPADUsage(userStats.getHost(), userStats.getNumOfUsers(), userStats.getNumOfProjects(),
+							userStats.getNumOfPatients(), userStats.getNumOfStudies(), userStats.getNumOfSeries(),
+							userStats.getNumOfAims(), userStats.getNumOfDSOs(), userStats.getNumOfPacs(), userStats.getNumOfAutoQueries(),
+							userStats.getNumOfWorkLists(), userStats.getNumOfFiles(), dateformat.format(new Date()));
+				}
 				userlist.addEPADUser(epadUser);
 			}
 			else
 			{
 				EPADUser epadUser = new EPADUser(user.getFullName(), user.getUsername(), 
-						user.getFirstName(), user.getLastName(), "******", user.isEnabled(), user.isAdmin(), user.isPasswordExpired(), "", permissions, projects, projectToRole, null);
+						user.getFirstName(), user.getLastName(), "******", user.isEnabled(), user.isAdmin(), user.isPasswordExpired(), "", permissions, projects, projectToRole);
 				epadUser.colorpreference = user.getColorpreference();
+				if (returnUsage)
+				{
+					EpadStatistics userStats = projectOperations.getUserStatistics(username, user.getUsername(), false);
+					if (userStats != null)
+						epadUser.usage = new EPADUsage(userStats.getHost(), userStats.getNumOfUsers(), userStats.getNumOfProjects(),
+							userStats.getNumOfPatients(), userStats.getNumOfStudies(), userStats.getNumOfSeries(),
+							userStats.getNumOfAims(), userStats.getNumOfDSOs(), userStats.getNumOfPacs(), userStats.getNumOfAutoQueries(),
+							userStats.getNumOfWorkLists(), userStats.getNumOfFiles(), dateformat.format(new Date()));
+				}
 				userlist.addEPADUser(epadUser);
 			}
 		}
@@ -3989,18 +3997,11 @@ public class DefaultEpadOperations implements EpadOperations
 
 	@Override
 	public EPADUser getUserDescription(String loggedInusername,
-			String username, String sessionID) throws Exception {
+			String username, String sessionID, boolean returnUsage) throws Exception {
 		User user = projectOperations.getUser(username);
 		if (user == null) {
 			user = projectOperations.getUserByEmail(username);
 			if (user == null) return null;
-		}
-		List<MessageLog> logs = user.getMessageLogs();
-		EPADMessageList messages = new EPADMessageList();
-		for (MessageLog log: logs)
-		{
-			EPADMessage emsg = new EPADMessage(log.date, log.message, log.level);
-			messages.addEPADMessage(emsg);
 		}
 		Set<String> permissions = new HashSet<String>();
 		String[] perms = user.getPermissions().split(",");
@@ -4024,14 +4025,32 @@ public class DefaultEpadOperations implements EpadOperations
 		if (projectOperations.isAdmin(loggedInusername) || loggedInusername.equals(user.getUsername()) || loggedInusername.equals(user.getCreator()))
 		{
 			epadUser = new EPADUser(user.getFullName(), user.getUsername(), 
-					user.getFirstName(), user.getLastName(), user.getEmail(), user.isEnabled(), user.isAdmin(), user.isPasswordExpired(), "", permissions, projects, projectToRole, messages);
+					user.getFirstName(), user.getLastName(), user.getEmail(), user.isEnabled(), user.isAdmin(), user.isPasswordExpired(), "", permissions, projects, projectToRole);
 			epadUser.colorpreference = user.getColorpreference();
+			if (returnUsage)
+			{
+				EpadStatistics userStats = projectOperations.getUserStatistics(username, user.getUsername(), false);
+				if (userStats != null)
+					epadUser.usage = new EPADUsage(userStats.getHost(), userStats.getNumOfUsers(), userStats.getNumOfProjects(),
+						userStats.getNumOfPatients(), userStats.getNumOfStudies(), userStats.getNumOfSeries(),
+						userStats.getNumOfAims(), userStats.getNumOfDSOs(), userStats.getNumOfPacs(), userStats.getNumOfAutoQueries(),
+						userStats.getNumOfWorkLists(), userStats.getNumOfFiles(), dateformat.format(new Date()));
+			}
 		}
 		else
 		{
 			epadUser = new EPADUser(user.getFullName(), user.getUsername(), 
-				user.getFirstName(), user.getLastName(), "******", user.isEnabled(), user.isAdmin(), user.isPasswordExpired(), "", permissions, projects, projectToRole, messages);
+				user.getFirstName(), user.getLastName(), "******", user.isEnabled(), user.isAdmin(), user.isPasswordExpired(), "", permissions, projects, projectToRole);
 			epadUser.colorpreference = user.getColorpreference();
+			if (returnUsage)
+			{
+				EpadStatistics userStats = projectOperations.getUserStatistics(username, user.getUsername(), false);
+				if (userStats != null)
+					epadUser.usage = new EPADUsage(userStats.getHost(), userStats.getNumOfUsers(), userStats.getNumOfProjects(),
+						userStats.getNumOfPatients(), userStats.getNumOfStudies(), userStats.getNumOfSeries(),
+						userStats.getNumOfAims(), userStats.getNumOfDSOs(), userStats.getNumOfPacs(), userStats.getNumOfAutoQueries(),
+						userStats.getNumOfWorkLists(), userStats.getNumOfFiles(), dateformat.format(new Date()));
+			}
 		}
 		return epadUser;
 

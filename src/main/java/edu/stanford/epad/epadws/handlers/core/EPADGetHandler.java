@@ -1104,14 +1104,16 @@ public class EPADGetHandler
 				statusCode = HttpServletResponse.SC_OK;
 
 			} else if (HandlerUtil.matchesTemplate(UsersRouteTemplates.USER_LIST, pathInfo)) {
-				EPADUserList userlist = epadOperations.getUserDescriptions(username, sessionID);
+				boolean usage = "true".equalsIgnoreCase(httpRequest.getParameter("includeSystemUsage"));
+				EPADUserList userlist = epadOperations.getUserDescriptions(username, sessionID, usage);
 				responseStream.append(userlist.toJSON());
 				statusCode = HttpServletResponse.SC_OK;
 
 			} else if (HandlerUtil.matchesTemplate(UsersRouteTemplates.USER, pathInfo)) {
 				Map<String, String> templateMap = HandlerUtil.getTemplateMap(UsersRouteTemplates.USER, pathInfo);
 				String return_username = HandlerUtil.getTemplateParameter(templateMap, "username");
-				EPADUser user = epadOperations.getUserDescription(username, return_username, sessionID);
+				boolean usage = "true".equalsIgnoreCase(httpRequest.getParameter("includeSystemUsage"));
+				EPADUser user = epadOperations.getUserDescription(username, return_username, sessionID, usage);
 				responseStream.append(user.toJSON());
 				statusCode = HttpServletResponse.SC_OK;
 

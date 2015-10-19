@@ -47,6 +47,7 @@ public class EpadStatistics extends AbstractDAO {
 	int numOfPacs;
 	int numOfAutoQueries;
 	int numOfWorkLists;
+	int numOfFiles;
 	
 	String creator;
 	Date createdTime;
@@ -149,6 +150,14 @@ public class EpadStatistics extends AbstractDAO {
 		this.numOfAutoQueries = numOfAutoQueries;
 	}
 
+	public int getNumOfFiles() {
+		return numOfFiles;
+	}
+
+	public void setNumOfFiles(int numOfFiles) {
+		this.numOfFiles = numOfFiles;
+	}
+
 	public String getCreator() {
 		return creator;
 	}
@@ -184,6 +193,7 @@ public class EpadStatistics extends AbstractDAO {
 		numOfPacs = numOfPacs + other.getNumOfPacs();
 		numOfAutoQueries = numOfAutoQueries + other.getNumOfAutoQueries();
 		numOfWorkLists = numOfWorkLists + other.getNumOfWorkLists();
+		numOfFiles = numOfFiles + other.getNumOfFiles();
 	}
 	
 	public final static String DBTABLE = "epadstatistics";
@@ -200,6 +210,7 @@ public class EpadStatistics extends AbstractDAO {
 		{"numOfWorkLists","int","numOfWorkLists","Integer"},
 		{"numOfPacs","int","numOfPacs","Integer"},
 		{"numOfAutoQueries","int","numOfAutoQueries","Integer"},
+		{"numOfFiles","int","numOfFiles","Integer"},
         {"creator","String","creator","varchar"},
         {"createdTime","Date","createdtime","timestamp"},
         {"updateTime","Date","updatetime","timestamp"},

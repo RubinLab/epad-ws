@@ -48,7 +48,7 @@ public class CleanupTempTask implements Runnable
 		File[] files = tmp.listFiles();
 		for (File file: files)
 		{
-			if (file.getName().endsWith(".tmp"))
+			if (file.getName().contains(".tmp") || file.getName().endsWith(".dcm") || file.getName().endsWith(".dso"))
 			{
 		        try
 		        {

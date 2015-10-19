@@ -55,7 +55,6 @@ public class User extends AbstractDAO {
 	Date updateTime;
 	
 	transient String role;  // Only valid within context of a project
-	transient List<MessageLog> messageLogs = new ArrayList<MessageLog>();
 	transient Map<String, String> projectToRole; // List of projects and the user's role in them
 	transient Map<String, TaskStatus> currentTasks = new TreeMap<String, TaskStatus>();
 	
@@ -64,20 +63,6 @@ public class User extends AbstractDAO {
 	public static final String CreateUserPermission = "CreateUser";
 	public static final String CreatePACPermission = "CreatePAC";
 	public static final String CreateAutoPACQueryPermission = "CreateAutoPACQuery";
-	
-	public static final class MessageLog
-	{
-		public final Date date;
-		public final Level level;
-		public final String message;		
-
-		public MessageLog(Level level, String message)
-		{
-			this.level = level;
-			this.message = message;
-			this.date = new Date();
-		}
-	}
 	
 	@Override
 	public long getId() {
@@ -227,20 +212,6 @@ public class User extends AbstractDAO {
 
 	public void setProjectToRole(Map<String, String> projectToRole) {
 		this.projectToRole = projectToRole;
-	}
-
-	public List<MessageLog> getMessageLogs() {
-		return messageLogs;
-	}
-
-	public void setMessageLogs(List<MessageLog> messageLogs) {
-		this.messageLogs = messageLogs;
-	}
-
-	public void addMessageLog(Level level, String message)
-	{
-		MessageLog el = new MessageLog(level, message);
-		messageLogs.add(el);
 	}
 	
 	public Map<String, TaskStatus> getCurrentTasks() {

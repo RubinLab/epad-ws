@@ -251,7 +251,7 @@ public interface EpadOperations
 	 * @return
 	 * @throws Exception
 	 */
-	EPADUserList getUserDescriptions(String username, String sessionID) throws Exception;
+	EPADUserList getUserDescriptions(String username, String sessionID, boolean usage) throws Exception;
 
 	/**
 	 * Get description for a user
@@ -261,7 +261,7 @@ public interface EpadOperations
 	 * @return
 	 * @throws Exception
 	 */
-	EPADUser getUserDescription(String loggedInusername, String username, String sessionID) throws Exception;
+	EPADUser getUserDescription(String loggedInusername, String username, String sessionID, boolean usage) throws Exception;
 
 	/**
 	 * Get users who can review annotations for a reader

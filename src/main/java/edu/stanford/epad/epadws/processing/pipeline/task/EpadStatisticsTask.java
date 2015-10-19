@@ -44,6 +44,7 @@ import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.epad.epadws.EPadWebServerVersion;
 import edu.stanford.epad.epadws.epaddb.EpadDatabase;
 import edu.stanford.epad.epadws.epaddb.EpadDatabaseOperations;
+import edu.stanford.epad.epadws.models.EpadFile;
 import edu.stanford.epad.epadws.models.EpadStatistics;
 import edu.stanford.epad.epadws.models.Project;
 import edu.stanford.epad.epadws.models.RemotePACQuery;
@@ -51,7 +52,6 @@ import edu.stanford.epad.epadws.models.Study;
 import edu.stanford.epad.epadws.models.Subject;
 import edu.stanford.epad.epadws.models.User;
 import edu.stanford.epad.epadws.models.WorkList;
-import edu.stanford.epad.epadws.security.EPADSessionOperations;
 import edu.stanford.epad.epadws.service.RemotePACService;
 
 /**
@@ -79,6 +79,7 @@ public class EpadStatisticsTask implements Runnable
 			int projects = new Project().getCount("");
 			int patients = new Subject().getCount("");
 			int studies = new Study().getCount("");
+			int files = new EpadFile().getCount("");
 			int series = epadDatabaseOperations.getNumberOfSeries();
 			int npacs = RemotePACService.getInstance().getRemotePACs().size();
 			int aims = epadDatabaseOperations.getNumberOfAIMs("1 = 1");
@@ -108,6 +109,7 @@ public class EpadStatisticsTask implements Runnable
 			es.setNumOfWorkLists(wls);
 			es.setNumOfPacs(npacs);
 			es.setNumOfAutoQueries(pacQueries);
+			es.setNumOfFiles(files);
 			es.setCreator("admin");
 			es.save();
 			Calendar now = Calendar.getInstance();
@@ -130,6 +132,7 @@ public class EpadStatisticsTask implements Runnable
 					epadUrl = epadUrl + "&numOfAims=" + aims;
 					epadUrl = epadUrl + "&numOfDSOs=" + dsos;
 					epadUrl = epadUrl + "&numOfWorkLists=" + wls;
+					epadUrl = epadUrl + "&numOfFiles=" + files;
 					epadUrl = epadUrl + "&host=" + host;
 					HttpClient client = new HttpClient();
 					PutMethod putMethod = new PutMethod(epadUrl);
@@ -188,13 +191,13 @@ public class EpadStatisticsTask implements Runnable
 							if (EPADConfig.xnatServer.indexOf("stanford") == -1)
 								epadDatabaseOperations.insertEpadEvent(
 										admin.getUsername(), 
-										msg, 
-										"System", "Upgrade",
-										"System", 
-										"Upgrade", 
-										"Upgrade", 
-										"Upgrade",
-										"Please update ePAD");												
+										msg,  // Message
+										"System", "Upgrade", // aimUID, aimName
+										"System", // patient ID
+										"Upgrade", // patient Name
+										"Upgrade", // templateID
+										"Upgrade", // templateName
+										"Please update ePAD");	// PluginName
 						}
 					}
 				}

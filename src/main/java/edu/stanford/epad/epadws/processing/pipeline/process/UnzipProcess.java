@@ -33,7 +33,9 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import edu.stanford.epad.epadws.processing.pipeline.task.UnzipTask;
-
+/* 
+ * Note: This class does not appear to be in use - delete?
+ */
 public class UnzipProcess extends AbstractPipelineProcess<List<File>>
 {
 	public UnzipProcess(ExecutorService unzipExec, BlockingQueue<File> unzipQueue, BlockingQueue<File> tagQueue)

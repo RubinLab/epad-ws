@@ -83,6 +83,11 @@ public class AIMDatabaseOperations {
         this.existUserPassword = existUserPassword;
         this.mySqlConnection = mySqlConnection;
     }
+    
+    public static final String aimcol_username = "UserLoginName";
+    public static final String aimcol_subjectID = "PatientID";
+    public static final String aimcol_projectID = "ProjectUID";
+    public static final String aimcol_aimID = "AnnotationUID";
 
     public void createAnnotationsTable() throws SQLException {
        String sqlCreateTable = "CREATE TABLE IF NOT EXISTS `" + ANNOTATIONS_TABLE + "` (\n"
