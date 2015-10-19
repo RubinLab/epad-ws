@@ -244,7 +244,6 @@ public class EPADUploadDirWatcher implements Runnable
 						username, 
 						"Error processing uploaded file:" + zipName, 
 						zipName, "", zipName, zipName, zipName, zipName, "Upload Error:" + e.getMessage());
-				projectOperations.userErrorLog(username, "Error processing zip file:" + zipName);
 			}
 			writeExceptionLog(directory, e);
 			projectOperations.updateUserTaskStatus(username, TaskStatus.TASK_UPLOAD, directory.getName(), "Failed upload:" + e.getMessage(), null, new Date());
@@ -423,7 +422,6 @@ public class EPADUploadDirWatcher implements Runnable
 				count = getInt(username.substring(username.lastIndexOf(":")+1));
 				username = username.substring(0, username.lastIndexOf(":"));
 			}
-			projectOperations.userInfoLog(username, "Sending DICOM files in upload directory " + directory.getAbsolutePath() + " to DCM4CHEE");
 			if (count < 5000) {
 				log.info("Sending DICOM files in upload directory " + directory.getAbsolutePath() + " to DCM4CHEE, number of files:" + count);
 				projectOperations.updateUserTaskStatus(username, TaskStatus.TASK_DCM4CHE_SEND, directory.getName(), "Started push", new Date(), null);
@@ -482,7 +480,7 @@ public class EPADUploadDirWatcher implements Runnable
 							username, 
 							"Errors in sending " + errcnt + " DICOM files to DCM4CHEE", 
 							"Dicoms", "Dicoms", "Dicoms", "Dicoms", "Dicoms", "Dicoms", "Error Processing Upload");					
-					projectOperations.userErrorLog(username, "Error sending " + errcnt + " DICOM files to DCM4CHEE");
+					projectOperations.createEventLog(username, null, null, null, null, null, null, directory.getName(), "DCM4CHEE SEND", "Error sending " + errcnt + " DICOM files to DCM4CHEE", true);
 				}
 			}
 		} catch (Exception x) {
@@ -493,7 +491,7 @@ public class EPADUploadDirWatcher implements Runnable
 					username, 
 					"Error sending DICOM files to DCM4CHEE", 
 					"Dicoms", "Dicoms", "Dicoms", "Dicoms", "Dicoms", "Dicoms", "Error Processing Upload");					
-			projectOperations.userErrorLog(username, "Error sending DICOM files to DCM4CHEE:" + x);
+			projectOperations.createEventLog(username, null, null, null, null, null, null, directory.getName(), "DCM4CHEE SEND", "Error sending DICOM files to DCM4CHEE", true);
 		}
 		try {
 			EpadDatabaseOperations databaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();	
