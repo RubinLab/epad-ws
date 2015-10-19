@@ -48,6 +48,8 @@ public class EpadStatistics extends AbstractDAO {
 	int numOfAutoQueries;
 	int numOfWorkLists;
 	int numOfFiles;
+	int numOfTemplates;
+	int numOfPlugins;
 	
 	String creator;
 	Date createdTime;
@@ -158,6 +160,22 @@ public class EpadStatistics extends AbstractDAO {
 		this.numOfFiles = numOfFiles;
 	}
 
+	public int getNumOfTemplates() {
+		return numOfTemplates;
+	}
+
+	public void setNumOfTemplates(int numOfTemplates) {
+		this.numOfTemplates = numOfTemplates;
+	}
+
+	public int getNumOfPlugins() {
+		return numOfPlugins;
+	}
+
+	public void setNumOfPlugins(int numOfPlugins) {
+		this.numOfPlugins = numOfPlugins;
+	}
+
 	public String getCreator() {
 		return creator;
 	}
@@ -194,6 +212,8 @@ public class EpadStatistics extends AbstractDAO {
 		numOfAutoQueries = numOfAutoQueries + other.getNumOfAutoQueries();
 		numOfWorkLists = numOfWorkLists + other.getNumOfWorkLists();
 		numOfFiles = numOfFiles + other.getNumOfFiles();
+		numOfTemplates = numOfTemplates + other.getNumOfTemplates();
+		numOfPlugins = numOfPlugins + other.getNumOfPlugins();
 	}
 	
 	public final static String DBTABLE = "epadstatistics";
@@ -211,6 +231,8 @@ public class EpadStatistics extends AbstractDAO {
 		{"numOfPacs","int","numOfPacs","Integer"},
 		{"numOfAutoQueries","int","numOfAutoQueries","Integer"},
 		{"numOfFiles","int","numOfFiles","Integer"},
+		{"numOfTemplates","int","numOfTemplates","Integer"},
+		{"numOfPlugins","int","numOfPlugins","Integer"},
         {"creator","String","creator","varchar"},
         {"createdTime","Date","createdtime","timestamp"},
         {"updateTime","Date","updatetime","timestamp"},

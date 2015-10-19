@@ -3971,7 +3971,7 @@ public class DefaultEpadOperations implements EpadOperations
 						epadUser.usage = new EPADUsage(userStats.getHost(), userStats.getNumOfUsers(), userStats.getNumOfProjects(),
 							userStats.getNumOfPatients(), userStats.getNumOfStudies(), userStats.getNumOfSeries(),
 							userStats.getNumOfAims(), userStats.getNumOfDSOs(), userStats.getNumOfPacs(), userStats.getNumOfAutoQueries(),
-							userStats.getNumOfWorkLists(), userStats.getNumOfFiles(), dateformat.format(new Date()));
+							userStats.getNumOfWorkLists(), userStats.getNumOfFiles(), userStats.getNumOfTemplates(), userStats.getNumOfPlugins(), dateformat.format(new Date()));
 				}
 				userlist.addEPADUser(epadUser);
 			}
@@ -3987,7 +3987,7 @@ public class DefaultEpadOperations implements EpadOperations
 						epadUser.usage = new EPADUsage(userStats.getHost(), userStats.getNumOfUsers(), userStats.getNumOfProjects(),
 							userStats.getNumOfPatients(), userStats.getNumOfStudies(), userStats.getNumOfSeries(),
 							userStats.getNumOfAims(), userStats.getNumOfDSOs(), userStats.getNumOfPacs(), userStats.getNumOfAutoQueries(),
-							userStats.getNumOfWorkLists(), userStats.getNumOfFiles(), dateformat.format(new Date()));
+							userStats.getNumOfWorkLists(), userStats.getNumOfFiles(), userStats.getNumOfTemplates(), userStats.getNumOfPlugins(), dateformat.format(new Date()));
 				}
 				userlist.addEPADUser(epadUser);
 			}
@@ -4034,7 +4034,7 @@ public class DefaultEpadOperations implements EpadOperations
 					epadUser.usage = new EPADUsage(userStats.getHost(), userStats.getNumOfUsers(), userStats.getNumOfProjects(),
 						userStats.getNumOfPatients(), userStats.getNumOfStudies(), userStats.getNumOfSeries(),
 						userStats.getNumOfAims(), userStats.getNumOfDSOs(), userStats.getNumOfPacs(), userStats.getNumOfAutoQueries(),
-						userStats.getNumOfWorkLists(), userStats.getNumOfFiles(), dateformat.format(new Date()));
+						userStats.getNumOfWorkLists(), userStats.getNumOfFiles(), userStats.getNumOfTemplates(), userStats.getNumOfPlugins(), dateformat.format(new Date()));
 			}
 		}
 		else
@@ -4049,7 +4049,7 @@ public class DefaultEpadOperations implements EpadOperations
 					epadUser.usage = new EPADUsage(userStats.getHost(), userStats.getNumOfUsers(), userStats.getNumOfProjects(),
 						userStats.getNumOfPatients(), userStats.getNumOfStudies(), userStats.getNumOfSeries(),
 						userStats.getNumOfAims(), userStats.getNumOfDSOs(), userStats.getNumOfPacs(), userStats.getNumOfAutoQueries(),
-						userStats.getNumOfWorkLists(), userStats.getNumOfFiles(), dateformat.format(new Date()));
+						userStats.getNumOfWorkLists(), userStats.getNumOfFiles(), userStats.getNumOfTemplates(), userStats.getNumOfPlugins(), dateformat.format(new Date()));
 			}
 		}
 		return epadUser;

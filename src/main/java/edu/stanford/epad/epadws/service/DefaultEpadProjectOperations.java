@@ -25,7 +25,6 @@ package edu.stanford.epad.epadws.service;
 //USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import java.io.File;
-import java.net.InetAddress;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -53,6 +52,7 @@ import edu.stanford.epad.epadws.models.EpadStatistics;
 import edu.stanford.epad.epadws.models.EventLog;
 import edu.stanford.epad.epadws.models.FileType;
 import edu.stanford.epad.epadws.models.NonDicomSeries;
+import edu.stanford.epad.epadws.models.Plugin;
 import edu.stanford.epad.epadws.models.Project;
 import edu.stanford.epad.epadws.models.ProjectToFile;
 import edu.stanford.epad.epadws.models.ProjectToSubject;
@@ -403,6 +403,8 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 			int patients = new Subject().getCount("Creator == '" + username + "'");
 			int studies = new Study().getCount("Creator == '" + username + "'");
 			int files = new EpadFile().getCount("Creator == '" + username + "'");
+			int templates = new EpadFile().getCount("Creator == '" + username + "' and filetype = '" + FileType.TEMPLATE.getName() + "'");
+			int plugins = new Plugin().getCount("Creator == '" + username + "'");
 			EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
 			int aims = epadDatabaseOperations.getNumberOfAIMs(AIMDatabaseOperations.aimcol_username + " = '" + username + "'");
 			int dsos = epadDatabaseOperations.getNumberOfAIMs("DSOSeriesUID is not null or DSOSeriesUID != '' and " + AIMDatabaseOperations.aimcol_username + " = '" + username + "'");
@@ -419,6 +421,8 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 			es.setNumOfWorkLists(wls);
 			es.setNumOfAutoQueries(pacQueries);
 			es.setNumOfFiles(files);
+			es.setNumOfTemplates(templates);
+			es.setNumOfPlugins(plugins);
 			es.setCreator("admin");
 			return es;
 		}

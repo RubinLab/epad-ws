@@ -46,6 +46,8 @@ import edu.stanford.epad.epadws.epaddb.EpadDatabase;
 import edu.stanford.epad.epadws.epaddb.EpadDatabaseOperations;
 import edu.stanford.epad.epadws.models.EpadFile;
 import edu.stanford.epad.epadws.models.EpadStatistics;
+import edu.stanford.epad.epadws.models.FileType;
+import edu.stanford.epad.epadws.models.Plugin;
 import edu.stanford.epad.epadws.models.Project;
 import edu.stanford.epad.epadws.models.RemotePACQuery;
 import edu.stanford.epad.epadws.models.Study;
@@ -80,6 +82,8 @@ public class EpadStatisticsTask implements Runnable
 			int patients = new Subject().getCount("");
 			int studies = new Study().getCount("");
 			int files = new EpadFile().getCount("");
+			int templates = new EpadFile().getCount("filetype = '" + FileType.TEMPLATE.getName() + "'");
+			int plugins = new Plugin().getCount("");
 			int series = epadDatabaseOperations.getNumberOfSeries();
 			int npacs = RemotePACService.getInstance().getRemotePACs().size();
 			int aims = epadDatabaseOperations.getNumberOfAIMs("1 = 1");
@@ -110,6 +114,8 @@ public class EpadStatisticsTask implements Runnable
 			es.setNumOfPacs(npacs);
 			es.setNumOfAutoQueries(pacQueries);
 			es.setNumOfFiles(files);
+			es.setNumOfPlugins(plugins);
+			es.setNumOfTemplates(templates);
 			es.setCreator("admin");
 			es.save();
 			Calendar now = Calendar.getInstance();
@@ -133,6 +139,8 @@ public class EpadStatisticsTask implements Runnable
 					epadUrl = epadUrl + "&numOfDSOs=" + dsos;
 					epadUrl = epadUrl + "&numOfWorkLists=" + wls;
 					epadUrl = epadUrl + "&numOfFiles=" + files;
+					epadUrl = epadUrl + "&numOfPlugins=" + plugins;
+					epadUrl = epadUrl + "&numOfTemplates=" + templates;
 					epadUrl = epadUrl + "&host=" + host;
 					HttpClient client = new HttpClient();
 					PutMethod putMethod = new PutMethod(epadUrl);
