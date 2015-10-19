@@ -36,7 +36,6 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.commons.io.FileUtils;
-import org.apache.log4j.Level;
 import org.mindrot.jbcrypt.BCrypt;
 
 import edu.stanford.epad.common.util.EPADConfig;
@@ -60,7 +59,6 @@ import edu.stanford.epad.epadws.models.ReviewerToReviewee;
 import edu.stanford.epad.epadws.models.Study;
 import edu.stanford.epad.epadws.models.Subject;
 import edu.stanford.epad.epadws.models.User;
-import edu.stanford.epad.epadws.models.User.MessageLog;
 import edu.stanford.epad.epadws.models.UserRole;
 import edu.stanford.epad.epadws.models.WorkListToStudy;
 import edu.stanford.epad.epadws.models.WorkListToSubject;
@@ -338,33 +336,6 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 			} else
 				throw x;
 		}
-	}
-
-	@Override
-	public void userErrorLog(String username, String message) {
-		try {
-			User user = getUser(username);
-			if (user != null)
-				user.addMessageLog(Level.ERROR, message);
-		} catch (Exception e) {	}
-	}
-
-	@Override
-	public void userWarningLog(String username, String message) {
-		try {
-			User user = getUser(username);
-			if (user != null)
-				user.addMessageLog(Level.WARN, message);
-		} catch (Exception e) {	}
-	}
-
-	@Override
-	public void userInfoLog(String username, String message) {
-		try {
-			User user = getUser(username);
-			if (user != null)
-				user.addMessageLog(Level.INFO, message);
-		} catch (Exception e) {	}
 	}
 
 	static SimpleDateFormat dateformat = new SimpleDateFormat("yyyyMMdd HH:mm:ss");
@@ -1905,20 +1876,6 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		NonDicomSeries nds = (NonDicomSeries) new NonDicomSeries().getObject("seriesUID = " + NonDicomSeries.toSQL(seriesUID));
 		if (nds != null)
 			nds.delete();
-	}
-
-	/* (non-Javadoc)
-	 * @see edu.stanford.epad.epadws.service.EpadProjectOperations#getUserLogs(java.lang.String)
-	 */
-	@Override
-	public List<MessageLog> getUserMessages(String username) {
-		try {
-			User user = getUser(username);
-			if (user != null)
-				return user.getMessageLogs();
-		} catch (Exception e) {
-		}
-		return null;
 	}
 
 	@Override

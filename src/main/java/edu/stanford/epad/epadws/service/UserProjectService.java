@@ -395,7 +395,7 @@ public class UserProjectService {
 					message, 
 					seriesUID, "", "Invalid PatientID:" + dicomPatientID, dicomPatientName, studyUID, projectID, "Error in Upload");					
 			dicomFile.delete();
-			projectOperations.userErrorLog(username, message);
+			projectOperations.createEventLog(username, projectID, dicomPatientID, studyUID, seriesUID, null, null, dicomFile.getName(), "UPLOAD SERIES", message, true);
 			return false;
 		}
 		if (pendingUploads.size() < 300)
@@ -448,7 +448,7 @@ public class UserProjectService {
 								message, 
 								seriesUID, "", dicomPatientID, dicomPatientName, studyUID, projectID, "Error in Upload");					
 						dicomFile.delete();
-						projectOperations.userErrorLog(username, message);
+						projectOperations.createEventLog(username, projectID, dicomPatientID, studyUID, seriesUID, null, null, dicomFile.getName(), "UPLOAD DSO", message, true);
 						return false;
 					}
 					String imageUID = dicomObject.getString(Tag.SOPInstanceUID);
@@ -469,7 +469,7 @@ public class UserProjectService {
 							username, 
 							"Error generating DSO Annotation", 
 							seriesUID, "", dicomPatientID, dicomPatientName, studyUID, projectID, "Upload " + dicomFile.getName());					
-					projectOperations.userErrorLog(username, "Error generating DSO Annotation");
+					projectOperations.createEventLog(username, projectID, dicomPatientID, studyUID, seriesUID, null, null, dicomFile.getName(), "UPLOAD DSO", "Error generating DSO Annotation", true);
 				}
 			}
 		} else {
@@ -478,7 +478,7 @@ public class UserProjectService {
 					username, 
 					"Missing patient ID or studyUID in DICOM file", 
 					seriesUID, "", dicomPatientID, dicomPatientName, studyUID, projectID, "Process Upload");					
-			projectOperations.userErrorLog(username, "Missing patient ID or studyUID in DICOM file " + dicomFile.getName());
+			projectOperations.createEventLog(username, projectID, dicomPatientID, studyUID, seriesUID, null, null, null, "UPLOAD DSO", "Missing patient ID or studyUID in DICOM file " + dicomFile.getName(), true);
 		}
 		return true;
 	}
