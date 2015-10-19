@@ -145,6 +145,7 @@ public class ServerStatusHandler extends AbstractHandler
 				responseStream.println("<b>Hostname:</b> " + InetAddress.getLocalHost().getHostName() + "<br>");
 				responseStream.println("<b>IP Address:</b> " + EpadStatisticsTask.getIPAddress() + "<br>");
 				responseStream.println("<br>");
+				responseStream.println("<style>tbody { display: block;max-height:350px;overflow-y:auto; } </style>");
 				String sessionID = SessionService.getJSessionIDFromRequest(httpRequest);
 				String username = EPADSessionOperations.getSessionUser(sessionID);
 				User user = DefaultEpadProjectOperations.getInstance().getUser(username);
@@ -169,7 +170,7 @@ public class ServerStatusHandler extends AbstractHandler
 					}
 					Collection<User> users = DefaultEpadProjectOperations.getUserCache();
 					responseStream.println("<br><b>Background Tasks: </b>");
-					responseStream.println("<br><table border=1 cellpadding=2><tr style='font-weight: bold;'><td align=center>User</td><td align=center>Task</td><td align=center>Target</td><td align=center>Status</td><td align=center>Start</td><td align=center>Complete</td><td align=center>Elapsed</td></tr>");
+					responseStream.println("<br><table border=1 cellpadding=2 ><tbody><tr style='font-weight: bold;'><td align=center>User</td><td align=center>Task</td><td align=center>Target</td><td align=center>Status</td><td align=center>Start</td><td align=center>Complete</td><td align=center>Elapsed</td></tr>");
 					boolean empty = true;
 					for (User u: users)
 					{
@@ -185,11 +186,11 @@ public class ServerStatusHandler extends AbstractHandler
 					}
 					if (empty)
 						responseStream.println("<tr><td colspan=100% align=center>No background processes running</td></tr>");
-					responseStream.println("</table>");
-					recentLogs = DefaultEpadProjectOperations.getInstance().getUseEventLogs("%", 0, 25);
+					responseStream.println("</tbody></table>");
+					recentLogs = DefaultEpadProjectOperations.getInstance().getUseEventLogs("%", 0, 100);
 				}  else {
 					responseStream.println("<br><b>Background Tasks: </b>");
-					responseStream.println("<br><table border=1 cellpadding=2><tr style='font-weight: bold;'><td align=center>User</td><td align=center>Task</td><td align=center>Target</td><td align=center>Status</td><td align=center>Start</td><td align=center>Complete</td><td align=center>Elapsed</td></tr>");
+					responseStream.println("<br><table border=1 cellpadding=2 ><tbody><tr style='font-weight: bold;'><td align=center>User</td><td align=center>Task</td><td align=center>Target</td><td align=center>Status</td><td align=center>Start</td><td align=center>Complete</td><td align=center>Elapsed</td></tr>");
 					Collection<TaskStatus> tssCol = user.getCurrentTasks().values();
 					List<TaskStatus> tss = new ArrayList<TaskStatus>();
 					tss.addAll(tssCol);
@@ -200,16 +201,16 @@ public class ServerStatusHandler extends AbstractHandler
 					}
 					if (tss.size() == 0)
 						responseStream.println("<tr><td colspan=100% align=center>No background processes running</td></tr>");
-					responseStream.println("</table>");
-					recentLogs = DefaultEpadProjectOperations.getInstance().getUseEventLogs(username, 0, 25);
+					responseStream.println("</tbody></table>");
+					recentLogs = DefaultEpadProjectOperations.getInstance().getUseEventLogs(username, 0, 100);
 				}
 				responseStream.println("<br><b>Event Logs: </b>");
-				responseStream.println("<br><table border=1 cellpadding=2><tr style='font-weight: bold;'><td align=center>Time</td><td align=center>User</td><td align=center>Action</td><td align=center>Project</td><td align=center >Target</td></tr>");
+				responseStream.println("<br><table border=1 cellpadding=2><tbody><tr style='font-weight: bold;'><td align=center>Time</td><td align=center>User</td><td align=center>Action</td><td align=center>Project</td><td align=center >Target</td></tr>");
 				for (EventLog elog: recentLogs)
 				{
-					responseStream.println("<tr style='max-height:20px;'><td nowrap>" + dateformat.format(elog.getCreatedTime()) + "</td><td>" + elog.getUsername() + "</td><td nowrap>" + elog.getFunction() + "</td><td nowrap>" + checkNull(elog.getProjectID(), "N/A") + "</td><td><div style='max-width:500px; max-height:20px; overflow:auto'>" + checkNull(elog.getTarget(), "N/A") + "</div></td></tr>");
+					responseStream.println("<tr style='max-height:20px;'><td nowrap>" + dateformat.format(elog.getCreatedTime()) + "</td><td>" + elog.getUsername() + "</td><td nowrap>" + elog.getFunction() + "</td><td nowrap>" + checkNull(elog.getProjectID(), "N/A") + "</td><td><div style='max-width:500px; max-height:20px; overflow-y:auto'>" + checkNull(elog.getTarget(), "N/A") + "</div></td></tr>");
 				}
-				responseStream.println("</table>");
+				responseStream.println("</tbody></table>");
 				
 				responseStream.println("</body>");
 				} 
