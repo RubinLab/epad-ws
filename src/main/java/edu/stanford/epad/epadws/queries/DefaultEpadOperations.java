@@ -323,7 +323,8 @@ public class DefaultEpadOperations implements EpadOperations
 		List<Subject> subjects = projectOperations.getUnassignSubjects();
 		for (Subject subject : subjects) {
 			EPADSubject epadSubject = subject2EPADSubject(sessionID, username, subject, EPADConfig.xnatUploadProjectID, searchFilter, false);
-			epadSubjectList.addEPADSubject(epadSubject);
+			if (epadSubject != null)
+				epadSubjectList.addEPADSubject(epadSubject);
 		}
 
 		return epadSubjectList;
@@ -1264,6 +1265,8 @@ public class DefaultEpadOperations implements EpadOperations
 	public int createProject(String username, ProjectReference projectReference, String projectName, String projectDescription, String defaultTemplate,
 			String sessionID) throws Exception
 	{
+		if (projectReference.projectID == null || projectReference.projectID.trim().length() == 0)
+			throw new Exception("Invalid Project ID");
 		projectOperations.createEventLog(username, projectReference.projectID, null, null, null, null, null, "CREATE PROJECT", projectName +":" + projectDescription);
 		projectOperations.createProject(username, projectReference.projectID, projectName, projectDescription, defaultTemplate, ProjectType.PRIVATE);
 		projectOperations.addUserToProject(username, projectReference.projectID, username, UserRole.OWNER, defaultTemplate);
