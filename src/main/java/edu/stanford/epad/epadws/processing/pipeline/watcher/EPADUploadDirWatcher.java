@@ -218,7 +218,11 @@ public class EPADUploadDirWatcher implements Runnable
 				String userName = UserProjectService.createProjectEntitiesFromDICOMFilesInUploadDirectory(directory, false);
 				String fileCount = "";
 				if (userName.contains(":"))
-					fileCount = userName.substring(userName.indexOf(":") +1) + " files";
+					fileCount = userName.substring(userName.indexOf(":") +1);
+				if (fileCount.equals("0"))
+					fileCount = "Zero files Uploaded. Please see error log.";
+				else if (fileCount.length() > 0)
+					fileCount = fileCount + " files found.";
 				projectOperations.updateUserTaskStatus(username, TaskStatus.TASK_ADD_TO_PROJECT, directory.getName(), "Completed processing " + fileCount, null, new Date());
 				log.info("Cleaning upload directory");
 				cleanUploadDirectory(directory);
