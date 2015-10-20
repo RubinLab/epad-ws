@@ -194,8 +194,12 @@ public class EPADUploadDirWatcher implements Runnable
 					projectOperations.updateUserTaskStatus(username, TaskStatus.TASK_ADD_TO_PROJECT, zipDirectory.getName(), "Started processing", new Date(), null);
 					String userName = UserProjectService.createProjectEntitiesFromDICOMFilesInUploadDirectory(zipDirectory, true);
 					String fileCount = "";
-					if (userName.contains(":"))
-						fileCount = userName.substring(userName.indexOf(":") +1) + " files";
+					if (userName != null && userName.contains(":"))
+						fileCount = userName.substring(userName.indexOf(":") +1);
+					if (fileCount.equals("0") || fileCount.equals(""))
+						fileCount = "Zero files Uploaded. Please see error log.";
+					else if (fileCount.length() > 0)
+						fileCount = fileCount + " files found.";
 					projectOperations.updateUserTaskStatus(username, TaskStatus.TASK_ADD_TO_PROJECT, zipDirectory.getName(), "Completed processing " + fileCount, null, new Date());
 					cleanUploadDirectory(zipDirectory);
 					if (userName != null)
@@ -213,8 +217,12 @@ public class EPADUploadDirWatcher implements Runnable
 				projectOperations.updateUserTaskStatus(username, TaskStatus.TASK_ADD_TO_PROJECT, directory.getName(), "Started processing", new Date(), null);
 				String userName = UserProjectService.createProjectEntitiesFromDICOMFilesInUploadDirectory(directory, false);
 				String fileCount = "";
-				if (userName.contains(":"))
-					fileCount = userName.substring(userName.indexOf(":") +1) + " files";
+				if (userName != null && userName.contains(":"))
+					fileCount = userName.substring(userName.indexOf(":") +1);
+				if (fileCount.equals("0") || fileCount.equals(""))
+					fileCount = "Zero files Uploaded. Please see error log.";
+				else if (fileCount.length() > 0)
+					fileCount = fileCount + " files found.";
 				projectOperations.updateUserTaskStatus(username, TaskStatus.TASK_ADD_TO_PROJECT, directory.getName(), "Completed processing " + fileCount, null, new Date());
 				log.info("Cleaning upload directory");
 				cleanUploadDirectory(directory);

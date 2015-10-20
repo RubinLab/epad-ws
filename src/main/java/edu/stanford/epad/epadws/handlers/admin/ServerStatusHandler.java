@@ -208,7 +208,7 @@ public class ServerStatusHandler extends AbstractHandler
 				responseStream.println("<br><table border=1 cellpadding=2><tbody><tr style='font-weight: bold;'><td align=center>Time</td><td align=center>User</td><td align=center>Action</td><td align=center>Project</td><td align=center >Target</td></tr>");
 				for (EventLog elog: recentLogs)
 				{
-					responseStream.println("<tr style='max-height:20px;'><td nowrap>" + dateformat.format(elog.getCreatedTime()) + "</td><td>" + elog.getUsername() + "</td><td nowrap>" + elog.getFunction() + "</td><td nowrap>" + checkNull(elog.getProjectID(), "N/A") + "</td><td><div style='max-width:500px; max-height:20px; overflow-y:auto'>" + checkNull(elog.getTarget(), "N/A") + "</div></td></tr>");
+					responseStream.println("<tr style='max-height:40px;'><td nowrap>" + dateformat.format(elog.getCreatedTime()) + "</td><td>" + elog.getUsername() + "</td><td nowrap>" + elog.getFunction() + "</td><td nowrap>" + checkNull(elog.getProjectID(), "N/A") + "</td><td><div style='max-width:500px; max-height:40px; overflow-y:auto'>" + checkNull(elog.getTarget(), "N/A") + "</div></td></tr>");
 				}
 				responseStream.println("</tbody></table>");
 				
