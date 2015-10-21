@@ -148,7 +148,9 @@ public class ServerStatusHandler extends AbstractHandler
 				responseStream.println("<b>Hostname:</b> " + InetAddress.getLocalHost().getHostName() + "<br>");
 				responseStream.println("<b>IP Address:</b> " + EpadStatisticsTask.getIPAddress() + "<br>");
 				int free = EpadDatabase.getInstance().getEPADDatabaseOperations().getFreeConnections();
+				int used = EpadDatabase.getInstance().getEPADDatabaseOperations().getUsedConnections();
 				responseStream.println("<b>Available DB Connections:</b> " + free + "<br>");
+				responseStream.println("<b>Used DB Connections:</b> " + used + "<br>");
 				responseStream.println("<br>");
 				responseStream.println("<style>tbody { display: block;max-height:350px;overflow-y:auto; } </style>");
 				String sessionID = SessionService.getJSessionIDFromRequest(httpRequest);
