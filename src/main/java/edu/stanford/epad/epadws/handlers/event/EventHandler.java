@@ -64,6 +64,9 @@ public class EventHandler extends AbstractHandler
 	private static final String MISSING_QUERY_MESSAGE = "No query in event request";
 	private static final String INVALID_SESSION_TOKEN_MESSAGE = "Session token is invalid on event route";
 
+	public static final String EVENT_COMPLETE = "complete";
+	public static final String EVENT_FAILED = "failed";
+	
 	private static int count = 999;
 	
 	@Override
@@ -123,9 +126,15 @@ public class EventHandler extends AbstractHandler
 							EpadProjectOperations projectOperations = DefaultEpadProjectOperations.getInstance();
 							String username = SessionService.getUsernameForSession(jsessionID);
 							Date endDate = null;
-							if ("complete".equalsIgnoreCase(event_status) || "failed".equalsIgnoreCase(event_status))
+							if (EVENT_COMPLETE.equalsIgnoreCase(event_status) || EVENT_FAILED.equalsIgnoreCase(event_status))
+							{
 								endDate = new Date();
+								boolean error = false;
+								if (EVENT_FAILED.equalsIgnoreCase(event_status)) error = true;
+								projectOperations.createEventLog(username, null, patient_id, null, null, null, aim_uid, null, "PLUGIN " + plugin_name + ":" + event_status.toUpperCase(), "", error);
+							}
 							projectOperations.updateUserTaskStatus(username, TaskStatus.TASK_PLUGIN, plugin_name + ":" + aim_uid, event_status, null, endDate);
+						
 						} else {
 							log.warning("Required parameter missing, event_status:" + event_status +
 									" aim_uid:" + aim_uid + " aim_name" + aim_name + 
