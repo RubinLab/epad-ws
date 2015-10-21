@@ -217,19 +217,23 @@ public class RTDICOMProcessingTask implements GeneratorTask
 				log.info("Field:" + contours.getFieldNames() + " ROIs:" + contours.getField("ROIName"));
 				for (int r = 0; r < numOfRoi; r++)
 				{
+					MLChar roiName = null;
+					try {
 					MLUInt8 seg = (MLUInt8) contours.getField("Segmentation", r); // [512x512x98  uint8 array]
-					MLChar roiName = (MLChar) contours.getField("ROIName", r);
+					roiName = (MLChar) contours.getField("ROIName", r);
 					String roi = roiName.getString(0);
 					log.info("ROI:" + roi);
 					if (seg == null) continue;
 					//	throw new Exception("No Segmentation found in MATLAN output file");
 					int[] dims = seg.getDimensions();
 					byte[][] segdata = seg.getArray();
+					try {
 					MLDouble points = (MLDouble) contours.getField("Points"); // [19956x3  double array]
 					MLDouble vps = (MLDouble) contours.getField("VoxPoints"); // [19956x3  double array]
+						log.info("Types, Segmentation:" + seg + " segdata:" + segdata.length + "x" + segdata[0].length + " Points:" + points + " VoxPoints:" + vps);
+					} catch (Exception x) {}
 					File matfile = new File(outFolderPath + "/" + patientID + ".mat");
 					matfile.renameTo(new File(outFilePath));
-					log.info("Types, Segmentation:" + seg + " segdata:" + segdata.length + "x" + segdata[0].length + " Points:" + points + " VoxPoints:" + vps);
 					for (int i = 0; i < dims.length; i++)
 						log.info("seg dimensions " + i + ":" + dims[i]);
 					if (seg != null) {
@@ -307,6 +311,12 @@ public class RTDICOMProcessingTask implements GeneratorTask
 								
 						}
 						projectOperations.updateUserTaskStatus(username, TaskStatus.TASK_RT_PROCESS, seriesUID, "Completed DSO Generation " + r, null, null);
+					}
+					} catch (Exception x) {
+						if (roiName != null)
+							log.warning("Error processing RT DICOM, ROI:"+ roiName.getString(0), x);
+						else
+							log.warning("Error processing RT DICOM", x);
 					}
 				}
 			} catch (Exception x) {
