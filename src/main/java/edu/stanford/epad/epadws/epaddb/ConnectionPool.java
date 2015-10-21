@@ -48,7 +48,7 @@ public class ConnectionPool implements Runnable
 	private final String username;
 	private final String password;
 
-	private int initialConnections = 5;
+	private int initialConnections = 25;
 
 	public ConnectionPool(String connectionUrl, String username, String password) throws SQLException
 	{

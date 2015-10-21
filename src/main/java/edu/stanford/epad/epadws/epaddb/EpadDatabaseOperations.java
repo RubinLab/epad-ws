@@ -52,6 +52,10 @@ import edu.stanford.epad.epadws.handlers.core.SubjectReference;
 
 public interface EpadDatabaseOperations
 {
+	int getFreeConnections();
+	
+	int getUsedConnections();
+	
 	String getPNGLocation(String studyUID, String seriesUID, String imageUID);
 
 	String getPNGLocation(ImageReference imageReference);

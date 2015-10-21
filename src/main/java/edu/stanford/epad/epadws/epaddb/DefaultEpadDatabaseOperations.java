@@ -80,6 +80,16 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 	}
 
 	@Override
+	public int getFreeConnections() {
+		return connectionPool.availableConnectionCount();
+	}
+
+	@Override
+	public int getUsedConnections() {
+		return connectionPool.usedConnectionCount();
+	}
+
+	@Override
 	public String getPNGLocation(ImageReference imageReference)
 	{
 		return getPNGLocation(imageReference.studyUID, imageReference.seriesUID, imageReference.imageUID);
