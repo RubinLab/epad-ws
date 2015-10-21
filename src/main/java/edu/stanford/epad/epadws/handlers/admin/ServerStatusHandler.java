@@ -47,6 +47,7 @@ import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.epad.dtos.TaskStatus;
 import edu.stanford.epad.epadws.EPadWebServerVersion;
+import edu.stanford.epad.epadws.Main;
 import edu.stanford.epad.epadws.epaddb.EpadDatabase;
 import edu.stanford.epad.epadws.handlers.HandlerUtil;
 import edu.stanford.epad.epadws.models.EventLog;
@@ -106,6 +107,8 @@ public class ServerStatusHandler extends AbstractHandler
 				String path = httpRequest.getContextPath().replace("status/", "").replace("status", "");
 				if (!path.endsWith("/")) path = path + "/";
 				responseStream.println("<a href=\"javascript:window.parent.location='" + path + "Web_pad.html'\"><b>Back to ePAD</b></a>");
+				if (Main.testPages)
+					responseStream.println("<div style='float:right'><a href=\"javascript:window.parent.location='" + path + "test/index.jsp'\"><b>Test Pages</b></a></div>");
 				responseStream.println("<hr>");
 				responseStream.println("<h3><center>ePAD Server Status</center></h3>");
 				responseStream.println("<hr>");

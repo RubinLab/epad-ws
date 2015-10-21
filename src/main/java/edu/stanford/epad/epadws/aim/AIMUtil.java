@@ -1807,6 +1807,23 @@ public class AIMUtil
 		}
 	}
 	
+	public static void updateTableTemplateColumn(List<EPADAIM> aims)
+	{
+		EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
+		for (EPADAIM aim: aims)
+		{
+			if (aim.xml == null || aim.xml.trim().length() == 0) continue;
+			try {
+				List<ImageAnnotationCollection> iacs = edu.stanford.hakan.aim4api.usage.AnnotationGetter.getImageAnnotationCollectionsFromString(aim.xml, null);
+				if (iacs.size() == 0) continue;
+				ImageAnnotationCollection iac = iacs.get(0);
+				EPADAIM epadAim = epadDatabaseOperations.updateAIMTemplateCode(iac.getUniqueIdentifier().getRoot(), iac.getImageAnnotations().get(0).getListTypeCode().get(0).getCode());
+			} catch (Exception e) {
+				log.warning("Error updating AIM Table TemplateCode", e);
+			}
+		}
+	}
+	
 	public static int updateExistDBFromMysql(String aimID)
 	{
 		EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();

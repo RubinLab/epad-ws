@@ -257,6 +257,19 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 		} finally {
 			close(c);
 		}
+		// Check empty template columns
+		try {
+			log.info("Checking annotations table template column ...");
+			
+			adb = new AIMDatabaseOperations(c, EPADConfig.eXistServerUrl,
+					EPADConfig.aim4Namespace, EPADConfig.eXistCollection, EPADConfig.eXistUsername, EPADConfig.eXistPassword);
+			List<EPADAIM> aims = adb.getAIMs("TEMPLATECODE is null", 0, 0);
+			AIMUtil.updateTableTemplateColumn(aims);
+		} catch (Exception sqle) {
+			log.warning("AIM Database operation failed:", sqle);
+		} finally {
+			close(c);
+		}
 		
 		// Fix coordination AIMs
 //			try {
