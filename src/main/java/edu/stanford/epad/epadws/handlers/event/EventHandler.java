@@ -131,9 +131,9 @@ public class EventHandler extends AbstractHandler
 								endDate = new Date();
 								boolean error = false;
 								if (EVENT_FAILED.equalsIgnoreCase(event_status)) error = true;
-								projectOperations.createEventLog(username, null, patient_id, null, null, null, aim_uid, null, "PLUGIN " + plugin_name + ":" + event_status.toUpperCase(), "", error);
+								projectOperations.createEventLog(username, null, patient_id, null, null, null, aim_uid, null, "Plugin " + plugin_name + ":" + event_status.toUpperCase(), "", error);
 							}
-							projectOperations.updateUserTaskStatus(username, TaskStatus.TASK_PLUGIN, plugin_name + ":" + aim_uid, event_status, null, endDate);
+							projectOperations.updateUserTaskStatus(username, TaskStatus.TASK_PLUGIN, plugin_name.toLowerCase() + ":" + aim_uid, event_status, null, endDate);
 						
 						} else {
 							log.warning("Required parameter missing, event_status:" + event_status +
