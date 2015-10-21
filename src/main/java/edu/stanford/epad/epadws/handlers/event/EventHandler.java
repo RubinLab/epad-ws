@@ -23,6 +23,7 @@
 //USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package edu.stanford.epad.epadws.handlers.event;
 
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.text.SimpleDateFormat;
 import java.util.Collection;
@@ -147,8 +148,32 @@ public class EventHandler extends AbstractHandler
 						log);
 			}
 		} else {
-			log.info("EventResource: Invalid session token");
-			statusCode = HandlerUtil.warningResponse(HttpServletResponse.SC_UNAUTHORIZED, INVALID_SESSION_TOKEN_MESSAGE, log);
+			try {
+				responseStream = httpResponse.getWriter();
+				responseStream.println("event_number, event_status, Date, aim_uid, aim_name, patient_id, patient_name, "
+						+ "template_id, template_name, plugin_name");
+				
+				// message[PATIENT_NAME] + message[PLUGIN_NAME] + " " + message[EVENT_STATUS]
+				StringBuilder sb = new StringBuilder();
+				sb.append("1, ");
+				sb.append("You are not logged in! Stop these requests, ");
+				sb.append("2015-XX-XX XX:XX:XX.0, ");
+				sb.append(" , ");
+				sb.append(" , ");
+				sb.append("Invalid Session, ");
+				sb.append(" , ");
+				sb.append(" , ");
+				sb.append(" , ");
+				sb.append("Please Stop Requests., ");
+				sb.append("\n");
+				responseStream.print(sb.toString());
+				responseStream.print(sb.toString());
+				responseStream.print(sb.toString());
+				responseStream.print(sb.toString());
+				statusCode = HttpServletResponse.SC_OK;
+			} catch (IOException e) {
+				statusCode = HandlerUtil.warningResponse(HttpServletResponse.SC_UNAUTHORIZED, INVALID_SESSION_TOKEN_MESSAGE, log);
+			}
 		}
 		httpResponse.setStatus(statusCode);
 	}
