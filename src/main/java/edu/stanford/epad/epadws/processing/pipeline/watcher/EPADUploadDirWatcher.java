@@ -180,6 +180,8 @@ public class EPADUploadDirWatcher implements Runnable
 				{
 					zipFile = waitForZipUploadToComplete(directory, username);
 					if (zipFile == null) break;
+					if (zipFile.getName().contains(" "))
+						zipFile = EPADFileUtils.renameFile(zipFile, zipFile.getName().replace(' ', '_'));
 					projectOperations.updateUserTaskStatus(username, TaskStatus.TASK_UNZIP, zipFile.getName(), "Started unzip", new Date(), null);
 					unzipFiles(zipFile);
 					projectOperations.updateUserTaskStatus(username, TaskStatus.TASK_UNZIP, zipFile.getName(), "Completed unzip", null, new Date());
