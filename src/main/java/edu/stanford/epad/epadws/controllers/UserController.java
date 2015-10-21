@@ -69,24 +69,26 @@ public class UserController {
  
 	@RequestMapping(value = "/", method = RequestMethod.GET)
 	public EPADUserList getEPADUsers( 
-											HttpServletRequest request, 
-									        HttpServletResponse response) throws Exception {
+										@RequestParam(value="includeSystemUsage", defaultValue="false") boolean includeSystemUsage,											
+										HttpServletRequest request, 
+								        HttpServletResponse response) throws Exception {
 		String sessionID = SessionService.getJSessionIDFromRequest(request);
 		String username = SessionService.getUsernameForSession(sessionID);
 		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
-		EPADUserList userlist = epadOperations.getUserDescriptions(username, sessionID);
+		EPADUserList userlist = epadOperations.getUserDescriptions(username, sessionID,includeSystemUsage);
 		return userlist;
 	}
  
 	@RequestMapping(value = "/{user}", method = RequestMethod.GET)
 	public EPADUser getEPADUser( 
 											@PathVariable String user,
+											@RequestParam(value="includeSystemUsage", defaultValue="false") boolean includeSystemUsage,											
 											HttpServletRequest request, 
 									        HttpServletResponse response) throws Exception {
 		String sessionID = SessionService.getJSessionIDFromRequest(request);
 		String username = SessionService.getUsernameForSession(sessionID);
 		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
-		EPADUser euser = epadOperations.getUserDescription(username, user, sessionID);
+		EPADUser euser = epadOperations.getUserDescription(username, user, sessionID, includeSystemUsage);
 		if (euser == null)
 			throw new NotFoundException("User " + user + " not found");
 		return euser;
@@ -100,7 +102,7 @@ public class UserController {
 		String sessionID = SessionService.getJSessionIDFromRequest(request);
 		String username = SessionService.getUsernameForSession(sessionID);
 		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
-		EPADUser euser = epadOperations.getUserDescription(username, user, sessionID);
+		EPADUser euser = epadOperations.getUserDescription(username, user, sessionID, false);
 		if (euser == null)
 			throw new NotFoundException("User " + user + " not found");
 		Collection<EPADSession> sessions = epadOperations.getCurrentSessions(user);

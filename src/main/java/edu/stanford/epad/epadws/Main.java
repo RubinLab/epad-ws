@@ -553,7 +553,7 @@ public class Main
 		log.info("Added file server for " + baseDirectory + " directory.");
 	}
 
-
+	public static boolean testPages = false;
 	private static void setupTestFiles()
 	{
 		String deployPath = EPADConfig.getEPADWebServerBaseDir() + "jetty/webapp/test/";
@@ -572,6 +572,7 @@ public class Main
 					File outFile = new File(deployDir, f.getName());
 					EPADFileUtils.copyFile(f, outFile);
 				}
+				testPages = true;
 			}
 		} 
 		catch (Exception x) {

@@ -29,6 +29,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -66,7 +67,6 @@ import edu.stanford.epad.dtos.EPADSubject;
 import edu.stanford.epad.dtos.EPADSubjectList;
 import edu.stanford.epad.dtos.EPADTemplateContainer;
 import edu.stanford.epad.dtos.EPADTemplateContainerList;
-import edu.stanford.epad.dtos.EPADUsage;
 import edu.stanford.epad.dtos.EPADUsageList;
 import edu.stanford.epad.dtos.EPADUser;
 import edu.stanford.epad.dtos.EPADUserList;
@@ -86,7 +86,6 @@ import edu.stanford.epad.epadws.epaddb.EpadDatabase;
 import edu.stanford.epad.epadws.handlers.HandlerUtil;
 import edu.stanford.epad.epadws.handlers.dicom.DSOUtil;
 import edu.stanford.epad.epadws.handlers.dicom.DownloadUtil;
-import edu.stanford.epad.epadws.models.EpadStatistics;
 import edu.stanford.epad.epadws.models.RemotePACQuery;
 import edu.stanford.epad.epadws.models.User;
 import edu.stanford.epad.epadws.processing.pipeline.task.EpadStatisticsTask;
@@ -94,9 +93,8 @@ import edu.stanford.epad.epadws.processing.pipeline.task.TCIADownloadTask;
 import edu.stanford.epad.epadws.queries.DefaultEpadOperations;
 import edu.stanford.epad.epadws.queries.EpadOperations;
 import edu.stanford.epad.epadws.security.EPADSession;
+import edu.stanford.epad.epadws.security.EPADSessionOperations;
 import edu.stanford.epad.epadws.service.DefaultEpadProjectOperations;
-import edu.stanford.epad.epadws.service.DefaultWorkListOperations;
-import edu.stanford.epad.epadws.service.EpadWorkListOperations;
 import edu.stanford.epad.epadws.service.PluginOperations;
 import edu.stanford.epad.epadws.service.RemotePACService;
 import edu.stanford.epad.epadws.service.TCIAService;
@@ -121,6 +119,7 @@ public class EPADGetHandler
 	 * Note: This class will soon become obsolete and be replaced by Spring Controllers
 	 */
 
+	static Map<String, String> lastRequest = new HashMap<String, String>();
 	protected static int handleGet(HttpServletRequest httpRequest, HttpServletResponse httpResponse, PrintWriter responseStream, String username, String sessionID)
 	{
 		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
@@ -163,6 +162,17 @@ public class EPADGetHandler
 
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.SUBJECT_LIST, pathInfo)) {
 				ProjectReference projectReference = ProjectReference.extract(ProjectsRouteTemplates.SUBJECT_LIST, pathInfo);
+				String host = EPADSessionOperations.getSessionHost(sessionID);
+				if (host != null && host.trim().length() > 0) {
+					// For multiple duplicate requests
+					long currSec = System.currentTimeMillis()/1000;
+					String requestStr = projectReference.projectID + httpRequest.getQueryString() + currSec;
+					if (requestStr.equals(lastRequest.get(host))) {
+						throw new Exception("Duplicate requests from client, please stop multiple, duplicate requests:" + httpRequest.getPathInfo());
+					}
+					lastRequest.put(host, requestStr);
+				}
+				
 				String sortField = httpRequest.getParameter("sortField");
 				boolean unassignedOnly = "true".equalsIgnoreCase(httpRequest.getParameter("unassignedOnly"));
 				boolean annotationCount = true;

@@ -80,6 +80,16 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 	}
 
 	@Override
+	public int getFreeConnections() {
+		return connectionPool.availableConnectionCount();
+	}
+
+	@Override
+	public int getUsedConnections() {
+		return connectionPool.usedConnectionCount();
+	}
+
+	@Override
 	public String getPNGLocation(ImageReference imageReference)
 	{
 		return getPNGLocation(imageReference.studyUID, imageReference.seriesUID, imageReference.imageUID);
@@ -252,6 +262,19 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 					EPADConfig.aim4Namespace, EPADConfig.eXistCollection, EPADConfig.eXistUsername, EPADConfig.eXistPassword);
 			List<EPADAIM> aims = adb.getAIMs("NAME is null", 0, 0);
 			AIMUtil.updateTableNameColumn(aims);
+		} catch (Exception sqle) {
+			log.warning("AIM Database operation failed:", sqle);
+		} finally {
+			close(c);
+		}
+		// Check empty template columns
+		try {
+			log.info("Checking annotations table template column ...");
+			
+			adb = new AIMDatabaseOperations(c, EPADConfig.eXistServerUrl,
+					EPADConfig.aim4Namespace, EPADConfig.eXistCollection, EPADConfig.eXistUsername, EPADConfig.eXistPassword);
+			List<EPADAIM> aims = adb.getAIMs("TEMPLATECODE is null", 0, 0);
+			AIMUtil.updateTableTemplateColumn(aims);
 		} catch (Exception sqle) {
 			log.warning("AIM Database operation failed:", sqle);
 		} finally {
@@ -1836,6 +1859,36 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 			log.warning("Database operation failed.", sqle);
 		} catch (Exception e) {
 			log.warning("Database operation (insert event) failed for AIM ID " + aim_uid, e);
+		} finally {
+			close(c, ps);
+		}
+	}
+
+	// Enter short event
+	@Override
+	public void insertEpadEvent(String sessionID, String message, String name, String target)
+	{
+		Connection c = null;
+		PreparedStatement ps = null;
+		try {
+			// logger.info("Inserting into event table: " + sessionID + " EVENT:" + aim_uid);
+
+			c = getConnection();
+			ps = c.prepareStatement(EpadDatabaseCommands.INSERT_INTO_EVENT);
+			ps.setString(1, sessionID);
+			ps.setString(2, message);
+			ps.setString(3, "");
+			ps.setString(4, "");
+			ps.setString(5, "");
+			ps.setString(6, name);
+			ps.setString(7, "");
+			ps.setString(8, "");
+			ps.setString(9, target);
+			ps.execute();
+		} catch (SQLException sqle) {
+			log.warning("Database operation failed.", sqle);
+		} catch (Exception e) {
+			log.warning("Database operation (insert event) failed", e);
 		} finally {
 			close(c, ps);
 		}

@@ -2952,6 +2952,8 @@ public class DefaultEpadOperations implements EpadOperations
 				EPADAIM aim = epadDatabaseOperations.getAIM(elog.getAimID());
 				if (aim != null) log.aimName = aim.name;
 			}
+			if (elog.isError())
+				log.errorMessage = elog.getParams();
 			elist.addEPADEventLog(log);
 		}
 		return elist;

@@ -23,6 +23,7 @@
 //USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package edu.stanford.epad.epadws.handlers.event;
 
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.text.SimpleDateFormat;
 import java.util.Collection;
@@ -63,6 +64,9 @@ public class EventHandler extends AbstractHandler
 	private static final String MISSING_QUERY_MESSAGE = "No query in event request";
 	private static final String INVALID_SESSION_TOKEN_MESSAGE = "Session token is invalid on event route";
 
+	public static final String EVENT_COMPLETE = "complete";
+	public static final String EVENT_FAILED = "failed";
+	
 	private static int count = 999;
 	
 	@Override
@@ -122,9 +126,15 @@ public class EventHandler extends AbstractHandler
 							EpadProjectOperations projectOperations = DefaultEpadProjectOperations.getInstance();
 							String username = SessionService.getUsernameForSession(jsessionID);
 							Date endDate = null;
-							if ("complete".equalsIgnoreCase(event_status) || "failed".equalsIgnoreCase(event_status))
+							if (EVENT_COMPLETE.equalsIgnoreCase(event_status) || EVENT_FAILED.equalsIgnoreCase(event_status))
+							{
 								endDate = new Date();
-							projectOperations.updateUserTaskStatus(username, TaskStatus.TASK_PLUGIN, plugin_name + ":" + aim_uid, event_status, null, endDate);
+								boolean error = false;
+								if (EVENT_FAILED.equalsIgnoreCase(event_status)) error = true;
+								projectOperations.createEventLog(username, null, patient_id, null, null, null, aim_uid, null, "Plugin " + plugin_name + ": " + event_status, "", error);
+							}
+							projectOperations.updateUserTaskStatus(username, TaskStatus.TASK_PLUGIN, plugin_name.toLowerCase() + ":" + aim_uid, event_status, null, endDate);
+						
 						} else {
 							log.warning("Required parameter missing, event_status:" + event_status +
 									" aim_uid:" + aim_uid + " aim_name" + aim_name + 
@@ -147,8 +157,32 @@ public class EventHandler extends AbstractHandler
 						log);
 			}
 		} else {
-			log.info("EventResource: Invalid session token");
-			statusCode = HandlerUtil.warningResponse(HttpServletResponse.SC_UNAUTHORIZED, INVALID_SESSION_TOKEN_MESSAGE, log);
+			try {
+				responseStream = httpResponse.getWriter();
+				responseStream.println("event_number, event_status, Date, aim_uid, aim_name, patient_id, patient_name, "
+						+ "template_id, template_name, plugin_name");
+				
+				// message[PATIENT_NAME] + message[PLUGIN_NAME] + " " + message[EVENT_STATUS]
+				StringBuilder sb = new StringBuilder();
+				sb.append("1, ");
+				sb.append("You are not logged in! Stop these requests, ");
+				sb.append("2015-XX-XX XX:XX:XX.0, ");
+				sb.append(" , ");
+				sb.append(" , ");
+				sb.append("Invalid Session, ");
+				sb.append(" , ");
+				sb.append(" , ");
+				sb.append(" , ");
+				sb.append("Please Stop Requests., ");
+				sb.append("\n");
+				responseStream.print(sb.toString());
+				responseStream.print(sb.toString());
+				responseStream.print(sb.toString());
+				responseStream.print(sb.toString());
+				statusCode = HttpServletResponse.SC_OK;
+			} catch (IOException e) {
+				statusCode = HandlerUtil.warningResponse(HttpServletResponse.SC_UNAUTHORIZED, INVALID_SESSION_TOKEN_MESSAGE, log);
+			}
 		}
 		httpResponse.setStatus(statusCode);
 	}

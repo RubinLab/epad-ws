@@ -47,6 +47,7 @@ import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.epad.dtos.TaskStatus;
 import edu.stanford.epad.epadws.EPadWebServerVersion;
+import edu.stanford.epad.epadws.Main;
 import edu.stanford.epad.epadws.epaddb.EpadDatabase;
 import edu.stanford.epad.epadws.handlers.HandlerUtil;
 import edu.stanford.epad.epadws.models.EventLog;
@@ -106,6 +107,8 @@ public class ServerStatusHandler extends AbstractHandler
 				String path = httpRequest.getContextPath().replace("status/", "").replace("status", "");
 				if (!path.endsWith("/")) path = path + "/";
 				responseStream.println("<a href=\"javascript:window.parent.location='" + path + "Web_pad.html'\"><b>Back to ePAD</b></a>");
+				if (Main.testPages)
+					responseStream.println("<div style='float:right'><a href=\"javascript:window.parent.location='" + path + "test/index.jsp'\"><b>Test Pages</b></a></div>");
 				responseStream.println("<hr>");
 				responseStream.println("<h3><center>ePAD Server Status</center></h3>");
 				responseStream.println("<hr>");
@@ -144,6 +147,10 @@ public class ServerStatusHandler extends AbstractHandler
 				responseStream.println("<b>Config webserviceBase:</b> " + EPADConfig.getParamValue("webserviceBase") + "<br>");
 				responseStream.println("<b>Hostname:</b> " + InetAddress.getLocalHost().getHostName() + "<br>");
 				responseStream.println("<b>IP Address:</b> " + EpadStatisticsTask.getIPAddress() + "<br>");
+				int free = EpadDatabase.getInstance().getEPADDatabaseOperations().getFreeConnections();
+				int used = EpadDatabase.getInstance().getEPADDatabaseOperations().getUsedConnections();
+				responseStream.println("<b>Available DB Connections:</b> " + free + "<br>");
+				responseStream.println("<b>Used DB Connections:</b> " + used + "<br>");
 				responseStream.println("<br>");
 				responseStream.println("<style>tbody { display: block;max-height:350px;overflow-y:auto; } </style>");
 				String sessionID = SessionService.getJSessionIDFromRequest(httpRequest);
@@ -187,7 +194,8 @@ public class ServerStatusHandler extends AbstractHandler
 					if (empty)
 						responseStream.println("<tr><td colspan=100% align=center>No background processes running</td></tr>");
 					responseStream.println("</tbody></table>");
-					recentLogs = DefaultEpadProjectOperations.getInstance().getUseEventLogs("%", 0, 100);
+					if (free > 0)
+						recentLogs = DefaultEpadProjectOperations.getInstance().getUseEventLogs("%", 0, 100);
 				}  else {
 					responseStream.println("<br><b>Background Tasks: </b>");
 					responseStream.println("<br><table border=1 cellpadding=2 ><tbody><tr style='font-weight: bold;'><td align=center>User</td><td align=center>Task</td><td align=center>Target</td><td align=center>Status</td><td align=center>Start</td><td align=center>Complete</td><td align=center>Elapsed</td></tr>");
@@ -202,7 +210,8 @@ public class ServerStatusHandler extends AbstractHandler
 					if (tss.size() == 0)
 						responseStream.println("<tr><td colspan=100% align=center>No background processes running</td></tr>");
 					responseStream.println("</tbody></table>");
-					recentLogs = DefaultEpadProjectOperations.getInstance().getUseEventLogs(username, 0, 100);
+					if (free > 0)
+						recentLogs = DefaultEpadProjectOperations.getInstance().getUseEventLogs(username, 0, 100);
 				}
 				responseStream.println("<br><b>Event Logs: </b>");
 				responseStream.println("<br><table border=1 cellpadding=2><tbody><tr style='font-weight: bold;'><td align=center>Time</td><td align=center>User</td><td align=center>Action</td><td align=center>Project</td><td align=center >Target</td></tr>");

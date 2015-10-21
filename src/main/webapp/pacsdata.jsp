@@ -135,7 +135,7 @@ $( document ).ready(function() {
 				var series = response.ResultSet.Result;
 				for (k = 0; k < series.length; k++)
 				{
-					listdata =  listdata + "<tr><td><img src=download-icon.gif onclick=\"download('" + studies[j].entityID + "')\"/></td><td>" + series[k].entityType + "</td><td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;" + series[k].entityValue + "</td><td>" + series[k].entityID + "</td><td>"  +  series[k].inEpad + "</td></tr>\n";
+					listdata =  listdata + "<tr><td><img src=download-icon.gif onclick=\"download('" + series[j].entityID + "')\"height=20px/></td><td>" + series[k].entityType + "</td><td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;" + series[k].entityValue + "</td><td>" + series[k].entityID + "</td><td>"  +  series[k].inEpad + "</td></tr>\n";
 				}
 			}
 		})

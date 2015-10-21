@@ -52,6 +52,10 @@ import edu.stanford.epad.epadws.handlers.core.SubjectReference;
 
 public interface EpadDatabaseOperations
 {
+	int getFreeConnections();
+	
+	int getUsedConnections();
+	
 	String getPNGLocation(String studyUID, String seriesUID, String imageUID);
 
 	String getPNGLocation(ImageReference imageReference);
@@ -76,6 +80,7 @@ public interface EpadDatabaseOperations
 
 	void insertEpadEvent(String sessionID, String eventStatus, String aimUID, String aimName, String patientID,
 			String patientName, String templateID, String templateName, String pluginName);
+	public void insertEpadEvent(String sessionID, String message, String name, String target);
 	
 	int deleteOldEvents();
 

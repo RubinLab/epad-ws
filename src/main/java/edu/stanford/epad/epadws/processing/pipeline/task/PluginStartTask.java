@@ -75,7 +75,7 @@ public class PluginStartTask implements Runnable
         		+ EPADConfig.getParamValue("webserviceBase", "/epad") + "/plugin/" + pluginName + "/?aimFile=" + annotationID 
         		+ "&frameNumber=" + frameNumber + "&projectID=" + projectID;
         log.info("Triggering ePAD plugin at " + url);
-		projectOperations.updateUserTaskStatus(username, TaskStatus.TASK_PLUGIN, pluginName + ":" + annotationID, "Started Plugin", new Date(), null);
+		projectOperations.updateUserTaskStatus(username, TaskStatus.TASK_PLUGIN, pluginName.toLowerCase() + ":" + annotationID, "Started Plugin", new Date(), null);
         GetMethod method = new GetMethod(url);
         method.setRequestHeader("Cookie", "JSESSIONID=" + jsessionID);
         try {
