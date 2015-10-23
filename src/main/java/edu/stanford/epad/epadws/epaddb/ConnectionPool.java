@@ -134,7 +134,7 @@ public class ConnectionPool implements Runnable
 	 * 
 	 * @throws SQLException
 	 */
-	private void closeExcessConnections() throws SQLException
+	private synchronized void closeExcessConnections() throws SQLException
 	{
 		int caSize = connectionsAvailable.size();
 		while (caSize > initialConnections) {

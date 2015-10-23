@@ -1074,6 +1074,9 @@ public class AIMDatabaseOperations {
 		} else if (aimSearchType == AIMSearchType.SERIES_UID) {
 			String seriesID = value;
 		    return getAIMs(projectID, null, null, seriesID, null, 0, start, count);
+		} else if (aimSearchType == AIMSearchType.TEMPLATE_CODE) {
+			String code = value;
+		    return this.getAIMs("TEMPLATECODE = '" + value + "'", start, count);
 		} else if (aimSearchType == AIMSearchType.ANNOTATION_UID) {
 			if (value.equalsIgnoreCase("all")) {
 				return this.getAIMs(projectID, null, null, null, null, 0, start, count);

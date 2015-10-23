@@ -199,7 +199,7 @@ public class EPADUploadDirWatcher implements Runnable
 					if (userName != null && userName.contains(":"))
 						fileCount = userName.substring(userName.indexOf(":") +1);
 					if (fileCount.equals("0") || fileCount.equals(""))
-						fileCount = "Zero files Uploaded. Please see error log.";
+						fileCount = "Zero DICOM files Uploaded. Please check error log.";
 					else if (fileCount.length() > 0)
 						fileCount = fileCount + " files found.";
 					projectOperations.updateUserTaskStatus(username, TaskStatus.TASK_ADD_TO_PROJECT, zipDirectory.getName(), "Completed processing " + fileCount, null, new Date());
@@ -222,7 +222,7 @@ public class EPADUploadDirWatcher implements Runnable
 				if (userName != null && userName.contains(":"))
 					fileCount = userName.substring(userName.indexOf(":") +1);
 				if (fileCount.equals("0") || fileCount.equals(""))
-					fileCount = "Zero files Uploaded. Please see error log.";
+					fileCount = "Zero DICOM files Uploaded. Please check error log.";
 				else if (fileCount.length() > 0)
 					fileCount = fileCount + " files found.";
 				projectOperations.updateUserTaskStatus(username, TaskStatus.TASK_ADD_TO_PROJECT, directory.getName(), "Completed processing " + fileCount, null, new Date());

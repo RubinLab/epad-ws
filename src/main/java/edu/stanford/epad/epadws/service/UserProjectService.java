@@ -237,13 +237,14 @@ public class UserProjectService {
 				String seriesUID = xnatUploadProperties.getProperty("SeriesName");
 				if (seriesUID == null) seriesUID = xnatUploadProperties.getProperty("SeriesUID");
 				log.info("Found XNAT upload properties file " + propertiesFilePath + " project:" + xnatProjectLabel + " user:" + xnatUserName);
+				log.info("Properties:" + xnatUploadProperties);
 				log.info("XNAT Properties, projectID:"  + xnatProjectLabel + " username:" + xnatUserName + " patient:" + patientID + " study:" + studyUID + " series:" + seriesUID);
 				if (xnatProjectLabel != null) {
-					projectOperations.createEventLog(xnatUserName, xnatProjectLabel, null, null, null, null, null, "UPLOAD DICOMS", "" + dicomUploadDirectory.list().length);
 					xnatUploadPropertiesFile.delete();
 					numberOfDICOMFiles = createProjectEntitiesFromDICOMFilesInUploadDirectory(dicomUploadDirectory, xnatProjectLabel, xnatSessionID, xnatUserName, patientID, studyUID, seriesUID, !zip);
 					if (numberOfDICOMFiles != 0)
 					{
+						projectOperations.createEventLog(xnatUserName, xnatProjectLabel, null, null, null, null, null, "UPLOAD DICOMS", "Number of Dicoms: " +numberOfDICOMFiles);
 						log.info("Found " + numberOfDICOMFiles + " DICOM file(s) in directory uploaded by " + xnatUserName + " for project " + xnatProjectLabel);
 					}
 					else
@@ -308,6 +309,7 @@ public class UserProjectService {
 		int numberOfDICOMFiles = 0;
 		Collection<File> files = listDICOMFiles(dicomUploadDirectory);
 		log.info("Number of files found:" + files.size());
+		int nondicoms = 0;
 		long i = 0;
 		for (File dicomFile : files) {
 			try {
@@ -322,6 +324,7 @@ public class UserProjectService {
 							log.warning("Error uploading aim file:" + dicomFile.getName() + ":" + x.getMessage());
 						}
 						dicomFile.delete();
+						nondicoms++;
 						continue;
 					}
 					else if ((allFiles || dicomFile.getName().endsWith(".nii")))
@@ -332,6 +335,7 @@ public class UserProjectService {
 							log.warning("Error uploading file:" + dicomFile.getName() + ":" + x.getMessage(), x);
 						}
 						dicomFile.delete();
+						nondicoms++;
 						continue;
 					}
 					else
@@ -354,7 +358,10 @@ public class UserProjectService {
 						dicomFile.getName(), "", dicomFile.getName(), dicomFile.getName(), dicomFile.getName(), projectID, "Error:" + x.getMessage());				}
 		}
 		projectOperations.updateUserTaskStatus(username, TaskStatus.TASK_ADD_TO_PROJECT, dicomUploadDirectory.getName(), "Files processed: " + numberOfDICOMFiles, null, new Date());
+		if (nondicoms != 0)
+			projectOperations.createEventLog(username, projectID, null, null, null, null, null, "UPLOAD FILES", "Number of files: " +nondicoms);
 		log.info("Number of dicom files in upload:" + numberOfDICOMFiles);
+		log.info("Number of non-dicom files in upload:" + nondicoms);
 		return numberOfDICOMFiles;
 	}
 	

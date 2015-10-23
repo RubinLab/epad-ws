@@ -2976,8 +2976,15 @@ public class DefaultEpadOperations implements EpadOperations
 
 	@Override
 	public EPADWorklistList getWorkListsForUser(String loggedInUserName, String username) throws Exception {
-		User user = (User) projectOperations.getUser(username);
-		List<WorkList> worklists = workListOperations.getWorkListsForUser(username);
+		List<WorkList> worklists = null;
+		if (projectOperations.isAdmin(loggedInUserName) && username.equals("*"))
+		{
+			worklists = workListOperations.getAllWorkLists();
+		}
+		else
+		{
+			worklists = workListOperations.getWorkListsForUser(username);
+		}
 		EPADWorklistList wllist = new EPADWorklistList();
 		for (WorkList wl: worklists)
 		{
@@ -2999,7 +3006,7 @@ public class DefaultEpadOperations implements EpadOperations
 					projectIDs.add(study.getProjectID());
 					statuses.add(study.getStatus());
 			}
-				
+			User user = (User) projectOperations.getDBObject(User.class, wl.getUserId());
 			wllist.addEPADWorklist(new EPADWorklist(wl.getWorkListID(), user.getUsername(), wl.getName(),
 					wl.getDescription(), wl.getStatus(),formatDate(wl.getStartDate()),
 					formatDate(wl.getCompleteDate()), formatDate(wl.getDueDate()), projectIDs, studyUIDs, statuses));

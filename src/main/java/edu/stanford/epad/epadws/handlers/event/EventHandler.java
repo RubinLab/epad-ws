@@ -179,7 +179,10 @@ public class EventHandler extends AbstractHandler
 				responseStream.print(sb.toString());
 				responseStream.print(sb.toString());
 				responseStream.print(sb.toString());
-				statusCode = HttpServletResponse.SC_OK;
+				if (System.currentTimeMillis()%3 == 0)
+					statusCode = HttpServletResponse.SC_OK;
+				else
+					statusCode = HttpServletResponse.SC_UNAUTHORIZED;
 			} catch (IOException e) {
 				statusCode = HandlerUtil.warningResponse(HttpServletResponse.SC_UNAUTHORIZED, INVALID_SESSION_TOKEN_MESSAGE, log);
 			}

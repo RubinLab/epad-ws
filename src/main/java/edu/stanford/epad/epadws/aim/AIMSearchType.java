@@ -27,7 +27,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 public enum AIMSearchType {
-	PATIENT_ID("patientId"), SERIES_UID("seriesUID"), PERSON_NAME("personName"), ANNOTATION_UID("annotationUID"), AIM_QUERY("aimQL"), JSON_QUERY("jsonQuery");
+	PATIENT_ID("patientId"), SERIES_UID("seriesUID"), PERSON_NAME("personName"), ANNOTATION_UID("annotationUID"), TEMPLATE_CODE("templateCode"), AIM_QUERY("aimQL"), JSON_QUERY("jsonQuery");
 
 	private String name;
 
