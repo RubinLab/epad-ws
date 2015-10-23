@@ -84,8 +84,8 @@ public class EPADSessionWatcher implements Runnable
 				EPADSessionOperations.checkSessionTimeout();
 				
 				Calendar now = Calendar.getInstance();
-				// Once an hour
-				if (prevTime == null || (prevTime.get(Calendar.HOUR_OF_DAY) != now.get(Calendar.HOUR_OF_DAY)))
+				// every 15 minutes
+				if (now.get(Calendar.MINUTE)%15 == 0)
 				{					
 					try {
 						long dcm4cheeMb = FileSystemUtils.freeSpaceKb(EPADConfig.dcm4cheeDirRoot)/1024;

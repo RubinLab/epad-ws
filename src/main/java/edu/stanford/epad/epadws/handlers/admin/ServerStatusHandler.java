@@ -147,19 +147,25 @@ public class ServerStatusHandler extends AbstractHandler
 				responseStream.println("<b>Config webserviceBase:</b> " + EPADConfig.getParamValue("webserviceBase") + "<br>");
 				responseStream.println("<b>Hostname:</b> " + InetAddress.getLocalHost().getHostName() + "<br>");
 				responseStream.println("<b>IP Address:</b> " + EpadStatisticsTask.getIPAddress() + "<br>");
-				int free = EpadDatabase.getInstance().getEPADDatabaseOperations().getFreeConnections();
-				int used = EpadDatabase.getInstance().getEPADDatabaseOperations().getUsedConnections();
-				responseStream.println("<b>Available DB Connections:</b> " + free + "<br>");
-				responseStream.println("<b>Used DB Connections:</b> " + used + "<br>");
-				responseStream.println("<br>");
 				responseStream.println("<style>tbody { display: block;max-height:350px;overflow-y:auto; } </style>");
 				String sessionID = SessionService.getJSessionIDFromRequest(httpRequest);
 				String username = EPADSessionOperations.getSessionUser(sessionID);
+				int free = EpadDatabase.getInstance().getEPADDatabaseOperations().getFreeConnections();
+				int used = EpadDatabase.getInstance().getEPADDatabaseOperations().getUsedConnections();
 				User user = DefaultEpadProjectOperations.getInstance().getUser(username);
 				List<EventLog> recentLogs = new ArrayList<EventLog>();
 				if (user.isAdmin()) {
+					responseStream.println("<br>");
+					responseStream.println("<b>Available DB Connections:</b> " + free + "<br>");
+					responseStream.println("<b>Used DB Connections:</b> " + used + "<br>");
+					responseStream.println("<br>");
+					long freeHeap = Runtime.getRuntime().freeMemory();
+					long totalHeap = Runtime.getRuntime().totalMemory();
+					DecimalFormat df = new DecimalFormat("###,###,###");
+					responseStream.println("<b>Available Heap Space:</b> " + df.format(freeHeap) + "<br>");
+					responseStream.println("<b>Total Heap Space:</b> " + df.format(totalHeap) + "<br>");
+					responseStream.println("<br>");
 					try {
-						DecimalFormat df = new DecimalFormat("###,###,###");
 						responseStream.println("<b>dcm4chee Free Space: </b>" + df.format(FileSystemUtils.freeSpaceKb(EPADConfig.dcm4cheeDirRoot)/1024) + " Mb<br>");
 						responseStream.println("<b>ePad Free Space: </b>" + df.format(FileSystemUtils.freeSpaceKb(EPADConfig.getEPADWebServerBaseDir())/1024) + " Mb<br>");
 						responseStream.println("<b>Tmp Free Space: </b>" + df.format(FileSystemUtils.freeSpaceKb(System.getProperty("java.io.tmpdir"))/1024) + " Mb (Max Upload)<br>");
