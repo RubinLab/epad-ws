@@ -29,6 +29,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -94,6 +95,7 @@ import edu.stanford.epad.epadws.processing.pipeline.task.TCIADownloadTask;
 import edu.stanford.epad.epadws.queries.DefaultEpadOperations;
 import edu.stanford.epad.epadws.queries.EpadOperations;
 import edu.stanford.epad.epadws.security.EPADSession;
+import edu.stanford.epad.epadws.security.EPADSessionOperations;
 import edu.stanford.epad.epadws.service.DefaultEpadProjectOperations;
 import edu.stanford.epad.epadws.service.DefaultWorkListOperations;
 import edu.stanford.epad.epadws.service.EpadWorkListOperations;
@@ -121,6 +123,7 @@ public class EPADGetHandler
 	 * Note: This class will soon become obsolete and be replaced by Spring Controllers
 	 */
 
+	static Map<String, String> lastRequest = new HashMap<String, String>();
 	protected static int handleGet(HttpServletRequest httpRequest, HttpServletResponse httpResponse, PrintWriter responseStream, String username, String sessionID)
 	{
 		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
@@ -163,6 +166,17 @@ public class EPADGetHandler
 
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.SUBJECT_LIST, pathInfo)) {
 				ProjectReference projectReference = ProjectReference.extract(ProjectsRouteTemplates.SUBJECT_LIST, pathInfo);
+				String host = EPADSessionOperations.getSessionHost(sessionID);
+				if (host != null && host.contains("epad-dev")) {
+					// For multiple duplicate requests
+					long currSec = System.currentTimeMillis()/1000;
+					String requestStr = projectReference.projectID + httpRequest.getQueryString() + currSec;
+					if (requestStr.equals(lastRequest.get(host))) {
+						throw new Exception("Duplicate requests from client, please stop multiple, duplicate requests:" + httpRequest.getPathInfo());
+					}
+					lastRequest.put(host, requestStr);
+				}
+				
 				String sortField = httpRequest.getParameter("sortField");
 				boolean unassignedOnly = "true".equalsIgnoreCase(httpRequest.getParameter("unassignedOnly"));
 				boolean annotationCount = true;

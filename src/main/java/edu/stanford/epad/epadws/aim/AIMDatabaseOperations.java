@@ -84,6 +84,11 @@ public class AIMDatabaseOperations {
         this.mySqlConnection = mySqlConnection;
     }
 
+    public static final String aimcol_username = "UserLoginName";
+    public static final String aimcol_subjectID = "PatientID";
+    public static final String aimcol_projectID = "ProjectUID";
+    public static final String aimcol_aimID = "AnnotationUID";
+
     public void createAnnotationsTable() throws SQLException {
        String sqlCreateTable = "CREATE TABLE IF NOT EXISTS `" + ANNOTATIONS_TABLE + "` (\n"
                 + "  `UserLoginName` VARCHAR(255) NOT NULL,\n"
@@ -1069,6 +1074,9 @@ public class AIMDatabaseOperations {
 		} else if (aimSearchType == AIMSearchType.SERIES_UID) {
 			String seriesID = value;
 		    return getAIMs(projectID, null, null, seriesID, null, 0, start, count);
+		} else if (aimSearchType == AIMSearchType.TEMPLATE_CODE) {
+			String code = value;
+		    return this.getAIMs("TEMPLATECODE = '" + value + "'", start, count);
 		} else if (aimSearchType == AIMSearchType.ANNOTATION_UID) {
 			if (value.equalsIgnoreCase("all")) {
 				return this.getAIMs(projectID, null, null, null, null, 0, start, count);
