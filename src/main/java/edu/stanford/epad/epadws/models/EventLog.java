@@ -189,8 +189,13 @@ public class EventLog extends AbstractDAO {
 			t = t + ": " + filename;
 		if (t.startsWith(":"))
 			t = t.substring(2);
-		if (error && params != null && params.length() > 0)
-			t = params + ":" + t;
+		if ((error || t.length() == 0) && params != null && params.length() > 0)
+		{
+			if (t.length() > 0)
+				t = params + ":" + t;
+			else
+				t = params;
+		}
 		return t;
 	}
 	
