@@ -57,7 +57,8 @@ public class EPADSessionWatcher implements Runnable
 
 	private final ShutdownSignal shutdownSignal = ShutdownSignal.getInstance();
 	
-
+	public static boolean diskspacealert = false;
+	
 	private String jsessionID = null;
 
 	public EPADSessionWatcher()
@@ -84,9 +85,10 @@ public class EPADSessionWatcher implements Runnable
 				EPADSessionOperations.checkSessionTimeout();
 				
 				Calendar now = Calendar.getInstance();
-				// Once an hour
-				if (prevTime == null || (prevTime.get(Calendar.HOUR_OF_DAY) != now.get(Calendar.HOUR_OF_DAY)))
-				{					
+				// every 15 minutes
+				if (now.get(Calendar.MINUTE)%15 == 0)
+				{
+					diskspacealert = false;
 					try {
 						long dcm4cheeMb = FileSystemUtils.freeSpaceKb(EPADConfig.dcm4cheeDirRoot)/1024;
 						long epadMb = FileSystemUtils.freeSpaceKb(EPADConfig.getEPADWebServerBaseDir())/1024;
@@ -96,6 +98,7 @@ public class EPADSessionWatcher implements Runnable
 							mysqlMb = FileSystemUtils.freeSpaceKb("/var/lib/mysql")/1024;
 						if ( dcm4cheeMb < 200 || epadMb < 200 || tmpMb < 200 || mysqlMb < 200)
 						{
+							diskspacealert = true;
 							projectOperations.createEventLog("system", null, null, null, null, null, null, null, "Disk Space", "Server running out of disk space",  true);
 							epadDatabaseOperations.insertEpadEvent(
 									"admin", 

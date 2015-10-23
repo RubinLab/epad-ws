@@ -172,7 +172,7 @@ public class EPADSessionOperations
 			session.setLifespan(EPADSessionOperations.SESSION_LIFESPAN);
 			return true;
 		}
-		log.warning("SessionId:" + jsessionID + " not found in active sessions");
+		//log.warning("SessionId:" + jsessionID + " not found in active sessions");
 		return false;
 	}
 
