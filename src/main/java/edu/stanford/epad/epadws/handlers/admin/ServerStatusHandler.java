@@ -55,6 +55,7 @@ import edu.stanford.epad.epadws.models.Plugin;
 import edu.stanford.epad.epadws.models.User;
 import edu.stanford.epad.epadws.processing.pipeline.PipelineFactory;
 import edu.stanford.epad.epadws.processing.pipeline.task.EpadStatisticsTask;
+import edu.stanford.epad.epadws.processing.pipeline.watcher.EPADSessionWatcher;
 import edu.stanford.epad.epadws.security.EPADSession;
 import edu.stanford.epad.epadws.security.EPADSessionOperations;
 import edu.stanford.epad.epadws.service.DefaultEpadProjectOperations;
@@ -147,6 +148,10 @@ public class ServerStatusHandler extends AbstractHandler
 				responseStream.println("<b>Config webserviceBase:</b> " + EPADConfig.getParamValue("webserviceBase") + "<br>");
 				responseStream.println("<b>Hostname:</b> " + InetAddress.getLocalHost().getHostName() + "<br>");
 				responseStream.println("<b>IP Address:</b> " + EpadStatisticsTask.getIPAddress() + "<br>");
+				if (EPADSessionWatcher.diskspacealert)
+				{
+					responseStream.println("<br><font size=+1 color=red><b>Low System Disk Space</b></font><br>");					
+				}
 				responseStream.println("<style>tbody { display: block;max-height:350px;overflow-y:auto; } </style>");
 				String sessionID = SessionService.getJSessionIDFromRequest(httpRequest);
 				String username = EPADSessionOperations.getSessionUser(sessionID);
