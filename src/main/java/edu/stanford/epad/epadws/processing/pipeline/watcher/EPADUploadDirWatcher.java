@@ -90,7 +90,8 @@ public class EPADUploadDirWatcher implements Runnable
 					count++;
 					List<File> newUploadDirectories = findNewUploadDirectory(rootUploadDirectory);
 					if (newUploadDirectories != null) {
-						log.info("Found " + newUploadDirectories.size() + " upload directories");
+						if (newUploadDirectories.size() > 0)
+							log.info("Found " + newUploadDirectories.size() + " upload directories");
 						for (File newUploadDirectory : newUploadDirectories) {
 							processUploadDirectory(newUploadDirectory);
 						}
