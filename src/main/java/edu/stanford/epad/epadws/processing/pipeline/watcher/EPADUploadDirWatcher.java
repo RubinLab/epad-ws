@@ -90,6 +90,7 @@ public class EPADUploadDirWatcher implements Runnable
 					count++;
 					List<File> newUploadDirectories = findNewUploadDirectory(rootUploadDirectory);
 					if (newUploadDirectories != null) {
+						log.info("Found " + newUploadDirectories.size() + " upload directories");
 						for (File newUploadDirectory : newUploadDirectories) {
 							processUploadDirectory(newUploadDirectory);
 						}
@@ -171,7 +172,8 @@ public class EPADUploadDirWatcher implements Runnable
 		try {
 			File xnatprops = new File(directory, UserProjectService.XNAT_UPLOAD_PROPERTIES_FILE_NAME);
 			username = getUserNameFromProperties(xnatprops);
-			projectOperations.updateUserTaskStatus(username, TaskStatus.TASK_UPLOAD, directory.getName(), "Started upload", new Date(), null);
+			if (username != null)
+				projectOperations.updateUserTaskStatus(username, TaskStatus.TASK_UPLOAD, directory.getName(), "Started upload", new Date(), null);
 			boolean hasZipFile = waitOnEmptyUploadDirectory(directory);
 			if (username == null)
 				username = getUserNameFromProperties(xnatprops);
