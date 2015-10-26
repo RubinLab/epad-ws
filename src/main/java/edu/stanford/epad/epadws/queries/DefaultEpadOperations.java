@@ -128,6 +128,7 @@ import edu.stanford.epad.epadws.models.EventLog;
 import edu.stanford.epad.epadws.models.FileType;
 import edu.stanford.epad.epadws.models.NonDicomSeries;
 import edu.stanford.epad.epadws.models.Project;
+import edu.stanford.epad.epadws.models.ProjectToSubjectToStudy;
 import edu.stanford.epad.epadws.models.ProjectType;
 import edu.stanford.epad.epadws.models.Study;
 import edu.stanford.epad.epadws.models.Subject;
@@ -341,10 +342,22 @@ public class DefaultEpadOperations implements EpadOperations
 		Subject subject = null;
 		Set<String> studyUIDsInEpad = new HashSet<String>();
 		subject = projectOperations.getSubject(subjectReference.subjectID);
-		studies = projectOperations.getStudiesForProjectAndSubject(subjectReference.projectID, 
+		boolean unassignedProject = subjectReference.projectID.equals(EPADConfig.getParamValue("UnassignedProjectID", "nonassigned"));
+		if (unassignedProject)
+		{
+			studies = projectOperations.getStudiesForSubject(subjectReference.subjectID);
+		}
+		else
+		{
+			studies = projectOperations.getStudiesForProjectAndSubject(subjectReference.projectID, 
 				subjectReference.subjectID);
+		}
+		
 		for (Study study: studies)
-			studyUIDsInEpad.add(study.getStudyUID());
+		{
+			if (!unassignedProject || new ProjectToSubjectToStudy().getCount("study_id = " + study.getId()) == 0)
+				studyUIDsInEpad.add(study.getStudyUID());
+		}
 		DCM4CHEEStudyList dcm4CheeStudyList = Dcm4CheeQueries.getStudies(studyUIDsInEpad);
 	
 
