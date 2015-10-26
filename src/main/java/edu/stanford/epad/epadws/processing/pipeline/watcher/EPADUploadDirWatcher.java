@@ -291,10 +291,10 @@ public class EPADUploadDirWatcher implements Runnable
 
 		long oldSize = -1;
 		int oldNumberOfFiles = -1;
-
+		int count = 0;
 		while (true) {
 			String[] filePaths = dir.list();
-
+			count++;
 			if (filePaths != null) {
 				if (filePaths.length > 0) {
 					long newSize = dir.getTotalSpace();
@@ -302,6 +302,8 @@ public class EPADUploadDirWatcher implements Runnable
 
 					if (oldNumberOfFiles != newNumberOfFiles || oldSize != newSize 
 							|| (newNumberOfFiles == 1  && (System.currentTimeMillis() - emptyDirStartWaitTime) < MIN_WAIT_TIME)) {
+						if (count%200 == 0)
+							log.info("Waiting on directory " + dir.getName() + ", number of files:" + newNumberOfFiles + ", directory size:" + newSize);
 						oldNumberOfFiles = newNumberOfFiles;
 						oldSize = newSize;
 					} else {
