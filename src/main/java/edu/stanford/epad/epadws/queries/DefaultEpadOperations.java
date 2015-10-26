@@ -1337,7 +1337,6 @@ public class DefaultEpadOperations implements EpadOperations
 			throw new Exception("Study can not be added to project:" + studyReference.projectID);
 		if (studyReference.studyUID != null && studyReference.studyUID.trim().length() == 0)
 			throw new Exception("Invalid Study UID");
-		projectOperations.createEventLog(username, studyReference.projectID, studyReference.subjectID, studyReference.studyUID, null, null, null, "CREATE STUDY", description +":" + studyDate);
 		String studyUID = studyReference.studyUID;
 		if (studyUID.equalsIgnoreCase("new"))
 		{
@@ -1347,10 +1346,12 @@ public class DefaultEpadOperations implements EpadOperations
 		Study study = projectOperations.getStudy(studyUID);
 		if (study == null)
 		{
+			projectOperations.createEventLog(username, studyReference.projectID, studyReference.subjectID, studyReference.studyUID, null, null, null, "CREATE STUDY", description +":" + studyDate);
 			study = projectOperations.createStudy(username, studyUID, studyReference.subjectID, description, studyDate);
 		}
 		if (studyReference.projectID != null && studyReference.projectID.length() != 0)
 		{
+			projectOperations.createEventLog(username, studyReference.projectID, studyReference.subjectID, studyReference.studyUID, null, null, null, "ADD STUDY", description +":" + studyDate);
 			log.info("adding study:" + studyUID + " to project:" + studyReference.projectID);
 			projectOperations.addStudyToProject(username, studyUID, studyReference.subjectID, studyReference.projectID);
 		}
