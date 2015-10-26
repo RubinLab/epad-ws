@@ -1766,7 +1766,7 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 			projectCache.remove(project.getProjectId());
 		} catch (Exception x) {
 			if (x.getMessage() != null && x.getMessage().contains("constraint")) {
-				throw new Exception("Error deleting project, a PAC Query may be referring to this project");
+				throw new Exception("Error deleting project, a PAC Query or Plugin may be referring to this project");
 			} else
 				throw x;
 		}
