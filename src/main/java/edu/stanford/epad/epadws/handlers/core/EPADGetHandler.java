@@ -167,7 +167,7 @@ public class EPADGetHandler
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.SUBJECT_LIST, pathInfo)) {
 				ProjectReference projectReference = ProjectReference.extract(ProjectsRouteTemplates.SUBJECT_LIST, pathInfo);
 				String host = EPADSessionOperations.getSessionHost(sessionID);
-				if (false && host != null && host.contains("epad-dev")) {
+				if (host != null && host.contains("epad-dev")) {
 					// For multiple duplicate requests
 					long currSec = System.currentTimeMillis()/1000;
 					String requestStr = projectReference.projectID + httpRequest.getQueryString() + currSec;

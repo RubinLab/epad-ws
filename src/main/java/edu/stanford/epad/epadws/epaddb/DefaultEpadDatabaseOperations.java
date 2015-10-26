@@ -1864,6 +1864,36 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 		}
 	}
 
+	// Enter short event
+	@Override
+	public void insertEpadEvent(String sessionID, String message, String name, String target)
+	{
+		Connection c = null;
+		PreparedStatement ps = null;
+		try {
+			// logger.info("Inserting into event table: " + sessionID + " EVENT:" + aim_uid);
+
+			c = getConnection();
+			ps = c.prepareStatement(EpadDatabaseCommands.INSERT_INTO_EVENT);
+			ps.setString(1, sessionID);
+			ps.setString(2, message);
+			ps.setString(3, "");
+			ps.setString(4, "");
+			ps.setString(5, "");
+			ps.setString(6, name);
+			ps.setString(7, "");
+			ps.setString(8, "");
+			ps.setString(9, target);
+			ps.execute();
+		} catch (SQLException sqle) {
+			log.warning("Database operation failed.", sqle);
+		} catch (Exception e) {
+			log.warning("Database operation (insert event) failed", e);
+		} finally {
+			close(c, ps);
+		}
+	}
+
 	/**
 	 * Cross database query that gets all image UIDs for a series if the corresponding image is recorded in the epad_files
 	 * table.

@@ -1004,6 +1004,12 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 			inclause = inclause + delim + id;
 			delim = ",";
 		}
+		List<Study> studies = new Study().getObjects("id not in (select distinct study_id from " + ProjectToSubjectToStudy.DBTABLE + ")");
+		for (Study study: studies)
+		{
+			inclause = inclause + delim + study.getSubjectId();
+			delim = ",";
+		}
 		if (inclause.length() == 0)
 			return new ArrayList<Subject>();
 		List objects = new Subject().getObjects("id in " + inclause + ") order by name");
@@ -1179,6 +1185,8 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 	@Override
 	public List<Study> getStudiesForSubject(String subjectUID) throws Exception {
 		Subject subject = getSubject(subjectUID);
+		if (subject == null)
+			return new ArrayList<Study>();
 		List objects = new Study().getObjects("subject_id  =" + subject.getId());
 		List<Study> studies = new ArrayList<Study>();
 		studies.addAll(objects);		
@@ -1826,6 +1834,10 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		{
 			new WorkListToStudy().deleteObjects("study_id =" + study.getId());			
 			study.delete();
+			List<Study> studies = this.getStudiesForSubject(subjectUID);
+			List<EpadFile> files = this.getEpadFiles(null, subjectUID, null, null, null, false);
+			if (studies.size() == 0 && files.size() == 0)
+				deleteSubject(username, subjectUID);
 	}
 	}
 
