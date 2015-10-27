@@ -422,7 +422,7 @@ public class EPADUploadDirWatcher implements Runnable
 			}
 			catch (Exception x)
 			{
-				log.warning("Error untaring " + zipFile.getAbsolutePath());
+				log.warning("Error untaring " + zipFile.getAbsolutePath(), x);
 			}
 		}
 	}
