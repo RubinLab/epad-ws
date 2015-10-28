@@ -177,8 +177,6 @@ public class EventHandler extends AbstractHandler
 				sb.append("\n");
 				responseStream.print(sb.toString());
 				responseStream.print(sb.toString());
-				responseStream.print(sb.toString());
-				responseStream.print(sb.toString());
 				if (System.currentTimeMillis()%3 == 0)
 					statusCode = HttpServletResponse.SC_OK;
 				else

@@ -147,7 +147,7 @@ public interface EpadOperations
 	 */
 	EPADStudyList getStudyDescriptions(SubjectReference subjectReference, String username, String sessionID,
 			EPADSearchFilter searchFilter) throws Exception;
-
+	
 	/**
 	 * Get study description
 	 * @param studyReference
@@ -841,6 +841,7 @@ public interface EpadOperations
 	 * @return
 	 */
 	String deleteSeries(SeriesReference seriesReference, boolean deleteAims);
+	void deleteSeriesPNGs(SeriesReference seriesReference);
 
 	/**
 	 * Delete project aim

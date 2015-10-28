@@ -125,7 +125,11 @@ public class EPADSessionHandler extends AbstractHandler
 				            String home = contextPath;
 				            if (!home.endsWith("/")) home = home + "/";
 				            home =  home  + EPADConfig.getParamValue("HomePage", "Web_pad.html");
-				    		httpResponse.sendRedirect(home);
+				            String redirectUrl = httpRequest.getParameter("redirectUrl");
+				            if (redirectUrl != null)
+					    		httpResponse.sendRedirect(redirectUrl);
+				            else
+				            	httpResponse.sendRedirect(home);
 				    		return;
 				    	}
 

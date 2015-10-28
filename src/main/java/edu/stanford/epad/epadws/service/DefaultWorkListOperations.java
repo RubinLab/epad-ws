@@ -159,7 +159,7 @@ public class DefaultWorkListOperations implements EpadWorkListOperations {
 		workList = (WorkList) workList.getObject("worklistid = " + workList.toSQL(workListID));
 		Project project = projectOperations.getProject(projectID);
 		if (!projectOperations.isSubjectInProject(subjectUID, project.getProjectId()))
-			throw new Exception("Subject " + subjectUID + " does not belong to Project " + projectID);
+			throw new Exception("Subject " + subjectUID + " no longer exists in Project " + projectID);
 		List<WorkListToSubject> wtoss = new WorkListToSubject().getObjects("worklist_id =" + workList.getId() + " order by sortorder");
 		long max = 0;
 		if (wtoss.size() > 0)
@@ -190,8 +190,6 @@ public class DefaultWorkListOperations implements EpadWorkListOperations {
 		WorkList workList = new WorkList();
 		workList = (WorkList) workList.getObject("worklistid = " + workList.toSQL(workListID));
 		Project project = projectOperations.getProject(projectID);
-		if (!projectOperations.isSubjectInProject(subjectUID, project.getProjectId()))
-			throw new Exception("Subject " + subjectUID + " does not belong to Project " + projectID);
 		WorkListToSubject wtos = (WorkListToSubject) new WorkListToSubject().getObject("worklist_id =" + workList.getId() + " and subject_id=" + subject.getId() + " and project_id=" + project.getId());
 		if (wtos != null)
 			wtos.delete();
@@ -209,7 +207,7 @@ public class DefaultWorkListOperations implements EpadWorkListOperations {
 		Project project = projectOperations.getProject(projectID);
 		Subject subject = (Subject) projectOperations.getDBObject(Subject.class, study.getSubjectId());
 		if (!projectOperations.isSubjectInProject(subject.getSubjectUID(), project.getProjectId()))
-			throw new Exception("Study " + studyUID + " does not belong to Project " + projectID);
+			throw new Exception("Study " + studyUID + " no longer exists in Project " + projectID);
 		List<WorkListToStudy> wtoss = new WorkListToStudy().getObjects("worklist_id =" + workList.getId() + " order by sortorder");
 		long max = 0;
 		if (wtoss.size() > 0)
@@ -305,6 +303,17 @@ public class DefaultWorkListOperations implements EpadWorkListOperations {
 		if (user == null)
 			throw new Exception("User not found, username:" + username);
 		List objects = new WorkList().getObjects("user_id =" + user.getId() + " order by worklistid");
+		List<WorkList> worklists = new ArrayList<WorkList>();
+		worklists.addAll(objects);
+		return worklists;
+	}
+
+	@Override
+	public List<WorkList> getWorkListsByUser(String username) throws Exception {
+		User user = projectOperations.getUser(username);
+		if (user == null)
+			throw new Exception("User not found, username:" + username);
+		List objects = new WorkList().getObjects("creator ='" + username + "' order by worklistid");
 		List<WorkList> worklists = new ArrayList<WorkList>();
 		worklists.addAll(objects);
 		return worklists;

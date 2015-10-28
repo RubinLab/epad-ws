@@ -78,7 +78,6 @@ import com.pixelmed.dicom.TagFromName;
 import edu.stanford.epad.common.dicom.DCM4CHEEImageDescription;
 import edu.stanford.epad.common.pixelmed.PixelMedUtils;
 import edu.stanford.epad.common.plugins.PluginAIMUtil;
-import edu.stanford.epad.epadws.plugins.PluginConfig;
 import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADFileUtils;
 import edu.stanford.epad.common.util.EPADLogger;
@@ -100,6 +99,7 @@ import edu.stanford.epad.epadws.handlers.event.EventHandler;
 import edu.stanford.epad.epadws.models.NonDicomSeries;
 import edu.stanford.epad.epadws.models.Project;
 import edu.stanford.epad.epadws.models.Subject;
+import edu.stanford.epad.epadws.plugins.PluginConfig;
 import edu.stanford.epad.epadws.processing.pipeline.task.PluginStartTask;
 import edu.stanford.epad.epadws.queries.DefaultEpadOperations;
 import edu.stanford.epad.epadws.queries.EpadOperations;
@@ -118,6 +118,7 @@ import edu.stanford.hakan.aim4api.compability.aimv3.Segmentation;
 import edu.stanford.hakan.aim4api.compability.aimv3.SegmentationCollection;
 import edu.stanford.hakan.aim4api.compability.aimv3.User;
 import edu.stanford.hakan.aim4api.usage.AnnotationBuilder;
+import edu.stanford.hakan.aim4api.usage.AnnotationGetter;
 import edu.stanford.hakan.aim4api.usage.AnnotationValidator;
 
 /**
@@ -1683,6 +1684,23 @@ public class AIMUtil
 		log.info("Time taken for checking AIM permissions:" + (endtime-starttime) + " msecs, in:" + aimlist.ResultSet.totalRecords + " out:" + projectAIMsMap.values().size() + " username:" + username);
 		
 		return projectAIMsMap;
+	}
+	
+	public static String getReferencedImage(EPADAIM aim) throws Exception
+	{
+		String xml = aim.xml;
+		if (xml == null)
+			throw new Exception("XML data is null, aim:" + aim.aimID);
+		int uidInd = xml.indexOf("sopInstanceUID");
+		if (uidInd == -1)
+			uidInd = xml.indexOf("imageReferenceUID");
+		if (uidInd == -1)
+			return null;
+		int quoteIndex = xml.indexOf('"', uidInd);
+		if (quoteIndex == -1)
+			return null;
+		int secondquote = xml.indexOf('"', quoteIndex);
+		return xml.substring(quoteIndex, secondquote);
 	}
 	
 //	public static int convertAllAim3() throws Exception {

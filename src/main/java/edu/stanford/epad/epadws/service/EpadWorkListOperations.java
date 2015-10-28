@@ -147,6 +147,7 @@ public interface EpadWorkListOperations {
 	 * @throws Exception
 	 */
 	List<WorkList> getWorkListsForUser(String username) throws Exception;
+	List<WorkList> getWorkListsByUser(String username) throws Exception;
 	
 	/**
 	 * Get WorkList for a user and project

@@ -128,6 +128,7 @@ import edu.stanford.epad.epadws.models.EventLog;
 import edu.stanford.epad.epadws.models.FileType;
 import edu.stanford.epad.epadws.models.NonDicomSeries;
 import edu.stanford.epad.epadws.models.Project;
+import edu.stanford.epad.epadws.models.ProjectToSubjectToStudy;
 import edu.stanford.epad.epadws.models.ProjectType;
 import edu.stanford.epad.epadws.models.Study;
 import edu.stanford.epad.epadws.models.Subject;
@@ -341,14 +342,28 @@ public class DefaultEpadOperations implements EpadOperations
 		Subject subject = null;
 		Set<String> studyUIDsInEpad = new HashSet<String>();
 		subject = projectOperations.getSubject(subjectReference.subjectID);
-		studies = projectOperations.getStudiesForProjectAndSubject(subjectReference.projectID, 
+		boolean unassignedProject = subjectReference.projectID.equals(EPADConfig.getParamValue("UnassignedProjectID", "nonassigned"));
+		if (unassignedProject)
+		{
+			studies = projectOperations.getStudiesForSubject(subjectReference.subjectID);
+		}
+		else
+		{
+			studies = projectOperations.getStudiesForProjectAndSubject(subjectReference.projectID, 
 				subjectReference.subjectID);
+		}
+		
 		for (Study study: studies)
-			studyUIDsInEpad.add(study.getStudyUID());
+		{
+			if (!unassignedProject || new ProjectToSubjectToStudy().getCount("study_id = " + study.getId()) <= 1)
+				studyUIDsInEpad.add(study.getStudyUID());
+		}
 		DCM4CHEEStudyList dcm4CheeStudyList = Dcm4CheeQueries.getStudies(studyUIDsInEpad);
 	
 
 		for (DCM4CHEEStudy dcm4CheeStudy : dcm4CheeStudyList.ResultSet.Result) {
+			List<NonDicomSeries> series = projectOperations.getNonDicomSeriesForStudy(dcm4CheeStudy.studyUID);
+			dcm4CheeStudy.seriesCount = dcm4CheeStudy.seriesCount + series.size();
 			EPADStudy epadStudy = dcm4cheeStudy2EpadStudy(sessionID, subjectReference.projectID, subjectReference.subjectID,
 					dcm4CheeStudy, username);
 			studyUIDsInEpad.remove(epadStudy.studyUID);
@@ -1048,9 +1063,7 @@ public class DefaultEpadOperations implements EpadOperations
 		if (Dcm4CheeOperations.deleteSeries(seriesReference.seriesUID, seriesPk))
 		{
 			epadDatabaseOperations.deleteSeries(seriesReference.seriesUID);
-			String pngPath = EPADConfig.getEPADWebServerPNGDir() + "studies/" + seriesReference.studyUID + "/series/" + seriesReference.seriesUID + "/images/";
-			log.debug("Deleting all files in:" + pngPath);
-			EPADFileUtils.deleteDirectoryAndContents(new File(pngPath));
+			deleteSeriesPNGs(seriesReference);
 			if (deleteAims)
 				deleteAllSeriesAims(seriesReference.seriesUID, false);
 			return "";
@@ -1060,6 +1073,13 @@ public class DefaultEpadOperations implements EpadOperations
 			return "Error deleting Series in DCM4CHE database";
 		}
 		
+	}
+
+	@Override
+	public void deleteSeriesPNGs(SeriesReference seriesReference) {
+		String pngPath = EPADConfig.getEPADWebServerPNGDir() + "studies/" + seriesReference.studyUID + "/series/" + seriesReference.seriesUID + "/images/";
+		log.debug("Deleting all files in:" + pngPath);
+		EPADFileUtils.deleteDirectoryAndContents(new File(pngPath));
 	}
 
 	@Override
@@ -1324,7 +1344,6 @@ public class DefaultEpadOperations implements EpadOperations
 			throw new Exception("Study can not be added to project:" + studyReference.projectID);
 		if (studyReference.studyUID != null && studyReference.studyUID.trim().length() == 0)
 			throw new Exception("Invalid Study UID");
-		projectOperations.createEventLog(username, studyReference.projectID, studyReference.subjectID, studyReference.studyUID, null, null, null, "CREATE STUDY", description +":" + studyDate);
 		String studyUID = studyReference.studyUID;
 		if (studyUID.equalsIgnoreCase("new"))
 		{
@@ -1334,10 +1353,12 @@ public class DefaultEpadOperations implements EpadOperations
 		Study study = projectOperations.getStudy(studyUID);
 		if (study == null)
 		{
+			projectOperations.createEventLog(username, studyReference.projectID, studyReference.subjectID, studyReference.studyUID, null, null, null, "CREATE STUDY", description +":" + studyDate);
 			study = projectOperations.createStudy(username, studyUID, studyReference.subjectID, description, studyDate);
 		}
 		if (studyReference.projectID != null && studyReference.projectID.length() != 0)
 		{
+			projectOperations.createEventLog(username, studyReference.projectID, studyReference.subjectID, studyReference.studyUID, null, null, null, "ADD STUDY", description +":" + studyDate);
 			log.info("adding study:" + studyUID + " to project:" + studyReference.projectID);
 			projectOperations.addStudyToProject(username, studyUID, studyReference.subjectID, studyReference.projectID);
 		}
@@ -2140,8 +2161,6 @@ public class DefaultEpadOperations implements EpadOperations
 	public int subjectDelete(SubjectReference subjectReference, String sessionID, String username) throws Exception
 	{
 		List<Study> studies = projectOperations.getStudiesForSubject(subjectReference.subjectID);
-		if (studies.size() > 0 && subjectReference.projectID != null && subjectReference.projectID.equals(EPADConfig.getParamValue("UnassignedProjectID", "nonassigned")))
-			throw new Exception("Patient can not be delete from project:" + subjectReference.projectID);
 		int xnatStatusCode;
 		User user = projectOperations.getUser(username);
 		if (!user.isAdmin() && !projectOperations.isOwner(username, subjectReference.projectID))
@@ -2167,8 +2186,6 @@ public class DefaultEpadOperations implements EpadOperations
 	@Override
 	public String studyDelete(StudyReference studyReference, String sessionID, boolean deleteAims, String username) throws Exception
 	{
-		if (studyReference.projectID != null && studyReference.projectID.equals(EPADConfig.getParamValue("UnassignedProjectID", "nonassigned")))
-			throw new Exception("Study can not be delete from project:" + studyReference.projectID);
 		int xnatStatusCode;
 		User user = projectOperations.getUser(username);
 		if (!user.isAdmin() && !projectOperations.isOwner(username, studyReference.projectID))
@@ -2984,6 +3001,12 @@ public class DefaultEpadOperations implements EpadOperations
 		else
 		{
 			worklists = workListOperations.getWorkListsForUser(username);
+			List<WorkList> worklist2 = workListOperations.getWorkListsByUser(username);
+			for (WorkList wl: worklist2)
+			{
+				if (!worklists.contains(wl))
+					worklists.add(wl);
+			}
 		}
 		EPADWorklistList wllist = new EPADWorklistList();
 		for (WorkList wl: worklists)
@@ -3398,6 +3421,7 @@ public class DefaultEpadOperations implements EpadOperations
 
 		String patientID = subject.getSubjectUID();
 		String patientName = subject.getName();
+		int numberOfStudies = 0;
 		if (!searchFilter.shouldFilterSubject(patientID, patientName)) {
 			String xnatSubjectID = "";
 			String uri = "";
@@ -3407,6 +3431,7 @@ public class DefaultEpadOperations implements EpadOperations
 			int numberOfAnnotations = 0;
 			if (annotationCount && !"true".equalsIgnoreCase(EPADConfig.getParamValue("SkipPatientAnnotationCount", "false"))) {
 				List<Study> studies = projectOperations.getStudiesForProjectAndSubject(projectID, patientID);
+				numberOfStudies = studies.size();
 				for  (Study study: studies)
 				{
 					// Skip this, cause it is too slow and not that important
@@ -3419,7 +3444,8 @@ public class DefaultEpadOperations implements EpadOperations
 			if (!searchFilter.shouldFilterSubject(patientID, patientName, numberOfAnnotations)) {
 				Set<String> examTypes = epadQueries.getExamTypesForSubject(patientID);
 				if (!searchFilter.shouldFilterSubject(patientID, patientName, examTypes, numberOfAnnotations)) {
-					int numberOfStudies = Dcm4CheeQueries.getNumberOfStudiesForPatient(patientID);
+					if (numberOfStudies == 0)
+						numberOfStudies = Dcm4CheeQueries.getNumberOfStudiesForPatient(patientID);
 
 					return new EPADSubject(projectID, patientID, patientName, insertUser, xnatSubjectID, insertDate, uri,
 							numberOfStudies, numberOfAnnotations, examTypes);
@@ -3879,7 +3905,12 @@ public class DefaultEpadOperations implements EpadOperations
 
 			dicomImageFilePath = temporaryDicomFile.getAbsolutePath();
 			Opener opener = new Opener();
-			ImagePlus image = opener.openImage(dicomImageFilePath);
+			ImagePlus image = null;
+			try {
+				image = opener.openImage(dicomImageFilePath);
+			} catch (Error x) {
+				log.warning("Error opening image", x);
+			}
 
 			if (image != null) {
 				// This method to get Window parameters in overriden below (need to test which one is correct)
@@ -4259,6 +4290,23 @@ public class DefaultEpadOperations implements EpadOperations
 		projectOperations.removeReviewee(loggedInUser, username, reviewee);
 	}
 
+	public EPADImage getSameSlice(String username, ImageReference imageReference, String followupStudyUID, String sessionID) throws Exception
+	{
+		SeriesReference seriesReference = new SeriesReference(imageReference.projectID, imageReference.subjectID, imageReference.seriesUID, imageReference.imageUID); 
+		EPADSeries newSeries = this.getSeriesDescription(seriesReference, username, sessionID);
+		StudyReference studyReference = new StudyReference(imageReference.projectID, imageReference.subjectID, followupStudyUID); 
+		EPADSeriesList serieses = getSeriesDescriptions(studyReference, username, sessionID, new EPADSearchFilter(), true);
+		for (EPADSeries oldSeries: serieses.ResultSet.Result) {
+			if (oldSeries.seriesDescription.equals(newSeries.seriesDescription)) {
+				EPADAIMList aims = this.getSeriesAIMDescriptions(seriesReference, username, sessionID);
+				for (EPADAIM aim: aims.ResultSet.Result) {
+					String imageUID = AIMUtil.getReferencedImage(aim);
+				}
+			}
+		}
+		return null;
+	}
+	
 	// This is Pixelmed variant (though does not seem to be correct).
 	// SourceImage srcDicomImage = new SourceImage(temporaryDicomFile.getAbsolutePath());
 	// ImageEnhancer imageEnhancer = new ImageEnhancer(srcDicomImage);
