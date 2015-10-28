@@ -103,9 +103,13 @@ public class TCIAService  {
 		}
 	}
 
+	public static long downtime = 0;
 	public List<String> getCollections() throws Exception{
 		if (collections == null) {
+			if (downtime != 0 && ((System.currentTimeMillis() - downtime) < 4*3600*1000))
+				return collections;
 			JsonArray collArray = getResponseFromTCIA("getCollectionValues");
+			downtime = 0;
 			collections = new ArrayList<String>();
 			for (int i = 0; i < collArray.size(); i++)
 				collections.add(collArray.get(i).getAsJsonObject().get("Collection").getAsString());
@@ -404,10 +408,12 @@ public class TCIAService  {
 			    return parser.parse(response).getAsJsonArray();
 			} else {
 				log.warning("TCIA URL:" + tciaURL + " Status:" + statusCode);
+				downtime = System.currentTimeMillis();
 				throw new Exception("Error calling TCIA, status = " + statusCode);
 			}
 		}
 		catch (Exception x) {
+			downtime = System.currentTimeMillis();
 			log.warning("Error calling TCIA url:" + tciaURL, x);
 			throw x;
 		}

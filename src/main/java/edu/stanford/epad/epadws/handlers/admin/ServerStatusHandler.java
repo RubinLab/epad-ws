@@ -184,7 +184,7 @@ public class ServerStatusHandler extends AbstractHandler
 						if (id.equals(sessionID))
 							you = "*";
 						EPADSession session = sessions.get(id);
-						responseStream.println("&nbsp;&nbsp;&nbsp;<b>User:</b> " + session.getUsername() + you + " <b>Started:</b> " + session.getCreatedTime() + " <b>From:</b>" + session.getRemoteAddr() + "<br>");
+						responseStream.println("&nbsp;&nbsp;&nbsp;<b>User:</b> " + session.getUsername() + you + " <b>Started:</b> " + session.getCreatedTime() + " <b>From:</b>" + session.getRemoteHost() + "/" + session.getRemoteAddr() + "<br>");
 					}
 					Collection<User> users = DefaultEpadProjectOperations.getUserCache();
 					responseStream.println("<br><b>Background Tasks: </b>");

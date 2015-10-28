@@ -355,7 +355,7 @@ public class DefaultEpadOperations implements EpadOperations
 		
 		for (Study study: studies)
 		{
-			if (!unassignedProject || new ProjectToSubjectToStudy().getCount("study_id = " + study.getId()) == 0)
+			if (!unassignedProject || new ProjectToSubjectToStudy().getCount("study_id = " + study.getId()) <= 1)
 				studyUIDsInEpad.add(study.getStudyUID());
 		}
 		DCM4CHEEStudyList dcm4CheeStudyList = Dcm4CheeQueries.getStudies(studyUIDsInEpad);
