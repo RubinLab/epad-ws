@@ -54,7 +54,7 @@ $( document ).ready(function() {
 						var studies = response.ResultSet.Result;
 						for (j = 0; j < studies.length; j++)
 						{
-							listdata =  listdata + "<tr><td>Study</td><td>&nbsp;&nbsp;&nbsp;" + studies[j].studyDescription + "&nbsp;&nbsp;<a href='javascript:downloadStudy(\"" +  subjects[i].subjectID + "\",\"" + studies[j].studyUID + "\")'><img src=download-icon.gif height=12px></a></td><td>" + studies[j].studyUID + "</td><td>"  +  studies[j].numberOfSeries + " / " + studies[j].numberOfAnnotations + "</td></tr>\n";
+							listdata =  listdata + "<tr><td>Study</td><td nowrap>&nbsp;&nbsp;&nbsp;" + studies[j].studyDescription + "&nbsp;&nbsp;<a href='javascript:downloadStudy(\"" +  subjects[i].subjectID + "\",\"" + studies[j].studyUID + "\")'><img src=download-icon.gif height=12px></a></td><td>" + studies[j].studyUID + "</td><td>"  +  studies[j].numberOfSeries + " / " + studies[j].numberOfAnnotations + "</td></tr>\n";
 							var url3 = url2 + studies[j].studyUID + "/series/";
 							$.ajax({         
 								url: url3 + "?username=<%=username%>",         
@@ -78,7 +78,7 @@ $( document ).ready(function() {
 										{
 											createDSO = "";
 										}
-										listdata =  listdata + "<tr><td nowrap>Series" + createDSO + "(<a href=javascript:regen('" + series[k].seriesUID + "')>Regenerate PNGs</a>)</td><td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href=series.jsp?projectID=<%=projectID%>&subjectID=" + subjects[i].subjectID + "&studyUID=" + studies[j].studyUID + "&seriesUID=" + series[k].seriesUID + ">" + series[k].seriesDescription + "</a>&nbsp;&nbsp;<a href='javascript:downloadSeries(\"" +  subjects[i].subjectID + "\",\"" + studies[j].studyUID + "\",\"" + series[k].seriesUID + "\")'><img src=download-icon.gif height=12px></a></td><td>" + series[k].seriesUID + "</td><td>" + series[k].numberOfImages + " / "  +  series[k].numberOfAnnotations + "</td></tr>\n";
+										listdata =  listdata + "<tr><td nowrap>Series" + createDSO + "(<a href=javascript:regen('" + series[k].seriesUID + "')>Regenerate PNGs</a>)</td><td nowrap>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href=series.jsp?projectID=<%=projectID%>&subjectID=" + subjects[i].subjectID + "&studyUID=" + studies[j].studyUID + "&seriesUID=" + series[k].seriesUID + ">" + series[k].seriesDescription + "</a>&nbsp;&nbsp;<a href='javascript:downloadSeries(\"" +  subjects[i].subjectID + "\",\"" + studies[j].studyUID + "\",\"" + series[k].seriesUID + "\")'><img src=download-icon.gif height=12px></a></td><td>" + series[k].seriesUID + "</td><td>" + series[k].numberOfImages + " / "  +  series[k].numberOfAnnotations + "</td></tr>\n";
 										var url4 = url3 + series[k].seriesUID + "/aims/?format=summary";
 										$.ajax({         
 											url: url4 + "&username=<%=username%>",         
@@ -95,7 +95,7 @@ $( document ).ready(function() {
 												{
 													if (aims[l].dsoSeriesUID != null && aims[l].dsoSeriesUID != "")
 													{
-														listdata =  listdata + "<tr><td>Aims</td><td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href='images.jsp?projectID=" + aims[l].aimID + "' target='rightpanel'>" + aims[l].name + " (" + aims[l].userName  + ")</a></td><td>" + aims[l].aimID + "/ " + aims[l].dsoSeriesUID + "(<a href=javascript:regen('" + aims[l].dsoSeriesUID + "')>Regenerate PNGs</a>)</td><td>"  +  aims[l].template + "/" + aims[l].templateType + "</td></tr>\n";
+														listdata =  listdata + "<tr><td>Aims</td><td nowrap>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href='images.jsp?projectID=" + aims[l].aimID + "' target='rightpanel'>" + aims[l].name + " (" + aims[l].userName  + ")</a></td><td>" + aims[l].aimID + "/ " + aims[l].dsoSeriesUID + "(<a href=javascript:regen('" + aims[l].dsoSeriesUID + "')>Regenerate PNGs</a>)</td><td>"  +  aims[l].template + "/" + aims[l].templateType + "</td></tr>\n";
 													}
 													else
 													{
