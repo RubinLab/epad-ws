@@ -95,7 +95,8 @@ public class EPADUploadDirWatcher implements Runnable
 						for (File newUploadDirectory : newUploadDirectories) {
 							processUploadDirectory(newUploadDirectory);
 						}
-						log.info("EPADUploadDirWatcher: Done processing directories");
+						if (newUploadDirectories.size() > 0)
+							log.info("EPADUploadDirWatcher: Done processing directories");
 					}
 				} catch (Exception e) {
 					log.warning("EPADUploadDirWatcher thread error ", e);
