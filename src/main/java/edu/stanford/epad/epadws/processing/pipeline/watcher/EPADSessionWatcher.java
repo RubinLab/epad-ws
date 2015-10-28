@@ -58,6 +58,7 @@ public class EPADSessionWatcher implements Runnable
 	private final ShutdownSignal shutdownSignal = ShutdownSignal.getInstance();
 	
 	public static boolean diskspacealert = false;
+	public static final int MIN_DISKSPACE = 500;
 
 	private String jsessionID = null;
 
@@ -93,10 +94,10 @@ public class EPADSessionWatcher implements Runnable
 						long dcm4cheeMb = FileSystemUtils.freeSpaceKb(EPADConfig.dcm4cheeDirRoot)/1024;
 						long epadMb = FileSystemUtils.freeSpaceKb(EPADConfig.getEPADWebServerBaseDir())/1024;
 						long tmpMb = FileSystemUtils.freeSpaceKb(System.getProperty("java.io.tmpdir"))/1024;
-						long mysqlMb = 300;
+						long mysqlMb = MIN_DISKSPACE;
 						if (new File("/var/lib/mysql").exists())
 							mysqlMb = FileSystemUtils.freeSpaceKb("/var/lib/mysql")/1024;
-						if ( dcm4cheeMb < 200 || epadMb < 200 || tmpMb < 200 || mysqlMb < 200)
+						if ( dcm4cheeMb < MIN_DISKSPACE || epadMb < MIN_DISKSPACE || tmpMb < MIN_DISKSPACE || mysqlMb < MIN_DISKSPACE)
 						{
 							diskspacealert = true;
 							projectOperations.createEventLog("system", null, null, null, null, null, null, null, "Disk Space", "Server running out of disk space",  true);
