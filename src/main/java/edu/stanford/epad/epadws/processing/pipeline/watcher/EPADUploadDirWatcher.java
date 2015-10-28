@@ -95,6 +95,7 @@ public class EPADUploadDirWatcher implements Runnable
 						for (File newUploadDirectory : newUploadDirectories) {
 							processUploadDirectory(newUploadDirectory);
 						}
+						log.info("EPADUploadDirWatcher: Done processing directories");
 					}
 				} catch (Exception e) {
 					log.warning("EPADUploadDirWatcher thread error ", e);
@@ -106,6 +107,8 @@ public class EPADUploadDirWatcher implements Runnable
 				}
 				TimeUnit.MILLISECONDS.sleep(CHECK_INTERVAL);
 			}
+		} catch (Error e) {
+			log.severe("Warning: EPADUploadDirWatcher thread error", e);
 		} catch (Throwable e) {
 			log.severe("Warning: EPADUploadDirWatcher thread error", e);
 		} finally {
