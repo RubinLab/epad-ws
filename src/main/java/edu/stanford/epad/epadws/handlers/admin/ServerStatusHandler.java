@@ -94,10 +94,16 @@ public class ServerStatusHandler extends AbstractHandler
 			request.setHandled(true);
 
 		try {
+			boolean debug = "true".equalsIgnoreCase(httpRequest.getParameter("system_debug"));
 			responseStream = httpResponse.getWriter();
 			boolean validSession = SessionService.hasValidSessionID(httpRequest);
+			User user = null;
+			String sessionID = null;
+			String username = null;
 			if (validSession) {
-				
+				sessionID = SessionService.getJSessionIDFromRequest(httpRequest);
+				username = EPADSessionOperations.getSessionUser(sessionID);
+				user = DefaultEpadProjectOperations.getInstance().getUser(username);
 				long upTime = System.currentTimeMillis() - startTime;
 				long upTimeHr = upTime / (1000*60*60);
 				long remain = upTime % (1000*60*60);
@@ -108,7 +114,7 @@ public class ServerStatusHandler extends AbstractHandler
 				String path = httpRequest.getContextPath().replace("status/", "").replace("status", "");
 				if (!path.endsWith("/")) path = path + "/";
 				responseStream.println("<a href=\"javascript:window.parent.location='" + path + "Web_pad.html'\"><b>Back to ePAD</b></a>");
-				if (Main.testPages)
+				if (Main.testPages && user != null && user.isAdmin())
 					responseStream.println("<div style='float:right'><a href=\"javascript:window.parent.location='" + path + "test/index.jsp'\"><b>Test Pages</b></a></div>");
 				responseStream.println("<hr>");
 				responseStream.println("<h3><center>ePAD Server Status</center></h3>");
@@ -119,7 +125,7 @@ public class ServerStatusHandler extends AbstractHandler
 			}
 			if (!validSession)
 				responseStream.println("Version: " + new EPadWebServerVersion().getVersion() + " Build Date: " + new EPadWebServerVersion().getBuildDate() + " Build Host: " + new EPadWebServerVersion().getBuildHost() + "<br>");
-			if (validSession) {
+			if (validSession || debug) {
 				responseStream.println("<b>Version:</b> " + new EPadWebServerVersion().getVersion() + " <b>Build Date:</b> " + new EPadWebServerVersion().getBuildDate() + " <b>Build Host:</b> " + new EPadWebServerVersion().getBuildHost() + "<br>");
 				List<Plugin> plugins = PluginOperations.getInstance().getPlugins();
 				responseStream.println("<br>");
@@ -153,13 +159,10 @@ public class ServerStatusHandler extends AbstractHandler
 					responseStream.println("<br><font size=+1 color=red><b>Low System Disk Space</b></font><br>");					
 				}
 				responseStream.println("<style>tbody { display: block;max-height:350px;overflow-y:auto; } </style>");
-				String sessionID = SessionService.getJSessionIDFromRequest(httpRequest);
-				String username = EPADSessionOperations.getSessionUser(sessionID);
+				List<EventLog> recentLogs = new ArrayList<EventLog>();
 				int free = EpadDatabase.getInstance().getEPADDatabaseOperations().getFreeConnections();
 				int used = EpadDatabase.getInstance().getEPADDatabaseOperations().getUsedConnections();
-				User user = DefaultEpadProjectOperations.getInstance().getUser(username);
-				List<EventLog> recentLogs = new ArrayList<EventLog>();
-				if (user.isAdmin()) {
+				if ((user != null && user.isAdmin()) || debug) {
 					responseStream.println("<br>");
 					responseStream.println("<b>Available DB Connections:</b> " + free + "<br>");
 					responseStream.println("<b>Used DB Connections:</b> " + used + "<br>");
@@ -205,7 +208,7 @@ public class ServerStatusHandler extends AbstractHandler
 					if (empty)
 						responseStream.println("<tr><td colspan=100% align=center>No background processes running</td></tr>");
 					responseStream.println("</tbody></table>");
-					if (free > 0)
+					if (free > 0 && !debug)
 						recentLogs = DefaultEpadProjectOperations.getInstance().getUseEventLogs("%", 0, 100);
 				}  else {
 					responseStream.println("<br><b>Background Tasks: </b>");
