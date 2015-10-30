@@ -35,6 +35,7 @@ public class EPADSession {
 	String remoteAddr;
 	Date createdTime;
 	Date lastActivity;
+	String lastRequest;
 	boolean valid;
 	
 	EPADSession(String sessionId, String username, int lifespan)
@@ -109,6 +110,14 @@ public class EPADSession {
 
 	public void setRemoteAddr(String remoteAddr) {
 		this.remoteAddr = remoteAddr;
+	}
+
+	public String getLastRequest() {
+		return lastRequest;
+	}
+
+	public void setLastRequest(String lastRequest) {
+		this.lastRequest = lastRequest;
 	}
 	
 }

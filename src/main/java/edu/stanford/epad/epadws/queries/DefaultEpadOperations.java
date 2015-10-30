@@ -1079,7 +1079,9 @@ public class DefaultEpadOperations implements EpadOperations
 	public void deleteSeriesPNGs(SeriesReference seriesReference) {
 		String pngPath = EPADConfig.getEPADWebServerPNGDir() + "studies/" + seriesReference.studyUID + "/series/" + seriesReference.seriesUID + "/images/";
 		log.debug("Deleting all files in:" + pngPath);
-		EPADFileUtils.deleteDirectoryAndContents(new File(pngPath));
+		File pngDir = new File(pngPath);
+		if (pngDir.exists())
+			EPADFileUtils.deleteDirectoryAndContents(pngDir);
 	}
 
 	@Override
@@ -2692,6 +2694,12 @@ public class DefaultEpadOperations implements EpadOperations
 				if (seriesMap.keySet().isEmpty())
 				{
 					aims.remove(i--);
+					if (aim.templateType != null && aim.templateType.equals("SEG"))
+					{
+						try {
+							AIMUtil.deleteAIM(aim.aimID, aim.projectID);
+						} catch (Exception x) {};
+					}
 				}
 			}
 			SeriesProcessingStatus status = epadDatabaseOperations.getSeriesProcessingStatus(aim.dsoSeriesUID);
@@ -2827,6 +2835,12 @@ public class DefaultEpadOperations implements EpadOperations
 				if (seriesMap.keySet().isEmpty())
 				{
 					aims.remove(i--);
+					if (aim.templateType != null && aim.templateType.equals("SEG"))
+					{
+						try {
+							AIMUtil.deleteAIM(aim.aimID, aim.projectID);
+						} catch (Exception x) {};
+					}
 				}
 			}
 			SeriesProcessingStatus status = epadDatabaseOperations.getSeriesProcessingStatus(aim.dsoSeriesUID);
@@ -4004,6 +4018,7 @@ public class DefaultEpadOperations implements EpadOperations
 				EPADUser epadUser = new EPADUser(user.getFullName(), user.getUsername(), 
 						user.getFirstName(), user.getLastName(), user.getEmail(), user.isEnabled(), user.isAdmin(), user.isPasswordExpired(), "", permissions, projects, projectToRole);
 				epadUser.colorpreference = user.getColorpreference();
+				epadUser.creator = user.getCreator();
 				if (returnUsage)
 				{
 					EpadStatistics userStats = projectOperations.getUserStatistics(username, user.getUsername(), false);
@@ -4020,6 +4035,7 @@ public class DefaultEpadOperations implements EpadOperations
 				EPADUser epadUser = new EPADUser(user.getFullName(), user.getUsername(), 
 						user.getFirstName(), user.getLastName(), "******", user.isEnabled(), user.isAdmin(), user.isPasswordExpired(), "", permissions, projects, projectToRole);
 				epadUser.colorpreference = user.getColorpreference();
+				epadUser.creator = user.getCreator();
 				if (returnUsage)
 				{
 					EpadStatistics userStats = projectOperations.getUserStatistics(username, user.getUsername(), false);
@@ -4067,6 +4083,7 @@ public class DefaultEpadOperations implements EpadOperations
 			epadUser = new EPADUser(user.getFullName(), user.getUsername(), 
 					user.getFirstName(), user.getLastName(), user.getEmail(), user.isEnabled(), user.isAdmin(), user.isPasswordExpired(), "", permissions, projects, projectToRole);
 			epadUser.colorpreference = user.getColorpreference();
+			epadUser.creator = user.getCreator();
 			if (returnUsage)
 			{
 				EpadStatistics userStats = projectOperations.getUserStatistics(username, user.getUsername(), false);
@@ -4082,6 +4099,7 @@ public class DefaultEpadOperations implements EpadOperations
 			epadUser = new EPADUser(user.getFullName(), user.getUsername(), 
 				user.getFirstName(), user.getLastName(), "******", user.isEnabled(), user.isAdmin(), user.isPasswordExpired(), "", permissions, projects, projectToRole);
 			epadUser.colorpreference = user.getColorpreference();
+			epadUser.creator = user.getCreator();
 			if (returnUsage)
 			{
 				EpadStatistics userStats = projectOperations.getUserStatistics(username, user.getUsername(), false);
@@ -4201,6 +4219,7 @@ public class DefaultEpadOperations implements EpadOperations
 				EPADUser epadUser = new EPADUser(user.getFullName(), user.getUsername(), 
 						user.getFirstName(), user.getLastName(), user.getEmail(), user.isEnabled(), user.isAdmin(), user.isPasswordExpired(), user.getRole(), permissions);
 				epadUser.colorpreference = user.getColorpreference();
+				epadUser.creator = user.getCreator();
 				userlist.addEPADUser(epadUser);
 			}
 			else
@@ -4208,6 +4227,7 @@ public class DefaultEpadOperations implements EpadOperations
 				EPADUser epadUser = new EPADUser(user.getFullName(), user.getUsername(), 
 						user.getFirstName(), user.getLastName(), "******", user.isEnabled(), user.isAdmin(), user.isPasswordExpired(), user.getRole(), permissions);
 				epadUser.colorpreference = user.getColorpreference();
+				epadUser.creator = user.getCreator();
 				userlist.addEPADUser(epadUser);
 			}
 		}
@@ -4247,6 +4267,7 @@ public class DefaultEpadOperations implements EpadOperations
 			EPADUser epadUser = new EPADUser(user.getFullName(), user.getUsername(), 
 					user.getFirstName(), user.getLastName(), user.getEmail(), user.isEnabled(), user.isAdmin(), user.isPasswordExpired(), "", null);
 			epadUser.colorpreference = user.getColorpreference();
+			epadUser.creator = user.getCreator();
 			userlist.addEPADUser(epadUser);
 		}
 		return userlist;
@@ -4261,6 +4282,7 @@ public class DefaultEpadOperations implements EpadOperations
 			EPADUser epadUser = new EPADUser(user.getFullName(), user.getUsername(), 
 					user.getFirstName(), user.getLastName(), user.getEmail(), user.isEnabled(), user.isAdmin(), user.isPasswordExpired(), "", null);
 			epadUser.colorpreference = user.getColorpreference();
+			epadUser.creator = user.getCreator();
 			userlist.addEPADUser(epadUser);
 		}
 		return userlist;

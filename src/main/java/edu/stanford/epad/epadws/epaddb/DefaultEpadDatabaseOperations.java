@@ -2823,13 +2823,13 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 
 	private void close(Connection c, Statement s, ResultSet rs)
 	{
-		close(c, s);
 		DatabaseUtils.close(rs);
+		close(c, s);
 	}
 	
 	private void close(Connection c, PreparedStatement ps, ResultSet rs)
 	{
-		close(c, ps);
 		DatabaseUtils.close(rs);
+		close(c, ps);
 	}
 }

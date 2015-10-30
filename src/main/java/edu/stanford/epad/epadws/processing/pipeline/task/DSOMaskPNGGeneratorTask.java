@@ -30,6 +30,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.epad.dtos.EPADAIM;
 import edu.stanford.epad.dtos.SeriesProcessingStatus;
@@ -40,8 +41,11 @@ import edu.stanford.epad.epadws.aim.aimapi.Aim;
 import edu.stanford.epad.epadws.epaddb.EpadDatabase;
 import edu.stanford.epad.epadws.epaddb.EpadDatabaseOperations;
 import edu.stanford.epad.epadws.handlers.dicom.DSOUtil;
+import edu.stanford.epad.epadws.models.Project;
 import edu.stanford.epad.epadws.processing.model.DicomSeriesProcessingStatusTracker;
 import edu.stanford.epad.epadws.processing.model.SeriesPipelineState;
+import edu.stanford.epad.epadws.service.DefaultEpadProjectOperations;
+import edu.stanford.epad.epadws.service.EpadProjectOperations;
 import edu.stanford.epad.epadws.service.UserProjectService;
 import edu.stanford.hakan.aim4api.compability.aimv3.ImageAnnotation;
 
@@ -77,6 +81,7 @@ public class DSOMaskPNGGeneratorTask implements GeneratorTask
 		}
 		log.info("Processing DSO for series  " + seriesUID + "; file=" + dsoFile.getAbsolutePath());
 		EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
+		EpadProjectOperations projectOperations = DefaultEpadProjectOperations.getInstance();
 		if (UserProjectService.pendingUploads.containsKey(studyUID))
 		{
 			String username = UserProjectService.pendingUploads.get(studyUID);
@@ -98,6 +103,14 @@ public class DSOMaskPNGGeneratorTask implements GeneratorTask
 			try {
 				DSOUtil.writeDSOMaskPNGs(dsoFile);
 			} catch (Exception x) {
+				log.warning("Error generating PNGs DSO series " + seriesUID, x);
+				SeriesPipelineState status = DicomSeriesProcessingStatusTracker.getInstance().getDicomSeriesProcessingStatus(seriesUID);
+				if (status != null)
+					DicomSeriesProcessingStatusTracker.getInstance().removeSeriesPipelineState(status);
+				epadDatabaseOperations.updateOrInsertSeries(seriesUID, SeriesProcessingStatus.ERROR);
+				throw x;
+			} catch (Error x) {
+				log.warning("Error generating PNGs DSO series " + seriesUID, x);
 				SeriesPipelineState status = DicomSeriesProcessingStatusTracker.getInstance().getDicomSeriesProcessingStatus(seriesUID);
 				if (status != null)
 					DicomSeriesProcessingStatusTracker.getInstance().removeSeriesPipelineState(status);
@@ -109,7 +122,16 @@ public class DSOMaskPNGGeneratorTask implements GeneratorTask
 			List<ImageAnnotation> ias = AIMQueries.getAIMImageAnnotations(AIMSearchType.SERIES_UID, seriesUID, "admin", 1, 50);
 			if (aims.size() == 0 && generateAIM)
 			{
-				ImageAnnotation ia = AIMUtil.generateAIMFileForDSO(dsoFile);
+				List<Project> projects = projectOperations.getProjectsForStudy(studyUID);
+				String projectID = null;
+				String username = null;
+				for (Project project: projects)
+				{
+					if (project.getProjectId().equals(EPADConfig.xnatUploadProjectID)) continue;
+					projectID = project.getProjectId();
+					username = project.getCreator();
+				}
+				ImageAnnotation ia = AIMUtil.generateAIMFileForDSO(dsoFile, projectID, username);
 				ias = new ArrayList<ImageAnnotation>();
 				ias.add(ia);
 			}

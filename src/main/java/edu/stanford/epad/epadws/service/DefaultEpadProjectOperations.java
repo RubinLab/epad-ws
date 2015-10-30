@@ -663,6 +663,12 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 			ptos.save();
 			this.createEventLog(loggedInUser, projectId, subjectUID, null, null, null, null, null, "Added Patient to Project", null, false);
 		}
+		List<ProjectToSubjectToStudy> psss = new ProjectToSubjectToStudy().getObjects("study_id=" + study.getId());
+		if (psss.size() == 1 && study.getCreator().equals("admin"))
+		{
+			study.setCreator(loggedInUser);
+			study.save();
+		}
 		ProjectToSubjectToStudy pss = (ProjectToSubjectToStudy) new ProjectToSubjectToStudy().getObject("proj_subj_id = " + ptos.getId() + " and study_id=" + study.getId());
 		if (pss == null)
 		{
@@ -1156,6 +1162,20 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 													+ ProjectToSubject.DBTABLE 
 													+ " where subject_id =" + subject.getId() + ")");
 		List<Project> projects = new ArrayList<Project>();
+		projects.addAll(objects);
+		
+		return projects;
+	}
+
+	@Override
+	public List<Project> getProjectsForStudy(String studyUID) throws Exception {
+		Study study = getStudy(studyUID);
+		List<Project> projects = new ArrayList<Project>();
+		List<AbstractDAO> psss = new ProjectToSubjectToStudy().getObjects("study_id=" + study.getId());
+		if (psss.size() == 0) return projects;
+		List objects = new Project().getObjects("id in (select project_id from " 
+													+ ProjectToSubject.DBTABLE 
+													+ " where id in (" + getIdList(psss) + ")");
 		projects.addAll(objects);
 		
 		return projects;
@@ -2167,6 +2187,20 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 			}
 		}
 		return objects;
+	}
+	
+	private String getIdList(List<AbstractDAO> objects)
+	{
+		if (objects == null) return "";
+		String list = "";
+		for (AbstractDAO object: objects)
+		{
+			list = "," + object.getId();
+		}
+		if (list.length() > 0)
+			return list.substring(1);
+		else
+			return list;
 	}
 
 }

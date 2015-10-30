@@ -113,6 +113,8 @@ public class DICOMSeriesWatcher implements Runnable
 
 		while (!shutdownSignal.hasShutdown()) {
 			count++;
+			if (count%1000 == 0)
+				log.debug("DICOMSeriesWatcher:" + count);
 			try {
 				SeriesProcessingDescription seriesProcessingDescription = dicomSeriesWatcherQueue.poll(2000,
 						TimeUnit.MILLISECONDS);
