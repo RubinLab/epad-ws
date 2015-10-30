@@ -182,13 +182,15 @@ public class ServerStatusHandler extends AbstractHandler
 					} catch (Exception x) {}
 					responseStream.println("<br><b>Current Sessions: </b>" + "<br>");
 					Map<String, EPADSession> sessions = EPADSessionOperations.getCurrentSessions();
+					responseStream.println("<br><table border=1 cellpadding=2 ><tbody><tr style='font-weight: bold;'><td align=center>User</td><td align=center>Started</td><td align=center>Client</td><td align=center>Last Request</td><td align=center>Request Time</td></tr>");
 					for (String id: sessions.keySet()) {
 						String you = "";
 						if (id.equals(sessionID))
 							you = "*";
 						EPADSession session = sessions.get(id);
-						responseStream.println("&nbsp;&nbsp;&nbsp;<b>User:</b> " + session.getUsername() + you + " <b>Started:</b> " + session.getCreatedTime() + " <b>From:</b>" + session.getRemoteHost() + "/" + session.getRemoteAddr() + "<br>");
+						responseStream.println("<tr><td>" + session.getUsername() + you + "</td><td>" + shortformat.format(session.getCreatedTime()) + "</td><td>" + session.getRemoteHost() + "/" + session.getRemoteAddr() + "</td><td>" + session.getLastRequest() + "</td><td>" + shortformat.format(session.getLastActivity()) + "</td></tr>");
 					}
+					responseStream.println("</table>");
 					Collection<User> users = DefaultEpadProjectOperations.getUserCache();
 					responseStream.println("<br><b>Background Tasks: </b>");
 					responseStream.println("<br><table border=1 cellpadding=2 ><tbody><tr style='font-weight: bold;'><td align=center>User</td><td align=center>Task</td><td align=center>Target</td><td align=center>Status</td><td align=center>Start</td><td align=center>Complete</td><td align=center>Elapsed</td></tr>");
@@ -201,7 +203,7 @@ public class ServerStatusHandler extends AbstractHandler
 						Collections.sort(tss, new TSComparator());
 						for (TaskStatus ts: tss)
 						{
-							responseStream.println("<tr><td>" + u.getUsername() + "</td><td>" + ts.type + "</td><td>" + ts.target + "</td><td>" + ts.status + "</td><td>" + ts.starttime + "</td><td>" + checkNull(ts.completetime, "In Process") + "</td><td>" + getDiff(getDate(ts.starttime), getDate(ts.completetime)) + "</td></tr>");
+							responseStream.println("<tr><td>" + u.getUsername() + "</td><td>" + ts.type + "</td><td>" + ts.target + "</td><td style='max-width:500px; max-height:40px; overflow-y:auto'>" + ts.status + "</td><td>" + ts.starttime + "</td><td>" + checkNull(ts.completetime, "In Process") + "</td><td>" + getDiff(getDate(ts.starttime), getDate(ts.completetime)) + "</td></tr>");
 							empty = false;
 						}
 					}
@@ -231,7 +233,10 @@ public class ServerStatusHandler extends AbstractHandler
 				responseStream.println("<br><table border=1 cellpadding=2><tbody><tr style='font-weight: bold;'><td align=center>Time</td><td align=center>User</td><td align=center>Action</td><td align=center>Project</td><td align=center >Target</td></tr>");
 				for (EventLog elog: recentLogs)
 				{
-					responseStream.println("<tr style='max-height:40px;'><td nowrap>" + dateformat.format(elog.getCreatedTime()) + "</td><td>" + elog.getUsername() + "</td><td nowrap>" + elog.getFunction() + "</td><td nowrap>" + checkNull(elog.getProjectID(), "N/A") + "</td><td><div style='max-width:500px; max-height:40px; overflow-y:auto'>" + checkNull(elog.getTarget(), "N/A") + "</div></td></tr>");
+					responseStream.println("<tr style='max-height:40px;'><td nowrap>" + dateformat.format(elog.getCreatedTime()) 
+								+ "</td><td>" + elog.getUsername() + "</td><td nowrap>" + elog.getFunction() 
+								+ "</td><td nowrap>" + checkNull(elog.getProjectID(), "N/A") 
+								+ "</td><td><div style='max-width:500px; max-height:40px; overflow-y:auto'>" + checkNull(elog.getTarget(), "N/A") + "</div></td></tr>");
 				}
 				responseStream.println("</tbody></table>");
 				
@@ -265,6 +270,8 @@ public class ServerStatusHandler extends AbstractHandler
 		catch (Exception x) {}
 		return null;
 	}
+	
+	static SimpleDateFormat shortformat = new SimpleDateFormat("MM/dd HH:mm:ss");
 	
 	public static String getDiff(Date start, Date end)
 	{

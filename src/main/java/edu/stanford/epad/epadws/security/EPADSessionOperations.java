@@ -160,15 +160,22 @@ public class EPADSessionOperations
 		if (jsessionID == null) // The getJSessionIDFromRequest method logs warning in this case.
 			return false;
 		else
-			return hasValidSessionID(jsessionID);
+			return hasValidSessionID(jsessionID, httpRequest);
 	}
 
 	public static boolean hasValidSessionID(String jsessionID)
+	{
+		return hasValidSessionID(jsessionID, null);
+	}
+
+	public static boolean hasValidSessionID(String jsessionID, HttpServletRequest httpRequest)
 	{
 		EPADSession session = currentSessions.get(jsessionID);
 		if (session != null)
 		{
 			session.setLastActivity(new Date());
+			if (httpRequest != null)
+				session.setLastRequest(httpRequest.getRequestURL().toString());
 			session.setLifespan(EPADSessionOperations.SESSION_LIFESPAN);
 			return true;
 		}

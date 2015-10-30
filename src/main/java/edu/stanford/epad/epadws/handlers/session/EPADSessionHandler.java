@@ -101,6 +101,7 @@ public class EPADSessionHandler extends AbstractHandler
 			}
 			if (username.length() != 0) {
 				log.info("Login Request, User:" + username  + " hostname:" + host +" ip:" + ip + " origin:" + origin);
+				log.info("From httpRequest hostname:" + httpRequest.getRemoteHost() +" ip:" + httpRequest.getRemoteAddr());
 				try {
 					EPADSessionResponse sessionResponse = SessionService.authenticateUser(httpRequest);
 					if (sessionResponse.statusCode == HttpServletResponse.SC_OK) {
