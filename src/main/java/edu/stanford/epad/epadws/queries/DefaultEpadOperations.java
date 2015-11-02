@@ -4035,7 +4035,6 @@ public class DefaultEpadOperations implements EpadOperations
 				EPADUser epadUser = new EPADUser(user.getFullName(), user.getUsername(), 
 						user.getFirstName(), user.getLastName(), "******", user.isEnabled(), user.isAdmin(), user.isPasswordExpired(), "", permissions, projects, projectToRole);
 				epadUser.colorpreference = user.getColorpreference();
-				epadUser.creator = user.getCreator();
 				if (returnUsage)
 				{
 					EpadStatistics userStats = projectOperations.getUserStatistics(username, user.getUsername(), false);
@@ -4099,7 +4098,6 @@ public class DefaultEpadOperations implements EpadOperations
 			epadUser = new EPADUser(user.getFullName(), user.getUsername(), 
 				user.getFirstName(), user.getLastName(), "******", user.isEnabled(), user.isAdmin(), user.isPasswordExpired(), "", permissions, projects, projectToRole);
 			epadUser.colorpreference = user.getColorpreference();
-			epadUser.creator = user.getCreator();
 			if (returnUsage)
 			{
 				EpadStatistics userStats = projectOperations.getUserStatistics(username, user.getUsername(), false);
@@ -4227,7 +4225,6 @@ public class DefaultEpadOperations implements EpadOperations
 				EPADUser epadUser = new EPADUser(user.getFullName(), user.getUsername(), 
 						user.getFirstName(), user.getLastName(), "******", user.isEnabled(), user.isAdmin(), user.isPasswordExpired(), user.getRole(), permissions);
 				epadUser.colorpreference = user.getColorpreference();
-				epadUser.creator = user.getCreator();
 				userlist.addEPADUser(epadUser);
 			}
 		}
@@ -4267,7 +4264,6 @@ public class DefaultEpadOperations implements EpadOperations
 			EPADUser epadUser = new EPADUser(user.getFullName(), user.getUsername(), 
 					user.getFirstName(), user.getLastName(), user.getEmail(), user.isEnabled(), user.isAdmin(), user.isPasswordExpired(), "", null);
 			epadUser.colorpreference = user.getColorpreference();
-			epadUser.creator = user.getCreator();
 			userlist.addEPADUser(epadUser);
 		}
 		return userlist;
@@ -4282,7 +4278,6 @@ public class DefaultEpadOperations implements EpadOperations
 			EPADUser epadUser = new EPADUser(user.getFullName(), user.getUsername(), 
 					user.getFirstName(), user.getLastName(), user.getEmail(), user.isEnabled(), user.isAdmin(), user.isPasswordExpired(), "", null);
 			epadUser.colorpreference = user.getColorpreference();
-			epadUser.creator = user.getCreator();
 			userlist.addEPADUser(epadUser);
 		}
 		return userlist;

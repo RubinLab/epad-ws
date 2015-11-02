@@ -175,7 +175,11 @@ public class EPADSessionOperations
 		{
 			session.setLastActivity(new Date());
 			if (httpRequest != null)
-				session.setLastRequest(httpRequest.getRequestURL().toString());
+			{
+				String url = httpRequest.getRequestURL().toString();
+				if (url.indexOf("eventresource") == -1)	
+					session.setLastRequest(url);
+			}
 			session.setLifespan(EPADSessionOperations.SESSION_LIFESPAN);
 			return true;
 		}
