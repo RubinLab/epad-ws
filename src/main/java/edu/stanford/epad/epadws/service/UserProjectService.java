@@ -244,7 +244,7 @@ public class UserProjectService {
 					numberOfDICOMFiles = createProjectEntitiesFromDICOMFilesInUploadDirectory(dicomUploadDirectory, xnatProjectLabel, xnatSessionID, xnatUserName, patientID, studyUID, seriesUID, !zip);
 					if (numberOfDICOMFiles != 0)
 					{
-						projectOperations.createEventLog(xnatUserName, xnatProjectLabel, null, null, null, null, null, "UPLOAD DICOMS", "Number of Dicoms: " +numberOfDICOMFiles);
+						projectOperations.createEventLog(xnatUserName, xnatProjectLabel, null, null, null, null, null, dicomUploadDirectory.getName(), "UPLOAD DICOMS", "Number of Dicoms: " +numberOfDICOMFiles, false);
 						log.info("Found " + numberOfDICOMFiles + " DICOM file(s) in directory uploaded by " + xnatUserName + " for project " + xnatProjectLabel);
 					}
 					else
