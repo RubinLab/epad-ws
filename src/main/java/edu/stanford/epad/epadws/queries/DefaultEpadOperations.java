@@ -182,7 +182,7 @@ public class DefaultEpadOperations implements EpadOperations
 	 */
 
 	@Override
-	public EPADProjectList getProjectDescriptions(String username, String sessionID, EPADSearchFilter searchFilter, boolean annotationCount) throws Exception
+	public EPADProjectList getProjectDescriptions(String username, String sessionID, EPADSearchFilter searchFilter, boolean annotationCount, boolean ignoreSystem) throws Exception
 	{
 		if (searchFilter.hasAnnotationMatch()) annotationCount = true;
 		EPADProjectList epadProjectList = new EPADProjectList();
@@ -193,6 +193,8 @@ public class DefaultEpadOperations implements EpadOperations
 		projects.addAll(projectList);
 		long gettime = System.currentTimeMillis();
 		for (Project project : projects) {
+			if (ignoreSystem && (project.getProjectId().equals(EPADConfig.xnatUploadProjectID) || project.getProjectId().equals(EPADConfig.getParamValue("UnassignedProjectID", "nonassigned"))))
+				continue;
 			EPADProject epadProject = project2EPADProject(sessionID, username, project, searchFilter, annotationCount);
 			
 			if (epadProject != null)
@@ -2222,8 +2224,9 @@ public class DefaultEpadOperations implements EpadOperations
 		log.info("Found " + seriesUIDs.size() + " series in study " + studyUID);
 
 		log.info("Deleting study " + studyUID + " from dcm4chee's database");
-		Dcm4CheeOperations.deleteStudy(studyUID); // Must run after finding series in DCM4CHEE
-
+		boolean success = Dcm4CheeOperations.deleteStudy(studyUID); // Must run after finding series in DCM4CHEE
+		if (!success)
+			throw new RuntimeException("Error deleting study in dcm4chee");
 		// First delete all series in study from ePAD's database; then delete the study itself.
 		// Should not delete until after deleting study in DCM4CHEE or PNG pipeline will activate.
 		for (String seriesUID : seriesUIDs) {

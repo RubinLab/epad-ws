@@ -39,6 +39,8 @@ import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 
 import edu.stanford.epad.common.util.EPADLogger;
+import edu.stanford.epad.dtos.EPADEventMessage;
+import edu.stanford.epad.dtos.EPADObjectList;
 import edu.stanford.epad.dtos.TaskStatus;
 import edu.stanford.epad.epadws.epaddb.EpadDatabase;
 import edu.stanford.epad.epadws.epaddb.EpadDatabaseOperations;
@@ -88,12 +90,17 @@ public class EventHandler extends AbstractHandler
 					String jsessionID = SessionService.getJSessionIDFromRequest(httpRequest);
 					if (count++ >= 1000)
 					{
-						log.info("Get Event request with JSESSIONID " + jsessionID);
+						log.info("Get Event request with JSESSIONID " + jsessionID + " format:" + httpRequest.getParameter("format"));
 						count = 0;
 					}
 					if (jsessionID != null) {
 						String username = httpRequest.getParameter("username");
-						findEventsForSessionID(username, responseStream, jsessionID);
+						if (username == null)
+							username = SessionService.getUsernameForSession(jsessionID);
+						boolean json = "json".equalsIgnoreCase(httpRequest.getParameter("format"));
+						if (json)
+							httpResponse.setContentType("application/json");
+						findEventsForSessionID(username, responseStream, jsessionID, json);
 						statusCode = HttpServletResponse.SC_OK;
 					} else {
 						statusCode = HandlerUtil.badRequestResponse(MISSING_JSESSIONID_MESSAGE, log);
@@ -110,6 +117,10 @@ public class EventHandler extends AbstractHandler
 						String template_id = httpRequest.getParameter("template_id");
 						String template_name = httpRequest.getParameter("template_name");
 						String plugin_name = httpRequest.getParameter("plugin_name");
+						String project_id = httpRequest.getParameter("project_id");
+						String project_name = httpRequest.getParameter("project_name");
+						String series_uid = httpRequest.getParameter("series_uid");
+						String study_uid = httpRequest.getParameter("study_uid");
 
 						log.info("Got event for AIM ID " + aim_uid + " with JSESSIONID " + jsessionID);
 						if (jsessionID.indexOf(",") != -1)
@@ -118,9 +129,11 @@ public class EventHandler extends AbstractHandler
 						if (jsessionID != null && event_status != null && aim_uid != null && aim_uid != null && aim_name != null
 								&& patient_id != null && patient_name != null && template_id != null && template_name != null
 								&& plugin_name != null) {
+							boolean error = false;
+							if (EVENT_FAILED.equalsIgnoreCase(event_status)) error = true;
 							EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
 							epadDatabaseOperations.insertEpadEvent(jsessionID, event_status, aim_uid, aim_name, patient_id,
-									patient_name, template_id, template_name, plugin_name);
+									patient_name, template_id, template_name, plugin_name, project_id, project_name, study_uid, series_uid, error);
 							responseStream.flush();
 							statusCode = HttpServletResponse.SC_OK;
 							EpadProjectOperations projectOperations = DefaultEpadProjectOperations.getInstance();
@@ -129,9 +142,7 @@ public class EventHandler extends AbstractHandler
 							if (EVENT_COMPLETE.equalsIgnoreCase(event_status) || EVENT_FAILED.equalsIgnoreCase(event_status))
 							{
 								endDate = new Date();
-								boolean error = false;
-								if (EVENT_FAILED.equalsIgnoreCase(event_status)) error = true;
-								projectOperations.createEventLog(username, null, patient_id, null, null, null, aim_uid, null, "Plugin " + plugin_name + ": " + event_status, "", error);
+								projectOperations.createEventLog(username, project_id, patient_id, study_uid, series_uid, null, aim_uid, null, "Plugin " + plugin_name + ": " + event_status, "", error);
 							}
 							projectOperations.updateUserTaskStatus(username, TaskStatus.TASK_PLUGIN, plugin_name.toLowerCase() + ":" + aim_uid, event_status, null, endDate);
 						
@@ -191,7 +202,7 @@ public class EventHandler extends AbstractHandler
 
 	public static Map<String, Map<String, String>> deletedEvents = new HashMap<String, Map<String, String>>();
 	
-	private void findEventsForSessionID(String username, PrintWriter responseStrean, String sessionID)
+	private void findEventsForSessionID(String username, PrintWriter responseStream, String sessionID, boolean json)
 	{
 		EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
 		// TODO This map should be replaced with a class describing an event.
@@ -208,8 +219,12 @@ public class EventHandler extends AbstractHandler
 			//log.info("No new events posted");
 			return;
 		}
-		responseStrean.println("event_number, event_status, Date, aim_uid, aim_name, patient_id, patient_name, "
-				+ "template_id, template_name, plugin_name");
+		EPADObjectList jsonList = new EPADObjectList();
+		if (!json)
+		{	
+			responseStream.println("event_number, event_status, Date, aim_uid, aim_name, patient_id, patient_name, "
+				+ "template_id, template_name, plugin_name, project_id");
+		}
 		
 		for (Map<String, String> row : eventMap) {
 			deletedEvents.put(row.get("aim_uid"), row);
@@ -217,20 +232,40 @@ public class EventHandler extends AbstractHandler
 			{
 				continue;
 			}
-			StringBuilder sb = new StringBuilder();
-			sb.append(row.get("pk")).append(separator);
-			sb.append(row.get("event_status")).append(separator);
-			sb.append(row.get("created_time")).append(separator);
-			sb.append(row.get("aim_uid")).append(separator);
-			sb.append(row.get("aim_name")).append(separator);
-			sb.append(row.get("patient_id")).append(separator);
-			sb.append(row.get("patient_name")).append(separator);
-			sb.append(row.get("template_id")).append(separator);
-			sb.append(row.get("template_name")).append(separator);
-			sb.append(row.get("plugin_name"));
-			sb.append("\n");
-			responseStrean.print(sb.toString());
-			log.info(sb.toString());
+			if (!json)
+			{
+				StringBuilder sb = new StringBuilder();
+				sb.append(row.get("pk")).append(separator);
+				sb.append(row.get("event_status")).append(separator);
+				sb.append(row.get("created_time")).append(separator);
+				sb.append(row.get("aim_uid")).append(separator);
+				sb.append(row.get("aim_name")).append(separator);
+				sb.append(row.get("patient_id")).append(separator);
+				sb.append(row.get("patient_name")).append(separator);
+				sb.append(row.get("template_id")).append(separator);
+				sb.append(row.get("template_name")).append(separator);
+				sb.append(row.get("plugin_name")).append(separator);
+				sb.append(row.get("project_id"));
+				sb.append("\n");
+				responseStream.print(sb.toString());
+				log.info(sb.toString());
+			}
+			else
+			{
+				EPADEventMessage event = new EPADEventMessage(new Integer(row.get("pk")), row.get("event_status"), "",
+								row.get("patient_id"), row.get("patient_name"), row.get("project_id"),
+								row.get("project_name"), row.get("study_uid"), row.get("series_uid"),
+								row.get("aim_uid"), row.get("aim_name"),
+								row.get("template_id"), row.get("template_name"), row.get("plugin_id"),
+								row.get("plugin_name"), row.get("created_time"), new Boolean(row.get("error")));
+				jsonList.addObject(event);
+
+			}
+
+		}
+		if (json)
+		{
+			responseStream.append(jsonList.toJSON());
 		}
 		if (deletedEvents.size() > 100) purgeDeletedEvents();
 	}

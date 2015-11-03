@@ -292,12 +292,12 @@ public class Dcm4CheeOperations
 		return success;
 	}
 
-	public static void deleteStudy(String studyUID)
+	public static boolean deleteStudy(String studyUID)
 	{
 		InputStream is = null;
 		InputStreamReader isr = null;
 		BufferedReader br = null;
-
+		boolean success = false;
 		try {
 			log.info("Deleting study " + studyUID + " files - command: ./dcmdeleteStudy " + studyUID);
 
@@ -328,6 +328,7 @@ public class Dcm4CheeOperations
 			try {
 				int exitValue = process.waitFor();
 				log.info("DICOM delete study exit value is: " + exitValue);
+				if (exitValue == 0) success = true;
 			} catch (Exception e) {
 				log.warning("Failed to delete DICOM study " + studyUID, e);
 			}
@@ -339,6 +340,7 @@ public class Dcm4CheeOperations
 		} catch (Exception e) {
 			log.warning("Failed to delete DICOM study " + studyUID, e);
 		}
+		return success;
 	}
 
 	private static String parseError(String output)

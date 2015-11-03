@@ -141,7 +141,8 @@ public class EPADGetHandler
 				boolean annotationCount = false;
 				if ("true".equalsIgnoreCase(httpRequest.getParameter("annotationCount")))
 					annotationCount = true;
-				EPADProjectList projectList = epadOperations.getProjectDescriptions(username, sessionID, searchFilter, annotationCount);
+				boolean ignoreSystem = "false".equalsIgnoreCase(httpRequest.getParameter("system"));
+				EPADProjectList projectList = epadOperations.getProjectDescriptions(username, sessionID, searchFilter, annotationCount, ignoreSystem);
 				responseStream.append(projectList.toJSON());
 
 				statusCode = HttpServletResponse.SC_OK;
@@ -163,7 +164,7 @@ public class EPADGetHandler
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.SUBJECT_LIST, pathInfo)) {
 				ProjectReference projectReference = ProjectReference.extract(ProjectsRouteTemplates.SUBJECT_LIST, pathInfo);
 				String host = EPADSessionOperations.getSessionHost(sessionID);
-				if (host != null && host.contains("epad-dev")) {
+				if (log.isDebugEnabled()) {
 					// For multiple duplicate requests
 					long currSec = System.currentTimeMillis()/1000;
 					String requestStr = projectReference.projectID + httpRequest.getQueryString() + currSec;

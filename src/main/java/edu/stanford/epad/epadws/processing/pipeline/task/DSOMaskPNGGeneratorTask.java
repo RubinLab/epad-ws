@@ -32,6 +32,7 @@ import java.util.Set;
 
 import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADLogger;
+import edu.stanford.epad.common.util.EventMessageCodes;
 import edu.stanford.epad.dtos.EPADAIM;
 import edu.stanford.epad.dtos.SeriesProcessingStatus;
 import edu.stanford.epad.epadws.aim.AIMQueries;
@@ -85,15 +86,20 @@ public class DSOMaskPNGGeneratorTask implements GeneratorTask
 		if (UserProjectService.pendingUploads.containsKey(studyUID))
 		{
 			String username = UserProjectService.pendingUploads.get(studyUID);
+			String projectID = EPADConfig.xnatUploadProjectID;
 			if (username != null && username.indexOf(":") != -1)
+			{
+				projectID = username.substring(username.indexOf(":")+1);
 				username = username.substring(0, username.indexOf(":"));
+			}
 			if (username != null)
 			{
 				epadDatabaseOperations.insertEpadEvent(
 						username, 
 						"Study Processing Complete", 
 						studyUID, studyUID, "", "", studyUID, studyUID, 
-						"Study:" + studyUID);					
+						"Study:" + studyUID,
+						projectID,"","","",false);					
 				UserProjectService.pendingUploads.remove(studyUID);
 			}
 		}
@@ -160,7 +166,7 @@ public class DSOMaskPNGGeneratorTask implements GeneratorTask
 				{
 					epadDatabaseOperations.insertEpadEvent(
 							ia.getListUser().get(0).getLoginName(), 
-							"Image Generation Complete", 
+							EventMessageCodes.IMAGE_PROCESSED, 
 							ia.getUniqueIdentifier(), ia.getName(),
 							aim.getPatientID(), 
 							aim.getPatientName(), 

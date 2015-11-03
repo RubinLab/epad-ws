@@ -187,6 +187,7 @@ public interface EpadProjectOperations {
 	 * @throws Exception
 	 */
 	Subject createSubject(String loggedInUser, String subjectUID, String name, Date dob, String gender) throws Exception;
+	Subject createSubject(String loggedInUser, String subjectUID, String name, Date dob, String gender, boolean changeOwner) throws Exception;
 	
 	/**
 	 * Create Study record in database
@@ -198,6 +199,7 @@ public interface EpadProjectOperations {
 	 */
 	Study createStudy(String loggedInUser, String studyUID, String subjectUID, String description) throws Exception;
 	Study createStudy(String loggedInUser, String studyUID, String subjectUID, String description, Date studyDate) throws Exception;
+	Study createStudy(String loggedInUser, String studyUID, String subjectUID, String description, Date studyDate, boolean changeOwner) throws Exception;
 	
 	/**
 	 * Create Study record in database

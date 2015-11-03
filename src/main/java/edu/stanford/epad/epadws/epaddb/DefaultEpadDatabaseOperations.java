@@ -1838,6 +1838,19 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 	public void insertEpadEvent(String sessionID, String event_status, String aim_uid, String aim_name,
 			String patient_id, String patient_name, String template_id, String template_name, String plugin_name)
 	{
+		insertEpadEvent(sessionID, event_status,
+				aim_uid, aim_name, patient_id,
+				patient_name, template_id, template_name,
+				plugin_name, "", "",
+				"", "",false);
+	}
+	
+	@Override
+	public void insertEpadEvent(String sessionID, String event_status,
+			String aim_uid, String aim_name, String patient_id,
+			String patient_name, String template_id, String template_name,
+			String plugin_name, String projectID, String projectName,
+			String studyUID, String seriesUID, boolean error) {
 		Connection c = null;
 		PreparedStatement ps = null;
 		try {
@@ -1854,6 +1867,11 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 			ps.setString(7, template_id);
 			ps.setString(8, template_name);
 			ps.setString(9, plugin_name);
+			ps.setString(10, projectID);
+			ps.setString(11, projectName);
+			ps.setString(12, seriesUID);
+			ps.setString(13, studyUID);
+			ps.setString(14, String.valueOf(error));
 			ps.execute();
 		} catch (SQLException sqle) {
 			log.warning("Database operation failed.", sqle);

@@ -29,7 +29,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Collections;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -41,8 +40,10 @@ import org.apache.commons.io.IOUtils;
 
 import edu.stanford.epad.common.dicom.DICOMFileDescription;
 import edu.stanford.epad.common.dicom.DicomReader;
+import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADFileUtils;
 import edu.stanford.epad.common.util.EPADLogger;
+import edu.stanford.epad.common.util.EventMessageCodes;
 import edu.stanford.epad.dtos.PNGFileProcessingStatus;
 import edu.stanford.epad.dtos.SeriesProcessingStatus;
 import edu.stanford.epad.dtos.TaskStatus;
@@ -109,18 +110,23 @@ public class SingleFrameDICOMPngGeneratorTask implements GeneratorTask
 		try {
 			imagesBeingProcessed.add(imageUID);
 			String username = null;
+			String projectID = EPADConfig.xnatUploadProjectID;
 			if (UserProjectService.pendingUploads.containsKey(studyUID))
 			{
 				username = UserProjectService.pendingUploads.get(studyUID);
 				if (username != null && username.indexOf(":") != -1)
+				{
+					projectID = username.substring(username.indexOf(":")+1);
 					username = username.substring(0, username.indexOf(":"));
+				}
 				if (username != null)
 				{
 					epadDatabaseOperations.insertEpadEvent(
 							username, 
-							"Study Processing Complete", 
+							EventMessageCodes.STUDY_PROCESSED, 
 							studyUID, studyUID, patientName, patientName, studyUID, studyUID, 
-							"Study:" + studyUID);					
+							"Study:" + studyUID,
+							projectID,"","","", false);					
 					UserProjectService.pendingUploads.remove(studyUID);
 				}
 			}

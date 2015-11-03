@@ -82,7 +82,7 @@ public interface EpadOperations
 	 * @return
 	 * @throws Exception
 	 */
-	EPADProjectList getProjectDescriptions(String username, String sessionID, EPADSearchFilter searchFilter, boolean annotationCount) throws Exception;
+	EPADProjectList getProjectDescriptions(String username, String sessionID, EPADSearchFilter searchFilter, boolean annotationCount, boolean ignoreSystem) throws Exception;
 
 	/**
 	 * Get project description

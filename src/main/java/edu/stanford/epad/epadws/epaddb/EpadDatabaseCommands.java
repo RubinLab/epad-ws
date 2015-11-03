@@ -37,8 +37,8 @@ public interface EpadDatabaseCommands
 
 	public static final String SELECT_EPAD_IMAGE_UIDS_FOR_SERIES = "select i.sop_iuid from epaddb.epad_files as f, pacsdb.instance as i, pacsdb.series as s where series_iuid=? and i.series_fk=s.pk and f.instance_fk=i.pk";
 	public static final String INSERT_INTO_EVENT = "INSERT INTO epaddb.events"
-			+ "(username,event_status,aim_uid,aim_name,patient_id,patient_name,template_id,template_name,plugin_name)"
-			+ "VALUES (?,?,?,?,?,?,?,?,?)";
+			+ "(username,event_status,aim_uid,aim_name,patient_id,patient_name,template_id,template_name,plugin_name,project_id,project_name,series_uid,study_uid,error)"
+			+ "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
 	public static final String SELECT_EVENTS_FOR_SESSIONID = "SELECT * from epaddb.events where username=? ORDER BY pk";
 	public static final String DELETE_EVENTS_FOR_SESSIONID = "DELETE from epaddb.events where username=? and pk <= ?";
 	public static final String SELECT_EVENTS_FOR_AIMID = "SELECT * from epaddb.events where aim_uid=? ORDER BY pk desc";

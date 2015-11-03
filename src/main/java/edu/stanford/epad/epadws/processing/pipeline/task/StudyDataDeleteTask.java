@@ -91,19 +91,13 @@ public class StudyDataDeleteTask implements Runnable
 			{
 				if (deleteInUnassigned)
 				{
-					if (!EPADConfig.UseEPADUsersProjects) {
-						String adminSessionID = XNATSessionOperations.getXNATAdminSessionID();
-						XNATDeletionOperations.deleteXNATDICOMStudy(projectID, patientID,
-								studyUID, adminSessionID);
-					} else {
-						List<NonDicomSeries> ndSerieses = projectOperations.getNonDicomSeriesForStudy(studyUID);
-						for (NonDicomSeries series: ndSerieses)
-						{
-							projectOperations.deleteNonDicomSeries(series.getSeriesUID());
-						}
-						projectOperations.deleteStudy("admin", studyUID, patientID, projectID);
-						projectOperations.deleteStudy("admin", studyUID);
+					List<NonDicomSeries> ndSerieses = projectOperations.getNonDicomSeriesForStudy(studyUID);
+					for (NonDicomSeries series: ndSerieses)
+					{
+						projectOperations.deleteNonDicomSeries(series.getSeriesUID());
 					}
+					projectOperations.deleteStudy("admin", studyUID, patientID, projectID);
+					projectOperations.deleteStudy("admin", studyUID);
 				}
 				epadOperations.deleteStudyFromEPadAndDcm4CheeDatabases(studyUID, deleteAims);
 			}

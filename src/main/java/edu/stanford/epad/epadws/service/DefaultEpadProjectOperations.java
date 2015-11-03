@@ -524,6 +524,13 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 	@Override
 	public Subject createSubject(String loggedInUser, String subjectUID,
 			String name, Date dob, String gender) throws Exception {
+		return createSubject(loggedInUser, subjectUID,
+				name, dob, gender, false);
+	}
+	
+	@Override
+	public Subject createSubject(String loggedInUser, String subjectUID,
+			String name, Date dob, String gender, boolean changeOwner) throws Exception {
 		Subject subject = getSubject(subjectUID);
 		if (subject == null) subject = new Subject();
 		subject.setSubjectUID(subjectUID);
@@ -536,6 +543,8 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 			subject.setCreator(loggedInUser);
 			this.createEventLog(loggedInUser, null, subjectUID, null, null, null, null, null, "Created Patient", null, false);
 		}
+		if (changeOwner)
+			subject.setCreator(loggedInUser);
 		subject.save();
 		//subjectCache.put(subject.getSubjectUID(), subject);
 		return subject;
@@ -553,6 +562,13 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 	@Override
 	public Study createStudy(String loggedInUser, String studyUID,
 			String subjectUID, String description, Date studyDate) throws Exception {
+		return createStudy(loggedInUser, studyUID,
+				subjectUID, description, studyDate, false);
+	}
+	
+	@Override
+	public Study createStudy(String loggedInUser, String studyUID,
+			String subjectUID, String description, Date studyDate, boolean changeOwner) throws Exception {
 		Subject subject = getSubject(subjectUID);
 		Study study = getStudy(studyUID);
 		if (study == null)
@@ -561,6 +577,8 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 			study.setCreator(loggedInUser);
 			this.createEventLog(loggedInUser, null, subjectUID, studyUID, null, null, null, null, "Created Study", null, false);
 		}
+		if (changeOwner)
+			study.setCreator(loggedInUser);
 		study.setStudyUID(studyUID);
 		study.setSubjectId(subject.getId());
 		if (description != null && description.length() > 0)
@@ -694,6 +712,7 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		ProjectToSubjectToStudy pss = new ProjectToSubjectToStudy();
 		pss.deleteObjects("proj_subj_id = " + ptos.getId());
 		ptos.delete();
+		new WorkListToSubject().deleteObjects("project_id = " + project.getId() + " and subject_id =" + subject.getId());
 	}
 
 	/* (non-Javadoc)
@@ -712,6 +731,7 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		ptos = (ProjectToSubject) ptos.getObject("project_id = " + project.getId() + " and subject_id =" + subject.getId());
 		ProjectToSubjectToStudy pss = new ProjectToSubjectToStudy();
 		pss.deleteObjects("proj_subj_id = " + ptos.getId() + " and study_id =" + study.getId());
+		new WorkListToStudy().deleteObjects("project_id = " + project.getId() + " and study_id =" + study.getId());
 	}
 
 	/* (non-Javadoc)
@@ -1875,6 +1895,7 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 			new ProjectToSubjectToStudy().deleteObjects("proj_subj_id =" + projSubj.getId());
 			projSubj.delete();
 		}
+		new WorkListToSubject().deleteObjects("subject_id =" + subject.getId() + " and project_id =" + project.getId());			
 		List projSubjs = new ProjectToSubject().getObjects("subject_id=" + subject.getId());
 		// TODO: delete subject if not used any more
 		if (projSubjs.size() == 0)
@@ -1908,6 +1929,7 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 			ProjectToSubjectToStudy projSubjStudy = (ProjectToSubjectToStudy) new ProjectToSubjectToStudy().getObject("proj_subj_id =" + projSubj.getId() + " and study_id=" + study.getId());
 			if (projSubjStudy != null) projSubjStudy.delete();
 		}
+		new WorkListToStudy().deleteObjects("study_id =" + study.getId() + " and project_id =" + project.getId());			
 		List<ProjectToSubjectToStudy> projSubjStudys = new ProjectToSubjectToStudy().getObjects("study_id=" + study.getId());
 		if (projSubjStudys.size() == 0)
 		{
