@@ -93,7 +93,7 @@ public class Dcm4CheeStudyQueryBuilder
 			sb.append(equalClause(typeValue));
 		}
 		if (!"examType".equals(type))
-			sb.append("s.modality <> 'SEG'");
+			sb.append(" and s.modality <> 'SEG'");
 		sb.append(" and s.study_fk=st.pk");
 		sb.append(" and st.patient_fk=p.pk");
 

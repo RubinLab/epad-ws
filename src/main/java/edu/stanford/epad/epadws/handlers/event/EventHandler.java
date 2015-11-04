@@ -176,7 +176,7 @@ public class EventHandler extends AbstractHandler
 				// message[PATIENT_NAME] + message[PLUGIN_NAME] + " " + message[EVENT_STATUS]
 				StringBuilder sb = new StringBuilder();
 				sb.append("1, ");
-				sb.append("You are not logged in! Stop these requests, ");
+				sb.append("You are not logged in! ");
 				sb.append("2015-XX-XX XX:XX:XX.0, ");
 				sb.append(" , ");
 				sb.append(" , ");
@@ -189,7 +189,7 @@ public class EventHandler extends AbstractHandler
 				responseStream.print(sb.toString());
 				responseStream.print(sb.toString());
 				responseStream.print(sb.toString());
-				if (System.currentTimeMillis()%3 == 0)
+				if (false && System.currentTimeMillis()%3 == 0)
 					statusCode = HttpServletResponse.SC_OK;
 				else
 					statusCode = HttpServletResponse.SC_UNAUTHORIZED;

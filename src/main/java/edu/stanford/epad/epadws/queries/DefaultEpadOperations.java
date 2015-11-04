@@ -1445,7 +1445,7 @@ public class DefaultEpadOperations implements EpadOperations
 			{
 				type = FileType.TEMPLATE;
 				if (EPADFileUtils.isImage(uploadedFile) || uploadedFile.getName().toLowerCase().endsWith(".zip"))
-					throw new Exception("Why are you uploading this weird file as a template?");
+					throw new Exception("This does not appear to be a template file");
 				if (!EPADFileUtils.isValidXml(uploadedFile, EPADConfig.templateXSDPath))
 				{
 					String error = EPADFileUtils.validateXml(uploadedFile, EPADConfig.templateXSDPath);
@@ -4321,6 +4321,10 @@ public class DefaultEpadOperations implements EpadOperations
 				EPADAIMList aims = this.getSeriesAIMDescriptions(seriesReference, username, sessionID);
 				for (EPADAIM aim: aims.ResultSet.Result) {
 					String imageUID = AIMUtil.getReferencedImage(aim);
+					if (imageUID == null) continue;
+					if (imageUID.equals(imageReference.imageUID)) {
+						
+					}
 				}
 			}
 		}
