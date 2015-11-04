@@ -193,7 +193,7 @@ public class ServerStatusHandler extends AbstractHandler
 					responseStream.println("</table>");
 					Collection<User> users = DefaultEpadProjectOperations.getUserCache();
 					responseStream.println("<br><b>Background Tasks: </b>");
-					responseStream.println("<br><table border=1 cellpadding=2 ><tbody><tr style='font-weight: bold;'><td align=center>User</td><td align=center>Task</td><td align=center>Target</td><td align=center>Status</td><td align=center>Start</td><td align=center>Complete</td><td align=center>Elapsed</td></tr>");
+					responseStream.println("<br><table border=1 cellpadding=2 ><tbody><tr style='font-weight: bold;'><td align=center>User</td><td align=center>Task</td><td align=center>Start</td><td align=center>Complete</td><td align=center>Elapsed</td><td align=center>Target</td><td align=center>Status</td></tr>");
 					boolean empty = true;
 					for (User u: users)
 					{
@@ -203,7 +203,7 @@ public class ServerStatusHandler extends AbstractHandler
 						Collections.sort(tss, new TSComparator());
 						for (TaskStatus ts: tss)
 						{
-							responseStream.println("<tr><td>" + u.getUsername() + "</td><td>" + ts.type + "</td><td>" + ts.target + "</td><td style='max-width:500px; max-height:40px; overflow-y:auto'>" + ts.status + "</td><td>" + ts.starttime + "</td><td>" + checkNull(ts.completetime, "In Process") + "</td><td>" + getDiff(getDate(ts.starttime), getDate(ts.completetime)) + "</td></tr>");
+							responseStream.println("<tr><td>" + u.getUsername() + "</td><td>" + ts.type + "</td><td>" + ts.starttime + "</td><td>" + checkNull(ts.completetime, "In Process") + "</td><td>" + getDiff(getDate(ts.starttime), getDate(ts.completetime)) + "</td><td>" + ts.target + "</td><td style='max-width:500px; max-height:40px; overflow-y:auto'>" + ts.status + "</td></tr>");
 							empty = false;
 						}
 					}
@@ -214,14 +214,14 @@ public class ServerStatusHandler extends AbstractHandler
 						recentLogs = DefaultEpadProjectOperations.getInstance().getUseEventLogs("%", 0, 100);
 				}  else {
 					responseStream.println("<br><b>Background Tasks: </b>");
-					responseStream.println("<br><table border=1 cellpadding=2 ><tbody><tr style='font-weight: bold;'><td align=center>User</td><td align=center>Task</td><td align=center>Target</td><td align=center>Status</td><td align=center>Start</td><td align=center>Complete</td><td align=center>Elapsed</td></tr>");
+					responseStream.println("<br><table border=1 cellpadding=2 ><tbody><tr style='font-weight: bold;'><td align=center>User</td><td align=center>Task</td><td align=center>Start</td><td align=center>Complete</td><td align=center>Elapsed</td><td align=center>Target</td><td align=center>Status</td></tr>");
 					Collection<TaskStatus> tssCol = user.getCurrentTasks().values();
 					List<TaskStatus> tss = new ArrayList<TaskStatus>();
 					tss.addAll(tssCol);
 					Collections.sort(tss, new TSComparator());
 					for (TaskStatus ts: tss)
 					{
-						responseStream.println("<tr><td>" + user.getUsername() + "</td><td>" + ts.type + "</td><td>" + ts.target + "</td><td>" + ts.status + "</td><td>" + ts.starttime + "</td><td>" + checkNull(ts.completetime, "In Process") + "</td><td>" + getDiff(getDate(ts.starttime), getDate(ts.completetime)) + "</td></tr>");
+						responseStream.println("<tr><td>" + user.getUsername() + "</td><td>" + ts.type + "</td><td>" + ts.starttime + "</td><td>" + checkNull(ts.completetime, "In Process") + "</td><td>" + getDiff(getDate(ts.starttime), getDate(ts.completetime)) + "</td><td>" + ts.target + "</td><td>" + ts.status + "</td></tr>");
 					}
 					if (tss.size() == 0)
 						responseStream.println("<tr><td colspan=100% align=center>No background processes running</td></tr>");

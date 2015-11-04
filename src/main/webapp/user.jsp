@@ -24,6 +24,7 @@
 <div id=logdata></div>
 <table>
 </table>
+<style>tbody { display: block;max-height:350px;overflow-y:auto; } </style>
 <script>
 $( document ).ready(function() {
 	var listdata;
@@ -118,7 +119,7 @@ $( document ).ready(function() {
 		}
 	});
 
-	url = "<%=request.getContextPath()%>/v2/users/<%=username%>/eventlogs/?start=0&count=10";
+	url = "<%=request.getContextPath()%>/v2/users/<%=username%>/eventlogs/?start=0&count=100";
 	$.ajax({         
 		url: url + "&username=<%=loggedInUser%>",         
 		type: 'get',         
@@ -131,7 +132,7 @@ $( document ).ready(function() {
 		success: function(response){
 			var logs = response.ResultSet.Result;
 			if (logs.length > 0) {
-			var html = "<table border=1 cellpadding=2><tr bgcolor=lightgray><td>Time</td><td>Action</td><td>ProjectID</td><td>ProjectName</td><td>SubjectID</td><td>SubjectName</td><td>StudyUID</td><td>SeriesUID</td><td>ImageUID</td><td>AimID</td><td>AimName</td><td>FileName</td></tr>";
+			var html = "<table border=1 cellpadding=2><tbody><tr bgcolor=lightgray><td>Time</td><td>Action</td><td>ProjectID</td><td>ProjectName</td><td>SubjectID</td><td>SubjectName</td><td>StudyUID</td><td>SeriesUID</td><td>ImageUID</td><td>AimID</td><td>AimName</td><td>FileName</td><td>More Info</td></tr>";
 			for (i = 0; i < logs.length; i++)
 			{
 				var line = "<tr><td>" + logs[i].createdTime + "</td>";
@@ -146,10 +147,11 @@ $( document ).ready(function() {
 				line = line + "<td>" + logs[i].aimID + "</td>";
 				line = line + "<td>" + logs[i].aimName + "</td>";
 				line = line + "<td>" + logs[i].filename + "</td>";
+				line = line + "<td>" + logs[i].params + "</td>";
 				line = line + "</tr>\n";
 				html = html + line;
 			}
-			html = html + "</table>\n";
+			html = html + "</tbody></table>\n";
 			document.getElementById("logdata").innerHTML = html;
 			} else {
 				document.getElementById("logdata").innerHTML = "No logs";
