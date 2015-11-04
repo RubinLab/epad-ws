@@ -571,7 +571,7 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 	 * @see edu.stanford.epad.epadws.service.EpadProjectOperations#addStudyToProject(java.lang.String, java.lang.String, java.lang.String, java.lang.String)
 	 */
 	@Override
-	public synchronized void addStudyToProject(String loggedInUser, String studyUID,
+	public void addStudyToProject(String loggedInUser, String studyUID,
 			String subjectUID, String projectId) throws Exception {
 		Study study = getStudy(studyUID);
 		Subject subject = new Subject();
