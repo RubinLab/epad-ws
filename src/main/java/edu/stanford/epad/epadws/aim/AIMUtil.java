@@ -692,7 +692,12 @@ public class AIMUtil
 				List<String> seriesIds = aim.getSeriesIDs();
 				if (ea != null && !ea.projectID.equals(projectID))
 				{
-					projectID = ea.projectID; 		// TODO: Do we change AIM project if it is in unassigned? 
+					if (ea.projectID.equals(EPADConfig.xnatUploadProjectID))
+					{
+						epadDatabaseOperations.updateAIM(ea.aimID, projectID, username);
+					}
+					else
+						projectID = ea.projectID;
 				}
 				String dsoSeriesUID = "";
 				if (seriesIds.size() > 1)

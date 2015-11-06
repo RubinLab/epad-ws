@@ -1854,6 +1854,7 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 			throw new Exception("No permissions to delete project");
 		log.info("Deleting project:" + projectID);
 		Project project = getProject(projectID);
+		if (project == null) return;
 		new ProjectToUser().deleteObjects("project_id=" + project.getId());
 		new EpadFile().deleteObjects("project_id=" + project.getId());
 		new ProjectToSubjectToUser().deleteObjects("proj_subj_id in (select id from " + new ProjectToSubject().returnDBTABLE() + " where project_id=" + project.getId() + ")");
@@ -1924,6 +1925,7 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		Subject subject = getSubject(subjectUID);
 		Project project = getProject(projectID);
 		Study study = getStudy(studyUID);
+		if (study == null) return;
 		ProjectToSubject projSubj = (ProjectToSubject) new ProjectToSubject().getObject("project_id =" + project.getId() + " and subject_id=" + subject.getId());
 		if (projSubj != null) {
 			ProjectToSubjectToStudy projSubjStudy = (ProjectToSubjectToStudy) new ProjectToSubjectToStudy().getObject("proj_subj_id =" + projSubj.getId() + " and study_id=" + study.getId());
@@ -1949,6 +1951,7 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 	public void deleteSubject(String username, String subjectUID) throws Exception {
 		log.info("Deleting subject:" + subjectUID);
 		Subject subject = getSubject(subjectUID);
+		if (subject == null) return;
 		List<ProjectToSubject> objects = new ProjectToSubject().getObjects("subject_id=" + subject.getId());
 		for (ProjectToSubject ptos: objects)
 		{
@@ -1973,6 +1976,7 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 	@Override
 	public void deleteStudy(String username, String studyUID) throws Exception {
 		Study study = getStudy(studyUID);
+		if (study == null) return;
 		ProjectToSubjectToStudy projSubjStudy = (ProjectToSubjectToStudy) new ProjectToSubjectToStudy().getObject("study_id=" + study.getId());
 		projSubjStudy.delete();
 		new EpadFile().deleteObjects("study_id=" + study.getId());
