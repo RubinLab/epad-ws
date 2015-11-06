@@ -1103,6 +1103,20 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		return projects;
 	}
 
+	@Override
+	public List<Project> getProjectsForStudy(String studyUID) throws Exception {
+		Study study = getStudy(studyUID);
+		List<Project> projects = new ArrayList<Project>();
+		List<AbstractDAO> psss = new ProjectToSubjectToStudy().getObjects("study_id=" + study.getId());
+		if (psss.size() == 0) return projects;
+		List objects = new Project().getObjects("id in (select project_id from " 
+													+ ProjectToSubject.DBTABLE 
+													+ " where id in (" + getIdList(psss) + ")");
+		projects.addAll(objects);
+		
+		return projects;
+	}
+
 	/* (non-Javadoc)
 	 * @see edu.stanford.epad.epadws.service.EpadProjectOperations#getStudiesForProjectAndSubject(java.lang.String, java.lang.String)
 	 */
@@ -2108,6 +2122,20 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 			}
 		}
 		return objects;
+	}
+	
+	private String getIdList(List<AbstractDAO> objects)
+	{
+		if (objects == null) return "";
+		String list = "";
+		for (AbstractDAO object: objects)
+		{
+			list = "," + object.getId();
+		}
+		if (list.length() > 0)
+			return list.substring(1);
+		else
+			return list;
 	}
 
 }

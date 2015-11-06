@@ -151,7 +151,7 @@ public class DefaultWorkListOperations implements EpadWorkListOperations {
 	 * @see edu.stanford.epad.epadws.service.EpadWorkListOperations#addSubjectToWorkList(java.lang.String, java.lang.String, java.lang.String)
 	 */
 	@Override
-	public void addSubjectToWorkList(String loggedInUser, String projectID, String subjectUID,
+	public synchronized void addSubjectToWorkList(String loggedInUser, String projectID, String subjectUID,
 			String workListID) throws Exception {
 		log.debug("Adding subject " + subjectUID + " to " + workListID + " for " + projectID);
 		Subject subject = projectOperations.getSubject(subjectUID);

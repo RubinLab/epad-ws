@@ -172,6 +172,7 @@ public class EPADUploadDirWatcher implements Runnable
 	private void processUploadDirectory(File directory) throws InterruptedException
 	{
 		File zipFile = null;
+		File zipDirectory = null;
 		String username = null;
 		boolean processed = false;
 		try {
@@ -197,7 +198,7 @@ public class EPADUploadDirWatcher implements Runnable
 						removeLen = 7;
 					else if (zipFile.getName().toLowerCase().endsWith(".gz"))
 						removeLen = 0;
-					File zipDirectory = new File(directory, zipFile.getName().substring(0, zipFile.getName().length()-removeLen));
+					zipDirectory = new File(directory, zipFile.getName().substring(0, zipFile.getName().length()-removeLen));
 					if (xnatprops.exists())
 						EPADFileUtils.copyFile(xnatprops, new File(zipDirectory, UserProjectService.XNAT_UPLOAD_PROPERTIES_FILE_NAME));
 					projectOperations.updateUserTaskStatus(username, TaskStatus.TASK_ADD_TO_PROJECT, zipDirectory.getName(), "Started processing", new Date(), null);
@@ -248,6 +249,10 @@ public class EPADUploadDirWatcher implements Runnable
 				projectOperations.updateUserTaskStatus(username, TaskStatus.TASK_UPLOAD, directory.getName(), "Completed upload - No files found", null, new Date());
 		} catch (Exception e) {
 			log.warning("Exception uploading " + directory.getAbsolutePath(), e);
+			if (zipFile != null)
+				projectOperations.updateUserTaskStatus(username, TaskStatus.TASK_UNZIP, zipFile.getName(), null, null, new Date());
+			if (zipDirectory != null)
+				projectOperations.updateUserTaskStatus(username, TaskStatus.TASK_ADD_TO_PROJECT, zipDirectory.getName(), null, null, new Date());
 			if (username == null)
 				username = UserProjectService.getUserNameFromPropertiesFile(directory);
 			if (username != null) {

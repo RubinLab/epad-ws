@@ -388,6 +388,14 @@ public interface EpadProjectOperations {
 	List<Project> getProjectsForSubject(String subjectUID) throws Exception;
 	
 	/**
+	 * Get projects for a study
+	 * @param subjectUID
+	 * @return
+	 * @throws Exception
+	 */
+	List<Project> getProjectsForStudy(String studyUID) throws Exception;
+	
+	/**
 	 * Get Subject/Patient by name
 	 * @param subjectName
 	 * @return
