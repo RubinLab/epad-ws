@@ -1,4 +1,5 @@
 <%@ page language="java"%>
+<%@ page import="java.net.*"%>
 <%@ page import="edu.stanford.epad.epadws.service.*"%>
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
 <HTML>
@@ -19,7 +20,7 @@
 <h2><center>ePad Web Services</center></h2>
 <p>
 <table align=center border=1 cellpadding=3 cellspacing=0>
-<form name=loginform method=post action="<%=request.getContextPath()%>/session/">
+<form name=loginform method=post action="<%=request.getContextPath()%>/session/?redirectUrl=<%=URLEncoder.encode(request.getContextPath() + "/test/index.jsp")%>">
 <tr><td width=50% align=right>Username:</td><td width=50% align=left><input name=username type=text></td></tr>
 <tr><td align=right>Password:</td><td align left><input name=password type=password></td></tr>
 <tr><td colspan=2 align=center><input type=button value=Submit onclick="document.loginform.submit()"></td></tr>
