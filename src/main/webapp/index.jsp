@@ -25,7 +25,7 @@
 </frameset>
 
 <frameset rows="*">
-<frame name=rightpanel src="<%=request.getContextPath()%>/status">
+<frame name=rightpanel src="status.jsp">
 </frameset>
    
 </frameset>

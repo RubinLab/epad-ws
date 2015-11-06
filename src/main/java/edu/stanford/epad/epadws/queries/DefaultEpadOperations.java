@@ -1445,7 +1445,7 @@ public class DefaultEpadOperations implements EpadOperations
 			{
 				type = FileType.TEMPLATE;
 				if (EPADFileUtils.isImage(uploadedFile) || uploadedFile.getName().toLowerCase().endsWith(".zip"))
-					throw new Exception("This does not appear to be a template file");
+					throw new Exception("This does not appear to be a template file. A smart client should check that.");
 				if (!EPADFileUtils.isValidXml(uploadedFile, EPADConfig.templateXSDPath))
 				{
 					String error = EPADFileUtils.validateXml(uploadedFile, EPADConfig.templateXSDPath);
@@ -3615,6 +3615,8 @@ public class DefaultEpadOperations implements EpadOperations
 		String override = epadDatabaseOperations.getSeriesDefaultTags(seriesUID);
 		if (override == null) override = "";
 		String[] tags = override.split(";");
+		String modality = "";
+		String bodyPart = "";
 		Map<String, String> overriddenTags = new HashMap<String, String>();
 		for (String tag: tags)
 		{
@@ -3639,12 +3641,17 @@ public class DefaultEpadOperations implements EpadOperations
 
 		if (suppliedDICOMElementMap.containsKey(PixelMedUtils.ModalityCode))
 		{
-			if (suppliedDICOMElementMap.get(PixelMedUtils.ModalityCode).get(0).value.equals("US"))
+			modality = suppliedDICOMElementMap.get(PixelMedUtils.ModalityCode).get(0).value;
+			if (modality.equals("US"))
 				useMax = true;
 			defaultDicomElements.add(suppliedDICOMElementMap.get(PixelMedUtils.ModalityCode).get(0));
 		}
 		else
 			defaultDicomElements.add(new DICOMElement(PixelMedUtils.ModalityCode, PixelMedUtils.ModalityTagName, ""));
+		if (suppliedDICOMElementMap.containsKey(PixelMedUtils.BodyPartExamined))
+		{
+			bodyPart = suppliedDICOMElementMap.get(PixelMedUtils.BodyPartExamined).get(0).value;
+		}
 
 		if (suppliedDICOMElementMap.containsKey(PixelMedUtils.SeriesDescriptionCode))
 			defaultDicomElements.add(suppliedDICOMElementMap.get(PixelMedUtils.SeriesDescriptionCode).get(0));
@@ -3769,7 +3776,7 @@ public class DefaultEpadOperations implements EpadOperations
 				if (overriddenTags.containsKey(PixelMedUtils.WindowCenterTagName))
 					defaultDicomElements.add(new DICOMElement(PixelMedUtils.WindowCenterCode, PixelMedUtils.WindowCenterTagName, overriddenTags.get(PixelMedUtils.WindowCenterTagName)));
 				else
-					defaultDicomElements.addAll(getCalculatedWindowingDICOMElements(studyUID, seriesUID, imageUID, useMax));
+					defaultDicomElements.addAll(getCalculatedWindowingDICOMElements(studyUID, seriesUID, imageUID, useMax, modality, bodyPart));
 			}
 			else
 			{
@@ -3782,7 +3789,7 @@ public class DefaultEpadOperations implements EpadOperations
 			if (overriddenTags.containsKey(PixelMedUtils.WindowCenterTagName))
 				defaultDicomElements.add(new DICOMElement(PixelMedUtils.WindowCenterCode, PixelMedUtils.WindowCenterTagName, overriddenTags.get(PixelMedUtils.WindowCenterTagName)));
 			else
-				defaultDicomElements.addAll(getCalculatedWindowingDICOMElements(studyUID, seriesUID, imageUID, useMax));
+				defaultDicomElements.addAll(getCalculatedWindowingDICOMElements(studyUID, seriesUID, imageUID, useMax, modality, bodyPart));
 		}
 		return new DICOMElementList(defaultDicomElements);
 	}
@@ -3909,7 +3916,37 @@ public class DefaultEpadOperations implements EpadOperations
 		return result;
 	}
 
-	private List<DICOMElement> getCalculatedWindowingDICOMElements(String studyUID, String seriesUID, String imageUID, boolean useMax)
+	static Map<String, String> defaultWindow = new HashMap<String, String>();
+	static { 
+		defaultWindow.put("CT-ABDOMEN", "350,40");
+		defaultWindow.put("CT-PELVIS", "350,40");
+		defaultWindow.put("CT-OVARY", "350,40");
+		defaultWindow.put("CT-BONE", "2500,480");
+		defaultWindow.put("CT-BRAIN", "80,40");
+		defaultWindow.put("CT-CTA (3D-MIP)", "650,50");
+		defaultWindow.put("CT-KIDNEY", "700,50");
+		defaultWindow.put("CT-LIVER", "120,70");
+		defaultWindow.put("CT-LUNG", "1500,-500");
+		defaultWindow.put("CT-MEDIASTINUM,CHEST", "4000,40");
+		defaultWindow.put("CT-MYELOGRAM", "880,110");
+		defaultWindow.put("CT-NECK", "350,20");
+		defaultWindow.put("CT-SINUS", "2000,100");
+		defaultWindow.put("CT-STROKE", "50,40");
+		defaultWindow.put("CT-SUBDURAL", "350,90");
+		defaultWindow.put("MR-BRAIN", "1200,800");
+		defaultWindow.put("MR-T1", "480,225");
+		defaultWindow.put("MR-T2", "350,300");
+		defaultWindow.put("MR-FLAIR", "800,170");
+		defaultWindow.put("MR-PD", "1900,950");
+		defaultWindow.put("US-LOW CONTRAST", "190,80");
+		defaultWindow.put("US-MED CONTRAST", "160,70");
+		defaultWindow.put("US-HIGH CONTRAST", "120,60");
+		defaultWindow.put("XA-CARDIAC (10 BIT)", "1024,512");
+		defaultWindow.put("XA-CARDIAC (12 BIT)", "4096,2048");
+		defaultWindow.put("XA-CARDIAC (8 BIT)", "255,127");
+	};
+	
+	private List<DICOMElement> getCalculatedWindowingDICOMElements(String studyUID, String seriesUID, String imageUID, boolean useMax, String modality, String bodyPart)
 	{
 		List<DICOMElement> dicomElements = new ArrayList<>();
 		long windowWidth = 400;
@@ -3967,6 +4004,13 @@ public class DefaultEpadOperations implements EpadOperations
 				if (useMax && windowWidth != 255 && windowCenter !=128) { 	//temporary test
 					windowCenter = 16384;
 					windowWidth = 32768;
+				}
+				String key = modality + "-" + bodyPart;
+				if (defaultWindow.get(key.toUpperCase()) != null)
+				{
+					String[] win = defaultWindow.get(key.toUpperCase()).split(",");
+					windowCenter = getInt(win[1]);
+					windowWidth = getInt(win[0]);
 				}
 					
 				log.info("Image " + imageUID + " in series " + seriesUID + " has a calculated window width of " + windowWidth

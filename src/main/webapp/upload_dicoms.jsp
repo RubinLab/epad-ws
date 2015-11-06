@@ -83,19 +83,19 @@
 <br>
 <% if (subjectID == null) { %>
  <form name="uploadform" id="uploadform" method="post" enctype="multipart/form-data" accept-charset=utf-8>
- Project: <input type=text readonly name="projectID" value="<%=projectID%>" size=10><br>
+ <b>Project:</b> <input type=text readonly name="projectID" value="<%=projectID%>" size=10><br>
 <% } else if (studyUID == null) { %>
  <form name="uploadform" id="uploadform"  method="post" enctype="multipart/form-data" accept-charset=utf-8>
- Project: <input type=text readonly name="projectID" value="<%=projectID%>"> Patient: <input type=text readonly name="subjectID" value="<%=subjectID%>"><br>
+ <b>Project</b>: <input type=text readonly name="projectID" value="<%=projectID%>"> Patient: <input type=text readonly name="subjectID" value="<%=subjectID%>"><br>
 <% } else if (seriesUID == null) { %>
  <form name="uploadform" id="uploadform" method="post" enctype="multipart/form-data" accept-charset=utf-8>
- Project: <input type=text readonly name="projectID" value="<%=projectID%>"> Patient: <input type=text readonly name="subjectID" value="<%=subjectID%>"> Study: <input type=text readonly name="studyUID" value="<%=studyUID%>"><br>
+ <b>Project:</b> <input type=text readonly name="projectID" value="<%=projectID%>"> Patient: <input type=text readonly name="subjectID" value="<%=subjectID%>"> Study: <input type=text readonly name="studyUID" value="<%=studyUID%>"><br>
 <% } else { %>
  <form name="uploadform" id="uploadform" method="post" enctype="multipart/form-data" accept-charset=utf-8>
-  Project: <input type=text readonly name="projectID" value="<%=projectID%>"> Patient: <input type=text readonly name="subjectID" value="<%=subjectID%>"> Study: <input type=text readonly name="studyUID" value="<%=studyUID%>"> Series: <input type=text readonly name="seriesUID" value="<%=seriesUID%>"><br>
+  <b>Project:</b> <input type=text readonly name="projectID" value="<%=projectID%>"> Patient: <input type=text readonly name="subjectID" value="<%=subjectID%>"> Study: <input type=text readonly name="studyUID" value="<%=studyUID%>"> Series: <input type=text readonly name="seriesUID" value="<%=seriesUID%>"><br>
 <% } %>
  <br>
- <b>Zip Files:</b> <input id=uploadlist type=file name=file multiple="multiple" accept=".zip,.dcm,.dso"><br>
+ <b>Upload ZIP/TARZ Files:</b> <input id=uploadlist type=file name=file multiple="multiple" accept=".zip,.dcm,.dso"><br>
   <br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input type="button" value="Submit" onclick="uploadFiles()">
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
