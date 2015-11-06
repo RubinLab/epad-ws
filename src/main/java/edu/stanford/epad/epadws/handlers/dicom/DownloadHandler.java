@@ -74,9 +74,12 @@ public class DownloadHandler extends AbstractHandler
 			request.setHandled(true);
 
 		String method = httpRequest.getMethod();
+		String sessionID = SessionService.getJSessionIDFromRequest(httpRequest);
+		log.info("ID:" + Thread.currentThread().getId() + " User:" + httpRequest.getParameter("username")  + " host:" + EPADSessionOperations.getSessionHost(sessionID) + " method:" + httpRequest.getMethod() 
+				+ ", url: " + httpRequest.getPathInfo() + ", parameters: "
+				+ httpRequest.getQueryString() + " sessionId:" + sessionID);
 		if ("GET".equalsIgnoreCase(method) || "POST".equalsIgnoreCase(method)) {
 			try {
-				String sessionID = SessionService.getJSessionIDFromRequest(httpRequest);
 				if (sessionID == null || sessionID.length() == 0) {
 					log.warning("JSESSIONID is Missing in client request");
 					statusCode = HandlerUtil.invalidTokenJSONResponse(INVALID_SESSION_TOKEN_MESSAGE, httpResponse.getWriter(), log);
