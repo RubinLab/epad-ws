@@ -204,6 +204,8 @@ public class ImageCheckHandler extends AbstractHandler
 		log.info("Starting fixSeriesImages, seriesUID=" + seriesUID + " imageUID=" + imageUID);
 		EpadOperations epadQueries = DefaultEpadOperations.getInstance();
 		Set<DICOMFileDescription> dicomFilesDescriptions = epadQueries.getDICOMFilesInSeries(seriesUID, imageUID);
+		SeriesReference seriesReference = new SeriesReference(null, null, dicomFilesDescriptions.iterator().next().studyUID, seriesUID);
+		epadQueries.deleteSeriesPNGs(seriesReference);
 		QueueAndWatcherManager.getInstance().addDICOMFileToPNGGeneratorPipeline("REPROCESS", dicomFilesDescriptions);
 		log.info("Series " +  seriesUID + " added to PNG Pipeline");
 		responseStream.write("Series " +  seriesUID + " added to PNG Pipeline\n");

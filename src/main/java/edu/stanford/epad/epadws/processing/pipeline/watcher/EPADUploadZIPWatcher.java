@@ -50,6 +50,8 @@ import edu.stanford.epad.epadws.processing.pipeline.threads.ShutdownSignal;
 /**
  * This is a process the runs every five seconds. If it sees a new ZIP, DCM or GZ file in two consecutive runs with the
  * same file size it will assume the it is "DONE" and put it into the QUEUE. This begins the process.
+ * 
+ * Note: This class does not appear to be in use - delete?
  */
 public class EPADUploadZIPWatcher implements Runnable
 {

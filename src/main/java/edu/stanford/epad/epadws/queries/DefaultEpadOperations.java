@@ -182,7 +182,7 @@ public class DefaultEpadOperations implements EpadOperations
 	 */
 
 	@Override
-	public EPADProjectList getProjectDescriptions(String username, String sessionID, EPADSearchFilter searchFilter, boolean annotationCount) throws Exception
+	public EPADProjectList getProjectDescriptions(String username, String sessionID, EPADSearchFilter searchFilter, boolean annotationCount, boolean ignoreSystem) throws Exception
 	{
 		if (searchFilter.hasAnnotationMatch()) annotationCount = true;
 		EPADProjectList epadProjectList = new EPADProjectList();
@@ -193,6 +193,8 @@ public class DefaultEpadOperations implements EpadOperations
 		projects.addAll(projectList);
 		long gettime = System.currentTimeMillis();
 		for (Project project : projects) {
+			if (ignoreSystem && (project.getProjectId().equals(EPADConfig.xnatUploadProjectID) || project.getProjectId().equals(EPADConfig.getParamValue("UnassignedProjectID", "nonassigned"))))
+				continue;
 			EPADProject epadProject = project2EPADProject(sessionID, username, project, searchFilter, annotationCount);
 			
 			if (epadProject != null)
@@ -1063,9 +1065,7 @@ public class DefaultEpadOperations implements EpadOperations
 		if (Dcm4CheeOperations.deleteSeries(seriesReference.seriesUID, seriesPk))
 		{
 			epadDatabaseOperations.deleteSeries(seriesReference.seriesUID);
-			String pngPath = EPADConfig.getEPADWebServerPNGDir() + "studies/" + seriesReference.studyUID + "/series/" + seriesReference.seriesUID + "/images/";
-			log.debug("Deleting all files in:" + pngPath);
-			EPADFileUtils.deleteDirectoryAndContents(new File(pngPath));
+			deleteSeriesPNGs(seriesReference);
 			if (deleteAims)
 				deleteAllSeriesAims(seriesReference.seriesUID, false);
 			return "";
@@ -1075,6 +1075,15 @@ public class DefaultEpadOperations implements EpadOperations
 			return "Error deleting Series in DCM4CHE database";
 		}
 		
+	}
+
+	@Override
+	public void deleteSeriesPNGs(SeriesReference seriesReference) {
+		String pngPath = EPADConfig.getEPADWebServerPNGDir() + "studies/" + seriesReference.studyUID + "/series/" + seriesReference.seriesUID + "/images/";
+		log.debug("Deleting all files in:" + pngPath);
+		File pngDir = new File(pngPath);
+		if (pngDir.exists())
+			EPADFileUtils.deleteDirectoryAndContents(pngDir);
 	}
 
 	@Override
@@ -1436,7 +1445,7 @@ public class DefaultEpadOperations implements EpadOperations
 			{
 				type = FileType.TEMPLATE;
 				if (EPADFileUtils.isImage(uploadedFile) || uploadedFile.getName().toLowerCase().endsWith(".zip"))
-					throw new Exception("This does not appear to be a template file. A smart client should check that.");
+					throw new Exception("This does not appear to be a template file. The should check this.");
 				if (!EPADFileUtils.isValidXml(uploadedFile, EPADConfig.templateXSDPath))
 				{
 					String error = EPADFileUtils.validateXml(uploadedFile, EPADConfig.templateXSDPath);
@@ -2688,6 +2697,12 @@ public class DefaultEpadOperations implements EpadOperations
 				if (seriesMap.keySet().isEmpty())
 				{
 					aims.remove(i--);
+					if (aim.templateType != null && aim.templateType.equals("SEG"))
+					{
+						try {
+							AIMUtil.deleteAIM(aim.aimID, aim.projectID);
+						} catch (Exception x) {};
+					}
 				}
 			}
 			SeriesProcessingStatus status = epadDatabaseOperations.getSeriesProcessingStatus(aim.dsoSeriesUID);
@@ -2823,6 +2838,12 @@ public class DefaultEpadOperations implements EpadOperations
 				if (seriesMap.keySet().isEmpty())
 				{
 					aims.remove(i--);
+					if (aim.templateType != null && aim.templateType.equals("SEG"))
+					{
+						try {
+							AIMUtil.deleteAIM(aim.aimID, aim.projectID);
+						} catch (Exception x) {};
+					}
 				}
 			}
 			SeriesProcessingStatus status = epadDatabaseOperations.getSeriesProcessingStatus(aim.dsoSeriesUID);
@@ -2997,6 +3018,12 @@ public class DefaultEpadOperations implements EpadOperations
 		else
 		{
 			worklists = workListOperations.getWorkListsForUser(username);
+			List<WorkList> worklist2 = workListOperations.getWorkListsByUser(username);
+			for (WorkList wl: worklist2)
+			{
+				if (!worklists.contains(wl))
+					worklists.add(wl);
+			}
 		}
 		EPADWorklistList wllist = new EPADWorklistList();
 		for (WorkList wl: worklists)
@@ -4010,7 +4037,7 @@ public class DefaultEpadOperations implements EpadOperations
 	}
 
 	@Override
-	public EPADUserList getUserDescriptions(String username, String sessionID)
+	public EPADUserList getUserDescriptions(String username, String sessionID, boolean returnUsage)
 			throws Exception {
 		EPADUserList userlist = new EPADUserList();
 		List<User> users = projectOperations.getAllUsers();
@@ -4038,6 +4065,16 @@ public class DefaultEpadOperations implements EpadOperations
 				EPADUser epadUser = new EPADUser(user.getFullName(), user.getUsername(), 
 						user.getFirstName(), user.getLastName(), user.getEmail(), user.isEnabled(), user.isAdmin(), user.isPasswordExpired(), "", permissions, projects, projectToRole);
 				epadUser.colorpreference = user.getColorpreference();
+				epadUser.creator = user.getCreator();
+				if (returnUsage)
+				{
+					EpadStatistics userStats = projectOperations.getUserStatistics(username, user.getUsername(), false);
+					if (userStats != null)
+						epadUser.usage = new EPADUsage(userStats.getHost(), userStats.getNumOfUsers(), userStats.getNumOfProjects(),
+							userStats.getNumOfPatients(), userStats.getNumOfStudies(), userStats.getNumOfSeries(),
+							userStats.getNumOfAims(), userStats.getNumOfDSOs(), userStats.getNumOfPacs(), userStats.getNumOfAutoQueries(),
+							userStats.getNumOfWorkLists(), userStats.getNumOfFiles(), userStats.getNumOfTemplates(), userStats.getNumOfPlugins(), dateformat.format(new Date()));
+				}
 				userlist.addEPADUser(epadUser);
 			}
 			else
@@ -4045,6 +4082,15 @@ public class DefaultEpadOperations implements EpadOperations
 				EPADUser epadUser = new EPADUser(user.getFullName(), user.getUsername(), 
 						user.getFirstName(), user.getLastName(), "******", user.isEnabled(), user.isAdmin(), user.isPasswordExpired(), "", permissions, projects, projectToRole);
 				epadUser.colorpreference = user.getColorpreference();
+				if (returnUsage)
+				{
+					EpadStatistics userStats = projectOperations.getUserStatistics(username, user.getUsername(), false);
+					if (userStats != null)
+						epadUser.usage = new EPADUsage(userStats.getHost(), userStats.getNumOfUsers(), userStats.getNumOfProjects(),
+							userStats.getNumOfPatients(), userStats.getNumOfStudies(), userStats.getNumOfSeries(),
+							userStats.getNumOfAims(), userStats.getNumOfDSOs(), userStats.getNumOfPacs(), userStats.getNumOfAutoQueries(),
+							userStats.getNumOfWorkLists(), userStats.getNumOfFiles(), userStats.getNumOfTemplates(), userStats.getNumOfPlugins(), dateformat.format(new Date()));
+				}
 				userlist.addEPADUser(epadUser);
 			}
 		}
@@ -4053,7 +4099,7 @@ public class DefaultEpadOperations implements EpadOperations
 
 	@Override
 	public EPADUser getUserDescription(String loggedInusername,
-			String username, String sessionID) throws Exception {
+			String username, String sessionID, boolean returnUsage) throws Exception {
 		User user = projectOperations.getUser(username);
 		if (user == null) {
 			user = projectOperations.getUserByEmail(username);
@@ -4083,12 +4129,31 @@ public class DefaultEpadOperations implements EpadOperations
 			epadUser = new EPADUser(user.getFullName(), user.getUsername(), 
 					user.getFirstName(), user.getLastName(), user.getEmail(), user.isEnabled(), user.isAdmin(), user.isPasswordExpired(), "", permissions, projects, projectToRole);
 			epadUser.colorpreference = user.getColorpreference();
+			epadUser.creator = user.getCreator();
+			if (returnUsage)
+			{
+				EpadStatistics userStats = projectOperations.getUserStatistics(username, user.getUsername(), false);
+				if (userStats != null)
+					epadUser.usage = new EPADUsage(userStats.getHost(), userStats.getNumOfUsers(), userStats.getNumOfProjects(),
+						userStats.getNumOfPatients(), userStats.getNumOfStudies(), userStats.getNumOfSeries(),
+						userStats.getNumOfAims(), userStats.getNumOfDSOs(), userStats.getNumOfPacs(), userStats.getNumOfAutoQueries(),
+						userStats.getNumOfWorkLists(), userStats.getNumOfFiles(), userStats.getNumOfTemplates(), userStats.getNumOfPlugins(), dateformat.format(new Date()));
+			}
 		}
 		else
 		{
 			epadUser = new EPADUser(user.getFullName(), user.getUsername(), 
 				user.getFirstName(), user.getLastName(), "******", user.isEnabled(), user.isAdmin(), user.isPasswordExpired(), "", permissions, projects, projectToRole);
 			epadUser.colorpreference = user.getColorpreference();
+			if (returnUsage)
+			{
+				EpadStatistics userStats = projectOperations.getUserStatistics(username, user.getUsername(), false);
+				if (userStats != null)
+					epadUser.usage = new EPADUsage(userStats.getHost(), userStats.getNumOfUsers(), userStats.getNumOfProjects(),
+						userStats.getNumOfPatients(), userStats.getNumOfStudies(), userStats.getNumOfSeries(),
+						userStats.getNumOfAims(), userStats.getNumOfDSOs(), userStats.getNumOfPacs(), userStats.getNumOfAutoQueries(),
+						userStats.getNumOfWorkLists(), userStats.getNumOfFiles(), userStats.getNumOfTemplates(), userStats.getNumOfPlugins(), dateformat.format(new Date()));
+			}
 		}
 		return epadUser;
 
@@ -4199,6 +4264,7 @@ public class DefaultEpadOperations implements EpadOperations
 				EPADUser epadUser = new EPADUser(user.getFullName(), user.getUsername(), 
 						user.getFirstName(), user.getLastName(), user.getEmail(), user.isEnabled(), user.isAdmin(), user.isPasswordExpired(), user.getRole(), permissions);
 				epadUser.colorpreference = user.getColorpreference();
+				epadUser.creator = user.getCreator();
 				userlist.addEPADUser(epadUser);
 			}
 			else
@@ -4288,6 +4354,27 @@ public class DefaultEpadOperations implements EpadOperations
 		projectOperations.removeReviewee(loggedInUser, username, reviewee);
 	}
 
+	public EPADImage getSameSlice(String username, ImageReference imageReference, String followupStudyUID, String sessionID) throws Exception
+	{
+		SeriesReference seriesReference = new SeriesReference(imageReference.projectID, imageReference.subjectID, imageReference.seriesUID, imageReference.imageUID); 
+		EPADSeries newSeries = this.getSeriesDescription(seriesReference, username, sessionID);
+		StudyReference studyReference = new StudyReference(imageReference.projectID, imageReference.subjectID, followupStudyUID); 
+		EPADSeriesList serieses = getSeriesDescriptions(studyReference, username, sessionID, new EPADSearchFilter(), true);
+		for (EPADSeries oldSeries: serieses.ResultSet.Result) {
+			if (oldSeries.seriesDescription.equals(newSeries.seriesDescription)) {
+				EPADAIMList aims = this.getSeriesAIMDescriptions(seriesReference, username, sessionID);
+				for (EPADAIM aim: aims.ResultSet.Result) {
+					String imageUID = AIMUtil.getReferencedImage(aim);
+					if (imageUID == null) continue;
+					if (imageUID.equals(imageReference.imageUID)) {
+						
+					}
+				}
+			}
+		}
+		return null;
+	}
+	
 	// This is Pixelmed variant (though does not seem to be correct).
 	// SourceImage srcDicomImage = new SourceImage(temporaryDicomFile.getAbsolutePath());
 	// ImageEnhancer imageEnhancer = new ImageEnhancer(srcDicomImage);

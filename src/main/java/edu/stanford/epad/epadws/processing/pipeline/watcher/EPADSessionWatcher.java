@@ -59,7 +59,7 @@ public class EPADSessionWatcher implements Runnable
 	
 	public static boolean diskspacealert = false;
 	public static final int MIN_DISKSPACE = 500;
-
+	
 	private String jsessionID = null;
 
 	public EPADSessionWatcher()
@@ -88,7 +88,7 @@ public class EPADSessionWatcher implements Runnable
 				Calendar now = Calendar.getInstance();
 				// every 15 minutes
 				if (now.get(Calendar.MINUTE)%15 == 0)
-				{					
+				{
 					diskspacealert = false;
 					try {
 						long dcm4cheeMb = FileSystemUtils.freeSpaceKb(EPADConfig.dcm4cheeDirRoot)/1024;
@@ -104,18 +104,18 @@ public class EPADSessionWatcher implements Runnable
 							epadDatabaseOperations.insertEpadEvent(
 									"admin", 
 									"Server running out of disk space", 
-									"Disk Space", "", "Disk Space", "Disk Space", "Disk Space", "Disk Space", "Server running out of disk space");
+									"", "", "", "", "", "", "Server running out of disk space");
 						}
 						if (EPadWebServerVersion.restartRequired)
 						{
 							epadDatabaseOperations.insertEpadEvent(
 									"admin", 
 									"Software updated, Please restart ePAD", 
-									"System", "Restart",
-									"System", 
-									"Restart", 
-									"Restart", 
-									"Restart",
+									"", "",
+									"", 
+									"", 
+									"", 
+									"",
 									"Please restart ePAD");
 						}
 					} catch (Exception x) {

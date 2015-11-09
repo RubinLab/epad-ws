@@ -80,6 +80,10 @@ public interface EpadDatabaseOperations
 
 	void insertEpadEvent(String sessionID, String eventStatus, String aimUID, String aimName, String patientID,
 			String patientName, String templateID, String templateName, String pluginName);
+
+	void insertEpadEvent(String sessionID, String eventStatus, String aimUID, String aimName, String patientID,
+			String patientName, String templateID, String templateName, String pluginName, 
+			String projectID, String projectName, String studyUID, String seriesUID, boolean error);
 	public void insertEpadEvent(String sessionID, String message, String name, String target);
 	
 	int deleteOldEvents();

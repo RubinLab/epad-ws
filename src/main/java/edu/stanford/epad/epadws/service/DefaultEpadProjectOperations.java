@@ -42,12 +42,17 @@ import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.epad.dtos.TaskStatus;
 import edu.stanford.epad.dtos.internal.DCM4CHEESeries;
+import edu.stanford.epad.epadws.aim.AIMDatabaseOperations;
 import edu.stanford.epad.epadws.epaddb.DatabaseUtils;
+import edu.stanford.epad.epadws.epaddb.EpadDatabase;
+import edu.stanford.epad.epadws.epaddb.EpadDatabaseOperations;
 import edu.stanford.epad.epadws.models.DisabledTemplate;
 import edu.stanford.epad.epadws.models.EpadFile;
+import edu.stanford.epad.epadws.models.EpadStatistics;
 import edu.stanford.epad.epadws.models.EventLog;
 import edu.stanford.epad.epadws.models.FileType;
 import edu.stanford.epad.epadws.models.NonDicomSeries;
+import edu.stanford.epad.epadws.models.Plugin;
 import edu.stanford.epad.epadws.models.Project;
 import edu.stanford.epad.epadws.models.ProjectToFile;
 import edu.stanford.epad.epadws.models.ProjectToSubject;
@@ -55,11 +60,13 @@ import edu.stanford.epad.epadws.models.ProjectToSubjectToStudy;
 import edu.stanford.epad.epadws.models.ProjectToSubjectToUser;
 import edu.stanford.epad.epadws.models.ProjectToUser;
 import edu.stanford.epad.epadws.models.ProjectType;
+import edu.stanford.epad.epadws.models.RemotePACQuery;
 import edu.stanford.epad.epadws.models.ReviewerToReviewee;
 import edu.stanford.epad.epadws.models.Study;
 import edu.stanford.epad.epadws.models.Subject;
 import edu.stanford.epad.epadws.models.User;
 import edu.stanford.epad.epadws.models.UserRole;
+import edu.stanford.epad.epadws.models.WorkList;
 import edu.stanford.epad.epadws.models.WorkListToStudy;
 import edu.stanford.epad.epadws.models.WorkListToSubject;
 import edu.stanford.epad.epadws.models.dao.AbstractDAO;
@@ -378,6 +385,57 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 	}
 
 	@Override
+	public EpadStatistics getUserStatistics(String loggedInUser,
+			String username, boolean exceptionOnErr) throws Exception {
+		User user = getUser(username);
+		if (!loggedInUser.equals(username) && !loggedInUser.equals(user.getCreator()) && !isAdmin(loggedInUser))
+		{
+			if (exceptionOnErr)
+				throw new Exception("No permission to get user " + username + " statistics");
+			else
+				return null;
+		}
+		try
+		{
+			EpadStatistics es = new EpadStatistics();
+			int projects = this.getProjectsForUser(username).size();
+			int users = new User().getCount("Creator == '" + username + "'")+1;
+			int patients = new Subject().getCount("Creator == '" + username + "'");
+			int studies = new Study().getCount("Creator == '" + username + "'");
+			int files = new EpadFile().getCount("Creator == '" + username + "'");
+			int templates = new EpadFile().getCount("Creator == '" + username + "' and filetype = '" + FileType.TEMPLATE.getName() + "'");
+			int plugins = new Plugin().getCount("Creator == '" + username + "'");
+			EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
+			int aims = epadDatabaseOperations.getNumberOfAIMs(AIMDatabaseOperations.aimcol_username + " = '" + username + "'");
+			int dsos = epadDatabaseOperations.getNumberOfAIMs("DSOSeriesUID is not null or DSOSeriesUID != '' and " + AIMDatabaseOperations.aimcol_username + " = '" + username + "'");
+			int pacQueries = new RemotePACQuery().getCount("");
+			int wls = new WorkList().getCount("user_id =" + user.getId());
+			String host = EPADConfig.xnatServer;
+			es.setHost(host);
+			es.setNumOfUsers(users);
+			es.setNumOfProjects(projects);
+			es.setNumOfPatients(patients);
+			es.setNumOfStudies(studies);
+			es.setNumOfAims(aims);
+			es.setNumOfDSOs(dsos);
+			es.setNumOfWorkLists(wls);
+			es.setNumOfAutoQueries(pacQueries);
+			es.setNumOfFiles(files);
+			es.setNumOfTemplates(templates);
+			es.setNumOfPlugins(plugins);
+			es.setCreator("admin");
+			return es;
+		}
+		catch (Exception x)
+		{
+			if (exceptionOnErr)
+				throw x;
+			else
+				return null;
+		}
+	}
+
+	@Override
 	public void createEventLog(String username, String projectID,
 			String subjectID, String studyUID, String seriesUID,
 			String imageUID, String aimID, String function,
@@ -466,6 +524,13 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 	@Override
 	public Subject createSubject(String loggedInUser, String subjectUID,
 			String name, Date dob, String gender) throws Exception {
+		return createSubject(loggedInUser, subjectUID,
+				name, dob, gender, false);
+	}
+	
+	@Override
+	public Subject createSubject(String loggedInUser, String subjectUID,
+			String name, Date dob, String gender, boolean changeOwner) throws Exception {
 		Subject subject = getSubject(subjectUID);
 		if (subject == null) subject = new Subject();
 		subject.setSubjectUID(subjectUID);
@@ -478,6 +543,8 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 			subject.setCreator(loggedInUser);
 			this.createEventLog(loggedInUser, null, subjectUID, null, null, null, null, null, "Created Patient", null, false);
 		}
+		if (changeOwner)
+			subject.setCreator(loggedInUser);
 		subject.save();
 		//subjectCache.put(subject.getSubjectUID(), subject);
 		return subject;
@@ -495,6 +562,13 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 	@Override
 	public Study createStudy(String loggedInUser, String studyUID,
 			String subjectUID, String description, Date studyDate) throws Exception {
+		return createStudy(loggedInUser, studyUID,
+				subjectUID, description, studyDate, false);
+	}
+	
+	@Override
+	public Study createStudy(String loggedInUser, String studyUID,
+			String subjectUID, String description, Date studyDate, boolean changeOwner) throws Exception {
 		Subject subject = getSubject(subjectUID);
 		Study study = getStudy(studyUID);
 		if (study == null)
@@ -503,6 +577,8 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 			study.setCreator(loggedInUser);
 			this.createEventLog(loggedInUser, null, subjectUID, studyUID, null, null, null, null, "Created Study", null, false);
 		}
+		if (changeOwner)
+			study.setCreator(loggedInUser);
 		study.setStudyUID(studyUID);
 		study.setSubjectId(subject.getId());
 		if (description != null && description.length() > 0)
@@ -551,6 +627,12 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		subject = (Subject) subject.getObject("subjectuid = " + subject.toSQL(subjectUID));
 		Project project = new Project();
 		project = (Project) project.getObject("projectId = " + project.toSQL(projectId));
+		List<ProjectToSubject> ptss = new ProjectToSubject().getObjects("subject_id=" + subject.getId());
+		if (ptss.size() == 1 && subject.getCreator().equals("admin"))
+		{
+			subject.setCreator(loggedInUser);
+			subject.save();
+		}
 		ProjectToSubject ptos = (ProjectToSubject) new ProjectToSubject().getObject("project_id =" + project.getId() + " and subject_id=" + subject.getId());
 		if (ptos == null)
 		{
@@ -605,6 +687,12 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 			ptos.save();
 			this.createEventLog(loggedInUser, projectId, subjectUID, null, null, null, null, null, "Added Patient to Project", null, false);
 		}
+		List<ProjectToSubjectToStudy> psss = new ProjectToSubjectToStudy().getObjects("study_id=" + study.getId());
+		if (psss.size() == 1 && study.getCreator().equals("admin"))
+		{
+			study.setCreator(loggedInUser);
+			study.save();
+		}
 		ProjectToSubjectToStudy pss = (ProjectToSubjectToStudy) new ProjectToSubjectToStudy().getObject("proj_subj_id = " + ptos.getId() + " and study_id=" + study.getId());
 		if (pss == null)
 		{
@@ -630,6 +718,7 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		ProjectToSubjectToStudy pss = new ProjectToSubjectToStudy();
 		pss.deleteObjects("proj_subj_id = " + ptos.getId());
 		ptos.delete();
+		new WorkListToSubject().deleteObjects("project_id = " + project.getId() + " and subject_id =" + subject.getId());
 	}
 
 	/* (non-Javadoc)
@@ -648,6 +737,7 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		ptos = (ProjectToSubject) ptos.getObject("project_id = " + project.getId() + " and subject_id =" + subject.getId());
 		ProjectToSubjectToStudy pss = new ProjectToSubjectToStudy();
 		pss.deleteObjects("proj_subj_id = " + ptos.getId() + " and study_id =" + study.getId());
+		new WorkListToStudy().deleteObjects("project_id = " + project.getId() + " and study_id =" + study.getId());
 	}
 
 	/* (non-Javadoc)
@@ -1770,6 +1860,7 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 			throw new Exception("No permissions to delete project");
 		log.info("Deleting project:" + projectID);
 		Project project = getProject(projectID);
+		if (project == null) return;
 		new ProjectToUser().deleteObjects("project_id=" + project.getId());
 		new EpadFile().deleteObjects("project_id=" + project.getId());
 		new ProjectToSubjectToUser().deleteObjects("proj_subj_id in (select id from " + new ProjectToSubject().returnDBTABLE() + " where project_id=" + project.getId() + ")");
@@ -1780,6 +1871,7 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 			projectCache.remove(project.getProjectId());
 		} catch (Exception x) {
 			if (x.getMessage() != null && x.getMessage().contains("constraint")) {
+				log.warning("Error deleting project", x);
 				throw new Exception("Error deleting project, a PAC Query or Plugin may be referring to this project");
 			} else
 				throw x;
@@ -1810,6 +1902,7 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 			new ProjectToSubjectToStudy().deleteObjects("proj_subj_id =" + projSubj.getId());
 			projSubj.delete();
 		}
+		new WorkListToSubject().deleteObjects("subject_id =" + subject.getId() + " and project_id =" + project.getId());			
 		List projSubjs = new ProjectToSubject().getObjects("subject_id=" + subject.getId());
 		// TODO: delete subject if not used any more
 		if (projSubjs.size() == 0)
@@ -1838,11 +1931,13 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		Subject subject = getSubject(subjectUID);
 		Project project = getProject(projectID);
 		Study study = getStudy(studyUID);
+		if (study == null) return;
 		ProjectToSubject projSubj = (ProjectToSubject) new ProjectToSubject().getObject("project_id =" + project.getId() + " and subject_id=" + subject.getId());
 		if (projSubj != null) {
 			ProjectToSubjectToStudy projSubjStudy = (ProjectToSubjectToStudy) new ProjectToSubjectToStudy().getObject("proj_subj_id =" + projSubj.getId() + " and study_id=" + study.getId());
 			if (projSubjStudy != null) projSubjStudy.delete();
 		}
+		new WorkListToStudy().deleteObjects("study_id =" + study.getId() + " and project_id =" + project.getId());			
 		List<ProjectToSubjectToStudy> projSubjStudys = new ProjectToSubjectToStudy().getObjects("study_id=" + study.getId());
 		if (projSubjStudys.size() == 0)
 		{
@@ -1852,7 +1947,7 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 			List<EpadFile> files = this.getEpadFiles(null, subjectUID, null, null, null, false);
 			if (studies.size() == 0 && files.size() == 0)
 				deleteSubject(username, subjectUID);
-	}
+		}
 	}
 
 	/* (non-Javadoc)
@@ -1862,6 +1957,7 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 	public void deleteSubject(String username, String subjectUID) throws Exception {
 		log.info("Deleting subject:" + subjectUID);
 		Subject subject = getSubject(subjectUID);
+		if (subject == null) return;
 		List<ProjectToSubject> objects = new ProjectToSubject().getObjects("subject_id=" + subject.getId());
 		for (ProjectToSubject ptos: objects)
 		{
@@ -1886,6 +1982,7 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 	@Override
 	public void deleteStudy(String username, String studyUID) throws Exception {
 		Study study = getStudy(studyUID);
+		if (study == null) return;
 		ProjectToSubjectToStudy projSubjStudy = (ProjectToSubjectToStudy) new ProjectToSubjectToStudy().getObject("study_id=" + study.getId());
 		projSubjStudy.delete();
 		new EpadFile().deleteObjects("study_id=" + study.getId());

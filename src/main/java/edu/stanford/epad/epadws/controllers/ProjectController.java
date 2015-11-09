@@ -100,6 +100,7 @@ public class ProjectController {
 	@RequestMapping(value = "/", method = RequestMethod.GET)
 	public EPADProjectList getEPADProjects(
 											@RequestParam(value="annotationCount", required = false, defaultValue = "false") boolean annotationCount,
+											@RequestParam(value="system", required = false, defaultValue = "true") boolean system,
 											HttpServletRequest request, 
 									        HttpServletResponse response) throws Exception {
 		String sessionID = SessionService.getJSessionIDFromRequest(request);
@@ -107,7 +108,7 @@ public class ProjectController {
 		EPADSearchFilter searchFilter = EPADSearchFilterBuilder.build(request);
 		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
 		log.info("Getting project descriptions");
-		EPADProjectList projectList = epadOperations.getProjectDescriptions(username, sessionID, searchFilter, annotationCount); 
+		EPADProjectList projectList = epadOperations.getProjectDescriptions(username, sessionID, searchFilter, annotationCount, !system); 
 		log.info("Number of projects:" + projectList.ResultSet.totalRecords);
 		return projectList;
 	}

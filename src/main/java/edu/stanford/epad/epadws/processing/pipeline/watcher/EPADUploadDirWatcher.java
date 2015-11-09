@@ -265,7 +265,7 @@ public class EPADUploadDirWatcher implements Runnable
 				epadDatabaseOperations.insertEpadEvent(
 						username, 
 						"Error processing uploaded file:" + zipName, 
-						zipName, "", zipName, zipName, zipName, zipName, "Upload Error:" + e.getMessage());
+						"", "", "", "", "", "", "Upload Error:" + e.getMessage());
 			}
 			writeExceptionLog(directory, e);
 			projectOperations.updateUserTaskStatus(username, TaskStatus.TASK_UPLOAD, directory.getName(), "Failed upload:" + e.getMessage(), null, new Date());
@@ -381,8 +381,8 @@ public class EPADUploadDirWatcher implements Runnable
 		log.info("Unzipping " + zipFile.getAbsolutePath());
 		if (zipFile.getName().toLowerCase().endsWith(".zip"))
 		{
-		EPADFileUtils.extractFolder(zipFile.getAbsolutePath());
-	}
+			EPADFileUtils.extractFolder(zipFile.getAbsolutePath());
+		}
 		else if (zipFile.getName().toLowerCase().endsWith(".gz") || zipFile.getName().toLowerCase().endsWith(".tgz"))
 		{
 			try
@@ -503,7 +503,7 @@ public class EPADUploadDirWatcher implements Runnable
 					epadDatabaseOperations.insertEpadEvent(
 							username, 
 							"Errors in sending " + errcnt + " DICOM files to DCM4CHEE", 
-							"Dicoms", "Dicoms", "Dicoms", "Dicoms", "Dicoms", "Dicoms", "Error Processing Upload");					
+							"", "", "", "", "", "", "Error Processing Upload");					
 					projectOperations.createEventLog(username, null, null, null, null, null, null, directory.getName(), "DCM4CHEE SEND", "Error sending " + errcnt + " DICOM files to DCM4CHEE", true);
 				}
 			}
@@ -514,7 +514,7 @@ public class EPADUploadDirWatcher implements Runnable
 			epadDatabaseOperations.insertEpadEvent(
 					username, 
 					"Error sending DICOM files to DCM4CHEE", 
-					"Dicoms", "Dicoms", "Dicoms", "Dicoms", "Dicoms", "Dicoms", "Error Processing Upload");					
+					"", "", "", "", "", "", "Error Processing Upload");					
 			projectOperations.createEventLog(username, null, null, null, null, null, null, directory.getName(), "DCM4CHEE SEND", "Error sending DICOM files to DCM4CHEE", true);
 		}
 		try {
@@ -542,8 +542,8 @@ public class EPADUploadDirWatcher implements Runnable
 	{
 		if (dir.exists())
 		{
-		log.info("Deleting upload directory " + dir.getAbsolutePath());
-		EPADFileUtils.deleteDirectoryAndContents(dir);
+			log.info("Deleting upload directory " + dir.getAbsolutePath());
+			EPADFileUtils.deleteDirectoryAndContents(dir);
 		}
 	}
 

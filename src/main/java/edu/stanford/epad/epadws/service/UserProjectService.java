@@ -535,6 +535,12 @@ public class UserProjectService {
 				}
 				else if (entry.isDirectory()) 
 				{
+					if (entry.getName().contains(" "))
+					{
+						File newFile = new File(entry.getParentFile(), entry.getName().replace(' ', '_'));
+						entry.renameTo(newFile);
+						entry = newFile;
+					}
 					files.addAll(listDICOMFiles(entry));
 				}
 				else

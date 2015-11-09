@@ -354,6 +354,97 @@ public class DownloadUtil {
 		
 	}
 
+	/**
+	 * Method to download list of Files
+	 * 
+	 * @param stream - true if file should stream, otherwise placed on disk to be picked (should be deleted after use)
+	 * @param httpResponse
+	 * @param subjectReference
+	 * @param username
+	 * @param sessionID
+	 * @param searchFilter
+	 * @param studyUIDs - download only these selected studies
+	 * @throws Exception
+	 */
+	public static void downloadFiles(HttpServletResponse httpResponse, String[] filePaths, String username) throws Exception
+	{
+		log.info("Downloading files:" + filePaths.length);
+		String downloadDirPath = EPADConfig.getEPADWebServerResourcesDir() + "download/" + "temp" + Long.toString(System.currentTimeMillis());
+		File downloadDir = new File(downloadDirPath);
+		downloadDir.mkdirs();
+		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
+		EpadProjectOperations projectOperations = DefaultEpadProjectOperations.getInstance();
+		EpadDatabaseOperations databaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
+		List<String> fileNames = new ArrayList<String>();
+		for (String filePath: filePaths)
+		{
+			if (filePath.startsWith("/")) filePath = filePath.substring(1);
+			String[] parts = filePath.split("/");
+			String projectID = null;
+			String subjectID = null;
+			String studyUID = null;
+			String seriesUID = null;
+			String fileName = null;
+			if (parts.length < 4)
+			{
+				log.warning("Invalid filePath:" + filePath);
+				continue;
+			}
+			projectID = parts[1];
+			if (parts.length == 4)
+			{
+				fileName = parts[3];
+			}
+			else if (parts.length == 6)
+			{
+				subjectID = parts[3];
+				fileName = parts[5];
+			}
+			else if (parts.length == 8)
+			{
+				subjectID = parts[3];
+				studyUID = parts[5];
+				fileName = parts[7];
+			}
+			else if (parts.length == 10)
+			{
+				subjectID = parts[3];
+				studyUID = parts[5];
+				seriesUID = parts[7];
+				fileName = parts[9];
+			}
+			else
+			{
+				log.warning("Invalid filePath:" + filePath);
+			}
+			File projectDir = new File(downloadDir, "Project-" + projectID);
+			projectDir.mkdirs();
+			EpadFile file = projectOperations.getEpadFile(projectID, subjectID, studyUID, seriesUID, fileName);
+			String name = file.getName();
+			File epadFile = new File(projectDir, name);
+			EPADFileUtils.copyFile(new File(EPADConfig.getEPADWebServerResourcesDir() +  getEpadFilePath(file)), epadFile);
+			fileNames.add("Project-" + projectID + "/" + name);
+		}
+		String zipName = "EpadFiles-" + timestamp.format(new Date()) + ".zip";
+		httpResponse.setContentType("application/zip");
+		httpResponse.setHeader("Content-Disposition", "attachment;filename=\"" + zipName + "\"");
+		
+		File zipFile = null;
+		OutputStream out = null;
+		try
+		{
+			out = httpResponse.getOutputStream();
+		}
+		catch (Exception e)
+		{
+			log.warning("Error getting output stream", e);
+			throw e;
+		}
+		ZipAndStreamFiles(out, fileNames, downloadDirPath + "/");
+		EPADFileUtils.deleteDirectoryAndContents(downloadDir);
+		
+	}
+
 	private static String getEpadFilePath(EpadFile file)
 	{
 		String path = "files/"+ file.getRelativePath();
@@ -975,5 +1066,7 @@ public class DownloadUtil {
 		else
 			return dateFormat.format(date);
 	}
+
+	static SimpleDateFormat timestamp = new SimpleDateFormat("yyyyMMddHHmm");
 
 }

@@ -83,7 +83,7 @@ public class AIMDatabaseOperations {
         this.existUserPassword = existUserPassword;
         this.mySqlConnection = mySqlConnection;
     }
-
+    
     public static final String aimcol_username = "UserLoginName";
     public static final String aimcol_subjectID = "PatientID";
     public static final String aimcol_projectID = "ProjectUID";
@@ -734,7 +734,7 @@ public class AIMDatabaseOperations {
     public List<EPADAIM> getAIMs(String projectID, String patientID, String studyUID, String seriesUID, String imageUID, int frameID, int start, int count) throws SQLException {
         return getAIMs(projectID, patientID, studyUID, seriesUID, imageUID, frameID, null, start, count);
     }
-    
+
 	public static final String[] defaultColors = {
 		"#00ffff",
 		"#000fff",
@@ -765,7 +765,7 @@ public class AIMDatabaseOperations {
 	};
 	
     public List<EPADAIM> getAIMs(String projectID, String patientID, String studyUID, String seriesUID, String imageUID, int frameID, String dsoSeriesUID, int start, int count) throws SQLException {
-        String sqlSelect = "SELECT UserLoginName, ProjectUID, PatientID, StudyUID, SeriesUID, ImageUID, frameID, AnnotationUID, DSOSeriesUID, DSOFRAMENO, XML, NAME, AIMCOLOR FROM annotations WHERE 1 = 1";
+        String sqlSelect = "SELECT UserLoginName, ProjectUID, PatientID, StudyUID, SeriesUID, ImageUID, frameID, AnnotationUID, DSOSeriesUID, DSOFRAMENO, XML, NAME, AIMCOLOR, TEMPLATECODE FROM annotations WHERE 1 = 1";
 		if (projectID != null && projectID.length() > 0)
 			sqlSelect = sqlSelect + " and (ProjectUID = '" + projectID + "')";
 		//sqlSelect = sqlSelect + " and (ProjectUID = '" + projectID + "' or ProjectUID = '" + EPADConfig.xnatUploadProjectID + "')";
@@ -811,10 +811,12 @@ public class AIMDatabaseOperations {
 				String xml = rs.getString(11);
 				String name = rs.getString(12);
 				String color = rs.getString(13);
+				String template = rs.getString(14);
 				EPADAIM aim = new EPADAIM(AnnotationID, UserName, ProjectID, PatientID, StudyUID, SeriesUID, ImageUID, FrameID, DSOSeriesUID);
 				aim.xml = xml;
 				aim.name = name;
 				aim.color = color;
+				aim.templateType = template;
 				if (dsoFrameNo != null)
 					aim.dsoFrameNo = dsoFrameNo;
 				aims.add(aim);

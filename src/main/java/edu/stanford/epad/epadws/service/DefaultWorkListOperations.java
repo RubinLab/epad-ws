@@ -151,7 +151,7 @@ public class DefaultWorkListOperations implements EpadWorkListOperations {
 	 * @see edu.stanford.epad.epadws.service.EpadWorkListOperations#addSubjectToWorkList(java.lang.String, java.lang.String, java.lang.String)
 	 */
 	@Override
-	public synchronized void addSubjectToWorkList(String loggedInUser, String projectID, String subjectUID,
+	public void addSubjectToWorkList(String loggedInUser, String projectID, String subjectUID,
 			String workListID) throws Exception {
 		log.debug("Adding subject " + subjectUID + " to " + workListID + " for " + projectID);
 		Subject subject = projectOperations.getSubject(subjectUID);
@@ -303,6 +303,17 @@ public class DefaultWorkListOperations implements EpadWorkListOperations {
 		if (user == null)
 			throw new Exception("User not found, username:" + username);
 		List objects = new WorkList().getObjects("user_id =" + user.getId() + " order by worklistid");
+		List<WorkList> worklists = new ArrayList<WorkList>();
+		worklists.addAll(objects);
+		return worklists;
+	}
+
+	@Override
+	public List<WorkList> getWorkListsByUser(String username) throws Exception {
+		User user = projectOperations.getUser(username);
+		if (user == null)
+			throw new Exception("User not found, username:" + username);
+		List objects = new WorkList().getObjects("creator ='" + username + "' order by worklistid");
 		List<WorkList> worklists = new ArrayList<WorkList>();
 		worklists.addAll(objects);
 		return worklists;

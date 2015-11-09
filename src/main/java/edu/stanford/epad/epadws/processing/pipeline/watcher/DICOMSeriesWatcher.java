@@ -36,6 +36,7 @@ import java.util.concurrent.TimeUnit;
 import edu.stanford.epad.common.dicom.DICOMFileDescription;
 import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADLogger;
+import edu.stanford.epad.common.util.EventMessageCodes;
 import edu.stanford.epad.dtos.PNGFileProcessingStatus;
 import edu.stanford.epad.dtos.SeriesProcessingStatus;
 import edu.stanford.epad.dtos.TaskStatus;
@@ -113,6 +114,8 @@ public class DICOMSeriesWatcher implements Runnable
 
 		while (!shutdownSignal.hasShutdown()) {
 			count++;
+			if (count%1000 == 0)
+				log.debug("DICOMSeriesWatcher:" + count);
 			try {
 				SeriesProcessingDescription seriesProcessingDescription = dicomSeriesWatcherQueue.poll(2000,
 						TimeUnit.MILLISECONDS);
@@ -187,31 +190,41 @@ public class DICOMSeriesWatcher implements Runnable
 						if (UserProjectService.pendingUploads.containsKey(studyUID))
 						{
 							String username = UserProjectService.pendingUploads.get(studyUID);
+							String projectID = EPADConfig.xnatUploadProjectID;
 							if (username != null && username.indexOf(":") != -1)
+							{
+								projectID = username.substring(username.indexOf(":")+1);
 								username = username.substring(0, username.indexOf(":"));
+							}
 							if (username != null)
 							{
 								epadDatabaseOperations.insertEpadEvent(
 										username, 
-										"Study Processing Complete", 
-										studyUID, studyUID, patientID, patientName, studyUID, studyUID, 
-										"Study:" + studyUID);					
+										EventMessageCodes.STUDY_PROCESSED, 
+										"", "", patientID, patientName, "", "", 
+										"Study:" + studyUID,
+										projectID,studyUID,"","",false);					
 								UserProjectService.pendingUploads.remove(studyUID);
 							}
 						}
 						if (UserProjectService.pendingPNGs.containsKey(seriesUID))
 						{
 							String username = UserProjectService.pendingPNGs.get(seriesUID);
+							String projectID = EPADConfig.xnatUploadProjectID;
 							if (username != null && username.indexOf(":") != -1)
+							{
+								projectID = username.substring(username.indexOf(":")+1);
 								username = username.substring(0, username.indexOf(":"));
+							}
 							if (username != null)
 							{
 								projectOperations.updateUserTaskStatus(username, TaskStatus.TASK_DICOM_PNG_GEN, seriesUID, "Generating PNGs Completed", null, new Date());
 								epadDatabaseOperations.insertEpadEvent(
 										username, 
-										"Image Generation Complete", 
-										seriesUID, seriesUID, patientID, patientName, seriesUID, seriesUID, 
-										"Series:" + seriesUID);					
+										EventMessageCodes.IMAGE_PROCESSED, 
+										"", "", patientID, patientName, "", "", 
+										"Series:" + seriesUID,
+										projectID,"","",seriesUID, false);					
 								UserProjectService.pendingPNGs.remove(seriesUID);
 							}
 						}

@@ -67,7 +67,6 @@ import edu.stanford.epad.dtos.EPADSubject;
 import edu.stanford.epad.dtos.EPADSubjectList;
 import edu.stanford.epad.dtos.EPADTemplateContainer;
 import edu.stanford.epad.dtos.EPADTemplateContainerList;
-import edu.stanford.epad.dtos.EPADUsage;
 import edu.stanford.epad.dtos.EPADUsageList;
 import edu.stanford.epad.dtos.EPADUser;
 import edu.stanford.epad.dtos.EPADUserList;
@@ -87,7 +86,6 @@ import edu.stanford.epad.epadws.epaddb.EpadDatabase;
 import edu.stanford.epad.epadws.handlers.HandlerUtil;
 import edu.stanford.epad.epadws.handlers.dicom.DSOUtil;
 import edu.stanford.epad.epadws.handlers.dicom.DownloadUtil;
-import edu.stanford.epad.epadws.models.EpadStatistics;
 import edu.stanford.epad.epadws.models.RemotePACQuery;
 import edu.stanford.epad.epadws.models.User;
 import edu.stanford.epad.epadws.processing.pipeline.task.EpadStatisticsTask;
@@ -97,8 +95,6 @@ import edu.stanford.epad.epadws.queries.EpadOperations;
 import edu.stanford.epad.epadws.security.EPADSession;
 import edu.stanford.epad.epadws.security.EPADSessionOperations;
 import edu.stanford.epad.epadws.service.DefaultEpadProjectOperations;
-import edu.stanford.epad.epadws.service.DefaultWorkListOperations;
-import edu.stanford.epad.epadws.service.EpadWorkListOperations;
 import edu.stanford.epad.epadws.service.PluginOperations;
 import edu.stanford.epad.epadws.service.RemotePACService;
 import edu.stanford.epad.epadws.service.TCIAService;
@@ -129,6 +125,7 @@ public class EPADGetHandler
 		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
 		PluginOperations pluginOperations= PluginOperations.getInstance();
 		String pathInfo = httpRequest.getPathInfo();
+		String host = EPADSessionOperations.getSessionHost(sessionID);
 		int statusCode;
 		try {
 			if (sessionID == null)
@@ -145,7 +142,8 @@ public class EPADGetHandler
 				boolean annotationCount = false;
 				if ("true".equalsIgnoreCase(httpRequest.getParameter("annotationCount")))
 					annotationCount = true;
-				EPADProjectList projectList = epadOperations.getProjectDescriptions(username, sessionID, searchFilter, annotationCount);
+				boolean ignoreSystem = "false".equalsIgnoreCase(httpRequest.getParameter("system"));
+				EPADProjectList projectList = epadOperations.getProjectDescriptions(username, sessionID, searchFilter, annotationCount, ignoreSystem);
 				responseStream.append(projectList.toJSON());
 
 				statusCode = HttpServletResponse.SC_OK;
@@ -166,7 +164,6 @@ public class EPADGetHandler
 
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.SUBJECT_LIST, pathInfo)) {
 				ProjectReference projectReference = ProjectReference.extract(ProjectsRouteTemplates.SUBJECT_LIST, pathInfo);
-				String host = EPADSessionOperations.getSessionHost(sessionID);
 				if (false && host != null && host.contains("epad-dev")) {
 					// For multiple duplicate requests
 					long currSec = System.currentTimeMillis()/1000;
@@ -1118,14 +1115,16 @@ public class EPADGetHandler
 				statusCode = HttpServletResponse.SC_OK;
 
 			} else if (HandlerUtil.matchesTemplate(UsersRouteTemplates.USER_LIST, pathInfo)) {
-				EPADUserList userlist = epadOperations.getUserDescriptions(username, sessionID);
+				boolean usage = "true".equalsIgnoreCase(httpRequest.getParameter("includeSystemUsage"));
+				EPADUserList userlist = epadOperations.getUserDescriptions(username, sessionID, usage);
 				responseStream.append(userlist.toJSON());
 				statusCode = HttpServletResponse.SC_OK;
 
 			} else if (HandlerUtil.matchesTemplate(UsersRouteTemplates.USER, pathInfo)) {
 				Map<String, String> templateMap = HandlerUtil.getTemplateMap(UsersRouteTemplates.USER, pathInfo);
 				String return_username = HandlerUtil.getTemplateParameter(templateMap, "username");
-				EPADUser user = epadOperations.getUserDescription(username, return_username, sessionID);
+				boolean usage = "true".equalsIgnoreCase(httpRequest.getParameter("includeSystemUsage"));
+				EPADUser user = epadOperations.getUserDescription(username, return_username, sessionID, usage);
 				responseStream.append(user.toJSON());
 				statusCode = HttpServletResponse.SC_OK;
 
@@ -1436,6 +1435,8 @@ public class EPADGetHandler
 				RemotePAC pac = RemotePACService.getInstance().getRemotePAC(pacid);
 				if (pac != null)
 				{
+					if (!isTest(host) && patientNameFilter.length() == 0 && patientIDFilter.length() == 0 && (tagGroup == null || tagGroup.length == 0) && modality == null)
+						patientIDFilter = "1*";  // Use as Default filter, otherwise a full query takes a too long and overloads the PAC
 					List<RemotePACEntity> entities = RemotePACService.getInstance().queryRemoteData(pac, patientNameFilter, patientIDFilter, "", "", modality, tagGroup, tagElement, tagValue, tagType, true, true);
 					RemotePACEntityList entityList = new RemotePACEntityList();
 					for (RemotePACEntity entity: entities)
@@ -1788,4 +1789,12 @@ public class EPADGetHandler
 		}
 	}
 
+	static boolean isTest(String host)
+	{
+		if (host == null) return false;
+		if (host.startsWith("epad-dev") || host.startsWith("epad-build"))
+			return true;
+		else
+			return false;
+	}
 }

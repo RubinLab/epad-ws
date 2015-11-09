@@ -82,7 +82,7 @@ public interface EpadOperations
 	 * @return
 	 * @throws Exception
 	 */
-	EPADProjectList getProjectDescriptions(String username, String sessionID, EPADSearchFilter searchFilter, boolean annotationCount) throws Exception;
+	EPADProjectList getProjectDescriptions(String username, String sessionID, EPADSearchFilter searchFilter, boolean annotationCount, boolean ignoreSystem) throws Exception;
 
 	/**
 	 * Get project description
@@ -147,7 +147,7 @@ public interface EpadOperations
 	 */
 	EPADStudyList getStudyDescriptions(SubjectReference subjectReference, String username, String sessionID,
 			EPADSearchFilter searchFilter) throws Exception;
-
+	
 	/**
 	 * Get study description
 	 * @param studyReference
@@ -251,7 +251,7 @@ public interface EpadOperations
 	 * @return
 	 * @throws Exception
 	 */
-	EPADUserList getUserDescriptions(String username, String sessionID) throws Exception;
+	EPADUserList getUserDescriptions(String username, String sessionID, boolean usage) throws Exception;
 
 	/**
 	 * Get description for a user
@@ -261,7 +261,7 @@ public interface EpadOperations
 	 * @return
 	 * @throws Exception
 	 */
-	EPADUser getUserDescription(String loggedInusername, String username, String sessionID) throws Exception;
+	EPADUser getUserDescription(String loggedInusername, String username, String sessionID, boolean usage) throws Exception;
 
 	/**
 	 * Get users who can review annotations for a reader
@@ -841,6 +841,7 @@ public interface EpadOperations
 	 * @return
 	 */
 	String deleteSeries(SeriesReference seriesReference, boolean deleteAims);
+	void deleteSeriesPNGs(SeriesReference seriesReference);
 
 	/**
 	 * Delete project aim

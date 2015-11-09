@@ -30,6 +30,7 @@ import java.util.List;
 import java.util.Map;
 
 import edu.stanford.epad.epadws.models.EpadFile;
+import edu.stanford.epad.epadws.models.EpadStatistics;
 import edu.stanford.epad.epadws.models.EventLog;
 import edu.stanford.epad.epadws.models.FileType;
 import edu.stanford.epad.epadws.models.NonDicomSeries;
@@ -173,6 +174,8 @@ public interface EpadProjectOperations {
 	void createEventLog(String username, String projectID, String subjectID, String studyUID, String seriesUID, String imageUID, String aimID, String function, String params);
 	void createEventLog(String username, String projectID, String subjectID, String studyUID, String seriesUID, String imageUID, String aimID, String filename, String function, String params, boolean error);
 	
+	EpadStatistics getUserStatistics(String loggediInUser, String username, boolean exceptionOnErr) throws Exception;
+	
 	/**
 	 * Create Subject record in database
 	 * @param loggedInUser
@@ -184,6 +187,7 @@ public interface EpadProjectOperations {
 	 * @throws Exception
 	 */
 	Subject createSubject(String loggedInUser, String subjectUID, String name, Date dob, String gender) throws Exception;
+	Subject createSubject(String loggedInUser, String subjectUID, String name, Date dob, String gender, boolean changeOwner) throws Exception;
 	
 	/**
 	 * Create Study record in database
@@ -195,6 +199,7 @@ public interface EpadProjectOperations {
 	 */
 	Study createStudy(String loggedInUser, String studyUID, String subjectUID, String description) throws Exception;
 	Study createStudy(String loggedInUser, String studyUID, String subjectUID, String description, Date studyDate) throws Exception;
+	Study createStudy(String loggedInUser, String studyUID, String subjectUID, String description, Date studyDate, boolean changeOwner) throws Exception;
 	
 	/**
 	 * Create Study record in database
@@ -776,7 +781,7 @@ public interface EpadProjectOperations {
 	 * @throws Exception
 	 */
 	void deleteFile(String loggedInUser, String projectID, String subjectUID, String studyUID, String seriesUID, String filename) throws Exception;	
-	
+		
 	/**
 	 * Get event logs for this user
 	 * @param username
