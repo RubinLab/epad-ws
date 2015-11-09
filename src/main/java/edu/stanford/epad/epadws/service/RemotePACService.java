@@ -669,7 +669,7 @@ public class RemotePACService extends RemotePACSBase {
 				qlevel = "PATIENT";
 			log.info("Remote PAC Query, pacID:" + pac.pacID + " patientName:" + patientNameFilter + " patientID:" + patientIDFilter + " studyDate:" + studyDateFilter + " studyIDFilter:" + studyIDFilter + " patientsOnly:" + patientsOnly + " studiesOnly:" + studiesOnly + " tagValues:" + tagValues);
 			if ((patientNameFilter == null || patientNameFilter.length() == 0) 
-					&& (patientIDFilter == null || patientIDFilter.length() == 0)
+					&& (patientIDFilter == null || patientIDFilter.length() == 0 || patientIDFilter.equals("1*"))
 					&& (tagGroups == null || tagGroups.length == 0)
 					&& patientsOnly)
 			{
@@ -840,7 +840,7 @@ public class RemotePACService extends RemotePACSBase {
 				}
 			}
 			if ((patientNameFilter == null || patientNameFilter.length() == 0) 
-					&& (patientIDFilter == null || patientIDFilter.length() == 0)
+					&& (patientIDFilter == null || patientIDFilter.length() == 0 || patientIDFilter.equals("1*"))
 					&& patientsOnly)
 			{
 				patientCache.put(pac.pacID, remoteEntities); 
