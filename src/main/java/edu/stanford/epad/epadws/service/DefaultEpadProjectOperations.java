@@ -1281,7 +1281,7 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		if (psss.size() == 0) return projects;
 		List objects = new Project().getObjects("id in (select project_id from " 
 													+ ProjectToSubject.DBTABLE 
-													+ " where id in (" + getIdList(psss) + ")");
+													+ " where id in (" + getIdList(psss) + "))");
 		projects.addAll(objects);
 		
 		return projects;
