@@ -64,7 +64,7 @@ public class EPADUploadDirWatcher implements Runnable
 	private static final int CHECK_INTERVAL = 5000; // Check every 5 seconds
 	private static final String FOUND_DIR_FILE = "dir.found";
 	private static final long MAX_WAIT_TIME = 3600000; // 1 hour (was 20 minutes before)
-	private static final long MIN_WAIT_TIME = 1200000; // 20 minutes before
+	private static final long MIN_WAIT_TIME = 1200000; // maybe a good idea to reduce to 10 mins, because client seems to be making several empty directories
 	private static final EPADLogger log = EPADLogger.getInstance();
 	private final EpadProjectOperations projectOperations = DefaultEpadProjectOperations.getInstance();
 
@@ -265,7 +265,7 @@ public class EPADUploadDirWatcher implements Runnable
 				epadDatabaseOperations.insertEpadEvent(
 						username, 
 						"Error processing uploaded file:" + zipName, 
-						zipName, "", zipName, zipName, zipName, zipName, "Upload Error:" + e.getMessage());
+						"", "", "", "", "", "", "Upload Error:" + e.getMessage());
 			}
 			writeExceptionLog(directory, e);
 			projectOperations.updateUserTaskStatus(username, TaskStatus.TASK_UPLOAD, directory.getName(), "Failed upload:" + e.getMessage(), null, new Date());
@@ -503,7 +503,7 @@ public class EPADUploadDirWatcher implements Runnable
 					epadDatabaseOperations.insertEpadEvent(
 							username, 
 							"Errors in sending " + errcnt + " DICOM files to DCM4CHEE", 
-							"Dicoms", "Dicoms", "Dicoms", "Dicoms", "Dicoms", "Dicoms", "Error Processing Upload");					
+							"", "", "", "", "", "", "Error Processing Upload");					
 					projectOperations.createEventLog(username, null, null, null, null, null, null, directory.getName(), "DCM4CHEE SEND", "Error sending " + errcnt + " DICOM files to DCM4CHEE", true);
 				}
 			}
@@ -514,7 +514,7 @@ public class EPADUploadDirWatcher implements Runnable
 			epadDatabaseOperations.insertEpadEvent(
 					username, 
 					"Error sending DICOM files to DCM4CHEE", 
-					"Dicoms", "Dicoms", "Dicoms", "Dicoms", "Dicoms", "Dicoms", "Error Processing Upload");					
+					"", "", "", "", "", "", "Error Processing Upload");					
 			projectOperations.createEventLog(username, null, null, null, null, null, null, directory.getName(), "DCM4CHEE SEND", "Error sending DICOM files to DCM4CHEE", true);
 		}
 		try {

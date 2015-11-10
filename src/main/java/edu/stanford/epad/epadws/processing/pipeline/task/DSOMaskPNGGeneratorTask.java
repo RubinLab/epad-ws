@@ -43,6 +43,7 @@ import edu.stanford.epad.epadws.epaddb.EpadDatabase;
 import edu.stanford.epad.epadws.epaddb.EpadDatabaseOperations;
 import edu.stanford.epad.epadws.handlers.dicom.DSOUtil;
 import edu.stanford.epad.epadws.models.Project;
+import edu.stanford.epad.epadws.models.Study;
 import edu.stanford.epad.epadws.processing.model.DicomSeriesProcessingStatusTracker;
 import edu.stanford.epad.epadws.processing.model.SeriesPipelineState;
 import edu.stanford.epad.epadws.service.DefaultEpadProjectOperations;
@@ -96,10 +97,10 @@ public class DSOMaskPNGGeneratorTask implements GeneratorTask
 			{
 				epadDatabaseOperations.insertEpadEvent(
 						username, 
-						"Study Processing Complete", 
-						studyUID, studyUID, "", "", studyUID, studyUID, 
+						EventMessageCodes.STUDY_PROCESSED, 
+						"", "", "", "", "", "", 
 						"Study:" + studyUID,
-						projectID,"","","",false);					
+						projectID,"",studyUID,"",false);					
 				UserProjectService.pendingUploads.remove(studyUID);
 			}
 		}
@@ -126,16 +127,18 @@ public class DSOMaskPNGGeneratorTask implements GeneratorTask
 			// Must be first upload, create AIM file
 			List<EPADAIM> aims = EpadDatabase.getInstance().getEPADDatabaseOperations().getAIMsByDSOSeries(seriesUID);
 			List<ImageAnnotation> ias = AIMQueries.getAIMImageAnnotations(AIMSearchType.SERIES_UID, seriesUID, "admin", 1, 50);
+			String projectID = null;
 			if (aims.size() == 0 && generateAIM)
 			{
 				List<Project> projects = projectOperations.getProjectsForStudy(studyUID);
-				String projectID = null;
-				String username = null;
+				Study study = projectOperations.getStudy(projectID);
+				String username = study.getCreator();
 				for (Project project: projects)
 				{
 					if (project.getProjectId().equals(EPADConfig.xnatUploadProjectID)) continue;
 					projectID = project.getProjectId();
-					username = project.getCreator();
+					if ("admin".equals(username))
+						username = project.getCreator();
 				}
 				ImageAnnotation ia = AIMUtil.generateAIMFileForDSO(dsoFile, projectID, username);
 				ias = new ArrayList<ImageAnnotation>();
@@ -147,13 +150,13 @@ public class DSOMaskPNGGeneratorTask implements GeneratorTask
 				Aim aim = new Aim(ia);
 				epadDatabaseOperations.insertEpadEvent(
 						ia.getListUser().get(0).getLoginName(), 
-						"Image Generation Complete", 
+						EventMessageCodes.IMAGE_PROCESSED, 
 						ia.getUniqueIdentifier(), ia.getName(),
 						aim.getPatientID(), 
 						aim.getPatientName(), 
 						aim.getCodeMeaning(), 
 						aim.getCodeValue(),
-						"DSO Plugin");					
+						"DSO Plugin", projectID,"","",seriesUID, false);					
 			}
 			else if (ias.size() != 0 && UserProjectService.pendingPNGs.containsKey(seriesUID))
 			{
@@ -172,7 +175,7 @@ public class DSOMaskPNGGeneratorTask implements GeneratorTask
 							aim.getPatientName(), 
 							aim.getCodeMeaning(), 
 							aim.getCodeValue(),
-							"");					
+							"", projectID,"","",seriesUID, false);					
 					UserProjectService.pendingPNGs.remove(seriesUID);
 				}
 			}

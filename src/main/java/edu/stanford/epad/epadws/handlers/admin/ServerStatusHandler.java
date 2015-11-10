@@ -56,6 +56,7 @@ import edu.stanford.epad.epadws.models.User;
 import edu.stanford.epad.epadws.processing.pipeline.PipelineFactory;
 import edu.stanford.epad.epadws.processing.pipeline.task.EpadStatisticsTask;
 import edu.stanford.epad.epadws.processing.pipeline.watcher.EPADSessionWatcher;
+import edu.stanford.epad.epadws.processing.pipeline.watcher.QueueAndWatcherManager;
 import edu.stanford.epad.epadws.security.EPADSession;
 import edu.stanford.epad.epadws.security.EPADSessionOperations;
 import edu.stanford.epad.epadws.service.DefaultEpadProjectOperations;
@@ -172,6 +173,10 @@ public class ServerStatusHandler extends AbstractHandler
 					DecimalFormat df = new DecimalFormat("###,###,###");
 					responseStream.println("<b>Available Heap Space:</b> " + df.format(freeHeap) + "<br>");
 					responseStream.println("<b>Total Heap Space:</b> " + df.format(totalHeap) + "<br>");
+					responseStream.println("<br>");
+					responseStream.println("<b>Series Queue:</b> " + QueueAndWatcherManager.dicomSeriesWatcherQueue.size() + "<br>");
+					responseStream.println("<b>PNG Queue:</b> " + QueueAndWatcherManager.pngGeneratorTaskQueue.size() + "<br>");
+					responseStream.println("<b>AddToProject Queue:</b> " + QueueAndWatcherManager.xnatSeriesWatcherQueue.size() + "<br>");
 					responseStream.println("<br>");
 					try {
 						responseStream.println("<b>dcm4chee Free Space: </b>" + df.format(FileSystemUtils.freeSpaceKb(EPADConfig.dcm4cheeDirRoot)/1024) + " Mb<br>");

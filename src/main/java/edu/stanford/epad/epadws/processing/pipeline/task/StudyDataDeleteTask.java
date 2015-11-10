@@ -108,7 +108,7 @@ public class StudyDataDeleteTask implements Runnable
 				EpadDatabase.getInstance().getEPADDatabaseOperations().insertEpadEvent(
 						username, 
 						"Study Not Deleted", 
-						studyUID, "", patientID, patientID, studyUID, projectID, msg);					
+						"", "", patientID, "", "", "", msg, projectID,"",studyUID,"", false);					
 
 			}
 		} catch (Exception e) {

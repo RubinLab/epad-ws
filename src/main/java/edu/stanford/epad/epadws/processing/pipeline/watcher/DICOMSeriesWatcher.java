@@ -201,9 +201,9 @@ public class DICOMSeriesWatcher implements Runnable
 								epadDatabaseOperations.insertEpadEvent(
 										username, 
 										EventMessageCodes.STUDY_PROCESSED, 
-										studyUID, studyUID, patientID, patientName, studyUID, studyUID, 
+										"", "", patientID, patientName, "", "", 
 										"Study:" + studyUID,
-										projectID,"","","",false);					
+										projectID,studyUID,"","",false);					
 								UserProjectService.pendingUploads.remove(studyUID);
 							}
 						}
@@ -222,9 +222,9 @@ public class DICOMSeriesWatcher implements Runnable
 								epadDatabaseOperations.insertEpadEvent(
 										username, 
 										EventMessageCodes.IMAGE_PROCESSED, 
-										seriesUID, seriesUID, patientID, patientName, seriesUID, seriesUID, 
+										"", "", patientID, patientName, "", "", 
 										"Series:" + seriesUID,
-										projectID,"","","", false);					
+										projectID,"","",seriesUID, false);					
 								UserProjectService.pendingPNGs.remove(seriesUID);
 							}
 						}

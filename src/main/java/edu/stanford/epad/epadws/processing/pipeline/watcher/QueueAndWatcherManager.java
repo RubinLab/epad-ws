@@ -54,11 +54,11 @@ public class QueueAndWatcherManager
 {
 	private static final EPADLogger log = EPADLogger.getInstance();
 
-	private static final BlockingQueue<SeriesProcessingDescription> dicomSeriesWatcherQueue = new ArrayBlockingQueue<SeriesProcessingDescription>(
+	public static final BlockingQueue<SeriesProcessingDescription> dicomSeriesWatcherQueue = new ArrayBlockingQueue<SeriesProcessingDescription>(
 			2000);
-	private static final BlockingQueue<SeriesProcessingDescription> xnatSeriesWatcherQueue = new ArrayBlockingQueue<SeriesProcessingDescription>(
+	public static final BlockingQueue<SeriesProcessingDescription> xnatSeriesWatcherQueue = new ArrayBlockingQueue<SeriesProcessingDescription>(
 			2000);
-	private static final BlockingQueue<GeneratorTask> pngGeneratorTaskQueue = new ArrayBlockingQueue<GeneratorTask>(2000);
+	public static final BlockingQueue<GeneratorTask> pngGeneratorTaskQueue = new ArrayBlockingQueue<GeneratorTask>(2000);
 	// private static final BlockingQueue<DicomHeadersTask> dicomHeadersTaskQueue = new
 	// ArrayBlockingQueue<DicomHeadersTask>(2000);
 

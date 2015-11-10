@@ -200,11 +200,11 @@ public class EpadStatisticsTask implements Runnable
 								epadDatabaseOperations.insertEpadEvent(
 										admin.getUsername(), 
 										msg,  // Message
-										"System", "Upgrade", // aimUID, aimName
-										"System", // patient ID
-										"Upgrade", // patient Name
-										"Upgrade", // templateID
-										"Upgrade", // templateName
+										"", "", // aimUID, aimName
+										"", // patient ID
+										"", // patient Name
+										"", // templateID
+										"", // templateName
 										"Please update ePAD");	// PluginName
 						}
 					}

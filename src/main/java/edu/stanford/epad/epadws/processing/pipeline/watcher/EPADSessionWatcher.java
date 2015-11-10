@@ -104,18 +104,18 @@ public class EPADSessionWatcher implements Runnable
 							epadDatabaseOperations.insertEpadEvent(
 									"admin", 
 									"Server running out of disk space", 
-									"Disk Space", "", "Disk Space", "Disk Space", "Disk Space", "Disk Space", "Server running out of disk space");
+									"", "", "", "", "", "", "Server running out of disk space");
 						}
 						if (EPadWebServerVersion.restartRequired)
 						{
 							epadDatabaseOperations.insertEpadEvent(
 									"admin", 
 									"Software updated, Please restart ePAD", 
-									"System", "Restart",
-									"System", 
-									"Restart", 
-									"Restart", 
-									"Restart",
+									"", "",
+									"", 
+									"", 
+									"", 
+									"",
 									"Please restart ePAD");
 						}
 					} catch (Exception x) {

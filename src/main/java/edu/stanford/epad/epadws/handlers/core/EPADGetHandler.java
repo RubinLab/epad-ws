@@ -125,6 +125,7 @@ public class EPADGetHandler
 		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
 		PluginOperations pluginOperations= PluginOperations.getInstance();
 		String pathInfo = httpRequest.getPathInfo();
+		String host = EPADSessionOperations.getSessionHost(sessionID);
 		int statusCode;
 		try {
 			if (sessionID == null)
@@ -163,7 +164,6 @@ public class EPADGetHandler
 
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.SUBJECT_LIST, pathInfo)) {
 				ProjectReference projectReference = ProjectReference.extract(ProjectsRouteTemplates.SUBJECT_LIST, pathInfo);
-				String host = EPADSessionOperations.getSessionHost(sessionID);
 				if (false && host != null && host.contains("epad-dev")) {
 					// For multiple duplicate requests
 					long currSec = System.currentTimeMillis()/1000;
@@ -1435,6 +1435,8 @@ public class EPADGetHandler
 				RemotePAC pac = RemotePACService.getInstance().getRemotePAC(pacid);
 				if (pac != null)
 				{
+					if (!isTest(host) && patientNameFilter.length() == 0 && patientIDFilter.length() == 0 && (tagGroup == null || tagGroup.length == 0) && modality == null)
+						patientIDFilter = "1*";  // Use as Default filter, otherwise a full query takes a too long and overloads the PAC
 					List<RemotePACEntity> entities = RemotePACService.getInstance().queryRemoteData(pac, patientNameFilter, patientIDFilter, "", "", modality, tagGroup, tagElement, tagValue, tagType, true, true);
 					RemotePACEntityList entityList = new RemotePACEntityList();
 					for (RemotePACEntity entity: entities)
@@ -1787,4 +1789,12 @@ public class EPADGetHandler
 		}
 	}
 
+	static boolean isTest(String host)
+	{
+		if (host == null) return false;
+		if (host.startsWith("epad-dev") || host.startsWith("epad-build"))
+			return true;
+		else
+			return false;
+	}
 }
