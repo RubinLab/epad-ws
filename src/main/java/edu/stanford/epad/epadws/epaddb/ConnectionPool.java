@@ -129,7 +129,7 @@ public class ConnectionPool implements Runnable
 	private final String username;
 	private final String password;
 
-	private int initialConnections = 5;
+	private int initialConnections = 25;
 
 	public ConnectionPool(String connectionUrl, String username, String password) throws SQLException
 	{
@@ -157,6 +157,7 @@ public class ConnectionPool implements Runnable
 	public synchronized Connection getConnection() throws SQLException
 	{
 		if (connectionsAvailable.size() == 0) {
+			logger.info("Creating new connection, used:" + connectionsUsed.size());
 			Connection connection = createConnection();
 			connectionsUsed.add(connection);
 			return connection;

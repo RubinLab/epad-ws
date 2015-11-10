@@ -934,7 +934,7 @@ public class RemotePACService extends RemotePACSBase {
 	 * @return
 	 * @throws Exception
 	 */
-	public synchronized String retrieveRemoteData(RemotePAC pac, String entityID, String projectID, String userName, String sessionID) throws Exception {
+	public String retrieveRemoteData(RemotePAC pac, String entityID, String projectID, String userName, String sessionID) throws Exception {
 		if (pac.hostname.equalsIgnoreCase(EPADConfig.xnatServer) && pac.port == 11112)
 		{
 			throw new Exception("This is the local PAC, image data can not transferred from it");

@@ -201,11 +201,11 @@ public class EPadWebServerVersion
 		EpadDatabase.getInstance().getEPADDatabaseOperations().insertEpadEvent(
 				username, 
 				"Software updated, Please restart ePAD", 
-				"System", "Restart",
-				"System", 
-				"Restart", 
-				"Restart", 
-				"Restart",
+				"", "",
+				"", 
+				"", 
+				"", 
+				"",
 				"Please restart ePAD");												
 	}
 }
