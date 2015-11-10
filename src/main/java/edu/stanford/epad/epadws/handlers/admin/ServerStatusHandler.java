@@ -209,64 +209,67 @@ public class ServerStatusHandler extends AbstractHandler
 				responseStream.println("Version: " + new EPadWebServerVersion().getVersion() + " Build Date: " + new EPadWebServerVersion().getBuildDate() + " Build Host: " + new EPadWebServerVersion().getBuildHost() + "<br>");
 			if (validSession || debug) {
 				responseStream.println("<b>Version:</b> " + new EPadWebServerVersion().getVersion() + " <b>Build Date:</b> " + new EPadWebServerVersion().getBuildDate() + " <b>Build Host:</b> " + new EPadWebServerVersion().getBuildHost() + "<br>");
-				List<Plugin> plugins = PluginOperations.getInstance().getPlugins();
-				responseStream.println("<br>");
-				responseStream.println("<b>Loaded Plugins:</b>");
-				responseStream.println("<br><table border=1 cellpadding=2><tr style='font-weight: bold;'>" + 
-						"<td align=center>ID</td><td align=center>Name</td><td align=center>Description</td>" +
-						"<td align=center>Javaclass</td><td align=center>Enabled</td><td align=center>Status</td><td align=center>Modality</td></tr>");
-				for (Plugin plugin: plugins)
-				{
-					responseStream.println("<tr><td>" + plugin.getPluginId() + "</td><td>" + plugin.getName() + "</td><td>" + checkNull(plugin.getDescription(), "&nbsp;") + "</td>");
-					responseStream.println("<td>" + plugin.getJavaclass() + "</td><td>" + plugin.getEnabled() + "</td><td>" + checkNull(plugin.getStatus(), "&nbsp;") + "</td><td>" + checkNull(plugin.getModality(), "&nbsp;") + "</td></tr>");
-				}
-				responseStream.println("</table>");
 					
 				//responseStream.println("Plugin Version - interface:      " + EPadPlugin.PLUGIN_INTERFACE_VERSION + "<br>");
 				//responseStream.println("Plugin Version - implementation: " + ePadPlugin.getPluginImplVersion() + "<br>");
 				EpadDatabase epadDatabase = EpadDatabase.getInstance();
-				responseStream.println("<br>");
+				responseStream.println("<table width=50%>");
 				//responseStream.println("ePAD database startup time: " + epadDatabase.getStartupTime() + " ms, database version: " + epadDatabase.getEPADDatabaseOperations().getDBVersion() + "<br>");
 				//Dcm4CheeDatabase dcm4CheeDatabase = Dcm4CheeDatabase.getInstance();
 				//responseStream.println("<br>");
 				//responseStream.println("DCM4CHEE database startup time: " + dcm4CheeDatabase.getStartupTime() + " ms" + "<br>");
 				//responseStream.println("<br>");
-				responseStream.println("<b>Config Server:</b> " + EPADConfig.xnatServer + "<br>");
-				responseStream.println("<b>Config serverProxy:</b> " + EPADConfig.getParamValue("serverProxy") + "<br>");
-				responseStream.println("<b>Config webserviceBase:</b> " + EPADConfig.getParamValue("webserviceBase") + "<br>");
-				responseStream.println("<b>Hostname:</b> " + InetAddress.getLocalHost().getHostName() + "<br>");
-				responseStream.println("<b>IP Address:</b> " + EpadStatisticsTask.getIPAddress() + "<br>");
+				responseStream.println("<tr><td colspan=2><hr></td></tr>");
+				responseStream.println("<tr><td><b>Config Server:</b></td><td nowrap>" + EPADConfig.xnatServer + "</td></tr>");
+				responseStream.println("<tr><td><b>Config serverProxy:</b></td><td nowrap>" + EPADConfig.getParamValue("serverProxy") + "</td></tr>");
+				responseStream.println("<tr><td><b>Config webserviceBase:</b></td><td nowrap>" + EPADConfig.getParamValue("webserviceBase") + "</td></tr>");
+				responseStream.println("<tr><td><b>Hostname:</b></td><td>" + InetAddress.getLocalHost().getHostName() + "</td></tr>");
+				responseStream.println("<tr><td><b>IP Address:</b></td><td>" + EpadStatisticsTask.getIPAddress() + "</td></tr>");
 				if (EPADSessionWatcher.diskspacealert)
 				{
-					responseStream.println("<br><font size=+1 color=red><b>Low System Disk Space</b></font><br>");					
+					responseStream.println("<tr><td colspan=2><font size=+1 color=red><b>Low System Disk Space</b></font></td></tr>");					
 				}
 				responseStream.println("<style>tbody { display: block;max-height:350px;overflow-y:auto; } </style>");
 				List<EventLog> recentLogs = new ArrayList<EventLog>();
 				int free = EpadDatabase.getInstance().getEPADDatabaseOperations().getFreeConnections();
 				int used = EpadDatabase.getInstance().getEPADDatabaseOperations().getUsedConnections();
 				if ((user != null && user.isAdmin()) || debug) {
-					responseStream.println("<br>");
-					responseStream.println("<b>Available DB Connections:</b> " + free + "<br>");
-					responseStream.println("<b>Used DB Connections:</b> " + used + "<br>");
-					responseStream.println("<br>");
+					responseStream.println("<tr><td colspan=2><hr></td></tr>");
+					responseStream.println("<tr><td nowrap><b>Available DB Connections:</b></td><td>" + free + "</td></tr>");
+					responseStream.println("<tr><td><b>Used DB Connections:</b></td><td>" + used + "</td></tr>");
+					responseStream.println("<tr><td colspan=2><hr></td></tr>");
 					long freeHeap = Runtime.getRuntime().freeMemory();
 					long totalHeap = Runtime.getRuntime().totalMemory();
 					DecimalFormat df = new DecimalFormat("###,###,###");
-					responseStream.println("<b>Available Heap Space:</b> " + df.format(freeHeap) + "<br>");
-					responseStream.println("<b>Total Heap Space:</b> " + df.format(totalHeap) + "<br>");
-					responseStream.println("<br>");
-					responseStream.println("<b>Series Queue:</b> " + QueueAndWatcherManager.dicomSeriesWatcherQueue.size() + "<br>");
-					responseStream.println("<b>PNG Queue:</b> " + QueueAndWatcherManager.pngGeneratorTaskQueue.size() + "<br>");
-					responseStream.println("<b>AddToProject Queue:</b> " + QueueAndWatcherManager.xnatSeriesWatcherQueue.size() + "<br>");
-					responseStream.println("<br>");
+					responseStream.println("<tr><td><b>Available Heap Space:</b></td><td>" + df.format(freeHeap) + "</td></tr>");
+					responseStream.println("<tr><td><b>Total Heap Space:</b></td><td>" + df.format(totalHeap) + "</td></tr>");
+					responseStream.println("<tr><td colspan=2><hr></td></tr>");
 					try {
-						responseStream.println("<b>dcm4chee Free Space: </b>" + df.format(FileSystemUtils.freeSpaceKb(EPADConfig.dcm4cheeDirRoot)/1024) + " Mb<br>");
-						responseStream.println("<b>ePad Free Space: </b>" + df.format(FileSystemUtils.freeSpaceKb(EPADConfig.getEPADWebServerBaseDir())/1024) + " Mb<br>");
-						responseStream.println("<b>Tmp Free Space: </b>" + df.format(FileSystemUtils.freeSpaceKb(System.getProperty("java.io.tmpdir"))/1024) + " Mb (Max Upload)<br>");
+						responseStream.println("<tr><td><b>dcm4chee Free Space: </b></td><td>" + df.format(FileSystemUtils.freeSpaceKb(EPADConfig.dcm4cheeDirRoot)/1024) + " Mb</td></tr>");
+						responseStream.println("<tr><td><b>ePad Free Space: </b></td><td>" + df.format(FileSystemUtils.freeSpaceKb(EPADConfig.getEPADWebServerBaseDir())/1024) + " Mb</td></tr>");
+						responseStream.println("<tr><td><b>Tmp Free Space: </b></td><td>" + df.format(FileSystemUtils.freeSpaceKb(System.getProperty("java.io.tmpdir"))/1024) + " Mb (Max Upload)</td></tr>");
 						if (new File("/var/lib/mysql").exists())
-							responseStream.println("<b>Mysql DB Free Space: </b>" + df.format(FileSystemUtils.freeSpaceKb("/var/lib/mysql")/1024) + " Mb<br>");
+							responseStream.println("<tr><td><b>Mysql DB Free Space: </b></td><td>" + df.format(FileSystemUtils.freeSpaceKb("/var/lib/mysql")/1024) + " Mb</td></tr>");
 					} catch (Exception x) {}
-					responseStream.println("<br><b>Current Sessions: </b>" + "<br>");
+					responseStream.println("<tr><td colspan=2><hr></td></tr>");
+					responseStream.println("<tr><td><b>Series Queue:</b></td><td>" + QueueAndWatcherManager.dicomSeriesWatcherQueue.size() + "</td></tr>");
+					responseStream.println("<tr><td><b>PNG Queue:</b></td><td>" + QueueAndWatcherManager.pngGeneratorTaskQueue.size() + "</td></tr>");
+					responseStream.println("<tr><td><b>AddToProject Queue:</b></td><td>" + QueueAndWatcherManager.xnatSeriesWatcherQueue.size() + "</td></tr>");
+					responseStream.println("<tr><td colspan=2><hr></td></tr>");
+					responseStream.println("</table>");
+					List<Plugin> plugins = PluginOperations.getInstance().getPlugins();
+					responseStream.println("<br>");
+					responseStream.println("<b>Loaded Plugins:</b>");
+					responseStream.println("<br><table border=1 cellpadding=2><tr style='font-weight: bold;'>" + 
+							"<td align=center>ID</td><td align=center>Name</td><td align=center>Description</td>" +
+							"<td align=center>Javaclass</td><td align=center>Enabled</td><td align=center>Status</td><td align=center>Modality</td></tr>");
+					for (Plugin plugin: plugins)
+					{
+						responseStream.println("<tr><td>" + plugin.getPluginId() + "</td><td>" + plugin.getName() + "</td><td>" + checkNull(plugin.getDescription(), "&nbsp;") + "</td>");
+						responseStream.println("<td>" + plugin.getJavaclass() + "</td><td>" + plugin.getEnabled() + "</td><td>" + checkNull(plugin.getStatus(), "&nbsp;") + "</td><td>" + checkNull(plugin.getModality(), "&nbsp;") + "</td></tr>");
+					}
+					responseStream.println("</table>");
+					responseStream.println("<br><b>Current Sessions: </b>");
 					Map<String, EPADSession> sessions = EPADSessionOperations.getCurrentSessions();
 					responseStream.println("<br><table border=1 cellpadding=2 ><tbody><tr style='font-weight: bold;'><td align=center>User</td><td align=center>Started</td><td align=center>Client</td><td align=center>Last Request</td><td align=center>Request Time</td></tr>");
 					for (String id: sessions.keySet()) {
