@@ -436,6 +436,8 @@ public class DSOUtil
 				ImageAnnotation aim = AIMUtil.generateAIMFileForDSO(temporaryDSOFile, username, projectID);
 				log.info("DSO AimID:" + aim.getUniqueIdentifier());
 				ea = epadDatabaseOperations.getAIM(aim.getUniqueIdentifier());
+				ea.dsoFrameNo = dsoEditRequest.editedFrameNumbers.get(0);
+				epadDatabaseOperations.updateAIMDSOFrameNo(ea.aimID, ea.dsoFrameNo);
 			}
 			for (File mask: dsoTIFFMaskFiles)
 			{
@@ -664,6 +666,7 @@ public class DSOUtil
 	
 	public static void writeDSOMaskPNGs(File dsoFile, String username) throws Exception
 	{
+		log.info("Start generating DSO PNGs: " + dsoFile.getName());
 		String seriesUID = "";
 		File tmpDSO = File.createTempFile("DSO_" + dsoFile.getName(), ".dcm");
 		try {
@@ -975,7 +978,7 @@ public class DSOUtil
 							+ " in  series " + seriesUID);
 					if (editedFramesPNGMaskFiles.size() != dsoEditRequest.editedFrameNumbers.size())
 						throw new IOException("Number of files and frames number do not match");
-					if (aim != null && aim.dsoFrameNo == 0) {
+					if (aim != null && (aim.dsoFrameNo == 0 || aim.dsoFrameNo < dsoEditRequest.editedFrameNumbers.get(0))) {
 						aim.dsoFrameNo = dsoEditRequest.editedFrameNumbers.get(0);
 						epadDatabaseOperations.updateAIMDSOFrameNo(aim.aimID, aim.dsoFrameNo);
 					}

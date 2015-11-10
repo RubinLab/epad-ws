@@ -838,6 +838,8 @@ public class AIMUtil
 											epadDatabaseOperations.deleteAIM("admin", e.aimID);
 											log.info("Updating dsoSeriesUID in aim database:" + e.dsoSeriesUID + " aimID:" + eaim.aimID);
 											epadDatabaseOperations.addDSOAIM(username, imageReference, e.dsoSeriesUID, eaim.aimID);												
+											if (eaim.dsoFrameNo == 0)
+												epadDatabaseOperations.updateAIMDSOFrameNo(eaim.aimID, e.dsoFrameNo);												
 											break;
 										}
 									}
