@@ -159,6 +159,7 @@ public class ConnectionPool implements Runnable
 		if (connectionsAvailable.size() == 0) {
 			logger.info("Creating new connection, used:" + connectionsUsed.size());
 			Connection connection = createConnection();
+			logger.info("Connection created");
 			connectionsUsed.add(connection);
 			return connection;
 		} else {
