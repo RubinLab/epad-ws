@@ -614,14 +614,16 @@ public class UserProjectService {
 						files.add(newFile);
 					} catch (Exception x) {log.warning("Error renaming", x);}
 				}
+				else if (!entry.isDirectory() && entry.getName().startsWith("1.") && (entry.getName().lastIndexOf(".") != entry.getName().length()-3))
+				{
+					try {
+						File newFile = new File(entry.getParentFile(), entry.getName()+".dcm");
+						entry.renameTo(newFile);
+						files.add(newFile);
+					} catch (Exception x) {log.warning("Error renaming", x);}
+				}
 				else if (entry.isDirectory()) 
 				{
-					if (entry.getName().contains(" "))
-					{
-						File newFile = new File(entry.getParentFile(), entry.getName().replace(' ', '_'));
-						entry.renameTo(newFile);
-						entry = newFile;
-					}
 					files.addAll(listDICOMFiles(entry));
 				}
 				else
