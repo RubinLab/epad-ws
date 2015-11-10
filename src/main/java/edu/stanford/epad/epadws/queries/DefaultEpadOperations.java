@@ -115,6 +115,8 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -3082,11 +3084,39 @@ public class DefaultEpadOperations implements EpadOperations
 			throw new Exception("No permissions for requested data");
 		EPADObjectList list = new EPADObjectList();
 		Collection<TaskStatus> tasks = projectOperations.getUser(username).getCurrentTasks().values();
-		for(TaskStatus task: tasks)
+		List<TaskStatus> tss = new ArrayList<TaskStatus>();
+		tss.addAll(tasks);
+		Collections.sort(tss, new TSComparator());
+		for(TaskStatus task: tss)
 		{
 			list.addObject(task);
 		}
 		return list;
+	}
+	
+	public static Date getDate(String dateStr)
+	{
+		if (dateStr == null || dateStr.length() == 0)
+			return new Date();
+		try
+		{
+			return dateTimeFormat.parse(dateStr);
+		}
+		catch (Exception x) {}
+		return null;
+	}
+	
+	public class TSComparator implements Comparator<TaskStatus> {
+		public int compare(TaskStatus o1, TaskStatus o2) {
+			try
+			{
+//				if (o2.completetime != null)
+//					return getDate(o2.completetime).compareTo(getDate(o1.completetime));
+//				else
+					return getDate(o2.starttime).compareTo(getDate(o1.starttime));
+			} catch (Exception x) {}
+			return 0;
+		}
 	}
 
 	@Override
