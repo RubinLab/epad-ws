@@ -348,6 +348,7 @@ public class UserProjectService {
 					}
 				}
 				projectOperations.updateUserTaskStatus(username, TaskStatus.TASK_ADD_TO_PROJECT, projectID, dicomUploadDirectory.getName(), "Files processed: " + i, null, null);
+				log.info("Adding to project:" + dicomFile.getName());
 				if (createProjectEntitiesFromDICOMFile(dicomFile, projectID, sessionID, username))
 					numberOfDICOMFiles++;
 			} catch (Throwable x) {
@@ -501,7 +502,9 @@ public class UserProjectService {
 	 */
 	public static void addSubjectAndStudyToProject(String subjectID, String subjectName, String studyUID, String studyDate, String projectID, String sessionID, String username) {
 		try {
+			log.info("Create Subject:" + subjectID);
 			projectOperations.createSubject(username, subjectID, subjectName, null, null);
+			log.info("Create Study:" +  studyUID);
 			projectOperations.createStudy(username, studyUID, subjectID, "", getDate(studyDate));
 			log.info("Upload/Transfer: Adding Study:" +  studyUID + " Subject:" + subjectID + " to Project:" + projectID);
 			projectOperations.addStudyToProject(username, studyUID, subjectID, projectID);
@@ -526,6 +529,14 @@ public class UserProjectService {
 					files.add(entry);
 				}
 				else if (!entry.isDirectory() && entry.getName().indexOf(".") == -1)
+				{
+					try {
+						File newFile = new File(entry.getParentFile(), entry.getName()+".dcm");
+						entry.renameTo(newFile);
+						files.add(newFile);
+					} catch (Exception x) {log.warning("Error renaming", x);}
+				}
+				else if (!entry.isDirectory() && entry.getName().startsWith("1.") && (entry.getName().lastIndexOf(".") != entry.getName().length()-3))
 				{
 					try {
 						File newFile = new File(entry.getParentFile(), entry.getName()+".dcm");

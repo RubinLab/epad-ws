@@ -558,7 +558,7 @@ public class RemotePACService extends RemotePACSBase {
 	 * @return
 	 * @throws Exception
 	 */
-	public synchronized List<RemotePACEntity> queryRemoteData(RemotePAC pac, String patientNameFilter, String patientIDFilter, String studyIDFilter, String studyDateFilter, String modality, boolean patientsOnly, boolean studiesOnly) throws Exception {
+	public List<RemotePACEntity> queryRemoteData(RemotePAC pac, String patientNameFilter, String patientIDFilter, String studyIDFilter, String studyDateFilter, String modality, boolean patientsOnly, boolean studiesOnly) throws Exception {
 		return queryRemoteData(pac, patientNameFilter, patientIDFilter, studyIDFilter, studyDateFilter, modality, null, null, null, null,
 				patientsOnly, studiesOnly);
 	}	
@@ -578,7 +578,7 @@ public class RemotePACService extends RemotePACSBase {
 	 * @return
 	 * @throws Exception
 	 */
-	public synchronized List<RemotePACEntity> queryRemoteData(RemotePAC pac, String patientNameFilter, String patientIDFilter, String studyIDFilter, String studyDateFilter, String modality, String[] tagGroups, String[] tagElements, String[] tagValues, String[] tagTypes, boolean patientsOnly, boolean studiesOnly) throws Exception {
+	public List<RemotePACEntity> queryRemoteData(RemotePAC pac, String patientNameFilter, String patientIDFilter, String studyIDFilter, String studyDateFilter, String modality, String[] tagGroups, String[] tagElements, String[] tagValues, String[] tagTypes, boolean patientsOnly, boolean studiesOnly) throws Exception {
 		
 		try {
 			String qlevel = null;
@@ -853,7 +853,7 @@ public class RemotePACService extends RemotePACSBase {
 	 * @return
 	 * @throws Exception
 	 */
-	public synchronized String retrieveRemoteData(RemotePAC pac, String entityID, String projectID, String userName, String sessionID) throws Exception {
+	public String retrieveRemoteData(RemotePAC pac, String entityID, String projectID, String userName, String sessionID) throws Exception {
 		if (pac.hostname.equalsIgnoreCase(EPADConfig.xnatServer) && pac.port == 11112)
 		{
 			throw new Exception("This is the local PAC, image data can not transferred from it");
