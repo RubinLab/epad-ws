@@ -582,7 +582,9 @@ public class UserProjectService {
 	 */
 	public static void addSubjectAndStudyToProject(String subjectID, String subjectName, String studyUID, String studyDate, String projectID, String sessionID, String username) {
 		try {
+			log.info("Create Subject:" + subjectID);
 			projectOperations.createSubject(username, subjectID, subjectName, null, null);
+			log.info("Create Study:" +  studyUID);
 			projectOperations.createStudy(username, studyUID, subjectID, "", getDate(studyDate));
 			log.info("Upload/Transfer: Adding Study:" +  studyUID + " Subject:" + subjectID + " to Project:" + projectID);
 			projectOperations.addStudyToProject(username, studyUID, subjectID, projectID);
