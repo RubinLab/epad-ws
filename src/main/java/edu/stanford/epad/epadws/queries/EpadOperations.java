@@ -277,6 +277,7 @@ public interface EpadOperations
 	 * @return
 	 */
 	EPADImage getImageDescription(ImageReference imageReference, String sessionID);
+	EPADImage getSameSliceFromNewStudy(String username, ImageReference imageReference, String followupStudyUID, String sessionID) throws Exception;
 
 	/**
 	 * Get frame descriptions for an image

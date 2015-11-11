@@ -428,7 +428,12 @@ public class EPADGetHandler
 				} else if (returnJPEG(httpRequest)) {
 					DownloadUtil.downloadImage(true, httpResponse, imageReference, username, sessionID, false);
 				} else {
-					EPADImage image = epadOperations.getImageDescription(imageReference, sessionID);
+					EPADImage image = null;
+					String followupStudy = httpRequest.getParameter("followupStudy");
+					if (followupStudy != null && followupStudy.length() > 0)
+						image = epadOperations.getSameSliceFromNewStudy(username, imageReference, followupStudy, sessionID);
+					else
+						image = epadOperations.getImageDescription(imageReference, sessionID);
 					if (image != null) {
 						responseStream.append(image.toJSON());
 					} else {
