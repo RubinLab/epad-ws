@@ -375,8 +375,10 @@ public class PluginOperations {
 		Plugin plugin = getPlugin(pluginId);
 		if (plugin == null)
 			throw new Exception("Plugin not found for id " + pluginId);
-		
+		new ProjectToPluginParameter().deleteObjects("plugin_id=" + pluginId);
+		new ProjectToPlugin().deleteObjects("plugin_id=" + pluginId);
 		plugin.delete();
+		
 	}
 
 	public boolean addParameters(String loggedInUser,String projectId, String pluginId, String[] paramNames, String[] paramValues) throws Exception {
