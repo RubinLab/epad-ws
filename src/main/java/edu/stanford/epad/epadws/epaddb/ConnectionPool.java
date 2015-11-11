@@ -201,7 +201,7 @@ public class ConnectionPool implements Runnable
 				synchronized (this) {
 					closeExcessConnections();
 				}
-				Thread.sleep(10);
+				Thread.sleep(600000);
 			}
 		} catch (SQLException sqle) {
 			logger.severe("SQL Exception. Lost the connection pool.", sqle);
