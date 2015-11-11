@@ -2518,7 +2518,7 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 				{
 					Date value = (Date) method.invoke(data, (Object[])null);
 					if (value != null)
-						ps.setDate(i, new java.sql.Date(value.getTime()));
+						ps.setTimestamp(i, new java.sql.Timestamp(value.getTime()));
 					else
 						ps.setNull(i, java.sql.Types.DATE);		
 				}
@@ -2601,8 +2601,10 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 				}
 				else if (columns[i][1].equals("Date"))
 				{
+					Timestamp stamp = rs.getTimestamp((columns[i][2]));
 					Date value = null;
-					value = rs.getDate(columns[i][2]);
+					if (stamp != null)
+						value = new Date(stamp.getTime());
 					Method method = data.getClass().getMethod(methodName, new Class[] {Date.class});
 					method.invoke(data, new Object[] {value});
 				}
