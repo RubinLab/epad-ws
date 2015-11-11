@@ -43,6 +43,7 @@
 		}
 		imagePaths.add(image.losslessImage);
 	}
+	EPADImage image = images.ResultSet.Result.get(0);
 %>
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
 <HTML>
@@ -64,7 +65,9 @@ img {
  Patient: <%=subjectID%><br>
  Study: <%=studyUID%><br>
  Series: <%=seriesUID%><br>
- Image: <span id=imageno>1</span>
+ Image: <span id=imageno>1</span><br>
+ Instance: <%=image.instanceNumber%><br>
+ Location: <%=image.sliceLocation%><br>
 <script>
 var images = new Array();
 <%
