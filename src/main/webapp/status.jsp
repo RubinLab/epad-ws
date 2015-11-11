@@ -27,7 +27,6 @@
 </HEAD>
 
 <BODY bgcolor=white>
-<br>
 <form>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
   <input type="button" value="Refresh Status" onclick="getStatus()">
