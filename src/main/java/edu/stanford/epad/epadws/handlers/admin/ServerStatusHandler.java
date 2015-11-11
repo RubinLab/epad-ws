@@ -229,7 +229,7 @@ public class ServerStatusHandler extends AbstractHandler
 				{
 					responseStream.println("<tr><td colspan=2><font size=+1 color=red><b>Low System Disk Space</b></font></td></tr>");					
 				}
-				responseStream.println("<style>tbody { display: block;max-height:350px;overflow-y:auto; } </style>");
+				responseStream.println("<style>tbody { display: block;max-height:440px;overflow-y:auto; } </style>");
 				List<EventLog> recentLogs = new ArrayList<EventLog>();
 				int free = EpadDatabase.getInstance().getEPADDatabaseOperations().getFreeConnections();
 				int used = EpadDatabase.getInstance().getEPADDatabaseOperations().getUsedConnections();
