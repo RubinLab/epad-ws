@@ -122,8 +122,8 @@ public class ConnectionPool implements Runnable
 {
 	private static final EPADLogger logger = EPADLogger.getInstance();
 
-	private final List<Connection> connectionsAvailable = Collections.synchronizedList(new ArrayList<Connection>());
-	private final List<Connection> connectionsUsed = Collections.synchronizedList(new ArrayList<Connection>());
+	private final List<Connection> connectionsAvailable = new ArrayList<Connection>();
+	private final List<Connection> connectionsUsed = new ArrayList<Connection>();
 
 	private final String connectionUrl;
 	private final String username;
