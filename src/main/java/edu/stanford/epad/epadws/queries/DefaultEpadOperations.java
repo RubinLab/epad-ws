@@ -4384,27 +4384,50 @@ public class DefaultEpadOperations implements EpadOperations
 		projectOperations.removeReviewee(loggedInUser, username, reviewee);
 	}
 
-	public EPADImage getSameSlice(String username, ImageReference imageReference, String followupStudyUID, String sessionID) throws Exception
+	/**
+	 * @param username
+	 * @param imageReference - Image from old study where old annotation created
+	 * @param followupStudyUID - StudyID of new study
+	 * @param sessionID
+	 * @return matching image from new study (same location)
+	 * @throws Exception
+	 */
+	@Override
+	public EPADImage getSameSliceFromNewStudy(String username, ImageReference imageReference, String followupStudyUID, String sessionID) throws Exception
 	{
-		SeriesReference seriesReference = new SeriesReference(imageReference.projectID, imageReference.subjectID, imageReference.seriesUID, imageReference.imageUID); 
-		EPADSeries newSeries = this.getSeriesDescription(seriesReference, username, sessionID);
+		SeriesReference oldSeriesReference = new SeriesReference(imageReference.projectID, imageReference.subjectID, imageReference.studyUID, imageReference.seriesUID); 
+		EPADSeries oldSeries = this.getSeriesDescription(oldSeriesReference, username, sessionID);
+		EPADImage oldImage = this.getImageDescription(imageReference, sessionID);
 		StudyReference studyReference = new StudyReference(imageReference.projectID, imageReference.subjectID, followupStudyUID); 
 		EPADSeriesList serieses = getSeriesDescriptions(studyReference, username, sessionID, new EPADSearchFilter(), true);
-		for (EPADSeries oldSeries: serieses.ResultSet.Result) {
-			if (oldSeries.seriesDescription.equals(newSeries.seriesDescription)) {
-				EPADAIMList aims = this.getSeriesAIMDescriptions(seriesReference, username, sessionID);
-				for (EPADAIM aim: aims.ResultSet.Result) {
-					String imageUID = AIMUtil.getReferencedImage(aim);
-					if (imageUID == null) continue;
-					if (imageUID.equals(imageReference.imageUID)) {
-						
+		for (EPADSeries newSeries: serieses.ResultSet.Result) {
+			if (oldSeries.seriesDescription.equals(newSeries.seriesDescription) || serieses.ResultSet.totalRecords == 1) {
+				SeriesReference newSeriesReference = new SeriesReference(imageReference.projectID, imageReference.subjectID, newSeries.studyUID, newSeries.seriesUID);
+				EPADImageList imageList = this.getImageDescriptions(newSeriesReference, sessionID, new EPADSearchFilter());
+				EPADImage closest = imageList.ResultSet.Result.get(0);
+				double diff = Math.abs(getDouble(oldImage.sliceLocation) - getDouble(closest.sliceLocation));
+				for (EPADImage image: imageList.ResultSet.Result) {
+					double diff2 = Math.abs(getDouble(oldImage.sliceLocation) - getDouble(image.sliceLocation));
+					if (diff2 < diff) {
+						closest = image;
+						diff = diff2;
 					}
 				}
+				return closest;
 			}
 		}
 		return null;
 	}
 	
+	double getDouble(String doubleStr)
+	{
+		try
+		{
+			return Double.valueOf(doubleStr);
+		}
+		catch (Exception x) {}
+		return 0.0;
+	}
 	// This is Pixelmed variant (though does not seem to be correct).
 	// SourceImage srcDicomImage = new SourceImage(temporaryDicomFile.getAbsolutePath());
 	// ImageEnhancer imageEnhancer = new ImageEnhancer(srcDicomImage);
