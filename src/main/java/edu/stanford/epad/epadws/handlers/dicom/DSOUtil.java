@@ -355,6 +355,8 @@ public class DSOUtil
 				ImageAnnotation aim = AIMUtil.generateAIMFileForDSO(temporaryDSOFile, username, projectID);
 				log.info("DSO AimID:" + aim.getUniqueIdentifier());
 				ea = epadDatabaseOperations.getAIM(aim.getUniqueIdentifier());
+				ea.dsoFrameNo = dsoEditRequest.editedFrameNumbers.get(0);
+				epadDatabaseOperations.updateAIMDSOFrameNo(ea.aimID, ea.dsoFrameNo);
 			}
 			for (File mask: dsoTIFFMaskFiles)
 			{
@@ -583,6 +585,7 @@ public class DSOUtil
 	
 	public static void writeDSOMaskPNGs(File dsoFile, String username) throws Exception
 	{
+		log.info("Start generating DSO PNGs: " + dsoFile.getName());
 		String seriesUID = "";
 		File tmpDSO = File.createTempFile("DSO_" + dsoFile.getName(), ".dcm");
 		try {
@@ -708,19 +711,19 @@ public class DSOUtil
 					if (refFrameNumber < 0) continue;
 					log.info("FrameNumber:" + frameNumber + " refFrameNumber:" + refFrameNumber + " instance number:" + dcm4cheeReferencedImageDescription.instanceNumber);
 					projectOperations.updateUserTaskStatus(username, TaskStatus.TASK_DSO_PNG_GEN, seriesUID, "Generating PNGs, frame:" + frameNumber, null, null);
-					BufferedImage bufferedImage = sourceDSOImage.getBufferedImage(frameNumber);
-					BufferedImage bufferedImageWithTransparency = generateTransparentImage(bufferedImage);
-					if (nonBlank.get())
-						nonblankFrame = refFrameNumber;
 					String pngMaskFilePath = pngMaskDirectoryPath + refFrameNumber + ".png";
-	
-					File pngMaskFile = new File(pngMaskFilePath);
 					try {
+						BufferedImage bufferedImage = sourceDSOImage.getBufferedImage(frameNumber);
+						BufferedImage bufferedImageWithTransparency = generateTransparentImage(bufferedImage);
+						if (nonBlank.get())
+							nonblankFrame = refFrameNumber;
+		
+						File pngMaskFile = new File(pngMaskFilePath);
 						insertEpadFile(databaseOperations, pngMaskFilePath, pngMaskFile.length(), imageUID);
 						log.info("Writing PNG mask file frame " + frameNumber + " of " + numberOfFrames + " for DSO " + imageUID + " in series " + seriesUID + " file:" + pngMaskFilePath + " nonBlank:" + nonBlank.get());
 						ImageIO.write(bufferedImageWithTransparency, "png", pngMaskFile);
 						databaseOperations.updateEpadFileRow(pngMaskFilePath, PNGFileProcessingStatus.DONE, 0, "");
-					} catch (IOException e) {
+					} catch (Exception e) {
 						log.warning("Failure writing PNG mask file " + pngMaskFilePath + " for frame " + frameNumber + " of DSO "
 								+ imageUID + " in series " + seriesUID, e);
 					}
@@ -894,7 +897,7 @@ public class DSOUtil
 							+ " in  series " + seriesUID);
 					if (editedFramesPNGMaskFiles.size() != dsoEditRequest.editedFrameNumbers.size())
 						throw new IOException("Number of files and frames number do not match");
-					if (aim != null && aim.dsoFrameNo == 0) {
+					if (aim != null && (aim.dsoFrameNo == 0 || aim.dsoFrameNo < dsoEditRequest.editedFrameNumbers.get(0))) {
 						aim.dsoFrameNo = dsoEditRequest.editedFrameNumbers.get(0);
 						epadDatabaseOperations.updateAIMDSOFrameNo(aim.aimID, aim.dsoFrameNo);
 					}

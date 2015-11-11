@@ -845,7 +845,7 @@ public class AIMDatabaseOperations {
     	if (!criteria.trim().toLowerCase().startsWith("where"))
     		criteria = "WHERE " + criteria;
         String sqlSelect = "SELECT UserLoginName, ProjectUID, PatientID, StudyUID, SeriesUID, ImageUID, frameID, AnnotationUID, DSOSeriesUID, DSOFRAMENO, XML, NAME, AIMCOLOR FROM annotations " + criteria;
-        log.info("AIMs select:" + sqlSelect);
+        log.debug("AIMs select:" + sqlSelect);
        
 		ResultSet rs = null;
         List<EPADAIM> aims = new ArrayList<EPADAIM>();
@@ -886,14 +886,14 @@ public class AIMDatabaseOperations {
 				aims.add(aim);
 				if (count > 0 && row > start+count) break;
 			}
-    	    log.info("AIM Records " + aims.size());
+    	    log.debug("AIM Records " + aims.size());
         }
         finally
         {
         	if (rs != null) rs.close();
         	statement.close();
         }
-        log.info("Number of AIMs found in database:" + aims.size());
+        log.debug("Number of AIMs found in database:" + aims.size());
 		return aims;
     }
    

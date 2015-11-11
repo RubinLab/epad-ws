@@ -41,8 +41,8 @@ public class ConnectionPool implements Runnable
 {
 	private static final EPADLogger logger = EPADLogger.getInstance();
 
-	private final List<Connection> connectionsAvailable = Collections.synchronizedList(new ArrayList<Connection>());
-	private final List<Connection> connectionsUsed = Collections.synchronizedList(new ArrayList<Connection>());
+	private final List<Connection> connectionsAvailable = new ArrayList<Connection>();
+	private final List<Connection> connectionsUsed = new ArrayList<Connection>();
 
 	private final String connectionUrl;
 	private final String username;
@@ -78,6 +78,7 @@ public class ConnectionPool implements Runnable
 		if (connectionsAvailable.size() == 0) {
 			logger.info("Creating new connection, used:" + connectionsUsed.size());
 			Connection connection = createConnection();
+			logger.info("Connection created");
 			connectionsUsed.add(connection);
 			return connection;
 		} else {
@@ -119,7 +120,7 @@ public class ConnectionPool implements Runnable
 				synchronized (this) {
 					closeExcessConnections();
 				}
-				Thread.sleep(10);
+				Thread.sleep(600000);
 			}
 		} catch (SQLException sqle) {
 			logger.severe("SQL Exception. Lost the connection pool.", sqle);
