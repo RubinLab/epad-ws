@@ -17,7 +17,7 @@
 #
 echo "Starting ePad using docker"
 docker start mysql
-sleep 3
+sleep 10
 docker start exist
 docker start dcm4chee
 docker start epad_web

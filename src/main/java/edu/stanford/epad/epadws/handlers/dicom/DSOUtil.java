@@ -1304,8 +1304,8 @@ public class DSOUtil
 
 	private static BufferedImage generateTransparentImage(BufferedImage source)
 	{
-		//Image image = makeColorOpaque(source, Color.WHITE);
-		Image image = makeAnyColorWhite(source);
+		//Image image = makeColorOpaque(source, Color.WHITE); // Because somebody said to convert DSOs to white
+		Image image = makeAnyColorWhite(source); // To retain DSO color comment this out and uncomment previous line
 		BufferedImage transparent = imageToBufferedImage(image);
 		Image image2 = makeColorTransparent(transparent, Color.BLACK);
 		BufferedImage transparent2 = imageToBufferedImage(image2);

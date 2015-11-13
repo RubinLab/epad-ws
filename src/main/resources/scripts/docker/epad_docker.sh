@@ -51,7 +51,7 @@ start() {
 		echo ""
 		mkdir -p DicomProxy/mysql
 		RUNNING=$(docker inspect -f {{.State.Running}} mysql 2> /dev/null)
-		if [ $? -ne 0 ]; then
+		if [ $? -ne 0 ] || [ "$RUNNING" == "<no value>" ] ; then
 			if [ "$UNAME" == "Darwin" ]; then
 				docker run -it -d --name mysql -e MYSQL_ROOT_PASSWORD=epad rubinlab/mysql
 			else
@@ -72,9 +72,9 @@ start() {
 		    docker pull rubinlab/epad
 		fi
 		RUNNING=$(docker inspect -f {{.State.Running}} mysql 2> /dev/null)
-	 	if [ $? -ne 0 ]; then
-    		echo "mysql did not start up"
-    		exit 1
+	 	if [ $? -ne 0 ] || [ "$RUNNING" == "<no value>" ] ; then
+		    echo "mysql did not start up"
+		    exit 1
 		fi
 		if [ "$RUNNING" == "false" ]; then
   			echo "mysql has stopped running"
@@ -156,8 +156,8 @@ start() {
  		echo "RUNNING eXist container ..."
         	echo ""
 		RUNNING=$(docker inspect -f {{.State.Running}} exist 2> /dev/null)
-		if [ $? -ne 0 ]; then
-		docker run -it -d --name exist -p 8899:8899 rubinlab/exist
+		if [ $? -ne 0 ] || [ "$RUNNING" == "<no value>" ] ; then
+			docker run -it -d --name exist -p 8899:8899 rubinlab/exist
 		elif [ "$RUNNING" == "false" ]; then
   			echo "exist container already installed, starting container"
  			docker start exist
@@ -175,9 +175,9 @@ start() {
 			docker start epad_web
 		fi
 		RUNNING=$(docker inspect -f {{.State.Running}} epad_web 2> /dev/null)
-		if [ $? -ne 0 ]; then
-		echo "RUNNING ePAD container ..."
-                echo ""
+		if [ $? -ne 0 ] || [ "$RUNNING" == "<no value>" ] ; then
+			echo "RUNNING ePAD container ..."
+			echo ""
 			if [ "$UNAME" == "Darwin" ]; then
 				
 				docker run -it -d --name epad_web -v $path/DicomProxy/:/root/mac/ -p 8080:8080 --link dcm4chee:dcm4chee --link mysql:mysql_host --link exist:exist -e MACDOCKER_HOST=$DOCKER_HOST rubinlab/epad:mac
@@ -190,7 +190,7 @@ start() {
 		if [ "$UNAME" == "Darwin" ]; then
 			echo "Please navigate to http://`docker-machine ip default`:8080/epad/ in your browser and login as admin/admin"
 		else
-		echo "Please navigate to http://`hostname`:8080/epad/ in your browser and login as admin/admin"
+			echo "Please navigate to http://`hostname`:8080/epad/ in your browser and login as admin/admin"
 		fi
 		echo ""
 		echo ""
