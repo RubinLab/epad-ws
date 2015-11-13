@@ -41,19 +41,12 @@ start() {
 		    exit
 		fi
 	fi
-        echo "Pulling all docker images, this will take some time!"
-	sleep 2
-        echo ""
-        docker pull rubinlab/mysql
-        docker pull rubinlab/dcm4chee
-        docker pull rubinlab/exist
-        if [ "$UNAME" == "Darwin" ]; then
-            docker pull rubinlab/epad:mac
-        else
-            docker pull rubinlab/epad
-        fi
-        echo ""
 	if hash docker 2>/dev/null; then
+		echo "Pulling all docker images, this will take some time!"
+		sleep 2
+		echo ""
+		docker pull rubinlab/mysql
+		echo ""
 		echo "RUNNING mysql container ..."
 		echo ""
 		mkdir -p DicomProxy/mysql
@@ -71,7 +64,13 @@ start() {
  			docker start mysql
 			sleep 2
 		fi
-	 	sleep 1
+		docker pull rubinlab/dcm4chee
+		docker pull rubinlab/exist
+		if [ "$UNAME" == "Darwin" ]; then
+		    docker pull rubinlab/epad:mac
+		else
+		    docker pull rubinlab/epad
+		fi
 		RUNNING=$(docker inspect -f {{.State.Running}} mysql 2> /dev/null)
 	 	if [ $? -ne 0 ]; then
     		echo "mysql did not start up"
@@ -83,7 +82,7 @@ start() {
  			exit 2
 		fi
 		epaddbexists=`docker exec -i -t mysql  mysql -uroot -pepad -e "show databases like 'epaddb'" | grep -v Warning` 
-		if [[ $string == *"ERROR"* ]]
+		if [[ $epaddbexists == *"ERROR"* ]]
 		then
 			echo "Error checking Database Existence"
 			docker stop mysql

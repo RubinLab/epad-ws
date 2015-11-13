@@ -122,6 +122,8 @@ import org.springframework.web.bind.annotation.RestController;
 import com.google.gson.Gson;
 
 import edu.stanford.epad.common.util.EPADLogger;
+import edu.stanford.epad.dtos.EPADEventLogList;
+import edu.stanford.epad.dtos.EPADObjectList;
 import edu.stanford.epad.dtos.EPADUser;
 import edu.stanford.epad.dtos.EPADUserList;
 import edu.stanford.epad.dtos.RemotePAC;
@@ -188,6 +190,38 @@ public class UserController {
 			throw new NotFoundException("User " + user + " not found");
 		Collection<EPADSession> sessions = epadOperations.getCurrentSessions(user);
 		return sessions;
+	}
+	 
+	@RequestMapping(value = "/{user}/eventlogs/", method = RequestMethod.GET)
+	public EPADEventLogList getEPADUserEventLogs( 
+											@PathVariable String user,
+											@RequestParam(value="start", defaultValue = "0") int start,
+											@RequestParam(value="count", defaultValue = "0") int count,
+											HttpServletRequest request, 
+									        HttpServletResponse response) throws Exception {
+		String sessionID = SessionService.getJSessionIDFromRequest(request);
+		String username = SessionService.getUsernameForSession(sessionID);
+		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
+		EPADUser euser = epadOperations.getUserDescription(username, user, sessionID, false);
+		if (euser == null)
+			throw new NotFoundException("User " + user + " not found");
+		EPADEventLogList logs = epadOperations.getEventLogs(username, user, start, count);
+		return logs;
+	}
+	 
+	@RequestMapping(value = "/{user}/taskstatus/", method = RequestMethod.GET)
+	public EPADObjectList getEPADUserTaskStatus( 
+											@PathVariable String user,
+											HttpServletRequest request, 
+									        HttpServletResponse response) throws Exception {
+		String sessionID = SessionService.getJSessionIDFromRequest(request);
+		String username = SessionService.getUsernameForSession(sessionID);
+		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
+		EPADUser euser = epadOperations.getUserDescription(username, user, sessionID, false);
+		if (euser == null)
+			throw new NotFoundException("User " + user + " not found");
+		EPADObjectList tasks = epadOperations.getTaskStatuses(username, user);
+		return tasks;
 	}
 	 
 	@RequestMapping(value = "/{user}/reviewers/", method = RequestMethod.GET)
