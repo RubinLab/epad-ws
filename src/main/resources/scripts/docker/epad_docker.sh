@@ -182,7 +182,7 @@ start() {
 				
 				docker run -it -d --name epad_web -v $path/DicomProxy/:/root/mac/ -p 8080:8080 --link dcm4chee:dcm4chee --link mysql:mysql_host --link exist:exist -e MACDOCKER_HOST=$DOCKER_HOST rubinlab/epad:mac
 			else
-		docker run -it -d --name epad_web -v $path/DicomProxy/:/root/DicomProxy/ -v /etc/localtime:/etc/localtime:ro -v /etc/timezone:/etc/timezone:ro -p 8080:8080 --link dcm4chee:dcm4chee --link mysql:mysql_host --link exist:exist -e DOCKER_HOST=`hostname` rubinlab/epad
+				docker run -it -d --name epad_web -v $path/DicomProxy/:/root/DicomProxy/ -v /etc/localtime:/etc/localtime:ro -v /etc/timezone:/etc/timezone:ro -p 8080:8080 --link dcm4chee:dcm4chee --link mysql:mysql_host --link exist:exist -e DOCKER_HOST=`hostname` rubinlab/epad
 			fi
 		fi
 		echo ""
