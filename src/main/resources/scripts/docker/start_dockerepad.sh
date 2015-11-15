@@ -16,6 +16,12 @@
 #USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 UNAME=`uname`
+        if [ "$UNAME" == "Darwin" ]; then
+                if [ "x$DOCKER_HOST" == "x" ]; then
+                        echo "DOCKER_HOST env variable not defined. Please use Docker Terminal."
+                        exit 1
+                fi
+        fi
 echo "Starting ePad using docker"
 docker start mysql
 sleep 3
