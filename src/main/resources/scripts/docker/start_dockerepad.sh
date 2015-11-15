@@ -15,9 +15,15 @@
 #WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE
 #USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
+UNAME=`uname`
 echo "Starting ePad using docker"
 docker start mysql
-sleep 10
+sleep 3
 docker start exist
 docker start dcm4chee
 docker start epad_web
+if [ "$UNAME" == "Darwin" ]; then
+	echo "Please WAIT for at least TWO minutes and then navigate to http://`docker-machine ip default`:8080/epad/ in your browser and login as admin/admin"
+else
+	echo "Please WAIT for at least TWO minutes and the navigate to http://`hostname`:8080/epad/ in your browser and login as admin/admin"
+fi

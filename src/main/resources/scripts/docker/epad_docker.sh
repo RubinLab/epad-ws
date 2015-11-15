@@ -188,9 +188,9 @@ start() {
 		echo ""
 		echo ""
 		if [ "$UNAME" == "Darwin" ]; then
-			echo "Please navigate to http://`docker-machine ip default`:8080/epad/ in your browser and login as admin/admin"
+			echo "Please WAIT for at least TWO minutes and then navigate to http://`docker-machine ip default`:8080/epad/ in your browser and login as admin/admin"
 		else
-			echo "Please navigate to http://`hostname`:8080/epad/ in your browser and login as admin/admin"
+			echo "Please WAIT for at least TWO minutes and then navigate to http://`hostname`:8080/epad/ in your browser and login as admin/admin"
 		fi
 		echo ""
 		echo ""
