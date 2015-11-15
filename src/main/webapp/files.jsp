@@ -13,7 +13,16 @@
 			String sessionID = SessionService.getJSessionIDFromRequest(request);
 			String username = EPADSessionOperations.getSessionUser(sessionID);
 			String projectID = request.getParameter("projectID");
+			boolean showstudies = "true".equalsIgnoreCase(request.getParameter("studies"));
+			boolean showseries = "true".equalsIgnoreCase(request.getParameter("series"));
+			boolean showaims = "true".equalsIgnoreCase(request.getParameter("aims"));
 %>
+<form>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+  <input type="button" value="Show Studies" onclick="window.location='files.jsp?projectID=<%=projectID%>&studies=true'">
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+  <input type="button" value="Show Series" onclick="window.location='files.jsp?projectID=<%=projectID%>&series=true'">
+</form>
 <h2>Project: <%=projectID%> (<a href=upload.jsp?projectID=<%=projectID%>>Upload<img src='upload-icon.jpg' height='20px' align=bottom></a>)</h2>
 <div id=imagelist><div>
 <script>
@@ -74,6 +83,7 @@ $( document ).ready(function() {
 						}
 					}
 				})
+<% if (showstudies || showseries || showaims) { %>
 				var url2 = url + subjects[i].subjectID + "/studies/";
 				$.ajax({         
 					url: url2 + "?username=<%=username%>",         
@@ -108,6 +118,7 @@ $( document ).ready(function() {
 									}
 								}
 							})
+<% if (showseries || showaims) { %>
 							var url3 = url2 + studies[j].studyUID + "/series/";
 							$.ajax({         
 								url: url3 + "?username=<%=username%>",         
@@ -163,9 +174,11 @@ $( document ).ready(function() {
 									}
 								}
 							})
+<%		} %>
 						}
 					}
 				})
+<%	} %>
 			}
 			filedata =  filedata + "</table>\n";
 			document.getElementById("imagelist").innerHTML = filedata;

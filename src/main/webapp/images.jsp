@@ -16,7 +16,18 @@
 			String unassignedOnly = "";
 			if (request.getParameter("unassignedOnly") != null)
 				unassignedOnly = "&unassignedOnly=" + request.getParameter("unassignedOnly");
+			boolean showstudies = "true".equalsIgnoreCase(request.getParameter("studies"));
+			boolean showseries = "true".equalsIgnoreCase(request.getParameter("series"));
+			boolean showaims = "true".equalsIgnoreCase(request.getParameter("aims"));
 %>
+<form>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+  <input type="button" value="Show Studies" onclick="window.location='images.jsp?projectID=<%=projectID%>&studies=true'">
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+  <input type="button" value="Show Series" onclick="window.location='images.jsp?projectID=<%=projectID%>&series=true'">
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+  <input type="button" value="Show Aims" onclick="window.location='images.jsp?projectID=<%=projectID%>&aims=true'">
+</form>
 <h2>Project: <%=projectID%></h2>
 <div id=imagelist><div>
 <table>
@@ -36,10 +47,14 @@ $( document ).ready(function() {
 			return true;},
 		success: function(response){
 			var subjects = response.ResultSet.Result;
-			listdata = "<table border=1><tr bgcolor=lightgray><td>Type</td><td>Name</td><td>ID</td><td>Studies/Series<br>Images/Annotations</td></tr>\n";
+			listdata = "<table border=1><tr bgcolor=lightgray><td>Type</td><td>Name</td><td>ID</td><td>Studies/Series<br>Images/Annotations</td><td>More info</td></tr>\n";
 			for (i = 0; i < subjects.length; i++)
 			{
-				listdata =  listdata + "<tr id='Patient" + i + "' ><td>Patient(<a href='addToProject.jsp?subjectID=" +  subjects[i].subjectID + "' target='rightpanel'>Add To Project</a>)</td><td><a href='images.jsp?projectID=" + subjects[i].id + "' target='rightpanel'>" + subjects[i].subjectName + "</a>" + "&nbsp;&nbsp;<a href='javascript:deletePatient(\"" +  subjects[i].subjectID + "\",\"" + i + "\")'><img src=delete.jpg height=12px></a></td><td>" + subjects[i].subjectID + "</td><td>"  +  subjects[i].numberOfStudies + " / " + subjects[i].numberOfAnnotations + "</td></tr>\n";
+				var addToProj = "(<a href='addToProject.jsp?subjectID=" +  subjects[i].subjectID + "' target='rightpanel'>Add To Project</a>)";
+				if ("<%=username%>" != "admin")
+					addToProj = "";
+				listdata =  listdata + "<tr id='Patient" + i + "' ><td>Patient" + addToProj + "</td><td><a href='images.jsp?projectID=" + subjects[i].id + "' target='rightpanel'>" + subjects[i].subjectName + "</a>" + "&nbsp;&nbsp;<a href='javascript:deletePatient(\"" +  subjects[i].subjectID + "\",\"" + i + "\")'><img src=delete.jpg height=12px></a></td><td>" + subjects[i].subjectID + "</td><td>"  +  subjects[i].numberOfStudies + " / " + subjects[i].numberOfAnnotations + "</td><td></td></tr>\n";
+<% if (showstudies || showseries || showaims) { %>
 				var url2 = url + subjects[i].subjectID + "/studies/";
 				$.ajax({         
 					url: url2 + "?username=<%=username%>",         
@@ -54,7 +69,8 @@ $( document ).ready(function() {
 						var studies = response.ResultSet.Result;
 						for (j = 0; j < studies.length; j++)
 						{
-							listdata =  listdata + "<tr><td>Study</td><td nowrap>&nbsp;&nbsp;&nbsp;" + studies[j].studyDescription + "&nbsp;&nbsp;<a href='javascript:downloadStudy(\"" +  subjects[i].subjectID + "\",\"" + studies[j].studyUID + "\")'><img src=download-icon.gif height=12px></a></td><td>" + studies[j].studyUID + "</td><td>"  +  studies[j].numberOfSeries + " / " + studies[j].numberOfAnnotations + "</td></tr>\n";
+							listdata =  listdata + "<tr><td>Study</td><td nowrap>&nbsp;&nbsp;&nbsp;" + studies[j].studyDescription + "&nbsp;&nbsp;<a href='javascript:downloadStudy(\"" +  subjects[i].subjectID + "\",\"" + studies[j].studyUID + "\")'><img src=download-icon.gif height=12px></a></td><td>" + studies[j].studyUID + "</td><td>"  +  studies[j].numberOfSeries + " / " + studies[j].numberOfAnnotations + "</td><td>" + studies[j].studyAccessionNumber + "</td></tr>\n";
+<% if (showseries || showaims) { %>
 							var url3 = url2 + studies[j].studyUID + "/series/";
 							$.ajax({         
 								url: url3 + "?username=<%=username%>",         
@@ -78,7 +94,14 @@ $( document ).ready(function() {
 										{
 											createDSO = "";
 										}
-										listdata =  listdata + "<tr><td nowrap>Series" + createDSO + "(<a href=javascript:regen('" + series[k].seriesUID + "')>Regenerate PNGs</a>)</td><td nowrap>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href=series.jsp?projectID=<%=projectID%>&subjectID=" + subjects[i].subjectID + "&studyUID=" + studies[j].studyUID + "&seriesUID=" + series[k].seriesUID + ">" + series[k].seriesDescription + "</a>&nbsp;&nbsp;<a href='javascript:downloadSeries(\"" +  subjects[i].subjectID + "\",\"" + studies[j].studyUID + "\",\"" + series[k].seriesUID + "\")'><img src=download-icon.gif height=12px></a></td><td>" + series[k].seriesUID + "</td><td>" + series[k].numberOfImages + " / "  +  series[k].numberOfAnnotations + "</td></tr>\n";
+										var regen = "(<a href=javascript:regen('" + series[k].seriesUID + "')>Regenerate PNGs</a>)";
+										if ("<%=username%>" != "admin")
+										{
+											createDSO = "";
+											regen = "";
+										}
+										listdata =  listdata + "<tr><td nowrap>Series" + createDSO + regen + "</td><td nowrap>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href=series.jsp?projectID=<%=projectID%>&subjectID=" + subjects[i].subjectID + "&studyUID=" + studies[j].studyUID + "&seriesUID=" + series[k].seriesUID + ">" + series[k].seriesDescription + "</a>&nbsp;&nbsp;<a href='javascript:downloadSeries(\"" +  subjects[i].subjectID + "\",\"" + studies[j].studyUID + "\",\"" + series[k].seriesUID + "\")'><img src=download-icon.gif height=12px></a></td><td>" + series[k].seriesUID + "</td><td>" + series[k].numberOfImages + " / "  +  series[k].numberOfAnnotations + "</td><td>" + series[k].accessionNumber + "</td></tr>\n";
+<%		if (showaims) { %>
 										var url4 = url3 + series[k].seriesUID + "/aims/?format=summary";
 										$.ajax({         
 											url: url4 + "&username=<%=username%>",         
@@ -99,17 +122,20 @@ $( document ).ready(function() {
 													}
 													else
 													{
-														listdata =  listdata + "<tr><td>Aims</td><td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href='images.jsp?projectID=" + aims[l].aimID + "' target='rightpanel'>" + aims[l].name + " (" + aims[l].userName  + ")</a></td><td>" + aims[l].aimID + "</td><td>"  +  aims[l].template + "/" + aims[l].templateType + "</td></tr>\n";
+														listdata =  listdata + "<tr><td>Aims</td><td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href='images.jsp?projectID=" + aims[l].aimID + "' target='rightpanel'>" + aims[l].name + " (" + aims[l].userName  + ")</a></td><td>" + aims[l].aimID + "</td><td>"  +  aims[l].template + "/" + aims[l].templateType + "</td><td>" + aims[l].dsoFrameNo  + "/" + aims[l].color + "</td></tr>\n";
 													}
 												}
 											}
 										})
+<%			} %>
 									}
 								}
 							})
+<%		} %>
 						}
 					}
 				})
+<%	} %>
 			}
 			listdata =  listdata + "</table>\n";
 			document.getElementById("imagelist").innerHTML = listdata;
