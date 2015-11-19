@@ -135,6 +135,8 @@ import edu.stanford.epad.epadws.models.NonDicomSeries;
 import edu.stanford.epad.epadws.models.Plugin;
 import edu.stanford.epad.epadws.models.Project;
 import edu.stanford.epad.epadws.models.ProjectToFile;
+import edu.stanford.epad.epadws.models.ProjectToPlugin;
+import edu.stanford.epad.epadws.models.ProjectToPluginParameter;
 import edu.stanford.epad.epadws.models.ProjectToSubject;
 import edu.stanford.epad.epadws.models.ProjectToSubjectToStudy;
 import edu.stanford.epad.epadws.models.ProjectToSubjectToUser;
@@ -1943,6 +1945,8 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		if (project == null) return;
 		new ProjectToUser().deleteObjects("project_id=" + project.getId());
 		new EpadFile().deleteObjects("project_id=" + project.getId());
+		new ProjectToPluginParameter().deleteObjects("project_id=" + project.getId() );
+		new ProjectToPlugin().deleteObjects("project_id=" + project.getId() );
 		new ProjectToSubjectToUser().deleteObjects("proj_subj_id in (select id from " + new ProjectToSubject().returnDBTABLE() + " where project_id=" + project.getId() + ")");
 		new ProjectToSubjectToStudy().deleteObjects("proj_subj_id in (select id from " + new ProjectToSubject().returnDBTABLE() + " where project_id=" + project.getId() + ")");
 		new ProjectToSubject().deleteObjects("project_id=" + project.getId());
