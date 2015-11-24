@@ -212,7 +212,7 @@ public class DSOMaskPNGGeneratorTask implements GeneratorTask
 			if (aims.size() == 0 && generateAIM)
 			{
 				List<Project> projects = projectOperations.getProjectsForStudy(studyUID);
-				Study study = projectOperations.getStudy(projectID);
+				Study study = projectOperations.getStudy(studyUID);
 				String username = study.getCreator();
 				for (Project project: projects)
 				{

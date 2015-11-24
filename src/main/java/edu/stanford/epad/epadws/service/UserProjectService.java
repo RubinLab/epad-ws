@@ -428,7 +428,7 @@ public class UserProjectService {
 					}
 				}
 				projectOperations.updateUserTaskStatus(username, TaskStatus.TASK_ADD_TO_PROJECT, projectID, dicomUploadDirectory.getName(), "Files processed: " + i, null, null);
-				log.info("Adding to project:" + dicomFile.getName());
+				log.debug("Adding to project:" + dicomFile.getName());
 				if (createProjectEntitiesFromDICOMFile(dicomFile, projectID, sessionID, username))
 					numberOfDICOMFiles++;
 			} catch (Throwable x) {
@@ -463,7 +463,7 @@ public class UserProjectService {
 		String studyDate = dicomObject.getString(Tag.StudyDate);
 		String seriesUID = dicomObject.getString(Tag.SeriesInstanceUID);
 		String modality = dicomObject.getString(Tag.Modality);
-		log.debug("Uploading dicom, username:" + username + " projectID:" + projectID + " patientName:" + dicomPatientName + " patientID:" + dicomPatientID + " studyUID:" + studyUID + " studyDate:" + studyDate + " seriesUID:" + seriesUID + " modality:" + modality);
+		log.info("Uploading dicom, username:" + username + " projectID:" + projectID + " patientName:" + dicomPatientName + " patientID:" + dicomPatientID + " studyUID:" + studyUID + " studyDate:" + studyDate + " seriesUID:" + seriesUID + " modality:" + modality);
 		if (dicomPatientID == null || dicomPatientID.trim().length() == 0 
 				|| dicomPatientID.equalsIgnoreCase("ANON") 
 				|| dicomPatientID.equalsIgnoreCase("Unknown") 
