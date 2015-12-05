@@ -108,10 +108,15 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 
 import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADLogger;
+import edu.stanford.epad.epadws.models.ProjectToPlugin;
+import edu.stanford.epad.epadws.models.ProjectToPluginParameter;
 import edu.stanford.epad.epadws.service.DefaultEpadProjectOperations;
 import edu.stanford.epad.epadws.service.EpadProjectOperations;
 import edu.stanford.epad.epadws.service.PluginOperations;
@@ -141,10 +146,79 @@ public class PluginConfig
 			if (!pluginOperations.getPlugins(pluginHandlerList, pluginTemplateList, pluginNameList)) {
 				migrate2DB();
 			}
+			checkParams();
 		} catch (Exception e) {
 			log.info("Failed to read plugin list from database "+e.getMessage());
 		}
 	}
+	
+	/**
+	 * Read plugin parameters from params file,
+	 * get parameters at the database
+	 * add from file to database if it doesn't exist
+	 */
+	
+	private void checkParams(){
+		try {
+			try {
+				File configFile = getParameterConfigFile();
+				if (!configFile.exists())
+					throw new IllegalStateException("No plugin parameter config file: " + configFile.getAbsolutePath());
+
+				BufferedReader br = new BufferedReader(new FileReader(configFile));
+				String line,pluginId="";
+				ArrayList<String> params=new ArrayList<String>();
+				ArrayList<String> values=new ArrayList<String>();
+				while ((line = br.readLine()) != null) {
+					line = line.trim(); // process the line.
+					if (!isCommentLine(line)) {
+						if (!line.contains("=")) {  //new plugin, if params not empty check db
+							log.info("parameters for new plugin : " + line); 
+							List <ProjectToPluginParameter> dbParams= pluginOperations.getPluginParameters(pluginId);
+							if (dbParams==null) {
+								
+								pluginOperations.addParameters("admin", EPADConfig.xnatUploadProjectID, pluginId,params.toArray(new String[params.size()]), values.toArray(new String[values.size()]));
+
+							}
+							params.clear();
+							values.clear();
+							pluginId=line;
+						}
+						else {	
+							String[] linePart = line.split("=");
+							if (linePart.length != 2) {
+								log.info("Wrong plugin parameter");
+							} else {
+								params.add(linePart[0]); //put(linePart[0], linePart[1]);
+								values.add(linePart[1]);
+							}
+						}
+					}
+				}
+				if (params.size()!=0){
+					log.info("Last plugin with parameters: "+pluginId);
+					List <ProjectToPluginParameter> dbParams= pluginOperations.getPluginParameters(pluginId);
+					log.info("dbparams " +dbParams);
+					if (dbParams==null || dbParams.isEmpty() ) {
+						log.info("adding parameters "+params.get(0));
+						pluginOperations.addParameters("admin", EPADConfig.xnatUploadProjectID, pluginId,params.toArray(new String[params.size()]), values.toArray(new String[values.size()]));
+
+						//pluginOperations.addParameters("admin", EPADConfig.xnatUploadProjectID, pluginId,(String[]) params.keySet().toArray(new String[params.size()]), (String[]) params.values().toArray(new String[params.size()]));
+
+					}
+				}
+				br.close();
+			} catch (Exception e) {
+				log.warning("Failed to read plugin config file for: " + e.getMessage(), e);
+			}
+			
+			
+			
+		} catch (Exception e) {
+			log.info("Failed to read plugin parameters from database "+e.getMessage());
+		}
+	}
+	
 	
 	
 	/**
@@ -198,6 +272,13 @@ public class PluginConfig
 		return false;
 	}
 
+	private File getParameterConfigFile()
+	{
+		File configFile = new File(EPADConfig.getEPADWebServerEtcDir() + "plugin-params.txt");
+
+		log.info("EPadPlugin config file: " + configFile.getAbsolutePath());
+		return configFile;
+	}
 	private File getConfigFile()
 	{
 		File configFile = new File(EPADConfig.getEPADWebServerPluginConfigFilePath());

@@ -320,6 +320,7 @@ public class PluginOperations {
 		return epadPluginList;
 	}
 	
+	
 	public EPADPlugin getPluginDescription(String pluginId, String username, String sessionID) throws Exception {
 		Plugin plugin=getPlugin(pluginId);
 
@@ -356,6 +357,17 @@ public class PluginOperations {
 		List<Plugin> plugins = new ArrayList<Plugin>();
 		plugins.addAll(objects);
 		return plugins;
+	}
+	
+	public List<ProjectToPluginParameter> getPluginParameters(String pluginId) throws Exception {
+		if (pluginId.trim().equals("")) return null;
+		Plugin plugin = new Plugin();
+		plugin = (Plugin) plugin.getObject("plugin_id = '" + pluginId+ "'");
+		if (plugin==null) return null;
+		List objects = new ProjectToPluginParameter().getObjects("plugin_id = " + plugin.getId() );
+		List<ProjectToPluginParameter> pluginparams = new ArrayList<ProjectToPluginParameter>();
+		pluginparams.addAll(objects);
+		return pluginparams;
 	}
 	
 	public Plugin getPlugin(String pluginId) throws Exception {
@@ -479,8 +491,9 @@ public class PluginOperations {
 		Plugin plugin = getPlugin(pluginId);
 		if (plugin == null)
 			throw new Exception("Plugin not found for id " + pluginId);
-		new ProjectToPluginParameter().deleteObjects("plugin_id=" + pluginId);
-		new ProjectToPlugin().deleteObjects("plugin_id=" + pluginId);
+		new ProjectToPluginParameter().deleteObjects("plugin_id=" + plugin.getId());
+		new ProjectToPlugin().deleteObjects("plugin_id=" + plugin.getId());
+		
 		plugin.delete();
 		
 	}
@@ -566,6 +579,8 @@ public class PluginOperations {
 		param = (ProjectToPluginParameter) param.getObject("project_id=" + project.getId() + " and plugin_id = " + plugin.getId()+ "  and name = '" + paramName + "'");
 		return param;
 	}
+	
+	
 
 }
 

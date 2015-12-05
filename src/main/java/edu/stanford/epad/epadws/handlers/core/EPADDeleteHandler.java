@@ -115,6 +115,7 @@ import edu.stanford.epad.dtos.EPADMessage;
 import edu.stanford.epad.dtos.EPADPlugin;
 import edu.stanford.epad.dtos.RemotePAC;
 import edu.stanford.epad.epadws.handlers.HandlerUtil;
+import edu.stanford.epad.epadws.models.Plugin;
 import edu.stanford.epad.epadws.models.User;
 import edu.stanford.epad.epadws.models.WorkList;
 import edu.stanford.epad.epadws.models.WorkListToStudy;
@@ -368,7 +369,7 @@ public class EPADDeleteHandler
 			
 			} else if (HandlerUtil.matchesTemplate(PluginRouteTemplates.PLUGIN, pathInfo)) {
 				PluginReference pluginReference = PluginReference.extract(PluginRouteTemplates.PLUGIN, pathInfo);
-				EPADPlugin plugin = pluginOperations.getPluginDescription(pluginReference.pluginID,username, sessionID);
+				Plugin plugin=pluginOperations.getPlugin(pluginReference.pluginID);
 				if (plugin == null) 
 					throw new Exception("Plugin not found for id " + pluginReference.pluginID);
 				pluginOperations.deletePlugin(username, pluginReference.pluginID);	
