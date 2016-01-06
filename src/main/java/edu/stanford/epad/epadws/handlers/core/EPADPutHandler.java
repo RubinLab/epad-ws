@@ -320,15 +320,22 @@ public class EPADPutHandler
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.PROJECT_AIM_LIST, pathInfo)) {
 				ProjectReference projectReference = ProjectReference.extract(ProjectsRouteTemplates.PROJECT_AIM_LIST, pathInfo);
 				AIMSearchType aimSearchType = AIMUtil.getAIMSearchType(httpRequest);
+				
+				//ml 
+				String[] aims = httpRequest.getParameterValues("aims");
+				
 				String searchValue = aimSearchType != null ? httpRequest.getParameter(aimSearchType.getName()) : null;
 				String templateName = httpRequest.getParameter("templateName");
 				if (templateName == null)
 					templateName = httpRequest.getParameter("pluginID");
 				log.info("PUT request for AIMs from user " + username + "; query type is " + aimSearchType + ", value "
 						+ searchValue + ", project " + projectReference.projectID);
+				
 				if (aimSearchType.equals(AIMSearchType.ANNOTATION_UID)) {
 					String[] aimIDs = searchValue.split(",");
 					AIMUtil.runPlugIn(aimIDs, templateName, projectReference.projectID, sessionID);
+				}else if (aims!=null && aims.length!=0) { //ml
+					AIMUtil.runPlugIn(aims, templateName, projectReference.projectID, sessionID);
 				}
 				statusCode = HttpServletResponse.SC_OK;
 
@@ -375,7 +382,8 @@ public class EPADPutHandler
 				}
 				else
 				{
-					if (description != null || dueDate != null || name != null)
+					//ml removed for changing user
+//					if (description != null || dueDate != null || name != null)
 						worklistOperations.updateWorkList(username, reader, workListID, name, description, null, getDate(dueDate));
 				}
 				String wlstatus = httpRequest.getParameter("status");
@@ -409,8 +417,13 @@ public class EPADPutHandler
 				if (!user.getUsername().equals(reader))
 					throw new Exception("User " +  reader + " does not match user for worklist "+ workListID);
 				log.debug("Worklist parameters, wlstatus:" + wlstatus + " started:" + started + " completed:" + completed);
-				if (wlstatus == null && !started && !completed)
-					worklistOperations.addSubjectToWorkList(username, projectID, subjectID, workListID); // Just change sort order
+				if (wlstatus == null && !started && !completed){
+					//ml get sortorder from param
+					String sortOrder = httpRequest.getParameter("sortorder");
+					if (sortOrder!=null)
+					//worklistOperations.addSubjectToWorkList(username, projectID, subjectID, workListID); // Just change sort order
+						worklistOperations.addSubjectToWorkList(username, projectID, subjectID, workListID,sortOrder);
+				}
 				else
 					worklistOperations.setWorkListSubjectStatus(reader, wl.getWorkListID(), projectID, subjectID, wlstatus, started, completed);
 				statusCode = HttpServletResponse.SC_OK;
@@ -805,8 +818,8 @@ public class EPADPutHandler
 				String developer = httpRequest.getParameter("developer");
 				String documentation = httpRequest.getParameter("documentation");
 				String rate = httpRequest.getParameter("rate");
-				EPADPlugin plugin = pluginOperations.getPluginDescription(pluginReference.pluginID, username, sessionID);
-				if (plugin != null) {
+				boolean isUpdate = pluginOperations.doesPluginExist(pluginReference.pluginID, username, sessionID);
+				if (isUpdate) {
 					pluginOperations.updatePlugin(username, pluginReference.pluginID, name, description, javaclass, enabled, modality, developer,documentation,rate,sessionID);
 					return HttpServletResponse.SC_OK;
 				} else {

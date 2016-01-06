@@ -263,6 +263,32 @@ public class DefaultWorkListOperations implements EpadWorkListOperations {
 
 	}
 	
+	//ml get sortorder from url
+	public synchronized void addSubjectToWorkList(String loggedInUser, String projectID, String subjectUID,
+			String workListID,String sortOrder) throws Exception {
+		log.debug("Adding subject " + subjectUID + " to " + workListID + " for " + projectID);
+		Subject subject = projectOperations.getSubject(subjectUID);
+		WorkList workList = new WorkList();
+		workList = (WorkList) workList.getObject("worklistid = " + workList.toSQL(workListID));
+		Project project = projectOperations.getProject(projectID);
+		if (!projectOperations.isSubjectInProject(subjectUID, project.getProjectId()))
+			throw new Exception("Subject " + subjectUID + " no longer exists in Project " + projectID);
+		
+		WorkListToSubject wtos = (WorkListToSubject) new WorkListToSubject().getObject("worklist_id =" + workList.getId() + " and subject_id=" + subject.getId() + " and project_id=" + project.getId());
+		if (wtos == null)
+		{
+			wtos = new WorkListToSubject();
+			wtos.setWorkListId(workList.getId());
+			wtos.setSubjectId(subject.getId());
+			wtos.setProjectId(project.getId());
+			wtos.setCreator(loggedInUser);
+		}
+		
+		wtos.setSortOrder(Long.valueOf(sortOrder));
+		wtos.save();
+
+	}
+	
 	@Override
 	public void removeSubjectFromWorkList(String loggedInUser,
 			String projectID, String subjectUID, String workListID)

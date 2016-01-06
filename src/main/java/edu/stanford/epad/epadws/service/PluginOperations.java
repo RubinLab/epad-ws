@@ -320,6 +320,12 @@ public class PluginOperations {
 		return epadPluginList;
 	}
 	
+	public boolean doesPluginExist(String pluginId, String username, String sessionID) throws Exception {
+		Plugin plugin=getPlugin(pluginId);
+
+		if (plugin==null) return false;
+		return true;
+	}
 	
 	public EPADPlugin getPluginDescription(String pluginId, String username, String sessionID) throws Exception {
 		Plugin plugin=getPlugin(pluginId);
@@ -338,7 +344,7 @@ public class PluginOperations {
 				throw new Exception("Global project cannot be retrieved");
 		}
 		ProjectToPlugin projectPlugin = getProjectToPlugin(project.getProjectId(),plugin.getPluginId());
-		log.warning("PROJECT + PLUGIN "+ project.getProjectId() + " " + plugin.getPluginId() + " p2p " + projectPlugin);
+//		log.warning("PROJECT + PLUGIN "+ project.getProjectId() + " " + plugin.getPluginId() + " p2p " + projectPlugin);
 		if (projectPlugin==null || !projectPlugin.getEnabled()) //project not enabled
 			return null;
 		EPADPluginParameterList parameters=getParametersByProjectIdAndPlugin(project.getId(), plugin.getId());
@@ -426,7 +432,7 @@ public class PluginOperations {
 		try {
 			plugin.save();
 		} catch (Exception e) {
-			log.warning("save error");
+			log.warning("save error "+e.getMessage());
 		}
 		return plugin;
 			
@@ -476,7 +482,7 @@ public class PluginOperations {
 		try {
 			plugin.save();
 		} catch (Exception e) {
-			log.warning("save error");
+			log.warning("save error "+e.getMessage());
 		}
 		return plugin;
 			

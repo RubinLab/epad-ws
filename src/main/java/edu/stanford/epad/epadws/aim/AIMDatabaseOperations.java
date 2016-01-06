@@ -868,7 +868,7 @@ public class AIMDatabaseOperations {
 		}
 		
 		sqlSelect = sqlSelect + " ORDER BY ProjectUID, PatientID, StudyUID, SeriesUID, ImageUID, FrameID";
-        log.debug("AIMs select:" + sqlSelect);
+        log.warning("AIMs select:" + sqlSelect);
        
 		ResultSet rs = null;
         List<EPADAIM> aims = new ArrayList<EPADAIM>();
@@ -918,7 +918,7 @@ public class AIMDatabaseOperations {
         	if (rs != null) rs.close();
         	statement.close();
         }
-        log.debug("Number of AIMs found in database:" + aims.size());
+        log.warning("Number of AIMs found in database:" + aims.size());
 		return aims;
     }
     

@@ -167,6 +167,8 @@ public interface EpadWorkListOperations {
 	 * @param workListID
 	 * @throws Exception
 	 */
+	void addSubjectToWorkList(String loggedInUser, String projectID, String subjectUID,
+			String workListID,String sortOrder) throws Exception;
 	void addSubjectToWorkList(String loggedInUser, String projectID, String subjectUID, String workListID) throws Exception;
 	void addSubjectsToWorkList(String loggedInUser, String projectID, JSONObject json, String workListID) throws Exception;
 	void removeSubjectFromWorkList(String loggedInUser, String projectID, String subjectUID, String workListID) throws Exception;

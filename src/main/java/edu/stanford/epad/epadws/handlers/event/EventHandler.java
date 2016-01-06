@@ -232,7 +232,8 @@ public class EventHandler extends AbstractHandler
 									" aim_uid:" + aim_uid + " aim_name" + aim_name + 
 									" patient_id: " + patient_id + " patient_name:" + patient_name +
 									" template_id:" + template_id + " template_name:" + template_name +
-									" plugin_name:"+ plugin_name);
+									" plugin_name:"+ plugin_name +
+									" project_id:"+ project_id);
 							statusCode = HandlerUtil.badRequestResponse(BAD_PARAMETERS_MESSAGE, log);
 						}
 					} else {
@@ -252,7 +253,7 @@ public class EventHandler extends AbstractHandler
 			try {
 				responseStream = httpResponse.getWriter();
 				responseStream.println("event_number, event_status, Date, aim_uid, aim_name, patient_id, patient_name, "
-						+ "template_id, template_name, plugin_name");
+						+ "template_id, template_name, plugin_name, project_id");
 				
 				// message[PATIENT_NAME] + message[PLUGIN_NAME] + " " + message[EVENT_STATUS]
 				StringBuilder sb = new StringBuilder();

@@ -457,6 +457,11 @@ public class UserProjectService {
 	public static boolean createProjectEntitiesFromDICOMFile(File dicomFile, String projectID, String sessionID, String username) throws Exception
 	{
 		DicomObject dicomObject = DicomReader.getDicomObject(dicomFile);
+		//corrupt and/or wrong dicom file control ml
+		if (dicomObject==null) {
+			log.warning("Dicom object couldn't be retrieved!");
+			return false;
+		}
 		String dicomPatientName = dicomObject.getString(Tag.PatientName);
 		String dicomPatientID = dicomObject.getString(Tag.PatientID);
 		String studyUID = dicomObject.getString(Tag.StudyInstanceUID);

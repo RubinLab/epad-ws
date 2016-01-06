@@ -446,9 +446,9 @@ public class EPADPostHandler
 					String developer = httpRequest.getParameter("developer");
 					String documentation = httpRequest.getParameter("documentation");
 					String rate = httpRequest.getParameter("rate");
-					EPADPlugin plugin = pluginOperations.getPluginDescription(pluginId, username, sessionID);
-					if (plugin != null) {
-						throw new Exception("Plugin " + plugin.getPluginId() +  " already exists");
+					boolean isUpdate = pluginOperations.doesPluginExist(pluginId, username, sessionID);
+					if (isUpdate) {
+						throw new Exception("Plugin " + pluginId +  " already exists");
 					} else {
 						pluginOperations.createPlugin(username, pluginId, name, description, javaclass, enabled, modality,developer,documentation,rate, sessionID);
 						return HttpServletResponse.SC_OK;
@@ -465,10 +465,9 @@ public class EPADPostHandler
 					String documentation = httpRequest.getParameter("documentation");
 					String rate = httpRequest.getParameter("rate");
 
-					EPADPlugin plugin = pluginOperations.getPluginDescription(pluginReference.pluginID, username, sessionID);
-
-					if (plugin != null) {
-						throw new Exception("Plugin " + plugin.getPluginId() +  " already exists");
+					boolean isUpdate = pluginOperations.doesPluginExist(pluginReference.pluginID, username, sessionID);
+					if (isUpdate) {
+						throw new Exception("Plugin " + pluginReference.pluginID +  " already exists");
 					} else {
 						pluginOperations.createPlugin(username, pluginReference.pluginID, name, description, javaclass, enabled, modality,developer,documentation,rate, sessionID);
 						return HttpServletResponse.SC_OK;

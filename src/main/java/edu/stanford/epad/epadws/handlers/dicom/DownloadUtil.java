@@ -231,6 +231,32 @@ public class DownloadUtil {
 						if (fos != null) fos.close();
 					}
 				}
+				
+				//ml include aims copied from series
+				if (includeAIMs)
+				{
+					EPADAIMList aimList = epadOperations.getSeriesAIMDescriptions(seriesReference, username, sessionID);
+					for (EPADAIM aim: aimList.ResultSet.Result)
+					{
+						String name = "Aim_" + aim.aimID + ".xml";
+						File aimFile = new File(seriesDir, name);
+						fileNames.add("Study-" + studyReference.studyUID + "/Series-" + series.seriesUID + "/" + name);
+						FileWriter fw = null;
+						try 
+						{
+							fw = new FileWriter(aimFile);
+							fw.write(aim.xml);
+						}
+						catch (Exception x)
+						{
+							log.warning("Error writing aim file");
+						}
+						finally 
+						{
+							if (fw != null) fw.close();
+						}
+					}
+				}
 			}
 		}
 		String zipName = "Patient-" + subjectReference.subjectID + ".zip";

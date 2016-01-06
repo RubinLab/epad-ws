@@ -131,7 +131,7 @@
      <dependency>
         <groupId>com.sun.jersey</groupId>
         <artifactId>jersey-core</artifactId>
-        <version>0.9-ea</version>
+        <version>1.19</version>
       </dependency>
 
     <dependency>
