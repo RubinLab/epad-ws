@@ -2077,18 +2077,6 @@ public class DefaultEpadOperations implements EpadOperations
 		EPADTemplateContainerList fileList = new EPADTemplateContainerList();
 		List<EpadFile> efiles = projectOperations.getEpadFiles(projectID, null, null, null, FileType.TEMPLATE, false);
 		Set<String> templateCodes = new HashSet<String>();
-		for (EpadFile efile: efiles)
-		{
-			EPADTemplateContainer template = convertEpadFileToTemplate(projectID, efile, new File(EPADConfig.getEPADWebServerResourcesDir() + getEpadFilePath(efile)));
-			if (template.enabled)
-			{
-				fileList.addTemplate(template);
-				templateCodes.add(template.templateCode);
-			}
-		}
-		efiles = projectOperations.getEpadFiles(EPADConfig.xnatUploadProjectID, null, null, null, FileType.TEMPLATE, false);
-		List<String> disabledTemplatesNames = projectOperations.getDisabledTemplates(projectID);
-		
 		//ml defaulttemplate
 		Project userProj = projectOperations.getProjectForUser(username, projectID);
 		String defTemplate="";
@@ -2097,10 +2085,38 @@ public class DefaultEpadOperations implements EpadOperations
 			defTemplate = userProj.getDefaultTemplate();
 		}
 
-			
 		for (EpadFile efile: efiles)
 		{
 			EPADTemplateContainer template = convertEpadFileToTemplate(projectID, efile, new File(EPADConfig.getEPADWebServerResourcesDir() + getEpadFilePath(efile)));
+			if (template.enabled)
+			{
+				//ml default template
+				List<EPADTemplate> templates = template.templates;
+				for (EPADTemplate t: templates)
+				{
+					log.info("template : " +t.getTemplateCode() + " defaulttemplate :"+defTemplate);
+					if (t.getTemplateCode().equals(defTemplate))
+					{
+						t.defaultTemplate = true;
+					}
+					else
+						t.defaultTemplate = false;
+				}
+				fileList.addTemplate(template);
+				templateCodes.add(template.templateCode);
+			}
+		}
+		efiles = projectOperations.getEpadFiles(EPADConfig.xnatUploadProjectID, null, null, null, FileType.TEMPLATE, false);
+		List<String> disabledTemplatesNames = projectOperations.getDisabledTemplates(projectID);
+		
+		
+		log.info("Default template for project "+ userProj.getName() + " is "+defTemplate);
+		
+		for (EpadFile efile: efiles)
+		{
+			
+			EPADTemplateContainer template = convertEpadFileToTemplate(projectID, efile, new File(EPADConfig.getEPADWebServerResourcesDir() + getEpadFilePath(efile)));
+			log.info("template enabled: " +template.enabled + " code: "+ template.templateCode + " codecontain:"+templateCodes.contains(template.templateCode));
 			if (template.enabled && !disabledTemplatesNames.contains(template.fileName) 
 					&& !disabledTemplatesNames.contains(template.templateName) 
 					&& !disabledTemplatesNames.contains(template.templateCode) 
@@ -2110,6 +2126,7 @@ public class DefaultEpadOperations implements EpadOperations
 				List<EPADTemplate> templates = template.templates;
 				for (EPADTemplate t: templates)
 				{
+					log.info("template : " +t.getTemplateCode() + " defaulttemplate :"+defTemplate);
 					if (t.getTemplateCode().equals(defTemplate))
 					{
 						t.defaultTemplate = true;

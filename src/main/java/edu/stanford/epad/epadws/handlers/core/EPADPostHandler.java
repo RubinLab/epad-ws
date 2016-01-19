@@ -121,6 +121,8 @@ import edu.stanford.epad.dtos.EPADMessage;
 import edu.stanford.epad.dtos.EPADPlugin;
 import edu.stanford.epad.dtos.EPADProject;
 import edu.stanford.epad.dtos.EPADSubject;
+import edu.stanford.epad.epadws.aim.AIMSearchType;
+import edu.stanford.epad.epadws.aim.AIMUtil;
 import edu.stanford.epad.epadws.handlers.HandlerUtil;
 import edu.stanford.epad.epadws.handlers.dicom.DSOUtil;
 import edu.stanford.epad.epadws.queries.DefaultEpadOperations;
@@ -435,7 +437,29 @@ public class EPADPostHandler
 					String workListID = HandlerUtil.getTemplateParameter(templateMap, "worklistID");
 					worklistOperations.addSubjectsToWorkList(username, projectID, HandlerUtil.getPostedJson(httpRequest), workListID);
 					statusCode = HttpServletResponse.SC_OK;
-									
+								
+				} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.PROJECT_AIM_LIST, pathInfo)) {
+					ProjectReference projectReference = ProjectReference.extract(ProjectsRouteTemplates.PROJECT_AIM_LIST, pathInfo);
+					AIMSearchType aimSearchType = AIMUtil.getAIMSearchType(httpRequest);
+					
+					//ml 
+					String[] aims = httpRequest.getParameterValues("aims");
+					
+					String searchValue = aimSearchType != null ? httpRequest.getParameter(aimSearchType.getName()) : null;
+					String templateName = httpRequest.getParameter("templateName");
+					if (templateName == null)
+						templateName = httpRequest.getParameter("pluginID");
+					log.info("POST request for AIMs from user " + username + "; query type is " + aimSearchType + ", value "
+							+ searchValue + ", project " + projectReference.projectID);
+					
+					if (aimSearchType.equals(AIMSearchType.ANNOTATION_UID)) {
+						String[] aimIDs = searchValue.split(",");
+						AIMUtil.runPlugIn(aimIDs, templateName, projectReference.projectID, sessionID);
+					}else if (aims!=null && aims.length!=0) { //ml
+						AIMUtil.runPlugIn(aims, templateName, projectReference.projectID, sessionID);
+					}
+					statusCode = HttpServletResponse.SC_OK;
+
 				} else if (HandlerUtil.matchesTemplate(PluginRouteTemplates.PLUGIN_LIST, pathInfo)) { //ML
 					String pluginId = httpRequest.getParameter("pluginId");
 					String name = httpRequest.getParameter("name");

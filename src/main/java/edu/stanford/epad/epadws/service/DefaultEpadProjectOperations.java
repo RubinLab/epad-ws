@@ -1950,6 +1950,11 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		new ProjectToSubjectToUser().deleteObjects("proj_subj_id in (select id from " + new ProjectToSubject().returnDBTABLE() + " where project_id=" + project.getId() + ")");
 		new ProjectToSubjectToStudy().deleteObjects("proj_subj_id in (select id from " + new ProjectToSubject().returnDBTABLE() + " where project_id=" + project.getId() + ")");
 		new ProjectToSubject().deleteObjects("project_id=" + project.getId());
+		//ml
+		new RemotePACQuery().deleteObjects("project_id=" + project.getId());
+		new WorkListToStudy().deleteObjects("project_id=" + project.getId());
+		new WorkListToSubject().deleteObjects("project_id=" + project.getId());
+		new WorkList().deleteObjects("project_id=" + project.getId());
 		try {
 			project.delete();
 			projectCache.remove(project.getProjectId());
