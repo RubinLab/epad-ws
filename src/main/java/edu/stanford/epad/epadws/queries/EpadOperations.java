@@ -820,6 +820,22 @@ public interface EpadOperations
 			String password, String oldpassword, String colorpreference, String[]addPermission, String[] removePermissions) throws Exception;
 	
 	/**
+	 * set user as admin
+	 * @param loggedInUser
+	 * @param username
+	 * @throws Exception
+	 */
+	void setAdmin(String loggedInUser, String username) throws Exception;
+	
+	/**
+	 * set user as not admin
+	 * @param loggedInUser
+	 * @param username
+	 * @throws Exception
+	 */
+	void resetAdmin(String loggedInUser, String username) throws Exception;
+	
+	/**
 	 * enable user
 	 * @param loggedInUser
 	 * @param username

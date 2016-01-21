@@ -515,17 +515,22 @@ public class EPADPutHandler
 				String password = httpRequest.getParameter("password");
 				String oldpassword = httpRequest.getParameter("oldpassword");
 				String colorpreference = httpRequest.getParameter("colorpreference");
+				String admin = httpRequest.getParameter("admin");
 				//log.info(" firstname:" + firstname + " lastname:" + lastname + " new password:" + password + " old password:" + oldpassword); 
 				String[] addPermissions = httpRequest.getParameterValues("addPermission");
 				String[] removePermissions = httpRequest.getParameterValues("removePermission");
 				String enable = httpRequest.getParameter("enable");
-				if (colorpreference == null && enable == null && firstname == null && lastname == null && email == null && addPermissions == null && removePermissions == null && password == null && oldpassword == null)
+				if (colorpreference == null && enable == null && firstname == null && lastname == null && email == null && addPermissions == null && removePermissions == null && password == null && oldpassword == null && admin == null)
 					throw new Exception("BAD Request - all parameters are null");
 				epadOperations.createOrModifyUser(username, target_username, firstname, lastname, email, password, oldpassword, colorpreference, addPermissions, removePermissions);
 				if ("true".equalsIgnoreCase(enable))
 					epadOperations.enableUser(username, target_username);
 				else if ("false".equalsIgnoreCase(enable))
 					epadOperations.disableUser(username, target_username);
+				if ("true".equalsIgnoreCase(admin))
+					epadOperations.setAdmin(username, target_username);
+				else if ("false".equalsIgnoreCase(admin))
+					epadOperations.resetAdmin(username, target_username);
 				statusCode = HttpServletResponse.SC_OK;
 				
 			} else if (HandlerUtil.matchesTemplate(UsersRouteTemplates.USER_REVIEWEE, pathInfo)) {

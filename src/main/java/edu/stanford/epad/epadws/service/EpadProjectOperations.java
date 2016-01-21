@@ -193,6 +193,22 @@ public interface EpadProjectOperations {
 			String password, String oldpassword, String colorpreference, List<String> addPermissions, List<String> removePermissions) throws Exception;
 	
 	/**
+	 * Set admin flag in user record
+	 * @param loggedInUser
+	 * @param username
+	 * @throws Exception
+	 */
+	void setAdmin(String loggedInUser, String username) throws Exception;
+	
+	/**
+	 * Reset admin flag in user record
+	 * @param loggedInUser
+	 * @param username
+	 * @throws Exception
+	 */
+	void resetAdmin(String loggedInUser, String username) throws Exception;
+	
+	/**
 	 * Set enabled flag in user record
 	 * @param loggedInUser
 	 * @param username

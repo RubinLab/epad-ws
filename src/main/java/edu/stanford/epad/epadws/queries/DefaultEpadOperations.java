@@ -4379,6 +4379,16 @@ public class DefaultEpadOperations implements EpadOperations
 	}
 
 	@Override
+	public void setAdmin(String loggedInUser, String username) throws Exception {
+		projectOperations.setAdmin(loggedInUser, username);
+	}
+
+	@Override
+	public void resetAdmin(String loggedInUser, String username) throws Exception {
+		projectOperations.resetAdmin(loggedInUser, username);
+	}
+	
+	@Override
 	public void enableUser(String loggedInUser, String username) throws Exception {
 		projectOperations.enableUser(loggedInUser, username);
 	}

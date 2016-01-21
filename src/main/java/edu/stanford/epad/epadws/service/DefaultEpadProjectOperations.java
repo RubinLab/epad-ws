@@ -380,6 +380,34 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 	}
 
 	/* (non-Javadoc)
+	 * @see edu.stanford.epad.epadws.service.EpadProjectOperations#setAdmin(java.lang.String, java.lang.String)
+	 */
+	@Override
+	public void setAdmin(String loggedInUserName, String username) throws Exception {
+		User loggedInUser = getUser(loggedInUserName);
+		User user = getUser(username);
+		if (loggedInUser != null && !loggedInUser.isAdmin() && !loggedInUserName.equals(user.getCreator()))
+			throw new Exception("No permission to modify user");
+		user.setAdmin(true);
+		user.save();
+		userCache.put(user.getUsername(), user);
+	}
+
+	/* (non-Javadoc)
+	 * @see edu.stanford.epad.epadws.service.EpadProjectOperations#resetAdmin(java.lang.String, java.lang.String)
+	 */
+	@Override
+	public void resetAdmin(String loggedInUserName, String username) throws Exception {
+		User loggedInUser = getUser(loggedInUserName);
+		User user = getUser(username);
+		if (loggedInUser != null && !loggedInUser.isAdmin() && !loggedInUserName.equals(user.getCreator()))
+			throw new Exception("No permission to modify user");
+		user.setAdmin(true);
+		user.save();
+		userCache.put(user.getUsername(), user);
+	}
+	
+	/* (non-Javadoc)
 	 * @see edu.stanford.epad.epadws.service.EpadProjectOperations#enableUser(java.lang.String, java.lang.String)
 	 */
 	@Override

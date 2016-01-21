@@ -373,10 +373,11 @@ public class EPADPostHandler
 					String enable = httpRequest.getParameter("enable");
 					String type = httpRequest.getParameter("type");
 					String colorpreference = httpRequest.getParameter("colorpreference");
+					String admin = httpRequest.getParameter("admin");
 					//log.info(" email:" + email +" firstname:" + firstname + " lastname:" + lastname + " new password:" + password + " old password:" + oldpassword); 
 					String[] addPermissions = httpRequest.getParameterValues("addPermission");
 					String[] removePermissions = httpRequest.getParameterValues("removePermission");
-					if (colorpreference == null && enable == null && firstname == null && lastname == null && email == null && addPermissions == null && removePermissions == null && password == null && oldpassword == null)
+					if (colorpreference == null && enable == null && firstname == null && lastname == null && email == null && addPermissions == null && removePermissions == null && password == null && oldpassword == null && admin == null)
 						throw new Exception("BAD Request - all parameters are null");
 					if ("new".equals(type) && projectOperations.getUser(target_username) != null)
 						throw new Exception("User " +  target_username + " already exists");
@@ -385,6 +386,10 @@ public class EPADPostHandler
 						epadOperations.enableUser(username, target_username);
 					else if ("false".equalsIgnoreCase(enable))
 						epadOperations.disableUser(username, target_username);
+					if ("true".equalsIgnoreCase(admin))
+						epadOperations.setAdmin(username, target_username);
+					else if ("false".equalsIgnoreCase(admin))
+						epadOperations.resetAdmin(username, target_username);
 					statusCode = HttpServletResponse.SC_OK;
 				
 				} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.PROJECT, pathInfo)) {
