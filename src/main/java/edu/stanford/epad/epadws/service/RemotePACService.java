@@ -618,7 +618,7 @@ public class RemotePACService extends RemotePACSBase {
 		Subject subject = (Subject) new Subject(query.getSubjectId()).retrieve();
 		Project project = (Project) new Project(query.getProjectId()).retrieve();
 		RemotePAC pac = this.getRemotePAC(query.getPacId());
-		RemotePACQueryConfig rqc = new RemotePACQueryConfig(query.getPacId(), query.getRequestor(),
+		RemotePACQueryConfig rqc = new RemotePACQueryConfig(query.getPacId(), pac.aeTitle, query.getRequestor(),
 				subject.getSubjectUID(), project.getProjectId(), query.getModality(), query.getPeriod(),
 				query.isEnabled(), query.getLastStudyDate(), dateformat.format(query.getLastQueryTime()),
 				query.getLastQueryStatus());

@@ -154,15 +154,15 @@ import edu.stanford.hakan.aim4api.compability.aimv3.ImageAnnotation;
  */
 public class UserProjectService {
 	private static final EPADLogger log = EPADLogger.getInstance();
-	
+
 	public static Map<String, String> pendingPNGs = new HashMap<String, String>();
 	public static Map<String, String> pendingUploads = new HashMap<String, String>();
 
 	private static final EpadProjectOperations projectOperations = DefaultEpadProjectOperations.getInstance();	
 	private static final EpadDatabaseOperations databaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();	
-	
+
 	public static final String XNAT_UPLOAD_PROPERTIES_FILE_NAME = "xnat_upload.properties";
-	
+
 	/**
 	 * Check if user is collaborator
 	 * @param sessionID
@@ -174,7 +174,7 @@ public class UserProjectService {
 	public static boolean isCollaborator(String sessionID, String username, String projectID) throws Exception {
 		return projectOperations.isCollaborator(username, projectID);
 	}
-	
+
 	/**
 	 * Check if user is owner
 	 * @param sessionID
@@ -186,7 +186,7 @@ public class UserProjectService {
 	public static boolean isOwner(String sessionID, String username, String projectID) throws Exception {
 		return projectOperations.isOwner(username, projectID);
 	}
-	
+
 	/**
 	 * Check if user is member
 	 * @param sessionID
@@ -198,7 +198,7 @@ public class UserProjectService {
 	public static boolean isMember(String sessionID, String username, String projectID) throws Exception {
 		return projectOperations.isMember(username, projectID);
 	}
-	
+
 	/**
 	 * Get all project ids
 	 * @return
@@ -211,7 +211,7 @@ public class UserProjectService {
 			projectIDs.add(project.getProjectId());
 		return projectIDs;
 	}
-	
+
 	/**
 	 * Get all study uids for project
 	 * @param projectID
@@ -225,7 +225,7 @@ public class UserProjectService {
 			studyIDs.add(study.getStudyUID());
 		return studyIDs;
 	}
-	
+
 	/**
 	 * Get all study uids for subject
 	 * @param projectID
@@ -240,7 +240,7 @@ public class UserProjectService {
 			studyIDs.add(study.getStudyUID());
 		return studyIDs;
 	}
-	
+
 	/**
 	 * Get first project fro study
 	 * @param studyUID
@@ -254,7 +254,7 @@ public class UserProjectService {
 		else
 			return EPADConfig.xnatUploadProjectID;
 	}
-	
+
 	/**
 	 * Get subjectids for project
 	 * @param projectID
@@ -344,7 +344,7 @@ public class UserProjectService {
 		}
 		return xnatUserName + ":" + numberOfDICOMFiles;
 	}
-	
+
 	public static String getUserNameFromPropertiesFile(File dicomUploadDirectory) {
 		String propertiesFilePath = dicomUploadDirectory.getAbsolutePath() + File.separator
 				+ XNAT_UPLOAD_PROPERTIES_FILE_NAME;
@@ -374,7 +374,7 @@ public class UserProjectService {
 		}
 		return null;
 	}
-	
+
 	/**
 	 * Create subject/study records from uploaded dicoms and add to project 
 	 * @param dicomUploadDirectory
@@ -445,7 +445,7 @@ public class UserProjectService {
 		log.info("Number of non-dicom files in upload:" + nondicoms);
 		return numberOfDICOMFiles;
 	}
-	
+
 	/**
 	 * Create subject/study records from uploaded dicom file and add to project 
 	 * @param dicomFile
@@ -456,7 +456,13 @@ public class UserProjectService {
 	 */
 	public static boolean createProjectEntitiesFromDICOMFile(File dicomFile, String projectID, String sessionID, String username) throws Exception
 	{
-		DicomObject dicomObject = DicomReader.getDicomObject(dicomFile);
+		DicomObject dicomObject=null;
+		try{
+			dicomObject = DicomReader.getDicomObject(dicomFile);
+		}catch(Exception e){
+			log.warning("Dicom object couldn't be retrieved!");
+			return false;
+		}
 		//corrupt and/or wrong dicom file control ml
 		if (dicomObject==null) {
 			log.warning("Dicom object couldn't be retrieved!");
@@ -499,16 +505,16 @@ public class UserProjectService {
 			//databaseOperations.deleteSeriesOnly(seriesUID); // This will recreate all images
 			if (dicomPatientName == null) dicomPatientName = "";
 			dicomPatientName = dicomPatientName.toUpperCase(); // DCM4CHEE stores the patient name as upper case
-			
+
 			addSubjectAndStudyToProject(dicomPatientID, dicomPatientName, studyUID, studyDate, projectID, sessionID, username);
-			
+
 			if ("SEG".equals(modality))
 			{
 				try {
-//					List<EPADAIM> aims = databaseOperations.getAIMsByDSOSeries(projectID, dicomPatientID, seriesUID);
-//					List<ImageAnnotation> ias = AIMQueries.getAIMImageAnnotations(AIMSearchType.SERIES_UID, seriesUID, username, 1, 50);
-//					if (ias.size() == 0 || aims.size() == 0) 
-//						AIMUtil.generateAIMFileForDSO(dicomFile, username, projectID);
+					//					List<EPADAIM> aims = databaseOperations.getAIMsByDSOSeries(projectID, dicomPatientID, seriesUID);
+					//					List<ImageAnnotation> ias = AIMQueries.getAIMImageAnnotations(AIMSearchType.SERIES_UID, seriesUID, username, 1, 50);
+					//					if (ias.size() == 0 || aims.size() == 0) 
+					//						AIMUtil.generateAIMFileForDSO(dicomFile, username, projectID);
 					List<EPADAIM> aims = databaseOperations.getAIMsByDSOSeries(null, dicomPatientID, seriesUID);
 					List<ImageAnnotation> ias = AIMQueries.getAIMImageAnnotations(AIMSearchType.SERIES_UID, seriesUID, username, 1, 50);
 					boolean generateAim = false;
@@ -550,11 +556,11 @@ public class UserProjectService {
 					File pngDirectory = new File(pngMaskDirectoryPath);
 					if (pngDirectory.exists())
 					{
-//						File[] files = pngDirectory.listFiles();
-//						for (File file: files)
-//						{
-//							//file.delete();
-//						}
+						//						File[] files = pngDirectory.listFiles();
+						//						for (File file: files)
+						//						{
+						//							//file.delete();
+						//						}
 					}
 				} catch (Exception x) {
 					log.warning("Error generating DSO Annotation:", x);
@@ -597,7 +603,7 @@ public class UserProjectService {
 			log.warning("Error creating subject/study in EPAD:", e);
 		}
 	}
-	
+
 	private static Collection<File> listDICOMFiles(File dir)
 	{
 		log.info("Checking upload directory:" + dir.getAbsolutePath());
@@ -636,10 +642,10 @@ public class UserProjectService {
 				else
 				{
 					files.add(entry);
-//					try {
-//						log.warning("Deleting non-dicom file:" + entry.getName());
-//						entry.delete();
-//					} catch (Exception x) {log.warning("Error deleting", x);}
+					//					try {
+					//						log.warning("Deleting non-dicom file:" + entry.getName());
+					//						entry.delete();
+					//					} catch (Exception x) {log.warning("Error deleting", x);}
 				}
 			}
 		}
@@ -649,10 +655,10 @@ public class UserProjectService {
 				dir.delete();
 			} catch (Exception x) {log.warning("Error deleting", x);}
 		}
-		
+
 		return files;
 	}
-	
+
 	public static void sendNewPassword(String loggedInUsername, String username) throws Exception
 	{
 		log.info("New password requested for " + username);
@@ -670,10 +676,10 @@ public class UserProjectService {
 		user.setPassword(newPwd);
 		boolean tls = "true".equalsIgnoreCase(EPADConfig.getParamValue("SMTPtls", "true"));
 		MailUtil mu = new MailUtil(	EPADConfig.getParamValue("SMTPHost", "smtp.gmail.com"), 
-									EPADConfig.getParamValue("SMTPPort", "587"), 
-									EPADConfig.getParamValue("MailUser", "epadstanford@gmail.com"), 
-									EPADConfig.getParamValue("MailPassword"), 
-									true);
+				EPADConfig.getParamValue("SMTPPort", "587"), 
+				EPADConfig.getParamValue("MailUser", "epadstanford@gmail.com"), 
+				EPADConfig.getParamValue("MailPassword"), 
+				true);
 		// No password, try sendMail
 		if (EPADConfig.getParamValue("MailPassword") == null || EPADConfig.getParamValue("MailPassword").trim().length() == 0) {
 			mu = new MailUtil();
@@ -693,12 +699,25 @@ public class UserProjectService {
 	 */
 	public static boolean isDicomFile(File file)
 	{
-		return file.isFile()
+		
+		if (file.isFile()
 				&& (file.getName().toLowerCase().endsWith(".dcm") || file.getName().toLowerCase().endsWith(".dso") || file.getName().toLowerCase().endsWith(".pres"))
-				&& !file.getName().startsWith(".");
+				&& !file.getName().startsWith(".")) {
+			//ml the previous method failed on jpgs 
+			DicomObject dicomObject=null;
+			try{
+				dicomObject = DicomReader.getDicomObject(file);
+			}catch(Exception e){
+				log.warning("Dicom object couldn't be retrieved!");
+				return false;
+			}
+			return true;
+			
+		}
+		return false;
 		// return file.isFile() && DicomFileUtil.hasMagicWordInHeader(file);
 	}
-	
+
 	static SimpleDateFormat dateformat = new SimpleDateFormat("yyyyMMdd");
 	private static Date getDate(String dateStr)
 	{
@@ -711,5 +730,5 @@ public class UserProjectService {
 			return null;
 		}
 	}
-	
+
 }

@@ -153,6 +153,8 @@ public class EPADDeleteHandler
 		String pathInfo = httpRequest.getPathInfo();
 		int statusCode;
 
+		//ml system delete
+		boolean all = !"false".equalsIgnoreCase(httpRequest.getParameter("all")); 
 		boolean deleteDSO = !"false".equalsIgnoreCase(httpRequest.getParameter("deleteDSO")); 
 		boolean deleteAims = !"false".equalsIgnoreCase(httpRequest.getParameter("deleteAims"));
 		try
