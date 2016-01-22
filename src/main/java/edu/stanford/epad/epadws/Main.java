@@ -362,7 +362,12 @@ public class Main
 		folder = new File(EPADConfig.getEPADWebServerDICOMScriptsDir());
 		if (!folder.exists()) folder.mkdirs();
 		folder = new File(EPADConfig.getEPADWebServerUploadDir());
-		if (!folder.exists()) folder.mkdirs();
+		//ml if (!folder.exists()) folder.mkdirs(); //remove temp dirs
+		if (folder.exists()) {
+			log.info("Deleting existing temp upload directory "+ folder.getName());
+			EPADFileUtils.deleteDirectoryAndContents(folder);
+		}
+		folder.mkdirs();
 		folder = new File(EPADConfig.getEPADWebServerFileUploadDir());
 		if (!folder.exists()) folder.mkdirs();
 		folder = new File(EPADConfig.getEPADWebServerAnnotationsDir());
