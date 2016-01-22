@@ -699,11 +699,14 @@ public class UserProjectService {
 	 */
 	public static boolean isDicomFile(File file)
 	{
-		
+		//original
+//		return (file.isFile()
+//				&& (file.getName().toLowerCase().endsWith(".dcm") || file.getName().toLowerCase().endsWith(".dso") || file.getName().toLowerCase().endsWith(".pres"))
+//				&& !file.getName().startsWith("."));
+		//ml the previous method failed on jpgs 
 		if (file.isFile()
 				&& (file.getName().toLowerCase().endsWith(".dcm") || file.getName().toLowerCase().endsWith(".dso") || file.getName().toLowerCase().endsWith(".pres"))
 				&& !file.getName().startsWith(".")) {
-			//ml the previous method failed on jpgs 
 			DicomObject dicomObject=null;
 			try{
 				dicomObject = DicomReader.getDicomObject(file);
