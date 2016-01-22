@@ -913,6 +913,16 @@ public interface EpadOperations
 	int subjectDelete(SubjectReference subjectReference, String sessionID, String username) throws Exception;
 
 	/**
+	 * @param subjectReference
+	 * @param sessionID
+	 * @param username
+	 * @param all
+	 * @return
+	 * @throws Exception
+	 */
+	int subjectDelete(SubjectReference subjectReference, String sessionID, String username, boolean all) throws Exception;
+
+	/**
 	 * @param studyReference
 	 * @param sessionID
 	 * @param deleteAims

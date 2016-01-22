@@ -165,8 +165,11 @@ public class EPADDeleteHandler
 	
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.SUBJECT, pathInfo)) {
 				SubjectReference subjectReference = SubjectReference.extract(ProjectsRouteTemplates.SUBJECT, pathInfo);
-				statusCode = epadOperations.subjectDelete(subjectReference, sessionID, username);
-	
+//				statusCode = epadOperations.subjectDelete(subjectReference, sessionID, username);
+				//ml
+				statusCode = epadOperations.subjectDelete(subjectReference, sessionID, username, all);
+				
+				
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.STUDY, pathInfo)) {
 				StudyReference studyReference = StudyReference.extract(ProjectsRouteTemplates.STUDY, pathInfo);
 				String err = epadOperations.studyDelete(studyReference, sessionID, deleteAims, username);

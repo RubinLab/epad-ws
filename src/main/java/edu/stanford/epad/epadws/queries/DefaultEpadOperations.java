@@ -2289,6 +2289,12 @@ public class DefaultEpadOperations implements EpadOperations
 	@Override
 	public int subjectDelete(SubjectReference subjectReference, String sessionID, String username) throws Exception
 	{
+		return subjectDelete(subjectReference, sessionID, username,false);
+	}
+	
+	@Override
+	public int subjectDelete(SubjectReference subjectReference, String sessionID, String username,boolean all) throws Exception
+	{
 		List<Study> studies = projectOperations.getStudiesForSubject(subjectReference.subjectID);
 		int xnatStatusCode;
 		User user = projectOperations.getUser(username);

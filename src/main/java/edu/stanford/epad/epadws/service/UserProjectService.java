@@ -700,24 +700,24 @@ public class UserProjectService {
 	public static boolean isDicomFile(File file)
 	{
 		//original
-//		return (file.isFile()
-//				&& (file.getName().toLowerCase().endsWith(".dcm") || file.getName().toLowerCase().endsWith(".dso") || file.getName().toLowerCase().endsWith(".pres"))
-//				&& !file.getName().startsWith("."));
-		//ml the previous method failed on jpgs 
-		if (file.isFile()
+		return (file.isFile()
 				&& (file.getName().toLowerCase().endsWith(".dcm") || file.getName().toLowerCase().endsWith(".dso") || file.getName().toLowerCase().endsWith(".pres"))
-				&& !file.getName().startsWith(".")) {
-			DicomObject dicomObject=null;
-			try{
-				dicomObject = DicomReader.getDicomObject(file);
-			}catch(Exception e){
-				log.warning("Dicom object couldn't be retrieved!");
-				return false;
-			}
-			return true;
-			
-		}
-		return false;
+				&& !file.getName().startsWith("."));
+		//ml the previous method failed on jpgs 
+//		if (file.isFile()
+//				&& (file.getName().toLowerCase().endsWith(".dcm") || file.getName().toLowerCase().endsWith(".dso") || file.getName().toLowerCase().endsWith(".pres"))
+//				&& !file.getName().startsWith(".")) {
+//			DicomObject dicomObject=null;
+//			try{
+//				dicomObject = DicomReader.getDicomObject(file);
+//			}catch(Exception e){
+//				log.warning("Dicom object couldn't be retrieved!");
+//				return false;
+//			}
+//			return true;
+//			
+//		}
+//		return false;
 		// return file.isFile() && DicomFileUtil.hasMagicWordInHeader(file);
 	}
 
