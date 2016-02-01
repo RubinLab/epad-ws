@@ -132,12 +132,23 @@ public class SubjectDataDeleteTask implements Runnable
 	private final String projectID;
 	private final String patientID;
 	private final String username;
+	private final boolean all;
 
 	public SubjectDataDeleteTask(String projectID, String patientID, String username)
 	{
 		this.projectID = projectID;
 		this.patientID = patientID;
 		this.username = username;
+		this.all=false;
+	}
+	
+	//ml support for deleting from system
+	public SubjectDataDeleteTask(String projectID, String patientID, String username, boolean all)
+	{
+		this.projectID = projectID;
+		this.patientID = patientID;
+		this.username = username;
+		this.all=all;
 	}
 
 	@Override
@@ -158,7 +169,7 @@ public class SubjectDataDeleteTask implements Runnable
     				break;
     			}
     		}
-    		if (deleteCompletely)
+    		if (deleteCompletely || all)
     		{
     			EpadProjectOperations projectOperations = DefaultEpadProjectOperations.getInstance();
     			projectOperations.updateUserTaskStatus(username, TaskStatus.TASK_DELETE_PATIENT, patientID, "Delete Patient Started", new Date(), null);
