@@ -9,11 +9,11 @@
 <BODY>
 <%
 		Cookie sessionCookie = new Cookie("JSESSIONID", "");
-		sessionCookie.setMaxAge(0);
+		sessionCookie.setMaxAge(10*10); //ml test
 		sessionCookie.setPath(request.getContextPath() + "/");
 		response.addCookie(sessionCookie);
 		sessionCookie = new Cookie("JSESSIONID", "");
-		sessionCookie.setMaxAge(0);
+		sessionCookie.setMaxAge(10*10);
 		sessionCookie.setPath(request.getContextPath());
 		response.addCookie(sessionCookie);
 		String redirect = "/index.jsp";

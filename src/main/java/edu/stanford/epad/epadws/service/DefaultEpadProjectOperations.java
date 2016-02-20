@@ -737,7 +737,7 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		subject = (Subject) subject.getObject("subjectuid = " + subject.toSQL(subjectUID));
 		Project project = new Project();
 		project = (Project) project.getObject("projectId = " + project.toSQL(projectId));
-		List<ProjectToSubject> ptss = new ProjectToSubject().getObjects("subject_id=" + subject.getId());
+		List<ProjectToSubject> ptss = new ProjectToSubject(). getObjects("subject_id=" + subject.getId());
 		if (ptss.size() == 1 && subject.getCreator().equals("admin"))
 		{
 			subject.setCreator(loggedInUser);

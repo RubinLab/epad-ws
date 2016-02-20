@@ -168,6 +168,8 @@ public class WebAuthFilter implements Filter {
 		            Cookie sessionCookie = new Cookie(JSESSIONID_COOKIE, sessionID);
 		            sessionCookie.setMaxAge(-1);
 		            sessionCookie.setPath(httpRequest.getContextPath());
+		            log.info("WS Secure web auth cookie =" + JSESSIONID_COOKIE + " path = "+ sessionCookie.getPath());
+		            
 		            httpResponse.addCookie(sessionCookie);
 		            if (httpRequest.getRequestURL().toString().indexOf("Web_pad") == -1)
 		            	httpResponse.sendRedirect("Web_pad.html");
@@ -178,6 +180,7 @@ public class WebAuthFilter implements Filter {
 			}
 		} else {
 			String sessionID = SessionService.getJSessionIDFromRequest(httpRequest);
+			log.info("ml session"+sessionID);
 			String method = httpRequest.getMethod();
 			boolean isValid = SessionService.hasValidSessionID(sessionID);
 			if (!isValid && httpRequest.getRequestURL().toString().indexOf("login.jsp") == -1 

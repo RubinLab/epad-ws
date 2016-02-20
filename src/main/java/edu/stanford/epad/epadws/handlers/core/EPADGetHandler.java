@@ -127,6 +127,7 @@ import edu.stanford.epad.dtos.EPADAIM;
 import edu.stanford.epad.dtos.EPADAIMList;
 import edu.stanford.epad.dtos.EPADData;
 import edu.stanford.epad.dtos.EPADDataList;
+import edu.stanford.epad.dtos.EPADError;
 import edu.stanford.epad.dtos.EPADEventLogList;
 import edu.stanford.epad.dtos.EPADFile;
 import edu.stanford.epad.dtos.EPADFileList;
@@ -345,12 +346,22 @@ public class EPADGetHandler
 					else
 						DownloadUtil.downloadStudy(true, httpResponse, studyReference, username, sessionID, searchFilter, seriesUIDs, includeAims);
 				} else {
+					try {
 					EPADStudy study = epadOperations.getStudyDescription(studyReference, username, sessionID);
 					if (study != null) {
 						responseStream.append(study.toJSON());
 					} else {
 						log.info("Study " + studyReference.studyUID + " not found");
-						throw new Exception("Study " + studyReference.studyUID + " not found");
+//						throw new Exception("Study " + studyReference.studyUID + " not found");
+						//ml error payload
+						EPADError err=new EPADError(1000, username, studyReference.projectID, studyReference.subjectID, studyReference.studyUID, "" , "", -1, "Study not found", "Study " + studyReference.studyUID + " not found. Please check studyId");
+						responseStream.append(err.toJSON());
+						statusCode = HttpServletResponse.SC_NOT_FOUND;
+					}
+					}catch (Exception e) {
+						EPADError err=new EPADError(1000, username, studyReference.projectID, studyReference.subjectID, studyReference.studyUID, "" , "", -1, "Study not found", "Study " + studyReference.studyUID + " not found. Please check studyId");
+						responseStream.append(err.toJSON());
+						statusCode = HttpServletResponse.SC_NOT_FOUND;
 					}
 				}
 				statusCode = HttpServletResponse.SC_OK;
