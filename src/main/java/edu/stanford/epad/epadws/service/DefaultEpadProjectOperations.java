@@ -738,7 +738,8 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		Project project = new Project();
 		project = (Project) project.getObject("projectId = " + project.toSQL(projectId));
 		List<ProjectToSubject> ptss = new ProjectToSubject().getObjects("subject_id=" + subject.getId());
-		if (ptss.size() == 1 && subject.getCreator().equals("admin"))
+		//ml null checks added for the bug occured after delete subject
+		if (ptss!=null && ptss.size() == 1 && subject.getCreator()!=null && subject.getCreator().equals("admin"))
 		{
 			subject.setCreator(loggedInUser);
 			subject.save();
@@ -1982,7 +1983,6 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		new RemotePACQuery().deleteObjects("project_id=" + project.getId());
 		new WorkListToStudy().deleteObjects("project_id=" + project.getId());
 		new WorkListToSubject().deleteObjects("project_id=" + project.getId());
-		new WorkList().deleteObjects("project_id=" + project.getId());
 		try {
 			project.delete();
 			projectCache.remove(project.getProjectId());
