@@ -799,7 +799,8 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 			this.createEventLog(loggedInUser, projectId, subjectUID, null, null, null, null, null, "Added Patient to Project", null, false);
 		}
 		List<ProjectToSubjectToStudy> psss = new ProjectToSubjectToStudy().getObjects("study_id=" + study.getId());
-		if (psss.size() == 1 && study.getCreator().equals("admin"))
+		//ml null check
+		if (psss!=null && psss.size() == 1 && subject.getCreator()!=null && subject.getCreator().equals("admin"))
 		{
 			study.setCreator(loggedInUser);
 			study.save();
