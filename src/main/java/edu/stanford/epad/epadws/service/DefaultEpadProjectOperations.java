@@ -739,7 +739,7 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		project = (Project) project.getObject("projectId = " + project.toSQL(projectId));
 		List<ProjectToSubject> ptss = new ProjectToSubject().getObjects("subject_id=" + subject.getId());
 		//ml null checks added for the bug occured after delete subject
-		if (ptss!=null && ptss.size() == 1 && subject.getCreator()!=null && subject.getCreator().equals("admin"))
+		if (ptss!=null && ptss.size() == 1 && ( subject.getCreator()==null || subject.getCreator().equals("admin")))
 		{
 			subject.setCreator(loggedInUser);
 			subject.save();
@@ -800,7 +800,7 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		}
 		List<ProjectToSubjectToStudy> psss = new ProjectToSubjectToStudy().getObjects("study_id=" + study.getId());
 		//ml null check
-		if (psss!=null && psss.size() == 1 && subject.getCreator()!=null && subject.getCreator().equals("admin"))
+		if (psss!=null && psss.size() == 1 && ( subject.getCreator()==null || subject.getCreator().equals("admin")))
 		{
 			study.setCreator(loggedInUser);
 			study.save();

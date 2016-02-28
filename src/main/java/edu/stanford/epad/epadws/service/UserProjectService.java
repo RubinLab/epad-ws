@@ -321,6 +321,9 @@ public class UserProjectService {
 				log.info("XNAT Properties, projectID:"  + xnatProjectLabel + " username:" + xnatUserName + " patient:" + patientID + " study:" + studyUID + " series:" + seriesUID);
 				if (xnatProjectLabel != null) {
 					xnatUploadPropertiesFile.delete();
+					//ml prevent null username 
+					if (xnatUserName == null)
+						xnatUserName = EPADConfig.xnatUploadProjectUser;
 					numberOfDICOMFiles = createProjectEntitiesFromDICOMFilesInUploadDirectory(dicomUploadDirectory, xnatProjectLabel, xnatSessionID, xnatUserName, patientID, studyUID, seriesUID, !zip);
 					if (numberOfDICOMFiles != 0)
 					{
