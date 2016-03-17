@@ -218,6 +218,7 @@ public class EPADGetHandler
 			int count = getInt(httpRequest.getParameter("count"));
 			if (count == 0) count = 5000;
 			long starttime = System.currentTimeMillis();
+			String subjectUIDs = httpRequest.getParameter("subjectUIDs");
 			String studyUIDs = httpRequest.getParameter("studyUIDs");
 			String seriesUIDs = httpRequest.getParameter("seriesUIDs");
 			if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.PROJECT_LIST, pathInfo)) {
@@ -236,14 +237,20 @@ public class EPADGetHandler
 				ProjectReference projectReference = ProjectReference.extract(ProjectsRouteTemplates.PROJECT, pathInfo);
 				if (projectReference.projectID.equals(EPADConfig.xnatUploadProjectID))
 					annotationCount = false;
-				EPADProject project = epadOperations.getProjectDescription(projectReference, username, sessionID, annotationCount);
-				if (project != null) {
-					log.info("Project aim count:" + project.numberOfAnnotations);
-					responseStream.append(project.toJSON());
-					statusCode = HttpServletResponse.SC_OK;
-				} else
-					throw new Exception("Project " + projectReference.projectID + " not found");
-
+				//ml added for project download
+				boolean includeAims = "true".equalsIgnoreCase(httpRequest.getParameter("includeAims"));
+				if (returnStream(httpRequest)) {
+					DownloadUtil.downloadProject(true, httpResponse, projectReference, username, sessionID, searchFilter, subjectUIDs, includeAims);
+				} else {
+					EPADProject project = epadOperations.getProjectDescription(projectReference, username, sessionID, annotationCount);
+				
+					if (project != null) {
+						log.info("Project aim count:" + project.numberOfAnnotations);
+						responseStream.append(project.toJSON());
+					} else
+						throw new Exception("Project " + projectReference.projectID + " not found");
+				}
+				statusCode = HttpServletResponse.SC_OK;
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.SUBJECT_LIST, pathInfo)) {
 				ProjectReference projectReference = ProjectReference.extract(ProjectsRouteTemplates.SUBJECT_LIST, pathInfo);
 				if (false && host != null && host.contains("epad-dev")) {
@@ -1167,6 +1174,11 @@ public class EPADGetHandler
 				String version = httpRequest.getParameter("version");
 				AIMReference aimReference = AIMReference.extract(AimsRouteTemplates.AIM, pathInfo);
 				EPADAIM aim = epadOperations.getAIMDescription(aimReference.aimID, username, sessionID);
+				//ml return not found status if not found
+				if (aim == null) {
+					return HttpServletResponse.SC_NOT_FOUND;
+				}
+					
 				if (returnSummary(httpRequest))
 				{	
 					if ("all".equalsIgnoreCase(version))
