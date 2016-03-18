@@ -408,7 +408,19 @@ public class DefaultEpadOperations implements EpadOperations
 	@Override
 	public EPADSubject getSubjectDescription(SubjectReference subjectReference, String username, String sessionID) throws Exception
 	{
-		Subject subject = projectOperations.getSubjectForProject(subjectReference.projectID, subjectReference.subjectID);
+
+		Subject subject =null;
+		if (subjectReference.projectID == null ){
+			subject = projectOperations.getSubject(subjectReference.subjectID);
+			if (subject != null) {
+				//ml for download. no project id. cannot take status
+				EPADSubject esubject = subject2EPADSubject(sessionID, username, subject, subjectReference.projectID, new EPADSearchFilter(), true);
+				return esubject;
+			}
+		}else {
+			subject = projectOperations.getSubjectForProject(subjectReference.projectID, subjectReference.subjectID);
+
+		}
 		if (subject != null) {
 			EPADSubject esubject = subject2EPADSubject(sessionID, username, subject, subjectReference.projectID, new EPADSearchFilter(), true);
 			String status = projectOperations.getUserStatusForProjectAndSubject(username, subjectReference.projectID, subjectReference.subjectID);
@@ -427,8 +439,15 @@ public class DefaultEpadOperations implements EpadOperations
 		Subject subject = null;
 		Set<String> studyUIDsInEpad = new HashSet<String>();
 		subject = projectOperations.getSubject(subjectReference.subjectID);
-		boolean unassignedProject = subjectReference.projectID.equals(EPADConfig.getParamValue("UnassignedProjectID", "nonassigned"));
-		if (unassignedProject)
+		boolean unassignedProject = false;
+		boolean noProject=false;
+		//ml fix for subjects download (null check)
+		if (subjectReference.projectID==null) {
+			noProject=true;
+		} else {
+			unassignedProject= subjectReference.projectID.equals(EPADConfig.getParamValue("UnassignedProjectID", "nonassigned"));
+		}
+		if (unassignedProject || noProject)
 		{
 			studies = projectOperations.getStudiesForSubject(subjectReference.subjectID);
 		}
@@ -437,10 +456,9 @@ public class DefaultEpadOperations implements EpadOperations
 			studies = projectOperations.getStudiesForProjectAndSubject(subjectReference.projectID, 
 					subjectReference.subjectID);
 		}
-
 		for (Study study: studies)
 		{
-			if (!unassignedProject || new ProjectToSubjectToStudy().getCount("study_id = " + study.getId()) <= 1)
+			if (noProject || !unassignedProject || new ProjectToSubjectToStudy().getCount("study_id = " + study.getId()) <= 1)
 				studyUIDsInEpad.add(study.getStudyUID());
 		}
 		DCM4CHEEStudyList dcm4CheeStudyList = Dcm4CheeQueries.getStudies(studyUIDsInEpad);
@@ -3633,7 +3651,13 @@ public class DefaultEpadOperations implements EpadOperations
 
 			int numberOfAnnotations = 0;
 			if (annotationCount && !"true".equalsIgnoreCase(EPADConfig.getParamValue("SkipPatientAnnotationCount", "false"))) {
-				List<Study> studies = projectOperations.getStudiesForProjectAndSubject(projectID, patientID);
+				List<Study> studies = null;
+				//ml fix for downloading multiple subjects
+				if (projectID==null) {
+					studies=projectOperations.getStudiesForSubject(patientID);
+				} else {
+					studies=projectOperations.getStudiesForProjectAndSubject(projectID, patientID);
+				}
 				numberOfStudies = studies.size();
 				for  (Study study: studies)
 				{

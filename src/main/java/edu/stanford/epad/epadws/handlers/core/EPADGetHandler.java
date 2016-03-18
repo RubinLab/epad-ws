@@ -313,7 +313,12 @@ public class EPADGetHandler
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.SUBJECT, pathInfo)) {
 				SubjectReference subjectReference = SubjectReference.extract(ProjectsRouteTemplates.SUBJECT, pathInfo);
 				boolean includeAims = "true".equalsIgnoreCase(httpRequest.getParameter("includeAims"));
-				if (returnFile(httpRequest)) {
+				//ml multiple subjects
+				if (subjectReference.subjectID.contains(",") && returnStream(httpRequest) ) {
+					subjectUIDs=subjectReference.subjectID;
+					DownloadUtil.downloadSubjects(true, httpResponse, subjectReference.subjectID, username, sessionID, searchFilter, includeAims);
+
+				}else if (returnFile(httpRequest)) {
 					DownloadUtil.downloadSubject(false, httpResponse, subjectReference, username, sessionID, searchFilter, studyUIDs, includeAims);
 				} else if (returnStream(httpRequest)) {
 					DownloadUtil.downloadSubject(true, httpResponse, subjectReference, username, sessionID, searchFilter, studyUIDs, includeAims);
