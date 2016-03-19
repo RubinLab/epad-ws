@@ -392,4 +392,6 @@ public interface EpadDatabaseOperations
 
 	String getDBVersion();
 
+	int getAIMCount(String projectID, String studyUID, String username);
+
 }

@@ -1,4 +1,4 @@
-ALTER TABLE user MODIFY COLUMN lastlogin timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP;
+ALTER TABLE user MODIFY COLUMN lastlogin timestamp NULL;
 
 UPDATE dbversion SET version = '1.10';
 commit;

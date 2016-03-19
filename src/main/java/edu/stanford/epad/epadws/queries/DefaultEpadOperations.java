@@ -2939,6 +2939,7 @@ public class DefaultEpadOperations implements EpadOperations
 		return epadDatabaseOperations.getAIM(frameReference, aimID);
 	}
 
+	
 	@Override
 	public EPADAIMList getStudyAIMDescriptions(StudyReference studyReference, String username, String sessionID)
 	{
@@ -3525,8 +3526,10 @@ public class DefaultEpadOperations implements EpadOperations
 				numberOfStudies = studies.size();
 				for  (String studyUID: studyUIDs)
 				{
-					EPADAIMList aims = getStudyAIMDescriptions(new StudyReference(null, null, studyUID), username, sessionID);
-					numberOfAnnotations = numberOfAnnotations + getNumberOfAccessibleAims(sessionID, projectID, aims, username);
+					//ml for speeding up annotation count
+					numberOfAnnotations += getStudyAimCount(sessionID,studyUID,projectID,username);
+//					EPADAIMList aims = getStudyAIMDescriptions(new StudyReference(null, null, studyUID), username, sessionID);
+//					numberOfAnnotations = numberOfAnnotations + getNumberOfAccessibleAims(sessionID, projectID, aims, username);
 				}
 				List<EPADAIM> sharedAims = epadDatabaseOperations.getSharedAIMs(projectID, null, null);
 				numberOfAnnotations = numberOfAnnotations + sharedAims.size();
@@ -3552,6 +3555,13 @@ public class DefaultEpadOperations implements EpadOperations
 				return null;
 		} else
 			return null;
+	}
+	
+	public int getStudyAimCount(String sessionID,String studyUID,String projectID,String username) {
+//		EPADAIMList aims = getStudyAIMDescriptions(new StudyReference(null, null, studyUID), username, sessionID);
+//		return getNumberOfAccessibleAims(sessionID, projectID, aims, username);
+		return epadDatabaseOperations.getAIMCount(projectID, studyUID, username);
+		
 	}
 
 	private int getNumberOfAccessibleAims(String sessionID, String suppliedProjectID, EPADAIMList aimlist, String username)
@@ -3661,9 +3671,11 @@ public class DefaultEpadOperations implements EpadOperations
 				numberOfStudies = studies.size();
 				for  (Study study: studies)
 				{
+					//ml
+					numberOfAnnotations += getStudyAimCount(sessionID,study.getStudyUID(),projectID,username);
 					// Skip this, cause it is too slow and not that important
-					EPADAIMList aims = getStudyAIMDescriptions(new StudyReference(null, null, study.getStudyUID()), username, sessionID);
-					numberOfAnnotations = numberOfAnnotations + getNumberOfAccessibleAims(sessionID, projectID, aims, username);
+//					EPADAIMList aims = getStudyAIMDescriptions(new StudyReference(null, null, study.getStudyUID()), username, sessionID);
+//					numberOfAnnotations = numberOfAnnotations + getNumberOfAccessibleAims(sessionID, projectID, aims, username);
 				}
 				List<EPADAIM> sharedAims = epadDatabaseOperations.getSharedAIMs(projectID, patientID, null);
 				numberOfAnnotations = numberOfAnnotations + sharedAims.size();
