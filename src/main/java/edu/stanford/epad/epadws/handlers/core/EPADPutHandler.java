@@ -414,7 +414,8 @@ public class EPADPutHandler
 				if (wl == null)
 					throw new Exception("Worklist not found for user " + reader);
 				User user = worklistOperations.getUserForWorkList(workListID);
-				if (!user.getUsername().equals(reader))
+				//ml user admin check  added
+				if (!user.isAdmin() || !user.getUsername().equals(reader))
 					throw new Exception("User " +  reader + " does not match user for worklist "+ workListID);
 				log.debug("Worklist parameters, wlstatus:" + wlstatus + " started:" + started + " completed:" + completed);
 				if (wlstatus == null && !started && !completed){
@@ -457,28 +458,30 @@ public class EPADPutHandler
 					worklistOperations.addStudyToWorkList(username, projectID, studyUID, workListID);
 					
 				statusCode = HttpServletResponse.SC_OK;
-	
-			} else if (HandlerUtil.matchesTemplate(UsersRouteTemplates.USER_PROJECT_SUBJECT, pathInfo)) {
-				Map<String, String> templateMap = HandlerUtil.getTemplateMap(UsersRouteTemplates.USER_PROJECT_SUBJECT, pathInfo);
-				String reader = HandlerUtil.getTemplateParameter(templateMap, "username");
-				String workListID = HandlerUtil.getTemplateParameter(templateMap, "worklistID");
-				String projectID = HandlerUtil.getTemplateParameter(templateMap, "projectID");
-				String subjectID = HandlerUtil.getTemplateParameter(templateMap, "subjectID");
-				String wlstatus = httpRequest.getParameter("status");
-				boolean started = "true".equalsIgnoreCase(httpRequest.getParameter("started"));
-				boolean completed = "true".equalsIgnoreCase(httpRequest.getParameter("completed"));
-				WorkList wl = worklistOperations.getWorkList(workListID);
-				if (wl == null)
-					throw new Exception("Worklist not found for user " + reader);
-				User user = worklistOperations.getUserForWorkList(workListID);
-				if (!user.getUsername().equals(reader))
-					throw new Exception("User " +  reader + " does not match user for worklist "+ workListID);
-				WorkListToSubject wls = worklistOperations.getWorkListSubjectStatus(workListID, projectID, subjectID);
-				if (wls == null)
-					worklistOperations.addSubjectToWorkList(username, projectID, subjectID, workListID);
-				worklistOperations.setWorkListSubjectStatus(reader, wl.getWorkListID(), projectID, subjectID, wlstatus, started, completed);
-				statusCode = HttpServletResponse.SC_OK;
-	
+				
+				//ml seems duplicate
+//			} else if (HandlerUtil.matchesTemplate(UsersRouteTemplates.USER_PROJECT_SUBJECT, pathInfo)) {
+//				Map<String, String> templateMap = HandlerUtil.getTemplateMap(UsersRouteTemplates.USER_PROJECT_SUBJECT, pathInfo);
+//				String reader = HandlerUtil.getTemplateParameter(templateMap, "username");
+//				String workListID = HandlerUtil.getTemplateParameter(templateMap, "worklistID");
+//				String projectID = HandlerUtil.getTemplateParameter(templateMap, "projectID");
+//				String subjectID = HandlerUtil.getTemplateParameter(templateMap, "subjectID");
+//				String wlstatus = httpRequest.getParameter("status");
+//				boolean started = "true".equalsIgnoreCase(httpRequest.getParameter("started"));
+//				boolean completed = "true".equalsIgnoreCase(httpRequest.getParameter("completed"));
+//				WorkList wl = worklistOperations.getWorkList(workListID);
+//				if (wl == null)
+//					throw new Exception("Worklist not found for user " + reader);
+//				User user = worklistOperations.getUserForWorkList(workListID);
+//				//ml user admin check
+//				if (!user.isAdmin() || !user.getUsername().equals(reader))
+//					throw new Exception("User " +  reader + " does not match user for worklist "+ workListID);
+//				WorkListToSubject wls = worklistOperations.getWorkListSubjectStatus(workListID, projectID, subjectID);
+//				if (wls == null)
+//					worklistOperations.addSubjectToWorkList(username, projectID, subjectID, workListID);
+//				worklistOperations.setWorkListSubjectStatus(reader, wl.getWorkListID(), projectID, subjectID, wlstatus, started, completed);
+//				statusCode = HttpServletResponse.SC_OK;
+//	
 			} else if (HandlerUtil.matchesTemplate(UsersRouteTemplates.USER_PROJECT_STUDY, pathInfo)) {
 				Map<String, String> templateMap = HandlerUtil.getTemplateMap(UsersRouteTemplates.USER_PROJECT_STUDY, pathInfo);
 				String reader = HandlerUtil.getTemplateParameter(templateMap, "username");

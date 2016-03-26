@@ -933,6 +933,17 @@ public interface EpadOperations
 	String studyDelete(StudyReference studyReference, String sessionID, boolean deleteAims, String username) throws Exception;
 
 	/**
+	 * @param studyReference
+	 * @param sessionID
+	 * @param deleteAims
+	 * @param username
+	 * @param all
+	 * @return
+	 * @throws Exception
+	 */
+	String studyDelete(StudyReference studyReference, String sessionID, boolean deleteAims, String username, boolean all) throws Exception;
+
+	/**
 	 * Delete series
 	 * @param seriesReference
 	 * @param sessionID
@@ -941,6 +952,17 @@ public interface EpadOperations
 	 * @return
 	 */
 	String seriesDelete(SeriesReference seriesReference, String sessionID, boolean deleteAims, String username) throws Exception;
+	
+	/**
+	 * Delete series
+	 * @param seriesReference
+	 * @param sessionID
+	 * @param deleteAims
+	 * @param username
+	 * @param all
+	 * @return
+	 */
+	String seriesDelete(SeriesReference seriesReference, String sessionID, boolean deleteAims, String username, boolean all) throws Exception;
 	
 	/**
 	 * Delete series

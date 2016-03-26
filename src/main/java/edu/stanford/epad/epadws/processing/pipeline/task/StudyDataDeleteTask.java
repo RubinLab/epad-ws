@@ -133,6 +133,7 @@ public class StudyDataDeleteTask implements Runnable
 	private final String patientID;
 	private final String studyUID;
 	private final boolean deleteAims;
+	private final boolean all;
 	
 	private static final EpadProjectOperations projectOperations = DefaultEpadProjectOperations.getInstance();	
 	
@@ -143,6 +144,18 @@ public class StudyDataDeleteTask implements Runnable
 		this.patientID = patientID;
 		this.studyUID = studyUID;
 		this.deleteAims = deleteAims;
+		this.all=false;
+		
+	}
+
+	public StudyDataDeleteTask(String username, String projectID, String patientID, String studyUID, boolean deleteAims, boolean all)
+	{
+		this.username = username;
+		this.projectID = projectID;
+		this.patientID = patientID;
+		this.studyUID = studyUID;
+		this.deleteAims = deleteAims;
+		this.all=all;
 	}
 
 	@Override
@@ -168,9 +181,9 @@ public class StudyDataDeleteTask implements Runnable
     				break;
     			}
     		}
-			if (deleteCompletely)
+			if (deleteCompletely || all)
 			{
-				if (deleteInUnassigned)
+				if (deleteInUnassigned || all)
 				{
 					List<NonDicomSeries> ndSerieses = projectOperations.getNonDicomSeriesForStudy(studyUID);
 					for (NonDicomSeries series: ndSerieses)

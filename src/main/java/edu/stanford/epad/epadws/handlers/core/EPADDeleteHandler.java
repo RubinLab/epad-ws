@@ -172,7 +172,9 @@ public class EPADDeleteHandler
 				
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.STUDY, pathInfo)) {
 				StudyReference studyReference = StudyReference.extract(ProjectsRouteTemplates.STUDY, pathInfo);
-				String err = epadOperations.studyDelete(studyReference, sessionID, deleteAims, username);
+				//String err = epadOperations.studyDelete(studyReference, sessionID, deleteAims, username);
+				//ml
+				String err = epadOperations.studyDelete(studyReference, sessionID, deleteAims, username, all);
 				if (err == null || err.trim().length() == 0)
 				{
 					statusCode = HttpServletResponse.SC_OK;
@@ -185,7 +187,9 @@ public class EPADDeleteHandler
 	
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.SERIES, pathInfo)) {
 				SeriesReference seriesReference = SeriesReference.extract(ProjectsRouteTemplates.SERIES, pathInfo);
-				String err = epadOperations.seriesDelete(seriesReference, sessionID, deleteAims, username);
+//				String err = epadOperations.seriesDelete(seriesReference, sessionID, deleteAims, username);
+				//ml all
+				String err = epadOperations.seriesDelete(seriesReference, sessionID, deleteAims, username, all);
 				if (err == null || err.trim().length() == 0)
 				{
 					statusCode = HttpServletResponse.SC_OK;

@@ -199,9 +199,12 @@ public class EPADSessionHandler extends AbstractHandler
 							//log.info("Setting HttpOnly, Secure cookie =" + jsessionID);
 				            Cookie sessionCookie = new Cookie(JSESSIONID_COOKIE, jsessionID);
 				            sessionCookie.setMaxAge(8*3600);
+				            
 				            //sessionCookie.setPath("/epad/; Secure; HttpOnly");
 				            String contextPath = httpRequest.getContextPath().replace("session/", "").replace("session", "");
 				            sessionCookie.setPath(contextPath);
+				            log.info("WS Secure cookie =" + jsessionID + " path = "+ sessionCookie.getPath());
+				            
 				            httpResponse.addCookie(sessionCookie);
 				            String home = contextPath;
 				            if (!home.endsWith("/")) home = home + "/";
@@ -276,6 +279,8 @@ public class EPADSessionHandler extends AbstractHandler
 		            sessionCookie.setMaxAge(0);
 		            sessionCookie.setPath(httpRequest.getContextPath());
 		            httpResponse.addCookie(sessionCookie);
+		            log.info("WS Secure seperatews cookie =" + jsessionID + " path = "+ sessionCookie.getPath());
+		            
 				}
 					if (username != null)
 						projectOperations.createEventLog(username, null, null, null, null, null, null, null, "User Logged Out", null, false);

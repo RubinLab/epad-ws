@@ -127,6 +127,7 @@ import edu.stanford.epad.dtos.EPADAIM;
 import edu.stanford.epad.dtos.EPADAIMList;
 import edu.stanford.epad.dtos.EPADData;
 import edu.stanford.epad.dtos.EPADDataList;
+import edu.stanford.epad.dtos.EPADError;
 import edu.stanford.epad.dtos.EPADEventLogList;
 import edu.stanford.epad.dtos.EPADFile;
 import edu.stanford.epad.dtos.EPADFileList;
@@ -217,6 +218,7 @@ public class EPADGetHandler
 			int count = getInt(httpRequest.getParameter("count"));
 			if (count == 0) count = 5000;
 			long starttime = System.currentTimeMillis();
+			String subjectUIDs = httpRequest.getParameter("subjectUIDs");
 			String studyUIDs = httpRequest.getParameter("studyUIDs");
 			String seriesUIDs = httpRequest.getParameter("seriesUIDs");
 			if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.PROJECT_LIST, pathInfo)) {
@@ -235,14 +237,20 @@ public class EPADGetHandler
 				ProjectReference projectReference = ProjectReference.extract(ProjectsRouteTemplates.PROJECT, pathInfo);
 				if (projectReference.projectID.equals(EPADConfig.xnatUploadProjectID))
 					annotationCount = false;
-				EPADProject project = epadOperations.getProjectDescription(projectReference, username, sessionID, annotationCount);
-				if (project != null) {
-					log.info("Project aim count:" + project.numberOfAnnotations);
-					responseStream.append(project.toJSON());
-					statusCode = HttpServletResponse.SC_OK;
-				} else
-					throw new Exception("Project " + projectReference.projectID + " not found");
-
+				//ml added for project download
+				boolean includeAims = "true".equalsIgnoreCase(httpRequest.getParameter("includeAims"));
+				if (returnStream(httpRequest)) {
+					DownloadUtil.downloadProject(true, httpResponse, projectReference, username, sessionID, searchFilter, subjectUIDs, includeAims);
+				} else {
+					EPADProject project = epadOperations.getProjectDescription(projectReference, username, sessionID, annotationCount);
+				
+					if (project != null) {
+						log.info("Project aim count:" + project.numberOfAnnotations);
+						responseStream.append(project.toJSON());
+					} else
+						throw new Exception("Project " + projectReference.projectID + " not found");
+				}
+				statusCode = HttpServletResponse.SC_OK;
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.SUBJECT_LIST, pathInfo)) {
 				ProjectReference projectReference = ProjectReference.extract(ProjectsRouteTemplates.SUBJECT_LIST, pathInfo);
 				if (false && host != null && host.contains("epad-dev")) {
@@ -305,7 +313,12 @@ public class EPADGetHandler
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.SUBJECT, pathInfo)) {
 				SubjectReference subjectReference = SubjectReference.extract(ProjectsRouteTemplates.SUBJECT, pathInfo);
 				boolean includeAims = "true".equalsIgnoreCase(httpRequest.getParameter("includeAims"));
-				if (returnFile(httpRequest)) {
+				//ml multiple subjects
+				if (subjectReference.subjectID.contains(",") && returnStream(httpRequest) ) {
+					subjectUIDs=subjectReference.subjectID;
+					DownloadUtil.downloadSubjects(true, httpResponse, subjectReference.subjectID, username, sessionID, searchFilter, includeAims);
+
+				}else if (returnFile(httpRequest)) {
 					DownloadUtil.downloadSubject(false, httpResponse, subjectReference, username, sessionID, searchFilter, studyUIDs, includeAims);
 				} else if (returnStream(httpRequest)) {
 					DownloadUtil.downloadSubject(true, httpResponse, subjectReference, username, sessionID, searchFilter, studyUIDs, includeAims);
@@ -345,12 +358,22 @@ public class EPADGetHandler
 					else
 						DownloadUtil.downloadStudy(true, httpResponse, studyReference, username, sessionID, searchFilter, seriesUIDs, includeAims);
 				} else {
+					try {
 					EPADStudy study = epadOperations.getStudyDescription(studyReference, username, sessionID);
 					if (study != null) {
 						responseStream.append(study.toJSON());
 					} else {
 						log.info("Study " + studyReference.studyUID + " not found");
-						throw new Exception("Study " + studyReference.studyUID + " not found");
+//						throw new Exception("Study " + studyReference.studyUID + " not found");
+						//ml error payload
+						EPADError err=new EPADError(1000, username, studyReference.projectID, studyReference.subjectID, studyReference.studyUID, "" , "", -1, "Study not found", "Study " + studyReference.studyUID + " not found. Please check studyId");
+						responseStream.append(err.toJSON());
+						statusCode = HttpServletResponse.SC_NOT_FOUND;
+					}
+					}catch (Exception e) {
+						EPADError err=new EPADError(1000, username, studyReference.projectID, studyReference.subjectID, studyReference.studyUID, "" , "", -1, "Study not found", "Study " + studyReference.studyUID + " not found. Please check studyId");
+						responseStream.append(err.toJSON());
+						statusCode = HttpServletResponse.SC_NOT_FOUND;
 					}
 				}
 				statusCode = HttpServletResponse.SC_OK;
@@ -1156,6 +1179,11 @@ public class EPADGetHandler
 				String version = httpRequest.getParameter("version");
 				AIMReference aimReference = AIMReference.extract(AimsRouteTemplates.AIM, pathInfo);
 				EPADAIM aim = epadOperations.getAIMDescription(aimReference.aimID, username, sessionID);
+				//ml return not found status if not found
+				if (aim == null) {
+					return HttpServletResponse.SC_NOT_FOUND;
+				}
+					
 				if (returnSummary(httpRequest))
 				{	
 					if ("all".equalsIgnoreCase(version))

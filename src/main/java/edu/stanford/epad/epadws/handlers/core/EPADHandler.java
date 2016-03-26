@@ -154,10 +154,13 @@ public class EPADHandler extends AbstractHandler
 			String method = httpRequest.getMethod();
 
 			String sessionID = SessionService.getJSessionIDFromRequest(httpRequest);
+			log.info("request  "+ sessionID);
 			boolean releaseSession = false;
 			if (sessionID == null)
 			{
 				sessionID = SessionService.getJSessionIDFromRequest(httpRequest, true);
+				log.info("createli request  "+ sessionID);
+				
 				releaseSession = true;
 			}
 			String username = httpRequest.getParameter("username");
