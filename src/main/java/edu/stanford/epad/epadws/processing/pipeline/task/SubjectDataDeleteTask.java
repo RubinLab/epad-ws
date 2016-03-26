@@ -185,7 +185,9 @@ public class SubjectDataDeleteTask implements Runnable
 						// adminSessionID = EPADSessionOperations.getAdminSessionID(); // Not needed
 					}
 		   			projectOperations.updateUserTaskStatus(username, TaskStatus.TASK_DELETE_PATIENT, patientID, "Delete Patient, deleting Study:" + studyUID, null, null);
-					epadOperations.studyDelete(studyReference, adminSessionID, false, username);
+//					epadOperations.studyDelete(studyReference, adminSessionID, false, username); 
+		   			//ml all added
+		   			epadOperations.studyDelete(studyReference, adminSessionID, false, username, all);
 				}
 				projectOperations.deleteSubject(username, patientID);
 	   			projectOperations.updateUserTaskStatus(username, TaskStatus.TASK_DELETE_PATIENT, patientID, "Delete Patient Completed", null, new Date());

@@ -187,7 +187,9 @@ public class EPADDeleteHandler
 	
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.SERIES, pathInfo)) {
 				SeriesReference seriesReference = SeriesReference.extract(ProjectsRouteTemplates.SERIES, pathInfo);
-				String err = epadOperations.seriesDelete(seriesReference, sessionID, deleteAims, username);
+//				String err = epadOperations.seriesDelete(seriesReference, sessionID, deleteAims, username);
+				//ml all
+				String err = epadOperations.seriesDelete(seriesReference, sessionID, deleteAims, username, all);
 				if (err == null || err.trim().length() == 0)
 				{
 					statusCode = HttpServletResponse.SC_OK;
