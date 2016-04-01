@@ -1400,4 +1400,8 @@ public interface EpadOperations
 	 */
 	EPADEventLogList getEventLogs(String loggedInUser, String username, int start, int count) throws Exception;
 	EPADObjectList getTaskStatuses(String loggedInUser, String username) throws Exception;
+	
+	
+	EPADProjectList getProjectsForStudy(String username, String sessionID, EPADSearchFilter searchFilter, boolean annotationCount, String studyUID)  throws Exception; //ml
+	EPADProjectList getProjectsForSubject(String username, String sessionID, EPADSearchFilter searchFilter, boolean annotationCount, String subjectUID)  throws Exception; //ml
 }

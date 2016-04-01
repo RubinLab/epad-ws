@@ -1314,8 +1314,9 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		if (psss.size() == 0) return projects;
 		List objects = new Project().getObjects("id in (select project_id from " 
 													+ ProjectToSubject.DBTABLE 
-													+ " where id in (" + getIdList(psss) + "))");
+													+ " where id in (" + getProjectToSubjectIdList(psss) + "))");
 		projects.addAll(objects);
+		log.info("study "+ study.getId() + "projecttosubj "+ getProjectToSubjectIdList(psss));
 		
 		return projects;
 	}
@@ -2340,13 +2341,27 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		return objects;
 	}
 	
+	private String getProjectToSubjectIdList(List<AbstractDAO> objects)
+	{
+		if (objects == null) return "";
+		String list = "";
+		for (AbstractDAO object: objects)
+		{
+			list += "," + ((ProjectToSubjectToStudy)object).getProjSubjId();
+		}
+		if (list.length() > 0)
+			return list.substring(1);
+		else
+			return list;
+	}
+	
 	private String getIdList(List<AbstractDAO> objects)
 	{
 		if (objects == null) return "";
 		String list = "";
 		for (AbstractDAO object: objects)
 		{
-			list = "," + object.getId();
+			list += "," + object.getId();
 		}
 		if (list.length() > 0)
 			return list.substring(1);

@@ -465,6 +465,11 @@ public class DefaultEpadOperations implements EpadOperations
 
 
 		for (DCM4CHEEStudy dcm4CheeStudy : dcm4CheeStudyList.ResultSet.Result) {
+			//ml+Dev for debugging patient mismatch with dcm4chee
+			if (!dcm4CheeStudy.patientID.equals(subjectReference.subjectID))
+			{
+				log.warning("Patient mismatch, Study:" + dcm4CheeStudy.studyUID + " epad patientID:" + subjectReference.subjectID + " dcm4chee patientID:" + dcm4CheeStudy.patientID);
+			}
 			List<NonDicomSeries> series = projectOperations.getNonDicomSeriesForStudy(dcm4CheeStudy.studyUID);
 			dcm4CheeStudy.seriesCount = dcm4CheeStudy.seriesCount + series.size();
 			EPADStudy epadStudy = dcm4cheeStudy2EpadStudy(sessionID, subjectReference.projectID, subjectReference.subjectID,
@@ -2939,7 +2944,7 @@ public class DefaultEpadOperations implements EpadOperations
 		return epadDatabaseOperations.getAIM(frameReference, aimID);
 	}
 
-	
+
 	@Override
 	public EPADAIMList getStudyAIMDescriptions(StudyReference studyReference, String username, String sessionID)
 	{
@@ -3370,10 +3375,10 @@ public class DefaultEpadOperations implements EpadOperations
 		int numberOfImages = dcm4CheeStudy.imagesCount;
 		Set<String> seriesUIDs = dcm4CheeDatabaseOperations.getAllSeriesUIDsInStudy(studyUID);
 		StudyProcessingStatus studyProcessingStatus = getStudyProcessingStatus(studyUID);
-//		//int numberOfAnnotations = (seriesUIDs.size() <= 0) ? 0 : AIMQueries.getNumberOfAIMAnnotationsForSeriesSet(seriesUIDs, username);
-//		EPADAIMList aims = getStudyAIMDescriptions(new StudyReference(suppliedProjectID, null, studyUID), null, sessionID);
-//		//log.info("Number of study aims:" + aims.ResultSet.totalRecords + " insertDate:" + insertDate + " createdTime:" + createdTime);
-//		int	numberOfAnnotations = getNumberOfAccessibleAims(sessionID, suppliedProjectID, aims, username);
+		//		//int numberOfAnnotations = (seriesUIDs.size() <= 0) ? 0 : AIMQueries.getNumberOfAIMAnnotationsForSeriesSet(seriesUIDs, username);
+		//		EPADAIMList aims = getStudyAIMDescriptions(new StudyReference(suppliedProjectID, null, studyUID), null, sessionID);
+		//		//log.info("Number of study aims:" + aims.ResultSet.totalRecords + " insertDate:" + insertDate + " createdTime:" + createdTime);
+		//		int	numberOfAnnotations = getNumberOfAccessibleAims(sessionID, suppliedProjectID, aims, username);
 		//ml for speeding up annotation count
 		int numberOfAnnotations = getStudyAimCount(sessionID,studyUID,suppliedProjectID,username);
 		return new EPADStudy(projectID, subjectID, patientName, studyUID, insertDate, firstSeriesUID,
@@ -3480,8 +3485,8 @@ public class DefaultEpadOperations implements EpadOperations
 				{
 					//ml for speeding up annotation count
 					numberOfAnnotations = getStudyAimCount(sessionID, studyUID.replace('_', '.'),projectID,username);
-//					EPADAIMList aims = getStudyAIMDescriptions(new StudyReference(null, null, studyUID.replace('_', '.')), username, sessionID);
-//					numberOfAnnotations = numberOfAnnotations + getNumberOfAccessibleAims(sessionID, projectID, aims, username);
+					//					EPADAIMList aims = getStudyAIMDescriptions(new StudyReference(null, null, studyUID.replace('_', '.')), username, sessionID);
+					//					numberOfAnnotations = numberOfAnnotations + getNumberOfAccessibleAims(sessionID, projectID, aims, username);
 				}
 			}
 			if (!searchFilter.shouldFilterProject(projectName, numberOfAnnotations)) {
@@ -3532,8 +3537,8 @@ public class DefaultEpadOperations implements EpadOperations
 				{
 					//ml for speeding up annotation count
 					numberOfAnnotations += getStudyAimCount(sessionID,studyUID,projectID,username);
-//					EPADAIMList aims = getStudyAIMDescriptions(new StudyReference(null, null, studyUID), username, sessionID);
-//					numberOfAnnotations = numberOfAnnotations + getNumberOfAccessibleAims(sessionID, projectID, aims, username);
+					//					EPADAIMList aims = getStudyAIMDescriptions(new StudyReference(null, null, studyUID), username, sessionID);
+					//					numberOfAnnotations = numberOfAnnotations + getNumberOfAccessibleAims(sessionID, projectID, aims, username);
 				}
 				List<EPADAIM> sharedAims = epadDatabaseOperations.getSharedAIMs(projectID, null, null);
 				numberOfAnnotations = numberOfAnnotations + sharedAims.size();
@@ -3560,12 +3565,12 @@ public class DefaultEpadOperations implements EpadOperations
 		} else
 			return null;
 	}
-	
+
 	public int getStudyAimCount(String sessionID,String studyUID,String projectID,String username) {
-//		EPADAIMList aims = getStudyAIMDescriptions(new StudyReference(null, null, studyUID), username, sessionID);
-//		return getNumberOfAccessibleAims(sessionID, projectID, aims, username);
+		//		EPADAIMList aims = getStudyAIMDescriptions(new StudyReference(null, null, studyUID), username, sessionID);
+		//		return getNumberOfAccessibleAims(sessionID, projectID, aims, username);
 		return epadDatabaseOperations.getAIMCount(projectID, studyUID, username);
-		
+
 	}
 
 	private int getNumberOfAccessibleAims(String sessionID, String suppliedProjectID, EPADAIMList aimlist, String username)
@@ -3678,8 +3683,8 @@ public class DefaultEpadOperations implements EpadOperations
 					//ml
 					numberOfAnnotations += getStudyAimCount(sessionID,study.getStudyUID(),projectID,username);
 					// Skip this, cause it is too slow and not that important
-//					EPADAIMList aims = getStudyAIMDescriptions(new StudyReference(null, null, study.getStudyUID()), username, sessionID);
-//					numberOfAnnotations = numberOfAnnotations + getNumberOfAccessibleAims(sessionID, projectID, aims, username);
+					//					EPADAIMList aims = getStudyAIMDescriptions(new StudyReference(null, null, study.getStudyUID()), username, sessionID);
+					//					numberOfAnnotations = numberOfAnnotations + getNumberOfAccessibleAims(sessionID, projectID, aims, username);
 				}
 				List<EPADAIM> sharedAims = epadDatabaseOperations.getSharedAIMs(projectID, patientID, null);
 				numberOfAnnotations = numberOfAnnotations + sharedAims.size();
@@ -4640,5 +4645,60 @@ public class DefaultEpadOperations implements EpadOperations
 	// imageEnhancer.findVisuParametersImage();
 	// windowWidth = Math.round(imageEnhancer.getWindowWidth());
 	// windowCenter = Math.round(imageEnhancer.getWindowCenter());
+
+	//ml
+	@Override
+	public EPADProjectList getProjectsForStudy(String username, String sessionID,EPADSearchFilter searchFilter, boolean annotationCount, String studyUID) throws Exception
+	{
+		EPADProjectList epadProjectList = new EPADProjectList();
+		long starttime = System.currentTimeMillis();
+		List<Project> projects = new ArrayList<Project>();
+		List projectList =	projectOperations.getProjectsForStudy(studyUID);
+		projectList = projectOperations.sort(projectList, "name", true);
+		projects.addAll(projectList);
+		long gettime = System.currentTimeMillis();
+		log.info("get projects for study " + studyUID + " returned " + projectList.size() +" items");
+		for (Project project : projects) {
+			if ((project.getProjectId().equals(EPADConfig.xnatUploadProjectID) || project.getProjectId().equals(EPADConfig.getParamValue("UnassignedProjectID", "nonassigned"))))
+				continue;
+			EPADProject epadProject = project2EPADProject(sessionID, username, project, searchFilter, false);
+
+			if (epadProject != null)
+			{
+				//log.info("project " + epadProject.id + " aim count:" + epadProject.numberOfAnnotations);
+				epadProjectList.addEPADProject(epadProject);
+			}
+		}
+		long convtime = System.currentTimeMillis();
+		log.info("Time to get " + epadProjectList.ResultSet.totalRecords + " projects:" + (gettime-starttime) + " msecs, to convert:" + (convtime-gettime) + " msecs");
+		return epadProjectList;
+	}
+	//ml
+	@Override
+	public EPADProjectList getProjectsForSubject(String username, String sessionID,EPADSearchFilter searchFilter, boolean annotationCount, String subjectUID) throws Exception
+	{
+		EPADProjectList epadProjectList = new EPADProjectList();
+		long starttime = System.currentTimeMillis();
+		List<Project> projects = new ArrayList<Project>();
+		List projectList =	projectOperations.getProjectsForSubject(subjectUID);
+		projectList = projectOperations.sort(projectList, "name", true);
+		projects.addAll(projectList);
+		long gettime = System.currentTimeMillis();
+		log.info("get projects for subject " + subjectUID + " returned " + projectList.size() +" items");
+		for (Project project : projects) {
+			if ((project.getProjectId().equals(EPADConfig.xnatUploadProjectID) || project.getProjectId().equals(EPADConfig.getParamValue("UnassignedProjectID", "nonassigned"))))
+				continue;
+			EPADProject epadProject = project2EPADProject(sessionID, username, project, searchFilter, false);
+
+			if (epadProject != null)
+			{
+				//log.info("project " + epadProject.id + " aim count:" + epadProject.numberOfAnnotations);
+				epadProjectList.addEPADProject(epadProject);
+			}
+		}
+		long convtime = System.currentTimeMillis();
+		log.info("Time to get " + epadProjectList.ResultSet.totalRecords + " projects:" + (gettime-starttime) + " msecs, to convert:" + (convtime-gettime) + " msecs");
+		return epadProjectList;
+	}
 
 }

@@ -168,6 +168,7 @@ import edu.stanford.epad.epadws.epaddb.EpadDatabase;
 import edu.stanford.epad.epadws.handlers.HandlerUtil;
 import edu.stanford.epad.epadws.handlers.dicom.DSOUtil;
 import edu.stanford.epad.epadws.handlers.dicom.DownloadUtil;
+import edu.stanford.epad.epadws.models.Project;
 import edu.stanford.epad.epadws.models.RemotePACQuery;
 import edu.stanford.epad.epadws.models.User;
 import edu.stanford.epad.epadws.processing.pipeline.task.EpadStatisticsTask;
@@ -177,6 +178,7 @@ import edu.stanford.epad.epadws.queries.EpadOperations;
 import edu.stanford.epad.epadws.security.EPADSession;
 import edu.stanford.epad.epadws.security.EPADSessionOperations;
 import edu.stanford.epad.epadws.service.DefaultEpadProjectOperations;
+import edu.stanford.epad.epadws.service.EpadProjectOperations;
 import edu.stanford.epad.epadws.service.PluginOperations;
 import edu.stanford.epad.epadws.service.RemotePACService;
 import edu.stanford.epad.epadws.service.TCIAService;
@@ -318,6 +320,14 @@ public class EPADGetHandler
 					subjectUIDs=subjectReference.subjectID;
 					DownloadUtil.downloadSubjects(true, httpResponse, subjectReference.subjectID, username, sessionID, searchFilter, includeAims);
 
+				}else if (returnConnected(httpRequest)) { //ml connected data for deletion
+					log.info("get projects for subject " + subjectReference.subjectID );
+					if (searchFilter ==null) {
+						searchFilter= new EPADSearchFilter();
+					}
+					EPADProjectList projectList = epadOperations.getProjectsForSubject( username,  sessionID,  searchFilter,  false, subjectReference.subjectID);
+					responseStream.append(projectList.toJSON());
+	
 				}else if (returnFile(httpRequest)) {
 					DownloadUtil.downloadSubject(false, httpResponse, subjectReference, username, sessionID, searchFilter, studyUIDs, includeAims);
 				} else if (returnStream(httpRequest)) {
@@ -347,7 +357,15 @@ public class EPADGetHandler
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.STUDY, pathInfo)) {
 				StudyReference studyReference = StudyReference.extract(ProjectsRouteTemplates.STUDY, pathInfo);
 				boolean includeAims = "true".equalsIgnoreCase(httpRequest.getParameter("includeAims"));
-				if (returnFile(httpRequest)) {
+				if (returnConnected(httpRequest)) { //ml connected data for deletion
+					log.info("get projects for study " + studyReference.studyUID );
+					if (searchFilter ==null) {
+						searchFilter= new EPADSearchFilter();
+					}
+					EPADProjectList projectList = epadOperations.getProjectsForStudy( username,  sessionID,  searchFilter,  false, studyReference.studyUID);
+					responseStream.append(projectList.toJSON());
+	
+				}else if (returnFile(httpRequest)) {
 					if (studyReference.studyUID.contains(","))
 						DownloadUtil.downloadStudies(false, httpResponse, studyReference.studyUID, username, sessionID, includeAims);
 					else
@@ -391,7 +409,15 @@ public class EPADGetHandler
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.SERIES, pathInfo)) {
 				SeriesReference seriesReference = SeriesReference.extract(ProjectsRouteTemplates.SERIES, pathInfo);
 				boolean includeAims = "true".equalsIgnoreCase(httpRequest.getParameter("includeAims"));
-				if (returnFile(httpRequest)) {
+				if (returnConnected(httpRequest)) { //ml connected data for deletion
+					log.info("get projects for study " + seriesReference.studyUID );
+					if (searchFilter ==null) {
+						searchFilter= new EPADSearchFilter();
+					}
+					EPADProjectList projectList = epadOperations.getProjectsForStudy( username,  sessionID,  searchFilter,  false, seriesReference.studyUID);
+					responseStream.append(projectList.toJSON());
+	
+				}else if (returnFile(httpRequest)) {
 					if (seriesReference.seriesUID.contains(","))
 						DownloadUtil.downloadSeries(false, httpResponse, seriesReference.seriesUID, username, sessionID, includeAims);
 					else
@@ -1836,6 +1862,14 @@ public class EPADGetHandler
 			return false;
 	}
 
+	private static boolean returnConnected(HttpServletRequest httpRequest)
+	{
+		String format = httpRequest.getParameter("format");
+		if (format != null && format.trim().equalsIgnoreCase("connected"))
+			return true;
+		else
+			return false;
+	}
 	private static boolean returnFile(HttpServletRequest httpRequest)
 	{
 		String format = httpRequest.getParameter("format");

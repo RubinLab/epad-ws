@@ -1612,6 +1612,24 @@ public class AIMUtil
 	public static String runPlugIn(String[] aimIDs, String templateName, String projectID, String jsessionID) throws Exception
 	{                        
 		String result = "";
+		
+		//ml moved out of for. look once
+		boolean templateHasBeenFound = false;
+		String handlerName = null;
+		String pluginName = null;
+
+		List<String> list = PluginConfig.getInstance().getPluginTemplateList();
+		log.info("plugin count: "+ list.size());
+		for (int i = 0; i < list.size(); i++) {
+			String templateNameFounded = list.get(i);
+			log.info("found plugin: " + templateNameFounded + " name:" + PluginConfig.getInstance().getPluginNameList().get(i));
+			if (templateNameFounded.equals(templateName)) {
+				handlerName = PluginConfig.getInstance().getPluginHandlerList().get(i);
+				pluginName = PluginConfig.getInstance().getPluginNameList().get(i);
+				templateHasBeenFound = true;
+			}
+		}
+		
 		for (String aimID:  aimIDs)
 		{
 			if (isPluginStillRunning(aimID))
@@ -1619,19 +1637,7 @@ public class AIMUtil
 				result = result + "\n" + "Previous version of this AIM " + aimID + " is still being processed by the plugin";
 				continue;
 			}
-			boolean templateHasBeenFound = false;
-			String handlerName = null;
-			String pluginName = null;
-
-			List<String> list = PluginConfig.getInstance().getPluginTemplateList();
-			for (int i = 0; i < list.size(); i++) {
-				String templateNameFounded = list.get(i);
-				if (templateNameFounded.equals(templateName)) {
-					handlerName = PluginConfig.getInstance().getPluginHandlerList().get(i);
-					pluginName = PluginConfig.getInstance().getPluginNameList().get(i);
-					templateHasBeenFound = true;
-				}
-			}
+			
 
 			if (templateHasBeenFound) {
 				log.info("Starting Plugin task for:" + pluginName);

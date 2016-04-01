@@ -448,19 +448,22 @@ public class EPADPostHandler
 					AIMSearchType aimSearchType = AIMUtil.getAIMSearchType(httpRequest);
 					
 					//ml 
+					String aim = httpRequest.getParameter("aims");
+					log.info("aims array  "+ aim);
 					String[] aims = httpRequest.getParameterValues("aims");
-					
+					log.info("aims array count "+ aims);
 					String searchValue = aimSearchType != null ? httpRequest.getParameter(aimSearchType.getName()) : null;
 					String templateName = httpRequest.getParameter("templateName");
 					if (templateName == null)
 						templateName = httpRequest.getParameter("pluginID");
 					log.info("POST request for AIMs from user " + username + "; query type is " + aimSearchType + ", value "
-							+ searchValue + ", project " + projectReference.projectID);
+							+ searchValue + ", project " + projectReference.projectID + " template/plugin:" +templateName);
 					
-					if (aimSearchType.equals(AIMSearchType.ANNOTATION_UID)) {
+					if (aimSearchType!=null && aimSearchType.equals(AIMSearchType.ANNOTATION_UID)) {
 						String[] aimIDs = searchValue.split(",");
 						AIMUtil.runPlugIn(aimIDs, templateName, projectReference.projectID, sessionID);
 					}else if (aims!=null && aims.length!=0) { //ml
+						log.info("run plugin with aims array ");  
 						AIMUtil.runPlugIn(aims, templateName, projectReference.projectID, sessionID);
 					}
 					statusCode = HttpServletResponse.SC_OK;
