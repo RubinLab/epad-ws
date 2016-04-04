@@ -462,12 +462,12 @@ public class AIMUtil
 			SegmentationCollection sc = new SegmentationCollection();
 			sc.AddSegmentation(new Segmentation(0, imageUID, sopClassUID, referencedImageUID[0], 1));
 			imageAnnotation.setSegmentationCollection(sc);
-
+			//ml adding sop class to createdicomimage references below
 			DICOMImageReference originalDICOMImageReference = PluginAIMUtil.createDICOMImageReferenceV3Compability(referencedStudyUID,
-					referencedSeriesUID, referencedImageUID[0]);
+					referencedSeriesUID, referencedImageUID[0], sopClassUID);
 			imageAnnotation.addImageReference(originalDICOMImageReference);
 			DICOMImageReference dsoDICOMImageReference = PluginAIMUtil.createDICOMImageReferenceV3Compability(studyUID, seriesUID,
-					imageUID);
+					imageUID, sopClassUID);
 			imageAnnotation.addImageReference(dsoDICOMImageReference);
 
 			Person person = new Person();
