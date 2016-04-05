@@ -221,7 +221,7 @@ public class DSOMaskPNGGeneratorTask implements GeneratorTask
 					if ("admin".equals(username))
 						username = project.getCreator();
 				}
-				ImageAnnotation ia = AIMUtil.generateAIMFileForDSO(dsoFile, projectID, username);
+				ImageAnnotation ia = AIMUtil.generateAIMFileForDSO(dsoFile, username, projectID);
 				ias = new ArrayList<ImageAnnotation>();
 				ias.add(ia);
 			}
