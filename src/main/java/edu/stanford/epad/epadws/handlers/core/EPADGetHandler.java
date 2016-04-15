@@ -1742,8 +1742,8 @@ public class EPADGetHandler
 					throw new Exception("Missing seriesUID in TCIA data transfer request");
 				if (projectID == null || projectID.trim().length() == 0)
 					throw new Exception("Missing projectID in TCIA data transfer request");
-				TCIAService.downloadSeriesFromTCIA(username, seriesUID, projectID);
-				statusCode = HttpServletResponse.SC_OK;
+				//ml get status code from tcia service to see if it was successful
+				statusCode = TCIAService.downloadSeriesFromTCIA(username, seriesUID, projectID);
 
 			} else if (HandlerUtil.matchesTemplate(PluginRouteTemplates.PLUGIN_LIST, pathInfo)) { //ML
 				

@@ -452,7 +452,12 @@ public class AIMUtil
 			log.info("DSO Image UID=" + imageUID);
 			log.info("Referenced SOP Instance UID=" + referencedImageUID[0]);
 			log.info("Referenced Series Instance UID=" + referencedSeriesUID);
-
+			
+	
+			
+			DCM4CHEEImageDescription id=dcm4CheeDatabaseOperations.getImageDescription(referencedStudyUID, referencedSeriesUID, referencedImageUID[0]);
+			log.info("class uid from image description" + id.classUID);
+			
 			String name = aimName;
 			if (name == null || name.trim().length() == 0) name = description;
 			if (name == null || name.trim().length() == 0) name = "segmentation";
@@ -464,11 +469,12 @@ public class AIMUtil
 			imageAnnotation.setSegmentationCollection(sc);
 			//ml adding sop class to createdicomimage references below
 			DICOMImageReference originalDICOMImageReference = PluginAIMUtil.createDICOMImageReferenceV3Compability(referencedStudyUID,
-					referencedSeriesUID, referencedImageUID[0], sopClassUID);
+					referencedSeriesUID, referencedImageUID[0], id.classUID);
 			imageAnnotation.addImageReference(originalDICOMImageReference);
-			DICOMImageReference dsoDICOMImageReference = PluginAIMUtil.createDICOMImageReferenceV3Compability(studyUID, seriesUID,
-					imageUID, sopClassUID);
-			imageAnnotation.addImageReference(dsoDICOMImageReference);
+			//ml 2. image reference removed
+//			DICOMImageReference dsoDICOMImageReference = PluginAIMUtil.createDICOMImageReferenceV3Compability(studyUID, seriesUID,
+//					imageUID, sopClassUID);
+//			imageAnnotation.addImageReference(dsoDICOMImageReference);
 
 			Person person = new Person();
 			person.setSex(patientSex.trim());
@@ -828,7 +834,16 @@ public class AIMUtil
 								log.info("DSO RSUID:" + dse.getReferencedSopInstanceUid().getRoot() + " SUID:" + dse.getSopInstanceUid().getRoot());
 								SeriesReference seriesReference = new SeriesReference(projectID, null, null, ea.seriesUID);
 								List<EPADAIM> aims = epadDatabaseOperations.getAIMs(seriesReference);
-								if (eaim != null && eaim.dsoSeriesUID == null && aims.size() > 1 && seriesIds.size() > 1) {
+								//ml aim for no imageref for dso
+								if (dse!=null && seriesIds.size()==1) {
+									final Dcm4CheeDatabaseOperations dcm4CheeDatabaseOperations = Dcm4CheeDatabase.getInstance()
+											.getDcm4CheeDatabaseOperations();
+									dsoSeriesUID=dcm4CheeDatabaseOperations.getSeriesUIDForImage(dse.getSopInstanceUid().getRoot());
+								}
+								
+								//if (eaim != null && eaim.dsoSeriesUID == null && aims.size() > 1 && seriesIds.size() > 1) {
+								//ml 
+								if (eaim != null && eaim.dsoSeriesUID == null && aims.size() > 1 && !dsoSeriesUID.equals("")) {
 									for (EPADAIM e: aims)
 									{
 										log.info("Checking, aimID:" + e.aimID + " dsoSeries:" + e.dsoSeriesUID + " this:" + dsoSeriesUID);

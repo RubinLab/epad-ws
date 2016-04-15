@@ -754,6 +754,10 @@ public class DefaultEpadOperations implements EpadOperations
 	@Override
 	public EPADFrameList getFrameDescriptions(ImageReference imageReference)
 	{
+		if (imageReference.seriesUID.equals("*")) { //ml no series uid. probably dso. fill it!
+			imageReference.seriesUID = dcm4CheeDatabaseOperations.getSeriesUIDForImage(imageReference.imageUID);
+			log.info("image reference of image "+imageReference.imageUID +" series uid filled with "+ imageReference.seriesUID);
+		}
 		DCM4CHEEImageDescription dcm4cheeImageDescription = dcm4CheeDatabaseOperations.getImageDescription(imageReference);
 		List<EPADFrame> frames = new ArrayList<>();
 
