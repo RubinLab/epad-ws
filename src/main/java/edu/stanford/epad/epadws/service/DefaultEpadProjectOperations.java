@@ -300,7 +300,7 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		user.setLastName(lastName);
 		user.setEmail(email);
 		String hashedPW = BCrypt.hashpw(password, BCrypt.gensalt());
-		//log.info("Password:" + password + " hash:" + hashedPW);
+//		log.info("Password:" + password + " hash:" + hashedPW);
 		user.setPassword(hashedPW);
 		user.setColorpreference(colorpreference);
 		String[] defaultPerms = EPADConfig.getParamValue("DefaultUserPermissions", User.CreateProjectPermission).split(",");

@@ -1075,8 +1075,8 @@ public class AIMDatabaseOperations {
 		return 0;
     }
     
-    public EPADAIM getAIM(String annotationID) throws SQLException {
-        String sqlSelect = "SELECT UserLoginName, ProjectUID, PatientID, StudyUID, SeriesUID, ImageUID, frameID, DSOSeriesUID,XML,NAME FROM annotations WHERE AnnotationUID = '"
+    public EPADAIM getAIM(String annotationID) throws SQLException { //ml shared projects added
+        String sqlSelect = "SELECT UserLoginName, ProjectUID, PatientID, StudyUID, SeriesUID, ImageUID, frameID, DSOSeriesUID,XML,NAME,SHAREDPROJECTS FROM annotations WHERE AnnotationUID = '"
         		+ annotationID + "'";
     	log.debug(sqlSelect);
 		ResultSet rs = null;
@@ -1095,7 +1095,8 @@ public class AIMDatabaseOperations {
 				String DSOSeriesUID = rs.getString(8);
 				String xml = rs.getString(9);
 				String name = rs.getString(10);
-				EPADAIM aim = new EPADAIM(annotationID, UserName, ProjectID, PatientID, StudyUID, SeriesUID, ImageUID, FrameID, DSOSeriesUID);
+				String sharedProjects = rs.getString(11);
+				EPADAIM aim = new EPADAIM(annotationID, UserName, ProjectID, PatientID, StudyUID, SeriesUID, ImageUID, FrameID, DSOSeriesUID, sharedProjects);
 				aim.xml = xml;
 				aim.name = name;
 				return aim;

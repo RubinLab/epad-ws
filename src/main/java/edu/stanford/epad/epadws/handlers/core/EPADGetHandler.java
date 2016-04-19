@@ -243,6 +243,24 @@ public class EPADGetHandler
 				boolean includeAims = "true".equalsIgnoreCase(httpRequest.getParameter("includeAims"));
 				if (returnStream(httpRequest)) {
 					DownloadUtil.downloadProject(true, httpResponse, projectReference, username, sessionID, searchFilter, subjectUIDs, includeAims);
+				}else if (returnConnected(httpRequest)) { //ml connected data for deletion
+					//need to get all subjects within and return their connected projects
+					if (searchFilter ==null) {
+						searchFilter= new EPADSearchFilter();
+					}
+					log.info("get subjects for project " + projectReference.projectID );
+					EPADSubjectList subjects= epadOperations.getSubjectDescriptions(projectReference.projectID, username, sessionID, searchFilter, start, count, "", annotationCount);
+					EPADProjectList allProjectList = new EPADProjectList();
+					for (EPADSubject subj: subjects.ResultSet.Result) {
+						EPADProjectList projectList= epadOperations.getProjectsForSubject( username,  sessionID,  searchFilter,  false, subj.subjectID);
+						log.info("get projects for subject " + subj.subjectID + " size " + projectList.ResultSet.Result.size() );
+						allProjectList.ResultSet.addAll(projectList.ResultSet);
+					}
+					
+					log.info("removing project " + projectReference.projectID  );
+					allProjectList.removeEPADProject(projectReference.projectID);
+					
+					responseStream.append(allProjectList.toJSON());
 				} else {
 					EPADProject project = epadOperations.getProjectDescription(projectReference, username, sessionID, annotationCount);
 				
@@ -326,6 +344,7 @@ public class EPADGetHandler
 						searchFilter= new EPADSearchFilter();
 					}
 					EPADProjectList projectList = epadOperations.getProjectsForSubject( username,  sessionID,  searchFilter,  false, subjectReference.subjectID);
+					projectList.removeEPADProject(subjectReference.projectID);
 					responseStream.append(projectList.toJSON());
 	
 				}else if (returnFile(httpRequest)) {
@@ -363,6 +382,7 @@ public class EPADGetHandler
 						searchFilter= new EPADSearchFilter();
 					}
 					EPADProjectList projectList = epadOperations.getProjectsForStudy( username,  sessionID,  searchFilter,  false, studyReference.studyUID);
+					projectList.removeEPADProject(studyReference.projectID);
 					responseStream.append(projectList.toJSON());
 	
 				}else if (returnFile(httpRequest)) {
@@ -415,6 +435,7 @@ public class EPADGetHandler
 						searchFilter= new EPADSearchFilter();
 					}
 					EPADProjectList projectList = epadOperations.getProjectsForStudy( username,  sessionID,  searchFilter,  false, seriesReference.studyUID);
+					projectList.removeEPADProject(seriesReference.projectID);
 					responseStream.append(projectList.toJSON());
 	
 				}else if (returnFile(httpRequest)) {
@@ -686,6 +707,26 @@ public class EPADGetHandler
 				AIMReference aimReference = AIMReference.extract(ProjectsRouteTemplates.PROJECT_AIM, pathInfo);
 				EPADAIM aim = epadOperations
 						.getProjectAIMDescription(projectReference, aimReference.aimID, username, sessionID);
+				if (returnConnected(httpRequest)) { //ml
+					EPADProjectList projectList = new EPADProjectList();
+					log.info("project "+ aim.projectID + " username " +username);
+					projectList.addEPADProject(epadOperations.getProjectDescription(new ProjectReference(aim.projectID), username, sessionID, false));
+					String[] sharedProjs= aim.sharedProjects.split(",");
+					for (String sharedProj: sharedProjs) {
+						projectList.addEPADProject(epadOperations.getProjectDescription(new ProjectReference(sharedProj), username, sessionID, false));
+						
+					}
+					for (EPADProject prj: projectList.ResultSet.Result) {
+						log.info("project " + prj.id  );
+					}
+					log.info("removing project " + projectReference.projectID  );
+					projectList.removeEPADProject(projectReference.projectID);
+					responseStream.append(projectList.toJSON());
+					statusCode = HttpServletResponse.SC_OK;
+					return statusCode;
+					
+				}
+				
 				if (!UserProjectService.isCollaborator(sessionID, username, aim.projectID))
 					username = null;
 				if (returnSummary(httpRequest))
@@ -1865,7 +1906,7 @@ public class EPADGetHandler
 	private static boolean returnConnected(HttpServletRequest httpRequest)
 	{
 		String format = httpRequest.getParameter("format");
-		if (format != null && format.trim().equalsIgnoreCase("connected"))
+		if (format != null && format.trim().equalsIgnoreCase("connectedSummary"))
 			return true;
 		else
 			return false;
