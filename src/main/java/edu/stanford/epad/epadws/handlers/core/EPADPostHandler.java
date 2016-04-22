@@ -104,6 +104,7 @@
  *******************************************************************************/
 package edu.stanford.epad.epadws.handlers.core;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.PrintWriter;
 import java.text.SimpleDateFormat;
@@ -113,6 +114,9 @@ import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADFileUtils;
@@ -447,11 +451,15 @@ public class EPADPostHandler
 					ProjectReference projectReference = ProjectReference.extract(ProjectsRouteTemplates.PROJECT_AIM_LIST, pathInfo);
 					AIMSearchType aimSearchType = AIMUtil.getAIMSearchType(httpRequest);
 					
-					//ml 
-					String aim = httpRequest.getParameter("aims");
-					log.info("aims array  "+ aim);
-					String[] aims = httpRequest.getParameterValues("aims");
-					log.info("aims array count "+ aims);
+					JSONObject aims = HandlerUtil.getPostedJson(httpRequest);
+				    JSONArray aimIDsJson = (JSONArray) aims.get("aims");
+				    String[] aimIDsStr= new String[aimIDsJson.length()];
+					for (int i = 0; i < aimIDsJson.length(); i++)
+					{
+						aimIDsStr[i] = aimIDsJson.getString(i);
+					}
+					log.info("aims array  "+ aimIDsStr);
+					
 					String searchValue = aimSearchType != null ? httpRequest.getParameter(aimSearchType.getName()) : null;
 					String templateName = httpRequest.getParameter("templateName");
 					if (templateName == null)
@@ -462,9 +470,9 @@ public class EPADPostHandler
 					if (aimSearchType!=null && aimSearchType.equals(AIMSearchType.ANNOTATION_UID)) {
 						String[] aimIDs = searchValue.split(",");
 						AIMUtil.runPlugIn(aimIDs, templateName, projectReference.projectID, sessionID);
-					}else if (aims!=null && aims.length!=0) { //ml
+					}else if (aimIDsStr!=null && aimIDsStr.length!=0) { //ml
 						log.info("run plugin with aims array ");  
-						AIMUtil.runPlugIn(aims, templateName, projectReference.projectID, sessionID);
+						AIMUtil.runPlugIn(aimIDsStr, templateName, projectReference.projectID, sessionID);
 					}
 					statusCode = HttpServletResponse.SC_OK;
 
