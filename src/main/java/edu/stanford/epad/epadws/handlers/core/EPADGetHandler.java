@@ -1787,12 +1787,13 @@ public class EPADGetHandler
 				statusCode = TCIAService.downloadSeriesFromTCIA(username, seriesUID, projectID);
 
 			} else if (HandlerUtil.matchesTemplate(PluginRouteTemplates.PLUGIN_LIST, pathInfo)) { //ML
-				
+				String processMultipleAims = httpRequest.getParameter("processMultipleAims");
+				boolean isProcessMultipleAims = ("true".equalsIgnoreCase(processMultipleAims));
 				EPADPluginList plugins = null;
 				if (returnSummary(httpRequest)) 
-					plugins = pluginOperations.getPluginSummaries(username, sessionID);
+					plugins = pluginOperations.getPluginSummaries(username, sessionID, isProcessMultipleAims);
 				else
-					plugins = pluginOperations.getPluginDescriptions(username, sessionID);
+					plugins = pluginOperations.getPluginDescriptions(username, sessionID, isProcessMultipleAims);
 				
 				responseStream.append(plugins.toJSON());
 				statusCode = HttpServletResponse.SC_OK;

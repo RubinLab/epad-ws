@@ -113,7 +113,7 @@ public class ImageReference
 {
 	public final String projectID;
 	public final String subjectID;
-	public final String studyUID;
+	public String studyUID; //ml final removed
 	public String seriesUID;
 	public String imageUID;
 

@@ -163,6 +163,7 @@ import edu.stanford.epad.epadws.handlers.dicom.DownloadUtil;
 import edu.stanford.epad.epadws.models.EpadFile;
 import edu.stanford.epad.epadws.models.FileType;
 import edu.stanford.epad.epadws.models.Project;
+import edu.stanford.epad.epadws.models.ProjectType;
 import edu.stanford.epad.epadws.models.WorkList;
 import edu.stanford.epad.epadws.queries.DefaultEpadOperations;
 import edu.stanford.epad.epadws.queries.EpadOperations;
@@ -1200,18 +1201,23 @@ public class ProjectController {
 											@RequestParam(value="projectName", required=true) String projectName,
 											@RequestParam(value="projectDescription", required=true) String projectDescription,
 											@RequestParam(value="defaultTemplate", required=false) String defaultTemplate,
+											@RequestParam(value="type", required=false) String typeStr,
 											HttpServletRequest request, 
 									        HttpServletResponse response) throws Exception {
 		String sessionID = SessionService.getJSessionIDFromRequest(request);
 		String username = SessionService.getUsernameForSession(sessionID);
+		ProjectType type=ProjectType.PRIVATE;
+		try {
+			type= ProjectType.valueOf(typeStr);
+		}catch (IllegalArgumentException e){}
 		ProjectReference projectReference = new ProjectReference(projectID);
 		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
 		int statusCode = 0;
 		EPADProject project = epadOperations.getProjectDescription(projectReference, username, sessionID, false);
 		if (project != null) {
-			statusCode = epadOperations.updateProject(username, projectReference, projectName, projectDescription, defaultTemplate, sessionID);
+			statusCode = epadOperations.updateProject(username, projectReference, projectName, projectDescription, defaultTemplate, sessionID, type);
 		} else {
-			statusCode = epadOperations.createProject(username, projectReference, projectName, projectDescription, defaultTemplate, sessionID);
+			statusCode = epadOperations.createProject(username, projectReference, projectName, projectDescription, defaultTemplate, sessionID, type);
 		}
 		log.warning("Create/Modify project, status:" + statusCode);
 		if (statusCode != HttpServletResponse.SC_OK)

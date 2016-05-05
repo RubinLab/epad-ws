@@ -1624,7 +1624,12 @@ public class AIMUtil
 		}
     }
     
-	public static String runPlugIn(String[] aimIDs, String templateName, String projectID, String jsessionID) throws Exception
+    public static String runPlugIn(String[] aimIDs, String templateName, String projectID, String jsessionID) throws Exception
+	{                        
+		return runPlugIn(aimIDs, templateName, projectID, jsessionID,true);
+	}
+    
+	public static String runPlugIn(String[] aimIDs, String templateName, String projectID, String jsessionID, boolean inParallel) throws Exception
 	{                        
 		String result = "";
 		
@@ -1645,19 +1650,23 @@ public class AIMUtil
 			}
 		}
 		
-		for (String aimID:  aimIDs)
-		{
-			if (isPluginStillRunning(aimID))
+		if (inParallel) { 
+			for (String aimID:  aimIDs)
 			{
-				result = result + "\n" + "Previous version of this AIM " + aimID + " is still being processed by the plugin";
-				continue;
+				if (isPluginStillRunning(aimID))
+				{
+					result = result + "\n" + "Previous version of this AIM " + aimID + " is still being processed by the plugin";
+					continue;
+				}
+				
+	
+				if (templateHasBeenFound && jsessionID != null) {
+					log.info("Starting Plugin task for:" + pluginName);
+					(new Thread(new PluginStartTask(jsessionID, pluginName, aimID, 0, projectID))).start();				
+				}
 			}
-			
-
-			if (templateHasBeenFound) {
-				log.info("Starting Plugin task for:" + pluginName);
-				(new Thread(new PluginStartTask(jsessionID, pluginName, aimID, 0, projectID))).start();				
-			}
+		} else { //send all aims at once
+			(new Thread(new PluginStartTask(jsessionID, pluginName, aimIDs, 0, projectID))).start();	
 		}
 		return result;
 	}

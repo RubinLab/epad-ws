@@ -115,6 +115,9 @@ import java.util.Set;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.json.JSONArray;
+import org.json.JSONObject;
+
 import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADFileUtils;
 import edu.stanford.epad.common.util.EPADLogger;
@@ -134,6 +137,7 @@ import edu.stanford.epad.epadws.handlers.HandlerUtil;
 import edu.stanford.epad.epadws.models.EpadFile;
 import edu.stanford.epad.epadws.models.FileType;
 import edu.stanford.epad.epadws.models.Project;
+import edu.stanford.epad.epadws.models.ProjectType;
 import edu.stanford.epad.epadws.models.RemotePACQuery;
 import edu.stanford.epad.epadws.models.Subject;
 import edu.stanford.epad.epadws.models.User;
@@ -210,11 +214,16 @@ public class EPADPutHandler
 				if (projectDescription == null)
 					projectDescription = httpRequest.getParameter("description");
 				String defaultTemplate = httpRequest.getParameter("defaultTemplate");
+				ProjectType type=ProjectType.PRIVATE;
+				if (httpRequest.getParameter("type").equalsIgnoreCase("public"))
+					type=ProjectType.PUBLIC;
+				else type=ProjectType.PRIVATE;
+					
 				EPADProject project = epadOperations.getProjectDescription(projectReference, username, sessionID, false);
 				if (project != null) {
-					statusCode = epadOperations.updateProject(username, projectReference, projectName, projectDescription, defaultTemplate, sessionID);
+					statusCode = epadOperations.updateProject(username, projectReference, projectName, projectDescription, defaultTemplate, sessionID, type);
 				} else {
-					statusCode = epadOperations.createProject(username, projectReference, projectName, projectDescription, defaultTemplate, sessionID);
+					statusCode = epadOperations.createProject(username, projectReference, projectName, projectDescription, defaultTemplate, sessionID, type);
 				}
 				project = epadOperations.getProjectDescription(projectReference, username, sessionID, false);
 				responseStream.append(project.toJSON());
@@ -322,7 +331,14 @@ public class EPADPutHandler
 				AIMSearchType aimSearchType = AIMUtil.getAIMSearchType(httpRequest);
 				
 				//ml 
-				String[] aims = httpRequest.getParameterValues("aims");
+				JSONObject aims = HandlerUtil.getPostedJson(httpRequest);
+			    JSONArray aimIDsJson = (JSONArray) aims.get("aims");
+			    String[] aimIDsStr= new String[aimIDsJson.length()];
+				for (int i = 0; i < aimIDsJson.length(); i++)
+				{
+					aimIDsStr[i] = aimIDsJson.getString(i);
+				}
+				log.info("aims array  "+ aimIDsStr);
 				
 				String searchValue = aimSearchType != null ? httpRequest.getParameter(aimSearchType.getName()) : null;
 				String templateName = httpRequest.getParameter("templateName");
@@ -331,11 +347,15 @@ public class EPADPutHandler
 				log.info("PUT request for AIMs from user " + username + "; query type is " + aimSearchType + ", value "
 						+ searchValue + ", project " + projectReference.projectID);
 				
-				if (aimSearchType.equals(AIMSearchType.ANNOTATION_UID)) {
+				String inParallel = httpRequest.getParameter("inParallel");
+				boolean isInParallel=!("false".equalsIgnoreCase(inParallel));
+
+				if (aimSearchType!=null && aimSearchType.equals(AIMSearchType.ANNOTATION_UID)) {
 					String[] aimIDs = searchValue.split(",");
-					AIMUtil.runPlugIn(aimIDs, templateName, projectReference.projectID, sessionID);
-				}else if (aims!=null && aims.length!=0) { //ml
-					AIMUtil.runPlugIn(aims, templateName, projectReference.projectID, sessionID);
+					AIMUtil.runPlugIn(aimIDs, templateName, projectReference.projectID, sessionID, isInParallel);
+				}else if (aims!=null && aimIDsStr.length!=0) { //ml
+					AIMUtil.runPlugIn(aimIDsStr, templateName, projectReference.projectID, sessionID, isInParallel);
+					
 				}
 				statusCode = HttpServletResponse.SC_OK;
 
@@ -826,12 +846,14 @@ public class EPADPutHandler
 				String developer = httpRequest.getParameter("developer");
 				String documentation = httpRequest.getParameter("documentation");
 				String rate = httpRequest.getParameter("rate");
+				String processMultipleAims = httpRequest.getParameter("processMultipleAims");
+				boolean isProcessMultipleAims = ("true".equalsIgnoreCase(processMultipleAims));
 				boolean isUpdate = pluginOperations.doesPluginExist(pluginReference.pluginID, username, sessionID);
 				if (isUpdate) {
-					pluginOperations.updatePlugin(username, pluginReference.pluginID, name, description, javaclass, enabled, modality, developer,documentation,rate,sessionID);
+					pluginOperations.updatePlugin(username, pluginReference.pluginID, name, description, javaclass, enabled, modality, developer,documentation,rate,sessionID, isProcessMultipleAims);
 					return HttpServletResponse.SC_OK;
 				} else {
-					pluginOperations.createPlugin(username, pluginReference.pluginID, name, description, javaclass, enabled, modality, developer,documentation,rate, sessionID);
+					pluginOperations.createPlugin(username, pluginReference.pluginID, name, description, javaclass, enabled, modality, developer,documentation,rate, sessionID, isProcessMultipleAims);
 					return HttpServletResponse.SC_OK;
 				}	
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.PLUGIN, pathInfo)) { //ML

@@ -146,6 +146,7 @@ import edu.stanford.epad.epadws.handlers.core.ProjectReference;
 import edu.stanford.epad.epadws.handlers.core.SeriesReference;
 import edu.stanford.epad.epadws.handlers.core.StudyReference;
 import edu.stanford.epad.epadws.handlers.core.SubjectReference;
+import edu.stanford.epad.epadws.models.ProjectType;
 import edu.stanford.epad.epadws.security.EPADSession;
 
 /**
@@ -1404,4 +1405,10 @@ public interface EpadOperations
 	
 	EPADProjectList getProjectsForStudy(String username, String sessionID, EPADSearchFilter searchFilter, boolean annotationCount, String studyUID)  throws Exception; //ml
 	EPADProjectList getProjectsForSubject(String username, String sessionID, EPADSearchFilter searchFilter, boolean annotationCount, String subjectUID)  throws Exception; //ml
+
+	int createProject(String username, ProjectReference projectReference, String projectName, String projectDescription,
+			String defaultTemplate, String sessionID, ProjectType type) throws Exception;
+
+	int updateProject(String username, ProjectReference projectReference, String projectName, String projectDescription,
+			String defaultTemplate, String sessionID, ProjectType type) throws Exception;
 }

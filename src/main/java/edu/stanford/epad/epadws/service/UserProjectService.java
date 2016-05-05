@@ -324,7 +324,8 @@ public class UserProjectService {
 					//ml prevent null username 
 					if (xnatUserName == null)
 						xnatUserName = EPADConfig.xnatUploadProjectUser;
-					numberOfDICOMFiles = createProjectEntitiesFromDICOMFilesInUploadDirectory(dicomUploadDirectory, xnatProjectLabel, xnatSessionID, xnatUserName, patientID, studyUID, seriesUID, !zip);
+					//ml sessionid param set to null for not triggering the plugin (it was xnatSessionID) 
+					numberOfDICOMFiles = createProjectEntitiesFromDICOMFilesInUploadDirectory(dicomUploadDirectory, xnatProjectLabel, null, xnatUserName, patientID, studyUID, seriesUID, !zip);
 					if (numberOfDICOMFiles != 0)
 					{
 						projectOperations.createEventLog(xnatUserName, xnatProjectLabel, null, null, null, null, null, dicomUploadDirectory.getName(), "UPLOAD DICOMS", "Number of Dicoms: " +numberOfDICOMFiles, false);

@@ -1398,26 +1398,43 @@ public class DefaultEpadOperations implements EpadOperations
 
 	@Override
 	public int createProject(String username, ProjectReference projectReference, String projectName, String projectDescription, String defaultTemplate,
-			String sessionID) throws Exception
+			String sessionID, ProjectType type) throws Exception
 	{
 		if (projectReference.projectID == null || projectReference.projectID.trim().length() == 0)
 			throw new Exception("Invalid Project ID");
 		projectOperations.createEventLog(username, projectReference.projectID, null, null, null, null, null, "CREATE PROJECT", projectName +":" + projectDescription);
-		projectOperations.createProject(username, projectReference.projectID, projectName, projectDescription, defaultTemplate, ProjectType.PRIVATE);
+		projectOperations.createProject(username, projectReference.projectID, projectName, projectDescription, defaultTemplate, type);
 		projectOperations.addUserToProject(username, projectReference.projectID, username, UserRole.OWNER, defaultTemplate);
 		return HttpServletResponse.SC_OK;
 	}
 
 	@Override
+	public int createProject(String username, ProjectReference projectReference, String projectName, String projectDescription, String defaultTemplate,
+			String sessionID) throws Exception
+	{
+		return createProject(username, projectReference, projectName, projectDescription, defaultTemplate, sessionID, ProjectType.PRIVATE);
+		
+	}
+
+	@Override
 	public int updateProject(String username,
 			ProjectReference projectReference, String projectName,
-			String projectDescription, String defaultTemplate, String sessionID) throws Exception {
+			String projectDescription, String defaultTemplate, String sessionID, ProjectType type) throws Exception {
 		projectOperations.createEventLog(username, projectReference.projectID, null, null, null, null, null, "UPDATE PROJECT", projectName +":" + projectDescription);
 		if (projectOperations.isOwner(username, projectReference.projectID))
-			projectOperations.updateProject(username, projectReference.projectID, projectName, projectDescription, defaultTemplate, null);
+			projectOperations.updateProject(username, projectReference.projectID, projectName, projectDescription, defaultTemplate, type);
 		else
 			throw new Exception("No privilege to modify project:" + projectReference.projectID);
 		return HttpServletResponse.SC_OK;
+	}
+	
+	@Override
+	public int updateProject(String username,
+			ProjectReference projectReference, String projectName,
+			String projectDescription, String defaultTemplate, String sessionID) throws Exception {
+		//type was null. left the same but why??
+		return updateProject(username, projectReference, projectName, projectDescription, defaultTemplate, sessionID, null);
+		
 	}
 
 	@Override
@@ -2097,7 +2114,8 @@ public class DefaultEpadOperations implements EpadOperations
 				//				if (templateCode.startsWith("SEG"))
 				//					description = "segmentation"; // Image template type
 			}
-			EPADTemplateContainer epadContainer = new EPADTemplateContainer("", "", "", "", "", name, template.length(), FileType.TEMPLATE.getName(), 
+			//ml changed first param from "" to default project
+			EPADTemplateContainer epadContainer = new EPADTemplateContainer(EPADConfig.xnatUploadProjectID, "", "", "", "", name, template.length(), FileType.TEMPLATE.getName(), 
 					formatDate(new Date(template.lastModified())), "templates/" + template.getName(), enabled, description);
 			epadContainer.templateName = templateName;
 			epadContainer.templateType = templateType;
@@ -4077,6 +4095,7 @@ public class DefaultEpadOperations implements EpadOperations
 				{
 					defaultDicomElements.add(new DICOMElement(PixelMedUtils.RescaleInterceptCode, PixelMedUtils.RescaleInterceptTagName,
 							tagMap.get(PixelMedUtils.RescaleInterceptCode)));
+					log.info("rescale-int "+ tagMap.get(PixelMedUtils.RescaleInterceptCode)); //ml
 				}
 				else if (dicomElement.tagCode.equals(PixelMedUtils.RescaleSlopeCode) && tagMap.containsKey(PixelMedUtils.RescaleSlopeCode))
 				{

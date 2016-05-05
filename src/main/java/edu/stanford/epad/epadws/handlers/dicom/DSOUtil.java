@@ -794,12 +794,20 @@ public class DSOUtil
 					projectOperations.updateUserTaskStatus(username, TaskStatus.TASK_DSO_PNG_GEN, seriesUID, "Generating PNGs, frame:" + frameNumber, null, null);
 					String pngMaskFilePath = pngMaskDirectoryPath + refFrameNumber + ".png";
 					try {
+						log.info("buffered image ");
 						BufferedImage bufferedImage = sourceDSOImage.getBufferedImage(frameNumber);
+						log.info("buffered image "+ bufferedImage.toString());
+						
 						BufferedImage bufferedImageWithTransparency = generateTransparentImage(bufferedImage);
+						log.info(" bufferedImageWithTransparency "+ bufferedImageWithTransparency.toString());
+						
 						if (nonBlank.get())
 							nonblankFrame = refFrameNumber;
-		
+						log.info(" nonblankFrame "+ nonblankFrame);
+						
 						File pngMaskFile = new File(pngMaskFilePath);
+						log.info(" pngMaskFile "+ pngMaskFile.getAbsolutePath());
+						
 						insertEpadFile(databaseOperations, pngMaskFilePath, pngMaskFile.length(), imageUID);
 						log.info("Writing PNG mask file frame " + frameNumber + " of " + numberOfFrames + " for DSO " + imageUID + " in series " + seriesUID + " file:" + pngMaskFilePath + " nonBlank:" + nonBlank.get());
 						ImageIO.write(bufferedImageWithTransparency, "png", pngMaskFile);
@@ -1304,8 +1312,8 @@ public class DSOUtil
 
 	private static BufferedImage generateTransparentImage(BufferedImage source)
 	{
-		//Image image = makeColorOpaque(source, Color.WHITE); // Because somebody said to convert DSOs to white
-		Image image = makeAnyColorWhite(source); // To retain DSO color comment this out and uncomment previous line
+		Image image = makeColorOpaque(source, Color.BLACK); // Because somebody said to convert DSOs to white
+//		Image image = makeAnyColorWhite(source); // To retain DSO color comment this out and uncomment previous line
 		BufferedImage transparent = imageToBufferedImage(image);
 		Image image2 = makeColorTransparent(transparent, Color.BLACK);
 		BufferedImage transparent2 = imageToBufferedImage(image2);
@@ -1315,7 +1323,7 @@ public class DSOUtil
 	private static BufferedImage imageToBufferedImage(Image image)
 	{
 		BufferedImage bufferedImage = new BufferedImage(image.getWidth(null), image.getHeight(null),
-				BufferedImage.TYPE_INT_ARGB);
+				BufferedImage.TYPE_BYTE_INDEXED); //ml TYPE_INT_ARGB
 		Graphics2D g2 = bufferedImage.createGraphics();
 		g2.drawImage(image, 0, 0, null);
 		g2.dispose();
@@ -1346,6 +1354,7 @@ public class DSOUtil
 
 	private static Image makeColorOpaque(BufferedImage im, final Color color)
 	{
+		nonBlank.set(false);
 		ImageFilter filter = new RGBImageFilter() {
 			public int markerRGB = color.getRGB() | 0xFF000000;
 
@@ -1353,6 +1362,7 @@ public class DSOUtil
 			public final int filterRGB(int x, int y, int rgb)
 			{
 				if ((rgb | 0xFF000000) == markerRGB) {
+					nonBlank.set(true);
 					return 0xFF000000 | rgb;
 				} else {
 					return rgb;
