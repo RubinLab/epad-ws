@@ -166,7 +166,18 @@ public class Aim4 extends ImageAnnotation implements Serializable, Aimapi {
 		setCagridId(ia.getCagridId());
 		setAimVersion(ia.getAimVersion(), "al536anhb55555");
 		setComment(ia.getComment());
-		setDateTime(ia.getDateTime());
+//		setDateTime(ia.getDateTime());
+		//ml datetime change for clunie
+		logger.warning("date is:" + ia.getDateTime());
+		String date=ia.getDateTime();
+		if (!ia.getDateTime().contains("-")) {//new format change to old
+			if (date.length()==14)
+				date=date.substring(0,4)+"-"+date.substring(4,6)+"-"+date.substring(6,8)+"T"+date.substring(8,10)+":"+date.substring(10,12)+":"+date.substring(12,14);
+			else
+				date=date.substring(0,4)+"-"+date.substring(4,6)+"-"+date.substring(6,8);
+				
+		}
+		setDateTime(date);
 		setName(ia.getName());
 		setUniqueIdentifier(ia.getUniqueIdentifier(), "al536anhb55555");
 		setCodeValue(ia.getCodeValue());
@@ -430,9 +441,21 @@ public class Aim4 extends ImageAnnotation implements Serializable, Aimapi {
 			DICOMImageReference dicomImageReference = (DICOMImageReference) imageReference;
 			ImageStudy study = dicomImageReference.getImageStudy();
 
-			SimpleDateFormat fmt = new SimpleDateFormat("yyyy-MM-dd");
+//			SimpleDateFormat fmt = new SimpleDateFormat("yyyy-MM-dd");
+//			Date date = new Date();
+//			date = fmt.parse(study.getStartDate().substring(0, 10));
+			//ml
+			SimpleDateFormat fmt ;
 			Date date = new Date();
-			date = fmt.parse(study.getStartDate().substring(0, 10));
+			logger.warning("date is:" + study.getStartDate());
+			if (study.getStartDate().contains("-")) {
+				fmt = new SimpleDateFormat("yyyy-MM-dd");
+				date = fmt.parse(study.getStartDate().substring(0, 10));
+			}else
+			{
+				fmt = new SimpleDateFormat("yyyyMMdd");
+				date = fmt.parse(study.getStartDate().substring(0, 8));	
+			}
 
 			return date;
 

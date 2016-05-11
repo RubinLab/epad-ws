@@ -403,9 +403,9 @@ public class EPADPostHandler
 					String projectDescription = httpRequest.getParameter("projectDescription");
 					String defaultTemplate = httpRequest.getParameter("defaultTemplate");
 					ProjectType type=ProjectType.PRIVATE;
-					try {
-						type= ProjectType.valueOf(httpRequest.getParameter("type"));
-					}catch (IllegalArgumentException e){}
+					if (httpRequest.getParameter("type")!=null && httpRequest.getParameter("type").equalsIgnoreCase("public"))
+						type=ProjectType.PUBLIC;
+					else type=ProjectType.PRIVATE;
 					
 					EPADProject project = epadOperations.getProjectDescription(projectReference, username, sessionID, false);
 					if (project != null) {
