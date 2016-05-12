@@ -300,7 +300,7 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		user.setLastName(lastName);
 		user.setEmail(email);
 		String hashedPW = BCrypt.hashpw(password, BCrypt.gensalt());
-		//log.info("Password:" + password + " hash:" + hashedPW);
+//		log.info("Password:" + password + " hash:" + hashedPW);
 		user.setPassword(hashedPW);
 		user.setColorpreference(colorpreference);
 		String[] defaultPerms = EPADConfig.getParamValue("DefaultUserPermissions", User.CreateProjectPermission).split(",");
@@ -402,7 +402,7 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		User user = getUser(username);
 		if (loggedInUser != null && !loggedInUser.isAdmin() && !loggedInUserName.equals(user.getCreator()))
 			throw new Exception("No permission to modify user");
-		user.setAdmin(true);
+		user.setAdmin(false);
 		user.save();
 		userCache.put(user.getUsername(), user);
 	}
@@ -1314,8 +1314,9 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		if (psss.size() == 0) return projects;
 		List objects = new Project().getObjects("id in (select project_id from " 
 													+ ProjectToSubject.DBTABLE 
-													+ " where id in (" + getIdList(psss) + "))");
+													+ " where id in (" + getProjectToSubjectIdList(psss) + "))");
 		projects.addAll(objects);
+		log.info("study "+ study.getId() + "projecttosubj "+ getProjectToSubjectIdList(psss));
 		
 		return projects;
 	}
@@ -2340,13 +2341,27 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		return objects;
 	}
 	
+	private String getProjectToSubjectIdList(List<AbstractDAO> objects)
+	{
+		if (objects == null) return "";
+		String list = "";
+		for (AbstractDAO object: objects)
+		{
+			list += "," + ((ProjectToSubjectToStudy)object).getProjSubjId();
+		}
+		if (list.length() > 0)
+			return list.substring(1);
+		else
+			return list;
+	}
+	
 	private String getIdList(List<AbstractDAO> objects)
 	{
 		if (objects == null) return "";
 		String list = "";
 		for (AbstractDAO object: objects)
 		{
-			list = "," + object.getId();
+			list += "," + object.getId();
 		}
 		if (list.length() > 0)
 			return list.substring(1);

@@ -406,9 +406,17 @@ public class Aim extends ImageAnnotation implements Serializable, Aimapi {
 			DICOMImageReference dicomImageReference = (DICOMImageReference) imageReference;
 			ImageStudy study = dicomImageReference.getImageStudy();
 
-			SimpleDateFormat fmt = new SimpleDateFormat("yyyy-MM-dd");
+			SimpleDateFormat fmt ;
 			Date date = new Date();
-			date = fmt.parse(study.getStartDate().substring(0, 10));
+			
+			if (study.getStartDate().contains("-")) {
+				fmt = new SimpleDateFormat("yyyy-MM-dd");
+				date = fmt.parse(study.getStartDate().substring(0, 10));
+			}else
+			{
+				fmt = new SimpleDateFormat("yyyyMMdd");
+				date = fmt.parse(study.getStartDate().substring(0, 8));	
+			}
 
 			return date;
 

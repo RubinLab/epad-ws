@@ -152,21 +152,22 @@ public class PluginController {
 											@RequestParam(value="developer", required=false) String developer,
 											@RequestParam(value="documentation", required=false) String documentation,
 											@RequestParam(value="rate", required=false) String rate,
+											@RequestParam(value="processMultipleAims", required=false) String processMultipleAims,
 											HttpServletRequest request, 
 									        HttpServletResponse response) throws Exception {
 		String sessionID = SessionService.getJSessionIDFromRequest(request);
 		String username = SessionService.getUsernameForSession(sessionID);
 		PluginOperations pluginOperations = PluginOperations.getInstance();
-		
+		boolean isProcessMultipleAims = ("true".equalsIgnoreCase(processMultipleAims));
 		PluginReference pluginReference = new PluginReference(pluginID);
 		
 		EPADPlugin plugin = pluginOperations.getPluginDescription(pluginReference.pluginID, username, sessionID);
 		int statusCode = 0;
 		if (plugin != null) {
-			pluginOperations.updatePlugin(username, pluginReference.pluginID, name, description, javaclass, enabled, modality, developer,documentation,rate,sessionID);
+			pluginOperations.updatePlugin(username, pluginReference.pluginID, name, description, javaclass, enabled, modality, developer,documentation,rate,sessionID,isProcessMultipleAims);
 			statusCode = HttpServletResponse.SC_OK;
 		} else {
-			pluginOperations.createPlugin(username, pluginReference.pluginID, name, description, javaclass, enabled, modality, developer,documentation,rate, sessionID);
+			pluginOperations.createPlugin(username, pluginReference.pluginID, name, description, javaclass, enabled, modality, developer,documentation,rate, sessionID, isProcessMultipleAims);
 			statusCode = HttpServletResponse.SC_OK;
 		}
 		

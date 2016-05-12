@@ -104,6 +104,7 @@
  *******************************************************************************/
 package edu.stanford.epad.epadws.handlers.core;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.PrintWriter;
 import java.text.SimpleDateFormat;
@@ -113,6 +114,9 @@ import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADFileUtils;
@@ -125,6 +129,7 @@ import edu.stanford.epad.epadws.aim.AIMSearchType;
 import edu.stanford.epad.epadws.aim.AIMUtil;
 import edu.stanford.epad.epadws.handlers.HandlerUtil;
 import edu.stanford.epad.epadws.handlers.dicom.DSOUtil;
+import edu.stanford.epad.epadws.models.ProjectType;
 import edu.stanford.epad.epadws.queries.DefaultEpadOperations;
 import edu.stanford.epad.epadws.queries.EpadOperations;
 import edu.stanford.epad.epadws.service.DefaultEpadProjectOperations;
@@ -397,11 +402,16 @@ public class EPADPostHandler
 					String projectName = httpRequest.getParameter("projectName");
 					String projectDescription = httpRequest.getParameter("projectDescription");
 					String defaultTemplate = httpRequest.getParameter("defaultTemplate");
+					ProjectType type=ProjectType.PRIVATE;
+					if (httpRequest.getParameter("type")!=null && httpRequest.getParameter("type").equalsIgnoreCase("public"))
+						type=ProjectType.PUBLIC;
+					else type=ProjectType.PRIVATE;
+					
 					EPADProject project = epadOperations.getProjectDescription(projectReference, username, sessionID, false);
 					if (project != null) {
 						throw new Exception("Project " + project.id +  " already exists");
 					} else {
-						statusCode = epadOperations.createProject(username, projectReference, projectName, projectDescription, defaultTemplate, sessionID);
+						statusCode = epadOperations.createProject(username, projectReference, projectName, projectDescription, defaultTemplate, sessionID, type);
 					}							
 				} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.SUBJECT, pathInfo)) {
 					SubjectReference subjectReference = SubjectReference.extract(ProjectsRouteTemplates.SUBJECT, pathInfo);
@@ -447,22 +457,32 @@ public class EPADPostHandler
 					ProjectReference projectReference = ProjectReference.extract(ProjectsRouteTemplates.PROJECT_AIM_LIST, pathInfo);
 					AIMSearchType aimSearchType = AIMUtil.getAIMSearchType(httpRequest);
 					
-					//ml 
-					String[] aims = httpRequest.getParameterValues("aims");
+					JSONObject aims = HandlerUtil.getPostedJson(httpRequest);
+				    JSONArray aimIDsJson = (JSONArray) aims.get("aims");
+				    String[] aimIDsStr= new String[aimIDsJson.length()];
+					for (int i = 0; i < aimIDsJson.length(); i++)
+					{
+						aimIDsStr[i] = aimIDsJson.getString(i);
+					}
+					log.info("aims array  "+ aimIDsStr);
 					
 					String searchValue = aimSearchType != null ? httpRequest.getParameter(aimSearchType.getName()) : null;
 					String templateName = httpRequest.getParameter("templateName");
 					if (templateName == null)
 						templateName = httpRequest.getParameter("pluginID");
 					log.info("POST request for AIMs from user " + username + "; query type is " + aimSearchType + ", value "
-							+ searchValue + ", project " + projectReference.projectID);
+							+ searchValue + ", project " + projectReference.projectID + " template/plugin:" +templateName);
+					String inParallel = httpRequest.getParameter("inParallel");
+					boolean isInParallel=!("false".equalsIgnoreCase(inParallel));
 					
-					if (aimSearchType.equals(AIMSearchType.ANNOTATION_UID)) {
+					if (aimSearchType!=null && aimSearchType.equals(AIMSearchType.ANNOTATION_UID)) {
 						String[] aimIDs = searchValue.split(",");
-						AIMUtil.runPlugIn(aimIDs, templateName, projectReference.projectID, sessionID);
-					}else if (aims!=null && aims.length!=0) { //ml
-						AIMUtil.runPlugIn(aims, templateName, projectReference.projectID, sessionID);
+						AIMUtil.runPlugIn(aimIDs, templateName, projectReference.projectID, sessionID, isInParallel);
+					}else if (aims!=null && aimIDsStr.length!=0) { //ml
+						AIMUtil.runPlugIn(aimIDsStr, templateName, projectReference.projectID, sessionID, isInParallel);
+						
 					}
+					
 					statusCode = HttpServletResponse.SC_OK;
 
 				} else if (HandlerUtil.matchesTemplate(PluginRouteTemplates.PLUGIN_LIST, pathInfo)) { //ML
@@ -493,12 +513,14 @@ public class EPADPostHandler
 					String developer = httpRequest.getParameter("developer");
 					String documentation = httpRequest.getParameter("documentation");
 					String rate = httpRequest.getParameter("rate");
+					String processMultipleAims = httpRequest.getParameter("processMultipleAims");
+					boolean isProcessMultipleAims = ("true".equalsIgnoreCase(processMultipleAims));
 
 					boolean isUpdate = pluginOperations.doesPluginExist(pluginReference.pluginID, username, sessionID);
 					if (isUpdate) {
 						throw new Exception("Plugin " + pluginReference.pluginID +  " already exists");
 					} else {
-						pluginOperations.createPlugin(username, pluginReference.pluginID, name, description, javaclass, enabled, modality,developer,documentation,rate, sessionID);
+						pluginOperations.createPlugin(username, pluginReference.pluginID, name, description, javaclass, enabled, modality,developer,documentation,rate, sessionID, isProcessMultipleAims);
 						return HttpServletResponse.SC_OK;
 					}	
 

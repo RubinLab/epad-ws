@@ -133,7 +133,7 @@ public class Plugin extends AbstractDAO {
 	String creator;
 	Date createdTime;
 	Date updateTime;
-	
+	Boolean processMultipleAims;
 	
 	@Override
 	public long getId() {
@@ -269,6 +269,14 @@ public class Plugin extends AbstractDAO {
 		this.updateTime = updateTime;
 	}
 
+	public boolean getProcessMultipleAims() {
+		return processMultipleAims;
+	}
+
+	public void setProcessMultipleAims(Boolean processMultipleAims) {
+		this.processMultipleAims = processMultipleAims;
+	}
+
 	public final static String DBTABLE = "plugin";
 	public final static String[][] DBCOLUMNS = {
         {"id","long","id","Id"},
@@ -286,6 +294,7 @@ public class Plugin extends AbstractDAO {
         {"creator","String","creator","varchar"},
         {"createdTime","Date","createdtime","timestamp"},
         {"updateTime","Date","updatetime","timestamp"},	
+        {"processMultipleAims","Boolean","processmultipleaims","tinyint(1)"},	
 	};
 
 	@Override

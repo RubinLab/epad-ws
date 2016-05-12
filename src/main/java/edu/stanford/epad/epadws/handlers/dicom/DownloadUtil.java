@@ -140,6 +140,8 @@ import edu.stanford.epad.dtos.EPADStudy;
 import edu.stanford.epad.dtos.EPADStudyList;
 import edu.stanford.epad.dtos.EPADSubject;
 import edu.stanford.epad.dtos.EPADSubjectList;
+import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeDatabase;
+import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeDatabaseOperations;
 import edu.stanford.epad.epadws.epaddb.EpadDatabase;
 import edu.stanford.epad.epadws.epaddb.EpadDatabaseOperations;
 import edu.stanford.epad.epadws.handlers.HandlerUtil;
@@ -1316,6 +1318,15 @@ public static void downloadResource(String relativePath, HttpServletResponse htt
  */
 public static void downloadImage(boolean stream, HttpServletResponse httpResponse, ImageReference imageReference, String username, String sessionID, boolean dicom) throws Exception
 {
+	if (imageReference.seriesUID.equals("*")) { //ml no series uid. probably dso. fill it!
+		final Dcm4CheeDatabaseOperations dcm4CheeDatabaseOperations = Dcm4CheeDatabase.getInstance()
+				.getDcm4CheeDatabaseOperations();
+		imageReference.seriesUID = dcm4CheeDatabaseOperations.getSeriesUIDForImage(imageReference.imageUID);
+		if (imageReference.studyUID.equals("*"))
+			imageReference.studyUID = dcm4CheeDatabaseOperations.getStudyUIDForSeries(imageReference.seriesUID);
+		
+		log.info("image reference of image "+imageReference.imageUID +" series uid filled with "+ imageReference.seriesUID);
+	}
 	String queryString = "requestType=WADO&studyUID=" + imageReference.studyUID 
 			+ "&seriesUID=" + imageReference.seriesUID + "&objectUID=" + imageReference.imageUID;
 	if (dicom)

@@ -109,6 +109,7 @@ import java.util.Date;
 
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpException;
+import org.apache.commons.httpclient.NameValuePair;
 import org.apache.commons.httpclient.methods.GetMethod;
 
 import edu.stanford.epad.common.util.EPADConfig;
@@ -135,6 +136,7 @@ public class PluginStartTask implements Runnable
 	private final String annotationID;
 	private final int frameNumber;
 	private final String projectID;
+	private final String[] annotationIDs;
 
 	public PluginStartTask(String jsessionID, String pluginName, String annotationID, int frameNumber, String projectID)
 	{
@@ -143,8 +145,27 @@ public class PluginStartTask implements Runnable
 		this.annotationID = annotationID;
 		this.frameNumber = frameNumber;
 		this.projectID = projectID;
+		this.annotationIDs = null;
+	}
+	
+	public PluginStartTask(String jsessionID, String pluginName, String[] annotationIDs, int frameNumber, String projectID)
+	{
+		this.jsessionID = jsessionID;
+		this.pluginName = pluginName;
+		this.annotationID = null;
+		this.frameNumber = frameNumber;
+		this.projectID = projectID;
+		this.annotationIDs = annotationIDs;
 	}
 
+	String getAnnotationIDs() {
+		StringBuilder annotationIDsBuilder= new StringBuilder();
+		for (String str: annotationIDs) {
+			annotationIDsBuilder.append(str);
+			annotationIDsBuilder.append(",");
+		}
+		return annotationIDsBuilder.toString().substring(0, annotationIDsBuilder.length()-1);
+	}
 	@Override
 	public void run()
 	{
@@ -153,11 +174,25 @@ public class PluginStartTask implements Runnable
 		projectOperations.createEventLog(username, projectID, null, null, null, null, annotationID, "Start PlugIn", pluginName);
         HttpClient client = new HttpClient(); // TODO Get rid of localhost
         String url = EPADConfig.getParamValue("serverProxy", "http://localhost:8080") 
-        		+ EPADConfig.getParamValue("webserviceBase", "/epad") + "/plugin/" + pluginName + "/?aimFile=" + annotationID 
+        		+ EPADConfig.getParamValue("webserviceBase", "/epad") + "/plugin/" + pluginName + "/?" //aimFile=" + annotationID 
         		+ "&frameNumber=" + frameNumber + "&projectID=" + projectID;
-        log.info("Triggering ePAD plugin at " + url);
+        if (annotationID!=null) 
+        	url+="&aimFile=" + annotationID;
+//        else
+//        	url+="&aimFile=" + getAnnotationIDs();
+        log.info("Triggering ePAD plugin at " + url + " is annotation null "+(annotationID!=null));
 		projectOperations.updateUserTaskStatus(username, TaskStatus.TASK_PLUGIN, pluginName.toLowerCase() + ":" + annotationID, "Started Plugin", new Date(), null);
         GetMethod method = new GetMethod(url);
+        log.info("pluginurl " + url);
+        
+        if (annotationID==null && annotationIDs.length>0)  {
+            NameValuePair[] params = new NameValuePair[annotationIDs.length];
+	        int i=0;
+	        for(String aimId: annotationIDs) {
+	        	params[i++]= new NameValuePair("aims", aimId) ;
+	        }
+	        method.setQueryString(params); 
+        }
         method.setRequestHeader("Cookie", "JSESSIONID=" + jsessionID);
         try {
             int statusCode = client.executeMethod(method);

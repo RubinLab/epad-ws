@@ -281,18 +281,21 @@ public class PluginOperations {
 		return true;
 	}
 	
-	public EPADPluginList getPluginSummaries(String username, String sessionID) throws Exception {
+	
+	public EPADPluginList getPluginSummaries(String username, String sessionID, Boolean processMultipleAims) throws Exception {
 		List<Plugin> plugins = getPlugins();
 		List<Project> projects= projectOperations.getAllProjects();
 		EPADPluginList epadPluginList = new EPADPluginList();
 		for (Project project : projects) {
 
 			for (Plugin plugin : plugins) {
-				EPADPlugin epadPlugin = plugin2EPADPluginProject(plugin,project,true);
-				
-				if (epadPlugin != null)
-				{
-					epadPluginList.addEPADPlugin(epadPlugin);
+				if (!processMultipleAims || plugin.getProcessMultipleAims()) {
+					EPADPlugin epadPlugin = plugin2EPADPluginProject(plugin,project,true);
+					
+					if (epadPlugin != null)
+					{
+						epadPluginList.addEPADPlugin(epadPlugin);
+					}
 				}
 			}
 		}
@@ -301,18 +304,27 @@ public class PluginOperations {
 		return epadPluginList;
 	}
 	
+	public EPADPluginList getPluginSummaries(String username, String sessionID) throws Exception {
+		return getPluginSummaries(username, sessionID, false);
+	}
+	
 	public EPADPluginList getPluginDescriptions(String username, String sessionID) throws Exception {
+		return getPluginDescriptions(username, sessionID,false);
+	}
+	public EPADPluginList getPluginDescriptions(String username, String sessionID, Boolean processMultipleAims) throws Exception {
 		List<Plugin> plugins = getPlugins();
 		List<Project> projects= projectOperations.getAllProjects();
 		EPADPluginList epadPluginList = new EPADPluginList();
 		for (Project project : projects) {
 
 			for (Plugin plugin : plugins) {
-				EPADPlugin epadPlugin = plugin2EPADPluginProject(plugin,project,false);
-				
-				if (epadPlugin != null)
-				{
-					epadPluginList.addEPADPlugin(epadPlugin);
+				if (!processMultipleAims || plugin.getProcessMultipleAims()) {
+					EPADPlugin epadPlugin = plugin2EPADPluginProject(plugin,project,false);
+					
+					if (epadPlugin != null)
+					{
+						epadPluginList.addEPADPlugin(epadPlugin);
+					}
 				}
 			}
 		}
@@ -351,10 +363,10 @@ public class PluginOperations {
 			
 		if (returnSummary){
 
-			return new EPADPlugin(plugin.getPluginId(),plugin.getName(),plugin.getDescription(),null,null,null,null,project.getProjectId(),project.getName(),parameters.getResult(),plugin.getDeveloper(),plugin.getDocumentation(),String.valueOf(plugin.getRate()));
+			return new EPADPlugin(plugin.getPluginId(),plugin.getName(),plugin.getDescription(),null,null,null,null,project.getProjectId(),project.getName(),parameters.getResult(),plugin.getDeveloper(),plugin.getDocumentation(),String.valueOf(plugin.getRate()),plugin.getProcessMultipleAims());
 		
 		}
-		return new EPADPlugin(plugin.getPluginId(),plugin.getName(),plugin.getDescription(),plugin.getJavaclass(),plugin.getEnabled(),plugin.getStatus(),plugin.getModality(),project.getProjectId(),project.getName(),parameters.getResult(),plugin.getDeveloper(),plugin.getDocumentation(),String.valueOf(plugin.getRate()));
+		return new EPADPlugin(plugin.getPluginId(),plugin.getName(),plugin.getDescription(),plugin.getJavaclass(),plugin.getEnabled(),plugin.getStatus(),plugin.getModality(),project.getProjectId(),project.getName(),parameters.getResult(),plugin.getDeveloper(),plugin.getDocumentation(),String.valueOf(plugin.getRate()),plugin.getProcessMultipleAims());
 
 	}
 	
@@ -390,6 +402,10 @@ public class PluginOperations {
 	
 	public Plugin createPlugin(String loggedInUser, String pluginId, String name, String description,
 			String javaclass, String enabled, String modality,  String developer, String documentation, String rate, String sessionID) throws Exception {
+		return createPlugin(loggedInUser, pluginId, name, description, javaclass, enabled, modality, developer, documentation, rate, sessionID, false);
+	}
+	public Plugin createPlugin(String loggedInUser, String pluginId, String name, String description,
+			String javaclass, String enabled, String modality,  String developer, String documentation, String rate, String sessionID, Boolean processMultipleAims) throws Exception {
 		User user=null;
 		try {
 			user = projectOperations.getUser(loggedInUser);
@@ -416,6 +432,8 @@ public class PluginOperations {
 			else
 				plugin.setEnabled(false);
 		}
+		plugin.setProcessMultipleAims(processMultipleAims);
+		
 		//plugin.setStatus(status);
 		
 		if (modality!=null && modality!="") 
@@ -437,10 +455,13 @@ public class PluginOperations {
 		return plugin;
 			
 	}
-
-	
 	public Plugin updatePlugin(String loggedInUser, String pluginId, String name, String description,
 			String javaclass, String enabled, String modality, String developer, String documentation, String rate,String sessionID) throws Exception {
+		return updatePlugin(loggedInUser, pluginId, name, description, javaclass, enabled, modality, developer, documentation, rate, sessionID, false);
+	}
+	
+	public Plugin updatePlugin(String loggedInUser, String pluginId, String name, String description,
+			String javaclass, String enabled, String modality, String developer, String documentation, String rate,String sessionID, Boolean processMultipleAims) throws Exception {
 		
 		User user=null;
 		try {
@@ -466,9 +487,9 @@ public class PluginOperations {
 			else
 				plugin.setEnabled(false);
 		}
-
+		plugin.setProcessMultipleAims(processMultipleAims);
 		//plugin.setStatus(status);
-		
+		log.info("updating plugin "+ plugin.getId() +"processmultiple"+ processMultipleAims);
 		if (modality!=null && modality!="") 
 			plugin.setModality(modality);
 		if (developer!=null && developer!="") 
