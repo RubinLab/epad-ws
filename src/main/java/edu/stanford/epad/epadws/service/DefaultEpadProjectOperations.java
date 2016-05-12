@@ -402,7 +402,7 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		User user = getUser(username);
 		if (loggedInUser != null && !loggedInUser.isAdmin() && !loggedInUserName.equals(user.getCreator()))
 			throw new Exception("No permission to modify user");
-		user.setAdmin(true);
+		user.setAdmin(false);
 		user.save();
 		userCache.put(user.getUsername(), user);
 	}
