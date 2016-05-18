@@ -657,9 +657,18 @@ public class DefaultDcm4CheeDatabaseOperations implements Dcm4CheeDatabaseOperat
 		String updatedTime = resultMap.get("updated_time");
 		String createdTime = resultMap.get("created_time");
 		String classUID = resultMap.get("sop_cuid");
-
+		log.info("sop_cuid :" + classUID);
+		String inst_attrs = resultMap.get("inst_attrs_ch").replaceAll("\"", "").replaceAll("\n", "").replaceAll("\r", "").replace(System.getProperty("line.separator"), "").replaceAll("R.DS", "RDS").replaceAll("S.DS", "SDS");
+		log.info("Instance attrs:" + inst_attrs);
+		log.info("Instance attrs RDS loc " + inst_attrs.indexOf("RDS"));
+		log.info("Instance attrs SDS loc " + inst_attrs.indexOf("SDS"));
+		String rescaleIntercept = inst_attrs.substring(inst_attrs.indexOf("RDS")+3,inst_attrs.indexOf("(",inst_attrs.indexOf("RDS"))).trim();
+		String rescaleSlope = inst_attrs.substring(inst_attrs.indexOf("SDS")+3).trim();
+		//ml rescale slope and intercept added
 		return new DCM4CHEEImageDescription(studyUID, seriesUID, imageUID, instanceNumber, sliceLocation, contentTime,
-				updatedTime, createdTime, classUID);
+				updatedTime, createdTime, classUID,rescaleIntercept, rescaleSlope);
+//		return new DCM4CHEEImageDescription(studyUID, seriesUID, imageUID, instanceNumber, sliceLocation, contentTime,
+//				updatedTime, createdTime, classUID);
 	}
 
 	@Override

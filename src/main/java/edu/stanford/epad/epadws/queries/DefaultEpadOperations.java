@@ -3782,6 +3782,8 @@ public class DefaultEpadOperations implements EpadOperations
 		String sliceLocation = dcm4cheeImageDescription.sliceLocation;
 		String imageDate = dcm4cheeImageDescription.contentTime;
 		String insertDate = dcm4cheeImageDescription.createdTime;
+		String rescaleIntercept = dcm4cheeImageDescription.rescaleIntercept;
+		String rescaleSlope = dcm4cheeImageDescription.rescaleSlope;
 		int numberOfFrames = getNumberOfFrames(imageUID, defaultDICOMElements);
 		boolean isDSO = isDSO(dcm4cheeImageDescription);
 		String losslessImage = getPNGPath(studyUID, seriesUID, imageUID);
@@ -3795,7 +3797,7 @@ public class DefaultEpadOperations implements EpadOperations
 		//log.debug("losslessimage:" + losslessImage);
 		return new EPADImage(projectID, subjectID, studyUID, seriesUID, imageUID, classUID, insertDate, imageDate,
 				sliceLocation, instanceNumber, losslessImage, lossyImage, dicomElements, defaultDICOMElements, numberOfFrames,
-				isDSO);
+				isDSO, rescaleIntercept, rescaleSlope);
 	}
 
 	private int getNumberOfFrames(String imageUID, DICOMElementList dicomElements)
