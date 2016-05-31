@@ -197,9 +197,17 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 			String imagePath = imageUID.replace('.', '_');  // Old style file name
 			if (!pngFilePath.contains(imageUID) && !pngFilePath.contains(imagePath))
 			{
-				log.info("Fixing pngFile:" + pngFilePath + " imageUID:" + imageUID + " imagePath:" + imagePath);
+				//delete the file reference that was wrong
+				int badpk = rs.getInt(2);               
+				log.info("Fixing pngFile:" + pngFilePath + " imageUID:" + imageUID + " imagePath:" + imagePath + " seriesUID:" + seriesUID + " pk:" + badpk);
 				rs.close();
 				ps.close();
+				log.info("deleting from epaddb.epad_files where pk=" + badpk);
+				ps = c.prepareStatement("delete from epaddb.epad_files where pk=" + badpk);
+				ps.execute();
+				ps.close();
+
+
 				ps = c.prepareStatement(EpadDatabaseCommands.SELECT_EPAD_FILE_PATH_BY_IMAGE_UID);
 				ps.setString(1, "%/" + imageUID + ".png");
 				if (log.isDebugEnabled())
@@ -236,7 +244,7 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 
 		return pngFilePath;
 	}
-	
+
 	@Override
 	public List<String> getAllPNGLocations(String imageUID) {
 		Connection c = null;
@@ -261,7 +269,7 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 		}
 		return pngFilePaths;
 	}
-	
+
 	@Override
 	public String getPNGLocation(FrameReference frameReference)
 	{
@@ -273,7 +281,7 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 	{
 		return ""; // TODO
 	}
-	
+
 	@Override
 	public void checkAndRefreshAnnotationsTable() {
 		Connection c = null;
@@ -303,7 +311,7 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 			log.info("No annotations found");
 			try {
 				log.info("Refreshing annotations table ...");
-				
+
 				if (EPADConfig.useV4.equals("false"))
 				{
 					adb = new AIMDatabaseOperations(c, EPADConfig.eXistServerUrl,
@@ -325,7 +333,7 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 		// Check empty xml columns
 		try {
 			log.info("Checking annotations table xml data ...");
-			
+
 			adb = new AIMDatabaseOperations(c, EPADConfig.eXistServerUrl,
 					EPADConfig.aim4Namespace, EPADConfig.eXistCollection, EPADConfig.eXistUsername, EPADConfig.eXistPassword);
 			List<EPADAIM> aims = adb.getAIMs("XML is null", 0, 0);
@@ -338,7 +346,7 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 		// Check empty name columns
 		try {
 			log.info("Checking annotations table name column ...");
-			
+
 			adb = new AIMDatabaseOperations(c, EPADConfig.eXistServerUrl,
 					EPADConfig.aim4Namespace, EPADConfig.eXistCollection, EPADConfig.eXistUsername, EPADConfig.eXistPassword);
 			List<EPADAIM> aims = adb.getAIMs("NAME is null", 0, 0);
@@ -351,7 +359,7 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 		// Check empty template columns
 		try {
 			log.info("Checking annotations table template column ...");
-			
+
 			adb = new AIMDatabaseOperations(c, EPADConfig.eXistServerUrl,
 					EPADConfig.aim4Namespace, EPADConfig.eXistCollection, EPADConfig.eXistUsername, EPADConfig.eXistPassword);
 			List<EPADAIM> aims = adb.getAIMs("TEMPLATECODE is null", 0, 0);
@@ -361,20 +369,20 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 		} finally {
 			close(c);
 		}
-		
+
 		// Fix coordination AIMs
-//			try {
-//				c = getConnection();
-//				adb = new AIMDatabaseOperations(c, EPADConfig.eXistServerUrl,
-//						EPADConfig.aim4Namespace, EPADConfig.eXistCollection, EPADConfig.eXistUsername, EPADConfig.eXistPassword);
-//				List<EPADAIM> aims = adb.getAIMs("XML like '%EPAD-prod%'", 0, 0);
-//				AIMUtil.convertAim3(aims);
-//				
-//			} catch (Exception x) {
-//				log.warning("Error fixing AIM for coordination tag:", x);
-//			} finally {
-//				close(c);
-//			}
+		//			try {
+		//				c = getConnection();
+		//				adb = new AIMDatabaseOperations(c, EPADConfig.eXistServerUrl,
+		//						EPADConfig.aim4Namespace, EPADConfig.eXistCollection, EPADConfig.eXistUsername, EPADConfig.eXistPassword);
+		//				List<EPADAIM> aims = adb.getAIMs("XML like '%EPAD-prod%'", 0, 0);
+		//				AIMUtil.convertAim3(aims);
+		//				
+		//			} catch (Exception x) {
+		//				log.warning("Error fixing AIM for coordination tag:", x);
+		//			} finally {
+		//				close(c);
+		//			}
 		// Check mongoDB
 		try {
 			log.info("Checking mongoDB ...");
@@ -402,7 +410,7 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 		} finally {
 			close(c);
 		}
-	
+
 	}
 
 	@Override
@@ -1301,7 +1309,7 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 			close(c);
 		}
 	}
-	
+
 	@Override
 	public void deleteAIM(String userName, String aimID) {
 		Connection c = null;
@@ -1925,7 +1933,7 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 				plugin_name, "", "",
 				"", "",false);
 	}
-	
+
 	@Override
 	public void insertEpadEvent(String sessionID, String event_status,
 			String aim_uid, String aim_name, String patient_id,
@@ -2118,39 +2126,39 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 		String insertSQL = getInsertSQL(tableName, columns);
 		try
 		{
-            ps = dbCon.prepareStatement(insertSQL, Statement.RETURN_GENERATED_KEYS);
-            setSQLValues(columns, ps, dbObject);
+			ps = dbCon.prepareStatement(insertSQL, Statement.RETURN_GENERATED_KEYS);
+			setSQLValues(columns, ps, dbObject);
 			if (log.isDebugEnabled())
 				log.debug("insert sql:" + ps.toString());
-            ps.executeUpdate();
-		    rs = ps.getGeneratedKeys();
-		    if (rs.next())
-		    {
-                String methodName = "set" + columns[0][0].substring(0,1).toUpperCase() + columns[0][0].substring(1);
-                Integer value = rs.getInt(1);
-                try
-                {
-                    Method method = dbObject.getClass().getMethod(methodName, new Class[] {int.class});
-                    method.invoke(dbObject, new Object[] {value});
-                }
-                catch(NoSuchMethodException ne)
-                {
-                    try
-                    {
-                        Method method = dbObject.getClass().getMethod(methodName, new Class[] {long.class});
-                        method.invoke(dbObject, new Object[] {value});
-                    }catch(Exception e)
-                    {
-                        e.printStackTrace();
-                        throw new IllegalArgumentException(e.getMessage());
-                    }
-                }
-                catch (Exception e)
-                {
-                    e.printStackTrace();
-                    throw new IllegalArgumentException(e.getMessage());
-                }
-		    }
+			ps.executeUpdate();
+			rs = ps.getGeneratedKeys();
+			if (rs.next())
+			{
+				String methodName = "set" + columns[0][0].substring(0,1).toUpperCase() + columns[0][0].substring(1);
+				Integer value = rs.getInt(1);
+				try
+				{
+					Method method = dbObject.getClass().getMethod(methodName, new Class[] {int.class});
+					method.invoke(dbObject, new Object[] {value});
+				}
+				catch(NoSuchMethodException ne)
+				{
+					try
+					{
+						Method method = dbObject.getClass().getMethod(methodName, new Class[] {long.class});
+						method.invoke(dbObject, new Object[] {value});
+					}catch(Exception e)
+					{
+						e.printStackTrace();
+						throw new IllegalArgumentException(e.getMessage());
+					}
+				}
+				catch (Exception e)
+				{
+					e.printStackTrace();
+					throw new IllegalArgumentException(e.getMessage());
+				}
+			}
 		}
 		catch (SQLException x)
 		{
@@ -2161,9 +2169,9 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 		{
 			close(dbCon, ps, rs);
 		}
-	    return dbObject;
+		return dbObject;
 	}
-		
+
 
 	@Override
 	public Object updateDBObject(Object dbObject, String dbTable, String[][] dbColumns) throws Exception
@@ -2213,9 +2221,9 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 		{
 			close(dbCon, ps, rs);
 		}
-	    return dbObject;
+		return dbObject;
 	}
-	
+
 	@Override
 	public int deleteDBObject(String dbTable, long id) throws Exception {
 		return deleteDBObjects(dbTable, "id =" + id);
@@ -2257,35 +2265,35 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 		Connection dbCon = null;
 		try
 		{
-            dbCon = getConnection();
-            if (startRecord == 0)
-                stmt = dbCon.createStatement();
-            else
-                stmt = dbCon.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
-            String sql = "SELECT * FROM "  + dbTable + " a " + criteria;
-            if (distinct)
-            	sql = "SELECT DISTINCT * FROM "  + dbTable + " a " + criteria;
-            if (maxRecords <= 0)
-            	maxRecords = 5000;
-            if (startRecord > 0)
-            {
-                sql = sql + " LIMIT " + (startRecord-1) + "," + maxRecords;
-            }
-            else
-               stmt.setMaxRows(maxRecords);
+			dbCon = getConnection();
+			if (startRecord == 0)
+				stmt = dbCon.createStatement();
+			else
+				stmt = dbCon.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
+			String sql = "SELECT * FROM "  + dbTable + " a " + criteria;
+			if (distinct)
+				sql = "SELECT DISTINCT * FROM "  + dbTable + " a " + criteria;
+			if (maxRecords <= 0)
+				maxRecords = 5000;
+			if (startRecord > 0)
+			{
+				sql = sql + " LIMIT " + (startRecord-1) + "," + maxRecords;
+			}
+			else
+				stmt.setMaxRows(maxRecords);
 			if (log.isDebugEnabled())
 				log.debug("Query:" + sql);
-            rs = stmt.executeQuery(sql);
-            Object data = null;
-		    while (rs.next()) 
-		    {
-		    	data = dbClass.newInstance();
-		    	getSQLValues(dbColumns, rs, data);
-		    	datas.add(data);
-		    }
+			rs = stmt.executeQuery(sql);
+			Object data = null;
+			while (rs.next()) 
+			{
+				data = dbClass.newInstance();
+				getSQLValues(dbColumns, rs, data);
+				datas.add(data);
+			}
 			if (log.isDebugEnabled())
 				log.debug("Returned:" + datas.size() + " rows");
-		    return datas;
+			return datas;
 		}
 		finally
 		{
@@ -2301,19 +2309,19 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 		Connection dbCon = null;
 		try
 		{
-            dbCon = getConnection();
-            stmt = dbCon.createStatement();
-            String sql = "SELECT * FROM "  + dbTable + " where id = " + id;
+			dbCon = getConnection();
+			stmt = dbCon.createStatement();
+			String sql = "SELECT * FROM "  + dbTable + " where id = " + id;
 			if (log.isDebugEnabled())
 				log.debug("Query:" + sql);
-            rs = stmt.executeQuery(sql);
-            Object data = null;
-		    if (rs.next()) 
-		    {
-		    	getSQLValues(dbColumns, rs, dbObject);
-		    	return dbObject;
-		    }
-		    return null;
+			rs = stmt.executeQuery(sql);
+			Object data = null;
+			if (rs.next()) 
+			{
+				getSQLValues(dbColumns, rs, dbObject);
+				return dbObject;
+			}
+			return null;
 		}
 		finally
 		{
@@ -2334,29 +2342,29 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 		Connection dbCon = null;
 		try
 		{
-            dbCon = getConnection();
-            if (startRecord == 0)
-                stmt = dbCon.createStatement();
-            else
-                stmt = dbCon.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
-            String sql = "SELECT id FROM "  + dbTable + " " + criteria;
-            if (maxRecords <= 0)
-            	maxRecords = 5000;
-            if (startRecord > 0)
-            {
-                sql = sql + " LIMIT " + (startRecord+1) + "," + maxRecords;
-            }
-            else
-               stmt.setMaxRows(maxRecords);
-            log.debug("Query:" + sql);
-            rs = stmt.executeQuery(sql);
-		    while (rs.next()) 
-		    {
-		    	Long id = rs.getLong(1);
-		    	datas.add(id);
-		    }
-		    log.debug("Returned:" + datas.size() + " rows");
-		    return datas;
+			dbCon = getConnection();
+			if (startRecord == 0)
+				stmt = dbCon.createStatement();
+			else
+				stmt = dbCon.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
+			String sql = "SELECT id FROM "  + dbTable + " " + criteria;
+			if (maxRecords <= 0)
+				maxRecords = 5000;
+			if (startRecord > 0)
+			{
+				sql = sql + " LIMIT " + (startRecord+1) + "," + maxRecords;
+			}
+			else
+				stmt.setMaxRows(maxRecords);
+			log.debug("Query:" + sql);
+			rs = stmt.executeQuery(sql);
+			while (rs.next()) 
+			{
+				Long id = rs.getLong(1);
+				datas.add(id);
+			}
+			log.debug("Returned:" + datas.size() + " rows");
+			return datas;
 		}
 		finally
 		{
@@ -2374,28 +2382,28 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 		Connection dbCon = null;
 		try
 		{
-            dbCon = getConnection();
-            stmt = dbCon.createStatement();
-            String sql = "SELECT count(*) FROM "  + dbTable + " " + criteria;
+			dbCon = getConnection();
+			stmt = dbCon.createStatement();
+			String sql = "SELECT count(*) FROM "  + dbTable + " " + criteria;
 			if (log.isDebugEnabled())
 				log.debug("Query:" + sql);
-            rs = stmt.executeQuery(sql);
-		    if (rs.next()) 
-		    {
-		    	int count = rs.getInt(1);
+			rs = stmt.executeQuery(sql);
+			if (rs.next()) 
+			{
+				int count = rs.getInt(1);
 				if (log.isDebugEnabled())
 					log.debug("Returned:" + count + " rows");
-                return count;
-		    }
-		    else
-		    	throw new SQLException ("Error retrieve count");
+				return count;
+			}
+			else
+				throw new SQLException ("Error retrieve count");
 		}
 		finally
 		{
 			close(dbCon, stmt, rs);
 		}
 	}
-	
+
 	private String getInsertSQL(String tableName, String[][]columns)
 	{
 		String insertSQL = "INSERT INTO " + tableName + " (";
@@ -2411,7 +2419,7 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 		insertSQL = insertSQL + values +")";
 		return insertSQL;
 	}
-	
+
 	protected String getUpdateSQL(String tableName, String[][]columns)
 	{
 		String updateSQL = "UPDATE " + tableName + " set ";
@@ -2435,7 +2443,7 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 		updateSQL = updateSQL + " where " + whereClause;
 		return updateSQL;		
 	}
-	
+
 	/**
 	 * Sets data values in insert/update preparedStatement using the object's column structure.
 	 * @param columns - see above
@@ -2444,7 +2452,7 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 	 * @throws SQLException
 	 */
 	protected void setSQLValues(String[][]columns, PreparedStatement ps, Object data)
-		throws SQLException
+			throws SQLException
 	{
 		int i = 1;
 		int j = 0;
@@ -2531,7 +2539,7 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 			throw new SQLException("Error setting values for " + columns[j][0] + " : " + x.getMessage());
 		}
 	}
-	
+
 	/**
 	 * Gets data values from result set and populates object using the object's column structure.
 	 * @param columns - see above
@@ -2540,7 +2548,7 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 	 * @throws SQLException
 	 */
 	protected void getSQLValues(String[][]columns, ResultSet rs, Object data)
-		throws SQLException
+			throws SQLException
 	{
 		int i = 0;
 		try
@@ -2629,7 +2637,7 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 			throw new SQLException("Error setting values for " + columns[i][0] + ":" + x.getMessage());
 		}
 	}
-	
+
 	private List<String> getAllEPadFilePathsWithStatus(PNGFileProcessingStatus pngFileProcessingStatus)
 	{
 		Connection c = null;
@@ -2925,7 +2933,7 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 		DatabaseUtils.close(rs);
 		close(c, s);
 	}
-	
+
 	private void close(Connection c, PreparedStatement ps, ResultSet rs)
 	{
 		DatabaseUtils.close(rs);

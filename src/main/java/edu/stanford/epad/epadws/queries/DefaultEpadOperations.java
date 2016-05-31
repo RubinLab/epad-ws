@@ -732,6 +732,8 @@ public class DefaultEpadOperations implements EpadOperations
 			//log.info("Image UID:" + epadImage.imageUID + " LossLess:" + epadImage.losslessImage);
 		}
 		log.info("Returning image list:" + imageDescriptions.size());
+		//return after sorting for correct slice order (using image position and orientation)
+//		epadImageList.sort();
 		return epadImageList;
 	}
 
