@@ -4222,7 +4222,10 @@ public class DefaultEpadOperations implements EpadOperations
 				image = opener.openImage(dicomImageFilePath);
 			} catch (Error x) {
 				log.warning("Error opening image", x);
+			} catch (Throwable x) {
+				log.warning("Error opening image", x);
 			}
+
 
 			if (image != null) {
 				// This method to get Window parameters in overriden below (need to test which one is correct)
