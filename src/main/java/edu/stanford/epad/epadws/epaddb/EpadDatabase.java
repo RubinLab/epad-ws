@@ -266,6 +266,7 @@ public class EpadDatabase
 			result = false;
 			try
 			{
+				//ml do not use 0 in file name 2.0.sql not accepted!!
 				double reqdVersion = getDouble(requiredVersion);
 				double nextVersion = getDouble(version) + 0.001;
 				for (double vers = nextVersion; vers < (reqdVersion+0.001); vers = vers + 0.001)
