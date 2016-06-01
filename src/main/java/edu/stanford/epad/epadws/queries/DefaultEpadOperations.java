@@ -4221,9 +4221,9 @@ public class DefaultEpadOperations implements EpadOperations
 			try {
 				image = opener.openImage(dicomImageFilePath);
 			} catch (Error x) {
-				log.warning("Error opening image", x);
+				log.warning("ImageJ error opening image");
 			} catch (Throwable x) {
-				log.warning("Error opening image", x);
+				log.warning("ImageJ error opening image");
 			}
 
 

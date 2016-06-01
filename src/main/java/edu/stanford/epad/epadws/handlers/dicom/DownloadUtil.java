@@ -503,6 +503,8 @@ public static void downloadSubject(boolean stream, HttpServletResponse httpRespo
 		EPADSeriesList seriesList = epadOperations.getSeriesDescriptions(studyReference, username, sessionID, searchFilter, false);
 		for (EPADSeries series: seriesList.ResultSet.Result)
 		{
+			if (series.projectID!= studyReference.projectID) //if the series is not in this project, skip
+				continue;
 			File seriesDir = new File(studyDir, "Series-" + series.seriesUID);
 			seriesDir.mkdirs();
 			SeriesReference seriesReference = new SeriesReference(studyReference.projectID, studyReference.subjectID, studyReference.studyUID, series.seriesUID);
