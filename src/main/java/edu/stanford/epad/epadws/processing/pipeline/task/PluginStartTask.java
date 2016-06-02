@@ -186,11 +186,13 @@ public class PluginStartTask implements Runnable
         log.info("pluginurl " + url);
         
         if (annotationID==null && annotationIDs.length>0)  {
-            NameValuePair[] params = new NameValuePair[annotationIDs.length];
+            NameValuePair[] params = new NameValuePair[annotationIDs.length+2];
 	        int i=0;
 	        for(String aimId: annotationIDs) {
 	        	params[i++]= new NameValuePair("aims", aimId) ;
 	        }
+	        params[i++]= new NameValuePair("frameNumber", String.valueOf(frameNumber)) ;
+	        params[i]= new NameValuePair("projectID", projectID) ;
 	        method.setQueryString(params); 
         }
         method.setRequestHeader("Cookie", "JSESSIONID=" + jsessionID);
