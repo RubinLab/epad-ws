@@ -760,6 +760,10 @@ public class DefaultEpadOperations implements EpadOperations
 			imageReference.seriesUID = dcm4CheeDatabaseOperations.getSeriesUIDForImage(imageReference.imageUID);
 			log.info("image reference of image "+imageReference.imageUID +" series uid filled with "+ imageReference.seriesUID);
 		}
+		if (imageReference.studyUID.equals("*")) { //ml no study uid. probably dso. fill it!
+			imageReference.studyUID = dcm4CheeDatabaseOperations.getStudyUIDForSeries(imageReference.seriesUID);
+			log.info("image reference of image "+imageReference.imageUID +" studyUID uid filled with "+ imageReference.studyUID);
+		}
 		DCM4CHEEImageDescription dcm4cheeImageDescription = dcm4CheeDatabaseOperations.getImageDescription(imageReference);
 		List<EPADFrame> frames = new ArrayList<>();
 

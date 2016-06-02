@@ -936,6 +936,14 @@ public class DSOUtil
 
 		log.info("Received DSO edit request for series " + seriesUID);
 		String confirm = dcm4CheeDatabaseOperations.getSeriesUIDForImage(imageUID);
+		//ml if ui do not know series uid (new dso)
+		if (seriesUID.equals("*")) {
+			seriesUID=confirm;
+		}
+		//ml if ui do not know study uid (new dso)
+		if (studyUID.equals("*")) {
+			studyUID=dcm4CheeDatabaseOperations.getStudyUIDForSeries(seriesUID);
+		}
 		if (!confirm.equals(seriesUID))
 		{
 			log.warning("Invalid ImageUID for series:" + seriesUID);
