@@ -2088,7 +2088,9 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		List<Study> studies = new Study().getObjects("subject_id = " + subject.getId());
 		for (Study study: studies)
 		{
-			new WorkListToStudy().deleteObjects("study_id =" + study.getId());			
+			new WorkListToStudy().deleteObjects("study_id =" + study.getId());
+			//delete files first
+			new EpadFile().deleteObjects("study_id=" + study.getId());
 			study.delete();
 		}
 		new EpadFile().deleteObjects("subject_id=" + subject.getId());
