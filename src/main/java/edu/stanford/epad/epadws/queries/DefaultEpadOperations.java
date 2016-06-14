@@ -1145,9 +1145,11 @@ public class DefaultEpadOperations implements EpadOperations
 					Set<String> allStudyUIDs = UserProjectService.getAllStudyUIDsForProject(projectId);
 					if (allStudyUIDs.contains(seriesReference.studyUID.replace('.', '_')) || allStudyUIDs.contains(seriesReference.studyUID))
 					{
-
-						log.info("Series " + seriesReference.studyUID + " in use by other projects:" + projectId + ", so series will not be deleted from DCM4CHEE");
-						return "Series " + seriesReference.seriesUID + " in use by other projects:" + projectId + ", so series will not be deleted from DCM4CHEE";
+						//the user chose to select from project we do not need that anymore. 
+						//should we tell user when we are also deleting from system?
+						return "";
+//						log.info("Series " + seriesReference.studyUID + " in use by other projects:" + projectId + ", so series will not be deleted from DCM4CHEE");
+//						return "Series " + seriesReference.seriesUID + " in use by other projects:" + projectId + ", so series will not be deleted from DCM4CHEE";
 					}
 				}
 			}

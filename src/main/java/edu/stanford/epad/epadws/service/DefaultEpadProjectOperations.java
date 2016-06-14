@@ -1329,8 +1329,11 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 			String subjectUID) throws Exception {
 		Project project = getProject(projectId);
 		Subject subject = getSubject(subjectUID);
-		ProjectToSubject ptos = (ProjectToSubject) new ProjectToSubject().getObject("project_id = " + project.getId() + " and subject_id=" + subject.getId());
 		List<Study> studies = new ArrayList<Study>();
+		//if we cannot retrieve the project or subject, we should return empty list 
+		if (project == null || subject == null)
+			return studies;
+		ProjectToSubject ptos = (ProjectToSubject) new ProjectToSubject().getObject("project_id = " + project.getId() + " and subject_id=" + subject.getId());
 		if (ptos == null)
 			return studies;
 		List objects = new Study().getObjects("id in (select study_id from " 
@@ -2105,8 +2108,7 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 	public void deleteStudy(String username, String studyUID) throws Exception {
 		Study study = getStudy(studyUID);
 		if (study == null) return;
-		ProjectToSubjectToStudy projSubjStudy = (ProjectToSubjectToStudy) new ProjectToSubjectToStudy().getObject("study_id=" + study.getId());
-		projSubjStudy.delete();
+		new ProjectToSubjectToStudy().deleteObjects("study_id=" + study.getId());
 		new EpadFile().deleteObjects("study_id=" + study.getId());
 		study.delete();
 	}
