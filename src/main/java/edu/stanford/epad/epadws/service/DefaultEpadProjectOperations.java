@@ -2105,8 +2105,7 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 	public void deleteStudy(String username, String studyUID) throws Exception {
 		Study study = getStudy(studyUID);
 		if (study == null) return;
-		ProjectToSubjectToStudy projSubjStudy = (ProjectToSubjectToStudy) new ProjectToSubjectToStudy().getObject("study_id=" + study.getId());
-		projSubjStudy.delete();
+		new ProjectToSubjectToStudy().deleteObjects("study_id=" + study.getId());
 		new EpadFile().deleteObjects("study_id=" + study.getId());
 		study.delete();
 	}
