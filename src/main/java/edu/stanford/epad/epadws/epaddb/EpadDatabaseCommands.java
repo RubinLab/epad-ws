@@ -131,6 +131,7 @@ public interface EpadDatabaseCommands
 	public static final String GET_EPAD_SERIES_TAGS = "SELECT default_tags from epaddb.series_status where series_iuid=?";
 	public static final String SELECT_EPAD_SERIES_BY_ID = "SELECT * from epaddb.series_status where series_iuid=?";
 	public static final String SELECT_DCM4CHE_STUDY_BY_ID = "SELECT study_iuid,study_desc,study_datetime,accession_no from pacsdb.study where study_iuid=?";
+	public static final String SELECT_ANNOTATION_STATUS_FOR_SERIES_BY_IDs = "SELECT annotationstatus from epaddb.project_subject_study_series_user_status s, epaddb.project p, epaddb.subject su, epaddb.study st, epaddb.user u  where s.project_id=p.id and s.subject_id=su.id and s.study_id=st.id and s.user_id=u.id and p.projectid=? and su.subjectuid=? and st.studyuid=? and series_uid=? and u.username=?";
 	public static final String SELECT_STATUS_FOR_SERIES_BY_ID = "SELECT status from epaddb.series_status where series_iuid=?";
 	public static final String SELECT_STATUS_AND_CREATED_TIME_FOR_SERIES_BY_ID = "SELECT status,created_time from epaddb.series_status where series_iuid=?";
 

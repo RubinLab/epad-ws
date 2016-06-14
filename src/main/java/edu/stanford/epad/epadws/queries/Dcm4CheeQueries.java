@@ -267,8 +267,8 @@ public class Dcm4CheeQueries
 						boolean skipThumbnail = false;
 						String currentSequence = "";
 						while ((dicomElementString = tagReader.readLine()) != null) {
-							if (dicomElementString.contains("(0009,1110)"))  // hard code for now TODO:???
-								skipThumbnail = true;
+//							if (dicomElementString.contains("(0009,1110)"))  // hard code for now TODO:???
+//								skipThumbnail = true;
 							if (dicomElementString.contains("(FFFE,E0DD)"))
 								skipThumbnail = false;
 							int sequence = dicomElementString.indexOf("SQ #-1");
@@ -364,6 +364,7 @@ public class Dcm4CheeQueries
 	// TODO This code is very brittle. Rewrite to make more robust. Also ignores DICOM sequences.
 	private static DICOMElement decodeDICOMElementString(String dicomElement)
 	{
+		log.info("dicom element "+dicomElement);
 		String[] fields = dicomElement.split(" ");
 
 		int valueFieldStartIndex = valueFieldStartIndex(fields);

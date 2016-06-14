@@ -126,6 +126,7 @@ import com.mongodb.DB;
 import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.epad.common.util.MongoDBOperations;
+import edu.stanford.epad.dtos.AnnotationStatus;
 import edu.stanford.epad.dtos.EPADAIM;
 import edu.stanford.epad.dtos.EPADData;
 import edu.stanford.epad.dtos.EPADDataList;
@@ -1553,6 +1554,41 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 			String debugInfo = DatabaseUtils.getDebugData(rs);
 			log.warning("Database operation failed; debugInfo=" + debugInfo, e);
 			throw e;
+		} finally {
+			close(c, ps, rs);
+		}
+	}
+	
+	@Override
+	public AnnotationStatus getAnnotationStatus(String projectUID, String subjectUID, String studyUID, String series_uid,
+			String username)
+	{
+		Connection c = null;
+		PreparedStatement ps = null;
+		ResultSet rs = null;
+		int status = -1;
+
+		try {
+			c = getConnection();
+			ps = c.prepareStatement(EpadDatabaseCommands.SELECT_ANNOTATION_STATUS_FOR_SERIES_BY_IDs);
+			ps.setString(1, projectUID);
+			ps.setString(2, subjectUID);
+			ps.setString(3, studyUID);
+			ps.setString(4, series_uid);
+			ps.setString(5, username);
+			rs = ps.executeQuery();
+			if (rs.next()) {
+				status = rs.getInt(1);
+				return AnnotationStatus.getValue(status);
+			} else
+				return AnnotationStatus.NOT_STARTED;
+		} catch (IllegalArgumentException e) {
+			log.warning("Invalid enum value for " + AnnotationStatus.class.getName(), e);
+			return null;
+		} catch (SQLException sqle) {
+			String debugInfo = DatabaseUtils.getDebugData(rs);
+			log.warning("Database operation failed; debugInfo=" + debugInfo, sqle);
+			return null;
 		} finally {
 			close(c, ps, rs);
 		}
