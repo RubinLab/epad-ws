@@ -619,6 +619,9 @@ public class UserProjectService {
 		}
 		if (dir.listFiles() != null) {
 			for (File entry : dir.listFiles()) {
+				//skip if this is a jpg file
+				if (entry.getName().endsWith(".jpg") || entry.getName().endsWith(".jpeg"))
+					continue;
 				if (isDicomFile(entry))
 				{
 					files.add(entry);
