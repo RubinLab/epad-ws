@@ -418,17 +418,19 @@ public class EPADGetHandler
 				
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.SERIES_LIST, pathInfo)) {
 				boolean filterDSO = "true".equalsIgnoreCase(httpRequest.getParameter("filterDSO"));
+				boolean includeAnnotationStatus = "true".equalsIgnoreCase(httpRequest.getParameter("includeAnnotationStatus"));
 				StudyReference studyReference = StudyReference.extract(ProjectsRouteTemplates.SERIES_LIST, pathInfo);
 				if (studyReference.subjectID.equals("null"))
 					throw new Exception("Patient ID in rest call is null:" + pathInfo);
 				EPADSeriesList seriesList = epadOperations.getSeriesDescriptions(studyReference, username, sessionID,
-						searchFilter, filterDSO);
+						searchFilter, filterDSO, includeAnnotationStatus);
 				responseStream.append(seriesList.toJSON());
 				statusCode = HttpServletResponse.SC_OK;
 
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.SERIES, pathInfo)) {
 				SeriesReference seriesReference = SeriesReference.extract(ProjectsRouteTemplates.SERIES, pathInfo);
 				boolean includeAims = "true".equalsIgnoreCase(httpRequest.getParameter("includeAims"));
+				boolean includeAnnotationStatus = "true".equalsIgnoreCase(httpRequest.getParameter("includeAnnotationStatus"));
 				if (returnConnected(httpRequest)) { //ml connected data for deletion
 					log.info("get projects for study " + seriesReference.studyUID );
 					if (searchFilter ==null) {
@@ -449,7 +451,7 @@ public class EPADGetHandler
 					else
 						DownloadUtil.downloadSeries(true, httpResponse, seriesReference, username, sessionID, includeAims);
 				} else {
-					EPADSeries series = epadOperations.getSeriesDescription(seriesReference, username, sessionID);
+					EPADSeries series = epadOperations.getSeriesDescription(seriesReference, username, sessionID, includeAnnotationStatus);
 					if (series != null) {
 						responseStream.append(series.toJSON());
 					} else {

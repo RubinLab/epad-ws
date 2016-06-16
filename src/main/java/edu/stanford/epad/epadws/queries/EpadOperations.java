@@ -254,6 +254,20 @@ public interface EpadOperations
 			EPADSearchFilter searchFilter, boolean filterDSOs) throws Exception;
 
 	/**
+	 * Get series descriptions for a study
+	 * @param studyReference
+	 * @param username
+	 * @param sessionID
+	 * @param searchFilter
+	 * @param filterDSOs
+	 * @param includeAnnotationStatus
+	 * @return
+	 * @throws Exception
+	 */
+	EPADSeriesList getSeriesDescriptions(StudyReference studyReference, String username, String sessionID,
+			EPADSearchFilter searchFilter, boolean filterDSOs, boolean includeAnnotationStatus) throws Exception;
+
+	/**
 	 * Get series description
 	 * @param seriesReference
 	 * @param username
@@ -1411,4 +1425,15 @@ public interface EpadOperations
 
 	int updateProject(String username, ProjectReference projectReference, String projectName, String projectDescription,
 			String defaultTemplate, String sessionID, ProjectType type) throws Exception;
+
+	/**
+	 * get series description with or without annotation status
+	 * @param seriesReference
+	 * @param username
+	 * @param sessionID
+	 * @param includeAnnotationStatus
+	 * @return annotation status (see AnnotationStatus class)
+	 */
+	EPADSeries getSeriesDescription(SeriesReference seriesReference, String username, String sessionID,
+			boolean includeAnnotationStatus);
 }

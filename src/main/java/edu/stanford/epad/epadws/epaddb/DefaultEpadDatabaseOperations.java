@@ -1560,7 +1560,37 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 	}
 	
 	@Override
-	public AnnotationStatus getAnnotationStatus(String projectUID, String subjectUID, String studyUID, String series_uid,
+	public int getAnnotationDoneUserCount(String projectUID, String subjectUID, String studyUID, String series_uid)
+	{
+		Connection c = null;
+		PreparedStatement ps = null;
+		ResultSet rs = null;
+		int count = -1;
+
+		try {
+			c = getConnection();
+			ps = c.prepareStatement(EpadDatabaseCommands.SELECT_ANNOTATION_DONE_COUNT_FOR_SERIES_BY_IDs);
+			ps.setString(1, projectUID);
+			ps.setString(2, subjectUID);
+			ps.setString(3, studyUID);
+			ps.setString(4, series_uid);
+			rs = ps.executeQuery();
+			if (rs.next()) {
+				count = rs.getInt(1);
+				return count;
+			} else
+				return 0;
+		} catch (SQLException sqle) {
+			String debugInfo = DatabaseUtils.getDebugData(rs);
+			log.warning("Database operation failed; debugInfo=" + debugInfo, sqle);
+			return 0;
+		} finally {
+			close(c, ps, rs);
+		}
+	}
+	
+	@Override
+	public AnnotationStatus getAnnotationStatusForUser(String projectUID, String subjectUID, String studyUID, String series_uid,
 			String username)
 	{
 		Connection c = null;

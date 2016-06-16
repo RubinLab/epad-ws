@@ -109,6 +109,8 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
+import edu.stanford.epad.dtos.AnnotationStatus;
+import edu.stanford.epad.epadws.handlers.core.SeriesReference;
 import edu.stanford.epad.epadws.models.EpadFile;
 import edu.stanford.epad.epadws.models.EpadStatistics;
 import edu.stanford.epad.epadws.models.EventLog;
@@ -955,4 +957,58 @@ public interface EpadProjectOperations {
 	 * @throws Exception
 	 */
 	List sort(List<AbstractDAO> objects, String field, boolean ascending);
+	
+	/**
+	 * get user count for a specific project with project uid
+	 * @param projectId
+	 * @return count
+	 * @throws Exception
+	 */
+	long getUserCountProject(String projectId) throws Exception;
+	
+	/**
+	 * get user count for a specific project with project id
+	 * @param id
+	 * @return count
+	 * @throws Exception
+	 */
+	long getUserCountForProject(long id) throws Exception;
+	
+	/**
+	 * Gets all the parameters and returns the annotation status for that specific user and series
+	 * @param projectuid
+	 * @param subjectuid
+	 * @param studyuid
+	 * @param seriesuid
+	 * @param username
+	 * @return annotation status see AnnotationStatus class for values or null
+	 * @author emelalkim
+	 */
+	AnnotationStatus getAnnotationStatusForUser(String projectUID, String subjectUID, String studyUID,
+			String series_uid, String username);
+	/**
+	 * Gets the number of users that are done annotating the specific series for the project (using model)
+	 * @param projectUID
+	 * @param subjectUID
+	 * @param studyUID
+	 * @param series_uid
+	 * @return count or 0
+	 * @author emelalkim
+	 */
+	int getAnnotationDoneUserCount(String projectUID, String subjectUID, String studyUID, String series_uid);
+	
+	/**
+	 * update annotation status for user
+	 * if annotation status can be converted to an integer writes it
+	 * if not checks if it is DONE
+	 * if not writes error
+	 * see AnnotationStatus class for the code values
+	 * @param username
+	 * @param seriesReference
+	 * @param annotationStatus
+	 * @param sessionID
+	 * @throws Exception
+	 */
+	void updateAnnotationStatus(String username, SeriesReference seriesReference, String annotationStatus,
+			String sessionID) throws Exception;
 }

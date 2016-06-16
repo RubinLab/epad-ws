@@ -120,12 +120,14 @@ import org.mindrot.jbcrypt.BCrypt;
 
 import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADLogger;
+import edu.stanford.epad.dtos.AnnotationStatus;
 import edu.stanford.epad.dtos.TaskStatus;
 import edu.stanford.epad.dtos.internal.DCM4CHEESeries;
 import edu.stanford.epad.epadws.aim.AIMDatabaseOperations;
 import edu.stanford.epad.epadws.epaddb.DatabaseUtils;
 import edu.stanford.epad.epadws.epaddb.EpadDatabase;
 import edu.stanford.epad.epadws.epaddb.EpadDatabaseOperations;
+import edu.stanford.epad.epadws.handlers.core.SeriesReference;
 import edu.stanford.epad.epadws.models.DisabledTemplate;
 import edu.stanford.epad.epadws.models.EpadFile;
 import edu.stanford.epad.epadws.models.EpadStatistics;
@@ -139,6 +141,7 @@ import edu.stanford.epad.epadws.models.ProjectToPlugin;
 import edu.stanford.epad.epadws.models.ProjectToPluginParameter;
 import edu.stanford.epad.epadws.models.ProjectToSubject;
 import edu.stanford.epad.epadws.models.ProjectToSubjectToStudy;
+import edu.stanford.epad.epadws.models.ProjectToSubjectToStudyToSeriesToUser;
 import edu.stanford.epad.epadws.models.ProjectToSubjectToUser;
 import edu.stanford.epad.epadws.models.ProjectToUser;
 import edu.stanford.epad.epadws.models.ProjectType;
@@ -379,6 +382,85 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		return user;
 	}
 
+	@Override
+	public void updateAnnotationStatus(String username,
+			SeriesReference seriesReference, String annotationStatus,
+			String sessionID) throws Exception {
+		Project p=getProject(seriesReference.projectID);
+		Subject su=getSubject(seriesReference.subjectID);
+		Study st=getStudy(seriesReference.studyUID);
+		User u=getUser(username);
+		
+		//check if the user exist in the project
+		//only occasion this can happen in epad is with admin.
+		//TODO better error reporting to ui
+		if (!isUserInProject(u.getId(), p.getId())) {
+			log.info("User doesn't exist in project, cannot update status");
+			return;
+		}
+		ProjectToSubjectToStudyToSeriesToUser psssuStatus = (ProjectToSubjectToStudyToSeriesToUser) 
+				new ProjectToSubjectToStudyToSeriesToUser().getObject("project_id="+p.getId()+ " and subject_id=" 
+					+ su.getId() + " and study_id=" 
+					+ st.getId() + " and series_uid='" + seriesReference.seriesUID + "' and user_id=" +u.getId() );
+		if (psssuStatus==null) {
+			psssuStatus = new ProjectToSubjectToStudyToSeriesToUser();
+			psssuStatus.setProjectId(p.getId());
+			psssuStatus.setSubjectId(su.getId());
+			psssuStatus.setStudyId(st.getId());
+			psssuStatus.setSeriesUID(seriesReference.seriesUID);
+			psssuStatus.setUserId(u.getId());
+		}
+		try {
+			psssuStatus.setAnnotationStatus(Integer.parseInt(annotationStatus));
+		}catch (NumberFormatException ne) {
+			if (annotationStatus.equals("DONE"))
+				psssuStatus.setAnnotationStatus(AnnotationStatus.getValueByName(annotationStatus).getCode());
+			else 
+				psssuStatus.setAnnotationStatus(AnnotationStatus.ERROR.getCode());
+		}
+		psssuStatus.save();
+	}
+	
+	@Override
+	public AnnotationStatus getAnnotationStatusForUser(String projectUID, String subjectUID, String studyUID, String series_uid, String username) {
+		try {
+			Project p=getProject(projectUID);
+			Subject su=getSubject(subjectUID);
+			Study st=getStudy(studyUID);
+			User u=getUser(username);
+			
+			ProjectToSubjectToStudyToSeriesToUser psssuStatus = (ProjectToSubjectToStudyToSeriesToUser) 
+					new ProjectToSubjectToStudyToSeriesToUser().getObject("project_id="+p.getId()+ " and subject_id=" 
+						+ su.getId() + " and study_id=" 
+						+ st.getId() + " and series_uid='" + series_uid + "' and user_id=" +u.getId() );
+			if (psssuStatus!=null)
+				return AnnotationStatus.getValue(psssuStatus.getAnnotationStatus());
+			return AnnotationStatus.NOT_STARTED;
+		} catch (Exception e) {
+			log.info("Cannot get annotation status from database for series "+ series_uid+ " " + e.getMessage());
+			return AnnotationStatus.ERROR;
+		}
+		
+	}
+	
+	@Override
+	public int getAnnotationDoneUserCount(String projectUID, String subjectUID, String studyUID, String series_uid) {
+		try {
+			Project p=getProject(projectUID);
+			Subject su=getSubject(subjectUID);
+			Study st=getStudy(studyUID);
+			
+			int count = new ProjectToSubjectToStudyToSeriesToUser().getCount("project_id="+p.getId()+ " and subject_id=" 
+						+ su.getId() + " and study_id=" 
+						+ st.getId() + " and series_uid='" + series_uid + "'");
+			return count;
+		} catch (Exception e) {
+			log.info("Cannot get annotation status from database for series "+ series_uid+ " " + e.getMessage());
+		}
+		return 0;
+	}
+
+	
 	/* (non-Javadoc)
 	 * @see edu.stanford.epad.epadws.service.EpadProjectOperations#setAdmin(java.lang.String, java.lang.String)
 	 */
@@ -1130,6 +1212,24 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		
 		return users;
 	}
+	
+	@Override
+	public long getUserCountProject(String projectId) throws Exception {
+		Project project = getProject(projectId);
+		if (project == null) return 0;
+		
+		return getUserCountForProject(project.getId());
+	}
+	
+	@Override
+	public long getUserCountForProject(long id)
+			throws Exception {
+		long count = new User().getCount("id in (select user_id from " 
+				+ ProjectToUser.DBTABLE 
+				+ " where project_id =" + id + ")");
+		return count;
+	}
+	
 	
 	/* (non-Javadoc)
 	 * @see edu.stanford.epad.epadws.service.EpadProjectOperations#getUsersWithRoleForProject(java.lang.String)

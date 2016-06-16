@@ -287,14 +287,25 @@ public class EPADPutHandler
 				String modality = httpRequest.getParameter("modality");
 				String seriesDate = httpRequest.getParameter("seriesDate");
 				String referencedSeries = httpRequest.getParameter("referencedSeries");
+				//get the annotation, it can be empty, or done(or 3) at this point
+				String annotationStatus = httpRequest.getParameter("annotationStatus");
+				
 				if (referencedSeries == null)
 					referencedSeries = httpRequest.getParameter("referencedSeriesUID");
 				String defaultTags = httpRequest.getParameter("defaultTags");
-				if (defaultTags != null) {
-					epadOperations.updateSeriesTags(username, seriesReference, defaultTags, sessionID);
-				} else {
+				EPADSeries series = epadOperations.getSeriesDescription(seriesReference, username, sessionID);
+				if (series!=null) { //updating
+					
+					if (defaultTags != null) {
+						epadOperations.updateSeriesTags(username, seriesReference, defaultTags, sessionID);
+					}
+					if (annotationStatus != null) {
+						projectOperations.updateAnnotationStatus(username, seriesReference, annotationStatus, sessionID);
+					}
+				}
+				else {
 					// Create non-dicom series
-					EPADSeries series  = epadOperations.createSeries(username, seriesReference, description, getDate(seriesDate), modality, referencedSeries, sessionID);
+					series  = epadOperations.createSeries(username, seriesReference, description, getDate(seriesDate), modality, referencedSeries, sessionID);
 				}
 				if (uploadedFile != null && false) {
 					String fileType = httpRequest.getParameter("fileType");

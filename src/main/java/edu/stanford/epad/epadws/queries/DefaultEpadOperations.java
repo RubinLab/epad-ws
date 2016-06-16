@@ -535,9 +535,15 @@ public class DefaultEpadOperations implements EpadOperations
 			}
 		}
 	}
-
+	
 	@Override
 	public EPADSeries getSeriesDescription(SeriesReference seriesReference, String username, String sessionID)
+	{
+		return getSeriesDescription(seriesReference, username, sessionID, false);
+		
+	}
+	@Override
+	public EPADSeries getSeriesDescription(SeriesReference seriesReference, String username, String sessionID, boolean includeAnnotationStatus)
 	{
 		String patientID = seriesReference.subjectID;
 		DCM4CHEESeries dcm4cheeSeries = Dcm4CheeQueries.getSeries(seriesReference.seriesUID);
@@ -545,7 +551,7 @@ public class DefaultEpadOperations implements EpadOperations
 		if (dcm4cheeSeries != null)
 		{
 			if (patientID == null) patientID = dcm4cheeSeries.patientID;
-			return dcm4cheeSeries2EpadSeries(sessionID, seriesReference.projectID, patientID, dcm4cheeSeries, username);
+			return dcm4cheeSeries2EpadSeries(sessionID, seriesReference.projectID, patientID, dcm4cheeSeries, username, includeAnnotationStatus);
 		}
 		else {
 			try {
@@ -566,20 +572,27 @@ public class DefaultEpadOperations implements EpadOperations
 			return null;
 		}
 	}
-
+	
 	@Override
 	public EPADSeriesList getSeriesDescriptions(StudyReference studyReference, String username, String sessionID,
 			EPADSearchFilter searchFilter, boolean filterDSOs)
+	{
+		return getSeriesDescriptions(studyReference, username, sessionID, searchFilter, filterDSOs, false);
+	}
+
+	@Override
+	public EPADSeriesList getSeriesDescriptions(StudyReference studyReference, String username, String sessionID,
+			EPADSearchFilter searchFilter, boolean filterDSOs, boolean includeAnnotationStatus)
 	{
 		EPADSeriesList epadSeriesList = new EPADSeriesList();
 
 		DCM4CHEESeriesList dcm4CheeSeriesList = Dcm4CheeQueries.getSeriesInStudy(studyReference.studyUID);
 		for (DCM4CHEESeries dcm4CheeSeries : dcm4CheeSeriesList.ResultSet.Result) {
 			EPADSeries epadSeries = dcm4cheeSeries2EpadSeries(sessionID, studyReference.projectID, studyReference.subjectID,
-					dcm4CheeSeries, username);
+					dcm4CheeSeries, username, includeAnnotationStatus);
 			boolean filter = searchFilter.shouldFilterSeries(epadSeries.patientID, epadSeries.patientName,
 					epadSeries.examType, epadSeries.numberOfAnnotations);
-			//log.info("Series:" + epadSeries.seriesDescription + " filterDSO:" + filterDSOs + " isDSO:"+ epadSeries.isDSO);
+//			log.info("Series:" + epadSeries.seriesDescription + " filterDSO:" + filterDSOs + " isDSO:"+ epadSeries.isDSO + " annotation:"+ epadSeries.annotationStatus.toString());
 			if (!filter && !(filterDSOs && epadSeries.isDSO))
 			{
 				//log.info("Series:" + epadSeries.seriesDescription + " createdtime:" + epadSeries.createdTime);
@@ -1117,6 +1130,7 @@ public class DefaultEpadOperations implements EpadOperations
 			String sessionID) throws Exception {
 		epadDatabaseOperations.updateSeriesDefaultTags(seriesReference.seriesUID, defaultTags);
 	}
+	
 
 	@Override
 	public String seriesDelete(SeriesReference seriesReference, String sessionID, boolean deleteAims, String username) throws Exception
@@ -3417,8 +3431,16 @@ public class DefaultEpadOperations implements EpadOperations
 				studyAccessionNumber, numberOfSeries, numberOfImages, numberOfAnnotations, createdTime);
 	}
 
+	
 	private EPADSeries dcm4cheeSeries2EpadSeries(String sessionID, String suppliedProjectID, String suppliedSubjectID,
 			DCM4CHEESeries dcm4CheeSeries, String username)
+	{
+		return dcm4cheeSeries2EpadSeries(sessionID, suppliedProjectID, suppliedSubjectID, dcm4CheeSeries, username, false);
+		
+	}
+	
+	private EPADSeries dcm4cheeSeries2EpadSeries(String sessionID, String suppliedProjectID, String suppliedSubjectID,
+			DCM4CHEESeries dcm4CheeSeries, String username, boolean includeAnnotationStatus)
 	{
 		String projectID = suppliedProjectID == null || suppliedProjectID.equals("") ? EPADConfig.xnatUploadProjectID : suppliedProjectID;
 		String patientName = trimTrailing(dcm4CheeSeries.patientName);
@@ -3447,13 +3469,85 @@ public class DefaultEpadOperations implements EpadOperations
 		SeriesProcessingStatus seriesProcessingStatus = epadDatabaseOperations.getSeriesProcessingStatus(seriesUID);
 		String createdTime = dcm4CheeSeries.createdTime != null ? dcm4CheeSeries.createdTime.toString() : "";
 
-		AnnotationStatus annotationStatus = epadDatabaseOperations.getAnnotationStatus(projectID, subjectID, studyUID, seriesUID, username);
 		
+		AnnotationStatus annotationStatus = null;
+		Map<String, AnnotationStatus> userStatusList = null;
+		
+		if (includeAnnotationStatus) {
+			userStatusList = new HashMap<>();
+			annotationStatus = getAnnotationStatus(projectID, subjectID, studyUID, seriesUID, username, userStatusList);
+			//set userStatusList to null so it doesn't display
+			if (userStatusList.size()==0)
+				userStatusList = null;
+		}
 		return new EPADSeries(projectID, subjectID, patientName, studyUID, seriesUID, seriesDate, seriesDescription,
 				examType, bodyPart, accessionNumber, numberOfImages, numberOfSeriesRelatedInstances, numberOfAnnotations,
-				institution, stationName, department, seriesProcessingStatus, createdTime, firstImageUIDInSeries, dcm4CheeSeries.isDSO, annotationStatus);
+				institution, stationName, department, seriesProcessingStatus, createdTime, firstImageUIDInSeries, dcm4CheeSeries.isDSO, annotationStatus, userStatusList);
 	}
 
+	public AnnotationStatus getAnnotationStatus(String projectUID, String subjectUID, String studyUID, String series_uid,
+			String username, Map<String, AnnotationStatus> userStatusList)
+	{
+		User user=null;
+		try {
+			user=projectOperations.getUser(username);
+		} catch (Exception e) {
+			log.info("User couldn't be retrieved for username "+username+ " " +e.getMessage());
+			return AnnotationStatus.NOT_STARTED;
+		}
+		boolean isOwner=false;
+		try {
+			isOwner=projectOperations.isOwner(username, projectUID);
+		} catch (Exception e) {
+			log.info("Is owner status couldn't be checked for username "+username + " and project "+projectUID + " " +e.getMessage());
+			return AnnotationStatus.NOT_STARTED;
+		}
+		//if the user os admin or the owner of the project, get cumulative. 
+		if (username.equals("admin") || (user!=null && (user.isAdmin() || isOwner))) {
+			long userCount=0;
+			int annotationDoneUserCount;
+			fillAnnotationStatusList(projectUID, subjectUID, studyUID, series_uid, username, userStatusList);
+			try {
+				userCount=projectOperations.getUserCountProject(projectUID);
+				annotationDoneUserCount = projectOperations.getAnnotationDoneUserCount(projectUID, subjectUID, studyUID, series_uid);
+			}catch (Exception e) {
+				log.info("User count couldn't be retrieved for project "+projectUID+ " " +e.getMessage());
+				return AnnotationStatus.NOT_STARTED;
+			}
+				
+			if (annotationDoneUserCount == 0)
+				return AnnotationStatus.NOT_STARTED;
+			else if (userCount == annotationDoneUserCount) 
+				return AnnotationStatus.DONE;
+			else if (userCount > annotationDoneUserCount) 
+				return AnnotationStatus.IN_PROGRESS;
+			
+			return AnnotationStatus.ERROR;
+		}
+		
+		//Else get his own status
+		return projectOperations.getAnnotationStatusForUser(projectUID, subjectUID, studyUID, series_uid, username);
+
+
+	}
+	
+	
+	public void fillAnnotationStatusList(String projectUID, String subjectUID, String studyUID, String series_uid,
+			String username, Map<String, AnnotationStatus> userStatusList)
+	{
+		try {
+			List<User> users = projectOperations.getUsersForProject(projectUID);
+			for (User u: users) {
+				userStatusList.put(u.getUsername(), projectOperations.getAnnotationStatusForUser(projectUID, subjectUID, studyUID, series_uid, u.getUsername()));
+			}
+		} catch (Exception e1) {
+			log.info("Couldn't get users for the project "+projectUID + e1.getMessage());
+		}
+		
+
+	}
+	
+	
 	private static String trimTrailing(String xnatName)
 	{
 		while (xnatName.endsWith("^"))

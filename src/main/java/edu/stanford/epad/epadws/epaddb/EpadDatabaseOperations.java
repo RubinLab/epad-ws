@@ -410,10 +410,21 @@ public interface EpadDatabaseOperations
 	 * @param studyuid
 	 * @param seriesuid
 	 * @param username
-	 * @return annotation status see AnnotationStatus class for values
+	 * @return annotation status see AnnotationStatus class for values or null
 	 * @author emelalkim
 	 */
-	AnnotationStatus getAnnotationStatus(String projectUID, String subjectUID, String studyUID, String series_uid,
-			String username);
+	AnnotationStatus getAnnotationStatusForUser(String projectUID, String subjectUID, String studyUID,
+			String series_uid, String username);
+
+	/**
+	 * Gets the number of users that are done annotating the specific series for the project
+	 * @param projectUID
+	 * @param subjectUID
+	 * @param studyUID
+	 * @param series_uid
+	 * @return count or 0
+	 * @author emelalkim
+	 */
+	int getAnnotationDoneUserCount(String projectUID, String subjectUID, String studyUID, String series_uid);
 
 }
