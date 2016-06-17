@@ -981,22 +981,26 @@ public interface EpadProjectOperations {
 	 * @param studyuid
 	 * @param seriesuid
 	 * @param username
+	 * @param numberOfSeries for cumulative status
 	 * @return annotation status see AnnotationStatus class for values or null
 	 * @author emelalkim
 	 */
 	AnnotationStatus getAnnotationStatusForUser(String projectUID, String subjectUID, String studyUID,
-			String series_uid, String username);
+			String series_uid, String username, int numberOfSeries);
+	
+	
 	/**
-	 * Gets the number of users that are done annotating the specific series for the project (using model)
+	 * Gets the number of users that are in the status annotating the specific series for the project (using model)
 	 * @param projectUID
 	 * @param subjectUID
 	 * @param studyUID
 	 * @param series_uid
+	 * @param status annotation status
 	 * @return count or 0
 	 * @author emelalkim
 	 */
-	int getAnnotationDoneUserCount(String projectUID, String subjectUID, String studyUID, String series_uid);
-	
+	int getAnnotationStatusUserCount(String projectUID, String subjectUID, String studyUID, String series_uid,
+			AnnotationStatus status);
 	/**
 	 * update annotation status for user
 	 * if annotation status can be converted to an integer writes it
@@ -1011,4 +1015,6 @@ public interface EpadProjectOperations {
 	 */
 	void updateAnnotationStatus(String username, SeriesReference seriesReference, String annotationStatus,
 			String sessionID) throws Exception;
+	
+	
 }

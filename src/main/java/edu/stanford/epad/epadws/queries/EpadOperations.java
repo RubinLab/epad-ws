@@ -1432,8 +1432,75 @@ public interface EpadOperations
 	 * @param username
 	 * @param sessionID
 	 * @param includeAnnotationStatus
-	 * @return annotation status (see AnnotationStatus class)
+	 * @return series with annotation status (see AnnotationStatus class)
 	 */
 	EPADSeries getSeriesDescription(SeriesReference seriesReference, String username, String sessionID,
 			boolean includeAnnotationStatus);
+
+	/**
+	 * get study description with or without annotation status
+	 * @param studyReference
+	 * @param username
+	 * @param sessionID
+	 * @param includeAnnotationStatus
+	 * @return study with annotation status (see AnnotationStatus class)
+	 * @throws Exception
+	 */
+	EPADStudy getStudyDescription(StudyReference studyReference, String username, String sessionID,
+			boolean includeAnnotationStatus) throws Exception;
+
+	/**
+	 * get study descriptions with or without annotation status
+	 * @param studyReference
+	 * @param username
+	 * @param sessionID
+	 * @param includeAnnotationStatus
+	 * @return study with annotation status (see AnnotationStatus class)
+	 * @throws Exception
+	 */
+	EPADStudyList getStudyDescriptions(SubjectReference subjectReference, String username, String sessionID,
+			EPADSearchFilter searchFilter, boolean includeAnnotationStatus) throws Exception;
+
+	/**
+	 * get subject description with or without annotation status
+	 * @param subjectReference
+	 * @param username
+	 * @param sessionID
+	 * @param includeAnnotationStatus
+	 * @return subject with annotation status (see AnnotationStatus class)
+	 * @throws Exception
+	 */
+	EPADSubject getSubjectDescription(SubjectReference subjectReference, String username, String sessionID,
+			boolean includeAnnotationStatus) throws Exception;
+
+	/**
+	 * get subject descriptions with or without annotation status
+	 * @param projectID
+	 * @param username
+	 * @param sessionID
+	 * @param searchFilter
+	 * @param start
+	 * @param count
+	 * @param sortField
+	 * @param annotationCount
+	 * @param includeAnnotationStatus
+	 * @return subjects with annotation status (see AnnotationStatus class)
+	 * @throws Exception
+	 */
+	EPADSubjectList getSubjectDescriptions(String projectID, String username, String sessionID,
+			EPADSearchFilter searchFilter, int start, int count, String sortField, boolean annotationCount,
+			boolean includeAnnotationStatus) throws Exception;
+
+	/**
+	 * get project description with or without annotation status
+	 * @param projectReference
+	 * @param username
+	 * @param sessionID
+	 * @param annotationCount
+	 * @param includeAnnotationStatus
+	 * @return project with annotation status (see AnnotationStatus class)
+	 * @throws Exception
+	 */
+	EPADProject getProjectDescription(ProjectReference projectReference, String username, String sessionID,
+			boolean annotationCount, boolean includeAnnotationStatus) throws Exception;
 }

@@ -364,7 +364,7 @@ public class Dcm4CheeQueries
 	// TODO This code is very brittle. Rewrite to make more robust. Also ignores DICOM sequences.
 	private static DICOMElement decodeDICOMElementString(String dicomElement)
 	{
-		log.info("dicom element "+dicomElement);
+//		log.info("dicom element "+dicomElement);
 		String[] fields = dicomElement.split(" ");
 
 		int valueFieldStartIndex = valueFieldStartIndex(fields);

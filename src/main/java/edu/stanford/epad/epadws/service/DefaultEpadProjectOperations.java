@@ -121,6 +121,7 @@ import org.mindrot.jbcrypt.BCrypt;
 import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.epad.dtos.AnnotationStatus;
+import edu.stanford.epad.dtos.EPADStudy;
 import edu.stanford.epad.dtos.TaskStatus;
 import edu.stanford.epad.dtos.internal.DCM4CHEESeries;
 import edu.stanford.epad.epadws.aim.AIMDatabaseOperations;
@@ -420,21 +421,109 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		}
 		psssuStatus.save();
 	}
+//	
+//	//is it better to get the status for each user of the project
+//	//more time consuming?
+//	//we also need to traverse this list to cumulate
+//  //also it is extra work to put the username, test the performance	
+//	public Map<String,AnnotationStatus> getAnnotationStatusList(String projectUID, String subjectUID, String studyUID, String series_uid) {
+//		Map<String, AnnotationStatus> userStatusMap=new HashMap<>();
+//		try {
+//			Project p=getProject(projectUID);
+//			
+//			List<ProjectToUser> userlist=new ProjectToUser().getObjects("project_id="+p.getId());
+//			for (ProjectToUser pu:userlist) {
+//				userStatusMap.put(String.valueOf(pu.getUserId()), getAnnotationStatusForUserById(projectUID, subjectUID, studyUID, series_uid, pu.getUserId()));
+//			}
+////			select id,  project_id, user_id, role, (select count(*) from project_subject_study_series_user_status s where s.project_id=pu.project_id and s.user_id=pu.user_id and annotationstatus=3)>0 as status from project_user pu where project_id=12;
+//			
+//		} catch (Exception e) {
+//			log.info("Cannot get annotation status from database for series "+ series_uid+ " " + e.getMessage());
+//			return null;
+//		}
+//		return userStatusMap;
+//		
+//	}
+//	
+//
+//	public AnnotationStatus getAnnotationStatusForUserById(String projectUID, String subjectUID, String studyUID, String series_uid, long userId) {
+//		try {
+//			Project p=getProject(projectUID);
+//			Subject su=getSubject(subjectUID);
+//			Study st=getStudy(studyUID);
+//			
+//			ProjectToSubjectToStudyToSeriesToUser psssuStatus = (ProjectToSubjectToStudyToSeriesToUser) 
+//					new ProjectToSubjectToStudyToSeriesToUser().getObject("project_id="+p.getId()+ " and subject_id=" 
+//						+ su.getId() + " and study_id=" 
+//						+ st.getId() + " and series_uid='" + series_uid + "' and user_id=" +userId );
+//			if (psssuStatus!=null)
+//				return AnnotationStatus.getValue(psssuStatus.getAnnotationStatus());
+//			return AnnotationStatus.NOT_STARTED;
+//		} catch (Exception e) {
+//			log.info("Cannot get annotation status from database for series "+ series_uid+ " " + e.getMessage());
+//			return AnnotationStatus.ERROR;
+//		}
+//		
+//	}
 	
 	@Override
-	public AnnotationStatus getAnnotationStatusForUser(String projectUID, String subjectUID, String studyUID, String series_uid, String username) {
+	public AnnotationStatus getAnnotationStatusForUser(String projectUID, String subjectUID, String studyUID, String series_uid, String username, int numberOfSeries) {
 		try {
-			Project p=getProject(projectUID);
-			Subject su=getSubject(subjectUID);
-			Study st=getStudy(studyUID);
+			
+			Project p=null;
+			Subject su=null;
+			Study st=null;
 			User u=getUser(username);
 			
-			ProjectToSubjectToStudyToSeriesToUser psssuStatus = (ProjectToSubjectToStudyToSeriesToUser) 
-					new ProjectToSubjectToStudyToSeriesToUser().getObject("project_id="+p.getId()+ " and subject_id=" 
-						+ su.getId() + " and study_id=" 
-						+ st.getId() + " and series_uid='" + series_uid + "' and user_id=" +u.getId() );
-			if (psssuStatus!=null)
-				return AnnotationStatus.getValue(psssuStatus.getAnnotationStatus());
+			StringBuilder filter=new StringBuilder();
+			if (projectUID!=null)  {
+				p=getProject(projectUID);
+				filter.append(" project_id=" + p.getId());
+			}
+			if (subjectUID!=null)  {
+				su =getSubject(subjectUID);
+				filter.append(" and subject_id=" + su.getId());
+			}
+			if (studyUID!=null) {
+				st=getStudy(studyUID);
+				filter.append(" and study_id=" + st.getId());
+			}
+			if (series_uid!=null) {
+				filter.append(" and series_uid='" + series_uid+ "'");
+			}
+			//username cannot be null
+			if (username==null) {
+				log.info("Username cannot be null");
+				return AnnotationStatus.ERROR;
+			}
+			filter.append(" and user_id=" + u.getId());
+			
+			
+			List<ProjectToSubjectToStudyToSeriesToUser> psssuStatusList=
+					new ProjectToSubjectToStudyToSeriesToUser().getObjects(filter.toString());
+			
+			if (psssuStatusList!=null) {
+				if (psssuStatusList.size()==1 && numberOfSeries==1) //series level 
+					return AnnotationStatus.getValue(psssuStatusList.get(0).getAnnotationStatus());
+				else { //we need cumulative result
+					int doneCount=0;
+					int inProgressCount=0;
+					for (ProjectToSubjectToStudyToSeriesToUser psssu:psssuStatusList) {
+						if (psssu.getAnnotationStatus()==AnnotationStatus.DONE.getCode()) {
+							doneCount++;
+						}
+						if (psssu.getAnnotationStatus()==AnnotationStatus.IN_PROGRESS.getCode()) {
+							inProgressCount++;
+						}
+					}
+					if (numberOfSeries==doneCount) 
+						return AnnotationStatus.DONE;
+					else if (doneCount+inProgressCount >0 )
+						return AnnotationStatus.IN_PROGRESS;
+					
+				}
+			}
+				
 			return AnnotationStatus.NOT_STARTED;
 		} catch (Exception e) {
 			log.info("Cannot get annotation status from database for series "+ series_uid+ " " + e.getMessage());
@@ -443,16 +532,38 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		
 	}
 	
+	//can return incorrect result for NOT_STARTED as they is possibly no tuple for that!!
 	@Override
-	public int getAnnotationDoneUserCount(String projectUID, String subjectUID, String studyUID, String series_uid) {
+	public int getAnnotationStatusUserCount(String projectUID, String subjectUID, String studyUID, String series_uid, AnnotationStatus status) {
 		try {
-			Project p=getProject(projectUID);
-			Subject su=getSubject(subjectUID);
-			Study st=getStudy(studyUID);
+			Project p=null;
+			Subject su=null;
+			Study st=null;
 			
-			int count = new ProjectToSubjectToStudyToSeriesToUser().getCount("project_id="+p.getId()+ " and subject_id=" 
-						+ su.getId() + " and study_id=" 
-						+ st.getId() + " and series_uid='" + series_uid + "'");
+			StringBuilder filter=new StringBuilder();
+			filter.append("annotationstatus="+status.getCode());
+			if (projectUID!=null)  {
+				p=getProject(projectUID);
+				filter.append(" and user_id in (select user_id from " +
+					ProjectToUser.DBTABLE + " where project_id=" + p.getId()
+					+") ");
+				filter.append(" and project_id=" + p.getId());
+			}
+			if (subjectUID!=null)  {
+				su =getSubject(subjectUID);
+				filter.append(" and subject_id=" + su.getId());
+			}
+			if (studyUID!=null) {
+				st=getStudy(studyUID);
+				filter.append(" and study_id=" + st.getId());
+			}
+			if (series_uid!=null) {
+				filter.append(" and series_uid='" + series_uid+ "'");
+			}
+				
+				
+			//get the status of users in this project
+			int count = new ProjectToSubjectToStudyToSeriesToUser().getCount(filter.toString());
 			return count;
 		} catch (Exception e) {
 			log.info("Cannot get annotation status from database for series "+ series_uid+ " " + e.getMessage());

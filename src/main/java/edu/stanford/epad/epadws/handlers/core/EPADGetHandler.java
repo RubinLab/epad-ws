@@ -237,6 +237,7 @@ public class EPADGetHandler
 				if ("false".equalsIgnoreCase(httpRequest.getParameter("annotationCount")))
 					annotationCount = false;
 				ProjectReference projectReference = ProjectReference.extract(ProjectsRouteTemplates.PROJECT, pathInfo);
+				boolean includeAnnotationStatus = "true".equalsIgnoreCase(httpRequest.getParameter("includeAnnotationStatus"));
 				if (projectReference.projectID.equals(EPADConfig.xnatUploadProjectID))
 					annotationCount = false;
 				//ml added for project download
@@ -262,7 +263,7 @@ public class EPADGetHandler
 					
 					responseStream.append(allProjectList.toJSON());
 				} else {
-					EPADProject project = epadOperations.getProjectDescription(projectReference, username, sessionID, annotationCount);
+					EPADProject project = epadOperations.getProjectDescription(projectReference, username, sessionID, annotationCount, includeAnnotationStatus);
 				
 					if (project != null) {
 						log.info("Project aim count:" + project.numberOfAnnotations);
@@ -285,6 +286,7 @@ public class EPADGetHandler
 				
 				String sortField = httpRequest.getParameter("sortField");
 				boolean unassignedOnly = "true".equalsIgnoreCase(httpRequest.getParameter("unassignedOnly"));
+				boolean includeAnnotationStatus = "true".equalsIgnoreCase(httpRequest.getParameter("includeAnnotationStatus"));
 				boolean annotationCount = true;
 				if ("false".equalsIgnoreCase(httpRequest.getParameter("annotationCount")))
 					annotationCount = false;
@@ -307,7 +309,7 @@ public class EPADGetHandler
 				else
 				{
 					subjectList = epadOperations.getSubjectDescriptions(projectReference.projectID, username,
-						sessionID, searchFilter, start, count, sortField, annotationCount);
+						sessionID, searchFilter, start, count, sortField, annotationCount, includeAnnotationStatus);
 				}
 				if (annotationCountOnly) // What a stupid request!
 				{
@@ -333,6 +335,7 @@ public class EPADGetHandler
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.SUBJECT, pathInfo)) {
 				SubjectReference subjectReference = SubjectReference.extract(ProjectsRouteTemplates.SUBJECT, pathInfo);
 				boolean includeAims = "true".equalsIgnoreCase(httpRequest.getParameter("includeAims"));
+				boolean includeAnnotationStatus = "true".equalsIgnoreCase(httpRequest.getParameter("includeAnnotationStatus"));
 				//ml multiple subjects
 				if (subjectReference.subjectID.contains(",") && returnStream(httpRequest) ) {
 					subjectUIDs=subjectReference.subjectID;
@@ -352,7 +355,7 @@ public class EPADGetHandler
 				} else if (returnStream(httpRequest)) {
 					DownloadUtil.downloadSubject(true, httpResponse, subjectReference, username, sessionID, searchFilter, studyUIDs, includeAims);
 				} else {
-					EPADSubject subject = epadOperations.getSubjectDescription(subjectReference, username, sessionID);
+					EPADSubject subject = epadOperations.getSubjectDescription(subjectReference, username, sessionID, includeAnnotationStatus);
 					if (subject != null) {
 						log.info("subject aim count:" + subject.numberOfAnnotations);
 						responseStream.append(subject.toJSON());
@@ -365,10 +368,11 @@ public class EPADGetHandler
 
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.STUDY_LIST, pathInfo)) {
 				SubjectReference subjectReference = SubjectReference.extract(ProjectsRouteTemplates.STUDY_LIST, pathInfo);
+				boolean includeAnnotationStatus = "true".equalsIgnoreCase(httpRequest.getParameter("includeAnnotationStatus"));
 				if (subjectReference.subjectID.equals("null"))
 					throw new Exception("Patient ID in rest call is null:" + pathInfo);
 				EPADStudyList studyList = epadOperations.getStudyDescriptions(subjectReference, username, sessionID,
-						searchFilter);
+						searchFilter, includeAnnotationStatus);
 				log.info("Returning " + studyList.ResultSet.totalRecords + " studies");
 				responseStream.append(studyList.toJSON());
 				statusCode = HttpServletResponse.SC_OK;
@@ -376,6 +380,7 @@ public class EPADGetHandler
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.STUDY, pathInfo)) {
 				StudyReference studyReference = StudyReference.extract(ProjectsRouteTemplates.STUDY, pathInfo);
 				boolean includeAims = "true".equalsIgnoreCase(httpRequest.getParameter("includeAims"));
+				boolean includeAnnotationStatus = "true".equalsIgnoreCase(httpRequest.getParameter("includeAnnotationStatus"));
 				if (returnConnected(httpRequest)) { //ml connected data for deletion
 					log.info("get projects for study " + studyReference.studyUID );
 					if (searchFilter ==null) {
@@ -397,7 +402,7 @@ public class EPADGetHandler
 						DownloadUtil.downloadStudy(true, httpResponse, studyReference, username, sessionID, searchFilter, seriesUIDs, includeAims);
 				} else {
 					try {
-					EPADStudy study = epadOperations.getStudyDescription(studyReference, username, sessionID);
+					EPADStudy study = epadOperations.getStudyDescription(studyReference, username, sessionID, includeAnnotationStatus);
 					if (study != null) {
 						responseStream.append(study.toJSON());
 					} else {
