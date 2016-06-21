@@ -1503,4 +1503,18 @@ public interface EpadOperations
 	 */
 	EPADProject getProjectDescription(ProjectReference projectReference, String username, String sessionID,
 			boolean annotationCount, boolean includeAnnotationStatus) throws Exception;
+
+	/** 
+	 * get project descriptions with or without annotation status
+	 * @param username
+	 * @param sessionID
+	 * @param searchFilter
+	 * @param annotationCount
+	 * @param ignoreSystem
+	 * @param includeAnnotationStatus
+	 * @return projects with annotation status (see AnnotationStatus class)
+	 * @throws Exception
+	 */
+	EPADProjectList getProjectDescriptions(String username, String sessionID, EPADSearchFilter searchFilter,
+			boolean annotationCount, boolean ignoreSystem, boolean includeAnnotationStatus) throws Exception;
 }

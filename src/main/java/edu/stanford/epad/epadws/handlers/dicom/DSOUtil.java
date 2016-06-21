@@ -745,6 +745,7 @@ public class DSOUtil
 				List<DCM4CHEEImageDescription> referencedImages = new ArrayList<DCM4CHEEImageDescription>();
 				List<DCM4CHEEImageDescription> imageDescriptions = dcm4CheeDatabaseOperations.getImageDescriptions(
 						studyUID, referencedSeriesUID);
+				//starting offset of instances (for series that doesn't start from 1)
 				int instanceOffset = imageDescriptions.size();
 				Map<String, DCM4CHEEImageDescription> descMap = new HashMap<String, DCM4CHEEImageDescription>();
 				for (DCM4CHEEImageDescription imageDescription : imageDescriptions) {

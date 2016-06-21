@@ -228,7 +228,8 @@ public class EPADGetHandler
 				if ("true".equalsIgnoreCase(httpRequest.getParameter("annotationCount")))
 					annotationCount = true;
 				boolean ignoreSystem = "false".equalsIgnoreCase(httpRequest.getParameter("system"));
-				EPADProjectList projectList = epadOperations.getProjectDescriptions(username, sessionID, searchFilter, annotationCount, ignoreSystem);
+				boolean includeAnnotationStatus = "true".equalsIgnoreCase(httpRequest.getParameter("includeAnnotationStatus"));
+				EPADProjectList projectList = epadOperations.getProjectDescriptions(username, sessionID, searchFilter, annotationCount, ignoreSystem, includeAnnotationStatus);
 				responseStream.append(projectList.toJSON());
 
 				statusCode = HttpServletResponse.SC_OK;

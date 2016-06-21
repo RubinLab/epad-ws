@@ -469,6 +469,9 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 	@Override
 	public AnnotationStatus getAnnotationStatusForUser(String projectUID, String subjectUID, String studyUID, String series_uid, String username, int numberOfSeries) {
 		try {
+			//no series fix, do not bother checking
+			if (numberOfSeries==0) 
+				return AnnotationStatus.DONE;
 			
 			Project p=null;
 			Subject su=null;

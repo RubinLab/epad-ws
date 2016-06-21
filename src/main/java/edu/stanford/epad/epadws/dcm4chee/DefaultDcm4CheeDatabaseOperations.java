@@ -113,6 +113,8 @@ import java.sql.Statement;
 import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -606,6 +608,30 @@ public class DefaultDcm4CheeDatabaseOperations implements Dcm4CheeDatabaseOperat
 		} finally {
 			close(c, ps, rs);
 		}
+		
+		//check if the images list has proper instance numbers
+		//if not order the slices
+		//we should read the required tags and then use that to sort instead of using just the slicelocation
+//		if(!(retVal.get(0).instanceNumber==1 && retVal.get(retVal.size()-1).instanceNumber== retVal.size())) {
+		if(retVal.get(retVal.size()-1).instanceNumber-retVal.get(0).instanceNumber+1 != retVal.size()) {
+			//sort before filling image list
+			//but we just have slice location
+			//the image showed darker after doing this, why??
+			Collections.sort(retVal, new Comparator<DCM4CHEEImageDescription>() {
+			    @Override
+			    public int compare(DCM4CHEEImageDescription o1, DCM4CHEEImageDescription o2) {
+			    	Double o1Loc=Double.parseDouble(o1.sliceLocation);
+			    	Double o2Loc=Double.parseDouble(o2.sliceLocation);
+			    	//use the reverse order 
+			        return -1*o1Loc.compareTo(o2Loc);
+			    }
+
+			});
+			
+			//update instance numbers after sorting
+			
+		}
+		
 		return retVal;
 	}
 
