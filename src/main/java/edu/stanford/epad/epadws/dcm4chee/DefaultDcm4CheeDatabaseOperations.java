@@ -630,6 +630,11 @@ public class DefaultDcm4CheeDatabaseOperations implements Dcm4CheeDatabaseOperat
 			
 			//update instance numbers after sorting
 			
+			for(int i=1; i<=retVal.size(); i++) {
+				retVal.get(i-1).instanceNumber=i;
+				
+			}
+			
 		}
 		
 		return retVal;
