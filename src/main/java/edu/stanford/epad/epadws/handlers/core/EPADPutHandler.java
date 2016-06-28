@@ -463,7 +463,7 @@ public class EPADPutHandler
 					throw new Exception("Worklist not found for user " + reader);
 				User user = worklistOperations.getUserForWorkList(workListID);
 				//ml user admin check  added
-				if (!user.isAdmin() || !user.getUsername().equals(reader))
+				if (!user.isAdmin() && !user.getUsername().equals(reader))
 					throw new Exception("User " +  reader + " does not match user for worklist "+ workListID);
 				log.debug("Worklist parameters, wlstatus:" + wlstatus + " started:" + started + " completed:" + completed);
 				if (wlstatus == null && !started && !completed){

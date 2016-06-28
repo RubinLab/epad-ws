@@ -1377,8 +1377,11 @@ public class DSOUtil
 			@Override
 			public final int filterRGB(int x, int y, int rgb)
 			{
-				if ((rgb | 0xFF000000) == markerRGB) {
+				if ((rgb & 0x00FFFFFF) != 0) {
 					nonBlank.set(true);
+				}
+				if ((rgb | 0xFF000000) == markerRGB) {
+//					nonBlank.set(true);
 					return 0xFF000000 | rgb;
 				} else {
 					return rgb;
