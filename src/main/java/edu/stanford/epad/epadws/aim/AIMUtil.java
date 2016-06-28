@@ -225,6 +225,20 @@ public class AIMUtil
 	private static final String xsdFileV4 = EPADConfig.xsdFileV4;
 	private static final String xsdFilePathV4 = EPADConfig.xsdFilePathV4;
 
+	/**
+	 * Gets the annotation for a unique identifier
+	 * @param uniqueIdentifier
+	 * @param username
+	 * @param jsessionID
+	 * @return
+	 * @throws AimException
+	 * @throws edu.stanford.hakan.aim4api.base.AimException
+	 */
+	public static ImageAnnotationCollection getImageAnnotationByUniqueId(String uniqueIdentifier) throws AimException,
+	    edu.stanford.hakan.aim4api.base.AimException {
+		 return AnnotationGetter.getImageAnnotationCollectionByUniqueIdentifier(eXistServerUrl, aim4Namespace, eXistCollectionV4, eXistUsername, eXistPassword, uniqueIdentifier);
+	    	
+	}
 	
 	private static long getTime(String timestamp)
 	{

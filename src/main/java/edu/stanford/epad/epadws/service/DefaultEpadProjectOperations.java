@@ -125,10 +125,16 @@ import edu.stanford.epad.dtos.EPADStudy;
 import edu.stanford.epad.dtos.TaskStatus;
 import edu.stanford.epad.dtos.internal.DCM4CHEESeries;
 import edu.stanford.epad.epadws.aim.AIMDatabaseOperations;
+import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeDatabase;
+import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeDatabaseOperations;
+import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeOperations;
 import edu.stanford.epad.epadws.epaddb.DatabaseUtils;
 import edu.stanford.epad.epadws.epaddb.EpadDatabase;
 import edu.stanford.epad.epadws.epaddb.EpadDatabaseOperations;
+import edu.stanford.epad.epadws.handlers.core.ProjectReference;
 import edu.stanford.epad.epadws.handlers.core.SeriesReference;
+import edu.stanford.epad.epadws.handlers.core.StudyReference;
+import edu.stanford.epad.epadws.handlers.core.SubjectReference;
 import edu.stanford.epad.epadws.models.DisabledTemplate;
 import edu.stanford.epad.epadws.models.EpadFile;
 import edu.stanford.epad.epadws.models.EpadStatistics;
@@ -142,7 +148,7 @@ import edu.stanford.epad.epadws.models.ProjectToPlugin;
 import edu.stanford.epad.epadws.models.ProjectToPluginParameter;
 import edu.stanford.epad.epadws.models.ProjectToSubject;
 import edu.stanford.epad.epadws.models.ProjectToSubjectToStudy;
-import edu.stanford.epad.epadws.models.ProjectToSubjectToStudyToSeriesToUser;
+import edu.stanford.epad.epadws.models.ProjectToSubjectToStudyToSeriesToUserStatus;
 import edu.stanford.epad.epadws.models.ProjectToSubjectToUser;
 import edu.stanford.epad.epadws.models.ProjectToUser;
 import edu.stanford.epad.epadws.models.ProjectType;
@@ -383,6 +389,8 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		return user;
 	}
 
+	
+	/* start of series get and set annotation status */
 	@Override
 	public void updateAnnotationStatus(String username,
 			SeriesReference seriesReference, String annotationStatus,
@@ -399,12 +407,12 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 			log.info("User doesn't exist in project, cannot update status");
 			return;
 		}
-		ProjectToSubjectToStudyToSeriesToUser psssuStatus = (ProjectToSubjectToStudyToSeriesToUser) 
-				new ProjectToSubjectToStudyToSeriesToUser().getObject("project_id="+p.getId()+ " and subject_id=" 
+		ProjectToSubjectToStudyToSeriesToUserStatus psssuStatus = (ProjectToSubjectToStudyToSeriesToUserStatus) 
+				new ProjectToSubjectToStudyToSeriesToUserStatus().getObject("project_id="+p.getId()+ " and subject_id=" 
 					+ su.getId() + " and study_id=" 
 					+ st.getId() + " and series_uid='" + seriesReference.seriesUID + "' and user_id=" +u.getId() );
 		if (psssuStatus==null) {
-			psssuStatus = new ProjectToSubjectToStudyToSeriesToUser();
+			psssuStatus = new ProjectToSubjectToStudyToSeriesToUserStatus();
 			psssuStatus.setProjectId(p.getId());
 			psssuStatus.setSubjectId(su.getId());
 			psssuStatus.setStudyId(st.getId());
@@ -421,50 +429,7 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		}
 		psssuStatus.save();
 	}
-//	
-//	//is it better to get the status for each user of the project
-//	//more time consuming?
-//	//we also need to traverse this list to cumulate
-//  //also it is extra work to put the username, test the performance	
-//	public Map<String,AnnotationStatus> getAnnotationStatusList(String projectUID, String subjectUID, String studyUID, String series_uid) {
-//		Map<String, AnnotationStatus> userStatusMap=new HashMap<>();
-//		try {
-//			Project p=getProject(projectUID);
-//			
-//			List<ProjectToUser> userlist=new ProjectToUser().getObjects("project_id="+p.getId());
-//			for (ProjectToUser pu:userlist) {
-//				userStatusMap.put(String.valueOf(pu.getUserId()), getAnnotationStatusForUserById(projectUID, subjectUID, studyUID, series_uid, pu.getUserId()));
-//			}
-////			select id,  project_id, user_id, role, (select count(*) from project_subject_study_series_user_status s where s.project_id=pu.project_id and s.user_id=pu.user_id and annotationstatus=3)>0 as status from project_user pu where project_id=12;
-//			
-//		} catch (Exception e) {
-//			log.info("Cannot get annotation status from database for series "+ series_uid+ " " + e.getMessage());
-//			return null;
-//		}
-//		return userStatusMap;
-//		
-//	}
-//	
-//
-//	public AnnotationStatus getAnnotationStatusForUserById(String projectUID, String subjectUID, String studyUID, String series_uid, long userId) {
-//		try {
-//			Project p=getProject(projectUID);
-//			Subject su=getSubject(subjectUID);
-//			Study st=getStudy(studyUID);
-//			
-//			ProjectToSubjectToStudyToSeriesToUser psssuStatus = (ProjectToSubjectToStudyToSeriesToUser) 
-//					new ProjectToSubjectToStudyToSeriesToUser().getObject("project_id="+p.getId()+ " and subject_id=" 
-//						+ su.getId() + " and study_id=" 
-//						+ st.getId() + " and series_uid='" + series_uid + "' and user_id=" +userId );
-//			if (psssuStatus!=null)
-//				return AnnotationStatus.getValue(psssuStatus.getAnnotationStatus());
-//			return AnnotationStatus.NOT_STARTED;
-//		} catch (Exception e) {
-//			log.info("Cannot get annotation status from database for series "+ series_uid+ " " + e.getMessage());
-//			return AnnotationStatus.ERROR;
-//		}
-//		
-//	}
+	
 	
 	@Override
 	public AnnotationStatus getAnnotationStatusForUser(String projectUID, String subjectUID, String studyUID, String series_uid, String username, int numberOfSeries) {
@@ -490,6 +455,7 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 			if (studyUID!=null) {
 				st=getStudy(studyUID);
 				filter.append(" and study_id=" + st.getId());
+						
 			}
 			if (series_uid!=null) {
 				filter.append(" and series_uid='" + series_uid+ "'");
@@ -500,18 +466,18 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 				return AnnotationStatus.ERROR;
 			}
 			filter.append(" and user_id=" + u.getId());
-			
-			
-			List<ProjectToSubjectToStudyToSeriesToUser> psssuStatusList=
-					new ProjectToSubjectToStudyToSeriesToUser().getObjects(filter.toString());
-			
+				
+			//check from series
+			List<ProjectToSubjectToStudyToSeriesToUserStatus> psssuStatusList=
+					new ProjectToSubjectToStudyToSeriesToUserStatus().getObjects(filter.toString());
+			log.info("filter "+filter.toString());
 			if (psssuStatusList!=null) {
 				if (psssuStatusList.size()==1 && numberOfSeries==1) //series level 
 					return AnnotationStatus.getValue(psssuStatusList.get(0).getAnnotationStatus());
 				else { //we need cumulative result
 					int doneCount=0;
 					int inProgressCount=0;
-					for (ProjectToSubjectToStudyToSeriesToUser psssu:psssuStatusList) {
+					for (ProjectToSubjectToStudyToSeriesToUserStatus psssu:psssuStatusList) {
 						if (psssu.getAnnotationStatus()==AnnotationStatus.DONE.getCode()) {
 							doneCount++;
 						}
@@ -519,13 +485,16 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 							inProgressCount++;
 						}
 					}
-					if (numberOfSeries==doneCount) 
+					log.info("Done "+doneCount + " numberOfSeries "+numberOfSeries+ " inprogress "+ inProgressCount);
+					//i need to use <+ because of the dso series. 
+					if (numberOfSeries<=doneCount) 
 						return AnnotationStatus.DONE;
 					else if (doneCount+inProgressCount >0 )
 						return AnnotationStatus.IN_PROGRESS;
 					
 				}
 			}
+			//end of check from series
 				
 			return AnnotationStatus.NOT_STARTED;
 		} catch (Exception e) {
@@ -534,8 +503,102 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		}
 		
 	}
+	/* end of series get and set annotation status */
+	private final Dcm4CheeDatabaseOperations dcm4CheeDatabaseOperations = Dcm4CheeDatabase.getInstance()
+			.getDcm4CheeDatabaseOperations();
+	/* start of study set annotation status */
+	@Override
+	public void updateAnnotationStatus(String username,
+			StudyReference studyReference, String annotationStatus,
+			String sessionID) throws Exception {
+		Project p=getProject(studyReference.projectID);
+		Subject su=getSubject(studyReference.subjectID);
+		Study st=getStudy(studyReference.studyUID);
+		User u=getUser(username);
+		
+		//check if the user exist in the project
+		//only occasion this can happen in epad is with admin.
+		//TODO better error reporting to ui
+		if (!isUserInProject(u.getId(), p.getId())) {
+			log.info("User doesn't exist in project, cannot update status");
+			return;
+		}
+		
+		//get all the series and update status for them
+		Set<String> seriesList=dcm4CheeDatabaseOperations.getAllSeriesUIDsInStudy(st.getStudyUID());
+		
+		for (String seriesUID:seriesList) {
+			updateAnnotationStatus(username, new SeriesReference(studyReference.projectID, studyReference.subjectID, studyReference.studyUID, seriesUID), annotationStatus, sessionID);
+		}
+		
 	
-	//can return incorrect result for NOT_STARTED as they is possibly no tuple for that!!
+		
+	}
+	/* end of study set annotation status */
+	/* start of subject set annotation status */
+	@Override
+	public void updateAnnotationStatus(String username,
+			SubjectReference subjectReference, String annotationStatus,
+			String sessionID) throws Exception {
+		Project p=getProject(subjectReference.projectID);
+		Subject su=getSubject(subjectReference.subjectID);
+		User u=getUser(username);
+		
+		//check if the user exist in the project
+		//only occasion this can happen in epad is with admin.
+		//TODO better error reporting to ui
+		if (!isUserInProject(u.getId(), p.getId())) {
+			log.info("User doesn't exist in project, cannot update status");
+			return;
+		}
+		//get all the studies, then series and update series status
+		List<Study> studyList=getStudiesForSubject(su.getSubjectUID());
+		for (Study study:studyList) {
+			//TODO should disgard dso series
+			Set<String> seriesList=dcm4CheeDatabaseOperations.getAllSeriesUIDsInStudy(study.getStudyUID());
+			
+			for (String seriesUID:seriesList) {
+				updateAnnotationStatus(username, new SeriesReference(subjectReference.projectID, subjectReference.subjectID, study.getStudyUID(), seriesUID), annotationStatus, sessionID);
+			}
+		}
+	}
+
+	/* end of subject set annotation status */
+	
+	/* start of subject set annotation status */
+	@Override
+	public void updateAnnotationStatus(String username,
+			ProjectReference projectReference, String annotationStatus,
+			String sessionID) throws Exception {
+		Project p=getProject(projectReference.projectID);
+		User u=getUser(username);
+		
+		//check if the user exist in the project
+		//only occasion this can happen in epad is with admin.
+		//TODO better error reporting to ui
+		if (!isUserInProject(u.getId(), p.getId())) {
+			log.info("User doesn't exist in project, cannot update status");
+			return;
+		}
+		
+		//get all the subjects, then studies, then series and update series status
+		List<Subject> subjectList = getSubjectsForProject(projectReference.projectID);
+		for (Subject subject:subjectList) {
+			List<Study> studyList=getStudiesForSubject(subject.getSubjectUID());
+			for (Study study:studyList) {
+				Set<String> seriesList=dcm4CheeDatabaseOperations.getAllSeriesUIDsInStudy(study.getStudyUID());
+				
+				for (String seriesUID:seriesList) {
+					updateAnnotationStatus(username, new SeriesReference(projectReference.projectID, subject.getSubjectUID(), study.getStudyUID(), seriesUID), annotationStatus, sessionID);
+				}
+			}
+		}
+	}
+
+	/* end of project set annotation status */
+	
+	
+	//can return incorrect result for NOT_STARTED as there is possibly no tuple for that!!
 	@Override
 	public int getAnnotationStatusUserCount(String projectUID, String subjectUID, String studyUID, String series_uid, AnnotationStatus status) {
 		try {
@@ -566,7 +629,7 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 				
 				
 			//get the status of users in this project
-			int count = new ProjectToSubjectToStudyToSeriesToUser().getCount(filter.toString());
+			int count = new ProjectToSubjectToStudyToSeriesToUserStatus().getCount(filter.toString());
 			return count;
 		} catch (Exception e) {
 			log.info("Cannot get annotation status from database for series "+ series_uid+ " " + e.getMessage());

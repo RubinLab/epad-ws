@@ -214,7 +214,7 @@ import edu.stanford.epad.epadws.models.FileType;
 import edu.stanford.epad.epadws.models.NonDicomSeries;
 import edu.stanford.epad.epadws.models.Project;
 import edu.stanford.epad.epadws.models.ProjectToSubjectToStudy;
-import edu.stanford.epad.epadws.models.ProjectToSubjectToStudyToSeriesToUser;
+import edu.stanford.epad.epadws.models.ProjectToSubjectToStudyToSeriesToUserStatus;
 import edu.stanford.epad.epadws.models.ProjectType;
 import edu.stanford.epad.epadws.models.Study;
 import edu.stanford.epad.epadws.models.Subject;
@@ -3636,24 +3636,35 @@ public class DefaultEpadOperations implements EpadOperations
 	public AnnotationStatus getAnnotationStatusSubject(String projectUID, String subjectUID,  
 			String username, Map<String, AnnotationStatus> userStatusList, String sessionID, EPADSearchFilter searchFilter)
 	{
-		//check if the subject has its own done status
-		//if not check series count
 		boolean isUserPrivileged = isUserPrivileged(projectUID, username);
 		try {
+			//to calculate the cumulative user list,  we need a map of user to an array containing [donecount and in_progresscount]
+			Map<String,int[]> statsMap= new HashMap<>();
+			
+			if (isUserPrivileged) {
+				//if the user is priviliged fill the user list
+				EPADUserList users = getUserDescriptions(username, new ProjectReference(projectUID), sessionID);
+				
+				for (EPADUser u : users.ResultSet.Result) {
+					int[] value=new int[]{0,0};
+					statsMap.put(u.username, value);
+						
+				}
+				
+			}
+//			else {
+//				AnnotationStatus as=projectOperations.getAnnotationStatusForUserBySubject(projectUID, subjectUID, username);
+//				if (as!=AnnotationStatus.ERROR)	 
+//					return as;
+//			}
+			
 			EPADStudyList studies= getStudyDescriptions(new SubjectReference(projectUID, subjectUID), username, sessionID, searchFilter,true);
 			int doneCount=0;
 			int inProgressCount=0;
-			//to calculate the cumulative user list,  we need a map of user to an array containing [donecount and in_progresscount]
-			Map<String,int[]> statsMap= new HashMap<>();
 			for (EPADStudy st: studies.ResultSet.Result) {
 				log.info("study "+ st.studyUID);
 				log.info("annotation status "+ st.annotationStatus);
-				if (st.annotationStatus.equals(AnnotationStatus.DONE)) {
-					doneCount++;
-				}
-				if (st.annotationStatus.equals(AnnotationStatus.IN_PROGRESS)) {
-					inProgressCount++;
-				}
+				
 				if (isUserPrivileged) {
 					//cumulate the users' status over studies
 					if (st.userStatusList!=null) {
@@ -3688,13 +3699,19 @@ public class DefaultEpadOperations implements EpadOperations
 						}
 						
 					}
+				} else {
+					if (st.annotationStatus.equals(AnnotationStatus.DONE)) {
+						doneCount++;
+					}
+					if (st.annotationStatus.equals(AnnotationStatus.IN_PROGRESS)) {
+						inProgressCount++;
+					}
 				}
 
 			}
 			
-			//we cannot fill userstatuslist for empty studies, do not have the names to start with!!
 			
-					
+			//cumulate studies		
 			if (isUserPrivileged) {
 				for (Entry<String, int[]> e : statsMap.entrySet()) {
 					int[] statForUser=e.getValue();
@@ -3705,14 +3722,33 @@ public class DefaultEpadOperations implements EpadOperations
 						userStatusList.put(e.getKey(), AnnotationStatus.IN_PROGRESS);
 					else userStatusList.put(e.getKey(), AnnotationStatus.NOT_STARTED);
 				}
+//				//check subject status table and override the cumulated from studies
+//				for (Entry<String, AnnotationStatus> e : userStatusList.entrySet()) {
+//					AnnotationStatus as=projectOperations.getAnnotationStatusForUserBySubject(projectUID, subjectUID, e.getKey());
+//					if (as!=AnnotationStatus.ERROR)	 
+//						e.setValue(as);
+//					log.info("subject set "+ subjectUID + "  "+ as);
+//				}
+//				
+				//check the user list to cumulate
+				for (Entry<String, AnnotationStatus> e : userStatusList.entrySet()) {
+					if (e.getValue().equals(AnnotationStatus.DONE)) 
+						doneCount++;
+					if (e.getValue().equals(AnnotationStatus.IN_PROGRESS))
+						inProgressCount++;
+				}
+				if (userStatusList.size() == 0 ||userStatusList.size()==doneCount) 
+					return AnnotationStatus.DONE;
+				else if (doneCount+inProgressCount >0 )
+					return AnnotationStatus.IN_PROGRESS;
 					
-			}
+			}else {
 			
-			if (studies.ResultSet.Result.size()==doneCount) 
-				return AnnotationStatus.DONE;
-			else if (doneCount+inProgressCount >0 )
-				return AnnotationStatus.IN_PROGRESS;
-				
+				if (studies.ResultSet.Result.size()==doneCount) 
+					return AnnotationStatus.DONE;
+				else if (doneCount+inProgressCount >0 )
+					return AnnotationStatus.IN_PROGRESS;
+			}
 			
 		
 		} catch (Exception e) {
@@ -3762,34 +3798,51 @@ public class DefaultEpadOperations implements EpadOperations
 	public AnnotationStatus getAnnotationStatus(String projectUID, String subjectUID, String studyUID, String series_uid,
 			String username, Map<String, AnnotationStatus> userStatusList, int numberOfSeries, boolean isUserPrivileged)
 	{
-		//if the user os admin or the owner of the project, get cumulative. 
+		//if the user is admin or the owner of the project, get cumulative. 
 		if (isUserPrivileged) {
-			long userCount=0;
-			int annotationDoneUserCount;
 			fillAnnotationStatusList(projectUID, subjectUID, studyUID, series_uid, username, userStatusList, numberOfSeries);
 			//no series fix, do not bother calculating
 			if (numberOfSeries==0) 
 				return AnnotationStatus.DONE;
-			try {
-				userCount=projectOperations.getUserCountProject(projectUID);
-				annotationDoneUserCount = projectOperations.getAnnotationStatusUserCount(projectUID, subjectUID, studyUID, series_uid,AnnotationStatus.DONE);
-			}catch (Exception e) {
-				log.info("User count couldn't be retrieved for project "+projectUID+ " " +e.getMessage());
-				return AnnotationStatus.NOT_STARTED;
+			
+			//go through the user list to cumulate
+			int doneCount=0;
+			int inProgressCount=0;
+			for (Entry<String, AnnotationStatus> e : userStatusList.entrySet()) {
+				if (e.getValue().equals(AnnotationStatus.DONE)) 
+					doneCount++;
+				if (e.getValue().equals(AnnotationStatus.IN_PROGRESS))
+					inProgressCount++;
 			}
-			if (annotationDoneUserCount == 0) {
-				int inProgressCount = projectOperations.getAnnotationStatusUserCount(projectUID, subjectUID, studyUID, series_uid,AnnotationStatus.IN_PROGRESS);
-				if (inProgressCount == 0)
-					return AnnotationStatus.NOT_STARTED;
-				else
-					return AnnotationStatus.IN_PROGRESS;
-			}
-			else if (userCount*numberOfSeries == annotationDoneUserCount) 
+			if (userStatusList.size() == 0 ||userStatusList.size()==doneCount) 
 				return AnnotationStatus.DONE;
-			else if (userCount*numberOfSeries > annotationDoneUserCount) 
+			else if (doneCount+inProgressCount >0 )
 				return AnnotationStatus.IN_PROGRESS;
 			
-			return AnnotationStatus.ERROR;
+			//use annotation and user counts to decide
+//			long userCount=0;
+//			int annotationDoneUserCount;
+			
+//			try {
+//				userCount=projectOperations.getUserCountProject(projectUID);
+//				annotationDoneUserCount = projectOperations.getAnnotationStatusUserCount(projectUID, subjectUID, studyUID, series_uid,AnnotationStatus.DONE);
+//			}catch (Exception e) {
+//				log.info("User count couldn't be retrieved for project "+projectUID+ " " +e.getMessage());
+//				return AnnotationStatus.NOT_STARTED;
+//			}
+//			if (annotationDoneUserCount == 0) {
+//				int inProgressCount = projectOperations.getAnnotationStatusUserCount(projectUID, subjectUID, studyUID, series_uid,AnnotationStatus.IN_PROGRESS);
+//				if (inProgressCount == 0)
+//					return AnnotationStatus.NOT_STARTED;
+//				else
+//					return AnnotationStatus.IN_PROGRESS;
+//			}
+//			else if (userCount*numberOfSeries == annotationDoneUserCount) 
+//				return AnnotationStatus.DONE;
+//			else if (userCount*numberOfSeries > annotationDoneUserCount) 
+//				return AnnotationStatus.IN_PROGRESS;
+			
+			return AnnotationStatus.NOT_STARTED;
 		}
 		
 		//Else get his own status
@@ -3805,6 +3858,8 @@ public class DefaultEpadOperations implements EpadOperations
 		try {
 			List<User> users = projectOperations.getUsersForProject(projectUID);
 			for (User u: users) {
+				log.info("putting user "+u.getUsername() + " status "+ projectOperations.getAnnotationStatusForUser(projectUID, subjectUID, studyUID, series_uid, u.getUsername(), numberOfSeries));
+				
 				userStatusList.put(u.getUsername(), projectOperations.getAnnotationStatusForUser(projectUID, subjectUID, studyUID, series_uid, u.getUsername(), numberOfSeries));
 			}
 		} catch (Exception e1) {

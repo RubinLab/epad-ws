@@ -110,7 +110,10 @@ import java.util.List;
 import java.util.Map;
 
 import edu.stanford.epad.dtos.AnnotationStatus;
+import edu.stanford.epad.epadws.handlers.core.ProjectReference;
 import edu.stanford.epad.epadws.handlers.core.SeriesReference;
+import edu.stanford.epad.epadws.handlers.core.StudyReference;
+import edu.stanford.epad.epadws.handlers.core.SubjectReference;
 import edu.stanford.epad.epadws.models.EpadFile;
 import edu.stanford.epad.epadws.models.EpadStatistics;
 import edu.stanford.epad.epadws.models.EventLog;
@@ -1014,6 +1017,39 @@ public interface EpadProjectOperations {
 	 * @throws Exception
 	 */
 	void updateAnnotationStatus(String username, SeriesReference seriesReference, String annotationStatus,
+			String sessionID) throws Exception;
+	
+	/**
+	 * updates the annotation status for whole study
+	 * @param username
+	 * @param studyReference
+	 * @param annotationStatus
+	 * @param sessionID
+	 * @throws Exception
+	 */
+	void updateAnnotationStatus(String username, StudyReference studyReference, String annotationStatus,
+			String sessionID) throws Exception;
+	
+	/**
+	 * updates the annotation status for whole subject
+	 * @param username
+	 * @param subjectReference
+	 * @param annotationStatus
+	 * @param sessionID
+	 * @throws Exception
+	 */
+	void updateAnnotationStatus(String username, SubjectReference subjectReference, String annotationStatus,
+			String sessionID) throws Exception;
+	
+	/**
+	 * updates the annotation status for whole project
+	 * @param username
+	 * @param projectReference
+	 * @param annotationStatus
+	 * @param sessionID
+	 * @throws Exception
+	 */
+	void updateAnnotationStatus(String username, ProjectReference projectReference, String annotationStatus,
 			String sessionID) throws Exception;
 	
 	

@@ -109,7 +109,7 @@ import java.util.Date;
 import edu.stanford.epad.dtos.AnnotationStatus;
 import edu.stanford.epad.epadws.models.dao.AbstractDAO;
 
-public class ProjectToSubjectToStudyToSeriesToUser extends AbstractDAO {
+public class ProjectToSubjectToStudyToSeriesToUserStatus extends AbstractDAO {
 
 	long id;
 	long projectId;

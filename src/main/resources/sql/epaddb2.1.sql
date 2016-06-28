@@ -22,6 +22,5 @@ KEY FK_psssustatus_user (user_id),
 CONSTRAINT FK_psssustatus_user FOREIGN KEY (user_id) REFERENCES user(id)) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 CREATE UNIQUE INDEX psssustatus_user on project_subject_study_series_user_status(project_id,subject_id,study_id,series_uid,user_id);
 
-
 UPDATE dbversion SET version = '2.0';
 commit;

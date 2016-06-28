@@ -214,12 +214,18 @@ public class EPADPutHandler
 				if (projectDescription == null)
 					projectDescription = httpRequest.getParameter("description");
 				String defaultTemplate = httpRequest.getParameter("defaultTemplate");
+				//get the annotation, it can be empty, or done(or 3) at this point
+				String annotationStatus = httpRequest.getParameter("annotationStatus");
+				
 				ProjectType type=ProjectType.PRIVATE;
 				if (httpRequest.getParameter("type")!=null && httpRequest.getParameter("type").equalsIgnoreCase("public"))
 					type=ProjectType.PUBLIC;
 				else type=ProjectType.PRIVATE;
 					
 				EPADProject project = epadOperations.getProjectDescription(projectReference, username, sessionID, false);
+				if (annotationStatus != null) {
+					projectOperations.updateAnnotationStatus(username, projectReference, annotationStatus, sessionID);
+				}
 				if (project != null) {
 					statusCode = epadOperations.updateProject(username, projectReference, projectName, projectDescription, defaultTemplate, sessionID, type);
 				} else {
@@ -239,7 +245,13 @@ public class EPADPutHandler
 				String subjectName = httpRequest.getParameter("subjectName");
 				String gender = httpRequest.getParameter("gender");
 				String dob = httpRequest.getParameter("dob");
+				//get the annotation, it can be empty, or done(or 3) at this point
+				String annotationStatus = httpRequest.getParameter("annotationStatus");
+				
 				EPADSubject subject = epadOperations.getSubjectDescription(subjectReference, username, sessionID);
+				if (annotationStatus != null) {
+					projectOperations.updateAnnotationStatus(username, subjectReference, annotationStatus, sessionID);
+				}
 				if (subject != null) {
 					statusCode = epadOperations.updateSubject(username, subjectReference, subjectName, getDate(dob), gender, sessionID);
 				} else {
@@ -268,12 +280,17 @@ public class EPADPutHandler
 				if (description == null)
 					description = httpRequest.getParameter("studyDescription");
 				String studyDate = httpRequest.getParameter("studyDate");
+				//get the annotation, it can be empty, or done(or 3) at this point
+				String annotationStatus = httpRequest.getParameter("annotationStatus");
+				
 				statusCode = epadOperations.createStudy(username, studyReference, description, getDate(studyDate), sessionID);
 				if (uploadedFile != null && false) {
 					String fileType = httpRequest.getParameter("fileType");
 					statusCode = epadOperations.createFile(username, studyReference, uploadedFile, description, fileType, sessionID);					
 				}
-	
+				if (annotationStatus != null) {
+					projectOperations.updateAnnotationStatus(username, studyReference, annotationStatus, sessionID);
+				}
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.STUDY_AIM, pathInfo)) {
 				StudyReference studyReference = StudyReference.extract(ProjectsRouteTemplates.STUDY_AIM, pathInfo);
 				AIMReference aimReference = AIMReference.extract(ProjectsRouteTemplates.STUDY_AIM, pathInfo);

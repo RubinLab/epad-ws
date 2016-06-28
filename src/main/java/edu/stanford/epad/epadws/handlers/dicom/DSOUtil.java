@@ -191,6 +191,10 @@ import edu.stanford.epad.epadws.queries.DefaultEpadOperations;
 import edu.stanford.epad.epadws.queries.EpadOperations;
 import edu.stanford.epad.epadws.service.DefaultEpadProjectOperations;
 import edu.stanford.epad.epadws.service.EpadProjectOperations;
+//import edu.stanford.hakan.aim3api.usage.AnnotationExtender;
+//import edu.stanford.hakan.aim3api.usage.AnnotationGetter;
+//import edu.stanford.hakan.aim4api.base.ImageAnnotationCollection;
+//import edu.stanford.hakan.aim4api.compability.aimv3.AimUtility;
 import edu.stanford.hakan.aim4api.compability.aimv3.ImageAnnotation;
 
 /**
@@ -699,6 +703,8 @@ public class DSOUtil
 			//Attribute a = new UnsignedShortAttribute(t);
 
 			int nonblankFrame = 0;
+			String nonBlankImageUID="";
+					
 			List<DICOMElement> referencedSOPInstanceUIDDICOMElements = getDICOMElementsByCode(dicomElementList,
 					PixelMedUtils.ReferencedSOPInstanceUIDCode);
 			String[] segNums = SequenceAttribute.getArrayOfSingleStringValueOrEmptyStringOfNamedAttributeWithinSequenceItems(dsoDICOMAttributes, TagFromName.SegmentSequence, TagFromName.SegmentNumber);
@@ -802,8 +808,10 @@ public class DSOUtil
 						BufferedImage bufferedImageWithTransparency = generateTransparentImage(bufferedImage);
 						log.info(" bufferedImageWithTransparency "+ bufferedImageWithTransparency.toString());
 						
-						if (nonBlank.get())
+						if (nonBlank.get()) {
 							nonblankFrame = refFrameNumber;
+							nonBlankImageUID = dcm4cheeReferencedImageDescription.imageUID;
+						}
 						log.info(" nonblankFrame "+ nonblankFrame);
 						
 						File pngMaskFile = new File(pngMaskFilePath);
@@ -866,8 +874,10 @@ public class DSOUtil
 					int frameNumber = instanceNumber - 1;
 					BufferedImage bufferedImage = sourceDSOImage.getBufferedImage(i);
 					BufferedImage bufferedImageWithTransparency = generateTransparentImage(bufferedImage);
-					if (nonBlank.get())
+					if (nonBlank.get()) {
 						nonblankFrame = frameNumber;
+						nonBlankImageUID = dcm4cheeReferencedImageDescription.imageUID;
+					}
 					String pngMaskFilePath = pngMaskDirectoryPath + frameNumber  + "_"  + segmentNumbers[i] + ".png";
 					
 					File pngMaskFile = new File(pngMaskFilePath);
@@ -889,6 +899,13 @@ public class DSOUtil
 			for (EPADAIM aim: aims)
 			{
 				epadDatabaseOperations.updateAIMDSOFrameNo(aim.aimID, nonblankFrame);
+//				ImageAnnotationCollection aimIA = AIMUtil.getImageAnnotationByUniqueId(aim.aimID);
+//				aimIA.getImageAnnotation().setDsoStartIndex(nonblankFrame);
+//				i need project it
+//				AIMUtil.saveImageAnnotationToServer(aimIA, projectID, nonblankFrame, jsessionID);
+//				aimIA.getImageAnnotation().setI
+//				AnnotationGetter.getImageAnnotationFromServerByUniqueIdentifier(serverURL, namespace, collection, dbUserName, dbUserPassword, uniqueIdentifier)
+//				aim.imageUID=nonBlankImageUID;
 			}
 			log.info("... finished writing PNG " + numberOfFrames + " masks for DSO image " + imageUID + " in series " + seriesUID + " nonBlankFrame:" + nonblankFrame);
 		} catch (DicomException e) {
