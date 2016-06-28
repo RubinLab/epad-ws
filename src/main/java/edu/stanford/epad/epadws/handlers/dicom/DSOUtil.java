@@ -191,10 +191,6 @@ import edu.stanford.epad.epadws.queries.DefaultEpadOperations;
 import edu.stanford.epad.epadws.queries.EpadOperations;
 import edu.stanford.epad.epadws.service.DefaultEpadProjectOperations;
 import edu.stanford.epad.epadws.service.EpadProjectOperations;
-//import edu.stanford.hakan.aim3api.usage.AnnotationExtender;
-//import edu.stanford.hakan.aim3api.usage.AnnotationGetter;
-//import edu.stanford.hakan.aim4api.base.ImageAnnotationCollection;
-//import edu.stanford.hakan.aim4api.compability.aimv3.AimUtility;
 import edu.stanford.hakan.aim4api.compability.aimv3.ImageAnnotation;
 
 /**
@@ -899,13 +895,7 @@ public class DSOUtil
 			for (EPADAIM aim: aims)
 			{
 				epadDatabaseOperations.updateAIMDSOFrameNo(aim.aimID, nonblankFrame);
-//				ImageAnnotationCollection aimIA = AIMUtil.getImageAnnotationByUniqueId(aim.aimID);
-//				aimIA.getImageAnnotation().setDsoStartIndex(nonblankFrame);
-//				i need project it
-//				AIMUtil.saveImageAnnotationToServer(aimIA, projectID, nonblankFrame, jsessionID);
-//				aimIA.getImageAnnotation().setI
-//				AnnotationGetter.getImageAnnotationFromServerByUniqueIdentifier(serverURL, namespace, collection, dbUserName, dbUserPassword, uniqueIdentifier)
-//				aim.imageUID=nonBlankImageUID;
+				AIMUtil.updateDSOStartIndex(aim, nonblankFrame);
 			}
 			log.info("... finished writing PNG " + numberOfFrames + " masks for DSO image " + imageUID + " in series " + seriesUID + " nonBlankFrame:" + nonblankFrame);
 		} catch (DicomException e) {

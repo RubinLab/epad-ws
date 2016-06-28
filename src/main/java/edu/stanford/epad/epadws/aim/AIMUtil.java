@@ -225,19 +225,20 @@ public class AIMUtil
 	private static final String xsdFileV4 = EPADConfig.xsdFileV4;
 	private static final String xsdFilePathV4 = EPADConfig.xsdFilePathV4;
 
-	/**
-	 * Gets the annotation for a unique identifier
-	 * @param uniqueIdentifier
-	 * @param username
-	 * @param jsessionID
-	 * @return
-	 * @throws AimException
-	 * @throws edu.stanford.hakan.aim4api.base.AimException
-	 */
-	public static ImageAnnotationCollection getImageAnnotationByUniqueId(String uniqueIdentifier) throws AimException,
-	    edu.stanford.hakan.aim4api.base.AimException {
-		 return AnnotationGetter.getImageAnnotationCollectionByUniqueIdentifier(eXistServerUrl, aim4Namespace, eXistCollectionV4, eXistUsername, eXistPassword, uniqueIdentifier);
-	    	
+	public static void updateDSOStartIndex(EPADAIM aim,int dsoStartIndex) {
+		ImageAnnotationCollection iac=null;
+		EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
+		try {
+			iac = AnnotationGetter.getImageAnnotationCollectionFromString(aim.xml, xsdFilePathV4);
+			iac.getImageAnnotation().setDsoStartIndex(dsoStartIndex);
+			//update the one in db
+			epadDatabaseOperations.updateAIMXml(aim.aimID, iac.getXMLString());
+			//update the one in exist
+			
+			saveImageAnnotationToServer(iac, aim.projectID, dsoStartIndex, null, false);
+		} catch (AimException e) {
+			log.info("Aim exception getting the aim from string " + e.getMessage());
+		}
 	}
 	
 	private static long getTime(String timestamp)
@@ -323,7 +324,7 @@ public class AIMUtil
 		            }
 		        }
 		
-		        if (templateHasBeenFound && jsessionID != null) {
+		        if (templateHasBeenFound && jsessionID != null && invokePlugin) {
 		        	// Start plugin task
 					log.info("Starting Plugin task for:" + pluginName);
 					(new Thread(new PluginStartTask(jsessionID, pluginName, aim.getUniqueIdentifier().getRoot(), frameNumber, projectID))).start();				
