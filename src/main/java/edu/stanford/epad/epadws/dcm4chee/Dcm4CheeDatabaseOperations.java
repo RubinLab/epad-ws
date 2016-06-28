@@ -179,4 +179,11 @@ public interface Dcm4CheeDatabaseOperations
 	 * availability, series_status, created_time, updated_time, series_attrs
 	 */
 	Map<String, String> getSeriesData(String seriesUID);
+
+	/**
+	 * get the series uids of non-dso series in the study
+	 * @param studyUID
+	 * @return
+	 */
+	Set<String> getNonDSOSeriesUIDsInStudy(String studyUID);
 }

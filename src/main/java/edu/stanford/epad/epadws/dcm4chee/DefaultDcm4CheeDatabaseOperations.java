@@ -312,6 +312,22 @@ public class DefaultDcm4CheeDatabaseOperations implements Dcm4CheeDatabaseOperat
 		}
 		return result;
 	}
+	
+	
+	@Override
+	public Set<String> getNonDSOSeriesUIDsInStudy(String studyUID)
+	{
+		List<Map<String, String>> seriesInStudy = getAllSeriesInStudy(studyUID);
+		Set<String> result = new HashSet<String>();
+
+		for (Map<String, String> series : seriesInStudy) {
+			if (!series.get("modality").trim().equals("SEG")) {
+				String seriesID = series.get("series_iuid");
+				result.add(seriesID);
+			}
+		}
+		return result;
+	}
 
 	@Override
 	public Set<String> getAllReadyDcm4CheeSeriesUIDs()

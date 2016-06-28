@@ -525,7 +525,7 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		}
 		
 		//get all the series and update status for them
-		Set<String> seriesList=dcm4CheeDatabaseOperations.getAllSeriesUIDsInStudy(st.getStudyUID());
+		Set<String> seriesList=dcm4CheeDatabaseOperations.getNonDSOSeriesUIDsInStudy(st.getStudyUID());
 		
 		for (String seriesUID:seriesList) {
 			updateAnnotationStatus(username, new SeriesReference(studyReference.projectID, studyReference.subjectID, studyReference.studyUID, seriesUID), annotationStatus, sessionID);
@@ -554,8 +554,7 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		//get all the studies, then series and update series status
 		List<Study> studyList=getStudiesForSubject(su.getSubjectUID());
 		for (Study study:studyList) {
-			//TODO should disgard dso series
-			Set<String> seriesList=dcm4CheeDatabaseOperations.getAllSeriesUIDsInStudy(study.getStudyUID());
+			Set<String> seriesList=dcm4CheeDatabaseOperations.getNonDSOSeriesUIDsInStudy(study.getStudyUID());
 			
 			for (String seriesUID:seriesList) {
 				updateAnnotationStatus(username, new SeriesReference(subjectReference.projectID, subjectReference.subjectID, study.getStudyUID(), seriesUID), annotationStatus, sessionID);
@@ -586,7 +585,7 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		for (Subject subject:subjectList) {
 			List<Study> studyList=getStudiesForSubject(subject.getSubjectUID());
 			for (Study study:studyList) {
-				Set<String> seriesList=dcm4CheeDatabaseOperations.getAllSeriesUIDsInStudy(study.getStudyUID());
+				Set<String> seriesList=dcm4CheeDatabaseOperations.getNonDSOSeriesUIDsInStudy(study.getStudyUID());
 				
 				for (String seriesUID:seriesList) {
 					updateAnnotationStatus(username, new SeriesReference(projectReference.projectID, subject.getSubjectUID(), study.getStudyUID(), seriesUID), annotationStatus, sessionID);
