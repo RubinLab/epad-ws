@@ -486,6 +486,7 @@ public class DefaultEpadOperations implements EpadOperations
 		{
 			studies = projectOperations.getStudiesForProjectAndSubject(subjectReference.projectID, 
 					subjectReference.subjectID);
+			
 		}
 		for (Study study: studies)
 		{
@@ -493,8 +494,7 @@ public class DefaultEpadOperations implements EpadOperations
 				studyUIDsInEpad.add(study.getStudyUID());
 		}
 		DCM4CHEEStudyList dcm4CheeStudyList = Dcm4CheeQueries.getStudies(studyUIDsInEpad);
-
-
+		
 		for (DCM4CHEEStudy dcm4CheeStudy : dcm4CheeStudyList.ResultSet.Result) {
 			//ml+Dev for debugging patient mismatch with dcm4chee
 			if (!dcm4CheeStudy.patientID.equals(subjectReference.subjectID))
@@ -505,11 +505,20 @@ public class DefaultEpadOperations implements EpadOperations
 			dcm4CheeStudy.seriesCount = dcm4CheeStudy.seriesCount + series.size();
 			EPADStudy epadStudy = dcm4cheeStudy2EpadStudy(sessionID, subjectReference.projectID, subjectReference.subjectID,
 					dcm4CheeStudy, username, includeAnnotationStatus);
+			if (epadStudy.studyDescription!=null) {//fill study's description in our db if it exists in dcm4che
+				Study dbStudy=projectOperations.getStudy(epadStudy.studyUID);
+				if (dbStudy.getDescription()==null || dbStudy.getDescription().equals("")) {
+					dbStudy.setDescription(epadStudy.studyDescription);
+					dbStudy.save();
+				}
+				
+			}
 			studyUIDsInEpad.remove(epadStudy.studyUID);
 			boolean filter = searchFilter.shouldFilterStudy(subjectReference.subjectID, epadStudy.studyAccessionNumber,
 					epadStudy.examTypes, epadStudy.numberOfAnnotations);
 			if (!filter)
 				epadStudyList.addEPADStudy(epadStudy);
+			
 		}
 		for (Study study: studies)
 		{
