@@ -1052,5 +1052,24 @@ public interface EpadProjectOperations {
 	void updateAnnotationStatus(String username, ProjectReference projectReference, String annotationStatus,
 			String sessionID) throws Exception;
 	
+	/**
+	 * create file with templateleveltype information
+	 * @param loggedInUser
+	 * @param projectID
+	 * @param subjectUID
+	 * @param studyUID
+	 * @param seriesUID
+	 * @param file
+	 * @param filename
+	 * @param description
+	 * @param fileType
+	 * @param templateLevelType
+	 * @return
+	 * @throws Exception
+	 */
+	EpadFile createFile(String loggedInUser, String projectID, String subjectUID, String studyUID, String seriesUID,
+			File file, String filename, String description, FileType fileType, String templateLevelType)
+			throws Exception;
+	
 	
 }

@@ -126,6 +126,8 @@ public class EpadFile extends AbstractDAO {
 	Date createdTime;
 	Date updateTime;
 
+	String templateLevelType;
+
 	@Override
 	public long getId() {
 		return id;
@@ -266,6 +268,14 @@ public class EpadFile extends AbstractDAO {
 		return "" + getId() + getExtension();
 	}
 	
+	public String getTemplateLevelType() {
+		return templateLevelType;
+	}
+
+	public void setTemplateLevelType(String templateLevelType) {
+		this.templateLevelType = templateLevelType;
+	}
+
 	public final static String DBTABLE = "epad_file";
 	public final static String[][] DBCOLUMNS = {
         {"id","long","id","Id"},
@@ -283,6 +293,7 @@ public class EpadFile extends AbstractDAO {
         {"creator","String","creator","varchar"},
         {"createdTime","Date","createdtime","timestamp"},
         {"updateTime","Date","updatetime","timestamp"},	
+		{"templateLevelType","String","templateleveltype","varchar"},
 	};
 
 	@Override
