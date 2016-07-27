@@ -118,10 +118,8 @@ import java.util.concurrent.TimeUnit;
 import javax.servlet.http.HttpServletResponse;
 
 import org.apache.commons.io.IOUtils;
-import org.dcm4che2.imageioimpl.plugins.dcm.SkippedDicomElement;
 
 import edu.stanford.epad.common.dicom.DCM4CHEEUtil;
-import edu.stanford.epad.common.pixelmed.PixelMedUtils;
 import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.epad.dtos.internal.DCM4CHEESeries;
 import edu.stanford.epad.dtos.internal.DCM4CHEESeriesList;
