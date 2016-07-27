@@ -120,7 +120,6 @@ import javax.servlet.http.HttpServletResponse;
 import org.apache.commons.io.IOUtils;
 
 import edu.stanford.epad.common.dicom.DCM4CHEEUtil;
-import edu.stanford.epad.common.pixelmed.PixelMedUtils;
 import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.epad.dtos.internal.DCM4CHEESeries;
 import edu.stanford.epad.dtos.internal.DCM4CHEESeriesList;
@@ -248,7 +247,8 @@ public class Dcm4CheeQueries
 	public static DICOMElementList getDICOMElementsFromWADO(String studyUID, String seriesUID, String imageUID)
 	{
 		DICOMElementList dicomElementList = new DICOMElementList();
-
+		DICOMElementList dicomElementListNoSkip = new DICOMElementList();
+		boolean skipThumbnail=false;
 		try {
 			File temporaryDICOMFile = File.createTempFile(imageUID, ".tmp");
 			int wadoStatusCode = DCM4CHEEUtil.downloadDICOMFileFromWADO(studyUID, seriesUID, imageUID, temporaryDICOMFile);
@@ -264,11 +264,11 @@ public class Dcm4CheeQueries
 						String dicomElementString;
 						FileReader tagFileReader = new FileReader(tempTag.getAbsolutePath());
 						tagReader = new BufferedReader(tagFileReader);
-						boolean skipThumbnail = false;
+						skipThumbnail = false;
 						String currentSequence = "";
 						while ((dicomElementString = tagReader.readLine()) != null) {
-//							if (dicomElementString.contains("(0009,1110)"))  // hard code for now TODO:???
-//								skipThumbnail = true;
+							if (dicomElementString.contains("(0009,1110)"))  // hard code for now TODO:???
+								skipThumbnail = true;
 							if (dicomElementString.contains("(FFFE,E0DD)"))
 								skipThumbnail = false;
 							int sequence = dicomElementString.indexOf("SQ #-1");
@@ -277,11 +277,21 @@ public class Dcm4CheeQueries
 							if (dicomElementString.contains("Sequence Delimitation Item"))
 								currentSequence = "";
 							DICOMElement dicomElement = decodeDICOMElementString(dicomElementString);
-							if (!skipThumbnail && dicomElement != null) {
-								dicomElement.parentSequenceName = currentSequence;
-								dicomElementList.addDICOMElement(dicomElement);
+							DICOMElement dicomElementNoSkip = decodeDICOMElementString(dicomElementString);
+							if (dicomElement != null) {
+								if (!skipThumbnail) {
+									dicomElement.parentSequenceName = currentSequence;
+									dicomElementList.addDICOMElement(dicomElement);
+								} 
+							//make a list with all the skip items
+							//at the end if the skip is not closed then use this list
+								else{
+									log.warning("Warning: skip sequence. skipping " + dicomElementString);
+									dicomElementNoSkip.parentSequenceName = currentSequence;
+									dicomElementListNoSkip.addDICOMElement(dicomElementNoSkip);
+								}
 							} else {
-								// log.warning("Warning: could not decode DICOM element " + dicomElementString + "; skipping");
+								 log.warning("Warning: could not decode DICOM element " + dicomElementString + "");
 							}
 						}
 					} finally {
@@ -301,6 +311,10 @@ public class Dcm4CheeQueries
 			}
 		} catch (IOException e) {
 			log.warning("IOException retrieving DICOM headers for image " + imageUID + " in series " + seriesUID, e);
+		}
+		if (skipThumbnail) {
+			log.warning("End of skip not found returning noskip data. ");
+			return dicomElementListNoSkip;
 		}
 		return dicomElementList;
 	}
