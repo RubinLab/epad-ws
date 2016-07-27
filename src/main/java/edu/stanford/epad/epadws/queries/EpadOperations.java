@@ -690,6 +690,15 @@ public interface EpadOperations
 	EPADTemplateContainerList getTemplateDescriptions(String username, String sessionID) throws Exception;
 
 	/**
+	 * Get templates with templateleveltypefilter
+	 * @param username
+	 * @param sessionID
+	 * @return
+	 * @throws Exception
+	 */
+	EPADTemplateContainerList getTemplateDescriptions(String username, String sessionID, String templateLevelFilter) throws Exception;
+
+	/**
 	 * Get system-wide templates
 	 * @param username
 	 * @param sessionID
@@ -706,7 +715,7 @@ public interface EpadOperations
 	 * @return
 	 * @throws Exception
 	 */
-	EPADTemplateContainerList getTemplateDescriptions(String projectID, String username, String sessionID) throws Exception;
+	EPADTemplateContainerList getProjectTemplateDescriptions(String projectID, String username, String sessionID) throws Exception;
 	
 	/**
 	 * @param seriesReference
@@ -1517,4 +1526,28 @@ public interface EpadOperations
 	 */
 	EPADProjectList getProjectDescriptions(String username, String sessionID, EPADSearchFilter searchFilter,
 			boolean annotationCount, boolean ignoreSystem, boolean includeAnnotationStatus) throws Exception;
+
+	/**
+	 * get templates with specific template description (filters with starts with)
+	 * @param projectID
+	 * @param username
+	 * @param sessionID
+	 * @param templateLevelFilter Send null if you do not want to filter
+	 * @return
+	 * @throws Exception
+	 */
+	EPADTemplateContainerList getProjectTemplateDescriptions(String projectID, String username, String sessionID,
+			String templateLevelFilter) throws Exception;
+
+	/**
+	 * get system templates with specific template description (filters with starts with)
+	 * @param projectID
+	 * @param username
+	 * @param sessionID
+	 * @param templateLevelFilter Send null if you do not want to filter
+	 * @return
+	 * @throws Exception
+	 */
+	EPADTemplateContainerList getSystemTemplateDescriptions(String username, String sessionID,
+			String templateLevelFilter) throws Exception;
 }

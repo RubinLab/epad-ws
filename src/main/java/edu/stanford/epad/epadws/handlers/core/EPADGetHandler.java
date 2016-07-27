@@ -741,7 +741,12 @@ public class EPADGetHandler
 				{	
 					responseStream.append(aim.toJSON());
 				}
-				else if ("data".equals(httpRequest.getParameter("format")))
+				else if (returnJson(httpRequest))
+				{
+					EPADAIMList aims = new EPADAIMList();
+					aims.addAIM(aim);
+					AIMUtil.queryAIMImageJsonAnnotations(responseStream, aims, username, sessionID);					
+				}else if ("data".equals(httpRequest.getParameter("format")))
 				{
 					String templateName = httpRequest.getParameter("templateName");
 					if (templateName == null || templateName.trim().length() == 0)
@@ -787,6 +792,12 @@ public class EPADGetHandler
 				{	
 					responseStream.append(aim.toJSON());
 				}
+				else if (returnJson(httpRequest))
+				{
+					EPADAIMList aims = new EPADAIMList();
+					aims.addAIM(aim);
+					AIMUtil.queryAIMImageJsonAnnotations(responseStream, aims, username, sessionID);					
+				}
 				else
 				{
 					AIMUtil.queryAIMImageAnnotations(responseStream, subjectReference.projectID, AIMSearchType.ANNOTATION_UID,
@@ -824,7 +835,12 @@ public class EPADGetHandler
 				{	
 					responseStream.append(aim.toJSON());
 				}
-				else if ("data".equals(httpRequest.getParameter("format")))
+				else if (returnJson(httpRequest))
+				{
+					EPADAIMList aims = new EPADAIMList();
+					aims.addAIM(aim);
+					AIMUtil.queryAIMImageJsonAnnotations(responseStream, aims, username, sessionID);					
+				}else if ("data".equals(httpRequest.getParameter("format")))
 				{
 					String templateName = httpRequest.getParameter("templateName");
 					if (templateName == null || templateName.trim().length() == 0)
@@ -882,7 +898,12 @@ public class EPADGetHandler
 					String json = AIMUtil.readPlugInData(aim, templateName, sessionID);
 					responseStream.append(json);
 				}
-				else
+				else if (returnJson(httpRequest))
+				{
+					EPADAIMList aims = new EPADAIMList();
+					aims.addAIM(aim);
+					AIMUtil.queryAIMImageJsonAnnotations(responseStream, aims, username, sessionID);					
+				}else
 				{
 					AIMUtil.queryAIMImageAnnotations(responseStream, seriesReference.projectID, AIMSearchType.ANNOTATION_UID,
 							aim.aimID, username);					
@@ -915,6 +936,12 @@ public class EPADGetHandler
 				if (returnSummary(httpRequest))
 				{	
 					responseStream.append(aim.toJSON());
+				}
+				else if (returnJson(httpRequest))
+				{
+					EPADAIMList aims = new EPADAIMList();
+					aims.addAIM(aim);
+					AIMUtil.queryAIMImageJsonAnnotations(responseStream, aims, username, sessionID);					
 				}
 				else if ("data".equals(httpRequest.getParameter("format")))
 				{
@@ -958,6 +985,12 @@ public class EPADGetHandler
 				if (returnSummary(httpRequest))
 				{	
 					responseStream.append(aim.toJSON());
+				}
+				else if (returnJson(httpRequest))
+				{
+					EPADAIMList aims = new EPADAIMList();
+					aims.addAIM(aim);
+					AIMUtil.queryAIMImageJsonAnnotations(responseStream, aims, username, sessionID);					
 				}
 				else if ("data".equals(httpRequest.getParameter("format")))
 				{
@@ -1018,6 +1051,12 @@ public class EPADGetHandler
 				{	
 					responseStream.append(aim.toJSON());
 				}
+				else if (returnJson(httpRequest))
+				{
+					EPADAIMList aims = new EPADAIMList();
+					aims.addAIM(aim);
+					AIMUtil.queryAIMImageJsonAnnotations(responseStream, aims, username, sessionID);					
+				}
 				else
 				{
 					AIMUtil.queryAIMImageAnnotations(responseStream, studyReference.projectID, AIMSearchType.ANNOTATION_UID,
@@ -1056,6 +1095,12 @@ public class EPADGetHandler
 				{	
 					responseStream.append(aim.toJSON());
 				}
+				else if (returnJson(httpRequest))
+				{
+					EPADAIMList aims = new EPADAIMList();
+					aims.addAIM(aim);
+					AIMUtil.queryAIMImageJsonAnnotations(responseStream, aims, username, sessionID);					
+				}
 				else
 				{
 					AIMUtil.queryAIMImageAnnotations(responseStream, seriesReference.projectID, AIMSearchType.ANNOTATION_UID,
@@ -1089,6 +1134,12 @@ public class EPADGetHandler
 				if (returnSummary(httpRequest))
 				{	
 					responseStream.append(aim.toJSON());
+				}
+				else if (returnJson(httpRequest))
+				{
+					EPADAIMList aims = new EPADAIMList();
+					aims.addAIM(aim);
+					AIMUtil.queryAIMImageJsonAnnotations(responseStream, aims, username, sessionID);					
 				}
 				else
 				{
@@ -1124,6 +1175,12 @@ public class EPADGetHandler
 				if (returnSummary(httpRequest))
 				{	
 					responseStream.append(aim.toJSON());
+				}
+				else if (returnJson(httpRequest))
+				{
+					EPADAIMList aims = new EPADAIMList();
+					aims.addAIM(aim);
+					AIMUtil.queryAIMImageJsonAnnotations(responseStream, aims, username, sessionID);					
 				}
 				else
 				{
@@ -1161,6 +1218,12 @@ public class EPADGetHandler
 				if (returnSummary(httpRequest))
 				{	
 					responseStream.append(aim.toJSON());
+				}
+				else if (returnJson(httpRequest))
+				{
+					EPADAIMList aims = new EPADAIMList();
+					aims.addAIM(aim);
+					AIMUtil.queryAIMImageJsonAnnotations(responseStream, aims, username, sessionID);					
 				}
 				else
 				{
@@ -1278,6 +1341,12 @@ public class EPADGetHandler
 					}
 					else
 						responseStream.append(aim.toJSON());
+				}
+				else if (returnJson(httpRequest))
+				{
+					EPADAIMList aims = new EPADAIMList();
+					aims.addAIM(aim);
+					AIMUtil.queryAIMImageJsonAnnotations(responseStream, aims, username, sessionID);					
 				}
 				else if ("data".equals(httpRequest.getParameter("format")))
 				{
@@ -1840,9 +1909,11 @@ public class EPADGetHandler
 
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.TEMPLATE_LIST, pathInfo)) {
 				ProjectReference reference = ProjectReference.extract(ProjectsRouteTemplates.TEMPLATE_LIST, pathInfo);
-				EPADTemplateContainerList templates = epadOperations.getTemplateDescriptions(reference.projectID, username, sessionID);
+				String templateLevelType = httpRequest.getParameter("templateleveltype");
+				EPADTemplateContainerList templates = epadOperations.getProjectTemplateDescriptions(reference.projectID, username, sessionID, templateLevelType);
+				log.info("template count "+templates.ResultSet.totalRecords);
 				if (templates.ResultSet.totalRecords == 0 && "true".equals(httpRequest.getParameter("includeSystemTemplates"))) {
-					EPADTemplateContainerList systemplates = epadOperations.getSystemTemplateDescriptions(username, sessionID);
+					EPADTemplateContainerList systemplates = epadOperations.getSystemTemplateDescriptions(username, sessionID, templateLevelType);
 					for (EPADTemplateContainer template: systemplates.ResultSet.Result) {
 						templates.addTemplate(template);
 					}
@@ -1851,7 +1922,8 @@ public class EPADGetHandler
 				statusCode = HttpServletResponse.SC_OK;
 
 			} else if (HandlerUtil.matchesTemplate(TemplatesRouteTemplates.TEMPLATE_LIST, pathInfo)) {
-				EPADTemplateContainerList templates = epadOperations.getTemplateDescriptions(username, sessionID);
+				String templateLevelType = httpRequest.getParameter("templateleveltype");
+				EPADTemplateContainerList templates = epadOperations.getTemplateDescriptions(username, sessionID, templateLevelType);
 				responseStream.append(templates.toJSON());
 				statusCode = HttpServletResponse.SC_OK;
 

@@ -1130,13 +1130,19 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 			return true;
 	}
 
+	@Override
+	public EpadFile createFile(String loggedInUser, String projectID,
+			String subjectUID, String studyUID, String seriesUID, File file,
+			String filename, String description, FileType fileType) throws Exception {
+		return createFile(loggedInUser, projectID, subjectUID, studyUID, seriesUID, file, filename, description, fileType, null);
+	}
 	/* (non-Javadoc)
 	 * @see edu.stanford.epad.epadws.service.EpadProjectOperations#createFile(java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.io.File, java.lang.String, java.lang.String, edu.stanford.epad.epadws.models.FileType)
 	 */
 	@Override
 	public EpadFile createFile(String loggedInUser, String projectID,
 			String subjectUID, String studyUID, String seriesUID, File file,
-			String filename, String description, FileType fileType) throws Exception {
+			String filename, String description, FileType fileType, String templateLevelType) throws Exception {
 		User requestor = getUser(loggedInUser);
 		EpadFile efile = new EpadFile();
 		efile.setName(filename);
@@ -1184,6 +1190,8 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		efile.setLength(file.length());
 		if (description != null)
 			efile.setDescription(description);
+		//set templateleveltype
+		efile.setTemplateLevelType(templateLevelType);
 		efile.save();
 		File parent = new File(efile.getFilePath());
 		parent.mkdirs();

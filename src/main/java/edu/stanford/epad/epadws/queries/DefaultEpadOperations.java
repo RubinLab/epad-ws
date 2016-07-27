@@ -1602,6 +1602,7 @@ public class DefaultEpadOperations implements EpadOperations
 	@Override
 	public void createFile(String username, String projectID, String subjectID, String studyID, String seriesID,
 			File uploadedFile, String description, String fileType, String sessionID) throws Exception {
+		String templateLevelType="image";//default
 		if (!projectOperations.hasAccessToProject(username, projectID))
 			throw new Exception("No permissions to upload to project " + projectID);
 		String filename = uploadedFile.getName();
@@ -1663,6 +1664,8 @@ public class DefaultEpadOperations implements EpadOperations
 					if (!(error.contains("content of element 'Template' is not complete") && getTemplateType(uploadedFile).startsWith("SEG")))
 						throw new Exception("Invalid Template file: " + error);
 				}
+				//read the xml to find out the template type and put it in description
+				templateLevelType=getTemplateLevelType(uploadedFile);
 				projectOperations.createEventLog(username, projectID, subjectID, studyID, seriesID, null, null, uploadedFile.getName(), "UPLOAD TEMPLATE", description, false);
 			}
 			else if (fileType != null && fileType.equals(FileType.IMAGE.getName()))
@@ -1736,6 +1739,32 @@ public class DefaultEpadOperations implements EpadOperations
 			{
 				JSONObject templateObj = templateObjs.getJSONObject(i);
 				return templateObj.getString("codeMeaning");
+			}
+		} catch (Exception x) {
+		}
+		return "";		
+	}
+	
+	private String getTemplateLevelType(File templateFile)
+	{
+		try {
+			String xml = EPADFileUtils.readFileAsString(templateFile);
+			JSONObject root = XML.toJSONObject(xml);
+			JSONObject container = root.getJSONObject("TemplateContainer");
+			JSONArray templateObjs = new JSONArray();
+			try {
+				JSONObject templateObj = container.getJSONObject("Template");
+				templateObjs.put(templateObj);
+			}
+			catch (Exception x) {
+				templateObjs = container.getJSONArray("Template");
+			}
+			for (int i = 0; i < templateObjs.length(); i++)
+			{
+				JSONObject templateObj = templateObjs.getJSONObject(i);
+				if (templateObj!=null && templateObj.getString("templateType")!=null)
+					return templateObj.getString("templateType").toLowerCase();
+				return "image";
 			}
 		} catch (Exception x) {
 		}
@@ -2073,9 +2102,15 @@ public class DefaultEpadOperations implements EpadOperations
 		return efile;
 	}
 
+	
 	@Override
 	public EPADTemplateContainerList getTemplateDescriptions(String username,
 			String sessionID) throws Exception {
+		return getTemplateDescriptions(username, sessionID, null);
+	}
+	@Override
+	public EPADTemplateContainerList getTemplateDescriptions(String username,
+			String sessionID, String templateLevelFilter) throws Exception {
 		EPADTemplateContainerList oldList = getSystemTemplateDescriptions(username, sessionID);
 		EPADTemplateContainerList fileList = new EPADTemplateContainerList();
 		List<EpadFile> efiles = projectOperations.getEpadFiles(null, null, null, null, FileType.TEMPLATE, false);
@@ -2118,15 +2153,22 @@ public class DefaultEpadOperations implements EpadOperations
 				if (disabledTemplatesNames.contains(template.fileName) || disabledTemplatesNames.contains(template.templateName) || disabledTemplatesNames.contains(template.templateCode))
 					enabled = false;
 				template.enabled = enabled;
-				fileList.addTemplate(template);
+				if (templateLevelFilter==null || template.templateLevelType.toLowerCase().startsWith(templateLevelFilter.toLowerCase()))
+					fileList.addTemplate(template);
 			}
 		}
 		return fileList;
 	}
-
+	
 	@Override
 	public EPADTemplateContainerList getSystemTemplateDescriptions(String username,
 			String sessionID) throws Exception {
+		return getSystemTemplateDescriptions(username, sessionID, null);
+	}
+
+	@Override
+	public EPADTemplateContainerList getSystemTemplateDescriptions(String username,
+			String sessionID, String templateLevelFilter) throws Exception {
 		EPADTemplateContainerList fileList = new EPADTemplateContainerList();
 		File[] templates = new File(EPADConfig.getEPADWebServerTemplatesDir()).listFiles();
 		List<String> disabledTemplatesNames = projectOperations.getDisabledTemplates(EPADConfig.xnatUploadProjectID);
@@ -2139,6 +2181,7 @@ public class DefaultEpadOperations implements EpadOperations
 			String templateUID = "";
 			String templateName = "";
 			String templateType = "";
+			String templateLevelType = "";
 			String templateCode = "";
 			String templateDescription = "";
 			String modality = "";
@@ -2170,9 +2213,20 @@ public class DefaultEpadOperations implements EpadOperations
 						templateDescription = templateObj.getString("description");
 						modality = templateObj.getString("modality");
 					} catch (Exception x) {}
-					EPADTemplate epadTmpl = new EPADTemplate(templateUID, templateName, templateType, templateCode,
-							templateDescription, modality);
-					epadTmpls.add(epadTmpl);
+					
+					try {
+						templateLevelType = templateObj.getString("templateType");
+					} catch (Exception x) {
+						templateLevelType = "image";
+					}
+					if (templateLevelType==null)
+						templateLevelType = "image";
+						
+					if (templateLevelType.toLowerCase().startsWith(templateLevelFilter.toLowerCase())) {
+						EPADTemplate epadTmpl = new EPADTemplate(templateUID, templateName, templateType, templateCode,
+								templateDescription, modality, templateLevelType);
+						epadTmpls.add(epadTmpl);
+					}
 				}
 			} catch (Exception x) {
 				log.warning("JSON Error", x);
@@ -2188,11 +2242,11 @@ public class DefaultEpadOperations implements EpadOperations
 			}
 			//ml changed first param from "" to default project
 			EPADTemplateContainer epadContainer = new EPADTemplateContainer(EPADConfig.xnatUploadProjectID, "", "", "", "", name, template.length(), FileType.TEMPLATE.getName(), 
-					formatDate(new Date(template.lastModified())), "templates/" + template.getName(), enabled, description);
+					formatDate(new Date(template.lastModified())), "templates/" + template.getName(), enabled, description, templateLevelType);
 			epadContainer.templateName = templateName;
 			epadContainer.templateType = templateType;
 			epadContainer.templateCode = templateCode;
-			epadContainer.templateDescription = templateDescription;
+			epadContainer.templateDescription = templateDescription;			
 			epadContainer.modality = modality;
 			epadContainer.templates = epadTmpls;
 			fileList.addTemplate(epadContainer);
@@ -2200,9 +2254,16 @@ public class DefaultEpadOperations implements EpadOperations
 		return fileList;
 	}
 
+	
 	@Override
-	public EPADTemplateContainerList getTemplateDescriptions(String projectID,
+	public EPADTemplateContainerList getProjectTemplateDescriptions(String projectID,
 			String username, String sessionID) throws Exception {
+		return getProjectTemplateDescriptions(projectID,username,sessionID,null);
+	
+	}
+	@Override
+	public EPADTemplateContainerList getProjectTemplateDescriptions(String projectID,
+			String username, String sessionID, String templateLevelFilter) throws Exception {
 		EPADTemplateContainerList fileList = new EPADTemplateContainerList();
 		List<EpadFile> efiles = projectOperations.getEpadFiles(projectID, null, null, null, FileType.TEMPLATE, false);
 		Set<String> templateCodes = new HashSet<String>();
@@ -2217,8 +2278,14 @@ public class DefaultEpadOperations implements EpadOperations
 		for (EpadFile efile: efiles)
 		{
 			EPADTemplateContainer template = convertEpadFileToTemplate(projectID, efile, new File(EPADConfig.getEPADWebServerResourcesDir() + getEpadFilePath(efile)));
-			if (template.enabled)
+			if (template.templateLevelType!= efile.getTemplateLevelType()) {//file (db) and template (xml) different
+				log.info("xml and db different for template "+template.templateName +"!! Updating db. it was "+ efile.getTemplateLevelType()+ " changing to " +template.templateLevelType);
+				efile.setTemplateLevelType(template.templateLevelType);
+				efile.save();
+			}
+			if (template.enabled && (templateLevelFilter==null || template.templateLevelType.toLowerCase().startsWith(templateLevelFilter.toLowerCase())))
 			{
+				log.info("description " + templateLevelFilter+ " template " + template.templateLevelType);
 				//ml default template
 				List<EPADTemplate> templates = template.templates;
 				for (EPADTemplate t: templates)
@@ -2249,7 +2316,8 @@ public class DefaultEpadOperations implements EpadOperations
 			if (template.enabled && !disabledTemplatesNames.contains(template.fileName) 
 					&& !disabledTemplatesNames.contains(template.templateName) 
 					&& !disabledTemplatesNames.contains(template.templateCode) 
-					&& !templateCodes.contains(template.templateCode)){
+					&& !templateCodes.contains(template.templateCode)  
+					&& (templateLevelFilter==null || template.templateLevelType.toLowerCase().startsWith(templateLevelFilter.toLowerCase()))){
 
 				//ml default template
 				List<EPADTemplate> templates = template.templates;
@@ -2277,6 +2345,7 @@ public class DefaultEpadOperations implements EpadOperations
 		String description = efile.getDescription();
 		String templateName = "";
 		String templateType = "";
+		String templateLevelType = "";
 		String templateCode = "";
 		String templateDescription = "";
 		String modality = "";
@@ -2304,8 +2373,15 @@ public class DefaultEpadOperations implements EpadOperations
 					templateDescription = templateObj.getString("description");
 					modality = templateObj.getString("modality");
 				} catch (Exception x) {}
+				try {
+					templateLevelType = templateObj.getString("templateType").toLowerCase();
+				} catch (Exception x) {
+					templateLevelType = "image";
+				}
+				if (templateLevelType==null) //if still null change to default
+					templateLevelType = "image";
 				EPADTemplate epadTmpl = new EPADTemplate(templateUID, templateName, templateType, templateCode,
-						templateDescription, modality);
+						templateDescription, modality, templateLevelType);
 				epadTmpls.add(epadTmpl);
 			}
 		} catch (Exception x) {}
@@ -2316,7 +2392,7 @@ public class DefaultEpadOperations implements EpadOperations
 			//				description = "segmentation"; // Image template type				
 		}
 		EPADTemplateContainer template = new EPADTemplateContainer(projectId, "", "", "", "", efile.getName(), efile.getLength(), FileType.TEMPLATE.getName(), 
-				formatDate(efile.getCreatedTime()), getEpadFilePath(efile), efile.isEnabled(), description);
+				formatDate(efile.getCreatedTime()), getEpadFilePath(efile), efile.isEnabled(), description, templateLevelType);
 		template.templateName = templateName;
 		template.templateType = templateType;
 		template.templateCode = templateCode;

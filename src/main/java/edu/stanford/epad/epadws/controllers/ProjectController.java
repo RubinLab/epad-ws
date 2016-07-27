@@ -988,15 +988,16 @@ public class ProjectController {
 	public EPADTemplateContainerList getEPADProjectTemplates( 
 											@PathVariable String projectID,
 											@RequestParam(value="includeSystemTemplates", required = false) boolean includeSystemTemplates, 
+											@RequestParam(value="templateleveltype", required = false) String templateleveltype, 
 											HttpServletRequest request, 
 									        HttpServletResponse response) throws Exception {
 		String sessionID = SessionService.getJSessionIDFromRequest(request);
 		String username = SessionService.getUsernameForSession(sessionID);
 		ProjectReference projectReference = new ProjectReference(projectID);
 		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
-		EPADTemplateContainerList templates = epadOperations.getTemplateDescriptions(projectReference.projectID, username, sessionID);
+		EPADTemplateContainerList templates = epadOperations.getProjectTemplateDescriptions(projectReference.projectID, username, sessionID, templateleveltype);
 		if (includeSystemTemplates) {
-			EPADTemplateContainerList systemplates = epadOperations.getSystemTemplateDescriptions(username, sessionID);
+			EPADTemplateContainerList systemplates = epadOperations.getSystemTemplateDescriptions(username, sessionID, templateleveltype);
 			for (EPADTemplateContainer template: systemplates.ResultSet.Result) {
 				templates.addTemplate(template);
 			}
