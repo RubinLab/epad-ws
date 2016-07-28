@@ -635,7 +635,7 @@ public class DefaultEpadOperations implements EpadOperations
 			dbStudy = projectOperations.getStudy(studyReference.studyUID);
 			dbStudy.save();
 		} catch (Exception e1) {
-			log.warning("Could not update updatetime in study for accession. It will cause the studies to be deleted id the setting is set in proxy-config",e1);
+			log.warning("Could not update updatetime in study for accession. It will cause the studies to be deleted if the setting is set in proxy-config",e1);
 		}
 		
 		
