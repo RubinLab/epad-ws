@@ -629,6 +629,16 @@ public class DefaultEpadOperations implements EpadOperations
 	public EPADSeriesList getSeriesDescriptions(StudyReference studyReference, String username, String sessionID,
 			EPADSearchFilter searchFilter, boolean filterDSOs, boolean includeAnnotationStatus)
 	{
+		//update study to put access time in the updatetime
+		Study dbStudy;
+		try {
+			dbStudy = projectOperations.getStudy(studyReference.studyUID);
+			dbStudy.save();
+		} catch (Exception e1) {
+			log.warning("Could not update updatetime in study for accession. It will cause the studies to be deleted id the setting is set in proxy-config",e1);
+		}
+		
+		
 		EPADSeriesList epadSeriesList = new EPADSeriesList();
 
 		DCM4CHEESeriesList dcm4CheeSeriesList = Dcm4CheeQueries.getSeriesInStudy(studyReference.studyUID);
