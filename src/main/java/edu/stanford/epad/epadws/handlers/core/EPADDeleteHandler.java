@@ -110,10 +110,12 @@ import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.epad.dtos.EPADMessage;
 import edu.stanford.epad.dtos.EPADPlugin;
 import edu.stanford.epad.dtos.RemotePAC;
+import edu.stanford.epad.epadws.dcm4chee.Dcm4cheeServer;
 import edu.stanford.epad.epadws.handlers.HandlerUtil;
 import edu.stanford.epad.epadws.models.Plugin;
 import edu.stanford.epad.epadws.models.User;
@@ -320,8 +322,18 @@ public class EPADDeleteHandler
 				RemotePAC pac = RemotePACService.getInstance().getRemotePAC(pacid);
 				if (pac == null)
 					throw new Exception("Remote PAC not found");
+			
 				RemotePACService.getInstance().removeRemotePAC(username, pac);
+				//cavit
+				Dcm4cheeServer instanceDcm4cheeServer = new Dcm4cheeServer();
+				instanceDcm4cheeServer.connect(EPADConfig.jmxUserName, EPADConfig.jmxUserPass, EPADConfig.dcm4CheeServer,(short) EPADConfig.dcm4cheeServerWadoPort);
+				instanceDcm4cheeServer.deleteAetitle(pac.aeTitle);
+				//throw new Exception("editing connection :" + pac.hostname);
+				//cavit
+				
+				
 				statusCode = HttpServletResponse.SC_OK;
+				//throw new Exception("pac removed" + pac.aeTitle);
 				
 			} else if (HandlerUtil.matchesTemplate(PACSRouteTemplates.PAC_QUERY, pathInfo)) {
 				Map<String, String> templateMap = HandlerUtil.getTemplateMap(PACSRouteTemplates.PAC_QUERY, pathInfo);

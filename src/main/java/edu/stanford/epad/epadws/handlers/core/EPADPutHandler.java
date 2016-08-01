@@ -132,6 +132,7 @@ import edu.stanford.epad.dtos.EPADSubject;
 import edu.stanford.epad.dtos.RemotePAC;
 import edu.stanford.epad.epadws.aim.AIMSearchType;
 import edu.stanford.epad.epadws.aim.AIMUtil;
+import edu.stanford.epad.epadws.dcm4chee.Dcm4cheeServer;
 import edu.stanford.epad.epadws.epaddb.EpadDatabase;
 import edu.stanford.epad.epadws.handlers.HandlerUtil;
 import edu.stanford.epad.epadws.models.EpadFile;
@@ -629,11 +630,26 @@ public class EPADPutHandler
 						throw new Exception("TCIA Collections can not be added or edited");
 					pac = new RemotePAC(pacid, aeTitle, hostname, port, queryModel, primaryDeviceType);
 					RemotePACService.getInstance().addRemotePAC(username, pac);
+					
+					Dcm4cheeServer instanceDcm4cheeServer = new Dcm4cheeServer();
+					instanceDcm4cheeServer.connect(EPADConfig.jmxUserName, EPADConfig.jmxUserPass, EPADConfig.dcm4CheeServer,(short) EPADConfig.dcm4cheeServerWadoPort);
+					instanceDcm4cheeServer.addAetitle(pac.aeTitle, pac.hostname, Integer.toString(pac.port));
+					
+					
+				
 				}
 				else
 				{
 					pac = new RemotePAC(pacid, aeTitle, hostname, port, queryModel, primaryDeviceType);
+					RemotePAC oldpac = RemotePACService.getInstance().getRemotePAC(pacid);
+					Dcm4cheeServer instanceDcm4cheeServer = new Dcm4cheeServer();
+					instanceDcm4cheeServer.connect(EPADConfig.jmxUserName, EPADConfig.jmxUserPass, EPADConfig.dcm4CheeServer,(short) EPADConfig.dcm4cheeServerWadoPort);
+					instanceDcm4cheeServer.editAetConfig(oldpac.hostname, pac.aeTitle, pac.hostname, Integer.toString(pac.port));
+					
+					
 					RemotePACService.getInstance().modifyRemotePAC(username, pac);
+				
+					
 				}
 				statusCode = HttpServletResponse.SC_OK;
 				

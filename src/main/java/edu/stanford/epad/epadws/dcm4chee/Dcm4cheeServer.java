@@ -25,8 +25,10 @@ import org.apache.http.impl.client.HttpClients;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.util.VersionInfo;
 
+import edu.stanford.epad.common.util.EPADLogger;
+
 public class Dcm4cheeServer {
-	
+	protected static final EPADLogger log = EPADLogger.getInstance();
 	private String dcmUser;
 	private String dcmPassword;
 	private String dcmHostname;
@@ -274,11 +276,12 @@ public class Dcm4cheeServer {
 		if (Control == true){
 		    String[] tokens = str.split("Exception report");
 		    String[] tokensa = tokens[1].split("logs.");
+		    log.info(tokensa[0]+"logs.");
 		    return tokensa[0]+"logs."	;
 		}
-		else
+		else{
 			return "null";
-		
+		}
 	}
 	
 	public boolean contains( String mainword, String lokingfor ) {
@@ -296,7 +299,7 @@ public class Dcm4cheeServer {
         Statement st = null;
         ResultSet rs = null;
         String id="0";
-        String url = "jdbc:mysql://epad-build.stanford.edu:3306/pacsdb";
+        String url = "jdbc:mysql://localhost:3306/pacsdb";
         String user = "pacs";
         String password = "pacs";
 

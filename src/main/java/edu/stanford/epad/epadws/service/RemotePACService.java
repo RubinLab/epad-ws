@@ -351,6 +351,7 @@ public class RemotePACService extends RemotePACSBase {
 			throw new Exception("No permission to create PAC configuration");
 		if (pac.pacID.startsWith("tcia"))
 			throw new Exception("Invalid PAC ID:" + pac.pacID);
+		
 		addRemotePAC(
 				pac.pacID,
 				pac.aeTitle,
@@ -401,6 +402,8 @@ public class RemotePACService extends RemotePACSBase {
 			if (count <= 1)
 				throw new Exception("Local PAC can not be deleted");
 		}
+		
+		
 		removeRemotePAC(pac.pacID);
 		this.storeProperties(pac.pacID + " deleted by EPAD " + new Date());
 	}
