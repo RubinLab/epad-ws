@@ -709,6 +709,8 @@ public class DefaultDcm4CheeDatabaseOperations implements Dcm4CheeDatabaseOperat
 		if ((inst_attrs!=null) && (inst_attrs.indexOf("RDS")!=-1) && inst_attrs.indexOf("SDS")!=-1) {
 			String rescaleIntercept = inst_attrs.substring(inst_attrs.indexOf("RDS")+3,inst_attrs.indexOf("(",inst_attrs.indexOf("RDS"))).trim();
 			String rescaleSlope = inst_attrs.substring(inst_attrs.indexOf("SDS")+3).trim();
+			if (rescaleSlope.contains(" "))
+				rescaleSlope = rescaleSlope.split(" ")[0].trim();
 			return new DCM4CHEEImageDescription(studyUID, seriesUID, imageUID, instanceNumber, sliceLocation, contentTime,
 					updatedTime, createdTime, classUID,rescaleIntercept, rescaleSlope);
 		}
