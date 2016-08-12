@@ -200,9 +200,11 @@ public class WebAuthFilter implements Filter {
 						+ httpRequest.getQueryString() + " sessionId:" + sessionID);
 				logstatus = true;
 			}
+			log.info("url "+httpRequest.getRequestURL().toString());
 			if (!isValid && !httpRequest.getRequestURL().toString().contains("WADO") 
 					&& !httpRequest.getRequestURL().toString().contains("/session") 
-					&& !httpRequest.getRequestURL().toString().contains("login.jsp"))
+					&& !httpRequest.getRequestURL().toString().contains("login.jsp")
+					&& !httpRequest.getRequestURL().toString().contains("statuslistener"))
 			{
 				if ("OPTIONS".equalsIgnoreCase(method)) {			
 					String origin = httpRequest.getHeader("Origin");

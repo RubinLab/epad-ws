@@ -149,6 +149,13 @@
 		<servlet-name>statistics</servlet-name>
 		<url-pattern>/statistics/*</url-pattern>
 	</servlet-mapping>
+	
+	<servlet>
+		<servlet-name>statuslistener</servlet-name>
+		<servlet-class>edu.stanford.epad.epadws.servlets.StatusListenerServlet</servlet-class>
+	</servlet>
+	
+	
   
   <context-param>
 		<param-name>contextConfigLocation</param-name>

@@ -811,24 +811,28 @@ public class AIMUtil
 				}
 				if (ea != null)
 				{
-					log.debug("ea.seriesUID:" + ea.seriesUID + " seriesID:" +  seriesID);
-					if (!ea.seriesUID.equals(seriesID) && (seriesIds.size() == 1 || !ea.seriesUID.equals(seriesIds.get(1))))
-					{
-						String message = "Invalid SeriesUID in AIM xml, AimID:" + ea.aimID + " Incorrect seriesUID in AIM:" + seriesID + " Should be:" + ea.seriesUID;
-						log.warning(message);
-						String xml = edu.stanford.hakan.aim4api.usage.AnnotationBuilder.convertToString(imageAnnotationColl);
-						log.info("DSO aim:" + xml);
-						epadDatabaseOperations.deleteAIM("admin", ea.aimID);
-//							throw new Exception(message);
-						imageID = ea.imageUID;
-						seriesID = ea.seriesUID;
-						return false;
-					}
-					if (seriesIds.size() > 1 && ea.seriesUID.equals(seriesIds.get(1)))
-					{
-						seriesID = seriesIds.get(1); // How weird, the actual series is second
-						dsoSeriesUID = seriesIds.get(0);
-						log.info("Source SeriesUID:" + seriesID + " dsoSeriesUID:" +  dsoSeriesUID);
+					if (ea.seriesUID==null) {
+						log.warning("no series in aim. skipping check");
+					}else {
+						log.debug("ea.seriesUID:" + ea.seriesUID + " seriesID:" +  seriesID);
+						if (ea.seriesUID!=null && !ea.seriesUID.equals(seriesID) && (seriesIds.size() == 1 || !ea.seriesUID.equals(seriesIds.get(1))))
+						{
+							String message = "Invalid SeriesUID in AIM xml, AimID:" + ea.aimID + " Incorrect seriesUID in AIM:" + seriesID + " Should be:" + ea.seriesUID;
+							log.warning(message);
+							String xml = edu.stanford.hakan.aim4api.usage.AnnotationBuilder.convertToString(imageAnnotationColl);
+							log.info("DSO aim:" + xml);
+							epadDatabaseOperations.deleteAIM("admin", ea.aimID);
+	//							throw new Exception(message);
+							imageID = ea.imageUID;
+							seriesID = ea.seriesUID;
+							return false;
+						}
+						if (seriesIds.size() > 1 && ea.seriesUID!=null && ea.seriesUID.equals(seriesIds.get(1)))
+						{
+							seriesID = seriesIds.get(1); // How weird, the actual series is second
+							dsoSeriesUID = seriesIds.get(0);
+							log.info("Source SeriesUID:" + seriesID + " dsoSeriesUID:" +  dsoSeriesUID);
+						}
 					}
 				}
 				log.info("Saving AIM file with ID " + imageAnnotationColl.getUniqueIdentifier() + " projectID:" + projectID + " seriesUID:" + seriesID + " username:" + username);
