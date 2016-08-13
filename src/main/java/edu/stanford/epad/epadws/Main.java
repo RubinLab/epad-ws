@@ -166,6 +166,7 @@ import edu.stanford.epad.epadws.handlers.dicom.WadoHandler;
 import edu.stanford.epad.epadws.handlers.event.EventHandler;
 import edu.stanford.epad.epadws.handlers.event.ProjectEventHandler;
 import edu.stanford.epad.epadws.handlers.plugin.EPadPluginHandler;
+import edu.stanford.epad.epadws.handlers.plugin.StatusListenerHandler;
 import edu.stanford.epad.epadws.handlers.session.EPADSessionHandler;
 import edu.stanford.epad.epadws.models.Plugin;
 import edu.stanford.epad.epadws.models.User;
@@ -490,6 +491,8 @@ public class Main
 			addHandlerAtContextPath(new EPADSessionHandler(), "/epad/session", handlerList);
 	
 			addHandlerAtContextPath(new EPADHandler(), "/epad/v2", handlerList);
+			
+			
 		}
 
 //      My Attempt to replace above EPADHandler with Spring Controllers
@@ -543,6 +546,8 @@ public class Main
 			addHandlerAtContextPath(new StatisticsHandler(), "/epad/statistics", handlerList);
 			addHandlerAtContextPath(new ResourcesFileHandler(), "/epad/resourcesFile", handlerList);
 			addHandlerAtContextPath(new DownloadHandler(), "/epad/download", handlerList);
+			
+			addHandlerAtContextPath(new StatusListenerHandler(), "/epad/statuslistener", handlerList);
 			
 			// TODO This call will disappear when we switch to AIM4
 			addHandlerAtContextPath(new CoordinationHandler(), "/epad/coordination", handlerList);

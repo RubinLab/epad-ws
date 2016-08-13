@@ -102,148 +102,42 @@
  * of non-limiting example, you will not contribute any code obtained by you under the GNU General Public License or other 
  * so-called "reciprocal" license.)
  *******************************************************************************/
-package edu.stanford.epad.epadws.security;
+package edu.stanford.epad.epadws.handlers.plugin;
 
-import java.io.IOException;
-import java.io.PrintWriter;
-
-import javax.servlet.Filter;
-import javax.servlet.FilterChain;
-import javax.servlet.FilterConfig;
-import javax.servlet.ServletException;
-import javax.servlet.ServletRequest;
-import javax.servlet.ServletResponse;
-import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import edu.stanford.epad.common.util.EPADConfig;
+import org.eclipse.jetty.server.Request;
+import org.eclipse.jetty.server.handler.AbstractHandler;
+
+import edu.stanford.epad.epadws.plugins.PluginHandlerMap;
 import edu.stanford.epad.common.util.EPADLogger;
-import edu.stanford.epad.dtos.EPADMessage;
-import edu.stanford.epad.epadws.Main;
-import edu.stanford.epad.epadws.handlers.core.EPADHandler;
-import edu.stanford.epad.epadws.service.SessionService;
 
-public class WebAuthFilter implements Filter {
+/**
+ * 
+ * 
+ * 
+ * @author emel alkim
+ */
+public class StatusListenerHandler extends AbstractHandler
+{
+	private final EPADLogger log = EPADLogger.getInstance();
 
-	private static final EPADLogger log = EPADLogger.getInstance();
-	private static final String WEBAUTH_HEADER = "X-WEBAUTH-USER";
-	private static final String JSESSIONID_COOKIE = "JSESSIONID";
-	private static final String LOGGEDINUSER_COOKIE = "ePADLoggedinUser";
-	
-	
 	@Override
-	public void init(FilterConfig filterConfig) throws ServletException {
-		// TODO Auto-generated method stub
+	public void handle(String s, Request request, HttpServletRequest httpRequest, HttpServletResponse httpResponse)
+	{
 		
-	}
-
-	@Override
-	public void doFilter(ServletRequest request, ServletResponse response,
-			FilterChain filterChain) throws IOException, ServletException {
-		HttpServletRequest httpRequest = (HttpServletRequest) request;
-		HttpServletResponse httpResponse = (HttpServletResponse) response;
-		String webAuthUser = httpRequest.getHeader(WEBAUTH_HEADER);
-		boolean logstatus = false;
-	    if (webAuthUser != null && webAuthUser.length() > 0 && EPADConfig.webAuthPassword != null)
-		{
-			String sessionID = SessionService.getJSessionIDFromRequest(httpRequest);
-			if (SessionService.hasValidSessionID(sessionID)) {
-				String sessionUser = EPADSessionOperations.getSessionUser(sessionID);
-				if (!sessionUser.equals(webAuthUser))
-					sessionID = null;
-			} else {
-				sessionID = null;
-			}
-			if (sessionID == null) {
-				try {
-					// Note: On the client, this call should be SessionResource.createSession(List<String>() with username, password)
-					log.info("WebAuth login request from user:" + webAuthUser  + " host: " + httpRequest.getRemoteHost() +":" + httpRequest.getRemoteAddr());
-					sessionID = EPADSessionOperations.authenticateWebAuthUser(webAuthUser, EPADConfig.webAuthPassword);
-		            EPADSessionOperations.setSessionHost(sessionID, httpRequest.getRemoteHost(), httpRequest.getRemoteAddr());
-					Cookie userName = new Cookie(LOGGEDINUSER_COOKIE, webAuthUser);
-		            userName.setMaxAge(-1);
-		            userName.setPath(httpRequest.getContextPath());
-		            httpResponse.addCookie(userName);
-		            Cookie sessionCookie = new Cookie(JSESSIONID_COOKIE, sessionID);
-		            sessionCookie.setMaxAge(-1);
-		            sessionCookie.setPath(httpRequest.getContextPath());
-		            log.info("WS Secure web auth cookie =" + JSESSIONID_COOKIE + " path = "+ sessionCookie.getPath());
-		            
-		            httpResponse.addCookie(sessionCookie);
-		            if (httpRequest.getRequestURL().toString().indexOf("Web_pad") == -1)
-		            	httpResponse.sendRedirect("Web_pad.html");
-		            return;
-				} catch (Exception e) {
-					log.warning("Error logging in WebAuth User", e);
-				}
-			}
-		} else {
-			String sessionID = SessionService.getJSessionIDFromRequest(httpRequest);
-			log.info("ml session"+sessionID);
-			String method = httpRequest.getMethod();
-			boolean isValid = SessionService.hasValidSessionID(sessionID);
-			if (!isValid && httpRequest.getRequestURL().toString().indexOf("login.jsp") == -1 
-					&& !httpRequest.getRequestURL().toString().contains("/session") 
-					&& !httpRequest.getRequestURL().toString().contains("/eventresource") 
-					&& !httpRequest.getHeader("User-Agent").contains("HttpClient") 
-					&& !httpRequest.getHeader("user-agent").contains("HttpClient") 
-					&& !httpRequest.getRequestURL().toString().contains("/v2") && Main.separateWebServicesApp) {
-            	log.info("Redirecting url:" + httpRequest.getRequestURL() + " to login.jsp");
-				httpResponse.sendRedirect(httpRequest.getContextPath() + "/login.jsp");
-            	return;
-			}
-			if (httpRequest.getRequestURL().indexOf("/v2/") != -1 || httpRequest.getRequestURL().indexOf("/plugin/") != -1)				
-			{
-				log.info("ID:" + Thread.currentThread().getId() + " host:" + EPADSessionOperations.getSessionHost(sessionID) + " method:" + httpRequest.getMethod() 
-						+ ", url: " + httpRequest.getPathInfo() + ", parameters: "
-						+ httpRequest.getQueryString() + " sessionId:" + sessionID);
-				logstatus = true;
-			}
-			log.info("url "+httpRequest.getRequestURL().toString());
-			if (!isValid && !httpRequest.getRequestURL().toString().contains("WADO") 
-					&& !httpRequest.getRequestURL().toString().contains("/session") 
-					&& !httpRequest.getRequestURL().toString().contains("login.jsp")
-					&& !httpRequest.getRequestURL().toString().contains("statuslistener"))
-			{
-				if ("OPTIONS".equalsIgnoreCase(method)) {			
-					String origin = httpRequest.getHeader("Origin");
-					httpResponse.setHeader("Access-Control-Allow-Origin", origin);
-					httpResponse.setHeader("Access-Control-Allow-Credentials", "true");
-					httpResponse.setHeader("Access-Control-Allow-Headers", "Authorization");
-					httpResponse.setHeader("Access-Control-Allow-Methods", "POST, DELETE, PUT, GET, OPTIONS");
-					httpResponse.setStatus(HttpServletResponse.SC_OK);
-					return;
-				} else {
-					PrintWriter responseStream = httpResponse.getWriter();
-					responseStream.append(new EPADMessage(EPADHandler.INVALID_SESSION_TOKEN_MESSAGE).toJSON());
-					httpResponse.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-		    		log.info("ID:" + Thread.currentThread().getId() + " Status returned to client:" + HttpServletResponse.SC_UNAUTHORIZED);
-					return;
-				}
-			}
-		}
-	    if (httpRequest.getRequestURL().indexOf("WEB-INF") != -1) {
-	    	// How come, this weird jetty allows this?
-			PrintWriter pw = httpResponse.getWriter();
-			httpResponse.setContentType("text/html");
-			pw.append("<html> <head> <meta http-equiv='Content-Type' content='text/html;charset=ISO-8859-1'/>" 
-					+ "<title>Error 403 Forbidden</title>"
-					+ "</head> <body> <h2>HTTP ERROR: 403 Forbidden</h2>"
-					+ "</body></html>");
-			httpResponse.setStatus(HttpServletResponse.SC_FORBIDDEN);
-			return;
-	    }
-        filterChain.doFilter(request, response);
-        if (logstatus) {
-    		log.info("ID:" + Thread.currentThread().getId() + " Status returned to client");
-        }
-		return;
-	}
-
-	@Override
-	public void destroy() {
-		// TODO Auto-generated method stub
+		if (request != null)					// In case handler is not called thru jetty
+			request.setHandled(true);
+		String status = httpRequest.getParameter("status");
+		String workFlowInstanceID = httpRequest.getParameter("workFlowInstanceID");
+		String workFlowID = httpRequest.getParameter("workFlowID");
 		
+		
+		PluginHandlerMap.getInstance().getPluginServletHandler("qifp").doPost(httpRequest, null);
+		
+		log.info("Status returned from qifp: status="+status + " workFlowInstanceID="+workFlowInstanceID + " workFlowID="+workFlowID );
+		httpResponse.setStatus(HttpServletResponse.SC_OK);
 	}
+
 }
