@@ -585,9 +585,30 @@ public class EPADGetHandler
 				responseStream.append(studyList.toJSON());
 				statusCode = HttpServletResponse.SC_OK;
 
-
 				/**
-				 * Studies routes. These short cuts are used when the invoker does not have a project or subject ID.
+				 * Studies routes. for getting old studies
+				 */
+			} else if (HandlerUtil.matchesTemplate(StudiesRouteTemplates.STUDY_LIST, pathInfo)) {
+				//older than in days
+				String olderThan_Days = httpRequest.getParameter("olderThan_Days");
+				Integer olderThan ;
+				if (olderThan_Days!=null) {
+					try{
+						olderThan = Integer.parseInt(olderThan_Days);
+					}catch (NumberFormatException ne){
+						olderThan=EPADConfig.olderThan_Days; //couldn't parse,use the one at the config file
+					}
+				}else {
+					olderThan=EPADConfig.olderThan_Days; //no param,use the one at the config file
+				}
+				
+				EPADStudyList studyList = epadOperations.getStudyDescriptions( username, sessionID,olderThan);
+				log.info("Returning " + studyList.ResultSet.totalRecords + " studies that are not accesses in " + olderThan + " days");
+				responseStream.append(studyList.toJSON());
+				statusCode = HttpServletResponse.SC_OK;
+				
+				/**
+				 * Study routes. These short cuts are used when the invoker does not have a project or subject ID.
 				 */
 			} else if (HandlerUtil.matchesTemplate(StudiesRouteTemplates.STUDY, pathInfo)) {
 				StudyReference studyReference = StudyReference.extract(StudiesRouteTemplates.STUDY, pathInfo);

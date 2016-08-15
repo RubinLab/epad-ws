@@ -1550,4 +1550,15 @@ public interface EpadOperations
 	 */
 	EPADTemplateContainerList getSystemTemplateDescriptions(String username, String sessionID,
 			String templateLevelFilter) throws Exception;
+
+	
+	/**
+	 * get study descriptions that are not accessed than given number of days
+	 * @param username
+	 * @param sessionID
+	 * @param days
+	 * @return
+	 * @throws Exception
+	 */
+	EPADStudyList getStudyDescriptions(String username, String sessionID, Integer days) throws Exception;
 }

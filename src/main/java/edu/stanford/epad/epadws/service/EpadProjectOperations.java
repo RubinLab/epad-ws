@@ -1071,5 +1071,13 @@ public interface EpadProjectOperations {
 			File file, String filename, String description, FileType fileType, String templateLevelType)
 			throws Exception;
 	
+	/**
+	 * get studies older than given number of days
+	 * @param days
+	 * @return
+	 * @throws Exception
+	 */
+	List<Study> getStudiesOlderThanDays(Integer days) throws Exception;
+	
 	
 }
