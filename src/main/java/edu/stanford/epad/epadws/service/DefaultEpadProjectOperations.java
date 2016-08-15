@@ -1605,6 +1605,19 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		return projects;
 	}
 
+	
+	/* (non-Javadoc)
+	 * @see edu.stanford.epad.epadws.service.EpadProjectOperations#getStudiesForProjectAndSubject(java.lang.String, java.lang.String)
+	 */
+	@Override
+	public List<Study> getStudiesOlderThanDays(Integer days) throws Exception {
+		List<Study> studies = new ArrayList<Study>();
+		List objects = new Study().getObjects("DATE_SUB(CURDATE(),INTERVAL "+days+" DAY) >updatetime");
+		studies.addAll(objects);
+		return studies;
+	}
+
+	
 	/* (non-Javadoc)
 	 * @see edu.stanford.epad.epadws.service.EpadProjectOperations#getStudiesForProjectAndSubject(java.lang.String, java.lang.String)
 	 */

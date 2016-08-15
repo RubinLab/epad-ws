@@ -461,6 +461,81 @@ public class DefaultEpadOperations implements EpadOperations
 		return getStudyDescriptions(subjectReference, username, sessionID, searchFilter, false);
 	
 	}
+	
+	@Override
+	public EPADStudyList getStudyDescriptions(String username, String sessionID,
+			Integer days) throws Exception
+	{
+		EPADStudyList epadStudyList = new EPADStudyList();
+		List<Study> studies = new ArrayList<Study>();
+		Subject subject = null;
+		Set<String> studyUIDsInEpad = new HashSet<String>();
+		
+		studies = projectOperations.getStudiesOlderThanDays(days);
+		for (Study study: studies)
+		{
+			studyUIDsInEpad.add(study.getStudyUID());
+		}
+		DCM4CHEEStudyList dcm4CheeStudyList = Dcm4CheeQueries.getStudies(studyUIDsInEpad);
+		
+		for (DCM4CHEEStudy dcm4CheeStudy : dcm4CheeStudyList.ResultSet.Result) {
+			subject =projectOperations.getSubjectForStudy(dcm4CheeStudy.studyUID);
+			
+			List<NonDicomSeries> series = projectOperations.getNonDicomSeriesForStudy(dcm4CheeStudy.studyUID);
+			dcm4CheeStudy.seriesCount = dcm4CheeStudy.seriesCount + series.size();
+			EPADStudy epadStudy = dcm4cheeStudy2EpadStudy(sessionID, subject.getProjectID(), subject.getSubjectUID(),
+					dcm4CheeStudy, username, false);
+			
+			studyUIDsInEpad.remove(epadStudy.studyUID);
+			epadStudyList.addEPADStudy(epadStudy);
+			
+		}
+		for (Study study: studies)
+		{
+			if (studyUIDsInEpad.contains(study.getStudyUID()))
+			{
+				List<NonDicomSeries> series = projectOperations.getNonDicomSeriesForStudy(study.getStudyUID());
+				String firstSeries = "";
+				if (series.size() > 0) firstSeries = series.get(0).getSeriesUID();
+				String firstSeriesDate = "";
+				if (series.size() > 0) firstSeriesDate = dateformat.format(series.get(0).getCreatedTime());
+				String desc = "";
+				subject =projectOperations.getSubjectForStudy(study.getStudyUID());
+				
+				DCM4CHEEStudy dcm4CheeStudy = new DCM4CHEEStudy(study.getStudyUID(), subject.getName(),subject.getSubjectUID(), 
+						"", formatDateTime(study.getStudyDate()), 
+						0, series.size(), firstSeries, firstSeriesDate,
+						"", 0, study.getStudyUID(), study.getDescription(), "",
+						"", "");
+				EPADStudy epadStudy = dcm4cheeStudy2EpadStudy(sessionID, study.getProjectID(), subject.getSubjectUID(),
+						dcm4CheeStudy, username);
+				epadStudyList.addEPADStudy(epadStudy);
+			}
+		}
+//		for (Study study: studies)
+//		{
+//			
+//				List<NonDicomSeries> series = projectOperations.getNonDicomSeriesForStudy(study.getStudyUID());
+//				String firstSeries = "";
+//				if (series.size() > 0) firstSeries = series.get(0).getSeriesUID();
+//				String firstSeriesDate = "";
+//				if (series.size() > 0) firstSeriesDate = dateformat.format(series.get(0).getCreatedTime());
+//				
+//				subject =projectOperations.getSubjectForStudy(study.getStudyUID());
+//				
+//				DCM4CHEEStudy dcm4CheeStudy = new DCM4CHEEStudy(study.getStudyUID(), subject.getName(),subject.getSubjectUID(), 
+//						"", formatDateTime(study.getStudyDate()), 
+//						0, series.size(), firstSeries, firstSeriesDate,
+//						"", 0, study.getStudyUID(), study.getDescription(), "",
+//						"", "");
+//				EPADStudy epadStudy = dcm4cheeStudy2EpadStudy(sessionID, study.getProjectID(), subject.getSubjectUID(),
+//						dcm4CheeStudy, username);
+//				epadStudyList.addEPADStudy(epadStudy);
+//			
+//		}
+		return epadStudyList;
+	}
+
 	@Override
 	public EPADStudyList getStudyDescriptions(SubjectReference subjectReference, String username, String sessionID,
 			EPADSearchFilter searchFilter, boolean includeAnnotationStatus) throws Exception
