@@ -1944,7 +1944,8 @@ public class EPADGetHandler
 
 			} else if (HandlerUtil.matchesTemplate(TemplatesRouteTemplates.TEMPLATE_LIST, pathInfo)) {
 				String templateLevelType = httpRequest.getParameter("templateleveltype");
-				EPADTemplateContainerList templates = epadOperations.getTemplateDescriptions(username, sessionID, templateLevelType);
+				boolean includeSystemTemplates = "true".equals(httpRequest.getParameter("includeSystemTemplates"));
+				EPADTemplateContainerList templates = epadOperations.getTemplateDescriptions(username, sessionID, templateLevelType, includeSystemTemplates);
 				responseStream.append(templates.toJSON());
 				statusCode = HttpServletResponse.SC_OK;
 

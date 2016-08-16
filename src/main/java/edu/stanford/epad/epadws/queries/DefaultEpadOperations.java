@@ -2183,13 +2183,20 @@ public class DefaultEpadOperations implements EpadOperations
 			String sessionID) throws Exception {
 		return getTemplateDescriptions(username, sessionID, null);
 	}
+	
 	@Override
 	public EPADTemplateContainerList getTemplateDescriptions(String username,
 			String sessionID, String templateLevelFilter) throws Exception {
+		return getTemplateDescriptions(username, sessionID, templateLevelFilter, false);
+	}
+	
+	@Override
+	public EPADTemplateContainerList getTemplateDescriptions(String username,
+			String sessionID, String templateLevelFilter, boolean includeSystemTemplates) throws Exception {
 		EPADTemplateContainerList oldList = getSystemTemplateDescriptions(username, sessionID);
 		EPADTemplateContainerList fileList = new EPADTemplateContainerList();
 		List<EpadFile> efiles = projectOperations.getEpadFiles(null, null, null, null, FileType.TEMPLATE, false);
-		if (efiles.size() == 0)
+		if (efiles.size() == 0 && includeSystemTemplates)
 			fileList = oldList;
 		Set<String> userProjects = new HashSet<String>();
 		Map<String, List<String>> disabledTemplates = new HashMap<String, List<String>>();
