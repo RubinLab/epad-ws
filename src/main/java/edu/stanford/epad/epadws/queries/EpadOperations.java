@@ -1561,4 +1561,16 @@ public interface EpadOperations
 	 * @throws Exception
 	 */
 	EPADStudyList getStudyDescriptions(String username, String sessionID, Integer days) throws Exception;
+
+	/**
+	 * get template descriptions filtering with templateLevelFilter and includeSystemTemplates
+	 * @param username
+	 * @param sessionID
+	 * @param templateLevelFilter
+	 * @param includeSystemTemplates
+	 * @return
+	 * @throws Exception
+	 */
+	EPADTemplateContainerList getTemplateDescriptions(String username, String sessionID, String templateLevelFilter,
+			boolean includeSystemTemplates) throws Exception;
 }
