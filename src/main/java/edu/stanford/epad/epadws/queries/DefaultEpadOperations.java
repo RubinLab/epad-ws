@@ -4418,6 +4418,37 @@ public class DefaultEpadOperations implements EpadOperations
 			//if (!isDSO)
 		}
 		String lossyImage = getWADOPath(studyUID, seriesUID, imageUID);
+		log.info("rescale slope:"+rescaleSlope+" and intercept:"+rescaleIntercept);
+		if (rescaleIntercept==null && rescaleSlope==null) {
+			log.info("rescale slope and intercept empty!");
+			if (dicomElements!=null){ //the first image, try dicom elements
+				log.info("using dicomelements");
+				for (int i=0;i< dicomElements.ResultSet.totalRecords; i++) {
+					if (dicomElements.ResultSet.Result.get(i).tagCode.equals("(0028,1052)")) {
+						rescaleIntercept = dicomElements.ResultSet.Result.get(i).value.trim();
+					}
+					if (dicomElements.ResultSet.Result.get(i).tagCode.equals("(0028,1053)")) {
+						rescaleSlope = dicomElements.ResultSet.Result.get(i).value.trim();
+					}
+				}
+				log.info("rescale slope:"+rescaleSlope+" and intercept:"+rescaleIntercept);
+			}
+			if (rescaleIntercept==null && rescaleSlope==null) { //still empty, query
+				log.info("rescale slope and intercept still empty!");
+				DICOMElementList dicomTags= getDICOMElements(studyUID, seriesUID, imageUID);
+				for (int i=0;i< dicomTags.ResultSet.totalRecords; i++) {
+					if (dicomTags.ResultSet.Result.get(i).tagCode.equals("(0028,1052)")) {
+						rescaleIntercept = dicomTags.ResultSet.Result.get(i).value.trim();
+					}
+					if (dicomTags.ResultSet.Result.get(i).tagCode.equals("(0028,1053)")) {
+						rescaleSlope = dicomTags.ResultSet.Result.get(i).value.trim();
+					}
+				}
+				log.info("rescale slope:"+rescaleSlope+" and intercept:"+rescaleIntercept);
+			}
+			
+		}
+		
 		//log.debug("losslessimage:" + losslessImage);
 		return new EPADImage(projectID, subjectID, studyUID, seriesUID, imageUID, classUID, insertDate, imageDate,
 				sliceLocation, instanceNumber, losslessImage, lossyImage, dicomElements, defaultDICOMElements, numberOfFrames,
