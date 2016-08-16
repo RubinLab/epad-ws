@@ -2297,7 +2297,7 @@ public class DefaultEpadOperations implements EpadOperations
 					if (templateLevelType==null)
 						templateLevelType = "image";
 						
-					if (templateLevelType.toLowerCase().startsWith(templateLevelFilter.toLowerCase())) {
+					if (templateLevelFilter==null || templateLevelType.toLowerCase().startsWith(templateLevelFilter.toLowerCase())) {
 						EPADTemplate epadTmpl = new EPADTemplate(templateUID, templateName, templateType, templateCode,
 								templateDescription, modality, templateLevelType);
 						epadTmpls.add(epadTmpl);
