@@ -4418,7 +4418,7 @@ public class DefaultEpadOperations implements EpadOperations
 			//if (!isDSO)
 		}
 		String lossyImage = getWADOPath(studyUID, seriesUID, imageUID);
-		log.info("rescale slope:"+rescaleSlope+" and intercept:"+rescaleIntercept);
+//		log.info("rescale slope:"+rescaleSlope+" and intercept:"+rescaleIntercept);
 		if (rescaleIntercept==null && rescaleSlope==null) {
 			log.info("rescale slope and intercept empty!");
 			if (dicomElements!=null){ //the first image, try dicom elements

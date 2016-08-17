@@ -511,18 +511,20 @@ public class UserProjectService {
 		
 		//check if the patient id already exist in the system. If so put a log or something, specifying the patient name that is used and the project
 		Subject subject = projectOperations.getSubject(dicomPatientID);
-		
-		if (subject != null && !dicomPatientName.equalsIgnoreCase(subject.getName()) && !duplicatePatientIds.contains(dicomPatientID)) {
-			duplicatePatientIds.add(dicomPatientID);
-			List<Project> projects=projectOperations.getProjectsForSubject(subject.getSubjectUID());
-			StringBuilder projectsStr=new StringBuilder();
-			for (Project p: projects) {
-				projectsStr.append(p.getName());
-				projectsStr.append(",");
+		if (subject != null && !dicomPatientName.equalsIgnoreCase(subject.getName()) ) {
+			if (!duplicatePatientIds.contains(dicomPatientID)) {
+				duplicatePatientIds.add(dicomPatientID);
+				List<Project> projects=projectOperations.getProjectsForSubject(subject.getSubjectUID());
+				StringBuilder projectsStr=new StringBuilder();
+				for (Project p: projects) {
+					projectsStr.append(p.getName());
+					projectsStr.append(",");
+				}
+				String message="The patient "+dicomPatientName+" is already uploaded as "+subject.getName()+" in project(s): "+ projectsStr.toString().substring(0, projectsStr.length()-1);
+				projectOperations.createEventLog(username, projectID, dicomPatientID, studyUID, seriesUID, null, null, dicomFile.getName(), "DUPLICATE DEIDENTIFICATION", message, true);
 			}
-			String message="The patient you upload as "+dicomPatientName+" has already been uploaded with name "+subject.getName()+" in project(s): "+ projectsStr.toString().substring(0, projectsStr.length()-1);
-			projectOperations.createEventLog(username, projectID, dicomPatientID, studyUID, seriesUID, null, null, dicomFile.getName(), "DUPLICATE DEIDENTIFICATION", message, true);
-
+			//for keeping the same name in cache
+			dicomPatientName=subject.getName();
 		}
 		
 		if (dicomPatientID != null && studyUID != null) {
