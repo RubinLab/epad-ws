@@ -162,6 +162,7 @@ public class UserProjectService {
 	private static final EpadDatabaseOperations databaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();	
 
 	public static final String XNAT_UPLOAD_PROPERTIES_FILE_NAME = "xnat_upload.properties";
+	public static HashSet<String> duplicatePatientIds= new HashSet<>();
 
 	/**
 	 * Check if user is collaborator
@@ -449,6 +450,8 @@ public class UserProjectService {
 		log.info("Number of non-dicom files in upload:" + nondicoms);
 		return numberOfDICOMFiles;
 	}
+	
+	
 
 	/**
 	 * Create subject/study records from uploaded dicom file and add to project 
@@ -505,6 +508,23 @@ public class UserProjectService {
 			pendingUploads.put(studyUID, username + ":" + projectID);
 		if (pendingPNGs.size() < 300)
 			pendingPNGs.put(seriesUID, username + ":" + projectID);
+		
+		//check if the patient id already exist in the system. If so put a log or something, specifying the patient name that is used and the project
+		Subject subject = projectOperations.getSubject(dicomPatientID);
+		
+		if (subject != null && !dicomPatientName.equalsIgnoreCase(subject.getName()) && !duplicatePatientIds.contains(dicomPatientID)) {
+			duplicatePatientIds.add(dicomPatientID);
+			List<Project> projects=projectOperations.getProjectsForSubject(subject.getSubjectUID());
+			StringBuilder projectsStr=new StringBuilder();
+			for (Project p: projects) {
+				projectsStr.append(p.getName());
+				projectsStr.append(",");
+			}
+			String message="The patient you upload as "+dicomPatientName+" has already been uploaded with name "+subject.getName()+" in project(s): "+ projectsStr.toString().substring(0, projectsStr.length()-1);
+			projectOperations.createEventLog(username, projectID, dicomPatientID, studyUID, seriesUID, null, null, dicomFile.getName(), "DUPLICATE DEIDENTIFICATION", message, true);
+
+		}
+		
 		if (dicomPatientID != null && studyUID != null) {
 			//databaseOperations.deleteSeriesOnly(seriesUID); // This will recreate all images
 			if (dicomPatientName == null) dicomPatientName = "";
