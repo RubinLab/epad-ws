@@ -291,7 +291,8 @@ public class Dcm4CheeQueries
 									dicomElementListNoSkip.addDICOMElement(dicomElementNoSkip);
 								}
 							} else {
-								 log.warning("Warning: could not decode DICOM element " + dicomElementString + "");
+								//too much log
+//								 log.warning("Warning: could not decode DICOM element " + dicomElementString + "");
 							}
 						}
 					} finally {

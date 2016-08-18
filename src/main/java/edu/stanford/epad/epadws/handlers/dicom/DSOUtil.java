@@ -258,10 +258,16 @@ public class DSOUtil
 					log.info("DSO to be edited, tag:" + dicomElement.tagName + " value:" + dicomElement.value);
 					seriesDescription = dicomElement.value;
 				}
+				
 			}
 			// Always 'clobber' the orginal DSO
 //			if (seriesDescription != null && seriesDescription.toLowerCase().contains("epad"))
 			{
+				//check if the image reference series is *
+				if (imageReference.seriesUID.equals("*")) {
+					log.info("why still * " + dsoEditRequest.toJSON() );
+				}
+				
 				seriesUID = imageReference.seriesUID;
 				instanceUID = imageReference.imageUID;
 			}
@@ -520,6 +526,7 @@ public class DSOUtil
 			boolean removeEmptyMasks = false;
 			if ("true".equals(EPADConfig.getParamValue("OptimizedDSOs", "true")))
 				removeEmptyMasks = true;
+			
 			String[] seriesImageUids = converter.generateDSO(files2FilePaths(tiffMaskFiles), dicomFilePaths, temporaryDSOFile.getAbsolutePath(), dsoSeriesDescription, dsoSeriesUID, dsoInstanceUID, removeEmptyMasks);
 			imageReference.seriesUID = seriesImageUids[0];
 			imageReference.imageUID = seriesImageUids[1];
@@ -966,6 +973,13 @@ public class DSOUtil
 			if (editedFrameNumbers == null || editedFrameNumbers.length() == 0)
 			{
 				dsoEditRequest = extractDSOEditRequest(fileItemIterator);
+				//ui doesn't send editedFrameNumbers, but the series uid is *
+				if (dsoEditRequest.seriesUID.equals("*")) {
+					dsoEditRequest.seriesUID=confirm;
+				}
+				if (dsoEditRequest.studyUID.equals("*")) {
+					dsoEditRequest.studyUID=dcm4CheeDatabaseOperations.getStudyUIDForSeries(seriesUID);
+				}
 			}
 			else
 			{
