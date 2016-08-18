@@ -1886,12 +1886,11 @@ public class EPADGetHandler
 
 			} else if (HandlerUtil.matchesTemplate(PluginRouteTemplates.PLUGIN_LIST, pathInfo)) { //ML
 				String processMultipleAims = httpRequest.getParameter("processMultipleAims");
-				boolean isProcessMultipleAims = ("true".equalsIgnoreCase(processMultipleAims));
 				EPADPluginList plugins = null;
 				if (returnSummary(httpRequest)) 
-					plugins = pluginOperations.getPluginSummaries(username, sessionID, isProcessMultipleAims);
+					plugins = pluginOperations.getPluginSummaries(username, sessionID, processMultipleAims);
 				else
-					plugins = pluginOperations.getPluginDescriptions(username, sessionID, isProcessMultipleAims);
+					plugins = pluginOperations.getPluginDescriptions(username, sessionID, processMultipleAims);
 				
 				responseStream.append(plugins.toJSON());
 				statusCode = HttpServletResponse.SC_OK;

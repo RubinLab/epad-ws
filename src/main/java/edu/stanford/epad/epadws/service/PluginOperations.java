@@ -282,14 +282,17 @@ public class PluginOperations {
 	}
 	
 	
-	public EPADPluginList getPluginSummaries(String username, String sessionID, Boolean processMultipleAims) throws Exception {
+	public EPADPluginList getPluginSummaries(String username, String sessionID, String processMultipleAims) throws Exception {
 		List<Plugin> plugins = getPlugins();
 		List<Project> projects= projectOperations.getAllProjects();
+		boolean isProcessMultipleAims = ("true".equalsIgnoreCase(processMultipleAims));
+		
 		EPADPluginList epadPluginList = new EPADPluginList();
 		for (Project project : projects) {
 
 			for (Plugin plugin : plugins) {
-				if (!processMultipleAims || plugin.getProcessMultipleAims()) {
+				//if null get all, if not get the ones that are same
+				if (processMultipleAims==null || plugin.getProcessMultipleAims()==isProcessMultipleAims) {
 					EPADPlugin epadPlugin = plugin2EPADPluginProject(plugin,project,true);
 					
 					if (epadPlugin != null)
@@ -305,20 +308,21 @@ public class PluginOperations {
 	}
 	
 	public EPADPluginList getPluginSummaries(String username, String sessionID) throws Exception {
-		return getPluginSummaries(username, sessionID, false);
+		return getPluginSummaries(username, sessionID, null);
 	}
 	
 	public EPADPluginList getPluginDescriptions(String username, String sessionID) throws Exception {
-		return getPluginDescriptions(username, sessionID,false);
+		return getPluginDescriptions(username, sessionID,null);
 	}
-	public EPADPluginList getPluginDescriptions(String username, String sessionID, Boolean processMultipleAims) throws Exception {
+	public EPADPluginList getPluginDescriptions(String username, String sessionID, String processMultipleAims) throws Exception {
 		List<Plugin> plugins = getPlugins();
 		List<Project> projects= projectOperations.getAllProjects();
+		boolean isProcessMultipleAims = ("true".equalsIgnoreCase(processMultipleAims));
 		EPADPluginList epadPluginList = new EPADPluginList();
 		for (Project project : projects) {
 
 			for (Plugin plugin : plugins) {
-				if (!processMultipleAims || plugin.getProcessMultipleAims()) {
+				if (processMultipleAims==null || plugin.getProcessMultipleAims()==isProcessMultipleAims) {
 					EPADPlugin epadPlugin = plugin2EPADPluginProject(plugin,project,false);
 					
 					if (epadPlugin != null)
