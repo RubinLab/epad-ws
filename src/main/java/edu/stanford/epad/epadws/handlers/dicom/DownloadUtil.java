@@ -140,6 +140,7 @@ import edu.stanford.epad.dtos.EPADStudy;
 import edu.stanford.epad.dtos.EPADStudyList;
 import edu.stanford.epad.dtos.EPADSubject;
 import edu.stanford.epad.dtos.EPADSubjectList;
+import edu.stanford.epad.epadws.aim.AIMUtil;
 import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeDatabase;
 import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeDatabaseOperations;
 import edu.stanford.epad.epadws.epaddb.EpadDatabase;
@@ -254,6 +255,7 @@ public class DownloadUtil {
 				if (includeAIMs)
 				{
 					EPADAIMList aimList = epadOperations.getSeriesAIMDescriptions(seriesReference, username, sessionID);
+					aimList = AIMUtil.filterPermittedImageAnnotations(aimList, username, sessionID);
 					for (EPADAIM aim: aimList.ResultSet.Result)
 					{
 						
@@ -401,6 +403,7 @@ public static void downloadProject(boolean stream, HttpServletResponse httpRespo
 				if (includeAIMs)
 				{
 					EPADAIMList aimList = epadOperations.getSeriesAIMDescriptions(seriesReference, username, sessionID);
+					aimList = AIMUtil.filterPermittedImageAnnotations(aimList, username, sessionID);
 					for (EPADAIM aim: aimList.ResultSet.Result)
 					{
 						String name ="Aim_" + format4Filename(subject.subjectName)+ "_" +aim.aimID + ".xml";
@@ -540,6 +543,7 @@ public static void downloadSubject(boolean stream, HttpServletResponse httpRespo
 			if (includeAIMs)
 			{
 				EPADAIMList aimList = epadOperations.getSeriesAIMDescriptions(seriesReference, username, sessionID);
+				aimList = AIMUtil.filterPermittedImageAnnotations(aimList, username, sessionID);
 				for (EPADAIM aim: aimList.ResultSet.Result)
 				{
 					String name ="Aim_" + format4Filename(study.patientName)+ "_" +aim.aimID + ".xml";
@@ -700,6 +704,7 @@ public static void downloadStudies(boolean stream, HttpServletResponse httpRespo
 			if (includeAIMs)
 			{
 				EPADAIMList aimList = epadOperations.getSeriesAIMDescriptions(seriesReference, username, sessionID);
+				aimList = AIMUtil.filterPermittedImageAnnotations(aimList, username, sessionID);
 				for (EPADAIM aim: aimList.ResultSet.Result)
 				{
 					//String name = "Aim_" + aim.aimID + ".xml";
@@ -896,7 +901,7 @@ public static void downloadStudy(boolean stream, HttpServletResponse httpRespons
 	List<String> fileNames = new ArrayList<String>();
 	EPADSeriesList seriesList = epadOperations.getSeriesDescriptions(studyReference, username, sessionID, searchFilter, false);
 	int imageCount = 0;
-	log.debug("Number series in study:" + seriesList.ResultSet.totalRecords);
+	log.info("Number series in study:" + seriesList.ResultSet.totalRecords);
 	for (EPADSeries series: seriesList.ResultSet.Result)
 	{
 		if (!seriesSet.isEmpty() && !seriesSet.contains(series.seriesUID)) continue;
@@ -946,6 +951,7 @@ public static void downloadStudy(boolean stream, HttpServletResponse httpRespons
 		if (includeAIMs)
 		{
 			EPADAIMList aimList = epadOperations.getSeriesAIMDescriptions(seriesReference, username, sessionID);
+			aimList = AIMUtil.filterPermittedImageAnnotations(aimList, username, sessionID);
 			for (EPADAIM aim: aimList.ResultSet.Result)
 			{
 				String name ="Aim_" + format4Filename(series.patientName)+ "_" +aim.aimID + ".xml";
@@ -1078,6 +1084,8 @@ public static void downloadSeries(boolean stream, HttpServletResponse httpRespon
 		if (includeAIMs)
 		{
 			EPADAIMList aimList = epadOperations.getSeriesAIMDescriptions(seriesReference, username, sessionID);
+			log.info("go filter");
+			aimList = AIMUtil.filterPermittedImageAnnotations(aimList, username, sessionID);
 			for (EPADAIM aim: aimList.ResultSet.Result)
 			{
 				String name ="Aim_" + format4Filename(series.patientName)+ "_" +aim.aimID + ".xml";
@@ -1203,6 +1211,8 @@ public static void downloadSeries(boolean stream, HttpServletResponse httpRespon
 	if (includeAIMs)
 	{
 		EPADAIMList aimList = epadOperations.getSeriesAIMDescriptions(seriesReference, username, sessionID);
+		log.info("go filter");
+		aimList = AIMUtil.filterPermittedImageAnnotations(aimList, username, sessionID);
 		for (EPADAIM aim: aimList.ResultSet.Result)
 		{
 			String name ="Aim_" + format4Filename(series.patientName)+ "_" +aim.aimID + ".xml";
