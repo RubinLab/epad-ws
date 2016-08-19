@@ -127,6 +127,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 
 import javax.servlet.http.HttpServletResponse;
+import javax.xml.parsers.ParserConfigurationException;
 
 import org.apache.commons.io.FileUtils;
 import org.json.JSONArray;
@@ -237,6 +238,7 @@ import edu.stanford.epad.epadws.service.EpadWorkListOperations;
 import edu.stanford.epad.epadws.service.UserProjectService;
 import edu.stanford.epad.epadws.xnat.XNATDeletionOperations;
 import edu.stanford.epad.epadws.xnat.XNATUtil;
+import edu.stanford.hakan.aim4api.base.AimException;
 import edu.stanford.hakan.aim4api.compability.aimv3.ImageAnnotation;
 import edu.stanford.hakan.aim4api.usage.AnnotationValidator;
 
@@ -715,8 +717,28 @@ public class DefaultEpadOperations implements EpadOperations
 //			log.info("Series:" + epadSeries.seriesDescription + " filterDSO:" + filterDSOs + " isDSO:"+ epadSeries.isDSO + " annotation:"+ epadSeries.annotationStatus.toString());
 			if (!filter && !(filterDSOs && epadSeries.isDSO))
 			{
+				if (epadSeries.isDSO){ //bad solution!!
+					//ml filter dsos with no permission
+					log.info("filter");
+					List<EPADAIM> aims = this.epadDatabaseOperations.getAIMsByDSOSeries(epadSeries.seriesUID);
+					try {
+						EPADAIMList aimList = AIMUtil.filterPermittedImageAnnotations(new EPADAIMList(aims), username, sessionID);
+						if (aimList!=null && aimList.ResultSet.totalRecords!=0) {
+							log.info("putting dso series:"+epadSeries.seriesUID);
+							epadSeriesList.addEPADSeries(epadSeries);
+						}
+					} catch (ParserConfigurationException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					} catch (AimException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+					
+				}
 				//log.info("Series:" + epadSeries.seriesDescription + " createdtime:" + epadSeries.createdTime);
-				epadSeriesList.addEPADSeries(epadSeries);
+				else
+					epadSeriesList.addEPADSeries(epadSeries);
 			}
 			else if (epadSeries.isDSO)
 			{
@@ -759,6 +781,9 @@ public class DefaultEpadOperations implements EpadOperations
 						}
 					}
 				}
+				
+					
+				
 			}
 
 		}
@@ -4418,7 +4443,7 @@ public class DefaultEpadOperations implements EpadOperations
 			//if (!isDSO)
 		}
 		String lossyImage = getWADOPath(studyUID, seriesUID, imageUID);
-		log.info("rescale slope:"+rescaleSlope+" and intercept:"+rescaleIntercept);
+//		log.info("rescale slope:"+rescaleSlope+" and intercept:"+rescaleIntercept);
 		if (rescaleIntercept==null && rescaleSlope==null) {
 			log.info("rescale slope and intercept empty!");
 			if (dicomElements!=null){ //the first image, try dicom elements

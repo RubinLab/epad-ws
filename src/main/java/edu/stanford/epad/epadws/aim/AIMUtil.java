@@ -1091,6 +1091,129 @@ public class AIMUtil
 		log.info("" + aims.size() + " annotations returned to client, time to write resp:" + (resptime-xmltime) + " msecs");
 	}
 	
+	public static EPADAIMList filterPermittedImageAnnotations(EPADAIMList aims, String user, String sessionID) throws ParserConfigurationException, AimException
+	{
+		long starttime = System.currentTimeMillis();
+		EPADAIMList aimsFromExist = new EPADAIMList();
+		EPADAIMList aimsFromDB = new EPADAIMList();
+		for (EPADAIM ea: aims.ResultSet.Result)
+		{
+			if (ea.xml == null || ea.xml.equals(""))
+			{
+				aimsFromExist.addAIM(ea);
+			}
+			else
+			{
+				aimsFromDB.addAIM(ea);
+			}
+		}
+		log.info("aimd from db:"+aimsFromDB.ResultSet.totalRecords);
+		List<EPADAIM> aimsDB = new ArrayList<EPADAIM>();
+		if (aimsFromDB.ResultSet.totalRecords > 0)
+		{
+			// Check permissions for aims from DB table
+			Map<String, List<EPADAIM>> aimsMap = getPermittedAIMs(sessionID, aimsFromDB, user);
+			long permtime = System.currentTimeMillis();
+			for (List<EPADAIM> paims: aimsMap.values())
+			{
+				aimsDB.addAll(paims);
+			}
+			// Get other params
+			for (int i = 0; i < aimsDB.size(); i++)
+			{
+				EPADAIM ea = aimsDB.get(i);
+				try {
+					List<ImageAnnotationCollection> iacs = edu.stanford.hakan.aim4api.usage.AnnotationGetter.getImageAnnotationCollectionsFromString(ea.xml, null);
+					ImageAnnotationCollection aim = iacs.get(0);
+					Aim4 a = new Aim4(aim);
+					ea.name = aim.getImageAnnotations().get(0).getName().getValue();
+					//ea.template = aim.getImageAnnotations().get(0).getListTypeCode().get(0).getCodeSystem();// .getCode();
+					//ml
+					ea.template = aim.getImageAnnotations().get(0).getListTypeCode().get(0).getCode();
+					ea.templateType = aim.getImageAnnotations().get(0).getListTypeCode().get(0).getCodeSystemName();
+					ea.date = aim.getDateTime();
+					ea.comment = a.getComment();
+					if (a.getFirstStudyDate() != null)
+						ea.studyDate = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(a.getFirstStudyDate());
+					ea.patientName = a.getPatientName();
+					ea.xml = aim.getXMLString(); //the only different thing from summaries!!! very bad solution!!
+				} catch (edu.stanford.hakan.aim4api.base.AimException e) {
+					log.warning("Invalid AIM xml in DB, aimID:" + ea.aimID, e);
+					aimsDB.remove(i--);
+					aimsFromExist.addAIM(ea);
+				}
+			}
+		}
+		long dbtime = System.currentTimeMillis();
+		
+		List<ImageAnnotationCollection> annotations = new ArrayList<ImageAnnotationCollection>();
+		if (aimsFromExist.ResultSet.totalRecords > 0)
+		{
+			// Check permission for aims from Exist
+			Map<String, String> projectAimIDs = getUIDCsvList(sessionID, aimsFromExist, user);
+			for (String projectID: projectAimIDs.keySet())
+			{
+				String uids = projectAimIDs.get(projectID);
+				if (uids.trim().length() > 0)
+				{
+					List<ImageAnnotationCollection> iacs = AIMQueries.getAIMImageAnnotationsV4(projectID, AIMSearchType.ANNOTATION_UID, uids, user);
+					annotations.addAll(iacs);
+					if (iacs.size() == 0)
+						log.warning("Annotations not found in Exist for uids:" + uids);
+					log.info("" + iacs.size() + " AIM4 file(s) found for project:" + projectID +" for user " + user);
+				
+				}
+			}
+		}
+		long existtime = System.currentTimeMillis();
+
+		Map<String, EPADAIM> aimMAP = new HashMap<String, EPADAIM>();
+		EPADAIMResultSet rs = aims.ResultSet;
+		for (EPADAIM aim: rs.Result)
+		{
+			aimMAP.put(aim.aimID, aim);
+		}
+		aims = new EPADAIMList();
+		for (ImageAnnotationCollection aim : annotations) {
+			try {
+				Aim4 a = new Aim4(aim);
+				EPADAIM ea = aimMAP.get(aim.getUniqueIdentifier());
+				if (ea == null)  continue;
+				if (aim.getImageAnnotations().get(0).getName() != null)
+				{
+					ea.name = aim.getImageAnnotations().get(0).getName().getValue();
+				}
+				if (aim.getImageAnnotations().get(0).getListTypeCode() != null && aim.getImageAnnotations().get(0).getListTypeCode().size() > 0)
+				{
+					//ml what is this?
+					//it is like this just above 
+//					ea.template = aim.getImageAnnotations().get(0).getListTypeCode().get(0).getDisplayName().getValue();
+//					ea.templateType = aim.getImageAnnotations().get(0).getListTypeCode().get(0).getCode();
+					//ml
+					ea.template = aim.getImageAnnotations().get(0).getListTypeCode().get(0).getCode();
+					ea.templateType = aim.getImageAnnotations().get(0).getListTypeCode().get(0).getCodeSystemName();
+				}
+				ea.date = aim.getDateTime();
+				ea.comment = a.getComment();
+				if (a.getFirstStudyDate() != null)
+					ea.studyDate = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(a.getFirstStudyDate());
+				ea.patientName = a.getPatientName();
+				ea.xml = aim.getXMLString(); //the only different thing from summaries!!! very bad solution!!
+				aims.addAIM(ea);
+			} catch (Exception x) {
+				log.warning("Error parsing annotation:" + aim, x);
+				x.printStackTrace();
+			}
+		}
+		aims.ResultSet.Result.addAll(aimsDB);
+		aims.ResultSet.totalRecords = aims.ResultSet.Result.size();
+		long endtime = System.currentTimeMillis();
+		log.info("" + aims.ResultSet.totalRecords + " annotation summaries returned to client, took:" + (endtime-starttime) 
+				+ " msecs, db time:" + (dbtime-starttime) + " exist time:" + (existtime-dbtime)
+				+ " iac to summaries:" + (existtime-endtime));
+		return aims;
+	}
+	
 	public static EPADAIMList queryAIMImageAnnotationSummariesV4(EPADAIMList aims, String user, String sessionID) throws ParserConfigurationException, AimException
 	{
 		long starttime = System.currentTimeMillis();
