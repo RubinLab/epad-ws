@@ -306,10 +306,11 @@ public class DSOUtil
 					return null;
 				}
 			}
-
 			if (DSOUtil.createDSO(imageReference, dsoTIFFMaskFiles, dicomFilePaths, seriesDescription, seriesUID, instanceUID))
 			{
-				log.info("Finished generating DSO");
+				Integer firstFrame=TIFFMasksToDSOConverter.firstFrames.get(instanceUID);
+				TIFFMasksToDSOConverter.firstFrames.remove(instanceUID);
+				log.info("Finished generating DSO. First frame is:"+firstFrame);
 				for (File file: dsoTIFFMaskFiles)
 				{
 					deleteQuietly(file);
@@ -319,7 +320,7 @@ public class DSOUtil
 					deleteQuietly(new File(dicom));
 				}
 				return new DSOEditResult(imageReference.projectID, imageReference.subjectID, imageReference.studyUID,			
-						imageReference.seriesUID, imageReference.imageUID, dsoEditRequest.aimID);
+						imageReference.seriesUID, imageReference.imageUID, dsoEditRequest.aimID, firstFrame);
 			}
 			else
 				return null;
@@ -526,8 +527,7 @@ public class DSOUtil
 			boolean removeEmptyMasks = false;
 			if ("true".equals(EPADConfig.getParamValue("OptimizedDSOs", "true")))
 				removeEmptyMasks = true;
-			
-			String[] seriesImageUids = converter.generateDSO(files2FilePaths(tiffMaskFiles), dicomFilePaths, temporaryDSOFile.getAbsolutePath(), dsoSeriesDescription, dsoSeriesUID, dsoInstanceUID, removeEmptyMasks);
+			String[] seriesImageUids = converter.generateDSO(files2FilePaths(tiffMaskFiles), dicomFilePaths, temporaryDSOFile.getAbsolutePath(), dsoSeriesDescription, dsoSeriesUID, dsoInstanceUID, removeEmptyMasks, "binary");
 			imageReference.seriesUID = seriesImageUids[0];
 			imageReference.imageUID = seriesImageUids[1];
 			log.info("Sending generated DSO " + temporaryDSOFile.getAbsolutePath() + " imageUID:" + imageReference.imageUID + " to dcm4chee...");
@@ -1016,10 +1016,10 @@ public class DSOUtil
 							+ " in  series " + seriesUID);
 					if (editedFramesPNGMaskFiles.size() != dsoEditRequest.editedFrameNumbers.size())
 						throw new IOException("Number of files and frames number do not match");
-					if (aim != null && (aim.dsoFrameNo == 0 || aim.dsoFrameNo < dsoEditRequest.editedFrameNumbers.get(0))) {
-						aim.dsoFrameNo = dsoEditRequest.editedFrameNumbers.get(0);
-						epadDatabaseOperations.updateAIMDSOFrameNo(aim.aimID, aim.dsoFrameNo);
-					}
+//					if (aim != null && (aim.dsoFrameNo == 0 || aim.dsoFrameNo < dsoEditRequest.editedFrameNumbers.get(0))) {
+//						aim.dsoFrameNo = dsoEditRequest.editedFrameNumbers.get(0);
+//						epadDatabaseOperations.updateAIMDSOFrameNo(aim.aimID, aim.dsoFrameNo);
+//					}
 					DSOEditResult dsoEditResult = DSOUtil.createEditedDSO(dsoEditRequest, editedFramesPNGMaskFiles, aim.seriesUID);
 					if (dsoEditResult != null)
 					{
@@ -1035,9 +1035,12 @@ public class DSOUtil
 						}
 						if (dsoEditResult.aimID != null && dsoEditResult.aimID.length() > 0)
 						{
+							log.info("update aim table dso first frame with "+ dsoEditResult.firstFrame + "for aim "+dsoEditResult.aimID);
+							epadDatabaseOperations.updateAIMDSOFrameNo(dsoEditResult.aimID, dsoEditResult.firstFrame);
 							List<ImageAnnotation> aims = AIMQueries.getAIMImageAnnotations(AIMSearchType.ANNOTATION_UID, dsoEditResult.aimID, "admin");
 							if (aims.size() > 0)
 							{
+								
 								log.info("DSO Annotation: " + dsoEditResult.aimID);
 //								String sessionID = XNATSessionOperations.getJSessionIDFromRequest(httpRequest);
 //								ImageAnnotation imageAnnotation =  aims.get(0);

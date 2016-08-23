@@ -811,6 +811,12 @@ public class AIMUtil
 				}
 				if (ea != null)
 				{
+					log.info("frame num:"+ea.dsoFrameNo);
+					if (ea.dsoFrameNo!=0) {//there is a frame number in db use that!
+						log.info("setting the xml with existing frameno "+ea.dsoFrameNo + " aim: "+ imageAnnotationColl.getXMLString());
+						imageAnnotationColl.getImageAnnotation().setDsoStartIndex(ea.dsoFrameNo);
+						
+					}
 					if (ea.seriesUID==null) {
 						log.warning("no series in aim. skipping check");
 					}else {
@@ -860,7 +866,7 @@ public class AIMUtil
 											.getDcm4CheeDatabaseOperations();
 									dsoSeriesUID=dcm4CheeDatabaseOperations.getSeriesUIDForImage(dse.getSopInstanceUid().getRoot());
 								}
-								
+//								updateDSOStartIndex(eaim, e.ds);
 								//if (eaim != null && eaim.dsoSeriesUID == null && aims.size() > 1 && seriesIds.size() > 1) {
 								//ml 
 								if (eaim != null && eaim.dsoSeriesUID == null && aims.size() > 1 && !dsoSeriesUID.equals("")) {
