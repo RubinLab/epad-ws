@@ -320,5 +320,5 @@ UPDATE lexicon set PARENT_ID = @qifp3dID where PARENT_ID=1;
 
 
 
-UPDATE dbversion SET version = '2.1';
+UPDATE dbversion SET version = '2.2';
 commit;
