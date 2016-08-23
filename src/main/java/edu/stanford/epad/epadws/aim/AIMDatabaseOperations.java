@@ -1076,7 +1076,7 @@ public class AIMDatabaseOperations {
     }
     
     public EPADAIM getAIM(String annotationID) throws SQLException { //ml shared projects added
-        String sqlSelect = "SELECT UserLoginName, ProjectUID, PatientID, StudyUID, SeriesUID, ImageUID, frameID, DSOSeriesUID,XML,NAME,SHAREDPROJECTS FROM annotations WHERE AnnotationUID = '"
+        String sqlSelect = "SELECT UserLoginName, ProjectUID, PatientID, StudyUID, SeriesUID, ImageUID, frameID, DSOSeriesUID,XML,NAME,SHAREDPROJECTS, DSOFRAMENO, AIMCOLOR FROM annotations WHERE AnnotationUID = '"
         		+ annotationID + "'";
     	log.debug(sqlSelect);
 		ResultSet rs = null;
@@ -1096,9 +1096,14 @@ public class AIMDatabaseOperations {
 				String xml = rs.getString(9);
 				String name = rs.getString(10);
 				String sharedProjects = rs.getString(11);
+				Integer dsoFrameNo = rs.getInt(12);
+				String color = rs.getString(13);
 				EPADAIM aim = new EPADAIM(annotationID, UserName, ProjectID, PatientID, StudyUID, SeriesUID, ImageUID, FrameID, DSOSeriesUID, sharedProjects);
 				aim.xml = xml;
 				aim.name = name;
+				aim.color = color;
+				if (dsoFrameNo != null)
+					aim.dsoFrameNo = dsoFrameNo;
 				return aim;
 			}
         }
@@ -1112,7 +1117,7 @@ public class AIMDatabaseOperations {
     }
     
     public List<EPADAIM> getAIMs(String annotationIDs) throws SQLException {
-        String sqlSelect = "SELECT UserLoginName, ProjectUID, PatientID, StudyUID, SeriesUID, ImageUID, frameID, AnnotationUID, DSOSeriesUID, XML, NAME FROM annotations WHERE AnnotationUID in ";
+        String sqlSelect = "SELECT UserLoginName, ProjectUID, PatientID, StudyUID, SeriesUID, ImageUID, frameID, AnnotationUID, DSOSeriesUID, XML, NAME, DSOFRAMENO, AIMCOLOR FROM annotations WHERE AnnotationUID in ";
         String[] ids = annotationIDs.split(",");
         String delim = "(";
         for (String id: ids)
@@ -1140,9 +1145,14 @@ public class AIMDatabaseOperations {
 				String DSOSeriesUID = rs.getString(9);
 				String xml = rs.getString(10);
 				String name = rs.getString(11);
+				Integer dsoFrameNo = rs.getInt(12);
+				String color = rs.getString(13);
 				EPADAIM aim = new EPADAIM(AnnotationID, UserName, ProjectID, PatientID, StudyUID, SeriesUID, ImageUID, FrameID, DSOSeriesUID);
 				aim.xml = xml;
 				aim.name = name;
+				aim.color = color;
+				if (dsoFrameNo != null)
+					aim.dsoFrameNo = dsoFrameNo;
 				aims.add(aim);
 			}
         }

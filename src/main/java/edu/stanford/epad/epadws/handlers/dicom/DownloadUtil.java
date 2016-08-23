@@ -243,7 +243,7 @@ public class DownloadUtil {
 					}
 					catch (Exception x)
 					{
-						log.warning("Error downloading image using wado");
+						log.warning("Error downloading image using wado", x);
 					}
 					finally 
 					{
