@@ -309,6 +309,11 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		user.setFirstName(firstName);
 		user.setLastName(lastName);
 		user.setEmail(email);
+		if (password==null || password.equals("")) {
+			password="ePad123!";
+			log.info("Password empty. Setting default password as "+password);
+		}
+			
 		String hashedPW = BCrypt.hashpw(password, BCrypt.gensalt());
 //		log.info("Password:" + password + " hash:" + hashedPW);
 		user.setPassword(hashedPW);
