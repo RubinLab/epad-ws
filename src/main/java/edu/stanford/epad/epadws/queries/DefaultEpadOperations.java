@@ -2385,7 +2385,7 @@ public class DefaultEpadOperations implements EpadOperations
 		for (EpadFile efile: efiles)
 		{
 			EPADTemplateContainer template = convertEpadFileToTemplate(projectID, efile, new File(EPADConfig.getEPADWebServerResourcesDir() + getEpadFilePath(efile)));
-			if (template.templateLevelType!= efile.getTemplateLevelType()) {//file (db) and template (xml) different
+			if (!template.templateLevelType.equalsIgnoreCase(efile.getTemplateLevelType())) {//file (db) and template (xml) different
 				log.info("xml and db different for template "+template.templateName +"!! Updating db. it was "+ efile.getTemplateLevelType()+ " changing to " +template.templateLevelType);
 				efile.setTemplateLevelType(template.templateLevelType);
 				efile.save();
