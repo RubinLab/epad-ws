@@ -703,6 +703,7 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		if (!requestor.isAdmin() && !loggedInUser.equals(user.getCreator()))
 			throw new Exception("No permissions to delete user");
 		try {
+			new ProjectToSubjectToStudyToSeriesToUserStatus().deleteObjects(" user_id =" + user.getId());
 			user.delete();
 			userCache.remove(user.getUsername());
 		} catch (Exception x) {
@@ -868,6 +869,7 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 			String username) throws Exception {
 		User user = getUser(username);
 		Project project = getProject(projectId);
+		new ProjectToSubjectToStudyToSeriesToUserStatus().deleteObjects(" project_id =" + project.getId()+ " and user_id=" + user.getId());
 		ProjectToUser ptou = (ProjectToUser) new ProjectToUser().getObject("project_id = " + project.getId() + " and user_id=" + user.getId());
 		if (ptou != null)
 			ptou.delete();
@@ -2286,6 +2288,7 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		new RemotePACQuery().deleteObjects("project_id=" + project.getId());
 		new WorkListToStudy().deleteObjects("project_id=" + project.getId());
 		new WorkListToSubject().deleteObjects("project_id=" + project.getId());
+		new ProjectToSubjectToStudyToSeriesToUserStatus().deleteObjects(" project_id =" + project.getId());
 		try {
 			project.delete();
 			projectCache.remove(project.getProjectId());
@@ -2322,6 +2325,7 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 			new ProjectToSubjectToStudy().deleteObjects("proj_subj_id =" + projSubj.getId());
 			projSubj.delete();
 		}
+		new ProjectToSubjectToStudyToSeriesToUserStatus().deleteObjects(" project_id =" + project.getId() + " and subject_id=" + subject.getId());
 		new WorkListToSubject().deleteObjects("subject_id =" + subject.getId() + " and project_id =" + project.getId());			
 		List projSubjs = new ProjectToSubject().getObjects("subject_id=" + subject.getId());
 		// TODO: delete subject if not used any more
@@ -2357,6 +2361,7 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 			ProjectToSubjectToStudy projSubjStudy = (ProjectToSubjectToStudy) new ProjectToSubjectToStudy().getObject("proj_subj_id =" + projSubj.getId() + " and study_id=" + study.getId());
 			if (projSubjStudy != null) projSubjStudy.delete();
 		}
+		new ProjectToSubjectToStudyToSeriesToUserStatus().deleteObjects("study_id =" + study.getId() + " and project_id =" + project.getId() + " and subject_id=" + subject.getId());
 		new WorkListToStudy().deleteObjects("study_id =" + study.getId() + " and project_id =" + project.getId());			
 		List<ProjectToSubjectToStudy> projSubjStudys = new ProjectToSubjectToStudy().getObjects("study_id=" + study.getId());
 		if (projSubjStudys.size() == 0)
@@ -2393,6 +2398,7 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 			new EpadFile().deleteObjects("study_id=" + study.getId());
 			study.delete();
 		}
+		new ProjectToSubjectToStudyToSeriesToUserStatus().deleteObjects("subject_id=" + subject.getId());
 		new EpadFile().deleteObjects("subject_id=" + subject.getId());
 		new WorkListToSubject().deleteObjects("subject_id =" + subject.getId());			
 		subject.delete();
@@ -2405,6 +2411,7 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 	public void deleteStudy(String username, String studyUID) throws Exception {
 		Study study = getStudy(studyUID);
 		if (study == null) return;
+		new ProjectToSubjectToStudyToSeriesToUserStatus().deleteObjects("study_id=" + study.getId());
 		new ProjectToSubjectToStudy().deleteObjects("study_id=" + study.getId());
 		new EpadFile().deleteObjects("study_id=" + study.getId());
 		study.delete();
