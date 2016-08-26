@@ -104,22 +104,31 @@
  *******************************************************************************/
 package edu.stanford.epad.epadws.service;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.json.XML;
+
 import edu.stanford.epad.common.util.EPADConfig;
+import edu.stanford.epad.common.util.EPADFileUtils;
 import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.epad.dtos.EPADPlugin;
 import edu.stanford.epad.dtos.EPADPluginList;
 import edu.stanford.epad.dtos.EPADPluginParameter;
 import edu.stanford.epad.dtos.EPADPluginParameterList;
+import edu.stanford.epad.dtos.EPADTemplateContainerList;
 import edu.stanford.epad.epadws.models.Plugin;
 import edu.stanford.epad.epadws.models.Project;
 import edu.stanford.epad.epadws.models.ProjectToPlugin;
 import edu.stanford.epad.epadws.models.ProjectToPluginParameter;
 import edu.stanford.epad.epadws.models.User;
+import edu.stanford.epad.epadws.queries.DefaultEpadOperations;
+import edu.stanford.epad.epadws.queries.EpadOperations;
 
 /**
  * All PlugIn related operations
@@ -234,6 +243,27 @@ public class PluginOperations {
 				epadPluginList.addEPADPlugin(epadPlugin);
 			}
 		}
+		List<Plugin> pluginsAll = getPluginsForProject(EPADConfig.xnatUploadProjectID);
+		for (Plugin plugin : pluginsAll) {
+			boolean isFound=false;
+			for(int i=0; i< epadPluginList.ResultSet.totalRecords; i++) {
+				log.info("plugin we are looking:"+plugin.getPluginId() + " plugin in list:"+epadPluginList.ResultSet.Result.get(i).pluginId);
+				if (plugin.getPluginId().equals(epadPluginList.ResultSet.Result.get(i).pluginId)){
+					isFound=true;
+					break;
+				}
+					
+			}
+			if (!isFound){
+				log.info("not found. adding "+plugin.getPluginId());
+				EPADPlugin epadPlugin = plugin2EPADPluginProject2(plugin,project,true);
+				if (epadPlugin != null)
+				{
+					epadPluginList.addEPADPlugin(epadPlugin);
+				}
+			}
+				
+		}
 		return epadPluginList;
 	}
 	public EPADPluginList getPluginDescriptionsForProject(String projectId, String username, String sessionID) throws Exception {
@@ -247,6 +277,24 @@ public class PluginOperations {
 			{
 				epadPluginList.addEPADPlugin(epadPlugin);
 			}
+		}
+		List<Plugin> pluginsAll = getPluginsForProject(EPADConfig.xnatUploadProjectID);
+		for (Plugin plugin : pluginsAll) {
+			boolean isFound=false;
+			for(int i=0; i< epadPluginList.ResultSet.totalRecords; i++) {
+				if (plugin.getPluginId().equals(epadPluginList.ResultSet.Result.get(i).pluginId)){
+					isFound=true;
+					break;
+				}
+			}
+			if (!isFound){
+				EPADPlugin epadPlugin = plugin2EPADPluginProject2(plugin,project,true);
+				if (epadPlugin != null)
+				{
+					epadPluginList.addEPADPlugin(epadPlugin);
+				}
+			}
+				
 		}
 		return epadPluginList;
 	}
@@ -359,10 +407,34 @@ public class PluginOperations {
 			if (project==null)
 				throw new Exception("Global project cannot be retrieved");
 		}
+		
 		ProjectToPlugin projectPlugin = getProjectToPlugin(project.getProjectId(),plugin.getPluginId());
 //		log.warning("PROJECT + PLUGIN "+ project.getProjectId() + " " + plugin.getPluginId() + " p2p " + projectPlugin);
 		if (projectPlugin==null || !projectPlugin.getEnabled()) //project not enabled
 			return null;
+		EPADPluginParameterList parameters=getParametersByProjectIdAndPlugin(project.getId(), plugin.getId());
+			
+		if (returnSummary){
+
+			return new EPADPlugin(plugin.getPluginId(),plugin.getName(),plugin.getDescription(),null,null,null,null,project.getProjectId(),project.getName(),parameters.getResult(),plugin.getDeveloper(),plugin.getDocumentation(),String.valueOf(plugin.getRate()),plugin.getProcessMultipleAims());
+		
+		}
+		return new EPADPlugin(plugin.getPluginId(),plugin.getName(),plugin.getDescription(),plugin.getJavaclass(),plugin.getEnabled(),plugin.getStatus(),plugin.getModality(),project.getProjectId(),project.getName(),parameters.getResult(),plugin.getDeveloper(),plugin.getDocumentation(),String.valueOf(plugin.getRate()),plugin.getProcessMultipleAims());
+
+	}
+	
+	private EPADPlugin plugin2EPADPluginProject2(Plugin plugin,Project project,Boolean returnSummary) throws Exception
+	{
+		if (project==null){
+			project=projectOperations.getProject(EPADConfig.xnatUploadProjectID);
+			if (project==null)
+				throw new Exception("Global project cannot be retrieved");
+		}
+		//disabled check!!!!!!!
+//		ProjectToPlugin projectPlugin = getProjectToPlugin(project.getProjectId(),plugin.getPluginId());
+////		log.warning("PROJECT + PLUGIN "+ project.getProjectId() + " " + plugin.getPluginId() + " p2p " + projectPlugin);
+//		if (projectPlugin==null || !projectPlugin.getEnabled()) //project not enabled
+//			return null;
 		EPADPluginParameterList parameters=getParametersByProjectIdAndPlugin(project.getId(), plugin.getId());
 			
 		if (returnSummary){
@@ -612,6 +684,109 @@ public class PluginOperations {
 	}
 	
 	
+	
+	
+	 /** 
+	 * @param templateFile
+	 * @return a String array containing code value, code meaning pair
+	 */
+	public String[] getTemplateCodeAndMeaning(String templateFile){
+		String templateName = "";
+		String templateType = "";
+		String templateLevelType = "";
+		String templateCode = "";
+//		File tfile = new File(EPADConfig.getEPADWebServerResourcesDir() + getEpadFilePath(efile));
+		File tfile = new File(templateFile);
+		
+		String xml="";
+		try {
+			xml = EPADFileUtils.readFileAsString(tfile);
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		JSONObject root = XML.toJSONObject(xml);
+		JSONObject container = root.getJSONObject("TemplateContainer");
+		JSONArray templateObjs = new JSONArray();
+		try {
+			JSONObject templateObj = container.getJSONObject("Template");
+			templateObjs.put(templateObj);
+		}
+		catch (Exception x) {
+			templateObjs = container.getJSONArray("Template");
+		}
+		for (int i = 0; i < templateObjs.length(); i++)
+		{
+			JSONObject templateObj = templateObjs.getJSONObject(i);
+			String templateUID = templateObj.getString("uid");
+			templateName = templateObj.getString("name");
+			templateType = templateObj.getString("codeMeaning");
+			templateCode = templateObj.getString("codeValue");
+		}
+		return new String[]{templateCode,templateType};
+	}
+	
+	public String createPlugin(String jarFile,String descFile,String templateFile,String className, boolean processMultipleAims, String name, boolean existingTemplate) {
+		String sessionID="";
+		String user="admin";
+		String error="SUCCESS! Please restart ePad";
+		try {
+			
+		//retrievals
+		//get the id from template (codevalue)
+		String[] templateInfo=getTemplateCodeAndMeaning(templateFile);
+		
+		
+		
+		//controls
+		//check if the plugin with name or id already exists
+		if (getPlugin(templateInfo[0])!= null)
+			return "The template code value is used as plugin id. This code value " +templateInfo[0]+" is already used. Change the code value in template";
+		
+		if (getPluginByName(name)!=null)
+			return "There is already a plugin with the name "+ name;
+				
+		EpadOperations epadOp = DefaultEpadOperations.getInstance();
+		//check if template already exists
+		if (!existingTemplate) {
+			EPADTemplateContainerList containers=epadOp.getTemplateDescriptions(user,sessionID);
+			for (int i=0; i<containers.ResultSet.totalRecords; i++) {
+				if (containers.ResultSet.Result.get(i).templateCode.equals(templateInfo[0]))
+					return "The template with code value " +templateInfo[0]+" is already used. Change the code value in template";
+			}	
+		}
+		
+		//check if template has epad-plugin in code-meaning
+		if (getPlugin(templateInfo[1])!= null)
+			return "The template code meaning should be epad-plugin for plugin to be triggered automatically. You have " +templateInfo[1]+". Change the code meaning in template";
+		
+		String description="";
+		String modality="";//doesnot exist in slicer's file
+		String developer="";
+		String documentation="";
+		String rate="";//doesnot exist
+		
+		//extract information from parameters descFile
+		
+		//additions
+		//create plugin
+		createPlugin(user, templateInfo[0], name, description, className, "true", modality, developer, documentation, rate, sessionID,processMultipleAims);
+		
+		//create plugin parameters
+		
+		//save template
+		
+		//save parameters descFile??
+		
+		//copy the jar?
+		
+		} catch (Exception e) {
+			log.warning(e.getMessage(),e);
+		}
+		
+		return error;
+	}
+
 
 }
 
