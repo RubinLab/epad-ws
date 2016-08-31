@@ -170,6 +170,7 @@ public class DownloadUtil {
 
 	private static final EPADLogger log = EPADLogger.getInstance();
 	private static final String INTERNAL_EXCEPTION_MESSAGE = "Internal error from WADO";
+	private static final String downloadDirName = "downloadWS/";
 
 	/**
 	 * Method to download multiple Subject dicoms
@@ -193,7 +194,7 @@ public class DownloadUtil {
 		for (String id: ids)
 			subjects.add(id.trim());
 	}
-	String downloadDirPath = EPADConfig.getEPADWebServerResourcesDir() + "download/" + "temp" + Long.toString(System.currentTimeMillis());
+	String downloadDirPath = EPADConfig.getEPADWebServerResourcesDir() + downloadDirName	 + "temp" + Long.toString(System.currentTimeMillis());
 	File downloadDir = new File(downloadDirPath);
 	downloadDir.mkdirs();
 	EpadOperations epadOperations = DefaultEpadOperations.getInstance();
@@ -311,10 +312,10 @@ public class DownloadUtil {
 	ZipAndStreamFiles(out, fileNames, downloadDirPath + "/");
 	if (!stream)
 	{
-		File newZip = new File(EPADConfig.getEPADWebServerResourcesDir() + "download/", zipName);
+		File newZip = new File(EPADConfig.getEPADWebServerResourcesDir() + downloadDirName	, zipName);
 		zipFile.renameTo(newZip);
 		EPADFile epadFile = new EPADFile("", "", "", "", "", zipName, zipFile.length(), "Subjects", 
-				formatDate(new Date()), "download/" + zipFile.getName(), true, subjectUIDs);
+				formatDate(new Date()), downloadDirName	 + zipFile.getName(), true, subjectUIDs);
 		PrintWriter responseStream = httpResponse.getWriter();
 		responseStream.append(epadFile.toJSON());
 	}
@@ -343,7 +344,7 @@ public static void downloadProject(boolean stream, HttpServletResponse httpRespo
 		for (String id: ids)
 			subjects.add(id.trim());
 	}
-	String downloadDirPath = EPADConfig.getEPADWebServerResourcesDir() + "download/" + "temp" + Long.toString(System.currentTimeMillis());
+	String downloadDirPath = EPADConfig.getEPADWebServerResourcesDir() + downloadDirName	 + "temp" + Long.toString(System.currentTimeMillis());
 	File downloadDir = new File(downloadDirPath);
 	downloadDir.mkdirs();
 	EpadOperations epadOperations = DefaultEpadOperations.getInstance();
@@ -457,10 +458,10 @@ public static void downloadProject(boolean stream, HttpServletResponse httpRespo
 	ZipAndStreamFiles(out, fileNames, downloadDirPath + "/");
 	if (!stream)
 	{
-		File newZip = new File(EPADConfig.getEPADWebServerResourcesDir() + "download/", zipName);
+		File newZip = new File(EPADConfig.getEPADWebServerResourcesDir() + downloadDirName	, zipName);
 		zipFile.renameTo(newZip);
 		EPADFile epadFile = new EPADFile("", "", "", "", "", zipName, zipFile.length(), "Project", 
-				formatDate(new Date()), "download/" + zipFile.getName(), true, projectReference.projectID);
+				formatDate(new Date()), downloadDirName	 + zipFile.getName(), true, projectReference.projectID);
 		PrintWriter responseStream = httpResponse.getWriter();
 		responseStream.append(epadFile.toJSON());
 	}
@@ -491,7 +492,8 @@ public static void downloadSubject(boolean stream, HttpServletResponse httpRespo
 		for (String id: ids)
 			studies.add(id.trim());
 	}
-	String downloadDirPath = EPADConfig.getEPADWebServerResourcesDir() + "download/" + "temp" + Long.toString(System.currentTimeMillis());
+	String downloadDirPath = EPADConfig.getEPADWebServerResourcesDir() + downloadDirName	 + "temp" + Long.toString(System.currentTimeMillis());
+	log.info("download path:"+downloadDirPath);
 	File downloadDir = new File(downloadDirPath);
 	downloadDir.mkdirs();
 	EpadOperations epadOperations = DefaultEpadOperations.getInstance();
@@ -596,10 +598,10 @@ public static void downloadSubject(boolean stream, HttpServletResponse httpRespo
 	ZipAndStreamFiles(out, fileNames, downloadDirPath + "/");
 	if (!stream)
 	{
-		File newZip = new File(EPADConfig.getEPADWebServerResourcesDir() + "download/", zipName);
+		File newZip = new File(EPADConfig.getEPADWebServerResourcesDir() + downloadDirName	, zipName);
 		zipFile.renameTo(newZip);
 		EPADFile epadFile = new EPADFile("", "", "", "", "", zipName, zipFile.length(), "Patient", 
-				formatDate(new Date()), "download/" + zipFile.getName(), true, subjectReference.subjectID);
+				formatDate(new Date()), downloadDirName	 + zipFile.getName(), true, subjectReference.subjectID);
 		PrintWriter responseStream = httpResponse.getWriter();
 		responseStream.append(epadFile.toJSON());
 	}
@@ -628,7 +630,7 @@ public static void downloadStudies(boolean stream, HttpServletResponse httpRespo
 		for (String id: ids)
 			studies.add(id.trim());
 	}
-	String downloadDirPath = EPADConfig.getEPADWebServerResourcesDir() + "download/" + "temp" + Long.toString(System.currentTimeMillis());
+	String downloadDirPath = EPADConfig.getEPADWebServerResourcesDir() + downloadDirName	 + "temp" + Long.toString(System.currentTimeMillis());
 	File downloadDir = new File(downloadDirPath);
 	downloadDir.mkdirs();
 	EpadOperations epadOperations = DefaultEpadOperations.getInstance();
@@ -761,10 +763,10 @@ public static void downloadStudies(boolean stream, HttpServletResponse httpRespo
 	ZipAndStreamFiles(out, fileNames, downloadDirPath + "/");
 	if (!stream)
 	{
-		File newZip = new File(EPADConfig.getEPADWebServerResourcesDir() + "download/", zipName);
+		File newZip = new File(EPADConfig.getEPADWebServerResourcesDir() + downloadDirName	, zipName);
 		zipFile.renameTo(newZip);
 		EPADFile epadFile = new EPADFile("", "", "", "", "", zipName, zipFile.length(), "Studies", 
-				formatDate(new Date()), "download/" + zipFile.getName(), true, studyUIDs);
+				formatDate(new Date()), downloadDirName	 + zipFile.getName(), true, studyUIDs);
 		PrintWriter responseStream = httpResponse.getWriter();
 		responseStream.append(epadFile.toJSON());
 	}
@@ -787,7 +789,7 @@ public static void downloadStudies(boolean stream, HttpServletResponse httpRespo
 public static void downloadFiles(HttpServletResponse httpResponse, String[] filePaths, String username) throws Exception
 {
 	log.info("Downloading files:" + filePaths.length);
-	String downloadDirPath = EPADConfig.getEPADWebServerResourcesDir() + "download/" + "temp" + Long.toString(System.currentTimeMillis());
+	String downloadDirPath = EPADConfig.getEPADWebServerResourcesDir() + downloadDirName	 + "temp" + Long.toString(System.currentTimeMillis());
 	File downloadDir = new File(downloadDirPath);
 	downloadDir.mkdirs();
 	EpadOperations epadOperations = DefaultEpadOperations.getInstance();
@@ -894,7 +896,7 @@ public static void downloadStudy(boolean stream, HttpServletResponse httpRespons
 		for (String id: ids)
 			seriesSet.add(id.trim());
 	}
-	String downloadDirPath = EPADConfig.getEPADWebServerResourcesDir() + "download/" + "temp" + Long.toString(System.currentTimeMillis());
+	String downloadDirPath = EPADConfig.getEPADWebServerResourcesDir() + downloadDirName	 + "temp" + Long.toString(System.currentTimeMillis());
 	File downloadDir = new File(downloadDirPath);
 	downloadDir.mkdirs();
 	EpadOperations epadOperations = DefaultEpadOperations.getInstance();
@@ -1003,10 +1005,10 @@ public static void downloadStudy(boolean stream, HttpServletResponse httpRespons
 	ZipAndStreamFiles(out, fileNames, downloadDirPath + "/");
 	if (!stream)
 	{
-		File newZip = new File(EPADConfig.getEPADWebServerResourcesDir() + "download/", zipName);
+		File newZip = new File(EPADConfig.getEPADWebServerResourcesDir() + downloadDirName	, zipName);
 		zipFile.renameTo(newZip);
 		EPADFile epadFile = new EPADFile("", "", "", "", "", zipName, zipFile.length(), "Study", 
-				formatDate(new Date()), "download/" + zipFile.getName(), true, studyReference.studyUID);
+				formatDate(new Date()), downloadDirName	 + zipFile.getName(), true, studyReference.studyUID);
 		PrintWriter responseStream = httpResponse.getWriter();
 		responseStream.append(epadFile.toJSON());
 	}
@@ -1029,7 +1031,7 @@ public static void downloadStudy(boolean stream, HttpServletResponse httpRespons
 public static void downloadSeries(boolean stream, HttpServletResponse httpResponse, String seriesUIDs, String username, String sessionID, boolean includeAIMs) throws Exception
 {
 	log.info("Downloading seriesUIDs:" + seriesUIDs + " stream:" + stream);
-	String downloadDirPath = EPADConfig.getEPADWebServerResourcesDir() + "download/" + "temp" + Long.toString(System.currentTimeMillis());
+	String downloadDirPath = EPADConfig.getEPADWebServerResourcesDir() + downloadDirName	 + "temp" + Long.toString(System.currentTimeMillis());
 	File downloadDir = new File(downloadDirPath);
 	downloadDir.mkdirs();
 	EpadOperations epadOperations = DefaultEpadOperations.getInstance();
@@ -1139,10 +1141,10 @@ public static void downloadSeries(boolean stream, HttpServletResponse httpRespon
 	ZipAndStreamFiles(out, fileNames, downloadDirPath + "/");
 	if (!stream)
 	{
-		File newZip = new File(EPADConfig.getEPADWebServerResourcesDir() + "download/", zipName);
+		File newZip = new File(EPADConfig.getEPADWebServerResourcesDir() + downloadDirName	, zipName);
 		zipFile.renameTo(newZip);
 		EPADFile epadFile = new EPADFile("", "", "", "", "", zipName, zipFile.length(), "Series", 
-				formatDate(new Date()), "download/" + zipFile.getName(), true, seriesUIDs);
+				formatDate(new Date()), downloadDirName	 + zipFile.getName(), true, seriesUIDs);
 		PrintWriter responseStream = httpResponse.getWriter();
 		responseStream.append(epadFile.toJSON());
 	}
@@ -1165,7 +1167,7 @@ public static void downloadSeries(boolean stream, HttpServletResponse httpRespon
 	log.info("Downloading series:" + seriesReference.seriesUID + " stream:" + stream);
 	EpadOperations epadOperations = DefaultEpadOperations.getInstance();
 	EPADSeries series = epadOperations.getSeriesDescription(seriesReference, username, sessionID);
-	String downloadDirPath = EPADConfig.getEPADWebServerResourcesDir() + "download/" + "temp" + Long.toString(System.currentTimeMillis());
+	String downloadDirPath = EPADConfig.getEPADWebServerResourcesDir() + downloadDirName	 + "temp" + Long.toString(System.currentTimeMillis());
 	File downloadDir = new File(downloadDirPath);
 	downloadDir.mkdirs();
 	List<String> fileNames = new ArrayList<String>();
@@ -1263,10 +1265,10 @@ public static void downloadSeries(boolean stream, HttpServletResponse httpRespon
 	ZipAndStreamFiles(out, fileNames, downloadDirPath + "/");
 	if (!stream)
 	{
-		File newZip = new File(EPADConfig.getEPADWebServerResourcesDir() + "download/", zipName);
+		File newZip = new File(EPADConfig.getEPADWebServerResourcesDir() + downloadDirName	, zipName);
 		zipFile.renameTo(newZip);
 		EPADFile epadFile = new EPADFile("", "", "", "", "", zipName, zipFile.length(), "Series", 
-				formatDate(new Date()), "download/" + zipFile.getName(), true, seriesReference.seriesUID);
+				formatDate(new Date()), downloadDirName	 + zipFile.getName(), true, seriesReference.seriesUID);
 		PrintWriter responseStream = httpResponse.getWriter();
 		responseStream.append(epadFile.toJSON());
 	}
@@ -1352,7 +1354,7 @@ public static void downloadImage(boolean stream, HttpServletResponse httpRespons
 	}
 	else
 	{
-		String downloadDirPath = EPADConfig.getEPADWebServerResourcesDir() + "download/";
+		String downloadDirPath = EPADConfig.getEPADWebServerResourcesDir() + downloadDirName	;
 		File downloadDir = new File(downloadDirPath);
 		downloadDir.mkdirs();
 		String imageName = imageReference.imageUID + ".dcm";
@@ -1372,7 +1374,7 @@ public static void downloadImage(boolean stream, HttpServletResponse httpRespons
 			if (fos != null) fos.close();
 		}
 		EPADFile epadFile = new EPADFile("", "", "", "", "", imageName, imageFile.length(), "Image", 
-				formatDate(new Date()), "download/" + imageFile.getName(), true, imageReference.imageUID);
+				formatDate(new Date()), downloadDirName	 + imageFile.getName(), true, imageReference.imageUID);
 		PrintWriter responseStream = httpResponse.getWriter();
 		responseStream.append(epadFile.toJSON());
 	}
