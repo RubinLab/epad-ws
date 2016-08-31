@@ -2841,7 +2841,7 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 	{
 		if (value == null) {
 			return def;
-		} else if ("".equalsIgnoreCase("")) {
+		} else if ("".equalsIgnoreCase(value)) {
 			return def;
 		}
 		return value;
