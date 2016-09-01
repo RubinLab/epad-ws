@@ -1531,6 +1531,25 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 			close(c, ps, rs);
 		}
 	}
+	
+	@Override
+	public void forceDICOMOnOldPipeline()
+	{
+		Connection c = null;
+		PreparedStatement ps = null;
+		ResultSet rs = null;
+		try {
+			c = getConnection();
+			ps = c.prepareStatement(EpadDatabaseCommands.DELETE_OLD_INPIPELINE_FROM_SERIES_STATUS);
+			ps.executeUpdate();
+			
+		} catch (SQLException sqle) {
+			String debugInfo = DatabaseUtils.getDebugData(rs);
+			log.warning("Database operation failed; debugInfo=" + debugInfo, sqle);
+		} finally {
+			close(c, ps, rs);
+		}
+	}
 
 	@Override
 	public int getKeyForTerm(Term term) throws SQLException

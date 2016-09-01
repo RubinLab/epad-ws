@@ -112,6 +112,8 @@ package edu.stanford.epad.epadws.epaddb;
  */
 public interface EpadDatabaseCommands
 {
+	public static final String DELETE_OLD_INPIPELINE_FROM_SERIES_STATUS = "delete from epaddb.series_status where status=2 and created_time < NOW() - INTERVAL 4 HOUR ";
+
 	public static final String DELETE_ALL_FROM_SERIES_STATUS = "delete from epaddb.series_status";
 
 	public static final String DELETE_SERIES_FROM_SERIES_STATUS = "delete from epaddb.series_status where series_iuid=?";

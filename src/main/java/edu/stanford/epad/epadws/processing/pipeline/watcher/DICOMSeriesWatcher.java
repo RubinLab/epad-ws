@@ -312,9 +312,22 @@ public class DICOMSeriesWatcher implements Runnable
 					}
 				}
 				Calendar now = Calendar.getInstance();
+				//delete the items that still appears to be in pipeline for more than 4 hours
 				if (now.get(Calendar.HOUR_OF_DAY) == 1 && prevTime != null && prevTime.get(Calendar.HOUR_OF_DAY) != 1)
 				{
 					// Run at 1 am.
+					try {
+						epadDatabaseOperations.forceDICOMOnOldPipeline();
+						
+					} catch (Exception x) {
+						log.warning("Exception running ImageCheck", x);
+					}
+					
+				}
+				//image check moved to 3 am. wait for the previous pipeline to be handled.
+				if (now.get(Calendar.HOUR_OF_DAY) == 3 && prevTime != null && prevTime.get(Calendar.HOUR_OF_DAY) != 3)
+				{
+					// Run at 3 am.
 					try {
 						if (!"true".equalsIgnoreCase(EPADConfig.getParamValue("DISABLE_IMAGECHECK")))
 						{	

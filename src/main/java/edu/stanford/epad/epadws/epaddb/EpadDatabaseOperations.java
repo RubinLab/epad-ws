@@ -427,4 +427,9 @@ public interface EpadDatabaseOperations
 	 */
 	int getAnnotationDoneUserCount(String projectUID, String subjectUID, String studyUID, String series_uid);
 
+	/**
+	 * delete series that are stuck at pipeline status to trigger reprocessing
+	 */
+	void forceDICOMOnOldPipeline();
+
 }
