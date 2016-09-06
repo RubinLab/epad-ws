@@ -4214,7 +4214,7 @@ public class DefaultEpadOperations implements EpadOperations
 				}
 				
 				EPADProject ep = new EPADProject("", "", description, projectName, projectID, "", "",
-						numberOfPatients, numberOfStudies, numberOfAnnotations, patientIDs, usernames, userRoles, annotationStatus, userStatusList);
+						numberOfPatients, numberOfStudies, numberOfAnnotations, patientIDs, usernames, userRoles, annotationStatus, userStatusList, project.getType());
 				ep.defaultTemplate = project.getDefaultTemplate();
 				return ep;
 			} else
