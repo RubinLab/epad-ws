@@ -102,137 +102,141 @@
  * of non-limiting example, you will not contribute any code obtained by you under the GNU General Public License or other 
  * so-called "reciprocal" license.)
  *******************************************************************************/
-package edu.stanford.epad.epadws.models;
+package edu.stanford.epad.epadws.plugins;
 
-import java.util.Date;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 
-import edu.stanford.epad.epadws.models.dao.AbstractDAO;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+
+import edu.stanford.epad.common.util.EPADConfig;
+import edu.stanford.epad.common.util.EPADLogger;
+import edu.stanford.epad.epadws.models.ProjectToPlugin;
+import edu.stanford.epad.epadws.models.ProjectToPluginParameter;
+import edu.stanford.epad.epadws.service.DefaultEpadProjectOperations;
+import edu.stanford.epad.epadws.service.EpadProjectOperations;
+import edu.stanford.epad.epadws.service.PluginOperations;
 
 /**
- * Project to PlugIn Parameter relation
+ * Reads the file plugin-config.txt one line at a time. Each line is the class name for the plugin handler.
  * 
- * @author Emel Alkim
- *
+ * @author alansnyder
  */
-
-public class ProjectToPluginParameter extends AbstractDAO {
-
-	long id;
-	long projectId;
-	long pluginId;
-	String name;
-	String defaultValue;
-	String creator;
-	Date createdTime;
-	Date updateTime;
-	String type;
-	String description;
+public class PluginParameterParser
+{
 	
-	
-	@Override
-	public long getId() {
-		return id;
-	}
-
-	public void setId(long id) {
-		this.id = id;
-	}
-
-	public long getProjectId() {
-		return projectId;
-	}
-
-	public void setProjectId(long projectId) {
-		this.projectId = projectId;
-	}
+	private static final EPADLogger log = EPADLogger.getInstance();
+	private static PluginParameterParser ourInstance = new PluginParameterParser();
 
 	
-	public long getPluginId() {
-		return pluginId;
+	public static PluginParameterParser getInstance()
+	{
+		return ourInstance;
 	}
 
-	public void setPluginId(long pluginId) {
-		this.pluginId = pluginId;
+	private PluginParameterParser()
+	{
+		//		try {
+		//			if (!pluginOperations.getPlugins(pluginHandlerList, pluginTemplateList, pluginNameList)) {
+		//				migrate2DB();
+		//			}
+		//			checkParams();
+		//		} catch (Exception e) {
+		//			log.info("Failed to read plugin list from database "+e.getMessage());
+		//		}
 	}
 
-	public String getName() {
-		return name;
+
+	/**
+	 * Parses the parameter xml and returns a list of parameter
+	 * 
+	 * @param file
+	 * @return a list of parameter information which is also a string list (in the order {type,name,defaultVal,description})
+	 */
+	public List<PluginParameter> parse(String file){
+
+
+		String type=null;
+		String name=null;
+		String defaultVal=null;
+		String description=null;
+		List<PluginParameter> parameters=new ArrayList<>();
+
+		try {	
+			File inputFile = new File(file);
+			DocumentBuilderFactory dbFactory 
+			= DocumentBuilderFactory.newInstance();
+			DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
+			Document doc = dBuilder.parse(inputFile);
+			doc.getDocumentElement().normalize();
+			NodeList paramGroups = doc.getElementsByTagName("parameters");
+			for (int i = 0; i < paramGroups.getLength(); i++) { //get parameter groups
+				Node paramGroup = paramGroups.item(i);
+				if (paramGroup.getNodeType() == Node.ELEMENT_NODE) {
+					Element paramGroupElement = (Element) paramGroup;
+					NodeList params =paramGroupElement.getChildNodes(); //get all children
+					for (int j = 0; j < params.getLength(); j++) { //get parameters
+						type=null;
+						name=null;
+						defaultVal=null;
+						description=null;
+						Node param = params.item(j);
+						
+						if (param.getNodeType() == Node.ELEMENT_NODE) {
+							Element paramElement = (Element) param;
+							if (paramElement.getTagName().equals("label") || paramElement.getTagName().equals("description")) {
+								System.out.println("Skipping label and description");
+								continue;
+							}
+							type=paramElement.getTagName();
+							name=paramElement.getElementsByTagName("name").item(0).getTextContent().trim();
+							description=paramElement.getElementsByTagName("description").item(0).getTextContent().trim();
+							defaultVal=paramElement.getElementsByTagName("default").item(0).getTextContent().trim();
+
+//							System.out.println("Param type: "+type + " name:"+name+ " default:"+defaultVal+ " desc:"+description); 
+							parameters.add(new PluginParameter(type, name, defaultVal, description));
+
+						}
+					}
+				}
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return parameters;
 	}
 
-	public void setName(String name) {
-		this.name = name;
+
+
+	private static boolean isCommentLine(String line)
+	{
+		line = line.trim();
+		if (line.startsWith("//"))
+			return true;
+		if (line.startsWith("#"))
+			return true;
+		if (line.startsWith("*"))
+			return true;
+
+		if ("".equals(line)) // count a blank line as a comment.
+			return true;
+
+		return false;
 	}
 
-	public String getDefaultValue() {
-		return defaultValue;
-	}
 
-	public void setDefaultValue(String defaultValue) {
-		this.defaultValue = defaultValue;
-	}
 
-	public String getCreator() {
-		return creator;
-	}
-
-	public void setCreator(String creator) {
-		this.creator = creator;
-	}
-
-	public Date getCreatedTime() {
-		return createdTime;
-	}
-
-	public void setCreatedTime(Date createdTime) {
-		this.createdTime = createdTime;
-	}
-
-	public Date getUpdateTime() {
-		return updateTime;
-	}
-
-	public void setUpdateTime(Date updateTime) {
-		this.updateTime = updateTime;
-	}
-
-	public String getType() {
-		return type;
-	}
-
-	public void setType(String type) {
-		this.type = type;
-	}
-
-	public String getDescription() {
-		return description;
-	}
-
-	public void setDescription(String description) {
-		this.description = description;
-	}
-
-	public final static String DBTABLE = "project_pluginparameter";
-	public final static String[][] DBCOLUMNS = {
-        {"id","long","id","Id"},
-        {"projectId","long","project_id","integer"},  
-        {"pluginId","long","plugin_id","integer"},
-        {"name","String","name","varchar"},
-        {"defaultValue","String","default_value","varchar"},
-        {"creator","String","creator","varchar"},
-        {"createdTime","Date","createdtime","timestamp"},
-        {"updateTime","Date","updatetime","timestamp"},	
-        {"type","String","type","varchar"},
-        {"description","String","description","varchar"},
-	};
-
-	@Override
-	public String returnDBTABLE() {
-		return DBTABLE;
-	}
-
-	@Override
-	public String[][] returnDBCOLUMNS() {
-		return DBCOLUMNS;
-	}
 
 }
