@@ -1093,16 +1093,15 @@ public class PluginOperations {
 		System.out.println("Creating plugin");
 		System.out.println("./plugin-manager.sh -j ~/myplugin-1.1.jar -t /root/myplugin/myplugin-template.xml \n\t: extracts all information from the files");
 		System.out.println("./plugin-manager.sh -j ~/myplugin-1.1.jar -t /root/myplugin/myplugin-template.xml -c edu.stanford.epad.plugins.myplugin.MyPluginHandler -m false -n myplugin  \n\t: more detailed parameters, manager checks if they match");
-		System.out.println("./plugin-manager.sh -j ~/myplugin-1.1.jar -t /root/myplugin/myplugin-template.xml -o \n\t: overwite the plugin with new information extracted from the files");
+		System.out.println("./plugin-manager.sh -j ~/myplugin-1.1.jar -t /root/myplugin/myplugin-template.xml -o \n\t: overwrite the plugin with new information extracted from the files");
 		System.out.println("Adding parameters");
-		System.out.println("./plugin-manager.sh -p /root/myplugin/myplugin-parameters.xml -n myplugin \n\t: adds the parameters in the file to the plugin, fails if there are existing parameters");
 		System.out.println("./plugin-manager.sh -p /root/myplugin/myplugin-parameters.xml -n myplugin -o \n\t: adds the parameters in the file to the plugin, deletes all existing and adds from scratch");
 
 	}
 	
 	public static void main(String[] argv) {
 		if (argv.length==0){
-			System.out.println("missing parameters");
+			System.out.println("No parameters specified");
 			displayHelp();
 			return;
 		}
