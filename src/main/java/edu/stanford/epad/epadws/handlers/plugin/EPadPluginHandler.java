@@ -141,7 +141,15 @@ public class EPadPluginHandler extends AbstractHandler
 		int statusCode;
 
 		httpResponse.setContentType("text/plain");
-		httpResponse.setHeader("Access-Control-Allow-Origin", "*");
+		String origin = httpRequest.getHeader("Origin"); // CORS request should have Origin header
+		
+		// Origin header indicates a possible CORS requests
+		if (origin != null) {
+			httpResponse.setHeader("Access-Control-Allow-Origin", origin);
+			httpResponse.setHeader("Access-Control-Allow-Credentials", "true"); // Needed to allow cookies
+		} else {
+			httpResponse.setHeader("Access-Control-Allow-Origin", "*");
+		}
 		if (request != null)					// In case handler is not called thru jetty
 			request.setHandled(true);
 
