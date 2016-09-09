@@ -139,8 +139,34 @@ public class PluginParameterParser
 	
 	private static final EPADLogger log = EPADLogger.getInstance();
 	private static PluginParameterParser ourInstance = new PluginParameterParser();
-
+	private String description=null;
+	private String contributor=null;
+	private String documentation=null; 
 	
+	public String getDescription() {
+		return description;
+	}
+
+	public void setDescription(String description) {
+		this.description = description;
+	}
+
+	public String getContributor() {
+		return contributor;
+	}
+
+	public void setContributor(String contributor) {
+		this.contributor = contributor;
+	}
+
+	public String getDocumentation() {
+		return documentation;
+	}
+
+	public void setDocumentation(String documentation) {
+		this.documentation = documentation;
+	}
+
 	public static PluginParameterParser getInstance()
 	{
 		return ourInstance;
@@ -171,16 +197,44 @@ public class PluginParameterParser
 		String type=null;
 		String name=null;
 		String defaultVal=null;
-		String description=null;
+		String paramDescription=null;
+		description=null;
+		documentation=null;
+		contributor=null;
 		List<PluginParameter> parameters=new ArrayList<>();
 
 		try {	
 			File inputFile = new File(file);
-			DocumentBuilderFactory dbFactory 
-			= DocumentBuilderFactory.newInstance();
+			DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
 			DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
 			Document doc = dBuilder.parse(inputFile);
 			doc.getDocumentElement().normalize();
+			NodeList exec = doc.getElementsByTagName("executable");
+			if (exec.getLength()==1){
+				if (exec.item(0).getNodeType() == Node.ELEMENT_NODE) {
+					Element execElement = (Element) exec.item(0);
+					NodeList infos =execElement.getChildNodes();
+					for (int j = 0; j < infos.getLength(); j++) { 
+						Node info = infos.item(j);
+					
+						if (info.getNodeType() == Node.ELEMENT_NODE) {
+							Element infoElement = (Element) info;
+							if (infoElement.getTagName().equals("contributor") )
+								contributor=infoElement.getTextContent().trim();
+								
+							if (infoElement.getTagName().equals("description")) 
+								description=infoElement.getTextContent().trim();
+							
+							if (infoElement.getTagName().equals("documentation")) 
+								documentation=infoElement.getTextContent().trim();
+						}
+						if (description!=null && contributor!=null && documentation!=null)
+							break;
+					}
+				
+				}
+			}
+			
 			NodeList paramGroups = doc.getElementsByTagName("parameters");
 			for (int i = 0; i < paramGroups.getLength(); i++) { //get parameter groups
 				Node paramGroup = paramGroups.item(i);
@@ -191,7 +245,7 @@ public class PluginParameterParser
 						type=null;
 						name=null;
 						defaultVal=null;
-						description=null;
+						paramDescription=null;
 						Node param = params.item(j);
 						
 						if (param.getNodeType() == Node.ELEMENT_NODE) {
@@ -201,11 +255,11 @@ public class PluginParameterParser
 							}
 							type=paramElement.getTagName();
 							name=paramElement.getElementsByTagName("name").item(0).getTextContent().trim();
-							description=paramElement.getElementsByTagName("description").item(0).getTextContent().trim();
+							paramDescription=paramElement.getElementsByTagName("description").item(0).getTextContent().trim();
 							defaultVal=paramElement.getElementsByTagName("default").item(0).getTextContent().trim();
 
 //							System.out.println("Param type: "+type + " name:"+name+ " default:"+defaultVal+ " desc:"+description); 
-							parameters.add(new PluginParameter(type, name, defaultVal, description));
+							parameters.add(new PluginParameter(type, name, defaultVal, paramDescription));
 
 						}
 					}

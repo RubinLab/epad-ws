@@ -816,7 +816,7 @@ public class PluginOperations {
 		return dbTemplate;
 	}
 	
-	public String createLocalPlugin(String jarFile,String descFile,String templateFile,String className, boolean processMultipleAims, String name, String description, boolean overwrite) {
+	public String createLocalPlugin(String jarFile,String descFile,String templateFile,String className, boolean processMultipleAims, String name, boolean overwrite) {
 		String sessionID="";
 		String pluginName="";
 		String templateId=null;
@@ -914,7 +914,7 @@ public class PluginOperations {
 			
 			
 			
-//			String description="";
+			String description="";
 			String modality="";//doesnot exist in slicer's file
 			String developer="";
 			String documentation="";
@@ -923,7 +923,11 @@ public class PluginOperations {
 			//TODO xsd validation??
 			//extract information of plugin from parameters descFile
 			if (descFile!=null){
-				//TODO ??
+				PluginParameterParser parser=PluginParameterParser.getInstance();
+				parser.parse(descFile);
+				documentation=parser.getDocumentation();
+				description=parser.getDescription();
+				developer=parser.getContributor();
 			}
 			
 			
@@ -987,14 +991,18 @@ public class PluginOperations {
 								epadOp.deleteFile(user, pr, f.fileName);
 							}
 						}
+						//check if the properties retrieved from desc file changed (description, etc)
+						p.setDescription(description);
+						p.setDocumentation(documentation);
+						p.setDeveloper(developer);
+						p.save();
 						
 					}catch (Exception e){
 						log.info("File "+descFile+" doesn't exist");
 					}
 				}
 				
-				//check if the properties retrieved from desc file changed (description, etc)
-				//TODO
+				
 				
 			}
 			//create plugin parameters if there is a desc file
@@ -1140,9 +1148,6 @@ public class PluginOperations {
 			case "-h":
 				displayHelp();
 				break;
-			case "-d":
-				description=getValue(argv,i+1);
-				break;
 			case "-o":
 				overwrite=true;
 				break;
@@ -1156,7 +1161,7 @@ public class PluginOperations {
 		}
 
 		PluginOperations po=new PluginOperations();
-		String resultMsg=po.createLocalPlugin(jarFile, descFile, templateFile, className, processMultipleAims, name, description,overwrite);
+		String resultMsg=po.createLocalPlugin(jarFile, descFile, templateFile, className, processMultipleAims, name,overwrite);
 		System.out.println(resultMsg);
 	}
 
