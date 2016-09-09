@@ -124,11 +124,17 @@ import edu.stanford.epad.common.plugins.PluginServletHandler;
 import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADFileUtils;
 import edu.stanford.epad.common.util.EPADLogger;
+import edu.stanford.epad.dtos.EPADFile;
+import edu.stanford.epad.dtos.EPADFileList;
 import edu.stanford.epad.dtos.EPADPlugin;
 import edu.stanford.epad.dtos.EPADPluginList;
 import edu.stanford.epad.dtos.EPADPluginParameter;
 import edu.stanford.epad.dtos.EPADPluginParameterList;
+import edu.stanford.epad.dtos.EPADTemplateContainer;
 import edu.stanford.epad.dtos.EPADTemplateContainerList;
+import edu.stanford.epad.epadws.handlers.core.EPADSearchFilter;
+import edu.stanford.epad.epadws.handlers.core.ProjectReference;
+import edu.stanford.epad.epadws.models.FileType;
 import edu.stanford.epad.epadws.models.Plugin;
 import edu.stanford.epad.epadws.models.Project;
 import edu.stanford.epad.epadws.models.ProjectToPlugin;
@@ -792,81 +798,120 @@ public class PluginOperations {
 		return classNames;
 	}
 	
-	public String createLocalPlugin(String jarFile,String descFile,String templateFile,String className, boolean processMultipleAims, String name, String description, boolean overwriteFile) {
+	public EPADTemplateContainer getTemplateWithCode(String code) {
+		EpadOperations epadOp = DefaultEpadOperations.getInstance();
+		EPADTemplateContainer dbTemplate=null;
+		EPADTemplateContainerList containers;
+		try {
+			containers = epadOp.getTemplateDescriptions("admin","");
+		
+			for (int i=0; i<containers.ResultSet.totalRecords; i++) {
+				if (containers.ResultSet.Result.get(i).templateCode.equals(code)) {
+					dbTemplate= containers.ResultSet.Result.get(i);
+				}
+			}
+		} catch (Exception e) {
+			System.out.println("Exception getting the template with code "+ code +" "+e.getMessage());
+		}
+		return dbTemplate;
+	}
+	
+	public String createLocalPlugin(String jarFile,String descFile,String templateFile,String className, boolean processMultipleAims, String name, String description, boolean overwrite) {
 		String sessionID="";
+		String pluginName="";
+		String templateId=null;
+		String templateType=null;
 		String user="admin";
+		EpadOperations epadOp = DefaultEpadOperations.getInstance();
 		String error="SUCCESS! Please restart ePad";
 		try {
-			if (descFile!=null){
-				PluginParameterParser parser=PluginParameterParser.getInstance();
-				parser.parse(descFile);
-			}
-			if (jarFile==null)
-				return "Jar file path is required";
-			if (templateFile==null)
-				return "Template file path is required";
 			
-			//retrievals
-			//get the id from template (codevalue)
-			String[] templateInfo=getTemplateCodeAndMeaning(templateFile);
+			/************************** required check ***********************/
+			
+			if (jarFile==null && name==null)
+				return "Jar file path or name is required";
+			if (templateFile==null && name==null)
+				return "Template file path or name is required";
+			
+			/************************** retrievals ***********************/
+			
+			
+			//get the id and type from input template (codevalue and meaning)
+			
+			if (templateFile!=null) {
+				String[] templateInfo=null;
+				templateInfo=getTemplateCodeAndMeaning(templateFile);
+				templateId=templateInfo[0];
+				templateType=templateInfo[1];
+			}
 			
 			//get the class names from the jar file
-			List<String> classes=getClassNames(jarFile);
-			if (classes.size()>1 && className==null) {
-				return "Multiple plugin handler classes in jar file. Class name required";
-			}
-			if (classes.size()==1) {
-				System.out.println("Found class "+ classes.get(0));
-				if (className!=null && !classes.get(0).equals(className)) {
-					System.out.println("Input class name does not exist in the jar file. Using "+ classes.get(0));
+			if (jarFile!=null) {
+				List<String> classes=getClassNames(jarFile);
+				if (classes.size()>1 && className==null) {
+					return "Multiple plugin handler classes in jar file. Class name required";
 				}
-				className=classes.get(0);
+				if (classes.size()==1) {
+					System.out.println("Found class "+ classes.get(0));
+					if (className!=null && !classes.get(0).equals(className)) {
+						System.out.println("Input class name does not exist in the jar file. Using "+ classes.get(0));
+					}
+					className=classes.get(0);
+				}
+				if (classes.size()==0)
+					return "No plugin handler class in the jar";
 			}
-			if (classes.size()==0)
-				return "No plugin handler class in the jar";
-			
-			//controls
-			
-			PluginHandlerMap pluginHandlerMap = PluginHandlerMap.getInstance();
-			String pluginName="";
-			//check if plugin class exists in jar
-			PluginServletHandler psh = pluginHandlerMap.loadFromClassName(className);
-			if (psh != null) {
-				pluginName = psh.getName();
+			/************************** controls ***********************/
+			//check the jar.. we do this twice.. second time do not check
+			if (jarFile!=null) {
+				File jar=new File(jarFile);
+				File dest=new File(EPADConfig.getEPADWebServerBaseDir()+"lib/plugins/"+jar.getName());
+				if (dest.exists() && !overwrite)
+					return "The jar file already exists.Try running with -o option if you wantto overwrite the file";
 				
-			} else {
-				return "Could not find plugin class: " + className+ ". Check your class name";
-			}
-			//if name is null just use the pluginname from class
-			if (name==null) {
-				name=pluginName;
-			}
-			else if (!pluginName.equals(name)) { //check the class's getName. is it same with input name
-				return "The class specifies the plugin name as "+pluginName+" in the getName() method. You have entered "+ name + " as the name. It should be the same";
 			}
 			
+			if (className!=null) {
+				PluginHandlerMap pluginHandlerMap = PluginHandlerMap.getInstance();
+				
+				//check if plugin class exists in jar
+				PluginServletHandler psh = pluginHandlerMap.loadFromClassName(className);
+				if (psh != null) {
+					pluginName = psh.getName();
+					
+				} else {
+					return "Could not find plugin class: " + className+ ". Check your class name";
+				}
+				//if name is null just use the pluginname from class
+				if (name==null) {
+					name=pluginName;
+				}
+				else if (!pluginName.equals(name) && !overwrite) { //check the class's getName. is it same with input name
+					return "The class specifies the plugin name as "+pluginName+" in the getName() method. You have entered "+ name + " as the name. It should be the same";
+				}
+			}
 			
 			//check if template has epad-plugin in code-meaning
-			if (!templateInfo[1].equalsIgnoreCase("epad-plugin"))
-				return "The template code meaning should be epad-plugin for plugin to be triggered automatically. You have " +templateInfo[1]+". Change the code meaning in template";
+			if (templateType!=null && !templateType.equalsIgnoreCase("epad-plugin"))
+				return "The template code meaning should be epad-plugin for plugin to be triggered automatically. You have " +templateType+". Change the code meaning in template";
+			
+			//if new plugin check if it matches with something already in the system
+			if (!overwrite) {
+				//check if the plugin with name or id already exists
+				if (getPlugin(templateId)!= null)
+					return "The template code value is used as plugin id. This code value " +templateId+" is already used. Change the code value in template or try with option -o if you want to update";
+				
+				if (getPluginByName(name)!=null)
+					return "There is already a plugin with the name "+ name+ " try with option -o if you want to update";
+			
+				//check if template already exists
+				if (getTemplateWithCode(templateId)!=null)
+					return "The template with code value " +templateId+" is already used. Change the code value in template try with option -o if you want to update";
+			
+			} 
+				
 			
 			
-			//TODO overwrite?
-			//check if the plugin with name or id already exists
-			if (getPlugin(templateInfo[0])!= null)
-				return "The template code value is used as plugin id. This code value " +templateInfo[0]+" is already used. Change the code value in template";
-			
-			if (getPluginByName(name)!=null)
-				return "There is already a plugin with the name "+ name;
-					
-			EpadOperations epadOp = DefaultEpadOperations.getInstance();
-			
-			//check if template already exists
-			EPADTemplateContainerList containers=epadOp.getTemplateDescriptions(user,sessionID);
-			for (int i=0; i<containers.ResultSet.totalRecords; i++) {
-				if (containers.ResultSet.Result.get(i).templateCode.equals(templateInfo[0]))
-					return "The template with code value " +templateInfo[0]+" is already used. Change the code value in template";
-			}	
 			
 			
 //			String description="";
@@ -882,38 +927,105 @@ public class PluginOperations {
 			}
 			
 			
-			//additions
-			//copy the jar
-			File jar=new File(jarFile);
-			File dest=new File(EPADConfig.getEPADWebServerBaseDir()+"lib/plugins/"+jar.getName());
-			if (dest.exists() && !overwriteFile)
-				return "The jar file already exists.Try running with -o option if you wantto overwrite the file";
-			FileUtils.copyFile(jar,dest);
+			/************************** create or update the plugin ***********************/
+			//copy the jar. second time do not check
+			if (jarFile!=null) {
+				File jar=new File(jarFile);
+				File dest=new File(EPADConfig.getEPADWebServerBaseDir()+"lib/plugins/"+jar.getName());
+				FileUtils.copyFile(jar,dest);
+			}
 			
-			//create plugin
-			createPlugin(user, templateInfo[0], name, description, className, "true", modality, developer, documentation, rate, sessionID,processMultipleAims);
-			setProjectPluginEnable(user, EPADConfig.xnatUploadProjectID, templateInfo[0], "true", sessionID);
-			
-			//create plugin parameters
-			if (!setParameters(descFile, templateInfo[0]))
-				error="Couldn't create parameters";
+			//create plugin if not overwrite
+			if (!overwrite){
+				createPlugin(user, templateId, name, description, className, "true", modality, developer, documentation, rate, sessionID,processMultipleAims);
+				setProjectPluginEnable(user, EPADConfig.xnatUploadProjectID, templateId, "true", sessionID);
+				System.out.println("Plugin "+name + " is created");
+			}else { //if overwrite make the checks and update
+				//we are trying to update
+				//check if the plugin exists, it should!
+				Plugin p=getPluginByName(name);
+				if (p==null)
+					return "There is no plugin with the name "+ name;
+				//if pluginName is not empty(no jar file) and different from the given name change the name
+				if (!pluginName.equals("") && !pluginName.equals(name)) {
+					if (getPluginByName(pluginName)!=null)
+						return "A plugin with name " + pluginName + " already exists";
+					System.out.println("Updating the plugin name from "+name+ " to "+ pluginName);
+					p.setName(pluginName);
+					p.save();
+				}
+				//if template not empty and different, change the template and plugin id. 
+				if (templateFile!=null) {
+					//find the template in the system
+					EPADTemplateContainer dbTemplate= getTemplateWithCode(p.getPluginId());
+					
+					//remove old template
+					if (dbTemplate!=null)
+						epadOp.deleteFile(user, new ProjectReference(EPADConfig.xnatUploadProjectID), dbTemplate.fileName);
+					
+					//if template has a new code update plugin id
+					//if the plugin id is the same with the new templates template code, they are just trying to update the template delete is enough
+					if (!templateId.equals(p.getPluginId())){
+						if (getTemplateWithCode(templateId)!=null)
+							return "The template with code value " +templateId+" is already used. Change the code value in template";
+						System.out.println("Updating the plugin id from "+p.getPluginId()+ " to "+ templateId);
+						p.setPluginId(templateId);
+						p.save();
+						
+					}
+					
+				}else { //if no template file get the plugin id (needed for parameters)
+					templateId=p.getPluginId();
+				}
+				if (descFile!=null) {
+					try{
+						//delete all the parameter files that is for this plugin, there should be only one!
+						ProjectReference pr =new ProjectReference(EPADConfig.xnatUploadProjectID);
+						EPADFileList files=epadOp.getFileDescriptions(pr, user, sessionID,new EPADSearchFilter(),false);
+						for (EPADFile f:files.ResultSet.Result) {
+							if (f.description.equals(templateId) && (f.fileType.equals("") || f.fileType.equals(FileType.PARAMETERS.getName()))){
+								epadOp.deleteFile(user, pr, f.fileName);
+							}
+						}
+						
+					}catch (Exception e){
+						log.info("File "+descFile+" doesn't exist");
+					}
+				}
+				
+				//check if the properties retrieved from desc file changed (description, etc)
+				//TODO
+				
+			}
+			//create plugin parameters if there is a desc file
+			if (descFile!=null) {
+				//deletes if there are any and adds 
+				updateparams(descFile,name,overwrite);
+//				if (templateId!=null &&!setParameters(descFile, templateId))
+//					return "Couldn't create parameters";
+			}
 			
 			//save template
 			//TODO local??
-			epadOp.createFile(user, EPADConfig.xnatUploadProjectID, null, null, null,
-						new File(templateFile), "local", "Template", sessionID);
+			if (templateFile!=null){
+				epadOp.createFile(user, EPADConfig.xnatUploadProjectID, null, null, null,
+						new File(templateFile), "local", FileType.TEMPLATE.getName(), sessionID);
+			}
 			
 			
 			//save parameters descFile
 			//put pluginid in description
-			epadOp.createFile(user, EPADConfig.xnatUploadProjectID, null, null, null,
-					new File(descFile), templateInfo[0], "Parametes", sessionID);
+			if (descFile!=null){
+				epadOp.createFile(user, EPADConfig.xnatUploadProjectID, null, null, null,
+					new File(descFile), templateId, FileType.PARAMETERS.getName(), sessionID);
+			}
 			
 			
 		
 		} catch (Exception e) {
 			log.warning(e.getMessage(),e);
 			error="Exception occured. "+e.getMessage();
+			
 		}
 		
 		return error;
@@ -944,7 +1056,7 @@ public class PluginOperations {
 			EPADPluginParameterList pList=getParametersByProjectIdAndPlugin(proj.getId(), plugin.getId());
 			if (pList.ResultSet.totalRecords>0 && !overwrite)
 				return "Plugin already has parameters. Try running with -o option if you wantto delete all and add again. This will remove all default settings for all the projects";
-			deletePlugin("admin", plugin.getPluginId());
+			deleteParameters("admin", plugin.getPluginId());
 			if (!setParameters(descFile, plugin.getPluginId()))
 				return "Couldn't set parameters";
 		} catch (Exception e) {
@@ -968,19 +1080,23 @@ public class PluginOperations {
 	public static void displayHelp() {
 		System.out.println("This script analyses the input files and creates a plugin, uploads the template and the parameter files if exists and copies the jar to plugins directory");
 		System.out.println("Parameters");
-		System.out.println("\t-j \tJar file full path. --Required--");
-		System.out.println("\t-t \tTemplate file full path. --Required--");
+		System.out.println("\t-j \tJar file full path");
+		System.out.println("\t-t \tTemplate file full path");
 		System.out.println("\t-p \tParameter file full path");
 		System.out.println("\t-c \tClass name (including the package name, case sensitive). If you do not specify we try extracting from the jar file");
 		System.out.println("\t-m \tDoes the plugin process multiple aims at once? Default is false.");
 		System.out.println("\t-n \tName of the plugin. Should be same with the name in the handler class. If you do not give a name the name in the class is used");
-		System.out.println("\t-d \tDescription of the plugin");
-		System.out.println("\t-o \tOverwrite jar file if exists");
+		System.out.println("\t-o \tOverwrite");
 		System.out.println("\t-h \tDisplay help");
 		
 		System.out.println("Sample usages");
-		System.out.println("./plugin-manager.sh -j ~/myplugin-1.1.jar -o");
-		System.out.println("./plugin-manager.sh -j ~/myplugin-1.1.jar -t /root/templates/myplugin-template.xml -c edu.stanford.epad.plugins.myplugin.MyPluginHandler -m false -n myplugin");
+		System.out.println("Creating plugin");
+		System.out.println("./plugin-manager.sh -j ~/myplugin-1.1.jar -t /root/myplugin/myplugin-template.xml \n\t: extracts all information from the files");
+		System.out.println("./plugin-manager.sh -j ~/myplugin-1.1.jar -t /root/myplugin/myplugin-template.xml -c edu.stanford.epad.plugins.myplugin.MyPluginHandler -m false -n myplugin  \n\t: more detailed parameters, manager checks if they match");
+		System.out.println("./plugin-manager.sh -j ~/myplugin-1.1.jar -t /root/myplugin/myplugin-template.xml -o \n\t: overwite the plugin with new information extracted from the files");
+		System.out.println("Adding parameters");
+		System.out.println("./plugin-manager.sh -p /root/myplugin/myplugin-parameters.xml -n myplugin \n\t: adds the parameters in the file to the plugin, fails if there are existing parameters");
+		System.out.println("./plugin-manager.sh -p /root/myplugin/myplugin-parameters.xml -n myplugin -o \n\t: adds the parameters in the file to the plugin, deletes all existing and adds from scratch");
 
 	}
 	
@@ -999,7 +1115,7 @@ public class PluginOperations {
 		boolean processMultipleAims=false;
 		String name=null;
 		String description=null;
-		boolean overwriteFile=false;
+		boolean overwrite=false;
 		boolean notKnown=false;
 		for (int i=0; i < argv.length; i++) {
 			notKnown=false; 
@@ -1029,7 +1145,7 @@ public class PluginOperations {
 				description=getValue(argv,i+1);
 				break;
 			case "-o":
-				overwriteFile=true;
+				overwrite=true;
 				break;
 			default:
 				notKnown=true;
@@ -1041,7 +1157,7 @@ public class PluginOperations {
 		}
 
 		PluginOperations po=new PluginOperations();
-		String resultMsg=po.createLocalPlugin(jarFile, descFile, templateFile, className, processMultipleAims, name, description, overwriteFile);
+		String resultMsg=po.createLocalPlugin(jarFile, descFile, templateFile, className, processMultipleAims, name, description,overwrite);
 		System.out.println(resultMsg);
 	}
 

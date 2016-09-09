@@ -197,7 +197,6 @@ public class PluginParameterParser
 						if (param.getNodeType() == Node.ELEMENT_NODE) {
 							Element paramElement = (Element) param;
 							if (paramElement.getTagName().equals("label") || paramElement.getTagName().equals("description")) {
-								System.out.println("Skipping label and description");
 								continue;
 							}
 							type=paramElement.getTagName();
