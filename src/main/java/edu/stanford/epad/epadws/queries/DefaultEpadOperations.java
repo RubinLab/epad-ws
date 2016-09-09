@@ -3995,7 +3995,7 @@ public class DefaultEpadOperations implements EpadOperations
 			fillAnnotationStatusList(projectUID, subjectUID, studyUID, series_uid, username, userStatusList, numberOfSeries);
 			//no series fix, do not bother calculating
 			if (numberOfSeries==0) 
-				return AnnotationStatus.DONE;
+				return AnnotationStatus.NOT_STARTED;
 			
 			//go through the user list to cumulate
 			int doneCount=0;
