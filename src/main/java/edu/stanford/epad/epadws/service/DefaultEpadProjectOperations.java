@@ -441,7 +441,7 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		try {
 			//no series fix, do not bother checking
 			if (numberOfSeries==0) 
-				return AnnotationStatus.DONE;
+				return AnnotationStatus.NOT_STARTED;
 			
 			Project p=null;
 			Subject su=null;

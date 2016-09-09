@@ -3995,7 +3995,7 @@ public class DefaultEpadOperations implements EpadOperations
 			fillAnnotationStatusList(projectUID, subjectUID, studyUID, series_uid, username, userStatusList, numberOfSeries);
 			//no series fix, do not bother calculating
 			if (numberOfSeries==0) 
-				return AnnotationStatus.DONE;
+				return AnnotationStatus.NOT_STARTED;
 			
 			//go through the user list to cumulate
 			int doneCount=0;
@@ -4214,7 +4214,7 @@ public class DefaultEpadOperations implements EpadOperations
 				}
 				
 				EPADProject ep = new EPADProject("", "", description, projectName, projectID, "", "",
-						numberOfPatients, numberOfStudies, numberOfAnnotations, patientIDs, usernames, userRoles, annotationStatus, userStatusList);
+						numberOfPatients, numberOfStudies, numberOfAnnotations, patientIDs, usernames, userRoles, annotationStatus, userStatusList, project.getType());
 				ep.defaultTemplate = project.getDefaultTemplate();
 				return ep;
 			} else
