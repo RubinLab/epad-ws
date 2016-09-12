@@ -234,9 +234,13 @@ public class EPADSessionHandler extends AbstractHandler
 				            httpResponse.addCookie(sessionCookie);
 //							httpResponse.addHeader("Set-Cookie", "JSESSIONID=" + jsessionID);
 						}
-						httpResponse.setHeader("Access-Control-Allow-Origin", "*");
-						//httpResponse.addHeader("Access-Control-Allow-Origin", origin);
-						httpResponse.addHeader("Access-Control-Allow-Credentials", "true");
+						// Origin header indicates a possible CORS requests
+						if (origin != null) {
+							httpResponse.setHeader("Access-Control-Allow-Origin", origin);
+							httpResponse.setHeader("Access-Control-Allow-Credentials", "true"); // Needed to allow cookies
+						} else {
+							httpResponse.setHeader("Access-Control-Allow-Origin", "*");
+						}
 						log.info("Successful login to EPAD; JSESSIONID=" + jsessionID);
 						statusCode = HttpServletResponse.SC_OK;
 				    	
@@ -266,7 +270,13 @@ public class EPADSessionHandler extends AbstractHandler
 				if (jsessionID != null)
 					username = EPADSessionOperations.getSessionUser(jsessionID);
 				statusCode = SessionService.invalidateSessionID(httpRequest);
-				httpResponse.setHeader("Access-Control-Allow-Origin", "*");
+				// Origin header indicates a possible CORS requests
+				if (origin != null) {
+					httpResponse.setHeader("Access-Control-Allow-Origin", origin);
+					httpResponse.setHeader("Access-Control-Allow-Credentials", "true"); // Needed to allow cookies
+				} else {
+					httpResponse.setHeader("Access-Control-Allow-Origin", "*");
+				}
 				httpResponse.setHeader("Access-Control-Allow-Methods", "POST, DELETE, OPTIONS");
 				//httpResponse.addHeader("Access-Control-Allow-Origin", "*");
 				if ("true".equalsIgnoreCase(EPADConfig.getParamValue("SeparateWebServicesApp")))
@@ -298,8 +308,8 @@ public class EPADSessionHandler extends AbstractHandler
 			}
 		} else if ("OPTIONS".equalsIgnoreCase(method)) {
 			log.info("CORS preflight OPTIONS request to session route" + " origin:" + origin);
-			//httpResponse.setHeader("Access-Control-Allow-Origin", origin);
-			httpResponse.setHeader("Access-Control-Allow-Origin", "*");
+			httpResponse.setHeader("Access-Control-Allow-Origin", origin);
+//			httpResponse.setHeader("Access-Control-Allow-Origin", "*");
 			//httpResponse.addHeader("Access-Control-Allow-Origin", "*");
 			httpResponse.setHeader("Access-Control-Allow-Credentials", "true");
 			httpResponse.setHeader("Access-Control-Allow-Headers", "Authorization");
@@ -307,7 +317,7 @@ public class EPADSessionHandler extends AbstractHandler
 			statusCode = HttpServletResponse.SC_OK;
 		} else {
 			log.info("Request, Method:" + method  + " origin:" + origin);
-			httpResponse.setHeader("Access-Control-Allow-Origin", "*");
+			httpResponse.setHeader("Access-Control-Allow-Origin", origin);
 			httpResponse.setHeader("Access-Control-Allow-Methods", "POST, DELETE, OPTIONS");
 			statusCode = HandlerUtil.warningResponse(HttpServletResponse.SC_METHOD_NOT_ALLOWED, INVALID_METHOD_MESSAGE
 					+ "; got " + method, log);
