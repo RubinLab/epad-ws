@@ -1950,8 +1950,15 @@ public class EPADGetHandler
 				statusCode = HttpServletResponse.SC_OK;
 
 			} else if (HandlerUtil.matchesTemplate(EPADsRouteTemplates.EPAD_LIST, pathInfo)) {
-				EPADDataList epads = EpadDatabase.getInstance().getEPADDatabaseOperations().getEpadHostNames();
-				responseStream.append(epads.toJSON());
+				boolean summary = "true".equals(httpRequest.getParameter("summary"));
+				if (!summary) { //old list
+					EPADDataList epads = EpadDatabase.getInstance().getEPADDatabaseOperations().getEpadHostNames();
+					responseStream.append(epads.toJSON());
+				}
+				else {
+					EPADUsageList eul = epadOperations.getUsageSummary(username);
+					responseStream.append(eul.toJSON());
+				}
 				statusCode = HttpServletResponse.SC_OK;
 
 			} else if (HandlerUtil.matchesTemplate(EPADsRouteTemplates.EPAD_VERSION, pathInfo)) {
