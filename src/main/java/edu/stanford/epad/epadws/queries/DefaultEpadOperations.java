@@ -3745,6 +3745,9 @@ public class DefaultEpadOperations implements EpadOperations
 			
 			EPADSubjectList subjects= getSubjectDescriptions(projectUID, username, sessionID, searchFilter,1,5000, null,false,true);
 			log.info("Number of subjects "+ subjects.ResultSet.totalRecords);
+			//artem's fix for empty project
+			if (subjects.ResultSet.totalRecords==0) 
+				return AnnotationStatus.NOT_STARTED;
 			int doneCount=0;
 			int inProgressCount=0;
 			//to calculate the cumulative user list,  we need a map of user to an array containing [donecount and in_progresscount]
@@ -3853,6 +3856,8 @@ public class DefaultEpadOperations implements EpadOperations
 			EPADStudyList studies= getStudyDescriptions(new SubjectReference(projectUID, subjectUID), username, sessionID, searchFilter,true);
 			int doneCount=0;
 			int inProgressCount=0;
+			if (studies.ResultSet.totalRecords==0)
+				return AnnotationStatus.NOT_STARTED;
 			for (EPADStudy st: studies.ResultSet.Result) {
 				log.info("study "+ st.studyUID);
 				log.info("annotation status "+ st.annotationStatus);
@@ -3878,7 +3883,7 @@ public class DefaultEpadOperations implements EpadOperations
 					}
 					
 					//fix for studies with no series
-					else if (st.annotationStatus.equals(AnnotationStatus.DONE)) {
+					else if (st.annotationStatus.equals(AnnotationStatus.NOT_STARTED)) {
 						for (Entry<String, int[]> e : statsMap.entrySet()) {
 							int[] value = e.getValue();
 							if (value==null) {
@@ -3929,7 +3934,9 @@ public class DefaultEpadOperations implements EpadOperations
 					if (e.getValue().equals(AnnotationStatus.IN_PROGRESS))
 						inProgressCount++;
 				}
-				if (userStatusList.size() == 0 ||userStatusList.size()==doneCount) 
+				if (userStatusList.size() == 0)
+					return AnnotationStatus.NOT_STARTED;
+				else if (userStatusList.size()==doneCount) 
 					return AnnotationStatus.DONE;
 				else if (doneCount+inProgressCount >0 )
 					return AnnotationStatus.IN_PROGRESS;
@@ -4006,7 +4013,9 @@ public class DefaultEpadOperations implements EpadOperations
 				if (e.getValue().equals(AnnotationStatus.IN_PROGRESS))
 					inProgressCount++;
 			}
-			if (userStatusList.size() == 0 ||userStatusList.size()==doneCount) 
+			if (userStatusList.size() == 0) 
+				return AnnotationStatus.NOT_STARTED;
+			else if(userStatusList.size()==doneCount) 
 				return AnnotationStatus.DONE;
 			else if (doneCount+inProgressCount >0 )
 				return AnnotationStatus.IN_PROGRESS;
