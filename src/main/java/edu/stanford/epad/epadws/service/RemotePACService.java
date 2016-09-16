@@ -301,18 +301,23 @@ public class RemotePACService extends RemotePACSBase {
 		if (EPADConfig.getParamValue("TCIA_APIKEY") != null && EPADConfig.getParamValue("TCIA_APIKEY").length() > 0) {
 			try {
 				List<String> collections = TCIAService.getInstance().getCollections();
-				for (String collection: collections)
-				{
-					RemotePAC rpac = new RemotePAC(TCIAService.TCIA_PREFIX + collection, TCIAService.TCIA_PREFIX + collection, "services.cancerimagingarchive.net",
-							443, "", "");
-					rps.add(rpac);
+				//check for null 
+				if (collections!=null) {
+					for (String collection: collections)
+					{
+						RemotePAC rpac = new RemotePAC(TCIAService.TCIA_PREFIX + collection, TCIAService.TCIA_PREFIX + collection, "services.cancerimagingarchive.net",
+								443, "", "");
+						rps.add(rpac);
+					}
 				}
 				Set<String> sharedLists = TCIAService.getInstance().getSharedLists();
-				for (String sharedList: sharedLists)
-				{
-					RemotePAC rpac = new RemotePAC(TCIAService.TCIA_PREFIX + sharedList, TCIAService.TCIA_PREFIX + sharedList, "services.cancerimagingarchive.net",
-							443, "", "");
-					rps.add(rpac);
+				if (sharedLists!=null){
+					for (String sharedList: sharedLists)
+					{
+						RemotePAC rpac = new RemotePAC(TCIAService.TCIA_PREFIX + sharedList, TCIAService.TCIA_PREFIX + sharedList, "services.cancerimagingarchive.net",
+								443, "", "");
+						rps.add(rpac);
+					}
 				}
 			} catch (Exception e) {
 				log.warning("Error getting TCIA collections", e);

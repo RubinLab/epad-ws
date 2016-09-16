@@ -415,7 +415,7 @@ public class TCIAService  {
 		GetMethod method = new GetMethod(tciaURL);
 		int statusCode = client.executeMethod(method);
 		File uploadStoreDir = new File(EPADConfig.getEPADWebServerUploadDir()
-													+ "temp" + System.currentTimeMillis());
+													+ "temp" + System.currentTimeMillis() + "_"+seriesUID.substring(seriesUID.length()-5));
 		uploadStoreDir.mkdirs();
 		File zipfile = new File(uploadStoreDir, "tcia.zip");
 		long total = 0;
@@ -460,6 +460,7 @@ public class TCIAService  {
 			tciaURL = tciaURL  + "&";
 		tciaURL = tciaURL.replace(' ', '+') + "api_key=" + apiKey;
 		log.debug("TCIA URL:" + tciaURL);
+		Thread.sleep(10000);
 		HttpClient client = new HttpClient();
 		try {
 			GetMethod method = new GetMethod(tciaURL);
