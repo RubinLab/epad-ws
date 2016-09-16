@@ -1959,7 +1959,7 @@ public class AIMUtil
 				}
 			}
 			catch (Exception x) {
-				log.warning("Error checking AIM permission:", x);
+				log.warning("Error checking AIM permission (Not important if the user not in project exception):", x);
 			}
 		}
 		long endtime = System.currentTimeMillis();
