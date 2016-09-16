@@ -3337,6 +3337,21 @@ public class DefaultEpadOperations implements EpadOperations
 	}
 
 	@Override
+	public EPADUsageList getUsageSummary(String username) throws Exception {
+		String sql = " createdtime =(select max(createdtime) from epadstatistics b where b.host = a.host) group by host order by host";
+		List<EpadStatistics> stats = new EpadStatistics().getObjects(sql);
+		EPADUsageList eul = new EPADUsageList();
+		for (EpadStatistics stat: stats)
+		{
+			eul.addUsage(new EPADUsage(stat.getHost(), stat.getNumOfUsers(), stat.getNumOfProjects(),
+				stat.getNumOfPatients(), stat.getNumOfStudies(), stat.getNumOfSeries(),
+				stat.getNumOfAims(), stat.getNumOfDSOs(), stat.getNumOfPacs(), stat.getNumOfAutoQueries(),
+				stat.getNumOfWorkLists(), stat.getNumOfFiles(), stat.getNumOfTemplates(), stat.getNumOfPlugins(), dateformat.format(stat.getCreatedTime())));
+		}
+		return eul;
+	}
+		
+	@Override
 	public EPADUsageList getUsage(String username, String hostname, boolean byMonth, boolean byYear, boolean all) throws Exception {
 		String sql = "host like '" + hostname.replace('*', '%') + "%' order by host, createdtime desc";
 		if (!all && !byMonth && !byYear) sql = "host like '" + hostname.replace('*', '%') + "%' and createdtime =(select max(createdtime) from epadstatistics b where b.host = a.host)";

@@ -1411,6 +1411,14 @@ public interface EpadOperations
 	EPADUsageList getUsage(String username, String hostname, boolean byMonth, boolean byYear, boolean all) throws Exception;
 	
 	/**
+	 * get all the hosts' usage (distinct, latest)
+	 * @param username
+	 * @return
+	 * @throws Exception
+	 */
+	EPADUsageList getUsageSummary(String username) throws Exception;
+	
+	/**
 	 * @param username
 	 * @return
 	 * @throws Exception
