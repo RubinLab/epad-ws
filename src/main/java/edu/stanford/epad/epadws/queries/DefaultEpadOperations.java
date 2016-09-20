@@ -2227,6 +2227,10 @@ public class DefaultEpadOperations implements EpadOperations
 		Map<String, List<String>> disabledTemplates = new HashMap<String, List<String>>();
 		for (EpadFile efile: efiles)
 		{
+			//get projects from project_template
+			//if there are tuples in project_template for this template use that instead
+			//we need the code to check in the project_template table.
+			//convert to template container object here
 			Project project = (Project) projectOperations.getDBObject(Project.class, efile.getProjectId());
 			String defTemplate = null;
 			Project userProj = projectOperations.getProjectForUser(username, project.getProjectId());

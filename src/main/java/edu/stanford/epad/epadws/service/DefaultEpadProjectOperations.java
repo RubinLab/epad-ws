@@ -150,6 +150,7 @@ import edu.stanford.epad.epadws.models.ProjectToSubject;
 import edu.stanford.epad.epadws.models.ProjectToSubjectToStudy;
 import edu.stanford.epad.epadws.models.ProjectToSubjectToStudyToSeriesToUserStatus;
 import edu.stanford.epad.epadws.models.ProjectToSubjectToUser;
+import edu.stanford.epad.epadws.models.ProjectToTemplate;
 import edu.stanford.epad.epadws.models.ProjectToUser;
 import edu.stanford.epad.epadws.models.ProjectType;
 import edu.stanford.epad.epadws.models.RemotePACQuery;
@@ -2185,6 +2186,12 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		if (project == null)
 			throw new Exception("Project not found");
 		new DisabledTemplate().deleteObjects("project_id = " + project.getId() + " and templatename=" + DisabledTemplate.toSQL(templateName));
+		//add to project_template relation. starting with 2.3
+		ProjectToTemplate pt = new ProjectToTemplate();
+		pt.setProjectId(project.getId());
+		pt.setTemplateName(templateName);
+		pt.setCreator(loggedInUser);
+		pt.save();
 	}
 
 	@Override
@@ -2199,6 +2206,9 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		dt.setTemplateName(templateName);
 		dt.setCreator(loggedInUser);
 		dt.save();
+		//remove from project template relation
+		new ProjectToTemplate().deleteObjects("project_id = " + project.getId() + " and templatename=" + DisabledTemplate.toSQL(templateName));
+		
 	}
 
 	@Override
