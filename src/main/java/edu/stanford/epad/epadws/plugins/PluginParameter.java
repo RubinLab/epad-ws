@@ -102,97 +102,20 @@
  * of non-limiting example, you will not contribute any code obtained by you under the GNU General Public License or other 
  * so-called "reciprocal" license.)
  *******************************************************************************/
-package edu.stanford.epad.epadws.models;
+package edu.stanford.epad.epadws.plugins;
 
-import java.util.Date;
-
-import edu.stanford.epad.epadws.models.dao.AbstractDAO;
-
-/**
- * Project to PlugIn Parameter relation
- * 
- * @author Emel Alkim
- *
- */
-
-public class ProjectToPluginParameter extends AbstractDAO {
-
-	long id;
-	long projectId;
-	long pluginId;
-	String name;
-	String defaultValue;
-	String creator;
-	Date createdTime;
-	Date updateTime;
-	String type;
-	String description;
+public class PluginParameter {
 	
+	private String type;
+	private String name;
+	private String defaultVal;
+	private String description;
 	
-	@Override
-	public long getId() {
-		return id;
-	}
-
-	public void setId(long id) {
-		this.id = id;
-	}
-
-	public long getProjectId() {
-		return projectId;
-	}
-
-	public void setProjectId(long projectId) {
-		this.projectId = projectId;
-	}
-
-	
-	public long getPluginId() {
-		return pluginId;
-	}
-
-	public void setPluginId(long pluginId) {
-		this.pluginId = pluginId;
-	}
-
-	public String getName() {
-		return name;
-	}
-
-	public void setName(String name) {
-		this.name = name;
-	}
-
-	public String getDefaultValue() {
-		return defaultValue;
-	}
-
-	public void setDefaultValue(String defaultValue) {
-		this.defaultValue = defaultValue;
-	}
-
-	public String getCreator() {
-		return creator;
-	}
-
-	public void setCreator(String creator) {
-		this.creator = creator;
-	}
-
-	public Date getCreatedTime() {
-		return createdTime;
-	}
-
-	public void setCreatedTime(Date createdTime) {
-		this.createdTime = createdTime;
-	}
-
-	public Date getUpdateTime() {
-		return updateTime;
-	}
-
-	public void setUpdateTime(Date updateTime) {
-		this.updateTime = updateTime;
+	public PluginParameter(String type,String name,String defaultVal,String description) {
+		this.type=type;
+		this.name=name;
+		this.defaultVal=defaultVal;
+		this.description=description;
 	}
 
 	public String getType() {
@@ -203,36 +126,28 @@ public class ProjectToPluginParameter extends AbstractDAO {
 		this.type = type;
 	}
 
+	public String getName() {
+		return name;
+	}
+
+	public void setName(String name) {
+		this.name = name;
+	}
+
+	public String getDefaultVal() {
+		return defaultVal;
+	}
+
+	public void setDefaultVal(String defaultVal) {
+		this.defaultVal = defaultVal;
+	}
+
 	public String getDescription() {
 		return description;
 	}
 
 	public void setDescription(String description) {
 		this.description = description;
-	}
-
-	public final static String DBTABLE = "project_pluginparameter";
-	public final static String[][] DBCOLUMNS = {
-        {"id","long","id","Id"},
-        {"projectId","long","project_id","integer"},  
-        {"pluginId","long","plugin_id","integer"},
-        {"name","String","name","varchar"},
-        {"defaultValue","String","default_value","varchar"},
-        {"creator","String","creator","varchar"},
-        {"createdTime","Date","createdtime","timestamp"},
-        {"updateTime","Date","updatetime","timestamp"},	
-        {"type","String","type","varchar"},
-        {"description","String","description","varchar"},
-	};
-
-	@Override
-	public String returnDBTABLE() {
-		return DBTABLE;
-	}
-
-	@Override
-	public String[][] returnDBCOLUMNS() {
-		return DBCOLUMNS;
 	}
 
 }

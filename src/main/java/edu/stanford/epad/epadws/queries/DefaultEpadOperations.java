@@ -1719,6 +1719,10 @@ public class DefaultEpadOperations implements EpadOperations
 		else if (uploadedFile.getName().toLowerCase().endsWith(".zip"))
 		{
 			FileType type = null;
+			if (fileType != null && fileType.equals(FileType.PARAMETERS.getName()))
+			{
+				type = FileType.PARAMETERS;
+			}
 			if (fileType != null && fileType.equals(FileType.TEMPLATE.getName()))
 			{
 				type = FileType.TEMPLATE;
@@ -1753,6 +1757,10 @@ public class DefaultEpadOperations implements EpadOperations
 		else
 		{
 			FileType type = null;
+			if (fileType != null && fileType.equals(FileType.PARAMETERS.getName()))
+			{
+				type = FileType.PARAMETERS;
+			}
 			if (fileType != null && fileType.equals(FileType.TEMPLATE.getName()))
 			{
 				type = FileType.TEMPLATE;

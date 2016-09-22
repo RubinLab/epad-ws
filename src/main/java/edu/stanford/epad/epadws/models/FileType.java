@@ -108,7 +108,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 public enum FileType {
-	TEMPLATE("Template"), IMAGE("Image"), DICOM("Dicom"), SERIES("Series"), ANNOTATION("Annotation");
+	TEMPLATE("Template"), IMAGE("Image"), DICOM("Dicom"), SERIES("Series"), ANNOTATION("Annotation"),PARAMETERS("Parameters");
 
 	private String name;
 
