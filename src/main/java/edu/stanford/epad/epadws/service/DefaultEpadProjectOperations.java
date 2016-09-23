@@ -2150,6 +2150,7 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		return efiles;
 	}
 
+	//changes the tuple's enable in file table
 	@Override
 	public void enableFile(String loggedInUser, String projectID,
 			String subjectUID, String studyUID, String seriesUID,
@@ -2159,7 +2160,7 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 			throw new Exception("File " + filename + " not found");
 		User requestor = getUser(loggedInUser);
 		if (!requestor.isAdmin() && !isOwner(loggedInUser, projectID) && !loggedInUser.equals(efile.getCreator()))
-			throw new Exception("No permissions to disable template");
+			throw new Exception("No permissions to enable template");
 		efile.setEnabled(true);
 		efile.save();
 	}
@@ -2194,6 +2195,8 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		pt.save();
 	}
 
+	
+	
 	@Override
 	public void disableTemplate(String loggedInUser, String projectID,
 			String subjectUID, String studyUID, String seriesUID,
@@ -2239,6 +2242,15 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		for (DisabledTemplate dt: dts)
 			templateNames.add(dt.getTemplateName());
 		return templateNames;
+	}
+	
+	@Override
+	public List<Long> getProjectsForTemplate(String templateName) throws Exception {
+		List<ProjectToTemplate> pts = new ProjectToTemplate().getObjects("templatename=" + ProjectToTemplate.toSQL(templateName));
+		List<Long> projects = new ArrayList<Long>();
+		for (ProjectToTemplate pt: pts)
+			projects.add(pt.getProjectId());
+		return projects;
 	}
 
 	/* (non-Javadoc)

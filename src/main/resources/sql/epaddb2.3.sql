@@ -7,7 +7,7 @@ createdtime timestamp,
 updatetime timestamp,
 updated_by varchar(64),
 PRIMARY KEY (id)) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-CREATE UNIQUE INDEX uk_disabled_template_ind on project_template(project_id,templatename);
+CREATE UNIQUE INDEX uk_project_template_ind on project_template(project_id,templatename);
 
 
 

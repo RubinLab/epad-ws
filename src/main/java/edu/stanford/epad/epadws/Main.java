@@ -144,6 +144,7 @@ import edu.stanford.epad.common.plugins.PluginServletHandler;
 import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADFileUtils;
 import edu.stanford.epad.common.util.EPADLogger;
+import edu.stanford.epad.dtos.EPADFileList;
 import edu.stanford.epad.epadws.aim.AIMUtil;
 import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeOperations;
 import edu.stanford.epad.epadws.epaddb.EpadDatabase;
@@ -168,7 +169,12 @@ import edu.stanford.epad.epadws.handlers.event.ProjectEventHandler;
 import edu.stanford.epad.epadws.handlers.plugin.EPadPluginHandler;
 import edu.stanford.epad.epadws.handlers.plugin.StatusListenerHandler;
 import edu.stanford.epad.epadws.handlers.session.EPADSessionHandler;
+import edu.stanford.epad.epadws.models.DisabledTemplate;
+import edu.stanford.epad.epadws.models.EpadFile;
+import edu.stanford.epad.epadws.models.FileType;
 import edu.stanford.epad.epadws.models.Plugin;
+import edu.stanford.epad.epadws.models.Project;
+import edu.stanford.epad.epadws.models.ProjectToTemplate;
 import edu.stanford.epad.epadws.models.User;
 import edu.stanford.epad.epadws.plugins.PluginConfig;
 import edu.stanford.epad.epadws.plugins.PluginHandlerMap;
@@ -475,12 +481,33 @@ public class Main
 			}
 			AIMUtil.checkSchemaFiles();
 			AIMUtil.checkTemplateFiles();
+			checkTemplateProjectRel();
+			
 		} catch (Exception e) {
 			log.warning("Failed to start database", e);
 			System.exit(1);
 		}
 	}
 
+	private static void checkTemplateProjectRel(){
+		try {
+			if (new ProjectToTemplate().getCount("")<=0) {
+				log.info("No project-template relation. Constructing the table using epad-file");
+				List<EpadFile> templates= new EpadFile().getObjects("filetype = '" + FileType.TEMPLATE.getName() + "'");
+				for(EpadFile t:templates) {
+					log.info("Adding project(id):"+t.getProjectId()+ " template:" +t.getName());
+					ProjectToTemplate pt = new ProjectToTemplate();
+					pt.setProjectId(t.getProjectId());
+					pt.setTemplateName(t.getName());
+					pt.setCreator("admin");
+					pt.save();
+				}
+			}
+		} catch (Exception e) {
+			log.warning("Couldn't get project template relation,",e);
+		}
+		
+	}
 	private static void addHandlers(Server server)
 	{
 		List<Handler> handlerList = new ArrayList<Handler>();
