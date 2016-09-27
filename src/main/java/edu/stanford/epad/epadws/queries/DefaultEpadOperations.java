@@ -1771,6 +1771,11 @@ public class DefaultEpadOperations implements EpadOperations
 				type = FileType.TEMPLATE;
 				if (EPADFileUtils.isImage(uploadedFile) || uploadedFile.getName().toLowerCase().endsWith(".zip"))
 					throw new Exception("This does not appear to be a template file. The client should check this.");
+				//check if the template code exists in the system 
+//				String codeValue=getTemplateCode(uploadedFile);
+//				if (projectOperations.get) {
+//					throw new Exception("Template with code "+ codeValue + " already exists");
+//				}
 				if (!EPADFileUtils.isValidXml(uploadedFile, EPADConfig.templateXSDPath))
 				{
 					String error = EPADFileUtils.validateXml(uploadedFile, EPADConfig.templateXSDPath);
@@ -1832,6 +1837,30 @@ public class DefaultEpadOperations implements EpadOperations
 				(new Thread(new DSOEvaluationTask(username, projectID, subjectID, studyID, seriesID, filename))).start();
 			}
 		}
+	}
+	
+	private String getTemplateCode(File templateFile)
+	{
+		try {
+			String xml = EPADFileUtils.readFileAsString(templateFile);
+			JSONObject root = XML.toJSONObject(xml);
+			JSONObject container = root.getJSONObject("TemplateContainer");
+			JSONArray templateObjs = new JSONArray();
+			try {
+				JSONObject templateObj = container.getJSONObject("Template");
+				templateObjs.put(templateObj);
+			}
+			catch (Exception x) {
+				templateObjs = container.getJSONArray("Template");
+			}
+			for (int i = 0; i < templateObjs.length(); i++)
+			{
+				JSONObject templateObj = templateObjs.getJSONObject(i);
+				return templateObj.getString("codeValue");
+			}
+		} catch (Exception x) {
+		}
+		return "";		
 	}
 
 	private String getTemplateType(File templateFile)
