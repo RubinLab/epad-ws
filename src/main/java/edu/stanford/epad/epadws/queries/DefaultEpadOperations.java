@@ -1703,6 +1703,97 @@ public class DefaultEpadOperations implements EpadOperations
 		}
 		return HttpServletResponse.SC_OK;
 	}
+	
+	
+//	public void createTemplate(String username, String projectID, 
+//			File uploadedFile, String description, String fileType, String sessionID) throws Exception {
+//		String templateLevelType="image";//default
+//		if (!projectOperations.hasAccessToProject(username, projectID))
+//			throw new Exception("No permissions to upload to project " + projectID);
+//		String filename = uploadedFile.getName();
+//		log.info("filename:" + filename);
+//		if (uploadedFile.getName().toLowerCase().endsWith(".zip")) {
+//			log.info("Unzipping " + uploadedFile.getAbsolutePath());
+//			EPADFileUtils.extractFolder(uploadedFile.getAbsolutePath());
+//			File[] files = uploadedFile.getParentFile().listFiles();
+//			boolean hasDICOMs = false;
+//			for (File file: files)
+//			{
+//				if (file.getName().toLowerCase().endsWith(".zip"))
+//				{
+//					createTemplate(username, projectID, file, description, FileType.TEMPLATE.getName(), sessionID);
+//					file.delete();
+//				}
+//				
+//			}
+//		} else {
+//		
+//			if (EPADFileUtils.isImage(uploadedFile) || UserProjectService.isDicomFile(uploadedFile))
+//				throw new Exception("This does not appear to be a template file. The client should check this.");
+//			
+//			if (!EPADFileUtils.isValidXml(uploadedFile, EPADConfig.templateXSDPath))
+//			{
+//				String error = EPADFileUtils.validateXml(uploadedFile, EPADConfig.templateXSDPath);
+//				if (!(error.contains("content of element 'Template' is not complete") && getTemplateType(uploadedFile).startsWith("SEG")))
+//					throw new Exception("Invalid Template file: " + error);
+//			}
+//			//check if the template code exists in the system 
+//	//		String codeValue=getTemplateCode(uploadedFile);
+//	//		if (projectOperations.get) {
+//	//			throw new Exception("Template with code "+ codeValue + " already exists");
+//	//		}
+//			//read the xml to find out the template type and put it in description
+//			templateLevelType=getTemplateLevelType(uploadedFile);
+//			projectOperations.createEventLog(username, projectID, null, null, null, null, null, uploadedFile.getName(), "UPLOAD TEMPLATE", description, false);
+//			
+//			
+////			projectOperations.createFile()
+//		}
+//
+//	}
+//	
+//	
+//	public EpadFile createTemplate(String loggedInUser, File file,
+//			String filename, String description, FileType fileType, String templateLevelType) throws Exception {
+//		User requestor = projectOperations.getUser(loggedInUser);
+//		EpadFile efile = new EpadFile();
+//		efile.setName(filename);
+//		efile.setDescription(description);
+//		
+//		boolean exists = false;
+//		EpadFile oldFile = this.getEpadFile(projectID, subjectUID, studyUID, seriesUID, filename);
+//		if (oldFile != null)
+//		{
+//			if (!requestor.isAdmin() && !isOwner(loggedInUser, projectID) && !loggedInUser.equals(oldFile.getCreator()))
+//				throw new Exception("No permissions to overwrite file");
+//			efile = oldFile;
+//			exists = true;
+//		}
+//		else
+//		{
+//			efile.setFilePath(EPADConfig.getEPADWebServerFilesDir() + efile.getRelativePath());
+//			efile.setCreator(loggedInUser);
+//		}
+//		if (fileType != null)
+//			efile.setFileType(fileType.getName());
+//		else
+//			efile.setFileType("");
+//		efile.setLength(file.length());
+//		if (description != null)
+//			efile.setDescription(description);
+//		//set templateleveltype
+//		efile.setTemplateLevelType(templateLevelType);
+//		efile.save();
+//		File parent = new File(efile.getFilePath());
+//		parent.mkdirs();
+//		String physicalName = "" + efile.getId() + efile.getExtension();
+//		FileUtils.copyFile(file, new File(parent, physicalName));
+//		if (exists)
+//			log.info("Modified file:" + efile.getName() + " in Project:" + efile.getProjectId());
+//		else
+//			log.info("Created file:" + efile.getName() + " in Project:" + efile.getProjectId());
+//		return efile;
+//	}
 
 	@Override
 	public void createFile(String username, String projectID, String subjectID, String studyID, String seriesID,
