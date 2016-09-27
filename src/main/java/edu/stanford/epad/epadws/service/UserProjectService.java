@@ -511,7 +511,7 @@ public class UserProjectService {
 		
 		//check if the patient id already exist in the system. If so put a log or something, specifying the patient name that is used and the project
 		Subject subject = projectOperations.getSubject(dicomPatientID);
-		if (subject != null && !dicomPatientName.equalsIgnoreCase(subject.getName()) ) {
+		if (subject != null && dicomPatientName!=null && !dicomPatientName.equalsIgnoreCase(subject.getName()) ) {
 			if (!duplicatePatientIds.contains(dicomPatientID)) {
 				duplicatePatientIds.add(dicomPatientID);
 				List<Project> projects=projectOperations.getProjectsForSubject(subject.getSubjectUID());
