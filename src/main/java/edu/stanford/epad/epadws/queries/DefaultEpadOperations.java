@@ -827,12 +827,17 @@ public class DefaultEpadOperations implements EpadOperations
 		DICOMElementList suppliedDICOMElementsFirst = getDICOMElements(imageDescriptions.get(0).studyUID,
 				imageDescriptions.get(0).seriesUID, imageDescriptions.get(0).imageUID);
 		String pixelSpacing1 = getDICOMElement(suppliedDICOMElementsFirst, PixelMedUtils.PixelSpacingCode);
+		String rows1 = getDICOMElement(suppliedDICOMElementsFirst, PixelMedUtils.RowsCode);
+		String columns1 = getDICOMElement(suppliedDICOMElementsFirst, PixelMedUtils.ColumnsCode);
+		
 		DICOMElementList suppliedDICOMElementsLast = getDICOMElements(imageDescriptions.get(numImages-1).studyUID,
 				imageDescriptions.get(numImages-1).seriesUID, imageDescriptions.get(numImages-1).imageUID);
 		String pixelSpacing2 = getDICOMElement(suppliedDICOMElementsLast, PixelMedUtils.PixelSpacingCode);
+		String rows2 = getDICOMElement(suppliedDICOMElementsLast, PixelMedUtils.RowsCode);
+		String columns2 = getDICOMElement(suppliedDICOMElementsLast, PixelMedUtils.ColumnsCode);
 		boolean getMetaDataForAllImages = false;
 		log.debug("pixelSpacing1:" + pixelSpacing1 + " pixelSpacing2:" + pixelSpacing2);
-		if (pixelSpacing1 != null && !pixelSpacing1.equals(pixelSpacing2))
+		if ((pixelSpacing1 != null && !pixelSpacing1.equals(pixelSpacing2)) || (rows1 != null && !rows1.equals(rows2)) || (columns1 != null && !columns1.equals(columns2)) )
 		{
 			log.info("Series: " +  seriesReference.seriesUID + " returning metadata for all images");
 			getMetaDataForAllImages = true;
