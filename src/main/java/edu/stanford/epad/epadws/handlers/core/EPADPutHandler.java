@@ -716,34 +716,69 @@ public class EPADPutHandler
 				ProjectReference reference = ProjectReference.extract(ProjectsRouteTemplates.TEMPLATE, pathInfo);
 				Map<String, String> templateMap = HandlerUtil.getTemplateMap(ProjectsRouteTemplates.TEMPLATE, pathInfo);
 				String templatename = HandlerUtil.getTemplateParameter(templateMap, "templatename");
+				log.info("recieved templatename="+templatename);
+				log.info("recieved project="+reference.projectID);
 				String enable = httpRequest.getParameter("enable");
 				if (enable != null)
 				{
 					EpadFile efile = projectOperations.getEpadFile(reference.projectID, null, null, null, templatename);
 					if (efile != null && "true".equalsIgnoreCase(enable))
 					{
+						log.info("enabling project");
+						//it is found with project reference, change the actual file tuple
 						projectOperations.enableFile(username, reference.projectID, null, null, null, templatename);
-					}
-					else if (efile != null && "false".equalsIgnoreCase(enable))
-					{	
-						projectOperations.disableFile(username, reference.projectID, null, null, null, templatename);
-					}
-					efile = projectOperations.getEpadFile(EPADConfig.xnatUploadProjectID, null, null, null, templatename);
-					if (efile != null && "true".equalsIgnoreCase(enable))
-					{
-						projectOperations.enableFile(username, EPADConfig.xnatUploadProjectID, null, null, null, templatename);
-					}
-					else if (efile != null && "false".equalsIgnoreCase(enable))
-					{	
-						projectOperations.disableFile(username, EPADConfig.xnatUploadProjectID, null, null, null, templatename);
-					}
-					if (efile == null && "true".equalsIgnoreCase(enable))
-					{
+						//also add to the project_template
 						projectOperations.enableTemplate(username, reference.projectID, null, null, null, templatename);
 					}
-					else if (efile == null && "false".equalsIgnoreCase(enable))
+					else if (efile != null && "false".equalsIgnoreCase(enable))
 					{	
+						log.info("disabling project");
+						//also add to the disabled_template
 						projectOperations.disableTemplate(username, reference.projectID, null, null, null, templatename);
+						
+						//it is found with project reference, change the actual file tuple. if not all project!
+						if (!reference.projectID.equals(EPADConfig.xnatUploadProjectID))
+							projectOperations.disableFile(username, reference.projectID, null, null, null, templatename);
+						else
+							//we need to check for other projects first
+							if (projectOperations.getProjectsForTemplate(templatename).isEmpty())
+								projectOperations.disableFile(username, reference.projectID, null, null, null, templatename);
+							
+						
+					}
+					if (efile == null) {
+						efile = projectOperations.getEpadFile(EPADConfig.xnatUploadProjectID, null, null, null, templatename);
+						//check if it is in upload project(all)
+						if (efile != null && "true".equalsIgnoreCase(enable))
+						{
+							log.info("enabling all project");
+							//enable the file
+							projectOperations.enableFile(username, EPADConfig.xnatUploadProjectID, null, null, null, templatename);
+							//enable for this project
+							projectOperations.enableTemplate(username, reference.projectID, null, null, null, templatename);
+						}
+						else if (efile != null && "false".equalsIgnoreCase(enable))
+						{	
+							log.info("disabling all project");
+							projectOperations.disableTemplate(username, reference.projectID, null, null, null, templatename);
+							
+							//disable the file, what if others are still enabled. 
+							//we need to check for other projects first
+							if (projectOperations.getProjectsForTemplate(templatename).isEmpty())
+								projectOperations.disableFile(username, EPADConfig.xnatUploadProjectID, null, null, null, templatename);
+							
+						}
+						//not a record in the epad-file, we do not support this after 2.2, leaving as is just in case
+						if (efile == null && "true".equalsIgnoreCase(enable))
+						{
+							log.info("enabling project for no rec");
+							projectOperations.enableTemplate(username, reference.projectID, null, null, null, templatename);
+						}
+						else if (efile == null && "false".equalsIgnoreCase(enable))
+						{	
+							log.info("disabling project for no rec");
+							projectOperations.disableTemplate(username, reference.projectID, null, null, null, templatename);
+						}
 					}
 				}
 				else if (httpRequest.getParameter("addToProject") != null)

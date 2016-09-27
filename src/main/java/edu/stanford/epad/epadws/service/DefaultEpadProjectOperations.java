@@ -150,6 +150,7 @@ import edu.stanford.epad.epadws.models.ProjectToSubject;
 import edu.stanford.epad.epadws.models.ProjectToSubjectToStudy;
 import edu.stanford.epad.epadws.models.ProjectToSubjectToStudyToSeriesToUserStatus;
 import edu.stanford.epad.epadws.models.ProjectToSubjectToUser;
+import edu.stanford.epad.epadws.models.ProjectToTemplate;
 import edu.stanford.epad.epadws.models.ProjectToUser;
 import edu.stanford.epad.epadws.models.ProjectType;
 import edu.stanford.epad.epadws.models.RemotePACQuery;
@@ -2149,6 +2150,7 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		return efiles;
 	}
 
+	//changes the tuple's enable in file table
 	@Override
 	public void enableFile(String loggedInUser, String projectID,
 			String subjectUID, String studyUID, String seriesUID,
@@ -2158,7 +2160,7 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 			throw new Exception("File " + filename + " not found");
 		User requestor = getUser(loggedInUser);
 		if (!requestor.isAdmin() && !isOwner(loggedInUser, projectID) && !loggedInUser.equals(efile.getCreator()))
-			throw new Exception("No permissions to disable template");
+			throw new Exception("No permissions to enable template");
 		efile.setEnabled(true);
 		efile.save();
 	}
@@ -2185,8 +2187,16 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		if (project == null)
 			throw new Exception("Project not found");
 		new DisabledTemplate().deleteObjects("project_id = " + project.getId() + " and templatename=" + DisabledTemplate.toSQL(templateName));
+		//add to project_template relation. starting with 2.3
+		ProjectToTemplate pt = new ProjectToTemplate();
+		pt.setProjectId(project.getId());
+		pt.setTemplateName(templateName);
+		pt.setCreator(loggedInUser);
+		pt.save();
 	}
 
+	
+	
 	@Override
 	public void disableTemplate(String loggedInUser, String projectID,
 			String subjectUID, String studyUID, String seriesUID,
@@ -2199,6 +2209,9 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		dt.setTemplateName(templateName);
 		dt.setCreator(loggedInUser);
 		dt.save();
+		//remove from project template relation
+		new ProjectToTemplate().deleteObjects("project_id = " + project.getId() + " and templatename=" + DisabledTemplate.toSQL(templateName));
+		
 	}
 
 	@Override
@@ -2229,6 +2242,15 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		for (DisabledTemplate dt: dts)
 			templateNames.add(dt.getTemplateName());
 		return templateNames;
+	}
+	
+	@Override
+	public List<Long> getProjectsForTemplate(String templateName) throws Exception {
+		List<ProjectToTemplate> pts = new ProjectToTemplate().getObjects("templatename=" + ProjectToTemplate.toSQL(templateName));
+		List<Long> projects = new ArrayList<Long>();
+		for (ProjectToTemplate pt: pts)
+			projects.add(pt.getProjectId());
+		return projects;
 	}
 
 	/* (non-Javadoc)

@@ -1079,5 +1079,13 @@ public interface EpadProjectOperations {
 	 */
 	List<Study> getStudiesOlderThanDays(Integer days) throws Exception;
 	
+	/**
+	 * get projects for a specific templatename
+	 * @param templatename
+	 * @return a list of project ids
+	 * @throws Exception
+	 */
+	List<Long> getProjectsForTemplate(String templatename) throws Exception;
+	
 	
 }
