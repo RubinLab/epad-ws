@@ -279,20 +279,28 @@ public class EPADSessionHandler extends AbstractHandler
 				}
 				httpResponse.setHeader("Access-Control-Allow-Methods", "POST, DELETE, OPTIONS");
 				//httpResponse.addHeader("Access-Control-Allow-Origin", "*");
-				if ("true".equalsIgnoreCase(EPADConfig.getParamValue("SeparateWebServicesApp")))
-				{
-		            Cookie sessionCookie = new Cookie(JSESSIONID_COOKIE, "");
-		            sessionCookie.setMaxAge(0);
-		            sessionCookie.setPath(httpRequest.getContextPath() + "/");
-		            httpResponse.addCookie(sessionCookie);
-		            sessionCookie = new Cookie(JSESSIONID_COOKIE, "");
-		            sessionCookie.setMaxAge(0);
-		            sessionCookie.setPath(httpRequest.getContextPath());
-		            httpResponse.addCookie(sessionCookie);
-		            log.info("WS Secure seperatews cookie =" + jsessionID + " path = "+ sessionCookie.getPath());
-		            
-				}
-					if (username != null)
+				//remove the control for artem, see if it messes up with epad ui
+                //if ("true".equalsIgnoreCase(EPADConfig.getParamValue("SeparateWebServicesApp")))
+                {
+                        String domain = httpRequest.getServerName();
+                        String contextPath = httpRequest.getContextPath().replace("session/", "").replace("session", "");
+                        Cookie userName = new Cookie(LOGGEDINUSER_COOKIE, "");
+                        userName.setMaxAge(0);
+                        userName.setPath(contextPath);
+                        httpResponse.addCookie(userName);
+
+                        Cookie sessionCookie = new Cookie(JSESSIONID_COOKIE, "");
+                        sessionCookie.setMaxAge(0);
+                        sessionCookie.setPath(contextPath + "/");
+                        httpResponse.addCookie(sessionCookie);
+                        sessionCookie = new Cookie(JSESSIONID_COOKIE, "");
+                        sessionCookie.setMaxAge(0);
+                        sessionCookie.setPath(contextPath);
+                        httpResponse.addCookie(sessionCookie);
+                        
+                        log.info("WS Secure seperatews cookie =" + jsessionID + " path = "+ sessionCookie.getPath() + " domain="+ sessionCookie.getDomain() );
+                }
+				if (username != null)
 						projectOperations.createEventLog(username, null, null, null, null, null, null, null, "User Logged Out", null, false);
 				log.info("Delete session returns status code " + statusCode);
 				statusCode = HttpServletResponse.SC_OK;
