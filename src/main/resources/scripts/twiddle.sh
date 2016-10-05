@@ -37,7 +37,7 @@ fi
 
 # Setup JBOSS_HOME
 if [ "x$JBOSS_HOME" = "x" ]; then
-    JBOSS_HOME=`cd $DIRNAME/..; pwd`
+    JBOSS_HOME=`cd $DIRNAME/../lib/; pwd`
 fi
 export JBOSS_HOME
 
@@ -59,6 +59,7 @@ if [ "x$JBOSS_CLASSPATH" = "x" ]; then
     JBOSS_CLASSPATH="$JBOSS_CLASSPATH:$JBOSS_HOME/getopt.jar"
     JBOSS_CLASSPATH="$JBOSS_CLASSPATH:$JBOSS_HOME/log4j-1.2.16.jar"
     JBOSS_CLASSPATH="$JBOSS_CLASSPATH:$JBOSS_HOME/jboss-jmx.jar"
+    JBOSS_CLASSPATH="$JBOSS_CLASSPATH:$JBOSS_HOME/twiddle.jar"
 else
     JBOSS_CLASSPATH="$JBOSS_CLASSPATH:$JBOSS_BOOT_CLASSPATH"
 fi
