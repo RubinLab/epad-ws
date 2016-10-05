@@ -210,6 +210,7 @@ import edu.stanford.epad.epadws.handlers.core.SubjectReference;
 import edu.stanford.epad.epadws.handlers.dicom.DSOUtil;
 import edu.stanford.epad.epadws.models.EpadFile;
 import edu.stanford.epad.epadws.models.EpadStatistics;
+import edu.stanford.epad.epadws.models.EpadTemplate;
 import edu.stanford.epad.epadws.models.EventLog;
 import edu.stanford.epad.epadws.models.FileType;
 import edu.stanford.epad.epadws.models.NonDicomSeries;
@@ -1799,6 +1800,9 @@ public class DefaultEpadOperations implements EpadOperations
 	public void createFile(String username, String projectID, String subjectID, String studyID, String seriesID,
 			File uploadedFile, String description, String fileType, String sessionID) throws Exception {
 		String templateLevelType="image";//default
+		//fill if template
+		EpadTemplate template =null;
+		
 		if (!projectOperations.hasAccessToProject(username, projectID))
 			throw new Exception("No permissions to upload to project " + projectID);
 		String filename = uploadedFile.getName();
@@ -1873,8 +1877,12 @@ public class DefaultEpadOperations implements EpadOperations
 					if (!(error.contains("content of element 'Template' is not complete") && getTemplateType(uploadedFile).startsWith("SEG")))
 						throw new Exception("Invalid Template file: " + error);
 				}
+				//read the file and extract a template object, it will be completed and saved after the file is created 
+				template = getFirstTemplateInfo(uploadedFile);
+				
 				//read the xml to find out the template type and put it in description
-				templateLevelType=getTemplateLevelType(uploadedFile);
+				//not used
+				//templateLevelType=getTemplateLevelType(uploadedFile);
 				projectOperations.createEventLog(username, projectID, subjectID, studyID, seriesID, null, null, uploadedFile.getName(), "UPLOAD TEMPLATE", description, false);
 			}
 			else if (fileType != null && fileType.equals(FileType.IMAGE.getName()))
@@ -1908,7 +1916,14 @@ public class DefaultEpadOperations implements EpadOperations
 			}
 			if (type == null || !type.equals(FileType.TEMPLATE))
 				projectOperations.createEventLog(username, projectID, subjectID, studyID, seriesID, null, null, uploadedFile.getName(), "UPLOAD FILE", description, false);
-			projectOperations.createFile(username, projectID, subjectID, studyID, seriesID, uploadedFile, filename, description, type);
+			EpadFile file=projectOperations.createFile(username, projectID, subjectID, studyID, seriesID, uploadedFile, filename, description, type);
+			//if it is a template put the file information and create the template entry in db
+			if (type != null && fileType.equals(FileType.TEMPLATE.getName())) {
+				template.setFileId(file.getId());
+				template.save();
+				log.info("template db entry is created for template="+template.getTemplateName());
+			}
+			
 			if (type != null && type.equals(FileType.IMAGE) && seriesID != null) {
 				NonDicomSeries ndSeries = projectOperations.getNonDicomSeries(seriesID);
 				if (ndSeries != null && ndSeries.getReferencedSeries() != null && ndSeries.getReferencedSeries().length() > 0) {
@@ -1930,8 +1945,9 @@ public class DefaultEpadOperations implements EpadOperations
 		}
 	}
 	
-	private String getTemplateCode(File templateFile)
+	private EpadTemplate getFirstTemplateInfo(File templateFile)
 	{
+		EpadTemplate template=new EpadTemplate();
 		try {
 			String xml = EPADFileUtils.readFileAsString(templateFile);
 			JSONObject root = XML.toJSONObject(xml);
@@ -1947,11 +1963,26 @@ public class DefaultEpadOperations implements EpadOperations
 			for (int i = 0; i < templateObjs.length(); i++)
 			{
 				JSONObject templateObj = templateObjs.getJSONObject(i);
-				return templateObj.getString("codeValue");
+				//extract template information and put it in template
+				//returns the first
+				template.setTemplateLevelType(templateObj.getString("templateType"));
+				template.setTemplateUID(templateObj.getString("uid"));
+				
+				template.setTemplateName(templateObj.getString("name"));
+				template.setAuthors(templateObj.getString("authors"));
+				template.setVersion(templateObj.getString("version"));
+				template.setTemplateCreationDate(templateObj.getString("creationDate"));
+				template.setTemplateDescription(templateObj.getString("description"));
+				template.setCodingSchemeVersion(templateObj.getString("codingSchemeVersion"));
+				template.setTemplateType(templateObj.getString("codeMeaning"));
+				template.setTemplateCode(templateObj.getString("codeValue"));
+				template.setCodingSchemeDesignator(templateObj.getString("codingSchemeDesignator"));
+				template.setModality(templateObj.getString("modality"));
+				return template;
 			}
 		} catch (Exception x) {
 		}
-		return "";		
+		return template;		
 	}
 
 	private String getTemplateType(File templateFile)
