@@ -1965,19 +1965,19 @@ public class DefaultEpadOperations implements EpadOperations
 				JSONObject templateObj = templateObjs.getJSONObject(i);
 				//extract template information and put it in template
 				//returns the first
-				template.setTemplateLevelType(templateObj.getString("templateType"));
-				template.setTemplateUID(templateObj.getString("uid"));
+				template.setTemplateLevelType(templateObj.optString("templateType"));
+				template.setTemplateUID(templateObj.optString("uid"));
 				
-				template.setTemplateName(templateObj.getString("name"));
-				template.setAuthors(templateObj.getString("authors"));
-				template.setVersion(templateObj.getString("version"));
-				template.setTemplateCreationDate(templateObj.getString("creationDate"));
-				template.setTemplateDescription(templateObj.getString("description"));
-				template.setCodingSchemeVersion(templateObj.getString("codingSchemeVersion"));
-				template.setTemplateType(templateObj.getString("codeMeaning"));
-				template.setTemplateCode(templateObj.getString("codeValue"));
-				template.setCodingSchemeDesignator(templateObj.getString("codingSchemeDesignator"));
-				template.setModality(templateObj.getString("modality"));
+				template.setTemplateName(templateObj.optString("name"));
+				template.setAuthors(templateObj.optString("authors"));
+				template.setVersion(templateObj.optString("version"));
+				template.setTemplateCreationDate(templateObj.optString("creationDate"));
+				template.setTemplateDescription(templateObj.optString("description"));
+				template.setCodingSchemeVersion(templateObj.optString("codingSchemeVersion"));
+				template.setTemplateType(templateObj.optString("codeMeaning"));
+				template.setTemplateCode(templateObj.optString("codeValue"));
+				template.setCodingSchemeDesignator(templateObj.optString("codingSchemeDesignator"));
+				template.setModality(templateObj.optString("modality"));
 				return template;
 			}
 		} catch (Exception x) {
@@ -2400,7 +2400,8 @@ public class DefaultEpadOperations implements EpadOperations
 			//sending null as project id instead of project.getProjectId()
 			EPADTemplateContainer template = convertEpadFileToTemplate(null, efile, tfile);
 			//check the project_template table
-			List<Long> projects = projectOperations.getProjectsForTemplate(template.fileName);
+			//disable
+			List<Long> projects = null; //projectOperations.getProjectsForTemplate(template.fileName);
 			//new format for the template, got project-template records
 			if (projects!=null && !projects.isEmpty()){
 				for (Long pId:projects) {

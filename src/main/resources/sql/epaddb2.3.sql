@@ -18,7 +18,7 @@ CONSTRAINT FK_project_template_pid FOREIGN KEY (project_id) REFERENCES project(i
 DROP TABLE if exists template;
 CREATE TABLE template (id integer unsigned NOT NULL AUTO_INCREMENT,
 --templateType
-templateLevelType varchar(128), 
+templateLevelType varchar(128),
 templateUID varchar(128),
 templateName varchar(128),
 authors varchar(128),

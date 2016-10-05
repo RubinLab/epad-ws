@@ -115,7 +115,7 @@ public class EpadTemplate extends AbstractDAO {
 	 * 
 	 */
 	private static final long serialVersionUID = 1L;
-	Long id;
+	long id;
 	String templateLevelType; //templateType
 	String templateUID;
 	String templateName;
@@ -140,7 +140,9 @@ public class EpadTemplate extends AbstractDAO {
 		return id;
 	}
 
-	
+	public void setId(long id) {
+		this.id = id;
+	}
 
 	public String getTemplateLevelType() {
 		return templateLevelType;
@@ -287,7 +289,7 @@ public class EpadTemplate extends AbstractDAO {
 	}
 
 
-	public final static String DBTABLE = "epad_file";
+	public final static String DBTABLE = "template";
 	public final static String[][] DBCOLUMNS = {
         {"id","long","id","Id"},
         {"templateLevelType","String","templateLevelType","varchar"},
