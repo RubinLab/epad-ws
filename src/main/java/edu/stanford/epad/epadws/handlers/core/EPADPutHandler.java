@@ -715,94 +715,98 @@ public class EPADPutHandler
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.TEMPLATE, pathInfo)) {
 				ProjectReference reference = ProjectReference.extract(ProjectsRouteTemplates.TEMPLATE, pathInfo);
 				Map<String, String> templateMap = HandlerUtil.getTemplateMap(ProjectsRouteTemplates.TEMPLATE, pathInfo);
-				String templatename = HandlerUtil.getTemplateParameter(templateMap, "templatename");
-				log.info("recieved templatename="+templatename);
+				String templatecode = HandlerUtil.getTemplateParameter(templateMap, "templatecode");
+				log.info("recieved templatecode="+templatecode);
 				log.info("recieved project="+reference.projectID);
 				String enable = httpRequest.getParameter("enable");
 				if (enable != null)
 				{
-					EpadFile efile = projectOperations.getEpadFile(reference.projectID, null, null, null, templatename);
-					if (efile != null && "true".equalsIgnoreCase(enable))
-					{
-						log.info("enabling project");
-						//it is found with project reference, change the actual file tuple
-						projectOperations.enableFile(username, reference.projectID, null, null, null, templatename);
-						//also add to the project_template
-						projectOperations.enableTemplate(username, reference.projectID, null, null, null, templatename);
-					}
-					else if (efile != null && "false".equalsIgnoreCase(enable))
-					{	
-						log.info("disabling project");
-						//also add to the disabled_template
-						projectOperations.disableTemplate(username, reference.projectID, null, null, null, templatename);
-						
-						//it is found with project reference, change the actual file tuple. if not all project!
-						if (!reference.projectID.equals(EPADConfig.xnatUploadProjectID))
-							projectOperations.disableFile(username, reference.projectID, null, null, null, templatename);
-						else
-							//we need to check for other projects first
-							if (projectOperations.getProjectsForTemplate(templatename).isEmpty())
-								projectOperations.disableFile(username, reference.projectID, null, null, null, templatename);
-							
-						
-					}
-					if (efile == null) {
-						efile = projectOperations.getEpadFile(EPADConfig.xnatUploadProjectID, null, null, null, templatename);
-						//check if it is in upload project(all)
-						if (efile != null && "true".equalsIgnoreCase(enable))
-						{
-							log.info("enabling all project");
-							//enable the file
-							projectOperations.enableFile(username, EPADConfig.xnatUploadProjectID, null, null, null, templatename);
-							//enable for this project
-							projectOperations.enableTemplate(username, reference.projectID, null, null, null, templatename);
-						}
-						else if (efile != null && "false".equalsIgnoreCase(enable))
-						{	
-							log.info("disabling all project");
-							projectOperations.disableTemplate(username, reference.projectID, null, null, null, templatename);
-							
-							//disable the file, what if others are still enabled. 
-							//we need to check for other projects first
-							if (projectOperations.getProjectsForTemplate(templatename).isEmpty())
-								projectOperations.disableFile(username, EPADConfig.xnatUploadProjectID, null, null, null, templatename);
-							
-						}
-						//not a record in the epad-file, we do not support this after 2.2, leaving as is just in case
-						if (efile == null && "true".equalsIgnoreCase(enable))
-						{
-							log.info("enabling project for no rec");
-							projectOperations.enableTemplate(username, reference.projectID, null, null, null, templatename);
-						}
-						else if (efile == null && "false".equalsIgnoreCase(enable))
-						{	
-							log.info("disabling project for no rec");
-							projectOperations.disableTemplate(username, reference.projectID, null, null, null, templatename);
-						}
-					}
+					boolean enableB = "true".equalsIgnoreCase(enable);
+					projectOperations.setProjectTemplate(username, reference.projectID, templatecode, enableB);
+					//just setting the template not modifying the file
+//					EpadFile efile = projectOperations.getEpadFile(reference.projectID, null, null, null, templatename);
+//					if (efile != null && "true".equalsIgnoreCase(enable))
+//					{
+//						log.info("enabling project");
+//						//it is found with project reference, change the actual file tuple
+//						projectOperations.enableFile(username, reference.projectID, null, null, null, templatename);
+//						//also add to the project_template
+//						projectOperations.enableTemplate(username, reference.projectID, null, null, null, templatename);
+//					}
+//					else if (efile != null && "false".equalsIgnoreCase(enable))
+//					{	
+//						log.info("disabling project");
+//						//also add to the disabled_template
+//						projectOperations.disableTemplate(username, reference.projectID, null, null, null, templatename);
+//						
+//						//it is found with project reference, change the actual file tuple. if not all project!
+//						if (!reference.projectID.equals(EPADConfig.xnatUploadProjectID))
+//							projectOperations.disableFile(username, reference.projectID, null, null, null, templatename);
+//						else
+//							//we need to check for other projects first
+//							if (projectOperations.getProjectsForTemplate(templatename).isEmpty())
+//								projectOperations.disableFile(username, reference.projectID, null, null, null, templatename);
+//							
+//						
+//					}
+//					if (efile == null) {
+//						efile = projectOperations.getEpadFile(EPADConfig.xnatUploadProjectID, null, null, null, templatename);
+//						//check if it is in upload project(all)
+//						if (efile != null && "true".equalsIgnoreCase(enable))
+//						{
+//							log.info("enabling all project");
+//							//enable the file
+//							projectOperations.enableFile(username, EPADConfig.xnatUploadProjectID, null, null, null, templatename);
+//							//enable for this project
+//							projectOperations.enableTemplate(username, reference.projectID, null, null, null, templatename);
+//						}
+//						else if (efile != null && "false".equalsIgnoreCase(enable))
+//						{	
+//							log.info("disabling all project");
+//							projectOperations.disableTemplate(username, reference.projectID, null, null, null, templatename);
+//							
+//							//disable the file, what if others are still enabled. 
+//							//we need to check for other projects first
+//							if (projectOperations.getProjectsForTemplate(templatename).isEmpty())
+//								projectOperations.disableFile(username, EPADConfig.xnatUploadProjectID, null, null, null, templatename);
+//							
+//						}
+//						//not a record in the epad-file, we do not support this after 2.2, leaving as is just in case
+//						if (efile == null && "true".equalsIgnoreCase(enable))
+//						{
+//							log.info("enabling project for no rec");
+//							projectOperations.enableTemplate(username, reference.projectID, null, null, null, templatename);
+//						}
+//						else if (efile == null && "false".equalsIgnoreCase(enable))
+//						{	
+//							log.info("disabling project for no rec");
+//							projectOperations.disableTemplate(username, reference.projectID, null, null, null, templatename);
+//						}
+//					}
 				}
-				else if (httpRequest.getParameter("addToProject") != null)
-				{
-					Project project = projectOperations.getProject(httpRequest.getParameter("addToProject"));
-					if (project == null)
-						throw new Exception("Project " + httpRequest.getParameter("addToProject") + " not found");
-					EpadFile efile = projectOperations.getEpadFile(reference.projectID, null, null, null, templatename);
-					if (efile != null)
-					{
-						projectOperations.linkFileToProject(username, project, efile);
-					}
-				}
-				else if (httpRequest.getParameter("removeFromProject") != null)
-				{
-					Project project = projectOperations.getProject(httpRequest.getParameter("addToProject"));
-					if (project == null)
-						throw new Exception("Project " + httpRequest.getParameter("addToProject") + " not found");
-					EpadFile efile = projectOperations.getEpadFile(reference.projectID, null, null, null, templatename);
-					if (efile != null)
-					{
-						projectOperations.unlinkFileFromProject(username, project, efile);
-					}
-				}
+				//not documented or used. see if there is any reference from ui
+//				else if (httpRequest.getParameter("addToProject") != null)
+//				{
+//					Project project = projectOperations.getProject(httpRequest.getParameter("addToProject"));
+//					if (project == null)
+//						throw new Exception("Project " + httpRequest.getParameter("addToProject") + " not found");
+//					EpadFile efile = projectOperations.getEpadFile(reference.projectID, null, null, null, templatename);
+//					if (efile != null)
+//					{
+//						projectOperations.linkFileToProject(username, project, efile);
+//					}
+//				}
+//				else if (httpRequest.getParameter("removeFromProject") != null)
+//				{
+//					Project project = projectOperations.getProject(httpRequest.getParameter("addToProject"));
+//					if (project == null)
+//						throw new Exception("Project " + httpRequest.getParameter("addToProject") + " not found");
+//					EpadFile efile = projectOperations.getEpadFile(reference.projectID, null, null, null, templatename);
+//					if (efile != null)
+//					{
+//						projectOperations.unlinkFileFromProject(username, project, efile);
+//					}
+//				}
 				else
 				{
 					if (uploadedFile != null)

@@ -116,7 +116,8 @@ public class ProjectToTemplate extends AbstractDAO {
 	private static final long serialVersionUID = 1L;
 	long id;
 	long projectId;
-	String templateName;
+	long templateId;
+	boolean enabled;
 	String creator;
 	Date createdTime;
 	Date updateTime;
@@ -138,12 +139,20 @@ public class ProjectToTemplate extends AbstractDAO {
 		this.projectId = projectId;
 	}
 
-	public String getTemplateName() {
-		return templateName;
+	public long getTemplateId() {
+		return templateId;
 	}
 
-	public void setTemplateName(String templateName) {
-		this.templateName = templateName;
+	public void setTemplateId(long templateId) {
+		this.templateId = templateId;
+	}
+
+	public boolean isEnabled() {
+		return enabled;
+	}
+
+	public void setEnabled(boolean enabled) {
+		this.enabled = enabled;
 	}
 
 	public String getCreator() {
@@ -174,7 +183,8 @@ public class ProjectToTemplate extends AbstractDAO {
 	public final static String[][] DBCOLUMNS = {
         {"id","long","id","Id"},
         {"projectId","long","project_id","integer"},
-        {"templateName","String","templatename","varchar"},
+        {"templateId","long","template_id","integer"},
+        {"enabled","boolean","enabled","bit"},
         {"creator","String","creator","varchar"},
         {"createdTime","Date","createdtime","timestamp"},
         {"updateTime","Date","updatetime","timestamp"},	

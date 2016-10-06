@@ -129,6 +129,7 @@ import edu.stanford.epad.dtos.EPADStudy;
 import edu.stanford.epad.dtos.EPADStudyList;
 import edu.stanford.epad.dtos.EPADSubject;
 import edu.stanford.epad.dtos.EPADSubjectList;
+import edu.stanford.epad.dtos.EPADTemplateContainer;
 import edu.stanford.epad.dtos.EPADTemplateContainerList;
 import edu.stanford.epad.dtos.EPADUsageList;
 import edu.stanford.epad.dtos.EPADUser;
@@ -147,6 +148,7 @@ import edu.stanford.epad.epadws.handlers.core.SeriesReference;
 import edu.stanford.epad.epadws.handlers.core.StudyReference;
 import edu.stanford.epad.epadws.handlers.core.SubjectReference;
 import edu.stanford.epad.epadws.models.ProjectType;
+import edu.stanford.epad.epadws.models.Template;
 import edu.stanford.epad.epadws.security.EPADSession;
 
 /**
@@ -1581,4 +1583,13 @@ public interface EpadOperations
 	 */
 	EPADTemplateContainerList getTemplateDescriptions(String username, String sessionID, String templateLevelFilter,
 			boolean includeSystemTemplates) throws Exception;
+
+	
+	/**
+	 * create a template container using the db tuple for template
+	 * @param t
+	 * @return
+	 * @throws Exception
+	 */
+	EPADTemplateContainer dbtemplate2Container(Template t) throws Exception;
 }

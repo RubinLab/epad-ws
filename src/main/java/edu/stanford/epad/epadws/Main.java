@@ -491,18 +491,18 @@ public class Main
 
 	private static void checkTemplateProjectRel(){
 		try {
-			if (new ProjectToTemplate().getCount("")<=0) {
-				log.info("No project-template relation. Constructing the table using epad-file");
-				List<EpadFile> templates= new EpadFile().getObjects("filetype = '" + FileType.TEMPLATE.getName() + "'");
-				for(EpadFile t:templates) {
-					log.info("Adding project(id):"+t.getProjectId()+ " template:" +t.getName());
-					ProjectToTemplate pt = new ProjectToTemplate();
-					pt.setProjectId(t.getProjectId());
-					pt.setTemplateName(t.getName());
-					pt.setCreator("admin");
-					pt.save();
-				}
-			}
+//			if (new ProjectToTemplate().getCount("")<=0) {
+//				log.info("No project-template relation. Constructing the table using epad-file");
+//				List<EpadFile> templates= new EpadFile().getObjects("filetype = '" + FileType.TEMPLATE.getName() + "'");
+//				for(EpadFile t:templates) {
+//					log.info("Adding project(id):"+t.getProjectId()+ " template:" +t.getName());
+//					ProjectToTemplate pt = new ProjectToTemplate();
+//					pt.setProjectId(t.getProjectId());
+//					pt.setTemplateName(t.getName());
+//					pt.setCreator("admin");
+//					pt.save();
+//				}
+//			}
 		} catch (Exception e) {
 			log.warning("Couldn't get project template relation,",e);
 		}

@@ -157,7 +157,7 @@ public class ProjectsRouteTemplates
 //	public static final String USER_SUBJECT = USER + "/subjects/{subjectID}";
 //	public static final String USER_STUDY = USER + "/studies/{studyUID}";
 	public static final String TEMPLATE_LIST = PROJECT + "/templates/";
-	public static final String TEMPLATE = PROJECT + "/templates/{templatename}";
+	public static final String TEMPLATE = PROJECT + "/templates/{templatecode}";
 	public static final String PLUGIN_LIST = PROJECT + "/plugins/";
 	public static final String PLUGIN = PLUGIN_LIST + "{pluginid}";
 	public static final String PARAMETER_LIST = PLUGIN + "/parameters/";

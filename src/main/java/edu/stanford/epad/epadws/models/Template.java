@@ -109,7 +109,7 @@ import java.util.Date;
 
 import edu.stanford.epad.epadws.models.dao.AbstractDAO;
 
-public class EpadTemplate extends AbstractDAO {
+public class Template extends AbstractDAO {
 
 	/**
 	 * 

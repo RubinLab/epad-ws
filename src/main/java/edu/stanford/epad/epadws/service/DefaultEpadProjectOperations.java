@@ -157,6 +157,7 @@ import edu.stanford.epad.epadws.models.RemotePACQuery;
 import edu.stanford.epad.epadws.models.ReviewerToReviewee;
 import edu.stanford.epad.epadws.models.Study;
 import edu.stanford.epad.epadws.models.Subject;
+import edu.stanford.epad.epadws.models.Template;
 import edu.stanford.epad.epadws.models.User;
 import edu.stanford.epad.epadws.models.UserRole;
 import edu.stanford.epad.epadws.models.WorkList;
@@ -181,7 +182,8 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 	private static Map<String, Project> projectCache = new HashMap<String, Project>();
 	private static Map<String, User> userCache = new HashMap<String, User>();
 	private static Map<String, Subject> subjectCache = new HashMap<String, Subject>();
-
+	private static Map<String, Template> templateCache = new HashMap<String, Template>();
+	
 	private DefaultEpadProjectOperations()
 	{
 	}
@@ -199,6 +201,7 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		projectCache = new HashMap<String, Project>();
 		userCache = new HashMap<String, User>();
 		subjectCache = new HashMap<String, Subject>();
+		templateCache = new HashMap<String, Template>();
 	}
 	
 	@Override
@@ -1212,6 +1215,17 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		return efile;
 	}
 
+	
+	@Override
+	public Template getTemplate(String templateCode) throws Exception {
+		Template template = templateCache.get(templateCode);
+		if (template != null)
+			return template;
+		template = new Template();
+		template = (Template) template.getObject("templateCode = " + template.toSQL(templateCode));
+		return template;
+	}
+	
 	/* (non-Javadoc)
 	 * @see edu.stanford.epad.epadws.service.EpadProjectOperations#getProject(java.lang.String)
 	 */
@@ -2179,6 +2193,8 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		efile.save();
 	}
 
+	
+	//TODO old version. keeping for compatibility but not good.
 	@Override
 	public void enableTemplate(String loggedInUser, String projectID,
 			String subjectUID, String studyUID, String seriesUID,
@@ -2187,16 +2203,10 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		if (project == null)
 			throw new Exception("Project not found");
 		new DisabledTemplate().deleteObjects("project_id = " + project.getId() + " and templatename=" + DisabledTemplate.toSQL(templateName));
-		//add to project_template relation. starting with 2.3
-		ProjectToTemplate pt = new ProjectToTemplate();
-		pt.setProjectId(project.getId());
-		pt.setTemplateName(templateName);
-		pt.setCreator(loggedInUser);
-		pt.save();
 	}
-
 	
 	
+	//TODO old version. keeping for compatibility but not good.
 	@Override
 	public void disableTemplate(String loggedInUser, String projectID,
 			String subjectUID, String studyUID, String seriesUID,
@@ -2208,10 +2218,30 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		dt.setProjectId(project.getId());
 		dt.setTemplateName(templateName);
 		dt.setCreator(loggedInUser);
-		dt.save();
-		//remove from project template relation
-		new ProjectToTemplate().deleteObjects("project_id = " + project.getId() + " and templatename=" + DisabledTemplate.toSQL(templateName));
+		dt.save();	
+	}
+	
+	
+	//starting with 2.3
+	@Override
+	public void setProjectTemplate(String loggedInUser, String projectID,
+			String templateCode, boolean enable) throws Exception {
+		Project project = getProject(projectID);
+		if (project == null)
+			throw new Exception("Project not found");
+		Template template = getTemplate(templateCode);
+		if (template == null)
+			throw new Exception("Template not found");
 		
+		
+		ProjectToTemplate pt = (ProjectToTemplate) new ProjectToTemplate().getObject("project_id = " + project.getId() + " and template_id=" + template.getId());
+		if (pt==null) {
+			pt= new ProjectToTemplate();
+			pt.setProjectId(project.getId());
+			pt.setTemplateId(template.getId());
+		}
+		pt.setEnabled(enable);
+		pt.save();
 	}
 
 	@Override
@@ -2245,8 +2275,17 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 	}
 	
 	@Override
-	public List<Long> getProjectsForTemplate(String templateName) throws Exception {
-		List<ProjectToTemplate> pts = new ProjectToTemplate().getObjects("templatename=" + ProjectToTemplate.toSQL(templateName));
+	public List<Long> getProjectsForTemplate(long templateId) throws Exception {
+		List<ProjectToTemplate> pts = new ProjectToTemplate().getObjects("template_id=" + templateId + " and enabled=true");
+		List<Long> projects = new ArrayList<Long>();
+		for (ProjectToTemplate pt: pts)
+			projects.add(pt.getProjectId());
+		return projects;
+	}
+	
+	@Override
+	public List<Long> getDisabledProjectsForTemplate(long templateId) throws Exception {
+		List<ProjectToTemplate> pts = new ProjectToTemplate().getObjects("template_id=" + templateId + " and enabled=false");
 		List<Long> projects = new ArrayList<Long>();
 		for (ProjectToTemplate pt: pts)
 			projects.add(pt.getProjectId());
