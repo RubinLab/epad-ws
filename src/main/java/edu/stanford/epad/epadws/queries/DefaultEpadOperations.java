@@ -160,6 +160,7 @@ import edu.stanford.epad.dtos.EPADImageList;
 import edu.stanford.epad.dtos.EPADObjectList;
 import edu.stanford.epad.dtos.EPADProject;
 import edu.stanford.epad.dtos.EPADProjectList;
+import edu.stanford.epad.dtos.EPADProjectTemplate;
 import edu.stanford.epad.dtos.EPADSeries;
 import edu.stanford.epad.dtos.EPADSeriesList;
 import edu.stanford.epad.dtos.EPADStudy;
@@ -2293,13 +2294,6 @@ public class DefaultEpadOperations implements EpadOperations
 		return getTemplateDescriptions(username, sessionID, templateLevelFilter, false);
 	}
 
-
-	//get templates for this project
-
-
-	//get templates for the all project
-	//check each to see if disabled for this project
-
 	@Override
 	public EPADTemplateContainer dbtemplate2Container(Template t) throws Exception {
 		List<EPADTemplate> epadTmpls = new ArrayList<EPADTemplate>();
@@ -2341,7 +2335,7 @@ public class DefaultEpadOperations implements EpadOperations
 		//new method. use templates table. version 2.3
 		if (dbTemplates!=null && !dbTemplates.isEmpty()) {
 			for (Template t: dbTemplates) {
-				Set<String> userProjects = new HashSet<String>();
+				Set<EPADProjectTemplate> userProjects = new HashSet<EPADProjectTemplate>();
 
 				//for each create the EPADTemplate and EPADTemplateContainer
 				EPADTemplateContainer template = dbtemplate2Container(t);
@@ -2355,34 +2349,45 @@ public class DefaultEpadOperations implements EpadOperations
 						if (projectOperations.hasAccessToProject(username, project.getProjectId())
 								|| project.getProjectId().equals(EPADConfig.xnatUploadProjectID))
 						{
-							userProjects.add(project.getProjectId());
+							String defTemplate = null;
+							boolean defaultTemplate=false;
+							Project userProj = projectOperations.getProjectForUser(username, project.getProjectId());
+							if (userProj != null)
+								defTemplate = userProj.getDefaultTemplate();
+							if (t.getTemplateCode().equals(defTemplate))
+								defaultTemplate = true;
+							EPADProjectTemplate pt=new EPADProjectTemplate(project.getProjectId(), projectOperations.getProjectTemplate(username, project.getProjectId(), t.getTemplateCode()), defaultTemplate);
+									
+							userProjects.add(pt);
 						}
 					}
 
 
 					//default template? for what should be related to project.
+					
 
 					//disabled templates get them and remove from user projects
-					List<Long> disabledProjects = projectOperations.getDisabledProjectsForTemplate(t.getId());
-					for (Long pId:disabledProjects) {
-						Project project = (Project) projectOperations.getDBObject(Project.class, pId);
-						userProjects.remove(project.getProjectId());
-					}
+					//is done for project
+//					List<Long> disabledProjects = projectOperations.getDisabledProjectsForTemplate(t.getId());
+//					for (Long pId:disabledProjects) {
+//						Project project = (Project) projectOperations.getDBObject(Project.class, pId);
+//						userProjects.remove(project.getProjectId());
+//					}
 
 
 					//??? it is related to project!!
 					//				boolean enabled = efile.isEnabled();
 					//				template.enabled = enabled;
 
-					template.projectIDs=new ArrayList<String>();
-					template.projectIDs.addAll(userProjects);
+					template.projectTemplates=new ArrayList<EPADProjectTemplate>();
+					template.projectTemplates.addAll(userProjects);
 					//if there are project-template records we do not care about the file tuple anymore
 					//it is ignoring the file projectid
 					//we need a way to put the projectid initially. it is in main
 
 					//just to put smt for ui. should be removed
-					if (template.projectIDs!=null && !template.projectIDs.isEmpty())
-						template.projectID=template.projectIDs.get(0);
+					if (template.projectTemplates!=null && !template.projectTemplates.isEmpty())
+						template.projectID=template.projectTemplates.get(0).projectID;
 					fileList.addTemplate(template);
 
 				}
@@ -2685,19 +2690,44 @@ public class DefaultEpadOperations implements EpadOperations
 			String username, String sessionID, String templateLevelFilter) throws Exception {
 		EPADTemplateContainerList fileList=getTemplateDescriptions(username, sessionID, templateLevelFilter);
 		EPADTemplateContainerList templates=new EPADTemplateContainerList();
+		boolean isInAllProject=false;
 		for (EPADTemplateContainer t:fileList.ResultSet.Result){
-			log.info("template "+ t.fileName+ " pid:"+t.projectID+" pids:"+t.projectIDs.size() + " contains:"+t.projectIDs.contains(projectID));
-
-			if ((t.projectID!=null && t.projectID.equalsIgnoreCase(projectID)) || (t.projectIDs!=null && t.projectIDs.contains(projectID))){
-				log.info("adding template "+ t.fileName);
+			if (t.projectTemplates!=null) {
+				log.info("template "+ t.fileName+ " pid:"+t.projectID+" pids:"+t.projectTemplates.size() );
+				for (EPADProjectTemplate pt: t.projectTemplates) {
+					if (pt.projectID.equalsIgnoreCase(projectID)) {
+						log.info("adding template "+ t.templateCode);
+						templates.addTemplate(t);
+						
+					}
+					if (pt.projectID.equals(EPADConfig.xnatUploadProjectID)) {
+						
+						isInAllProject=true;
+					}
+				}
+			}
+			else if ((t.projectID!=null && t.projectID.equalsIgnoreCase(projectID))){
+				log.info("adding template "+ t.templateCode);
 
 				templates.addTemplate(t);
 			}
 			//if the template's project is all project and template is not disabled for this project
-			else if (t.projectID.equals(EPADConfig.xnatUploadProjectID)) {
+			if (isInAllProject) {
 				List<String> disabledTemplatesNames = projectOperations.getDisabledTemplates(projectID);
-				if (!(disabledTemplatesNames.contains(t.fileName) || disabledTemplatesNames.contains(t.templateName) || disabledTemplatesNames.contains(t.templateCode)))
-					templates.addTemplate(t);
+				log.info("disbled template count for project:"+disabledTemplatesNames.size());
+				//can keep the same it is using templatecode (starting 2.3)
+				if (!(disabledTemplatesNames.contains(t.fileName) || disabledTemplatesNames.contains(t.templateName) || disabledTemplatesNames.contains(t.templateCode))){
+					log.info("template "+ t.templateCode+ "is not disabled");
+					if (!templates.ResultSet.Result.contains(t)){ 
+						log.info("adding template "+ t.templateCode);
+						templates.addTemplate(t);
+					}
+				}else {
+					log.info("removing template "+ t.templateCode);
+					templates.ResultSet.Result.remove(t);
+					templates.ResultSet.totalRecords--;
+				}
+					
 			}
 
 

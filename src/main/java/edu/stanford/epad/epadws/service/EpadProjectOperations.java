@@ -1081,7 +1081,7 @@ public interface EpadProjectOperations {
 	List<Study> getStudiesOlderThanDays(Integer days) throws Exception;
 	
 	/**
-	 * get projects for a specific template
+	 * get all projects for a specific template
 	 * @param templateid
 	 * @return a list of project ids
 	 * @throws Exception
@@ -1115,6 +1115,24 @@ public interface EpadProjectOperations {
 	 * @throws Exception
 	 */
 	List<Long> getDisabledProjectsForTemplate(long templateId) throws Exception;
+	
+	/**
+	 * get the current enable/disable status
+	 * @param loggedInUser
+	 * @param projectID
+	 * @param templateCode
+	 * @return
+	 * @throws Exception
+	 */
+	boolean getProjectTemplate(String loggedInUser, String projectID, String templateCode) throws Exception;
+	
+	/**
+	 * get enabled projects for a specific template
+	 * @param templateId
+	 * @return
+	 * @throws Exception
+	 */
+	List<Long> getEnabledProjectsForTemplate(long templateId) throws Exception;
 	
 	
 }

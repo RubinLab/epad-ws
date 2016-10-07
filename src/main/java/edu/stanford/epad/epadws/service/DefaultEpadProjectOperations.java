@@ -2243,6 +2243,21 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		pt.setEnabled(enable);
 		pt.save();
 	}
+	
+	@Override
+	public boolean getProjectTemplate(String loggedInUser, String projectID,
+			String templateCode) throws Exception {
+		Project project = getProject(projectID);
+		if (project == null)
+			throw new Exception("Project not found");
+		Template template = getTemplate(templateCode);
+		if (template == null)
+			throw new Exception("Template not found");
+		
+		
+		ProjectToTemplate pt = (ProjectToTemplate) new ProjectToTemplate().getObject("project_id = " + project.getId() + " and template_id=" + template.getId());
+		return pt.isEnabled();
+	}
 
 	@Override
 	public EpadFile updateEpadFile(long fileID, String filename,
@@ -2267,15 +2282,22 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		Project project = getProject(projectID);
 		if (project == null)
 			throw new Exception("Project not found");
-		List<DisabledTemplate> dts = new DisabledTemplate().getObjects("project_id=" + project.getId());
-		List<String> templateNames = new ArrayList<String>();
-		for (DisabledTemplate dt: dts)
-			templateNames.add(dt.getTemplateName());
-		return templateNames;
+		
+		List<ProjectToTemplate> dts = new ProjectToTemplate().getObjects("project_id = " + project.getId() + " and enabled=false");
+		List<String> templateCodes = new ArrayList<String>();
+		for (ProjectToTemplate dt: dts) {
+			Template t=(Template) getDBObject(Template.class, dt.getTemplateId());
+			if (t == null)
+				throw new Exception("Template not found");
+			
+			templateCodes.add(t.getTemplateCode());
+		}
+		return templateCodes;
+		
 	}
 	
 	@Override
-	public List<Long> getProjectsForTemplate(long templateId) throws Exception {
+	public List<Long> getEnabledProjectsForTemplate(long templateId) throws Exception {
 		List<ProjectToTemplate> pts = new ProjectToTemplate().getObjects("template_id=" + templateId + " and enabled=true");
 		List<Long> projects = new ArrayList<Long>();
 		for (ProjectToTemplate pt: pts)
@@ -2283,6 +2305,14 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		return projects;
 	}
 	
+	@Override
+	public List<Long> getProjectsForTemplate(long templateId) throws Exception {
+		List<ProjectToTemplate> pts = new ProjectToTemplate().getObjects("template_id=" + templateId );
+		List<Long> projects = new ArrayList<Long>();
+		for (ProjectToTemplate pt: pts)
+			projects.add(pt.getProjectId());
+		return projects;
+	}
 	@Override
 	public List<Long> getDisabledProjectsForTemplate(long templateId) throws Exception {
 		List<ProjectToTemplate> pts = new ProjectToTemplate().getObjects("template_id=" + templateId + " and enabled=false");
