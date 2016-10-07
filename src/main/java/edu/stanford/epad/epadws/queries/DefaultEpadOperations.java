@@ -1791,7 +1791,8 @@ public class DefaultEpadOperations implements EpadOperations
 				}
 				//read the file and extract a template object, it will be completed and saved after the file is created 
 				template = getFirstTemplateInfo(uploadedFile);
-
+				if (templateExists(template.getTemplateCode()))
+					throw new Exception("Invalid Template code "+ template.getTemplateCode() +" already exists in the system ");
 				//read the xml to find out the template type and put it in description
 				//not used
 				//templateLevelType=getTemplateLevelType(uploadedFile);
@@ -1857,6 +1858,25 @@ public class DefaultEpadOperations implements EpadOperations
 				(new Thread(new DSOEvaluationTask(username, projectID, subjectID, studyID, seriesID, filename))).start();
 			}
 		}
+	}
+
+	private boolean templateExists(String templateCode) throws Exception {
+		List<Template> templates=new Template().getObjects("LOWER(templateCode)='"+ templateCode.toLowerCase() +"'");
+		if (templates!=null && !templates.isEmpty())
+			return true;
+		return false;
+	}
+	
+	private List<Template> getTemplates(String templateCode) throws Exception {
+		List<Template> templates=new Template().getObjects("LOWER(templateCode)='"+ templateCode.toLowerCase() +"'");
+		if (templates!=null && !templates.isEmpty())
+			return templates;
+		return null;
+	}
+	
+	private Template getTemplate(String templateCode) throws Exception {
+		Template template=(Template) new Template().getObject("LOWER(templateCode)='"+ templateCode.toLowerCase() +"'");
+		return template;
 	}
 
 	private Template getFirstTemplateInfo(File templateFile)
@@ -2324,16 +2344,38 @@ public class DefaultEpadOperations implements EpadOperations
 		for (EpadFile efile: efiles)
 		{
 			File tfile = new File(EPADConfig.getEPADWebServerResourcesDir() + getEpadFilePath(efile));
-		
 			Template template = getFirstTemplateInfo(tfile);
-			template.setFileId(efile.getId());
-			template.save();
-			log.info("template db entry is created for template="+template.getTemplateName());
+			if (template.getTemplateCode()==null) {
+				log.warning("Template code couldn't be retrieved. Skipping file");
+				continue;
+			}
+			Template existingTemplate=getTemplate(template.getTemplateCode());
+			if (existingTemplate!=null){
+				//two different possibilities; either the user uploaded same file to different projects or uses the same code
+				EpadFile ef=(EpadFile)projectOperations.getDBObject(EpadFile.class, existingTemplate.getFileId());
+				
+				
+				//if same file just remove the extras and put the project relations
+				if (efile.getName().equals(ef.getName()) && efile.getLength()==ef.getLength() && !efile.getProjectId().equals(ef.getProjectId()) ) {
+					log.info("same file for template="+template.getTemplateName() +" just putting the project relation");
+				}
+				//if same code for different files put it in the log
+				else {
+					Project project= (Project) projectOperations.getDBObject(Project.class, efile.getProjectId());
+					projectOperations.createEventLog("admin", project.getProjectId(), null, null, null, null, null, efile.getName(), "The same template code cannot be used for different templates code saved as "+ template.getTemplateCode()+"-2", template.getTemplateCode(), true);
+					template.setTemplateCode(template.getTemplateCode()+"-2");
+					template.setFileId(efile.getId());
+					template.save();
+					log.info("template db entry is created for template="+template.getTemplateName() + " as " + template.getTemplateCode());
+				}
+				
+			}else {
+				template.setFileId(efile.getId());
+				template.save();
+				log.info("template db entry is created for template="+template.getTemplateName() + " as " + template.getTemplateCode());
+			}
 			Project project= (Project) projectOperations.getDBObject(Project.class, efile.getProjectId());
-			
 			projectOperations.setProjectTemplate("admin", project.getProjectId(), template.getTemplateCode(), efile.isEnabled());
-			
-			
 			
 		}
 		
@@ -2343,7 +2385,6 @@ public class DefaultEpadOperations implements EpadOperations
 			for (DisabledTemplate dt:dts) {
 				//it was actually file name but the if check uses filename,templatename and templateCode so lets check all
 				//if (disabledTemplatesNames.contains(template.fileName) || disabledTemplatesNames.contains(template.templateName) || disabledTemplatesNames.contains(template.templateCode))
-				
 				for (EpadFile efile: efiles)
 				{
 					File tfile = new File(EPADConfig.getEPADWebServerResourcesDir() + getEpadFilePath(efile));

@@ -25,6 +25,7 @@ creator varchar(128),
 createdtime timestamp,
 updatetime timestamp,
 PRIMARY KEY (id),
+UNIQUE (templateCode),
 KEY FK_template_file (file_id),
 CONSTRAINT FK_template_file FOREIGN KEY (file_id) REFERENCES epad_file(id)) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
