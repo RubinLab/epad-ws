@@ -816,7 +816,7 @@ public class PluginOperations {
 		return dbTemplate;
 	}
 	
-	public String createLocalPlugin(String jarFile,String descFile,String templateFile,String className, boolean processMultipleAims, String name, boolean overwrite) {
+	public String createLocalPlugin(String jarFile,String descFile,String templateFile,String className, boolean processMultipleAims, String name, boolean overwrite, String matlabJarFile) {
 		String sessionID="";
 		String pluginName="";
 		String templateId=null;
@@ -937,6 +937,13 @@ public class PluginOperations {
 				File jar=new File(jarFile);
 				File dest=new File(EPADConfig.getEPADWebServerBaseDir()+"lib/plugins/"+jar.getName());
 				FileUtils.copyFile(jar,dest);
+			}
+			
+			//no checks with matlab file, just copy
+			if (matlabJarFile!=null) {
+				File matlabJar=new File(matlabJarFile);
+				File dest=new File(EPADConfig.getEPADWebServerBaseDir()+"lib/plugins/"+matlabJar.getName());
+				FileUtils.copyFile(matlabJar,dest);
 			}
 			
 			//create plugin if not overwrite
@@ -1089,6 +1096,7 @@ public class PluginOperations {
 		System.out.println("This script analyses the input files and creates a plugin, uploads the template and the parameter files if exists and copies the jar to plugins directory");
 		System.out.println("Parameters");
 		System.out.println("\t-j \tJar file full path");
+		System.out.println("\t-mj \tMatlab Jar file full path");
 		System.out.println("\t-t \tTemplate file full path");
 		System.out.println("\t-p \tParameter file full path");
 		System.out.println("\t-c \tClass name (including the package name, case sensitive). If you do not specify we try extracting from the jar file");
@@ -1101,7 +1109,7 @@ public class PluginOperations {
 		System.out.println("Creating plugin");
 		System.out.println("./plugin-manager.sh -j ~/myplugin-1.1.jar -t /root/myplugin/myplugin-template.xml \n\t: extracts all information from the files");
 		System.out.println("./plugin-manager.sh -j ~/myplugin-1.1.jar -t /root/myplugin/myplugin-template.xml -c edu.stanford.epad.plugins.myplugin.MyPluginHandler -m false -n myplugin  \n\t: more detailed parameters, manager checks if they match");
-		System.out.println("./plugin-manager.sh -j ~/myplugin-1.1.jar -t /root/myplugin/myplugin-template.xml -o \n\t: overwrite the plugin with new information extracted from the files");
+		System.out.println("./plugin-manager.sh -j ~/myplugin-1.1.jar -mj ~/myplugin-matlab-1.1.jar -t /root/myplugin/myplugin-template.xml -o \n\t: overwrite the plugin with new information extracted from the files");
 		System.out.println("Adding parameters");
 		System.out.println("./plugin-manager.sh -p /root/myplugin/myplugin-parameters.xml -n myplugin -o \n\t: adds the parameters in the file to the plugin, deletes all existing and adds from scratch");
 
@@ -1116,6 +1124,7 @@ public class PluginOperations {
 		
 		
 		String jarFile=null;
+		String matlabJarFile=null;
 		String descFile=null;
 		String templateFile=null;
 		String className=null;
@@ -1129,6 +1138,9 @@ public class PluginOperations {
 			switch (argv[i]) {
 			case "-j":
 				jarFile=getValue(argv,i+1);
+				break;
+			case "-mj":
+				matlabJarFile=getValue(argv,i+1);
 				break;
 			case "-p":
 				descFile=getValue(argv,i+1);
@@ -1161,7 +1173,7 @@ public class PluginOperations {
 		}
 
 		PluginOperations po=new PluginOperations();
-		String resultMsg=po.createLocalPlugin(jarFile, descFile, templateFile, className, processMultipleAims, name,overwrite);
+		String resultMsg=po.createLocalPlugin(jarFile, descFile, templateFile, className, processMultipleAims, name,overwrite, matlabJarFile);
 		System.out.println(resultMsg);
 	}
 
