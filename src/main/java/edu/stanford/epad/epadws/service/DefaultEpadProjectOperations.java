@@ -2242,6 +2242,16 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		}
 		pt.setEnabled(enable);
 		pt.save();
+		
+		
+		//get file info, if the project is the same set enabled of the file
+		EpadFile f=(EpadFile) getDBObject(EpadFile.class, template.getFileId());
+		if (f.getProjectId()==project.getId()) {
+			f.setEnabled(enable);
+			f.save();
+		}
+		
+		
 	}
 	
 	@Override
@@ -2278,7 +2288,7 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 	}
 
 	@Override
-	public List<String> getDisabledTemplates(String projectID) throws Exception {
+	public List<String> getDisabledTemplateCodes(String projectID) throws Exception {
 		Project project = getProject(projectID);
 		if (project == null)
 			throw new Exception("Project not found");
@@ -2293,6 +2303,25 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 			templateCodes.add(t.getTemplateCode());
 		}
 		return templateCodes;
+		
+	}
+	
+	@Override
+	public List<String> getDisabledTemplates(String projectID) throws Exception {
+		Project project = getProject(projectID);
+		if (project == null)
+			throw new Exception("Project not found");
+		
+		List<DisabledTemplate> dts = new DisabledTemplate().getObjects("project_id = " + project.getId() );
+		//if empty check call the method for the new version 
+		if (dts==null || dts.isEmpty())
+			return getDisabledTemplateCodes(projectID);
+		List<String> templateFileNames = new ArrayList<String>();
+		for (DisabledTemplate dt: dts) {
+			templateFileNames.add(dt.getTemplateName());
+		}
+		
+		return templateFileNames;
 		
 	}
 	
@@ -2339,11 +2368,23 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		String path = efile.getFilePath();
 		File file = new File(path);
 		try {
-			if (file.exists())
+			if (file.exists()) {
 				file.delete();
+			}
 		} catch (Exception x) {
 			log.warning("Error deleting file:" + file.getAbsolutePath(), x);
 		}
+		//if file is a template delete the entries in template and project_template
+		if (efile.getFileType().equalsIgnoreCase("Template")){
+			//get project entities and delete them first
+			List<Template> templates=new Template().getObjects("file_id =" + efile.getId());
+			for (Template t:templates) {
+				new ProjectToTemplate().deleteObjects("template_id =" + t.getId());
+			}
+			//delete the template
+			new Template().deleteObjects("file_id =" + efile.getId());
+		}
+		
 		new ProjectToFile().deleteObjects("file_id =" + efile.getId());
 		efile.delete();
 	}

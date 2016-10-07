@@ -1135,4 +1135,13 @@ public interface EpadProjectOperations {
 	List<Long> getEnabledProjectsForTemplate(long templateId) throws Exception;
 	
 	
+	/**
+	 * new get disables templates. returns codes
+	 * @param projectID
+	 * @return
+	 * @throws Exception
+	 */
+	List<String> getDisabledTemplateCodes(String projectID) throws Exception;
+	
+	
 }
