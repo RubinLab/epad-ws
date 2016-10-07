@@ -2313,6 +2313,22 @@ public class DefaultEpadOperations implements EpadOperations
 		return template;
 
 	}
+	
+	@Override
+	public void migrateTemplates() throws Exception {
+		List<EpadFile> efiles = projectOperations.getEpadFiles(null, null, null, null, FileType.TEMPLATE, false);
+		for (EpadFile efile: efiles)
+		{
+			File tfile = new File(EPADConfig.getEPADWebServerResourcesDir() + getEpadFilePath(efile));
+		
+			Template template = getFirstTemplateInfo(tfile);
+			template.setFileId(efile.getId());
+			template.save();
+			log.info("template db entry is created for template="+template.getTemplateName());
+			Project project= (Project) projectOperations.getDBObject(Project.class, efile.getProjectId());
+			projectOperations.setProjectTemplate("admin", project.getProjectId(), template.getTemplateCode(), true);
+		}
+	}
 
 	@Override
 	public EPADTemplateContainerList getTemplateDescriptions(String username,

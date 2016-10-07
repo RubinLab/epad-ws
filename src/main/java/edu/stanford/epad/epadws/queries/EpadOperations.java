@@ -1592,4 +1592,10 @@ public interface EpadOperations
 	 * @throws Exception
 	 */
 	EPADTemplateContainer dbtemplate2Container(Template t) throws Exception;
+
+	/**
+	 * code to migrate the templates from files. called from main
+	 * @throws Exception
+	 */
+	void migrateTemplates() throws Exception;
 }
