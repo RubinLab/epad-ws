@@ -140,6 +140,8 @@ import edu.stanford.epad.dtos.EPADStudy;
 import edu.stanford.epad.dtos.EPADStudyList;
 import edu.stanford.epad.dtos.EPADSubject;
 import edu.stanford.epad.dtos.EPADSubjectList;
+import edu.stanford.epad.epadws.aim.AIMQueries;
+import edu.stanford.epad.epadws.aim.AIMSearchType;
 import edu.stanford.epad.epadws.aim.AIMUtil;
 import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeDatabase;
 import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeDatabaseOperations;
@@ -158,6 +160,11 @@ import edu.stanford.epad.epadws.queries.EpadOperations;
 import edu.stanford.epad.epadws.security.EPADSessionOperations;
 import edu.stanford.epad.epadws.service.DefaultEpadProjectOperations;
 import edu.stanford.epad.epadws.service.EpadProjectOperations;
+import edu.stanford.hakan.aim4api.base.AimException;
+import edu.stanford.hakan.aim4api.base.ImageAnnotationCollection;
+import edu.stanford.hakan.aim4api.project.epad.Aim;
+import edu.stanford.hakan.aim4api.usage.AnnotationGetter;
+import edu.stanford.hakan.aim4api.compability.aimv3.ImageAnnotation;
 
 /**
  * @author Dev Gude
@@ -259,7 +266,6 @@ public class DownloadUtil {
 					aimList = AIMUtil.filterPermittedImageAnnotations(aimList, username, sessionID);
 					for (EPADAIM aim: aimList.ResultSet.Result)
 					{
-						
 						String name ="Aim_" + format4Filename(subject.subjectName)+ "_" +aim.aimID + ".xml";
 						
 						File aimFile = new File(seriesDir, name);
@@ -268,7 +274,8 @@ public class DownloadUtil {
 						try 
 						{
 							fw = new FileWriter(aimFile);
-							fw.write(aim.xml);
+//							fw.write(aim.xml);
+							fw.write(formatXMLtoLatest(aim.xml));
 						}
 						catch (Exception x)
 						{
@@ -414,7 +421,7 @@ public static void downloadProject(boolean stream, HttpServletResponse httpRespo
 						try 
 						{
 							fw = new FileWriter(aimFile);
-							fw.write(aim.xml);
+							fw.write(formatXMLtoLatest(aim.xml));
 						}
 						catch (Exception x)
 						{
@@ -555,7 +562,7 @@ public static void downloadSubject(boolean stream, HttpServletResponse httpRespo
 					try 
 					{
 						fw = new FileWriter(aimFile);
-						fw.write(aim.xml);
+						fw.write(formatXMLtoLatest(aim.xml));
 					}
 					catch (Exception x)
 					{
@@ -718,7 +725,7 @@ public static void downloadStudies(boolean stream, HttpServletResponse httpRespo
 					try 
 					{
 						fw = new FileWriter(aimFile);
-						fw.write(aim.xml);
+						fw.write(formatXMLtoLatest(aim.xml));
 					}
 					catch (Exception x)
 					{
@@ -963,7 +970,7 @@ public static void downloadStudy(boolean stream, HttpServletResponse httpRespons
 				try 
 				{
 					fw = new FileWriter(aimFile);
-					fw.write(aim.xml);
+					fw.write(formatXMLtoLatest(aim.xml));
 				}
 				catch (Exception x)
 				{
@@ -1014,6 +1021,29 @@ public static void downloadStudy(boolean stream, HttpServletResponse httpRespons
 	}
 	EPADFileUtils.deleteDirectoryAndContents(downloadDir);
 
+}
+
+
+
+private static String formatXMLtoLatest(String xml) throws AimException {
+	log.info("formatting aim");
+	List<ImageAnnotationCollection> iacs = AnnotationGetter
+			.getImageAnnotationCollectionsFromString(xml, EPADConfig.xsdFilePathV4);
+	
+	if (iacs.size()>1) {
+		StringBuilder aimXml = new StringBuilder("<imageAnnotations>\n");
+		for (ImageAnnotationCollection iac : iacs) {
+			ImageAnnotation ia=new ImageAnnotation(iac);
+			log.info("new aim is:"+ ia.toAimV4().getXMLString());
+			aimXml.append(ia.toAimV4().getXMLString());
+		}
+		aimXml.append("</imageAnnotations>\n");
+		log.info("(multiple iac) new aim is:"+ aimXml.toString());
+		return aimXml.toString();
+	}
+	ImageAnnotation ia=new ImageAnnotation(iacs.get(0));
+	log.info("new aim is:"+ ia.toAimV4().getXMLString());
+	return ia.toAimV4().getXMLString();
 }
 
 /**
@@ -1097,7 +1127,7 @@ public static void downloadSeries(boolean stream, HttpServletResponse httpRespon
 				try 
 				{
 					fw = new FileWriter(aimFile);
-					fw.write(aim.xml);
+					fw.write(formatXMLtoLatest(aim.xml));
 				}
 				catch (Exception x)
 				{
@@ -1224,7 +1254,7 @@ public static void downloadSeries(boolean stream, HttpServletResponse httpRespon
 			try 
 			{
 				fw = new FileWriter(aimFile);
-				fw.write(aim.xml);
+				fw.write(formatXMLtoLatest(aim.xml));
 			}
 			catch (Exception x)
 			{
