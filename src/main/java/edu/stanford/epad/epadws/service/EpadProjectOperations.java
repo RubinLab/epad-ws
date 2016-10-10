@@ -123,6 +123,7 @@ import edu.stanford.epad.epadws.models.Project;
 import edu.stanford.epad.epadws.models.ProjectType;
 import edu.stanford.epad.epadws.models.Study;
 import edu.stanford.epad.epadws.models.Subject;
+import edu.stanford.epad.epadws.models.Template;
 import edu.stanford.epad.epadws.models.User;
 import edu.stanford.epad.epadws.models.UserRole;
 import edu.stanford.epad.epadws.models.dao.AbstractDAO;
@@ -1080,12 +1081,67 @@ public interface EpadProjectOperations {
 	List<Study> getStudiesOlderThanDays(Integer days) throws Exception;
 	
 	/**
-	 * get projects for a specific templatename
-	 * @param templatename
+	 * get all projects for a specific template
+	 * @param templateid
 	 * @return a list of project ids
 	 * @throws Exception
 	 */
-	List<Long> getProjectsForTemplate(String templatename) throws Exception;
+	List<Long> getProjectsForTemplate(long templateid) throws Exception;
+	
+	
+	/**
+	 * get template entry from db
+	 * @param templateCode
+	 * @return
+	 * @throws Exception
+	 */
+	Template getTemplate(String templateCode) throws Exception;
+	
+	/**
+	 * set project-template relation. enable/disable template for a specific project
+	 * @param loggedInUser
+	 * @param projectID
+	 * @param templateCode
+	 * @throws Exception
+	 */
+	void setProjectTemplate(String loggedInUser, String projectID, String templateCode, boolean enable)
+			throws Exception;
+	
+	
+	/**
+	 * get disabled projects for a template
+	 * @param templateId
+	 * @return
+	 * @throws Exception
+	 */
+	List<Long> getDisabledProjectsForTemplate(long templateId) throws Exception;
+	
+	/**
+	 * get the current enable/disable status
+	 * @param loggedInUser
+	 * @param projectID
+	 * @param templateCode
+	 * @return
+	 * @throws Exception
+	 */
+	boolean getProjectTemplate(String loggedInUser, String projectID, String templateCode) throws Exception;
+	
+	/**
+	 * get enabled projects for a specific template
+	 * @param templateId
+	 * @return
+	 * @throws Exception
+	 */
+	List<Long> getEnabledProjectsForTemplate(long templateId) throws Exception;
+	
+	
+	/**
+	 * new get disables templates. returns codes
+	 * @param projectID
+	 * @return
+	 * @throws Exception
+	 */
+	List<String> getDisabledTemplateCodes(String projectID) throws Exception;
 	
 	
 }

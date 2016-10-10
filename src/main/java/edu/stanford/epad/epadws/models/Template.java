@@ -104,24 +104,37 @@
  *******************************************************************************/
 package edu.stanford.epad.epadws.models;
 
+import java.text.SimpleDateFormat;
 import java.util.Date;
 
 import edu.stanford.epad.epadws.models.dao.AbstractDAO;
 
-public class ProjectToTemplate extends AbstractDAO {
+public class Template extends AbstractDAO {
 
 	/**
 	 * 
 	 */
 	private static final long serialVersionUID = 1L;
 	long id;
-	long projectId;
-	long templateId;
-	boolean enabled;
+	String templateLevelType; //templateType
+	String templateUID;
+	String templateName;
+	String authors;
+	String version;
+	Date templateCreationDate;
+	String templateDescription;
+	String codingSchemeVersion;
+	String templateType; //codeMeaning
+	String templateCode; //codevalue
+	String codingSchemeDesignator;
+	String modality;
+	Long fileId;
+	
 	String creator;
 	Date createdTime;
 	Date updateTime;
 
+	
 	@Override
 	public long getId() {
 		return id;
@@ -131,28 +144,120 @@ public class ProjectToTemplate extends AbstractDAO {
 		this.id = id;
 	}
 
-	public long getProjectId() {
-		return projectId;
+	public String getTemplateLevelType() {
+		return templateLevelType;
 	}
 
-	public void setProjectId(long projectId) {
-		this.projectId = projectId;
+	public void setTemplateLevelType(String templateLevelType) {
+		this.templateLevelType = templateLevelType;
 	}
 
-	public long getTemplateId() {
-		return templateId;
+	public String getTemplateUID() {
+		return templateUID;
 	}
 
-	public void setTemplateId(long templateId) {
-		this.templateId = templateId;
+	public void setTemplateUID(String templateUID) {
+		this.templateUID = templateUID;
 	}
 
-	public boolean isEnabled() {
-		return enabled;
+	public String getTemplateName() {
+		return templateName;
 	}
 
-	public void setEnabled(boolean enabled) {
-		this.enabled = enabled;
+	public void setTemplateName(String templateName) {
+		this.templateName = templateName;
+	}
+
+	public String getAuthors() {
+		return authors;
+	}
+
+	public void setAuthors(String authors) {
+		this.authors = authors;
+	}
+
+	public String getVersion() {
+		return version;
+	}
+
+	public void setVersion(String version) {
+		this.version = version;
+	}
+
+	public Date getTemplateCreationDate() {
+		return templateCreationDate;
+	}
+
+	public void setTemplateCreationDate(String string) {
+		Date date=null;
+		try{
+			SimpleDateFormat spDateFormat= new SimpleDateFormat("yyyy-MM-dd");
+			date=spDateFormat.parse(string);
+		} catch(Exception e) {
+			e.printStackTrace();
+		}
+		this.templateCreationDate = date;
+	}
+	
+	public void setTemplateCreationDate(Date date) {
+		
+		this.templateCreationDate = date;
+	}
+
+	public String getTemplateDescription() {
+		return templateDescription;
+	}
+
+	public void setTemplateDescription(String templateDescription) {
+		this.templateDescription = templateDescription;
+	}
+
+	public String getCodingSchemeVersion() {
+		return codingSchemeVersion;
+	}
+
+	public void setCodingSchemeVersion(String codingSchemeVersion) {
+		this.codingSchemeVersion = codingSchemeVersion;
+	}
+
+	public String getTemplateType() {
+		return templateType;
+	}
+
+	public void setTemplateType(String templateType) {
+		this.templateType = templateType;
+	}
+
+	public String getTemplateCode() {
+		return templateCode;
+	}
+
+	public void setTemplateCode(String templateCode) {
+		this.templateCode = templateCode;
+	}
+
+	public String getCodingSchemeDesignator() {
+		return codingSchemeDesignator;
+	}
+
+	public void setCodingSchemeDesignator(String codingSchemeDesignator) {
+		this.codingSchemeDesignator = codingSchemeDesignator;
+	}
+
+	public String getModality() {
+		return modality;
+	}
+
+	public void setModality(String modality) {
+		this.modality = modality;
+	}
+
+	public Long getFileId() {
+		return fileId;
+	}
+
+	public void setFileId(Long fileId) {
+		this.fileId = fileId;
 	}
 
 	public String getCreator() {
@@ -167,9 +272,13 @@ public class ProjectToTemplate extends AbstractDAO {
 		return createdTime;
 	}
 
+
+
 	public void setCreatedTime(Date createdTime) {
 		this.createdTime = createdTime;
 	}
+
+
 
 	public Date getUpdateTime() {
 		return updateTime;
@@ -179,12 +288,23 @@ public class ProjectToTemplate extends AbstractDAO {
 		this.updateTime = updateTime;
 	}
 
-	public final static String DBTABLE = "project_template";
+
+	public final static String DBTABLE = "template";
 	public final static String[][] DBCOLUMNS = {
         {"id","long","id","Id"},
-        {"projectId","long","project_id","integer"},
-        {"templateId","long","template_id","integer"},
-        {"enabled","boolean","enabled","bit"},
+        {"templateLevelType","String","templateLevelType","varchar"},
+        {"templateUID","String","templateUID","varchar"},
+        {"templateName","String","templateName","varchar"},
+        {"authors","String","authors","varchar"},
+        {"version","String","version","varchar"},
+        {"templateCreationDate","Date","templateCreationDate","timestamp"},
+        {"templateDescription","String","templateDescription","varchar"},
+        {"codingSchemeVersion","String","codingSchemeVersion","varchar"},
+        {"templateType","String","templateType","varchar"},
+        {"templateCode","String","templateCode","varchar"},
+        {"codingSchemeDesignator","String","codingSchemeDesignator","varchar"},
+        {"modality","String","modality","varchar"},
+        {"fileId","Long","file_id","integer"},
         {"creator","String","creator","varchar"},
         {"createdTime","Date","createdtime","timestamp"},
         {"updateTime","Date","updatetime","timestamp"},	

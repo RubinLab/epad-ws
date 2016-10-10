@@ -160,6 +160,7 @@ import edu.stanford.epad.dtos.EPADImageList;
 import edu.stanford.epad.dtos.EPADObjectList;
 import edu.stanford.epad.dtos.EPADProject;
 import edu.stanford.epad.dtos.EPADProjectList;
+import edu.stanford.epad.dtos.EPADProjectTemplate;
 import edu.stanford.epad.dtos.EPADSeries;
 import edu.stanford.epad.dtos.EPADSeriesList;
 import edu.stanford.epad.dtos.EPADStudy;
@@ -208,8 +209,10 @@ import edu.stanford.epad.epadws.handlers.core.SeriesReference;
 import edu.stanford.epad.epadws.handlers.core.StudyReference;
 import edu.stanford.epad.epadws.handlers.core.SubjectReference;
 import edu.stanford.epad.epadws.handlers.dicom.DSOUtil;
+import edu.stanford.epad.epadws.models.DisabledTemplate;
 import edu.stanford.epad.epadws.models.EpadFile;
 import edu.stanford.epad.epadws.models.EpadStatistics;
+import edu.stanford.epad.epadws.models.Template;
 import edu.stanford.epad.epadws.models.EventLog;
 import edu.stanford.epad.epadws.models.FileType;
 import edu.stanford.epad.epadws.models.NonDicomSeries;
@@ -314,7 +317,7 @@ public class DefaultEpadOperations implements EpadOperations
 			return project2EPADProject(sessionID, username, project, new EPADSearchFilter(), annotationCount, includeAnnotationStatus);
 		return null;
 	}
-	
+
 	@Override
 	public EPADSubjectList getSubjectDescriptions(String projectID, String username, String sessionID,
 			EPADSearchFilter searchFilter, int start, int count, String sortField, boolean annotationCount) throws Exception
@@ -461,9 +464,9 @@ public class DefaultEpadOperations implements EpadOperations
 			EPADSearchFilter searchFilter) throws Exception
 	{
 		return getStudyDescriptions(subjectReference, username, sessionID, searchFilter, false);
-	
+
 	}
-	
+
 	@Override
 	public EPADStudyList getStudyDescriptions(String username, String sessionID,
 			Integer days) throws Exception
@@ -472,25 +475,25 @@ public class DefaultEpadOperations implements EpadOperations
 		List<Study> studies = new ArrayList<Study>();
 		Subject subject = null;
 		Set<String> studyUIDsInEpad = new HashSet<String>();
-		
+
 		studies = projectOperations.getStudiesOlderThanDays(days);
 		for (Study study: studies)
 		{
 			studyUIDsInEpad.add(study.getStudyUID());
 		}
 		DCM4CHEEStudyList dcm4CheeStudyList = Dcm4CheeQueries.getStudies(studyUIDsInEpad);
-		
+
 		for (DCM4CHEEStudy dcm4CheeStudy : dcm4CheeStudyList.ResultSet.Result) {
 			subject =projectOperations.getSubjectForStudy(dcm4CheeStudy.studyUID);
-			
+
 			List<NonDicomSeries> series = projectOperations.getNonDicomSeriesForStudy(dcm4CheeStudy.studyUID);
 			dcm4CheeStudy.seriesCount = dcm4CheeStudy.seriesCount + series.size();
 			EPADStudy epadStudy = dcm4cheeStudy2EpadStudy(sessionID, subject.getProjectID(), subject.getSubjectUID(),
 					dcm4CheeStudy, username, false);
-			
+
 			studyUIDsInEpad.remove(epadStudy.studyUID);
 			epadStudyList.addEPADStudy(epadStudy);
-			
+
 		}
 		for (Study study: studies)
 		{
@@ -503,7 +506,7 @@ public class DefaultEpadOperations implements EpadOperations
 				if (series.size() > 0) firstSeriesDate = dateformat.format(series.get(0).getCreatedTime());
 				String desc = "";
 				subject =projectOperations.getSubjectForStudy(study.getStudyUID());
-				
+
 				DCM4CHEEStudy dcm4CheeStudy = new DCM4CHEEStudy(study.getStudyUID(), subject.getName(),subject.getSubjectUID(), 
 						"", formatDateTime(study.getStudyDate()), 
 						0, series.size(), firstSeries, firstSeriesDate,
@@ -514,27 +517,27 @@ public class DefaultEpadOperations implements EpadOperations
 				epadStudyList.addEPADStudy(epadStudy);
 			}
 		}
-//		for (Study study: studies)
-//		{
-//			
-//				List<NonDicomSeries> series = projectOperations.getNonDicomSeriesForStudy(study.getStudyUID());
-//				String firstSeries = "";
-//				if (series.size() > 0) firstSeries = series.get(0).getSeriesUID();
-//				String firstSeriesDate = "";
-//				if (series.size() > 0) firstSeriesDate = dateformat.format(series.get(0).getCreatedTime());
-//				
-//				subject =projectOperations.getSubjectForStudy(study.getStudyUID());
-//				
-//				DCM4CHEEStudy dcm4CheeStudy = new DCM4CHEEStudy(study.getStudyUID(), subject.getName(),subject.getSubjectUID(), 
-//						"", formatDateTime(study.getStudyDate()), 
-//						0, series.size(), firstSeries, firstSeriesDate,
-//						"", 0, study.getStudyUID(), study.getDescription(), "",
-//						"", "");
-//				EPADStudy epadStudy = dcm4cheeStudy2EpadStudy(sessionID, study.getProjectID(), subject.getSubjectUID(),
-//						dcm4CheeStudy, username);
-//				epadStudyList.addEPADStudy(epadStudy);
-//			
-//		}
+		//		for (Study study: studies)
+		//		{
+		//			
+		//				List<NonDicomSeries> series = projectOperations.getNonDicomSeriesForStudy(study.getStudyUID());
+		//				String firstSeries = "";
+		//				if (series.size() > 0) firstSeries = series.get(0).getSeriesUID();
+		//				String firstSeriesDate = "";
+		//				if (series.size() > 0) firstSeriesDate = dateformat.format(series.get(0).getCreatedTime());
+		//				
+		//				subject =projectOperations.getSubjectForStudy(study.getStudyUID());
+		//				
+		//				DCM4CHEEStudy dcm4CheeStudy = new DCM4CHEEStudy(study.getStudyUID(), subject.getName(),subject.getSubjectUID(), 
+		//						"", formatDateTime(study.getStudyDate()), 
+		//						0, series.size(), firstSeries, firstSeriesDate,
+		//						"", 0, study.getStudyUID(), study.getDescription(), "",
+		//						"", "");
+		//				EPADStudy epadStudy = dcm4cheeStudy2EpadStudy(sessionID, study.getProjectID(), subject.getSubjectUID(),
+		//						dcm4CheeStudy, username);
+		//				epadStudyList.addEPADStudy(epadStudy);
+		//			
+		//		}
 		return epadStudyList;
 	}
 
@@ -563,7 +566,7 @@ public class DefaultEpadOperations implements EpadOperations
 		{
 			studies = projectOperations.getStudiesForProjectAndSubject(subjectReference.projectID, 
 					subjectReference.subjectID);
-			
+
 		}
 		for (Study study: studies)
 		{
@@ -571,7 +574,7 @@ public class DefaultEpadOperations implements EpadOperations
 				studyUIDsInEpad.add(study.getStudyUID());
 		}
 		DCM4CHEEStudyList dcm4CheeStudyList = Dcm4CheeQueries.getStudies(studyUIDsInEpad);
-		
+
 		for (DCM4CHEEStudy dcm4CheeStudy : dcm4CheeStudyList.ResultSet.Result) {
 			//ml+Dev for debugging patient mismatch with dcm4chee
 			if (!dcm4CheeStudy.patientID.equals(subjectReference.subjectID))
@@ -588,14 +591,14 @@ public class DefaultEpadOperations implements EpadOperations
 					dbStudy.setDescription(epadStudy.studyDescription);
 					dbStudy.save();
 				}
-				
+
 			}
 			studyUIDsInEpad.remove(epadStudy.studyUID);
 			boolean filter = searchFilter.shouldFilterStudy(subjectReference.subjectID, epadStudy.studyAccessionNumber,
 					epadStudy.examTypes, epadStudy.numberOfAnnotations);
 			if (!filter)
 				epadStudyList.addEPADStudy(epadStudy);
-			
+
 		}
 		for (Study study: studies)
 		{
@@ -628,7 +631,7 @@ public class DefaultEpadOperations implements EpadOperations
 	{
 		return getStudyDescription(studyReference, username, sessionID, false);
 	}
-	
+
 	@Override
 	public EPADStudy getStudyDescription(StudyReference studyReference, String username, String sessionID, boolean includeAnnotationStatus) throws Exception
 	{
@@ -657,12 +660,12 @@ public class DefaultEpadOperations implements EpadOperations
 			}
 		}
 	}
-	
+
 	@Override
 	public EPADSeries getSeriesDescription(SeriesReference seriesReference, String username, String sessionID)
 	{
 		return getSeriesDescription(seriesReference, username, sessionID, false);
-		
+
 	}
 	@Override
 	public EPADSeries getSeriesDescription(SeriesReference seriesReference, String username, String sessionID, boolean includeAnnotationStatus)
@@ -694,7 +697,7 @@ public class DefaultEpadOperations implements EpadOperations
 			return null;
 		}
 	}
-	
+
 	@Override
 	public EPADSeriesList getSeriesDescriptions(StudyReference studyReference, String username, String sessionID,
 			EPADSearchFilter searchFilter, boolean filterDSOs)
@@ -714,7 +717,7 @@ public class DefaultEpadOperations implements EpadOperations
 					dcm4CheeSeries, username, includeAnnotationStatus);
 			boolean filter = searchFilter.shouldFilterSeries(epadSeries.patientID, epadSeries.patientName,
 					epadSeries.examType, epadSeries.numberOfAnnotations);
-//			log.info("Series:" + epadSeries.seriesDescription + " filterDSO:" + filterDSOs + " isDSO:"+ epadSeries.isDSO + " annotation:"+ epadSeries.annotationStatus.toString());
+			//			log.info("Series:" + epadSeries.seriesDescription + " filterDSO:" + filterDSOs + " isDSO:"+ epadSeries.isDSO + " annotation:"+ epadSeries.annotationStatus.toString());
 			if (!filter && !(filterDSOs && epadSeries.isDSO))
 			{
 				if (epadSeries.isDSO){ //bad solution!!
@@ -734,7 +737,7 @@ public class DefaultEpadOperations implements EpadOperations
 						// TODO Auto-generated catch block
 						e.printStackTrace();
 					}
-					
+
 				}
 				//log.info("Series:" + epadSeries.seriesDescription + " createdtime:" + epadSeries.createdTime);
 				else
@@ -781,9 +784,9 @@ public class DefaultEpadOperations implements EpadOperations
 						}
 					}
 				}
-				
-					
-				
+
+
+
 			}
 
 		}
@@ -811,10 +814,10 @@ public class DefaultEpadOperations implements EpadOperations
 	{
 		List<DCM4CHEEImageDescription> imageDescriptions = dcm4CheeDatabaseOperations.getImageDescriptions(
 				seriesReference.studyUID, seriesReference.seriesUID);
-		
-		
-		
-		
+
+
+
+
 		int numImages = imageDescriptions.size();
 		if (numImages == 0)
 			throw new RuntimeException("This series " + seriesReference.seriesUID + " has no images");
@@ -829,7 +832,7 @@ public class DefaultEpadOperations implements EpadOperations
 		String pixelSpacing1 = getDICOMElement(suppliedDICOMElementsFirst, PixelMedUtils.PixelSpacingCode);
 		String rows1 = getDICOMElement(suppliedDICOMElementsFirst, PixelMedUtils.RowsCode);
 		String columns1 = getDICOMElement(suppliedDICOMElementsFirst, PixelMedUtils.ColumnsCode);
-		
+
 		DICOMElementList suppliedDICOMElementsLast = getDICOMElements(imageDescriptions.get(numImages-1).studyUID,
 				imageDescriptions.get(numImages-1).seriesUID, imageDescriptions.get(numImages-1).imageUID);
 		String pixelSpacing2 = getDICOMElement(suppliedDICOMElementsLast, PixelMedUtils.PixelSpacingCode);
@@ -901,7 +904,7 @@ public class DefaultEpadOperations implements EpadOperations
 		}
 		log.info("Returning image list:" + imageDescriptions.size());
 		//return after sorting for correct slice order (using image position and orientation)
-//		epadImageList.sort(); //doesnt work after (first slice should hold dicom info), sort before
+		//		epadImageList.sort(); //doesnt work after (first slice should hold dicom info), sort before
 		return epadImageList;
 	}
 
@@ -1284,7 +1287,7 @@ public class DefaultEpadOperations implements EpadOperations
 			String sessionID) throws Exception {
 		epadDatabaseOperations.updateSeriesDefaultTags(seriesReference.seriesUID, defaultTags);
 	}
-	
+
 
 	@Override
 	public String seriesDelete(SeriesReference seriesReference, String sessionID, boolean deleteAims, String username) throws Exception
@@ -1316,8 +1319,8 @@ public class DefaultEpadOperations implements EpadOperations
 						//the user chose to select from project we do not need that anymore. 
 						//should we tell user when we are also deleting from system?
 						return "";
-//						log.info("Series " + seriesReference.studyUID + " in use by other projects:" + projectId + ", so series will not be deleted from DCM4CHEE");
-//						return "Series " + seriesReference.seriesUID + " in use by other projects:" + projectId + ", so series will not be deleted from DCM4CHEE";
+						//						log.info("Series " + seriesReference.studyUID + " in use by other projects:" + projectId + ", so series will not be deleted from DCM4CHEE");
+						//						return "Series " + seriesReference.seriesUID + " in use by other projects:" + projectId + ", so series will not be deleted from DCM4CHEE";
 					}
 				}
 			}
@@ -1451,7 +1454,7 @@ public class DefaultEpadOperations implements EpadOperations
 		}
 		return examTypes;
 	}
-	
+
 	@Override
 	public Set<String> getSeriesUIDsForSubject(String projectID, String patientID, String sessionID,
 			EPADSearchFilter searchFilter)
@@ -1590,7 +1593,7 @@ public class DefaultEpadOperations implements EpadOperations
 			String sessionID) throws Exception
 	{
 		return createProject(username, projectReference, projectName, projectDescription, defaultTemplate, sessionID, ProjectType.PRIVATE);
-		
+
 	}
 
 	@Override
@@ -1604,14 +1607,14 @@ public class DefaultEpadOperations implements EpadOperations
 			throw new Exception("No privilege to modify project:" + projectReference.projectID);
 		return HttpServletResponse.SC_OK;
 	}
-	
+
 	@Override
 	public int updateProject(String username,
 			ProjectReference projectReference, String projectName,
 			String projectDescription, String defaultTemplate, String sessionID) throws Exception {
 		//type was null. left the same but why??
 		return updateProject(username, projectReference, projectName, projectDescription, defaultTemplate, sessionID, null);
-		
+
 	}
 
 	@Override
@@ -1704,10 +1707,14 @@ public class DefaultEpadOperations implements EpadOperations
 		return HttpServletResponse.SC_OK;
 	}
 
+
 	@Override
 	public void createFile(String username, String projectID, String subjectID, String studyID, String seriesID,
 			File uploadedFile, String description, String fileType, String sessionID) throws Exception {
-		String templateLevelType="image";//default
+		//		String templateLevelType="image";//default
+		//fill if template
+		Template template =null;
+
 		if (!projectOperations.hasAccessToProject(username, projectID))
 			throw new Exception("No permissions to upload to project " + projectID);
 		String filename = uploadedFile.getName();
@@ -1771,14 +1778,24 @@ public class DefaultEpadOperations implements EpadOperations
 				type = FileType.TEMPLATE;
 				if (EPADFileUtils.isImage(uploadedFile) || uploadedFile.getName().toLowerCase().endsWith(".zip"))
 					throw new Exception("This does not appear to be a template file. The client should check this.");
+				//check if the template code exists in the system 
+				//				String codeValue=getTemplateCode(uploadedFile);
+				//				if (projectOperations.get) {
+				//					throw new Exception("Template with code "+ codeValue + " already exists");
+				//				}
 				if (!EPADFileUtils.isValidXml(uploadedFile, EPADConfig.templateXSDPath))
 				{
 					String error = EPADFileUtils.validateXml(uploadedFile, EPADConfig.templateXSDPath);
 					if (!(error.contains("content of element 'Template' is not complete") && getTemplateType(uploadedFile).startsWith("SEG")))
 						throw new Exception("Invalid Template file: " + error);
 				}
+				//read the file and extract a template object, it will be completed and saved after the file is created 
+				template = getFirstTemplateInfo(uploadedFile);
+				if (templateExists(template.getTemplateCode()))
+					throw new Exception("Invalid Template code "+ template.getTemplateCode() +" already exists in the system ");
 				//read the xml to find out the template type and put it in description
-				templateLevelType=getTemplateLevelType(uploadedFile);
+				//not used
+				//templateLevelType=getTemplateLevelType(uploadedFile);
 				projectOperations.createEventLog(username, projectID, subjectID, studyID, seriesID, null, null, uploadedFile.getName(), "UPLOAD TEMPLATE", description, false);
 			}
 			else if (fileType != null && fileType.equals(FileType.IMAGE.getName()))
@@ -1812,7 +1829,16 @@ public class DefaultEpadOperations implements EpadOperations
 			}
 			if (type == null || !type.equals(FileType.TEMPLATE))
 				projectOperations.createEventLog(username, projectID, subjectID, studyID, seriesID, null, null, uploadedFile.getName(), "UPLOAD FILE", description, false);
-			projectOperations.createFile(username, projectID, subjectID, studyID, seriesID, uploadedFile, filename, description, type);
+			EpadFile file=projectOperations.createFile(username, projectID, subjectID, studyID, seriesID, uploadedFile, filename, description, type, template.getTemplateLevelType());
+			//if it is a template put the file information and create the template entry in db
+			if (type != null && fileType.equals(FileType.TEMPLATE.getName())) {
+				template.setFileId(file.getId());
+				template.save();
+				log.info("template db entry is created for template="+template.getTemplateName());
+				projectOperations.setProjectTemplate(username, projectID, template.getTemplateCode(), true);
+
+			}
+
 			if (type != null && type.equals(FileType.IMAGE) && seriesID != null) {
 				NonDicomSeries ndSeries = projectOperations.getNonDicomSeries(seriesID);
 				if (ndSeries != null && ndSeries.getReferencedSeries() != null && ndSeries.getReferencedSeries().length() > 0) {
@@ -1832,6 +1858,67 @@ public class DefaultEpadOperations implements EpadOperations
 				(new Thread(new DSOEvaluationTask(username, projectID, subjectID, studyID, seriesID, filename))).start();
 			}
 		}
+	}
+
+	private boolean templateExists(String templateCode) throws Exception {
+		List<Template> templates=new Template().getObjects("LOWER(templateCode)='"+ templateCode.toLowerCase() +"'");
+		if (templates!=null && !templates.isEmpty())
+			return true;
+		return false;
+	}
+	
+	private List<Template> getTemplates(String templateCode) throws Exception {
+		List<Template> templates=new Template().getObjects("LOWER(templateCode)='"+ templateCode.toLowerCase() +"'");
+		if (templates!=null && !templates.isEmpty())
+			return templates;
+		return null;
+	}
+	
+	private Template getTemplate(String templateCode) throws Exception {
+		Template template=(Template) new Template().getObject("LOWER(templateCode)='"+ templateCode.toLowerCase() +"'");
+		return template;
+	}
+
+	private Template getFirstTemplateInfo(File templateFile)
+	{
+		Template template=new Template();
+		try {
+			String xml = EPADFileUtils.readFileAsString(templateFile);
+			JSONObject root = XML.toJSONObject(xml);
+			JSONObject container = root.getJSONObject("TemplateContainer");
+			JSONArray templateObjs = new JSONArray();
+			try {
+				JSONObject templateObj = container.getJSONObject("Template");
+				templateObjs.put(templateObj);
+			}
+			catch (Exception x) {
+				templateObjs = container.getJSONArray("Template");
+			}
+			for (int i = 0; i < templateObjs.length(); i++)
+			{
+				JSONObject templateObj = templateObjs.getJSONObject(i);
+				//extract template information and put it in template
+				//returns the first
+				template.setTemplateLevelType(templateObj.optString("templateType").toLowerCase());
+				if (template.getTemplateLevelType().equals(""))
+					template.setTemplateLevelType("image");
+				template.setTemplateUID(templateObj.optString("uid"));
+
+				template.setTemplateName(templateObj.optString("name"));
+				template.setAuthors(templateObj.optString("authors"));
+				template.setVersion(templateObj.optString("version"));
+				template.setTemplateCreationDate(templateObj.optString("creationDate"));
+				template.setTemplateDescription(templateObj.optString("description"));
+				template.setCodingSchemeVersion(templateObj.optString("codingSchemeVersion"));
+				template.setTemplateType(templateObj.optString("codeMeaning"));
+				template.setTemplateCode(templateObj.optString("codeValue"));
+				template.setCodingSchemeDesignator(templateObj.optString("codingSchemeDesignator"));
+				template.setModality(templateObj.optString("modality"));
+				return template;
+			}
+		} catch (Exception x) {
+		}
+		return template;		
 	}
 
 	private String getTemplateType(File templateFile)
@@ -1857,7 +1944,7 @@ public class DefaultEpadOperations implements EpadOperations
 		}
 		return "";		
 	}
-	
+
 	private String getTemplateLevelType(File templateFile)
 	{
 		try {
@@ -2215,101 +2302,208 @@ public class DefaultEpadOperations implements EpadOperations
 		return efile;
 	}
 
-	
+
 	@Override
 	public EPADTemplateContainerList getTemplateDescriptions(String username,
 			String sessionID) throws Exception {
 		return getTemplateDescriptions(username, sessionID, null);
 	}
-	
+
 	@Override
 	public EPADTemplateContainerList getTemplateDescriptions(String username,
 			String sessionID, String templateLevelFilter) throws Exception {
 		return getTemplateDescriptions(username, sessionID, templateLevelFilter, false);
 	}
+
+	@Override
+	public EPADTemplateContainer dbtemplate2Container(Template t) throws Exception {
+		List<EPADTemplate> epadTmpls = new ArrayList<EPADTemplate>();
+		//the template is the first template anyway. not supporting multiple templates now
+		EPADTemplate epadTmpl = new EPADTemplate(t.getTemplateUID(), t.getTemplateName(), t.getTemplateType(), t.getTemplateCode(),
+				t.getTemplateDescription(), t.getModality(), t.getTemplateLevelType());
+		epadTmpls.add(epadTmpl);
+		EpadFile f = (EpadFile) projectOperations.getDBObject(EpadFile.class, t.getFileId());
+		if (f!=null) {
+			EPADTemplateContainer template = new EPADTemplateContainer("", "", "", "", "", f.getName(), f.getLength(), FileType.TEMPLATE.getName(), 
+					formatDate(f.getCreatedTime()), getEpadFilePath(f), f.isEnabled(), f.getDescription(), t.getTemplateLevelType());
+			template.templateName = t.getTemplateName();
+			template.templateType = t.getTemplateType();
+			template.templateCode = t.getTemplateCode();
+			template.templateDescription = t.getTemplateDescription();
+			template.modality = t.getModality();
+			template.templates = epadTmpls;
+			return template;
+		}
+		return null;
+
+	}
 	
+	@Override
+	public void migrateTemplates() throws Exception {
+		List<EpadFile> efiles = projectOperations.getEpadFiles(null, null, null, null, FileType.TEMPLATE, false);
+		for (EpadFile efile: efiles)
+		{
+			File tfile = new File(EPADConfig.getEPADWebServerResourcesDir() + getEpadFilePath(efile));
+			Template template = getFirstTemplateInfo(tfile);
+			if (template.getTemplateCode()==null) {
+				log.warning("Template code couldn't be retrieved. Skipping file");
+				continue;
+			}
+			Template existingTemplate=getTemplate(template.getTemplateCode());
+			if (existingTemplate!=null){
+				//two different possibilities; either the user uploaded same file to different projects or uses the same code
+				EpadFile ef=(EpadFile)projectOperations.getDBObject(EpadFile.class, existingTemplate.getFileId());
+				
+				
+				//if same file just remove the extras and put the project relations
+				if (efile.getName().equals(ef.getName()) && efile.getLength()==ef.getLength() && !efile.getProjectId().equals(ef.getProjectId()) ) {
+					log.info("same file for template="+template.getTemplateName() +" just putting the project relation");
+				}
+				//if same code for different files put it in the log
+				else {
+					Project project= (Project) projectOperations.getDBObject(Project.class, efile.getProjectId());
+					projectOperations.createEventLog("admin", project.getProjectId(), null, null, null, null, null, efile.getName(), "The same template code cannot be used for different templates code saved as "+ template.getTemplateCode()+"-2", template.getTemplateCode(), true);
+					template.setTemplateCode(template.getTemplateCode()+"-2");
+					template.setFileId(efile.getId());
+					template.save();
+					log.info("template db entry is created for template="+template.getTemplateName() + " as " + template.getTemplateCode());
+				}
+				
+			}else {
+				template.setFileId(efile.getId());
+				template.save();
+				log.info("template db entry is created for template="+template.getTemplateName() + " as " + template.getTemplateCode());
+			}
+			Project project= (Project) projectOperations.getDBObject(Project.class, efile.getProjectId());
+			projectOperations.setProjectTemplate("admin", project.getProjectId(), template.getTemplateCode(), efile.isEnabled());
+			
+		}
+		
+		//get the disabled templates and set their enable attribute
+		List<DisabledTemplate> dts = new DisabledTemplate().getObjects("");
+		if (dts!=null && !dts.isEmpty()) {
+			for (DisabledTemplate dt:dts) {
+				//it was actually file name but the if check uses filename,templatename and templateCode so lets check all
+				//if (disabledTemplatesNames.contains(template.fileName) || disabledTemplatesNames.contains(template.templateName) || disabledTemplatesNames.contains(template.templateCode))
+				for (EpadFile efile: efiles)
+				{
+					File tfile = new File(EPADConfig.getEPADWebServerResourcesDir() + getEpadFilePath(efile));
+					//we do not actually need to get this project id, but putting to get the correct template container object
+					Project fileProject= (Project) projectOperations.getDBObject(Project.class, efile.getProjectId());
+					Project disableProject= (Project) projectOperations.getDBObject(Project.class, dt.getProjectId());
+					EPADTemplateContainer tc=convertEpadFileToTemplate(fileProject.getProjectId(), efile, tfile); 
+					if (tc.fileName.equalsIgnoreCase(dt.getTemplateName()) || tc.templateName.equalsIgnoreCase(dt.getTemplateName()) || tc.templateCode.equalsIgnoreCase(dt.getTemplateName())){
+						projectOperations.setProjectTemplate("admin", disableProject.getProjectId(), tc.templateCode, false);
+						dt.delete();
+					}
+				
+				}
+				
+				
+			}
+		}
+		
+	}
+
 	@Override
 	public EPADTemplateContainerList getTemplateDescriptions(String username,
 			String sessionID, String templateLevelFilter, boolean includeSystemTemplates) throws Exception {
-		EPADTemplateContainerList oldList = getSystemTemplateDescriptions(username, sessionID);
+
 		EPADTemplateContainerList fileList = new EPADTemplateContainerList();
-		List<EpadFile> efiles = projectOperations.getEpadFiles(null, null, null, null, FileType.TEMPLATE, false);
-		if (efiles.size() == 0 && includeSystemTemplates)
-			fileList = oldList;
-		Map<String, List<String>> disabledTemplates = new HashMap<String, List<String>>();
-		for (EpadFile efile: efiles)
-		{
-			Set<String> userProjects = new HashSet<String>();
-			
-			//get projects from project_template
-			//if there are tuples in project_template for this template use that instead
-			//we need the code to check in the project_template table.
-			//convert to template container object here
-			File tfile = new File(EPADConfig.getEPADWebServerResourcesDir() + getEpadFilePath(efile));
-			//sending null as project id instead of project.getProjectId()
-			EPADTemplateContainer template = convertEpadFileToTemplate(null, efile, tfile);
-			//check the project_template table
-			List<Long> projects = projectOperations.getProjectsForTemplate(template.fileName);
-			//new format for the template, got project-template records
-			if (projects!=null && !projects.isEmpty()){
-				for (Long pId:projects) {
-					Project project = (Project) projectOperations.getDBObject(Project.class, pId);
-					String defTemplate = null;
-					Project userProj = projectOperations.getProjectForUser(username, project.getProjectId());
-					if (userProj != null)
-					{
-						defTemplate = userProj.getDefaultTemplate();
-					}
-					List<String> disabledTemplatesNames = disabledTemplates.get(project.getProjectId());
-					if (disabledTemplatesNames == null)
-					{
-						disabledTemplatesNames = projectOperations.getDisabledTemplates(project.getProjectId());
-						disabledTemplates.put(project.getProjectId(), disabledTemplatesNames);
-					}
-					if (userProjects.contains(project.getProjectId()) || projectOperations.hasAccessToProject(username, project.getProjectId())
-							|| project.getProjectId().equals(EPADConfig.xnatUploadProjectID))
-					{
-						userProjects.add(project.getProjectId());
-						
-						List<EPADTemplate> templates = template.templates;
-						for (EPADTemplate t: templates)
+
+		//not supported anymore but should we put just in case
+		if (includeSystemTemplates)
+			throw new Exception("System templates are not supported anymore");
+		//		EPADTemplateContainerList oldList = getSystemTemplateDescriptions(username, sessionID);
+		//		if (includeSystemTemplates)
+		//			fileList = oldList;
+
+		String criteria="";
+		if (templateLevelFilter!=null) 
+			criteria = "LOWER(templateLevelType) like '"+templateLevelFilter.toLowerCase()+"%'";
+		//get all templates
+		List<Template> dbTemplates = new Template().getObjects(criteria);
+		//new method. use templates table. version 2.3
+		if (dbTemplates!=null && !dbTemplates.isEmpty()) {
+			for (Template t: dbTemplates) {
+				Set<EPADProjectTemplate> userProjects = new HashSet<EPADProjectTemplate>();
+
+				//for each create the EPADTemplate and EPADTemplateContainer
+				EPADTemplateContainer template = dbtemplate2Container(t);
+				//if template couldn't be retrieved skip
+				if (template==null) continue;
+				//get project information and put it in
+				List<Long> projects = projectOperations.getProjectsForTemplate(t.getId());
+				//new format for the template, got project-template records
+				if (projects!=null && !projects.isEmpty()){
+					for (Long pId:projects) {
+						Project project = (Project) projectOperations.getDBObject(Project.class, pId);
+
+						if (projectOperations.hasAccessToProject(username, project.getProjectId())
+								|| project.getProjectId().equals(EPADConfig.xnatUploadProjectID))
 						{
+							String defTemplate = null;
+							boolean defaultTemplate=false;
+							Project userProj = projectOperations.getProjectForUser(username, project.getProjectId());
+							if (userProj != null)
+								defTemplate = userProj.getDefaultTemplate();
 							if (t.getTemplateCode().equals(defTemplate))
-							{
-								t.defaultTemplate = true;
-							}
-							else
-								t.defaultTemplate = false;
+								defaultTemplate = true;
+							EPADProjectTemplate pt=new EPADProjectTemplate(project.getProjectId(), projectOperations.getProjectTemplate(username, project.getProjectId(), t.getTemplateCode()), defaultTemplate);
+									
+							userProjects.add(pt);
 						}
-						if (disabledTemplatesNames.contains(template.fileName) || disabledTemplatesNames.contains(template.templateName) || disabledTemplatesNames.contains(template.templateCode))
-							userProjects.remove(project.getProjectId());
-						
-						
 					}
+
+
+					//default template? for what should be related to project.
 					
-					
-				}
-				
-				boolean enabled = efile.isEnabled();
-				
-				template.enabled = enabled;
-				
-				template.projectIDs=new ArrayList<String>();
-				template.projectIDs.addAll(userProjects);
-				//if there are project-template records we do not care about the file tuple anymore
-				//it is ignoring the file projectid
-				//we need a way to put the projectid initially. it is in main
-				
-				//just to put smt for ui. should be removed
-				if (template.projectIDs!=null && !template.projectIDs.isEmpty())
-					template.projectID=template.projectIDs.get(0);
-				
-				if (templateLevelFilter==null || template.templateLevelType.toLowerCase().startsWith(templateLevelFilter.toLowerCase()))
+
+					//disabled templates get them and remove from user projects
+					//is done for project
+//					List<Long> disabledProjects = projectOperations.getDisabledProjectsForTemplate(t.getId());
+//					for (Long pId:disabledProjects) {
+//						Project project = (Project) projectOperations.getDBObject(Project.class, pId);
+//						userProjects.remove(project.getProjectId());
+//					}
+
+
+					//??? it is related to project!!
+					//				boolean enabled = efile.isEnabled();
+					//				template.enabled = enabled;
+
+					template.projectTemplates=new ArrayList<EPADProjectTemplate>();
+					template.projectTemplates.addAll(userProjects);
+					//if there are project-template records we do not care about the file tuple anymore
+					//it is ignoring the file projectid
+					//we need a way to put the projectid initially. it is in main
+
+					//just to put smt for ui. should be removed
+					if (template.projectTemplates!=null && !template.projectTemplates.isEmpty())
+						template.projectID=template.projectTemplates.get(0).projectID;
 					fileList.addTemplate(template);
-				
+
+				}
+
 			}
-			//old format, no project-template records. use the old retrieval
-			else {
+		}
+		//old format, no project-template records. use the old retrieval
+		else {
+			List<EpadFile> efiles = projectOperations.getEpadFiles(null, null, null, null, FileType.TEMPLATE, false);
+			//			if (efiles.size() == 0 && includeSystemTemplates)
+			//				fileList = oldList;
+			Map<String, List<String>> disabledTemplates = new HashMap<String, List<String>>();
+			for (EpadFile efile: efiles)
+			{
+				Set<String> userProjects = new HashSet<String>();
+
+				//get projects from project_template
+				//if there are tuples in project_template for this template use that instead
+				//we need the code to check in the project_template table.
+				//convert to template container object here
+				File tfile = new File(EPADConfig.getEPADWebServerResourcesDir() + getEpadFilePath(efile));
+				//sending null as project id instead of project.getProjectId()
+				EPADTemplateContainer template = convertEpadFileToTemplate(null, efile, tfile);
 				Project project = (Project) projectOperations.getDBObject(Project.class, efile.getProjectId());
 				String defTemplate = null;
 				Project userProj = projectOperations.getProjectForUser(username, project.getProjectId());
@@ -2327,7 +2521,7 @@ public class DefaultEpadOperations implements EpadOperations
 						|| project.getProjectId().equals(EPADConfig.xnatUploadProjectID))
 				{
 					userProjects.add(project.getProjectId());
-					
+
 					List<EPADTemplate> templates = template.templates;
 					for (EPADTemplate t: templates)
 					{
@@ -2345,16 +2539,144 @@ public class DefaultEpadOperations implements EpadOperations
 					template.projectID=project.getProjectId();
 					template.projectIDs=new ArrayList<String>();
 					template.projectIDs.add(project.getProjectId());
-					
+
 					if (templateLevelFilter==null || template.templateLevelType.toLowerCase().startsWith(templateLevelFilter.toLowerCase()))
 						fileList.addTemplate(template);
-					
+
 				}
 			}
 		}
 		return fileList;
 	}
-	
+
+	//	@Override
+	//	public EPADTemplateContainerList getTemplateDescriptions(String username,
+	//			String sessionID, String templateLevelFilter, boolean includeSystemTemplates) throws Exception {
+	//		EPADTemplateContainerList oldList = getSystemTemplateDescriptions(username, sessionID);
+	//		EPADTemplateContainerList fileList = new EPADTemplateContainerList();
+	//		List<EpadFile> efiles = projectOperations.getEpadFiles(null, null, null, null, FileType.TEMPLATE, false);
+	//		if (efiles.size() == 0 && includeSystemTemplates)
+	//			fileList = oldList;
+	//		Map<String, List<String>> disabledTemplates = new HashMap<String, List<String>>();
+	//		for (EpadFile efile: efiles)
+	//		{
+	//			Set<String> userProjects = new HashSet<String>();
+	//			
+	//			//get projects from project_template
+	//			//if there are tuples in project_template for this template use that instead
+	//			//we need the code to check in the project_template table.
+	//			//convert to template container object here
+	//			File tfile = new File(EPADConfig.getEPADWebServerResourcesDir() + getEpadFilePath(efile));
+	//			//sending null as project id instead of project.getProjectId()
+	//			EPADTemplateContainer template = convertEpadFileToTemplate(null, efile, tfile);
+	//			//check the project_template table
+	//			//disable
+	//			List<Long> projects = null; //projectOperations.getProjectsForTemplate(template.fileName);
+	//			//new format for the template, got project-template records
+	//			if (projects!=null && !projects.isEmpty()){
+	//				for (Long pId:projects) {
+	//					Project project = (Project) projectOperations.getDBObject(Project.class, pId);
+	//					String defTemplate = null;
+	//					Project userProj = projectOperations.getProjectForUser(username, project.getProjectId());
+	//					if (userProj != null)
+	//					{
+	//						defTemplate = userProj.getDefaultTemplate();
+	//					}
+	//					List<String> disabledTemplatesNames = disabledTemplates.get(project.getProjectId());
+	//					if (disabledTemplatesNames == null)
+	//					{
+	//						disabledTemplatesNames = projectOperations.getDisabledTemplates(project.getProjectId());
+	//						disabledTemplates.put(project.getProjectId(), disabledTemplatesNames);
+	//					}
+	//					if (userProjects.contains(project.getProjectId()) || projectOperations.hasAccessToProject(username, project.getProjectId())
+	//							|| project.getProjectId().equals(EPADConfig.xnatUploadProjectID))
+	//					{
+	//						userProjects.add(project.getProjectId());
+	//						
+	//						List<EPADTemplate> templates = template.templates;
+	//						for (EPADTemplate t: templates)
+	//						{
+	//							if (t.getTemplateCode().equals(defTemplate))
+	//							{
+	//								t.defaultTemplate = true;
+	//							}
+	//							else
+	//								t.defaultTemplate = false;
+	//						}
+	//						if (disabledTemplatesNames.contains(template.fileName) || disabledTemplatesNames.contains(template.templateName) || disabledTemplatesNames.contains(template.templateCode))
+	//							userProjects.remove(project.getProjectId());
+	//						
+	//						
+	//					}
+	//					
+	//					
+	//				}
+	//				
+	//				boolean enabled = efile.isEnabled();
+	//				
+	//				template.enabled = enabled;
+	//				
+	//				template.projectIDs=new ArrayList<String>();
+	//				template.projectIDs.addAll(userProjects);
+	//				//if there are project-template records we do not care about the file tuple anymore
+	//				//it is ignoring the file projectid
+	//				//we need a way to put the projectid initially. it is in main
+	//				
+	//				//just to put smt for ui. should be removed
+	//				if (template.projectIDs!=null && !template.projectIDs.isEmpty())
+	//					template.projectID=template.projectIDs.get(0);
+	//				
+	//				if (templateLevelFilter==null || template.templateLevelType.toLowerCase().startsWith(templateLevelFilter.toLowerCase()))
+	//					fileList.addTemplate(template);
+	//				
+	//			}
+	//			//old format, no project-template records. use the old retrieval
+	//			else {
+	//				Project project = (Project) projectOperations.getDBObject(Project.class, efile.getProjectId());
+	//				String defTemplate = null;
+	//				Project userProj = projectOperations.getProjectForUser(username, project.getProjectId());
+	//				if (userProj != null)
+	//				{
+	//					defTemplate = userProj.getDefaultTemplate();
+	//				}
+	//				List<String> disabledTemplatesNames = disabledTemplates.get(project.getProjectId());
+	//				if (disabledTemplatesNames == null)
+	//				{
+	//					disabledTemplatesNames = projectOperations.getDisabledTemplates(project.getProjectId());
+	//					disabledTemplates.put(project.getProjectId(), disabledTemplatesNames);
+	//				}
+	//				if (userProjects.contains(project.getProjectId()) || projectOperations.hasAccessToProject(username, project.getProjectId())
+	//						|| project.getProjectId().equals(EPADConfig.xnatUploadProjectID))
+	//				{
+	//					userProjects.add(project.getProjectId());
+	//					
+	//					List<EPADTemplate> templates = template.templates;
+	//					for (EPADTemplate t: templates)
+	//					{
+	//						if (t.getTemplateCode().equals(defTemplate))
+	//						{
+	//							t.defaultTemplate = true;
+	//						}
+	//						else
+	//							t.defaultTemplate = false;
+	//					}
+	//					boolean enabled = efile.isEnabled();
+	//					if (disabledTemplatesNames.contains(template.fileName) || disabledTemplatesNames.contains(template.templateName) || disabledTemplatesNames.contains(template.templateCode))
+	//						enabled = false;
+	//					template.enabled = enabled;
+	//					template.projectID=project.getProjectId();
+	//					template.projectIDs=new ArrayList<String>();
+	//					template.projectIDs.add(project.getProjectId());
+	//					
+	//					if (templateLevelFilter==null || template.templateLevelType.toLowerCase().startsWith(templateLevelFilter.toLowerCase()))
+	//						fileList.addTemplate(template);
+	//					
+	//				}
+	//			}
+	//		}
+	//		return fileList;
+	//	}
+
 	@Override
 	public EPADTemplateContainerList getSystemTemplateDescriptions(String username,
 			String sessionID) throws Exception {
@@ -2366,6 +2688,7 @@ public class DefaultEpadOperations implements EpadOperations
 			String sessionID, String templateLevelFilter) throws Exception {
 		EPADTemplateContainerList fileList = new EPADTemplateContainerList();
 		File[] templates = new File(EPADConfig.getEPADWebServerTemplatesDir()).listFiles();
+		//this method is not used any more. leaving the old version of disabled templates
 		List<String> disabledTemplatesNames = projectOperations.getDisabledTemplates(EPADConfig.xnatUploadProjectID);
 		for (File template: templates)
 		{
@@ -2408,7 +2731,7 @@ public class DefaultEpadOperations implements EpadOperations
 						templateDescription = templateObj.getString("description");
 						modality = templateObj.getString("modality");
 					} catch (Exception x) {}
-					
+
 					try {
 						templateLevelType = templateObj.getString("templateType");
 					} catch (Exception x) {
@@ -2416,7 +2739,7 @@ public class DefaultEpadOperations implements EpadOperations
 					}
 					if (templateLevelType==null)
 						templateLevelType = "image";
-						
+
 					if (templateLevelFilter==null || templateLevelType.toLowerCase().startsWith(templateLevelFilter.toLowerCase())) {
 						EPADTemplate epadTmpl = new EPADTemplate(templateUID, templateName, templateType, templateCode,
 								templateDescription, modality, templateLevelType);
@@ -2449,111 +2772,130 @@ public class DefaultEpadOperations implements EpadOperations
 		return fileList;
 	}
 
-	
+
 	@Override
 	public EPADTemplateContainerList getProjectTemplateDescriptions(String projectID,
 			String username, String sessionID) throws Exception {
 		return getProjectTemplateDescriptions(projectID,username,sessionID,null);
-	
+
 	}
 	@Override
 	public EPADTemplateContainerList getProjectTemplateDescriptions(String projectID,
 			String username, String sessionID, String templateLevelFilter) throws Exception {
 		EPADTemplateContainerList fileList=getTemplateDescriptions(username, sessionID, templateLevelFilter);
 		EPADTemplateContainerList templates=new EPADTemplateContainerList();
+		boolean isInAllProject=false;
 		for (EPADTemplateContainer t:fileList.ResultSet.Result){
-			log.info("template "+ t.fileName+ " pid:"+t.projectID+" pids:"+t.projectIDs.size() + " contains:"+t.projectIDs.contains(projectID));
-			
-			if ((t.projectID!=null && t.projectID.equalsIgnoreCase(projectID)) || (t.projectIDs!=null && t.projectIDs.contains(projectID))){
-				log.info("adding template "+ t.fileName);
-				
+			if (t.projectTemplates!=null) {
+				for (EPADProjectTemplate pt: t.projectTemplates) {
+					if (pt.projectID.equalsIgnoreCase(projectID)) {
+						log.info("adding template "+ t.templateCode);
+						templates.addTemplate(t);
+						
+					}
+					if (pt.projectID.equals(EPADConfig.xnatUploadProjectID)) {
+						
+						isInAllProject=true;
+					}
+				}
+			}
+			else if ((t.projectID!=null && t.projectID.equalsIgnoreCase(projectID))){
 				templates.addTemplate(t);
 			}
 			//if the template's project is all project and template is not disabled for this project
-			else if (t.projectID.equals(EPADConfig.xnatUploadProjectID)) {
-				List<String> disabledTemplatesNames = projectOperations.getDisabledTemplates(projectID);
-				if (!(disabledTemplatesNames.contains(t.fileName) || disabledTemplatesNames.contains(t.templateName) || disabledTemplatesNames.contains(t.templateCode)))
-					templates.addTemplate(t);
+			if (isInAllProject) {
+				List<String> disabledTemplatesNames = projectOperations.getDisabledTemplateCodes(projectID);
+				//can keep the same it is using templatecode (starting 2.3)
+				if (!(disabledTemplatesNames.contains(t.fileName) || disabledTemplatesNames.contains(t.templateName) || disabledTemplatesNames.contains(t.templateCode))){
+					if (!templates.ResultSet.Result.contains(t)){ 
+						templates.addTemplate(t);
+					}
+				}else {
+					log.info("disabled in project, removing template "+ t.templateCode);
+					templates.ResultSet.Result.remove(t);
+					templates.ResultSet.totalRecords--;
+				}
+					
 			}
-				
-			
+
+
 		}
 		return templates;
-		
-		
-//		EPADTemplateContainerList fileList = new EPADTemplateContainerList();
-//		List<EpadFile> efiles = projectOperations.getEpadFiles(projectID, null, null, null, FileType.TEMPLATE, false);
-//		Set<String> templateCodes = new HashSet<String>();
-//		//ml defaulttemplate
-//		Project userProj = projectOperations.getProjectForUser(username, projectID);
-//		String defTemplate="";
-//		if (userProj != null)
-//		{
-//			defTemplate = userProj.getDefaultTemplate();
-//		}
-//
-//		for (EpadFile efile: efiles)
-//		{
-//			EPADTemplateContainer template = convertEpadFileToTemplate(projectID, efile, new File(EPADConfig.getEPADWebServerResourcesDir() + getEpadFilePath(efile)));
-//			if (!template.templateLevelType.equalsIgnoreCase(efile.getTemplateLevelType())) {//file (db) and template (xml) different
-//				log.info("xml and db different for template "+template.templateName +"!! Updating db. it was "+ efile.getTemplateLevelType()+ " changing to " +template.templateLevelType);
-//				efile.setTemplateLevelType(template.templateLevelType);
-//				efile.save();
-//			}
-//			if (template.enabled && (templateLevelFilter==null || template.templateLevelType.toLowerCase().startsWith(templateLevelFilter.toLowerCase())))
-//			{
-//				log.info("description " + templateLevelFilter+ " template " + template.templateLevelType);
-//				//ml default template
-//				List<EPADTemplate> templates = template.templates;
-//				for (EPADTemplate t: templates)
-//				{
-//					log.info("template : " +t.getTemplateCode() + " defaulttemplate :"+defTemplate);
-//					if (t.getTemplateCode().equals(defTemplate))
-//					{
-//						t.defaultTemplate = true;
-//					}
-//					else
-//						t.defaultTemplate = false;
-//				}
-//				fileList.addTemplate(template);
-//				templateCodes.add(template.templateCode);
-//			}
-//		}
-//		efiles = projectOperations.getEpadFiles(EPADConfig.xnatUploadProjectID, null, null, null, FileType.TEMPLATE, false);
-//		List<String> disabledTemplatesNames = projectOperations.getDisabledTemplates(projectID);
-//
-//
-//		log.info("Default template for project "+ userProj.getName() + " is "+defTemplate);
-//
-//		for (EpadFile efile: efiles)
-//		{
-//
-//			EPADTemplateContainer template = convertEpadFileToTemplate(projectID, efile, new File(EPADConfig.getEPADWebServerResourcesDir() + getEpadFilePath(efile)));
-//			log.info("template enabled: " +template.enabled + " code: "+ template.templateCode + " codecontain:"+templateCodes.contains(template.templateCode));
-//			if (template.enabled && !disabledTemplatesNames.contains(template.fileName) 
-//					&& !disabledTemplatesNames.contains(template.templateName) 
-//					&& !disabledTemplatesNames.contains(template.templateCode) 
-//					&& !templateCodes.contains(template.templateCode)  
-//					&& (templateLevelFilter==null || template.templateLevelType.toLowerCase().startsWith(templateLevelFilter.toLowerCase()))){
-//
-//				//ml default template
-//				List<EPADTemplate> templates = template.templates;
-//				for (EPADTemplate t: templates)
-//				{
-//					log.info("template : " +t.getTemplateCode() + " defaulttemplate :"+defTemplate);
-//					if (t.getTemplateCode().equals(defTemplate))
-//					{
-//						t.defaultTemplate = true;
-//					}
-//					else
-//						t.defaultTemplate = false;
-//				}
-//
-//				fileList.addTemplate(template);
-//			}
-//
-//		}
-//		return fileList;
+
+
+		//		EPADTemplateContainerList fileList = new EPADTemplateContainerList();
+		//		List<EpadFile> efiles = projectOperations.getEpadFiles(projectID, null, null, null, FileType.TEMPLATE, false);
+		//		Set<String> templateCodes = new HashSet<String>();
+		//		//ml defaulttemplate
+		//		Project userProj = projectOperations.getProjectForUser(username, projectID);
+		//		String defTemplate="";
+		//		if (userProj != null)
+		//		{
+		//			defTemplate = userProj.getDefaultTemplate();
+		//		}
+		//
+		//		for (EpadFile efile: efiles)
+		//		{
+		//			EPADTemplateContainer template = convertEpadFileToTemplate(projectID, efile, new File(EPADConfig.getEPADWebServerResourcesDir() + getEpadFilePath(efile)));
+		//			if (!template.templateLevelType.equalsIgnoreCase(efile.getTemplateLevelType())) {//file (db) and template (xml) different
+		//				log.info("xml and db different for template "+template.templateName +"!! Updating db. it was "+ efile.getTemplateLevelType()+ " changing to " +template.templateLevelType);
+		//				efile.setTemplateLevelType(template.templateLevelType);
+		//				efile.save();
+		//			}
+		//			if (template.enabled && (templateLevelFilter==null || template.templateLevelType.toLowerCase().startsWith(templateLevelFilter.toLowerCase())))
+		//			{
+		//				log.info("description " + templateLevelFilter+ " template " + template.templateLevelType);
+		//				//ml default template
+		//				List<EPADTemplate> templates = template.templates;
+		//				for (EPADTemplate t: templates)
+		//				{
+		//					log.info("template : " +t.getTemplateCode() + " defaulttemplate :"+defTemplate);
+		//					if (t.getTemplateCode().equals(defTemplate))
+		//					{
+		//						t.defaultTemplate = true;
+		//					}
+		//					else
+		//						t.defaultTemplate = false;
+		//				}
+		//				fileList.addTemplate(template);
+		//				templateCodes.add(template.templateCode);
+		//			}
+		//		}
+		//		efiles = projectOperations.getEpadFiles(EPADConfig.xnatUploadProjectID, null, null, null, FileType.TEMPLATE, false);
+		//		List<String> disabledTemplatesNames = projectOperations.getDisabledTemplates(projectID);
+		//
+		//
+		//		log.info("Default template for project "+ userProj.getName() + " is "+defTemplate);
+		//
+		//		for (EpadFile efile: efiles)
+		//		{
+		//
+		//			EPADTemplateContainer template = convertEpadFileToTemplate(projectID, efile, new File(EPADConfig.getEPADWebServerResourcesDir() + getEpadFilePath(efile)));
+		//			log.info("template enabled: " +template.enabled + " code: "+ template.templateCode + " codecontain:"+templateCodes.contains(template.templateCode));
+		//			if (template.enabled && !disabledTemplatesNames.contains(template.fileName) 
+		//					&& !disabledTemplatesNames.contains(template.templateName) 
+		//					&& !disabledTemplatesNames.contains(template.templateCode) 
+		//					&& !templateCodes.contains(template.templateCode)  
+		//					&& (templateLevelFilter==null || template.templateLevelType.toLowerCase().startsWith(templateLevelFilter.toLowerCase()))){
+		//
+		//				//ml default template
+		//				List<EPADTemplate> templates = template.templates;
+		//				for (EPADTemplate t: templates)
+		//				{
+		//					log.info("template : " +t.getTemplateCode() + " defaulttemplate :"+defTemplate);
+		//					if (t.getTemplateCode().equals(defTemplate))
+		//					{
+		//						t.defaultTemplate = true;
+		//					}
+		//					else
+		//						t.defaultTemplate = false;
+		//				}
+		//
+		//				fileList.addTemplate(template);
+		//			}
+		//
+		//		}
+		//		return fileList;
 	}
 
 
@@ -3454,13 +3796,13 @@ public class DefaultEpadOperations implements EpadOperations
 		for (EpadStatistics stat: stats)
 		{
 			eul.addUsage(new EPADUsage(stat.getHost(), stat.getNumOfUsers(), stat.getNumOfProjects(),
-				stat.getNumOfPatients(), stat.getNumOfStudies(), stat.getNumOfSeries(),
-				stat.getNumOfAims(), stat.getNumOfDSOs(), stat.getNumOfPacs(), stat.getNumOfAutoQueries(),
-				stat.getNumOfWorkLists(), stat.getNumOfFiles(), stat.getNumOfTemplates(), stat.getNumOfPlugins(), dateformat.format(stat.getCreatedTime())));
+					stat.getNumOfPatients(), stat.getNumOfStudies(), stat.getNumOfSeries(),
+					stat.getNumOfAims(), stat.getNumOfDSOs(), stat.getNumOfPacs(), stat.getNumOfAutoQueries(),
+					stat.getNumOfWorkLists(), stat.getNumOfFiles(), stat.getNumOfTemplates(), stat.getNumOfPlugins(), dateformat.format(stat.getCreatedTime())));
 		}
 		return eul;
 	}
-		
+
 	@Override
 	public EPADUsageList getUsage(String username, String hostname, boolean byMonth, boolean byYear, boolean all) throws Exception {
 		String sql = "host like '" + hostname.replace('*', '%') + "%' order by host, createdtime desc";
@@ -3788,10 +4130,10 @@ public class DefaultEpadOperations implements EpadOperations
 		//		int	numberOfAnnotations = getNumberOfAccessibleAims(sessionID, suppliedProjectID, aims, username);
 		//ml for speeding up annotation count
 		int numberOfAnnotations = getStudyAimCount(sessionID,studyUID,suppliedProjectID,username);
-		
+
 		AnnotationStatus annotationStatus = null;
 		Map<String, AnnotationStatus> userStatusList = null;
-		
+
 		if (includeAnnotationStatus) {
 			userStatusList = new HashMap<>();
 			annotationStatus = getAnnotationStatusStudy(projectID, subjectID, studyUID, username, userStatusList,numberOfSeries);
@@ -3799,20 +4141,20 @@ public class DefaultEpadOperations implements EpadOperations
 			if (userStatusList.size()==0)
 				userStatusList = null;
 		}
-		
+
 		return new EPADStudy(projectID, subjectID, patientName, studyUID, insertDate, firstSeriesUID,
 				firstSeriesDateAcquired, physicianName, birthdate, sex, studyProcessingStatus, examTypes, studyDescription,
 				studyAccessionNumber, numberOfSeries, numberOfImages, numberOfAnnotations, createdTime, annotationStatus, userStatusList);
 	}
 
-	
+
 	private EPADSeries dcm4cheeSeries2EpadSeries(String sessionID, String suppliedProjectID, String suppliedSubjectID,
 			DCM4CHEESeries dcm4CheeSeries, String username)
 	{
 		return dcm4cheeSeries2EpadSeries(sessionID, suppliedProjectID, suppliedSubjectID, dcm4CheeSeries, username, false);
-		
+
 	}
-	
+
 	private EPADSeries dcm4cheeSeries2EpadSeries(String sessionID, String suppliedProjectID, String suppliedSubjectID,
 			DCM4CHEESeries dcm4CheeSeries, String username, boolean includeAnnotationStatus)
 	{
@@ -3843,10 +4185,10 @@ public class DefaultEpadOperations implements EpadOperations
 		SeriesProcessingStatus seriesProcessingStatus = epadDatabaseOperations.getSeriesProcessingStatus(seriesUID);
 		String createdTime = dcm4CheeSeries.createdTime != null ? dcm4CheeSeries.createdTime.toString() : "";
 
-		
+
 		AnnotationStatus annotationStatus = null;
 		Map<String, AnnotationStatus> userStatusList = null;
-		
+
 		if (includeAnnotationStatus) {
 			userStatusList = new HashMap<>();
 			annotationStatus = getAnnotationStatusSeries(projectID, subjectID, studyUID, seriesUID, username, userStatusList);
@@ -3858,7 +4200,7 @@ public class DefaultEpadOperations implements EpadOperations
 				examType, bodyPart, accessionNumber, numberOfImages, numberOfSeriesRelatedInstances, numberOfAnnotations,
 				institution, stationName, department, seriesProcessingStatus, createdTime, firstImageUIDInSeries, dcm4CheeSeries.isDSO, annotationStatus, userStatusList);
 	}
-	
+
 	public AnnotationStatus getAnnotationStatusProject(String projectUID,
 			String username, Map<String, AnnotationStatus> userStatusList, String sessionID, EPADSearchFilter searchFilter)
 	{
@@ -3866,8 +4208,8 @@ public class DefaultEpadOperations implements EpadOperations
 		//if not check for each subject
 		boolean isUserPrivileged = isUserPrivileged(projectUID, username);
 		try {
-			
-			
+
+
 			EPADSubjectList subjects= getSubjectDescriptions(projectUID, username, sessionID, searchFilter,1,5000, null,false,true);
 			log.info("Number of subjects "+ subjects.ResultSet.totalRecords);
 			//artem's fix for empty project
@@ -3894,16 +4236,16 @@ public class DefaultEpadOperations implements EpadOperations
 							if (value==null) {
 								value=new int[]{0,0};
 							}
-							
+
 							if (e.getValue().equals(AnnotationStatus.DONE)) {
 								value[0]++;
-								
+
 							}else if (e.getValue().equals(AnnotationStatus.IN_PROGRESS)) {
 								value[1]++;
-								
+
 							}
 							statsMap.put(e.getKey(), value);
-								
+
 						}
 					}
 					//fix for subjects with no studies
@@ -3913,12 +4255,12 @@ public class DefaultEpadOperations implements EpadOperations
 							if (value==null) {
 								value=new int[]{0,0};
 							}
-							
+
 							value[0]++;
 							statsMap.put(e.getKey(), value);
-								
+
 						}
-						
+
 					}
 				}
 
@@ -3934,25 +4276,25 @@ public class DefaultEpadOperations implements EpadOperations
 						userStatusList.put(e.getKey(), AnnotationStatus.IN_PROGRESS);
 					else userStatusList.put(e.getKey(), AnnotationStatus.NOT_STARTED);
 				}
-					
+
 			}
 			log.info("Subjects Done =" + doneCount + " in progress="+inProgressCount);
 			if (subjects.ResultSet.Result.size()==doneCount) 
 				return AnnotationStatus.DONE;
 			else if (doneCount+inProgressCount >0 )
 				return AnnotationStatus.IN_PROGRESS;
-				
-			
-		
+
+
+
 		} catch (Exception e) {
 			log.info("Could not retrieve subjects for project "+ projectUID + " " + e.getMessage());
 			return AnnotationStatus.ERROR;
 		}
 		return AnnotationStatus.NOT_STARTED;
-		
-	
+
+
 	}
-	
+
 	public AnnotationStatus getAnnotationStatusSubject(String projectUID, String subjectUID,  
 			String username, Map<String, AnnotationStatus> userStatusList, String sessionID, EPADSearchFilter searchFilter)
 	{
@@ -3960,24 +4302,24 @@ public class DefaultEpadOperations implements EpadOperations
 		try {
 			//to calculate the cumulative user list,  we need a map of user to an array containing [donecount and in_progresscount]
 			Map<String,int[]> statsMap= new HashMap<>();
-			
+
 			if (isUserPrivileged) {
 				//if the user is priviliged fill the user list
 				EPADUserList users = getUserDescriptions(username, new ProjectReference(projectUID), sessionID);
-				
+
 				for (EPADUser u : users.ResultSet.Result) {
 					int[] value=new int[]{0,0};
 					statsMap.put(u.username, value);
-						
+
 				}
-				
+
 			}
-//			else {
-//				AnnotationStatus as=projectOperations.getAnnotationStatusForUserBySubject(projectUID, subjectUID, username);
-//				if (as!=AnnotationStatus.ERROR)	 
-//					return as;
-//			}
-			
+			//			else {
+			//				AnnotationStatus as=projectOperations.getAnnotationStatusForUserBySubject(projectUID, subjectUID, username);
+			//				if (as!=AnnotationStatus.ERROR)	 
+			//					return as;
+			//			}
+
 			EPADStudyList studies= getStudyDescriptions(new SubjectReference(projectUID, subjectUID), username, sessionID, searchFilter,true);
 			int doneCount=0;
 			int inProgressCount=0;
@@ -3986,7 +4328,7 @@ public class DefaultEpadOperations implements EpadOperations
 			for (EPADStudy st: studies.ResultSet.Result) {
 				log.info("study "+ st.studyUID);
 				log.info("annotation status "+ st.annotationStatus);
-				
+
 				if (isUserPrivileged) {
 					//cumulate the users' status over studies
 					if (st.userStatusList!=null) {
@@ -3997,16 +4339,16 @@ public class DefaultEpadOperations implements EpadOperations
 							}
 							if (e.getValue().equals(AnnotationStatus.DONE)) {
 								value[0]++;
-								
+
 							}else if (e.getValue().equals(AnnotationStatus.IN_PROGRESS)) {
 								value[1]++;
-								
+
 							}
 							statsMap.put(e.getKey(), value);
-								
+
 						}
 					}
-					
+
 					//fix for studies with no series
 					else if (st.annotationStatus.equals(AnnotationStatus.NOT_STARTED)) {
 						for (Entry<String, int[]> e : statsMap.entrySet()) {
@@ -4014,12 +4356,12 @@ public class DefaultEpadOperations implements EpadOperations
 							if (value==null) {
 								value=new int[]{0,0};
 							}
-							
+
 							value[0]++;
 							statsMap.put(e.getKey(), value);
-								
+
 						}
-						
+
 					}
 				} else {
 					if (st.annotationStatus.equals(AnnotationStatus.DONE)) {
@@ -4031,8 +4373,8 @@ public class DefaultEpadOperations implements EpadOperations
 				}
 
 			}
-			
-			
+
+
 			//cumulate studies		
 			if (isUserPrivileged) {
 				for (Entry<String, int[]> e : statsMap.entrySet()) {
@@ -4044,14 +4386,14 @@ public class DefaultEpadOperations implements EpadOperations
 						userStatusList.put(e.getKey(), AnnotationStatus.IN_PROGRESS);
 					else userStatusList.put(e.getKey(), AnnotationStatus.NOT_STARTED);
 				}
-//				//check subject status table and override the cumulated from studies
-//				for (Entry<String, AnnotationStatus> e : userStatusList.entrySet()) {
-//					AnnotationStatus as=projectOperations.getAnnotationStatusForUserBySubject(projectUID, subjectUID, e.getKey());
-//					if (as!=AnnotationStatus.ERROR)	 
-//						e.setValue(as);
-//					log.info("subject set "+ subjectUID + "  "+ as);
-//				}
-//				
+				//				//check subject status table and override the cumulated from studies
+				//				for (Entry<String, AnnotationStatus> e : userStatusList.entrySet()) {
+				//					AnnotationStatus as=projectOperations.getAnnotationStatusForUserBySubject(projectUID, subjectUID, e.getKey());
+				//					if (as!=AnnotationStatus.ERROR)	 
+				//						e.setValue(as);
+				//					log.info("subject set "+ subjectUID + "  "+ as);
+				//				}
+				//				
 				//check the user list to cumulate
 				for (Entry<String, AnnotationStatus> e : userStatusList.entrySet()) {
 					if (e.getValue().equals(AnnotationStatus.DONE)) 
@@ -4065,23 +4407,23 @@ public class DefaultEpadOperations implements EpadOperations
 					return AnnotationStatus.DONE;
 				else if (doneCount+inProgressCount >0 )
 					return AnnotationStatus.IN_PROGRESS;
-					
+
 			}else {
-			
+
 				if (studies.ResultSet.Result.size()==doneCount) 
 					return AnnotationStatus.DONE;
 				else if (doneCount+inProgressCount >0 )
 					return AnnotationStatus.IN_PROGRESS;
 			}
-			
-		
+
+
 		} catch (Exception e) {
 			log.info("Could not retrieve studies for subject "+ subjectUID + " " + e.getMessage());
 			return AnnotationStatus.ERROR;
 		}
 		return AnnotationStatus.NOT_STARTED;
 	}
-	
+
 	public AnnotationStatus getAnnotationStatusStudy(String projectUID, String subjectUID, String studyUID, 
 			String username, Map<String, AnnotationStatus> userStatusList, int numberOfSeries)
 	{
@@ -4090,12 +4432,12 @@ public class DefaultEpadOperations implements EpadOperations
 		return getAnnotationStatus(projectUID, subjectUID, studyUID, null, username, userStatusList, numberOfSeries, isUserPrivileged(projectUID,username));
 
 	}
-	
+
 	public AnnotationStatus getAnnotationStatusSeries(String projectUID, String subjectUID, String studyUID, String series_uid,
 			String username, Map<String, AnnotationStatus> userStatusList) {
 		return getAnnotationStatus(projectUID, subjectUID, studyUID, series_uid, username, userStatusList, 1, isUserPrivileged(projectUID,username));
 	}
-	
+
 	public boolean isUserPrivileged(String projectUID, String username) {
 		User user=null;
 		try {
@@ -4117,7 +4459,7 @@ public class DefaultEpadOperations implements EpadOperations
 		}
 		return false;
 	}
-			
+
 
 	public AnnotationStatus getAnnotationStatus(String projectUID, String subjectUID, String studyUID, String series_uid,
 			String username, Map<String, AnnotationStatus> userStatusList, int numberOfSeries, boolean isUserPrivileged)
@@ -4128,7 +4470,7 @@ public class DefaultEpadOperations implements EpadOperations
 			//no series fix, do not bother calculating
 			if (numberOfSeries==0) 
 				return AnnotationStatus.NOT_STARTED;
-			
+
 			//go through the user list to cumulate
 			int doneCount=0;
 			int inProgressCount=0;
@@ -4144,40 +4486,40 @@ public class DefaultEpadOperations implements EpadOperations
 				return AnnotationStatus.DONE;
 			else if (doneCount+inProgressCount >0 )
 				return AnnotationStatus.IN_PROGRESS;
-			
+
 			//use annotation and user counts to decide
-//			long userCount=0;
-//			int annotationDoneUserCount;
-			
-//			try {
-//				userCount=projectOperations.getUserCountProject(projectUID);
-//				annotationDoneUserCount = projectOperations.getAnnotationStatusUserCount(projectUID, subjectUID, studyUID, series_uid,AnnotationStatus.DONE);
-//			}catch (Exception e) {
-//				log.info("User count couldn't be retrieved for project "+projectUID+ " " +e.getMessage());
-//				return AnnotationStatus.NOT_STARTED;
-//			}
-//			if (annotationDoneUserCount == 0) {
-//				int inProgressCount = projectOperations.getAnnotationStatusUserCount(projectUID, subjectUID, studyUID, series_uid,AnnotationStatus.IN_PROGRESS);
-//				if (inProgressCount == 0)
-//					return AnnotationStatus.NOT_STARTED;
-//				else
-//					return AnnotationStatus.IN_PROGRESS;
-//			}
-//			else if (userCount*numberOfSeries == annotationDoneUserCount) 
-//				return AnnotationStatus.DONE;
-//			else if (userCount*numberOfSeries > annotationDoneUserCount) 
-//				return AnnotationStatus.IN_PROGRESS;
-			
+			//			long userCount=0;
+			//			int annotationDoneUserCount;
+
+			//			try {
+			//				userCount=projectOperations.getUserCountProject(projectUID);
+			//				annotationDoneUserCount = projectOperations.getAnnotationStatusUserCount(projectUID, subjectUID, studyUID, series_uid,AnnotationStatus.DONE);
+			//			}catch (Exception e) {
+			//				log.info("User count couldn't be retrieved for project "+projectUID+ " " +e.getMessage());
+			//				return AnnotationStatus.NOT_STARTED;
+			//			}
+			//			if (annotationDoneUserCount == 0) {
+			//				int inProgressCount = projectOperations.getAnnotationStatusUserCount(projectUID, subjectUID, studyUID, series_uid,AnnotationStatus.IN_PROGRESS);
+			//				if (inProgressCount == 0)
+			//					return AnnotationStatus.NOT_STARTED;
+			//				else
+			//					return AnnotationStatus.IN_PROGRESS;
+			//			}
+			//			else if (userCount*numberOfSeries == annotationDoneUserCount) 
+			//				return AnnotationStatus.DONE;
+			//			else if (userCount*numberOfSeries > annotationDoneUserCount) 
+			//				return AnnotationStatus.IN_PROGRESS;
+
 			return AnnotationStatus.NOT_STARTED;
 		}
-		
+
 		//Else get his own status
 		return projectOperations.getAnnotationStatusForUser(projectUID, subjectUID, studyUID, series_uid, username, numberOfSeries);
 
 
 	}
-	
-	
+
+
 	public void fillAnnotationStatusList(String projectUID, String subjectUID, String studyUID, String series_uid,
 			String username, Map<String, AnnotationStatus> userStatusList, int numberOfSeries)
 	{
@@ -4185,17 +4527,17 @@ public class DefaultEpadOperations implements EpadOperations
 			List<User> users = projectOperations.getUsersForProject(projectUID);
 			for (User u: users) {
 				log.info("putting user "+u.getUsername() + " status "+ projectOperations.getAnnotationStatusForUser(projectUID, subjectUID, studyUID, series_uid, u.getUsername(), numberOfSeries));
-				
+
 				userStatusList.put(u.getUsername(), projectOperations.getAnnotationStatusForUser(projectUID, subjectUID, studyUID, series_uid, u.getUsername(), numberOfSeries));
 			}
 		} catch (Exception e1) {
 			log.info("Couldn't get users for the project "+projectUID + e1.getMessage());
 		}
-		
+
 
 	}
-	
-	
+
+
 	private static String trimTrailing(String xnatName)
 	{
 		while (xnatName.endsWith("^"))
@@ -4336,7 +4678,7 @@ public class DefaultEpadOperations implements EpadOperations
 				//	userRoles.put(username, "Collaborator");
 
 				//log.info("Time for conv, subj:" + (subjecttime-starttime) + ", study:" + (studytime-subjecttime) + " aim:" + (aimtime-studytime) + " user:" + (usertime-aimtime) + " msecs");
-				
+
 				AnnotationStatus annotationStatus = null;
 				Map<String, AnnotationStatus> userStatusList = null;
 				if (includeAnnotationStatus) {
@@ -4346,7 +4688,7 @@ public class DefaultEpadOperations implements EpadOperations
 					if (userStatusList.size()==0)
 						userStatusList = null;
 				}
-				
+
 				EPADProject ep = new EPADProject("", "", description, projectName, projectID, "", "",
 						numberOfPatients, numberOfStudies, numberOfAnnotations, patientIDs, usernames, userRoles, annotationStatus, userStatusList, project.getType());
 				ep.defaultTemplate = project.getDefaultTemplate();
@@ -4577,7 +4919,7 @@ public class DefaultEpadOperations implements EpadOperations
 			//if (!isDSO)
 		}
 		String lossyImage = getWADOPath(studyUID, seriesUID, imageUID);
-//		log.info("rescale slope:"+rescaleSlope+" and intercept:"+rescaleIntercept);
+		//		log.info("rescale slope:"+rescaleSlope+" and intercept:"+rescaleIntercept);
 		if (rescaleIntercept==null && rescaleSlope==null) {
 			log.info("rescale slope and intercept empty!");
 			if (dicomElements!=null){ //the first image, try dicom elements
@@ -4605,9 +4947,9 @@ public class DefaultEpadOperations implements EpadOperations
 				}
 				log.info("rescale slope:"+rescaleSlope+" and intercept:"+rescaleIntercept);
 			}
-			
+
 		}
-		
+
 		//log.debug("losslessimage:" + losslessImage);
 		return new EPADImage(projectID, subjectID, studyUID, seriesUID, imageUID, classUID, insertDate, imageDate,
 				sliceLocation, instanceNumber, losslessImage, lossyImage, dicomElements, defaultDICOMElements, numberOfFrames,
