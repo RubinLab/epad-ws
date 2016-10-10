@@ -1899,7 +1899,7 @@ public class DefaultEpadOperations implements EpadOperations
 				JSONObject templateObj = templateObjs.getJSONObject(i);
 				//extract template information and put it in template
 				//returns the first
-				template.setTemplateLevelType(templateObj.optString("templateType"));
+				template.setTemplateLevelType(templateObj.optString("templateType").toLowerCase());
 				if (template.getTemplateLevelType().equals(""))
 					template.setTemplateLevelType("image");
 				template.setTemplateUID(templateObj.optString("uid"));
