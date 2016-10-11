@@ -930,7 +930,7 @@ public class AIMDatabaseOperations {
 				aim.xml = xml;
 				aim.name = name;
 				aim.color = color;
-				aim.templateType = template;
+				aim.template = template;
 				if (dsoFrameNo != null)
 					aim.dsoFrameNo = dsoFrameNo;
 				aims.add(aim);
@@ -958,7 +958,7 @@ public class AIMDatabaseOperations {
     public List<EPADAIM> getAIMs(String criteria, int start, int count) throws SQLException {
     	if (!criteria.trim().toLowerCase().startsWith("where"))
     		criteria = "WHERE " + criteria;
-        String sqlSelect = "SELECT UserLoginName, ProjectUID, PatientID, StudyUID, SeriesUID, ImageUID, frameID, AnnotationUID, DSOSeriesUID, DSOFRAMENO, XML, NAME, AIMCOLOR FROM annotations " + criteria;
+        String sqlSelect = "SELECT UserLoginName, ProjectUID, PatientID, StudyUID, SeriesUID, ImageUID, frameID, AnnotationUID, DSOSeriesUID, DSOFRAMENO, XML, NAME, AIMCOLOR,TEMPLATECODE FROM annotations " + criteria;
         log.debug("AIMs select:" + sqlSelect);
        
 		ResultSet rs = null;
@@ -982,11 +982,13 @@ public class AIMDatabaseOperations {
 				Integer dsoFrameNo = rs.getInt(10);
 				String xml = rs.getString(11);
 				String name = rs.getString(12);
-				String color = rs.getString(12);
+				String color = rs.getString(13);
+				String template = rs.getString(14);
 				EPADAIM aim = new EPADAIM(AnnotationID, UserName, ProjectID, PatientID, StudyUID, SeriesUID, ImageUID, FrameID, DSOSeriesUID);
 				aim.xml = xml;
 				aim.name = name;
 				aim.color = color;
+				aim.template = template;
 				if (aim.color == null || aim.color.trim().length() == 0)
 				{
 					aim.color = defaultColors[(row-1)%defaultColors.length];

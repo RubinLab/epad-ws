@@ -511,7 +511,8 @@ public class UserProjectService {
 		
 		//check if the patient id already exist in the system. If so put a log or something, specifying the patient name that is used and the project
 		Subject subject = projectOperations.getSubject(dicomPatientID);
-		if (subject != null && dicomPatientName!=null && !dicomPatientName.equalsIgnoreCase(subject.getName()) ) {
+		//TODO for some reason this(dicomPatientName.trim().toLowerCase().equalsIgnoreCase(subject.getName().trim().toLowerCase()) does not work for Anonymous
+		if (subject != null && dicomPatientName!=null && !dicomPatientName.trim().toLowerCase().equalsIgnoreCase(subject.getName().trim().toLowerCase()) ) {
 			if (!duplicatePatientIds.contains(dicomPatientID)) {
 				duplicatePatientIds.add(dicomPatientID);
 				List<Project> projects=projectOperations.getProjectsForSubject(subject.getSubjectUID());

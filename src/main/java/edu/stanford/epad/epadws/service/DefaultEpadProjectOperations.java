@@ -1218,6 +1218,7 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 	
 	@Override
 	public Template getTemplate(String templateCode) throws Exception {
+		templateCode=templateCode.trim();
 		Template template = templateCache.get(templateCode);
 		if (template != null)
 			return template;

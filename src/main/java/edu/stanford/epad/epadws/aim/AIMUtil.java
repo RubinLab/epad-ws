@@ -224,7 +224,10 @@ public class AIMUtil
 	private static final String eXistCollectionV4 = EPADConfig.eXistCollectionV4;
 	private static final String xsdFileV4 = EPADConfig.xsdFileV4;
 	private static final String xsdFilePathV4 = EPADConfig.xsdFilePathV4;
-
+	//a list of strings, holds information about the uploaded dso, to be used during DSOMaskPNGGeneration to update the aim enity in db
+	//holds	seriesID,dsoInstanceUid,aimID,projectID	in this order	
+	public static List<String[]> dsoAims=new ArrayList<>();
+	
 	public static void updateDSOStartIndex(EPADAIM aim,int dsoStartIndex) {
 		ImageAnnotationCollection iac=null;
 		EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
@@ -750,6 +753,8 @@ public class AIMUtil
 		return saveAIMAnnotation(aimFile, projectID, 0, sessionId, username, false);
 	}
 	
+
+
 	public static boolean saveAIMAnnotation(File aimFile, String projectID, int frameNumber, String sessionId, String username, boolean uploaded) throws AimException
 	{
 		if (aimFile == null)
@@ -858,13 +863,18 @@ public class AIMUtil
 							{
 								DicomSegmentationEntity dse = (DicomSegmentationEntity) sec.getSegmentationEntityList().get(0);
 								log.info("DSO RSUID:" + dse.getReferencedSopInstanceUid().getRoot() + " SUID:" + dse.getSopInstanceUid().getRoot());
-								SeriesReference seriesReference = new SeriesReference(projectID, null, null, ea.seriesUID);
+								SeriesReference seriesReference = new SeriesReference(projectID, null, null, seriesID);
 								List<EPADAIM> aims = epadDatabaseOperations.getAIMs(seriesReference);
 								//ml aim for no imageref for dso
 								if (dse!=null && seriesIds.size()==1) {
 									final Dcm4CheeDatabaseOperations dcm4CheeDatabaseOperations = Dcm4CheeDatabase.getInstance()
 											.getDcm4CheeDatabaseOperations();
 									dsoSeriesUID=dcm4CheeDatabaseOperations.getSeriesUIDForImage(dse.getSopInstanceUid().getRoot());
+									if (dsoSeriesUID.equals("")) { //DSO is not in db yet
+										//required info
+//										seriesID,dsoInstanceUid,aimID,projectID		
+										dsoAims.add(new String[]{seriesID,dse.getSopInstanceUid().getRoot(),eaim.aimID,projectID});
+									}
 								}
 //								updateDSOStartIndex(eaim, e.ds);
 								//if (eaim != null && eaim.dsoSeriesUID == null && aims.size() > 1 && seriesIds.size() > 1) {
@@ -2117,6 +2127,7 @@ public class AIMUtil
 				List<ImageAnnotationCollection> iacs = edu.stanford.hakan.aim4api.usage.AnnotationGetter.getImageAnnotationCollectionsFromString(aim.xml, null);
 				if (iacs.size() == 0) continue;
 				ImageAnnotationCollection iac = iacs.get(0);
+				log.info("aim:"+iac.getUniqueIdentifier().getRoot() +" templatecode:" +  iac.getImageAnnotations().get(0).getListTypeCode().get(0).getCode());
 				EPADAIM epadAim = epadDatabaseOperations.updateAIMTemplateCode(iac.getUniqueIdentifier().getRoot(), iac.getImageAnnotations().get(0).getListTypeCode().get(0).getCode());
 			} catch (Exception e) {
 				log.warning("Error updating AIM Table TemplateCode", e);

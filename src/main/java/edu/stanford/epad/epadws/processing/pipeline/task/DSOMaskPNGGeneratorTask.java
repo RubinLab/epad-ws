@@ -115,21 +115,28 @@ import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.epad.common.util.EventMessageCodes;
 import edu.stanford.epad.dtos.EPADAIM;
+import edu.stanford.epad.dtos.EPADAIMList;
 import edu.stanford.epad.dtos.SeriesProcessingStatus;
 import edu.stanford.epad.epadws.aim.AIMQueries;
 import edu.stanford.epad.epadws.aim.AIMSearchType;
 import edu.stanford.epad.epadws.aim.AIMUtil;
 import edu.stanford.epad.epadws.aim.aimapi.Aim;
+import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeDatabase;
+import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeDatabaseOperations;
 import edu.stanford.epad.epadws.epaddb.EpadDatabase;
 import edu.stanford.epad.epadws.epaddb.EpadDatabaseOperations;
+import edu.stanford.epad.epadws.handlers.core.ImageReference;
+import edu.stanford.epad.epadws.handlers.core.SeriesReference;
 import edu.stanford.epad.epadws.handlers.dicom.DSOUtil;
 import edu.stanford.epad.epadws.models.Project;
 import edu.stanford.epad.epadws.models.Study;
+import edu.stanford.epad.epadws.models.Template;
 import edu.stanford.epad.epadws.processing.model.DicomSeriesProcessingStatusTracker;
 import edu.stanford.epad.epadws.processing.model.SeriesPipelineState;
 import edu.stanford.epad.epadws.service.DefaultEpadProjectOperations;
 import edu.stanford.epad.epadws.service.EpadProjectOperations;
 import edu.stanford.epad.epadws.service.UserProjectService;
+import edu.stanford.hakan.aim4api.base.ImageAnnotationCollection;
 import edu.stanford.hakan.aim4api.compability.aimv3.ImageAnnotation;
 
 public class DSOMaskPNGGeneratorTask implements GeneratorTask
@@ -206,8 +213,47 @@ public class DSOMaskPNGGeneratorTask implements GeneratorTask
 				throw x;
 			}
 			// Must be first upload, create AIM file
+			//check if there were any dso aims in the upload first
+			for (int i=0; i<AIMUtil.dsoAims.size(); i++) {
+				String[] a=AIMUtil.dsoAims.get(i);
+				final Dcm4CheeDatabaseOperations dcm4CheeDatabaseOperations = Dcm4CheeDatabase.getInstance()
+						.getDcm4CheeDatabaseOperations();
+				String dsoSeriesUID=dcm4CheeDatabaseOperations.getSeriesUIDForImage(a[1]);
+				if (dsoSeriesUID.equals(seriesUID) ) { //referencing to this dso series
+					EpadDatabase.getInstance().getEPADDatabaseOperations().updateAIMDSOSeries(a[2], dsoSeriesUID, "admin");
+					SeriesReference seriesReference = new SeriesReference(a[3], null, null, a[0]);
+					List<EPADAIM> aims = epadDatabaseOperations.getAIMs(seriesReference);
+					for (EPADAIM e: aims)
+					{
+						log.info("Checking, aimID:" + e.aimID + " dsoSeries:" + e.dsoSeriesUID + " this:" + dsoSeriesUID);
+						if (!e.aimID.equals(a[2]) && e.dsoSeriesUID != null && e.dsoSeriesUID.equals(dsoSeriesUID))
+						{
+							ImageReference imageReference = new ImageReference(a[3], e.subjectID, e.studyUID, e.seriesUID, e.imageUID);												
+							//delete the wrong one
+							epadDatabaseOperations.deleteAIM("admin", e.aimID);
+							log.info("Updating dsoSeriesUID in aim database:" + e.dsoSeriesUID + " aimID:" + a[2]);
+							//update the existing aim with the dso series uid
+							epadDatabaseOperations.addDSOAIM("admin", imageReference, e.dsoSeriesUID, a[2]);												
+							epadDatabaseOperations.updateAIMDSOFrameNo(a[2], e.dsoFrameNo);	
+							//update template code
+							//done below after getting the aims
+							break;
+						}
+					}
+					
+					AIMUtil.dsoAims.remove(a);
+					i--;
+				}
+			}
+			//check db
 			List<EPADAIM> aims = EpadDatabase.getInstance().getEPADDatabaseOperations().getAIMsByDSOSeries(seriesUID);
-			List<ImageAnnotation> ias = AIMQueries.getAIMImageAnnotations(AIMSearchType.SERIES_UID, seriesUID, "admin", 1, 50);
+			log.info("aims count:"+aims.size());
+			//update the templatecode columns
+			AIMUtil.updateTableTemplateColumn(aims);
+			//requery
+			aims= EpadDatabase.getInstance().getEPADDatabaseOperations().getAIMsByDSOSeries(seriesUID);
+			//check exist (series uid is dso's series id. this won't work with the new aims)
+//			List<ImageAnnotation> ias = AIMQueries.getAIMImageAnnotations(AIMSearchType.SERIES_UID, seriesUID, "admin", 1, 50);
 			String projectID = null;
 			if (aims.size() == 0 && generateAIM)
 			{
@@ -222,41 +268,46 @@ public class DSOMaskPNGGeneratorTask implements GeneratorTask
 						username = project.getCreator();
 				}
 				ImageAnnotation ia = AIMUtil.generateAIMFileForDSO(dsoFile, username, projectID);
-				ias = new ArrayList<ImageAnnotation>();
-				ias.add(ia);
+				//requery
+				aims=EpadDatabase.getInstance().getEPADDatabaseOperations().getAIMsByDSOSeries(seriesUID);
 			}
-			if (ias.size() != 0 && ias.get(0).getCodingSchemeDesignator() != null && ias.get(0).getCodingSchemeDesignator().equals("epad-plugin"))
+			if (aims.size() != 0 && aims.get(0).templateType != null && aims.get(0).templateType.equals("epad-plugin"))
 			{
-				ImageAnnotation ia = ias.get(0);
-				Aim aim = new Aim(ia);
+				EPADAIMList aimList= AIMUtil.getAllVersionSummaries(aims.get(0));
+				EPADAIM aim = aimList.ResultSet.Result.get(0);
+				EpadProjectOperations projOp = DefaultEpadProjectOperations.getInstance();
+				Template t=projOp.getTemplate(aim.template);
+				
 				epadDatabaseOperations.insertEpadEvent(
-						ia.getListUser().get(0).getLoginName(), 
+						aim.userName, 
 						EventMessageCodes.IMAGE_PROCESSED, 
-						ia.getUniqueIdentifier(), ia.getName(),
-						aim.getPatientID(), 
-						aim.getPatientName(), 
-						aim.getCodeMeaning(), 
-						aim.getCodeValue(),
-						"DSO Plugin", projectID,"","",seriesUID, false);					
+						aim.aimID, aim.name,
+						aim.subjectID, 
+						aim.patientName, 
+						aim.template,
+						t.getTemplateName(), 
+						"DSO Plugin", aim.projectID,"","",seriesUID, false);					
 			}
-			else if (ias.size() != 0 && UserProjectService.pendingPNGs.containsKey(seriesUID))
+			else if (aims.size() != 0 && UserProjectService.pendingPNGs.containsKey(seriesUID))
 			{
-				ImageAnnotation ia = ias.get(0);
-				Aim aim = new Aim(ia);
+				EPADAIMList aimList= AIMUtil.getAllVersionSummaries(aims.get(0));
+				EPADAIM aim = aimList.ResultSet.Result.get(0);
+				EpadProjectOperations projOp = DefaultEpadProjectOperations.getInstance();
+				Template t=projOp.getTemplate(aim.template);
 				String username = UserProjectService.pendingPNGs.get(seriesUID);
 				if (username != null && username.indexOf(":") != -1)
 					username = username.substring(0, username.indexOf(":"));
 				if (username != null)
 				{
 					epadDatabaseOperations.insertEpadEvent(
-							ia.getListUser().get(0).getLoginName(), 
+							aim.userName, 
 							EventMessageCodes.IMAGE_PROCESSED, 
-							ia.getUniqueIdentifier(), ia.getName(),
-							aim.getPatientID(), 
-							aim.getPatientName(), 
-							aim.getCodeMeaning(), 
-							aim.getCodeValue(),
-							"", projectID,"","",seriesUID, false);					
+							aim.aimID, aim.name,
+							aim.subjectID, 
+							aim.patientName, 
+							aim.template,
+							t.getTemplateName(), 
+							"", aim.projectID,"","",seriesUID, false);					
 					UserProjectService.pendingPNGs.remove(seriesUID);
 				}
 			}
