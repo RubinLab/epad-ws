@@ -1,6 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- edited with XMLSpy v2013 sp1 (x64) (http://www.altova.com) by Pat Mongkolwat (Northwestern University) -->
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns="gme://caCORE.caCORE/3.2/edu.northwestern.radiology.AIMTemplate" targetNamespace="gme://caCORE.caCORE/3.2/edu.northwestern.radiology.AIMTemplate" elementFormDefault="qualified" version="AIMTemplate_v2_rv13">
+
+
+						
+	<xs:simpleType name="TemplateTypeValues">
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="Study"/>
+			<xs:enumeration value="Series"/>
+			<xs:enumeration value="Image"/>
+		</xs:restriction>
+	</xs:simpleType>
 	<xs:simpleType name="modalityType">
 		<xs:restriction base="xs:string">
 			<xs:enumeration value="AU"/>
@@ -94,6 +104,11 @@
 			<xs:enumeration value="Line"/>
 			<xs:enumeration value="AnyShape"/>
 			<xs:enumeration value="AnyClosedShape"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="Label">
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="Label"/>
 		</xs:restriction>
 	</xs:simpleType>
 	<xs:simpleType name="UID">
@@ -238,6 +253,8 @@
 								<xs:choice>
 									<xs:sequence>
 										<xs:choice>
+
+											<!-- Anatomic entity begin-->			
 											<xs:element name="AnatomicEntity">
 												<xs:complexType>
 													<xs:sequence minOccurs="0">
@@ -267,6 +284,9 @@
 													<xs:attribute name="annotatorConfidence" type="xs:boolean" use="required"/>
 												</xs:complexType>
 											</xs:element>
+											<!-- Anatomic entity end-->
+
+											<!-- ImagingObservation begin-->
 											<xs:element name="ImagingObservation">
 												<xs:complexType>
 													<xs:sequence minOccurs="0">
@@ -285,13 +305,16 @@
 													<xs:attribute name="annotatorConfidence" type="xs:boolean" use="required"/>
 												</xs:complexType>
 											</xs:element>
+											<!-- ImagingObservation enf-->
+											
 											<xs:element name="Inference">
 												<xs:complexType>
 													<xs:attribute name="annotatorConfidence" type="xs:boolean" use="required"/>
 												</xs:complexType>
 											</xs:element>
+											
 										</xs:choice>
-										<xs:element name="AllowedTerm" maxOccurs="unbounded">
+										<xs:element name="AllowedTerm"  minOccurs="0" maxOccurs="unbounded">
 											<xs:complexType>
 												<xs:complexContent>
 													<xs:extension base="ValidTerm">
@@ -302,7 +325,30 @@
 												</xs:complexContent>
 											</xs:complexType>
 										</xs:element>
+											<xs:sequence>
+												<xs:element name="textFreeInput" minOccurs="0" maxOccurs="unbounded">
+ 												 	<xs:complexType>
+    														<xs:simpleContent>
+      															<xs:extension base="xs:string">
+       																 <xs:attribute name="keyId" type="xs:string" use="required" />
+      															</xs:extension>
+   														 </xs:simpleContent>
+  													</xs:complexType>
+												</xs:element> 
+											</xs:sequence>		
+																		
 									</xs:sequence>
+									<xs:sequence>
+												<xs:element name="textFreeInputComponent" minOccurs="0" maxOccurs="unbounded">
+ 												 	<xs:complexType>
+    														<xs:simpleContent>
+      															<xs:extension base="xs:string">
+       																 <xs:attribute name="keyId" type="xs:string" use="required" />
+      															</xs:extension>
+   														 </xs:simpleContent>
+  													</xs:complexType>
+												</xs:element> 
+											</xs:sequence>		
 									<xs:element name="Calculation">
 										<xs:complexType>
 											<xs:sequence>
@@ -334,6 +380,7 @@
 											<xs:attribute name="nextId" type="UID" use="optional"/>
 										</xs:complexType>
 									</xs:element>
+									
 									<xs:element name="GeometricShape">
 										<xs:complexType>
 											<xs:simpleContent>
@@ -344,7 +391,20 @@
 											</xs:simpleContent>
 										</xs:complexType>
 									</xs:element>
+                                                                     
+									<xs:element name="Label">
+										<xs:complexType>
+											<xs:simpleContent>
+												<xs:extension base="Label">
+													<xs:attribute name="noMoreQuestions" type="xs:boolean" use="optional" default="false"/>
+													<xs:attribute name="nextId" type="UID" use="optional"/>
+												</xs:extension>
+											</xs:simpleContent>
+										</xs:complexType>
+									</xs:element>
+												
 								</xs:choice>
+											
 							</xs:sequence>
 						</xs:extension>
 					</xs:complexContent>
@@ -358,6 +418,8 @@
 				</xs:complexType>
 			</xs:element>
 		</xs:sequence>
+		<xs:attribute name="templateType" type="TemplateTypeValues" use="optional"/>
+          	<xs:attribute name="isSegRequested" type="xs:boolean" use="optional"/>
 		<xs:attribute name="name" type="xs:string" use="required"/>
 		<xs:attribute name="version" type="xs:string" use="required"/>
 		<xs:attribute name="description" type="xs:string" use="required"/>
@@ -398,12 +460,16 @@
 		<xs:attribute name="requireComment" type="xs:boolean"/>
 	</xs:complexType>
 	<xs:complexType name="ComponentCharacteristic" abstract="true">
+
 		<xs:sequence>
-			<xs:element name="AllowedTerm" maxOccurs="unbounded">
+									
+									
+			<xs:element name="AllowedTerm" minOccurs="0" maxOccurs="unbounded">
 				<xs:complexType>
 					<xs:complexContent>
 						<xs:extension base="ValidTerm">
 							<xs:sequence minOccurs="0">
+										
 								<xs:element name="CharacteristicQuantification" maxOccurs="unbounded">
 									<xs:complexType>
 										<xs:complexContent>
@@ -415,6 +481,7 @@
 														<xs:element name="Interval" type="Interval" maxOccurs="unbounded"/>
 														<xs:element name="Quantile" type="Quantile"/>
 													</xs:choice>
+
 													<xs:element name="NonQuantifiable" minOccurs="0" maxOccurs="unbounded">
 														<xs:complexType>
 															<xs:attribute name="codeValue" type="xs:string" use="required"/>
@@ -432,6 +499,7 @@
 										</xs:complexContent>
 									</xs:complexType>
 								</xs:element>
+
 							</xs:sequence>
 							<xs:attribute name="defaultAnswer" type="xs:boolean" use="optional" default="false"/>
 							<xs:attribute name="nextId" type="UID" use="optional"/>
