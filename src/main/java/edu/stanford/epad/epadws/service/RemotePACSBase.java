@@ -259,7 +259,7 @@ public class RemotePACSBase {
 				int			      queryPort = presentationAddress.getPort();
 				log.info("queryHost:" + queryHost + " queryPort:" + queryPort);
 				String                       queryModel = networkApplicationInformation.getApplicationEntityMap().getQueryModel(queryCalledAETitle);
-				int                     queryDebugLevel = networkApplicationProperties.getQueryDebugLevel();
+				int                     queryDebugLevel = 0;//networkApplicationProperties.getQueryDebugLevel();
 
 				if (NetworkApplicationProperties.isStudyRootQueryModel(queryModel) || queryModel == null) {
 					currentRemoteQueryInformationModel=new StudyRootQueryInformationModel(queryHost,queryPort,queryCalledAETitle,queryCallingAETitle,queryDebugLevel);

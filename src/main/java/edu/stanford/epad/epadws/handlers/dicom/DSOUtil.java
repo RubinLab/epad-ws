@@ -561,7 +561,12 @@ public class DSOUtil
 
 			pngFilesDirectory.mkdirs();
 			Opener opener = new Opener();
-			ImagePlus image = opener.openImage(dicomFile.getAbsolutePath());
+			ImagePlus image=null;
+			try{
+				image = opener.openImage(dicomFile.getAbsolutePath());
+			}catch(Throwable t) {
+				log.warning("ImageJ failed", t);
+			}
 			if (image != null) {
 				numberOfFrames  = image.getNFrames();
 				int numberOfSlices  = image.getNSlices();
@@ -584,7 +589,9 @@ public class DSOUtil
 				}
 			} else {
 				log.info("Using pixelmed:" + pngFilePath + " Dir:" + pngFilesDirectory.getAbsolutePath());
-				ConsumerFormatImageMaker.convertFileToEightBitImage(dicomFile.getAbsolutePath(), pngFilePath, "png", 0);
+				//if we use the old version, it writes all the properties (annotations) on the image, that is why the last parameter is null
+				ConsumerFormatImageMaker.convertFileToEightBitImage(dicomFile.getAbsolutePath(), pngFilePath, "png",0,0,0,0,100,null);
+				//old version convertFileToEightBitImage(dicomFile.getAbsolutePath(), pngFilePath, "png", 0);
 				File[] pngs = pngFilesDirectory.listFiles();
 				for (File png: pngs)
 				{
