@@ -293,7 +293,16 @@ public class DSOUtil
 			List<File> existingDSOTIFFMaskFiles = DSOUtil.getDSOTIFFMaskFiles(imageReference, dsoTIFFMaskFiles);
 			int frameMaskFilesIndex = 0;
 			for (Integer frameNumber : dsoEditRequest.editedFrameNumbers) {
-				if (frameNumber >= 0 && frameNumber < imageDescriptions.size()) {
+				if (imageDescriptions.size()==1  && frameNumber > imageDescriptions.size()) {
+					//just one mask, but frame number is larger
+					log.info("Editing frame: " + frameNumber + " in new DSO");
+					// For some reason the original DSO Masks are in reverse order
+					int editMaskFileIndex = 0;
+					File prev = dsoTIFFMaskFiles.get(editMaskFileIndex);
+					deleteQuietly(prev);
+					dsoTIFFMaskFiles.set(editMaskFileIndex, editFramesTIFFMaskFiles.get(frameMaskFilesIndex++));
+				}
+				else if (frameNumber >= 0 && frameNumber < imageDescriptions.size()) {
 					log.info("Editing frame: " + frameNumber + " in new DSO");
 					// For some reason the original DSO Masks are in reverse order
 					int editMaskFileIndex = existingDSOTIFFMaskFiles.size() - frameNumber -1;
@@ -1296,7 +1305,7 @@ public class DSOUtil
 		return dicomFilePaths;
 	}
 
-	private static List<File> getDSOTIFFMaskFiles(ImageReference imageReference, List<File> dsoMaskFiles) throws IOException
+	private static List<File> getDSOTIFFMaskFiles(ImageReference imageReference, List<File> dsoMaskFiles) throws Exception
 	{
 		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
 
@@ -1314,7 +1323,16 @@ public class DSOUtil
 				BufferedImage bufferedImage = ImageIO.read(maskFile);
 				File tiffFile = File.createTempFile(imageReference.imageUID + "_frame_" + frame.frameNumber + "_", ".tif");
 				ImageIO.write(bufferedImage, "tif", tiffFile);
-				dsoMaskFiles.set(dsoMaskFiles.size() - frame.frameNumber-1, tiffFile);
+				//ml very bad fix for just one frame
+				if (dsoMaskFiles.size()==1)
+					dsoMaskFiles.set(0, tiffFile);
+				else if (dsoMaskFiles.size() - frame.frameNumber-1<0){
+					//TODO fix for templates starting from a number greater than 0, but has more than one frames
+					throw new Exception("DSO edit with frame numbers not starting from 1 and has more than one frames is not supported ");
+				}
+				else {
+					dsoMaskFiles.set(dsoMaskFiles.size() - frame.frameNumber-1, tiffFile);
+				}
 			} catch (IOException e) {
 				log.warning("Error creating TIFF mask file " + maskFilePath + " for frame " + frame.frameNumber + " for DSO "
 						+ imageReference.imageUID, e);
