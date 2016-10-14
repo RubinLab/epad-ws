@@ -2416,6 +2416,8 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		Project project = getProject(projectID);
 		if (project == null) return;
 		new ProjectToUser().deleteObjects("project_id=" + project.getId());
+		new ProjectToTemplate().deleteObjects("project_id=" + project.getId());
+		new Template().deleteObjects("file_id in (select id from epad_file where project_id=" + project.getId()+")");
 		new EpadFile().deleteObjects("project_id=" + project.getId());
 		new ProjectToPluginParameter().deleteObjects("project_id=" + project.getId() );
 		new ProjectToPlugin().deleteObjects("project_id=" + project.getId() );
