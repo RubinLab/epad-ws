@@ -1827,11 +1827,15 @@ public class DefaultEpadOperations implements EpadOperations
 						log.warning("Error saving AIM file to Exist DB:" + uploadedFile.getName());					
 				}				
 			}
-			if (type == null || !type.equals(FileType.TEMPLATE))
+			EpadFile file=null;
+			if (type == null || !type.equals(FileType.TEMPLATE)) {
 				projectOperations.createEventLog(username, projectID, subjectID, studyID, seriesID, null, null, uploadedFile.getName(), "UPLOAD FILE", description, false);
-			EpadFile file=projectOperations.createFile(username, projectID, subjectID, studyID, seriesID, uploadedFile, filename, description, type, template.getTemplateLevelType());
-			//if it is a template put the file information and create the template entry in db
+				file=projectOperations.createFile(username, projectID, subjectID, studyID, seriesID, uploadedFile, filename, description, type);
+			}
+					//if it is a template put the file information and create the template entry in db
 			if (type != null && fileType.equals(FileType.TEMPLATE.getName())) {
+				file=projectOperations.createFile(username, projectID, subjectID, studyID, seriesID, uploadedFile, filename, description, type, template.getTemplateLevelType());
+
 				template.setFileId(file.getId());
 				template.save();
 				log.info("template db entry is created for template="+template.getTemplateName());
