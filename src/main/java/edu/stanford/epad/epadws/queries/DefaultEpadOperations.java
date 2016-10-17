@@ -1791,11 +1791,11 @@ public class DefaultEpadOperations implements EpadOperations
 				}
 				//read the file and extract a template object, it will be completed and saved after the file is created 
 				template = getFirstTemplateInfo(uploadedFile);
-				if (templateExists(template.getTemplateCode()))
-					throw new Exception("Invalid Template code "+ template.getTemplateCode() +" already exists in the system ");
-				//read the xml to find out the template type and put it in description
-				//not used
-				//templateLevelType=getTemplateLevelType(uploadedFile);
+				
+				//this should be uncommented once the ui is able to add project template relation from the interface
+//				if (templateExists(template.getTemplateCode()))
+//					throw new Exception("Invalid Template code "+ template.getTemplateCode() +" already exists in the system ");
+				
 				projectOperations.createEventLog(username, projectID, subjectID, studyID, seriesID, null, null, uploadedFile.getName(), "UPLOAD TEMPLATE", description, false);
 			}
 			else if (fileType != null && fileType.equals(FileType.IMAGE.getName()))
@@ -1834,10 +1834,31 @@ public class DefaultEpadOperations implements EpadOperations
 			}
 					//if it is a template put the file information and create the template entry in db
 			if (type != null && fileType.equals(FileType.TEMPLATE.getName())) {
-				file=projectOperations.createFile(username, projectID, subjectID, studyID, seriesID, uploadedFile, filename, description, type, template.getTemplateLevelType());
-
-				template.setFileId(file.getId());
-				template.save();
+				//temporary fix for uploading same template to different projects. should be removed once the ui is able to add project template relation from the interface
+				Template existingTemplate=getTemplate(template.getTemplateCode());
+				if (existingTemplate!=null){
+					//two different possibilities; either the user uploaded same file to different projects or uses the same code
+					EpadFile ef=(EpadFile)projectOperations.getDBObject(EpadFile.class, existingTemplate.getFileId());
+					
+					
+					//if same file just remove the extras and put the project relations
+					if (filename.equalsIgnoreCase(ef.getName()) && uploadedFile.length()==ef.getLength() && !projectID.equals(ef.getProjectId()) ) {
+						log.info("same file for template="+template.getTemplateName() +" just putting the project relation");
+						file=ef;
+						template=existingTemplate;
+					}
+					else {
+						throw new Exception("Invalid Template code "+ template.getTemplateCode() +" already exists in the system ");
+					}
+				} else {
+					//get this out of if else once the ui is able to add project template relation from the interface
+					file=projectOperations.createFile(username, projectID, subjectID, studyID, seriesID, uploadedFile, filename, description, type, template.getTemplateLevelType());
+					template.setFileId(file.getId());
+					template.save();
+				}
+				
+				
+				
 				log.info("template db entry is created for template="+template.getTemplateName());
 				projectOperations.setProjectTemplate(username, projectID, template.getTemplateCode(), true);
 
@@ -2483,8 +2504,13 @@ public class DefaultEpadOperations implements EpadOperations
 					//we need a way to put the projectid initially. it is in main
 
 					//just to put smt for ui. should be removed
-					if (template.projectTemplates!=null && !template.projectTemplates.isEmpty())
-						template.projectID=template.projectTemplates.get(0).projectID;
+					if (template.projectTemplates!=null && !template.projectTemplates.isEmpty()){
+						for (EPADProjectTemplate pt:template.projectTemplates) {
+							template.projectID+=pt.projectID+",";
+						}
+						template.projectID=template.projectID.trim().replaceAll(",+$", "");
+//						template.projectID=template.projectTemplates.get(0).projectID;
+					}
 					fileList.addTemplate(template);
 
 				}
@@ -2987,6 +3013,9 @@ public class DefaultEpadOperations implements EpadOperations
 		else
 		{
 			EpadFile file = projectOperations.getEpadFile(projectReference.projectID, null, null, null, fileName);
+			if (file.getFileType().equalsIgnoreCase(FileType.TEMPLATE.getName())) {
+				throw new Exception("Do not use this endpoint for deleting templates. Use delete template endpoint");
+			}
 			if (file == null && !user.isAdmin())
 				throw new Exception("No permissions to delete system template");
 			if (file != null && !username.equals(file.getCreator()) && !projectOperations.isOwner(username, projectReference.projectID))
