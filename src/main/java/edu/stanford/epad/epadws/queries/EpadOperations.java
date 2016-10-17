@@ -1598,4 +1598,20 @@ public interface EpadOperations
 	 * @throws Exception
 	 */
 	void migrateTemplates() throws Exception;
+
+	/**
+	 * delete a specific file
+	 * @param username
+	 * @param fileId
+	 * @throws Exception
+	 */
+	void deleteFile(String username, long fileId) throws Exception;
+
+	/**
+	 * delete template completely
+	 * @param username
+	 * @param templatecode
+	 * @throws Exception
+	 */
+	void deleteTemplate(String username, String templatecode) throws Exception;
 }

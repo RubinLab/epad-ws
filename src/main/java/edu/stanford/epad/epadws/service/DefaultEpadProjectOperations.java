@@ -2033,6 +2033,49 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		return file;
 	}
 
+	
+	@Override
+	public EpadFile getEpadFile(String projectID,
+			String subjectUID, String studyUID, String seriesUID,
+			String filename, String filetype) throws Exception {
+		String criteria = "";
+		if (projectID != null && projectID.length() > 0)
+		{
+			Project project = getProject(projectID);
+			criteria = criteria + "project_id = " + project.getId();
+		}
+		else
+			criteria = criteria + "project_id is null";
+		if (subjectUID != null && subjectUID.length() > 0)
+		{
+			Subject subject = getSubject(subjectUID);
+			criteria = criteria + " and subject_id = " + subject.getId();
+		}
+		else
+			criteria = criteria + " and subject_id is null";
+		if (studyUID != null && studyUID.length() > 0)
+		{
+			Study study = getStudy(studyUID);
+			criteria = criteria + " and study_id = " + study.getId();
+		}
+		else
+			criteria = criteria + " and study_id is null";
+		if (seriesUID != null && seriesUID.length() > 0)
+		{
+			criteria = criteria + " and series_uid = '" + seriesUID + "'";
+		}
+		else
+			criteria = criteria + " and series_uid is null";
+		if (filetype!= null && filetype.length() > 0)
+		{
+			criteria = criteria + " and filetype = '" + filetype + "'";
+		}
+		else
+			criteria = criteria + " and filetype is null";
+		criteria = criteria + " and name = " + new EpadFile().toSQL(filename);
+		EpadFile file = (EpadFile) new EpadFile().getObject(criteria);
+		return file;
+	}
 	/* (non-Javadoc)
 	 * @see edu.stanford.epad.epadws.service.EpadProjectOperations#getEpadFiles(java.lang.String, java.lang.String, java.lang.String, java.lang.String, FileType)
 	 */
@@ -2390,6 +2433,41 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		efile.delete();
 	}
 	
+	@Override
+	public void deleteFile(String loggedInUser, String projectID,
+			String subjectUID, String studyUID, String seriesUID,
+			String filename, String filetype) throws Exception {
+		log.info("Deleting File, projectID:" + projectID + "  subjectUID:" + subjectUID + "  studyUID:" + studyUID + "  seriesUID:" + seriesUID + "  filename:" + filename);
+		EpadFile efile = getEpadFile(projectID, subjectUID, studyUID, seriesUID, filename, filetype);
+		if (efile == null)
+			throw new Exception("File not found");
+		User requestor = getUser(loggedInUser);
+		if (!requestor.isAdmin() && !isOwner(loggedInUser, projectID) && !loggedInUser.equals(efile.getCreator()))
+			throw new Exception("No permissions to delete file");
+		String path = efile.getFilePath();
+		File file = new File(path);
+		try {
+			if (file.exists()) {
+				file.delete();
+			}
+		} catch (Exception x) {
+			log.warning("Error deleting file:" + file.getAbsolutePath(), x);
+		}
+		//if file is a template delete the entries in template and project_template
+		if (efile.getFileType().equalsIgnoreCase("Template")){
+			//get project entities and delete them first
+			List<Template> templates=new Template().getObjects("file_id =" + efile.getId());
+			for (Template t:templates) {
+				new ProjectToTemplate().deleteObjects("template_id =" + t.getId());
+			}
+			//delete the template
+			new Template().deleteObjects("file_id =" + efile.getId());
+		}
+		
+		new ProjectToFile().deleteObjects("file_id =" + efile.getId());
+		efile.delete();
+	}
+	
 	private void deleteFile(EpadFile efile) throws Exception {
 		String path = efile.getFilePath();
 		File file = new File(path);
@@ -2416,9 +2494,32 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		Project project = getProject(projectID);
 		if (project == null) return;
 		new ProjectToUser().deleteObjects("project_id=" + project.getId());
+		//extra checks for migration
+		//if the templates that are in this project has any references to other projects, 
+		//check if they have file references
+		//check if the are same size
+		//if so update the template file ref in the template
+		List<ProjectToTemplate> projectTemplates= new ProjectToTemplate().getObjects("project_id=" + project.getId());
+		for (ProjectToTemplate pt :projectTemplates) {
+			List<ProjectToTemplate> otherProjects =new ProjectToTemplate().getObjects("template_id="+pt.getTemplateId()+" and project_id<>" + project.getId());
+			for (ProjectToTemplate ot :otherProjects) { //for each template check
+				//get the template
+				Template t=(Template) getDBObject(Template.class, ot.getTemplateId());
+				//get the file
+				EpadFile f=(EpadFile) getDBObject(EpadFile.class, t.getFileId());
+				//find the same file with different project id and update the template
+				List <EpadFile> files= new EpadFile().getObjects("id<>"+ t.getFileId() + " and name='"+f.getName() + "' and length="+f.getLength()); 
+				if (files.size()>=1) { //found one record update template, if more than one just use the first
+					t.setFileId(files.get(0).getId());
+					t.save();
+				}
+			}
+		}
+		
 		new ProjectToTemplate().deleteObjects("project_id=" + project.getId());
 		new Template().deleteObjects("file_id in (select id from epad_file where project_id=" + project.getId()+")");
 		new EpadFile().deleteObjects("project_id=" + project.getId());
+					
 		new ProjectToPluginParameter().deleteObjects("project_id=" + project.getId() );
 		new ProjectToPlugin().deleteObjects("project_id=" + project.getId() );
 		new ProjectToSubjectToUser().deleteObjects("proj_subj_id in (select id from " + new ProjectToSubject().returnDBTABLE() + " where project_id=" + project.getId() + ")");

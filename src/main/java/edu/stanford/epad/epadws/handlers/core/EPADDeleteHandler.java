@@ -114,6 +114,7 @@ import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.epad.dtos.EPADMessage;
 import edu.stanford.epad.dtos.EPADPlugin;
+import edu.stanford.epad.dtos.EPADTemplateContainerList;
 import edu.stanford.epad.dtos.RemotePAC;
 import edu.stanford.epad.epadws.dcm4chee.Dcm4cheeServer;
 import edu.stanford.epad.epadws.handlers.HandlerUtil;
@@ -396,6 +397,14 @@ public class EPADDeleteHandler
 				pluginOperations.deletePlugin(username, pluginReference.pluginID);	
 				statusCode = HttpServletResponse.SC_OK;
 			
+			} else if (HandlerUtil.matchesTemplate(TemplatesRouteTemplates.TEMPLATE, pathInfo)) {
+				Map<String, String> templateMap = HandlerUtil.getTemplateMap(TemplatesRouteTemplates.TEMPLATE, pathInfo);
+				String templatecode = HandlerUtil.getTemplateParameter(templateMap, "templatecode");
+				
+				epadOperations.deleteTemplate(username, templatecode);
+				statusCode= HttpServletResponse.SC_OK;
+			
+				
 			} else {
 				statusCode = HandlerUtil.badRequestJSONResponse(BAD_DELETE_MESSAGE + ":" + pathInfo, responseStream, log);
 			}

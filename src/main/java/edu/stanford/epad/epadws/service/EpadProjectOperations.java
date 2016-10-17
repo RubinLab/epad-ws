@@ -1143,5 +1143,33 @@ public interface EpadProjectOperations {
 	 */
 	List<String> getDisabledTemplateCodes(String projectID) throws Exception;
 	
+	/**
+	 * get file with type
+	 * @param projectID
+	 * @param subjectUID
+	 * @param studyUID
+	 * @param seriesUID
+	 * @param filename
+	 * @param filetype
+	 * @return
+	 * @throws Exception
+	 */
+	EpadFile getEpadFile(String projectID, String subjectUID, String studyUID, String seriesUID, String filename,
+			String filetype) throws Exception;
+	
+	/**
+	 * delete a file with filetype attribute
+	 * @param loggedInUser
+	 * @param projectID
+	 * @param subjectUID
+	 * @param studyUID
+	 * @param seriesUID
+	 * @param filename
+	 * @param filetype
+	 * @throws Exception
+	 */
+	void deleteFile(String loggedInUser, String projectID, String subjectUID, String studyUID, String seriesUID,
+			String filename, String filetype) throws Exception;
+	
 	
 }
