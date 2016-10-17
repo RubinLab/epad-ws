@@ -2416,9 +2416,32 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		Project project = getProject(projectID);
 		if (project == null) return;
 		new ProjectToUser().deleteObjects("project_id=" + project.getId());
+		//extra checks for migration
+		//if the templates that are in this project has any references to other projects, 
+		//check if they have file references
+		//check if the are same size
+		//if so update the template file ref in the template
+		List<ProjectToTemplate> projectTemplates= new ProjectToTemplate().getObjects("project_id=" + project.getId());
+		for (ProjectToTemplate pt :projectTemplates) {
+			List<ProjectToTemplate> otherProjects =new ProjectToTemplate().getObjects("template_id="+pt.getTemplateId()+" and project_id<>" + project.getId());
+			for (ProjectToTemplate ot :otherProjects) { //for each template check
+				//get the template
+				Template t=(Template) getDBObject(Template.class, ot.getTemplateId());
+				//get the file
+				EpadFile f=(EpadFile) getDBObject(EpadFile.class, t.getFileId());
+				//find the same file with different project id and update the template
+				List <EpadFile> files= new EpadFile().getObjects("id<>"+ t.getFileId() + " and name='"+f.getName() + "' and length="+f.getLength()); 
+				if (files.size()>=1) { //found one record update template, if more than one just use the first
+					t.setFileId(files.get(0).getId());
+					t.save();
+				}
+			}
+		}
+		
 		new ProjectToTemplate().deleteObjects("project_id=" + project.getId());
 		new Template().deleteObjects("file_id in (select id from epad_file where project_id=" + project.getId()+")");
 		new EpadFile().deleteObjects("project_id=" + project.getId());
+					
 		new ProjectToPluginParameter().deleteObjects("project_id=" + project.getId() );
 		new ProjectToPlugin().deleteObjects("project_id=" + project.getId() );
 		new ProjectToSubjectToUser().deleteObjects("proj_subj_id in (select id from " + new ProjectToSubject().returnDBTABLE() + " where project_id=" + project.getId() + ")");
