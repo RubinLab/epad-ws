@@ -217,8 +217,10 @@ import edu.stanford.epad.epadws.models.EventLog;
 import edu.stanford.epad.epadws.models.FileType;
 import edu.stanford.epad.epadws.models.NonDicomSeries;
 import edu.stanford.epad.epadws.models.Project;
+import edu.stanford.epad.epadws.models.ProjectToFile;
 import edu.stanford.epad.epadws.models.ProjectToSubjectToStudy;
 import edu.stanford.epad.epadws.models.ProjectToSubjectToStudyToSeriesToUserStatus;
+import edu.stanford.epad.epadws.models.ProjectToTemplate;
 import edu.stanford.epad.epadws.models.ProjectType;
 import edu.stanford.epad.epadws.models.Study;
 import edu.stanford.epad.epadws.models.Subject;
@@ -2396,6 +2398,7 @@ public class DefaultEpadOperations implements EpadOperations
 				
 			}else {
 				template.setFileId(efile.getId());
+				template.setCreator(efile.getCreator());
 				template.save();
 				log.info("template db entry is created for template="+template.getTemplateName() + " as " + template.getTemplateCode());
 			}
@@ -3035,6 +3038,46 @@ public class DefaultEpadOperations implements EpadOperations
 		}
 	}
 
+	
+	
+	@Override
+	public void deleteTemplate(String username, 
+			String templatecode) throws Exception {
+		Template t=getTemplate(templatecode);
+		User requestor = projectOperations.getUser(username);
+		EpadFile f=(EpadFile) projectOperations.getDBObject(EpadFile.class, t.getFileId());
+		List <EpadFile> files= new EpadFile().getObjects(" name='"+f.getName() + "' and length="+f.getLength()); 
+		int usersFiles=0;
+		for (EpadFile fl:files) { 
+			log.info("found file:"+fl.getId() );
+			if (username.equals(fl.getCreator()))
+					usersFiles++;
+		}
+		if (!requestor.isAdmin() && !(usersFiles==files.size()))
+			throw new Exception("No permissions to delete template");
+		log.info("Deleting Template, templatecode: " + templatecode);
+		
+		new ProjectToTemplate().deleteObjects("template_id=" + t.getId());
+		//migration check multiple files
+		if (usersFiles>1) {
+			for (EpadFile fl:files) { 
+				deleteFile(username,fl.getId());
+			}
+		}else {
+			deleteFile(username,t.getFileId());
+		}
+		//deleteFile also deletes the template and projecttemplate entries. it is ok, I am handling migration first 
+		new Template().deleteObjects("id=" + t.getId());
+	
+	}
+
+	@Override
+	public void deleteFile(String username, long fileId) throws Exception {
+		EpadFile f=(EpadFile) projectOperations.getDBObject(EpadFile.class, fileId);
+		Project p=(Project) projectOperations.getDBObject(Project.class, f.getProjectId());
+		projectOperations.deleteFile(username,p.getProjectId(),null,null,null, f.getName(), f.getFileType());
+	}
+	
 	@Override
 	public void deleteFile(String username, SubjectReference subjectReference,
 			String fileName) throws Exception {

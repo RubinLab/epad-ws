@@ -698,18 +698,12 @@ public class EPADPutHandler
 				
 			} else if (HandlerUtil.matchesTemplate(TemplatesRouteTemplates.TEMPLATE, pathInfo)) {
 				Map<String, String> templateMap = HandlerUtil.getTemplateMap(TemplatesRouteTemplates.TEMPLATE, pathInfo);
-				String templatename = HandlerUtil.getTemplateParameter(templateMap, "name");
+				String templatecode = HandlerUtil.getTemplateParameter(templateMap, "templatecode");
 				String enable = httpRequest.getParameter("enable");
 				if (enable != null)
 				{
-					if ("true".equalsIgnoreCase(enable))
-					{
-						projectOperations.enableTemplate(username, EPADConfig.xnatUploadProjectID, null, null, null, templatename);
-					}
-					else if ("false".equalsIgnoreCase(enable))
-					{	
-						projectOperations.disableTemplate(username, EPADConfig.xnatUploadProjectID, null, null, null, templatename);
-					}
+					projectOperations.setProjectTemplate(username, EPADConfig.xnatUploadProjectID, templatecode, "true".equalsIgnoreCase(enable)); 
+					
 				}
 				
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.TEMPLATE, pathInfo)) {
