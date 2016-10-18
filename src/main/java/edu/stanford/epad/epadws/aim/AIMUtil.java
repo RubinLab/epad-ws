@@ -279,6 +279,7 @@ public class AIMUtil
 			if (isPluginStillRunning(aim.getUniqueIdentifier().getRoot()))
 				throw new edu.stanford.hakan.aim4api.base.AimException("Previous version of this AIM " + aim.getUniqueIdentifier().getRoot() + " is still being processed by the plugin");
 			
+			
 			// For safety, write a backup file - what is this strange safety feature??
 		    String tempXmlPath = baseAnnotationDir + "temp-" + aim.getUniqueIdentifier().getRoot() + ".xml";
 		    String storeXmlPath = baseAnnotationDir + aim.getUniqueIdentifier().getRoot() + ".xml";
@@ -757,6 +758,8 @@ public class AIMUtil
 
 	public static boolean saveAIMAnnotation(File aimFile, String projectID, int frameNumber, String sessionId, String username, boolean uploaded) throws AimException
 	{
+		final Dcm4CheeDatabaseOperations dcm4CheeDatabaseOperations = Dcm4CheeDatabase.getInstance()
+				.getDcm4CheeDatabaseOperations();
 		if (aimFile == null)
 			return true;
 		try {
@@ -797,6 +800,11 @@ public class AIMUtil
 				if (imageID != null && imageID.length() > 0)
 					seriesID = aim.getSeriesID(imageID);
 				String studyID = aim.getStudyID(seriesID);
+				//try fix for aim edit tedseg
+				if (studyID==null || studyID.equals("")) {
+					studyID=dcm4CheeDatabaseOperations.getStudyUIDForSeries(seriesID);
+					
+				}
 				List<String> seriesIds = aim.getSeriesIDs();
 				if (ea != null && !ea.projectID.equals(projectID))
 				{
@@ -867,8 +875,7 @@ public class AIMUtil
 								List<EPADAIM> aims = epadDatabaseOperations.getAIMs(seriesReference);
 								//ml aim for no imageref for dso
 								if (dse!=null && seriesIds.size()==1) {
-									final Dcm4CheeDatabaseOperations dcm4CheeDatabaseOperations = Dcm4CheeDatabase.getInstance()
-											.getDcm4CheeDatabaseOperations();
+									
 									dsoSeriesUID=dcm4CheeDatabaseOperations.getSeriesUIDForImage(dse.getSopInstanceUid().getRoot());
 									if (dsoSeriesUID.equals("")) { //DSO is not in db yet
 										//required info

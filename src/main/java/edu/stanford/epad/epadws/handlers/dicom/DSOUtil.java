@@ -214,6 +214,10 @@ public class DSOUtil
 	private static DSOEditResult createEditedDSO(DSOEditRequest dsoEditRequest, List<File> editFramesPNGMaskFiles, String referencedSeriesUID)
 	{
 		try {
+			//try fix for empty study id 
+			if (dsoEditRequest.studyUID==null || dsoEditRequest.studyUID.equals("")) {
+				dsoEditRequest.studyUID=dcm4CheeDatabaseOperations.getStudyUIDForSeries(referencedSeriesUID);
+			}
 			List<DCM4CHEEImageDescription> imageDescriptions = dcm4CheeDatabaseOperations.getImageDescriptions(
 					dsoEditRequest.studyUID, referencedSeriesUID);
 			int width = 0;
