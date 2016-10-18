@@ -370,18 +370,18 @@ public class DSOUtil
 					File temporaryDICOMFile = File.createTempFile(imageDescription.imageUID, ".dcm");
 					//log.info("Downloading source DICOM file for image " + imageDescription.imageUID);
 					DCM4CHEEUtil.downloadDICOMFileFromWADO(dsoEditRequest.studyUID, dsoEditRequest.seriesUID, imageDescription.imageUID, temporaryDICOMFile);
-					if (width == 0) {
-						DicomInputStream dicomInputStream = null;
-						try {
-							dicomInputStream = new DicomInputStream(new FileInputStream(temporaryDICOMFile));
-							AttributeList localDICOMAttributes = new AttributeList();
-							localDICOMAttributes.read(dicomInputStream);
-							width = (short)Attribute.getSingleIntegerValueOrDefault(localDICOMAttributes, TagFromName.Columns, 1);
-							height = (short)Attribute.getSingleIntegerValueOrDefault(localDICOMAttributes, TagFromName.Rows, 1);
-						} finally {
-							IOUtils.closeQuietly(dicomInputStream);
-						}
-					}
+//					if (width == 0) {
+//						DicomInputStream dicomInputStream = null;
+//						try {
+//							dicomInputStream = new DicomInputStream(new FileInputStream(temporaryDICOMFile));
+//							AttributeList localDICOMAttributes = new AttributeList();
+//							localDICOMAttributes.read(dicomInputStream);
+//							width = (short)Attribute.getSingleIntegerValueOrDefault(localDICOMAttributes, TagFromName.Columns, 1);
+//							height = (short)Attribute.getSingleIntegerValueOrDefault(localDICOMAttributes, TagFromName.Rows, 1);
+//						} finally {
+//							IOUtils.closeQuietly(dicomInputStream);
+//						}
+//					}
 					dicomFilePaths.add(temporaryDICOMFile.getAbsolutePath());
 				} catch (IOException e) {
 					log.warning("Error downloading DICOM file for referenced image " + imageDescription.imageUID + " for series "
@@ -492,6 +492,21 @@ public class DSOUtil
 
 	private static File copyEmptyTiffFile(File original, String newFileName, int width, int height)
 	{
+		
+		BufferedImage orjImg;
+		try {
+			orjImg = ImageIO.read(original);
+		
+			if (width!= orjImg.getWidth() || height!=orjImg.getHeight()) {
+				log.warning("Width and height not right. Old width:"+width +" updated:"+ orjImg.getWidth()+" old height:"+ height + " updated:"+orjImg.getHeight());
+				width=orjImg.getWidth();
+				height=orjImg.getHeight();
+				
+			}
+		} catch (IOException e1) {
+			log.warning("failed to read original tiff;",e1);
+		}
+		
 		File newFile = null;
 		try {
 			long len = original.length();
