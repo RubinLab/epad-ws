@@ -50,5 +50,5 @@ CREATE UNIQUE INDEX uk_project_template_ind on project_template(project_id,templ
 
 
 
-UPDATE dbversion SET version = '2.2';
+UPDATE dbversion SET version = '2.3';
 commit;
