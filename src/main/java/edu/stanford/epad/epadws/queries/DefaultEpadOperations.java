@@ -3254,7 +3254,7 @@ public class DefaultEpadOperations implements EpadOperations
 			String sessionID) {
 		try {
 			EPADAIM aim = epadDatabaseOperations.getAIM(aimID);
-			if (!"admin".equals(username) && !projectOperations.hasAccessToProject(username, projectReference.projectID) && (aim == null || !aim.userName.equals(username)))
+			if (!"admin".equals(username) && !projectOperations.hasAccessToProject(username, projectReference.projectID) && (aim == null || !aim.userName.equalsIgnoreCase(username)))
 			{
 				log.warning("No permissions to update AIM:" + aimID + " for user " + username);
 				throw new Exception("No permissions to update AIM:" + aimID + " for user " + username);
@@ -3301,7 +3301,7 @@ public class DefaultEpadOperations implements EpadOperations
 		try {
 			projectOperations.createEventLog(username, subjectReference.projectID, subjectReference.subjectID, null, null, null, aimID, "CREATE AIM", aimFile.getName());
 			EPADAIM aim = epadDatabaseOperations.addAIM(username, subjectReference, aimID);
-			if (!"admin".equals(username) && !aim.userName.equals(username) && !aim.userName.equals("shared") && !UserProjectService.isOwner(sessionID, username, aim.projectID))
+			if (!"admin".equals(username) && !aim.userName.equalsIgnoreCase(username) && !aim.userName.equalsIgnoreCase("shared") && !UserProjectService.isOwner(sessionID, username, aim.projectID))
 			{
 				log.warning("No permissions to update AIM:" + aimID + " for user " + username);
 				throw new Exception("No permissions to update AIM:" + aimID + " for user " + username);
@@ -3329,7 +3329,7 @@ public class DefaultEpadOperations implements EpadOperations
 		try {
 			projectOperations.createEventLog(username, studyReference.projectID, studyReference.subjectID, studyReference.studyUID, null, null, aimID, "CREATE AIM", aimFile.getName());
 			EPADAIM aim = epadDatabaseOperations.addAIM(username, studyReference, aimID);
-			if (!"admin".equals(username) && !aim.userName.equals(username) && !aim.userName.equals("shared") && !UserProjectService.isOwner(sessionID, username, aim.projectID))
+			if (!"admin".equals(username) && !aim.userName.equalsIgnoreCase(username) && !aim.userName.equalsIgnoreCase("shared") && !UserProjectService.isOwner(sessionID, username, aim.projectID))
 			{
 				log.warning("No permissions to update AIM:" + aimID + " for user " + username);
 				throw new Exception("No permissions to update AIM:" + aimID + " for user " + username);
@@ -3357,7 +3357,7 @@ public class DefaultEpadOperations implements EpadOperations
 		try {
 			projectOperations.createEventLog(username, seriesReference.projectID, seriesReference.subjectID, seriesReference.studyUID, seriesReference.seriesUID, null, aimID, "CREATE AIM", aimFile.getName());
 			EPADAIM aim = epadDatabaseOperations.addAIM(username, seriesReference, aimID);
-			if (!"admin".equals(username) && !aim.userName.equals(username) && !aim.userName.equals("shared") && !UserProjectService.isOwner(sessionID, username, aim.projectID))
+			if (!"admin".equals(username) && !aim.userName.equalsIgnoreCase(username) && !aim.userName.equalsIgnoreCase("shared") && !UserProjectService.isOwner(sessionID, username, aim.projectID))
 			{
 				log.warning("No permissions to update AIM:" + aimID + " for user " + username);
 				throw new Exception("No permissions to update AIM:" + aimID + " for user " + username);
@@ -3385,7 +3385,7 @@ public class DefaultEpadOperations implements EpadOperations
 		try {
 			projectOperations.createEventLog(username, imageReference.projectID, imageReference.subjectID, imageReference.studyUID, imageReference.seriesUID, imageReference.imageUID, aimID, "CREATE AIM", aimFile.getName());
 			EPADAIM aim = epadDatabaseOperations.addAIM(username, imageReference, aimID);
-			if (!"admin".equals(username) && !aim.userName.equals(username) && !aim.userName.equals("shared") && !UserProjectService.isOwner(sessionID, username, aim.projectID))
+			if (!"admin".equals(username) && !aim.userName.equalsIgnoreCase(username) && !aim.userName.equalsIgnoreCase("shared") && !UserProjectService.isOwner(sessionID, username, aim.projectID))
 			{
 				log.warning("No permissions to update AIM:" + aimID + " for user " + username);
 				throw new Exception("No permissions to update AIM:" + aimID + " for user " + username);
@@ -3413,7 +3413,7 @@ public class DefaultEpadOperations implements EpadOperations
 		try {
 			projectOperations.createEventLog(username, frameReference.projectID, frameReference.subjectID, frameReference.studyUID, frameReference.seriesUID, frameReference.imageUID, aimID, "CREATE AIM", aimFile.getName() + ":" + frameReference.frameNumber);
 			EPADAIM aim = epadDatabaseOperations.addAIM(username, frameReference, aimID);
-			if (!"admin".equals(username) && !aim.userName.equals(username) && !aim.userName.equals("shared") && !UserProjectService.isOwner(sessionID, username, aim.projectID))
+			if (!"admin".equals(username) && !aim.userName.equalsIgnoreCase(username) && !aim.userName.equalsIgnoreCase("shared") && !UserProjectService.isOwner(sessionID, username, aim.projectID))
 			{
 				log.warning("No permissions to update AIM:" + aimID + " for user " + username);
 				throw new Exception("No permissions to update AIM:" + aimID + " for user " + username);
@@ -3442,7 +3442,7 @@ public class DefaultEpadOperations implements EpadOperations
 				log.warning("AIM " + aimID + " not found");
 				return HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 			}
-			if (!"admin".equals(username) && !aim.userName.equals(username) && !aim.userName.equals("shared") && !UserProjectService.isOwner(sessionID, username, aim.projectID))
+			if (!"admin".equals(username) && !aim.userName.equalsIgnoreCase(username) && !aim.userName.equalsIgnoreCase("shared") && !UserProjectService.isOwner(sessionID, username, aim.projectID))
 			{
 				log.warning("No permissions to delete AIM:" + aimID + " for user " + username);
 				throw new Exception("No permissions to delete AIM:" + aimID + " for user " + username);
@@ -3498,7 +3498,7 @@ public class DefaultEpadOperations implements EpadOperations
 		try {
 			projectOperations.createEventLog(username, subjectReference.projectID, subjectReference.subjectID, null, null, null, aimID, "DELETE AIM", "deleteDSO:" + deleteDSO);
 			EPADAIM aim = getAIMDescription(aimID, username, sessionID);
-			if (!"admin".equals(username) && !aim.userName.equals(username) && !aim.userName.equals("shared") && !UserProjectService.isOwner(sessionID, username, aim.projectID))
+			if (!"admin".equals(username) && !aim.userName.equalsIgnoreCase(username) && !aim.userName.equalsIgnoreCase("shared") && !UserProjectService.isOwner(sessionID, username, aim.projectID))
 			{
 				log.warning("No permissions to delete AIM:" + aimID + " for user " + username);
 				throw new Exception("No permissions to delete AIM:" + aimID + " for user " + username);
@@ -3524,7 +3524,7 @@ public class DefaultEpadOperations implements EpadOperations
 		try {
 			projectOperations.createEventLog(username, studyReference.projectID, studyReference.subjectID, studyReference.studyUID, null, null, aimID, "DELETE AIM", "deleteDSO:" + deleteDSO);
 			EPADAIM aim = getAIMDescription(aimID, username, sessionID);
-			if (!"admin".equals(username) && !aim.userName.equals(username) && !aim.userName.equals("shared") && !UserProjectService.isOwner(sessionID, username, aim.projectID))
+			if (!"admin".equals(username) && !aim.userName.equalsIgnoreCase(username) && !aim.userName.equalsIgnoreCase("shared") && !UserProjectService.isOwner(sessionID, username, aim.projectID))
 			{
 				log.warning("No permissions to delete AIM:" + aimID + " for user " + username);
 				throw new Exception("No permissions to delete AIM:" + aimID + " for user " + username);
@@ -3550,7 +3550,7 @@ public class DefaultEpadOperations implements EpadOperations
 		try {
 			projectOperations.createEventLog(username, seriesReference.projectID, seriesReference.subjectID, seriesReference.studyUID, seriesReference.seriesUID, null, aimID, "DELETE AIM", "deleteDSO:" + deleteDSO);
 			EPADAIM aim = getAIMDescription(aimID, username, sessionID);
-			if (!"admin".equals(username) && !aim.userName.equals(username) && !aim.userName.equals("shared") && !UserProjectService.isOwner(sessionID, username, aim.projectID))
+			if (!"admin".equals(username) && !aim.userName.equalsIgnoreCase(username) && !aim.userName.equalsIgnoreCase("shared") && !UserProjectService.isOwner(sessionID, username, aim.projectID))
 			{
 				log.warning("No permissions to delete AIM:" + aimID + " for user " + username);
 				throw new Exception("No permissions to delete AIM:" + aimID + " for user " + username);
@@ -3594,7 +3594,7 @@ public class DefaultEpadOperations implements EpadOperations
 		try {
 			projectOperations.createEventLog(username, imageReference.projectID, imageReference.subjectID, imageReference.studyUID, imageReference.seriesUID, imageReference.imageUID, aimID, "DELETE AIM", "deleteDSO:" + deleteDSO);
 			EPADAIM aim = getAIMDescription(aimID, username, sessionID);
-			if (!"admin".equals(username) && !aim.userName.equals(username) && !aim.userName.equals("shared") && !UserProjectService.isOwner(sessionID, username, aim.projectID))
+			if (!"admin".equals(username) && !aim.userName.equalsIgnoreCase(username) && !aim.userName.equalsIgnoreCase("shared") && !UserProjectService.isOwner(sessionID, username, aim.projectID))
 			{
 				log.warning("No permissions to delete AIM:" + aimID + " for user " + username);
 				throw new Exception("No permissions to delete AIM:" + aimID + " for user " + username);
@@ -3620,7 +3620,7 @@ public class DefaultEpadOperations implements EpadOperations
 		try {
 			projectOperations.createEventLog(username, frameReference.projectID, frameReference.subjectID, frameReference.studyUID, frameReference.seriesUID, frameReference.imageUID, aimID, "DELETE AIM", "deleteDSO:" + deleteDSO + ":" + frameReference.frameNumber);
 			EPADAIM aim = getAIMDescription(aimID, username, sessionID);
-			if (!"admin".equals(username) && !aim.userName.equals(username) && !aim.userName.equals("shared") && !UserProjectService.isOwner(sessionID, username, aim.projectID))
+			if (!"admin".equals(username) && !aim.userName.equalsIgnoreCase(username) && !aim.userName.equalsIgnoreCase("shared") && !UserProjectService.isOwner(sessionID, username, aim.projectID))
 			{
 				log.warning("No permissions to delete AIM:" + aimID + " for user " + username);
 				throw new Exception("No permissions to delete AIM:" + aimID + " for user " + username);
@@ -3645,7 +3645,7 @@ public class DefaultEpadOperations implements EpadOperations
 		try {
 			projectOperations.createEventLog(username, null, null, null, null, null, aimID, "DELETE AIM", "deleteDSO:" + deleteDSO);
 			EPADAIM aim = getAIMDescription(aimID, username, sessionID);
-			if (!"admin".equals(username) && !aim.userName.equals(username) && !aim.userName.equals("shared") && !UserProjectService.isOwner(sessionID, username, aim.projectID))
+			if (!"admin".equals(username) && !aim.userName.equalsIgnoreCase(username) && !aim.userName.equalsIgnoreCase("shared") && !UserProjectService.isOwner(sessionID, username, aim.projectID))
 			{
 				log.warning("No permissions to delete AIM:" + aimID + " for user " + username);
 				throw new Exception("No permissions to delete AIM:" + aimID + " for user " + username);
@@ -4796,7 +4796,7 @@ public class DefaultEpadOperations implements EpadOperations
 				Set<EPADAIM> aims = aimlist.getAIMsForProject(projectID);
 				for (EPADAIM aim: aims)
 				{
-					if (!isCollaborator || aim.userName.equals(username) || aim.userName.equals("shared"))
+					if (!isCollaborator || aim.userName.equalsIgnoreCase(username) || aim.userName.equalsIgnoreCase("shared"))
 					{
 						count++;
 					}

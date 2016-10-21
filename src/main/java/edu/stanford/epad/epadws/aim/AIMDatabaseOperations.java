@@ -848,14 +848,14 @@ public class AIMDatabaseOperations {
 	//select a.projectuid,a.patientid,a.studyuid,count(*) from annotations a,project_user pu,project p, user u where a.projectuid=p.projectid and p.id=pu.project_id and pu.role not like 'Collaborator' and pu.user_id=u.id and u.username='admin' and studyuid='1.2.826.0.1.3680043.8.420.17214402469099817596602593812838717198' and pu.project_id=7; 
 	 public int getAIMCount(String projectID, String studyUID, String username) throws SQLException {
 		 	int count=0;
-	        String sqlSelect = "SELECT count(*) FROM annotations a,project_user pu,project p, user u WHERE a.projectuid=p.projectid and p.id=pu.project_id  and pu.user_id=u.id and pu.role not like 'Collaborator'  ";
+	        String sqlSelect = "SELECT count(*) FROM annotations a,project_user pu,project p, user u WHERE a.projectuid=p.projectid and p.id=pu.project_id  and pu.user_id=u.id  ";
 			if (projectID != null && projectID.length() > 0)
 				sqlSelect = sqlSelect + " and (p.projectid = '" + projectID + "')";
 			if (studyUID != null && studyUID.length() > 0)
 				sqlSelect = sqlSelect + " AND StudyUID = '" + studyUID + "'";
 			if (username != null && username.length() > 0)
 				sqlSelect = sqlSelect + " AND u.username = '" + username + "'";
-			sqlSelect = sqlSelect + " AND (a.userloginname = '" + username + "' OR a.userloginname = 'shared')";
+			sqlSelect = sqlSelect + " AND (a.userloginname = '" + username + "' OR (a.userloginname = 'shared' and pu.role not like 'Collaborator'))";
 			
 			log.warning("AIMs count select:" + sqlSelect);
 	       
