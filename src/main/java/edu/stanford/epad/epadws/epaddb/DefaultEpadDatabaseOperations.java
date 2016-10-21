@@ -1375,6 +1375,27 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 			close(c, ps, rs);
 		}
 	}
+	
+	@Override
+	public void insertPixelValues(String filePath, int frameNum, String pixelValues)
+	{
+		Connection c = null;
+		PreparedStatement ps = null;
+		ResultSet rs = null;
+		try {
+			c = getConnection();
+			ps = c.prepareStatement(EpadDatabaseCommands.INSERT_PIXEL_VALUES_FOR_EXACT_PATH);
+			ps.setString(1, filePath);
+			ps.setInt(2, frameNum);
+			ps.setString(3, pixelValues);
+			ps.execute();
+		} catch (SQLException sqle) {
+			String debugInfo = DatabaseUtils.getDebugData(rs);
+			log.warning("Database operation failed; debugInfo=" + debugInfo, sqle);
+		} finally {
+			close(c, ps, rs);
+		}
+	}
 
 	@Override
 	public boolean hasEpadFileRow(String filePath)

@@ -427,4 +427,12 @@ public interface EpadDatabaseOperations
 	 */
 	int getAnnotationDoneUserCount(String projectUID, String subjectUID, String studyUID, String series_uid);
 
+	/**
+	 * hold pixel values for paramteric maps
+	 * @param filePath
+	 * @param frameNum
+	 * @param pixelValues
+	 */
+	void insertPixelValues(String filePath, int frameNum, String pixelValues);
+
 }
