@@ -1931,7 +1931,7 @@ public class AIMUtil
 				Set<EPADAIM> aims = aimlist.getAIMsForProject(projectID);
 				for (EPADAIM aim: aims)
 				{
-					if (!isCollaborator || aim.userName.equals(username) || aim.userName.equals("shared"))
+					if (!isCollaborator || aim.userName.equalsIgnoreCase(username) || aim.userName.equalsIgnoreCase("shared"))
 						csv = csv + "," +  aim.aimID;
 				}
 				if (csv.length() != 0)
@@ -1971,7 +1971,7 @@ public class AIMUtil
 				}
 				for (EPADAIM aim: aims)
 				{
-					if (!isCollaborator || aim.userName.equals(username) || aim.userName.equals("shared"))
+					if (!isCollaborator || aim.userName.equalsIgnoreCase(username) || aim.userName.equalsIgnoreCase("shared"))
 						projectAIMs.add(aim);
 				}
 			}

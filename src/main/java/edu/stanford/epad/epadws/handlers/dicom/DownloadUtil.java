@@ -674,7 +674,7 @@ public static void downloadStudies(boolean stream, HttpServletResponse httpRespo
 					List<EPADAIM> aims = databaseOperations.getAIMsByDSOSeries(series.seriesUID);
 					boolean skip = true;
 					for (EPADAIM aim: aims) {
-						if (aim.userName.equals(username))
+						if (aim.userName.equalsIgnoreCase(username))
 							skip = false;
 					}
 					if (skip)
