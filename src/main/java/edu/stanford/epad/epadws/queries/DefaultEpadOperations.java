@@ -924,8 +924,15 @@ public class DefaultEpadOperations implements EpadOperations
 		return eImage;
 	}
 
+	
 	@Override
 	public EPADFrameList getFrameDescriptions(ImageReference imageReference)
+	{
+		return getFrameDescriptions(imageReference,false,false);
+		
+	}
+	@Override
+	public EPADFrameList getFrameDescriptions(ImageReference imageReference, boolean all, boolean pixelData)
 	{
 		if (imageReference.seriesUID.equals("*")) { //ml no series uid. probably dso. fill it!
 			imageReference.seriesUID = dcm4CheeDatabaseOperations.getSeriesUIDForImage(imageReference.imageUID);
@@ -1025,7 +1032,7 @@ public class DefaultEpadOperations implements EpadOperations
 						String sourceLosslessImage = getPNGPath(studyUID, referencedSeriesUID, referencedImageUID);
 						String sourceLossyImage = getWADOPath(studyUID, referencedSeriesUID, referencedImageUID);
 						//log.info("Frame:" + frameNumber + " losslessImage:" + losslessImage);
-						if (isFirst) {
+						if (isFirst || all) {
 							EPADDSOFrame frame = new EPADDSOFrame(imageReference.projectID, imageReference.subjectID,
 									imageReference.studyUID, imageReference.seriesUID, imageReference.imageUID, insertDate, imageDate,
 									sliceLocation, frameNumber, losslessImage, lossyImage, suppliedDICOMElements, defaultDICOMElements,
@@ -1102,7 +1109,7 @@ public class DefaultEpadOperations implements EpadOperations
 						String sourceLosslessImage = getPNGPath(studyUID, referencedSeriesUID, referencedImageUID);
 						String sourceLossyImage = getWADOPath(studyUID, referencedSeriesUID, referencedImageUID);
 						//log.info("Frame:" + frameNumber + " losslessImage:" + losslessImage);
-						if (isFirst) {
+						if (isFirst || all) {
 							EPADDSOFrame frame = new EPADDSOFrame(imageReference.projectID, imageReference.subjectID,
 									imageReference.studyUID, imageReference.seriesUID, imageReference.imageUID, insertDate, imageDate,
 									sliceLocation, frameNumber, losslessImage, lossyImage, suppliedDICOMElements, defaultDICOMElements,
@@ -1161,6 +1168,10 @@ public class DefaultEpadOperations implements EpadOperations
 					}
 					//log.debug("png " + i + ":" + pngs.get(i).substring(pngs.get(i).lastIndexOf("/")+1));
 				}
+				Map<String, String> pixelValues=null;
+				if (pixelData) {
+					pixelValues= epadDatabaseOperations.getPixelValues(imageReference.imageUID);
+				}
 				DICOMElementList suppliedDICOMElements = getDICOMElements(imageReference);
 				DICOMElementList defaultDICOMElements = getDefaultDICOMElements(imageReference, suppliedDICOMElements);
 				String insertDate = dcm4cheeImageDescription.createdTime;
@@ -1170,16 +1181,21 @@ public class DefaultEpadOperations implements EpadOperations
 
 				for (int i = 0; i < pngs.size(); i++)
 				{
-					if (i == 0) {
+					
+					String pixelValue=null;
+					if (pixelData) {
+						pixelValue=pixelValues.get(pngs.get(i));
+					}
+					if (i == 0 || all) {
 						EPADFrame frame = new EPADFrame(imageReference.projectID, imageReference.subjectID,
 								imageReference.studyUID, imageReference.seriesUID, imageReference.imageUID, insertDate, imageDate,
-								sliceLocation, i, pngs.get(i), lossyImage, suppliedDICOMElements, defaultDICOMElements);
+								sliceLocation, i, pngs.get(i), lossyImage, suppliedDICOMElements, defaultDICOMElements,pixelValue);
 						frames.add(frame);
 					} else { // We do not add DICOM headers to remaining frame descriptions because it would be too expensive
 						EPADFrame frame = new EPADFrame(imageReference.projectID, imageReference.subjectID,
 								imageReference.studyUID, imageReference.seriesUID, imageReference.imageUID, insertDate, imageDate,
 								sliceLocation, i, pngs.get(i), lossyImage, new DICOMElementList(),
-								new DICOMElementList());
+								new DICOMElementList(), pixelValue);
 						frames.add(frame);
 					}
 				}
@@ -1237,7 +1253,22 @@ public class DefaultEpadOperations implements EpadOperations
 	@Override
 	public EPADFrame getFrameDescription(FrameReference frameReference, String sessionID)
 	{
-		return null; // TODO
+		return getFrameDescription(frameReference, sessionID, false);
+	}
+	@Override
+	public EPADFrame getFrameDescription(FrameReference frameReference, String sessionID, boolean pixelData)
+	{
+		ImageReference imageReference=new ImageReference(frameReference.projectID, frameReference.subjectID, frameReference.studyUID, frameReference.seriesUID, 
+				frameReference.imageUID);
+		//basic version use getFrameDescriptions, but getFrameDescriptions handles frame numbers, makes 0 based (pixelmed created 1 based).
+		//so using this for now. TODO create specific frame getter for better performance
+		EPADFrameList frames=getFrameDescriptions(imageReference,true,pixelData);
+		for (EPADFrame frame:frames.ResultSet.Result) {
+			if (frame.frameNumber==frameReference.frameNumber)
+				return frame;
+		}
+		return null;
+		
 	}
 
 	/**

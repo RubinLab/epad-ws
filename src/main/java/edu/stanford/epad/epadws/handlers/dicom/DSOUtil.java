@@ -619,7 +619,7 @@ public class DSOUtil
 						try{ 
 							log.info("name is:"+name.replace(".png", ""));
 							frameNum=Integer.parseInt(name.replace(".png", ""));
-							databaseOperations.insertPixelValues(newFile.getAbsolutePath(), frameNum, getPixelValues(sImg,frameNum-1));
+							databaseOperations.insertPixelValues(newFile.getAbsolutePath(), frameNum, getPixelValues(sImg,frameNum-1),imageUID);
 						} catch (NumberFormatException ne) {
 							log.warning("Could not parse the file name to get the frame number");
 						}

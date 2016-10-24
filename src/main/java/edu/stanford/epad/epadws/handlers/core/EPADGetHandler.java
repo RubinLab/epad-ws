@@ -544,13 +544,16 @@ public class EPADGetHandler
 				ImageReference imageReference = ImageReference.extract(ProjectsRouteTemplates.FRAME_LIST, pathInfo);
 				if (imageReference.subjectID.equals("null"))
 					throw new Exception("Patient ID in rest call is null:" + pathInfo);
-				EPADFrameList frameList = epadOperations.getFrameDescriptions(imageReference);
+				boolean pixelData = "true".equalsIgnoreCase(httpRequest.getParameter("includePixels"));
+				boolean allTags = "true".equalsIgnoreCase(httpRequest.getParameter("allTags"));
+				EPADFrameList frameList = epadOperations.getFrameDescriptions(imageReference,allTags,pixelData);
 				responseStream.append(frameList.toJSON());
 				statusCode = HttpServletResponse.SC_OK;
 
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.FRAME, pathInfo)) {
 				FrameReference frameReference = FrameReference.extract(ProjectsRouteTemplates.FRAME, pathInfo);
-				EPADFrame frame = epadOperations.getFrameDescription(frameReference, sessionID);
+				boolean pixelData = "true".equalsIgnoreCase(httpRequest.getParameter("includePixels"));
+				EPADFrame frame = epadOperations.getFrameDescription(frameReference, sessionID,pixelData);
 				if (frame != null) {
 					responseStream.append(frame.toJSON());
 					statusCode = HttpServletResponse.SC_OK;

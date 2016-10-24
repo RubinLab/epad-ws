@@ -272,6 +272,57 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 	}
 
 	@Override
+	public Map<String,String> getPixelValues(String imageUID) {
+		Connection c = null;
+		PreparedStatement ps = null;
+		ResultSet rs = null;
+		Map<String,String> pixelValues = new HashMap<String,String>();
+
+		try {
+			c = getConnection();
+			ps = c.prepareStatement(EpadDatabaseCommands.SELECT_PIXEL_VALUES_FOR_IMAGE);
+			ps.setString(1, imageUID);
+			rs = ps.executeQuery();
+			while (rs.next()) {
+				String pngFilePath = rs.getString(1);
+				String pixelValue = rs.getString(2);
+				pixelValues.put(pngFilePath,pixelValue);
+			}
+		} catch (SQLException sqle) {
+			String debugInfo = DatabaseUtils.getDebugData(rs);
+			log.warning("Database operation failed; debugInfo=" + debugInfo, sqle);
+		} finally {
+			close(c, ps, rs);
+		}
+		return pixelValues;
+	}
+	
+	@Override
+	public String getPixelValuesForPng(String pngPath) {
+		Connection c = null;
+		PreparedStatement ps = null;
+		ResultSet rs = null;
+		Map<String,String> pixelValues = new HashMap<String,String>();
+
+		try {
+			c = getConnection();
+			ps = c.prepareStatement(EpadDatabaseCommands.SELECT_PIXEL_VALUES_FOR_PATH);
+			ps.setString(1, pngPath);
+			rs = ps.executeQuery();
+			while (rs.next()) {
+				String pixelValue = rs.getString(1);
+				return pixelValue;
+			}
+		} catch (SQLException sqle) {
+			String debugInfo = DatabaseUtils.getDebugData(rs);
+			log.warning("Database operation failed; debugInfo=" + debugInfo, sqle);
+		} finally {
+			close(c, ps, rs);
+		}
+		return null;
+	}
+	
+	@Override
 	public String getPNGLocation(FrameReference frameReference)
 	{
 		return ""; // TODO
@@ -1377,7 +1428,7 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 	}
 	
 	@Override
-	public void insertPixelValues(String filePath, int frameNum, String pixelValues)
+	public void insertPixelValues(String filePath, int frameNum, String pixelValues, String imageUID)
 	{
 		Connection c = null;
 		PreparedStatement ps = null;
@@ -1388,6 +1439,7 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 			ps.setString(1, filePath);
 			ps.setInt(2, frameNum);
 			ps.setString(3, pixelValues);
+			ps.setString(4, imageUID);
 			ps.execute();
 		} catch (SQLException sqle) {
 			String debugInfo = DatabaseUtils.getDebugData(rs);

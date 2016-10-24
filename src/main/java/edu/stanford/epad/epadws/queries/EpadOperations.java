@@ -1598,4 +1598,22 @@ public interface EpadOperations
 	 * @throws Exception
 	 */
 	void migrateTemplates() throws Exception;
+
+	/**
+	 * extend getFrameDescriptions with booleans to trigger sending all the dicom tags and pixel data
+	 * @param imageReference
+	 * @param all
+	 * @param pixelData
+	 * @return
+	 */
+	EPADFrameList getFrameDescriptions(ImageReference imageReference, boolean all, boolean pixelData);
+
+	/**
+	 * extend getFrameDescriptions with booleans to trigger sending all the dicom tags and pixel data
+	 * @param imageReference
+	 * @param sessionID
+	 * @param pixelData
+	 * @return
+	 */
+	EPADFrame getFrameDescription(FrameReference frameReference, String sessionID, boolean pixelData);
 }

@@ -433,6 +433,23 @@ public interface EpadDatabaseOperations
 	 * @param frameNum
 	 * @param pixelValues
 	 */
-	void insertPixelValues(String filePath, int frameNum, String pixelValues);
+	void insertPixelValues(String filePath, int frameNum, String pixelValues, String imageUID);
+
+	/**
+	 * get pixel values for the image
+	 * implemented for parametric maps where the pixel values can be float
+	 * @param imageUID
+	 * @return
+	 */
+	Map<String, String> getPixelValues(String imageUID);
+
+	/**
+	 * get pixel values for a specific png
+	 * @param pngPath
+	 * @return
+	 */
+	String getPixelValuesForPng(String pngPath);
+
+	
 
 }
