@@ -157,6 +157,7 @@ import edu.stanford.epad.dtos.RemotePACEntity;
 import edu.stanford.epad.dtos.RemotePACQueryConfig;
 import edu.stanford.epad.dtos.internal.DCM4CHEEStudy;
 import edu.stanford.epad.dtos.internal.DCM4CHEEStudyList;
+import edu.stanford.epad.epadws.dcm4chee.Dcm4cheeServer;
 import edu.stanford.epad.epadws.epaddb.EpadDatabase;
 import edu.stanford.epad.epadws.epaddb.EpadDatabaseOperations;
 import edu.stanford.epad.epadws.models.Project;
@@ -204,18 +205,58 @@ public class RemotePACService extends RemotePACSBase {
 	}
 
 	public static void checkPropertiesFile() {
+		
 		File propertiesFile = new File(EPADConfig.getEPADRemotePACsConfigFilePath());
-		if (!propertiesFile.exists()) {
+		//if (!propertiesFile.exists()) {
+		//cavit updated
 			BufferedReader reader = null;
 			InputStream is = null;
 			StringBuilder sb = new StringBuilder();
+			String lineTemp  = null;
 			try {
 				is = EPADFileUtils.class.getClassLoader().getResourceAsStream(propertiesFile.getName());
 				reader = new BufferedReader(new InputStreamReader(is, "UTF8"));
 				String line = null;
 				while ((line = reader.readLine()) != null) {
-					sb.append(line);
-					sb.append("\n");
+				
+					
+					if (line.equals("Dicom.RemoteAEs.local.CalledAETitle=EPAD_DCM")){
+						lineTemp = "Dicom.RemoteAEs."+EPADConfig.aeTitle.toString()+".CalledAETitle="+EPADConfig.aeTitle.toString();
+						sb.append(lineTemp);
+						sb.append("\n");
+						lineTemp = null;
+					}else if (line.equals("Dicom.CallingAETitle=EPAD_DCM")){
+						lineTemp = line.replaceAll("EPAD_DCM", EPADConfig.aeTitle.toString());
+						sb.append(lineTemp);
+						sb.append("\n");
+						lineTemp = null;
+					}else if (line.equals("Dicom.RemoteAEs.local.HostNameOrIPAddress=_HOSTNAME_")){
+						lineTemp = "Dicom.RemoteAEs."+EPADConfig.aeTitle.toString()+".HostNameOrIPAddress="+EPADConfig.dicomServerIP.toString();
+						sb.append(lineTemp);
+						sb.append("\n");
+						lineTemp = null;
+					}else if (line.equals("Dicom.RemoteAEs.local.PrimaryDeviceType=WSD")){
+						lineTemp = "Dicom.RemoteAEs."+EPADConfig.aeTitle.toString()+".PrimaryDeviceType=WSD";
+						sb.append(lineTemp);
+						sb.append("\n");
+						lineTemp = null;
+					}else if (line.equals("Dicom.RemoteAEs.local.Port=11112")){
+						lineTemp = "Dicom.RemoteAEs."+EPADConfig.aeTitle.toString()+".Port=11112";
+						sb.append(lineTemp);
+						sb.append("\n");
+						lineTemp = null;
+					}else if (line.equals("Dicom.RemoteAEs=local")){
+						lineTemp = "Dicom.RemoteAEs="+EPADConfig.aeTitle.toString();
+						sb.append(lineTemp);
+						sb.append("\n");
+						lineTemp = null;
+					}else{
+						sb.append(line);
+						sb.append("\n");
+						
+					}
+	
+					
 				}
 			} catch (Exception x) {
 				log.warning("Error creating properties file", x);
@@ -226,8 +267,10 @@ public class RemotePACService extends RemotePACSBase {
 				else if (is != null)
 					IOUtils.closeQuietly(is);
 			}
-			EPADFileUtils.write(propertiesFile, sb.toString().replace("_HOSTNAME_", EPADConfig.xnatServer));
-		}
+			EPADFileUtils.write(propertiesFile, sb.toString());		
+			//cavit
+			
+	//	}
 	}
 	
 	public static DicomTagList getDicomTags()
@@ -288,16 +331,72 @@ public class RemotePACService extends RemotePACSBase {
 	 * Get all configured remote PACs
 	 * @return
 	 */
-	public List<RemotePAC> getRemotePACs() {
+	public List<RemotePAC> getRemotePACs() throws Exception {
+		Dcm4cheeServer instanceDcm4cheeServer = new Dcm4cheeServer();
+		instanceDcm4cheeServer.connect();
+		
+		List<String[]> connectionList = instanceDcm4cheeServer.listAetitle();
+		int atpos=-1;
+		int control =0;
 		List<RemotePAC> rps = new ArrayList<RemotePAC>();
 		ApplicationEntityMap aeMap = networkApplicationInformation.getApplicationEntityMap();
 		for (Object aeName: aeMap.keySet()) {
 			ApplicationEntity ae = (ApplicationEntity) aeMap.get(aeName);
-			String localName = networkApplicationInformation.getLocalNameFromApplicationEntityTitle(aeName.toString());
+			String localName = networkApplicationInformation.getLocalNameFromApplicationEntityTitle(aeName.toString());	
 			RemotePAC rp = new RemotePAC(localName, ae.getDicomAETitle(), ae.getPresentationAddress().getHostname(),
 					ae.getPresentationAddress().getPort(), ae.getQueryModel(), ae.getPrimaryDeviceType());
+			
+			
+			
+			//cavit
+			
+	         for (int i = 0; i < connectionList.size(); i++)
+	            {
+	                String[] strArray = new String[4];
+	                  strArray=  (connectionList.get(i));
+	                         if (   ae.getDicomAETitle().equals(strArray[1])  ) {
+	                        	control=1;
+	                        	atpos= i;
+	                         }
+	            }
+	         if (control ==1){
+	        	 control = 0;
+	         }else{
+	         
+	        	 instanceDcm4cheeServer.addAetitle( ae.getDicomAETitle(), ae.getPresentationAddress().getHostname(),Integer.toString(ae.getPresentationAddress().getPort()));
+	         }
+	        //cavit
+	       
+			
 			rps.add(rp);
 		}
+		
+		//cavit
+ 		for (int i = 0; i < connectionList.size(); i++)
+         {
+ 			  String[] strArraya = new String[4];
+              strArraya=  (connectionList.get(i));
+              control =0;
+ 			for (Object aeName: aeMap.keySet()) {
+ 				ApplicationEntity ae = (ApplicationEntity) aeMap.get(aeName);
+ 				String localName = networkApplicationInformation.getLocalNameFromApplicationEntityTitle(aeName.toString());
+	                
+ 				if (( (strArraya[1].equals(ae.getDicomAETitle())) ) ){
+ 					control=1;
+                	atpos= i;
+ 				}	
+ 			
+ 			}   
+ 			if (control ==1){
+	        	 control = 0;
+	         }else{
+	        	 
+	        	 addRemotePAC( strArraya[1], strArraya[1],strArraya[2],Integer.parseInt(strArraya[3]),null,"WSD");
+                 
+	         }
+         }
+ 		//cavit
+		
 		if (EPADConfig.getParamValue("TCIA_APIKEY") != null && EPADConfig.getParamValue("TCIA_APIKEY").length() > 0) {
 			try {
 				List<String> collections = TCIAService.getInstance().getCollections();
@@ -366,6 +465,30 @@ public class RemotePACService extends RemotePACSBase {
 				pac.primaryDeviceType);
 	}
 	
+	//cavit
+		public synchronized void modifyRemotePAC(String loggedInUser, RemotePAC pac , RemotePAC oldpac) throws Exception {
+			User user = DefaultEpadProjectOperations.getInstance().getUser(loggedInUser);
+			if (pac.pacID.startsWith("tcia"))
+				throw new Exception("This PAC Configuration can not be modified:" + pac.pacID);
+			if (!user.isAdmin() && !user.hasPermission(User.CreatePACPermission))
+				throw new Exception("No permission to modify PAC configuration");
+			log.info("oldpac.pacID :" + oldpac.pacID);
+		
+			removeRemotePAC(pac.pacID);
+			log.info("PAC :" +  pac.pacID);
+			log.info("PAC :" +  pac.aeTitle);
+			log.info("PAC :" +  pac.hostname);
+			log.info("PAC :" +  pac.port);
+			log.info("PAC :" +  pac.primaryDeviceType);
+
+			pac = new RemotePAC(pac.aeTitle,pac.aeTitle, pac.hostname, pac.port, pac.queryModel, pac.primaryDeviceType);
+			
+			addRemotePAC(loggedInUser, pac);
+			
+			
+		}
+		//cavit
+	
 	/**
 	 * Modify a Remote PAC in configuration file
 	 * @param pac
@@ -401,7 +524,8 @@ public class RemotePACService extends RemotePACSBase {
 			int count = 0;
 			for (RemotePAC p: pacs)
 			{
-				if (p.hostname.equalsIgnoreCase(EPADConfig.xnatServer))
+				//cavit
+				if (p.aeTitle.equalsIgnoreCase(EPADConfig.aeTitle))
 					count++;
 			}
 			if (count <= 1)
