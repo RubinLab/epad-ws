@@ -625,35 +625,47 @@ public class EPADPutHandler
 				else if (primaryDeviceType == null)
 					primaryDeviceType = pac.primaryDeviceType;
 				if (pac == null)
-				{
-					if (pacid.startsWith(TCIAService.TCIA_PREFIX))
-						throw new Exception("TCIA Collections can not be added or edited");
-					pac = new RemotePAC(pacid, aeTitle, hostname, port, queryModel, primaryDeviceType);
-					RemotePACService.getInstance().addRemotePAC(username, pac);
+					if (pac == null)
+					{
+						if (pacid.startsWith(TCIAService.TCIA_PREFIX))
+							throw new Exception("TCIA Collections can not be added or edited");
+						pac = new RemotePAC(pacid, aeTitle, hostname, port, queryModel, primaryDeviceType);
+						
+						
+						Dcm4cheeServer instanceDcm4cheeServer = new Dcm4cheeServer();
+						instanceDcm4cheeServer.connect();
+						if (instanceDcm4cheeServer.addAetitle(pac.aeTitle, pac.hostname, Integer.toString(pac.port)).equals("null") )
+						{
+							RemotePACService.getInstance().addRemotePAC(username, pac);
+							log.info("Pacs Conection Added succesfully \n Added AEtitle :" + pac.aeTitle + " \n Host Name :" + pac.hostname + "\n Port no :"+ Integer.toString(pac.port));
+							
+						}else{
+							throw new Exception("Unable to add new pacs connection : " + " AEtitle: "+ pac.aeTitle + "\n Host Name: " + pac.hostname + "Port no:"+pac.port);
+						}
+						
+						
 					
-					Dcm4cheeServer instanceDcm4cheeServer = new Dcm4cheeServer();
-					instanceDcm4cheeServer.connect(EPADConfig.jmxUserName, EPADConfig.jmxUserPass, EPADConfig.dcm4CheeServer,(short) EPADConfig.dcm4cheeServerWadoPort);
-					instanceDcm4cheeServer.addAetitle(pac.aeTitle, pac.hostname, Integer.toString(pac.port));
+					}
+					else
+					{
+						pac = new RemotePAC(pacid, aeTitle, hostname, port, queryModel, primaryDeviceType);
+						RemotePAC oldpac = RemotePACService.getInstance().getRemotePAC(pacid);
+						Dcm4cheeServer instanceDcm4cheeServer = new Dcm4cheeServer();
+						instanceDcm4cheeServer.connect();
+						RemotePACService.getInstance().modifyRemotePAC(username, pac,oldpac);
+						if (instanceDcm4cheeServer.editAetConfig(oldpac.aeTitle,oldpac.hostname, pac.aeTitle, pac.hostname, Integer.toString(pac.port)).equals("null")){
+							log.info("Pacs Connection Edited Succesfuly \n Old Aetitle: " +oldpac.aeTitle + "\n Old Hostname: " + oldpac.hostname + "\n New aetitle :" + pac.aeTitle + " \n New host :" + pac.hostname + " \n New port :"+ Integer.toString(pac.port));
+							
+						}else{
+							throw new Exception("Unable to edit pacs connection : Old Aetitle: " +oldpac.aeTitle + " Old Hostname: " + oldpac.hostname + "\n New aetitle :" + pac.aeTitle + " New host :" + pac.hostname + " New port :"+ Integer.toString(pac.port) );
+							
+						}
+						
+						
+					}
+					statusCode = HttpServletResponse.SC_OK;
 					
-					
-				
-				}
-				else
-				{
-					pac = new RemotePAC(pacid, aeTitle, hostname, port, queryModel, primaryDeviceType);
-					RemotePAC oldpac = RemotePACService.getInstance().getRemotePAC(pacid);
-					Dcm4cheeServer instanceDcm4cheeServer = new Dcm4cheeServer();
-					instanceDcm4cheeServer.connect(EPADConfig.jmxUserName, EPADConfig.jmxUserPass, EPADConfig.dcm4CheeServer,(short) EPADConfig.dcm4cheeServerWadoPort);
-					instanceDcm4cheeServer.editAetConfig(oldpac.hostname, pac.aeTitle, pac.hostname, Integer.toString(pac.port));
-					
-					
-					RemotePACService.getInstance().modifyRemotePAC(username, pac);
-				
-					
-				}
-				statusCode = HttpServletResponse.SC_OK;
-				
-			} else if (HandlerUtil.matchesTemplate(PACSRouteTemplates.PAC_QUERY, pathInfo)) {
+				} else if (HandlerUtil.matchesTemplate(PACSRouteTemplates.PAC_QUERY, pathInfo)) {
 				Map<String, String> templateMap = HandlerUtil.getTemplateMap(PACSRouteTemplates.PAC_QUERY, pathInfo);
 				String pacID = HandlerUtil.getTemplateParameter(templateMap, "pacid");
 				if (pacID.equalsIgnoreCase("null"))
