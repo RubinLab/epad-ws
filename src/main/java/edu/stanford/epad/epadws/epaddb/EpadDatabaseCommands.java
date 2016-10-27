@@ -143,6 +143,12 @@ public interface EpadDatabaseCommands
 	public static final String DELETE_FROM_EPAD_FILES = "delete from epaddb.epad_files where file_path like ?";
 	public static final String INSERT_INTO_EPAD_FILES = "INSERT INTO epaddb.epad_files"
 			+ "(instance_fk,file_type,file_path,file_size,file_status,err_msg,file_md5)" + "VALUES (?,?,?,?,?,?,?)";
+	
+	public static final String INSERT_PIXEL_VALUES_FOR_EXACT_PATH = "INSERT INTO epaddb.pixel_values"
+			+ "(file_path,frame_num,value,image_uid)" + "VALUES (?,?,?,?)";
+	
+	public static final String SELECT_PIXEL_VALUES_FOR_PATH = "SELECT value from epaddb.pixel_values where file_path=?";
+	public static final String SELECT_PIXEL_VALUES_FOR_IMAGE = "SELECT file_path, value from epaddb.pixel_values where image_uid=?";
 	//pk added for removing broken links
 	public static final String SELECT_EPAD_FILE_PATH_FOR_IMAGE = "SELECT file_path, f.pk from epaddb.epad_files as f, pacsdb.instance as i where i.sop_iuid=? and i.pk = f.instance_fk";
 	public static final String SELECT_EPAD_FILE_PATH_BY_IMAGE_UID = "SELECT file_path from epaddb.epad_files as f where file_path like ?";

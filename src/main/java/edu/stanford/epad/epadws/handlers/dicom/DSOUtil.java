@@ -113,6 +113,9 @@ import java.awt.Graphics2D;
 import java.awt.Image;
 import java.awt.Toolkit;
 import java.awt.image.BufferedImage;
+import java.awt.image.DataBuffer;
+import java.awt.image.DataBufferDouble;
+import java.awt.image.DataBufferFloat;
 import java.awt.image.FilteredImageSource;
 import java.awt.image.ImageFilter;
 import java.awt.image.ImageProducer;
@@ -140,6 +143,7 @@ import org.apache.commons.fileupload.FileItemStream;
 import org.apache.commons.fileupload.FileUploadException;
 import org.apache.commons.fileupload.servlet.ServletFileUpload;
 import org.apache.commons.io.IOUtils;
+import org.eclipse.jetty.util.ajax.JSON;
 
 import com.google.gson.Gson;
 import com.pixelmed.dicom.Attribute;
@@ -596,7 +600,12 @@ public class DSOUtil
 
 			pngFilesDirectory.mkdirs();
 			Opener opener = new Opener();
-			ImagePlus image = opener.openImage(dicomFile.getAbsolutePath());
+			ImagePlus image=null;
+			try{
+				image = opener.openImage(dicomFile.getAbsolutePath());
+			}catch(Throwable t) {
+				log.warning("ImageJ failed", t);
+			}
 			if (image != null) {
 				numberOfFrames  = image.getNFrames();
 				int numberOfSlices  = image.getNSlices();
@@ -619,7 +628,15 @@ public class DSOUtil
 				}
 			} else {
 				log.info("Using pixelmed:" + pngFilePath + " Dir:" + pngFilesDirectory.getAbsolutePath());
-				ConsumerFormatImageMaker.convertFileToEightBitImage(dicomFile.getAbsolutePath(), pngFilePath, "png", 0);
+				//part from pixelmed, trying to read pixel data
+				
+					
+				//if we use the old version, it writes all the properties (annotations) on the image, that is why the last parameter is null
+				ConsumerFormatImageMaker.convertFileToEightBitImage(dicomFile.getAbsolutePath(), pngFilePath, "png",0,0,0,0,100,null);
+				log.info("png path:"+pngDirectoryPath);
+				//old version convertFileToEightBitImage(dicomFile.getAbsolutePath(), pngFilePath, "png", 0);
+				
+				SourceImage sImg=new SourceImage(dicomFile.getAbsolutePath());
 				File[] pngs = pngFilesDirectory.listFiles();
 				for (File png: pngs)
 				{
@@ -633,6 +650,15 @@ public class DSOUtil
 						File newFile = new File(pngDirectoryPath, name);
 						png.renameTo(newFile);
 						insertEpadFile(databaseOperations, newFile.getAbsolutePath(), 0, imageUID);
+						int frameNum=0;
+						try{ 
+							log.info("name is:"+name.replace(".png", ""));
+							frameNum=Integer.parseInt(name.replace(".png", ""));
+							databaseOperations.insertPixelValues(newFile.getAbsolutePath(), frameNum, getPixelValues(sImg,frameNum-1),imageUID);
+						} catch (NumberFormatException ne) {
+							log.warning("Could not parse the file name to get the frame number");
+						}
+						
 						databaseOperations.updateEpadFileRow(newFile.getAbsolutePath(), PNGFileProcessingStatus.DONE,png.length(), "");
 					}
 				}
@@ -646,6 +672,56 @@ public class DSOUtil
 			databaseOperations.updateOrInsertSeries(seriesUID, SeriesProcessingStatus.ERROR);
 			throw e;
 		} 
+	}
+	
+	public static String getPixelValues(SourceImage sImg, int frameNum){
+		int signMask=0;
+		int signBit=0;
+		
+		
+		BufferedImage src = sImg.getBufferedImage(frameNum); 
+		if (sImg.isSigned()) {
+			// the source image will already have been sign extended to the data type size
+			// so we don't need to worry about other than exactly 8 and 16 bits
+			if (src.getSampleModel().getDataType() == DataBuffer.TYPE_BYTE) {
+				signBit=0x0080;
+				signMask=0xffffff80;
+			}
+			else {	// assume short or ushort
+				signBit=0x8000;
+				signMask=0xffff8000;
+			}
+		}
+		double[] storedPixelValueArray;
+		if (src.getRaster().getDataBuffer() instanceof DataBufferFloat) {
+			float[] storedPixelValues  = src.getSampleModel().getPixels(0,0,src.getWidth(),src.getHeight(),(float[])null,src.getRaster().getDataBuffer());
+			//copy to double array
+			storedPixelValueArray=new double[storedPixelValues.length];
+			for(int i=0;i< storedPixelValues.length; i++) {
+				storedPixelValueArray[i]=storedPixelValues[i];
+			}
+		}
+		else if (src.getRaster().getDataBuffer() instanceof DataBufferDouble) {
+			double[] storedPixelValues  = src.getSampleModel().getPixels(0,0,src.getWidth(),src.getHeight(),(double[])null,src.getRaster().getDataBuffer());
+			storedPixelValueArray=storedPixelValues;
+		}
+		else {
+			int[] storedPixelValues  = src.getSampleModel().getPixels(0,0,src.getWidth(),src.getHeight(),(int[])null,src.getRaster().getDataBuffer());
+			int storedPixelValueInt=0;
+			//copy to double array
+			storedPixelValueArray=new double[storedPixelValues.length];
+			for(int i=0;i< storedPixelValues.length; i++) {
+				storedPixelValueInt=storedPixelValues[i];
+
+				if (sImg.isSigned() && (storedPixelValueInt&signBit) != 0) {
+					storedPixelValueInt|=signMask;	// sign extend
+				}
+				storedPixelValueArray[i]=storedPixelValueInt;
+			}
+			
+		}
+		return JSON.toString(storedPixelValueArray);
+		
 	}
 	
 	public static boolean checkDSOMaskPNGs(File dsoFile)
