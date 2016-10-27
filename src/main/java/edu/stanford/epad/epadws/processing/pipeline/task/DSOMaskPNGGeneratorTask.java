@@ -274,6 +274,8 @@ public class DSOMaskPNGGeneratorTask implements GeneratorTask
 			if (aims.size() != 0 && aims.get(0).templateType != null && aims.get(0).templateType.equals("epad-plugin"))
 			{
 				EPADAIMList aimList= AIMUtil.getAllVersionSummaries(aims.get(0));
+				if (aimList.ResultSet.totalRecords<0)
+					return;
 				EPADAIM aim = aimList.ResultSet.Result.get(0);
 				EpadProjectOperations projOp = DefaultEpadProjectOperations.getInstance();
 				Template t=projOp.getTemplate(aim.template);
@@ -291,6 +293,8 @@ public class DSOMaskPNGGeneratorTask implements GeneratorTask
 			else if (aims.size() != 0 && UserProjectService.pendingPNGs.containsKey(seriesUID))
 			{
 				EPADAIMList aimList= AIMUtil.getAllVersionSummaries(aims.get(0));
+				if (aimList.ResultSet.totalRecords<0)
+					return;
 				EPADAIM aim = aimList.ResultSet.Result.get(0);
 				EpadProjectOperations projOp = DefaultEpadProjectOperations.getInstance();
 				Template t=projOp.getTemplate(aim.template);

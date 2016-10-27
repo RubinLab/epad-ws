@@ -25,6 +25,7 @@ import org.apache.http.impl.client.HttpClients;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.util.VersionInfo;
 
+import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADLogger;
 
 public class Dcm4cheeServer {
@@ -299,7 +300,7 @@ public class Dcm4cheeServer {
         Statement st = null;
         ResultSet rs = null;
         String id="0";
-        String url = "jdbc:mysql://localhost:3306/pacsdb";
+        String url = EPADConfig.dcm4CheeDatabaseURL; // do not use localhost "jdbc:mysql://localhost:3306/pacsdb";
         String user = "pacs";
         String password = "pacs";
 
