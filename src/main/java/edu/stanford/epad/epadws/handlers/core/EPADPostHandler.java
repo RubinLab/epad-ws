@@ -171,6 +171,10 @@ public class EPADPostHandler
 			if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.FRAME_LIST, pathInfo)) {
 				ImageReference imageReference = ImageReference.extract(ProjectsRouteTemplates.FRAME_LIST, pathInfo);
 				String type = httpRequest.getParameter("type");
+				String segCat = httpRequest.getParameter("segCategory");
+				String segType = httpRequest.getParameter("segType");
+				String color = httpRequest.getParameter("color");
+				
 				if ("new".equalsIgnoreCase(type))
 				{
 					boolean errstatus = DSOUtil.handleCreateDSO(imageReference.projectID, imageReference.subjectID, imageReference.studyUID,
