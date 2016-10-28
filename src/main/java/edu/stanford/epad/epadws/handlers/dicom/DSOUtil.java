@@ -1150,8 +1150,10 @@ public class DSOUtil
 						}
 						if (dsoEditResult.aimID != null && dsoEditResult.aimID.length() > 0)
 						{
-							log.info("update aim table dso first frame with "+ dsoEditResult.firstFrame + "for aim "+dsoEditResult.aimID);
-							epadDatabaseOperations.updateAIMDSOFrameNo(dsoEditResult.aimID, dsoEditResult.firstFrame);
+							if (dsoEditResult.firstFrame!=null) {
+								log.info("update aim table dso first frame with "+ dsoEditResult.firstFrame + "for aim "+dsoEditResult.aimID);
+								epadDatabaseOperations.updateAIMDSOFrameNo(dsoEditResult.aimID, dsoEditResult.firstFrame);
+							}
 							List<ImageAnnotation> aims = AIMQueries.getAIMImageAnnotations(AIMSearchType.ANNOTATION_UID, dsoEditResult.aimID, "admin");
 							if (aims.size() > 0)
 							{
