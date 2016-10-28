@@ -319,7 +319,7 @@ public class DSOUtil
 					return null;
 				}
 			}
-			if (DSOUtil.createDSO(imageReference, dsoTIFFMaskFiles, dicomFilePaths, seriesDescription, seriesUID, instanceUID))
+			if (DSOUtil.createDSO(imageReference, dsoTIFFMaskFiles, dicomFilePaths, seriesDescription, seriesUID, instanceUID, dsoEditRequest.property, dsoEditRequest.color))
 			{
 				Integer firstFrame=TIFFMasksToDSOConverter.firstFrames.get(instanceUID);
 				TIFFMasksToDSOConverter.firstFrames.remove(instanceUID);
@@ -445,7 +445,7 @@ public class DSOUtil
 			boolean removeEmptyMasks = false;
 			if ("true".equals(EPADConfig.getParamValue("OptimizedDSOs", "true")))
 				removeEmptyMasks = true;
-			String[] seriesImageUids = converter.generateDSO(files2FilePaths(dsoTIFFMaskFiles), dicomFilePaths, temporaryDSOFile.getAbsolutePath(), dsoName, null, null, removeEmptyMasks);
+			String[] seriesImageUids = converter.generateDSO(files2FilePaths(dsoTIFFMaskFiles), dicomFilePaths, temporaryDSOFile.getAbsolutePath(), dsoName, null, null, removeEmptyMasks, dsoEditRequest.property, dsoEditRequest.color);
 			String dsoSeriesUID = seriesImageUids[0];
 			String dsoImageUID = seriesImageUids[1];
 			log.info("Sending generated DSO " + temporaryDSOFile.getAbsolutePath() + " dsoImageUID:" + dsoImageUID + " dsoSeriesUID:" + dsoSeriesUID + " to dcm4chee...");
@@ -551,6 +551,10 @@ public class DSOUtil
 
 	public static boolean createDSO(ImageReference imageReference, List<File> tiffMaskFiles, List<String> dicomFilePaths, String dsoSeriesDescription, String dsoSeriesUID, String dsoInstanceUID)
 	{
+		return createDSO(imageReference, tiffMaskFiles, dicomFilePaths, dsoSeriesDescription, dsoSeriesUID, dsoInstanceUID, null, null);
+	}
+	public static boolean createDSO(ImageReference imageReference, List<File> tiffMaskFiles, List<String> dicomFilePaths, String dsoSeriesDescription, String dsoSeriesUID, String dsoInstanceUID, String property, String color)
+	{
 		log.info("Generating DSO " + imageReference.imageUID + " with " + tiffMaskFiles.size() + " TIFF mask file(s)...");
 		try {
 			File temporaryDSOFile = File.createTempFile(imageReference.imageUID, ".dso");
@@ -562,7 +566,7 @@ public class DSOUtil
 			boolean removeEmptyMasks = false;
 			if ("true".equals(EPADConfig.getParamValue("OptimizedDSOs", "true")))
 				removeEmptyMasks = true;
-			String[] seriesImageUids = converter.generateDSO(files2FilePaths(tiffMaskFiles), dicomFilePaths, temporaryDSOFile.getAbsolutePath(), dsoSeriesDescription, dsoSeriesUID, dsoInstanceUID, removeEmptyMasks, "binary");
+			String[] seriesImageUids = converter.generateDSO(files2FilePaths(tiffMaskFiles), dicomFilePaths, temporaryDSOFile.getAbsolutePath(), dsoSeriesDescription, dsoSeriesUID, dsoInstanceUID, removeEmptyMasks, "binary", property, color);
 			imageReference.seriesUID = seriesImageUids[0];
 			imageReference.imageUID = seriesImageUids[1];
 			log.info("Sending generated DSO " + temporaryDSOFile.getAbsolutePath() + " imageUID:" + imageReference.imageUID + " to dcm4chee...");
@@ -1150,6 +1154,13 @@ public class DSOUtil
 				}
 				dsoEditRequest = new DSOEditRequest(projectID, subjectID, studyUID, seriesUID, "", "",numbers);
 			}
+			
+			//need to pass this all the way to segmentation writer, put into edit request
+			String property = httpRequest.getParameter("property");
+			String color = httpRequest.getParameter("color");
+			dsoEditRequest.property=property;
+			dsoEditRequest.color=color;
+			
 			log.info("DSOCreateRequest, seriesUID:" + dsoEditRequest.seriesUID + " imageUID:" + dsoEditRequest.imageUID + " aimID:" + dsoEditRequest.aimID + " number Frames:" + dsoEditRequest.editedFrameNumbers.size());
 
 			if (dsoEditRequest != null) {
