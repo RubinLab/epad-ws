@@ -3212,10 +3212,16 @@ public class DefaultEpadOperations implements EpadOperations
 			throw new Exception("No permissions to delete Study: " + studyReference.studyUID + " from system. You are not admin. Please select delete from project. ");
 
 		projectOperations.createEventLog(username, studyReference.projectID, studyReference.subjectID, studyReference.studyUID, null, null, null, "DELETE STUDY", null);
-		log.info("Deleting in XNAT: study " + studyReference.studyUID + " for patient "
-				+ studyReference.subjectID + " in project " + studyReference.projectID + " from user " + username);
-
-		projectOperations.deleteStudy(username, studyReference.studyUID, studyReference.subjectID, studyReference.projectID);
+		
+		
+		if (projectOperations.getProjectsForStudy(studyReference.studyUID).size()>1) {
+			//do this if not trying to delete from all. 
+			//if we do it when the study is in only all project the StudyDataTask throws null pointer exception
+			log.info("Deleting in XNAT: study " + studyReference.studyUID + " for patient "
+					+ studyReference.subjectID + " in project " + studyReference.projectID + " from user " + username);
+	
+			projectOperations.deleteStudy(username, studyReference.studyUID, studyReference.subjectID, studyReference.projectID);
+		}
 		this.deleteAllAims(studyReference.projectID, studyReference.subjectID, studyReference.studyUID, null, true);
 		xnatStatusCode = HttpServletResponse.SC_OK;
 
