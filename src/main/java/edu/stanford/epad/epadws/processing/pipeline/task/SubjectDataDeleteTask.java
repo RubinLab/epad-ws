@@ -113,7 +113,6 @@ import edu.stanford.epad.dtos.TaskStatus;
 import edu.stanford.epad.epadws.handlers.core.StudyReference;
 import edu.stanford.epad.epadws.queries.DefaultEpadOperations;
 import edu.stanford.epad.epadws.queries.EpadOperations;
-import edu.stanford.epad.epadws.security.EPADSessionOperations;
 import edu.stanford.epad.epadws.service.DefaultEpadProjectOperations;
 import edu.stanford.epad.epadws.service.EpadProjectOperations;
 import edu.stanford.epad.epadws.service.UserProjectService;
@@ -129,7 +128,7 @@ public class SubjectDataDeleteTask implements Runnable
 {
 	private static EPADLogger log = EPADLogger.getInstance();
 
-	private final String projectID;
+	private String projectID;
 	private final String patientID;
 	private final String username;
 	private final boolean all;
@@ -173,7 +172,24 @@ public class SubjectDataDeleteTask implements Runnable
     		{
     			EpadProjectOperations projectOperations = DefaultEpadProjectOperations.getInstance();
     			projectOperations.updateUserTaskStatus(username, TaskStatus.TASK_DELETE_PATIENT, patientID, "Delete Patient Started", new Date(), null);
-				Set<String> subjectStudyUIDs = UserProjectService.getStudyUIDsForSubject(projectID, patientID);
+    			boolean unassignedProject = false;
+    			boolean noProject=false;
+    			if (projectID==null) {
+    				noProject=true;
+    			} else {
+    				unassignedProject= projectID.equals(EPADConfig.getParamValue("UnassignedProjectID", "nonassigned"));
+    			}
+    			if (unassignedProject || noProject)
+    			{
+    				if (projectOperations.getProjectsForSubject(patientID).size()==1) {
+    					//check if the subject is in only one project
+	    				//set the project id to all
+    					log.info("the subject is in only one project. nonassigned. deleting from all");
+	    				projectID = EPADConfig.xnatUploadProjectID;
+    				}
+    			}
+    			
+    			Set<String> subjectStudyUIDs = UserProjectService.getStudyUIDsForSubject(projectID, patientID);
 				EpadOperations epadOperations = DefaultEpadOperations.getInstance();
 				for (String studyUID: subjectStudyUIDs)
 				{
