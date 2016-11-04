@@ -105,17 +105,14 @@
 package edu.stanford.epad.epadws.processing.pipeline.task;
 
 import java.util.Date;
-import java.util.List;
 import java.util.Set;
 
 import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.epad.dtos.TaskStatus;
 import edu.stanford.epad.epadws.handlers.core.StudyReference;
-import edu.stanford.epad.epadws.models.Study;
 import edu.stanford.epad.epadws.queries.DefaultEpadOperations;
 import edu.stanford.epad.epadws.queries.EpadOperations;
-import edu.stanford.epad.epadws.security.EPADSessionOperations;
 import edu.stanford.epad.epadws.service.DefaultEpadProjectOperations;
 import edu.stanford.epad.epadws.service.EpadProjectOperations;
 import edu.stanford.epad.epadws.service.UserProjectService;
