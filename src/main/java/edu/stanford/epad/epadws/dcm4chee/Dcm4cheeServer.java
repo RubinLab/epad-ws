@@ -96,12 +96,16 @@ public class Dcm4cheeServer {
 	}
 	
 	public List<String[]> listAetitle() throws IOException{
+		
 		this.params = new ArrayList<NameValuePair>(2);
 		params.add(new BasicNameValuePair("action", "invokeOp"));
 		params.add(new BasicNameValuePair("name", "dcm4chee.archive:service=AE"));
 		params.add(new BasicNameValuePair("methodIndex", "0"));
 		this.params.add(new BasicNameValuePair("submit", "Invoke"));
 		executeHttprequest();
+		 if( this.response.getEntity() != null ) {
+			 this.response.getEntity().consumeContent();
+	      }
 		return getAelist();
 		
 		
@@ -170,22 +174,28 @@ public class Dcm4cheeServer {
 		this.params.add(new BasicNameValuePair("submit", "Invoke"));
 		System.out.println(this.params.size());
 		executeHttprequest();
+		 if( this.response.getEntity() != null ) {
+			 this.response.getEntity().consumeContent();
+	      }
 		return getError();
 
 		
 	}
 	
 	public void executeHttprequest() throws ClientProtocolException, IOException{
-		
+	
 		this.httppost.setEntity(new UrlEncodedFormEntity(this.params, "UTF-8"));
-		this.response = httpclient.execute(this.httppost);
-		this.entity = response.getEntity();
+		this.response = this.httpclient.execute(this.httppost);
+		this.entity = this.response.getEntity();
+		//added
+		
+		httppost.releaseConnection();
 	}
 	
 	public List<String[]>  getAelist() throws IOException {
-
-		if (this.entity != null) {
 		
+		if (this.entity != null) {
+			
 			List<String[]> connectionList = new ArrayList<String[]>();
 		    InputStream in = this.entity.getContent();
 		    String str = "";
@@ -196,7 +206,7 @@ public class Dcm4cheeServer {
 		    	String line;
 		    	Boolean Control= false;
 		    	while((line = reader.readLine()) != null) {
-		    		System.out.println(line);
+		    		
 		    		if (contains(line,"<span class='OpResult'>")){
 		    			Control = true;
 		    		}
@@ -210,9 +220,11 @@ public class Dcm4cheeServer {
 		     in.close();
 		     //bw.close();
 		    }
-		    System.out.println("str =================="+str);
+		    
+		    
 		    String delims= "[\\[\\]]+";
 		    String[] tokens = str.split(delims);
+	    	
 	    	
 		    String allhosts = tokens[1];
 		    delims = "[,]";
@@ -250,7 +262,9 @@ public class Dcm4cheeServer {
 		    	 }
 		    	 connectionList.add(connectionArray);
 		    }
-		   
+		    if( this.response.getEntity() != null ) {
+		    	this.response.getEntity().consumeContent();
+		      }
 		    return connectionList;
 		}else
 		return null;
@@ -258,8 +272,7 @@ public class Dcm4cheeServer {
 	}
 	//if returns null means there is no error 
 	public String getError() throws IOException {
-		//BufferedWriter bw = new BufferedWriter(new FileWriter(new File("Filepath")));
-		//Vector<String[]> connectionVector = new Vector<String[]>();
+
 	    InputStream in = this.entity.getContent();
 	    String str = "";
 	    Boolean Control= false;
@@ -273,6 +286,8 @@ public class Dcm4cheeServer {
 	    		if (contains(line,"Error")){
 	    			Control = true;
 	    		}
+	    		//added next line
+	    		if (Control== true)
 	    		str= str + line ;
 	    	    result.append(line);
 
@@ -281,10 +296,12 @@ public class Dcm4cheeServer {
 	    } finally {
 	     in.close();
 	    }
+	    if( this.response.getEntity() != null ) {
+	    	this.response.getEntity().consumeContent();
+	      }
 		if (Control == true){
 		    String[] tokens = str.split("Exception report");
 		    String[] tokensa = tokens[1].split("logs.");
-		    log.info(tokensa[0]+"logs.");
 		    return tokensa[0]+"logs."	;
 		}
 		else{

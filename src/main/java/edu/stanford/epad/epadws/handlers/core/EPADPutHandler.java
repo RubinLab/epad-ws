@@ -135,6 +135,7 @@ import edu.stanford.epad.epadws.aim.AIMUtil;
 import edu.stanford.epad.epadws.dcm4chee.Dcm4cheeServer;
 import edu.stanford.epad.epadws.epaddb.EpadDatabase;
 import edu.stanford.epad.epadws.handlers.HandlerUtil;
+
 import edu.stanford.epad.epadws.models.EpadFile;
 import edu.stanford.epad.epadws.models.FileType;
 import edu.stanford.epad.epadws.models.Project;
@@ -607,6 +608,7 @@ public class EPADPutHandler
 				String hostname = httpRequest.getParameter("hostname");
 				int port = getInt(httpRequest.getParameter("port"));
 				String primaryDeviceType = httpRequest.getParameter("deviceType");
+				String newConnection = httpRequest.getParameter("op");
 				String queryModel = httpRequest.getParameter("queryModel");
 				if (aeTitle == null && pac == null)
 					throw new Exception("Missing aeTitle parameter in PAC Put");
@@ -624,30 +626,34 @@ public class EPADPutHandler
 					primaryDeviceType = "WSD";
 				else if (primaryDeviceType == null)
 					primaryDeviceType = pac.primaryDeviceType;
-				if (pac == null)
-					if (pac == null)
+
+					if ("new".equalsIgnoreCase(newConnection)  ) 
 					{
 						if (pacid.startsWith(TCIAService.TCIA_PREFIX))
 							throw new Exception("TCIA Collections can not be added or edited");
 						pac = new RemotePAC(pacid, aeTitle, hostname, port, queryModel, primaryDeviceType);
 						
 						
+						RemotePACService.getInstance().addRemotePAC(username, pac);
 						Dcm4cheeServer instanceDcm4cheeServer = new Dcm4cheeServer();
+						
 						instanceDcm4cheeServer.connect();
 						if (instanceDcm4cheeServer.addAetitle(pac.aeTitle, pac.hostname, Integer.toString(pac.port)).equals("null") )
 						{
-							RemotePACService.getInstance().addRemotePAC(username, pac);
+							
 							log.info("Pacs Conection Added succesfully \n Added AEtitle :" + pac.aeTitle + " \n Host Name :" + pac.hostname + "\n Port no :"+ Integer.toString(pac.port));
 							
 						}else{
+							//RemotePACService.getInstance().removeRemotePAC(username, pac);
 							throw new Exception("Unable to add new pacs connection : " + " AEtitle: "+ pac.aeTitle + "\n Host Name: " + pac.hostname + "Port no:"+pac.port);
 						}
-						
-						
+						pac = null;
+						aeTitle =null; 
+						hostname =null; port = 0;
+						instanceDcm4cheeServer=null;
 					
-					}
-					else
-					{
+					}else {
+						
 						pac = new RemotePAC(pacid, aeTitle, hostname, port, queryModel, primaryDeviceType);
 						RemotePAC oldpac = RemotePACService.getInstance().getRemotePAC(pacid);
 						Dcm4cheeServer instanceDcm4cheeServer = new Dcm4cheeServer();
@@ -660,8 +666,11 @@ public class EPADPutHandler
 							throw new Exception("Unable to edit pacs connection : Old Aetitle: " +oldpac.aeTitle + " Old Hostname: " + oldpac.hostname + "\n New aetitle :" + pac.aeTitle + " New host :" + pac.hostname + " New port :"+ Integer.toString(pac.port) );
 							
 						}
-						
-						
+						pac = null;
+						aeTitle =null; 
+						hostname =null; port = 0;
+						instanceDcm4cheeServer = null;
+						instanceDcm4cheeServer=null;
 					}
 					statusCode = HttpServletResponse.SC_OK;
 					

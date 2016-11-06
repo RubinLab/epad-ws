@@ -324,11 +324,11 @@ public class EPADDeleteHandler
 				if (pac == null)
 					throw new Exception("Remote PAC not found");
 			
-				RemotePACService.getInstance().removeRemotePAC(username, pac);
+				
 				//cavit
-				Dcm4cheeServer instanceDcm4cheeServer = new Dcm4cheeServer();
-				instanceDcm4cheeServer.connect(EPADConfig.jmxUserName, EPADConfig.jmxUserPass, EPADConfig.dcm4CheeServer,(short) EPADConfig.dcm4cheeServerWadoPort);
-				instanceDcm4cheeServer.deleteAetitle(pac.aeTitle);
+				
+				RemotePACService.getInstance().removeRemotePAC(username, pac);
+				
 				//throw new Exception("editing connection :" + pac.hostname);
 				//cavit
 				

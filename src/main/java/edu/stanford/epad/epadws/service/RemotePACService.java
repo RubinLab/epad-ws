@@ -268,6 +268,7 @@ public class RemotePACService extends RemotePACSBase {
 					IOUtils.closeQuietly(is);
 			}
 			EPADFileUtils.write(propertiesFile, sb.toString());		
+		
 			//cavit
 			
 	//	}
@@ -326,7 +327,7 @@ public class RemotePACService extends RemotePACSBase {
 		dicomTags = dclist;
 		return dclist;			
 	}
-	
+
 	/**
 	 * Get all configured remote PACs
 	 * @return
@@ -347,7 +348,6 @@ public class RemotePACService extends RemotePACSBase {
 					ae.getPresentationAddress().getPort(), ae.getQueryModel(), ae.getPrimaryDeviceType());
 			
 			
-			
 			//cavit
 			
 	         for (int i = 0; i < connectionList.size(); i++)
@@ -365,13 +365,18 @@ public class RemotePACService extends RemotePACSBase {
 	         
 	        	 instanceDcm4cheeServer.addAetitle( ae.getDicomAETitle(), ae.getPresentationAddress().getHostname(),Integer.toString(ae.getPresentationAddress().getPort()));
 	         }
+	         
 	        //cavit
 	       
 			
 			rps.add(rp);
 		}
-		
+		instanceDcm4cheeServer = null;
+		instanceDcm4cheeServer = new Dcm4cheeServer();
+		instanceDcm4cheeServer.connect();
 		//cavit
+		connectionList.clear();
+		connectionList = instanceDcm4cheeServer.listAetitle();
  		for (int i = 0; i < connectionList.size(); i++)
          {
  			  String[] strArraya = new String[4];
@@ -395,6 +400,8 @@ public class RemotePACService extends RemotePACSBase {
                  
 	         }
          }
+ 		
+ 		instanceDcm4cheeServer = null;
  		//cavit
 		
 		if (EPADConfig.getParamValue("TCIA_APIKEY") != null && EPADConfig.getParamValue("TCIA_APIKEY").length() > 0) {
@@ -422,6 +429,7 @@ public class RemotePACService extends RemotePACSBase {
 				log.warning("Error getting TCIA collections", e);
 			}
 		}
+	
 		return rps;
 	}
 
@@ -431,12 +439,15 @@ public class RemotePACService extends RemotePACSBase {
 	 * @return
 	 */
 	public RemotePAC getRemotePAC(String pacID) {
+		
+		
 		ApplicationEntityMap aeMap = networkApplicationInformation.getApplicationEntityMap();
 		for (Object aeName: aeMap.keySet()) {
 			ApplicationEntity ae = (ApplicationEntity) aeMap.get(aeName);
 			String localName = networkApplicationInformation.getLocalNameFromApplicationEntityTitle(aeName.toString());
 			if (localName.equals(pacID))
 			{
+				
 				return new RemotePAC(localName, ae.getDicomAETitle(), ae.getPresentationAddress().getHostname(),
 					ae.getPresentationAddress().getPort(), ae.getQueryModel(), ae.getPrimaryDeviceType());
 			}
@@ -456,6 +467,31 @@ public class RemotePACService extends RemotePACSBase {
 		if (pac.pacID.startsWith("tcia"))
 			throw new Exception("Invalid PAC ID:" + pac.pacID);
 		
+		
+		List<RemotePAC> rps = new ArrayList<RemotePAC>();
+		ApplicationEntityMap aeMap = networkApplicationInformation.getApplicationEntityMap();
+		for (Object aeName: aeMap.keySet()) {
+			ApplicationEntity ae = (ApplicationEntity) aeMap.get(aeName);
+			String localName = networkApplicationInformation.getLocalNameFromApplicationEntityTitle(aeName.toString());
+			RemotePAC rp = new RemotePAC(localName, ae.getDicomAETitle(), ae.getPresentationAddress().getHostname(),
+					ae.getPresentationAddress().getPort(), ae.getQueryModel(), ae.getPrimaryDeviceType());
+			
+			rps.add(rp);
+			
+		}
+		
+		int count = 0;
+		for (RemotePAC p: rps)
+		{
+			
+			//cavit
+			if (p.pacID.equalsIgnoreCase(pac.pacID))
+				count++;
+		}
+		if (count == 0)
+		{
+		
+			
 		addRemotePAC(
 				pac.pacID,
 				pac.aeTitle,
@@ -463,6 +499,11 @@ public class RemotePACService extends RemotePACSBase {
 				pac.port,
 				pac.queryModel,
 				pac.primaryDeviceType);
+		}else{
+			throw new Exception("Abbreviation already exist ");
+			
+		}
+		pac = null;
 	}
 	
 	//cavit
@@ -472,20 +513,48 @@ public class RemotePACService extends RemotePACSBase {
 				throw new Exception("This PAC Configuration can not be modified:" + pac.pacID);
 			if (!user.isAdmin() && !user.hasPermission(User.CreatePACPermission))
 				throw new Exception("No permission to modify PAC configuration");
-			log.info("oldpac.pacID :" + oldpac.pacID);
 		
+		//cavit
+			List<RemotePAC> rps = new ArrayList<RemotePAC>();
+			ApplicationEntityMap aeMap = networkApplicationInformation.getApplicationEntityMap();
+			for (Object aeName: aeMap.keySet()) {
+				ApplicationEntity ae = (ApplicationEntity) aeMap.get(aeName);
+				String localName = networkApplicationInformation.getLocalNameFromApplicationEntityTitle(aeName.toString());
+				RemotePAC rp = new RemotePAC(localName, ae.getDicomAETitle(), ae.getPresentationAddress().getHostname(),
+						ae.getPresentationAddress().getPort(), ae.getQueryModel(), ae.getPrimaryDeviceType());
+			
+				rps.add(rp);
+				
+			}
+			int count = 0;
+			for (RemotePAC p: rps)
+			{
+				
+				//cavit
+				if (   (p.pacID.equalsIgnoreCase(pac.pacID))     ){
+					
+					for (RemotePAC k: rps){
+						if ( (! k.pacID.equalsIgnoreCase(p.pacID) ) && (k.aeTitle.equals(pac.aeTitle)) )  {
+							
+							count++;
+						}
+						
+					}
+				}
+					
+			}
+			
+			if (count == 0){
 			removeRemotePAC(pac.pacID);
-			log.info("PAC :" +  pac.pacID);
-			log.info("PAC :" +  pac.aeTitle);
-			log.info("PAC :" +  pac.hostname);
-			log.info("PAC :" +  pac.port);
-			log.info("PAC :" +  pac.primaryDeviceType);
-
-			pac = new RemotePAC(pac.aeTitle,pac.aeTitle, pac.hostname, pac.port, pac.queryModel, pac.primaryDeviceType);
+		
+			
+			//cavit
 			
 			addRemotePAC(loggedInUser, pac);
-			
-			
+			}else{
+				throw new Exception("Pacs name already exist");
+			}
+			pac = null;
 		}
 		//cavit
 	
@@ -518,7 +587,8 @@ public class RemotePACService extends RemotePACSBase {
 		{
 			throw new Exception("Periodic queries have been configured for PAC:" + pac.pacID + ", it can not be deleted");
 		}
-		if (pac.hostname.equalsIgnoreCase(EPADConfig.xnatServer))
+		//cavit
+		if (pac.aeTitle.equalsIgnoreCase(EPADConfig.aeTitle))
 		{
 			List<RemotePAC> pacs = getRemotePACs();
 			int count = 0;
@@ -528,12 +598,23 @@ public class RemotePACService extends RemotePACSBase {
 				if (p.aeTitle.equalsIgnoreCase(EPADConfig.aeTitle))
 					count++;
 			}
-			if (count <= 1)
+			if (count >= 1)
 				throw new Exception("Local PAC can not be deleted");
 		}
 		
 		
 		removeRemotePAC(pac.pacID);
+		Dcm4cheeServer instanceDcm4cheeServer = new Dcm4cheeServer();
+		instanceDcm4cheeServer.connect();
+		if (instanceDcm4cheeServer.deleteAetitle(pac.aeTitle).equals("null")){
+			
+			log.info("Pacs Conection Deleted succesfully\n AEtitle :" + pac.aeTitle + "\n Host Name :" + pac.hostname + "\n Port no :"+ Integer.toString(pac.port));
+			
+		}else{
+			throw new Exception("Unable to delete pacs connection : " + "\n AEtitle: "+ pac.aeTitle + " Host Name: " + pac.hostname + "Port no:"+pac.port);
+			
+		}
+		instanceDcm4cheeServer = null;
 		this.storeProperties(pac.pacID + " deleted by EPAD " + new Date());
 	}
 

@@ -198,9 +198,11 @@ public class RemotePACSBase {
 		log.debug("2 localNameToApplicationEntityTitleMap:" + networkApplicationInformation.getListOfLocalNamesOfApplicationEntities());
 		applicationProperties = networkApplicationProperties.getProperties(getProperties());
 		this.storeProperties(localname + " added by EPAD " + new Date());
+		
 	}
 	
 	protected void removeRemotePAC(String localname) throws IOException, DicomNetworkException {
+		
 		networkApplicationInformation = networkApplicationProperties.getNetworkApplicationInformation();
 		networkApplicationInformation.remove(localname);
 		applicationProperties = networkApplicationProperties.getProperties(getProperties());
