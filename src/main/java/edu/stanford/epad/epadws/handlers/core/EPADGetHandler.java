@@ -165,6 +165,7 @@ import edu.stanford.epad.dtos.RemotePACQueryConfigList;
 import edu.stanford.epad.epadws.EPadWebServerVersion;
 import edu.stanford.epad.epadws.aim.AIMSearchType;
 import edu.stanford.epad.epadws.aim.AIMUtil;
+import edu.stanford.epad.epadws.aim.dicomsr.Aim2DicomSRConverter;
 import edu.stanford.epad.epadws.epaddb.EpadDatabase;
 import edu.stanford.epad.epadws.handlers.HandlerUtil;
 import edu.stanford.epad.epadws.handlers.dicom.DSOUtil;
@@ -739,8 +740,13 @@ public class EPADGetHandler
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.PROJECT_AIM, pathInfo)) {
 				ProjectReference projectReference = ProjectReference.extract(ProjectsRouteTemplates.PROJECT_AIM, pathInfo);
 				AIMReference aimReference = AIMReference.extract(ProjectsRouteTemplates.PROJECT_AIM, pathInfo);
+				//Aim2DicomSR
 				EPADAIM aim = epadOperations
 						.getProjectAIMDescription(projectReference, aimReference.aimID, username, sessionID);
+				if (returnDicomSR(httpRequest)) { //ml
+					Aim2DicomSRConverter converter=new Aim2DicomSRConverter();
+					converter.Aim2DicomSR(aimReference.aimID);
+				}
 				if (returnConnected(httpRequest)) { //ml
 					EPADProjectList projectList = new EPADProjectList();
 					log.info("project "+ aim.projectID + " username " +username);
@@ -2023,6 +2029,7 @@ public class EPADGetHandler
 			return false;
 	}
 
+	
 	private static boolean returnConnected(HttpServletRequest httpRequest)
 	{
 		String format = httpRequest.getParameter("format");
@@ -2044,6 +2051,15 @@ public class EPADGetHandler
 	{
 		String format = httpRequest.getParameter("format");
 		if (format != null && format.trim().equalsIgnoreCase("stream"))
+			return true;
+		else
+			return false;
+	}
+	
+	private static boolean returnDicomSR(HttpServletRequest httpRequest)
+	{
+		String format = httpRequest.getParameter("format");
+		if (format != null && format.trim().equalsIgnoreCase("dicomsr"))
 			return true;
 		else
 			return false;
