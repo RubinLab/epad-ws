@@ -102,77 +102,11 @@
  * of non-limiting example, you will not contribute any code obtained by you under the GNU General Public License or other 
  * so-called "reciprocal" license.)
  *******************************************************************************/
-package edu.stanford.epad.epadws.epaddb;
+package edu.stanford.epad.epadws.handlers.core;
 
-/**
- * This interface defines SQL commands to work with ePAD's MySQL database.
- * 
- * 
- * @author martin
- */
-public interface EpadDatabaseCommands
+public class PropertiesRouteTemplates
 {
-	public static final String DELETE_ALL_FROM_SERIES_STATUS = "delete from epaddb.series_status";
+	public static final String PROPERTY_LIST = "/properties/";
+	public static final String SEGMENTED_PROPERTY = PROPERTY_LIST + "segmentedproperty/";
 
-	public static final String DELETE_SERIES_FROM_SERIES_STATUS = "delete from epaddb.series_status where series_iuid=?";
-
-	public static final String SELECT_EPAD_IMAGE_UIDS_FOR_SERIES = "select i.sop_iuid from epaddb.epad_files as f, pacsdb.instance as i, pacsdb.series as s where series_iuid=? and i.series_fk=s.pk and f.instance_fk=i.pk";
-	public static final String INSERT_INTO_EVENT = "INSERT INTO epaddb.events"
-			+ "(username,event_status,aim_uid,aim_name,patient_id,patient_name,template_id,template_name,plugin_name,project_id,project_name,series_uid,study_uid,error)"
-			+ "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
-	public static final String SELECT_EVENTS_FOR_SESSIONID = "SELECT * from epaddb.events where username=? ORDER BY pk";
-	public static final String DELETE_EVENTS_FOR_SESSIONID = "DELETE from epaddb.events where username=? and pk <= ?";
-	public static final String SELECT_EVENTS_FOR_AIMID = "SELECT * from epaddb.events where aim_uid=? ORDER BY pk desc";
-	public static final String DELETE_OLD_EVENTS = "DELETE from epaddb.events where created_time < ?";
-	
-	public static final String INSERT_INTO_EPAD_SERIES_STATUS = "INSERT INTO epaddb.series_status(series_iuid,status) VALUES (?,?)";
-	public static final String UPDATE_EPAD_SERIES_STATUS = "UPDATE epaddb.series_status SET status=? where series_iuid=?";
-	public static final String UPDATE_EPAD_SERIES_TAGS = "UPDATE epaddb.series_status SET default_tags=? where series_iuid=?";
-	public static final String GET_EPAD_SERIES_TAGS = "SELECT default_tags from epaddb.series_status where series_iuid=?";
-	public static final String SELECT_EPAD_SERIES_BY_ID = "SELECT * from epaddb.series_status where series_iuid=?";
-	public static final String SELECT_DCM4CHE_STUDY_BY_ID = "SELECT study_iuid,study_desc,study_datetime,accession_no from pacsdb.study where study_iuid=?";
-	public static final String SELECT_ANNOTATION_STATUS_FOR_SERIES_BY_IDs = "SELECT annotationstatus from epaddb.project_subject_study_series_user_status s, epaddb.project p, epaddb.subject su, epaddb.study st, epaddb.user u  where s.project_id=p.id and s.subject_id=su.id and s.study_id=st.id and s.user_id=u.id and p.projectid=? and su.subjectuid=? and st.studyuid=? and series_uid=? and u.username=?";
-	public static final String SELECT_ANNOTATION_DONE_COUNT_FOR_SERIES_BY_IDs = "SELECT count(*) from epaddb.project_subject_study_series_user_status s, epaddb.project p, epaddb.subject su, epaddb.study st  where s.project_id=p.id and s.subject_id=su.id and s.study_id=st.id and p.projectid=? and su.subjectuid=? and st.studyuid=? and series_uid=? and s.annotationstatus=3";
-	public static final String SELECT_STATUS_FOR_SERIES_BY_ID = "SELECT status from epaddb.series_status where series_iuid=?";
-	public static final String SELECT_STATUS_AND_CREATED_TIME_FOR_SERIES_BY_ID = "SELECT status,created_time from epaddb.series_status where series_iuid=?";
-
-	public static final String SELECT_ALL_EPAD_FILE_PATHS_WITH_STATUS = "select file_path from epaddb.epad_files where file_status = ?";
-	public static final String SELECT_EPAD_FILES_FOR_EXACT_PATH = "SELECT * from epaddb.epad_files where file_path=?";
-	public static final String UPDATE_EPAD_FILES_FOR_EXACT_PATH = "UPDATE epaddb.epad_files SET file_status=?, file_size=?, err_msg=? where file_path=?";
-	public static final String DELETE_ALL_FROM_EPAD_FILES = "delete from epaddb.epad_files";
-	public static final String DELETE_FROM_EPAD_FILES = "delete from epaddb.epad_files where file_path like ?";
-	public static final String INSERT_INTO_EPAD_FILES = "INSERT INTO epaddb.epad_files"
-			+ "(instance_fk,file_type,file_path,file_size,file_status,err_msg,file_md5)" + "VALUES (?,?,?,?,?,?,?)";
-	
-	public static final String INSERT_PIXEL_VALUES_FOR_EXACT_PATH = "INSERT INTO epaddb.pixel_values"
-			+ "(file_path,frame_num,value,image_uid)" + "VALUES (?,?,?,?)";
-	
-	public static final String SELECT_PIXEL_VALUES_FOR_PATH = "SELECT value from epaddb.pixel_values where file_path=?";
-	public static final String SELECT_PIXEL_VALUES_FOR_IMAGE = "SELECT file_path, value from epaddb.pixel_values where image_uid=?";
-	//pk added for removing broken links
-	public static final String SELECT_EPAD_FILE_PATH_FOR_IMAGE = "SELECT file_path, f.pk from epaddb.epad_files as f, pacsdb.instance as i where i.sop_iuid=? and i.pk = f.instance_fk";
-	public static final String SELECT_EPAD_FILE_PATH_BY_IMAGE_UID = "SELECT file_path from epaddb.epad_files as f where file_path like ?";
-
-	public static final String SELECT_COORDINATION_USING_KEY = "select coordination_id, schema_name, schema_version, description "
-			+ "from epaddb.coordinations as c where c.coordination_key = ?";
-
-	// coordination_id, schema, schema_version, description; column 0 is auto-increment coordination_key
-	public static final String INSERT_COORDINATION = "insert into epaddb.coordinations values(NULL, ?, ?, ?, ?) ";
-
-	// coordination_id, schema, schema_version, description; column 0 is auto-increment coordination_key
-	public static final String UPDATE_COORDINATION = "update epaddb.coordinations set coordination_id = ? where coordination_key = ?";
-
-	// coordination_key, term_key, position
-	public static final String INSERT_COORDINATION2TERM = "insert into epaddb.coordination2term values(?, ?, ?) ";
-
-	// term_id, schema, schema_version, description; column 0 is auto-increment key
-	public static final String INSERT_COORDINATION_TERM = "insert into epaddb.terms values(NULL, ?, ?, ?, ?)";
-
-	public static final String SELECT_COORDINATION_TERM_KEY = "select term_key from epaddb.terms as t where t.term_id = ? and t.schema_name = ? and t.schema_version = ?";
-
-	public static final String SELECT_COORDINATION_BY_ID = "select coordination_id,t.term_id,t.schema_name,t.description from terms t,coordination2term c2,coordinations c where c.coordination_key=c2.coordination_key and t.term_key=c2.term_key and coordination_id like ? order by coordination_id,position";
-	
-	public static final String CLEANUP_OBSOLETE_EPAD_FILES = "delete from epad_files where instance_fk not in (select pk from pacsdb.instance)";
-
-	public static final String SELECT_DISTINCT_EPADS = "select distinct host from epaddb.epadstatistics";
 }

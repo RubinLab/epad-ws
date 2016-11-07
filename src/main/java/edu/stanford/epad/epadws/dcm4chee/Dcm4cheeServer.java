@@ -324,9 +324,11 @@ public class Dcm4cheeServer {
         Statement st = null;
         ResultSet rs = null;
         String id="0";
+
         String url = EPADConfig.dcm4CheeDatabaseURL;
         String user = EPADConfig.dcm4CheeDatabaseUsername;
         String password = EPADConfig.dcm4CheeDatabasePassword;
+
 
         try {
             con = DriverManager.getConnection(url, user, password);
