@@ -745,7 +745,7 @@ public class EPADGetHandler
 						.getProjectAIMDescription(projectReference, aimReference.aimID, username, sessionID);
 				if (returnDicomSR(httpRequest)) { //ml
 					Aim2DicomSRConverter converter=new Aim2DicomSRConverter();
-					converter.Aim2DicomSR(aimReference.aimID);
+					converter.Aim2DicomSR(aimReference.aimID,projectReference.projectID);
 				}
 				if (returnConnected(httpRequest)) { //ml
 					EPADProjectList projectList = new EPADProjectList();
