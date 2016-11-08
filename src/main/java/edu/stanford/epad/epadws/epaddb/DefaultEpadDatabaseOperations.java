@@ -1418,6 +1418,7 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 			ps.setLong(2, fileSize);
 			ps.setString(3, getValueOrDefault(errorMsg, ""));
 			ps.setString(4, filePath);
+			log.info("running sql:"+ps.toString());
 			ps.execute();
 		} catch (SQLException sqle) {
 			String debugInfo = DatabaseUtils.getDebugData(rs);
