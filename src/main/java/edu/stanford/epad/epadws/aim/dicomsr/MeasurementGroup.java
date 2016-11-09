@@ -21,7 +21,63 @@ public class MeasurementGroup {
     	measurementItems.add(new MeasurementItem());
 	}
 	
-    public String toJSON()
+    public String getTrackingIdentifier() {
+		return TrackingIdentifier;
+	}
+
+	public void setTrackingIdentifier(String trackingIdentifier) {
+		TrackingIdentifier = trackingIdentifier;
+	}
+
+	public int getReferencedSegment() {
+		return ReferencedSegment;
+	}
+
+	public void setReferencedSegment(int referencedSegment) {
+		ReferencedSegment = referencedSegment;
+	}
+
+	public String getSourceSeriesForImageSegmentation() {
+		return SourceSeriesForImageSegmentation;
+	}
+
+	public void setSourceSeriesForImageSegmentation(String sourceSeriesForImageSegmentation) {
+		SourceSeriesForImageSegmentation = sourceSeriesForImageSegmentation;
+	}
+
+	public String getSegmentationSOPInstanceUID() {
+		return segmentationSOPInstanceUID;
+	}
+
+	public void setSegmentationSOPInstanceUID(String segmentationSOPInstanceUID) {
+		this.segmentationSOPInstanceUID = segmentationSOPInstanceUID;
+	}
+
+	public ControlledTerm getFinding() {
+		return Finding;
+	}
+
+	public void setFinding(ControlledTerm finding) {
+		Finding = finding;
+	}
+
+	public ControlledTerm getFindingSite() {
+		return FindingSite;
+	}
+
+	public void setFindingSite(ControlledTerm findingSite) {
+		FindingSite = findingSite;
+	}
+
+	public List<MeasurementItem> getMeasurementItems() {
+		return measurementItems;
+	}
+
+	public void setMeasurementItems(List<MeasurementItem> measurementItems) {
+		this.measurementItems = measurementItems;
+	}
+
+	public String toJSON()
 	{
 		Gson gson = new Gson();
 

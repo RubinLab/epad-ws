@@ -6,8 +6,32 @@ public class ObserverContext {
 	String ObserverType="PERSON";
     String PersonObserverName= "Reader1";
     
+    public ObserverContext(){
+    	
+    }
     
-    public String toJSON()
+    
+    public String getObserverType() {
+		return ObserverType;
+	}
+
+
+	public void setObserverType(String observerType) {
+		ObserverType = observerType;
+	}
+
+
+	public String getPersonObserverName() {
+		return PersonObserverName;
+	}
+
+
+	public void setPersonObserverName(String personObserverName) {
+		PersonObserverName = personObserverName;
+	}
+
+
+	public String toJSON()
 	{
 		Gson gson = new Gson();
 

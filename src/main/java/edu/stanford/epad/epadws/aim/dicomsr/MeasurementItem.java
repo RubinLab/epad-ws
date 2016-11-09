@@ -9,7 +9,43 @@ public class MeasurementItem {
     ControlledTerm units= new ControlledTerm("[hnsf'U]", "UCUM", "Hounsfield unit");
     ControlledTerm derivationModifier= new ControlledTerm("R-00317", "SRT", "Mean");
     
-    public String toJSON()
+    public MeasurementItem() {
+    	
+    }
+    
+    public String getValue() {
+		return value;
+	}
+
+	public void setValue(String value) {
+		this.value = value;
+	}
+
+	public ControlledTerm getQuantity() {
+		return quantity;
+	}
+
+	public void setQuantity(ControlledTerm quantity) {
+		this.quantity = quantity;
+	}
+
+	public ControlledTerm getUnits() {
+		return units;
+	}
+
+	public void setUnits(ControlledTerm units) {
+		this.units = units;
+	}
+
+	public ControlledTerm getDerivationModifier() {
+		return derivationModifier;
+	}
+
+	public void setDerivationModifier(ControlledTerm derivationModifier) {
+		this.derivationModifier = derivationModifier;
+	}
+
+	public String toJSON()
 	{
 		Gson gson = new Gson();
 

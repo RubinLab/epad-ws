@@ -6,18 +6,29 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.Set;
 
 import org.apache.commons.io.IOUtils;
+import org.junit.internal.runners.model.EachTestNotifier;
+
+import com.pixelmed.dicom.TagFromName;
 
 import edu.stanford.epad.common.dicom.DCM4CHEEUtil;
 import edu.stanford.epad.common.dicom.DICOMFileDescription;
+import edu.stanford.epad.common.pixelmed.PixelMedUtils;
 import edu.stanford.epad.common.plugins.PluginAIMUtil;
 import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADLogger;
+import edu.stanford.epad.dtos.internal.DICOMElement;
+import edu.stanford.epad.dtos.internal.DICOMElementList;
 import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeDatabase;
 import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeDatabaseOperations;
+import edu.stanford.epad.epadws.queries.Dcm4CheeQueries;
+import edu.stanford.hakan.aim4api.base.CalculationEntity;
 import edu.stanford.hakan.aim4api.base.DicomImageReferenceEntity;
+import edu.stanford.hakan.aim4api.base.DicomSegmentationEntity;
 import edu.stanford.hakan.aim4api.base.ImageAnnotationCollection;
 import edu.stanford.hakan.aim4api.base.ImageStudy;
 
@@ -28,6 +39,23 @@ import edu.stanford.hakan.aim4api.base.ImageStudy;
  */
 public class Aim2DicomSRConverter {
 	private static final EPADLogger log = EPADLogger.getInstance();
+	
+	public static void runtid1500writer(DicomSRMetadata meta,String imageDir, String compositeDir, String outputFileName ) throws Exception{
+		log.info(meta.toJSON());
+		
+		File metaFile=File.createTempFile("meta"+System.currentTimeMillis(),".json");
+		log.info("Writing json to temp file "+ metaFile.getAbsolutePath());
+		FileWriter fw = new FileWriter(metaFile);
+		fw.write(meta.toJSON());
+		fw.close();
+		if (imageDir==null)
+			imageDir="/home/epad/tid1500test";
+		if (compositeDir==null)
+			compositeDir="/home/epad/tid1500test"; //for testing
+		if (outputFileName==null) 
+			outputFileName="liver_sr_test.dcm";
+		runtid1500writer(metaFile.getAbsolutePath(), imageDir, compositeDir, outputFileName, true);
+	}
 	
 	
 	/**
@@ -118,6 +146,10 @@ public class Aim2DicomSRConverter {
 	public Aim2DicomSRConverter() {
 	}
 	
+	private String getDICOMFileName(DICOMFileDescription dicomFileDescription)
+	{
+		return dicomFileDescription.filePath.substring(dicomFileDescription.filePath.lastIndexOf("/")+1);
+	}
 	private String getDICOMFilePath(DICOMFileDescription dicomFileDescription)
 	{
 		return EPADConfig.dcm4cheeDirRoot + dicomFileDescription.filePath;
@@ -159,13 +191,41 @@ public class Aim2DicomSRConverter {
 		imagePath = imagePath.substring(0, imagePath.lastIndexOf('/'));
 		return imagePath;
 	}
+	
+	public String getPathandFilenames4Series(String seriesUID, ArrayList<String> filenames) {
+		Dcm4CheeDatabaseOperations dcm4cheOp= Dcm4CheeDatabase.getInstance()
+				.getDcm4CheeDatabaseOperations();
+		Set<DICOMFileDescription> dicomFilesDescriptions = dcm4cheOp.getDICOMFilesForSeries(seriesUID);
+		DICOMFileDescription dicomFileDescription=null;
+		Iterator<DICOMFileDescription> it=dicomFilesDescriptions.iterator();
+		while (it.hasNext()) {
+			dicomFileDescription =it.next();
+			log.info("filename is:"+getDICOMFileName(dicomFileDescription));
+			filenames.add(getDICOMFileName(dicomFileDescription));
+		}
+		//get the path of the last
+		if (dicomFileDescription!=null) {
+			String imagePath = getDICOMFilePath(dicomFileDescription);
+			File inputDICOMFile = new File(imagePath);
+	
+			// If the file does not exist locally (because it is stored on another file system), download it.
+			if (!inputDICOMFile.exists()) {
+				inputDICOMFile = downloadRemoteDICOM(dicomFileDescription);
+				imagePath = inputDICOMFile.getAbsolutePath();
+			}
+			
+			imagePath = imagePath.substring(0, imagePath.lastIndexOf('/'));
+			return imagePath;
+		}
+		return null;
+	}
 	public void Aim2DicomSR(String aimID,String projectID) {
-		String imagePath="",segPath=""; 
+		String imagePath=null,segPath=null,outputFileName=null; 
+		
 		try {
 			ImageAnnotationCollection iac = PluginAIMUtil.getImageAnnotationCollectionFromServer(aimID, projectID);
-			
+			DicomSRMetadata meta=new DicomSRMetadata();
 			if (iac != null) {
-					
 				// Get DICOM path					
 				DicomImageReferenceEntity dicomImageReferenceEntity = (DicomImageReferenceEntity) iac
 																		.getImageAnnotations().get(0).getImageReferenceEntityCollection().get(0);
@@ -175,32 +235,94 @@ public class Aim2DicomSRConverter {
 				String seedImageUID = imageStudy.getImageSeries().getImageCollection().get(0).getSopInstanceUid().getRoot();
 				log.info("the image " +seedImageUID+ " series "+ seriesUID);
 				
-				imagePath=getPath4Series(seriesUID);
+				ArrayList<String> imgFilenames=new ArrayList<>();
+				imagePath=getPathandFilenames4Series(seriesUID,imgFilenames);
 				log.info("image path is "+imagePath);
+				meta.setImageLibrary(imgFilenames);
 				
-//				DicomSegmentationEntity segEntity= (DicomSegmentationEntity)iac.getImageAnnotations().get(0).getSegmentationEntityCollection().get(0);
-//				log.info("segmentation uid:"+segEntity.getSopInstanceUid());
+				//get the segmentation
+				DicomSegmentationEntity segEntity= (DicomSegmentationEntity)iac.getImageAnnotations().get(0).getSegmentationEntityCollection().get(0);
+				String dsoImageUID= segEntity.getSopInstanceUid().getRoot();
+				log.info("segmentation uid:"+dsoImageUID);
 				
 				String dsoSeriesUID = PluginAIMUtil.getDSOSeriesUID(aimID);
 				log.info("dsoseriesuid:"+dsoSeriesUID);
-				String dsoPath=getPath4Series(dsoSeriesUID);
-				log.info("dso path is "+dsoPath);
+				ArrayList<String> dsoFilenames=new ArrayList<>();
+				segPath=getPathandFilenames4Series(dsoSeriesUID, dsoFilenames);
+				log.info("dso path is "+segPath);
+				
+				meta.setCompositeContext(dsoFilenames);
+				
+				meta.observerContext.setPersonObserverName(iac.getUser().getName().getValue());
+				//clear the measurements. there are defaults for test
+				meta.Measurements.clear();
+				//create the measurement group. just put the series and segmentation image uid. leave the rest to the default
+				MeasurementGroup mgrp=new MeasurementGroup();
+				mgrp.setSourceSeriesForImageSegmentation(seriesUID);
+				mgrp.setSegmentationSOPInstanceUID(dsoImageUID);
+				//get the finding and finding site from dso header
+				DICOMElementList tags= Dcm4CheeQueries.getDICOMElementsFromWADO(studyUID, dsoSeriesUID, dsoImageUID);
+				ControlledTerm category= new ControlledTerm();
+				ControlledTerm type= new ControlledTerm();
+				for (int i=0; i< tags.ResultSet.totalRecords; i++) {
+					DICOMElement tag=tags.ResultSet.Result.get(i);
+					log.info ("tag code="+tag.tagCode+" value="+tag.value+" parent="+tag.parentSequenceName);
+					if (tag.tagCode.equals(PixelMedUtils.CodeValueCode)) {
+						log.info ("value parent for"+tag.tagName + " = "+ tag.parentSequenceName);
+						if (tag.parentSequenceName.equalsIgnoreCase("Segmented Property Category Code Sequence")) {
+							category.setCodeValue(tag.value);
+						}else if (tag.parentSequenceName.equalsIgnoreCase("Segmented Property Type Code Sequence")) {
+							type.setCodeValue(tag.value);
+						}
+					}
+					if (tag.tagCode.equals(PixelMedUtils.CodeMeaningCode)) {
+						log.info ("meaning parent for"+tag.tagName + " = "+ tag.parentSequenceName);
+						if (tag.parentSequenceName.equalsIgnoreCase("Segmented Property Category Code Sequence")) {
+							category.setCodeMeaning(tag.value);
+						}else if (tag.parentSequenceName.equalsIgnoreCase("Segmented Property Type Code Sequence")) {
+							type.setCodeMeaning(tag.value);
+						}
+					}
+					if (tag.tagCode.equals(PixelMedUtils.CodingSchemeDesignatorCode)) {
+						log.info ("designator parent for"+tag.tagName + " = "+ tag.parentSequenceName);
+						if (tag.parentSequenceName.equalsIgnoreCase("Segmented Property Category Code Sequence")) {
+							category.setCodingSchemeDesignator(tag.value);
+						}else if (tag.parentSequenceName.equalsIgnoreCase("Segmented Property Type Code Sequence")) {
+							type.setCodingSchemeDesignator(tag.value);
+						}
+					}
+				}
+				log.info("category is "+category.toJSON());
+				log.info("type is "+type.toJSON());
+				mgrp.Finding=category;
+				mgrp.FindingSite=type;
+				
+				//add the measurements from aim
+				mgrp.measurementItems.clear();
+				for (CalculationEntity cal:iac.getImageAnnotations().get(0).getCalculationEntityCollection().getCalculationEntityList()) {
+					log.info("calculation is "+cal.getDescription());
+					ControlledTerm derivationMod= new ControlledTerm(cal.getListTypeCode().get(0));//???
+					ControlledTerm quantity= new ControlledTerm(cal.getListTypeCode().get(0));
+					String value=cal.getCalculationResultCollection().getExtendedCalculationResultList().get(0).getCalculationDataCollection().get(0).getValue().getValue();
+					//use this for now. PROBLEM. aim does not have controlled term for this
+					ControlledTerm units= new ControlledTerm("[hnsf'U]", "UCUM", "Hounsfield unit");
+					MeasurementItem mit=new MeasurementItem();
+					//fails if I send null but he has samples with no derivation.
+					//TODO find a way to not send it or just remove from class
+					mit.setDerivationModifier(derivationMod);
+					mit.setQuantity(quantity);
+					mit.setUnits(units);
+					mit.setValue(value);
+					mgrp.measurementItems.add(mit);
+				}
+				
+				//add the measurements group to the object
+				meta.Measurements.add(mgrp);
+				
+				outputFileName = "dicomsr"+System.currentTimeMillis()+".dcm";
 				
 			}
-	
-			DicomSRMetadata meta=new DicomSRMetadata();
-			log.info(meta.toJSON());
-		
-			File metaFile=File.createTempFile("meta"+System.currentTimeMillis(),".json");
-			log.info("Writing json to temp file "+ metaFile.getAbsolutePath());
-			FileWriter fw = new FileWriter(metaFile);
-			fw.write(meta.toJSON());
-			fw.close();
-			
-			imagePath="/home/epad/tid1500test";
-			segPath="/home/epad/tid1500test"; //for testing
-			runtid1500writer(metaFile.getAbsolutePath(), imagePath, segPath, "liver_sr_test.dcm", true);
-			
+			runtid1500writer(meta, imagePath, segPath, outputFileName);
 			
 		} catch (IOException e) {
 			log.warning("IO Error ",e);
@@ -209,6 +331,8 @@ public class Aim2DicomSRConverter {
 		}
 		
 	}
+	
+	
 	
 	
 }
