@@ -1955,14 +1955,28 @@ public class EPADGetHandler
 
 			} else if (HandlerUtil.matchesTemplate(EPADsRouteTemplates.EPAD_LIST, pathInfo)) {
 				boolean summary = "true".equals(httpRequest.getParameter("summary"));
-				if (!summary) { //old list
-					EPADDataList epads = EpadDatabase.getInstance().getEPADDatabaseOperations().getEpadHostNames();
-					responseStream.append(epads.toJSON());
-				}
-				else {
+				boolean activeCount = "true".equals(httpRequest.getParameter("activeCount"));
+				String activeLast = httpRequest.getParameter("activeLast");
+				
+				if (summary) {
 					EPADUsageList eul = epadOperations.getUsageSummary(username);
 					responseStream.append(eul.toJSON());
 				}
+				else if (activeCount){ //activeLast in days
+					int days=7;//default 7 days
+					try{
+						if (activeLast!=null)
+							days=Integer.parseInt(activeLast);
+					}catch(NumberFormatException ne) {
+						log.warning("the input days "+ activeLast + " is not a number. Defaulting to 7 days");
+					}
+					Integer eul = epadOperations.getActiveCount(days);
+					responseStream.append(eul.toString());
+				}else { //old list
+					EPADDataList epads = EpadDatabase.getInstance().getEPADDatabaseOperations().getEpadHostNames();
+					responseStream.append(epads.toJSON());
+				} 
+				
 				statusCode = HttpServletResponse.SC_OK;
 
 			} else if (HandlerUtil.matchesTemplate(EPADsRouteTemplates.EPAD_VERSION, pathInfo)) {

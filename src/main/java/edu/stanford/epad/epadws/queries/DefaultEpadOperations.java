@@ -3915,6 +3915,14 @@ public class DefaultEpadOperations implements EpadOperations
 		}
 		return eul;
 	}
+	
+	@Override
+	public int getActiveCount(int days) throws Exception {
+		String sql = "createdtime >(( NOW( ) - INTERVAL "+ days+" DAY)) and createdtime =(select max(createdtime) from epadstatistics b where b.host = a.host) group by host order by host";
+		log.info("active count query: "+sql);
+		List<EpadStatistics> stats = new EpadStatistics().getObjects(sql);
+		return stats.size();
+	}
 
 	@Override
 	public EPADUsageList getUsage(String username, String hostname, boolean byMonth, boolean byYear, boolean all) throws Exception {

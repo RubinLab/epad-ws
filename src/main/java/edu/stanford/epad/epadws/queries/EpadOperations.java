@@ -1633,4 +1633,12 @@ public interface EpadOperations
 	 */
 	void deleteTemplate(String username, String templatecode) throws Exception;
 
+	/**
+	 * get the number of active instances for the last ? number of days
+	 * @param days
+	 * @return
+	 * @throws Exception
+	 */
+	int getActiveCount(int days) throws Exception;
+
 }
