@@ -254,6 +254,8 @@ public class Aim2DicomSRConverter {
 				meta.setCompositeContext(dsoFilenames);
 				
 				meta.observerContext.setPersonObserverName(iac.getUser().getName().getValue());
+				//set the series desc as annotation name
+				meta.setSeriesDescription(iac.getImageAnnotations().get(0).getName().getValue());
 				//clear the measurements. there are defaults for test
 				meta.Measurements.clear();
 				//create the measurement group. just put the series and segmentation image uid. leave the rest to the default
@@ -308,6 +310,8 @@ public class Aim2DicomSRConverter {
 					ControlledTerm units= new ControlledTerm("[hnsf'U]", "UCUM", "Hounsfield unit");
 					MeasurementItem mit=new MeasurementItem();
 					//fails if I send null but he has samples with no derivation.
+					//nothing wrong with the produced json. something wrong with tid1500writer. 
+					//it also does not write mean and standard dev
 					//TODO find a way to not send it or just remove from class
 					mit.setDerivationModifier(derivationMod);
 					mit.setQuantity(quantity);
