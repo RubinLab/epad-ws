@@ -102,144 +102,205 @@
  * of non-limiting example, you will not contribute any code obtained by you under the GNU General Public License or other 
  * so-called "reciprocal" license.)
  *******************************************************************************/
-package edu.stanford.epad.epadws.handlers.admin;
+package edu.stanford.epad.epadws.models;
 
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.sql.SQLException;
+import java.util.Date;
+import edu.stanford.epad.epadws.models.dao.AbstractDAO;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+public class EpadStatisticsTemplate extends AbstractDAO {
 
-import org.eclipse.jetty.server.Request;
-import org.eclipse.jetty.server.handler.AbstractHandler;
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
+	long id;
+	String host;
+	String templateLevelType;
+	String templateName;
+	String authors;
+	String version;
+	String templateDescription;
+	String templateType;
+	String templateCode;
+	int numOfAims;
+	String templateText;
+	//these two just for xml retrieval will not be persisted
+	String filePath;
+	String fileId;
 
-import edu.stanford.epad.common.util.EPADLogger;
-import edu.stanford.epad.epadws.handlers.HandlerUtil;
-import edu.stanford.epad.epadws.handlers.core.ProjectsRouteTemplates;
-import edu.stanford.epad.epadws.models.EpadStatistics;
-import edu.stanford.epad.epadws.models.EpadStatisticsTemplate;
 
-/**
- * @author dev
- */
-public class StatisticsHandler extends AbstractHandler
-{
-	private static final EPADLogger log = EPADLogger.getInstance();
-
-	private static final String FORBIDDEN = "Forbidden method - only PUT supported on statistics route";
-	private static final String INTERNAL_ERROR_MESSAGE = "Internal server error on statistics route";
-	private static final String INTERNAL_IO_ERROR_MESSAGE = "Internal server IO error on statistics route";
-	private static final String INTERNAL_SQL_ERROR_MESSAGE = "Internal server SQL error on statistics route";
-	private static final String INVALID_SESSION_TOKEN_MESSAGE = "Session token is invalid for statistics route";
+	String creator;
+	Date createdTime;
+	Date updateTime;
+	String updated_by;
 
 	@Override
-	public void handle(String s, Request request, HttpServletRequest httpRequest, HttpServletResponse httpResponse)
-	{
-		PrintWriter responseStream = null;
-		int statusCode;
-
-		request.setHandled(true);
-
-		try {
-			responseStream = httpResponse.getWriter();
-			String pathInfo = httpRequest.getPathInfo();
-			log.info("path info:"+pathInfo);
-			String method = httpRequest.getMethod();
-			if ("PUT".equalsIgnoreCase(method)) {
-				
-				if (HandlerUtil.matchesTemplate("/templates/", pathInfo)) {
-					try {
-						String host = httpRequest.getParameter("host");
-						if (host != null) {
-							statusCode = HttpServletResponse.SC_OK;
-							EpadStatisticsTemplate st = new EpadStatisticsTemplate();
-							
-							st.setTemplateCode(httpRequest.getParameter("templateCode"));
-							st.setTemplateName(httpRequest.getParameter("templateName"));
-							st.setAuthors(httpRequest.getParameter("authors"));
-							st.setVersion(httpRequest.getParameter("version"));
-							st.setTemplateLevelType(httpRequest.getParameter("templateLevelType"));
-							st.setTemplateDescription(httpRequest.getParameter("templateDescription"));
-							st.setNumOfAims(getInt(httpRequest.getParameter("numOfAims")));
-							st.setTemplateText(HandlerUtil.getPostedString(httpRequest));
-							
-							
-							String remoteIP = request.getRemoteAddr();
-							if (!remoteIP.startsWith("127.") && !remoteIP.startsWith("0:"))
-								st.setHost(host + " : " + remoteIP);
-							
-							st.setCreator("admin");
-							st.save();
-						}
-						else
-							statusCode = HttpServletResponse.SC_BAD_REQUEST;
-	
-					} catch (IOException e) {
-						statusCode = HandlerUtil.internalErrorResponse(INTERNAL_IO_ERROR_MESSAGE, e, responseStream, log);
-					} catch (SQLException e) {
-						statusCode = HandlerUtil.internalErrorResponse(INTERNAL_SQL_ERROR_MESSAGE, e, responseStream, log);
-					}
-				}else {
-					try {
-						String host = httpRequest.getParameter("host");
-						if (host != null) {
-							statusCode = HttpServletResponse.SC_OK;
-							EpadStatistics es = new EpadStatistics();
-							int users = getInt(httpRequest.getParameter("numOfUsers"));
-							int projects = getInt(httpRequest.getParameter("numOfProjects"));
-							int patients = getInt(httpRequest.getParameter("numOfPatients"));
-							int studies = getInt(httpRequest.getParameter("numOfStudies"));
-							int series = getInt(httpRequest.getParameter("numOfSeries"));
-							int aims = getInt(httpRequest.getParameter("numOfAims"));
-							int dsos = getInt(httpRequest.getParameter("numOfDSOs"));
-							int wls = getInt(httpRequest.getParameter("numOfWorkLists"));
-							int files = getInt(httpRequest.getParameter("numOfFiles"));
-							int templates = getInt(httpRequest.getParameter("numOfTemplates"));
-							int plugins = getInt(httpRequest.getParameter("numOfPlugins"));
-							String remoteIP = request.getRemoteAddr();
-							if (!remoteIP.startsWith("127.") && !remoteIP.startsWith("0:"))
-								es.setHost(host + " : " + remoteIP);
-							es.setNumOfUsers(users);
-							es.setNumOfProjects(projects);
-							es.setNumOfPatients(patients);
-							es.setNumOfStudies(studies);
-							es.setNumOfSeries(series);
-							es.setNumOfAims(aims);
-							es.setNumOfDSOs(dsos);
-							es.setNumOfWorkLists(wls);
-							es.setNumOfFiles(files);
-							es.setNumOfTemplates(templates);
-							es.setNumOfPlugins(plugins);
-							es.setCreator("admin");
-							es.save();
-						}
-						else
-							statusCode = HttpServletResponse.SC_BAD_REQUEST;
-	
-					} catch (IOException e) {
-						statusCode = HandlerUtil.internalErrorResponse(INTERNAL_IO_ERROR_MESSAGE, e, responseStream, log);
-					} catch (SQLException e) {
-						statusCode = HandlerUtil.internalErrorResponse(INTERNAL_SQL_ERROR_MESSAGE, e, responseStream, log);
-					}
-				}
-			} else {
-				statusCode = HandlerUtil.warningResponse(HttpServletResponse.SC_FORBIDDEN, FORBIDDEN, responseStream, log);
-			}
-
-			responseStream.flush();
-		} catch (Throwable t) {
-			statusCode = HandlerUtil.internalErrorJSONResponse(INTERNAL_ERROR_MESSAGE, t, responseStream, log);
-		}
-		httpResponse.setStatus(statusCode);
+	public long getId() {
+		return id;
 	}
-	
-	private int getInt(String value)
-	{
-		try {
-			return new Integer(value.trim()).intValue();
-		} catch (Exception x) {
-			return 0;
-		}
+
+	public void setId(long id) {
+		this.id = id;
 	}
+
+
+
+	public String getHost() {
+		return host;
+	}
+
+	public void setHost(String host) {
+		this.host = host;
+	}
+
+	public String getTemplateLevelType() {
+		return templateLevelType;
+	}
+
+	public void setTemplateLevelType(String templateLevelType) {
+		this.templateLevelType = templateLevelType;
+	}
+
+	public String getTemplateName() {
+		return templateName;
+	}
+
+	public void setTemplateName(String templateName) {
+		this.templateName = templateName;
+	}
+
+	public String getAuthors() {
+		return authors;
+	}
+
+	public void setAuthors(String authors) {
+		this.authors = authors;
+	}
+
+	public String getVersion() {
+		return version;
+	}
+
+	public void setVersion(String version) {
+		this.version = version;
+	}
+
+	public String getTemplateDescription() {
+		return templateDescription;
+	}
+
+	public void setTemplateDescription(String templateDescription) {
+		this.templateDescription = templateDescription;
+	}
+
+	public String getTemplateType() {
+		return templateType;
+	}
+
+	public void setTemplateType(String templateType) {
+		this.templateType = templateType;
+	}
+
+	public String getTemplateCode() {
+		return templateCode;
+	}
+
+	public void setTemplateCode(String templateCode) {
+		this.templateCode = templateCode;
+	}
+
+	public int getNumOfAims() {
+		return numOfAims;
+	}
+
+	public void setNumOfAims(int numOfAims) {
+		this.numOfAims = numOfAims;
+	}
+
+	public String getTemplateText() {
+		return templateText;
+	}
+
+	public void setTemplateText(String templateText) {
+		this.templateText = templateText;
+	}
+
+	public String getCreator() {
+		return creator;
+	}
+
+	public void setCreator(String creator) {
+		this.creator = creator;
+	}
+
+	public Date getCreatedTime() {
+		return createdTime;
+	}
+
+	public void setCreatedTime(Date createdTime) {
+		this.createdTime = createdTime;
+	}
+
+	public Date getUpdateTime() {
+		return updateTime;
+	}
+
+	public void setUpdateTime(Date updateTime) {
+		this.updateTime = updateTime;
+	}
+
+	public String getUpdated_by() {
+		return updated_by;
+	}
+
+	public void setUpdated_by(String updated_by) {
+		this.updated_by = updated_by;
+	}
+
+	public String getFilePath() {
+		return filePath;
+	}
+
+	public void setFilePath(String filePath) {
+		this.filePath = filePath;
+	}
+
+	public String getFileId() {
+		return fileId;
+	}
+
+	public void setFileId(String fileId) {
+		this.fileId = fileId;
+	}
+
+	public final static String DBTABLE = "epadstatistics_template";
+	public final static String[][] DBCOLUMNS = {
+			{"id","long","id","Id"},
+			{"host","String","host","varchar"},
+			{"templateLevelType","String","templateLevelType","varchar"},
+			{"templateName","String","templateName","varchar"},
+			{"authors","String","authors","varchar"},
+			{"version","String","version","varchar"},
+			{"templateDescription","String","templateDescription","varchar"},
+			{"templateType","String","templateType","varchar"},
+			{"templateCode","String","templateCode","varchar"},
+			{"templateText","String","templateText","mediumtext"},
+			{"numOfAims","int","numOfAims","Integer"},
+			{"creator","String","creator","varchar"},
+			{"createdTime","Date","createdtime","timestamp"},
+			{"updateTime","Date","updatetime","timestamp"},	
+			{"updated_by","String","updated_by","varchar"},
+
+	};
+
+	@Override
+	public String returnDBTABLE() {
+		return DBTABLE;
+	}
+
+	@Override
+	public String[][] returnDBCOLUMNS() {
+		return DBCOLUMNS;
+	}
+
 }

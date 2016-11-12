@@ -142,6 +142,7 @@ import edu.stanford.epad.epadws.handlers.core.ProjectReference;
 import edu.stanford.epad.epadws.handlers.core.SeriesReference;
 import edu.stanford.epad.epadws.handlers.core.StudyReference;
 import edu.stanford.epad.epadws.handlers.core.SubjectReference;
+import edu.stanford.epad.epadws.models.EpadStatisticsTemplate;
 import edu.stanford.epad.epadws.models.Project;
 import edu.stanford.epad.epadws.service.DefaultEpadProjectOperations;
 import edu.stanford.hakan.aim4api.base.AimException;
@@ -246,6 +247,41 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 		return pngFilePath;
 	}
 
+	
+	@Override
+	public List<EpadStatisticsTemplate> getTemplateStats() {
+		Connection c = null;
+		PreparedStatement ps = null;
+		ResultSet rs = null;
+		List<EpadStatisticsTemplate> templateStats = new ArrayList<EpadStatisticsTemplate>();
+
+		try {
+			c = getConnection();
+			ps = c.prepareStatement(EpadDatabaseCommands.SELECT_TEMPLATE_STATS);
+			rs = ps.executeQuery();
+			while (rs.next()) {
+				EpadStatisticsTemplate st= new EpadStatisticsTemplate();
+				st.setTemplateCode(rs.getString(1));
+				st.setTemplateName(rs.getString(2));
+				st.setAuthors(rs.getString(3));
+				st.setVersion(rs.getString(4));
+				st.setTemplateLevelType(rs.getString(5));
+				st.setTemplateDescription(rs.getString(6));
+				st.setFilePath(rs.getString(7));
+				st.setFileId(rs.getString(8));
+				st.setNumOfAims(rs.getInt(9));
+				templateStats.add(st);
+				
+			}
+		} catch (SQLException sqle) {
+			String debugInfo = DatabaseUtils.getDebugData(rs);
+			log.warning("Database operation failed; debugInfo=" + debugInfo, sqle);
+		} finally {
+			close(c, ps, rs);
+		}
+		return templateStats;
+	}
+	
 	@Override
 	public List<String> getAllPNGLocations(String imageUID) {
 		Connection c = null;
@@ -984,6 +1020,8 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 		return 0;
 	}
 
+	
+	
 	@Override
 	public int getNumberOfAIMs(String criteria) {
 		Connection c = null;

@@ -521,6 +521,27 @@ public class HandlerUtil
 		return null;
     }
     
+    public static String getPostedString(HttpServletRequest httpRequest) throws Exception
+    {
+    	StringBuffer jb = new StringBuffer();
+		String line = null;
+		try {
+		    BufferedReader reader = new BufferedReader(new InputStreamReader( httpRequest.getInputStream()));
+		    while ((line = reader.readLine()) != null)
+		      jb.append(line);
+		} catch (Exception e) {
+			log.warning("Error receiving data:" + e);
+			throw e;
+		}
+		log.debug("Posted string:" + jb);
+		try {
+    	    return jb.toString();
+		} catch (Exception e) {
+			log.warning("Error parsing request string:" + jb);
+		}    	
+		return null;
+    }
+    
 	public static Map<String, Object> parsePostedData(String uploadDirPath, HttpServletRequest httpRequest, PrintWriter responseStream) throws Exception
 	{
 		File uploadDir = new File(uploadDirPath);
