@@ -150,6 +150,7 @@ import edu.stanford.epad.dtos.EPADSubject;
 import edu.stanford.epad.dtos.EPADSubjectList;
 import edu.stanford.epad.dtos.EPADTemplateContainer;
 import edu.stanford.epad.dtos.EPADTemplateContainerList;
+import edu.stanford.epad.dtos.EPADTemplateUsageList;
 import edu.stanford.epad.dtos.EPADUsageList;
 import edu.stanford.epad.dtos.EPADUser;
 import edu.stanford.epad.dtos.EPADUserList;
@@ -1977,6 +1978,19 @@ public class EPADGetHandler
 					responseStream.append(epads.toJSON());
 				} 
 				
+				statusCode = HttpServletResponse.SC_OK;
+
+			} else if (HandlerUtil.matchesTemplate(EPADsRouteTemplates.EPAD_TEMPLATES, pathInfo)) {
+				boolean summary = !"false".equals(httpRequest.getParameter("summary")); //default is true
+				
+				if (summary) {
+					EPADTemplateUsageList eul = epadOperations.getTemplateStatSummary();
+					responseStream.append(eul.toJSON());
+				}
+				else {
+					EPADTemplateUsageList eul = epadOperations.getTemplateStatSummaryWithXML();
+					responseStream.append(eul.toJSON());
+				}
 				statusCode = HttpServletResponse.SC_OK;
 
 			} else if (HandlerUtil.matchesTemplate(EPADsRouteTemplates.EPAD_VERSION, pathInfo)) {
