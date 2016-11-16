@@ -44,6 +44,13 @@ public class MeasurementItem {
 	public void setDerivationModifier(ControlledTerm derivationModifier) {
 		this.derivationModifier = derivationModifier;
 	}
+	
+	public static MeasurementItem fromJSON(String json)
+	{
+		Gson gson = new Gson();
+		
+		return gson.fromJson(json, MeasurementItem.class);
+	}
 
 	public String toJSON()
 	{

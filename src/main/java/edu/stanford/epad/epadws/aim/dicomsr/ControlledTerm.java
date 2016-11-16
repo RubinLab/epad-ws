@@ -41,6 +41,13 @@ public class ControlledTerm {
 	public void setCodeMeaning(String codeMeaning) {
 		CodeMeaning = codeMeaning;
 	}
+	
+	public static ControlledTerm fromJSON(String json)
+	{
+		Gson gson = new Gson();
+		
+		return gson.fromJson(json, ControlledTerm.class);
+	}
 	public String toJSON()
 	{
 		Gson gson = new Gson();

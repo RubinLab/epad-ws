@@ -151,10 +151,17 @@ public class DicomSRMetadata {
 	}
 	
 	
+	public static DicomSRMetadata fromJSON(String json)
+	{
+		Gson gson = new Gson();
+		
+		return gson.fromJson(json, DicomSRMetadata.class);
+	}
+	
 	public String toJSON()
 	{
 		Gson gson = new Gson();
-
+		
 		return gson.toJson(this).replace("\"schema\"", "\"@schema\"");
 	}
 

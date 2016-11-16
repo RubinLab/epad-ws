@@ -30,7 +30,12 @@ public class ObserverContext {
 		PersonObserverName = personObserverName;
 	}
 
-
+	public static ObserverContext fromJSON(String json)
+	{
+		Gson gson = new Gson();
+		
+		return gson.fromJson(json, ObserverContext.class);
+	}
 	public String toJSON()
 	{
 		Gson gson = new Gson();

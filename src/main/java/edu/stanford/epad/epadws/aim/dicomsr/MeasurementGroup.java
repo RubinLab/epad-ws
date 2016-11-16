@@ -77,6 +77,12 @@ public class MeasurementGroup {
 		this.measurementItems = measurementItems;
 	}
 
+	public static MeasurementGroup fromJSON(String json)
+	{
+		Gson gson = new Gson();
+		
+		return gson.fromJson(json, MeasurementGroup.class);
+	}
 	public String toJSON()
 	{
 		Gson gson = new Gson();
