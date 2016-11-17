@@ -23,6 +23,7 @@ import edu.stanford.epad.dtos.internal.DICOMElementList;
 import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeDatabase;
 import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeDatabaseOperations;
 import edu.stanford.epad.epadws.queries.Dcm4CheeQueries;
+import edu.stanford.hakan.aim4api.base.Algorithm;
 import edu.stanford.hakan.aim4api.base.CD;
 import edu.stanford.hakan.aim4api.base.CalculationData;
 import edu.stanford.hakan.aim4api.base.CalculationEntity;
@@ -272,6 +273,28 @@ public class Aim2DicomSRConverter {
           return null;
      }
 
+     
+     public MeasurementItem fillQuantityAndUnit(MeasurementItem item, String unit) {
+    	 if (item==null) 
+    		 item=new MeasurementItem();
+    	 ControlledTerm quantity=null;
+    	 ControlledTerm units=null;
+    	 if (unit.equals("HU")) {
+    		quantity= new ControlledTerm("112031", "DCM", "Attenuation Coefficient");
+    	    units= new ControlledTerm("[hnsf'U]", "UCUM", "Hounsfield unit");
+    	 }else if (unit.equals("SUV")) {
+    		quantity= new ControlledTerm("126401", "DCM", "SUVbw");
+     	    units= new ControlledTerm("{SUVbw}g/ml", "UCUM", "Standardized Uptake Value body weight");
+    	 }else {
+    		 //default?????
+    		quantity= new ControlledTerm("112031", "DCM", "Attenuation Coefficient");
+     	    units= new ControlledTerm("[hnsf'U]", "UCUM", "Hounsfield unit");
+    	 }
+    	 
+    	 item.setQuantity(quantity);
+    	 item.setUnits(units);
+    	 return item;
+     }
      public void Aim2DicomSR(String aimID,String projectID) {
           String imagePath=null,segPath=null,outputFileName=null;
 
@@ -357,19 +380,25 @@ public class Aim2DicomSRConverter {
                     for (CalculationEntity cal:iac.getImageAnnotations().get(0).getCalculationEntityCollection().getCalculationEntityList()) {
                          log.info("calculation is "+cal.getDescription());
                          ControlledTerm derivationMod= new ControlledTerm(cal.getListTypeCode().get(0));//???
-                         ControlledTerm quantity= new ControlledTerm(cal.getListTypeCode().get(0));
+//                         ControlledTerm quantity= new ControlledTerm(cal.getListTypeCode().get(0));
                          String value=cal.getCalculationResultCollection().getExtendedCalculationResultList().get(0).getCalculationDataCollection().get(0).getValue().getValue();
+                         String unit=cal.getCalculationResultCollection().getExtendedCalculationResultList().get(0).getUnitOfMeasure().getValue();
+                         
                          //use this for now. PROBLEM. aim does not have controlled term for this
-                         ControlledTerm units= new ControlledTerm("[hnsf'U]", "UCUM", "Hounsfield unit");
+                         //ControlledTerm units= new ControlledTerm("[hnsf'U]", "UCUM", "Hounsfield unit");
                          MeasurementItem mit=new MeasurementItem();
+                         
+                         mit=fillQuantityAndUnit(mit, unit);
+                         
                          //fails if I send null but he has samples with no derivation.
                          //nothing wrong with the produced json. something wrong with tid1500writer.
                          //it also does not write mean and standard dev
                          //TODO find a way to not send it or just remove from class
                          mit.setDerivationModifier(derivationMod);
-                         mit.setQuantity(quantity);
-                         mit.setUnits(units);
-                         mit.setValue(value);
+                         
+                         
+                         //get the first 16 digits if longer
+                         mit.setValue(value.substring(0, 16<value.length()?16:value.length()));
                          mgrp.measurementItems.add(mit);
                     }
 
@@ -550,9 +579,9 @@ public class Aim2DicomSRConverter {
                log.info("source series is:"+sourceSeriesUID);
                String dsoInstanceUID=meas.segmentationSOPInstanceUID;
                DICOMFileDescription firstImage=getFirstInstanceUIDInSeries(sourceSeriesUID);
-               String studyUID="tbd";
-               String modality="tbd";
-               String imageUID="tbd";
+               String studyUID="na";
+               String modality="na";
+               String imageUID="na";
                if (firstImage==null) {
             	   //get the first in the imagelibrary
             	   imageUID=meta.getImageLibrary().get(0);
@@ -594,15 +623,16 @@ public class Aim2DicomSRConverter {
                for (MeasurementItem item:meas.measurementItems) {
                     CalculationEntity cal =new CalculationEntity();
                     ControlledTerm quantity=item.getQuantity();
+                    ControlledTerm derivationMod=item.getDerivationModifier();
                     ControlledTerm units=item.getUnits();
-                    cal.addTypeCode(new CD(quantity.CodeValue,quantity.CodeMeaning,quantity.CodingSchemeDesignator));
+                    cal.addTypeCode(new CD(derivationMod.CodeValue,derivationMod.CodeMeaning,derivationMod.CodingSchemeDesignator));
                     ExtendedCalculationResult calculationResult=new ExtendedCalculationResult();
                     
                     calculationResult.setType(CalculationResultIdentifier.Scalar);
-                    //get the code meaning??? not a controlled term in aim
+                    //get the code meaning??? not a controlled term in aim get it back from look up table
                     calculationResult.setUnitOfMeasure(new ST(units.CodeMeaning));
-                    //ml put units for now
-                    calculationResult.setDataType(new CD(units.CodeValue,units.CodeMeaning,units.CodingSchemeDesignator));
+                    //ml assume all data types are double. dicom sr does not have data type
+                    calculationResult.setDataType(new CD("99EPADD1","Double","99EPAD"));
 
                     // Create a CalculationData instance
                     
@@ -611,7 +641,7 @@ public class Aim2DicomSRConverter {
                     calculationData.addCoordinate(0, 0); // TODO what goes here?
 
                     // Create a Dimension instance
-                    Dimension dimension = new Dimension(0, 1, quantity.CodeMeaning);
+                    Dimension dimension = new Dimension(0, 1, derivationMod.CodeMeaning);
 
                     // Add calculationData to calculationResult
                     calculationResult.addCalculationData(calculationData);
@@ -638,6 +668,12 @@ public class Aim2DicomSRConverter {
 //                    </type>
 //                    <version value="1.0"/>
 //                    </algorithm>
+                    Algorithm alg=new Algorithm();
+                    alg.setName(new ST(derivationMod.CodeMeaning));
+                    ArrayList<CD> types=new ArrayList<>();
+                    types.add(new CD("RID12780","Calculation","RadLex","3.2"));
+                    alg.setType(types);
+                    cal.setAlgorithm(alg);
                     
                     ia.addCalculationEntity(cal);
 
