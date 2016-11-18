@@ -18,5 +18,5 @@ where  CODE_VALUE='99EPADA6';
 update lexicon set CODE_MEANING='Maximum', CODE_VALUE='G-A437', description='Maximum', SCHEMA_DESIGNATOR='SRT' 
 where  CODE_VALUE='99EPADA7';
 
-UPDATE dbversion SET version = '2.3.2';
+UPDATE dbversion SET version = '2.32';
 commit;
