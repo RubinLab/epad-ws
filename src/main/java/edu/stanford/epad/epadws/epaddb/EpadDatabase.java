@@ -240,6 +240,10 @@ public class EpadDatabase
 			if (rs.next()) {
 				result = true;
 				version = rs.getString("version");
+				//fix for db entry in the form of 2.3.2
+				String db_version = version.substring(0, version.lastIndexOf(".")) + version.substring(version.lastIndexOf(".")+1);
+				if (!version.equals(db_version))
+					version=db_version;
 				sb.append("Database version is: ").append(version).append(" ");
 				dbversion = version;
 			}

@@ -743,10 +743,32 @@ public class EPADGetHandler
 				//Aim2DicomSR
 				EPADAIM aim = epadOperations
 						.getProjectAIMDescription(projectReference, aimReference.aimID, username, sessionID);
-				if (returnDicomSR(httpRequest)) { //ml
-					Aim2DicomSRConverter converter=new Aim2DicomSRConverter();
-					converter.Aim2DicomSR(aimReference.aimID,projectReference.projectID);
+				if (aim==null) {
+					log.warning("aim not found");
+					return HttpServletResponse.SC_NOT_FOUND;
 				}
+				
+
+				
+				if (returnDicomSR(httpRequest)) { //ml
+//					DownloadUtil.downloadProject(true, httpResponse, projectReference, username, sessionID, searchFilter, subjectUIDs, false);
+//					statusCode = HttpServletResponse.SC_OK;
+//					return statusCode;
+					Aim2DicomSRConverter converter=new Aim2DicomSRConverter();
+//					String outputFilePath=EPADConfig.getEPADWebServerFilesDir() + "dicomsr1479433456410.dcm";//+converter.Aim2DicomSR(aimReference.aimID,projectReference.projectID);
+					String outputFilePath=EPADConfig.getEPADWebServerDICOMScriptsDir()+"bin/"+converter.Aim2DicomSR(aimReference.aimID,projectReference.projectID);
+					log.info("output file:"+outputFilePath);
+//					
+					if (outputFilePath!=null) {
+						DownloadUtil.downloadDicomSrFile(httpResponse, outputFilePath, username);
+//						EPADFileUtils.downloadFile(httpRequest, httpResponse, new File(outputFilePath), aim.name+"SR.dcm"); 
+						statusCode = HttpServletResponse.SC_OK;
+						return statusCode;
+					}
+				}
+				//TODO what is this?????
+				if (!UserProjectService.isCollaborator(sessionID, username, aim.projectID))
+					username = null;
 				if (returnConnected(httpRequest)) { //ml
 					EPADProjectList projectList = new EPADProjectList();
 					log.info("project "+ aim.projectID + " username " +username);
@@ -765,11 +787,7 @@ public class EPADGetHandler
 					statusCode = HttpServletResponse.SC_OK;
 					return statusCode;
 					
-				}
-				
-				if (!UserProjectService.isCollaborator(sessionID, username, aim.projectID))
-					username = null;
-				if (returnSummary(httpRequest))
+				}else if (returnSummary(httpRequest))
 				{	
 					responseStream.append(aim.toJSON());
 				}

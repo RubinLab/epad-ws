@@ -781,6 +781,40 @@ public static void downloadStudies(boolean stream, HttpServletResponse httpRespo
 
 }
 
+public static void downloadDicomSrFile(HttpServletResponse httpResponse, String filePath, String username) throws Exception
+{
+	log.info("Downloading DicomSR file" );
+	String downloadDirPath = EPADConfig.getEPADWebServerResourcesDir() + downloadDirName	 + "temp" + Long.toString(System.currentTimeMillis());
+	File downloadDir = new File(downloadDirPath);
+	downloadDir.mkdirs();
+	List<String> fileNames = new ArrayList<String>();
+	
+	File dicomSr=new File(filePath);
+	String name = dicomSr.getName();
+	File epadFile = new File(downloadDir, name);
+	EPADFileUtils.copyFile(dicomSr, epadFile);
+	fileNames.add(name);
+	
+	String zipName = "EpadFiles-" + timestamp.format(new Date()) + ".zip";
+	httpResponse.setContentType("application/zip");
+	httpResponse.setHeader("Content-Disposition", "attachment;filename=\"" + zipName + "\"");
+
+	File zipFile = null;
+	OutputStream out = null;
+	try
+	{
+		out = httpResponse.getOutputStream();
+	}
+	catch (Exception e)
+	{
+		log.warning("Error getting output stream", e);
+		throw e;
+	}
+	ZipAndStreamFiles(out, fileNames, downloadDirPath + "/");
+	EPADFileUtils.deleteDirectoryAndContents(downloadDir);
+
+}
+
 /**
  * Method to download list of Files
  * 

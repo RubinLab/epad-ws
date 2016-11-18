@@ -195,6 +195,7 @@ import edu.stanford.epad.dtos.internal.XNATUserList;
 import edu.stanford.epad.epadws.aim.AIMQueries;
 import edu.stanford.epad.epadws.aim.AIMSearchType;
 import edu.stanford.epad.epadws.aim.AIMUtil;
+import edu.stanford.epad.epadws.aim.dicomsr.Aim2DicomSRConverter;
 import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeDatabase;
 import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeDatabaseOperations;
 import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeOperations;
@@ -1860,6 +1861,26 @@ public class DefaultEpadOperations implements EpadOperations
 						log.warning("Error saving AIM file to Exist DB:" + uploadedFile.getName());					
 				}				
 			}
+			
+			if (type == null && PixelMedUtils.isDicomSR(uploadedFile.getAbsolutePath())) {
+				log.info("DicomSR found in createFile. processing");
+				type=FileType.DICOMSR;
+				Aim2DicomSRConverter converter=new Aim2DicomSRConverter();
+				String xml=converter.DicomSR2Aim(uploadedFile.getAbsolutePath(), projectID);
+				String tmpAimName="/tmp/tmpAim"+System.currentTimeMillis()+".xml";
+				File tmpAim=new File(tmpAimName);
+				EPADFileUtils.write(tmpAim, xml);
+				log.info("tmp aim path:"+ tmpAim.getAbsolutePath());
+				
+				if (AnnotationValidator.ValidateXML(tmpAim.getAbsolutePath(), EPADConfig.xsdFilePath)) {
+					log.info("xml produced from dicom sr is valid");
+					if (!AIMUtil.saveAIMAnnotation(tmpAim, projectID, 0, sessionID, username, true))
+						log.warning("Error processing aim file:" + uploadedFile.getName());
+				}
+				else 
+					log.warning("xml produced from dicom sr is NOT valid");
+			}
+			
 			EpadFile file=null;
 			if (type == null || !type.equals(FileType.TEMPLATE)) {
 				projectOperations.createEventLog(username, projectID, subjectID, studyID, seriesID, null, null, uploadedFile.getName(), "UPLOAD FILE", description, false);

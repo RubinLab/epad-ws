@@ -113,6 +113,7 @@ import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
 
+import edu.stanford.epad.common.pixelmed.PixelMedUtils;
 import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADFileUtils;
 import edu.stanford.epad.common.util.EPADLogger;
@@ -290,6 +291,10 @@ public class EPADUploadZIPWatcher implements Runnable
 		if (!isExtensionForPipeline(fileName)) {
 			return false;
 		}
+		if (PixelMedUtils.isDicomSR(fileKey.getFile().getAbsolutePath())) {
+			log.warning("Dicom SR file. Do not add to pipeline");
+			return false;
+		}
 
 		if (waitingForPipelineMap.containsKey(fileKey)) {
 			// determine if the file has changed, since last checked.
@@ -317,7 +322,7 @@ public class EPADUploadZIPWatcher implements Runnable
 	 */
 	private boolean isExtensionForPipeline(String filename)
 	{
-		if (filename.endsWith(".dcm"))
+		if (filename.endsWith(".dcm") )
 			return true;
 		if (filename.endsWith(".zip"))
 			return true;
