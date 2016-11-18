@@ -349,7 +349,7 @@ public class Aim2DicomSRConverter {
 		String imagePath=null,segPath=null,outputFileName=null;
 
 		try {
-			outputFileName = "dicomsr"+System.currentTimeMillis()+".dcm";
+			outputFileName = EPADConfig.getEPADWebServerDownloadWSDir()+"dicomsr"+System.currentTimeMillis()+".dcm";
 			ImageAnnotationCollection iac = PluginAIMUtil.getImageAnnotationCollectionFromServer(aimID, projectID);
 			DicomSRMetadata meta=new DicomSRMetadata();
 			if (iac != null) {
@@ -362,8 +362,8 @@ public class Aim2DicomSRConverter {
 				String seedImageUID = imageStudy.getImageSeries().getImageCollection().get(0).getSopInstanceUid().getRoot();
 				log.info("the image " +seedImageUID+ " series "+ seriesUID);
 				String sopClassUID = imageStudy.getImageSeries().getImageCollection().get(0).getSopClassUid().getRoot();
-				
-					
+
+
 				ArrayList<String> imgFilenames=new ArrayList<>();
 				imagePath=getPathandFilenames4Series(seriesUID,imgFilenames);
 				log.info("image path is "+imagePath);
@@ -385,15 +385,15 @@ public class Aim2DicomSRConverter {
 				meta.observerContext.setPersonObserverName(iac.getUser().getName().getValue());
 				//set the series desc as annotation name
 				//do not put all that extra information. leaving the code in case we decide otherwise later
-//				NameManagerV4 commentManagerV4 = new NameManagerV4();
-//				String fullName= commentManagerV4.toString(iac.getImageAnnotations().get(0));
+				//NameManagerV4 commentManagerV4 = new NameManagerV4();
+				//String fullName= commentManagerV4.toString(iac.getImageAnnotations().get(0));
 				String name= iac.getImageAnnotations().get(0).getName().getValue();
 				String desc=iac.getImageAnnotations().get(0).getListTypeCode().get(0).getCode() + "|" + name;
 				log.info("desc is:"+desc);
 				if (desc.length()>64) {//dicom does not accept
 					//get just the name (not required when no extra information)
-//					desc=iac.getImageAnnotations().get(0).getListTypeCode().get(0).getCode() + "|" + name;
-					
+					//desc=iac.getImageAnnotations().get(0).getListTypeCode().get(0).getCode() + "|" + name;
+
 					//the actual shortening
 					desc=desc.substring(0,64<desc.length()?64:desc.length());
 					log.info("shortened desc is:"+desc);
@@ -411,6 +411,8 @@ public class Aim2DicomSRConverter {
 				ControlledTerm category= new ControlledTerm();
 				ControlledTerm type= new ControlledTerm();
 				String injected=null, seriesDate=null, seriesTime=null, radioPhStartTime=null, radioPhHalfTime=null, weight=null, units=null;
+				String min=null;
+				String max=null;
 				DICOMElementList imageTags= Dcm4CheeQueries.getDICOMElementsFromWADO(studyUID, seriesUID, seedImageUID);
 				for (int i=0; i< dsoTags.ResultSet.totalRecords; i++) {
 					DICOMElement tag=dsoTags.ResultSet.Result.get(i);
@@ -439,7 +441,7 @@ public class Aim2DicomSRConverter {
 				for (int i=0; i< imageTags.ResultSet.totalRecords; i++) {
 					DICOMElement tag=imageTags.ResultSet.Result.get(i);
 					//get the other tags for suv
-					
+
 					if (tag.tagCode.equals(PixelMedUtils.TotalDoseCode)) {
 						injected=tag.value;
 					}
@@ -461,10 +463,16 @@ public class Aim2DicomSRConverter {
 					if (tag.tagCode.equals(PixelMedUtils.UnitsCode)) {
 						units=tag.value;
 					}
-					
+					if (tag.tagCode.equals(PixelMedUtils.SmallestImagePixelValueCode)) {
+						min=tag.value;
+					}
+					if (tag.tagCode.equals(PixelMedUtils.LargestImagePixelValueCode)) {
+						max=tag.value;
+					}
+
 
 				}
-				
+
 				log.info("category is "+category.toJSON());
 				log.info("type is "+type.toJSON());
 				mgrp.Finding=category;
@@ -474,59 +482,59 @@ public class Aim2DicomSRConverter {
 					log.info("PET image. creating rwvms");
 					//calculate the scale factor
 					log.info("injected "+injected + " date "+ seriesDate+" time "+ seriesTime +" start "+ radioPhStartTime + " half "+  radioPhHalfTime +" weight "+ weight +" units "+ units);
-					Double scaleFactor=calcSuvScaleFactorBW(injected, seriesDate, seriesTime, radioPhStartTime, radioPhHalfTime, weight, units);
+					double scaleFactor=calcSuvScaleFactorBW(injected, seriesDate, seriesTime, radioPhStartTime, radioPhHalfTime, weight, units);
 					//write rwvms to a temp dir and put to composite context
 					//actually copy the dso in the temp folder also. you can give one composite dir
 					//InsertRealWorldValueMap 0 19 0 2.09516 explanation label "126401" "DCM" "" "SUVbw" "" patients/Patient-suv\ 279850299396958268090143072201919589014-Study-1.2.826.0.1.3680043.8.420.31045327731767436406834216341378921542/Series-1.2.826.0.1.3680043.8.420.26000445572709934008257479349240802467/ .
-					String min="0";
-					String max="1";
-					String slope=scaleFactor.toString();
-					slope=trimStr(slope,16);
+
+					//keep it under 16 digits. putting 12 in fraction. it can be 3 digits before fraction 
+					String slope=String.format("%.12f", scaleFactor);
 					log.info("slope is:"+slope);
-					File rwvmDir = new File("/tmp/", "RWVM-" + outputFileName);
+					File rwvmDir = new File(outputFileName.substring(0, outputFileName.lastIndexOf("/")), "RWVM-" + outputFileName.substring(outputFileName.lastIndexOf("/")+1));
 					rwvmDir.mkdirs();
 					MessageLogger logger = new PrintStreamMessageLogger(System.err);
 					String src = imagePath;
 					String dstFolderName = rwvmDir.getAbsolutePath();
 					log.info("call pixelmed with src:"+src+ " and dest:"+dstFolderName);
 					new InsertRealWorldValueMap(min,max,"0",slope,"SUV calculated by ePAD","", "126401","DCM","","SUVbw",null,src,dstFolderName,logger);
-					
+
 					//getting the first. we store just one seg
 					File segFile=new File(segPath+File.separator+meta.getCompositeContext().get(0));
-					File segFileCopy=new File(dstFolderName,segFile.getName());
-					EPADFileUtils.copyFile(segFile, segFileCopy);
-					
-					meta.getCompositeContext().clear();
+
+					//do not clear just add the first
+//					meta.getCompositeContext().clear();
 					for(File f:rwvmDir.listFiles()) {
 						log.info("add file to composite "+ f.getName());
 						meta.getCompositeContext().add(f.getName());
+						//the name is already the uid
+						//is it a problem it is the same uid with one of the images
+						mgrp.setRwvmMapUsedForMeasurement(f.getName().replace(".dcm", ""));
+						mgrp.setMeasurementMethod(new ControlledTerm("126401", "DCM", "SUVbw"));
+						break;
 					}
+
+					File segFileCopy=new File(dstFolderName,segFile.getName());
+					EPADFileUtils.copyFile(segFile, segFileCopy);
+
 					log.info("update seg path to "+ dstFolderName);
 					segPath=dstFolderName;
-					
+
 				}
-				
+
 				//add the measurements from aim
 				mgrp.measurementItems.clear();
 				for (CalculationEntity cal:iac.getImageAnnotations().get(0).getCalculationEntityCollection().getCalculationEntityList()) {
 					log.info("calculation is "+cal.getDescription());
-					ControlledTerm derivationMod= new ControlledTerm(cal.getListTypeCode().get(0));//???
-					//                         ControlledTerm quantity= new ControlledTerm(cal.getListTypeCode().get(0));
+					ControlledTerm derivationMod= new ControlledTerm(cal.getListTypeCode().get(0));
+					//ControlledTerm quantity= new ControlledTerm(cal.getListTypeCode().get(0));
 					String value=cal.getCalculationResultCollection().getExtendedCalculationResultList().get(0).getCalculationDataCollection().get(0).getValue().getValue();
 					String unit=cal.getCalculationResultCollection().getExtendedCalculationResultList().get(0).getUnitOfMeasure().getValue();
 
-					//use this for now. PROBLEM. aim does not have controlled term for this
-					//ControlledTerm units= new ControlledTerm("[hnsf'U]", "UCUM", "Hounsfield unit");
 					MeasurementItem mit=new MeasurementItem();
-
 					mit=fillQuantityAndUnit(mit, unit);
 
-					//fails if I send null but he has samples with no derivation.
-					//nothing wrong with the produced json. something wrong with tid1500writer.
-					//it also does not write mean and standard dev
-					//TODO find a way to not send it or just remove from class
+					//TODO handle calculations sent in the quantity (like volume)
 					mit.setDerivationModifier(derivationMod);
-
 
 					//get the first 16 digits if longer
 					mit.setValue(trimStr(value,16));
@@ -536,13 +544,13 @@ public class Aim2DicomSRConverter {
 				//add the measurements group to the object
 				meta.Measurements.add(mgrp);
 
-				
+
 
 			}
 			return runtid1500writer(meta, imagePath, segPath, outputFileName);
-			
 
-			
+
+
 
 		} catch (IOException e) {
 			log.warning("IO Error ",e);
@@ -552,63 +560,64 @@ public class Aim2DicomSRConverter {
 		return null;
 
 	}
-	
+
 	String trimStr(String str,int charNum) {
 		return str.substring(0,charNum<str.length()?charNum:str.length());
 	}
 	String timeFormatter(String time) {
 		if (time.length()>6 && time.contains("."))
-			 time=time.substring(0,time.indexOf("."));
+			time=time.substring(0,time.indexOf("."));
 		if (time.length()<6) time="0"+time;
 		return time;
 	}
-	
-	
+
+
 	public double calcSuvScaleFactorBW(String injected, String acqDate,String acqTime,String radioPhStartTime, String radioPhHalfTime, String weight, String units) {
 		return calcSuvScaleFactorBW("0", "0", injected, acqDate, acqTime, radioPhStartTime, radioPhHalfTime, weight, units);
 	}
-	
+
 	//use series time not acquisition time!!!
-		public double calcSuvScaleFactorBW(String rescaleSlope, String rescaleIntercept,String injected, String acqDate,String acqTime,String radioPhStartTime, String radioPhHalfTime, String weight, String units) {
-			double rs= Double.parseDouble(rescaleSlope);
-			double ri= Double.parseDouble(rescaleIntercept);
-			double inj = Double.parseDouble(injected);
-			acqTime=timeFormatter(acqTime);
-			long st = Date.UTC(Integer.parseInt(acqDate.substring(0, 4)), Integer.parseInt(acqDate.substring(4, 6)), Integer.parseInt(acqDate.substring(6, 8)), Integer.parseInt(acqTime.substring(0, 2)), Integer.parseInt(acqTime.substring(2, 4)), Integer.parseInt(acqTime.substring(4, 6)));
+	public double calcSuvScaleFactorBW(String rescaleSlope, String rescaleIntercept,String injected, String acqDate,String acqTime,String radioPhStartTime, String radioPhHalfTime, String weight, String units) {
+		double rs= Double.parseDouble(rescaleSlope);
+		double ri= Double.parseDouble(rescaleIntercept);
+		double inj = Double.parseDouble(injected);
+		acqTime=timeFormatter(acqTime);
+		long st = Date.UTC(Integer.parseInt(acqDate.substring(0, 4)), Integer.parseInt(acqDate.substring(4, 6)), Integer.parseInt(acqDate.substring(6, 8)), Integer.parseInt(acqTime.substring(0, 2)), Integer.parseInt(acqTime.substring(2, 4)), Integer.parseInt(acqTime.substring(4, 6)));
 
-			radioPhStartTime=timeFormatter(radioPhStartTime);
-			long rst = Date.UTC(Integer.parseInt(acqDate.substring(0, 4)), Integer.parseInt(acqDate.substring(4, 6)), Integer.parseInt(acqDate.substring(6, 8)), Integer.parseInt(radioPhStartTime.substring(0, 2)), Integer.parseInt(radioPhStartTime.substring(2, 4)), Integer.parseInt(radioPhStartTime.substring(4, 6)));
-			
-			Double rht = Double.parseDouble(radioPhHalfTime);
-			double w = Double.parseDouble(weight);
-					
-			double scaleFactorSUVbw=0;
-			
-			//if it is suv no need to compute
-			if (units.startsWith("SUV")) 
-				return 1;
-			
-			
-			//TODO ml I omited extra checks like decaycorrection and start time zone. need to do that!! 
-			if (injected != null && radioPhHalfTime != null && radioPhStartTime != null && acqDate != null && st != 0 && w != 0) {
-				if (rst != 0) {
-					double decayTime = (st - rst) / 1000.0;	// seconds
-					double halfLife = rht;
-					double injectedDose = inj;
-					double decayedDose = injectedDose * Math.pow(2, -decayTime / halfLife);
-					scaleFactorSUVbw = (w * 1000 / decayedDose);
-					//ml I think it should be without rescale slope and intercept but I should verify!
-//					scaleFactorSUVbw = scaleFactorSUVbw * rs;
-					
-				}
+		radioPhStartTime=timeFormatter(radioPhStartTime);
+		long rst = Date.UTC(Integer.parseInt(acqDate.substring(0, 4)), Integer.parseInt(acqDate.substring(4, 6)), Integer.parseInt(acqDate.substring(6, 8)), Integer.parseInt(radioPhStartTime.substring(0, 2)), Integer.parseInt(radioPhStartTime.substring(2, 4)), Integer.parseInt(radioPhStartTime.substring(4, 6)));
+
+		Double rht = Double.parseDouble(radioPhHalfTime);
+		double w = Double.parseDouble(weight);
+
+		double scaleFactorSUVbw=0;
+
+		//if it is suv no need to compute
+		if (units.startsWith("SUV")) 
+			return 1;
+
+
+		//TODO ml I omited extra checks like decaycorrection and start time zone. need to do that!! 
+		if (injected != null && radioPhHalfTime != null && radioPhStartTime != null && acqDate != null && st != 0 && w != 0) {
+			if (rst != 0) {
+				double decayTime = (st - rst) / 1000.0;	// seconds
+				double halfLife = rht;
+				double injectedDose = inj;
+				double decayedDose = injectedDose * Math.pow(2, -decayTime / halfLife);
+				scaleFactorSUVbw = (w * 1000 / decayedDose);
+				log.info("scale in func is :"+scaleFactorSUVbw);
+				//ml I think it should be without rescale slope and intercept but I should verify!
+				//					scaleFactorSUVbw = scaleFactorSUVbw * rs;
+
 			}
-			
-
-//			double suvValue = (pix + ri) * scaleFactorSUVbw;		
-			
-			return scaleFactorSUVbw;
-			
 		}
+
+
+		//			double suvValue = (pix + ri) * scaleFactorSUVbw;		
+
+		return scaleFactorSUVbw;
+
+	}
 
 	/**
 	 * reads the dicom sr using tid1500reader from dcmqi and outputs a DicomSRMetadata object
@@ -711,7 +720,7 @@ public class Aim2DicomSRConverter {
 		return meta;
 	}
 
-	
+
 	/**
 	 * start the dicomsr to aim conversion using a file path
 	 * @param filePath
@@ -740,7 +749,7 @@ public class Aim2DicomSRConverter {
 		return date;
 
 	}
-	
+
 	/**
 	 * start the dicomsr to aim conversion using a metadata object
 	 * @param filePath
@@ -779,7 +788,7 @@ public class Aim2DicomSRConverter {
 			//               </person>
 
 			ImageAnnotation ia=new ImageAnnotation();
-			
+
 			ia.setDateTime(dateFormat.format(now));
 
 
@@ -788,15 +797,15 @@ public class Aim2DicomSRConverter {
 			String[] desc=seriesDesc.split("\\|");
 			log.info("desc length"+desc.length);
 			if (desc.length==2) {
-				
+
 				EpadProjectOperations projOp = DefaultEpadProjectOperations.getInstance();
 				Template t=projOp.getTemplate(desc[0].trim());
 				if (t!=null) {
 					ia.setName(new ST(desc[1]));
 					//do not put all that extra information. leaving the code in case we decide otherwise later
-//					log.info("name :"+ia.getName().getValue());
-//					NameManagerV4 commentManagerV4 = new NameManagerV4(ia);
-//					log.info("name edited:"+ia.getName().getValue());
+					//					log.info("name :"+ia.getName().getValue());
+					//					NameManagerV4 commentManagerV4 = new NameManagerV4(ia);
+					//					log.info("name edited:"+ia.getName().getValue());
 					ArrayList<CD> types=new ArrayList<>();
 					types.add(new CD(t.getTemplateCode(),t.getTemplateName(),t.getCodingSchemeDesignator(),t.getCodingSchemeVersion()));
 					ia.setTypeCode(types);
@@ -813,7 +822,7 @@ public class Aim2DicomSRConverter {
 			}
 
 			//comment???
-					//       <comment value="CT /  / 10"/>
+			//       <comment value="CT /  / 10"/>
 			for (MeasurementGroup meas:meta.getMeasurements()){
 
 				String sourceSeriesUID=meas.SourceSeriesForImageSegmentation;
@@ -899,52 +908,52 @@ public class Aim2DicomSRConverter {
 
 					calculationResult.setType(CalculationResultIdentifier.Scalar);
 					//get the code meaning??? not a controlled term in aim get it back from look up table
-							calculationResult.setUnitOfMeasure(new ST(unitRetrieveFromControlledTerm(units)));
-							//ml assume all data types are double. dicom sr does not have data type
-							calculationResult.setDataType(new CD("99EPADD1","Double","99EPAD"));
+					calculationResult.setUnitOfMeasure(new ST(unitRetrieveFromControlledTerm(units)));
+					//ml assume all data types are double. dicom sr does not have data type
+					calculationResult.setDataType(new CD("99EPADD1","Double","99EPAD"));
 
-							// Create a CalculationData instance
-							CalculationData calculationData = new CalculationData();
-							calculationData.setValue(new ST(item.getValue()));
-							calculationData.addCoordinate(0, 0); // TODO what goes here?
+					// Create a CalculationData instance
+					CalculationData calculationData = new CalculationData();
+					calculationData.setValue(new ST(item.getValue()));
+					calculationData.addCoordinate(0, 0); // TODO what goes here?
 
-							// Create a Dimension instance
-							Dimension dimension = new Dimension(0, 1, derivationMod.CodeMeaning);
+					// Create a Dimension instance
+					Dimension dimension = new Dimension(0, 1, derivationMod.CodeMeaning);
 
-							// Add calculationData to calculationResult
-							calculationResult.addCalculationData(calculationData);
+					// Add calculationData to calculationResult
+					calculationResult.addCalculationData(calculationData);
 
-							// Add dimension to calculationResult
-							calculationResult.addDimension(dimension);
+					// Add dimension to calculationResult
+					calculationResult.addDimension(dimension);
 
-							//                    // add the shape reference to the calculation
-							//                    ReferencedGeometricShape reference = new ReferencedGeometricShape();
-							//                    reference.setCagridId(0);
-							//                    reference.setReferencedShapeIdentifier(shapeId);
-							//                    calculation.addReferencedGeometricShape(reference);
+					//                    // add the shape reference to the calculation
+					//                    ReferencedGeometricShape reference = new ReferencedGeometricShape();
+					//                    reference.setCagridId(0);
+					//                    reference.setReferencedShapeIdentifier(shapeId);
+					//                    calculation.addReferencedGeometricShape(reference);
 
-							// Add calculationResult to calculation
-							cal.addCalculationResult(calculationResult);
+					// Add calculationResult to calculation
+					cal.addCalculationResult(calculationResult);
 
-							//to calentity
-							//                    <description value="Min"/>
-							//                    <mathML/>
-							//                    <algorithm>
-							//                    <name value="Min"/>
-							//                    <type code="RID12780" codeSystemName="RadLex" codeSystemVersion="3.2">
-							//                    <iso:displayName xmlns:iso="uri:iso.org:21090" value="Calculation"/>
-							//                    </type>
-							//                    <version value="1.0"/>
-							//                    </algorithm>
-							Algorithm alg=new Algorithm();
-							alg.setName(new ST(derivationMod.CodeMeaning));
-							alg.setVersion(new ST("na"));
-							ArrayList<CD> types=new ArrayList<>();
-							types.add(new CD("RID12780","Calculation","RadLex","3.2"));
-							alg.setType(types);
-							cal.setAlgorithm(alg);
+					//to calentity
+					//                    <description value="Min"/>
+					//                    <mathML/>
+					//                    <algorithm>
+					//                    <name value="Min"/>
+					//                    <type code="RID12780" codeSystemName="RadLex" codeSystemVersion="3.2">
+					//                    <iso:displayName xmlns:iso="uri:iso.org:21090" value="Calculation"/>
+					//                    </type>
+					//                    <version value="1.0"/>
+					//                    </algorithm>
+					Algorithm alg=new Algorithm();
+					alg.setName(new ST(derivationMod.CodeMeaning));
+					alg.setVersion(new ST("na"));
+					ArrayList<CD> types=new ArrayList<>();
+					types.add(new CD("RID12780","Calculation","RadLex","3.2"));
+					alg.setType(types);
+					cal.setAlgorithm(alg);
 
-							ia.addCalculationEntity(cal);
+					ia.addCalculationEntity(cal);
 				}
 
 			}
@@ -956,7 +965,7 @@ public class Aim2DicomSRConverter {
 		} catch (Exception e) {
 			log.warning("dicom sr to aim exception ",e);
 		}
-		
+
 		return null;
 
 	}

@@ -13,7 +13,8 @@ public class MeasurementGroup {
     String segmentationSOPInstanceUID= "1.2.276.0.7230010.3.1.4.0.42154.1458337731.665796";
     ControlledTerm Finding =new ControlledTerm("T-D0060", "SRT", "Organ");
     ControlledTerm FindingSite =new ControlledTerm("T-62000", "SRT", "Liver");
-    
+    String rwvmMapUsedForMeasurement=null;
+    ControlledTerm MeasurementMethod =null;
     List<MeasurementItem> measurementItems=new  ArrayList<MeasurementItem>();
     
     public MeasurementGroup() {
@@ -75,6 +76,22 @@ public class MeasurementGroup {
 
 	public void setMeasurementItems(List<MeasurementItem> measurementItems) {
 		this.measurementItems = measurementItems;
+	}
+
+	public String getRwvmMapUsedForMeasurement() {
+		return rwvmMapUsedForMeasurement;
+	}
+
+	public void setRwvmMapUsedForMeasurement(String rwvmMapUsedForMeasurement) {
+		this.rwvmMapUsedForMeasurement = rwvmMapUsedForMeasurement;
+	}
+
+	public ControlledTerm getMeasurementMethod() {
+		return MeasurementMethod;
+	}
+
+	public void setMeasurementMethod(ControlledTerm measurementMethod) {
+		MeasurementMethod = measurementMethod;
 	}
 
 	public static MeasurementGroup fromJSON(String json)

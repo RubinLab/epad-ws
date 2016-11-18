@@ -378,6 +378,20 @@ public class Main
 		}
 		else
 			folder.mkdirs();
+		folder = new File(EPADConfig.getEPADWebServerDownloadDir());
+		if (folder.exists()) {
+			log.info("Deleting existing temp download directory "+ folder.getName());
+			EPADFileUtils.deleteDirectoryContents(folder);
+		}
+		else
+			folder.mkdirs();
+		folder = new File(EPADConfig.getEPADWebServerDownloadWSDir());
+		if (folder.exists()) {
+			log.info("Deleting existing temp downloadWS directory "+ folder.getName());
+			EPADFileUtils.deleteDirectoryContents(folder);
+		}
+		else
+			folder.mkdirs();
 		folder = new File(EPADConfig.getEPADWebServerFileUploadDir());
 		if (!folder.exists()) folder.mkdirs();
 		folder = new File(EPADConfig.getEPADWebServerAnnotationsDir());
