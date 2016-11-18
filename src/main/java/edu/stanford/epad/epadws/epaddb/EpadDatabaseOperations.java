@@ -124,6 +124,7 @@ import edu.stanford.epad.epadws.handlers.core.ProjectReference;
 import edu.stanford.epad.epadws.handlers.core.SeriesReference;
 import edu.stanford.epad.epadws.handlers.core.StudyReference;
 import edu.stanford.epad.epadws.handlers.core.SubjectReference;
+import edu.stanford.epad.epadws.models.EpadStatisticsTemplate;
 
 /**
  * Defines all operations on ePAD's database
@@ -449,6 +450,12 @@ public interface EpadDatabaseOperations
 	 * @return
 	 */
 	String getPixelValuesForPng(String pngPath);
+
+	/**
+	 * method for populating template statistics from db
+	 * @return
+	 */
+	List<EpadStatisticsTemplate> getTemplateStats();
 
 	
 

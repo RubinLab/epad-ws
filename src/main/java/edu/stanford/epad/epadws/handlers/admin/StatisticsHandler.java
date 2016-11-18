@@ -116,7 +116,9 @@ import org.eclipse.jetty.server.handler.AbstractHandler;
 
 import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.epad.epadws.handlers.HandlerUtil;
+import edu.stanford.epad.epadws.handlers.core.ProjectsRouteTemplates;
 import edu.stanford.epad.epadws.models.EpadStatistics;
+import edu.stanford.epad.epadws.models.EpadStatisticsTemplate;
 
 /**
  * @author dev
@@ -141,49 +143,85 @@ public class StatisticsHandler extends AbstractHandler
 
 		try {
 			responseStream = httpResponse.getWriter();
-
+			String pathInfo = httpRequest.getPathInfo();
+			log.info("path info:"+pathInfo);
 			String method = httpRequest.getMethod();
 			if ("PUT".equalsIgnoreCase(method)) {
-				try {
-					String host = httpRequest.getParameter("host");
-					if (host != null) {
-						statusCode = HttpServletResponse.SC_OK;
-						EpadStatistics es = new EpadStatistics();
-						int users = getInt(httpRequest.getParameter("numOfUsers"));
-						int projects = getInt(httpRequest.getParameter("numOfProjects"));
-						int patients = getInt(httpRequest.getParameter("numOfPatients"));
-						int studies = getInt(httpRequest.getParameter("numOfStudies"));
-						int series = getInt(httpRequest.getParameter("numOfSeries"));
-						int aims = getInt(httpRequest.getParameter("numOfAims"));
-						int dsos = getInt(httpRequest.getParameter("numOfDSOs"));
-						int wls = getInt(httpRequest.getParameter("numOfWorkLists"));
-						int files = getInt(httpRequest.getParameter("numOfFiles"));
-						int templates = getInt(httpRequest.getParameter("numOfTemplates"));
-						int plugins = getInt(httpRequest.getParameter("numOfPlugins"));
-						String remoteIP = request.getRemoteAddr();
-						if (!remoteIP.startsWith("127.") && !remoteIP.startsWith("0:"))
-							es.setHost(host + " : " + remoteIP);
-						es.setNumOfUsers(users);
-						es.setNumOfProjects(projects);
-						es.setNumOfPatients(patients);
-						es.setNumOfStudies(studies);
-						es.setNumOfSeries(series);
-						es.setNumOfAims(aims);
-						es.setNumOfDSOs(dsos);
-						es.setNumOfWorkLists(wls);
-						es.setNumOfFiles(files);
-						es.setNumOfTemplates(templates);
-						es.setNumOfPlugins(plugins);
-						es.setCreator("admin");
-						es.save();
+				
+				if (HandlerUtil.matchesTemplate("/templates/", pathInfo)) {
+					try {
+						String host = httpRequest.getParameter("host");
+						if (host != null) {
+							statusCode = HttpServletResponse.SC_OK;
+							EpadStatisticsTemplate st = new EpadStatisticsTemplate();
+							
+							st.setTemplateCode(httpRequest.getParameter("templateCode"));
+							st.setTemplateName(httpRequest.getParameter("templateName"));
+							st.setAuthors(httpRequest.getParameter("authors"));
+							st.setVersion(httpRequest.getParameter("version"));
+							st.setTemplateLevelType(httpRequest.getParameter("templateLevelType"));
+							st.setTemplateDescription(httpRequest.getParameter("templateDescription"));
+							st.setNumOfAims(getInt(httpRequest.getParameter("numOfAims")));
+							st.setTemplateText(HandlerUtil.getPostedString(httpRequest));
+							
+							
+							String remoteIP = request.getRemoteAddr();
+							if (!remoteIP.startsWith("127.") && !remoteIP.startsWith("0:"))
+								st.setHost(host + " : " + remoteIP);
+							
+							st.setCreator("admin");
+							st.save();
+						}
+						else
+							statusCode = HttpServletResponse.SC_BAD_REQUEST;
+	
+					} catch (IOException e) {
+						statusCode = HandlerUtil.internalErrorResponse(INTERNAL_IO_ERROR_MESSAGE, e, responseStream, log);
+					} catch (SQLException e) {
+						statusCode = HandlerUtil.internalErrorResponse(INTERNAL_SQL_ERROR_MESSAGE, e, responseStream, log);
 					}
-					else
-						statusCode = HttpServletResponse.SC_BAD_REQUEST;
-
-				} catch (IOException e) {
-					statusCode = HandlerUtil.internalErrorResponse(INTERNAL_IO_ERROR_MESSAGE, e, responseStream, log);
-				} catch (SQLException e) {
-					statusCode = HandlerUtil.internalErrorResponse(INTERNAL_SQL_ERROR_MESSAGE, e, responseStream, log);
+				}else {
+					try {
+						String host = httpRequest.getParameter("host");
+						if (host != null) {
+							statusCode = HttpServletResponse.SC_OK;
+							EpadStatistics es = new EpadStatistics();
+							int users = getInt(httpRequest.getParameter("numOfUsers"));
+							int projects = getInt(httpRequest.getParameter("numOfProjects"));
+							int patients = getInt(httpRequest.getParameter("numOfPatients"));
+							int studies = getInt(httpRequest.getParameter("numOfStudies"));
+							int series = getInt(httpRequest.getParameter("numOfSeries"));
+							int aims = getInt(httpRequest.getParameter("numOfAims"));
+							int dsos = getInt(httpRequest.getParameter("numOfDSOs"));
+							int wls = getInt(httpRequest.getParameter("numOfWorkLists"));
+							int files = getInt(httpRequest.getParameter("numOfFiles"));
+							int templates = getInt(httpRequest.getParameter("numOfTemplates"));
+							int plugins = getInt(httpRequest.getParameter("numOfPlugins"));
+							String remoteIP = request.getRemoteAddr();
+							if (!remoteIP.startsWith("127.") && !remoteIP.startsWith("0:"))
+								es.setHost(host + " : " + remoteIP);
+							es.setNumOfUsers(users);
+							es.setNumOfProjects(projects);
+							es.setNumOfPatients(patients);
+							es.setNumOfStudies(studies);
+							es.setNumOfSeries(series);
+							es.setNumOfAims(aims);
+							es.setNumOfDSOs(dsos);
+							es.setNumOfWorkLists(wls);
+							es.setNumOfFiles(files);
+							es.setNumOfTemplates(templates);
+							es.setNumOfPlugins(plugins);
+							es.setCreator("admin");
+							es.save();
+						}
+						else
+							statusCode = HttpServletResponse.SC_BAD_REQUEST;
+	
+					} catch (IOException e) {
+						statusCode = HandlerUtil.internalErrorResponse(INTERNAL_IO_ERROR_MESSAGE, e, responseStream, log);
+					} catch (SQLException e) {
+						statusCode = HandlerUtil.internalErrorResponse(INTERNAL_SQL_ERROR_MESSAGE, e, responseStream, log);
+					}
 				}
 			} else {
 				statusCode = HandlerUtil.warningResponse(HttpServletResponse.SC_FORBIDDEN, FORBIDDEN, responseStream, log);

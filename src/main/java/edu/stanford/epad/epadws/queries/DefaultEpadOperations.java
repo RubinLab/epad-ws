@@ -170,6 +170,8 @@ import edu.stanford.epad.dtos.EPADSubjectList;
 import edu.stanford.epad.dtos.EPADTemplate;
 import edu.stanford.epad.dtos.EPADTemplateContainer;
 import edu.stanford.epad.dtos.EPADTemplateContainerList;
+import edu.stanford.epad.dtos.EPADTemplateUsage;
+import edu.stanford.epad.dtos.EPADTemplateUsageList;
 import edu.stanford.epad.dtos.EPADUsage;
 import edu.stanford.epad.dtos.EPADUsageList;
 import edu.stanford.epad.dtos.EPADUser;
@@ -212,6 +214,7 @@ import edu.stanford.epad.epadws.handlers.dicom.DSOUtil;
 import edu.stanford.epad.epadws.models.DisabledTemplate;
 import edu.stanford.epad.epadws.models.EpadFile;
 import edu.stanford.epad.epadws.models.EpadStatistics;
+import edu.stanford.epad.epadws.models.EpadStatisticsTemplate;
 import edu.stanford.epad.epadws.models.Template;
 import edu.stanford.epad.epadws.models.EventLog;
 import edu.stanford.epad.epadws.models.FileType;
@@ -3939,6 +3942,44 @@ public class DefaultEpadOperations implements EpadOperations
 					stat.getNumOfWorkLists(), stat.getNumOfFiles(), stat.getNumOfTemplates(), stat.getNumOfPlugins(), dateformat.format(stat.getCreatedTime())));
 		}
 		return eul;
+	}
+	
+	@Override
+	public EPADTemplateUsageList getTemplateStatSummary() throws Exception {
+		String sql = "createdtime >(((select max(createdtime) from epadstatistics_template b where b.host = a.host)- INTERVAL 1 HOUR))  group by host,templatecode order by host,templatecode";
+		log.info("template stat query: "+sql);
+		List<EpadStatisticsTemplate> stats = new EpadStatisticsTemplate().getObjects(sql);
+		EPADTemplateUsageList eul = new EPADTemplateUsageList();
+		for (EpadStatisticsTemplate stat: stats)
+		{
+			eul.addTemplateUsage(new EPADTemplateUsage(stat.getHost(),stat.getTemplateLevelType(),stat.getTemplateName(),
+					stat.getAuthors(),stat.getVersion(),stat.getTemplateDescription(),stat.getTemplateType(),
+					stat.getTemplateCode(),stat.getNumOfAims(),null, dateformat.format(stat.getCreatedTime())));
+		}
+		return eul;
+	}
+	
+	@Override
+	public EPADTemplateUsageList getTemplateStatSummaryWithXML() throws Exception {
+		String sql = "createdtime >(((select max(createdtime) from epadstatistics_template b where b.host = a.host)- INTERVAL 1 HOUR))  group by host,templatecode order by host,templatecode";
+		log.info("template stat query: "+sql);
+		List<EpadStatisticsTemplate> stats = new EpadStatisticsTemplate().getObjects(sql);
+		EPADTemplateUsageList eul = new EPADTemplateUsageList();
+		for (EpadStatisticsTemplate stat: stats)
+		{
+			eul.addTemplateUsage(new EPADTemplateUsage(stat.getHost(),stat.getTemplateLevelType(),stat.getTemplateName(),
+					stat.getAuthors(),stat.getVersion(),stat.getTemplateDescription(),stat.getTemplateType(),
+					stat.getTemplateCode(),stat.getNumOfAims(),stat.getTemplateText(), dateformat.format(stat.getCreatedTime())));
+		}
+		return eul;
+	}
+	
+	@Override
+	public int getActiveCount(int days) throws Exception {
+		String sql = "createdtime >(( NOW( ) - INTERVAL "+ days+" DAY)) and createdtime =(select max(createdtime) from epadstatistics b where b.host = a.host) group by host order by host";
+		log.info("active count query: "+sql);
+		List<EpadStatistics> stats = new EpadStatistics().getObjects(sql);
+		return stats.size();
 	}
 
 	@Override

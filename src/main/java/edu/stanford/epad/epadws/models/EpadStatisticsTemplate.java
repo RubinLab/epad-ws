@@ -102,13 +102,205 @@
  * of non-limiting example, you will not contribute any code obtained by you under the GNU General Public License or other 
  * so-called "reciprocal" license.)
  *******************************************************************************/
-package edu.stanford.epad.epadws.handlers.core;
+package edu.stanford.epad.epadws.models;
 
-public class EPADsRouteTemplates
-{
-	public static final String EPAD_LIST = "/epads/";
-	public static final String EPAD_USAGE = EPAD_LIST + "{hostname}";
-	public static final String EPAD_VERSION = EPAD_LIST + "version/";
-	public static final String EPAD_TEMPLATES = EPAD_LIST + "templates/";
+import java.util.Date;
+import edu.stanford.epad.epadws.models.dao.AbstractDAO;
+
+public class EpadStatisticsTemplate extends AbstractDAO {
+
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
+	long id;
+	String host;
+	String templateLevelType;
+	String templateName;
+	String authors;
+	String version;
+	String templateDescription;
+	String templateType;
+	String templateCode;
+	int numOfAims;
+	String templateText;
+	//these two just for xml retrieval will not be persisted
+	String filePath;
+	String fileId;
+
+
+	String creator;
+	Date createdTime;
+	Date updateTime;
+	String updated_by;
+
+	@Override
+	public long getId() {
+		return id;
+	}
+
+	public void setId(long id) {
+		this.id = id;
+	}
+
+
+
+	public String getHost() {
+		return host;
+	}
+
+	public void setHost(String host) {
+		this.host = host;
+	}
+
+	public String getTemplateLevelType() {
+		return templateLevelType;
+	}
+
+	public void setTemplateLevelType(String templateLevelType) {
+		this.templateLevelType = templateLevelType;
+	}
+
+	public String getTemplateName() {
+		return templateName;
+	}
+
+	public void setTemplateName(String templateName) {
+		this.templateName = templateName;
+	}
+
+	public String getAuthors() {
+		return authors;
+	}
+
+	public void setAuthors(String authors) {
+		this.authors = authors;
+	}
+
+	public String getVersion() {
+		return version;
+	}
+
+	public void setVersion(String version) {
+		this.version = version;
+	}
+
+	public String getTemplateDescription() {
+		return templateDescription;
+	}
+
+	public void setTemplateDescription(String templateDescription) {
+		this.templateDescription = templateDescription;
+	}
+
+	public String getTemplateType() {
+		return templateType;
+	}
+
+	public void setTemplateType(String templateType) {
+		this.templateType = templateType;
+	}
+
+	public String getTemplateCode() {
+		return templateCode;
+	}
+
+	public void setTemplateCode(String templateCode) {
+		this.templateCode = templateCode;
+	}
+
+	public int getNumOfAims() {
+		return numOfAims;
+	}
+
+	public void setNumOfAims(int numOfAims) {
+		this.numOfAims = numOfAims;
+	}
+
+	public String getTemplateText() {
+		return templateText;
+	}
+
+	public void setTemplateText(String templateText) {
+		this.templateText = templateText;
+	}
+
+	public String getCreator() {
+		return creator;
+	}
+
+	public void setCreator(String creator) {
+		this.creator = creator;
+	}
+
+	public Date getCreatedTime() {
+		return createdTime;
+	}
+
+	public void setCreatedTime(Date createdTime) {
+		this.createdTime = createdTime;
+	}
+
+	public Date getUpdateTime() {
+		return updateTime;
+	}
+
+	public void setUpdateTime(Date updateTime) {
+		this.updateTime = updateTime;
+	}
+
+	public String getUpdated_by() {
+		return updated_by;
+	}
+
+	public void setUpdated_by(String updated_by) {
+		this.updated_by = updated_by;
+	}
+
+	public String getFilePath() {
+		return filePath;
+	}
+
+	public void setFilePath(String filePath) {
+		this.filePath = filePath;
+	}
+
+	public String getFileId() {
+		return fileId;
+	}
+
+	public void setFileId(String fileId) {
+		this.fileId = fileId;
+	}
+
+	public final static String DBTABLE = "epadstatistics_template";
+	public final static String[][] DBCOLUMNS = {
+			{"id","long","id","Id"},
+			{"host","String","host","varchar"},
+			{"templateLevelType","String","templateLevelType","varchar"},
+			{"templateName","String","templateName","varchar"},
+			{"authors","String","authors","varchar"},
+			{"version","String","version","varchar"},
+			{"templateDescription","String","templateDescription","varchar"},
+			{"templateType","String","templateType","varchar"},
+			{"templateCode","String","templateCode","varchar"},
+			{"templateText","String","templateText","mediumtext"},
+			{"numOfAims","int","numOfAims","Integer"},
+			{"creator","String","creator","varchar"},
+			{"createdTime","Date","createdtime","timestamp"},
+			{"updateTime","Date","updatetime","timestamp"},	
+			{"updated_by","String","updated_by","varchar"},
+
+	};
+
+	@Override
+	public String returnDBTABLE() {
+		return DBTABLE;
+	}
+
+	@Override
+	public String[][] returnDBCOLUMNS() {
+		return DBCOLUMNS;
+	}
 
 }
