@@ -1779,15 +1779,38 @@ public class DefaultEpadOperations implements EpadOperations
 			projectOperations.createFile(username, projectID, subjectID, studyID, seriesID, uploadedFile, filename, description, type);
 			log.info("Unzipping " + uploadedFile.getAbsolutePath());
 			EPADFileUtils.extractFolder(uploadedFile.getAbsolutePath());
-			File[] files = uploadedFile.getParentFile().listFiles();
-			boolean hasDICOMs = false;
-			for (File file: files)
-			{
+			//to prevent infinite loop for zip uploads
+			File parent = uploadedFile.getParentFile();
+            File zipDirectory = new File(parent, uploadedFile.getName().substring(0, uploadedFile.getName().length()-4));
+            File[] files1 = zipDirectory.listFiles();
+            boolean hasDICOMs = false;
+            List<File> files = new ArrayList<File>();
+            for (File f: files1)
+            {
+                  files.add(f);
+            }
+            for (int i = 0; i < files.size(); i++)
+            {
+                  File file = files.get(i);
+                  if (file.isDirectory())
+                  {
+                         File[] files2 = file.listFiles();
+                         for (File f: files2)
+                         {
+                                files.add(f);
+                         }
+                         continue;
+                  }
+			
+			
 				if (!UserProjectService.isDicomFile(file) || file.getName().toLowerCase().endsWith(".zip"))
 				{
-					// TODO: move other images into EPAD and then delete from here
-					createFile(username, projectID, subjectID, studyID, seriesID, file, description, FileType.TEMPLATE.getName(), sessionID);
-					file.delete();
+					if (file.getName().toLowerCase().endsWith(".xml"))
+						createFile(username, projectID, subjectID, studyID, seriesID, file, description, FileType.TEMPLATE.getName(), sessionID);
+	                 else
+	                	createFile(username, projectID, subjectID, studyID, seriesID, file, description, null, sessionID);
+	                 file.delete();
+						
 				}
 				else
 				{
@@ -1797,7 +1820,7 @@ public class DefaultEpadOperations implements EpadOperations
 			}
 			uploadedFile.delete();
 			if (hasDICOMs)
-				Dcm4CheeOperations.dcmsnd(uploadedFile.getParentFile(), true);			
+				Dcm4CheeOperations.dcmsnd(zipDirectory, true);			
 		}
 		else
 		{
