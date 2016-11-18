@@ -109,5 +109,6 @@ public class EPADsRouteTemplates
 	public static final String EPAD_LIST = "/epads/";
 	public static final String EPAD_USAGE = EPAD_LIST + "{hostname}";
 	public static final String EPAD_VERSION = EPAD_LIST + "version/";
+	public static final String EPAD_TEMPLATES = EPAD_LIST + "templates/";
 
 }

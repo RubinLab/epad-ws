@@ -104,10 +104,13 @@
  *******************************************************************************/
 package edu.stanford.epad.epadws.processing.pipeline.task;
 
+import java.io.File;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
+import java.net.URLEncoder;
 import java.util.Calendar;
 import java.util.Enumeration;
 import java.util.List;
@@ -119,14 +122,17 @@ import javax.servlet.http.HttpServletResponse;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.httpclient.methods.PutMethod;
+import org.apache.commons.httpclient.methods.StringRequestEntity;
 
 import edu.stanford.epad.common.util.EPADConfig;
+import edu.stanford.epad.common.util.EPADFileUtils;
 import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.epad.epadws.EPadWebServerVersion;
 import edu.stanford.epad.epadws.epaddb.EpadDatabase;
 import edu.stanford.epad.epadws.epaddb.EpadDatabaseOperations;
 import edu.stanford.epad.epadws.models.EpadFile;
 import edu.stanford.epad.epadws.models.EpadStatistics;
+import edu.stanford.epad.epadws.models.EpadStatisticsTemplate;
 import edu.stanford.epad.epadws.models.FileType;
 import edu.stanford.epad.epadws.models.Plugin;
 import edu.stanford.epad.epadws.models.Project;
@@ -199,6 +205,10 @@ public class EpadStatisticsTask implements Runnable
 			es.setNumOfTemplates(templates);
 			es.setCreator("admin");
 			es.save();
+			
+			//get the template statistics
+			List<EpadStatisticsTemplate> templateStats= epadDatabaseOperations.getTemplateStats();
+			
 			Calendar now = Calendar.getInstance();
 			boolean daily = true;
 			if ("Weekly".equalsIgnoreCase(EPADConfig.getParamValue("StatisticsPeriod", "Daily")))
@@ -210,9 +220,10 @@ public class EpadStatisticsTask implements Runnable
 					long delay = new Random().nextInt(1800 + 1);
 					if (EPADConfig.xnatServer.indexOf("stanford") == -1)
 						Thread.sleep(1000*delay); // So that all don't do this at the same time
+					//send the number statistics
 					String epadUrl = EPADConfig.getParamValue("EpadStatisticsURL", "https://epad-public.stanford.edu/epad/statistics/");
 					epadUrl = epadUrl + "?numOfUsers=" + users;
-					epadUrl = epadUrl + "&numOfProjects=" + users;
+					epadUrl = epadUrl + "&numOfProjects=" + projects;
 					epadUrl = epadUrl + "&numOfPatients=" + patients;
 					epadUrl = epadUrl + "&numOfStudies=" + studies;
 					epadUrl = epadUrl + "&numOfSeries=" + series;
@@ -234,6 +245,43 @@ public class EpadStatisticsTask implements Runnable
 						log.warning("Error calling Central Epad with URL " + epadUrl, e);
 					} finally {
 						putMethod.releaseConnection();
+					}
+					
+					
+					//send statistics for templates
+					for (EpadStatisticsTemplate st:templateStats) {
+						//get the xml first
+						String filePath=st.getFilePath()+st.getFileId()+".xml";
+						log.info("path "+filePath);
+						File f=null;
+						if (filePath!= null && (f=new File(filePath)).exists()) {
+							st.setTemplateText(EPADFileUtils.readFileAsString(f));
+						}
+						st.setCreator("admin");
+						//persist to db
+						st.save();
+						
+						epadUrl =  EPADConfig.getParamValue("EpadTemplateStatisticsURL", "http://epad-dev4.stanford.edu:8080/epad/statistics/templates/");
+						epadUrl = epadUrl + "?templateCode=" + encode(st.getTemplateCode());
+						epadUrl = epadUrl + "&templateName=" + encode(st.getTemplateName());
+						epadUrl = epadUrl + "&authors=" + encode(st.getAuthors());
+						epadUrl = epadUrl + "&version=" + encode(st.getVersion());
+						epadUrl = epadUrl + "&templateLevelType=" + encode(st.getTemplateLevelType());
+						epadUrl = epadUrl + "&templateDescription=" + encode(st.getTemplateDescription());
+						epadUrl = epadUrl + "&numOfAims=" +  st.getNumOfAims();
+						epadUrl = epadUrl + "&host=" + host;
+						putMethod = new PutMethod(epadUrl);
+						putMethod.setRequestEntity(new StringRequestEntity(st.getTemplateText(), "text/xml", "UTF-8"));						
+						
+						try {
+							log.info("Sending template statistics to Central Epad, url:" + epadUrl);
+							int status = client.executeMethod(putMethod);
+							log.info("Done Sending, status:" + putMethod.getStatusLine());
+						} catch (IOException e) {
+							log.warning("Error calling Central Epad with URL " + epadUrl, e);
+						} finally {
+							putMethod.releaseConnection();
+						}
 					}
 				}
 			}
@@ -298,6 +346,16 @@ public class EpadStatisticsTask implements Runnable
 			log.warning("Error is getting epad version", x);
 		} finally {
 			getMethod.releaseConnection();
+		}
+	}
+	
+	private static String encode(String urlString)
+	{
+		try {
+			return URLEncoder.encode(urlString, "UTF-8");
+		} catch (UnsupportedEncodingException e) {
+			log.warning("Warning: error encoding URL " + urlString, e);
+			return null;
 		}
 	}
 	

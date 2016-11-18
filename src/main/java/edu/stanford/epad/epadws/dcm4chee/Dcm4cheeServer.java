@@ -4,6 +4,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.net.UnknownHostException;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
@@ -41,14 +42,25 @@ public class Dcm4cheeServer {
 
 	HttpResponse response;
 	HttpEntity entity;
-	public void connect(String dcmUser, String dcmPassword, String dcmHostname, Short dcmPort) throws ClientProtocolException, IOException {
+	public void connect() throws Exception {
 		
-		this.dcmUser = dcmUser;
-		this.dcmPassword = dcmPassword;
-		this.dcmHostname = dcmHostname;
-		this.dcmPort = dcmPort;
+		this.dcmUser = EPADConfig.jmxUserName;
+		this.dcmPassword = EPADConfig.jmxUserPass;
+		this.dcmHostname = EPADConfig.dcm4CheeServer;
+		this.dcmPort = (short) EPADConfig.dcm4cheeServerWadoPort;
 		this.httpclient = HttpClients.createDefault();
 		this.httppost = new HttpPost("http://"+this.dcmUser+":"+this.dcmPassword+"@"+this.dcmHostname+":"+this.dcmPort+"/jmx-console/HtmlAdaptor");
+		
+		try{
+			this.response = httpclient.execute(this.httppost);
+		}catch(UnknownHostException e){
+			throw new Exception("Your dcm4chee server name is incorrect or \n network connection issues");
+			
+		}
+		this.entity = response.getEntity();
+		if (this.response.getStatusLine().getReasonPhrase().equals("Unauthorized")){
+			throw new Exception("Your JmxUserName or JmxUserPassword is not correct or does not exist.\n Please check your proxy-config.properties file");
+		}
 
 	}
 	
@@ -83,13 +95,17 @@ public class Dcm4cheeServer {
 		
 	}
 	
-	public Vector<String[]> listAetitle() throws IOException{
+	public List<String[]> listAetitle() throws IOException{
+		
 		this.params = new ArrayList<NameValuePair>(2);
 		params.add(new BasicNameValuePair("action", "invokeOp"));
 		params.add(new BasicNameValuePair("name", "dcm4chee.archive:service=AE"));
 		params.add(new BasicNameValuePair("methodIndex", "0"));
 		this.params.add(new BasicNameValuePair("submit", "Invoke"));
 		executeHttprequest();
+		 if( this.response.getEntity() != null ) {
+			 this.response.getEntity().consumeContent();
+	      }
 		return getAelist();
 		
 		
@@ -112,15 +128,16 @@ public class Dcm4cheeServer {
 		
 	}
 	
-	public String editAetConfig(String oldhostName , String newTitle , String newHostName , String newPort) throws ClientProtocolException, IOException{
+	public String editAetConfig(String oldaeName, String oldhostName , String newTitle , String newHostName , String newPort) throws ClientProtocolException, IOException{
 		//sqlConnection(hostName);
+		updateAetitle(oldaeName,newTitle) ;
 		this.params.removeAll(this.params);
 		System.out.println(this.params.size());
 		this.params = new ArrayList<NameValuePair>(2);
 		this.params.add(new BasicNameValuePair("action", "invokeOp"));
 		this.params.add(new BasicNameValuePair("name", "dcm4chee.archive:service=AE"));
 		this.params.add(new BasicNameValuePair("methodIndex", "4"));
-		this.params.add(new BasicNameValuePair("arg0", sqlConnection(oldhostName)));
+		this.params.add(new BasicNameValuePair("arg0", sqlConnection(newTitle,oldhostName)));
 		this.params.add(new BasicNameValuePair("arg1", newTitle));
 		this.params.add(new BasicNameValuePair("arg2", newHostName));
 		this.params.add(new BasicNameValuePair("arg3", newPort));
@@ -157,23 +174,29 @@ public class Dcm4cheeServer {
 		this.params.add(new BasicNameValuePair("submit", "Invoke"));
 		System.out.println(this.params.size());
 		executeHttprequest();
+		 if( this.response.getEntity() != null ) {
+			 this.response.getEntity().consumeContent();
+	      }
 		return getError();
 
 		
 	}
 	
 	public void executeHttprequest() throws ClientProtocolException, IOException{
-		
+	
 		this.httppost.setEntity(new UrlEncodedFormEntity(this.params, "UTF-8"));
-		this.response = httpclient.execute(this.httppost);
-		this.entity = response.getEntity();
+		this.response = this.httpclient.execute(this.httppost);
+		this.entity = this.response.getEntity();
+		//added
+		
+		httppost.releaseConnection();
 	}
 	
-	public Vector<String[]>  getAelist() throws IOException {
-		//BufferedWriter bw = new BufferedWriter(new FileWriter(new File("Filepath")));
-		if (this.entity != null) {
+	public List<String[]>  getAelist() throws IOException {
 		
-			Vector<String[]> connectionVector = new Vector<String[]>();
+		if (this.entity != null) {
+			
+			List<String[]> connectionList = new ArrayList<String[]>();
 		    InputStream in = this.entity.getContent();
 		    String str = "";
 		    
@@ -183,7 +206,7 @@ public class Dcm4cheeServer {
 		    	String line;
 		    	Boolean Control= false;
 		    	while((line = reader.readLine()) != null) {
-		    		System.out.println(line);
+		    		
 		    		if (contains(line,"<span class='OpResult'>")){
 		    			Control = true;
 		    		}
@@ -191,16 +214,17 @@ public class Dcm4cheeServer {
 		    			str= str + line ;
 		    		}
 		    	    result.append(line);
-		    	    //bw.write(line);
 		    	}
 		    	
 		    } finally {
 		     in.close();
 		     //bw.close();
 		    }
-		    System.out.println("str =================="+str);
+		    
+		    
 		    String delims= "[\\[\\]]+";
 		    String[] tokens = str.split(delims);
+	    	
 	    	
 		    String allhosts = tokens[1];
 		    delims = "[,]";
@@ -211,8 +235,7 @@ public class Dcm4cheeServer {
 		    	String[] tokensLinea = tokensLine[i].split(delimsa);
 		    	String[] connectionArray = new String[4];
 		    	 for (int k=0;k<tokensLinea.length;k++){
-		    		 
-		    		
+		    		 	    		
 		    		 if (k==1){
 		    			 // dcm name and hostname
 		    			 String[] tokensLineab = tokensLinea[k].split("@",2);
@@ -224,8 +247,7 @@ public class Dcm4cheeServer {
 		    					 System.out.println("host name : "+tokensLineab[t]);
 		    					 connectionArray[2]=tokensLineab[t];
 		    				 }
-		    				 
-		    				 
+		    				  
 		    			 }
 		    		 }else if (k==2){
 		    			 //port number
@@ -238,18 +260,19 @@ public class Dcm4cheeServer {
 		    		 }
 		    		 
 		    	 }
-		    	 connectionVector.add(connectionArray);
+		    	 connectionList.add(connectionArray);
 		    }
-		   
-		    return connectionVector;
+		    if( this.response.getEntity() != null ) {
+		    	this.response.getEntity().consumeContent();
+		      }
+		    return connectionList;
 		}else
 		return null;
 		
 	}
-	//if returns null means there is no error else error string
+	//if returns null means there is no error 
 	public String getError() throws IOException {
-		//BufferedWriter bw = new BufferedWriter(new FileWriter(new File("Filepath")));
-		//Vector<String[]> connectionVector = new Vector<String[]>();
+
 	    InputStream in = this.entity.getContent();
 	    String str = "";
 	    Boolean Control= false;
@@ -259,25 +282,26 @@ public class Dcm4cheeServer {
 	    	String line;
 	    	
 	    	while((line = reader.readLine()) != null) {
-	    	//	System.out.println(line);
+
 	    		if (contains(line,"Error")){
 	    			Control = true;
 	    		}
-	    		//if (Control == true){
-	    			str= str + line ;
-	    		//}
+	    		//added next line
+	    		if (Control== true)
+	    		str= str + line ;
 	    	    result.append(line);
-	    	    //bw.write(line);
+
 	    	}
 	    	
 	    } finally {
 	     in.close();
-	     //bw.close();
 	    }
+	    if( this.response.getEntity() != null ) {
+	    	this.response.getEntity().consumeContent();
+	      }
 		if (Control == true){
 		    String[] tokens = str.split("Exception report");
 		    String[] tokensa = tokens[1].split("logs.");
-		    log.info(tokensa[0]+"logs.");
 		    return tokensa[0]+"logs."	;
 		}
 		else{
@@ -295,19 +319,21 @@ public class Dcm4cheeServer {
 	
 		}
 	
-	public String sqlConnection (String oldHostName){
+	public String sqlConnection (String oldaeName,String oldHostName){
 		Connection con = null;
         Statement st = null;
         ResultSet rs = null;
         String id="0";
-        String url = EPADConfig.dcm4CheeDatabaseURL; // do not use localhost "jdbc:mysql://localhost:3306/pacsdb";
-        String user = "pacs";
-        String password = "pacs";
+
+        String url = EPADConfig.dcm4CheeDatabaseURL;
+        String user = EPADConfig.dcm4CheeDatabaseUsername;
+        String password = EPADConfig.dcm4CheeDatabasePassword;
+
 
         try {
             con = DriverManager.getConnection(url, user, password);
             st = con.createStatement();
-            rs = st.executeQuery("SELECT * from pacsdb.ae where hostname =\""+oldHostName+"\"");
+            rs = st.executeQuery("SELECT * from pacsdb.ae where hostname =\""+oldHostName+"\" and aet =\""+oldaeName+"\" ");
 
             while(rs.next()) {
                 System.out.println(rs.getString(1));

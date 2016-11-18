@@ -341,6 +341,7 @@ public class QueueAndWatcherManager
 		String outputPNGFilePath = createOutputPNGFilePathForSingleFrameDICOMImage(dicomFileDescription);
 		File outputPNGFile = new File(outputPNGFilePath);
 		EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
+		
 		insertEpadFile(epadDatabaseOperations, outputPNGFilePath, outputPNGFile.length(), dicomFileDescription.imageUID);
 		SingleFrameDICOMPngGeneratorTask pngGeneratorTask = new SingleFrameDICOMPngGeneratorTask(patientName,
 				dicomFileDescription, dicomFile, outputPNGFile);
@@ -376,7 +377,9 @@ public class QueueAndWatcherManager
 		StringBuilder outputPNGFilePath = new StringBuilder();
 
 		outputPNGFilePath.append(EPADConfig.getEPADWebServerPNGDir());
-		outputPNGFilePath.append("/studies/" + studyUID);
+		if (!EPADConfig.getEPADWebServerPNGDir().endsWith("/"))
+			outputPNGFilePath.append("/");
+		outputPNGFilePath.append("studies/" + studyUID);
 		outputPNGFilePath.append("/series/" + seriesUID);
 		outputPNGFilePath.append("/images/" + imageUID + ".png");
 

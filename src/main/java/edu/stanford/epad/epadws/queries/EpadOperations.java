@@ -131,6 +131,7 @@ import edu.stanford.epad.dtos.EPADSubject;
 import edu.stanford.epad.dtos.EPADSubjectList;
 import edu.stanford.epad.dtos.EPADTemplateContainer;
 import edu.stanford.epad.dtos.EPADTemplateContainerList;
+import edu.stanford.epad.dtos.EPADTemplateUsageList;
 import edu.stanford.epad.dtos.EPADUsageList;
 import edu.stanford.epad.dtos.EPADUser;
 import edu.stanford.epad.dtos.EPADUserList;
@@ -1632,5 +1633,29 @@ public interface EpadOperations
 	 * @throws Exception
 	 */
 	void deleteTemplate(String username, String templatecode) throws Exception;
+
+	/**
+	 * get the number of active instances for the last ? number of days
+	 * @param days
+	 * @return
+	 * @throws Exception
+	 */
+	int getActiveCount(int days) throws Exception;
+
+	
+	/**
+	 * gets the summary for template stats
+	 * @return
+	 * @throws Exception
+	 */
+	EPADTemplateUsageList getTemplateStatSummary() throws Exception;
+
+	
+	/**
+	 * gets the summary for template stats. contains also the xml
+	 * @return
+	 * @throws Exception
+	 */
+	EPADTemplateUsageList getTemplateStatSummaryWithXML() throws Exception;
 
 }

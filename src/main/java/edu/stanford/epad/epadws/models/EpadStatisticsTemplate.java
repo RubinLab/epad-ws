@@ -102,203 +102,205 @@
  * of non-limiting example, you will not contribute any code obtained by you under the GNU General Public License or other 
  * so-called "reciprocal" license.)
  *******************************************************************************/
-package edu.stanford.epad.epadws.processing.pipeline.task;
+package edu.stanford.epad.epadws.models;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.Date;
+import edu.stanford.epad.epadws.models.dao.AbstractDAO;
 
-import javax.imageio.ImageIO;
+public class EpadStatisticsTemplate extends AbstractDAO {
 
-import org.apache.commons.io.IOUtils;
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
+	long id;
+	String host;
+	String templateLevelType;
+	String templateName;
+	String authors;
+	String version;
+	String templateDescription;
+	String templateType;
+	String templateCode;
+	int numOfAims;
+	String templateText;
+	//these two just for xml retrieval will not be persisted
+	String filePath;
+	String fileId;
 
-import edu.stanford.epad.common.dicom.DICOMFileDescription;
-import edu.stanford.epad.common.dicom.DicomReader;
-import edu.stanford.epad.common.util.EPADConfig;
-import edu.stanford.epad.common.util.EPADFileUtils;
-import edu.stanford.epad.common.util.EPADLogger;
-import edu.stanford.epad.common.util.EventMessageCodes;
-import edu.stanford.epad.dtos.PNGFileProcessingStatus;
-import edu.stanford.epad.dtos.SeriesProcessingStatus;
-import edu.stanford.epad.dtos.TaskStatus;
-import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeDatabaseUtils;
-import edu.stanford.epad.epadws.epaddb.EpadDatabase;
-import edu.stanford.epad.epadws.epaddb.EpadDatabaseOperations;
-import edu.stanford.epad.epadws.service.DefaultEpadProjectOperations;
-import edu.stanford.epad.epadws.service.EpadProjectOperations;
-import edu.stanford.epad.epadws.service.UserProjectService;
 
-public class SingleFrameDICOMPngGeneratorTask implements GeneratorTask
-{
-	private static final EPADLogger log = EPADLogger.getInstance();
+	String creator;
+	Date createdTime;
+	Date updateTime;
+	String updated_by;
 
-	private final String patientName;
-	private final String studyUID;
-	private final String seriesUID;
-	private final String imageUID;
-	private final int instanceNumber;
-	private final File dicomFile;
-	private final File pngFile;
-	
-	static public Set imagesBeingProcessed = Collections.synchronizedSet(new HashSet());
+	@Override
+	public long getId() {
+		return id;
+	}
 
-	public SingleFrameDICOMPngGeneratorTask(String patientName, DICOMFileDescription dicomFileDescription,
-			File dicomFile, File pngFile)
-	{
-		this.patientName = patientName;
-		this.studyUID = dicomFileDescription.studyUID;
-		this.seriesUID = dicomFileDescription.seriesUID;
-		this.imageUID = dicomFileDescription.imageUID;
-		this.instanceNumber = dicomFileDescription.instanceNumber;
-		this.dicomFile = dicomFile;
-		this.pngFile = pngFile;
+	public void setId(long id) {
+		this.id = id;
+	}
+
+
+
+	public String getHost() {
+		return host;
+	}
+
+	public void setHost(String host) {
+		this.host = host;
+	}
+
+	public String getTemplateLevelType() {
+		return templateLevelType;
+	}
+
+	public void setTemplateLevelType(String templateLevelType) {
+		this.templateLevelType = templateLevelType;
+	}
+
+	public String getTemplateName() {
+		return templateName;
+	}
+
+	public void setTemplateName(String templateName) {
+		this.templateName = templateName;
+	}
+
+	public String getAuthors() {
+		return authors;
+	}
+
+	public void setAuthors(String authors) {
+		this.authors = authors;
+	}
+
+	public String getVersion() {
+		return version;
+	}
+
+	public void setVersion(String version) {
+		this.version = version;
+	}
+
+	public String getTemplateDescription() {
+		return templateDescription;
+	}
+
+	public void setTemplateDescription(String templateDescription) {
+		this.templateDescription = templateDescription;
+	}
+
+	public String getTemplateType() {
+		return templateType;
+	}
+
+	public void setTemplateType(String templateType) {
+		this.templateType = templateType;
+	}
+
+	public String getTemplateCode() {
+		return templateCode;
+	}
+
+	public void setTemplateCode(String templateCode) {
+		this.templateCode = templateCode;
+	}
+
+	public int getNumOfAims() {
+		return numOfAims;
+	}
+
+	public void setNumOfAims(int numOfAims) {
+		this.numOfAims = numOfAims;
+	}
+
+	public String getTemplateText() {
+		return templateText;
+	}
+
+	public void setTemplateText(String templateText) {
+		this.templateText = templateText;
+	}
+
+	public String getCreator() {
+		return creator;
+	}
+
+	public void setCreator(String creator) {
+		this.creator = creator;
+	}
+
+	public Date getCreatedTime() {
+		return createdTime;
+	}
+
+	public void setCreatedTime(Date createdTime) {
+		this.createdTime = createdTime;
+	}
+
+	public Date getUpdateTime() {
+		return updateTime;
+	}
+
+	public void setUpdateTime(Date updateTime) {
+		this.updateTime = updateTime;
+	}
+
+	public String getUpdated_by() {
+		return updated_by;
+	}
+
+	public void setUpdated_by(String updated_by) {
+		this.updated_by = updated_by;
+	}
+
+	public String getFilePath() {
+		return filePath;
+	}
+
+	public void setFilePath(String filePath) {
+		this.filePath = filePath;
+	}
+
+	public String getFileId() {
+		return fileId;
+	}
+
+	public void setFileId(String fileId) {
+		this.fileId = fileId;
+	}
+
+	public final static String DBTABLE = "epadstatistics_template";
+	public final static String[][] DBCOLUMNS = {
+			{"id","long","id","Id"},
+			{"host","String","host","varchar"},
+			{"templateLevelType","String","templateLevelType","varchar"},
+			{"templateName","String","templateName","varchar"},
+			{"authors","String","authors","varchar"},
+			{"version","String","version","varchar"},
+			{"templateDescription","String","templateDescription","varchar"},
+			{"templateType","String","templateType","varchar"},
+			{"templateCode","String","templateCode","varchar"},
+			{"templateText","String","templateText","mediumtext"},
+			{"numOfAims","int","numOfAims","Integer"},
+			{"creator","String","creator","varchar"},
+			{"createdTime","Date","createdtime","timestamp"},
+			{"updateTime","Date","updatetime","timestamp"},	
+			{"updated_by","String","updated_by","varchar"},
+
+	};
+
+	@Override
+	public String returnDBTABLE() {
+		return DBTABLE;
 	}
 
 	@Override
-	public String getSeriesUID()
-	{
-		return this.seriesUID;
+	public String[][] returnDBCOLUMNS() {
+		return DBCOLUMNS;
 	}
 
-	@Override
-	public void run()
-	{
-		Thread.currentThread().setPriority(Thread.MIN_PRIORITY); // Let interactive thread run sooner
-		if (imagesBeingProcessed.contains(imageUID))
-		{
-			log.info("Image " + imageUID + " already being processed");
-			return;
-		}
-		generatePNGs();
-	}
-
-	private void generatePNGs()
-	{
-		EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
-		EpadProjectOperations projectOperations = DefaultEpadProjectOperations.getInstance();
-		File inputDICOMFile = dicomFile;
-		File outputPNGFile = pngFile;
-		Map<String, String> epadFilesRow = new HashMap<String, String>();
-		OutputStream outputPNGStream = null;
-		String pngPath=pngFile.getAbsolutePath();
-		try {
-			imagesBeingProcessed.add(imageUID);
-			String username = null;
-			String projectID = EPADConfig.xnatUploadProjectID;
-			if (UserProjectService.pendingUploads.containsKey(studyUID))
-			{
-				username = UserProjectService.pendingUploads.get(studyUID);
-				if (username != null && username.indexOf(":") != -1)
-				{
-					projectID = username.substring(username.indexOf(":")+1);
-					username = username.substring(0, username.indexOf(":"));
-				}
-				if (username != null)
-				{
-					epadDatabaseOperations.insertEpadEvent(
-							username, 
-							EventMessageCodes.STUDY_PROCESSED, 
-							"", "", "", patientName, "", "", 
-							"Study:" + studyUID,
-							projectID,"","","", false);					
-					UserProjectService.pendingUploads.remove(studyUID);
-				}
-			}
-			projectOperations.updateUserTaskStatus(username, TaskStatus.TASK_DICOM_PNG_GEN, seriesUID, "Generating PNGs, instance:" + instanceNumber, null, null);
-			DicomReader instance = new DicomReader(inputDICOMFile);
-			String pngFilePath = outputPNGFile.getAbsolutePath();
-			outputPNGFile = new File(pngFilePath);
-
-			EPADFileUtils.createDirsAndFile(outputPNGFile);
-			try {
-				outputPNGStream = new FileOutputStream(outputPNGFile);
-				ImageIO.write(instance.getPackedImage(), "png", outputPNGStream);
-				outputPNGStream.close();
-			} catch (Exception x) {
-				// Try second method using pixelmed library
-				log.warning("dcm4che failed to create PNG for instance " + instanceNumber + " in series " + seriesUID + " for patient "
-						+ patientName + ", trying pixelmed", x);
-				outputPNGFile.delete();
-				instance.dcmconvpng3(0, outputPNGFile);
-			}
-			epadFilesRow = Dcm4CheeDatabaseUtils.createEPadFilesRowData(outputPNGFile.getAbsolutePath(),
-					outputPNGFile.length(), imageUID);
-			log.info("PNG of size " + getFileSize(epadFilesRow) + " generated for instance " + instanceNumber + " in series "
-					+ seriesUID + ", study " + studyUID + " for patient " + patientName);
-
-			epadDatabaseOperations.updateEpadFileRow(epadFilesRow.get("file_path"), PNGFileProcessingStatus.DONE,
-					getFileSize(epadFilesRow), "");
-		} catch (FileNotFoundException e) {
-			log.warning("Failed to create PNG for instance " + instanceNumber + " in series " + seriesUID + " for patient "
-					+ patientName, e);
-			//use outputPNGFile.getAbsolutePath() instead of epadFilesRow.get("file_path"). returns null if exception occured before createEPadFilesRowData
-			epadDatabaseOperations.updateEpadFileRow(pngPath, PNGFileProcessingStatus.ERROR, 0,
-					"DICOM file not found.");
-			epadDatabaseOperations.updateOrInsertSeries(seriesUID, SeriesProcessingStatus.ERROR);
-		} catch (IOException e) {
-			log.warning("Failed to create PNG for instance " + instanceNumber + " in series " + seriesUID + " for patient "
-					+ patientName, e);
-			epadDatabaseOperations.updateEpadFileRow(pngPath, PNGFileProcessingStatus.ERROR, 0,
-					"IO Error: " + e.getMessage());
-			epadDatabaseOperations.updateOrInsertSeries(seriesUID, SeriesProcessingStatus.ERROR);
-		} catch (Throwable t) {
-			log.warning("Failed to create PNG for instance " + instanceNumber + " in series " + seriesUID + " for patient "
-					+ patientName, t);
-			epadDatabaseOperations.updateEpadFileRow(pngPath, PNGFileProcessingStatus.ERROR, 0,
-					"General Exception: " + t.getMessage());
-			epadDatabaseOperations.updateOrInsertSeries(seriesUID, SeriesProcessingStatus.ERROR);
-		} finally {
-			imagesBeingProcessed.remove(imageUID);
-			IOUtils.closeQuietly(outputPNGStream);
-			if (inputDICOMFile.getName().endsWith(".tmp")) {
-				inputDICOMFile.delete();
-			}
-		}
-	}
-
-	@Override
-	public String toString()
-	{
-		StringBuilder sb = new StringBuilder();
-		sb.append("PngGeneratorTask[").append(" in=").append(dicomFile);
-		sb.append(" out=").append(pngFile).append("]");
-
-		return sb.toString();
-	}
-
-	@Override
-	public File getDICOMFile()
-	{
-		return dicomFile;
-	}
-
-	@Override
-	public String getTagFilePath()
-	{
-		return pngFile.getAbsolutePath().replaceAll("\\.png", ".tag");
-	}
-
-	@Override
-	public String getTaskType()
-	{
-		return "Png";
-	}
-
-	private int getFileSize(Map<String, String> epadFilesTable)
-	{
-		try {
-			String fileSize = epadFilesTable.get("file_size");
-			return Integer.parseInt(fileSize);
-		} catch (Exception e) {
-			log.warning("Warning: failed to get file", e);
-			return 0;
-		}
-	}
 }

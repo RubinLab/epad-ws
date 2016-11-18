@@ -175,4 +175,7 @@ public interface EpadDatabaseCommands
 	public static final String CLEANUP_OBSOLETE_EPAD_FILES = "delete from epad_files where instance_fk not in (select pk from pacsdb.instance)";
 
 	public static final String SELECT_DISTINCT_EPADS = "select distinct host from epaddb.epadstatistics";
+	
+	public static final String SELECT_TEMPLATE_STATS = "select t.templatecode,t.templatename,t.authors,t.version,t.templateleveltype,t.templatedescription,f.filepath,f.id, (select count(*) from annotations a where a.templatecode=t.templatecode) as aims from template t,epad_file f where t.file_id=f.id;";
+	
 }
