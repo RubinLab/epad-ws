@@ -122,6 +122,7 @@ import org.dcm4che2.data.DicomObject;
 import org.dcm4che2.data.Tag;
 
 import edu.stanford.epad.common.dicom.DicomReader;
+import edu.stanford.epad.common.pixelmed.PixelMedUtils;
 import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADFileUtils;
 import edu.stanford.epad.common.util.EPADLogger;
@@ -131,6 +132,7 @@ import edu.stanford.epad.dtos.TaskStatus;
 import edu.stanford.epad.epadws.aim.AIMQueries;
 import edu.stanford.epad.epadws.aim.AIMSearchType;
 import edu.stanford.epad.epadws.aim.AIMUtil;
+import edu.stanford.epad.epadws.aim.dicomsr.Aim2DicomSRConverter;
 import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeDatabase;
 import edu.stanford.epad.epadws.epaddb.EpadDatabase;
 import edu.stanford.epad.epadws.epaddb.EpadDatabaseOperations;
@@ -400,6 +402,24 @@ public class UserProjectService {
 			try {
 				log.info("File " + i++ + " : " +dicomFile.getName());
 				if (!isDicomFile(dicomFile)) {
+					if (PixelMedUtils.isDicomSR(dicomFile.getAbsolutePath())) {
+						try {
+							log.info("DicomSR found in createProjectEntitiesFromDICOMFilesInUploadDirectory. processing");
+							Aim2DicomSRConverter converter=new Aim2DicomSRConverter();
+							String xml=converter.DicomSR2Aim(dicomFile.getAbsolutePath(), projectID);
+							String tmpAimName="/tmp/tmpAim"+System.currentTimeMillis()+".xml";
+							File tmpAim=new File(tmpAimName);
+							EPADFileUtils.write(tmpAim, xml);
+							log.info("tmp aim path:"+ tmpAim.getAbsolutePath());
+							if (AIMUtil.saveAIMAnnotation(tmpAim, projectID, 0, sessionID, username, true))
+								log.warning("Error processing aim file:" + dicomFile.getName());
+						} catch (Exception x) {
+							log.warning("Error uploading aim file:" + dicomFile.getName() + ":" + x.getMessage());
+						}
+						dicomFile.delete();
+						nondicoms++;
+						continue;
+					}
 					if (dicomFile.getName().endsWith(".xml"))
 					{
 						try {
@@ -732,7 +752,7 @@ public class UserProjectService {
 		//original
 		return (file.isFile()
 				&& (file.getName().toLowerCase().endsWith(".dcm") || file.getName().toLowerCase().endsWith(".dso") || file.getName().toLowerCase().endsWith(".pres"))
-				&& !file.getName().startsWith("."));
+				&& !file.getName().startsWith("."))&& !PixelMedUtils.isDicomSR(file.getAbsolutePath());
 		//ml the previous method failed on jpgs 
 //		if (file.isFile()
 //				&& (file.getName().toLowerCase().endsWith(".dcm") || file.getName().toLowerCase().endsWith(".dso") || file.getName().toLowerCase().endsWith(".pres"))

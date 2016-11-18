@@ -166,6 +166,7 @@ import edu.stanford.epad.dtos.RemotePACQueryConfigList;
 import edu.stanford.epad.epadws.EPadWebServerVersion;
 import edu.stanford.epad.epadws.aim.AIMSearchType;
 import edu.stanford.epad.epadws.aim.AIMUtil;
+import edu.stanford.epad.epadws.aim.dicomsr.Aim2DicomSRConverter;
 import edu.stanford.epad.epadws.epaddb.EpadDatabase;
 import edu.stanford.epad.epadws.handlers.HandlerUtil;
 import edu.stanford.epad.epadws.handlers.dicom.DSOUtil;
@@ -740,8 +741,29 @@ public class EPADGetHandler
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.PROJECT_AIM, pathInfo)) {
 				ProjectReference projectReference = ProjectReference.extract(ProjectsRouteTemplates.PROJECT_AIM, pathInfo);
 				AIMReference aimReference = AIMReference.extract(ProjectsRouteTemplates.PROJECT_AIM, pathInfo);
+				//Aim2DicomSR
 				EPADAIM aim = epadOperations
 						.getProjectAIMDescription(projectReference, aimReference.aimID, username, sessionID);
+				if (aim==null) {
+					log.warning("aim not found");
+					return HttpServletResponse.SC_NOT_FOUND;
+				}
+				
+				if (returnStream(httpRequest) && ("dicomsr".equals(httpRequest.getParameter("type")))) { //ml
+					
+					Aim2DicomSRConverter converter=new Aim2DicomSRConverter();
+					String outputFilePath=converter.Aim2DicomSR(aimReference.aimID,projectReference.projectID);
+					log.info("output file:"+outputFilePath);
+//					
+					if (outputFilePath!=null) {
+						EPADFileUtils.downloadFile(httpRequest, httpResponse, new File(outputFilePath), aim.name+"SR.dcm"); 
+						statusCode = HttpServletResponse.SC_OK;
+						return statusCode;
+					}
+				}
+				//TODO what is this?????
+				if (!UserProjectService.isCollaborator(sessionID, username, aim.projectID))
+					username = null;
 				if (returnConnected(httpRequest)) { //ml
 					EPADProjectList projectList = new EPADProjectList();
 					log.info("project "+ aim.projectID + " username " +username);
@@ -760,11 +782,7 @@ public class EPADGetHandler
 					statusCode = HttpServletResponse.SC_OK;
 					return statusCode;
 					
-				}
-				
-				if (!UserProjectService.isCollaborator(sessionID, username, aim.projectID))
-					username = null;
-				if (returnSummary(httpRequest))
+				}else if (returnSummary(httpRequest))
 				{	
 					responseStream.append(aim.toJSON());
 				}
@@ -815,6 +833,20 @@ public class EPADGetHandler
 				AIMReference aimReference = AIMReference.extract(ProjectsRouteTemplates.SUBJECT_AIM, pathInfo);
 				EPADAIM aim = epadOperations
 						.getSubjectAIMDescription(subjectReference, aimReference.aimID, username, sessionID);
+				if (aim==null)
+					return HttpServletResponse.SC_NOT_FOUND;
+				if (returnStream(httpRequest) && ("dicomsr".equals(httpRequest.getParameter("type")))) { //ml
+					
+					Aim2DicomSRConverter converter=new Aim2DicomSRConverter();
+					String outputFilePath=converter.Aim2DicomSR(aimReference.aimID,aim.projectID);
+					log.info("output file:"+outputFilePath);
+					
+					if (outputFilePath!=null) {
+						EPADFileUtils.downloadFile(httpRequest, httpResponse, new File(outputFilePath), aim.name+"SR.dcm"); 
+						statusCode = HttpServletResponse.SC_OK;
+						return statusCode;
+					}
+				}
 				if (returnSummary(httpRequest))
 				{	
 					responseStream.append(aim.toJSON());
@@ -858,6 +890,20 @@ public class EPADGetHandler
 				StudyReference studyReference = StudyReference.extract(ProjectsRouteTemplates.STUDY_AIM, pathInfo);
 				AIMReference aimReference = AIMReference.extract(ProjectsRouteTemplates.STUDY_AIM, pathInfo);
 				EPADAIM aim = epadOperations.getStudyAIMDescription(studyReference, aimReference.aimID, username, sessionID);
+				if (aim==null)
+					return HttpServletResponse.SC_NOT_FOUND;
+				if (returnStream(httpRequest) && ("dicomsr".equals(httpRequest.getParameter("type")))) { //ml
+					
+					Aim2DicomSRConverter converter=new Aim2DicomSRConverter();
+					String outputFilePath=converter.Aim2DicomSR(aimReference.aimID,aim.projectID);
+					log.info("output file:"+outputFilePath);
+					
+					if (outputFilePath!=null) {
+						EPADFileUtils.downloadFile(httpRequest, httpResponse, new File(outputFilePath), aim.name+"SR.dcm"); 
+						statusCode = HttpServletResponse.SC_OK;
+						return statusCode;
+					}
+				}
 				if (returnSummary(httpRequest))
 				{	
 					responseStream.append(aim.toJSON());
@@ -913,6 +959,20 @@ public class EPADGetHandler
 				SeriesReference seriesReference = SeriesReference.extract(ProjectsRouteTemplates.SERIES_AIM, pathInfo);
 				AIMReference aimReference = AIMReference.extract(ProjectsRouteTemplates.SERIES_AIM, pathInfo);
 				EPADAIM aim = epadOperations.getSeriesAIMDescription(seriesReference, aimReference.aimID, username, sessionID);
+				if (aim==null)
+					return HttpServletResponse.SC_NOT_FOUND;
+				if (returnStream(httpRequest) && ("dicomsr".equals(httpRequest.getParameter("type")))) { //ml
+					
+					Aim2DicomSRConverter converter=new Aim2DicomSRConverter();
+					String outputFilePath=converter.Aim2DicomSR(aimReference.aimID,aim.projectID);
+					log.info("output file:"+outputFilePath);
+					
+					if (outputFilePath!=null) {
+						EPADFileUtils.downloadFile(httpRequest, httpResponse, new File(outputFilePath), aim.name+"SR.dcm"); 
+						statusCode = HttpServletResponse.SC_OK;
+						return statusCode;
+					}
+				}
 				if (returnSummary(httpRequest))
 				{	
 					responseStream.append(aim.toJSON());
@@ -960,6 +1020,20 @@ public class EPADGetHandler
 				ImageReference imageReference = ImageReference.extract(ProjectsRouteTemplates.IMAGE_AIM, pathInfo);
 				AIMReference aimReference = AIMReference.extract(ProjectsRouteTemplates.IMAGE_AIM, pathInfo);
 				EPADAIM aim = epadOperations.getImageAIMDescription(imageReference, aimReference.aimID, username, sessionID);
+				if (aim==null)
+					return HttpServletResponse.SC_NOT_FOUND;
+				if (returnStream(httpRequest) && ("dicomsr".equals(httpRequest.getParameter("type")))) { //ml
+					
+					Aim2DicomSRConverter converter=new Aim2DicomSRConverter();
+					String outputFilePath=converter.Aim2DicomSR(aimReference.aimID,aim.projectID);
+					log.info("output file:"+outputFilePath);
+					
+					if (outputFilePath!=null) {
+						EPADFileUtils.downloadFile(httpRequest, httpResponse, new File(outputFilePath), aim.name+"SR.dcm"); 
+						statusCode = HttpServletResponse.SC_OK;
+						return statusCode;
+					}
+				}
 				if (returnSummary(httpRequest))
 				{	
 					responseStream.append(aim.toJSON());
@@ -1009,6 +1083,20 @@ public class EPADGetHandler
 				FrameReference frameReference = FrameReference.extract(ProjectsRouteTemplates.FRAME_AIM, pathInfo);
 				AIMReference aimReference = AIMReference.extract(ProjectsRouteTemplates.FRAME_AIM, pathInfo);
 				EPADAIM aim = epadOperations.getFrameAIMDescription(frameReference, aimReference.aimID, username, sessionID);
+				if (aim==null)
+					return HttpServletResponse.SC_NOT_FOUND;
+				if (returnStream(httpRequest) && ("dicomsr".equals(httpRequest.getParameter("type")))) { //ml
+					
+					Aim2DicomSRConverter converter=new Aim2DicomSRConverter();
+					String outputFilePath=converter.Aim2DicomSR(aimReference.aimID,aim.projectID);
+					log.info("output file:"+outputFilePath);
+					
+					if (outputFilePath!=null) {
+						EPADFileUtils.downloadFile(httpRequest, httpResponse, new File(outputFilePath), aim.name+"SR.dcm"); 
+						statusCode = HttpServletResponse.SC_OK;
+						return statusCode;
+					}
+				}
 				if (returnSummary(httpRequest))
 				{	
 					responseStream.append(aim.toJSON());
@@ -1074,6 +1162,20 @@ public class EPADGetHandler
 				StudyReference studyReference = StudyReference.extract(StudiesRouteTemplates.STUDY_AIM, pathInfo);
 				AIMReference aimReference = AIMReference.extract(StudiesRouteTemplates.STUDY_AIM, pathInfo);
 				EPADAIM aim = epadOperations.getStudyAIMDescription(studyReference, aimReference.aimID, username, sessionID);
+				if (aim==null)
+					return HttpServletResponse.SC_NOT_FOUND;
+				if (returnStream(httpRequest) && ("dicomsr".equals(httpRequest.getParameter("type")))) { //ml
+					
+					Aim2DicomSRConverter converter=new Aim2DicomSRConverter();
+					String outputFilePath=converter.Aim2DicomSR(aimReference.aimID,aim.projectID);
+					log.info("output file:"+outputFilePath);
+					
+					if (outputFilePath!=null) {
+						EPADFileUtils.downloadFile(httpRequest, httpResponse, new File(outputFilePath), aim.name+"SR.dcm"); 
+						statusCode = HttpServletResponse.SC_OK;
+						return statusCode;
+					}
+				}
 				if (returnSummary(httpRequest))
 				{	
 					responseStream.append(aim.toJSON());
@@ -1118,6 +1220,20 @@ public class EPADGetHandler
 				SeriesReference seriesReference = SeriesReference.extract(StudiesRouteTemplates.SERIES_AIM, pathInfo);
 				AIMReference aimReference = AIMReference.extract(StudiesRouteTemplates.SERIES_AIM, pathInfo);
 				EPADAIM aim = epadOperations.getSeriesAIMDescription(seriesReference, aimReference.aimID, username, sessionID);
+				if (aim==null)
+					return HttpServletResponse.SC_NOT_FOUND;
+				if (returnStream(httpRequest) && ("dicomsr".equals(httpRequest.getParameter("type")))) { //ml
+					
+					Aim2DicomSRConverter converter=new Aim2DicomSRConverter();
+					String outputFilePath=converter.Aim2DicomSR(aimReference.aimID,aim.projectID);
+					log.info("output file:"+outputFilePath);
+					
+					if (outputFilePath!=null) {
+						EPADFileUtils.downloadFile(httpRequest, httpResponse, new File(outputFilePath), aim.name+"SR.dcm"); 
+						statusCode = HttpServletResponse.SC_OK;
+						return statusCode;
+					}
+				}
 				if (returnSummary(httpRequest))
 				{	
 					responseStream.append(aim.toJSON());
@@ -1158,6 +1274,20 @@ public class EPADGetHandler
 				ImageReference imageReference = ImageReference.extract(StudiesRouteTemplates.IMAGE_AIM, pathInfo);
 				AIMReference aimReference = AIMReference.extract(StudiesRouteTemplates.SERIES_AIM, pathInfo);
 				EPADAIM aim = epadOperations.getImageAIMDescription(imageReference, aimReference.aimID, username, sessionID);
+				if (aim==null)
+					return HttpServletResponse.SC_NOT_FOUND;
+				if (returnStream(httpRequest) && ("dicomsr".equals(httpRequest.getParameter("type")))) { //ml
+					
+					Aim2DicomSRConverter converter=new Aim2DicomSRConverter();
+					String outputFilePath=converter.Aim2DicomSR(aimReference.aimID,aim.projectID);
+					log.info("output file:"+outputFilePath);
+					
+					if (outputFilePath!=null) {
+						EPADFileUtils.downloadFile(httpRequest, httpResponse, new File(outputFilePath), aim.name+"SR.dcm"); 
+						statusCode = HttpServletResponse.SC_OK;
+						return statusCode;
+					}
+				}
 				if (returnSummary(httpRequest))
 				{	
 					responseStream.append(aim.toJSON());
@@ -1199,6 +1329,20 @@ public class EPADGetHandler
 				FrameReference frameReference = FrameReference.extract(StudiesRouteTemplates.FRAME_AIM, pathInfo);
 				AIMReference aimReference = AIMReference.extract(StudiesRouteTemplates.FRAME_AIM, pathInfo);
 				EPADAIM aim = epadOperations.getFrameAIMDescription(frameReference, aimReference.aimID, username, sessionID);
+				if (aim==null)
+					return HttpServletResponse.SC_NOT_FOUND;
+				if (returnStream(httpRequest) && ("dicomsr".equals(httpRequest.getParameter("type")))) { //ml
+					
+					Aim2DicomSRConverter converter=new Aim2DicomSRConverter();
+					String outputFilePath=converter.Aim2DicomSR(aimReference.aimID,aim.projectID);
+					log.info("output file:"+outputFilePath);
+					
+					if (outputFilePath!=null) {
+						EPADFileUtils.downloadFile(httpRequest, httpResponse, new File(outputFilePath), aim.name+"SR.dcm"); 
+						statusCode = HttpServletResponse.SC_OK;
+						return statusCode;
+					}
+				}
 				if (returnSummary(httpRequest))
 				{	
 					responseStream.append(aim.toJSON());
@@ -1242,6 +1386,20 @@ public class EPADGetHandler
 				SubjectReference subjectReference = SubjectReference.extract(SubjectsRouteTemplates.SUBJECT_AIM_LIST, pathInfo);
 				AIMReference aimReference = AIMReference.extract(SubjectsRouteTemplates.SUBJECT_AIM, pathInfo);
 				EPADAIM aim = epadOperations.getSubjectAIMDescription(subjectReference, aimReference.aimID, username, sessionID);
+				if (aim==null)
+					return HttpServletResponse.SC_NOT_FOUND;
+				if (returnStream(httpRequest) && ("dicomsr".equals(httpRequest.getParameter("type")))) { //ml
+					
+					Aim2DicomSRConverter converter=new Aim2DicomSRConverter();
+					String outputFilePath=converter.Aim2DicomSR(aimReference.aimID,aim.projectID);
+					log.info("output file:"+outputFilePath);
+					
+					if (outputFilePath!=null) {
+						EPADFileUtils.downloadFile(httpRequest, httpResponse, new File(outputFilePath), aim.name+"SR.dcm"); 
+						statusCode = HttpServletResponse.SC_OK;
+						return statusCode;
+					}
+				}
 				if (returnSummary(httpRequest))
 				{	
 					responseStream.append(aim.toJSON());
@@ -1349,6 +1507,18 @@ public class EPADGetHandler
 					return HttpServletResponse.SC_NOT_FOUND;
 				}
 					
+				if (returnStream(httpRequest) && ("dicomsr".equals(httpRequest.getParameter("type")))) { //ml
+					
+					Aim2DicomSRConverter converter=new Aim2DicomSRConverter();
+					String outputFilePath=converter.Aim2DicomSR(aimReference.aimID,aim.projectID);
+					log.info("output file:"+outputFilePath);
+					
+					if (outputFilePath!=null) {
+						EPADFileUtils.downloadFile(httpRequest, httpResponse, new File(outputFilePath), aim.name+"SR.dcm"); 
+						statusCode = HttpServletResponse.SC_OK;
+						return statusCode;
+					}
+				}
 				if (returnSummary(httpRequest))
 				{	
 					if ("all".equalsIgnoreCase(version))
@@ -2051,6 +2221,7 @@ public class EPADGetHandler
 			return false;
 	}
 
+	
 	private static boolean returnConnected(HttpServletRequest httpRequest)
 	{
 		String format = httpRequest.getParameter("format");
@@ -2076,6 +2247,15 @@ public class EPADGetHandler
 		else
 			return false;
 	}
+	
+//	private static boolean returnDicomSR(HttpServletRequest httpRequest)
+//	{
+//		String format = httpRequest.getParameter("format");
+//		if (format != null && format.trim().equalsIgnoreCase("dicomsr"))
+//			return true;
+//		else
+//			return false;
+//	}
 
 	private static boolean returnPNG(HttpServletRequest httpRequest)
 	{
