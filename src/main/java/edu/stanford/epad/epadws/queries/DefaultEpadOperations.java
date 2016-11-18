@@ -1579,8 +1579,10 @@ public class DefaultEpadOperations implements EpadOperations
 						}
 
 					}
-					if (!DSOUtil.checkDSOMaskPNGs(dsoFile))
-						dicomFilesWithoutPNGs.add(dicomFileDescription);						
+					if (PixelMedUtils.isDicomSegmentationObject(dsoFile.getAbsolutePath())) { //check if pixelmed thinks it is a segmentation object (does not support surface segmentation yet)
+						if (!DSOUtil.checkDSOMaskPNGs(dsoFile))
+							dicomFilesWithoutPNGs.add(dicomFileDescription);				
+					}
 				}
 			}
 		} catch (Exception e) {

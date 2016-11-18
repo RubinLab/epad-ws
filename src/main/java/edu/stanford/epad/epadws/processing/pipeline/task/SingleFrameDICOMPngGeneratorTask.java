@@ -187,7 +187,7 @@ public class SingleFrameDICOMPngGeneratorTask implements GeneratorTask
 		File outputPNGFile = pngFile;
 		Map<String, String> epadFilesRow = new HashMap<String, String>();
 		OutputStream outputPNGStream = null;
-
+		String pngPath=pngFile.getAbsolutePath();
 		try {
 			imagesBeingProcessed.add(imageUID);
 			String username = null;
@@ -238,19 +238,20 @@ public class SingleFrameDICOMPngGeneratorTask implements GeneratorTask
 		} catch (FileNotFoundException e) {
 			log.warning("Failed to create PNG for instance " + instanceNumber + " in series " + seriesUID + " for patient "
 					+ patientName, e);
-			epadDatabaseOperations.updateEpadFileRow(epadFilesRow.get("file_path"), PNGFileProcessingStatus.ERROR, 0,
+			//use outputPNGFile.getAbsolutePath() instead of epadFilesRow.get("file_path"). returns null if exception occured before createEPadFilesRowData
+			epadDatabaseOperations.updateEpadFileRow(pngPath, PNGFileProcessingStatus.ERROR, 0,
 					"DICOM file not found.");
 			epadDatabaseOperations.updateOrInsertSeries(seriesUID, SeriesProcessingStatus.ERROR);
 		} catch (IOException e) {
 			log.warning("Failed to create PNG for instance " + instanceNumber + " in series " + seriesUID + " for patient "
 					+ patientName, e);
-			epadDatabaseOperations.updateEpadFileRow(epadFilesRow.get("file_path"), PNGFileProcessingStatus.ERROR, 0,
+			epadDatabaseOperations.updateEpadFileRow(pngPath, PNGFileProcessingStatus.ERROR, 0,
 					"IO Error: " + e.getMessage());
 			epadDatabaseOperations.updateOrInsertSeries(seriesUID, SeriesProcessingStatus.ERROR);
 		} catch (Throwable t) {
 			log.warning("Failed to create PNG for instance " + instanceNumber + " in series " + seriesUID + " for patient "
 					+ patientName, t);
-			epadDatabaseOperations.updateEpadFileRow(epadFilesRow.get("file_path"), PNGFileProcessingStatus.ERROR, 0,
+			epadDatabaseOperations.updateEpadFileRow(pngPath, PNGFileProcessingStatus.ERROR, 0,
 					"General Exception: " + t.getMessage());
 			epadDatabaseOperations.updateOrInsertSeries(seriesUID, SeriesProcessingStatus.ERROR);
 		} finally {
