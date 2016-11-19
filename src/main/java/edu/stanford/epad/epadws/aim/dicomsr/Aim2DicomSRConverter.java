@@ -318,8 +318,7 @@ public class Aim2DicomSRConverter {
 			units= new ControlledTerm("{SUVbw}g/ml", "UCUM", "Standardized Uptake Value body weight");
 		}else {
 			//default?????
-			quantity= new ControlledTerm("112031", "DCM", "Attenuation Coefficient");
-			units= new ControlledTerm("[hnsf'U]", "UCUM", "Hounsfield unit");
+			units= new ControlledTerm("1", "UCUM", "no units");
 		}
 
 		item.setQuantity(quantity);
@@ -342,6 +341,8 @@ public class Aim2DicomSRConverter {
 			return "HU";
 		}else if (units.getCodeValue().equals("{SUVbw}g/ml")) {
 			return "SUV";
+		}else if (units.getCodeValue().equals("1")) {
+			return "pixels";
 		}
 		return "";
 	}
@@ -525,16 +526,21 @@ public class Aim2DicomSRConverter {
 				mgrp.measurementItems.clear();
 				for (CalculationEntity cal:iac.getImageAnnotations().get(0).getCalculationEntityCollection().getCalculationEntityList()) {
 					log.info("calculation is "+cal.getDescription());
-					ControlledTerm derivationMod= new ControlledTerm(cal.getListTypeCode().get(0));
+					ControlledTerm aimCalc= new ControlledTerm(cal.getListTypeCode().get(0));
 					//ControlledTerm quantity= new ControlledTerm(cal.getListTypeCode().get(0));
 					String value=cal.getCalculationResultCollection().getExtendedCalculationResultList().get(0).getCalculationDataCollection().get(0).getValue().getValue();
 					String unit=cal.getCalculationResultCollection().getExtendedCalculationResultList().get(0).getUnitOfMeasure().getValue();
 
 					MeasurementItem mit=new MeasurementItem();
 					mit=fillQuantityAndUnit(mit, unit);
-
 					//TODO handle calculations sent in the quantity (like volume)
-					mit.setDerivationModifier(derivationMod);
+					if (mit.quantity!= null){
+						mit.setDerivationModifier(aimCalc);
+					}
+					else {
+						mit.setQuantity(aimCalc);
+						
+					}
 
 					//get the first 16 digits if longer
 					mit.setValue(trimStr(value,16));
@@ -901,6 +907,8 @@ public class Aim2DicomSRConverter {
 					CalculationEntity cal =new CalculationEntity();
 					ControlledTerm quantity=item.getQuantity();
 					ControlledTerm derivationMod=item.getDerivationModifier();
+					if (derivationMod==null) //if it is null get the quantity
+						derivationMod=quantity;
 					ControlledTerm units=item.getUnits();
 					cal.addTypeCode(new CD(derivationMod.CodeValue,derivationMod.CodeMeaning,derivationMod.CodingSchemeDesignator));
 					cal.setDescription(new ST(derivationMod.CodeMeaning));
