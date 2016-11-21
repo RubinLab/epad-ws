@@ -818,6 +818,13 @@ public class Aim2DicomSRConverter {
 				}
 				else {
 					ia.setName(new ST(seriesDesc));
+					//set default to seg only
+					t=projOp.getTemplate("SEG");
+					if (t!=null) {
+						ArrayList<CD> types=new ArrayList<>();
+						types.add(new CD(t.getTemplateCode(),t.getTemplateName(),t.getCodingSchemeDesignator(),t.getCodingSchemeVersion()));
+						ia.setTypeCode(types);
+					}
 				}
 				//template info
 				//               <typeCode code="ROI" codeSystemName="ROI Only">
