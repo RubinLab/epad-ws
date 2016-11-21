@@ -1907,7 +1907,7 @@ public class DefaultEpadOperations implements EpadOperations
 				
 				if (AnnotationValidator.ValidateXML(tmpAim.getAbsolutePath(), EPADConfig.xsdFilePath)) {
 					log.info("xml produced from dicom sr is valid");
-					if (!AIMUtil.saveAIMAnnotation(tmpAim, projectID, 0, sessionID, username, true))
+					if (!AIMUtil.saveAIMAnnotation(tmpAim, projectID, 0, sessionID, username, false))
 						log.warning("Error processing aim file:" + uploadedFile.getName());
 				}
 				else 
