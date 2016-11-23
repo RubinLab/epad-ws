@@ -1900,18 +1900,22 @@ public class DefaultEpadOperations implements EpadOperations
 				type=FileType.DICOMSR;
 				Aim2DicomSRConverter converter=new Aim2DicomSRConverter();
 				String xml=converter.DicomSR2Aim(uploadedFile.getAbsolutePath(), projectID);
-				String tmpAimName="/tmp/tmpAim"+System.currentTimeMillis()+".xml";
-				File tmpAim=new File(tmpAimName);
-				EPADFileUtils.write(tmpAim, xml);
-				log.info("tmp aim path:"+ tmpAim.getAbsolutePath());
-				
-				if (AnnotationValidator.ValidateXML(tmpAim.getAbsolutePath(), EPADConfig.xsdFilePath)) {
-					log.info("xml produced from dicom sr is valid");
-					if (!AIMUtil.saveAIMAnnotation(tmpAim, projectID, 0, sessionID, username, false))
-						log.warning("Error processing aim file:" + uploadedFile.getName());
+				if (xml==null) {
+					log.info("Could not convert to dicom sr");
+				}else {
+					String tmpAimName="/tmp/tmpAim"+System.currentTimeMillis()+".xml";
+					File tmpAim=new File(tmpAimName);
+					EPADFileUtils.write(tmpAim, xml);
+					log.info("tmp aim path:"+ tmpAim.getAbsolutePath());
+					
+					if (AnnotationValidator.ValidateXML(tmpAim.getAbsolutePath(), EPADConfig.xsdFilePath)) {
+						log.info("xml produced from dicom sr is valid");
+						if (!AIMUtil.saveAIMAnnotation(tmpAim, projectID, 0, sessionID, username, false))
+							log.warning("Error processing aim file:" + uploadedFile.getName());
+					}
+					else 
+						log.warning("xml produced from dicom sr is NOT valid");
 				}
-				else 
-					log.warning("xml produced from dicom sr is NOT valid");
 			}
 			
 			EpadFile file=null;

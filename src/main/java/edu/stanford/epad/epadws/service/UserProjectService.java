@@ -147,6 +147,7 @@ import edu.stanford.epad.epadws.xnat.XNATCreationOperations;
 import edu.stanford.epad.epadws.xnat.XNATSessionOperations;
 import edu.stanford.epad.epadws.xnat.XNATUtil;
 import edu.stanford.hakan.aim4api.compability.aimv3.ImageAnnotation;
+import edu.stanford.hakan.aim4api.usage.AnnotationValidator;
 
 /**
  * Originally a Wrapper class to call either XNAT or EPAD project/user api (not only calls EPAD api)
@@ -406,13 +407,19 @@ public class UserProjectService {
 						try {
 							log.info("DicomSR found in createProjectEntitiesFromDICOMFilesInUploadDirectory. processing");
 							Aim2DicomSRConverter converter=new Aim2DicomSRConverter();
+							
 							String xml=converter.DicomSR2Aim(dicomFile.getAbsolutePath(), projectID);
-							String tmpAimName="/tmp/tmpAim"+System.currentTimeMillis()+".xml";
-							File tmpAim=new File(tmpAimName);
-							EPADFileUtils.write(tmpAim, xml);
-							log.info("tmp aim path:"+ tmpAim.getAbsolutePath());
-							if (AIMUtil.saveAIMAnnotation(tmpAim, projectID, 0, sessionID, username, false))
-								log.warning("Error processing aim file:" + dicomFile.getName());
+							if (xml==null) {
+								log.info("Could not convert to dicom sr");
+							}else {
+								String tmpAimName="/tmp/tmpAim"+System.currentTimeMillis()+".xml";
+								File tmpAim=new File(tmpAimName);
+								EPADFileUtils.write(tmpAim, xml);
+								log.info("tmp aim path:"+ tmpAim.getAbsolutePath());
+								if (AIMUtil.saveAIMAnnotation(tmpAim, projectID, 0, sessionID, username, false))
+									log.warning("Error processing aim file:" + dicomFile.getName());
+							}
+							
 						} catch (Exception x) {
 							log.warning("Error uploading aim file:" + dicomFile.getName() + ":" + x.getMessage());
 						}
