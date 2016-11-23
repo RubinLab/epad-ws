@@ -128,6 +128,8 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
@@ -696,31 +698,42 @@ public class DSOUtil
 				signMask=0xffff8000;
 			}
 		}
-		double[] storedPixelValueArray;
+		Double[] storedPixelValueArray;
 		if (src.getRaster().getDataBuffer() instanceof DataBufferFloat) {
 			float[] storedPixelValues  = src.getSampleModel().getPixels(0,0,src.getWidth(),src.getHeight(),(float[])null,src.getRaster().getDataBuffer());
 			//copy to double array
-			storedPixelValueArray=new double[storedPixelValues.length];
+			storedPixelValueArray=new Double[storedPixelValues.length];
 			for(int i=0;i< storedPixelValues.length; i++) {
-				storedPixelValueArray[i]=storedPixelValues[i];
+				storedPixelValueArray[i]= BigDecimal.valueOf(storedPixelValues[i])
+					    .setScale(6, RoundingMode.HALF_UP)
+					    .doubleValue();
 			}
 		}
 		else if (src.getRaster().getDataBuffer() instanceof DataBufferDouble) {
 			double[] storedPixelValues  = src.getSampleModel().getPixels(0,0,src.getWidth(),src.getHeight(),(double[])null,src.getRaster().getDataBuffer());
-			storedPixelValueArray=storedPixelValues;
+			
+			storedPixelValueArray=new Double[storedPixelValues.length];
+			for(int i=0;i< storedPixelValues.length; i++) {
+				storedPixelValueArray[i]= BigDecimal.valueOf(storedPixelValues[i])
+					    .setScale(6, RoundingMode.HALF_UP)
+					    .doubleValue();
+			}
 		}
 		else {
 			int[] storedPixelValues  = src.getSampleModel().getPixels(0,0,src.getWidth(),src.getHeight(),(int[])null,src.getRaster().getDataBuffer());
 			int storedPixelValueInt=0;
 			//copy to double array
-			storedPixelValueArray=new double[storedPixelValues.length];
+			storedPixelValueArray=new Double[storedPixelValues.length];
+			
 			for(int i=0;i< storedPixelValues.length; i++) {
 				storedPixelValueInt=storedPixelValues[i];
 
 				if (sImg.isSigned() && (storedPixelValueInt&signBit) != 0) {
 					storedPixelValueInt|=signMask;	// sign extend
 				}
-				storedPixelValueArray[i]=storedPixelValueInt;
+				storedPixelValueArray[i]= BigDecimal.valueOf(storedPixelValueInt)
+					    .setScale(6, RoundingMode.HALF_UP)
+					    .doubleValue();
 			}
 			
 		}
