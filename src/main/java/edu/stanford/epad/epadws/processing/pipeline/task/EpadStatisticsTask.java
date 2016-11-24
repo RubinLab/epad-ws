@@ -261,7 +261,7 @@ public class EpadStatisticsTask implements Runnable
 						//persist to db
 						st.save();
 						
-						epadUrl =  EPADConfig.getParamValue("EpadTemplateStatisticsURL", "http://epad-dev4.stanford.edu:8080/epad/statistics/templates/");
+						epadUrl =  EPADConfig.getParamValue("EpadTemplateStatisticsURL", "https://epad-public.stanford.edu/epad/statistics/templates/");
 						epadUrl = epadUrl + "?templateCode=" + encode(st.getTemplateCode());
 						epadUrl = epadUrl + "&templateName=" + encode(st.getTemplateName());
 						epadUrl = epadUrl + "&authors=" + encode(st.getAuthors());
