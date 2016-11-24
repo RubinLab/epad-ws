@@ -1110,6 +1110,12 @@ public class DSOUtil
 			}
 
 			if (dsoEditRequest != null) {
+				//need to pass this all the way to segmentation writer, put into edit request
+				String property = httpRequest.getParameter("property");
+				String color = httpRequest.getParameter("color");
+				dsoEditRequest.property=property;
+				dsoEditRequest.color=color;
+				
 				log.info("DSOEditRequest, imageUID:" + dsoEditRequest.imageUID + " aimID:" + dsoEditRequest.aimID + " number Frames:" + dsoEditRequest.editedFrameNumbers.size());
 				EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
 				String username = httpRequest.getParameter("username");
