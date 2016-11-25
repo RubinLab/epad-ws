@@ -802,10 +802,11 @@ public class Aim2DicomSRConverter {
 			log.info("series desc "+seriesDesc);
 			String[] desc=seriesDesc.split("\\|");
 			log.info("desc length"+desc.length);
+			EpadProjectOperations projOp = DefaultEpadProjectOperations.getInstance();
+			Template t=null;
 			if (desc.length==2) {
 
-				EpadProjectOperations projOp = DefaultEpadProjectOperations.getInstance();
-				Template t=projOp.getTemplate(desc[0].trim());
+				t=projOp.getTemplate(desc[0].trim());
 				if (t!=null) {
 					ia.setName(new ST(desc[1]));
 					//do not put all that extra information. leaving the code in case we decide otherwise later
@@ -820,7 +821,9 @@ public class Aim2DicomSRConverter {
 					ia.setName(new ST(seriesDesc));
 					//set default to seg only
 					t=projOp.getTemplate("SEG");
+					log.info("no template");
 					if (t!=null) {
+						log.info("using seg");
 						ArrayList<CD> types=new ArrayList<>();
 						types.add(new CD(t.getTemplateCode(),t.getTemplateName(),t.getCodingSchemeDesignator(),t.getCodingSchemeVersion()));
 						ia.setTypeCode(types);
@@ -832,6 +835,15 @@ public class Aim2DicomSRConverter {
 				//               </typeCode>
 			}else {
 				ia.setName(new ST(seriesDesc));
+				//set default to seg only
+				t=projOp.getTemplate("SEG");
+				log.info("no template");
+				if (t!=null) {
+					log.info("using seg");
+					ArrayList<CD> types=new ArrayList<>();
+					types.add(new CD(t.getTemplateCode(),t.getTemplateName(),t.getCodingSchemeDesignator(),t.getCodingSchemeVersion()));
+					ia.setTypeCode(types);
+				}
 			}
 
 			//comment???
