@@ -372,6 +372,10 @@ public class Aim2DicomSRConverter {
 
 				//get the segmentation
 				DicomSegmentationEntity segEntity= (DicomSegmentationEntity)iac.getImageAnnotations().get(0).getSegmentationEntityCollection().get(0);
+				if (segEntity==null) {
+					log.warning("no segmentation. DicomSR conversion doesn't work for annotations withpug segmentation. cannot continue" );
+					return null;
+				}
 				String dsoImageUID= segEntity.getSopInstanceUid().getRoot();
 				log.info("segmentation uid:"+dsoImageUID);
 
