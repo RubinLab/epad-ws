@@ -37,5 +37,5 @@ updated_by varchar(64),
 PRIMARY KEY (id)) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 
-UPDATE dbversion SET version = '2.32';
+UPDATE dbversion SET version = '2.4';
 commit;
