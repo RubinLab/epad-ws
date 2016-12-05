@@ -855,7 +855,7 @@ public class AIMDatabaseOperations {
 				sqlSelect = sqlSelect + " AND StudyUID = '" + studyUID + "'";
 			if (username != null && username.length() > 0)
 				sqlSelect = sqlSelect + " AND u.username = '" + username + "'";
-			sqlSelect = sqlSelect + " AND (a.userloginname = '" + username + "' OR (a.userloginname = 'shared' and pu.role not like 'Collaborator'))";
+			sqlSelect = sqlSelect + " AND (a.userloginname = '" + username + "' OR a.userloginname = 'shared' OR pu.role not like 'Collaborator')";
 			
 			log.warning("AIMs count select:" + sqlSelect);
 	       
