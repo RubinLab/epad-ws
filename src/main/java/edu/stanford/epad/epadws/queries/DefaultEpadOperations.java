@@ -1924,7 +1924,7 @@ public class DefaultEpadOperations implements EpadOperations
 				file=projectOperations.createFile(username, projectID, subjectID, studyID, seriesID, uploadedFile, filename, description, type);
 			}
 					//if it is a template put the file information and create the template entry in db
-			if (type != null && fileType.equals(FileType.TEMPLATE.getName())) {
+			if (type != null && fileType!=null && fileType.equals(FileType.TEMPLATE.getName())) {
 				//temporary fix for uploading same template to different projects. should be removed once the ui is able to add project template relation from the interface
 				Template existingTemplate=getTemplate(template.getTemplateCode());
 				if (existingTemplate!=null){
@@ -3133,8 +3133,17 @@ public class DefaultEpadOperations implements EpadOperations
 	public void deleteTemplate(String username, 
 			String templatecode) throws Exception {
 		Template t=getTemplate(templatecode);
+		if (t==null) {
+			log.warning("Template with code "+templatecode+" does not exist");
+			return;
+		}
+			
 		User requestor = projectOperations.getUser(username);
 		EpadFile f=(EpadFile) projectOperations.getDBObject(EpadFile.class, t.getFileId());
+		if (f==null) {
+			log.warning("No file for template with code "+templatecode);
+			return;
+		}
 		List <EpadFile> files= new EpadFile().getObjects(" name='"+f.getName() + "' and length="+f.getLength()); 
 		int usersFiles=0;
 		for (EpadFile fl:files) { 
