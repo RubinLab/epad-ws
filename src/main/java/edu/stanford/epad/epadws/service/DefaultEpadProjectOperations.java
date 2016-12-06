@@ -713,11 +713,25 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 			throw new Exception("No permissions to delete user");
 		try {
 			new ProjectToSubjectToStudyToSeriesToUserStatus().deleteObjects(" user_id =" + user.getId());
+			//check if there are worklists assigned to this user and delete
+			try {
+				EpadWorkListOperations worklistOperations = DefaultWorkListOperations.getInstance();
+				List<WorkList> worklists=worklistOperations.getWorkListsForUser(user.getUsername());
+				log.info("Number of worklists "+worklists.size() +" for user "+ user.getUsername());
+				for (WorkList wl:worklists) {
+					log.info("deleting worklist "+wl.getWorkListID());
+					worklistOperations.deleteWorkList(loggedInUser, wl.getWorkListID());
+				}
+			}catch(Exception e) {
+				log.warning("Cannot delete the worklists assigned to this user."+e.getMessage());
+				
+			}
+			
 			user.delete();
 			userCache.remove(user.getUsername());
 		} catch (Exception x) {
 			if (x.getMessage() != null && x.getMessage().contains("constraint")) {
-				throw new Exception("Error deleting user, this user is still a member of projects");
+				throw new Exception("Error deleting user, this user is still a member of projects or worklists");
 			} else
 				throw x;
 		}
