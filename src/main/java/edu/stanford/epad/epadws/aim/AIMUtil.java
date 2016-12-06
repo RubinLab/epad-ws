@@ -1961,6 +1961,7 @@ public class AIMUtil
 			try
 			{
 				boolean isCollaborator = UserProjectService.isCollaborator(sessionID, username, projectID);
+				
 				//log.info("User:" + username + " projectID:" + projectID + " isCollaborator:" + isCollaborator);
 				Set<EPADAIM> aims = aimlist.getAIMsForProject(projectID);
 				List<EPADAIM> projectAIMs = projectAIMsMap.get(projectID);
@@ -1976,7 +1977,7 @@ public class AIMUtil
 				}
 			}
 			catch (Exception x) {
-				log.warning("Error checking AIM permission (Not important if the user not in project exception):", x);
+				log.warning("Error getting aim permissions", x);
 			}
 		}
 		long endtime = System.currentTimeMillis();

@@ -4934,6 +4934,7 @@ public class DefaultEpadOperations implements EpadOperations
 			if (suppliedProjectID == null || !suppliedProjectID.equals(projectID)) continue;
 			try
 			{
+				
 				boolean isCollaborator = UserProjectService.isCollaborator(sessionID, username, projectID);
 				Set<EPADAIM> aims = aimlist.getAIMsForProject(projectID);
 				for (EPADAIM aim: aims)

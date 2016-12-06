@@ -1933,6 +1933,7 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 
 	/* (non-Javadoc)
 	 * @see edu.stanford.epad.epadws.service.EpadProjectOperations#isCollaborator(java.lang.String, java.lang.String)
+	 * returns true if the user is not in the project but project is public
 	 */
 	@Override
 	public boolean isCollaborator(String username, String projectID) throws Exception {
@@ -1946,8 +1947,15 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		UserRole role = getUserProjectRole(username, projectID);
 		if (role == null && isAdmin(username)) return false;
 		if (role == null && projectID.equals(EPADConfig.xnatUploadProjectID)) return true;
-		if (role == null)
-			throw new Exception("User " + username  + " does not exist in project:" + projectID);
+		if (role == null){
+			Project p=getProject(projectID);
+			if (p.getType().equals(ProjectType.PUBLIC.getName())) {
+				log.warning("User " + username  + " does not exist in project:" + projectID+ ". Bu project is public. Returning true for collaborator so he can at least see his own annotations");
+				return true;
+			}
+			else 
+				throw new Exception("User " + username  + " does not exist in project:" + projectID);
+		}
 		if (role.equals(UserRole.COLLABORATOR))
 			return true;
 		else
