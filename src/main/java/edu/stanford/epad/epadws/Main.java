@@ -357,6 +357,7 @@ public class Main
 		"stop_dockerepad.sh",
 		"start_dockerepad.sh",
 		"uninstall_dockerepad.sh",
+		"plugin-manager.sh", //plugin manager script file
 	};
 
 	public static void checkResourcesFolders() {
