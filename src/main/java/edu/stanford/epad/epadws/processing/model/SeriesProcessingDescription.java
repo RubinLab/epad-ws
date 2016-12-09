@@ -104,8 +104,8 @@
  *******************************************************************************/
 package edu.stanford.epad.epadws.processing.model;
 
-import java.util.ArrayList;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 import edu.stanford.epad.common.dicom.DICOMFileDescription;
 import edu.stanford.epad.common.util.EPADLogger;
@@ -119,7 +119,7 @@ public class SeriesProcessingDescription
 	private static final EPADLogger logger = EPADLogger.getInstance();
 
 	private final int numberOfInstances;
-	private final ArrayList<DicomImageDescription> instances;
+	private final ConcurrentHashMap<Integer,DicomImageDescription> instances ;
 	private final String studyUID;
 	private final String seriesUID;
 	private final String subjectName;
@@ -136,9 +136,7 @@ public class SeriesProcessingDescription
 		if (instanceSize < numberOfInstances + 1)
 			instanceSize = 2 * numberOfInstances;
 
-		instances = new ArrayList<DicomImageDescription>(instanceSize);
-		for (int i = 0; i < instanceSize + 1; i++)
-			instances.add(null); // Indicates that it is not processed yet
+		instances = new ConcurrentHashMap<Integer,DicomImageDescription>(instanceSize);
 
 		this.seriesUID = seriesUID;
 		this.studyUID = studyUID;
@@ -187,14 +185,8 @@ public class SeriesProcessingDescription
 
 	public int getNumberOfCompletedInstances()
 	{
-		int count = 0;
-		int size = size();
-		for (int i = 0; i < size; i++) {
-			if (hasInstance(i)) {
-				count++;
-			}
-		}
-		return count;
+		//in hash the size is the actual number of instances
+		return size();
 	}
 
 	public int getNumberOfInstances()
@@ -209,10 +201,6 @@ public class SeriesProcessingDescription
 
 	public boolean hasInstance(int index)
 	{
-		if (index >= instances.size()) {
-			return false;
-		}
-
 		return instances.get(index) != null;
 	}
 
@@ -234,15 +222,10 @@ public class SeriesProcessingDescription
 		DicomImageDescription imageEntry = new DicomImageDescription(instanceNumber, sopInstanceUID);
 		if (!hasInstance(instanceNumber)) {
 			if (instances.size() < instanceNumber + 1) {
-				int start = instances.size();
-				logger.warning("resizing array from=" + instances.size() + " to=" + (instanceNumber + 1) + " series="
-						+ seriesUID);
-				instances.ensureCapacity(instanceNumber + 1);
-				for (int i = start; i < instanceNumber + 1; i++) {
-					instances.add(start, null);
-				}
+				logger.info("current size=" + instances.size() + " instance number is=" + (instanceNumber) + " series="
+						+ seriesUID+". Using hash no need for resizing");
 			}
-			instances.set(instanceNumber, imageEntry);
+			instances.put(instanceNumber, imageEntry);
 		}
 	}
 }
