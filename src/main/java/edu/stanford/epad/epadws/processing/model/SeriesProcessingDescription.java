@@ -166,12 +166,14 @@ public class SeriesProcessingDescription
 
 	public boolean isComplete()
 	{
-		int size = instances.size();
-		for (int i = 0; i < size; i++) {
-			if (!hasInstance(i)) {
-				return false;
-			}
-		}
+		if (size()!=numberOfInstances)
+			return false;
+//		int size = instances.size();
+//		for (int i = 0; i < size; i++) {
+//			if (!hasInstance(i)) {
+//				return false;
+//			}
+//		}
 		return true;
 	}
 
