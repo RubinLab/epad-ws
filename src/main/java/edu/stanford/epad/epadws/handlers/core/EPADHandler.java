@@ -109,6 +109,7 @@ import java.io.PrintWriter;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.apache.http.HttpResponse;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 
@@ -190,6 +191,8 @@ public class EPADHandler extends AbstractHandler
 					statusCode = EPADPutHandler.handlePut(httpRequest, httpResponse, responseStream, username, sessionID);
 				} else if ("POST".equalsIgnoreCase(method)) {
 					statusCode = EPADPostHandler.handlePost(httpRequest, responseStream, username, sessionID);
+				} else if ("OPTIONS".equalsIgnoreCase(method)) {
+					statusCode = HttpServletResponse.SC_OK;
 				} else {
 					statusCode = HandlerUtil.badRequestJSONResponse(FORBIDDEN_MESSAGE, responseStream, log);
 				}
