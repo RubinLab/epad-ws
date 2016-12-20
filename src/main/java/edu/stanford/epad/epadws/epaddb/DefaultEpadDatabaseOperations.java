@@ -1175,6 +1175,23 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 	}
 
 	@Override
+	public EPADAIM addAIM(String userName, FrameReference reference,
+			String aimID, String aimXML, String aimName, boolean isDicomSR) {
+		Connection c = null;
+		try {
+			c = getConnection();
+			AIMDatabaseOperations adb = new AIMDatabaseOperations(c, EPADConfig.eXistServerUrl,
+					EPADConfig.aim4Namespace, EPADConfig.eXistCollection, EPADConfig.eXistUsername, EPADConfig.eXistPassword);
+			return adb.insert(aimID, userName, reference.projectID, reference.subjectID, reference.studyUID, reference.seriesUID, reference.imageUID, 0, null, aimXML, aimName, isDicomSR);
+		} catch (SQLException sqle) {
+			log.warning("AIM Database operation failed:", sqle);
+		} finally {
+			close(c);
+		}
+		return null;
+	}
+	
+	@Override
 	public EPADAIM addDSOAIM(String userName, ImageReference reference,
 			String dsoSeriesUID, String aimID, String aimXML, String name) {
 		Connection c = null;

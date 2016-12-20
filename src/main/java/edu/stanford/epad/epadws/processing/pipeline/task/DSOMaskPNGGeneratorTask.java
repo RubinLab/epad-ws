@@ -230,7 +230,8 @@ public class DSOMaskPNGGeneratorTask implements GeneratorTask
 						{
 							ImageReference imageReference = new ImageReference(a[3], e.subjectID, e.studyUID, e.seriesUID, e.imageUID);												
 							//delete the wrong one
-							epadDatabaseOperations.deleteAIM("admin", e.aimID);
+							if (e.isDicomSR==false && a[4].equalsIgnoreCase("false"))// if none of them are dicomsr
+								epadDatabaseOperations.deleteAIM("admin", e.aimID);
 							log.info("Updating dsoSeriesUID in aim database:" + e.dsoSeriesUID + " aimID:" + a[2]);
 							//update the existing aim with the dso series uid
 							epadDatabaseOperations.addDSOAIM("admin", imageReference, e.dsoSeriesUID, a[2]);												
