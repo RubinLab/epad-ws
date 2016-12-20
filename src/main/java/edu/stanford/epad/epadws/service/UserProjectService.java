@@ -416,7 +416,7 @@ public class UserProjectService {
 								File tmpAim=new File(tmpAimName);
 								EPADFileUtils.write(tmpAim, xml);
 								log.info("tmp aim path:"+ tmpAim.getAbsolutePath());
-								if (AIMUtil.saveAIMAnnotation(tmpAim, projectID, 0, sessionID, username, false))
+								if (AIMUtil.saveAIMAnnotation(tmpAim, projectID, 0, sessionID, username, false,true))
 									log.warning("Error processing aim file:" + dicomFile.getName());
 							}
 							

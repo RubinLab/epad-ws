@@ -457,6 +457,19 @@ public interface EpadDatabaseOperations
 	 */
 	List<EpadStatisticsTemplate> getTemplateStats();
 
+	/**
+	 * adding a dicomsr aim
+	 * @param userName
+	 * @param reference
+	 * @param aimID
+	 * @param aimXML
+	 * @param aimName
+	 * @param isDicomSR
+	 * @return
+	 */
+	EPADAIM addAIM(String userName, FrameReference reference, String aimID, String aimXML, String aimName,
+			boolean isDicomSR);
+
 	
 
 }

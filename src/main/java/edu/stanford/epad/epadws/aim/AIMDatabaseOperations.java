@@ -699,6 +699,10 @@ public class AIMDatabaseOperations {
     }
     
     public EPADAIM insert(String annotationUID, String userName, String projectID, String patientID, String studyUID, String seriesUID, String imageUID, int frameID, String dsoSeriesUID, String aimXML, String aimName) throws SQLException {
+    	return insert(annotationUID, userName, projectID, patientID, studyUID, seriesUID, imageUID, frameID, dsoSeriesUID, aimXML, aimName, false);
+    }
+    	
+    public EPADAIM insert(String annotationUID, String userName, String projectID, String patientID, String studyUID, String seriesUID, String imageUID, int frameID, String dsoSeriesUID, String aimXML, String aimName, boolean isDicomSR) throws SQLException {
     	try {
     		EPADAIM aim = getAIM(annotationUID);
     		if (aim != null)
@@ -726,7 +730,7 @@ public class AIMDatabaseOperations {
     	            //log.info("AIMs update:" + sql);
     	            this.statement.executeUpdate(sql);   				
      			}
-				return new EPADAIM(aim.aimID, aim.userName, aim.projectID, aim.subjectID, aim.subjectID, aim.seriesUID, aim.imageUID, aim.instanceOrFrameNumber, dsoSeriesUID);
+				return new EPADAIM(aim.aimID, aim.userName, aim.projectID, aim.subjectID, aim.subjectID, aim.seriesUID, aim.imageUID, aim.instanceOrFrameNumber, dsoSeriesUID, isDicomSR);
     		}
             String sql = "INSERT into " + ANNOTATIONS_TABLE + " (AnnotationUID";
             String values = "'" + annotationUID + "'";
@@ -780,11 +784,15 @@ public class AIMDatabaseOperations {
                 sql = sql + ",NAME";
        			values = values + "," + AbstractDAO.toSQL(aimName);
     		}
+       		{
+                sql = sql + ",IS_DICOMSR";
+       			values = values + "," + isDicomSR;
+    		}
             sql = sql + ") VALUES (" + values + ")";
             log.info("AIMs insert:" + sql);
     	    this.statement = mySqlConnection.createStatement();
  	        this.statement.executeUpdate(sql);
-			return new EPADAIM(annotationUID, userName, projectID, patientID, studyUID, seriesUID, imageUID, frameID, dsoSeriesUID);
+			return new EPADAIM(annotationUID, userName, projectID, patientID, studyUID, seriesUID, imageUID, frameID, dsoSeriesUID, isDicomSR);
     	} finally {
     		if (statement != null)
     			statement.close();

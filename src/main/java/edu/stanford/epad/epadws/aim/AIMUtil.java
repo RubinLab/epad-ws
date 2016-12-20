@@ -754,9 +754,12 @@ public class AIMUtil
 		return saveAIMAnnotation(aimFile, projectID, 0, sessionId, username, false);
 	}
 	
-
-
 	public static boolean saveAIMAnnotation(File aimFile, String projectID, int frameNumber, String sessionId, String username, boolean uploaded) throws AimException
+	{
+		return saveAIMAnnotation(aimFile, projectID, frameNumber, sessionId, username, uploaded, false);
+	}
+
+	public static boolean saveAIMAnnotation(File aimFile, String projectID, int frameNumber, String sessionId, String username, boolean uploaded, boolean isDicomSR) throws AimException
 	{
 		final Dcm4CheeDatabaseOperations dcm4CheeDatabaseOperations = Dcm4CheeDatabase.getInstance()
 				.getDcm4CheeDatabaseOperations();
@@ -863,7 +866,7 @@ public class AIMUtil
 				if (imageAnnotationColl != null && projectID != null && username != null)
 				{
 					FrameReference frameReference = new FrameReference(projectID, patientID, studyID, seriesID, imageID, new Integer(frameNumber));
-					EPADAIM eaim = epadDatabaseOperations.addAIM(username, frameReference, imageAnnotationColl.getUniqueIdentifier().getRoot(), xml, imageAnnotationColl.getImageAnnotation().getName().getValue());
+					EPADAIM eaim = epadDatabaseOperations.addAIM(username, frameReference, imageAnnotationColl.getUniqueIdentifier().getRoot(), xml, imageAnnotationColl.getImageAnnotation().getName().getValue(),isDicomSR);
 					try {
 						if (sec != null && sec.getSegmentationEntityList().size() > 0)
 						{
@@ -880,7 +883,7 @@ public class AIMUtil
 									if (dsoSeriesUID.equals("")) { //DSO is not in db yet
 										//required info
 //										seriesID,dsoInstanceUid,aimID,projectID		
-										dsoAims.add(new String[]{seriesID,dse.getSopInstanceUid().getRoot(),eaim.aimID,projectID});
+										dsoAims.add(new String[]{seriesID,dse.getSopInstanceUid().getRoot(),eaim.aimID,projectID, String.valueOf(isDicomSR)});
 									}
 								}
 //								updateDSOStartIndex(eaim, e.ds);
@@ -893,7 +896,8 @@ public class AIMUtil
 										if (!e.aimID.equals(eaim.aimID) && e.dsoSeriesUID != null && e.dsoSeriesUID.equals(dsoSeriesUID))
 										{
 											ImageReference imageReference = new ImageReference(projectID, e.subjectID, e.studyUID, e.seriesUID, e.imageUID);												
-											epadDatabaseOperations.deleteAIM("admin", e.aimID);
+											if (e.isDicomSR==false && eaim.isDicomSR==false)// if none of them are dicomsr
+												epadDatabaseOperations.deleteAIM("admin", e.aimID);
 											log.info("Updating dsoSeriesUID in aim database:" + e.dsoSeriesUID + " aimID:" + eaim.aimID);
 											epadDatabaseOperations.addDSOAIM(username, imageReference, e.dsoSeriesUID, eaim.aimID);												
 											if (eaim.dsoFrameNo == 0)
