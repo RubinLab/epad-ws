@@ -382,16 +382,11 @@ public class RTDICOMProcessingTask implements GeneratorTask
 							if (projectOperations.isStudyInProjectAndSubject(project.getProjectId(), patientID, studyUID))
 							{
 								String projectID = project.getProjectId();
-								log.info("login username: "+username);
-								//get the study's creator or project's creator if the username does not exist in upload
-								if (username==null) {
-									Study study = projectOperations.getStudy(studyUID);
-									username = study.getCreator();
-									if (!projectOperations.hasAccessToProject(username, project.getId()))
-										username = project.getCreator();
+								//get the project's creator if the username does not exist in upload or is admin
+								if (username==null || "admin".equals(username)) {
+									username = project.getCreator();
 								}
-								//use the uploading user to create the annotations
-								log.info("using username: "+username);
+								log.info("creating annotation for dicom rt using username: "+username +  " and project "+ projectID);
 								ImageAnnotation ia = AIMUtil.generateAIMFileForDSO(dsoFile, username, projectID, dsoDescr);
 								epadDatabaseOperations.updateAIMColor(ia.getUniqueIdentifier(), color);
 							}
