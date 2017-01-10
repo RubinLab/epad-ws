@@ -112,6 +112,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -140,6 +141,7 @@ import org.apache.commons.fileupload.disk.DiskFileItemFactory;
 import org.apache.commons.fileupload.servlet.ServletFileUpload;
 import org.apache.commons.io.IOUtils;
 import org.json.JSONObject;
+import org.json.JSONString;
 import org.json.XML;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -167,6 +169,8 @@ import edu.stanford.epad.common.util.XmlNamespaceTranslator;
 import edu.stanford.epad.dtos.EPADAIM;
 import edu.stanford.epad.dtos.EPADAIMList;
 import edu.stanford.epad.dtos.EPADAIMList.EPADAIMResultSet;
+import edu.stanford.epad.dtos.internal.DICOMElement;
+import edu.stanford.epad.dtos.internal.DICOMElementList;
 import edu.stanford.epad.epadws.aim.aimapi.Aim;
 import edu.stanford.epad.epadws.aim.aimapi.Aim4;
 import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeDatabase;
@@ -180,8 +184,10 @@ import edu.stanford.epad.epadws.handlers.event.EventHandler;
 import edu.stanford.epad.epadws.models.NonDicomSeries;
 import edu.stanford.epad.epadws.models.Project;
 import edu.stanford.epad.epadws.models.Subject;
+import edu.stanford.epad.epadws.models.Template;
 import edu.stanford.epad.epadws.plugins.PluginConfig;
 import edu.stanford.epad.epadws.processing.pipeline.task.PluginStartTask;
+import edu.stanford.epad.epadws.queries.Dcm4CheeQueries;
 import edu.stanford.epad.epadws.queries.DefaultEpadOperations;
 import edu.stanford.epad.epadws.queries.EpadOperations;
 import edu.stanford.epad.epadws.service.DefaultEpadProjectOperations;
@@ -189,11 +195,20 @@ import edu.stanford.epad.epadws.service.EpadProjectOperations;
 import edu.stanford.epad.epadws.service.SessionService;
 import edu.stanford.epad.epadws.service.UserProjectService;
 import edu.stanford.hakan.aim4api.base.AimException;
+import edu.stanford.hakan.aim4api.base.CD;
+import edu.stanford.hakan.aim4api.base.DicomImageReferenceEntity;
 import edu.stanford.hakan.aim4api.base.DicomSegmentationEntity;
+import edu.stanford.hakan.aim4api.base.II;
+import edu.stanford.hakan.aim4api.base.Image;
 import edu.stanford.hakan.aim4api.base.ImageAnnotationCollection;
+import edu.stanford.hakan.aim4api.base.ImageCollection;
+import edu.stanford.hakan.aim4api.base.ImageSeries;
+import edu.stanford.hakan.aim4api.base.ImageStudy;
+import edu.stanford.hakan.aim4api.base.ST;
 import edu.stanford.hakan.aim4api.base.SegmentationEntityCollection;
 import edu.stanford.hakan.aim4api.compability.aimv3.DICOMImageReference;
 import edu.stanford.hakan.aim4api.compability.aimv3.ImageAnnotation;
+import edu.stanford.hakan.aim4api.compability.aimv3.Modality;
 import edu.stanford.hakan.aim4api.compability.aimv3.Person;
 import edu.stanford.hakan.aim4api.compability.aimv3.Segmentation;
 import edu.stanford.hakan.aim4api.compability.aimv3.SegmentationCollection;
@@ -2475,7 +2490,230 @@ public class AIMUtil
 	
 	}
 
-	/****************************AIME Methods**********************************/
+	/****************************AIME Methods***********************************/
 	
+	
+	public static void saveAim(String xml, String projectID, String username) throws AimException {
+		if (xml==null) {
+			log.info("Input xml is empty. Skipping save");
+		}else {
+			String tmpAimName="/tmp/tmpAim"+System.currentTimeMillis()+".xml";
+			File tmpAim=new File(tmpAimName);
+			EPADFileUtils.write(tmpAim, xml);
+			log.info("tmp aim path:"+ tmpAim.getAbsolutePath());
+			
+			if (AnnotationValidator.ValidateXML(tmpAim.getAbsolutePath(), EPADConfig.xsdFilePath)) {
+				log.info("xml produced from dicom sr is valid");
+				//sending null. plugin wouldn't be triggered
+				if (!AIMUtil.saveAIMAnnotation(tmpAim, projectID, 0, null, username, false, true))
+					log.warning("Error saving aim file:" + tmpAimName);
+			}
+			else 
+				log.warning("xml produced from dicom sr is NOT valid");
+		}
+	}
+	public static void migrateAimFromMintJson(JSONObject mintJson, String projectID, String username, String templateCode) {
+		
+		try{
+			String aimXML= createAimFromMintJson(mintJson, projectID, username, templateCode);
+			saveAim(aimXML, projectID, username);
+			
+		} catch(Exception e) {
+			log.warning("Mint to Aim migration is unsuccessful", e);
+		}
+		
+	}
+	
+	public static String createAimFromMintJson(JSONObject mintJson, String projectID, String username, String templateCode) throws Exception {
+		EpadProjectOperations projOp = DefaultEpadProjectOperations.getInstance();
+		edu.stanford.epad.epadws.models.User epadUser=projOp.getUser(username);
+	
+		ImageAnnotationCollection iac = new ImageAnnotationCollection();
+		edu.stanford.hakan.aim4api.base.User user=new edu.stanford.hakan.aim4api.base.User();
+		user.setName(new ST(epadUser.getFullName()));
+		user.setLoginName(new ST(username));
+		iac.setUser(user);
+		//set the date to current date
+		DateFormat dateFormat = new SimpleDateFormat("yyyyMMddHHmmss");
+		Date now=new Date();
+
+		iac.setDateTime(dateFormat.format(now));
+
+
+		//patient info
+		//               <person>
+		//               <name value=""/>
+		//               <id value="LIDC-IDRI-0314"/>
+		//               <birthDate value="19000101000000"/>
+		//               <sex value="F"/>
+		//               <ethnicGroup/>
+		//               </person>
+
+		edu.stanford.hakan.aim4api.base.ImageAnnotation ia=new edu.stanford.hakan.aim4api.base.ImageAnnotation();
+
+		ia.setDateTime(dateFormat.format(now));
+
+		
+		Template t=null;
+		if (templateCode==null)
+			t=projOp.getTemplate("RECIST");
+		else
+			t=projOp.getTemplate(templateCode);
+		if (t!=null){
+			ia.setName(new ST(((JSONString)mintJson.get("name")).toString()));
+				
+			ArrayList<CD> types=new ArrayList<>();
+			types.add(new CD(t.getTemplateCode(),t.getTemplateName(),t.getCodingSchemeDesignator(),t.getCodingSchemeVersion()));
+			ia.setTypeCode(types);
+			
+		}
+
+		//comment???
+		//       <comment value="CT /  / 10"/>
+		
+		String imageUID=mintJson.get("sopInstanceUid").toString();
+		log.info("Retrieved image uid is "+imageUID);
+
+		String sopClassUID="na",studyDate="na",studyTime="na", pName="na",pId="na",pBirthDate="na",pSex="na", studyUID="na", sourceSeriesUID="na";
+
+		//fill the missing information from dicom tags
+		DICOMElementList tags= Dcm4CheeQueries.getDICOMElementsFromWADO("*", "*", imageUID);
+		if (tags==null) {
+			log.warning("Dicom image couldn't be retrieved. Cannot get the necessary information!");
+		}
+		else {
+			for (int i=0; i< tags.ResultSet.totalRecords; i++) {
+				DICOMElement tag=tags.ResultSet.Result.get(i);
+				if (tag.tagCode.equals(PixelMedUtils.SOPClassUIDCode)) 
+					sopClassUID=tag.value;
+				if (tag.tagCode.equals(PixelMedUtils.StudyDateCode)) 
+					studyDate=tag.value;
+				if (tag.tagCode.equals(PixelMedUtils.StudyTimeCode)) 
+					studyTime=tag.value;
+				if (tag.tagCode.equals(PixelMedUtils.PatientNameCode)) 
+					pName=tag.value;
+				if (tag.tagCode.equals(PixelMedUtils.PatientIDCode)) 
+					pId=tag.value;
+				if (tag.tagCode.equals(PixelMedUtils.PatientBirthDateCode)) 
+					pBirthDate=tag.value;
+				if (tag.tagCode.equals(PixelMedUtils.PatientSexCode)) 
+					pSex=tag.value;
+				if (tag.tagCode.equals(PixelMedUtils.StudyInstanceUIDCode)) 
+					studyUID=tag.value;
+				if (tag.tagCode.equals(PixelMedUtils.SeriesInstanceUIDCode)) 
+					sourceSeriesUID=tag.value;
+			}
+			log.info("the values retrieved from dicom "+ sopClassUID+" "+studyDate+" "+studyTime+" "+pName+" "+pId+" "+pBirthDate+" "+pSex+" "+studyUID+" "+sourceSeriesUID+" ");
+		}
+		edu.stanford.hakan.aim4api.base.Person p=new edu.stanford.hakan.aim4api.base.Person();
+		p.setBirthDate(formatPatientBirthDate(pBirthDate));
+		p.setId(new ST(pId));
+		p.setName(new ST(pName));
+		p.setSex(new ST(pSex));
+		iac.setPerson(p);
+
+ 
+
+		DicomImageReferenceEntity dicomImageReferenceEntity  = new DicomImageReferenceEntity();
+		ImageStudy study = new ImageStudy();
+		study.setInstanceUid(new II(studyUID));
+		ImageSeries series=new ImageSeries();
+		series.setInstanceUid(new II(sourceSeriesUID));
+		Image image=new Image();
+		image.setSopInstanceUid(new II(imageUID));
+		image.setSopClassUid(new II(sopClassUID));
+		ImageCollection imageCol=new ImageCollection();
+		imageCol.addImage(image);
+		series.setImageCollection(imageCol);
+		Modality mod=Modality.getInstance();
+		series.setModality(mod.get(sopClassUID));
+		study.setImageSeries(series);
+		study.setStartDate(studyDate);
+		study.setStartTime(studyTime);
+		dicomImageReferenceEntity.setImageStudy(study);
+		ia.addImageReferenceEntity(dicomImageReferenceEntity);
+
+//			for (MeasurementItem item:meas.measurementItems) {
+//				CalculationEntity cal =new CalculationEntity();
+//				ControlledTerm quantity=item.getQuantity();
+//				ControlledTerm derivationMod=item.getDerivationModifier();
+//				if (derivationMod==null) //if it is null get the quantity
+//					derivationMod=quantity;
+//				ControlledTerm units=item.getUnits();
+//				cal.addTypeCode(new CD(derivationMod.CodeValue,derivationMod.CodeMeaning,derivationMod.CodingSchemeDesignator));
+//				cal.setDescription(new ST(derivationMod.CodeMeaning));
+//				ExtendedCalculationResult calculationResult=new ExtendedCalculationResult();
+//
+//				calculationResult.setType(CalculationResultIdentifier.Scalar);
+//				//get the code meaning??? not a controlled term in aim get it back from look up table
+//				calculationResult.setUnitOfMeasure(new ST(unitRetrieveFromControlledTerm(units)));
+//				//ml assume all data types are double. dicom sr does not have data type
+//				calculationResult.setDataType(new CD("99EPADD1","Double","99EPAD"));
+//
+//				// Create a CalculationData instance
+//				CalculationData calculationData = new CalculationData();
+//				calculationData.setValue(new ST(item.getValue()));
+//				calculationData.addCoordinate(0, 0); // TODO what goes here?
+//
+//				// Create a Dimension instance
+//				Dimension dimension = new Dimension(0, 1, derivationMod.CodeMeaning);
+//
+//				// Add calculationData to calculationResult
+//				calculationResult.addCalculationData(calculationData);
+//
+//				// Add dimension to calculationResult
+//				calculationResult.addDimension(dimension);
+//
+//				//                    // add the shape reference to the calculation
+//				//                    ReferencedGeometricShape reference = new ReferencedGeometricShape();
+//				//                    reference.setCagridId(0);
+//				//                    reference.setReferencedShapeIdentifier(shapeId);
+//				//                    calculation.addReferencedGeometricShape(reference);
+//
+//				// Add calculationResult to calculation
+//				cal.addCalculationResult(calculationResult);
+//
+//				//to calentity
+//				//                    <description value="Min"/>
+//				//                    <mathML/>
+//				//                    <algorithm>
+//				//                    <name value="Min"/>
+//				//                    <type code="RID12780" codeSystemName="RadLex" codeSystemVersion="3.2">
+//				//                    <iso:displayName xmlns:iso="uri:iso.org:21090" value="Calculation"/>
+//				//                    </type>
+//				//                    <version value="1.0"/>
+//				//                    </algorithm>
+//				Algorithm alg=new Algorithm();
+//				alg.setName(new ST(derivationMod.CodeMeaning));
+//				alg.setVersion(new ST("na"));
+//				ArrayList<CD> types=new ArrayList<>();
+//				types.add(new CD("RID12780","Calculation","RadLex","3.2"));
+//				alg.setType(types);
+//				cal.setAlgorithm(alg);
+//
+//				ia.addCalculationEntity(cal);
+//			}
+
+		
+		iac.addImageAnnotation(ia);
+
+		log.info("annotation is: "+iac.toStringXML());
+		return iac.toStringXML();
+		
+	}
+
+	/**
+	 * puts 19000101000000 if null or empty
+	 * @param d
+	 * @return
+	 */
+	public static String formatPatientBirthDate(String d) {
+		if (d==null) d="";
+		String date = ((d.length() >= 4) ? d.substring(0, 4) : "1900") 
+				+ ((d.length() >= 6) ? d.substring(4, 6) : "01") 
+				+ ((d.length() >= 8) ? d.substring(6, 8) : "01") + "000000";
+		return date;
+	
+	}
 
 }
