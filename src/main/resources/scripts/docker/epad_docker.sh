@@ -145,9 +145,9 @@ start() {
 		RUNNING=$(docker inspect -f {{.State.Running}} dcm4chee 2> /dev/null)
 		if [ $? -ne 0 ]; then
 			if [ "$UNAME" == "Darwin" ]; then
-				docker run --name dcm4chee  -d --link mysql:mysql -p 9080:9080 -p 11112:11112 rubinlab/dcm4chee
+				docker run --name dcm4chee  -d --link mysql:mysql -p 1099:1099 -p 9080:9080 -p 11112:11112 rubinlab/dcm4chee
 			else
- 		docker run --name dcm4chee -v $path/DicomProxy/dcm4chee/:/app/dcm4chee-2.17.1-mysql/server/default/archive/ -d --link mysql:mysql -p 9080:9080 -p 11112:11112 rubinlab/dcm4chee
+ 		docker run --name dcm4chee -v $path/DicomProxy/dcm4chee/:/app/dcm4chee-2.17.1-mysql/server/default/archive/ -d --link mysql:mysql -p 1099:1099 -p 9080:9080 -p 11112:11112 rubinlab/dcm4chee
 			fi
 		elif [ "$RUNNING" == "false" ]; then
   			echo "dcm4chee container already installed, starting container"
