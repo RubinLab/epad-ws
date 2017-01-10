@@ -49,7 +49,7 @@ else
 fi
 
 # Setup the classpath
-JBOSS_BOOT_CLASSPATH="$JBOSS_HOME/bin/twiddle.jar"
+JBOSS_BOOT_CLASSPATH="$JBOSS_HOME/twiddle.jar"
 
 echo "JBOSS HOME: $JBOSS_HOME"
 
