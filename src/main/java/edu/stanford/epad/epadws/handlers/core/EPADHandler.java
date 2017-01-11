@@ -196,7 +196,10 @@ public class EPADHandler extends AbstractHandler
 				} else {
 					statusCode = HandlerUtil.badRequestJSONResponse(FORBIDDEN_MESSAGE, responseStream, log);
 				}
+			} else if ("OPTIONS".equalsIgnoreCase(method)) {
+				statusCode = HttpServletResponse.SC_OK;
 			} else {
+				
 				statusCode = HandlerUtil.invalidTokenJSONResponse(INVALID_SESSION_TOKEN_MESSAGE, responseStream, log);
 			}
 			if (releaseSession) {

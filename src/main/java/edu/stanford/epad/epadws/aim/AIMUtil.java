@@ -140,8 +140,8 @@ import org.apache.commons.fileupload.FileUploadException;
 import org.apache.commons.fileupload.disk.DiskFileItemFactory;
 import org.apache.commons.fileupload.servlet.ServletFileUpload;
 import org.apache.commons.io.IOUtils;
+import org.json.JSONArray;
 import org.json.JSONObject;
-import org.json.JSONString;
 import org.json.XML;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -194,6 +194,7 @@ import edu.stanford.epad.epadws.service.DefaultEpadProjectOperations;
 import edu.stanford.epad.epadws.service.EpadProjectOperations;
 import edu.stanford.epad.epadws.service.SessionService;
 import edu.stanford.epad.epadws.service.UserProjectService;
+import edu.stanford.hakan.aim4api.base.ImagingObservationCharacteristic;
 import edu.stanford.hakan.aim4api.base.AimException;
 import edu.stanford.hakan.aim4api.base.CD;
 import edu.stanford.hakan.aim4api.base.DicomImageReferenceEntity;
@@ -204,8 +205,13 @@ import edu.stanford.hakan.aim4api.base.ImageAnnotationCollection;
 import edu.stanford.hakan.aim4api.base.ImageCollection;
 import edu.stanford.hakan.aim4api.base.ImageSeries;
 import edu.stanford.hakan.aim4api.base.ImageStudy;
+import edu.stanford.hakan.aim4api.base.ImagingObservationEntity;
+import edu.stanford.hakan.aim4api.base.ImagingPhysicalEntity;
+import edu.stanford.hakan.aim4api.base.MarkupEntity;
 import edu.stanford.hakan.aim4api.base.ST;
 import edu.stanford.hakan.aim4api.base.SegmentationEntityCollection;
+import edu.stanford.hakan.aim4api.base.TwoDimensionSpatialCoordinate;
+import edu.stanford.hakan.aim4api.base.TwoDimensionSpatialCoordinateCollection;
 import edu.stanford.hakan.aim4api.compability.aimv3.DICOMImageReference;
 import edu.stanford.hakan.aim4api.compability.aimv3.ImageAnnotation;
 import edu.stanford.hakan.aim4api.compability.aimv3.Modality;
@@ -923,6 +929,7 @@ public class AIMUtil
 								}								
 							}
 						}
+						
 					} catch (Exception x) {
 						log.warning("Error checking segmentation", x);
 					}
@@ -2503,9 +2510,9 @@ public class AIMUtil
 			log.info("tmp aim path:"+ tmpAim.getAbsolutePath());
 			
 			if (AnnotationValidator.ValidateXML(tmpAim.getAbsolutePath(), EPADConfig.xsdFilePath)) {
-				log.info("xml produced from dicom sr is valid");
+				log.info("xml produced  is valid");
 				//sending null. plugin wouldn't be triggered
-				if (!AIMUtil.saveAIMAnnotation(tmpAim, projectID, 0, null, username, false, true))
+				if (AIMUtil.saveAIMAnnotation(tmpAim, projectID, 0, null, username, false, false))
 					log.warning("Error saving aim file:" + tmpAimName);
 			}
 			else 
@@ -2560,9 +2567,10 @@ public class AIMUtil
 		else
 			t=projOp.getTemplate(templateCode);
 		if (t!=null){
-			ia.setName(new ST(((JSONString)mintJson.get("name")).toString()));
+			ia.setName(new ST(mintJson.getString("name")));
 				
 			ArrayList<CD> types=new ArrayList<>();
+			//TODO it puts different values in the aim file than standard use. What does the gui put????
 			types.add(new CD(t.getTemplateCode(),t.getTemplateName(),t.getCodingSchemeDesignator(),t.getCodingSchemeVersion()));
 			ia.setTypeCode(types);
 			
@@ -2571,7 +2579,7 @@ public class AIMUtil
 		//comment???
 		//       <comment value="CT /  / 10"/>
 		
-		String imageUID=mintJson.get("sopInstanceUid").toString();
+		String imageUID=mintJson.getString("imageInstanceUid");
 		log.info("Retrieved image uid is "+imageUID);
 
 		String sopClassUID="na",studyDate="na",studyTime="na", pName="na",pId="na",pBirthDate="na",pSex="na", studyUID="na", sourceSeriesUID="na";
@@ -2582,25 +2590,27 @@ public class AIMUtil
 			log.warning("Dicom image couldn't be retrieved. Cannot get the necessary information!");
 		}
 		else {
+			log.info("study code:"+PixelMedUtils.StudyInstanceUIDCode + " series code:"+PixelMedUtils.SeriesInstanceUIDCode);
 			for (int i=0; i< tags.ResultSet.totalRecords; i++) {
 				DICOMElement tag=tags.ResultSet.Result.get(i);
-				if (tag.tagCode.equals(PixelMedUtils.SOPClassUIDCode)) 
+				
+				if (tag.tagCode.equalsIgnoreCase(PixelMedUtils.SOPClassUIDCode)) 
 					sopClassUID=tag.value;
-				if (tag.tagCode.equals(PixelMedUtils.StudyDateCode)) 
+				if (tag.tagCode.equalsIgnoreCase(PixelMedUtils.StudyDateCode)) 
 					studyDate=tag.value;
-				if (tag.tagCode.equals(PixelMedUtils.StudyTimeCode)) 
+				if (tag.tagCode.equalsIgnoreCase(PixelMedUtils.StudyTimeCode)) 
 					studyTime=tag.value;
-				if (tag.tagCode.equals(PixelMedUtils.PatientNameCode)) 
+				if (tag.tagCode.equalsIgnoreCase(PixelMedUtils.PatientNameCode)) 
 					pName=tag.value;
-				if (tag.tagCode.equals(PixelMedUtils.PatientIDCode)) 
+				if (tag.tagCode.equalsIgnoreCase(PixelMedUtils.PatientIDCode)) 
 					pId=tag.value;
-				if (tag.tagCode.equals(PixelMedUtils.PatientBirthDateCode)) 
+				if (tag.tagCode.equalsIgnoreCase(PixelMedUtils.PatientBirthDateCode)) 
 					pBirthDate=tag.value;
-				if (tag.tagCode.equals(PixelMedUtils.PatientSexCode)) 
+				if (tag.tagCode.equalsIgnoreCase(PixelMedUtils.PatientSexCode)) 
 					pSex=tag.value;
-				if (tag.tagCode.equals(PixelMedUtils.StudyInstanceUIDCode)) 
+				if (tag.tagCode.equalsIgnoreCase(PixelMedUtils.StudyInstanceUIDCode)) 
 					studyUID=tag.value;
-				if (tag.tagCode.equals(PixelMedUtils.SeriesInstanceUIDCode)) 
+				if (tag.tagCode.equalsIgnoreCase(PixelMedUtils.SeriesInstanceUIDCode)) 
 					sourceSeriesUID=tag.value;
 			}
 			log.info("the values retrieved from dicom "+ sopClassUID+" "+studyDate+" "+studyTime+" "+pName+" "+pId+" "+pBirthDate+" "+pSex+" "+studyUID+" "+sourceSeriesUID+" ");
@@ -2632,7 +2642,13 @@ public class AIMUtil
 		study.setStartTime(studyTime);
 		dicomImageReferenceEntity.setImageStudy(study);
 		ia.addImageReferenceEntity(dicomImageReferenceEntity);
+		
+		ia.addMarkupEntity(getMarkupEntityFromPF((JSONObject)mintJson.get("PlanarFigure")));
+		ia.addImagingPhysicalEntity(getImagingPhysicalEntityFromPF("Location",((JSONObject)mintJson.get("lesion")).getString("location")));
+		ia.addImagingPhysicalEntity(getImagingPhysicalEntityFromPF("Status",((JSONObject)mintJson.get("lesion")).getString("status")));
+		ia.addImagingObservationEntity(getImagingObservationEntityFromPF("Lesion",((JSONObject)mintJson.get("lesion")).getString("timepoint"),"Type",((JSONObject)mintJson.get("lesion")).getString("type")));
 
+		
 //			for (MeasurementItem item:meas.measurementItems) {
 //				CalculationEntity cal =new CalculationEntity();
 //				ControlledTerm quantity=item.getQuantity();
@@ -2700,6 +2716,180 @@ public class AIMUtil
 		log.info("annotation is: "+iac.toStringXML());
 		return iac.toStringXML();
 		
+	}
+
+	private static ImagingObservationEntity getImagingObservationEntityFromPF(String label, String value,
+			String characteristicLabel, String characteristicValue) {
+		ImagingObservationEntity oe= new ImagingObservationEntity();
+		oe.setLabel(new ST(label));
+		oe.setAnnotatorConfidence(0.0);
+		//TODO needs a lookup. lexicon won't work tough. we need name based search or they need to send code.
+		oe.addTypeCode(new CD(value,value,"na","na"));
+		
+		ImagingObservationCharacteristic oc=new ImagingObservationCharacteristic();
+		oc.setLabel(new ST(characteristicLabel));
+		oc.setAnnotatorConfidence(0.0);
+		//TODO needs a lookup. lexicon won't work tough. we need name based search or they need to send code.
+		oc.addTypeCode(new CD(characteristicValue,characteristicValue,"na","na"));
+		
+		oe.addImagingObservationCharacteristic(oc);
+		return oe;
+	}
+
+	private static ImagingPhysicalEntity getImagingPhysicalEntityFromPF(String label, String value) {
+		ImagingPhysicalEntity pe= new ImagingPhysicalEntity();
+		pe.setLabel(new ST(label));
+		pe.setAnnotatorConfidence(0.0);
+		//TODO needs a lookup. lexicon won't work tough. we need name based search or they need to send code.
+		//Lexicon lex=Lexicon.getInstance();
+		pe.addTypeCode(new CD(value,value,"na","na"));
+		return pe;
+	}
+
+	private static MarkupEntity getMarkupEntityFromPF(JSONObject pf) {
+		//extract the geometry
+		JSONObject transformParam = (JSONObject) ((JSONObject)pf.get("Geometry")).get("transformParam");
+		double[][] transformMatrix=new double[3][3];
+		transformMatrix[0][0]=transformParam.getDouble("param0");
+		transformMatrix[0][1]=transformParam.getDouble("param1");
+		transformMatrix[0][2]=transformParam.getDouble("param2");
+		transformMatrix[1][0]=transformParam.getDouble("param3");
+		transformMatrix[1][1]=transformParam.getDouble("param4");
+		transformMatrix[1][2]=transformParam.getDouble("param5");
+		transformMatrix[2][0]=transformParam.getDouble("param6");
+		transformMatrix[2][1]=transformParam.getDouble("param7");
+		transformMatrix[2][2]=transformParam.getDouble("param8");
+		log.info("Transform matrix");
+		log.info(transformMatrix[0][0]+" "+transformMatrix[0][1]+" "+transformMatrix[0][2]);
+		log.info(transformMatrix[1][0]+" "+transformMatrix[1][1]+" "+transformMatrix[1][2]);
+		log.info(transformMatrix[2][0]+" "+transformMatrix[2][1]+" "+transformMatrix[2][2]);
+		
+		
+		double[] originVectorTrasform=new double[3];
+		originVectorTrasform[0]=transformParam.getDouble("param9");
+		originVectorTrasform[1]=transformParam.getDouble("param10");
+		originVectorTrasform[2]=transformParam.getDouble("param11");
+		log.info("Transform origin");
+		log.info(originVectorTrasform[0]+" "+originVectorTrasform[1]+" "+originVectorTrasform[2]);
+		
+		JSONObject boundsParam = (JSONObject) ((JSONObject)pf.get("Geometry")).get("boundsParam");
+		double[][] boundsMatrix=new double[3][2];
+		boundsMatrix[0][0]=boundsParam.getDouble("bound0");//x
+		boundsMatrix[0][1]=boundsParam.getDouble("bound1");
+		boundsMatrix[1][0]=boundsParam.getDouble("bound2");//y
+		boundsMatrix[1][1]=boundsParam.getDouble("bound3");
+		boundsMatrix[2][0]=boundsParam.getDouble("bound4");//z
+		boundsMatrix[2][1]=boundsParam.getDouble("bound5");
+		log.info("Bounds matrix");
+		log.info(boundsMatrix[0][0]+" "+boundsMatrix[0][1]);
+		log.info(boundsMatrix[1][0]+" "+boundsMatrix[1][1]);
+		log.info(boundsMatrix[2][0]+" "+boundsMatrix[2][1]);
+		
+		
+		JSONObject spacingParam = (JSONObject) ((JSONObject)pf.get("Geometry")).get("Spacing");
+		double[] spacingVector=new double[3];
+		spacingVector[0]=spacingParam.getDouble("x");
+		spacingVector[1]=spacingParam.getDouble("y");
+		spacingVector[2]=spacingParam.getDouble("z");
+		log.info("Spacing");
+		log.info(spacingVector[0]+" "+spacingVector[1]+" "+spacingVector[2]);
+		
+		JSONObject originParam = (JSONObject) ((JSONObject)pf.get("Geometry")).get("Origin");
+		double[] originVector=new double[3];
+		originVector[0]=originParam.getDouble("x");
+		originVector[1]=originParam.getDouble("y");
+		originVector[2]=originParam.getDouble("z");
+		log.info("Origin ");
+		log.info(originVector[0]+" "+originVector[1]+" "+originVector[2]);
+		
+		JSONArray points = (JSONArray) ((JSONObject)pf.get("ControlPoints")).get("Vertex");
+		double [][] pointsMM = new double[points.length()][3];
+        for (int i = 0; i < points.length(); i++) {
+        	log.info(i+". point index="+((JSONObject)points.get(i)).getString("id")+ " x="+Double.parseDouble(((JSONObject)points.get(i)).getString("x"))+ " y="+Double.parseDouble(((JSONObject)points.get(i)).getString("y")));
+        	pointsMM[i][0]=(Double.parseDouble(((JSONObject)points.get(i)).getString("id")));
+        	pointsMM[i][1]=(Double.parseDouble(((JSONObject)points.get(i)).getString("x")));
+        	pointsMM[i][2]=(Double.parseDouble(((JSONObject)points.get(i)).getString("y")));
+        }
+		
+        double [][] pointsPX=transformPoints(pointsMM,transformMatrix,boundsMatrix,spacingVector,originVector);
+		
+		edu.stanford.hakan.aim4api.base.TwoDimensionGeometricShapeEntity res = new edu.stanford.hakan.aim4api.base.TwoDimensionMultiPoint();
+        res.setShapeIdentifier(1);
+		res.setIncludeFlag(true);
+        TwoDimensionSpatialCoordinateCollection cc=new TwoDimensionSpatialCoordinateCollection();
+	      for (int i = 0; i < points.length(); i++) {
+	      	TwoDimensionSpatialCoordinate c=new TwoDimensionSpatialCoordinate();
+	      	log.info(i+". point index="+pointsPX[i][0]+ " x="+pointsPX[i][1]+ " y="+pointsPX[i][2]);
+	      	c.setCoordinateIndex((int)pointsPX[i][0]);
+	      	c.setX(pointsPX[i][1]);
+	      	c.setY(pointsPX[i][2]);
+	      	cc.addTwoDimensionSpatialCoordinate(c);
+	      }
+//        JSONArray points = (JSONArray) ((JSONObject)pf.get("ControlPoints")).get("Vertex");
+//        for (int i = 0; i < points.length(); i++) {
+//        	TwoDimensionSpatialCoordinate c=new TwoDimensionSpatialCoordinate();
+//        	log.info(i+". point index="+((JSONObject)points.get(i)).getString("id")+ " x="+Double.parseDouble(((JSONObject)points.get(i)).getString("x"))+ " y="+Double.parseDouble(((JSONObject)points.get(i)).getString("y")));
+//        	c.setCoordinateIndex(Integer.parseInt(((JSONObject)points.get(i)).getString("id")));
+//        	c.setX(Double.parseDouble(((JSONObject)points.get(i)).getString("x")));
+//        	c.setY(Double.parseDouble(((JSONObject)points.get(i)).getString("y")));
+//        	cc.addTwoDimensionSpatialCoordinate(c);
+//        }
+        res.setTwoDimensionSpatialCoordinateCollection(cc);
+        return res;
+	}
+
+	public static double[][] transposeMatrix(double [][] m){
+        double[][] temp = new double[m[0].length][m.length];
+        for (int i = 0; i < m.length; i++)
+            for (int j = 0; j < m[0].length; j++)
+                temp[j][i] = m[i][j];
+        return temp;
+    }
+	public static double[] substractVector(double [] v1, double[] v2){
+		if (v1.length!=v2.length){
+			log.warning("vector sizes should be the same");
+			return null;
+		}
+        double[] temp = new double[v1.length];
+        for (int i = 0; i < v1.length; i++)
+                temp[i] = v1[i]-v2[i];
+        return temp;
+    }
+	
+	public static double[] multiply(double [][] m, double[] v){
+		if (m[0].length!=v.length){
+			log.warning("sizes not compatible for multiplying");
+			return null;
+		}
+        double[] temp = new double[m.length];
+        for (int i = 0; i < m.length; i++){
+        	temp[i]=0;
+            for (int j = 0; j < m[0].length; j++)
+                temp[i] += m[i][j]*v[j];
+        }
+        return temp;
+    }
+	private static double[][] transformPoints(double[][] pointsMM, double[][] transformMatrix, double[][] boundsMatrix,
+			double[] spacingVector, double[] originVector) {
+		// TODO Auto-generated method stub
+		//(i,j,k)^T = ( transform  )^(-1) * ((x,y,z)^T - Origin)
+		//A diagonal matrix (let's say S2) is built using the values of the vector S.
+		//this is actually transform in the sample. i think D*S2 in the code is transform in pf
+		
+		double[][] pointsPX=new double[pointsMM.length][3];
+		double[][] transformMatrixTranspose=transposeMatrix(transformMatrix);
+		for (int i=0;i<pointsMM.length;i++) {
+			pointsPX[i][0]=pointsMM[i][0];
+			double[] point=new double[]{pointsMM[i][1],pointsMM[i][2],0.0};
+			
+			double[] transformedPoint=multiply(transformMatrixTranspose, substractVector(point, originVector));
+			
+			pointsPX[i][1]=transformedPoint[0];
+			pointsPX[i][2]=transformedPoint[1];
+			
+		}
+		
+		return pointsPX;
 	}
 
 	/**
