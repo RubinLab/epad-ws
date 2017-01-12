@@ -153,6 +153,7 @@ import edu.stanford.epad.epadws.service.DefaultEpadProjectOperations;
 import edu.stanford.epad.epadws.service.EpadProjectOperations;
 import edu.stanford.epad.epadws.service.UserProjectService;
 import edu.stanford.hakan.aim4api.compability.aimv3.ImageAnnotation;
+import ij.io.TiffDecoder;
 
 public class RTDICOMProcessingTask implements GeneratorTask
 {
@@ -318,11 +319,29 @@ public class RTDICOMProcessingTask implements GeneratorTask
 					for (int i = 0; i < dims.length; i++)
 						log.info("seg dimensions " + i + ":" + dims[i]);
 					if (seg != null) {
+						byte[] pixels = null;
+						TIFFMasksToDSOConverter converter = new TIFFMasksToDSOConverter();
+						List<String> segDicomFilePaths = new ArrayList<String>();
+						//copy to the same index
+						for (int i=0;i<dicomFilePaths.size();i++)
+							segDicomFilePaths.add(i,dicomFilePaths.get(i));
+						List<Integer> emptyFileIndex = new ArrayList<Integer>();
+						boolean removeEmpty = true;
+						int minInstanceNo = converter.getAttributesFromDICOMFiles(segDicomFilePaths);
+						if (minInstanceNo > 1) removeEmpty = false;
+						log.info("min istance no is: "+minInstanceNo + " remove empty:"+removeEmpty);
 						// Convert 1 byte/pixel to 1 bit/pixel
 						int numbytes = dims[0]*dims[1]/8;
-						byte[] pixel_data = new byte[numbytes*dims[2]];
+//						byte[] pixel_data = new byte[numbytes*dims[2]];
 						int totframes = dims[2];
-						for (int frame = 0; frame < dims[2]-1; frame++) { // Skip last frame because matlab is off by 1 slice
+						//ml the bound was dims[2]-1 with note //Skip last frame because matlab is off by 1 slice
+						//but it was throwing error when I added the optimization 
+						//and it works fine with the exact dimension. I guess it was smt about the offset of the pixeldata to hold all 
+						//slices at once
+						for (int frame = 0; frame < dims[2]; frame++) { 
+							boolean nonzerodata = false;
+							byte[] pixel_data = new byte[numbytes];
+
 							//int offset = frame*numbytes;
 	//						int offset = (frame+1)*numbytes; // one slice off
 							int offset = (totframes-frame-1)*numbytes; // one slice off
@@ -332,7 +351,7 @@ public class RTDICOMProcessingTask implements GeneratorTask
 								int index = k*8;
 								int x = index/dims[1];
 								int y = index%dims[1];
-								pixel_data[offset + k] = 0;
+								pixel_data[k] = 0;
 								for (int l = 0; l < 8; l++)
 								{
 									int y1 = y + l;
@@ -345,13 +364,60 @@ public class RTDICOMProcessingTask implements GeneratorTask
 									//log.info("x1:" + x1 + " y1:" + y1);
 									if (segdata[x1][y1 + frame*dims[1]] != 0)
 									{
-										int setBit =  pixel_data[offset + k] + (1 << l);
-										pixel_data[offset + k] =(byte) setBit;
+										int setBit =  pixel_data[ k] + (1 << l);
+										pixel_data[ k] =(byte) setBit;
+										nonzerodata = true;
 									}
 								}
 	//								if (pixel_data[k] != 0)
 	//									log.info("maskfile" + i + ": " + k + " pixel:" + pixel_data[k]);
 							}
+							if (!nonzerodata && removeEmpty) {
+								log.info("Frame " + frame + " empty. mark for removal " );
+								emptyFileIndex.add(frame);
+								continue;
+							}
+							
+							if (pixels == null) {
+								//pixels = new_frame.clone();
+								pixels = pixel_data;
+								log.info("adding first frame "+frame);
+							} else {
+								log.info("adding frame "+frame);
+								byte[] temp = new byte[pixels.length + pixel_data.length];
+								System.arraycopy(pixels, 0, temp, 0, pixels.length);
+								System.arraycopy(pixel_data, 0, temp, pixels.length, pixel_data.length);
+								//pixels = temp.clone();
+								pixels = temp;
+							}
+						}
+						if (removeEmpty) {
+							log.info("empty size "+emptyFileIndex.size());
+							for (int i = 0; i < emptyFileIndex.size(); i++)
+							{
+								int index = emptyFileIndex.get(i);
+								//it was dicomattributes.length
+								log.info("Removing dicom " + (converter.getDicomAttributes().length - index -1));
+								segDicomFilePaths.remove(converter.getDicomAttributes().length - index -1);
+								//log.info("before "+converter.getDicomAttributes()[index]+ " index "+index);
+								converter.getDicomAttributes()[index]=null;
+								log.info("after "+converter.getDicomAttributes()[index]+ " index "+index);
+								
+							}
+							
+						}
+						if (segDicomFilePaths.size() != converter.getDicomAttributes().length)
+						{
+							AttributeList[] dicomAttributesNew = new AttributeList[dicomFilePaths.size()];
+							int i = 0;
+							for (AttributeList attrs: converter.getDicomAttributes())
+							{
+								if (attrs == null) continue;
+								dicomAttributesNew[i++] = attrs;
+							}
+							converter.setDicomAttributes(dicomAttributesNew);
+							log.info("setting number of frames to "+segDicomFilePaths.size());
+							converter.setNumberOfFrames(segDicomFilePaths.size());
 						}
 						File dsoFile = new File(outFolderPath + "/" + seriesUID + ".dso");
 						if (roi == null) roi = "";
@@ -359,8 +425,7 @@ public class RTDICOMProcessingTask implements GeneratorTask
 						if (dsoDescr.length() < 4) dsoDescr = description + "_" + dsoDescr;
 						projectOperations.updateUserTaskStatus(username, TaskStatus.TASK_RT_PROCESS, seriesUID, "Generating DSO", null, null);
 						log.info("Generating new DSO for RTSTRUCT series " + seriesUID);
-						TIFFMasksToDSOConverter converter = new TIFFMasksToDSOConverter();
-						String[] seriesImageUids = converter.generateDSO(pixel_data, dicomFilePaths, dsoFile.getAbsolutePath(), dsoDescr, null, null);
+						String[] seriesImageUids = converter.generateDSO(pixels, segDicomFilePaths, dsoFile.getAbsolutePath(), dsoDescr, null, null);
 						String dsoSeriesUID = seriesImageUids[0];
 						String dsoImageUID = seriesImageUids[1];
 						log.info("Sending generated DSO " + dsoFile.getAbsolutePath() + " imageUID:" + dsoImageUID + " to dcm4chee...");
