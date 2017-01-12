@@ -493,6 +493,33 @@ public class EPADPostHandler
 					}
 					statusCode = HttpServletResponse.SC_OK;
 
+				} else if (HandlerUtil.matchesTemplate(AimsRouteTemplates.AIMS_LIST, pathInfo)) {
+					
+					String migrateFrom = httpRequest.getParameter("migrateFrom");
+					if (migrateFrom!=null && migrateFrom.equalsIgnoreCase("mint")) {
+						JSONObject mintJson = HandlerUtil.getPostedJson(httpRequest);
+						String aimName=AIMUtil.migrateAimFromMintJson(mintJson, username, "RECIST");
+						
+						String scheme = httpRequest.getScheme();             // http
+					    String serverName = httpRequest.getServerName();     // epad-dev4
+					    int serverPort = httpRequest.getServerPort();        // 8080
+					    
+					    // Reconstruct original requesting URL
+					    StringBuilder url = new StringBuilder();
+					    url.append(scheme).append("://").append(serverName);
+
+					    if (serverPort != 80 && serverPort != 443) {
+					        url.append(":").append(serverPort);
+					    }
+
+					    url.append("/epad").append("/resources/download/");
+					    url.append(aimName);
+						responseStream.append(url.toString());
+						
+					}
+					statusCode = HttpServletResponse.SC_OK;
+
+				
 				} else if (HandlerUtil.matchesTemplate(PluginRouteTemplates.PLUGIN_LIST, pathInfo)) { //ML
 					String pluginId = httpRequest.getParameter("pluginId");
 					String name = httpRequest.getParameter("name");

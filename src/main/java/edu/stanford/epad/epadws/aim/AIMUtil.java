@@ -196,9 +196,13 @@ import edu.stanford.epad.epadws.service.SessionService;
 import edu.stanford.epad.epadws.service.UserProjectService;
 import edu.stanford.hakan.aim4api.base.ImagingObservationCharacteristic;
 import edu.stanford.hakan.aim4api.base.AimException;
+import edu.stanford.hakan.aim4api.base.Algorithm;
 import edu.stanford.hakan.aim4api.base.CD;
+import edu.stanford.hakan.aim4api.base.CalculationEntity;
 import edu.stanford.hakan.aim4api.base.DicomImageReferenceEntity;
 import edu.stanford.hakan.aim4api.base.DicomSegmentationEntity;
+import edu.stanford.hakan.aim4api.base.Enumerations;
+import edu.stanford.hakan.aim4api.base.ExtendedCalculationResult;
 import edu.stanford.hakan.aim4api.base.II;
 import edu.stanford.hakan.aim4api.base.Image;
 import edu.stanford.hakan.aim4api.base.ImageAnnotationCollection;
@@ -207,13 +211,13 @@ import edu.stanford.hakan.aim4api.base.ImageSeries;
 import edu.stanford.hakan.aim4api.base.ImageStudy;
 import edu.stanford.hakan.aim4api.base.ImagingObservationEntity;
 import edu.stanford.hakan.aim4api.base.ImagingPhysicalEntity;
-import edu.stanford.hakan.aim4api.base.MarkupEntity;
 import edu.stanford.hakan.aim4api.base.ST;
 import edu.stanford.hakan.aim4api.base.SegmentationEntityCollection;
 import edu.stanford.hakan.aim4api.base.TwoDimensionSpatialCoordinate;
 import edu.stanford.hakan.aim4api.base.TwoDimensionSpatialCoordinateCollection;
 import edu.stanford.hakan.aim4api.compability.aimv3.DICOMImageReference;
 import edu.stanford.hakan.aim4api.compability.aimv3.ImageAnnotation;
+import edu.stanford.hakan.aim4api.compability.aimv3.Lexicon;
 import edu.stanford.hakan.aim4api.compability.aimv3.Modality;
 import edu.stanford.hakan.aim4api.compability.aimv3.Person;
 import edu.stanford.hakan.aim4api.compability.aimv3.Segmentation;
@@ -2499,7 +2503,13 @@ public class AIMUtil
 
 	/****************************AIME Methods***********************************/
 	
-	
+	/**
+	 * Save the aim xml to the project
+	 * @param xml
+	 * @param projectID
+	 * @param username
+	 * @throws AimException
+	 */
 	public static void saveAim(String xml, String projectID, String username) throws AimException {
 		if (xml==null) {
 			log.info("Input xml is empty. Skipping save");
@@ -2519,10 +2529,18 @@ public class AIMUtil
 				log.warning("xml produced from dicom sr is NOT valid");
 		}
 	}
+	
+	/**
+	 * migrate a mint formatted json to an actual aim file and save to the project
+	 * @param mintJson
+	 * @param projectID
+	 * @param username
+	 * @param templateCode
+	 */
 	public static void migrateAimFromMintJson(JSONObject mintJson, String projectID, String username, String templateCode) {
 		
 		try{
-			String aimXML= createAimFromMintJson(mintJson, projectID, username, templateCode);
+			String aimXML= createAimFromMintJson(mintJson, username, templateCode);
 			saveAim(aimXML, projectID, username);
 			
 		} catch(Exception e) {
@@ -2531,13 +2549,48 @@ public class AIMUtil
 		
 	}
 	
-	public static String createAimFromMintJson(JSONObject mintJson, String projectID, String username, String templateCode) throws Exception {
+	
+	/**
+	 * migrate a mint formatted json to an actual aim file  and download it
+	 * @param mintJson
+	 * @param username
+	 * @param templateCode
+	 */
+	public static String migrateAimFromMintJson(JSONObject mintJson, String username, String templateCode) {
+		
+		try{
+			String aimXML= createAimFromMintJson(mintJson, username, templateCode);
+			String tmpAimName=EPADConfig.getEPADWebServerDownloadDir()+ mintJson.getString("name")+System.currentTimeMillis()+".xml";
+			File tmpAim=new File(tmpAimName);
+			EPADFileUtils.write(tmpAim, aimXML);
+			log.info("tmp aim path:"+ tmpAim.getAbsolutePath());
+			if (AnnotationValidator.ValidateXML(tmpAim.getAbsolutePath(), EPADConfig.xsdFilePath)) {
+				log.info("xml produced  is valid");
+				return tmpAim.getName();
+			}
+			
+		} catch(Exception e) {
+			log.warning("Mint to Aim migration is unsuccessful", e);
+		}
+		return null;
+		
+	}
+	
+	/**
+	 * create an aim file using the information in the mintjson and the template code that is sent
+	 * @param mintJson
+	 * @param username
+	 * @param templateCode
+	 * @return
+	 * @throws Exception
+	 */
+	public static String createAimFromMintJson(JSONObject mintJson, String username, String templateCode) throws Exception {
 		EpadProjectOperations projOp = DefaultEpadProjectOperations.getInstance();
 		edu.stanford.epad.epadws.models.User epadUser=projOp.getUser(username);
 	
 		ImageAnnotationCollection iac = new ImageAnnotationCollection();
 		edu.stanford.hakan.aim4api.base.User user=new edu.stanford.hakan.aim4api.base.User();
-		user.setName(new ST(epadUser.getFullName()));
+		user.setName(new ST(username));
 		user.setLoginName(new ST(username));
 		iac.setUser(user);
 		//set the date to current date
@@ -2545,22 +2598,9 @@ public class AIMUtil
 		Date now=new Date();
 
 		iac.setDateTime(dateFormat.format(now));
-
-
-		//patient info
-		//               <person>
-		//               <name value=""/>
-		//               <id value="LIDC-IDRI-0314"/>
-		//               <birthDate value="19000101000000"/>
-		//               <sex value="F"/>
-		//               <ethnicGroup/>
-		//               </person>
-
 		edu.stanford.hakan.aim4api.base.ImageAnnotation ia=new edu.stanford.hakan.aim4api.base.ImageAnnotation();
-
 		ia.setDateTime(dateFormat.format(now));
 
-		
 		Template t=null;
 		if (templateCode==null)
 			t=projOp.getTemplate("RECIST");
@@ -2576,45 +2616,64 @@ public class AIMUtil
 			
 		}
 
-		//comment???
-		//       <comment value="CT /  / 10"/>
-		
-		String imageUID=mintJson.getString("imageInstanceUid");
-		log.info("Retrieved image uid is "+imageUID);
-
+		ia.setComment(new ST(mintJson.getString("comment")));
 		String sopClassUID="na",studyDate="na",studyTime="na", pName="na",pId="na",pBirthDate="na",pSex="na", studyUID="na", sourceSeriesUID="na";
 
-		//fill the missing information from dicom tags
-		DICOMElementList tags= Dcm4CheeQueries.getDICOMElementsFromWADO("*", "*", imageUID);
-		if (tags==null) {
-			log.warning("Dicom image couldn't be retrieved. Cannot get the necessary information!");
-		}
-		else {
-			log.info("study code:"+PixelMedUtils.StudyInstanceUIDCode + " series code:"+PixelMedUtils.SeriesInstanceUIDCode);
-			for (int i=0; i< tags.ResultSet.totalRecords; i++) {
-				DICOMElement tag=tags.ResultSet.Result.get(i);
-				
-				if (tag.tagCode.equalsIgnoreCase(PixelMedUtils.SOPClassUIDCode)) 
-					sopClassUID=tag.value;
-				if (tag.tagCode.equalsIgnoreCase(PixelMedUtils.StudyDateCode)) 
-					studyDate=tag.value;
-				if (tag.tagCode.equalsIgnoreCase(PixelMedUtils.StudyTimeCode)) 
-					studyTime=tag.value;
-				if (tag.tagCode.equalsIgnoreCase(PixelMedUtils.PatientNameCode)) 
-					pName=tag.value;
-				if (tag.tagCode.equalsIgnoreCase(PixelMedUtils.PatientIDCode)) 
-					pId=tag.value;
-				if (tag.tagCode.equalsIgnoreCase(PixelMedUtils.PatientBirthDateCode)) 
-					pBirthDate=tag.value;
-				if (tag.tagCode.equalsIgnoreCase(PixelMedUtils.PatientSexCode)) 
-					pSex=tag.value;
-				if (tag.tagCode.equalsIgnoreCase(PixelMedUtils.StudyInstanceUIDCode)) 
-					studyUID=tag.value;
-				if (tag.tagCode.equalsIgnoreCase(PixelMedUtils.SeriesInstanceUIDCode)) 
-					sourceSeriesUID=tag.value;
+		String imageUID=mintJson.optString("imageInstanceUid");
+		if (imageUID!=null && !imageUID.equals("")) {
+			log.info("Retrieved image uid is "+imageUID);
+	
+			//fill the missing information from dicom tags
+			DICOMElementList tags= Dcm4CheeQueries.getDICOMElementsFromWADO("*", "*", imageUID);
+			if (tags==null) {
+				log.warning("Dicom image couldn't be retrieved. Cannot get the necessary information!");
 			}
-			log.info("the values retrieved from dicom "+ sopClassUID+" "+studyDate+" "+studyTime+" "+pName+" "+pId+" "+pBirthDate+" "+pSex+" "+studyUID+" "+sourceSeriesUID+" ");
+			else {
+				log.info("study code:"+PixelMedUtils.StudyInstanceUIDCode + " series code:"+PixelMedUtils.SeriesInstanceUIDCode);
+				for (int i=0; i< tags.ResultSet.totalRecords; i++) {
+					DICOMElement tag=tags.ResultSet.Result.get(i);
+					
+					if (tag.tagCode.equalsIgnoreCase(PixelMedUtils.SOPClassUIDCode)) 
+						sopClassUID=tag.value;
+					if (tag.tagCode.equalsIgnoreCase(PixelMedUtils.StudyDateCode)) 
+						studyDate=tag.value;
+					if (tag.tagCode.equalsIgnoreCase(PixelMedUtils.StudyTimeCode)) 
+						studyTime=tag.value;
+					if (tag.tagCode.equalsIgnoreCase(PixelMedUtils.PatientNameCode)) 
+						pName=tag.value;
+					if (tag.tagCode.equalsIgnoreCase(PixelMedUtils.PatientIDCode)) 
+						pId=tag.value;
+					if (tag.tagCode.equalsIgnoreCase(PixelMedUtils.PatientBirthDateCode)) 
+						pBirthDate=tag.value;
+					if (tag.tagCode.equalsIgnoreCase(PixelMedUtils.PatientSexCode)) 
+						pSex=tag.value;
+					if (tag.tagCode.equalsIgnoreCase(PixelMedUtils.StudyInstanceUIDCode)) 
+						studyUID=tag.value;
+					if (tag.tagCode.equalsIgnoreCase(PixelMedUtils.SeriesInstanceUIDCode)) 
+						sourceSeriesUID=tag.value;
+				}
+			}
+		
+		}else { //imageInstanceUID not present read the available data from mintjson.
+			imageUID=((JSONObject)((JSONObject)((JSONArray)((JSONObject)((JSONObject)mintJson.get("imageStudy")).get("imageSeries")).get("imageCollection")).get(0)).get("image")).optString("sopInstanceUid", "na");
+			sopClassUID=((JSONObject)((JSONObject)((JSONArray)((JSONObject)((JSONObject)mintJson.get("imageStudy")).get("imageSeries")).get("imageCollection")).get(0)).get("image")).optString("sopClassUid", "na");
+			
+			studyDate=((JSONObject)mintJson.get("imageStudy")).getString("startDate");
+			studyTime=((JSONObject)mintJson.get("imageStudy")).getString("startTime");
+			
+			pName=((JSONObject)mintJson.get("person")).getString("name");
+			pId=((JSONObject)mintJson.get("person")).getString("id");
+			pBirthDate=((JSONObject)mintJson.get("person")).getString("birthDate");
+			pSex=((JSONObject)mintJson.get("person")).getString("sex");
+			
+			studyUID=((JSONObject)mintJson.get("imageStudy")).getString("instanceUid");
+			sourceSeriesUID=((JSONObject)((JSONObject)mintJson.get("imageStudy")).get("imageSeries")).optString("instanceUid", "na");
+			
 		}
+		
+		log.info("the values retrieved are "+ sopClassUID+" "+studyDate+" "+studyTime+" "+pName+" "+pId+" "+pBirthDate+" "+pSex+" "+studyUID+" "+sourceSeriesUID+" ");
+
+		//put the patient information in aim
 		edu.stanford.hakan.aim4api.base.Person p=new edu.stanford.hakan.aim4api.base.Person();
 		p.setBirthDate(formatPatientBirthDate(pBirthDate));
 		p.setId(new ST(pId));
@@ -2622,8 +2681,7 @@ public class AIMUtil
 		p.setSex(new ST(pSex));
 		iac.setPerson(p);
 
- 
-
+		//add the image reference entity
 		DicomImageReferenceEntity dicomImageReferenceEntity  = new DicomImageReferenceEntity();
 		ImageStudy study = new ImageStudy();
 		study.setInstanceUid(new II(studyUID));
@@ -2636,81 +2694,21 @@ public class AIMUtil
 		imageCol.addImage(image);
 		series.setImageCollection(imageCol);
 		Modality mod=Modality.getInstance();
-		series.setModality(mod.get(sopClassUID));
+		//if the modality cannot be retrieved do not put at all
+		if ((mod.get(sopClassUID))!=null)
+			series.setModality(mod.get(sopClassUID));
 		study.setImageSeries(series);
 		study.setStartDate(studyDate);
 		study.setStartTime(studyTime);
 		dicomImageReferenceEntity.setImageStudy(study);
 		ia.addImageReferenceEntity(dicomImageReferenceEntity);
 		
-		ia.addMarkupEntity(getMarkupEntityFromPF((JSONObject)mintJson.get("PlanarFigure")));
+		//create the entities using information from pf
+		ia=addMarkupAndCalculationFromPF(ia,(JSONObject)mintJson.get("PlanarFigure"));
 		ia.addImagingPhysicalEntity(getImagingPhysicalEntityFromPF("Location",((JSONObject)mintJson.get("lesion")).getString("location")));
 		ia.addImagingPhysicalEntity(getImagingPhysicalEntityFromPF("Status",((JSONObject)mintJson.get("lesion")).getString("status")));
 		ia.addImagingObservationEntity(getImagingObservationEntityFromPF("Lesion",((JSONObject)mintJson.get("lesion")).getString("timepoint"),"Type",((JSONObject)mintJson.get("lesion")).getString("type")));
 
-		
-//			for (MeasurementItem item:meas.measurementItems) {
-//				CalculationEntity cal =new CalculationEntity();
-//				ControlledTerm quantity=item.getQuantity();
-//				ControlledTerm derivationMod=item.getDerivationModifier();
-//				if (derivationMod==null) //if it is null get the quantity
-//					derivationMod=quantity;
-//				ControlledTerm units=item.getUnits();
-//				cal.addTypeCode(new CD(derivationMod.CodeValue,derivationMod.CodeMeaning,derivationMod.CodingSchemeDesignator));
-//				cal.setDescription(new ST(derivationMod.CodeMeaning));
-//				ExtendedCalculationResult calculationResult=new ExtendedCalculationResult();
-//
-//				calculationResult.setType(CalculationResultIdentifier.Scalar);
-//				//get the code meaning??? not a controlled term in aim get it back from look up table
-//				calculationResult.setUnitOfMeasure(new ST(unitRetrieveFromControlledTerm(units)));
-//				//ml assume all data types are double. dicom sr does not have data type
-//				calculationResult.setDataType(new CD("99EPADD1","Double","99EPAD"));
-//
-//				// Create a CalculationData instance
-//				CalculationData calculationData = new CalculationData();
-//				calculationData.setValue(new ST(item.getValue()));
-//				calculationData.addCoordinate(0, 0); // TODO what goes here?
-//
-//				// Create a Dimension instance
-//				Dimension dimension = new Dimension(0, 1, derivationMod.CodeMeaning);
-//
-//				// Add calculationData to calculationResult
-//				calculationResult.addCalculationData(calculationData);
-//
-//				// Add dimension to calculationResult
-//				calculationResult.addDimension(dimension);
-//
-//				//                    // add the shape reference to the calculation
-//				//                    ReferencedGeometricShape reference = new ReferencedGeometricShape();
-//				//                    reference.setCagridId(0);
-//				//                    reference.setReferencedShapeIdentifier(shapeId);
-//				//                    calculation.addReferencedGeometricShape(reference);
-//
-//				// Add calculationResult to calculation
-//				cal.addCalculationResult(calculationResult);
-//
-//				//to calentity
-//				//                    <description value="Min"/>
-//				//                    <mathML/>
-//				//                    <algorithm>
-//				//                    <name value="Min"/>
-//				//                    <type code="RID12780" codeSystemName="RadLex" codeSystemVersion="3.2">
-//				//                    <iso:displayName xmlns:iso="uri:iso.org:21090" value="Calculation"/>
-//				//                    </type>
-//				//                    <version value="1.0"/>
-//				//                    </algorithm>
-//				Algorithm alg=new Algorithm();
-//				alg.setName(new ST(derivationMod.CodeMeaning));
-//				alg.setVersion(new ST("na"));
-//				ArrayList<CD> types=new ArrayList<>();
-//				types.add(new CD("RID12780","Calculation","RadLex","3.2"));
-//				alg.setType(types);
-//				cal.setAlgorithm(alg);
-//
-//				ia.addCalculationEntity(cal);
-//			}
-
-		
 		iac.addImageAnnotation(ia);
 
 		log.info("annotation is: "+iac.toStringXML());
@@ -2718,6 +2716,14 @@ public class AIMUtil
 		
 	}
 
+	/**
+	 * create a ImagingObservationEntity using the timepoint and type (in characteristic label and value) values
+	 * @param label
+	 * @param value
+	 * @param characteristicLabel
+	 * @param characteristicValue
+	 * @return
+	 */
 	private static ImagingObservationEntity getImagingObservationEntityFromPF(String label, String value,
 			String characteristicLabel, String characteristicValue) {
 		ImagingObservationEntity oe= new ImagingObservationEntity();
@@ -2736,6 +2742,12 @@ public class AIMUtil
 		return oe;
 	}
 
+	/**
+	 * create ImagingPhysicalEntity for location and status
+	 * @param label
+	 * @param value
+	 * @return
+	 */
 	private static ImagingPhysicalEntity getImagingPhysicalEntityFromPF(String label, String value) {
 		ImagingPhysicalEntity pe= new ImagingPhysicalEntity();
 		pe.setLabel(new ST(label));
@@ -2746,7 +2758,14 @@ public class AIMUtil
 		return pe;
 	}
 
-	private static MarkupEntity getMarkupEntityFromPF(JSONObject pf) {
+	/**
+	 * create the Markup entity and line length Calculation entities using information from pf
+	 * adds it the the input image annotation and returns the image annotation
+	 * @param ia
+	 * @param pf
+	 * @return ia
+	 */
+	private static edu.stanford.hakan.aim4api.base.ImageAnnotation addMarkupAndCalculationFromPF(edu.stanford.hakan.aim4api.base.ImageAnnotation ia,JSONObject pf) {
 		//extract the geometry
 		JSONObject transformParam = (JSONObject) ((JSONObject)pf.get("Geometry")).get("transformParam");
 		double[][] transformMatrix=new double[3][3];
@@ -2806,13 +2825,16 @@ public class AIMUtil
 		double [][] pointsMM = new double[points.length()][3];
         for (int i = 0; i < points.length(); i++) {
         	log.info(i+". point index="+((JSONObject)points.get(i)).getString("id")+ " x="+Double.parseDouble(((JSONObject)points.get(i)).getString("x"))+ " y="+Double.parseDouble(((JSONObject)points.get(i)).getString("y")));
+        	
+        	//TODO should put them in the correct id order in case it is unordered
         	pointsMM[i][0]=(Double.parseDouble(((JSONObject)points.get(i)).getString("id")));
         	pointsMM[i][1]=(Double.parseDouble(((JSONObject)points.get(i)).getString("x")));
         	pointsMM[i][2]=(Double.parseDouble(((JSONObject)points.get(i)).getString("y")));
         }
 		
-        double [][] pointsPX=transformPoints(pointsMM,transformMatrix,boundsMatrix,spacingVector,originVector);
+        double [][] pointsPX=transformPoints(pointsMM,transformMatrix,originVectorTrasform,boundsMatrix,spacingVector,originVector);
 		
+        //add the geometric shape entity
 		edu.stanford.hakan.aim4api.base.TwoDimensionGeometricShapeEntity res = new edu.stanford.hakan.aim4api.base.TwoDimensionMultiPoint();
         res.setShapeIdentifier(1);
 		res.setIncludeFlag(true);
@@ -2825,19 +2847,154 @@ public class AIMUtil
 	      	c.setY(pointsPX[i][2]);
 	      	cc.addTwoDimensionSpatialCoordinate(c);
 	      }
-//        JSONArray points = (JSONArray) ((JSONObject)pf.get("ControlPoints")).get("Vertex");
-//        for (int i = 0; i < points.length(); i++) {
-//        	TwoDimensionSpatialCoordinate c=new TwoDimensionSpatialCoordinate();
-//        	log.info(i+". point index="+((JSONObject)points.get(i)).getString("id")+ " x="+Double.parseDouble(((JSONObject)points.get(i)).getString("x"))+ " y="+Double.parseDouble(((JSONObject)points.get(i)).getString("y")));
-//        	c.setCoordinateIndex(Integer.parseInt(((JSONObject)points.get(i)).getString("id")));
-//        	c.setX(Double.parseDouble(((JSONObject)points.get(i)).getString("x")));
-//        	c.setY(Double.parseDouble(((JSONObject)points.get(i)).getString("y")));
-//        	cc.addTwoDimensionSpatialCoordinate(c);
-//        }
         res.setTwoDimensionSpatialCoordinateCollection(cc);
-        return res;
+        ia.addMarkupEntity(res);
+        
+        //calculate the longest line in the closed shape 
+        double[] majorAxis=getMajorAxis(pointsPX, spacingVector);
+        //add length calculation for major axis
+        ia.addCalculationEntity(addlengthCalculation(majorAxis[2]));
+        
+        return ia;
 	}
+	//values from edu.stanford.hakan.aim4api.project.epad.Aim to keep the same for default
+	private static final String LINE_LENGTH = "LineLength";
+    private static final String VERSION = "1.0";
+    private static final String PRIVATE_DESIGNATOR = "private";
+	    
+	    
+    /**
+     * the code retrieved from edu.stanford.hakan.aim4api.project.epad.Aim and converted to aim4 classes
+     * @param length
+     * @return
+     */
+	 private static CalculationEntity addlengthCalculation(
+	            double length) {
+		 
+			CalculationEntity cal =new CalculationEntity();
+			Lexicon lex=Lexicon.getInstance();
+	        CD calcCD= lex.get("G-D7FE");
+	        String desc="";
+	        if (calcCD!=null) {
+	        	 cal.addTypeCode(new CD(calcCD.getCode(),calcCD.getDisplayName().getValue(),calcCD.getCodeSystemName()));
+	        	 cal.setDescription(new ST(calcCD.getDisplayName().getValue()));
+	        	 desc=calcCD.getDisplayName().getValue();
+	        }else {
+	        	cal.addTypeCode(new CD(LINE_LENGTH,LINE_LENGTH,PRIVATE_DESIGNATOR));
+	        	cal.setDescription(new ST(LINE_LENGTH));
+	        	desc=LINE_LENGTH;
+	        }
+	        ExtendedCalculationResult calculationResult=new ExtendedCalculationResult();
 
+			calculationResult.setType(Enumerations.CalculationResultIdentifier.Scalar);
+			calculationResult.setUnitOfMeasure(new ST("cm"));
+			calculationResult.setDataType(new CD("99EPADD1","Double","99EPAD"));
+
+			// Create a CalculationData instance
+			edu.stanford.hakan.aim4api.base.CalculationData calculationData = new edu.stanford.hakan.aim4api.base.CalculationData();
+			calculationData.setValue(new ST(String.valueOf(length)));
+			calculationData.addCoordinate(0, 0);
+
+			// Create a Dimension instance
+			edu.stanford.hakan.aim4api.base.Dimension dimension = new edu.stanford.hakan.aim4api.base.Dimension(0, 1, desc);
+
+			// Add calculationData to calculationResult
+			calculationResult.addCalculationData(calculationData);
+
+			// Add dimension to calculationResult
+			calculationResult.addDimension(dimension);
+
+			//this should be rdf removing for now. do not have shape id. and do not see it in the recist aim.
+			//                    // add the shape reference to the calculation
+			//                    ReferencedGeometricShape reference = new ReferencedGeometricShape();
+			//                    reference.setCagridId(0);
+			//                    reference.setReferencedShapeIdentifier(shapeId);
+			//                    calculation.addReferencedGeometricShape(reference);
+
+			// Add calculationResult to calculation
+			cal.addCalculationResult(calculationResult);
+
+			Algorithm alg=new Algorithm();
+			alg.setName(new ST(desc));
+			alg.setVersion(new ST(VERSION));
+			ArrayList<CD> types=new ArrayList<>();
+			types.add(new CD("RID12780","Calculation","RadLex","3.2"));
+			alg.setType(types);
+			cal.setAlgorithm(alg);
+
+			return cal;
+		}
+	 
+	 /**
+	  * calculate the longest line in the close shape
+	  * for each point pi calculate distance to all other pj
+  	  * 	get max dist from pi
+	  * get max dist
+	  * @param points
+	  * @param spacing
+	  * @return a vector identifying the major axis point indexes and the line length in cm. 
+	  * [3,5,2.23] meaning from point 3 to point 5, length is 2.23cm
+	  */
+	private static double[] getMajorAxis(double[][] points, double[] spacing) {
+		double[][] maxDists=new double[points.length][2]; //matrix holding the index of the farthest point and the distance to that point for the each point
+		double[] majorAxis=null; //a vector identifying the major axis point indexes and the line length in cm. [3,5,2.23]
+		for (int i=0;i<points.length; i++) {
+			double maxDist=-1;
+			int point=-1;
+			for (int j=i+1;j<points.length; j++) {
+				double dist=calculateLineLength(points[i][1],points[i][2],points[j][1],points[j][2],spacing[0],spacing[1]);
+				log.info("distance from "+i+" to "+j+ " is "+ dist);
+				if (dist>maxDist) {
+					maxDist=dist;
+					point=j;
+				}
+			}	
+			maxDists[i][0]=point;
+			maxDists[i][1]=maxDist;
+			
+		}
+		//get the maximum of maximums
+		double maxDist=-1;
+		int point=-1;
+		for (int i=0;i<maxDists.length; i++) {
+			log.info("max distance from "+i +" is "+ maxDists[i][1] + " and to "+ maxDists[i][0]);
+			if (maxDists[i][1]>maxDist) {
+				maxDist=maxDists[i][1];
+				point=i;
+			}
+		}
+		log.info("max distance is between point "+point+ "("+points[point][1]+":"+points[point][2]+") and " + maxDists[point][0] +"("+points[(int)maxDists[point][0]][1]+":"+points[(int)maxDists[point][0]][2]+") and is "+ maxDists[point][1] +" cm");
+		majorAxis=new double[]{point,maxDists[point][0],maxDists[point][1]};
+		return majorAxis;
+		
+	}
+	
+	/**
+	 * calculate line length code from edu.stanford.hakan.aim4api.project.epad.Aim. modified to get the actual coordinates
+	 * possible problem. just uses pixelSpacingX
+	 * @param x1
+	 * @param y1
+	 * @param x2
+	 * @param y2
+	 * @param pixelSpacingX
+	 * @param pixelSpacingY
+	 * @return
+	 */
+	private static double calculateLineLength(double x1, double y1, double x2, double y2,
+            double pixelSpacingX, double pixelSpacingY) {
+		double length = Math.abs(x1
+                    - x2);
+        double width = Math
+                .abs(y1 - y2);
+        return Math.sqrt(length * length + width * width) * pixelSpacingX
+                / 10.0;
+    }
+
+	/**
+	 * transpose a matrix
+	 * @param m
+	 * @return
+	 */
 	public static double[][] transposeMatrix(double [][] m){
         double[][] temp = new double[m[0].length][m.length];
         for (int i = 0; i < m.length; i++)
@@ -2845,6 +3002,13 @@ public class AIMUtil
                 temp[j][i] = m[i][j];
         return temp;
     }
+	
+	/**
+	 * subtracts second vector from the first
+	 * @param v1
+	 * @param v2
+	 * @return
+	 */
 	public static double[] substractVector(double [] v1, double[] v2){
 		if (v1.length!=v2.length){
 			log.warning("vector sizes should be the same");
@@ -2856,6 +3020,29 @@ public class AIMUtil
         return temp;
     }
 	
+	/**
+	 * adds two input vectors
+	 * @param v1
+	 * @param v2
+	 * @return
+	 */
+	public static double[] addVector(double [] v1, double[] v2){
+		if (v1.length!=v2.length){
+			log.warning("vector sizes should be the same");
+			return null;
+		}
+        double[] temp = new double[v1.length];
+        for (int i = 0; i < v1.length; i++)
+                temp[i] = v1[i]+v2[i];
+        return temp;
+    }
+	
+	/**
+	 * multiplies a matrix and a vector
+	 * @param m
+	 * @param v
+	 * @return
+	 */
 	public static double[] multiply(double [][] m, double[] v){
 		if (m[0].length!=v.length){
 			log.warning("sizes not compatible for multiplying");
@@ -2869,20 +3056,27 @@ public class AIMUtil
         }
         return temp;
     }
-	private static double[][] transformPoints(double[][] pointsMM, double[][] transformMatrix, double[][] boundsMatrix,
+	
+	/**
+	 * transform points from MM space to PX space using geometry from pf file
+	 * @param pointsMM
+	 * @param transformMatrix
+	 * @param originVectorTrasform
+	 * @param boundsMatrix
+	 * @param spacingVector
+	 * @param originVector
+	 * @return
+	 */
+	private static double[][] transformPoints(double[][] pointsMM, double[][] transformMatrix, double[] originVectorTrasform, double[][] boundsMatrix,
 			double[] spacingVector, double[] originVector) {
-		// TODO Auto-generated method stub
-		//(i,j,k)^T = ( transform  )^(-1) * ((x,y,z)^T - Origin)
-		//A diagonal matrix (let's say S2) is built using the values of the vector S.
-		//this is actually transform in the sample. i think D*S2 in the code is transform in pf
-		
+		//asked imon. she said just multiply with the transformation matrix and add transformation origin vector
 		double[][] pointsPX=new double[pointsMM.length][3];
-		double[][] transformMatrixTranspose=transposeMatrix(transformMatrix);
+//		double[][] transformMatrixTranspose=transposeMatrix(transformMatrix);
 		for (int i=0;i<pointsMM.length;i++) {
 			pointsPX[i][0]=pointsMM[i][0];
-			double[] point=new double[]{pointsMM[i][1],pointsMM[i][2],0.0};
+			double[] point=new double[]{pointsMM[i][1],pointsMM[i][2],1.0};
 			
-			double[] transformedPoint=multiply(transformMatrixTranspose, substractVector(point, originVector));
+			double[] transformedPoint=addVector(multiply(transformMatrix, point),originVectorTrasform);
 			
 			pointsPX[i][1]=transformedPoint[0];
 			pointsPX[i][2]=transformedPoint[1];
