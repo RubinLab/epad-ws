@@ -887,7 +887,7 @@ public class AIMDatabaseOperations {
 	    }
 	
     public List<EPADAIM> getAIMs(String projectID, String patientID, String studyUID, String seriesUID, String imageUID, int frameID, String dsoSeriesUID, int start, int count) throws SQLException {
-        String sqlSelect = "SELECT UserLoginName, ProjectUID, PatientID, StudyUID, SeriesUID, ImageUID, frameID, AnnotationUID, DSOSeriesUID, DSOFRAMENO, XML, NAME, AIMCOLOR, TEMPLATECODE FROM annotations WHERE 1 = 1";
+        String sqlSelect = "SELECT UserLoginName, ProjectUID, PatientID, StudyUID, SeriesUID, ImageUID, frameID, AnnotationUID, DSOSeriesUID, DSOFRAMENO, XML, NAME, AIMCOLOR, TEMPLATECODE, is_dicomsr FROM annotations WHERE 1 = 1";
 		if (projectID != null && projectID.length() > 0)
 			sqlSelect = sqlSelect + " and (ProjectUID = '" + projectID + "')";
 		//sqlSelect = sqlSelect + " and (ProjectUID = '" + projectID + "' or ProjectUID = '" + EPADConfig.xnatUploadProjectID + "')";
@@ -934,7 +934,8 @@ public class AIMDatabaseOperations {
 				String name = rs.getString(12);
 				String color = rs.getString(13);
 				String template = rs.getString(14);
-				EPADAIM aim = new EPADAIM(AnnotationID, UserName, ProjectID, PatientID, StudyUID, SeriesUID, ImageUID, FrameID, DSOSeriesUID);
+				boolean isDicomSR = rs.getBoolean(15);
+				EPADAIM aim = new EPADAIM(AnnotationID, UserName, ProjectID, PatientID, StudyUID, SeriesUID, ImageUID, FrameID, DSOSeriesUID, isDicomSR);
 				aim.xml = xml;
 				aim.name = name;
 				aim.color = color;
@@ -966,7 +967,7 @@ public class AIMDatabaseOperations {
     public List<EPADAIM> getAIMs(String criteria, int start, int count) throws SQLException {
     	if (!criteria.trim().toLowerCase().startsWith("where"))
     		criteria = "WHERE " + criteria;
-        String sqlSelect = "SELECT UserLoginName, ProjectUID, PatientID, StudyUID, SeriesUID, ImageUID, frameID, AnnotationUID, DSOSeriesUID, DSOFRAMENO, XML, NAME, AIMCOLOR,TEMPLATECODE FROM annotations " + criteria;
+        String sqlSelect = "SELECT UserLoginName, ProjectUID, PatientID, StudyUID, SeriesUID, ImageUID, frameID, AnnotationUID, DSOSeriesUID, DSOFRAMENO, XML, NAME, AIMCOLOR,TEMPLATECODE, is_dicomsr FROM annotations " + criteria;
         log.debug("AIMs select:" + sqlSelect);
        
 		ResultSet rs = null;
@@ -992,7 +993,8 @@ public class AIMDatabaseOperations {
 				String name = rs.getString(12);
 				String color = rs.getString(13);
 				String template = rs.getString(14);
-				EPADAIM aim = new EPADAIM(AnnotationID, UserName, ProjectID, PatientID, StudyUID, SeriesUID, ImageUID, FrameID, DSOSeriesUID);
+				boolean isDicomSR = rs.getBoolean(15);
+				EPADAIM aim = new EPADAIM(AnnotationID, UserName, ProjectID, PatientID, StudyUID, SeriesUID, ImageUID, FrameID, DSOSeriesUID, isDicomSR);
 				aim.xml = xml;
 				aim.name = name;
 				aim.color = color;
@@ -1086,7 +1088,7 @@ public class AIMDatabaseOperations {
     }
     
     public EPADAIM getAIM(String annotationID) throws SQLException { //ml shared projects added
-        String sqlSelect = "SELECT UserLoginName, ProjectUID, PatientID, StudyUID, SeriesUID, ImageUID, frameID, DSOSeriesUID,XML,NAME,SHAREDPROJECTS, DSOFRAMENO, AIMCOLOR FROM annotations WHERE AnnotationUID = '"
+        String sqlSelect = "SELECT UserLoginName, ProjectUID, PatientID, StudyUID, SeriesUID, ImageUID, frameID, DSOSeriesUID,XML,NAME,SHAREDPROJECTS, DSOFRAMENO, AIMCOLOR, is_dicomsr FROM annotations WHERE AnnotationUID = '"
         		+ annotationID + "'";
     	log.debug(sqlSelect);
 		ResultSet rs = null;
@@ -1108,7 +1110,8 @@ public class AIMDatabaseOperations {
 				String sharedProjects = rs.getString(11);
 				Integer dsoFrameNo = rs.getInt(12);
 				String color = rs.getString(13);
-				EPADAIM aim = new EPADAIM(annotationID, UserName, ProjectID, PatientID, StudyUID, SeriesUID, ImageUID, FrameID, DSOSeriesUID, sharedProjects);
+				boolean isDicomSR = rs.getBoolean(14);
+				EPADAIM aim = new EPADAIM(annotationID, UserName, ProjectID, PatientID, StudyUID, SeriesUID, ImageUID, FrameID, DSOSeriesUID, sharedProjects, isDicomSR);
 				aim.xml = xml;
 				aim.name = name;
 				aim.color = color;
@@ -1127,7 +1130,7 @@ public class AIMDatabaseOperations {
     }
     
     public List<EPADAIM> getAIMs(String annotationIDs) throws SQLException {
-        String sqlSelect = "SELECT UserLoginName, ProjectUID, PatientID, StudyUID, SeriesUID, ImageUID, frameID, AnnotationUID, DSOSeriesUID, XML, NAME, DSOFRAMENO, AIMCOLOR FROM annotations WHERE AnnotationUID in ";
+        String sqlSelect = "SELECT UserLoginName, ProjectUID, PatientID, StudyUID, SeriesUID, ImageUID, frameID, AnnotationUID, DSOSeriesUID, XML, NAME, DSOFRAMENO, AIMCOLOR, is_dicomsr FROM annotations WHERE AnnotationUID in ";
         String[] ids = annotationIDs.split(",");
         String delim = "(";
         for (String id: ids)
@@ -1157,7 +1160,8 @@ public class AIMDatabaseOperations {
 				String name = rs.getString(11);
 				Integer dsoFrameNo = rs.getInt(12);
 				String color = rs.getString(13);
-				EPADAIM aim = new EPADAIM(AnnotationID, UserName, ProjectID, PatientID, StudyUID, SeriesUID, ImageUID, FrameID, DSOSeriesUID);
+				boolean isDicomSR = rs.getBoolean(14);
+				EPADAIM aim = new EPADAIM(AnnotationID, UserName, ProjectID, PatientID, StudyUID, SeriesUID, ImageUID, FrameID, DSOSeriesUID, isDicomSR);
 				aim.xml = xml;
 				aim.name = name;
 				aim.color = color;
