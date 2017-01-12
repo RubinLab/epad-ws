@@ -205,6 +205,7 @@ public class RTDICOMProcessingTask implements GeneratorTask
 				if (username != null && username.indexOf(":") != -1)
 					username = username.substring(0, username.indexOf(":"));
 			}
+			log.info("The retrieved username is "+username);
 			projectOperations.updateUserTaskStatus(username, TaskStatus.TASK_RT_PROCESS, seriesUID, "RT Dicom Processing Started", new Date(), null);
 			DICOMElementList dicomElementList = Dcm4CheeQueries.getDICOMElementsFromWADO(studyUID, seriesUID, imageUID);
 			String inputDirPath = EPADConfig.getEPADWebServerResourcesDir() + "download/" + "temp" + Long.toString(System.currentTimeMillis()) + "/";
@@ -431,6 +432,7 @@ public class RTDICOMProcessingTask implements GeneratorTask
 						log.info("Sending generated DSO " + dsoFile.getAbsolutePath() + " imageUID:" + dsoImageUID + " to dcm4chee...");
 						DCM4CHEEUtil.dcmsnd(dsoFile.getAbsolutePath(), false);
 						List<Project> projects = projectOperations.getProjectsForSubject(patientID);
+						log.info("Patient "+patientID+ " has "+ projects.size() + " projects");
 						String color = "";
 						if (r < delems.size())
 						{
@@ -440,20 +442,21 @@ public class RTDICOMProcessingTask implements GeneratorTask
 								color = formatColor(getInt(colors[0]), getInt(colors[1]), getInt(colors[2]));
 						}
 						for (Project project: projects) {
-							log.debug("RT Dicom projectID:" + project.getProjectId());
+							log.info("RT Dicom projectID:" + project.getProjectId());
 							if (project.getProjectId().equals(EPADConfig.xnatUploadProjectID)) continue;
 							if (projectOperations.isStudyInProjectAndSubject(project.getProjectId(), patientID, studyUID))
 							{
 								String projectID = project.getProjectId();
-								Study study = projectOperations.getStudy(studyUID);
-								String owner = study.getCreator();
-								if (!projectOperations.hasAccessToProject(owner, project.getId()))
-									owner = project.getCreator();
-								ImageAnnotation ia = AIMUtil.generateAIMFileForDSO(dsoFile, owner, projectID, dsoDescr);
+								//get the project's creator if the username does not exist in upload or is admin
+								if (username==null || "admin".equals(username)) {
+									username = project.getCreator();
+								}
+								log.info("creating annotation for dicom rt using username: "+username +  " and project "+ projectID);
+								ImageAnnotation ia = AIMUtil.generateAIMFileForDSO(dsoFile, username, projectID, dsoDescr);
 								epadDatabaseOperations.updateAIMColor(ia.getUniqueIdentifier(), color);
 							}
 							else
-								log.debug("RT Dicom study not is project:" + studyUID);
+								log.info("RT Dicom study not is project:" + studyUID);
 								
 						}
 						projectOperations.updateUserTaskStatus(username, TaskStatus.TASK_RT_PROCESS, seriesUID, "Completed DSO Generation " + r, null, null);
