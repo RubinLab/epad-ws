@@ -215,6 +215,7 @@ import edu.stanford.epad.epadws.handlers.dicom.DSOUtil;
 import edu.stanford.epad.epadws.models.DisabledTemplate;
 import edu.stanford.epad.epadws.models.EpadFile;
 import edu.stanford.epad.epadws.models.EpadStatistics;
+import edu.stanford.epad.epadws.models.EpadStatisticsMonthly;
 import edu.stanford.epad.epadws.models.EpadStatisticsTemplate;
 import edu.stanford.epad.epadws.models.Template;
 import edu.stanford.epad.epadws.models.EventLog;
@@ -3984,6 +3985,21 @@ public class DefaultEpadOperations implements EpadOperations
 	}
 	
 	@Override
+	public EPADUsageList getMonthlyUsageForMonth(int month) throws Exception {
+		String sql = " month(createdtime)=1";
+		List<EpadStatisticsMonthly> stats = new EpadStatisticsMonthly().getObjects(sql);
+		EPADUsageList eul = new EPADUsageList();
+		for (EpadStatisticsMonthly stat: stats)
+		{
+			eul.addUsage(new EPADUsage("", stat.getNumOfUsers(), stat.getNumOfProjects(),
+					stat.getNumOfPatients(), stat.getNumOfStudies(), stat.getNumOfSeries(),
+					stat.getNumOfAims(), stat.getNumOfDSOs(), stat.getNumOfPacs(), stat.getNumOfAutoQueries(),
+					stat.getNumOfWorkLists(), stat.getNumOfFiles(), stat.getNumOfTemplates(), stat.getNumOfPlugins(), dateformat.format(stat.getCreatedTime())));
+		}
+		return eul;
+	}
+	
+	@Override
 	public EPADTemplateUsageList getTemplateStatSummary() throws Exception {
 		String sql = "createdtime >(((select max(createdtime) from epadstatistics_template b where b.host = a.host)- INTERVAL 1 HOUR))  group by host,templatecode order by host,templatecode";
 		log.info("template stat query: "+sql);
@@ -3997,6 +4013,8 @@ public class DefaultEpadOperations implements EpadOperations
 		}
 		return eul;
 	}
+	
+	
 	
 	@Override
 	public EPADTemplateUsageList getTemplateStatSummaryWithXML() throws Exception {

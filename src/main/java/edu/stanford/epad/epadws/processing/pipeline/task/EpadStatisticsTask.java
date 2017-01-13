@@ -127,6 +127,7 @@ import org.apache.commons.httpclient.methods.StringRequestEntity;
 import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADFileUtils;
 import edu.stanford.epad.common.util.EPADLogger;
+import edu.stanford.epad.dtos.EPADUsageList;
 import edu.stanford.epad.epadws.EPadWebServerVersion;
 import edu.stanford.epad.epadws.epaddb.EpadDatabase;
 import edu.stanford.epad.epadws.epaddb.EpadDatabaseOperations;
@@ -141,6 +142,8 @@ import edu.stanford.epad.epadws.models.Study;
 import edu.stanford.epad.epadws.models.Subject;
 import edu.stanford.epad.epadws.models.User;
 import edu.stanford.epad.epadws.models.WorkList;
+import edu.stanford.epad.epadws.queries.DefaultEpadOperations;
+import edu.stanford.epad.epadws.queries.EpadOperations;
 import edu.stanford.epad.epadws.service.RemotePACService;
 
 /**
@@ -154,6 +157,7 @@ public class EpadStatisticsTask implements Runnable
 {
 	private static EPADLogger log = EPADLogger.getInstance();
 	private final EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
+	private final EpadOperations epadOperations = DefaultEpadOperations.getInstance();
 	
 	public static String newEPADVersion = "";	
 	public static boolean newEPADVersionAvailable = false;
@@ -347,6 +351,26 @@ public class EpadStatisticsTask implements Runnable
 		} finally {
 			getMethod.releaseConnection();
 		}
+		
+		
+		//done with calculating and sending the statistics
+		//calculate a monthly cumulative if it is the first day of the month
+		boolean isAlreadyCalced=false;
+		Calendar now = Calendar.getInstance();
+		log.info("month is "+now.get(Calendar.MONTH));
+		try {
+			EPADUsageList monthly= epadOperations.getMonthlyUsageForMonth(now.get(Calendar.MONTH)+1);
+			if (monthly!= null && monthly.ResultSet.totalRecords>0)
+				isAlreadyCalced=true;
+		} catch (Exception e) {
+			log.warning("Couldn't get if the monthly cumulative statistics already calculated, assuming no");
+		}
+		if ( isAlreadyCalced==false )  {
+//			if ( isAlreadyCalced==false && now.get(Calendar.DAY_OF_MONTH) == 1)  {
+			log.info("it is the first day");
+			epadDatabaseOperations.calcMonthlyCumulatives();
+		}
+	
 	}
 	
 	private static String encode(String urlString)

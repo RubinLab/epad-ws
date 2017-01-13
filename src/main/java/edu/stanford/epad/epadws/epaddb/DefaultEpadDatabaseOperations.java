@@ -3150,4 +3150,22 @@ public class DefaultEpadDatabaseOperations implements EpadDatabaseOperations
 		}
 		return 0;
 	}
+	
+	@Override
+	public void calcMonthlyCumulatives()
+	{
+		Connection c = null;
+		PreparedStatement ps = null;
+		ResultSet rs = null;
+		try {
+			c = getConnection();
+			ps = c.prepareStatement(EpadDatabaseCommands.CALCULATE_MONTHLY_CUMULATIVE_USAGE);
+			ps.execute();
+		} catch (SQLException sqle) {
+			String debugInfo = DatabaseUtils.getDebugData(rs);
+			log.warning("Database operation failed; debugInfo=" + debugInfo, sqle);
+		} finally {
+			close(c, ps, rs);
+		}
+	}
 }
