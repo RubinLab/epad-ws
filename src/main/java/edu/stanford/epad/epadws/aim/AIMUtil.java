@@ -3189,7 +3189,7 @@ public class AIMUtil
 		for (int i=0;i<pointsMM.length;i++) {
 			pointsPX[i][0]=pointsMM[i][0];
 			double[] point=new double[]{pointsMM[i][1],pointsMM[i][2],1.0};
-			
+			double[] w2i=world2index(point, transformMatrix, originVectorTrasform);
 			//go from index to world. then world to index
 			double[] transformedPoint=world2index(index2world(point, transformMatrix, originVectorTrasform), transformMatrix, originVectorTrasform);
 			

@@ -463,6 +463,11 @@ public class EPADPostHandler
 						JSONObject mintJson = HandlerUtil.getPostedJson(httpRequest);
 						AIMUtil.migrateAimFromMintJson(mintJson,projectReference.projectID, username, "RECIST");
 						
+					}else if (migrateFrom!=null && migrateFrom.equalsIgnoreCase("osirix")) {
+						JSONObject osirixJson = HandlerUtil.getPostedXML(httpRequest);
+						log.info("xml json "+osirixJson.toString());
+//						AIMUtil.migrateAimFromMintJson(osirixJson,projectReference.projectID, username, "RECIST");
+						
 					}else { //regular. rerunning plugin on annotations
 					
 						JSONObject aims = HandlerUtil.getPostedJson(httpRequest);
@@ -515,6 +520,11 @@ public class EPADPostHandler
 					    url.append("/epad").append("/resources/download/");
 					    url.append(aimName);
 						responseStream.append(url.toString());
+						
+					}else if (migrateFrom!=null && migrateFrom.equalsIgnoreCase("osirix")) {
+						JSONObject osirixJson = HandlerUtil.getPostedXML(httpRequest);
+						log.info("xml json "+osirixJson.toString());
+//						String aimName=AIMUtil.migrateAimFromOsirixJson(osirixJson, username, "ROI");
 						
 					}
 					statusCode = HttpServletResponse.SC_OK;

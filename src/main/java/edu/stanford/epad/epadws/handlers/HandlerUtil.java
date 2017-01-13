@@ -136,6 +136,7 @@ import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Level;
 import org.json.JSONObject;
+import org.json.XML;
 
 import com.sun.jersey.api.uri.UriTemplate;
 
@@ -521,6 +522,26 @@ public class HandlerUtil
 		return null;
     }
     
+    public static JSONObject getPostedXML(HttpServletRequest httpRequest) throws Exception
+    {
+    	StringBuffer jb = new StringBuffer();
+		String line = null;
+		try {
+		    BufferedReader reader = new BufferedReader(new InputStreamReader( httpRequest.getInputStream()));
+		    while ((line = reader.readLine()) != null)
+		      jb.append(line);
+		} catch (Exception e) {
+			log.warning("Error receiving data:" + e);
+			throw e;
+		}
+		log.debug("Posted Json:" + jb);
+		try {
+    	    return XML.toJSONObject(jb.toString());
+		} catch (Exception e) {
+			log.warning("Error parsing XML request string to json:" + jb);
+		}    	
+		return null;
+    }
     public static String getPostedString(HttpServletRequest httpRequest) throws Exception
     {
     	StringBuffer jb = new StringBuffer();
