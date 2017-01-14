@@ -3985,8 +3985,21 @@ public class DefaultEpadOperations implements EpadOperations
 	}
 	
 	@Override
-	public EPADUsageList getMonthlyUsageForMonth(int month) throws Exception {
-		String sql = " month(createdtime)=1";
+	public EPADUsageList getMonthlyUsageSummary() throws Exception {
+		List<EpadStatisticsMonthly> stats = new EpadStatisticsMonthly().getObjects("");
+		EPADUsageList eul = new EPADUsageList();
+		for (EpadStatisticsMonthly stat: stats)
+		{
+			eul.addUsage(new EPADUsage("", stat.getNumOfUsers(), stat.getNumOfProjects(),
+					stat.getNumOfPatients(), stat.getNumOfStudies(), stat.getNumOfSeries(),
+					stat.getNumOfAims(), stat.getNumOfDSOs(), stat.getNumOfPacs(), stat.getNumOfAutoQueries(),
+					stat.getNumOfWorkLists(), stat.getNumOfFiles(), stat.getNumOfTemplates(), stat.getNumOfPlugins(), dateformat.format(stat.getCreatedTime())));
+		}
+		return eul;
+	}
+	@Override
+	public EPADUsageList getMonthlyUsageSummaryForMonth(int month) throws Exception {
+		String sql = " month(createdtime)="+month;
 		List<EpadStatisticsMonthly> stats = new EpadStatisticsMonthly().getObjects(sql);
 		EPADUsageList eul = new EPADUsageList();
 		for (EpadStatisticsMonthly stat: stats)

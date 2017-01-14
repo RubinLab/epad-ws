@@ -354,20 +354,17 @@ public class EpadStatisticsTask implements Runnable
 		
 		
 		//done with calculating and sending the statistics
-		//calculate a monthly cumulative if it is the first day of the month
+		//calculate a monthly cumulative if it is there is no record for the month
 		boolean isAlreadyCalced=false;
 		Calendar now = Calendar.getInstance();
-		log.info("month is "+now.get(Calendar.MONTH));
 		try {
-			EPADUsageList monthly= epadOperations.getMonthlyUsageForMonth(now.get(Calendar.MONTH)+1);
+			EPADUsageList monthly= epadOperations.getMonthlyUsageSummaryForMonth(now.get(Calendar.MONTH)+1);
 			if (monthly!= null && monthly.ResultSet.totalRecords>0)
 				isAlreadyCalced=true;
 		} catch (Exception e) {
-			log.warning("Couldn't get if the monthly cumulative statistics already calculated, assuming no");
+			log.warning("Couldn't get if the monthly cumulative statistics already calculated, assuming no" ,e);
 		}
 		if ( isAlreadyCalced==false )  {
-//			if ( isAlreadyCalced==false && now.get(Calendar.DAY_OF_MONTH) == 1)  {
-			log.info("it is the first day");
 			epadDatabaseOperations.calcMonthlyCumulatives();
 		}
 	

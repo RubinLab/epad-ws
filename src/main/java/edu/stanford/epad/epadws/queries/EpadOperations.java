@@ -1664,6 +1664,14 @@ public interface EpadOperations
 	 * @return
 	 * @throws Exception
 	 */
-	EPADUsageList getMonthlyUsageForMonth(int month) throws Exception;
+	EPADUsageList getMonthlyUsageSummaryForMonth(int month) throws Exception;
+
+	/**
+	 * gets the monthly cumulative usage summary for all the months available
+	 * @param month
+	 * @return
+	 * @throws Exception
+	 */
+	EPADUsageList getMonthlyUsageSummary() throws Exception;
 
 }
