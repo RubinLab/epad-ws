@@ -2729,14 +2729,13 @@ public class AIMUtil
 		ImagingObservationEntity oe= new ImagingObservationEntity();
 		oe.setLabel(new ST(label));
 		oe.setAnnotatorConfidence(0.0);
-		//TODO needs a lookup. lexicon won't work tough. we need name based search or they need to send code.
-		oe.addTypeCode(new CD(value,value,"na","na"));
+		
+		oe.addTypeCode(edu.stanford.epad.common.util.Lexicon.getInstance().getLex(value));
 		
 		ImagingObservationCharacteristic oc=new ImagingObservationCharacteristic();
 		oc.setLabel(new ST(characteristicLabel));
 		oc.setAnnotatorConfidence(0.0);
-		//TODO needs a lookup. lexicon won't work tough. we need name based search or they need to send code.
-		oc.addTypeCode(new CD(characteristicValue,characteristicValue,"na","na"));
+		oc.addTypeCode(edu.stanford.epad.common.util.Lexicon.getInstance().getLex(characteristicValue));
 		
 		oe.addImagingObservationCharacteristic(oc);
 		return oe;
@@ -2752,9 +2751,7 @@ public class AIMUtil
 		ImagingPhysicalEntity pe= new ImagingPhysicalEntity();
 		pe.setLabel(new ST(label));
 		pe.setAnnotatorConfidence(0.0);
-		//TODO needs a lookup. lexicon won't work tough. we need name based search or they need to send code.
-		//Lexicon lex=Lexicon.getInstance();
-		pe.addTypeCode(new CD(value,value,"na","na"));
+		pe.addTypeCode(edu.stanford.epad.common.util.Lexicon.getInstance().getLex(value));
 		return pe;
 	}
 
