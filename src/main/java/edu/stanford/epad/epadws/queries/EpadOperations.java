@@ -1658,4 +1658,20 @@ public interface EpadOperations
 	 */
 	EPADTemplateUsageList getTemplateStatSummaryWithXML() throws Exception;
 
+	/**
+	 * gets the monthly cumulative usage summary for the specified month
+	 * @param month
+	 * @return
+	 * @throws Exception
+	 */
+	EPADUsageList getMonthlyUsageSummaryForMonth(int month) throws Exception;
+
+	/**
+	 * gets the monthly cumulative usage summary for all the months available
+	 * @param month
+	 * @return
+	 * @throws Exception
+	 */
+	EPADUsageList getMonthlyUsageSummary() throws Exception;
+
 }

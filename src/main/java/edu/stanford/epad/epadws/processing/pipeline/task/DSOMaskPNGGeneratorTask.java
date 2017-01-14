@@ -265,8 +265,10 @@ public class DSOMaskPNGGeneratorTask implements GeneratorTask
 				{
 					if (project.getProjectId().equals(EPADConfig.xnatUploadProjectID)) continue;
 					projectID = project.getProjectId();
-					if ("admin".equals(username))
+					if ("admin".equals(username)){ 
 						username = project.getCreator();
+						log.info("dso png generator sets username admin to "+username);
+					}
 				}
 				ImageAnnotation ia = AIMUtil.generateAIMFileForDSO(dsoFile, username, projectID);
 				//requery

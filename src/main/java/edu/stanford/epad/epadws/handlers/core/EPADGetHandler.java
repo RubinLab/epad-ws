@@ -2126,11 +2126,16 @@ public class EPADGetHandler
 
 			} else if (HandlerUtil.matchesTemplate(EPADsRouteTemplates.EPAD_LIST, pathInfo)) {
 				boolean summary = "true".equals(httpRequest.getParameter("summary"));
+				boolean monthly = "true".equals(httpRequest.getParameter("monthly"));
 				boolean activeCount = "true".equals(httpRequest.getParameter("activeCount"));
 				String activeLast = httpRequest.getParameter("activeLast");
 				
 				if (summary) {
 					EPADUsageList eul = epadOperations.getUsageSummary(username);
+					responseStream.append(eul.toJSON());
+				}
+				else if (monthly) {
+					EPADUsageList eul = epadOperations.getMonthlyUsageSummary();
 					responseStream.append(eul.toJSON());
 				}
 				else if (activeCount){ //activeLast in days

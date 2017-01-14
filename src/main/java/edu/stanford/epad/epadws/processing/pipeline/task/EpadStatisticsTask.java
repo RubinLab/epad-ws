@@ -127,6 +127,7 @@ import org.apache.commons.httpclient.methods.StringRequestEntity;
 import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADFileUtils;
 import edu.stanford.epad.common.util.EPADLogger;
+import edu.stanford.epad.dtos.EPADUsageList;
 import edu.stanford.epad.epadws.EPadWebServerVersion;
 import edu.stanford.epad.epadws.epaddb.EpadDatabase;
 import edu.stanford.epad.epadws.epaddb.EpadDatabaseOperations;
@@ -141,6 +142,8 @@ import edu.stanford.epad.epadws.models.Study;
 import edu.stanford.epad.epadws.models.Subject;
 import edu.stanford.epad.epadws.models.User;
 import edu.stanford.epad.epadws.models.WorkList;
+import edu.stanford.epad.epadws.queries.DefaultEpadOperations;
+import edu.stanford.epad.epadws.queries.EpadOperations;
 import edu.stanford.epad.epadws.service.RemotePACService;
 
 /**
@@ -154,6 +157,7 @@ public class EpadStatisticsTask implements Runnable
 {
 	private static EPADLogger log = EPADLogger.getInstance();
 	private final EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
+	private final EpadOperations epadOperations = DefaultEpadOperations.getInstance();
 	
 	public static String newEPADVersion = "";	
 	public static boolean newEPADVersionAvailable = false;
@@ -347,6 +351,23 @@ public class EpadStatisticsTask implements Runnable
 		} finally {
 			getMethod.releaseConnection();
 		}
+		
+		
+		//done with calculating and sending the statistics
+		//calculate a monthly cumulative if it is there is no record for the month
+		boolean isAlreadyCalced=false;
+		Calendar now = Calendar.getInstance();
+		try {
+			EPADUsageList monthly= epadOperations.getMonthlyUsageSummaryForMonth(now.get(Calendar.MONTH)+1);
+			if (monthly!= null && monthly.ResultSet.totalRecords>0)
+				isAlreadyCalced=true;
+		} catch (Exception e) {
+			log.warning("Couldn't get if the monthly cumulative statistics already calculated, assuming no" ,e);
+		}
+		if ( isAlreadyCalced==false )  {
+			epadDatabaseOperations.calcMonthlyCumulatives();
+		}
+	
 	}
 	
 	private static String encode(String urlString)

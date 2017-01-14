@@ -1,0 +1,10 @@
+#!/bin/sh
+### ====================================================================== ###
+##                                                                          ##
+##  dcm4che2/dcmdelete  Launch Script                                          ##
+##                                                                          ##
+### ====================================================================== ###
+
+##moveSeriesToTrash not supported in the current dcm4chee
+
+./twiddle.sh -s dcm4chee:1099 -uadmin -padmin invoke dcm4chee.archive:service=ContentEditService moveSeriesToTrash $1;

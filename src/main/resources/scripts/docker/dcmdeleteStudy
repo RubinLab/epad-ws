@@ -1,0 +1,8 @@
+#!/bin/sh
+### ====================================================================== ###
+##                                                                          ##
+##  dcm4che2/dcmdelete  Launch Script                                          ##
+##                                                                          ##
+### ====================================================================== ###
+
+./twiddle.sh -s dcm4chee:1099 -uadmin -padmin invoke dcm4chee.archive:service=ContentEditService moveStudyToTrash $1;
