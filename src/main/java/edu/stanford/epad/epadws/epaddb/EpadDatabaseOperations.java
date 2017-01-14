@@ -470,6 +470,11 @@ public interface EpadDatabaseOperations
 	EPADAIM addAIM(String userName, FrameReference reference, String aimID, String aimXML, String aimName,
 			boolean isDicomSR);
 
+	/**
+	 * calculates the monthly cumulatives from epadstatistics table getting just the latest and puts it to epadstatistics_monthly
+	 */
+	void calcMonthlyCumulatives();
+
 	
 
 }
