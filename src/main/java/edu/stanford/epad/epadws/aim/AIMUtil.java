@@ -2730,15 +2730,19 @@ public class AIMUtil
 		oe.setLabel(new ST(label));
 		oe.setAnnotatorConfidence(0.0);
 		
-		oe.addTypeCode(edu.stanford.epad.common.util.Lexicon.getInstance().getLex(value));
+		oe.addTypeCode(edu.stanford.epad.common.util.Lexicon.getInstance().getLex(cleanString(value)));
 		
 		ImagingObservationCharacteristic oc=new ImagingObservationCharacteristic();
 		oc.setLabel(new ST(characteristicLabel));
 		oc.setAnnotatorConfidence(0.0);
-		oc.addTypeCode(edu.stanford.epad.common.util.Lexicon.getInstance().getLex(characteristicValue));
+		oc.addTypeCode(edu.stanford.epad.common.util.Lexicon.getInstance().getLex(cleanString(characteristicValue)));
 		
 		oe.addImagingObservationCharacteristic(oc);
 		return oe;
+	}
+	
+	private static String cleanString(String value) {
+		return value.replaceAll("-", " ");
 	}
 
 	/**
@@ -2751,7 +2755,7 @@ public class AIMUtil
 		ImagingPhysicalEntity pe= new ImagingPhysicalEntity();
 		pe.setLabel(new ST(label));
 		pe.setAnnotatorConfidence(0.0);
-		pe.addTypeCode(edu.stanford.epad.common.util.Lexicon.getInstance().getLex(value));
+		pe.addTypeCode(edu.stanford.epad.common.util.Lexicon.getInstance().getLex(cleanString(value)));
 		return pe;
 	}
 
