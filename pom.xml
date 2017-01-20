@@ -117,6 +117,14 @@
       <version>${aim3api.version}</version>
     </dependency -->
 
+
+<!-- https://mvnrepository.com/artifact/xmlwise/xmlwise -->
+<dependency>
+    <groupId>xmlwise</groupId>
+    <artifactId>xmlwise</artifactId>
+    <version>1.2.11</version>
+</dependency>
+
     <dependency>
       <groupId>edu.stanford.hakan.aim4api</groupId>
       <artifactId>aimapi</artifactId>

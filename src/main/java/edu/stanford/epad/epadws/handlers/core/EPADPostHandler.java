@@ -464,9 +464,9 @@ public class EPADPostHandler
 						AIMUtil.migrateAimFromMintJson(mintJson,projectReference.projectID, username, "RECIST");
 						
 					}else if (migrateFrom!=null && migrateFrom.equalsIgnoreCase("osirix")) {
-						JSONObject osirixJson = HandlerUtil.getPostedXML(httpRequest);
+						JSONObject osirixJson = HandlerUtil.getPostedPListXML(httpRequest);
 						log.info("xml json "+osirixJson.toString());
-//						AIMUtil.migrateAimFromMintJson(osirixJson,projectReference.projectID, username, "RECIST");
+						AIMUtil.migrateAimFromOsirixJson(osirixJson,projectReference.projectID, username, "ROI");
 						
 					}else { //regular. rerunning plugin on annotations
 					
@@ -522,7 +522,7 @@ public class EPADPostHandler
 						responseStream.append(url.toString());
 						
 					}else if (migrateFrom!=null && migrateFrom.equalsIgnoreCase("osirix")) {
-						JSONObject osirixJson = HandlerUtil.getPostedXML(httpRequest);
+						JSONObject osirixJson = HandlerUtil.getPostedPListXML(httpRequest);
 						log.info("xml json "+osirixJson.toString());
 //						String aimName=AIMUtil.migrateAimFromOsirixJson(osirixJson, username, "ROI");
 						

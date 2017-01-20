@@ -2503,6 +2503,8 @@ public class AIMUtil
 
 	/****************************AIME Methods***********************************/
 	
+	/****************************AIM Migration Methods***********************************/
+	
 	/**
 	 * Save the aim xml to the project
 	 * @param xml
@@ -2585,38 +2587,10 @@ public class AIMUtil
 	 * @throws Exception
 	 */
 	public static String createAimFromMintJson(JSONObject mintJson, String username, String templateCode) throws Exception {
-		EpadProjectOperations projOp = DefaultEpadProjectOperations.getInstance();
-		edu.stanford.epad.epadws.models.User epadUser=projOp.getUser(username);
-	
-		ImageAnnotationCollection iac = new ImageAnnotationCollection();
-		edu.stanford.hakan.aim4api.base.User user=new edu.stanford.hakan.aim4api.base.User();
-		user.setName(new ST(username));
-		user.setLoginName(new ST(username));
-		iac.setUser(user);
-		//set the date to current date
-		DateFormat dateFormat = new SimpleDateFormat("yyyyMMddHHmmss");
-		Date now=new Date();
-
-		iac.setDateTime(dateFormat.format(now));
-		edu.stanford.hakan.aim4api.base.ImageAnnotation ia=new edu.stanford.hakan.aim4api.base.ImageAnnotation();
-		ia.setDateTime(dateFormat.format(now));
-
-		Template t=null;
-		if (templateCode==null)
-			t=projOp.getTemplate("RECIST");
-		else
-			t=projOp.getTemplate(templateCode);
-		if (t!=null){
-			ia.setName(new ST(mintJson.getString("name")));
-				
-			ArrayList<CD> types=new ArrayList<>();
-			//TODO it puts different values in the aim file than standard use. What does the gui put????
-			types.add(new CD(t.getTemplateCode(),t.getTemplateName(),t.getCodingSchemeDesignator(),t.getCodingSchemeVersion()));
-			ia.setTypeCode(types);
-			
-		}
-
-		ia.setComment(new ST(mintJson.getString("comment")));
+		
+		
+		String lesionName=mintJson.getString("name");
+		String comment=mintJson.getString("comment");
 		String sopClassUID="na",studyDate="na",studyTime="na", pName="na",pId="na",pBirthDate="na",pSex="na", studyUID="na", sourceSeriesUID="na";
 
 		String imageUID=mintJson.optString("imageInstanceUid");
@@ -2672,6 +2646,42 @@ public class AIMUtil
 		}
 		
 		log.info("the values retrieved are "+ sopClassUID+" "+studyDate+" "+studyTime+" "+pName+" "+pId+" "+pBirthDate+" "+pSex+" "+studyUID+" "+sourceSeriesUID+" ");
+		ImageAnnotationCollection iac = createImageAnnotationColectionFromProperties(username, pName, pId, pBirthDate, pSex);
+		edu.stanford.hakan.aim4api.base.ImageAnnotation ia=createImageAnnotationFromProperties(username, templateCode, lesionName, comment, imageUID, sopClassUID, studyDate, studyTime, studyUID, sourceSeriesUID);
+		
+		//create the entities using information from pf
+		ia=addMarkupAndCalculationFromPF(ia,(JSONObject)mintJson.get("PlanarFigure"));
+		ia.addImagingPhysicalEntity(getImagingPhysicalEntityFromPF("Location",((JSONObject)mintJson.get("lesion")).getString("location")));
+		ia.addImagingPhysicalEntity(getImagingPhysicalEntityFromPF("Status",((JSONObject)mintJson.get("lesion")).getString("status")));
+		ia.addImagingObservationEntity(getImagingObservationEntityFromPF("Lesion",((JSONObject)mintJson.get("lesion")).getString("timepoint"),"Type",((JSONObject)mintJson.get("lesion")).getString("type")));
+
+		iac.addImageAnnotation(ia);
+
+		log.info("annotation is: "+iac.toStringXML());
+		return iac.toStringXML();
+		
+	}
+	
+	/**
+	 * create an ImageAnnotationCollection object using the properties
+	 * @param username
+	 * @param pName
+	 * @param pId
+	 * @param pBirthDate
+	 * @param pSex
+	 * @return
+	 */
+	public static edu.stanford.hakan.aim4api.base.ImageAnnotationCollection createImageAnnotationColectionFromProperties(String username, String pName, String pId, String pBirthDate, String pSex){
+		ImageAnnotationCollection iac = new ImageAnnotationCollection();
+		edu.stanford.hakan.aim4api.base.User user=new edu.stanford.hakan.aim4api.base.User();
+		user.setName(new ST(username));
+		user.setLoginName(new ST(username));
+		iac.setUser(user);
+		//set the date to current date
+		DateFormat dateFormat = new SimpleDateFormat("yyyyMMddHHmmss");
+		Date now=new Date();
+
+		iac.setDateTime(dateFormat.format(now));
 
 		//put the patient information in aim
 		edu.stanford.hakan.aim4api.base.Person p=new edu.stanford.hakan.aim4api.base.Person();
@@ -2680,6 +2690,55 @@ public class AIMUtil
 		p.setName(new ST(pName));
 		p.setSex(new ST(pSex));
 		iac.setPerson(p);
+		
+		return iac;
+	}
+	
+	
+	/**
+	 * create an ImageAnnotation object using the properties
+	 * @param username
+	 * @param templateCode
+	 * @param lesionName
+	 * @param comment
+	 * @param imageUID
+	 * @param sopClassUID
+	 * @param studyDate
+	 * @param studyTime
+	 * @param studyUID
+	 * @param sourceSeriesUID
+	 * @return
+	 * @throws Exception
+	 */
+	public static edu.stanford.hakan.aim4api.base.ImageAnnotation createImageAnnotationFromProperties(String username, String templateCode, String lesionName, String comment, String imageUID,String sopClassUID,String studyDate, String studyTime,String studyUID, String sourceSeriesUID) throws Exception {
+		EpadProjectOperations projOp = DefaultEpadProjectOperations.getInstance();
+		
+		//set the date to current date
+		DateFormat dateFormat = new SimpleDateFormat("yyyyMMddHHmmss");
+		Date now=new Date();
+
+		
+		edu.stanford.hakan.aim4api.base.ImageAnnotation ia=new edu.stanford.hakan.aim4api.base.ImageAnnotation();
+		ia.setDateTime(dateFormat.format(now));
+
+		Template t=null;
+		if (templateCode==null)
+			t=projOp.getTemplate("RECIST");
+		else
+			t=projOp.getTemplate(templateCode);
+		if (t!=null){
+			ia.setName(new ST(lesionName));
+				
+			ArrayList<CD> types=new ArrayList<>();
+			//TODO it puts different values in the aim file than standard use. What does the gui put????
+			types.add(new CD(t.getTemplateCode(),t.getTemplateName(),t.getCodingSchemeDesignator(),t.getCodingSchemeVersion()));
+			ia.setTypeCode(types);
+			
+		}
+
+		ia.setComment(new ST(comment));
+		
+		
 
 		//add the image reference entity
 		DicomImageReferenceEntity dicomImageReferenceEntity  = new DicomImageReferenceEntity();
@@ -2703,16 +2762,7 @@ public class AIMUtil
 		dicomImageReferenceEntity.setImageStudy(study);
 		ia.addImageReferenceEntity(dicomImageReferenceEntity);
 		
-		//create the entities using information from pf
-		ia=addMarkupAndCalculationFromPF(ia,(JSONObject)mintJson.get("PlanarFigure"));
-		ia.addImagingPhysicalEntity(getImagingPhysicalEntityFromPF("Location",((JSONObject)mintJson.get("lesion")).getString("location")));
-		ia.addImagingPhysicalEntity(getImagingPhysicalEntityFromPF("Status",((JSONObject)mintJson.get("lesion")).getString("status")));
-		ia.addImagingObservationEntity(getImagingObservationEntityFromPF("Lesion",((JSONObject)mintJson.get("lesion")).getString("timepoint"),"Type",((JSONObject)mintJson.get("lesion")).getString("type")));
-
-		iac.addImageAnnotation(ia);
-
-		log.info("annotation is: "+iac.toStringXML());
-		return iac.toStringXML();
+		return ia;
 		
 	}
 
@@ -2835,12 +2885,25 @@ public class AIMUtil
 		
         double [][] pointsPX=transformPoints(pointsMM,transformMatrix,originVectorTrasform,boundsMatrix,spacingVector,originVector);
 		
+        ia=addMarkupAndCalculationFromPointsPX(ia, pointsPX, spacingVector);
+        return ia;
+	}
+	
+	/**
+	 * create the Markup entity and line length Calculation entities using information from pf
+	 * adds it the the input image annotation and returns the image annotation
+	 * @param ia
+	 * @param pf
+	 * @return ia
+	 */
+	private static edu.stanford.hakan.aim4api.base.ImageAnnotation addMarkupAndCalculationFromPointsPX(edu.stanford.hakan.aim4api.base.ImageAnnotation ia,double [][] pointsPX, double[] spacingVector) {
+	
         //add the geometric shape entity
 		edu.stanford.hakan.aim4api.base.TwoDimensionGeometricShapeEntity res = new edu.stanford.hakan.aim4api.base.TwoDimensionMultiPoint();
         res.setShapeIdentifier(1);
 		res.setIncludeFlag(true);
         TwoDimensionSpatialCoordinateCollection cc=new TwoDimensionSpatialCoordinateCollection();
-	      for (int i = 0; i < points.length(); i++) {
+	      for (int i = 0; i < pointsPX.length; i++) {
 	      	TwoDimensionSpatialCoordinate c=new TwoDimensionSpatialCoordinate();
 	      	log.info(i+". point index="+pointsPX[i][0]+ " x="+pointsPX[i][1]+ " y="+pointsPX[i][2]);
 	      	c.setCoordinateIndex((int)pointsPX[i][0]);
@@ -2925,6 +2988,8 @@ public class AIMUtil
 
 			return cal;
 		}
+	 
+	 /**************** math functions ********************/
 	 
 	 /**
 	  * calculate the longest line in the close shape
@@ -3157,6 +3222,7 @@ public class AIMUtil
         }
         return temp;
     }
+	/**************** end of math functions ********************/
 	
 	private static double[] index2world(double[] point,double[][] transformMatrix, double[] originVectorTrasform){
 		double[] newPoint = addVector(multiply(transformMatrix, point),originVectorTrasform);
@@ -3217,5 +3283,135 @@ public class AIMUtil
 		return date;
 	
 	}
+	
+	
+	/**************************Osirix******************************/
+	
+	/**
+	 * migrate an osirix formatted json to actual aim files and save to the project. produces multiple aims
+	 * @param osirixJson
+	 * @param projectID
+	 * @param username
+	 * @param templateCode
+	 */
+	public static void migrateAimFromOsirixJson(JSONObject osirixJson, String projectID, String username, String templateCode) {
+		
+		try{
+			ArrayList<String> aimXMLs= createAimsFromOsirixJson(osirixJson, username, templateCode);
+			for(String aimXML:aimXMLs)
+				saveAim(aimXML, projectID, username);
+			
+		} catch(Exception e) {
+			log.warning("Mint to Aim migration is unsuccessful", e);
+		}
+		
+	}
+	
+	public static ArrayList<String> createAimsFromOsirixJson(JSONObject osirixJson, String username, String templateCode) throws Exception {
+		ArrayList<String> aims=new ArrayList<String>();
+		JSONArray images=(JSONArray)osirixJson.get("Images");
+		for (int i=0;i<images.length(); i++) {
+			
+			JSONArray rois=images.getJSONObject(i).getJSONArray("ROIs");
+			for (int j=0;j<rois.length(); j++) {
+				log.info("processing roi "+ j);
+				aims.add(createAimFromOsirixLesionJson(rois.getJSONObject(j), username, templateCode));
+				return aims;
+			}
+		}
+		
+		return aims;
+	}
+	
+	public static String createAimFromOsirixLesionJson(JSONObject osirixLesionJson, String username, String templateCode) throws Exception {
+		
+		String lesionName=osirixLesionJson.getString("Name");
+		String comment="";//mintJson.getString("comment");
+		String sopClassUID="na",studyDate="na",studyTime="na", pName="na",pId="na",pBirthDate="na",pSex="na", studyUID="na", sourceSeriesUID="na";
 
+		String imageUID=osirixLesionJson.optString("SOPInstanceUID");
+		if (imageUID!=null && !imageUID.equals("")) {
+			log.info("Retrieved image uid is "+imageUID);
+	
+			//fill the missing information from dicom tags
+			DICOMElementList tags= Dcm4CheeQueries.getDICOMElementsFromWADO("*", "*", imageUID);
+			if (tags==null) {
+				log.warning("Dicom image couldn't be retrieved. Cannot get the necessary information!");
+			}
+			else {
+				log.info("study code:"+PixelMedUtils.StudyInstanceUIDCode + " series code:"+PixelMedUtils.SeriesInstanceUIDCode);
+				for (int i=0; i< tags.ResultSet.totalRecords; i++) {
+					DICOMElement tag=tags.ResultSet.Result.get(i);
+					
+					if (tag.tagCode.equalsIgnoreCase(PixelMedUtils.SOPClassUIDCode)) 
+						sopClassUID=tag.value;
+					if (tag.tagCode.equalsIgnoreCase(PixelMedUtils.StudyDateCode)) 
+						studyDate=tag.value;
+					if (tag.tagCode.equalsIgnoreCase(PixelMedUtils.StudyTimeCode)) 
+						studyTime=tag.value;
+					if (tag.tagCode.equalsIgnoreCase(PixelMedUtils.PatientNameCode)) 
+						pName=tag.value;
+					if (tag.tagCode.equalsIgnoreCase(PixelMedUtils.PatientIDCode)) 
+						pId=tag.value;
+					if (tag.tagCode.equalsIgnoreCase(PixelMedUtils.PatientBirthDateCode)) 
+						pBirthDate=tag.value;
+					if (tag.tagCode.equalsIgnoreCase(PixelMedUtils.PatientSexCode)) 
+						pSex=tag.value;
+					if (tag.tagCode.equalsIgnoreCase(PixelMedUtils.StudyInstanceUIDCode)) 
+						studyUID=tag.value;
+					if (tag.tagCode.equalsIgnoreCase(PixelMedUtils.SeriesInstanceUIDCode)) 
+						sourceSeriesUID=tag.value;
+				}
+			}
+		
+		}else { //imageInstanceUID not present read the available data from osirixjson.
+			log.warning("cannot handle having no image in epad! will put na in most of the data");
+			imageUID=osirixLesionJson.optString("SOPInstanceUID");
+//			sopClassUID=((JSONObject)((JSONObject)((JSONArray)((JSONObject)((JSONObject)mintJson.get("imageStudy")).get("imageSeries")).get("imageCollection")).get(0)).get("image")).optString("sopClassUid", "na");
+//			
+//			studyDate=((JSONObject)mintJson.get("imageStudy")).getString("startDate");
+//			studyTime=((JSONObject)mintJson.get("imageStudy")).getString("startTime");
+//			
+//			pName=((JSONObject)mintJson.get("person")).getString("name");
+//			pId=((JSONObject)mintJson.get("person")).getString("id");
+//			pBirthDate=((JSONObject)mintJson.get("person")).getString("birthDate");
+//			pSex=((JSONObject)mintJson.get("person")).getString("sex");
+//			
+			studyUID=osirixLesionJson.optString("StudyInstanceUID");
+			sourceSeriesUID=osirixLesionJson.optString("SeriesInstanceUID");			
+		}
+		
+		log.info("the values retrieved are "+ sopClassUID+" "+studyDate+" "+studyTime+" "+pName+" "+pId+" "+pBirthDate+" "+pSex+" "+studyUID+" "+sourceSeriesUID+" ");
+		ImageAnnotationCollection iac = createImageAnnotationColectionFromProperties(username, pName, pId, pBirthDate, pSex);
+		edu.stanford.hakan.aim4api.base.ImageAnnotation ia=createImageAnnotationFromProperties(username, templateCode, lesionName, comment, imageUID, sopClassUID, studyDate, studyTime, studyUID, sourceSeriesUID);
+		
+		//create markup entity
+		double [][] pointsPX=extractPointsFromJsonArray(osirixLesionJson.getJSONArray("Point_px"));
+		
+        ia=addMarkupAndCalculationFromPointsPX(ia, pointsPX,new double[]{1,1,1});
+		
+		iac.addImageAnnotation(ia);
+
+		log.info("annotation is: "+iac.toStringXML());
+		return iac.toStringXML();
+	}
+	
+	/**
+	 * extract points in {index,x,y} format
+	 * @param jsonPoints
+	 * @return
+	 */
+	private static double[][] extractPointsFromJsonArray(JSONArray jsonPoints) {
+		double[][] points=new double[jsonPoints.length()][3];
+		for (int i = 0; i < jsonPoints.length(); i++) {
+			JSONArray point=jsonPoints.getJSONArray(i);
+			points[i][0]=i;
+			points[i][1]=point.getDouble(0);
+			points[i][2]=point.getDouble(1);
+			
+		}
+		return points;
+	}
+	
+	
 }
