@@ -2886,7 +2886,7 @@ public class AIMUtil
 		
         double [][] pointsPX=transformPoints(pointsMM,transformMatrix,originVectorTrasform,boundsMatrix,spacingVector,originVector);
 		
-        ia=addMarkupFromPointsPX(ia, pointsPX,null);
+        ia=addMarkupFromPointsPX(ia, pointsPX,ShapeType.POLY);
         ia=addLengthCalculationFromPointsPX(ia, pointsPX, spacingVector);
         return ia;
 	}
@@ -3325,8 +3325,11 @@ public class AIMUtil
 			double[] w2i=world2index(point, transformMatrix, originVectorTrasform);
 			//go from index to world. then world to index
 			double[] transformedPoint=world2index(index2world(point, transformMatrix, originVectorTrasform), transformMatrix, originVectorTrasform);
-			
-			
+			log.info("tests");
+			double[] pointW=new double[]{56.66,64.69,-162.74};
+			double[] pointP=world2index(pointW, transformMatrix, originVectorTrasform);
+			double[] pointP2=new double[]{387,360,146};
+			double[] pointW2=index2world(pointP2, transformMatrix, originVectorTrasform);
 			
 			pointsPX[i][1]=transformedPoint[0];
 			pointsPX[i][2]=transformedPoint[1];
