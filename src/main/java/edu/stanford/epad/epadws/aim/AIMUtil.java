@@ -223,6 +223,7 @@ import edu.stanford.hakan.aim4api.compability.aimv3.Person;
 import edu.stanford.hakan.aim4api.compability.aimv3.Segmentation;
 import edu.stanford.hakan.aim4api.compability.aimv3.SegmentationCollection;
 import edu.stanford.hakan.aim4api.compability.aimv3.User;
+import edu.stanford.hakan.aim4api.project.epad.Enumerations.ShapeType;
 import edu.stanford.hakan.aim4api.usage.AnnotationBuilder;
 import edu.stanford.hakan.aim4api.usage.AnnotationGetter;
 import edu.stanford.hakan.aim4api.usage.AnnotationValidator;
@@ -2885,21 +2886,51 @@ public class AIMUtil
 		
         double [][] pointsPX=transformPoints(pointsMM,transformMatrix,originVectorTrasform,boundsMatrix,spacingVector,originVector);
 		
-        ia=addMarkupAndCalculationFromPointsPX(ia, pointsPX, spacingVector);
+        ia=addMarkupFromPointsPX(ia, pointsPX,null);
+        ia=addLengthCalculationFromPointsPX(ia, pointsPX, spacingVector);
         return ia;
 	}
 	
 	/**
-	 * create the Markup entity and line length Calculation entities using information from pf
+	 * create the Markup entity using information from pf
 	 * adds it the the input image annotation and returns the image annotation
 	 * @param ia
 	 * @param pf
 	 * @return ia
 	 */
-	private static edu.stanford.hakan.aim4api.base.ImageAnnotation addMarkupAndCalculationFromPointsPX(edu.stanford.hakan.aim4api.base.ImageAnnotation ia,double [][] pointsPX, double[] spacingVector) {
+	private static edu.stanford.hakan.aim4api.base.ImageAnnotation addMarkupFromPointsPX(edu.stanford.hakan.aim4api.base.ImageAnnotation ia,double [][] pointsPX, ShapeType shapeType) {
 	
         //add the geometric shape entity
-		edu.stanford.hakan.aim4api.base.TwoDimensionGeometricShapeEntity res = new edu.stanford.hakan.aim4api.base.TwoDimensionMultiPoint();
+		edu.stanford.hakan.aim4api.base.TwoDimensionGeometricShapeEntity res = null;
+		if (shapeType != null) {
+            switch (shapeType) {
+            	case POINT:
+                	res = new edu.stanford.hakan.aim4api.base.TwoDimensionPoint();
+                    break;
+                case LINE:
+                case OPENPOLY:
+                	res = new edu.stanford.hakan.aim4api.base.TwoDimensionMultiPoint();
+                    break;
+                case POLY:
+                case RECTANGLE:
+                	res = new edu.stanford.hakan.aim4api.base.TwoDimensionPolyline();
+                    break;
+                case SPLINE:
+                	res = new edu.stanford.hakan.aim4api.base.TwoDimensionSpline();
+                    break;
+                case CIRCLE:
+                	res = new edu.stanford.hakan.aim4api.base.TwoDimensionCircle();
+                    break;
+                case NORMAL:
+                	res = new edu.stanford.hakan.aim4api.base.TwoDimensionEllipse();
+                	break;
+                default:
+                	res=new edu.stanford.hakan.aim4api.base.TwoDimensionMultiPoint();
+                    break;
+            }
+        }else{
+        	res=new edu.stanford.hakan.aim4api.base.TwoDimensionMultiPoint();
+        }
         res.setShapeIdentifier(1);
 		res.setIncludeFlag(true);
         TwoDimensionSpatialCoordinateCollection cc=new TwoDimensionSpatialCoordinateCollection();
@@ -2913,11 +2944,22 @@ public class AIMUtil
 	      }
         res.setTwoDimensionSpatialCoordinateCollection(cc);
         ia.addMarkupEntity(res);
-        
+        return ia;
+	}
+	
+	/**
+	 * create the line length Calculation entity using information from pf. calculates the longest line in the roi and adds that as length calculation
+	 * @param ia
+	 * @param pointsPX
+	 * @param spacingVector
+	 * @return
+	 */
+	private static edu.stanford.hakan.aim4api.base.ImageAnnotation addLengthCalculationFromPointsPX(edu.stanford.hakan.aim4api.base.ImageAnnotation ia,double [][] pointsPX, double[] spacingVector) {
+
         //calculate the longest line in the closed shape 
         double[] majorAxis=getMajorAxis(pointsPX, spacingVector);
         //add length calculation for major axis
-        ia.addCalculationEntity(addlengthCalculation(majorAxis[2]));
+        ia.addCalculationEntity(addLengthCalculation(majorAxis[2],1,"cm"));
         
         return ia;
 	}
@@ -2925,69 +2967,93 @@ public class AIMUtil
 	private static final String LINE_LENGTH = "LineLength";
     private static final String VERSION = "1.0";
     private static final String PRIVATE_DESIGNATOR = "private";
-	    
+    private static final String MEAN = "Mean"; 
+    private static final String AREA = "Area";
+    private static final String STD_DEV = "Standard Deviation";
+    private static final String MIN = "Minimum";
+    private static final String MAX = "Maximum";
 	    
     /**
      * the code retrieved from edu.stanford.hakan.aim4api.project.epad.Aim and converted to aim4 classes
      * @param length
      * @return
      */
-	 private static CalculationEntity addlengthCalculation(
-	            double length) {
-		 
-			CalculationEntity cal =new CalculationEntity();
-			Lexicon lex=Lexicon.getInstance();
-	        CD calcCD= lex.get("G-D7FE");
-	        String desc="";
-	        if (calcCD!=null) {
-	        	 cal.addTypeCode(new CD(calcCD.getCode(),calcCD.getDisplayName().getValue(),calcCD.getCodeSystemName()));
-	        	 cal.setDescription(new ST(calcCD.getDisplayName().getValue()));
-	        	 desc=calcCD.getDisplayName().getValue();
-	        }else {
-	        	cal.addTypeCode(new CD(LINE_LENGTH,LINE_LENGTH,PRIVATE_DESIGNATOR));
-	        	cal.setDescription(new ST(LINE_LENGTH));
-	        	desc=LINE_LENGTH;
-	        }
-	        ExtendedCalculationResult calculationResult=new ExtendedCalculationResult();
+    
+	public static CalculationEntity addMeanCalculation(double value, Integer shapeId, String units) {
+    	return addCalculation(value,shapeId,units,MEAN, "R-00317");
+    }
+    public static CalculationEntity addAreaCalculation(double value, Integer shapeId, String units) {
+    	return addCalculation(value,shapeId,units,AREA, "99EPADA4");
+    }
+    public static CalculationEntity addStdDevCalculation(double value, Integer shapeId, String units) {
+    	return addCalculation(value,shapeId,units,STD_DEV, "R-10047");
+    }
+    public static CalculationEntity addMinCalculation(double value, Integer shapeId, String units) {
+    	return addCalculation(value,shapeId,units,MIN, "R-404FB");
+    }
+    public static CalculationEntity addMaxCalculation(double value, Integer shapeId, String units) {
+    	return addCalculation(value,shapeId,units,MAX, "G-A437");
+    }
+    public static CalculationEntity addLengthCalculation(double value, Integer shapeId, String units) {
+    	return addCalculation(value,shapeId,units,LINE_LENGTH, "G-D7FE");
+    }
+        
+    public static CalculationEntity addCalculation(double value, Integer shapeId, String units, String name, String code) {
+    	
+    	CalculationEntity cal =new CalculationEntity();
+		Lexicon lex=Lexicon.getInstance();
+        CD calcCD= lex.get(code);
+        String desc="";
+        if (calcCD!=null) {
+        	 cal.addTypeCode(new CD(calcCD.getCode(),calcCD.getDisplayName().getValue(),calcCD.getCodeSystemName()));
+        	 cal.setDescription(new ST(calcCD.getDisplayName().getValue()));
+        	 desc=calcCD.getDisplayName().getValue();
+        }else {
+        	cal.addTypeCode(new CD(name,name,PRIVATE_DESIGNATOR));
+        	cal.setDescription(new ST(name));
+        	desc=name;
+        }
+        ExtendedCalculationResult calculationResult=new ExtendedCalculationResult();
 
-			calculationResult.setType(Enumerations.CalculationResultIdentifier.Scalar);
-			calculationResult.setUnitOfMeasure(new ST("cm"));
-			calculationResult.setDataType(new CD("99EPADD1","Double","99EPAD"));
+		calculationResult.setType(Enumerations.CalculationResultIdentifier.Scalar);
+		calculationResult.setUnitOfMeasure(new ST(units));
+		calculationResult.setDataType(new CD("99EPADD1","Double","99EPAD"));
 
-			// Create a CalculationData instance
-			edu.stanford.hakan.aim4api.base.CalculationData calculationData = new edu.stanford.hakan.aim4api.base.CalculationData();
-			calculationData.setValue(new ST(String.valueOf(length)));
-			calculationData.addCoordinate(0, 0);
+		// Create a CalculationData instance
+		edu.stanford.hakan.aim4api.base.CalculationData calculationData = new edu.stanford.hakan.aim4api.base.CalculationData();
+		calculationData.setValue(new ST(String.valueOf(value)));
+		calculationData.addCoordinate(0, 0);
 
-			// Create a Dimension instance
-			edu.stanford.hakan.aim4api.base.Dimension dimension = new edu.stanford.hakan.aim4api.base.Dimension(0, 1, desc);
+		// Create a Dimension instance
+		edu.stanford.hakan.aim4api.base.Dimension dimension = new edu.stanford.hakan.aim4api.base.Dimension(0, 1, desc);
 
-			// Add calculationData to calculationResult
-			calculationResult.addCalculationData(calculationData);
+		// Add calculationData to calculationResult
+		calculationResult.addCalculationData(calculationData);
 
-			// Add dimension to calculationResult
-			calculationResult.addDimension(dimension);
+		// Add dimension to calculationResult
+		calculationResult.addDimension(dimension);
 
-			//this should be rdf removing for now. do not have shape id. and do not see it in the recist aim.
-			//                    // add the shape reference to the calculation
-			//                    ReferencedGeometricShape reference = new ReferencedGeometricShape();
-			//                    reference.setCagridId(0);
-			//                    reference.setReferencedShapeIdentifier(shapeId);
-			//                    calculation.addReferencedGeometricShape(reference);
+		//this should be rdf removing for now. do not have shape id. and do not see it in the recist aim.
+		//                    // add the shape reference to the calculation
+		//                    ReferencedGeometricShape reference = new ReferencedGeometricShape();
+		//                    reference.setCagridId(0);
+		//                    reference.setReferencedShapeIdentifier(shapeId);
+		//                    calculation.addReferencedGeometricShape(reference);
 
-			// Add calculationResult to calculation
-			cal.addCalculationResult(calculationResult);
+		// Add calculationResult to calculation
+		cal.addCalculationResult(calculationResult);
 
-			Algorithm alg=new Algorithm();
-			alg.setName(new ST(desc));
-			alg.setVersion(new ST(VERSION));
-			ArrayList<CD> types=new ArrayList<>();
-			types.add(new CD("RID12780","Calculation","RadLex","3.2"));
-			alg.setType(types);
-			cal.setAlgorithm(alg);
+		Algorithm alg=new Algorithm();
+		alg.setName(new ST(desc));
+		alg.setVersion(new ST(VERSION));
+		ArrayList<CD> types=new ArrayList<>();
+		types.add(new CD("RID12780","Calculation","RadLex","3.2"));
+		alg.setType(types);
+		cal.setAlgorithm(alg);
 
-			return cal;
-		}
+		return cal;
+		
+     }
 	 
 	 /**************** math functions ********************/
 	 
@@ -3307,6 +3373,14 @@ public class AIMUtil
 		
 	}
 	
+	/**
+	 * creates multiple aims from the osirix json.
+	 * @param osirixJson
+	 * @param username
+	 * @param templateCode
+	 * @return an arraylist of aim xmls
+	 * @throws Exception
+	 */
 	public static ArrayList<String> createAimsFromOsirixJson(JSONObject osirixJson, String username, String templateCode) throws Exception {
 		ArrayList<String> aims=new ArrayList<String>();
 		JSONArray images=(JSONArray)osirixJson.get("Images");
@@ -3316,13 +3390,20 @@ public class AIMUtil
 			for (int j=0;j<rois.length(); j++) {
 				log.info("processing roi "+ j);
 				aims.add(createAimFromOsirixLesionJson(rois.getJSONObject(j), username, templateCode));
-				return aims;
 			}
 		}
 		
 		return aims;
 	}
 	
+	/**
+	 * creates an annotation for each roi in the osirix json
+	 * @param osirixLesionJson
+	 * @param username
+	 * @param templateCode
+	 * @return aim xml
+	 * @throws Exception
+	 */
 	public static String createAimFromOsirixLesionJson(JSONObject osirixLesionJson, String username, String templateCode) throws Exception {
 		
 		String lesionName=osirixLesionJson.getString("Name");
@@ -3367,16 +3448,6 @@ public class AIMUtil
 		}else { //imageInstanceUID not present read the available data from osirixjson.
 			log.warning("cannot handle having no image in epad! will put na in most of the data");
 			imageUID=osirixLesionJson.optString("SOPInstanceUID");
-//			sopClassUID=((JSONObject)((JSONObject)((JSONArray)((JSONObject)((JSONObject)mintJson.get("imageStudy")).get("imageSeries")).get("imageCollection")).get(0)).get("image")).optString("sopClassUid", "na");
-//			
-//			studyDate=((JSONObject)mintJson.get("imageStudy")).getString("startDate");
-//			studyTime=((JSONObject)mintJson.get("imageStudy")).getString("startTime");
-//			
-//			pName=((JSONObject)mintJson.get("person")).getString("name");
-//			pId=((JSONObject)mintJson.get("person")).getString("id");
-//			pBirthDate=((JSONObject)mintJson.get("person")).getString("birthDate");
-//			pSex=((JSONObject)mintJson.get("person")).getString("sex");
-//			
 			studyUID=osirixLesionJson.optString("StudyInstanceUID");
 			sourceSeriesUID=osirixLesionJson.optString("SeriesInstanceUID");			
 		}
@@ -3387,14 +3458,42 @@ public class AIMUtil
 		
 		//create markup entity
 		double [][] pointsPX=extractPointsFromJsonArray(osirixLesionJson.getJSONArray("Point_px"));
-		
-        ia=addMarkupAndCalculationFromPointsPX(ia, pointsPX,new double[]{1,1,1});
+		ShapeType shapeType=ShapeType.POLY;
+		switch(osirixLesionJson.getInt("Type")){
+		case 9:
+			shapeType=ShapeType.SPLINE;
+			break;
+		case 14:
+			shapeType=ShapeType.LINE;
+			break;
+		case 10://mouth
+			shapeType=ShapeType.OPENPOLY;
+			break;
+			
+		}
+		ia=addMarkupFromPointsPX(ia, pointsPX,shapeType);
+        
+		//add the calculations. the calculations in osirix xml are:
+		//AreaCm2, AreaPix2, Center, Dev (std dev), LengthCm, LengthPix, Max, Mean, Min, Total
+		//we have definitions for these: AreaCm2,  Dev (std dev), LengthCm, Max, Mean, Min
+		//we can put osirixLesionJson.getInt("IndexInImage") as the shape identifier but we save each shape to separate aim. I am  putting 1 in all
+		//put the calculation onlt if it is different than 0. osirix puts those fields even if they are empty. (like area for a line)
+		if (osirixLesionJson.getDouble("AreaCm2")!=0) ia.addCalculationEntity(addAreaCalculation(osirixLesionJson.getDouble("AreaCm2") ,1,"cm2"));
+		if (osirixLesionJson.getDouble("Dev")!=0) ia.addCalculationEntity(addStdDevCalculation(osirixLesionJson.getDouble("Dev") ,1,"linear"));
+		if (osirixLesionJson.getDouble("LengthCm")!=0) ia.addCalculationEntity(addLengthCalculation(osirixLesionJson.getDouble("LengthCm") ,1,"cm"));
+		if (osirixLesionJson.getDouble("Max")!=0) ia.addCalculationEntity(addMaxCalculation(osirixLesionJson.getDouble("Max") ,1,"linear"));
+		if (osirixLesionJson.getDouble("Mean")!=0) ia.addCalculationEntity(addMeanCalculation(osirixLesionJson.getDouble("Mean") ,1,"linear"));
+		if (osirixLesionJson.getDouble("Min")!=0) ia.addCalculationEntity(addMinCalculation(osirixLesionJson.getDouble("Min") ,1,"linear"));
+        
 		
 		iac.addImageAnnotation(ia);
 
 		log.info("annotation is: "+iac.toStringXML());
 		return iac.toStringXML();
 	}
+	
+	
+
 	
 	/**
 	 * extract points in {index,x,y} format
