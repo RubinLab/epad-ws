@@ -168,7 +168,9 @@ import edu.stanford.epad.common.util.MongoDBOperations;
 import edu.stanford.epad.common.util.XmlNamespaceTranslator;
 import edu.stanford.epad.dtos.EPADAIM;
 import edu.stanford.epad.dtos.EPADAIMList;
+import edu.stanford.epad.dtos.EPADImageList;
 import edu.stanford.epad.dtos.EPADAIMList.EPADAIMResultSet;
+import edu.stanford.epad.dtos.internal.DCM4CHEESeries;
 import edu.stanford.epad.dtos.internal.DICOMElement;
 import edu.stanford.epad.dtos.internal.DICOMElementList;
 import edu.stanford.epad.epadws.aim.aimapi.Aim;
@@ -2629,7 +2631,23 @@ public class AIMUtil
 				}
 			}
 		
-		}else { //imageInstanceUID not present read the available data from mintjson.
+		}else { 
+			String seriesUID=mintJson.optString("imageSeriesUid");
+			if (seriesUID!=null && !seriesUID.equals("")) {
+				DCM4CHEESeries series=Dcm4CheeQueries.getSeries(seriesUID);
+//				sopClassUID=;
+				studyDate=series.seriesDate;
+				studyTime=series.createdTime;
+				pName=series.patientName;
+				pId=series.patientID;
+//				pBirthDate=tag.value;
+//				pSex=tag.value;
+				studyUID=series.studyUID;
+				sourceSeriesUID=seriesUID;
+			
+				
+			}else {
+			//imageInstanceUID not present read the available data from mintjson.
 			imageUID=((JSONObject)((JSONObject)((JSONArray)((JSONObject)((JSONObject)mintJson.get("imageStudy")).get("imageSeries")).get("imageCollection")).get(0)).get("image")).optString("sopInstanceUid", "na");
 			sopClassUID=((JSONObject)((JSONObject)((JSONArray)((JSONObject)((JSONObject)mintJson.get("imageStudy")).get("imageSeries")).get("imageCollection")).get(0)).get("image")).optString("sopClassUid", "na");
 			
@@ -2643,7 +2661,25 @@ public class AIMUtil
 			
 			studyUID=((JSONObject)mintJson.get("imageStudy")).getString("instanceUid");
 			sourceSeriesUID=((JSONObject)((JSONObject)mintJson.get("imageStudy")).get("imageSeries")).optString("instanceUid", "na");
+			}
+		}
 			
+		if (imageUID==null || imageUID.equals("") || imageUID.equals("na")) {
+			//get the image uid using the slice location
+			Double sliceLoc=((JSONObject) ((JSONObject)((JSONObject)mintJson.get("PlanarFigure")).get("Geometry")).get("Origin")).getDouble("z");
+			log.info("slice location is "+ sliceLoc);
+			
+			Dcm4CheeDatabaseOperations dcm4CheeDatabaseOperations= Dcm4CheeDatabase.getInstance()
+					.getDcm4CheeDatabaseOperations();
+			List<DCM4CHEEImageDescription> imageDescriptions = dcm4CheeDatabaseOperations.getImageDescriptions(
+					studyUID, sourceSeriesUID);
+			for(DCM4CHEEImageDescription image:imageDescriptions){
+				if (((Double)Double.parseDouble(image.sliceLocation)).intValue()==sliceLoc.intValue()){
+					log.info("found image "+ image.instanceNumber +  " uid "+image.imageUID);
+					imageUID=image.imageUID;
+				}
+			}
+						
 		}
 		
 		log.info("the values retrieved are "+ sopClassUID+" "+studyDate+" "+studyTime+" "+pName+" "+pId+" "+pBirthDate+" "+pSex+" "+studyUID+" "+sourceSeriesUID+" ");
@@ -2754,9 +2790,11 @@ public class AIMUtil
 		imageCol.addImage(image);
 		series.setImageCollection(imageCol);
 		Modality mod=Modality.getInstance();
-		//if the modality cannot be retrieved do not put at all
+		//if the modality cannot be retrieved put default
 		if ((mod.get(sopClassUID))!=null)
 			series.setModality(mod.get(sopClassUID));
+		else
+			series.setModality(mod.getDefaultModality());
 		study.setImageSeries(series);
 		study.setStartDate(studyDate);
 		study.setStartTime(studyTime);
@@ -3331,12 +3369,28 @@ public class AIMUtil
 			double[] pointP2=new double[]{387,360,146};
 			double[] pointW2=index2world(pointP2, transformMatrix, originVectorTrasform);
 			
-			pointsPX[i][1]=transformedPoint[0];
-			pointsPX[i][2]=transformedPoint[1];
+			pointsPX[i][1]=pointsMM[i][1]*(1.0/(getExtentInMM(0, boundsMatrix,transformMatrix[0][0])/getExtent(0, boundsMatrix)));
+			pointsPX[i][2]=pointsMM[i][2]*(1.0/(getExtentInMM(1, boundsMatrix,transformMatrix[1][1])/getExtent(1, boundsMatrix)));
+			if (pointsPX[i][1]<0) 
+				pointsPX[i][1] = boundsMatrix[0][1] +pointsPX[i][1];
+			if (pointsPX[i][2]<0) 
+				pointsPX[i][2] = boundsMatrix[1][1] +pointsPX[i][2];
+			
+			log.info("point is"+pointsPX[i][1]+" "+pointsPX[i][2] );
+			
+//			pointsPX[i][1]=transformedPoint[0];
+//			pointsPX[i][2]=transformedPoint[1];
 			
 		}
 		
 		return pointsPX;
+	}
+	
+	private static double getExtent(int direction, double[][] bounds){
+		return bounds[direction][1]-bounds[direction][0];
+	}
+	private static double getExtentInMM(int direction, double[][] bounds, double magnitude){
+		return getExtent(direction,bounds)*magnitude;
 	}
 
 	/**
