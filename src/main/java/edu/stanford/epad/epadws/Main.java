@@ -352,13 +352,16 @@ public class Main
 		}
 	}
 	
-	static final String[] epadScripts = {
+	static final String[] epadDockerScripts = {
 		"epad_docker.sh",
 		"stop_dockerepad.sh",
 		"start_dockerepad.sh",
 		"uninstall_dockerepad.sh",
+	};
+	static final String[] epadOtherScripts = {		
 		"plugin-manager.sh", //plugin manager script file
 	};
+	
 
 	public static void checkResourcesFolders() {
 		File folder = new File(EPADConfig.getEPADWebServerBaseDir() + "bin/");
@@ -401,21 +404,31 @@ public class Main
 		if (!folder.exists()) folder.mkdirs();
 		folder = new File(EPADConfig.getEPADWebServerSchemaDir());
 		if (!folder.exists()) folder.mkdirs();
-		
+		log.info("checking and copying startup scripts");
+		if (System.getenv("DCM4CHEE_NAME")!=null) { //this is docker instance. copy docker versions of scripts
+			log.info("getting docker versions");
+			copyFiles(System.getProperty("user.home") + "/mac/bin/", EPADConfig.getEPADWebServerBaseDir() + "bin/", "scripts/docker/", epadDockerScripts);
+		}
+		//copy other scripts
+		copyFiles(System.getProperty("user.home") + "/mac/bin/", EPADConfig.getEPADWebServerBaseDir() + "bin/", "scripts/", epadOtherScripts);
+
+	}
+
+	private static void copyFiles(String macDir,String dicomProxyDir,String resourceDir, String[] scripts){
 		try
 		{
 			// Copy start/stop scripts over (mainly for docker)
-			File binDir = new File(System.getProperty("user.home") + "/mac/bin/");
+			File binDir = new File(macDir);
 			if (!binDir.exists())
-				binDir = new File(EPADConfig.getEPADWebServerBaseDir() + "bin/");
-			for (String scriptFile: epadScripts)
+				binDir = new File(dicomProxyDir);
+			for (String scriptFile: scripts)
 			{
 				File file = new File(binDir, scriptFile);
 				if (!file.exists()) {
 					InputStream in = null;
 					OutputStream out = null;
 					try {
-						in = new Dcm4CheeOperations().getClass().getClassLoader().getResourceAsStream("scripts/docker/" + scriptFile);
+						in = new Dcm4CheeOperations().getClass().getClassLoader().getResourceAsStream(resourceDir + scriptFile);
 			            out = new FileOutputStream(file);
 	
 			            // Transfer bytes from in to out
@@ -435,10 +448,10 @@ public class Main
 				if (file.exists())
 					file.setExecutable(true);
 			}
-		} catch (Exception x) {}
+		} catch (Exception x) {log.warning("Exception in docker script copy",x);}
 
 	}
-
+	
 	private static void configureJettyServer(Server server)
 	{
 		FileInputStream jettyConfigFileStream = null;
