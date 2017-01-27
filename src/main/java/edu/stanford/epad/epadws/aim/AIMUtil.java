@@ -3360,21 +3360,22 @@ public class AIMUtil
 		for (int i=0;i<pointsMM.length;i++) {
 			pointsPX[i][0]=pointsMM[i][0];
 			double[] point=new double[]{pointsMM[i][1],pointsMM[i][2],1.0};
-			double[] w2i=world2index(point, transformMatrix, originVectorTrasform);
-			//go from index to world. then world to index
-			double[] transformedPoint=world2index(index2world(point, transformMatrix, originVectorTrasform), transformMatrix, originVectorTrasform);
-			log.info("tests");
-			double[] pointW=new double[]{56.66,64.69,-162.74};
-			double[] pointP=world2index(pointW, transformMatrix, originVectorTrasform);
-			double[] pointP2=new double[]{387,360,146};
-			double[] pointW2=index2world(pointP2, transformMatrix, originVectorTrasform);
+//			double[] w2i=world2index(point, transformMatrix, originVectorTrasform);
+//			//go from index to world. then world to index
+//			double[] transformedPoint=world2index(index2world(point, transformMatrix, originVectorTrasform), transformMatrix, originVectorTrasform);
+//			log.info("tests");
+//			double[] pointW=new double[]{56.66,64.69,-162.74};
+//			double[] pointP=world2index(pointW, transformMatrix, originVectorTrasform);
+//			double[] pointP2=new double[]{387,360,146};
+//			double[] pointW2=index2world(pointP2, transformMatrix, originVectorTrasform);
 			
-			pointsPX[i][1]=pointsMM[i][1]*(1.0/(getExtentInMM(0, boundsMatrix,transformMatrix[0][0])/getExtent(0, boundsMatrix)));
-			pointsPX[i][2]=pointsMM[i][2]*(1.0/(getExtentInMM(1, boundsMatrix,transformMatrix[1][1])/getExtent(1, boundsMatrix)));
-			if (pointsPX[i][1]<0) 
-				pointsPX[i][1] = boundsMatrix[0][1] +pointsPX[i][1];
-			if (pointsPX[i][2]<0) 
-				pointsPX[i][2] = boundsMatrix[1][1] +pointsPX[i][2];
+			pointsPX[i][1]=pointsMM[i][1]*(1.0/(getExtentInMM(0, boundsMatrix,transformMatrix)/getExtent(0, boundsMatrix)));
+			pointsPX[i][2]=pointsMM[i][2]*(1.0/(getExtentInMM(1, boundsMatrix,transformMatrix)/getExtent(1, boundsMatrix)));
+//			if (pointsPX[i][1]<0) 
+//				pointsPX[i][1] = boundsMatrix[0][1] +pointsPX[i][1];
+			//if (pointsPX[i][2]<0) 
+			//they start from the bottom left of image, we start from top
+			pointsPX[i][2] = boundsMatrix[1][1] -pointsPX[i][2];
 			
 			log.info("point is"+pointsPX[i][1]+" "+pointsPX[i][2] );
 			
@@ -3389,7 +3390,8 @@ public class AIMUtil
 	private static double getExtent(int direction, double[][] bounds){
 		return bounds[direction][1]-bounds[direction][0];
 	}
-	private static double getExtentInMM(int direction, double[][] bounds, double magnitude){
+	private static double getExtentInMM(int direction, double[][] bounds, double[][] transformMatrix){
+		double magnitude=Math.sqrt(Math.pow(transformMatrix[0][direction], 2)+Math.pow(transformMatrix[1][direction], 2)+Math.pow(transformMatrix[2][direction], 2));
 		return getExtent(direction,bounds)*magnitude;
 	}
 
