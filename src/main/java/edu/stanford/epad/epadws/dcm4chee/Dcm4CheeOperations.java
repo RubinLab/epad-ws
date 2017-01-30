@@ -131,11 +131,14 @@ public class Dcm4CheeOperations
 	
 	static final String[] scriptFiles = {
 		"dcmsnd",
-		"dcmdeleteSeries",
-		"dcmdeleteStudy",
 		"twiddle.sh",
 		"dcm2txt",
 	};
+	
+	static final String[] dockerSpecificScriptFiles = {
+			"dcmdeleteSeries",
+			"dcmdeleteStudy",
+		};
 	
 	static final String[] libFiles = {
 		"dcm4che-tool-dcmsnd-2.0.24.jar",
@@ -152,21 +155,23 @@ public class Dcm4CheeOperations
 		"jboss-jmx.jar",
 	};
 	
-	public static void checkScriptFiles()
-	{
+	private static void copyFiles(String dicomProxyDir,String resourceDir, String[] scripts, boolean setExecutable, boolean overwrite){
 		try
 		{
-			File scriptDir = new File(EPADConfig.getEPADWebServerDICOMScriptsDir() + "bin/");
+			// Copy start/stop scripts over (mainly for docker)
+			File scriptDir = new File(dicomProxyDir);
 			if (!scriptDir.exists())
 				scriptDir.mkdirs();
-			for (String scriptFile: scriptFiles)
+			for (String scriptFile: scripts)
 			{
+				log.info("File "+ scriptFile);
 				File file = new File(scriptDir, scriptFile);
-				if (!file.exists()) {
+				log.info("File "+ scriptFile + (file.exists()?" exists": " not exists") + " in "+ scriptDir);
+				if (overwrite || !file.exists()) {
 					InputStream in = null;
 					OutputStream out = null;
 					try {
-						in = new Dcm4CheeOperations().getClass().getClassLoader().getResourceAsStream("scripts/" + scriptFile);
+						in = new Dcm4CheeOperations().getClass().getClassLoader().getResourceAsStream(resourceDir + scriptFile);
 			            out = new FileOutputStream(file);
 	
 			            // Transfer bytes from in to out
@@ -183,40 +188,26 @@ public class Dcm4CheeOperations
 			            IOUtils.closeQuietly(out);
 					}
 				}
-				if (file.exists())
+				if (setExecutable && file.exists())
 					file.setExecutable(true);
 			}
-			File libDir = new File(EPADConfig.getEPADWebServerDICOMScriptsDir() + "lib/");
-			if (!libDir.exists())
-				libDir.mkdirs();
-			for (String libFile: libFiles)
-			{
-				File file = new File(libDir, libFile);
-				if (!file.exists()) {
-					InputStream in = null;
-					OutputStream out = null;
-					try {
-						in = new Dcm4CheeOperations().getClass().getClassLoader().getResourceAsStream("scripts/" + libFile);
-			            out = new FileOutputStream(file);
-	
-			            // Transfer bytes from in to out
-			            byte[] buf = new byte[1024];
-			            int len;
-			            while ((len = in.read(buf)) > 0)
-			            {
-			                    out.write(buf, 0, len);
-			            }
-					} catch (Exception x) {
-						
-					} finally {
-			            IOUtils.closeQuietly(in);
-			            IOUtils.closeQuietly(out);
-					}
-				}
-			}
-		} catch (Exception x) {
-			x.printStackTrace();
+		} catch (Exception x) {log.warning("Exception in script copy",x);}
+
+	}
+	public static void checkScriptFiles()
+	{
+		
+		copyFiles(EPADConfig.getEPADWebServerDICOMScriptsDir() + "bin/", "scripts/", scriptFiles, true, false);
+		if (System.getenv("DCM4CHEE_NAME")!=null) { //this is docker instance. copy docker versions of scripts
+			log.info("getting docker versions");
+			copyFiles(EPADConfig.getEPADWebServerDICOMScriptsDir() + "bin/", "scripts/docker/", dockerSpecificScriptFiles, true, true);
+		}else {
+			copyFiles(EPADConfig.getEPADWebServerDICOMScriptsDir() + "bin/", "scripts/", dockerSpecificScriptFiles, true, true);
 		}
+			
+		copyFiles(EPADConfig.getEPADWebServerDICOMScriptsDir() + "lib/", "scripts/", libFiles, true, false);
+		
+			
 	}
 
 	public static boolean dcmsnd(File inputDirFile, boolean throwException) throws Exception
