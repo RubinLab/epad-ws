@@ -92,11 +92,11 @@
 		<version>${riesz.plugin.version}</version>
 	</dependency>
     
-    <dependency>
+    <!-- <dependency>
 		<groupId>edu.stanford.epad.plugins</groupId>
 		<artifactId>vanderbilt</artifactId>
 		<version>${vanderbilt.plugin.version}</version>
-	</dependency>
+	</dependency> -->
 	
    
    <dependency>
