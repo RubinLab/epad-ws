@@ -2635,15 +2635,17 @@ public class AIMUtil
 			String seriesUID=mintJson.optString("imageSeriesUid");
 			if (seriesUID!=null && !seriesUID.equals("")) {
 				DCM4CHEESeries series=Dcm4CheeQueries.getSeries(seriesUID);
-//				sopClassUID=;
-				studyDate=series.seriesDate;
-				studyTime=series.createdTime;
-				pName=series.patientName;
-				pId=series.patientID;
-//				pBirthDate=tag.value;
-//				pSex=tag.value;
-				studyUID=series.studyUID;
-				sourceSeriesUID=seriesUID;
+				if (series!=null) {
+	//				sopClassUID=;
+					studyDate=series.seriesDate;
+					studyTime=series.createdTime;
+					pName=series.patientName;
+					pId=series.patientID;
+	//				pBirthDate=tag.value;
+	//				pSex=tag.value;
+					studyUID=series.studyUID;
+					sourceSeriesUID=seriesUID;
+				}
 			
 				
 			}else {
@@ -2664,13 +2666,14 @@ public class AIMUtil
 			}
 		}
 		Double sliceLoc=0.0;
-		if (imageUID==null || imageUID.equals("") || imageUID.equals("na")) {
+		if ((imageUID==null || imageUID.equals("") || imageUID.equals("na"))&& !(sourceSeriesUID==null||sourceSeriesUID.equals("na")||sourceSeriesUID.equals(""))) {
 			//get the image uid using the slice location
 			sliceLoc=((JSONObject) ((JSONObject)((JSONObject)mintJson.get("PlanarFigure")).get("Geometry")).get("Origin")).getDouble("z");
 			Double sliceThickness=((JSONObject) ((JSONObject)((JSONObject)mintJson.get("PlanarFigure")).get("Geometry")).get("Spacing")).getDouble("z");
 			
 			log.info("slice location is "+ sliceLoc);
-			
+			if (studyUID==null || studyUID.equals("") || studyUID.equals("na"))
+				studyUID="*";
 			Dcm4CheeDatabaseOperations dcm4CheeDatabaseOperations= Dcm4CheeDatabase.getInstance()
 					.getDcm4CheeDatabaseOperations();
 			List<DCM4CHEEImageDescription> imageDescriptions = dcm4CheeDatabaseOperations.getImageDescriptions(
@@ -2684,7 +2687,8 @@ public class AIMUtil
 			}
 						
 		}
-		
+		if (imageUID.equals(""))
+			imageUID="na"; //to keep all the same
 		log.info("the values retrieved are "+ sopClassUID+" "+studyDate+" "+studyTime+" "+pName+" "+pId+" "+pBirthDate+" "+pSex+" "+studyUID+" "+sourceSeriesUID+" ");
 		ImageAnnotationCollection iac = createImageAnnotationColectionFromProperties(username, pName, pId, pBirthDate, pSex);
 		edu.stanford.hakan.aim4api.base.ImageAnnotation ia=createImageAnnotationFromProperties(username, templateCode, lesionName, comment+" / "+sliceLoc, imageUID, sopClassUID, studyDate, studyTime, studyUID, sourceSeriesUID);

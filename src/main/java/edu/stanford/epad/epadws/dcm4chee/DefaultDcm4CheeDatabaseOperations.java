@@ -625,10 +625,14 @@ public class DefaultDcm4CheeDatabaseOperations implements Dcm4CheeDatabaseOperat
 			close(c, ps, rs);
 		}
 		
+		//return if empty
+		if (retVal.isEmpty())
+			return retVal;
 		//check if the images list has proper instance numbers
 		//if not order the slices
 		//we should read the required tags and then use that to sort instead of using just the slicelocation
 //		if(!(retVal.get(0).instanceNumber==1 && retVal.get(retVal.size()-1).instanceNumber== retVal.size())) {
+		
 		if(retVal.get(retVal.size()-1).instanceNumber-retVal.get(0).instanceNumber+1 != retVal.size()) {
 			//sort before filling image list
 			//but we just have slice location
