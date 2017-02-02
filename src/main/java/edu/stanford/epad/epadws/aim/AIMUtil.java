@@ -2633,6 +2633,7 @@ public class AIMUtil
 		
 		}else { 
 			String seriesUID=mintJson.optString("imageSeriesUid");
+			sourceSeriesUID=seriesUID;
 			if (seriesUID!=null && !seriesUID.equals("")) {
 				DCM4CHEESeries series=Dcm4CheeQueries.getSeries(seriesUID);
 				if (series!=null) {
@@ -2644,7 +2645,7 @@ public class AIMUtil
 	//				pBirthDate=tag.value;
 	//				pSex=tag.value;
 					studyUID=series.studyUID;
-					sourceSeriesUID=seriesUID;
+					
 				}
 			
 				
@@ -2665,13 +2666,13 @@ public class AIMUtil
 			sourceSeriesUID=((JSONObject)((JSONObject)mintJson.get("imageStudy")).get("imageSeries")).optString("instanceUid", "na");
 			}
 		}
-		Double sliceLoc=0.0;
+		Double sliceLoc=((JSONObject) ((JSONObject)((JSONObject)mintJson.get("PlanarFigure")).get("Geometry")).get("Origin")).getDouble("z");
+		Double sliceThickness=((JSONObject) ((JSONObject)((JSONObject)mintJson.get("PlanarFigure")).get("Geometry")).get("Spacing")).getDouble("z");
+		log.info("slice location is "+ sliceLoc);
+		
 		if ((imageUID==null || imageUID.equals("") || imageUID.equals("na"))&& !(sourceSeriesUID==null||sourceSeriesUID.equals("na")||sourceSeriesUID.equals(""))) {
 			//get the image uid using the slice location
-			sliceLoc=((JSONObject) ((JSONObject)((JSONObject)mintJson.get("PlanarFigure")).get("Geometry")).get("Origin")).getDouble("z");
-			Double sliceThickness=((JSONObject) ((JSONObject)((JSONObject)mintJson.get("PlanarFigure")).get("Geometry")).get("Spacing")).getDouble("z");
-			
-			log.info("slice location is "+ sliceLoc);
+				
 			if (studyUID==null || studyUID.equals("") || studyUID.equals("na"))
 				studyUID="*";
 			Dcm4CheeDatabaseOperations dcm4CheeDatabaseOperations= Dcm4CheeDatabase.getInstance()
