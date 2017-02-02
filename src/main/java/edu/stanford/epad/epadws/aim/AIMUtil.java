@@ -3519,15 +3519,54 @@ public class AIMUtil
 		double [][] pointsPX=extractPointsFromJsonArray(osirixLesionJson.getJSONArray("Point_px"));
 		ShapeType shapeType=ShapeType.POLY;
 		switch(osirixLesionJson.getInt("Type")){
-		case 9:
+//		tLength,//5            LINE
+//		tROIBox,//6            
+//		t3DRotate,//7
+//		tCross,//8            NORMAL
+//		tOval,//9            SPLINE
+//		tOPolygon,//10        OPENPOLY
+//		tCPolygon,//11        POLY
+//		tAngle ,//12
+//		tText,//13
+//		tArrow,//14         LINE
+//		tPencil,//15
+//		t3Dpoint,//16
+//		t3DCut,//17
+//		tCamera3D,//18
+//		t2DPoint,//19         POINT
+//		tPlain,//20
+//		tBonesRemoval,//21
+//		tWLBlended,//  22
+//		tRepulsor,//  23
+//		tLayerROI,//24
+//		tROISelector,//25
+//		tAxis,//26
+//		tDynAngle,//27
+//		tCurvedROI,//28            SPLINE
+//		tTAGT,                      //  29
+//		tBall,                      //  30
+//		tOvalAngle,                 //  31
+		case 9: //		tOval
+		case 28://		tCurvedROI
 			shapeType=ShapeType.SPLINE;
 			break;
-		case 14:
+		case 14://		tArrow
+		case 5: //		tLength
 			shapeType=ShapeType.LINE;
 			break;
-		case 10://mouth
+		case 10://mouth 	tOPolygon
 			shapeType=ShapeType.OPENPOLY;
 			break;
+		case 8: //		tCross
+			shapeType=ShapeType.NORMAL;
+			break;
+		case 11://		tCPolygon
+			shapeType=ShapeType.POLY;
+			break;
+		case 19://		t2DPoint
+			shapeType=ShapeType.POINT;
+			break;
+			
 			
 		}
 		ia=addMarkupFromPointsPX(ia, pointsPX,shapeType);
