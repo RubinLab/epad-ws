@@ -135,13 +135,16 @@ import org.apache.commons.httpclient.HttpException;
 import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Level;
+import org.json.JSONArray;
 import org.json.JSONObject;
+import org.json.XML;
 
 import com.sun.jersey.api.uri.UriTemplate;
 
 import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.epad.dtos.EPADMessage;
+import xmlwise.Plist;
 
 /**
  * Utility methods for handlers
@@ -521,6 +524,38 @@ public class HandlerUtil
 		return null;
     }
     
+    public static JSONObject getPostedPListXML(HttpServletRequest httpRequest) throws Exception
+    {
+    	StringBuffer jb = new StringBuffer();
+    	StringBuffer jb2 = new StringBuffer();
+		String line = null;
+		try {
+		    BufferedReader reader = new BufferedReader(new InputStreamReader( httpRequest.getInputStream()));
+		    while ((line = reader.readLine()) != null){
+		      jb.append(line);
+		    }
+		    String json="";
+		    Map<String, Object> properties = Plist.fromXml(jb.toString()); // loads the (nested) properties.
+		    log.info("map contents");
+		    for (Map.Entry<String, Object> entry : properties.entrySet())
+		    {
+		       log.info(entry.getKey() + "/" + entry.getValue());
+		       
+		       json=entry.getValue().toString().replaceAll("=", ":").replaceAll("[\\._a-zA-Z0-9-\\(\\) ]+", "\\\"$0\\\"").replaceAll("\\\"\\(", "\\[\\\"").replaceAll("\\\" \\(", "\\[\\\"").replaceAll("\\)\\\"", "\\\"\\]").replaceAll("\\\" \\\"", "").replaceAll("\\\" ", "\\\"");
+		       json="{\"Images\":" +json + "}" ; 
+		       log.info("json is:"+json);
+		       
+		    }
+		    if (json!=null)
+		    	return new JSONObject(json);
+		   
+		} catch (Exception e) {
+			log.warning("Error receiving data:" + e);
+			throw e;
+		}
+  	
+		return null;
+    }
     public static String getPostedString(HttpServletRequest httpRequest) throws Exception
     {
     	StringBuffer jb = new StringBuffer();

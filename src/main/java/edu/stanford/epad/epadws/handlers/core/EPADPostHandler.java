@@ -458,34 +458,78 @@ public class EPADPostHandler
 					ProjectReference projectReference = ProjectReference.extract(ProjectsRouteTemplates.PROJECT_AIM_LIST, pathInfo);
 					AIMSearchType aimSearchType = AIMUtil.getAIMSearchType(httpRequest);
 					
-					JSONObject aims = HandlerUtil.getPostedJson(httpRequest);
-				    JSONArray aimIDsJson = (JSONArray) aims.get("aims");
-				    String[] aimIDsStr= new String[aimIDsJson.length()];
-					for (int i = 0; i < aimIDsJson.length(); i++)
-					{
-						aimIDsStr[i] = aimIDsJson.getString(i);
-					}
-					log.info("aims array  "+ aimIDsStr);
-					
-					String searchValue = aimSearchType != null ? httpRequest.getParameter(aimSearchType.getName()) : null;
-					String templateName = httpRequest.getParameter("templateName");
-					if (templateName == null)
-						templateName = httpRequest.getParameter("pluginID");
-					log.info("POST request for AIMs from user " + username + "; query type is " + aimSearchType + ", value "
-							+ searchValue + ", project " + projectReference.projectID + " template/plugin:" +templateName);
-					String inParallel = httpRequest.getParameter("inParallel");
-					boolean isInParallel=!("false".equalsIgnoreCase(inParallel));
-					
-					if (aimSearchType!=null && aimSearchType.equals(AIMSearchType.ANNOTATION_UID)) {
-						String[] aimIDs = searchValue.split(",");
-						AIMUtil.runPlugIn(aimIDs, templateName, projectReference.projectID, sessionID, isInParallel);
-					}else if (aims!=null && aimIDsStr.length!=0) { //ml
-						AIMUtil.runPlugIn(aimIDsStr, templateName, projectReference.projectID, sessionID, isInParallel);
+					String migrateFrom = httpRequest.getParameter("migrateFrom");
+					if (migrateFrom!=null && migrateFrom.equalsIgnoreCase("mint")) {
+						JSONObject mintJson = HandlerUtil.getPostedJson(httpRequest);
+						AIMUtil.migrateAimFromMintJson(mintJson,projectReference.projectID, username, "RECIST");
 						
-					}
+					}else if (migrateFrom!=null && migrateFrom.equalsIgnoreCase("osirix")) {
+						JSONObject osirixJson = HandlerUtil.getPostedPListXML(httpRequest);
+						log.info("xml json "+osirixJson.toString());
+						AIMUtil.migrateAimFromOsirixJson(osirixJson,projectReference.projectID, username, "ROI");
+						
+					}else { //regular. rerunning plugin on annotations
 					
+						JSONObject aims = HandlerUtil.getPostedJson(httpRequest);
+					    JSONArray aimIDsJson = (JSONArray) aims.get("aims");
+					    String[] aimIDsStr= new String[aimIDsJson.length()];
+						for (int i = 0; i < aimIDsJson.length(); i++)
+						{
+							aimIDsStr[i] = aimIDsJson.getString(i);
+						}
+						log.info("aims array  "+ aimIDsStr);
+						
+						String searchValue = aimSearchType != null ? httpRequest.getParameter(aimSearchType.getName()) : null;
+						String templateName = httpRequest.getParameter("templateName");
+						if (templateName == null)
+							templateName = httpRequest.getParameter("pluginID");
+						log.info("POST request for AIMs from user " + username + "; query type is " + aimSearchType + ", value "
+								+ searchValue + ", project " + projectReference.projectID + " template/plugin:" +templateName);
+						String inParallel = httpRequest.getParameter("inParallel");
+						boolean isInParallel=!("false".equalsIgnoreCase(inParallel));
+						
+						if (aimSearchType!=null && aimSearchType.equals(AIMSearchType.ANNOTATION_UID)) {
+							String[] aimIDs = searchValue.split(",");
+							AIMUtil.runPlugIn(aimIDs, templateName, projectReference.projectID, sessionID, isInParallel);
+						}else if (aims!=null && aimIDsStr.length!=0) { //ml
+							AIMUtil.runPlugIn(aimIDsStr, templateName, projectReference.projectID, sessionID, isInParallel);
+							
+						}
+					}
 					statusCode = HttpServletResponse.SC_OK;
 
+				} else if (HandlerUtil.matchesTemplate(AimsRouteTemplates.AIMS_LIST, pathInfo)) {
+					
+					String migrateFrom = httpRequest.getParameter("migrateFrom");
+					if (migrateFrom!=null && migrateFrom.equalsIgnoreCase("mint")) {
+						JSONObject mintJson = HandlerUtil.getPostedJson(httpRequest);
+						String aimName=AIMUtil.migrateAimFromMintJson(mintJson, username, "RECIST");
+						
+						String scheme = httpRequest.getScheme();             // http
+					    String serverName = httpRequest.getServerName();     // epad-dev4
+					    int serverPort = httpRequest.getServerPort();        // 8080
+					    
+					    // Reconstruct original requesting URL
+					    StringBuilder url = new StringBuilder();
+					    url.append(scheme).append("://").append(serverName);
+
+					    if (serverPort != 80 && serverPort != 443) {
+					        url.append(":").append(serverPort);
+					    }
+
+					    url.append("/epad").append("/resources/download/");
+					    url.append(aimName);
+						responseStream.append(url.toString());
+						
+					}else if (migrateFrom!=null && migrateFrom.equalsIgnoreCase("osirix")) {
+						JSONObject osirixJson = HandlerUtil.getPostedPListXML(httpRequest);
+						log.info("xml json "+osirixJson.toString());
+//						String aimName=AIMUtil.migrateAimFromOsirixJson(osirixJson, username, "ROI");
+						
+					}
+					statusCode = HttpServletResponse.SC_OK;
+
+				
 				} else if (HandlerUtil.matchesTemplate(PluginRouteTemplates.PLUGIN_LIST, pathInfo)) { //ML
 					String pluginId = httpRequest.getParameter("pluginId");
 					String name = httpRequest.getParameter("name");
