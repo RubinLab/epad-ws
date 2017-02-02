@@ -754,9 +754,10 @@ public class EPADGetHandler
 					Aim2DicomSRConverter converter=new Aim2DicomSRConverter();
 					String outputFilePath=converter.Aim2DicomSR(aimReference.aimID,projectReference.projectID);
 					log.info("output file:"+outputFilePath);
-//					
+
 					if (outputFilePath!=null) {
-						EPADFileUtils.downloadFile(httpRequest, httpResponse, new File(outputFilePath), aim.name+"SR.dcm"); 
+						DownloadUtil.downloadDicomSrFile(httpResponse, outputFilePath, username, aim.name+"SR.dcm");
+						
 						statusCode = HttpServletResponse.SC_OK;
 						return statusCode;
 					}
@@ -842,7 +843,8 @@ public class EPADGetHandler
 					log.info("output file:"+outputFilePath);
 					
 					if (outputFilePath!=null) {
-						EPADFileUtils.downloadFile(httpRequest, httpResponse, new File(outputFilePath), aim.name+"SR.dcm"); 
+						DownloadUtil.downloadDicomSrFile(httpResponse, outputFilePath, username, aim.name+"SR.dcm");
+						
 						statusCode = HttpServletResponse.SC_OK;
 						return statusCode;
 					}
@@ -899,7 +901,8 @@ public class EPADGetHandler
 					log.info("output file:"+outputFilePath);
 					
 					if (outputFilePath!=null) {
-						EPADFileUtils.downloadFile(httpRequest, httpResponse, new File(outputFilePath), aim.name+"SR.dcm"); 
+						DownloadUtil.downloadDicomSrFile(httpResponse, outputFilePath, username, aim.name+"SR.dcm");
+						
 						statusCode = HttpServletResponse.SC_OK;
 						return statusCode;
 					}
@@ -968,7 +971,8 @@ public class EPADGetHandler
 					log.info("output file:"+outputFilePath);
 					
 					if (outputFilePath!=null) {
-						EPADFileUtils.downloadFile(httpRequest, httpResponse, new File(outputFilePath), aim.name+"SR.dcm"); 
+						DownloadUtil.downloadDicomSrFile(httpResponse, outputFilePath, username, aim.name+"SR.dcm");
+						
 						statusCode = HttpServletResponse.SC_OK;
 						return statusCode;
 					}
@@ -1029,7 +1033,8 @@ public class EPADGetHandler
 					log.info("output file:"+outputFilePath);
 					
 					if (outputFilePath!=null) {
-						EPADFileUtils.downloadFile(httpRequest, httpResponse, new File(outputFilePath), aim.name+"SR.dcm"); 
+						DownloadUtil.downloadDicomSrFile(httpResponse, outputFilePath, username, aim.name+"SR.dcm");
+						
 						statusCode = HttpServletResponse.SC_OK;
 						return statusCode;
 					}
@@ -1092,7 +1097,8 @@ public class EPADGetHandler
 					log.info("output file:"+outputFilePath);
 					
 					if (outputFilePath!=null) {
-						EPADFileUtils.downloadFile(httpRequest, httpResponse, new File(outputFilePath), aim.name+"SR.dcm"); 
+						DownloadUtil.downloadDicomSrFile(httpResponse, outputFilePath, username, aim.name+"SR.dcm");
+						
 						statusCode = HttpServletResponse.SC_OK;
 						return statusCode;
 					}
@@ -1171,7 +1177,8 @@ public class EPADGetHandler
 					log.info("output file:"+outputFilePath);
 					
 					if (outputFilePath!=null) {
-						EPADFileUtils.downloadFile(httpRequest, httpResponse, new File(outputFilePath), aim.name+"SR.dcm"); 
+						DownloadUtil.downloadDicomSrFile(httpResponse, outputFilePath, username, aim.name+"SR.dcm");
+						
 						statusCode = HttpServletResponse.SC_OK;
 						return statusCode;
 					}
@@ -1229,7 +1236,8 @@ public class EPADGetHandler
 					log.info("output file:"+outputFilePath);
 					
 					if (outputFilePath!=null) {
-						EPADFileUtils.downloadFile(httpRequest, httpResponse, new File(outputFilePath), aim.name+"SR.dcm"); 
+						DownloadUtil.downloadDicomSrFile(httpResponse, outputFilePath, username, aim.name+"SR.dcm");
+						
 						statusCode = HttpServletResponse.SC_OK;
 						return statusCode;
 					}
@@ -1283,7 +1291,8 @@ public class EPADGetHandler
 					log.info("output file:"+outputFilePath);
 					
 					if (outputFilePath!=null) {
-						EPADFileUtils.downloadFile(httpRequest, httpResponse, new File(outputFilePath), aim.name+"SR.dcm"); 
+						DownloadUtil.downloadDicomSrFile(httpResponse, outputFilePath, username, aim.name+"SR.dcm");
+						
 						statusCode = HttpServletResponse.SC_OK;
 						return statusCode;
 					}
@@ -1338,7 +1347,8 @@ public class EPADGetHandler
 					log.info("output file:"+outputFilePath);
 					
 					if (outputFilePath!=null) {
-						EPADFileUtils.downloadFile(httpRequest, httpResponse, new File(outputFilePath), aim.name+"SR.dcm"); 
+						DownloadUtil.downloadDicomSrFile(httpResponse, outputFilePath, username, aim.name+"SR.dcm");
+						
 						statusCode = HttpServletResponse.SC_OK;
 						return statusCode;
 					}
@@ -1395,7 +1405,8 @@ public class EPADGetHandler
 					log.info("output file:"+outputFilePath);
 					
 					if (outputFilePath!=null) {
-						EPADFileUtils.downloadFile(httpRequest, httpResponse, new File(outputFilePath), aim.name+"SR.dcm"); 
+						DownloadUtil.downloadDicomSrFile(httpResponse, outputFilePath, username, aim.name+"SR.dcm");
+						
 						statusCode = HttpServletResponse.SC_OK;
 						return statusCode;
 					}
@@ -1514,7 +1525,7 @@ public class EPADGetHandler
 					log.info("output file:"+outputFilePath);
 					
 					if (outputFilePath!=null) {
-						EPADFileUtils.downloadFile(httpRequest, httpResponse, new File(outputFilePath), aim.name+"SR.dcm"); 
+						DownloadUtil.downloadDicomSrFile(httpResponse, outputFilePath, username, aim.name+"SR.dcm");
 						statusCode = HttpServletResponse.SC_OK;
 						return statusCode;
 					}

@@ -114,6 +114,7 @@ import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
@@ -781,8 +782,9 @@ public static void downloadStudies(boolean stream, HttpServletResponse httpRespo
 
 }
 
-public static void downloadDicomSrFile(HttpServletResponse httpResponse, String filePath, String username) throws Exception
+public static void downloadDicomSrFile(HttpServletResponse httpResponse, String filePath, String username, String srName) throws Exception
 {
+	srName=srName.replace(" ", "_"); //replace spaces
 	log.info("Downloading DicomSR file" );
 	String downloadDirPath = EPADConfig.getEPADWebServerResourcesDir() + downloadDirName	 + "temp" + Long.toString(System.currentTimeMillis());
 	File downloadDir = new File(downloadDirPath);
@@ -791,11 +793,25 @@ public static void downloadDicomSrFile(HttpServletResponse httpResponse, String 
 	
 	File dicomSr=new File(filePath);
 	String name = dicomSr.getName();
-	File epadFile = new File(downloadDir, name);
-	EPADFileUtils.copyFile(dicomSr, epadFile);
-	fileNames.add(name);
+	File dicomSrFile = new File(downloadDir, srName);
+	EPADFileUtils.copyFile(dicomSr, dicomSrFile);
+	fileNames.add(srName);
+	File rwvmDir = new File(filePath.substring(0, filePath.lastIndexOf("/")), "RWVM-" + filePath.substring(filePath.lastIndexOf("/")+1));
+	log.info("rwvm dir "+rwvmDir.getAbsolutePath());
+	if (rwvmDir.exists()){
+		Collection<File> rwvmFiles =EPADFileUtils.getAllFilesWithExtension(rwvmDir, "dcm", true);
 	
-	String zipName = "EpadFiles-" + timestamp.format(new Date()) + ".zip";
+		log.info("rwvm files count "+rwvmFiles.size());
+		for(File f:rwvmFiles) {
+			log.info("rwvm file "+f.getName());
+			File rwvmFile = new File(downloadDir, f.getName());
+			EPADFileUtils.copyFile(f, rwvmFile);
+			fileNames.add(f.getName());
+		}
+	}
+	
+	
+	String zipName = "DicomSR-" + timestamp.format(new Date()) + ".zip";
 	httpResponse.setContentType("application/zip");
 	httpResponse.setHeader("Content-Disposition", "attachment;filename=\"" + zipName + "\"");
 

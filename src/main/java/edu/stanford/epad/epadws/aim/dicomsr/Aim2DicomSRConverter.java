@@ -11,33 +11,30 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Set;
+
+import javax.servlet.http.HttpServletResponse;
 
 import org.apache.commons.io.IOUtils;
 
-import com.pixelmed.apps.InsertRealWorldValueMap;
-import com.pixelmed.dicom.ContentItem;
+import com.pixelmed.dicom.AttributeList;
 import com.pixelmed.utils.MessageLogger;
 import com.pixelmed.utils.PrintStreamMessageLogger;
 
 import edu.stanford.epad.common.dicom.DCM4CHEEUtil;
 import edu.stanford.epad.common.dicom.DICOMFileDescription;
 import edu.stanford.epad.common.pixelmed.PixelMedUtils;
+import edu.stanford.epad.common.pixelmed.RealWorldValueMapFileWriter;
 import edu.stanford.epad.common.plugins.PluginAIMUtil;
 import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADFileUtils;
 import edu.stanford.epad.common.util.EPADLogger;
-import edu.stanford.epad.common.util.Lexicon;
 import edu.stanford.epad.dtos.internal.DICOMElement;
 import edu.stanford.epad.dtos.internal.DICOMElementList;
 import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeDatabase;
 import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeDatabaseOperations;
-import edu.stanford.epad.epadws.epaddb.DefaultEpadDatabaseOperations;
 import edu.stanford.epad.epadws.models.Template;
 import edu.stanford.epad.epadws.queries.Dcm4CheeQueries;
-import edu.stanford.epad.epadws.queries.DefaultEpadOperations;
-import edu.stanford.epad.epadws.queries.EpadOperations;
 import edu.stanford.epad.epadws.service.DefaultEpadProjectOperations;
 import edu.stanford.epad.epadws.service.EpadProjectOperations;
 import edu.stanford.hakan.aim4api.base.Algorithm;
@@ -58,8 +55,6 @@ import edu.stanford.hakan.aim4api.base.Person;
 import edu.stanford.hakan.aim4api.base.ST;
 import edu.stanford.hakan.aim4api.base.User;
 import edu.stanford.hakan.aim4api.compability.aimv3.Modality;
-import edu.stanford.hakan.aim4api.database.mysql.DatabaseOperations;
-import edu.stanford.hakan.aim4api.plugin.v4.NameManagerV4;
 import edu.stanford.hakan.aim4api.base.Enumerations.CalculationResultIdentifier;
 import edu.stanford.hakan.aim4api.base.ExtendedCalculationResult;
 
@@ -501,11 +496,31 @@ public class Aim2DicomSRConverter {
 					String src = imagePath;
 					String dstFolderName = rwvmDir.getAbsolutePath();
 					log.info("call pixelmed with src:"+src+ " and dest:"+dstFolderName);
-					new InsertRealWorldValueMap(min,max,"0",slope,"SUV calculated by ePAD","", "126401","DCM","","SUVbw",null,src,dstFolderName,logger);
+					
+					Set<String> imageUIDs = Dcm4CheeDatabase.getInstance().getDcm4CheeDatabaseOperations().getImageUIDsForSeries(seriesUID); 
+					
+					File temporaryDICOMFile = File.createTempFile(seedImageUID, ".dcm");
+					int wadoStatusCode = DCM4CHEEUtil.downloadDICOMFileFromWADO(studyUID, seriesUID, seedImageUID, temporaryDICOMFile);
+					RealWorldValueMapFileWriter rwvmWriter=null;
+					if (wadoStatusCode == HttpServletResponse.SC_OK) {
+						AttributeList imageDICOMAttributes = PixelMedUtils.readDICOMAttributeList(temporaryDICOMFile);
+					
+						AttributeList[] original_attrs_list = new AttributeList[1];
+						original_attrs_list[0] = imageDICOMAttributes;
+						String[] imageUIDsArray= new String[imageUIDs.size()];
+						rwvmWriter=new RealWorldValueMapFileWriter(imageUIDs.toArray(imageUIDsArray), original_attrs_list, min, max, "0", slope, "SUV calculated by ePAD");
+						rwvmWriter.saveDicomFile(rwvmDir.getAbsolutePath()+File.separator+ rwvmWriter.getImageUID()+"rwvm.dcm");
+						log.info("saving rwvm to "+rwvmDir.getAbsolutePath()+ File.separator+rwvmWriter.getImageUID()+"rwvm.dcm");
+					}else {
+						log.warning("Couldn't get dicom file");
+					}
+					
+					//new InsertRealWorldValueMap(min,max,"0",slope,"SUV calculated by ePAD","", "126401","DCM","","SUVbw",null,src,dstFolderName,logger);
 
 					//getting the first. we store just one seg
 					File segFile=new File(segPath+File.separator+meta.getCompositeContext().get(0));
 
+					
 					//do not clear just add the first
 //					meta.getCompositeContext().clear();
 					for(File f:rwvmDir.listFiles()) {
@@ -513,7 +528,7 @@ public class Aim2DicomSRConverter {
 						meta.getCompositeContext().add(f.getName());
 						//the name is already the uid
 						//is it a problem it is the same uid with one of the images
-						mgrp.setRwvmMapUsedForMeasurement(f.getName().replace(".dcm", ""));
+						mgrp.setRwvmMapUsedForMeasurement(f.getName().replace("rwvm", "").replace(".dcm", ""));
 						mgrp.setMeasurementMethod(new ControlledTerm("126401", "DCM", "SUVbw"));
 						break;
 					}
