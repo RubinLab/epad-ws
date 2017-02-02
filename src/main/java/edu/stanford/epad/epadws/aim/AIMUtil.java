@@ -2663,10 +2663,12 @@ public class AIMUtil
 			sourceSeriesUID=((JSONObject)((JSONObject)mintJson.get("imageStudy")).get("imageSeries")).optString("instanceUid", "na");
 			}
 		}
-			
+		Double sliceLoc=0.0;
 		if (imageUID==null || imageUID.equals("") || imageUID.equals("na")) {
 			//get the image uid using the slice location
-			Double sliceLoc=((JSONObject) ((JSONObject)((JSONObject)mintJson.get("PlanarFigure")).get("Geometry")).get("Origin")).getDouble("z");
+			sliceLoc=((JSONObject) ((JSONObject)((JSONObject)mintJson.get("PlanarFigure")).get("Geometry")).get("Origin")).getDouble("z");
+			Double sliceThickness=((JSONObject) ((JSONObject)((JSONObject)mintJson.get("PlanarFigure")).get("Geometry")).get("Spacing")).getDouble("z");
+			
 			log.info("slice location is "+ sliceLoc);
 			
 			Dcm4CheeDatabaseOperations dcm4CheeDatabaseOperations= Dcm4CheeDatabase.getInstance()
@@ -2674,7 +2676,8 @@ public class AIMUtil
 			List<DCM4CHEEImageDescription> imageDescriptions = dcm4CheeDatabaseOperations.getImageDescriptions(
 					studyUID, sourceSeriesUID);
 			for(DCM4CHEEImageDescription image:imageDescriptions){
-				if (((Double)Double.parseDouble(image.sliceLocation)).intValue()==sliceLoc.intValue()){
+				Double imageLoc=((Double)Double.parseDouble(image.sliceLocation));
+				if (((Double)(imageLoc-(0.5*sliceThickness))).intValue()==sliceLoc.intValue()||imageLoc.intValue()==sliceLoc.intValue()){
 					log.info("found image "+ image.instanceNumber +  " uid "+image.imageUID);
 					imageUID=image.imageUID;
 				}
@@ -2684,7 +2687,7 @@ public class AIMUtil
 		
 		log.info("the values retrieved are "+ sopClassUID+" "+studyDate+" "+studyTime+" "+pName+" "+pId+" "+pBirthDate+" "+pSex+" "+studyUID+" "+sourceSeriesUID+" ");
 		ImageAnnotationCollection iac = createImageAnnotationColectionFromProperties(username, pName, pId, pBirthDate, pSex);
-		edu.stanford.hakan.aim4api.base.ImageAnnotation ia=createImageAnnotationFromProperties(username, templateCode, lesionName, comment, imageUID, sopClassUID, studyDate, studyTime, studyUID, sourceSeriesUID);
+		edu.stanford.hakan.aim4api.base.ImageAnnotation ia=createImageAnnotationFromProperties(username, templateCode, lesionName, comment+" / "+sliceLoc, imageUID, sopClassUID, studyDate, studyTime, studyUID, sourceSeriesUID);
 		
 		//create the entities using information from pf
 		ia=addMarkupAndCalculationFromPF(ia,(JSONObject)mintJson.get("PlanarFigure"));
@@ -2692,6 +2695,7 @@ public class AIMUtil
 		ia.addImagingPhysicalEntity(getImagingPhysicalEntityFromPF("Status",((JSONObject)mintJson.get("lesion")).getString("status")));
 		ia.addImagingObservationEntity(getImagingObservationEntityFromPF("Lesion",((JSONObject)mintJson.get("lesion")).getString("timepoint"),"Type",((JSONObject)mintJson.get("lesion")).getString("type")));
 
+		
 		iac.addImageAnnotation(ia);
 
 		log.info("annotation is: "+iac.toStringXML());
