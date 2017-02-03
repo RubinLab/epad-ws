@@ -120,6 +120,8 @@ import javax.servlet.http.HttpServletResponse;
 import org.apache.commons.io.IOUtils;
 
 import edu.stanford.epad.common.dicom.DCM4CHEEUtil;
+import edu.stanford.epad.common.pixelmed.SegmentedProperty;
+import edu.stanford.epad.common.pixelmed.SegmentedPropertyHelper;
 import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.epad.dtos.internal.DCM4CHEESeries;
 import edu.stanford.epad.dtos.internal.DCM4CHEESeriesList;
@@ -246,6 +248,12 @@ public class Dcm4CheeQueries
 
 	public static DICOMElementList getDICOMElementsFromWADO(String studyUID, String seriesUID, String imageUID)
 	{
+		return getDICOMElementsFromWADO(studyUID, seriesUID, imageUID,null);
+	}
+	public static DICOMElementList getDICOMElementsFromWADO(String studyUID, String seriesUID, String imageUID, SegmentedProperty catTypeProp)
+	{
+		String catCode="";
+		String typeCode="";
 		DICOMElementList dicomElementList = new DICOMElementList();
 		DICOMElementList dicomElementListNoSkip = new DICOMElementList();
 		boolean skipThumbnail=false;
@@ -267,6 +275,8 @@ public class Dcm4CheeQueries
 						skipThumbnail = false;
 						String currentSequence = "";
 						while ((dicomElementString = tagReader.readLine()) != null) {
+							
+									
 							if (dicomElementString.contains("(0009,1110)"))  // hard code for now TODO:???
 								skipThumbnail = true;
 							if (dicomElementString.contains("(FFFE,E0DD)"))
@@ -282,6 +292,18 @@ public class Dcm4CheeQueries
 								if (!skipThumbnail) {
 									dicomElement.parentSequenceName = currentSequence;
 									dicomElementList.addDICOMElement(dicomElement);
+									if (dicomElementString.contains("(0008,0100)")) {
+										if (dicomElement.parentSequenceName!=null && dicomElement.parentSequenceName.equalsIgnoreCase("Segmented Property Category Code Sequence"))//category code
+										{
+											catCode=dicomElement.value.trim();
+											log.info("cat code is "+catCode);
+										}
+										else if (dicomElement.parentSequenceName!=null && dicomElement.parentSequenceName.equalsIgnoreCase("Segmented Property Type Code Sequence"))//category code
+										{
+											typeCode=dicomElement.value.trim();
+											log.info("type code is "+typeCode);
+										}
+									}
 								} 
 							//make a list with all the skip items
 							//at the end if the skip is not closed then use this list
@@ -313,6 +335,21 @@ public class Dcm4CheeQueries
 		} catch (IOException e) {
 			log.warning("IOException retrieving DICOM headers for image " + imageUID + " in series " + seriesUID, e);
 		}
+		try{
+			if (!catCode.equals("") && !typeCode.equals("")) {
+				SegmentedPropertyHelper helper=new SegmentedPropertyHelper();
+				SegmentedProperty prop= helper.getProperty(catCode, typeCode);
+				if (prop!=null){
+					catTypeProp.copyValuesFrom(prop);
+				}
+				else {
+					log.info("Category-type pair not found");
+				}
+			}
+		} catch(Exception ex) {
+			log.warning("Exception in getting category type ",ex);
+		}
+		
 		if (skipThumbnail) {
 			log.warning("End of skip not found returning noskip data. ");
 			return dicomElementListNoSkip;

@@ -142,6 +142,8 @@ import edu.stanford.epad.common.dicom.DCM4CHEEImageDescription;
 import edu.stanford.epad.common.dicom.DCM4CHEEUtil;
 import edu.stanford.epad.common.dicom.DICOMFileDescription;
 import edu.stanford.epad.common.pixelmed.PixelMedUtils;
+import edu.stanford.epad.common.pixelmed.SegmentedProperty;
+import edu.stanford.epad.common.pixelmed.SegmentedPropertyHelper;
 import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADFileUtils;
 import edu.stanford.epad.common.util.EPADLogger;
@@ -960,7 +962,8 @@ public class DefaultEpadOperations implements EpadOperations
 		if (dcm4cheeImageDescription != null && isDSO(dcm4cheeImageDescription)) {
 			log.info("Getting referenced series for DSO, subjectID:" + imageReference.subjectID 
 					+ " seriesID:" +imageReference.seriesUID + " imageUID:" + imageReference.imageUID);
-			DICOMElementList suppliedDICOMElements = getDICOMElements(imageReference);
+			SegmentedProperty catTypeProp=new SegmentedProperty();
+			DICOMElementList suppliedDICOMElements = getDICOMElements(imageReference,catTypeProp);
 			List<DICOMElement> referencedSOPInstanceUIDDICOMElements = getDICOMElementsByCode(suppliedDICOMElements,
 					PixelMedUtils.ReferencedSOPInstanceUIDCode);
 			int numberOfFrames = getNumberOfFrames(imageReference.imageUID, suppliedDICOMElements);
@@ -982,8 +985,9 @@ public class DefaultEpadOperations implements EpadOperations
 				}
 
 				if (!referencedSeriesUID.equals("")) {
+					
 					DICOMElementList referencedDICOMElements = getDICOMElements(studyUID, referencedSeriesUID,
-							referencedFirstImageUID);
+							referencedFirstImageUID );
 					DICOMElementList defaultDICOMElements = getDefaultDICOMElements(imageReference, referencedDICOMElements);
 					boolean isFirst = true;
 					List<DCM4CHEEImageDescription> imageDescriptions = dcm4CheeDatabaseOperations.getImageDescriptions(
@@ -1044,11 +1048,13 @@ public class DefaultEpadOperations implements EpadOperations
 						String sourceLosslessImage = getPNGPath(studyUID, referencedSeriesUID, referencedImageUID);
 						String sourceLossyImage = getWADOPath(studyUID, referencedSeriesUID, referencedImageUID);
 						//log.info("Frame:" + frameNumber + " losslessImage:" + losslessImage);
+						
+						
 						if (isFirst || all) {
 							EPADDSOFrame frame = new EPADDSOFrame(imageReference.projectID, imageReference.subjectID,
 									imageReference.studyUID, imageReference.seriesUID, imageReference.imageUID, insertDate, imageDate,
 									sliceLocation, frameNumber, losslessImage, lossyImage, suppliedDICOMElements, defaultDICOMElements,
-									referencedSeriesUID, referencedImageUID, sourceLosslessImage, sourceLossyImage);
+									referencedSeriesUID, referencedImageUID, sourceLosslessImage, sourceLossyImage, catTypeProp.getId(),catTypeProp.getName(),catTypeProp.getDefColor());
 							frames.add(frame);
 							isFirst = false;
 						} else { // We do not add DICOM headers to remaining frame descriptions because it would be too expensive
@@ -1056,7 +1062,7 @@ public class DefaultEpadOperations implements EpadOperations
 									imageReference.studyUID, imageReference.seriesUID, imageReference.imageUID, insertDate, imageDate,
 									sliceLocation, frameNumber, losslessImage, lossyImage, new DICOMElementList(),
 									new DICOMElementList(), referencedSeriesUID, referencedImageUID, sourceLosslessImage,
-									sourceLossyImage);
+									sourceLossyImage,catTypeProp.getId(),catTypeProp.getName(),catTypeProp.getDefColor());
 							frames.add(frame);
 						}
 					}
@@ -1125,7 +1131,7 @@ public class DefaultEpadOperations implements EpadOperations
 							EPADDSOFrame frame = new EPADDSOFrame(imageReference.projectID, imageReference.subjectID,
 									imageReference.studyUID, imageReference.seriesUID, imageReference.imageUID, insertDate, imageDate,
 									sliceLocation, frameNumber, losslessImage, lossyImage, suppliedDICOMElements, defaultDICOMElements,
-									referencedSeriesUID, referencedImageUID, sourceLosslessImage, sourceLossyImage);
+									referencedSeriesUID, referencedImageUID, sourceLosslessImage, sourceLossyImage,catTypeProp.getId(),catTypeProp.getName(),catTypeProp.getDefColor());
 							frame.segmentNumber = getInt(segmentNumberDICOMElements.get(index).value);
 							frame.multiSegment = true;
 							frames.add(frame);
@@ -1135,7 +1141,7 @@ public class DefaultEpadOperations implements EpadOperations
 									imageReference.studyUID, imageReference.seriesUID, imageReference.imageUID, insertDate, imageDate,
 									sliceLocation, frameNumber, losslessImage, lossyImage, new DICOMElementList(),
 									new DICOMElementList(), referencedSeriesUID, referencedImageUID, sourceLosslessImage,
-									sourceLossyImage);
+									sourceLossyImage,catTypeProp.getId(),catTypeProp.getName(),catTypeProp.getDefColor());
 							frame.segmentNumber = getInt(segmentNumberDICOMElements.get(index).value);
 							frame.multiSegment = true;
 							frames.add(frame);
@@ -5237,10 +5243,24 @@ public class DefaultEpadOperations implements EpadOperations
 	{
 		return getDICOMElements(imageReference.studyUID, imageReference.seriesUID, imageReference.imageUID);
 	}
+	private DICOMElementList getDICOMElements(ImageReference imageReference, SegmentedProperty catTypeProp)
+	{
+		return getDICOMElements(imageReference.studyUID, imageReference.seriesUID, imageReference.imageUID, catTypeProp);
+	}
 
 	private DICOMElementList getDICOMElements(String studyUID, String seriesUID, String imageUID)
 	{
 		DICOMElementList dicomElementList = Dcm4CheeQueries.getDICOMElementsFromWADO(studyUID, seriesUID, imageUID);
+
+		if (dicomElementList == null)
+			log.warning("Could not get DICOM header for image " + imageUID + " in series " + seriesUID);
+
+		return dicomElementList;
+	}
+	
+	private DICOMElementList getDICOMElements(String studyUID, String seriesUID, String imageUID, SegmentedProperty catTypeProp)
+	{
+		DICOMElementList dicomElementList = Dcm4CheeQueries.getDICOMElementsFromWADO(studyUID, seriesUID, imageUID, catTypeProp);
 
 		if (dicomElementList == null)
 			log.warning("Could not get DICOM header for image " + imageUID + " in series " + seriesUID);
