@@ -2672,18 +2672,34 @@ public class AIMUtil
 		
 		if ((imageUID==null || imageUID.equals("") || imageUID.equals("na"))&& !(sourceSeriesUID==null||sourceSeriesUID.equals("na")||sourceSeriesUID.equals(""))) {
 			//get the image uid using the slice location
-				
 			if (studyUID==null || studyUID.equals("") || studyUID.equals("na"))
 				studyUID="*";
 			Dcm4CheeDatabaseOperations dcm4CheeDatabaseOperations= Dcm4CheeDatabase.getInstance()
 					.getDcm4CheeDatabaseOperations();
+			EpadOperations epadOperations = DefaultEpadOperations.getInstance();
 			List<DCM4CHEEImageDescription> imageDescriptions = dcm4CheeDatabaseOperations.getImageDescriptions(
 					studyUID, sourceSeriesUID);
 			for(DCM4CHEEImageDescription image:imageDescriptions){
-				Double imageLoc=((Double)Double.parseDouble(image.sliceLocation));
+				DICOMElementList imageDICOMElements = epadOperations.getDICOMElements(image.studyUID,
+						image.seriesUID, image.imageUID);
+				String imagePosition=epadOperations.getDICOMElement(imageDICOMElements,PixelMedUtils.ImagePositionPatientCode);
+				Double imageLoc=-1.0;
+				try{
+					if (imagePosition!=null) {
+						imageLoc=Double.parseDouble(imagePosition.split("\\\\")[2]);
+					}
+				}catch(Exception e){
+					
+					log.warning("Couldn't get image position "+e.getMessage()) ;
+				}
+				if ( imageLoc==-1.0) {
+					imageLoc=((Double)Double.parseDouble(image.sliceLocation));
+					log.info("Couldn't get image position using slice loc" +imageLoc) ;
+				}
 				if (((Double)(imageLoc-(0.5*sliceThickness))).intValue()==sliceLoc.intValue()||imageLoc.intValue()==sliceLoc.intValue()){
 					log.info("found image "+ image.instanceNumber +  " uid "+image.imageUID);
 					imageUID=image.imageUID;
+					break;
 				}
 			}
 						

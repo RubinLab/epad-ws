@@ -5248,7 +5248,8 @@ public class DefaultEpadOperations implements EpadOperations
 		return getDICOMElements(imageReference.studyUID, imageReference.seriesUID, imageReference.imageUID, catTypeProp);
 	}
 
-	private DICOMElementList getDICOMElements(String studyUID, String seriesUID, String imageUID)
+	@Override
+	public DICOMElementList getDICOMElements(String studyUID, String seriesUID, String imageUID)
 	{
 		DICOMElementList dicomElementList = Dcm4CheeQueries.getDICOMElementsFromWADO(studyUID, seriesUID, imageUID);
 
@@ -5274,7 +5275,8 @@ public class DefaultEpadOperations implements EpadOperations
 				suppliedDICOMElements, 0);
 	}
 
-	private String getDICOMElement(DICOMElementList dicomElements, String tagName)
+	@Override
+	public String getDICOMElement(DICOMElementList dicomElements, String tagName)
 	{
 		List<DICOMElement> defaultDicomElements = new ArrayList<>();
 		Map<String, List<DICOMElement>> dicomElementMap = generateDICOMElementMap(dicomElements);
