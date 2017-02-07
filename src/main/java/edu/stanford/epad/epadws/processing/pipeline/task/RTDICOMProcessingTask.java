@@ -324,7 +324,7 @@ public class RTDICOMProcessingTask implements GeneratorTask
 						TIFFMasksToDSOConverter converter = new TIFFMasksToDSOConverter();
 						List<String> segDicomFilePaths = new ArrayList<String>();
 						//copy to the same index
-						for (int i=0;i<dicomFilePaths.size();i++)
+						for (int i=dicomFilePaths.size()-1;i>=0;i--)
 							segDicomFilePaths.add(dicomFilePaths.size()-i-1,dicomFilePaths.get(i));
 						List<Integer> emptyFileIndex = new ArrayList<Integer>();
 						boolean removeEmpty = true;
@@ -396,7 +396,7 @@ public class RTDICOMProcessingTask implements GeneratorTask
 						}
 						if (removeEmpty) {
 							log.info("empty size "+emptyFileIndex.size());
-							for (int i = 0; i <emptyFileIndex.size() ; i++)
+							for (int i = emptyFileIndex.size(); i >=0 ; i++)
 							{
 								int index = emptyFileIndex.get(i);
 								
