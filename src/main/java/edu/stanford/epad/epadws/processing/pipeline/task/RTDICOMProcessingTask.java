@@ -325,7 +325,7 @@ public class RTDICOMProcessingTask implements GeneratorTask
 						List<String> segDicomFilePaths = new ArrayList<String>();
 						//copy to the same index
 						for (int i=0;i<dicomFilePaths.size();i++)
-							segDicomFilePaths.add(i,dicomFilePaths.get(i));
+							segDicomFilePaths.add(dicomFilePaths.size()-i-1,dicomFilePaths.get(i));
 						List<Integer> emptyFileIndex = new ArrayList<Integer>();
 						boolean removeEmpty = true;
 						int minInstanceNo = converter.getAttributesFromDICOMFiles(segDicomFilePaths);
@@ -339,7 +339,9 @@ public class RTDICOMProcessingTask implements GeneratorTask
 						//but it was throwing error when I added the optimization 
 						//and it works fine with the exact dimension. I guess it was smt about the offset of the pixeldata to hold all 
 						//slices at once
-						for (int frame = 0; frame < dims[2]; frame++) { 
+						//get it reverse
+						for (int frame = dims[2]-1; frame >=0; frame--) { 
+//						for (int frame = 0; frame < dims[2]; frame++) { 
 							boolean nonzerodata = false;
 							byte[] pixel_data = new byte[numbytes];
 
@@ -394,17 +396,23 @@ public class RTDICOMProcessingTask implements GeneratorTask
 						}
 						if (removeEmpty) {
 							log.info("empty size "+emptyFileIndex.size());
-							for (int i = 0; i < emptyFileIndex.size(); i++)
+							for (int i = 0; i <emptyFileIndex.size() ; i++)
 							{
 								int index = emptyFileIndex.get(i);
+								
 								//it was dicomattributes.length
-								log.info("Removing dicom " + (converter.getDicomAttributes().length - index -1));
-								segDicomFilePaths.remove(converter.getDicomAttributes().length - index -1);
-								//log.info("before "+converter.getDicomAttributes()[index]+ " index "+index);
-								converter.getDicomAttributes()[index]=null;
-								log.info("after "+converter.getDicomAttributes()[index]+ " index "+index);
+								if (converter.getDicomAttributes().length - index -1<segDicomFilePaths.size()) {
+									log.info("Removing dicom " +(converter.getDicomAttributes().length - index -1));
+									segDicomFilePaths.remove(converter.getDicomAttributes().length - index -1);
+									//log.info("before "+converter.getDicomAttributes()[index]+ " index "+index);
+									converter.getDicomAttributes()[index]=null;
+									log.info("after "+converter.getDicomAttributes()[index]+ " index "+index);
+								}else {
+									log.warning("size check fail in index "+index + " calc index to remove " + (converter.getDicomAttributes().length - index -1) +" dicom files size "+ segDicomFilePaths.size());
+								}
 								
 							}
+							
 							
 						}
 						if (segDicomFilePaths.size() != converter.getDicomAttributes().length)
@@ -426,6 +434,8 @@ public class RTDICOMProcessingTask implements GeneratorTask
 						if (dsoDescr.length() < 4) dsoDescr = description + "_" + dsoDescr;
 						projectOperations.updateUserTaskStatus(username, TaskStatus.TASK_RT_PROCESS, seriesUID, "Generating DSO", null, null);
 						log.info("Generating new DSO for RTSTRUCT series " + seriesUID);
+						
+						
 						String[] seriesImageUids = converter.generateDSO(pixels, segDicomFilePaths, dsoFile.getAbsolutePath(), dsoDescr, null, null);
 						String dsoSeriesUID = seriesImageUids[0];
 						String dsoImageUID = seriesImageUids[1];

@@ -336,7 +336,7 @@ public class Dcm4CheeQueries
 			log.warning("IOException retrieving DICOM headers for image " + imageUID + " in series " + seriesUID, e);
 		}
 		try{
-			if (!catCode.equals("") && !typeCode.equals("")) {
+			if (catTypeProp!=null && !catCode.equals("") && !typeCode.equals("")) {
 				SegmentedPropertyHelper helper=new SegmentedPropertyHelper();
 				SegmentedProperty prop= helper.getProperty(catCode, typeCode);
 				if (prop!=null){
