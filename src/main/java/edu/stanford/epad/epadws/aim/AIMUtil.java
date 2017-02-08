@@ -3571,8 +3571,12 @@ public class AIMUtil
 //		tTAGT,                      //  29
 //		tBall,                      //  30
 //		tOvalAngle,                 //  31
+		case 6://		tROIBox
+			shapeType=ShapeType.RECTANGLE;
+			break;
 		case 9: //		tOval
 		case 28://		tCurvedROI
+		case 20://  	tPlain
 			shapeType=ShapeType.SPLINE;
 			break;
 		case 14://		tArrow
