@@ -2672,18 +2672,34 @@ public class AIMUtil
 		
 		if ((imageUID==null || imageUID.equals("") || imageUID.equals("na"))&& !(sourceSeriesUID==null||sourceSeriesUID.equals("na")||sourceSeriesUID.equals(""))) {
 			//get the image uid using the slice location
-				
 			if (studyUID==null || studyUID.equals("") || studyUID.equals("na"))
 				studyUID="*";
 			Dcm4CheeDatabaseOperations dcm4CheeDatabaseOperations= Dcm4CheeDatabase.getInstance()
 					.getDcm4CheeDatabaseOperations();
+			EpadOperations epadOperations = DefaultEpadOperations.getInstance();
 			List<DCM4CHEEImageDescription> imageDescriptions = dcm4CheeDatabaseOperations.getImageDescriptions(
 					studyUID, sourceSeriesUID);
 			for(DCM4CHEEImageDescription image:imageDescriptions){
-				Double imageLoc=((Double)Double.parseDouble(image.sliceLocation));
+				DICOMElementList imageDICOMElements = epadOperations.getDICOMElements(image.studyUID,
+						image.seriesUID, image.imageUID);
+				String imagePosition=epadOperations.getDICOMElement(imageDICOMElements,PixelMedUtils.ImagePositionPatientCode);
+				Double imageLoc=-1.0;
+				try{
+					if (imagePosition!=null) {
+						imageLoc=Double.parseDouble(imagePosition.split("\\\\")[2]);
+					}
+				}catch(Exception e){
+					
+					log.warning("Couldn't get image position "+e.getMessage()) ;
+				}
+				if ( imageLoc==-1.0) {
+					imageLoc=((Double)Double.parseDouble(image.sliceLocation));
+					log.info("Couldn't get image position using slice loc" +imageLoc) ;
+				}
 				if (((Double)(imageLoc-(0.5*sliceThickness))).intValue()==sliceLoc.intValue()||imageLoc.intValue()==sliceLoc.intValue()){
 					log.info("found image "+ image.instanceNumber +  " uid "+image.imageUID);
 					imageUID=image.imageUID;
+					break;
 				}
 			}
 						
@@ -2696,7 +2712,9 @@ public class AIMUtil
 		
 		//create the entities using information from pf
 		ia=addMarkupAndCalculationFromPF(ia,(JSONObject)mintJson.get("PlanarFigure"));
-		ia.addImagingPhysicalEntity(getImagingPhysicalEntityFromPF("Location",((JSONObject)mintJson.get("lesion")).getString("location")));
+		String location = ((JSONObject)mintJson.get("lesion")).optString("location");
+		if (location!=null && !location.equals(""))
+			ia.addImagingPhysicalEntity(getImagingPhysicalEntityFromPF("Location",location));
 		ia.addImagingPhysicalEntity(getImagingPhysicalEntityFromPF("Status",((JSONObject)mintJson.get("lesion")).getString("status")));
 		ia.addImagingObservationEntity(getImagingObservationEntityFromPF("Lesion",((JSONObject)mintJson.get("lesion")).getString("timepoint"),"Type",((JSONObject)mintJson.get("lesion")).getString("type")));
 
@@ -2757,6 +2775,7 @@ public class AIMUtil
 	 * @throws Exception
 	 */
 	public static edu.stanford.hakan.aim4api.base.ImageAnnotation createImageAnnotationFromProperties(String username, String templateCode, String lesionName, String comment, String imageUID,String sopClassUID,String studyDate, String studyTime,String studyUID, String sourceSeriesUID) throws Exception {
+		log.info("creating image annotation for template:"+ templateCode +" lesion:" +lesionName+ " comment:" +comment+" imageuid:"+ imageUID) ;
 		EpadProjectOperations projOp = DefaultEpadProjectOperations.getInstance();
 		
 		//set the date to current date
@@ -3555,8 +3574,13 @@ public class AIMUtil
 //		tTAGT,                      //  29
 //		tBall,                      //  30
 //		tOvalAngle,                 //  31
+		case 6://		tROIBox
+			shapeType=ShapeType.RECTANGLE;
+			break;
 		case 9: //		tOval
 		case 28://		tCurvedROI
+		case 20://  	tPlain
+		case 11://		tCPolygon
 			shapeType=ShapeType.SPLINE;
 			break;
 		case 14://		tArrow
@@ -3568,9 +3592,6 @@ public class AIMUtil
 			break;
 		case 8: //		tCross
 			shapeType=ShapeType.NORMAL;
-			break;
-		case 11://		tCPolygon
-			shapeType=ShapeType.POLY;
 			break;
 		case 19://		t2DPoint
 			shapeType=ShapeType.POINT;

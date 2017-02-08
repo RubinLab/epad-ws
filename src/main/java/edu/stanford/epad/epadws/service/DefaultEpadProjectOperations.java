@@ -1528,7 +1528,9 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 			inclause = inclause + delim + id;
 			delim = ",";
 		}
-		List<Study> studies = new Study().getObjects("id not in (select distinct study_id from " + ProjectToSubjectToStudy.DBTABLE + ")");
+//		List<Study> studies = new Study().getObjects("id not in (select distinct study_id from " + ProjectToSubjectToStudy.DBTABLE + ")");
+		
+		List<Study> studies = new Study().getObjects("id not in (select distinct study_id from  " + ProjectToSubjectToStudy.DBTABLE + " where proj_subj_id not in (select id from project_subject where project_id="+project.getId()+"))");
 		for (Study study: studies)
 		{
 			inclause = inclause + delim + study.getSubjectId();

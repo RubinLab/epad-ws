@@ -140,6 +140,7 @@ import edu.stanford.epad.dtos.EPADWorklistList;
 import edu.stanford.epad.dtos.EPADWorklistStudyList;
 import edu.stanford.epad.dtos.EPADWorklistSubjectList;
 import edu.stanford.epad.dtos.internal.DCM4CHEESeries;
+import edu.stanford.epad.dtos.internal.DICOMElementList;
 import edu.stanford.epad.epadws.aim.AIMSearchType;
 import edu.stanford.epad.epadws.handlers.core.EPADSearchFilter;
 import edu.stanford.epad.epadws.handlers.core.FrameReference;
@@ -1673,5 +1674,22 @@ public interface EpadOperations
 	 * @throws Exception
 	 */
 	EPADUsageList getMonthlyUsageSummary() throws Exception;
+
+	/**
+	 * get dicom element for a specific tag code
+	 * @param dicomElements
+	 * @param tagName
+	 * @return
+	 */
+	String getDICOMElement(DICOMElementList dicomElements, String tagName);
+
+	/**
+	 * get dicom elements for an image
+	 * @param studyUID
+	 * @param seriesUID
+	 * @param imageUID
+	 * @return
+	 */
+	DICOMElementList getDICOMElements(String studyUID, String seriesUID, String imageUID);
 
 }
