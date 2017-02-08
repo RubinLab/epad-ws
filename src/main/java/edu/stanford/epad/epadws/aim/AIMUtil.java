@@ -2712,7 +2712,9 @@ public class AIMUtil
 		
 		//create the entities using information from pf
 		ia=addMarkupAndCalculationFromPF(ia,(JSONObject)mintJson.get("PlanarFigure"));
-		ia.addImagingPhysicalEntity(getImagingPhysicalEntityFromPF("Location",((JSONObject)mintJson.get("lesion")).getString("location")));
+		String location = ((JSONObject)mintJson.get("lesion")).optString("location");
+		if (location!=null && !location.equals(""))
+			ia.addImagingPhysicalEntity(getImagingPhysicalEntityFromPF("Location",location));
 		ia.addImagingPhysicalEntity(getImagingPhysicalEntityFromPF("Status",((JSONObject)mintJson.get("lesion")).getString("status")));
 		ia.addImagingObservationEntity(getImagingObservationEntityFromPF("Lesion",((JSONObject)mintJson.get("lesion")).getString("timepoint"),"Type",((JSONObject)mintJson.get("lesion")).getString("type")));
 
