@@ -2775,6 +2775,7 @@ public class AIMUtil
 	 * @throws Exception
 	 */
 	public static edu.stanford.hakan.aim4api.base.ImageAnnotation createImageAnnotationFromProperties(String username, String templateCode, String lesionName, String comment, String imageUID,String sopClassUID,String studyDate, String studyTime,String studyUID, String sourceSeriesUID) throws Exception {
+		log.info("creating image annotation for template:"+ templateCode +" lesion:" +lesionName+ " comment:" +comment+" imageuid:"+ imageUID) ;
 		EpadProjectOperations projOp = DefaultEpadProjectOperations.getInstance();
 		
 		//set the date to current date
@@ -3579,6 +3580,7 @@ public class AIMUtil
 		case 9: //		tOval
 		case 28://		tCurvedROI
 		case 20://  	tPlain
+		case 11://		tCPolygon
 			shapeType=ShapeType.SPLINE;
 			break;
 		case 14://		tArrow
@@ -3590,9 +3592,6 @@ public class AIMUtil
 			break;
 		case 8: //		tCross
 			shapeType=ShapeType.NORMAL;
-			break;
-		case 11://		tCPolygon
-			shapeType=ShapeType.POLY;
 			break;
 		case 19://		t2DPoint
 			shapeType=ShapeType.POINT;
