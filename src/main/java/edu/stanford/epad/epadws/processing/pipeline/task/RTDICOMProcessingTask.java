@@ -396,14 +396,14 @@ public class RTDICOMProcessingTask implements GeneratorTask
 						}
 						if (removeEmpty) {
 							log.info("empty size "+emptyFileIndex.size());
-							for (int i = emptyFileIndex.size(); i >=0 ; i++)
+							for (int i = 0; i<emptyFileIndex.size() ; i++)
 							{
 								int index = emptyFileIndex.get(i);
 								
 								//it was dicomattributes.length
 								if (converter.getDicomAttributes().length - index -1<segDicomFilePaths.size()) {
-									log.info("Removing dicom " +(converter.getDicomAttributes().length - index -1));
-									segDicomFilePaths.remove(converter.getDicomAttributes().length - index -1);
+									log.info("Removing dicom " + index);
+									segDicomFilePaths.remove( index );
 									//log.info("before "+converter.getDicomAttributes()[index]+ " index "+index);
 									converter.getDicomAttributes()[index]=null;
 									log.info("after "+converter.getDicomAttributes()[index]+ " index "+index);
@@ -417,7 +417,7 @@ public class RTDICOMProcessingTask implements GeneratorTask
 						}
 						if (segDicomFilePaths.size() != converter.getDicomAttributes().length)
 						{
-							AttributeList[] dicomAttributesNew = new AttributeList[dicomFilePaths.size()];
+							AttributeList[] dicomAttributesNew = new AttributeList[converter.getDicomAttributes().length];
 							int i = 0;
 							for (AttributeList attrs: converter.getDicomAttributes())
 							{
@@ -485,8 +485,8 @@ public class RTDICOMProcessingTask implements GeneratorTask
 			Map<String, String>  epadFilesRow = Dcm4CheeDatabaseUtils.createEPadFilesRowData(outFilePath, 0, imageUID);			
 			epadDatabaseOperations.updateEpadFileRow(epadFilesRow.get("file_path"), PNGFileProcessingStatus.DONE, 0, "");
 			
-			EPADFileUtils.deleteDirectoryAndContents(inputDir);
-			EPADFileUtils.deleteDirectoryAndContents(outputDir);
+//			EPADFileUtils.deleteDirectoryAndContents(inputDir);
+//			EPADFileUtils.deleteDirectoryAndContents(outputDir);
 			projectOperations.updateUserTaskStatus(username, TaskStatus.TASK_RT_PROCESS, seriesUID, "Completed Processing", null, new Date());
 		} catch (Exception e) {
 			log.warning("Error processing DICOM RT file for series " + seriesUID, e);
