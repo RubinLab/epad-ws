@@ -179,6 +179,7 @@ import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeDatabase;
 import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeDatabaseOperations;
 import edu.stanford.epad.epadws.epaddb.EpadDatabase;
 import edu.stanford.epad.epadws.epaddb.EpadDatabaseOperations;
+import edu.stanford.epad.epadws.handlers.HandlerUtil;
 import edu.stanford.epad.epadws.handlers.core.FrameReference;
 import edu.stanford.epad.epadws.handlers.core.ImageReference;
 import edu.stanford.epad.epadws.handlers.core.SeriesReference;
@@ -201,6 +202,8 @@ import edu.stanford.hakan.aim4api.base.AimException;
 import edu.stanford.hakan.aim4api.base.Algorithm;
 import edu.stanford.hakan.aim4api.base.CD;
 import edu.stanford.hakan.aim4api.base.CalculationEntity;
+import edu.stanford.hakan.aim4api.base.CharacteristicQuantification;
+import edu.stanford.hakan.aim4api.base.CharacteristicQuantificationCollection;
 import edu.stanford.hakan.aim4api.base.DicomImageReferenceEntity;
 import edu.stanford.hakan.aim4api.base.DicomSegmentationEntity;
 import edu.stanford.hakan.aim4api.base.Enumerations;
@@ -214,9 +217,11 @@ import edu.stanford.hakan.aim4api.base.ImageStudy;
 import edu.stanford.hakan.aim4api.base.ImagingObservationEntity;
 import edu.stanford.hakan.aim4api.base.ImagingPhysicalEntity;
 import edu.stanford.hakan.aim4api.base.ST;
+import edu.stanford.hakan.aim4api.base.Scale;
 import edu.stanford.hakan.aim4api.base.SegmentationEntityCollection;
 import edu.stanford.hakan.aim4api.base.TwoDimensionSpatialCoordinate;
 import edu.stanford.hakan.aim4api.base.TwoDimensionSpatialCoordinateCollection;
+import edu.stanford.hakan.aim4api.compability.aimv3.Converter;
 import edu.stanford.hakan.aim4api.compability.aimv3.DICOMImageReference;
 import edu.stanford.hakan.aim4api.compability.aimv3.ImageAnnotation;
 import edu.stanford.hakan.aim4api.compability.aimv3.Lexicon;
@@ -2715,7 +2720,9 @@ public class AIMUtil
 		String location = ((JSONObject)mintJson.get("lesion")).optString("location");
 		if (location!=null && !location.equals(""))
 			ia.addImagingPhysicalEntity(getImagingPhysicalEntityFromPF("Location",location));
-		ia.addImagingPhysicalEntity(getImagingPhysicalEntityFromPF("Status",((JSONObject)mintJson.get("lesion")).getString("status")));
+		String status=((JSONObject)mintJson.get("lesion")).optString("status");
+		if (status!=null && !status.equals(""))
+			ia.addImagingPhysicalEntity(getImagingPhysicalEntityFromPF("Status",status));
 		ia.addImagingObservationEntity(getImagingObservationEntityFromPF("Lesion",((JSONObject)mintJson.get("lesion")).getString("timepoint"),"Type",((JSONObject)mintJson.get("lesion")).getString("type")));
 
 		
@@ -2843,13 +2850,38 @@ public class AIMUtil
 	 */
 	private static ImagingObservationEntity getImagingObservationEntityFromPF(String label, String value,
 			String characteristicLabel, String characteristicValue) {
+		
+		Integer timepoint=0;
+		try {
+			timepoint=Integer.parseInt(value.trim());
+		}catch(Exception e){
+			log.info("timepoint is not integer. assuming 0");
+		}
 		ImagingObservationEntity oe= new ImagingObservationEntity();
 		oe.setLabel(new ST(label));
 		oe.setAnnotatorConfidence(0.0);
-		
-		oe.addTypeCode(edu.stanford.epad.common.util.Lexicon.getInstance().getLex(cleanString(value)));
-		
+		if(timepoint==0)
+			oe.addTypeCode(edu.stanford.epad.common.util.Lexicon.getInstance().getLex(cleanString("baseline")));
+		else
+			oe.addTypeCode(edu.stanford.epad.common.util.Lexicon.getInstance().getLex(cleanString("follow up")));
+		//timepoint
 		ImagingObservationCharacteristic oc=new ImagingObservationCharacteristic();
+		oc.setLabel(new ST("Timepoint"));
+		oc.setAnnotatorConfidence(0.0);
+		CD  timepointCD= edu.stanford.epad.common.util.Lexicon.getInstance().getLex(cleanString("timepoint"));
+		if (timepointCD==null)
+			timepointCD=new CD("T00","Timepoint","RECIST-AMS");
+		oc.addTypeCode(timepointCD);
+		Scale cq =new Scale();
+		cq.setAnnotatorConfidence(0.0);//
+		cq.setValue(new ST(value));//
+		cq.setLabel(new ST(value)); //*** label-description
+		cq.setType(Enumerations.ScaleType.Nominal);
+		oc.addCharacteristicQuantification(cq);
+		oe.addImagingObservationCharacteristic(oc);
+		
+		//type
+		oc=new ImagingObservationCharacteristic();
 		oc.setLabel(new ST(characteristicLabel));
 		oc.setAnnotatorConfidence(0.0);
 		oc.addTypeCode(edu.stanford.epad.common.util.Lexicon.getInstance().getLex(cleanString(characteristicValue)));
@@ -3439,6 +3471,29 @@ public class AIMUtil
 	
 	
 	/**************************Osirix******************************/
+	
+	/**
+	 * migrate an osirix file to actual aim files and save to the project. produces multiple aims. handles the parsing
+	 * @param osirixJson
+	 * @param projectID
+	 * @param username
+	 * @param templateCode
+	 */
+	public static void migrateAimFromOsirixJson(File osirixFile, String projectID, String username, String templateCode) {
+		
+		try{
+			
+			String fileContent=EPADFileUtils.readFileAsString(osirixFile);
+			JSONObject osirixJson = HandlerUtil.parsePListFile(fileContent);
+			ArrayList<String> aimXMLs= createAimsFromOsirixJson(osirixJson, username, templateCode);
+			for(String aimXML:aimXMLs)
+				saveAim(aimXML, projectID, username);
+			
+		} catch(Exception e) {
+			log.warning("Mint to Aim migration is unsuccessful", e);
+		}
+		
+	}
 	
 	/**
 	 * migrate an osirix formatted json to actual aim files and save to the project. produces multiple aims
