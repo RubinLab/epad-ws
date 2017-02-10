@@ -179,6 +179,7 @@ import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeDatabase;
 import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeDatabaseOperations;
 import edu.stanford.epad.epadws.epaddb.EpadDatabase;
 import edu.stanford.epad.epadws.epaddb.EpadDatabaseOperations;
+import edu.stanford.epad.epadws.handlers.HandlerUtil;
 import edu.stanford.epad.epadws.handlers.core.FrameReference;
 import edu.stanford.epad.epadws.handlers.core.ImageReference;
 import edu.stanford.epad.epadws.handlers.core.SeriesReference;
@@ -3439,7 +3440,29 @@ public class AIMUtil
 	
 	
 	/**************************Osirix******************************/
-	
+	/**
+	 * migrate an osirix file to actual aim files and save to the project. produces multiple aims. handles the parsing
+	 	 * @param osirixJson
+	 	 * @param projectID
+	 	 * @param username
+	 	 * @param templateCode
+	 	 */
+	 	public static void migrateAimFromOsirixJson(File osirixFile, String projectID, String username, String templateCode) {
+	 		
+	 		try{
+	 			
+	 			String fileContent=EPADFileUtils.readFileAsString(osirixFile);
+	 			JSONObject osirixJson = HandlerUtil.parsePListFile(fileContent);
+	 			ArrayList<String> aimXMLs= createAimsFromOsirixJson(osirixJson, username, templateCode);
+	 			for(String aimXML:aimXMLs)
+	 				saveAim(aimXML, projectID, username);
+	 			
+	 		} catch(Exception e) {
+	 			log.warning("Mint to Aim migration is unsuccessful", e);
+	 		}
+	 		
+	 	}
+	 	
 	/**
 	 * migrate an osirix formatted json to actual aim files and save to the project. produces multiple aims
 	 * @param osirixJson
