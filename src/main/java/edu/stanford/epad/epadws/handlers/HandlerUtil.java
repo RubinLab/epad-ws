@@ -534,28 +534,38 @@ public class HandlerUtil
 		    while ((line = reader.readLine()) != null){
 		      jb.append(line);
 		    }
-		    String json="";
-		    Map<String, Object> properties = Plist.fromXml(jb.toString()); // loads the (nested) properties.
-		    log.info("map contents");
-		    for (Map.Entry<String, Object> entry : properties.entrySet())
-		    {
-		       log.info(entry.getKey() + "/" + entry.getValue());
-		       
-		       json=entry.getValue().toString().replaceAll("=", ":").replaceAll("[\\._a-zA-Z0-9-\\(\\) ]+", "\\\"$0\\\"").replaceAll("\\\"\\(", "\\[\\\"").replaceAll("\\\" \\(", "\\[\\\"").replaceAll("\\)\\\"", "\\\"\\]").replaceAll("\\\" \\\"", "").replaceAll("\\\" ", "\\\"");
-		       json="{\"Images\":" +json + "}" ; 
-		       log.info("json is:"+json);
-		       
-		    }
-		    if (json!=null)
-		    	return new JSONObject(json);
+		    return parsePListFile(jb.toString());
 		   
 		} catch (Exception e) {
 			log.warning("Error receiving data:" + e);
 			throw e;
 		}
   	
-		return null;
     }
+    
+    public static JSONObject parsePListFile(String fileContent){
+    	try {
+    		String json="";
+    		Map<String, Object> properties = Plist.fromXml(fileContent); // loads the (nested) properties.
+    		log.info("map contents");
+    		for (Map.Entry<String, Object> entry : properties.entrySet())
+    		{
+    			log.info(entry.getKey() + "/" + entry.getValue());
+
+    			json=entry.getValue().toString().replaceAll("=", ":").replaceAll("[\\._a-zA-Z0-9-\\(\\) ]+", "\\\"$0\\\"").replaceAll("\\\"\\(", "\\[\\\"").replaceAll("\\\" \\(", "\\[\\\"").replaceAll("\\)\\\"", "\\\"\\]").replaceAll("\\\" \\\"", "").replaceAll("\\\" ", "\\\"");
+    			json="{\"Images\":" +json + "}" ; 
+    			log.info("json is:"+json);
+
+    		}
+    		if (json!=null)
+    			return new JSONObject(json);
+    	} catch (Exception e) {
+    		log.warning("Error parsing plist data", e);
+    	}
+
+    	return null;
+    }
+
     public static String getPostedString(HttpServletRequest httpRequest) throws Exception
     {
     	StringBuffer jb = new StringBuffer();

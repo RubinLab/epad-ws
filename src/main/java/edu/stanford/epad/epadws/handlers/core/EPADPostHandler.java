@@ -464,9 +464,13 @@ public class EPADPostHandler
 						AIMUtil.migrateAimFromMintJson(mintJson,projectReference.projectID, username, "RECIST");
 						
 					}else if (migrateFrom!=null && migrateFrom.equalsIgnoreCase("osirix")) {
-						JSONObject osirixJson = HandlerUtil.getPostedPListXML(httpRequest);
-						log.info("xml json "+osirixJson.toString());
-						AIMUtil.migrateAimFromOsirixJson(osirixJson,projectReference.projectID, username, "ROI");
+						if (uploadedFile!=null){
+							AIMUtil.migrateAimFromOsirixJson(uploadedFile,projectReference.projectID, username, "ROI");
+						}else {
+							JSONObject osirixJson = HandlerUtil.getPostedPListXML(httpRequest);
+							log.info("xml json "+osirixJson.toString());
+							AIMUtil.migrateAimFromOsirixJson(osirixJson,projectReference.projectID, username, "ROI");
+						}
 						
 					}else { //regular. rerunning plugin on annotations
 					
