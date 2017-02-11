@@ -411,8 +411,8 @@ public class Aim2DicomSRConverter {
 				ControlledTerm category= new ControlledTerm();
 				ControlledTerm type= new ControlledTerm();
 				String injected=null, seriesDate=null, seriesTime=null, radioPhStartTime=null, radioPhHalfTime=null, weight=null, units=null;
-				String min=null;
-				String max=null;
+				String min="0";
+				String max="0";
 				DICOMElementList imageTags= Dcm4CheeQueries.getDICOMElementsFromWADO(studyUID, seriesUID, seedImageUID);
 				for (int i=0; i< dsoTags.ResultSet.totalRecords; i++) {
 					DICOMElement tag=dsoTags.ResultSet.Result.get(i);
