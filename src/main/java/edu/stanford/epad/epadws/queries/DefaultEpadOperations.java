@@ -3319,11 +3319,12 @@ public class DefaultEpadOperations implements EpadOperations
 		// Now delete studies from dcm4chee and ePAD's database; includes deleting PNGs for studies.
 		Set<String> seriesUIDs = dcm4CheeDatabaseOperations.getAllSeriesUIDsInStudy(studyUID);
 		log.info("Found " + seriesUIDs.size() + " series in study " + studyUID);
-		
-		log.info("Deleting study " + studyUID + " from dcm4chee's database");
-		boolean success = Dcm4CheeOperations.deleteStudy(studyUID); // Must run after finding series in DCM4CHEE
-		if (!success && !seriesUIDs.isEmpty()) { //do not throw error if the study doesn't have any series
-			throw new RuntimeException("Error deleting study in dcm4chee");
+		if (!seriesUIDs.isEmpty()){
+			log.info("Deleting study " + studyUID + " from dcm4chee's database");
+			boolean success = Dcm4CheeOperations.deleteStudy(studyUID); // Must run after finding series in DCM4CHEE
+			if (!success) { //do not throw error if the study doesn't have any series
+				throw new RuntimeException("Error deleting study in dcm4chee");
+			}
 		}
 		// First delete all series in study from ePAD's database; then delete the study itself.
 		// Should not delete until after deleting study in DCM4CHEE or PNG pipeline will activate.
