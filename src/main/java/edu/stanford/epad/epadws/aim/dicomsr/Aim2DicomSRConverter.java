@@ -480,6 +480,11 @@ public class Aim2DicomSRConverter {
 
 				}
 
+				if (min==null || min.trim().equals(""))
+					min="0";
+				if (max==null || max.trim().equals(""))
+					max="0";
+				
 				log.info("category is "+category.toJSON());
 				log.info("type is "+type.toJSON());
 				mgrp.Finding=category;

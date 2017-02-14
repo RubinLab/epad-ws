@@ -733,24 +733,28 @@ public class UserProjectService {
 		String newPwd = username;
 		if (newPwd.length() > 4) newPwd = newPwd.substring(0, 4);
 		newPwd = newPwd + new IdGenerator().generateId(6);
-		user.setPassword(newPwd);
-		boolean tls = "true".equalsIgnoreCase(EPADConfig.getParamValue("SMTPtls", "true"));
-		MailUtil mu = new MailUtil(	EPADConfig.getParamValue("SMTPHost", "smtp.gmail.com"), 
-				EPADConfig.getParamValue("SMTPPort", "587"), 
-				EPADConfig.getParamValue("MailUser", "epadstanford@gmail.com"), 
-				EPADConfig.getParamValue("MailPassword"), 
-				true);
-		// No password, try sendMail
-		if (EPADConfig.getParamValue("MailPassword") == null || EPADConfig.getParamValue("MailPassword").trim().length() == 0) {
-			mu = new MailUtil();
+		try {
+			boolean tls = "true".equalsIgnoreCase(EPADConfig.getParamValue("SMTPtls", "true"));
+			MailUtil mu = new MailUtil(	EPADConfig.getParamValue("SMTPHost", "smtp.gmail.com"), 
+					EPADConfig.getParamValue("SMTPPort", "587"), 
+					EPADConfig.getParamValue("MailUser", "epadstanford@gmail.com"), 
+					EPADConfig.getParamValue("MailPassword"), 
+					true);
+			// No password, try sendMail
+			if (EPADConfig.getParamValue("MailPassword") == null || EPADConfig.getParamValue("MailPassword").trim().length() == 0) {
+				mu = new MailUtil();
+			}
+			mu.send(user.getEmail(), 
+					EPADConfig.xnatServer + "_noreply@stanford.edu", 
+					"New password for ePAD@" + EPADConfig.xnatServer, 
+					"Hello " + user.getFirstName() + " " + user.getLastName() + ",\n\nYour new ePAD password is " + newPwd + "\n\nPlease login and reset your password.\n\nRegards\n\nePAD Team");
+			user.setPassword(newPwd);
+			projectOperations.updateUser("admin", username,
+					null, null, null, newPwd, null, null, 
+					new ArrayList<String>(), new ArrayList<String>());
+		}catch(Exception e){
+			log.warning("Password reset mail couldn't be sent not reseting", e);
 		}
-		mu.send(user.getEmail(), 
-				EPADConfig.xnatServer + "_noreply@stanford.edu", 
-				"New password for ePAD@" + EPADConfig.xnatServer, 
-				"Hello " + user.getFirstName() + " " + user.getLastName() + ",\n\nYour new ePAD password is " + newPwd + "\n\nPlease login and reset your password.\n\nRegards\n\nePAD Team");
-		projectOperations.updateUser("admin", username,
-				null, null, null, newPwd, null, null, 
-				new ArrayList<String>(), new ArrayList<String>());
 	}
 
 	/**
