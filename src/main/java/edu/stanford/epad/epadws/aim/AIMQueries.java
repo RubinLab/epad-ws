@@ -392,6 +392,23 @@ public class AIMQueries
 			if (aims != null) {
 				resultAims.addAll(aims);
 			}
+		} else if (aimSearchType == AIMSearchType.SEG_INSTANCE_UID) { //seg instance uid for finding segmentation dsos
+			String dsoInstanceUID = value;
+			try {
+				List<edu.stanford.hakan.aim4api.base.ImageAnnotationCollection> iacs = edu.stanford.hakan.aim4api.usage.AnnotationGetter
+						.getImageAnnotationCollectionByDsoInstanceUIDEqual(eXistServerUrl, aim4Namespace,
+								collection4Name, eXistUsername, eXistPassword, dsoInstanceUID);
+				if (aims == null)
+					aims = new ArrayList<ImageAnnotation>();
+				for (int i = 0; i < iacs.size(); i++)
+					aims.add(new ImageAnnotation(iacs.get(i)));
+			} catch (edu.stanford.hakan.aim4api.base.AimException e) {
+				log.warning("Exception in AnnotationGetter.getImageAnnotationsFromServerByDsoInstanceUIDEqual "
+						+ dsoInstanceUID, e);
+			}
+			if (aims != null) {
+				resultAims.addAll(aims);
+			}
 		} else if (aimSearchType == AIMSearchType.ANNOTATION_UID) {
 			String annotationUID = value;
 			if (value.equals("all")) {

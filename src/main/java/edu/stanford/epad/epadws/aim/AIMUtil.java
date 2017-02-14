@@ -925,13 +925,15 @@ public class AIMUtil
 										if (!e.aimID.equals(eaim.aimID) && e.dsoSeriesUID != null && e.dsoSeriesUID.equals(dsoSeriesUID))
 										{
 											ImageReference imageReference = new ImageReference(projectID, e.subjectID, e.studyUID, e.seriesUID, e.imageUID);												
-											if (e.isDicomSR==false && eaim.isDicomSR==false)// if none of them are dicomsr
+											if ((eaim.name.equals(e.name) ||  eaim.name.equals(e.name.replace("ePAD DSO-", ""))||(e.isDicomSR==false && eaim.isDicomSR==false))){// if none of them are dicomsr
 												epadDatabaseOperations.deleteAIM("admin", e.aimID);
+												log.info("Deleting aim with name:" + e.name + " and aimID:" + eaim.aimID);
+											}
 											log.info("Updating dsoSeriesUID in aim database:" + e.dsoSeriesUID + " aimID:" + eaim.aimID);
 											epadDatabaseOperations.addDSOAIM(username, imageReference, e.dsoSeriesUID, eaim.aimID);												
 											if (eaim.dsoFrameNo == 0)
 												epadDatabaseOperations.updateAIMDSOFrameNo(eaim.aimID, e.dsoFrameNo);												
-											break;
+//											break;
 										}
 									}
 								}								

@@ -1908,7 +1908,7 @@ public class DefaultEpadOperations implements EpadOperations
 				Aim2DicomSRConverter converter=new Aim2DicomSRConverter();
 				String xml=converter.DicomSR2Aim(uploadedFile.getAbsolutePath(), projectID);
 				if (xml==null) {
-					log.info("Could not convert to dicom sr");
+					log.info("Could not convert from dicom sr");
 				}else {
 					String tmpAimName="/tmp/tmpAim"+System.currentTimeMillis()+".xml";
 					File tmpAim=new File(tmpAimName);
