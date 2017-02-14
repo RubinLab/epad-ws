@@ -138,8 +138,10 @@ public class PNGFilesOperations
 
 		try {
 			File dirToDelete = new File(outputPath.toString());
-			boolean success = deleteFile(dirToDelete);
-			log.info("Deleted the PNGs for study " + studyUID + " at " + outputPath.toString() + "; success = " + success);
+			if (dirToDelete.exists()){
+				boolean success = deleteFile(dirToDelete);
+				log.info("Deleted the PNGs for study " + studyUID + " at " + outputPath.toString() + "; success = " + success);
+			}
 		} catch (IOException e) {
 			log.warning("Error deleting the PNGs for study " + studyUID + " at " + outputPath.toString(), e);
 		}
