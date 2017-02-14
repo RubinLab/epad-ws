@@ -1,5 +1,6 @@
 package edu.stanford.epad.epadws.aim.dicomsr;
 
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileWriter;
@@ -11,6 +12,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Set;
 
 import javax.servlet.http.HttpServletResponse;
@@ -29,10 +31,15 @@ import edu.stanford.epad.common.plugins.PluginAIMUtil;
 import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADFileUtils;
 import edu.stanford.epad.common.util.EPADLogger;
+import edu.stanford.epad.dtos.EPADAIM;
 import edu.stanford.epad.dtos.internal.DICOMElement;
 import edu.stanford.epad.dtos.internal.DICOMElementList;
+import edu.stanford.epad.epadws.aim.AIMDatabaseOperations;
+import edu.stanford.epad.epadws.aim.AIMUtil;
 import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeDatabase;
 import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeDatabaseOperations;
+import edu.stanford.epad.epadws.epaddb.EpadDatabase;
+import edu.stanford.epad.epadws.epaddb.EpadDatabaseOperations;
 import edu.stanford.epad.epadws.models.Template;
 import edu.stanford.epad.epadws.queries.Dcm4CheeQueries;
 import edu.stanford.epad.epadws.service.DefaultEpadProjectOperations;
@@ -823,10 +830,12 @@ public class Aim2DicomSRConverter {
 			log.info("desc length"+desc.length);
 			EpadProjectOperations projOp = DefaultEpadProjectOperations.getInstance();
 			Template t=null;
+			boolean epadSR=false;
 			if (desc.length==2) {
 
 				t=projOp.getTemplate(desc[0].trim());
 				if (t!=null) {
+					epadSR=true;
 					ia.setName(new ST(desc[1]));
 					//do not put all that extra information. leaving the code in case we decide otherwise later
 					//					log.info("name :"+ia.getName().getValue());
@@ -872,6 +881,22 @@ public class Aim2DicomSRConverter {
 				String sourceSeriesUID=meas.SourceSeriesForImageSegmentation;
 				log.info("source series is:"+sourceSeriesUID);
 				String dsoInstanceUID=meas.segmentationSOPInstanceUID;
+				if (epadSR) {
+					//it is our segmentation see if it is already there
+					EpadDatabaseOperations dbOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
+					Dcm4CheeDatabaseOperations dcm4CheeDatabaseOperations= Dcm4CheeDatabase.getInstance()
+							.getDcm4CheeDatabaseOperations();
+					String dsoSeriesUID = dcm4CheeDatabaseOperations.getSeriesUIDForImage(dsoInstanceUID);
+					List<EPADAIM> aims=dbOperations.getAIMsByDSOSeries(projectID, dsoSeriesUID);
+					for (EPADAIM aim:aims){
+						if (aim.name.equals(ia.getName().getValue()) || aim.name.equals("ePAD DSO-"+ia.getName().getValue())){
+							log.warning("Aim with name "+aim.name + " already exists. Will not create another one for the dicomsr");
+							return null;
+						}
+					}
+				}
+				
+				
 				DICOMFileDescription firstImage=getFirstInstanceUIDInSeries(sourceSeriesUID);
 				String studyUID="na";
 				String imageUID="na";

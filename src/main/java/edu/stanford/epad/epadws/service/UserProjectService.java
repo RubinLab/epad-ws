@@ -410,7 +410,7 @@ public class UserProjectService {
 							
 							String xml=converter.DicomSR2Aim(dicomFile.getAbsolutePath(), projectID);
 							if (xml==null) {
-								log.info("Could not convert to dicom sr");
+								log.info("Could not convert from dicom sr");
 							}else {
 								String tmpAimName="/tmp/tmpAim"+System.currentTimeMillis()+".xml";
 								File tmpAim=new File(tmpAimName);
@@ -502,6 +502,7 @@ public class UserProjectService {
 			log.warning("Dicom object couldn't be retrieved!");
 			return false;
 		}
+		String sopInstanceUID = dicomObject.getString(Tag.SOPInstanceUID);
 		String dicomPatientName = dicomObject.getString(Tag.PatientName);
 		String dicomPatientID = dicomObject.getString(Tag.PatientID);
 		String studyUID = dicomObject.getString(Tag.StudyInstanceUID);
@@ -570,7 +571,9 @@ public class UserProjectService {
 					//					if (ias.size() == 0 || aims.size() == 0) 
 					//						AIMUtil.generateAIMFileForDSO(dicomFile, username, projectID);
 					List<EPADAIM> aims = databaseOperations.getAIMsByDSOSeries(null, dicomPatientID, seriesUID);
-					List<ImageAnnotation> ias = AIMQueries.getAIMImageAnnotations(AIMSearchType.SERIES_UID, seriesUID, username, 1, 50);
+					log.info("getting annotations for dso w/uid "+sopInstanceUID);
+					List<ImageAnnotation> ias = AIMQueries.getAIMImageAnnotations(AIMSearchType.SEG_INSTANCE_UID, sopInstanceUID, username, 1, 50);
+					log.info("Found aims:"+ias.size());
 					boolean generateAim = false;
 					if (aims.size() == 1 && aims.get(0).projectID.equals(EPADConfig.xnatUploadProjectID) && !projectID.equals(EPADConfig.xnatUploadProjectID))
 						generateAim = true;
