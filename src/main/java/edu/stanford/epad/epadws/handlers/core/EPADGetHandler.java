@@ -812,9 +812,15 @@ public class EPADGetHandler
 				if (subjectReference.subjectID.equals("null"))
 					throw new Exception("Patient ID in rest call is null:" + pathInfo);
 				EPADAIMList aims = epadOperations.getSubjectAIMDescriptions(subjectReference, username, sessionID);
+				boolean returnTable="returnTable".equals(httpRequest.getParameter("format"));
 				long dbtime = System.currentTimeMillis();
 				log.info("Time taken for AIM database query:" + (dbtime-starttime) + " msecs");
-				if (returnSummary(httpRequest))
+				
+				if (returnTable) {
+					
+					responseStream.append(AIMUtil.fillTable(aims,"RECIST",new String[]{"Name","StudyDate","Lesion","Type", "Location","Length"}));
+				}
+				else if (returnSummary(httpRequest))
 				{	
 					aims = AIMUtil.queryAIMImageAnnotationSummariesV4(aims, username, sessionID);					
 					responseStream.append(aims.toJSON());
