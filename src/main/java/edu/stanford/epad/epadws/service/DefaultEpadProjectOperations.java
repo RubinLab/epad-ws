@@ -855,7 +855,7 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		try {
 			elog.save();
 		} catch (Exception e) {
-			if (params.length()>128) 
+			if (params!=null && params.length()>128) 
 				elog.setParams(params.substring(0, 127));
 			try {
 				elog.save();
