@@ -322,6 +322,7 @@ public class AimReporter {
 			//calculate the rrs
 			Double[] tRRBaseline=calcRRBaseline(tSums);
 			Double[] tRRMin=calcRRMin(tSums);
+			String[] responseCats=calcResponseCat(tRRBaseline);
 			
 			if (!ntLesionNames.isEmpty() && !ntStudyDates.isEmpty()){
 				//fill in the table for target lesions
@@ -332,11 +333,13 @@ public class AimReporter {
 				//calculate the rrs
 				Double[] ntRRBaseline=calcRRBaseline(ntSums);
 				Double[] ntRRMin=calcRRMin(ntSums);
-				return new RecistReport(tLesionNames.toArray(new String[tLesionNames.size()]), tStudyDates.toArray(new String[tStudyDates.size()]), tTable, tSums, tRRBaseline, tRRMin,
+				
+				
+				return new RecistReport(tLesionNames.toArray(new String[tLesionNames.size()]), tStudyDates.toArray(new String[tStudyDates.size()]), tTable, tSums, tRRBaseline, tRRMin, responseCats,
 						ntLesionNames.toArray(new String[ntLesionNames.size()]), ntStudyDates.toArray(new String[ntStudyDates.size()]), ntTable, ntSums, ntRRBaseline, ntRRMin);
 	
 			}else {
-				return new RecistReport(tLesionNames.toArray(new String[tLesionNames.size()]), tStudyDates.toArray(new String[tStudyDates.size()]), tTable, tSums, tRRBaseline, tRRMin);
+				return new RecistReport(tLesionNames.toArray(new String[tLesionNames.size()]), tStudyDates.toArray(new String[tStudyDates.size()]), tTable, tSums, tRRBaseline, tRRMin, responseCats);
 			}
 		}else {
 			log.info("no target lesion in table " +table );
@@ -414,6 +417,24 @@ public class AimReporter {
 			
 		}
 		return rrMin;
+	}
+	
+	
+	private static String[] calcResponseCat(Double[] rrBaseline){
+		String[] responseCats=new String[rrBaseline.length];
+		for (int i=0;i<rrBaseline.length;i++) {
+			if (i==0) {
+				responseCats[0]="BL";
+			}
+			else if (rrBaseline[i] <= -30) {
+				responseCats[i]="PR";
+			} else if (rrBaseline[i] >= 20) {
+				responseCats[i]="PD";
+			} else {
+				responseCats[i]="SD";
+			}
+		}
+		return responseCats;
 	}
 
 	
