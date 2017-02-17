@@ -105,13 +105,19 @@
 
 package edu.stanford.epad.epadws.aim;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.epad.dtos.EPADAIM;
 import edu.stanford.epad.dtos.EPADAIMList;
+import edu.stanford.epad.dtos.RecistReport;
 import edu.stanford.hakan.aim4api.base.AimException;
 import edu.stanford.hakan.aim4api.base.CD;
 import edu.stanford.hakan.aim4api.base.CalculationEntity;
@@ -127,26 +133,41 @@ public class AimReporter {
 	private static final EPADLogger log = EPADLogger.getInstance();
 	private static final String xsdFilePathV4 = EPADConfig.xsdFilePathV4;
 	
-	/***************************** get annotation tables *************************/
+	/**
+	 * Fills in a table of String values traversing through input aim files looking for the input columns
+	 * the columns can be Name, StudyDate
+	 * or any value stored in a ImagingObservationEntity, ImagingObservationEntityCharacteristic, ImagingPhysicalEntity or CalculationEntity
+	 * label is matched to the column in all but calculation (for calculation description)
+	 * value and code (if exists) is returned as a json object 
+	 * @param aims
+	 * @param templatecode
+	 * @param columns
+	 * @return a json array in string format. json array contains a json object for each aim with column names as attributes
+	 */
 	public static String fillTable(EPADAIMList aims,String templatecode, String[] columns){
 		
 		String [][] table=null;
 		
 		table=new String[aims.ResultSet.totalRecords][columns.length];
-		//table[0]=columns;
 		int row=0;
 		//for each aim. find the item that contains the label to match and return the value (and/or code?)
 		for (EPADAIM aim:aims.ResultSet.Result) {
 			ImageAnnotationCollection iac=null;
 			Map<String,String> values=new HashMap<>();
 			for (int i=0;i<columns.length;i++) {
-				log.info("key =" + columns[i]);
 				values.put(columns[i],"");
 			}
 			try {
 				iac = AnnotationGetter.getImageAnnotationCollectionFromString(aim.xml, xsdFilePathV4);
 				if (iac!=null) {
 					edu.stanford.hakan.aim4api.base.ImageAnnotation ia= iac.getImageAnnotation();
+					//check the template
+					if (templatecode!=null) {
+						if (!ia.getListTypeCode().get(0).getCode().equalsIgnoreCase(templatecode)) {
+							log.warning("Aim template is "+ia.getListTypeCode().get(0).getCode().equalsIgnoreCase(templatecode) + " was looking for "+templatecode);
+							continue;
+						}
+					}
 					if (values.containsKey("StudyDate")) {
 						try{
 							values.put("StudyDate", formJsonObj(((DicomImageReferenceEntity)ia.getImageReferenceEntityCollection().get(0)).getImageStudy().getStartDate()));
@@ -197,9 +218,8 @@ public class AimReporter {
 							
 							if (values.containsKey(cal.getDescription().getValue())) { //key exists put the value
 								try {
-								String value=((ExtendedCalculationResult)cal.getCalculationResultCollection().getCalculationResultList().get(0)).getCalculationDataCollection().get(0).getValue().getValue();
-								log.info("the value for "+cal.getDescription().getValue() + " is " +value);
-								values.put(cal.getDescription().getValue(), formJsonObj(value,cal.getListTypeCode().get(0).getCode()));
+									String value=((ExtendedCalculationResult)cal.getCalculationResultCollection().getCalculationResultList().get(0)).getCalculationDataCollection().get(0).getValue().getValue();
+									values.put(cal.getDescription().getValue(), formJsonObj(value,cal.getListTypeCode().get(0).getCode()));
 								}catch(Exception e) {
 									log.warning("The value for "+cal.getDescription().getValue() + " couldn't be retrieved ", e);
 								}
@@ -207,9 +227,6 @@ public class AimReporter {
 						}
 					}
 				}
-				log.info("Retrieved values are ");
-				for (String v:values.values()) 
-					log.info ("Value = "+v);
 				String[] strValues=new String[columns.length];
 				for (int i=0;i<columns.length;i++) {
 					strValues[i]="\""+columns[i]+"\":"+values.get(columns[i]);
@@ -237,14 +254,8 @@ public class AimReporter {
 				tableJson.append(",");
 		}
 		tableJson.append("]");
-		log.info("The produced string is "+tableJson.toString());
+//		log.info("The produced string is "+tableJson.toString());
 		return tableJson.toString();
-	}
-	
-	public static String getValueFromCD(CD cd,String mode) {
-		String code=cd.getCode();
-		String displayName=cd.getDisplayName().getValue();
-		return code+":"+displayName;
 	}
 	
 	public static String formJsonObj(String value) {
@@ -252,6 +263,137 @@ public class AimReporter {
 	}
 	public static String formJsonObj(String value, String code) {
 		return "{\"value\":\""+value+"\",\"code\":\""+code+"\"}";
+	}
+	
+	
+	public static RecistReport getRecist(EPADAIMList aims){
+		
+		JSONArray lesions= new JSONArray(AimReporter.fillTable(aims,"RECIST",new String[]{"Name","StudyDate","Lesion","Type", "Location","Length"}));
+		
+		//get targets
+		ArrayList<String> tLesionNames=new ArrayList<>();
+		ArrayList<String> tStudyDates=new ArrayList<>();
+		ArrayList<String> ntLesionNames=new ArrayList<>();
+		ArrayList<String> ntStudyDates=new ArrayList<>();
+		//first pass fill in the lesion names and study dates (x and y axis of the table)
+		for (int i = 0; i < lesions.length(); i++)
+		{
+			String lesionName = ((JSONObject)((JSONObject)lesions.get(i)).get("Name")).getString("value");
+			String studyDate = ((JSONObject)((JSONObject)lesions.get(i)).get("StudyDate")).getString("value");
+			String type=((JSONObject)((JSONObject)lesions.get(i)).get("Type")).getString("value");
+			if (type.equalsIgnoreCase("target")) {
+				if (!tLesionNames.contains(lesionName))
+					tLesionNames.add(lesionName);
+				if (!tStudyDates.contains(studyDate))
+					tStudyDates.add(studyDate);
+			}else {
+				if (!ntLesionNames.contains(lesionName))
+					ntLesionNames.add(lesionName);
+				if (!ntStudyDates.contains(studyDate))
+					ntStudyDates.add(studyDate);
+			}
+		}
+		//sort lists
+		Collections.sort(tLesionNames);
+		Collections.sort(tStudyDates);
+		Collections.sort(ntLesionNames);
+		Collections.sort(ntStudyDates);
+		
+		//fill in the table for target lesions
+		String [][] tTable=fillRecistTable(tLesionNames, tStudyDates, lesions, "target");
+
+		//calculate the sums first
+		Double[] tSums=calcSums(tTable);
+		//calculate the rrs
+		Double[] tRRBaseline=calcRRBaseline(tSums);
+		Double[] tRRMin=calcRRMin(tSums);
+		
+		if (!ntLesionNames.isEmpty() && !ntStudyDates.isEmpty()){
+			//fill in the table for target lesions
+			String [][] ntTable=fillRecistTable(ntLesionNames, ntStudyDates, lesions, "nontarget");
+	
+			//calculate the sums first
+			Double[] ntSums=calcSums(tTable);
+			//calculate the rrs
+			Double[] ntRRBaseline=calcRRBaseline(ntSums);
+			Double[] ntRRMin=calcRRMin(ntSums);
+			return new RecistReport(tLesionNames.toArray(new String[tLesionNames.size()]), tStudyDates.toArray(new String[tStudyDates.size()]), tTable, tSums, tRRBaseline, tRRMin,
+					ntLesionNames.toArray(new String[ntLesionNames.size()]), ntStudyDates.toArray(new String[ntStudyDates.size()]), ntTable, ntSums, ntRRBaseline, ntRRMin);
+
+		}else {
+			return new RecistReport(tLesionNames.toArray(new String[tLesionNames.size()]), tStudyDates.toArray(new String[tStudyDates.size()]), tTable, tSums, tRRBaseline, tRRMin);
+		}
+		
+
+	}
+	
+	
+	public static String [][] fillRecistTable(ArrayList<String> lesionNames, ArrayList<String> studyDates, JSONArray lesions, String type){
+		String [][] table=new String[lesionNames.size()][studyDates.size()+3];
+		//get the values to the table
+		for (int i = 0; i < lesions.length(); i++)
+		{
+			String lesionName = ((JSONObject)((JSONObject)lesions.get(i)).get("Name")).getString("value");
+			String studyDate = ((JSONObject)((JSONObject)lesions.get(i)).get("StudyDate")).getString("value");
+			String aimType=((JSONObject)((JSONObject)lesions.get(i)).get("Type")).getString("value");
+			if (!aimType.equalsIgnoreCase(type)) {
+				continue;
+			}
+			table[lesionNames.indexOf(lesionName)][0]=lesionName;
+			table[lesionNames.indexOf(lesionName)][1]=((JSONObject)((JSONObject)lesions.get(i)).get("Type")).getString("value");
+			table[lesionNames.indexOf(lesionName)][2]=((JSONObject)((JSONObject)lesions.get(i)).get("Location")).getString("value");
+
+			
+			table[lesionNames.indexOf(lesionName)][studyDates.indexOf(studyDate)+3]=((JSONObject)((JSONObject)lesions.get(i)).get("Length")).getString("value");
+		}
+		
+		
+		return table;
+	}
+	private static Double[] calcSums(String[][] table){
+		Double[] sums=new Double[table[0].length-3];
+				for (int j=0; j< table[0].length-3; j++) {
+					sums[j]=0.0;
+					for(int i=0; i<table.length; i++){
+						try{
+							sums[j]+=Double.parseDouble(table[i][j+3]);
+							
+						}catch(NumberFormatException e) {
+							log.warning("Couldn't convert to double value="+table[i][j+3]);
+						}
+					}
+					
+				}
+				
+				return sums;
+	}
+	
+	private static Double[] calcRRBaseline(Double[] sums) {
+		Double baseline=sums[0];
+		Double[] rrBaseline=new Double[sums.length];
+		StringBuilder rrBaseStr= new StringBuilder();
+		for (int i=0;i<sums.length;i++) {
+			rrBaseline[i]=(sums[i]-baseline)*100.0/baseline;
+			rrBaseStr.append(rrBaseline[i]+ "  ");
+		}
+		return rrBaseline;
+	}
+	
+	private static Double[] calcRRMin(Double[] sums) {
+		Double min=999999.0;
+		for (int i=0;i<sums.length;i++) {
+			if (sums[i]<min)
+				min=sums[i];
+		}
+		log.info("Min is "+min);
+		Double[] rrMin=new Double[sums.length];
+		StringBuilder rrMinStr= new StringBuilder();
+		for (int i=0;i<sums.length;i++) {
+			rrMin[i]=(sums[i]-min)*100.0/min;	
+			rrMinStr.append(rrMin[i]+ "  ");
+			
+		}
+		return rrMin;
 	}
 
 }

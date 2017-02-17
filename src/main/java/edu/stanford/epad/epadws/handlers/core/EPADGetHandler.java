@@ -817,9 +817,9 @@ public class EPADGetHandler
 				
 				if (returnTable) {
 					
-					responseStream.append(AimReporter.fillTable(aims,"RECIST",new String[]{"Name","StudyDate","Lesion","Type", "Location","Length"}));
+//					responseStream.append(AimReporter.fillTable(aims,"RECIST",new String[]{"Name","StudyDate","Lesion","Type", "Location","Length"}));
 					
-					
+					responseStream.append(AimReporter.getRecist(aims).toJSON());
 				}
 				else if (returnSummary(httpRequest))
 				{	
