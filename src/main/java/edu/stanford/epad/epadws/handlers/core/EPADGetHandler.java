@@ -1449,16 +1449,7 @@ public class EPADGetHandler
 				String type = httpRequest.getParameter("type");
 				
 				if (report!=null && report.equalsIgnoreCase("WATERFALL")) {
-					Double[] values=AimReporter.getWaterfall(subjectUIDs, username, sessionID, type);
-					StringBuilder jsonArray=new StringBuilder();
-					jsonArray.append("[");
-					for ( int i=0;i<values.length; i++){
-						jsonArray.append(values[i]);
-						if (i!=values.length-1)		
-							jsonArray.append(",");
-					}
-					jsonArray.append("]");
-					responseStream.append(jsonArray.toString());
+					responseStream.append(AimReporter.getWaterfall(subjectUIDs, username, sessionID, type).toJSON());
 				}else{
 					EPADAIMList aims = null;
 					if (!deletedAims)

@@ -120,6 +120,7 @@ import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.epad.dtos.EPADAIM;
 import edu.stanford.epad.dtos.EPADAIMList;
 import edu.stanford.epad.dtos.RecistReport;
+import edu.stanford.epad.dtos.WaterfallReport;
 import edu.stanford.epad.epadws.handlers.core.SubjectReference;
 import edu.stanford.epad.epadws.queries.DefaultEpadOperations;
 import edu.stanford.epad.epadws.queries.EpadOperations;
@@ -446,14 +447,15 @@ public class AimReporter {
 	 * @param type BASELINE or MIN
 	 * @return
 	 */
-	public static Double[] getWaterfall(String subjectIDs, String username, String sessionID, String type){
-		Set<String> subjects = new HashSet<String>();
+	public static WaterfallReport getWaterfall(String subjectIDs, String username, String sessionID, String type){
+		ArrayList<String> subjects = new ArrayList<>();
 		if (subjectIDs != null) {
 			String[] ids = subjectIDs.split(",");
 			for (String id: ids)
 				subjects.add(id.trim());
 		}
 		ArrayList<Double> values=new ArrayList<>();
+		ArrayList<String> responses=new ArrayList<>();
 		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
 		for(String subjectID:subjects) {
 			SubjectReference subjectReference=new SubjectReference(null, subjectID);
@@ -464,12 +466,16 @@ public class AimReporter {
 				log.warning("Couldn't retrieve recist report for patient "+ subjectID);
 				continue;
 			}
-			if (type.equalsIgnoreCase("BASELINE")) 
+			if (type.equalsIgnoreCase("BASELINE")) {
 				values.add(recist.getMinRRBaseLine());
-			else
+				responses.add(recist.getMinRRBaseLineResponse());
+			}else {
 				values.add(recist.getMinRRMinimum());
+				responses.add(recist.getMinRRMinimumResponse());
+			}
 		}
-		Collections.sort(values,Collections.reverseOrder());
-		return values.toArray(new Double[values.size()]);
+		//let Waterfall handle the sorting
+		return new WaterfallReport(subjects.toArray(new String[subjects.size()]), values.toArray(new Double[values.size()]), responses.toArray(new String[responses.size()]));
 	}
+
 }
