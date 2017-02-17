@@ -855,7 +855,13 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		try {
 			elog.save();
 		} catch (Exception e) {
-			log.warning("Error saving event log", e);
+			if (params!=null && params.length()>128) 
+				elog.setParams(params.substring(0, 127));
+			try {
+				elog.save();
+			} catch (Exception e2) {
+				log.warning("Error saving event log", e2);
+			}
 		}
 	}
 
