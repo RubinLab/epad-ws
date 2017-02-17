@@ -814,12 +814,18 @@ public class EPADGetHandler
 				boolean returnTable="returnTable".equals(httpRequest.getParameter("format"));
 				long dbtime = System.currentTimeMillis();
 				log.info("Time taken for AIM database query:" + (dbtime-starttime) + " msecs");
+				String report = httpRequest.getParameter("report");
 				
-				if (returnTable) {
-					
-//					responseStream.append(AimReporter.fillTable(aims,"RECIST",new String[]{"Name","StudyDate","Lesion","Type", "Location","Length"}));
-					
+				if (report!=null && report.equalsIgnoreCase("RECIST")) {
+				
 					responseStream.append(AimReporter.getRecist(aims).toJSON());
+				} else if (returnTable) {
+					String templateCode = httpRequest.getParameter("templatecode");
+					String columns = httpRequest.getParameter("columns"); //comma seperated
+					if (columns!=null) {
+						String[] columnsArray=columns.split(",");
+						responseStream.append(AimReporter.fillTable(aims,templateCode,columnsArray));
+					}
 				}
 				else if (returnSummary(httpRequest))
 				{	
