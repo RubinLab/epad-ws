@@ -925,7 +925,7 @@ public class AIMUtil
 										if (!e.aimID.equals(eaim.aimID) && e.dsoSeriesUID != null && e.dsoSeriesUID.equals(dsoSeriesUID))
 										{
 											ImageReference imageReference = new ImageReference(projectID, e.subjectID, e.studyUID, e.seriesUID, e.imageUID);												
-											if ((eaim.name.equals(e.name) ||  eaim.name.equals(e.name.replace("ePAD DSO-", ""))||(e.isDicomSR==false && eaim.isDicomSR==false))){// if none of them are dicomsr
+											if (((eaim.name!=null && e.name!=null) && (eaim.name.equals(e.name) ||  eaim.name.equals(e.name.replace("ePAD DSO-", ""))))||(e.isDicomSR==false && eaim.isDicomSR==false)){// if none of them are dicomsr
 												epadDatabaseOperations.deleteAIM("admin", e.aimID);
 												log.info("Deleting aim with name:" + e.name + " and aimID:" + eaim.aimID);
 											}
