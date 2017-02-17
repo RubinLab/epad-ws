@@ -1444,74 +1444,91 @@ public class EPADGetHandler
 				boolean deletedAims = "true".equalsIgnoreCase(httpRequest.getParameter("deletedAIMs"));
 				log.info("GET request for AIMs from user " + username + "; query type is " + aimSearchType + ", value "
 						+ searchValue + ", project " + projectID + " deletedAIMs:" + deletedAims);
-				EPADAIMList aims = null;
-				if (!deletedAims)
-					aims = epadOperations.getAIMDescriptions(projectID, aimSearchType, searchValue, username, sessionID, start, count);
 				
-				long dbtime = System.currentTimeMillis();
-				log.info("Time taken for AIM database query:" + (dbtime-starttime) + " msecs");
-				if (database!=null && database.equalsIgnoreCase("AIME")){ //ml
-					if (user!=null)
-						username=user;
+				String report = httpRequest.getParameter("report");
+				String type = httpRequest.getParameter("type");
+				
+				if (report!=null && report.equalsIgnoreCase("WATERFALL")) {
+					Double[] values=AimReporter.getWaterfall(subjectUIDs, username, sessionID, type);
+					StringBuilder jsonArray=new StringBuilder();
+					jsonArray.append("[");
+					for ( int i=0;i<values.length; i++){
+						jsonArray.append(values[i]);
+						if (i!=values.length-1)		
+							jsonArray.append(",");
+					}
+					jsonArray.append("]");
+					responseStream.append(jsonArray.toString());
+				}else{
+					EPADAIMList aims = null;
+					if (!deletedAims)
+						aims = epadOperations.getAIMDescriptions(projectID, aimSearchType, searchValue, username, sessionID, start, count);
+					
+					long dbtime = System.currentTimeMillis();
+					log.info("Time taken for AIM database query:" + (dbtime-starttime) + " msecs");
+					if (database!=null && database.equalsIgnoreCase("AIME")){ //ml
+						if (user!=null)
+							username=user;
+						if (returnSummary(httpRequest))
+						{
+							aims = AIMUtil.queryAIMImageAnnotationSummariesV4AIME(aimSearchType, searchValue, username, sessionID);
+							responseStream.append(aims.toJSON());
+						}else if (returnJson(httpRequest))
+						{
+							AIMUtil.queryAIMImageAnnotationsV4AIME(responseStream, aimSearchType, searchValue, username, sessionID, true);					
+						}else {
+							AIMUtil.queryAIMImageAnnotationsV4AIME(responseStream, aimSearchType, searchValue, username, sessionID, false);					
+						}
+					}
+					else
 					if (returnSummary(httpRequest))
 					{
-						aims = AIMUtil.queryAIMImageAnnotationSummariesV4AIME(aimSearchType, searchValue, username, sessionID);
+						if (AIMSearchType.AIM_QUERY.equals(aimSearchType) || AIMSearchType.JSON_QUERY.equals(aimSearchType))
+						{
+							if (!deletedAims)
+								aims = AIMUtil.queryAIMImageAnnotationSummariesV4(aims, aimSearchType, searchValue, username, sessionID);
+							else
+								aims = AIMUtil.queryDeletedAIMImageAnnotationSummaries(aimSearchType, searchValue, username);
+						}
+						else
+						{
+							if (!deletedAims)
+								aims = AIMUtil.queryAIMImageAnnotationSummariesV4(aims, username, sessionID);					
+							else
+								aims = AIMUtil.queryDeletedAIMImageAnnotationSummaries(aimSearchType, searchValue, username);
+						}
 						responseStream.append(aims.toJSON());
-					}else if (returnJson(httpRequest))
-					{
-						AIMUtil.queryAIMImageAnnotationsV4AIME(responseStream, aimSearchType, searchValue, username, sessionID, true);					
-					}else {
-						AIMUtil.queryAIMImageAnnotationsV4AIME(responseStream, aimSearchType, searchValue, username, sessionID, false);					
 					}
-				}
-				else
-				if (returnSummary(httpRequest))
-				{
-					if (AIMSearchType.AIM_QUERY.equals(aimSearchType) || AIMSearchType.JSON_QUERY.equals(aimSearchType))
+					else if (returnJson(httpRequest))
 					{
-						if (!deletedAims)
-							aims = AIMUtil.queryAIMImageAnnotationSummariesV4(aims, aimSearchType, searchValue, username, sessionID);
+						if (AIMSearchType.JSON_QUERY.equals(aimSearchType))
+						{
+							AIMUtil.queryAIMImageAnnotationsV4(responseStream, aims, aimSearchType, searchValue, username, sessionID, true);					
+						}
 						else
-							aims = AIMUtil.queryDeletedAIMImageAnnotationSummaries(aimSearchType, searchValue, username);
+						{
+							if (!deletedAims)
+								AIMUtil.queryAIMImageJsonAnnotations(responseStream, aims, username, sessionID);					
+							else
+								AIMUtil.queryDeletedAIMImageJsonAnnotation(responseStream, aimSearchType, searchValue, username, sessionID);
+						}
 					}
 					else
 					{
-						if (!deletedAims)
-							aims = AIMUtil.queryAIMImageAnnotationSummariesV4(aims, username, sessionID);					
+						if (AIMSearchType.AIM_QUERY.equals(aimSearchType))
+						{
+							if (!deletedAims)
+								AIMUtil.queryAIMImageAnnotationsV4(responseStream, aims, aimSearchType, searchValue, username, sessionID, false);					
+							else
+								AIMUtil.queryDeletedAIMImageAnnotations(responseStream, aimSearchType, searchValue, username, sessionID);
+						}
 						else
-							aims = AIMUtil.queryDeletedAIMImageAnnotationSummaries(aimSearchType, searchValue, username);
-					}
-					responseStream.append(aims.toJSON());
-				}
-				else if (returnJson(httpRequest))
-				{
-					if (AIMSearchType.JSON_QUERY.equals(aimSearchType))
-					{
-						AIMUtil.queryAIMImageAnnotationsV4(responseStream, aims, aimSearchType, searchValue, username, sessionID, true);					
-					}
-					else
-					{
-						if (!deletedAims)
-							AIMUtil.queryAIMImageJsonAnnotations(responseStream, aims, username, sessionID);					
-						else
-							AIMUtil.queryDeletedAIMImageJsonAnnotation(responseStream, aimSearchType, searchValue, username, sessionID);
-					}
-				}
-				else
-				{
-					if (AIMSearchType.AIM_QUERY.equals(aimSearchType))
-					{
-						if (!deletedAims)
-							AIMUtil.queryAIMImageAnnotationsV4(responseStream, aims, aimSearchType, searchValue, username, sessionID, false);					
-						else
-							AIMUtil.queryDeletedAIMImageAnnotations(responseStream, aimSearchType, searchValue, username, sessionID);
-					}
-					else
-					{
-						if (!deletedAims)
-							AIMUtil.queryAIMImageAnnotationsV4(responseStream, aims, username, sessionID);					
-						else
-							AIMUtil.queryDeletedAIMImageAnnotations(responseStream, aimSearchType, searchValue, username, sessionID);
+						{
+							if (!deletedAims)
+								AIMUtil.queryAIMImageAnnotationsV4(responseStream, aims, username, sessionID);					
+							else
+								AIMUtil.queryDeletedAIMImageAnnotations(responseStream, aimSearchType, searchValue, username, sessionID);
+						}
 					}
 				}
 				statusCode = HttpServletResponse.SC_OK;

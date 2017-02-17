@@ -108,7 +108,9 @@ package edu.stanford.epad.epadws.aim;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -118,8 +120,10 @@ import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.epad.dtos.EPADAIM;
 import edu.stanford.epad.dtos.EPADAIMList;
 import edu.stanford.epad.dtos.RecistReport;
+import edu.stanford.epad.epadws.handlers.core.SubjectReference;
+import edu.stanford.epad.epadws.queries.DefaultEpadOperations;
+import edu.stanford.epad.epadws.queries.EpadOperations;
 import edu.stanford.hakan.aim4api.base.AimException;
-import edu.stanford.hakan.aim4api.base.CD;
 import edu.stanford.hakan.aim4api.base.CalculationEntity;
 import edu.stanford.hakan.aim4api.base.DicomImageReferenceEntity;
 import edu.stanford.hakan.aim4api.base.ExtendedCalculationResult;
@@ -165,6 +169,7 @@ public class AimReporter {
 					if (templatecode!=null) {
 						if (!ia.getListTypeCode().get(0).getCode().equalsIgnoreCase(templatecode)) {
 							log.warning("Aim template is "+ia.getListTypeCode().get(0).getCode().equalsIgnoreCase(templatecode) + " was looking for "+templatecode);
+							table[row++]=null;
 							continue;
 						}
 					}
@@ -243,6 +248,8 @@ public class AimReporter {
 		StringBuilder tableJson=new StringBuilder();
 		tableJson.append("[");
 		for (int i=0;i<table.length;i++){
+			if (table[i]==null) 
+				continue;
 			tableJson.append("{");
 			for (int j = 0; j < table[0].length; j++) {
 				tableJson.append(table[i][j]);
@@ -267,9 +274,16 @@ public class AimReporter {
 	
 	
 	public static RecistReport getRecist(EPADAIMList aims){
-		
-		JSONArray lesions= new JSONArray(AimReporter.fillTable(aims,"RECIST",new String[]{"Name","StudyDate","Lesion","Type", "Location","Length"}));
-		
+		String table=AimReporter.fillTable(aims,"RECIST",new String[]{"Name","StudyDate","Lesion","Type", "Location","Length"});
+		if (table==null || table.isEmpty()) 
+			return null;
+		JSONArray lesions;
+		try{
+			lesions=new JSONArray(table);
+		}catch(Exception e) {
+			log.warning("couldn't parse json for "+table);
+			return null;
+		}
 		//get targets
 		ArrayList<String> tLesionNames=new ArrayList<>();
 		ArrayList<String> tStudyDates=new ArrayList<>();
@@ -299,30 +313,33 @@ public class AimReporter {
 		Collections.sort(ntLesionNames);
 		Collections.sort(ntStudyDates);
 		
-		//fill in the table for target lesions
-		String [][] tTable=fillRecistTable(tLesionNames, tStudyDates, lesions, "target");
-
-		//calculate the sums first
-		Double[] tSums=calcSums(tTable);
-		//calculate the rrs
-		Double[] tRRBaseline=calcRRBaseline(tSums);
-		Double[] tRRMin=calcRRMin(tSums);
-		
-		if (!ntLesionNames.isEmpty() && !ntStudyDates.isEmpty()){
+		if (!tLesionNames.isEmpty() && !tStudyDates.isEmpty()){
 			//fill in the table for target lesions
-			String [][] ntTable=fillRecistTable(ntLesionNames, ntStudyDates, lesions, "nontarget");
-	
+			
+			String [][] tTable=fillRecistTable(tLesionNames, tStudyDates, lesions, "target");
 			//calculate the sums first
-			Double[] ntSums=calcSums(tTable);
+			Double[] tSums=calcSums(tTable);
 			//calculate the rrs
-			Double[] ntRRBaseline=calcRRBaseline(ntSums);
-			Double[] ntRRMin=calcRRMin(ntSums);
-			return new RecistReport(tLesionNames.toArray(new String[tLesionNames.size()]), tStudyDates.toArray(new String[tStudyDates.size()]), tTable, tSums, tRRBaseline, tRRMin,
-					ntLesionNames.toArray(new String[ntLesionNames.size()]), ntStudyDates.toArray(new String[ntStudyDates.size()]), ntTable, ntSums, ntRRBaseline, ntRRMin);
-
-		}else {
-			return new RecistReport(tLesionNames.toArray(new String[tLesionNames.size()]), tStudyDates.toArray(new String[tStudyDates.size()]), tTable, tSums, tRRBaseline, tRRMin);
+			Double[] tRRBaseline=calcRRBaseline(tSums);
+			Double[] tRRMin=calcRRMin(tSums);
+			
+			if (!ntLesionNames.isEmpty() && !ntStudyDates.isEmpty()){
+				//fill in the table for target lesions
+				String [][] ntTable=fillRecistTable(ntLesionNames, ntStudyDates, lesions, "nontarget");
+		
+				//calculate the sums first
+				Double[] ntSums=calcSums(tTable);
+				//calculate the rrs
+				Double[] ntRRBaseline=calcRRBaseline(ntSums);
+				Double[] ntRRMin=calcRRMin(ntSums);
+				return new RecistReport(tLesionNames.toArray(new String[tLesionNames.size()]), tStudyDates.toArray(new String[tStudyDates.size()]), tTable, tSums, tRRBaseline, tRRMin,
+						ntLesionNames.toArray(new String[ntLesionNames.size()]), ntStudyDates.toArray(new String[ntStudyDates.size()]), ntTable, ntSums, ntRRBaseline, ntRRMin);
+	
+			}else {
+				return new RecistReport(tLesionNames.toArray(new String[tLesionNames.size()]), tStudyDates.toArray(new String[tStudyDates.size()]), tTable, tSums, tRRBaseline, tRRMin);
+			}
 		}
+		return null;
 		
 
 	}
@@ -396,4 +413,39 @@ public class AimReporter {
 		return rrMin;
 	}
 
+	
+	/**
+	 * 
+	 * @param subjectIDs
+	 * @param username
+	 * @param sessionID
+	 * @param type BASELINE or MIN
+	 * @return
+	 */
+	public static Double[] getWaterfall(String subjectIDs, String username, String sessionID, String type){
+		Set<String> subjects = new HashSet<String>();
+		if (subjectIDs != null) {
+			String[] ids = subjectIDs.split(",");
+			for (String id: ids)
+				subjects.add(id.trim());
+		}
+		ArrayList<Double> values=new ArrayList<>();
+		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
+		for(String subjectID:subjects) {
+			SubjectReference subjectReference=new SubjectReference(null, subjectID);
+			EPADAIMList aims = epadOperations.getSubjectAIMDescriptions(subjectReference, username, sessionID);
+			log.info(aims.ResultSet.totalRecords+ " aims found for "+ subjectID);
+			RecistReport recist=getRecist(aims);
+			if (recist==null) {
+				log.warning("Couldn't retrieve recist report for patient "+ subjectID);
+				continue;
+			}
+			if (type.equalsIgnoreCase("BASELINE")) 
+				values.add(recist.getMinRRBaseLine());
+			else
+				values.add(recist.getMinRRMinimum());
+		}
+		Collections.sort(values,Collections.reverseOrder());
+		return values.toArray(new Double[values.size()]);
+	}
 }
