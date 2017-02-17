@@ -338,7 +338,10 @@ public class AimReporter {
 			}else {
 				return new RecistReport(tLesionNames.toArray(new String[tLesionNames.size()]), tStudyDates.toArray(new String[tStudyDates.size()]), tTable, tSums, tRRBaseline, tRRMin);
 			}
+		}else {
+			log.info("no target lesion in table " +table );
 		}
+		
 		return null;
 		
 
