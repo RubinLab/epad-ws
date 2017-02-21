@@ -323,6 +323,7 @@ public class AimReporter {
 			//calculate the rrs
 			Double[] tRRBaseline=calcRRBaseline(tSums);
 			Double[] tRRMin=calcRRMin(tSums);
+			Double[] tRR=calcRR(tSums);
 			String[] responseCats=calcResponseCat(tRRBaseline);
 			
 			if (!ntLesionNames.isEmpty() && !ntStudyDates.isEmpty()){
@@ -330,17 +331,17 @@ public class AimReporter {
 				String [][] ntTable=fillRecistTable(ntLesionNames, ntStudyDates, lesions, "nontarget");
 		
 				//calculate the sums first
-				Double[] ntSums=calcSums(tTable);
+				Double[] ntSums=calcSums(ntTable);
 				//calculate the rrs
 				Double[] ntRRBaseline=calcRRBaseline(ntSums);
 				Double[] ntRRMin=calcRRMin(ntSums);
 				
 				
-				return new RecistReport(tLesionNames.toArray(new String[tLesionNames.size()]), tStudyDates.toArray(new String[tStudyDates.size()]), tTable, tSums, tRRBaseline, tRRMin, responseCats,
+				return new RecistReport(tLesionNames.toArray(new String[tLesionNames.size()]), tStudyDates.toArray(new String[tStudyDates.size()]), tTable, tSums, tRRBaseline, tRRMin, tRR, responseCats,
 						ntLesionNames.toArray(new String[ntLesionNames.size()]), ntStudyDates.toArray(new String[ntStudyDates.size()]), ntTable, ntSums, ntRRBaseline, ntRRMin);
 	
 			}else {
-				return new RecistReport(tLesionNames.toArray(new String[tLesionNames.size()]), tStudyDates.toArray(new String[tStudyDates.size()]), tTable, tSums, tRRBaseline, tRRMin, responseCats);
+				return new RecistReport(tLesionNames.toArray(new String[tLesionNames.size()]), tStudyDates.toArray(new String[tStudyDates.size()]), tTable, tSums, tRRBaseline, tRRMin, tRR, responseCats);
 			}
 		}else {
 			log.info("no target lesion in table " +table );
@@ -418,6 +419,22 @@ public class AimReporter {
 			
 		}
 		return rrMin;
+	}
+	
+	private static Double[] calcRR(Double[] sums) {
+		Double min=sums[0];
+		log.info("Min is "+min);
+		Double[] rr=new Double[sums.length];
+		StringBuilder rrStr= new StringBuilder();
+		for (int i=0;i<sums.length;i++) {
+			rr[i]=(sums[i]-min)*100.0/min;	
+			rrStr.append(rr[i]+ "  ");
+			if (sums[i]<min) {
+				min=sums[i];
+				log.info("Min changed. New min is:"+min);
+			}
+		}
+		return rr;
 	}
 	
 	
