@@ -1390,7 +1390,20 @@ public class EPADGetHandler
 				EPADAIMList aims = epadOperations.getSubjectAIMDescriptions(subjectReference, username, sessionID);
 				long dbtime = System.currentTimeMillis();
 				log.info("Time taken for AIM database query:" + (dbtime-starttime) + " msecs");
-				if (returnSummary(httpRequest))
+				boolean returnTable="returnTable".equals(httpRequest.getParameter("format"));
+				String report = httpRequest.getParameter("report");
+				if (report!=null && report.equalsIgnoreCase("RECIST")) {
+					
+					responseStream.append(AimReporter.getRecist(aims).toJSON());
+				} else if (returnTable) {
+					String templateCode = httpRequest.getParameter("templatecode");
+					String columns = httpRequest.getParameter("columns"); //comma seperated
+					if (columns!=null) {
+						String[] columnsArray=columns.split(",");
+						responseStream.append(AimReporter.fillTable(aims,templateCode,columnsArray));
+					}
+				}
+				else if (returnSummary(httpRequest))
 				{	
 					aims = AIMUtil.queryAIMImageAnnotationSummariesV4(aims, username, sessionID);					
 					responseStream.append(aims.toJSON());
