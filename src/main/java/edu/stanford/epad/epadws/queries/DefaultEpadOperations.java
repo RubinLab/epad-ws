@@ -732,9 +732,15 @@ public class DefaultEpadOperations implements EpadOperations
 				if (epadSeries.isDSO){ //bad solution!!
 					//ml filter dsos with no permission
 					log.info("filter");
-					List<EPADAIM> aims = this.epadDatabaseOperations.getAIMsByDSOSeries(epadSeries.seriesUID);
+					List<EPADAIM> aims = null;
+					if (studyReference.projectID!=null && !studyReference.projectID.equals(""))
+						aims=this.epadDatabaseOperations.getAIMsByDSOSeries(studyReference.projectID,epadSeries.seriesUID);
+					else{
+						aims=this.epadDatabaseOperations.getAIMsByDSOSeries(epadSeries.seriesUID);
+						log.info("No project id. Returning all series for this project. may download dso series that are in other projects");
+					}
 					try {
-						EPADAIMList aimList = AIMUtil.filterPermittedImageAnnotations(new EPADAIMList(aims), username, sessionID);
+						EPADAIMList aimList = AIMUtil.filterPermittedImageAnnotations(new EPADAIMList(aims), username, sessionID, studyReference.projectID);
 						if (aimList!=null && aimList.ResultSet.totalRecords!=0) {
 							log.info("putting dso series:"+epadSeries.seriesUID);
 							epadSeriesList.addEPADSeries(epadSeries);
