@@ -108,10 +108,7 @@ package edu.stanford.epad.epadws.aim;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
-
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -120,6 +117,7 @@ import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.epad.dtos.EPADAIM;
 import edu.stanford.epad.dtos.EPADAIMList;
 import edu.stanford.epad.dtos.RecistReport;
+import edu.stanford.epad.dtos.RecistReportUIDCell;
 import edu.stanford.epad.dtos.WaterfallReport;
 import edu.stanford.epad.epadws.handlers.core.SubjectReference;
 import edu.stanford.epad.epadws.queries.DefaultEpadOperations;
@@ -185,7 +183,28 @@ public class AimReporter {
 						try{
 							values.put("Name", formJsonObj(ia.getName().getValue()));
 						}catch(Exception e){
-							log.warning("The value for StudyDate couldn't be retrieved ", e);
+							log.warning("The value for Name couldn't be retrieved ", e);
+						}
+					}
+					if (values.containsKey("StudyUID")) {
+						try{
+							values.put("StudyUID", formJsonObj(((DicomImageReferenceEntity)ia.getImageReferenceEntityCollection().get(0)).getImageStudy().getInstanceUid().getRoot()));
+						}catch(Exception e){
+							log.warning("The value for StudyUID couldn't be retrieved ", e);
+						}
+					}
+					if (values.containsKey("SeriesUID")) {
+						try{
+							values.put("SeriesUID", formJsonObj(((DicomImageReferenceEntity)ia.getImageReferenceEntityCollection().get(0)).getImageStudy().getImageSeries().getInstanceUid().getRoot()));
+						}catch(Exception e){
+							log.warning("The value for SeriesUID couldn't be retrieved ", e);
+						}
+					}
+					if (values.containsKey("AimUID")) {
+						try{
+							values.put("AimUID", formJsonObj(iac.getUniqueIdentifier().getRoot()));
+						}catch(Exception e){
+							log.warning("The value for AimUID couldn't be retrieved ", e);
 						}
 					}
 					
@@ -280,7 +299,7 @@ public class AimReporter {
 	 * @return
 	 */
 	public static RecistReport getRecist(EPADAIMList aims){
-		String table=AimReporter.fillTable(aims,"RECIST",new String[]{"Name","StudyDate","Lesion","Type", "Location","Length"});
+		String table=AimReporter.fillTable(aims,"RECIST",new String[]{"Name","StudyDate","Lesion","Type", "Location","Length","StudyUID","SeriesUID","AimUID"});
 		if (table==null || table.isEmpty()) 
 			return null;
 		JSONArray lesions;
@@ -330,7 +349,8 @@ public class AimReporter {
 		if (!tLesionNames.isEmpty() && !tStudyDates.isEmpty()){
 			//fill in the table for target lesions
 			Integer[] tTimepoints=new Integer[tStudyDates.size()];
-			String [][] tTable=fillRecistTable(tLesionNames, tStudyDates, lesions, targetTypes,tTimepoints);
+			RecistReportUIDCell[][] tUIDs=new RecistReportUIDCell[tLesionNames.size()][tStudyDates.size()];
+			String [][] tTable=fillRecistTable(tLesionNames, tStudyDates, lesions, targetTypes,tTimepoints, tUIDs);
 			//calculate the sums first
 			Double[] tSums=calcSums(tTable);
 			//calculate the rrs
@@ -352,7 +372,8 @@ public class AimReporter {
 				ArrayList<String> nonTargetTypes=new ArrayList<>();
 				targetTypes.add("non-target");
 				Integer[] ntTimepoints=new Integer[ntStudyDates.size()];
-				String [][] ntTable=fillRecistTable(ntLesionNames, ntStudyDates, lesions, nonTargetTypes, ntTimepoints);
+				RecistReportUIDCell[][] ntUIDs=new RecistReportUIDCell[ntLesionNames.size()][ntStudyDates.size()];
+				String [][] ntTable=fillRecistTable(ntLesionNames, ntStudyDates, lesions, nonTargetTypes, ntTimepoints, ntUIDs);
 		
 				//calculate the sums first
 				Double[] ntSums=calcSums(ntTable);
@@ -361,11 +382,11 @@ public class AimReporter {
 				Double[] ntRRMin=calcRRMin(ntSums);
 				
 				
-				return new RecistReport(tLesionNames.toArray(new String[tLesionNames.size()]), tStudyDates.toArray(new String[tStudyDates.size()]), tTable, tSums, tRRBaseline, tRRMin, tRR, responseCats,
-						ntLesionNames.toArray(new String[ntLesionNames.size()]), ntStudyDates.toArray(new String[ntStudyDates.size()]), ntTable, ntSums, ntRRBaseline, ntRRMin);
+				return new RecistReport(tLesionNames.toArray(new String[tLesionNames.size()]), tStudyDates.toArray(new String[tStudyDates.size()]), tTable, tSums, tRRBaseline, tRRMin, tRR, responseCats, tUIDs,
+						ntLesionNames.toArray(new String[ntLesionNames.size()]), ntStudyDates.toArray(new String[ntStudyDates.size()]), ntTable, ntSums, ntRRBaseline, ntRRMin, ntUIDs);
 	
 			}else {
-				return new RecistReport(tLesionNames.toArray(new String[tLesionNames.size()]), tStudyDates.toArray(new String[tStudyDates.size()]), tTable, tSums, tRRBaseline, tRRMin, tRR, responseCats);
+				return new RecistReport(tLesionNames.toArray(new String[tLesionNames.size()]), tStudyDates.toArray(new String[tStudyDates.size()]), tTable, tSums, tRRBaseline, tRRMin, tRR, responseCats, tUIDs);
 			}
 		}else {
 			log.info("no target lesion in table " +table );
@@ -382,13 +403,15 @@ public class AimReporter {
 	 * Also analyses the table and fills in the timepoint array which has timepoint numbers. 
 	 * 0, 1, ...
 	 * 0 is baseline
+	 * and fills in the UIDStruct table. table is constructed in the same manner with the recist table (lesion names are rows, study dates are columns), but it doesn't have the extra info columns recist table has
+	 * for each annotation UIDStruct has StudyUID, SeriesUID and AimUID
 	 * @param lesionNames
 	 * @param studyDates
 	 * @param lesions
 	 * @param type
 	 * @return
 	 */
-	public static String [][] fillRecistTable(ArrayList<String> lesionNames, ArrayList<String> studyDates, JSONArray lesions, ArrayList<String> type, Integer[] timepoints){
+	public static String [][] fillRecistTable(ArrayList<String> lesionNames, ArrayList<String> studyDates, JSONArray lesions, ArrayList<String> type, Integer[] timepoints, RecistReportUIDCell[][] UIDs){
 		String [][] table=new String[lesionNames.size()][studyDates.size()+3];
 		
 		int baselineIndex=0;
@@ -431,6 +454,15 @@ public class AimReporter {
 			timepoints[studyDates.indexOf(studyDate)]=timepoint;
 			
 			table[lesionNames.indexOf(lesionName)][studyDates.indexOf(studyDate)+3]=((JSONObject)((JSONObject)lesions.get(i)).get("Length")).getString("value");
+		
+			if (UIDs!=null){
+				String studyUID = ((JSONObject)((JSONObject)lesions.get(i)).get("StudyUID")).getString("value");
+				String seriesUID = ((JSONObject)((JSONObject)lesions.get(i)).get("SeriesUID")).getString("value");
+				String aimUID=((JSONObject)((JSONObject)lesions.get(i)).get("AimUID")).getString("value");
+				//put as a UID cell object
+				UIDs[lesionNames.indexOf(lesionName)][studyDates.indexOf(studyDate)]=new RecistReportUIDCell(studyUID, seriesUID, aimUID);
+				
+			}
 		}
 		
 		
