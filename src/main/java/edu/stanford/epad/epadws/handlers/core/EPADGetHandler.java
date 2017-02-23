@@ -343,7 +343,7 @@ public class EPADGetHandler
 				//ml multiple subjects
 				if (subjectReference.subjectID.contains(",") && returnStream(httpRequest) ) {
 					subjectUIDs=subjectReference.subjectID;
-					DownloadUtil.downloadSubjects(true, httpResponse, subjectReference.subjectID, username, sessionID, searchFilter, includeAims);
+					DownloadUtil.downloadSubjects(true, httpResponse, subjectReference.subjectID, username, sessionID, searchFilter, includeAims, subjectReference.projectID);
 
 				}else if (returnConnected(httpRequest)) { //ml connected data for deletion
 					log.info("get projects for subject " + subjectReference.subjectID );
@@ -396,12 +396,12 @@ public class EPADGetHandler
 	
 				}else if (returnFile(httpRequest)) {
 					if (studyReference.studyUID.contains(","))
-						DownloadUtil.downloadStudies(false, httpResponse, studyReference.studyUID, username, sessionID, includeAims);
+						DownloadUtil.downloadStudies(false, httpResponse, studyReference.studyUID, username, sessionID, includeAims, studyReference.projectID);
 					else
 						DownloadUtil.downloadStudy(false, httpResponse, studyReference, username, sessionID, searchFilter, seriesUIDs, includeAims);
 				} else if (returnStream(httpRequest)) {
 					if (studyReference.studyUID.contains(","))
-						DownloadUtil.downloadStudies(true, httpResponse, studyReference.studyUID, username, sessionID, includeAims);
+						DownloadUtil.downloadStudies(true, httpResponse, studyReference.studyUID, username, sessionID, includeAims, studyReference.projectID);
 					else
 						DownloadUtil.downloadStudy(true, httpResponse, studyReference, username, sessionID, searchFilter, seriesUIDs, includeAims);
 				} else {

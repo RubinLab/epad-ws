@@ -1152,18 +1152,24 @@ public class AIMUtil
 	
 	public static EPADAIMList filterPermittedImageAnnotations(EPADAIMList aims, String user, String sessionID) throws ParserConfigurationException, AimException
 	{
+		return filterPermittedImageAnnotations(aims, user, sessionID,null);
+	}
+	public static EPADAIMList filterPermittedImageAnnotations(EPADAIMList aims, String user, String sessionID, String projectUID) throws ParserConfigurationException, AimException
+	{
 		long starttime = System.currentTimeMillis();
 		EPADAIMList aimsFromExist = new EPADAIMList();
 		EPADAIMList aimsFromDB = new EPADAIMList();
 		for (EPADAIM ea: aims.ResultSet.Result)
 		{
-			if (ea.xml == null || ea.xml.equals(""))
-			{
-				aimsFromExist.addAIM(ea);
-			}
-			else
-			{
-				aimsFromDB.addAIM(ea);
+			if (projectUID==null || projectUID.equals("") || ea.projectID.equals(projectUID)) {
+				if (ea.xml == null || ea.xml.equals(""))
+				{
+					aimsFromExist.addAIM(ea);
+				}
+				else
+				{
+					aimsFromDB.addAIM(ea);
+				}
 			}
 		}
 		log.info("aimd from db:"+aimsFromDB.ResultSet.totalRecords);

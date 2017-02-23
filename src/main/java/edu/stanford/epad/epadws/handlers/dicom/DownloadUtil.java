@@ -180,6 +180,10 @@ public class DownloadUtil {
 	private static final String INTERNAL_EXCEPTION_MESSAGE = "Internal error from WADO";
 	private static final String downloadDirName = "downloadWS/";
 
+	public static void downloadSubjects(boolean stream, HttpServletResponse httpResponse, String subjectUIDs, String username, String sessionID, 
+			EPADSearchFilter searchFilter,  boolean includeAIMs) throws Exception {
+		downloadSubjects(stream, httpResponse, subjectUIDs, username, sessionID, searchFilter, includeAIMs, null);
+	}
 	/**
 	 * Method to download multiple Subject dicoms
 	 * 
@@ -194,7 +198,7 @@ public class DownloadUtil {
 	 * @throws Exception
 	 */
 	public static void downloadSubjects(boolean stream, HttpServletResponse httpResponse, String subjectUIDs, String username, String sessionID, 
-			EPADSearchFilter searchFilter,  boolean includeAIMs) throws Exception {
+			EPADSearchFilter searchFilter,  boolean includeAIMs, String projectID) throws Exception {
 	log.info("Downloading subjects:" + subjectUIDs + " stream:" + stream);
 	Set<String> subjects = new HashSet<String>();
 	if (subjectUIDs != null) {
@@ -211,7 +215,7 @@ public class DownloadUtil {
 	//subjects
 	for (String subjectID: subjects)
 	{
-		SubjectReference subjectReference = new SubjectReference(null, subjectID);
+		SubjectReference subjectReference = new SubjectReference(projectID, subjectID);
 		EPADSubject subject = epadOperations.getSubjectDescription(subjectReference, username, sessionID);
 
 		if (!subjects.isEmpty() && !subjects.contains(subject.subjectID)) continue;
@@ -618,6 +622,21 @@ public static void downloadSubject(boolean stream, HttpServletResponse httpRespo
 }
 
 /**
+ * keep the old version
+ * @param stream
+ * @param httpResponse
+ * @param studyUIDs
+ * @param username
+ * @param sessionID
+ * @param includeAIMs
+ * @throws Exception
+ */
+public static void downloadStudies(boolean stream, HttpServletResponse httpResponse, String studyUIDs, String username, String sessionID, boolean includeAIMs) throws Exception
+{
+	downloadStudies(stream, httpResponse, studyUIDs, username, sessionID, includeAIMs, null);
+}
+
+/**
  * Method to download list of Study dicoms
  * 
  * @param stream - true if file should stream, otherwise placed on disk to be picked (should be deleted after use)
@@ -627,9 +646,10 @@ public static void downloadSubject(boolean stream, HttpServletResponse httpRespo
  * @param sessionID
  * @param searchFilter
  * @param studyUIDs - download only these selected studies
+ * @param projectID
  * @throws Exception
  */
-public static void downloadStudies(boolean stream, HttpServletResponse httpResponse, String studyUIDs, String username, String sessionID, boolean includeAIMs) throws Exception
+public static void downloadStudies(boolean stream, HttpServletResponse httpResponse, String studyUIDs, String username, String sessionID, boolean includeAIMs, String projectID) throws Exception
 {
 	log.info("Downloading studies:" + studyUIDs + " stream:" + stream);
 	Set<String> studies = new HashSet<String>();
@@ -651,18 +671,18 @@ public static void downloadStudies(boolean stream, HttpServletResponse httpRespo
 		File studyDir = new File(downloadDir, "Study-" + studyUID);
 		studyDir.mkdirs();
 
-		StudyReference studyReference = new StudyReference(null, null, studyUID);
+		StudyReference studyReference = new StudyReference(projectID, null, studyUID);
 		EPADStudy study = epadOperations.getStudyDescription(studyReference, username, sessionID);
 		if (study == null)
 			throw new Exception("Study not found:" + studyReference.studyUID);
-		studyReference = new StudyReference(null, study.patientID, studyUID);
+		studyReference = new StudyReference(projectID, study.patientID, studyUID);
 		EPADSeriesList seriesList = epadOperations.getSeriesDescriptions(studyReference, username, sessionID, new EPADSearchFilter(), false);
 		for (EPADSeries series: seriesList.ResultSet.Result)
 		{
 			if (series.isNonDicomSeries) {
 				File seriesDir = new File(studyDir, "Series-" + series.seriesUID);
 				seriesDir.mkdirs();
-				List<EpadFile> files = projectOperations.getSeriesFiles(null, null, studyUID, series.seriesUID);
+				List<EpadFile> files = projectOperations.getSeriesFiles(projectID, null, studyUID, series.seriesUID);
 				for (EpadFile file: files) {
 					String name = file.getName();
 					File epadFile = new File(seriesDir, name);
