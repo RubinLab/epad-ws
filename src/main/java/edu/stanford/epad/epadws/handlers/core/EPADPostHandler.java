@@ -127,6 +127,7 @@ import edu.stanford.epad.dtos.EPADProject;
 import edu.stanford.epad.dtos.EPADSubject;
 import edu.stanford.epad.epadws.aim.AIMSearchType;
 import edu.stanford.epad.epadws.aim.AIMUtil;
+import edu.stanford.epad.epadws.aim.AimMigrator;
 import edu.stanford.epad.epadws.handlers.HandlerUtil;
 import edu.stanford.epad.epadws.handlers.dicom.DSOUtil;
 import edu.stanford.epad.epadws.models.ProjectType;
@@ -461,15 +462,15 @@ public class EPADPostHandler
 					String migrateFrom = httpRequest.getParameter("migrateFrom");
 					if (migrateFrom!=null && migrateFrom.equalsIgnoreCase("mint")) {
 						JSONObject mintJson = HandlerUtil.getPostedJson(httpRequest);
-						AIMUtil.migrateAimFromMintJson(mintJson,projectReference.projectID, username, "RECIST");
+						AimMigrator.migrateAimFromMintJson(mintJson,projectReference.projectID, username, "RECIST");
 						
 					}else if (migrateFrom!=null && migrateFrom.equalsIgnoreCase("osirix")) {
 						if (uploadedFile!=null){
-							AIMUtil.migrateAimFromOsirixJson(uploadedFile,projectReference.projectID, username, "ROI");
+							AimMigrator.migrateAimFromOsirixJson(uploadedFile,projectReference.projectID, username, "ROI");
 						}else {
 							JSONObject osirixJson = HandlerUtil.getPostedPListXML(httpRequest);
 							log.info("xml json "+osirixJson.toString());
-							AIMUtil.migrateAimFromOsirixJson(osirixJson,projectReference.projectID, username, "ROI");
+							AimMigrator.migrateAimFromOsirixJson(osirixJson,projectReference.projectID, username, "ROI");
 						}
 						
 					}else { //regular. rerunning plugin on annotations
@@ -507,7 +508,7 @@ public class EPADPostHandler
 					String migrateFrom = httpRequest.getParameter("migrateFrom");
 					if (migrateFrom!=null && migrateFrom.equalsIgnoreCase("mint")) {
 						JSONObject mintJson = HandlerUtil.getPostedJson(httpRequest);
-						String aimName=AIMUtil.migrateAimFromMintJson(mintJson, username, "RECIST");
+						String aimName=AimMigrator.migrateAimFromMintJson(mintJson, username, "RECIST");
 						
 						String scheme = httpRequest.getScheme();             // http
 					    String serverName = httpRequest.getServerName();     // epad-dev4
