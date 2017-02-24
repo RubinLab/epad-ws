@@ -2158,6 +2158,7 @@ public class EPADGetHandler
 						templates.addTemplate(template);
 					}
 				}
+				templates.sort();
 				responseStream.append(templates.toJSON());
 				statusCode = HttpServletResponse.SC_OK;
 
@@ -2165,6 +2166,7 @@ public class EPADGetHandler
 				String templateLevelType = httpRequest.getParameter("templateleveltype");
 				boolean includeSystemTemplates = "true".equals(httpRequest.getParameter("includeSystemTemplates"));
 				EPADTemplateContainerList templates = epadOperations.getTemplateDescriptions(username, sessionID, templateLevelType, includeSystemTemplates);
+				templates.sort();
 				responseStream.append(templates.toJSON());
 				statusCode = HttpServletResponse.SC_OK;
 
