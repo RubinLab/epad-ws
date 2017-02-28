@@ -7,4 +7,4 @@
 
 ##moveSeriesToTrash not supported in the current dcm4chee
 
-./twiddle.sh -s dcm4chee:1099 -uadmin -padmin invoke dcm4chee.archive:service=ContentEditService moveSeriesToTrash $1;
+./twiddle.sh -s dcm4chee:1099 -uadmin -p$2 invoke dcm4chee.archive:service=ContentEditService moveSeriesToTrash $1;

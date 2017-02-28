@@ -131,13 +131,13 @@ public class Dcm4CheeOperations
 	
 	static final String[] scriptFiles = {
 		"dcmsnd",
-		"twiddle.sh",
 		"dcm2txt",
 	};
 	
 	static final String[] dockerSpecificScriptFiles = {
 			"dcmdeleteSeries",
 			"dcmdeleteStudy",
+			"twiddle.sh", //needs to be overridden. file is the same for docker and other
 		};
 	
 	static final String[] libFiles = {
