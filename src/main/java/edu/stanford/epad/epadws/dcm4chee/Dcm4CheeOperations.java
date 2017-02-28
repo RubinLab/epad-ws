@@ -373,7 +373,7 @@ public class Dcm4CheeOperations
 		try {
 			log.info("Deleting study " + studyUID + " files - command: ./dcmdeleteStudy " + studyUID);
 
-			String[] command = { "./dcmdeleteStudy", studyUID };
+			String[] command = { "./dcmdeleteStudy", studyUID, EPADConfig.xnatUploadProjectPassword };
 
 			ProcessBuilder pb = new ProcessBuilder(command);
 			String dicomScriptsDir = EPADConfig.getEPADWebServerDICOMScriptsDir() + "bin/";
