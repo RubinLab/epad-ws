@@ -5,4 +5,4 @@
 ##                                                                          ##
 ### ====================================================================== ###
 
-./twiddle.sh -s dcm4chee:1099 -uadmin -padmin invoke dcm4chee.archive:service=ContentEditService moveStudyToTrash $1;
+./twiddle.sh -s dcm4chee:1099 -uadmin -p$2 invoke dcm4chee.archive:service=ContentEditService moveStudyToTrash $1;
