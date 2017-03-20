@@ -915,7 +915,7 @@ public class DSOUtil
 						String pngMaskFilePath = pngMaskDirectoryPath + i + ".png";
 						try {
 							log.info("buffered image ");
-							BufferedImage bufferedImage = sourceDSOImage.getBufferedImage(frameNumber);
+							BufferedImage bufferedImage = sourceDSOImage.getBufferedImage(i);
 							BufferedImage bufferedImageWithTransparency =null;
 							log.info("buffered image "+ bufferedImage.toString());
 							if (segType.equalsIgnoreCase("BINARY")){
@@ -942,11 +942,11 @@ public class DSOUtil
 							log.info(" pngMaskFile "+ pngMaskFile.getAbsolutePath());
 							
 							insertEpadFile(databaseOperations, pngMaskFilePath, pngMaskFile.length(), imageUID);
-							log.info("Writing PNG mask file frame " + frameNumber + " of " + numberOfFrames + " for DSO " + imageUID + " in series " + seriesUID + " file:" + pngMaskFilePath + " nonBlank:" + nonBlank.get());
+							log.info("Writing PNG mask file frame " + i + " of " + numberOfFrames + " for DSO " + imageUID + " in series " + seriesUID + " file:" + pngMaskFilePath + " nonBlank:" + nonBlank.get());
 							ImageIO.write(bufferedImageWithTransparency, "png", pngMaskFile);
 							databaseOperations.updateEpadFileRow(pngMaskFilePath, PNGFileProcessingStatus.DONE, 0, "");
 						} catch (Exception e) {
-							log.warning("Failure writing PNG mask file " + pngMaskFilePath + " for frame " + frameNumber + " of DSO "
+							log.warning("Failure writing PNG mask file " + pngMaskFilePath + " for frame " + i + " of DSO "
 									+ imageUID + " in series " + seriesUID, e);
 						}
 						
