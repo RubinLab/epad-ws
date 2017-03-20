@@ -800,6 +800,8 @@ public class DSOUtil
 			SourceImage sourceDSOImage = dso.convert(tmpDSO.getAbsolutePath());
 			int numberOfFrames = sourceDSOImage.getNumberOfBufferedImages();
 			AttributeList dicomAttributes = PixelMedUtils.readAttributeListFromDicomFile(tmpDSO.getAbsolutePath());
+			String segType = Attribute.getSingleStringValueOrEmptyString(dicomAttributes, TagFromName.SegmentationType);
+			
 			String studyUID = Attribute.getSingleStringValueOrEmptyString(dicomAttributes, TagFromName.StudyInstanceUID);
 			seriesUID = Attribute.getSingleStringValueOrEmptyString(dicomAttributes, TagFromName.SeriesInstanceUID);
 			String imageUID = Attribute.getSingleStringValueOrEmptyString(dicomAttributes, TagFromName.SOPInstanceUID);
@@ -914,14 +916,25 @@ public class DSOUtil
 						try {
 							log.info("buffered image ");
 							BufferedImage bufferedImage = sourceDSOImage.getBufferedImage(frameNumber);
+							BufferedImage bufferedImageWithTransparency =null;
 							log.info("buffered image "+ bufferedImage.toString());
-							
-							BufferedImage bufferedImageWithTransparency = generateTransparentImage(bufferedImage);
-							log.info(" bufferedImageWithTransparency "+ bufferedImageWithTransparency.toString());
-							
-							if (nonBlank.get() && nonblankFrame>i) {
-								nonblankFrame = i;
-								nonBlankImageUID = dcm4cheeReferencedImageDescription.imageUID;
+							if (segType.equalsIgnoreCase("BINARY")){
+								bufferedImageWithTransparency = generateTransparentImage(bufferedImage);
+								log.info(" bufferedImageWithTransparency "+ bufferedImageWithTransparency.toString());
+					
+								if (nonBlank.get()) {
+									nonblankFrame = i;
+									nonBlankImageUID = dcm4cheeReferencedImageDescription.imageUID;
+								}
+							}
+							else {
+								//do not do transparency for color. 
+								bufferedImageWithTransparency = bufferedImage;
+								//we have no way to check nonblank like this just put the first
+								if (i==0) {
+									nonblankFrame = i;
+									nonBlankImageUID = dcm4cheeReferencedImageDescription.imageUID;
+								}
 							}
 							log.info(" nonblankFrame "+ nonblankFrame);
 							
@@ -987,10 +1000,25 @@ public class DSOUtil
 							BufferedImage bufferedImageWithTransparency = generateTransparentImage(bufferedImage);
 							log.info(" bufferedImageWithTransparency "+ bufferedImageWithTransparency.toString());
 							
-							if (nonBlank.get()) {
-								nonblankFrame = refFrameNumber;
-								nonBlankImageUID = dcm4cheeReferencedImageDescription.imageUID;
+							if (segType.equalsIgnoreCase("BINARY")){
+								bufferedImageWithTransparency = generateTransparentImage(bufferedImage);
+								log.info(" bufferedImageWithTransparency "+ bufferedImageWithTransparency.toString());
+					
+								if (nonBlank.get()) {
+									nonblankFrame = refFrameNumber;
+									nonBlankImageUID = dcm4cheeReferencedImageDescription.imageUID;
+								}
 							}
+							else {
+								//do not do transparency for color. 
+								bufferedImageWithTransparency = bufferedImage;
+								//we have no way to check nonblank like this just put the first
+								if (refFrameNumber==0) {
+									nonblankFrame = refFrameNumber;
+									nonBlankImageUID = dcm4cheeReferencedImageDescription.imageUID;
+								}
+							}
+							
 							log.info(" nonblankFrame "+ nonblankFrame);
 							
 							File pngMaskFile = new File(pngMaskFilePath);
