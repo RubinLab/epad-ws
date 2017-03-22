@@ -160,6 +160,7 @@ import com.pixelmed.display.SourceImage;
 import edu.stanford.epad.common.dicom.DCM4CHEEImageDescription;
 import edu.stanford.epad.common.dicom.DCM4CHEEUtil;
 import edu.stanford.epad.common.dicom.DicomFileUtil;
+import edu.stanford.epad.common.dicom.DicomReader;
 import edu.stanford.epad.common.dicom.DicomSegmentationObject;
 import edu.stanford.epad.common.pixelmed.PixelMedUtils;
 import edu.stanford.epad.common.pixelmed.TIFFMasksToDSOConverter;
@@ -603,6 +604,38 @@ public class DSOUtil
 			log.info("Writing PNGs for MultiFrame DICOM " + imageUID + " in series " + seriesUID);
 
 			pngFilesDirectory.mkdirs();
+			//use DicomReader instead of ImageJ, this one constructs the nice packed pngs
+			DicomReader instance = new DicomReader(dicomFile);
+			if (instance != null && (numberOfFrames  = instance.getNumberOfFrames())!=0) {
+				
+				log.info("Multiframe dicom, frames:" + numberOfFrames );
+				try{
+					//try getting the first frame just to see if we can get pngs using dcm4che
+					instance.getPackedImage(0);
+					for (int frameNumber = 0; frameNumber < numberOfFrames; frameNumber++) {
+						
+						pngFilePath = pngDirectoryPath + frameNumber + ".png";
+						File pngFile = new File(pngFilePath);
+						try {
+							insertEpadFile(databaseOperations, pngFilePath, 0, imageUID);
+							log.info("Writing PNG frame " + frameNumber + " in multi-frame image " + imageUID + " in series " + seriesUID);
+							ImageIO.write(instance.getPackedImage(frameNumber), "png", pngFile);
+							databaseOperations.updateEpadFileRow(pngFilePath, PNGFileProcessingStatus.DONE, pngFile.length(), "");
+						} catch (IOException e) {
+							log.warning("Failure writing PNG file " + pngFilePath + " for frame " + frameNumber
+									+ " in multi-frame image " + imageUID + " in series " + seriesUID, e);
+						}
+					}
+					//finished successfully return
+					return;
+				} catch(Exception e) {
+					log.warning("Failure in getting the packed images. Try with imagej and pixelmed");
+				}
+
+			} 
+			//couldn't generate the pngs and return inside the if above, try imagej and pixelmed"
+			log.info("Attempting to generate pngs with imagej");
+			pngFilePath = pngDirectoryPath + "0.png";
 			Opener opener = new Opener();
 			ImagePlus image=null;
 			try{
