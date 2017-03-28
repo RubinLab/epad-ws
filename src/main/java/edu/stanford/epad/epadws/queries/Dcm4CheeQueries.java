@@ -120,6 +120,7 @@ import javax.servlet.http.HttpServletResponse;
 import org.apache.commons.io.IOUtils;
 
 import edu.stanford.epad.common.dicom.DCM4CHEEUtil;
+import edu.stanford.epad.common.pixelmed.DSOColorHelper;
 import edu.stanford.epad.common.pixelmed.SegmentedProperty;
 import edu.stanford.epad.common.pixelmed.SegmentedPropertyHelper;
 import edu.stanford.epad.common.util.EPADLogger;
@@ -254,6 +255,7 @@ public class Dcm4CheeQueries
 	{
 		String catCode="";
 		String typeCode="";
+		String color=null;
 		DICOMElementList dicomElementList = new DICOMElementList();
 		DICOMElementList dicomElementListNoSkip = new DICOMElementList();
 		boolean skipThumbnail=false;
@@ -304,6 +306,11 @@ public class Dcm4CheeQueries
 											log.info("type code is "+typeCode);
 										}
 									}
+									if (dicomElementString.contains("(0062,000D)")) {
+										color=dicomElement.value.trim();
+										log.info("color is "+color);
+										
+									}
 								} 
 							//make a list with all the skip items
 							//at the end if the skip is not closed then use this list
@@ -344,6 +351,17 @@ public class Dcm4CheeQueries
 				}
 				else {
 					log.info("Category-type pair not found");
+				}
+				if (color!=null){
+					String[] colorStrA=color.split("\\\\");
+					if (colorStrA.length==3){
+						int[] colorIntA=new int[3];
+						for (int i=0;i<colorStrA.length; i++)
+							colorIntA[i]=Integer.parseInt(colorStrA[i]);
+						int[] rgb=DSOColorHelper.scaledLab2Rgb(colorIntA);
+						String colorText="rgb("+rgb[0]+";"+rgb[1]+";"+rgb[2]+")";
+						catTypeProp.setDefColor(colorText);
+					}
 				}
 			}
 		} catch(Exception ex) {
