@@ -282,7 +282,36 @@ public class EPADSessionOperations
 		}
 		if (jSessionID == null)
 		{
-			log.warning("No JSESSIONID cookie present in request " + servletRequest.getRequestURL());
+//			log.warning("No JSESSIONID cookie present in request " + servletRequest.getRequestURL());
+			//secondary authentication mechanism
+			String auth = servletRequest.getHeader("Authorization");
+			String clientKey = null;
+			if (auth != null)
+			{
+				String[] tokens = auth.split(",");
+				for (String t: tokens)
+				{
+					if (t.length() == 0) continue;
+					String[] parts = t.split("=");
+					if (parts.length != 2)
+					{
+						log.warning("Invalid Authorization Token");
+						continue;
+					}
+					if (parts[0].equalsIgnoreCase("JSESSIONID"))
+						jSessionID = parts[1];
+					else if (parts[0].equalsIgnoreCase("CLIENT_KEY"))
+						clientKey = parts[1];
+				}
+				if (!EPADConfig.getParamValue("CLIENT_KEY", "bb33647e-140e-11e7-93ae-92361f002671").equals(clientKey))
+				{
+					log.warning("Invalid Authorization Client Key:" + clientKey);
+					jSessionID = null;
+				}
+			}
+			else
+				log.warning("No JSESSIONID cookie present in request " + servletRequest.getRequestURL() + " method:" + servletRequest.getMethod());
+
 		}
 		else
 		{
