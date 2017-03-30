@@ -1011,66 +1011,115 @@ public class DefaultEpadOperations implements EpadOperations
 						DCM4CHEEImageDescription dcm4cheeReferencedImageDescription = descMap.get(referencedImageUID);
 						referencedImages.add(dcm4cheeReferencedImageDescription);
 					}
+					
 					if (instanceOffset == 0) instanceOffset = 1;
 					if (referencedSOPInstanceUIDDICOMElements.size() < imageDescriptions.size())
 						instanceOffset = 1;
 					int index = 0;
 					boolean instanceOneFound = false;
 					int instanceCount = 0;
-					for (DICOMElement dicomElement : referencedSOPInstanceUIDDICOMElements) {
-						String referencedImageUID = dicomElement.value;
-						DCM4CHEEImageDescription dcm4cheeReferencedImageDescription = referencedImages.get(index);
-						index++;
-						if (dcm4cheeReferencedImageDescription == null)
-						{
-							// Note: These referenced images that are not found probably are extra images referenced in the DICOM. 
-							//		 There seems to be no way to tell them apart using this PixelMed api - need to use something else
-							log.info("Did not find referenced image, seriesuid:" + referencedSeriesUID + " imageuid:" + referencedImageUID 
-									+ " for DSO seriesUID:" + imageReference.seriesUID + " DSO imageUID:" + imageReference.imageUID);
-							continue;
+					log.info("is multiframe="+imageDescriptions.get(0).multiFrameImage);
+					if (referencedSOPInstanceUIDDICOMElements.size()==1 && imageDescriptions.get(0).multiFrameImage) {
+						log.info("This is a dso on a multiframe image. lets write the pngs. assuming starting from 0!");
+						for (int frameNumber=0; frameNumber<numberOfFrames; frameNumber++) {
+							String referencedImageUID = referencedSOPInstanceUIDDICOMElements.get(0).value;
+							DCM4CHEEImageDescription dcm4cheeReferencedImageDescription = referencedImages.get(0);
+							index++;
+							if (dcm4cheeReferencedImageDescription == null)
+							{
+								// Note: These referenced images that are not found probably are extra images referenced in the DICOM. 
+								//		 There seems to be no way to tell them apart using this PixelMed api - need to use something else
+								log.info("Did not find referenced image, seriesuid:" + referencedSeriesUID + " imageuid:" + referencedImageUID 
+										+ " for DSO seriesUID:" + imageReference.seriesUID + " DSO imageUID:" + imageReference.imageUID);
+								continue;
+							}
+							String insertDate = dcm4cheeReferencedImageDescription.createdTime;
+							String imageDate = dcm4cheeReferencedImageDescription.contentTime;
+							String sliceLocation = dcm4cheeReferencedImageDescription.sliceLocation;
+							
+							String losslessImage = getPNGMaskPath(studyUID, imageReference.seriesUID, imageReference.imageUID,
+									frameNumber);
+							String contourImage = "";
+							contourImage = getPNGContourPath(studyUID, imageReference.seriesUID, imageReference.imageUID,
+									frameNumber);
+							String lossyImage = ""; // We do not have a lossy image for the DSO frame
+							String sourceLosslessImage = getPNGPath(studyUID, referencedSeriesUID, referencedImageUID);
+							String sourceLossyImage = getWADOPath(studyUID, referencedSeriesUID, referencedImageUID);
+							//log.info("Frame:" + frameNumber + " losslessImage:" + losslessImage);
+							
+							
+							if (isFirst || all) {
+								EPADDSOFrame frame = new EPADDSOFrame(imageReference.projectID, imageReference.subjectID,
+										imageReference.studyUID, imageReference.seriesUID, imageReference.imageUID, insertDate, imageDate,
+										sliceLocation, frameNumber, losslessImage, lossyImage, suppliedDICOMElements, defaultDICOMElements,
+										referencedSeriesUID, referencedImageUID, sourceLosslessImage, sourceLossyImage, catTypeProp.getId(),catTypeProp.getName(),catTypeProp.getDefColor());
+								frames.add(frame);
+								isFirst = false;
+							} else { // We do not add DICOM headers to remaining frame descriptions because it would be too expensive
+								EPADDSOFrame frame = new EPADDSOFrame(imageReference.projectID, imageReference.subjectID,
+										imageReference.studyUID, imageReference.seriesUID, imageReference.imageUID, insertDate, imageDate,
+										sliceLocation, frameNumber, losslessImage, lossyImage, new DICOMElementList(),
+										new DICOMElementList(), referencedSeriesUID, referencedImageUID, sourceLosslessImage,
+										sourceLossyImage,catTypeProp.getId(),catTypeProp.getName(),catTypeProp.getDefColor());
+								frames.add(frame);
+							}
 						}
-						String insertDate = dcm4cheeReferencedImageDescription.createdTime;
-						String imageDate = dcm4cheeReferencedImageDescription.contentTime;
-						String sliceLocation = dcm4cheeReferencedImageDescription.sliceLocation;
-						int instanceNumber = dcm4cheeReferencedImageDescription.instanceNumber;
-						// In case all instanceNumbers are 1
-						if (instanceNumber == 1 && !instanceOneFound)
-						{
-							instanceOneFound = true;
-							instanceCount = 1;
-						}
-						else if (instanceNumber == 1 && instanceOneFound)
-						{
-							instanceCount++;
-							instanceNumber = instanceCount;
-						}
-						int frameNumber = instanceNumber - instanceOffset; // Frames 0-based, instances 1 or more
-						String losslessImage = getPNGMaskPath(studyUID, imageReference.seriesUID, imageReference.imageUID,
-								frameNumber);
-						String contourImage = "";
-						contourImage = getPNGContourPath(studyUID, imageReference.seriesUID, imageReference.imageUID,
-								frameNumber);
-						String lossyImage = ""; // We do not have a lossy image for the DSO frame
-						String sourceLosslessImage = getPNGPath(studyUID, referencedSeriesUID, referencedImageUID);
-						String sourceLossyImage = getWADOPath(studyUID, referencedSeriesUID, referencedImageUID);
-						//log.info("Frame:" + frameNumber + " losslessImage:" + losslessImage);
-						
-						
-						if (isFirst || all) {
-							EPADDSOFrame frame = new EPADDSOFrame(imageReference.projectID, imageReference.subjectID,
-									imageReference.studyUID, imageReference.seriesUID, imageReference.imageUID, insertDate, imageDate,
-									sliceLocation, frameNumber, losslessImage, lossyImage, suppliedDICOMElements, defaultDICOMElements,
-									referencedSeriesUID, referencedImageUID, sourceLosslessImage, sourceLossyImage, catTypeProp.getId(),catTypeProp.getName(),catTypeProp.getDefColor());
-							frames.add(frame);
-							isFirst = false;
-						} else { // We do not add DICOM headers to remaining frame descriptions because it would be too expensive
-							EPADDSOFrame frame = new EPADDSOFrame(imageReference.projectID, imageReference.subjectID,
-									imageReference.studyUID, imageReference.seriesUID, imageReference.imageUID, insertDate, imageDate,
-									sliceLocation, frameNumber, losslessImage, lossyImage, new DICOMElementList(),
-									new DICOMElementList(), referencedSeriesUID, referencedImageUID, sourceLosslessImage,
-									sourceLossyImage,catTypeProp.getId(),catTypeProp.getName(),catTypeProp.getDefColor());
-							frames.add(frame);
-						}
+					}else{
+						for (DICOMElement dicomElement : referencedSOPInstanceUIDDICOMElements) {
+							String referencedImageUID = dicomElement.value;
+							DCM4CHEEImageDescription dcm4cheeReferencedImageDescription = referencedImages.get(index);
+							index++;
+							if (dcm4cheeReferencedImageDescription == null)
+							{
+								// Note: These referenced images that are not found probably are extra images referenced in the DICOM. 
+								//		 There seems to be no way to tell them apart using this PixelMed api - need to use something else
+								log.info("Did not find referenced image, seriesuid:" + referencedSeriesUID + " imageuid:" + referencedImageUID 
+										+ " for DSO seriesUID:" + imageReference.seriesUID + " DSO imageUID:" + imageReference.imageUID);
+								continue;
+							}
+							String insertDate = dcm4cheeReferencedImageDescription.createdTime;
+							String imageDate = dcm4cheeReferencedImageDescription.contentTime;
+							String sliceLocation = dcm4cheeReferencedImageDescription.sliceLocation;
+							int instanceNumber = dcm4cheeReferencedImageDescription.instanceNumber;
+							// In case all instanceNumbers are 1
+							if (instanceNumber == 1 && !instanceOneFound)
+							{
+								instanceOneFound = true;
+								instanceCount = 1;
+							}
+							else if (instanceNumber == 1 && instanceOneFound)
+							{
+								instanceCount++;
+								instanceNumber = instanceCount;
+							}
+							int frameNumber = instanceNumber - instanceOffset; // Frames 0-based, instances 1 or more
+							String losslessImage = getPNGMaskPath(studyUID, imageReference.seriesUID, imageReference.imageUID,
+									frameNumber);
+							String contourImage = "";
+							contourImage = getPNGContourPath(studyUID, imageReference.seriesUID, imageReference.imageUID,
+									frameNumber);
+							String lossyImage = ""; // We do not have a lossy image for the DSO frame
+							String sourceLosslessImage = getPNGPath(studyUID, referencedSeriesUID, referencedImageUID);
+							String sourceLossyImage = getWADOPath(studyUID, referencedSeriesUID, referencedImageUID);
+							//log.info("Frame:" + frameNumber + " losslessImage:" + losslessImage);
+							
+							
+							if (isFirst || all) {
+								EPADDSOFrame frame = new EPADDSOFrame(imageReference.projectID, imageReference.subjectID,
+										imageReference.studyUID, imageReference.seriesUID, imageReference.imageUID, insertDate, imageDate,
+										sliceLocation, frameNumber, losslessImage, lossyImage, suppliedDICOMElements, defaultDICOMElements,
+										referencedSeriesUID, referencedImageUID, sourceLosslessImage, sourceLossyImage, catTypeProp.getId(),catTypeProp.getName(),catTypeProp.getDefColor());
+								frames.add(frame);
+								isFirst = false;
+							} else { // We do not add DICOM headers to remaining frame descriptions because it would be too expensive
+								EPADDSOFrame frame = new EPADDSOFrame(imageReference.projectID, imageReference.subjectID,
+										imageReference.studyUID, imageReference.seriesUID, imageReference.imageUID, insertDate, imageDate,
+										sliceLocation, frameNumber, losslessImage, lossyImage, new DICOMElementList(),
+										new DICOMElementList(), referencedSeriesUID, referencedImageUID, sourceLosslessImage,
+										sourceLossyImage,catTypeProp.getId(),catTypeProp.getName(),catTypeProp.getDefColor());
+								frames.add(frame);
+							}
+						} 
 					}
 					log.info("Returning :" + frames.size() + " frames for DSO");
 					return new EPADFrameList(frames);

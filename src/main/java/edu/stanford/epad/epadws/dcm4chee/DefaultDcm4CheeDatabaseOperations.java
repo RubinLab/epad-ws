@@ -708,20 +708,44 @@ public class DefaultDcm4CheeDatabaseOperations implements Dcm4CheeDatabaseOperat
 		String updatedTime = resultMap.get("updated_time");
 		String createdTime = resultMap.get("created_time");
 		String classUID = resultMap.get("sop_cuid");
-		String inst_attrs = resultMap.get("inst_attrs_ch").replaceAll("\"", "").replaceAll("\n", "").replaceAll("\r", "").replace(System.getProperty("line.separator"), "").replaceAll("R.DS", "RDS").replaceAll("S.DS", "SDS");
+		String inst_attrs = resultMap.get("inst_attrs_ch").replaceAll("\"", "").replaceAll("\\s", " ").replaceAll("\\n", "").replaceAll("\\r", "").replace(System.getProperty("line.separator"), "").replaceAll("R.DS", "RDS").replaceAll("S.DS", "SDS").replaceAll("  ", " ").replace("\\", "\\\\").trim();
+		//ml if no rescale slope and intercept use the old version
+		DCM4CHEEImageDescription did=new DCM4CHEEImageDescription(studyUID, seriesUID, imageUID, instanceNumber, sliceLocation, contentTime,
+				updatedTime, createdTime, classUID);
 		//ml rescale slope and intercept added
 		if ((inst_attrs!=null) && (inst_attrs.indexOf("RDS")!=-1) && inst_attrs.indexOf("SDS")!=-1) {
 			String rescaleIntercept = inst_attrs.substring(inst_attrs.indexOf("RDS")+3,inst_attrs.indexOf("(",inst_attrs.indexOf("RDS"))).trim();
 			String rescaleSlope = inst_attrs.substring(inst_attrs.indexOf("SDS")+3).trim();
 			if (rescaleSlope.contains(" "))
 				rescaleSlope = rescaleSlope.split(" ")[0].trim();
-			return new DCM4CHEEImageDescription(studyUID, seriesUID, imageUID, instanceNumber, sliceLocation, contentTime,
+			//found rescale slope and intercept
+			did=new DCM4CHEEImageDescription(studyUID, seriesUID, imageUID, instanceNumber, sliceLocation, contentTime,
 					updatedTime, createdTime, classUID,rescaleIntercept, rescaleSlope);
 		}
 		
-		//ml if no rescale slope and intercept use the old version
-		return new DCM4CHEEImageDescription(studyUID, seriesUID, imageUID, instanceNumber, sliceLocation, contentTime,
-				updatedTime, createdTime, classUID);
+		
+		   
+		if (inst_attrs!=null) {
+			int firstIndex=-1;
+			int lastIndex=-1;
+			firstIndex=inst_attrs.indexOf("IS");
+			if (firstIndex!=-1 && firstIndex==inst_attrs.indexOf("ISO_"))
+				firstIndex=inst_attrs.indexOf("IS",inst_attrs.indexOf("ISO_")+1);
+			lastIndex=inst_attrs.lastIndexOf("IS");
+			if (firstIndex!=-1 && lastIndex!=-1 && firstIndex!=lastIndex) {
+				log.info("There are two IS, this should be a multiframe!");
+				did.multiFrameImage=true;
+				log.info(inst_attrs);
+
+			}else {
+//				log.info("No IS, or smt wrong indexof="+firstIndex+ " last="+lastIndex);
+				log.info(inst_attrs);
+
+			}
+		}
+		
+		
+		return did;
 	}
 
 	@Override
