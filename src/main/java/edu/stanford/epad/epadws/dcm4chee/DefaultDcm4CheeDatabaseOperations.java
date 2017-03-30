@@ -121,8 +121,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-//import java.util.regex.Matcher;
-//import java.util.regex.Pattern;
 
 import edu.stanford.epad.common.dicom.DCM4CHEEImageDescription;
 import edu.stanford.epad.common.dicom.DICOMFileDescription;
