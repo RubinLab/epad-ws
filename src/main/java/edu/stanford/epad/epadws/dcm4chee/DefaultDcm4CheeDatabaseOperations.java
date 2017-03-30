@@ -728,32 +728,19 @@ public class DefaultDcm4CheeDatabaseOperations implements Dcm4CheeDatabaseOperat
 		
 		   
 		if (inst_attrs!=null) {
-//			log.info("match "+inst_attrs.matches("(.*)\\bIS([0-9])+\\b(.*)\\bIS([0-9])+\\b(.*)"));
-//			String regex = "\\bIS([0-9])+\\b";
-//			Pattern p = Pattern.compile(regex);
-//			Matcher m = p.matcher(inst_attrs.replace("\\", "\\\\"));   // get a matcher object
-//			int count = 0;
 			int firstIndex=-1;
 			int lastIndex=-1;
-//			while(m.find()) {
-//				count++;
-//				if (count==1)
-//					firstIndex=m.start();
-//				lastIndex=m.start();
-//			}
-//			log.info("First indexof="+firstIndex+ " last="+lastIndex);
 			firstIndex=inst_attrs.indexOf("IS");
 			if (firstIndex!=-1 && firstIndex==inst_attrs.indexOf("ISO_"))
 				firstIndex=inst_attrs.indexOf("IS",inst_attrs.indexOf("ISO_")+1);
 			lastIndex=inst_attrs.lastIndexOf("IS");
 			if (firstIndex!=-1 && lastIndex!=-1 && firstIndex!=lastIndex) {
-
 				log.info("There are two IS, this should be a multiframe!");
 				did.multiFrameImage=true;
 				log.info(inst_attrs);
 
 			}else {
-				log.info("No IS, or smt wrong indexof="+firstIndex+ " last="+lastIndex);
+//				log.info("No IS, or smt wrong indexof="+firstIndex+ " last="+lastIndex);
 				log.info(inst_attrs);
 
 			}
