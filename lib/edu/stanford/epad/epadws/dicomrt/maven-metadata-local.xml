@@ -3,10 +3,11 @@
   <groupId>edu.stanford.epad.epadws</groupId>
   <artifactId>dicomrt</artifactId>
   <versioning>
-    <release>R2013b</release>
+    <release>R2016b</release>
     <versions>
       <version>R2013b</version>
+      <version>R2016b</version>
     </versions>
-    <lastUpdated>20150521210813</lastUpdated>
+    <lastUpdated>20170403143300</lastUpdated>
   </versioning>
 </metadata>
