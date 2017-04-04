@@ -146,7 +146,8 @@ public class PluginConfig
 			if (!pluginOperations.getPlugins(pluginHandlerList, pluginTemplateList, pluginNameList)) {
 				migrate2DB();
 			}
-			checkParams();
+			//commenting out for now. remove when plugin store is ready
+//			checkParams();
 		} catch (Exception e) {
 			log.info("Failed to read plugin list from database "+e.getMessage());
 		}
