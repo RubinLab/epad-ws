@@ -737,10 +737,6 @@ public class DefaultDcm4CheeDatabaseOperations implements Dcm4CheeDatabaseOperat
 				did.multiFrameImage=true;
 				log.info(inst_attrs);
 
-			}else {
-//				log.info("No IS, or smt wrong indexof="+firstIndex+ " last="+lastIndex);
-				log.info(inst_attrs);
-
 			}
 		}
 		
