@@ -114,7 +114,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import DicomRT.ConvertDicoms;
+import dicomrt.DicomRTSegExtractor;
 
 import com.jmatio.io.MatFileReader;
 import com.jmatio.types.MLChar;
@@ -154,7 +154,8 @@ import edu.stanford.hakan.aim4api.compability.aimv3.ImageAnnotation;
 
 public class RTDICOMProcessingTask implements GeneratorTask
 {
-	private ConvertDicoms convertDicoms = null; // MATLAB-generated Java class containing function
+	private DicomRTSegExtractor segExtractor = null; // MATLAB-generated Java class containing function
+
 	private static final EPADLogger log = EPADLogger.getInstance();
 
 	private final String studyUID;
@@ -208,13 +209,16 @@ public class RTDICOMProcessingTask implements GeneratorTask
 			String inputDirPath = EPADConfig.getEPADWebServerResourcesDir() + "download/" + "temp" + Long.toString(System.currentTimeMillis()) + "/";
 			File inputDir = new File(inputDirPath);
 			inputDir.mkdirs();
+			String seriesDirPath= inputDirPath+"series/";
+			File seriesDir =  new File(seriesDirPath);
+			seriesDir.mkdirs();
 			String filename = dicomFile.getName();
 			if (filename.indexOf(".") == -1) filename = filename + ".dcm";
-			File inputFile = new File(inputDir, filename);
-			EPADFileUtils.copyFile(dicomFile, inputFile);
-			if (convertDicoms == null) {
+			File rtFile = new File(inputDir, filename);
+			EPADFileUtils.copyFile(dicomFile, rtFile);
+			if (segExtractor == null) {
 				try {
-					convertDicoms = new ConvertDicoms();
+					segExtractor = new DicomRTSegExtractor();
 				} catch (MWException t) {
 					log.warning("Failed to initialize MATLAB RT Processor", t);
 					return;
@@ -267,7 +271,7 @@ public class RTDICOMProcessingTask implements GeneratorTask
 			    			String referencedImageUID = list.get(TagFromName.ReferencedSOPInstanceUID).getSingleStringValueOrEmptyString();
 			    			//String referencedSeriesUID = dcm4CheeDatabaseOperations.getSeriesUIDForImage(referencedImageUIDs[i]);
 				            //log.info("Downloading ReferencedSOPInstanceUID:" + referencedImageUID);
-				            File dicomFile = new File(inputDir, referencedImageUID + ".dcm");
+				            File dicomFile = new File(seriesDir, referencedImageUID + ".dcm");
 							projectOperations.updateUserTaskStatus(username, TaskStatus.TASK_RT_PROCESS, seriesUID, "Downloading referenced image: " + j++, null, null);
 				            DCM4CHEEUtil.downloadDICOMFileFromWADO(studyUID, seriesUID, referencedImageUID, dicomFile);
 				            dicomFilePaths.add(dicomFile.getAbsolutePath());
@@ -276,12 +280,13 @@ public class RTDICOMProcessingTask implements GeneratorTask
 			    }
 			}
 			projectOperations.updateUserTaskStatus(username, TaskStatus.TASK_RT_PROCESS, seriesUID, "Download Completed", null, null);
-			MWCharArray inFolderPath = new MWCharArray(inputDirPath);
+			MWCharArray seriesFolderPath = new MWCharArray(seriesDirPath);
+			MWCharArray rtPath = new MWCharArray(rtFile.getAbsolutePath());
 			MWCharArray outFolderPath = new MWCharArray(outputDirPath);
 			log.info("Invoking MATLAB-generated code..., inputPath:" + inputDirPath);
 			projectOperations.updateUserTaskStatus(username, TaskStatus.TASK_RT_MATLAB, seriesUID, "MATLAB Processing Started", new Date(), null);
 			long starttime = System.currentTimeMillis();
-			convertDicoms.scanDir(inFolderPath, outFolderPath);
+			segExtractor.extractDSOsFromRT(1,seriesFolderPath,rtPath,outFolderPath);
 			long endtime = System.currentTimeMillis();
 			projectOperations.updateUserTaskStatus(username, TaskStatus.TASK_RT_MATLAB, seriesUID, "MATLAB Processing Completed", null, new Date());
 			log.info("Returned from MATLAB..., outFolderPath:" + outputDirPath + " took " + (endtime-starttime)/1000 + " secs");
@@ -493,9 +498,9 @@ public class RTDICOMProcessingTask implements GeneratorTask
 		} finally {
 			log.info("DICOM RT for series " + seriesUID + " completed");
 			seriesBeingProcessed.remove(seriesUID);
-			if (convertDicoms != null) {
-				convertDicoms.dispose();
-				convertDicoms = null;
+			if (segExtractor != null) {
+				segExtractor.dispose();
+				segExtractor = null;
 			}
 		}
 	}

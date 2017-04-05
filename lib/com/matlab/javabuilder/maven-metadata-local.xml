@@ -3,9 +3,10 @@
   <groupId>com.matlab</groupId>
   <artifactId>javabuilder</artifactId>
   <versioning>
-    <release>R2013b</release>
+    <release>R2016b</release>
     <versions>
       <version>R2013b</version>
+      <version>R2016b</version>
     </versions>
   </versioning>
 </metadata>
