@@ -2032,8 +2032,19 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 		String criteria = "";
 		if (projectID != null && projectID.length() > 0)
 		{
-			Project project = getProject(projectID);
-			criteria = criteria + "project_id = " + project.getId();
+			String[] projectIDs=projectID.split(",");
+			criteria = criteria + "(";
+			for (String pID:projectIDs) {
+				Project project = getProject(pID);
+				if (project!=null ) {
+					if (criteria.charAt(criteria.length()-1)!='(')
+						criteria = criteria + " or "; 
+					criteria = criteria + "project_id = " + project.getId();
+				}
+				
+			}
+			criteria = criteria + ") ";
+			
 		}
 		else
 			criteria = criteria + "project_id is null";
