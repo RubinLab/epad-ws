@@ -951,7 +951,7 @@ public class DSOUtil
 							BufferedImage bufferedImage = sourceDSOImage.getBufferedImage(i);
 							BufferedImage bufferedImageWithTransparency =null;
 							log.info("buffered image "+ bufferedImage.toString());
-							if (segType.equalsIgnoreCase("BINARY")){
+							//if (segType.equalsIgnoreCase("BINARY")){
 								bufferedImageWithTransparency = generateTransparentImage(bufferedImage);
 								log.info(" bufferedImageWithTransparency "+ bufferedImageWithTransparency.toString());
 					
@@ -959,7 +959,7 @@ public class DSOUtil
 									nonblankFrame = i;
 									nonBlankImageUID = dcm4cheeReferencedImageDescription.imageUID;
 								}
-							}
+							/*}
 							else {
 								//do not do transparency for color. 
 								bufferedImageWithTransparency = bufferedImage;
@@ -968,7 +968,7 @@ public class DSOUtil
 									nonblankFrame = i;
 									nonBlankImageUID = dcm4cheeReferencedImageDescription.imageUID;
 								}
-							}
+							}*/
 							log.info(" nonblankFrame "+ nonblankFrame);
 							
 							File pngMaskFile = new File(pngMaskFilePath);
