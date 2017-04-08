@@ -730,7 +730,9 @@ public class AIMDatabaseOperations {
     	            //log.info("AIMs update:" + sql);
     	            this.statement.executeUpdate(sql);   				
      			}
-				return new EPADAIM(aim.aimID, aim.userName, aim.projectID, aim.subjectID, aim.subjectID, aim.seriesUID, aim.imageUID, aim.instanceOrFrameNumber, dsoSeriesUID, isDicomSR);
+			EPADAIM epadaim=new EPADAIM(aim.aimID, aim.userName, aim.projectID, aim.subjectID, aim.subjectID, aim.seriesUID, aim.imageUID, aim.instanceOrFrameNumber, dsoSeriesUID, isDicomSR);
+			epadaim.name=aimName;
+			return epadaim;
     		}
             String sql = "INSERT into " + ANNOTATIONS_TABLE + " (AnnotationUID";
             String values = "'" + annotationUID + "'";
@@ -792,7 +794,9 @@ public class AIMDatabaseOperations {
             log.info("AIMs insert:" + sql);
     	    this.statement = mySqlConnection.createStatement();
  	        this.statement.executeUpdate(sql);
-			return new EPADAIM(annotationUID, userName, projectID, patientID, studyUID, seriesUID, imageUID, frameID, dsoSeriesUID, isDicomSR);
+			EPADAIM epadaim=new EPADAIM(annotationUID, userName, projectID, patientID, studyUID, seriesUID, imageUID, frameID, dsoSeriesUID, isDicomSR);
+			epadaim.name=aimName;
+			return epadaim;
     	} finally {
     		if (statement != null)
     			statement.close();
