@@ -594,18 +594,21 @@ public class DefaultEpadOperations implements EpadOperations
 			dcm4CheeStudy.seriesCount = dcm4CheeStudy.seriesCount + series.size();
 			EPADStudy epadStudy = dcm4cheeStudy2EpadStudy(sessionID, subjectReference.projectID, subjectReference.subjectID,
 					dcm4CheeStudy, username, includeAnnotationStatus);
-			if (epadStudy.studyDescription!=null) {//fill study's description in our db if it exists in dcm4che
+			if (epadStudy.studyDescription!=null && !epadStudy.studyDescription.equals("")) {//fill study's description in our db if it exists in dcm4che
 				Study dbStudy=projectOperations.getStudy(epadStudy.studyUID);
 				if (dbStudy.getDescription()==null || dbStudy.getDescription().equals("")) {
 					dbStudy.setDescription(epadStudy.studyDescription);
 					dbStudy.save();
 				}
 
+			}else {// see if our db has it
+				Study dbStudy=projectOperations.getStudy(epadStudy.studyUID);
+				if (dbStudy.getDescription()!=null ) {
+					epadStudy.studyDescription=dbStudy.getDescription();
+					log.info("Setting desc to "+dbStudy.getDescription());
+				}
 			}
-			//get and check if the protocol is non empty and use that. but it is in the header
-//			else if {
-//				
-//			}
+			
 			studyUIDsInEpad.remove(epadStudy.studyUID);
 			boolean filter = searchFilter.shouldFilterStudy(subjectReference.subjectID, epadStudy.studyAccessionNumber,
 					epadStudy.examTypes, epadStudy.numberOfAnnotations);

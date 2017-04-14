@@ -509,6 +509,12 @@ public class UserProjectService {
 		String studyDate = dicomObject.getString(Tag.StudyDate);
 		String seriesUID = dicomObject.getString(Tag.SeriesInstanceUID);
 		String modality = dicomObject.getString(Tag.Modality);
+		String protocol = dicomObject.getString(Tag.ProtocolName);
+		String studyDesc = dicomObject.getString(Tag.StudyDescription);
+		if (studyDesc==null || studyDesc.trim()=="") {
+			log.info("Study desc empty using protocol" + protocol);
+			studyDesc=protocol.split("/")[0];
+		}
 		log.info("Uploading dicom, username:" + username + " projectID:" + projectID + " patientName:" + dicomPatientName + " patientID:" + dicomPatientID + " studyUID:" + studyUID + " studyDate:" + studyDate + " seriesUID:" + seriesUID + " modality:" + modality);
 		if (dicomPatientID == null || dicomPatientID.trim().length() == 0 
 				|| dicomPatientID.equalsIgnoreCase("ANON") 
@@ -531,6 +537,10 @@ public class UserProjectService {
 			dicomFile.delete();
 			projectOperations.createEventLog(username, projectID, dicomPatientID, studyUID, seriesUID, null, null, dicomFile.getName(), "UPLOAD SERIES", message, true);
 			return false;
+		}
+		if (dicomPatientID.contains("/")) {
+			log.info("Patient id / character replaced with _");
+			dicomPatientID=dicomPatientID.replace("/", "%2F");
 		}
 		if (pendingUploads.size() < 300)
 			pendingUploads.put(studyUID, username + ":" + projectID);
@@ -560,8 +570,10 @@ public class UserProjectService {
 			//databaseOperations.deleteSeriesOnly(seriesUID); // This will recreate all images
 			if (dicomPatientName == null) dicomPatientName = "";
 			dicomPatientName = dicomPatientName.toUpperCase(); // DCM4CHEE stores the patient name as upper case
+			
+			
 
-			addSubjectAndStudyToProject(dicomPatientID, dicomPatientName, studyUID, studyDate, projectID, sessionID, username);
+			addSubjectAndStudyToProject(dicomPatientID, dicomPatientName, studyUID, studyDate, projectID, sessionID, username, studyDesc);
 
 			if ("SEG".equals(modality))
 			{
@@ -649,18 +661,32 @@ public class UserProjectService {
 	 * @param username
 	 */
 	public static void addSubjectAndStudyToProject(String subjectID, String subjectName, String studyUID, String studyDate, String projectID, String sessionID, String username) {
+		addSubjectAndStudyToProject(subjectID, subjectName, studyUID, studyDate, projectID, sessionID, username, "");
+	}
+
+	
+	/**
+	 * Add subject/study records to project with study desc
+	 * @param subjectID
+	 * @param subjectName
+	 * @param studyUID
+	 * @param projectID
+	 * @param sessionID
+	 * @param username
+	 * @param study desc
+	 */
+	public static void addSubjectAndStudyToProject(String subjectID, String subjectName, String studyUID, String studyDate, String projectID, String sessionID, String username, String studyDesc) {
 		try {
 			log.info("Create Subject:" + subjectID);
 			projectOperations.createSubject(username, subjectID, subjectName, null, null);
-			log.info("Create Study:" +  studyUID);
-			projectOperations.createStudy(username, studyUID, subjectID, "", getDate(studyDate));
+			log.info("Create Study:" +  studyUID + " desc "+ studyDesc);
+			projectOperations.createStudy(username, studyUID, subjectID, studyDesc, getDate(studyDate));
 			log.info("Upload/Transfer: Adding Study:" +  studyUID + " Subject:" + subjectID + " to Project:" + projectID);
 			projectOperations.addStudyToProject(username, studyUID, subjectID, projectID);
 		} catch (Exception e) {
 			log.warning("Error creating subject/study in EPAD:", e);
 		}
 	}
-
 	private static Collection<File> listDICOMFiles(File dir)
 	{
 		log.info("Checking upload directory:" + dir.getAbsolutePath());
