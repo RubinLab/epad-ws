@@ -602,6 +602,10 @@ public class DefaultEpadOperations implements EpadOperations
 				}
 
 			}
+			//get and check if the protocol is non empty and use that. but it is in the header
+//			else if {
+//				
+//			}
 			studyUIDsInEpad.remove(epadStudy.studyUID);
 			boolean filter = searchFilter.shouldFilterStudy(subjectReference.subjectID, epadStudy.studyAccessionNumber,
 					epadStudy.examTypes, epadStudy.numberOfAnnotations);
