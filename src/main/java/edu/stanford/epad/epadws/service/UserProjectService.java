@@ -561,9 +561,19 @@ public class UserProjectService {
 				}
 				String message="The patient "+dicomPatientName+" is already uploaded as "+subject.getName()+" in project(s): "+ projectsStr.toString().substring(0, projectsStr.length()-1);
 				projectOperations.createEventLog(username, projectID, dicomPatientID, studyUID, seriesUID, null, null, dicomFile.getName(), "DUPLICATE DEIDENTIFICATION", message, true);
+				
+				//for keeping the same name in cache
+				dicomPatientName=subject.getName();
+			}else {
+				if (!dicomPatientName.equals(subject.getName())){ //if db record exists but the name is different
+					//add name to the id and create a new one
+					subject = new Subject();
+					log.info("subject uid was "+ dicomPatientID + " now "+dicomPatientID+"_"+dicomPatientName);
+					dicomPatientID= dicomPatientID+"_"+dicomPatientName;
+					
+				}
 			}
-			//for keeping the same name in cache
-			dicomPatientName=subject.getName();
+			
 		}
 		
 		if (dicomPatientID != null && studyUID != null) {

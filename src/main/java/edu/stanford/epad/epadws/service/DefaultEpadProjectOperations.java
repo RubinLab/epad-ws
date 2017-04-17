@@ -931,7 +931,15 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 	public Subject createSubject(String loggedInUser, String subjectUID,
 			String name, Date dob, String gender, boolean changeOwner) throws Exception {
 		Subject subject = getSubject(subjectUID);
+		log.info("Subject create with name " + name + " uid "+ subjectUID + "  "+ subject);
 		if (subject == null) subject = new Subject();
+		else if (!name.equals(subject.getName())){ //if db record exists but the name is different
+			//add name to the id and create a new one
+			subject = new Subject();
+			log.info("subject uid was "+ subjectUID + " now "+subjectUID+"_"+name);
+			subjectUID= subjectUID+"_"+name;
+			
+		}
 		subject.setSubjectUID(subjectUID);
 		if (name != null && name.trim().length() > 0) subject.setName(name);
 		if (subject.getName() == null) subject.setName("");
