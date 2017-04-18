@@ -857,6 +857,8 @@ public class DSOUtil
 			//Attribute a = new UnsignedShortAttribute(t);
 
 			int nonblankFrame = 0;
+			int firstNonblankFrame = dicomElementList.getNumberOfElements();
+			int lastNonblankFrame = 0;
 			String nonBlankImageUID="";
 					
 			List<DICOMElement> referencedSOPInstanceUIDDICOMElements = getDICOMElementsByCode(dicomElementList,
@@ -956,6 +958,11 @@ public class DSOUtil
 								log.info(" bufferedImageWithTransparency "+ bufferedImageWithTransparency.toString());
 					
 								if (nonBlank.get()) {
+									if (i<firstNonblankFrame)
+										firstNonblankFrame=i;
+									if (i>lastNonblankFrame)
+										lastNonblankFrame=i;
+									
 									nonblankFrame = i;
 									nonBlankImageUID = dcm4cheeReferencedImageDescription.imageUID;
 								}
@@ -969,7 +976,7 @@ public class DSOUtil
 									nonBlankImageUID = dcm4cheeReferencedImageDescription.imageUID;
 								}
 							}*/
-							log.info(" nonblankFrame "+ nonblankFrame);
+							log.info(" nonblankFrame "+ nonblankFrame +" firstnonblankFrame "+ firstNonblankFrame +" lastnonblankFrame "+ lastNonblankFrame);
 							
 							File pngMaskFile = new File(pngMaskFilePath);
 							log.info(" pngMaskFile "+ pngMaskFile.getAbsolutePath());
@@ -1033,26 +1040,30 @@ public class DSOUtil
 							BufferedImage bufferedImageWithTransparency = generateTransparentImage(bufferedImage);
 							log.info(" bufferedImageWithTransparency "+ bufferedImageWithTransparency.toString());
 							
-							if (segType.equalsIgnoreCase("BINARY")){
+							//if (segType.equalsIgnoreCase("BINARY")){
 								bufferedImageWithTransparency = generateTransparentImage(bufferedImage);
 								log.info(" bufferedImageWithTransparency "+ bufferedImageWithTransparency.toString());
 					
 								if (nonBlank.get()) {
+									if (refFrameNumber<firstNonblankFrame)
+										firstNonblankFrame=refFrameNumber;
+									if (refFrameNumber>lastNonblankFrame)
+										lastNonblankFrame=refFrameNumber;
 									nonblankFrame = refFrameNumber;
 									nonBlankImageUID = dcm4cheeReferencedImageDescription.imageUID;
 								}
-							}
-							else {
-								//do not do transparency for color. 
-								bufferedImageWithTransparency = bufferedImage;
-								//we have no way to check nonblank like this just put the first
-								if (refFrameNumber==0) {
-									nonblankFrame = refFrameNumber;
-									nonBlankImageUID = dcm4cheeReferencedImageDescription.imageUID;
-								}
-							}
+//							}
+//							else {
+//								//do not do transparency for color. 
+//								bufferedImageWithTransparency = bufferedImage;
+//								//we have no way to check nonblank like this just put the first
+//								if (refFrameNumber==0) {
+//									nonblankFrame = refFrameNumber;
+//									nonBlankImageUID = dcm4cheeReferencedImageDescription.imageUID;
+//								}
+//							}
 							
-							log.info(" nonblankFrame "+ nonblankFrame);
+							log.info(" nonblankFrame "+ nonblankFrame +" firstnonblankFrame "+ firstNonblankFrame +" lastnonblankFrame "+ lastNonblankFrame);
 							
 							File pngMaskFile = new File(pngMaskFilePath);
 							log.info(" pngMaskFile "+ pngMaskFile.getAbsolutePath());
@@ -1116,6 +1127,10 @@ public class DSOUtil
 					BufferedImage bufferedImage = sourceDSOImage.getBufferedImage(i);
 					BufferedImage bufferedImageWithTransparency = generateTransparentImage(bufferedImage);
 					if (nonBlank.get()) {
+						if (frameNumber<firstNonblankFrame)
+							firstNonblankFrame=frameNumber;
+						if (frameNumber>lastNonblankFrame)
+							lastNonblankFrame=frameNumber;
 						nonblankFrame = frameNumber;
 						nonBlankImageUID = dcm4cheeReferencedImageDescription.imageUID;
 					}
@@ -1139,10 +1154,12 @@ public class DSOUtil
 			List<EPADAIM> aims = epadDatabaseOperations.getAIMsByDSOSeries(seriesUID);
 			for (EPADAIM aim: aims)
 			{
-				epadDatabaseOperations.updateAIMDSOFrameNo(aim.aimID, nonblankFrame);
-				AIMUtil.updateDSOStartIndex(aim, nonblankFrame);
+//				nonblankFrame=(lastNonblankFrame+firstNonblankFrame)/2;
+//				log.info("The middle frame is "+ nonblankFrame);
+				epadDatabaseOperations.updateAIMDSOFrameNo(aim.aimID, firstNonblankFrame);
+				AIMUtil.updateDSOStartIndex(aim, firstNonblankFrame);
 			}
-			log.info("... finished writing PNG " + numberOfFrames + " masks for DSO image " + imageUID + " in series " + seriesUID + " nonBlankFrame:" + nonblankFrame);
+			log.info("... finished writing PNG " + numberOfFrames + " masks for DSO image " + imageUID + " in series " + seriesUID + " firstNonblankFrame:" + firstNonblankFrame);
 		} catch (DicomException e) {
 			log.warning("DICOM exception writing DSO PNG masks, series:" + seriesUID, e);
 			throw new Exception("DICOM exception writing DSO PNG masks, series:" + seriesUID, e);
