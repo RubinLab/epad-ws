@@ -15,3 +15,10 @@ target/*
 
 *.pyc
 /bin/
+
+*.DS_Store
+
+matlab/GENERATED/
+matlab/dicomrt/
+matlab/tim_v2/
+
