@@ -430,7 +430,6 @@ public class EPADPostHandler
 				} else if (HandlerUtil.matchesTemplate(UsersRouteTemplates.USER_WORKLISTS, pathInfo)) {
 					Map<String, String> templateMap = HandlerUtil.getTemplateMap(UsersRouteTemplates.USER_WORKLISTS, pathInfo);
 					String reader = HandlerUtil.getTemplateParameter(templateMap, "username");
-					String projectID = HandlerUtil.getTemplateParameter(templateMap, "projectID");
 					String description = httpRequest.getParameter("description");
 					String name = httpRequest.getParameter("name");
 					String dueDate = httpRequest.getParameter("dueDate");
@@ -440,7 +439,6 @@ public class EPADPostHandler
 				} else if (HandlerUtil.matchesTemplate(UsersRouteTemplates.USER_WORKLIST, pathInfo)) {
 					Map<String, String> templateMap = HandlerUtil.getTemplateMap(UsersRouteTemplates.USER_WORKLIST, pathInfo);
 					String reader = HandlerUtil.getTemplateParameter(templateMap, "username");
-					String projectID = HandlerUtil.getTemplateParameter(templateMap, "projectID");
 					String workListID = HandlerUtil.getTemplateParameter(templateMap, "worklistID");
 					String name = httpRequest.getParameter("name");
 					String description = httpRequest.getParameter("description");
