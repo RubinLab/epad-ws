@@ -565,11 +565,18 @@ public class UserProjectService {
 				//for keeping the same name in cache
 				dicomPatientName=subject.getName();
 			}else {
-				if (!dicomPatientName.equals(subject.getName())){ //if db record exists but the name is different
-					//add name to the id and create a new one
-					subject = new Subject();
-					log.info("subject uid was "+ dicomPatientID + " now "+dicomPatientID+"_"+dicomPatientName);
-					dicomPatientID= dicomPatientID+"_"+dicomPatientName;
+				if (!dicomPatientName.replace("^", "").trim().equalsIgnoreCase(subject.getName().replace("^", "").trim())){ //if db record exists but the name is different
+					//see if the combination is in db
+					dicomPatientID= dicomPatientID+"_"+dicomPatientName.replace("^", "").trim();
+					subject = projectOperations.getSubject(dicomPatientID);
+					if (subject==null){
+						subject = new Subject();
+					}else if(!dicomPatientName.replace("^", "").trim().equalsIgnoreCase(subject.getName().replace("^", "").trim())){
+						//add name to the id and create a new one
+						subject = new Subject();
+						log.info("subject uid was "+ dicomPatientID + " now "+dicomPatientID+"_"+dicomPatientName.replace("^", "").trim());
+						dicomPatientID= dicomPatientID+"_"+dicomPatientName;
+					}
 					
 				}
 			}
@@ -687,6 +694,10 @@ public class UserProjectService {
 	 */
 	public static void addSubjectAndStudyToProject(String subjectID, String subjectName, String studyUID, String studyDate, String projectID, String sessionID, String username, String studyDesc) {
 		try {
+			if (subjectID.contains("/")) {
+				log.info("Patient id / character replaced with %2F");
+				subjectID=subjectID.replace("/", "%2F");
+			}
 			log.info("Create Subject:" + subjectID);
 			projectOperations.createSubject(username, subjectID, subjectName, null, null);
 			log.info("Create Study:" +  studyUID + " desc "+ studyDesc);

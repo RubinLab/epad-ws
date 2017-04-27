@@ -116,12 +116,15 @@ import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeDatabaseOperations;
 import edu.stanford.epad.epadws.epaddb.EpadDatabase;
 import edu.stanford.epad.epadws.epaddb.EpadDatabaseOperations;
 import edu.stanford.epad.epadws.handlers.core.SeriesReference;
+import edu.stanford.epad.epadws.models.Subject;
 import edu.stanford.epad.epadws.processing.model.SeriesProcessingDescription;
 import edu.stanford.epad.epadws.processing.pipeline.task.DSOMaskPNGGeneratorTask;
 import edu.stanford.epad.epadws.processing.pipeline.task.SingleFrameDICOMPngGeneratorTask;
 import edu.stanford.epad.epadws.processing.pipeline.threads.ShutdownSignal;
 import edu.stanford.epad.epadws.queries.DefaultEpadOperations;
 import edu.stanford.epad.epadws.queries.EpadOperations;
+import edu.stanford.epad.epadws.service.DefaultEpadProjectOperations;
+import edu.stanford.epad.epadws.service.EpadProjectOperations;
 import edu.stanford.epad.epadws.service.RemotePACService;
 import edu.stanford.epad.epadws.xnat.XNATSessionOperations;
 
@@ -138,6 +141,9 @@ public class Dcm4CheeDatabaseWatcher implements Runnable
 
 	private final BlockingQueue<SeriesProcessingDescription> dcm4CheeSeriesWatcherQueue;
 	private final BlockingQueue<SeriesProcessingDescription> xnatSeriesWatcherQueue;
+	
+	private static final EpadProjectOperations projectOperations = DefaultEpadProjectOperations.getInstance();	
+	
 
 	public Dcm4CheeDatabaseWatcher(BlockingQueue<SeriesProcessingDescription> dicomSeriesWatcherQueue,
 			BlockingQueue<SeriesProcessingDescription> xnatSeriesWatcherQueue)
@@ -147,6 +153,33 @@ public class Dcm4CheeDatabaseWatcher implements Runnable
 		this.xnatSeriesWatcherQueue = xnatSeriesWatcherQueue;
 	}
 
+	public String getUniquePatientID(String dicomPatientID,String dicomPatientName){
+		try {
+			String uniqueDicomPatientID=dicomPatientID.replace("/", "%2F");
+			Subject subject = projectOperations.getSubject(uniqueDicomPatientID);
+			if (!dicomPatientName.replace("^", "").trim().equalsIgnoreCase(subject.getName().replace("^", "").trim())){ //if db record exists but the name is different
+				//see if the combination is in db
+				uniqueDicomPatientID= uniqueDicomPatientID+"_"+dicomPatientName.replace("^", "").trim();
+				
+					subject = projectOperations.getSubject(uniqueDicomPatientID);
+				
+				if (subject==null){
+					subject = new Subject();
+				}else if(!dicomPatientName.replace("^", "").trim().equalsIgnoreCase(subject.getName().replace("^", "").trim())){
+					//add name to the id and create a new one
+					subject = new Subject();
+					uniqueDicomPatientID= uniqueDicomPatientID+"_"+dicomPatientName;
+				}
+				
+			}
+			logger.info("Unique patient id is "+uniqueDicomPatientID);
+			return uniqueDicomPatientID;
+		} catch (Exception e) {
+			logger.warning("Couldn't check the uniqueness of dicompatient id returning the original");
+			return dicomPatientID.replace("/", "%2F");
+		}
+	}
+	
 	@Override
 	public void run()
 	{
@@ -165,7 +198,8 @@ public class Dcm4CheeDatabaseWatcher implements Runnable
 					String seriesUID = dcm4CheeSeries.seriesUID;
 					String studyUID = dcm4CheeDatabaseOperations.getStudyUIDForSeries(seriesUID);
 					String patientName = dcm4CheeSeries.patientName;
-					String patientID = dcm4CheeSeries.patientID;
+					String patientID = getUniquePatientID(dcm4CheeSeries.patientID,dcm4CheeSeries.patientName);
+					
 					String seriesDesc = dcm4CheeSeries.seriesDescription;
 					int numInstances = dcm4CheeSeries.imagesInSeries;
 					SeriesProcessingDescription dicomSeriesDescription = new SeriesProcessingDescription(numInstances,

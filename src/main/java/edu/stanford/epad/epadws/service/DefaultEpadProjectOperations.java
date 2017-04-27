@@ -931,14 +931,24 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 	public Subject createSubject(String loggedInUser, String subjectUID,
 			String name, Date dob, String gender, boolean changeOwner) throws Exception {
 		Subject subject = getSubject(subjectUID);
-		log.info("Subject create with name " + name + " uid "+ subjectUID + "  "+ subject);
+		log.info("Subject create with name " + name + " uid "+ subjectUID );
 		if (subject == null) subject = new Subject();
-		else if (!name.equals(subject.getName())){ //if db record exists but the name is different
-			//add name to the id and create a new one
-			subject = new Subject();
-			log.info("subject uid was "+ subjectUID + " now "+subjectUID+"_"+name);
-			subjectUID= subjectUID+"_"+name;
-			
+		else {
+			log.info("name is "+name.replace("^", "") + " subjectname is "+subject.getName().replace("^", "") + "e" );
+			if (!name.replace("^", "").trim().equalsIgnoreCase(subject.getName().replace("^", "").trim())){ //if db record exists but the name is different
+				//see if the combination is in db
+				subjectUID= subjectUID+"_"+name.replace("^", "").trim();
+				subject = getSubject(subjectUID);
+				if (subject==null){
+					subject = new Subject();
+				}else if (!name.replace("^", "").trim().equalsIgnoreCase(subject.getName().replace("^", "").trim())){
+					//add name to the id and create a new one
+					subject = new Subject();
+					log.info("subject uid was "+ subjectUID + " now "+subjectUID+"_"+name);
+					subjectUID= subjectUID+"_"+name.replace("^", "").trim();
+				}
+				
+			}
 		}
 		subject.setSubjectUID(subjectUID);
 		if (name != null && name.trim().length() > 0) subject.setName(name);
