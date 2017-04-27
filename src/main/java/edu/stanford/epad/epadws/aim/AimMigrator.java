@@ -135,6 +135,7 @@ import edu.stanford.hakan.aim4api.base.AimException;
 import edu.stanford.hakan.aim4api.base.Algorithm;
 import edu.stanford.hakan.aim4api.base.CD;
 import edu.stanford.hakan.aim4api.base.CalculationEntity;
+import edu.stanford.hakan.aim4api.base.CharacteristicQuantification;
 import edu.stanford.hakan.aim4api.base.DicomImageReferenceEntity;
 import edu.stanford.hakan.aim4api.base.Enumerations;
 import edu.stanford.hakan.aim4api.base.ExtendedCalculationResult;
@@ -148,8 +149,10 @@ import edu.stanford.hakan.aim4api.base.ImagingObservationCharacteristic;
 import edu.stanford.hakan.aim4api.base.ImagingObservationEntity;
 import edu.stanford.hakan.aim4api.base.ImagingPhysicalEntity;
 import edu.stanford.hakan.aim4api.base.ST;
+import edu.stanford.hakan.aim4api.base.Scale;
 import edu.stanford.hakan.aim4api.base.TwoDimensionSpatialCoordinate;
 import edu.stanford.hakan.aim4api.base.TwoDimensionSpatialCoordinateCollection;
+import edu.stanford.hakan.aim4api.base.Enumerations.ScaleType;
 import edu.stanford.hakan.aim4api.compability.aimv3.Lexicon;
 import edu.stanford.hakan.aim4api.compability.aimv3.Modality;
 import edu.stanford.hakan.aim4api.project.epad.Enumerations.ShapeType;
@@ -324,13 +327,14 @@ public class AimMigrator {
 		
 		if ((imageUID==null || imageUID.equals("") || imageUID.equals("na"))&& !(sourceSeriesUID==null||sourceSeriesUID.equals("na")||sourceSeriesUID.equals(""))) {
 			//get the image uid using the slice location
-			if (studyUID==null || studyUID.equals("") || studyUID.equals("na"))
-				studyUID="*";
+			String dcm4cheStudyUID=studyUID;
+			if (dcm4cheStudyUID==null || dcm4cheStudyUID.equals("") || dcm4cheStudyUID.equals("na"))
+				dcm4cheStudyUID="*";
 			Dcm4CheeDatabaseOperations dcm4CheeDatabaseOperations= Dcm4CheeDatabase.getInstance()
 					.getDcm4CheeDatabaseOperations();
 			EpadOperations epadOperations = DefaultEpadOperations.getInstance();
 			List<DCM4CHEEImageDescription> imageDescriptions = dcm4CheeDatabaseOperations.getImageDescriptions(
-					studyUID, sourceSeriesUID);
+					dcm4cheStudyUID, sourceSeriesUID);
 			for(DCM4CHEEImageDescription image:imageDescriptions){
 				DICOMElementList imageDICOMElements = epadOperations.getDICOMElements(image.studyUID,
 						image.seriesUID, image.imageUID);
@@ -367,8 +371,15 @@ public class AimMigrator {
 		String location = ((JSONObject)mintJson.get("lesion")).optString("location");
 		if (location!=null && !location.equals(""))
 			ia.addImagingPhysicalEntity(getImagingPhysicalEntityFromPF("Location",location));
-		ia.addImagingPhysicalEntity(getImagingPhysicalEntityFromPF("Status",((JSONObject)mintJson.get("lesion")).getString("status")));
-		ia.addImagingObservationEntity(getImagingObservationEntityFromPF("Lesion",((JSONObject)mintJson.get("lesion")).getString("timepoint"),"Type",((JSONObject)mintJson.get("lesion")).getString("type")));
+		//ia.addImagingPhysicalEntity(getImagingPhysicalEntityFromPF("Status",((JSONObject)mintJson.get("lesion")).getString("status")));
+		CD qualityCode=null;
+		//default yes
+		if (((JSONObject)mintJson.get("lesion")).optString("evaluable","yes").equalsIgnoreCase("no"))
+			qualityCode=new CD("RID39225","Nonevaluable","Radlex",""); // is not evaluable
+		else 
+			qualityCode=new CD("S86","Evaluable","RECIST-AMS",""); //is evaluable
+			
+		ia.addImagingObservationEntity(getImagingObservationEntityFromPF("Lesion Quality",qualityCode,"Timepoint",((JSONObject)mintJson.get("lesion")).getInt("timepoint"), "Type",((JSONObject)mintJson.get("lesion")).getString("type")));
 
 		
 		iac.addImageAnnotation(ia);
@@ -489,22 +500,41 @@ public class AimMigrator {
 	 * create a ImagingObservationEntity using the timepoint and type (in characteristic label and value) values
 	 * @param label
 	 * @param value
-	 * @param characteristicLabel
-	 * @param characteristicValue
+	 * @param tpCharacteristicLabel timepoint characteristic
+	 * @param tpCharacteristicValue
+	 * @param typeCharacteristicLabel type characteristic
+	 * @param typeCharacteristicValue
 	 * @return
 	 */
-	private static ImagingObservationEntity getImagingObservationEntityFromPF(String label, String value,
-			String characteristicLabel, String characteristicValue) {
+	private static ImagingObservationEntity getImagingObservationEntityFromPF(String label, CD value,
+			String tpCharacteristicLabel, Integer tpCharacteristicValue, String typeCharacteristicLabel, String typeCharacteristicValue) {
 		ImagingObservationEntity oe= new ImagingObservationEntity();
 		oe.setLabel(new ST(label));
 		oe.setAnnotatorConfidence(0.0);
 		
-		oe.addTypeCode(edu.stanford.epad.common.util.Lexicon.getInstance().getLex(cleanString(value)));
+		oe.addTypeCode(value);
 		
 		ImagingObservationCharacteristic oc=new ImagingObservationCharacteristic();
-		oc.setLabel(new ST(characteristicLabel));
+		oc.setLabel(new ST(tpCharacteristicLabel));
 		oc.setAnnotatorConfidence(0.0);
-		oc.addTypeCode(edu.stanford.epad.common.util.Lexicon.getInstance().getLex(cleanString(characteristicValue)));
+		oc.addTypeCode(new CD("S90","FU Number (0=Baseline)","RECIST-AMS",""));
+		Scale cq=new Scale();
+		cq.setAnnotatorConfidence(0.0);
+		cq.setValue(new ST(String.valueOf(tpCharacteristicValue)));
+		cq.setType(ScaleType.Nominal);
+		String cqLabel="Baseline";
+		if (tpCharacteristicValue>0)
+			cqLabel="FU"+tpCharacteristicValue;
+		cq.setLabel(new ST(tpCharacteristicLabel));
+		cq.setValueLabel(new ST(cqLabel));
+		oc.addCharacteristicQuantification(cq);
+		
+		oe.addImagingObservationCharacteristic(oc);
+		
+		oc=new ImagingObservationCharacteristic();
+		oc.setLabel(new ST(typeCharacteristicLabel));
+		oc.setAnnotatorConfidence(0.0);
+		oc.addTypeCode(edu.stanford.epad.common.util.Lexicon.getInstance().getLex(cleanString(typeCharacteristicValue)));
 		
 		oe.addImagingObservationCharacteristic(oc);
 		return oe;
