@@ -827,6 +827,12 @@ public class AIMUtil
 				EPADAIM ea = epadDatabaseOperations.getAIM(imageAnnotationColl.getUniqueIdentifier().getRoot());
 				Aim4 aim = new Aim4(imageAnnotationColl);
 				String patientID = aim.getPatientID();
+				String patientName = aim.getPatientName();
+				//find the unique patient id for this epad instance and use that while saving
+				EpadOperations epadOperations = DefaultEpadOperations.getInstance();
+				patientID=epadOperations.getUniquePatientID(patientID, patientName);
+				log.info("Using patient id as "+patientID);
+				
 				String imageID = aim.getFirstImageID();
 				String seriesID = aim.getFirstSeriesID();
 				if (imageID != null && imageID.length() > 0)
