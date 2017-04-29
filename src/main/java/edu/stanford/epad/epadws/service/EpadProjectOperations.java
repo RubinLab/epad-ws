@@ -290,6 +290,19 @@ public interface EpadProjectOperations {
 	 */
 	Subject createSubject(String loggedInUser, String subjectUID, String name, Date dob, String gender) throws Exception;
 	Subject createSubject(String loggedInUser, String subjectUID, String name, Date dob, String gender, boolean changeOwner) throws Exception;
+	/**
+	 * create a subject with a display uid
+	 * @param loggedInUser
+	 * @param subjectUID
+	 * @param name
+	 * @param dob
+	 * @param gender
+	 * @param displayUID
+	 * @return
+	 * @throws Exception
+	 */
+	Subject createSubject(String loggedInUser, String subjectUID, String name, Date dob, String gender, String displayUID) throws Exception;
+	Subject createSubject(String loggedInUser, String subjectUID, String name, Date dob, String gender, boolean changeOwner, String displayUID) throws Exception;
 	
 	/**
 	 * Create Study record in database

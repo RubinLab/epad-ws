@@ -927,12 +927,51 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 				name, dob, gender, false);
 	}
 	
+	
+	/* (non-Javadoc)
+	 * @see edu.stanford.epad.epadws.service.EpadProjectOperations#createSubject(java.lang.String, java.lang.String, java.lang.String, java.util.Date, java.lang.String)
+	 */
+	@Override
+	public Subject createSubject(String loggedInUser, String subjectUID,
+			String name, Date dob, String gender, String displayUID) throws Exception {
+		return createSubject(loggedInUser, subjectUID,
+				name, dob, gender, false, displayUID);
+	}
+	
 	@Override
 	public Subject createSubject(String loggedInUser, String subjectUID,
 			String name, Date dob, String gender, boolean changeOwner) throws Exception {
 		Subject subject = getSubject(subjectUID);
+		log.info("Subject create with name " + name + " uid "+ subjectUID );
+		if (subject == null) subject = new Subject();
+		subject.setDisplayUID(subjectUID);
+		subject.setSubjectUID(subjectUID);
+		if (name != null && name.trim().length() > 0) subject.setName(name);
+		if (subject.getName() == null) subject.setName("");
+		if (dob != null) subject.setDob(dob);
+		if (gender != null && name.trim().length() > 0) subject.setGender(gender);
+		if (subject.getId() == 0)
+		{
+			subject.setCreator(loggedInUser);
+			this.createEventLog(loggedInUser, null, subjectUID, null, null, null, null, null, "Created Patient", null, false);
+		}
+		if (changeOwner)
+			subject.setCreator(loggedInUser);
+		subject.save();
+		//subjectCache.put(subject.getSubjectUID(), subject);
+		return subject;
+	}
+
+	
+	@Override
+	public Subject createSubject(String loggedInUser, String subjectUID,
+			String name, Date dob, String gender, boolean changeOwner, String displayUID) throws Exception {
+		Subject subject = getSubject(subjectUID);
+		log.info("Subject create with name " + name + " uid "+ subjectUID );
 		if (subject == null) subject = new Subject();
 		subject.setSubjectUID(subjectUID);
+		log.info("Setting display subject id to "+ displayUID);
+		subject.setDisplayUID(displayUID);
 		if (name != null && name.trim().length() > 0) subject.setName(name);
 		if (subject.getName() == null) subject.setName("");
 		if (dob != null) subject.setDob(dob);

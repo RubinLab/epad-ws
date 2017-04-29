@@ -276,6 +276,49 @@ public class DefaultEpadOperations implements EpadOperations
 	{
 		return ourInstance;
 	}
+	
+	
+	/**
+	 * calculates a combined uid w/ uid_name and limiting it to 128 chars
+	 * first checks if the combined key exists in db
+	 * if not checks if the uid exists with different name, 
+	 * if so returns the calculated combined key otherwise returns the id after replacing / with %2F
+	 * this was implemented for handling animal data which has multiple patient names with a single patient id
+	 * 
+	 */
+	@Override
+	public String getUniquePatientID(String dicomPatientID,String dicomPatientName){
+		try {
+			
+			String validDicomPatientID=dicomPatientID.replace("/", "%2F");
+			String uniquePatientID=validDicomPatientID;
+			//construct the combined id uid_name. db field is 128 chars
+			String combinedDicomPatientID= validDicomPatientID+"_"+dicomPatientName.replace("^", "").replaceAll("\\s", "").trim();
+			if (combinedDicomPatientID.length()>128)
+				combinedDicomPatientID=combinedDicomPatientID.substring(0,127);
+			
+			Subject subject = projectOperations.getSubject(combinedDicomPatientID);
+			
+			if (subject!=null) {
+				if (dicomPatientName.replace("^", "").trim().equalsIgnoreCase(subject.getName().replace("^", "").trim()))
+						uniquePatientID=combinedDicomPatientID;
+			}else{
+				
+				subject = projectOperations.getSubject(validDicomPatientID);
+			
+				if (subject!= null && !dicomPatientName.replace("^", "").trim().equalsIgnoreCase(subject.getName().replace("^", "").trim())){ //if db record exists but the name is different
+					uniquePatientID=combinedDicomPatientID;
+				}
+					
+				
+			}
+			log.info("Unique patient id is "+uniquePatientID);
+			return uniquePatientID;
+		} catch (Exception e) {
+			log.warning("Couldn't check the uniqueness of dicom patient id returning the original", e);
+		}
+		return dicomPatientID.replace("/", "%2F");
+	}
 
 	/**
 	 * Get operations
@@ -594,14 +637,21 @@ public class DefaultEpadOperations implements EpadOperations
 			dcm4CheeStudy.seriesCount = dcm4CheeStudy.seriesCount + series.size();
 			EPADStudy epadStudy = dcm4cheeStudy2EpadStudy(sessionID, subjectReference.projectID, subjectReference.subjectID,
 					dcm4CheeStudy, username, includeAnnotationStatus);
-			if (epadStudy.studyDescription!=null) {//fill study's description in our db if it exists in dcm4che
+			if (epadStudy.studyDescription!=null && !epadStudy.studyDescription.equals("")) {//fill study's description in our db if it exists in dcm4che
 				Study dbStudy=projectOperations.getStudy(epadStudy.studyUID);
 				if (dbStudy.getDescription()==null || dbStudy.getDescription().equals("")) {
 					dbStudy.setDescription(epadStudy.studyDescription);
 					dbStudy.save();
 				}
 
+			}else {// see if our db has it
+				Study dbStudy=projectOperations.getStudy(epadStudy.studyUID);
+				if (dbStudy.getDescription()!=null ) {
+					epadStudy.studyDescription=dbStudy.getDescription();
+					log.info("Setting desc to "+dbStudy.getDescription());
+				}
 			}
+			
 			studyUIDsInEpad.remove(epadStudy.studyUID);
 			boolean filter = searchFilter.shouldFilterStudy(subjectReference.subjectID, epadStudy.studyAccessionNumber,
 					epadStudy.examTypes, epadStudy.numberOfAnnotations);
@@ -5111,6 +5161,7 @@ public class DefaultEpadOperations implements EpadOperations
 		EpadOperations epadQueries = DefaultEpadOperations.getInstance();
 
 		String patientID = subject.getSubjectUID();
+		String displayID = subject.getDisplayUID();
 		String patientName = subject.getName();
 		int numberOfStudies = 0;
 		if (!searchFilter.shouldFilterSubject(patientID, patientName)) {
@@ -5156,7 +5207,7 @@ public class DefaultEpadOperations implements EpadOperations
 							userStatusList = null;
 					}
 					return new EPADSubject(projectID, patientID, patientName, insertUser, xnatSubjectID, insertDate, uri,
-							numberOfStudies, numberOfAnnotations, examTypes, annotationStatus, userStatusList);
+							numberOfStudies, numberOfAnnotations, examTypes, annotationStatus, userStatusList, displayID);
 				} else
 					return null;
 			} else

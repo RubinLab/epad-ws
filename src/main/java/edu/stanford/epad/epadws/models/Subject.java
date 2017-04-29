@@ -120,6 +120,8 @@ public class Subject extends AbstractDAO {
 	Date updateTime;
 	transient String status;
 	transient String projectID;
+	
+	String displayUID;
 
 	public Subject(long id)
 	{
@@ -210,6 +212,15 @@ public class Subject extends AbstractDAO {
 		this.projectID = projectID;
 	}
 
+	
+	public String getDisplayUID() {
+		return displayUID;
+	}
+
+	public void setDisplayUID(String displayUID) {
+		this.displayUID = displayUID;
+	}
+	
 	public final static String DBTABLE = "subject";
 	public final static String[][] DBCOLUMNS = {
         {"id","long","id","Id"},
@@ -220,6 +231,7 @@ public class Subject extends AbstractDAO {
         {"creator","String","creator","varchar"},
         {"createdTime","Date","createdtime","timestamp"},
         {"updateTime","Date","updatetime","timestamp"},	
+        {"displayUID","String","displayUID","varchar"},
 	};
 
 	@Override
