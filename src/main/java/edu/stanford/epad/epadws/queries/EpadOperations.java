@@ -1692,4 +1692,11 @@ public interface EpadOperations
 	 */
 	DICOMElementList getDICOMElements(String studyUID, String seriesUID, String imageUID);
 
+	/**
+	 * get unique patient id for this name and id checking db 
+	 * @param dicomPatientID
+	 * @param dicomPatientName
+	 * @return unique patient id (first 128 chars if longer)
+	 */
+	String getUniquePatientID(String dicomPatientID,String dicomPatientName);
 }

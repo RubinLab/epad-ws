@@ -124,7 +124,30 @@ public class SeriesProcessingDescription
 	private final String seriesUID;
 	private final String subjectName;
 	private final String subjectID;
+	private final String displaySubjectID;
 
+	
+	public SeriesProcessingDescription(int numberOfInstances, String seriesUID, String studyUID, String patientName,
+			String subjectID, String displaySubjectID)
+	{
+		if (numberOfInstances < 1)
+			throw new IllegalArgumentException("numInstances must be a positive value.");
+
+		this.numberOfInstances = numberOfInstances;
+		int instanceSize = 2000;
+		if (instanceSize < numberOfInstances + 1)
+			instanceSize = 2 * numberOfInstances;
+
+		instances = new ConcurrentHashMap<Integer,DicomImageDescription>(instanceSize);
+
+		this.seriesUID = seriesUID;
+		this.studyUID = studyUID;
+		this.subjectName = patientName;
+		this.subjectID = subjectID;
+		this.displaySubjectID=displaySubjectID;
+		
+	}
+	
 	public SeriesProcessingDescription(int numberOfInstances, String seriesUID, String studyUID, String patientName,
 			String subjectID)
 	{
@@ -142,6 +165,7 @@ public class SeriesProcessingDescription
 		this.studyUID = studyUID;
 		this.subjectName = patientName;
 		this.subjectID = subjectID;
+		this.displaySubjectID=subjectID;
 	}
 
 	public String getSeriesUID()
@@ -162,6 +186,11 @@ public class SeriesProcessingDescription
 	public String getSubjectID()
 	{
 		return subjectID;
+	}
+	
+	public String getDisplaySubjectID()
+	{
+		return displaySubjectID;
 	}
 
 	public boolean isComplete()

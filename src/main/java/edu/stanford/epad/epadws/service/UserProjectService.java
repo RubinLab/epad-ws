@@ -141,6 +141,7 @@ import edu.stanford.epad.epadws.models.Study;
 import edu.stanford.epad.epadws.models.Subject;
 import edu.stanford.epad.epadws.models.User;
 import edu.stanford.epad.epadws.queries.DefaultEpadOperations;
+import edu.stanford.epad.epadws.queries.EpadOperations;
 import edu.stanford.epad.epadws.queries.XNATQueries;
 import edu.stanford.epad.epadws.security.IdGenerator;
 import edu.stanford.epad.epadws.xnat.XNATCreationOperations;
@@ -161,6 +162,7 @@ public class UserProjectService {
 	public static Map<String, String> pendingPNGs = new HashMap<String, String>();
 	public static Map<String, String> pendingUploads = new HashMap<String, String>();
 
+	private static final EpadOperations epadOperations = DefaultEpadOperations.getInstance();	
 	private static final EpadProjectOperations projectOperations = DefaultEpadProjectOperations.getInstance();	
 	private static final EpadDatabaseOperations databaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();	
 
@@ -504,7 +506,7 @@ public class UserProjectService {
 		}
 		String sopInstanceUID = dicomObject.getString(Tag.SOPInstanceUID);
 		String dicomPatientName = dicomObject.getString(Tag.PatientName);
-		String dicomPatientID = dicomObject.getString(Tag.PatientID);
+		String dicomPatientID = dicomObject.getString(Tag.PatientID); 
 		String studyUID = dicomObject.getString(Tag.StudyInstanceUID);
 		String studyDate = dicomObject.getString(Tag.StudyDate);
 		String seriesUID = dicomObject.getString(Tag.SeriesInstanceUID);
@@ -538,50 +540,53 @@ public class UserProjectService {
 			projectOperations.createEventLog(username, projectID, dicomPatientID, studyUID, seriesUID, null, null, dicomFile.getName(), "UPLOAD SERIES", message, true);
 			return false;
 		}
-		if (dicomPatientID.contains("/")) {
-			log.info("Patient id / character replaced with _");
-			dicomPatientID=dicomPatientID.replace("/", "%2F");
-		}
+		
+		//dicom is accepted after the initial checks
+		//now put the current patient id in display and get the unique patient id
+		String displayPatientID=dicomPatientID;
+		dicomPatientID = epadOperations.getUniquePatientID(dicomPatientID, dicomPatientName);
+		
 		if (pendingUploads.size() < 300)
 			pendingUploads.put(studyUID, username + ":" + projectID);
 		if (pendingPNGs.size() < 300)
 			pendingPNGs.put(seriesUID, username + ":" + projectID);
 		
-		//check if the patient id already exist in the system. If so put a log or something, specifying the patient name that is used and the project
-		Subject subject = projectOperations.getSubject(dicomPatientID);
-		//TODO for some reason this(dicomPatientName.trim().toLowerCase().equalsIgnoreCase(subject.getName().trim().toLowerCase()) does not work for Anonymous
-		if (subject != null && dicomPatientName!=null && subject.getName()!=null && !dicomPatientName.trim().toLowerCase().equalsIgnoreCase(subject.getName().trim().toLowerCase()) ) {
-			if (!duplicatePatientIds.contains(dicomPatientID)) {
-				duplicatePatientIds.add(dicomPatientID);
-				List<Project> projects=projectOperations.getProjectsForSubject(subject.getSubjectUID());
-				StringBuilder projectsStr=new StringBuilder();
-				for (Project p: projects) {
-					projectsStr.append(p.getName());
-					projectsStr.append(",");
-				}
-				String message="The patient "+dicomPatientName+" is already uploaded as "+subject.getName()+" in project(s): "+ projectsStr.toString().substring(0, projectsStr.length()-1);
-				projectOperations.createEventLog(username, projectID, dicomPatientID, studyUID, seriesUID, null, null, dicomFile.getName(), "DUPLICATE DEIDENTIFICATION", message, true);
-				
-				//for keeping the same name in cache
-				dicomPatientName=subject.getName();
-			}else {
-				if (!dicomPatientName.replace("^", "").trim().equalsIgnoreCase(subject.getName().replace("^", "").trim())){ //if db record exists but the name is different
-					//see if the combination is in db
-					dicomPatientID= dicomPatientID+"_"+dicomPatientName.replace("^", "").trim();
-					subject = projectOperations.getSubject(dicomPatientID);
-					if (subject==null){
-						subject = new Subject();
-					}else if(!dicomPatientName.replace("^", "").trim().equalsIgnoreCase(subject.getName().replace("^", "").trim())){
-						//add name to the id and create a new one
-						subject = new Subject();
-						log.info("subject uid was "+ dicomPatientID + " now "+dicomPatientID+"_"+dicomPatientName.replace("^", "").trim());
-						dicomPatientID= dicomPatientID+"_"+dicomPatientName;
-					}
-					
-				}
-			}
-			
-		}
+		//the new version with creating the combined key should handle this but needs revising and testing
+//		//check if the patient id already exist in the system. If so put a log or something, specifying the patient name that is used and the project
+//		Subject subject = projectOperations.getSubject(dicomPatientID);
+//		//TODO for some reason this(dicomPatientName.trim().toLowerCase().equalsIgnoreCase(subject.getName().trim().toLowerCase()) does not work for Anonymous
+//		if (subject != null && dicomPatientName!=null && subject.getName()!=null && !dicomPatientName.trim().toLowerCase().equalsIgnoreCase(subject.getName().trim().toLowerCase()) ) {
+//			if (!duplicatePatientIds.contains(dicomPatientID)) {
+//				duplicatePatientIds.add(dicomPatientID);
+//				List<Project> projects=projectOperations.getProjectsForSubject(subject.getSubjectUID());
+//				StringBuilder projectsStr=new StringBuilder();
+//				for (Project p: projects) {
+//					projectsStr.append(p.getName());
+//					projectsStr.append(",");
+//				}
+//				String message="The patient "+dicomPatientName+" is already uploaded as "+subject.getName()+" in project(s): "+ projectsStr.toString().substring(0, projectsStr.length()-1);
+//				projectOperations.createEventLog(username, projectID, dicomPatientID, studyUID, seriesUID, null, null, dicomFile.getName(), "DUPLICATE DEIDENTIFICATION", message, true);
+//				
+//				//for keeping the same name in cache
+//				dicomPatientName=subject.getName();
+//			}else {
+//				if (!dicomPatientName.replace("^", "").trim().equalsIgnoreCase(subject.getName().replace("^", "").trim())){ //if db record exists but the name is different
+//					//see if the combination is in db
+//					dicomPatientID= dicomPatientID+"_"+dicomPatientName.replace("^", "").trim();
+//					subject = projectOperations.getSubject(dicomPatientID);
+//					if (subject==null){
+//						subject = new Subject();
+//					}else if(!dicomPatientName.replace("^", "").trim().equalsIgnoreCase(subject.getName().replace("^", "").trim())){
+//						//add name to the id and create a new one
+//						subject = new Subject();
+//						log.info("subject uid was "+ dicomPatientID + " now "+dicomPatientID+"_"+dicomPatientName.replace("^", "").trim());
+//						dicomPatientID= dicomPatientID+"_"+dicomPatientName;
+//					}
+//					
+//				}
+//			}
+//			
+//		}
 		
 		if (dicomPatientID != null && studyUID != null) {
 			//databaseOperations.deleteSeriesOnly(seriesUID); // This will recreate all images
@@ -590,7 +595,7 @@ public class UserProjectService {
 			
 			
 
-			addSubjectAndStudyToProject(dicomPatientID, dicomPatientName, studyUID, studyDate, projectID, sessionID, username, studyDesc);
+			addSubjectAndStudyToProject(dicomPatientID, dicomPatientName, studyUID, studyDate, projectID, sessionID, username, studyDesc, displayPatientID);
 
 			if ("SEG".equals(modality))
 			{
@@ -694,10 +699,6 @@ public class UserProjectService {
 	 */
 	public static void addSubjectAndStudyToProject(String subjectID, String subjectName, String studyUID, String studyDate, String projectID, String sessionID, String username, String studyDesc) {
 		try {
-			if (subjectID.contains("/")) {
-				log.info("Patient id / character replaced with %2F");
-				subjectID=subjectID.replace("/", "%2F");
-			}
 			log.info("Create Subject:" + subjectID);
 			projectOperations.createSubject(username, subjectID, subjectName, null, null);
 			log.info("Create Study:" +  studyUID + " desc "+ studyDesc);
@@ -708,6 +709,33 @@ public class UserProjectService {
 			log.warning("Error creating subject/study in EPAD:", e);
 		}
 	}
+	
+	
+	/**
+	 * Add subject/study records to project with study desc and display subject uid
+	 * @param subjectID
+	 * @param subjectName
+	 * @param studyUID
+	 * @param studyDate
+	 * @param projectID
+	 * @param sessionID
+	 * @param username
+	 * @param studyDesc
+	 * @param displaySubjectID
+	 */
+	public static void addSubjectAndStudyToProject(String subjectID, String subjectName, String studyUID, String studyDate, String projectID, String sessionID, String username, String studyDesc, String displaySubjectID) {
+		try {
+			log.info("Create Subject:" + subjectID);
+			projectOperations.createSubject(username, subjectID, subjectName, null, null,displaySubjectID);
+			log.info("Create Study:" +  studyUID + " desc "+ studyDesc);
+			projectOperations.createStudy(username, studyUID, subjectID, studyDesc, getDate(studyDate));
+			log.info("Upload/Transfer: Adding Study:" +  studyUID + " Subject:" + subjectID + " to Project:" + projectID);
+			projectOperations.addStudyToProject(username, studyUID, subjectID, projectID);
+		} catch (Exception e) {
+			log.warning("Error creating subject/study in EPAD:", e);
+		}
+	}
+	
 	private static Collection<File> listDICOMFiles(File dir)
 	{
 		log.info("Checking upload directory:" + dir.getAbsolutePath());

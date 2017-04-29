@@ -166,6 +166,8 @@ public class XNATSeriesWatcher implements Runnable
 
 					String studyUID = seriesProcessingDescription.getStudyUID();
 					String subjectID = seriesProcessingDescription.getSubjectID();
+					String displayPatientID = seriesProcessingDescription.getDisplaySubjectID();
+					
 					String patientName = seriesProcessingDescription.getPatientName();
 
 					log.info("XNAT/EPAD series watcher processing study " + studyUID + " for subject " + patientName + " with ID "
@@ -177,7 +179,7 @@ public class XNATSeriesWatcher implements Runnable
 						if (!EPADConfig.UseEPADUsersProjects) {
 							epadOperations.createSubjectAndStudy(xnatUploadProjectUser, xnatUploadProjectID, subjectID, patientName, studyUID, jsessionID);
 						} else {
-							projectOperations.createSubject(xnatUploadProjectUser, subjectID, patientName, null, null);
+							projectOperations.createSubject(xnatUploadProjectUser, subjectID, patientName, null, null,displayPatientID);
 							projectOperations.createStudy(xnatUploadProjectUser, studyUID, subjectID,"");
 							projectOperations.addStudyToProject(xnatUploadProjectUser, studyUID, subjectID, xnatUploadProjectID);
 						}

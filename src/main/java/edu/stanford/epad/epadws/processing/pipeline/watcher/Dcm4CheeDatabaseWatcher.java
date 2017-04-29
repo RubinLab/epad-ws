@@ -153,32 +153,7 @@ public class Dcm4CheeDatabaseWatcher implements Runnable
 		this.xnatSeriesWatcherQueue = xnatSeriesWatcherQueue;
 	}
 
-	public String getUniquePatientID(String dicomPatientID,String dicomPatientName){
-		try {
-			String uniqueDicomPatientID=dicomPatientID.replace("/", "%2F");
-			Subject subject = projectOperations.getSubject(uniqueDicomPatientID);
-			if (!dicomPatientName.replace("^", "").trim().equalsIgnoreCase(subject.getName().replace("^", "").trim())){ //if db record exists but the name is different
-				//see if the combination is in db
-				uniqueDicomPatientID= uniqueDicomPatientID+"_"+dicomPatientName.replace("^", "").trim();
-				
-					subject = projectOperations.getSubject(uniqueDicomPatientID);
-				
-				if (subject==null){
-					subject = new Subject();
-				}else if(!dicomPatientName.replace("^", "").trim().equalsIgnoreCase(subject.getName().replace("^", "").trim())){
-					//add name to the id and create a new one
-					subject = new Subject();
-					uniqueDicomPatientID= uniqueDicomPatientID+"_"+dicomPatientName;
-				}
-				
-			}
-			logger.info("Unique patient id is "+uniqueDicomPatientID);
-			return uniqueDicomPatientID;
-		} catch (Exception e) {
-			logger.warning("Couldn't check the uniqueness of dicompatient id returning the original");
-			return dicomPatientID.replace("/", "%2F");
-		}
-	}
+	
 	
 	@Override
 	public void run()
@@ -198,12 +173,12 @@ public class Dcm4CheeDatabaseWatcher implements Runnable
 					String seriesUID = dcm4CheeSeries.seriesUID;
 					String studyUID = dcm4CheeDatabaseOperations.getStudyUIDForSeries(seriesUID);
 					String patientName = dcm4CheeSeries.patientName;
-					String patientID = getUniquePatientID(dcm4CheeSeries.patientID,dcm4CheeSeries.patientName);
+					String patientID = epadQueries.getUniquePatientID(dcm4CheeSeries.patientID,dcm4CheeSeries.patientName);
 					
 					String seriesDesc = dcm4CheeSeries.seriesDescription;
 					int numInstances = dcm4CheeSeries.imagesInSeries;
 					SeriesProcessingDescription dicomSeriesDescription = new SeriesProcessingDescription(numInstances,
-							seriesUID, studyUID, patientName, patientID);
+							seriesUID, studyUID, patientName, patientID, dcm4CheeSeries.patientID);
 					epadDatabaseOperations.updateOrInsertSeries(seriesUID, SeriesProcessingStatus.IN_PIPELINE);
 					submitSeriesForPngGeneration(dicomSeriesDescription); // Submit this series to generate all the PNG files.
 					submitSeriesForXNATGeneration(dicomSeriesDescription); // Submit this series to generate XNAT information.
