@@ -290,7 +290,7 @@ public class DefaultEpadOperations implements EpadOperations
 	public String getUniquePatientID(String dicomPatientID,String dicomPatientName){
 		try {
 			
-			String validDicomPatientID=dicomPatientID.replace("/", "%2F");
+			String validDicomPatientID=dicomPatientID.replace("/", "-");
 			String uniquePatientID=validDicomPatientID;
 			//construct the combined id uid_name. db field is 128 chars
 			String combinedDicomPatientID= validDicomPatientID+"_"+dicomPatientName.replace("^", "").replaceAll("\\s", "").trim();
@@ -317,7 +317,7 @@ public class DefaultEpadOperations implements EpadOperations
 		} catch (Exception e) {
 			log.warning("Couldn't check the uniqueness of dicom patient id returning the original", e);
 		}
-		return dicomPatientID.replace("/", "%2F");
+		return dicomPatientID.replace("/", "-");
 	}
 
 	/**

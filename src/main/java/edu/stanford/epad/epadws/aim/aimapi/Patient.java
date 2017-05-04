@@ -109,10 +109,19 @@ import edu.stanford.hakan.aim4api.compability.aimv3.Person;
 @SuppressWarnings("serial")
 public class Patient extends Person {
 
+	
 	public Patient() {
 		super();
 	}
 
+	public Patient(String name, String id, String sex, String birthdate, String originalId) {
+		super();
+		setName(name);
+		setId(id);
+		setSex(sex);
+		setBirthDate(birthdate);
+		setOriginalId(originalId);
+	}
 	public Patient(String name, String id, String sex, String birthdate) {
 		super();
 		setName(name);
@@ -123,7 +132,7 @@ public class Patient extends Person {
 
 	public Patient(Person person) {
 		this(person.getName(), person.getId(), person.getSex(), person
-				.getBirthDate());
+				.getBirthDate(), person.getOriginalId());
 	}
 
 }

@@ -495,6 +495,20 @@ public class Aim4 extends ImageAnnotation implements Serializable, Aimapi {
 
 	}
 
+	 public String getOriginalPatientID() {
+	        String result = "";
+	        try {
+	            result= getListPerson().get(0).getOriginalId();
+	            if (result==null)
+	            	return getPatientID();
+
+	        } catch (Exception e) {
+	            logger.info("Error: Aim getOriginalPatientId " + e.getMessage());
+	        }
+	        return result;
+
+	    }
+
 	private String getObservationCodeValue() {
 		String result = null;
 
@@ -741,6 +755,7 @@ public class Aim4 extends ImageAnnotation implements Serializable, Aimapi {
 		Person person = getFirstPerson();
 		person.setName(patient.getName());
 		person.setId(patient.getId());
+		person.setOriginalId(patient.getOriginalId());
 		person.setSex(patient.getSex());
 		person.setBirthDate(patient.getBirthDate());
 
