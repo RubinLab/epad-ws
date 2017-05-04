@@ -2284,7 +2284,8 @@ log.info("isDicomSR :" + eaim.isDicomSR + " and :" + e.isDicomSR);
 		"AimXPath.xml",
 		"AIMTemplate_v2rvStanford.xsd",
 		"AIM_v4_rv44_XML.xsd",
-		"ISO_datatypes_Narrative.xsd"		
+		"ISO_datatypes_Narrative.xsd",
+		"AIM_v4_XMLStanford.xsd"
 	};
 	
 	public static void checkSchemaFiles()
