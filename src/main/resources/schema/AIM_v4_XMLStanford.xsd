@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- edited with XMLSpy v2012 rel. 2 sp1 (x64) (http://www.altova.com) by Pat Mongkolwat (Northwestern University) -->
 <!-- By the AIM team at Northwestern University -->
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns="gme://caCORE.caCORE/4.4/edu.northwestern.radiology.AIM" xmlns:iso="uri:iso.org:21090" targetNamespace="gme://caCORE.caCORE/4.4/edu.northwestern.radiology.AIM" elementFormDefault="qualified" version="AIM_v4_rv44_XML">
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns="gme://caCORE.caCORE/4.4/edu.northwestern.radiology.AIM" xmlns:iso="uri:iso.org:21090" targetNamespace="gme://caCORE.caCORE/4.4/edu.northwestern.radiology.AIM" elementFormDefault="qualified" version="AIM_v4_XMLStanford">
 	<xs:import namespace="uri:iso.org:21090" schemaLocation="ISO_datatypes_Narrative.xsd"/>
 	<xs:simpleType name="AimVersion">
 		<xs:restriction base="xs:string">
