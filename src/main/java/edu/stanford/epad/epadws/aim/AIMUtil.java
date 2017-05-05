@@ -112,7 +112,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -140,7 +139,6 @@ import org.apache.commons.fileupload.FileUploadException;
 import org.apache.commons.fileupload.disk.DiskFileItemFactory;
 import org.apache.commons.fileupload.servlet.ServletFileUpload;
 import org.apache.commons.io.IOUtils;
-import org.json.JSONArray;
 import org.json.JSONObject;
 import org.json.XML;
 import org.w3c.dom.Document;
@@ -168,18 +166,12 @@ import edu.stanford.epad.common.util.MongoDBOperations;
 import edu.stanford.epad.common.util.XmlNamespaceTranslator;
 import edu.stanford.epad.dtos.EPADAIM;
 import edu.stanford.epad.dtos.EPADAIMList;
-import edu.stanford.epad.dtos.EPADImageList;
 import edu.stanford.epad.dtos.EPADAIMList.EPADAIMResultSet;
-import edu.stanford.epad.dtos.internal.DCM4CHEESeries;
-import edu.stanford.epad.dtos.internal.DICOMElement;
-import edu.stanford.epad.dtos.internal.DICOMElementList;
-import edu.stanford.epad.epadws.aim.aimapi.Aim;
-import edu.stanford.epad.epadws.aim.aimapi.Aim4;
+import edu.stanford.hakan.aim4api.project.epad.Aim;
 import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeDatabase;
 import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeDatabaseOperations;
 import edu.stanford.epad.epadws.epaddb.EpadDatabase;
 import edu.stanford.epad.epadws.epaddb.EpadDatabaseOperations;
-import edu.stanford.epad.epadws.handlers.HandlerUtil;
 import edu.stanford.epad.epadws.handlers.core.FrameReference;
 import edu.stanford.epad.epadws.handlers.core.ImageReference;
 import edu.stanford.epad.epadws.handlers.core.SeriesReference;
@@ -187,46 +179,26 @@ import edu.stanford.epad.epadws.handlers.event.EventHandler;
 import edu.stanford.epad.epadws.models.NonDicomSeries;
 import edu.stanford.epad.epadws.models.Project;
 import edu.stanford.epad.epadws.models.Subject;
-import edu.stanford.epad.epadws.models.Template;
 import edu.stanford.epad.epadws.plugins.PluginConfig;
 import edu.stanford.epad.epadws.processing.pipeline.task.PluginStartTask;
-import edu.stanford.epad.epadws.queries.Dcm4CheeQueries;
 import edu.stanford.epad.epadws.queries.DefaultEpadOperations;
 import edu.stanford.epad.epadws.queries.EpadOperations;
 import edu.stanford.epad.epadws.service.DefaultEpadProjectOperations;
 import edu.stanford.epad.epadws.service.EpadProjectOperations;
 import edu.stanford.epad.epadws.service.SessionService;
 import edu.stanford.epad.epadws.service.UserProjectService;
-import edu.stanford.hakan.aim4api.base.ImagingObservationCharacteristic;
 import edu.stanford.hakan.aim4api.base.AimException;
-import edu.stanford.hakan.aim4api.base.Algorithm;
-import edu.stanford.hakan.aim4api.base.CD;
-import edu.stanford.hakan.aim4api.base.CalculationEntity;
-import edu.stanford.hakan.aim4api.base.DicomImageReferenceEntity;
 import edu.stanford.hakan.aim4api.base.DicomSegmentationEntity;
-import edu.stanford.hakan.aim4api.base.Enumerations;
-import edu.stanford.hakan.aim4api.base.ExtendedCalculationResult;
-import edu.stanford.hakan.aim4api.base.II;
-import edu.stanford.hakan.aim4api.base.Image;
 import edu.stanford.hakan.aim4api.base.ImageAnnotationCollection;
-import edu.stanford.hakan.aim4api.base.ImageCollection;
-import edu.stanford.hakan.aim4api.base.ImageSeries;
-import edu.stanford.hakan.aim4api.base.ImageStudy;
-import edu.stanford.hakan.aim4api.base.ImagingObservationEntity;
-import edu.stanford.hakan.aim4api.base.ImagingPhysicalEntity;
 import edu.stanford.hakan.aim4api.base.ST;
 import edu.stanford.hakan.aim4api.base.SegmentationEntityCollection;
-import edu.stanford.hakan.aim4api.base.TwoDimensionSpatialCoordinate;
-import edu.stanford.hakan.aim4api.base.TwoDimensionSpatialCoordinateCollection;
 import edu.stanford.hakan.aim4api.compability.aimv3.DICOMImageReference;
 import edu.stanford.hakan.aim4api.compability.aimv3.ImageAnnotation;
-import edu.stanford.hakan.aim4api.compability.aimv3.Lexicon;
-import edu.stanford.hakan.aim4api.compability.aimv3.Modality;
 import edu.stanford.hakan.aim4api.compability.aimv3.Person;
 import edu.stanford.hakan.aim4api.compability.aimv3.Segmentation;
 import edu.stanford.hakan.aim4api.compability.aimv3.SegmentationCollection;
 import edu.stanford.hakan.aim4api.compability.aimv3.User;
-import edu.stanford.hakan.aim4api.project.epad.Enumerations.ShapeType;
+import edu.stanford.hakan.aim4api.project.epad.Patient;
 import edu.stanford.hakan.aim4api.usage.AnnotationBuilder;
 import edu.stanford.hakan.aim4api.usage.AnnotationGetter;
 import edu.stanford.hakan.aim4api.usage.AnnotationValidator;
@@ -825,13 +797,27 @@ public class AIMUtil
 					}
 				}
 				EPADAIM ea = epadDatabaseOperations.getAIM(imageAnnotationColl.getUniqueIdentifier().getRoot());
-				Aim4 aim = new Aim4(imageAnnotationColl);
+				Aim aim = new Aim(imageAnnotationColl);
 				String patientID = aim.getPatientID();
+				String originalPatientID = aim.getOriginalPatientID();
 				String patientName = aim.getPatientName();
-				//find the unique patient id for this epad instance and use that while saving
-				EpadOperations epadOperations = DefaultEpadOperations.getInstance();
-				patientID=epadOperations.getUniquePatientID(patientID, patientName);
-				log.info("Using patient id as "+patientID);
+				if (!patientID.equalsIgnoreCase(originalPatientID)) {
+					//find the unique patient id for this epad instance and use that while saving
+					EpadOperations epadOperations = DefaultEpadOperations.getInstance();
+					String uniquePatientID=epadOperations.getUniquePatientID(originalPatientID, patientName);
+					log.info("Unique patient id as "+uniquePatientID);
+					if (!patientID.equalsIgnoreCase(uniquePatientID)){
+						patientID=uniquePatientID;
+						Patient p=aim.getPatient();
+						p.setId(uniquePatientID);
+						log.info("new patient id is "+p.getId());
+						aim.setPatient(p);
+						log.info("Using patient id as "+aim.getPatientID());
+						edu.stanford.hakan.aim4api.base.Person annotationPatient=imageAnnotationColl.getPerson();
+						annotationPatient.setId(new ST(uniquePatientID));
+						log.info("set annotation patient id as "+imageAnnotationColl.getPerson().getId().getValue());
+					}
+				}
 				
 				String imageID = aim.getFirstImageID();
 				String seriesID = aim.getFirstSeriesID();
@@ -1147,7 +1133,7 @@ log.info("isDicomSR :" + eaim.isDicomSR + " and :" + e.isDicomSR);
 			res.setAttributeNS("http://www.w3.org/2000/xmlns/", "xmlns:rdf", "http://www.w3.org/1999/02/22-rdf-syntax-ns#");
 			res.setAttributeNS("http://www.w3.org/2000/xmlns/", "xmlns:xsi", "http://www.w3.org/2001/XMLSchema-instance");
 			res.setAttribute("xsi:schemaLocation",
-					"gme://caCORE.caCORE/4.4/edu.northwestern.radiology.AIM AIM_v4_rv44_XML.xsd");
+					EPADConfig.aim4Namespace+ " " + EPADConfig.xsdFileV4);
 			res.setAttribute("xmlns", "gme://caCORE.caCORE/4.4/edu.northwestern.radiology.AIM");
 			Node n = renameNodeNS(res, "ImageAnnotationCollection","gme://caCORE.caCORE/4.4/edu.northwestern.radiology.AIM");
 			root.appendChild(n); // Adding to the root
@@ -1200,7 +1186,7 @@ log.info("isDicomSR :" + eaim.isDicomSR + " and :" + e.isDicomSR);
 				try {
 					List<ImageAnnotationCollection> iacs = edu.stanford.hakan.aim4api.usage.AnnotationGetter.getImageAnnotationCollectionsFromString(ea.xml, null);
 					ImageAnnotationCollection aim = iacs.get(0);
-					Aim4 a = new Aim4(aim);
+					Aim a = new Aim(aim);
 					ea.name = aim.getImageAnnotations().get(0).getName().getValue();
 					//ea.template = aim.getImageAnnotations().get(0).getListTypeCode().get(0).getCodeSystem();// .getCode();
 					//ml
@@ -1251,7 +1237,7 @@ log.info("isDicomSR :" + eaim.isDicomSR + " and :" + e.isDicomSR);
 		aims = new EPADAIMList();
 		for (ImageAnnotationCollection aim : annotations) {
 			try {
-				Aim4 a = new Aim4(aim);
+				Aim a = new Aim(aim);
 				EPADAIM ea = aimMAP.get(aim.getUniqueIdentifier());
 				if (ea == null)  continue;
 				if (aim.getImageAnnotations().get(0).getName() != null)
@@ -1323,7 +1309,7 @@ log.info("isDicomSR :" + eaim.isDicomSR + " and :" + e.isDicomSR);
 				try {
 					List<ImageAnnotationCollection> iacs = edu.stanford.hakan.aim4api.usage.AnnotationGetter.getImageAnnotationCollectionsFromString(ea.xml, null);
 					ImageAnnotationCollection aim = iacs.get(0);
-					Aim4 a = new Aim4(aim);
+					Aim a = new Aim(aim);
 					ea.name = aim.getImageAnnotations().get(0).getName().getValue();
 					//ea.template = aim.getImageAnnotations().get(0).getListTypeCode().get(0).getCodeSystem();// .getCode();
 					//ml
@@ -1374,7 +1360,7 @@ log.info("isDicomSR :" + eaim.isDicomSR + " and :" + e.isDicomSR);
 		aims = new EPADAIMList();
 		for (ImageAnnotationCollection aim : annotations) {
 			try {
-				Aim4 a = new Aim4(aim);
+				Aim a = new Aim(aim);
 				EPADAIM ea = aimMAP.get(aim.getUniqueIdentifier());
 				if (ea == null)  continue;
 				if (aim.getImageAnnotations().get(0).getName() != null)
@@ -1433,7 +1419,7 @@ log.info("isDicomSR :" + eaim.isDicomSR + " and :" + e.isDicomSR);
 					try
 					{
 						EPADAIM ea = paimsMap.get(iac.getUniqueIdentifier().getRoot());
-						Aim4 a = new Aim4(iac);
+						Aim a = new Aim(iac);
 						ea.name = iac.getImageAnnotations().get(0).getName().getValue();
 						//ml
 						ea.template = iac.getImageAnnotations().get(0).getListTypeCode().get(0).getCode();
@@ -1591,7 +1577,7 @@ log.info("isDicomSR :" + eaim.isDicomSR + " and :" + e.isDicomSR);
 			ImageAnnotationCollection iac = iacs.get(i);
 			try
 			{
-				Aim4 a = new Aim4(iac);
+				Aim a = new Aim(iac);
 				EPADAIM ea = new EPADAIM(iac.getUniqueIdentifier().getRoot(), aim.userName, 
 						aim.projectID, aim.subjectID, aim.studyUID, aim.seriesUID, aim.imageUID, aim.instanceOrFrameNumber);
 				ea.name = iac.getImageAnnotations().get(0).getName().getValue();
@@ -1622,7 +1608,7 @@ log.info("isDicomSR :" + eaim.isDicomSR + " and :" + e.isDicomSR);
 			ImageAnnotationCollection iac = iacs.get(i);
 			try
 			{
-				Aim4 a = new Aim4(iac);
+				Aim a = new Aim(iac);
 				EPADAIM ea = new EPADAIM(iac.getUniqueIdentifier().getRoot(), aim.userName, 
 						aim.projectID, aim.subjectID, aim.studyUID, aim.seriesUID, aim.imageUID, aim.instanceOrFrameNumber);
 				ea.name = iac.getImageAnnotations().get(0).getName().getValue();
@@ -1653,7 +1639,7 @@ log.info("isDicomSR :" + eaim.isDicomSR + " and :" + e.isDicomSR);
 			ImageAnnotationCollection iac = iacs.get(i);
 			try
 			{
-				Aim4 a = new Aim4(iac);
+				Aim a = new Aim(iac);
 				EPADAIM ea = new EPADAIM(iac.getUniqueIdentifier().getRoot(), aim.userName, 
 						aim.projectID, aim.subjectID, aim.studyUID, aim.seriesUID, aim.imageUID, aim.instanceOrFrameNumber);
 				ea.name = iac.getImageAnnotations().get(0).getName().getValue();
@@ -1730,7 +1716,7 @@ log.info("isDicomSR :" + eaim.isDicomSR + " and :" + e.isDicomSR);
 			ImageAnnotationCollection iac = iacs.get(i);
 			try
 			{
-				Aim4 a = new Aim4(iac);
+				Aim a = new Aim(iac);
 				EPADAIM ea = new EPADAIM(iac.getUniqueIdentifier().getRoot(), a.getLoggedInUser().getLoginName(), "", a.getPatientID(), a.getFirstStudyID(), a.getFirstSeriesID(), a.getFirstImageID(), 0);
 				ea.name = iac.getImageAnnotations().get(0).getName().getValue();
 				//ml
@@ -2298,7 +2284,8 @@ log.info("isDicomSR :" + eaim.isDicomSR + " and :" + e.isDicomSR);
 		"AimXPath.xml",
 		"AIMTemplate_v2rvStanford.xsd",
 		"AIM_v4_rv44_XML.xsd",
-		"ISO_datatypes_Narrative.xsd"		
+		"ISO_datatypes_Narrative.xsd",
+		"AIM_v4_XMLStanford.xsd"
 	};
 	
 	public static void checkSchemaFiles()
@@ -2449,7 +2436,7 @@ log.info("isDicomSR :" + eaim.isDicomSR + " and :" + e.isDicomSR);
 		EPADAIMList aims = new EPADAIMList();
 		for (ImageAnnotationCollection aim : iacs) {
 			try {
-				Aim4 a = new Aim4(aim);
+				Aim a = new Aim(aim);
 				EPADAIM ea =null;
 				try
 				{
