@@ -167,8 +167,7 @@ import edu.stanford.epad.common.util.XmlNamespaceTranslator;
 import edu.stanford.epad.dtos.EPADAIM;
 import edu.stanford.epad.dtos.EPADAIMList;
 import edu.stanford.epad.dtos.EPADAIMList.EPADAIMResultSet;
-import edu.stanford.epad.epadws.aim.aimapi.Aim;
-import edu.stanford.epad.epadws.aim.aimapi.Aim4;
+import edu.stanford.hakan.aim4api.project.epad.Aim;
 import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeDatabase;
 import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeDatabaseOperations;
 import edu.stanford.epad.epadws.epaddb.EpadDatabase;
@@ -199,6 +198,7 @@ import edu.stanford.hakan.aim4api.compability.aimv3.Person;
 import edu.stanford.hakan.aim4api.compability.aimv3.Segmentation;
 import edu.stanford.hakan.aim4api.compability.aimv3.SegmentationCollection;
 import edu.stanford.hakan.aim4api.compability.aimv3.User;
+import edu.stanford.hakan.aim4api.project.epad.Patient;
 import edu.stanford.hakan.aim4api.usage.AnnotationBuilder;
 import edu.stanford.hakan.aim4api.usage.AnnotationGetter;
 import edu.stanford.hakan.aim4api.usage.AnnotationValidator;
@@ -797,7 +797,7 @@ public class AIMUtil
 					}
 				}
 				EPADAIM ea = epadDatabaseOperations.getAIM(imageAnnotationColl.getUniqueIdentifier().getRoot());
-				Aim4 aim = new Aim4(imageAnnotationColl);
+				Aim aim = new Aim(imageAnnotationColl);
 				String patientID = aim.getPatientID();
 				String originalPatientID = aim.getOriginalPatientID();
 				String patientName = aim.getPatientName();
@@ -808,7 +808,7 @@ public class AIMUtil
 					log.info("Unique patient id as "+uniquePatientID);
 					if (!patientID.equalsIgnoreCase(uniquePatientID)){
 						patientID=uniquePatientID;
-						edu.stanford.epad.epadws.aim.aimapi.Patient p=aim.getPatient();
+						Patient p=aim.getPatient();
 						p.setId(uniquePatientID);
 						log.info("new patient id is "+p.getId());
 						aim.setPatient(p);
@@ -1186,7 +1186,7 @@ log.info("isDicomSR :" + eaim.isDicomSR + " and :" + e.isDicomSR);
 				try {
 					List<ImageAnnotationCollection> iacs = edu.stanford.hakan.aim4api.usage.AnnotationGetter.getImageAnnotationCollectionsFromString(ea.xml, null);
 					ImageAnnotationCollection aim = iacs.get(0);
-					Aim4 a = new Aim4(aim);
+					Aim a = new Aim(aim);
 					ea.name = aim.getImageAnnotations().get(0).getName().getValue();
 					//ea.template = aim.getImageAnnotations().get(0).getListTypeCode().get(0).getCodeSystem();// .getCode();
 					//ml
@@ -1237,7 +1237,7 @@ log.info("isDicomSR :" + eaim.isDicomSR + " and :" + e.isDicomSR);
 		aims = new EPADAIMList();
 		for (ImageAnnotationCollection aim : annotations) {
 			try {
-				Aim4 a = new Aim4(aim);
+				Aim a = new Aim(aim);
 				EPADAIM ea = aimMAP.get(aim.getUniqueIdentifier());
 				if (ea == null)  continue;
 				if (aim.getImageAnnotations().get(0).getName() != null)
@@ -1309,7 +1309,7 @@ log.info("isDicomSR :" + eaim.isDicomSR + " and :" + e.isDicomSR);
 				try {
 					List<ImageAnnotationCollection> iacs = edu.stanford.hakan.aim4api.usage.AnnotationGetter.getImageAnnotationCollectionsFromString(ea.xml, null);
 					ImageAnnotationCollection aim = iacs.get(0);
-					Aim4 a = new Aim4(aim);
+					Aim a = new Aim(aim);
 					ea.name = aim.getImageAnnotations().get(0).getName().getValue();
 					//ea.template = aim.getImageAnnotations().get(0).getListTypeCode().get(0).getCodeSystem();// .getCode();
 					//ml
@@ -1360,7 +1360,7 @@ log.info("isDicomSR :" + eaim.isDicomSR + " and :" + e.isDicomSR);
 		aims = new EPADAIMList();
 		for (ImageAnnotationCollection aim : annotations) {
 			try {
-				Aim4 a = new Aim4(aim);
+				Aim a = new Aim(aim);
 				EPADAIM ea = aimMAP.get(aim.getUniqueIdentifier());
 				if (ea == null)  continue;
 				if (aim.getImageAnnotations().get(0).getName() != null)
@@ -1419,7 +1419,7 @@ log.info("isDicomSR :" + eaim.isDicomSR + " and :" + e.isDicomSR);
 					try
 					{
 						EPADAIM ea = paimsMap.get(iac.getUniqueIdentifier().getRoot());
-						Aim4 a = new Aim4(iac);
+						Aim a = new Aim(iac);
 						ea.name = iac.getImageAnnotations().get(0).getName().getValue();
 						//ml
 						ea.template = iac.getImageAnnotations().get(0).getListTypeCode().get(0).getCode();
@@ -1577,7 +1577,7 @@ log.info("isDicomSR :" + eaim.isDicomSR + " and :" + e.isDicomSR);
 			ImageAnnotationCollection iac = iacs.get(i);
 			try
 			{
-				Aim4 a = new Aim4(iac);
+				Aim a = new Aim(iac);
 				EPADAIM ea = new EPADAIM(iac.getUniqueIdentifier().getRoot(), aim.userName, 
 						aim.projectID, aim.subjectID, aim.studyUID, aim.seriesUID, aim.imageUID, aim.instanceOrFrameNumber);
 				ea.name = iac.getImageAnnotations().get(0).getName().getValue();
@@ -1608,7 +1608,7 @@ log.info("isDicomSR :" + eaim.isDicomSR + " and :" + e.isDicomSR);
 			ImageAnnotationCollection iac = iacs.get(i);
 			try
 			{
-				Aim4 a = new Aim4(iac);
+				Aim a = new Aim(iac);
 				EPADAIM ea = new EPADAIM(iac.getUniqueIdentifier().getRoot(), aim.userName, 
 						aim.projectID, aim.subjectID, aim.studyUID, aim.seriesUID, aim.imageUID, aim.instanceOrFrameNumber);
 				ea.name = iac.getImageAnnotations().get(0).getName().getValue();
@@ -1639,7 +1639,7 @@ log.info("isDicomSR :" + eaim.isDicomSR + " and :" + e.isDicomSR);
 			ImageAnnotationCollection iac = iacs.get(i);
 			try
 			{
-				Aim4 a = new Aim4(iac);
+				Aim a = new Aim(iac);
 				EPADAIM ea = new EPADAIM(iac.getUniqueIdentifier().getRoot(), aim.userName, 
 						aim.projectID, aim.subjectID, aim.studyUID, aim.seriesUID, aim.imageUID, aim.instanceOrFrameNumber);
 				ea.name = iac.getImageAnnotations().get(0).getName().getValue();
@@ -1716,7 +1716,7 @@ log.info("isDicomSR :" + eaim.isDicomSR + " and :" + e.isDicomSR);
 			ImageAnnotationCollection iac = iacs.get(i);
 			try
 			{
-				Aim4 a = new Aim4(iac);
+				Aim a = new Aim(iac);
 				EPADAIM ea = new EPADAIM(iac.getUniqueIdentifier().getRoot(), a.getLoggedInUser().getLoginName(), "", a.getPatientID(), a.getFirstStudyID(), a.getFirstSeriesID(), a.getFirstImageID(), 0);
 				ea.name = iac.getImageAnnotations().get(0).getName().getValue();
 				//ml
@@ -2436,7 +2436,7 @@ log.info("isDicomSR :" + eaim.isDicomSR + " and :" + e.isDicomSR);
 		EPADAIMList aims = new EPADAIMList();
 		for (ImageAnnotationCollection aim : iacs) {
 			try {
-				Aim4 a = new Aim4(aim);
+				Aim a = new Aim(aim);
 				EPADAIM ea =null;
 				try
 				{
