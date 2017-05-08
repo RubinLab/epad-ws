@@ -155,6 +155,14 @@ public class Dcm4CheeOperations
 		"jboss-jmx.jar",
 	};
 	
+	static final String[] soFiles = {
+			"libmwiptutil.so",
+			"libmwnhood.so",
+			"libmwippfilter.so",
+			"libmwippBinder.so",
+			"libmwippreconstruct.so",
+		};
+	
 	private static void copyFiles(String dicomProxyDir,String resourceDir, String[] scripts, boolean setExecutable, boolean overwrite){
 		try
 		{
@@ -206,7 +214,7 @@ public class Dcm4CheeOperations
 		}
 			
 		copyFiles(EPADConfig.getEPADWebServerDICOMScriptsDir() + "lib/", "scripts/", libFiles, true, false);
-		
+		copyFiles(EPADConfig.getEPADWebServerDICOMScriptsDir() + "so/", "scripts/", soFiles, true, false);
 			
 	}
 
