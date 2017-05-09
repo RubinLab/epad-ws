@@ -368,6 +368,14 @@ public class AimMigrator {
 		
 		//create the entities using information from pf
 		ia=addMarkupAndCalculationFromPF(ia,(JSONObject)mintJson.get("PlanarFigure"));
+		Double value=0.0;
+		if ((value=mintJson.optDouble("area(cm2)", 0))!=0) ia.addCalculationEntity(addAreaCalculation(value ,1,"cm2"));
+		if ((value=mintJson.optDouble("stddev",0))!=0) ia.addCalculationEntity(addStdDevCalculation(value ,1,"linear"));
+		if ((value=mintJson.optDouble("max",0))!=0) ia.addCalculationEntity(addMaxCalculation(value ,1,"linear"));
+		if ((value=mintJson.optDouble("mean",0))!=0) ia.addCalculationEntity(addMeanCalculation(value ,1,"linear"));
+		if ((value=mintJson.optDouble("min",0))!=0) ia.addCalculationEntity(addMinCalculation(value ,1,"linear"));
+		if ((value=mintJson.optDouble("volume(cm3)",0))!=0) ia.addCalculationEntity(addVolumeCalculation(value ,1,"cm3"));
+        
 		String location = ((JSONObject)mintJson.get("lesion")).optString("location");
 		if (location!=null && !location.equals(""))
 			ia.addImagingPhysicalEntity(getImagingPhysicalEntityFromPF("Location",location));
@@ -720,6 +728,7 @@ public class AimMigrator {
     private static final String STD_DEV = "Standard Deviation";
     private static final String MIN = "Minimum";
     private static final String MAX = "Maximum";
+    private static final String VOLUME = "Volume";
 	    
     /**
      * the code retrieved from edu.stanford.hakan.aim4api.project.epad.Aim and converted to aim4 classes
@@ -744,6 +753,9 @@ public class AimMigrator {
     }
     public static CalculationEntity addLengthCalculation(double value, Integer shapeId, String units) {
     	return addCalculation(value,shapeId,units,LINE_LENGTH, "G-D7FE");
+    }
+    public static CalculationEntity addVolumeCalculation(double value, Integer shapeId, String units) {
+    	return addCalculation(value,shapeId,units,VOLUME, "RID28668");
     }
         
     public static CalculationEntity addCalculation(double value, Integer shapeId, String units, String name, String code) {
