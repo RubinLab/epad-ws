@@ -404,6 +404,13 @@ public class EPADDeleteHandler
 				epadOperations.deleteTemplate(username, templatecode);
 				statusCode= HttpServletResponse.SC_OK;
 			
+			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.FLAGGED_IMG, pathInfo)) {
+				ProjectReference projectReference = ProjectReference.extract(ProjectsRouteTemplates.FLAGGED_IMG, pathInfo);
+				Map<String, String> templateMap = HandlerUtil.getTemplateMap(ProjectsRouteTemplates.FLAGGED_IMG, pathInfo);
+				String path_user = HandlerUtil.getTemplateParameter(templateMap, "username");
+				String path_image = HandlerUtil.getTemplateParameter(templateMap, "image");
+				epadOperations.setFlagged(path_user, projectReference, path_image, sessionID, false);
+				statusCode = HttpServletResponse.SC_OK;
 				
 			} else {
 				statusCode = HandlerUtil.badRequestJSONResponse(BAD_DELETE_MESSAGE + ":" + pathInfo, responseStream, log);

@@ -144,6 +144,8 @@ public class ProjectsRouteTemplates
 	public static final String FRAME_AIM = FRAME_AIM_LIST + "{aid}";
 	public static final String USER_LIST = PROJECT + "/users/";
 	public static final String USER = USER_LIST + "{username}";
+	public static final String FLAGGED_LIST = USER + "/flagged/";
+	public static final String FLAGGED_IMG = FLAGGED_LIST+"{image}";
 //	public static final String WORKLISTS = PROJECT + "/worklists/";
 //	public static final String WORKLIST = WORKLISTS + "{workListID}";
 //	public static final String USER_WORKLISTS = USER + "/worklists/";

@@ -290,7 +290,7 @@ public interface EpadOperations
 	EPADImageList getImageDescriptions(SeriesReference seriesReference, String sessionID, EPADSearchFilter searchFilter);
 	
 	/**
-	 * Get image descriptions for a series with username to get the information about the flags
+	 * Get image descriptions for a series with username to get the information about the flags.
 	 * @param seriesReference
 	 * @param sessionID
 	 * @param searchFilter
@@ -1708,4 +1708,24 @@ public interface EpadOperations
 	 * @return unique patient id (first 128 chars if longer)
 	 */
 	String getUniquePatientID(String dicomPatientID,String dicomPatientName);
+
+	/**
+	 * gets the image descriptions for flagged images only
+	 * @param username
+	 * @param projectReference
+	 * @param sessionID
+	 * @return
+	 */
+	EPADImageList getFlaggedImageDescriptions(String username, ProjectReference projectReference, String sessionID);
+
+	/**
+	 * set the flagged property of an image
+	 * @param username
+	 * @param projectReference
+	 * @param imageUID
+	 * @param sessionID
+	 * @param flag
+	 */
+	void setFlagged(String username, ProjectReference projectReference, String imageUID, String sessionID,
+			boolean flag);
 }

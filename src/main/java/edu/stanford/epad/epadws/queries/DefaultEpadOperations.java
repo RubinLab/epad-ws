@@ -875,6 +875,23 @@ public class DefaultEpadOperations implements EpadOperations
 	Set<String> seriesInProcess = new HashSet<String>();
 	
 	@Override
+	public EPADImageList getFlaggedImageDescriptions(String username, ProjectReference projectReference,  String sessionID){
+		List<String> imageUIDs=projectOperations.getFlaggedImageUIDs(username, projectReference.projectID);
+		EPADImageList epadImageList = new EPADImageList();
+		for (String imageUID:imageUIDs){
+			//TODO get the actual image info
+			//set isFlagged
+			epadImageList.addImage(new EPADImage(projectReference.projectID, "patientID", "studyUID", "seriesUID", imageUID, "classUID", "insertDate", "imageDate", "sliceLocation", 1, "losslessImage", "lossyImage", null,null, 0, false));
+		}
+		return epadImageList;
+	}
+	
+	@Override
+	public void setFlagged(String username, ProjectReference projectReference, String imageUID, String sessionID, boolean flag){
+		projectOperations.setFlagged(username, imageUID, projectReference.projectID, flag);
+	}
+	
+	@Override
 	public EPADImageList getImageDescriptions(SeriesReference seriesReference, String sessionID,
 			EPADSearchFilter searchFilter)
 	{

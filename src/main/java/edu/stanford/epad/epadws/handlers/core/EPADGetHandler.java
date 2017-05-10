@@ -1145,7 +1145,16 @@ public class EPADGetHandler
 				EPADUserList users = epadOperations.getUserDescriptions(username, projectReference, sessionID);
 				responseStream.append(users.toJSON());
 				statusCode = HttpServletResponse.SC_OK;
-
+				
+			
+			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.FLAGGED_LIST, pathInfo)) {
+				ProjectReference projectReference = ProjectReference.extract(ProjectsRouteTemplates.FLAGGED_LIST, pathInfo);
+				Map<String, String> templateMap = HandlerUtil.getTemplateMap(ProjectsRouteTemplates.FLAGGED_LIST, pathInfo);
+				String path_user = HandlerUtil.getTemplateParameter(templateMap, "username");
+				EPADImageList images=epadOperations.getFlaggedImageDescriptions(path_user, projectReference, sessionID);
+				responseStream.append(images.toJSON());
+				statusCode = HttpServletResponse.SC_OK;
+				
 //			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.USER_WORKLIST_SUBJECTS, pathInfo)) {
 //				ProjectReference projectReference = ProjectReference.extract(ProjectsRouteTemplates.USER_WORKLIST_SUBJECTS, pathInfo);
 //				Map<String, String> templateMap = HandlerUtil.getTemplateMap(ProjectsRouteTemplates.USER_WORKLIST_SUBJECTS, pathInfo);

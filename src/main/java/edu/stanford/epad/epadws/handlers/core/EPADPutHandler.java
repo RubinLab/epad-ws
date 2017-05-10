@@ -122,6 +122,7 @@ import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADFileUtils;
 import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.epad.dtos.EPADAIM;
+import edu.stanford.epad.dtos.EPADImageList;
 import edu.stanford.epad.dtos.EPADMessage;
 import edu.stanford.epad.dtos.EPADPlugin;
 import edu.stanford.epad.dtos.EPADPluginList;
@@ -970,6 +971,14 @@ public class EPADPutHandler
 					throw new Exception();
 				return HttpServletResponse.SC_OK;
 
+			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.FLAGGED_IMG, pathInfo)) {
+				ProjectReference projectReference = ProjectReference.extract(ProjectsRouteTemplates.FLAGGED_IMG, pathInfo);
+				Map<String, String> templateMap = HandlerUtil.getTemplateMap(ProjectsRouteTemplates.FLAGGED_IMG, pathInfo);
+				String path_user = HandlerUtil.getTemplateParameter(templateMap, "username");
+				String path_image = HandlerUtil.getTemplateParameter(templateMap, "image");
+				epadOperations.setFlagged(path_user, projectReference, path_image, sessionID, true);
+				statusCode = HttpServletResponse.SC_OK;
+			
 			} else {
 				statusCode = HandlerUtil.badRequestJSONResponse(BAD_PUT_MESSAGE + ":" + pathInfo, responseStream, log);
 			}
