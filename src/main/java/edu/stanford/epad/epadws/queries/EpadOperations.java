@@ -288,6 +288,15 @@ public interface EpadOperations
 	 * @return
 	 */
 	EPADImageList getImageDescriptions(SeriesReference seriesReference, String sessionID, EPADSearchFilter searchFilter);
+	
+	/**
+	 * Get image descriptions for a series with username to get the information about the flags
+	 * @param seriesReference
+	 * @param sessionID
+	 * @param searchFilter
+	 * @return
+	 */
+	EPADImageList getImageDescriptions(String username, SeriesReference seriesReference, String sessionID, EPADSearchFilter searchFilter);
 
 	/**
 	 * Get image description

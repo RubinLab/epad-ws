@@ -494,7 +494,7 @@ public class EPADGetHandler
 				SeriesReference seriesReference = SeriesReference.extract(ProjectsRouteTemplates.IMAGE_LIST, pathInfo);
 				if (seriesReference.subjectID.equals("null"))
 					throw new Exception("Patient ID in rest call is null:" + pathInfo);
-				EPADImageList imageList = epadOperations.getImageDescriptions(seriesReference, sessionID, searchFilter);
+				EPADImageList imageList = epadOperations.getImageDescriptions(username,seriesReference, sessionID, searchFilter);
 				responseStream.append(imageList.toJSON());
 				statusCode = HttpServletResponse.SC_OK;
 

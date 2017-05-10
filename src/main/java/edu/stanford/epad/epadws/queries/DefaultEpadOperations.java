@@ -873,15 +873,22 @@ public class DefaultEpadOperations implements EpadOperations
 	}
 
 	Set<String> seriesInProcess = new HashSet<String>();
+	
 	@Override
 	public EPADImageList getImageDescriptions(SeriesReference seriesReference, String sessionID,
+			EPADSearchFilter searchFilter)
+	{
+	 	return getImageDescriptions(null, seriesReference, sessionID, searchFilter);
+	}
+	@Override
+	public EPADImageList getImageDescriptions(String username,SeriesReference seriesReference, String sessionID,
 			EPADSearchFilter searchFilter)
 	{
 		List<DCM4CHEEImageDescription> imageDescriptions = dcm4CheeDatabaseOperations.getImageDescriptions(
 				seriesReference.studyUID, seriesReference.seriesUID);
 
 
-
+		
 
 		int numImages = imageDescriptions.size();
 		if (numImages == 0)
@@ -940,6 +947,10 @@ public class DefaultEpadOperations implements EpadOperations
 				epadImage = createEPADImage(seriesReference, dcm4cheeImageDescription, suppliedDICOMElements, defaultDICOMElements);
 				log.info("Returning DICOM metadata, supplied Elements:" + suppliedDICOMElements.getNumberOfElements() + " default Elements:" + defaultDICOMElements.getNumberOfElements());
 				epadImage.multiFrameImage = dcm4cheeImageDescription.multiFrameImage;
+				//get if flagged and put it in epadimage
+				if (username!=null) {
+					epadImage.isFlaggedImage=projectOperations.isFlagged(username,dcm4cheeImageDescription.imageUID,seriesReference.projectID);
+				}
 				epadImageList.addImage(epadImage);
 				isFirst = false;
 			} else { 
@@ -968,6 +979,10 @@ public class DefaultEpadOperations implements EpadOperations
 				}
 				else
 					epadImage = createEPADImage(seriesReference, dcm4cheeImageDescription, new DICOMElementList(), new DICOMElementList());
+				//get if flagged and put it in epadimage
+				if (username!=null) {
+					epadImage.isFlaggedImage=projectOperations.isFlagged(username,dcm4cheeImageDescription.imageUID,seriesReference.projectID);
+				}
 				epadImageList.addImage(epadImage);
 			}
 			//log.info("Image UID:" + epadImage.imageUID + " LossLess:" + epadImage.losslessImage);
@@ -5313,6 +5328,8 @@ public class DefaultEpadOperations implements EpadOperations
 			}
 
 		}
+		
+		
 
 		//log.debug("losslessimage:" + losslessImage);
 		return new EPADImage(projectID, subjectID, studyUID, seriesUID, imageUID, classUID, insertDate, imageDate,
