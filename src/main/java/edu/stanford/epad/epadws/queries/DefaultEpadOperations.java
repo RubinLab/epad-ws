@@ -252,6 +252,7 @@ import edu.stanford.epad.epadws.xnat.XNATDeletionOperations;
 import edu.stanford.epad.epadws.xnat.XNATUtil;
 import edu.stanford.hakan.aim4api.base.AimException;
 import edu.stanford.hakan.aim4api.compability.aimv3.ImageAnnotation;
+import edu.stanford.hakan.aim4api.project.epad.Patient;
 import edu.stanford.hakan.aim4api.usage.AnnotationValidator;
 
 // TODO Too long - separate in to multiple classes
@@ -876,12 +877,27 @@ public class DefaultEpadOperations implements EpadOperations
 	
 	@Override
 	public EPADImageList getFlaggedImageDescriptions(String username, ProjectReference projectReference,  String sessionID){
-		List<String> imageUIDs=projectOperations.getFlaggedImageUIDs(username, projectReference.projectID);
+		String projectID=null;
+		if (projectReference!=null) 
+			projectID=projectReference.projectID;
+		List<String> imageUIDs=projectOperations.getFlaggedImageUIDs(username, projectID);
 		EPADImageList epadImageList = new EPADImageList();
 		for (String imageUID:imageUIDs){
 			//TODO get the actual image info
 			//set isFlagged
-			epadImageList.addImage(new EPADImage(projectReference.projectID, "patientID", "studyUID", "seriesUID", imageUID, "classUID", "insertDate", "imageDate", "sliceLocation", 1, "losslessImage", "lossyImage", null,null, 0, false));
+			String seriesUID=dcm4CheeDatabaseOperations.getSeriesUIDForImage(imageUID);
+			String studyUID=dcm4CheeDatabaseOperations.getStudyUIDForSeries(seriesUID);
+			Subject patient=new Subject();
+			try {
+				patient = projectOperations.getSubjectForStudy(studyUID);
+			} catch (Exception e) {
+				log.warning("Couldn't get patient for study "+ studyUID + ". Skipping", e);
+				continue;
+			}
+			ImageReference imref=new ImageReference(projectID, patient.getSubjectUID(), studyUID, seriesUID, imageUID);
+			EPADImage eim=getImageDescription(imref,sessionID);
+			eim.isFlaggedImage=true;
+			epadImageList.addImage(eim);
 		}
 		return epadImageList;
 	}

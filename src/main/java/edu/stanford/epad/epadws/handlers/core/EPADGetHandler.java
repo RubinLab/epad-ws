@@ -1155,6 +1155,13 @@ public class EPADGetHandler
 				responseStream.append(images.toJSON());
 				statusCode = HttpServletResponse.SC_OK;
 				
+			} else if (HandlerUtil.matchesTemplate(UsersRouteTemplates.USER_FLAGGED_LIST, pathInfo)) {
+				Map<String, String> templateMap = HandlerUtil.getTemplateMap(UsersRouteTemplates.USER_FLAGGED_LIST, pathInfo);
+				String path_user = HandlerUtil.getTemplateParameter(templateMap, "username");
+				EPADImageList images=epadOperations.getFlaggedImageDescriptions(path_user, null, sessionID);
+				responseStream.append(images.toJSON());
+				statusCode = HttpServletResponse.SC_OK;
+				
 //			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.USER_WORKLIST_SUBJECTS, pathInfo)) {
 //				ProjectReference projectReference = ProjectReference.extract(ProjectsRouteTemplates.USER_WORKLIST_SUBJECTS, pathInfo);
 //				Map<String, String> templateMap = HandlerUtil.getTemplateMap(ProjectsRouteTemplates.USER_WORKLIST_SUBJECTS, pathInfo);

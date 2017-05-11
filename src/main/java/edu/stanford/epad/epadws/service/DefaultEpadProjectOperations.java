@@ -3051,7 +3051,7 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 	@Override
 	public List<String> getFlaggedImageUIDs(String username,String projectID) {
 		List<ProjectToUserToFlaggedImage> pufis=null;
-		String projectQry=(projectID==null)?" and project_id ='" + projectID + "'":"";
+		String projectQry=(projectID!=null)?" and project_id ='" + projectID + "'":"";
 		try {
 			pufis = new ProjectToUserToFlaggedImage().getObjects("username = '" + username + "' "+projectQry);
 		} catch (Exception e) {
