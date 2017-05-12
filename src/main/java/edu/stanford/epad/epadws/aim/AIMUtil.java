@@ -819,10 +819,17 @@ public class AIMUtil
 					}
 				}
 				
-				String imageID = aim.getFirstImageID();
+				String imageID = aim.getFirstImageID().trim();
 				String seriesID = aim.getFirstSeriesID();
 				if (imageID != null && imageID.length() > 0)
 					seriesID = aim.getSeriesID(imageID);
+				
+				if (imageID==null || imageID.equals("") || imageID.equalsIgnoreCase("na")) {
+					//aim has missing information. possibly from pf migration
+					log.info("Aim has missing information. possibly from pf migration. Series is"+ seriesID + " comment is "+ aim.getComment());
+					//TODO fill in image, study and patient info
+					
+				}
 				String studyID = aim.getStudyID(seriesID);
 				//try fix for aim edit tedseg
 				if (studyID==null || studyID.equals("")) {
