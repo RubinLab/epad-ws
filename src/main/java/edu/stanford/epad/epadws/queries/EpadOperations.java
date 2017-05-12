@@ -1728,4 +1728,13 @@ public interface EpadOperations
 	 */
 	void setFlagged(String username, ProjectReference projectReference, String imageUID, String sessionID,
 			boolean flag);
+
+	/**
+	 * get image description using just projectid and image uid
+	 * @param projectID
+	 * @param imageUID
+	 * @param sessionID
+	 * @return
+	 */
+	EPADImage getImageDescription(String projectID, String imageUID, String sessionID);
 }

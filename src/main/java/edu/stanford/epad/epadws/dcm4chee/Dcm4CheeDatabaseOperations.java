@@ -122,6 +122,8 @@ import edu.stanford.epad.epadws.queries.Dcm4CheeQueries;
  */
 public interface Dcm4CheeDatabaseOperations
 {
+	String getSubjectUIDForStudy(String studyUID);
+	
 	String getStudyUIDForSeries(String seriesUID);
 
 	String getSeriesUIDForImage(String imageUID);
@@ -186,4 +188,11 @@ public interface Dcm4CheeDatabaseOperations
 	 * @return
 	 */
 	Set<String> getNonDSOSeriesUIDsInStudy(String studyUID);
+
+	/**
+	 * get the image description using just imageuid 
+	 * @param imageUID
+	 * @return
+	 */
+	DCM4CHEEImageDescription getImageDescription(String imageUID);
 }

@@ -538,7 +538,37 @@ public class DefaultDcm4CheeDatabaseOperations implements Dcm4CheeDatabaseOperat
 			close(c, ps, rs);
 		}
 	}
+	
+	@Override
+	public String getSubjectUIDForStudy(String studyUID)
+	{
+		Connection c = null;
+		PreparedStatement ps = null;
+		ResultSet rs = null;
+		try {
+			c = getConnection();
+			ps = c.prepareStatement(Dcm4CheeDatabaseCommands.SELECT_PATIENT_FOR_STUDY);
+			ps.setString(1, studyUID);
+			if (log.isDebugEnabled())
+				log.debug(ps.toString());
 
+			rs = ps.executeQuery();
+			if (rs.next())
+				return rs.getString("pat_id");
+			else {
+				log.warning("Could not find subject for study " + studyUID);
+				return "";
+			}
+		} catch (SQLException sqle) {
+			String debugInfo = DatabaseUtils.getDebugData(rs);
+			log.warning("Database operation failed; debugInfo=" + debugInfo, sqle);
+			return "";
+		} finally {
+			close(c, ps, rs);
+		}
+	}
+
+	
 	@Override
 	public String getStudyUIDForSeries(String seriesUID)
 	{
@@ -685,6 +715,39 @@ public class DefaultDcm4CheeDatabaseOperations implements Dcm4CheeDatabaseOperat
 				return extractDCM4CHEEImageDescription(studyUID, seriesUID, resultMap);
 			} else {
 				log.warning("Could not find dcm4chee image data for image " + imageUID + " in series " + seriesUID);
+				return null;
+			}
+		} catch (NumberFormatException e) {
+			log.warning("Invalid instance number in dcm4chee image " + imageUID);
+		} catch (SQLException e) {
+			String debugInfo = DatabaseUtils.getDebugData(rs);
+			log.warning("Database operation failed; debugInfo=" + debugInfo, e);
+		} finally {
+			close(c, ps, rs);
+		}
+		return null;
+	}
+	
+	@Override
+	public DCM4CHEEImageDescription getImageDescription(String imageUID)
+	{
+		Connection c = null;
+		PreparedStatement ps = null;
+		ResultSet rs = null;
+		try {
+			c = getConnection();
+			ps = c.prepareStatement(Dcm4CheeDatabaseCommands.SELECT_IMAGE_FOR_INSUID);
+			ps.setString(1, imageUID);
+			if (log.isDebugEnabled())
+				log.debug(ps.toString());
+			rs = ps.executeQuery();
+			if (rs.next()) {
+				Map<String, String> resultMap = createResultMap(rs);
+				String studyUID = resultMap.get("study_iuid");
+				String seriesUID = resultMap.get("series_iuid");
+				return extractDCM4CHEEImageDescription(studyUID, seriesUID, resultMap);
+			} else {
+				log.warning("Could not find dcm4chee image data for image " + imageUID );
 				return null;
 			}
 		} catch (NumberFormatException e) {

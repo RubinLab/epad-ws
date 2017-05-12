@@ -883,19 +883,7 @@ public class DefaultEpadOperations implements EpadOperations
 		List<String> imageUIDs=projectOperations.getFlaggedImageUIDs(username, projectID);
 		EPADImageList epadImageList = new EPADImageList();
 		for (String imageUID:imageUIDs){
-			//TODO get the actual image info
-			//set isFlagged
-			String seriesUID=dcm4CheeDatabaseOperations.getSeriesUIDForImage(imageUID);
-			String studyUID=dcm4CheeDatabaseOperations.getStudyUIDForSeries(seriesUID);
-			Subject patient=new Subject();
-			try {
-				patient = projectOperations.getSubjectForStudy(studyUID);
-			} catch (Exception e) {
-				log.warning("Couldn't get patient for study "+ studyUID + ". Skipping", e);
-				continue;
-			}
-			ImageReference imref=new ImageReference(projectID, patient.getSubjectUID(), studyUID, seriesUID, imageUID);
-			EPADImage eim=getImageDescription(imref,sessionID);
+			EPADImage eim=getImageDescription(projectID,imageUID,sessionID);
 			eim.isFlaggedImage=true;
 			epadImageList.addImage(eim);
 		}
@@ -1031,6 +1019,24 @@ public class DefaultEpadOperations implements EpadOperations
 	{
 		DCM4CHEEImageDescription dcm4cheeImageDescription = dcm4CheeDatabaseOperations.getImageDescription(imageReference);
 		List<String> pngs = epadDatabaseOperations.getAllPNGLocations(imageReference.imageUID);
+		if (pngs.size() > 1)
+			dcm4cheeImageDescription.multiFrameImage = true;
+		DICOMElementList suppliedDICOMElements = getDICOMElements(imageReference);
+		DICOMElementList defaultDICOMElements = getDefaultDICOMElements(imageReference, suppliedDICOMElements);
+
+		EPADImage eImage = createEPADImage(imageReference, dcm4cheeImageDescription, suppliedDICOMElements, defaultDICOMElements);
+		eImage.multiFrameImage = dcm4cheeImageDescription.multiFrameImage;
+		log.info("Returning DICOM metadata, supplied Elements:" + suppliedDICOMElements.getNumberOfElements() + " default Elements:" + defaultDICOMElements.getNumberOfElements());
+		return eImage;
+	}
+	
+	@Override
+	public EPADImage getImageDescription(String projectID, String imageUID, String sessionID)
+	{
+		DCM4CHEEImageDescription dcm4cheeImageDescription = dcm4CheeDatabaseOperations.getImageDescription(imageUID);
+		String subjectID=dcm4CheeDatabaseOperations.getSubjectUIDForStudy(dcm4cheeImageDescription.studyUID);
+		ImageReference imageReference=new ImageReference(projectID, subjectID, dcm4cheeImageDescription.studyUID, dcm4cheeImageDescription.seriesUID, dcm4cheeImageDescription.imageUID);
+		List<String> pngs = epadDatabaseOperations.getAllPNGLocations(imageUID);
 		if (pngs.size() > 1)
 			dcm4cheeImageDescription.multiFrameImage = true;
 		DICOMElementList suppliedDICOMElements = getDICOMElements(imageReference);
