@@ -364,7 +364,7 @@ public class AimMigrator {
 			imageUID="na"; //to keep all the same
 		log.info("the values retrieved are "+ sopClassUID+" "+studyDate+" "+studyTime+" "+pName+" "+pId+" "+pBirthDate+" "+pSex+" "+studyUID+" "+sourceSeriesUID+" ");
 		ImageAnnotationCollection iac = createImageAnnotationColectionFromProperties(username, pName, pId, pBirthDate, pSex);
-		edu.stanford.hakan.aim4api.base.ImageAnnotation ia=createImageAnnotationFromProperties(username, templateCode, lesionName, comment+" / "+sliceLoc, imageUID, sopClassUID, studyDate, studyTime, studyUID, sourceSeriesUID);
+		edu.stanford.hakan.aim4api.base.ImageAnnotation ia=createImageAnnotationFromProperties(username, templateCode, lesionName, comment+" / "+sliceLoc + " / " +sliceThickness, imageUID, sopClassUID, studyDate, studyTime, studyUID, sourceSeriesUID);
 		
 		//create the entities using information from pf
 		ia=addMarkupAndCalculationFromPF(ia,(JSONObject)mintJson.get("PlanarFigure"));
