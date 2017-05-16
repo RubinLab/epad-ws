@@ -116,6 +116,7 @@ import org.json.JSONObject;
 
 import edu.stanford.epad.common.dicom.DCM4CHEEImageDescription;
 import edu.stanford.epad.common.pixelmed.PixelMedUtils;
+import edu.stanford.epad.common.plugins.PluginAIMUtil;
 import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADFileUtils;
 import edu.stanford.epad.common.util.EPADLogger;
@@ -368,14 +369,7 @@ public class AimMigrator {
 		
 		//create the entities using information from pf
 		ia=addMarkupAndCalculationFromPF(ia,(JSONObject)mintJson.get("PlanarFigure"));
-		Double value=0.0;
-		if ((value=mintJson.optDouble("area(cm2)", 0))!=0) ia.addCalculationEntity(addAreaCalculation(value ,1,"cm2"));
-		if ((value=mintJson.optDouble("stddev",0))!=0) ia.addCalculationEntity(addStdDevCalculation(value ,1,"linear"));
-		if ((value=mintJson.optDouble("max",0))!=0) ia.addCalculationEntity(addMaxCalculation(value ,1,"linear"));
-		if ((value=mintJson.optDouble("mean",0))!=0) ia.addCalculationEntity(addMeanCalculation(value ,1,"linear"));
-		if ((value=mintJson.optDouble("min",0))!=0) ia.addCalculationEntity(addMinCalculation(value ,1,"linear"));
-		if ((value=mintJson.optDouble("volume(cm3)",0))!=0) ia.addCalculationEntity(addVolumeCalculation(value ,1,"cm3"));
-        
+       
 		String location = ((JSONObject)mintJson.get("lesion")).optString("location");
 		if (location!=null && !location.equals(""))
 			ia.addImagingPhysicalEntity(getImagingPhysicalEntityFromPF("Location",location));
@@ -391,10 +385,30 @@ public class AimMigrator {
 
 		
 		iac.addImageAnnotation(ia);
+		edu.stanford.epad.common.util.Lexicon lexicon=edu.stanford.epad.common.util.Lexicon.getInstance();
+		CD parent = lexicon.getLex("mint");
+		log.info("parent code is "+ parent.getCode());
+		if (parent.getCode().trim().equalsIgnoreCase("99EPADD0")){
+			parent = lexicon.createLex("mint","Mint Calculations",null,"99EPADM1");
+        	log.info("new parent code is "+ parent.getCode());
+    		
+        }
+		
+		ArrayList<String[]> features=getMeasurementsFromPF(mintJson);
+		iac=PluginAIMUtil.addFeatures(iac, features , 1,parent, true) ; 
 
 		log.info("annotation is: "+iac.toStringXML());
 		return iac.toStringXML();
 		
+	}
+	
+	public static ArrayList<String[]> getMeasurementsFromPF(JSONObject mintJson){
+		JSONArray measurements = (JSONArray) mintJson.get("measurements");
+		ArrayList<String[]> features=new ArrayList<>();
+		for (int i = 0; i < measurements.length(); i++) {
+	    	features.add(new String[] {((JSONObject)measurements.get(i)).getString("Type"),((JSONObject)measurements.get(i)).getString("CurrentValue"),((JSONObject)measurements.get(i)).getString("Unit")});
+		}
+		return features;
 	}
 	
 	/**
@@ -455,6 +469,7 @@ public class AimMigrator {
 
 		
 		edu.stanford.hakan.aim4api.base.ImageAnnotation ia=new edu.stanford.hakan.aim4api.base.ImageAnnotation();
+		ia.refreshUniqueIdentifier();
 		ia.setDateTime(dateFormat.format(now));
 
 		Template t=null;
@@ -517,6 +532,7 @@ public class AimMigrator {
 	private static ImagingObservationEntity getImagingObservationEntityFromPF(String label, CD value,
 			String tpCharacteristicLabel, Integer tpCharacteristicValue, String typeCharacteristicLabel, String typeCharacteristicValue) {
 		ImagingObservationEntity oe= new ImagingObservationEntity();
+		oe.setUniqueIdentifier();
 		oe.setLabel(new ST(label));
 		oe.setAnnotatorConfidence(0.0);
 		
@@ -560,6 +576,7 @@ public class AimMigrator {
 	 */
 	private static ImagingPhysicalEntity getImagingPhysicalEntityFromPF(String label, String value) {
 		ImagingPhysicalEntity pe= new ImagingPhysicalEntity();
+		pe.setUniqueIdentifier();
 		pe.setLabel(new ST(label));
 		pe.setAnnotatorConfidence(0.0);
 		pe.addTypeCode(edu.stanford.epad.common.util.Lexicon.getInstance().getLex(cleanString(value)));
@@ -687,6 +704,7 @@ public class AimMigrator {
         }else{
         	res=new edu.stanford.hakan.aim4api.base.TwoDimensionMultiPoint();
         }
+		res.setUniqueIdentifier();
         res.setShapeIdentifier(1);
 		res.setIncludeFlag(true);
         TwoDimensionSpatialCoordinateCollection cc=new TwoDimensionSpatialCoordinateCollection();
@@ -761,6 +779,7 @@ public class AimMigrator {
     public static CalculationEntity addCalculation(double value, Integer shapeId, String units, String name, String code) {
     	
     	CalculationEntity cal =new CalculationEntity();
+    	cal.setUniqueIdentifier();
 		Lexicon lex=Lexicon.getInstance();
         CD calcCD= lex.get(code);
         String desc="";
@@ -783,7 +802,7 @@ public class AimMigrator {
 		edu.stanford.hakan.aim4api.base.CalculationData calculationData = new edu.stanford.hakan.aim4api.base.CalculationData();
 		calculationData.setValue(new ST(String.valueOf(value)));
 		calculationData.addCoordinate(0, 0);
-
+		
 		// Create a Dimension instance
 		edu.stanford.hakan.aim4api.base.Dimension dimension = new edu.stanford.hakan.aim4api.base.Dimension(0, 1, desc);
 
