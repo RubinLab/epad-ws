@@ -110,6 +110,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import edu.stanford.epad.common.util.EPADConfig;
@@ -130,6 +131,7 @@ import edu.stanford.hakan.aim4api.base.ImageAnnotationCollection;
 import edu.stanford.hakan.aim4api.base.ImagingObservationCharacteristic;
 import edu.stanford.hakan.aim4api.base.ImagingObservationEntity;
 import edu.stanford.hakan.aim4api.base.ImagingPhysicalEntity;
+import edu.stanford.hakan.aim4api.base.Scale;
 import edu.stanford.hakan.aim4api.usage.AnnotationGetter;
 
 public class AimReporter {
@@ -167,7 +169,7 @@ public class AimReporter {
 					//check the template
 					if (templatecode!=null) {
 						if (!ia.getListTypeCode().get(0).getCode().equalsIgnoreCase(templatecode)) {
-							log.warning("Aim template is "+ia.getListTypeCode().get(0).getCode().equalsIgnoreCase(templatecode) + " was looking for "+templatecode);
+							log.warning("Aim template is "+ia.getListTypeCode().get(0).getCode() + " was looking for "+templatecode);
 							table[row++]=null;
 							continue;
 						}
@@ -220,7 +222,12 @@ public class AimReporter {
 							if (ob.getImagingObservationCharacteristicCollection()!=null) {
 								for (ImagingObservationCharacteristic obChar: ob.getImagingObservationCharacteristicCollection().getImagingObservationCharacteristicList()){
 									if (values.containsKey(obChar.getLabel().getValue())) { //key exists put the value
-										values.put(obChar.getLabel().getValue(), formJsonObj(obChar.getListTypeCode().get(0).getDisplayName().getValue(),obChar.getListTypeCode().get(0).getCode()));
+										//if it has a quantification put that
+										if (obChar.getCharacteristicQuantificationCollection().size()>0){
+											Scale sq=(Scale)obChar.getCharacteristicQuantificationCollection().get(0);
+											values.put(obChar.getLabel().getValue(), formJsonObj(sq.getValue().getValue(),obChar.getListTypeCode().get(0).getCode()));
+										} else
+											values.put(obChar.getLabel().getValue(), formJsonObj(obChar.getListTypeCode().get(0).getDisplayName().getValue(),obChar.getListTypeCode().get(0).getCode()));
 									}
 								}
 							}
@@ -293,6 +300,17 @@ public class AimReporter {
 		return "{\"value\":\""+value+"\",\"code\":\""+code+"\"}";
 	}
 	
+	private static JSONArray concatArray(JSONArray... arrs)
+	        throws JSONException {
+	    JSONArray result = new JSONArray();
+	    for (JSONArray arr : arrs) {
+	        for (int i = 0; i < arr.length(); i++) {
+	            result.put(arr.get(i));
+	        }
+	    }
+	    return result;
+	}
+	
 	/**
 	 * creates a recist report object from the input aims list
 	 * @param aims
@@ -300,11 +318,17 @@ public class AimReporter {
 	 */
 	public static RecistReport getRecist(EPADAIMList aims){
 		String table=AimReporter.fillTable(aims,"RECIST",new String[]{"Name","StudyDate","Lesion","Type", "Location","Length","StudyUID","SeriesUID","AimUID"});
-		if (table==null || table.isEmpty()) 
+		//get and append recist_mint records
+		String tableMint=AimReporter.fillTable(aims,"RECIST_MINT",new String[]{"Name","StudyDate","Timepoint","Type", "Location","Length","StudyUID","SeriesUID","AimUID"});
+		
+		if ((table==null || table.isEmpty()) && (tableMint==null || tableMint.isEmpty())) 
 			return null;
 		JSONArray lesions;
 		try{
 			lesions=new JSONArray(table);
+			JSONArray lesionsMint=new JSONArray(tableMint);
+			log.info("lesions len "+ lesions.length()+ " lesionsmint len "+ lesionsMint.length());
+			lesions=concatArray(lesions,lesionsMint);
 		}catch(Exception e) {
 			log.warning("couldn't parse json for "+table);
 			return null;
@@ -316,7 +340,10 @@ public class AimReporter {
 		ArrayList<String> ntStudyDates=new ArrayList<>();
 		ArrayList<String> targetTypes=new ArrayList<>();
 		ArrayList<String> tNewLesionStudyDates=new ArrayList<>();
+		Integer[] tTimepoints=null;
+		
 		targetTypes.add("target");
+		targetTypes.add("target lesion"); //for new recist mint template
 		targetTypes.add("new lesion");
 		targetTypes.add("resolved lesion");
 		//first pass fill in the lesion names and study dates (x and y axis of the table)
@@ -348,7 +375,8 @@ public class AimReporter {
 		
 		if (!tLesionNames.isEmpty() && !tStudyDates.isEmpty()){
 			//fill in the table for target lesions
-			Integer[] tTimepoints=new Integer[tStudyDates.size()];
+			if (tTimepoints==null)
+				tTimepoints=new Integer[tStudyDates.size()];
 			RecistReportUIDCell[][] tUIDs=new RecistReportUIDCell[tLesionNames.size()][tStudyDates.size()];
 			String [][] tTable=fillRecistTable(tLesionNames, tStudyDates, lesions, targetTypes,tTimepoints, tUIDs);
 			//calculate the sums first
@@ -370,7 +398,7 @@ public class AimReporter {
 			if (!ntLesionNames.isEmpty() && !ntStudyDates.isEmpty()){
 				//fill in the table for non-target lesions
 				ArrayList<String> nonTargetTypes=new ArrayList<>();
-				targetTypes.add("non-target");
+				nonTargetTypes.add("non-target");
 				Integer[] ntTimepoints=new Integer[ntStudyDates.size()];
 				RecistReportUIDCell[][] ntUIDs=new RecistReportUIDCell[ntLesionNames.size()][ntStudyDates.size()];
 				String [][] ntTable=fillRecistTable(ntLesionNames, ntStudyDates, lesions, nonTargetTypes, ntTimepoints, ntUIDs);
@@ -436,11 +464,15 @@ public class AimReporter {
 				log.warning("Location at date "+ studyDate + " is different from the same lesion on a different date. The existing one is:"+table[lesionNames.indexOf(lesionName)][2] +" whereas this is:"+((JSONObject)((JSONObject)lesions.get(i)).get("Location")).getString("value"));
 			table[lesionNames.indexOf(lesionName)][2]=((JSONObject)((JSONObject)lesions.get(i)).get("Location")).getString("value");
 			//get the lesion and get the timepoint. if it is integer put that otherwise calculate using study dates
-			String lesionTimepoint=((JSONObject)((JSONObject)lesions.get(i)).get("Lesion")).getString("value");
+			JSONObject tpObj=(JSONObject) ((JSONObject)lesions.get(i)).opt("Timepoint");
+			if (tpObj==null)
+				tpObj=(JSONObject) ((JSONObject)lesions.get(i)).opt("Lesion");
+			String lesionTimepoint=tpObj.optString("value");
 			int timepoint=0;
 			try{
 				timepoint=Integer.parseInt(lesionTimepoint);
 			}catch(NumberFormatException ne) {
+				log.info("Trying to get timepoint from text "+lesionTimepoint);
 				if (lesionTimepoint.toLowerCase().contains("baseline")) {
 					timepoint=0;
 				}else {
@@ -449,12 +481,18 @@ public class AimReporter {
 			}
 			if (timepoint==0)
 				baselineIndex=0;
-			if (timepoints[studyDates.indexOf(studyDate)]!=null && timepoints[studyDates.indexOf(studyDate)]!= timepoint) 
-				log.info("why is the timepoint "+ timepoint + " different from the already existing "+timepoints[studyDates.indexOf(studyDate)]);
+			if (timepoints[studyDates.indexOf(studyDate)]!=null && timepoints[studyDates.indexOf(studyDate)]!= timepoint) {
+				log.info("why is the timepoint "+ timepoint + " different from the already existing "+timepoints[studyDates.indexOf(studyDate)] + " "+studyDate );
+				for (int t:timepoints){
+					log.info("timepoint "+ t);
+				}
+				for (String st:studyDates){
+					log.info("studyDates  "+ st);
+				}
+			}
 			timepoints[studyDates.indexOf(studyDate)]=timepoint;
-			
+			log.info("setting timepoint index "+studyDates.indexOf(studyDate) + " for study "+studyDate + " is set to "+timepoint);
 			table[lesionNames.indexOf(lesionName)][studyDates.indexOf(studyDate)+3]=((JSONObject)((JSONObject)lesions.get(i)).get("Length")).getString("value");
-		
 			if (UIDs!=null){
 				String studyUID = ((JSONObject)((JSONObject)lesions.get(i)).get("StudyUID")).getString("value");
 				String seriesUID = ((JSONObject)((JSONObject)lesions.get(i)).get("SeriesUID")).getString("value");
