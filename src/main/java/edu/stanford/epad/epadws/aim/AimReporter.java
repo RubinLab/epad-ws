@@ -330,7 +330,7 @@ public class AimReporter {
 			log.info("lesions len "+ lesions.length()+ " lesionsmint len "+ lesionsMint.length());
 			lesions=concatArray(lesions,lesionsMint);
 		}catch(Exception e) {
-			log.warning("couldn't parse json for "+table);
+			log.warning("couldn't parse json for "+table + " "+ tableMint +  " " +e.getMessage());
 			return null;
 		}
 		//get targets
