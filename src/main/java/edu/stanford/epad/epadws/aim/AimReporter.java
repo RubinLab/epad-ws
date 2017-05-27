@@ -480,7 +480,7 @@ public class AimReporter {
 				}
 			}
 			if (timepoint==0)
-				baselineIndex=0;
+				baselineIndex=studyDates.indexOf(studyDate);
 			if (timepoints[studyDates.indexOf(studyDate)]!=null && timepoints[studyDates.indexOf(studyDate)]!= timepoint) {
 				log.info("why is the timepoint "+ timepoint + " different from the already existing "+timepoints[studyDates.indexOf(studyDate)] + " "+studyDate );
 				for (int t:timepoints){
