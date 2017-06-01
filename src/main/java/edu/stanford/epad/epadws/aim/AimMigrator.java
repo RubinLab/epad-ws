@@ -558,7 +558,8 @@ public class AimMigrator {
 		oc=new ImagingObservationCharacteristic();
 		oc.setLabel(new ST(typeCharacteristicLabel));
 		oc.setAnnotatorConfidence(0.0);
-		oc.addTypeCode(edu.stanford.epad.common.util.Lexicon.getInstance().getLex(cleanString(typeCharacteristicValue)));
+		//do not clean lesion type
+		oc.addTypeCode(edu.stanford.epad.common.util.Lexicon.getInstance().getLex(typeCharacteristicValue));
 		
 		oe.addImagingObservationCharacteristic(oc);
 		return oe;
