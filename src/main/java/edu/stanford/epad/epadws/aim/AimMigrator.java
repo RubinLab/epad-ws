@@ -154,7 +154,6 @@ import edu.stanford.hakan.aim4api.base.Scale;
 import edu.stanford.hakan.aim4api.base.TwoDimensionSpatialCoordinate;
 import edu.stanford.hakan.aim4api.base.TwoDimensionSpatialCoordinateCollection;
 import edu.stanford.hakan.aim4api.base.Enumerations.ScaleType;
-import edu.stanford.hakan.aim4api.compability.aimv3.Lexicon;
 import edu.stanford.hakan.aim4api.compability.aimv3.Modality;
 import edu.stanford.hakan.aim4api.project.epad.Enumerations.ShapeType;
 import edu.stanford.hakan.aim4api.usage.AnnotationValidator;
@@ -382,9 +381,7 @@ public class AimMigrator {
 			qualityCode=new CD("S86","Evaluable","RECIST-AMS",""); //is evaluable
 			
 		ia.addImagingObservationEntity(getImagingObservationEntityFromPF("Lesion Quality",qualityCode,"Timepoint",((JSONObject)mintJson.get("lesion")).getInt("timepoint"), "Type",((JSONObject)mintJson.get("lesion")).getString("type")));
-
 		
-		iac.addImageAnnotation(ia);
 		edu.stanford.epad.common.util.Lexicon lexicon=edu.stanford.epad.common.util.Lexicon.getInstance();
 		CD parent = lexicon.getLex("mint");
 		log.info("parent code is "+ parent.getCode());
@@ -394,11 +391,34 @@ public class AimMigrator {
     		
         }
 		
+		iac.addImageAnnotation(ia);
+		
+		//add the rest of the calculations
 		ArrayList<String[]> features=getMeasurementsFromPF(mintJson);
 		iac=PluginAIMUtil.addFeatures(iac, features , 1,parent, true) ; 
 
+		//this should be called after addfeatures as addfeatures tries to init v3.CalculationData and fails as it is not double
+		addSummaryCalcsFromPF(mintJson, parent, iac.getImageAnnotation());
 		log.info("annotation is: "+iac.toStringXML());
 		return iac.toStringXML();
+		
+	}
+	
+	public static void addSummaryCalcsFromPF(JSONObject mintJson, CD parent, edu.stanford.hakan.aim4api.base.ImageAnnotation ia){
+		JSONArray measurements = (JSONArray) mintJson.get("measurements");
+		for (int i = 0; i < measurements.length(); i++) {
+			//if this is a summary. add it as a separate calculation
+			try{ 
+				double val=Double.parseDouble(((JSONObject)measurements.get(i)).getString("CurrentValue"));
+			}catch(NumberFormatException ne){
+				CD featureCD = edu.stanford.epad.common.util.Lexicon.getInstance().getLex(((JSONObject)measurements.get(i)).getString("Type"));
+	            if (featureCD.getCode().equals("99EPADD0")){
+	            	featureCD = edu.stanford.epad.common.util.Lexicon.getInstance().createLex(((JSONObject)measurements.get(i)).getString("Type"),((JSONObject)measurements.get(i)).getString("Type"),parent,null);
+	            }
+	            ia.addCalculationEntity(addCalculation(((JSONObject)measurements.get(i)).getString("CurrentValue"),1,"",featureCD.getDisplayName().getValue(), featureCD.getCode()));
+			
+			}
+		}
 		
 	}
 	
@@ -406,7 +426,12 @@ public class AimMigrator {
 		JSONArray measurements = (JSONArray) mintJson.get("measurements");
 		ArrayList<String[]> features=new ArrayList<>();
 		for (int i = 0; i < measurements.length(); i++) {
-	    	features.add(new String[] {((JSONObject)measurements.get(i)).getString("Type"),((JSONObject)measurements.get(i)).getString("CurrentValue"),((JSONObject)measurements.get(i)).getString("Unit")});
+			try {
+				double val=Double.parseDouble(((JSONObject)measurements.get(i)).getString("CurrentValue"));
+				features.add(new String[] {((JSONObject)measurements.get(i)).getString("Type"),((JSONObject)measurements.get(i)).getString("CurrentValue"),((JSONObject)measurements.get(i)).getString("Unit")});
+			}catch(NumberFormatException ne){
+				log.info("this is a summary. dont add it as a feature add a separate calculation. "+((JSONObject)measurements.get(i)).getString("Type"));
+			}
 		}
 		return features;
 	}
@@ -756,52 +781,56 @@ public class AimMigrator {
      */
     
 	public static CalculationEntity addMeanCalculation(double value, Integer shapeId, String units) {
-    	return addCalculation(value,shapeId,units,MEAN, "R-00317");
+    	return addCalculation(String.valueOf(value),shapeId,units,MEAN, "R-00317");
     }
     public static CalculationEntity addAreaCalculation(double value, Integer shapeId, String units) {
-    	return addCalculation(value,shapeId,units,AREA, "99EPADA4");
+    	return addCalculation(String.valueOf(value),shapeId,units,AREA, "99EPADA4");
     }
     public static CalculationEntity addStdDevCalculation(double value, Integer shapeId, String units) {
-    	return addCalculation(value,shapeId,units,STD_DEV, "R-10047");
+    	return addCalculation(String.valueOf(value),shapeId,units,STD_DEV, "R-10047");
     }
     public static CalculationEntity addMinCalculation(double value, Integer shapeId, String units) {
-    	return addCalculation(value,shapeId,units,MIN, "R-404FB");
+    	return addCalculation(String.valueOf(value),shapeId,units,MIN, "R-404FB");
     }
     public static CalculationEntity addMaxCalculation(double value, Integer shapeId, String units) {
-    	return addCalculation(value,shapeId,units,MAX, "G-A437");
+    	return addCalculation(String.valueOf(value),shapeId,units,MAX, "G-A437");
     }
     public static CalculationEntity addLengthCalculation(double value, Integer shapeId, String units) {
-    	return addCalculation(value,shapeId,units,LINE_LENGTH, "G-D7FE");
+    	return addCalculation(String.valueOf(value),shapeId,units,LINE_LENGTH, "G-D7FE");
     }
     public static CalculationEntity addVolumeCalculation(double value, Integer shapeId, String units) {
-    	return addCalculation(value,shapeId,units,VOLUME, "RID28668");
+    	return addCalculation(String.valueOf(value),shapeId,units,VOLUME, "RID28668");
     }
         
-    public static CalculationEntity addCalculation(double value, Integer shapeId, String units, String name, String code) {
+    public static CalculationEntity addCalculation(String value, Integer shapeId, String units, String name, String code) {
     	
     	CalculationEntity cal =new CalculationEntity();
     	cal.setUniqueIdentifier();
-		Lexicon lex=Lexicon.getInstance();
-        CD calcCD= lex.get(code);
+		CD calcCD= edu.stanford.hakan.aim4api.compability.aimv3.Lexicon.getInstance().get(code);
         String desc="";
-        if (calcCD!=null) {
-        	 cal.addTypeCode(new CD(calcCD.getCode(),calcCD.getDisplayName().getValue(),calcCD.getCodeSystemName()));
-        	 cal.setDescription(new ST(calcCD.getDisplayName().getValue()));
-        	 desc=calcCD.getDisplayName().getValue();
+        if (calcCD!=null || ((calcCD=edu.stanford.epad.common.util.Lexicon.getInstance().getLex(name))!=null)) {
+	    	 cal.addTypeCode(new CD(calcCD.getCode(),calcCD.getDisplayName().getValue(),calcCD.getCodeSystemName()));
+	    	 cal.setDescription(new ST(calcCD.getDisplayName().getValue()));
+	    	 desc=calcCD.getDisplayName().getValue();
         }else {
+        	
         	cal.addTypeCode(new CD(name,name,PRIVATE_DESIGNATOR));
         	cal.setDescription(new ST(name));
         	desc=name;
+        	
         }
         ExtendedCalculationResult calculationResult=new ExtendedCalculationResult();
 
 		calculationResult.setType(Enumerations.CalculationResultIdentifier.Scalar);
 		calculationResult.setUnitOfMeasure(new ST(units));
-		calculationResult.setDataType(new CD("99EPADD1","Double","99EPAD"));
+		if (units.equals(""))
+			calculationResult.setDataType(new CD("99EPADD2","String","99EPAD"));
+		else
+			calculationResult.setDataType(new CD("99EPADD1","Double","99EPAD"));
 
 		// Create a CalculationData instance
 		edu.stanford.hakan.aim4api.base.CalculationData calculationData = new edu.stanford.hakan.aim4api.base.CalculationData();
-		calculationData.setValue(new ST(String.valueOf(value)));
+		calculationData.setValue(new ST(value));
 		calculationData.addCoordinate(0, 0);
 		
 		// Create a Dimension instance
