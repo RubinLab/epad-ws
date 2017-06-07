@@ -272,20 +272,28 @@ public class AimReporter {
 			}
 		}
 		
-		StringBuilder tableJson=new StringBuilder();
-		tableJson.append("[");
+		ArrayList<String> rows=new ArrayList<>();
 		
 		for (int i=0;i<table.length;i++){
+			StringBuilder rowStr=new StringBuilder();
 			if (table[i]==null) 
 				continue;
-			tableJson.append("{");
+			rowStr.append("{");
 			for (int j = 0; j < table[i].length; j++) {
-				tableJson.append(table[i][j]);
-				if (j!=table[i].length-1)
-					tableJson.append(",");
+				rowStr.append(table[i][j]);
+				if (j<table[i].length-1)
+					rowStr.append(",");
 			}
-			tableJson.append("}");
-			if (i!=table.length-1)
+			rowStr.append("}");
+			rows.add(rowStr.toString());
+			
+		}
+		
+		StringBuilder tableJson=new StringBuilder();
+		tableJson.append("[");
+		for (int i=0;i<rows.size();i++){
+			tableJson.append(rows.get(i));
+			if (i<rows.size()-1 )
 				tableJson.append(",");
 		}
 		tableJson.append("]");
@@ -410,11 +418,14 @@ public class AimReporter {
 				Double[] ntRRMin=calcRRMin(ntSums);
 				
 				
-				return new RecistReport(tLesionNames.toArray(new String[tLesionNames.size()]), tStudyDates.toArray(new String[tStudyDates.size()]), tTable, tSums, tRRBaseline, tRRMin, tRR, responseCats, tUIDs,
+				RecistReport rr= new RecistReport(tLesionNames.toArray(new String[tLesionNames.size()]), tStudyDates.toArray(new String[tStudyDates.size()]), tTable, tSums, tRRBaseline, tRRMin, tRR, responseCats, tUIDs,
 						ntLesionNames.toArray(new String[ntLesionNames.size()]), ntStudyDates.toArray(new String[ntStudyDates.size()]), ntTable, ntSums, ntRRBaseline, ntRRMin, ntUIDs);
-	
+				rr.setTimepoints(tTimepoints);
+				return rr;
 			}else {
-				return new RecistReport(tLesionNames.toArray(new String[tLesionNames.size()]), tStudyDates.toArray(new String[tStudyDates.size()]), tTable, tSums, tRRBaseline, tRRMin, tRR, responseCats, tUIDs);
+				RecistReport rr= new RecistReport(tLesionNames.toArray(new String[tLesionNames.size()]), tStudyDates.toArray(new String[tStudyDates.size()]), tTable, tSums, tRRBaseline, tRRMin, tRR, responseCats, tUIDs);
+				rr.setTimepoints(tTimepoints);
+				return rr;
 			}
 		}else {
 			log.info("no target lesion in table " +table );

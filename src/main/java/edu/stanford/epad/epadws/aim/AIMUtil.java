@@ -168,6 +168,7 @@ import edu.stanford.epad.dtos.EPADAIM;
 import edu.stanford.epad.dtos.EPADAIMList;
 import edu.stanford.epad.dtos.EPADAIMList.EPADAIMResultSet;
 import edu.stanford.hakan.aim4api.project.epad.Aim;
+import edu.stanford.hakan.aim4api.project.epad.Aim4;
 import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeDatabase;
 import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeDatabaseOperations;
 import edu.stanford.epad.epadws.epaddb.EpadDatabase;
@@ -797,9 +798,11 @@ public class AIMUtil
 					}
 				}
 				EPADAIM ea = epadDatabaseOperations.getAIM(imageAnnotationColl.getUniqueIdentifier().getRoot());
-				Aim aim = new Aim(imageAnnotationColl);
+				Aim4 aim = new Aim4(imageAnnotationColl);
 				String patientID = aim.getPatientID();
 				String originalPatientID = aim.getOriginalPatientID();
+				log.info("pat "+ imageAnnotationColl.getPerson().getId());
+				log.info("pat id "+ imageAnnotationColl.getPerson().getId().getValue()+ " aimpatid "+ patientID + "  aimorig "+ originalPatientID);
 				String patientName = aim.getPatientName();
 				if (!patientID.equalsIgnoreCase(originalPatientID)) {
 					//find the unique patient id for this epad instance and use that while saving
@@ -808,11 +811,11 @@ public class AIMUtil
 					log.info("Unique patient id as "+uniquePatientID);
 					if (!patientID.equalsIgnoreCase(uniquePatientID)){
 						patientID=uniquePatientID;
-						Patient p=aim.getPatient();
-						p.setId(uniquePatientID);
-						log.info("new patient id is "+p.getId());
-						aim.setPatient(p);
-						log.info("Using patient id as "+aim.getPatientID());
+//						Patient p=aim.getPatient();
+//						p.setId(uniquePatientID);
+//						log.info("new patient id is "+p.getId());
+//						aim.setPatient(p);
+//						log.info("Using patient id as "+aim.getPatientID());
 						edu.stanford.hakan.aim4api.base.Person annotationPatient=imageAnnotationColl.getPerson();
 						annotationPatient.setId(new ST(uniquePatientID));
 						log.info("set annotation patient id as "+imageAnnotationColl.getPerson().getId().getValue());
