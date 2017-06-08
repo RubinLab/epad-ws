@@ -705,36 +705,42 @@ public class EPADGetHandler
 				log.info("GET request for AIMs from user " + username + "; query type is " + aimSearchType + ", value "
 						+ searchValue + ", project " + projectID);
 				EPADAIMList aims = null;
-				if (aimSearchType != null)
-					aims = epadOperations.getAIMDescriptions(projectID, aimSearchType, searchValue, username, sessionID, start, count);
-				else
-					aims = epadOperations.getProjectAIMDescriptions(projectReference, username, sessionID);
-				long dbtime = System.currentTimeMillis();
-				log.info("Time taken for AIM database query:" + (dbtime-starttime) + " msecs");
-				if (returnSummary(httpRequest))
-				{
-					if (AIMSearchType.JSON_QUERY.equals(aimSearchType) || AIMSearchType.AIM_QUERY.equals(aimSearchType))
-						aims = AIMUtil.queryAIMImageAnnotationSummariesV4(aims, aimSearchType, searchValue, username, sessionID);
+				String report = httpRequest.getParameter("report");
+				
+				if (report!=null && report.equalsIgnoreCase("WATERFALL")) {
+					responseStream.append(AimReporter.getWaterfallProject(projectID, username, sessionID).toJSON());
+				}else {
+					if (aimSearchType != null)
+						aims = epadOperations.getAIMDescriptions(projectID, aimSearchType, searchValue, username, sessionID, start, count);
 					else
-						aims = AIMUtil.queryAIMImageAnnotationSummariesV4(aims, username, sessionID);					
-					long starttime2 = System.currentTimeMillis();
-					responseStream.append(aims.toJSON());
-					long resptime = System.currentTimeMillis();
-					log.info("Time taken for write http response:" + (resptime-starttime2) + " msecs");
-				}
-				else if (returnJson(httpRequest))
-				{
-					if (AIMSearchType.JSON_QUERY.equals(aimSearchType) || AIMSearchType.AIM_QUERY.equals(aimSearchType))
-						AIMUtil.queryAIMImageAnnotationsV4(responseStream, aims, aimSearchType, searchValue, username, sessionID, true);					
+						aims = epadOperations.getProjectAIMDescriptions(projectReference, username, sessionID);
+					long dbtime = System.currentTimeMillis();
+					log.info("Time taken for AIM database query:" + (dbtime-starttime) + " msecs");
+					if (returnSummary(httpRequest))
+					{
+						if (AIMSearchType.JSON_QUERY.equals(aimSearchType) || AIMSearchType.AIM_QUERY.equals(aimSearchType))
+							aims = AIMUtil.queryAIMImageAnnotationSummariesV4(aims, aimSearchType, searchValue, username, sessionID);
+						else
+							aims = AIMUtil.queryAIMImageAnnotationSummariesV4(aims, username, sessionID);					
+						long starttime2 = System.currentTimeMillis();
+						responseStream.append(aims.toJSON());
+						long resptime = System.currentTimeMillis();
+						log.info("Time taken for write http response:" + (resptime-starttime2) + " msecs");
+					}
+					else if (returnJson(httpRequest))
+					{
+						if (AIMSearchType.JSON_QUERY.equals(aimSearchType) || AIMSearchType.AIM_QUERY.equals(aimSearchType))
+							AIMUtil.queryAIMImageAnnotationsV4(responseStream, aims, aimSearchType, searchValue, username, sessionID, true);					
+						else
+							AIMUtil.queryAIMImageJsonAnnotations(responseStream, aims, username, sessionID);					
+					}
 					else
-						AIMUtil.queryAIMImageJsonAnnotations(responseStream, aims, username, sessionID);					
-				}
-				else
-				{
-					if (AIMSearchType.AIM_QUERY.equals(aimSearchType) || AIMSearchType.JSON_QUERY.equals(aimSearchType))
-						AIMUtil.queryAIMImageAnnotationsV4(responseStream, aims, aimSearchType, searchValue, username, sessionID, false);					
-					else
-						AIMUtil.queryAIMImageAnnotationsV4(responseStream, aims, username, sessionID);					
+					{
+						if (AIMSearchType.AIM_QUERY.equals(aimSearchType) || AIMSearchType.JSON_QUERY.equals(aimSearchType))
+							AIMUtil.queryAIMImageAnnotationsV4(responseStream, aims, aimSearchType, searchValue, username, sessionID, false);					
+						else
+							AIMUtil.queryAIMImageAnnotationsV4(responseStream, aims, username, sessionID);					
+					}
 				}
 				statusCode = HttpServletResponse.SC_OK;
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.PROJECT_AIM, pathInfo)) {

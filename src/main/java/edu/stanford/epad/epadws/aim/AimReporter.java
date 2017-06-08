@@ -108,6 +108,7 @@ package edu.stanford.epad.epadws.aim;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -121,8 +122,11 @@ import edu.stanford.epad.dtos.RecistReport;
 import edu.stanford.epad.dtos.RecistReportUIDCell;
 import edu.stanford.epad.dtos.WaterfallReport;
 import edu.stanford.epad.epadws.handlers.core.SubjectReference;
+import edu.stanford.epad.epadws.models.Subject;
 import edu.stanford.epad.epadws.queries.DefaultEpadOperations;
 import edu.stanford.epad.epadws.queries.EpadOperations;
+import edu.stanford.epad.epadws.service.DefaultEpadProjectOperations;
+import edu.stanford.epad.epadws.service.EpadProjectOperations;
 import edu.stanford.hakan.aim4api.base.AimException;
 import edu.stanford.hakan.aim4api.base.CalculationEntity;
 import edu.stanford.hakan.aim4api.base.DicomImageReferenceEntity;
@@ -636,7 +640,6 @@ public class AimReporter {
 		return responseCats;
 	}
 
-	
 	/**
 	 * 
 	 * @param subjectIDs
@@ -644,6 +647,22 @@ public class AimReporter {
 	 * @param sessionID
 	 * @return
 	 */
+	public static WaterfallReport getWaterfallProject(String projectID, String username, String sessionID){
+		EpadProjectOperations projOp = DefaultEpadProjectOperations.getInstance();
+		ArrayList<String> subjects=new ArrayList<>();
+		try {
+			List<Subject> subjectObjs=projOp.getSubjectsForProject(projectID);
+			for (Subject s:subjectObjs)
+				subjects.add(s.getSubjectUID());
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		return getWaterfall(subjects, username, sessionID);
+	}
+	
+	
 	public static WaterfallReport getWaterfall(String subjectIDs, String username, String sessionID){
 		ArrayList<String> subjects = new ArrayList<>();
 		if (subjectIDs != null) {
@@ -651,9 +670,21 @@ public class AimReporter {
 			for (String id: ids)
 				subjects.add(id.trim());
 		}
+		return getWaterfall(subjects, username, sessionID);
+	}
+	/**
+	 * 
+	 * @param subjectIDs
+	 * @param username
+	 * @param sessionID
+	 * @return
+	 */
+	public static WaterfallReport getWaterfall(ArrayList<String> subjects, String username, String sessionID){
+		
 		ArrayList<Double> values=new ArrayList<>();
 		ArrayList<String> responses=new ArrayList<>();
 		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
+		ArrayList<String> validSubjects =new ArrayList<>();
 		for(String subjectID:subjects) {
 			SubjectReference subjectReference=new SubjectReference(null, subjectID);
 			EPADAIMList aims = epadOperations.getSubjectAIMDescriptions(subjectReference, username, sessionID);
@@ -663,11 +694,12 @@ public class AimReporter {
 				log.warning("Couldn't retrieve recist report for patient "+ subjectID);
 				continue;
 			}
+			validSubjects.add(subjectID);
 			values.add(recist.getMinRR());
 			responses.add(recist.getMinRRResponse());
 		}
 		//let Waterfall handle the sorting
-		return new WaterfallReport(subjects.toArray(new String[subjects.size()]), values.toArray(new Double[values.size()]), responses.toArray(new String[responses.size()]));
+		return new WaterfallReport(validSubjects.toArray(new String[validSubjects.size()]), values.toArray(new Double[values.size()]), responses.toArray(new String[responses.size()]));
 	}
 
 }
