@@ -513,8 +513,9 @@ public class AimReporter {
 				String studyUID = ((JSONObject)((JSONObject)lesions.get(i)).get("StudyUID")).getString("value");
 				String seriesUID = ((JSONObject)((JSONObject)lesions.get(i)).get("SeriesUID")).getString("value");
 				String aimUID=((JSONObject)((JSONObject)lesions.get(i)).get("AimUID")).getString("value");
+				String location=((JSONObject)((JSONObject)lesions.get(i)).get("Location")).getString("value");
 				//put as a UID cell object
-				UIDs[lesionNames.indexOf(lesionName)][studyDates.indexOf(studyDate)]=new RecistReportUIDCell(studyUID, seriesUID, aimUID);
+				UIDs[lesionNames.indexOf(lesionName)][studyDates.indexOf(studyDate)]=new RecistReportUIDCell(studyUID, seriesUID, aimUID,timepoint,aimType,location);
 				
 			}
 		}
