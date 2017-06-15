@@ -167,6 +167,8 @@ import edu.stanford.epad.common.util.XmlNamespaceTranslator;
 import edu.stanford.epad.dtos.EPADAIM;
 import edu.stanford.epad.dtos.EPADAIMList;
 import edu.stanford.epad.dtos.EPADAIMList.EPADAIMResultSet;
+import edu.stanford.epad.dtos.internal.DCM4CHEESeries;
+import edu.stanford.epad.dtos.internal.DICOMElementList;
 import edu.stanford.hakan.aim4api.project.epad.Aim;
 import edu.stanford.hakan.aim4api.project.epad.Aim4;
 import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeDatabase;
@@ -182,6 +184,7 @@ import edu.stanford.epad.epadws.models.Project;
 import edu.stanford.epad.epadws.models.Subject;
 import edu.stanford.epad.epadws.plugins.PluginConfig;
 import edu.stanford.epad.epadws.processing.pipeline.task.PluginStartTask;
+import edu.stanford.epad.epadws.queries.Dcm4CheeQueries;
 import edu.stanford.epad.epadws.queries.DefaultEpadOperations;
 import edu.stanford.epad.epadws.queries.EpadOperations;
 import edu.stanford.epad.epadws.service.DefaultEpadProjectOperations;
@@ -189,12 +192,17 @@ import edu.stanford.epad.epadws.service.EpadProjectOperations;
 import edu.stanford.epad.epadws.service.SessionService;
 import edu.stanford.epad.epadws.service.UserProjectService;
 import edu.stanford.hakan.aim4api.base.AimException;
+import edu.stanford.hakan.aim4api.base.DicomImageReferenceEntity;
 import edu.stanford.hakan.aim4api.base.DicomSegmentationEntity;
+import edu.stanford.hakan.aim4api.base.II;
 import edu.stanford.hakan.aim4api.base.ImageAnnotationCollection;
+import edu.stanford.hakan.aim4api.base.ImageReferenceEntity;
+import edu.stanford.hakan.aim4api.base.ImageStudy;
 import edu.stanford.hakan.aim4api.base.ST;
 import edu.stanford.hakan.aim4api.base.SegmentationEntityCollection;
 import edu.stanford.hakan.aim4api.compability.aimv3.DICOMImageReference;
 import edu.stanford.hakan.aim4api.compability.aimv3.ImageAnnotation;
+import edu.stanford.hakan.aim4api.compability.aimv3.Modality;
 import edu.stanford.hakan.aim4api.compability.aimv3.Person;
 import edu.stanford.hakan.aim4api.compability.aimv3.Segmentation;
 import edu.stanford.hakan.aim4api.compability.aimv3.SegmentationCollection;
@@ -822,11 +830,107 @@ public class AIMUtil
 					}
 				}
 				
-				String imageID = aim.getFirstImageID();
+				String imageID = aim.getFirstImageID().trim();
 				String seriesID = aim.getFirstSeriesID();
 				if (imageID != null && imageID.length() > 0)
 					seriesID = aim.getSeriesID(imageID);
 				String studyID = aim.getStudyID(seriesID);
+				
+				if (imageID==null || imageID.equals("") || imageID.equalsIgnoreCase("na")) {
+					//aim has missing information. possibly from pf migration
+					log.info("Aim has missing information. possibly from pf migration. Series is"+ seriesID + " comment is "+ aim.getComment());
+					//TODO fill in image, study and patient info
+					//check if series is in epad
+					DCM4CHEESeries series=Dcm4CheeQueries.getSeries(seriesID);
+					if (series==null) {
+						log.warning("Series is not in the epad repository. Cannot fill in data. Aim cannot be listed without an imageid");
+					}else {
+						String[] comment=aim.getComment().split("/");
+						Double sliceLoc=-99999.0;
+						Double sliceThickness=-99999.0; //TODO get slice thickness
+						try{
+							if (comment.length==3) {
+								sliceLoc=Double.valueOf(comment[1]);
+								sliceThickness=Double.valueOf(comment[2]);
+							} else if (comment.length==2) { //this shouldn't happen
+								sliceLoc=Double.valueOf(comment[0]);
+								sliceThickness=Double.valueOf(comment[1]);
+							} 
+						}catch(NumberFormatException ne) {
+							log.warning("Couldn't get slice location " + aim.getComment());
+							
+						}
+						if (sliceLoc!=-99999.0) {
+							EpadOperations epadOperations = DefaultEpadOperations.getInstance();
+							List<DCM4CHEEImageDescription> imageDescriptions = dcm4CheeDatabaseOperations.getImageDescriptions(
+									series.studyUID, seriesID);
+							for(DCM4CHEEImageDescription image:imageDescriptions){
+								DICOMElementList imageDICOMElements = epadOperations.getDICOMElements(image.studyUID,
+										image.seriesUID, image.imageUID);
+								String imagePosition=epadOperations.getDICOMElement(imageDICOMElements,PixelMedUtils.ImagePositionPatientCode);
+								Double imageLoc=-1.0;
+								try{
+									if (imagePosition!=null) {
+										imageLoc=Double.parseDouble(imagePosition.split("\\\\")[2]);
+									}
+								}catch(Exception e){
+									
+									log.warning("Couldn't get image position "+e.getMessage()) ;
+								}
+								if ( imageLoc==-1.0) {
+									imageLoc=((Double)Double.parseDouble(image.sliceLocation));
+									log.info("Couldn't get image position using slice loc" +imageLoc) ;
+								}
+								if (((Double)(imageLoc-(0.5*sliceThickness))).intValue()==sliceLoc.intValue()||imageLoc.intValue()==sliceLoc.intValue()){
+									log.info("found image "+ image.instanceNumber +  " uid "+image.imageUID);
+									imageID=image.imageUID;
+									//fill in person info
+									{
+						 				Patient p=new Patient();
+						 				p.setBirthDate(epadOperations.getDICOMElement(imageDICOMElements,PixelMedUtils.PatientBirthDateCode));
+						 				p.setSex(epadOperations.getDICOMElement(imageDICOMElements,PixelMedUtils.PatientSexCode));
+										p.setName(series.patientName);
+										p.setId(series.patientID);
+										aim.setPatient(p);
+										if (originalPatientID.equalsIgnoreCase(patientID))
+											patientID=p.getId();
+										
+										edu.stanford.hakan.aim4api.base.Person annotationPatient = imageAnnotationColl.getPerson();
+										annotationPatient.setBirthDate(p.getBirthDate());
+										annotationPatient.setSex(new ST(p.getSex()));
+										annotationPatient.setName(new ST(p.getName()));
+										annotationPatient.setId(new ST(p.getId()));
+									}
+									//fill in the study and image info
+									{
+										List<ImageReferenceEntity> refs= imageAnnotationColl.getImageAnnotation().getImageReferenceEntityCollection().getImageReferenceEntityList();
+										if (refs.size()==1) { //this should be the case for pf
+											aim.setStudyID(series.seriesUID, series.studyUID, series.seriesDate, series.createdTime);
+											
+											ImageStudy study=((DicomImageReferenceEntity)refs.get(0)).getImageStudy();
+											studyID=series.studyUID;
+											study.setInstanceUid(new II(series.studyUID));
+											study.setStartDate(series.seriesDate);
+											study.setStartTime(series.createdTime);
+											
+											Modality mod=Modality.getInstance();
+											//if the modality cannot be retrieved put default
+											if ((mod.get(image.classUID))!=null)
+												study.getImageSeries().setModality(mod.get(image.classUID));
+											else
+												study.getImageSeries().setModality(mod.getDefaultModality());
+											study.getImageSeries().getImageCollection().get(0).setSopInstanceUid(new II(imageID));
+											study.getImageSeries().getImageCollection().get(0).setSopClassUid(new II(image.classUID));
+										}
+									}
+						 			
+						 			
+									break;
+								}
+							}
+						}
+					}
+				}
 				//try fix for aim edit tedseg
 				if (studyID==null || studyID.equals("")) {
 					studyID=dcm4CheeDatabaseOperations.getStudyUIDForSeries(seriesID);
