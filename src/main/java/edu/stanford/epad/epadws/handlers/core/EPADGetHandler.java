@@ -706,9 +706,10 @@ public class EPADGetHandler
 						+ searchValue + ", project " + projectID);
 				EPADAIMList aims = null;
 				String report = httpRequest.getParameter("report");
+				String type = httpRequest.getParameter("type");
 				
 				if (report!=null && report.equalsIgnoreCase("WATERFALL")) {
-					responseStream.append(AimReporter.getWaterfallProject(projectID, username, sessionID).toJSON());
+					responseStream.append(AimReporter.getWaterfallProject(projectID, username, sessionID, type).toJSON());
 				}else {
 					if (aimSearchType != null)
 						aims = epadOperations.getAIMDescriptions(projectID, aimSearchType, searchValue, username, sessionID, start, count);
@@ -1471,9 +1472,9 @@ public class EPADGetHandler
 						+ searchValue + ", project " + projectID + " deletedAIMs:" + deletedAims);
 				
 				String report = httpRequest.getParameter("report");
-				
+				String type = httpRequest.getParameter("type");
 				if (report!=null && report.equalsIgnoreCase("WATERFALL")) {
-					responseStream.append(AimReporter.getWaterfall(subjectUIDs, username, sessionID).toJSON());
+					responseStream.append(AimReporter.getWaterfall(subjectUIDs, username, sessionID, type).toJSON());
 				}else{
 					EPADAIMList aims = null;
 					if (!deletedAims)

@@ -347,16 +347,15 @@ public class AimReporter {
 		}
 		//get targets
 		ArrayList<String> tLesionNames=new ArrayList<>();
-		ArrayList<String> tStudyDates=new ArrayList<>();
+		ArrayList<String> studyDates=new ArrayList<>();
 		ArrayList<String> ntLesionNames=new ArrayList<>();
-		ArrayList<String> ntStudyDates=new ArrayList<>();
+//		ArrayList<String> ntStudyDates=new ArrayList<>();
 		ArrayList<String> targetTypes=new ArrayList<>();
-		ArrayList<String> tNewLesionStudyDates=new ArrayList<>();
+		ArrayList<String> ntNewLesionStudyDates=new ArrayList<>();
 		Integer[] tTimepoints=null;
 		
 		targetTypes.add("target");
 		targetTypes.add("target lesion"); //for new recist mint template
-		targetTypes.add("new lesion");
 		targetTypes.add("resolved lesion");
 		//first pass fill in the lesion names and study dates (x and y axis of the table)
 		for (int i = 0; i < lesions.length(); i++)
@@ -364,70 +363,68 @@ public class AimReporter {
 			String lesionName = ((JSONObject)((JSONObject)lesions.get(i)).get("Name")).getString("value");
 			String studyDate = ((JSONObject)((JSONObject)lesions.get(i)).get("StudyDate")).getString("value");
 			String type=((JSONObject)((JSONObject)lesions.get(i)).get("Type")).getString("value");
+			if (!studyDates.contains(studyDate))
+				studyDates.add(studyDate);
 			if (targetTypes.contains(type.toLowerCase())) {
 				if (!tLesionNames.contains(lesionName))
 					tLesionNames.add(lesionName);
-				if (!tStudyDates.contains(studyDate))
-					tStudyDates.add(studyDate);
-				if (type.equalsIgnoreCase("new lesion") && !tNewLesionStudyDates.contains(studyDate)) {
-					tNewLesionStudyDates.add(studyDate);
-				}
 			}else {
+				if (type.equalsIgnoreCase("new lesion") && !ntNewLesionStudyDates.contains(studyDate)) {
+					ntNewLesionStudyDates.add(studyDate);
+				}
 				if (!ntLesionNames.contains(lesionName))
 					ntLesionNames.add(lesionName);
-				if (!ntStudyDates.contains(studyDate))
-					ntStudyDates.add(studyDate);
+//				if (!ntStudyDates.contains(studyDate))
+//					ntStudyDates.add(studyDate);
 			}
 		}
 		//sort lists
 		Collections.sort(tLesionNames);
-		Collections.sort(tStudyDates);
+		Collections.sort(studyDates);
 		Collections.sort(ntLesionNames);
-		Collections.sort(ntStudyDates);
+//		Collections.sort(ntStudyDates);
 		
-		if (!tLesionNames.isEmpty() && !tStudyDates.isEmpty()){
+		if (!tLesionNames.isEmpty() && !studyDates.isEmpty()){
 			//fill in the table for target lesions
 			if (tTimepoints==null)
-				tTimepoints=new Integer[tStudyDates.size()];
-			RecistReportUIDCell[][] tUIDs=new RecistReportUIDCell[tLesionNames.size()][tStudyDates.size()];
-			String [][] tTable=fillRecistTable(tLesionNames, tStudyDates, lesions, targetTypes,tTimepoints, tUIDs);
+				tTimepoints=new Integer[studyDates.size()];
+			RecistReportUIDCell[][] tUIDs=new RecistReportUIDCell[tLesionNames.size()][studyDates.size()];
+			String [][] tTable=fillRecistTable(tLesionNames, studyDates, lesions, targetTypes,tTimepoints, tUIDs);
 			//calculate the sums first
 			Double[] tSums=calcSums(tTable);
 			//calculate the rrs
-			Double[] tRRBaseline=calcRRBaseline(tSums);
-			Double[] tRRMin=calcRRMin(tSums);
+			Double[] tRRBaseline=calcRRBaseline(tSums, tTimepoints);
+			Double[] tRRMin=calcRRMin(tSums, tTimepoints);
 			Double[] tRR=calcRR(tSums, tTimepoints);
-			Boolean[] isThereNewLesion=new Boolean[tStudyDates.size()];
-			if (!tNewLesionStudyDates.isEmpty()) {
-				for (String studyDate:tNewLesionStudyDates)
-					isThereNewLesion[tStudyDates.indexOf(studyDate)]=true;
+			Boolean[] isThereNewLesion=new Boolean[studyDates.size()];
+			if (!ntNewLesionStudyDates.isEmpty()) {
+				for (String studyDate:ntNewLesionStudyDates)
+					isThereNewLesion[studyDates.indexOf(studyDate)]=true;
 			}
 			
 			
 			
-			String[] responseCats=calcResponseCat(tRR,tTimepoints, isThereNewLesion);
+			String[] responseCats=calcResponseCat(tRR,tTimepoints, isThereNewLesion,tSums);
 			
-			if (!ntLesionNames.isEmpty() && !ntStudyDates.isEmpty()){
+			if (!ntLesionNames.isEmpty() && !studyDates.isEmpty()){
 				//fill in the table for non-target lesions
 				ArrayList<String> nonTargetTypes=new ArrayList<>();
 				nonTargetTypes.add("non-target");
-				Integer[] ntTimepoints=new Integer[ntStudyDates.size()];
-				RecistReportUIDCell[][] ntUIDs=new RecistReportUIDCell[ntLesionNames.size()][ntStudyDates.size()];
-				String [][] ntTable=fillRecistTable(ntLesionNames, ntStudyDates, lesions, nonTargetTypes, ntTimepoints, ntUIDs);
+				nonTargetTypes.add("nontarget");
+				nonTargetTypes.add("non-cancer lesion");
+				nonTargetTypes.add("new lesion");
+				Integer[] ntTimepoints=new Integer[studyDates.size()];
+				RecistReportUIDCell[][] ntUIDs=new RecistReportUIDCell[ntLesionNames.size()][studyDates.size()];
+				String [][] ntTable=fillRecistTable(ntLesionNames, studyDates, lesions, nonTargetTypes, ntTimepoints, ntUIDs);
 		
-				//calculate the sums first
-				Double[] ntSums=calcSums(ntTable);
-				//calculate the rrs
-				Double[] ntRRBaseline=calcRRBaseline(ntSums);
-				Double[] ntRRMin=calcRRMin(ntSums);
 				
 				
-				RecistReport rr= new RecistReport(tLesionNames.toArray(new String[tLesionNames.size()]), tStudyDates.toArray(new String[tStudyDates.size()]), tTable, tSums, tRRBaseline, tRRMin, tRR, responseCats, tUIDs,
-						ntLesionNames.toArray(new String[ntLesionNames.size()]), ntStudyDates.toArray(new String[ntStudyDates.size()]), ntTable, ntSums, ntRRBaseline, ntRRMin, ntUIDs);
+				RecistReport rr= new RecistReport(tLesionNames.toArray(new String[tLesionNames.size()]), studyDates.toArray(new String[studyDates.size()]), tTable, tSums, tRRBaseline, tRRMin, tRR, responseCats, tUIDs,
+						ntLesionNames.toArray(new String[ntLesionNames.size()]), ntTable, ntUIDs);
 				rr.setTimepoints(tTimepoints);
 				return rr;
 			}else {
-				RecistReport rr= new RecistReport(tLesionNames.toArray(new String[tLesionNames.size()]), tStudyDates.toArray(new String[tStudyDates.size()]), tTable, tSums, tRRBaseline, tRRMin, tRR, responseCats, tUIDs);
+				RecistReport rr= new RecistReport(tLesionNames.toArray(new String[tLesionNames.size()]), studyDates.toArray(new String[studyDates.size()]), tTable, tSums, tRRBaseline, tRRMin, tRR, responseCats, tUIDs);
 				rr.setTimepoints(tTimepoints);
 				return rr;
 			}
@@ -551,11 +548,15 @@ public class AimReporter {
 	 * @param sums
 	 * @return
 	 */
-	private static Double[] calcRRBaseline(Double[] sums) {
+	private static Double[] calcRRBaseline(Double[] sums,Integer[] timepoints) {
 		Double baseline=sums[0];
 		Double[] rrBaseline=new Double[sums.length];
 		StringBuilder rrBaseStr= new StringBuilder();
 		for (int i=0;i<sums.length;i++) {
+			if (timepoints[i]==0) {
+				baseline=sums[i];
+				log.info("baseline changed. New baseline is:"+i);
+			}
 			rrBaseline[i]=(sums[i]-baseline)*100.0/baseline;
 			rrBaseStr.append(rrBaseline[i]+ "  ");
 		}
@@ -567,11 +568,13 @@ public class AimReporter {
 	 * @param sums
 	 * @return
 	 */
-	private static Double[] calcRRMin(Double[] sums) {
+	private static Double[] calcRRMin(Double[] sums,Integer[] timepoints) {
 		Double min=999999.0;
 		for (int i=0;i<sums.length;i++) {
-			if (sums[i]<min)
+			if (timepoints[i]==0 || sums[i]<min) {
 				min=sums[i];
+				log.info("Min changed. New min is:"+min);
+			}
 		}
 		log.info("Min is "+min);
 		Double[] rrMin=new Double[sums.length];
@@ -622,21 +625,23 @@ public class AimReporter {
 	 * @param isThereNewLesion
 	 * @return
 	 */
-	private static String[] calcResponseCat(Double[] rr, Integer[] timepoints, Boolean[] isThereNewLesion){
+	private static String[] calcResponseCat(Double[] rr, Integer[] timepoints, Boolean[] isThereNewLesion, Double[] sums ){
 		String[] responseCats=new String[rr.length];
 		for (int i=0;i<rr.length;i++) {
-			//TODO check if there is a new lesion
-			
 			if (i==0 || timepoints[i]==0) {
 				responseCats[i]="BL";
 			}
-			else if (rr[i] <= -30) {
-				responseCats[i]="PR";
-			} else if (rr[i] >= 20 || (isThereNewLesion!=null && isThereNewLesion[i]!=null && isThereNewLesion[i]==true)) {
-				responseCats[i]="PD";
-			} else {
-				responseCats[i]="SD";
+			else if (sums[i]==0){
+				responseCats[i]="CR"; //complete response
 			}
+			else if (rr[i] <= -30) {
+				responseCats[i]="PR";//partial response
+			} else if (rr[i] >= 20 || (isThereNewLesion!=null && isThereNewLesion[i]!=null && isThereNewLesion[i]==true)) {
+				responseCats[i]="PD"; //progressive
+			} else {
+				responseCats[i]="SD"; //stable disease
+			}
+			
 		}
 		return responseCats;
 	}
@@ -648,7 +653,7 @@ public class AimReporter {
 	 * @param sessionID
 	 * @return
 	 */
-	public static WaterfallReport getWaterfallProject(String projectID, String username, String sessionID){
+	public static WaterfallReport getWaterfallProject(String projectID, String username, String sessionID, String type){
 		EpadProjectOperations projOp = DefaultEpadProjectOperations.getInstance();
 		ArrayList<String> subjects=new ArrayList<>();
 		try {
@@ -660,18 +665,18 @@ public class AimReporter {
 			e.printStackTrace();
 		}
 		
-		return getWaterfall(subjects, username, sessionID);
+		return getWaterfall(subjects, username, sessionID, type);
 	}
 	
 	
-	public static WaterfallReport getWaterfall(String subjectIDs, String username, String sessionID){
+	public static WaterfallReport getWaterfall(String subjectIDs, String username, String sessionID, String type){
 		ArrayList<String> subjects = new ArrayList<>();
 		if (subjectIDs != null) {
 			String[] ids = subjectIDs.split(",");
 			for (String id: ids)
 				subjects.add(id.trim());
 		}
-		return getWaterfall(subjects, username, sessionID);
+		return getWaterfall(subjects, username, sessionID, type);
 	}
 	/**
 	 * 
@@ -680,7 +685,7 @@ public class AimReporter {
 	 * @param sessionID
 	 * @return
 	 */
-	public static WaterfallReport getWaterfall(ArrayList<String> subjects, String username, String sessionID){
+	public static WaterfallReport getWaterfall(ArrayList<String> subjects, String username, String sessionID, String type){
 		
 		ArrayList<Double> values=new ArrayList<>();
 		ArrayList<String> responses=new ArrayList<>();
@@ -696,8 +701,20 @@ public class AimReporter {
 				continue;
 			}
 			validSubjects.add(subjectID);
-			values.add(recist.getMinRR());
-			responses.add(recist.getMinRRResponse());
+			switch(type){
+			case "BASELINE":
+				values.add(recist.getMaxChangeRRBaseLine());
+				responses.add(recist.getBestResponseBaseline());
+				break;
+			case "MIN":
+				values.add(recist.getMaxChangeRRMin());
+				responses.add(recist.getBestResponseMin());
+				break;
+			default:
+				values.add(recist.getMaxChangeRRBaseLine());
+				responses.add(recist.getBestResponseBaseline());
+				break;
+			}
 		}
 		//let Waterfall handle the sorting
 		return new WaterfallReport(validSubjects.toArray(new String[validSubjects.size()]), values.toArray(new Double[values.size()]), responses.toArray(new String[responses.size()]));
