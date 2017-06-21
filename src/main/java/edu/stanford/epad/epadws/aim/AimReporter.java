@@ -505,7 +505,11 @@ public class AimReporter {
 			}
 			timepoints[studyDates.indexOf(studyDate)]=timepoint;
 			log.info("setting timepoint index "+studyDates.indexOf(studyDate) + " for study "+studyDate + " is set to "+timepoint);
-			table[lesionNames.indexOf(lesionName)][studyDates.indexOf(studyDate)+3]=((JSONObject)((JSONObject)lesions.get(i)).get("Length")).getString("value");
+			if (!aimType.equals("resolved lesion"))
+				table[lesionNames.indexOf(lesionName)][studyDates.indexOf(studyDate)+3]=((JSONObject)((JSONObject)lesions.get(i)).get("Length")).getString("value");
+			else 
+				table[lesionNames.indexOf(lesionName)][studyDates.indexOf(studyDate)+3]="0";
+			
 			if (UIDs!=null){
 				String studyUID = ((JSONObject)((JSONObject)lesions.get(i)).get("StudyUID")).getString("value");
 				String seriesUID = ((JSONObject)((JSONObject)lesions.get(i)).get("SeriesUID")).getString("value");
