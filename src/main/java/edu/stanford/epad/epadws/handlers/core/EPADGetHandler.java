@@ -117,6 +117,8 @@ import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.json.JSONObject;
+
 import com.google.gson.Gson;
 
 import edu.stanford.epad.common.pixelmed.SegmentedPropertyHelper;
@@ -182,6 +184,7 @@ import edu.stanford.epad.epadws.security.EPADSession;
 import edu.stanford.epad.epadws.security.EPADSessionOperations;
 import edu.stanford.epad.epadws.service.DefaultEpadProjectOperations;
 import edu.stanford.epad.epadws.service.PluginOperations;
+import edu.stanford.epad.epadws.service.PluginStoreOperations;
 import edu.stanford.epad.epadws.service.RemotePACService;
 import edu.stanford.epad.epadws.service.TCIAService;
 import edu.stanford.epad.epadws.service.UserProjectService;
@@ -2115,7 +2118,53 @@ public class EPADGetHandler
 				responseStream.append(plugins.toJSON());
 				statusCode = HttpServletResponse.SC_OK;
 
-			} else if (HandlerUtil.matchesTemplate(PluginRouteTemplates.PLUGIN, pathInfo)) { //ML
+			}else if (HandlerUtil.matchesTemplate(PluginRouteTemplates.PLUGINSTORE_LIST, pathInfo)) { //cav		     
+				 
+					PluginStoreOperations instancePluginStoreOperations = new PluginStoreOperations();
+					//cav
+					if (httpRequest.getParameterMap().containsKey("pluginOperation")){
+						String pluginName = httpRequest.getParameter("pluginName");
+						String pluginId = httpRequest.getParameter("pluginId");
+						
+						String pluginJavaClass = httpRequest.getParameter("pluginJar");
+						String pluginJavaClassType = httpRequest.getParameter("pluginJarType");
+						String xmlPluginConfigFile = httpRequest.getParameter("xmlPluginConfigFile");
+						String pluginMathlabClass = httpRequest.getParameter("pluginMathlabJar");
+
+						
+						String pluginOperation = httpRequest.getParameter("pluginOperation");
+						log.info("Plugin name epad get handler=" + pluginName);
+						log.info("Plugin id epad get handle =" + pluginId);
+						log.info("Plugin op epad get handle=" + pluginOperation);
+						log.info("Plugin xml config file epad get handle=" + xmlPluginConfigFile);
+						if (pluginOperation.equals("uninstallPlugin")){
+							JSONObject xmlProp= instancePluginStoreOperations.readXml(new File(xmlPluginConfigFile));
+							log.info("deleting plugin ................................");
+
+								log.info("deleting regular file ");
+								instancePluginStoreOperations.deletePluginFromStore(pluginId, username, sessionID,xmlPluginConfigFile);
+
+						}
+						if (pluginOperation.equals("installPlugin")){
+							log.info("get handler install plugin ................................");
+							log.info("get handler install plugin plugin id.......:"+pluginId);
+							log.info("get handler install plugin username.......:"+username);
+							log.info("get handler install plugin session id.......:"+sessionID);
+							log.info("get handler install plugin .......xml:"+xmlPluginConfigFile);
+							instancePluginStoreOperations.installPluginFromStore(pluginId, username, sessionID,xmlPluginConfigFile);
+							
+						}
+					}
+						log.info("try to connect");
+						
+						
+						instancePluginStoreOperations.getPluginStoreFileList();
+						instancePluginStoreOperations.readPropertiesRegisterPluginFromXml();
+						
+						responseStream.append(instancePluginStoreOperations.getRegisteredPluginList().toJSON());			
+						statusCode = HttpServletResponse.SC_OK;
+
+			}else if (HandlerUtil.matchesTemplate(PluginRouteTemplates.PLUGIN, pathInfo)) { //ML
 								
 				PluginReference pluginReference = PluginReference.extract(PluginRouteTemplates.PLUGIN, pathInfo);
 
