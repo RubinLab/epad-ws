@@ -108,5 +108,6 @@ public class PluginRouteTemplates
 {
 	public static final String PLUGIN_LIST = "/plugins/";
 	public static final String PLUGIN = PLUGIN_LIST + "{pluginid}";
+	public static final String PLUGINSTORE_LIST = "/pluginsstore/";
 
 }

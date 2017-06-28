@@ -160,10 +160,7 @@ public class PluginOperations {
 	
 	private static final PluginOperations ourInstance = new PluginOperations();
 	
-	
-	private PluginOperations()
-	{
-	}
+
 
 	public static PluginOperations getInstance()
 	{
@@ -846,7 +843,7 @@ public class PluginOperations {
 			}
 			
 			//get the class names from the jar file
-			if (jarFile!=null) {
+			if ((jarFile!=null)&& (className==null || className.equals(""))) {
 				List<String> classes=getClassNames(jarFile);
 				if (classes.size()>1 && className==null) {
 					return "Multiple plugin handler classes in jar file. Class name required";
@@ -904,9 +901,9 @@ public class PluginOperations {
 				if (getPluginByName(name)!=null)
 					return "There is already a plugin with the name "+ name+ " try with option -o if you want to update";
 			
-				//check if template already exists
-				if (getTemplateWithCode(templateId)!=null)
-					return "The template with code value " +templateId+" is already used. Change the code value in template try with option -o if you want to update";
+				//check if template already exists 
+				//cav if (getTemplateWithCode(templateId)!=null)
+				//cav return "The template with code value " +templateId+" is already used. Change the code value in template try with option -o if you want to update";
 			
 			} 
 				
@@ -934,8 +931,11 @@ public class PluginOperations {
 			/************************** create or update the plugin ***********************/
 			//copy the jar. second time do not check
 			if (jarFile!=null) {
+				log.info("**********************************jar file" +jarFile);
 				File jar=new File(jarFile);
 				File dest=new File(EPADConfig.getEPADWebServerBaseDir()+"lib/plugins/"+jar.getName());
+				log.info("**********************************jar.getname" +jar.getName());
+				log.info("**********************************full path" +EPADConfig.getEPADWebServerBaseDir()+"lib/plugins/"+jar.getName());
 				FileUtils.copyFile(jar,dest);
 			}
 			
