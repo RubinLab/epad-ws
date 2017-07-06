@@ -220,7 +220,7 @@ public class AimMigrator {
 
 		try{
 			String aimXML= createAimFromMintJson(mintJson, username, templateCode);
-			String tmpAimName=EPADConfig.getEPADWebServerDownloadDir()+ mintJson.getString("name")+System.currentTimeMillis()+".xml";
+			String tmpAimName=EPADConfig.getEPADWebServerDownloadDir()+ mintJson.getString("name").replaceAll(" ", "")+System.currentTimeMillis()+".xml";
 			File tmpAim=new File(tmpAimName);
 			EPADFileUtils.write(tmpAim, aimXML);
 			log.info("tmp aim path:"+ tmpAim.getAbsolutePath());
@@ -321,53 +321,59 @@ public class AimMigrator {
 				sourceSeriesUID=((JSONObject)((JSONObject)mintJson.get("imageStudy")).get("imageSeries")).optString("instanceUid", "na");
 			}
 		}
-		Double sliceLoc=((JSONObject) ((JSONObject)((JSONObject)mintJson.get("PlanarFigure")).get("Geometry")).get("Origin")).getDouble("z");
-		Double sliceThickness=((JSONObject) ((JSONObject)((JSONObject)mintJson.get("PlanarFigure")).get("Geometry")).get("Spacing")).getDouble("z");
-		log.info("slice location is "+ sliceLoc);
-
-		if ((imageUID==null || imageUID.equals("") || imageUID.equals("na"))&& !(sourceSeriesUID==null||sourceSeriesUID.equals("na")||sourceSeriesUID.equals(""))) {
-			//get the image uid using the slice location
-			String dcm4cheStudyUID=studyUID;
-			if (dcm4cheStudyUID==null || dcm4cheStudyUID.equals("") || dcm4cheStudyUID.equals("na"))
-				dcm4cheStudyUID="*";
-			Dcm4CheeDatabaseOperations dcm4CheeDatabaseOperations= Dcm4CheeDatabase.getInstance()
-					.getDcm4CheeDatabaseOperations();
-			EpadOperations epadOperations = DefaultEpadOperations.getInstance();
-			List<DCM4CHEEImageDescription> imageDescriptions = dcm4CheeDatabaseOperations.getImageDescriptions(
-					dcm4cheStudyUID, sourceSeriesUID);
-			for(DCM4CHEEImageDescription image:imageDescriptions){
-				DICOMElementList imageDICOMElements = epadOperations.getDICOMElements(image.studyUID,
-						image.seriesUID, image.imageUID);
-				String imagePosition=epadOperations.getDICOMElement(imageDICOMElements,PixelMedUtils.ImagePositionPatientCode);
-				Double imageLoc=-1.0;
-				try{
-					if (imagePosition!=null) {
-						imageLoc=Double.parseDouble(imagePosition.split("\\\\")[2]);
+		JSONObject pf=mintJson.optJSONObject("PlanarFigure");
+		if (pf!=null){
+			Double sliceLoc=((JSONObject) ((JSONObject)pf.get("Geometry")).get("Origin")).getDouble("z");
+			Double sliceThickness=((JSONObject) ((JSONObject)pf.get("Geometry")).get("Spacing")).getDouble("z");
+			log.info("slice location is "+ sliceLoc);
+			comment =comment+" / "+sliceLoc + " / " +sliceThickness;
+			if ((imageUID==null || imageUID.equals("") || imageUID.equals("na"))&& !(sourceSeriesUID==null||sourceSeriesUID.equals("na")||sourceSeriesUID.equals(""))) {
+				//get the image uid using the slice location
+				String dcm4cheStudyUID=studyUID;
+				if (dcm4cheStudyUID==null || dcm4cheStudyUID.equals("") || dcm4cheStudyUID.equals("na"))
+					dcm4cheStudyUID="*";
+				Dcm4CheeDatabaseOperations dcm4CheeDatabaseOperations= Dcm4CheeDatabase.getInstance()
+						.getDcm4CheeDatabaseOperations();
+				EpadOperations epadOperations = DefaultEpadOperations.getInstance();
+				List<DCM4CHEEImageDescription> imageDescriptions = dcm4CheeDatabaseOperations.getImageDescriptions(
+						dcm4cheStudyUID, sourceSeriesUID);
+				for(DCM4CHEEImageDescription image:imageDescriptions){
+					DICOMElementList imageDICOMElements = epadOperations.getDICOMElements(image.studyUID,
+							image.seriesUID, image.imageUID);
+					String imagePosition=epadOperations.getDICOMElement(imageDICOMElements,PixelMedUtils.ImagePositionPatientCode);
+					Double imageLoc=-1.0;
+					try{
+						if (imagePosition!=null) {
+							imageLoc=Double.parseDouble(imagePosition.split("\\\\")[2]);
+						}
+					}catch(Exception e){
+	
+						log.warning("Couldn't get image position "+e.getMessage()) ;
 					}
-				}catch(Exception e){
-
-					log.warning("Couldn't get image position "+e.getMessage()) ;
+					if ( imageLoc==-1.0) {
+						imageLoc=((Double)Double.parseDouble(image.sliceLocation));
+						log.info("Couldn't get image position using slice loc" +imageLoc) ;
+					}
+					if (((Double)(imageLoc-(0.5*sliceThickness))).intValue()==sliceLoc.intValue()||imageLoc.intValue()==sliceLoc.intValue()){
+						log.info("found image "+ image.instanceNumber +  " uid "+image.imageUID);
+						imageUID=image.imageUID;
+						break;
+					}
 				}
-				if ( imageLoc==-1.0) {
-					imageLoc=((Double)Double.parseDouble(image.sliceLocation));
-					log.info("Couldn't get image position using slice loc" +imageLoc) ;
-				}
-				if (((Double)(imageLoc-(0.5*sliceThickness))).intValue()==sliceLoc.intValue()||imageLoc.intValue()==sliceLoc.intValue()){
-					log.info("found image "+ image.instanceNumber +  " uid "+image.imageUID);
-					imageUID=image.imageUID;
-					break;
-				}
+	
 			}
-
+		}else {
+			comment=comment+" / no geometric roi";
 		}
 		if (imageUID.equals(""))
 			imageUID="na"; //to keep all the same
 		log.info("the values retrieved are "+ sopClassUID+" "+studyDate+" "+studyTime+" "+pName+" "+pId+" "+pBirthDate+" "+pSex+" "+studyUID+" "+sourceSeriesUID+" ");
 		ImageAnnotationCollection iac = createImageAnnotationColectionFromProperties(username, pName, pId, pBirthDate, pSex);
-		edu.stanford.hakan.aim4api.base.ImageAnnotation ia=createImageAnnotationFromProperties(username, templateCode, lesionName, comment+" / "+sliceLoc + " / " +sliceThickness, imageUID, sopClassUID, studyDate, studyTime, studyUID, sourceSeriesUID);
+		edu.stanford.hakan.aim4api.base.ImageAnnotation ia=createImageAnnotationFromProperties(username, templateCode, lesionName, comment, imageUID, sopClassUID, studyDate, studyTime, studyUID, sourceSeriesUID);
 
 		//create the entities using information from pf
-		ia=addMarkupAndCalculationFromPF(ia,(JSONObject)mintJson.get("PlanarFigure"));
+		if (pf!=null)
+			ia=addMarkupAndCalculationFromPF(ia,pf);
 
 		String location = ((JSONObject)mintJson.get("lesion")).optString("location");
 		if (location!=null && !location.equals(""))
@@ -380,8 +386,10 @@ public class AimMigrator {
 		else 
 			qualityCode=new CD("S86","Evaluable","RECIST-AMS",""); //is evaluable
 
-		ia.addImagingObservationEntity(getImagingObservationEntityFromPF("Lesion Quality",qualityCode,"Timepoint",((JSONObject)mintJson.get("lesion")).getInt("timepoint"), "Type",((JSONObject)mintJson.get("lesion")).getString("type")));
-
+		String status=((JSONObject)mintJson.get("lesion")).optString("status");
+		String enhancement=((JSONObject)mintJson.get("lesion")).optString("enhancement");
+		ia.addImagingObservationEntity(getImagingObservationEntityFromPF("Lesion Quality",qualityCode,"Timepoint",((JSONObject)mintJson.get("lesion")).getInt("timepoint"), "Type",((JSONObject)mintJson.get("lesion")).getString("type"),"Lesion Status", status, "Lesion Enhancement",enhancement));
+		
 		edu.stanford.epad.common.util.Lexicon lexicon=edu.stanford.epad.common.util.Lexicon.getInstance();
 		CD parent = lexicon.getLex("mint");
 		log.info("parent code is "+ parent.getCode());
@@ -395,7 +403,8 @@ public class AimMigrator {
 
 		//add the rest of the calculations
 		ArrayList<String[]> features=getMeasurementsFromPF(mintJson);
-		iac=PluginAIMUtil.addFeatures(iac, features , 1,parent, true) ; 
+		if (features!=null)
+			iac=PluginAIMUtil.addFeatures(iac, features , 1,parent, true) ; 
 
 		//this should be called after addfeatures as addfeatures tries to init v3.CalculationData and fails as it is not double
 		addSummaryCalcsFromPF(mintJson, parent, iac.getImageAnnotation());
@@ -405,32 +414,38 @@ public class AimMigrator {
 	}
 
 	public static void addSummaryCalcsFromPF(JSONObject mintJson, CD parent, edu.stanford.hakan.aim4api.base.ImageAnnotation ia){
-		JSONArray measurements = (JSONArray) mintJson.get("measurements");
-		for (int i = 0; i < measurements.length(); i++) {
-			//if this is a summary. add it as a separate calculation
-			try{ 
-				double val=Double.parseDouble(((JSONObject)measurements.get(i)).getString("CurrentValue"));
-			}catch(NumberFormatException ne){
-				CD featureCD = edu.stanford.epad.common.util.Lexicon.getInstance().getLex(((JSONObject)measurements.get(i)).getString("Type"));
-				if (featureCD.getCode().equals("99EPADD0")){
-					featureCD = edu.stanford.epad.common.util.Lexicon.getInstance().createLex(((JSONObject)measurements.get(i)).getString("Type"),((JSONObject)measurements.get(i)).getString("Type"),parent,null);
+		JSONArray measurements = (JSONArray) mintJson.optJSONArray("measurements");
+		if (measurements!=null){
+			for (int i = 0; i < measurements.length(); i++) {
+				//if this is a summary. add it as a separate calculation
+				try{ 
+					double val=Double.parseDouble(((JSONObject)measurements.get(i)).getString("CurrentValue"));
+				}catch(NumberFormatException ne){
+					CD featureCD = edu.stanford.epad.common.util.Lexicon.getInstance().getLex(((JSONObject)measurements.get(i)).getString("Type"));
+					if (featureCD.getCode().equals("99EPADD0")){
+						featureCD = edu.stanford.epad.common.util.Lexicon.getInstance().createLex(((JSONObject)measurements.get(i)).getString("Type"),((JSONObject)measurements.get(i)).getString("Type"),parent,null);
+					}
+					ia.addCalculationEntity(addCalculation(((JSONObject)measurements.get(i)).getString("CurrentValue"),1,"",featureCD.getDisplayName().getValue(), featureCD.getCode()));
+	
 				}
-				ia.addCalculationEntity(addCalculation(((JSONObject)measurements.get(i)).getString("CurrentValue"),1,"",featureCD.getDisplayName().getValue(), featureCD.getCode()));
-
 			}
 		}
 
 	}
 
 	public static ArrayList<String[]> getMeasurementsFromPF(JSONObject mintJson){
-		JSONArray measurements = (JSONArray) mintJson.get("measurements");
-		ArrayList<String[]> features=new ArrayList<>();
-		for (int i = 0; i < measurements.length(); i++) {
-			try {
-				double val=Double.parseDouble(((JSONObject)measurements.get(i)).getString("CurrentValue"));
-				features.add(new String[] {((JSONObject)measurements.get(i)).getString("Type"),((JSONObject)measurements.get(i)).getString("CurrentValue"),((JSONObject)measurements.get(i)).getString("Unit")});
-			}catch(NumberFormatException ne){
-				log.info("this is a summary. dont add it as a feature add a separate calculation. "+((JSONObject)measurements.get(i)).getString("Type"));
+		JSONArray measurements = (JSONArray) mintJson.optJSONArray("measurements");
+		ArrayList<String[]> features=null;
+		if (measurements!=null){
+			features=new ArrayList<>();
+		
+			for (int i = 0; i < measurements.length(); i++) {
+				try {
+					double val=Double.parseDouble(((JSONObject)measurements.get(i)).getString("CurrentValue"));
+					features.add(new String[] {((JSONObject)measurements.get(i)).getString("Type"),((JSONObject)measurements.get(i)).getString("CurrentValue"),((JSONObject)measurements.get(i)).getString("Unit")});
+				}catch(NumberFormatException ne){
+					log.info("this is a summary. dont add it as a feature add a separate calculation. "+((JSONObject)measurements.get(i)).getString("Type"));
+				}
 			}
 		}
 		return features;
@@ -587,9 +602,50 @@ public class AimMigrator {
 		oc.addTypeCode(edu.stanford.epad.common.util.Lexicon.getInstance().getLex(typeCharacteristicValue));
 
 		oe.addImagingObservationCharacteristic(oc);
+		
+		
 		return oe;
 	}
 
+	/**
+	 * new getImagingObservationEntity with status and enhancing. Uses the old version 
+	 * @param label
+	 * @param value
+	 * @param tpCharacteristicLabel
+	 * @param tpCharacteristicValue
+	 * @param typeCharacteristicLabel
+	 * @param typeCharacteristicValue
+	 * @param statusCharacteristicLabel
+	 * @param statusCharacteristicValue
+	 * @param enhancingCharacteristicLabel
+	 * @param enhancingCharacteristicValue
+	 * @return
+	 */
+	private static ImagingObservationEntity getImagingObservationEntityFromPF(String label, CD value,
+			String tpCharacteristicLabel, Integer tpCharacteristicValue, String typeCharacteristicLabel, String typeCharacteristicValue, String statusCharacteristicLabel, String statusCharacteristicValue,String enhancingCharacteristicLabel, String enhancingCharacteristicValue ) {
+		ImagingObservationEntity oe= getImagingObservationEntityFromPF(label,value,tpCharacteristicLabel,  tpCharacteristicValue,  typeCharacteristicLabel,  typeCharacteristicValue);
+		
+		ImagingObservationCharacteristic oc=new ImagingObservationCharacteristic();
+		oc.setLabel(new ST(statusCharacteristicLabel));
+		oc.setAnnotatorConfidence(0.0);
+		//do not clean 
+		oc.addTypeCode(edu.stanford.epad.common.util.Lexicon.getInstance().getLex(statusCharacteristicValue));
+
+		oe.addImagingObservationCharacteristic(oc);
+		
+		if (enhancingCharacteristicValue!=null && !enhancingCharacteristicValue.equals("")) {
+			oc=new ImagingObservationCharacteristic();
+			oc.setLabel(new ST(enhancingCharacteristicLabel));
+			oc.setAnnotatorConfidence(0.0);
+			//do not clean 
+			oc.addTypeCode(edu.stanford.epad.common.util.Lexicon.getInstance().getLex(enhancingCharacteristicValue));
+	
+			oe.addImagingObservationCharacteristic(oc);
+		}
+		return oe;
+	}
+
+	
 	private static String cleanString(String value) {
 		return value.replaceAll("-", " ");
 	}
@@ -685,8 +741,9 @@ public class AimMigrator {
 
 		double [][] pointsPX=transformPoints(pointsMM,transformMatrix,originVectorTrasform,boundsMatrix,spacingVector,originVector);
 
-		ia=addMarkupFromPointsPX(ia, pointsPX,ShapeType.POLY);
-		ia=addLengthCalculationFromPointsPX(ia, pointsPX, spacingVector);
+		ia=addMarkupFromPointsPX(ia, pointsPX,ShapeType.SPLINE);
+		//let the json send the one from measurements
+//		ia=addLengthCalculationFromPointsPX(ia, pointsPX, spacingVector);
 		return ia;
 	}
 

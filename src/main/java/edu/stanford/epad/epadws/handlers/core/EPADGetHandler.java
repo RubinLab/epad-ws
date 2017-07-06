@@ -117,6 +117,9 @@ import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.json.JSONArray;
+import org.json.JSONObject;
+
 import com.google.gson.Gson;
 
 import edu.stanford.epad.common.pixelmed.SegmentedPropertyHelper;
@@ -158,6 +161,7 @@ import edu.stanford.epad.dtos.EPADWorklist;
 import edu.stanford.epad.dtos.EPADWorklistList;
 import edu.stanford.epad.dtos.EPADWorklistStudyList;
 import edu.stanford.epad.dtos.EPADWorklistSubjectList;
+import edu.stanford.epad.dtos.RecistReport;
 import edu.stanford.epad.dtos.RemotePAC;
 import edu.stanford.epad.dtos.RemotePACEntity;
 import edu.stanford.epad.dtos.RemotePACEntityList;
@@ -824,8 +828,13 @@ public class EPADGetHandler
 				String report = httpRequest.getParameter("report");
 				
 				if (report!=null && report.equalsIgnoreCase("RECIST")) {
-				
-					responseStream.append(AimReporter.getRecist(aims).toJSON());
+					RecistReport recistTable=AimReporter.getRecist(aims);
+					if (recistTable!=null)
+						responseStream.append(recistTable.toJSON());
+					else {
+						log.warning("Couldn't get recist table");
+						responseStream.append("{}");
+					}
 				} else if (returnTable) {
 					String templateCode = httpRequest.getParameter("templatecode");
 					String columns = httpRequest.getParameter("columns"); //comma seperated
@@ -1474,7 +1483,13 @@ public class EPADGetHandler
 				String report = httpRequest.getParameter("report");
 				String type = httpRequest.getParameter("type");
 				if (report!=null && report.equalsIgnoreCase("WATERFALL")) {
-					responseStream.append(AimReporter.getWaterfall(subjectUIDs, username, sessionID, type).toJSON());
+					if (subjectUIDs!=null && subjectUIDs!="")
+						responseStream.append(AimReporter.getWaterfall(subjectUIDs, username, sessionID, type).toJSON());
+					else {
+						JSONObject sub_proj = HandlerUtil.getPostedJson(httpRequest);
+					    JSONArray sub_proj_array = (JSONArray) sub_proj.get("sub_proj");
+					    responseStream.append(AimReporter.getWaterfall(sub_proj_array, username, sessionID, type).toJSON());
+					}
 				}else{
 					EPADAIMList aims = null;
 					if (!deletedAims)
