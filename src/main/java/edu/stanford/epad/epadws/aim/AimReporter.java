@@ -734,18 +734,18 @@ public class AimReporter {
 			e.printStackTrace();
 		}
 		
-		return getWaterfall(subjects, username, sessionID, type);
+		return getWaterfall(subjects, username, sessionID, type,projectID);
 	}
 	
 	
-	public static WaterfallReport getWaterfall(String subjectIDs, String username, String sessionID, String type){
+	public static WaterfallReport getWaterfall(String subjectIDs, String username, String sessionID, String type, String projectID){
 		ArrayList<String> subjects = new ArrayList<>();
 		if (subjectIDs != null) {
 			String[] ids = subjectIDs.split(",");
 			for (String id: ids)
 				subjects.add(id.trim());
 		}
-		return getWaterfall(subjects, username, sessionID, type);
+		return getWaterfall(subjects, username, sessionID, type, projectID);
 	}
 	
 	
@@ -756,10 +756,10 @@ public class AimReporter {
 	 * @param sessionID
 	 * @return
 	 */
-	public static WaterfallReport getWaterfall(ArrayList<String> subjects, String username, String sessionID, String type){
+	public static WaterfallReport getWaterfall(ArrayList<String> subjects, String username, String sessionID, String type, String projectID){
 		
 		ArrayList<Double> values=new ArrayList<>();
-		ArrayList<String> responses=new ArrayList<>();
+		ArrayList<String> projects=new ArrayList<>();
 		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
 		ArrayList<String> validSubjects =new ArrayList<>();
 		for(String subjectID:subjects) {
@@ -772,6 +772,7 @@ public class AimReporter {
 				continue;
 			}
 			validSubjects.add(subjectID);
+			projects.add(projectID);
 			switch(type){
 			case "BASELINE":
 				values.add(recist.getMinRRBaseLine());
@@ -789,8 +790,8 @@ public class AimReporter {
 		}
 		//let Waterfall handle the sorting
 
-		return new WaterfallReport(validSubjects.toArray(new String[validSubjects.size()]), values.toArray(new Double[values.size()]));
-//		return new WaterfallReport(validSubjects.toArray(new String[validSubjects.size()]), values.toArray(new Double[values.size()]), responses.toArray(new String[responses.size()]));
+//		return new WaterfallReport(validSubjects.toArray(new String[validSubjects.size()]), values.toArray(new Double[values.size()]));
+		return new WaterfallReport(validSubjects.toArray(new String[validSubjects.size()]), values.toArray(new Double[values.size()]), projects.toArray(new String[projects.size()]));
 	}
 	
 	

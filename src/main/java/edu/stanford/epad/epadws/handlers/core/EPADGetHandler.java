@@ -1484,7 +1484,7 @@ public class EPADGetHandler
 				String type = httpRequest.getParameter("type");
 				if (report!=null && report.equalsIgnoreCase("WATERFALL")) {
 					if (subjectUIDs!=null && subjectUIDs!="")
-						responseStream.append(AimReporter.getWaterfall(subjectUIDs, username, sessionID, type).toJSON());
+						responseStream.append(AimReporter.getWaterfall(subjectUIDs, username, sessionID, type, projectID).toJSON());
 					else {
 						JSONObject sub_proj = HandlerUtil.getPostedJson(httpRequest);
 					    JSONArray sub_proj_array = (JSONArray) sub_proj.get("sub_proj");
