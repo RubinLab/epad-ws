@@ -1486,9 +1486,12 @@ public class EPADGetHandler
 					if (subjectUIDs!=null && subjectUIDs!="")
 						responseStream.append(AimReporter.getWaterfall(subjectUIDs, username, sessionID, type, projectID).toJSON());
 					else {
-						JSONObject sub_proj = HandlerUtil.getPostedJson(httpRequest);
-					    JSONArray sub_proj_array = (JSONArray) sub_proj.get("sub_proj");
-					    responseStream.append(AimReporter.getWaterfall(sub_proj_array, username, sessionID, type).toJSON());
+						String subj_proj_pairs=httpRequest.getParameter("subj_proj_pairs");
+						if (subj_proj_pairs!=null && subj_proj_pairs!=""){
+							JSONObject subj_proj_pairs_jso = new JSONObject((subj_proj_pairs));
+							JSONArray sub_proj_array = (JSONArray) subj_proj_pairs_jso.get("jsArray");
+							responseStream.append(AimReporter.getWaterfall(sub_proj_array, username, sessionID, type).toJSON());
+						}
 					}
 				}else{
 					EPADAIMList aims = null;
