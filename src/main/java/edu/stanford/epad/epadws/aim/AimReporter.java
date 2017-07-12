@@ -411,7 +411,7 @@ public class AimReporter {
 			//calculate the rrs
 			Double[] tRRBaseline=calcRRBaseline(tSums, tTimepoints);
 			Double[] tRRMin=calcRRMin(tSums, tTimepoints);
-			Double[] tRR=calcRR(tSums, tTimepoints);
+//			Double[] tRR=calcRR(tSums, tTimepoints);
 			
 			Integer[] ntTimepoints=new Integer[studyDates.size()];
 			RecistReportUIDCell[][] ntUIDs=new RecistReportUIDCell[ntLesionNames.size()][studyDates.size()];
@@ -441,15 +441,15 @@ public class AimReporter {
 					isThereNewLesion[studyDates.indexOf(studyDate)]=true;
 			}
 			
-			String[] responseCats=calcResponseCat(tRR,tTimepoints, isThereNewLesion,tSums);
+			String[] responseCats=calcResponseCat(tRRBaseline,tTimepoints, isThereNewLesion,tSums);
 			
 			if (!ntLesionNames.isEmpty() && !studyDates.isEmpty()){	
-				RecistReport rr= new RecistReport(tLesionNames.toArray(new String[tLesionNames.size()]), studyDates.toArray(new String[studyDates.size()]), tTable, tSums, tRRBaseline, tRRMin, tRR, responseCats, tUIDs,
+				RecistReport rr= new RecistReport(tLesionNames.toArray(new String[tLesionNames.size()]), studyDates.toArray(new String[studyDates.size()]), tTable, tSums, tRRBaseline, tRRMin, null, responseCats, tUIDs,
 						ntLesionNames.toArray(new String[ntLesionNames.size()]), ntTable, ntUIDs);
 				rr.setTimepoints(tTimepoints);
 				return rr;
 			}else {
-				RecistReport rr= new RecistReport(tLesionNames.toArray(new String[tLesionNames.size()]), studyDates.toArray(new String[studyDates.size()]), tTable, tSums, tRRBaseline, tRRMin, tRR, responseCats, tUIDs);
+				RecistReport rr= new RecistReport(tLesionNames.toArray(new String[tLesionNames.size()]), studyDates.toArray(new String[studyDates.size()]), tTable, tSums, tRRBaseline, tRRMin, null, responseCats, tUIDs);
 				rr.setTimepoints(tTimepoints);
 				return rr;
 			}
@@ -632,29 +632,30 @@ public class AimReporter {
 		return rrBaseline;
 	}
 	
-	/**
-	 * calculate response rates in reference to the min value (overall)
-	 * @param sums
-	 * @return
-	 */
-	private static Double[] calcRRMin(Double[] sums,Integer[] timepoints) {
-		Double min=999999.0;
-		for (int i=0;i<sums.length;i++) {
-			if ((timepoints[i]!=null && timepoints[i]==0) || sums[i]<min) {
-				min=sums[i];
-				log.info("Min changed. New min is:"+min);
-			}
-		}
-		log.info("Min is "+min);
-		Double[] rrMin=new Double[sums.length];
-		StringBuilder rrMinStr= new StringBuilder();
-		for (int i=0;i<sums.length;i++) {
-			rrMin[i]=(sums[i]-min)*100.0/min;	
-			rrMinStr.append(rrMin[i]+ "  ");
-			
-		}
-		return rrMin;
-	}
+	//removed as Dr. Rubin said the method below is rrmin
+//	/**
+//	 * calculate response rates in reference to the min value (overall)
+//	 * @param sums
+//	 * @return
+//	 */
+//	private static Double[] calcRRMin(Double[] sums,Integer[] timepoints) {
+//		Double min=999999.0;
+//		for (int i=0;i<sums.length;i++) {
+//			if ((timepoints[i]!=null && timepoints[i]==0) || sums[i]<min) {
+//				min=sums[i];
+//				log.info("Min changed. New min is:"+min);
+//			}
+//		}
+//		log.info("Min is "+min);
+//		Double[] rrMin=new Double[sums.length];
+//		StringBuilder rrMinStr= new StringBuilder();
+//		for (int i=0;i<sums.length;i++) {
+//			rrMin[i]=(sums[i]-min)*100.0/min;	
+//			rrMinStr.append(rrMin[i]+ "  ");
+//			
+//		}
+//		return rrMin;
+//	}
 	
 	/**
 	 * calculate response rates in reference to the current baseline and current min.
@@ -666,7 +667,7 @@ public class AimReporter {
 	 * @param timepoints
 	 * @return
 	 */
-	private static Double[] calcRR(Double[] sums,Integer[] timepoints) {
+	private static Double[] calcRRMin(Double[] sums,Integer[] timepoints) {
 		Double min=sums[0];
 		log.info("Min is "+min);
 		Double[] rr=new Double[sums.length];
