@@ -840,7 +840,7 @@ public class UserProjectService {
 	{
 		//original
 		return (file.isFile()
-				&& (file.getName().toLowerCase().endsWith(".dcm") || file.getName().toLowerCase().endsWith(".dso") || file.getName().toLowerCase().endsWith(".pres"))
+				&& (file.getName().toLowerCase().endsWith(".dcm") || file.getName().toLowerCase().endsWith(".dso") || file.getName().toLowerCase().endsWith(".pres") || PixelMedUtils.isDicom(file.getAbsolutePath()))
 				&& !file.getName().startsWith("."))&& !PixelMedUtils.isDicomSR(file.getAbsolutePath());
 		//ml the previous method failed on jpgs 
 //		if (file.isFile()
