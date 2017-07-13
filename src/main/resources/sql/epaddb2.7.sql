@@ -2,6 +2,7 @@ CREATE TABLE IF NOT EXISTS user_flaggedimage (id integer unsigned NOT NULL AUTO_
 username varchar(128),
 image_uid varchar(128),
 project_id varchar(128),
+subject_uid varchar(128),
 creator varchar(128),
 createdtime timestamp,
 updatetime timestamp,

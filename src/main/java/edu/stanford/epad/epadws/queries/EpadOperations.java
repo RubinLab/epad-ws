@@ -1712,21 +1712,21 @@ public interface EpadOperations
 	/**
 	 * gets the image descriptions for flagged images only
 	 * @param username
-	 * @param projectReference
+	 * @param subjectReference
 	 * @param sessionID
 	 * @return
 	 */
-	EPADImageList getFlaggedImageDescriptions(String username, ProjectReference projectReference, String sessionID);
+	EPADImageList getFlaggedImageDescriptions(String username, SubjectReference subjectReference, String sessionID);
 
 	/**
 	 * set the flagged property of an image
 	 * @param username
-	 * @param projectReference
+	 * @param subjectReference
 	 * @param imageUID
 	 * @param sessionID
 	 * @param flag
 	 */
-	void setFlagged(String username, ProjectReference projectReference, String imageUID, String sessionID,
+	void setFlagged(String username, SubjectReference projectReference, String imageUID, String sessionID,
 			boolean flag);
 
 	/**

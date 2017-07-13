@@ -3001,10 +3001,10 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 
 	
 	@Override
-	public ProjectToUserToFlaggedImage getFlagStatus(String username, String imageUID, String projectID) {
+	public ProjectToUserToFlaggedImage getFlagStatus(String username, String imageUID, String projectID, String subjectID) {
 		ProjectToUserToFlaggedImage pufi=null;
 		try {
-			pufi = (ProjectToUserToFlaggedImage) new ProjectToUserToFlaggedImage().getObject("username = '" + username + "' and image_uid ='" + imageUID+ "' " + " and project_id ='" + projectID + "'");
+			pufi = (ProjectToUserToFlaggedImage) new ProjectToUserToFlaggedImage().getObject("username = '" + username + "' and image_uid ='" + imageUID+ "' " + " and project_id ='" + projectID + "' and subject_id='"+subjectID+"'");
 		} catch (Exception e) {
 			log.warning("cannot check flagged status ", e);
 			
@@ -3014,8 +3014,8 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 	}
 	
 	@Override
-	public boolean isFlagged(String username, String imageUID, String projectID) {
-		ProjectToUserToFlaggedImage pufi=getFlagStatus(username, imageUID, projectID);
+	public boolean isFlagged(String username, String imageUID, String projectID, String subjectID) {
+		ProjectToUserToFlaggedImage pufi=getFlagStatus(username, imageUID, projectID,subjectID);
 		if (pufi != null) {
 			return true;
 		}
@@ -3023,8 +3023,8 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 	}
 	
 	@Override
-	public void setFlagged(String username, String imageUID, String projectID, boolean flag) {
-		ProjectToUserToFlaggedImage pufi=getFlagStatus(username, imageUID, projectID);
+	public void setFlagged(String username, String imageUID, String projectID, boolean flag, String subjectID) {
+		ProjectToUserToFlaggedImage pufi=getFlagStatus(username, imageUID, projectID,subjectID);
 		if (pufi != null) {
 			if (flag)
 				return; //already there
@@ -3049,9 +3049,10 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 	}
 	
 	@Override
-	public List<String> getFlaggedImageUIDs(String username,String projectID) {
+	public List<String> getFlaggedImageUIDs(String username,String projectID, String subjectID) {
 		List<ProjectToUserToFlaggedImage> pufis=null;
 		String projectQry=(projectID!=null)?" and project_id ='" + projectID + "'":"";
+		projectQry+=(subjectID!=null)?" and subject_id ='" + subjectID + "'":"";
 		try {
 			pufis = new ProjectToUserToFlaggedImage().getObjects("username = '" + username + "' "+projectQry);
 		} catch (Exception e) {

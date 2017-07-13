@@ -1190,9 +1190,10 @@ public interface EpadProjectOperations {
 	 * @param username
 	 * @param imageUID
 	 * @param projectID
+	 * @param subjectID
 	 * @return
 	 */
-	boolean isFlagged(String username, String imageUID, String projectID);
+	boolean isFlagged(String username, String imageUID, String projectID, String subjectID);
 	
 	/**
 	 * set image flagged for this project and user
@@ -1200,25 +1201,28 @@ public interface EpadProjectOperations {
 	 * @param imageUID
 	 * @param projectID
 	 * @param flag
+	 * @param subjectID
 	 */
-	void setFlagged(String username, String imageUID, String projectID, boolean flag);
+	void setFlagged(String username, String imageUID, String projectID, boolean flag, String subjectID);
 	
 	/**
 	 * get the flag status from db
 	 * @param username
 	 * @param imageUID
 	 * @param projectID
+	 * @param subjectID
 	 * @return
 	 */
-	ProjectToUserToFlaggedImage getFlagStatus(String username, String imageUID, String projectID);
+	ProjectToUserToFlaggedImage getFlagStatus(String username, String imageUID, String projectID, String subjectID);
 	
 	/**
 	 * gets the imageuids for the flagged images in the project. if the project id is null returns all
 	 * @param username
 	 * @param projectID
+	 * @param subjectID
 	 * @return
 	 */
-	List<String> getFlaggedImageUIDs(String username, String projectID);
+	List<String> getFlaggedImageUIDs(String username, String projectID, String subjectID);
 	
 	
 }

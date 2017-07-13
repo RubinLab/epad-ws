@@ -876,11 +876,14 @@ public class DefaultEpadOperations implements EpadOperations
 	Set<String> seriesInProcess = new HashSet<String>();
 	
 	@Override
-	public EPADImageList getFlaggedImageDescriptions(String username, ProjectReference projectReference,  String sessionID){
+	public EPADImageList getFlaggedImageDescriptions(String username, SubjectReference subjectReference,  String sessionID){
 		String projectID=null;
-		if (projectReference!=null) 
-			projectID=projectReference.projectID;
-		List<String> imageUIDs=projectOperations.getFlaggedImageUIDs(username, projectID);
+		String subjectID=null;
+		if (subjectReference!=null) {
+			projectID=subjectReference.projectID;
+			subjectID=subjectReference.subjectID;
+		}
+		List<String> imageUIDs=projectOperations.getFlaggedImageUIDs(username, projectID,subjectID);
 		EPADImageList epadImageList = new EPADImageList();
 		for (String imageUID:imageUIDs){
 			EPADImage eim=getImageDescription(projectID,imageUID,sessionID);
@@ -891,8 +894,8 @@ public class DefaultEpadOperations implements EpadOperations
 	}
 	
 	@Override
-	public void setFlagged(String username, ProjectReference projectReference, String imageUID, String sessionID, boolean flag){
-		projectOperations.setFlagged(username, imageUID, projectReference.projectID, flag);
+	public void setFlagged(String username, SubjectReference subjectReference, String imageUID, String sessionID, boolean flag){
+		projectOperations.setFlagged(username, imageUID, subjectReference.projectID, flag, subjectReference.subjectID);
 	}
 	
 	@Override
@@ -970,7 +973,7 @@ public class DefaultEpadOperations implements EpadOperations
 				epadImage.multiFrameImage = dcm4cheeImageDescription.multiFrameImage;
 				//get if flagged and put it in epadimage
 				if (username!=null) {
-					epadImage.isFlaggedImage=projectOperations.isFlagged(username,dcm4cheeImageDescription.imageUID,seriesReference.projectID);
+					epadImage.isFlaggedImage=projectOperations.isFlagged(username,dcm4cheeImageDescription.imageUID,seriesReference.projectID,seriesReference.subjectID);
 				}
 				epadImageList.addImage(epadImage);
 				isFirst = false;
@@ -1002,7 +1005,7 @@ public class DefaultEpadOperations implements EpadOperations
 					epadImage = createEPADImage(seriesReference, dcm4cheeImageDescription, new DICOMElementList(), new DICOMElementList());
 				//get if flagged and put it in epadimage
 				if (username!=null) {
-					epadImage.isFlaggedImage=projectOperations.isFlagged(username,dcm4cheeImageDescription.imageUID,seriesReference.projectID);
+					epadImage.isFlaggedImage=projectOperations.isFlagged(username,dcm4cheeImageDescription.imageUID,seriesReference.projectID,seriesReference.subjectID);
 				}
 				epadImageList.addImage(epadImage);
 			}
