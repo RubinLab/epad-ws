@@ -109,10 +109,11 @@ import java.util.Date;
 import edu.stanford.epad.dtos.AnnotationStatus;
 import edu.stanford.epad.epadws.models.dao.AbstractDAO;
 
-public class ProjectToUserToFlaggedImage extends AbstractDAO {
+public class ProjectToSubjectToUserToFlaggedImage extends AbstractDAO {
 
 	long id;
 	String projectId;
+	String subjectId;
 	String username;
 	String imageUID;
 	String creator;
@@ -135,6 +136,14 @@ public class ProjectToUserToFlaggedImage extends AbstractDAO {
 
 	public void setProjectId(String projectId) {
 		this.projectId = projectId;
+	}
+
+	public String getSubjectId() {
+		return subjectId;
+	}
+
+	public void setSubjectId(String subjectId) {
+		this.subjectId = subjectId;
 	}
 
 	public String getUsername() {
@@ -184,6 +193,7 @@ public class ProjectToUserToFlaggedImage extends AbstractDAO {
 	public final static String[][] DBCOLUMNS = {
         {"id","long","id","Id"},
         {"projectId","String","project_id","varchar"},
+        {"subjectId","String","subject_id","varchar"},
         {"username","String","username","varchar"},
         {"imageUID","String","image_uid","varchar"},
         {"creator","String","creator","varchar"},

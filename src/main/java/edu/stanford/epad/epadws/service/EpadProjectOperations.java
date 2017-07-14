@@ -120,7 +120,7 @@ import edu.stanford.epad.epadws.models.EventLog;
 import edu.stanford.epad.epadws.models.FileType;
 import edu.stanford.epad.epadws.models.NonDicomSeries;
 import edu.stanford.epad.epadws.models.Project;
-import edu.stanford.epad.epadws.models.ProjectToUserToFlaggedImage;
+import edu.stanford.epad.epadws.models.ProjectToSubjectToUserToFlaggedImage;
 import edu.stanford.epad.epadws.models.ProjectType;
 import edu.stanford.epad.epadws.models.Study;
 import edu.stanford.epad.epadws.models.Subject;
@@ -1213,7 +1213,7 @@ public interface EpadProjectOperations {
 	 * @param subjectID
 	 * @return
 	 */
-	ProjectToUserToFlaggedImage getFlagStatus(String username, String imageUID, String projectID, String subjectID);
+	ProjectToSubjectToUserToFlaggedImage getFlagStatus(String username, String imageUID, String projectID, String subjectID);
 	
 	/**
 	 * gets the imageuids for the flagged images in the project. if the project id is null returns all

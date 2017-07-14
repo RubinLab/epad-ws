@@ -150,9 +150,10 @@ import edu.stanford.epad.epadws.models.ProjectToSubject;
 import edu.stanford.epad.epadws.models.ProjectToSubjectToStudy;
 import edu.stanford.epad.epadws.models.ProjectToSubjectToStudyToSeriesToUserStatus;
 import edu.stanford.epad.epadws.models.ProjectToSubjectToUser;
+import edu.stanford.epad.epadws.models.ProjectToSubjectToUserToFlaggedImage;
 import edu.stanford.epad.epadws.models.ProjectToTemplate;
 import edu.stanford.epad.epadws.models.ProjectToUser;
-import edu.stanford.epad.epadws.models.ProjectToUserToFlaggedImage;
+import edu.stanford.epad.epadws.models.ProjectToSubjectToUserToFlaggedImage;
 import edu.stanford.epad.epadws.models.ProjectType;
 import edu.stanford.epad.epadws.models.RemotePACQuery;
 import edu.stanford.epad.epadws.models.ReviewerToReviewee;
@@ -3001,10 +3002,10 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 
 	
 	@Override
-	public ProjectToUserToFlaggedImage getFlagStatus(String username, String imageUID, String projectID, String subjectID) {
-		ProjectToUserToFlaggedImage pufi=null;
+	public ProjectToSubjectToUserToFlaggedImage getFlagStatus(String username, String imageUID, String projectID, String subjectID) {
+		ProjectToSubjectToUserToFlaggedImage pufi=null;
 		try {
-			pufi = (ProjectToUserToFlaggedImage) new ProjectToUserToFlaggedImage().getObject("username = '" + username + "' and image_uid ='" + imageUID+ "' " + " and project_id ='" + projectID + "' and subject_id='"+subjectID+"'");
+			pufi = (ProjectToSubjectToUserToFlaggedImage) new ProjectToSubjectToUserToFlaggedImage().getObject("username = '" + username + "' and image_uid ='" + imageUID+ "' " + " and project_id ='" + projectID + "' and subject_id='"+subjectID+"'");
 		} catch (Exception e) {
 			log.warning("cannot check flagged status ", e);
 			
@@ -3015,7 +3016,7 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 	
 	@Override
 	public boolean isFlagged(String username, String imageUID, String projectID, String subjectID) {
-		ProjectToUserToFlaggedImage pufi=getFlagStatus(username, imageUID, projectID,subjectID);
+		ProjectToSubjectToUserToFlaggedImage pufi=getFlagStatus(username, imageUID, projectID,subjectID);
 		if (pufi != null) {
 			return true;
 		}
@@ -3024,7 +3025,7 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 	
 	@Override
 	public void setFlagged(String username, String imageUID, String projectID, boolean flag, String subjectID) {
-		ProjectToUserToFlaggedImage pufi=getFlagStatus(username, imageUID, projectID,subjectID);
+		ProjectToSubjectToUserToFlaggedImage pufi=getFlagStatus(username, imageUID, projectID,subjectID);
 		if (pufi != null) {
 			if (flag)
 				return; //already there
@@ -3035,10 +3036,11 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 					log.warning("Cannot delete flag", e);
 				}
 		}else if (flag) {
-			pufi=new ProjectToUserToFlaggedImage();
+			pufi=new ProjectToSubjectToUserToFlaggedImage();
 			pufi.setUsername(username);
 			pufi.setImageUID(imageUID);
 			pufi.setProjectId(projectID);
+			pufi.setSubjectId(subjectID);
 			pufi.setCreator(username);
 			try {
 				pufi.save();
@@ -3050,17 +3052,17 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 	
 	@Override
 	public List<String> getFlaggedImageUIDs(String username,String projectID, String subjectID) {
-		List<ProjectToUserToFlaggedImage> pufis=null;
+		List<ProjectToSubjectToUserToFlaggedImage> pufis=null;
 		String projectQry=(projectID!=null)?" and project_id ='" + projectID + "'":"";
 		projectQry+=(subjectID!=null)?" and subject_id ='" + subjectID + "'":"";
 		try {
-			pufis = new ProjectToUserToFlaggedImage().getObjects("username = '" + username + "' "+projectQry);
+			pufis = new ProjectToSubjectToUserToFlaggedImage().getObjects("username = '" + username + "' "+projectQry);
 		} catch (Exception e) {
 			log.warning("Cannot get flagged image uids ", e);
 			
 		}
 		List<String> imageUIDs=new ArrayList<>();
-		for (ProjectToUserToFlaggedImage f:pufis)
+		for (ProjectToSubjectToUserToFlaggedImage f:pufis)
 			imageUIDs.add(f.getImageUID());
 		
 		return imageUIDs;
