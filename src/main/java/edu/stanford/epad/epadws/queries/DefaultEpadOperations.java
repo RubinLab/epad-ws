@@ -738,7 +738,32 @@ public class DefaultEpadOperations implements EpadOperations
 			if (patientID == null) patientID = dcm4cheeSeries.patientID;
 			return dcm4cheeSeries2EpadSeries(sessionID, seriesReference.projectID, patientID, dcm4cheeSeries, username, includeAnnotationStatus);
 		}
-		else {
+		else if (seriesReference.seriesUID.equalsIgnoreCase("FLAGGED")){
+			try {
+				StudyReference studyReference=new StudyReference(seriesReference.projectID, seriesReference.subjectID, seriesReference.studyUID);
+				EPADImageList flaggedImages=getFlaggedImageDescriptions(username, studyReference, sessionID);
+				if (flaggedImages!=null && flaggedImages.ResultSet.totalRecords>0) {
+					EPADStudy st=null;
+					try {
+						st=getStudyDescription(studyReference, username, sessionID);
+					} catch (Exception e) {
+						log.warning("Couldn't get study for flagged images");
+					}
+					String date=(st!=null)?st.insertDate:"ND";
+					String patientName=(st!=null)?st.patientName:"";
+						
+					EPADSeries series =	new EPADSeries(studyReference.projectID, studyReference.subjectID, patientName, studyReference.studyUID, 
+							"FLAGGED", 
+							date, 
+							"FLAGGED", 
+							"", "", "", flaggedImages.ResultSet.totalRecords, 0, 0, "","","",SeriesProcessingStatus.DONE,"","", false);
+					return series;
+				}
+			} catch (Exception e) {
+				log.warning("Error getting flagged series", e);
+			}
+			return null;
+		}else {
 			try {
 				NonDicomSeries ndSeries = projectOperations.getNonDicomSeries(seriesReference.seriesUID);
 				if (ndSeries != null) {
@@ -768,6 +793,13 @@ public class DefaultEpadOperations implements EpadOperations
 	@Override
 	public EPADSeriesList getSeriesDescriptions(StudyReference studyReference, String username, String sessionID,
 			EPADSearchFilter searchFilter, boolean filterDSOs, boolean includeAnnotationStatus)
+	{
+		return getSeriesDescriptions(studyReference, username, sessionID, searchFilter, filterDSOs, includeAnnotationStatus, false);
+	}
+	
+	@Override
+	public EPADSeriesList getSeriesDescriptions(StudyReference studyReference, String username, String sessionID,
+			EPADSearchFilter searchFilter, boolean filterDSOs, boolean includeAnnotationStatus, boolean getFlagged)
 	{
 		EPADSeriesList epadSeriesList = new EPADSeriesList();
 
@@ -870,20 +902,42 @@ public class DefaultEpadOperations implements EpadOperations
 		} catch (Exception e) {
 			log.warning("Error getting non-dicom series", e);
 		}
+		
+		EPADImageList flaggedImages=getFlaggedImageDescriptions(username, studyReference, sessionID);
+		if (flaggedImages!=null && flaggedImages.ResultSet.totalRecords>0) {
+			EPADStudy st=null;
+			try {
+				st=getStudyDescription(studyReference, username, sessionID);
+			} catch (Exception e) {
+				log.warning("Couldn't get study for flagged images");
+			}
+			String date=(st!=null)?st.insertDate:"ND";
+			String patientName=(st!=null)?st.patientName:"";
+				
+			EPADSeries series =	new EPADSeries(studyReference.projectID, studyReference.subjectID, patientName, studyReference.studyUID, 
+					"FLAGGED", 
+					date, 
+					"FLAGGED", 
+					"", "", "", flaggedImages.ResultSet.totalRecords, 0, 0, "","","",SeriesProcessingStatus.DONE,"","", false);
+			epadSeriesList.addEPADSeries(series);
+		}
+		
 		return epadSeriesList;
 	}
 
 	Set<String> seriesInProcess = new HashSet<String>();
 	
 	@Override
-	public EPADImageList getFlaggedImageDescriptions(String username, SubjectReference subjectReference,  String sessionID){
+	public EPADImageList getFlaggedImageDescriptions(String username, StudyReference studyReference, String sessionID){
 		String projectID=null;
 		String subjectID=null;
-		if (subjectReference!=null) {
-			projectID=subjectReference.projectID;
-			subjectID=subjectReference.subjectID;
+		String studyID=null;
+		if (studyReference!=null) {
+			projectID=studyReference.projectID;
+			subjectID=studyReference.subjectID;
+			studyID=studyReference.studyUID;
 		}
-		List<String> imageUIDs=projectOperations.getFlaggedImageUIDs(username, projectID,subjectID);
+		List<String> imageUIDs=projectOperations.getFlaggedImageUIDs(username, projectID,subjectID, studyID);
 		EPADImageList epadImageList = new EPADImageList();
 		for (String imageUID:imageUIDs){
 			EPADImage eim=getImageDescription(projectID,imageUID,sessionID);
@@ -894,8 +948,8 @@ public class DefaultEpadOperations implements EpadOperations
 	}
 	
 	@Override
-	public void setFlagged(String username, SubjectReference subjectReference, String imageUID, String sessionID, boolean flag){
-		projectOperations.setFlagged(username, imageUID, subjectReference.projectID, flag, subjectReference.subjectID);
+	public void setFlagged(String username, StudyReference studyReference, String imageUID, String sessionID, boolean flag){
+		projectOperations.setFlagged(username, imageUID, studyReference.projectID, flag, studyReference.subjectID, studyReference.studyUID);
 	}
 	
 	@Override
@@ -908,6 +962,17 @@ public class DefaultEpadOperations implements EpadOperations
 	public EPADImageList getImageDescriptions(String username,SeriesReference seriesReference, String sessionID,
 			EPADSearchFilter searchFilter)
 	{
+		if (seriesReference.seriesUID.equalsIgnoreCase("FLAGGED")){
+			try {
+				StudyReference studyReference=new StudyReference(seriesReference.projectID, seriesReference.subjectID, seriesReference.studyUID);
+				return getFlaggedImageDescriptions(username, studyReference, sessionID);
+				
+			} catch (Exception e) {
+				log.warning("Error getting flagged images", e);
+				return null;
+			}
+		}
+		
 		List<DCM4CHEEImageDescription> imageDescriptions = dcm4CheeDatabaseOperations.getImageDescriptions(
 				seriesReference.studyUID, seriesReference.seriesUID);
 
@@ -973,7 +1038,7 @@ public class DefaultEpadOperations implements EpadOperations
 				epadImage.multiFrameImage = dcm4cheeImageDescription.multiFrameImage;
 				//get if flagged and put it in epadimage
 				if (username!=null) {
-					epadImage.isFlaggedImage=projectOperations.isFlagged(username,dcm4cheeImageDescription.imageUID,seriesReference.projectID,seriesReference.subjectID);
+					epadImage.isFlaggedImage=projectOperations.isFlagged(username,dcm4cheeImageDescription.imageUID,seriesReference.projectID,seriesReference.subjectID, seriesReference.studyUID);
 				}
 				epadImageList.addImage(epadImage);
 				isFirst = false;
@@ -1005,7 +1070,7 @@ public class DefaultEpadOperations implements EpadOperations
 					epadImage = createEPADImage(seriesReference, dcm4cheeImageDescription, new DICOMElementList(), new DICOMElementList());
 				//get if flagged and put it in epadimage
 				if (username!=null) {
-					epadImage.isFlaggedImage=projectOperations.isFlagged(username,dcm4cheeImageDescription.imageUID,seriesReference.projectID,seriesReference.subjectID);
+					epadImage.isFlaggedImage=projectOperations.isFlagged(username,dcm4cheeImageDescription.imageUID,seriesReference.projectID,seriesReference.subjectID, seriesReference.studyUID);
 				}
 				epadImageList.addImage(epadImage);
 			}

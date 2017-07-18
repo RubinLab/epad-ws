@@ -1712,21 +1712,21 @@ public interface EpadOperations
 	/**
 	 * gets the image descriptions for flagged images only
 	 * @param username
-	 * @param subjectReference
+	 * @param studyReference
 	 * @param sessionID
 	 * @return
 	 */
-	EPADImageList getFlaggedImageDescriptions(String username, SubjectReference subjectReference, String sessionID);
+	EPADImageList getFlaggedImageDescriptions(String username, StudyReference studyReference, String sessionID);
 
 	/**
 	 * set the flagged property of an image
 	 * @param username
-	 * @param subjectReference
+	 * @param studyReference
 	 * @param imageUID
 	 * @param sessionID
 	 * @param flag
 	 */
-	void setFlagged(String username, SubjectReference projectReference, String imageUID, String sessionID,
+	void setFlagged(String username, StudyReference studyReference, String imageUID, String sessionID,
 			boolean flag);
 
 	/**
@@ -1737,4 +1737,18 @@ public interface EpadOperations
 	 * @return
 	 */
 	EPADImage getImageDescription(String projectID, String imageUID, String sessionID);
+
+	/**
+	 * get series with flagged images
+	 * @param studyReference
+	 * @param username
+	 * @param sessionID
+	 * @param searchFilter
+	 * @param filterDSOs
+	 * @param includeAnnotationStatus
+	 * @param getFlagged
+	 * @return
+	 */
+	EPADSeriesList getSeriesDescriptions(StudyReference studyReference, String username, String sessionID,
+			EPADSearchFilter searchFilter, boolean filterDSOs, boolean includeAnnotationStatus, boolean getFlagged);
 }
