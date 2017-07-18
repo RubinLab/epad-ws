@@ -126,6 +126,7 @@ import edu.stanford.epad.common.pixelmed.PixelMedUtils;
 import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADFileUtils;
 import edu.stanford.epad.common.util.EPADLogger;
+import edu.stanford.epad.common.util.EventMessageCodes;
 import edu.stanford.epad.common.util.MailUtil;
 import edu.stanford.epad.dtos.EPADAIM;
 import edu.stanford.epad.dtos.TaskStatus;
@@ -134,6 +135,7 @@ import edu.stanford.epad.epadws.aim.AIMSearchType;
 import edu.stanford.epad.epadws.aim.AIMUtil;
 import edu.stanford.epad.epadws.aim.dicomsr.Aim2DicomSRConverter;
 import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeDatabase;
+import edu.stanford.epad.epadws.epaddb.DefaultEpadDatabaseOperations;
 import edu.stanford.epad.epadws.epaddb.EpadDatabase;
 import edu.stanford.epad.epadws.epaddb.EpadDatabaseOperations;
 import edu.stanford.epad.epadws.models.Project;
@@ -339,6 +341,15 @@ public class UserProjectService {
 					}
 					else
 					{
+						//permenant log
+						projectOperations.createEventLog(xnatUserName, xnatProjectLabel, null, null, null, null, null, dicomUploadDirectory.getName(), "No DICOMs in upload", "No Dicom Files in Upload Directory", true);
+						//temporary session log
+						EpadDatabaseOperations epadDatabaseOperations=EpadDatabase.getInstance().getEPADDatabaseOperations();
+						epadDatabaseOperations.insertEpadEvent(xnatSessionID,
+								EventMessageCodes.UPLOAD_TYPE_ERROR, 
+								"", "", "", "", "", "", 
+								"",
+								xnatProjectLabel,"","","", true);
 						log.warning("No DICOM files found in upload directory!");
 						return null;
 					}
