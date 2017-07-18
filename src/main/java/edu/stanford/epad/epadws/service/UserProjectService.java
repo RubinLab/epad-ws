@@ -341,7 +341,9 @@ public class UserProjectService {
 					}
 					else
 					{
-						//projectOperations.createEventLog(xnatUserName, xnatProjectLabel, null, null, null, null, null, dicomUploadDirectory.getName(), "No DICOMs in upload", "No Dicoms found in upload directory", true);
+						//permenant log
+						projectOperations.createEventLog(xnatUserName, xnatProjectLabel, null, null, null, null, null, dicomUploadDirectory.getName(), "No DICOMs in upload", "No Dicom Files in Upload Directory", true);
+						//temporary session log
 						EpadDatabaseOperations epadDatabaseOperations=EpadDatabase.getInstance().getEPADDatabaseOperations();
 						epadDatabaseOperations.insertEpadEvent(xnatSessionID,
 								EventMessageCodes.UPLOAD_TYPE_ERROR, 
