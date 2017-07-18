@@ -291,6 +291,7 @@ public interface EpadOperations
 	
 	/**
 	 * Get image descriptions for a series with username to get the information about the flags.
+	 * @param username
 	 * @param seriesReference
 	 * @param sessionID
 	 * @param searchFilter

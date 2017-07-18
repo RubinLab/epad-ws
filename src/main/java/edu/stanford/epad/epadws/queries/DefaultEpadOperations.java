@@ -143,7 +143,6 @@ import edu.stanford.epad.common.dicom.DCM4CHEEUtil;
 import edu.stanford.epad.common.dicom.DICOMFileDescription;
 import edu.stanford.epad.common.pixelmed.PixelMedUtils;
 import edu.stanford.epad.common.pixelmed.SegmentedProperty;
-import edu.stanford.epad.common.pixelmed.SegmentedPropertyHelper;
 import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADFileUtils;
 import edu.stanford.epad.common.util.EPADLogger;
@@ -224,9 +223,7 @@ import edu.stanford.epad.epadws.models.EventLog;
 import edu.stanford.epad.epadws.models.FileType;
 import edu.stanford.epad.epadws.models.NonDicomSeries;
 import edu.stanford.epad.epadws.models.Project;
-import edu.stanford.epad.epadws.models.ProjectToFile;
 import edu.stanford.epad.epadws.models.ProjectToSubjectToStudy;
-import edu.stanford.epad.epadws.models.ProjectToSubjectToStudyToSeriesToUserStatus;
 import edu.stanford.epad.epadws.models.ProjectToTemplate;
 import edu.stanford.epad.epadws.models.ProjectType;
 import edu.stanford.epad.epadws.models.Study;
@@ -252,7 +249,6 @@ import edu.stanford.epad.epadws.xnat.XNATDeletionOperations;
 import edu.stanford.epad.epadws.xnat.XNATUtil;
 import edu.stanford.hakan.aim4api.base.AimException;
 import edu.stanford.hakan.aim4api.compability.aimv3.ImageAnnotation;
-import edu.stanford.hakan.aim4api.project.epad.Patient;
 import edu.stanford.hakan.aim4api.usage.AnnotationValidator;
 
 // TODO Too long - separate in to multiple classes
