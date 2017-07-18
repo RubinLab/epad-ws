@@ -150,6 +150,7 @@ import edu.stanford.epad.epadws.models.ProjectToSubject;
 import edu.stanford.epad.epadws.models.ProjectToSubjectToStudy;
 import edu.stanford.epad.epadws.models.ProjectToSubjectToStudyToSeriesToUserStatus;
 import edu.stanford.epad.epadws.models.ProjectToSubjectToUser;
+import edu.stanford.epad.epadws.models.ProjectToSubjectToStudyToUserToFlaggedImage;
 import edu.stanford.epad.epadws.models.ProjectToTemplate;
 import edu.stanford.epad.epadws.models.ProjectToUser;
 import edu.stanford.epad.epadws.models.ProjectType;
@@ -2998,4 +2999,74 @@ public class DefaultEpadProjectOperations implements EpadProjectOperations {
 			return list;
 	}
 
+	
+	@Override
+	public ProjectToSubjectToStudyToUserToFlaggedImage getFlagStatus(String username, String imageUID, String projectID, String subjectID, String studyID) {
+		ProjectToSubjectToStudyToUserToFlaggedImage pufi=null;
+		try {
+			pufi = (ProjectToSubjectToStudyToUserToFlaggedImage) new ProjectToSubjectToStudyToUserToFlaggedImage().getObject("username = '" + username + "' and image_uid ='" + imageUID+ "' " + " and project_id ='" + projectID + "' and subject_id='"+subjectID+"' and study_id='"+studyID+"'");
+		} catch (Exception e) {
+			log.warning("cannot check flagged status ", e);
+			
+		}
+		
+		return pufi;
+	}
+	
+	@Override
+	public boolean isFlagged(String username, String imageUID, String projectID, String subjectID, String studyID) {
+		ProjectToSubjectToStudyToUserToFlaggedImage pufi=getFlagStatus(username, imageUID, projectID,subjectID,studyID);
+		if (pufi != null) {
+			return true;
+		}
+		return false;
+	}
+	
+	@Override
+	public void setFlagged(String username, String imageUID, String projectID, boolean flag, String subjectID, String studyID) {
+		ProjectToSubjectToStudyToUserToFlaggedImage pufi=getFlagStatus(username, imageUID, projectID,subjectID,studyID);
+		if (pufi != null) {
+			if (flag)
+				return; //already there
+			else
+				try {
+					pufi.delete();
+				} catch (Exception e) {
+					log.warning("Cannot delete flag", e);
+				}
+		}else if (flag) {
+			pufi=new ProjectToSubjectToStudyToUserToFlaggedImage();
+			pufi.setUsername(username);
+			pufi.setImageUID(imageUID);
+			pufi.setProjectId(projectID);
+			pufi.setSubjectId(subjectID);
+			pufi.setStudyId(studyID);
+			pufi.setCreator(username);
+			try {
+				pufi.save();
+			} catch (Exception e) {
+				log.warning("Cannot create flag", e);
+			}
+		}
+	}
+	
+	@Override
+	public List<String> getFlaggedImageUIDs(String username,String projectID, String subjectID, String studyID) {
+		List<ProjectToSubjectToStudyToUserToFlaggedImage> pufis=null;
+		String projectQry=(projectID!=null)?" and project_id ='" + projectID + "'":"";
+		projectQry+=(subjectID!=null)?" and subject_id ='" + subjectID + "'":"";
+		projectQry+=(studyID!=null)?" and study_id ='" + studyID + "'":"";
+		try {
+			pufis = new ProjectToSubjectToStudyToUserToFlaggedImage().getObjects("username = '" + username + "' "+projectQry);
+		} catch (Exception e) {
+			log.warning("Cannot get flagged image uids ", e);
+			
+		}
+		List<String> imageUIDs=new ArrayList<>();
+		for (ProjectToSubjectToStudyToUserToFlaggedImage f:pufis)
+			imageUIDs.add(f.getImageUID());
+		
+		return imageUIDs;
+	}
+	
 }

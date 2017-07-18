@@ -431,11 +431,15 @@ public class EPADGetHandler
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.SERIES_LIST, pathInfo)) {
 				boolean filterDSO = "true".equalsIgnoreCase(httpRequest.getParameter("filterDSO"));
 				boolean includeAnnotationStatus = "true".equalsIgnoreCase(httpRequest.getParameter("includeAnnotationStatus"));
+				boolean getFlagged = "true".equalsIgnoreCase(httpRequest.getParameter("getFlagged"));
+				
 				StudyReference studyReference = StudyReference.extract(ProjectsRouteTemplates.SERIES_LIST, pathInfo);
 				if (studyReference.subjectID.equals("null"))
 					throw new Exception("Patient ID in rest call is null:" + pathInfo);
 				EPADSeriesList seriesList = epadOperations.getSeriesDescriptions(studyReference, username, sessionID,
-						searchFilter, filterDSO, includeAnnotationStatus);
+						searchFilter, filterDSO, includeAnnotationStatus, getFlagged);
+				
+				
 				responseStream.append(seriesList.toJSON());
 				statusCode = HttpServletResponse.SC_OK;
 
@@ -497,7 +501,7 @@ public class EPADGetHandler
 				SeriesReference seriesReference = SeriesReference.extract(ProjectsRouteTemplates.IMAGE_LIST, pathInfo);
 				if (seriesReference.subjectID.equals("null"))
 					throw new Exception("Patient ID in rest call is null:" + pathInfo);
-				EPADImageList imageList = epadOperations.getImageDescriptions(seriesReference, sessionID, searchFilter);
+				EPADImageList imageList = epadOperations.getImageDescriptions(username,seriesReference, sessionID, searchFilter);
 				responseStream.append(imageList.toJSON());
 				statusCode = HttpServletResponse.SC_OK;
 
@@ -1148,7 +1152,23 @@ public class EPADGetHandler
 				EPADUserList users = epadOperations.getUserDescriptions(username, projectReference, sessionID);
 				responseStream.append(users.toJSON());
 				statusCode = HttpServletResponse.SC_OK;
-
+				
+			
+			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.FLAGGED_LIST, pathInfo)) {
+				StudyReference studyReference =StudyReference.extract(ProjectsRouteTemplates.FLAGGED_LIST, pathInfo);
+				Map<String, String> templateMap = HandlerUtil.getTemplateMap(ProjectsRouteTemplates.FLAGGED_LIST, pathInfo);
+				String path_user = HandlerUtil.getTemplateParameter(templateMap, "username");
+				EPADImageList images=epadOperations.getFlaggedImageDescriptions(path_user, studyReference, sessionID);
+				responseStream.append(images.toJSON());
+				statusCode = HttpServletResponse.SC_OK;
+				
+			} else if (HandlerUtil.matchesTemplate(UsersRouteTemplates.USER_FLAGGED_LIST, pathInfo)) {
+				Map<String, String> templateMap = HandlerUtil.getTemplateMap(UsersRouteTemplates.USER_FLAGGED_LIST, pathInfo);
+				String path_user = HandlerUtil.getTemplateParameter(templateMap, "username");
+				EPADImageList images=epadOperations.getFlaggedImageDescriptions(path_user, null, sessionID);
+				responseStream.append(images.toJSON());
+				statusCode = HttpServletResponse.SC_OK;
+				
 //			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.USER_WORKLIST_SUBJECTS, pathInfo)) {
 //				ProjectReference projectReference = ProjectReference.extract(ProjectsRouteTemplates.USER_WORKLIST_SUBJECTS, pathInfo);
 //				Map<String, String> templateMap = HandlerUtil.getTemplateMap(ProjectsRouteTemplates.USER_WORKLIST_SUBJECTS, pathInfo);

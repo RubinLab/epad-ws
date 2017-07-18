@@ -126,4 +126,7 @@ public class UsersRouteTemplates
 	public static final String USER_REVIEWEES = USER + "/reviewees/";
 	public static final String USER_REVIEWEE = USER + "/reviewees/{reviewee}";
 	public static final String USER_REVIEWEE_AIMS = USER + "/reviewees/{reviewee}/aims/";
+	
+	public static final String USER_FLAGGED_LIST = USER + "/flagged/";
+	
 }

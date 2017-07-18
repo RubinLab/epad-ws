@@ -288,6 +288,16 @@ public interface EpadOperations
 	 * @return
 	 */
 	EPADImageList getImageDescriptions(SeriesReference seriesReference, String sessionID, EPADSearchFilter searchFilter);
+	
+	/**
+	 * Get image descriptions for a series with username to get the information about the flags.
+	 * @param username
+	 * @param seriesReference
+	 * @param sessionID
+	 * @param searchFilter
+	 * @return
+	 */
+	EPADImageList getImageDescriptions(String username, SeriesReference seriesReference, String sessionID, EPADSearchFilter searchFilter);
 
 	/**
 	 * Get image description
@@ -1699,4 +1709,47 @@ public interface EpadOperations
 	 * @return unique patient id (first 128 chars if longer)
 	 */
 	String getUniquePatientID(String dicomPatientID,String dicomPatientName);
+
+	/**
+	 * gets the image descriptions for flagged images only
+	 * @param username
+	 * @param studyReference
+	 * @param sessionID
+	 * @return
+	 */
+	EPADImageList getFlaggedImageDescriptions(String username, StudyReference studyReference, String sessionID);
+
+	/**
+	 * set the flagged property of an image
+	 * @param username
+	 * @param studyReference
+	 * @param imageUID
+	 * @param sessionID
+	 * @param flag
+	 */
+	void setFlagged(String username, StudyReference studyReference, String imageUID, String sessionID,
+			boolean flag);
+
+	/**
+	 * get image description using just projectid and image uid
+	 * @param projectID
+	 * @param imageUID
+	 * @param sessionID
+	 * @return
+	 */
+	EPADImage getImageDescription(String projectID, String imageUID, String sessionID);
+
+	/**
+	 * get series with flagged images
+	 * @param studyReference
+	 * @param username
+	 * @param sessionID
+	 * @param searchFilter
+	 * @param filterDSOs
+	 * @param includeAnnotationStatus
+	 * @param getFlagged
+	 * @return
+	 */
+	EPADSeriesList getSeriesDescriptions(StudyReference studyReference, String username, String sessionID,
+			EPADSearchFilter searchFilter, boolean filterDSOs, boolean includeAnnotationStatus, boolean getFlagged);
 }
