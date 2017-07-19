@@ -3613,8 +3613,11 @@ public class DefaultEpadOperations implements EpadOperations
 			}
 			if (!AIMUtil.saveAIMAnnotation(aimFile, aim.projectID, sessionID, username))
 				return "";
-			else
+			else{
+				//delete the db entry if you couldn't save the file!
+				epadDatabaseOperations.deleteAIM(username, aim.aimID);
 				return "Error saving AIM file";
+			}
 		} catch (Exception e) {
 			log.warning("Error saving AIM file ",e);
 			return e.getMessage();
