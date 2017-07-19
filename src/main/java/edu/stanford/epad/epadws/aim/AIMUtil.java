@@ -162,6 +162,7 @@ import edu.stanford.epad.common.plugins.PluginAIMUtil;
 import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADFileUtils;
 import edu.stanford.epad.common.util.EPADLogger;
+import edu.stanford.epad.common.util.EventMessageCodes;
 import edu.stanford.epad.common.util.MongoDBOperations;
 import edu.stanford.epad.common.util.XmlNamespaceTranslator;
 import edu.stanford.epad.dtos.EPADAIM;
@@ -1021,9 +1022,9 @@ public class AIMUtil
 										if (!e.aimID.equals(eaim.aimID) && e.dsoSeriesUID != null && e.dsoSeriesUID.equals(dsoSeriesUID))
 										{
 											ImageReference imageReference = new ImageReference(projectID, e.subjectID, e.studyUID, e.seriesUID, e.imageUID);										
-log.info("Templates :" + eaim.template + " and :" + e.template);	
-log.info("Names :" + eaim.name + " and :" + e.name);	
-log.info("isDicomSR :" + eaim.isDicomSR + " and :" + e.isDicomSR);		
+											log.info("Templates :" + eaim.template + " and :" + e.template);	
+											log.info("Names :" + eaim.name + " and :" + e.name);	
+											log.info("isDicomSR :" + eaim.isDicomSR + " and :" + e.isDicomSR);		
 											if ((eaim.name!=null && e.name!=null) && (eaim.template==null && e.template==null)  && (eaim.name.equals(e.name) ||  eaim.name.equals(e.name.replace("ePAD DSO-", ""))) &&(e.isDicomSR==false && eaim.isDicomSR==false)){// if none of them are dicomsr
 											
 												epadDatabaseOperations.deleteAIM("admin", e.aimID);
@@ -1052,7 +1053,17 @@ log.info("isDicomSR :" + eaim.isDicomSR + " and :" + e.isDicomSR);
         	} catch (Exception x) {
         		log.warning("Error saving annotation", e);
         	}
-			throw new edu.stanford.hakan.aim4api.base.AimException(e.getMessage());
+        	if (e.getMessage().toLowerCase().contains("validation")) {
+        		EpadProjectOperations projectOperations = DefaultEpadProjectOperations.getInstance();
+        		projectOperations.createEventLog(username, projectID, null, null, null, null, null, "", "Check Aim Schema", EventMessageCodes.AIM_VALIDATION_ERROR, true);
+        		EpadDatabaseOperations epadDatabaseOperations=EpadDatabase.getInstance().getEPADDatabaseOperations();
+        		epadDatabaseOperations.insertEpadEvent(sessionId,
+        				EventMessageCodes.AIM_VALIDATION_ERROR, 
+        				"", "", "", "", "", "", 
+        				"",
+        				projectID,"","","", true);
+        	}else
+        		throw new edu.stanford.hakan.aim4api.base.AimException(e.getMessage());
         }
 			
 		return true;
@@ -2388,36 +2399,47 @@ log.info("isDicomSR :" + eaim.isDicomSR + " and :" + e.isDicomSR);
 		"AimXPath.xml",
 		"AIMTemplate_v2rvStanford.xsd",
 		"AIM_v4_rv44_XML.xsd",
-		"ISO_datatypes_Narrative.xsd",
-		"AIM_v4_XMLStanford.xsd"
+		"ISO_datatypes_Narrative.xsd"
 	};
 	
+	static final String[] OVERWRITE_SCHEMA_FILES = {
+			"AIM_v4_XMLStanford.xsd"
+		};
+	
+	private static void copyFile(String schemaFile, boolean overwrite){
+		File file = new File(EPADConfig.getEPADWebServerSchemaDir() + schemaFile);
+		if (!file.exists() || overwrite) {
+			InputStream in = null;
+			OutputStream out = null;
+			try {
+				in = new AIMUtil().getClass().getClassLoader().getResourceAsStream("schema/" + schemaFile);
+	            out = new FileOutputStream(file);
+
+	            // Transfer bytes from in to out
+	            byte[] buf = new byte[1024];
+	            int len;
+	            while ((len = in.read(buf)) > 0)
+	            {
+	                    out.write(buf, 0, len);
+	            }
+			} catch (Exception x) {
+				
+			} finally {
+	            IOUtils.closeQuietly(in);
+	            IOUtils.closeQuietly(out);
+			}
+		}
+	}
 	public static void checkSchemaFiles()
 	{
 		for (String schemaFile: SCHEMA_FILES)
 		{
-			File file = new File(EPADConfig.getEPADWebServerSchemaDir() + schemaFile);
-			if (!file.exists()) {
-				InputStream in = null;
-				OutputStream out = null;
-				try {
-					in = new AIMUtil().getClass().getClassLoader().getResourceAsStream("schema/" + schemaFile);
-		            out = new FileOutputStream(file);
-
-		            // Transfer bytes from in to out
-		            byte[] buf = new byte[1024];
-		            int len;
-		            while ((len = in.read(buf)) > 0)
-		            {
-		                    out.write(buf, 0, len);
-		            }
-				} catch (Exception x) {
-					
-				} finally {
-		            IOUtils.closeQuietly(in);
-		            IOUtils.closeQuietly(out);
-				}
-			}
+			copyFile(schemaFile,false);
+		}
+		
+		for (String schemaFile: OVERWRITE_SCHEMA_FILES)
+		{
+			copyFile(schemaFile,true);
 		}
 	}
 	
