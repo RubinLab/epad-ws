@@ -259,7 +259,7 @@ public class AimReporter {
 							if (values.containsKey(cal.getDescription().getValue().toLowerCase())) { //key exists put the value
 								try {
 									String value=((ExtendedCalculationResult)cal.getCalculationResultCollection().getCalculationResultList().get(0)).getCalculationDataCollection().get(0).getValue().getValue();
-									log.info("value is "+value + "|");
+//									log.info("value is "+value + "|");
 									if (value==null || value.trim().equals("")) value="0";
 									values.put(cal.getDescription().getValue().toLowerCase(), formJsonObj(value,cal.getListTypeCode().get(0).getCode()));
 								}catch(Exception e) {
@@ -344,9 +344,9 @@ public class AimReporter {
 	 * @return
 	 */
 	public static RecistReport getRecist(EPADAIMList aims){
-		String table=AimReporter.fillTable(aims,"RECIST",new String[]{"Name","StudyDate","Lesion","Type", "Location","Length","StudyUID","SeriesUID","AimUID"});
+		String table=AimReporter.fillTable(aims,"RECIST",new String[]{"Name","StudyDate","Lesion","Type", "Location","Length","StudyUID","SeriesUID","AimUID","LongAxis","ShortAxis"});
 		//get and append recist_mint records
-		String tableMint=AimReporter.fillTable(aims,"RECIST_MINT",new String[]{"Name","StudyDate","Timepoint","Type", "Lesion Status", "Location","Length","StudyUID","SeriesUID","AimUID"});
+		String tableMint=AimReporter.fillTable(aims,"RECIST_MINT",new String[]{"Name","StudyDate","Timepoint","Type", "Lesion Status", "Location","Length","StudyUID","SeriesUID","AimUID","LongAxis","ShortAxis"});
 		
 		if ((table==null || table.isEmpty()) && (tableMint==null || tableMint.isEmpty())) 
 			return null;
@@ -406,8 +406,10 @@ public class AimReporter {
 				tTimepoints=new Integer[studyDates.size()];
 			RecistReportUIDCell[][] tUIDs=new RecistReportUIDCell[tLesionNames.size()][studyDates.size()];
 			String [][] tTable=fillRecistTable(tLesionNames, studyDates, lesions, targetTypes,tTimepoints, tUIDs);
+//			Integer[] timepoints=checkAndFormat(tTimepoints);
+			
 			//calculate the sums first
-			Double[] tSums=calcSums(tTable);
+			Double[] tSums=calcSums(tTable, tTimepoints);
 			//calculate the rrs
 			Double[] tRRBaseline=calcRRBaseline(tSums, tTimepoints);
 			Double[] tRRMin=calcRRMin(tSums, tTimepoints);
@@ -462,6 +464,19 @@ public class AimReporter {
 
 	}
 	
+	private static ArrayList<Integer> checkAndFormat(Integer[] tTimepoints) {
+		//check and verify timepoints are ordered
+		//remove duplicates and construct another timepoints array to be used for calculations
+		ArrayList<Integer> timepoints=new ArrayList<>();
+		for(int i=0;i<tTimepoints.length;i++){
+			if (!timepoints.contains(tTimepoints[i])){
+				timepoints.add(tTimepoints[i]);
+			}
+		}
+		
+		return null;
+	}
+
 	/**
 	 * fills the recist table where lesion names are the rows. and the columns are the info and the study dates 
 	 * The info sits in the first 3 columns (Name,Type,Location)
@@ -549,9 +564,26 @@ public class AimReporter {
 				}
 				
 			}else{
-				if (!aimType.equals("resolved lesion"))
-					table[lesionNames.indexOf(lesionName)][studyDates.indexOf(studyDate)+3]=((JSONObject)((JSONObject)lesions.get(i)).get("length")).getString("value");
-				else 
+				if (!aimType.equals("resolved lesion")){
+					//get length and put it in table
+					//if there are longaxis and shortaxis 
+					//use short if it is lymph, use long otherwise
+					//if there is just length use that
+					String length="";
+					JSONObject longaxis=((JSONObject)((JSONObject)lesions.get(i)).optJSONObject("longaxis"));
+					JSONObject shortaxis=((JSONObject)((JSONObject)lesions.get(i)).optJSONObject("shortaxis"));
+					if (longaxis!=null && shortaxis!=null){
+						if (((JSONObject)((JSONObject)lesions.get(i)).get("location")).getString("value").toLowerCase().contains("lymph"))
+							length=shortaxis.getString("value");
+						else
+							length=longaxis.getString("value");
+//						log.info("Gotta use long axis, short axis. length is "+length);
+					}else{
+						length=((JSONObject)((JSONObject)lesions.get(i)).get("length")).getString("value");
+					}
+					table[lesionNames.indexOf(lesionName)][studyDates.indexOf(studyDate)+3]=length;
+				
+				}else 
 					table[lesionNames.indexOf(lesionName)][studyDates.indexOf(studyDate)+3]="0";
 			}
 			if (UIDs!=null){
@@ -611,7 +643,42 @@ public class AimReporter {
 
 		return sums;
 	}
-	
+	/**
+	 * calculate sums of lesion dimensions for each timepoint
+	 * @param table
+	 * @param timepoints. timepoints should start from 0 and be continuous but timepoint can repeat(they need to be adjacent)
+	 * @return it will return the sums for each timepoint. if the timepoint is listed twice. it will have the same amount twice
+	 */
+	private static Double[] calcSums(String[][] table, Integer[] timepoints){
+		Double[] sums=new Double[table[0].length-3];
+		for (int k=0; k< table[0].length-3; k++) {
+			sums[k]=0.0;
+			for (int j=k; j< table[0].length-3; j++) {
+				if (timepoints[j]==timepoints[k]){
+			
+					for(int i=0; i<table.length; i++){
+						try{
+							sums[k]+=Double.parseDouble(table[i][j+3]);
+		
+						}catch(Exception e) {
+							log.warning("Couldn't convert to double value="+table[i][j+3]);
+						}
+					}
+				}else{
+					//break if you see any other timepoint and skip the columns already calculated
+					k=j-1;
+					break;
+				}
+			}
+
+		}
+		for (int i=0;i<sums.length;i++)
+			if (sums[i]==null)
+				sums[i]=0.0;
+		for (int i=0;i<sums.length;i++)
+			log.info("sum "+ i+ " " + sums[i]);
+		return sums;
+	}
 	/**
 	 * calculate response rates in reference to baseline (first)
 	 * @param sums
@@ -622,12 +689,14 @@ public class AimReporter {
 		Double[] rrBaseline=new Double[sums.length];
 		StringBuilder rrBaseStr= new StringBuilder();
 		for (int i=0;i<sums.length;i++) {
-			if (timepoints[i]!=null && timepoints[i]==0) {
-				baseline=sums[i];
-				log.info("baseline changed. New baseline is:"+i);
+			if (sums[i]!=null){
+				if (timepoints[i]!=null && timepoints[i]==0) {
+					baseline=sums[i];
+					log.info("baseline changed. New baseline is:"+i);
+				}
+				rrBaseline[i]=(sums[i]-baseline)*100.0/baseline;
+				rrBaseStr.append(rrBaseline[i]+ "  ");
 			}
-			rrBaseline[i]=(sums[i]-baseline)*100.0/baseline;
-			rrBaseStr.append(rrBaseline[i]+ "  ");
 		}
 		return rrBaseline;
 	}
@@ -673,15 +742,17 @@ public class AimReporter {
 		Double[] rr=new Double[sums.length];
 		StringBuilder rrStr= new StringBuilder();
 		for (int i=0;i<sums.length;i++) {
-			if (timepoints[i]!=null && timepoints[i]==0) {
-				min=sums[i];
-				log.info("Min changed. New baseline.min is:"+min);
-			}
-			rr[i]=(sums[i]-min)*100.0/min;	
-			rrStr.append(rr[i]+ "  ");
-			if (sums[i]<min) {
-				min=sums[i];
-				log.info("Min changed. Smaller rr. min is:"+min);
+			if (sums[i]!=null){
+				if (timepoints[i]!=null && timepoints[i]==0) {
+					min=sums[i];
+					log.info("Min changed. New baseline.min is:"+min);
+				}
+				rr[i]=(sums[i]-min)*100.0/min;	
+				rrStr.append(rr[i]+ "  ");
+				if (sums[i]<min) {
+					min=sums[i];
+					log.info("Min changed. Smaller rr. min is:"+min);
+				}
 			}
 		}
 		return rr;
@@ -698,18 +769,20 @@ public class AimReporter {
 	private static String[] calcResponseCat(Double[] rr, Integer[] timepoints, Boolean[] isThereNewLesion, Double[] sums ){
 		String[] responseCats=new String[rr.length];
 		for (int i=0;i<rr.length;i++) {
-			if (i==0 || (timepoints[i]!=null && timepoints[i]==0)) {
-				responseCats[i]="BL";
-			}
-			else if (rr[i] >= 20 || (isThereNewLesion!=null && isThereNewLesion[i]!=null && isThereNewLesion[i]==true)) {
-				responseCats[i]="PD"; //progressive
-			} else if (sums[i]==0){
-				responseCats[i]="CR"; //complete response
-			}
-			else if (rr[i] <= -30) {
-				responseCats[i]="PR";//partial response
-			}  else {
-				responseCats[i]="SD"; //stable disease
+			if (rr[i]!=null) {
+				if (i==0 || (timepoints[i]!=null && timepoints[i]==0)) {
+					responseCats[i]="BL";
+				}
+				else if (rr[i] >= 20 || (isThereNewLesion!=null && isThereNewLesion[i]!=null && isThereNewLesion[i]==true)) {
+					responseCats[i]="PD"; //progressive
+				} else if (sums[i]==0){
+					responseCats[i]="CR"; //complete response
+				}
+				else if (rr[i] <= -30) {
+					responseCats[i]="PR";//partial response
+				}  else {
+					responseCats[i]="SD"; //stable disease
+				}
 			}
 			
 		}
