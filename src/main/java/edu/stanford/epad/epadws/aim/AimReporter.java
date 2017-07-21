@@ -210,6 +210,13 @@ public class AimReporter {
 							log.warning("The value for SeriesUID couldn't be retrieved ", e);
 						}
 					}
+					if (values.containsKey("modality")) {
+						try{
+							values.put("modality", formJsonObj(((DicomImageReferenceEntity)ia.getImageReferenceEntityCollection().get(0)).getImageStudy().getImageSeries().getModality().getDisplayName().getValue()));
+						}catch(Exception e){
+							log.warning("The value for modality couldn't be retrieved ", e);
+						}
+					}
 					if (values.containsKey("aimuid")) {
 						try{
 							values.put("aimuid", formJsonObj(iac.getUniqueIdentifier().getRoot()));
@@ -344,9 +351,9 @@ public class AimReporter {
 	 * @return
 	 */
 	public static RecistReport getRecist(EPADAIMList aims){
-		String table=AimReporter.fillTable(aims,"RECIST",new String[]{"Name","StudyDate","Lesion","Type", "Location","Length","StudyUID","SeriesUID","AimUID","LongAxis","ShortAxis"});
+		String table=AimReporter.fillTable(aims,"RECIST",new String[]{"Name","StudyDate","Lesion","Type", "Location","Length","StudyUID","SeriesUID","AimUID","LongAxis","ShortAxis", "Modality"});
 		//get and append recist_mint records
-		String tableMint=AimReporter.fillTable(aims,"RECIST_MINT",new String[]{"Name","StudyDate","Timepoint","Type", "Lesion Status", "Location","Length","StudyUID","SeriesUID","AimUID","LongAxis","ShortAxis"});
+		String tableMint=AimReporter.fillTable(aims,"RECIST_MINT",new String[]{"Name","StudyDate","Timepoint","Type", "Lesion Status", "Location","Length","StudyUID","SeriesUID","AimUID","LongAxis","ShortAxis", "Modality"});
 		
 		if ((table==null || table.isEmpty()) && (tableMint==null || tableMint.isEmpty())) 
 			return null;
@@ -408,14 +415,9 @@ public class AimReporter {
 			String [][] tTable=fillRecistTable(tLesionNames, studyDates, lesions, targetTypes,tTimepoints, tUIDs);
 //			Integer[] timepoints=checkAndFormat(tTimepoints);
 			
-			//calculate the sums first
-			Double[] tSums=calcSums(tTable, tTimepoints);
-			//calculate the rrs
-			Double[] tRRBaseline=calcRRBaseline(tSums, tTimepoints);
-			Double[] tRRMin=calcRRMin(tSums, tTimepoints);
-//			Double[] tRR=calcRR(tSums, tTimepoints);
 			
-			Integer[] ntTimepoints=new Integer[studyDates.size()];
+			
+//			Integer[] ntTimepoints=new Integer[studyDates.size()];
 			RecistReportUIDCell[][] ntUIDs=new RecistReportUIDCell[ntLesionNames.size()][studyDates.size()];
 			String [][] ntTable=null;
 			if (!ntLesionNames.isEmpty() && !studyDates.isEmpty()){
@@ -426,7 +428,7 @@ public class AimReporter {
 				nonTargetTypes.add("non-cancer lesion");
 				nonTargetTypes.add("new lesion");
 				
-				ntTable=fillRecistTable(ntLesionNames, studyDates, lesions, nonTargetTypes, ntTimepoints, ntUIDs);
+				ntTable=fillRecistTable(ntLesionNames, studyDates, lesions, nonTargetTypes, tTimepoints, ntUIDs);
 				for (int i = 0; i < ntTable.length; i++) {
 					
 					for (int j = 0; j < studyDates.size(); j++) {
@@ -443,15 +445,20 @@ public class AimReporter {
 					isThereNewLesion[studyDates.indexOf(studyDate)]=true;
 			}
 			
+			//calculate the sums first
+			Double[] tSums=calcSums(tTable, tTimepoints);
+			//calculate the rrs
+			Double[] tRRBaseline=calcRRBaseline(tSums, tTimepoints);
+			Double[] tRRMin=calcRRMin(tSums, tTimepoints);
 			String[] responseCats=calcResponseCat(tRRBaseline,tTimepoints, isThereNewLesion,tSums);
 			
 			if (!ntLesionNames.isEmpty() && !studyDates.isEmpty()){	
-				RecistReport rr= new RecistReport(tLesionNames.toArray(new String[tLesionNames.size()]), studyDates.toArray(new String[studyDates.size()]), tTable, tSums, tRRBaseline, tRRMin, null, responseCats, tUIDs,
+				RecistReport rr= new RecistReport(tLesionNames.toArray(new String[tLesionNames.size()]), studyDates.toArray(new String[studyDates.size()]), tTable, tSums, tRRBaseline, tRRMin, responseCats, tUIDs,
 						ntLesionNames.toArray(new String[ntLesionNames.size()]), ntTable, ntUIDs);
 				rr.setTimepoints(tTimepoints);
 				return rr;
 			}else {
-				RecistReport rr= new RecistReport(tLesionNames.toArray(new String[tLesionNames.size()]), studyDates.toArray(new String[studyDates.size()]), tTable, tSums, tRRBaseline, tRRMin, null, responseCats, tUIDs);
+				RecistReport rr= new RecistReport(tLesionNames.toArray(new String[tLesionNames.size()]), studyDates.toArray(new String[studyDates.size()]), tTable, tSums, tRRBaseline, tRRMin, responseCats, tUIDs);
 				rr.setTimepoints(tTimepoints);
 				return rr;
 			}
@@ -462,19 +469,6 @@ public class AimReporter {
 		return null;
 		
 
-	}
-	
-	private static ArrayList<Integer> checkAndFormat(Integer[] tTimepoints) {
-		//check and verify timepoints are ordered
-		//remove duplicates and construct another timepoints array to be used for calculations
-		ArrayList<Integer> timepoints=new ArrayList<>();
-		for(int i=0;i<tTimepoints.length;i++){
-			if (!timepoints.contains(tTimepoints[i])){
-				timepoints.add(tTimepoints[i]);
-			}
-		}
-		
-		return null;
 	}
 
 	/**
@@ -591,6 +585,7 @@ public class AimReporter {
 				String seriesUID = ((JSONObject)((JSONObject)lesions.get(i)).get("seriesuid")).getString("value");
 				String aimUID=((JSONObject)((JSONObject)lesions.get(i)).get("aimuid")).getString("value");
 				String location=((JSONObject)((JSONObject)lesions.get(i)).get("location")).getString("value");
+//				String modality=((JSONObject)((JSONObject)lesions.get(i)).get("modality")).getString("value");
 				//put as a UID cell object
 				UIDs[lesionNames.indexOf(lesionName)][studyDates.indexOf(studyDate)]=new RecistReportUIDCell(studyUID, seriesUID, aimUID,timepoint,aimType,location);
 				
@@ -653,8 +648,12 @@ public class AimReporter {
 		Double[] sums=new Double[table[0].length-3];
 		for (int k=0; k< table[0].length-3; k++) {
 			sums[k]=0.0;
+			log.info("k is "+k);
 			for (int j=k; j< table[0].length-3; j++) {
+				log.info("j is "+j);
 				if (timepoints[j]==timepoints[k]){
+					if (j!=k)
+						sums[j]=null;
 			
 					for(int i=0; i<table.length; i++){
 						try{
@@ -667,14 +666,15 @@ public class AimReporter {
 				}else{
 					//break if you see any other timepoint and skip the columns already calculated
 					k=j-1;
+					log.info("jumping to "+(k+1));
 					break;
 				}
 			}
 
 		}
-		for (int i=0;i<sums.length;i++)
-			if (sums[i]==null)
-				sums[i]=0.0;
+//		for (int i=0;i<sums.length;i++)
+//			if (sums[i]==null)
+//				sums[i]=0.0;
 		for (int i=0;i<sums.length;i++)
 			log.info("sum "+ i+ " " + sums[i]);
 		return sums;
@@ -747,7 +747,11 @@ public class AimReporter {
 					min=sums[i];
 					log.info("Min changed. New baseline.min is:"+min);
 				}
-				rr[i]=(sums[i]-min)*100.0/min;	
+				if (min==0){
+					log.warning("min is 0. returning 999999.9 for rr");
+					rr[i]=999999.9;
+				}else
+					rr[i]=(sums[i]-min)*100.0/min;	
 				rrStr.append(rr[i]+ "  ");
 				if (sums[i]<min) {
 					min=sums[i];
