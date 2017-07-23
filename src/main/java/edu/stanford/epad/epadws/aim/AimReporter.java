@@ -268,6 +268,11 @@ public class AimReporter {
 									String value=((ExtendedCalculationResult)cal.getCalculationResultCollection().getCalculationResultList().get(0)).getCalculationDataCollection().get(0).getValue().getValue();
 //									log.info("value is "+value + "|");
 									if (value==null || value.trim().equals("")) value="0";
+									//check the units. if they are mm. convert to cm
+									String units=((ExtendedCalculationResult)cal.getCalculationResultCollection().getCalculationResultList().get(0)).getUnitOfMeasure().getValue().trim();
+									if (units.equalsIgnoreCase("mm")){
+										value=String.valueOf(Double.parseDouble(value)/10);
+									}
 									values.put(cal.getDescription().getValue().toLowerCase(), formJsonObj(value,cal.getListTypeCode().get(0).getCode()));
 								}catch(Exception e) {
 									log.warning("The value for "+cal.getDescription().getValue() + " couldn't be retrieved ", e);
@@ -451,6 +456,25 @@ public class AimReporter {
 			Double[] tRRBaseline=calcRRBaseline(tSums, tTimepoints);
 			Double[] tRRMin=calcRRMin(tSums, tTimepoints);
 			String[] responseCats=calcResponseCat(tRRBaseline,tTimepoints, isThereNewLesion,tSums);
+			//check for the reappear. we just have reappear in nontarget right now
+			//if the previous was CR, and there is a reappear it is PD
+			for (int i=0;i<responseCats.length;i++){
+				if (responseCats[i]!=null && responseCats[i].equalsIgnoreCase("CR") && i<responseCats.length-1 && !ntLesionNames.isEmpty()){
+					//this is cr, find the next timepoint
+					//stop looking if the timepoint is greater than +1
+					for (int k=i+1;k<tTimepoints.length;k++){
+						if (tTimepoints[k]==tTimepoints[i]+1){
+							//see for all the nontarget lesions
+							for (int j=0;j<ntTable.length;j++){
+								if (ntTable[j][k].toLowerCase().contains("reappeared"))
+									responseCats[k]="PD";
+							}
+						}else if (tTimepoints[k]>tTimepoints[i]+1){
+							break;
+						}
+					}
+				}
+			}
 			
 			if (!ntLesionNames.isEmpty() && !studyDates.isEmpty()){	
 				RecistReport rr= new RecistReport(tLesionNames.toArray(new String[tLesionNames.size()]), studyDates.toArray(new String[studyDates.size()]), tTable, tSums, tRRBaseline, tRRMin, responseCats, tUIDs,
@@ -585,9 +609,9 @@ public class AimReporter {
 				String seriesUID = ((JSONObject)((JSONObject)lesions.get(i)).get("seriesuid")).getString("value");
 				String aimUID=((JSONObject)((JSONObject)lesions.get(i)).get("aimuid")).getString("value");
 				String location=((JSONObject)((JSONObject)lesions.get(i)).get("location")).getString("value");
-//				String modality=((JSONObject)((JSONObject)lesions.get(i)).get("modality")).getString("value");
+				String modality=((JSONObject)((JSONObject)lesions.get(i)).get("modality")).getString("value");
 				//put as a UID cell object
-				UIDs[lesionNames.indexOf(lesionName)][studyDates.indexOf(studyDate)]=new RecistReportUIDCell(studyUID, seriesUID, aimUID,timepoint,aimType,location);
+				UIDs[lesionNames.indexOf(lesionName)][studyDates.indexOf(studyDate)]=new RecistReportUIDCell(studyUID, seriesUID, aimUID,timepoint,aimType,location,modality);
 				
 			}
 			
@@ -608,6 +632,12 @@ public class AimReporter {
 							}else if (table[i][k+3]!=null && table[i][k+3].trim().equalsIgnoreCase("resolved lesion")){
 								break;
 							}
+						}
+					}
+					
+					if (table[i][j+3]!=null && table[i][j+3].trim().equalsIgnoreCase("resolved lesion")){
+						if (j<studyDates.size()-1 && table[i][j+4]!=null && table[i][j+4].trim().equalsIgnoreCase("present lesion")){
+								table[i][j+4]="reappeared lesion";
 						}
 					}
 					
