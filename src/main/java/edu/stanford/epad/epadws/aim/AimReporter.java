@@ -108,6 +108,7 @@ package edu.stanford.epad.epadws.aim;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -121,8 +122,11 @@ import edu.stanford.epad.dtos.RecistReport;
 import edu.stanford.epad.dtos.RecistReportUIDCell;
 import edu.stanford.epad.dtos.WaterfallReport;
 import edu.stanford.epad.epadws.handlers.core.SubjectReference;
+import edu.stanford.epad.epadws.models.Subject;
 import edu.stanford.epad.epadws.queries.DefaultEpadOperations;
 import edu.stanford.epad.epadws.queries.EpadOperations;
+import edu.stanford.epad.epadws.service.DefaultEpadProjectOperations;
+import edu.stanford.epad.epadws.service.EpadProjectOperations;
 import edu.stanford.hakan.aim4api.base.AimException;
 import edu.stanford.hakan.aim4api.base.CalculationEntity;
 import edu.stanford.hakan.aim4api.base.DicomImageReferenceEntity;
@@ -152,6 +156,10 @@ public class AimReporter {
 	public static String fillTable(EPADAIMList aims,String templatecode, String[] columns){
 		
 		String [][] table=null;
+		//make sure they are lower case
+		for (int i=0;i<columns.length;i++){
+			columns[i]=columns[i].toLowerCase();
+		}
 		if (aims.ResultSet.totalRecords==0) return null;
 		table=new String[aims.ResultSet.totalRecords][columns.length];
 		int row=0;
@@ -174,37 +182,44 @@ public class AimReporter {
 							continue;
 						}
 					}
-					if (values.containsKey("StudyDate")) {
+					if (values.containsKey("studydate")) {
 						try{
-							values.put("StudyDate", formJsonObj(((DicomImageReferenceEntity)ia.getImageReferenceEntityCollection().get(0)).getImageStudy().getStartDate()));
+							values.put("studydate", formJsonObj(((DicomImageReferenceEntity)ia.getImageReferenceEntityCollection().get(0)).getImageStudy().getStartDate()));
 						}catch(Exception e){
 							log.warning("The value for StudyDate couldn't be retrieved ", e);
 						}
 					}
-					if (values.containsKey("Name")) {
+					if (values.containsKey("name")) {
 						try{
-							values.put("Name", formJsonObj(ia.getName().getValue()));
+							values.put("name", formJsonObj(ia.getName().getValue()));
 						}catch(Exception e){
 							log.warning("The value for Name couldn't be retrieved ", e);
 						}
 					}
-					if (values.containsKey("StudyUID")) {
+					if (values.containsKey("studyuid")) {
 						try{
-							values.put("StudyUID", formJsonObj(((DicomImageReferenceEntity)ia.getImageReferenceEntityCollection().get(0)).getImageStudy().getInstanceUid().getRoot()));
+							values.put("studyuid", formJsonObj(((DicomImageReferenceEntity)ia.getImageReferenceEntityCollection().get(0)).getImageStudy().getInstanceUid().getRoot()));
 						}catch(Exception e){
 							log.warning("The value for StudyUID couldn't be retrieved ", e);
 						}
 					}
-					if (values.containsKey("SeriesUID")) {
+					if (values.containsKey("seriesuid")) {
 						try{
-							values.put("SeriesUID", formJsonObj(((DicomImageReferenceEntity)ia.getImageReferenceEntityCollection().get(0)).getImageStudy().getImageSeries().getInstanceUid().getRoot()));
+							values.put("seriesuid", formJsonObj(((DicomImageReferenceEntity)ia.getImageReferenceEntityCollection().get(0)).getImageStudy().getImageSeries().getInstanceUid().getRoot()));
 						}catch(Exception e){
 							log.warning("The value for SeriesUID couldn't be retrieved ", e);
 						}
 					}
-					if (values.containsKey("AimUID")) {
+					if (values.containsKey("modality")) {
 						try{
-							values.put("AimUID", formJsonObj(iac.getUniqueIdentifier().getRoot()));
+							values.put("modality", formJsonObj(((DicomImageReferenceEntity)ia.getImageReferenceEntityCollection().get(0)).getImageStudy().getImageSeries().getModality().getDisplayName().getValue()));
+						}catch(Exception e){
+							log.warning("The value for modality couldn't be retrieved ", e);
+						}
+					}
+					if (values.containsKey("aimuid")) {
+						try{
+							values.put("aimuid", formJsonObj(iac.getUniqueIdentifier().getRoot()));
 						}catch(Exception e){
 							log.warning("The value for AimUID couldn't be retrieved ", e);
 						}
@@ -214,20 +229,20 @@ public class AimReporter {
 					if (ia.getImagingObservationEntityCollection()!=null){
 						for (ImagingObservationEntity ob: ia.getImagingObservationEntityCollection().getImagingObservationEntityList()){
 							
-							if (values.containsKey(ob.getLabel().getValue())) { //key exists put the value
-								values.put(ob.getLabel().getValue(), formJsonObj(ob.getListTypeCode().get(0).getDisplayName().getValue(),ob.getListTypeCode().get(0).getCode()));
+							if (values.containsKey(ob.getLabel().getValue().toLowerCase())) { //key exists put the value
+								values.put(ob.getLabel().getValue().toLowerCase(), formJsonObj(ob.getListTypeCode().get(0).getDisplayName().getValue(),ob.getListTypeCode().get(0).getCode()));
 
 							}
 							//look through observation characteristics
 							if (ob.getImagingObservationCharacteristicCollection()!=null) {
 								for (ImagingObservationCharacteristic obChar: ob.getImagingObservationCharacteristicCollection().getImagingObservationCharacteristicList()){
-									if (values.containsKey(obChar.getLabel().getValue())) { //key exists put the value
+									if (values.containsKey(obChar.getLabel().getValue().toLowerCase())) { //key exists put the value
 										//if it has a quantification put that
 										if (obChar.getCharacteristicQuantificationCollection().size()>0){
 											Scale sq=(Scale)obChar.getCharacteristicQuantificationCollection().get(0);
-											values.put(obChar.getLabel().getValue(), formJsonObj(sq.getValue().getValue(),obChar.getListTypeCode().get(0).getCode()));
+											values.put(obChar.getLabel().getValue().toLowerCase(), formJsonObj(sq.getValue().getValue(),obChar.getListTypeCode().get(0).getCode()));
 										} else
-											values.put(obChar.getLabel().getValue(), formJsonObj(obChar.getListTypeCode().get(0).getDisplayName().getValue(),obChar.getListTypeCode().get(0).getCode()));
+											values.put(obChar.getLabel().getValue().toLowerCase(), formJsonObj(obChar.getListTypeCode().get(0).getDisplayName().getValue(),obChar.getListTypeCode().get(0).getCode()));
 									}
 								}
 							}
@@ -238,8 +253,8 @@ public class AimReporter {
 					if (ia.getImagingPhysicalEntityCollection()!=null){
 						for (ImagingPhysicalEntity phy: ia.getImagingPhysicalEntityCollection().getImagingPhysicalEntityList()){
 							
-							if (values.containsKey(phy.getLabel().getValue())) { //key exists put the value
-								values.put(phy.getLabel().getValue(), formJsonObj(phy.getListTypeCode().get(0).getDisplayName().getValue(),phy.getListTypeCode().get(0).getCode()));
+							if (values.containsKey(phy.getLabel().getValue().toLowerCase())) { //key exists put the value
+								values.put(phy.getLabel().getValue().toLowerCase(), formJsonObj(phy.getListTypeCode().get(0).getDisplayName().getValue(),phy.getListTypeCode().get(0).getCode()));
 
 							}
 						}
@@ -248,10 +263,17 @@ public class AimReporter {
 					if (ia.getCalculationEntityCollection()!=null){
 						for (CalculationEntity cal: ia.getCalculationEntityCollection().getCalculationEntityList()){
 							
-							if (values.containsKey(cal.getDescription().getValue())) { //key exists put the value
+							if (values.containsKey(cal.getDescription().getValue().toLowerCase())) { //key exists put the value
 								try {
 									String value=((ExtendedCalculationResult)cal.getCalculationResultCollection().getCalculationResultList().get(0)).getCalculationDataCollection().get(0).getValue().getValue();
-									values.put(cal.getDescription().getValue(), formJsonObj(value,cal.getListTypeCode().get(0).getCode()));
+//									log.info("value is "+value + "|");
+									if (value==null || value.trim().equals("")) value="0";
+									//check the units. if they are mm. convert to cm
+									String units=((ExtendedCalculationResult)cal.getCalculationResultCollection().getCalculationResultList().get(0)).getUnitOfMeasure().getValue().trim();
+									if (units.equalsIgnoreCase("mm")){
+										value=String.valueOf(Double.parseDouble(value)/10);
+									}
+									values.put(cal.getDescription().getValue().toLowerCase(), formJsonObj(value,cal.getListTypeCode().get(0).getCode()));
 								}catch(Exception e) {
 									log.warning("The value for "+cal.getDescription().getValue() + " couldn't be retrieved ", e);
 								}
@@ -261,6 +283,15 @@ public class AimReporter {
 				}
 				String[] strValues=new String[columns.length];
 				for (int i=0;i<columns.length;i++) {
+					//length is mandatory put 0 if it is not in the aim
+					if ( values.get(columns[i]).equals("") ){
+						if (columns[i].equals("length")) {
+							log.info("putting non-existent length");
+							values.put(columns[i], formJsonObj("0","RID39123"));
+						} else {
+							values.put(columns[i], formJsonObj(""));
+						}
+					}
 					strValues[i]="\""+columns[i]+"\":"+values.get(columns[i]);
 					
 				}
@@ -272,20 +303,28 @@ public class AimReporter {
 			}
 		}
 		
-		StringBuilder tableJson=new StringBuilder();
-		tableJson.append("[");
+		ArrayList<String> rows=new ArrayList<>();
 		
 		for (int i=0;i<table.length;i++){
+			StringBuilder rowStr=new StringBuilder();
 			if (table[i]==null) 
 				continue;
-			tableJson.append("{");
+			rowStr.append("{");
 			for (int j = 0; j < table[i].length; j++) {
-				tableJson.append(table[i][j]);
-				if (j!=table[i].length-1)
-					tableJson.append(",");
+				rowStr.append(table[i][j]);
+				if (j<table[i].length-1)
+					rowStr.append(",");
 			}
-			tableJson.append("}");
-			if (i!=table.length-1)
+			rowStr.append("}");
+			rows.add(rowStr.toString());
+			
+		}
+		
+		StringBuilder tableJson=new StringBuilder();
+		tableJson.append("[");
+		for (int i=0;i<rows.size();i++){
+			tableJson.append(rows.get(i));
+			if (i<rows.size()-1 )
 				tableJson.append(",");
 		}
 		tableJson.append("]");
@@ -317,9 +356,9 @@ public class AimReporter {
 	 * @return
 	 */
 	public static RecistReport getRecist(EPADAIMList aims){
-		String table=AimReporter.fillTable(aims,"RECIST",new String[]{"Name","StudyDate","Lesion","Type", "Location","Length","StudyUID","SeriesUID","AimUID"});
+		String table=AimReporter.fillTable(aims,"RECIST",new String[]{"Name","StudyDate","Lesion","Type", "Location","Length","StudyUID","SeriesUID","AimUID","LongAxis","ShortAxis", "Modality"});
 		//get and append recist_mint records
-		String tableMint=AimReporter.fillTable(aims,"RECIST_MINT",new String[]{"Name","StudyDate","Timepoint","Type", "Location","Length","StudyUID","SeriesUID","AimUID"});
+		String tableMint=AimReporter.fillTable(aims,"RECIST_MINT",new String[]{"Name","StudyDate","Timepoint","Type", "Lesion Status", "Location","Length","StudyUID","SeriesUID","AimUID","LongAxis","ShortAxis", "Modality"});
 		
 		if ((table==null || table.isEmpty()) && (tableMint==null || tableMint.isEmpty())) 
 			return null;
@@ -335,86 +374,117 @@ public class AimReporter {
 		}
 		//get targets
 		ArrayList<String> tLesionNames=new ArrayList<>();
-		ArrayList<String> tStudyDates=new ArrayList<>();
+		ArrayList<String> studyDates=new ArrayList<>();
 		ArrayList<String> ntLesionNames=new ArrayList<>();
-		ArrayList<String> ntStudyDates=new ArrayList<>();
+//		ArrayList<String> ntStudyDates=new ArrayList<>();
 		ArrayList<String> targetTypes=new ArrayList<>();
-		ArrayList<String> tNewLesionStudyDates=new ArrayList<>();
+		ArrayList<String> ntNewLesionStudyDates=new ArrayList<>();
 		Integer[] tTimepoints=null;
 		
 		targetTypes.add("target");
 		targetTypes.add("target lesion"); //for new recist mint template
-		targetTypes.add("new lesion");
 		targetTypes.add("resolved lesion");
 		//first pass fill in the lesion names and study dates (x and y axis of the table)
 		for (int i = 0; i < lesions.length(); i++)
 		{
-			String lesionName = ((JSONObject)((JSONObject)lesions.get(i)).get("Name")).getString("value");
-			String studyDate = ((JSONObject)((JSONObject)lesions.get(i)).get("StudyDate")).getString("value");
-			String type=((JSONObject)((JSONObject)lesions.get(i)).get("Type")).getString("value");
+			String lesionName = ((JSONObject)((JSONObject)lesions.get(i)).get("name")).getString("value");
+			String studyDate = ((JSONObject)((JSONObject)lesions.get(i)).get("studydate")).getString("value");
+			String type=((JSONObject)((JSONObject)lesions.get(i)).get("type")).getString("value");
+			if (!studyDates.contains(studyDate))
+				studyDates.add(studyDate);
 			if (targetTypes.contains(type.toLowerCase())) {
 				if (!tLesionNames.contains(lesionName))
 					tLesionNames.add(lesionName);
-				if (!tStudyDates.contains(studyDate))
-					tStudyDates.add(studyDate);
-				if (type.equalsIgnoreCase("new lesion") && !tNewLesionStudyDates.contains(studyDate)) {
-					tNewLesionStudyDates.add(studyDate);
-				}
 			}else {
+				//will not work with the new version, but should keep for the old version
+				if (type.equalsIgnoreCase("new lesion") && !ntNewLesionStudyDates.contains(studyDate)) {
+					ntNewLesionStudyDates.add(studyDate);
+				}
 				if (!ntLesionNames.contains(lesionName))
 					ntLesionNames.add(lesionName);
-				if (!ntStudyDates.contains(studyDate))
-					ntStudyDates.add(studyDate);
+//				if (!ntStudyDates.contains(studyDate))
+//					ntStudyDates.add(studyDate);
 			}
 		}
 		//sort lists
 		Collections.sort(tLesionNames);
-		Collections.sort(tStudyDates);
+		Collections.sort(studyDates);
 		Collections.sort(ntLesionNames);
-		Collections.sort(ntStudyDates);
+//		Collections.sort(ntStudyDates);
 		
-		if (!tLesionNames.isEmpty() && !tStudyDates.isEmpty()){
+		if (!tLesionNames.isEmpty() && !studyDates.isEmpty()){
 			//fill in the table for target lesions
 			if (tTimepoints==null)
-				tTimepoints=new Integer[tStudyDates.size()];
-			RecistReportUIDCell[][] tUIDs=new RecistReportUIDCell[tLesionNames.size()][tStudyDates.size()];
-			String [][] tTable=fillRecistTable(tLesionNames, tStudyDates, lesions, targetTypes,tTimepoints, tUIDs);
-			//calculate the sums first
-			Double[] tSums=calcSums(tTable);
-			//calculate the rrs
-			Double[] tRRBaseline=calcRRBaseline(tSums);
-			Double[] tRRMin=calcRRMin(tSums);
-			Double[] tRR=calcRR(tSums, tTimepoints);
-			Boolean[] isThereNewLesion=new Boolean[tStudyDates.size()];
-			if (!tNewLesionStudyDates.isEmpty()) {
-				for (String studyDate:tNewLesionStudyDates)
-					isThereNewLesion[tStudyDates.indexOf(studyDate)]=true;
-			}
+				tTimepoints=new Integer[studyDates.size()];
+			RecistReportUIDCell[][] tUIDs=new RecistReportUIDCell[tLesionNames.size()][studyDates.size()];
+			String [][] tTable=fillRecistTable(tLesionNames, studyDates, lesions, targetTypes,tTimepoints, tUIDs);
+//			Integer[] timepoints=checkAndFormat(tTimepoints);
 			
 			
 			
-			String[] responseCats=calcResponseCat(tRR,tTimepoints, isThereNewLesion);
-			
-			if (!ntLesionNames.isEmpty() && !ntStudyDates.isEmpty()){
+//			Integer[] ntTimepoints=new Integer[studyDates.size()];
+			RecistReportUIDCell[][] ntUIDs=new RecistReportUIDCell[ntLesionNames.size()][studyDates.size()];
+			String [][] ntTable=null;
+			if (!ntLesionNames.isEmpty() && !studyDates.isEmpty()){
 				//fill in the table for non-target lesions
 				ArrayList<String> nonTargetTypes=new ArrayList<>();
 				nonTargetTypes.add("non-target");
-				Integer[] ntTimepoints=new Integer[ntStudyDates.size()];
-				RecistReportUIDCell[][] ntUIDs=new RecistReportUIDCell[ntLesionNames.size()][ntStudyDates.size()];
-				String [][] ntTable=fillRecistTable(ntLesionNames, ntStudyDates, lesions, nonTargetTypes, ntTimepoints, ntUIDs);
-		
-				//calculate the sums first
-				Double[] ntSums=calcSums(ntTable);
-				//calculate the rrs
-				Double[] ntRRBaseline=calcRRBaseline(ntSums);
-				Double[] ntRRMin=calcRRMin(ntSums);
+				nonTargetTypes.add("nontarget");
+				nonTargetTypes.add("non-cancer lesion");
+				nonTargetTypes.add("new lesion");
 				
-				
-				return new RecistReport(tLesionNames.toArray(new String[tLesionNames.size()]), tStudyDates.toArray(new String[tStudyDates.size()]), tTable, tSums, tRRBaseline, tRRMin, tRR, responseCats, tUIDs,
-						ntLesionNames.toArray(new String[ntLesionNames.size()]), ntStudyDates.toArray(new String[ntStudyDates.size()]), ntTable, ntSums, ntRRBaseline, ntRRMin, ntUIDs);
-	
+				ntTable=fillRecistTable(ntLesionNames, studyDates, lesions, nonTargetTypes, tTimepoints, ntUIDs);
+				for (int i = 0; i < ntTable.length; i++) {
+					
+					for (int j = 0; j < studyDates.size(); j++) {
+						if (ntTable[i][j+3]!=null && ntTable[i][j+3].trim().equalsIgnoreCase("new lesion") && !ntNewLesionStudyDates.contains(studyDates.get(j))) {
+							ntNewLesionStudyDates.add(studyDates.get(j));
+						}
+					}
+				}
+			}
+			
+			Boolean[] isThereNewLesion=new Boolean[studyDates.size()];
+			if (!ntNewLesionStudyDates.isEmpty()) {
+				for (String studyDate:ntNewLesionStudyDates)
+					isThereNewLesion[studyDates.indexOf(studyDate)]=true;
+			}
+			
+			//calculate the sums first
+			Double[] tSums=calcSums(tTable, tTimepoints);
+			//calculate the rrs
+			Double[] tRRBaseline=calcRRBaseline(tSums, tTimepoints);
+			Double[] tRRMin=calcRRMin(tSums, tTimepoints);
+			String[] responseCats=calcResponseCat(tRRBaseline,tTimepoints, isThereNewLesion,tSums);
+			//check for the reappear. we just have reappear in nontarget right now
+			//if the previous was CR, and there is a reappear it is PD
+			for (int i=0;i<responseCats.length;i++){
+				if (responseCats[i]!=null && responseCats[i].equalsIgnoreCase("CR") && i<responseCats.length-1 && !ntLesionNames.isEmpty()){
+					//this is cr, find the next timepoint
+					//stop looking if the timepoint is greater than +1
+					for (int k=i+1;k<tTimepoints.length;k++){
+						if (tTimepoints[k]==tTimepoints[i]+1){
+							//see for all the nontarget lesions
+							for (int j=0;j<ntTable.length;j++){
+								if (ntTable[j][k].toLowerCase().contains("reappeared"))
+									responseCats[k]="PD";
+							}
+						}else if (tTimepoints[k]>tTimepoints[i]+1){
+							break;
+						}
+					}
+				}
+			}
+			
+			if (!ntLesionNames.isEmpty() && !studyDates.isEmpty()){	
+				RecistReport rr= new RecistReport(tLesionNames.toArray(new String[tLesionNames.size()]), studyDates.toArray(new String[studyDates.size()]), tTable, tSums, tRRBaseline, tRRMin, responseCats, tUIDs,
+						ntLesionNames.toArray(new String[ntLesionNames.size()]), ntTable, ntUIDs);
+				rr.setTimepoints(tTimepoints);
+				return rr;
 			}else {
-				return new RecistReport(tLesionNames.toArray(new String[tLesionNames.size()]), tStudyDates.toArray(new String[tStudyDates.size()]), tTable, tSums, tRRBaseline, tRRMin, tRR, responseCats, tUIDs);
+				RecistReport rr= new RecistReport(tLesionNames.toArray(new String[tLesionNames.size()]), studyDates.toArray(new String[studyDates.size()]), tTable, tSums, tRRBaseline, tRRMin, responseCats, tUIDs);
+				rr.setTimepoints(tTimepoints);
+				return rr;
 			}
 		}else {
 			log.info("no target lesion in table " +table );
@@ -424,7 +494,7 @@ public class AimReporter {
 		
 
 	}
-	
+
 	/**
 	 * fills the recist table where lesion names are the rows. and the columns are the info and the study dates 
 	 * The info sits in the first 3 columns (Name,Type,Location)
@@ -446,9 +516,13 @@ public class AimReporter {
 		//get the values to the table
 		for (int i = 0; i < lesions.length(); i++)
 		{
-			String lesionName = ((JSONObject)((JSONObject)lesions.get(i)).get("Name")).getString("value");
-			String studyDate = ((JSONObject)((JSONObject)lesions.get(i)).get("StudyDate")).getString("value");
-			String aimType=((JSONObject)((JSONObject)lesions.get(i)).get("Type")).getString("value");
+			String lesionName = ((JSONObject)((JSONObject)lesions.get(i)).get("name")).getString("value");
+			String studyDate = ((JSONObject)((JSONObject)lesions.get(i)).get("studydate")).getString("value");
+			String aimType=((JSONObject)((JSONObject)lesions.get(i)).get("type")).getString("value");
+			JSONObject statusObject=((JSONObject)lesions.get(i)).optJSONObject("lesion status");
+			String aimStatus=null;
+			if (statusObject!=null)
+				aimStatus=statusObject.optString("value");
 			
 			if (!type.contains(aimType.toLowerCase())) {
 				continue;
@@ -456,17 +530,17 @@ public class AimReporter {
 			table[lesionNames.indexOf(lesionName)][0]=lesionName;
 			//check if exists and if different and put warnings.
 			//changes anyhow
-			if (table[lesionNames.indexOf(lesionName)][1]!=null && !table[lesionNames.indexOf(lesionName)][1].equalsIgnoreCase(((JSONObject)((JSONObject)lesions.get(i)).get("Type")).getString("value")))
-				log.warning("Type at date "+ studyDate + " is different from the same lesion on a different date. The existing one is:"+table[lesionNames.indexOf(lesionName)][1] +" whereas this is:"+((JSONObject)((JSONObject)lesions.get(i)).get("Type")).getString("value"));
-			table[lesionNames.indexOf(lesionName)][1]=((JSONObject)((JSONObject)lesions.get(i)).get("Type")).getString("value");
+			if (table[lesionNames.indexOf(lesionName)][1]!=null && !table[lesionNames.indexOf(lesionName)][1].equalsIgnoreCase(((JSONObject)((JSONObject)lesions.get(i)).get("type")).getString("value")))
+				log.warning("Type at date "+ studyDate + " is different from the same lesion on a different date. The existing one is:"+table[lesionNames.indexOf(lesionName)][1] +" whereas this is:"+((JSONObject)((JSONObject)lesions.get(i)).get("type")).getString("value"));
+			table[lesionNames.indexOf(lesionName)][1]=((JSONObject)((JSONObject)lesions.get(i)).get("type")).getString("value");
 			
-			if (table[lesionNames.indexOf(lesionName)][2]!=null && !table[lesionNames.indexOf(lesionName)][2].equalsIgnoreCase(((JSONObject)((JSONObject)lesions.get(i)).get("Location")).getString("value")))
-				log.warning("Location at date "+ studyDate + " is different from the same lesion on a different date. The existing one is:"+table[lesionNames.indexOf(lesionName)][2] +" whereas this is:"+((JSONObject)((JSONObject)lesions.get(i)).get("Location")).getString("value"));
-			table[lesionNames.indexOf(lesionName)][2]=((JSONObject)((JSONObject)lesions.get(i)).get("Location")).getString("value");
+			if (table[lesionNames.indexOf(lesionName)][2]!=null && !table[lesionNames.indexOf(lesionName)][2].equalsIgnoreCase(((JSONObject)((JSONObject)lesions.get(i)).get("location")).getString("value")))
+				log.warning("Location at date "+ studyDate + " is different from the same lesion on a different date. The existing one is:"+table[lesionNames.indexOf(lesionName)][2] +" whereas this is:"+((JSONObject)((JSONObject)lesions.get(i)).get("location")).getString("value"));
+			table[lesionNames.indexOf(lesionName)][2]=((JSONObject)((JSONObject)lesions.get(i)).get("location")).getString("value");
 			//get the lesion and get the timepoint. if it is integer put that otherwise calculate using study dates
-			JSONObject tpObj=(JSONObject) ((JSONObject)lesions.get(i)).opt("Timepoint");
+			JSONObject tpObj=(JSONObject) ((JSONObject)lesions.get(i)).opt("timepoint");
 			if (tpObj==null)
-				tpObj=(JSONObject) ((JSONObject)lesions.get(i)).opt("Lesion");
+				tpObj=(JSONObject) ((JSONObject)lesions.get(i)).opt("lesion");
 			String lesionTimepoint=tpObj.optString("value");
 			int timepoint=0;
 			try{
@@ -484,7 +558,7 @@ public class AimReporter {
 			if (timepoints[studyDates.indexOf(studyDate)]!=null && timepoints[studyDates.indexOf(studyDate)]!= timepoint) {
 				//TODO How to handle timepoint changes? I currently override with the latest for now
 				log.info("why is the timepoint "+ timepoint + " different from the already existing "+timepoints[studyDates.indexOf(studyDate)] + " "+studyDate );
-				for (int t:timepoints){
+				for (Integer t:timepoints){
 					log.info("timepoint "+ t);
 				}
 				for (String st:studyDates){
@@ -492,19 +566,84 @@ public class AimReporter {
 				}
 			}
 			timepoints[studyDates.indexOf(studyDate)]=timepoint;
-			log.info("setting timepoint index "+studyDates.indexOf(studyDate) + " for study "+studyDate + " is set to "+timepoint);
-			table[lesionNames.indexOf(lesionName)][studyDates.indexOf(studyDate)+3]=((JSONObject)((JSONObject)lesions.get(i)).get("Length")).getString("value");
+//			log.info("setting timepoint index "+studyDates.indexOf(studyDate) + " for study "+studyDate + " is set to "+timepoint);
+			//check if it is the nontarget table and fill in with text instead of values
+			if (type.contains("nontarget")){
+				if (aimStatus!=null && !aimStatus.equals("")){
+					table[lesionNames.indexOf(lesionName)][studyDates.indexOf(studyDate)+3]=((JSONObject)((JSONObject)lesions.get(i)).get("lesion status")).getString("value");
+				} else {
+					String status="";
+					if (aimType.equals("resolved lesion") || aimType.equals("new lesion"))
+						status=aimType;
+					else 
+						status="present lesion";
+						
+					table[lesionNames.indexOf(lesionName)][studyDates.indexOf(studyDate)+3]=status;
+				}
+				
+			}else{
+				if (!aimType.equals("resolved lesion")){
+					//get length and put it in table
+					//if there are longaxis and shortaxis 
+					//use short if it is lymph, use long otherwise
+					//if there is just length use that
+					String length="";
+					JSONObject longaxis=((JSONObject)((JSONObject)lesions.get(i)).optJSONObject("longaxis"));
+					JSONObject shortaxis=((JSONObject)((JSONObject)lesions.get(i)).optJSONObject("shortaxis"));
+					if (longaxis!=null && shortaxis!=null){
+						if (((JSONObject)((JSONObject)lesions.get(i)).get("location")).getString("value").toLowerCase().contains("lymph"))
+							length=shortaxis.getString("value");
+						else
+							length=longaxis.getString("value");
+//						log.info("Gotta use long axis, short axis. length is "+length);
+					}else{
+						length=((JSONObject)((JSONObject)lesions.get(i)).get("length")).getString("value");
+					}
+					table[lesionNames.indexOf(lesionName)][studyDates.indexOf(studyDate)+3]=length;
+				
+				}else 
+					table[lesionNames.indexOf(lesionName)][studyDates.indexOf(studyDate)+3]="0";
+			}
 			if (UIDs!=null){
-				String studyUID = ((JSONObject)((JSONObject)lesions.get(i)).get("StudyUID")).getString("value");
-				String seriesUID = ((JSONObject)((JSONObject)lesions.get(i)).get("SeriesUID")).getString("value");
-				String aimUID=((JSONObject)((JSONObject)lesions.get(i)).get("AimUID")).getString("value");
+				String studyUID = ((JSONObject)((JSONObject)lesions.get(i)).get("studyuid")).getString("value");
+				String seriesUID = ((JSONObject)((JSONObject)lesions.get(i)).get("seriesuid")).getString("value");
+				String aimUID=((JSONObject)((JSONObject)lesions.get(i)).get("aimuid")).getString("value");
+				String location=((JSONObject)((JSONObject)lesions.get(i)).get("location")).getString("value");
+				String modality=((JSONObject)((JSONObject)lesions.get(i)).get("modality")).getString("value");
 				//put as a UID cell object
-				UIDs[lesionNames.indexOf(lesionName)][studyDates.indexOf(studyDate)]=new RecistReportUIDCell(studyUID, seriesUID, aimUID);
+				UIDs[lesionNames.indexOf(lesionName)][studyDates.indexOf(studyDate)]=new RecistReportUIDCell(studyUID, seriesUID, aimUID,timepoint,aimType,location,modality);
 				
 			}
+			
+			
 		}
-		
-		
+		//I need to do this after the table is populated
+		if (type.contains("nontarget")){
+			for (int i = 0; i < table.length; i++) {
+				
+				for (int j = 0; j < studyDates.size(); j++) {
+					//if this is new lesion mark all following consecutive new lesions as present
+					if (table[i][j+3]!=null && table[i][j+3].trim().equalsIgnoreCase("new lesion")){
+						for (int k = j+1; k < studyDates.size(); k++) {
+//							log.info("marking i="+i+ " j="+j+ " k=" +k+ " table[i,j+3]="+table[i][j+3]+ " table[i,k+3]="+table[i][k+3]);
+							
+							if (table[i][k+3]!=null && table[i][k+3].trim().equalsIgnoreCase("new lesion")){
+								table[i][k+3]="present lesion";
+							}else if (table[i][k+3]!=null && table[i][k+3].trim().equalsIgnoreCase("resolved lesion")){
+								break;
+							}
+						}
+					}
+					
+					if (table[i][j+3]!=null && table[i][j+3].trim().equalsIgnoreCase("resolved lesion")){
+						if (j<studyDates.size()-1 && table[i][j+4]!=null && table[i][j+4].trim().equalsIgnoreCase("present lesion")){
+								table[i][j+4]="reappeared lesion";
+						}
+					}
+					
+				}
+			}
+		}
 		return table;
 	}
 	/**
@@ -529,44 +668,93 @@ public class AimReporter {
 
 		return sums;
 	}
-	
+	/**
+	 * calculate sums of lesion dimensions for each timepoint
+	 * @param table
+	 * @param timepoints. timepoints should start from 0 and be continuous but timepoint can repeat(they need to be adjacent)
+	 * @return it will return the sums for each timepoint. if the timepoint is listed twice. it will have the same amount twice
+	 */
+	private static Double[] calcSums(String[][] table, Integer[] timepoints){
+		Double[] sums=new Double[table[0].length-3];
+		for (int k=0; k< table[0].length-3; k++) {
+			sums[k]=0.0;
+			log.info("k is "+k);
+			for (int j=k; j< table[0].length-3; j++) {
+				log.info("j is "+j);
+				if (timepoints[j]==timepoints[k]){
+					if (j!=k)
+						sums[j]=null;
+			
+					for(int i=0; i<table.length; i++){
+						try{
+							sums[k]+=Double.parseDouble(table[i][j+3]);
+		
+						}catch(Exception e) {
+							log.warning("Couldn't convert to double value="+table[i][j+3]);
+						}
+					}
+				}else{
+					//break if you see any other timepoint and skip the columns already calculated
+					k=j-1;
+					log.info("jumping to "+(k+1));
+					break;
+				}
+			}
+
+		}
+//		for (int i=0;i<sums.length;i++)
+//			if (sums[i]==null)
+//				sums[i]=0.0;
+		for (int i=0;i<sums.length;i++)
+			log.info("sum "+ i+ " " + sums[i]);
+		return sums;
+	}
 	/**
 	 * calculate response rates in reference to baseline (first)
 	 * @param sums
 	 * @return
 	 */
-	private static Double[] calcRRBaseline(Double[] sums) {
+	private static Double[] calcRRBaseline(Double[] sums,Integer[] timepoints) {
 		Double baseline=sums[0];
 		Double[] rrBaseline=new Double[sums.length];
 		StringBuilder rrBaseStr= new StringBuilder();
 		for (int i=0;i<sums.length;i++) {
-			rrBaseline[i]=(sums[i]-baseline)*100.0/baseline;
-			rrBaseStr.append(rrBaseline[i]+ "  ");
+			if (sums[i]!=null){
+				if (timepoints[i]!=null && timepoints[i]==0) {
+					baseline=sums[i];
+					log.info("baseline changed. New baseline is:"+i);
+				}
+				rrBaseline[i]=(sums[i]-baseline)*100.0/baseline;
+				rrBaseStr.append(rrBaseline[i]+ "  ");
+			}
 		}
 		return rrBaseline;
 	}
 	
-	/**
-	 * calculate response rates in reference to the min value (overall)
-	 * @param sums
-	 * @return
-	 */
-	private static Double[] calcRRMin(Double[] sums) {
-		Double min=999999.0;
-		for (int i=0;i<sums.length;i++) {
-			if (sums[i]<min)
-				min=sums[i];
-		}
-		log.info("Min is "+min);
-		Double[] rrMin=new Double[sums.length];
-		StringBuilder rrMinStr= new StringBuilder();
-		for (int i=0;i<sums.length;i++) {
-			rrMin[i]=(sums[i]-min)*100.0/min;	
-			rrMinStr.append(rrMin[i]+ "  ");
-			
-		}
-		return rrMin;
-	}
+	//removed as Dr. Rubin said the method below is rrmin
+//	/**
+//	 * calculate response rates in reference to the min value (overall)
+//	 * @param sums
+//	 * @return
+//	 */
+//	private static Double[] calcRRMin(Double[] sums,Integer[] timepoints) {
+//		Double min=999999.0;
+//		for (int i=0;i<sums.length;i++) {
+//			if ((timepoints[i]!=null && timepoints[i]==0) || sums[i]<min) {
+//				min=sums[i];
+//				log.info("Min changed. New min is:"+min);
+//			}
+//		}
+//		log.info("Min is "+min);
+//		Double[] rrMin=new Double[sums.length];
+//		StringBuilder rrMinStr= new StringBuilder();
+//		for (int i=0;i<sums.length;i++) {
+//			rrMin[i]=(sums[i]-min)*100.0/min;	
+//			rrMinStr.append(rrMin[i]+ "  ");
+//			
+//		}
+//		return rrMin;
+//	}
 	
 	/**
 	 * calculate response rates in reference to the current baseline and current min.
@@ -578,21 +766,27 @@ public class AimReporter {
 	 * @param timepoints
 	 * @return
 	 */
-	private static Double[] calcRR(Double[] sums,Integer[] timepoints) {
+	private static Double[] calcRRMin(Double[] sums,Integer[] timepoints) {
 		Double min=sums[0];
 		log.info("Min is "+min);
 		Double[] rr=new Double[sums.length];
 		StringBuilder rrStr= new StringBuilder();
 		for (int i=0;i<sums.length;i++) {
-			if (timepoints[i]==0) {
-				min=sums[i];
-				log.info("Min changed. New baseline.min is:"+min);
-			}
-			rr[i]=(sums[i]-min)*100.0/min;	
-			rrStr.append(rr[i]+ "  ");
-			if (sums[i]<min) {
-				min=sums[i];
-				log.info("Min changed. Smaller rr. min is:"+min);
+			if (sums[i]!=null){
+				if (timepoints[i]!=null && timepoints[i]==0) {
+					min=sums[i];
+					log.info("Min changed. New baseline.min is:"+min);
+				}
+				if (min==0){
+					log.warning("min is 0. returning 999999.9 for rr");
+					rr[i]=999999.9;
+				}else
+					rr[i]=(sums[i]-min)*100.0/min;	
+				rrStr.append(rr[i]+ "  ");
+				if (sums[i]<min) {
+					min=sums[i];
+					log.info("Min changed. Smaller rr. min is:"+min);
+				}
 			}
 		}
 		return rr;
@@ -606,25 +800,62 @@ public class AimReporter {
 	 * @param isThereNewLesion
 	 * @return
 	 */
-	private static String[] calcResponseCat(Double[] rr, Integer[] timepoints, Boolean[] isThereNewLesion){
+	private static String[] calcResponseCat(Double[] rr, Integer[] timepoints, Boolean[] isThereNewLesion, Double[] sums ){
 		String[] responseCats=new String[rr.length];
 		for (int i=0;i<rr.length;i++) {
-			//TODO check if there is a new lesion
+			if (rr[i]!=null) {
+				if (i==0 || (timepoints[i]!=null && timepoints[i]==0)) {
+					responseCats[i]="BL";
+				}
+				else if (rr[i] >= 20 || (isThereNewLesion!=null && isThereNewLesion[i]!=null && isThereNewLesion[i]==true)) {
+					responseCats[i]="PD"; //progressive
+				} else if (sums[i]==0){
+					responseCats[i]="CR"; //complete response
+				}
+				else if (rr[i] <= -30) {
+					responseCats[i]="PR";//partial response
+				}  else {
+					responseCats[i]="SD"; //stable disease
+				}
+			}
 			
-			if (i==0 || timepoints[i]==0) {
-				responseCats[i]="BL";
-			}
-			else if (rr[i] <= -30) {
-				responseCats[i]="PR";
-			} else if (rr[i] >= 20 || (isThereNewLesion!=null && isThereNewLesion[i]!=null && isThereNewLesion[i]==true)) {
-				responseCats[i]="PD";
-			} else {
-				responseCats[i]="SD";
-			}
 		}
 		return responseCats;
 	}
 
+	/**
+	 * 
+	 * @param subjectIDs
+	 * @param username
+	 * @param sessionID
+	 * @return
+	 */
+	public static WaterfallReport getWaterfallProject(String projectID, String username, String sessionID, String type){
+		EpadProjectOperations projOp = DefaultEpadProjectOperations.getInstance();
+		ArrayList<String> subjects=new ArrayList<>();
+		try {
+			List<Subject> subjectObjs=projOp.getSubjectsForProject(projectID);
+			for (Subject s:subjectObjs)
+				subjects.add(s.getSubjectUID());
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		return getWaterfall(subjects, username, sessionID, type,projectID);
+	}
+	
+	
+	public static WaterfallReport getWaterfall(String subjectIDs, String username, String sessionID, String type, String projectID){
+		ArrayList<String> subjects = new ArrayList<>();
+		if (subjectIDs != null) {
+			String[] ids = subjectIDs.split(",");
+			for (String id: ids)
+				subjects.add(id.trim());
+		}
+		return getWaterfall(subjects, username, sessionID, type, projectID);
+	}
+	
 	
 	/**
 	 * 
@@ -633,16 +864,12 @@ public class AimReporter {
 	 * @param sessionID
 	 * @return
 	 */
-	public static WaterfallReport getWaterfall(String subjectIDs, String username, String sessionID){
-		ArrayList<String> subjects = new ArrayList<>();
-		if (subjectIDs != null) {
-			String[] ids = subjectIDs.split(",");
-			for (String id: ids)
-				subjects.add(id.trim());
-		}
+	public static WaterfallReport getWaterfall(ArrayList<String> subjects, String username, String sessionID, String type, String projectID){
+		
 		ArrayList<Double> values=new ArrayList<>();
-		ArrayList<String> responses=new ArrayList<>();
+		ArrayList<String> projects=new ArrayList<>();
 		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
+		ArrayList<String> validSubjects =new ArrayList<>();
 		for(String subjectID:subjects) {
 			SubjectReference subjectReference=new SubjectReference(null, subjectID);
 			EPADAIMList aims = epadOperations.getSubjectAIMDescriptions(subjectReference, username, sessionID);
@@ -652,11 +879,66 @@ public class AimReporter {
 				log.warning("Couldn't retrieve recist report for patient "+ subjectID);
 				continue;
 			}
-			values.add(recist.getMinRR());
-			responses.add(recist.getMinRRResponse());
+			validSubjects.add(subjectID);
+			projects.add(projectID);
+			switch(type){
+			case "BASELINE":
+				values.add(recist.getMinRRBaseLine());
+//				responses.add(recist.getBestResponseBaseline());
+				break;
+			case "MIN":
+				values.add(recist.getMinRRMinimum());
+//				responses.add(recist.getBestResponseMin());
+				break;
+			default:
+				values.add(recist.getMinRRBaseLine());
+//				responses.add(recist.getBestResponseBaseline());
+				break;
+			}
 		}
 		//let Waterfall handle the sorting
-		return new WaterfallReport(subjects.toArray(new String[subjects.size()]), values.toArray(new Double[values.size()]), responses.toArray(new String[responses.size()]));
+
+//		return new WaterfallReport(validSubjects.toArray(new String[validSubjects.size()]), values.toArray(new Double[values.size()]));
+		return new WaterfallReport(validSubjects.toArray(new String[validSubjects.size()]), values.toArray(new Double[values.size()]), projects.toArray(new String[projects.size()]));
+	}
+	
+	
+	public static WaterfallReport getWaterfall(JSONArray subj_proj_array, String username, String sessionID, String type){
+		
+		ArrayList<Double> values=new ArrayList<>();
+		ArrayList<String> projects=new ArrayList<>();
+		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
+		ArrayList<String> validSubjects =new ArrayList<>();
+		for (int i = 0; i < subj_proj_array.length(); i++)
+		{
+			JSONObject sub_prj = subj_proj_array.getJSONObject(i);
+			SubjectReference subjectReference=new SubjectReference(sub_prj.getString("projectID"), sub_prj.getString("subjectID"));
+			EPADAIMList aims = epadOperations.getSubjectAIMDescriptions(subjectReference, username, sessionID);
+			log.info(aims.ResultSet.totalRecords+ " aims found for "+ sub_prj.getString("subjectID"));
+			RecistReport recist=getRecist(aims);
+			if (recist==null) {
+				log.warning("Couldn't retrieve recist report for patient "+ sub_prj.getString("subjectID"));
+				continue;
+			}
+			validSubjects.add(sub_prj.getString("subjectID"));
+			switch(type){
+			case "BASELINE":
+				values.add(recist.getMinRRBaseLine());
+				projects.add(sub_prj.getString("projectID"));
+				break;
+			case "MIN":
+				values.add(recist.getMinRRMinimum());
+				projects.add(sub_prj.getString("projectID"));
+				break;
+			default:
+				values.add(recist.getMinRRBaseLine());
+				projects.add(sub_prj.getString("projectID"));
+				break;
+			}
+		}
+		//let Waterfall handle the sorting
+
+		return new WaterfallReport(validSubjects.toArray(new String[validSubjects.size()]), values.toArray(new Double[values.size()]), projects.toArray(new String[projects.size()]));
 	}
 
 }

@@ -117,6 +117,7 @@ import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.json.JSONArray;
 import org.json.JSONObject;
 
 import com.google.gson.Gson;
@@ -160,6 +161,7 @@ import edu.stanford.epad.dtos.EPADWorklist;
 import edu.stanford.epad.dtos.EPADWorklistList;
 import edu.stanford.epad.dtos.EPADWorklistStudyList;
 import edu.stanford.epad.dtos.EPADWorklistSubjectList;
+import edu.stanford.epad.dtos.RecistReport;
 import edu.stanford.epad.dtos.RemotePAC;
 import edu.stanford.epad.dtos.RemotePACEntity;
 import edu.stanford.epad.dtos.RemotePACEntityList;
@@ -712,36 +714,43 @@ public class EPADGetHandler
 				log.info("GET request for AIMs from user " + username + "; query type is " + aimSearchType + ", value "
 						+ searchValue + ", project " + projectID);
 				EPADAIMList aims = null;
-				if (aimSearchType != null)
-					aims = epadOperations.getAIMDescriptions(projectID, aimSearchType, searchValue, username, sessionID, start, count);
-				else
-					aims = epadOperations.getProjectAIMDescriptions(projectReference, username, sessionID);
-				long dbtime = System.currentTimeMillis();
-				log.info("Time taken for AIM database query:" + (dbtime-starttime) + " msecs");
-				if (returnSummary(httpRequest))
-				{
-					if (AIMSearchType.JSON_QUERY.equals(aimSearchType) || AIMSearchType.AIM_QUERY.equals(aimSearchType))
-						aims = AIMUtil.queryAIMImageAnnotationSummariesV4(aims, aimSearchType, searchValue, username, sessionID);
+				String report = httpRequest.getParameter("report");
+				String type = httpRequest.getParameter("type");
+				
+				if (report!=null && report.equalsIgnoreCase("WATERFALL")) {
+					responseStream.append(AimReporter.getWaterfallProject(projectID, username, sessionID, type).toJSON());
+				}else {
+					if (aimSearchType != null)
+						aims = epadOperations.getAIMDescriptions(projectID, aimSearchType, searchValue, username, sessionID, start, count);
 					else
-						aims = AIMUtil.queryAIMImageAnnotationSummariesV4(aims, username, sessionID);					
-					long starttime2 = System.currentTimeMillis();
-					responseStream.append(aims.toJSON());
-					long resptime = System.currentTimeMillis();
-					log.info("Time taken for write http response:" + (resptime-starttime2) + " msecs");
-				}
-				else if (returnJson(httpRequest))
-				{
-					if (AIMSearchType.JSON_QUERY.equals(aimSearchType) || AIMSearchType.AIM_QUERY.equals(aimSearchType))
-						AIMUtil.queryAIMImageAnnotationsV4(responseStream, aims, aimSearchType, searchValue, username, sessionID, true);					
+						aims = epadOperations.getProjectAIMDescriptions(projectReference, username, sessionID);
+					long dbtime = System.currentTimeMillis();
+					log.info("Time taken for AIM database query:" + (dbtime-starttime) + " msecs");
+					if (returnSummary(httpRequest))
+					{
+						if (AIMSearchType.JSON_QUERY.equals(aimSearchType) || AIMSearchType.AIM_QUERY.equals(aimSearchType))
+							aims = AIMUtil.queryAIMImageAnnotationSummariesV4(aims, aimSearchType, searchValue, username, sessionID);
+						else
+							aims = AIMUtil.queryAIMImageAnnotationSummariesV4(aims, username, sessionID);					
+						long starttime2 = System.currentTimeMillis();
+						responseStream.append(aims.toJSON());
+						long resptime = System.currentTimeMillis();
+						log.info("Time taken for write http response:" + (resptime-starttime2) + " msecs");
+					}
+					else if (returnJson(httpRequest))
+					{
+						if (AIMSearchType.JSON_QUERY.equals(aimSearchType) || AIMSearchType.AIM_QUERY.equals(aimSearchType))
+							AIMUtil.queryAIMImageAnnotationsV4(responseStream, aims, aimSearchType, searchValue, username, sessionID, true);					
+						else
+							AIMUtil.queryAIMImageJsonAnnotations(responseStream, aims, username, sessionID);					
+					}
 					else
-						AIMUtil.queryAIMImageJsonAnnotations(responseStream, aims, username, sessionID);					
-				}
-				else
-				{
-					if (AIMSearchType.AIM_QUERY.equals(aimSearchType) || AIMSearchType.JSON_QUERY.equals(aimSearchType))
-						AIMUtil.queryAIMImageAnnotationsV4(responseStream, aims, aimSearchType, searchValue, username, sessionID, false);					
-					else
-						AIMUtil.queryAIMImageAnnotationsV4(responseStream, aims, username, sessionID);					
+					{
+						if (AIMSearchType.AIM_QUERY.equals(aimSearchType) || AIMSearchType.JSON_QUERY.equals(aimSearchType))
+							AIMUtil.queryAIMImageAnnotationsV4(responseStream, aims, aimSearchType, searchValue, username, sessionID, false);					
+						else
+							AIMUtil.queryAIMImageAnnotationsV4(responseStream, aims, username, sessionID);					
+					}
 				}
 				statusCode = HttpServletResponse.SC_OK;
 			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.PROJECT_AIM, pathInfo)) {
@@ -824,8 +833,13 @@ public class EPADGetHandler
 				String report = httpRequest.getParameter("report");
 				
 				if (report!=null && report.equalsIgnoreCase("RECIST")) {
-				
-					responseStream.append(AimReporter.getRecist(aims).toJSON());
+					RecistReport recistTable=AimReporter.getRecist(aims);
+					if (recistTable!=null)
+						responseStream.append(recistTable.toJSON());
+					else {
+						log.warning("Couldn't get recist table");
+						responseStream.append("{}");
+					}
 				} else if (returnTable) {
 					String templateCode = httpRequest.getParameter("templatecode");
 					String columns = httpRequest.getParameter("columns"); //comma seperated
@@ -1488,9 +1502,18 @@ public class EPADGetHandler
 						+ searchValue + ", project " + projectID + " deletedAIMs:" + deletedAims);
 				
 				String report = httpRequest.getParameter("report");
-				
+				String type = httpRequest.getParameter("type");
 				if (report!=null && report.equalsIgnoreCase("WATERFALL")) {
-					responseStream.append(AimReporter.getWaterfall(subjectUIDs, username, sessionID).toJSON());
+					if (subjectUIDs!=null && subjectUIDs!="")
+						responseStream.append(AimReporter.getWaterfall(subjectUIDs, username, sessionID, type, projectID).toJSON());
+					else {
+						String subj_proj_pairs=httpRequest.getParameter("subj_proj_pairs");
+						if (subj_proj_pairs!=null && subj_proj_pairs!=""){
+							JSONObject subj_proj_pairs_jso = new JSONObject((subj_proj_pairs));
+							JSONArray sub_proj_array = (JSONArray) subj_proj_pairs_jso.get("jsArray");
+							responseStream.append(AimReporter.getWaterfall(sub_proj_array, username, sessionID, type).toJSON());
+						}
+					}
 				}else{
 					EPADAIMList aims = null;
 					if (!deletedAims)
