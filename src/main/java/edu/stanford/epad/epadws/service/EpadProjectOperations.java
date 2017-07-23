@@ -120,6 +120,7 @@ import edu.stanford.epad.epadws.models.EventLog;
 import edu.stanford.epad.epadws.models.FileType;
 import edu.stanford.epad.epadws.models.NonDicomSeries;
 import edu.stanford.epad.epadws.models.Project;
+import edu.stanford.epad.epadws.models.ProjectToSubjectToStudyToUserToFlaggedImage;
 import edu.stanford.epad.epadws.models.ProjectType;
 import edu.stanford.epad.epadws.models.Study;
 import edu.stanford.epad.epadws.models.Subject;
@@ -1183,6 +1184,45 @@ public interface EpadProjectOperations {
 	 */
 	void deleteFile(String loggedInUser, String projectID, String subjectUID, String studyUID, String seriesUID,
 			String filename, String filetype) throws Exception;
+	
+	/**
+	 * check if the image is flagged for this project and user
+	 * @param username
+	 * @param imageUID
+	 * @param projectID
+	 * @param subjectID
+	 * @return
+	 */
+	boolean isFlagged(String username, String imageUID, String projectID, String subjectID, String studyID);
+	
+	/**
+	 * set image flagged for this project and user
+	 * @param username
+	 * @param imageUID
+	 * @param projectID
+	 * @param flag
+	 * @param subjectID
+	 */
+	void setFlagged(String username, String imageUID, String projectID, boolean flag, String subjectID, String studyID);
+	
+	/**
+	 * get the flag status from db
+	 * @param username
+	 * @param imageUID
+	 * @param projectID
+	 * @param subjectID
+	 * @return
+	 */
+	ProjectToSubjectToStudyToUserToFlaggedImage getFlagStatus(String username, String imageUID, String projectID, String subjectID, String studyID);
+	
+	/**
+	 * gets the imageuids for the flagged images in the project. if the project id is null returns all
+	 * @param username
+	 * @param projectID
+	 * @param subjectID
+	 * @return
+	 */
+	List<String> getFlaggedImageUIDs(String username, String projectID, String subjectID, String studyID);
 	
 	
 }

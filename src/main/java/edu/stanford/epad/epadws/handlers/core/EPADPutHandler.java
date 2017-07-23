@@ -108,10 +108,7 @@ import java.io.File;
 import java.io.PrintWriter;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.Enumeration;
 import java.util.Map;
-import java.util.Set;
-
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -123,9 +120,6 @@ import edu.stanford.epad.common.util.EPADFileUtils;
 import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.epad.dtos.EPADAIM;
 import edu.stanford.epad.dtos.EPADMessage;
-import edu.stanford.epad.dtos.EPADPlugin;
-import edu.stanford.epad.dtos.EPADPluginList;
-import edu.stanford.epad.dtos.EPADPluginParameterList;
 import edu.stanford.epad.dtos.EPADProject;
 import edu.stanford.epad.dtos.EPADSeries;
 import edu.stanford.epad.dtos.EPADSubject;
@@ -138,14 +132,11 @@ import edu.stanford.epad.epadws.handlers.HandlerUtil;
 
 import edu.stanford.epad.epadws.models.EpadFile;
 import edu.stanford.epad.epadws.models.FileType;
-import edu.stanford.epad.epadws.models.Project;
 import edu.stanford.epad.epadws.models.ProjectType;
 import edu.stanford.epad.epadws.models.RemotePACQuery;
-import edu.stanford.epad.epadws.models.Subject;
 import edu.stanford.epad.epadws.models.User;
 import edu.stanford.epad.epadws.models.WorkList;
 import edu.stanford.epad.epadws.models.WorkListToStudy;
-import edu.stanford.epad.epadws.models.WorkListToSubject;
 import edu.stanford.epad.epadws.queries.DefaultEpadOperations;
 import edu.stanford.epad.epadws.queries.EpadOperations;
 import edu.stanford.epad.epadws.service.DefaultEpadProjectOperations;
@@ -970,6 +961,14 @@ public class EPADPutHandler
 					throw new Exception();
 				return HttpServletResponse.SC_OK;
 
+			} else if (HandlerUtil.matchesTemplate(ProjectsRouteTemplates.FLAGGED_IMG, pathInfo)) {
+				StudyReference studyReference = StudyReference.extract(ProjectsRouteTemplates.FLAGGED_IMG, pathInfo);
+				Map<String, String> templateMap = HandlerUtil.getTemplateMap(ProjectsRouteTemplates.FLAGGED_IMG, pathInfo);
+				String path_user = HandlerUtil.getTemplateParameter(templateMap, "username");
+				String path_image = HandlerUtil.getTemplateParameter(templateMap, "image");
+				epadOperations.setFlagged(path_user, studyReference, path_image, sessionID, true);
+				statusCode = HttpServletResponse.SC_OK;
+			
 			} else {
 				statusCode = HandlerUtil.badRequestJSONResponse(BAD_PUT_MESSAGE + ":" + pathInfo, responseStream, log);
 			}

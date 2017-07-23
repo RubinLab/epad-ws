@@ -529,6 +529,7 @@
 			<xs:element name="startDate" type="iso:TS"/>
 			<xs:element name="startTime" type="iso:TS"/>
 			<xs:element name="procedureDescription" type="iso:ST" minOccurs="0"/>
+			<xs:element name="accessionNumber" type="iso:ST" minOccurs="0"/>
 			<xs:element name="imageSeries" type="ImageSeries"/>
 			<xs:element name="referencedDicomObjectCollection" minOccurs="0">
 				<xs:complexType>

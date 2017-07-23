@@ -102,97 +102,124 @@
  * of non-limiting example, you will not contribute any code obtained by you under the GNU General Public License or other 
  * so-called "reciprocal" license.)
  *******************************************************************************/
-package edu.stanford.epad.epadws.dcm4chee;
+package edu.stanford.epad.epadws.models;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.Date;
 
-import edu.stanford.epad.common.dicom.DCM4CHEEImageDescription;
-import edu.stanford.epad.common.dicom.DICOMFileDescription;
-import edu.stanford.epad.dtos.internal.DCM4CHEEStudySearchType;
-import edu.stanford.epad.epadws.handlers.core.ImageReference;
-import edu.stanford.epad.epadws.queries.Dcm4CheeQueries;
+import edu.stanford.epad.dtos.AnnotationStatus;
+import edu.stanford.epad.epadws.models.dao.AbstractDAO;
 
-/**
- * Defines all operations on the dcm4chee database used by ePAD.
- * 
- * @author martin
- * @see Dcm4CheeQueries
- */
-public interface Dcm4CheeDatabaseOperations
-{
-	String getSubjectUIDForStudy(String studyUID);
+public class ProjectToSubjectToStudyToUserToFlaggedImage extends AbstractDAO {
+
+	long id;
+	String projectId;
+	String subjectId;
+	String studyId;
+	String username;
+	String imageUID;
+	String creator;
+	Date createdTime;
+	Date updateTime;
+
+	@Override
+	public long getId() {
+		return id;
+	}
+
+	public void setId(long id) {
+		this.id = id;
+	}
 	
-	String getStudyUIDForSeries(String seriesUID);
+	
+	public String getProjectId() {
+		return projectId;
+	}
 
-	String getSeriesUIDForImage(String imageUID);
+	public void setProjectId(String projectId) {
+		this.projectId = projectId;
+	}
 
-	Map<String, String> studySearch(String studyUID);
+	public String getSubjectId() {
+		return subjectId;
+	}
 
-	List<Map<String, String>> getAllSeriesInStudy(String studyUID);
+	public void setSubjectId(String subjectId) {
+		this.subjectId = subjectId;
+	}
+	
+	public String getStudyId() {
+		return studyId;
+	}
 
-	Set<String> getAllSeriesUIDsInStudy(String studyUID);
+	public void setStudyId(String studyId) {
+		this.studyId = studyId;
+	}
 
-	Set<String> getStudyUIDsForPatient(String patientID);
+	public String getUsername() {
+		return username;
+	}
 
-	Set<String> getImageUIDsForSeries(String seriesUID);
+	public void setUsername(String username) {
+		this.username = username;
+	}
 
-	String getFirstImageUIDInSeries(String seriesUID);
+	public String getImageUID() {
+		return imageUID;
+	}
 
-	int getNumberOfStudiesForPatient(String patientID);
+	public void setImageUID(String imageUID) {
+		this.imageUID = imageUID;
+	}
 
-	int getNumberOfStudiesForPatients(Set<String> patientIDs);
+	public String getCreator() {
+		return creator;
+	}
 
-	Map<String, String> getParentStudyForSeries(String seriesUID);
+	public void setCreator(String creator) {
+		this.creator = creator;
+	}
 
-	public Set<DICOMFileDescription> getDICOMFilesForSeries(String seriesUID);
+	public Date getCreatedTime() {
+		return createdTime;
+	}
 
-	List<DCM4CHEEImageDescription> getImageDescriptions(String studyUID, String seriesUID);
+	public void setCreatedTime(Date createdTime) {
+		this.createdTime = createdTime;
+	}
 
-	DCM4CHEEImageDescription getImageDescription(ImageReference imageReference);
+	public Date getUpdateTime() {
+		return updateTime;
+	}
 
-	DCM4CHEEImageDescription getImageDescription(String studyUID, String seriesUID, String imageUID);
+	public void setUpdateTime(Date updateTime) {
+		this.updateTime = updateTime;
+	}
 
-	int getPrimaryKeyForImageUID(String imageUID);
 
-	/**
-	 * Get all dcm4chee studies that have finished processing.
-	 */
-	Set<String> getAllReadyDcm4CheeSeriesUIDs();
 
-	/**
-	 * Get all dcm4chee studies/series.
-	 */
-	Set<String> getAllDcm4CheeSeriesUIDs();
 
-	/**
-	 * typeValue one of: patientName, patientId, studyDate, accessionNum, examType
-	 * 
-	 * @see DCM4CHEEStudySearchType
-	 */
-	List<Map<String, String>> studySearch(DCM4CHEEStudySearchType searchType, String typeValue);
+	public final static String DBTABLE = "user_flaggedimage";
+	public final static String[][] DBCOLUMNS = {
+        {"id","long","id","Id"},
+        {"projectId","String","project_id","varchar"},
+        {"subjectId","String","subject_id","varchar"},
+        {"studyId","String","study_id","varchar"},
+        {"username","String","username","varchar"},
+        {"imageUID","String","image_uid","varchar"},
+        {"creator","String","creator","varchar"},
+        {"createdTime","Date","createdtime","timestamp"},
+        {"updateTime","Date","updatetime","timestamp"},	
+	};
 
-	/**
-	 * Returns a map describing a dcm4chee series with the following keys: pk, study_fk, mpps_fk, inst_code_fk,
-	 * series_iuid, series_no, modality, body_part, laterality, series_desc, institution, station_name, department,
-	 * perf_physician, perf_phys_fn_sx, perf_phys_gn_sx perf_phys_i_name, perf_phys_p_name, pps_start, series_custom1,
-	 * series_custom2, series_custom3, num_instances, src_aet, ext_retr_aet, retrieve_aets, fileset_iuid, fileset_id,
-	 * availability, series_status, created_time, updated_time, series_attrs
-	 */
-	Map<String, String> getSeriesData(String seriesUID);
+	
+	@Override
+	public String returnDBTABLE() {
+		return DBTABLE;
+	}
 
-	/**
-	 * get the series uids of non-dso series in the study
-	 * @param studyUID
-	 * @return
-	 */
-	Set<String> getNonDSOSeriesUIDsInStudy(String studyUID);
+	@Override
+	public String[][] returnDBCOLUMNS() {
+		return DBCOLUMNS;
+	}
 
-	/**
-	 * get the image description using just imageuid 
-	 * @param imageUID
-	 * @return
-	 */
-	DCM4CHEEImageDescription getImageDescription(String imageUID);
 }
