@@ -212,7 +212,7 @@ public class AimReporter {
 					}
 					if (values.containsKey("modality")) {
 						try{
-							values.put("modality", formJsonObj(((DicomImageReferenceEntity)ia.getImageReferenceEntityCollection().get(0)).getImageStudy().getImageSeries().getModality().getDisplayName().getValue()));
+							values.put("modality", formJsonObj(((DicomImageReferenceEntity)ia.getImageReferenceEntityCollection().get(0)).getImageStudy().getImageSeries().getModality().getDisplayName().getValue(),((DicomImageReferenceEntity)ia.getImageReferenceEntityCollection().get(0)).getImageStudy().getImageSeries().getModality().getCode()));
 						}catch(Exception e){
 							log.warning("The value for modality couldn't be retrieved ", e);
 						}
@@ -590,7 +590,7 @@ public class AimReporter {
 					String length="";
 					JSONObject longaxis=((JSONObject)((JSONObject)lesions.get(i)).optJSONObject("longaxis"));
 					JSONObject shortaxis=((JSONObject)((JSONObject)lesions.get(i)).optJSONObject("shortaxis"));
-					if (longaxis!=null && shortaxis!=null){
+					if (longaxis!=null && !longaxis.getString("value").equals("")  && shortaxis!=null && !shortaxis.getString("value").equals("")){
 						if (((JSONObject)((JSONObject)lesions.get(i)).get("location")).getString("value").toLowerCase().contains("lymph"))
 							length=shortaxis.getString("value");
 						else
@@ -609,7 +609,9 @@ public class AimReporter {
 				String seriesUID = ((JSONObject)((JSONObject)lesions.get(i)).get("seriesuid")).getString("value");
 				String aimUID=((JSONObject)((JSONObject)lesions.get(i)).get("aimuid")).getString("value");
 				String location=((JSONObject)((JSONObject)lesions.get(i)).get("location")).getString("value");
-				String modality=((JSONObject)((JSONObject)lesions.get(i)).get("modality")).getString("value");
+				String modality=((JSONObject)((JSONObject)lesions.get(i)).get("modality")).getString("code");
+				if (modality.equals("99EPADM0"))
+					modality=((JSONObject)((JSONObject)lesions.get(i)).get("modality")).getString("value");
 				//put as a UID cell object
 				UIDs[lesionNames.indexOf(lesionName)][studyDates.indexOf(studyDate)]=new RecistReportUIDCell(studyUID, seriesUID, aimUID,timepoint,aimType,location,modality);
 				
