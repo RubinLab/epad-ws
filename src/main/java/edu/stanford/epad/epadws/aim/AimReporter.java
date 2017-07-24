@@ -455,7 +455,8 @@ public class AimReporter {
 			//calculate the rrs
 			Double[] tRRBaseline=calcRRBaseline(tSums, tTimepoints);
 			Double[] tRRMin=calcRRMin(tSums, tTimepoints);
-			String[] responseCats=calcResponseCat(tRRBaseline,tTimepoints, isThereNewLesion,tSums);
+			//use rrmin not baseline
+			String[] responseCats=calcResponseCat(tRRMin,tTimepoints, isThereNewLesion,tSums);
 			//check for the reappear. we just have reappear in nontarget right now
 			//if the previous was CR, and there is a reappear it is PD
 			for (int i=0;i<responseCats.length;i++){
