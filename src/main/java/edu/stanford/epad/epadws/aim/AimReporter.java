@@ -136,6 +136,7 @@ import edu.stanford.hakan.aim4api.base.ImagingObservationCharacteristic;
 import edu.stanford.hakan.aim4api.base.ImagingObservationEntity;
 import edu.stanford.hakan.aim4api.base.ImagingPhysicalEntity;
 import edu.stanford.hakan.aim4api.base.Scale;
+import edu.stanford.hakan.aim4api.questions.Question;
 import edu.stanford.hakan.aim4api.usage.AnnotationGetter;
 
 public class AimReporter {
@@ -280,6 +281,22 @@ public class AimReporter {
 							}
 						}
 					}
+					
+					//look through questions
+					if (ia.getQuestionCollection()!=null){
+						for (Question q: ia.getQuestionCollection().getListQuestion()){
+							
+							if (values.containsKey(q.getQuestion().toLowerCase())) { //key exists put the value
+								try {
+									String value=q.getAnswer();
+//									
+									values.put(q.getQuestion().toLowerCase(), formJsonObj(value));
+								}catch(Exception e) {
+									log.warning("The value for "+q.getQuestion().toLowerCase() + " couldn't be retrieved ", e);
+								}
+							}
+						}
+					}
 				}
 				String[] strValues=new String[columns.length];
 				for (int i=0;i<columns.length;i++) {
@@ -356,9 +373,9 @@ public class AimReporter {
 	 * @return
 	 */
 	public static RecistReport getRecist(EPADAIMList aims){
-		String table=AimReporter.fillTable(aims,"RECIST",new String[]{"Name","StudyDate","Lesion","Type", "Location","Length","StudyUID","SeriesUID","AimUID","LongAxis","ShortAxis", "Modality"});
+		String table=AimReporter.fillTable(aims,"RECIST",new String[]{"Name","StudyDate","Lesion","Type", "Location","Length","StudyUID","SeriesUID","AimUID","LongAxis","ShortAxis", "Modality", "Trial", "Trial Arm", "Trial CaseID"});
 		//get and append recist_mint records
-		String tableMint=AimReporter.fillTable(aims,"RECIST_MINT",new String[]{"Name","StudyDate","Timepoint","Type", "Lesion Status", "Location","Length","StudyUID","SeriesUID","AimUID","LongAxis","ShortAxis", "Modality"});
+		String tableMint=AimReporter.fillTable(aims,"RECIST_MINT",new String[]{"Name","StudyDate","Timepoint","Type", "Lesion Status", "Location","Length","StudyUID","SeriesUID","AimUID","LongAxis","ShortAxis", "Modality", "Trial", "Trial Arm", "Trial CaseID"});
 		
 		if ((table==null || table.isEmpty()) && (tableMint==null || tableMint.isEmpty())) 
 			return null;
