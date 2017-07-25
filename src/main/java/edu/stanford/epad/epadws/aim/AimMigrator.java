@@ -376,12 +376,16 @@ public class AimMigrator {
 		//see if you can find trial info and store as freetext
 		String trial=mintJson.optString("trial");
 		String trialArm=mintJson.optString("trialArm");
+		String trialCaseID=mintJson.optString("trialCaseID");
 		QuestionCollection qc= new QuestionCollection();
 		if (trial!=null && !trial.equals("")){
 			qc.addQuestion(new Question("Trial", trial));
 		}
 		if (trialArm!=null && !trialArm.equals("")){
 			qc.addQuestion(new Question("Trial Arm", trialArm));
+		}
+		if (trialCaseID!=null && !trialCaseID.equals("")){
+			qc.addQuestion(new Question("Trial CaseID", trialCaseID));
 		}
 		ia.setQuestionCollection(qc);
 		
