@@ -156,6 +156,8 @@ import edu.stanford.hakan.aim4api.base.TwoDimensionSpatialCoordinateCollection;
 import edu.stanford.hakan.aim4api.base.Enumerations.ScaleType;
 import edu.stanford.hakan.aim4api.compability.aimv3.Modality;
 import edu.stanford.hakan.aim4api.project.epad.Enumerations.ShapeType;
+import edu.stanford.hakan.aim4api.questions.Question;
+import edu.stanford.hakan.aim4api.questions.QuestionCollection;
 import edu.stanford.hakan.aim4api.usage.AnnotationValidator;
 
 public class AimMigrator {
@@ -370,7 +372,19 @@ public class AimMigrator {
 		log.info("the values retrieved are "+ sopClassUID+" "+studyDate+" "+studyTime+" "+pName+" "+pId+" "+pBirthDate+" "+pSex+" "+studyUID+" "+sourceSeriesUID+" ");
 		ImageAnnotationCollection iac = createImageAnnotationColectionFromProperties(username, pName, pId, pBirthDate, pSex);
 		edu.stanford.hakan.aim4api.base.ImageAnnotation ia=createImageAnnotationFromProperties(username, templateCode, lesionName, comment, imageUID, sopClassUID, studyDate, studyTime, studyUID, sourceSeriesUID);
-
+		
+		//see if you can find trial info and store as freetext
+		String trial=mintJson.optString("trial");
+		String trialArm=mintJson.optString("trialArm");
+		QuestionCollection qc= new QuestionCollection();
+		if (trial!=null && !trial.equals("")){
+			qc.addQuestion(new Question("Trial", trial));
+		}
+		if (trialArm!=null && !trialArm.equals("")){
+			qc.addQuestion(new Question("Trial Arm", trialArm));
+		}
+		ia.setQuestionCollection(qc);
+		
 		//create the entities using information from pf
 		if (pf!=null)
 			ia=addMarkupAndCalculationFromPF(ia,pf);
