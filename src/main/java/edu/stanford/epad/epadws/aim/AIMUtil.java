@@ -255,6 +255,23 @@ public class AIMUtil
 		}
 	}
 	
+	public static void updateDSOStartIndexAndName(EPADAIM aim,int dsoStartIndex, String name) {
+		ImageAnnotationCollection iac=null;
+		EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
+		try {
+			iac = AnnotationGetter.getImageAnnotationCollectionFromString(aim.xml, xsdFilePathV4);
+			iac.getImageAnnotation().setDsoStartIndex(dsoStartIndex);
+			iac.getImageAnnotation().setName(new ST(name));
+			//update the one in db
+			epadDatabaseOperations.updateAIMXml(aim.aimID, iac.getXMLString());
+			//update the one in exist
+			
+			saveImageAnnotationToServer(iac, aim.projectID, dsoStartIndex, null, false);
+		} catch (AimException e) {
+			log.info("Aim exception getting the aim from string " + e.getMessage());
+		}
+	}
+	
 	private static long getTime(String timestamp)
 	{
 		try
