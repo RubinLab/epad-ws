@@ -262,13 +262,19 @@ public class DSOUtil
 			String seriesDescription = null;
 			String seriesUID = null;
 			String instanceUID = null;
-			for (DICOMElement dicomElement : dicomElements.ResultSet.Result) {
-				if (dicomElement.tagCode.equalsIgnoreCase(PixelMedUtils.SeriesDescriptionCode)) {
-					log.info("DSO to be edited, tag:" + dicomElement.tagName + " value:" + dicomElement.value);
-					seriesDescription = dicomElement.value;
+			//put name from dsoeditrequest instead of reading from tags
+			if (dsoEditRequest.name!=null){
+				seriesDescription=dsoEditRequest.name;
+			}else { //don't have name in the request get the series desc from the dso being edited
+				for (DICOMElement dicomElement : dicomElements.ResultSet.Result) {
+					if (dicomElement.tagCode.equalsIgnoreCase(PixelMedUtils.SeriesDescriptionCode)) {
+						log.info("DSO to be edited, tag:" + dicomElement.tagName + " value:" + dicomElement.value);
+						seriesDescription = dicomElement.value;
+					}
+					
 				}
-				
 			}
+			
 			// Always 'clobber' the orginal DSO
 //			if (seriesDescription != null && seriesDescription.toLowerCase().contains("epad"))
 			{
@@ -338,7 +344,7 @@ public class DSOUtil
 					deleteQuietly(new File(dicom));
 				}
 				return new DSOEditResult(imageReference.projectID, imageReference.subjectID, imageReference.studyUID,			
-						imageReference.seriesUID, imageReference.imageUID, dsoEditRequest.aimID, firstFrame);
+						imageReference.seriesUID, imageReference.imageUID, dsoEditRequest.aimID, firstFrame, dsoEditRequest.name);
 			}
 			else
 				return null;
@@ -1253,8 +1259,10 @@ public class DSOUtil
 				//need to pass this all the way to segmentation writer, put into edit request
 				String property = httpRequest.getParameter("property");
 				String color = httpRequest.getParameter("color");
+				String name = httpRequest.getParameter("name");
 				dsoEditRequest.property=property;
 				dsoEditRequest.color=color;
+				dsoEditRequest.name=name;
 				
 				log.info("DSOEditRequest, imageUID:" + dsoEditRequest.imageUID + " aimID:" + dsoEditRequest.aimID + " number Frames:" + dsoEditRequest.editedFrameNumbers.size());
 				EpadDatabaseOperations epadDatabaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();
@@ -1299,6 +1307,9 @@ public class DSOUtil
 							if (dsoEditResult.firstFrame!=null) {
 								log.info("update aim table dso first frame with "+ dsoEditResult.firstFrame + "for aim "+dsoEditResult.aimID);
 								epadDatabaseOperations.updateAIMDSOFrameNo(dsoEditResult.aimID, dsoEditResult.firstFrame);
+								epadDatabaseOperations.updateAIMName(dsoEditResult.aimID, dsoEditResult.name);
+								AIMUtil.updateDSOStartIndexAndName(aim, dsoEditResult.firstFrame, dsoEditRequest.name);
+								
 							}
 							List<ImageAnnotation> aims = AIMQueries.getAIMImageAnnotations(AIMSearchType.ANNOTATION_UID, dsoEditResult.aimID, "admin");
 							if (aims.size() > 0)
