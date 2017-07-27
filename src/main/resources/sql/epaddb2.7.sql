@@ -10,5 +10,5 @@ updatetime timestamp,
 updated_by varchar(64),
 PRIMARY KEY (id)) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-UPDATE dbversion SET version = '2.6';
+UPDATE dbversion SET version = '2.7';
 commit;
