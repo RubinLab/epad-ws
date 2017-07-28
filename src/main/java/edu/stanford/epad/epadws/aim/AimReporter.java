@@ -172,6 +172,11 @@ public class AimReporter {
 				values.put(columns[i],"");
 			}
 			try {
+				if (aim.xml==null){
+					log.warning("Aim with no xml! Something is wrong");
+					continue;
+				}
+					
 				iac = AnnotationGetter.getImageAnnotationCollectionFromString(aim.xml, xsdFilePathV4);
 				if (iac!=null) {
 					edu.stanford.hakan.aim4api.base.ImageAnnotation ia= iac.getImageAnnotation();
@@ -891,7 +896,7 @@ public class AimReporter {
 		EpadOperations epadOperations = DefaultEpadOperations.getInstance();
 		ArrayList<String> validSubjects =new ArrayList<>();
 		for(String subjectID:subjects) {
-			SubjectReference subjectReference=new SubjectReference(null, subjectID);
+			SubjectReference subjectReference=new SubjectReference(projectID, subjectID);
 			EPADAIMList aims = epadOperations.getSubjectAIMDescriptions(subjectReference, username, sessionID);
 			log.info(aims.ResultSet.totalRecords+ " aims found for "+ subjectID);
 			RecistReport recist=getRecist(aims);
