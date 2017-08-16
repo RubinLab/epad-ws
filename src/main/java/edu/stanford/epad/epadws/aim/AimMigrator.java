@@ -1347,7 +1347,7 @@ public class AimMigrator {
 		String lesionName=osirixLesionJson.getString("Name");
 		String comment="";//mintJson.getString("comment");
 		String sopClassUID="na",studyDate="na",studyTime="na", pName="na",pId="na",pBirthDate="na",pSex="na", studyUID="na", sourceSeriesUID="na";
-
+		String accessionNumber="";
 		String imageUID=osirixLesionJson.optString("SOPInstanceUID");
 		if (imageUID!=null && !imageUID.equals("")) {
 			log.info("Retrieved image uid is "+imageUID);
@@ -1368,6 +1368,8 @@ public class AimMigrator {
 						studyDate=tag.value;
 					if (tag.tagCode.equalsIgnoreCase(PixelMedUtils.StudyTimeCode)) 
 						studyTime=tag.value;
+					if (tag.tagCode.equalsIgnoreCase(PixelMedUtils.AccessionNumberCode)) 
+						accessionNumber=tag.value;
 					if (tag.tagCode.equalsIgnoreCase(PixelMedUtils.PatientNameCode)) 
 						pName=tag.value;
 					if (tag.tagCode.equalsIgnoreCase(PixelMedUtils.PatientIDCode)) 
@@ -1392,7 +1394,7 @@ public class AimMigrator {
 
 		log.info("the values retrieved are "+ sopClassUID+" "+studyDate+" "+studyTime+" "+pName+" "+pId+" "+pBirthDate+" "+pSex+" "+studyUID+" "+sourceSeriesUID+" ");
 		ImageAnnotationCollection iac = createImageAnnotationColectionFromProperties(username, pName, pId, pBirthDate, pSex);
-		edu.stanford.hakan.aim4api.base.ImageAnnotation ia=createImageAnnotationFromProperties(username, templateCode, lesionName, comment, imageUID, sopClassUID, studyDate, studyTime, studyUID, sourceSeriesUID);
+		edu.stanford.hakan.aim4api.base.ImageAnnotation ia=createImageAnnotationFromProperties(username, templateCode, lesionName, comment, imageUID, sopClassUID, studyDate, studyTime, studyUID, sourceSeriesUID, accessionNumber);
 
 		//create markup entity
 		double [][] pointsPX=extractPointsFromJsonArray(osirixLesionJson.getJSONArray("Point_px"));
