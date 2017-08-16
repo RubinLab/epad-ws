@@ -252,7 +252,7 @@ public class AimMigrator {
 		String lesionName=mintJson.getString("name");
 		String comment=mintJson.getString("comment");
 		String sopClassUID="na",studyDate="na",studyTime="na", pName="na",pId="na",pBirthDate="na",pSex="na", studyUID="na", sourceSeriesUID="na";
-
+		String accessionNumber="";
 		String imageUID=mintJson.optString("imageInstanceUid");
 		if (imageUID!=null && !imageUID.equals("")) {
 			log.info("Retrieved image uid is "+imageUID);
@@ -273,6 +273,8 @@ public class AimMigrator {
 						studyDate=tag.value;
 					if (tag.tagCode.equalsIgnoreCase(PixelMedUtils.StudyTimeCode)) 
 						studyTime=tag.value;
+					if (tag.tagCode.equalsIgnoreCase(PixelMedUtils.AccessionNumberCode)) 
+						accessionNumber=tag.value;
 					if (tag.tagCode.equalsIgnoreCase(PixelMedUtils.PatientNameCode)) 
 						pName=tag.value;
 					if (tag.tagCode.equalsIgnoreCase(PixelMedUtils.PatientIDCode)) 
@@ -297,6 +299,7 @@ public class AimMigrator {
 					//				sopClassUID=;
 					studyDate=series.seriesDate;
 					studyTime=series.createdTime;
+					accessionNumber=series.accessionNumber;
 					pName=series.patientName;
 					pId=series.patientID;
 					//				pBirthDate=tag.value;
@@ -313,6 +316,7 @@ public class AimMigrator {
 
 				studyDate=((JSONObject)mintJson.get("imageStudy")).getString("startDate");
 				studyTime=((JSONObject)mintJson.get("imageStudy")).getString("startTime");
+				accessionNumber=((JSONObject)mintJson.get("imageStudy")).optString("accessionNumber");
 
 				pName=((JSONObject)mintJson.get("person")).getString("name");
 				pId=((JSONObject)mintJson.get("person")).getString("id");
@@ -371,7 +375,7 @@ public class AimMigrator {
 			imageUID="na"; //to keep all the same
 		log.info("the values retrieved are "+ sopClassUID+" "+studyDate+" "+studyTime+" "+pName+" "+pId+" "+pBirthDate+" "+pSex+" "+studyUID+" "+sourceSeriesUID+" ");
 		ImageAnnotationCollection iac = createImageAnnotationColectionFromProperties(username, pName, pId, pBirthDate, pSex);
-		edu.stanford.hakan.aim4api.base.ImageAnnotation ia=createImageAnnotationFromProperties(username, templateCode, lesionName, comment, imageUID, sopClassUID, studyDate, studyTime, studyUID, sourceSeriesUID);
+		edu.stanford.hakan.aim4api.base.ImageAnnotation ia=createImageAnnotationFromProperties(username, templateCode, lesionName, comment, imageUID, sopClassUID, studyDate, studyTime, studyUID, sourceSeriesUID, accessionNumber);
 		
 		//see if you can find trial info and store as freetext
 		String trial=mintJson.optString("trial");
@@ -517,7 +521,11 @@ public class AimMigrator {
 	 * @return
 	 * @throws Exception
 	 */
+	
 	public static edu.stanford.hakan.aim4api.base.ImageAnnotation createImageAnnotationFromProperties(String username, String templateCode, String lesionName, String comment, String imageUID,String sopClassUID,String studyDate, String studyTime,String studyUID, String sourceSeriesUID) throws Exception {
+		return createImageAnnotationFromProperties(username, templateCode, lesionName, comment, imageUID, sopClassUID, studyDate, studyTime, studyUID, sourceSeriesUID, "");
+	}
+	public static edu.stanford.hakan.aim4api.base.ImageAnnotation createImageAnnotationFromProperties(String username, String templateCode, String lesionName, String comment, String imageUID,String sopClassUID,String studyDate, String studyTime,String studyUID, String sourceSeriesUID, String accessionNumber) throws Exception {
 		log.info("creating image annotation for template:"+ templateCode +" lesion:" +lesionName+ " comment:" +comment+" imageuid:"+ imageUID) ;
 		EpadProjectOperations projOp = DefaultEpadProjectOperations.getInstance();
 
@@ -570,6 +578,9 @@ public class AimMigrator {
 		study.setImageSeries(series);
 		study.setStartDate(studyDate);
 		study.setStartTime(studyTime);
+		if (accessionNumber!=null && !accessionNumber.equals("")) {
+			study.setAccessionNumber(new ST(accessionNumber));
+		}
 		dicomImageReferenceEntity.setImageStudy(study);
 		ia.addImageReferenceEntity(dicomImageReferenceEntity);
 
