@@ -409,8 +409,14 @@ public class Dcm4CheeQueries
 		String patientID = getStringValueFromRow(dcm4CheeSeriesData, "pat_id");
 		String patientName = getStringValueFromRow(dcm4CheeSeriesData, "pat_name");
 		String seriesDate = getStringValueFromRow(dcm4CheeSeriesData, "pps_start");
-		if (seriesDate == null || seriesDate.length() == 0)
-			seriesDate = getStringValueFromRow(dcm4CheeSeriesData, "study_datetime");
+		if (seriesDate == null || seriesDate.length() == 0){
+			//see if there is series date and time inside the blob
+			seriesDate = getStringValueFromRow(dcm4CheeSeriesData, "series_datetime");
+			if (seriesDate == null || seriesDate.length() == 0){
+				//use the study date and time
+				seriesDate = getStringValueFromRow(dcm4CheeSeriesData, "study_datetime");
+			}
+		}
 		String examType = getStringValueFromRow(dcm4CheeSeriesData, "modality");
 		String thumbnailURL = getStringValueFromRow(dcm4CheeSeriesData, "thumbnail_url");
 		String seriesDescription = getStringValueFromRow(dcm4CheeSeriesData, "series_desc");

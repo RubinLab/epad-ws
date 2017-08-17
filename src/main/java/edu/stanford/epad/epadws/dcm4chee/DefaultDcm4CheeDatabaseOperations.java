@@ -282,7 +282,7 @@ public class DefaultDcm4CheeDatabaseOperations implements Dcm4CheeDatabaseOperat
 				for (int i = 1; i < nCols + 1; i++) {
 					String colName = metaData.getColumnName(i);
 					String value = rs.getString(i);
-					if (colName.toLowerCase().contains("study_datetime") || colName.toLowerCase().contains("pps_start")) {
+					if (colName.toLowerCase().contains("study_datetime") || colName.toLowerCase().contains("pps_start") || colName.toLowerCase().contains("series_datetime") ) {
 						Timestamp ts = rs.getTimestamp(i);
 						if (ts != null)
 							value = new SimpleDateFormat("yyyyMMdd HH:mm:ss").format(new Date(ts.getTime()));
