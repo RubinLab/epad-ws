@@ -222,7 +222,8 @@ public class AimMigrator {
 
 		try{
 			String aimXML= createAimFromMintJson(mintJson, username, templateCode);
-			String tmpAimName=EPADConfig.getEPADWebServerDownloadDir()+ mintJson.getString("name").replaceAll(" ", "")+System.currentTimeMillis()+".xml";
+			String tmpAimName=EPADConfig.getEPADWebServerDownloadDir()+ mintJson.getString("name").replaceAll("\\W", "")+System.currentTimeMillis()+".xml";
+			log.info("tmp aim name is :"+ tmpAimName);
 			File tmpAim=new File(tmpAimName);
 			EPADFileUtils.write(tmpAim, aimXML);
 			log.info("tmp aim path:"+ tmpAim.getAbsolutePath());
