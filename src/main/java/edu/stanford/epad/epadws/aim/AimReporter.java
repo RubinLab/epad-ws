@@ -704,7 +704,8 @@ public class AimReporter {
 		for (int k=0; k< table[0].length-3; k++) {
 			sums[k]=0.0;
 			log.info("k is "+k);
-			for (int j=k; j< table[0].length-3; j++) {
+			int j=k;
+			for (j=k; j< table[0].length-3; j++) {
 				log.info("j is "+j);
 				if (timepoints[j]==timepoints[k]){
 					if (j!=k)
@@ -720,11 +721,12 @@ public class AimReporter {
 					}
 				}else{
 					//break if you see any other timepoint and skip the columns already calculated
-					k=j-1;
-					log.info("jumping to "+(k+1));
+					
 					break;
 				}
 			}
+			k=j-1;
+			log.info("jumping to "+(k+1));
 
 		}
 //		for (int i=0;i<sums.length;i++)
