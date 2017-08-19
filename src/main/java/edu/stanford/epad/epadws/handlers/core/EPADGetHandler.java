@@ -126,6 +126,7 @@ import edu.stanford.epad.common.pixelmed.SegmentedPropertyHelper;
 import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADFileUtils;
 import edu.stanford.epad.common.util.EPADLogger;
+import edu.stanford.epad.common.util.EventMessageCodes;
 import edu.stanford.epad.dtos.DicomTagList;
 import edu.stanford.epad.dtos.EPADAIM;
 import edu.stanford.epad.dtos.EPADAIMList;
@@ -173,6 +174,7 @@ import edu.stanford.epad.epadws.aim.AIMUtil;
 import edu.stanford.epad.epadws.aim.AimReporter;
 import edu.stanford.epad.epadws.aim.dicomsr.Aim2DicomSRConverter;
 import edu.stanford.epad.epadws.epaddb.EpadDatabase;
+import edu.stanford.epad.epadws.epaddb.EpadDatabaseOperations;
 import edu.stanford.epad.epadws.handlers.HandlerUtil;
 import edu.stanford.epad.epadws.handlers.dicom.DSOUtil;
 import edu.stanford.epad.epadws.handlers.dicom.DownloadUtil;
@@ -838,6 +840,12 @@ public class EPADGetHandler
 						responseStream.append(recistTable.toJSON());
 					else {
 						log.warning("Couldn't get recist table");
+						//temporary session log
+  						EpadDatabaseOperations epadDatabaseOperations=EpadDatabase.getInstance().getEPADDatabaseOperations();		  						
+  						epadDatabaseOperations.insertEpadEvent(sessionID,
+  								EventMessageCodes.RECIST_FAILED, 
+ 								"", "", "", "", "", "", "",
+ 								subjectReference.projectID,"","","", true);	
 						responseStream.append("{}");
 					}
 				} else if (returnTable) {
