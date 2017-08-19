@@ -749,7 +749,11 @@ public class AimReporter {
 					baseline=sums[i];
 					log.info("baseline changed. New baseline is:"+i);
 				}
-				rrBaseline[i]=(sums[i]-baseline)*100.0/baseline;
+				if (baseline==0){
+					log.warning("baseline is 0. returning 999999.9 for rr");
+					rrBaseline[i]=999999.9;
+				}else
+					rrBaseline[i]=(sums[i]-baseline)*100.0/baseline;
 				rrBaseStr.append(rrBaseline[i]+ "  ");
 			}
 		}
