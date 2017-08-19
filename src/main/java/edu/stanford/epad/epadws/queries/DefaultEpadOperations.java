@@ -3136,7 +3136,7 @@ public class DefaultEpadOperations implements EpadOperations
 			String username, String sessionID, String templateLevelFilter) throws Exception {
 		EPADTemplateContainerList fileList=getTemplateDescriptions(username, sessionID, templateLevelFilter);
 		EPADTemplateContainerList templates=new EPADTemplateContainerList();
-		boolean isInAllProject=false;
+//		boolean isInAllProject=false;
 		for (EPADTemplateContainer t:fileList.ResultSet.Result){
 			if (t.projectTemplates!=null) {
 				for (EPADProjectTemplate pt: t.projectTemplates) {
@@ -3147,28 +3147,30 @@ public class DefaultEpadOperations implements EpadOperations
 					}
 					if (pt.projectID.equals(EPADConfig.xnatUploadProjectID)) {
 						
-						isInAllProject=true;
+//						isInAllProject=true;
+//						//if the template's project is all project and template is not disabled for this project
+//						if (isInAllProject) 
+						{
+							List<String> disabledTemplatesNames = projectOperations.getDisabledTemplateCodes(projectID);
+							//can keep the same it is using templatecode (starting 2.3)
+							if (!(disabledTemplatesNames.contains(t.fileName) || disabledTemplatesNames.contains(t.templateName) || disabledTemplatesNames.contains(t.templateCode))){
+								if (!templates.ResultSet.Result.contains(t)){ 
+									templates.addTemplate(t);
+								}
+//							}else {
+//								log.info("disabled in project, removing template "+ t.templateCode);
+//								templates.ResultSet.Result.remove(t);
+//								templates.ResultSet.totalRecords--;
+							}
+								
+						}
 					}
 				}
 			}
 			else if ((t.projectID!=null && t.projectID.equalsIgnoreCase(projectID))){
 				templates.addTemplate(t);
 			}
-			//if the template's project is all project and template is not disabled for this project
-			if (isInAllProject) {
-				List<String> disabledTemplatesNames = projectOperations.getDisabledTemplateCodes(projectID);
-				//can keep the same it is using templatecode (starting 2.3)
-				if (!(disabledTemplatesNames.contains(t.fileName) || disabledTemplatesNames.contains(t.templateName) || disabledTemplatesNames.contains(t.templateCode))){
-					if (!templates.ResultSet.Result.contains(t)){ 
-						templates.addTemplate(t);
-					}
-				}else {
-					log.info("disabled in project, removing template "+ t.templateCode);
-					templates.ResultSet.Result.remove(t);
-					templates.ResultSet.totalRecords--;
-				}
-					
-			}
+			
 
 
 		}
