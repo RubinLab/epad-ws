@@ -121,6 +121,8 @@ import edu.stanford.epad.common.util.EventMessageCodes;
 import edu.stanford.epad.dtos.PNGFileProcessingStatus;
 import edu.stanford.epad.dtos.SeriesProcessingStatus;
 import edu.stanford.epad.dtos.TaskStatus;
+import edu.stanford.epad.epadws.arrdb.ArrDatabase;
+import edu.stanford.epad.epadws.arrdb.ArrDatabaseOperations;
 import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeDatabase;
 import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeDatabaseOperations;
 import edu.stanford.epad.epadws.dcm4chee.Dcm4CheeDatabaseUtils;
@@ -334,6 +336,15 @@ public class DICOMSeriesWatcher implements Runnable
 						log.warning("Exception running Remote Queries", x);
 					}
 				}
+				//check and clear old arrdb entities
+				if (now.get(Calendar.HOUR_OF_DAY) == 3 && prevTime != null && prevTime.get(Calendar.HOUR_OF_DAY) != 3)
+				{
+					log.info("3 am. Lets clear the audit log. Deleting entries older than "+ EPADConfig.olderThan_Days+" days");
+					ArrDatabaseOperations arrDatabaseOperations = ArrDatabase.getInstance().getArrDatabaseOperations();
+					arrDatabaseOperations.removeOldLogs(EPADConfig.olderThan_Days);
+					
+				}
+				
 				prevTime = now;
 			} catch (Exception e) {
 				log.severe("Exception in DICOM series watcher thread", e);
