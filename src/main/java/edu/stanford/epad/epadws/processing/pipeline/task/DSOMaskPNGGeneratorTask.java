@@ -190,23 +190,7 @@ public class DSOMaskPNGGeneratorTask implements GeneratorTask
 
 		try {
 			seriesBeingProcessed.add(seriesUID);
-			try {
-				DSOUtil.writeDSOMaskPNGs(dsoFile);
-			} catch (Exception x) {
-				log.warning("Error generating PNGs DSO series " + seriesUID, x);
-				SeriesPipelineState status = DicomSeriesProcessingStatusTracker.getInstance().getDicomSeriesProcessingStatus(seriesUID);
-				if (status != null)
-					DicomSeriesProcessingStatusTracker.getInstance().removeSeriesPipelineState(status);
-				epadDatabaseOperations.updateOrInsertSeries(seriesUID, SeriesProcessingStatus.ERROR);
-				throw x;
-			} catch (Error x) {
-				log.warning("Error generating PNGs DSO series " + seriesUID, x);
-				SeriesPipelineState status = DicomSeriesProcessingStatusTracker.getInstance().getDicomSeriesProcessingStatus(seriesUID);
-				if (status != null)
-					DicomSeriesProcessingStatusTracker.getInstance().removeSeriesPipelineState(status);
-				epadDatabaseOperations.updateOrInsertSeries(seriesUID, SeriesProcessingStatus.ERROR);
-				throw x;
-			}
+			//create the aim first to be able to set the first slice number for direct push to dcm4chee (dicomrt)
 			// Must be first upload, create AIM file
 			//check if there were any dso aims in the upload first
 			for (int i=0; i<AIMUtil.dsoAims.size(); i++) {
@@ -249,7 +233,7 @@ public class DSOMaskPNGGeneratorTask implements GeneratorTask
 			//requery
 			aims= EpadDatabase.getInstance().getEPADDatabaseOperations().getAIMsByDSOSeries(seriesUID);
 			//check exist (series uid is dso's series id. this won't work with the new aims)
-//			List<ImageAnnotation> ias = AIMQueries.getAIMImageAnnotations(AIMSearchType.SERIES_UID, seriesUID, "admin", 1, 50);
+//						List<ImageAnnotation> ias = AIMQueries.getAIMImageAnnotations(AIMSearchType.SERIES_UID, seriesUID, "admin", 1, 50);
 			String projectID = null;
 			if (aims.size() == 0 && generateAIM)
 			{
@@ -269,6 +253,25 @@ public class DSOMaskPNGGeneratorTask implements GeneratorTask
 				//requery
 				aims=EpadDatabase.getInstance().getEPADDatabaseOperations().getAIMsByDSOSeries(seriesUID);
 			}
+			
+			try {
+				DSOUtil.writeDSOMaskPNGs(dsoFile);
+			} catch (Exception x) {
+				log.warning("Error generating PNGs DSO series " + seriesUID, x);
+				SeriesPipelineState status = DicomSeriesProcessingStatusTracker.getInstance().getDicomSeriesProcessingStatus(seriesUID);
+				if (status != null)
+					DicomSeriesProcessingStatusTracker.getInstance().removeSeriesPipelineState(status);
+				epadDatabaseOperations.updateOrInsertSeries(seriesUID, SeriesProcessingStatus.ERROR);
+				throw x;
+			} catch (Error x) {
+				log.warning("Error generating PNGs DSO series " + seriesUID, x);
+				SeriesPipelineState status = DicomSeriesProcessingStatusTracker.getInstance().getDicomSeriesProcessingStatus(seriesUID);
+				if (status != null)
+					DicomSeriesProcessingStatusTracker.getInstance().removeSeriesPipelineState(status);
+				epadDatabaseOperations.updateOrInsertSeries(seriesUID, SeriesProcessingStatus.ERROR);
+				throw x;
+			}
+			
 			if (aims.size() != 0 && aims.get(0).templateType != null && aims.get(0).templateType.equals("epad-plugin"))
 			{
 				EPADAIMList aimList= AIMUtil.getAllVersionSummaries(aims.get(0));
