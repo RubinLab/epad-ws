@@ -863,7 +863,7 @@ public class DSOUtil
 			//Attribute a = new UnsignedShortAttribute(t);
 
 			int nonblankFrame = 0;
-			int firstNonblankFrame = dicomElementList.getNumberOfElements();
+			int firstNonblankFrame = 99999;//large value to initialize
 			int lastNonblankFrame = 0;
 			String nonBlankImageUID="";
 					
@@ -1160,6 +1160,9 @@ public class DSOUtil
 			List<EPADAIM> aims = epadDatabaseOperations.getAIMsByDSOSeries(seriesUID);
 			for (EPADAIM aim: aims)
 			{
+				//if the first frame couldn't be found. set to first slice
+				if (firstNonblankFrame==99999)
+					firstNonblankFrame=0;
 //				nonblankFrame=(lastNonblankFrame+firstNonblankFrame)/2;
 //				log.info("The middle frame is "+ nonblankFrame);
 				epadDatabaseOperations.updateAIMDSOFrameNo(aim.aimID, firstNonblankFrame);
