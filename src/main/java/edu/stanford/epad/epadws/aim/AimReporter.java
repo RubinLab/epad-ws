@@ -380,7 +380,7 @@ public class AimReporter {
 	public static RecistReport getRecist(EPADAIMList aims){
 		String table=AimReporter.fillTable(aims,"RECIST",new String[]{"Name","StudyDate","Lesion","Type", "Location","Length","StudyUID","SeriesUID","AimUID","LongAxis","ShortAxis", "Modality", "Trial", "Trial Arm", "Trial CaseID"});
 		//get and append recist_mint records
-		String tableMint=AimReporter.fillTable(aims,"RECIST_MINT",new String[]{"Name","StudyDate","Timepoint","Type", "Lesion Status", "Location","Length","StudyUID","SeriesUID","AimUID","LongAxis","ShortAxis", "Modality", "Trial", "Trial Arm", "Trial CaseID"});
+		String tableMint=AimReporter.fillTable(aims,"RECIST_v2",new String[]{"Name","StudyDate","Timepoint","Type", "Lesion Status", "Location","Length","StudyUID","SeriesUID","AimUID","LongAxis","ShortAxis", "Modality", "Trial", "Trial Arm", "Trial CaseID"});
 		
 		if ((table==null || table.isEmpty()) && (tableMint==null || tableMint.isEmpty())) 
 			return null;
