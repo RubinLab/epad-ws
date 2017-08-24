@@ -460,7 +460,7 @@ public class EPADPostHandler
 					String migrateFrom = httpRequest.getParameter("migrateFrom");
 					if (migrateFrom!=null && migrateFrom.equalsIgnoreCase("mint")) {
 						JSONObject mintJson = HandlerUtil.getPostedJson(httpRequest);
-						AimMigrator.migrateAimFromMintJson(mintJson,projectReference.projectID, username, "RECIST_MINT");
+						AimMigrator.migrateAimFromMintJson(mintJson,projectReference.projectID, username, "RECIST_v2");
 						
 					}else if (migrateFrom!=null && migrateFrom.equalsIgnoreCase("osirix")) {
 						if (uploadedFile!=null){
@@ -506,7 +506,7 @@ public class EPADPostHandler
 					String migrateFrom = httpRequest.getParameter("migrateFrom");
 					if (migrateFrom!=null && migrateFrom.equalsIgnoreCase("mint")) {
 						JSONObject mintJson = HandlerUtil.getPostedJson(httpRequest);
-						String aimName=AimMigrator.migrateAimFromMintJson(mintJson, username, "RECIST_MINT");
+						String aimName=AimMigrator.migrateAimFromMintJson(mintJson, username, "RECIST_v2");
 						
 						String scheme = httpRequest.getScheme();             // http
 					    String serverName = httpRequest.getServerName();     // epad-dev4
