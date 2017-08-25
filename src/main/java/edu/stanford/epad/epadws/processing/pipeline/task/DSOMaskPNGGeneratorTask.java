@@ -249,7 +249,8 @@ public class DSOMaskPNGGeneratorTask implements GeneratorTask
 						log.info("dso png generator sets username admin to "+username);
 					}
 				}
-				ImageAnnotation ia = AIMUtil.generateAIMFileForDSO(dsoFile, username, projectID);
+				//we should make the calculations 
+				ImageAnnotation ia = AIMUtil.generateAIMFileForDSO(dsoFile, username, projectID, null, true);
 				//requery
 				aims=EpadDatabase.getInstance().getEPADDatabaseOperations().getAIMsByDSOSeries(seriesUID);
 			}

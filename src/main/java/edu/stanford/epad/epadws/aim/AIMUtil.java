@@ -179,6 +179,7 @@ import edu.stanford.epad.epadws.epaddb.EpadDatabaseOperations;
 import edu.stanford.epad.epadws.handlers.core.FrameReference;
 import edu.stanford.epad.epadws.handlers.core.ImageReference;
 import edu.stanford.epad.epadws.handlers.core.SeriesReference;
+import edu.stanford.epad.epadws.handlers.dicom.DSOUtil;
 import edu.stanford.epad.epadws.handlers.event.EventHandler;
 import edu.stanford.epad.epadws.models.NonDicomSeries;
 import edu.stanford.epad.epadws.models.Project;
@@ -435,7 +436,12 @@ public class AIMUtil
 		return generateAIMFileForDSO(dsoFile, username, projectID, null);
 	}
 	
+	
 	public static ImageAnnotation generateAIMFileForDSO(File dsoFile, String username, String projectID, String aimName) throws Exception
+	{
+		return generateAIMFileForDSO(dsoFile, username, projectID, aimName, false);
+	}
+	public static ImageAnnotation generateAIMFileForDSO(File dsoFile, String username, String projectID, String aimName, boolean generateCalcs) throws Exception
 	{
 		log.info("Creating DSO AIM for user " + username + " in project " + projectID + " file:" + dsoFile.getAbsolutePath());
 		AttributeList dsoDICOMAttributes = PixelMedUtils.readDICOMAttributeList(dsoFile);
@@ -468,20 +474,23 @@ public class AIMUtil
 		        if (sitem != null) {
 		            AttributeList list = sitem.getAttributeList();
 		            SequenceAttribute referencedInstanceSeq = (SequenceAttribute) list.get(TagFromName.ReferencedInstanceSequence);
+		            referencedImageUID = new String[referencedInstanceSeq.getNumberOfItems()];
+		            log.info("Sequence num of items is "+ referencedInstanceSeq.getNumberOfItems());
 				    Iterator sitems2 = referencedInstanceSeq.iterator();
+				    int index=0;
 				    while (sitems2.hasNext())
 				    {
 					    sitem = (SequenceItem)sitems2.next();
 			            list = sitem.getAttributeList();
 			            if (list.get(TagFromName.ReferencedSOPInstanceUID) != null)
 			            {		            	
-			    			referencedImageUID = new String[1];
-			    			referencedImageUID[0] = list.get(TagFromName.ReferencedSOPInstanceUID).getSingleStringValueOrEmptyString();
-							referencedSeriesUID = dcm4CheeDatabaseOperations.getSeriesUIDForImage(referencedImageUID[0]);
+			    			referencedImageUID[index++] = list.get(TagFromName.ReferencedSOPInstanceUID).getSingleStringValueOrEmptyString();
+							log.info("referenced "+ (index-1) + " is " +referencedImageUID[index-1]);
+			    			referencedSeriesUID = dcm4CheeDatabaseOperations.getSeriesUIDForImage(referencedImageUID[0]);
 							if (referencedSeriesUID != null && referencedSeriesUID.length() > 0)
 							{
 								log.info("ReferencedSOPInstanceUID:" + referencedImageUID[0]);
-								break;
+//								break;
 							}
 							else
 								log.info("DSO Referenced Image not found:" + referencedImageUID[0]);
@@ -535,6 +544,15 @@ public class AIMUtil
 			// TODO Not general. See if we can generate AIM on GUI upload of DSO with correct user.
 			setImageAnnotationUser(imageAnnotation, username);
 
+			if (generateCalcs){
+				//open the referenced images and calculate the aggregations
+				Double[] calcs=DSOUtil.generateCalcs(referencedSeriesUID,referencedImageUID,dsoFile);
+				//add calculations to aim
+				if (calcs!=null){
+					log.info("Retrieved calculations are: min="+calcs[0]+ " max="+calcs[1]+ " mean="+calcs[2]+" stddev="+calcs[3]);
+				}
+			}
+			
 			log.info("Saving AIM file for DSO " + imageUID + " in series " + seriesUID + " with ID "
 					+ imageAnnotation.getUniqueIdentifier());
 			try {

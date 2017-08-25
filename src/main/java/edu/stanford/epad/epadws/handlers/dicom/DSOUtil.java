@@ -130,10 +130,12 @@ import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.Map.Entry;
 
 import javax.imageio.ImageIO;
 import javax.servlet.http.HttpServletRequest;
@@ -717,7 +719,141 @@ public class DSOUtil
 		} 
 	}
 	
+	/**
+	 * 
+	 * @param referencedSeriesUID
+	 * @param referencedImageUIDs
+	 * @param dsoFile
+	 * @return null if cannot download and open series images
+	 */
+	public static Double[] generateCalcs(String referencedSeriesUID,String[] referencedImageUIDs,File dsoFile){
+		//save min, max, mean and std dev 
+		Double min=9999999.0;
+		Double max=-9999999.0;
+		Double mean=0.0;
+		Double stdDev=0.0;
+		Double total=0.0;
+		Double count=0.0;
+		
+		File tmpFolder = new File("/tmp/referedseries"+System.currentTimeMillis());
+		if (!tmpFolder.mkdirs()){
+			log.warning("Cannot create tmp folder. Cannot calculate aggregations.");
+			return null;
+		}
+		//download the referenced images
+		try {
+			
+			for (String referencedImageUID:referencedImageUIDs){
+				File dicom1 = new File(tmpFolder, referencedImageUID + ".dcm");
+				DCM4CHEEUtil.downloadDICOMFileFromWADO("*", referencedSeriesUID, referencedImageUID, dicom1);
+				
+			}
+		} catch (IOException e) {
+			log.warning("Cannot download series images. Cannot calculate aggregations.", e);
+			return null;
+		}
+		
+		//open the dso
+		try {
+			SourceImage dso=new SourceImage(dsoFile.getAbsolutePath());
+			//for each frame get the referenced image 
+			//they should be in the same order
+			SourceImage refImage=null;
+			for(int i=0;i<dso.getNumberOfFrames();i++){
+				//get pixel values for this dso frame
+				double[] mask=getPixelValuesAsArray(dso, i);
+				
+				log.info("getting image "+ referencedImageUIDs[i]+ " for "+ i+ "th frame");
+				refImage=new SourceImage(tmpFolder.getAbsolutePath()+"/"+referencedImageUIDs[i]+".dcm");
+				double[] image=getPixelValuesAsArray(refImage,0);
+				if (image.length!=mask.length){
+					log.warning("mask and image should be same length.image is "+ image.length+ " mask is "+mask.length);
+					continue;
+				}
+				log.info("calculating for  "+ image.length+ " values. image&mask size");
+				for (int j=0;j<image.length;j++){
+					if (mask[j]!=0 && mask[j]!=1){
+						log.warning("not a binary mask" + mask[j]+ " Aborting");
+						return null;
+					}
+					double val=image[j]*mask[j];
+					if (val<min)
+						min=val;
+					if (val>max)
+						max=val;
+					total+=val;
+					count++;
+					
+				}
+				
+			}
+			mean=total/count;
+			
+			return new Double[]{min,max,mean,stdDev};
+		} catch (IOException e) {
+			log.warning("Cannot read file ",e);
+		} catch (DicomException e) {
+			log.warning("Dicom issue ",e);
+		}
+		catch (Exception e) {
+			log.warning("Cannot calculate values ",e);
+			
+		}
+		
+		
+		return null;
+		
+	}
+	
+	
+//	private void rawTotalMean() {
+//
+//		Entry<Double, Double> next;
+//		total = raw = mean = 0.0;
+//
+//		Iterator<Entry<Double, Double>> itr = map.entrySet().iterator();
+//
+//		while (itr.hasNext()) {
+//			next = itr.next();
+//			Double key = next.getKey();
+//			Double value = next.getValue();
+//			if (key >= lowerBound && key <= upperBound) {
+//				raw += key * value;
+//				total += value;
+//			}
+//		}
+//
+//		mean = (raw / total);
+//	}
+//
+//	private void standardDeviation() {
+//
+//		if (total != 0) {
+//			double sum = 0.0;
+//
+//			Iterator<Entry<Double, Double>> itr = map.entrySet().iterator();
+//			while (itr.hasNext()) {
+//
+//				Entry<Double, Double> next = itr.next();
+//				Double key = next.getKey();
+//				Double value = next.getValue();
+//
+//				if (key >= lowerBound && key <= upperBound) {
+//
+//					for (int i = 0; i < value; i++) {
+//						double x = (key - mean);
+//						sum += (x * x);
+//					}
+//				}
+//			}
+//			stdDev = Math.sqrt(sum / total);
+//		}
+//
+//	}
 	public static String getPixelValues(SourceImage sImg, int frameNum){
+		return JSON.toString(getPixelValuesAsArray(sImg,frameNum));
+	}
+	public static double[] getPixelValuesAsArray(SourceImage sImg, int frameNum){
 		int signMask=0;
 		int signBit=0;
 		
@@ -763,7 +899,7 @@ public class DSOUtil
 			}
 			
 		}
-		return JSON.toString(storedPixelValueArray);
+		return storedPixelValueArray;
 		
 	}
 	
