@@ -153,6 +153,8 @@ import com.pixelmed.dicom.AttributeList;
 import com.pixelmed.dicom.AttributeTag;
 import com.pixelmed.dicom.DicomException;
 import com.pixelmed.dicom.DicomInputStream;
+import com.pixelmed.dicom.ModalityTransform;
+import com.pixelmed.dicom.SUVTransform;
 import com.pixelmed.dicom.SequenceAttribute;
 import com.pixelmed.dicom.TagFromName;
 import com.pixelmed.dicom.UnsignedShortAttribute;
@@ -169,6 +171,7 @@ import edu.stanford.epad.common.pixelmed.TIFFMasksToDSOConverter;
 import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADFileUtils;
 import edu.stanford.epad.common.util.EPADLogger;
+import edu.stanford.epad.common.util.PixelMapDouble;
 import edu.stanford.epad.common.util.RunSystemCommand;
 import edu.stanford.epad.dtos.DSOEditRequest;
 import edu.stanford.epad.dtos.DSOEditResult;
@@ -759,35 +762,53 @@ public class DSOUtil
 			//for each frame get the referenced image 
 			//they should be in the same order
 			SourceImage refImage=null;
+			PixelMapDouble pixelMap = new PixelMapDouble();
 			for(int i=0;i<dso.getNumberOfFrames();i++){
 				//get pixel values for this dso frame
+				//mask get raw values is enough
 				double[] mask=getPixelValuesAsArray(dso, i);
 				
 				log.info("getting image "+ referencedImageUIDs[i]+ " for "+ i+ "th frame");
 				refImage=new SourceImage(tmpFolder.getAbsolutePath()+"/"+referencedImageUIDs[i]+".dcm");
-				double[] image=getPixelValuesAsArray(refImage,0);
+				//we need to transform the values. using pixelmed
+				double[] image=getTransformedPixelValuesAsArray(refImage,0);
 				if (image.length!=mask.length){
 					log.warning("mask and image should be same length.image is "+ image.length+ " mask is "+mask.length);
 					continue;
 				}
-				log.info("calculating for  "+ image.length+ " values. image&mask size");
+				log.info("calculating for  "+ image.length+ " values. image&mask size. for frame " + i);
 				for (int j=0;j<image.length;j++){
 					if (mask[j]!=0 && mask[j]!=1){
 						log.warning("not a binary mask" + mask[j]+ " Aborting");
 						return null;
 					}
 					double val=image[j]*mask[j];
-					if (val<min)
-						min=val;
-					if (val>max)
-						max=val;
-					total+=val;
-					count++;
+					if (val!=0)  {
+						if (val<min)
+							min=val;
+						if (val>max)
+							max=val;
+						total+=val;
+						count++;
+						// add it to the map or inc its frequency
+						Double f = pixelMap.get(val);
+						if (f == null) {
+							pixelMap.put(val, 1.0);
+						} else {
+							pixelMap.put(val, f + 1);
+						}
+						log.info("j="+j+" val ="+val);
+					}
 					
 				}
 				
 			}
+			log.info("Total is "+ total + " count is "+count);
 			mean=total/count;
+			pixelMap.minMaxRange();
+			pixelMap.calc();
+			
+			log.info("min="+pixelMap.getMin() +" max="+pixelMap.getMax()+ " mean=" +pixelMap.getMean()+ " stddev="+ pixelMap.getStdDev());
 			
 			return new Double[]{min,max,mean,stdDev};
 		} catch (IOException e) {
@@ -806,53 +827,105 @@ public class DSOUtil
 	}
 	
 	
-//	private void rawTotalMean() {
-//
-//		Entry<Double, Double> next;
-//		total = raw = mean = 0.0;
-//
-//		Iterator<Entry<Double, Double>> itr = map.entrySet().iterator();
-//
-//		while (itr.hasNext()) {
-//			next = itr.next();
-//			Double key = next.getKey();
-//			Double value = next.getValue();
-//			if (key >= lowerBound && key <= upperBound) {
-//				raw += key * value;
-//				total += value;
-//			}
-//		}
-//
-//		mean = (raw / total);
-//	}
-//
-//	private void standardDeviation() {
-//
-//		if (total != 0) {
-//			double sum = 0.0;
-//
-//			Iterator<Entry<Double, Double>> itr = map.entrySet().iterator();
-//			while (itr.hasNext()) {
-//
-//				Entry<Double, Double> next = itr.next();
-//				Double key = next.getKey();
-//				Double value = next.getValue();
-//
-//				if (key >= lowerBound && key <= upperBound) {
-//
-//					for (int i = 0; i < value; i++) {
-//						double x = (key - mean);
-//						sum += (x * x);
-//					}
-//				}
-//			}
-//			stdDev = Math.sqrt(sum / total);
-//		}
-//
-//	}
+
 	public static String getPixelValues(SourceImage sImg, int frameNum){
 		return JSON.toString(getPixelValuesAsArray(sImg,frameNum));
 	}
+	
+	//this is the epad's version. I used pixelmed for now. 
+	//TODO verify values.
+//	public Double getPixValue(int seriesIndex, int imageIndex, int x, int y, String rescaleIntercept, String rescaleSlope) {
+//		
+//		//get the rescales from the actual image index
+//		//why are the indexes different??????
+//		double rs= Double.parseDouble(rescaleSlope);
+//		double ri= Double.parseDouble(rescaleIntercept);
+//		int raw=getRawValue(seriesIndex, imageIndex, x, y);
+//		if (rs==0 && ri==0) {
+//			// logger.info("Couldn't get rescale slope and intercept!!");
+//			rs = 1;
+//			ri = 0;
+//		}
+//			
+//		int pixRep=0;
+//		int bit=16;
+//		try {
+//			pixRep = Integer.parseInt(dicomTagMap.getPixelRepresentation()); //signed or unsigned
+//			bit=Integer.parseInt(dicomTagMap.getBitsStored()); //one image has wrong bits (cog) calculates wrong values with this!!
+//		}catch(Exception e) {
+//			logger.info("Couldn't get bits stored from dicom, assuming 16 bits");	
+//		}
+//		if (bit == 8) {//check the largest value if exist
+//			DicomTag largest=dicomTagMap.getTag("(0028,0107)");
+//			if (largest!=null) {
+//				try {
+//					if (Integer.parseInt(largest.getValue())>256)
+//						bit=16;
+//				}catch(Exception e) {
+//					logger.info("Couldn't find largest from dicom, using 8 bits");	
+//				}
+//			}
+//		}
+//		
+//		//combining the the r and g color data from png (each 8 bits) to go back to 16 bit dicom data
+//		//pixel representation added
+//		raw = (((1<<(bit-pixRep))-1)&raw)-(((raw>>(bit-pixRep))^(pixRep))<<(bit-pixRep));
+//		
+//		if (dicomTagMap!=null && (dicomTagMap.getModality().equals("PT"))) {
+//			if (dicomTagMap.getUnits().startsWith("BQML"))
+//				return calcSuv(raw,rescaleSlope, rescaleIntercept, dicomTagMap.getTotalDose(), dicomTagMap.getSeriesDate(), dicomTagMap.getSeriesTime(), dicomTagMap.getRadioPhStartDateTime(), dicomTagMap.getRadioPhHalfTime(), dicomTagMap.getPatientWeight(), dicomTagMap.getUnits()) ;
+//			//if not in bqml just put the rescaled value and put the units at the end 
+//			return raw*rs+ri; 
+//		}
+//		if (dicomTagMap!=null && (dicomTagMap.getModality().equals("CT") )) {
+//			return (raw*rs+ri);
+//			
+//		}
+//		return raw*rs+ri;
+//		
+//	}
+	
+	/**
+	 * gets the transformed pixel values for the image. 
+	 * HU values for ct
+	 * SUV values for pet
+	 * calculated by pixelmed
+	 * @param sImg
+	 * @param frameNum
+	 * @return
+	 */
+	public static double[] getTransformedPixelValuesAsArray(SourceImage sImg, int frameNum){
+		double[] rawPixels=getPixelValuesAsArray(sImg, frameNum);
+		double[] transformedPixels=rawPixels.clone();
+		
+		log.info("modality transform "+sImg.getModalityTransform().toString());
+		SUVTransform suvTransform=sImg.getSUVTransform();
+		if (suvTransform != null) {
+			log.info("found suv transform ");
+			com.pixelmed.dicom.SUVTransform.SingleSUVTransform t = suvTransform.getSingleSUVTransform(frameNum);
+			if (t.isValidSUVbw()) {
+				for(int i=0;i< rawPixels.length; i++) {
+					transformedPixels[i]=t.getSUVbwValue(rawPixels[i]);
+				}
+			}
+				
+		}
+		ModalityTransform modalityTransform=sImg.getModalityTransform();
+		double useSlope=1.0;
+		double useIntercept=0.0; 
+		
+		if (modalityTransform != null) {
+			useSlope = modalityTransform.getRescaleSlope    (frameNum);
+			useIntercept = modalityTransform.getRescaleIntercept(frameNum);
+			log.info("found modality transform. slope "+ useSlope+" intercept "+useIntercept);
+			for(int i=0;i< rawPixels.length; i++) {
+				transformedPixels[i]=rawPixels[i]*useSlope+useIntercept;
+			}
+		}
+		
+		return transformedPixels;
+	}
+	
 	public static double[] getPixelValuesAsArray(SourceImage sImg, int frameNum){
 		int signMask=0;
 		int signBit=0;
@@ -871,6 +944,7 @@ public class DSOUtil
 				signMask=0xffff8000;
 			}
 		}
+		
 		double[] storedPixelValueArray;
 		if (src.getRaster().getDataBuffer() instanceof DataBufferFloat) {
 			float[] storedPixelValues  = src.getSampleModel().getPixels(0,0,src.getWidth(),src.getHeight(),(float[])null,src.getRaster().getDataBuffer());
