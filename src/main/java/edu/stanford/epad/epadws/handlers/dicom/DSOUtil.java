@@ -730,13 +730,6 @@ public class DSOUtil
 	 * @return null if cannot download and open series images
 	 */
 	public static Double[] generateCalcs(String referencedSeriesUID,String[] referencedImageUIDs,File dsoFile){
-		//save min, max, mean and std dev 
-		Double min=9999999.0;
-		Double max=-9999999.0;
-		Double mean=0.0;
-		Double stdDev=0.0;
-		Double total=0.0;
-		Double count=0.0;
 		
 		File tmpFolder = new File("/tmp/referedseries"+System.currentTimeMillis());
 		if (!tmpFolder.mkdirs()){
@@ -784,12 +777,6 @@ public class DSOUtil
 					}
 					double val=image[j]*mask[j];
 					if (val!=0)  {
-						if (val<min)
-							min=val;
-						if (val>max)
-							max=val;
-						total+=val;
-						count++;
 						// add it to the map or inc its frequency
 						Double f = pixelMap.get(val);
 						if (f == null) {
@@ -803,14 +790,12 @@ public class DSOUtil
 				}
 				
 			}
-			log.info("Total is "+ total + " count is "+count);
-			mean=total/count;
 			pixelMap.minMaxRange();
 			pixelMap.calc();
 			
 			log.info("min="+pixelMap.getMin() +" max="+pixelMap.getMax()+ " mean=" +pixelMap.getMean()+ " stddev="+ pixelMap.getStdDev());
 			
-			return new Double[]{min,max,mean,stdDev};
+			return new Double[]{pixelMap.getMin() ,pixelMap.getMax(),pixelMap.getMean(),pixelMap.getStdDev()};
 		} catch (IOException e) {
 			log.warning("Cannot read file ",e);
 		} catch (DicomException e) {
