@@ -156,6 +156,7 @@ import com.pixelmed.dicom.DicomInputStream;
 import com.pixelmed.dicom.ModalityTransform;
 import com.pixelmed.dicom.SUVTransform;
 import com.pixelmed.dicom.SequenceAttribute;
+import com.pixelmed.dicom.SequenceItem;
 import com.pixelmed.dicom.TagFromName;
 import com.pixelmed.dicom.UnsignedShortAttribute;
 import com.pixelmed.display.ConsumerFormatImageMaker;
@@ -722,6 +723,60 @@ public class DSOUtil
 		} 
 	}
 	
+	public static Double[] generateCalcs(String dsoUID){
+		String referencedSeriesUID="";
+		String[] referencedImageUID=null;
+		File tmpFolder = new File("/tmp/referedseries"+System.currentTimeMillis());
+		if (!tmpFolder.mkdirs()){
+			log.warning("Cannot create tmp folder. Cannot calculate aggregations.");
+			return null;
+		}
+		File dsoFile = new File(tmpFolder, dsoUID + ".dcm");
+		try {
+			DCM4CHEEUtil.downloadDICOMFileFromWADO("*", "*", dsoUID, dsoFile);
+		} catch (IOException e) {
+			log.warning("Cannot download dso image. Cannot calculate aggregations.", e);
+			return null;
+		}
+		
+		AttributeList dsoDICOMAttributes = PixelMedUtils.readDICOMAttributeList(dsoFile);
+		SequenceAttribute referencedSeriesSequence =(SequenceAttribute)dsoDICOMAttributes.get(TagFromName.ReferencedSeriesSequence);
+		if (referencedSeriesSequence != null) {
+		    Iterator sitems = referencedSeriesSequence.iterator();
+		    if (sitems.hasNext()) {
+		        SequenceItem sitem = (SequenceItem)sitems.next();
+		        if (sitem != null) {
+		            AttributeList list = sitem.getAttributeList();
+		            SequenceAttribute referencedInstanceSeq = (SequenceAttribute) list.get(TagFromName.ReferencedInstanceSequence);
+		            referencedImageUID = new String[referencedInstanceSeq.getNumberOfItems()];
+		            log.info("Sequence num of items is "+ referencedInstanceSeq.getNumberOfItems());
+				    Iterator sitems2 = referencedInstanceSeq.iterator();
+				    int index=0;
+				    while (sitems2.hasNext())
+				    {
+					    sitem = (SequenceItem)sitems2.next();
+			            list = sitem.getAttributeList();
+			            if (list.get(TagFromName.ReferencedSOPInstanceUID) != null)
+			            {		            	
+			    			referencedImageUID[index++] = list.get(TagFromName.ReferencedSOPInstanceUID).getSingleStringValueOrEmptyString();
+							log.info("referenced "+ (index-1) + " is " +referencedImageUID[index-1]);
+			    			referencedSeriesUID = dcm4CheeDatabaseOperations.getSeriesUIDForImage(referencedImageUID[0]);
+							if (referencedSeriesUID != null && referencedSeriesUID.length() > 0)
+							{
+								log.info("ReferencedSOPInstanceUID:" + referencedImageUID[0]);
+//								break;
+							}
+							else
+								log.info("DSO Referenced Image not found:" + referencedImageUID[0]);
+			            }
+				    }
+ 		        }
+		    }
+		}
+		
+		return generateCalcs(referencedSeriesUID, referencedImageUID, dsoFile, tmpFolder);
+		
+	}
 	/**
 	 * 
 	 * @param referencedSeriesUID
@@ -729,13 +784,18 @@ public class DSOUtil
 	 * @param dsoFile
 	 * @return null if cannot download and open series images
 	 */
+	
 	public static Double[] generateCalcs(String referencedSeriesUID,String[] referencedImageUIDs,File dsoFile){
-		
 		File tmpFolder = new File("/tmp/referedseries"+System.currentTimeMillis());
 		if (!tmpFolder.mkdirs()){
 			log.warning("Cannot create tmp folder. Cannot calculate aggregations.");
 			return null;
 		}
+		return generateCalcs(referencedSeriesUID, referencedImageUIDs, dsoFile, tmpFolder);
+	}
+	public static Double[] generateCalcs(String referencedSeriesUID,String[] referencedImageUIDs,File dsoFile, File tmpFolder){
+		
+		
 		//download the referenced images
 		try {
 			
