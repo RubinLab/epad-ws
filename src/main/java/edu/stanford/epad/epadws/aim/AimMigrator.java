@@ -155,6 +155,7 @@ import edu.stanford.hakan.aim4api.base.TwoDimensionSpatialCoordinate;
 import edu.stanford.hakan.aim4api.base.TwoDimensionSpatialCoordinateCollection;
 import edu.stanford.hakan.aim4api.base.Enumerations.ScaleType;
 import edu.stanford.hakan.aim4api.compability.aimv3.Modality;
+import edu.stanford.hakan.aim4api.project.epad.Aim4;
 import edu.stanford.hakan.aim4api.project.epad.Enumerations.ShapeType;
 import edu.stanford.hakan.aim4api.questions.Question;
 import edu.stanford.hakan.aim4api.questions.QuestionCollection;
@@ -448,7 +449,7 @@ public class AimMigrator {
 					if (featureCD.getCode().equals("99EPADD0")){
 						featureCD = edu.stanford.epad.common.util.Lexicon.getInstance().createLex(((JSONObject)measurements.get(i)).getString("Type"),((JSONObject)measurements.get(i)).getString("Type"),parent,null);
 					}
-					ia.addCalculationEntity(addCalculation(((JSONObject)measurements.get(i)).getString("CurrentValue"),1,"",featureCD.getDisplayName().getValue(), featureCD.getCode()));
+					ia.addCalculationEntity(AIMUtil.addCalculation(((JSONObject)measurements.get(i)).getString("CurrentValue"),1,"",featureCD.getDisplayName().getValue(), featureCD.getCode()));
 	
 				}
 			}
@@ -846,110 +847,13 @@ public class AimMigrator {
 		//calculate the longest line in the closed shape 
 		double[] majorAxis=getMajorAxis(pointsPX, spacingVector);
 		//add length calculation for major axis
-		ia.addCalculationEntity(addLengthCalculation(majorAxis[2],1,"cm"));
+		ia.addCalculationEntity(Aim4.addLengthCalculation(majorAxis[2],1,"cm"));
 
 		return ia;
 	}
-	//values from edu.stanford.hakan.aim4api.project.epad.Aim to keep the same for default
-	private static final String LINE_LENGTH = "LineLength";
-	private static final String VERSION = "1.0";
-	private static final String PRIVATE_DESIGNATOR = "private";
-	private static final String MEAN = "Mean"; 
-	private static final String AREA = "Area";
-	private static final String STD_DEV = "Standard Deviation";
-	private static final String MIN = "Minimum";
-	private static final String MAX = "Maximum";
-	private static final String VOLUME = "Volume";
+	
 
-	/**
-	 * the code retrieved from edu.stanford.hakan.aim4api.project.epad.Aim and converted to aim4 classes
-	 * @param length
-	 * @return
-	 */
-
-	public static CalculationEntity addMeanCalculation(double value, Integer shapeId, String units) {
-		return addCalculation(String.valueOf(value),shapeId,units,MEAN, "R-00317");
-	}
-	public static CalculationEntity addAreaCalculation(double value, Integer shapeId, String units) {
-		return addCalculation(String.valueOf(value),shapeId,units,AREA, "99EPADA4");
-	}
-	public static CalculationEntity addStdDevCalculation(double value, Integer shapeId, String units) {
-		return addCalculation(String.valueOf(value),shapeId,units,STD_DEV, "R-10047");
-	}
-	public static CalculationEntity addMinCalculation(double value, Integer shapeId, String units) {
-		return addCalculation(String.valueOf(value),shapeId,units,MIN, "R-404FB");
-	}
-	public static CalculationEntity addMaxCalculation(double value, Integer shapeId, String units) {
-		return addCalculation(String.valueOf(value),shapeId,units,MAX, "G-A437");
-	}
-	public static CalculationEntity addLengthCalculation(double value, Integer shapeId, String units) {
-		return addCalculation(String.valueOf(value),shapeId,units,LINE_LENGTH, "G-D7FE");
-	}
-	public static CalculationEntity addVolumeCalculation(double value, Integer shapeId, String units) {
-		return addCalculation(String.valueOf(value),shapeId,units,VOLUME, "RID28668");
-	}
-
-	public static CalculationEntity addCalculation(String value, Integer shapeId, String units, String name, String code) {
-
-		CalculationEntity cal =new CalculationEntity();
-		cal.setUniqueIdentifier();
-		CD calcCD= edu.stanford.hakan.aim4api.compability.aimv3.Lexicon.getInstance().get(code);
-		String desc="";
-		if (calcCD!=null || ((calcCD=edu.stanford.epad.common.util.Lexicon.getInstance().getLex(name))!=null)) {
-			cal.addTypeCode(new CD(calcCD.getCode(),calcCD.getDisplayName().getValue(),calcCD.getCodeSystemName()));
-			cal.setDescription(new ST(calcCD.getDisplayName().getValue()));
-			desc=calcCD.getDisplayName().getValue();
-		}else {
-
-			cal.addTypeCode(new CD(name,name,PRIVATE_DESIGNATOR));
-			cal.setDescription(new ST(name));
-			desc=name;
-
-		}
-		ExtendedCalculationResult calculationResult=new ExtendedCalculationResult();
-
-		calculationResult.setType(Enumerations.CalculationResultIdentifier.Scalar);
-		calculationResult.setUnitOfMeasure(new ST(units));
-		if (units.equals(""))
-			calculationResult.setDataType(new CD("99EPADD2","String","99EPAD"));
-		else
-			calculationResult.setDataType(new CD("99EPADD1","Double","99EPAD"));
-
-		// Create a CalculationData instance
-		edu.stanford.hakan.aim4api.base.CalculationData calculationData = new edu.stanford.hakan.aim4api.base.CalculationData();
-		calculationData.setValue(new ST(value));
-		calculationData.addCoordinate(0, 0);
-
-		// Create a Dimension instance
-		edu.stanford.hakan.aim4api.base.Dimension dimension = new edu.stanford.hakan.aim4api.base.Dimension(0, 1, desc);
-
-		// Add calculationData to calculationResult
-		calculationResult.addCalculationData(calculationData);
-
-		// Add dimension to calculationResult
-		calculationResult.addDimension(dimension);
-
-		//this should be rdf removing for now. do not have shape id. and do not see it in the recist aim.
-		//                    // add the shape reference to the calculation
-		//                    ReferencedGeometricShape reference = new ReferencedGeometricShape();
-		//                    reference.setCagridId(0);
-		//                    reference.setReferencedShapeIdentifier(shapeId);
-		//                    calculation.addReferencedGeometricShape(reference);
-
-		// Add calculationResult to calculation
-		cal.addCalculationResult(calculationResult);
-
-		Algorithm alg=new Algorithm();
-		alg.setName(new ST(desc));
-		alg.setVersion(new ST(VERSION));
-		ArrayList<CD> types=new ArrayList<>();
-		types.add(new CD("RID12780","Calculation","RadLex","3.2"));
-		alg.setType(types);
-		cal.setAlgorithm(alg);
-
-		return cal;
-
-	}
+	
 
 	/**************** math functions ********************/
 
@@ -1460,12 +1364,12 @@ public class AimMigrator {
 		//we have definitions for these: AreaCm2,  Dev (std dev), LengthCm, Max, Mean, Min
 		//we can put osirixLesionJson.getInt("IndexInImage") as the shape identifier but we save each shape to separate aim. I am  putting 1 in all
 		//put the calculation onlt if it is different than 0. osirix puts those fields even if they are empty. (like area for a line)
-		if (osirixLesionJson.getDouble("AreaCm2")!=0) ia.addCalculationEntity(addAreaCalculation(osirixLesionJson.getDouble("AreaCm2") ,1,"cm2"));
-		if (osirixLesionJson.getDouble("Dev")!=0) ia.addCalculationEntity(addStdDevCalculation(osirixLesionJson.getDouble("Dev") ,1,"linear"));
-		if (osirixLesionJson.getDouble("LengthCm")!=0) ia.addCalculationEntity(addLengthCalculation(osirixLesionJson.getDouble("LengthCm") ,1,"cm"));
-		if (osirixLesionJson.getDouble("Max")!=0) ia.addCalculationEntity(addMaxCalculation(osirixLesionJson.getDouble("Max") ,1,"linear"));
-		if (osirixLesionJson.getDouble("Mean")!=0) ia.addCalculationEntity(addMeanCalculation(osirixLesionJson.getDouble("Mean") ,1,"linear"));
-		if (osirixLesionJson.getDouble("Min")!=0) ia.addCalculationEntity(addMinCalculation(osirixLesionJson.getDouble("Min") ,1,"linear"));
+		if (osirixLesionJson.getDouble("AreaCm2")!=0) ia.addCalculationEntity(Aim4.addAreaCalculation(osirixLesionJson.getDouble("AreaCm2") ,1,"cm2"));
+		if (osirixLesionJson.getDouble("Dev")!=0) ia.addCalculationEntity(Aim4.addStdDevCalculation(osirixLesionJson.getDouble("Dev") ,1,"linear"));
+		if (osirixLesionJson.getDouble("LengthCm")!=0) ia.addCalculationEntity(Aim4.addLengthCalculation(osirixLesionJson.getDouble("LengthCm") ,1,"cm"));
+		if (osirixLesionJson.getDouble("Max")!=0) ia.addCalculationEntity(Aim4.addMaxCalculation(osirixLesionJson.getDouble("Max") ,1,"linear"));
+		if (osirixLesionJson.getDouble("Mean")!=0) ia.addCalculationEntity(Aim4.addMeanCalculation(osirixLesionJson.getDouble("Mean") ,1,"linear"));
+		if (osirixLesionJson.getDouble("Min")!=0) ia.addCalculationEntity(Aim4.addMinCalculation(osirixLesionJson.getDouble("Min") ,1,"linear"));
 
 
 		iac.addImageAnnotation(ia);
