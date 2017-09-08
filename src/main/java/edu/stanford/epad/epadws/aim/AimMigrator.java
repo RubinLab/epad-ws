@@ -808,7 +808,7 @@ public class AimMigrator {
 				res = new edu.stanford.hakan.aim4api.base.TwoDimensionCircle();
 				break;
 			case NORMAL:
-				res = new edu.stanford.hakan.aim4api.base.TwoDimensionEllipse();
+				res = new edu.stanford.hakan.aim4api.base.TwoDimensionOrthogonal();
 				break;
 			default:
 				res=new edu.stanford.hakan.aim4api.base.TwoDimensionMultiPoint();
