@@ -771,7 +771,7 @@ public class DefaultDcm4CheeDatabaseOperations implements Dcm4CheeDatabaseOperat
 		String updatedTime = resultMap.get("updated_time");
 		String createdTime = resultMap.get("created_time");
 		String classUID = resultMap.get("sop_cuid");
-		String inst_attrs = resultMap.get("inst_attrs_ch").replaceAll("\"", "").replaceAll("[^\\w.()-*#]", " ").replaceAll("\\s+", " ").replaceAll("\\n", "").replaceAll("\\r", "").replace(System.getProperty("line.separator"), "").replaceAll("R.DS", "RDS").replaceAll("S.DS", "SDS").replaceAll("  ", " ").replace("\\", "\\\\").trim();
+		String inst_attrs = resultMap.get("inst_attrs_ch").replaceAll("\"", "").replaceAll("[^\\w.()*#^-]", " ").replaceAll("\\s+", " ").replaceAll("\\n", "").replaceAll("\\r", "").replace(System.getProperty("line.separator"), "").replaceAll("R.DS", "RDS").replaceAll("S.DS", "SDS").replaceAll("  ", " ").replace("\\", "\\\\").trim();
 		
 		//ml if no rescale slope and intercept use the old version
 		DCM4CHEEImageDescription did=new DCM4CHEEImageDescription(studyUID, seriesUID, imageUID, instanceNumber, sliceLocation, contentTime,
