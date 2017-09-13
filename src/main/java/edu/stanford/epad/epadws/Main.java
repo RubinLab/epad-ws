@@ -499,16 +499,17 @@ public class Main
 			//log.info("Checking annotations table");
 			databaseOperations.checkAndRefreshAnnotationsTable();
 			log.info("Done with database/queues init");
-			List<User> users = DefaultEpadProjectOperations.getInstance().getAllUsers();
-			if (EPADConfig.UseEPADUsersProjects && users.size() <= 1) {
-				// Sync XNAT to Epad if needed
-				try {
-					XNATSyncHandler.syncXNATtoEpad("admin", "");
-				}
-				catch (Exception x) {
-					log.warning("Error syncing XNAT data", x);
-				}
-			}
+			//disabling xnat sync September 12, 2017
+//			List<User> users = DefaultEpadProjectOperations.getInstance().getAllUsers();
+//			if (EPADConfig.UseEPADUsersProjects && users.size() <= 1) {
+//				// Sync XNAT to Epad if needed
+//				try {
+//					XNATSyncHandler.syncXNATtoEpad("admin", "");
+//				}
+//				catch (Exception x) {
+//					log.warning("Error syncing XNAT data", x);
+//				}
+//			}
 			AIMUtil.checkSchemaFiles();
 			AIMUtil.checkTemplateFiles();
 			checkTemplateProjectRel();
