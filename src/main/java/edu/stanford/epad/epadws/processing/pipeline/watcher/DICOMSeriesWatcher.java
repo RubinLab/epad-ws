@@ -339,9 +339,11 @@ public class DICOMSeriesWatcher implements Runnable
 				//check and clear old arrdb entities
 				if (now.get(Calendar.HOUR_OF_DAY) == 3 && prevTime != null && prevTime.get(Calendar.HOUR_OF_DAY) != 3)
 				{
-					log.info("3 am. Lets clear the audit log. Deleting entries older than "+ EPADConfig.olderThan_Days+" days");
-					ArrDatabaseOperations arrDatabaseOperations = ArrDatabase.getInstance().getArrDatabaseOperations();
-					arrDatabaseOperations.removeOldLogs(EPADConfig.olderThan_Days);
+					if (EPADConfig.logOlderThan_Days!=-1) { //if it is -1, do not delete log entries 
+						log.info("3 am. Lets clear the audit log. Deleting entries older than "+ EPADConfig.logOlderThan_Days+" days");
+						ArrDatabaseOperations arrDatabaseOperations = ArrDatabase.getInstance().getArrDatabaseOperations();
+						arrDatabaseOperations.removeOldLogs(EPADConfig.logOlderThan_Days);
+					}
 					
 				}
 				
