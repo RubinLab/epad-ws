@@ -44,53 +44,7 @@
       <version>${project.version}</version> 
     </dependency>
 
-    <dependency>
-      <groupId>edu.stanford.epad.plugins</groupId>
-      <artifactId>tedseg</artifactId>
-      <version>${tedseg.plugin.version}</version>
-    </dependency>
-
-    <dependency>
-      <groupId>edu.stanford.epad.plugins</groupId>
-      <artifactId>jjvector</artifactId>
-      <version>${jjvector.plugin.version}</version>
-    </dependency>
-
-	<dependency>
-		<groupId>edu.stanford.epad.plugins</groupId>
-		<artifactId>lesionseg</artifactId>
-		<version>${lesionseg.plugin.version}</version>
-	</dependency>
-
-	<dependency>
-		<groupId>edu.stanford.epad.plugins</groupId>
-		<artifactId>sampleplugin</artifactId>
-		<version>${sampleplugin.plugin.version}</version>
-	</dependency>
-
-	<dependency>
-		<groupId>edu.stanford.epad.plugins</groupId>
-		<artifactId>riesz</artifactId>
-		<version>${riesz.plugin.version}</version>
-	</dependency>
-
-    <dependency>
-		<groupId>edu.stanford.epad.plugins</groupId>
-		<artifactId>lesionseg</artifactId>
-		<version>${lesionseg.plugin.version}</version>
-	</dependency>
-
-	<dependency>
-		<groupId>edu.stanford.epad.plugins</groupId>
-		<artifactId>sampleplugin</artifactId>
-		<version>${sampleplugin.plugin.version}</version>
-	</dependency>
-
-	<dependency>
-		<groupId>edu.stanford.epad.plugins</groupId>
-		<artifactId>riesz</artifactId>
-		<version>${riesz.plugin.version}</version>
-	</dependency>
+    
     
     <!-- <dependency>
 		<groupId>edu.stanford.epad.plugins</groupId>
@@ -358,7 +312,69 @@
 	    <version>4.11</version>
 	</dependency>
   </dependencies>
+<profiles>
+    <profile>
+             <id>full</id>
+             <activation>
+                <activeByDefault>true</activeByDefault>
+             </activation>
+             <dependencies>
+                 <dependency>
+      <groupId>edu.stanford.epad.plugins</groupId>
+      <artifactId>tedseg</artifactId>
+      <version>${tedseg.plugin.version}</version>
+    </dependency>
 
+    <dependency>
+      <groupId>edu.stanford.epad.plugins</groupId>
+      <artifactId>jjvector</artifactId>
+      <version>${jjvector.plugin.version}</version>
+    </dependency>
+
+	<dependency>
+		<groupId>edu.stanford.epad.plugins</groupId>
+		<artifactId>lesionseg</artifactId>
+		<version>${lesionseg.plugin.version}</version>
+	</dependency>
+
+	<dependency>
+		<groupId>edu.stanford.epad.plugins</groupId>
+		<artifactId>sampleplugin</artifactId>
+		<version>${sampleplugin.plugin.version}</version>
+	</dependency>
+
+	<dependency>
+		<groupId>edu.stanford.epad.plugins</groupId>
+		<artifactId>riesz</artifactId>
+		<version>${riesz.plugin.version}</version>
+	</dependency>
+
+    <dependency>
+		<groupId>edu.stanford.epad.plugins</groupId>
+		<artifactId>lesionseg</artifactId>
+		<version>${lesionseg.plugin.version}</version>
+	</dependency>
+
+	<dependency>
+		<groupId>edu.stanford.epad.plugins</groupId>
+		<artifactId>sampleplugin</artifactId>
+		<version>${sampleplugin.plugin.version}</version>
+	</dependency>
+
+	<dependency>
+		<groupId>edu.stanford.epad.plugins</groupId>
+		<artifactId>riesz</artifactId>
+		<version>${riesz.plugin.version}</version>
+	</dependency>
+             </dependencies>
+    </profile>
+      
+      <profile>
+             <id>opensource</id>
+             <modules>
+             </modules>
+    </profile>
+    </profiles>
   <build>
 	<resources>
 	   <resource>
