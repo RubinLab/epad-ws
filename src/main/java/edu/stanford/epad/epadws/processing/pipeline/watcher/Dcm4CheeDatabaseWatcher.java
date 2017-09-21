@@ -108,6 +108,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 
+import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADLogger;
 import edu.stanford.epad.dtos.SeriesProcessingStatus;
 import edu.stanford.epad.dtos.internal.DCM4CHEESeries;
@@ -174,6 +175,30 @@ public class Dcm4CheeDatabaseWatcher implements Runnable
 					String studyUID = dcm4CheeDatabaseOperations.getStudyUIDForSeries(seriesUID);
 					String patientName = dcm4CheeSeries.patientName;
 					String patientID = epadQueries.getUniquePatientID(dcm4CheeSeries.patientID,dcm4CheeSeries.patientName);
+					String dicomPatientID=dcm4CheeSeries.patientID;
+					if (dicomPatientID == null || dicomPatientID.trim().length() == 0 
+							|| dicomPatientID.equalsIgnoreCase("ANON") 
+							|| dicomPatientID.equalsIgnoreCase("Unknown") 
+							|| dicomPatientID.contains("%") 
+							|| dicomPatientID.equalsIgnoreCase("Anonymous"))
+					{
+						String message = "Invalid patientID:'" + dicomPatientID + "' , Rejecting series "+seriesUID+" from dcm4chee ";
+						if (dicomPatientID != null)
+							message = "Invalid non-unique patient ID " + dicomPatientID + " in DICOM file";
+						if (dicomPatientID != null && dicomPatientID.contains("%"))
+						{
+							message = "An invalid character in patient ID " + dicomPatientID;
+						}
+						EpadDatabaseOperations databaseOperations = EpadDatabase.getInstance().getEPADDatabaseOperations();	
+
+						databaseOperations.insertEpadEvent(
+								EPADConfig.xnatUploadProjectUser, 
+								message, 
+								seriesUID, "", "Invalid PatientID:" + dicomPatientID, patientName, studyUID, EPADConfig.xnatUploadProjectID, "Error in dcm4chee push");					
+						projectOperations.createEventLog(EPADConfig.xnatUploadProjectUser, EPADConfig.xnatUploadProjectID, dicomPatientID, studyUID, seriesUID, null, null, "", "PROCESS SERIES FROM DCM4CHEE", message, true);
+						continue;
+					}
+
 					
 					String seriesDesc = dcm4CheeSeries.seriesDescription;
 					int numInstances = dcm4CheeSeries.imagesInSeries;
