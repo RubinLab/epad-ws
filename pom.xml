@@ -17,7 +17,7 @@
 	<properties>
 	   <timestamp>${maven.build.timestamp}</timestamp>
 
-	   <epadws.version>2.7</epadws.version>
+	   <epadws.version>2.8</epadws.version>
 
 	   <maven.build.timestamp.format>yyyy-MM-dd HH:mm</maven.build.timestamp.format>
 		<hostname>${env.HOSTNAME}${env.COMPUTERNAME}</hostname>
