@@ -179,6 +179,7 @@ import edu.stanford.epad.epadws.epaddb.EpadDatabaseOperations;
 import edu.stanford.epad.epadws.handlers.core.FrameReference;
 import edu.stanford.epad.epadws.handlers.core.ImageReference;
 import edu.stanford.epad.epadws.handlers.core.SeriesReference;
+import edu.stanford.epad.epadws.handlers.dicom.DSOUtil;
 import edu.stanford.epad.epadws.handlers.event.EventHandler;
 import edu.stanford.epad.epadws.models.NonDicomSeries;
 import edu.stanford.epad.epadws.models.Project;
@@ -193,8 +194,13 @@ import edu.stanford.epad.epadws.service.EpadProjectOperations;
 import edu.stanford.epad.epadws.service.SessionService;
 import edu.stanford.epad.epadws.service.UserProjectService;
 import edu.stanford.hakan.aim4api.base.AimException;
+import edu.stanford.hakan.aim4api.base.Algorithm;
+import edu.stanford.hakan.aim4api.base.CD;
+import edu.stanford.hakan.aim4api.base.CalculationEntity;
 import edu.stanford.hakan.aim4api.base.DicomImageReferenceEntity;
 import edu.stanford.hakan.aim4api.base.DicomSegmentationEntity;
+import edu.stanford.hakan.aim4api.base.Enumerations;
+import edu.stanford.hakan.aim4api.base.ExtendedCalculationResult;
 import edu.stanford.hakan.aim4api.base.II;
 import edu.stanford.hakan.aim4api.base.ImageAnnotationCollection;
 import edu.stanford.hakan.aim4api.base.ImageReferenceEntity;
@@ -435,7 +441,12 @@ public class AIMUtil
 		return generateAIMFileForDSO(dsoFile, username, projectID, null);
 	}
 	
+	
 	public static ImageAnnotation generateAIMFileForDSO(File dsoFile, String username, String projectID, String aimName) throws Exception
+	{
+		return generateAIMFileForDSO(dsoFile, username, projectID, aimName, false);
+	}
+	public static ImageAnnotation generateAIMFileForDSO(File dsoFile, String username, String projectID, String aimName, boolean generateCalcs) throws Exception
 	{
 		log.info("Creating DSO AIM for user " + username + " in project " + projectID + " file:" + dsoFile.getAbsolutePath());
 		AttributeList dsoDICOMAttributes = PixelMedUtils.readDICOMAttributeList(dsoFile);
@@ -468,20 +479,23 @@ public class AIMUtil
 		        if (sitem != null) {
 		            AttributeList list = sitem.getAttributeList();
 		            SequenceAttribute referencedInstanceSeq = (SequenceAttribute) list.get(TagFromName.ReferencedInstanceSequence);
+		            referencedImageUID = new String[referencedInstanceSeq.getNumberOfItems()];
+		            log.info("Sequence num of items is "+ referencedInstanceSeq.getNumberOfItems());
 				    Iterator sitems2 = referencedInstanceSeq.iterator();
+				    int index=0;
 				    while (sitems2.hasNext())
 				    {
 					    sitem = (SequenceItem)sitems2.next();
 			            list = sitem.getAttributeList();
 			            if (list.get(TagFromName.ReferencedSOPInstanceUID) != null)
 			            {		            	
-			    			referencedImageUID = new String[1];
-			    			referencedImageUID[0] = list.get(TagFromName.ReferencedSOPInstanceUID).getSingleStringValueOrEmptyString();
-							referencedSeriesUID = dcm4CheeDatabaseOperations.getSeriesUIDForImage(referencedImageUID[0]);
+			    			referencedImageUID[index++] = list.get(TagFromName.ReferencedSOPInstanceUID).getSingleStringValueOrEmptyString();
+							log.info("referenced "+ (index-1) + " is " +referencedImageUID[index-1]);
+			    			referencedSeriesUID = dcm4CheeDatabaseOperations.getSeriesUIDForImage(referencedImageUID[0]);
 							if (referencedSeriesUID != null && referencedSeriesUID.length() > 0)
 							{
 								log.info("ReferencedSOPInstanceUID:" + referencedImageUID[0]);
-								break;
+//								break;
 							}
 							else
 								log.info("DSO Referenced Image not found:" + referencedImageUID[0]);
@@ -535,6 +549,30 @@ public class AIMUtil
 			// TODO Not general. See if we can generate AIM on GUI upload of DSO with correct user.
 			setImageAnnotationUser(imageAnnotation, username);
 
+			if (generateCalcs){
+				//open the referenced images and calculate the aggregations
+				Double[] calcs=DSOUtil.generateCalcs(referencedSeriesUID,referencedImageUID,dsoFile);
+				//add calculations to aim
+				if (calcs!=null){
+					log.info("Retrieved calculations are: min="+calcs[0]+ " max="+calcs[1]+ " mean="+calcs[2]+" stddev="+calcs[3]);
+					Aim aim=new Aim(imageAnnotation);
+					String units="pixels";
+					if (aim.getModality().equals("PT")) {
+						units="SUV";
+					}
+					if (aim.getModality().equals("CT")) {
+						units="HU";
+						
+					}
+					aim.addMinCalculation(calcs[0], null, units);
+					aim.addMaxCalculation(calcs[1], null, units);
+					aim.addMeanCalculation(calcs[2], null, units);
+					aim.addStdDevCalculation(calcs[3], null, units);
+					imageAnnotation=aim;
+				}
+				
+			}
+			
 			log.info("Saving AIM file for DSO " + imageUID + " in series " + seriesUID + " with ID "
 					+ imageAnnotation.getUniqueIdentifier());
 			try {
@@ -810,7 +848,9 @@ public class AIMUtil
                 	log.warning("Unable to save aim:" + EPADFileUtils.readFileAsString(aimFile));
             }
             if (imageAnnotationColl != null) {
-				SegmentationEntityCollection sec = imageAnnotationColl.getImageAnnotations().get(0).getSegmentationEntityCollection();
+            	Aim4 aim = new Aim4(imageAnnotationColl);
+				
+            	SegmentationEntityCollection sec = imageAnnotationColl.getImageAnnotations().get(0).getSegmentationEntityCollection();
 				if (sec != null)
 					log.debug("Aim: " + imageAnnotationColl.getUniqueIdentifier().getRoot() + " SEC size:" + sec.getSegmentationEntityList().size());
 				if (sec != null  && imageAnnotationColl.getImageAnnotations().get(0).getListTypeCode().get(0).getCode().equals("SEG"))
@@ -822,9 +862,43 @@ public class AIMUtil
 						epadDatabaseOperations.deleteAIM(username, imageAnnotationColl.getUniqueIdentifier().getRoot());
 						throw new Exception("Invalid AIM, contains empty segmentation data");
 					}
+					//ml this is a segmentation aim sent from ui. 
+					//add calculations
+					boolean generateCalcs=false;
+					if (imageAnnotationColl.getImageAnnotation().getCalculationEntityCollection().size()<1){
+						log.info("No calculations for dso. Let's calculate");
+						generateCalcs=true;
+					}
+					if (generateCalcs){
+						//open the referenced images and calculate the aggregations
+						DicomSegmentationEntity dseg=(DicomSegmentationEntity) sec.getSegmentationEntityList().get(0);
+						DicomImageReferenceEntity dimg= (DicomImageReferenceEntity) imageAnnotationColl.getImageAnnotation().getImageReferenceEntityCollection().get(0);
+						String seriesUID=dimg.getImageStudy().getImageSeries().getInstanceUid().getRoot();
+						String[] referencedImageUID=new String[2];
+						
+						Double[] calcs=DSOUtil.generateCalcs(dseg.getSopInstanceUid().getRoot());
+						//add calculations to aim
+						if (calcs!=null){
+							log.info("Retrieved calculations are: min="+calcs[0]+ " max="+calcs[1]+ " mean="+calcs[2]+" stddev="+calcs[3]);
+							String units="pixels";
+							if (aim.getModality().equals("PT")) {
+								units="SUV";
+							}
+							if (aim.getModality().equals("CT")) {
+								units="HU";
+								
+							}
+							aim.addCalculationEntity(Aim4.addMinCalculation(calcs[0], null, units));
+							aim.addCalculationEntity(Aim4.addMaxCalculation(calcs[1], null, units));
+							aim.addCalculationEntity(Aim4.addMeanCalculation(calcs[2], null, units));
+							aim.addCalculationEntity(Aim4.addStdDevCalculation(calcs[3], null, units));
+							
+						}
+						
+					}
+					
 				}
 				EPADAIM ea = epadDatabaseOperations.getAIM(imageAnnotationColl.getUniqueIdentifier().getRoot());
-				Aim4 aim = new Aim4(imageAnnotationColl);
 				String patientID = aim.getPatientID();
 				String originalPatientID = aim.getOriginalPatientID();
 				log.info("pat "+ imageAnnotationColl.getPerson().getId());
@@ -2658,4 +2732,78 @@ public class AIMUtil
 
 	/****************************AIME Methods***********************************/
 	
+	
+	private static final String VERSION = "1.0";
+	private static final String PRIVATE_DESIGNATOR = "private";
+	
+	/**
+	 * epad-ws's addcalculation. it can be used for accessing the dynamic lexicon
+	 * @param value
+	 * @param shapeId
+	 * @param units
+	 * @param name
+	 * @param code
+	 * @return
+	 */
+	public static CalculationEntity addCalculation(String value, Integer shapeId, String units, String name, String code) {
+
+		CalculationEntity cal =new CalculationEntity();
+		cal.setUniqueIdentifier();
+		CD calcCD= edu.stanford.hakan.aim4api.compability.aimv3.Lexicon.getInstance().get(code);
+		String desc="";
+		if (calcCD!=null || ((calcCD= edu.stanford.epad.common.util.Lexicon.getInstance().getLex(name))!=null)) {
+			cal.addTypeCode(new CD(calcCD.getCode(),calcCD.getDisplayName().getValue(),calcCD.getCodeSystemName()));
+			cal.setDescription(new ST(calcCD.getDisplayName().getValue()));
+			desc=calcCD.getDisplayName().getValue();
+		}else {
+
+			cal.addTypeCode(new CD(name,name,PRIVATE_DESIGNATOR));
+			cal.setDescription(new ST(name));
+			desc=name;
+
+		}
+		ExtendedCalculationResult calculationResult=new ExtendedCalculationResult();
+
+		calculationResult.setType(Enumerations.CalculationResultIdentifier.Scalar);
+		calculationResult.setUnitOfMeasure(new ST(units));
+		if (units.equals(""))
+			calculationResult.setDataType(new CD("99EPADD2","String","99EPAD"));
+		else
+			calculationResult.setDataType(new CD("99EPADD1","Double","99EPAD"));
+
+		// Create a CalculationData instance
+		edu.stanford.hakan.aim4api.base.CalculationData calculationData = new edu.stanford.hakan.aim4api.base.CalculationData();
+		calculationData.setValue(new ST(value));
+		calculationData.addCoordinate(0, 0);
+
+		// Create a Dimension instance
+		edu.stanford.hakan.aim4api.base.Dimension dimension = new edu.stanford.hakan.aim4api.base.Dimension(0, 1, desc);
+
+		// Add calculationData to calculationResult
+		calculationResult.addCalculationData(calculationData);
+
+		// Add dimension to calculationResult
+		calculationResult.addDimension(dimension);
+
+		//this should be rdf removing for now. do not have shape id. and do not see it in the recist aim.
+		//                    // add the shape reference to the calculation
+		//                    ReferencedGeometricShape reference = new ReferencedGeometricShape();
+		//                    reference.setCagridId(0);
+		//                    reference.setReferencedShapeIdentifier(shapeId);
+		//                    calculation.addReferencedGeometricShape(reference);
+
+		// Add calculationResult to calculation
+		cal.addCalculationResult(calculationResult);
+
+		Algorithm alg=new Algorithm();
+		alg.setName(new ST(desc));
+		alg.setVersion(new ST(VERSION));
+		ArrayList<CD> types=new ArrayList<>();
+		types.add(new CD("RID12780","Calculation","RadLex","3.2"));
+		alg.setType(types);
+		cal.setAlgorithm(alg);
+
+		return cal;
+
+	}
 }

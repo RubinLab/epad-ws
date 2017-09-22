@@ -624,7 +624,8 @@ public class UserProjectService {
 						generateAim = true;
 					if (generateAim || ias.size() == 0 || aims.size() == 0) 
 					{
-						AIMUtil.generateAIMFileForDSO(dicomFile, username, projectID);
+						log.info("came from create project entities");
+						AIMUtil.generateAIMFileForDSO(dicomFile, username, projectID,null,true);
 					}
 					else
 					{

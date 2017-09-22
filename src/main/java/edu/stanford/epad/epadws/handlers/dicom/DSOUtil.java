@@ -130,10 +130,12 @@ import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.Map.Entry;
 
 import javax.imageio.ImageIO;
 import javax.servlet.http.HttpServletRequest;
@@ -151,7 +153,10 @@ import com.pixelmed.dicom.AttributeList;
 import com.pixelmed.dicom.AttributeTag;
 import com.pixelmed.dicom.DicomException;
 import com.pixelmed.dicom.DicomInputStream;
+import com.pixelmed.dicom.ModalityTransform;
+import com.pixelmed.dicom.SUVTransform;
 import com.pixelmed.dicom.SequenceAttribute;
+import com.pixelmed.dicom.SequenceItem;
 import com.pixelmed.dicom.TagFromName;
 import com.pixelmed.dicom.UnsignedShortAttribute;
 import com.pixelmed.display.ConsumerFormatImageMaker;
@@ -167,6 +172,7 @@ import edu.stanford.epad.common.pixelmed.TIFFMasksToDSOConverter;
 import edu.stanford.epad.common.util.EPADConfig;
 import edu.stanford.epad.common.util.EPADFileUtils;
 import edu.stanford.epad.common.util.EPADLogger;
+import edu.stanford.epad.common.util.PixelMapDouble;
 import edu.stanford.epad.common.util.RunSystemCommand;
 import edu.stanford.epad.dtos.DSOEditRequest;
 import edu.stanford.epad.dtos.DSOEditResult;
@@ -717,7 +723,255 @@ public class DSOUtil
 		} 
 	}
 	
+	public static Double[] generateCalcs(String dsoUID){
+		String referencedSeriesUID="";
+		String[] referencedImageUID=null;
+		File tmpFolder = new File("/tmp/referedseries"+System.currentTimeMillis());
+		if (!tmpFolder.mkdirs()){
+			log.warning("Cannot create tmp folder. Cannot calculate aggregations.");
+			return null;
+		}
+		File dsoFile = new File(tmpFolder, dsoUID + ".dcm");
+		try {
+			DCM4CHEEUtil.downloadDICOMFileFromWADO("*", "*", dsoUID, dsoFile);
+		} catch (IOException e) {
+			log.warning("Cannot download dso image. Cannot calculate aggregations.", e);
+			return null;
+		}
+		
+		AttributeList dsoDICOMAttributes = PixelMedUtils.readDICOMAttributeList(dsoFile);
+		SequenceAttribute referencedSeriesSequence =(SequenceAttribute)dsoDICOMAttributes.get(TagFromName.ReferencedSeriesSequence);
+		if (referencedSeriesSequence != null) {
+		    Iterator sitems = referencedSeriesSequence.iterator();
+		    if (sitems.hasNext()) {
+		        SequenceItem sitem = (SequenceItem)sitems.next();
+		        if (sitem != null) {
+		            AttributeList list = sitem.getAttributeList();
+		            SequenceAttribute referencedInstanceSeq = (SequenceAttribute) list.get(TagFromName.ReferencedInstanceSequence);
+		            referencedImageUID = new String[referencedInstanceSeq.getNumberOfItems()];
+		            log.info("Sequence num of items is "+ referencedInstanceSeq.getNumberOfItems());
+				    Iterator sitems2 = referencedInstanceSeq.iterator();
+				    int index=0;
+				    while (sitems2.hasNext())
+				    {
+					    sitem = (SequenceItem)sitems2.next();
+			            list = sitem.getAttributeList();
+			            if (list.get(TagFromName.ReferencedSOPInstanceUID) != null)
+			            {		            	
+			    			referencedImageUID[index++] = list.get(TagFromName.ReferencedSOPInstanceUID).getSingleStringValueOrEmptyString();
+							log.info("referenced "+ (index-1) + " is " +referencedImageUID[index-1]);
+			    			referencedSeriesUID = dcm4CheeDatabaseOperations.getSeriesUIDForImage(referencedImageUID[0]);
+							if (referencedSeriesUID != null && referencedSeriesUID.length() > 0)
+							{
+								log.info("ReferencedSOPInstanceUID:" + referencedImageUID[0]);
+//								break;
+							}
+							else
+								log.info("DSO Referenced Image not found:" + referencedImageUID[0]);
+			            }
+				    }
+ 		        }
+		    }
+		}
+		
+		return generateCalcs(referencedSeriesUID, referencedImageUID, dsoFile, tmpFolder);
+		
+	}
+	/**
+	 * 
+	 * @param referencedSeriesUID
+	 * @param referencedImageUIDs
+	 * @param dsoFile
+	 * @return null if cannot download and open series images
+	 */
+	
+	public static Double[] generateCalcs(String referencedSeriesUID,String[] referencedImageUIDs,File dsoFile){
+		File tmpFolder = new File("/tmp/referedseries"+System.currentTimeMillis());
+		if (!tmpFolder.mkdirs()){
+			log.warning("Cannot create tmp folder. Cannot calculate aggregations.");
+			return null;
+		}
+		return generateCalcs(referencedSeriesUID, referencedImageUIDs, dsoFile, tmpFolder);
+	}
+	public static Double[] generateCalcs(String referencedSeriesUID,String[] referencedImageUIDs,File dsoFile, File tmpFolder){
+		
+		
+		//download the referenced images
+		try {
+			
+			for (String referencedImageUID:referencedImageUIDs){
+				File dicom1 = new File(tmpFolder, referencedImageUID + ".dcm");
+				DCM4CHEEUtil.downloadDICOMFileFromWADO("*", referencedSeriesUID, referencedImageUID, dicom1);
+				
+			}
+		} catch (IOException e) {
+			log.warning("Cannot download series images. Cannot calculate aggregations.", e);
+			return null;
+		}
+		
+		//open the dso
+		try {
+			SourceImage dso=new SourceImage(dsoFile.getAbsolutePath());
+			//for each frame get the referenced image 
+			//they should be in the same order
+			SourceImage refImage=null;
+			PixelMapDouble pixelMap = new PixelMapDouble();
+			for(int i=0;i<dso.getNumberOfFrames();i++){
+				//get pixel values for this dso frame
+				//mask get raw values is enough
+				double[] mask=getPixelValuesAsArray(dso, i);
+				
+				log.info("getting image "+ referencedImageUIDs[i]+ " for "+ i+ "th frame");
+				refImage=new SourceImage(tmpFolder.getAbsolutePath()+"/"+referencedImageUIDs[i]+".dcm");
+				//we need to transform the values. using pixelmed
+				double[] image=getTransformedPixelValuesAsArray(refImage,0);
+				if (image.length!=mask.length){
+					log.warning("mask and image should be same length.image is "+ image.length+ " mask is "+mask.length);
+					continue;
+				}
+				log.info("calculating for  "+ image.length+ " values. image&mask size. for frame " + i);
+				for (int j=0;j<image.length;j++){
+					if (mask[j]!=0 && mask[j]!=1){
+						log.warning("not a binary mask" + mask[j]+ " Aborting");
+						return null;
+					}
+					double val=image[j]*mask[j];
+					if (val!=0)  {
+						// add it to the map or inc its frequency
+						Double f = pixelMap.get(val);
+						if (f == null) {
+							pixelMap.put(val, 1.0);
+						} else {
+							pixelMap.put(val, f + 1);
+						}
+						log.info("j="+j+" val ="+val);
+					}
+					
+				}
+				
+			}
+			pixelMap.minMaxRange();
+			pixelMap.calc();
+			
+			log.info("min="+pixelMap.getMin() +" max="+pixelMap.getMax()+ " mean=" +pixelMap.getMean()+ " stddev="+ pixelMap.getStdDev());
+			
+			return new Double[]{pixelMap.getMin() ,pixelMap.getMax(),pixelMap.getMean(),pixelMap.getStdDev()};
+		} catch (IOException e) {
+			log.warning("Cannot read file ",e);
+		} catch (DicomException e) {
+			log.warning("Dicom issue ",e);
+		}
+		catch (Exception e) {
+			log.warning("Cannot calculate values ",e);
+			
+		}
+		
+		
+		return null;
+		
+	}
+	
+	
+
 	public static String getPixelValues(SourceImage sImg, int frameNum){
+		return JSON.toString(getPixelValuesAsArray(sImg,frameNum));
+	}
+	
+	//this is the epad's version. I used pixelmed for now. 
+	//TODO verify values.
+//	public Double getPixValue(int seriesIndex, int imageIndex, int x, int y, String rescaleIntercept, String rescaleSlope) {
+//		
+//		//get the rescales from the actual image index
+//		//why are the indexes different??????
+//		double rs= Double.parseDouble(rescaleSlope);
+//		double ri= Double.parseDouble(rescaleIntercept);
+//		int raw=getRawValue(seriesIndex, imageIndex, x, y);
+//		if (rs==0 && ri==0) {
+//			// logger.info("Couldn't get rescale slope and intercept!!");
+//			rs = 1;
+//			ri = 0;
+//		}
+//			
+//		int pixRep=0;
+//		int bit=16;
+//		try {
+//			pixRep = Integer.parseInt(dicomTagMap.getPixelRepresentation()); //signed or unsigned
+//			bit=Integer.parseInt(dicomTagMap.getBitsStored()); //one image has wrong bits (cog) calculates wrong values with this!!
+//		}catch(Exception e) {
+//			logger.info("Couldn't get bits stored from dicom, assuming 16 bits");	
+//		}
+//		if (bit == 8) {//check the largest value if exist
+//			DicomTag largest=dicomTagMap.getTag("(0028,0107)");
+//			if (largest!=null) {
+//				try {
+//					if (Integer.parseInt(largest.getValue())>256)
+//						bit=16;
+//				}catch(Exception e) {
+//					logger.info("Couldn't find largest from dicom, using 8 bits");	
+//				}
+//			}
+//		}
+//		
+//		//combining the the r and g color data from png (each 8 bits) to go back to 16 bit dicom data
+//		//pixel representation added
+//		raw = (((1<<(bit-pixRep))-1)&raw)-(((raw>>(bit-pixRep))^(pixRep))<<(bit-pixRep));
+//		
+//		if (dicomTagMap!=null && (dicomTagMap.getModality().equals("PT"))) {
+//			if (dicomTagMap.getUnits().startsWith("BQML"))
+//				return calcSuv(raw,rescaleSlope, rescaleIntercept, dicomTagMap.getTotalDose(), dicomTagMap.getSeriesDate(), dicomTagMap.getSeriesTime(), dicomTagMap.getRadioPhStartDateTime(), dicomTagMap.getRadioPhHalfTime(), dicomTagMap.getPatientWeight(), dicomTagMap.getUnits()) ;
+//			//if not in bqml just put the rescaled value and put the units at the end 
+//			return raw*rs+ri; 
+//		}
+//		if (dicomTagMap!=null && (dicomTagMap.getModality().equals("CT") )) {
+//			return (raw*rs+ri);
+//			
+//		}
+//		return raw*rs+ri;
+//		
+//	}
+	
+	/**
+	 * gets the transformed pixel values for the image. 
+	 * HU values for ct
+	 * SUV values for pet
+	 * calculated by pixelmed
+	 * @param sImg
+	 * @param frameNum
+	 * @return
+	 */
+	public static double[] getTransformedPixelValuesAsArray(SourceImage sImg, int frameNum){
+		double[] rawPixels=getPixelValuesAsArray(sImg, frameNum);
+		double[] transformedPixels=rawPixels.clone();
+		
+		log.info("modality transform "+sImg.getModalityTransform().toString());
+		SUVTransform suvTransform=sImg.getSUVTransform();
+		if (suvTransform != null) {
+			log.info("found suv transform ");
+			com.pixelmed.dicom.SUVTransform.SingleSUVTransform t = suvTransform.getSingleSUVTransform(frameNum);
+			if (t.isValidSUVbw()) {
+				for(int i=0;i< rawPixels.length; i++) {
+					transformedPixels[i]=t.getSUVbwValue(rawPixels[i]);
+				}
+			}
+				
+		}
+		ModalityTransform modalityTransform=sImg.getModalityTransform();
+		double useSlope=1.0;
+		double useIntercept=0.0; 
+		
+		if (modalityTransform != null) {
+			useSlope = modalityTransform.getRescaleSlope    (frameNum);
+			useIntercept = modalityTransform.getRescaleIntercept(frameNum);
+			log.info("found modality transform. slope "+ useSlope+" intercept "+useIntercept);
+			for(int i=0;i< rawPixels.length; i++) {
+				transformedPixels[i]=rawPixels[i]*useSlope+useIntercept;
+			}
+		}
+		
+		return transformedPixels;
+	}
+	
+	public static double[] getPixelValuesAsArray(SourceImage sImg, int frameNum){
 		int signMask=0;
 		int signBit=0;
 		
@@ -735,6 +989,7 @@ public class DSOUtil
 				signMask=0xffff8000;
 			}
 		}
+		
 		double[] storedPixelValueArray;
 		if (src.getRaster().getDataBuffer() instanceof DataBufferFloat) {
 			float[] storedPixelValues  = src.getSampleModel().getPixels(0,0,src.getWidth(),src.getHeight(),(float[])null,src.getRaster().getDataBuffer());
@@ -763,7 +1018,7 @@ public class DSOUtil
 			}
 			
 		}
-		return JSON.toString(storedPixelValueArray);
+		return storedPixelValueArray;
 		
 	}
 	
